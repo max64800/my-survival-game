@@ -15,6 +15,7 @@ var count := 1
 var _age := 0.0
 var _flying := false
 var _retry := 0.0
+var _asked := 0.0  ## seconds since we asked the host to pick us up (0 = not asked)
 static var _mesh_cache := {}
 
 
@@ -68,9 +69,18 @@ func _physics_process(delta: float) -> void:
 			freeze = true
 		return
 	global_position = global_position.move_toward(target, FLY_SPEED * delta * (1.0 + 2.0 / maxf(dist, 0.5)))
-	if dist < 0.6:
-		if not auth.request_pickup(auth.local_peer_id(), drop_id):
-			# Bag full: fall back down and try again in a while.
-			_flying = false
-			freeze = false
-			_retry = 3.0
+	if _asked > 0.0:
+		_asked += delta
+		if _asked > 1.5:  # no answer: the host said no (bag full?)
+			pickup_refused()
+	elif dist < 0.6:
+		_asked = 0.001
+		auth.ask_pickup(drop_id)
+
+
+## The host couldn't fit us in the bag: fall back down and try again in a while.
+func pickup_refused() -> void:
+	_flying = false
+	_asked = 0.0
+	freeze = false
+	_retry = 3.0

@@ -9,6 +9,10 @@ signal swing_impact  ## the pickaxe just hit (time to dig)
 const SKIN := Color(0.93, 0.72, 0.58)
 const BEARD := Color(0.72, 0.33, 0.14)
 const TUNIC := Color(0.25, 0.38, 0.55)
+## Shirt colors, so co-op friends look different: host blue, then red, green, gold.
+const TUNICS := [Color(0.25, 0.38, 0.55), Color(0.6, 0.22, 0.2), Color(0.25, 0.48, 0.25), Color(0.7, 0.55, 0.2)]
+
+var tunic := TUNIC
 const LEATHER := Color(0.33, 0.21, 0.12)
 const METAL := Color(0.6, 0.6, 0.63)
 
@@ -24,7 +28,7 @@ func _ready() -> void:
 		_part(_cyl(0.09, 0.11, 0.36), LEATHER, Vector3(x, 0.18, 0))
 		_part(_box(Vector3(0.18, 0.1, 0.28)), LEATHER.darkened(0.3), Vector3(x, 0.05, -0.04))
 	# Body, belt
-	_part(_capsule(0.33, 0.78), TUNIC, Vector3(0, 0.68, 0))
+	_part(_capsule(0.33, 0.78), tunic, Vector3(0, 0.68, 0))
 	_part(_cyl(0.34, 0.34, 0.08), LEATHER, Vector3(0, 0.55, 0))
 	_part(_box(Vector3(0.12, 0.09, 0.04)), Color(0.85, 0.7, 0.3), Vector3(0, 0.55, -0.34))
 	# Head, nose, eyes
@@ -44,7 +48,7 @@ func _ready() -> void:
 	right_arm = Node3D.new()
 	right_arm.position = Vector3(0.38, 0.95, 0)
 	add_child(right_arm)
-	_part(_capsule(0.08, 0.5), TUNIC, Vector3(0, -0.22, 0), right_arm)
+	_part(_capsule(0.08, 0.5), tunic, Vector3(0, -0.22, 0), right_arm)
 	_part(_sphere(0.08), SKIN, Vector3(0, -0.47, 0), right_arm)
 	var pick := Node3D.new()
 	pick.position = Vector3(0, -0.47, 0)
@@ -57,7 +61,7 @@ func _ready() -> void:
 	left_arm.position = Vector3(-0.38, 0.95, 0)
 	left_arm.rotation.x = deg_to_rad(-35)
 	add_child(left_arm)
-	_part(_capsule(0.08, 0.5), TUNIC, Vector3(0, -0.22, 0), left_arm)
+	_part(_capsule(0.08, 0.5), tunic, Vector3(0, -0.22, 0), left_arm)
 	_part(_sphere(0.08), SKIN, Vector3(0, -0.47, 0), left_arm)
 	left_hand = Node3D.new()
 	left_hand.position = Vector3(0, -0.55, 0)

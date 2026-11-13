@@ -229,7 +229,7 @@ func _on_slot_input(event: InputEvent, index: int) -> void:
 	if _swap_from < 0:
 		_swap_from = index
 	else:
-		GameAuthority.instance.request_swap(peer_id, _swap_from, index)
+		GameAuthority.instance.ask_swap(_swap_from, index)
 		_swap_from = -1
 	_refresh_slots()
 

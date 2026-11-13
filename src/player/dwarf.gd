@@ -1,7 +1,9 @@
 class_name Dwarf
 extends CharacterBody3D
 ## The dwarf: walking, running, jumping, the camera behind them, and swinging the pickaxe.
-## It never changes the world itself: it ASKS the GameAuthority (request_*).
+## It never changes the world itself: it ASKS the GameAuthority (ask_*).
+## In co-op, other players' dwarfs are "puppets" (is_local = false): no camera,
+## no controls, they just copy the position their owner sends over the network.
 
 const WALK_SPEED := 4.0
 const RUN_SPEED := 6.5
@@ -11,12 +13,15 @@ const AIR_ACCEL := 4.0
 const SWING_TIME := 0.55
 const CAMERA_DISTANCE := 3.4
 const SHOULDER := Vector3(0.55, 1.5, 0.0)
+const POSE_SEND_TIME := 0.05  ## send our position 20 times a second
 
 var peer_id := 1
 var model: DwarfModel
 var lantern: Lantern
 var camera: Camera3D
 var input_enabled := true
+var is_local := true  ## false = a friend's dwarf, moved by the network
+var color_index := 0  ## which shirt color (0 = host)
 
 var _yaw := 0.0
 var _pitch := -0.25
@@ -26,6 +31,9 @@ var _spring: SpringArm3D
 var _shake := 0.0
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
 var _respawn_point := Vector3.ZERO
+var _pose_timer := 0.0
+var _net_pos := Vector3.ZERO
+var _net_yaw := 0.0
 
 
 func _ready() -> void:
@@ -41,13 +49,21 @@ func _ready() -> void:
 	shape.position = Vector3.UP * 0.675
 	add_child(shape)
 	model = DwarfModel.new()
+	model.tunic = DwarfModel.TUNICS[color_index % DwarfModel.TUNICS.size()]
 	add_child(model)
 	model.swing_impact.connect(_on_swing_impact)
 	lantern = Lantern.new()
 	lantern.peer_id = peer_id
 	model.left_hand.add_child(lantern)
-	_build_camera()
 	_respawn_point = global_position
+	_net_pos = global_position
+	if not is_local:
+		set_physics_process(false)
+		return
+	_build_camera()
+	var auth := GameAuthority.instance
+	if auth:
+		auth.dig_feedback.connect(_on_dig_feedback)
 
 
 func set_respawn(p: Vector3) -> void:
@@ -78,7 +94,7 @@ func _build_camera() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not input_enabled:
+	if not input_enabled or not is_local:
 		return
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		_yaw -= event.relative.x * Controls.MOUSE_SENSITIVITY
@@ -89,13 +105,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	var ps := auth.get_player(peer_id)
 	for i in 8:
 		if event.is_action_pressed("hotbar_%d" % (i + 1)):
-			auth.request_select_slot(peer_id, i)
+			auth.ask_select_slot(i)
 	if ps and event.is_action_pressed("hotbar_next"):
-		auth.request_select_slot(peer_id, (ps.selected_slot + 1) % Inventory.HOTBAR_SIZE)
+		auth.ask_select_slot((ps.selected_slot + 1) % Inventory.HOTBAR_SIZE)
 	if ps and event.is_action_pressed("hotbar_prev"):
-		auth.request_select_slot(peer_id, (ps.selected_slot + Inventory.HOTBAR_SIZE - 1) % Inventory.HOTBAR_SIZE)
+		auth.ask_select_slot((ps.selected_slot + Inventory.HOTBAR_SIZE - 1) % Inventory.HOTBAR_SIZE)
 	if event.is_action_pressed("refill_lantern"):
-		auth.request_refill(peer_id)
+		auth.ask_refill()
 
 
 func _physics_process(delta: float) -> void:
@@ -128,6 +144,8 @@ func _physics_process(delta: float) -> void:
 
 	if playing and Input.is_action_pressed("dig") and not model.swinging:
 		model.swing(SWING_TIME)
+		if _online():
+			_net_swing.rpc()
 
 	# Safety net: if we ever fall out of the cave, go back to the start.
 	if global_position.y < CaveMaker.Y_MIN - 30.0:
@@ -136,6 +154,14 @@ func _physics_process(delta: float) -> void:
 
 
 func _process(delta: float) -> void:
+	if not is_local:
+		global_position = global_position.lerp(_net_pos, minf(1.0, delta * 15.0))
+		model.rotation.y = lerp_angle(model.rotation.y, _net_yaw, minf(1.0, delta * 15.0))
+		return
+	_pose_timer -= delta
+	if _pose_timer <= 0.0 and _online():
+		_pose_timer = POSE_SEND_TIME
+		_net_pose.rpc(global_position, model.rotation.y)
 	_cam_yaw.global_position = global_position + Vector3.UP * SHOULDER.y
 	_cam_yaw.rotation.y = _yaw
 	_cam_pitch.rotation.x = _pitch
@@ -178,25 +204,51 @@ func _aim_info() -> Dictionary:
 
 
 func _on_swing_impact() -> void:
+	if not is_local:
+		return
 	var auth := GameAuthority.instance
 	var hit := aim()
 	if auth == null or hit.is_empty():
 		return
 	var glow_id := auth.glow.id_of(hit.collider) if auth.glow else -1
 	if glow_id >= 0:
-		if auth.request_break_glow(peer_id, glow_id):
-			Fx.burst(get_parent(), hit.position, Color(0.5, 0.85, 1.0), 14)
-			_shake = 0.6
+		auth.ask_break_glow(glow_id)
+		Fx.burst(get_parent(), hit.position, Color(0.5, 0.85, 1.0), 10)
+		_shake = 0.5
 		return
-	var result := auth.request_hit(peer_id, hit.position, hit.normal)
+	auth.ask_hit(hit.position, hit.normal)
+
+
+## The host's answer to our pickaxe hit (arrives right away when playing alone).
+func _on_dig_feedback(pid: int, result: Dictionary) -> void:
+	if pid != peer_id or not result.has("point"):
+		return
+	var at: Vector3 = result.point
 	var col := Fx.material_color(result.get("material", Mat.STONE))
 	match result.get("state", ""):
 		"hit":
-			Fx.burst(get_parent(), hit.position + hit.normal * 0.1, col, 6, 2.5)
+			Fx.burst(get_parent(), at, col, 6, 2.5)
 			_shake = 0.35
 		"dug":
-			Fx.burst(get_parent(), hit.position, col, 16, 4.0)
+			Fx.burst(get_parent(), at, col, 16, 4.0)
 			_shake = 0.8
 		"blocked":
-			Fx.burst(get_parent(), hit.position + hit.normal * 0.1, Color(1.0, 0.9, 0.6), 4, 5.0)
+			Fx.burst(get_parent(), at, Color(1.0, 0.9, 0.6), 4, 5.0)
 			_shake = 0.2
+
+
+# ---------------------------------------------------------------- network pose
+
+func _online() -> bool:
+	return not multiplayer.get_peers().is_empty()
+
+
+@rpc("authority", "unreliable_ordered")
+func _net_pose(pos: Vector3, yaw: float) -> void:
+	_net_pos = pos
+	_net_yaw = yaw
+
+
+@rpc("authority", "reliable")
+func _net_swing() -> void:
+	model.swing(SWING_TIME)
