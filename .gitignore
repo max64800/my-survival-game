@@ -1,0 +1,13 @@
+# Godot's own temporary files (it rebuilds these by itself)
+.godot/
+.import/
+*.tmp
+# Exported game builds
+/builds/
+/export/
+# Steam test file
+steam_appid.txt
+# Computer junk
+.DS_Store
+Thumbs.db
+desktop.ini
