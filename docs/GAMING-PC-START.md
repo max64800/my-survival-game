@@ -66,7 +66,24 @@ The autopilot plays by itself, takes screenshots, and prints a report:
 
 On the MacBook (M3), the autopilot report said: loads in about 3–8 seconds, about 50 FPS at 1600×900.
 
-## 5. Still to do in Step 1 on the PC
+## 5. Trying the later steps (branches)
+
+Claude built Steps 2 to 5 on separate "branches" (parallel copies), each on top of the one before:
+
+| Command | You get |
+|---|---|
+| `git switch main` | Step 1 only (start here) |
+| `git switch step-2-friends` | + co-op (start menu: Host / Join) |
+| `git switch step-3-survive` | + survival, crafting (Tab), skills (K), map (M) |
+| `git switch step-4-build` | + Build Hammer (B menu, C save blueprint, V blueprint book), chests, cave-ins |
+| `git switch step-5-fight` | + weapons and monsters (left click attack, hold for heavy, right click block/parry, Ctrl dodge) |
+
+After switching, press F5 in Godot. Run `git status` first: it must say "nothing to commit".
+
+Quick start items for testing on the later branches: craft a Campfire and a Workbench by hand (Tab),
+chop hanging roots for wood, dig orange clay for the smelter.
+
+## 6. Still to do in Step 1 on the PC
 
 - [ ] Play test + feedback (above).
 - [ ] Pick the art pack: Claude tries 2 free CC0 packs and shows screenshots (the dwarf is shapes for now).
