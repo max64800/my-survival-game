@@ -9,6 +9,7 @@ uniform vec3 dirt_color : source_color = vec3(0.36, 0.25, 0.16);
 uniform vec3 copper_color : source_color = vec3(0.78, 0.45, 0.22);
 uniform vec3 border_color : source_color = vec3(0.13, 0.10, 0.17);
 uniform vec3 border_glow : source_color = vec3(0.35, 0.18, 0.65);
+uniform vec3 clay_color : source_color = vec3(0.78, 0.42, 0.22);
 uniform float flat_shading = 1.0;
 
 varying vec4 v_indices;
@@ -50,6 +51,8 @@ vec3 mat_color(float idx, vec3 wp, out vec3 emit) {
 		float speck = step(0.86, vnoise(wp * 3.1));
 		emit = copper_color * speck * 0.35;
 		return mix(stone_color * 0.8, copper_color, 0.55 + 0.45 * n);
+	} else if (idx > 4.5) {
+		return clay_color * (0.85 + 0.25 * n);
 	} else {
 		float vein = smoothstep(0.78, 0.86, vnoise(wp * 0.6));
 		emit = border_glow * vein * 0.8;

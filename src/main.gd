@@ -302,6 +302,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		take_screenshot()
 	if not _ready_to_play:
 		return
+	if event.is_action_pressed("toggle_map") or (event.is_action_pressed("pause") and hud.is_map_open()):
+		var open_map := not hud.is_map_open()
+		hud.set_map_open(open_map)
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if open_map else Input.MOUSE_MODE_CAPTURED
+		return
+	if event.is_action_pressed("toggle_skills") or (event.is_action_pressed("pause") and hud.is_skills_open()):
+		var open := not hud.is_skills_open()
+		hud.set_skills_open(open)
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if open else Input.MOUSE_MODE_CAPTURED
+		return
 	if event.is_action_pressed("pause"):
 		if hud.is_bag_open():
 			_set_bag(false)

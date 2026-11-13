@@ -174,6 +174,13 @@ func ask_use(aim_point: Vector3, aim_normal: Vector3, yaw: float) -> void:
 		_rpc_use.rpc_id(1, aim_point, aim_normal, yaw)
 
 
+func ask_buy_perk(perk_id: String) -> void:
+	if is_host():
+		request_buy_perk(local_peer_id(), perk_id)
+	else:
+		_rpc_buy_perk.rpc_id(1, perk_id)
+
+
 func ask_craft(recipe_id: String, station_id: int = 0) -> void:
 	if is_host():
 		request_craft(local_peer_id(), recipe_id, station_id)
@@ -225,6 +232,12 @@ func _rpc_harvest(glow_id: int) -> void:
 func _rpc_use(aim_point: Vector3, aim_normal: Vector3, yaw: float) -> void:
 	if is_host():
 		request_use(multiplayer.get_remote_sender_id(), aim_point, aim_normal, yaw)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_buy_perk(perk_id: String) -> void:
+	if is_host():
+		request_buy_perk(multiplayer.get_remote_sender_id(), perk_id)
 
 
 @rpc("any_peer", "reliable")
@@ -402,6 +415,14 @@ func _take_sip(ps: PlayerState, slot_i: int) -> void:
 	else:
 		slot.sips = sips
 	ps.inventory.changed.emit()
+
+
+func request_buy_perk(peer_id: int, perk_id: String) -> bool:
+	var ps := get_player(peer_id)
+	if ps == null or not ps.progress.buy_perk(perk_id):
+		return false
+	_progress_dirty[peer_id] = true
+	return true
 
 
 ## Crafting. station_id 0 = by hand. Instant recipes finish now; timed ones (smelter,

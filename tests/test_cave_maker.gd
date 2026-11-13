@@ -127,3 +127,17 @@ func test_generation_speed() -> void:
 	var ms := (Time.get_ticks_usec() - t) / 5000.0
 	print("        (cave block takes %.1f ms)" % ms)
 	check(ms < 150.0, "a cave block should generate in under 150 ms (took %.1f)" % ms)
+
+
+func test_there_is_clay_for_a_smelter() -> void:
+	# The smelter needs 15 clay, so every cave must have clay near its open spaces.
+	for s in [1, 42, 99]:
+		var c := CaveMaker.new(s)
+		var clay := 0
+		for room in c.rooms:
+			for i in 400:
+				var a := float(i) * 0.37
+				var p := Vector3i((room.center + Vector3(cos(a) * room.radii.x, -room.radii.y * 0.6 - (i % 4), sin(a) * room.radii.z) * (0.3 + 0.7 * fmod(i * 0.618, 1.0))).round())
+				if c.sdf_at(Vector3(p)) < 0.0 and c.material_at(p) == Mat.CLAY:
+					clay += 1
+		check(clay >= 15, "seed %d: clay voxels near rooms (found %d)" % [s, clay])

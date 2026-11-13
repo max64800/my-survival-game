@@ -213,6 +213,8 @@ func material_at(p: Vector3i) -> int:
 		return Mat.MOSS
 	if sdf_at(pf + Vector3.UP * 2.0) > 0.0:
 		return Mat.DIRT
+	if s > -3.0 and _is_clay(pf):
+		return Mat.CLAY
 	if s > -2.5 and _dirt_noise.get_noise_3dv(pf) > 0.35:
 		return Mat.DIRT
 	return Mat.STONE
@@ -272,6 +274,11 @@ func _bound_dist(p: Vector3) -> float:
 static func _smin(a: float, b: float, k: float) -> float:
 	var h := clampf(0.5 + 0.5 * (b - a) / k, 0.0, 1.0)
 	return lerpf(b, a, h) - k * h * (1.0 - h)
+
+
+## Clay: soft orange patches in the lower parts of the cave (doc: "stream banks").
+func _is_clay(p: Vector3) -> bool:
+	return _dirt_noise.get_noise_3d(p.x * 0.6 + 500.0, p.y * 0.6, p.z * 0.6) < -0.32 and p.y < -8.0
 
 
 func _is_ore(p: Vector3i) -> bool:
@@ -349,6 +356,8 @@ func generate_block(buf: VoxelBuffer, origin: Vector3i) -> void:
 					m = Mat.MOSS
 				elif grid[base + y + 2] > 0.0:
 					m = Mat.DIRT
+				elif s > -3.0 and _is_clay(Vector3(pi)):
+					m = Mat.CLAY
 				elif s > -2.5 and _dirt_noise.get_noise_3dv(Vector3(pi)) > 0.35:
 					m = Mat.DIRT
 				buf.set_voxel(m, x, y, z, IDX)

@@ -14,6 +14,8 @@ const KEYS := {
 	"toggle_fps": [KEY_F3],
 	"screenshot": [KEY_F12],
 	"interact": [KEY_E],
+	"toggle_skills": [KEY_K],
+	"toggle_map": [KEY_M],
 }
 const MOUSE := {
 	"dig": [MOUSE_BUTTON_LEFT],

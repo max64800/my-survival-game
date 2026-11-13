@@ -120,6 +120,15 @@ func _run() -> void:
 		await _wait(0.5)
 		await _shot("08_station_menu")
 		_main._set_bag(false)
+	ps.progress.add_xp(3000, "mining")
+	_main.hud.set_skills_open(true)
+	await _wait(0.5)
+	await _shot("10_skills")
+	_main.hud.set_skills_open(false)
+	_main.hud.set_map_open(true)
+	await _wait(0.5)
+	await _shot("11_map")
+	_main.hud.set_map_open(false)
 	# Look up at the ceiling for hanging roots.
 	dwarf._pitch = 0.6
 	await _wait(0.8)

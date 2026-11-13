@@ -8,20 +8,21 @@ const STONE := 1
 const DIRT := 2
 const COPPER := 3
 const BORDER := 4
+const CLAY := 5
 
-const NAMES := {MOSS: "Moss", STONE: "Stone", DIRT: "Dirt", COPPER: "Copper ore", BORDER: "Border rock"}
+const NAMES := {MOSS: "Moss", STONE: "Stone", DIRT: "Dirt", COPPER: "Copper ore", BORDER: "Border rock", CLAY: "Orange clay"}
 
 ## How much digging a spot of this rock needs.
-const HARDNESS := {MOSS: 10, DIRT: 10, STONE: 26, COPPER: 45, BORDER: 80}
+const HARDNESS := {MOSS: 10, DIRT: 10, STONE: 26, COPPER: 45, BORDER: 80, CLAY: 15}
 ## The weakest pickaxe tier that can dig it (0 stone, 1 copper, 2 silver).
-const MIN_TIER := {MOSS: 0, DIRT: 0, STONE: 0, COPPER: 0, BORDER: 1}
+const MIN_TIER := {MOSS: 0, DIRT: 0, STONE: 0, COPPER: 0, BORDER: 1, CLAY: 0}
 const TIER_NAMES := ["Stone", "Copper", "Silver", "Iron", "Steel"]
 
 ## What item you get from dug voxels of this material, and how many voxels make one item.
-const DROP_ITEM := {MOSS: "moss", DIRT: "dirt", STONE: "stone", COPPER: "copper_ore"}
-const VOXELS_PER_ITEM := {MOSS: 4, DIRT: 4, STONE: 3, COPPER: 3}
+const DROP_ITEM := {MOSS: "moss", DIRT: "dirt", STONE: "stone", COPPER: "copper_ore", CLAY: "clay"}
+const VOXELS_PER_ITEM := {MOSS: 4, DIRT: 4, STONE: 3, COPPER: 3, CLAY: 2}
 ## Mining XP per finished dig (progression doc 7.2).
-const DIG_XP := {MOSS: 1, DIRT: 1, STONE: 2, COPPER: 6, BORDER: 50}
+const DIG_XP := {MOSS: 1, DIRT: 1, STONE: 2, COPPER: 6, BORDER: 50, CLAY: 1}
 
 
 static func hardness(mat: int) -> int:

@@ -28,6 +28,10 @@ var _bars := {}  ## "health"/"stamina"/"hunger"/"thirst" -> ProgressBar
 var _level_label: Label
 var _buff_label: Label
 var craft: CraftPanel
+var skills: SkillsPanel
+var map_panel: MapPanel
+var map_data := MapData.new()
+var _map_timer := 0.0
 var _slot_style_cache := {}
 
 
@@ -149,6 +153,16 @@ func _build() -> void:
 	root.add_child(craft)
 	craft.resized.connect(func(): craft.position = Vector2(root.size.x - craft.size.x - 30, 90))
 
+	skills = SkillsPanel.new()
+	skills.peer_id = peer_id
+	skills.visible = false
+	root.add_child(skills)
+	skills.resized.connect(func(): skills.position = (root.size - skills.size) * 0.5)
+	map_panel = MapPanel.new()
+	map_panel.visible = false
+	root.add_child(map_panel)
+	map_panel.resized.connect(func(): map_panel.position = (root.size - map_panel.size) * 0.5)
+
 	_fps_label = _label(root, 15)
 	_fps_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
 	_fps_label.position += Vector2(-130, 10)
@@ -161,7 +175,7 @@ func _build() -> void:
 
 	_help = _label(root, 14)
 	_help.position = Vector2(16, 12)
-	_help.text = "WASD walk · Shift run · Space jump · Mouse look\nLeft click dig/harvest · Right click eat/place · E use station\n1-8 / wheel hotbar · R refill lantern · Tab bag + crafting · Esc pause"
+	_help.text = "WASD walk · Shift run · Space jump · Mouse look\nLeft click dig/harvest · Right click eat/place · E use station\n1-8 / wheel hotbar · R refill lantern · Tab bag + crafting\nK skills · M map · Esc pause"
 
 	_pause = _overlay(root, "Paused", "Click to keep digging")
 	_loading = _overlay(root, "Digging out the cave…", "")
@@ -318,6 +332,27 @@ func set_bag_open(open: bool) -> void:
 		craft.visible = false
 
 
+func is_map_open() -> bool:
+	return map_panel.visible
+
+
+func set_map_open(open: bool) -> void:
+	map_panel.visible = open
+	var d := _local_dwarf()
+	if open and d:
+		map_panel.open(map_data, d.global_position, d.model.rotation.y + PI, GameAuthority.instance.stations.values())
+
+
+func is_skills_open() -> bool:
+	return skills.visible
+
+
+func set_skills_open(open: bool) -> void:
+	skills.visible = open
+	if open:
+		skills.refresh()
+
+
 func open_station(st: Station) -> void:
 	_bag_panel.visible = true
 	_refresh_slots()
@@ -372,6 +407,10 @@ func _process(delta: float) -> void:
 		else:
 			_aim_label.text = info.name
 	_fps_label.text = "%d FPS" % Engine.get_frames_per_second()
+	_map_timer -= delta
+	if _map_timer <= 0.0 and dwarf and auth and auth.world:
+		_map_timer = 0.5
+		map_data.reveal(dwarf.global_position, auth.world.sdf_at)
 	_dig_bar_timer -= delta
 	if _dig_bar_timer <= 0.0:
 		_dig_bar.visible = false
