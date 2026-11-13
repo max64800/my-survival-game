@@ -30,12 +30,18 @@ You are a **dwarf**. The whole game happens **underground**. There is no sky.
 
 | Thing | What we picked | Why (simple) |
 |---|---|---|
-| Game engine | **Godot 4** (free, no fees ever) | Almost everything is saved as text, so Claude can build it and you just press Play. |
-| Dig-anywhere world | **Voxel Tools** add-on for Godot (free) | It already does the "sugar-cube world" trick with smooth walls. Saves months. |
-| Steam co-op (later) | **GodotSteam** add-on (free) | Lets friends click "Join" through Steam. |
+| Game engine | **Godot 4.7.2** official (free, no fees ever) | Almost everything is saved as text, so Claude can build it and you just press Play. |
+| Dig-anywhere world | **Voxel Tools 1.7 — GDExtension edition** (free, MIT) | It already does the "sugar-cube world" trick with smooth walls. Saves months. The GDExtension edition plugs into the normal Godot. |
+| Steam co-op (later) | **GodotSteam — GDExtension edition** (free) | Lets friends click "Join" through Steam. Also plugs into the normal Godot. |
 | Code language | **GDScript** (Godot's own language) | Simple, made for Godot. |
 
-**Must check before building:** that Voxel Tools and GodotSteam work together in the same Godot version. If they don't, Claude stops and explains the choices before going on.
+**Checked on Nov 14, 2026:** both add-ons come as "GDExtension" plug-ins for the *official* Godot (Voxel Tools needs 4.5+, GodotSteam needs 4.4+). That means we don't need a special custom Godot, so they should work together. We still test it for real early in Step 1. (Note: the GDExtension edition of Voxel Tools leaves out "FastNoise2", a faster noise maker. We'll use Godot's built-in noise instead.)
+
+**Claude's helper tools (on this computer):**
+- **Godot MCP** (Coding-Solo/godot-mcp): lets Claude start the game, read error messages, and stop it.
+- **GodotPrompter** skills: Godot know-how for Claude (player controllers, multiplayer, procedural generation, and more).
+- **Superpowers** skills: brainstorming, planning, debugging, testing.
+- **Context7**: up-to-date docs for Godot and the add-ons.
 
 ---
 
@@ -132,7 +138,7 @@ Hunger/thirst, building, monsters, fighting, co-op, saving, menus. They come in 
 
 | Risk | What we'll do |
 |---|---|
-| Voxel Tools + GodotSteam might not work together | Check first. If not, pick a different way and write it in the journal. |
+| Voxel Tools + GodotSteam might not work together | Smaller risk now (both plug into official Godot). Still test both together in Step 1 before building lots on top. |
 | Smooth digging can be slow on huge worlds | Keep chunks small; only redraw what changed; test speed early. |
 | Free assets may not match each other's style | Pick one main art pack and fill gaps carefully; adjust colors so they match. |
 | Co-op can cause "my friend sees something different than me" bugs | Use the one "request → approve → update" path from day one. |
