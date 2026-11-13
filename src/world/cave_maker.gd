@@ -21,7 +21,7 @@ const WALL_NOISE_AMP := 2.2  ## how bumpy walls are (meters)
 const BLEND := 3.0  ## how softly tunnels melt into caverns (meters)
 const CULL_MARGIN := 6.0  ## blocks farther than this from every shape are solid rock
 const ORE_CELL := 2  ## ore veins are decided on a 2 m grid
-const ORE_THRESHOLD := 0.6
+const ORE_THRESHOLD := 0.66
 const SOLID_FILL := -6.0  ## SDF value used for blocks that are all rock
 
 var seed: int

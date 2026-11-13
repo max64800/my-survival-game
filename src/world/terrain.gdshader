@@ -47,8 +47,8 @@ vec3 mat_color(float idx, vec3 wp, out vec3 emit) {
 	} else if (idx < 2.5) {
 		return dirt_color * (0.8 + 0.4 * n);
 	} else if (idx < 3.5) {
-		float speck = step(0.82, vnoise(wp * 3.1));
-		emit = copper_color * speck * 0.6;
+		float speck = step(0.86, vnoise(wp * 3.1));
+		emit = copper_color * speck * 0.35;
 		return mix(stone_color * 0.8, copper_color, 0.55 + 0.45 * n);
 	} else {
 		float vein = smoothstep(0.78, 0.86, vnoise(wp * 0.6));

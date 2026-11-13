@@ -1,0 +1,331 @@
+class_name Hud
+extends CanvasLayer
+## Everything drawn on top of the game: crosshair, what you're aiming at,
+## dig progress, the hotbar (Item Bar), the bag, lantern fuel, frame rate, pause screen.
+
+const SLOT_SIZE := 58
+
+var peer_id := 1
+var seed_text := ""
+
+var _aim_label: Label
+var _dig_bar: ProgressBar
+var _dig_bar_timer := 0.0
+var _hotbar: HBoxContainer
+var _bag_panel: PanelContainer
+var _bag_grid: GridContainer
+var _fuel_bar: ProgressBar
+var _fuel_label: Label
+var _fps_label: Label
+var _toast: Label
+var _toast_timer := 0.0
+var _help: Label
+var _help_timer := 25.0
+var _pause: Control
+var _loading: Control
+var _swap_from := -1
+var _slot_style_cache := {}
+
+
+func _ready() -> void:
+	layer = 10
+	_build()
+	var auth := GameAuthority.instance
+	if auth:
+		auth.dig_feedback.connect(_on_dig_feedback)
+		var ps := auth.get_player(peer_id)
+		if ps:
+			ps.inventory.changed.connect(_refresh_slots)
+	_refresh_slots()
+
+
+func _build() -> void:
+	var root := Control.new()
+	root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(root)
+
+	var cross := Label.new()
+	cross.text = "+"
+	cross.add_theme_font_size_override("font_size", 22)
+	cross.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	cross.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	cross.add_theme_color_override("font_outline_color", Color.BLACK)
+	cross.add_theme_constant_override("outline_size", 4)
+	root.add_child(cross)
+
+	_aim_label = _label(root, 16)
+	_aim_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	_aim_label.position += Vector2(-100, 26)
+	_aim_label.custom_minimum_size = Vector2(200, 0)
+	_aim_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
+	_dig_bar = ProgressBar.new()
+	_dig_bar.show_percentage = false
+	_dig_bar.custom_minimum_size = Vector2(90, 8)
+	_dig_bar.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	_dig_bar.position += Vector2(-45, 52)
+	_dig_bar.visible = false
+	root.add_child(_dig_bar)
+
+	_hotbar = HBoxContainer.new()
+	_hotbar.add_theme_constant_override("separation", 6)
+	_hotbar.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	_hotbar.position += Vector2(-(SLOT_SIZE + 6) * 4, -SLOT_SIZE - 18)
+	root.add_child(_hotbar)
+	for i in Inventory.HOTBAR_SIZE:
+		_hotbar.add_child(_make_slot(i, str(i + 1)))
+
+	_bag_panel = PanelContainer.new()
+	_bag_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	_bag_panel.visible = false
+	var bag_bg := StyleBoxFlat.new()
+	bag_bg.bg_color = Color(0.06, 0.05, 0.05, 0.88)
+	bag_bg.set_corner_radius_all(10)
+	bag_bg.set_content_margin_all(14)
+	_bag_panel.add_theme_stylebox_override("panel", bag_bg)
+	root.add_child(_bag_panel)
+	var bag_box := VBoxContainer.new()
+	_bag_panel.add_child(bag_box)
+	var title := _label(bag_box, 18)
+	title.text = "Bag  (click two slots to swap them)"
+	_bag_grid = GridContainer.new()
+	_bag_grid.columns = 10
+	bag_box.add_child(_bag_grid)
+	for i in Inventory.BAG_SIZE:
+		_bag_grid.add_child(_make_slot(Inventory.HOTBAR_SIZE + i, ""))
+	_bag_panel.resized.connect(func(): _bag_panel.position = (root.size - _bag_panel.size) * 0.5)
+
+	var fuel_box := VBoxContainer.new()
+	fuel_box.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+	fuel_box.position += Vector2(20, -70)
+	root.add_child(fuel_box)
+	_fuel_label = _label(fuel_box, 15)
+	_fuel_bar = ProgressBar.new()
+	_fuel_bar.custom_minimum_size = Vector2(200, 10)
+	_fuel_bar.show_percentage = false
+	_fuel_bar.max_value = GameAuthority.MAX_FUEL
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = Color(1.0, 0.75, 0.35)
+	_fuel_bar.add_theme_stylebox_override("fill", fill)
+	fuel_box.add_child(_fuel_bar)
+
+	_fps_label = _label(root, 15)
+	_fps_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	_fps_label.position += Vector2(-130, 10)
+
+	_toast = _label(root, 20)
+	_toast.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	_toast.position += Vector2(-250, 80)
+	_toast.custom_minimum_size = Vector2(500, 0)
+	_toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
+	_help = _label(root, 14)
+	_help.position = Vector2(16, 12)
+	_help.text = "WASD walk · Shift run · Space jump · Mouse look\nLeft click dig · 1-8 / wheel pick hotbar · R refill lantern\nTab bag · F3 frame rate · F12 screenshot · Esc pause"
+
+	_pause = _overlay(root, "Paused", "Click to keep digging")
+	_loading = _overlay(root, "Digging out the cave…", "")
+	_loading.visible = true
+
+
+func _label(parent: Node, size: int) -> Label:
+	var l := Label.new()
+	l.add_theme_font_size_override("font_size", size)
+	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+	l.add_theme_constant_override("outline_size", 5)
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(l)
+	return l
+
+
+func _overlay(root: Control, title: String, sub: String) -> Control:
+	var bg := ColorRect.new()
+	bg.color = Color(0.02, 0.02, 0.04, 0.72)
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.visible = false
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(bg)
+	var box := VBoxContainer.new()
+	box.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	box.alignment = BoxContainer.ALIGNMENT_CENTER
+	bg.add_child(box)
+	var t := _label(box, 40)
+	t.text = title
+	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var s := _label(box, 18)
+	s.name = "Sub"
+	s.text = sub
+	s.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	box.resized.connect(func(): box.position = (bg.size - box.size) * 0.5)
+	return bg
+
+
+func _make_slot(index: int, key: String) -> Control:
+	var panel := Panel.new()
+	panel.custom_minimum_size = Vector2(SLOT_SIZE, SLOT_SIZE)
+	panel.name = "Slot%d" % index
+	panel.gui_input.connect(_on_slot_input.bind(index))
+	var icon := Panel.new()
+	icon.name = "Icon"
+	icon.position = Vector2(9, 9)
+	icon.size = Vector2(SLOT_SIZE - 18, SLOT_SIZE - 18)
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(icon)
+	var short := _label(panel, 15)
+	short.name = "Short"
+	short.position = Vector2(0, 17)
+	short.size = Vector2(SLOT_SIZE, 20)
+	short.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var count := _label(panel, 14)
+	count.name = "Count"
+	count.position = Vector2(4, SLOT_SIZE - 22)
+	count.size = Vector2(SLOT_SIZE - 8, 20)
+	count.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	var k := _label(panel, 11)
+	k.text = key
+	k.position = Vector2(4, 1)
+	return panel
+
+
+func _slot_style(color: Color, border: Color) -> StyleBoxFlat:
+	var key := [color, border]
+	if not _slot_style_cache.has(key):
+		var s := StyleBoxFlat.new()
+		s.bg_color = color
+		s.border_color = border
+		s.set_border_width_all(2)
+		s.set_corner_radius_all(6)
+		_slot_style_cache[key] = s
+	return _slot_style_cache[key]
+
+
+func _refresh_slots() -> void:
+	var auth := GameAuthority.instance
+	var ps: GameAuthority.PlayerState = auth.get_player(peer_id) if auth else null
+	if ps == null:
+		return
+	for i in Inventory.SIZE:
+		var panel: Panel = _hotbar.get_child(i) if i < Inventory.HOTBAR_SIZE else _bag_grid.get_child(i - Inventory.HOTBAR_SIZE)
+		var s := ps.inventory.get_slot(i)
+		var selected := i == ps.selected_slot
+		var swap_pick := i == _swap_from
+		var border := Color(1, 0.85, 0.4) if selected or swap_pick else Color(0.4, 0.38, 0.35, 0.9)
+		panel.add_theme_stylebox_override("panel", _slot_style(Color(0.08, 0.07, 0.07, 0.75), border))
+		var icon: Panel = panel.get_node("Icon")
+		icon.visible = not s.is_empty()
+		if not s.is_empty():
+			icon.add_theme_stylebox_override("panel", _slot_style(Items.color(s.id).darkened(0.15), Items.color(s.id).lightened(0.3)))
+			panel.tooltip_text = Items.display_name(s.id)
+		(panel.get_node("Short") as Label).text = "" if s.is_empty() else Items.short_label(s.id)
+		(panel.get_node("Count") as Label).text = "" if s.is_empty() or s.count <= 1 else str(s.count)
+
+
+func _on_slot_input(event: InputEvent, index: int) -> void:
+	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
+		return
+	if not _bag_panel.visible:
+		return
+	if _swap_from < 0:
+		_swap_from = index
+	else:
+		GameAuthority.instance.request_swap(peer_id, _swap_from, index)
+		_swap_from = -1
+	_refresh_slots()
+
+
+func _on_dig_feedback(pid: int, result: Dictionary) -> void:
+	if pid != peer_id:
+		return
+	match result.get("state", ""):
+		"hit":
+			_dig_bar.max_value = result.needed
+			_dig_bar.value = result.hits
+			_dig_bar.visible = true
+			_dig_bar_timer = 1.2
+		"dug":
+			_dig_bar.value = _dig_bar.max_value
+			_dig_bar_timer = 0.25
+		"blocked":
+			show_toast("Too hard! This rock needs a better pickaxe.")
+		"no_tool":
+			show_toast("Pick your pickaxe in the hotbar (key 1).")
+
+
+func show_toast(text: String, seconds: float = 2.5) -> void:
+	_toast.text = text
+	_toast_timer = seconds
+
+
+func set_loading(on: bool, text: String = "") -> void:
+	_loading.visible = on
+	if text != "":
+		(_loading.find_child("Sub", true, false) as Label).text = text
+
+
+func is_bag_open() -> bool:
+	return _bag_panel.visible
+
+
+func set_bag_open(open: bool) -> void:
+	_bag_panel.visible = open
+	_swap_from = -1
+	_refresh_slots()
+
+
+func set_paused(on: bool) -> void:
+	_pause.visible = on
+	(_pause.find_child("Sub", true, false) as Label).text = "Click to keep digging\n\nCave seed: %s" % seed_text
+
+
+func _process(delta: float) -> void:
+	var auth := GameAuthority.instance
+	var ps: GameAuthority.PlayerState = auth.get_player(peer_id) if auth else null
+	if ps:
+		_fuel_bar.value = ps.fuel
+		var crystals := ps.inventory.count_of("glow_crystal")
+		var mins := int(ps.fuel) / 60
+		var secs := int(ps.fuel) % 60
+		_fuel_label.text = "Lantern %d:%02d   (R: refill, %d crystal%s)" % [mins, secs, crystals, "" if crystals == 1 else "s"]
+		if ps.fuel <= 0.0:
+			_fuel_label.text = "Lantern is out!  Mine a glow crystal, press R"
+		_refresh_selection(ps.selected_slot)
+	var dwarf := _local_dwarf()
+	if dwarf:
+		var info := dwarf._aim_info()
+		if info.is_empty():
+			_aim_label.text = ""
+		elif info.kind == "rock":
+			var power := Items.dig_power(ps.selected_item()) if ps else 1
+			var hits := Mat.hits_needed(info.material, maxi(power, 1))
+			_aim_label.text = "%s · %s" % [info.name, "can't dig yet" if hits == 0 else "%d hit%s" % [hits, "" if hits == 1 else "s"]]
+		else:
+			_aim_label.text = info.name
+	_fps_label.text = "%d FPS" % Engine.get_frames_per_second()
+	_dig_bar_timer -= delta
+	if _dig_bar_timer <= 0.0:
+		_dig_bar.visible = false
+	_toast_timer -= delta
+	_toast.modulate.a = clampf(_toast_timer, 0.0, 1.0)
+	_help_timer -= delta
+	_help.modulate.a = clampf(_help_timer / 3.0, 0.0, 1.0)
+
+
+var _last_selected := -1
+
+
+func _refresh_selection(sel: int) -> void:
+	if sel != _last_selected:
+		_last_selected = sel
+		_refresh_slots()
+
+
+func _local_dwarf() -> Dwarf:
+	var auth := GameAuthority.instance
+	var ps: GameAuthority.PlayerState = auth.get_player(peer_id) if auth else null
+	return ps.node as Dwarf if ps else null
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("toggle_fps"):
+		_fps_label.visible = not _fps_label.visible
