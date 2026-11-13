@@ -123,6 +123,8 @@ func _build_look() -> void:
 	label.outline_size = 10
 	label.modulate = Color(1, 1, 1, 0.8)
 	add_child(label)
+	label.visibility_range_begin = 2.0  # hide when the camera is right on top of it
+	label.visibility_range_end = 30.0
 
 
 func _part(mesh: Mesh, color: Color, pos: Vector3, glow: bool = false) -> MeshInstance3D:

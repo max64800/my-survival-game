@@ -20,6 +20,8 @@ const KEYS := {
 	"lift_up": [KEY_PAGEUP, KEY_EQUAL],
 	"lift_down": [KEY_PAGEDOWN, KEY_MINUS],
 	"build_menu": [KEY_B],
+	"capture": [KEY_C],
+	"blueprints": [KEY_V],
 }
 const MOUSE := {
 	"dig": [MOUSE_BUTTON_LEFT],

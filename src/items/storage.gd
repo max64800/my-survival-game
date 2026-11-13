@@ -235,6 +235,8 @@ func _build_look(body: StaticBody3D, kind: String) -> void:
 	label.font_size = 36
 	label.outline_size = 10
 	body.add_child(label)
+	label.visibility_range_begin = 2.0
+	label.visibility_range_end = 30.0
 
 
 static func _mat(c: Color) -> Material:

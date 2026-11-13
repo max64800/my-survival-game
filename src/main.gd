@@ -147,6 +147,7 @@ func start_game(p_seed: int, snap: Dictionary = {}) -> void:
 
 	hud = Hud.new()
 	hud.build_mode = bm
+	bm.message.connect(func(t: String): hud.show_toast(t, 5.0))
 	hud.peer_id = me
 	hud.seed_text = str(seed)
 	add_child(hud)
@@ -307,6 +308,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("screenshot"):
 		take_screenshot()
 	if not _ready_to_play:
+		return
+	if event.is_action_pressed("blueprints") or (event.is_action_pressed("pause") and hud.is_blueprints_open()):
+		var open_v := not hud.is_blueprints_open() and hud.build_mode.active()
+		hud.set_blueprints_open(open_v)
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if open_v else Input.MOUSE_MODE_CAPTURED
 		return
 	if event.is_action_pressed("build_menu") or (event.is_action_pressed("pause") and hud.is_build_menu_open()):
 		var open_b := not hud.is_build_menu_open() and hud.build_mode.active()

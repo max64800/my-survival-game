@@ -31,6 +31,7 @@ var craft: CraftPanel
 var skills: SkillsPanel
 var map_panel: MapPanel
 var build_menu: BuildMenu
+var blueprint_menu: BlueprintMenu
 var box_panel: BoxPanel
 var build_mode: BuildMode
 var _build_label: Label
@@ -171,6 +172,10 @@ func _build() -> void:
 	build_menu.visible = false
 	root.add_child(build_menu)
 	build_menu.resized.connect(func(): build_menu.position = (root.size - build_menu.size) * 0.5)
+	blueprint_menu = BlueprintMenu.new()
+	blueprint_menu.visible = false
+	root.add_child(blueprint_menu)
+	blueprint_menu.resized.connect(func(): blueprint_menu.position = (root.size - blueprint_menu.size) * 0.5)
 	_build_label = _label(root, 16)
 	_build_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
 	_build_label.position += Vector2(-300, -110)
@@ -373,6 +378,17 @@ func set_build_menu_open(open: bool) -> void:
 		build_menu.refresh()
 
 
+func is_blueprints_open() -> bool:
+	return blueprint_menu.visible
+
+
+func set_blueprints_open(open: bool) -> void:
+	blueprint_menu.mode = build_mode
+	blueprint_menu.visible = open
+	if open:
+		blueprint_menu.refresh()
+
+
 func is_map_open() -> bool:
 	return map_panel.visible
 
@@ -448,9 +464,11 @@ func _process(delta: float) -> void:
 		else:
 			_aim_label.text = info.name
 	_fps_label.text = "%d FPS" % Engine.get_frames_per_second()
-	if build_mode and build_mode.active():
+	if build_mode and build_mode.active() and build_mode.blueprint:
+		_build_label.text = "Blueprint: %s (%s)\nQ turn · left click place · right click cancel" % [build_mode.blueprint.name, BuildMenu._cost_text(build_mode.blueprint.cost())]
+	elif build_mode and build_mode.active():
 		var c := BuildMenu._cost_text(Pieces.cost(build_mode.piece, build_mode.family))
-		_build_label.text = "%s · %s (%s)%s\nB choose · Q turn · PgUp/PgDn lift · right click take down" % [
+		_build_label.text = "%s · %s (%s)%s\nB choose · Q turn · PgUp/PgDn lift · right click take down · C save blueprint · V blueprints" % [
 			Pieces.LIST[build_mode.piece].name, Pieces.FAMILIES[build_mode.family].name, c,
 			"" if build_mode.problem == "" else "  —  " + build_mode.problem]
 	else:

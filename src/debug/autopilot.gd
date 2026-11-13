@@ -157,6 +157,23 @@ func _run() -> void:
 	await _wait(0.5)
 	await _shot("13_build_menu")
 	_main.hud.set_build_menu_open(false)
+	# Step 4: place the starter lodge blueprint and feed its Builder's Chest.
+	var json := FileAccess.get_file_as_string("res://blueprints/small_rootwood_lodge.dwbp")
+	var bp_origin: Vector3 = _main.world.maker.find_floor(dwarf.global_position.x - fwd.x * 8.0, dwarf.global_position.z - fwd.z * 8.0, dwarf.global_position.y + 3.0).round()
+	var chest_at: Vector3 = _main.world.maker.find_floor(bp_origin.x + 5.0, bp_origin.z, bp_origin.y + 3.0)
+	var placed_bp := auth.builder.request_place_blueprint(auth.local_peer_id(), json, bp_origin, 0, chest_at)
+	_report.append("step 4: blueprint placed: '%s'" % placed_bp)
+	dwarf._yaw += PI
+	dwarf._pitch = -0.25
+	await _wait(1.0)
+	await _shot("14_blueprint_ghost")
+	if not auth.builder.sites.is_empty():
+		var box_id: int = auth.builder.sites.keys()[0]
+		for item in {plank_root = 39, cut_stone = 36, copper_ingot = 2}:
+			auth.storage.put(box_id, item, {plank_root = 39, cut_stone = 36, copper_ingot = 2}[item])
+		await _wait(12.0)
+		_report.append("step 4: builder's chest says: %s" % auth.builder.site_status(box_id))
+		await _shot("15_lodge_building")
 	auth.request_select_slot(auth.local_peer_id(), 0)
 	# Look up at the ceiling for hanging roots.
 	dwarf._pitch = 0.6

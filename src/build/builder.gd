@@ -28,6 +28,7 @@ const MAX_SITES := 3
 const SITE_TICK := 0.5  ## carve every 0.5 s, build every 1 s
 const CHEST_RANGE := 16.0
 const CARVE_RADIUS := 0.8  ## gentle scoops, so the floor under the building stays
+const CARVES_PER_TICK := 3
 
 
 func _ready() -> void:
@@ -413,7 +414,7 @@ func _ev_site(box_id: int, json: String, origin: Vector3, rot: int, built: Array
 		ghost_root.add_child(g)
 		g.global_position = plan[i].pos
 		g.rotation.y = plan[i].rot * PI / 2.0
-		g.set_ghost_ok.call_deferred(true)
+		g.set_ghost_plan.call_deferred()
 		g.visible = not plan[i].built
 		plan[i].ghost = g
 	var carve := bp.carve_cells(origin, rot)
@@ -484,7 +485,12 @@ func _carve_step(box_id: int, site: Dictionary, chest: Dictionary) -> bool:
 				if left > 0:
 					auth.spawn_drop(item, left, chest.node.global_position + Vector3.UP)
 		_set_status(box_id, "Carving rock… %d cells left" % site.carve.size())
+		site.carved_this_tick = site.get("carved_this_tick", 0) + 1
+		if site.carved_this_tick < CARVES_PER_TICK:
+			continue  # a few scoops per tick
+		site.carved_this_tick = 0
 		return true
+	site.carved_this_tick = 0
 	return false
 
 

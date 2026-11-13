@@ -33,6 +33,12 @@ func set_ghost_ok(ok: bool) -> void:
 		_ghost_mat.albedo_color = Color(0.3, 1.0, 0.4, 0.35) if ok else Color(1.0, 0.25, 0.2, 0.35)
 
 
+## Blueprint plans show as blue glass (so they don't look like the green "OK" ghost).
+func set_ghost_plan() -> void:
+	if _ghost_mat:
+		_ghost_mat.albedo_color = Color(0.35, 0.6, 1.0, 0.3)
+
+
 ## Rebuild for a different piece/material (the ghost changes when you pick something else).
 func rebuild(p_piece: String, p_family: String) -> void:
 	piece = p_piece
