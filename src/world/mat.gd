@@ -9,20 +9,37 @@ const DIRT := 2
 const COPPER := 3
 const BORDER := 4
 const CLAY := 5
+# Fungal Jungle (world doc 2.7 numbering)
+const MYCELIUM := 8  ## the jungle's "moss": soft white fungus mat on floors
+const SILVER := 9
+const AMBERROCK := 11
+const SPORESTONE := 13  ## the jungle's default rock
 
-const NAMES := {MOSS: "Moss", STONE: "Stone", DIRT: "Dirt", COPPER: "Copper ore", BORDER: "Border rock", CLAY: "Orange clay"}
+const NAMES := {MOSS: "Moss", STONE: "Stone", DIRT: "Dirt", COPPER: "Copper ore", BORDER: "Border rock", CLAY: "Orange clay",
+	MYCELIUM: "Mycelium", SILVER: "Silver ore", AMBERROCK: "Amberrock", SPORESTONE: "Sporestone"}
 
 ## How much digging a spot of this rock needs.
-const HARDNESS := {MOSS: 10, DIRT: 10, STONE: 26, COPPER: 45, BORDER: 80, CLAY: 15}
+const HARDNESS := {MOSS: 10, DIRT: 10, STONE: 26, COPPER: 45, BORDER: 80, CLAY: 15,
+	MYCELIUM: 10, SILVER: 55, AMBERROCK: 25, SPORESTONE: 30}
 ## The weakest pickaxe tier that can dig it (0 stone, 1 copper, 2 silver).
-const MIN_TIER := {MOSS: 0, DIRT: 0, STONE: 0, COPPER: 0, BORDER: 1, CLAY: 0}
+const MIN_TIER := {MOSS: 0, DIRT: 0, STONE: 0, COPPER: 0, BORDER: 1, CLAY: 0,
+	MYCELIUM: 0, SILVER: 1, AMBERROCK: 0, SPORESTONE: 0}
 const TIER_NAMES := ["Stone", "Copper", "Silver", "Iron", "Steel"]
 
 ## What item you get from dug voxels of this material, and how many voxels make one item.
-const DROP_ITEM := {MOSS: "moss", DIRT: "dirt", STONE: "stone", COPPER: "copper_ore", CLAY: "clay"}
-const VOXELS_PER_ITEM := {MOSS: 4, DIRT: 4, STONE: 3, COPPER: 3, CLAY: 2}
+const DROP_ITEM := {MOSS: "moss", DIRT: "dirt", STONE: "stone", COPPER: "copper_ore", CLAY: "clay",
+	MYCELIUM: "dirt", SILVER: "silver_ore", AMBERROCK: "amberrock", SPORESTONE: "sporestone"}
+const VOXELS_PER_ITEM := {MOSS: 4, DIRT: 4, STONE: 3, COPPER: 3, CLAY: 2,
+	MYCELIUM: 4, SILVER: 3, AMBERROCK: 3, SPORESTONE: 3}
 ## Mining XP per finished dig (progression doc 7.2).
-const DIG_XP := {MOSS: 1, DIRT: 1, STONE: 2, COPPER: 6, BORDER: 50, CLAY: 1}
+const DIG_XP := {MOSS: 1, DIRT: 1, STONE: 2, COPPER: 6, BORDER: 50, CLAY: 1,
+	MYCELIUM: 1, SILVER: 8, AMBERROCK: 2, SPORESTONE: 2}
+
+## Which rocks each biome is made of.
+const PALETTES := {
+	"mossy": {rock = STONE, floor = MOSS, under = DIRT, ore = COPPER, patch = CLAY},
+	"fungal": {rock = SPORESTONE, floor = MYCELIUM, under = DIRT, ore = SILVER, patch = AMBERROCK},
+}
 
 
 static func hardness(mat: int) -> int:
