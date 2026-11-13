@@ -207,10 +207,12 @@ func _build_look(body: StaticBody3D, kind: String) -> void:
 		var bmat := StandardMaterial3D.new()
 		bmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		bmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		bmat.albedo_color = Color(1.0, 0.9, 0.6, 0.25)
+		bmat.albedo_color = Color(1.0, 0.9, 0.6, 0.18)
 		bmat.no_depth_test = true  # shows through rock, so you can find your way back
 		beam.material_override = bmat
 		beam.position = Vector3.UP * 6.5
+		beam.visibility_range_begin = 6.0  # only from a distance (up close it would fill the screen)
+		beam.visibility_range_end = 60.0
 		body.add_child(beam)
 	else:
 		var mi := MeshInstance3D.new()

@@ -32,6 +32,9 @@ var _best_dist := INF
 var _net_pos := Vector3.ZERO
 var _net_yaw := 0.0
 var _hp_label: Label3D
+var _bar_fill: MeshInstance3D
+var _stun_fill: MeshInstance3D
+var _bars: Node3D
 var _flash := 0.0
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
 
@@ -69,7 +72,15 @@ func _ready() -> void:
 	_hp_label.font_size = 32
 	_hp_label.outline_size = 8
 	_hp_label.no_depth_test = true
+	_hp_label.visibility_range_end = 25.0
 	add_child(_hp_label)
+	# Health bar (red) and stun bar (gold): little flat bars that always face the camera.
+	_bars = Node3D.new()
+	_bars.position = _hp_label.position + Vector3.DOWN * 0.18
+	add_child(_bars)
+	_bar(Color(0.1, 0.08, 0.08, 0.8), 0.0, 1.0)
+	_bar_fill = _bar(Color(0.85, 0.2, 0.2), 0.001, 1.0)
+	_stun_fill = _bar(Color(1.0, 0.8, 0.3), 0.002, 0.0, -0.07)
 	_net_pos = global_position
 	_update_label()
 
@@ -297,13 +308,41 @@ func set_hp(value: float, stun_frac: float, stunned: bool) -> void:
 func _update_label() -> void:
 	if _hp_label == null:
 		return
-	var n: String = (data.get("leader", "Leader") if leader else data.name)
-	if hp >= max_hp() and stun.value <= 0.0:
-		_hp_label.text = ("♛ " if leader else "") + n
-		_hp_label.modulate = Color(1, 1, 1, 0.6)
-		return
-	var bars := 12
-	var filled := clampi(roundi(hp / max_hp() * bars), 0, bars)
-	var stun_bars := clampi(roundi(stun.fraction() * bars), 0, bars)
-	_hp_label.text = "%s%s\n%s\n%s" % ["♛ " if leader else "", n, "█".repeat(filled) + "░".repeat(bars - filled), ("▮".repeat(stun_bars) + "▯".repeat(bars - stun_bars)) if stun_bars > 0 else ""]
-	_hp_label.modulate = Color(1.0, 0.85, 0.3) if stun.is_stunned() else Color(1, 1, 1, 0.9)
+	_hp_label.text = (data.get("leader", "Leader") if leader else data.name) + (" (dazed!)" if stun.is_stunned() else "")
+	_hp_label.modulate = Color(1.0, 0.85, 0.3) if leader or stun.is_stunned() else Color(1, 1, 1, 0.75)
+	var hurt := hp < max_hp() or stun.value > 0.0
+	_bars.visible = hurt
+	_set_bar(_bar_fill, clampf(hp / max_hp(), 0.0, 1.0))
+	_set_bar(_stun_fill, stun.fraction())
+
+
+const BAR_W := 0.8
+
+
+func _bar(color: Color, z: float, fill: float, y: float = 0.0) -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	var q := QuadMesh.new()
+	q.size = Vector2(BAR_W, 0.08 if y == 0.0 else 0.04)
+	mi.mesh = q
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	m.billboard_keep_scale = true
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.no_depth_test = true
+	m.albedo_color = color
+	m.render_priority = int(z * 1000)
+	mi.material_override = m
+	mi.position = Vector3(0, y, 0)
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_bars.add_child(mi)
+	_set_bar(mi, fill)
+	return mi
+
+
+## Shrinks a bar from the right. (Billboards turn with the camera, so we change the quad's size.)
+func _set_bar(mi: MeshInstance3D, f: float) -> void:
+	var q: QuadMesh = mi.mesh
+	q.size.x = maxf(BAR_W * f, 0.001)
+	q.center_offset = Vector3(-BAR_W * (1.0 - f) * 0.5, 0, 0)
+	mi.visible = f > 0.0

@@ -175,6 +175,37 @@ func _run() -> void:
 		_report.append("step 4: builder's chest says: %s" % auth.builder.site_status(box_id))
 		await _shot("15_lodge_building")
 	auth.request_select_slot(auth.local_peer_id(), 0)
+	# Step 5: a fight. Sword in hand, back lantern on, a pack of monsters in front.
+	ps.inventory.add("sword_stone", 1)
+	ps.inventory.add("shield_stone", 1)
+	ps.inventory.add("lantern_back", 1)
+	_to_hotbar(ps, "sword_stone")
+	var mm: MonsterManager = auth.monsters
+	var ahead := dwarf.global_position - Basis(Vector3.UP, dwarf._yaw).z * 3.5
+	for k in [["mossnipper", Vector3(0, 0, 0), true], ["mossnipper", Vector3(1.2, 0, 0.6), false], ["rustwight", Vector3(-1.4, 0, 0.5), false], ["cairnling", Vector3(0.5, 0, -2.0), false]]:
+		var at: Vector3 = _main.world.maker.find_floor(ahead.x + k[1].x, ahead.z + k[1].z, dwarf.global_position.y + 2.0)
+		mm._ev_spawn(mm._next_uid, k[0], at + Vector3.UP * 0.3, k[2], 99)
+	dwarf._pitch = -0.2
+	await _wait(1.5)
+	await _shot("16_monsters")
+	var hp_before := 0.0
+	for m: Monster in mm.monsters.values():
+		hp_before += m.hp
+	for i in 6:
+		Input.action_press("dig")
+		await _wait(0.1)
+		Input.action_release("dig")
+		await _wait(0.6)
+	await _shot("17_fighting")
+	var hp_after := 0.0
+	for m: Monster in mm.monsters.values():
+		hp_after += m.hp
+	_report.append("step 5: monsters lost %.0f HP to 6 sword swings; %d still alive; our health %.0f, fighting skill XP %d" % [
+		hp_before - hp_after, mm.monsters.size(), ps.vitals.health, ps.progress.skill_xp.fighting])
+	for m: Monster in mm.monsters.values():
+		mm._ev_remove(m.uid)
+	ps.vitals.health = ps.vitals.max_health()
+	auth.request_select_slot(auth.local_peer_id(), 0)
 	# Look up at the ceiling for hanging roots.
 	dwarf._pitch = 0.6
 	await _wait(0.8)
