@@ -161,6 +161,7 @@ func _attack(heavy: bool) -> void:
 	var step := _combo_step
 	var riposte := clock < _riposte_until
 	dwarf.model.attack(speed, heavy)
+	Sfx.play("swing", dwarf.global_position + Vector3.UP, -8.0, 0.8 if heavy else 1.1)
 	dwarf.get_tree().create_timer(speed * 0.4).timeout.connect(func(): _impact(heavy, step, riposte))
 	dwarf.face_camera()
 

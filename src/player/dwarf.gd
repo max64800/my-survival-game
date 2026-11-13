@@ -162,6 +162,7 @@ func _physics_process(delta: float) -> void:
 		var want := atan2(-face_dir.x, -face_dir.z)
 		model.rotation.y = lerp_angle(model.rotation.y, want, minf(1.0, delta * 12.0))
 
+	_footsteps(delta, Vector2(velocity.x, velocity.z).length())
 	if playing and Input.is_action_pressed("dig") and not model.swinging and not _holding_hammer() and not fight.weapon_mode() and _can_swing():
 		model.swing(SWING_TIME)
 		if _online():
@@ -265,6 +266,8 @@ func _on_swing_impact() -> void:
 	if glow_id >= 0:
 		auth.ask_harvest(glow_id)
 		var spot := auth.glow.get_spot(glow_id)
+		var sk: String = spot.get("kind", "")
+		Sfx.play("crystal" if sk.begins_with("crystal") else ("chop" if sk == "root" else "dig_soft"), hit.position, -3.0)
 		Fx.burst(get_parent(), hit.position, spot.get("color", Color.WHITE), 8)
 		_shake = 0.4
 		return
@@ -275,6 +278,20 @@ func _on_swing_impact() -> void:
 	if hit.collider is Station or hit.collider is PieceNode or Storage.box_id_of(hit.collider) >= 0:
 		return  # don't dig through your own furniture or buildings
 	auth.ask_hit(hit.position, hit.normal)
+
+
+var _step_t := 0.0
+
+
+## Footsteps on stone: faster when running.
+func _footsteps(delta: float, speed: float) -> void:
+	if not is_on_floor() or speed < 1.0:
+		_step_t = 0.0
+		return
+	_step_t -= delta
+	if _step_t <= 0.0:
+		_step_t = 0.42 if speed < 5.0 else 0.3
+		Sfx.play("step", global_position, -14.0)
 
 
 # ---------------------------------------------------------------- fighting (see DwarfFight)
@@ -336,16 +353,23 @@ func _on_dig_feedback(pid: int, result: Dictionary) -> void:
 		return
 	var at: Vector3 = result.point
 	var col := Fx.material_color(result.get("material", Mat.STONE))
+	var soft: bool = result.get("material", Mat.STONE) in [Mat.MOSS, Mat.DIRT, Mat.CLAY]
 	match result.get("state", ""):
 		"hit":
 			Fx.burst(get_parent(), at, col, 6, 2.5)
 			_shake = 0.35
+			Sfx.play("dig_soft" if soft else "dig_rock", at)
 		"dug":
 			Fx.burst(get_parent(), at, col, 16, 4.0)
 			_shake = 0.8
+			Sfx.play("dig_soft" if soft else "dig_rock", at, 2.0, 0.85)
 		"blocked":
 			Fx.burst(get_parent(), at, Color(1.0, 0.9, 0.6), 4, 5.0)
 			_shake = 0.2
+			Sfx.play("clink", at)
+		"done":
+			var k: String = result.get("kind", "")
+			Sfx.play("crystal" if k.begins_with("crystal") else ("chop" if k == "root" else "pickup"), at)
 
 
 # ---------------------------------------------------------------- network pose

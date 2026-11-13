@@ -417,6 +417,10 @@ func _judge_incoming() -> void:
 				if result.result == "parry" and dwarf.has_method("got_parry"):
 					dwarf.got_parry()
 		result.name = hit.name
+		match result.result:
+			"parry": Sfx.ui("parry", -2.0)
+			"block": Sfx.ui("block", -4.0)
+			"hit": Sfx.ui("hit_heavy" if result.damage >= 15 else "hit", -2.0)
 		defended.emit(result)
 		if result.result == "parry":
 			ask_parried(hit.uid, result.stun)
@@ -472,6 +476,7 @@ func _ev_remove(uid: int) -> void:
 	monsters.erase(uid)
 	if m:
 		Fx.burst(_root, m.global_position + Vector3.UP * 0.4, m.data.color, 18, 3.0)
+		Sfx.play("death", m.global_position)
 		m.queue_free()
 
 
@@ -487,6 +492,7 @@ func _ev_hit(uid: int, dmg: int) -> void:
 	var m: Monster = monsters.get(uid)
 	if m:
 		Fx.burst(_root, m.global_position + Vector3.UP * 0.5, Color(1.0, 0.9, 0.7), 6, 2.0)
+		Sfx.play("hit_heavy" if dmg >= 20 else "hit", m.global_position)
 		_float_number(m.global_position + Vector3.UP * 1.4, str(dmg))
 
 

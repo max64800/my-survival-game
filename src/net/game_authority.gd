@@ -439,6 +439,7 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 			var roll := randf()
 			if peer_id == local_peer_id():
 				ps.vitals.consume(id, roll)
+				Sfx.ui("eat", -4.0)
 			else:
 				_rpc_consumed.rpc_id(peer_id, id, roll)
 			return "ate"
@@ -572,6 +573,8 @@ func request_craft(peer_id: int, recipe_id: String, station_id: int = 0) -> bool
 		if fuel_item != "":
 			ps.inventory.remove(fuel_item, r.fuel)
 	var skill := "survival" if r.station in ["campfire", "cooking_pot"] else "smithing"
+	if peer_id == local_peer_id():
+		Sfx.ui("craft", 0.0)
 	var xp := 10 if Items.stack_size(r.output) == 1 else (5 if skill == "survival" else 1)
 	give_xp(peer_id, xp, skill)
 	return true
@@ -601,6 +604,8 @@ func request_refill(peer_id: int) -> bool:
 		if ps.inventory.remove(id, 1):
 			ps.fuel = minf(MAX_FUEL, ps.fuel + Items.fuel_seconds(id))
 			fuel_changed.emit(peer_id, ps.fuel)
+			if peer_id == local_peer_id():
+				Sfx.ui("refill")
 			if peer_id != local_peer_id():
 				_rpc_fuel.rpc_id(peer_id, ps.fuel)
 			return true
@@ -614,6 +619,7 @@ func _host_dig(center: Vector3, tool_tier: int = 0, radius: float = DIG_RADIUS) 
 		for spot in glow.spots_near(center, DIG_RADIUS + 0.9):
 			_host_remove_glow(spot)
 	var counts := world.apply_dig(center, radius, tool_tier)
+	Sfx.play("dig_break", center, -6.0)
 	if builder:
 		builder.reanchor_near(center, radius)
 		builder.queue_check(center, radius)
@@ -655,6 +661,7 @@ func _send_inventory(peer_id: int) -> void:
 ## Dig event for the other players (the host already dug when it decided).
 @rpc("authority", "reliable")
 func _ev_dig(edit: Vector4) -> void:
+	Sfx.play("dig_break", Vector3(edit.x, edit.y, edit.z), -6.0)
 	edit_log.append(edit)
 	_pending_digs.append(edit)
 	_apply_pending_digs()
@@ -688,6 +695,7 @@ func _ev_spot_chops(glow_id: int, left: int) -> void:
 
 @rpc("authority", "call_local", "reliable")
 func _ev_place_station(station_id: int, kind: String, pos: Vector3, yaw: float) -> void:
+	Sfx.play("build", pos)
 	var st: Station = STATION_SCRIPT.new()
 	st.station_id = station_id
 	st.kind = kind
@@ -930,6 +938,7 @@ func hurt(peer_id: int, amount: float) -> void:
 		return
 	if peer_id == local_peer_id():
 		ps.vitals.take_damage(amount)
+		Sfx.ui("hit_heavy", 0.0)
 	else:
 		_rpc_hurt.rpc_id(peer_id, amount)
 

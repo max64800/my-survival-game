@@ -149,4 +149,5 @@ func _send_raiders(src: String, base: Vector3) -> Array:
 
 @rpc("authority", "call_local", "reliable")
 func _ev_warning(text: String) -> void:
+	Sfx.ui("parry", -6.0)  # a distant bell
 	warning.emit(text)

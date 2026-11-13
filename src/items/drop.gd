@@ -76,6 +76,7 @@ func _physics_process(delta: float) -> void:
 	elif dist < 0.6:
 		_asked = 0.001
 		auth.ask_pickup(drop_id)
+		Sfx.ui("pickup", -8.0)
 
 
 ## The host couldn't fit us in the bag: fall back down and try again in a while.

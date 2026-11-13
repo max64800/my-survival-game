@@ -142,6 +142,7 @@ func _workbench_near(pos: Vector3) -> bool:
 
 @rpc("authority", "call_local", "reliable")
 func _ev_add_piece(uid: int, piece: String, family: String, pos: Vector3, rot: int, anchored: bool) -> void:
+	Sfx.play("build", pos, -2.0, 1.2 if family in ["cut_stone", "cut_marble", "clay_brick"] else 1.0)
 	structure.add(uid, piece, family, pos, rot, anchored)
 	var n: PieceNode = PIECE_SCRIPT.new()
 	n.uid = uid
@@ -172,6 +173,7 @@ func _ev_remove_piece(uid: int) -> void:
 
 @rpc("authority", "call_local", "reliable")
 func _ev_warn(center: Vector3) -> void:
+	Sfx.play("dig_break", center, 4.0, 0.55)  # deep rumble before a cave-in
 	Fx.burst(get_parent(), center, Color(0.55, 0.5, 0.45), 30, 1.5)
 
 
