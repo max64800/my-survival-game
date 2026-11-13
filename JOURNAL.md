@@ -78,7 +78,7 @@ Our diary of building the game: what we did, what went wrong, and how we fixed i
 
 You went to sleep and asked Claude to build, test and prepare as much as possible.
 
-**The big picture: 5 "branches" (like parallel copies of the project, each built on the one before)**
+**The big picture: 7 "branches" (like parallel copies of the project, each built on the one before)**
 
 | Branch | What's in it | Status |
 |---|---|---|
@@ -87,6 +87,8 @@ You went to sleep and asked Claude to build, test and prepare as much as possibl
 | `step-3-survive` | + **survival, crafting, skills, map** | Tested; needs play-testing |
 | `step-4-build` | + **building, blueprints, chests, cave-ins, dying & graves** | Tested; needs play-testing |
 | `step-5-fight` | + **weapons, monsters, parry, dodge** (Mossy Hollows) | Tested; needs play-testing |
+| `step-6-deeper` | + **ruins, rune shrines, boss clues, 3 bosses, raids, sounds** (Mossy Hollows finished) | Tested; needs play-testing |
+| `step-7-ready` | + **save & continue**, art candidates (try `-- art=quaternius`) | Tested; **the newest everything** |
 
 Why branches? Our rule says each step must be playable and approved before the next one. So `main` stays Step 1 until you've tried it. The later steps wait on their own branches, ready to merge when you say yes.
 
@@ -99,6 +101,8 @@ Why branches? Our rule says each step must be playable and approved before the n
 - **Step 2 (branch `step-2-friends`):** co-op over IP address and Steam lobbies, a start menu, friends with names and shirt colors. Late joiners catch up on every hole already dug. The "netcheck" robot ran two game windows and checked both see the same cave.
 - **Step 3 (branch `step-3-survive`):** health, stamina, hunger, thirst (never kills you), 3 food-buff slots, 16 dishes + 6 drinks, ~80 items, ~55 recipes, placeable stations (campfire, workbench, smelter, anvil…), hanging roots for wood, mushrooms, fiber, clay, levels + 4 skills + 43 perks (K screen), the Rune Slab rules, and a parchment map per floor (M screen).
 - **Step 4 (branch `step-4-build`):** the Build Hammer with a green/red ghost, 11 kinds of pieces in 10 materials (B menu), steadiness (wood bridges sag and fall, metal reaches far), chests, **blueprints**: save your own (C), place one from the book (V), fill its Builder's Chest and it carves rock and builds itself piece by piece. A starter "Small Rootwood Lodge" blueprint ships with the game. **Cave-ins**: loose rock lumps and 20 m+ "icicles" fall, and mine props hold rock up. **Dying**: your haul goes into a grave (with a light beam so you can find it), you keep your hotbar tools, you wake at your bed.
+- **Step 6 (branch `step-6-deeper`):** Mossy Hollows is finished. The cave now plans special places: 3 old ruins with loot chests and sleeping Rustwights, 5 rune shrines (2 sealed in rock), 4 abandoned camps, crystal geodes sealed in rock, 3 monster nests, a Great Hall, a Nest Cavern, and **Orrumhal's lair sealed in rock** far from the start. **3 wall carvings** (press E) draw shrinking circles on your map until you know exactly where to dig. **Bosses:** Orrumhal (3 phases: 4 Mossnippers crawl out in phase 2, his chest opens in phase 3), Skerra (calls her brood, stun her to stop it) and Brask (horn wakes 2 Rustwights). Orrumhal drops the **Keeper's Heartstone** for the Copper pickaxe, which breaks the border rock. **Raids** come to your base (bed + a station) while side bosses you've found are alive. The Rune Slab screen lets you carve runes. **Sounds** (free CC0 from Kenney): digging, crystals, chopping, building, hits, a bell-clang for perfect parries, footsteps, pickups.
+- **Step 7 start (branch `step-7-ready`):** **saving**: autosave every 5 minutes, when you quit, and on F5, with 3 backups. "Continue" on the start menu. Plus the **art choice**: see `docs/art/ART-CHOICE.md`.
 - **Step 5 (branch `step-5-fight`):** sword, mace, spear, shield, great axe, great maul (stone/copper/silver), light and heavy attacks, combos, block, **perfect parry** (stuns monsters), dodge-roll, the back lantern (frees your hand for a shield). The 6 Mossy Hollows monsters with their attacks and warnings, pack leaders with gold crowns, a spawner that fills caves near you, health bars and damage numbers. The damage math matches the combat doc's examples exactly.
 
 **Hurdles / mistakes (including Claude's)**
@@ -119,13 +123,20 @@ Why branches? Our rule says each step must be playable and approved before the n
 - Monster health bars showed as white boxes (the font has no block characters). **Fix:** real little bars.
 - In the co-op fight test, the monster arrived too early and killed the friend before they could craft. (Good news: dying works in co-op.) **Fix:** the test waits until the friend is ready.
 - The design docs had no weapon recipes at all. **Fix:** Claude added starting recipes, clearly marked "tune in play-testing".
+- Tiny hidden pockets (geodes, shrines) could be closed up by the bumpy cave walls. **Fix:** bigger pockets (only 2–3 geodes fit now instead of 6).
+- **A bug the screenshots caught:** every monster shrank back to normal size after its first attack, so the 3 m boss became 1 m and disappeared in his dark hall. **Fix:** the attack wobble keeps each monster's size. Bosses also glow a little now so you can read them.
+- The sound script used a name Godot reserves (`_get`), so no sound played and 18 checks failed at once. **Fix:** renamed. (The test robot found it in seconds.)
+- The test robot got slow (5 minutes) after caves started planning special places. **Fix:** the same seed's cave plan is reused: back to 2 minutes.
+- The rigged art model came out 100× too big (its skeleton is stored scaled ×100). **Fix:** measure the real head height in the world.
 
 **Not done yet / known limits**
 - No art pack yet: the dwarf and stations are simple shapes. You pick the pack on the PC.
 - No sounds yet.
 - Steam lobbies are written but untested. They need Steam running and two accounts or PCs.
 - Runes can only drop from pack leaders so far (ruins and shrines come with Step 6), and there's no Rune Slab screen yet. The map isn't shared between friends yet.
-- Not built yet from the combat doc: crossbow, gems, elemental effects (burn/chill/poison), crystal-variant monsters, bosses and raids (Step 6), friendly fire.
+- Not built yet from the combat doc: crossbow, gems, elemental effects (burn/chill/poison), crystal-variant monsters, friendly fire. Boss arenas don't seal shut yet, and boss altars (re-summoning) aren't built.
+- **Fungal Jungle (biome 2) isn't built yet.** The Copper pickaxe can already dig the border rock, but there's nothing behind it so far.
+- Friends' health/hunger aren't saved (their bag and skills are).
 - A cave-in check takes ~17 ms after each dig on the host. Fine for now; it can move to a background thread later.
 
 **Next (for you, on the gaming PC)**
