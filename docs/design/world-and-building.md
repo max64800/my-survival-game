@@ -14,6 +14,8 @@ and the big choices are listed as questions for you in section 9.*
 - `src/world/cave_maker.gd` (`CaveMaker`): rooms (squashed balls) + segments (tubes), `_smin` soft blend,
   flat floors, `generate_block()` with a "solid block" fast path.
 - `src/world/mat.gd` (`Mat`): material numbers 0 moss, 1 stone, 2 dirt, 3 copper, 4 border rock.
+  Hardness (hits with the stone pickaxe, power 1): moss 1, dirt 1, stone 3, copper 5, border never.
+  Dig ball radius 1.35 m, reach 4.5 m. Step 1 has 2 big caverns + 7 small rooms.
 - `src/world/world.gd` (`World.apply_dig`): digs a ball, skips undiggable voxels.
 - Sign rule used everywhere: **SDF positive = air, negative = rock** (same as the code).
 
@@ -104,7 +106,7 @@ func border_tier_at(p: Vector3) -> int:
 ```
 
 - `World.apply_dig()` already skips undiggable voxels voxel-by-voxel. Change one line: a `Mat.BORDER`
-  voxel is diggable only if `tool_tier >= border_tier_at(voxel)`. Hardness of border rock = 8 (hits).
+  voxel is diggable only if `tool_tier >= border_tier_at(voxel)`. Border rock hardness = **80** (border 1) or **100** (border 2), on the same ×10 scale as the progression doc 2.3 (7 hits with a Copper pickaxe).
 - Feedback: if any voxel in the dig ball was skipped because of tier, play the "clang" + spark effect and
   show the needed pickaxe name once per 3 seconds.
 - **Gate glow:** border rock faces near a gate show glowing veins in the next biome's colour
@@ -201,7 +203,7 @@ place_caverns(rng, count):
 (`far_enough` compares horizontal distance between centres with `max(r1.x, r1.z) + max(r2.x, r2.z) + gap`,
 or passes if the two caverns' vertical ranges don't overlap.)
 
-**Medium chambers:** Mossy 8, Fungal 10. Radius 8–14 m (horizontal), 5–7 m (vertical). Min gap 15 m from
+**Medium chambers:** Mossy 8 (Step 1 code makes 7), Fungal 10. Radius 8–14 m (horizontal), 5–7 m (vertical). Min gap 15 m from
 caverns and each other. Any floor.
 
 ### 2.3 Tunnel network (every cavern reachable without digging)
@@ -219,7 +221,7 @@ on a floor and the network has a few clear "stair" places).
 | Tree | Minimum spanning tree (Prim's method, already in `_connect_rooms`) over the edge cost. Every tree edge must be **walkable both ways** (slope rule below). |
 | Loops | Add `ceil(0.25 × node_count)` extra edges: the cheapest non-tree edges between nodes that are at least 3 tree-hops apart (so a loop is a real shortcut, not a second door into the same room). Loop edges may include one-way drops. |
 | Dead ends | Mossy 6, Fungal 8. Start at a random point on a tunnel, wander 20–60 m, end in a pocket (radius 3–4 m) with a 50% chance of a small loot sack or crystal cluster. |
-| Tunnel radius | Main (tree edges touching a cavern): 2.6–3.4 m. Others: 2.0–2.6 m. Never below 2.0 m (after floor flattening at `cp.y − 0.6 r`, the clear height is 1.6 r = 3.2 m; the dwarf is ~1.4 m tall). |
+| Tunnel radius | Main (tree edges touching a cavern): 2.6–3.4 m. Others: 2.0–2.6 m. Never below 2.0 m (after floor flattening at `cp.y − 0.6 r`, the clear height is 1.6 r = 3.2 m; the dwarf is 1.35 m tall). |
 | Worm step | 6 m per capsule; wander strength 0.65 (as in code); give up and go straight after `3 × distance / 6` steps. |
 | Smooth blend | `BLEND = 3 m` between tunnels and rooms (as in code). |
 
@@ -292,21 +294,30 @@ func sdf_at(p) -> float:
 
 Proposed material list (extend `Mat`; 8-bit allows 256):
 
-| Index | Material | Where | Hardness (hits, stone pickaxe) |
-|---|---|---|---|
-| 0 | Moss | Mossy: top surface of floors (already in code) | 1 |
-| 1 | Stone | Everywhere (default) | 3 |
-| 2 | Dirt | Under moss, and noise patches (already in code) | 1 |
-| 3 | Copper ore | Mossy veins | 5 |
-| 4 | Border rock | Slabs + world edge; tier by position | 8 (and tier check) |
-| 5 | White marble | Mossy rock-colour blobs (building stone) | 4 |
-| 6 | Dark basalt | Mossy floors 2–3, Fungal floor 3 blobs | 4 |
-| 7 | Brown rock | Mossy blobs | 3 |
-| 8 | Mycelium soil | Fungal: top surface of floors (Fungal's "moss") | 1 |
-| 9 | Silver ore | Fungal veins | 6 |
-| 10 | Orange clay | Fungal blobs | 2 |
-| 11 | Yellow sandstone | Fungal blobs | 3 |
-| 12 | Glow-crystal rock | Geode walls (crystals grow on it) | 4 |
+Hardness uses the progression doc's ×10 scale (2.3): stone pickaxe power 10, so hardness ÷ 10, rounded up,
+= hits with the stone pickaxe. Step 1 code stores the hit counts directly (stone 3, power 1). Item ids are in
+the progression doc (section 1).
+
+| Index | Material | Where | Hardness (stone-pickaxe hits) | Item it drops |
+|---|---|---|---|---|
+| 0 | Moss | Mossy: top surface of floors (already in code) | 10 (1) | `moss` (Step 1 code: `dirt`) |
+| 1 | Stone | Mossy default rock | 26 (3) | `stone` |
+| 2 | Dirt | Under moss, and noise patches (already in code) | 10 (1) | `dirt` |
+| 3 | Copper ore | Mossy veins | 45 (5) | `copper_ore` |
+| 4 | Border rock | Slabs + world edge; tier by position | 80 / 100 + tier check | nothing |
+| 5 | White marble | Mossy rock-colour blobs (building stone) | 30 (3) | `marble` |
+| 6 | Dark basalt | Mossy floors 2–3, Fungal floor 3 blobs | 35 (4) | `basalt` |
+| 7 | Brown rock | Mossy blobs | 26 (3) | `brown_rock` |
+| 8 | Mycelium soil | Fungal: top surface of floors (Fungal's "moss") | 10 (1) | `dirt` |
+| 9 | Silver ore | Fungal veins | 55 (copper pickaxe needed) | `silver_ore` |
+| 10 | Orange clay | Mossy stream banks, Fungal blobs | 15 (2) | `clay` |
+| 11 | Amberrock (yellow) | Fungal bands and blobs | 25 (3) | `amberrock` |
+| 12 | Glow-crystal rock | Geode walls (crystals grow on it) | 18 (2) | crystals of the geode's colour |
+| 13 | Sporestone | Fungal default rock (replaces stone) | 30 (3) | `sporestone` |
+| 14 | Ancient brick | Floors and walls of ruins and the Great Hall | 40 (4) | `ancient_brick` |
+
+**Clay must exist in Mossy:** the Smelter needs 15 clay in the first hour (progression doc 4.1). Put clay
+blobs (radius 2–4 m) along the banks of every Mossy stream, at least one within 80 m of spawn.
 
 **Ore veins** replace the current "noise cells" with planned veins (veins look and feel better: you follow
 them). Keep the noise version as a sprinkle for 20% of the ore.
@@ -325,8 +336,8 @@ make_vein(rng, floor):
     for n in node_count: add ellipsoid(start, radius); dir = (dir + random*0.5).normalized(); start += dir * 1.5
 ```
 - A voxel is ore if it is rock and inside any vein ellipsoid. Ore never replaces border rock.
-- **Rock-colour blobs:** Mossy 8 blobs (marble 3, basalt 2, brown 3), Fungal 8 (clay 3, sandstone 3,
-  basalt 2), radius 6–12 m, noisy edges. These are the building-stone sources for the styles in section 5.
+- **Rock-colour blobs:** Mossy 8 blobs (marble 3, basalt 2, brown 3) plus the stream-bank clay, Fungal 8
+  (clay 3, amberrock 3, basalt 2), radius 6–12 m, noisy edges. These are the building-stone sources for the styles in section 5.
 - Store veins and blobs in the same spatial index as shapes (2.9) so solid blocks only check nearby ones.
 
 ### 2.8 Water
@@ -387,17 +398,17 @@ Sizes are width × height × depth in metres. "Open" = reachable without digging
 | # | POI | Size | Access | How it's carved / placed | Loot / monsters | Mossy | Fungal |
 |---|---|---|---|---|---|---|---|
 | 1 | **Biome Gate** | 10 × 8 × 12 | Open | Gate tunnel (1.3) + archway scene | Lore tablet about the next biome | 1–2 per border (1.3) | 2 (other side of Mossy's) |
-| 2 | **Old Dwarf Ruin** (small) | 10–14 × 6 × 10–14 | Open | Forced-air box + flat solid floor; the ruin is a **blueprint** (section 7) stamped as damaged pieces (marble/stone style) | 1 chest: recipes (40%), ancient blueprint (25%), copper bars, food; 1 rune (30%) | 3 | 2 (overgrown) |
-| 3 | **Great Hall** (big ruin) | 30 × 14 × 30 | Open, inside a big cavern | Uses a cavern; flattens 30 × 30 of its floor; big blueprint stamped (pillars, broken stairs, throne) | **Guaranteed ancient blueprint**, 2 chests, 1 rune, a wall marking spot (3.2) | 1 | 1 |
+| 2 | **Old Dwarf Ruin** (small) | 10–14 × 6 × 10–14 | Open | Forced-air box + flat solid floor; the ruin is a **blueprint** (section 7) stamped as damaged pieces (marble/stone style) | 1 chest: recipes (40%), ancient blueprint (25%), copper ingots, food; 1 rune (30%) | 3 | 2 (overgrown) |
+| 3 | **Great Hall** (big ruin) | 30 × 14 × 30 | Open, inside a big cavern | Uses a cavern; flattens 30 × 30 of its floor; big blueprint stamped (pillars, broken stairs, throne) | **Guaranteed ancient blueprint**, 2 chests, 1 rune, a wall marking spot (3.2). In Mossy it is also **Brask's lair** (the "Thane's Hall", combat doc 8.3) | 1 | 1 |
 | 4 | **Abandoned Camp** | 8 × 4 × 8 | Open | No carving; placed on a flat spot of a chamber or tunnel widening (find with 9 floor samples, max height difference 0.6 m) | Bedroll, dead campfire, journal page (lore), crystals, food, torches | 4 | 3 |
 | 5 | **Monster Nest** | 12–16 m ellipsoid | Open | Chamber-like air ellipsoid + nest mesh; joined to the network by a connector tunnel | Pack of 3–6 + **pack leader**; respawns every 20 min until the nest is smashed (HP 400); egg sack loot | 3 (critter burrows) | 5 (beetle hives) |
-| 6 | **Side-boss Lair** | a whole big cavern | Open | Cavern floor flattened to a 30 m radius arena; boss scene + treasure pile | Side boss; rare ore pile; blueprint or named item; discovering it starts raids (plan 5.10) | 1 | 2 |
-| 7 | **Main Boss Lair** | 36 × 18 × 36 | **Sealed** | Forced-air dome with a flat floor, 6–10 m of rock from the nearest tunnel, ≥ 150 m from spawn, on floor 2 or 3 (local). Summoning altar scene in the middle. Its walls are "protected" (blueprints can't carve them; players can dig normally) | Main boss + boss part needed for the next pickaxe | 1 | 1 |
+| 6 | **Side-boss Lair** | a whole big cavern | Open | Cavern floor flattened to that boss's arena size (20–35 m across, combat doc 8.3 and 8.5); boss scene + treasure pile | Side boss; rare ore pile; blueprint or named item; discovering it starts raids (plan 5.10) | 2 (Skerra's Nest Cavern; Brask uses the Great Hall) | 3 (Silver Vault, Brood Hollow; the Gloamstalker uses the Giant Mushroom Grove cavern) |
+| 7 | **Main Boss Lair** | Mossy 36 × 18 × 36, Fungal 46 × 20 × 46 (fits a 40 m arena) | **Sealed** | Forced-air dome with a flat floor, 6–10 m of rock from the nearest tunnel, ≥ 150 m from spawn, on floor 2 or 3 (local). Summoning altar scene in the middle. Its walls are "protected" (blueprints can't carve them; players can dig normally, except **during the boss fight**, when nobody can dig them, combat doc 8.1) | Main boss + boss part needed for the next pickaxe | 1 | 1 |
 | 8 | **Rune Shrine** | 4 × 4 × 4 | 3 open, 2 sealed | Small alcove (pocket) with a pedestal scene | 1 rune each | 5 | 5 |
 | 9 | **Wall Marking** (boss clue) | 3 × 2 m relief | Open | Decal + slightly raised mesh on a vertical wall (find a wall: SDF gradient with `|n.y| < 0.3`) | Map clue (3.2) | 3 | 3 |
 | 10 | **Underground Lake** | 20–40 m | Open | Bowl in a cavern floor (2.8) + water plane; small island 30% of the time | Fish spots (later), a sunken chest (50%) | 1 | 1 |
 | 11 | **Crystal Geode** | 4–8 m ellipsoid | Sealed | Sealed pocket lined with material 12; crystal clusters placed on every inner surface | Lots of crystals (lantern fuel, light colours), 10% a gem | 6 | 4 |
-| 12 | **Root Grove** (Mossy) / **Giant Mushroom Grove** (Fungal) | 20–30 m area | Open | No carving; tree-root / giant-mushroom scenes on a cavern or chamber floor and ceiling | **Wood source** (chop), glow mushrooms | 2 | 1 cavern + 3 chambers |
+| 12 | **Root Grove** (Mossy) / **Giant Mushroom Grove** (Fungal) | 20–30 m area | Open | No carving; tree-root / giant-mushroom scenes on a cavern or chamber floor and ceiling | **Wood source** (chop), glow mushrooms. In Mossy, one grove is within 60 m of spawn (the first wood comes from here) | 2 | 1 cavern + 3 chambers |
 | 13 | **Spore Vent** (Fungal only) | 3 m | Open | Small hole in floor + particle cloud | Hazard (slow poison), rare spore item | 0 | 6 |
 
 Spawn: Mossy's spawn cavern gets no nests, lairs or vents within 60 m. Monsters there are weak critters only.
@@ -509,7 +520,7 @@ class MapState:
 | ▲ / ▼ | (a) Planned links (spiral ramps, galleries, drop shafts that cross a floor line): shown once their pixel is revealed. (b) **Trail markers:** whenever a player's floor index changes and no marker is within 12 m, add ▼ on the upper page and ▲ on the lower page at that x, z. This covers your own dug shafts and built stairs for free. |
 | Pins | Player places them (8 icons, a short label). Max 200 per world. |
 | Boss clue circle | After clue 1 / 2 / 3 (3.2), drawn on the lair's floor page(s). Other pages of that biome show a small note "Clue: Floor 3". |
-| Grave | Skull icon where you died, on that floor's page. If you're on another page, a skull at the page edge with "▲2"/"▼1" telling how many floors away. |
+| Grave | Grave icon (small cairn) where you died, on that floor's page. If you're on another page, a grave icon at the page edge with "▲2"/"▼1" telling how many floors away. |
 
 ### 4.5 Saving
 Each page saves as a PNG (400 × 400 grayscale, usually under 20 KB). Pins, links and graves save as JSON.
@@ -549,29 +560,32 @@ Ghost colour: green = OK, red = not allowed, with a one-line reason at the cross
 
 ### 5.3 Materials, HP and styles
 
+The family id is the item it uses (ids from the progression doc, section 1).
+
 | Material family | Item used | Where it comes from | Piece HP (per 2×2 wall) | Notes |
 |---|---|---|---|---|
-| Wood (rootwood) | `wood` | Root Groves (Mossy) | 200 | Cheap, light, best for early bases |
-| Capwood | `capwood` | Giant mushrooms (Fungal) | 260 | Fungal wood, a bit stronger |
-| Mushroom brick | `mushroom_brick` | Crafted: mushroom flesh + dirt | 300 | Soft, warm look |
-| Rough stone | `stone` | Stone (Mat 1) | 500 | Default heavy material |
-| Marble | `marble` | Mat 5 | 600 | Old dwarf look (ruins) |
-| Basalt / brown rock / clay / sandstone | `basalt`, `brown_rock`, `clay`, `sandstone` | Mat 6, 7, 10, 11 | 450–550 | Colour choices |
-| Copper metal | `copper_bar` | Smelted copper | 800 | Trims, beams, doors |
-| Silver metal | `silver_bar` | Smelted silver | 900 | Fungal-tier trims |
-| Crystal / decor | `crystal` | Geodes, crystal clusters | 150 | Glows; decoration, lamps, windows |
+| Rootwood | `plank_root` | Rootwood from Root Groves (Mossy), cut at the Workbench | 200 | Cheap, light, best for early bases |
+| Capwood | `plank_mushroom` | Giant mushroom stalks (Fungal), cut at the Workbench | 260 | Fungal wood, a bit stronger |
+| Mushroom brick | `mushroom_brick` | Masonry Table: 2 mushroom flesh + 1 clay → 2 | 300 | Soft, warm look |
+| Cut stone | `cut_stone` | Masonry Table: 2 stone → 1 | 500 | Default heavy material |
+| Marble | `cut_marble` | Masonry Table: 2 marble → 1 (Mat 5) | 600 | Old dwarf look (ruins) |
+| Rock colours | `basalt`, `brown_rock` (raw), `clay_brick`, `amber_block`, `sporestone_block` | Mat 6, 7, 10, 11, 13 | 450–550 | Colour choices |
+| Ancient brick | `ancient_brick` | Ruins (Mat 14) | 550 | Ruin style (Cobalt rune) |
+| Copper metal | `copper_ingot` | Smelted copper | 800 | Trims, beams, doors |
+| Silver metal | `silver_ingot` | Smelted silver | 900 | Fungal-tier trims |
+| Crystal / decor | any glow crystal (`crystal_*`) | Geodes, crystal clusters | 150 | Glows; decoration, lamps, windows |
 | Moss / vine thatch | `fiber` | Moss, vines | 80 | Roof/canopy covers only |
 
 **Three styles per biome** (a style = a material set + a matching look for every piece):
 
 | Biome | Style | Main materials | Feeling |
 |---|---|---|---|
-| Mossy Hollows | **Rootwood Lodge** | wood + fiber thatch + copper nails | Cosy cabin |
-| Mossy Hollows | **Hollow Stone** | rough stone + brown rock + copper trims | Sturdy mine house |
-| Mossy Hollows | **Marble Hall** | marble + basalt + copper | Old dwarf grandeur (matches the ruins; ancient blueprints use it) |
-| Fungal Jungle | **Capwood** | capwood + mushroom cap roof tiles | Round, organic |
-| Fungal Jungle | **Spore Brick** | mushroom brick + clay | Earthy, soft colours |
-| Fungal Jungle | **Kiln Clay** | orange clay + sandstone + silver | Warm, fired-brick look |
+| Mossy Hollows | **Rootwood Lodge** | rootwood planks + fiber thatch + copper nails | Cosy cabin |
+| Mossy Hollows | **Hollow Stone** | cut stone + brown rock + copper trims | Sturdy mine house |
+| Mossy Hollows | **Marble Hall** | cut marble + basalt + copper | Old dwarf grandeur (matches the ruins; ancient blueprints use it) |
+| Fungal Jungle | **Capwood** | mushroom planks + mushroom cap roof tiles | Round, organic |
+| Fungal Jungle | **Spore Brick** | mushroom brick + sporestone blocks | Earthy, soft colours |
+| Fungal Jungle | **Kiln Clay** | clay bricks + amber blocks + silver | Warm, fired-brick look |
 
 ### 5.4 Piece catalog
 
@@ -591,13 +605,13 @@ material family (except thatch); costs are the same across families.
 | Diagonal beam | 2 m at 45° | 2 | — | Braces |
 | Pillar | 0.4 × 2 × 0.4 | 3 | — | Bottom, middle, top |
 | Short pillar | 0.4 × 1 × 0.4 | 2 | — | |
-| **Mine prop (support beam)** | post 2–4 m (adjusts to the ceiling) + 2 m header | 4 | +1 copper bar | **Rock support** (section 6). Wood/stone/metal only. Stretches to touch the ceiling (max 4 m). |
+| **Mine prop (support beam)** | post 2–4 m (adjusts to the ceiling) + 2 m header | 4 | +1 copper ingot | **Rock support** (section 6). Wood/stone/metal only. Stretches to touch the ceiling (max 4 m). |
 | Stairs | 2 × 2 × 2 (45°) | 6 | — | Walkable |
 | Ramp | 2 × 1 × 2 (26.6°) | 4 | — | Walkable, carts later |
 | Ladder | 0.6 × 2 | 2 | wood or metal only | Climbable (crosses floors → ▲/▼ trail marker) |
-| Door + frame | 2 × 2 wall with a 1 × 2 door | 4 | +2 copper bar (hinges) | Opens both ways; can be locked to "owner + friends" |
-| Big gate | 4 × 4 | 12 | +4 copper bar | Double door |
-| Trapdoor | 2 × 2 floor | 4 | +1 copper bar | |
+| Door + frame | 2 × 2 wall with a 1 × 2 door | 4 | +2 copper ingot (hinges) | Opens both ways; can be locked to "owner + friends" |
+| Big gate | 4 × 4 | 12 | +4 copper ingot | Double door |
+| Trapdoor | 2 × 2 floor | 4 | +1 copper ingot | |
 | Window wall | 2 × 2 with 1 × 1 hole | 3 | +1 crystal (glass) optional | |
 | Shutters | 1 × 1 | 1 | wood/metal | |
 | Railing / fence | 2 × 1 | 1 | — | |
@@ -606,31 +620,32 @@ material family (except thatch); costs are the same across families.
 | Canopy (thatch) | 2 × 2 | 3 fiber | — | Light cover, very weak |
 | Wall sconce / lantern post | 0.5 / 2 m | 1 | +1 crystal | Light (crystal colour = light colour) |
 
-**Furniture and stations** (recipes belong to Step 3 crafting; numbers are a starting point):
+**Furniture and stations.** Recipes, slot counts and unlocks live in the **progression doc** (section 4.1
+for stations, 10.2 for chests). This table only adds the size each one takes on the 2 m grid.
 
-| Station / furniture | Footprint | Cost | Job |
-|---|---|---|---|
-| Bed | 1 × 2 | 8 wood, 4 fiber | Wake-up point after death |
-| Small chest | 1 × 1 | 6 wood, 1 copper bar | 16 slots |
-| Large chest | 2 × 1 | 10 wood, 2 copper bar | 32 slots |
-| Workbench | 2 × 1 | 10 wood, 4 stone | Basic crafting; needed nearby for building |
-| Stonecutter | 2 × 1 | 12 stone, 2 copper bar | Rock → building blocks (all rock colours) |
-| Smelter | 2 × 2 | 20 stone, 6 dirt | Ore → bars |
-| Forge + anvil | 2 × 2 | 20 stone, 10 copper bar | Tools, weapons, upgrades |
-| Cooking pot / hearth | 1 × 1 | 8 stone, 2 copper bar | Food |
-| Mushroom planter | 2 × 2 | 6 wood, 8 dirt | Farming |
-| Drip bucket | 1 × 1 | 3 wood | Water under a dripping ceiling |
-| **Rune Slab** | 2 × 1 × 2 | 30 stone or marble | Carve runes (one per world) |
-| **Builder's Chest** | 1 × 1 | 8 wood, 2 copper bar, 1 crystal | Builds blueprints (section 7) |
-| Table, bench, chair, shelf, banner | various | 2–6 wood | Comfort/decoration |
+| Station / furniture | Footprint | Job |
+|---|---|---|
+| Bed | 1 × 2 | Wake-up point after death |
+| Chests (`chest_small`, `chest_stone`, `chest_copper`, `chest_chitin`, `crate_ore`) | 1 × 1 (small), 2 × 1 (others) | Storage |
+| Workbench | 2 × 1 | Basic crafting; needed within 20 m for building |
+| Masonry Table | 2 × 1 | Rock → building blocks (all rock colours) |
+| Smelter | 2 × 2 | Ore → ingots |
+| Anvil (the "forge") | 2 × 2 | Tools, weapons, upgrades |
+| Campfire + Cooking Pot | 1 × 1 | Food |
+| Tanning Rack, Brewing Barrel, Gem Bench | 1 × 1 / 1 × 1 / 2 × 1 | Leather / drinks / gems |
+| Farm Plot | 2 × 2 | Farming (4 planting spots) |
+| Drip Bucket | 1 × 1 | Water under a dripping ceiling |
+| **Rune Slab** | 2 × 1 × 2 | Carve runes. You may build more than one; they all share the same carved runes |
+| **Builder's Chest** | 1 × 1 | Builds blueprints (section 7). Free: it comes with the blueprint |
+| Table, bench, chair, shelf, banner | various | Comfort/decoration (2–6 `plank_root`) |
 
 Piece HP scales with size: **HP = family HP × units / 4** (a 2 × 2 wall = family HP; a beam = half).
 Destroyed pieces drop **50%** of their cost. Removing your own piece (hammer, hold to deconstruct) returns
 **100%**.
 
 ### 5.5 Damage
-Monster damage to pieces is multiplied by material: wood 1.0, capwood 0.9, mushroom brick 0.8, stone/rock
-0.6, marble 0.55, metal 0.4, crystal 1.2, thatch 1.5. (Raids target the weakest piece near the base.)
+Monster damage to pieces is multiplied by material: rootwood 1.0, capwood 0.9, mushroom brick 0.8, stone/rock
+0.6, marble 0.55, metal 0.4, crystal 1.2, thatch 1.5. (Raiders that can't reach a player attack the nearest built piece, combat doc 8.6.)
 
 ### 5.6 Building stability (how pieces hold each other up)
 
@@ -643,7 +658,7 @@ Monster damage to pieces is multiplied by material: wood 1.0, capwood 0.9, mushr
 |---|---|---|---|
 | Thatch / canopy | 30% | 45% | 2 pieces (4 m) |
 | Crystal | 15% | 40% | 2 pieces |
-| Wood / capwood | 10% | 20% | 4 pieces (8 m) |
+| Rootwood / capwood | 10% | 20% | 4 pieces (8 m) |
 | Mushroom brick | 8% | 25% | 3 pieces |
 | Stone / rock colours / marble | 5% | 30% | 3 pieces (6 m) |
 | Copper / silver metal | 4% | 12% | 7 pieces (14 m) |
@@ -771,7 +786,7 @@ copied buffer, and the result is applied on the main thread. Digging a loose roc
 
 > **In plain words:** a blueprint is a saved building. You get one by drawing a box around something you
 > built, by finding old ones in ruins, or as a file from a friend. You place it as a see-through ghost and
-> put down a Builder's Chest next to it. Fill the chest with materials and it builds the house by itself,
+> a Builder's Chest comes with it (no crafting needed). Fill the chest with materials and it builds the house by itself,
 > one piece per second, from the bottom up. If the ghost is inside rock, the chest first carves the rock
 > away (and keeps the rock it dug!). If materials run out, it waits.
 
@@ -790,12 +805,12 @@ Saved in `user://blueprints/<name>.dwbp` as JSON text (easy to share; shown belo
   "origin": "bottom_center",               // positions below are relative to the box's bottom centre
   "chest_hint": [0, 0, 6],                 // suggested chest spot (optional)
   "pieces": [
-    {"id": "wall_2x2",  "mat": "wood",  "pos": [-4.0, 0.0, -3.0], "rot": 0, "anchor": "rock"},
-    {"id": "floor_2x2", "mat": "stone", "pos": [ 0.0, 0.0,  0.0], "rot": 1},
-    {"id": "door",      "mat": "wood",  "pos": [ 0.0, 0.0,  5.0], "rot": 2}
+    {"id": "wall_2x2",  "mat": "plank_root",  "pos": [-4.0, 0.0, -3.0], "rot": 0, "anchor": "rock"},
+    {"id": "floor_2x2", "mat": "cut_stone", "pos": [ 0.0, 0.0,  0.0], "rot": 1},
+    {"id": "door",      "mat": "plank_root",  "pos": [ 0.0, 0.0,  5.0], "rot": 2}
   ],
   "air": {"cell": 1, "rle": [140, 12, 3, 9]},   // carve mask, see 7.2
-  "cost": {"wood": 64, "stone": 40, "copper_bar": 6},   // recomputed on load, shown in UI
+  "cost": {"plank_root": 64, "cut_stone": 40, "copper_ingot": 6},   // recomputed on load, shown in UI
   "check": "a1b2c3d4"                       // checksum of the pieces + air, to spot broken files
 }
 ```
@@ -832,7 +847,7 @@ Saved in `user://blueprints/<name>.dwbp` as JSON text (easy to share; shown belo
 - **Warnings** (allowed, but shown): pieces marked `anchor: rock` with no rock at their new spot;
   "carving this will make loose rock fall" (the cave-in check 6.2 runs once on a copy of the area, and the
   rock that would fall is outlined in orange).
-- Then place the **Builder's Chest** within **16 m** of the box (or at `chest_hint`). Plan + chest become one
+- Then place the blueprint's free **Builder's Chest** (24 slots, building materials and carved rock only) within **16 m** of the box (or at `chest_hint`). Plan + chest become one
   "build site". Max **3 active build sites per world** (host setting).
 
 ### 7.4 The build loop (host only, one tick per second)
@@ -865,7 +880,7 @@ tick():
         and the chest holds its cost
     if p == null:
         if all built: status = DONE; ghost disappears; chest becomes a normal chest
-        elif missing materials: status = "Paused: needs 6 wood, 2 copper bar"
+        elif missing materials: status = "Paused: needs 6 plank_root, 2 copper_ingot"
         else: status = "Waiting: something is in the way"
         return
     take cost from chest; spawn piece with a 0.8 s "rises from dust" animation; mark built
@@ -886,7 +901,7 @@ tick():
 | Monster (or rubble) breaks a built piece | It goes back to "not built" (needs materials again; the broken piece dropped 50%). Pieces that lose support (5.6) also go back. |
 | Someone digs or a cave-in fills the carve space | Every 10 s the chest re-checks its carve cells; new rock is queued for carving again. |
 | Someone builds a different piece inside the plan | That planned piece is marked "blocked" (red) and skipped. Remove the stranger piece to unblock it. |
-| Chest destroyed | Its items drop in a sack. The plan stays as a ghost, paused. Placing a new Builder's Chest within 16 m resumes it. |
+| Chest destroyed | Its items drop in a sack. The plan stays as a ghost, paused. Placing the blueprint's chest again (free, from the blueprint book) within 16 m resumes it. |
 | Cancel (owner or host only) | Ghost removed. Built pieces stay. Materials stay in the chest. Carved rock stays carved. |
 | Carve meets border rock / protected rock (shouldn't happen) | That cell is skipped and logged. |
 | Carving drains a pool | Normal water rule (2.8). |
@@ -908,7 +923,7 @@ the result with its own sequence number; clients apply results strictly in that 
 
 | Request (from a player) | Host checks | Broadcast (to everyone) |
 |---|---|---|
-| `Dig(center, radius, tool_tier)` | Reach (≤ 4 m from that player), area loaded, tier vs material/border | `DigDone(seq, center, radius, tool_tier)` → every PC runs the same `apply_dig`; host spawns the drops |
+| `Dig(center, radius, tool_tier)` | Reach (≤ 4.5 m from that player, same as Step 1 code), area loaded, tier vs material/border | `DigDone(seq, center, radius, tool_tier)` → every PC runs the same `apply_dig`; host spawns the drops |
 | `PlacePiece(id, mat, transform)` | All of 5.2 + cost in that player's bag | `PieceAdded(seq, piece_uid, id, mat, transform)` |
 | `RemovePiece(uid)` | Owner/permission, reach | `PieceRemoved(seq, uid, reason)` |
 | `PlaceBlueprint(json, transform)` + `PlaceChest(...)` | 7.1 validation + 7.3 rules | `BuildSiteAdded(seq, site_id, json, transform, chest_uid)` |
@@ -934,7 +949,7 @@ mismatch), the seed, the order of applied edits. The determinism check (2.1 rule
 
 ## 9. Open questions for you
 
-Each has a suggested answer (marked ★) that this document already assumes.
+Each has a suggested answer (marked ★) that this document already assumes. **All open questions from the three design docs are collected, numbered and de-duplicated in `docs/design/README.md`.** Answer them there.
 
 1. **Which way is the Fungal Jungle?**
    A) East ★ B) North C) West D) South (only matters for how the map looks).
@@ -952,3 +967,17 @@ Each has a suggested answer (marked ★) that this document already assumes.
    A) Sealed in rock, you dig in after the 3rd clue ★ B) Behind a hidden breakable wall at the end of a tunnel C) Behind a door that only opens after the 3rd clue.
 8. **Border gates?**
    A) Gate tunnels leave a thin 4 m plug ★ B) No gates, the whole 20 m wall is the same everywhere C) Gates only, the rest of the border is never diggable.
+
+---
+
+## Review changes (Nov 14, 2026)
+
+The three design docs were written at the same time, so they disagreed in places. This review made them match each other and the Step 1 code.
+
+- **Materials list (2.7):** hardness now uses the progression doc's ×10 scale, with the Step 1 hit counts in brackets (stone 3, copper 5). Border rock is hardness 80 / 100, not "8 hits". Yellow sandstone → **amberrock**; added **sporestone** (13) and **ancient brick** (14) so every item in the progression doc has a rock it comes from.
+- **Clay is now in Mossy too** (stream banks). Before, it was Fungal-only, but the Smelter needs clay in the first hour.
+- **Item ids now match the progression doc:** `wood`/`capwood`/`copper_bar`/`crystal` → `plank_root`/`plank_mushroom`/`copper_ingot`/`crystal_*`. Building families use the progression doc's cut blocks (`cut_stone`, `cut_marble`, `clay_brick`…).
+- **Stations and chests:** the furniture table now points to the progression doc for recipes and slots (they disagreed on every cost). "Stonecutter" → **Masonry Table** (a stonecutter station exists in another game), "Forge + anvil" → **Anvil**, "Mushroom planter" → **Farm Plot**. More than one Rune Slab is allowed (they share runes).
+- **Builder's Chest is free and comes with the blueprint** (owner spec section 1), instead of being crafted.
+- **Bosses:** side-boss lairs now match the combat doc (Mossy 2, Fungal 3; two of them reuse the Great Hall and the mushroom grove). The Fungal main lair grew to 46 m so Thallus's 40 m arena fits. Lair walls can't be dug only during the fight.
+- **Small fixes:** reach 4 m → 4.5 m and dwarf height 1.35 m (Step 1 code), Step 1 makes 7 chambers, raiders hit the nearest piece (combat doc), the grave icon is a cairn (not a skull), and one Root Grove sits near spawn for the first wood.

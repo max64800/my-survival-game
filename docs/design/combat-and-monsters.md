@@ -36,12 +36,12 @@ The dwarf is short and tough. Base values below are before food buffs, skills, a
 |---|---|---|
 | Max health | **100** | Buff food can add +20% (spec 5.4). |
 | Health regen | **2 HP/s** | Starts after **6 s** without taking damage. |
-| Health regen when hunger or thirst is 0 | **1 HP/s** | Half speed (spec 5.4: "heal slower"). |
+| Health regen when hunger or thirst is 0 | **0.8 HP/s** | −60% (spec 5.4: "heal slower"). Same rule as progression doc 6.2. |
 | Max stamina | **100** | Buff food can add +15%. |
 | Stamina regen | **25 /s** | Starts **0.8 s** after you last spent stamina. |
 | Stamina regen while holding block | **12 /s** | Half speed. |
 | "Winded" (stamina hit 0) | Regen delay becomes **1.5 s** | You can still walk. Running, dodging, heavy attacks are locked until stamina is back to **20**. |
-| Hunger/thirst at 0 | Stamina regen **×0.75** | Spec: "get tired." |
+| Hunger/thirst at 0 | Stamina regen **×0.7**, max stamina **−20%** | Spec: "get tired." Same rule as progression doc 6.2. |
 | Player armor | **0** at start | Armor pieces come from the crafting doc. The formula in section 2.2 works for them. |
 | Player stun | Players have **no** stun meter | Instead: guard break (1.4) and knockdown (2.6). |
 
@@ -59,7 +59,7 @@ The dwarf is short and tough. Base values below are before food buffs, skills, a
 | Perfect parry | **0** | Parry is always the best move (spec 5.8). |
 | Pressing block (nothing hits) | **0** | |
 | Crossbow reload | **0** | |
-| Mining swing (pickaxe) | **4** | So mining also uses stamina (spec 5.4: "everything"). |
+| Mining swing (pickaxe or axe) | **5** | So mining also uses stamina (spec 5.4: "everything"). |
 
 ### 1.3 Dodge-roll
 
@@ -287,9 +287,11 @@ Base numbers in 3.2 are Stone. Multiply for other tiers. Speed, reach, and stami
 
 **Example:** Silver sword light = 10 × 1.65 = **16.5 → 17** (rounding happens at the end of the full formula).
 
-**Quality (Q1–Q5, from the Smith skill):** damage **+0% / +3% / +6% / +9% / +12%**. On shields: block reduction **+0 / +1 / +2 / +3 / +4** points.
+**Quality (Q1–Q5, from the Smithing skill):** damage **+0% / +4% / +8% / +13% / +20%** (the same table as tools, progression doc 3.4). On shields: block reduction **+0 / +1 / +2 / +3 / +4** points.
 
-**Forge upgrades (+1 to +3 per item):** each level **+5% damage** (shields: **+2 points** block reduction). Block reduction caps at **90%**.
+**Anvil upgrades (+1 to +3 per item, progression doc 3.3):** damage **+8% / +16% / +25%** in total (shields: **+2 points** block reduction per level). Block reduction caps at **90%**.
+
+**Hand lantern rule:** while you still carry the **hand lantern**, your off-hand is busy: no shield, no two-handed weapons, no crossbow. The **back lantern** (progression doc 5.4, about 2.5 hours in) frees both hands.
 
 ### 3.5 Shield details
 
@@ -318,8 +320,8 @@ Base numbers in 3.2 are Stone. Multiply for other tiers. Speed, reach, and stami
 | Bolt | Damage × | Type | Extra | Craft from (starting idea) |
 |---|---|---|---|---|
 | Stone-tip bolt | ×1.0 | Pierce | — | Wood + stone |
-| Metal-tip bolt | ×1.2 | Pierce | — | Wood + any metal bar of your crossbow's tier |
-| Thumper bolt | ×1.1 | **Blunt** | +35 stun, ignores 30% armor | Wood + stone + resin |
+| Metal-tip bolt | ×1.2 | Pierce | — | Wood + any metal ingot of your crossbow's tier |
+| Thumper bolt | ×1.1 | **Blunt** | +35 stun, ignores 30% armor | Wood + stone + rope |
 | Ember bolt | ×0.9 | Pierce | +8 fire damage, +40 burn buildup | Metal-tip + red crystal |
 | Rime bolt | ×0.9 | Pierce | +8 frost damage, +40 chill buildup | Metal-tip + blue crystal |
 | Blight bolt | ×0.9 | Pierce | +6 poison damage, +50 poison buildup | Metal-tip + green crystal or venom sac |
@@ -349,13 +351,13 @@ Values are per gem. Elemental damage is flat (it does not grow with tier, so it 
 |---|---|---|---|---|---|
 | **Ember Gem** | Red | +5 fire damage per hit, +25 burn buildup | Perfect parries set the attacker's burn buildup +50 | Mined ore drops warm (smelts 20% faster) | Red crystal monsters (15%), ruin chests in Mossy (3%) |
 | **Rime Gem** | Blue | +5 frost damage per hit, +25 chill buildup | Perfect parries add +50 chill buildup | — (no effect) | Blue crystal monsters (15%), stream caves |
-| **Blight Gem** | Green | +3 poison damage per hit, +30 poison buildup | Blocking adds +20 poison buildup to the attacker | — | Green crystal monsters (15%), Sporelings (2%), Brood Mother Sivix (100%) |
+| **Blight Gem** | Green | +3 poison damage per hit, +30 poison buildup | Blocking adds +20 poison buildup to the attacker | — | Green crystal monsters (15%), Wheezecaps (2%), Sivix, Mother of Needles (100%) |
 | **Leech Gem** | Dark red | Heal **5%** of physical damage you deal | Heal **4 HP** per perfect parry | — | Rustwights (3%), Thane chest, Fungal Jungle ruin chests (4%) |
 | **Jolt Gem** | Yellow | Your hits fill stun **+30%** | Your parries fill stun **+30%** | — | Cairnlings (4%), Rusted Thane (50%) |
-| **Swift Gem** | Purple | Attack stamina cost **−15%** | Block stamina cost **−20%** | Mining stamina cost −25% | Purple crystal monsters (15%) |
+| **Swift Gem** | Violet | Attack stamina cost **−15%** | Block stamina cost **−20%** | Mining stamina cost −25% | Violet crystal monsters (15%) |
 | **Bulwark Gem** | Amber | Take **10%** less damage while attacking (during swing) | Block reduction **+8 points** (cap 90%) | — | Amber crystal monsters (15%), Old Ironshell (50%) |
 | **Keen Gem** | White | Physical damage **+8%** | Bash damage +25% | — | Ruin chests (both biomes, 3%), Gill Stalkers (3%) |
-| **Delver Gem** | Brown | — | — | Dig speed **+20%**, 10% chance of 1 extra ore | Copper and silver ore veins (0.5% per ore block mined) |
+| **Burrow Gem** | Brown | — | — | Dig speed **+20%**, 10% chance of 1 extra ore | Copper and silver ore veins (0.5% per ore block mined) |
 
 ### 4.3 Epic gems
 
@@ -368,7 +370,7 @@ Only fit the Steel **epic socket**. The first two are the owner's examples.
 | **Echoing Guard** | Each perfect parry sends out a shockwave. | **4 m** circle, **15 blunt damage**, **+20 stun** to every enemy in it. | Main boss Thallus (Fungal): first-kill choice |
 | **Rootbound Heart** | When you drop below 25% health, you dig in. | **30%** less damage taken and **+3 HP/s** for **6 s**. Cooldown **90 s**. | Main boss Thallus: first-kill choice |
 | **Bloomrot** | Enemies that die while poisoned burst into a poison cloud. | **3 m** cloud, **6 poison damage/s** + **40 buildup/s**, lasts **5 s**. | Fungal side bosses (5% each kill) |
-| **Shiftstep** | Your dodge-roll becomes a short blink (teleport) that passes through enemies. | Blink **5 m**, i-frames for the whole **0.3 s**. Costs **+10** stamina (30 total). | Purple crystal monsters in Fungal Jungle (0.5%) |
+| **Shiftstep** | Your dodge-roll becomes a short blink (teleport) that passes through enemies. | Blink **5 m**, i-frames for the whole **0.3 s**. Costs **+10** stamina (30 total). | Violet crystal monsters in Fungal Jungle (0.5%) |
 
 Epic gems from the first two biomes drop **long before** you have Steel. That's on purpose: you carry the prize and look forward to it.
 
@@ -376,9 +378,9 @@ Epic gems from the first two biomes drop **long before** you have Steel. That's 
 
 | Rule | Value |
 |---|---|
-| Where | At a **Gem Bench** (crafted near the forge; recipe in crafting doc) |
+| Where | At a **Gem Bench** (crafted near the Anvil; recipe in progression doc 4.1) |
 | Socketing cost | **Free** |
-| Removing a gem | Gem comes back **intact**. Costs **5 glow crystals**. |
+| Removing a gem | Gem comes back **intact**. Costs **5 blue glow crystals** (`crystal_blue`). |
 | Same gem twice in one item | The 2nd copy works at **50%** strength |
 | Two different elements in one item | Both work |
 | Epic gem in a normal socket | Not allowed (and normal gem in an epic socket: not allowed) |
@@ -392,17 +394,17 @@ Epic gems from the first two biomes drop **long before** you have Steel. That's 
 
 ### 5.1 Shared rules for all monsters
 
-**Sizes (which tunnels they fit in).** The dwarf is **1.3 m** tall and **0.7 m** wide, so a hand-dug tunnel is about **1.5 m** high.
+**Sizes (which tunnels they fit in).** The dwarf is **1.35 m** tall and **0.7 m** wide. One pickaxe dig scoops out a ball **2.7 m** across (Step 1 code: radius 1.35 m), so a hand-dug tunnel is about **2–2.5 m** high.
 
 | Size | Needs an opening at least | Meaning for the player |
 |---|---|---|
 | Tiny | 0.6 m | Goes anywhere, even cracks you can't use |
 | Small | 1.2 m | Follows you through any tunnel you dig |
-| Medium | 2.0 m | Can't follow into a normal dug tunnel |
-| Large | 3.0 m | Only big tunnels and caverns |
+| Medium | 2.0 m | Follows you through most dug tunnels |
+| Large | 3.0 m | Can't follow into a dug tunnel. Only big tunnels and caverns |
 | Huge | 5.0 m | Boss lairs and caverns only |
 
-- **Monsters never dig** in this version. Digging a small tunnel is a real escape from big monsters. That's part of being a dwarf.
+- **Monsters never dig** in this version. Digging a tunnel is a real escape from Large and Huge monsters. That's part of being a dwarf.
 - If a monster can't reach you for **10 s**, it gives up and goes home (leash). Ranged monsters keep shooting while they can see you.
 
 **AI states (every monster uses these; tables only list what is special):**
@@ -439,7 +441,7 @@ Player is expected to have **Stone → Copper** gear here. Hits are small. Monst
 | **Wickwing** | Moth the size of a hat, drawn to your lantern, glittery dust | Tiny | 25 | 0 | 20 | ×1.0 / ×0.75 / ×1.5 | −50% / 0 / 0 | 1–3 (start 2) | 5 |
 | **Bogbelly** | Round stream toad with a sticky tongue and a big throat sac | Medium | 70 | 5 | 60 | ×1.0 / ×1.25 / ×1.0 | 0 / −25% / 25% | Alone | 12 |
 | **Rustwight** | Rusty dwarf armor held together by moss, eyes of blue mushroom light | Small | 90 | 25 | 80 | ×0.75 / ×1.5 / ×0.75 | 25% / 0 / 100% (immune) | 1–2 | 20 |
-| **Cairnling** | Squat stone guardian from the old ruins, runes glowing on its chest | Medium | 140 | 40 | 120 | ×0.5 / ×1.5 / ×0.75 | 50% / 50% / 100% (immune) | Alone | 30 |
+| **Cairnling** | Squat stone guardian from the old ruins, runes glowing on its chest | Medium | 120 | 40 | 120 | ×0.5 / ×1.5 / ×0.75 | 50% / 50% / 100% (immune) | Alone | 30 |
 
 Negative resist = weakness (takes more). Example: Wickwing −50% fire takes 1.5× fire damage.
 
@@ -474,7 +476,7 @@ Negative resist = weakness (takes more). Example: Wickwing −50% fire takes 1.5
 | Rustwight | Starts "asleep" as an armor pile. Wakes if you come within **4 m** or touch ruin loot. | Old dwarf ruins | Rusty scrap ×3 (80%, smelts to copper), Old rune ×1 (2%), Leech Gem (3%) |
 | Cairnling | Slow (walk 2 m/s). Never leaves its ruin room. Doesn't chase past its doorway. | Ruin halls, guarding chests | Cut stone ×6 (100%), Rune shard ×1 (25%), Jolt Gem (4%) |
 
-**Speeds (all Mossy monsters, m/s walk / run):** Mossnipper 2/5, Skitterling 3/7, Wickwing fly 6, Bogbelly 1.5/4 (hops), Rustwight 2/4.5, Cairnling 2/2. **Player:** walk 3.5, run 6.
+**Speeds (all Mossy monsters, m/s walk / run):** Mossnipper 2/5, Skitterling 3/7, Wickwing fly 6, Bogbelly 1.5/4 (hops), Rustwight 2/4.5, Cairnling 2/2. **Player:** walk 4.0, run 6.5 (same as Step 1 code).
 
 ### 5.3 Fungal Jungle monsters (biome 2)
 
@@ -484,9 +486,9 @@ Player arrives with **Copper** and moves to **Silver** gear. Hits hurt more. Spo
 
 | Monster | Look (one line) | Size | HP | Armor | Stun max | Slash / Blunt / Pierce | Fire / Frost / Poison resist | Pack size | XP |
 |---|---|---|---|---|---|---|---|---|---|
-| **Sporeling** | Knee-high walking mushroom with a puffy cap that wheezes | Small | 80 | 0 | 50 | ×1.5 / ×1.0 / ×0.75 | −50% / 0 / 100% (immune) | 2–4 (start 3) | 15 |
+| **Wheezecap** | Knee-high walking mushroom with a puffy cap that wheezes | Small | 80 | 0 | 50 | ×1.5 / ×1.0 / ×0.75 | −50% / 0 / 100% (immune) | 2–4 (start 3) | 15 |
 | **Needlemite** | Dog-sized mite, glassy legs, long needle mouth | Small | 45 | 10 | 40 | ×1.0 / ×1.0 / ×1.5 | 0 / −25% / 50% | 4–7 (start 5) | 10 |
-| **Husk Charger** | Horned beetle as big as a cart, shell like dark bronze | Large | 260 | 40 (front), 0 (back) | 160 | ×0.5 / ×1.5 / ×1.0 | 0 / 0 / 25% | Alone or 2 | 50 |
+| **Husk Charger** | Horned beetle as big as a cart, shell like dark bronze | Large | 210 | 40 (front), 0 (back) | 160 | ×0.5 / ×1.5 / ×1.0 | 0 / 0 / 25% | Alone or 2 | 50 |
 | **Gill Stalker** | Tall thin mantis-bug that hides under mushroom caps, scythe arms | Medium | 150 | 10 | 90 | ×1.0 / ×1.0 / ×1.25 | −25% / 0 / 50% | Alone | 40 |
 | **Cap Spitter** | Rooted mushroom with a mouth-like gill that lobs spore bombs | Medium | 110 | 0 | 70 | ×1.5 / ×0.75 / ×0.5 | −50% / 0 / 100% (immune) | 1–3 (start 2) | 25 |
 
@@ -494,9 +496,9 @@ Player arrives with **Copper** and moves to **Silver** gear. Hits hurt more. Spo
 
 | Monster | Attack | Tell (s) | Damage | Parry | Notes |
 |---|---|---|---|---|---|
-| Sporeling | Cap Butt | 0.6 | 12 blunt | Any | Headbutt |
-| Sporeling | Spore Puff | 1.0 | 0 + cloud | Gust | Cap swells. Cloud **3 m**, lasts **5 s**, **+25 poison buildup/s** |
-| Sporeling | Death Burst (on death) | 0.8 | Cloud as above | Gust | Shakes before popping. Fire kill = no cloud. |
+| Wheezecap | Cap Butt | 0.6 | 12 blunt | Any | Headbutt |
+| Wheezecap | Spore Puff | 1.0 | 0 + cloud | Gust | Cap swells. Cloud **3 m**, lasts **5 s**, **+25 poison buildup/s** |
+| Wheezecap | Death Burst (on death) | 0.8 | Cloud as above | Gust | Shakes before popping. Fire kill = no cloud. |
 | Needlemite | Needle Jab | 0.5 | 9 pierce + 20 poison buildup | Any | |
 | Needlemite | Leap Bite | 0.7 | 14 pierce | Any | From 5 m. Spear Brace works. |
 | Husk Charger | Horn Gore | 0.9 | 22 pierce | Any | |
@@ -512,7 +514,7 @@ Player arrives with **Copper** and moves to **Silver** gear. Hits hurt more. Spo
 
 | Monster | Special behavior | Lives in | Drops (count, chance) |
 |---|---|---|---|
-| Sporeling | Slow (1.5/3 m/s). Puffs first, then walks in. | Everywhere on fungus floors | Spore cap ×2 (80%, food/cooking), Spore powder ×1 (50%), Blight Gem (2%) |
+| Wheezecap | Slow (1.5/3 m/s). Puffs first, then walks in. | Everywhere on fungus floors | Giant mushroom flesh ×2 (80%, food/cooking), Spore powder ×1 (50%), Blight Gem (2%) |
 | Needlemite | Pack AI: 2 attack while the rest circle at 4 m, then swap. Fast (3/7.5 m/s) | Bug nests, mushroom roots | Needle ×2 (70%, bolt crafting), Venom sac ×1 (25%) |
 | Husk Charger | Turns slowly (**90°/s**). Get behind it: back has 0 armor. Can't enter tunnels under 3 m. | Big caverns, wide tunnels | Husk plate ×2 (90%), Beetle meat ×3 (100%), Horn ×1 (30%) |
 | Gill Stalker | Hides still under a cap. Revealed if you come within **6 m** with lantern lit, or within 3 m without. Flees to a new cap at 30% HP (the only monster that hides again). | Giant mushroom forests | Scythe blade ×1 (60%), Stalker meat ×2 (80%), Keen Gem (3%) |
@@ -528,10 +530,32 @@ These never start a fight (except where noted). Spec 5.4 says hunting is a food 
 | **Flitter** | Mossy | Small cave bat with blue ear tufts | Tiny | 10 | Flies in loops near ceilings, flees from light. Crossbow target. | Wing meat ×1, Leathery skin ×1 (50%) |
 | **Pebblepinch** | Mossy | Crayfish in streams | Tiny | 15 | Hides under stones in water. Pinches for 3 if grabbed, then flees. | Tail meat ×1 |
 | **Truffle Hog** | Fungal | Snouted, six-legged grazer with mushroom-cap ears | Medium | 90 | **Neutral:** fights back if hit (Tusk Shove: tell 0.8 s, 12 blunt, parry Any), runs after losing 50% HP. Digs up truffles: follow one to find truffle patches. | Hog meat ×4, Truffle ×1 (40%), Hide ×2 |
-| **Glow Snail** | Fungal | Slow snail with a glowing green shell | Small | 30 | Never moves fast (1 m/s). Leaves a glowing trail for 30 s. | Snail meat ×2, Glow slime ×2 (lantern fuel) |
+| **Lampshell Snail** | Fungal | Slow snail with a glowing green shell | Small | 30 | Never moves fast (1 m/s). Leaves a glowing trail for 30 s. | Snail meat ×2, Glow slime ×2 (lantern fuel) |
 | **Puffpod Grazer** | Fungal | Floating jellyfish-like spore sack | Small | 20 | Drifts. Pops into a **harmless** spore cloud on death. | Puffpod jelly ×2 (counts as food and drink, like juicy mushrooms) |
 
 Animals respawn in their area **20 minutes** after being killed, if no player is within 50 m.
+
+### 5.5 Drop names → item ids
+
+The drop tables above use fun names. In the game, many of them are the **same item** from the item list (progression doc section 1). This table says which.
+
+| Drop names in this doc | Item id (progression doc) |
+|---|---|
+| Nipper meat, Raw lizard meat, Toad leg, Shuffler meat, Wing meat, Tail meat | `critter_meat` |
+| Skitter hide, Leathery skin, Moss chitin, Shell plate, Hide (Truffle Hog) | `critter_hide` |
+| Beetle meat, Stalker meat, Hog meat, Snail meat | `beetle_meat` |
+| Husk plate, Horn | `chitin_plate` |
+| Giant mushroom flesh | `mushroom_flesh` |
+| Truffle | `spore_truffle` |
+| Puffpod jelly | `bellcap` (food and drink) |
+| Cut stone | `cut_stone` |
+| Rusty scrap | `rusty_scrap` (smelts: 3 → 1 copper ingot) |
+| Old rune, Rune, Random rune | a rune (progression doc 8) |
+| Rune shard | `rune_shard_<colour>`, random colour |
+| Red / Blue / Green / Violet / Amber / White crystal | `crystal_red` / `crystal_blue` / `crystal_green` / `crystal_violet` / `crystal_amber` / `crystal_white` |
+| Glow spores, Glow slime | `glow_slime` (weak lantern fuel, burns like wood) |
+
+Everything else (Glitter dust, Wickwing wing, Throat sac, Spore powder, Needle, Venom sac, Scythe blade, Spitter gill, and the boss materials like Queen's carapace) is a **special crafting item** owned by this doc. Their recipes (bolts, weapons, armor) are not designed yet; they get written before Step 5.
 
 ---
 
@@ -547,7 +571,7 @@ Spec rule: while the leader lives, the pack is stronger. Kill the leader and the
 | Skitterling | **Skitterling Ringleader** | 25% |
 | Wickwing | **Wickwing Lamplady** | 15% |
 | Rustwight | **Rustwight Captain** | 30% (always in ruin halls with 2+ Rustwights) |
-| Sporeling | **Sporeling Grandcap** | 40% |
+| Wheezecap | **Wheezecap Grandcap** | 40% |
 | Needlemite | **Needlemite Broodkeeper** | 40% (always in nests) |
 | Cap Spitter | **Cap Spitter Oldgill** | 30% |
 
@@ -564,7 +588,7 @@ Solo monsters (Bogbelly, Cairnling, Husk Charger, Gill Stalker) never have leade
 | Armor | **+10** |
 | Tells | **Same speed** (fair for parrying) |
 | XP | **×3** |
-| Drops | Normal drops **×2** + **1 rune** (20%) + 1 normal gem (10%) |
+| Drops | Normal drops **×2** + **1 rune** (10%) + 1 normal gem (10%) |
 
 ### 6.3 The pack boost
 
@@ -601,7 +625,7 @@ Spec rule: some monsters come in crystal-colored versions with matching powers. 
 | **Ember-crested** | Red | +5 fire damage, +30 burn buildup | Leaves a burning patch (2 m, 3 s, 5 fire/s) where it dies | Fire **75%** | Frost **−50%** |
 | **Rime-crested** | Blue | +5 frost damage, +30 chill buildup | Its hits that you block still add 15 chill buildup | Frost **75%** | Fire **−50%** |
 | **Blight-crested** | Green | +4 poison damage, +35 poison buildup | Leaves a 2 m poison cloud for 4 s every 10 s | Poison **100%** | Fire **−25%** |
-| **Shift-crested** | Purple | +0 | **Blink:** every **8 s** teleports to **6 m** behind or beside its target. Tell: purple shimmer **0.5 s** before. Can't blink while stunned. | All elements **25%** | Pierce **×1.25** |
+| **Shift-crested** | Violet | +0 | **Blink:** every **8 s** teleports to **6 m** behind or beside its target. Tell: violet shimmer **0.5 s** before. Can't blink while stunned. | All elements **25%** | Pierce **×1.25** |
 | **Amber-crested** | Amber (gold-orange) | +0 | **Stone skin:** armor **+30**. Its heaviest attack becomes ⛨ crushing. | Physical (via armor) | Blunt **×1.25** |
 
 ### 7.2 Stat changes (on top of the normal monster)
@@ -618,8 +642,8 @@ Spec rule: some monsters come in crystal-colored versions with matching powers. 
 
 | Where | Chance any spawned monster is a crystal variant | Color split |
 |---|---|---|
-| Mossy Hollows | **4%** | Red 30%, Blue 30%, Amber 30%, Purple 10%, Green 0% |
-| Fungal Jungle | **7%** | Green 35%, Red 20%, Purple 20%, Amber 15%, Blue 10% |
+| Mossy Hollows | **4%** | Red 30%, Blue 30%, Amber 30%, Violet 10%, Green 0% |
+| Fungal Jungle | **7%** | Green 35%, Red 20%, Violet 20%, Amber 15%, Blue 10% |
 | Pack leaders | Can be crystal variants (stacks both buffs) | Same split |
 | Passive animals, bosses | Never | — |
 
@@ -630,7 +654,7 @@ Spec rule: some monsters come in crystal-colored versions with matching powers. 
 | Red | Red crystal ×4 | Ember Gem 15% |
 | Blue | Blue crystal ×4 | Rime Gem 15% |
 | Green | Green crystal ×4 | Blight Gem 15% |
-| Purple | Purple crystal ×3 | Swift Gem 15%, Shiftstep epic gem 0.5% (Fungal only) |
+| Violet | Violet crystal ×3 | Swift Gem 15%, Shiftstep epic gem 0.5% (Fungal only) |
 | Amber | Amber crystal ×4 | Bulwark Gem 15% |
 
 ---
@@ -639,23 +663,23 @@ Spec rule: some monsters come in crystal-colored versions with matching powers. 
 
 ### 8.1 How bosses fit the game (from the spec)
 
-- **Main boss** (one per biome): hidden lair. Found with **3 wall markings**: 1st marking draws a big circle on the map (**radius 80 m**), 2nd a smaller circle (**radius 30 m**), 3rd shows the exact spot. Markings are in old ruins and big caverns; the Cave Maker places **5** per biome so you only need any 3.
+- **Main boss** (one per biome): hidden lair. Found with **3 wall markings**: 1st marking draws a big circle on the map (**radius 120 m**), 2nd a smaller circle (**radius 45 m**), 3rd shows the exact spot. The Cave Maker places exactly **3** per biome, all reachable without digging (one in the Great Hall, one in a small ruin or camp, one on a cavern wall). Rules and numbers: world doc 3.2.
 - **Main boss drop:** the part needed for the next pickaxe (with the biome's best ore).
 - **Side bosses:** guard big caverns (treasure, rare ore, blueprints). Discovering their cavern starts raids (8.6).
 - **Boss drops:** every player within **60 m** gets their own copy.
 - **Re-summoning:** each main boss lair has an **altar**. Placing an offering re-summons the boss (for more drops or another epic gem). Offering listed per boss.
-- **Lair walls** are made of the border rock your current pickaxe can't dig, so nobody can tunnel around the fight. Side-boss caverns are normal rock.
+- **Lair walls:** the lair is sealed inside normal rock, and you **dig your way in** after the 3rd marking (world doc 3.1). When the fight starts, the lair walls glow and **can't be dug until the fight ends** (win or reset), so nobody can tunnel around the fight. Side-boss caverns are normal rock.
 - Bosses don't leash. They **reset to full HP** if every player is more than 60 m away or dead for **30 s**.
 
-### 8.2 Mossy Hollows main boss: **Orrumhal, the Mossbound Warden**
+### 8.2 Mossy Hollows main boss: **Orrumhal, the Mossbound Keeper**
 
 **Look:** a 5 m stone guardian the old dwarves carved to protect their deepest hall, now wrapped in moss and roots, blue mushrooms growing from its shoulders, a cracked glowing stone in its chest.
 
 | Value | Number |
 |---|---|
 | Size | Huge |
-| HP | **2400** |
-| Armor | **50** (phase 3 heartstone: **0**) |
+| HP | **2000** |
+| Armor | **30** (phase 3 heartstone: **0**) |
 | Slash / Blunt / Pierce | ×0.75 / ×1.25 / ×0.75 |
 | Fire / Frost / Poison | 25% / 25% / 100% (immune) |
 | Stun max | **200** (+30% each stun) |
@@ -680,20 +704,20 @@ Spec rule: some monsters come in crystal-colored versions with matching powers. 
 | Hall Quake | 2+ | 1.5 | 15 per ring, 3 rings | Gust (or jump/roll each ring) | Both fists raised, slams floor. Rings 1.0 s apart. |
 | Heart Pulse | 3 | 1.5 | 30 fire, 6 m circle | ⛨ Shield + Gust | Chest glows brighter and brighter. Every **20 s** |
 
-**Arena needs:** round hall **30 m** across, ceiling **12 m**, **4 stone pillars** (each breaks after 1 Fist Slam: cover that runs out), one entrance tunnel (3 m) that seals with a stone door when the fight starts and opens on win or reset.
+**Arena needs:** round hall **30 m** across, ceiling **12 m**, **4 stone pillars** (each breaks after 1 Fist Slam: cover that runs out), the hole you dug in is the only entrance: a stone door grows over it when the fight starts and opens on win or reset.
 
 **Drops (each nearby player):**
 
 | Drop | Count | Chance |
 |---|---|---|
-| **Warden's Heartstone** (part for the **Copper Pickaxe**, which breaks the border into Fungal Jungle) | 1 | 100% |
-| Copper bar | 10 | 100% |
-| Random rune | 1 | 100% |
+| **Keeper's Heartstone** (part for the **Copper Pickaxe**, which breaks the border into Fungal Jungle) | 1 | 100% |
+| Copper ingot | 10 | 100% |
+| Random rune | 2 | 100% |
 | Epic gem: **choose Cinder Wake or Hoarfrost Pulse** | 1 | 100% first kill, 20% re-summons |
-| Ancient blueprint "Warden's Hall" (building style) | 1 | 100% first kill |
-| Warden trophy (wall decoration) | 1 | 100% |
+| Ancient blueprint "Keeper's Hall" (building style) | 1 | 100% first kill |
+| Keeper trophy (wall decoration) | 1 | 100% |
 
-**Re-summon offering:** 10 copper bars + 5 glow crystals + 1 rune shard.
+**Re-summon offering:** 10 copper ingots + 5 blue glow crystals + 1 rune shard (any colour).
 
 ### 8.3 Mossy Hollows side bosses
 
@@ -701,7 +725,7 @@ Spec rule: some monsters come in crystal-colored versions with matching powers. 
 
 | Value | Number |
 |---|---|
-| Size / HP / Armor | Large / **700** / 15 |
+| Size / HP / Armor | Large / **1000** / 15 |
 | Slash / Blunt / Pierce | ×1.25 / ×1.0 / ×1.0 |
 | Stun max | 120 |
 | Pack leader for | Mossnippers (gives them the 6.3 boost) |
@@ -714,9 +738,9 @@ Spec rule: some monsters come in crystal-colored versions with matching powers. 
 | Brood Call | 1.5 | Summons **4 Mossnippers** (every 40 s) | Interrupted if she takes **30 stun** during the call | Screeches, eggs glow |
 
 Arena: cavern **25 m**, ceiling 8 m, soft moss floor (needed for Burrow Strike).
-Drops (each player): Queen's carapace ×1 (shield upgrade material), Copper ore ×15, Random normal gem ×1 (50%), Rune ×1 (50%).
+Drops (each player): Queen's carapace ×1 (shield upgrade material), Copper ore ×15, Random normal gem ×1 (50%), Rune ×1 (100%).
 
-**Brask, the Rusted Thane** — the animated armor of a dwarf lord, taller than a dwarf, cloak of moss, a great rusty axe. Guards the **Thane's Hall** (old dwarf treasure room and blueprints).
+**Brask, the Rusted Thane** — the animated armor of a dwarf lord, taller than a dwarf, cloak of moss, a great rusty axe. Guards the **Thane's Hall**: the biome's Great Hall ruin (world doc 3.1, old dwarf treasure room and blueprints).
 
 | Value | Number |
 |---|---|
@@ -734,7 +758,7 @@ Drops (each player): Queen's carapace ×1 (shield upgrade material), Copper ore 
 | Rally Horn | 1.5 | Wakes **2 more Rustwights** (once at 50% HP) | Interrupted by 30 stun during it | Raises a horn |
 
 Arena: hall **20 m**, ceiling 8 m, 2 rows of pillars, ruin decorations.
-Drops (each player): Named weapon **"Brask's Rustbite"** (Copper-tier axe, Q4, Jolt Gem socketed), Ancient blueprint "Thane's Hall", Copper bar ×6, Jolt Gem (50%), Leech Gem (25%).
+Drops (each player): Named weapon **"Brask's Rustbite"** (Copper-tier axe, Q4, Jolt Gem socketed), Ancient blueprint "Thane's Hall", Copper ingot ×6, Rune ×1 (100%), Jolt Gem (50%), Leech Gem (25%).
 
 ### 8.4 Fungal Jungle main boss: **Thallus, the Grey Bloom**
 
@@ -743,7 +767,7 @@ Drops (each player): Named weapon **"Brask's Rustbite"** (Copper-tier axe, Q4, J
 | Value | Number |
 |---|---|
 | Size | Huge |
-| HP | **5200** |
+| HP | **4400** |
 | Armor | **20** |
 | Slash / Blunt / Pierce | ×1.25 / ×1.0 / ×1.0 |
 | Fire / Frost / Poison | **−50%** (weak) / 0 / 100% (immune) |
@@ -771,20 +795,20 @@ Drops (each player): Named weapon **"Brask's Rustbite"** (Copper-tier axe, Q4, J
 | Choking Exhale | 2+ | 1.4 | Cone 8 m, cloud 6 s, 10 poison damage/s | Gust | Breathes in loudly, chest swells |
 | Trample | 3 | 1.1 | 30 blunt, KD | Any | Lowers head, runs 12 m |
 
-**Arena needs:** round cavern **40 m** across, ceiling **15 m**, floor of soft fungus mat (needed for Rooting), **6 giant mushroom stems** to hide behind (stems break after 2 Tramples), one entrance (4 m) sealed by a wall of spore growth during the fight.
+**Arena needs:** round cavern **40 m** across, ceiling **15 m**, floor of soft fungus mat (needed for Rooting), **6 giant mushroom stems** to hide behind (stems break after 2 Tramples), the hole you dug in is the only entrance, sealed by a wall of spore growth during the fight.
 
 **Drops (each nearby player):**
 
 | Drop | Count | Chance |
 |---|---|---|
 | **Bloomheart Core** (part for the **Silver Pickaxe**, which breaks the border into biome 3) | 1 | 100% |
-| Silver bar | 10 | 100% |
+| Silver ingot | 10 | 100% |
 | Random rune | 2 | 100% |
 | Epic gem: **choose Echoing Guard or Rootbound Heart** | 1 | 100% first kill, 20% re-summons |
 | Ancient blueprint "Bloom Garden" (mushroom-brick style) | 1 | 100% first kill |
 | Grey Bloom trophy | 1 | 100% |
 
-**Re-summon offering:** 10 silver bars + 5 green crystals + 3 spore caps.
+**Re-summon offering:** 10 silver ingots + 5 green glow crystals + 3 giant mushroom flesh.
 
 ### 8.5 Fungal Jungle side bosses
 
@@ -805,13 +829,13 @@ Drops (each player): Named weapon **"Brask's Rustbite"** (Copper-tier axe, Q4, J
 | Roll Over | 1.0 | 25 blunt | Any | Only when you're behind it: tips sideways to crush you |
 
 Arena: cavern **35 m**, ceiling 10 m, **5 rock pillars** (each takes 2 charges, then breaks).
-Drops (each player): Ironshell plate ×3 (heavy shield and armor material), Silver ore ×20, Bulwark Gem (50%), Rune (50%).
+Drops (each player): Ironshell plate ×3 (heavy shield and armor material), Silver ore ×20, Bulwark Gem (50%), Rune ×1 (100%).
 
-**Brood Mother Sivix** — a Needlemite queen with a swollen glowing abdomen, six long glassy legs, webs everywhere. Guards the **Brood Hollow** (bug nests, rare venom and blueprints for traps).
+**Sivix, Mother of Needles** — a Needlemite queen with a swollen glowing abdomen, six long glassy legs, webs everywhere. Guards the **Brood Hollow** (bug nests, rare venom and blueprints for traps).
 
 | Value | Number |
 |---|---|
-| Size / HP / Armor | Large / **1300** / 15 |
+| Size / HP / Armor | Large / **1600** / 15 |
 | Slash / Blunt / Pierce | ×1.0 / ×1.0 / ×1.5 |
 | Fire / Frost / Poison | −25% / −25% / 100% |
 | Stun max | 140 |
@@ -825,9 +849,9 @@ Drops (each player): Ironshell plate ×3 (heavy shield and armor material), Silv
 | Brood Swarm | 1.5 | Summons **6 Needlemites** (every 30 s, max 8 alive) | Interrupted by 30 stun during it | Screech, egg sacs on walls burst |
 
 Arena: cavern **30 m**, ceiling **12 m** (she uses it), webbed walls (fire burns webs and the egg sacs: **burning all 6 sacs stops Brood Swarm**).
-Drops (each player): Sivix silk ×5, Venom sac ×5, Blight Gem (100%), Ancient blueprint "Web Trap" (100% first kill), Bloomrot epic gem (5%).
+Drops (each player): Sivix silk ×5, Venom sac ×5, Blight Gem (100%), Rune ×1 (100%), Ancient blueprint "Web Trap" (100% first kill), Bloomrot epic gem (5%).
 
-**The Gloamstalker** — a Gill Stalker three times normal size, nearly see-through, two glowing eyes. Guards the **Lantern Grove** (rare glow crystals and the biome's best lantern upgrade recipe).
+**The Gloamstalker** — a Gill Stalker three times normal size, nearly see-through, two glowing eyes. Guards the **Lantern Grove**, the biome's Giant Mushroom Grove cavern (world doc 3.1; rare glow crystals and the biome's best lantern upgrade recipe).
 
 | Value | Number |
 |---|---|
@@ -845,7 +869,7 @@ Drops (each player): Sivix silk ×5, Venom sac ×5, Blight Gem (100%), Ancient b
 | Fade | 0.5 | Goes invisible for 8 s (every 25 s) | — (not an attack) | Shimmers. Lantern light reveals it within **6 m**; Glow bolts reveal it within their circle. |
 
 Arena: grove **30 m**, ceiling 15 m, giant mushrooms to hide among, dim (few glow plants).
-Drops (each player): Gloam scythe ×2 (spear upgrade material), Silver bar ×6, Big glow crystal ×5, Keen Gem (50%), Bloomrot epic gem (5%).
+Drops (each player): Gloam scythe ×2 (spear upgrade material), Silver ingot ×6, White glow crystal ×5, Rune ×1 (100%), Keen Gem (50%), Bloomrot epic gem (5%).
 
 ### 8.6 Raids
 
@@ -885,8 +909,8 @@ Drops (each player): Gloam scythe ×2 (spear upgrade material), Silver bar ×6, 
 |---|---|---|
 | Skerra, Nipper Queen | 1 Mossnipper Elder + 4 Mossnippers + 2 Skitterlings | 7 |
 | Brask, the Rusted Thane | 1 Rustwight Captain + 2 Rustwights + 1 Cairnling | 4 |
-| Old Ironshell | 2 Husk Chargers + 3 Sporelings | 5 |
-| Brood Mother Sivix | 1 Needlemite Broodkeeper + 6 Needlemites | 7 |
+| Old Ironshell | 2 Husk Chargers + 3 Wheezecaps | 5 |
+| Sivix, Mother of Needles | 1 Needlemite Broodkeeper + 6 Needlemites | 7 |
 | The Gloamstalker | 2 Gill Stalkers + 2 Cap Spitters | 4 |
 
 Each raider has the normal crystal variant chance for its biome.
@@ -936,8 +960,24 @@ Count = number of players within **60 m** when the fight starts (for bosses: ins
 | Mossnipper with Stone sword | ~2 s | 3 |
 | Rustwight with Copper mace | ~5 s | 5 |
 | Husk Charger with Silver mace, from behind | ~15 s | 8–10 |
-| Orrumhal, solo, Copper gear, good play | ~5 minutes | — |
-| Thallus, solo, Silver gear, good play | ~7 minutes | — |
+| Orrumhal, solo, Copper gear, good play | ~4–5 minutes | — |
+| Thallus, solo, Silver gear, good play | ~6 minutes | — |
+
+**Balance check (worked examples, Nov 14 review).** A real fight is not non-stop hitting: you wait for tells, dodge, and back off. So we guess you land hits about **40% of the time** ("uptime"). Fight time ≈ HP ÷ (damage per hit ÷ swing time × 0.4).
+
+| Fight | Weapon (Q1, +0) | Damage per light hit | Result |
+|---|---|---|---|
+| Mossnipper (30 HP) | Stone sword | 10 × 1.25 slash = 12.5 | **3 hits** |
+| Rustwight (90 HP, armor 25) | Copper mace | 11 × 1.3 × 1.5 blunt × 100/117.5 = 18.3 | **5 hits** |
+| Cairnling (120 HP, armor 40) | Copper mace | 11 × 1.3 × 1.5 × 100/128 = 16.8 | **8 hits** (fewer with heavies) |
+| Husk Charger (210 HP), from behind | Silver mace | 11 × 1.65 × 1.5 = 27.2 | **8 hits** |
+| Skerra (1000 HP, armor 15) | Copper sword | 13 × 1.25 × 100/115 = 14.1 every 0.55 s → 10.3 per s at 40% | **~1.6 min** (+ her adds ≈ 2 min) |
+| Brask (900 HP, armor 45) | Copper mace | 21.5 × 100/131.5 = 16.3 every 0.75 s → 8.7 per s | **~1.7 min** |
+| Sivix (1600 HP, armor 15) | Silver spear | 18.2 × 1.5 × 100/115 = 23.7 every 0.6 s → 15.8 per s | **~1.7 min** (+ swarm) |
+| Orrumhal (2000 HP, armor 30) | Copper sword | Phases 1–2: 13 × 0.75 × 100/130 = 7.5 → 5.5 per s. Phase 3 heartstone (0 armor, ×1.5): 14.6 → 10.6 per s | **~5 min** (mace: ~4 min) |
+| Thallus (4400 HP, armor 20) | Silver sword | 16.5 × 1.25 × 100/120 = 17.2 → 12.5 per s | **~6 min** (~4 min with an Ember Gem) |
+
+Before this review, Orrumhal had 2400 HP and 50 armor: a Copper sword needed about **370 light hits** (over 8 minutes). That was too long, so HP and armor came down.
 
 **Auto-checks to write** (little tests the computer runs):
 - Worked example in 2.2 returns 38.
@@ -951,13 +991,28 @@ Count = number of players within **60 m** when the fight starts (for bosses: ins
 
 ## 11. Open questions for the owner
 
-Each has a **default** (marked ★) that the doc already uses. Change it if you like another answer.
+Each has a **default** (marked ★) that the doc already uses. Change it if you like another answer. **All open questions from the three design docs are collected, numbered and de-duplicated in `docs/design/README.md`.** Answer them there.
 
 1. **Heavy attack button:** (A) ★ hold left click 0.3 s, (B) a separate key (middle mouse or Q), (C) Shift + left click.
 2. **Dodge-roll button:** (A) ★ Left Ctrl + direction, (B) double-tap a direction, (C) Alt.
 3. **Friendly fire damage:** (A) ★ half damage (×0.5), (B) full damage, (C) quarter damage.
 4. **Big monsters and small tunnels:** (A) ★ they can't follow you into tunnels smaller than them (digging is an escape), (B) some monsters can burrow after you, (C) they wait outside forever.
 5. **Epic gems from the first two bosses** (you can't use them until Steel): (A) ★ you choose 1 of 2 on first kill, (B) random, (C) no epic gems until the Steel biome.
-6. **Taking a gem out:** (A) ★ gem is kept, costs 5 glow crystals, (B) free, (C) the gem breaks.
+6. **Taking a gem out:** (A) ★ gem is kept, costs 5 blue glow crystals, (B) free, (C) the gem breaks.
 7. **Raids when nobody is home:** (A) ★ no raids unless a player is within 40 m of the base, (B) raids happen anyway and can damage buildings.
 8. **Aiming in fights:** (A) ★ soft aim help only (turns you up to 30°), (B) a lock-on key that keeps the camera on one enemy, (C) both, player chooses in settings.
+
+---
+
+## Review changes (Nov 14, 2026)
+
+The three design docs were written at the same time, so they disagreed in places. This review made them match.
+
+- **Boss fights were too long.** Orrumhal HP 2400 → **2000**, armor 50 → **30**. Thallus HP 5200 → **4400**. Skerra 700 → **1000** and Sivix 1300 → **1600** (they were too short). Cairnling 140 → **120** HP and Husk Charger 260 → **210** HP (to land in 3–8 hits). See the new balance check in section 10.
+- **Names that were too close to other games:** "Warden" → **Keeper** (Orrumhal, Keeper's Heartstone), "Sporeling" → **Wheezecap**, "Brood Mother" → **Sivix, Mother of Needles**, "Glow Snail" → **Lampshell Snail**. "Delver Gem" → **Burrow Gem** (Delver is already a rune set name).
+- **Crystal colours now match the item list:** purple → **violet**, and drops use the progression doc's crystal ids. "Bars" → **ingots** (`copper_ingot`, `silver_ingot`). Resin (not an item) → rope.
+- **Wall markings:** 3 per biome (not 5), circles 120 m then 45 m, to match the world doc.
+- **Boss lairs:** you dig into a sealed lair (world doc). The walls only become undiggable during the fight (they used to be border rock, which made digging in impossible).
+- **Runes:** every side boss drops 1 rune, main bosses drop 2, pack leaders 10% (rune rules belong to the progression doc).
+- **Matches the Step 1 code and the progression doc:** pickaxe swing stamina 4 → 5, player walk/run 4.0/6.5, dwarf height 1.35 m, dug tunnels are 2–2.5 m high (so Medium monsters can follow), hunger-at-zero effects, and quality/upgrade bonuses now use the same table as tools.
+- **Added:** section 5.5 (drop names → item ids) and the hand-lantern rule (no shield or two-handers until the back lantern).

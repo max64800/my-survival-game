@@ -53,6 +53,8 @@
 | `sporestone` | Sporestone | 100 | FJ (replaces most stone) | Sporestone blocks (dark building style) |
 | `amberrock` | Amberrock | 100 | FJ bands in cavern walls | Amber blocks (yellow building style) |
 | `ancient_brick` | Ancient Brick | 100 | Old dwarf ruins (MH, FJ) | Ruin-style building pieces |
+| `basalt` | Dark Basalt | 100 | MH deep floors, FJ bottom floor (blobs) | Dark building colour (raw, no cutting needed) |
+| `brown_rock` | Brown Rock | 100 | MH blobs | Brown building colour (raw, no cutting needed) |
 
 ### 1.2 Ores and crystals (raw)
 
@@ -65,6 +67,11 @@
 | `crystal_violet` | Violet Glow Crystal | 100 | FJ (common) | Lantern fuel, +2 upgrades (Silver tier) |
 | `crystal_amber` | Amber Glow Crystal | 100 | FJ (uncommon, near giant mushrooms) | Lantern fuel, Bright Lantern |
 | `crystal_white` | White Glow Crystal | 100 | MH + FJ rare; side bosses; ruin chests | Best lantern fuel, +3 upgrades, respec |
+| `crystal_red` | Red Glow Crystal | 100 | Red crystal monsters (combat doc 7.4), FJ rare near spore vents | Lantern fuel, Ember bolts |
+| `rusty_scrap` | Rusty Scrap | 100 | Rustwights (combat doc) | Smelter: 3 → 1 copper_ingot |
+| `glow_slime` | Glow Slime | 100 | FJ: Lampshell Snails, Cap Spitters | Weak lantern fuel (like wood) |
+
+**Step 1 code note:** the code calls the blue crystal `glow_crystal` and the starting pickaxe `stone_pickaxe`. In Step 3, rename them to `crystal_blue` and `pickaxe_stone` (no save files exist until Step 7, so renaming is free). Step 1 moss voxels drop `dirt`; Step 3 makes them drop `moss`.
 
 ### 1.3 Wood, plants and mushrooms (raw)
 
@@ -126,8 +133,8 @@ A waterskin holds **5 sips**. Recipes that say "1 water" use either 1 `water_buc
 
 | id | Name | Stack | Where found | What it's for |
 |---|---|---|---|---|
-| `boss_trophy_mossy` | (name set by combat doc) | 100 | Mossy Hollows main boss, 1 per nearby player | Copper pickaxe |
-| `boss_trophy_fungal` | (name set by combat doc) | 100 | Fungal Jungle main boss, 1 per nearby player | Silver pickaxe |
+| `keeper_heartstone` | Keeper's Heartstone | 100 | Mossy Hollows main boss (Orrumhal), 1 per nearby player | Copper pickaxe |
+| `bloomheart_core` | Bloomheart Core | 100 | Fungal Jungle main boss (Thallus), 1 per nearby player | Silver pickaxe |
 | `rune_<branch>_<set><n>` | Rune (e.g. `rune_miner_m1`) | 100 | See section 8 | Carve on the Rune Slab |
 | `rune_shard_<branch>` | Rune Shard (4 colours) | 100 | Duplicate runes turn into these | 3 shards → any missing rune of that colour |
 
@@ -141,7 +148,7 @@ So the pickaxe ladder has numbers. These get redesigned when biomes 3 and 4 are 
 | `iron_ingot` | 100 | Smelter: 2 iron_ore + 1 fuel | Iron tier |
 | `coal` | 100 | Biome 4 | Steel |
 | `steel_ingot` | 100 | Smelter: 1 iron_ingot + 2 coal → 1 | Steel tier |
-| `boss_trophy_biome3` / `boss_trophy_biome4` | 100 | Those bosses | Iron / Steel pickaxe |
+| `boss_part_biome3` / `boss_part_biome4` | 100 | Those bosses | Iron / Steel pickaxe |
 
 ### 1.9 Tools (stack 1)
 
@@ -165,8 +172,9 @@ Every material has a **hardness** number. Every pickaxe has a **dig power** numb
 
 - **Hits needed = hardness ÷ dig power, rounded up.**
 - Some materials have a **minimum tier**. A weaker pickaxe just bounces off (spark + "clink" sound + a tip: "Needs a Copper pickaxe").
-- One "spot" = a round blob about **1.2 m across**, so holes look smooth.
-- One swing takes **0.75 s** and costs **5 stamina**.
+- One "spot" = one dig: a round ball **2.7 m across** (radius 1.35 m, as in the Step 1 code), so holes look smooth. You can reach spots up to **4.5 m** away.
+- One swing takes **0.55 s** (Step 1 code) and costs **5 stamina**.
+- **Step 1 code uses a small scale:** hardness moss 1, dirt 1, stone 3, copper 5, and the stone pickaxe has power 1. It gives the **same number of hits** as the table below. In Step 3, switch to the ×10 scale below (stone pickaxe 10) so better pickaxes can have in-between powers like 13 and 17.
 - Damage on a half-dug spot fades back after **10 s** of not hitting it (so you can't "pre-chip" walls).
 
 ### 2.2 Dig power per pickaxe tier
@@ -186,40 +194,43 @@ Every material has a **hardness** number. Every pickaxe has a **dig power** numb
 | Material | Hardness | Min tier | Stone | Copper | Silver | Iron | Steel |
 |---|---|---|---|---|---|---|---|
 | Dirt | 10 | Stone | 1 | 1 | 1 | 1 | 1 |
-| Moss | 10 | Stone | 1 | 1 | 1 | 1 | 1 |
+| Moss / mycelium soil | 10 | Stone | 1 | 1 | 1 | 1 | 1 |
 | Clay | 15 | Stone | 2 | 2 | 1 | 1 | 1 |
 | Glow crystal (any colour) | 18 | Stone | 2 | 2 | 2 | 1 | 1 |
-| Stone | 20 | Stone | 2 | 2 | 2 | 1 | 1 |
 | Amberrock | 25 | Stone | 3 | 2 | 2 | 2 | 1 |
+| Stone / brown rock | 26 | Stone | 3 | 2 | 2 | 2 | 1 |
 | Marble | 30 | Stone | 3 | 3 | 2 | 2 | 2 |
 | Sporestone | 30 | Stone | 3 | 3 | 2 | 2 | 2 |
+| Basalt | 35 | Stone | 4 | 3 | 3 | 2 | 2 |
 | Ancient brick | 40 | Stone | 4 | 4 | 3 | 2 | 2 |
 | Copper ore | 45 | Stone | 5 | 4 | 3 | 3 | 2 |
 | Silver ore | 55 | Copper | — | 5 | 4 | 3 | 2 |
 | Iron ore (future) | 70 | Silver | — | — | 5 | 4 | 3 |
 | **Border rock 1** (MH → FJ) | 80 | Copper | — | 7 | 5 | 4 | 3 |
-| **Border rock 2** (FJ → biome 3) | 100 | Silver | — | — | 6 | 5 | 4 |
+| **Border rock 2** (Mossy → biome 3, north) | 100 | Silver | — | — | 6 | 5 | 4 |
 
-This matches the owner's rule: with the starting pickaxe, dirt is 1 hit, stone 2–3, ore 4–5. Each new pickaxe also gets "ore 4–5 hits" on its own biome's ore (Copper pick on silver = 5).
+This matches the owner's rule and the Step 1 code: with the starting pickaxe, dirt is 1 hit, stone 3, copper ore 5. Each new pickaxe also gets "ore 4–5 hits" on its own biome's ore (Copper pick on silver = 5).
 
-**Border rock** is a band about **3 m thick** at every biome edge, dark with glowing cracks. Breaking through takes about 1 minute with the right pickaxe. That's the "door" moment.
+**Border rock** is a wall **20 m thick** between biomes, dark with glowing cracks (world doc 1.1). At each **gate**, tunnels from both sides leave only a **4 m plug** to dig. Breaking through the plug takes about half a minute to a minute with the right pickaxe. That's the "door" moment. Step 1 code treats border rock as never diggable; the tier check arrives in Step 6.
 
 ### 2.4 Yield per dug spot
 
-| Material | Drops | Notes |
-|---|---|---|
-| Dirt | 2 `dirt` | 5% chance of 1 `root_tuber` near giant roots (MH) |
-| Moss | 1 `moss` + 1 `dirt` | |
-| Clay | 2 `clay` | |
-| Stone / sporestone / amberrock / marble | 2 of that stone | |
-| Ancient brick | 2 `ancient_brick` | |
-| Copper ore | 2 `copper_ore` + 1 `stone` | |
-| Silver ore | 2 `silver_ore` + 1 `sporestone` | |
-| Glow crystal | 2–4 of that colour (even odds) | Crystals regrow on the same wall after 60 min if the spot isn't built over |
-| Border rock | nothing | It's a wall, not a mine |
-| Any stone or ore spot | 0.15% (MH) / 0.2% (FJ) chance of a **rune pebble** | See section 8 |
+**The rule (same as the Step 1 code):** a dig removes a ball of voxels (1 m "sugar cubes"). You get **1 item for every few voxels** of each material in that ball, and always at least 1 item per dig. A full ball of solid rock is about 10 voxels; a dig at a tunnel wall is usually half rock, about 5–6 voxels.
 
-So **1 ore spot = 1 ingot** (2 ore → 1 ingot). Easy to remember.
+| Material | Item | Voxels per item | Typical dig at a wall | Notes |
+|---|---|---|---|---|
+| Dirt | `dirt` | 4 | 1–2 | 5% chance of 1 `root_tuber` near giant roots (MH) |
+| Moss / mycelium soil | `moss` (Step 1 code: `dirt`) / `dirt` | 4 | 1–2 | |
+| Clay | `clay` | 3 | 2 | |
+| Stone and every rock colour | that rock (`stone`, `marble`, `basalt`…) | 3 | 2 | |
+| Ancient brick | `ancient_brick` | 3 | 2 | |
+| Copper ore | `copper_ore` | 3 | 2 | |
+| Silver ore | `silver_ore` | 3 | 2 | |
+| Glow crystal | that colour's crystal | — | 2–4 (even odds) | Crystals regrow on the same wall after 60 min if the spot isn't built over |
+| Border rock | nothing | — | — | It's a wall, not a mine |
+| Any stone or ore spot | — | — | — | 0.15% (MH) / 0.2% (FJ) chance of a **rune pebble** (section 8) |
+
+So a typical **ore dig ≈ 2 ore ≈ 1 ingot** (2 ore → 1 ingot). Easy to remember.
 
 ### 2.5 Chopping (axes)
 
@@ -230,7 +241,9 @@ Same math as digging. Axe "chop power" = same numbers as the pickaxe of that tie
 | Giant root (MH) | 30 | Stone | 3 | 3 | 2 | 3 `rootwood` |
 | Giant mushroom stalk (FJ) | 45 | Copper | — | 4 | 3 | 3 `mushroom_wood` + 1 `mushroom_flesh` |
 
-A giant root or mushroom has **4 chop points** (so about 12 rootwood per root). Chopped roots and mushrooms **regrow after 90 minutes** of world time, unless something is built within 4 m of them. Wood never runs out.
+A giant root or mushroom has **4 chop points** (so about 12 rootwood per root).
+
+**First wood:** the axe needs a Workbench, and the Workbench needs rootwood. So the **pickaxe can also chop** giant roots at **half power** (Stone pickaxe on a root = 6 hits). That gets you the first 13 rootwood for the campfire and workbench. Chopped roots and mushrooms **regrow after 90 minutes** of world time, unless something is built within 4 m of them. Wood never runs out.
 
 ---
 
@@ -245,7 +258,7 @@ Stone pickaxe (start)
    └─ mine copper in Mossy Hollows, find 3 wall markings, beat the Mossy boss
 Copper pickaxe  = copper + Mossy boss part  → breaks Border rock 1 → Fungal Jungle
    └─ mine silver, beat the Fungal boss
-Silver pickaxe  = silver + Fungal boss part → breaks Border rock 2 → biome 3
+Silver pickaxe  = silver + Fungal boss part → breaks Border rock 2 (back in Mossy, north side) → biome 3
 Iron, Steel     = same pattern, later biomes
 ```
 
@@ -259,13 +272,13 @@ Only the **pickaxe** needs the boss part. Axes and other tools of a tier only ne
 | `axe_stone` | Workbench | 3 stone, 2 rootwood, 2 rope | Start |
 | `build_hammer` | Workbench | 3 stone, 2 rootwood | Workbench built |
 | `axe_copper` | Anvil | 6 copper_ingot, 3 plank_root, 1 leather | First copper ingot |
-| `pickaxe_copper` | Anvil | 8 copper_ingot, 4 plank_root, 2 leather, **1 boss_trophy_mossy** | Holding the Mossy boss part |
+| `pickaxe_copper` | Anvil | 8 copper_ingot, 4 plank_root, 2 leather, **1 keeper_heartstone** | Holding the Mossy boss part |
 | `axe_silver` | Anvil | 6 silver_ingot, 3 plank_mushroom, 2 chitin_plate | First silver ingot |
-| `pickaxe_silver` | Anvil | 8 silver_ingot, 4 plank_mushroom, 2 chitin_plate, **1 boss_trophy_fungal** | Holding the Fungal boss part |
+| `pickaxe_silver` | Anvil | 8 silver_ingot, 4 plank_mushroom, 2 chitin_plate, **1 bloomheart_core** | Holding the Fungal boss part |
 | `axe_iron` *(future)* | Anvil | 6 iron_ingot, 3 plank_mushroom, 2 leather | First iron ingot |
-| `pickaxe_iron` *(future)* | Anvil | 8 iron_ingot, 4 plank_mushroom, 2 leather, 1 boss_trophy_biome3 | Biome 3 boss part |
+| `pickaxe_iron` *(future)* | Anvil | 8 iron_ingot, 4 plank_mushroom, 2 leather, 1 boss_part_biome3 | Biome 3 boss part |
 | `axe_steel` *(future)* | Anvil | 6 steel_ingot, 3 plank_mushroom, 2 leather | First steel ingot |
-| `pickaxe_steel` *(future)* | Anvil | 8 steel_ingot, 4 plank_mushroom, 2 leather, 1 boss_trophy_biome4 | Biome 4 boss part |
+| `pickaxe_steel` *(future)* | Anvil | 8 steel_ingot, 4 plank_mushroom, 2 leather, 1 boss_part_biome4 | Biome 4 boss part |
 
 **Tool durability: none.** Tools never break or wear out. Losing gear only happens at death (and you keep tools then too, see section 9). This keeps the game gentle and saves a whole "repair" system. (Open question 1.)
 
@@ -341,6 +354,7 @@ A recipe "unlocks" (appears in the menu) the first time you pick up one of its k
 | 11 | **Brewing Barrel** | 10 plank_root, 2 copper_ingot, 2 rope | First `root_tuber` + Cooking Pot built | — | Ales and meads |
 | 12 | **Rune Slab** | 15 stone, 5 cut_stone | First rune picked up | — | Carve runes, respec |
 | 13 | **Chests** | see section 10 | Workbench | — | Storage |
+| 14 | **Gem Bench** (Step 5) | 8 plank_root, 4 copper_ingot, 2 crystal_blue | First gem picked up | — | Put gems into gear, take them out (combat doc 4.4) |
 
 **Stations use nearby chests.** When you craft at a station, it can take materials from your bag **and** any chest within **10 m** of it. (This saves a lot of walking back and forth. If it causes co-op bugs, it can wait until Step 4.)
 ### 4.2 Smelter details
@@ -349,6 +363,7 @@ A recipe "unlocks" (appears in the menu) the first time you pick up one of its k
 |---|---|---|---|
 | 2 copper_ore | 1 copper_ingot | 20 s | 1 wood |
 | 2 silver_ore | 1 silver_ingot | 30 s | 1 wood |
+| 3 rusty_scrap | 1 copper_ingot | 20 s | 1 wood |
 | 2 clay | 2 clay_brick | 10 s | 1 wood per 2 batches |
 | 3 crystal_blue + 1 clay | 1 lantern_lens | 30 s | 1 wood |
 | 2 iron_ore *(future)* | 1 iron_ingot | 40 s | 1 wood |
@@ -374,6 +389,8 @@ A recipe "unlocks" (appears in the menu) the first time you pick up one of its k
 
 ### 5.1 How fuel works
 
+**What Step 1 code already does:** the lantern has a fuel **tank** of **600 s** (10 minutes). Press **R** to put one crystal in: it adds **240 s** (4 minutes). When the tank is empty, a dim glow stays. Step 3 keeps the tank and adds the fuel slot below, which feeds the tank by itself.
+
 - The lantern has **one fuel slot** that holds up to **20 pieces** of one fuel type.
 - It burns one piece at a time. When a piece runs out, the next one starts.
 - Press **R** to fill the slot from your bag (it takes the fuel type already in the slot, or the best one you have).
@@ -384,28 +401,31 @@ A recipe "unlocks" (appears in the menu) the first time you pick up one of its k
 
 | Fuel | Burn time per piece | Light colour | Effect while burning |
 |---|---|---|---|
-| `rootwood` / `mushroom_wood` | 2 min | Flickering orange | Radius ×0.85 (smoky, cheap) |
-| `crystal_blue` | 8 min | Cool blue | Normal. The "default" light. |
-| `crystal_green` | 8 min | Soft green | Mushrooms, tubers and fiber within the light get a soft outline |
-| `crystal_violet` | 10 min | Violet | Rune pebbles, hidden wall markings and ruin secrets within the light sparkle |
-| `crystal_amber` | 10 min | Warm gold | Radius ×1.15 |
-| `crystal_white` | 20 min | Bright white | Radius ×1.25, brightness ×1.2 |
+| `rootwood` / `mushroom_wood` / `glow_slime` | 1 min | Flickering orange (slime: pale green) | Radius ×0.85 (smoky, cheap) |
+| `crystal_blue` | 4 min (= 240 s, same as Step 1 code) | Cool blue | Normal. The "default" light. |
+| `crystal_green` | 4 min | Soft green | Mushrooms, tubers and fiber within the light get a soft outline |
+| `crystal_red` | 4 min | Warm red | Wickwings and other light-chasing monsters notice you from 25% less far |
+| `crystal_violet` | 5 min | Violet | Rune pebbles, hidden wall markings and ruin secrets within the light sparkle |
+| `crystal_amber` | 5 min | Warm gold | Radius ×1.15 |
+| `crystal_white` | 10 min | Bright white | Radius ×1.25, brightness ×1.2 |
+
+Fuel use check: about **15 blue crystals per hour** of play. One crystal dig gives 2–4, and crystals regrow, so a few crystal walls near base keep you going.
 
 So wood is a cheap backup and crystals are the "good" fuel, which fits the cave.
 
 ### 5.3 The dim glow when empty
 
-- When the slot is empty (or the lantern is off), a **dim glow stays**: radius **3 m**, **15%** brightness, pale yellow.
+- When the slot is empty (or the lantern is off), a **dim glow stays**: radius **4.5 m**, about **25%** brightness, pale yellow (Step 1 code: light range 4.5 m, energy 0.45 instead of 1.7).
 - It never goes fully dark. This is a rule, and an auto-check tests it.
 
 ### 5.4 Lantern upgrades
 
 | Lantern | Where it sits | Light radius | Brightness | Fuel use | Recipe (station) | Unlocks when |
 |---|---|---|---|---|---|---|
-| `lantern_hand` | Left hand | 8 m | 100% | ×1.0 | Start item | Start |
-| `lantern_back` | On your back, glowing above your head. **Hands free** | 10 m | 100% | ×1.0 | 4 copper_ingot, 2 leather, 1 lantern_lens, 2 rope (Anvil) | First copper ingot |
-| `lantern_bright` | Back | 13 m | 120% | ×0.85 | 6 silver_ingot, 2 chitin_plate, 2 lantern_lens, 5 crystal_amber (Anvil) | First silver ingot |
-| `lantern_grand` *(future)* | Back | 16 m | 140% | ×0.75 | 6 iron_ingot, 3 lantern_lens, 3 crystal_white (Anvil) | First iron ingot |
+| `lantern_hand` | Left hand | 14 m (Step 1 code) | 100% | ×1.0 | Start item | Start |
+| `lantern_back` | On your back, glowing above your head. **Hands free** | 16 m | 100% | ×1.0 | 4 copper_ingot, 2 leather, 1 lantern_lens, 2 rope (Anvil) | First copper ingot |
+| `lantern_bright` | Back | 19 m | 120% | ×0.85 | 6 silver_ingot, 2 chitin_plate, 2 lantern_lens, 5 crystal_amber (Anvil) | First silver ingot |
+| `lantern_grand` *(future)* | Back | 22 m | 140% | ×0.75 | 6 iron_ingot, 3 lantern_lens, 3 crystal_white (Anvil) | First iron ingot |
 
 - The new lantern **replaces** the old one, and its fuel moves over.
 - While the hand lantern is out, you can only use one-handed tools and weapons (no shield, no two-handers). The combat doc confirms this. This makes the back lantern a big, exciting upgrade.
@@ -419,8 +439,8 @@ So wood is a cheap backup and crystals are the "good" fuel, which fits the cave.
 
 | Stat | Max | Regen | Notes |
 |---|---|---|---|
-| Health | 100 | 1.0 per second after 5 s without taking damage | Food buffs raise max |
-| Stamina | 100 | 20 per second after 1 s of not using it | Food buffs raise max |
+| Health | 100 | 2 per second after 6 s without taking damage (combat doc 1.1) | Food buffs raise max |
+| Stamina | 100 | 25 per second after 0.8 s of not using it (combat doc 1.1) | Food buffs raise max |
 | Hunger | 100 (full) | — | Drains 2.5 per minute |
 | Thirst | 100 (full) | — | Drains 2.8 per minute |
 
@@ -582,8 +602,8 @@ Your dwarf grows in **two ways at once**:
 | Hit an enemy | 1 per hit | Fighting |
 | Perfect parry | 3 | Fighting |
 | Kill a critter / beetle | 10 | Fighting |
-| Kill a monster | 20–60 (combat doc sets it) | Fighting |
-| Kill a pack leader | 100 | Fighting |
+| Kill a monster | 5–50 (each monster's "XP" in the combat doc) | Fighting |
+| Kill a pack leader | ×3 the normal monster's XP (combat doc 6.2) | Fighting |
 | Side boss | 300 | Fighting |
 | Main boss: Mossy / Fungal | 1,000 / 2,000 | Character only |
 | Discover a big cavern | 150 | Character only |
@@ -745,12 +765,14 @@ At the Rune Slab: pay **5 crystal_blue + 1 crystal_white** to refund **all** per
 
 | Source | Rate | Notes |
 |---|---|---|
-| Rune pedestal in an old ruin | 100% (1 rune) | Mossy has about 6 ruins, Fungal about 7. One pedestal each. |
+| Rune Shrine (small alcove with a pedestal) | 100% (1 rune) | 5 per biome, 2 of them sealed in rock (world doc 3.1) |
+| Great Hall ruin | 100% (1 rune) | 1 per biome |
+| Small ruin | 30% (1 rune) | Mossy 3, Fungal 2 |
 | Side boss | 100% (1 rune per nearby player) | |
 | Main boss | 100% (2 runes per nearby player) | |
 | Ruin chest | 8% | |
 | Pack leader | 10% | |
-| Normal monster | 0.5% | Critters and beetles never drop runes |
+| Normal monster | 0.5% (Rustwights: 2%, they guard ruins) | Critters and beetles never drop runes |
 | Digging a stone or ore spot | 0.15% MH / 0.2% FJ ("rune pebble") | Violet crystal light makes them sparkle |
 
 **Which rune drops:**
@@ -758,7 +780,7 @@ At the Rune Slab: pay **5 crystal_blue + 1 crystal_white** to refund **all** per
 2. **Bad-luck protection:** 75% of the time, the game picks a rune your world doesn't have yet (if that colour still has missing ones in that biome). Otherwise it's fully random.
 3. In Fungal Jungle, 20% of drops are a **missing Mossy rune** instead, until all Mossy sets are done.
 
-Expected solo haul in Mossy Hollows (~8 hours): about **15–17 of the 20 runes**. The rest come from shards and Fungal backfill.
+Expected solo haul in Mossy Hollows (~8 hours): about **13–15 of the 20 runes** (about 11 from shrines, ruins and bosses, plus a few lucky drops; some are duplicates). The rest come from shards and Fungal backfill.
 
 ### 8.3 Duplicates
 
@@ -911,13 +933,13 @@ Chests are shared in co-op: first come, first served (from the plan).
 
 **Rune pacing:** most Mossy runes by the time you cross into Fungal; Mossy sets finished early in Fungal; Fungal sets around the Fungal boss.
 
-**Resource budget check (copper era, solo):** about 100 copper ingots for everything (pickaxe 8, axe 6, anvil 6, pot 4, lantern 4, masonry 2, chests ~10, weapons and armor ~30 (combat doc), upgrades ~30). 100 ingots = 100 ore spots ≈ 450 swings ≈ 6 minutes of pure swinging, spread over a few hours of exploring for veins. Finding veins is the real work, not hitting them.
+**Resource budget check (copper era, solo):** about 100 copper ingots for everything (pickaxe 8, axe 6, anvil 6, pot 4, lantern 4, masonry 2, chests ~10, weapons and armor ~30 (combat doc), upgrades ~30). 100 ingots = 200 ore ≈ 100 ore digs (about 2 ore each) ≈ 450 swings ≈ 4 minutes of pure swinging (0.55 s each), spread over a few hours of exploring for veins. Finding veins is the real work, not hitting them.
 
 ---
 
 ## 12. Open questions for the owner
 
-Each has my pick marked ★ (what this doc already assumes).
+Each has my pick marked ★ (what this doc already assumes). **All open questions from the three design docs are collected, numbered and de-duplicated in `docs/design/README.md`.** Answer them there.
 
 1. **Tools wearing out?** ★ A) Never wear out. B) Slowly wear out, repair at the Anvil for a few ingots.
 2. **Do brewed drinks use one of the 3 buff slots?** ★ A) Yes, same slots as dishes. B) Separate: 3 food slots + 1 drink slot.
@@ -927,3 +949,20 @@ Each has my pick marked ★ (what this doc already assumes).
 6. **Rune set sizes:** ★ A) Mossy 5 per colour, Fungal 6. B) 6 everywhere. C) 4 everywhere (quicker to finish).
 7. **Changing your perks (respec):** ★ A) Cheap, at the Rune Slab. B) Free, any time. C) Never.
 8. **Max character level for the first release:** ★ A) 30 (matches the two biomes). B) 50 (room to grow, slower levels).
+
+---
+
+## Review changes (Nov 14, 2026)
+
+The three design docs were written at the same time, so they disagreed in places. This review made them match each other and the Step 1 code.
+
+- **Dig numbers now match the Step 1 code.** Stone hardness 20 → **26** (3 hits with the stone pickaxe, like the code; 2 with copper). Added a note that the code uses a ×1 scale (stone 3, power 1) and Step 3 moves to the ×10 scale. Dig spot is a **2.7 m** ball (was 1.2 m), swing **0.55 s** (was 0.75 s).
+- **Yields now follow the code's rule** (1 item per 3–4 dug voxels, at least 1 per dig) instead of fixed counts. A typical ore dig still gives about 1 ingot, so the copper budget still works (about 4 minutes of swinging for 100 ingots).
+- **Lantern now matches the code:** blue crystal **4 min** (240 s, was 8), other fuels scaled to match, the 600 s tank explained, light radii 14 / 16 / 19 / 22 m and a 4.5 m dim glow.
+- **Health and stamina regen** now use the combat doc's numbers (2 HP/s after 6 s; 25 stamina/s after 0.8 s).
+- **Border rock:** a 20 m wall with a 4 m plug at gates (world doc), not a 3 m band. Border rock 2 leads from **Mossy** to biome 3 (biomes only touch Mossy in the star layout).
+- **Boss parts got real names:** `keeper_heartstone` and `bloomheart_core` (from the combat doc).
+- **New items** the other docs needed: `basalt`, `brown_rock` (building colours from the world doc), `crystal_red` (fire crystal monsters and Ember bolts), `rusty_scrap`, `glow_slime`. Added the **Gem Bench** station (combat doc needed it).
+- **Fixed a dead end:** the axe needs rootwood, and rootwood needed an axe. Now the pickaxe chops roots at half power.
+- **Rune sources** now match the world doc's places (5 shrines, the Great Hall, small ruins). Monster XP now matches the combat doc (5–50, leaders ×3).
+- Step 1 code ids `glow_crystal` and `stone_pickaxe` get renamed in Step 3 (noted in 1.2).
