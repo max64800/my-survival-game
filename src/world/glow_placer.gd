@@ -26,8 +26,20 @@ const KINDS := {
 	"root": {item = "rootwood", count = [3, 3], tool = "axe", hardness = 30, chops = 4, color = Color(0.42, 0.29, 0.18), xp = 3, skill = "survival"},
 }
 
+static var _placed := {}  ## seed -> spots (copied out, because a GlowField changes its own copy)
+
+
 ## Returns an Array of {id, pos, normal, kind, color, scale, spin, length}.
 static func place(maker: CaveMaker) -> Array[Dictionary]:
+	if not _placed.has(maker.seed):
+		_placed[maker.seed] = _place(maker)
+	var out: Array[Dictionary] = []
+	for s in _placed[maker.seed]:
+		out.append(s.duplicate())
+	return out
+
+
+static func _place(maker: CaveMaker) -> Array[Dictionary]:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = maker.seed + 777
 	var spots: Array[Dictionary] = []

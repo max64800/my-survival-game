@@ -23,6 +23,9 @@ var stun := StunMeter.new()
 var boosted := false  ## a living pack leader is near
 var data: Dictionary
 var model: Node3D
+var phase := 0  ## bosses: which phase (0 = first)
+var _cooldowns := {}  ## bosses: attack name -> seconds until it can be used again
+var _stun_at_tell := 0.0
 var _timer := 0.0
 var _think := 0.0
 var _attack: Dictionary = {}
@@ -44,9 +47,10 @@ func setup(p_uid: int, p_kind: String, p_leader: bool, p_home: Vector3) -> void:
 	kind = p_kind
 	leader = p_leader
 	home = p_home
-	data = Monsters.LIST[kind]
+	data = Monsters.info(kind)
 	hp = Monsters.max_hp(kind, leader)
-	stun = StunMeter.new(data.stun * (Monsters.LEADER.stun if leader else 1.0), 3.0)
+	var boss_kind: String = data.get("boss", "")
+	stun = StunMeter.new(data.stun * (Monsters.LEADER.stun if leader else 1.0), 5.0 if boss_kind == "main" else (4.0 if boss_kind == "side" else 3.0), boss_kind != "")
 	state = State.SLEEP if data.get("sleeps", false) else State.IDLE
 	_timer = randf_range(3.0, 8.0)
 
@@ -89,6 +93,44 @@ func max_hp() -> float:
 	return Monsters.max_hp(kind, leader)
 
 
+func is_boss() -> bool:
+	return data.has("boss")
+
+
+## Numbers for damage math (a boss's phase can change its armor).
+func stats() -> Dictionary:
+	var s := Monsters.target_stats(kind, leader)
+	if is_boss() and data.phases[phase].has("armor"):
+		s.armor = data.phases[phase].armor
+	return s
+
+
+## The attacks it can use right now.
+func attack_options() -> Array:
+	if not is_boss():
+		return data.attacks
+	var out := []
+	var mult: float = data.phases[phase].get("tell_mult", 1.0)
+	for id in data.phases[phase].attacks:
+		var a: Dictionary = data.attack_list[id].duplicate(true)
+		a.tell = maxf(a.tell * mult, 0.5)
+		a.id = id
+		out.append(a)
+	return out
+
+
+## Bosses: move to the next phase when health drops low enough. Returns the phase's on_enter (or {}).
+func check_phase() -> Dictionary:
+	if not is_boss():
+		return {}
+	var frac := hp / max_hp()
+	var entered := {}
+	while phase < data.phases.size() - 1 and frac <= data.phases[phase].until:
+		phase += 1
+		entered = data.phases[phase].get("on_enter", {})
+	return entered
+
+
 func is_alive() -> bool:
 	return hp > 0.0
 
@@ -111,6 +153,10 @@ func think(delta: float, mgr: Node) -> void:
 		return
 	if state == State.STUNNED:
 		state = State.CHASE
+	for k in _cooldowns.keys():
+		_cooldowns[k] -= delta
+		if _cooldowns[k] <= 0.0:
+			_cooldowns.erase(k)
 	_think -= delta
 	if _think <= 0.0:
 		_think = 0.3
@@ -152,7 +198,7 @@ func think(delta: float, mgr: Node) -> void:
 				_no_progress = 0.0
 			else:
 				_no_progress += delta
-			if global_position.distance_to(home) > Monsters.LEASH or _no_progress > Monsters.GIVE_UP:
+			if not is_boss() and (global_position.distance_to(home) > Monsters.LEASH or _no_progress > Monsters.GIVE_UP):
 				state = State.RETURN
 				target_peer = 0
 				return
@@ -168,13 +214,21 @@ func think(delta: float, mgr: Node) -> void:
 			_face(target)
 			_move(delta, Vector3.ZERO, 0.0)
 			if _timer <= 0.0:
+				if _attack.has("summon"):
+					# Interrupted if it took 30 stun during the call (doc 8.3).
+					if stun.value - _stun_at_tell < 30.0 and not stun.is_stunned():
+						mgr.boss_summon(self, _attack.summon[0], _attack.summon[1])
+					_cooldowns[_attack.get("id", _attack.name)] = _attack.get("cooldown", 30.0)
 				if _attack.has("follow"):
 					var f: Dictionary = _attack.follow
-					_attack = _attack.duplicate()
-					_attack.erase("follow")
-					_attack.tell = f.tell
-					_attack.damage = f.damage
-					_start_attack(_attack, mgr)
+					var next := _attack.duplicate()
+					next.tell = f.tell
+					next.damage = f.damage
+					if f.has("follow"):
+						next.follow = f.follow  # chains like Hall Quake's 3 rings
+					else:
+						next.erase("follow")
+					_start_attack(next, mgr)
 				else:
 					state = State.RECOVER
 					_timer = RECOVER_TIME
@@ -225,14 +279,17 @@ func alert(peer: int) -> void:
 
 func _pick_attack(dist: float) -> Dictionary:
 	var options := []
-	for a in data.attacks:
-		if dist <= a.reach and (not a.get("lunge", false) or dist > 2.0):
+	for a in attack_options():
+		if _cooldowns.has(a.get("id", a.name)):
+			continue
+		if dist <= a.reach and (not a.get("lunge", false) or dist > 2.0) and (not a.get("ranged", false) or dist > 3.0 or not is_boss()):
 			options.append(a)
 	return options.pick_random() if not options.is_empty() else {}
 
 
 func _start_attack(atk: Dictionary, mgr: Node) -> void:
 	_attack = atk
+	_stun_at_tell = stun.value
 	state = State.ATTACK
 	_timer = atk.tell
 	mgr.send_tell(self, atk)

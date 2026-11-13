@@ -35,6 +35,8 @@ var blueprint_menu: BlueprintMenu
 var box_panel: BoxPanel
 var build_mode: BuildMode
 var _build_label: Label
+var _boss_label: Label
+var _boss_bar: ProgressBar
 var map_data := MapData.new()
 var _map_timer := 0.0
 var _slot_style_cache := {}
@@ -185,6 +187,21 @@ func _build() -> void:
 	map_panel.visible = false
 	root.add_child(map_panel)
 	map_panel.resized.connect(func(): map_panel.position = (root.size - map_panel.size) * 0.5)
+
+	_boss_label = _label(root, 20)
+	_boss_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	_boss_label.position += Vector2(-300, 120)
+	_boss_label.custom_minimum_size = Vector2(600, 0)
+	_boss_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_boss_bar = ProgressBar.new()
+	_boss_bar.show_percentage = false
+	_boss_bar.custom_minimum_size = Vector2(600, 14)
+	_boss_bar.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	_boss_bar.position += Vector2(-300, 150)
+	var boss_fill := StyleBoxFlat.new()
+	boss_fill.bg_color = Color(0.75, 0.15, 0.15)
+	_boss_bar.add_theme_stylebox_override("fill", boss_fill)
+	root.add_child(_boss_bar)
 
 	_fps_label = _label(root, 15)
 	_fps_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
@@ -464,6 +481,7 @@ func _process(delta: float) -> void:
 		else:
 			_aim_label.text = info.name
 	_fps_label.text = "%d FPS" % Engine.get_frames_per_second()
+	_update_boss_bar(dwarf)
 	if build_mode and build_mode.active() and build_mode.blueprint:
 		_build_label.text = "Blueprint: %s (%s)\nQ turn · left click place · right click cancel" % [build_mode.blueprint.name, BuildMenu._cost_text(build_mode.blueprint.cost())]
 	elif build_mode and build_mode.active():
@@ -493,6 +511,22 @@ func _refresh_selection(sel: int) -> void:
 	if sel != _last_selected:
 		_last_selected = sel
 		_refresh_slots()
+
+
+## A big health bar at the top while a boss is near.
+func _update_boss_bar(dwarf: Dwarf) -> void:
+	var auth := GameAuthority.instance
+	var boss: Monster = null
+	if dwarf and auth and auth.monsters:
+		for m: Monster in auth.monsters.monsters.values():
+			if m.is_boss() and m.global_position.distance_to(dwarf.global_position) < 50.0:
+				boss = m
+	_boss_label.visible = boss != null
+	_boss_bar.visible = boss != null
+	if boss:
+		_boss_label.text = boss.data.name + ("  —  DAZED!" if boss.stun.is_stunned() else "")
+		_boss_bar.max_value = boss.max_hp()
+		_boss_bar.value = boss.hp
 
 
 func _local_dwarf() -> Dwarf:

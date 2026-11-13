@@ -11,8 +11,15 @@ var terrain: VoxelTerrain
 var _tool: VoxelTool
 
 
+## Caves already planned this session (same seed = same cave, and planning takes ~1.5 s).
+## Safe to share: a CaveMaker never changes after it's made.
+static var _planned := {}
+
+
 func setup(seed: int) -> void:
-	maker = CaveMaker.new(seed)
+	if not _planned.has(seed):
+		_planned[seed] = CaveMaker.new(seed)
+	maker = _planned[seed]
 	terrain = VoxelTerrain.new()
 	terrain.name = "Terrain"
 	var fmt := VoxelFormat.new()
