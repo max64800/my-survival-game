@@ -15,3 +15,16 @@ Full design: `docs/superpowers/specs/2026-11-14-dwarf-survival-game-design.md`
 - The GitHub repo is public: never commit personal paths, usernames, keys, or Steam credentials.
 - Use Voxel Tools and GodotSteam **GDExtension** editions with the official Godot build (never the module builds).
 - Use the `godot` MCP to run the game and read errors; use GodotPrompter skills for Godot patterns.
+
+## How the code is laid out
+- `src/world/`: Cave Maker (seed → SDF + materials), World (Voxel Tools terrain, digging), Glow Placer/Field, terrain shader, `mat.gd` (materials + hardness).
+- `src/net/game_authority.gd`: the referee. Every world change is `request_*` (approve) → `_do_*` (everyone applies). Keep it that way for co-op.
+- `src/player/`: Dwarf (movement, camera, swing), placeholder model, lantern, controls, fx.
+- `src/items/`: item list, inventory, drops. `src/ui/hud.gd`: everything on screen.
+- `src/debug/autopilot.gd`: scripted play run with screenshots.
+- Design docs for later steps: `docs/design/` (start with its README).
+
+## Checking work
+- Auto-checks: `tools/run_tests.sh` (Mac) / `tools\run_tests.bat` (Windows). Set `GODOT` to the Godot program. Add `only=name` to run one file. Every new system gets a `tests/test_*.gd`.
+- Autopilot: `godot --path . -- autopilot seed=42 shots=<folder>`. Prints a report (load time, items dug, FPS) and saves screenshots. Look at the screenshots before saying something looks right.
+- `godot --path . -- seed=1234` starts a specific cave.
