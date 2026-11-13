@@ -78,14 +78,15 @@ Our diary of building the game: what we did, what went wrong, and how we fixed i
 
 You went to sleep and asked Claude to build, test and prepare as much as possible.
 
-**The big picture: 4 "branches" (like parallel copies of the project)**
+**The big picture: 5 "branches" (like parallel copies of the project, each built on the one before)**
 
 | Branch | What's in it | Status |
 |---|---|---|
 | `main` | **Step 1, First Tunnel** + all design docs | Ready to play-test |
-| `step-2-friends` | Step 1 + **co-op** (play with friends) | Tested with two game windows |
-| `step-3-survive` | Step 2 + **survival, crafting, skills, map** | Tested; needs play-testing |
-| (more may follow) | | |
+| `step-2-friends` | + **co-op** (play with friends) | Tested with two game windows |
+| `step-3-survive` | + **survival, crafting, skills, map** | Tested; needs play-testing |
+| `step-4-build` | + **building, blueprints, chests, cave-ins, dying & graves** | Tested; needs play-testing |
+| `step-5-fight` | + **weapons, monsters, parry, dodge** (Mossy Hollows) | Tested; needs play-testing |
 
 Why branches? Our rule says each step must be playable and approved before the next one. So `main` stays Step 1 until you've tried it. The later steps wait on their own branches, ready to merge when you say yes.
 
@@ -97,6 +98,8 @@ Why branches? Our rule says each step must be playable and approved before the n
 - **Steam check:** the Steam add-on and the digging add-on work together. (That was the biggest technical risk in our plan.)
 - **Step 2 (branch `step-2-friends`):** co-op over IP address and Steam lobbies, a start menu, friends with names and shirt colors. Late joiners catch up on every hole already dug. The "netcheck" robot ran two game windows and checked both see the same cave.
 - **Step 3 (branch `step-3-survive`):** health, stamina, hunger, thirst (never kills you), 3 food-buff slots, 16 dishes + 6 drinks, ~80 items, ~55 recipes, placeable stations (campfire, workbench, smelter, anvil…), hanging roots for wood, mushrooms, fiber, clay, levels + 4 skills + 43 perks (K screen), the Rune Slab rules, and a parchment map per floor (M screen).
+- **Step 4 (branch `step-4-build`):** the Build Hammer with a green/red ghost, 11 kinds of pieces in 10 materials (B menu), steadiness (wood bridges sag and fall, metal reaches far), chests, **blueprints**: save your own (C), place one from the book (V), fill its Builder's Chest and it carves rock and builds itself piece by piece. A starter "Small Rootwood Lodge" blueprint ships with the game. **Cave-ins**: loose rock lumps and 20 m+ "icicles" fall, and mine props hold rock up. **Dying**: your haul goes into a grave (with a light beam so you can find it), you keep your hotbar tools, you wake at your bed.
+- **Step 5 (branch `step-5-fight`):** sword, mace, spear, shield, great axe, great maul (stone/copper/silver), light and heavy attacks, combos, block, **perfect parry** (stuns monsters), dodge-roll, the back lantern (frees your hand for a shield). The 6 Mossy Hollows monsters with their attacks and warnings, pack leaders with gold crowns, a spawner that fills caves near you, health bars and damage numbers. The damage math matches the combat doc's examples exactly.
 
 **Hurdles / mistakes (including Claude's)**
 - The test robot first said "PASS" even when a test crashed. **Fix:** it now catches every error, and Claude proved it by planting a broken test.
@@ -109,15 +112,25 @@ Why branches? Our rule says each step must be playable and approved before the n
 - The progression doc measures hardness ×10 (stone 26, pickaxe 10), but Step 1 used small numbers. Same hit counts. **Fix:** Step 3 switches to the doc's ×10 scale.
 - The three design docs disagreed with each other in places (the first boss needed ~370 sword hits!). **Fix:** a review pass; the boss now takes about 5 minutes.
 - Some names were too close to other games' names. **Fix:** renamed (for example, "Warden" became "Keeper").
+- Walls couldn't be placed on floors, and walls couldn't meet at corners (they "overlapped" by a few cm). **Fix:** pieces may touch.
+- The Builder's Chest carved a bit too deep, so its floors weren't "touching rock" and nothing could be built. **Fix:** gentler carving, and the rock check looks a bit deeper (the cave is made of 1 m blocks).
+- **Claude almost shipped a co-op bug:** friends' computers replayed the Builder's Chest's small carving scoops as big pickaxe holes, so caves would slowly differ between friends. **Fix:** every dig now carries its exact size to everyone.
+- Cave-in checks silently didn't run near the top and bottom of the world (that part never loads). **Fix:** the check stays inside the world and retries if the area isn't loaded yet.
+- Monster health bars showed as white boxes (the font has no block characters). **Fix:** real little bars.
+- In the co-op fight test, the monster arrived too early and killed the friend before they could craft. (Good news: dying works in co-op.) **Fix:** the test waits until the friend is ready.
+- The design docs had no weapon recipes at all. **Fix:** Claude added starting recipes, clearly marked "tune in play-testing".
 
 **Not done yet / known limits**
 - No art pack yet: the dwarf and stations are simple shapes. You pick the pack on the PC.
 - No sounds yet.
 - Steam lobbies are written but untested. They need Steam running and two accounts or PCs.
-- Step 3: no monsters yet (so no death or graves), runes can't be found yet (they come with ruins in Step 6), and the map isn't shared between friends yet.
+- Runes can only drop from pack leaders so far (ruins and shrines come with Step 6), and there's no Rune Slab screen yet. The map isn't shared between friends yet.
+- Not built yet from the combat doc: crossbow, gems, elemental effects (burn/chill/poison), crystal-variant monsters, bosses and raids (Step 6), friendly fire.
+- A cave-in check takes ~17 ms after each dig on the host. Fine for now; it can move to a background thread later.
 
 **Next (for you, on the gaming PC)**
 1. `git pull --ff-only`, open in Godot, press F5. See `docs/GAMING-PC-START.md`.
 2. Play Step 1 for 10 minutes and tell Claude how it feels.
-3. If you like it: say "merge step 2" (and later "merge step 3").
-4. Skim the 26 questions in `docs/design/README.md`.
+3. To try a later step: `git switch step-5-fight` (or another branch name), then press F5 in Godot. `git switch main` goes back.
+4. If you like a step: say "merge step 2" (then 3, 4, 5). Each branch already contains the ones before it.
+5. Skim the 26 questions in `docs/design/README.md`.
