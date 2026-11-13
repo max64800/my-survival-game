@@ -77,6 +77,18 @@ func _run_client() -> void:
 
 
 func _run_host() -> void:
+	# Dig a little before the friend arrives, so they must catch up on old holes.
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	_main.hud.set_paused(false)
+	_main.dwarf._pitch = -0.75
+	_main.dwarf._yaw = PI
+	Input.action_press("dig")
+	await _wait(3.0)
+	Input.action_release("dig")
+	var early: int = _main.authority.edit_log.size()
+	print("HOST dug %d holes before the friend joined" % early)
+	if early == 0:
+		print("NETCHECK FAIL: host couldn't dig")
 	while _client_report.is_empty():
 		await _wait(0.25)
 	var auth: GameAuthority = _main.authority
