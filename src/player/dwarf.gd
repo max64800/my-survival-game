@@ -25,6 +25,7 @@ var camera: Camera3D
 var input_enabled := true
 var is_local := true  ## false = a friend's dwarf, moved by the network
 var color_index := 0  ## which shirt color (0 = host)
+var fight: DwarfFight
 
 var _yaw := 0.0
 var _pitch := -0.25
@@ -64,6 +65,9 @@ func _ready() -> void:
 		set_physics_process(false)
 		return
 	_build_camera()
+	fight = DwarfFight.new()
+	fight.dwarf = self
+	add_child(fight)
 	var auth := GameAuthority.instance
 	if auth:
 		auth.dig_feedback.connect(_on_dig_feedback)
@@ -115,7 +119,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		auth.ask_select_slot((ps.selected_slot + Inventory.HOTBAR_SIZE - 1) % Inventory.HOTBAR_SIZE)
 	if event.is_action_pressed("refill_lantern"):
 		auth.ask_refill()
-	if event.is_action_pressed("use") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and not _holding_hammer():
+	if event.is_action_pressed("use") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and not _holding_hammer() and not fight.weapon_mode():
 		var hit := aim()
 		auth.ask_use(hit.get("position", Vector3.INF), hit.get("normal", Vector3.ZERO), model.rotation.y + PI)
 
@@ -131,11 +135,18 @@ func _physics_process(delta: float) -> void:
 	var body := _vitals()
 	if running and body and not body.drain_stamina(RUN_STAMINA, delta):
 		running = false  # out of breath
-	var speed := RUN_SPEED if running else WALK_SPEED
+	var fight_mult := fight.step(delta, playing, dir) if fight else 1.0
+	if fight and (fight.is_blocking() or fight.stagger > 0.0):
+		running = false
+	var speed := (RUN_SPEED if running else WALK_SPEED) * fight_mult
 	var target := dir * speed
 	var a := ACCEL if is_on_floor() else AIR_ACCEL
 	velocity.x = move_toward(velocity.x, target.x, a * speed * delta)
 	velocity.z = move_toward(velocity.z, target.z, a * speed * delta)
+	if fight and fight.dodging():
+		var dv := fight.dodge_velocity()
+		velocity.x = dv.x
+		velocity.z = dv.z
 	if is_on_floor():
 		if playing and Input.is_action_just_pressed("jump") and (body == null or body.use_stamina(JUMP_STAMINA)):
 			velocity.y = JUMP_SPEED
@@ -151,7 +162,7 @@ func _physics_process(delta: float) -> void:
 		var want := atan2(-face_dir.x, -face_dir.z)
 		model.rotation.y = lerp_angle(model.rotation.y, want, minf(1.0, delta * 12.0))
 
-	if playing and Input.is_action_pressed("dig") and not model.swinging and not _holding_hammer() and _can_swing():
+	if playing and Input.is_action_pressed("dig") and not model.swinging and not _holding_hammer() and not fight.weapon_mode() and _can_swing():
 		model.swing(SWING_TIME)
 		if _online():
 			_net_swing.rpc()
@@ -163,6 +174,8 @@ func _physics_process(delta: float) -> void:
 
 
 func _process(delta: float) -> void:
+	if is_local and fight:
+		model.set_held(fight.item())
 	if not is_local:
 		global_position = global_position.lerp(_net_pos, minf(1.0, delta * 15.0))
 		model.rotation.y = lerp_angle(model.rotation.y, _net_yaw, minf(1.0, delta * 15.0))
@@ -185,7 +198,7 @@ func aim_far(reach: float) -> Dictionary:
 	var from := camera.global_position
 	var forward := -camera.global_basis.z
 	var q := PhysicsRayQueryParameters3D.create(from, from + forward * (CAMERA_DISTANCE + reach + 2.0))
-	q.collision_mask = World.TERRAIN_LAYER | GlowField.GLOW_LAYER | Station.STATION_LAYER | PieceNode.PIECE_LAYER
+	q.collision_mask = World.TERRAIN_LAYER | GlowField.GLOW_LAYER | Station.STATION_LAYER | Monster.MONSTER_LAYER | PieceNode.PIECE_LAYER
 	q.exclude = [get_rid()]
 	var hit := get_world_3d().direct_space_state.intersect_ray(q)
 	if hit.is_empty() or (global_position + Vector3.UP).distance_to(hit.position) > reach:
@@ -199,7 +212,7 @@ func aim() -> Dictionary:
 	var forward := -camera.global_basis.z
 	var space := get_world_3d().direct_space_state
 	var q := PhysicsRayQueryParameters3D.create(from, from + forward * (CAMERA_DISTANCE + GameAuthority.REACH + 2.0))
-	q.collision_mask = World.TERRAIN_LAYER | GlowField.GLOW_LAYER | Station.STATION_LAYER
+	q.collision_mask = World.TERRAIN_LAYER | GlowField.GLOW_LAYER | Station.STATION_LAYER | Monster.MONSTER_LAYER
 	q.exclude = [get_rid()]
 	var hit := space.intersect_ray(q)
 	if hit.is_empty():
@@ -251,9 +264,45 @@ func _on_swing_impact() -> void:
 		Fx.burst(get_parent(), hit.position, spot.get("color", Color.WHITE), 8)
 		_shake = 0.4
 		return
+	var mon := MonsterManager.uid_of(hit.collider)
+	if mon >= 0:
+		auth.monsters.ask_attack(PackedInt32Array([mon]), false, 0, false)  # a pickaxe works in a pinch
+		return
 	if hit.collider is Station or hit.collider is PieceNode or Storage.box_id_of(hit.collider) >= 0:
 		return  # don't dig through your own furniture or buildings
 	auth.ask_hit(hit.position, hit.normal)
+
+
+# ---------------------------------------------------------------- fighting (see DwarfFight)
+
+func defense_state() -> Dictionary:
+	return fight.defense_state()
+
+
+func is_invulnerable() -> bool:
+	return fight.invulnerable()
+
+
+func guard_break() -> void:
+	fight.guard_break()
+
+
+func knock_down() -> void:
+	fight.knock_down()
+
+
+func got_parry() -> void:
+	fight.got_parry()
+	_shake = 0.5
+
+
+func add_shake(amount: float) -> void:
+	_shake = maxf(_shake, amount)
+
+
+## Turn to face where the camera looks (when attacking).
+func face_camera() -> void:
+	model.rotation.y = _yaw
 
 
 func _holding_hammer() -> bool:

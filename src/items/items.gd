@@ -79,6 +79,7 @@ const DATA := {
 	"axe_copper": {name = "Copper Axe", stack = 1, color = Color(0.9, 0.55, 0.3), short = "Ax", kind = "axe", power = 13, tier = 1},
 	"axe_silver": {name = "Silver Axe", stack = 1, color = Color(0.85, 0.87, 0.92), short = "Ax", kind = "axe", power = 17, tier = 2},
 	"build_hammer": {name = "Build Hammer", stack = 1, color = Color(0.6, 0.5, 0.4), short = "Hm", kind = "hammer"},
+	"lantern_back": {name = "Back Lantern", stack = 1, color = Color(1.0, 0.8, 0.45), short = "BL", kind = "lantern"},
 	# --- stations (placed in the world)
 	"campfire": {name = "Campfire", stack = 1, color = Color(1.0, 0.55, 0.2), short = "Fi", kind = "station"},
 	"workbench": {name = "Workbench", stack = 1, color = Color(0.6, 0.45, 0.3), short = "Wk", kind = "station"},
@@ -91,6 +92,25 @@ const DATA := {
 	"rune_slab": {name = "Rune Slab", stack = 1, color = Color(0.5, 0.5, 0.6), short = "RS", kind = "station"},
 	"farm_plot": {name = "Farm Plot", stack = 1, color = Color(0.35, 0.25, 0.15), short = "FP", kind = "station"},
 	"drip_bucket": {name = "Drip Bucket", stack = 1, color = Color(0.45, 0.4, 0.35), short = "DB", kind = "station"},
+	# --- weapons (combat doc 3). tier: 0 stone, 1 copper, 2 silver
+	"sword_stone": {name = "Stone Sword", stack = 1, color = Color(0.65, 0.63, 0.6), short = "Sw", kind = "weapon", weapon = "sword", tier = 0},
+	"mace_stone": {name = "Stone Mace", stack = 1, color = Color(0.65, 0.63, 0.6), short = "Mc", kind = "weapon", weapon = "mace", tier = 0},
+	"spear_stone": {name = "Stone Spear", stack = 1, color = Color(0.65, 0.63, 0.6), short = "Sp", kind = "weapon", weapon = "spear", tier = 0},
+	"shield_stone": {name = "Wooden Shield", stack = 1, color = Color(0.65, 0.63, 0.6), short = "Sh", kind = "shield", weapon = "shield", tier = 0},
+	"axe_2h_stone": {name = "Stone Great Axe", stack = 1, color = Color(0.65, 0.63, 0.6), short = "GA", kind = "weapon", weapon = "axe_2h", tier = 0},
+	"mace_2h_stone": {name = "Stone Great Maul", stack = 1, color = Color(0.65, 0.63, 0.6), short = "GM", kind = "weapon", weapon = "mace_2h", tier = 0},
+	"sword_copper": {name = "Copper Sword", stack = 1, color = Color(0.9, 0.55, 0.3), short = "Sw", kind = "weapon", weapon = "sword", tier = 1},
+	"mace_copper": {name = "Copper Mace", stack = 1, color = Color(0.9, 0.55, 0.3), short = "Mc", kind = "weapon", weapon = "mace", tier = 1},
+	"spear_copper": {name = "Copper Spear", stack = 1, color = Color(0.9, 0.55, 0.3), short = "Sp", kind = "weapon", weapon = "spear", tier = 1},
+	"shield_copper": {name = "Copper Shield", stack = 1, color = Color(0.9, 0.55, 0.3), short = "Sh", kind = "shield", weapon = "shield", tier = 1},
+	"axe_2h_copper": {name = "Copper Great Axe", stack = 1, color = Color(0.9, 0.55, 0.3), short = "GA", kind = "weapon", weapon = "axe_2h", tier = 1},
+	"mace_2h_copper": {name = "Copper Great Maul", stack = 1, color = Color(0.9, 0.55, 0.3), short = "GM", kind = "weapon", weapon = "mace_2h", tier = 1},
+	"sword_silver": {name = "Silver Sword", stack = 1, color = Color(0.85, 0.87, 0.92), short = "Sw", kind = "weapon", weapon = "sword", tier = 2},
+	"mace_silver": {name = "Silver Mace", stack = 1, color = Color(0.85, 0.87, 0.92), short = "Mc", kind = "weapon", weapon = "mace", tier = 2},
+	"spear_silver": {name = "Silver Spear", stack = 1, color = Color(0.85, 0.87, 0.92), short = "Sp", kind = "weapon", weapon = "spear", tier = 2},
+	"shield_silver": {name = "Silver Shield", stack = 1, color = Color(0.85, 0.87, 0.92), short = "Sh", kind = "shield", weapon = "shield", tier = 2},
+	"axe_2h_silver": {name = "Silver Great Axe", stack = 1, color = Color(0.85, 0.87, 0.92), short = "GA", kind = "weapon", weapon = "axe_2h", tier = 2},
+	"mace_2h_silver": {name = "Silver Great Maul", stack = 1, color = Color(0.85, 0.87, 0.92), short = "GM", kind = "weapon", weapon = "mace_2h", tier = 2},
 	# --- storage (placed in the world)
 	"chest_small": {name = "Chest", stack = 1, color = Color(0.55, 0.38, 0.22), short = "Ch", kind = "chest"},
 	"chest_stone": {name = "Stone Chest", stack = 1, color = Color(0.55, 0.55, 0.55), short = "SC", kind = "chest"},
@@ -103,6 +123,11 @@ static var _all := {}
 static func _data() -> Dictionary:
 	if _all.is_empty():
 		_all = DATA.duplicate()
+		for r in RuneSlab.RUNES:  # runes found while exploring, carved at the Rune Slab
+			var colour := RuneSlab.colour_of(r)
+			_all["rune_" + r] = {name = "%s Rune (%s)" % [colour.capitalize(), RuneSlab.COLOURS[colour].capitalize()],
+				color = {"ochre": Color(0.8, 0.6, 0.25), "crimson": Color(0.85, 0.2, 0.25), "cobalt": Color(0.2, 0.35, 0.85), "verdant": Color(0.3, 0.8, 0.35)}[colour],
+				short = "R" + r.right(2), kind = "rune"}
 		for id in Foods.DISHES:
 			var f: Dictionary = Foods.DISHES[id]
 			_all[id] = {name = f.name, stack = 20, color = f.get("color", Color(0.9, 0.7, 0.4)), short = f.get("short", "Fd"),

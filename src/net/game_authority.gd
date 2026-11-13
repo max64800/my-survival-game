@@ -42,6 +42,7 @@ var stations_root: Node3D
 var rune_slab := RuneSlab.new()  ## one per world, shared by everyone
 var builder: Builder
 var storage: Storage
+var monsters: MonsterManager
 var _next_station_id := 1
 var _progress_dirty := {}  ## peer ids whose XP changed and need a sync
 var _progress_sync := 0.0
@@ -86,6 +87,9 @@ func _ready() -> void:
 	storage = Storage.new()
 	storage.name = "Storage"
 	add_child(storage)
+	monsters = MonsterManager.new()
+	monsters.name = "Monsters"
+	add_child(monsters)
 
 
 func _exit_tree() -> void:
@@ -690,7 +694,7 @@ func snapshot() -> Dictionary:
 			if glow._spots[id].get("chops", 1) != GlowPlacer.KINDS[glow._spots[id].kind].get("chops", 1):
 				chops[id] = glow._spots[id].chops
 	return {edits = edit_log.duplicate(), glow = removed_glow.duplicate(), drops = drops, next_drop = _next_drop_id,
-		stations = sts, chops = chops, runes = rune_slab.to_data(), build = builder.snapshot(), boxes = storage.snapshot()}
+		stations = sts, chops = chops, runes = rune_slab.to_data(), build = builder.snapshot(), boxes = storage.snapshot(), monsters = monsters.snapshot()}
 
 
 func load_snapshot(snap: Dictionary) -> void:
@@ -715,6 +719,8 @@ func load_snapshot(snap: Dictionary) -> void:
 		builder.load_snapshot(snap.build)
 	if snap.has("boxes"):
 		storage.load_snapshot(snap.boxes)
+	if snap.has("monsters"):
+		monsters.load_snapshot(snap.monsters)
 
 
 # ================================================================== helpers

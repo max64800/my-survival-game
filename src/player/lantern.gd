@@ -49,14 +49,33 @@ func _ready() -> void:
 	add_child(light)
 
 
+## The back lantern (progression doc 5.4) sits above your head and frees both hands.
+static func is_on_back(ps: GameAuthority.PlayerState) -> bool:
+	return ps != null and ps.inventory.count_of("lantern_back") > 0
+
+
+var _on_back := false
+
+
 func _process(delta: float) -> void:
 	var auth := GameAuthority.instance
-	var fuel := auth.get_player(peer_id).fuel if auth and auth.get_player(peer_id) else GameAuthority.MAX_FUEL
+	var ps: GameAuthority.PlayerState = auth.get_player(peer_id) if auth else null
+	var fuel := ps.fuel if ps else GameAuthority.MAX_FUEL
+	var back := is_on_back(ps)
+	if back != _on_back:
+		_on_back = back
+		var model := get_parent()
+		while model and not model is DwarfModel:
+			model = model.get_parent()
+		if model:
+			reparent(model if back else (model as DwarfModel).left_hand, false)
+			position = Vector3(0, 1.75, 0.25) if back else Vector3.ZERO
+	var full_range := 16.0 if back else FULL_RANGE
 	var t := 1.0 if fuel > 0.0 else 0.0
 	if fuel > 0.0 and fuel < LOW_FUEL:
 		_flicker += delta * 14.0
 		t = 0.55 + 0.45 * absf(sin(_flicker) * sin(_flicker * 0.37))
 	var energy := lerpf(EMPTY_ENERGY, FULL_ENERGY, t)
-	light.omni_range = lerpf(light.omni_range, lerpf(EMPTY_RANGE, FULL_RANGE, t), minf(1.0, delta * 4.0))
+	light.omni_range = lerpf(light.omni_range, lerpf(EMPTY_RANGE, full_range, t), minf(1.0, delta * 4.0))
 	light.light_energy = lerpf(light.light_energy, energy, minf(1.0, delta * 6.0))
 	_glass_mat.emission_energy_multiplier = 0.6 + 2.4 * t

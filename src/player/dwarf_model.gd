@@ -20,6 +20,8 @@ var right_arm: Node3D  ## shoulder pivot, rotates on X to swing
 var left_hand: Node3D  ## where the lantern hangs
 var swinging := false
 var _mats := {}
+var _hand: Node3D  ## what the right hand holds
+var _held := "?"
 
 
 func _ready() -> void:
@@ -50,13 +52,11 @@ func _ready() -> void:
 	add_child(right_arm)
 	_part(_capsule(0.08, 0.5), tunic, Vector3(0, -0.22, 0), right_arm)
 	_part(_sphere(0.08), SKIN, Vector3(0, -0.47, 0), right_arm)
-	var pick := Node3D.new()
-	pick.position = Vector3(0, -0.47, 0)
-	pick.rotation.x = deg_to_rad(-90)
-	right_arm.add_child(pick)
-	_part(_cyl(0.025, 0.025, 0.85), Color(0.5, 0.35, 0.2), Vector3(0, 0.25, 0), pick)
-	var head := _part(_box(Vector3(0.07, 0.07, 0.55)), Color(0.55, 0.53, 0.5), Vector3(0, 0.62, 0.02), pick)
-	head.rotation.x = deg_to_rad(8)
+	_hand = Node3D.new()
+	_hand.position = Vector3(0, -0.47, 0)
+	_hand.rotation.x = deg_to_rad(-90)
+	right_arm.add_child(_hand)
+	set_held("")
 	var left_arm := Node3D.new()
 	left_arm.position = Vector3(-0.38, 0.95, 0)
 	left_arm.rotation.x = deg_to_rad(-35)
@@ -80,6 +80,49 @@ func swing(duration: float) -> void:
 	t.tween_callback(swing_impact.emit)
 	t.tween_property(right_arm, "rotation:x", deg_to_rad(35), duration * 0.38).set_trans(Tween.TRANS_SINE)
 	t.tween_callback(func(): swinging = false)
+
+
+## Weapon attack: wind up, strike at 40% of the time, recover.
+func attack(duration: float, heavy: bool) -> void:
+	swinging = true
+	var t := create_tween()
+	t.tween_property(right_arm, "rotation:x", deg_to_rad(165 if heavy else 120), duration * 0.3).set_trans(Tween.TRANS_SINE)
+	t.tween_property(right_arm, "rotation:x", deg_to_rad(-15), duration * 0.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	t.tween_property(right_arm, "rotation:x", deg_to_rad(35), duration * 0.6).set_trans(Tween.TRANS_SINE)
+	t.tween_callback(func(): swinging = false)
+
+
+## Shows the right thing in the hand: pickaxe, sword, mace…
+func set_held(item: String) -> void:
+	if item == _held:
+		return
+	_held = item
+	for c in _hand.get_children():
+		c.queue_free()
+	var col := Items.color(item) if item != "" else Color(0.55, 0.53, 0.5)
+	var handle := Color(0.5, 0.35, 0.2)
+	var look := Combat.weapon_of(item) if Items.kind(item) in ["weapon", "shield", "axe"] else Items.kind(item)
+	match look:
+		"sword":
+			_part(_box(Vector3(0.06, 0.08, 0.8)), col, Vector3(0, 0.1, -0.45), _hand)
+			_part(_box(Vector3(0.25, 0.04, 0.04)), handle, Vector3(0, 0.1, -0.05), _hand)
+		"mace", "mace_2h":
+			_part(_cyl(0.03, 0.03, 0.7), handle, Vector3(0, 0.35, 0), _hand)
+			_part(_sphere(0.14 if look == "mace_2h" else 0.1), col, Vector3(0, 0.72, 0), _hand)
+		"spear":
+			_part(_cyl(0.025, 0.025, 1.6), handle, Vector3(0, 0.6, 0), _hand)
+			_part(_cyl(0.0, 0.06, 0.25), col, Vector3(0, 1.5, 0), _hand)
+		"axe", "axe_2h":
+			_part(_cyl(0.03, 0.03, 0.8), handle, Vector3(0, 0.35, 0), _hand)
+			_part(_box(Vector3(0.05, 0.25, 0.3)), col, Vector3(0, 0.65, -0.12), _hand)
+		"shield":
+			_part(_cyl(0.3, 0.3, 0.06), col, Vector3(0, 0.0, -0.1), _hand).rotation.x = PI / 2.0
+		"hammer":
+			_part(_cyl(0.025, 0.025, 0.6), handle, Vector3(0, 0.25, 0), _hand)
+			_part(_box(Vector3(0.12, 0.12, 0.22)), col, Vector3(0, 0.55, 0), _hand)
+		_:
+			_part(_cyl(0.025, 0.025, 0.85), handle, Vector3(0, 0.25, 0), _hand)
+			_part(_box(Vector3(0.07, 0.07, 0.55)), col, Vector3(0, 0.62, 0.02), _hand).rotation.x = deg_to_rad(8)
 
 
 func _rest() -> void:

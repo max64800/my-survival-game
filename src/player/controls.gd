@@ -22,6 +22,7 @@ const KEYS := {
 	"build_menu": [KEY_B],
 	"capture": [KEY_C],
 	"blueprints": [KEY_V],
+	"dodge": [KEY_CTRL],
 }
 const MOUSE := {
 	"dig": [MOUSE_BUTTON_LEFT],

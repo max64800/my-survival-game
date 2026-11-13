@@ -20,7 +20,8 @@ var session: Session
 var players_root: Node3D
 var _ready_to_play := false
 var _menu: Node
-var player_slots := {1: 0}  ## peer id -> player number (0 = host, 1-3 = friends)
+var player_slots := {1: 0}
+var _monsters := true  ## peer id -> player number (0 = host, 1-3 = friends)
 
 
 func _ready() -> void:
@@ -56,6 +57,9 @@ func _ready() -> void:
 				mode = "solo"
 		elif arg == "netcheck":
 			debug_script = "res://src/debug/netcheck.gd"
+			_monsters = false
+		elif arg == "nomonsters":
+			_monsters = false
 	if debug_script != "":
 		var dbg: Node = load(debug_script).new()
 		dbg.name = "Debug"
@@ -73,6 +77,17 @@ func _ready() -> void:
 			_show_menu()
 			_menu.call("set_status", "Connecting to %s…" % address)
 			session.join_direct(address, port)
+
+
+## What happened when a monster's attack reached us (shown briefly at the top of the screen).
+func _on_defended(r: Dictionary) -> void:
+	match r.result:
+		"block":
+			hud.show_toast("Blocked %s (−%d)" % [r.name, roundi(r.damage)], 1.2)
+		"dodge":
+			hud.show_toast("Dodged!", 1.0)
+		"hit":
+			hud.show_toast("Hit by %s (−%d)" % [r.name, roundi(r.damage)], 1.2)
 
 
 func _show_menu() -> void:
@@ -137,6 +152,7 @@ func start_game(p_seed: int, snap: Dictionary = {}) -> void:
 	dwarf = _spawn_dwarf(me, _spawn_spot(me), true)
 	dwarf.set_physics_process(false)  # wait until the floor exists
 	authority.add_player(me, dwarf, authority.is_host())
+	authority.monsters.enabled = _monsters
 	if not snap.is_empty():
 		authority.load_snapshot(snap)
 
@@ -148,6 +164,8 @@ func start_game(p_seed: int, snap: Dictionary = {}) -> void:
 	hud = Hud.new()
 	hud.build_mode = bm
 	bm.message.connect(func(t: String): hud.show_toast(t, 5.0))
+	dwarf.fight.message.connect(func(t: String, _c: Color): hud.show_toast(t, 1.5))
+	authority.monsters.defended.connect(_on_defended)
 	hud.peer_id = me
 	hud.seed_text = str(seed)
 	add_child(hud)
