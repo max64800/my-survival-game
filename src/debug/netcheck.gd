@@ -10,6 +10,7 @@ const TIMEOUT := 90.0
 var _main: Node
 var _shots := "user://netcheck"
 var _client_report := {}
+var _fight_requested := false
 
 
 func _ready() -> void:
@@ -69,6 +70,32 @@ func _run_client() -> void:
 	var spot: Vector3 = _main.world.maker.find_floor(dwarf.global_position.x + 1.5, dwarf.global_position.z, dwarf.global_position.y + 1.5)
 	auth.ask_use(spot, Vector3.UP, 0.0)
 	await _wait(2.0)
+	# Step 5: ask the host for a Cairnling next to us, then hit it with the sword.
+	_ready_to_fight.rpc_id(1)
+	var mm: MonsterManager = auth.monsters
+	for t in 40:
+		if mm.monsters.has(900):
+			break
+		await _wait(0.25)
+	var cair: Monster = mm.get_monster(900)
+	var hp_seen := -1.0
+	if cair:
+		for i in Inventory.SIZE:
+			if me0.inventory.get_slot(i).get("id", "") == "sword_stone":
+				if i >= Inventory.HOTBAR_SIZE:
+					auth.ask_swap(i, Inventory.HOTBAR_SIZE - 2)
+					i = Inventory.HOTBAR_SIZE - 2
+				await _wait(0.5)
+				auth.ask_select_slot(i)
+				break
+		await _wait(0.5)
+		dwarf.global_position = cair.global_position + Vector3(-1.2, 0, 0)
+		await _wait(0.3)
+		for k in 3:
+			mm.ask_attack(PackedInt32Array([900]), true, 0, false)
+			await _wait(0.6)
+		await _wait(1.0)
+		hp_seen = cair.hp if is_instance_valid(cair) else 0.0
 	await RenderingServer.frame_post_draw
 	_main.take_screenshot(_shots.path_join("client.png"))
 	var me := auth.get_player(auth.local_peer_id())
@@ -88,6 +115,7 @@ func _run_client() -> void:
 		stations = auth.stations.size(),
 		xp = me.progress.xp,
 		smithing = me.progress.skill_xp.smithing,
+		monster_hp = hp_seen,
 	}
 	print("CLIENT REPORT: ", report, " answers: ", states)
 	_report.rpc_id(1, report)
@@ -115,7 +143,13 @@ func _run_host() -> void:
 			if friend:
 				friend.inventory.add("stone", 5)
 				friend.inventory.add("rootwood", 3)
+				friend.inventory.add("sword_stone", 1)
 				gave = true
+		if _fight_requested and not multiplayer.get_peers().is_empty():
+			_fight_requested = false
+			var fp: Vector3 = _main.authority.get_player(multiplayer.get_peers()[0]).node.global_position
+			var mm: MonsterManager = _main.authority.monsters
+			mm._ev_spawn.rpc(900, "cairnling", _main.world.maker.find_floor(fp.x + 1.3, fp.z, fp.y + 2.0) + Vector3.UP * 0.3, false, 900)
 		await _wait(0.25)
 	var auth: GameAuthority = _main.authority
 	var cid: int = multiplayer.get_peers()[0] if not multiplayer.get_peers().is_empty() else -1
@@ -150,6 +184,15 @@ func _run_host() -> void:
 		fails.append("friend's XP differs: friend %d/%d, host %d/%d" % [r.xp, r.smithing, ps.progress.xp, ps.progress.skill_xp.smithing])
 	if ps and r.smithing == 0:
 		fails.append("friend got no smithing XP for crafting")
+	var host_cair: Monster = auth.monsters.get_monster(900)
+	var host_hp: float = host_cair.hp if host_cair else 0.0
+	if r.monster_hp < 0.0:
+		fails.append("friend never saw the Cairnling")
+	elif host_hp >= Monsters.max_hp("cairnling", false):
+		fails.append("friend's sword hits never reached the host (Cairnling HP %.0f)" % host_hp)
+	elif absf(host_hp - r.monster_hp) > 0.5:
+		fails.append("Cairnling HP differs: host %.0f, friend %.0f" % [host_hp, r.monster_hp])
+	print("HOST: Cairnling HP %.0f / %.0f (friend sees %.0f)" % [host_hp, Monsters.max_hp("cairnling", false), r.monster_hp])
 	if not _main.players_root.has_node("Dwarf_%d" % cid):
 		fails.append("host can't see the friend's dwarf")
 	print("HOST: edits %d, friend's bag on host: dirt %d stone %d" % [auth.edit_log.size(), ps.inventory.count_of("dirt") if ps else -1, ps.inventory.count_of("stone") if ps else -1])
@@ -161,3 +204,8 @@ func _run_host() -> void:
 @rpc("any_peer", "reliable")
 func _report(r: Dictionary) -> void:
 	_client_report = r
+
+
+@rpc("any_peer", "reliable")
+func _ready_to_fight() -> void:
+	_fight_requested = true
