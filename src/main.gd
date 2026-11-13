@@ -174,6 +174,7 @@ func start_game(p_seed: int, snap: Dictionary = {}) -> void:
 	bm.message.connect(func(t: String): hud.show_toast(t, 5.0))
 	dwarf.fight.message.connect(func(t: String, _c: Color): hud.show_toast(t, 1.5))
 	authority.monsters.defended.connect(_on_defended)
+	authority.raids.warning.connect(func(t: String): hud.show_toast(t, 8.0))
 	hud.peer_id = me
 	hud.seed_text = str(seed)
 	add_child(hud)

@@ -44,6 +44,7 @@ var builder: Builder
 var storage: Storage
 var monsters: MonsterManager
 var poi_field: PoiField
+var raids: Raids
 ## What the whole world remembers (shared by every player): clues found, shrines emptied,
 ## bosses beaten, side-boss caverns discovered.
 var world_state := {clues = [], shrines = [], bosses_dead = [], lairs_found = []}
@@ -94,6 +95,9 @@ func _ready() -> void:
 	monsters = MonsterManager.new()
 	monsters.name = "Monsters"
 	add_child(monsters)
+	raids = Raids.new()
+	raids.name = "Raids"
+	add_child(raids)
 
 
 func _exit_tree() -> void:
