@@ -21,7 +21,10 @@ var players_root: Node3D
 var _ready_to_play := false
 var _menu: Node
 var player_slots := {1: 0}
-var _monsters := true  ## peer id -> player number (0 = host, 1-3 = friends)
+var _monsters := true
+var _saving := true  ## off for robot test runs
+var _autosave := 300.0
+var _loaded := {}  ## the save we started from (friends' dwarfs are restored from it when they rejoin)  ## peer id -> player number (0 = host, 1-3 = friends)
 
 
 func _ready() -> void:
@@ -53,13 +56,19 @@ func _ready() -> void:
 			port = arg.trim_prefix("port=").to_int()
 		elif arg == "autopilot":
 			debug_script = "res://src/debug/autopilot.gd"
+			_saving = false
 			if mode == "menu":
 				mode = "solo"
 		elif arg == "netcheck":
 			debug_script = "res://src/debug/netcheck.gd"
 			_monsters = false
+			_saving = false
 		elif arg == "nomonsters":
 			_monsters = false
+		elif arg == "continue":
+			mode = "continue"
+		elif arg.begins_with("savecheck"):
+			debug_script = "res://src/debug/savecheck.gd"
 	if debug_script != "":
 		var dbg: Node = load(debug_script).new()
 		dbg.name = "Debug"
@@ -70,6 +79,12 @@ func _ready() -> void:
 			_show_menu()
 		"solo":
 			start_game(seed)
+		"continue":
+			var data := SaveGame.newest()
+			if data.is_empty():
+				start_game(seed)
+			else:
+				start_game(data.seed, {}, data)
 		"host":
 			start_game(seed)
 			session.host_direct(port)
@@ -94,6 +109,7 @@ func _show_menu() -> void:
 	_menu = load("res://src/ui/start_menu.gd").new()
 	add_child(_menu)
 	_menu.connect("play_alone", func(s: int): _close_menu(); start_game(s if s > 0 else seed))
+	_menu.connect("continue_game", func(data: Dictionary): _close_menu(); start_game(data.seed, {}, data))
 	_menu.connect("host_direct", func(s: int):
 		_close_menu()
 		start_game(s if s > 0 else seed)
@@ -114,8 +130,9 @@ func _close_menu() -> void:
 		_menu = null
 
 
-## Builds the whole game. `snap` is the host's catch-up data when joining a friend.
-func start_game(p_seed: int, snap: Dictionary = {}) -> void:
+## Builds the whole game. `snap` is the host's catch-up data when joining a friend;
+## `save` is a save file's data when continuing.
+func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> void:
 	seed = p_seed
 	print("Cave seed: ", seed)
 	_make_environment()
@@ -161,6 +178,11 @@ func start_game(p_seed: int, snap: Dictionary = {}) -> void:
 	authority.monsters.enabled = _monsters
 	if not snap.is_empty():
 		authority.load_snapshot(snap)
+	elif not save.is_empty():
+		_loaded = save
+		authority.load_snapshot(save.snap)
+		if save.players.has(0):
+			SaveGame.apply_player(authority.get_player(me), save.players[0])
 	elif authority.is_host():
 		authority.seed_poi_loot()
 
@@ -170,6 +192,8 @@ func start_game(p_seed: int, snap: Dictionary = {}) -> void:
 	add_child(bm)
 
 	hud = Hud.new()
+	if not save.is_empty() and save.get("map", {}).size() > 0:
+		hud.map_data.load_data(save.map)
 	hud.build_mode = bm
 	bm.message.connect(func(t: String): hud.show_toast(t, 5.0))
 	dwarf.fight.message.connect(func(t: String, _c: Color): hud.show_toast(t, 1.5))
@@ -243,7 +267,15 @@ func _on_peer_connected(id: int) -> void:
 	var pos := _spawn_spot(id)
 	var puppet := _spawn_dwarf(id, pos, false)
 	_player_joined.rpc(id, pos, player_slots)
-	authority.add_player(id, puppet)
+	var friend := authority.add_player(id, puppet)
+	var slot: int = player_slots[id]
+	if _loaded.get("players", {}).has(slot):
+		# Welcome back: the bag, skills and lantern you had last time.
+		var d: Dictionary = _loaded.players[slot]
+		friend.inventory.load_data(d.inv)
+		friend.progress.load_data(d.progress)
+		friend.fuel = d.fuel
+		authority._progress_dirty[id] = true
 	if hud:
 		hud.show_toast("%s joined!" % player_name(id))
 
@@ -320,7 +352,12 @@ func _make_environment() -> void:
 	add_child(we)
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	if world and _ready_to_play and _saving and authority.is_host():
+		_autosave -= delta
+		if _autosave <= 0.0:
+			_autosave = 300.0  # every 5 minutes (spec 5.11)
+			save_now("Autosaved")
 	if world == null or _ready_to_play:
 		return
 	var p := dwarf.global_position
@@ -331,9 +368,25 @@ func _process(_delta: float) -> void:
 		hud.set_loading(false)
 
 
+## Saves now (host only). Shows a small note.
+func save_now(note: String = "Saved") -> void:
+	if not _saving or world == null or not authority.is_host():
+		return
+	var err := SaveGame.save(self)
+	if hud:
+		hud.show_toast(note if err == "" else "Save failed: " + err, 2.0)
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST and _ready_to_play:
+		save_now()  # saving when you quit (spec 5.11)
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("screenshot"):
 		take_screenshot()
+	if event.is_action_pressed("quicksave") and _ready_to_play:
+		save_now("Saved (F5)")
 	if not _ready_to_play:
 		return
 	if event.is_action_pressed("blueprints") or (event.is_action_pressed("pause") and hud.is_blueprints_open()):

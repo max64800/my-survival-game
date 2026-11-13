@@ -6,6 +6,7 @@ signal play_alone(seed: int)
 signal host_direct(seed: int)
 signal join_direct(address: String)
 signal host_steam(seed: int)
+signal continue_game(data: Dictionary)
 
 var _status: Label
 var _seed_edit: LineEdit
@@ -32,8 +33,12 @@ func _ready() -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)
 
+	var save := SaveGame.newest()
+	if not save.is_empty():
+		var b := _button(box, "Continue (saved %s)" % str(save.saved_at).replace("T", " "), func(): continue_game.emit(save))
+		b.add_theme_color_override("font_color", Color(1.0, 0.85, 0.5))
 	_seed_edit = _field(box, "Cave seed (empty = random)")
-	_button(box, "Play alone", func(): play_alone.emit(_seed()))
+	_button(box, "New world (play alone)", func(): play_alone.emit(_seed()))
 	box.add_child(HSeparator.new())
 	_button(box, "Host a game (direct / same network)", func(): host_direct.emit(_seed()))
 	var row := HBoxContainer.new()

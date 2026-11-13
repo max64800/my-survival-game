@@ -68,6 +68,25 @@ func reveal(p: Vector3, sdf: Callable) -> void:
 					img.set_pixel(px.x + ox, px.y + oy, col)
 
 
+## For saving: each floor page as a PNG, plus the ▲/▼ marks.
+func to_data() -> Dictionary:
+	var pages := []
+	for img in floors:
+		pages.append(img.save_png_to_buffer())
+	return {pages = pages, markers = markers.duplicate(true), last = _last_floor}
+
+
+func load_data(d: Dictionary) -> void:
+	var pages: Array = d.get("pages", [])
+	for i in mini(pages.size(), floors.size()):
+		var img := Image.new()
+		if img.load_png_from_buffer(pages[i]) == OK and img.get_size() == floors[i].get_size():
+			img.convert(Image.FORMAT_RGBA8)
+			floors[i] = img
+	markers.assign(d.get("markers", []))
+	_last_floor = d.get("last", -1)
+
+
 func seen_fraction(f: int) -> float:
 	var n := 0
 	var img := floors[f]

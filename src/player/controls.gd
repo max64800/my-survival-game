@@ -23,6 +23,7 @@ const KEYS := {
 	"capture": [KEY_C],
 	"blueprints": [KEY_V],
 	"dodge": [KEY_CTRL],
+	"quicksave": [KEY_F5],
 }
 const MOUSE := {
 	"dig": [MOUSE_BUTTON_LEFT],
