@@ -25,7 +25,10 @@ const ORE_THRESHOLD := 0.66
 const SOLID_FILL := -6.0  ## SDF value used for blocks that are all rock
 
 var seed: int
-var rooms: Array[Dictionary] = []  ## {center: Vector3, radii: Vector3, big: bool}
+var rooms: Array[Dictionary] = []  ## {center: Vector3, radii: Vector3, big: bool, kind: String, sealed: bool}
+## Special places (world doc 3.1): {id, type, pos, normal, room}. type: lair, nest_cavern,
+## great_hall, ruin, nest, camp, shrine, geode, marking.
+var pois: Array[Dictionary] = []
 var segments: Array[Dictionary] = []  ## {a: Vector3, b: Vector3, r: float}
 var spawn_point := Vector3.ZERO
 
@@ -45,7 +48,7 @@ var _ore_noise := FastNoiseLite.new()
 var _dirt_noise := FastNoiseLite.new()
 
 
-func _init(p_seed: int = 1, big_caverns: int = 2, small_rooms: int = 7) -> void:
+func _init(p_seed: int = 1, big_caverns: int = 3, small_rooms: int = 12) -> void:
 	seed = p_seed
 	_setup_noise()
 	var rng := RandomNumberGenerator.new()
@@ -54,6 +57,9 @@ func _init(p_seed: int = 1, big_caverns: int = 2, small_rooms: int = 7) -> void:
 	_connect_rooms(rng)
 	_bake_shapes()
 	spawn_point = _find_spawn()
+	var poi_rng := RandomNumberGenerator.new()
+	poi_rng.seed = p_seed + 999  # its own dice, so adding places never moves the caves
+	_plan_pois(poi_rng)
 
 
 # ---------------------------------------------------------------- layout
@@ -79,7 +85,7 @@ func _place_rooms(rng: RandomNumberGenerator, big_count: int, small_count: int) 
 		var c := Vector3(rng.randf_range(-140, 140), rng.randf_range(-38, -18), rng.randf_range(-140, 140))
 		var r := Vector3(rng.randf_range(24, 34), rng.randf_range(10, 14), rng.randf_range(24, 34))
 		if _far_from_rooms(c, 120.0 if tries < 300 else 70.0):
-			rooms.append({center = c, radii = r, big = true})
+			rooms.append({center = c, radii = r, big = true, kind = "cavern", sealed = false})
 	# Small chambers: little rooms along the way.
 	tries = 0
 	while rooms.size() < big_count + small_count and tries < 1000:
@@ -87,7 +93,7 @@ func _place_rooms(rng: RandomNumberGenerator, big_count: int, small_count: int) 
 		var c := Vector3(rng.randf_range(-170, 170), rng.randf_range(-54, -2), rng.randf_range(-170, 170))
 		var r := Vector3(rng.randf_range(7, 12), rng.randf_range(5, 7), rng.randf_range(7, 12))
 		if _far_from_rooms(c, 45.0):
-			rooms.append({center = c, radii = r, big = false})
+			rooms.append({center = c, radii = r, big = false, kind = "room", sealed = false})
 
 
 func _count_big() -> int:
@@ -166,6 +172,8 @@ func _clamp_inside(p: Vector3) -> Vector3:
 
 
 func _bake_shapes() -> void:
+	for arr in [_room_c, _room_r, _room_min, _room_max, _seg_a, _seg_b, _seg_r, _seg_min, _seg_max]:
+		arr.clear()
 	var pad := Vector3.ONE * (WALL_NOISE_AMP + BLEND + 1.0)
 	for room in rooms:
 		_room_c.append(room.center)
@@ -192,6 +200,179 @@ func find_floor(x: float, z: float, y_start: float) -> Vector3:
 	while y > Y_MIN and sdf_at(Vector3(x, y, z)) > 0.0:
 		y -= 0.25
 	return Vector3(x, y, z)
+
+
+# ---------------------------------------------------------------- special places (POIs)
+
+func _plan_pois(rng: RandomNumberGenerator) -> void:
+	var spawn: Vector3 = rooms[0].center
+	rooms[0].kind = "spawn"
+	var bigs := []
+	for i in range(1, rooms.size()):
+		if rooms[i].big:
+			bigs.append(i)
+	if bigs.size() > 0:
+		rooms[bigs[0]].kind = "nest_cavern"  # Skerra, the Nipper Queen
+		_add_poi("nest_cavern", find_floor(rooms[bigs[0]].center.x, rooms[bigs[0]].center.z, rooms[bigs[0]].center.y), Vector3.UP, bigs[0])
+	if bigs.size() > 1:
+		rooms[bigs[1]].kind = "great_hall"  # Brask, the Rusted Thane
+		_add_poi("great_hall", find_floor(rooms[bigs[1]].center.x, rooms[bigs[1]].center.z, rooms[bigs[1]].center.y), Vector3.UP, bigs[1])
+	# Small rooms: ruins, nests and camps (no nests within 60 m of the start).
+	var smalls := []
+	for i in rooms.size():
+		if not rooms[i].big:
+			smalls.append(i)
+	smalls.sort_custom(func(a, b): return rooms[a].center.distance_to(spawn) > rooms[b].center.distance_to(spawn))
+	var plan := ["ruin", "nest", "ruin", "camp", "nest", "ruin", "camp", "nest", "camp", "camp"]
+	var k := 0
+	for i in smalls:
+		if k >= plan.size():
+			break
+		var t: String = plan[k]
+		if t == "nest" and rooms[i].center.distance_to(spawn) < 60.0:
+			t = "camp"
+		rooms[i].kind = t
+		_add_poi(t, find_floor(rooms[i].center.x, rooms[i].center.z, rooms[i].center.y), Vector3.UP, i)
+		k += 1
+	# The main boss lair: a sealed dome, 6+ m of rock all around, 150+ m from the start.
+	for attempt in 600:
+		var c := Vector3(rng.randf_range(-165, 165), rng.randf_range(-40, -16), rng.randf_range(-165, 165))
+		if c.distance_to(spawn) < 150.0:
+			continue
+		var r := Vector3(18, 9, 18)
+		if _solid_around(c, r + Vector3.ONE * 6.0):
+			rooms.append({center = c, radii = r, big = true, kind = "lair", sealed = true})
+			_add_poi("lair", c - Vector3.UP * r.y * 0.55, Vector3.UP, rooms.size() - 1)
+			break
+	# Crystal geodes (sealed pockets near tunnels) and rune shrines (3 open alcoves, 2 sealed).
+	var geodes := 0
+	var shrines_open := 0
+	var shrines_sealed := 0
+	for attempt in 800:
+		if geodes >= 6 and shrines_open >= 3 and shrines_sealed >= 2:
+			break
+		var sgi := rng.randi_range(0, segments.size() - 1)
+		var sg: Dictionary = segments[sgi]
+		var mid: Vector3 = (sg.a + sg.b) * 0.5
+		if mid.distance_to(spawn) < 25.0:
+			continue
+		var along: Vector3 = (sg.b - sg.a).normalized()
+		var side := along.cross(Vector3.UP).normalized()
+		if side.length() < 0.5:
+			continue
+		side *= -1.0 if rng.randf() < 0.5 else 1.0
+		if shrines_open < 3:
+			var c: Vector3 = mid + side * (sg.r + 1.2)
+			if _far_from_pois(c, 20.0):
+				rooms.append({center = c, radii = Vector3(2.8, 2.8, 2.8), big = false, kind = "shrine", sealed = false})
+				_add_poi("shrine", c, -side, rooms.size() - 1)
+				shrines_open += 1
+				continue
+		var dist: float = sg.r + rng.randf_range(5.0, 8.0)
+		var c := mid + side * dist
+		if geodes < 6:
+			# Pockets must be bigger than the wall bumpiness (2.2 m), or bumps could close them.
+			var gr := rng.randf_range(3.0, 4.5)
+			if _solid_around(c, Vector3.ONE * (gr + 2.5)) and _far_from_pois(c, 15.0):
+				rooms.append({center = c, radii = Vector3(gr, gr * 0.9, gr), big = false, kind = "geode", sealed = true})
+				_add_poi("geode", c, -side, rooms.size() - 1)
+				geodes += 1
+				continue
+		if shrines_sealed < 2 and _solid_around(c, Vector3.ONE * 5.3) and _far_from_pois(c, 20.0):
+			rooms.append({center = c, radii = Vector3(2.8, 2.8, 2.8), big = false, kind = "shrine", sealed = true})
+			_add_poi("shrine", c, -side, rooms.size() - 1)
+			shrines_sealed += 1
+	_bake_shapes()
+	_place_markings(rng, spawn)
+
+
+## The 3 wall markings (boss clues): one in the Great Hall, one in a ruin, one on a
+## cavern wall near the start. Each ≥ 80 m from the lair and ≥ 60 m from the others (world doc 3.2).
+func _place_markings(rng: RandomNumberGenerator, spawn: Vector3) -> void:
+	var lair := lair_poi()
+	var candidates := []
+	for kind in ["great_hall", "ruin", "spawn", "cavern", "nest_cavern", "camp", "room"]:
+		for i in rooms.size():
+			if rooms[i].kind == kind:
+				candidates.append(i)
+	var placed := []
+	for i in candidates:
+		if placed.size() >= 3:
+			break
+		var room: Dictionary = rooms[i]
+		for attempt in 16:
+			var a := rng.randf_range(0, TAU)
+			var start: Vector3 = room.center + Vector3.DOWN * room.radii.y * 0.25
+			var hit := _march_wall(start, Vector3(cos(a), 0, sin(a)), 60.0)
+			if hit == Vector3.INF:
+				continue
+			var n := _normal(hit)
+			if absf(n.y) > 0.3:
+				continue
+			if not lair.is_empty() and hit.distance_to(lair.pos) < 80.0:
+				break
+			var ok := true
+			for p in placed:
+				if p.distance_to(hit) < 60.0:
+					ok = false
+			if not ok:
+				break
+			placed.append(hit)
+			_add_poi("marking", hit + n * 0.05, n, i)
+			break
+
+
+func _add_poi(type: String, pos: Vector3, normal: Vector3, room: int) -> void:
+	pois.append({id = pois.size(), type = type, pos = pos, normal = normal, room = room})
+
+
+func _far_from_pois(p: Vector3, d: float) -> bool:
+	for q in pois:
+		if q.pos.distance_to(p) < d:
+			return false
+	return true
+
+
+## True if a box of half-size `half` around `c` is rock everywhere we sample.
+func _solid_around(c: Vector3, half: Vector3) -> bool:
+	if _bound_dist(c) < half.x + 4.0:
+		return false
+	for x in [-1.0, 0.0, 1.0]:
+		for y in [-1.0, 0.0, 1.0]:
+			for z in [-1.0, 0.0, 1.0]:
+				if sdf_at(c + Vector3(x, y, z) * half) >= -0.5:
+					return false
+	return true
+
+
+func _march_wall(start: Vector3, dir: Vector3, max_dist: float) -> Vector3:
+	var t := 0.0
+	while t < max_dist:
+		var p := start + dir * t
+		var d := sdf_at(p)
+		if d < 0.05:
+			return p
+		t += maxf(d * 0.8, 0.2)
+	return Vector3.INF
+
+
+func _normal(p: Vector3) -> Vector3:
+	const E := 0.4
+	var g := Vector3(sdf_at(p + Vector3(E, 0, 0)) - sdf_at(p - Vector3(E, 0, 0)),
+		sdf_at(p + Vector3(0, E, 0)) - sdf_at(p - Vector3(0, E, 0)),
+		sdf_at(p + Vector3(0, 0, E)) - sdf_at(p - Vector3(0, 0, E)))
+	return g.normalized() if g.length() > 0.0001 else Vector3.UP
+
+
+func lair_poi() -> Dictionary:
+	for p in pois:
+		if p.type == "lair":
+			return p
+	return {}
+
+
+func pois_of(type: String) -> Array:
+	return pois.filter(func(p): return p.type == type)
 
 
 # ---------------------------------------------------------------- queries
