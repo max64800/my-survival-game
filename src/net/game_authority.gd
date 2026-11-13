@@ -26,11 +26,11 @@ var world: World
 var glow: GlowField
 var drops_root: Node3D
 var players: Dictionary = {}  ## peer_id -> PlayerState
-var edit_log: Array[Vector3] = []  ## every dig center, so late joiners can catch up
+var edit_log: Array[Vector4] = []  ## every dig: center (xyz) + pickaxe tier (w), so late joiners can catch up
 var removed_glow: Array[int] = []
 var _drops: Dictionary = {}  ## drop_id -> Drop
 var _next_drop_id := 1
-var _pending_digs: Array[Vector3] = []  ## digs waiting for that part of the cave to load
+var _pending_digs: Array[Vector4] = []  ## digs waiting for that part of the cave to load
 var _fuel_sync := 0.0
 
 
@@ -70,7 +70,7 @@ func add_player(peer_id: int, node: Node3D, give_start_items: bool = true) -> Pl
 	var ps := PlayerState.new()
 	ps.node = node
 	if give_start_items:
-		ps.inventory.add("stone_pickaxe", 1)
+		ps.inventory.add("pickaxe_stone", 1)
 	players[peer_id] = ps
 	if is_host() and peer_id != local_peer_id():
 		ps.inventory.changed.connect(func(): _send_inventory(peer_id))
@@ -222,7 +222,8 @@ func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
 	var mat := world.rock_material_near(point - normal * 0.3, 1.1)
 	if mat < 0:
 		return {state = "air"}
-	var needed := Mat.hits_needed(mat, power)
+	var tool_tier := Items.tier(ps.selected_item())
+	var needed := Mat.hits_needed(mat, power, tool_tier)
 	if needed == 0:
 		return {state = "blocked", material = mat, point = point}
 	if ps.dig_target.distance_to(center) > 1.0:
@@ -233,7 +234,7 @@ func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
 		return {state = "hit", hits = ps.dig_hits, needed = needed, material = mat, point = point}
 	ps.dig_hits = 0
 	ps.dig_target = Vector3.INF
-	var counts := _host_dig(center)
+	var counts := _host_dig(center, tool_tier)
 	_give_dig_drops(ps, counts, center + normal * 0.8)
 	return {state = "dug", hits = needed, needed = needed, material = mat, point = point}
 
@@ -270,7 +271,7 @@ func request_refill(peer_id: int) -> bool:
 	var ps := get_player(peer_id)
 	if ps == null or ps.fuel > MAX_FUEL - 30.0:
 		return false
-	for id in ["glow_crystal"]:
+	for id in ["crystal_blue"]:
 		if ps.inventory.remove(id, 1):
 			ps.fuel = minf(MAX_FUEL, ps.fuel + Items.fuel_seconds(id))
 			fuel_changed.emit(peer_id, ps.fuel)
@@ -282,22 +283,22 @@ func request_refill(peer_id: int) -> bool:
 
 # Host-side helpers that decide things, then tell everyone.
 
-func _host_dig(center: Vector3) -> Dictionary:
+func _host_dig(center: Vector3, tool_tier: int = 0) -> Dictionary:
 	if glow:
 		for spot in glow.spots_near(center, DIG_RADIUS + 0.9):
 			_host_remove_glow(spot)
-	var counts := world.apply_dig(center, DIG_RADIUS)
-	edit_log.append(center)
-	if multiplayer.has_multiplayer_peer():
-		_ev_dig.rpc(center)  # the others apply it; we already did
+	var counts := world.apply_dig(center, DIG_RADIUS, tool_tier)
+	var edit := Vector4(center.x, center.y, center.z, tool_tier)
+	edit_log.append(edit)
+	_ev_dig.rpc(edit)  # the others apply it; we already did
 	return counts
 
 
 func _host_remove_glow(spot: Dictionary) -> void:
 	removed_glow.append(spot.id)
 	_ev_remove_glow.rpc(spot.id)
-	var item := "glow_crystal" if spot.kind == GlowPlacer.CRYSTAL else "glowcap"
-	spawn_drop(item, 2 if item == "glow_crystal" else 1, spot.pos + spot.normal * 0.5)
+	var item := "crystal_blue" if spot.kind == GlowPlacer.CRYSTAL else "glowcap"
+	spawn_drop(item, 2 if item == "crystal_blue" else 1, spot.pos + spot.normal * 0.5)
 
 
 func spawn_drop(item_id: String, count: int, pos: Vector3) -> void:
@@ -324,21 +325,22 @@ func _send_inventory(peer_id: int) -> void:
 
 ## Dig event for the other players (the host already dug when it decided).
 @rpc("authority", "reliable")
-func _ev_dig(center: Vector3) -> void:
-	edit_log.append(center)
-	_pending_digs.append(center)
+func _ev_dig(edit: Vector4) -> void:
+	edit_log.append(edit)
+	_pending_digs.append(edit)
 	_apply_pending_digs()
 
 
 func _apply_pending_digs() -> void:
 	if _pending_digs.is_empty() or world == null:
 		return
-	var still: Array[Vector3] = []
-	for c in _pending_digs:
+	var still: Array[Vector4] = []
+	for e in _pending_digs:
+		var c := Vector3(e.x, e.y, e.z)
 		if world.is_ready_at(c, DIG_RADIUS + 1.0):
-			world.apply_dig(c, DIG_RADIUS)  # carving is order-independent, so late is fine
+			world.apply_dig(c, DIG_RADIUS, int(e.w))  # carving is order-independent, so late is fine
 		else:
-			still.append(c)
+			still.append(e)
 	_pending_digs = still
 
 

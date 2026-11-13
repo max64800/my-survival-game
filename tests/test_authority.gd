@@ -128,10 +128,10 @@ func test_lantern_refill_uses_a_crystal() -> void:
 	check(not auth.request_refill(1), "full lantern can't be refilled")
 	ps.fuel = 10.0
 	check(not auth.request_refill(1), "no crystal, no refill")
-	ps.inventory.add("glow_crystal", 2)
+	ps.inventory.add("crystal_blue", 2)
 	check(auth.request_refill(1), "refill with a crystal")
-	check_eq(ps.inventory.count_of("glow_crystal"), 1, "one crystal used")
-	check_near(ps.fuel, 10.0 + Items.fuel_seconds("glow_crystal"), 0.01, "fuel went up")
+	check_eq(ps.inventory.count_of("crystal_blue"), 1, "one crystal used")
+	check_near(ps.fuel, 10.0 + Items.fuel_seconds("crystal_blue"), 0.01, "fuel went up")
 	_teardown()
 
 
@@ -143,7 +143,7 @@ func test_fuel_burns_down_but_not_below_zero() -> void:
 	_teardown()
 
 
-func test_breaking_glow_crystal_gives_crystals() -> void:
+func test_breaking_crystal_blue_gives_crystals() -> void:
 	await _setup(42)
 	var spot: Dictionary = {}
 	for id in glow._spots:

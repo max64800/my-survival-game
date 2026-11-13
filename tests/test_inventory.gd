@@ -33,17 +33,17 @@ func test_full_bag_returns_leftover() -> void:
 
 func test_tools_do_not_stack() -> void:
 	var inv := Inventory.new()
-	inv.add("stone_pickaxe", 2)
+	inv.add("pickaxe_stone", 2)
 	check_eq(inv.get_slot(0).count, 1, "one pickaxe per slot")
 	check_eq(inv.get_slot(1).count, 1, "second pickaxe in next slot")
 
 
 func test_remove() -> void:
 	var inv := Inventory.new()
-	inv.add("glow_crystal", 3)
-	check(not inv.remove("glow_crystal", 4), "can't remove more than you have")
-	check_eq(inv.count_of("glow_crystal"), 3, "failed remove changes nothing")
-	check(inv.remove("glow_crystal", 3), "remove all")
+	inv.add("crystal_blue", 3)
+	check(not inv.remove("crystal_blue", 4), "can't remove more than you have")
+	check_eq(inv.count_of("crystal_blue"), 3, "failed remove changes nothing")
+	check(inv.remove("crystal_blue", 3), "remove all")
 	check(inv.get_slot(0).is_empty(), "slot empty after removing all")
 
 

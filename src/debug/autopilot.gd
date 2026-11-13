@@ -65,7 +65,7 @@ func _run() -> void:
 	await _shot("03_after_digging")
 	_report.append("after digging: stone=%d dirt=%d copper=%d crystals=%d, drops lying around=%d" % [
 		ps.inventory.count_of("stone"), ps.inventory.count_of("dirt"), ps.inventory.count_of("copper_ore"),
-		ps.inventory.count_of("glow_crystal"), auth.drop_count()])
+		ps.inventory.count_of("crystal_blue"), auth.drop_count()])
 
 	# Walk forward and dig a tunnel into a wall.
 	dwarf._pitch = 0.0
@@ -84,7 +84,7 @@ func _run() -> void:
 	ps.fuel = 0.0
 	await _wait(1.0)
 	await _shot("05_lantern_empty")
-	ps.inventory.add("glow_crystal", 1)
+	ps.inventory.add("crystal_blue", 1)
 	_report.append("refill worked: %s (fuel %.0f s)" % [auth.request_refill(auth.local_peer_id()), ps.fuel])
 	await _wait(1.0)
 

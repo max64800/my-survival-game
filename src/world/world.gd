@@ -84,9 +84,9 @@ func _material_of(v: Vector3i) -> int:
 	return m
 
 
-## Carves a ball of rock away. Border rock is never removed.
+## Carves a ball of rock away. Rock too hard for `tool_tier` (like border rock) is left alone.
 ## Returns how many voxels of each material turned into air: {Mat.STONE: 7, ...}
-func apply_dig(center: Vector3, radius: float) -> Dictionary:
+func apply_dig(center: Vector3, radius: float, tool_tier: int = 0) -> Dictionary:
 	var counts := {}
 	var lo := Vector3i((center - Vector3.ONE * (radius + 1.0)).floor())
 	var hi := Vector3i((center + Vector3.ONE * (radius + 1.0)).ceil())
@@ -107,7 +107,7 @@ func apply_dig(center: Vector3, radius: float) -> Dictionary:
 				if carve <= old:
 					continue
 				var m := buf.get_voxel(x, y, z, VoxelBuffer.CHANNEL_INDICES)
-				if not Mat.is_diggable(m):
+				if not Mat.is_diggable(m, tool_tier):
 					continue
 				buf.set_voxel_f(carve, x, y, z, VoxelBuffer.CHANNEL_SDF)
 				if old < 0.0 and carve >= 0.0:

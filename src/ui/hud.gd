@@ -283,7 +283,7 @@ func _process(delta: float) -> void:
 	var ps: GameAuthority.PlayerState = auth.get_player(peer_id) if auth else null
 	if ps:
 		_fuel_bar.value = ps.fuel
-		var crystals := ps.inventory.count_of("glow_crystal")
+		var crystals := ps.inventory.count_of("crystal_blue")
 		var mins := int(ps.fuel) / 60
 		var secs := int(ps.fuel) % 60
 		_fuel_label.text = "Lantern %d:%02d   (R: refill, %d crystal%s)" % [mins, secs, crystals, "" if crystals == 1 else "s"]
@@ -296,9 +296,10 @@ func _process(delta: float) -> void:
 		if info.is_empty():
 			_aim_label.text = ""
 		elif info.kind == "rock":
-			var power := Items.dig_power(ps.selected_item()) if ps else 1
-			var hits := Mat.hits_needed(info.material, maxi(power, 1))
-			_aim_label.text = "%s · %s" % [info.name, "can't dig yet" if hits == 0 else "%d hit%s" % [hits, "" if hits == 1 else "s"]]
+			var tool := ps.selected_item() if ps else ""
+			var power := Items.dig_power(tool) if Items.dig_power(tool) > 0 else 10
+			var hits := Mat.hits_needed(info.material, power, maxi(Items.tier(tool), 0))
+			_aim_label.text = "%s · %s" % [info.name, "needs a %s pickaxe" % Mat.TIER_NAMES[Mat.min_tier(info.material)] if hits == 0 else "%d hit%s" % [hits, "" if hits == 1 else "s"]]
 		else:
 			_aim_label.text = info.name
 	_fps_label.text = "%d FPS" % Engine.get_frames_per_second()

@@ -43,7 +43,7 @@ static func _mesh_for(id: String) -> Mesh:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = Items.color(id)
 	mat.roughness = 0.7
-	if id in ["glow_crystal", "glowcap", "copper_ore"]:
+	if id in ["crystal_blue", "glowcap", "copper_ore"]:
 		mat.emission_enabled = true
 		mat.emission = Items.color(id)
 		mat.emission_energy_multiplier = 0.8 if id != "copper_ore" else 0.25

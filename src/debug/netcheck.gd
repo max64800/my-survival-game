@@ -57,8 +57,8 @@ func _run_client() -> void:
 	_main.take_screenshot(_shots.path_join("client.png"))
 	var me := auth.get_player(auth.local_peer_id())
 	var air := 0
-	for c in auth.edit_log:
-		if auth.world.sdf_at(c) > 0.0:
+	for e in auth.edit_log:
+		if auth.world.sdf_at(Vector3(e.x, e.y, e.z)) > 0.0:
 			air += 1
 	var report := {
 		edits = auth.edit_log.size(),
@@ -66,7 +66,7 @@ func _run_client() -> void:
 		pending = auth.pending_dig_count(),
 		dirt = me.inventory.count_of("dirt"),
 		stone = me.inventory.count_of("stone"),
-		pickaxes = me.inventory.count_of("stone_pickaxe"),
+		pickaxes = me.inventory.count_of("pickaxe_stone"),
 		sees_host = _main.players_root.has_node("Dwarf_1"),
 		drops = auth.drop_count(),
 	}
@@ -97,8 +97,8 @@ func _run_host() -> void:
 	_main.take_screenshot(_shots.path_join("host.png"))
 	var ps := auth.get_player(cid)
 	var air := 0
-	for c in auth.edit_log:
-		if auth.world.sdf_at(c) > 0.0:
+	for e in auth.edit_log:
+		if auth.world.sdf_at(Vector3(e.x, e.y, e.z)) > 0.0:
 			air += 1
 	var r := _client_report
 	var fails: Array[String] = []
