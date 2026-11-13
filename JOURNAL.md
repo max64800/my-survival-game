@@ -71,3 +71,53 @@ Our diary of building the game: what we did, what went wrong, and how we fixed i
 **Next**
 - You read the updated plan and say yes (or ask for changes).
 - Claude writes the Step 1 build list, saves it to GitHub, and you build on the gaming PC.
+
+---
+
+## Night 2 — November 14, 2026 (00:30 → morning): Claude's overnight build on the MacBook
+
+You went to sleep and asked Claude to build, test and prepare as much as possible.
+
+**The big picture: 4 "branches" (like parallel copies of the project)**
+
+| Branch | What's in it | Status |
+|---|---|---|
+| `main` | **Step 1, First Tunnel** + all design docs | Ready to play-test |
+| `step-2-friends` | Step 1 + **co-op** (play with friends) | Tested with two game windows |
+| `step-3-survive` | Step 2 + **survival, crafting, skills, map** | Tested; needs play-testing |
+| (more may follow) | | |
+
+Why branches? Our rule says each step must be playable and approved before the next one. So `main` stays Step 1 until you've tried it. The later steps wait on their own branches, ready to merge when you say yes.
+
+**What we did**
+- Installed Godot 4.7.2 on the MacBook (in a temporary folder) so Claude could actually run the game, not just write it.
+- **Step 1 (main):** random caves (2 big caverns, 7 small rooms, twisty tunnels), smooth digging, rock hardness (moss 1 hit, stone 3, copper 5), undiggable border rock, chunks that fly into your bag, 8-slot hotbar + 30-slot bag, a lantern you refill with glow crystals, glowing crystals and mushrooms, frame-rate counter, pause screen.
+- **Checks:** a test robot (`tools/run_tests.sh` / `.bat`) runs auto-checks, plus an "autopilot" that plays the game by itself and takes screenshots. Claude looked at every screenshot.
+- **Design docs** (`docs/design/`): combat & monsters, progression & economy, world & building. Then a review pass made all three agree. **26 open questions for you** are in `docs/design/README.md`. Each has a default (★); only answer the ones you want to change.
+- **Steam check:** the Steam add-on and the digging add-on work together. (That was the biggest technical risk in our plan.)
+- **Step 2 (branch `step-2-friends`):** co-op over IP address and Steam lobbies, a start menu, friends with names and shirt colors. Late joiners catch up on every hole already dug. The "netcheck" robot ran two game windows and checked both see the same cave.
+- **Step 3 (branch `step-3-survive`):** health, stamina, hunger, thirst (never kills you), 3 food-buff slots, 16 dishes + 6 drinks, ~80 items, ~55 recipes, placeable stations (campfire, workbench, smelter, anvil…), hanging roots for wood, mushrooms, fiber, clay, levels + 4 skills + 43 perks (K screen), the Rune Slab rules, and a parchment map per floor (M screen).
+
+**Hurdles / mistakes (including Claude's)**
+- The test robot first said "PASS" even when a test crashed. **Fix:** it now catches every error, and Claude proved it by planting a broken test.
+- Copper was 20% of all rock, far too much. The tests caught it. **Fix:** now about 5%.
+- The first screenshots were too dark at a distance. **Fix:** brighter cave "bounce light", less fog.
+- Crystals were too tiny to notice. **Fix:** 1.8× bigger.
+- Roots hung at an angle from slanted ceilings, out of reach. **Fix:** they hang straight down now.
+- Roots and brown mushrooms were invisible in the dark. **Fix:** a faint glow on every harvestable thing.
+- The smelter needs clay, but the cave had none. **Fix:** clay patches in the lower cave.
+- The progression doc measures hardness ×10 (stone 26, pickaxe 10), but Step 1 used small numbers. Same hit counts. **Fix:** Step 3 switches to the doc's ×10 scale.
+- The three design docs disagreed with each other in places (the first boss needed ~370 sword hits!). **Fix:** a review pass; the boss now takes about 5 minutes.
+- Some names were too close to other games' names. **Fix:** renamed (for example, "Warden" became "Keeper").
+
+**Not done yet / known limits**
+- No art pack yet: the dwarf and stations are simple shapes. You pick the pack on the PC.
+- No sounds yet.
+- Steam lobbies are written but untested. They need Steam running and two accounts or PCs.
+- Step 3: no monsters yet (so no death or graves), runes can't be found yet (they come with ruins in Step 6), and the map isn't shared between friends yet.
+
+**Next (for you, on the gaming PC)**
+1. `git pull --ff-only`, open in Godot, press F5. See `docs/GAMING-PC-START.md`.
+2. Play Step 1 for 10 minutes and tell Claude how it feels.
+3. If you like it: say "merge step 2" (and later "merge step 3").
+4. Skim the 26 questions in `docs/design/README.md`.
