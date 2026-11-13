@@ -115,7 +115,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		auth.ask_select_slot((ps.selected_slot + Inventory.HOTBAR_SIZE - 1) % Inventory.HOTBAR_SIZE)
 	if event.is_action_pressed("refill_lantern"):
 		auth.ask_refill()
-	if event.is_action_pressed("use") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+	if event.is_action_pressed("use") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and not _holding_hammer():
 		var hit := aim()
 		auth.ask_use(hit.get("position", Vector3.INF), hit.get("normal", Vector3.ZERO), model.rotation.y + PI)
 
@@ -151,7 +151,7 @@ func _physics_process(delta: float) -> void:
 		var want := atan2(-face_dir.x, -face_dir.z)
 		model.rotation.y = lerp_angle(model.rotation.y, want, minf(1.0, delta * 12.0))
 
-	if playing and Input.is_action_pressed("dig") and not model.swinging and _can_swing():
+	if playing and Input.is_action_pressed("dig") and not model.swinging and not _holding_hammer() and _can_swing():
 		model.swing(SWING_TIME)
 		if _online():
 			_net_swing.rpc()
@@ -178,6 +178,19 @@ func _process(delta: float) -> void:
 	_shake = maxf(0.0, _shake - delta * 4.0)
 	camera.h_offset = randf_range(-1, 1) * _shake * 0.06
 	camera.v_offset = randf_range(-1, 1) * _shake * 0.06
+
+
+## What's under the crosshair, up to `reach` meters from the dwarf (building reaches further).
+func aim_far(reach: float) -> Dictionary:
+	var from := camera.global_position
+	var forward := -camera.global_basis.z
+	var q := PhysicsRayQueryParameters3D.create(from, from + forward * (CAMERA_DISTANCE + reach + 2.0))
+	q.collision_mask = World.TERRAIN_LAYER | GlowField.GLOW_LAYER | Station.STATION_LAYER | PieceNode.PIECE_LAYER
+	q.exclude = [get_rid()]
+	var hit := get_world_3d().direct_space_state.intersect_ray(q)
+	if hit.is_empty() or (global_position + Vector3.UP).distance_to(hit.position) > reach:
+		return {}
+	return hit
 
 
 ## What's under the crosshair, within reach.
@@ -233,9 +246,15 @@ func _on_swing_impact() -> void:
 		Fx.burst(get_parent(), hit.position, spot.get("color", Color.WHITE), 8)
 		_shake = 0.4
 		return
-	if hit.collider is Station:
-		return  # don't dig through your own furniture
+	if hit.collider is Station or hit.collider is PieceNode:
+		return  # don't dig through your own furniture or buildings
 	auth.ask_hit(hit.position, hit.normal)
+
+
+func _holding_hammer() -> bool:
+	var auth := GameAuthority.instance
+	var ps := auth.get_player(peer_id) if auth else null
+	return ps != null and ps.selected_item() == "build_hammer"
 
 
 func _vitals() -> Vitals:

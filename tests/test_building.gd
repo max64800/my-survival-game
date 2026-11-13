@@ -75,6 +75,8 @@ func test_overlap_blocks_duplicates() -> void:
 	check(s.overlaps("wall", Vector3(1, 0, 0), 0), "same spot is taken")
 	check(not s.overlaps("wall", Vector3(1, 2, 0), 0), "stacking on top is fine")
 	check(not s.overlaps("floor", Vector3(1, 0, 1), 0), "floor next to the wall is fine")
+	check(not s.overlaps("wall", Vector3(0, 0, 1), 1), "a wall meeting it at the corner is fine")
+	check(s.overlaps("wall", Vector3(1.5, 0, 0), 0), "a wall half on top of it is not")
 
 
 func test_removing_support_drops_the_rest() -> void:

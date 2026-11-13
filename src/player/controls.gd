@@ -16,6 +16,10 @@ const KEYS := {
 	"interact": [KEY_E],
 	"toggle_skills": [KEY_K],
 	"toggle_map": [KEY_M],
+	"rotate_piece": [KEY_Q],
+	"lift_up": [KEY_PAGEUP, KEY_EQUAL],
+	"lift_down": [KEY_PAGEDOWN, KEY_MINUS],
+	"build_menu": [KEY_B],
 }
 const MOUSE := {
 	"dig": [MOUSE_BUTTON_LEFT],

@@ -40,6 +40,7 @@ var _fuel_sync := 0.0
 var stations: Dictionary = {}  ## station id -> Station node
 var stations_root: Node3D
 var rune_slab := RuneSlab.new()  ## one per world, shared by everyone
+var builder: Builder
 var _next_station_id := 1
 var _progress_dirty := {}  ## peer ids whose XP changed and need a sync
 var _progress_sync := 0.0
@@ -73,6 +74,12 @@ class PlayerState:
 
 func _enter_tree() -> void:
 	instance = self
+
+
+func _ready() -> void:
+	builder = Builder.new()
+	builder.name = "Builder"
+	add_child(builder)
 
 
 func _exit_tree() -> void:
@@ -503,6 +510,9 @@ func _host_dig(center: Vector3, tool_tier: int = 0) -> Dictionary:
 		for spot in glow.spots_near(center, DIG_RADIUS + 0.9):
 			_host_remove_glow(spot)
 	var counts := world.apply_dig(center, DIG_RADIUS, tool_tier)
+	if builder:
+		builder.reanchor_near(center, DIG_RADIUS)
+		builder.queue_check(center, DIG_RADIUS)
 	var edit := Vector4(center.x, center.y, center.z, tool_tier)
 	edit_log.append(edit)
 	_ev_dig.rpc(edit)  # the others apply it; we already did
@@ -666,7 +676,7 @@ func snapshot() -> Dictionary:
 			if glow._spots[id].get("chops", 1) != GlowPlacer.KINDS[glow._spots[id].kind].get("chops", 1):
 				chops[id] = glow._spots[id].chops
 	return {edits = edit_log.duplicate(), glow = removed_glow.duplicate(), drops = drops, next_drop = _next_drop_id,
-		stations = sts, chops = chops, runes = rune_slab.to_data()}
+		stations = sts, chops = chops, runes = rune_slab.to_data(), build = builder.snapshot()}
 
 
 func load_snapshot(snap: Dictionary) -> void:
@@ -687,6 +697,8 @@ func load_snapshot(snap: Dictionary) -> void:
 			glow.set_chops(id, snap.chops[id])
 	if snap.has("runes"):
 		rune_slab.load_data(snap.runes)
+	if snap.has("build"):
+		builder.load_snapshot(snap.build)
 
 
 # ================================================================== helpers
@@ -704,6 +716,25 @@ func _give_dig_drops(ps: PlayerState, counts: Dictionary, pos: Vector3) -> void:
 			n = maxi(n, 1)  # always feel rewarded for hitting ore
 		if n > 0:
 			spawn_drop(item, n, pos)
+
+
+## Something hurt a player (falling rock now, monsters in Step 5). Their own computer
+## owns their body, so the host sends it there.
+func hurt(peer_id: int, amount: float) -> void:
+	var ps := get_player(peer_id)
+	if ps == null:
+		return
+	if peer_id == local_peer_id():
+		ps.vitals.take_damage(amount)
+	else:
+		_rpc_hurt.rpc_id(peer_id, amount)
+
+
+@rpc("authority", "reliable")
+func _rpc_hurt(amount: float) -> void:
+	var me := get_player(local_peer_id())
+	if me:
+		me.vitals.take_damage(amount)
 
 
 ## XP from the host. Goes to the skill and the character level, then syncs to the player.

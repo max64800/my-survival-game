@@ -30,6 +30,9 @@ var _buff_label: Label
 var craft: CraftPanel
 var skills: SkillsPanel
 var map_panel: MapPanel
+var build_menu: BuildMenu
+var build_mode: BuildMode
+var _build_label: Label
 var map_data := MapData.new()
 var _map_timer := 0.0
 var _slot_style_cache := {}
@@ -158,6 +161,16 @@ func _build() -> void:
 	skills.visible = false
 	root.add_child(skills)
 	skills.resized.connect(func(): skills.position = (root.size - skills.size) * 0.5)
+	build_menu = BuildMenu.new()
+	build_menu.peer_id = peer_id
+	build_menu.visible = false
+	root.add_child(build_menu)
+	build_menu.resized.connect(func(): build_menu.position = (root.size - build_menu.size) * 0.5)
+	_build_label = _label(root, 16)
+	_build_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	_build_label.position += Vector2(-300, -110)
+	_build_label.custom_minimum_size = Vector2(600, 0)
+	_build_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	map_panel = MapPanel.new()
 	map_panel.visible = false
 	root.add_child(map_panel)
@@ -332,6 +345,17 @@ func set_bag_open(open: bool) -> void:
 		craft.visible = false
 
 
+func is_build_menu_open() -> bool:
+	return build_menu.visible
+
+
+func set_build_menu_open(open: bool) -> void:
+	build_menu.mode = build_mode
+	build_menu.visible = open
+	if open:
+		build_menu.refresh()
+
+
 func is_map_open() -> bool:
 	return map_panel.visible
 
@@ -407,6 +431,13 @@ func _process(delta: float) -> void:
 		else:
 			_aim_label.text = info.name
 	_fps_label.text = "%d FPS" % Engine.get_frames_per_second()
+	if build_mode and build_mode.active():
+		var c := BuildMenu._cost_text(Pieces.cost(build_mode.piece, build_mode.family))
+		_build_label.text = "%s · %s (%s)%s\nB choose · Q turn · PgUp/PgDn lift · right click take down" % [
+			Pieces.LIST[build_mode.piece].name, Pieces.FAMILIES[build_mode.family].name, c,
+			"" if build_mode.problem == "" else "  —  " + build_mode.problem]
+	else:
+		_build_label.text = ""
 	_map_timer -= delta
 	if _map_timer <= 0.0 and dwarf and auth and auth.world:
 		_map_timer = 0.5

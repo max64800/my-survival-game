@@ -114,3 +114,44 @@ func apply_dig(center: Vector3, radius: float, tool_tier: int = 0) -> Dictionary
 					counts[m] = counts.get(m, 0) + 1
 	_tool.paste(lo, buf, mask)
 	return counts
+
+
+## Turns these rock voxels into air (a cave-in). Border rock is left alone.
+## Returns how many voxels of each material fell: {Mat.STONE: 40, ...}
+func remove_voxels(points: PackedVector3Array) -> Dictionary:
+	var counts := {}
+	if points.is_empty():
+		return counts
+	var lo := Vector3i(points[0])
+	var hi := lo
+	for p in points:
+		lo = lo.min(Vector3i(p))
+		hi = hi.max(Vector3i(p))
+	var size := hi - lo + Vector3i.ONE
+	if not _tool.is_area_editable(AABB(Vector3(lo), Vector3(size))):
+		return counts
+	var buf := VoxelBuffer.new()
+	buf.create(size.x, size.y, size.z)
+	buf.set_channel_depth(VoxelBuffer.CHANNEL_INDICES, VoxelBuffer.DEPTH_8_BIT)
+	var mask := (1 << VoxelBuffer.CHANNEL_SDF) | (1 << VoxelBuffer.CHANNEL_INDICES)
+	_tool.copy(lo, buf, mask)
+	for p in points:
+		var v := Vector3i(p) - lo
+		var m := buf.get_voxel(v.x, v.y, v.z, VoxelBuffer.CHANNEL_INDICES)
+		if m == Mat.BORDER or buf.get_voxel_f(v.x, v.y, v.z, VoxelBuffer.CHANNEL_SDF) >= 0.0:
+			continue
+		buf.set_voxel_f(0.6, v.x, v.y, v.z, VoxelBuffer.CHANNEL_SDF)
+		counts[m] = counts.get(m, 0) + 1
+	_tool.paste(lo, buf, mask)
+	return counts
+
+
+## Copies the voxels in a box (for the cave-in check, which must not touch the live world).
+func copy_area(origin: Vector3i, size: Vector3i) -> VoxelBuffer:
+	if not _tool.is_area_editable(AABB(Vector3(origin), Vector3(size))):
+		return null
+	var buf := VoxelBuffer.new()
+	buf.create(size.x, size.y, size.z)
+	buf.set_channel_depth(VoxelBuffer.CHANNEL_INDICES, VoxelBuffer.DEPTH_8_BIT)
+	_tool.copy(origin, buf, (1 << VoxelBuffer.CHANNEL_SDF) | (1 << VoxelBuffer.CHANNEL_INDICES))
+	return buf

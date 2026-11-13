@@ -24,14 +24,12 @@ func box_of(uid: int) -> AABB:
 	return Pieces.box(p.piece, p.pos, p.rot)
 
 
-## Would a new piece overlap something already built? Boxes are shrunk a little so touching
-## is fine. Different kinds (a wall on a floor's edge) may overlap a bit more: a wall sits
-## half on the floor next to it.
+## Would a new piece overlap something already built? Boxes are shrunk a little first, so
+## pieces that just touch (a wall on a floor's edge, two walls meeting at a corner) are fine.
 func overlaps(piece: String, pos: Vector3, rot: int) -> bool:
-	var kind: String = Pieces.LIST[piece].place
+	var mine := _shrunk(Pieces.box(piece, pos, rot), 0.16)
 	for uid in pieces:
-		var shrink := 0.05 if Pieces.LIST[pieces[uid].piece].place == kind else 0.2
-		if _shrunk(box_of(uid), shrink).intersects(_shrunk(Pieces.box(piece, pos, rot), shrink)):
+		if _shrunk(box_of(uid), 0.16).intersects(mine):
 			return true
 	return false
 

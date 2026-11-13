@@ -140,7 +140,13 @@ func start_game(p_seed: int, snap: Dictionary = {}) -> void:
 	if not snap.is_empty():
 		authority.load_snapshot(snap)
 
+	var bm := BuildMode.new()
+	bm.name = "BuildMode"
+	bm.dwarf = dwarf
+	add_child(bm)
+
 	hud = Hud.new()
+	hud.build_mode = bm
 	hud.peer_id = me
 	hud.seed_text = str(seed)
 	add_child(hud)
@@ -301,6 +307,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("screenshot"):
 		take_screenshot()
 	if not _ready_to_play:
+		return
+	if event.is_action_pressed("build_menu") or (event.is_action_pressed("pause") and hud.is_build_menu_open()):
+		var open_b := not hud.is_build_menu_open() and hud.build_mode.active()
+		hud.set_build_menu_open(open_b)
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if open_b else Input.MOUSE_MODE_CAPTURED
 		return
 	if event.is_action_pressed("toggle_map") or (event.is_action_pressed("pause") and hud.is_map_open()):
 		var open_map := not hud.is_map_open()

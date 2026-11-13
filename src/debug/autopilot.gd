@@ -129,6 +129,35 @@ func _run() -> void:
 	await _wait(0.5)
 	await _shot("11_map")
 	_main.hud.set_map_open(false)
+	# Step 4: build a little hut with the Build Hammer.
+	ps.inventory.add("build_hammer", 1)
+	ps.inventory.add("plank_root", 80)
+	ps.inventory.add("cut_stone", 40)
+	ps.inventory.add("copper_ingot", 6)
+	_to_hotbar(ps, "build_hammer")
+	dwarf._pitch = -0.3
+	var fwd := -Basis(Vector3.UP, dwarf._yaw).z
+	var base: Vector3 = _main.world.maker.find_floor(dwarf.global_position.x + fwd.x * 5.0, dwarf.global_position.z + fwd.z * 5.0, dwarf.global_position.y + 2.0)
+	var results := []
+	var plan := [["floor", "cut_stone", Vector3(0, 0, 0), 0], ["floor", "cut_stone", Vector3(2, 0, 0), 0],
+		["wall", "plank_root", Vector3(0, 0.25, -1.0), 0], ["wall", "plank_root", Vector3(2, 0.25, -1.0), 0],
+		["doorway", "plank_root", Vector3(0, 0.25, 1.0), 0], ["wall", "plank_root", Vector3(2, 0.25, 1.0), 0],
+		["wall", "plank_root", Vector3(-1.0, 0.25, 0), 1], ["wall", "plank_root", Vector3(3.0, 0.25, 0), 1],
+		["pillar", "cut_stone", Vector3(3.0, 0.25, 1.0), 0]]
+	var origin: Vector3 = Pieces.snap("floor", base, Vector3.UP, 0.0, 0).pos
+	for step in plan:
+		var pos: Vector3 = origin + step[2]
+		pos.y = _main.world.maker.find_floor(pos.x, pos.z, origin.y + 2.0).y + step[2].y if step[0] != "floor" else _main.world.maker.find_floor(pos.x, pos.z, origin.y + 2.0).y
+		results.append("%s:%s" % [step[0], auth.builder.request_place(auth.local_peer_id(), step[0], step[1], pos, step[3])])
+	await _wait(1.2)
+	_report.append("step 4: " + ", ".join(results))
+	_report.append("step 4: %d pieces stand" % auth.builder.structure.pieces.size())
+	await _shot("12_hut")
+	_main.hud.set_build_menu_open(true)
+	await _wait(0.5)
+	await _shot("13_build_menu")
+	_main.hud.set_build_menu_open(false)
+	auth.request_select_slot(auth.local_peer_id(), 0)
 	# Look up at the ceiling for hanging roots.
 	dwarf._pitch = 0.6
 	await _wait(0.8)
