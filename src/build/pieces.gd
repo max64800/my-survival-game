@@ -134,12 +134,13 @@ static func touches_rock(piece: String, pos: Vector3, rot: int, sdf: Callable) -
 	for axis in 3:
 		for sgn in [-1.0, 1.0]:
 			var f := mid
-			f[axis] += sgn * (b.size[axis] * 0.5 + 0.3)
+			f[axis] += sgn * (b.size[axis] * 0.5 + 0.5)
 			if sdf.call(f) < 0.0:
 				return true
 	# Corners of the bottom face (uneven floors). AABB endpoints 0, 1, 4, 5 are the bottom ones.
+	# The cave is made of 1 m voxels, so look up to 0.75 m down.
 	for i in [0, 1, 4, 5]:
 		var c := b.get_endpoint(i)
-		if sdf.call(c + Vector3.DOWN * 0.3) < 0.0:
+		if sdf.call(c + Vector3.DOWN * 0.75) < 0.0:
 			return true
 	return false

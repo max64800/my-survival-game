@@ -21,6 +21,13 @@ var _checks := []  ## host: [time, center, radius]
 var _falls := []  ## host: [time, points]
 var _breaks := []  ## host: [time, uid]
 var _pending_falls: Array[PackedVector3Array] = []  ## falls waiting for that area to load here
+var sites := {}  ## Builder's Chest box id -> build site (see _ev_site)
+var _site_timer := 0.0
+var _site_ticks := 0
+const MAX_SITES := 3
+const SITE_TICK := 0.5  ## carve every 0.5 s, build every 1 s
+const CHEST_RANGE := 16.0
+const CARVE_RADIUS := 0.8  ## gentle scoops, so the floor under the building stays
 
 
 func _ready() -> void:
@@ -218,6 +225,12 @@ func _process(delta: float) -> void:
 		_apply_pending_falls()
 	if not auth.is_host():
 		return
+	_site_timer -= delta
+	if _site_timer <= 0.0:
+		_site_timer = SITE_TICK
+		_site_ticks += 1
+		if not sites.is_empty():
+			_tick_sites()
 	while not _checks.is_empty() and _checks[0][0] <= _clock:
 		var c: Array = _checks.pop_front()
 		_run_check(c[1], c[2], c[3] if c.size() > 3 else 0)
@@ -332,14 +345,228 @@ static func _bounds(pts: PackedVector3Array) -> AABB:
 
 
 ## Text for a Builder's Chest ("Building 3 of 12", "Paused: needs 6 Rootwood Plank"…).
-func site_status(_box_id: int) -> String:
+func site_status(box_id: int) -> String:
+	return sites.get(box_id, {}).get("status", "")
+
+
+# ================================================================== blueprints & build sites
+
+func ask_place_blueprint(json: String, origin: Vector3, rot: int, chest_pos: Vector3) -> void:
+	if auth.is_host():
+		request_place_blueprint(auth.local_peer_id(), json, origin, rot, chest_pos)
+	else:
+		_rpc_place_blueprint.rpc_id(1, json, origin, rot, chest_pos)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_place_blueprint(json: String, origin: Vector3, rot: int, chest_pos: Vector3) -> void:
+	if auth.is_host():
+		request_place_blueprint(multiplayer.get_remote_sender_id(), json, origin, rot, chest_pos)
+
+
+## Host: checks the blueprint (it may come from anyone, so every rule is re-checked here)
+## and starts a build site. Returns "" or why not.
+func request_place_blueprint(peer_id: int, json: String, origin: Vector3, rot: int, chest_pos: Vector3) -> String:
+	var ps := auth.get_player(peer_id)
+	if ps == null:
+		return "?"
+	var r := Blueprint.from_json(json)
+	if not r.ok:
+		return r.error
+	if sites.size() >= MAX_SITES:
+		return "Too many build sites (max %d)" % MAX_SITES
+	if ps.node.global_position.distance_to(origin) > 24.0:
+		return "Too far away"
+	if chest_pos.distance_to(origin) > CHEST_RANGE:
+		return "The chest must be within 16 m"
+	var bp: Blueprint = r.blueprint
+	for c in bp.carve_cells(origin, rot):
+		if auth.world.sdf_at(c) < 0.0 and auth.world.material_at(c) == Mat.BORDER:
+			return "It would carve border rock"
+	var box_id: int = auth.storage.create_box("builder", chest_pos, rot * PI / 2.0, peer_id)
+	_ev_site.rpc(box_id, json, origin, rot, [])
 	return ""
+
+
+## Everyone: a build site appeared. Shows its ghost (blue see-through pieces).
+@rpc("authority", "call_local", "reliable")
+func _ev_site(box_id: int, json: String, origin: Vector3, rot: int, built: Array) -> void:
+	var r := Blueprint.from_json(json)
+	if not r.ok:
+		return
+	var bp: Blueprint = r.blueprint
+	var chest: Dictionary = auth.storage.get_box(box_id)
+	var chest_pos: Vector3 = chest.node.global_position if not chest.is_empty() else origin
+	var plan := bp.world_pieces(origin, rot)
+	plan.sort_custom(func(a, b):
+		if absf(a.pos.y - b.pos.y) > 0.01:
+			return a.pos.y < b.pos.y
+		return a.pos.distance_to(chest_pos) < b.pos.distance_to(chest_pos))
+	var ghost_root := Node3D.new()
+	add_child(ghost_root)
+	for i in plan.size():
+		plan[i].built = built.has(i)
+		var g: PieceNode = PIECE_SCRIPT.new()
+		g.ghost = true
+		g.piece = plan[i].piece
+		g.family = plan[i].family
+		ghost_root.add_child(g)
+		g.global_position = plan[i].pos
+		g.rotation.y = plan[i].rot * PI / 2.0
+		g.set_ghost_ok.call_deferred(true)
+		g.visible = not plan[i].built
+		plan[i].ghost = g
+	var carve := bp.carve_cells(origin, rot)
+	carve.sort_custom(func(a, b): return a.distance_to(chest_pos) < b.distance_to(chest_pos))
+	sites[box_id] = {json = json, origin = origin, rot = rot, plan = plan, carve = carve, ghosts = ghost_root,
+		status = "Starting…", leftovers = {}}
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_site_piece(box_id: int, index: int) -> void:
+	var site: Dictionary = sites.get(box_id, {})
+	if site.is_empty():
+		return
+	site.plan[index].built = true
+	site.plan[index].ghost.visible = false
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_site_status(box_id: int, text: String) -> void:
+	if sites.has(box_id):
+		sites[box_id].status = text
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_site_done(box_id: int) -> void:
+	var site: Dictionary = sites.get(box_id, {})
+	sites.erase(box_id)
+	if not site.is_empty():
+		site.ghosts.queue_free()
+
+
+## Host: one step of every build site. Carving first (rock goes into the chest), then pieces.
+func _tick_sites() -> void:
+	for box_id in sites.keys():
+		var site: Dictionary = sites[box_id]
+		var chest: Dictionary = auth.storage.get_box(box_id)
+		if chest.is_empty():
+			_set_status(box_id, "Paused: the Builder's Chest is gone")
+			continue
+		if _carve_step(box_id, site, chest):
+			continue
+		if _site_ticks % 2 == 0:
+			_build_step(box_id, site, chest)
+
+
+## Carves one cell of rock. Returns true if it did (or is waiting to).
+func _carve_step(box_id: int, site: Dictionary, chest: Dictionary) -> bool:
+	while not site.carve.is_empty():
+		var c: Vector3 = site.carve[0]
+		if auth.world.sdf_at(c) > 0.0:
+			site.carve.pop_front()  # already open
+			continue
+		for pid in auth.players:
+			if auth.players[pid].node.global_position.distance_to(c) < 1.6:
+				_set_status(box_id, "Waiting: someone is in the way")
+				return true
+		var counts: Dictionary = auth._host_dig(c, 0, CARVE_RADIUS)
+		site.carve.pop_front()
+		for mat in counts:
+			var item: String = Mat.DROP_ITEM.get(mat, "")
+			if item == "":
+				continue
+			var v: int = counts[mat] + site.leftovers.get(mat, 0)
+			var per: int = Mat.VOXELS_PER_ITEM.get(mat, 3)
+			site.leftovers[mat] = v % per
+			if v / per > 0:
+				var left: int = auth.storage.put(box_id, item, v / per)
+				if left > 0:
+					auth.spawn_drop(item, left, chest.node.global_position + Vector3.UP)
+		_set_status(box_id, "Carving rock… %d cells left" % site.carve.size())
+		return true
+	return false
+
+
+func _build_step(box_id: int, site: Dictionary, chest: Dictionary) -> void:
+	var inv: Inventory = chest.inv
+	var first_missing := {}
+	var done := 0
+	for i in site.plan.size():
+		var p: Dictionary = site.plan[i]
+		if p.built:
+			done += 1
+			continue
+		if _identical_exists(p):
+			_ev_site_piece.rpc(box_id, i)
+			return
+		if structure.overlaps(p.piece, p.pos, p.rot) or Pieces.rock_problem(p.piece, p.pos, p.rot, auth.world.sdf_at) != "":
+			continue  # blocked: something else is there
+		var cost := Pieces.cost(p.piece, p.family)
+		var missing := {}
+		for item in cost:
+			if inv.count_of(item) < cost[item]:
+				missing[item] = cost[item] - inv.count_of(item)
+		if not missing.is_empty():
+			if first_missing.is_empty():
+				first_missing = missing
+			continue  # skip ahead to something we can afford
+		var anchored := Pieces.touches_rock(p.piece, p.pos, p.rot, auth.world.sdf_at)
+		if structure.preview_stability(p.piece, p.family, p.pos, p.rot, anchored) < Pieces.MIN_STABILITY:
+			continue  # wait until what holds it up is built
+		var blocked := false
+		for pid in auth.players:
+			if Pieces.box(p.piece, p.pos, p.rot).grow(0.1).has_point(auth.players[pid].node.global_position + Vector3.UP):
+				blocked = true
+		if blocked:
+			_set_status(box_id, "Waiting: someone is in the way")
+			return
+		for item in cost:
+			inv.remove(item, cost[item])
+		auth.storage._changed(box_id)
+		var uid := _next_uid
+		_next_uid += 1
+		_ev_add_piece.rpc(uid, p.piece, p.family, p.pos, p.rot, anchored)
+		_ev_site_piece.rpc(box_id, i)
+		_set_status(box_id, "Building… %d of %d" % [done + 1, site.plan.size()])
+		return
+	if done == site.plan.size():
+		_set_status(box_id, "Done!")
+		_ev_site_done.rpc(box_id)
+	elif not first_missing.is_empty():
+		var parts := []
+		for item in first_missing:
+			parts.append("%d %s" % [first_missing[item], Items.display_name(item)])
+		_set_status(box_id, "Paused: needs " + ", ".join(parts))
+	else:
+		_set_status(box_id, "Waiting: something is in the way")
+
+
+func _identical_exists(p: Dictionary) -> bool:
+	for uid in structure.pieces:
+		var q: Dictionary = structure.pieces[uid]
+		if q.piece == p.piece and q.family == p.family and q.rot == p.rot and q.pos.distance_to(p.pos) < 0.05:
+			return true
+	return false
+
+
+func _set_status(box_id: int, text: String) -> void:
+	if sites.has(box_id) and sites[box_id].status != text:
+		_ev_site_status.rpc(box_id, text)
 
 
 # ================================================================== late joiners
 
 func snapshot() -> Dictionary:
-	return {pieces = structure.to_data(), falls = fall_log.duplicate(), next = _next_uid}
+	var site_list := []
+	for box_id in sites:
+		var st: Dictionary = sites[box_id]
+		var built := []
+		for i in st.plan.size():
+			if st.plan[i].built:
+				built.append(i)
+		site_list.append([box_id, st.json, st.origin, st.rot, built])
+	return {pieces = structure.to_data(), falls = fall_log.duplicate(), next = _next_uid, sites = site_list}
 
 
 func load_snapshot(s: Dictionary) -> void:
@@ -349,3 +576,5 @@ func load_snapshot(s: Dictionary) -> void:
 	for p in s.get("pieces", []):
 		_ev_add_piece(p[0], p[1], p[2], p[3], p[4], p[5])
 	_next_uid = s.get("next", _next_uid)
+	for st in s.get("sites", []):
+		_ev_site(st[0], st[1], st[2], st[3], st[4])

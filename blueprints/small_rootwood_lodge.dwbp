@@ -1,0 +1,228 @@
+{
+  "air": {
+    "cell": 1,
+    "rle": [
+      0,
+      144
+    ]
+  },
+  "author": "Dwarf Game",
+  "check": "b39e09cb",
+  "cost": {
+    "copper_ingot": 2,
+    "cut_stone": 36,
+    "plank_root": 39
+  },
+  "created": "2026-11-14",
+  "format": 1,
+  "name": "Small Rootwood Lodge",
+  "origin": "bottom_center",
+  "pieces": [
+    {
+      "id": "floor",
+      "mat": "cut_stone",
+      "pos": [
+        -2.0,
+        0.0,
+        -1.0
+      ],
+      "rot": 0
+    },
+    {
+      "id": "floor",
+      "mat": "cut_stone",
+      "pos": [
+        -2.0,
+        0.0,
+        1.0
+      ],
+      "rot": 0
+    },
+    {
+      "id": "floor",
+      "mat": "cut_stone",
+      "pos": [
+        0.0,
+        0.0,
+        -1.0
+      ],
+      "rot": 0
+    },
+    {
+      "id": "floor",
+      "mat": "cut_stone",
+      "pos": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "rot": 0
+    },
+    {
+      "id": "floor",
+      "mat": "cut_stone",
+      "pos": [
+        2.0,
+        0.0,
+        -1.0
+      ],
+      "rot": 0
+    },
+    {
+      "id": "floor",
+      "mat": "cut_stone",
+      "pos": [
+        2.0,
+        0.0,
+        1.0
+      ],
+      "rot": 0
+    },
+    {
+      "id": "wall",
+      "mat": "plank_root",
+      "pos": [
+        -2.0,
+        0.5,
+        -2.0
+      ],
+      "rot": 0
+    },
+    {
+      "id": "wall",
+      "mat": "plank_root",
+      "pos": [
+        0.0,
+        0.5,
+        -2.0
+      ],
+      "rot": 0
+    },
+    {
+      "id": "wall",
+      "mat": "plank_root",
+      "pos": [
+        2.0,
+        0.5,
+        -2.0
+      ],
+      "rot": 0
+    },
+    {
+      "id": "wall",
+      "mat": "plank_root",
+      "pos": [
+        -2.0,
+        0.5,
+        2.0
+      ],
+      "rot": 0
+    },
+    {
+      "id": "doorway",
+      "mat": "plank_root",
+      "pos": [
+        0.0,
+        0.5,
+        2.0
+      ],
+      "rot": 0
+    },
+    {
+      "id": "wall",
+      "mat": "plank_root",
+      "pos": [
+        2.0,
+        0.5,
+        2.0
+      ],
+      "rot": 0
+    },
+    {
+      "id": "wall",
+      "mat": "plank_root",
+      "pos": [
+        -3.0,
+        0.5,
+        -1.0
+      ],
+      "rot": 1
+    },
+    {
+      "id": "wall",
+      "mat": "plank_root",
+      "pos": [
+        -3.0,
+        0.5,
+        1.0
+      ],
+      "rot": 1
+    },
+    {
+      "id": "window_wall",
+      "mat": "plank_root",
+      "pos": [
+        3.0,
+        0.5,
+        -1.0
+      ],
+      "rot": 1
+    },
+    {
+      "id": "wall",
+      "mat": "plank_root",
+      "pos": [
+        3.0,
+        0.5,
+        1.0
+      ],
+      "rot": 1
+    },
+    {
+      "id": "pillar",
+      "mat": "cut_stone",
+      "pos": [
+        -3.0,
+        0.5,
+        -2.0
+      ],
+      "rot": 0
+    },
+    {
+      "id": "pillar",
+      "mat": "cut_stone",
+      "pos": [
+        3.0,
+        0.5,
+        -2.0
+      ],
+      "rot": 0
+    },
+    {
+      "id": "pillar",
+      "mat": "cut_stone",
+      "pos": [
+        -3.0,
+        0.5,
+        2.0
+      ],
+      "rot": 0
+    },
+    {
+      "id": "pillar",
+      "mat": "cut_stone",
+      "pos": [
+        3.0,
+        0.5,
+        2.0
+      ],
+      "rot": 0
+    }
+  ],
+  "size": [
+    8.0,
+    3.0,
+    6.0
+  ],
+  "source": "ancient"
+}

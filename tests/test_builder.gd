@@ -123,3 +123,33 @@ func test_mine_prop_marks_support() -> void:
 	check_eq(sp.size(), 3, "a prop holds rock at 3 points on its top")
 	check(sp[0].y > 3.0, "points are above the prop (it's 3 m tall)")
 	_teardown()
+
+
+func test_blueprint_builds_itself() -> void:
+	await _setup()
+	var json := FileAccess.get_file_as_string("res://blueprints/small_rootwood_lodge.dwbp")
+	var origin := world.maker.find_floor(player.global_position.x + 6.0, player.global_position.z, player.global_position.y + 2.0).round()
+	var chest_pos := world.maker.find_floor(origin.x, origin.z + 5.0, origin.y + 3.0)
+	check_eq(auth.builder.request_place_blueprint(1, "nonsense", origin, 0, chest_pos), "This isn't a blueprint file.", "junk refused")
+	check_eq(auth.builder.request_place_blueprint(1, json, origin, 0, chest_pos), "", "lodge placed")
+	check_eq(auth.builder.sites.size(), 1, "one build site")
+	var box_id: int = auth.builder.sites.keys()[0]
+	check_eq(auth.storage.get_box(box_id).kind, "builder", "a Builder's Chest came with it")
+	# Run the site with an empty chest: it carves, then waits for materials.
+	for i in 400:
+		auth.builder._site_ticks += 1
+		auth.builder._tick_sites()
+		if auth.builder.site_status(box_id).begins_with("Paused"):
+			break
+	check(auth.builder.site_status(box_id).begins_with("Paused: needs"), "asks for materials (%s)" % auth.builder.site_status(box_id))
+	for item in {plank_root = 39, cut_stone = 36, copper_ingot = 2}:
+		auth.storage.put(box_id, item, {plank_root = 39, cut_stone = 36, copper_ingot = 2}[item])
+	for i in 120:
+		auth.builder._site_ticks += 1
+		auth.builder._tick_sites()
+		if auth.builder.sites.is_empty():
+			break
+	var built := auth.builder.structure.pieces.size()
+	print("        (lodge: %d of 20 pieces built, status: %s)" % [built, auth.builder.site_status(box_id)])
+	check(built >= 15, "most of the lodge got built (%d of 20)" % built)
+	_teardown()

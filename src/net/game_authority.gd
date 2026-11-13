@@ -31,7 +31,7 @@ var world: World
 var glow: GlowField
 var drops_root: Node3D
 var players: Dictionary = {}  ## peer_id -> PlayerState
-var edit_log: Array[Vector4] = []  ## every dig: center (xyz) + pickaxe tier (w), so late joiners can catch up
+var edit_log: Array[Vector4] = []  ## every dig: center (xyz) + packed tier & size (w, see pack_dig), for late joiners
 var removed_glow: Array[int] = []
 var _drops: Dictionary = {}  ## drop_id -> Drop
 var _next_drop_id := 1
@@ -518,15 +518,15 @@ func request_refill(peer_id: int) -> bool:
 
 # Host-side helpers that decide things, then tell everyone.
 
-func _host_dig(center: Vector3, tool_tier: int = 0) -> Dictionary:
+func _host_dig(center: Vector3, tool_tier: int = 0, radius: float = DIG_RADIUS) -> Dictionary:
 	if glow:
 		for spot in glow.spots_near(center, DIG_RADIUS + 0.9):
 			_host_remove_glow(spot)
-	var counts := world.apply_dig(center, DIG_RADIUS, tool_tier)
+	var counts := world.apply_dig(center, radius, tool_tier)
 	if builder:
-		builder.reanchor_near(center, DIG_RADIUS)
-		builder.queue_check(center, DIG_RADIUS)
-	var edit := Vector4(center.x, center.y, center.z, tool_tier)
+		builder.reanchor_near(center, radius)
+		builder.queue_check(center, radius)
+	var edit := Vector4(center.x, center.y, center.z, pack_dig(tool_tier, radius))
 	edit_log.append(edit)
 	_ev_dig.rpc(edit)  # the others apply it; we already did
 	return counts
@@ -575,8 +575,9 @@ func _apply_pending_digs() -> void:
 	var still: Array[Vector4] = []
 	for e in _pending_digs:
 		var c := Vector3(e.x, e.y, e.z)
-		if world.is_ready_at(c, DIG_RADIUS + 1.0):
-			world.apply_dig(c, DIG_RADIUS, int(e.w))  # carving is order-independent, so late is fine
+		var tr := unpack_dig(e.w)
+		if world.is_ready_at(c, tr.y + 1.0):
+			world.apply_dig(c, tr.y, int(tr.x))  # carving is order-independent, so late is fine
 		else:
 			still.append(e)
 	_pending_digs = still
@@ -851,6 +852,17 @@ func station_near(p: Vector3, radius: float = STATION_REACH) -> Station:
 		if st.global_position.distance_to(p) <= radius and (best == null or st.global_position.distance_to(p) < best.global_position.distance_to(p)):
 			best = st
 	return best
+
+
+## A dig's pickaxe tier and size, squeezed into one number: tier × 1000 + radius in cm.
+## (Exact to the centimeter, so every computer carves exactly the same hole.)
+static func pack_dig(tool_tier: int, radius: float) -> float:
+	return tool_tier * 1000.0 + roundf(radius * 100.0)
+
+
+## Back to Vector2(tier, radius).
+static func unpack_dig(w: float) -> Vector2:
+	return Vector2(floorf(w / 1000.0), fmod(w, 1000.0) / 100.0)
 
 
 func drop_count() -> int:
