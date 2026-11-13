@@ -225,6 +225,11 @@ func _aim_info() -> Dictionary:
 	if hit.collider is Station:
 		var st: Station = hit.collider
 		return {kind = "station", name = "%s · E to use" % Items.display_name(st.kind), station = st}
+	var box_id := Storage.box_id_of(hit.collider)
+	if box_id >= 0 and auth:
+		var box := auth.storage.get_box(box_id)
+		var nm: String = {"grave": "Your grave", "builder": "Builder's Chest"}.get(box.get("kind", ""), "Chest")
+		return {kind = "box", name = "%s · E to open" % nm, box_id = box_id}
 	if auth and auth.world:
 		var mat := auth.world.rock_material_near(hit.position - hit.normal * 0.3, 1.1)
 		if mat >= 0:
@@ -246,7 +251,7 @@ func _on_swing_impact() -> void:
 		Fx.burst(get_parent(), hit.position, spot.get("color", Color.WHITE), 8)
 		_shake = 0.4
 		return
-	if hit.collider is Station or hit.collider is PieceNode:
+	if hit.collider is Station or hit.collider is PieceNode or Storage.box_id_of(hit.collider) >= 0:
 		return  # don't dig through your own furniture or buildings
 	auth.ask_hit(hit.position, hit.normal)
 

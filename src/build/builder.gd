@@ -331,6 +331,11 @@ static func _bounds(pts: PackedVector3Array) -> AABB:
 	return b.grow(0.5)
 
 
+## Text for a Builder's Chest ("Building 3 of 12", "Paused: needs 6 Rootwood Plank"…).
+func site_status(_box_id: int) -> String:
+	return ""
+
+
 # ================================================================== late joiners
 
 func snapshot() -> Dictionary:

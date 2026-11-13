@@ -333,6 +333,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		_set_bag(not hud.is_bag_open())
 	elif event.is_action_pressed("interact") and not hud.is_bag_open():
 		var info := dwarf._aim_info()
+		if info.has("box_id"):
+			hud.open_box(info.box_id)
+			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+			return
 		var st: Station = info.get("station")
 		if st == null:
 			st = authority.station_near(dwarf.global_position, 2.5)

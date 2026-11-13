@@ -31,6 +31,7 @@ var craft: CraftPanel
 var skills: SkillsPanel
 var map_panel: MapPanel
 var build_menu: BuildMenu
+var box_panel: BoxPanel
 var build_mode: BuildMode
 var _build_label: Label
 var map_data := MapData.new()
@@ -161,6 +162,10 @@ func _build() -> void:
 	skills.visible = false
 	root.add_child(skills)
 	skills.resized.connect(func(): skills.position = (root.size - skills.size) * 0.5)
+	box_panel = BoxPanel.new()
+	box_panel.visible = false
+	root.add_child(box_panel)
+	box_panel.resized.connect(func(): box_panel.position = Vector2(root.size.x - box_panel.size.x - 30, 90))
 	build_menu = BuildMenu.new()
 	build_menu.peer_id = peer_id
 	build_menu.visible = false
@@ -294,6 +299,9 @@ func _on_slot_input(event: InputEvent, index: int) -> void:
 		return
 	if not _bag_panel.visible:
 		return
+	if box_panel.visible:
+		GameAuthority.instance.storage.ask_transfer(box_panel.box_id, false, index)
+		return
 	if _swap_from < 0:
 		_swap_from = index
 	else:
@@ -339,10 +347,19 @@ func set_bag_open(open: bool) -> void:
 	_bag_panel.visible = open
 	_swap_from = -1
 	_refresh_slots()
+	box_panel.visible = false
 	if open:
 		craft.open_for(null)
 	else:
 		craft.visible = false
+
+
+## E at a chest or grave: your bag on the left, the box on the right.
+func open_box(id: int) -> void:
+	_bag_panel.visible = true
+	_refresh_slots()
+	craft.visible = false
+	box_panel.open(id)
 
 
 func is_build_menu_open() -> bool:

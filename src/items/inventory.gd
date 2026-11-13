@@ -12,9 +12,10 @@ const SIZE := HOTBAR_SIZE + BAG_SIZE
 var slots: Array[Dictionary] = []
 
 
-func _init() -> void:
-	slots.resize(SIZE)
-	for i in SIZE:
+## `size` = how many slots (a player's bag is SIZE; chests and graves pick their own).
+func _init(size: int = SIZE) -> void:
+	slots.resize(size)
+	for i in size:
 		slots[i] = {}
 
 
@@ -33,7 +34,7 @@ func add(id: String, count: int) -> int:
 			var put := mini(room, left)
 			s.count += put
 			left -= put
-	for i in SIZE:
+	for i in slots.size():
 		if left == 0:
 			break
 		if slots[i].is_empty():
@@ -60,7 +61,7 @@ func remove(id: String, count: int) -> bool:
 	if count_of(id) < count:
 		return false
 	var left := count
-	for i in range(SIZE - 1, -1, -1):
+	for i in range(slots.size() - 1, -1, -1):
 		var s := slots[i]
 		if s.get("id", "") != id:
 			continue
@@ -76,12 +77,12 @@ func remove(id: String, count: int) -> bool:
 
 
 func get_slot(i: int) -> Dictionary:
-	return slots[i] if i >= 0 and i < SIZE else {}
+	return slots[i] if i >= 0 and i < slots.size() else {}
 
 
 ## Swaps two slots (dragging items around in the bag).
 func swap(a: int, b: int) -> void:
-	if a == b or a < 0 or b < 0 or a >= SIZE or b >= SIZE:
+	if a == b or a < 0 or b < 0 or a >= slots.size() or b >= slots.size():
 		return
 	var tmp := slots[a]
 	slots[a] = slots[b]
@@ -95,6 +96,6 @@ func to_data() -> Array:
 
 
 func load_data(data: Array) -> void:
-	for i in SIZE:
+	for i in slots.size():
 		slots[i] = data[i].duplicate() if i < data.size() and data[i] is Dictionary else {}
 	changed.emit()

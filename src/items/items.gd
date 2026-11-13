@@ -91,6 +91,9 @@ const DATA := {
 	"rune_slab": {name = "Rune Slab", stack = 1, color = Color(0.5, 0.5, 0.6), short = "RS", kind = "station"},
 	"farm_plot": {name = "Farm Plot", stack = 1, color = Color(0.35, 0.25, 0.15), short = "FP", kind = "station"},
 	"drip_bucket": {name = "Drip Bucket", stack = 1, color = Color(0.45, 0.4, 0.35), short = "DB", kind = "station"},
+	# --- storage (placed in the world)
+	"chest_small": {name = "Chest", stack = 1, color = Color(0.55, 0.38, 0.22), short = "Ch", kind = "chest"},
+	"chest_stone": {name = "Stone Chest", stack = 1, color = Color(0.55, 0.55, 0.55), short = "SC", kind = "chest"},
 }
 
 ## Dishes and drinks are added from Foods (one list for food data).

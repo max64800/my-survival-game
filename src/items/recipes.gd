@@ -24,6 +24,8 @@ const LIST := {
 	"tanning_rack": {station = "workbench", inputs = {plank_root = 6, rope = 4}, output = "tanning_rack", count = 1, unlock = ["critter_hide"]},
 	"smelter": {station = "workbench", inputs = {stone = 20, clay = 15}, output = "smelter", count = 1, unlock = ["copper_ore"]},
 	"farm_plot": {station = "workbench", inputs = {dirt = 10, moss = 5, plank_root = 4}, output = "farm_plot", count = 1, unlock = ["glowcap", "hollowcap", "bellcap", "root_tuber"]},
+	"chest_small": {station = "workbench", inputs = {plank_root = 8, rope = 2}, output = "chest_small", count = 1, unlock = []},
+	"chest_stone": {station = "workbench", inputs = {cut_stone = 10, copper_ingot = 2}, output = "chest_stone", count = 1, unlock = ["cut_stone"]},
 	"drip_bucket": {station = "workbench", inputs = {plank_root = 4, rope = 1}, output = "drip_bucket", count = 1, unlock = []},
 	"rune_slab": {station = "workbench", inputs = {stone = 15, cut_stone = 5}, output = "rune_slab", count = 1, unlock = ["rune"]},
 	"anvil": {station = "workbench", inputs = {stone = 10, copper_ingot = 6}, output = "anvil", count = 1, unlock = ["copper_ingot"]},

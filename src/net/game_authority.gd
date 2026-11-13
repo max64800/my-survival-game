@@ -41,6 +41,7 @@ var stations: Dictionary = {}  ## station id -> Station node
 var stations_root: Node3D
 var rune_slab := RuneSlab.new()  ## one per world, shared by everyone
 var builder: Builder
+var storage: Storage
 var _next_station_id := 1
 var _progress_dirty := {}  ## peer ids whose XP changed and need a sync
 var _progress_sync := 0.0
@@ -59,6 +60,8 @@ class PlayerState:
 	var vitals := Vitals.new()  ## simulated on the player's own computer
 	var progress := Progression.new()  ## owned by the host, copied to the player
 	var seen := {}  ## every item id this player has held (unlocks recipes)
+	var bed_pos := Vector3.INF  ## where you wake up after dying (INF = the world start)
+	var dying := false
 
 	func _init() -> void:
 		inventory.changed.connect(_note_seen)
@@ -80,6 +83,9 @@ func _ready() -> void:
 	builder = Builder.new()
 	builder.name = "Builder"
 	add_child(builder)
+	storage = Storage.new()
+	storage.name = "Storage"
+	add_child(storage)
 
 
 func _exit_tree() -> void:
@@ -409,7 +415,14 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 			_next_station_id += 1
 			_ev_place_station.rpc(sid, id, aim_point, yaw)
 			if id == "bed":
-				ps.node.call("set_respawn", aim_point + Vector3.UP * 0.5)
+				ps.bed_pos = aim_point + Vector3.UP * 0.5
+			return "placed"
+		"chest":
+			if aim_point == Vector3.INF or aim_normal.y < 0.6 or _chest(ps).distance_to(aim_point) > REACH + 1.0:
+				return ""
+			if not ps.inventory.remove(id, 1):
+				return ""
+			storage.create_box(id, aim_point, yaw, peer_id)
 			return "placed"
 	return ""
 
@@ -676,7 +689,7 @@ func snapshot() -> Dictionary:
 			if glow._spots[id].get("chops", 1) != GlowPlacer.KINDS[glow._spots[id].kind].get("chops", 1):
 				chops[id] = glow._spots[id].chops
 	return {edits = edit_log.duplicate(), glow = removed_glow.duplicate(), drops = drops, next_drop = _next_drop_id,
-		stations = sts, chops = chops, runes = rune_slab.to_data(), build = builder.snapshot()}
+		stations = sts, chops = chops, runes = rune_slab.to_data(), build = builder.snapshot(), boxes = storage.snapshot()}
 
 
 func load_snapshot(snap: Dictionary) -> void:
@@ -699,6 +712,8 @@ func load_snapshot(snap: Dictionary) -> void:
 		rune_slab.load_data(snap.runes)
 	if snap.has("build"):
 		builder.load_snapshot(snap.build)
+	if snap.has("boxes"):
+		storage.load_snapshot(snap.boxes)
 
 
 # ================================================================== helpers
@@ -716,6 +731,62 @@ func _give_dig_drops(ps: PlayerState, counts: Dictionary, pos: Vector3) -> void:
 			n = maxi(n, 1)  # always feel rewarded for hitting ore
 		if n > 0:
 			spawn_drop(item, n, pos)
+
+
+## Our dwarf's health hit zero.
+func ask_died() -> void:
+	if is_host():
+		request_died(local_peer_id())
+	else:
+		_rpc_died.rpc_id(1)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_died() -> void:
+	if is_host():
+		request_died(multiplayer.get_remote_sender_id())
+
+
+## Death (progression doc 9): bag items and hotbar stackables go into a grave where you fell.
+## Hotbar tools (stack 1) and the lantern stay with you. You wake at your bed.
+func request_died(peer_id: int) -> void:
+	var ps := get_player(peer_id)
+	if ps == null:
+		return
+	var where: Vector3 = ps.node.global_position
+	var grave := -1
+	for i in ps.inventory.slots.size():
+		var s: Dictionary = ps.inventory.slots[i]
+		if s.is_empty() or (i < Inventory.HOTBAR_SIZE and Items.stack_size(s.id) == 1):
+			continue
+		if grave < 0:
+			grave = storage.create_box("grave", where, 0.0, peer_id)
+		storage.boxes[grave].inv.slots[i] = s.duplicate()
+		ps.inventory.slots[i] = {}
+	if grave >= 0:
+		storage._changed(grave)
+	ps.inventory.changed.emit()
+	var wake: Vector3 = ps.bed_pos if ps.bed_pos != Vector3.INF else world.maker.spawn_point
+	if peer_id == local_peer_id():
+		_respawn_here(wake)
+	else:
+		_rpc_respawn.rpc_id(peer_id, wake)
+
+
+@rpc("authority", "reliable")
+func _rpc_respawn(wake: Vector3) -> void:
+	_respawn_here(wake)
+
+
+func _respawn_here(wake: Vector3) -> void:
+	var me := get_player(local_peer_id())
+	if me == null:
+		return
+	me.vitals.respawn()
+	me.dying = false
+	me.node.global_position = wake
+	if me.node is CharacterBody3D:
+		(me.node as CharacterBody3D).velocity = Vector3.ZERO
 
 
 ## Something hurt a player (falling rock now, monsters in Step 5). Their own computer
@@ -761,6 +832,11 @@ func _tick_vitals(ps: PlayerState, delta: float) -> void:
 			resting = true
 			break
 	var v := ps.vitals
+	if v.is_dead():
+		if not ps.dying:
+			ps.dying = true
+			ask_died()
+		return
 	var hunger_before := v.hunger
 	var thirst_before := v.thirst
 	v.tick(delta, resting)
