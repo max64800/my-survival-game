@@ -42,3 +42,32 @@ Our diary of building the game: what we did, what went wrong, and how we fixed i
 **Next**
 - You read the plan and say yes (or ask for changes).
 - Claude writes the step-by-step build list for Step 1.
+
+---
+
+## Day 2 — November 14, 2026: Big planning Q&A (on the MacBook)
+
+**What we did**
+- Copied the project from GitHub onto the MacBook. Plan here, build on the gaming PC.
+- Answered 13 rounds of multiple-choice questions and filled in almost the whole game:
+  - **World:** a "star" of 7 biomes. Mossy Hollows in the middle, 4 around it, 1 above, 1 below. Each about 400 m wide with 2–5 big caverns. Border rock you can only dig with a better pickaxe. No day/night.
+  - **Digging:** hard rock takes more hits. Chunks fall out and get picked up from a big radius.
+  - **Lantern:** held in hand, burns wood or crystals (crystal = light color), keeps a dim glow when empty, upgrades to sit on your back.
+  - **Survival:** slow, gentle hunger/thirst. 3 small food buffs that last 25+ min. Stamina for everything.
+  - **Growing:** skills improve with use, plus levels and points. **Runes** get carved on a stone slab at your base, and each color helps a skill branch.
+  - **Gear:** Stone → Copper → Silver → Iron → Steel. **Gems** go into gear (fire, frost, poison). Steel gets an epic gem.
+  - **Fighting:** 8 weapons, dodge-roll, friendly fire on (can turn off).
+  - **Monsters:** pack leaders make their pack stronger. Crystal variants. Hidden bosses found with 3 wall-marking clues. Side bosses guard caverns and send raids until you kill them.
+  - **Building:** your own, found, and shared blueprints. The chest builds piece by piece. Cave-ins come with support beams in Step 4.
+  - **Co-op:** host runs the world. Each world has its own dwarfs. Boss loot for everyone.
+- Updated the plan with all of this. Step 1 is now "a slice of Mossy Hollows" with stone + copper (iron moved later).
+
+**Hurdles / mistakes**
+- **Underground maps are hard** because tunnels stack on top of each other. **Fix:** an old-parchment map with one page per "floor," flipping as you climb. We'll test it.
+- **Two kinds of "runes" got mixed up** (skill runes and gear powers). **Fix:** runes = carved on the slab, **gems** = put in gear, **crystals** = lantern fuel.
+- **Claude's mistake:** the first "star" drawing in the plan put North and South *under* the start biome. Fixed before saving.
+- We don't know how strong the gaming PC is. **Fix:** Step 1 shows a frame-rate counter so we can tune it.
+
+**Next**
+- You read the updated plan and say yes (or ask for changes).
+- Claude writes the Step 1 build list, saves it to GitHub, and you build on the gaming PC.
