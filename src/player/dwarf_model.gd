@@ -13,6 +13,13 @@ const TUNIC := Color(0.25, 0.38, 0.55)
 const TUNICS := [Color(0.25, 0.38, 0.55), Color(0.6, 0.22, 0.2), Color(0.25, 0.48, 0.25), Color(0.7, 0.55, 0.2)]
 
 var tunic := TUNIC
+## Which look: "shapes" (built from boxes and spheres) or "quaternius" (a CC0 rigged model with
+## real animations, from assets/art_candidates). Pick with the command line: -- art=quaternius
+static var art := "shapes"
+const RIG_PATH := "res://assets/art_candidates/quaternius_adventurer.glb"
+var rig: Node3D
+var anim: AnimationPlayer
+var _rig_anim := ""
 const LEATHER := Color(0.33, 0.21, 0.12)
 const METAL := Color(0.6, 0.6, 0.63)
 
@@ -25,6 +32,9 @@ var _held := "?"
 
 
 func _ready() -> void:
+	if art == "quaternius" and ResourceLoader.exists(RIG_PATH):
+		_build_rig()
+		return
 	# Legs
 	for x in [-0.13, 0.13]:
 		_part(_cyl(0.09, 0.11, 0.36), LEATHER, Vector3(x, 0.18, 0))
@@ -74,6 +84,12 @@ func swing(duration: float) -> void:
 	if swinging:
 		return
 	swinging = true
+	if rig:
+		_rig_play("Sword_Slash", duration)
+		var t0 := get_tree().create_timer(duration * 0.6)
+		t0.timeout.connect(func(): swing_impact.emit())
+		get_tree().create_timer(duration).timeout.connect(func(): swinging = false)
+		return
 	var t := create_tween()
 	t.tween_property(right_arm, "rotation:x", deg_to_rad(150), duration * 0.4).set_trans(Tween.TRANS_SINE)
 	t.tween_property(right_arm, "rotation:x", deg_to_rad(10), duration * 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
@@ -85,6 +101,10 @@ func swing(duration: float) -> void:
 ## Weapon attack: wind up, strike at 40% of the time, recover.
 func attack(duration: float, heavy: bool) -> void:
 	swinging = true
+	if rig:
+		_rig_play("Sword_Slash" if heavy else "Punch_Right", duration)
+		get_tree().create_timer(duration).timeout.connect(func(): swinging = false)
+		return
 	var t := create_tween()
 	t.tween_property(right_arm, "rotation:x", deg_to_rad(165 if heavy else 120), duration * 0.3).set_trans(Tween.TRANS_SINE)
 	t.tween_property(right_arm, "rotation:x", deg_to_rad(-15), duration * 0.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
@@ -125,8 +145,74 @@ func set_held(item: String) -> void:
 			_part(_box(Vector3(0.07, 0.07, 0.55)), col, Vector3(0, 0.62, 0.02), _hand).rotation.x = deg_to_rad(8)
 
 
+## The rigged look: a CC0 character squashed into dwarf proportions, tools in its right hand,
+## the lantern in its left.
+func _build_rig() -> void:
+	rig = (load(RIG_PATH) as PackedScene).instantiate()
+	add_child(rig)
+	rig.rotation.y = PI  # the model faces +Z; our dwarf faces -Z
+	var sk: Skeleton3D = rig.find_children("*", "Skeleton3D", true, false)[0]
+	# Measure the real height from the head bone in the world (skinned meshes report tiny boxes,
+	# and the skeleton inside is turned and scaled ×100 because it came from Blender).
+	var head_world := sk.global_transform * sk.get_bone_global_rest(sk.find_bone("Head")).origin
+	var head_y := head_world.y - rig.global_position.y
+	var s := 1.2 / head_y if head_y > 0.1 else 1.0
+	rig.scale = Vector3(s * 1.25, s, s * 1.25)
+	anim = rig.find_children("*", "AnimationPlayer", true, false)[0]
+	var right := BoneAttachment3D.new()
+	right.bone_name = "Wrist.R"
+	sk.add_child(right)
+	_hand = Node3D.new()
+	_hand.rotation.x = deg_to_rad(-90)
+	right.add_child(_hand)
+	var left := BoneAttachment3D.new()
+	left.bone_name = "Wrist.L"
+	sk.add_child(left)
+	left_hand = Node3D.new()
+	left.add_child(left_hand)
+	# Cancel every scale above the hands (our dwarf scale AND the model's hidden ×100),
+	# so tools and the lantern keep their normal size.
+	for h in [_hand, left_hand]:
+		h.scale = Vector3.ONE / h.get_parent().global_transform.basis.get_scale()
+	right_arm = Node3D.new()  # (not used by the rigged look, kept so other code works)
+	add_child(right_arm)
+	set_held("")
+	_rig_play("Idle", 1.0)
+
+
+func _rig_play(name: String, duration: float = 0.0) -> void:
+	if anim == null:
+		return
+	var full := "CharacterArmature|" + name
+	if not anim.has_animation(full):
+		return
+	var speed := 1.0
+	if duration > 0.0 and name in ["Sword_Slash", "Punch_Right", "Roll"]:
+		speed = anim.get_animation(full).length / duration
+	anim.play(full, 0.15, speed)
+	_rig_anim = name
+
+
+## Walking/running/rolling animation for the rigged look (the shapes look ignores this).
+func set_motion(speed: float, on_floor: bool, rolling: bool) -> void:
+	if rig == null or (swinging and not rolling):
+		return
+	var want := "Idle"
+	if rolling:
+		want = "Roll"
+	elif not on_floor:
+		want = _rig_anim if _rig_anim in ["Run", "Walk"] else "Idle"
+	elif speed > 5.0:
+		want = "Run"
+	elif speed > 0.5:
+		want = "Walk"
+	if want != _rig_anim:
+		_rig_play(want, 0.45 if want == "Roll" else 0.0)
+
+
 func _rest() -> void:
-	right_arm.rotation.x = deg_to_rad(35)
+	if right_arm:
+		right_arm.rotation.x = deg_to_rad(35)
 
 
 # ---------------------------------------------------------------- shape helpers

@@ -163,6 +163,7 @@ func _physics_process(delta: float) -> void:
 		model.rotation.y = lerp_angle(model.rotation.y, want, minf(1.0, delta * 12.0))
 
 	_footsteps(delta, Vector2(velocity.x, velocity.z).length())
+	model.set_motion(Vector2(velocity.x, velocity.z).length(), is_on_floor(), fight != null and fight.dodging())
 	if playing and Input.is_action_pressed("dig") and not model.swinging and not _holding_hammer() and not fight.weapon_mode() and _can_swing():
 		model.swing(SWING_TIME)
 		if _online():

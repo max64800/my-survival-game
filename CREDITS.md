@@ -11,7 +11,9 @@ Rule: only things allowed in a game you sell (best: CC0).
 | Sound effects in `assets/sfx/` (mining, impacts, footsteps, glass, wood, bell): from "Impact Sounds" by Kenney | https://kenney.nl/assets/impact-sounds | CC0 | 2026-11-14 |
 | Sound effects in `assets/sfx/` (pluck, open, close, glass): from "Interface Sounds" by Kenney | https://kenney.nl/assets/interface-sounds | CC0 | 2026-11-14 |
 | Sound effects in `assets/sfx/` (metal click, leather, cloth): from "RPG Audio" by Kenney | https://kenney.nl/assets/rpg-audio | CC0 | 2026-11-14 |
+| Character model candidates in `assets/art_candidates/`: "Adventurer" and "Hooded Adventurer" by Quaternius | https://poly.pizza/m/5EGWBMpuXq · https://poly.pizza/m/y9KWOVG21R | CC0 | 2026-11-14 |
+| Character model candidate in `assets/art_candidates/`: "Adventurer" by Polygonal Mind | https://poly.pizza/m/BCMT02FrVE | CC0 | 2026-11-14 |
 
-No art or music assets yet: the dwarf, monsters, crystals, mushrooms and rock colors are
+No chosen art or music yet: the dwarf, monsters, crystals, mushrooms and rock colors are
 made from simple shapes and math in our own code. Kenney asks (but doesn't require) a credit:
 "Sounds by Kenney (www.kenney.nl)" goes in the game's credits screen in Step 7.

@@ -67,6 +67,11 @@ func _ready() -> void:
 			_monsters = false
 		elif arg == "continue":
 			mode = "continue"
+		elif arg.begins_with("art="):
+			DwarfModel.art = arg.trim_prefix("art=")
+		elif arg == "artpreview":
+			debug_script = "res://src/debug/artpreview.gd"
+			_saving = false
 		elif arg.begins_with("savecheck"):
 			debug_script = "res://src/debug/savecheck.gd"
 	if debug_script != "":
