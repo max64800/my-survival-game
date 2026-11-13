@@ -14,6 +14,9 @@ const SWING_TIME := 0.55
 const CAMERA_DISTANCE := 3.4
 const SHOULDER := Vector3(0.55, 1.5, 0.0)
 const POSE_SEND_TIME := 0.05  ## send our position 20 times a second
+const RUN_STAMINA := 8.0  ## per second
+const JUMP_STAMINA := 10.0
+const SWING_STAMINA := 5.0
 
 var peer_id := 1
 var model: DwarfModel
@@ -112,6 +115,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		auth.ask_select_slot((ps.selected_slot + Inventory.HOTBAR_SIZE - 1) % Inventory.HOTBAR_SIZE)
 	if event.is_action_pressed("refill_lantern"):
 		auth.ask_refill()
+	if event.is_action_pressed("use") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+		var hit := aim()
+		auth.ask_use(hit.get("position", Vector3.INF), hit.get("normal", Vector3.ZERO), model.rotation.y + PI)
 
 
 func _physics_process(delta: float) -> void:
@@ -121,14 +127,17 @@ func _physics_process(delta: float) -> void:
 	if playing:
 		var iv := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 		dir = (Basis(Vector3.UP, _yaw) * Vector3(iv.x, 0, iv.y))
-		running = Input.is_action_pressed("run")
+		running = Input.is_action_pressed("run") and iv.length() > 0.1
+	var body := _vitals()
+	if running and body and not body.drain_stamina(RUN_STAMINA, delta):
+		running = false  # out of breath
 	var speed := RUN_SPEED if running else WALK_SPEED
 	var target := dir * speed
 	var a := ACCEL if is_on_floor() else AIR_ACCEL
 	velocity.x = move_toward(velocity.x, target.x, a * speed * delta)
 	velocity.z = move_toward(velocity.z, target.z, a * speed * delta)
 	if is_on_floor():
-		if playing and Input.is_action_just_pressed("jump"):
+		if playing and Input.is_action_just_pressed("jump") and (body == null or body.use_stamina(JUMP_STAMINA)):
 			velocity.y = JUMP_SPEED
 	else:
 		velocity.y -= _gravity * delta
@@ -142,7 +151,7 @@ func _physics_process(delta: float) -> void:
 		var want := atan2(-face_dir.x, -face_dir.z)
 		model.rotation.y = lerp_angle(model.rotation.y, want, minf(1.0, delta * 12.0))
 
-	if playing and Input.is_action_pressed("dig") and not model.swinging:
+	if playing and Input.is_action_pressed("dig") and not model.swinging and _can_swing():
 		model.swing(SWING_TIME)
 		if _online():
 			_net_swing.rpc()
@@ -177,7 +186,7 @@ func aim() -> Dictionary:
 	var forward := -camera.global_basis.z
 	var space := get_world_3d().direct_space_state
 	var q := PhysicsRayQueryParameters3D.create(from, from + forward * (CAMERA_DISTANCE + GameAuthority.REACH + 2.0))
-	q.collision_mask = World.TERRAIN_LAYER | GlowField.GLOW_LAYER
+	q.collision_mask = World.TERRAIN_LAYER | GlowField.GLOW_LAYER | Station.STATION_LAYER
 	q.exclude = [get_rid()]
 	var hit := space.intersect_ray(q)
 	if hit.is_empty():
@@ -195,7 +204,14 @@ func _aim_info() -> Dictionary:
 	var auth := GameAuthority.instance
 	if auth and auth.glow and auth.glow.id_of(hit.collider) >= 0:
 		var spot := auth.glow.get_spot(auth.glow.id_of(hit.collider))
-		return {kind = "glow", name = "Glow Crystal" if spot.get("kind") == GlowPlacer.CRYSTAL else "Glowcap"}
+		var k: Dictionary = GlowPlacer.KINDS.get(spot.get("kind", ""), {})
+		var nm := Items.display_name(k.get("item", ""))
+		if spot.get("kind") == GlowPlacer.ROOT:
+			nm = "Hanging Root (%d chops left)" % spot.get("chops", 1)
+		return {kind = "glow", name = nm}
+	if hit.collider is Station:
+		var st: Station = hit.collider
+		return {kind = "station", name = "%s · E to use" % Items.display_name(st.kind), station = st}
 	if auth and auth.world:
 		var mat := auth.world.rock_material_near(hit.position - hit.normal * 0.3, 1.1)
 		if mat >= 0:
@@ -212,11 +228,29 @@ func _on_swing_impact() -> void:
 		return
 	var glow_id := auth.glow.id_of(hit.collider) if auth.glow else -1
 	if glow_id >= 0:
-		auth.ask_break_glow(glow_id)
-		Fx.burst(get_parent(), hit.position, Color(0.5, 0.85, 1.0), 10)
-		_shake = 0.5
+		auth.ask_harvest(glow_id)
+		var spot := auth.glow.get_spot(glow_id)
+		Fx.burst(get_parent(), hit.position, spot.get("color", Color.WHITE), 8)
+		_shake = 0.4
 		return
+	if hit.collider is Station:
+		return  # don't dig through your own furniture
 	auth.ask_hit(hit.position, hit.normal)
+
+
+func _vitals() -> Vitals:
+	var auth := GameAuthority.instance
+	var ps := auth.get_player(peer_id) if auth else null
+	return ps.vitals if ps else null
+
+
+## Swinging costs stamina (less with Mining skill and the Light Arms perk).
+func _can_swing() -> bool:
+	var auth := GameAuthority.instance
+	var ps := auth.get_player(peer_id) if auth else null
+	if ps == null:
+		return true
+	return ps.vitals.use_stamina(SWING_STAMINA * ps.progress.swing_stamina_mult())
 
 
 ## The host's answer to our pickaxe hit (arrives right away when playing alone).

@@ -13,9 +13,11 @@ const KEYS := {
 	"pause": [KEY_ESCAPE],
 	"toggle_fps": [KEY_F3],
 	"screenshot": [KEY_F12],
+	"interact": [KEY_E],
 }
 const MOUSE := {
 	"dig": [MOUSE_BUTTON_LEFT],
+	"use": [MOUSE_BUTTON_RIGHT],
 	"hotbar_next": [MOUSE_BUTTON_WHEEL_DOWN],
 	"hotbar_prev": [MOUSE_BUTTON_WHEEL_UP],
 }

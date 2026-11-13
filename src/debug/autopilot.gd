@@ -88,10 +88,42 @@ func _run() -> void:
 	_report.append("refill worked: %s (fuel %.0f s)" % [auth.request_refill(auth.local_peer_id()), ps.fuel])
 	await _wait(1.0)
 
+	# Step 3: craft a campfire and a workbench, place them, eat something.
+	ps.inventory.add("stone", 12)
+	ps.inventory.add("rootwood", 14)
+	ps.inventory.add("dish_hollowcap_stew", 1)
 	_main._set_bag(true)
 	await _wait(0.5)
-	await _shot("06_bag")
+	await _shot("06_bag_and_crafting")
 	_main._set_bag(false)
+	var made_fire := auth.request_craft(auth.local_peer_id(), "campfire")
+	var made_bench := auth.request_craft(auth.local_peer_id(), "workbench")
+	var placed := []
+	for item in ["campfire", "workbench"]:
+		_to_hotbar(ps, item)
+		var fwd := -Basis(Vector3.UP, dwarf._yaw).z
+		var side := Basis(Vector3.UP, dwarf._yaw).x * (1.5 if item == "workbench" else -1.0)
+		var spot := dwarf.global_position + fwd * 2.8 + side
+		var floor_p: Vector3 = _main.world.maker.find_floor(spot.x, spot.z, dwarf.global_position.y + 1.5)
+		placed.append(auth.request_use(auth.local_peer_id(), floor_p, Vector3.UP, dwarf._yaw))
+	_to_hotbar(ps, "dish_hollowcap_stew")
+	var ate := auth.request_use(auth.local_peer_id(), Vector3.INF, Vector3.ZERO, 0.0)
+	auth.request_select_slot(auth.local_peer_id(), 0)
+	dwarf._pitch = -0.35
+	await _wait(1.0)
+	await _shot("07_campfire_and_workbench")
+	_report.append("step 3: crafted fire=%s bench=%s, placed=%s, ate=%s, max health now %.0f, level %d" % [
+		made_fire, made_bench, placed, ate, ps.vitals.max_health(), ps.progress.level])
+	var st: Station = auth.station_near(dwarf.global_position, 6.0)
+	if st:
+		_main.hud.open_station(st)
+		await _wait(0.5)
+		await _shot("08_station_menu")
+		_main._set_bag(false)
+	# Look up at the ceiling for hanging roots.
+	dwarf._pitch = 0.6
+	await _wait(0.8)
+	await _shot("09_ceiling_roots")
 
 	var avg := 0.0
 	var low := 9999.0
@@ -106,3 +138,15 @@ func _run() -> void:
 		print("  ", line)
 	print("============================")
 	get_tree().quit()
+
+
+## Like a player dragging an item onto hotbar slot 8 and selecting it.
+func _to_hotbar(ps: GameAuthority.PlayerState, item: String) -> void:
+	var auth: GameAuthority = _main.authority
+	for i in Inventory.SIZE:
+		if ps.inventory.get_slot(i).get("id", "") == item:
+			if i >= Inventory.HOTBAR_SIZE:
+				auth.request_swap(auth.local_peer_id(), i, Inventory.HOTBAR_SIZE - 1)
+				i = Inventory.HOTBAR_SIZE - 1
+			auth.request_select_slot(auth.local_peer_id(), i)
+			return

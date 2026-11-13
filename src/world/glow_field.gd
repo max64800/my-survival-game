@@ -14,12 +14,16 @@ var _lights: Array[OmniLight3D] = []
 var _light_timer := 0.0
 var _crystal_mesh: Mesh
 var _mushroom_mesh: Mesh
+var _fiber_mesh: Mesh
+var _root_mesh: Mesh
 var _materials := {}
 
 
 func build(spots: Array[Dictionary]) -> void:
 	_crystal_mesh = _make_crystal_mesh()
 	_mushroom_mesh = _make_mushroom_mesh()
+	_fiber_mesh = _make_fiber_mesh()
+	_root_mesh = _make_root_mesh()
 	for s in spots:
 		_spots[s.id] = s
 		_add_node(s)
@@ -48,6 +52,15 @@ func spots_near(p: Vector3, radius: float) -> Array[Dictionary]:
 	return out
 
 
+## A root was chopped: remember how many chops it has left.
+func set_chops(id: int, left: int) -> void:
+	if _spots.has(id):
+		_spots[id].chops = left
+		var n: Node3D = _nodes.get(id)
+		if n:
+			n.scale = n.scale * Vector3(0.85, 1.0, 0.85)  # a bit thinner after each chop
+
+
 func remove_spot(id: int) -> void:
 	_spots.erase(id)
 	var n: Node = _nodes.get(id)
@@ -70,14 +83,28 @@ func _add_node(s: Dictionary) -> void:
 	body.collision_mask = 0
 	body.set_meta("glow_id", s.id)
 	var shape := CollisionShape3D.new()
-	var sphere := SphereShape3D.new()
-	sphere.radius = 0.4 * s.scale
-	shape.shape = sphere
-	shape.position = Vector3.UP * 0.3 * s.scale
+	var is_root: bool = s.kind == GlowPlacer.ROOT
+	if is_root:
+		var cap := CapsuleShape3D.new()
+		cap.radius = 0.35
+		cap.height = maxf(s.length, 0.8)
+		shape.shape = cap
+		shape.position = Vector3.UP * s.length * 0.5
+	else:
+		var sphere := SphereShape3D.new()
+		sphere.radius = 0.4 * s.scale
+		shape.shape = sphere
+		shape.position = Vector3.UP * 0.3 * s.scale
 	body.add_child(shape)
 	var mi := MeshInstance3D.new()
-	mi.mesh = _crystal_mesh if s.kind == GlowPlacer.CRYSTAL else _mushroom_mesh
-	mi.material_override = _material_for(s.color)
+	match s.kind:
+		"crystal", "crystal_green": mi.mesh = _crystal_mesh
+		"fiber": mi.mesh = _fiber_mesh
+		"root":
+			mi.mesh = _root_mesh
+			mi.scale = Vector3(1, s.length, 1) / s.scale  # stretch to reach toward the floor
+		_: mi.mesh = _mushroom_mesh
+	mi.material_override = _material_for(s.color, GlowPlacer.KINDS[s.kind].get("glow", false))
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	body.add_child(mi)
 	add_child(body)
@@ -88,15 +115,16 @@ func _add_node(s: Dictionary) -> void:
 	_nodes[s.id] = body
 
 
-func _material_for(c: Color) -> Material:
-	var key := c.to_html()
+func _material_for(c: Color, glows: bool = true) -> Material:
+	var key := c.to_html() + str(glows)
 	if not _materials.has(key):
 		var m := StandardMaterial3D.new()
-		m.albedo_color = c.darkened(0.3)
+		m.albedo_color = c.darkened(0.3) if glows else c
 		m.emission_enabled = true
 		m.emission = c
-		m.emission_energy_multiplier = 2.2
-		m.roughness = 0.25
+		# Glowing things shine; the rest get a faint glow so they're findable in the dark.
+		m.emission_energy_multiplier = 2.2 if glows else 0.35
+		m.roughness = 0.25 if glows else 0.85
 		_materials[key] = m
 	return _materials[key]
 
@@ -110,7 +138,7 @@ func _process(delta: float) -> void:
 	if cam == null:
 		return
 	var from := cam.global_position
-	var near := _spots.values()
+	var near := _spots.values().filter(func(s): return GlowPlacer.KINDS[s.kind].get("glow", false))
 	near.sort_custom(func(a, b): return a.pos.distance_squared_to(from) < b.pos.distance_squared_to(from))
 	for i in LIGHT_COUNT:
 		var l := _lights[i]
@@ -118,7 +146,7 @@ func _process(delta: float) -> void:
 			var s: Dictionary = near[i]
 			l.global_position = s.pos + s.normal * 0.6
 			l.light_color = s.color
-			l.light_energy = 1.1 if s.kind == GlowPlacer.CRYSTAL else 0.7
+			l.light_energy = 1.1 if s.kind.begins_with("crystal") else 0.7
 		else:
 			l.light_energy = 0.0
 
@@ -163,5 +191,50 @@ func _make_mushroom_mesh() -> Mesh:
 	var small := Transform3D(Basis().scaled(Vector3.ONE * 0.55), Vector3(0.22, 0.0, 0.1))
 	st.append_from(stem, 0, small * Transform3D(Basis(), Vector3.UP * 0.2))
 	st.append_from(cap, 0, small * Transform3D(Basis(), Vector3.UP * 0.38))
+	st.generate_normals()
+	return st.commit()
+
+
+func _make_fiber_mesh() -> Mesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for i in 7:
+		var blade := CylinderMesh.new()
+		blade.radial_segments = 3
+		blade.rings = 0
+		blade.top_radius = 0.0
+		blade.bottom_radius = 0.025
+		blade.height = 0.35 + 0.05 * (i % 3)
+		var a := i * 0.9
+		var t := Transform3D(Basis(Vector3.UP, a) * Basis(Vector3.RIGHT, 0.35), Vector3(cos(a), 0, sin(a)) * 0.08)
+		t.origin += t.basis.y * blade.height * 0.5
+		st.append_from(blade, 0, t)
+	st.generate_normals()
+	return st.commit()
+
+
+## A root 1 m long (stretched to fit), thick at the ceiling and thin at the tip,
+## with a few twists so it looks organic.
+func _make_root_mesh() -> Mesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var main := CylinderMesh.new()
+	main.radial_segments = 7
+	main.rings = 4
+	main.top_radius = 0.06
+	main.bottom_radius = 0.28
+	main.height = 1.0
+	st.append_from(main, 0, Transform3D(Basis(), Vector3.UP * 0.5))
+	for i in 3:
+		var side := CylinderMesh.new()
+		side.radial_segments = 5
+		side.rings = 1
+		side.top_radius = 0.02
+		side.bottom_radius = 0.1
+		side.height = 0.45
+		var a := i * 2.1
+		var t := Transform3D(Basis(Vector3.UP, a) * Basis(Vector3.RIGHT, 0.7), Vector3(cos(a), 0, sin(a)) * 0.15 + Vector3.UP * (0.15 + 0.2 * i))
+		t.origin += t.basis.y * 0.2
+		st.append_from(side, 0, t)
 	st.generate_normals()
 	return st.commit()

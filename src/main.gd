@@ -128,6 +128,10 @@ func start_game(p_seed: int, snap: Dictionary = {}) -> void:
 	players_root = Node3D.new()
 	players_root.name = "Players"
 	add_child(players_root)
+	var stations_root := Node3D.new()
+	stations_root.name = "Stations"
+	add_child(stations_root)
+	authority.stations_root = stations_root
 
 	var me := multiplayer.get_unique_id()
 	dwarf = _spawn_dwarf(me, _spawn_spot(me), true)
@@ -306,6 +310,16 @@ func _unhandled_input(event: InputEvent) -> void:
 			hud.set_paused(true)
 	elif event.is_action_pressed("toggle_bag"):
 		_set_bag(not hud.is_bag_open())
+	elif event.is_action_pressed("interact") and not hud.is_bag_open():
+		var info := dwarf._aim_info()
+		var st: Station = info.get("station")
+		if st == null:
+			st = authority.station_near(dwarf.global_position, 2.5)
+		if st:
+			hud.open_station(st)
+			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	elif event.is_action_pressed("interact") and hud.is_bag_open():
+		_set_bag(false)
 	elif event is InputEventMouseButton and event.pressed and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED and not hud.is_bag_open():
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		hud.set_paused(false)

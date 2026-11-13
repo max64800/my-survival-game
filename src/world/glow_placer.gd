@@ -1,26 +1,44 @@
 class_name GlowPlacer
-## Glow Placer: picks spots on cave walls for glowing crystals (walls and ceilings)
-## and glowing mushrooms (floors). Same seed = same spots, so every co-op player
-## sees the same crystals, and each spot has an id the host can refer to.
+## Glow Placer: picks spots on cave surfaces for things you can harvest:
+## glowing crystals (walls), hanging roots (ceilings, the first wood!), and mushrooms
+## and fiber tufts (floors). Same seed = same spots, so every co-op player sees the
+## same things, and each spot has an id the host can refer to.
 ##
 ## How: shoot pretend rays from inside each room/tunnel until they hit rock
-## (using the Cave Maker's distance numbers), then sit a crystal or mushroom there.
+## (using the Cave Maker's distance numbers), then put something there.
 
 const CRYSTAL := "crystal"
-const MUSHROOM := "mushroom"
+const MUSHROOM := "glowcap"  ## the glowing blue mushroom
+const ROOT := "root"
 const MIN_SPACING := 2.5
 
-## Returns an Array of {id, pos, normal, kind, color}.
+## What each kind is. tool: "hand" (anything, even bare hands), "pickaxe", or "axe"
+## (axe at full power, pickaxe at half). hardness uses the ×10 dig scale.
+## chops: a root can be chopped through this many times before it's gone.
+const KINDS := {
+	"crystal": {item = "crystal_blue", count = [2, 4], tool = "pickaxe", hardness = 18, glow = true, color = Color(0.35, 0.75, 1.0), xp = 4, skill = "mining"},
+	"crystal_green": {item = "crystal_green", count = [2, 4], tool = "pickaxe", hardness = 18, glow = true, color = Color(0.35, 1.0, 0.5), xp = 4, skill = "mining"},
+	"glowcap": {item = "glowcap", count = [1, 1], tool = "hand", glow = true, color = Color(0.25, 0.95, 0.85), xp = 1, skill = "survival"},
+	"hollowcap": {item = "hollowcap", count = [1, 1], tool = "hand", color = Color(0.55, 0.38, 0.26), xp = 1, skill = "survival"},
+	"bellcap": {item = "bellcap", count = [1, 1], tool = "hand", color = Color(0.55, 0.7, 1.0), xp = 1, skill = "survival"},
+	"firecap": {item = "firecap", count = [1, 1], tool = "hand", glow = true, color = Color(1.0, 0.35, 0.2), xp = 1, skill = "survival"},
+	"fiber": {item = "fiber", count = [2, 2], tool = "hand", color = Color(0.5, 0.65, 0.3), xp = 1, skill = "survival"},
+	"root": {item = "rootwood", count = [3, 3], tool = "axe", hardness = 30, chops = 4, color = Color(0.42, 0.29, 0.18), xp = 3, skill = "survival"},
+}
+
+## Returns an Array of {id, pos, normal, kind, color, scale, spin, length}.
 static func place(maker: CaveMaker) -> Array[Dictionary]:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = maker.seed + 777
 	var spots: Array[Dictionary] = []
 	for room in maker.rooms:
-		var count := 60 if room.big else 12
+		var count := 70 if room.big else 14
 		for i in count:
 			var dir := _random_dir(rng)
 			if i % 3 == 0:
-				dir.y = -absf(dir.y) - 0.6  # every third ray aims at the floor (mushrooms)
+				dir.y = -absf(dir.y) - 0.6  # aim at the floor (mushrooms, fiber)
+			elif i % 5 == 1:
+				dir.y = absf(dir.y) + 0.8  # aim at the ceiling (roots)
 			_try_add(maker, rng, spots, room.center, dir.normalized(), 70.0)
 	for i in range(0, maker.segments.size(), 2):
 		var s: Dictionary = maker.segments[i]
@@ -46,11 +64,34 @@ static func _try_add(maker: CaveMaker, rng: RandomNumberGenerator, spots: Array[
 		if s.pos.distance_to(hit) < MIN_SPACING:
 			return
 	var n := normal_at(maker, hit)
-	var kind := MUSHROOM if n.y > 0.65 else CRYSTAL
-	var color := Color(0.35, 0.75, 1.0) if kind == CRYSTAL else Color(0.25, 0.95, 0.85)
-	if kind == CRYSTAL and rng.randf() < 0.15:
-		color = Color(0.65, 0.45, 1.0)  # a few violet ones for variety
-	spots.append({id = -1, pos = hit, normal = n, kind = kind, color = color, scale = rng.randf_range(0.7, 1.3) * (1.8 if kind == CRYSTAL else 1.0), spin = rng.randf_range(0, TAU)})
+	var kind := _pick_kind(n, rng)
+	if kind == ROOT and maker.sdf_at(hit + Vector3.DOWN * 0.6) <= 0.0:
+		kind = CRYSTAL  # no room to hang straight down here
+	var length := 0.0
+	if kind == ROOT:
+		# Roots hang straight down toward the floor, ending about a dwarf's reach above it.
+		n = Vector3.DOWN
+		var below := _march(maker, hit + Vector3.DOWN * 0.3, Vector3.DOWN, 40.0)
+		var gap := hit.distance_to(below) if below != Vector3.INF else 3.0
+		length = maxf(gap - 1.6, 1.2)
+	var scale := rng.randf_range(0.7, 1.3) * (1.8 if kind.begins_with("crystal") else 1.0)
+	if kind == ROOT:
+		scale = 1.0  # roots are stretched by `length` instead
+	spots.append({id = -1, pos = hit, normal = n, kind = kind, color = KINDS[kind].color, scale = scale,
+		spin = rng.randf_range(0, TAU), length = length, chops = KINDS[kind].get("chops", 1)})
+
+
+static func _pick_kind(n: Vector3, rng: RandomNumberGenerator) -> String:
+	var r := rng.randf()
+	if n.y > 0.65:  # floor
+		if r < 0.40: return "glowcap"
+		if r < 0.58: return "hollowcap"
+		if r < 0.70: return "bellcap"
+		if r < 0.92: return "fiber"
+		return "firecap"
+	if n.y < -0.55 and r < 0.6:  # ceiling
+		return ROOT
+	return "crystal_green" if r > 0.88 else CRYSTAL
 
 
 ## Sphere tracing: jump forward by the distance to the nearest wall until we touch it.
@@ -74,3 +115,7 @@ static func normal_at(maker: CaveMaker, p: Vector3) -> Vector3:
 		maker.sdf_at(p + Vector3(0, E, 0)) - maker.sdf_at(p - Vector3(0, E, 0)),
 		maker.sdf_at(p + Vector3(0, 0, E)) - maker.sdf_at(p - Vector3(0, 0, E)))
 	return g.normalized() if g.length() > 0.0001 else Vector3.UP
+
+
+static func is_plant(kind: String) -> bool:
+	return KINDS.get(kind, {}).get("tool", "") == "hand"

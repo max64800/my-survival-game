@@ -52,9 +52,9 @@ const LIST := {
 	"dish_glowcap_skewer": {station = "campfire", inputs = {glowcap = 2}, output = "dish_glowcap_skewer", count = 1, seconds = 10, unlock = []},
 	"dish_seared_critter": {station = "campfire", inputs = {critter_meat = 1}, output = "dish_seared_critter", count = 1, seconds = 10, unlock = []},
 	"dish_firecap_skewer": {station = "campfire", inputs = {critter_meat = 1, firecap = 1}, output = "dish_firecap_skewer", count = 1, seconds = 10, unlock = "ruin"},
-	"dish_beetle_roast": {station = "campfire", inputs = {beetle_meat = 1}, output = "dish_beetle_roast", count = 1, seconds = 10, unlock = []},
-	"dish_stalk_steak": {station = "campfire", inputs = {mushroom_flesh = 2}, output = "dish_stalk_steak", count = 1, seconds = 10, unlock = []},
-	"dish_ember_skewer": {station = "campfire", inputs = {beetle_meat = 1, ember_morel = 2}, output = "dish_ember_skewer", count = 1, seconds = 10, unlock = []},
+	"dish_beetle_roast": {station = "campfire", inputs = {beetle_meat = 1}, output = "dish_beetle_roast", count = 1, seconds = 10, unlock = ["beetle_meat"]},
+	"dish_stalk_steak": {station = "campfire", inputs = {mushroom_flesh = 2}, output = "dish_stalk_steak", count = 1, seconds = 10, unlock = ["mushroom_flesh"]},
+	"dish_ember_skewer": {station = "campfire", inputs = {beetle_meat = 1, ember_morel = 2}, output = "dish_ember_skewer", count = 1, seconds = 10, unlock = ["ember_morel"]},
 	"boil_water": {station = "campfire", inputs = {waterskin_dirty = 1}, output = "waterskin_clean", count = 1, seconds = 10, unlock = ["waterskin_dirty"]},
 	# --- cooking pot (20 s)
 	"dish_tuber_mash": {station = "cooking_pot", inputs = {root_tuber = 3, water_bucket = 1}, output = "dish_tuber_mash", count = 1, seconds = 20, unlock = []},

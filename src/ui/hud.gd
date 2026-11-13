@@ -24,6 +24,10 @@ var _help_timer := 25.0
 var _pause: Control
 var _loading: Control
 var _swap_from := -1
+var _bars := {}  ## "health"/"stamina"/"hunger"/"thirst" -> ProgressBar
+var _level_label: Label
+var _buff_label: Label
+var craft: CraftPanel
 var _slot_style_cache := {}
 
 
@@ -110,6 +114,41 @@ func _build() -> void:
 	_fuel_bar.add_theme_stylebox_override("fill", fill)
 	fuel_box.add_child(_fuel_bar)
 
+	# Body bars (bottom left, above the lantern).
+	var bars := VBoxContainer.new()
+	bars.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+	bars.position += Vector2(20, -190)
+	bars.add_theme_constant_override("separation", 3)
+	root.add_child(bars)
+	for b in [["health", Color(0.85, 0.25, 0.25)], ["stamina", Color(0.95, 0.85, 0.3)], ["hunger", Color(0.9, 0.55, 0.25)], ["thirst", Color(0.35, 0.6, 1.0)]]:
+		var row := HBoxContainer.new()
+		bars.add_child(row)
+		var l := _label(row, 13)
+		l.text = b[0].capitalize()
+		l.custom_minimum_size = Vector2(62, 0)
+		var pb := ProgressBar.new()
+		pb.custom_minimum_size = Vector2(150, 10)
+		pb.show_percentage = false
+		var bar_fill := StyleBoxFlat.new()
+		bar_fill.bg_color = b[1]
+		pb.add_theme_stylebox_override("fill", bar_fill)
+		row.add_child(pb)
+		_bars[b[0]] = pb
+	_buff_label = _label(bars, 13)
+	_level_label = _label(root, 16)
+	_level_label.anchor_left = 1.0
+	_level_label.anchor_right = 1.0
+	_level_label.offset_left = -460
+	_level_label.offset_right = -16
+	_level_label.offset_top = 36
+	_level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+
+	craft = CraftPanel.new()
+	craft.peer_id = peer_id
+	craft.visible = false
+	root.add_child(craft)
+	craft.resized.connect(func(): craft.position = Vector2(root.size.x - craft.size.x - 30, 90))
+
 	_fps_label = _label(root, 15)
 	_fps_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
 	_fps_label.position += Vector2(-130, 10)
@@ -122,7 +161,7 @@ func _build() -> void:
 
 	_help = _label(root, 14)
 	_help.position = Vector2(16, 12)
-	_help.text = "WASD walk · Shift run · Space jump · Mouse look\nLeft click dig · 1-8 / wheel pick hotbar · R refill lantern\nTab bag · F3 frame rate · F12 screenshot · Esc pause"
+	_help.text = "WASD walk · Shift run · Space jump · Mouse look\nLeft click dig/harvest · Right click eat/place · E use station\n1-8 / wheel hotbar · R refill lantern · Tab bag + crafting · Esc pause"
 
 	_pause = _overlay(root, "Paused", "Click to keep digging")
 	_loading = _overlay(root, "Digging out the cave…", "")
@@ -201,6 +240,8 @@ func _slot_style(color: Color, border: Color) -> StyleBoxFlat:
 
 
 func _refresh_slots() -> void:
+	if craft and craft.visible:
+		craft.refresh()
 	var auth := GameAuthority.instance
 	var ps: GameAuthority.PlayerState = auth.get_player(peer_id) if auth else null
 	if ps == null:
@@ -271,6 +312,16 @@ func set_bag_open(open: bool) -> void:
 	_bag_panel.visible = open
 	_swap_from = -1
 	_refresh_slots()
+	if open:
+		craft.open_for(null)
+	else:
+		craft.visible = false
+
+
+func open_station(st: Station) -> void:
+	_bag_panel.visible = true
+	_refresh_slots()
+	craft.open_for(st)
 
 
 func set_paused(on: bool) -> void:
@@ -282,6 +333,24 @@ func _process(delta: float) -> void:
 	var auth := GameAuthority.instance
 	var ps: GameAuthority.PlayerState = auth.get_player(peer_id) if auth else null
 	if ps:
+		var v := ps.vitals
+		_bars.health.max_value = v.max_health()
+		_bars.health.value = v.health
+		_bars.stamina.max_value = v.max_stamina()
+		_bars.stamina.value = v.stamina
+		_bars.hunger.value = v.hunger
+		_bars.thirst.value = v.thirst
+		var buffs := []
+		for b in v.buffs:
+			buffs.append("%s %d:%02d" % [Items.display_name(b.id), int(b.time_left) / 60, int(b.time_left) % 60])
+		var mood: String = {"well_fed": "Well fed", "peckish": "Peckish", "starving": "Starving (tired)"}.get(v.status(), "")
+		_buff_label.text = "\n".join(([mood] if mood != "" else []) + buffs)
+		var p := ps.progress
+		_level_label.text = "Level %d  (%d/%d XP)%s\nMining %d · Fighting %d · Smithing %d · Survival %d" % [
+			p.level, p.xp, Progression.xp_to_next(p.level), "  · %d perk points" % p.points_free() if p.points_free() > 0 else "",
+			p.skill_level.mining, p.skill_level.fighting, p.skill_level.smithing, p.skill_level.survival]
+		if craft.visible and craft.station:
+			craft._status.text = craft.station.busy_text()
 		_fuel_bar.value = ps.fuel
 		var crystals := ps.inventory.count_of("crystal_blue")
 		var mins := int(ps.fuel) / 60

@@ -19,6 +19,11 @@ const PICKUP_RANGE := 6.0
 const MAX_FUEL := 600.0  ## 10 minutes of full lantern light
 const FUEL_SYNC_TIME := 2.0
 const DROP_SCENE := preload("res://src/items/drop.gd")
+const STATION_SCRIPT := preload("res://src/world/station.gd")
+const STATION_REACH := 4.0
+const PROGRESS_SYNC_TIME := 0.5
+## Fuel the R key uses, best first.
+const FUEL_ORDER := ["crystal_white", "crystal_amber", "crystal_violet", "crystal_blue", "crystal_green", "crystal_red", "rootwood", "mushroom_wood", "glow_slime"]
 
 static var instance: GameAuthority
 
@@ -32,6 +37,12 @@ var _drops: Dictionary = {}  ## drop_id -> Drop
 var _next_drop_id := 1
 var _pending_digs: Array[Vector4] = []  ## digs waiting for that part of the cave to load
 var _fuel_sync := 0.0
+var stations: Dictionary = {}  ## station id -> Station node
+var stations_root: Node3D
+var rune_slab := RuneSlab.new()  ## one per world, shared by everyone
+var _next_station_id := 1
+var _progress_dirty := {}  ## peer ids whose XP changed and need a sync
+var _progress_sync := 0.0
 
 
 class PlayerState:
@@ -41,7 +52,20 @@ class PlayerState:
 	var fuel := GameAuthority.MAX_FUEL
 	var dig_target := Vector3.INF
 	var dig_hits := 0
+	var harvest_id := -1
+	var harvest_hits := 0
 	var leftovers := {}  ## material -> voxels dug that didn't add up to a whole item yet
+	var vitals := Vitals.new()  ## simulated on the player's own computer
+	var progress := Progression.new()  ## owned by the host, copied to the player
+	var seen := {}  ## every item id this player has held (unlocks recipes)
+
+	func _init() -> void:
+		inventory.changed.connect(_note_seen)
+
+	func _note_seen() -> void:
+		for slot in inventory.slots:
+			if not slot.is_empty():
+				seen[slot.id] = true
 
 	func selected_item() -> String:
 		return inventory.get_slot(selected_slot).get("id", "")
@@ -91,7 +115,21 @@ func _process(delta: float) -> void:
 		var ps: PlayerState = players[id]
 		if ps.fuel > 0.0:
 			ps.fuel = maxf(0.0, ps.fuel - delta)
+	var me := get_player(local_peer_id())
+	if me:
+		_tick_vitals(me, delta)
 	_apply_pending_digs()
+	if is_host():
+		for st in stations.values():
+			for done in st.tick(delta):
+				spawn_drop(done[0], done[1], st.global_position + Vector3.UP * 1.2)
+		_progress_sync -= delta
+		if _progress_sync <= 0.0 and not _progress_dirty.is_empty():
+			_progress_sync = PROGRESS_SYNC_TIME
+			for pid in _progress_dirty:
+				if pid != local_peer_id() and multiplayer.get_peers().has(pid) and players.has(pid):
+					_rpc_progress.rpc_id(pid, players[pid].progress.to_data())
+			_progress_dirty.clear()
 	if is_host() and multiplayer.has_multiplayer_peer():
 		_fuel_sync -= delta
 		if _fuel_sync <= 0.0:
@@ -121,11 +159,26 @@ func ask_hit(point: Vector3, normal: Vector3) -> void:
 		_rpc_hit.rpc_id(1, point, normal)
 
 
-func ask_break_glow(glow_id: int) -> void:
+func ask_harvest(glow_id: int) -> void:
 	if is_host():
-		request_break_glow(local_peer_id(), glow_id)
+		request_harvest(local_peer_id(), glow_id)
 	else:
-		_rpc_break_glow.rpc_id(1, glow_id)
+		_rpc_harvest.rpc_id(1, glow_id)
+
+
+## Right click with the selected hotbar item: eat, drink, or place a station.
+func ask_use(aim_point: Vector3, aim_normal: Vector3, yaw: float) -> void:
+	if is_host():
+		request_use(local_peer_id(), aim_point, aim_normal, yaw)
+	else:
+		_rpc_use.rpc_id(1, aim_point, aim_normal, yaw)
+
+
+func ask_craft(recipe_id: String, station_id: int = 0) -> void:
+	if is_host():
+		request_craft(local_peer_id(), recipe_id, station_id)
+	else:
+		_rpc_craft.rpc_id(1, recipe_id, station_id)
 
 
 func ask_pickup(drop_id: int) -> void:
@@ -163,9 +216,21 @@ func _rpc_hit(point: Vector3, normal: Vector3) -> void:
 
 
 @rpc("any_peer", "reliable")
-func _rpc_break_glow(glow_id: int) -> void:
+func _rpc_harvest(glow_id: int) -> void:
 	if is_host():
-		request_break_glow(multiplayer.get_remote_sender_id(), glow_id)
+		request_harvest(multiplayer.get_remote_sender_id(), glow_id)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_use(aim_point: Vector3, aim_normal: Vector3, yaw: float) -> void:
+	if is_host():
+		request_use(multiplayer.get_remote_sender_id(), aim_point, aim_normal, yaw)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_craft(recipe_id: String, station_id: int) -> void:
+	if is_host():
+		request_craft(multiplayer.get_remote_sender_id(), recipe_id, station_id)
 
 
 @rpc("any_peer", "reliable")
@@ -213,7 +278,7 @@ func request_hit(peer_id: int, point: Vector3, normal: Vector3) -> Dictionary:
 
 
 func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
-	var power := Items.dig_power(ps.selected_item())
+	var power := Items.dig_power(ps.selected_item()) * ps.progress.dig_power_mult()
 	if power <= 0:
 		return {state = "no_tool"}
 	if _chest(ps).distance_to(point) > REACH + 1.0:
@@ -236,18 +301,147 @@ func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
 	ps.dig_target = Vector3.INF
 	var counts := _host_dig(center, tool_tier)
 	_give_dig_drops(ps, counts, center + normal * 0.8)
+	give_xp(_peer_of(ps), Mat.DIG_XP.get(mat, 1), "mining")
 	return {state = "dug", hits = needed, needed = needed, material = mat, point = point}
 
 
-## Breaking a glow crystal or mushroom.
-func request_break_glow(peer_id: int, glow_id: int) -> bool:
+## Hitting something that grows on the cave: crystals, mushrooms, fiber, roots.
+## Result like request_hit: {state = "hit"|"done"|"no_tool"|"too_far"|"gone", hits, needed}
+func request_harvest(peer_id: int, glow_id: int) -> Dictionary:
 	var ps := get_player(peer_id)
-	if ps == null or glow == null or Items.dig_power(ps.selected_item()) <= 0:
-		return false
+	if ps == null or glow == null:
+		return {}
 	var spot := glow.get_spot(glow_id)
-	if spot.is_empty() or _chest(ps).distance_to(spot.pos) > REACH + 1.0:
+	if spot.is_empty():
+		return {state = "gone"}
+	if _chest(ps).distance_to(spot.pos) > REACH + (spot.get("length", 0.0) if spot.kind == GlowPlacer.ROOT else 0.0) + 1.0:
+		return {state = "too_far"}
+	var k: Dictionary = GlowPlacer.KINDS[spot.kind]
+	var needed := 1
+	if k.tool != "hand":
+		var tool := ps.selected_item()
+		var power := 0.0
+		if Items.kind(tool) == "pickaxe":
+			power = Items.dig_power(tool) * ps.progress.dig_power_mult() * (0.5 if k.tool == "axe" else 1.0)
+		elif Items.kind(tool) == "axe" and k.tool == "axe":
+			power = Items.info(tool).power
+		if power <= 0.0:
+			var r := {state = "no_tool", point = spot.pos}
+			_tell_feedback(peer_id, r)
+			return r
+		needed = ceili(k.hardness / power - 0.0001)
+	if ps.harvest_id != glow_id:
+		ps.harvest_id = glow_id
+		ps.harvest_hits = 0
+	ps.harvest_hits += 1
+	if ps.harvest_hits < needed:
+		var r := {state = "hit", hits = ps.harvest_hits, needed = needed, point = spot.pos}
+		_tell_feedback(peer_id, r)
+		return r
+	ps.harvest_hits = 0
+	ps.harvest_id = -1
+	var count := randi_range(k.count[0], k.count[1])
+	if GlowPlacer.is_plant(spot.kind) and ps.progress.perk_rank("forager") > 0:
+		count += 1
+	spawn_drop(k.item, count, spot.pos + spot.normal * 0.6)
+	give_xp(peer_id, k.xp, k.skill)
+	var left: int = spot.get("chops", 1) - 1
+	if left > 0:
+		_ev_spot_chops.rpc(glow_id, left)
+	else:
+		removed_glow.append(glow_id)
+		_ev_remove_glow.rpc(glow_id)
+	var done := {state = "done", hits = needed, needed = needed, point = spot.pos, kind = spot.kind}
+	_tell_feedback(peer_id, done)
+	return done
+
+
+## Right click: eat/drink the selected item, or place it if it's a station.
+func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: float) -> String:
+	var ps := get_player(peer_id)
+	if ps == null:
+		return ""
+	var slot := ps.inventory.get_slot(ps.selected_slot)
+	if slot.is_empty():
+		return ""
+	var id: String = slot.id
+	match Items.kind(id):
+		"food", "drink":
+			if id == "waterskin_clean" or id == "waterskin_dirty":
+				_take_sip(ps, ps.selected_slot)
+			elif not ps.inventory.remove(id, 1):
+				return ""
+			var roll := randf()
+			if peer_id == local_peer_id():
+				ps.vitals.consume(id, roll)
+			else:
+				_rpc_consumed.rpc_id(peer_id, id, roll)
+			return "ate"
+		"station":
+			if aim_point == Vector3.INF or aim_normal.y < 0.6 or _chest(ps).distance_to(aim_point) > REACH + 1.0:
+				return ""
+			for st in stations.values():
+				if st.global_position.distance_to(aim_point) < 1.5:
+					return ""  # too close to another station
+			if not ps.inventory.remove(id, 1):
+				return ""
+			var sid := _next_station_id
+			_next_station_id += 1
+			_ev_place_station.rpc(sid, id, aim_point, yaw)
+			if id == "bed":
+				ps.node.call("set_respawn", aim_point + Vector3.UP * 0.5)
+			return "placed"
+	return ""
+
+
+func _take_sip(ps: PlayerState, slot_i: int) -> void:
+	var slot := ps.inventory.slots[slot_i]
+	var sips: int = slot.get("sips", Items.info(slot.id).get("sips", 1)) - 1
+	if sips <= 0:
+		ps.inventory.slots[slot_i] = {id = Items.info(slot.id).get("empties_to", "waterskin_empty"), count = 1}
+	else:
+		slot.sips = sips
+	ps.inventory.changed.emit()
+
+
+## Crafting. station_id 0 = by hand. Instant recipes finish now; timed ones (smelter,
+## campfire, pot, tanning rack) take their inputs now and pop out of the station later.
+func request_craft(peer_id: int, recipe_id: String, station_id: int = 0) -> bool:
+	var ps := get_player(peer_id)
+	var r := Recipes.get_recipe(recipe_id)
+	if ps == null or r.is_empty():
 		return false
-	_host_remove_glow(spot)
+	if not Recipes.is_unlocked(recipe_id, ps.seen, rune_slab.taught_recipes()):
+		return false
+	var st: Station = stations.get(station_id)
+	if r.station == Recipes.HAND:
+		st = null
+	elif st == null or st.kind != r.station or _chest(ps).distance_to(st.global_position) > STATION_REACH + 1.0:
+		return false
+	var fuel_item := ""
+	if r.get("fuel", 0) > 0:
+		for f in ["rootwood", "mushroom_wood"]:
+			if ps.inventory.count_of(f) >= r.fuel:
+				fuel_item = f
+				break
+		if fuel_item == "":
+			return false
+	if r.get("seconds", 0) > 0 and st:
+		if not Crafting.missing(ps.inventory, recipe_id).is_empty() or not st.can_queue():
+			return false
+		for item in r.inputs:
+			ps.inventory.remove(item, r.inputs[item])
+		if fuel_item != "":
+			ps.inventory.remove(fuel_item, r.fuel)
+		st.queue_job(r.output, r.count, r.seconds)
+	else:
+		if not Crafting.craft(ps.inventory, recipe_id):
+			return false
+		if fuel_item != "":
+			ps.inventory.remove(fuel_item, r.fuel)
+	var skill := "survival" if r.station in ["campfire", "cooking_pot"] else "smithing"
+	var xp := 10 if Items.stack_size(r.output) == 1 else (5 if skill == "survival" else 1)
+	give_xp(peer_id, xp, skill)
 	return true
 
 
@@ -271,7 +465,7 @@ func request_refill(peer_id: int) -> bool:
 	var ps := get_player(peer_id)
 	if ps == null or ps.fuel > MAX_FUEL - 30.0:
 		return false
-	for id in ["crystal_blue"]:
+	for id in FUEL_ORDER:
 		if ps.inventory.remove(id, 1):
 			ps.fuel = minf(MAX_FUEL, ps.fuel + Items.fuel_seconds(id))
 			fuel_changed.emit(peer_id, ps.fuel)
@@ -297,8 +491,8 @@ func _host_dig(center: Vector3, tool_tier: int = 0) -> Dictionary:
 func _host_remove_glow(spot: Dictionary) -> void:
 	removed_glow.append(spot.id)
 	_ev_remove_glow.rpc(spot.id)
-	var item := "crystal_blue" if spot.kind == GlowPlacer.CRYSTAL else "glowcap"
-	spawn_drop(item, 2 if item == "crystal_blue" else 1, spot.pos + spot.normal * 0.5)
+	var k: Dictionary = GlowPlacer.KINDS[spot.kind]
+	spawn_drop(k.item, k.count[0], spot.pos + spot.normal * 0.5)
 
 
 func spawn_drop(item_id: String, count: int, pos: Vector3) -> void:
@@ -351,6 +545,24 @@ func _ev_remove_glow(glow_id: int) -> void:
 
 
 @rpc("authority", "call_local", "reliable")
+func _ev_spot_chops(glow_id: int, left: int) -> void:
+	if glow:
+		glow.set_chops(glow_id, left)
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_place_station(station_id: int, kind: String, pos: Vector3, yaw: float) -> void:
+	var st: Station = STATION_SCRIPT.new()
+	st.station_id = station_id
+	st.kind = kind
+	stations_root.add_child(st)
+	st.global_position = pos
+	st.rotation.y = yaw
+	stations[station_id] = st
+	_next_station_id = maxi(_next_station_id, station_id + 1)
+
+
+@rpc("authority", "call_local", "reliable")
 func _ev_spawn_drop(drop_id: int, item_id: String, count: int, pos: Vector3, vel: Vector3) -> void:
 	var d: Drop = DROP_SCENE.new()
 	d.drop_id = drop_id
@@ -394,6 +606,20 @@ func _rpc_inventory(data: Array, selected: int) -> void:
 
 
 @rpc("authority", "reliable")
+func _rpc_consumed(item_id: String, roll: float) -> void:
+	var me := get_player(local_peer_id())
+	if me:
+		me.vitals.consume(item_id, roll)
+
+
+@rpc("authority", "reliable")
+func _rpc_progress(data: Dictionary) -> void:
+	var me := get_player(local_peer_id())
+	if me:
+		me.progress.load_data(data)
+
+
+@rpc("authority", "reliable")
 func _rpc_fuel(fuel: float) -> void:
 	var me := get_player(local_peer_id())
 	if me:
@@ -409,7 +635,17 @@ func snapshot() -> Dictionary:
 	for id in _drops:
 		var d: Drop = _drops[id]
 		drops.append([id, d.item_id, d.count, d.global_position])
-	return {edits = edit_log.duplicate(), glow = removed_glow.duplicate(), drops = drops, next_drop = _next_drop_id}
+	var sts := []
+	for id in stations:
+		var st: Station = stations[id]
+		sts.append([id, st.kind, st.global_position, st.rotation.y])
+	var chops := {}
+	if glow:
+		for id in glow._spots:
+			if glow._spots[id].get("chops", 1) != GlowPlacer.KINDS[glow._spots[id].kind].get("chops", 1):
+				chops[id] = glow._spots[id].chops
+	return {edits = edit_log.duplicate(), glow = removed_glow.duplicate(), drops = drops, next_drop = _next_drop_id,
+		stations = sts, chops = chops, runes = rune_slab.to_data()}
 
 
 func load_snapshot(snap: Dictionary) -> void:
@@ -423,6 +659,13 @@ func load_snapshot(snap: Dictionary) -> void:
 	for d in snap.drops:
 		_ev_spawn_drop(d[0], d[1], d[2], d[3], Vector3.ZERO)
 	_next_drop_id = snap.next_drop
+	for st in snap.get("stations", []):
+		_ev_place_station(st[0], st[1], st[2], st[3])
+	for id in snap.get("chops", {}):
+		if glow:
+			glow.set_chops(id, snap.chops[id])
+	if snap.has("runes"):
+		rune_slab.load_data(snap.runes)
 
 
 # ================================================================== helpers
@@ -440,6 +683,46 @@ func _give_dig_drops(ps: PlayerState, counts: Dictionary, pos: Vector3) -> void:
 			n = maxi(n, 1)  # always feel rewarded for hitting ore
 		if n > 0:
 			spawn_drop(item, n, pos)
+
+
+## XP from the host. Goes to the skill and the character level, then syncs to the player.
+func give_xp(peer_id: int, amount: int, skill: String = "") -> void:
+	var ps := get_player(peer_id)
+	if ps == null or amount <= 0:
+		return
+	ps.progress.add_xp(amount, skill)
+	_progress_dirty[peer_id] = true
+
+
+func _peer_of(ps: PlayerState) -> int:
+	for id in players:
+		if players[id] == ps:
+			return id
+	return -1
+
+
+## Hunger, thirst, stamina and healing for OUR dwarf (each computer runs its own player's body).
+func _tick_vitals(ps: PlayerState, delta: float) -> void:
+	var resting := false
+	for st in stations.values():
+		if st.kind in ["campfire", "bed"] and st.global_position.distance_to(ps.node.global_position) < 4.0:
+			resting = true
+			break
+	var v := ps.vitals
+	var hunger_before := v.hunger
+	var thirst_before := v.thirst
+	v.tick(delta, resting)
+	# Survival skill and perks slow the drain.
+	v.hunger = hunger_before - (hunger_before - v.hunger) * ps.progress.hunger_drain_mult() * (1.0 + rune_slab.bonus("hunger_drain"))
+	v.thirst = thirst_before - (thirst_before - v.thirst) * ps.progress.thirst_drain_mult() * (1.0 + rune_slab.bonus("thirst_drain"))
+
+
+func station_near(p: Vector3, radius: float = STATION_REACH) -> Station:
+	var best: Station = null
+	for st in stations.values():
+		if st.global_position.distance_to(p) <= radius and (best == null or st.global_position.distance_to(p) < best.global_position.distance_to(p)):
+			best = st
+	return best
 
 
 func drop_count() -> int:
