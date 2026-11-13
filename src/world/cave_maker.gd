@@ -364,6 +364,29 @@ func _normal(p: Vector3) -> Vector3:
 	return g.normalized() if g.length() > 0.0001 else Vector3.UP
 
 
+## The three map circles the wall markings reveal (world doc 3.2): [center_xz, radius] ×3.
+## 1st: 120 m circle with the lair inside (not in the middle), 2nd: 45 m inside the 1st, 3rd: exact.
+func clue_circles() -> Array:
+	var lair := lair_poi()
+	if lair.is_empty():
+		return []
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed + 555
+	var L := Vector2(lair.pos.x, lair.pos.z)
+	var c1 := L + _in_disc(rng, 60.0)
+	var c2 := L
+	for i in 50:
+		c2 = L + _in_disc(rng, 22.5)
+		if c2.distance_to(c1) + 45.0 <= 120.0:
+			break
+	return [[c1, 120.0], [c2, 45.0], [L, 6.0]]
+
+
+static func _in_disc(rng: RandomNumberGenerator, r: float) -> Vector2:
+	var a := rng.randf() * TAU
+	return Vector2(cos(a), sin(a)) * r * sqrt(rng.randf())
+
+
 func lair_poi() -> Dictionary:
 	for p in pois:
 		if p.type == "lair":

@@ -43,6 +43,10 @@ var rune_slab := RuneSlab.new()  ## one per world, shared by everyone
 var builder: Builder
 var storage: Storage
 var monsters: MonsterManager
+var poi_field: PoiField
+## What the whole world remembers (shared by every player): clues found, shrines emptied,
+## bosses beaten, side-boss caverns discovered.
+var world_state := {clues = [], shrines = [], bosses_dead = [], lairs_found = []}
 var _next_station_id := 1
 var _progress_dirty := {}  ## peer ids whose XP changed and need a sync
 var _progress_sync := 0.0
@@ -198,6 +202,21 @@ func ask_buy_perk(perk_id: String) -> void:
 		_rpc_buy_perk.rpc_id(1, perk_id)
 
 
+## E at a special place (wall marking, rune shrine).
+func ask_poi(poi_id: int) -> void:
+	if is_host():
+		request_poi(local_peer_id(), poi_id)
+	else:
+		_rpc_poi.rpc_id(1, poi_id)
+
+
+func ask_carve(item_id: String) -> void:
+	if is_host():
+		request_carve(local_peer_id(), item_id)
+	else:
+		_rpc_carve.rpc_id(1, item_id)
+
+
 func ask_craft(recipe_id: String, station_id: int = 0) -> void:
 	if is_host():
 		request_craft(local_peer_id(), recipe_id, station_id)
@@ -255,6 +274,18 @@ func _rpc_use(aim_point: Vector3, aim_normal: Vector3, yaw: float) -> void:
 func _rpc_buy_perk(perk_id: String) -> void:
 	if is_host():
 		request_buy_perk(multiplayer.get_remote_sender_id(), perk_id)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_poi(poi_id: int) -> void:
+	if is_host():
+		request_poi(multiplayer.get_remote_sender_id(), poi_id)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_carve(item_id: String) -> void:
+	if is_host():
+		request_carve(multiplayer.get_remote_sender_id(), item_id)
 
 
 @rpc("any_peer", "reliable")
@@ -439,6 +470,58 @@ func _take_sip(ps: PlayerState, slot_i: int) -> void:
 	else:
 		slot.sips = sips
 	ps.inventory.changed.emit()
+
+
+## Reading a wall marking (a boss clue) or taking a shrine's rune. Returns what happened.
+func request_poi(peer_id: int, poi_id: int) -> String:
+	var ps := get_player(peer_id)
+	var pois: Array = world.maker.pois
+	if ps == null or poi_id < 0 or poi_id >= pois.size():
+		return ""
+	var poi: Dictionary = pois[poi_id]
+	if _chest(ps).distance_to(poi.pos) > 5.0:
+		return "too_far"
+	match poi.type:
+		"marking":
+			if world_state.clues.has(poi_id):
+				return "already"
+			world_state.clues.append(poi_id)
+			for pid in players:
+				give_xp(pid, 100)  # clues are shared: everyone learns from them
+			_ev_state.rpc(world_state)
+			return "clue"
+		"shrine":
+			if world_state.shrines.has(poi_id):
+				return "empty"
+			var rune := rune_slab.pick_drop("m", [randf(), randf(), randf()])
+			world_state.shrines.append(poi_id)
+			if rune != "":
+				var left := ps.inventory.add("rune_" + rune, 1)
+				if left > 0:
+					spawn_drop("rune_" + rune, 1, poi.pos + Vector3.UP)
+			_ev_state.rpc(world_state)
+			return "rune"
+	return ""
+
+
+## Carving a rune you carry into the Rune Slab (you must stand at one).
+func request_carve(peer_id: int, item_id: String) -> String:
+	var ps := get_player(peer_id)
+	if ps == null or not item_id.begins_with("rune_") or ps.inventory.count_of(item_id) < 1:
+		return ""
+	var near := false
+	for st in stations.values():
+		if st.kind == "rune_slab" and st.global_position.distance_to(ps.node.global_position) < STATION_REACH + 1.0:
+			near = true
+	if not near:
+		return "no_slab"
+	ps.inventory.remove(item_id, 1)
+	var result := rune_slab.offer(item_id.trim_prefix("rune_"))
+	if result == "carved":
+		for pid in players:
+			give_xp(pid, 50)
+	_ev_slab.rpc(rune_slab.to_data())
+	return result
 
 
 func request_buy_perk(peer_id: int, perk_id: String) -> bool:
@@ -654,6 +737,43 @@ func _rpc_inventory(data: Array, selected: int) -> void:
 		me.selected_slot = selected
 
 
+@rpc("authority", "call_local", "reliable")
+func _ev_state(state: Dictionary) -> void:
+	world_state = state.duplicate(true)
+	if poi_field:
+		for id in world_state.shrines:
+			poi_field.set_taken(id)
+		for id in world_state.clues:
+			poi_field.set_read(id)
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_slab(data: Dictionary) -> void:
+	rune_slab.load_data(data)
+
+
+## Host, new world only: fill the ruin and camp chests with old loot (world doc 3.1).
+func seed_poi_loot() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = world.maker.seed + 4242
+	for poi in world.maker.pois:
+		if poi.type != "ruin" and poi.type != "camp":
+			continue
+		var at: Vector3 = world.maker.find_floor(poi.pos.x + 1.5, poi.pos.z + 1.0, poi.pos.y + 3.0)
+		var id := storage.create_box("chest_small", at, rng.randf() * TAU)
+		if poi.type == "ruin":
+			storage.put(id, "copper_ingot", rng.randi_range(2, 4))
+			storage.put(id, "crystal_blue", rng.randi_range(2, 5))
+			storage.put(id, ["dish_hollowcap_stew", "dish_tuber_mash", "drink_glowcap_tea"][rng.randi_range(0, 2)], 1)
+			if rng.randf() < 0.3:
+				storage.put(id, "rune_" + rune_slab.pick_drop("m", [rng.randf(), rng.randf(), rng.randf()]), 1)
+			storage.put(id, "rusty_scrap", rng.randi_range(1, 4))
+		else:
+			storage.put(id, "crystal_blue", rng.randi_range(1, 3))
+			storage.put(id, "rope", rng.randi_range(1, 3))
+			storage.put(id, ["critter_meat", "glowcap", "bellcap"][rng.randi_range(0, 2)], rng.randi_range(2, 4))
+
+
 @rpc("authority", "reliable")
 func _rpc_consumed(item_id: String, roll: float) -> void:
 	var me := get_player(local_peer_id())
@@ -694,7 +814,7 @@ func snapshot() -> Dictionary:
 			if glow._spots[id].get("chops", 1) != GlowPlacer.KINDS[glow._spots[id].kind].get("chops", 1):
 				chops[id] = glow._spots[id].chops
 	return {edits = edit_log.duplicate(), glow = removed_glow.duplicate(), drops = drops, next_drop = _next_drop_id,
-		stations = sts, chops = chops, runes = rune_slab.to_data(), build = builder.snapshot(), boxes = storage.snapshot(), monsters = monsters.snapshot()}
+		stations = sts, chops = chops, runes = rune_slab.to_data(), build = builder.snapshot(), boxes = storage.snapshot(), monsters = monsters.snapshot(), state = world_state}
 
 
 func load_snapshot(snap: Dictionary) -> void:
@@ -721,6 +841,8 @@ func load_snapshot(snap: Dictionary) -> void:
 		storage.load_snapshot(snap.boxes)
 	if snap.has("monsters"):
 		monsters.load_snapshot(snap.monsters)
+	if snap.has("state"):
+		_ev_state(snap.state)
 
 
 # ================================================================== helpers

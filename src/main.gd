@@ -129,6 +129,11 @@ func start_game(p_seed: int, snap: Dictionary = {}) -> void:
 	add_child(glow)
 	glow.build(GlowPlacer.place(world.maker))
 
+	var pf := PoiField.new()
+	pf.name = "Pois"
+	add_child(pf)
+	pf.build(world.maker)
+
 	var drops := Node3D.new()
 	drops.name = "Drops"
 	add_child(drops)
@@ -138,6 +143,7 @@ func start_game(p_seed: int, snap: Dictionary = {}) -> void:
 	authority.world = world
 	authority.glow = glow
 	authority.drops_root = drops
+	authority.poi_field = pf
 	add_child(authority)
 
 	players_root = Node3D.new()
@@ -155,6 +161,8 @@ func start_game(p_seed: int, snap: Dictionary = {}) -> void:
 	authority.monsters.enabled = _monsters
 	if not snap.is_empty():
 		authority.load_snapshot(snap)
+	elif authority.is_host():
+		authority.seed_poi_loot()
 
 	var bm := BuildMode.new()
 	bm.name = "BuildMode"
@@ -360,6 +368,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		if info.has("box_id"):
 			hud.open_box(info.box_id)
 			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+			return
+		if info.has("poi_id"):
+			authority.ask_poi(info.poi_id)
+			var t: String = world.maker.pois[info.poi_id].type
+			hud.show_toast("You copy the old carving onto your map (M)." if t == "marking" else "You take the rune. Carve it at a Rune Slab.", 4.0)
 			return
 		var st: Station = info.get("station")
 		if st == null:

@@ -80,6 +80,25 @@ func _draw_marks() -> void:
 			continue
 		var at := Vector2(data.to_pixel(m.pos)) * scale
 		_overlay.draw_string(font, at - Vector2(7, -7), "▲" if m.up else "▼", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(0.25, 0.15, 0.08))
+	# Boss clues (world doc 3.2): circles shrink with every wall marking read.
+	var auth := GameAuthority.instance
+	if auth and auth.world:
+		var found: int = auth.world_state.clues.size()
+		var circles: Array = auth.world.maker.clue_circles()
+		var lair: Dictionary = auth.world.maker.lair_poi()
+		for i in mini(found, circles.size()):
+			var c: Vector2 = circles[i][0]
+			var px := (c + Vector2.ONE * CaveMaker.HALF_SIZE) * scale
+			var col := Color(0.6, 0.1, 0.1, 0.9)
+			if i < 2:
+				_overlay.draw_arc(px, circles[i][1] * scale.x, 0, TAU, 64, col, 2.0 if i == found - 1 else 1.0)
+			elif MapData.floor_of(lair.pos.y) == floor:
+				_overlay.draw_line(px - Vector2(8, 8), px + Vector2(8, 8), col, 3.0)
+				_overlay.draw_line(px - Vector2(8, -8), px + Vector2(8, -8), col, 3.0)
+		if found > 0 and not lair.is_empty():
+			var f := MapData.floor_of(lair.pos.y)
+			var hint := "floors %d–%d" % [maxi(f, 1), mini(f + 2, MapData.floor_count())] if found == 1 else "floor %d" % (f + 1)
+			_overlay.draw_string(font, Vector2(8, 20), "Boss clues: %d of 3 · the lair is on %s" % [found, hint], HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(0.4, 0.05, 0.05))
 	for st in _stations:
 		if MapData.floor_of(st.global_position.y) == floor:
 			_overlay.draw_circle(Vector2(data.to_pixel(st.global_position)) * scale, 5, Color(0.9, 0.4, 0.15))

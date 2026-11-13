@@ -198,7 +198,7 @@ func aim_far(reach: float) -> Dictionary:
 	var from := camera.global_position
 	var forward := -camera.global_basis.z
 	var q := PhysicsRayQueryParameters3D.create(from, from + forward * (CAMERA_DISTANCE + reach + 2.0))
-	q.collision_mask = World.TERRAIN_LAYER | GlowField.GLOW_LAYER | Station.STATION_LAYER | Monster.MONSTER_LAYER | PieceNode.PIECE_LAYER
+	q.collision_mask = World.TERRAIN_LAYER | GlowField.GLOW_LAYER | Station.STATION_LAYER | Monster.MONSTER_LAYER | PoiField.POI_LAYER | PieceNode.PIECE_LAYER
 	q.exclude = [get_rid()]
 	var hit := get_world_3d().direct_space_state.intersect_ray(q)
 	if hit.is_empty() or (global_position + Vector3.UP).distance_to(hit.position) > reach:
@@ -212,7 +212,7 @@ func aim() -> Dictionary:
 	var forward := -camera.global_basis.z
 	var space := get_world_3d().direct_space_state
 	var q := PhysicsRayQueryParameters3D.create(from, from + forward * (CAMERA_DISTANCE + GameAuthority.REACH + 2.0))
-	q.collision_mask = World.TERRAIN_LAYER | GlowField.GLOW_LAYER | Station.STATION_LAYER | Monster.MONSTER_LAYER
+	q.collision_mask = World.TERRAIN_LAYER | GlowField.GLOW_LAYER | Station.STATION_LAYER | Monster.MONSTER_LAYER | PoiField.POI_LAYER
 	q.exclude = [get_rid()]
 	var hit := space.intersect_ray(q)
 	if hit.is_empty():
@@ -238,6 +238,10 @@ func _aim_info() -> Dictionary:
 	if hit.collider is Station:
 		var st: Station = hit.collider
 		return {kind = "station", name = "%s · E to use" % Items.display_name(st.kind), station = st}
+	var poi_id := PoiField.poi_id_of(hit.collider)
+	if poi_id >= 0 and auth:
+		var t: String = auth.world.maker.pois[poi_id].type
+		return {kind = "poi", poi_id = poi_id, name = "Old carving · E to read" if t == "marking" else "Rune shrine · E to take"}
 	var box_id := Storage.box_id_of(hit.collider)
 	if box_id >= 0 and auth:
 		var box := auth.storage.get_box(box_id)

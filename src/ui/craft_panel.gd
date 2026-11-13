@@ -45,6 +45,9 @@ func refresh() -> void:
 	var ps: GameAuthority.PlayerState = auth.get_player(peer_id) if auth else null
 	if ps == null or not is_inside_tree():
 		return
+	if station and station.kind == "rune_slab":
+		_rune_slab(ps, auth)
+		return
 	var where := Recipes.HAND if station == null else station.kind
 	_title.text = "Craft by hand" if station == null else Items.display_name(station.kind)
 	_status.text = station.busy_text() if station else ""
@@ -95,3 +98,45 @@ func _row(recipe_id: String, inv: Inventory) -> Control:
 		get_tree().create_timer(0.15).timeout.connect(refresh))
 	row.add_child(b)
 	return row
+
+
+## The Rune Slab: carve runes you carry. Each colour helps one skill branch; a full set gives a big perk.
+func _rune_slab(ps: GameAuthority.PlayerState, auth: GameAuthority) -> void:
+	_title.text = "Rune Slab"
+	_status.text = ""
+	for c in _list.get_children():
+		c.queue_free()
+	var slab := auth.rune_slab
+	for colour in RuneSlab.COLOURS:
+		var l := Label.new()
+		var n_m := RuneSlab.runes_in_set(colour + "_m").filter(func(r): return slab.carved_runes.has(r)).size()
+		l.text = "%s (%s): %d of 5 carved%s · shards %d" % [colour.capitalize(), RuneSlab.COLOURS[colour].capitalize(), n_m,
+			"  ★ " + RuneSlab.SET_PERKS[colour + "_m"].get_slice(":", 0) if slab.is_set_done(colour + "_m") else "", slab.shards[colour]]
+		_list.add_child(l)
+	var any := false
+	for s in ps.inventory.slots:
+		if s.is_empty() or not s.id.begins_with("rune_"):
+			continue
+		any = true
+		var row := HBoxContainer.new()
+		var t := Label.new()
+		var rid: String = s.id.trim_prefix("rune_")
+		var effect: Dictionary = RuneSlab.RUNES.get(rid, {})
+		t.text = "%s ×%d — %s%s" % [Items.display_name(s.id), s.count, ("teaches " + str(effect.recipe)) if effect.has("recipe") else str(effect),
+			" (already carved: becomes a shard)" if slab.carved_runes.has(rid) else ""]
+		t.autowrap_mode = TextServer.AUTOWRAP_WORD
+		t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(t)
+		var b := Button.new()
+		b.text = "Carve"
+		var item: String = s.id
+		b.pressed.connect(func():
+			GameAuthority.instance.ask_carve(item)
+			get_tree().create_timer(0.15).timeout.connect(refresh))
+		row.add_child(b)
+		_list.add_child(row)
+	if not any:
+		var l := Label.new()
+		l.text = "You carry no runes. Find them at rune shrines, in ruins, and on pack leaders."
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD
+		_list.add_child(l)
