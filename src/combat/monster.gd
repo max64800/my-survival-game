@@ -69,10 +69,19 @@ func _ready() -> void:
 	add_child(shape)
 	model = MonsterModel.build(data.shape, data.color, s, leader)
 	add_child(model)
+	if is_boss():
+		# Bosses glow softly (moss and runes), so you can read their attacks in a dark hall.
+		var glow := OmniLight3D.new()
+		glow.light_color = data.color.lightened(0.5)
+		glow.omni_range = 9.0 + s * 2.0
+		glow.light_energy = 1.4
+		glow.position = Vector3.UP * cap.height * 0.8
+		add_child(glow)
+		MonsterModel.make_glowy(model, data.color.lightened(0.3))
 	_hp_label = Label3D.new()
 	_hp_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	_hp_label.position = Vector3.UP * (cap.height + 0.4)
-	_hp_label.pixel_size = 0.004
+	_hp_label.pixel_size = 0.004 * (2.0 if is_boss() else 1.0)
 	_hp_label.font_size = 32
 	_hp_label.outline_size = 8
 	_hp_label.no_depth_test = true
@@ -334,10 +343,13 @@ func puppet_step(delta: float) -> void:
 ## The warning before a hit: eyes flash and the body leans in.
 func show_tell(seconds: float) -> void:
 	_flash = seconds
+	# Squash relative to the monster's own size (bosses and leaders are bigger than 1).
+	var base: Vector3 = model.get_meta("base_scale", model.scale)
+	model.set_meta("base_scale", base)
 	var t := create_tween()
-	t.tween_property(model, "scale", Vector3(1.0, 0.85, 1.15), seconds * 0.8).set_trans(Tween.TRANS_SINE)
-	t.tween_property(model, "scale", Vector3(1.0, 1.1, 0.9), 0.08)
-	t.tween_property(model, "scale", Vector3.ONE, 0.2)
+	t.tween_property(model, "scale", base * Vector3(1.0, 0.85, 1.15), seconds * 0.8).set_trans(Tween.TRANS_SINE)
+	t.tween_property(model, "scale", base * Vector3(1.0, 1.1, 0.9), 0.08)
+	t.tween_property(model, "scale", base, 0.2)
 
 
 func _process(delta: float) -> void:

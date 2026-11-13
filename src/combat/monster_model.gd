@@ -100,6 +100,17 @@ static func build(shape: String, color: Color, size: float, leader: bool) -> Nod
 	return root
 
 
+## Bosses: every part gets a faint glow of `color` so the big shape reads in the dark.
+static func make_glowy(model: Node3D, color: Color) -> void:
+	for c in model.get_children():
+		if c is MeshInstance3D and c.material_override is StandardMaterial3D and c.material_override != model.get_meta("eye_mat"):
+			var m: StandardMaterial3D = (c.material_override as StandardMaterial3D).duplicate()
+			m.emission_enabled = true
+			m.emission = color
+			m.emission_energy_multiplier = 0.25
+			c.material_override = m
+
+
 ## 0 = normal eyes, 1 = bright flash (the "tell" just before a hit lands).
 static func set_glow(model: Node3D, amount: float) -> void:
 	var m: StandardMaterial3D = model.get_meta("eye_mat")

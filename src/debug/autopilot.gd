@@ -206,6 +206,38 @@ func _run() -> void:
 		mm._ev_remove(m.uid)
 	ps.vitals.health = ps.vitals.max_health()
 	auth.request_select_slot(auth.local_peer_id(), 0)
+	# Step 6: visit the special places.
+	var maker: CaveMaker = _main.world.maker
+	var mark: Dictionary = maker.pois_of("marking")[0]
+	await _teleport(dwarf, mark.pos + mark.normal * 3.0, mark.pos + Vector3.UP * 1.2)
+	await _shot("18_wall_marking")
+	_report.append("step 6: read marking -> %s" % auth.request_poi(auth.local_peer_id(), mark.id))
+	var shrine: Dictionary = maker.pois_of("shrine")[0]
+	await _teleport(dwarf, shrine.pos + shrine.normal * 2.5, shrine.pos)
+	await _shot("19_rune_shrine")
+	var ruin: Dictionary = maker.pois_of("ruin")[0]
+	await _teleport(dwarf, ruin.pos + Vector3(0, 1.0, 6.0), ruin.pos)
+	await _shot("20_ruin")
+	_main.hud.set_map_open(true)
+	await _wait(0.5)
+	await _shot("21_map_with_clue")
+	_main.hud.set_map_open(false)
+	auth.monsters.enabled = true
+	var hall: Dictionary = maker.pois_of("great_hall")[0]
+	await _teleport(dwarf, hall.pos + Vector3(0, 1.0, 12.0), hall.pos + Vector3.UP * 2.0)
+	auth.monsters._wake_bosses()
+	await _wait(2.0)
+	await _shot("22_brask")
+	var lair: Dictionary = maker.lair_poi()
+	await _teleport(dwarf, lair.pos + Vector3(0, 1.0, 12.0), lair.pos + Vector3.UP * 3.0)
+	auth.monsters._wake_bosses()
+	await _wait(2.5)
+	await _shot("23_orrumhal")
+	var bosses := []
+	for m: Monster in auth.monsters.monsters.values():
+		if m.is_boss():
+			bosses.append(m.data.name.get_slice(",", 0))
+	_report.append("step 6: bosses awake: %s; raid sources found: %s" % [bosses, auth.world_state.lairs_found])
 	# Look up at the ceiling for hanging roots.
 	dwarf._pitch = 0.6
 	await _wait(0.8)
@@ -236,3 +268,21 @@ func _to_hotbar(ps: GameAuthority.PlayerState, item: String) -> void:
 				i = Inventory.HOTBAR_SIZE - 1
 			auth.request_select_slot(auth.local_peer_id(), i)
 			return
+
+
+## Jump somewhere for a screenshot: wait until the cave there is built, then look at `look_at`.
+func _teleport(dwarf: Dwarf, to: Vector3, look_at: Vector3) -> void:
+	dwarf.set_physics_process(false)
+	dwarf.global_position = to
+	var w: World = _main.world
+	for i in 400:
+		if w.terrain.is_area_meshed(AABB(to - Vector3.ONE * 6, Vector3.ONE * 12)):
+			break
+		await get_tree().process_frame
+	var dir := look_at - (to + Vector3.UP * 1.5)
+	dwarf._yaw = atan2(-dir.x, -dir.z)
+	dwarf._pitch = clampf(atan2(dir.y, Vector2(dir.x, dir.z).length()), -1.2, 1.0)
+	dwarf.model.rotation.y = dwarf._yaw
+	await _wait(0.6)
+	dwarf.set_physics_process(true)
+	await _wait(0.4)

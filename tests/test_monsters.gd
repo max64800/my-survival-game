@@ -161,3 +161,13 @@ func test_spawner_fills_nearby_caves() -> void:
 	auth.monsters._spawn_and_despawn()
 	check(auth.monsters.monsters.size() > 0, "monsters appeared near us (%d)" % auth.monsters.monsters.size())
 	_teardown()
+
+
+func test_attack_animation_keeps_monster_size() -> void:
+	await _setup()
+	var m := _spawn("mossnipper", Vector3(4, 0, 0), true)  # leaders are 1.3× bigger
+	var before: Vector3 = m.model.scale
+	m.show_tell(0.05)
+	await tree.create_timer(0.5).timeout
+	check(m.model.scale.is_equal_approx(before), "still %s after the attack (was %s)" % [m.model.scale, before])
+	_teardown()
