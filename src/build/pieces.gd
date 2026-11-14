@@ -75,6 +75,8 @@ const LIST := {
 		families = ["cut_stone", "cut_marble", "clay_brick", "basalt", "ancient_brick"], station = {"mason": 2}},
 	# --- getting around
 	"stairs": {name = "Stairs", group = "around", size = Vector3(2, 2, 2), units = 6, place = "cell", walkable_slope = true, station = ALL},
+	"ramp": {name = "Ramp", group = "around", size = Vector3(2, 1, 2), units = 4, place = "cell", shape = "ramp", walkable_slope = true,
+		station = ALL},  # a smooth slope, rising toward the back (−z) like stairs
 	"ladder": {name = "Ladder", group = "around", size = Vector3(1, 2, 0.2), units = 2, place = "edge", shape = "ladder",
 		families = ["plank_root", "plank_mushroom", "copper_ingot"], station = {"workbench": 1, "anvil": 1}},
 	"railing": {name = "Railing", group = "around", size = Vector3(2, 1, 0.15), units = 1, place = "edge", shape = "railing",

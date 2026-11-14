@@ -66,6 +66,7 @@ static func _make(piece: String, style: String, detail: bool) -> ArrayMesh:
 		"railing": _railing(s)
 		"door": _door(s)
 		"steps": _steps(s, 2)
+		"ramp": _ramp(s)
 		"triangle": _triangle(s)
 		"diagonal": _diagonal(piece, s)
 		"column_base", "column_shaft", "column_capital": _column_part(shape, s)
@@ -142,6 +143,20 @@ static func _steps(s: Vector3, count: int) -> void:
 		var h := (i + 1) * s.y / count
 		var depth := s.z / count
 		_slab(Vector3(0, h * 0.5, s.z * 0.5 - (i + 0.5) * depth), Vector3(s.x, h, depth), "floor")
+
+
+## Ramp: a solid wedge, low at the front (z = +d/2) and full height at the back, with cleats
+## across the slope so it looks walkable.
+static func _ramp(s: Vector3) -> void:
+	var hz := s.z * 0.5
+	_prism_x([Vector2(hz, 0.0), Vector2(-hz, 0.0), Vector2(-hz, s.y)], -s.x * 0.5, s.x * 0.5)
+	if _detail:
+		var slope := atan2(s.y, s.z)
+		for i in 4:
+			var t := (i + 0.5) / 4.0
+			_push(Transform3D(Basis(Vector3.RIGHT, slope), Vector3(0, s.y * t, hz - s.z * t)))
+			_box(Vector3(0, 0.025, 0), Vector3(s.x - 0.1, 0.05, 0.08))
+			_pop()
 
 
 ## Roof: low at the front (z = +d/2), `rise` higher at the back.
