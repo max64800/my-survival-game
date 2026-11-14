@@ -58,7 +58,7 @@ func refresh() -> void:
 		c.queue_free()
 	var shown := 0
 	for id in Recipes.for_station(where):
-		if not Recipes.is_unlocked(id, ps.seen, auth.rune_slab.taught_recipes()):
+		if not Recipes.is_unlocked(id, ps.seen, auth.taught_recipes()):
 			continue
 		shown += 1
 		_list.add_child(_row(id, ps.inventory))

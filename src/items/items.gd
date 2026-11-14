@@ -113,6 +113,7 @@ const DATA := {
 	"blasting_pod": {name = "Blasting Pod", stack = 20, color = Color(0.95, 0.45, 0.25), short = "BP", kind = "throw"},
 	"spore_mask": {name = "Spore Mask", stack = 1, color = Color(0.55, 0.65, 0.45), short = "Mk", kind = "wear"},
 	"prospectors_lens": {name = "Prospector's Lens", stack = 1, color = Color(0.85, 0.9, 1.0), short = "Ln", kind = "lens"},
+	"recipe_page": {name = "Old Recipe Page", color = Color(0.85, 0.78, 0.6), short = "Pg", kind = "page"},
 	"rope_ladder": {name = "Rope Ladder", stack = 10, color = Color(0.75, 0.65, 0.45), short = "RL", kind = "station"},
 	"gem_bench": {name = "Gem Bench", stack = 1, color = Color(0.45, 0.6, 0.75), short = "GB", kind = "station"},
 	"rune_slab": {name = "Rune Slab", stack = 1, color = Color(0.5, 0.5, 0.6), short = "RS", kind = "station"},

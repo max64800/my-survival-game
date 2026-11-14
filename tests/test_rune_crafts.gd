@@ -100,3 +100,15 @@ func test_ore_crate_only_takes_ore() -> void:
 	check(Storage.accepts("crate_ore", "copper_ore"), "ore yes")
 	check(Storage.accepts("crate_ore", "crystal_blue"), "crystals yes")
 	check(not Storage.accepts("crate_ore", "sword_stone"), "swords no")
+
+
+func test_recipe_pages_from_ruins() -> void:
+	await _setup()
+	var ruin_recipes := Recipes.LIST.keys().filter(func(r): return Recipes.LIST[r].unlock is String and Recipes.LIST[r].unlock == "ruin")
+	check(ruin_recipes.size() <= 2 * world.maker.pois_of("ruin").size(), "enough ruin pages to find every ruin recipe")
+	ps.inventory.slots[2] = {id = "recipe_page", count = 2}
+	ps.selected_slot = 2
+	check_eq(auth.request_use(1, Vector3.INF, Vector3.ZERO, 0.0), "learned", "the page teaches a recipe")
+	check_eq(auth.world_state.learned.size(), 1, "remembered by the world")
+	check(auth.taught_recipes().has(auth.world_state.learned[0]), "and it shows up in the crafting list")
+	_teardown()

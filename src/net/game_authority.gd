@@ -303,6 +303,19 @@ func request_unsocket(peer_id: int, slot: int, index: int) -> String:
 	return ""
 
 
+## Recipes taught by carved runes and by old recipe pages (shared by everyone).
+func taught_recipes() -> Dictionary:
+	var out := rune_slab.taught_recipes()
+	for r in world_state.get("learned", []):
+		out[r] = true
+	return out
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_learned(what: String) -> void:
+	hud_message.emit("The old page teaches everyone: %s" % what)
+
+
 ## Healing (Leech gems): the player's own computer owns their health.
 func heal(peer_id: int, amount: float) -> void:
 	if amount <= 0.0:
@@ -566,6 +579,19 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 			if fb.has("damage"):
 				add_boost(ps, id, {damage = fb.damage}, Foods.minutes_of(id) * 60.0)
 			return "ate"
+		"page":
+			# An old recipe page from a ruin: the whole group learns a recipe nobody knew yet.
+			var left := Recipes.LIST.keys().filter(func(r): return Recipes.LIST[r].unlock is String and Recipes.LIST[r].unlock == "ruin" \
+				and not world_state.get("learned", []).has(r))
+			if left.is_empty() or not ps.inventory.remove(id, 1):
+				return "nothing_new"
+			var r: String = left[randi() % left.size()]
+			var learned: Array = world_state.get("learned", []).duplicate()
+			learned.append(r)
+			world_state.learned = learned
+			_ev_state.rpc(world_state)
+			_ev_learned.rpc(Items.display_name(Recipes.LIST[r].output))
+			return "learned"
 		"tonic":
 			if not ps.inventory.remove(id, 1):
 				return ""
@@ -866,7 +892,7 @@ func request_craft(peer_id: int, recipe_id: String, station_id: int = 0) -> bool
 	var r := Recipes.get_recipe(recipe_id)
 	if ps == null or r.is_empty():
 		return false
-	if not Recipes.is_unlocked(recipe_id, ps.seen, rune_slab.taught_recipes()):
+	if not Recipes.is_unlocked(recipe_id, ps.seen, taught_recipes()):
 		return false
 	var st: Station = stations.get(station_id)
 	if r.station == Recipes.HAND:
@@ -1098,6 +1124,7 @@ static func rune_biome_at(p: Vector3) -> String:
 
 func _seed_fungal_loot(rng: RandomNumberGenerator, id: int, ruin: bool) -> void:
 	if ruin:
+		storage.put(id, "recipe_page", 2)
 		for g in [["keen", 0.03], ["leech", 0.04]]:
 			if rng.randf() < g[1]:
 				storage.put(id, Gems.item_id(g[0]), 1)
@@ -1126,6 +1153,7 @@ func seed_poi_loot() -> void:
 			_seed_fungal_loot(rng, id, poi.type == "ruin")
 			continue
 		if poi.type == "ruin":
+			storage.put(id, "recipe_page", 2)  # every old ruin keeps forgotten recipes
 			for g in [["keen", 0.03], ["ember", 0.03]]:  # doc 4.2: rare gems in old chests
 				if rng.randf() < g[1]:
 					storage.put(id, Gems.item_id(g[0]), 1)
