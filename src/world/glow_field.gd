@@ -89,7 +89,7 @@ func _add_node(s: Dictionary) -> void:
 	var is_root: bool = s.kind in GlowPlacer.TALL
 	if is_root:
 		var cap := CapsuleShape3D.new()
-		cap.radius = 0.35 if s.kind == GlowPlacer.ROOT else 0.45
+		cap.radius = 0.35 if s.kind == GlowPlacer.ROOT or s.kind == GlowPlacer.ROOT_DANGLE else 0.45
 		cap.height = maxf(s.length, 0.8)
 		shape.shape = cap
 		shape.position = Vector3.UP * s.length * 0.5
@@ -103,7 +103,7 @@ func _add_node(s: Dictionary) -> void:
 	match s.kind:
 		"crystal", "crystal_green", "crystal_amber": mi.mesh = _crystal_mesh
 		"fiber": mi.mesh = _fiber_mesh
-		"root":
+		"root", "root_dangle":
 			mi.mesh = _root_mesh
 			mi.scale = Vector3(1, s.length, 1) / s.scale  # stretch to reach toward the floor
 		GlowPlacer.GIANT: mi.mesh = _giant_mesh(s.length)

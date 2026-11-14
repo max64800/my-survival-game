@@ -9,7 +9,10 @@ const HAND := "hand"
 
 const LIST := {
 	# --- by hand (bag menu)
-	"rope": {station = HAND, inputs = {fiber = 3}, output = "rope", count = 1, unlock = []},
+	# Your first tools, made from what's lying in the starting room (feedback F11).
+	"pickaxe_stone": {station = HAND, inputs = {stone = 3, rootwood = 2}, output = "pickaxe_stone", count = 1, unlock = []},
+	"lantern": {station = HAND, inputs = {stone = 2, rootwood = 1, crystal_blue = 1}, output = "lantern", count = 1, unlock = []},
+	"rope":{station = HAND, inputs = {fiber = 3}, output = "rope", count = 1, unlock = []},
 	"campfire": {station = HAND, inputs = {stone = 5, rootwood = 3}, output = "campfire", count = 1, unlock = []},
 	"workbench": {station = HAND, inputs = {rootwood = 10, stone = 6}, output = "workbench", count = 1, unlock = []},
 	"waterskin": {station = HAND, inputs = {critter_hide = 2, rope = 1}, output = "waterskin_empty", count = 1, unlock = ["critter_hide"]},
@@ -17,7 +20,6 @@ const LIST := {
 	# --- workbench
 	"plank_root": {station = "workbench", inputs = {rootwood = 1}, output = "plank_root", count = 2, unlock = []},
 	"plank_mushroom": {station = "workbench", inputs = {mushroom_wood = 1}, output = "plank_mushroom", count = 2, unlock = ["mushroom_wood"]},
-	"pickaxe_stone": {station = "workbench", inputs = {stone = 4, rootwood = 2, rope = 2}, output = "pickaxe_stone", count = 1, unlock = []},
 	"axe_stone": {station = "workbench", inputs = {stone = 3, rootwood = 2, rope = 2}, output = "axe_stone", count = 1, unlock = []},
 	"build_hammer": {station = "workbench", inputs = {stone = 3, rootwood = 2}, output = "build_hammer", count = 1, unlock = []},
 	"bed": {station = "workbench", inputs = {plank_root = 6, moss = 4, leather = 2}, output = "bed", count = 1, unlock = []},

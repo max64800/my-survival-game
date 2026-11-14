@@ -23,7 +23,7 @@ func _setup() -> void:
 	root.add_child(auth)
 	player = Node3D.new()
 	root.add_child(player)
-	player.global_position = world.maker.spawn_point
+	player.global_position = world.maker.cavern_spawn
 	auth.add_player(1, player)
 
 

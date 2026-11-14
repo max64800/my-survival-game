@@ -88,6 +88,7 @@ const DATA := {
 	"axe_copper": {name = "Copper Axe", stack = 1, color = Color(0.9, 0.55, 0.3), short = "Ax", kind = "axe", power = 13, tier = 1},
 	"axe_silver": {name = "Silver Axe", stack = 1, color = Color(0.85, 0.87, 0.92), short = "Ax", kind = "axe", power = 17, tier = 2},
 	"build_hammer": {name = "Build Hammer", stack = 1, color = Color(0.6, 0.5, 0.4), short = "Hm", kind = "hammer"},
+	"lantern": {name = "Lantern", stack = 1, color = Color(1.0, 0.75, 0.4), short = "La", kind = "lantern"},
 	"lantern_back": {name = "Back Lantern", stack = 1, color = Color(1.0, 0.8, 0.45), short = "BL", kind = "lantern"},
 	# --- stations (placed in the world)
 	"campfire": {name = "Campfire", stack = 1, color = Color(1.0, 0.55, 0.2), short = "Fi", kind = "station"},

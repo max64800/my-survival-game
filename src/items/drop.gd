@@ -4,6 +4,8 @@ extends RigidBody3D
 ## the dwarf comes within PICKUP_RADIUS it flies to them and asks to be picked up.
 
 const PICKUP_RADIUS := 4.0
+const LOOSE_PICKUP_RADIUS := 1.5  ## things lying on the floor: you walk over to pick them up
+var pickup_radius := PICKUP_RADIUS
 const SETTLE_TIME := 0.45  ## let it fall out before it starts flying to you
 const FLY_SPEED := 9.0
 const DROP_LAYER := 4
@@ -65,7 +67,7 @@ func _physics_process(delta: float) -> void:
 	var target: Vector3 = ps.node.global_position + Vector3.UP * 0.9
 	var dist := global_position.distance_to(target)
 	if not _flying:
-		if dist < PICKUP_RADIUS and _retry == 0.0:
+		if dist < pickup_radius and _retry == 0.0:
 			_flying = true
 			freeze = true
 		return

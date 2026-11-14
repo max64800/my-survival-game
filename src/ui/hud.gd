@@ -350,6 +350,56 @@ func _on_dig_feedback(pid: int, result: Dictionary) -> void:
 			show_toast("Pick your pickaxe in the hotbar (key 1).")
 
 
+## "What do I do now?" for the first minutes of a new game (feedback F11).
+## One line at the top of the screen that changes as you go, then disappears.
+var _steps_label: Label
+var _steps_done := false
+
+
+func _update_first_steps(ps: GameAuthority.PlayerState, has_lantern: bool) -> void:
+	if _steps_done:
+		return
+	if _steps_label == null:
+		_steps_label = Label.new()
+		_steps_label.add_theme_font_size_override("font_size", 20)
+		_steps_label.add_theme_color_override("font_outline_color", Color.BLACK)
+		_steps_label.add_theme_constant_override("outline_size", 6)
+		_steps_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_steps_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		# Centered, below the top corner texts, wrapping onto a second line if it's long.
+		_steps_label.anchor_left = 0.5
+		_steps_label.anchor_right = 0.5
+		_steps_label.offset_left = -360
+		_steps_label.offset_right = 360
+		_steps_label.offset_top = 120
+		add_child(_steps_label)
+	var inv := ps.inventory
+	var has_pick := inv.count_of("pickaxe_stone") + inv.count_of("pickaxe_copper") + inv.count_of("pickaxe_silver") > 0
+	var t := ""
+	if not has_pick and (inv.count_of("stone") < 3 or inv.count_of("rootwood") < 2):
+		t = "Pick up the loose rocks (walk over them) and pull down the hanging roots (click them)."
+	elif not has_pick:
+		t = "Press Tab and make a Stone Pickaxe."
+	elif not has_lantern and inv.count_of("crystal_blue") < 1:
+		t = "Grab the little glow crystal on the floor, then make a Lantern (Tab)."
+	elif not has_lantern:
+		t = "Press Tab and make a Lantern."
+	elif _in_start_room() and get_tree().root.find_child("Peephole", true, false) != null:
+		t = "Something glows through that little hole… Dig through the soft wall (hold left click)."
+	else:
+		_steps_done = true
+	_steps_label.text = t
+	_steps_label.visible = t != ""
+
+
+func _in_start_room() -> bool:
+	var me := _local_dwarf()
+	var st: Dictionary = GameAuthority.instance.world.maker.start
+	if me == null or st.is_empty():
+		return false
+	return me.global_position.distance_to(st.room_c) < CaveMaker.START_ROOM_R.x + 1.5
+
+
 func show_toast(text: String, seconds: float = 2.5) -> void:
 	_toast.text = text
 	_toast_timer = seconds
@@ -482,7 +532,12 @@ func _process(delta: float) -> void:
 		var secs := int(ps.fuel) % 60
 		_fuel_label.text = "Lantern %d:%02d   (R: refill, %d fuel)" % [mins, secs, crystals]
 		if ps.fuel <= 0.0:
-			_fuel_label.text = "Lantern is out!  Mine a glow crystal, press R"
+			_fuel_label.text = "Lantern is out!  Get a glow crystal or rootwood, press R"
+		var has_lantern := Lantern.has_lantern(ps)
+		_fuel_bar.visible = has_lantern
+		if not has_lantern:
+			_fuel_label.text = "No lantern yet"
+		_update_first_steps(ps, has_lantern)
 		var me := _local_dwarf()
 		if me and me.fight and me.fight.is_crossbow():
 			var bolts := 0
