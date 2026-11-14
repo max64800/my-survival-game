@@ -156,7 +156,7 @@ func _spawn_pack(room_i: int, room: Dictionary) -> Array:
 			continue
 		var uid := _next_uid
 		_next_uid += 1
-		_ev_spawn.rpc(uid, kind, spot + Vector3.UP * 0.3, has_leader and k == 0, room_i)
+		_ev_spawn.rpc(uid, kind, spot + Vector3.UP * 0.3, has_leader and k == 0, room_i, Monsters.roll_variant(biome, randf(), randf()))
 		uids.append(uid)
 	return uids
 
@@ -222,7 +222,22 @@ func boss_summon(m: Monster, kind: String, count: int) -> void:
 
 func send_tell(m: Monster, atk: Dictionary) -> void:
 	var dmg: float = atk.damage * m.damage_mult()
-	_ev_tell.rpc(m.uid, m.target_peer, atk.tell, dmg, atk.reach, atk.parry == "shield", atk.get("knockdown", false), atk.name)
+	var buildup: Dictionary = atk.get("buildup", {}).duplicate()
+	var v: Dictionary = Monsters.VARIANTS.get(m.variant, {})
+	if dmg > 0.0 and not v.is_empty():
+		dmg += v.get("extra_damage", 0)
+		for k in v.get("buildup", {}):
+			buildup[k] = buildup.get(k, 0.0) + v.buildup[k]
+	# Amber skin: its heaviest attack can only be parried with a shield (doc 7.1).
+	var crushing: bool = atk.parry == "shield" or (m.variant == "amber" and atk.damage >= _heaviest(m))
+	_ev_tell.rpc(m.uid, m.target_peer, atk.tell, dmg, atk.reach, crushing, atk.get("knockdown", false), atk.name, buildup)
+
+
+func _heaviest(m: Monster) -> float:
+	var best := 0.0
+	for a in m.attack_options():
+		best = maxf(best, a.damage)
+	return best
 
 
 func monster_changed(m: Monster) -> void:
@@ -369,7 +384,10 @@ func _boss_drops(m: Monster) -> void:
 func _kill(m: Monster, peer: int) -> void:
 	if m.is_boss():
 		_boss_drops(m)
-	var xp: int = m.data.xp * (Monsters.LEADER.xp if m.leader else 1)
+	var xp: int = m.data.xp * (Monsters.LEADER.xp if m.leader else 1) * (Monsters.VARIANT_STATS.xp if m.variant != "" else 1)
+	if m.variant != "":
+		var v: Dictionary = Monsters.VARIANTS[m.variant]
+		auth.spawn_drop(v.crystal, v.count, m.global_position + Vector3.UP * 0.7)
 	for pid in auth.players:  # kills give XP to everyone nearby (progression doc 7.2)
 		if auth.players[pid].node.global_position.distance_to(m.global_position) < 30.0 or pid == peer:
 			auth.give_xp(pid, xp, "fighting")
@@ -394,14 +412,14 @@ func _kill(m: Monster, peer: int) -> void:
 
 ## Everyone: a monster starts an attack. Only the target's own computer judges it.
 @rpc("authority", "call_local", "reliable")
-func _ev_tell(uid: int, target: int, tell: float, dmg: float, reach: float, crushing: bool, kd: bool, attack_name: String) -> void:
+func _ev_tell(uid: int, target: int, tell: float, dmg: float, reach: float, crushing: bool, kd: bool, attack_name: String, buildup: Dictionary = {}) -> void:
 	var m: Monster = monsters.get(uid)
 	if m:
 		m.show_tell(tell)
 	if auth.is_host():
 		_parry_ok[uid] = target  # only this player may parry this swing, once
 	if target == auth.local_peer_id() and dmg > 0.0:
-		_incoming.append({uid = uid, at = _clock + tell, damage = dmg, reach = reach, crushing = crushing, kd = kd, name = attack_name})
+		_incoming.append({uid = uid, at = _clock + tell, damage = dmg, reach = reach, crushing = crushing, kd = kd, name = attack_name, buildup = buildup})
 
 
 func _judge_incoming() -> void:
@@ -426,6 +444,12 @@ func _judge_incoming() -> void:
 				var def: Dictionary = dwarf.call("defense_state") if dwarf.has_method("defense_state") else {holding = false, pressed_ago = -1.0, weapon = "fists", shield = false, tier = 0}
 				result = Combat.defend(hit.damage, def.pressed_ago, def.holding, def.weapon, def.shield, def.tier, hit.crushing)
 				me.vitals.take_damage(result.damage)
+				# Poison/fire/frost buildup: all of it on a hit, half through a block, none on a parry.
+				var share: float = {"hit": 1.0, "block": 0.5}.get(result.result, 0.0)
+				for kind in hit.get("buildup", {}):
+					var started := me.vitals.ailments.add(kind, hit.buildup[kind] * share)
+					if started != "":
+						result.ailment = started
 				if result.stamina > 0.0:
 					me.vitals.stamina = maxf(0.0, me.vitals.stamina - result.stamina)
 					if me.vitals.stamina <= 0.0 and dwarf.has_method("guard_break"):
@@ -479,9 +503,9 @@ func request_parried(uid: int, stun_amount: float) -> void:
 # ================================================================== everyone updates
 
 @rpc("authority", "call_local", "reliable")
-func _ev_spawn(uid: int, kind: String, pos: Vector3, leader: bool, pack: int) -> void:
+func _ev_spawn(uid: int, kind: String, pos: Vector3, leader: bool, pack: int, variant: String = "") -> void:
 	var m: Monster = MONSTER_SCRIPT.new()
-	m.setup(uid, kind, leader, pos)
+	m.setup(uid, kind, leader, pos, variant)
 	m.pack_id = pack
 	_root.add_child(m)
 	m.global_position = pos
@@ -545,11 +569,11 @@ func _float_number(at: Vector3, text: String) -> void:
 func snapshot() -> Array:
 	var out := []
 	for m: Monster in monsters.values():
-		out.append([m.uid, m.kind, m.global_position, m.leader, m.pack_id, m.hp])
+		out.append([m.uid, m.kind, m.global_position, m.leader, m.pack_id, m.hp, m.variant])
 	return out
 
 
 func load_snapshot(list: Array) -> void:
 	for e in list:
-		_ev_spawn(e[0], e[1], e[2], e[3], e[4])
+		_ev_spawn(e[0], e[1], e[2], e[3], e[4], e[6] if e.size() > 6 else "")
 		monsters[e[0]].hp = e[5]

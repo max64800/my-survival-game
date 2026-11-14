@@ -49,15 +49,12 @@ const DATA := {
 	"critter_hide": {name = "Critter Hide", color = Color(0.6, 0.45, 0.3), short = "Hi"},
 	"beetle_meat": {name = "Beetle Meat", color = Color(0.7, 0.45, 0.4), short = "Bm", kind = "food", hunger = 10, upset = 0.3},
 	"chitin_plate": {name = "Chitin Plate", color = Color(0.3, 0.4, 0.3), short = "Ch"},
-	# Fungal Jungle monster parts (combat doc 5.3, 8.5)
+	# Fungal Jungle monster parts (combat doc 5.3, 8.5; doc 5.5 maps horns, stalker meat and glow spores to old items)
 	"spore_powder": {name = "Spore Powder", color = Color(0.7, 0.65, 0.5), short = "Sp"},
 	"needle": {name = "Mite Needle", color = Color(0.75, 0.85, 0.9), short = "Nd"},
 	"venom_sac": {name = "Venom Sac", color = Color(0.45, 0.8, 0.35), short = "Vs"},
-	"horn": {name = "Husk Horn", color = Color(0.5, 0.4, 0.3), short = "Hn"},
 	"scythe_blade": {name = "Scythe Blade", color = Color(0.6, 0.6, 0.7), short = "Sb"},
-	"stalker_meat": {name = "Stalker Meat", color = Color(0.75, 0.5, 0.55), short = "St", kind = "food", hunger = 12, upset = 0.3},
 	"spitter_gill": {name = "Spitter Gill", color = Color(0.9, 0.5, 0.35), short = "Sg"},
-	"glow_spores": {name = "Glow Spores", color = Color(0.7, 1.0, 0.8), short = "Gs", kind = "fuel", fuel = 45.0},
 	"ironshell_plate": {name = "Ironshell Plate", color = Color(0.35, 0.3, 0.25), short = "Ip"},
 	"sivix_silk": {name = "Sivix Silk", color = Color(0.92, 0.95, 1.0), short = "Sk"},
 	"gloam_scythe": {name = "Gloam Scythe", color = Color(0.55, 0.55, 0.75), short = "Gl"},

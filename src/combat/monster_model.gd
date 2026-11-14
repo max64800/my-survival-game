@@ -157,6 +157,22 @@ static func build(shape: String, color: Color, size: float, leader: bool) -> Nod
 	return root
 
 
+## Crystal variants: a cluster of glowing crystals on the monster's back.
+static func add_crystals(model: Node3D, color: Color) -> void:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = color.darkened(0.2)
+	m.emission_enabled = true
+	m.emission = color
+	m.emission_energy_multiplier = 2.5
+	var top := 0.3
+	for c in model.get_children():
+		if c is MeshInstance3D:
+			top = maxf(top, c.position.y)
+	for i in 4:
+		var shard := _add(model, _cyl(0.0, 0.07, 0.35 - i * 0.04), m, Vector3((i - 1.5) * 0.09, top + 0.1, 0.1 + (i % 2) * 0.08))
+		shard.rotation = Vector3(0.3 - (i % 2) * 0.5, 0, (i - 1.5) * 0.35)
+
+
 ## Bosses: every part gets a faint glow of `color` so the big shape reads in the dark.
 static func make_glowy(model: Node3D, color: Color) -> void:
 	for c in model.get_children():

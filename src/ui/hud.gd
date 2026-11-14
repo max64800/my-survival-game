@@ -455,7 +455,7 @@ func _process(delta: float) -> void:
 		for b in v.buffs:
 			buffs.append("%s %d:%02d" % [Items.display_name(b.id), int(b.time_left) / 60, int(b.time_left) % 60])
 		var mood: String = {"well_fed": "Well fed", "peckish": "Peckish", "starving": "Starving (tired)"}.get(v.status(), "")
-		_buff_label.text = "\n".join(([mood] if mood != "" else []) + buffs)
+		_buff_label.text = "\n".join(([mood] if mood != "" else []) + buffs + Array(v.ailments.describe()))
 		var p := ps.progress
 		_level_label.text = "Level %d  (%d/%d XP)%s\nMining %d · Fighting %d · Smithing %d · Survival %d" % [
 			p.level, p.xp, Progression.xp_to_next(p.level), "  · %d perk points" % p.points_free() if p.points_free() > 0 else "",
@@ -463,10 +463,12 @@ func _process(delta: float) -> void:
 		if craft.visible and craft.station:
 			craft._status.text = craft.station.busy_text()
 		_fuel_bar.value = ps.fuel
-		var crystals := ps.inventory.count_of("crystal_blue")
+		var crystals := 0
+		for id in GameAuthority.FUEL_ORDER:
+			crystals += ps.inventory.count_of(id)
 		var mins := int(ps.fuel) / 60
 		var secs := int(ps.fuel) % 60
-		_fuel_label.text = "Lantern %d:%02d   (R: refill, %d crystal%s)" % [mins, secs, crystals, "" if crystals == 1 else "s"]
+		_fuel_label.text = "Lantern %d:%02d   (R: refill, %d fuel)" % [mins, secs, crystals]
 		if ps.fuel <= 0.0:
 			_fuel_label.text = "Lantern is out!  Mine a glow crystal, press R"
 		_refresh_selection(ps.selected_slot)

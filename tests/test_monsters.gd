@@ -96,6 +96,34 @@ func test_sword_damage_and_kill() -> void:
 	_teardown()
 
 
+func test_crystal_monster_hits_harder_and_drops_crystals() -> void:
+	await _setup()
+	var uid: int = auth.monsters._next_uid
+	var p := world.maker.find_floor(player.global_position.x + 1.2, player.global_position.z, player.global_position.y + 2.0)
+	auth.monsters._ev_spawn(uid, "mossnipper", p + Vector3.UP * 0.3, false, 0, "red")
+	var m := auth.monsters.get_monster(uid)
+	check_near(m.hp, 42.0, 0.01, "30 HP × 1.4")
+	m.target_peer = 1
+	auth.monsters.send_tell(m, {name = "Claw Pinch", tell = 0.0, damage = 6, type = "slash", reach = 1.3, parry = "any"})
+	auth.monsters._judge_incoming()
+	check_near(ps.vitals.health, 100.0 - (6.0 * 1.1 + 5.0), 0.01, "×1.1 damage + 5 fire")
+	check_near(ps.vitals.ailments.buildup.burn, 30.0, 0.01, "and 30 burn buildup")
+	ps.inventory.add("sword_stone", 1)
+	auth.request_select_slot(1, 1)
+	m.state = Monster.State.CHASE
+	for i in 6:
+		if auth.monsters.monsters.is_empty():
+			break
+		auth.monsters.request_attack(1, PackedInt32Array([uid]), true, 0, false)
+	check(auth.monsters.monsters.is_empty(), "killed it")
+	var red := 0
+	for d in auth._drops.values():
+		if d.item_id == "crystal_red":
+			red += d.count
+	check_eq(red, 4, "4 red crystals dropped")
+	_teardown()
+
+
 func test_sneak_attack_doubles() -> void:
 	await _setup()
 	ps.inventory.add("sword_stone", 1)
@@ -126,6 +154,24 @@ func test_unblocked_hit_hurts() -> void:
 	auth.monsters._ev_tell(m.uid, 1, 0.0, 8.0, 1.3, false, false, "Bite")
 	auth.monsters._judge_incoming()
 	check_eq(ps.vitals.health, 92.0, "8 damage")
+	_teardown()
+
+
+func test_poison_jabs_build_up() -> void:
+	await _setup()
+	var m := _spawn("needlemite", Vector3(1.0, 0, 0))
+	for i in 4:
+		auth.monsters._ev_tell(m.uid, 1, 0.0, 1.0, 1.4, false, false, "Needle Jab", {poison = 20})
+		auth.monsters._judge_incoming()
+	check(not ps.vitals.ailments.has("poison"), "4 jabs: not yet")
+	(player as FakeDwarf).defense = {holding = true, pressed_ago = 0.05, weapon = "sword", shield = false, tier = 0}
+	auth.monsters._ev_tell(m.uid, 1, 0.0, 1.0, 1.4, false, false, "Needle Jab", {poison = 20})
+	auth.monsters._judge_incoming()
+	check(not ps.vitals.ailments.has("poison"), "a parried jab adds nothing")
+	(player as FakeDwarf).defense = {holding = false, pressed_ago = -1.0, weapon = "sword", shield = false, tier = 0}
+	auth.monsters._ev_tell(m.uid, 1, 0.0, 1.0, 1.4, false, false, "Needle Jab", {poison = 20})
+	auth.monsters._judge_incoming()
+	check(ps.vitals.ailments.has("poison"), "the 5th jab that lands: poisoned")
 	_teardown()
 
 

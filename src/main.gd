@@ -109,6 +109,9 @@ func _on_defended(r: Dictionary) -> void:
 			hud.show_toast("Dodged!", 1.0)
 		"hit":
 			hud.show_toast("Hit by %s (−%d)" % [r.name, roundi(r.damage)], 1.2)
+	if r.has("ailment"):
+		var what: String = {"poison": "You are poisoned!", "burn": "You are burning!", "chill": "You are chilled!", "frozen": "You are frozen!"}.get(r.ailment, "")
+		hud.show_toast(what + "  (" + r.name + ")", 2.0)
 
 
 func _show_menu() -> void:

@@ -80,3 +80,19 @@ func test_jungle_runes_and_backfill() -> void:
 	check(slab.pick_drop("f", [0.1, 0.9, 0.5, 0.1]).contains("_m"), "sometimes a missing Mossy rune instead")
 	check_eq(GameAuthority.rune_biome_at(Vector3(400, -20, 0)), "f", "jungle position")
 	check_eq(GameAuthority.rune_biome_at(Vector3(0, -20, 0)), "m", "mossy position")
+
+
+func test_crystal_variants() -> void:
+	check_eq(Monsters.roll_variant("mossy", 0.5, 0.1), "", "most monsters are normal")
+	check_eq(Monsters.roll_variant("fungal", 0.05, 0.1), "green", "jungle: green is the most common crystal")
+	check_eq(Monsters.roll_variant("mossy", 0.03, 0.1), "red", "mossy: red first")
+	check_eq(Monsters.roll_variant("mossy", 0.05, 0.1), "", "mossy chance is 4%")
+	check_near(Monsters.max_hp("wheezecap", false, "green"), 80.0 * 1.4, 0.01, "variants have 40% more health")
+	check_eq(Monsters.target_stats("wheezecap", false, "amber").armor, 30, "amber skin: +30 armor")
+	for v in Monsters.VARIANTS:
+		check(Items.exists(Monsters.VARIANTS[v].crystal), "%s drops a real crystal" % v)
+	var model := MonsterModel.build("crab", Color.GRAY, 1.0, false)
+	var before := model.get_child_count()
+	MonsterModel.add_crystals(model, Color.RED)
+	check(model.get_child_count() > before, "crystals grow on its back")
+	model.free()

@@ -2,8 +2,9 @@ class_name Monsters
 ## Monster data for Mossy Hollows and the Fungal Jungle (combat doc 5.2, 5.3, 6, 7, 8).
 ## Each attack: tell = seconds of warning before it lands, reach in meters,
 ## parry: "any" (weapon or shield), "shield" (crushing: only a shield parry works).
-## shortcut: poison buildup, spore clouds, blinding and hiding aren't built yet; those attacks
-## deal plain damage for now (poison clouds as "poison" damage). Upgrade with the effects system.
+## buildup = {poison/burn/chill: amount} fills the target's Ailments meter (combat doc 2.6).
+## shortcut: lingering spore clouds, blinding and hiding aren't built yet: a cloud is one big
+## buildup on hit, Web Spray chills instead of slowing. Upgrade when area effects exist.
 
 const LIST := {
 	"mossnipper": {name = "Mossnipper", size = 0.5, hp = 30, armor = 0, stun = 30, slash = 1.25, blunt = 1.0, pierce = 1.0,
@@ -41,19 +42,19 @@ const LIST := {
 		color = Color(0.5, 0.5, 0.52), shape = "golem",
 		attacks = [{name = "Stone Fist", tell = 0.9, damage = 18, type = "blunt", reach = 2.0, parry = "any"},
 			{name = "Ruin Slam", tell = 1.2, damage = 24, type = "blunt", reach = 2.5, parry = "shield", knockdown = true},
-			{name = "Rune Flare", tell = 1.0, damage = 12, type = "fire", reach = 4.0, parry = "any"}],
+			{name = "Rune Flare", tell = 1.0, damage = 12, type = "fire", reach = 4.0, parry = "any", buildup = {burn = 40}}],
 		drops = [["cut_stone", 6, 1.0]]},
 	# ---- Fungal Jungle (combat doc 5.3). Players arrive with copper and leave with silver.
 	"wheezecap": {name = "Wheezecap", size = 0.6, hp = 80, armor = 0, stun = 50, slash = 1.5, blunt = 1.0, pierce = 0.75,
 		fire = -0.5, frost = 0.0, poison = 1.0, walk = 1.5, run = 3.0, pack = [2, 4], xp = 15, leader = "Wheezecap Puffmother", leader_chance = 0.25,
 		color = Color(0.78, 0.7, 0.6), shape = "mushroom",
 		attacks = [{name = "Cap Butt", tell = 0.6, damage = 12, type = "blunt", reach = 1.4, parry = "any"},
-			{name = "Spore Puff", tell = 1.0, damage = 10, type = "poison", reach = 3.0, parry = "any"}],
+			{name = "Spore Puff", tell = 1.0, damage = 4, type = "poison", reach = 3.0, parry = "any", buildup = {poison = 60}}],
 		drops = [["mushroom_flesh", 2, 0.8], ["spore_powder", 1, 0.5]]},
 	"needlemite": {name = "Needlemite", size = 0.55, hp = 45, armor = 10, stun = 40, slash = 1.0, blunt = 1.0, pierce = 1.5,
 		fire = 0.0, frost = -0.25, poison = 0.5, walk = 3.0, run = 7.5, pack = [4, 7], xp = 10, leader = "Needlemite Broodkeeper", leader_chance = 0.2,
 		color = Color(0.6, 0.72, 0.75), shape = "mite", hit_and_run = true,
-		attacks = [{name = "Needle Jab", tell = 0.5, damage = 11, type = "pierce", reach = 1.4, parry = "any"},
+		attacks = [{name = "Needle Jab", tell = 0.5, damage = 9, type = "pierce", reach = 1.4, parry = "any", buildup = {poison = 20}},
 			{name = "Leap Bite", tell = 0.7, damage = 14, type = "pierce", reach = 5.0, parry = "any", lunge = true}],
 		drops = [["needle", 2, 0.7], ["venom_sac", 1, 0.25]]},
 	"husk_charger": {name = "Husk Charger", size = 1.4, hp = 210, armor = 40, stun = 160, slash = 0.5, blunt = 1.5, pierce = 1.0,
@@ -62,19 +63,19 @@ const LIST := {
 		attacks = [{name = "Horn Gore", tell = 0.9, damage = 22, type = "pierce", reach = 2.2, parry = "any"},
 			{name = "Charge", tell = 1.3, damage = 30, type = "blunt", reach = 12.0, parry = "shield", knockdown = true, lunge = true},
 			{name = "Shell Stomp", tell = 1.1, damage = 18, type = "blunt", reach = 3.0, parry = "any"}],
-		drops = [["chitin_plate", 2, 0.9], ["beetle_meat", 3, 1.0], ["horn", 1, 0.3]]},
+		drops = [["chitin_plate", 2, 0.9], ["beetle_meat", 3, 1.0], ["chitin_plate", 1, 0.3]]},
 	"gill_stalker": {name = "Gill Stalker", size = 1.1, hp = 150, armor = 10, stun = 90, slash = 1.0, blunt = 1.0, pierce = 1.25,
 		fire = -0.25, frost = 0.0, poison = 0.5, walk = 2.5, run = 6.0, pack = [1, 1], xp = 40,
 		color = Color(0.5, 0.45, 0.6), shape = "mantis", sleeps = true,  # "hides" until you come close
 		attacks = [{name = "Scythe Pair", tell = 0.6, damage = 14, type = "slash", reach = 2.0, parry = "any", follow = {tell = 0.4, damage = 14}},
 			{name = "Ambush Lunge", tell = 1.0, damage = 26, type = "slash", reach = 5.0, parry = "any", lunge = true}],
-		drops = [["scythe_blade", 1, 0.6], ["stalker_meat", 2, 0.8]]},
+		drops = [["scythe_blade", 1, 0.6], ["beetle_meat", 2, 0.8]]},
 	"cap_spitter": {name = "Cap Spitter", size = 1.2, hp = 110, armor = 0, stun = 70, slash = 1.5, blunt = 0.75, pierce = 0.5,
 		fire = -0.5, frost = 0.0, poison = 1.0, walk = 0.0, run = 0.0, pack = [1, 3], xp = 25,
 		color = Color(0.85, 0.45, 0.3), shape = "mushroom",
-		attacks = [{name = "Spore Bomb", tell = 1.2, damage = 15, type = "blunt", reach = 20.0, parry = "any", ranged = true},
+		attacks = [{name = "Spore Bomb", tell = 1.2, damage = 15, type = "blunt", reach = 20.0, parry = "any", ranged = true, buildup = {poison = 50}},
 			{name = "Root Snap", tell = 0.7, damage = 12, type = "pierce", reach = 2.0, parry = "any"}],
-		drops = [["spitter_gill", 2, 0.7], ["glow_spores", 3, 0.6]]},
+		drops = [["spitter_gill", 2, 0.7], ["glow_slime", 3, 0.6]]},
 }
 
 ## Bosses (combat doc 8.2, 8.3). boss: "main" or "side". phases: from full health down; each lists
@@ -94,7 +95,7 @@ const BOSSES := {
 			rubble_toss = {name = "Rubble Toss", tell = 1.2, damage = 20, type = "blunt", reach = 14.0, parry = "any", ranged = true},
 			moss_grasp = {name = "Moss Grasp", tell = 0.8, damage = 10, type = "blunt", reach = 10.0, parry = "any", ranged = true},
 			hall_quake = {name = "Hall Quake", tell = 1.5, damage = 15, type = "blunt", reach = 9.0, parry = "any", follow = {tell = 1.0, damage = 15, follow = {tell = 1.0, damage = 15}}},
-			heart_pulse = {name = "Heart Pulse", tell = 1.5, damage = 30, type = "fire", reach = 6.0, parry = "shield"}}},
+			heart_pulse = {name = "Heart Pulse", tell = 1.5, damage = 30, type = "fire", reach = 6.0, parry = "shield", buildup = {burn = 60}}}},
 	"skerra": {name = "Skerra, the Nipper Queen", boss = "side", biome = "mossy", size = 2.4, hp = 1000, armor = 15, stun = 120,
 		slash = 1.25, blunt = 1.0, pierce = 1.0, fire = 0.0, frost = 0.0, poison = 0.0, walk = 3.0, run = 4.5, xp = 300,
 		color = Color(0.4, 0.55, 0.3), shape = "crab", room = "nest_cavern",
@@ -128,9 +129,9 @@ const BOSSES := {
 		attack_list = {
 			cap_crush = {name = "Cap Crush", tell = 1.0, damage = 40, type = "blunt", reach = 5.0, parry = "shield", knockdown = true},
 			tendril_lash = {name = "Tendril Lash", tell = 0.7, damage = 15, type = "slash", reach = 6.0, parry = "any", follow = {tell = 0.5, damage = 15, follow = {tell = 0.5, damage = 15}}},
-			spore_volley = {name = "Spore Volley", tell = 1.2, damage = 15, type = "poison", reach = 18.0, parry = "any", ranged = true},
+			spore_volley = {name = "Spore Volley", tell = 1.2, damage = 15, type = "blunt", reach = 18.0, parry = "any", ranged = true, buildup = {poison = 40}},
 			bloom_burst = {name = "Bloom Burst", tell = 1.3, damage = 45, type = "blunt", reach = 14.0, parry = "shield", knockdown = true, ranged = true},
-			choking_exhale = {name = "Choking Exhale", tell = 1.4, damage = 20, type = "poison", reach = 8.0, parry = "any"},
+			choking_exhale = {name = "Choking Exhale", tell = 1.4, damage = 10, type = "poison", reach = 8.0, parry = "any", buildup = {poison = 100}},
 			trample = {name = "Trample", tell = 1.1, damage = 30, type = "blunt", reach = 12.0, parry = "any", knockdown = true, lunge = true}}},
 	"old_ironshell": {name = "Old Ironshell", boss = "side", biome = "fungal", size = 2.6, hp = 1600, armor = 70, stun = 200,
 		slash = 0.5, blunt = 1.5, pierce = 1.0, fire = 0.0, frost = 0.0, poison = 0.25, walk = 2.0, run = 5.5, xp = 600,
@@ -150,8 +151,8 @@ const BOSSES := {
 		drops = [["sivix_silk", 5, 1.0], ["venom_sac", 5, 1.0]], runes = 1,
 		phases = [{until = 0.0, attacks = ["stinger_lance", "web_spray", "ceiling_drop", "brood_swarm"]}],
 		attack_list = {
-			stinger_lance = {name = "Stinger Lance", tell = 0.9, damage = 25, type = "pierce", reach = 3.0, parry = "any"},
-			web_spray = {name = "Web Spray", tell = 1.1, damage = 8, type = "blunt", reach = 6.0, parry = "any"},
+			stinger_lance = {name = "Stinger Lance", tell = 0.9, damage = 25, type = "pierce", reach = 3.0, parry = "any", buildup = {poison = 50}},
+			web_spray = {name = "Web Spray", tell = 1.1, damage = 4, type = "blunt", reach = 6.0, parry = "any", buildup = {chill = 100}},
 			ceiling_drop = {name = "Ceiling Drop", tell = 1.4, damage = 35, type = "blunt", reach = 10.0, parry = "shield", knockdown = true, ranged = true},
 			brood_swarm = {name = "Brood Swarm", tell = 1.5, damage = 0, type = "blunt", reach = 30.0, parry = "any", summon = ["needlemite", 6], cooldown = 30.0}}},
 	"gloamstalker": {name = "The Gloamstalker", boss = "side", biome = "fungal", size = 2.4, hp = 1400, armor = 15, stun = 130,
@@ -196,12 +197,45 @@ const GIVE_UP := 10.0  ## seconds without reaching you before going home
 const WANDER_RADIUS := 15.0
 
 
-## A monster's final numbers, with leader/pack boosts applied. Used for damage math.
-static func target_stats(id: String, leader: bool) -> Dictionary:
+## Crystal variants (combat doc 7): crystals grow on their backs, glow, and add a power.
+## shortcut: gem drops wait for the gem system; elemental resists are stored but only matter
+## once players deal elemental damage.
+const VARIANTS := {
+	"red": {name = "Ember-crested", color = Color(1.0, 0.35, 0.2), extra_damage = 5, buildup = {burn = 30}, crystal = "crystal_red", count = 4, fire = 0.75, frost = -0.5},
+	"blue": {name = "Rime-crested", color = Color(0.4, 0.75, 1.0), extra_damage = 5, buildup = {chill = 30}, crystal = "crystal_blue", count = 4, frost = 0.75, fire = -0.5},
+	"green": {name = "Blight-crested", color = Color(0.4, 1.0, 0.45), extra_damage = 4, buildup = {poison = 35}, crystal = "crystal_green", count = 4, poison = 1.0, fire = -0.25},
+	"violet": {name = "Shift-crested", color = Color(0.7, 0.45, 1.0), blink = 8.0, crystal = "crystal_violet", count = 3, pierce_mult = 1.25},
+	"amber": {name = "Amber-crested", color = Color(1.0, 0.7, 0.25), armor = 30, crystal = "crystal_amber", count = 4, blunt_mult = 1.25},
+}
+const VARIANT_STATS := {hp = 1.4, damage = 1.1, stun = 1.2, xp = 2}
+## [chance a spawned monster is a crystal variant, colour split] per biome (doc 7.3).
+const VARIANT_CHANCE := {
+	"mossy": [0.04, {red = 0.3, blue = 0.3, amber = 0.3, violet = 0.1}],
+	"fungal": [0.07, {green = 0.35, red = 0.2, violet = 0.2, amber = 0.15, blue = 0.1}],
+}
+
+
+## Two dice (0..1) -> "" (normal) or a variant colour.
+static func roll_variant(biome: String, chance_roll: float, colour_roll: float) -> String:
+	var c: Array = VARIANT_CHANCE.get(biome, [0.0, {}])
+	if chance_roll >= c[0]:
+		return ""
+	var acc := 0.0
+	for colour in c[1]:
+		acc += c[1][colour]
+		if colour_roll < acc:
+			return colour
+	return c[1].keys()[-1]
+
+
+## A monster's final numbers, with leader/variant boosts applied. Used for damage math.
+static func target_stats(id: String, leader: bool, variant: String = "") -> Dictionary:
 	var m: Dictionary = info(id)
-	return {armor = m.armor + (LEADER.armor if leader else 0), slash = m.slash, blunt = m.blunt, pierce = m.pierce,
-		fire = m.fire, frost = m.frost, poison = m.poison}
+	var v: Dictionary = VARIANTS.get(variant, {})
+	return {armor = m.armor + (LEADER.armor if leader else 0) + v.get("armor", 0), slash = m.slash,
+		blunt = m.blunt * v.get("blunt_mult", 1.0), pierce = m.pierce * v.get("pierce_mult", 1.0),
+		fire = v.get("fire", m.fire), frost = v.get("frost", m.frost), poison = v.get("poison", m.poison)}
 
 
-static func max_hp(id: String, leader: bool) -> float:
-	return info(id).hp * (LEADER.hp if leader else 1.0)
+static func max_hp(id: String, leader: bool, variant: String = "") -> float:
+	return info(id).hp * (LEADER.hp if leader else 1.0) * (VARIANT_STATS.hp if variant != "" else 1.0)

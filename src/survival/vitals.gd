@@ -25,6 +25,7 @@ var hunger := 100.0
 var thirst := 100.0
 var buffs: Array[Dictionary] = []  ## {id, time_left (seconds)}
 var upset_time := 0.0
+var ailments := Ailments.new()  ## poison, burn, chill (only on the dwarf's own computer)
 var _since_damage := 999.0
 var _since_stamina := 999.0
 
@@ -92,7 +93,10 @@ func tick(delta: float, resting: bool = false) -> void:
 		buffs[i].time_left -= delta
 		if buffs[i].time_left <= 0.0:
 			buffs.remove_at(i)
-	if _since_damage >= HEALTH_REGEN_DELAY:
+	var dot := ailments.tick(delta)
+	if dot > 0.0:
+		health = maxf(0.0, health - dot)
+	if _since_damage >= HEALTH_REGEN_DELAY and not ailments.blocks_regen():
 		health += HEALTH_REGEN * health_regen_mult() * delta
 	if _since_stamina >= STAMINA_REGEN_DELAY:
 		stamina += STAMINA_REGEN * stamina_regen_mult() * delta
@@ -162,6 +166,7 @@ func _add_buff(id: String) -> void:
 ## Dying clears buffs and refills the body (you wake at your bed).
 func respawn() -> void:
 	buffs.clear()
+	ailments.clear()
 	upset_time = 0.0
 	health = max_health()
 	stamina = max_stamina()

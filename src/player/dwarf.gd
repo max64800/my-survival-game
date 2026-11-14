@@ -138,7 +138,7 @@ func _physics_process(delta: float) -> void:
 	var fight_mult := fight.step(delta, playing, dir) if fight else 1.0
 	if fight and (fight.is_blocking() or fight.stagger > 0.0):
 		running = false
-	var speed := (RUN_SPEED if running else WALK_SPEED) * fight_mult
+	var speed := (RUN_SPEED if running else WALK_SPEED) * fight_mult * (body.ailments.speed_mult() if body else 1.0)
 	var target := dir * speed
 	var a := ACCEL if is_on_floor() else AIR_ACCEL
 	velocity.x = move_toward(velocity.x, target.x, a * speed * delta)

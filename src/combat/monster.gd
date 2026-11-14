@@ -14,6 +14,7 @@ const RECOVER_TIME := 0.7
 var uid := 0
 var kind := "mossnipper"
 var leader := false
+var variant := ""  ## crystal colour ("" = normal), combat doc 7
 var pack_id := 0
 var hp := 30.0
 var state := State.IDLE
@@ -39,18 +40,20 @@ var _bar_fill: MeshInstance3D
 var _stun_fill: MeshInstance3D
 var _bars: Node3D
 var _flash := 0.0
+var _blink := 8.0
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
 
 
-func setup(p_uid: int, p_kind: String, p_leader: bool, p_home: Vector3) -> void:
+func setup(p_uid: int, p_kind: String, p_leader: bool, p_home: Vector3, p_variant: String = "") -> void:
 	uid = p_uid
 	kind = p_kind
 	leader = p_leader
 	home = p_home
 	data = Monsters.info(kind)
-	hp = Monsters.max_hp(kind, leader)
+	variant = p_variant if Monsters.VARIANTS.has(p_variant) and not data.has("boss") else ""
+	hp = Monsters.max_hp(kind, leader, variant)
 	var boss_kind: String = data.get("boss", "")
-	stun = StunMeter.new(data.stun * (Monsters.LEADER.stun if leader else 1.0), 5.0 if boss_kind == "main" else (4.0 if boss_kind == "side" else 3.0), boss_kind != "")
+	stun = StunMeter.new(data.stun * (Monsters.LEADER.stun if leader else 1.0) * (Monsters.VARIANT_STATS.stun if variant != "" else 1.0), 5.0 if boss_kind == "main" else (4.0 if boss_kind == "side" else 3.0), boss_kind != "")
 	state = State.SLEEP if data.get("sleeps", false) else State.IDLE
 	_timer = randf_range(3.0, 8.0)
 
@@ -78,6 +81,16 @@ func _ready() -> void:
 		glow.position = Vector3.UP * cap.height * 0.8
 		add_child(glow)
 		MonsterModel.make_glowy(model, data.color.lightened(0.3))
+	if variant != "":
+		# Crystal variants: glowing crystals on the back that light up the cave around them.
+		var vc: Color = Monsters.VARIANTS[variant].color
+		MonsterModel.add_crystals(model, vc)
+		var light := OmniLight3D.new()
+		light.light_color = vc
+		light.omni_range = 5.0 + s * 2.0
+		light.light_energy = 1.0
+		light.position = Vector3.UP * cap.height
+		add_child(light)
 	_hp_label = Label3D.new()
 	_hp_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	_hp_label.position = Vector3.UP * (cap.height + 0.4)
@@ -99,7 +112,7 @@ func _ready() -> void:
 
 
 func max_hp() -> float:
-	return Monsters.max_hp(kind, leader)
+	return Monsters.max_hp(kind, leader, variant)
 
 
 func is_boss() -> bool:
@@ -108,7 +121,7 @@ func is_boss() -> bool:
 
 ## Numbers for damage math (a boss's phase can change its armor).
 func stats() -> Dictionary:
-	var s := Monsters.target_stats(kind, leader)
+	var s := Monsters.target_stats(kind, leader, variant)
 	if is_boss() and data.phases[phase].has("armor"):
 		s.armor = data.phases[phase].armor
 	return s
@@ -146,7 +159,8 @@ func is_alive() -> bool:
 
 ## How strong its hits are right now (leader ×1.3, pack boost +20%).
 func damage_mult() -> float:
-	return (Monsters.LEADER.damage if leader else 1.0) * (1.0 + (Monsters.PACK_BOOST.damage if boosted else 0.0))
+	return (Monsters.LEADER.damage if leader else 1.0) * (1.0 + (Monsters.PACK_BOOST.damage if boosted else 0.0)) \
+		* (Monsters.VARIANT_STATS.damage if variant != "" else 1.0)
 
 
 # ================================================================== host brain
@@ -201,6 +215,11 @@ func think(delta: float, mgr: Node) -> void:
 				return
 			var to := target.global_position - global_position
 			var dist := Vector2(to.x, to.z).length()
+			if variant == "violet":
+				_blink -= delta
+				if _blink <= 0.0 and dist < 12.0 and _try_blink(target, to, mgr):
+					_blink = Monsters.VARIANTS.violet.blink
+					return
 			# Gave up? (too far from home, or can't get closer for 10 s)
 			if dist < _best_dist - 0.5:
 				_best_dist = dist
@@ -295,6 +314,20 @@ func alert(peer: int) -> void:
 	_no_progress = 0.0
 
 
+## Shift-crested: pops up behind or beside its target (doc 7.1).
+func _try_blink(target: Node3D, to: Vector3, mgr: Node) -> bool:
+	var maker: CaveMaker = mgr.auth.world.maker
+	var dir := Vector3(to.x, 0, to.z).normalized().rotated(Vector3.UP, [0.0, PI / 2.0, -PI / 2.0].pick_random())
+	var spot := target.global_position + dir * 2.5
+	spot = maker.find_floor(spot.x, spot.z, target.global_position.y + 1.5)
+	if maker.sdf_at(spot + Vector3.UP * 0.8) <= 0.3 or absf(spot.y - target.global_position.y) > 2.0:
+		return false
+	show_tell(0.5)
+	global_position = spot + Vector3.UP * 0.2
+	velocity = Vector3.ZERO
+	return true
+
+
 func _pick_attack(dist: float) -> Dictionary:
 	var options := []
 	for a in attack_options():
@@ -386,7 +419,10 @@ func set_hp(value: float, stun_frac: float, stunned: bool) -> void:
 func _update_label() -> void:
 	if _hp_label == null:
 		return
-	_hp_label.text = (data.get("leader", "Leader") if leader else data.name) + (" (dazed!)" if stun.is_stunned() else "")
+	var nm: String = data.get("leader", "Leader") if leader else data.name
+	if variant != "":
+		nm = Monsters.VARIANTS[variant].name + " " + nm
+	_hp_label.text = nm + (" (dazed!)" if stun.is_stunned() else "")
 	_hp_label.modulate = Color(1.0, 0.85, 0.3) if leader or stun.is_stunned() else Color(1, 1, 1, 0.75)
 	var hurt := hp < max_hp() or stun.value > 0.0
 	_bars.visible = hurt
