@@ -69,6 +69,20 @@ boards, pale straw rope lashings, copper hinges, a stone ring around the round d
    log end-rings with a bark rim. (The first request silently failed; asking again worked.)
 New detail from the house worth keeping: **flat stone footings under every log leg.**
 
+**Stonehold reference pictures, all done (same chat):**
+1. Kit sheet v2 (17 pieces, 6 × 3): uneven hand-cut blocks in **3–4 tones** (charcoal, mid-grey, pale sandy-grey,
+   warm brownish) with dark mortar and moss; copper bands as decoration (foundation, stairs, pillar, railing,
+   battlements); round doorway = ring of wedge stones + carved rune keystone; round door = dark planks with copper
+   straps and ring; window = iron grille under a timber lintel; sloped wall = stepped blocks; pillar with wider
+   base/top; timber beam with copper end caps; balustrade railing; flat roof slab; battlement edge + corner.
+2. Finished keep: two storeys on stone piers, flat roof with battlements, a tower corner, front terrace with
+   balustrade, stepped stairs, copper lantern by the round door.
+3. Joins: corners interlock with quoins (alternating long/short stones); wall on foundation with a riveted copper
+   band along the joint; roof slab sits on the wall, battlement on the slab's outer edge; ceiling = stone slabs
+   held by dark timber joists with copper brackets; battlement edges meet a corner piece; triangle + square
+   floors edge to edge.
+4. Textures: block wall, flagstone floor, dark timber with copper rivets, hammered copper band with rivets.
+
 Order: **Delver's Shack first** (style sheet → house picture → owner reviews → models → test in game), then
 Stonehold, then Hearthbrick.
 
