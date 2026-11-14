@@ -100,9 +100,39 @@ func _init(p_seed: int = 1, big_caverns: int = 3, small_rooms: int = 12) -> void
 	_plan_pois(fpoi, r0, rooms.size(), s0, s1, gates[0].pos, "fungal", BIOMES[1].cx)
 	# Last, so it never moves anything above: the small room where you wake up.
 	cavern_spawn = spawn_point
+	_plan_colonnades()
 	_plan_start()
 	if not start.is_empty():
 		spawn_point = start.spawn
+
+
+## Rows of great old columns standing in the big caverns (feedback F9/F21), 1-2 per cavern,
+## only where the floor is open and the ceiling is high enough. Planned last, with their own
+## dice, so nothing else moves.
+func _plan_colonnades() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed + 5150
+	for ri in rooms.size():
+		var room: Dictionary = rooms[ri]
+		if not room.big or room.get("sealed", false):
+			continue
+		var c: Vector3 = room.center
+		var r: Vector3 = room.radii
+		var placed := 0
+		var want := rng.randi_range(1, 2)
+		for attempt in 12:
+			if placed >= want:
+				break
+			var a := rng.randf_range(0.0, TAU)
+			var dist := rng.randf_range(0.25, 0.55)
+			var at := c + Vector3(cos(a) * r.x * dist, 0.0, sin(a) * r.z * dist)
+			var fl := find_floor(at.x, at.z, c.y)
+			if sdf_at(fl + Vector3.UP * 8.0) <= 0.0 or not _far_from_pois(fl, 12.0):
+				continue  # ceiling too low, or something else is already here
+			_poi_biome = room.get("biome", "mossy")
+			_add_poi("colonnade", fl, Vector3.UP, ri)
+			pois[-1].yaw = rng.randf_range(0.0, TAU)
+			placed += 1
 
 
 # ---------------------------------------------------------------- the start (feedback F10)

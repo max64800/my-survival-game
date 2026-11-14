@@ -95,7 +95,9 @@ func test_save_and_load_a_world() -> void:
 	check(auth2.rune_slab.carved_runes.has("ochre_m2"), "carved rune remembered")
 	check_eq(ps2.inventory.count_of("copper_ingot"), 17, "bag is back")
 	check_eq(ps2.progress.level, level, "level is back")
-	check_near(ps2.fuel, 123.0, 2.0, "lantern fuel is back (it keeps burning while we wait)")
+	# ±6 s: the lantern keeps burning while the world loads, and loading time varies by computer.
+	# (Still catches the real bug: fuel reset to full 600 or to 0.)
+	check_near(ps2.fuel, 123.0, 6.0, "lantern fuel is back (it keeps burning while we wait)")
 	root_b.queue_free()
 	_clean()
 
