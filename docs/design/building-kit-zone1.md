@@ -16,16 +16,18 @@ Only Mossy Hollows (Zone 1). Other zones come later. Every model follows the wor
 
 ## The kit
 
-Same 13 pieces in every style:
+Same 16 pieces in every style:
 Foundation · **Triangle foundation** · Stairs · Floor/ceiling · **Triangle floor/ceiling** · Wall · Half wall ·
-Doorway · Window wall · Pillar · Beam · Door · Railing.
+Doorway · Window wall · **Sloped wall** (a wall cut corner to corner: fills the gap beside stairs and under the sides
+of a sloped roof) · **Round doorway** (hobbit-hole style) · **Round door** · Pillar · Beam · Door · Railing.
+Foundations keep **tall legs** (a crawl space is fine; players can raise/lower foundations like in Conan).
 
 Plus the roof set:
 - **Delver's Shack and Hearthbrick (sloped):** Gable wall (the triangle end wall) · Roof slope · Outer corner ·
-  Inner corner · Ridge cap → 18 pieces each.
-- **Stonehold (flat):** Flat roof slab · Battlement edge · Battlement corner → 16 pieces.
+  Inner corner · Ridge cap → 21 pieces each.
+- **Stonehold (flat):** Flat roof slab · Battlement edge · Battlement corner → 19 pieces.
 
-Total: **52 models** (18 + 18 + 16). Ladder, mine prop and decor stay shared (one look each).
+Total: **61 models** (21 + 21 + 19). Ladder, mine prop and decor stay shared (one look each).
 
 ### Rules for the shapes
 - **Roofs are hollow:** a sloped roof piece is a thin slanted panel (like a lean-to), open underneath. Corners are
@@ -46,6 +48,10 @@ Building pieces must be exact sizes to snap and tile, and picture-to-3D makes lu
 2. Build the meshes in Blender to exact sizes (by script): bevelled, chipped, wobbly edges, uneven planks/stones,
    painted with those textures. Save as `assets/models/build/<piece>__<family>.glb` (the game already loads these).
 3. Check in the game: snapping, no gaps, no floating parts, the "white edges" bug fixed.
+
+**Delver's Shack style sheet approved direction (v2, November 14):** ChatGPT chat "Generate Building Kit Sheet",
+second picture (21 pieces, 7 × 3). Dark bark-covered logs for frames, lighter split planks, a few grey weathered
+boards, pale straw rope lashings, copper hinges, a stone ring around the round doorway.
 
 Order: **Delver's Shack first** (style sheet → house picture → owner reviews → models → test in game), then
 Stonehold, then Hearthbrick.
