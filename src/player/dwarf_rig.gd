@@ -70,6 +70,7 @@ func build(tint: Color) -> void:
 	_tint_clothes(tint)
 	for mi in find_children("*", "MeshInstance3D", true, false):
 		mi.layers = DwarfModel.VISUAL_LAYER
+		_add_rim(mi)
 	# Dwarf proportions, applied after every animation frame.
 	var prop := DwarfProportions.new()
 	skeleton.add_child(prop)
@@ -308,6 +309,24 @@ static func _big_beard(mi: MeshInstance3D) -> Mesh:
 	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays, [], {}, flags)
 	m.surface_set_material(0, mi.mesh.surface_get_material(0))
 	return m
+
+
+## A soft light along the dwarf's outline, so they stand out against the dark cave
+## (the same trick the painted props use; see Look / prop.gdshader).
+static func _add_rim(mi: MeshInstance3D) -> void:
+	if mi.mesh == null:
+		return
+	for i in mi.mesh.get_surface_count():
+		var m := mi.get_active_material(i) as BaseMaterial3D
+		if m == null:
+			continue
+		if mi.get_surface_override_material(i) == null and mi.material_override == null:
+			m = m.duplicate()
+		m.rim_enabled = true
+		m.rim = 0.35
+		m.rim_tint = 0.6
+		if mi.material_override == null:
+			mi.set_surface_override_material(i, m)
 
 
 ## Each player's shirt and hood get their own colour (host blue, then red, green, gold).

@@ -47,7 +47,10 @@ void vertex() {
 		vec3 q = VERTEX * 3.1;  // only the shape's own corners: moving things keep their shape
 		VERTEX += (vec3(vnoise(q), vnoise(q + 17.3), vnoise(q + 31.7)) - 0.5) * 2.0 * wobble;
 	}
-	v_pos = VERTEX;
+	// Grain follows the object's real size: a root stretched 6 m long gets 6 m of bark, not one
+	// stretched-out tile. (The node's scale, measured from its transform.)
+	vec3 node_scale = vec3(length(MODEL_MATRIX[0].xyz), length(MODEL_MATRIX[1].xyz), length(MODEL_MATRIX[2].xyz));
+	v_pos = VERTEX * node_scale;
 	v_n = NORMAL;
 }
 
