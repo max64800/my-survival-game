@@ -77,6 +77,10 @@ func _run() -> void:
 		await _props_test()
 		quit()
 		return
+	if "monsters" in OS.get_cmdline_user_args():
+		await _monster_lineup()
+		quit()
+		return
 	if "fire" in OS.get_cmdline_user_args():
 		await _fire_test()
 		quit()
@@ -247,3 +251,21 @@ func _props_test() -> void:
 	_view(Vector3(0.2, 0.3, -1), 5.0, 1.2)
 	await _wait(0.5)
 	await _shot("p_props")
+
+
+## Tuning aid: every monster shape in a row, frozen mid-stride (walking at 3 m/s).
+func _monster_lineup() -> void:
+	_model.visible = false
+	var shapes := ["crab", "lizard", "moth", "toad", "armor", "golem", "mushroom", "mite", "beetle", "mantis", "shuffler", "bat", "hog", "snail", "puffpod"]
+	var models := []
+	for i in shapes.size():
+		var m := MonsterModel.build(shapes[i], Color.from_hsv(i / 15.0, 0.45, 0.6), 1.0, i == 4)
+		m.position = Vector3((i % 5 - 2) * 1.6, 0, -int(i / 5) * 1.8)
+		root.add_child(m)
+		models.append(m)
+	for k in 2:
+		for m in models:
+			MonsterModel.animate(m, 3.0, 1.0, 0.31 + k * 0.17)
+		_view(Vector3(0.25, 0.45, 1), 9.0, 0.3)
+		await _wait(0.3)
+		await _shot("m_lineup_%d" % k)

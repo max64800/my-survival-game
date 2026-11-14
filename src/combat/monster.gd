@@ -40,6 +40,10 @@ var _bar_fill: MeshInstance3D
 var _stun_fill: MeshInstance3D
 var _bars: Node3D
 var _flash := 0.0
+var _last_pos := Vector3.ZERO
+var _speed := 0.0
+var _clock := 0.0
+var _size := 1.0
 var _blink := 8.0
 var _ball := 0.0  ## Moss Shuffler: seconds left rolled up in its shell
 var ailments := Ailments.new()  ## host: burn / chill / poison on this monster (doc 2.6)
@@ -75,7 +79,8 @@ func _ready() -> void:
 	shape.shape = cap
 	shape.position = Vector3.UP * cap.height * 0.5
 	add_child(shape)
-	model = MonsterModel.build(data.shape, data.color, s, leader)
+	model = MonsterModel.build(data.shape, data.color, s, leader, kind)
+	_size = s
 	add_child(model)
 	if is_boss():
 		# Bosses glow softly (moss and runes), so you can read their attacks in a dark hall.
@@ -505,6 +510,14 @@ func show_tell(seconds: float) -> void:
 
 
 func _process(delta: float) -> void:
+	# Coming alive (only looks): walk, waddle, flap, breathe, at the speed we really move.
+	if _clock == 0.0:
+		_last_pos = global_position  # first frame: we didn't really "move" from the origin
+	var moved := Vector2(global_position.x - _last_pos.x, global_position.z - _last_pos.z).length()
+	_last_pos = global_position
+	_speed = lerpf(_speed, moved / maxf(delta, 0.001), minf(1.0, delta * 8.0))
+	_clock += delta
+	MonsterModel.animate(model, _speed, _size, _clock + uid * 0.37)
 	if _flash > 0.0:
 		_flash -= delta
 		MonsterModel.set_glow(model, 1.0 if _flash < 0.25 else 0.35)  # bright gleam in the last 250 ms
@@ -513,7 +526,7 @@ func _process(delta: float) -> void:
 	if stun.is_stunned():
 		model.rotation.z = sin(Time.get_ticks_msec() * 0.01) * 0.15
 	else:
-		model.rotation.z = 0.0
+		model.rotation.z = sin(_clock * (5.0 + _speed * 2.5)) * 0.07 * clampf(_speed / 3.0, 0.0, 1.0)  # waddle
 
 
 func set_hp(value: float, stun_frac: float, stunned: bool) -> void:

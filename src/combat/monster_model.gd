@@ -3,7 +3,19 @@ class_name MonsterModel
 ## Every model has glowing eyes; they flash right before an attack lands.
 
 
-static func build(shape: String, color: Color, size: float, leader: bool) -> Node3D:
+static func build(shape: String, color: Color, size: float, leader: bool, kind: String = "") -> Node3D:
+	# A real model from the asset forge (Claude 2), when one exists for this monster:
+	# res://assets/models/monsters/<kind>.glb (front +Z, feet at the bottom, ~1 m = size 1).
+	var forged := Look.forged("monsters", kind) if kind != "" else null
+	if forged:
+		var holder := Node3D.new()
+		forged.rotation.y = PI  # forged models face +Z; monsters face -Z
+		holder.add_child(forged)
+		var no_eyes := StandardMaterial3D.new()  # forged models have painted eyes; nothing to flash
+		holder.set_meta("eye_mat", no_eyes)
+		holder.scale = Vector3.ONE * size
+		_tag_parts(holder, shape)
+		return holder
 	var root := Node3D.new()
 	var body := _mat(color)
 	var dark := _mat(color.darkened(0.35))
@@ -209,7 +221,77 @@ static func build(shape: String, color: Color, size: float, leader: bool) -> Nod
 		crown.position = Vector3(0, eye_y + 0.18, eye_z + 0.1)
 		root.add_child(crown)
 	root.scale = Vector3.ONE * size
+	_tag_parts(root, shape)
 	return root
+
+
+# ------------------------------------------------------------ coming alive (only looks)
+
+## Finds the parts that move: legs (thin tubes near the ground), wings (thin flat boxes on
+## flyers) and a tail. Remembers their resting angle so the movement swings around it.
+static func _tag_parts(root: Node3D, shape: String) -> void:
+	var legs := []
+	var wings := []
+	for c in root.get_children():
+		if not c is MeshInstance3D:
+			continue
+		var mi := c as MeshInstance3D
+		_unbox(mi, shape)
+		if mi.mesh is BoxMesh and (mi.mesh as BoxMesh).size.y < 0.05 and shape in ["moth", "bat"]:
+			wings.append([mi, mi.rotation, signf(mi.position.x)])
+		elif (mi.mesh is CylinderMesh or mi.mesh is CapsuleMesh) and mi.position.y < 0.3 and mi.position.length() > 0.05:
+			# Neighbouring legs move in turns: by side and by front/back position.
+			var phase := (0.0 if mi.position.x < 0.0 else PI) + mi.position.z * 6.0
+			legs.append([mi, mi.rotation, phase])
+	root.set_meta("legs", legs)
+	root.set_meta("wings", wings)
+	root.set_meta("flyer", shape in ["moth", "bat", "puffpod"])
+	root.set_meta("rest_y", root.position.y)
+
+
+## Chunky boxes look like toy blocks. Turn each one into a rough, faceted lump the same size
+## (a boulder for stone creatures, a knobbly body part for the rest). Thin boxes (wings,
+## blades, handles, eyes' brows) stay sharp.
+static func _unbox(mi: MeshInstance3D, shape: String) -> void:
+	if not mi.mesh is BoxMesh:
+		return
+	var size := (mi.mesh as BoxMesh).size
+	if minf(size.x, minf(size.y, size.z)) < 0.09:
+		return
+	var lump := SphereMesh.new()
+	lump.radius = 0.5
+	lump.height = 1.0
+	lump.radial_segments = 7
+	lump.rings = 4
+	mi.mesh = lump
+	mi.scale *= size * 1.12
+	if mi.material_override is ShaderMaterial:
+		var albedo: Color = (mi.material_override as ShaderMaterial).get_shader_parameter("albedo")
+		var stone := shape in ["golem", "armor", "shuffler"]
+		mi.material_override = Look.mat(albedo, "stone" if stone else "", 0.0, 0.06 if stone else 0.03)
+
+
+## Every frame: walking (legs swing in turns, the body bobs and waddles, leans into the run),
+## wings flap, and a slow breath when standing still. `speed` in m/s, `size` = monster size.
+static func animate(model: Node3D, speed: float, size: float, clock: float) -> void:
+	if not model.has_meta("legs"):
+		return
+	var go := clampf(speed / 3.0, 0.0, 1.0)            # 0 = standing, 1 = running
+	var stride := clock * (5.0 + speed * 2.5) / maxf(size, 0.6)
+	for leg in model.get_meta("legs"):
+		var mi: MeshInstance3D = leg[0]
+		mi.rotation = leg[1] + Vector3(sin(stride + leg[2]) * 0.55 * go, 0, 0)
+	for wing in model.get_meta("wings"):
+		var mi: MeshInstance3D = wing[0]
+		mi.rotation = wing[1] + Vector3(0, 0, sin(clock * 16.0) * 0.55 * wing[2])
+	var rest_y: float = model.get_meta("rest_y")
+	if model.get_meta("flyer"):
+		model.position.y = rest_y + sin(clock * 2.2) * 0.12 * size  # hovering
+	else:
+		var bob := absf(sin(stride)) * 0.06 * size * go
+		var breath := sin(clock * 2.0) * 0.012 * size * (1.0 - go)
+		model.position.y = rest_y + bob + breath
+	model.rotation.x = -0.15 * go  # lean into the run
 
 
 ## Crystal variants: a cluster of glowing crystals on the monster's back.
@@ -231,7 +313,11 @@ static func add_crystals(model: Node3D, color: Color) -> void:
 ## Bosses: every part gets a faint glow of `color` so the big shape reads in the dark.
 static func make_glowy(model: Node3D, color: Color) -> void:
 	for c in model.get_children():
-		if c is MeshInstance3D and c.material_override is StandardMaterial3D and c.material_override != model.get_meta("eye_mat"):
+		if c is MeshInstance3D and c.material_override is ShaderMaterial:
+			# The painted look (Look.mat): same colour and grain, plus the soft glow.
+			var albedo: Color = (c.material_override as ShaderMaterial).get_shader_parameter("albedo")
+			c.material_override = Look.mat(albedo, "", 0.25, 0.015, color)
+		elif c is MeshInstance3D and c.material_override is StandardMaterial3D and c.material_override != model.get_meta("eye_mat"):
 			var m: StandardMaterial3D = (c.material_override as StandardMaterial3D).duplicate()
 			m.emission_enabled = true
 			m.emission = color
