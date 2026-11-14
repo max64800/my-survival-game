@@ -86,7 +86,7 @@ func _build() -> void:
 	_hotbar = HBoxContainer.new()
 	_hotbar.add_theme_constant_override("separation", 6)
 	_hotbar.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
-	_hotbar.position += Vector2(-(SLOT_SIZE + 6) * 4, -SLOT_SIZE - 18)
+	_hotbar.position += Vector2(-((SLOT_SIZE + 6) * Inventory.HOTBAR_SIZE - 6) / 2.0, -SLOT_SIZE - 18)  # centered for any hotbar size
 	root.add_child(_hotbar)
 	for i in Inventory.HOTBAR_SIZE:
 		_hotbar.add_child(_make_slot(i, str(i + 1)))
@@ -265,6 +265,15 @@ func _make_slot(index: int, key: String) -> Control:
 	icon.size = Vector2(SLOT_SIZE - 18, SLOT_SIZE - 18)
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(icon)
+	# The item's picture (feedback F17, pictures by Claude 2). Without one, the colored square shows.
+	var pic := TextureRect.new()
+	pic.name = "Pic"
+	pic.position = Vector2(4, 4)
+	pic.size = Vector2(SLOT_SIZE - 8, SLOT_SIZE - 8)
+	pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	pic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(pic)
 	var short := _label(panel, 15)
 	short.name = "Short"
 	short.position = Vector2(0, 17)
@@ -308,11 +317,14 @@ func _refresh_slots() -> void:
 		var border := Color(1, 0.85, 0.4) if selected or swap_pick else Color(0.4, 0.38, 0.35, 0.9)
 		panel.add_theme_stylebox_override("panel", _slot_style(Color(0.08, 0.07, 0.07, 0.75), border))
 		var icon: Panel = panel.get_node("Icon")
-		icon.visible = not s.is_empty()
+		var pic: TextureRect = panel.get_node("Pic")
+		var tex: Texture2D = null if s.is_empty() else Items.icon(s.id)
+		pic.texture = tex
+		icon.visible = not s.is_empty() and tex == null
 		if not s.is_empty():
 			icon.add_theme_stylebox_override("panel", _slot_style(Items.color(s.id).darkened(0.15), Items.color(s.id).lightened(0.3)))
 			panel.tooltip_text = Items.display_name(s.id)
-		(panel.get_node("Short") as Label).text = "" if s.is_empty() else Items.short_label(s.id)
+		(panel.get_node("Short") as Label).text = "" if s.is_empty() or tex != null else Items.short_label(s.id)
 		(panel.get_node("Count") as Label).text = "" if s.is_empty() or s.count <= 1 else str(s.count)
 
 
@@ -499,7 +511,38 @@ func set_paused(on: bool) -> void:
 	ff.visible = auth != null and auth.is_host()
 	if auth:
 		ff.set_pressed_no_signal(auth.friendly_fire())
+	_ensure_sound_controls()
 	(_pause.find_child("Sub", true, false) as Label).text = "Click to keep digging\n\nCave seed: %s" % seed_text
+
+
+## Sound on the pause screen (feedback F15): a volume slider and a Mute switch, remembered.
+func _ensure_sound_controls() -> void:
+	var box: HBoxContainer = _pause.find_child("SoundBox", true, false)
+	if box == null:
+		box = HBoxContainer.new()
+		box.name = "SoundBox"
+		box.add_theme_constant_override("separation", 14)
+		var title := Label.new()
+		title.text = "Sound"
+		box.add_child(title)
+		var slider := HSlider.new()
+		slider.name = "Volume"
+		slider.min_value = 0
+		slider.max_value = 100
+		slider.step = 5
+		slider.custom_minimum_size = Vector2(220, 24)
+		slider.focus_mode = Control.FOCUS_NONE
+		slider.value_changed.connect(func(v: float): SoundSettings.set_volume(v / 100.0))
+		box.add_child(slider)
+		var mute := CheckButton.new()
+		mute.name = "Mute"
+		mute.text = "Mute"
+		mute.focus_mode = Control.FOCUS_NONE
+		mute.toggled.connect(func(m: bool): SoundSettings.set_muted(m))
+		box.add_child(mute)
+		(_pause.find_child("Sub", true, false) as Label).get_parent().add_child(box)
+	(box.get_node("Volume") as HSlider).set_value_no_signal(SoundSettings.volume * 100.0)
+	(box.get_node("Mute") as CheckButton).set_pressed_no_signal(SoundSettings.muted)
 
 
 func _process(delta: float) -> void:

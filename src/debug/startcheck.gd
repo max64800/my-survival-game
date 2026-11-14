@@ -139,6 +139,10 @@ func _run() -> void:
 	_face(dwarf, (t_end - (st.room_c as Vector3)).normalized())
 	await _wait(1.0)
 	await _shot("06_cavern")
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	_main.hud.set_paused(true)
+	await _wait(0.3)
+	await _shot("07_pause_with_sound")
 	_finish()
 
 
