@@ -34,6 +34,8 @@ def parse_args():
 	p.add_argument("--warmth", type=float, default=0.04, help="push colors a little toward warm")
 	p.add_argument("--rotate-x", type=float, default=0.0, help="extra turn in degrees if the model lies on its side")
 	p.add_argument("--rotate-z", type=float, default=0.0, help="extra turn in degrees to face forward")
+	p.add_argument("--srgb-corners", action="store_true",
+		help="the model's corner colors are stored as screen colors (TripoSR does this); convert them")
 	p.add_argument("--crumbs", type=float, default=0.02, help="drop loose parts smaller than this share of the model")
 	p.add_argument("--preview", default="", help="png path for a preview picture")
 	return p.parse_args(argv)
@@ -151,6 +153,18 @@ def grade(rgb, sat, warmth):
 	out[:, 0] += warmth
 	out[:, 2] -= warmth
 	return np.clip(out, 0.0, 1.0)
+
+
+def fix_corner_colors(obj):
+	"""TripoSR saves corner colors as screen ("sRGB") values, but glTF says they must be "linear".
+	Blender trusts glTF, so everything comes out washed out and pale. Convert them back."""
+	for attr in obj.data.color_attributes:
+		vals = np.empty(len(attr.data) * 4, dtype=np.float32)
+		attr.data.foreach_get("color", vals)
+		vals = vals.reshape(-1, 4)
+		c = vals[:, :3]
+		vals[:, :3] = np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
+		attr.data.foreach_set("color", vals.ravel())
 
 
 def fix_textures(obj, a):
@@ -288,6 +302,8 @@ def main():
 	islands, crumbs = drop_crumbs(obj, a.crumbs)
 	place(obj, a)
 	before, after = decimate(obj, a.tris)
+	if a.srgb_corners:
+		fix_corner_colors(obj)
 	ensure_material(obj, a.tex)
 	textures = fix_textures(obj, a)
 	if a.preview:

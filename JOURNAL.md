@@ -421,3 +421,22 @@ Why branches? Our rule says each step must be playable and approved before the n
 - **Claude lost its own fixes during the merge.** It told git which version of `dwarf.gd` to keep, *then* re-added the ledge/jump/camera fixes, but never told git to save the file again. The tests passed because they read the unsaved file, so nobody noticed. Then Claude deleted that copy of the folder. git even warned "this folder has unsaved changes," and Claude forced it anyway. **Fix:** Claude noticed the warning right after, checked main (the fixes were missing), and redid them.
   **Lessons:** check that the saved version has the changes (`git show`), not just the files on disk. And a "you have unsaved changes" warning means stop and look, not force.
 - Claude also saved before a test had finished. The test then "failed" only because Godot's list of code files was out of date after the merge (one import run fixed it). Nothing was broken, but saving should always wait for the tests.
+
+---
+
+## Day 3, later — November 14, 2026: Every item gets a picture (F17), plus the first AI workbench
+
+**What we did**
+- **Workbench test:** the owner made a workbench picture in ChatGPT; Claude turned it into a 3D model with TripoSR in 16 seconds.
+  Result: right shape, but blobby and with wrong colors — "placeholder", not final art. Next: try the better TRELLIS.2 website (needs a free account) or build it in Blender.
+- **Item icons:** Claude drove ChatGPT in the owner's Chrome and made **170 item pictures** in 12 picture sheets (16 per sheet, so the style matches).
+  A script cuts each sheet into single pictures with see-through backgrounds: `assets/icons/<item id>.png`.
+- Added `Items.icon(id)` so the game can find each item's picture (all runes of one colour share one picture), plus an auto-check (`tests/test_icons.gd`). Claude 1 hooks them into the bag/hotbar.
+
+**Hurdles / mistakes (including Claude's)**
+- **Pale colors on the AI workbench:** TripoSR stores colors in "screen" form but the file format expects "linear" form, so everything looked washed out. Fix: convert them back in the cleanup step.
+- **The item list from Godot froze** (other Godot windows were open). Fix: read the list straight from the code files instead.
+- **The ChatGPT page opened the old workbench chat** in the new tab. Fix: clicked "New chat" first; nothing was sent by mistake.
+- **Waiting for pictures:** Claude's first "wait until done" timer ran out before the picture was ready. Fix: send, wait ~2 minutes, then check every sheet by looking at it before cutting.
+- **Short descriptions help:** names like "Bloomheart Core" mean nothing to ChatGPT, so each item got a few words ("a large glowing boss heart-gem in stone").
+- The new auto-check found one missing picture: the hand **Lantern** that Claude 1 had just added. Made it the same way.

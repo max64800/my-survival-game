@@ -13,6 +13,7 @@ Rule: only things allowed in a game you sell (best: CC0).
 | Sound effects in `assets/sfx/` (metal click, leather, cloth): from "RPG Audio" by Kenney | https://kenney.nl/assets/rpg-audio | CC0 | 2026-11-14 |
 | Character model candidates in `assets/art_candidates/`: "Adventurer" and "Hooded Adventurer" by Quaternius | https://poly.pizza/m/5EGWBMpuXq · https://poly.pizza/m/y9KWOVG21R | CC0 | 2026-11-14 |
 | Character model candidate in `assets/art_candidates/`: "Adventurer" by Polygonal Mind | https://poly.pizza/m/BCMT02FrVE | CC0 | 2026-11-14 |
+| **AI-made.** Item icons in `assets/icons/` (170 pictures): made by us with ChatGPT image generation (owner's ChatGPT Plus), cut apart and background removed with our `tools/asset_forge/icons.py` (rembg + ISNet, Apache-2.0) | Our own prompts: `tools/asset_forge/ICON_PROMPTS.md` | Ours (OpenAI terms give the output to the user). Steam: disclose as pre-generated AI content | 2026-11-14 |
 
 No chosen art or music yet: the dwarf, monsters, crystals, mushrooms and rock colors are
 made from simple shapes and math in our own code. Kenney asks (but doesn't require) a credit:

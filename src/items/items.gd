@@ -200,6 +200,21 @@ static func short_label(id: String) -> String:
 	return info(id).get("short", id.left(2))
 
 
+## Folder with one picture per item: res://assets/icons/<item id>.png (made by tools/asset_forge/icons.py).
+const ICON_DIR := "res://assets/icons/"
+static var _icons := {}
+
+
+## The item's picture, or null if it has none yet (then show color + short label instead).
+static func icon(id: String) -> Texture2D:
+	if not _icons.has(id):
+		var path := ICON_DIR + id + ".png"
+		if not ResourceLoader.exists(path) and id.begins_with("rune_"):
+			path = ICON_DIR + "rune_" + id.split("_")[1] + ".png"  # all runes of one colour share a picture
+		_icons[id] = load(path) if ResourceLoader.exists(path) else null
+	return _icons[id]
+
+
 static func kind(id: String) -> String:
 	return info(id).get("kind", "material")
 
