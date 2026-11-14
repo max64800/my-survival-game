@@ -54,6 +54,12 @@ func refresh() -> void:
 	var where := Recipes.HAND if station == null else station.kind
 	_title.text = "Craft by hand" if station == null else Items.display_name(station.kind)
 	_status.text = station.busy_text() if station else ""
+	if station and Station.EXTRAS.has(station.kind):
+		# Station levels (building polish spec §3): show the level and how to raise it.
+		var nxt := station.next_extra()
+		_title.text += "  ·  level %d of %d" % [station.level(), Station.max_level(station.kind)]
+		if nxt != "" and _status.text == "":
+			_status.text = "Place a %s within 4 m to reach level %d." % [Items.display_name(nxt), station.level() + 1]
 	for c in _list.get_children():
 		c.queue_free()
 	var shown := 0

@@ -102,9 +102,35 @@ func test_propped_up_in_time_is_saved() -> void:
 	_teardown()
 
 
+## Building polish spec §3: stations and their levels.
+func test_station_levels_unlock_pieces() -> void:
+	await _setup()
+	var at := player.global_position + Vector3(-3, 0, 0)
+	auth._ev_place_station(1, "workbench", at, 0.0)
+	ps.inventory.add("plank_root", 20)
+	ps.inventory.add("cut_stone", 20)
+	var s := _floor_spot("roof_26", 3.0)
+	check_eq(auth.builder.station_problem("roof_26", "plank_root", s.pos), "Needs Workbench level 2 (build a Chopping Block next to it)",
+		"a wooden roof needs Workbench level 2")
+	auth._ev_place_station(2, "chopping_block", at + Vector3(6, 0, 0), 0.0)
+	check_eq((auth.stations[1] as Station).level(), 1, "an extra 6 m away doesn't count")
+	auth._ev_place_station(3, "chopping_block", at + Vector3(2, 0, 0), 0.0)
+	auth._ev_place_station(4, "chopping_block", at + Vector3(0, 0, 2), 0.0)
+	check_eq((auth.stations[1] as Station).level(), 2, "two Chopping Blocks nearby: still only level 2 (each extra counts once)")
+	check_eq(auth.builder.station_problem("roof_26", "plank_root", s.pos), "", "now the roof is allowed")
+	check_eq(auth.builder.station_problem("floor", "cut_stone", s.pos), "Needs a Mason's Table within 20 m", "stone needs a Mason's Table")
+	auth._ev_place_station(5, "masonry_table", at + Vector3(0, 0, -3), 0.0)
+	check_eq(auth.builder.station_problem("floor", "cut_stone", s.pos), "", "with the Mason's Table, stone floors are fine")
+	check_eq(auth.builder.station_problem("column", "cut_stone", s.pos), "Needs Mason's Table level 2 (build a Chisel Rack next to it)",
+		"carved columns need a Chisel Rack")
+	check_eq(Station.max_level("workbench"), 4, "the Workbench goes up to level 4")
+	_teardown()
+
+
 func test_remove_gives_everything_back() -> void:
 	await _setup()
 	auth._ev_place_station(1, "workbench", player.global_position + Vector3(-3, 0, 0), 0.0)
+	auth._ev_place_station(2, "masonry_table", player.global_position + Vector3(-3, 0, 3), 0.0)
 	ps.inventory.add("cut_stone", 4)
 	var s := _floor_spot("floor", 3.0)
 	auth.builder.request_place(1, "floor", "cut_stone", s.pos, s.rot)

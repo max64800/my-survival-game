@@ -76,8 +76,9 @@ func problem(ps: GameAuthority.PlayerState, piece: String, family: String, pos: 
 		return "Can't be made from %s" % Pieces.FAMILIES.get(family, {}).get("name", family)
 	if ps.node.global_position.distance_to(pos) > Pieces.BUILD_REACH + 1.0:
 		return "Too far away"
-	if not _workbench_near(pos):
-		return "Needs a Workbench within 20 m"
+	var station_why := station_problem(piece, family, pos)
+	if station_why != "":
+		return station_why
 	var rock := Pieces.rock_problem(piece, pos, rot, auth.world.sdf_at)
 	if rock != "":
 		return rock
@@ -133,11 +134,30 @@ func request_remove(peer_id: int, uid: int) -> bool:
 	return true
 
 
-func _workbench_near(pos: Vector3) -> bool:
+## Building polish spec §3: wood pieces need a Workbench, stone/brick a Mason's Table, copper an
+## Anvil, within 20 m and at the piece's level (more extras around the station = higher level).
+const STATION_KIND := {"workbench": "workbench", "mason": "masonry_table", "anvil": "anvil"}
+
+
+func station_problem(piece: String, family: String, pos: Vector3) -> String:
+	var kind: String = STATION_KIND[Pieces.station_for(family)]
+	var need := Pieces.needed_level(piece, family)
+	var best := 0
+	var nearest: Station = null
 	for st in auth.stations.values():
-		if st.kind == "workbench" and st.global_position.distance_to(pos) <= Pieces.WORKBENCH_RANGE:
-			return true
-	return false
+		if st.kind == kind and st.global_position.distance_to(pos) <= Pieces.WORKBENCH_RANGE:
+			var lvl: int = (st as Station).level()
+			if lvl > best:
+				best = lvl
+				nearest = st
+	var name := Items.display_name(kind)
+	if nearest == null:
+		return "Needs a %s within 20 m" % name
+	if best < need:
+		var extra := nearest.next_extra()
+		return "Needs %s level %d (build a %s next to it)" % [name, need, Items.display_name(extra)] if extra != "" \
+			else "Needs %s level %d" % [name, need]
+	return ""
 
 
 # ================================================================== everyone updates

@@ -134,6 +134,9 @@ func _run() -> void:
 	ps.inventory.add("plank_root", 80)
 	ps.inventory.add("cut_stone", 40)
 	ps.inventory.add("copper_ingot", 6)
+	# Stone pieces need a Mason's Table nearby (building polish spec §3).
+	var auth_ref: GameAuthority = _main.authority
+	auth_ref._ev_place_station(auth_ref._next_station_id, "masonry_table", dwarf.global_position + Vector3(-3, 0, -2), 0.0)
 	_to_hotbar(ps, "build_hammer")
 	dwarf._pitch = -0.3
 	var fwd := -Basis(Vector3.UP, dwarf._yaw).z
