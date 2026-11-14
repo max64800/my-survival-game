@@ -27,7 +27,7 @@ func _run() -> void:
 		waited += 0.25
 	var dwarf: Dwarf = _main.dwarf
 	var maker: CaveMaker = _main.world.maker
-	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	Controls.set_captured(true)
 	_main.hud.set_paused(false)
 	_main.hud.visible = false
 	var counts := {}

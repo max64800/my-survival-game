@@ -750,6 +750,8 @@ func _clouds_step(delta: float) -> void:
 
 
 func _has_mask(ps: GameAuthority.PlayerState) -> bool:
+	if ps.inventory.equipped("head") == "spore_mask":
+		return true
 	for i in Inventory.HOTBAR_SIZE:
 		if ps.inventory.get_slot(i).get("id", "") == "spore_mask":
 			return true

@@ -14,7 +14,7 @@ var _addr_edit: LineEdit
 
 
 func _ready() -> void:
-	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	Controls.set_captured(false)
 	var bg := ColorRect.new()
 	bg.color = Color(0.04, 0.035, 0.05)
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)

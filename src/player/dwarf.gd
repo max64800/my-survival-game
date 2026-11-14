@@ -120,7 +120,7 @@ func _build_camera() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not input_enabled or not is_local:
 		return
-	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+	if event is InputEventMouseMotion and Controls.captured():
 		_yaw -= event.relative.x * Controls.MOUSE_SENSITIVITY
 		_pitch = clampf(_pitch - event.relative.y * Controls.MOUSE_SENSITIVITY, -1.35, 1.1)
 	var auth := GameAuthority.instance
@@ -130,6 +130,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	for i in Inventory.HOTBAR_SIZE:
 		if event.is_action_pressed("hotbar_%d" % (i + 1)):
 			auth.ask_select_slot(i)
+	if ps and event.is_action_pressed("draw_weapon"):
+		if ps.inventory.equipped("weapon") == "":
+			fight.message.emit("No weapon equipped. Put one in the Weapon slot (Tab).", Color.WHITE)
+		else:
+			auth.ask_draw_weapon(not ps.weapon_drawn)
 	# Mouse wheel: camera closer / farther (feedback F18).
 	if event.is_action_pressed("zoom_in"):
 		_zoom = maxf(ZOOM_MIN, _zoom - ZOOM_STEP)
@@ -140,7 +145,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			fight.start_reload()  # R reloads while you hold the crossbow (doc 1.5)
 		else:
 			auth.ask_refill()
-	if event.is_action_pressed("use") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and not _holding_hammer() and not fight.weapon_mode():
+	if event.is_action_pressed("use") and Controls.captured() and not _holding_hammer() and not fight.weapon_mode():
 		var hit := aim_far(20.0) if ps and Items.kind(ps.selected_item()) == "throw" else aim()  # you can throw far
 		auth.ask_use(hit.get("position", Vector3.INF), hit.get("normal", Vector3.ZERO), model.rotation.y + PI)
 
@@ -148,7 +153,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _physics_process(delta: float) -> void:
 	var dir := Vector3.ZERO
 	var running := false
-	var playing := input_enabled and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
+	var playing := input_enabled and Controls.captured()
 	var iv := Vector2.ZERO
 	if playing:
 		iv = Input.get_vector("move_left", "move_right", "move_forward", "move_back")

@@ -48,7 +48,7 @@ func has_shield() -> bool:
 	var ps := _ps()
 	if ps == null or Combat.WEAPONS[weapon()].hands == 2 or not Lantern.is_on_back(ps):
 		return false
-	if Items.kind(item()) == "shield":
+	if Items.kind(item()) == "shield" or ps.inventory.equipped("shield") != "":
 		return true
 	for i in Inventory.HOTBAR_SIZE:
 		if Items.kind(ps.inventory.get_slot(i).get("id", "")) == "shield":
@@ -58,7 +58,7 @@ func has_shield() -> bool:
 
 func shield_tier() -> int:
 	var ps := _ps()
-	var best := 0
+	var best := maxi(Items.tier(ps.inventory.equipped("shield")), 0)
 	for i in Inventory.HOTBAR_SIZE:
 		var id: String = ps.inventory.get_slot(i).get("id", "")
 		if Items.kind(id) == "shield":
@@ -71,12 +71,12 @@ func is_crossbow() -> bool:
 
 
 func aiming() -> bool:
-	return is_crossbow() and stagger <= 0.0 and Input.is_action_pressed("use") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
+	return is_crossbow() and stagger <= 0.0 and Input.is_action_pressed("use") and Controls.captured()
 
 
 func is_blocking() -> bool:
 	return weapon_mode() and not is_crossbow() and stagger <= 0.0 and _dodge_t < 0.0 and Input.is_action_pressed("use") \
-		and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
+		and Controls.captured()
 
 
 func dodging() -> bool:

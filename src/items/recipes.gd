@@ -35,6 +35,12 @@ const LIST := {
 	"anvil": {station = "workbench", inputs = {stone = 10, copper_ingot = 6}, output = "anvil", count = 1, unlock = ["copper_ingot"]},
 	"cooking_pot": {station = "workbench", inputs = {copper_ingot = 4, stone = 4}, output = "cooking_pot", count = 1, unlock = ["copper_ingot"]},
 	"masonry_table": {station = "workbench", inputs = {stone = 10, plank_root = 6, copper_ingot = 2}, output = "masonry_table", count = 1, unlock = ["copper_ingot"]},
+	# Clothes and a backpack (feedback F23): leather from the tanning rack.
+	"cap_leather": {station = "workbench", inputs = {leather = 2, fiber = 2}, output = "cap_leather", count = 1, unlock = ["leather"]},
+	"tunic_leather": {station = "workbench", inputs = {leather = 4, rope = 1}, output = "tunic_leather", count = 1, unlock = ["leather"]},
+	"trousers_leather": {station = "workbench", inputs = {leather = 3, rope = 1}, output = "trousers_leather", count = 1, unlock = ["leather"]},
+	"boots_leather": {station = "workbench", inputs = {leather = 2, fiber = 2}, output = "boots_leather", count = 1, unlock = ["leather"]},
+	"satchel": {station = "workbench", inputs = {leather = 4, rope = 2}, output = "satchel", count = 1, unlock = ["leather"]},
 	# --- tanning rack (60 s each)
 	"leather": {station = "tanning_rack", inputs = {critter_hide = 1}, output = "leather", count = 1, seconds = 60, unlock = ["critter_hide"]},
 	# --- smelter (needs wood fuel; times from doc 4.2)
@@ -44,6 +50,10 @@ const LIST := {
 	"clay_brick": {station = "smelter", inputs = {clay = 2}, output = "clay_brick", count = 2, seconds = 10, fuel = 1, unlock = ["clay"]},
 	"lantern_lens": {station = "smelter", inputs = {crystal_blue = 3, clay = 1}, output = "lantern_lens", count = 1, seconds = 30, fuel = 1, unlock = ["crystal_blue"]},
 	# --- anvil
+	"helm_copper": {station = "anvil", inputs = {copper_ingot = 4, leather = 1}, output = "helm_copper", count = 1, unlock = ["copper_ingot"]},
+	"mail_copper": {station = "anvil", inputs = {copper_ingot = 8, leather = 2}, output = "mail_copper", count = 1, unlock = ["copper_ingot"]},
+	"greaves_copper": {station = "anvil", inputs = {copper_ingot = 6, leather = 1}, output = "greaves_copper", count = 1, unlock = ["copper_ingot"]},
+	"boots_copper": {station = "anvil", inputs = {copper_ingot = 3, leather = 1}, output = "boots_copper", count = 1, unlock = ["copper_ingot"]},
 	"axe_copper": {station = "anvil", inputs = {copper_ingot = 6, plank_root = 3, leather = 1}, output = "axe_copper", count = 1, unlock = ["copper_ingot"]},
 	"pickaxe_copper": {station = "anvil", inputs = {copper_ingot = 8, plank_root = 4, leather = 2, keeper_heartstone = 1}, output = "pickaxe_copper", count = 1, unlock = ["keeper_heartstone"]},
 	"axe_silver": {station = "anvil", inputs = {silver_ingot = 6, plank_mushroom = 3, chitin_plate = 2}, output = "axe_silver", count = 1, unlock = ["silver_ingot"]},

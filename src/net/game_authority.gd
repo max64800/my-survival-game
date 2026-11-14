@@ -55,10 +55,17 @@ var _progress_dirty := {}  ## peer ids whose XP changed and need a sync
 var _progress_sync := 0.0
 
 
+## Item kinds you hold in your hand to use. Anything else picked on the hotbar (rocks, ore,
+## crystals...) leaves your hand free, so the equipped pickaxe is used.
+const HAND_KINDS := ["pickaxe", "axe", "hammer", "weapon", "shield", "food", "drink", "station", "chest",
+	"throw", "tonic", "waterskin", "horn", "lens", "page", "rune"]
+
+
 class PlayerState:
 	var node: Node3D
-	var inventory := Inventory.new()
+	var inventory := Inventory.new(Inventory.PLAYER_SIZE)  ## with backpack + equipment slots (F23)
 	var selected_slot := 0
+	var weapon_drawn := false  ## F: fighting with the equipped weapon (+ shield)
 	var fuel := GameAuthority.MAX_FUEL
 	var needs_lantern := false  ## true = started with nothing: no light until a Lantern is made
 	var dig_target := Vector3.INF
@@ -85,8 +92,27 @@ class PlayerState:
 			if not slot.is_empty():
 				seen[slot.id] = true
 
+	## What's in the dwarf's hand (feedback F23): the equipped weapon while it's drawn (F);
+	## otherwise the picked hotbar item if it's something you hold to use; otherwise (empty hand,
+	## rocks, ore...) the equipped pickaxe, so you can always dig.
 	func selected_item() -> String:
-		return inventory.get_slot(selected_slot).get("id", "")
+		return inventory.get_slot(hand_slot()).get("id", "")
+
+	## The slot index of what's in hand (a hotbar slot or an equipment slot).
+	func hand_slot() -> int:
+		if weapon_drawn and inventory.equipped("weapon") != "":
+			return Inventory.equip_index("weapon")
+		var picked: String = inventory.get_slot(selected_slot).get("id", "")
+		if not Items.kind(picked) in HAND_KINDS and inventory.equipped("pickaxe") != "":
+			return Inventory.equip_index("pickaxe")
+		return selected_slot
+
+	## How much worn clothes/armor soak up: 2% per armor point, at most 60%.
+	func armor_cut() -> float:
+		var armor := 0
+		for part in ["head", "chest", "legs", "feet"]:
+			armor += int(Items.info(inventory.equipped(part)).get("armor", 0))
+		return minf(0.6, armor * 0.02)
 
 
 func _enter_tree() -> void:
@@ -451,6 +477,30 @@ func request_select_slot(peer_id: int, slot: int) -> void:
 	var ps := get_player(peer_id)
 	if ps and slot >= 0 and slot < Inventory.HOTBAR_SIZE:
 		ps.selected_slot = slot
+		ps.weapon_drawn = false  # picking a hotbar slot puts the weapon away
+
+
+## F: draw or put away the equipped weapon (feedback F23).
+func ask_draw_weapon(on: bool) -> void:
+	var me := get_player(local_peer_id())
+	if me:
+		me.weapon_drawn = on and me.inventory.equipped("weapon") != ""  # show it right away
+	if is_host():
+		request_draw_weapon(local_peer_id(), on)
+	else:
+		_rpc_draw_weapon.rpc_id(1, on)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_draw_weapon(on: bool) -> void:
+	if is_host():
+		request_draw_weapon(multiplayer.get_remote_sender_id(), on)
+
+
+func request_draw_weapon(peer_id: int, on: bool) -> void:
+	var ps := get_player(peer_id)
+	if ps:
+		ps.weapon_drawn = on and ps.inventory.equipped("weapon") != ""
 
 
 ## Moving items around in your own bag.
@@ -473,7 +523,7 @@ func request_hit(peer_id: int, point: Vector3, normal: Vector3) -> Dictionary:
 
 func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
 	var power: float = Items.dig_power(ps.selected_item()) * ps.progress.dig_power_mult() \
-		* (1.0 + Gems.bonus(ps.inventory.get_slot(ps.selected_slot)).get("dig", 0.0))
+		* (1.0 + Gems.bonus(ps.inventory.get_slot(ps.hand_slot())).get("dig", 0.0))
 	if power <= 0:
 		return {state = "no_tool"}
 	if _chest(ps).distance_to(point) > REACH + 1.0:
@@ -1329,8 +1379,8 @@ func request_died(peer_id: int) -> void:
 	var grave := -1
 	for i in ps.inventory.slots.size():
 		var s: Dictionary = ps.inventory.slots[i]
-		if s.is_empty() or (i < Inventory.HOTBAR_SIZE and Items.stack_size(s.id) == 1):
-			continue
+		if s.is_empty() or (i < Inventory.HOTBAR_SIZE and Items.stack_size(s.id) == 1) or Inventory.is_equip_index(i):
+			continue  # hotbar tools and everything equipped (F23) stay with you
 		if grave < 0:
 			grave = storage.create_box("grave", where, 0.0, peer_id)
 		storage.boxes[grave].inv.slots[i] = s.duplicate()
@@ -1381,7 +1431,7 @@ func _rpc_hurt(amount: float, buildup: Dictionary = {}) -> void:
 
 
 func _take_hurt(ps: PlayerState, amount: float, buildup: Dictionary) -> void:
-	ps.vitals.take_damage(amount)
+	ps.vitals.take_damage(amount * (1.0 - ps.armor_cut()))  # clothes/armor soak some up (F23)
 	Sfx.ui("hit_heavy", 0.0)
 	for k in buildup:
 		ps.vitals.ailments.add(k, buildup[k])

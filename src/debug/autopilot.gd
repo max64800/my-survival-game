@@ -42,7 +42,7 @@ func _run() -> void:
 	var dwarf: Dwarf = _main.dwarf
 	var auth: GameAuthority = _main.authority
 	var ps := auth.get_player(auth.local_peer_id())
-	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	Controls.set_captured(true)
 	_main.hud.set_paused(false)
 	await _wait(1.5)
 	_report.append("glow spots: %d" % _main.glow.spot_count())
@@ -318,14 +318,54 @@ func _visit_jungle(dwarf: Dwarf, ps: GameAuthority.PlayerState) -> void:
 		if m.kind == "husk_charger":
 			husk = m
 	if husk:
-		await _teleport(dwarf, dwarf.global_position, husk.global_position + Vector3.UP * 0.6)
-		var before := husk.hp
+		# Step to about 4 m from it first: the new column rows (F21) can stand in the way of a long shot.
+		# Try 8 directions around it and take the first with a clear line of sight.
+		var target := husk.global_position + Vector3.UP * 0.6
+		var spot := dwarf.global_position
+		var space := dwarf.get_world_3d().direct_space_state
+		for k in 8:
+			var a := k * TAU / 8.0
+			var p := husk.global_position + Vector3(cos(a), 0, sin(a)) * 4.0
+			p = _main.world.maker.find_floor(p.x, p.z, husk.global_position.y + 2.0) + Vector3.UP * 0.9
+			var q := PhysicsRayQueryParameters3D.create(p + Vector3.UP * 0.8, target, World.TERRAIN_LAYER)
+			if space.intersect_ray(q).is_empty():
+				spot = p
+				break
+		await _teleport(dwarf, spot, target)
+		# Remember everyone's health: the bolt hits whichever monster is first under the crosshair.
+		var hp_before := {}
+		for m: Monster in mm.monsters.values():
+			hp_before[m.uid] = m.hp
+		# Aim like a player: point the CAMERA (behind the right shoulder) at it, not the dwarf's head.
+		var cam := dwarf.camera
+		for k in 4:
+			var d := target - cam.global_position
+			dwarf._yaw = atan2(-d.x, -d.z)
+			dwarf._pitch = clampf(atan2(d.y, Vector2(d.x, d.z).length()), -1.2, 1.0)
+			await get_tree().process_frame
+			await get_tree().process_frame
+		# What does the crosshair line touch first? (Same line the crossbow uses.)
+		var probe := PhysicsRayQueryParameters3D.create(cam.global_position, cam.global_position - cam.global_basis.z * Combat.BOLT_MAX)
+		probe.collision_mask = World.TERRAIN_LAYER | Monster.MONSTER_LAYER | PieceNode.PIECE_LAYER | Dwarf.BODY_LAYER
+		probe.exclude = [dwarf.get_rid()]
+		var first := space.intersect_ray(probe)
+		var first_c: Object = first.get("collider")
+		_report.append("step 7: crosshair line first touches: %s %s at %.1f m (husk is %.1f m away)" % [
+			first_c.get_class() if first_c else "nothing", (first_c as Node).name if first_c is Node else "",
+			cam.global_position.distance_to(first.get("position", cam.global_position)), cam.global_position.distance_to(husk.global_position)])
 		dwarf.fight.loaded = true
 		dwarf.fight._shoot(true)
 		await _wait(0.06)
 		await _shot("27b_crossbow")
 		await _wait(0.3)
-		_report.append("step 7: crossbow bolt hit the Husk Charger for %.0f (bolts left %d)" % [before - husk.hp, ps.inventory.count_of("bolt_stone")])
+		var hit_name := "nothing"
+		var hit_for := 0.0
+		for m: Monster in mm.monsters.values():
+			var lost: float = hp_before.get(m.uid, m.hp) - m.hp
+			if lost > hit_for:
+				hit_for = lost
+				hit_name = m.kind
+		_report.append("step 7: crossbow bolt hit %s for %.0f (bolts left %d)" % [hit_name, hit_for, ps.inventory.count_of("bolt_stone")])
 	for m: Monster in mm.monsters.values():
 		mm._ev_remove(m.uid)
 	mm.set_physics_process(true)

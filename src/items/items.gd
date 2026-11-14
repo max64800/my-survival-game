@@ -112,7 +112,19 @@ const DATA := {
 	"war_horn": {name = "War Horn", stack = 1, color = Color(0.75, 0.6, 0.4), short = "WH", kind = "horn"},
 	"spore_bomb": {name = "Spore Bomb", stack = 20, color = Color(0.6, 0.75, 0.4), short = "SB", kind = "throw"},
 	"blasting_pod": {name = "Blasting Pod", stack = 20, color = Color(0.95, 0.45, 0.25), short = "BP", kind = "throw"},
-	"spore_mask": {name = "Spore Mask", stack = 1, color = Color(0.55, 0.65, 0.45), short = "Mk", kind = "wear"},
+	"spore_mask": {name = "Spore Mask", stack = 1, color = Color(0.55, 0.65, 0.45), short = "Mk", kind = "wear", slot = "head", armor = 1, look = "mask"},
+	# --- clothes and armor (feedback F23): worn in the head/chest/legs/feet slots.
+	# Each armor point soaks up 2% of damage (at most 60%).
+	"cap_leather": {name = "Leather Cap", stack = 1, color = Color(0.55, 0.38, 0.24), short = "Cp", kind = "wear", slot = "head", armor = 2, look = "leather"},
+	"tunic_leather": {name = "Leather Tunic", stack = 1, color = Color(0.5, 0.34, 0.22), short = "Tu", kind = "wear", slot = "chest", armor = 4, look = "leather"},
+	"trousers_leather": {name = "Leather Trousers", stack = 1, color = Color(0.45, 0.32, 0.22), short = "Tr", kind = "wear", slot = "legs", armor = 3, look = "leather"},
+	"boots_leather": {name = "Leather Boots", stack = 1, color = Color(0.4, 0.28, 0.18), short = "Bo", kind = "wear", slot = "feet", armor = 2, look = "leather"},
+	"helm_copper": {name = "Copper Helm", stack = 1, color = Color(0.9, 0.55, 0.3), short = "He", kind = "wear", slot = "head", armor = 5, look = "copper"},
+	"mail_copper": {name = "Copper Mail", stack = 1, color = Color(0.88, 0.52, 0.28), short = "Ma", kind = "wear", slot = "chest", armor = 9, look = "copper"},
+	"greaves_copper": {name = "Copper Greaves", stack = 1, color = Color(0.85, 0.5, 0.28), short = "Gr", kind = "wear", slot = "legs", armor = 6, look = "copper"},
+	"boots_copper": {name = "Copper-shod Boots", stack = 1, color = Color(0.8, 0.48, 0.26), short = "CB", kind = "wear", slot = "feet", armor = 4, look = "copper"},
+	# --- backpacks (pack slot): open 10 more bag slots
+	"satchel": {name = "Leather Satchel", stack = 1, color = Color(0.6, 0.42, 0.25), short = "Sa", kind = "pack"},
 	"prospectors_lens": {name = "Prospector's Lens", stack = 1, color = Color(0.85, 0.9, 1.0), short = "Ln", kind = "lens"},
 	"recipe_page": {name = "Old Recipe Page", color = Color(0.85, 0.78, 0.6), short = "Pg", kind = "page"},
 	"rope_ladder": {name = "Rope Ladder", stack = 10, color = Color(0.75, 0.65, 0.45), short = "RL", kind = "station"},

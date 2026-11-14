@@ -58,7 +58,8 @@ func _ready() -> void:
 
 ## The back lantern (progression doc 5.4) sits above your head and frees both hands.
 static func is_on_back(ps: GameAuthority.PlayerState) -> bool:
-	return ps != null and ps.inventory.count_of("lantern_back") > 0
+	return ps != null and (ps.inventory.equipped("lantern") == "lantern_back"
+		or (not ps.inventory.is_player and ps.inventory.count_of("lantern_back") > 0))
 
 
 ## Do they have a lantern? In a new game the host wakes without one and crafts it (feedback F11).
@@ -67,7 +68,7 @@ static func is_on_back(ps: GameAuthority.PlayerState) -> bool:
 static func has_lantern(ps: GameAuthority.PlayerState) -> bool:
 	if ps == null or not ps.needs_lantern:
 		return true
-	return ps.inventory.count_of("lantern") > 0 or ps.inventory.count_of("lantern_back") > 0
+	return ps.inventory.equipped("lantern") != ""  # it lights while it's in the lantern slot (F23)
 
 
 var _on_back := false

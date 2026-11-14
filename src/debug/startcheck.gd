@@ -47,7 +47,7 @@ func _run() -> void:
 	var me := auth.local_peer_id()
 	var ps := auth.get_player(me)
 	var st: Dictionary = _main.world.maker.start
-	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	Controls.set_captured(true)
 	_main.hud.set_paused(false)
 	_say("start room found: %s" % (not st.is_empty()))
 	if st.is_empty():
@@ -91,7 +91,7 @@ func _run() -> void:
 	var pick := auth.request_craft(me, "pickaxe_stone")
 	var lamp := auth.request_craft(me, "lantern")
 	_main._set_bag(false)
-	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	Controls.set_captured(true)
 	_say("crafted pickaxe: %s, lantern: %s; lantern visible now: %s" % [pick, lamp, Lantern.has_lantern(ps)])
 	for i in Inventory.HOTBAR_SIZE:
 		if ps.inventory.get_slot(i).get("id", "") == "pickaxe_stone":
@@ -139,7 +139,7 @@ func _run() -> void:
 	_face(dwarf, (t_end - (st.room_c as Vector3)).normalized())
 	await _wait(1.0)
 	await _shot("06_cavern")
-	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	Controls.set_captured(false)
 	_main.hud.set_paused(true)
 	await _wait(0.3)
 	await _shot("07_pause_with_sound")

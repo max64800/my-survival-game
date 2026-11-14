@@ -102,7 +102,9 @@ func test_needs_pickaxe_selected() -> void:
 	await _setup(42)
 	var p := _find_rock(Mat.STONE)
 	auth.request_select_slot(1, 3)
-	check_eq(auth.request_hit(1, p, Vector3.UP).get("state"), "no_tool", "empty hand can't dig")
+	check(auth.request_hit(1, p, Vector3.UP).get("state") != "no_tool", "empty hand digs with the equipped pickaxe (F23)")
+	auth.get_player(1).inventory.slots[Inventory.equip_index("pickaxe")] = {}
+	check_eq(auth.request_hit(1, p, Vector3.UP).get("state"), "no_tool", "no pickaxe at all: can't dig")
 	_teardown()
 
 
@@ -197,7 +199,7 @@ func test_mushrooms_by_hand() -> void:
 func test_eat_from_hotbar() -> void:
 	await _setup(42)
 	ps.inventory.add("dish_hollowcap_stew", 1)
-	auth.request_select_slot(1, 1)
+	auth.request_select_slot(1, 0)  # the pickaxe sits in its own slot now (F23), so items start at slot 1 (key 1)
 	ps.vitals.hunger = 20
 	check_eq(auth.request_use(1, Vector3.INF, Vector3.ZERO, 0.0), "ate", "ate the stew")
 	check_eq(ps.inventory.count_of("dish_hollowcap_stew"), 0, "stew used up")
@@ -209,7 +211,7 @@ func test_eat_from_hotbar() -> void:
 func test_waterskin_has_five_sips() -> void:
 	await _setup(42)
 	ps.inventory.add("waterskin_clean", 1)
-	auth.request_select_slot(1, 1)
+	auth.request_select_slot(1, 0)  # the pickaxe sits in its own slot now (F23), so items start at slot 1 (key 1)
 	for i in 5:
 		ps.vitals.thirst = 0
 		auth.request_use(1, Vector3.INF, Vector3.ZERO, 0.0)

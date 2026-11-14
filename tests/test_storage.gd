@@ -43,7 +43,7 @@ func test_chest_place_fill_and_empty() -> void:
 	ps.inventory.add("chest_small", 1)
 	ps.inventory.add("stone", 50)
 	auth.request_select_slot(1, 0)
-	auth.request_select_slot(1, 1)  # the chest is in slot 2 (pickaxe is in slot 1)
+	auth.request_select_slot(1, 0)  # the chest is in hotbar slot 1 (the pickaxe sits in its own slot, F23)
 	var spot := world.maker.find_floor(player.global_position.x + 1.5, player.global_position.z, player.global_position.y + 1.0)
 	check_eq(auth.request_use(1, spot, Vector3.UP, 0.0), "placed", "chest placed")
 	check_eq(auth.storage.boxes.size(), 1, "one chest")

@@ -14,6 +14,10 @@ var _dig_bar_timer := 0.0
 var _hotbar: HBoxContainer
 var _bag_panel: PanelContainer
 var _bag_grid: GridContainer
+var _slot_panels := {}  ## inventory index -> its slot Panel (hotbar, bag, backpack, equipment)
+var _pack_title: Label
+var _equip_title: Label
+const EQUIP_NAMES := ["Pick", "Lamp", "Weapon", "Shield", "Head", "Chest", "Legs", "Feet", "Pack"]
 var _fuel_bar: ProgressBar
 var _fuel_label: Label
 var _fps_label: Label
@@ -103,12 +107,25 @@ func _build() -> void:
 	var bag_box := VBoxContainer.new()
 	_bag_panel.add_child(bag_box)
 	var title := _label(bag_box, 18)
-	title.text = "Bag  (click two slots to swap them)"
+	title.text = "Bag  (click two slots to swap · right-click to equip / take off)"
 	_bag_grid = GridContainer.new()
 	_bag_grid.columns = 10
 	bag_box.add_child(_bag_grid)
 	for i in Inventory.BAG_SIZE:
 		_bag_grid.add_child(_make_slot(Inventory.HOTBAR_SIZE + i, ""))
+	# Backpack slots (open while a backpack is worn) and the equipment slots (feedback F23).
+	_pack_title = _label(bag_box, 15)
+	var pack_grid := GridContainer.new()
+	pack_grid.columns = 10
+	bag_box.add_child(pack_grid)
+	for i in Inventory.PACK_SIZE:
+		pack_grid.add_child(_make_slot(Inventory.PACK_START + i, ""))
+	_equip_title = _label(bag_box, 15)
+	var equip_grid := GridContainer.new()
+	equip_grid.columns = Inventory.EQUIP.size()
+	bag_box.add_child(equip_grid)
+	for i in Inventory.EQUIP.size():
+		equip_grid.add_child(_make_slot(Inventory.EQUIP_START + i, EQUIP_NAMES[i]))
 	_bag_panel.resized.connect(func(): _bag_panel.position = (root.size - _bag_panel.size) * 0.5)
 
 	var fuel_box := VBoxContainer.new()
@@ -259,6 +276,7 @@ func _make_slot(index: int, key: String) -> Control:
 	panel.custom_minimum_size = Vector2(SLOT_SIZE, SLOT_SIZE)
 	panel.name = "Slot%d" % index
 	panel.gui_input.connect(_on_slot_input.bind(index))
+	_slot_panels[index] = panel
 	var icon := Panel.new()
 	icon.name = "Icon"
 	icon.position = Vector2(9, 9)
@@ -309,16 +327,26 @@ func _refresh_slots() -> void:
 	var ps: GameAuthority.PlayerState = auth.get_player(peer_id) if auth else null
 	if ps == null:
 		return
-	for i in Inventory.SIZE:
-		var panel: Panel = _hotbar.get_child(i) if i < Inventory.HOTBAR_SIZE else _bag_grid.get_child(i - Inventory.HOTBAR_SIZE)
+	var pack_open := ps.inventory.pack_open()
+	if _pack_title:
+		_pack_title.text = "Backpack" if pack_open else "Backpack  (wear a Leather Satchel to open these)"
+		_equip_title.text = "Equipped  ·  armor soaks up %d%% of damage  ·  F: draw / put away weapon" % roundi(ps.armor_cut() * 100.0)
+	var hand := ps.hand_slot()
+	for key in _slot_panels:
+		var i: int = key
+		var panel: Panel = _slot_panels[i]
+		if Inventory.is_pack_index(i):
+			panel.modulate.a = 1.0 if pack_open else 0.35
 		var s := ps.inventory.get_slot(i)
-		var selected := i == ps.selected_slot
+		var selected: bool = i == ps.selected_slot or (i == hand and Inventory.is_equip_index(i))
 		var swap_pick := i == _swap_from
 		var border := Color(1, 0.85, 0.4) if selected or swap_pick else Color(0.4, 0.38, 0.35, 0.9)
 		panel.add_theme_stylebox_override("panel", _slot_style(Color(0.08, 0.07, 0.07, 0.75), border))
 		var icon: Panel = panel.get_node("Icon")
 		var pic: TextureRect = panel.get_node("Pic")
 		var tex: Texture2D = null if s.is_empty() else Items.icon(s.id)
+		if s.is_empty() and Inventory.is_equip_index(i):
+			tex = _slot_outline(Inventory.EQUIP[i - Inventory.EQUIP_START])  # faint "pickaxe goes here" (Claude 2)
 		pic.texture = tex
 		icon.visible = not s.is_empty() and tex == null
 		if not s.is_empty():
@@ -329,10 +357,22 @@ func _refresh_slots() -> void:
 
 
 func _on_slot_input(event: InputEvent, index: int) -> void:
-	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
+	if not (event is InputEventMouseButton and event.pressed):
 		return
 	if not _bag_panel.visible:
 		return
+	if event.button_index == MOUSE_BUTTON_RIGHT and not box_panel.visible:
+		_quick_equip(index)
+		return
+	if event.button_index != MOUSE_BUTTON_LEFT:
+		return
+	if _swap_from >= 0 and not box_panel.visible:
+		var inv: Inventory = GameAuthority.instance.get_player(peer_id).inventory
+		if _swap_from != index and not inv.swap_allowed(_swap_from, index):
+			show_toast("That doesn't go in that slot (or the backpack isn't empty).", 2.5)
+			_swap_from = -1
+			_refresh_slots()
+			return
 	if box_panel.visible:
 		GameAuthority.instance.storage.ask_transfer(box_panel.box_id, false, index)
 		return
@@ -342,6 +382,45 @@ func _on_slot_input(event: InputEvent, index: int) -> void:
 		GameAuthority.instance.ask_swap(_swap_from, index)
 		_swap_from = -1
 	_refresh_slots()
+
+
+static var _outlines := {}
+
+
+static func _slot_outline(slot_name: String) -> Texture2D:
+	if not _outlines.has(slot_name):
+		var path := "res://assets/icons/slot_%s.png" % slot_name
+		_outlines[slot_name] = load(path) if ResourceLoader.exists(path) else null
+	return _outlines[slot_name]
+
+
+## Right-click: equip an item into its slot (swapping out what was there), or take an
+## equipped item off into the first free bag slot.
+func _quick_equip(index: int) -> void:
+	var auth := GameAuthority.instance
+	var inv: Inventory = auth.get_player(peer_id).inventory
+	var s := inv.get_slot(index)
+	if s.is_empty():
+		return
+	if Inventory.is_equip_index(index):
+		for i in Inventory.SIZE:
+			if inv.get_slot(i).is_empty():
+				if inv.swap_allowed(index, i):
+					auth.ask_swap(index, i)
+				else:
+					show_toast("Empty the backpack first.", 2.5)
+				return
+		show_toast("No room in the bag to take that off.", 2.5)
+		return
+	var where := Inventory.equip_slot_for(s.id)
+	if where == "":
+		show_toast("%s can't be equipped." % Items.display_name(s.id), 2.0)
+		return
+	var target := Inventory.equip_index(where)
+	if inv.swap_allowed(index, target):
+		auth.ask_swap(index, target)
+	else:
+		show_toast("Empty the backpack first.", 2.5)
 
 
 func _on_dig_feedback(pid: int, result: Dictionary) -> void:

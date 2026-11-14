@@ -34,7 +34,7 @@ static func craft(inv: Inventory, recipe_id: String) -> bool:
 
 ## Would the output fit after the inputs are taken out? (Inputs free up room.)
 static func _fits(inv: Inventory, r: Dictionary) -> bool:
-	var copy := Inventory.new()
+	var copy := Inventory.new(inv.slots.size())  # same size: a dwarf's copy keeps its equipment slots
 	copy.load_data(inv.to_data())
 	for item in r.inputs:
 		copy.remove(item, r.inputs[item])

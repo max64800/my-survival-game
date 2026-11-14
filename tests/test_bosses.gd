@@ -61,7 +61,7 @@ func test_orrumhal_phases() -> void:
 func test_phase_change_through_damage_summons() -> void:
 	await _setup()
 	ps.inventory.add("mace_2h_silver", 1)
-	auth.request_select_slot(1, 1)
+	auth.request_select_slot(1, 0)  # the pickaxe sits in its own slot now (F23), so items start at slot 1 (key 1)
 	var b := _boss("orrumhal")
 	b.state = Monster.State.CHASE
 	b.hp = 1310.0
