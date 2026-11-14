@@ -11,6 +11,8 @@ approved it, so it always wins. The three docs below add the details and numbers
 |---|---|---|
 | [`combat-and-monsters.md`](combat-and-monsters.md) | Fighting rules, weapons, gems, every monster, pack leaders, bosses, raids, co-op scaling. | Steps 5–6 |
 | [`progression-and-economy.md`](progression-and-economy.md) | Every item, digging hardness, tools and tiers, stations, lantern, food and water, levels, skills, runes, death, bag, pacing. | Step 3 (some Step 1) |
+| [`ai-art-pipeline.md`](ai-art-pipeline.md) | Using ChatGPT + "image → 3D" tools to make props, textures and icons, and getting them into the game. | Visual steps V3+ |
+| [`visuals-plan.md`](visuals-plan.md) | How the game gets its look: light, fog, rock textures, shapes, the dwarf model, animations, where to get assets. | Visual steps V0–V5 |
 | [`world-and-building.md`](world-and-building.md) | The star of 7 biomes, how caves are made, special places, the map, building pieces, cave-ins, blueprints, co-op world edits. | Steps 1, 3, 4, 6 |
 
 **Who owns what** (if two docs ever disagree again, this decides):
