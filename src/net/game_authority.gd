@@ -300,7 +300,7 @@ func heal(peer_id: int, amount: float) -> void:
 		return
 	if peer_id == local_peer_id():
 		var ps := get_player(peer_id)
-		if ps:
+		if ps and not ps.dying and not ps.vitals.is_dead():  # no healing a dwarf who already fell
 			ps.vitals.health = minf(ps.vitals.max_health(), ps.vitals.health + amount)
 	elif get_player(peer_id):
 		_rpc_heal.rpc_id(peer_id, amount)
