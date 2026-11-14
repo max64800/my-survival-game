@@ -80,8 +80,9 @@ func _run() -> void:
 			return
 	# Six pieces at a time, 3.5 m apart, photographed from 7 m; built where the last batch was
 	# (each batch is cleared first), so they never run into the cave walls.
+	var only_blueprints := OS.get_cmdline_user_args().has("part=blueprints")
 	for fam in Pieces.MOSSY_FAMILIES:
-		if only != "" and fam != only:
+		if only_blueprints or (only != "" and fam != only):
 			continue
 		var batch: Array = []
 		for id in Pieces.LIST:
@@ -121,6 +122,14 @@ func _run() -> void:
 		dwarf._zoom = 6.0
 		await _wait(1.0)
 		await _shot("%02d_blueprint_%s" % [n, id])
+		# From above, to see the furniture inside (the lamp goes in the middle).
+		lamp.global_position = bx + Vector3(0, 2.2, 0)
+		_look(dwarf, bx + Vector3(0.5, 9.0, 3.0), bx + Vector3(0, 0, -0.5))
+		dwarf._zoom = 1.0
+		dwarf.visible = false
+		await _wait(0.8)
+		await _shot("%02d_blueprint_%s_inside" % [n, id])
+		dwarf.visible = true
 		n += 1
 		bx += Vector3(16, 0, 0)
 	get_tree().quit()

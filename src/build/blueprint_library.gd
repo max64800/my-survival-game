@@ -18,6 +18,7 @@ const NAMES := {
 const WOOD := "plank_root"
 const STONE := "cut_stone"
 const BRICK := "clay_brick"
+const COPPER := "copper_ingot"
 
 var _bp: Blueprint
 
@@ -80,6 +81,20 @@ func _homestead() -> void:
 	# Two carved columns holding up the hall.
 	_add("column", STONE, Vector3(-1, y, 2), 0)
 	_add("column", STONE, Vector3(1, y, 2), 0)
+	# Furnishing: a table with two chairs, a banner, sconces; a rug and a shelf in the bedroom;
+	# barrels and crates in the storage room.
+	_add("table", WOOD, Vector3(0, y, 0.6), 0)
+	_add("chair", WOOD, Vector3(-1.45, y, 0.6), 1)
+	_add("chair", WOOD, Vector3(1.45, y, 0.6), 3)
+	_on_wall_z("banner", WOOD, 0, -1, y, 1)
+	_on_wall_x("wall_sconce", COPPER, -3, 2, y + 1.2, 1)
+	_on_wall_x("wall_sconce", COPPER, 3, 2, y + 1.2, -1)
+	_add("rug", WOOD, Vector3(-3, y, -3), 0)
+	_on_wall_z("shelf", WOOD, -3, -5, y, 1)
+	_on_wall_z("barrel", WOOD, 2, -5, y, 1)
+	_on_wall_z("barrel", WOOD, 2.8, -5, y, 1)
+	_on_wall_z("crate", WOOD, 4.2, -5, y, 1)
+	_add("crate", WOOD, Vector3(4.2, y, -3.1), 0)
 
 
 ## A stone hall on a foundation: columns inside, an arched doorway, gables and a steep roof.
@@ -101,6 +116,14 @@ func _stone_hall() -> void:
 	for z in [-2, 0, 2]:
 		_add("column", STONE, Vector3(-1, y, z), 0)
 		_add("column", STONE, Vector3(1, y, z), 0)
+	# A long rug up the middle, a table at the far end, banners and sconces.
+	_add("rug", WOOD, Vector3(0, y, 0), 1)
+	_add("table", STONE, Vector3(0, y, -3), 0)
+	for x in [-2, 2]:
+		_on_wall_z("banner", WOOD, x, -4, y, 1)
+	for z in [-3, 3]:
+		_on_wall_x("wall_sconce", COPPER, -3, z, y + 1.2, 1)
+		_on_wall_x("wall_sconce", COPPER, 3, z, y + 1.2, -1)
 	# Steep roof: two rows each side, rising to the ridge at z = 0.
 	var top := y + 2.0
 	for x in [-2, 0, 2]:
@@ -142,6 +165,11 @@ func _forge() -> void:
 		_add("roof_26", WOOD, Vector3(x, y + 2.0, 2), 0)
 		_add("roof_26", WOOD, Vector3(x, y + 3.0, 0), 0)
 		_add("roof_26", WOOD, Vector3(x, y + 4.0, -2), 0)
+	# A weapon rack and a barrel by the back wall, shields on the side walls.
+	_on_wall_z("weapon_rack", WOOD, -1.6, -3, y, 1)
+	_on_wall_z("barrel", WOOD, 2.2, -3, y, 1)
+	_on_wall_x("wall_shield", WOOD, -3, 0, y + 0.15, 1)
+	_on_wall_x("wall_shield", COPPER, 3, 0, y + 0.15, -1)
 	# The chimney: a stack of stone pillars just behind the back wall, rising past the roof.
 	for i in 3:
 		_add("pillar", STONE, Vector3(1.4, y + i * 2.0, -3.6), 0)
@@ -163,6 +191,9 @@ func _watchtower() -> void:
 		_wall_z("wall", -4, z, y, WOOD)
 		_wall_z("wall", 0, z, y, WOOD)
 	_add("stairs", WOOD, Vector3(-1, y, -1), 2)  # climbs toward the back
+	_on_wall_x("bench", WOOD, -4, 0, y, 1)
+	_add("barrel", WOOD, Vector3(-3.5, y, -1.5), 0)
+	_on_wall_z("wall_sconce", COPPER, -3, -2, y + 1.2, 1)
 	# Upstairs: floor with a hole over the stairs, windows all round, roof.
 	var y2 := y + 2.0
 	_add("floor", WOOD, Vector3(-3, y2, -1), 0)
@@ -175,6 +206,7 @@ func _watchtower() -> void:
 	for z in [-1, 1]:
 		_wall_z("window_wall", -4, z, y3, WOOD)
 		_wall_z("wall", 0, z, y3, WOOD)
+	_add("rug", WOOD, Vector3(-3, y2 + 0.25, 0), 1)
 	var top := y3 + 2.0
 	for x in [-3, -1]:
 		_add("roof_26", WOOD, Vector3(x, top, 1), 0)
@@ -226,3 +258,16 @@ func _wall_x(id: String, x: float, z: float, y: float, mat: String) -> void:
 ## A wall-like piece on the line x = `x`, centred at z (spans Z).
 func _wall_z(id: String, x: float, z: float, y: float, mat: String) -> void:
 	_add(id, mat, Vector3(x, y, z), 1)
+
+
+## A piece standing against (or hanging on) a wall on the line z = `z`, on the side `side` (+1 = +z),
+## its back on the wall's face and its front facing away from the wall.
+func _on_wall_z(id: String, mat: String, x: float, z: float, y: float, side: int) -> void:
+	var depth: float = Pieces.LIST[id].size.z
+	_add(id, mat, Vector3(x, y, z + side * (0.15 + depth * 0.5)), 0 if side > 0 else 2)
+
+
+## The same against a wall on the line x = `x`.
+func _on_wall_x(id: String, mat: String, x: float, z: float, y: float, side: int) -> void:
+	var depth: float = Pieces.LIST[id].size.z
+	_add(id, mat, Vector3(x + side * (0.15 + depth * 0.5), y, z), 1 if side > 0 else 3)

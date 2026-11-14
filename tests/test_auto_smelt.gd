@@ -89,3 +89,9 @@ func test_ore_crate_looks_fuller() -> void:
 	Storage.show_fill(body, inv)
 	check(pile.visible and pile.scale.y > 1.0, "the pile shows and rises")
 	body.free()
+
+
+func test_builders_chest_takes_decor_extras() -> void:
+	check(Storage.accepts("builder", "fiber"), "fiber for rugs and banners")
+	check(Storage.accepts("builder", "crystal_blue"), "crystals for sconces")
+	check(not Storage.accepts("builder", "sword_stone"), "but not swords")

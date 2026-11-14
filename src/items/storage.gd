@@ -124,8 +124,22 @@ static func accepts(kind: String, item: String) -> bool:
 		return item in ORE_CRATE or item.begins_with("crystal_")
 	if kind != "builder":
 		return true
+	if _piece_extras().has(item):
+		return true  # fiber for rugs and banners, crystals for sconces...
 	return Pieces.FAMILIES.has(item) or item in ["stone", "dirt", "moss", "clay", "copper_ore", "copper_ingot",
 		"sporestone", "amberrock", "silver_ore", "mushroom_flesh"]  # what a builder carves out of the Jungle
+
+
+static var _extras_cache := {}
+
+
+## Every extra item some building piece costs (besides its material).
+static func _piece_extras() -> Dictionary:
+	if _extras_cache.is_empty():
+		for id in Pieces.LIST:
+			for item in Pieces.LIST[id].get("extra", {}):
+				_extras_cache[item] = true
+	return _extras_cache
 
 
 ## Host: make a new box. Returns its id.
