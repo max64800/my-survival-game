@@ -152,17 +152,7 @@ func _part(parent: Node3D, mesh: Mesh, mat: Material, pos: Vector3) -> MeshInsta
 
 
 static func _mat(c: Color, glow: float = 0.0) -> Material:
-	var key := [c, glow]
-	if not _mats.has(key):
-		var m := StandardMaterial3D.new()
-		m.albedo_color = c
-		m.roughness = 0.85
-		if glow > 0.0:
-			m.emission_enabled = true
-			m.emission = c
-			m.emission_energy_multiplier = glow
-		_mats[key] = m
-	return _mats[key]
+	return Look.mat(c, "", glow, 0.0 if glow > 0.0 else 0.03)  # old ruins: a bit crooked
 
 
 static func _box(s: Vector3) -> Mesh:

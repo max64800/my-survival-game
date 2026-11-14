@@ -97,9 +97,7 @@ static func build(shape: String, color: Color, size: float, leader: bool) -> Nod
 			_add(root, _sphere(0.16, 0.13), dark, Vector3(0, 0.38, -0.25))
 			var needle := _add(root, _cyl(0.0, 0.03, 0.4), _mat(Color(0.85, 0.95, 1.0)), Vector3(0, 0.36, -0.55))
 			needle.rotation.x = -PI / 2.0
-			var glass := _mat(Color(0.8, 0.92, 1.0))
-			glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-			glass.albedo_color.a = 0.6
+			var glass := Look.mat(Color(0.8, 0.92, 1.0, 0.6))
 			for i in 6:
 				var side := -1.0 if i < 3 else 1.0
 				var leg := _add(root, _cyl(0.015, 0.02, 0.55), glass, Vector3(side * 0.3, 0.22, -0.15 + (i % 3) * 0.18))
@@ -258,11 +256,8 @@ static func _add(parent: Node3D, mesh: Mesh, mat: Material, pos: Vector3, scale 
 	return mi
 
 
-static func _mat(c: Color) -> StandardMaterial3D:
-	var m := StandardMaterial3D.new()
-	m.albedo_color = c
-	m.roughness = 0.8
-	return m
+static func _mat(c: Color) -> Material:
+	return Look.mat(c, "", 0.0, 0.015)  # slightly lumpy: creatures shouldn't look machine-made
 
 
 static func _sphere(r: float, h: float) -> Mesh:

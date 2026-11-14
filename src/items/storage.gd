@@ -262,10 +262,7 @@ func _build_look(body: StaticBody3D, kind: String) -> void:
 
 
 static func _mat(c: Color) -> Material:
-	var m := StandardMaterial3D.new()
-	m.albedo_color = c
-	m.roughness = 0.85
-	return m
+	return Look.mat(c)
 
 
 # ================================================================== late joiners

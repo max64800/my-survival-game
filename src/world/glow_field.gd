@@ -108,7 +108,7 @@ func _add_node(s: Dictionary) -> void:
 			mi.scale = Vector3(1, s.length, 1) / s.scale  # stretch to reach toward the floor
 		GlowPlacer.GIANT: mi.mesh = _giant_mesh(s.length)
 		_: mi.mesh = _mushroom_mesh
-	mi.material_override = _material_for(s.color, GlowPlacer.KINDS[s.kind].get("glow", false))
+	mi.material_override = _material_for(s.color, GlowPlacer.KINDS[s.kind].get("glow", false), _surface_of(s.kind))
 	if s.kind == GlowPlacer.GIANT:
 		mi.material_override = null  # the giant mushroom mesh brings its own stalk + cap colors
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -157,17 +157,25 @@ func _add_drip(s: Dictionary) -> void:
 	_nodes[s.id] = root
 
 
-func _material_for(c: Color, glows: bool = true) -> Material:
-	var key := c.to_html() + str(glows)
+## Which painted grain each kind of plant/crystal gets (see Look.SURFACES).
+func _surface_of(kind: String) -> String:
+	if kind == "root":
+		return "bark"
+	if kind.begins_with("crystal"):
+		return "smooth"
+	return "fungus"
+
+
+func _material_for(c: Color, glows: bool = true, surface: String = "") -> Material:
+	var key := c.to_html() + str(glows) + surface
 	if not _materials.has(key):
-		var m := StandardMaterial3D.new()
-		m.albedo_color = c.darkened(0.3) if glows else c
-		m.emission_enabled = true
-		m.emission = c
+		if surface == "":
+			surface = "smooth" if glows else "fungus"
 		# Glowing things shine; the rest get a faint glow so they're findable in the dark.
-		m.emission_energy_multiplier = 2.2 if glows else 0.35
-		m.roughness = 0.25 if glows else 0.85
-		_materials[key] = m
+		# Crystals stay sharp; mushrooms and roots get a little lumpy.
+		var wobble := 0.0 if surface == "smooth" else 0.025
+		_materials[key] = Look.mat(c.darkened(0.3) if glows else c, surface,
+			2.2 if glows else (0.12 if surface == "bark" else 0.35), wobble, c)
 	return _materials[key]
 
 
@@ -206,8 +214,8 @@ func _giant_mesh(h: float) -> Mesh:
 	h = key * 0.5
 	var mesh := ArrayMesh.new()
 	var stalk := CylinderMesh.new()
-	stalk.radial_segments = 8
-	stalk.rings = 2
+	stalk.radial_segments = 12
+	stalk.rings = 6
 	stalk.top_radius = 0.22
 	stalk.bottom_radius = 0.38
 	stalk.height = h
@@ -216,16 +224,10 @@ func _giant_mesh(h: float) -> Mesh:
 	st.append_from(stalk, 0, Transform3D(Basis(), Vector3.UP * h * 0.5))
 	st.generate_normals()
 	st.commit(mesh)
-	var stalk_mat := StandardMaterial3D.new()
-	stalk_mat.albedo_color = Color(0.86, 0.82, 0.74)
-	stalk_mat.roughness = 0.9
-	stalk_mat.emission_enabled = true
-	stalk_mat.emission = Color(0.86, 0.82, 0.74)
-	stalk_mat.emission_energy_multiplier = 0.12
-	mesh.surface_set_material(0, stalk_mat)
+	mesh.surface_set_material(0, Look.mat(Color(0.82, 0.77, 0.68), "fungus", 0.1, 0.07))
 	var cap := SphereMesh.new()
-	cap.radial_segments = 12
-	cap.rings = 4
+	cap.radial_segments = 20
+	cap.rings = 7
 	cap.radius = 0.9 + h * 0.18
 	cap.height = 0.7 + h * 0.08
 	cap.is_hemisphere = true
@@ -234,13 +236,8 @@ func _giant_mesh(h: float) -> Mesh:
 	st2.append_from(cap, 0, Transform3D(Basis(), Vector3.UP * (h - 0.15)))
 	st2.generate_normals()
 	st2.commit(mesh)
-	var cap_mat := StandardMaterial3D.new()
-	cap_mat.albedo_color = Color(0.55, 0.32, 0.62)
-	cap_mat.roughness = 0.6
-	cap_mat.emission_enabled = true
-	cap_mat.emission = Color(0.72, 0.4, 0.9)
-	cap_mat.emission_energy_multiplier = 0.6
-	mesh.surface_set_material(1, cap_mat)
+	# A wavy, lumpy cap with a soft purple glow.
+	mesh.surface_set_material(1, Look.mat(Color(0.48, 0.28, 0.56), "fungus", 0.45, 0.16, Color(0.72, 0.4, 0.9)))
 	_giants[key] = mesh
 	return mesh
 
@@ -266,15 +263,15 @@ func _make_mushroom_mesh() -> Mesh:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var stem := CylinderMesh.new()
-	stem.radial_segments = 6
-	stem.rings = 0
+	stem.radial_segments = 7
+	stem.rings = 2
 	stem.top_radius = 0.045
 	stem.bottom_radius = 0.07
 	stem.height = 0.4
 	st.append_from(stem, 0, Transform3D(Basis(), Vector3.UP * 0.2))
 	var cap := SphereMesh.new()
-	cap.radial_segments = 8
-	cap.rings = 3
+	cap.radial_segments = 11
+	cap.rings = 4
 	cap.radius = 0.24
 	cap.height = 0.2
 	cap.is_hemisphere = true

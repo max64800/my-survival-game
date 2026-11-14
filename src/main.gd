@@ -75,6 +75,12 @@ func _ready() -> void:
 			mode = "continue"
 		elif arg.begins_with("art="):
 			DwarfModel.art = arg.trim_prefix("art=")
+		elif arg == "lookdev":
+			debug_script = "res://src/debug/lookdev.gd"
+			_saving = false
+			_monsters = false
+			if mode == "menu":
+				mode = "solo"
 		elif arg == "artpreview":
 			debug_script = "res://src/debug/artpreview.gd"
 			_saving = false
@@ -358,29 +364,11 @@ func _player_joined(id: int, pos: Vector3, slots: Dictionary) -> void:
 
 # ---------------------------------------------------------------- look & feel
 
+## Light, fog, colour and floating dust: all in src/art/ambience.gd.
 func _make_environment() -> void:
-	var env := Environment.new()
-	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color(0.015, 0.015, 0.025)
-	# Soft "cave bounce" light so it's never pitch black.
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.42, 0.46, 0.6)
-	env.ambient_light_energy = 0.6
-	env.tonemap_mode = Environment.TONE_MAPPER_AGX
-	env.tonemap_exposure = 1.1
-	env.glow_enabled = true
-	env.glow_intensity = 0.9
-	env.glow_bloom = 0.08
-	env.glow_hdr_threshold = 0.9
-	env.fog_enabled = true
-	env.fog_light_color = Color(0.09, 0.1, 0.15)
-	env.fog_density = 0.007
-	env.ssao_enabled = true
-	env.ssao_radius = 1.5
-	env.ssao_intensity = 1.5
-	var we := WorldEnvironment.new()
-	we.environment = env
-	add_child(we)
+	var amb := Ambience.new()
+	amb.name = "Ambience"
+	add_child(amb)
 
 
 func _process(delta: float) -> void:

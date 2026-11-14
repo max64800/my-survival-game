@@ -1,25 +1,40 @@
 shader_type spatial;
-// Colors the dig-anywhere rock. Each voxel has a material number (see mat.gd):
+// Paints the dig-anywhere rock. Each voxel has a material number (see mat.gd):
 // 0 moss, 1 stone, 2 dirt, 3 copper ore, 4 border rock, 5 clay,
 // 8 mycelium, 9 silver ore, 11 amberrock, 13 sporestone, 15 the world's edge.
-// The look: flat-shaded low-poly facets + soft color noise. No image textures yet.
+//
+// The look: hand-painted textures (baked by tools/art/bake_terrain_textures.py), one slice
+// per material number in two texture arrays. Smooth terrain has no UV "wrapping paper",
+// so each texture is projected from 3 sides (top, front, side) and blended: "triplanar".
+// The albedo's alpha channel marks veins/specks that glow (ores, border rock, spores).
 
-uniform vec3 moss_color : source_color = vec3(0.24, 0.40, 0.17);
-uniform vec3 stone_color : source_color = vec3(0.38, 0.35, 0.33);
-uniform vec3 dirt_color : source_color = vec3(0.36, 0.25, 0.16);
-uniform vec3 copper_color : source_color = vec3(0.78, 0.45, 0.22);
-uniform vec3 border_color : source_color = vec3(0.13, 0.10, 0.17);
-uniform vec3 border_glow : source_color = vec3(0.35, 0.18, 0.65);
-uniform vec3 clay_color : source_color = vec3(0.78, 0.42, 0.22);
-uniform vec3 mycelium_color : source_color = vec3(0.78, 0.74, 0.68);
-uniform vec3 silver_color : source_color = vec3(0.82, 0.85, 0.92);
-uniform vec3 amber_color : source_color = vec3(0.86, 0.62, 0.22);
-uniform vec3 sporestone_color : source_color = vec3(0.34, 0.28, 0.38);
-uniform float flat_shading = 1.0;
+uniform sampler2DArray albedo_tex : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform sampler2DArray normal_tex : filter_linear_mipmap_anisotropic, repeat_enable;
+uniform float tex_scale = 0.33;  // one texture tile every ~3 m
+uniform float bump_strength = 1.0;
+uniform float flat_shading = 0.0;  // 1 = old low-poly facets
+
+// Glow colour of the alpha-marked veins, per material number.
+const vec3 GLOW[16] = vec3[16](
+	vec3(0.0), vec3(0.0), vec3(0.0),
+	vec3(0.95, 0.42, 0.12) * 0.55,  // 3 copper
+	vec3(0.40, 0.20, 0.75) * 1.2,   // 4 border rock
+	vec3(0.0), vec3(0.0), vec3(0.0), vec3(0.0),
+	vec3(0.75, 0.85, 1.0) * 0.6,    // 9 silver
+	vec3(0.0), vec3(0.0), vec3(0.0),
+	vec3(0.65, 0.30, 0.95) * 0.6,   // 13 sporestone specks
+	vec3(0.0), vec3(0.0));
+// How rough (matte) each material is. Lower = a little shine under the lantern.
+const float ROUGH[16] = float[16](0.95, 0.82, 0.93, 0.8, 0.75, 0.68, 0.8, 0.8,
+	0.92, 0.8, 0.8, 0.7, 0.8, 0.84, 0.8, 0.85);
+// Ores: the veins are metal.
+const float METAL[16] = float[16](0.0, 0.0, 0.0, 0.85, 0.0, 0.0, 0.0, 0.0,
+	0.0, 0.9, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
 
 varying vec4 v_indices;
 varying vec4 v_weights;
 varying vec3 v_world;
+varying vec3 v_wnormal;
 
 vec4 decode_8bit_vec4(float v) {
 	uint i = floatBitsToUint(v);
@@ -42,60 +57,73 @@ float vnoise(vec3 x) {
 				   mix(hash(i + vec3(0, 1, 1)), hash(i + vec3(1, 1, 1)), f.x), f.y), f.z);
 }
 
-vec3 mat_color(float idx, vec3 wp, out vec3 emit) {
-	float n = vnoise(wp * 0.9) * 0.5 + vnoise(wp * 0.23) * 0.5;
-	emit = vec3(0.0);
-	if (idx < 0.5) {
-		return moss_color * (0.75 + 0.5 * n);
-	} else if (idx < 1.5) {
-		float strata = sin(wp.y * 1.7 + vnoise(wp * 0.15) * 4.0) * 0.5 + 0.5;
-		return stone_color * (0.8 + 0.25 * n + 0.12 * strata);
-	} else if (idx < 2.5) {
-		return dirt_color * (0.8 + 0.4 * n);
-	} else if (idx < 3.5) {
-		float speck = step(0.86, vnoise(wp * 3.1));
-		emit = copper_color * speck * 0.35;
-		return mix(stone_color * 0.8, copper_color, 0.55 + 0.45 * n);
-	} else if (idx > 14.5) {
-		return border_color * (0.6 + 0.2 * n);  // the world's edge: dark, no glowing veins
-	} else if (idx > 12.5) {
-		float strata2 = sin(wp.y * 1.3 + vnoise(wp * 0.12) * 5.0) * 0.5 + 0.5;
-		emit = vec3(0.25, 0.1, 0.35) * step(0.88, vnoise(wp * 1.7)) * 0.4;  // faint spore specks
-		return sporestone_color * (0.8 + 0.25 * n + 0.1 * strata2);
-	} else if (idx > 10.5) {
-		return amber_color * (0.8 + 0.3 * n);
-	} else if (idx > 8.5) {
-		float speck2 = step(0.84, vnoise(wp * 3.3));
-		emit = silver_color * speck2 * 0.45;
-		return mix(sporestone_color, silver_color, 0.55 + 0.45 * n);
-	} else if (idx > 7.5) {
-		return mycelium_color * (0.8 + 0.25 * n);
-	} else if (idx > 4.5) {
-		return clay_color * (0.85 + 0.25 * n);
-	} else {
-		float vein = smoothstep(0.78, 0.86, vnoise(wp * 0.6));
-		emit = border_glow * vein * 0.8;
-		return border_color * (0.8 + 0.3 * n);
-	}
+// One material, projected from 3 sides. Returns colour+glow mask, and a world-space normal.
+void triplanar(float layer, vec3 p, vec3 bw, vec3 wn, out vec4 alb, out vec3 nrm) {
+	vec2 uvx = p.zy;
+	vec2 uvy = p.xz;
+	vec2 uvz = p.xy;
+	alb = texture(albedo_tex, vec3(uvx, layer)) * bw.x
+		+ texture(albedo_tex, vec3(uvy, layer)) * bw.y
+		+ texture(albedo_tex, vec3(uvz, layer)) * bw.z;
+	vec3 tx = texture(normal_tex, vec3(uvx, layer)).xyz * 2.0 - 1.0;
+	vec3 ty = texture(normal_tex, vec3(uvy, layer)).xyz * 2.0 - 1.0;
+	vec3 tz = texture(normal_tex, vec3(uvz, layer)).xyz * 2.0 - 1.0;
+	tx.xy *= bump_strength;
+	ty.xy *= bump_strength;
+	tz.xy *= bump_strength;
+	// "Whiteout" blend: bend the surface normal by each projection's bumps.
+	tx = vec3(tx.xy + wn.zy, abs(tx.z) * wn.x);
+	ty = vec3(ty.xy + wn.xz, abs(ty.z) * wn.y);
+	tz = vec3(tz.xy + wn.xy, abs(tz.z) * wn.z);
+	nrm = tx.zyx * bw.x + ty.xzy * bw.y + tz.xyz * bw.z;
 }
 
 void vertex() {
 	v_indices = decode_8bit_vec4(CUSTOM1.x);
 	v_weights = decode_8bit_vec4(CUSTOM1.y) / 255.0;
 	v_world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	v_wnormal = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
 }
 
 void fragment() {
 	vec4 w = v_weights / (v_weights.x + v_weights.y + v_weights.z + v_weights.w + 0.00001);
-	vec3 e0; vec3 e1; vec3 e2; vec3 e3;
-	vec3 col = mat_color(v_indices.x, v_world, e0) * w.x
-		+ mat_color(v_indices.y, v_world, e1) * w.y
-		+ mat_color(v_indices.z, v_world, e2) * w.z
-		+ mat_color(v_indices.w, v_world, e3) * w.w;
-	ALBEDO = col;
-	EMISSION = e0 * w.x + e1 * w.y + e2 * w.z + e3 * w.w;
-	ROUGHNESS = 0.92;
+	vec3 wn = normalize(v_wnormal);
 	if (flat_shading > 0.5) {
-		NORMAL = normalize(cross(dFdy(VERTEX), dFdx(VERTEX)));
+		wn = normalize((INV_VIEW_MATRIX * vec4(normalize(cross(dFdy(VERTEX), dFdx(VERTEX))), 0.0)).xyz);
 	}
+	// Sharper blend between the 3 projections = less smeary rock.
+	vec3 bw = pow(abs(wn), vec3(4.0));
+	bw /= (bw.x + bw.y + bw.z);
+	vec3 p = v_world * tex_scale;
+
+	vec3 col = vec3(0.0);
+	vec3 emit = vec3(0.0);
+	vec3 nrm = vec3(0.0);
+	float rough = 0.0;
+	float metal = 0.0;
+	float ids[4] = float[4](v_indices.x, v_indices.y, v_indices.z, v_indices.w);
+	float ws[4] = float[4](w.x, w.y, w.z, w.w);
+	for (int k = 0; k < 4; k++) {
+		if (ws[k] < 0.02) {
+			continue;  // skip materials that barely show (saves texture reads)
+		}
+		int id = clamp(int(ids[k] + 0.5), 0, 15);
+		vec4 a;
+		vec3 n;
+		triplanar(float(id), p, bw, wn, a, n);
+		col += a.rgb * ws[k];
+		emit += GLOW[id] * a.a * ws[k];
+		nrm += n * ws[k];
+		rough += mix(ROUGH[id], 0.35, a.a * METAL[id]) * ws[k];
+		metal += METAL[id] * a.a * ws[k];
+	}
+	// Big soft light/dark patches so the texture repeats are hard to spot.
+	float macro = vnoise(v_world * 0.07) * 0.6 + vnoise(v_world * 0.21) * 0.4;
+	col *= 0.78 + 0.4 * macro;
+
+	ALBEDO = col;
+	EMISSION = emit;
+	ROUGHNESS = rough;
+	METALLIC = metal;
+	NORMAL = normalize((VIEW_MATRIX * vec4(normalize(nrm + wn * 0.001), 0.0)).xyz);
 }

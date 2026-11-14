@@ -39,6 +39,8 @@ func setup(seed: int) -> void:
 	terrain.bounds = AABB(Vector3(lo), Vector3(hi - lo))
 	var mat := ShaderMaterial.new()
 	mat.shader = preload("res://src/world/terrain.gdshader")
+	mat.set_shader_parameter("albedo_tex", preload("res://assets/textures/terrain/terrain_albedo.png"))
+	mat.set_shader_parameter("normal_tex", preload("res://assets/textures/terrain/terrain_normal.png"))
 	terrain.material_override = mat
 	add_child(terrain)
 	_tool = terrain.get_voxel_tool()

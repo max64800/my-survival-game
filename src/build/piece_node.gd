@@ -122,12 +122,14 @@ func _ramp_shape(s: Vector3) -> void:
 static func _mat(fam: String) -> Material:
 	if not _mats.has(fam):
 		var f: Dictionary = Pieces.FAMILIES[fam]
-		var m := StandardMaterial3D.new()
-		m.albedo_color = f.color
-		m.roughness = 0.85 if not f.get("glow", false) else 0.2
-		if f.get("glow", false):
-			m.emission_enabled = true
-			m.emission = f.color
-			m.emission_energy_multiplier = 1.5
-		_mats[fam] = m
+		var surface := "stone"
+		if fam.begins_with("plank"):
+			surface = "wood"
+		elif fam == "mushroom_brick":
+			surface = "fungus"
+		elif fam.ends_with("ingot"):
+			surface = "metal"
+		elif f.get("glow", false):
+			surface = "smooth"
+		_mats[fam] = Look.mat(f.color, surface, 1.5 if f.get("glow", false) else 0.0)
 	return _mats[fam]

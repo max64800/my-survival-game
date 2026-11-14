@@ -331,9 +331,7 @@ func _rubble(b: AABB, counts: Dictionary) -> void:
 		var bm := BoxMesh.new()
 		bm.size = sh.size
 		mi.mesh = bm
-		var mat := StandardMaterial3D.new()
-		mat.albedo_color = Color(0.42, 0.39, 0.36)
-		mi.material_override = mat
+		mi.material_override = Look.mat(Color(0.42, 0.39, 0.36), "stone")
 		rb.add_child(mi)
 		add_child(rb)
 		rb.global_position = b.position + Vector3(randf() * b.size.x, randf() * b.size.y, randf() * b.size.z)

@@ -203,14 +203,7 @@ func _build_look() -> void:
 func _part(mesh: Mesh, color: Color, pos: Vector3, glow: bool = false) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
 	mi.mesh = mesh
-	var m := StandardMaterial3D.new()
-	m.albedo_color = color
-	m.roughness = 0.8
-	if glow:
-		m.emission_enabled = true
-		m.emission = color
-		m.emission_energy_multiplier = 3.0
-	mi.material_override = m
+	mi.material_override = Look.mat(color, "", 3.0 if glow else 0.0)
 	mi.position = pos
 	add_child(mi)
 	return mi
