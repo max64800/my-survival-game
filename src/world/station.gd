@@ -95,7 +95,7 @@ func _size() -> Vector3:
 		"bed": return Vector3(1.0, 0.5, 2.0)
 		"rune_slab": return Vector3(1.6, 1.8, 0.4)
 		"twin_smelter": return Vector3(2.0, 1.6, 1.2)
-		"crystal_sconce", "glow_marker": return Vector3(0.4, 1.2, 0.4)
+		"crystal_sconce", "glow_marker", "glow_lamp": return Vector3(0.4, 1.2, 0.4)
 		"training_dummy": return Vector3(0.6, 1.6, 0.6)
 		"rope_ladder": return Vector3(0.7, LADDER_HEIGHT, 0.15)
 		"gem_bench": return Vector3(1.4, 0.9, 0.8)
@@ -167,8 +167,9 @@ func _build_look() -> void:
 			_part(_box(Vector3(1.2, 1.2, 0.05)), Color(0.4, 0.6, 1.0), Vector3(0, sz.y * 0.55, -0.21), true)
 		"farm_plot":
 			_part(_box(sz), Color(0.3, 0.2, 0.12), Vector3.UP * 0.1)
-		"crystal_sconce", "glow_marker":
-			# A post with a glowing crystal (sconce: blue light; marker: an amber flag, shown on the map).
+		"crystal_sconce", "glow_marker", "glow_lamp":
+			# A post with a glowing crystal (sconce: blue light; marker: an amber flag, shown on the map;
+			# glow lamp: a beetle's glow gland, soft green light).
 			var marker := kind == "glow_marker"
 			_part(_cyl(0.05, 0.06, 1.1), Color(0.4, 0.3, 0.2), Vector3.UP * 0.55)
 			_part(_box(Vector3(0.25, 0.25, 0.25)) if not marker else _box(Vector3(0.45, 0.3, 0.03)), c, Vector3(0.0 if not marker else 0.24, 1.15, 0), true)

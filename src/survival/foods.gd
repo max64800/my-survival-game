@@ -15,6 +15,11 @@ const DISHES := {
 	"dish_hearth_stew": {name = "Old Hearth Stew", hunger = 60, minutes = 40, buff = {max_health = 0.15, stamina_regen = 0.10}},
 	# --- Fungal Jungle dishes
 	"dish_beetle_roast": {name = "Beetle Roast", hunger = 30, minutes = 25, buff = {max_health = 0.12}},
+	# --- The first three creatures (docs/design/monsters-first-three.md)
+	"dish_cooked_snail": {name = "Cooked Snail", hunger = 30, minutes = 25, buff = {max_health = 0.10}},
+	"dish_roasted_bug": {name = "Roasted Bug", hunger = 30, minutes = 25, buff = {damage = 0.08}},
+	"dish_snail_stew": {name = "Snail & Mushroom Stew", hunger = 55, minutes = 35, buff = {max_health = 0.20}},
+	"dish_bug_stew": {name = "Bug & Mushroom Stew", hunger = 55, minutes = 35, buff = {max_stamina = 0.20}},
 	"dish_stalk_steak": {name = "Stalk Steak", hunger = 30, minutes = 25, buff = {max_stamina = 0.15}},
 	"dish_ember_skewer": {name = "Ember Skewer", hunger = 30, minutes = 25, buff = {damage = 0.10}},
 	"dish_truffle_risotto": {name = "Truffle Risotto", hunger = 50, minutes = 35, buff = {max_stamina = 0.20}},

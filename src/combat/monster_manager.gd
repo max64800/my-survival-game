@@ -147,7 +147,10 @@ func _animals_step(i: int, room: Dictionary, near: float) -> void:
 
 func _spawn_herd(key: int, room: Dictionary) -> Array:
 	var maker: CaveMaker = auth.world.maker
-	var kind: String = Monsters.ANIMALS[room.get("biome", "mossy")].pick_random()
+	var herd: Array = Monsters.ANIMALS[room.get("biome", "mossy")]
+	if herd.is_empty():
+		return []  # cave animals are hidden for now (Monsters.ANIMALS)
+	var kind: String = herd.pick_random()
 	var info: Dictionary = Monsters.LIST[kind]
 	var uids := []
 	for k in randi_range(info.pack[0], info.pack[1]):
@@ -169,22 +172,19 @@ func _spawn_pack(room_i: int, room: Dictionary) -> Array:
 	var lists: Dictionary = Monsters.SPAWNS[biome]
 	var choices: Array = lists.big if room.big else lists.small
 	var kind: String = choices.pick_random()
+	# Special rooms (owner's first three, docs/design/monsters-first-three.md).
 	if biome == "fungal":
 		match room.get("kind", ""):
-			"nest", "brood_hollow":
-				kind = "needlemite"
-			"ruin", "silver_vault":
-				kind = ["husk_charger", "wheezecap"].pick_random()
+			"nest", "brood_hollow", "ruin", "silver_vault":
+				kind = "great_rock_beetle"
 			"lantern_grove":
-				kind = ["gill_stalker", "wheezecap"].pick_random()
+				kind = "cave_bat"
 	else:
 		match room.get("kind", ""):
 			"spawn":
-				kind = ["mossnipper", "wickwing"].pick_random()  # weak critters near the start (world doc 3.1)
-			"ruin", "great_hall":
-				kind = "rustwight"  # sleeping armor guards old ruins
-			"nest", "nest_cavern":
-				kind = ["mossnipper", "skitterling"].pick_random()
+				kind = "rock_snail"  # slow: near the start you can always walk away
+			"ruin", "great_hall", "nest", "nest_cavern":
+				kind = "rock_beetle"
 	var info: Dictionary = Monsters.LIST[kind]
 	var has_leader: bool = randf() < info.get("leader_chance", 0.0) or room.get("kind", "") == "nest"  # nests always have a leader
 	var count := randi_range(info.pack[0], info.pack[1]) + (1 if has_leader else 0)
@@ -195,9 +195,16 @@ func _spawn_pack(room_i: int, room: Dictionary) -> Array:
 		var spot := maker.find_floor(room.center.x + cos(a) * r, room.center.z + sin(a) * r, room.center.y)
 		if maker.sdf_at(spot + Vector3.UP) <= 0.0:
 			continue
+		var at := spot + Vector3.UP * 0.3
+		if info.get("roosts", false):
+			# Bats start asleep, hanging from the ceiling right above this spot.
+			var ceiling := GlowPlacer._march(maker, spot + Vector3.UP * 1.0, Vector3.UP, 30.0)
+			if ceiling == Vector3.INF:
+				continue
+			at = ceiling + Vector3.DOWN * 0.3
 		var uid := _next_uid
 		_next_uid += 1
-		_ev_spawn.rpc(uid, kind, spot + Vector3.UP * 0.3, has_leader and k == 0, room_i, Monsters.roll_variant(biome, randf(), randf()))
+		_ev_spawn.rpc(uid, kind, at, has_leader and k == 0, room_i, Monsters.roll_variant(biome, randf(), randf()))
 		uids.append(uid)
 	return uids
 
@@ -353,6 +360,26 @@ func _gem_buildup(m: Monster, gb: Dictionary) -> void:
 
 ## Host: one hit lands on a monster (sword, bolt...).
 func _hurt_monster(m: Monster, peer: int, dmg: int, stun_amount: float) -> void:
+	# Rock Beetle: its back is soft (owner: charge, sidestep, hit it from behind).
+	var back: float = m.data.get("soft_back", 0.0)
+	var hitter: Node3D = player_node(peer)
+	if back > 0.0 and hitter:
+		var facing := -Basis(Vector3.UP, m.model.rotation.y).z
+		var from := (hitter.global_position - m.global_position) * Vector3(1, 0, 1)
+		if from.length() > 0.01 and facing.dot(from.normalized()) < -0.25:
+			dmg = roundi(dmg * back)
+			_ev_note.rpc(m.uid, "Weak spot!")
+	# Rock Snail: hiding in its shell = 90% less damage; every 3rd hit makes it hide.
+	var shell: Dictionary = m.data.get("shell_hide", {})
+	if not shell.is_empty():
+		if m.shell_left > 0.0:
+			dmg = maxi(1, roundi(dmg * (1.0 - shell.cut)))
+		else:
+			m.shell_hits += 1
+			if m.shell_hits >= shell.hits:
+				m.shell_hits = 0
+				m.shell_left = shell.seconds
+				monster_shell(m, true)
 	m.hp -= dmg
 	m.last_hitter = peer
 	m.stun.add(stun_amount)
@@ -925,6 +952,28 @@ func _ev_hp(uid: int, hp: float, stun_frac: float, stunned: bool) -> void:
 	var m: Monster = monsters.get(uid)
 	if m:
 		m.set_hp(hp, stun_frac, stunned)
+
+
+## Host: the snail pulled into its shell (or came out). Everyone sees it.
+func monster_shell(m: Monster, hidden: bool) -> void:
+	_ev_shell.rpc(m.uid, hidden)
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_shell(uid: int, hidden: bool) -> void:
+	var m: Monster = monsters.get(uid)
+	if m:
+		m.show_shell(hidden)
+		if hidden:
+			_float_number(m.global_position + Vector3.UP * 1.3, "Hides in its shell!")
+
+
+## A short word floating up over a monster ("Weak spot!").
+@rpc("authority", "call_local", "reliable")
+func _ev_note(uid: int, text: String) -> void:
+	var m: Monster = monsters.get(uid)
+	if m:
+		_float_number(m.global_position + Vector3.UP * 1.6, text)
 
 
 @rpc("authority", "call_local", "reliable")

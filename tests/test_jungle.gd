@@ -35,7 +35,9 @@ func test_every_boss_is_complete() -> void:
 
 func test_jungle_spawns_and_raids_use_jungle_monsters() -> void:
 	for kind in Monsters.SPAWNS.fungal.big + Monsters.SPAWNS.fungal.small:
-		check(Monsters.LIST[kind].shape in ["mushroom", "mite", "beetle", "mantis"], "%s is a jungle monster" % kind)
+		# Owner's first three (Nov 14): big beetles and bats live in the jungle; no snails there.
+		check(Monsters.LIST[kind].shape in ["rock_beetle", "cave_bat"], "%s is a jungle monster" % kind)
+		check(kind != "rock_snail", "no snails in the jungle")
 	for src in Raids.SOURCES:
 		check(Monsters.BOSSES.has(src), "raid source %s is a boss" % src)
 		for r in Raids.SOURCES[src]:

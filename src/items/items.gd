@@ -49,6 +49,17 @@ const DATA := {
 	"critter_hide": {name = "Critter Hide", color = Color(0.6, 0.45, 0.3), short = "Hi"},
 	"beetle_meat": {name = "Beetle Meat", color = Color(0.7, 0.45, 0.4), short = "Bm", kind = "food", hunger = 10, upset = 0.3},
 	"chitin_plate": {name = "Chitin Plate", color = Color(0.3, 0.4, 0.3), short = "Ch"},
+	# ---- From the first three creatures (docs/design/monsters-first-three.md)
+	"snail_meat": {name = "Snail Meat", color = Color(0.72, 0.62, 0.55), short = "Sn", kind = "food", hunger = 10, upset = 0.3},
+	"shell_piece": {name = "Shell Piece", color = Color(0.55, 0.5, 0.44), short = "Sp"},
+	"wing_leather": {name = "Wing Leather", color = Color(0.35, 0.28, 0.3), short = "Wl"},
+	"bat_fang": {name = "Bat Fang", color = Color(0.92, 0.9, 0.84), short = "Bf"},
+	"bug_meat": {name = "Bug Meat", color = Color(0.75, 0.55, 0.45), short = "Bg", kind = "food", hunger = 10, upset = 0.3},
+	"glow_gland": {name = "Glow Gland", color = Color(0.5, 0.9, 0.6), short = "Gg", kind = "fuel", fuel = 480.0},  # twice a crystal
+	"bolt_fang": {name = "Fang Bolt", color = Color(0.9, 0.88, 0.82), short = "Bf", kind = "ammo"},
+	"pickaxe_fang": {name = "Fanged Pickaxe", stack = 1, color = Color(0.85, 0.82, 0.75), short = "Pf", kind = "pickaxe", power = 13, tier = 0},
+	"shield_shell": {name = "Shell Shield", stack = 1, color = Color(0.55, 0.5, 0.44), short = "Ss", kind = "shield", weapon = "shield", tier = 1},
+	"glow_lamp": {name = "Glow Lamp", stack = 5, color = Color(0.5, 0.95, 0.6), short = "GL", kind = "station"},
 	# Fungal Jungle monster parts (combat doc 5.3, 8.5; doc 5.5 maps horns, stalker meat and glow spores to old items)
 	"spore_powder": {name = "Spore Powder", color = Color(0.7, 0.65, 0.5), short = "Sp"},
 	"needle": {name = "Mite Needle", color = Color(0.75, 0.85, 0.9), short = "Nd"},

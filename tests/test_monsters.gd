@@ -308,3 +308,44 @@ func test_attack_animation_keeps_monster_size() -> void:
 	await tree.create_timer(0.5).timeout
 	check(m.model.scale.is_equal_approx(before), "still %s after the attack (was %s)" % [m.model.scale, before])
 	_teardown()
+
+
+## Owner's Rock Snail: after 3 hits it hides in its shell (3 s), taking 90% less damage.
+func test_rock_snail_hides_in_its_shell() -> void:
+	await _setup()
+	ps.inventory.add("sword_stone", 1)
+	auth.request_select_slot(1, 1)
+	var m := _spawn("rock_snail", Vector3(1.2, 0, 0))
+	m.state = Monster.State.CHASE
+	var first := auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, 0, false)
+	auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, 0, false)
+	check(m.shell_left <= 0.0, "two hits: still out")
+	auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, 0, false)
+	check_near(m.shell_left, 3.0, 0.01, "third hit: hides for 3 s")
+	var before := m.hp
+	auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, 0, false)
+	check(before - m.hp <= maxf(1.0, first * 0.15), "hidden: about 90%% less damage (%.0f instead of %d)" % [before - m.hp, first])
+	m.think(3.1, auth.monsters)
+	check(m.shell_left <= 0.0, "comes back out after 3 s")
+	_teardown()
+
+
+## Owner's Rock Beetle: its back is soft (double damage from behind).
+func test_rock_beetle_soft_back() -> void:
+	await _setup()
+	ps.inventory.add("sword_stone", 1)
+	auth.request_select_slot(1, 1)
+	var m := _spawn("rock_beetle", Vector3(1.2, 0, 0))
+	m.state = Monster.State.CHASE
+	# Face the beetle toward the player: a front hit.
+	var to := player.global_position - m.global_position
+	m.model.rotation.y = atan2(-to.x, -to.z)
+	var hp0 := m.hp
+	auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, 0, false)
+	var front := hp0 - m.hp
+	m.model.rotation.y += PI  # now its back is to us
+	hp0 = m.hp
+	auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, 0, false)
+	var behind := hp0 - m.hp
+	check(behind >= front * 1.8, "from behind: about double (%.0f vs %.0f)" % [behind, front])
+	_teardown()

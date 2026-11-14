@@ -34,6 +34,7 @@ const HIP_SPREAD := 3.0  ## degrees
 const BOLTS := {
 	"bolt_stone": {mult = 1.0},
 	"bolt_metal": {mult = 1.2},
+	"bolt_fang": {mult = 1.3},  # bat fang tips: sharper than metal
 	"bolt_thumper": {mult = 1.1, type = "blunt", stun = 35.0, armor_break = 0.3},
 	"bolt_ember": {mult = 0.9, elemental = {fire = 8.0}},
 	"bolt_rime": {mult = 0.9, elemental = {frost = 8.0}},
@@ -41,7 +42,7 @@ const BOLTS := {
 	"bolt_glow": {mult = 0.5, glow = 60.0},
 }
 ## Which bolt gets fired: the first one found in this order (fancy bolts are kept for later).
-const BOLT_ORDER := ["bolt_stone", "bolt_metal", "bolt_thumper", "bolt_glow", "bolt_blight", "bolt_ember", "bolt_rime"]
+const BOLT_ORDER := ["bolt_stone", "bolt_metal", "bolt_fang", "bolt_thumper", "bolt_glow", "bolt_blight", "bolt_ember", "bolt_rime"]
 
 # --- Player (doc 1)
 const DODGE_STAMINA := 20.0

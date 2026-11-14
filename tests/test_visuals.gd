@@ -130,3 +130,24 @@ func test_monsters_have_moving_parts() -> void:
 	var boxes := golem.find_children("*", "MeshInstance3D", true, false).filter(chunky)
 	check(boxes.is_empty(), "no chunky toy-block boxes left on a golem (%d)" % boxes.size())
 	golem.free()
+
+
+func test_first_three_creatures() -> void:
+	for id in ["rock_snail", "cave_bat", "rock_beetle", "great_rock_beetle"]:
+		check(Monsters.LIST.has(id), "%s exists" % id)
+		for d in Monsters.LIST[id].drops:
+			check(Items.exists(d[0]), "%s drops a real item: %s" % [id, d[0]])
+	check(Monsters.LIST.rock_snail.shell_hide.hits == 3 and Monsters.LIST.rock_snail.shell_hide.seconds == 3.0, "snail hides after 3 hits for 3 s (owner)")
+	check(is_equal_approx(Monsters.LIST.rock_snail.shell_hide.cut, 0.9), "hiding = 90% less damage (owner)")
+	check(Monsters.LIST.cave_bat.flies and Monsters.LIST.cave_bat.swoops and Monsters.LIST.cave_bat.roosts, "bats fly, swoop and roost")
+	check(Monsters.LIST.rock_beetle.soft_back > 1.0 and Monsters.LIST.rock_beetle.straight_charge, "beetle charges straight, soft back")
+	for biome in ["mossy", "fungal"]:
+		for kind in Monsters.SPAWNS[biome].big + Monsters.SPAWNS[biome].small:
+			check(kind in ["rock_snail", "cave_bat", "rock_beetle", "great_rock_beetle"], "only the first three spawn for now: %s" % kind)
+	for r in ["dish_cooked_snail", "dish_roasted_bug", "dish_snail_stew", "dish_bug_stew", "shield_shell", "bolt_fang", "pickaxe_fang", "glow_lamp", "leather_from_wing"]:
+		check(Recipes.LIST.has(r), "recipe %s exists" % r)
+	check(Items.info("glow_gland").fuel > Items.info("crystal_blue").fuel, "a glow gland lasts longer than a crystal")
+	# The snail's model can pull in and come back out.
+	var m := MonsterModel.build("rock_snail", Color(0.5, 0.45, 0.4), 1.0, false)
+	check(m.find_children("*", "MeshInstance3D", true, false).any(func(mi): return mi.has_meta("soft")), "snail has a soft body to pull in")
+	m.free()
