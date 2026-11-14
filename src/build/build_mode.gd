@@ -99,11 +99,16 @@ func _process(_delta: float) -> void:
 		_ghost.visible = false
 		target = {}
 		return
-	target = Pieces.snap(piece, hit.position, hit.normal, dwarf.model.rotation.y + PI, rot, lift)
+	var auth := GameAuthority.instance
+	# Aiming at something already built? Snap to it (its top edge, corner, or side).
+	var anchor := AABB()
+	var hit_node: Object = hit.get("collider")
+	if hit_node is PieceNode and auth.builder.structure.pieces.has((hit_node as PieceNode).uid):
+		anchor = auth.builder.structure.box_of((hit_node as PieceNode).uid)
+	target = Pieces.snap(piece, hit.position, hit.normal, dwarf.model.rotation.y + PI, rot, lift, anchor)
 	_ghost.visible = true
 	_ghost.global_position = target.pos
 	_ghost.rotation = Vector3(0, target.rot * PI / 2.0, 0)
-	var auth := GameAuthority.instance
 	problem = auth.builder.problem(auth.get_player(dwarf.peer_id), piece, family, target.pos, target.rot)
 	_ghost.set_ghost_ok(problem == "")
 

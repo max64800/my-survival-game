@@ -160,31 +160,66 @@ static func box(piece: String, pos: Vector3, rot: int) -> AABB:
 
 ## Where a piece goes when you aim at `p` (surface point) with surface normal `n`,
 ## facing `yaw`, turned `rot` extra quarter turns, lifted `lift` meters.
-static func snap(piece: String, p: Vector3, n: Vector3, yaw: float, rot: int, lift: float = 0.0) -> Dictionary:
+## `anchor` = the box of the built piece under the crosshair (empty AABB = aiming at rock):
+##  - aiming at its TOP: the new piece stands on it. Walls go to its nearest edge, pillars to its
+##    nearest corner, roofs/floors line up on the 1 m grid (so a wall never lands mid-floor).
+##  - aiming at the SIDE of a floor/foundation with a floor/foundation: the new one goes right next to it.
+##  - otherwise: the 1 m grid (2 m pieces + 1 m halves), heights in 0.5 m steps.
+static func snap(piece: String, p: Vector3, n: Vector3, yaw: float, rot: int, lift: float = 0.0, anchor: AABB = AABB()) -> Dictionary:
 	var info: Dictionary = LIST[piece]
 	var q := (posmod(roundi(yaw / (PI / 2.0)), 4) + rot) % 4
-	var cx := floorf(p.x / GRID) * GRID + GRID * 0.5
-	var cz := floorf(p.z / GRID) * GRID + GRID * 0.5
+	var s := turned_size(piece, q)
 	var h: float = info.size.y
-	var y := snappedf(p.y, 0.5) if n.y > 0.5 else snappedf(p.y - h * 0.5, 0.5)
-	var pos := Vector3(cx, y, cz)
-	match info.place:
-		"edge":
-			# Spans X when q is even (sits on a north/south edge), spans Z when odd.
-			if q % 2 == 0:
-				pos.z = cz + signf(p.z - cz + 0.0001) * GRID * 0.5
-			else:
-				pos.x = cx + signf(p.x - cx + 0.0001) * GRID * 0.5
-		"corner":
-			pos.x = cx + signf(p.x - cx + 0.0001) * GRID * 0.5
-			pos.z = cz + signf(p.z - cz + 0.0001) * GRID * 0.5
-		"free":
-			pos.x = snappedf(p.x, 0.5)
-			pos.z = snappedf(p.z, 0.5)
-		"ceiling":
-			pos.y = snappedf(p.y, 0.5) - h if n.y < -0.5 else snappedf(p.y, 0.5)
+	var pos := _on_grid(info.place, p, s, q)
+	pos.y = snappedf(p.y, 0.5) if n.y > 0.5 else snappedf(p.y - h * 0.5, 0.5)
+	var has_anchor := anchor.size != Vector3.ZERO
+	if has_anchor and n.y > 0.5:
+		pos.y = anchor.end.y
+		match info.place:
+			"edge":
+				# Across the wall: the anchor's nearest face, or its middle line if it's thin (a wall on a wall).
+				var axis := 2 if q % 2 == 0 else 0
+				if anchor.size[axis] < 0.9:
+					pos[axis] = anchor.get_center()[axis]
+				else:
+					pos[axis] = anchor.position[axis] if absf(p[axis] - anchor.position[axis]) < absf(p[axis] - anchor.end[axis]) else anchor.end[axis]
+			"corner":
+				for axis in [0, 2]:
+					if anchor.size[axis] < 0.9:
+						pos[axis] = anchor.get_center()[axis]
+					else:
+						pos[axis] = anchor.position[axis] if absf(p[axis] - anchor.position[axis]) < absf(p[axis] - anchor.end[axis]) else anchor.end[axis]
+	elif has_anchor and absf(n.y) < 0.5 and info.place == "cell" and info.get("group", "") in ["floor", "foundation"] and anchor.size.y <= 1.05:
+		# Next to the floor/foundation we're looking at, at the same height.
+		var axis := 0 if absf(n.x) > absf(n.z) else 2
+		var side := signf(n[axis])
+		pos[axis] = (anchor.end[axis] if side > 0.0 else anchor.position[axis]) + side * s[axis] * 0.5
+		pos.y = anchor.position.y
+	if info.place == "ceiling":
+		pos.y = snappedf(p.y, 0.5) - h if n.y < -0.5 else snappedf(p.y, 0.5)
 	pos.y += lift
 	return {pos = pos, rot = q}
+
+
+## The piece's spot on the 1 m grid (x and z only).
+static func _on_grid(place: String, p: Vector3, s: Vector3, q: int) -> Vector3:
+	# Footprint edges on grid lines: centre = nearest grid line from the low edge, + half the size.
+	var x := snappedf(p.x - s.x * 0.5, FINE) + s.x * 0.5
+	var z := snappedf(p.z - s.z * 0.5, FINE) + s.z * 0.5
+	match place:
+		"edge":
+			# Spans X when q is even (sits on a north/south line), spans Z when odd.
+			if q % 2 == 0:
+				z = roundf(p.z / FINE) * FINE
+			else:
+				x = roundf(p.x / FINE) * FINE
+		"corner":
+			x = roundf(p.x / FINE) * FINE
+			z = roundf(p.z / FINE) * FINE
+		"free":
+			x = snappedf(p.x, 0.5)
+			z = snappedf(p.z, 0.5)
+	return Vector3(x, 0, z)
 
 
 ## Points used to test for rock: 8 corners (shrunk 0.1 m), the centre and 6 face centres.

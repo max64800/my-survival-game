@@ -42,6 +42,52 @@ func test_soft_numbers() -> void:
 	check(f.copper_ingot.up == 0.03 and f.copper_ingot.side == 0.06, "copper 0.03 / 0.06")
 
 
+# ---------------------------------------------------------------- snapping (spec §2)
+
+const FLOOR := AABB(Vector3(0, 0, 0), Vector3(2, 0.25, 2))
+
+
+func test_wall_snaps_to_floor_edge() -> void:
+	var s := Pieces.snap("wall", Vector3(1.0, 0.25, 1.7), Vector3.UP, 0.0, 0, 0.0, FLOOR)
+	check_eq(s.pos, Vector3(1, 0.25, 2), "wall on the floor's near edge, standing on top of it")
+	var t := Pieces.snap("wall", Vector3(1.0, 0.25, 0.9), Vector3.UP, 0.0, 0, 0.0, FLOOR)
+	check(t.pos.z == 0.0 or t.pos.z == 2.0, "never mid-floor (z=%s)" % t.pos.z)
+
+
+func test_roof_sits_on_wall_top() -> void:
+	var wall := AABB(Vector3(0, 0.25, 1.85), Vector3(2, 2, 0.3))
+	var r := Pieces.snap("roof_26", Vector3(1.0, 2.25, 2.0), Vector3.UP, 0.0, 0, 0.0, wall)
+	check_eq(r.pos.y, 2.25, "roof base at the wall's top")
+	var w := Pieces.snap("wall", Vector3(1.0, 2.25, 2.0), Vector3.UP, 0.0, 0, 0.0, wall)
+	check_eq(w.pos, Vector3(1, 2.25, 2.0), "a wall on a wall stacks exactly on it")
+
+
+func test_pillar_snaps_to_floor_corner() -> void:
+	var s := Pieces.snap("pillar", Vector3(1.8, 0.25, 0.3), Vector3.UP, 0.0, 0, 0.0, FLOOR)
+	check_eq(s.pos, Vector3(2, 0.25, 0), "pillar on the nearest corner")
+
+
+func test_half_floor_fills_1m() -> void:
+	var s := Pieces.snap("small_floor", Vector3(2.4, 0.0, 0.6), Vector3.UP, 0.0, 0)
+	check_eq(s.pos, Vector3(2.5, 0, 0.5), "a 1 m floor fills one 1 m square")
+
+
+func test_no_anchor_uses_1m_grid() -> void:
+	check_eq(Pieces.snap("floor", Vector3(3.4, 0.0, 0.0), Vector3.UP, 0.0, 0).pos.x, 3.0, "2 m floor: edges on grid lines")
+
+
+func test_floor_extends_from_side() -> void:
+	var s := Pieces.snap("floor", Vector3(2.0, 0.1, 1.0), Vector3.RIGHT, 0.0, 0, 0.0, FLOOR)
+	check_eq(s.pos, Vector3(3, 0, 1), "aiming at a floor's side: the new one goes right next to it")
+
+
+func test_rotation_cycles() -> void:
+	var a := Pieces.snap("roof_45", Vector3(1, 0, 1), Vector3.UP, 0.0, 0)
+	var b := Pieces.snap("roof_45", Vector3(1, 0, 1), Vector3.UP, 0.0, 4)
+	check_eq(a.rot, b.rot, "four turns = back where you started")
+	check_eq(a.pos, b.pos, "...in the same spot")
+
+
 func test_stations_by_material() -> void:
 	check_eq(Pieces.station_for("plank_root"), "workbench", "wood → Workbench")
 	check_eq(Pieces.station_for("cut_stone"), "mason", "stone → Mason's Table")
