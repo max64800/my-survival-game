@@ -478,7 +478,7 @@ func _can_swing() -> bool:
 	var ps := auth.get_player(peer_id) if auth else null
 	if ps == null:
 		return true
-	var swift: float = Gems.bonus(ps.inventory.get_slot(ps.selected_slot)).get("mine_stamina", 0.0)
+	var swift: float = Gems.bonus(ps.inventory.get_slot(ps.hand_slot())).get("mine_stamina", 0.0)
 	return ps.vitals.use_stamina(SWING_STAMINA * ps.progress.swing_stamina_mult() * (1.0 - swift))
 
 

@@ -351,7 +351,7 @@ func _refresh_slots() -> void:
 		icon.visible = not s.is_empty() and tex == null
 		if not s.is_empty():
 			icon.add_theme_stylebox_override("panel", _slot_style(Items.color(s.id).darkened(0.15), Items.color(s.id).lightened(0.3)))
-			panel.tooltip_text = Items.display_name(s.id)
+			panel.tooltip_text = Upgrades.display_name(s)  # "Copper Sword +2"
 		(panel.get_node("Short") as Label).text = "" if s.is_empty() or tex != null else Items.short_label(s.id)
 		(panel.get_node("Count") as Label).text = "" if s.is_empty() or s.count <= 1 else str(s.count)
 

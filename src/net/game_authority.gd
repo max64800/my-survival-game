@@ -109,9 +109,10 @@ class PlayerState:
 
 	## How much worn clothes/armor soak up: 2% per armor point, at most 60%.
 	func armor_cut() -> float:
-		var armor := 0
+		var armor := 0.0
 		for part in ["head", "chest", "legs", "feet"]:
-			armor += int(Items.info(inventory.equipped(part)).get("armor", 0))
+			var worn := inventory.get_slot(Inventory.equip_index(part))
+			armor += int(Items.info(inventory.equipped(part)).get("armor", 0)) * (1.0 + Upgrades.bonus(worn))
 		return minf(0.6, armor * 0.02)
 
 
@@ -396,6 +397,52 @@ func ask_refill() -> void:
 		_rpc_refill.rpc_id(1)
 
 
+## Gear upgrades (building polish spec §4): improve the item in `slot` at a station.
+func ask_upgrade(slot: int, station_id: int) -> void:
+	if is_host():
+		request_upgrade(local_peer_id(), slot, station_id)
+	else:
+		_rpc_upgrade.rpc_id(1, slot, station_id)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_upgrade(slot: int, station_id: int) -> void:
+	if is_host():
+		request_upgrade(multiplayer.get_remote_sender_id(), slot, station_id)
+
+
+## Returns "" when done, otherwise why not.
+func request_upgrade(peer_id: int, slot: int, station_id: int) -> String:
+	var ps := get_player(peer_id)
+	var st: Station = stations.get(station_id)
+	if ps == null or st == null:
+		return "?"
+	var s := ps.inventory.get_slot(slot)
+	if s.is_empty() or not Upgrades.can_upgrade(s.id):
+		return "That can't be upgraded."
+	if st.kind != Upgrades.station_for(s.id):
+		return "Upgrade this at a %s." % Items.display_name(Upgrades.station_for(s.id))
+	if ps.node.global_position.distance_to(st.global_position) > 6.0:
+		return "Too far from the %s." % Items.display_name(st.kind)
+	var cost := Upgrades.next_cost(s)
+	if cost.is_empty():
+		return "Already +3."
+	if st.level() < Upgrades.needed_level(s):
+		return "Needs %s level %d." % [Items.display_name(st.kind), Upgrades.needed_level(s)]
+	for item in cost:
+		if ps.inventory.count_of(item) < cost[item]:
+			return "Needs %d %s." % [cost[item], Items.display_name(item)]
+	for item in cost:
+		ps.inventory.remove(item, cost[item])
+	s["up"] = Upgrades.level(s) + 1
+	ps.inventory.changed.emit()
+	give_xp(peer_id, 5, "smithing")
+	if peer_id == local_peer_id():
+		Sfx.ui("craft", 0.0)
+		hud_message.emit("%s!" % Upgrades.display_name(s))
+	return ""
+
+
 func ask_swap(a: int, b: int) -> void:
 	if is_host():
 		request_swap(local_peer_id(), a, b)
@@ -523,7 +570,7 @@ func request_hit(peer_id: int, point: Vector3, normal: Vector3) -> Dictionary:
 
 func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
 	var power: float = Items.dig_power(ps.selected_item()) * ps.progress.dig_power_mult() \
-		* (1.0 + Gems.bonus(ps.inventory.get_slot(ps.hand_slot())).get("dig", 0.0))
+		* (1.0 + Gems.bonus(ps.inventory.get_slot(ps.hand_slot())).get("dig", 0.0)) 		* (1.0 + Upgrades.bonus(ps.inventory.get_slot(ps.hand_slot())))  # +15% per upgrade step
 	if power <= 0:
 		return {state = "no_tool"}
 	if _chest(ps).distance_to(point) > REACH + 1.0:
@@ -576,9 +623,9 @@ func request_harvest(peer_id: int, glow_id: int) -> Dictionary:
 			return r
 		var power := 0.0
 		if Items.kind(tool) == "pickaxe":
-			power = Items.dig_power(tool) * ps.progress.dig_power_mult() * (0.5 if k.tool == "axe" else 1.0)
+			power = Items.dig_power(tool) * ps.progress.dig_power_mult() * (0.5 if k.tool == "axe" else 1.0) 				* (1.0 + Upgrades.bonus(ps.inventory.get_slot(ps.hand_slot())))
 		elif Items.kind(tool) == "axe" and k.tool == "axe":
-			power = Items.info(tool).power
+			power = Items.info(tool).power * (1.0 + Upgrades.bonus(ps.inventory.get_slot(ps.hand_slot())))
 		if power <= 0.0:
 			var r := {state = "no_tool", point = spot.pos}
 			_tell_feedback(peer_id, r)
@@ -617,7 +664,7 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 	var ps := get_player(peer_id)
 	if ps == null:
 		return ""
-	var slot := ps.inventory.get_slot(ps.selected_slot)
+	var slot := ps.inventory.get_slot(ps.hand_slot())
 	if slot.is_empty():
 		return ""
 	var id: String = slot.id
@@ -1346,7 +1393,7 @@ func _give_dig_drops(ps: PlayerState, counts: Dictionary, pos: Vector3) -> void:
 		var ore: bool = mat == Mat.COPPER or mat == Mat.SILVER
 		if ore:
 			n = maxi(n, 1)  # always feel rewarded for hitting ore
-			if randf() < Gems.bonus(ps.inventory.get_slot(ps.selected_slot)).get("extra_ore", 0.0):
+			if randf() < Gems.bonus(ps.inventory.get_slot(ps.hand_slot())).get("extra_ore", 0.0):
 				n += 1  # Burrow gem
 			for i in n:
 				if randf() < 0.005:

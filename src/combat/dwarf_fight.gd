@@ -160,7 +160,7 @@ func _attack(heavy: bool) -> void:
 		return
 	var ps := _ps()
 	var wd: Dictionary = Combat.WEAPONS[weapon()]
-	var cost: float = (wd.heavy_sta if heavy else wd.light_sta) * (1.0 - Gems.bonus(ps.inventory.get_slot(ps.selected_slot)).get("stamina", 0.0))
+	var cost: float = (wd.heavy_sta if heavy else wd.light_sta) * (1.0 - Gems.bonus(ps.inventory.get_slot(ps.hand_slot())).get("stamina", 0.0))
 	if heavy:
 		if not ps.vitals.use_stamina(cost):
 			message.emit("Too tired for a heavy attack", Color(0.9, 0.9, 0.9))

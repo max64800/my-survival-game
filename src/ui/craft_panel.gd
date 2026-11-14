@@ -73,6 +73,56 @@ func refresh() -> void:
 		l.text = "Nothing to make here yet. Explore and collect more!"
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD
 		_list.add_child(l)
+	if station and station.kind in ["workbench", "anvil"]:
+		_upgrade_rows(ps.inventory)
+
+
+## Gear upgrades (building polish spec §4): everything you carry or wear that this station can improve.
+func _upgrade_rows(inv: Inventory) -> void:
+	var heading := Label.new()
+	heading.text = "Upgrade gear (+15% each step, up to +3)"
+	heading.add_theme_font_size_override("font_size", 17)
+	_list.add_child(heading)
+	var any := false
+	for i in inv.slots.size():
+		var s := inv.get_slot(i)
+		if s.is_empty() or not Upgrades.can_upgrade(s.id) or Upgrades.station_for(s.id) != station.kind:
+			continue
+		any = true
+		var row := HBoxContainer.new()
+		var text := RichTextLabel.new()
+		text.bbcode_enabled = true
+		text.fit_content = true
+		text.scroll_active = false
+		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var cost := Upgrades.next_cost(s)
+		var ok := not cost.is_empty() and station.level() >= Upgrades.needed_level(s)
+		var parts := []
+		for item in cost:
+			var have := inv.count_of(item)
+			var col := "white" if have >= cost[item] else "#ff7070"
+			ok = ok and have >= cost[item]
+			parts.append("[color=%s]%d/%d %s[/color]" % [col, mini(have, cost[item]), cost[item], Items.display_name(item)])
+		if cost.is_empty():
+			parts = ["fully upgraded"]
+		elif station.level() < Upgrades.needed_level(s):
+			parts.append("[color=#ff7070]needs station level %d[/color]" % Upgrades.needed_level(s))
+		text.text = "[b]%s[/b]\n[font_size=13]%s[/font_size]" % [Upgrades.display_name(s), ", ".join(parts)]
+		row.add_child(text)
+		var b := Button.new()
+		b.text = "Upgrade"
+		b.disabled = not ok
+		b.custom_minimum_size = Vector2(80, 0)
+		var slot_index := i
+		b.pressed.connect(func():
+			GameAuthority.instance.ask_upgrade(slot_index, station.station_id)
+			get_tree().create_timer(0.15).timeout.connect(refresh))
+		row.add_child(b)
+		_list.add_child(row)
+	if not any:
+		var l := Label.new()
+		l.text = "Nothing to upgrade here. (%s)" % ("copper and silver gear" if station.kind == "anvil" else "stone, wood, leather and shell gear")
+		_list.add_child(l)
 
 
 func _row(recipe_id: String, inv: Inventory) -> Control:
