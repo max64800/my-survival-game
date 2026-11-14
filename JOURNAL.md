@@ -89,7 +89,7 @@ You went to sleep and asked Claude to build, test and prepare as much as possibl
 | `step-5-fight` | + **weapons, monsters, parry, dodge** (Mossy Hollows) | Tested; needs play-testing |
 | `step-6-deeper` | + **ruins, rune shrines, boss clues, 3 bosses, raids, sounds** (Mossy Hollows finished) | Tested; needs play-testing |
 | `step-7-ready` | + **save & continue**, art candidates (try `-- art=quaternius`) | Tested |
-| `fungal-jungle` | + **the Fungal Jungle** (biome 2), poison/burn/chill, crystal monsters | Tested; **the newest everything** |
+| `fungal-jungle` | + **the Fungal Jungle** (biome 2), poison/burn/chill, crystal monsters, cave animals, crossbow, friendly fire, spore clouds, gems, boss altars | Tested; **the newest everything** |
 
 Why branches? Our rule says each step must be playable and approved before the next one. So `main` stays Step 1 until you've tried it. The later steps wait on their own branches, ready to merge when you say yes.
 
@@ -186,12 +186,37 @@ Why branches? Our rule says each step must be playable and approved before the n
 - A safety check stopped Claude from cleaning a log folder with a risky delete command. **Fix:** used a fresh folder instead.
 
 **Not done yet / known limits**
-- Spore **clouds** that hang in the air, blinding, and the Gill Stalker's real hiding are simplified: a cloud is one big dose of poison on hit for now.
-- Gems (and gem drops from crystal monsters), the crossbow and friendly fire still wait.
+- Blinding (Gill Hiss, Smoke Gill) and the Gill Stalker's real hiding are simplified.
 - The jungle's boss arena needs its "rooting" phase and spore sacs (Thallus fights with his normal attacks for now).
 - Recipes for the new monster parts (needles, venom sacs, Sivix silk…) aren't designed yet; they're collectibles for now.
 
 **Next (for you, on the gaming PC)**
 1. `git pull --ff-only`, then `git switch fungal-jungle` for the newest everything (see `docs/GAMING-PC-START.md`).
 2. To see the jungle quickly without beating Orrumhal, start the game with `-- jungle` (see the PC guide): you appear next to the purple gate with a copper pickaxe, axe, sword and shield. Dig through the plug and you're in.
+
+---
+
+## Night 2, even later — November 14, 2026: animals, crossbow, gems, and more
+
+**What we did (all on `fungal-jungle`)**
+- **Cave animals** (combat doc 5.4), for hunting food: **Moss Shufflers** (roll into an armored ball when hit: use a mace!) and **Flitters** (little bats) in Mossy; **Truffle Hogs** (fight back until half hurt, then run), **Lampshell Snails** (glowing shells, drop lantern slime) and floating **Puffpods** (pop into a harmless puff) in the Jungle. They ignore you until you hit them, and come back 20 minutes after a hunt.
+- **The crossbow** (combat doc 3.6): tap left click to shoot from the hip (a little wobbly), hold right click to aim (zooms in, dead straight, more damage), R to reload (running stops the reload). 3 crossbows (wood, copper, silver) and **7 kinds of bolts**: stone, metal, thumper (good on shells), ember, rime, blight, and glow bolts that light up a spot for a minute. Half your bolts can be picked up again.
+- **Friendly fire** (doc 2.7): on by default. Your swings and bolts hurt friends for half damage (never stun them). The host can switch it off on the pause screen (Esc).
+- **Spore clouds** that hang in the air for a few seconds: Wheezecaps puff them and burst into one when they die, Cap Spitter bombs leave one, Thallus breathes a big one, green crystal monsters leave a trail. Walk out of them! **Spore Ward Stew** halves them.
+- **Monsters get poisoned, burned and chilled too** (from bolts and gems). Chilled monsters walk slower; bosses can't be frozen solid.
+- **Gems** (combat doc 4): 9 gems (Ember, Rime, Blight, Leech, Jolt, Swift, Bulwark, Keen, Burrow) that go into copper and better weapons, shields, pickaxes and crossbows at a new **Gem Bench**. Each gem does something different in each kind of item (an Ember Gem in a sword adds fire; in a shield, your perfect parries set the attacker burning). Putting a gem in is free; taking it out costs 5 blue crystals. Gems drop from crystal monsters (15%), some monsters and bosses, old ruin chests, and ore veins. The 6 **epic gems** drop too (the first boss kill always gives one) but only fit Steel gear, which comes in a later biome: you carry them as a prize.
+- **Boss altars**: once you've beaten a main boss, its altar can call it back for another fight (Orrumhal: 10 copper ingots, 5 blue crystals and a rune shard). And during a main boss fight the **lair walls can't be dug**, so nobody can tunnel around the fight.
+
+**Hurdles / mistakes (including Claude's)**
+- **Claude pushed a change before the co-op robot had finished**, and that robot run failed. Looking into it found a real old bug: **a friend who joined while dig sparkles were in the air was never let in** (the sparkles sat in the same folder as the players, and the host tripped over one). **Fix:** the host only counts dwarfs. Fixed on every branch from Step 2 up. Lesson: wait for the robot before pushing.
+- A test expected 15 damage from a friend's blight bolt, but the right answer is 19 (the rounding happens before halving). The code was right; the test was fixed.
+- A poison test broke when spore puffs became clouds (the poison moved from the hit into the cloud). **Fix:** the test counts both.
+- The first spore cloud looked like a solid lavender ball. **Fix:** a soft bunch of see-through puffs that fade out.
+- Several "this value has no type" errors (Godot's strict mode treats them as errors, which is good: they catch mistakes early). Each was fixed by writing the type.
+
+**Not done yet / known limits**
+- Crossbow bolts hit instantly (no flight time or drop yet) and there are no head-shots yet.
+- Gems: the Ember Gem in a pickaxe (faster smelting) does nothing yet; epic gems have no effects until Steel exists.
+- Thallus doesn't have his spore sacs or underground "rooting" phase yet; Orrumhal's heartstone weak spot isn't built yet.
+- The lair's stone door doesn't grow shut (the locked walls do the same job for now).
 
