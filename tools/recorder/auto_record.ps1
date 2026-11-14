@@ -55,6 +55,24 @@ public static class DwarfWin {
 
 $script:SkipPids = @{}
 
+# A game counts as the owner playing only if a person started it: the desktop icon,
+# the Start menu, or Godot's editor (F5). If it was started from a terminal or a script
+# (that's how Claude runs the game), it's a robot run. Returns why, or $null for a person.
+$ScriptyParents = @('bash.exe', 'sh.exe', 'timeout.exe', 'node.exe', 'claude.exe',
+                    'powershell.exe', 'pwsh.exe', 'cmd.exe', 'python.exe', 'conhost.exe')
+function Get-RobotReason([int]$procId) {
+    $proc = Get-CimInstance Win32_Process -Filter "ProcessId=$procId"
+    if ($proc.CommandLine -match 'autopilot|netcheck|--headless') { return 'robot command' }
+    for ($depth = 0; $depth -lt 6 -and $proc; $depth++) {
+        $parent = Get-CimInstance Win32_Process -Filter "ProcessId=$($proc.ParentProcessId)"
+        if (-not $parent) { return $null }
+        if ($parent.Name -eq 'explorer.exe') { return $null }          # started by a person
+        if ($ScriptyParents -contains $parent.Name.ToLower()) { return "started by $($parent.Name)" }
+        $proc = $parent                                                 # e.g. the Godot editor: look further up
+    }
+    return $null
+}
+
 function Find-Game {
     $procs = Get-Process -ErrorAction SilentlyContinue |
         Where-Object { $_.ProcessName -like 'Godot*' -or $_.ProcessName -like 'Dwarf*' }
@@ -65,10 +83,10 @@ function Find-Game {
         if ($title -like '*Godot Engine*') { continue }   # that's the editor, not the game
         if ($script:SkipPids.ContainsKey($p.Id)) { continue }
         if (-not $IncludeRobots) {
-            $cmd = (Get-CimInstance Win32_Process -Filter "ProcessId=$($p.Id)").CommandLine
-            if ($cmd -match 'autopilot|netcheck|--headless') {
+            $why = Get-RobotReason $p.Id
+            if ($why) {
                 $script:SkipPids[$p.Id] = $true
-                Log "Skipping robot run (pid $($p.Id))."
+                Log "Skipping robot run (pid $($p.Id)): $why"
                 continue
             }
         }
@@ -314,35 +332,29 @@ function Point-AtGame($p) {
 
 function Record-Session($game) {
     Log "Game found: '$($game.MainWindowTitle)' (pid $($game.Id))."
+    $started = Get-Date
+    $videoPath = $null
     $startedObs = $false
     $ownerChoice = $null
-    if (-not (Obs-IsRunning)) {
-        $ownerChoice = Save-ObsChoice
-        Start-ObsHidden
-        $startedObs = $true
-    }
-    else {
-        $cfg = Read-WsConfig
-        if (-not $cfg.server_enabled) {
-            Log 'OBS is already open but its remote control is off. Close OBS once and the next game will record.'
-            $script:SkipPids[$game.Id] = $true
-            return
-        }
-    }
-
     $prev = $null
+
     try {
+        if (-not (Obs-IsRunning)) {
+            $ownerChoice = Save-ObsChoice
+            Start-ObsHidden
+            $startedObs = $true
+        } elseif (-not (Read-WsConfig).server_enabled) {
+            throw 'OBS is already open but its remote control is off. Close OBS once and the next game will record.'
+        }
+
         Connect-Obs
-        $status = Obs 'GetRecordStatus'
-        $streaming = (Obs 'GetStreamStatus').outputActive
-        if ($status.outputActive -or $streaming) {
-            Log 'OBS is already recording or streaming; leaving it alone.'
-            $script:SkipPids[$game.Id] = $true
-            return
+        if ((Obs 'GetRecordStatus').outputActive -or (Obs 'GetStreamStatus').outputActive) {
+            throw 'OBS is already recording or streaming; leaving it alone.'
         }
         if ($startedObs) { Start-Sleep -Seconds 4 }   # let OBS finish its first load
         $prev = Use-DwarfSetup
         Point-AtGame $game
+
         # StartRecord only means "OK, I'll try". Wait until OBS is really recording.
         $recording = $false
         for ($attempt = 1; $attempt -le 3 -and -not $recording -and -not $game.HasExited; $attempt++) {
@@ -363,11 +375,11 @@ function Record-Session($game) {
             if (-not (Obs 'GetRecordStatus').outputActive) { break }
             Start-Sleep -Milliseconds 250
         }
-        Log "Recording saved: $($out.outputPath)"
+        $videoPath = $out.outputPath
+        Log "Recording saved: $videoPath"
     }
     catch {
-        Log "Problem while recording: $_"
-        $script:SkipPids[$game.Id] = $true
+        Log "No video this time: $_"
     }
     finally {
         try {
@@ -386,6 +398,53 @@ function Record-Session($game) {
             }
         } catch { Log "Problem while tidying up OBS: $_" }
     }
+
+    # Even without a video, the game's log + your feedback are still worth a report.
+    while (-not $game.HasExited) { Start-Sleep -Seconds 1 }
+    $script:SkipPids[$game.Id] = $true
+    try { New-PlaySession $started (Get-Date) $videoPath $game.MainWindowTitle }
+    catch { Log "Could not make the session folder: $_" }
+}
+
+# ---------------------------------------------------------------- play session folder
+
+$ProjectDir = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+$GameLogFile = Join-Path $env:APPDATA 'Godot\app_userdata\Dwarf Game\logs\godot.log'
+
+# Makes "Dwarf Game Recordings\<date time>\" with the video and the game's log,
+# then starts session_report.ps1 (feedback box, snapshots, Claude's report) on its own,
+# so the recorder can go straight back to watching.
+function New-PlaySession($started, $ended, $videoPath, $title) {
+    $name = $started.ToString('yyyy-MM-dd HH-mm-ss')
+    $dir = Join-Path $RecordDir $name
+    New-Item -ItemType Directory -Force -Path $dir | Out-Null
+
+    if ($videoPath -and (Test-Path $videoPath)) {
+        Start-Sleep -Seconds 1
+        Move-Item -LiteralPath $videoPath -Destination (Join-Path $dir 'video.mp4') -Force
+    }
+    if ((Test-Path $GameLogFile) -and (Get-Item $GameLogFile).LastWriteTime -ge $started.AddSeconds(-5)) {
+        Copy-Item -LiteralPath $GameLogFile -Destination (Join-Path $dir 'game-log.txt') -Force
+    }
+
+    $branch = (& git -C $ProjectDir rev-parse --abbrev-ref HEAD 2>$null)
+    $commit = (& git -C $ProjectDir rev-parse --short HEAD 2>$null)
+    $info = [ordered]@{
+        started          = $started.ToString('s')
+        ended            = $ended.ToString('s')
+        minutes          = [math]::Round(($ended - $started).TotalMinutes, 1)
+        window_title     = $title
+        git_branch       = "$branch"
+        git_commit       = "$commit"
+        has_video        = (Test-Path (Join-Path $dir 'video.mp4'))
+        has_game_log     = (Test-Path (Join-Path $dir 'game-log.txt'))
+    }
+    $info | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $dir 'session.json') -Encoding UTF8
+    Log "Session folder: $dir"
+
+    $reporter = Join-Path $PSScriptRoot 'session_report.ps1'
+    Start-Process -FilePath powershell.exe -WindowStyle Hidden -ArgumentList @(
+        '-NoProfile', '-ExecutionPolicy', 'Bypass', '-STA', '-File', "`"$reporter`"", '-SessionDir', "`"$dir`"")
 }
 
 # ---------------------------------------------------------------- main loop
