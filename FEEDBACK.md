@@ -29,7 +29,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 | A world that feels alive (enemies, ruins) | F9, F21 | Columns asked for twice (F9, F21) |
 | Cave shapes (round vs sharp, tunnels) | F19, F20 | |
 | Digging feel + resources | F13, F14 | |
-| Pictures / looks | F17, F22, F24, F25, F26 | **The dwarf's look keeps coming up (F25 said twice)** |
+| Pictures / looks | F17, F22, F24, F25, F26, F28 | **The dwarf's look keeps coming up (F25 said twice)** |
 
 ---
 
@@ -37,6 +37,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 
 *(Nov 14, after your first real play session. You chose: merge everything into main; start kit = rocks + roots + 1 crystal; 25–50 chunks; copper very rare.)*
 
+- [ ] **F28. Sometimes the game loads with textures, sometimes plain and blocky.** Not a loading bug: there are 2 versions. **main** (the desktop icon, Claudes 1+2) has plain colors. Claude 3's **visuals** copy has textures, the new dwarf and new monsters, but hasn't been merged into main yet (20+ changes). Fix: Claude 3 merges visuals into main, then everyone uses the one version. *From: you. Said: 1×*
 - [ ] **F24. The beard isn't attached to the face.** → Claude 3 (looks). *From: you. Said: 1×*
 - [ ] **F25. The dwarf doesn't look dwarvish.** Should be short and WIDE, with shorter legs and arms, not a "small guy". → Claude 3. *From: you. Said: 3×* (Nov 14: "short and wide"; then: "better, but legs and arms should be shorter"; then: "shorter legs, shorter arms, maybe fat: right now it looks like a bulky guy")
 - [ ] **F26. The long things hanging from the ceiling look like icicles,** the same width top to bottom. Real stalactites: wide at the top, getting thinner, a rounded tip, smaller ones around them. (They're actually roots, so roots should look like roots too.) → Claude 3. *From: you. Said: 1×*
