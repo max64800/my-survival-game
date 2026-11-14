@@ -20,16 +20,30 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 
 | Area | Items | Notes |
 |---|---|---|
-| Seeing in the dark (light) | F1 | |
+| Seeing in the dark (light) | F1, F12 | The lantern comes up a lot: brightness, then refilling |
 | Moving around (walking, jumping, climbing) | F2, F3 | |
-| Making the game / tools | F4, F5, F6, F7 | |
-| Sound | F8 | |
+| Making the game / tools | F4, F5, F6, F7, F16 | |
+| Sound | F8, F15 | |
+| The start of the game (first 5 minutes) | F10, F11 | |
+| A world that feels alive (enemies, ruins) | F9 | |
+| Digging feel + resources | F13, F14 | |
+| Pictures / looks | F17 | Claudes 2 and 3 |
 
 ---
 
 ## Open (still to do)
 
-*Nothing open right now.* Play a session, then tell Claude what you think.
+*(Nov 14, after your first real play session. You chose: merge everything into main; start kit = rocks + roots + 1 crystal; 25–50 chunks; copper very rare.)*
+
+- [ ] **F9. The world feels empty: it needs enemies, abandoned/destroyed structures, and columns.** Enemies + ruins already exist on the later branches. Merging brings them in. Columns are new. *From: you. Said: 1×*
+- [ ] **F10. Don't start in a big cave.** Start in a small room with a tiny hole where something glows on the other side. Dig through, run down a tunnel, then reach the big cave. *From: you. Said: 1×*
+- [ ] **F11. Start with nothing.** Pick up loose rocks (plus roots + 1 crystal). Tab shows the bag **and simple crafting**. Craft a pickaxe and a lantern, then dig out. *From: you. Said: 1×*
+- [ ] **F12. Refilling the lantern is impossible right now.** *From: you. Said: 1×*
+- [ ] **F13. A broken block should burst into lots of pieces (25–50, random)** that all fly to you, but still only give 1 rock/copper/etc. *From: you. Said: 1×*
+- [ ] **F14. Copper is too common.** Make it very rare (about 1/6 as much). *From: you. Said: 1×*
+- [ ] **F15. A menu to mute/unmute the sound** (and change the volume). *From: you. Said: 1×*
+- [ ] **F16. Merge all the steps (up to the Fungal Jungle) into main**, so the desktop icon plays the full game. *From: you. Said: 1×*
+- [ ] **F17. There are no pictures for resources/items.** → Claude 2 (pictures from ChatGPT) and Claude 3 (how the game looks) are on this. Claude 1 makes sure their pictures plug in. *From: you. Said: 1×*
 
 **Claude noticed, waiting for your OK** (not fixed until you say so):
 - [ ] **C1. The game runs at only ~50 FPS on your RTX 3060 Ti.** It should be much higher, so something is slowing it down. (Found Nov 14 on the first PC run.)
