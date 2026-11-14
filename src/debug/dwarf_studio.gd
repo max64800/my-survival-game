@@ -81,6 +81,10 @@ func _run() -> void:
 		await _monster_lineup()
 		quit()
 		return
+	if "armor" in OS.get_cmdline_user_args():
+		await _armor_lineup()
+		quit()
+		return
 	if "fire" in OS.get_cmdline_user_args():
 		await _fire_test()
 		quit()
@@ -276,3 +280,20 @@ func _monster_lineup() -> void:
 		_view(Vector3(0.25, 0.45, 1), 9.0, 0.3)
 		await _wait(0.3)
 		await _shot("m_lineup_%d" % k)
+
+
+## Tuning aid: one dwarf per armor material, full set each (docs/design/armor.md).
+func _armor_lineup() -> void:
+	_model.visible = false
+	var tiers := ["hide", "copper", "husk", "silver", "ironshell"]
+	for i in tiers.size():
+		var m := DwarfModel.new()
+		m.position = Vector3((i - 2) * 1.25, 0, 0)
+		root.add_child(m)
+		m.set_held("pickaxe_stone")
+		m.set_wear(["armor_head_" + tiers[i], "armor_chest_" + tiers[i], "armor_feet_" + tiers[i]])
+	await _wait(0.6)
+	_view(Vector3(0.15, 0.1, -1), 6.3, 0.6)
+	await _shot("a_armor_front")
+	_view(Vector3(0.9, 0.1, -0.5), 6.5, 0.6)
+	await _shot("a_armor_side")

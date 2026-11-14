@@ -9,6 +9,7 @@ approved it, so it always wins. The three docs below add the details and numbers
 
 | Doc | What it covers (one line) | Built in |
 |---|---|---|
+| [`armor.md`](armor.md) | **Proposal**: armor pieces, 5 material sets, numbers, 6 questions for the owner (the look is already built). | When the owner answers |
 | [`combat-and-monsters.md`](combat-and-monsters.md) | Fighting rules, weapons, gems, every monster, pack leaders, bosses, raids, co-op scaling. | Steps 5–6 |
 | [`progression-and-economy.md`](progression-and-economy.md) | Every item, digging hardness, tools and tiers, stations, lantern, food and water, levels, skills, runes, death, bag, pacing. | Step 3 (some Step 1) |
 | [`ai-art-pipeline.md`](ai-art-pipeline.md) | Using ChatGPT + "image → 3D" tools to make props, textures and icons, and getting them into the game. | Visual steps V3+ |

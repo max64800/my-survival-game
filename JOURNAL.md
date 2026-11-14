@@ -554,3 +554,20 @@ Why branches? Our rule says each step must be playable and approved before the n
 - Monsters still have simple shapes; no real monster models yet.
 - Climbing ladders and swimming have no animation (the game has no swimming yet).
 - Armor pieces aren't designed yet (the dwarf can show them once they are).
+
+---
+
+## Day 3, later — November 14, 2026: The new look, part 4: speed, monsters, ladders, armor (branch `visuals`)
+
+**What we did**
+- **Speed (C1 solved):** a new robot (`-- seed=42 perfcheck`) turns off the frame cap and measures. Your monitor runs at **60 Hz**, so the game shows at most 60 pictures a second; underneath it ran at ~200 fps. Every new look (fog, bounced light, shadows, clutter, particles) costs under half a millisecond. Found and fixed a real slow spot: on every dig, the game checked every mushroom/crystal/root in the whole world, and several times a second sorted all glowing ones. Now it only looks in the 4 m squares nearby: **~200 → ~300 fps** uncapped, and digs no longer cost ~8 ms. Also found that the 25-50 bits burst cost ~11 ms per broken block; Claude 1 fixed it (now under 3 ms).
+- **Monsters come alive:** legs swing in turns, bodies bob and waddle and lean into a run, wings flap, flyers hover, and they breathe when standing still. Chunky box parts became rough, faceted lumps (the Cairnling is now a pile of boulders, not cubes). Bosses got their soft glow back (it had stopped working with the painted look). Real monster models: the hook is ready (`assets/models/monsters/<id>.glb`); Claude 2 will ask you before making them.
+- **Ladders:** a climbing animation (hands high on the rungs, legs stepping up in turns), stitched from two other animations.
+- **Swimming:** the packs have swim animations; the game has no water to swim in yet, so it waits.
+- **Armor:** a proposal (`docs/design/armor.md`) with 3 pieces, 5 material sets, numbers, and 6 questions for you. The *look* is already built: 5 helmet styles, breastplates with shoulder guards, shin guards and toe caps.
+- New checks: armor/mask parts appear and disappear correctly; monsters have legs/wings and no toy-block boxes. 235 checks, all pass.
+
+**Mistakes and hurdles (including Claude's)**
+- Claude's timing lines printed in the middle of the measurement, and printing is slow, so the first numbers were muddled. Fix: store the numbers and print at the end.
+- The first breastplate sat on the upper-chest bone, so it ended up at the neck with a ring floating at shoulder height. Fix: moved it to the middle of the body.
+- A new check was too strict (it counted thin handles as "toy blocks"). Fixed the check.

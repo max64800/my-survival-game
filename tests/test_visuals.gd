@@ -93,3 +93,40 @@ func test_fire_and_chips_make_particles() -> void:
 	Fx.burst(root, Vector3.ZERO, Color(0.4, 0.75, 1.0), 4)
 	check(root.find_children("*", "CPUParticles3D", true, false).size() == 3, "crystal sparks glow, no dust")
 	root.free()
+
+
+func test_armor_and_wear_show_on_the_dwarf() -> void:
+	var m := DwarfModel.new()
+	tree.root.add_child(m)
+	var before := m.find_children("*", "MeshInstance3D", true, false).size()
+	m.set_wear(["armor_head_copper", "armor_chest_copper", "armor_feet_copper", "spore_mask"])
+	var after := m.find_children("*", "MeshInstance3D", true, false)
+	check(after.size() > before + 8, "armor pieces and the mask appear (%d -> %d parts)" % [before, after.size()])
+	for mi: MeshInstance3D in after:
+		check(mi.layers == DwarfModel.VISUAL_LAYER, "every worn part is on the dwarf's layer (no lantern self-shadow)")
+	check(not m.dwarf_rig._cap.visible, "an armor helmet replaces the starting iron cap")
+	m.set_wear([])
+	await frames(2)
+	check(m.dwarf_rig._cap.visible, "taking the helmet off brings the cap back")
+	check(m.find_children("*", "MeshInstance3D", true, false).size() == before, "all armor parts are removed again")
+	m.free()
+
+
+func test_monsters_have_moving_parts() -> void:
+	var crab := MonsterModel.build("crab", Color(0.5, 0.4, 0.3), 1.0, false)
+	check((crab.get_meta("legs") as Array).size() >= 4, "a crab has legs that walk")
+	MonsterModel.animate(crab, 3.0, 1.0, 0.4)
+	check(crab.rotation.x < 0.0, "it leans into a run")
+	crab.free()
+	var bat := MonsterModel.build("bat", Color(0.4, 0.3, 0.5), 1.0, false)
+	check((bat.get_meta("wings") as Array).size() == 2, "a bat has two flapping wings")
+	bat.free()
+	var golem := MonsterModel.build("golem", Color(0.5, 0.5, 0.5), 1.0, false)
+	var chunky := func(mi: MeshInstance3D) -> bool:
+		if not mi.mesh is BoxMesh:
+			return false
+		var b := (mi.mesh as BoxMesh).size
+		return minf(b.x, minf(b.y, b.z)) >= 0.09  # thin bars (handles, blades) stay sharp on purpose
+	var boxes := golem.find_children("*", "MeshInstance3D", true, false).filter(chunky)
+	check(boxes.is_empty(), "no chunky toy-block boxes left on a golem (%d)" % boxes.size())
+	golem.free()

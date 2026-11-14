@@ -283,6 +283,7 @@ func _borrow_meshes(path: String, fix: Callable) -> void:
 
 ## Things worn (armor, masks). Each id builds its parts on a bone; new armor = a new entry here.
 var _worn := {}  ## id -> the node holding its parts
+var _cap: Node3D  ## the starting iron cap (hidden under an armor helmet)
 
 
 func set_wear(ids: Array) -> void:
@@ -291,8 +292,139 @@ func set_wear(ids: Array) -> void:
 			_worn[id].queue_free()
 			_worn.erase(id)
 	for id in ids:
-		if not _worn.has(id) and has_method("_wear_" + id):
+		if _worn.has(id):
+			continue
+		if String(id).begins_with("armor_"):
+			var made := _wear_armor(id)
+			if made:
+				_worn[id] = made
+		elif has_method("_wear_" + id):
 			_worn[id] = call("_wear_" + id)
+	# An armor helmet replaces the starting iron cap.
+	var armored_head := false
+	for id in _worn:
+		armored_head = armored_head or String(id).begins_with("armor_head_")
+	if _cap:
+		_cap.visible = not armored_head
+
+
+## Armor sets (docs/design/armor.md): colour + surface of each material.
+const ARMOR := {
+	"hide": [Color(0.42, 0.28, 0.17), "leather"],
+	"copper": [Color(0.78, 0.47, 0.25), "metal"],
+	"husk": [Color(0.44, 0.4, 0.27), "fungus"],
+	"silver": [Color(0.8, 0.82, 0.88), "metal"],
+	"ironshell": [Color(0.3, 0.32, 0.35), "metal"],
+}
+
+
+## Builds one armor piece from its id: armor_<head|chest|feet>_<material>. Sizes are in each
+## bone's own units, measured from the clothes (chest about ±0.18 wide, front toward +Z).
+func _wear_armor(id: String) -> Node3D:
+	var parts := id.split("_")
+	if parts.size() < 3 or not ARMOR.has(parts[2]):
+		return null
+	var tier: String = parts[2]
+	var col: Color = ARMOR[tier][0]
+	var surf: String = ARMOR[tier][1]
+	var holder := Node3D.new()
+	add_child(holder)
+	match parts[1]:
+		"head":
+			_helmet_shape(_on_bone("Head", holder), tier, col, surf)
+		"chest":
+			# A shell over chest and belly (on the middle spine bone), and a rim at the waist.
+			var chest := _on_bone("spine_02", holder)
+			_piece(chest, _ball(0.5), col, surf, Vector3(0, 0.06, 0.012), Vector3(0.4, 0.42, 0.31))  # breastplate shell
+			var trim := col.darkened(0.25) if tier != "hide" else Color(0.55, 0.38, 0.2)
+			var waist := _on_bone("spine_01", holder)
+			_piece(waist, _ring(0.15, 0.17), trim, "metal", Vector3(0, 0.03, 0.01), Vector3(1.0, 1.0, 0.85))  # waist rim
+			for side in ["l", "r"]:
+				var arm := _on_bone("upperarm_" + side, holder)
+				_piece(arm, _ball(0.5, true), col, surf, Vector3(0, 0.02, 0), Vector3(0.2, 0.16, 0.2))  # shoulder guard
+				_piece(arm, _ring(0.085, 0.1), trim, "metal", Vector3(0, 0.0, 0), Vector3.ONE)
+		"feet":
+			for side in ["l", "r"]:
+				var shin := _on_bone("calf_" + side, holder)
+				_piece(shin, _tube(0.1, 0.11, 0.16), col, surf, Vector3(0, 0.08, 0.01), Vector3(1.0, 1.0, 1.05))  # shin guard
+				var foot := _on_bone("foot_" + side, holder)
+				_piece(foot, _ball(0.5), col, surf, Vector3(0, 0.08, 0.03), Vector3(0.13, 0.16, 0.12))  # toe cap
+	for mi: MeshInstance3D in holder.find_children("*", "MeshInstance3D", true, false):
+		mi.layers = DwarfModel.VISUAL_LAYER
+	return holder
+
+
+func _helmet_shape(att: Node3D, tier: String, col: Color, surf: String) -> void:
+	var dome := _piece(att, _ball(0.5, true), col, surf, Vector3(0, 0.115, -0.02), Vector3(0.27, 0.32, 0.29))
+	var band := col.darkened(0.3) if tier != "hide" else Color(0.3, 0.2, 0.12)
+	_piece(att, _ring(0.124, 0.142), band, "metal", Vector3(0, 0.12, -0.02), Vector3(1.0, 0.6, 1.1))
+	match tier:
+		"hide":
+			for x in [-1.0, 1.0]:  # ear flaps
+				_piece(att, _ball(0.5), col, surf, Vector3(x * 0.12, 0.05, -0.01), Vector3(0.04, 0.12, 0.1))
+		"copper":
+			_piece(att, BoxMesh.new(), col, surf, Vector3(0, 0.08, 0.14), Vector3(0.026, 0.1, 0.02))  # nose guard
+		"husk":
+			for i in 3:  # shell ridges
+				_piece(att, _ball(0.5), col.darkened(0.15), surf, Vector3(0, 0.2 + i * 0.01, -0.09 + i * 0.07), Vector3(0.05, 0.05, 0.08))
+		"silver":
+			for x in [-1.0, 1.0]:  # cheek guards
+				_piece(att, BoxMesh.new(), col, surf, Vector3(x * 0.11, 0.04, 0.07), Vector3(0.02, 0.1, 0.09))
+			_piece(att, BoxMesh.new(), col, surf, Vector3(0, 0.08, 0.14), Vector3(0.026, 0.1, 0.02))
+		"ironshell":
+			dome.scale *= Vector3(1.05, 1.1, 1.05)
+			_piece(att, BoxMesh.new(), col, surf, Vector3(0, 0.07, 0.13), Vector3(0.18, 0.09, 0.025))  # face plate
+			for x in [-1.0, 1.0]:  # eye slits are the gaps between plates
+				_piece(att, BoxMesh.new(), col.lightened(0.15), "metal", Vector3(x * 0.05, 0.12, 0.135), Vector3(0.05, 0.02, 0.02))
+
+
+func _on_bone(bone: String, holder: Node3D) -> Node3D:
+	var att := BoneAttachment3D.new()
+	att.bone_name = bone
+	skeleton.add_child(att)
+	# Freed together with the piece: the holder remembers its bone attachments.
+	holder.tree_exiting.connect(att.queue_free)
+	return att
+
+
+func _piece(parent: Node3D, mesh: Mesh, col: Color, surf: String, pos: Vector3, size: Vector3) -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	mi.mesh = mesh
+	mi.material_override = Look.mat(col, surf)
+	mi.position = pos
+	mi.scale = size
+	mi.layers = DwarfModel.VISUAL_LAYER
+	parent.add_child(mi)
+	return mi
+
+
+static func _ball(r: float, half: bool = false) -> Mesh:
+	var m := SphereMesh.new()
+	m.radius = r
+	m.height = r * (1.0 if half else 2.0)
+	m.is_hemisphere = half
+	m.radial_segments = 16
+	m.rings = 8
+	return m
+
+
+static func _ring(inner: float, outer: float) -> Mesh:
+	var m := TorusMesh.new()
+	m.inner_radius = inner
+	m.outer_radius = outer
+	m.rings = 20
+	m.ring_segments = 6
+	return m
+
+
+static func _tube(top: float, bottom: float, h: float) -> Mesh:
+	var m := CylinderMesh.new()
+	m.top_radius = top
+	m.bottom_radius = bottom
+	m.height = h
+	m.radial_segments = 12
+	m.rings = 1
+	return m
 
 
 ## Spore Mask: a cloth mask over nose and mouth with two round filters (head bone units,
@@ -336,6 +468,7 @@ func _build_helmet() -> void:
 	var att := BoneAttachment3D.new()
 	att.bone_name = "Head"
 	skeleton.add_child(att)
+	_cap = att
 	var iron := Color(0.5, 0.5, 0.53)
 	var dome := MeshInstance3D.new()
 	var sm := SphereMesh.new()
