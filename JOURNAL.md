@@ -272,3 +272,25 @@ Why branches? Our rule says each step must be playable and approved before the n
 
 **Hurdles / things to look into**
 - **Frame rate is only about 50 FPS**, about the same as the MacBook. A 3060 Ti should do much better, so something is probably slowing it down that isn't the graphics card (maybe the lights, or the cave being rebuilt). The "lowest 1 FPS" was the moment the cave loaded. **Next:** find out what's slowing it down, after your play-test.
+
+### Later on Day 3: the auto-recorder
+
+**What we did**
+- You asked for the game to be recorded **every time you play or test**, without pressing anything.
+- Claude built a small helper (`tools/recorder/`). It starts when Windows starts and checks every 2 seconds whether the Dwarf Game window is open. When it is, OBS starts hidden in the tray and records **just the game window and the game's own sound**. When you close the game, it stops, saves the video and closes OBS.
+- Videos go to **Videos → Dwarf Game Recordings**, named by date and time.
+- Claude's robot test runs (autopilot) are skipped, so the folder only has *your* play sessions.
+- It uses its own OBS setup called "Dwarf Game", so your normal OBS scenes stay the same.
+- To switch it on or off, double-click `Turn On Auto-Recording.bat` or `Turn Off Auto-Recording.bat`.
+
+**Hurdles / mistakes (including Claude's)**
+- **Test 1:** OBS said "not ready yet" because it was still starting up. **Fix:** wait and ask again.
+- **Test 2: OBS crashed.** Claude's script switched OBS to the Dwarf Game setup while OBS was still starting, and OBS can't handle that. The crash also left OBS set to the Dwarf Game setup instead of your own. **Fix:** Claude put your settings back from a backup it had made before testing. Now OBS *starts* in the Dwarf Game setup (no switching), and afterwards the script puts your normal setup back.
+- **Test 3:** OBS said "OK, recording!" but it never really started. **Fix:** the script now checks that OBS is *really* recording, and tries again (up to 3 times) if not.
+- **Claude's bug:** the "Turn Off" switch looked for the recorder by name and would have found *itself* too, so it could have stopped itself first. **Fix:** it skips itself. Tested on and off.
+- Test 4 worked: a 1920×1080 video with the game in it.
+
+**Small known limits**
+- The first few seconds (while OBS starts, about 5–7 seconds) aren't recorded. That's mostly the cave loading.
+- A thin strip of the window border shows at the top of the video.
+- `main` has no game sounds yet, so the sound track is silent until we're on a branch with sounds.
