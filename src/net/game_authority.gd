@@ -60,6 +60,7 @@ class PlayerState:
 	var inventory := Inventory.new()
 	var selected_slot := 0
 	var fuel := GameAuthority.MAX_FUEL
+	var needs_lantern := false  ## true = started with nothing: no light until a Lantern is made
 	var dig_target := Vector3.INF
 	var dig_hits := 0
 	var harvest_id := -1
@@ -122,10 +123,18 @@ func local_peer_id() -> int:
 
 ## Registers a player. `give_start_items` is false on a client's copy of itself
 ## (the host owns everyone's bag and sends it over).
+## A real new game: the host wakes up with an empty bag and makes their first tools
+## from what's lying in the starting room (feedback F11). Off for tests and robots.
+var start_with_nothing := false
+
+
 func add_player(peer_id: int, node: Node3D, give_start_items: bool = true) -> PlayerState:
 	var ps := PlayerState.new()
 	ps.node = node
-	if give_start_items:
+	if start_with_nothing and peer_id == local_peer_id():
+		ps.needs_lantern = true  # wakes up with nothing: makes a lantern from what's in the room
+	elif give_start_items:
+		# Friends who join later (and test robots) arrive ready to dig, with a lantern built in.
 		ps.inventory.add("pickaxe_stone", 1)
 	players[peer_id] = ps
 	if is_host() and peer_id != local_peer_id():
@@ -145,7 +154,7 @@ func get_player(peer_id: int) -> PlayerState:
 func _process(delta: float) -> void:
 	for id in players:
 		var ps: PlayerState = players[id]
-		if ps.fuel > 0.0:
+		if ps.fuel > 0.0 and Lantern.has_lantern(ps):  # no lantern yet = nothing burning
 			ps.fuel = maxf(0.0, ps.fuel - delta)
 	var me := get_player(local_peer_id())
 	if me:
@@ -947,10 +956,20 @@ func request_pickup(peer_id: int, drop_id: int) -> bool:
 	return true
 
 
-## Put one fuel item (a glow crystal) into the lantern.
+## Put one fuel item (a glow crystal, rootwood...) into the lantern.
+## Always says why when it can't (feedback F12: it used to fail silently).
 func request_refill(peer_id: int) -> bool:
 	var ps := get_player(peer_id)
-	if ps == null or ps.fuel > MAX_FUEL - 30.0:
+	if ps == null:
+		return false
+	var say := func(t: String) -> void:
+		if peer_id == local_peer_id():
+			hud_message.emit(t)
+	if not Lantern.has_lantern(ps):
+		say.call("You don't have a lantern yet. Make one in the bag (Tab).")
+		return false
+	if ps.fuel > MAX_FUEL - 20.0:
+		say.call("Your lantern is already full.")
 		return false
 	for id in FUEL_ORDER:
 		if ps.inventory.remove(id, 1):
@@ -960,8 +979,23 @@ func request_refill(peer_id: int) -> bool:
 				Sfx.ui("refill")
 			if peer_id != local_peer_id():
 				_rpc_fuel.rpc_id(peer_id, ps.fuel)
+			say.call("Lantern refilled with %s." % Items.display_name(id))
 			return true
+	say.call("Nothing to burn! Glow crystals (hit them with a pickaxe) or rootwood work.")
 	return false
+
+
+## The loose rocks and the little crystal lying in the starting room (host, new games only).
+func spawn_start_items() -> void:
+	var st: Dictionary = world.maker.start
+	if st.is_empty():
+		return
+	var loose: Array = st.loose
+	for i in loose.size():
+		var item := "crystal_blue" if i == loose.size() - 1 else "stone"
+		var id := _next_drop_id
+		_next_drop_id += 1
+		_ev_spawn_drop.rpc(id, item, 1, loose[i], Vector3.ZERO)
 
 
 # Host-side helpers that decide things, then tell everyone.
@@ -1068,6 +1102,9 @@ func _ev_spawn_drop(drop_id: int, item_id: String, count: int, pos: Vector3, vel
 	d.global_position = pos
 	d.home = pos
 	d.linear_velocity = vel
+	if vel == Vector3.ZERO:
+		d.pickup_radius = Drop.LOOSE_PICKUP_RADIUS  # lying on the floor: walk up to it
+		d.freeze = true  # placed on the floor already; don't fall before the floor has loaded
 	_drops[drop_id] = d
 	_next_drop_id = maxi(_next_drop_id, drop_id + 1)
 

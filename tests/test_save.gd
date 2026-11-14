@@ -28,7 +28,7 @@ func _world(root: Node) -> Array:
 	root.add_child(auth)
 	var player := Node3D.new()
 	root.add_child(player)
-	player.global_position = world.maker.spawn_point
+	player.global_position = world.maker.cavern_spawn
 	var viewer := VoxelViewer.new()
 	viewer.view_distance = 32
 	viewer.requires_visuals = false

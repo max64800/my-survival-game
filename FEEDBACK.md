@@ -14,7 +14,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 
 ## Things that keep coming back 🔁
 
-*Nothing yet.* (When the same problem shows up twice, it goes here with what we tried each time.)
+- **F25, the dwarf doesn't look dwarvish (said 2×).** 1st time: "short and wide". Claude 3 made a rigged dwarf, a bit better. 2nd time: "legs and arms should be shorter". Next try (Claude 3): short legs (about 1/3 of the height), short thick arms, barrel chest, wide shoulders, big hands, boots and head.
 
 ## Patterns (what kind of things you notice most)
 
@@ -22,12 +22,14 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 |---|---|---|
 | Seeing in the dark (light) | F1, F12 | The lantern comes up a lot: brightness, then refilling |
 | Moving around (walking, jumping, climbing) | F2, F3 | |
+| Controls + camera | F18, F23 | |
 | Making the game / tools | F4, F5, F6, F7, F16 | |
 | Sound | F8, F15 | |
 | The start of the game (first 5 minutes) | F10, F11 | |
-| A world that feels alive (enemies, ruins) | F9 | |
+| A world that feels alive (enemies, ruins) | F9, F21 | Columns asked for twice (F9, F21) |
+| Cave shapes (round vs sharp, tunnels) | F19, F20 | |
 | Digging feel + resources | F13, F14 | |
-| Pictures / looks | F17, F18, F19, F20 | Claudes 2 and 3. Biggest wish: less "Roblox", more Valheim/Grounded |
+| Pictures / looks | F17, F22, F24, F25, F26, F27, F28 | **The dwarf's look keeps coming up (F25 said 3 times)** |
 
 ---
 
@@ -36,22 +38,30 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 *(Nov 14, after your first real play session. You chose: merge everything into main; start kit = rocks + roots + 1 crystal; 25–50 chunks; copper very rare.)*
 
 - [ ] **F9. The world feels empty: it needs enemies, abandoned/destroyed structures, and columns.** Enemies + ruins already exist on the later branches. Merging brings them in. Columns are new. *From: you. Said: 1×*
-- [ ] **F10. Don't start in a big cave.** Start in a small room with a tiny hole where something glows on the other side. Dig through, run down a tunnel, then reach the big cave. *From: you. Said: 1×*
-- [ ] **F11. Start with nothing.** Pick up loose rocks (plus roots + 1 crystal). Tab shows the bag **and simple crafting**. Craft a pickaxe and a lantern, then dig out. *From: you. Said: 1×*
-- [ ] **F12. Refilling the lantern is impossible right now.** *From: you. Said: 1×*
-- [ ] **F13. A broken block should burst into lots of pieces (25–50, random)** that all fly to you, but still only give 1 rock/copper/etc. *From: you. Said: 1×*
-- [ ] **F14. Copper is too common.** Make it very rare (about 1/6 as much). *From: you. Said: 1×*
-- [ ] **F15. A menu to mute/unmute the sound** (and change the volume). *From: you. Said: 1×*
-- [ ] **F17. There are no pictures for resources/items.** → Claude 2 (pictures from ChatGPT) and Claude 3 (how the game looks) are on this. Claude 1 makes sure their pictures plug in. *From: you. Said: 1×*
-- [ ] **F18. The game looks too "Roblox-y".** Make it look more like Valheim (and Grounded if possible): real textures, better colours and shapes, not super realistic. → First pass done Nov 14 on the `visuals` branch: hand-painted rock textures, a darker cave with fog and floating dust, painted grain on every object. Waiting for you to try it. *From: you. Said: 1×*
-- [ ] **F19. I want animations: running, jumping, swinging…** → Done Nov 14 on the `visuals` branch: a real 3D dwarf with idle, walk, jog, sprint, jump, pickaxe swing, sword attacks, dodge roll, block, shield, crossbow aim, getting hit, knock-back, eating and throwing. Waiting for you to try it. *From: you. Said: 1×*
-- [ ] **F20. The dwarf doesn't look like a dwarf: dwarves are short, fat and wide.** → Fixed on the `visuals` branch (much shorter legs, 45% wider, bigger chest, head, hands and feet), plus a metal helmet and a big ginger beard. Waiting for you to say if it's dwarfy enough. *From: you. Said: 1×*
+- [ ] **F23. Real equipment slots** for pickaxe, lantern, clothes, etc. (not just the hotbar). *From: you. Said: 1×*
+- [ ] **F24. The beard isn't attached to the face.** → Claude 3: fixed on the `visuals` branch. The pack's little beard stays small on the face, and a real full beard now grows from the jaw down over the chest. Waiting for you to look. *From: you. Said: 1×*
+- [ ] **F25. The dwarf doesn't look dwarvish.** Should be short and WIDE, with shorter legs and arms, not a "small guy". → Claude 3, on the `visuals` branch: stubby legs (measured: 34% of the height, about a third), short arms that end at the hips, a round belly (not muscles), a big head and big hands and boots. Waiting for you to look. *From: you. Said: 3×* (Nov 14: "short and wide"; later: "legs and arms should be shorter"; then: "looks like a bulky guy: shorter legs, shorter arms, maybe fat")
+- [ ] **F26. The long things hanging from the ceiling look like icicles,** the same width top to bottom. Real stalactites: wide at the top, getting thinner, a rounded tip, smaller ones around them. (They're actually roots, so roots should look like roots too.) → Claude 3, on the `visuals` branch: roots are now twisted, knobbly wood that forks into thin strands, and real stone stalactite clusters hang from the ceilings. Waiting for you to look. *From: you. Said: 1×*
+- [ ] **F27. The game looks too "Roblox-y".** Make it look more like Valheim (Grounded if possible): real textures, better colours and shapes, not super realistic. → Claude 3, on the `visuals` branch: hand-painted rock, darker cave with fog and floating dust, painted grain on every object, fire, lantern, effects, cave clutter. Waiting for you to try it. *From: you. Said: 1×*
+- [ ] **F28. Animations: running, jumping, swinging…** → Claude 3, on the `visuals` branch: a real 3D dwarf with idle, walk, jog, sprint, jump + landing, a mining swing, axe chop, sword attacks, dodge roll, block, shield, crossbow aim/shoot/reload, getting hit, knock-back, eating, throwing, getting up; friends see it all in co-op. *From: you. Said: 1×*
+- [ ] **F19. Caves are too round.** Make them a 50-50 mix: some smooth and round, some sharp and rocky. *From: you. Said: 1×*
+- [ ] **F20. More tunnels, like Minecraft:** lots of passages crisscrossing, branching, and leading off in every direction. *From: you. Said: 1×*
+- [ ] **F21. Columns should look better, like great dwarf halls**: carved pillars with a base, a shaft and a top. Not just blocks. (Same wish as the columns in F9.) *From: you. Said: 1×*
 
 **Claude noticed, waiting for your OK** (not fixed until you say so):
 - [ ] **C1. The game runs at only ~50 FPS on your RTX 3060 Ti.** It should be much higher, so something is slowing it down. (Found Nov 14 on the first PC run.)
 
 ## Done
 
+- [x] ~~**F22. Holding a pickaxe when I have nothing.**~~ Fixed Nov 14. Any non-tool (empty hand, rocks, food) used to fall back to drawing a pickaxe. Now an empty hand holds nothing. *From: you. Said: 1×*
+- [x] ~~**F17. Pictures for items.**~~ Done Nov 14. Claude 2 made 170 item pictures, and Claude 1 shows them in the hotbar and bag (the old colored square only if a picture is missing). *From: you. Said: 1×*
+- [x] ~~**F15. A menu to mute/unmute and change the volume.**~~ Done Nov 14. On the pause screen (Esc): a Sound slider and a Mute switch, remembered next time. *From: you. Said: 1×*
+- [x] ~~**F14. Copper is too common.**~~ Fixed Nov 14. Measured: copper went from 8% of the cave wall rock down to 1.3% (1/6, as you chose). Jungle silver is unchanged. *From: you. Said: 1×*
+- [x] ~~**F13. A broken block should burst into lots of pieces.**~~ Done Nov 14. 25-50 little bits pop out, tumble, then fly into you. Still 1 item, like before. *From: you. Said: 1×*
+- [x] ~~**F12. Refilling the lantern was impossible.**~~ Fixed Nov 14. Two reasons: most crystals grew too high to reach, and R failed silently (for example when the lantern was nearly full). Now every cavern has crystals at dwarf height, R always says what's wrong, and rootwood works as fuel too. *From: you. Said: 1×*
+- [x] ~~**F11. Start with nothing: pick up rocks, craft a pickaxe and a lantern.**~~ Done Nov 14. 6 loose rocks, 1 crystal and 3 thin roots (pull them by hand) in the room. Tab: Stone Pickaxe (3 stone + 2 rootwood) and Lantern (2 stone + 1 rootwood + 1 crystal). A hint line tells you each next step. *From: you. Said: 1×*
+- [x] ~~**F10. Start in a small room with a glowing hole, dig through, run a tunnel, reach the cave.**~~ Done Nov 14. A small sealed room, a soft dirt wall with a glowing crack (light leaking through), and a 15-20 m tunnel to the first big cavern. Tested on 6 different caves. *From: you. Said: 1×*
+- [x] ~~**F18. The mouse wheel should zoom the camera, not change the hotbar. Hotbar = keys 1-9.**~~ Done Nov 14. The wheel zooms smoothly from 1.4 m to 8 m behind the dwarf, and the hotbar now has 9 slots (keys 1-9). *From: you. Said: 1×*
 - [x] ~~**F16. Merge all the steps (up to the Fungal Jungle) into main.**~~ Done Nov 14. The desktop icon now plays everything: crafting, survival, building, monsters, ruins, bosses, the Fungal Jungle. 214 auto-checks pass, and the autopilot played through all of it. *From: you. Said: 1×*
 - [x] ~~**F8. Mute only Claude's tests. When I play, I want sound.**~~ Fixed Nov 14. Muting was already only for Claude's test runs. The real problem was that Step 1 had **no sounds at all** (they'd only been built on the Step 6 branch). Now Step 1 has 11 sounds from Kenney's free packs: pickaxe swing, digging (soft for moss/dirt, hard for stone), rock breaking, a "clink" on rock that's too hard, crystals, footsteps, pickups, lantern refill, and bag open/close. *From: you. Said: 1×*
 

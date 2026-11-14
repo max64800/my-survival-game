@@ -88,6 +88,7 @@ const DATA := {
 	"axe_copper": {name = "Copper Axe", stack = 1, color = Color(0.9, 0.55, 0.3), short = "Ax", kind = "axe", power = 13, tier = 1},
 	"axe_silver": {name = "Silver Axe", stack = 1, color = Color(0.85, 0.87, 0.92), short = "Ax", kind = "axe", power = 17, tier = 2},
 	"build_hammer": {name = "Build Hammer", stack = 1, color = Color(0.6, 0.5, 0.4), short = "Hm", kind = "hammer"},
+	"lantern": {name = "Lantern", stack = 1, color = Color(1.0, 0.75, 0.4), short = "La", kind = "lantern"},
 	"lantern_back": {name = "Back Lantern", stack = 1, color = Color(1.0, 0.8, 0.45), short = "BL", kind = "lantern"},
 	# --- stations (placed in the world)
 	"campfire": {name = "Campfire", stack = 1, color = Color(1.0, 0.55, 0.2), short = "Fi", kind = "station"},
@@ -198,6 +199,21 @@ static func color(id: String) -> Color:
 
 static func short_label(id: String) -> String:
 	return info(id).get("short", id.left(2))
+
+
+## Folder with one picture per item: res://assets/icons/<item id>.png (made by tools/asset_forge/icons.py).
+const ICON_DIR := "res://assets/icons/"
+static var _icons := {}
+
+
+## The item's picture, or null if it has none yet (then show color + short label instead).
+static func icon(id: String) -> Texture2D:
+	if not _icons.has(id):
+		var path := ICON_DIR + id + ".png"
+		if not ResourceLoader.exists(path) and id.begins_with("rune_"):
+			path = ICON_DIR + "rune_" + id.split("_")[1] + ".png"  # all runes of one colour share a picture
+		_icons[id] = load(path) if ResourceLoader.exists(path) else null
+	return _icons[id]
 
 
 static func kind(id: String) -> String:

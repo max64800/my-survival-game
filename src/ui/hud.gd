@@ -86,7 +86,7 @@ func _build() -> void:
 	_hotbar = HBoxContainer.new()
 	_hotbar.add_theme_constant_override("separation", 6)
 	_hotbar.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
-	_hotbar.position += Vector2(-(SLOT_SIZE + 6) * 4, -SLOT_SIZE - 18)
+	_hotbar.position += Vector2(-((SLOT_SIZE + 6) * Inventory.HOTBAR_SIZE - 6) / 2.0, -SLOT_SIZE - 18)  # centered for any hotbar size
 	root.add_child(_hotbar)
 	for i in Inventory.HOTBAR_SIZE:
 		_hotbar.add_child(_make_slot(i, str(i + 1)))
@@ -215,7 +215,7 @@ func _build() -> void:
 
 	_help = _label(root, 14)
 	_help.position = Vector2(16, 12)
-	_help.text = "WASD walk · Shift run · Space jump · Mouse look\nLeft click dig/harvest · Right click eat/place · E use station\n1-8 / wheel hotbar · R refill lantern · Tab bag + crafting\nK skills · M map · Esc pause"
+	_help.text = "WASD walk · Shift run · Space jump · Mouse look\nLeft click dig/harvest · Right click eat/place · E use station\n1-9 hotbar · Wheel zoom · R refill lantern · Tab bag + crafting\nK skills · M map · Esc pause"
 
 	_pause = _overlay(root, "Paused", "Click to keep digging")
 	_loading = _overlay(root, "Digging out the cave…", "")
@@ -265,6 +265,15 @@ func _make_slot(index: int, key: String) -> Control:
 	icon.size = Vector2(SLOT_SIZE - 18, SLOT_SIZE - 18)
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(icon)
+	# The item's picture (feedback F17, pictures by Claude 2). Without one, the colored square shows.
+	var pic := TextureRect.new()
+	pic.name = "Pic"
+	pic.position = Vector2(4, 4)
+	pic.size = Vector2(SLOT_SIZE - 8, SLOT_SIZE - 8)
+	pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	pic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(pic)
 	var short := _label(panel, 15)
 	short.name = "Short"
 	short.position = Vector2(0, 17)
@@ -308,11 +317,14 @@ func _refresh_slots() -> void:
 		var border := Color(1, 0.85, 0.4) if selected or swap_pick else Color(0.4, 0.38, 0.35, 0.9)
 		panel.add_theme_stylebox_override("panel", _slot_style(Color(0.08, 0.07, 0.07, 0.75), border))
 		var icon: Panel = panel.get_node("Icon")
-		icon.visible = not s.is_empty()
+		var pic: TextureRect = panel.get_node("Pic")
+		var tex: Texture2D = null if s.is_empty() else Items.icon(s.id)
+		pic.texture = tex
+		icon.visible = not s.is_empty() and tex == null
 		if not s.is_empty():
 			icon.add_theme_stylebox_override("panel", _slot_style(Items.color(s.id).darkened(0.15), Items.color(s.id).lightened(0.3)))
 			panel.tooltip_text = Items.display_name(s.id)
-		(panel.get_node("Short") as Label).text = "" if s.is_empty() else Items.short_label(s.id)
+		(panel.get_node("Short") as Label).text = "" if s.is_empty() or tex != null else Items.short_label(s.id)
 		(panel.get_node("Count") as Label).text = "" if s.is_empty() or s.count <= 1 else str(s.count)
 
 
@@ -348,6 +360,56 @@ func _on_dig_feedback(pid: int, result: Dictionary) -> void:
 			show_toast(result.get("why", "Too hard! This rock needs a better pickaxe."))
 		"no_tool":
 			show_toast("Pick your pickaxe in the hotbar (key 1).")
+
+
+## "What do I do now?" for the first minutes of a new game (feedback F11).
+## One line at the top of the screen that changes as you go, then disappears.
+var _steps_label: Label
+var _steps_done := false
+
+
+func _update_first_steps(ps: GameAuthority.PlayerState, has_lantern: bool) -> void:
+	if _steps_done:
+		return
+	if _steps_label == null:
+		_steps_label = Label.new()
+		_steps_label.add_theme_font_size_override("font_size", 20)
+		_steps_label.add_theme_color_override("font_outline_color", Color.BLACK)
+		_steps_label.add_theme_constant_override("outline_size", 6)
+		_steps_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_steps_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		# Centered, below the top corner texts, wrapping onto a second line if it's long.
+		_steps_label.anchor_left = 0.5
+		_steps_label.anchor_right = 0.5
+		_steps_label.offset_left = -360
+		_steps_label.offset_right = 360
+		_steps_label.offset_top = 120
+		add_child(_steps_label)
+	var inv := ps.inventory
+	var has_pick := inv.count_of("pickaxe_stone") + inv.count_of("pickaxe_copper") + inv.count_of("pickaxe_silver") > 0
+	var t := ""
+	if not has_pick and (inv.count_of("stone") < 3 or inv.count_of("rootwood") < 2):
+		t = "Pick up the loose rocks (walk over them) and pull down the hanging roots (click them)."
+	elif not has_pick:
+		t = "Press Tab and make a Stone Pickaxe."
+	elif not has_lantern and inv.count_of("crystal_blue") < 1:
+		t = "Grab the little glow crystal on the floor, then make a Lantern (Tab)."
+	elif not has_lantern:
+		t = "Press Tab and make a Lantern."
+	elif _in_start_room() and get_tree().root.find_child("Peephole", true, false) != null:
+		t = "Something glows through that little hole… Dig through the soft wall (hold left click)."
+	else:
+		_steps_done = true
+	_steps_label.text = t
+	_steps_label.visible = t != ""
+
+
+func _in_start_room() -> bool:
+	var me := _local_dwarf()
+	var st: Dictionary = GameAuthority.instance.world.maker.start
+	if me == null or st.is_empty():
+		return false
+	return me.global_position.distance_to(st.room_c) < CaveMaker.START_ROOM_R.x + 1.5
 
 
 func show_toast(text: String, seconds: float = 2.5) -> void:
@@ -449,7 +511,38 @@ func set_paused(on: bool) -> void:
 	ff.visible = auth != null and auth.is_host()
 	if auth:
 		ff.set_pressed_no_signal(auth.friendly_fire())
+	_ensure_sound_controls()
 	(_pause.find_child("Sub", true, false) as Label).text = "Click to keep digging\n\nCave seed: %s" % seed_text
+
+
+## Sound on the pause screen (feedback F15): a volume slider and a Mute switch, remembered.
+func _ensure_sound_controls() -> void:
+	var box: HBoxContainer = _pause.find_child("SoundBox", true, false)
+	if box == null:
+		box = HBoxContainer.new()
+		box.name = "SoundBox"
+		box.add_theme_constant_override("separation", 14)
+		var title := Label.new()
+		title.text = "Sound"
+		box.add_child(title)
+		var slider := HSlider.new()
+		slider.name = "Volume"
+		slider.min_value = 0
+		slider.max_value = 100
+		slider.step = 5
+		slider.custom_minimum_size = Vector2(220, 24)
+		slider.focus_mode = Control.FOCUS_NONE
+		slider.value_changed.connect(func(v: float): SoundSettings.set_volume(v / 100.0))
+		box.add_child(slider)
+		var mute := CheckButton.new()
+		mute.name = "Mute"
+		mute.text = "Mute"
+		mute.focus_mode = Control.FOCUS_NONE
+		mute.toggled.connect(func(m: bool): SoundSettings.set_muted(m))
+		box.add_child(mute)
+		(_pause.find_child("Sub", true, false) as Label).get_parent().add_child(box)
+	(box.get_node("Volume") as HSlider).set_value_no_signal(SoundSettings.volume * 100.0)
+	(box.get_node("Mute") as CheckButton).set_pressed_no_signal(SoundSettings.muted)
 
 
 func _process(delta: float) -> void:
@@ -482,7 +575,12 @@ func _process(delta: float) -> void:
 		var secs := int(ps.fuel) % 60
 		_fuel_label.text = "Lantern %d:%02d   (R: refill, %d fuel)" % [mins, secs, crystals]
 		if ps.fuel <= 0.0:
-			_fuel_label.text = "Lantern is out!  Mine a glow crystal, press R"
+			_fuel_label.text = "Lantern is out!  Get a glow crystal or rootwood, press R"
+		var has_lantern := Lantern.has_lantern(ps)
+		_fuel_bar.visible = has_lantern
+		if not has_lantern:
+			_fuel_label.text = "No lantern yet"
+		_update_first_steps(ps, has_lantern)
 		var me := _local_dwarf()
 		if me and me.fight and me.fight.is_crossbow():
 			var bolts := 0

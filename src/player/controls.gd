@@ -28,8 +28,9 @@ const KEYS := {
 const MOUSE := {
 	"dig": [MOUSE_BUTTON_LEFT],
 	"use": [MOUSE_BUTTON_RIGHT],
-	"hotbar_next": [MOUSE_BUTTON_WHEEL_DOWN],
-	"hotbar_prev": [MOUSE_BUTTON_WHEEL_UP],
+	# The mouse wheel zooms the camera (feedback F18). Hotbar slots are keys 1-9.
+	"zoom_in": [MOUSE_BUTTON_WHEEL_UP],
+	"zoom_out": [MOUSE_BUTTON_WHEEL_DOWN],
 }
 
 const MOUSE_SENSITIVITY := 0.0025
@@ -48,7 +49,7 @@ static func setup() -> void:
 			var ev := InputEventMouseButton.new()
 			ev.button_index = b
 			InputMap.action_add_event(action, ev)
-	for i in 8:
+	for i in Inventory.HOTBAR_SIZE:
 		var action := "hotbar_%d" % (i + 1)
 		_ensure(action)
 		var ev := InputEventKey.new()

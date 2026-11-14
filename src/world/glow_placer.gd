@@ -28,6 +28,8 @@ const KINDS := {
 	# (or copper pickaxe at half power), and each chop also drops some flesh.
 	"giant_mushroom": {item = "mushroom_wood", count = [3, 3], extra = "mushroom_flesh", tool = "axe", hardness = 40, min_tier = 1, chops = 4, color = Color(0.72, 0.5, 0.78), xp = 4, skill = "survival"},
 	"drip": {item = "", tool = "none", color = Color(0.55, 0.75, 0.95)},
+	# Thin roots in the starting room: pull them by hand for your first pickaxe handle (feedback F11).
+	"root_dangle": {item = "rootwood", count = [1, 1], tool = "hand", color = Color(0.45, 0.31, 0.19), xp = 1, skill = "survival"},
 	"crystal_amber": {item = "crystal_amber", count = [2, 3], tool = "pickaxe", hardness = 22, glow = true, color = Color(1.0, 0.72, 0.28), xp = 5, skill = "mining"},
 	"spore_truffle": {item = "spore_truffle", count = [1, 2], tool = "hand", color = Color(0.45, 0.33, 0.52), xp = 1, skill = "survival"},
 	"ember_morel": {item = "ember_morel", count = [1, 1], tool = "hand", glow = true, color = Color(1.0, 0.45, 0.15), xp = 2, skill = "survival"},
@@ -37,7 +39,8 @@ const GIANT := "giant_mushroom"
 const DRIP := "drip"
 const DRIP_REACH := 3.0  ## a bucket within this many meters (sideways) of a drip fills up
 ## Kinds that stand tall (or hang long): their size is `length`, not `scale`.
-const TALL := ["root", "giant_mushroom"]
+const TALL := ["root", "giant_mushroom", "root_dangle"]
+const ROOT_DANGLE := "root_dangle"
 
 static var _placed := {}  ## seed -> spots (copied out, because a GlowField changes its own copy)
 
@@ -74,9 +77,87 @@ static func _place(maker: CaveMaker) -> Array[Dictionary]:
 			var mid: Vector3 = (s.a + s.b) * 0.5
 			if CaveMaker.biome_at(mid) == biome:
 				_try_add(maker, rng, spots, mid, _random_dir(rng), 12.0, biome)
+	# Added after everything above (with their own dice), so older spots never move.
+	_add_low_crystals(maker, spots)
+	_add_start_spots(maker, spots)
 	for i in spots.size():
 		spots[i].id = i
 	return spots
+
+
+## Lantern fuel you can actually reach (feedback F12): most crystals grow high on walls and
+## ceilings, so every room also gets a few at dwarf height, found by looking sideways from the floor.
+static func _add_low_crystals(maker: CaveMaker, spots: Array[Dictionary]) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = maker.seed + 778
+	for room in maker.rooms:
+		if room.get("sealed", false):
+			continue
+		var c: Vector3 = room.center
+		var fl := maker.find_floor(c.x, c.z, c.y)
+		var eye := fl + Vector3.UP * 1.3
+		if maker.sdf_at(eye) <= 0.0:
+			continue
+		var want := 8 if room.big else 3
+		var first := rng.randf_range(0.0, TAU)
+		for i in want * 2:
+			if want <= 0:
+				break
+			var a := first + i * TAU / float(want * 2)
+			var dir := Vector3(cos(a), rng.randf_range(-0.12, 0.05), sin(a)).normalized()
+			var hit := _march(maker, eye, dir, 60.0)
+			if hit == Vector3.INF:
+				continue
+			var below := _march(maker, hit + Vector3.UP * 0.3 + (eye - hit).normalized() * 0.6, Vector3.DOWN, 6.0)
+			if below == Vector3.INF or hit.y - below.y > 2.2:
+				continue  # too high to reach from the floor here
+			if not _spaced(spots, hit):
+				continue
+			var kind := CRYSTAL
+			if room.get("biome", "mossy") == "fungal":
+				kind = "crystal_amber" if rng.randf() < 0.35 else CRYSTAL
+			_add_spot(spots, hit, normal_at(maker, hit), kind, rng.randf_range(1.3, 2.0), rng.randf_range(0, TAU), 0.0)
+			want -= 1
+
+
+## The starting room: roots to pull, glowing mushrooms, and the crystals you see through the peephole.
+static func _add_start_spots(maker: CaveMaker, spots: Array[Dictionary]) -> void:
+	var st := maker.start
+	if st.is_empty():
+		return
+	for p in st.roots:
+		var top := _march(maker, p, Vector3.UP, 6.0)
+		if top == Vector3.INF:
+			continue
+		var below := _march(maker, top + Vector3.DOWN * 0.3, Vector3.DOWN, 8.0)
+		var gap := top.distance_to(below) if below != Vector3.INF else 3.0
+		_add_spot(spots, top, Vector3.DOWN, ROOT_DANGLE, 1.0, 0.0, clampf(gap - 1.9, 0.6, 1.6))
+	for p in st.caps:
+		var fl := _march(maker, p + Vector3.UP * 1.0, Vector3.DOWN, 4.0)
+		if fl != Vector3.INF:
+			_add_spot(spots, fl, Vector3.UP, MUSHROOM, 1.1, 0.0, 0.0)
+	var a0: Vector3 = st.tunnel[0].a
+	var u: Vector3 = st.dir
+	for gp in st.tunnel_glow:
+		var p: Vector3 = gp
+		var axis: Vector3 = a0 + u * (p - a0).dot(u)
+		var out: Vector3 = p - axis
+		var dir := out.normalized() if out.length() > 0.1 else Vector3.UP
+		var hit := _march(maker, axis, dir, 6.0)
+		if hit != Vector3.INF:
+			_add_spot(spots, hit, normal_at(maker, hit), CRYSTAL, 1.8, 0.0, 0.0)
+
+
+static func _spaced(spots: Array[Dictionary], p: Vector3) -> bool:
+	for s in spots:
+		if s.pos.distance_to(p) < MIN_SPACING:
+			return false
+	return true
+
+
+static func _add_spot(spots: Array[Dictionary], pos: Vector3, n: Vector3, kind: String, scale: float, spin: float, length: float) -> void:
+	spots.append({id = -1, pos = pos, normal = n, kind = kind, color = KINDS[kind].color,
+		scale = 1.0 if kind in TALL else scale, spin = spin, length = length, chops = KINDS[kind].get("chops", 1)})
 
 
 static func _random_dir(rng: RandomNumberGenerator) -> Vector3:

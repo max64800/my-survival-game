@@ -109,6 +109,8 @@ def cleanup(raw, dst, preview, a):
 	cmd = [find_blender(), "--background", "--factory-startup", "--python", str(HERE / "blender_cleanup.py"), "--",
 		str(raw), str(dst), "--size", str(a.size or size), "--tris", str(a.tris or tris), "--tex", str(tex),
 		"--rotate-x", str(a.rotate_x + ENGINE_TURN_X[a.engine]), "--rotate-z", str(a.rotate_z), "--fit", a.fit, "--preview", str(preview)]
+	if a.engine == "triposr":
+		cmd.append("--srgb-corners")
 	res = subprocess.run(cmd, capture_output=True, text=True)
 	for line in res.stdout.splitlines():
 		if line.startswith("FORGE_REPORT "):

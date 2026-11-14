@@ -32,7 +32,9 @@ const WALL_NOISE_AMP := 2.2  ## how bumpy walls are (meters)
 const BLEND := 3.0  ## how softly tunnels melt into caverns (meters)
 const CULL_MARGIN := 6.0  ## blocks farther than this from every shape are solid rock
 const ORE_CELL := 2  ## ore veins are decided on a 2 m grid
-const ORE_THRESHOLD := 0.66
+const ORE_THRESHOLD := 0.66  ## Jungle silver
+## Mossy copper is very rare (feedback F14): about 1.3% of wall rock, 1/6 of before (was 0.66 → 8%).
+const COPPER_THRESHOLD := 0.915
 const SOLID_FILL := -6.0  ## SDF value used for blocks that are all rock
 
 var seed: int
@@ -93,6 +95,201 @@ func _init(p_seed: int = 1, big_caverns: int = 3, small_rooms: int = 12) -> void
 	var fpoi := RandomNumberGenerator.new()
 	fpoi.seed = p_seed + 7999
 	_plan_pois(fpoi, r0, rooms.size(), s0, s1, gates[0].pos, "fungal", BIOMES[1].cx)
+	# Last, so it never moves anything above: the small room where you wake up.
+	cavern_spawn = spawn_point
+	_plan_start()
+	if not start.is_empty():
+		spawn_point = start.spawn
+
+
+# ---------------------------------------------------------------- the start (feedback F10)
+# You wake in a small, sealed room. Through a peephole in a soft dirt wall you can see a glow.
+# Dig through the wall, follow a short tunnel, and you come out in the first big cavern.
+# These shapes are exact (no bumpy-wall noise), so the thin wall and the hole stay as planned.
+
+const START_ROOM_R := Vector3(3.2, 2.4, 3.2)
+const START_TUNNEL_R := 1.7
+const START_PLUG := 1.8   ## how thick the dirt wall is
+const START_HOLE_R := 0.45  ## the peephole
+const START_HOLE_Y := 1.45  ## peephole height above the room floor
+
+## Empty if no good spot was found (then you start in the cavern like before).
+## Keys: room_c, dir (from the room toward the cavern), floor_y, tunnel [{a,b,r}], hole_a, hole_b,
+## plug_a, plug_b, spawn, loose [Vector3], roots [Vector3], caps [Vector3], tunnel_glow [Vector3], min, max.
+var start := {}
+## The old start in the middle of the first cavern (test robots still start here).
+var cavern_spawn := Vector3.ZERO
+
+
+func _plan_start() -> void:
+	if rooms.is_empty():
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed + 4242
+	var cav: Dictionary = rooms[0]
+	var c: Vector3 = cav.center
+	var r: Vector3 = cav.radii
+	# Try the side of the cavern facing away from the boss lair first, then fan out both ways.
+	var first := rng.randf_range(0.0, TAU)
+	var lair := lair_poi()
+	if not lair.is_empty():
+		var away: Vector3 = c - (lair.pos as Vector3)
+		first = atan2(away.z, away.x)
+	for attempt in 32:
+		var k := (attempt + 1) / 2
+		var ang := first + (k if attempt % 2 == 1 else -k) * TAU / 32.0
+		var d := Vector3(cos(ang), 0.0, sin(ang))  # from the cavern center outward
+		var reach := 1.0 / sqrt(pow(d.x / r.x, 2) + pow(d.z / r.z, 2))  # cavern radius this way
+		var inside := c + d * reach * 0.7
+		var fl := find_floor(inside.x, inside.z, c.y)
+		if sdf_at(fl + Vector3.UP * 1.5) <= 0.0 or fl.y <= Y_MIN + 6.0:
+			continue
+		var tunnel_len := rng.randf_range(15.0, 20.0)
+		var floor_y := fl.y + rng.randf_range(-0.5, 1.5)
+		var room_c := Vector3(c.x, 0.0, c.z) + d * (reach + tunnel_len)
+		room_c.y = floor_y + START_ROOM_R.y * 0.55
+		var u := -d  # from the room toward the cavern
+		var side := Vector3(-u.z, 0.0, u.x)
+		var tr := START_TUNNEL_R
+		var a0 := room_c + u * (START_ROOM_R.x + START_PLUG + tr)
+		a0.y = floor_y + tr * 0.6
+		var end := fl + Vector3.UP * (tr * 0.6)
+		var m1 := a0.lerp(end, 0.4) + side * rng.randf_range(-2.5, 2.5)
+		var m2 := a0.lerp(end, 0.75) + side * rng.randf_range(-2.0, 2.0)
+		var plan := {
+			room_c = room_c, dir = u, floor_y = floor_y,
+			tunnel = [{a = a0, b = m1, r = tr}, {a = m1, b = m2, r = tr}, {a = m2, b = end, r = tr + 0.3}],
+			hole_a = room_c + u * (START_ROOM_R.x - 0.8) + Vector3.UP * (floor_y + START_HOLE_Y - room_c.y),
+			hole_b = room_c + u * (START_ROOM_R.x + START_PLUG + 0.8) + Vector3.UP * (floor_y + START_HOLE_Y - room_c.y),
+			plug_a = room_c + u * (START_ROOM_R.x - 0.6),
+			plug_b = room_c + u * (START_ROOM_R.x + START_PLUG + 0.4),
+		}
+		if not _start_fits(plan):
+			continue
+		var lo := room_c - START_ROOM_R - Vector3.ONE * 3.0
+		var hi := room_c + START_ROOM_R + Vector3.ONE * 3.0
+		for s in plan.tunnel:
+			lo = lo.min(s.a.min(s.b) - Vector3.ONE * (s.r + 3.0))
+			hi = hi.max(s.a.max(s.b) + Vector3.ONE * (s.r + 3.0))
+		plan.min = lo
+		plan.max = hi
+		start = plan
+		_place_start_things(rng)
+		return
+
+
+## The room, wall and most of the tunnel must sit in solid rock, away from every other cave
+## (so nothing else breaks into the room), and inside the world.
+func _start_fits(plan: Dictionary) -> bool:
+	var rc: Vector3 = plan.room_c
+	var checks: Array[Vector3] = []
+	for x in [-1.0, 0.0, 1.0]:
+		for y in [-1.0, 0.0, 1.0]:
+			for z in [-1.0, 0.0, 1.0]:
+				checks.append(rc + Vector3(x, y, z) * (START_ROOM_R + Vector3.ONE * 2.5))
+	checks.append(plan.plug_a)
+	checks.append(plan.plug_b)
+	var t0: Dictionary = plan.tunnel[0]
+	var t2: Dictionary = plan.tunnel[2]
+	for k in 8:
+		var t := float(k) / 8.0
+		# Only the first part: the far end is meant to open into the cavern.
+		var p: Vector3 = (t0.a as Vector3).lerp(t2.b, t * 0.4)
+		var side := Vector3(-(plan.dir as Vector3).z, 0.0, (plan.dir as Vector3).x)
+		checks.append(p + side * 3.0)
+		checks.append(p - side * 3.0)
+		checks.append(p + Vector3.UP * 3.0)
+	for p in checks:
+		if sdf_at(p) > -1.0 or _region_dist(p) < 4.0:
+			return false
+	return true
+
+
+func _place_start_things(rng: RandomNumberGenerator) -> void:
+	var rc: Vector3 = start.room_c
+	var u: Vector3 = start.dir
+	var side := Vector3(-u.z, 0.0, u.x)
+	var fy: float = start.floor_y
+	# You wake at the back of the room, facing the peephole.
+	start.spawn = Vector3(rc.x, fy, rc.z) - u * 1.3 + Vector3.UP * 1.0
+	# Loose rocks and one small crystal on the floor (feedback F11).
+	# Scattered toward the front of the room, never right under your feet (you walk over to them).
+	var loose: Array[Vector3] = []
+	var wake: Vector3 = start.spawn
+	var tries := 0
+	while loose.size() < 7 and tries < 200:
+		tries += 1
+		var a := rng.randf_range(0.0, TAU)
+		var dist := rng.randf_range(0.6, 2.3)
+		var p := rc + Vector3(cos(a), 0.0, sin(a)) * dist
+		if Vector2(p.x - wake.x, p.z - wake.z).length() < 2.2:
+			continue
+		var ok := true
+		for q in loose:
+			if Vector2(p.x - q.x, p.z - q.z).length() < 0.6:
+				ok = false
+		if ok:
+			loose.append(Vector3(p.x, fy + 0.25, p.z))
+	start.loose = loose
+	# Roots dangling from the ceiling (pull them by hand) and a couple of glowing mushrooms.
+	var roots: Array[Vector3] = []
+	for i in 3:
+		var p := rc + side * (float(i) - 1.0) * 1.4 - u * 0.4
+		roots.append(Vector3(p.x, rc.y + START_ROOM_R.y * 0.8, p.z))
+	start.roots = roots
+	start.caps = [Vector3(rc.x, fy, rc.z) + side * 2.2 - u * 1.6, Vector3(rc.x, fy, rc.z) - side * 2.3 + u * 0.6]
+	# The glow you see through the peephole: crystals just past the wall.
+	var t0: Dictionary = start.tunnel[0]
+	var a0: Vector3 = t0.a
+	start.tunnel_glow = [a0 + u * 1.2 + side * 1.4 + Vector3.UP * 0.4, a0 + u * 2.5 - side * 1.3 + Vector3.UP * 0.9,
+		a0 + Vector3.UP * 1.3]
+
+
+## Distance to the start's open air (negative = inside the air).
+func _start_dist(p: Vector3) -> float:
+	var rc: Vector3 = start.room_c
+	var q := (p - rc) / START_ROOM_R
+	var d := (q.length() - 1.0) * minf(START_ROOM_R.x, minf(START_ROOM_R.y, START_ROOM_R.z))
+	d = maxf(d, (rc.y - START_ROOM_R.y * 0.55) - p.y)  # flat floor
+	var t := 1e9
+	for s in start.tunnel:
+		t = _smin(t, _capsule_dist(p, s.a, s.b, s.r, true), 1.0)
+	# (No real hole in the wall: with 1 m blocks it would either close up or be big enough
+	# to squeeze through. The Peephole node draws a glowing crack instead.)
+	return minf(d, t)
+
+
+static func _capsule_dist(p: Vector3, a: Vector3, b: Vector3, r: float, flat_floor: bool) -> float:
+	var ab := b - a
+	var t := clampf((p - a).dot(ab) / maxf(ab.length_squared(), 0.0001), 0.0, 1.0)
+	var cp := a + ab * t
+	var d := p.distance_to(cp) - r
+	return maxf(d, (cp.y - r * 0.6) - p.y) if flat_floor else d
+
+
+func _near_start(p: Vector3) -> bool:
+	if start.is_empty():
+		return false
+	var mn: Vector3 = start.min
+	var mx: Vector3 = start.max
+	return p.x >= mn.x and p.y >= mn.y and p.z >= mn.z and p.x <= mx.x and p.y <= mx.y and p.z <= mx.z
+
+
+func _start_overlaps(lo: Vector3, hi: Vector3) -> bool:
+	return not start.is_empty() and _overlaps(lo, hi, start.min, start.max)
+
+
+## The soft dirt wall between the room and the tunnel (1 hit with a stone pickaxe).
+func in_start_plug(p: Vector3) -> bool:
+	if start.is_empty():
+		return false
+	var a: Vector3 = start.plug_a
+	var b: Vector3 = start.plug_b
+	var ab := b - a
+	var t := (p - a).dot(ab) / ab.length_squared()
+	if t < 0.0 or t > 1.0:
+		return false
+	return p.distance_to(a + ab * t) < 3.0
 
 
 # ---------------------------------------------------------------- layout
@@ -510,7 +707,10 @@ static func biome_at(p: Vector3) -> String:
 func sdf_at(p: Vector3) -> float:
 	var cell = _grid.get(Vector3i((p / GRID).floor()))
 	if cell == null:
-		return minf(SOLID_FILL, _region_dist(p))  # no cave within 6 m: solid rock (like generate_block)
+		var s := minf(SOLID_FILL, _region_dist(p))  # no cave within 6 m: solid rock (like generate_block)
+		if _near_start(p):
+			s = minf(maxf(s, -_start_dist(p)), _region_dist(p))
+		return s
 	return _sdf_with(p, cell[0], cell[1])
 
 
@@ -520,6 +720,8 @@ func material_at(p: Vector3i) -> int:
 	var wall := _wall_rock(pf)
 	if wall >= 0:
 		return wall
+	if in_start_plug(pf):
+		return Mat.DIRT
 	var pal: Dictionary = Mat.PALETTES[biome_at(pf)]
 	if _is_ore(p):
 		return pal.ore
@@ -551,6 +753,8 @@ func _sdf_with(p: Vector3, room_ids: PackedInt32Array, seg_ids: PackedInt32Array
 	for i in seg_ids:
 		d = _smin(d, _seg_dist(p, i), BLEND)
 	var s := -d + _wall_noise.get_noise_3dv(p) * WALL_NOISE_AMP
+	if _near_start(p):
+		s = maxf(s, -_start_dist(p))
 	return minf(s, _region_dist(p))
 
 
@@ -617,7 +821,8 @@ func _is_ore(p: Vector3i) -> bool:
 	var n := _ore_noise.get_noise_3dv(cell * ORE_CELL + Vector3.ONE * (ORE_CELL * 0.5))
 	# Deeper = a bit more copper.
 	var depth_bonus := clampf((-p.y) / 64.0, 0.0, 1.0) * 0.08
-	return n + depth_bonus > ORE_THRESHOLD
+	var threshold := COPPER_THRESHOLD if p.x < SLAB_X + SLAB_W * 0.5 else ORE_THRESHOLD
+	return n + depth_bonus > threshold
 
 
 # ---------------------------------------------------------------- voxel generation
@@ -646,7 +851,8 @@ func generate_block(buf: VoxelBuffer, origin: Vector3i) -> void:
 	var one_biome := biome_at(bmax) == mid
 	var pal: Dictionary = Mat.PALETTES[mid]
 
-	if room_ids.is_empty() and seg_ids.is_empty() and one_biome:
+	var near_start := _start_overlaps(lo, hi)
+	if room_ids.is_empty() and seg_ids.is_empty() and one_biome and not near_start:
 		# Solid rock block: fast path.
 		buf.fill_f(SOLID_FILL, SDF)
 		buf.fill(pal.rock, IDX)
@@ -694,6 +900,8 @@ func generate_block(buf: VoxelBuffer, origin: Vector3i) -> void:
 				var wall := _wall_rock(Vector3(pi)) if touches_border else -1
 				if wall >= 0:
 					m = wall
+				elif near_start and in_start_plug(Vector3(pi)):
+					m = Mat.DIRT
 				elif _is_ore(pi):
 					m = p_ore
 				elif grid[base + y + 1] > 0.0:

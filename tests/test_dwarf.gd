@@ -15,7 +15,7 @@ func test_dwarf_does_not_fall_through_floor() -> void:
 	root.add_child(auth)
 	var dwarf := Dwarf.new()
 	root.add_child(dwarf)
-	var spawn := world.maker.spawn_point
+	var spawn := world.maker.cavern_spawn
 	dwarf.global_position = spawn
 	dwarf.set_physics_process(false)
 	var viewer := VoxelViewer.new()

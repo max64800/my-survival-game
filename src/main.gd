@@ -25,11 +25,15 @@ var _monsters := true
 var _saving := true  ## off for robot test runs
 var _autosave := 300.0
 var _jungle_kit := false  ## "-- jungle": start at the jungle gate with copper tools (for testing)
+## Test robots and test kits start in the big cavern with tools, like before.
+## Real games start in the small room with nothing (feedback F10/F11).
+var _robot_run := false
 var _loaded := {}  ## the save we started from (friends' dwarfs are restored from it when they rejoin)  ## peer id -> player number (0 = host, 1-3 = friends)
 
 
 func _ready() -> void:
 	Controls.setup()
+	SoundSettings.load_and_apply()
 	seed = randi() % 1000000
 	session = Session.new()
 	session.name = "Session"
@@ -84,8 +88,16 @@ func _ready() -> void:
 		elif arg == "artpreview":
 			debug_script = "res://src/debug/artpreview.gd"
 			_saving = false
+		elif arg == "startcheck":
+			debug_script = "res://src/debug/startcheck.gd"
+			_saving = false
+			_monsters = false
+			if mode == "menu":
+				mode = "solo"
 		elif arg.begins_with("savecheck"):
 			debug_script = "res://src/debug/savecheck.gd"
+	# (startcheck is a robot too, but it plays the real new-game start on purpose.)
+	_robot_run = (debug_script != "" and not debug_script.ends_with("startcheck.gd")) or _jungle_kit
 	if debug_script != "":
 		var dbg: Node = load(debug_script).new()
 		dbg.name = "Debug"
@@ -177,6 +189,10 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	pf.name = "Pois"
 	add_child(pf)
 	pf.build(world.maker)
+	var peephole := Peephole.make(world)
+	if peephole:
+		peephole.name = "Peephole"
+		add_child(peephole)
 
 	var drops := Node3D.new()
 	drops.name = "Drops"
@@ -201,6 +217,8 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	var me := multiplayer.get_unique_id()
 	dwarf = _spawn_dwarf(me, _spawn_spot(me), true)
 	dwarf.set_physics_process(false)  # wait until the floor exists
+	var fresh := snap.is_empty() and save.is_empty() and authority.is_host()
+	authority.start_with_nothing = fresh and not _robot_run and not world.maker.start.is_empty()
 	authority.add_player(me, dwarf, authority.is_host())
 	authority.monsters.enabled = _monsters
 	if not snap.is_empty():
@@ -212,6 +230,8 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 			SaveGame.apply_player(authority.get_player(me), save.players[0])
 	elif authority.is_host():
 		authority.seed_poi_loot()
+		if authority.start_with_nothing:
+			authority.spawn_start_items()
 	if _jungle_kit:
 		# Test kit: what you'd have after beating Orrumhal and Brask.
 		var kit := authority.get_player(me).inventory
@@ -268,7 +288,7 @@ func _spawn_dwarf(peer_id: int, pos: Vector3, local: bool) -> Dwarf:
 
 ## Friends appear in a little circle around the start point.
 func _spawn_spot(peer_id: int) -> Vector3:
-	var base := world.maker.spawn_point
+	var base := world.maker.cavern_spawn if _robot_run else world.maker.spawn_point
 	if _jungle_kit:
 		var gate: Dictionary = world.maker.pois_of("gate", "mossy")[0]
 		base = world.maker.find_floor(gate.pos.x - 5.0, gate.pos.z, gate.pos.y + 1.5) + Vector3.UP

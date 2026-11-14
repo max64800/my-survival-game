@@ -76,12 +76,24 @@ static func is_on_back(ps: GameAuthority.PlayerState) -> bool:
 	return ps != null and ps.inventory.count_of("lantern_back") > 0
 
 
+## Do they have a lantern? In a new game the host wakes without one and crafts it (feedback F11).
+## Everyone else (friends who join, test robots) has one built in, like before.
+## (A friend's dwarf whose bag we can't see counts as having one.)
+static func has_lantern(ps: GameAuthority.PlayerState) -> bool:
+	if ps == null or not ps.needs_lantern:
+		return true
+	return ps.inventory.count_of("lantern") > 0 or ps.inventory.count_of("lantern_back") > 0
+
+
 var _on_back := false
 
 
 func _process(delta: float) -> void:
 	var auth := GameAuthority.instance
 	var ps: GameAuthority.PlayerState = auth.get_player(peer_id) if auth else null
+	visible = has_lantern(ps)
+	if not visible:
+		return
 	var fuel := ps.fuel if ps else GameAuthority.MAX_FUEL
 	var back := is_on_back(ps)
 	if back != _on_back:

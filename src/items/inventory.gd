@@ -1,11 +1,11 @@
 class_name Inventory
 extends RefCounted
-## Inventory: the hotbar (slots 0-7) plus the bag (slots 8-37).
+## Inventory: the hotbar (slots 0-8, keys 1-9) plus the bag (slots 9-38).
 ## Each slot is either empty ({}) or {id = "stone", count = 12}.
 
 signal changed
 
-const HOTBAR_SIZE := 8
+const HOTBAR_SIZE := 9  ## keys 1-9 (feedback F18; was 8)
 const BAG_SIZE := 30
 const SIZE := HOTBAR_SIZE + BAG_SIZE
 

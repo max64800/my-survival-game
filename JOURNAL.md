@@ -424,6 +424,49 @@ Why branches? Our rule says each step must be playable and approved before the n
 
 ---
 
+## Day 3, later — November 14, 2026: Every item gets a picture (F17), plus the first AI workbench
+
+**What we did**
+- **Workbench test:** the owner made a workbench picture in ChatGPT; Claude turned it into a 3D model with TripoSR in 16 seconds.
+  Result: right shape, but blobby and with wrong colors — "placeholder", not final art. Next: try the better TRELLIS.2 website (needs a free account) or build it in Blender.
+- **Item icons:** Claude drove ChatGPT in the owner's Chrome and made **170 item pictures** in 12 picture sheets (16 per sheet, so the style matches).
+  A script cuts each sheet into single pictures with see-through backgrounds: `assets/icons/<item id>.png`.
+- Added `Items.icon(id)` so the game can find each item's picture (all runes of one colour share one picture), plus an auto-check (`tests/test_icons.gd`). Claude 1 hooks them into the bag/hotbar.
+
+**Hurdles / mistakes (including Claude's)**
+- **Pale colors on the AI workbench:** TripoSR stores colors in "screen" form but the file format expects "linear" form, so everything looked washed out. Fix: convert them back in the cleanup step.
+- **The item list from Godot froze** (other Godot windows were open). Fix: read the list straight from the code files instead.
+- **The ChatGPT page opened the old workbench chat** in the new tab. Fix: clicked "New chat" first; nothing was sent by mistake.
+- **Waiting for pictures:** Claude's first "wait until done" timer ran out before the picture was ready. Fix: send, wait ~2 minutes, then check every sheet by looking at it before cutting.
+- **Short descriptions help:** names like "Bloomheart Core" mean nothing to ChatGPT, so each item got a few words ("a large glowing boss heart-gem in stone").
+- The new auto-check found one missing picture: the hand **Lantern** that Claude 1 had just added. Made it the same way.
+
+### Day 3, afternoon: the new start, chunky breaks, rare copper, sound menu, zoom (Claude 1)
+
+**What we did** (F10-F18, F22 in `FEEDBACK.md`)
+- **A brand new start.** You wake in a small sealed room with an empty bag. A glowing crack in a soft dirt wall shows something bright on the other side. Pick up 6 loose rocks and a little crystal, pull 3 thin roots off the ceiling by hand, then press Tab and make a **Stone Pickaxe** and a **Lantern**. A hint line at the top tells you each next step. Dig through the wall and run about 20 m down a tunnel into the first big cavern.
+- **A robot that plays the start** (`-- startcheck`): it does all of the above by itself and takes 7 pictures. Claude looked at every picture and fixed what looked wrong.
+- **Lantern refill fixed (F12).** Most crystals grew too high to reach, and R failed without saying why. Now every cavern has crystals at dwarf height, R always explains, and rootwood burns too.
+- **Chunky breaks (F13).** 25-50 little bits burst out and fly into you. Still 1 item.
+- **Copper is very rare (F14).** Measured 8% → 1.3% of wall rock.
+- **Sound menu (F15).** A volume slider and a Mute switch on the pause screen, remembered.
+- **Item pictures (F17).** Claude 2's 170 pictures now show in the hotbar and bag.
+- **Mouse wheel = zoom, hotbar = keys 1-9 (F18).**
+- **No pickaxe in an empty hand (F22).**
+- 227 auto-checks pass (13 new ones for the start, chunks and sound).
+
+**Hurdles / mistakes (Claude's)**
+- **The first start room was never found.** Claude's safety check said "the tunnel must be surrounded by rock" for 70% of its length, but the tunnel is *supposed* to open into the cavern at about 55%. A little probe script found it in one run.
+- **The peephole took 5 tries.** (1) A truly tiny hole can't exist in a world made of 1 m blocks: it just closes up. (2) So Claude drew a glowing crack instead, but its "find the wall" walk went *through* the hole and put the crack in the tunnel. (3) Its "has the wall been dug away?" check looked inside the hole, saw air, and deleted the crack straight away. (4) The light pointed into the rock (a flipped direction). (5) The crack sat a bit inside the drawn wall. Each one was found by looking at the robot's picture.
+- **4 rocks jumped into your bag on the first frame**, because some landed right under your feet. Now they're kept 2 m+ away.
+- **The hint text overlapped the top-right text** and ran off the screen. Now it wraps and sits lower.
+- **Adding a lantern to the robots' starting kit shifted every hotbar slot**, and 10 old checks broke. Better idea: only you (the host, in a new game) need to craft a lantern. Friends and robots keep the built-in one.
+- **The command-line tool ate backslashes once more**, in a test pattern. Again, the fix was to write it with the editor.
+- **One check failed once, then passed 3 times in a row.** It's probably a timing-sensitive test. We'll watch for it.
+
+**Passed to Claude 3 (looks):** the beard (F24), short and wide dwarf proportions (F25, said twice now), and roots that look like icicles, plus real stalactites (F26).
+
+**Still open:** F9/F21 (better ruins and columns), F19 (sharper, rockier caves, 50-50), F20 (more Minecraft-like tunnels), F23 (equipment slots).
 ## Day 3, later — November 14, 2026: The new look, part 1 (branch `visuals`)
 
 **What we did**

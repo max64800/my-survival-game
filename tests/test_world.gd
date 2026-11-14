@@ -24,8 +24,8 @@ func _wait_ready(world: World, p: Vector3) -> bool:
 
 func test_world_loads_and_matches_cave_maker() -> void:
 	var world := _make_world(42, Vector3.ZERO)
-	world.get_child(-1).global_position = world.maker.spawn_point
-	var spawn := world.maker.spawn_point
+	world.get_child(-1).global_position = world.maker.cavern_spawn
+	var spawn := world.maker.cavern_spawn
 	check(await _wait_ready(world, spawn), "terrain should load around spawn")
 	var below := Vector3i((spawn + Vector3.DOWN * 3.0).round())
 	check(world.sdf_at(Vector3(below)) < 0.0, "rock under spawn")
@@ -35,7 +35,7 @@ func test_world_loads_and_matches_cave_maker() -> void:
 
 func test_digging_makes_air_and_counts_rock() -> void:
 	var world := _make_world(42, Vector3.ZERO)
-	var spawn := world.maker.spawn_point
+	var spawn := world.maker.cavern_spawn
 	world.get_child(-1).global_position = spawn
 	check(await _wait_ready(world, spawn), "terrain should load")
 	var target := spawn + Vector3.DOWN * 3.0

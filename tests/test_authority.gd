@@ -29,7 +29,7 @@ func _setup(seed: int, at: Vector3 = Vector3.INF) -> void:
 	root.add_child(auth)
 	player = Node3D.new()
 	root.add_child(player)
-	player.global_position = world.maker.spawn_point if at == Vector3.INF else at
+	player.global_position = world.maker.cavern_spawn if at == Vector3.INF else at
 	var viewer := VoxelViewer.new()
 	viewer.view_distance = 32
 	viewer.requires_visuals = false
