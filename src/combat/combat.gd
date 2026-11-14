@@ -104,15 +104,17 @@ static func situation(sneak: bool, stunned: bool, first_heavy_on_stunned: bool, 
 
 
 ## A crossbow bolt's damage. `dist` fades it out past 40 m.
-static func shot_damage(aimed: bool, tier: int, bolt: String, target: Dictionary, dist: float, situation: float = 1.0) -> int:
+static func shot_damage(aimed: bool, tier: int, bolt: String, target: Dictionary, dist: float, situation: float = 1.0, buff: float = 0.0, extra := {}) -> int:
 	var b: Dictionary = BOLTS.get(bolt, BOLTS.bolt_stone)
 	var wd: Dictionary = WEAPONS.crossbow
 	var phys: float = (wd.heavy if aimed else wd.light) * TIER_DAMAGE[clampi(tier, 0, 4)] * b.mult
 	phys *= target.get(b.get("type", "pierce"), 1.0)
 	phys *= 100.0 / (100.0 + target.get("armor", 0.0) * (1.0 - b.get("armor_break", 0.0)))
-	phys *= situation * range_falloff(dist)
+	phys *= situation * range_falloff(dist) * (1.0 + buff)
 	var elem := 0.0
-	var el: Dictionary = b.get("elemental", {})
+	var el: Dictionary = b.get("elemental", {}).duplicate()
+	for e in extra:  # gems in the crossbow
+		el[e] = el.get(e, 0.0) + extra[e]
 	for e in el:
 		elem += el[e] * (1.0 - minf(target.get(e, 0.0), 1.0))
 	return maxi(1, roundi(phys + elem)) if dist <= BOLT_MAX else 0
@@ -131,14 +133,17 @@ static func stun_value(w: String, heavy: bool, tier: int) -> float:
 ## pressed_ago = seconds since block was pressed (-1 = not holding block).
 ## Returns {result: "parry"|"block"|"hit", damage, stamina, stun}.
 ## crushing: only a shield perfect parry counts as a parry.
-static func defend(hit: float, pressed_ago: float, holding: bool, w: String, has_shield: bool, tier: int, crushing: bool = false) -> Dictionary:
+## bonus: shield gem bonuses (block = extra reduction, block_stamina = cheaper blocks).
+static func defend(hit: float, pressed_ago: float, holding: bool, w: String, has_shield: bool, tier: int, crushing: bool = false, bonus: Dictionary = {}) -> Dictionary:
 	var parry_ms: float = WEAPONS.shield.parry_ms if has_shield else WEAPONS.get(w, WEAPONS.fists).parry_ms
 	var in_window := pressed_ago >= 0.0 and pressed_ago * 1000.0 <= parry_ms
 	if holding and in_window and (has_shield or not crushing):
 		return {result = "parry", damage = 0.0, stamina = 0.0, stun = STUN_SHIELD_PARRY if has_shield else STUN_WEAPON_PARRY}
 	if holding:
 		var reduction: float = SHIELD_BLOCK[clampi(tier, 0, 4)] if has_shield else WEAPONS.get(w, WEAPONS.fists).block
-		return {result = "block", damage = hit * (1.0 - reduction), stamina = hit * (0.5 if has_shield else 1.0), stun = STUN_SHIELD_BLOCK if has_shield else 0.0}
+		reduction = minf(0.9, reduction + bonus.get("block", 0.0))  # block reduction caps at 90%
+		return {result = "block", damage = hit * (1.0 - reduction), stamina = hit * (0.5 if has_shield else 1.0) * (1.0 - bonus.get("block_stamina", 0.0)),
+			stun = STUN_SHIELD_BLOCK if has_shield else 0.0}
 	return {result = "hit", damage = hit, stamina = 0.0, stun = 0.0}
 
 

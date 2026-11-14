@@ -28,6 +28,8 @@ const LIST := {
 	"chest_stone": {station = "workbench", inputs = {cut_stone = 10, copper_ingot = 2}, output = "chest_stone", count = 1, unlock = ["cut_stone"]},
 	"drip_bucket": {station = "workbench", inputs = {plank_root = 4, rope = 1}, output = "drip_bucket", count = 1, unlock = []},
 	"rune_slab": {station = "workbench", inputs = {stone = 15, cut_stone = 5}, output = "rune_slab", count = 1, unlock = ["rune"]},
+	"gem_bench": {station = "workbench", inputs = {plank_root = 8, copper_ingot = 4, crystal_blue = 2}, output = "gem_bench", count = 1,
+		unlock = ["gem_ember", "gem_rime", "gem_blight", "gem_leech", "gem_jolt", "gem_swift", "gem_bulwark", "gem_keen", "gem_burrow"]},
 	"anvil": {station = "workbench", inputs = {stone = 10, copper_ingot = 6}, output = "anvil", count = 1, unlock = ["copper_ingot"]},
 	"cooking_pot": {station = "workbench", inputs = {copper_ingot = 4, stone = 4}, output = "cooking_pot", count = 1, unlock = ["copper_ingot"]},
 	"masonry_table": {station = "workbench", inputs = {stone = 10, plank_root = 6, copper_ingot = 2}, output = "masonry_table", count = 1, unlock = ["copper_ingot"]},

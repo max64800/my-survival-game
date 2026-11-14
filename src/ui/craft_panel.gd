@@ -48,6 +48,9 @@ func refresh() -> void:
 	if station and station.kind == "rune_slab":
 		_rune_slab(ps, auth)
 		return
+	if station and station.kind == "gem_bench":
+		_gem_bench(ps)
+		return
 	var where := Recipes.HAND if station == null else station.kind
 	_title.text = "Craft by hand" if station == null else Items.display_name(station.kind)
 	_status.text = station.busy_text() if station else ""
@@ -98,6 +101,58 @@ func _row(recipe_id: String, inv: Inventory) -> Control:
 		get_tree().create_timer(0.15).timeout.connect(refresh))
 	row.add_child(b)
 	return row
+
+
+## The Gem Bench (combat doc 4.4): every item with sockets, its gems, and the gems you carry.
+func _gem_bench(ps: GameAuthority.PlayerState) -> void:
+	_title.text = "Gem Bench"
+	_status.text = "Socketing is free. Taking a gem out costs 5 blue glow crystals."
+	for c in _list.get_children():
+		c.queue_free()
+	var carried := []
+	for s in ps.inventory.slots:
+		if not s.is_empty() and Gems.gem_of(s.id) != "" and not carried.has(Gems.gem_of(s.id)):
+			carried.append(Gems.gem_of(s.id))
+	var any := false
+	for i in ps.inventory.slots.size():
+		var s := ps.inventory.get_slot(i)
+		if s.is_empty() or Gems.socket_count(s.id) == 0:
+			continue
+		any = true
+		var gems: Array = s.get("gems", [])
+		var l := Label.new()
+		l.text = "%s  (%d of %d sockets used)" % [Items.display_name(s.id), gems.size(), Gems.socket_count(s.id)]
+		l.add_theme_font_size_override("font_size", 16)
+		_list.add_child(l)
+		var row := HBoxContainer.new()
+		_list.add_child(row)
+		for gi in gems.size():
+			var b := Button.new()
+			b.text = "Take out %s" % Gems.NORMAL.get(gems[gi], {}).get("name", gems[gi])
+			var slot_i := i
+			var idx := gi
+			b.pressed.connect(func():
+				GameAuthority.instance.ask_unsocket(slot_i, idx)
+				get_tree().create_timer(0.15).timeout.connect(refresh))
+			row.add_child(b)
+		if gems.size() < Gems.socket_count(s.id):
+			for g in carried:
+				if not Gems.NORMAL.has(g):
+					continue
+				var b := Button.new()
+				b.text = "+ %s" % Gems.NORMAL[g].name
+				b.tooltip_text = str(Gems.NORMAL[g][Gems.slot_kind(s.id)])
+				var slot_i := i
+				var gem: String = g
+				b.pressed.connect(func():
+					GameAuthority.instance.ask_socket(slot_i, gem)
+					get_tree().create_timer(0.15).timeout.connect(refresh))
+				row.add_child(b)
+	if not any:
+		var l := Label.new()
+		l.text = "Copper and better weapons, shields and pickaxes have gem sockets. Stone ones don't."
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD
+		_list.add_child(l)
 
 
 ## The Rune Slab: carve runes you carry. Each colour helps one skill branch; a full set gives a big perk.

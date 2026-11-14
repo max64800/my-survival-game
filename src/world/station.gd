@@ -63,6 +63,7 @@ func _size() -> Vector3:
 		"cooking_pot": return Vector3(0.9, 0.7, 0.9)
 		"bed": return Vector3(1.0, 0.5, 2.0)
 		"rune_slab": return Vector3(1.6, 1.8, 0.4)
+		"gem_bench": return Vector3(1.4, 0.9, 0.8)
 		"farm_plot": return Vector3(2.0, 0.2, 2.0)
 	return Vector3(1.0, 1.0, 1.0)
 
@@ -91,6 +92,13 @@ func _build_look() -> void:
 			_part(_cyl(0.45, 0.6, sz.y), c, Vector3.UP * sz.y * 0.5)
 			_part(_box(Vector3(0.4, 0.35, 0.1)), Color(1.0, 0.5, 0.15), Vector3(0, 0.35, -0.55), true)
 			_part(_cyl(0.15, 0.18, 0.6), c.darkened(0.3), Vector3.UP * (sz.y + 0.3))
+		"gem_bench":
+			_part(_box(Vector3(sz.x, 0.12, sz.z)), Color(0.4, 0.3, 0.22), Vector3.UP * 0.8)
+			for x in [-0.6, 0.6]:
+				_part(_box(Vector3(0.1, 0.8, 0.7)), Color(0.35, 0.25, 0.18), Vector3(x, 0.4, 0))
+			_part(_cyl(0.2, 0.2, 0.06), Color(0.6, 0.6, 0.62), Vector3(-0.3, 0.9, 0))  # polishing wheel
+			for i in 3:
+				_part(_box(Vector3(0.1, 0.1, 0.1)), [Color(1.0, 0.35, 0.2), Color(0.4, 1.0, 0.4), Color(0.45, 0.75, 1.0)][i], Vector3(0.2 + i * 0.15, 0.92, 0.1), true)
 		"anvil":
 			_part(_box(Vector3(0.35, 0.45, 0.35)), Color(0.4, 0.3, 0.2), Vector3.UP * 0.22)
 			_part(_box(Vector3(0.9, 0.3, 0.4)), c, Vector3.UP * 0.6)

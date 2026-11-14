@@ -97,5 +97,5 @@ func to_data() -> Array:
 
 func load_data(data: Array) -> void:
 	for i in slots.size():
-		slots[i] = data[i].duplicate() if i < data.size() and data[i] is Dictionary else {}
+		slots[i] = data[i].duplicate(true) if i < data.size() and data[i] is Dictionary else {}  # deep: gems lists too
 	changed.emit()

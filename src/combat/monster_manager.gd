@@ -312,6 +312,12 @@ func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: 
 	var w := Combat.weapon_of(item)
 	var tier := maxi(Items.tier(item), 0)
 	var wd: Dictionary = Combat.WEAPONS[w]
+	var gb := Gems.bonus(ps.inventory.get_slot(ps.selected_slot))
+	var elem := {}
+	for e in ["fire", "frost", "poison"]:
+		if gb.has(e):
+			elem[e] = gb[e]
+	var buff: float = gb.get("keen", 0.0) + (gb.get("bash", 0.0) if w == "shield" else 0.0)
 	var total := 0
 	var n := 0
 	var max_targets := max_targets_for(w)
@@ -328,10 +334,19 @@ func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: 
 		var crush := heavy and m.stun.take_crush()
 		var sit := Combat.situation(sneak, m.stun.is_stunned(), crush, riposte)
 		var mult := 0.6 if (w == "axe" and n == 2) else 1.0
-		var dmg := roundi(Combat.damage(w, heavy, tier, m.stats(), combo_step, sit) * mult)
+		var dmg := roundi(Combat.damage(w, heavy, tier, m.stats(), combo_step, sit, 0.0, 0.0, buff, elem) * mult)
 		total += dmg
-		_hurt_monster(m, peer, dmg, Combat.stun_value(w, heavy, tier))
+		_gem_buildup(m, gb)
+		_hurt_monster(m, peer, dmg, Combat.stun_value(w, heavy, tier) * (1.0 + gb.get("stun", 0.0)))
+	auth.heal(peer, total * gb.get("leech", 0.0))
 	return total
+
+
+## Ember/Rime/Blight gems in a weapon add buildup on every hit.
+func _gem_buildup(m: Monster, gb: Dictionary) -> void:
+	for k in {"burn": "burn", "chill": "chill", "poisoned": "poison"}:
+		if gb.has(k):
+			m.add_buildup({"burn": "burn", "chill": "chill", "poisoned": "poison"}[k], gb[k])
 
 
 ## Host: one hit lands on a monster (sword, bolt...).
@@ -429,13 +444,20 @@ func request_shoot(peer: int, bolt: String, aimed: bool, uid: int, from: Vector3
 	var m: Monster = monsters.get(uid)
 	if m and m.is_alive() and m.global_position.distance_to(point) < 2.0 + m.data.size * 1.5:
 		var tier := maxi(Items.tier(ps.selected_item()), 0)
+		var gb := Gems.bonus(ps.inventory.get_slot(ps.selected_slot))  # crossbow gems ride on every bolt
+		var elem := {}
+		for e in ["fire", "frost", "poison"]:
+			if gb.has(e):
+				elem[e] = gb[e]
 		var sneak: bool = m.state in [Monster.State.IDLE, Monster.State.WANDER, Monster.State.SLEEP]
 		var sit := Combat.situation(sneak, m.stun.is_stunned(), false, false)
-		dealt = Combat.shot_damage(aimed, tier, bolt, m.stats(), dist, sit)
-		var stun_amount: float = Combat.stun_value("crossbow", aimed, tier) + b.get("stun", 0.0)
+		dealt = Combat.shot_damage(aimed, tier, bolt, m.stats(), dist, sit, gb.get("keen", 0.0), elem)
+		var stun_amount: float = (Combat.stun_value("crossbow", aimed, tier) + b.get("stun", 0.0)) * (1.0 + gb.get("stun", 0.0))
 		for k in BOLT_BUILDUP.get(bolt, {}):
 			m.add_buildup(k, BOLT_BUILDUP[bolt][k])
+		_gem_buildup(m, gb)
 		_hurt_monster(m, peer, dealt, stun_amount)
+		auth.heal(peer, dealt * gb.get("leech", 0.0))
 	if b.has("glow"):
 		_ev_glow_bolt.rpc(point, b.glow)
 	elif randf() < 0.5:
@@ -542,7 +564,10 @@ func _boss_drops(m: Monster) -> void:
 			continue
 		var gifts := []
 		for d in m.data.drops:
-			gifts.append([d[0], d[1]])
+			if randf() < d[2]:
+				gifts.append([d[0], d[1]])
+		if m.data.has("epic_choice") and not auth.world_state.bosses_dead.has(m.kind):
+			gifts.append([Gems.item_id(m.data.epic_choice.pick_random()), 1])  # first kill: one epic gem
 		for r in m.data.get("runes", 0):
 			var rune := auth.rune_slab.pick_drop(GameAuthority.rune_biome_at(m.global_position), [randf(), randf(), randf(), randf()])
 			if rune != "":
@@ -565,6 +590,10 @@ func _kill(m: Monster, peer: int) -> void:
 	if m.variant != "":
 		var v: Dictionary = Monsters.VARIANTS[m.variant]
 		auth.spawn_drop(v.crystal, v.count, m.global_position + Vector3.UP * 0.7)
+		if randf() < 0.15:
+			auth.spawn_drop(Gems.item_id(Gems.VARIANT_GEM[m.variant]), 1, m.global_position + Vector3.UP * 0.9)
+		if m.variant == "violet" and CaveMaker.biome_at(m.global_position) == "fungal" and randf() < 0.005:
+			auth.spawn_drop(Gems.item_id("shiftstep"), 1, m.global_position + Vector3.UP)
 	for pid in auth.players:  # kills give XP to everyone nearby (progression doc 7.2)
 		if auth.players[pid].node.global_position.distance_to(m.global_position) < 30.0 or pid == peer:
 			auth.give_xp(pid, xp, m.data.get("skill", "fighting"))
@@ -685,7 +714,13 @@ func _judge_incoming() -> void:
 				result = {result = "dodge", damage = 0.0, stun = 0.0}
 			else:
 				var def: Dictionary = dwarf.call("defense_state") if dwarf.has_method("defense_state") else {holding = false, pressed_ago = -1.0, weapon = "fists", shield = false, tier = 0}
-				result = Combat.defend(hit.damage, def.pressed_ago, def.holding, def.weapon, def.shield, def.tier, hit.crushing)
+				var sb := Gems.bonus(Gems.shield_slot(me.inventory)) if def.shield else {}
+				result = Combat.defend(hit.damage, def.pressed_ago, def.holding, def.weapon, def.shield, def.tier, hit.crushing, sb)
+				var swinging: bool = dwarf.get("fight") != null and dwarf.fight._busy > 0.0
+				if result.result == "hit" and swinging:
+					result.damage *= 1.0 - Gems.bonus(me.inventory.get_slot(me.selected_slot)).get("guard", 0.0)  # Bulwark gem
+				if result.result == "block" and sb.has("block_poison"):
+					ask_blocked(hit.uid)
 				me.vitals.take_damage(result.damage)
 				# Poison/fire/frost buildup: all of it on a hit, half through a block, none on a parry.
 				var share: float = {"hit": 1.0, "block": 0.5}.get(result.result, 0.0)
@@ -712,6 +747,30 @@ func _judge_incoming() -> void:
 	_incoming = still
 
 
+## We blocked a hit with a Blight-gem shield: poison the attacker (host).
+func ask_blocked(uid: int) -> void:
+	if auth.is_host():
+		request_blocked(uid, auth.local_peer_id())
+	else:
+		_rpc_blocked.rpc_id(1, uid)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_blocked(uid: int) -> void:
+	if auth.is_host():
+		request_blocked(uid, multiplayer.get_remote_sender_id())
+
+
+func request_blocked(uid: int, peer: int) -> void:
+	var m: Monster = monsters.get(uid)
+	var ps := auth.get_player(peer)
+	if m == null or ps == null or ps.node.global_position.distance_to(m.global_position) > 8.0:
+		return
+	var sb := Gems.bonus(Gems.shield_slot(ps.inventory))
+	if sb.has("block_poison"):
+		m.add_buildup("poison", sb.block_poison)
+
+
 func _in_reach(m: Monster, dwarf: Node3D, reach: float) -> bool:
 	var d := m.global_position - dwarf.global_position
 	return Vector2(d.x, d.z).length() <= reach + 0.8 and absf(d.y) < 2.5
@@ -720,22 +779,33 @@ func _in_reach(m: Monster, dwarf: Node3D, reach: float) -> bool:
 ## We parried: the host fills the monster's stun meter and staggers it.
 func ask_parried(uid: int, stun_amount: float) -> void:
 	if auth.is_host():
-		request_parried(uid, stun_amount)
+		request_parried(uid, stun_amount, auth.local_peer_id())
 	else:
 		_rpc_parried.rpc_id(1, uid, stun_amount)
 
 
 @rpc("any_peer", "reliable")
 func _rpc_parried(uid: int, stun_amount: float) -> void:
-	if auth.is_host() and _parry_ok.get(uid, -1) == multiplayer.get_remote_sender_id():
+	var sender := multiplayer.get_remote_sender_id()
+	if auth.is_host() and _parry_ok.get(uid, -1) == sender:
 		_parry_ok.erase(uid)
-		request_parried(uid, clampf(stun_amount, 0.0, Combat.STUN_SHIELD_PARRY))
+		request_parried(uid, stun_amount, sender)
 
 
-func request_parried(uid: int, stun_amount: float) -> void:
+## A perfect parry: stun the monster. Shield gems of the parrying player add their extras (doc 4.2).
+func request_parried(uid: int, stun_amount: float, peer: int = 0) -> void:
 	var m: Monster = monsters.get(uid)
 	if m == null:
 		return
+	var ps := auth.get_player(peer)
+	if ps:
+		var sb := Gems.bonus(Gems.shield_slot(ps.inventory))
+		stun_amount = clampf(stun_amount, 0.0, Combat.STUN_SHIELD_PARRY) * (1.0 + sb.get("parry_stun", 0.0))
+		if sb.has("parry_burn"):
+			m.add_buildup("burn", sb.parry_burn)
+		if sb.has("parry_chill"):
+			m.add_buildup("chill", sb.parry_chill)
+		auth.heal(peer, sb.get("parry_heal", 0.0))
 	m.stun.add(stun_amount)
 	if not m.stun.is_stunned():
 		m.state = Monster.State.RECOVER  # staggered for a moment

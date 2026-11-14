@@ -352,7 +352,8 @@ func _can_swing() -> bool:
 	var ps := auth.get_player(peer_id) if auth else null
 	if ps == null:
 		return true
-	return ps.vitals.use_stamina(SWING_STAMINA * ps.progress.swing_stamina_mult())
+	var swift: float = Gems.bonus(ps.inventory.get_slot(ps.selected_slot)).get("mine_stamina", 0.0)
+	return ps.vitals.use_stamina(SWING_STAMINA * ps.progress.swing_stamina_mult() * (1.0 - swift))
 
 
 ## The host's answer to our pickaxe hit (arrives right away when playing alone).

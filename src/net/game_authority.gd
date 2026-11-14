@@ -214,6 +214,103 @@ func ask_poi(poi_id: int) -> void:
 		_rpc_poi.rpc_id(1, poi_id)
 
 
+## Gem Bench (combat doc 4.4): put a gem from the bag into the item in bag slot `slot`.
+func ask_socket(slot: int, gem: String) -> void:
+	if is_host():
+		request_socket(local_peer_id(), slot, gem)
+	else:
+		_rpc_socket.rpc_id(1, slot, gem)
+
+
+func ask_unsocket(slot: int, index: int) -> void:
+	if is_host():
+		request_unsocket(local_peer_id(), slot, index)
+	else:
+		_rpc_unsocket.rpc_id(1, slot, index)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_socket(slot: int, gem: String) -> void:
+	if is_host():
+		request_socket(multiplayer.get_remote_sender_id(), slot, gem)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_unsocket(slot: int, index: int) -> void:
+	if is_host():
+		request_unsocket(multiplayer.get_remote_sender_id(), slot, index)
+
+
+func _near_kind(ps: PlayerState, kind: String) -> bool:
+	for st in stations.values():
+		if st.kind == kind and st.global_position.distance_to(ps.node.global_position) < STATION_REACH + 1.0:
+			return true
+	return false
+
+
+## Socketing is free. Returns "" or why not.
+func request_socket(peer_id: int, slot: int, gem: String) -> String:
+	var ps := get_player(peer_id)
+	if ps == null:
+		return "?"
+	if not _near_kind(ps, "gem_bench"):
+		return "Stand at a Gem Bench"
+	var s := ps.inventory.get_slot(slot)
+	if not Gems.can_socket(s, gem):
+		return "No free socket for that gem"
+	if not ps.inventory.remove(Gems.item_id(gem), 1):
+		return "You don't have that gem"
+	s = ps.inventory.get_slot(slot)  # (removing never moves other slots)
+	var list: Array = s.get("gems", []).duplicate()
+	list.append(gem)
+	s.gems = list
+	ps.inventory.changed.emit()
+	return ""
+
+
+## Taking a gem out gives it back intact, for 5 blue glow crystals.
+func request_unsocket(peer_id: int, slot: int, index: int) -> String:
+	var ps := get_player(peer_id)
+	if ps == null:
+		return "?"
+	if not _near_kind(ps, "gem_bench"):
+		return "Stand at a Gem Bench"
+	var s := ps.inventory.get_slot(slot)
+	var list: Array = s.get("gems", [])
+	if index < 0 or index >= list.size():
+		return "?"
+	for item in Gems.REMOVE_COST:
+		if ps.inventory.count_of(item) < Gems.REMOVE_COST[item]:
+			return "Needs 5 blue glow crystals"
+	for item in Gems.REMOVE_COST:
+		ps.inventory.remove(item, Gems.REMOVE_COST[item])
+	var gem: String = list[index]
+	list = list.duplicate()
+	list.remove_at(index)
+	s.gems = list
+	if ps.inventory.add(Gems.item_id(gem), 1) > 0:
+		spawn_drop(Gems.item_id(gem), 1, ps.node.global_position + Vector3.UP)
+	ps.inventory.changed.emit()
+	return ""
+
+
+## Healing (Leech gems): the player's own computer owns their health.
+func heal(peer_id: int, amount: float) -> void:
+	if amount <= 0.0:
+		return
+	if peer_id == local_peer_id():
+		var ps := get_player(peer_id)
+		if ps:
+			ps.vitals.health = minf(ps.vitals.max_health(), ps.vitals.health + amount)
+	elif get_player(peer_id):
+		_rpc_heal.rpc_id(peer_id, amount)
+
+
+@rpc("authority", "reliable")
+func _rpc_heal(amount: float) -> void:
+	heal(local_peer_id(), amount)
+
+
 func ask_carve(item_id: String) -> void:
 	if is_host():
 		request_carve(local_peer_id(), item_id)
@@ -344,7 +441,8 @@ func request_hit(peer_id: int, point: Vector3, normal: Vector3) -> Dictionary:
 
 
 func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
-	var power := Items.dig_power(ps.selected_item()) * ps.progress.dig_power_mult()
+	var power: float = Items.dig_power(ps.selected_item()) * ps.progress.dig_power_mult() \
+		* (1.0 + Gems.bonus(ps.inventory.get_slot(ps.selected_slot)).get("dig", 0.0))
 	if power <= 0:
 		return {state = "no_tool"}
 	if _chest(ps).distance_to(point) > REACH + 1.0:
@@ -788,6 +886,9 @@ static func rune_biome_at(p: Vector3) -> String:
 
 func _seed_fungal_loot(rng: RandomNumberGenerator, id: int, ruin: bool) -> void:
 	if ruin:
+		for g in [["keen", 0.03], ["leech", 0.04]]:
+			if rng.randf() < g[1]:
+				storage.put(id, Gems.item_id(g[0]), 1)
 		storage.put(id, "silver_ingot", rng.randi_range(1, 3))
 		storage.put(id, "crystal_amber", rng.randi_range(2, 4))
 		storage.put(id, ["dish_truffle_risotto", "dish_chitin_crunch", "drink_spore_mead"][rng.randi_range(0, 2)], 1)
@@ -813,6 +914,9 @@ func seed_poi_loot() -> void:
 			_seed_fungal_loot(rng, id, poi.type == "ruin")
 			continue
 		if poi.type == "ruin":
+			for g in [["keen", 0.03], ["ember", 0.03]]:  # doc 4.2: rare gems in old chests
+				if rng.randf() < g[1]:
+					storage.put(id, Gems.item_id(g[0]), 1)
 			storage.put(id, "copper_ingot", rng.randi_range(2, 4))
 			storage.put(id, "crystal_blue", rng.randi_range(2, 5))
 			storage.put(id, ["dish_hollowcap_stew", "dish_tuber_mash", "drink_glowcap_tea"][rng.randi_range(0, 2)], 1)
@@ -909,8 +1013,14 @@ func _give_dig_drops(ps: PlayerState, counts: Dictionary, pos: Vector3) -> void:
 		var per: int = Mat.VOXELS_PER_ITEM.get(mat, 3)
 		var n := voxels / per
 		ps.leftovers[mat] = voxels % per
-		if mat == Mat.COPPER:
+		var ore: bool = mat == Mat.COPPER or mat == Mat.SILVER
+		if ore:
 			n = maxi(n, 1)  # always feel rewarded for hitting ore
+			if randf() < Gems.bonus(ps.inventory.get_slot(ps.selected_slot)).get("extra_ore", 0.0):
+				n += 1  # Burrow gem
+			for i in n:
+				if randf() < 0.005:
+					spawn_drop(Gems.item_id("burrow"), 1, pos)  # ore veins hide Burrow gems (doc 4.2)
 		if n > 0:
 			spawn_drop(item, n, pos)
 

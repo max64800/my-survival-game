@@ -98,6 +98,7 @@ const DATA := {
 	"tanning_rack": {name = "Tanning Rack", stack = 1, color = Color(0.6, 0.45, 0.3), short = "TR", kind = "station"},
 	"masonry_table": {name = "Masonry Table", stack = 1, color = Color(0.6, 0.6, 0.6), short = "MT", kind = "station"},
 	"bed": {name = "Bed", stack = 1, color = Color(0.5, 0.35, 0.5), short = "Bd", kind = "station"},
+	"gem_bench": {name = "Gem Bench", stack = 1, color = Color(0.45, 0.6, 0.75), short = "GB", kind = "station"},
 	"rune_slab": {name = "Rune Slab", stack = 1, color = Color(0.5, 0.5, 0.6), short = "RS", kind = "station"},
 	"farm_plot": {name = "Farm Plot", stack = 1, color = Color(0.35, 0.25, 0.15), short = "FP", kind = "station"},
 	"drip_bucket": {name = "Drip Bucket", stack = 1, color = Color(0.45, 0.4, 0.35), short = "DB", kind = "station"},
@@ -147,6 +148,10 @@ static func _data() -> Dictionary:
 			_all["rune_" + r] = {name = "%s Rune (%s)" % [colour.capitalize(), RuneSlab.COLOURS[colour].capitalize()],
 				color = {"ochre": Color(0.8, 0.6, 0.25), "crimson": Color(0.85, 0.2, 0.25), "cobalt": Color(0.2, 0.35, 0.85), "verdant": Color(0.3, 0.8, 0.35)}[colour],
 				short = "R" + r.right(2), kind = "rune"}
+		for g in Gems.NORMAL:  # gems for weapons, shields and pickaxes (combat doc 4)
+			_all["gem_" + g] = {name = Gems.NORMAL[g].name, color = Gems.NORMAL[g].color, short = "G" + g.left(1).to_upper(), kind = "gem", stack = 20}
+		for g in Gems.EPIC:
+			_all["gem_" + g] = {name = Gems.EPIC[g].name, color = Gems.EPIC[g].color, short = "E" + g.left(1).to_upper(), kind = "gem", stack = 5}
 		for id in Foods.DISHES:
 			var f: Dictionary = Foods.DISHES[id]
 			_all[id] = {name = f.name, stack = 20, color = f.get("color", Color(0.9, 0.7, 0.4)), short = f.get("short", "Fd"),
