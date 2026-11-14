@@ -11,8 +11,24 @@ var pieces := {}  ## uid -> {piece, family, pos, rot, hp, anchored, stability}
 
 
 func add(uid: int, piece: String, family: String, pos: Vector3, rot: int, anchored: bool) -> void:
+	anchored = anchored or is_foundation(piece)  # foundations are always steady (spec §5)
 	pieces[uid] = {piece = piece, family = family, pos = pos, rot = rot, hp = Pieces.hp(piece, family),
 		anchored = anchored, stability = 1.0 if anchored else 0.0}
+
+
+static func is_foundation(piece: String) -> bool:
+	return Pieces.LIST.get(piece, {}).get("foundation", false)
+
+
+## The hammer's strength colors (spec §5): blue ≥ 0.75, green ≥ 0.5, yellow ≥ 0.25, red below.
+static func strength_color(s: float) -> Color:
+	if s >= 0.75:
+		return Color(0.35, 0.6, 1.0)
+	if s >= 0.5:
+		return Color(0.35, 0.9, 0.4)
+	if s >= 0.25:
+		return Color(1.0, 0.85, 0.25)
+	return Color(1.0, 0.3, 0.25)
 
 
 func remove(uid: int) -> void:
@@ -51,7 +67,7 @@ func neighbors(uid: int) -> Array:
 
 ## How steady a piece WOULD be if placed here (for the green/red ghost).
 func preview_stability(piece: String, family: String, pos: Vector3, rot: int, anchored: bool) -> float:
-	if anchored:
+	if anchored or is_foundation(piece):
 		return 1.0
 	var b := Pieces.box(piece, pos, rot)
 	var best := 0.0
@@ -59,7 +75,7 @@ func preview_stability(piece: String, family: String, pos: Vector3, rot: int, an
 		var nb := box_of(uid)
 		if not b.grow(0.06).intersects(nb):
 			continue
-		best = maxf(best, pieces[uid].stability - _loss(family, nb, b))
+		best = maxf(best, pieces[uid].stability - _loss(family, nb, b, piece))
 	return best
 
 
@@ -78,7 +94,7 @@ func recompute() -> Array:
 				continue
 			var my_box := box_of(uid)
 			for other in neighbors(uid):
-				var s: float = pieces[other].stability - _loss(me.family, box_of(other), my_box)
+				var s: float = pieces[other].stability - _loss(me.family, box_of(other), my_box, me.piece)
 				if s > me.stability + 0.0001:
 					me.stability = s
 					changed = true
@@ -90,9 +106,12 @@ func recompute() -> Array:
 
 
 ## Loss for `family` sitting next to a neighbour box: "up" if the neighbour is underneath.
-static func _loss(family: String, neighbor: AABB, me: AABB) -> float:
+## Pillars and columns carry weight straight down very well (spec §5: only 0.02 going up).
+static func _loss(family: String, neighbor: AABB, me: AABB, piece: String = "") -> float:
 	var f: Dictionary = Pieces.FAMILIES[family]
 	var below := neighbor.end.y <= me.position.y + 0.05
+	if below and piece in ["pillar", "column"]:
+		return minf(Pieces.PILLAR_UP_LOSS, f.up)
 	return f.up if below else f.side
 
 

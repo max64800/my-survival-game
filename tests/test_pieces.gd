@@ -88,6 +88,47 @@ func test_rotation_cycles() -> void:
 	check_eq(a.pos, b.pos, "...in the same spot")
 
 
+# ---------------------------------------------------------------- soft steadiness (spec §5)
+
+func test_foundation_always_anchored() -> void:
+	var s := Structure.new()
+	s.add(1, "foundation", "cut_stone", Vector3(1, 5, 1), 0, false)  # not touching rock
+	s.add(2, "wall", "plank_root", Vector3(1, 6, 0), 0, false)
+	s.recompute()
+	check_near(s.pieces[1].stability, 1.0, 0.001, "a foundation is always fully steady")
+	check_near(s.pieces[2].stability, 0.92, 0.001, "a wooden wall on it: 1 - 0.08")
+	check_near(s.preview_stability("foundation", "cut_stone", Vector3(9, 9, 9), 0, false), 1.0, 0.001, "...even in the preview")
+
+
+func test_stone_reaches_farther_than_wood() -> void:
+	var reach := {}
+	for fam in ["plank_root", "cut_stone", "copper_ingot"]:
+		var s := Structure.new()
+		s.add(1, "floor", fam, Vector3(1, 0, 1), 0, true)
+		for i in 20:
+			s.add(2 + i, "floor", fam, Vector3(3 + i * 2, 0, 1), 0, false)
+		reach[fam] = 20 - s.recompute().size()
+	check(reach.plank_root < reach.cut_stone and reach.cut_stone < reach.copper_ingot,
+		"wood < stone < copper sideways reach (%s)" % str(reach))
+	check_eq(reach.plank_root, 5, "wood: 5 floors out")
+
+
+func test_pillar_stack_stays_strong() -> void:
+	var s := Structure.new()
+	s.add(1, "pillar", "plank_root", Vector3(0, 0, 0), 0, true)
+	for i in 5:
+		s.add(2 + i, "pillar", "plank_root", Vector3(0, 2 + i * 2, 0), 0, false)
+	s.recompute()
+	check(s.pieces[6].stability > 0.85, "5 wooden pillars up still strong (%.2f)" % s.pieces[6].stability)
+
+
+func test_strength_colors() -> void:
+	check_eq(Structure.strength_color(0.9), Color(0.35, 0.6, 1.0), "strong = blue")
+	check_eq(Structure.strength_color(0.6), Color(0.35, 0.9, 0.4), "good = green")
+	check_eq(Structure.strength_color(0.3), Color(1.0, 0.85, 0.25), "weak = yellow")
+	check_eq(Structure.strength_color(0.12), Color(1.0, 0.3, 0.25), "barely = red")
+
+
 func test_stations_by_material() -> void:
 	check_eq(Pieces.station_for("plank_root"), "workbench", "wood → Workbench")
 	check_eq(Pieces.station_for("cut_stone"), "mason", "stone → Mason's Table")
