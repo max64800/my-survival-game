@@ -42,7 +42,6 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F13. A broken block should burst into lots of pieces (25–50, random)** that all fly to you, but still only give 1 rock/copper/etc. *From: you. Said: 1×*
 - [ ] **F14. Copper is too common.** Make it very rare (about 1/6 as much). *From: you. Said: 1×*
 - [ ] **F15. A menu to mute/unmute the sound** (and change the volume). *From: you. Said: 1×*
-- [ ] **F16. Merge all the steps (up to the Fungal Jungle) into main**, so the desktop icon plays the full game. *From: you. Said: 1×*
 - [ ] **F17. There are no pictures for resources/items.** → Claude 2 (pictures from ChatGPT) and Claude 3 (how the game looks) are on this. Claude 1 makes sure their pictures plug in. *From: you. Said: 1×*
 
 **Claude noticed, waiting for your OK** (not fixed until you say so):
@@ -50,6 +49,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 
 ## Done
 
+- [x] ~~**F16. Merge all the steps (up to the Fungal Jungle) into main.**~~ Done Nov 14. The desktop icon now plays everything: crafting, survival, building, monsters, ruins, bosses, the Fungal Jungle. 214 auto-checks pass, and the autopilot played through all of it. *From: you. Said: 1×*
 - [x] ~~**F8. Mute only Claude's tests. When I play, I want sound.**~~ Fixed Nov 14. Muting was already only for Claude's test runs. The real problem was that Step 1 had **no sounds at all** (they'd only been built on the Step 6 branch). Now Step 1 has 11 sounds from Kenney's free packs: pickaxe swing, digging (soft for moss/dirt, hard for stone), rock breaking, a "clink" on rock that's too hard, crystals, footsteps, pickups, lantern refill, and bag open/close. *From: you. Said: 1×*
 
 - [x] ~~**F1. The lantern is too dim.**~~ Fixed Nov 14. The dwarf's own body *and* the lantern's glass box were blocking the light, like holding a flashlight behind your back. Now neither blocks it, and the light reaches further. *From: Claude (test session), you said yes. Said: 1×*
