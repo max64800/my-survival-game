@@ -9,6 +9,10 @@ const LIGHT_COUNT := 12
 const LIGHT_UPDATE := 0.3
 
 var _spots: Dictionary = {}  ## id -> spot data
+## Speed: which spots are in which 4 m square, so "what's near here?" only checks a few squares
+## instead of every spot in the world (that took ~8 ms per dig, a visible stutter).
+const CELL := 4.0
+var _grid := {}  ## Vector3i -> Array of spot ids
 var _nodes: Dictionary = {}  ## id -> StaticBody3D
 var _lights: Array[OmniLight3D] = []
 var _light_timer := 0.0
@@ -26,6 +30,7 @@ func build(spots: Array[Dictionary]) -> void:
 	_root_mesh = _make_root_mesh()
 	for s in spots:
 		_spots[s.id] = s
+		_grid_add(s)
 		_add_node(s)
 	for i in LIGHT_COUNT:
 		var l := OmniLight3D.new()
@@ -46,10 +51,27 @@ func spot_count() -> int:
 
 func spots_near(p: Vector3, radius: float) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
-	for s in _spots.values():
-		if s.pos.distance_to(p) <= radius:
-			out.append(s)
+	var lo := _cell(p - Vector3.ONE * radius)
+	var hi := _cell(p + Vector3.ONE * radius)
+	for x in range(lo.x, hi.x + 1):
+		for y in range(lo.y, hi.y + 1):
+			for z in range(lo.z, hi.z + 1):
+				for id in _grid.get(Vector3i(x, y, z), []):
+					var s: Dictionary = _spots[id]
+					if s.pos.distance_to(p) <= radius:
+						out.append(s)
 	return out
+
+
+static func _cell(p: Vector3) -> Vector3i:
+	return Vector3i((p / CELL).floor())
+
+
+func _grid_add(s: Dictionary) -> void:
+	var c := _cell(s.pos)
+	if not _grid.has(c):
+		_grid[c] = []
+	_grid[c].append(s.id)
 
 
 ## A root was chopped: remember how many chops it has left.
@@ -62,6 +84,10 @@ func set_chops(id: int, left: int) -> void:
 
 
 func remove_spot(id: int) -> void:
+	if _spots.has(id):
+		var c := _cell(_spots[id].pos)
+		if _grid.has(c):
+			_grid[c].erase(id)
 	_spots.erase(id)
 	var n: Node = _nodes.get(id)
 	_nodes.erase(id)
@@ -188,7 +214,8 @@ func _process(delta: float) -> void:
 	if cam == null:
 		return
 	var from := cam.global_position
-	var near := _spots.values().filter(func(s): return GlowPlacer.KINDS[s.kind].get("glow", false))
+	# Only spots within 40 m can get a light, so only look in the squares around us.
+	var near := spots_near(from, 40.0).filter(func(s): return GlowPlacer.KINDS[s.kind].get("glow", false))
 	near.sort_custom(func(a, b): return a.pos.distance_squared_to(from) < b.pos.distance_squared_to(from))
 	for i in LIGHT_COUNT:
 		var l := _lights[i]

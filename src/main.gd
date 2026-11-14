@@ -79,6 +79,12 @@ func _ready() -> void:
 			mode = "continue"
 		elif arg.begins_with("art="):
 			DwarfModel.art = arg.trim_prefix("art=")
+		elif arg == "perfcheck":
+			debug_script = "res://src/debug/perfcheck.gd"
+			_saving = false
+			_monsters = false
+			if mode == "menu":
+				mode = "solo"
 		elif arg == "lookdev":
 			debug_script = "res://src/debug/lookdev.gd"
 			_saving = false
