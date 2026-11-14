@@ -43,11 +43,11 @@ opening, extra, families, station = {"workbench": lvl, "mason": lvl, "anvil": lv
 walkable_slope. `Pieces.MOSSY_FAMILIES: Array[String]`. `Pieces.station_for(family) -> String` (plank_root→workbench,
 cut_stone/clay_brick→mason, copper_ingot→anvil, others→workbench).
 
-- [ ] Test `test_every_piece_is_valid`: every LIST entry has size>0, units>0, a known place/group, and at least one Mossy family allowed.
-- [ ] Test `test_old_ids_still_exist` and `test_starter_lodge_pieces_exist` (load `res://blueprints/small_rootwood_lodge.dwbp`, every id in LIST).
-- [ ] Test `test_soft_numbers`: FAMILIES up/side match the Global Constraints.
-- [ ] Implement the spec §1 table (ids as written there; window_small = old `window_wall`, floor_small = old `small_floor`).
-- [ ] Run `tests/run_tests.bat only=test_pieces` → PASS. Run the full suite → PASS. Commit.
+- [x] Test `test_every_piece_is_valid`: every LIST entry has size>0, units>0, a known place/group, and at least one Mossy family allowed.
+- [x] Test `test_old_ids_still_exist` and `test_starter_lodge_pieces_exist` (load `res://blueprints/small_rootwood_lodge.dwbp`, every id in LIST).
+- [x] Test `test_soft_numbers`: FAMILIES up/side match the Global Constraints.
+- [x] Implement the spec §1 table (ids as written there; window_small = old `window_wall`, floor_small = old `small_floor`).
+- [x] Run `tests/run_tests.bat only=test_pieces` → PASS. Run the full suite → PASS. Commit.
 
 ### Task A2: Snapping (1 m grid + anchor)
 
@@ -56,7 +56,7 @@ cut_stone/clay_brick→mason, copper_ingot→anvil, others→workbench).
 **Interfaces:** `Pieces.snap(piece: String, p: Vector3, n: Vector3, yaw: float, rot: int, lift: float = 0.0, anchor: AABB = AABB()) -> Dictionary {pos, rot}`.
 The anchor is the box of the built piece under the crosshair (or empty).
 
-- [ ] Tests:
+- [x] Tests:
   - `test_wall_snaps_to_floor_edge` (floor box (0,0,0)-(2,0.25,2), aim (1.0,0.25,1.7) up → wall at z=2, y=0.25)
   - `test_roof_sits_on_wall_top` (anchor = wall box top y=2.25 → roof pos.y == 2.25)
   - `test_pillar_snaps_to_floor_corner`
@@ -64,11 +64,11 @@ The anchor is the box of the built piece under the crosshair (or empty).
   - `test_no_anchor_uses_1m_grid` (cell 2×2 at p.x=3.4 → center x=3)
   - `test_floor_extends_from_side` (aim the side of a floor → new floor adjacent, same y)
   - `test_rotation_cycles`
-- [ ] Implement: with an anchor and n.y>0.5, the base y = anchor.end.y; edge → nearest anchor face across the axis; corner → nearest anchor corner;
+- [x] Implement: with an anchor and n.y>0.5, the base y = anchor.end.y; edge → nearest anchor face across the axis; corner → nearest anchor corner;
   cell → 1 m grid clamped inside the anchor's top. With an anchor and a side hit on a cell/foundation piece → place adjacent along n.
   Without an anchor: the old rules, but on a 1 m grid.
-- [ ] build_mode passes `Structure.box_of(uid)` when the hit collider is a PieceNode.
-- [ ] Run the tests, then the full suite. Commit.
+- [x] build_mode passes `Structure.box_of(uid)` when the hit collider is a PieceNode.
+- [x] Run the tests, then the full suite. Commit.
 
 ### Task A3: Soft steadiness rules
 
@@ -77,12 +77,12 @@ The anchor is the box of the built piece under the crosshair (or empty).
 **Interfaces:** `Structure.add(...)` anchors foundations. `Structure._loss(family, neighbor, me, piece := "")` gives pillar/column the 0.02 "up" loss.
 `static func Structure.strength_color(s: float) -> Color`.
 
-- [ ] Tests:
+- [x] Tests:
   - `test_foundation_always_anchored`
   - `test_stone_reaches_farther_than_wood` (count how many floors stick out sideways before <0.10)
   - `test_pillar_stack_stays_strong` (5 stacked pillars > 0.85)
   - `test_strength_colors`
-- [ ] Implement, run, commit.
+- [x] Implement, run, commit.
 
 ### Task A4: BlueprintLibrary (4 simple blueprints)
 
@@ -92,12 +92,12 @@ Test: `tests/test_blueprint_library.gd`.
 **Interfaces:** `BlueprintLibrary.IDS := ["miners_homestead", "stone_hall", "forge_workshop", "watchtower_cabin"]`,
 `static func make(id: String) -> Blueprint`, `static func list() -> Array[Dictionary] {id, name, file}`.
 
-- [ ] Tests:
+- [x] Tests:
   - every blueprint: all piece ids/families are allowed; fits inside `size`; no two pieces overlap (Structure.overlaps)
   - JSON round trip
   - the homestead has air cells for the rooms
   - every non-foundation piece touches another piece or the floor
-- [ ] Implement per spec §7 (simple versions). Run, commit.
+- [x] Implement per spec §7 (simple versions). Run, commit.
 
 ## Phase B (after the visuals merge)
 
@@ -106,3 +106,13 @@ Test: `tests/test_blueprint_library.gd`.
 - **B3 Station levels:** station.gd: workbench/mason/anvil level from extras within 4 m; items/recipes for the extras; builder checks `station_for(family)` level ≥ the piece's need; the build menu groups by `group` and greys out locked pieces.
 - **B4 Gear upgrades:** slot `up` 0..3; `Items` power/damage/armor read ×(1+0.15·up); the upgrade action in the station panel; cost per spec §4; name suffix "+N".
 - **B5 Blueprint UX:** the chest auto-placed outside the front of the footprint; the 4 blueprints in the V book; the `-- buildcheck` photo robot.
+
+## Status (Nov 14, 2026): all of phase A and B done
+
+A1–A4 and B1–B5 are built, tested and pushed. Extras added on top:
+- 45° triangle and diagonal pieces.
+- Climbable built ladders, and doors that open (E).
+- A walkable Ramp.
+- A Decor tab with 14 pieces, used to furnish the four blueprints.
+- The Cozy rest buff, which gives comfort from furniture.
+- Claude 2's hand-made piece models load automatically from `assets/models/build/<piece>__<family>.glb`.
