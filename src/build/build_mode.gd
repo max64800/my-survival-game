@@ -15,6 +15,7 @@ var rot := 0
 var lift := 0.0
 var problem := ""  ## why the ghost is red ("" = it's fine)
 var target := {}  ## {pos, rot} where the piece would go
+var aimed_uid := -1  ## the built piece under the crosshair (-1 = none), for the "how steady is it" line
 var _ghost: PieceNode
 var blueprint: Blueprint = null  ## not null = placing a whole blueprint
 var _bp_json := ""
@@ -146,6 +147,7 @@ func _process(delta: float) -> void:
 			_bp_chest_ghost.rotation.y = rot * PI / 2.0
 		return
 	var hit := dwarf.aim_far(Pieces.BUILD_REACH)
+	aimed_uid = -1
 	if hit.is_empty():
 		_ghost.visible = false
 		target = {}
@@ -156,6 +158,7 @@ func _process(delta: float) -> void:
 	var hit_node: Object = hit.get("collider")
 	if hit_node is PieceNode and auth.builder.structure.pieces.has((hit_node as PieceNode).uid):
 		anchor = auth.builder.structure.box_of((hit_node as PieceNode).uid)
+		aimed_uid = (hit_node as PieceNode).uid
 	target = Pieces.snap(piece, hit.position, hit.normal, dwarf.model.rotation.y + PI, rot, lift, anchor)
 	_ghost.visible = true
 	_ghost.global_position = target.pos

@@ -691,6 +691,10 @@ func _process(delta: float) -> void:
 		_build_label.text = "%s · %s (%s)%s\nB choose · Q turn · PgUp/PgDn lift · right click take down · C save blueprint · V blueprints" % [
 			Pieces.LIST[build_mode.piece].name, Pieces.FAMILIES[build_mode.family].name, c,
 			"" if build_mode.problem == "" else "  —  " + build_mode.problem]
+		var aimed: Dictionary = auth.builder.structure.pieces.get(build_mode.aimed_uid, {}) if auth and auth.builder else {}
+		if not aimed.is_empty():
+			_build_label.text = "Looking at: %s (%s) · %s\n" % [Pieces.LIST[aimed.piece].name, Pieces.FAMILIES[aimed.family].name,
+				steadiness_text(aimed)] + _build_label.text
 	else:
 		_build_label.text = ""
 	_map_timer -= delta
@@ -740,3 +744,13 @@ func _local_dwarf() -> Dwarf:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("toggle_fps"):
 		_fps_label.visible = not _fps_label.visible
+
+
+## "rock-steady", "85% steady", "shaky (31%)": how well a built piece is held up.
+static func steadiness_text(p: Dictionary) -> String:
+	if p.get("anchored", false):
+		return "rock-steady (on rock or a foundation)"
+	var pct := roundi(float(p.get("stability", 0.0)) * 100.0)
+	if pct < 25:
+		return "shaky! (%d%%) prop it up" % pct
+	return "%d%% steady" % pct

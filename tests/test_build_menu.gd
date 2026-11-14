@@ -37,3 +37,9 @@ func test_chest_goes_on_the_open_side_nearest_you() -> void:
 	check(back.is_finite() and back.z < 0.0, "the chest goes on the open side, not into the rock")
 	var solid := func(_p: Vector3) -> float: return -1.0
 	check(not Builder.chest_spot(size, Vector3.ZERO, 0, Vector3.ZERO, solid).is_finite(), "no open floor anywhere = no spot")
+
+
+func test_steadiness_words() -> void:
+	check(Hud.steadiness_text({anchored = true, stability = 1.0}).begins_with("rock-steady"), "on rock")
+	check_eq(Hud.steadiness_text({anchored = false, stability = 0.8}), "80% steady", "held up by others")
+	check(Hud.steadiness_text({anchored = false, stability = 0.2}).begins_with("shaky"), "about to fall")
