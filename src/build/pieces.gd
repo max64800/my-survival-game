@@ -79,6 +79,24 @@ const LIST := {
 		families = ["plank_root", "plank_mushroom", "copper_ingot"], station = {"workbench": 1, "anvil": 1}},
 	"railing": {name = "Railing", group = "around", size = Vector3(2, 1, 0.15), units = 1, place = "edge", shape = "railing",
 		families = ["plank_root", "plank_mushroom", "copper_ingot", "silver_ingot"], station = {"workbench": 1, "anvil": 1}},
+	# --- triangles (owner's Conan Exiles idea; 45°): a triangle is half a 2×2 square, cut corner to
+	# corner. Rot 0 keeps the half on the −x/+z side of the line (−1,−1)→(1,1); Q turns which corner
+	# is cut. Diagonal pieces stand on that line (2.83 m long). Octagons and cut corners on our grid.
+	"foundation_triangle": {name = "Triangle Foundation", group = "foundation", size = Vector3(2, 1, 2), units = 4, place = "cell",
+		foundation = true, shape = "triangle", families = ["cut_stone", "clay_brick"], station = {"mason": 1}},
+	"floor_triangle": {name = "Triangle Floor", group = "floor", size = Vector3(2, 0.25, 2), units = 2, place = "cell", shape = "triangle",
+		station = {"workbench": 2, "mason": 1, "anvil": 1}},
+	"wall_diagonal": {name = "Diagonal Wall", group = "wall", size = Vector3(2, 2, 2), units = 6, place = "cell", shape = "diagonal",
+		families = ["plank_root", "plank_mushroom", "cut_stone", "cut_marble", "clay_brick", "basalt", "ancient_brick"],
+		station = {"workbench": 2, "mason": 2}},
+	"half_wall_diagonal": {name = "Diagonal Half Wall", group = "wall", size = Vector3(2, 1, 2), units = 3, place = "cell", shape = "diagonal",
+		families = ["plank_root", "plank_mushroom", "cut_stone", "cut_marble", "clay_brick", "basalt", "ancient_brick"],
+		station = {"workbench": 2, "mason": 2}},
+	"window_diagonal": {name = "Diagonal Window", group = "wall", size = Vector3(2, 2, 2), units = 5, place = "cell", shape = "diagonal",
+		opening = Vector3(1.0, 0.8, 0.6), families = ["plank_root", "plank_mushroom", "cut_stone", "cut_marble", "clay_brick", "basalt", "ancient_brick"],
+		station = {"workbench": 3, "mason": 2}},
+	"railing_diagonal": {name = "Diagonal Railing", group = "around", size = Vector3(2, 1, 2), units = 2, place = "cell", shape = "diagonal",
+		families = ["plank_root", "plank_mushroom", "copper_ingot", "silver_ingot"], station = {"workbench": 2, "anvil": 1}},
 	# --- mining
 	"ceiling_panel": {name = "Ceiling Panel", group = "mining", size = Vector3(2, 0.25, 2), units = 4, place = "ceiling", supports_rock = true, station = ALL},
 	"mine_prop": {name = "Mine Prop", group = "mining", size = Vector3(2, 3, 0.4), units = 4, place = "free", extra = {copper_ingot = 1}, supports_rock = true,

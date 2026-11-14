@@ -57,6 +57,23 @@ Each piece: size (x × y × z, m), how it snaps, which materials, the station le
 | | railing | 2×1×0.15 | edge | wood, copper | WB 1 |
 | Mining | ceiling_panel, mine_prop (kept) | — | — | as now | as now |
 
+**Triangles (added Nov 14, the owner's Conan Exiles idea; chose 45° triangles):** round-ish buildings
+(octagons, cut corners, angled walls) on the same grid.
+
+| Piece id | What | Materials | Unlock |
+|---|---|---|---|
+| foundation_triangle | half of a 2×2 foundation, cut corner to corner | stone, brick | Mason 1 |
+| floor_triangle | half of a 2×2 floor | all | WB 2 / Mason 1 |
+| wall_diagonal | a 2.83 m wall standing on a triangle's slanted edge | wood, stone, brick | WB 2 / Mason 2 |
+| half_wall_diagonal | the same, 1 m high | wood, stone, brick | WB 2 / Mason 2 |
+| window_diagonal | a diagonal wall with a small window | wood, stone, brick | WB 3 / Mason 2 |
+| railing_diagonal | a railing along the slanted edge | wood, copper | WB 2 / Anvil 1 |
+
+- They use a 2×2 cell ("cell" snapping). Q turns them a quarter turn, which picks which corner is cut.
+- In the piece's own space, rot 0 keeps the half on the −x/+z side of the line from (−1,−1) to (1,1);
+  the diagonal pieces stand on that line.
+- Two triangles fill one cell when they're opposite halves (rot differs by 2). That doesn't count as overlapping.
+
 **Families kept for Mossy:** plank_root (Rootwood), cut_stone, clay_brick, copper_ingot. Other families stay in the
 code for the Jungle and found items, but are not offered in the Mossy build menu unless the player owns the material.
 

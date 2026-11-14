@@ -129,6 +129,38 @@ func test_strength_colors() -> void:
 	check_eq(Structure.strength_color(0.12), Color(1.0, 0.3, 0.25), "barely = red")
 
 
+# ---------------------------------------------------------------- triangles (owner's Conan idea, 45°)
+
+func test_two_triangles_fill_one_square() -> void:
+	var s := Structure.new()
+	s.add(1, "floor_triangle", "cut_stone", Vector3(1, 0, 1), 0, true)
+	check(not s.overlaps("floor_triangle", Vector3(1, 0, 1), 2), "the opposite half fits")
+	check(s.overlaps("floor_triangle", Vector3(1, 0, 1), 0), "the same half twice doesn't")
+	check(s.overlaps("floor_triangle", Vector3(1, 0, 1), 1), "a quarter-turned one overlaps")
+	check(s.overlaps("floor", Vector3(1, 0, 1), 0), "a square floor on top of a triangle doesn't fit")
+	check(not s.overlaps("wall_diagonal", Vector3(1, 0.25, 1), 0), "a diagonal wall stands on the triangle's edge")
+
+
+func test_octagon_tower_ring_is_valid() -> void:
+	# 3×3 squares; the 4 corner squares are triangles with diagonal walls: an octagon.
+	var s := Structure.new()
+	var uid := 1
+	var corners := {Vector2i(-2, -2): 0, Vector2i(2, -2): 1, Vector2i(2, 2): 2, Vector2i(-2, 2): 3}
+	for x in [-2, 0, 2]:
+		for z in [-2, 0, 2]:
+			var k := Vector2i(x, z)
+			if corners.has(k):
+				check(not s.overlaps("foundation_triangle", Vector3(x, 0, z), corners[k]), "corner triangle %s fits" % k)
+				s.add(uid, "foundation_triangle", "cut_stone", Vector3(x, 0, z), corners[k], true)
+				uid += 1
+				check(not s.overlaps("wall_diagonal", Vector3(x, 1, z), corners[k]), "diagonal wall %s fits" % k)
+				s.add(uid, "wall_diagonal", "cut_stone", Vector3(x, 1, z), corners[k], false)
+			else:
+				s.add(uid, "foundation", "cut_stone", Vector3(x, 0, z), 0, true)
+			uid += 1
+	check(s.recompute().is_empty(), "the octagon tower's base stands")
+
+
 func test_stations_by_material() -> void:
 	check_eq(Pieces.station_for("plank_root"), "workbench", "wood → Workbench")
 	check_eq(Pieces.station_for("cut_stone"), "mason", "stone → Mason's Table")

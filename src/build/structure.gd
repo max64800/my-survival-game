@@ -47,9 +47,27 @@ func overlaps(piece: String, pos: Vector3, rot: int) -> bool:
 	for uid in pieces:
 		if fits_inside(piece, pieces[uid].piece) or fits_inside(pieces[uid].piece, piece):
 			continue  # a door goes inside a doorway
+		if _other_half(piece, pos, rot, pieces[uid]):
+			continue  # two triangles filling the two halves of one square
 		if _shrunk(box_of(uid), 0.16).intersects(mine):
 			return true
 	return false
+
+
+## Two half-square pieces (triangles, diagonal walls) in the same spot, turned opposite ways,
+## use opposite halves of the square (spec: triangles). Diagonal pieces stand on the line between.
+static func _other_half(piece: String, pos: Vector3, rot: int, other: Dictionary) -> bool:
+	var a: String = Pieces.LIST[piece].get("shape", "")
+	var b: String = Pieces.LIST[other.piece].get("shape", "")
+	if not (a in ["triangle", "diagonal"] and b in ["triangle", "diagonal"]):
+		return false
+	if (pos - (other.pos as Vector3)) * Vector3(1, 0, 1) != Vector3.ZERO:
+		return false
+	if a == "diagonal" and b == "diagonal":
+		return false  # two diagonal walls in one square cross or sit on the same line: the normal check decides
+	if a == "triangle" and b == "triangle":
+		return posmod(rot - int(other.rot), 4) == 2
+	return true  # a diagonal wall standing on (or under) a triangle's slanted edge
 
 
 ## Pieces made to sit inside another one's opening.
