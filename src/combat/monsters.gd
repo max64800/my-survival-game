@@ -3,8 +3,9 @@ class_name Monsters
 ## Each attack: tell = seconds of warning before it lands, reach in meters,
 ## parry: "any" (weapon or shield), "shield" (crushing: only a shield parry works).
 ## buildup = {poison/burn/chill: amount} fills the target's Ailments meter (combat doc 2.6).
-## shortcut: lingering spore clouds, blinding and hiding aren't built yet: a cloud is one big
-## buildup on hit, Web Spray chills instead of slowing. Upgrade when area effects exist.
+## cloud = a spore cloud left when the attack lands: at "self", "target" or "between" them,
+## radius m, time s, rate = poison buildup per second inside, dps = damage per second inside.
+## shortcut: blinding and the Gill Stalker's real hiding aren't built; Web Spray chills instead of slowing.
 
 const LIST := {
 	"mossnipper": {name = "Mossnipper", size = 0.5, hp = 30, armor = 0, stun = 30, slash = 1.25, blunt = 1.0, pierce = 1.0,
@@ -47,9 +48,9 @@ const LIST := {
 	# ---- Fungal Jungle (combat doc 5.3). Players arrive with copper and leave with silver.
 	"wheezecap": {name = "Wheezecap", size = 0.6, hp = 80, armor = 0, stun = 50, slash = 1.5, blunt = 1.0, pierce = 0.75,
 		fire = -0.5, frost = 0.0, poison = 1.0, walk = 1.5, run = 3.0, pack = [2, 4], xp = 15, leader = "Wheezecap Puffmother", leader_chance = 0.25,
-		color = Color(0.78, 0.7, 0.6), shape = "mushroom",
+		color = Color(0.78, 0.7, 0.6), shape = "mushroom", death_cloud = {radius = 3.0, time = 5.0, rate = 25.0},
 		attacks = [{name = "Cap Butt", tell = 0.6, damage = 12, type = "blunt", reach = 1.4, parry = "any"},
-			{name = "Spore Puff", tell = 1.0, damage = 4, type = "poison", reach = 3.0, parry = "any", buildup = {poison = 60}}],
+			{name = "Spore Puff", tell = 1.0, damage = 4, type = "poison", reach = 3.0, parry = "any", cloud = {at = "self", radius = 3.0, time = 5.0, rate = 25.0}}],
 		drops = [["mushroom_flesh", 2, 0.8], ["spore_powder", 1, 0.5]]},
 	"needlemite": {name = "Needlemite", size = 0.55, hp = 45, armor = 10, stun = 40, slash = 1.0, blunt = 1.0, pierce = 1.5,
 		fire = 0.0, frost = -0.25, poison = 0.5, walk = 3.0, run = 7.5, pack = [4, 7], xp = 10, leader = "Needlemite Broodkeeper", leader_chance = 0.2,
@@ -73,7 +74,7 @@ const LIST := {
 	"cap_spitter": {name = "Cap Spitter", size = 1.2, hp = 110, armor = 0, stun = 70, slash = 1.5, blunt = 0.75, pierce = 0.5,
 		fire = -0.5, frost = 0.0, poison = 1.0, walk = 0.0, run = 0.0, pack = [1, 3], xp = 25,
 		color = Color(0.85, 0.45, 0.3), shape = "mushroom",
-		attacks = [{name = "Spore Bomb", tell = 1.2, damage = 15, type = "blunt", reach = 20.0, parry = "any", ranged = true, buildup = {poison = 50}},
+		attacks = [{name = "Spore Bomb", tell = 1.2, damage = 15, type = "blunt", reach = 20.0, parry = "any", ranged = true, cloud = {at = "target", radius = 2.0, time = 4.0, rate = 25.0}},
 			{name = "Root Snap", tell = 0.7, damage = 12, type = "pierce", reach = 2.0, parry = "any"}],
 		drops = [["spitter_gill", 2, 0.7], ["glow_slime", 3, 0.6]]},
 	# ---- Cave animals (combat doc 5.4): food you can hunt. passive = never attacks, runs when hit;
@@ -98,6 +99,7 @@ const LIST := {
 	"puffpod_grazer": {name = "Puffpod Grazer", size = 0.7, hp = 20, armor = 0, stun = 20, slash = 1.25, blunt = 1.0, pierce = 1.5,
 		fire = 0.0, frost = 0.0, poison = 1.0, walk = 0.8, run = 1.5, pack = [2, 3], xp = 3, skill = "survival",
 		color = Color(0.85, 0.7, 0.95), shape = "puffpod", passive = true, flies = true, attacks = [],
+		death_cloud = {radius = 2.5, time = 3.0, rate = 0.0},  # harmless puff
 		drops = [["bellcap", 2, 1.0]]},
 }
 ## Cave animals per biome (they live in big caverns and every other room).
@@ -157,7 +159,7 @@ const BOSSES := {
 			tendril_lash = {name = "Tendril Lash", tell = 0.7, damage = 15, type = "slash", reach = 6.0, parry = "any", follow = {tell = 0.5, damage = 15, follow = {tell = 0.5, damage = 15}}},
 			spore_volley = {name = "Spore Volley", tell = 1.2, damage = 15, type = "blunt", reach = 18.0, parry = "any", ranged = true, buildup = {poison = 40}},
 			bloom_burst = {name = "Bloom Burst", tell = 1.3, damage = 45, type = "blunt", reach = 14.0, parry = "shield", knockdown = true, ranged = true},
-			choking_exhale = {name = "Choking Exhale", tell = 1.4, damage = 10, type = "poison", reach = 8.0, parry = "any", buildup = {poison = 100}},
+			choking_exhale = {name = "Choking Exhale", tell = 1.4, damage = 10, type = "poison", reach = 8.0, parry = "any", cloud = {at = "between", radius = 4.0, time = 6.0, rate = 10.0, dps = 10.0}},
 			trample = {name = "Trample", tell = 1.1, damage = 30, type = "blunt", reach = 12.0, parry = "any", knockdown = true, lunge = true}}},
 	"old_ironshell": {name = "Old Ironshell", boss = "side", biome = "fungal", size = 2.6, hp = 1600, armor = 70, stun = 200,
 		slash = 0.5, blunt = 1.5, pierce = 1.0, fire = 0.0, frost = 0.0, poison = 0.25, walk = 2.0, run = 5.5, xp = 600,

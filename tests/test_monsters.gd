@@ -191,6 +191,28 @@ func test_friendly_fire() -> void:
 	_teardown()
 
 
+func test_spore_clouds() -> void:
+	await _setup()
+	var mm := auth.monsters
+	mm.spawn_cloud(player.global_position, 3.0, 5.0, 25.0, 0.0)
+	check_eq(mm.clouds.size(), 1, "a cloud appeared")
+	for i in 20:
+		mm._clouds_step(0.1)
+	check_near(ps.vitals.ailments.buildup.poison, 50.0, 0.5, "2 s inside: 50 poison buildup")
+	ps.vitals.consume("dish_spore_ward_stew")
+	for i in 20:
+		mm._clouds_step(0.1)
+	check_near(ps.vitals.ailments.buildup.poison, 75.0, 0.5, "Spore Ward Stew halves it")
+	for i in 20:
+		mm._clouds_step(0.1)
+	check_eq(mm.clouds.size(), 0, "after 5 s it's gone")
+	# A Wheezecap bursts into a cloud when it dies (unless it burned).
+	var w := _spawn("wheezecap", Vector3(1.2, 0, 0))
+	mm._kill(w, 1)
+	check_eq(mm.clouds.size(), 1, "death burst")
+	_teardown()
+
+
 func test_sneak_attack_doubles() -> void:
 	await _setup()
 	ps.inventory.add("sword_stone", 1)

@@ -48,6 +48,6 @@ func test_jungle_attacks_poison() -> void:
 	var poisonous := 0
 	for id in Monsters.LIST:
 		for a in Monsters.LIST[id].attacks:
-			if a.get("buildup", {}).has("poison"):
+			if a.get("buildup", {}).has("poison") or a.has("cloud"):
 				poisonous += 1
 	check(poisonous >= 3, "jungle monsters carry poison")

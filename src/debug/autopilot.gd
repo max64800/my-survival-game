@@ -304,6 +304,7 @@ func _visit_jungle(dwarf: Dwarf, ps: GameAuthority.PlayerState) -> void:
 		at = maker.find_floor(at.x, at.z, dwarf.global_position.y + 2.0)
 		mm._ev_spawn(mm._next_uid, kinds[i], at + Vector3.UP * 0.3, i == 1, 999)
 		mm._next_uid += 1
+	mm.spawn_cloud(dwarf.global_position + fwd * 6.0 + side * -4.4 + Vector3.UP * 0.8, 3.0, 8.0, 0.0, 0.0)  # a spore puff (harmless here)
 	await _wait(0.8)
 	var look := dwarf.global_position + fwd * 6.0
 	await _teleport(dwarf, dwarf.global_position, look)

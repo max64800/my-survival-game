@@ -63,6 +63,7 @@ func _physics_process(delta: float) -> void:
 		for m in monsters.values():
 			m.puppet_step(delta)
 	_judge_incoming()
+	_clouds_step(delta)
 
 
 func _host_step(delta: float) -> void:
@@ -555,6 +556,9 @@ func _boss_drops(m: Monster) -> void:
 
 
 func _kill(m: Monster, peer: int) -> void:
+	var dc: Dictionary = m.data.get("death_cloud", {})
+	if not dc.is_empty() and not m.ailments.has("burn"):  # a fire kill burns the spores away
+		spawn_cloud(m.global_position + Vector3.UP * 0.5, dc.radius, dc.time, dc.rate, 0.0)
 	if m.is_boss():
 		_boss_drops(m)
 	var xp: int = m.data.xp * (Monsters.LEADER.xp if m.leader else 1) * (Monsters.VARIANT_STATS.xp if m.variant != "" else 1)
@@ -593,6 +597,72 @@ func _ev_tell(uid: int, target: int, tell: float, dmg: float, reach: float, crus
 		_parry_ok[uid] = target  # only this player may parry this swing, once
 	if target == auth.local_peer_id() and dmg > 0.0:
 		_incoming.append({uid = uid, at = _clock + tell, damage = dmg, reach = reach, crushing = crushing, kd = kd, name = attack_name, buildup = buildup})
+
+
+# ================================================================== spore clouds
+
+const CLOUD_COLOR := Color(0.62, 0.72, 0.4, 0.16)
+var clouds: Array[Dictionary] = []  ## {pos, radius, left, rate, dps, node}
+
+
+## Host: a spore cloud appears (everyone sees it; each player's own computer feels it).
+func spawn_cloud(pos: Vector3, radius: float, seconds: float, rate: float, dps: float) -> void:
+	_ev_cloud.rpc(pos, radius, seconds, rate, dps)
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_cloud(pos: Vector3, radius: float, seconds: float, rate: float, dps: float) -> void:
+	# A lumpy bunch of soft see-through puffs (one shared material, so fading is one change).
+	var mi := Node3D.new()
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat.proximity_fade_enabled = true  # soft where it meets the ground
+	mat.proximity_fade_distance = 0.8
+	mat.albedo_color = CLOUD_COLOR if rate > 0.0 else Color(0.85, 0.75, 0.95, CLOUD_COLOR.a)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(pos)
+	for i in 6:
+		var puff := MeshInstance3D.new()
+		var s := SphereMesh.new()
+		var r := radius * rng.randf_range(0.45, 0.7)
+		s.radius = r
+		s.height = r * 1.6
+		s.radial_segments = 12
+		s.rings = 6
+		puff.mesh = s
+		puff.material_override = mat
+		puff.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		puff.position = Vector3(rng.randf_range(-1, 1), rng.randf_range(-0.2, 0.5), rng.randf_range(-1, 1)) * radius * 0.45
+		mi.add_child(puff)
+	mi.set_meta("mat", mat)
+	_root.add_child(mi)
+	mi.global_position = pos
+	clouds.append({pos = pos, radius = radius, left = seconds, total = seconds, rate = rate, dps = dps, node = mi})
+	Sfx.play("dig_soft", pos, -6.0, 0.6)
+
+
+func _clouds_step(delta: float) -> void:
+	if clouds.is_empty():
+		return
+	var me := auth.get_player(auth.local_peer_id())
+	var still: Array[Dictionary] = []
+	for c in clouds:
+		c.left -= delta
+		if c.left <= 0.0:
+			c.node.queue_free()
+			continue
+		var mat: StandardMaterial3D = c.node.get_meta("mat")
+		mat.albedo_color.a = CLOUD_COLOR.a * clampf(c.left / 1.0, 0.0, 1.0)  # fades out in its last second
+		c.node.scale = Vector3.ONE * (0.6 + 0.4 * minf(1.0, (c.total - c.left) / 0.5))  # puffs up
+		if me and me.node and not me.dying and me.node.global_position.distance_to(c.pos) < c.radius + 0.3:
+			var ward := 1.0 - me.vitals.buff_total("spore_resist")  # Spore Ward Stew halves it
+			me.vitals.ailments.add("poison", c.rate * delta * ward)
+			if c.dps > 0.0:
+				me.vitals.take_damage(c.dps * delta * ward)
+		still.append(c)
+	clouds = still
 
 
 func _judge_incoming() -> void:

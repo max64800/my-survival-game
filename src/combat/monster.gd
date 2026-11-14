@@ -45,6 +45,7 @@ var _ball := 0.0  ## Moss Shuffler: seconds left rolled up in its shell
 var ailments := Ailments.new()  ## host: burn / chill / poison on this monster (doc 2.6)
 var last_hitter := 0
 var _dot_sync := 0.0
+var _trail := 10.0
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
 
 
@@ -175,6 +176,12 @@ func think(delta: float, mgr: Node) -> void:
 	stun.decay_mult = Monsters.PACK_BOOST.decay if boosted else 1.0
 	stun.tick(delta)
 	_timer -= delta
+	if variant == "green":
+		# Blight-crested: leaves a small poison cloud every 10 s (doc 7.1).
+		_trail -= delta
+		if _trail <= 0.0 and state in [State.CHASE, State.ATTACK, State.RECOVER]:
+			_trail = 10.0
+			mgr.spawn_cloud(global_position, 2.0, 4.0, 25.0, 0.0)
 	var dot := ailments.tick(delta)
 	if dot > 0.0:
 		hp -= dot
@@ -272,6 +279,14 @@ func think(delta: float, mgr: Node) -> void:
 			_face(target)
 		State.ATTACK:
 			_face(target)
+			if _timer <= 0.0 and _attack.has("cloud"):
+				var c: Dictionary = _attack.cloud
+				var at := global_position
+				if target and c.at == "target":
+					at = target.global_position
+				elif target and c.at == "between":
+					at = global_position.lerp(target.global_position, 0.6)
+				mgr.spawn_cloud(at, c.radius, c.time, c.rate, c.get("dps", 0.0))
 			if _attack.get("lunge", false) and target and _timer < _attack.tell * 0.6:
 				# Charges and pounces: rush at the target during the last part of the wind-up.
 				var rush := target.global_position - global_position
