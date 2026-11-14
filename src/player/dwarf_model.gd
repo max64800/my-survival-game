@@ -145,9 +145,11 @@ func set_held(item: String) -> void:
 		"hammer":
 			_part(_cyl(0.025, 0.025, 0.6), handle, Vector3(0, 0.25, 0), _hand)
 			_part(_box(Vector3(0.12, 0.12, 0.22)), col, Vector3(0, 0.55, 0), _hand)
-		_:
+		"pickaxe":
 			_part(_cyl(0.025, 0.025, 0.85), handle, Vector3(0, 0.25, 0), _hand)
 			_part(_box(Vector3(0.07, 0.07, 0.55)), col, Vector3(0, 0.62, 0.02), _hand).rotation.x = deg_to_rad(8)
+		_:
+			pass  # empty hand, or rocks/food/etc.: hold nothing (feedback F22: it used to show a pickaxe)
 
 
 ## The rigged look: a CC0 character squashed into dwarf proportions, tools in its right hand,
