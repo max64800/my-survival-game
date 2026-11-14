@@ -84,7 +84,7 @@ func test_notices_and_chases_you() -> void:
 func test_sword_damage_and_kill() -> void:
 	await _setup()
 	ps.inventory.add("sword_stone", 1)
-	auth.request_select_slot(1, 1)
+	auth.request_select_slot(1, 0)  # the pickaxe sits in its own slot now (F23), so items start at slot 1 (key 1)
 	var m := _spawn("mossnipper", Vector3(1.2, 0, 0))
 	m.state = Monster.State.CHASE  # it saw us: no sneak bonus
 	var dealt := auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, 0, false)
@@ -109,7 +109,7 @@ func test_crystal_monster_hits_harder_and_drops_crystals() -> void:
 	check_near(ps.vitals.health, 100.0 - (6.0 * 1.1 + 5.0), 0.01, "×1.1 damage + 5 fire")
 	check_near(ps.vitals.ailments.buildup.burn, 30.0, 0.01, "and 30 burn buildup")
 	ps.inventory.add("sword_stone", 1)
-	auth.request_select_slot(1, 1)
+	auth.request_select_slot(1, 0)  # the pickaxe sits in its own slot now (F23), so items start at slot 1 (key 1)
 	m.state = Monster.State.CHASE
 	for i in 6:
 		if auth.monsters.monsters.is_empty():
@@ -127,7 +127,7 @@ func test_crystal_monster_hits_harder_and_drops_crystals() -> void:
 func test_animals_run_and_the_hog_fights_back() -> void:
 	await _setup()
 	ps.inventory.add("sword_stone", 1)
-	auth.request_select_slot(1, 1)
+	auth.request_select_slot(1, 0)  # the pickaxe sits in its own slot now (F23), so items start at slot 1 (key 1)
 	var shuffler := _spawn("moss_shuffler", Vector3(1.2, 0, 0))
 	for i in 60:
 		await tree.physics_frame
@@ -218,7 +218,7 @@ func test_spore_clouds() -> void:
 func test_sneak_attack_doubles() -> void:
 	await _setup()
 	ps.inventory.add("sword_stone", 1)
-	auth.request_select_slot(1, 1)
+	auth.request_select_slot(1, 0)  # the pickaxe sits in its own slot now (F23), so items start at slot 1 (key 1)
 	var m := _spawn("rustwight", Vector3(1.2, 0, 0))
 	check_eq(m.state, Monster.State.SLEEP, "rustwights start asleep")
 	var dealt := auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, 0, false)
@@ -278,7 +278,7 @@ func test_too_far_misses() -> void:
 func test_pack_leader_boost_ends_when_it_dies() -> void:
 	await _setup()
 	ps.inventory.add("mace_2h_copper", 1)
-	auth.request_select_slot(1, 1)
+	auth.request_select_slot(1, 0)  # the pickaxe sits in its own slot now (F23), so items start at slot 1 (key 1)
 	var leader := _spawn("mossnipper", Vector3(5, 0, 0), true, 7)
 	var member := _spawn("mossnipper", Vector3(6, 0, 1), false, 7)
 	auth.monsters._update_boosts()

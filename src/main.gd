@@ -110,6 +110,8 @@ func _ready() -> void:
 			debug_script = "res://src/debug/savecheck.gd"
 	# (startcheck is a robot too, but it plays the real new-game start on purpose.)
 	_robot_run = (debug_script != "" and not debug_script.ends_with("startcheck.gd")) or _jungle_kit
+	# Every test robot (startcheck too) leaves the real mouse alone (F27).
+	Controls.robot = debug_script != ""
 	if debug_script != "":
 		var dbg: Node = load(debug_script).new()
 		dbg.name = "Debug"
@@ -438,6 +440,12 @@ func save_now(note: String = "Saved") -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST and _ready_to_play:
 		save_now()  # saving when you quit (spec 5.11)
+	# You switched to another program (Alt+Tab, clicked another window): let go of the mouse
+	# and show the pause screen. Click back into the game to keep playing (feedback F27).
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and not Controls.robot and Controls.captured():
+		Controls.set_captured(false)
+		if hud:
+			hud.set_paused(true)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -450,28 +458,28 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("blueprints") or (event.is_action_pressed("pause") and hud.is_blueprints_open()):
 		var open_v := not hud.is_blueprints_open() and hud.build_mode.active()
 		hud.set_blueprints_open(open_v)
-		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if open_v else Input.MOUSE_MODE_CAPTURED
+		Controls.set_captured(false) if open_v else Input.MOUSE_MODE_CAPTURED
 		return
 	if event.is_action_pressed("build_menu") or (event.is_action_pressed("pause") and hud.is_build_menu_open()):
 		var open_b := not hud.is_build_menu_open() and hud.build_mode.active()
 		hud.set_build_menu_open(open_b)
-		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if open_b else Input.MOUSE_MODE_CAPTURED
+		Controls.set_captured(false) if open_b else Input.MOUSE_MODE_CAPTURED
 		return
 	if event.is_action_pressed("toggle_map") or (event.is_action_pressed("pause") and hud.is_map_open()):
 		var open_map := not hud.is_map_open()
 		hud.set_map_open(open_map)
-		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if open_map else Input.MOUSE_MODE_CAPTURED
+		Controls.set_captured(false) if open_map else Input.MOUSE_MODE_CAPTURED
 		return
 	if event.is_action_pressed("toggle_skills") or (event.is_action_pressed("pause") and hud.is_skills_open()):
 		var open := not hud.is_skills_open()
 		hud.set_skills_open(open)
-		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if open else Input.MOUSE_MODE_CAPTURED
+		Controls.set_captured(not open)
 		return
 	if event.is_action_pressed("pause"):
 		if hud.is_bag_open():
 			_set_bag(false)
 		else:
-			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+			Controls.set_captured(false)
 			hud.set_paused(true)
 	elif event.is_action_pressed("toggle_bag"):
 		_set_bag(not hud.is_bag_open())
@@ -481,7 +489,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			dwarf.model.react("use")  # reach out to open / touch it
 		if info.has("box_id"):
 			hud.open_box(info.box_id)
-			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+			Controls.set_captured(false)
 			return
 		if info.has("poi_id"):
 			authority.ask_poi(info.poi_id)
@@ -503,11 +511,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		if st:
 			hud.open_station(st)
-			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+			Controls.set_captured(false)
 	elif event.is_action_pressed("interact") and hud.is_bag_open():
 		_set_bag(false)
-	elif event is InputEventMouseButton and event.pressed and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED and not hud.is_bag_open():
-		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	elif event is InputEventMouseButton and event.pressed and not Controls.captured() and not hud.is_bag_open():
+		Controls.set_captured(true)
 		hud.set_paused(false)
 
 
@@ -528,7 +536,7 @@ func _altar_text(biome: String) -> String:
 
 func _set_bag(open: bool) -> void:
 	hud.set_bag_open(open)
-	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if open else Input.MOUSE_MODE_CAPTURED
+	Controls.set_captured(not open)
 
 
 func take_screenshot(path: String = "") -> String:

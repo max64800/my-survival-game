@@ -22,14 +22,14 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 |---|---|---|
 | Seeing in the dark (light) | F1, F12 | The lantern comes up a lot: brightness, then refilling |
 | Moving around (walking, jumping, climbing) | F2, F3 | |
-| Controls + camera | F18, F23 | |
+| Controls + camera | F18, F23, F27 | |
 | Making the game / tools | F4, F5, F6, F7, F16 | |
 | Sound | F8, F15 | |
 | The start of the game (first 5 minutes) | F10, F11 | |
 | A world that feels alive (enemies, ruins) | F9, F21 | Columns asked for twice (F9, F21) |
 | Cave shapes (round vs sharp, tunnels) | F19, F20 | |
 | Digging feel + resources | F13, F14 | |
-| Pictures / looks | F17, F22, F24, F25, F26, F27, F28 | **The dwarf's look keeps coming up (F25 said 3 times)** |
+| Pictures / looks | F17, F22, F24, F25, F26, F28, F29, F30, F31 | **The dwarf's look keeps coming up (F25 said twice)** |
 
 ---
 
@@ -37,17 +37,26 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 
 *(Nov 14, after your first real play session. You chose: merge everything into main; start kit = rocks + roots + 1 crystal; 25–50 chunks; copper very rare.)*
 
-- [ ] **F23. Real equipment slots** for pickaxe, lantern, clothes, etc. (not just the hotbar). *From: you. Said: 1×*
-- [ ] **F24. The beard isn't attached to the face.** → Claude 3: fixed on the `visuals` branch. The pack's little beard stays small on the face, and a real full beard now grows from the jaw down over the chest. Waiting for you to look. *From: you. Said: 1×*
-- [ ] **F25. The dwarf doesn't look dwarvish.** Should be short and WIDE, with shorter legs and arms, not a "small guy". → Claude 3, on the `visuals` branch: stubby legs (measured: 34% of the height, about a third), short arms that end at the hips, a round belly (not muscles), a big head and big hands and boots. Waiting for you to look. *From: you. Said: 3×* (Nov 14: "short and wide"; later: "legs and arms should be shorter"; then: "looks like a bulky guy: shorter legs, shorter arms, maybe fat")
-- [ ] **F26. The long things hanging from the ceiling look like icicles,** the same width top to bottom. Real stalactites: wide at the top, getting thinner, a rounded tip, smaller ones around them. (They're actually roots, so roots should look like roots too.) → Claude 3, on the `visuals` branch: roots are now twisted, knobbly wood that forks into thin strands, and real stone stalactite clusters hang from the ceilings. Waiting for you to look. *From: you. Said: 1×*
-- [ ] **F27. The game looks too "Roblox-y".** Make it look more like Valheim (Grounded if possible): real textures, better colours and shapes, not super realistic. → Claude 3, on the `visuals` branch: hand-painted rock, darker cave with fog and floating dust, painted grain on every object, fire, lantern, effects, cave clutter. Waiting for you to try it. *From: you. Said: 1×*
-- [ ] **F28. Animations: running, jumping, swinging…** → Claude 3, on the `visuals` branch: a real 3D dwarf with idle, walk, jog, sprint, jump + landing, a mining swing, axe chop, sword attacks, dodge roll, block, shield, crossbow aim/shoot/reload, getting hit, knock-back, eating, throwing, getting up; friends see it all in co-op. *From: you. Said: 1×*
+- [ ] **F28. Sometimes the game loads with textures, sometimes plain and blocky.** Not a loading bug: there are 2 versions. **main** (the desktop icon, Claudes 1+2) has plain colors. Claude 3's **visuals** copy has textures, the new dwarf and new monsters, but hasn't been merged into main yet (20+ changes). Fix: Claude 3 merges visuals into main, then everyone uses the one version. *From: you. Said: 1×*
+- [ ] **F24. The beard isn't attached to the face.** → Claude 3, on the `visuals` branch: the pack's little beard stays small on the face, and a real full beard grows from the jaw down over the chest. Waiting for you to look. *From: you. Said: 1×*
+- [ ] **F25. The dwarf doesn't look dwarvish.** Should be short and WIDE, with shorter legs and arms, not a "small guy". → Claude 3, on the `visuals` branch: stubby legs (measured: 34% of the height), short arms that end at the hips, a round belly (not muscles), a big head, big hands and boots. Waiting for you to look. *From: you. Said: 3×* ("short and wide"; "legs and arms should be shorter"; "a bulky guy: shorter legs, shorter arms, maybe fat")
+- [ ] **F26. The long things hanging from the ceiling look like icicles,** the same width top to bottom. Real stalactites: wide at the top, getting thinner, a rounded tip, smaller ones around them. (They're actually roots, so roots should look like roots too.) → Claude 3, on the `visuals` branch: roots are twisted, knobbly wood that forks into thin strands, and real stone stalactite clusters hang from the ceilings. Waiting for you to look. *From: you. Said: 1×*
+- [ ] **F29. The game looks too "Roblox-y".** Make it look more like Valheim (Grounded if possible): real textures, better colours and shapes, not super realistic. → Claude 3, on the `visuals` branch: hand-painted rock, darker cave with fog and dust, painted grain on everything, fire, lantern, effects, cave clutter, monsters that move. Waiting for you to try it. *From: you. Said: 1×*
+- [ ] **F30. Animations: running, jumping, swinging…** → Claude 3, on the `visuals` branch: a real 3D dwarf with idle, walk, jog, sprint, jump + landing, mining swing, axe chop, sword attacks, roll, block, shield, crossbow, getting hit, eating, climbing ladders, getting up; friends see it in co-op. *From: you. Said: 1×*
+- [ ] **F31. Monsters: start with snails, bats and a beetle, polish them first.** Snails slow but hit hard, hide in the shell after a few hits (90% less damage); big bats that swoop in, attack, fly out; a beetle. Drops and uses chosen in a multiple-choice session (docs/design/monsters-first-three.md). → Claude 3, on the `visuals` branch: built; the other monsters are hidden for now. Waiting for you to try it. *From: you. Said: 1×*
 
 **Claude noticed, waiting for your OK** (not fixed until you say so):
 
 ## Done
 
+- [x] ~~**F27. The game grabs my mouse even when I'm in another program, and Claude's tests take my mouse.**~~ Fixed Nov 14. When you switch away (click another window or Alt+Tab), the game lets go of the mouse and pauses. Click back into the game to keep playing. Claude's test robots only *pretend* to hold the mouse now, so they never touch yours. *From: you. Said: 1×*
+- [x] ~~**F23. Real equipment slots.**~~ Done Nov 14. 9 slots in the bag window (Tab): Pickaxe, Lantern, Weapon, Shield, Head, Chest, Legs, Feet, Pack.
+  - With an empty hand (or just holding rocks), you dig with the equipped pickaxe. **F** draws or puts away the equipped weapon.
+  - **Right-click** an item to equip it or take it off. Pickaxes, lanterns, clothes and backpacks put themselves on when you get them.
+  - Armor soaks up damage (2% per point, at most 60%): a leather set (workbench, 22%) and a copper set (anvil, 48%).
+  - A **Leather Satchel** opens 10 more bag slots.
+  - Equipped things stay with you when you die.
+  - Pictures by Claude 2. *From: you. Said: 1×*
 - [x] ~~**C1. The game only runs at ~50 FPS on the RTX 3060 Ti.**~~ Explained + sped up Nov 14. Claude 3 measured it: the ~50-60 is just the frame cap. Your screen is 60 Hz and "vsync" holds the game to it. Without the cap it runs ~200-300 FPS. Speed-ups along the way: glowing things are now found through a grid instead of checking every one (Claude 3), and the block-breaking burst reuses its shapes (Claude 1). A few small hitches remain, from the cave re-building itself after digging. *From: Claude (first PC run). Said: 1×*
 - [x] ~~**F21. Columns should look better, like great dwarf halls, not just blocks.**~~ Done Nov 14. Carved columns: a stepped base, an 8-sided shaft with 2 bands that narrows toward the top, and a wide stepped top. Broken ones snap off with a jagged top, and their fallen pieces and rubble lie around them. *From: you. Said: 1×*
 - [x] ~~**F20. More tunnels, like Minecraft.**~~ Done Nov 14. About 3x the tunnels: more loops, more dead ends, and 16 twisty side passages per area that branch, cross, climb and dip. *From: you. Said: 1×*

@@ -44,7 +44,7 @@ func _run_client() -> void:
 	var states := {}
 	auth.dig_feedback.connect(func(_p, r): states[r.get("state", "?")] = states.get(r.get("state", "?"), 0) + 1)
 	await _wait(2.0)
-	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	Controls.set_captured(true)
 	_main.hud.set_paused(false)
 	dwarf._pitch = -0.75
 	Input.action_press("dig")
@@ -125,7 +125,7 @@ func _run_client() -> void:
 
 func _run_host() -> void:
 	# Dig a little before the friend arrives, so they must catch up on old holes.
-	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	Controls.set_captured(true)
 	_main.hud.set_paused(false)
 	_main.dwarf._pitch = -0.75
 	_main.dwarf._yaw = PI

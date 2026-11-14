@@ -33,7 +33,7 @@ func _run() -> void:
 	await _wait(1.0)
 	var dwarf: Dwarf = _main.dwarf
 	dwarf.set_physics_process(false)
-	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	Controls.set_captured(true)
 	_main.hud.set_paused(false)
 	var fwd := -Basis(Vector3.UP, dwarf._yaw).z
 	var side := Basis(Vector3.UP, dwarf._yaw).x

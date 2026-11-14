@@ -75,7 +75,7 @@ func test_bench_socket_and_remove() -> void:
 func test_ember_sword_burns() -> void:
 	await _setup()
 	ps.inventory.slots[1] = {id = "sword_copper", count = 1, gems = ["ember"]}
-	auth.request_select_slot(1, 1)
+	auth.request_select_slot(1, 1)  # the sword was put straight into slot index 1 above
 	var uid: int = auth.monsters._next_uid
 	var p := world.maker.find_floor(player.global_position.x + 1.2, player.global_position.z, player.global_position.y + 2.0)
 	auth.monsters._ev_spawn(uid, "cairnling", p + Vector3.UP * 0.3, false, 0)

@@ -109,7 +109,7 @@ func _process(_delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not active() or Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+	if not active() or not Controls.captured():
 		return
 	var auth := GameAuthority.instance
 	if blueprint:

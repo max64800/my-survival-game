@@ -23,6 +23,7 @@ const KEYS := {
 	"capture": [KEY_C],
 	"blueprints": [KEY_V],
 	"dodge": [KEY_CTRL],
+	"draw_weapon": [KEY_F],  ## draw / put away the equipped weapon (F23)
 	"quicksave": [KEY_F5],
 }
 const MOUSE := {
@@ -34,6 +35,24 @@ const MOUSE := {
 }
 
 const MOUSE_SENSITIVITY := 0.0025
+
+## Test robots never grab the real mouse (feedback F27: it was stealing the owner's mouse while
+## they used other programs). For robots, "captured" is only pretend.
+static var robot := false
+static var _fake_captured := false
+
+
+## Is the mouse "in the game" (looking around, digging) right now?
+static func captured() -> bool:
+	return _fake_captured if robot else Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
+
+
+## Grab or free the mouse. (Robots only pretend.)
+static func set_captured(on: bool) -> void:
+	if robot:
+		_fake_captured = on
+		return
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if on else Input.MOUSE_MODE_VISIBLE
 
 
 static func setup() -> void:

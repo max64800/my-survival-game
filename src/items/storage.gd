@@ -6,7 +6,7 @@ extends Node
 
 const BOX_LAYER := 16  ## same layer as stations, so you can aim at them and press E
 const REACH := 4.5
-const SIZES := {"chest_small": 12, "chest_stone": 24, "chest_copper": 36, "crate_ore": 60, "grave": Inventory.SIZE, "builder": 24}
+const SIZES := {"chest_small": 12, "chest_stone": 24, "chest_copper": 36, "crate_ore": 60, "grave": Inventory.EQUIP_START, "builder": 24}
 ## The Ore Crate only takes ores, stone types, clay and crystals (doc 8 storage table).
 const ORE_CRATE := ["stone", "dirt", "moss", "clay", "copper_ore", "silver_ore", "sporestone", "amberrock", "marble", "basalt", "brown_rock"]
 

@@ -63,5 +63,5 @@ func refresh() -> void:
 			b.pressed.connect(func():
 				mode.start_blueprint(json)
 				visible = false
-				Input.mouse_mode = Input.MOUSE_MODE_CAPTURED)
+				Controls.set_captured(true))
 		_list.add_child(b)
