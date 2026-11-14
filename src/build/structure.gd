@@ -45,9 +45,16 @@ func box_of(uid: int) -> AABB:
 func overlaps(piece: String, pos: Vector3, rot: int) -> bool:
 	var mine := _shrunk(Pieces.box(piece, pos, rot), 0.16)
 	for uid in pieces:
+		if fits_inside(piece, pieces[uid].piece) or fits_inside(pieces[uid].piece, piece):
+			continue  # a door goes inside a doorway
 		if _shrunk(box_of(uid), 0.16).intersects(mine):
 			return true
 	return false
+
+
+## Pieces made to sit inside another one's opening.
+static func fits_inside(inner: String, outer: String) -> bool:
+	return inner == "door" and outer in ["doorway", "arch_doorway"]
 
 
 ## Shrinks a box on every side, but never past its middle (thin walls stay valid boxes).
