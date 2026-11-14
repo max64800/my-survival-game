@@ -143,6 +143,7 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	if on_floor and velocity.y <= 0.01 and dir.length() > 0.1 and is_on_wall():
 		_try_step_up(dir * speed * delta)
+	_footsteps(delta)
 
 	# Face where we're going, or where we're digging.
 	var face_dir := dir
@@ -154,6 +155,7 @@ func _physics_process(delta: float) -> void:
 
 	if playing and Input.is_action_pressed("dig") and not model.swinging:
 		model.swing(SWING_TIME)
+		Sfx.play("swing", global_position + Vector3.UP, -12.0)
 
 	# Safety net: if we ever fall out of the cave, go back to the start.
 	if global_position.y < CaveMaker.Y_MIN - 30.0:
@@ -237,17 +239,38 @@ func _on_swing_impact() -> void:
 	if glow_id >= 0:
 		if auth.request_break_glow(peer_id, glow_id):
 			Fx.burst(get_parent(), hit.position, Color(0.5, 0.85, 1.0), 14)
+			Sfx.play("crystal", hit.position)
 			_shake = 0.6
 		return
 	var result := auth.request_hit(peer_id, hit.position, hit.normal)
-	var col := Fx.material_color(result.get("material", Mat.STONE))
+	var mat: int = result.get("material", Mat.STONE)
+	var col := Fx.material_color(mat)
+	var soft := mat == Mat.MOSS or mat == Mat.DIRT
 	match result.get("state", ""):
 		"hit":
 			Fx.burst(get_parent(), hit.position + hit.normal * 0.1, col, 6, 2.5)
+			Sfx.play("dig_soft" if soft else "dig_rock", hit.position)
 			_shake = 0.35
 		"dug":
 			Fx.burst(get_parent(), hit.position, col, 16, 4.0)
+			Sfx.play("dig_soft" if soft else "dig_rock", hit.position, 2.0, 0.85)
 			_shake = 0.8
 		"blocked":
 			Fx.burst(get_parent(), hit.position + hit.normal * 0.1, Color(1.0, 0.9, 0.6), 4, 5.0)
+			Sfx.play("clink", hit.position)
 			_shake = 0.2
+
+
+var _step_t := 0.0
+
+
+## Footsteps: quicker when running.
+func _footsteps(delta: float) -> void:
+	var speed := Vector2(velocity.x, velocity.z).length()
+	if not is_on_floor() or speed < 1.0:
+		_step_t = 0.0
+		return
+	_step_t -= delta
+	if _step_t <= 0.0:
+		_step_t = 0.42 if speed < 5.0 else 0.3
+		Sfx.play("step", global_position, -14.0)

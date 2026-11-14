@@ -23,6 +23,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 | Seeing in the dark (light) | F1 | |
 | Moving around (walking, jumping, climbing) | F2, F3 | |
 | Making the game / tools | F4, F5, F6, F7 | |
+| Sound | F8 | |
 
 ---
 
@@ -34,6 +35,8 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **C1. The game runs at only ~50 FPS on your RTX 3060 Ti.** It should be much higher, so something is slowing it down. (Found Nov 14 on the first PC run.)
 
 ## Done
+
+- [x] ~~**F8. Mute only Claude's tests. When I play, I want sound.**~~ Fixed Nov 14. Muting was already only for Claude's test runs. The real problem was that Step 1 had **no sounds at all** (they'd only been built on the Step 6 branch). Now Step 1 has 11 sounds from Kenney's free packs: pickaxe swing, digging (soft for moss/dirt, hard for stone), rock breaking, a "clink" on rock that's too hard, crystals, footsteps, pickups, lantern refill, and bag open/close. *From: you. Said: 1×*
 
 - [x] ~~**F1. The lantern is too dim.**~~ Fixed Nov 14. The dwarf's own body *and* the lantern's glass box were blocking the light, like holding a flashlight behind your back. Now neither blocks it, and the light reaches further. *From: Claude (test session), you said yes. Said: 1×*
 - [x] ~~**F2. The dwarf gets stuck on small ledges and bumps.**~~ Fixed Nov 14. The dwarf now steps up anything up to 50 cm tall by itself, like stairs. Taller walls still need a jump. *From: Claude (test session), you said yes. Said: 1×*

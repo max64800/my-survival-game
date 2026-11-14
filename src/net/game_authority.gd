@@ -163,6 +163,7 @@ func request_refill(peer_id: int) -> bool:
 		if ps.inventory.remove(id, 1):
 			ps.fuel = minf(MAX_FUEL, ps.fuel + Items.fuel_seconds(id))
 			fuel_changed.emit(peer_id, ps.fuel)
+			Sfx.ui("refill")
 			return true
 	return false
 
@@ -172,6 +173,7 @@ func request_refill(peer_id: int) -> bool:
 ## Removes a scoop of rock (and any crystals stuck to it).
 func _do_dig(center: Vector3) -> Dictionary:
 	var counts := world.apply_dig(center, DIG_RADIUS)
+	Sfx.play("dig_break", center, -6.0)
 	if glow:
 		for spot in glow.spots_near(center, DIG_RADIUS + 0.9):
 			_do_remove_glow(spot.id)

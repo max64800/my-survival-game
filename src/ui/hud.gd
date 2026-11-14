@@ -268,6 +268,8 @@ func is_bag_open() -> bool:
 
 
 func set_bag_open(open: bool) -> void:
+	if open != _bag_panel.visible:
+		Sfx.ui("open" if open else "close", -10.0)
 	_bag_panel.visible = open
 	_swap_from = -1
 	_refresh_slots()

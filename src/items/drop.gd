@@ -69,7 +69,9 @@ func _physics_process(delta: float) -> void:
 		return
 	global_position = global_position.move_toward(target, FLY_SPEED * delta * (1.0 + 2.0 / maxf(dist, 0.5)))
 	if dist < 0.6:
-		if not auth.request_pickup(auth.local_peer_id(), drop_id):
+		if auth.request_pickup(auth.local_peer_id(), drop_id):
+			Sfx.ui("pickup", -8.0)
+		else:
 			# Bag full: fall back down and try again in a while.
 			_flying = false
 			freeze = false
