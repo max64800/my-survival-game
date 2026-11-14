@@ -95,6 +95,10 @@ func _material_of(v: Vector3i) -> int:
 
 ## Carves a ball of rock away. Rock too hard for `tool_tier` (like border rock) is left alone.
 ## Returns how many voxels of each material turned into air: {Mat.STONE: 7, ...}
+## Rock changed near `center` (dig or cave-in). Only looks listen (e.g. Clutter lifts away).
+signal changed(center: Vector3, radius: float)
+
+
 func apply_dig(center: Vector3, radius: float, tool_tier: int = 0) -> Dictionary:
 	var counts := {}
 	var lo := Vector3i((center - Vector3.ONE * (radius + 1.0)).floor())
@@ -122,6 +126,8 @@ func apply_dig(center: Vector3, radius: float, tool_tier: int = 0) -> Dictionary
 				if old < 0.0 and carve >= 0.0:
 					counts[m] = counts.get(m, 0) + 1
 	_tool.paste(lo, buf, mask)
+	if not counts.is_empty():
+		changed.emit(center, radius)
 	return counts
 
 
@@ -152,6 +158,8 @@ func remove_voxels(points: PackedVector3Array) -> Dictionary:
 		buf.set_voxel_f(0.6, v.x, v.y, v.z, VoxelBuffer.CHANNEL_SDF)
 		counts[m] = counts.get(m, 0) + 1
 	_tool.paste(lo, buf, mask)
+	if not counts.is_empty():
+		changed.emit((Vector3(lo) + Vector3(hi)) * 0.5, (Vector3(hi - lo)).length() * 0.5 + 1.0)
 	return counts
 
 

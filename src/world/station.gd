@@ -103,10 +103,31 @@ func _size() -> Vector3:
 	return Vector3(1.0, 1.0, 1.0)
 
 
-## Placeholder looks made of boxes and cylinders (real art comes with the art pack).
+## The campfire's flames, sparks and smoke, and its flickering light.
+func _add_fire() -> void:
+	var fire := Fire.new(1.0)
+	fire.position = Vector3.UP * 0.12
+	add_child(fire)
+	_fire = OmniLight3D.new()
+	_fire.light_color = Color(1.0, 0.6, 0.3)
+	_fire.omni_range = 9.0
+	_fire.light_energy = 1.8
+	_fire.position = Vector3.UP * 0.6
+	add_child(_fire)
+
+
+## Placeholder looks made of boxes and cylinders (used until the asset forge has a model).
 func _build_look() -> void:
 	var c := Items.color(kind)
 	var sz := _size()
+	# A real 3D model from the asset forge, when one exists (else the simple shapes below).
+	var model := Look.forged("stations", kind)
+	if model:
+		model.rotation.y = PI  # forged models face +Z; stations face -Z
+		add_child(model)
+		if kind == "campfire":
+			_add_fire()
+		return
 	match kind:
 		"campfire":
 			for i in 6:
@@ -116,15 +137,7 @@ func _build_look() -> void:
 				var log := _part(_cyl(0.06, 0.06, 0.7), Color(0.4, 0.27, 0.15), Vector3(0, 0.12, 0))
 				log.rotation = Vector3(PI / 2.0, i * PI / 3.0, 0)
 			_part(_cyl(0.12, 0.2, 0.08), Color(1.0, 0.45, 0.12), Vector3(0, 0.08, 0), true)  # glowing coals
-			var fire := Fire.new(1.0)
-			fire.position = Vector3.UP * 0.12
-			add_child(fire)
-			_fire = OmniLight3D.new()
-			_fire.light_color = Color(1.0, 0.6, 0.3)
-			_fire.omni_range = 9.0
-			_fire.light_energy = 1.8
-			_fire.position = Vector3.UP * 0.6
-			add_child(_fire)
+			_add_fire()
 		"smelter":
 			_part(_cyl(0.45, 0.6, sz.y), c, Vector3.UP * sz.y * 0.5)
 			_part(_box(Vector3(0.4, 0.35, 0.1)), Color(1.0, 0.5, 0.15), Vector3(0, 0.35, -0.55), true)

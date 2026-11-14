@@ -17,8 +17,8 @@ const OUTFIT := "res://assets/characters/dwarf/Male_Ranger.gltf"
 const BASE := "res://assets/characters/dwarf/Superhero_Male_FullBody.gltf"
 const BEARD := "res://assets/characters/dwarf/Hair_Beard.gltf"
 const LIBS := {"": "res://assets/characters/anims/UAL1.glb", "b": "res://assets/characters/anims/UAL2.glb"}
-const HEIGHT := 1.0   ## where the head bone ends up (metres); the whole dwarf is ~1.3 m tall
-const WIDTH := 1.45   ## dwarves are short, fat and wide: the whole body is squashed wider
+const HEIGHT := 0.98  ## where the head bone ends up (metres); with the helmet the dwarf is ~1.3 m tall
+const WIDTH := 1.2    ## a little extra width overall (most of the bulk comes from DwarfProportions)
 const BEARD_COLOR := Color(0.62, 0.32, 0.14)
 ## Which animation does what. Names from the UAL packs ("b/" = pack 2). Godot drops the
 ## "_Loop" ending from the file's names when it imports them, and makes those animations loop.
@@ -89,13 +89,14 @@ func build(tint: Color) -> void:
 	prop.setup(skeleton)
 	# Size: put the head bone at HEIGHT, and make the dwarf a bit wider.
 	var head := skeleton.find_bone("Head")
-	var head_y := prop._rest_global(skeleton, head, true).origin.y - (skeleton.get_bone_rest(skeleton.find_bone("pelvis")).basis * prop._drop).y
+	var head_y := prop._rest_global(skeleton, head, true).origin.y - prop.drop_height
 	var s := HEIGHT / maxf(head_y, 0.1)
 	scale = Vector3(s * WIDTH, s, s * WIDTH)
 	# Hands: things held keep their own size (cancel the dwarf scale and the big-hand scale).
 	right_hand = _hand_socket("hand_r")
 	left_hand = _hand_socket("hand_l")
 	_build_helmet()
+	_build_beard()
 	_build_tree(body)
 
 
@@ -254,6 +255,55 @@ func _borrow_meshes(path: String, fix: Callable) -> void:
 	other.free()
 
 
+## Things worn (armor, masks). Each id builds its parts on a bone; new armor = a new entry here.
+var _worn := {}  ## id -> the node holding its parts
+
+
+func set_wear(ids: Array) -> void:
+	for id in _worn.keys():
+		if id not in ids:
+			_worn[id].queue_free()
+			_worn.erase(id)
+	for id in ids:
+		if not _worn.has(id) and has_method("_wear_" + id):
+			_worn[id] = call("_wear_" + id)
+
+
+## Spore Mask: a cloth mask over nose and mouth with two round filters (head bone units,
+## face toward +Z; see _build_helmet for the measurements).
+func _wear_spore_mask() -> Node3D:
+	var att := BoneAttachment3D.new()
+	att.bone_name = "Head"
+	skeleton.add_child(att)
+	var cloth := Color(0.5, 0.58, 0.42)
+	var sm := SphereMesh.new()
+	sm.radius = 0.1
+	sm.height = 0.2
+	sm.radial_segments = 12
+	sm.rings = 6
+	var mask := MeshInstance3D.new()
+	mask.mesh = sm
+	mask.position = Vector3(0, 0.03, 0.115)
+	mask.scale = Vector3(1.35, 0.75, 0.7)
+	mask.material_override = Look.mat(cloth, "cloth")
+	att.add_child(mask)
+	for x in [-0.075, 0.075]:
+		var f := MeshInstance3D.new()
+		var cm := CylinderMesh.new()
+		cm.top_radius = 0.035
+		cm.bottom_radius = 0.04
+		cm.height = 0.035
+		cm.radial_segments = 10
+		f.mesh = cm
+		f.position = Vector3(x, 0.0, 0.17)
+		f.rotation = Vector3(PI / 2.0, 0, x * 3.0)
+		f.material_override = Look.mat(Color(0.35, 0.33, 0.3), "metal")
+		att.add_child(f)
+	for mi: MeshInstance3D in att.find_children("*", "MeshInstance3D", true, false):
+		mi.layers = DwarfModel.VISUAL_LAYER
+	return att
+
+
 ## A dwarf helmet on the head bone. Sizes are in the head bone's own units (measured: the skull
 ## is about ±0.15 wide, its top at +0.21 up, the face toward +Z).
 func _build_helmet() -> void:
@@ -263,8 +313,8 @@ func _build_helmet() -> void:
 	var iron := Color(0.5, 0.5, 0.53)
 	var dome := MeshInstance3D.new()
 	var sm := SphereMesh.new()
-	sm.radius = 0.142
-	sm.height = 0.142
+	sm.radius = 0.128
+	sm.height = 0.128
 	sm.is_hemisphere = true
 	sm.radial_segments = 16
 	sm.rings = 6
@@ -275,8 +325,8 @@ func _build_helmet() -> void:
 	att.add_child(dome)
 	var rim := MeshInstance3D.new()
 	var tm := TorusMesh.new()
-	tm.inner_radius = 0.138
-	tm.outer_radius = 0.158
+	tm.inner_radius = 0.124
+	tm.outer_radius = 0.14
 	tm.rings = 20
 	tm.ring_segments = 6
 	rim.mesh = tm
@@ -286,9 +336,9 @@ func _build_helmet() -> void:
 	att.add_child(rim)
 	var ridge := MeshInstance3D.new()
 	var rb := BoxMesh.new()
-	rb.size = Vector3(0.025, 0.03, 0.2)
+	rb.size = Vector3(0.022, 0.026, 0.18)
 	ridge.mesh = rb
-	ridge.position = Vector3(0, 0.27, -0.02)
+	ridge.position = Vector3(0, 0.25, -0.02)
 	ridge.material_override = Look.mat(Color(0.55, 0.38, 0.2), "metal")
 	att.add_child(ridge)
 	var nose := MeshInstance3D.new()
@@ -300,6 +350,65 @@ func _build_helmet() -> void:
 	att.add_child(nose)
 	for mi in [dome, rim, ridge, nose]:
 		mi.layers = DwarfModel.VISUAL_LAYER
+
+
+## The big dwarf beard: a full, lumpy beard that grows from the jaw and flows down onto the chest,
+## built from rings (like stacking hoops of different sizes and wrapping them in skin).
+## It rides on the head bone, so it turns with the head. Head bone units: face toward +Z.
+func _build_beard() -> void:
+	var att := BoneAttachment3D.new()
+	att.bone_name = "Head"
+	skeleton.add_child(att)
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	const RINGS := 9
+	const AROUND := 12
+	var rings := []
+	for r in RINGS:
+		var t := float(r) / (RINGS - 1)
+		var y := lerpf(0.05, -0.46, t)                  # from the jaw down onto the chest
+		var z := lerpf(0.07, 0.17, sqrt(t))             # follows the chest forward
+		var w := 0.135 * (1.0 + 0.3 * sin(PI * t * 0.85)) * (1.0 - 0.8 * t * t)  # widest in the middle
+		var d := 0.075 * (1.0 - 0.55 * t)
+		var ring := []
+		for a in AROUND:
+			var ang := TAU * a / AROUND
+			var lump := 1.0 + 0.12 * sin(ang * 3.0 + r * 1.7) * t  # hand-made, uneven locks
+			ring.append(Vector3(cos(ang) * w * lump, y, z + sin(ang) * d * lump))
+		rings.append(ring)
+	var tip := Vector3(0, -0.53, 0.19)
+	for r in RINGS - 1:
+		for a in AROUND:
+			var b := (a + 1) % AROUND
+			_quad(st, rings[r][a], rings[r][b], rings[r + 1][b], rings[r + 1][a])
+	for a in AROUND:
+		st.add_vertex(rings[RINGS - 1][a])
+		st.add_vertex(tip)
+		st.add_vertex(rings[RINGS - 1][(a + 1) % AROUND])
+	# A thick moustache: two drooping tufts under the nose.
+	for sx in [-1.0, 1.0]:
+		var root := Vector3(0.02 * sx, 0.075, 0.155)
+		var end := Vector3(0.12 * sx, -0.01, 0.12)
+		for a in 6:
+			var a0 := TAU * a / 6.0
+			var a1 := TAU * (a + 1) / 6.0
+			var o0 := Vector3(0, cos(a0), sin(a0)) * 0.025
+			var o1 := Vector3(0, cos(a1), sin(a1)) * 0.025
+			st.add_vertex(root + o0)
+			st.add_vertex(end)
+			st.add_vertex(root + o1)
+	st.generate_normals()
+	var mi := MeshInstance3D.new()
+	mi.mesh = st.commit()
+	var m := Look.mat(BEARD_COLOR, "bark", 0.0, 0.0)  # bark's long streaks read as strands of hair
+	mi.material_override = m
+	mi.layers = DwarfModel.VISUAL_LAYER
+	att.add_child(mi)
+
+
+static func _quad(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, d: Vector3) -> void:
+	for v in [a, c, b, a, d, c]:  # this order makes the outside the visible side
+		st.add_vertex(v)
 
 
 ## The pack's short chin beard, stretched into a big dwarf beard: longer down onto the chest,
@@ -319,8 +428,8 @@ static func _big_beard(mi: MeshInstance3D) -> Mesh:
 	for i in verts.size():
 		var d := to_head * verts[i] - pivot
 		var t := clampf(-d.y / 0.05, 0.0, 1.0)  # 0 = moustache, 1 = the hanging part
-		var k := Vector3(1.25, 1.2, 1.3).lerp(Vector3(1.45, 3.2, 1.9), t)
-		verts[i] = from_head * (pivot + d * k + Vector3(0, 0, 0.02 * t))
+		var k := Vector3(1.15, 1.1, 1.1).lerp(Vector3(1.25, 1.3, 1.15), t)  # only a little: it must stay on the face
+		verts[i] = from_head * (pivot + d * k)
 	arrays[Mesh.ARRAY_VERTEX] = verts
 	arrays[Mesh.ARRAY_NORMAL] = arrays[Mesh.ARRAY_NORMAL]
 	var m := ArrayMesh.new()

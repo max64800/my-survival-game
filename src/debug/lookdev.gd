@@ -97,6 +97,10 @@ func _run() -> void:
 	dwarf._pitch = 0.1
 	await _wait(0.8)
 	await _shot("c_spawn_look")
+	dwarf._pitch = 0.75  # look up: ceiling roots and stalactites
+	await _wait(0.6)
+	await _shot("c2_ceiling")
+	dwarf._pitch = 0.1
 	# Walk forward for a moment (animations).
 	dwarf.bot_move = Vector2(0, -1)
 	await _wait(0.7)

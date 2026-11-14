@@ -301,28 +301,48 @@ func _make_fiber_mesh() -> Mesh:
 	return st.commit()
 
 
-## A root 1 m long (stretched to fit), thick at the ceiling and thin at the tip,
-## with a few twists so it looks organic.
+## A root 1 m long (stretched to fit the gap to the floor), hanging down from the ceiling:
+## a thick, knobbly base, twisting and getting thinner toward the end, with a couple of side
+## roots forking off and thin hair-roots at the tip. Clearly wood, not a stone icicle (F26).
 func _make_root_mesh() -> Mesh:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var main := CylinderMesh.new()
-	main.radial_segments = 7
-	main.rings = 4
-	main.top_radius = 0.06
-	main.bottom_radius = 0.28
-	main.height = 1.0
-	st.append_from(main, 0, Transform3D(Basis(), Vector3.UP * 0.5))
-	for i in 3:
-		var side := CylinderMesh.new()
-		side.radial_segments = 5
-		side.rings = 1
-		side.top_radius = 0.02
-		side.bottom_radius = 0.1
-		side.height = 0.45
-		var a := i * 2.1
-		var t := Transform3D(Basis(Vector3.UP, a) * Basis(Vector3.RIGHT, 0.7), Vector3(cos(a), 0, sin(a)) * 0.15 + Vector3.UP * (0.15 + 0.2 * i))
-		t.origin += t.basis.y * 0.2
-		st.append_from(side, 0, t)
+	_root_tube(st, Vector3.ZERO, [Vector3(0.0, 0.0, 0.0), Vector3(0.06, 0.25, 0.03), Vector3(-0.05, 0.5, 0.05),
+		Vector3(0.04, 0.75, -0.04), Vector3(-0.02, 1.0, 0.02)], 0.3, 0.025)
+	# Side roots: forking off and curling down.
+	_root_tube(st, Vector3.ZERO, [Vector3(0.0, 0.18, 0.0), Vector3(0.18, 0.3, 0.05), Vector3(0.26, 0.5, 0.1), Vector3(0.24, 0.7, 0.16)], 0.09, 0.015)
+	_root_tube(st, Vector3.ZERO, [Vector3(0.0, 0.42, 0.0), Vector3(-0.16, 0.52, -0.08), Vector3(-0.2, 0.68, -0.14), Vector3(-0.17, 0.85, -0.2)], 0.07, 0.012)
+	# Hair-roots at the tip.
+	for k in 3:
+		var a := k * TAU / 3.0
+		_root_tube(st, Vector3.ZERO, [Vector3(-0.02, 0.92, 0.02), Vector3(cos(a) * 0.05, 1.0, sin(a) * 0.05), Vector3(cos(a) * 0.08, 1.08, sin(a) * 0.08)], 0.02, 0.005)
 	st.generate_normals()
 	return st.commit()
+
+
+## A bendy tube through `points` (local +Y = down the root), from radius r0 to r1.
+static func _root_tube(st: SurfaceTool, origin: Vector3, points: Array, r0: float, r1: float) -> void:
+	const AROUND := 7
+	const STEPS := 4  # smooth steps between two points
+	var path := []
+	for i in points.size() - 1:
+		for k in STEPS:
+			path.append((points[i] as Vector3).lerp(points[i + 1], float(k) / STEPS))
+	path.append(points[points.size() - 1])
+	var rings := []
+	for i in path.size():
+		var t := float(i) / (path.size() - 1)
+		var radius := lerpf(r0, r1, pow(t, 0.7)) * (1.0 + 0.12 * sin(i * 2.3))  # knobbly
+		var fwd: Vector3 = (path[mini(i + 1, path.size() - 1)] - path[maxi(i - 1, 0)]).normalized()
+		var side := fwd.cross(Vector3.FORWARD if absf(fwd.z) < 0.9 else Vector3.RIGHT).normalized()
+		var other := fwd.cross(side)
+		var ring := []
+		for a in AROUND:
+			var ang := TAU * a / AROUND + t * 2.5  # a little twist
+			ring.append(origin + path[i] + (side * cos(ang) + other * sin(ang)) * radius)
+		rings.append(ring)
+	for i in rings.size() - 1:
+		for a in AROUND:
+			var b := (a + 1) % AROUND
+			for v in [rings[i][a], rings[i + 1][a], rings[i][b], rings[i][b], rings[i + 1][a], rings[i + 1][b]]:
+				st.add_vertex(v)

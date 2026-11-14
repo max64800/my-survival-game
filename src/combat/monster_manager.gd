@@ -917,7 +917,7 @@ func _ev_remove(uid: int) -> void:
 	if m:
 		Fx.burst(_root, m.global_position + Vector3.UP * 0.4, m.data.color, 18, 3.0)
 		Sfx.play("death", m.global_position)
-		m.queue_free()
+		m.die_visual()  # tips over and sinks away (only looks), then frees itself
 
 
 @rpc("authority", "call_local", "reliable")
@@ -933,6 +933,7 @@ func _ev_hit(uid: int, dmg: int) -> void:
 	if m:
 		Fx.burst(_root, m.global_position + Vector3.UP * 0.5, Color(1.0, 0.9, 0.7), 6, 2.0)
 		Sfx.play("hit_heavy" if dmg >= 20 else "hit", m.global_position)
+		m.hit_flash()
 		_float_number(m.global_position + Vector3.UP * 1.4, str(dmg))
 
 

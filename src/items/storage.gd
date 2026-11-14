@@ -205,7 +205,11 @@ func _build_look(body: StaticBody3D, kind: String) -> void:
 	body.add_child(cs)
 	var color: Color = {"chest_small": Color(0.55, 0.38, 0.22), "chest_stone": Color(0.55, 0.55, 0.55),
 		"builder": Color(0.3, 0.45, 0.7), "grave": Color(0.45, 0.43, 0.4)}.get(kind, Color.GRAY)
-	if kind == "grave":
+	var model := Look.forged("stations", kind)  # a real model from the asset forge, if made
+	if model:
+		model.rotation.y = PI  # forged models face +Z; boxes face -Z
+		body.add_child(model)
+	elif kind == "grave":
 		# A little cairn of stones with a soft beam of light so you can find it again.
 		for i in 5:
 			var mi := MeshInstance3D.new()

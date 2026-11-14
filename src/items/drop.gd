@@ -30,6 +30,13 @@ func _ready() -> void:
 	sphere.radius = 0.16
 	shape.shape = sphere
 	add_child(shape)
+	var model := Look.forged("items", item_id)  # a real model from the asset forge, if made
+	if model:
+		model.scale = Vector3.ONE * 0.7  # forged items are 0.4 m; a dropped chunk is smaller
+		model.position = Vector3.DOWN * 0.12
+		model.rotation.y = randf() * TAU
+		add_child(model)
+		return
 	var mi := MeshInstance3D.new()
 	mi.mesh = _mesh_for(item_id)
 	mi.rotation = Vector3(randf() * TAU, randf() * TAU, 0)

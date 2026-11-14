@@ -73,6 +73,10 @@ func _run() -> void:
 			await _anim_sheet(arg.trim_prefix("sheet=").split(","))
 			quit()
 			return
+	if "props" in OS.get_cmdline_user_args():
+		await _props_test()
+		quit()
+		return
 	if "fire" in OS.get_cmdline_user_args():
 		await _fire_test()
 		quit()
@@ -129,6 +133,17 @@ func _run() -> void:
 	_model.react("eat")
 	await _wait(0.6)
 	await _both("9_eat")
+	await _wait(1.0)
+	_model.set_wear(["spore_mask"])
+	await _wait(0.3)
+	_view(Vector3(0.3, 0.05, -1), 1.6, 0.95)
+	await _shot("10_mask")
+	_model.set_wear([])
+	_model.set_held("sword_copper")
+	_model.swinging = false
+	_model.attack(0.5, true)
+	await _wait(0.3)
+	await _both("11_trail")
 	quit()
 
 
@@ -207,3 +222,28 @@ func _anim_sheet(names: Array) -> void:
 			await process_frame
 			await process_frame
 			await _shot("s_%s_%d_t%.2f" % [n.replace("/", "_"), k, t])
+
+
+## Tuning aid: a stalactite cluster and a hanging root next to the dwarf.
+func _props_test() -> void:
+	for i in 3:
+		var mi := MeshInstance3D.new()
+		mi.mesh = Clutter._stalactite_mesh()
+		mi.material_override = Look.mat(Color(0.5, 0.46, 0.41), "stone")
+		var len: float = [1.6, 0.6, 0.4][i]
+		mi.position = Vector3(0.9 + i * 0.35, 2.4, -0.3 + i * 0.2)
+		mi.scale = Vector3(len * 0.2, len, len * 0.2)
+		root.add_child(mi)
+	var gf := GlowField.new()
+	var root_mi := MeshInstance3D.new()
+	root_mi.mesh = gf._make_root_mesh()
+	root_mi.material_override = Look.mat(Color(0.42, 0.29, 0.18), "bark", 0.12, 0.025)
+	root_mi.position = Vector3(-0.9, 2.4, -0.3)
+	root_mi.rotation.x = PI  # hangs down (its +Y points down)
+	root_mi.scale = Vector3(1, 1.8, 1)
+	root.add_child(root_mi)
+	gf.free()
+	_model.set_held("pickaxe_stone")
+	_view(Vector3(0.2, 0.3, -1), 5.0, 1.2)
+	await _wait(0.5)
+	await _shot("p_props")

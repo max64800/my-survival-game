@@ -48,7 +48,7 @@ static func burst(parent: Node, pos: Vector3, color: Color, amount: int = 10, sp
 
 
 ## A soft puff of dust that drifts up and fades (digging, landing, things breaking).
-static func dust(parent: Node, pos: Vector3, color: Color, amount: int = 5) -> void:
+static func dust(parent: Node, pos: Vector3, color: Color, amount: int = 5, size: float = 0.45) -> void:
 	var p := CPUParticles3D.new()
 	p.one_shot = true
 	p.emitting = false
@@ -75,7 +75,7 @@ static func dust(parent: Node, pos: Vector3, color: Color, amount: int = 5) -> v
 	fade.set_color(1, Color(1, 1, 1, 0.0))
 	p.color_ramp = fade
 	var q := QuadMesh.new()
-	q.size = Vector2(0.45, 0.45)
+	q.size = Vector2(size, size)
 	var m := StandardMaterial3D.new()
 	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	m.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES

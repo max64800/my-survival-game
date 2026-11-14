@@ -168,6 +168,11 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	add_child(glow)
 	glow.build(GlowPlacer.place(world.maker))
 
+	var clutter := Clutter.new()  # pebbles, rocks, bones, twigs on the floors (only looks)
+	clutter.name = "Clutter"
+	add_child(clutter)
+	clutter.build(world.maker, world)
+
 	var pf := PoiField.new()
 	pf.name = "Pois"
 	add_child(pf)

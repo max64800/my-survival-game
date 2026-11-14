@@ -65,6 +65,21 @@ static func guess(c: Color) -> String:
 	return "fungus"
 
 
+## A 3D model made by the asset forge (tools/asset_forge, Claude 2), if one exists:
+## res://assets/models/<folder>/<id>.glb (folder "stations" = stations + chests, "items" = things
+## lying on the ground). Their rules: front faces +Z, origin at the bottom centre, metres.
+## Returns null when there's no model yet, so callers keep their simple look.
+static var _forged := {}
+
+
+static func forged(folder: String, id: String) -> Node3D:
+	var path := "res://assets/models/%s/%s.glb" % [folder, id]
+	if not _forged.has(path):
+		_forged[path] = load(path) if ResourceLoader.exists(path) else null
+	var scene: PackedScene = _forged[path]
+	return scene.instantiate() as Node3D if scene else null
+
+
 static func _load() -> void:
 	if _shader == null:
 		_shader = load("res://src/art/prop.gdshader")

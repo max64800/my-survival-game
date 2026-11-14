@@ -43,27 +43,43 @@ func test_rigged_dwarf_builds_and_animates() -> void:
 func test_dwarf_is_short_and_wide() -> void:
 	var m := DwarfModel.new()
 	tree.root.add_child(m)
-	await frames(5)
 	var sk := m.dwarf_rig.skeleton
-	var head := (sk.global_transform * sk.get_bone_global_pose(sk.find_bone("Head"))).origin
-	var foot := (sk.global_transform * sk.get_bone_global_pose(sk.find_bone("foot_l"))).origin
-	check(head.y > 0.8 and head.y < 1.25, "head at dwarf height (%.2f m)" % head.y)
-	check(foot.y < 0.25, "feet stay on the ground (%.2f m)" % foot.y)
-	check(m.dwarf_rig.scale.x > m.dwarf_rig.scale.y * 1.3, "squashed wider than tall")
+	var prop: DwarfProportions = null
+	for c in sk.get_children():
+		if c is DwarfProportions:
+			prop = c
+	check(prop != null, "the dwarf-proportions step is on the skeleton")
+	# Bones must be read right after the proportions are applied (before that, they're human).
+	var got := {}
+	var read := func():
+		var at := func(b: String) -> Vector3: return sk.global_transform * sk.get_bone_global_pose(sk.find_bone(b)).origin
+		got.head = at.call("Head").y
+		got.hip = (at.call("thigh_l").y + at.call("thigh_r").y) * 0.5
+		got.hand = at.call("hand_l").y
+		got.toe = minf(at.call("ball_l").y, at.call("ball_r").y)
+		got.belly = at.call("spine_01")
+	prop.modification_processed.connect(read)
+	await frames(20)
+	var top: float = got.head + 0.25
+	check(got.head > 0.75 and got.head < 1.1, "head at dwarf height (%.2f m)" % got.head)
+	check(got.hip / top < 0.4, "stubby legs: hips at %.0f%% of the height (owner F25: about a third)" % (got.hip / top * 100.0))
+	check(got.hand > got.hip - 0.05, "short arms: hands hang no lower than the hips (hands %.2f, hips %.2f)" % [got.hand, got.hip])
+	check(absf(got.toe) < 0.08, "toes on the floor (%.2f m)" % got.toe)
 	m.free()
 
 
 func test_tool_models_cover_every_tool() -> void:
-	for look in ["pickaxe", "axe", "axe_2h", "sword", "mace", "mace_2h", "spear", "hammer", "shield", "crossbow", "food"]:
+	for look in ToolModels.TOOLS:
 		var t := ToolModels.build(look, Color(0.6, 0.6, 0.6), DwarfModel.VISUAL_LAYER)
 		var meshes := t.find_children("*", "MeshInstance3D", true, false)
 		check(meshes.size() >= 1, "%s has a model" % look)
 		for mi: MeshInstance3D in meshes:
 			check(mi.layers == DwarfModel.VISUAL_LAYER, "%s sits on the dwarf's layer (no lantern self-shadow)" % look)
 		t.free()
-	var empty := ToolModels.build("fists", Color.WHITE, 2)
-	check(empty.get_child_count() == 0, "bare fists hold nothing")
-	empty.free()
+	for look in ["fists", "", "food", "material"]:
+		var empty := ToolModels.build(look, Color.WHITE, 2)
+		check(empty.get_child_count() == 0, "%s: nothing in the hand (F22)" % look)
+		empty.free()
 
 
 func test_fire_and_chips_make_particles() -> void:

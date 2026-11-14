@@ -123,6 +123,8 @@ func attack(duration: float, heavy: bool) -> void:
 	swinging = true
 	if dwarf_rig:
 		dwarf_rig.attack(duration, heavy)
+		# A pale swoosh behind the blade (brighter for a heavy blow).
+		WeaponTrail.follow(_hand, duration * 0.7, Color(1.0, 0.95, 0.85, 0.55 if heavy else 0.35), 0.3, 0.9)
 		get_tree().create_timer(duration).timeout.connect(func(): swinging = false)
 		return
 	if rig:
@@ -148,7 +150,7 @@ func set_held(item: String) -> void:
 	var col := Items.color(item)
 	var kind := Items.kind(item)
 	var look := Combat.weapon_of(item) if kind in ["weapon", "shield", "axe"] else kind
-	_hand.add_child(ToolModels.build(look, col, VISUAL_LAYER))
+	_hand.add_child(ToolModels.build(look, col, VISUAL_LAYER, item))
 
 
 ## The rigged look: a CC0 character squashed into dwarf proportions, tools in its right hand,
@@ -219,6 +221,12 @@ func set_motion(speed: float, on_floor: bool, rolling: bool) -> void:
 		_rig_play(want, 0.45 if want == "Roll" else 0.0)
 
 
+## What the dwarf wears (armor, Spore Mask…): item ids. See DwarfRig.set_wear.
+func set_wear(ids: Array) -> void:
+	if dwarf_rig:
+		dwarf_rig.set_wear(ids)
+
+
 ## Held poses for the rigged dwarf: block (sword up), shield up, crossbow aim.
 func set_pose(blocking: bool, aiming: bool, shield: bool) -> void:
 	if dwarf_rig:
@@ -258,7 +266,7 @@ func _build_dwarf_rig() -> void:
 	_hand = Node3D.new()
 	_hand.rotation = hand_tool_rot
 	_hand.position = hand_tool_pos
-	_hand.scale = Vector3.ONE * 0.8  # tools were sized for the old, bigger placeholder
+	_hand.scale = Vector3.ONE  # tools at their real size (the stocky dwarf carries them well)
 	dwarf_rig.right_hand.add_child(_hand)
 	left_hand = dwarf_rig.left_hand
 	right_arm = Node3D.new()  # (only used by the shapes look; kept so other code works)

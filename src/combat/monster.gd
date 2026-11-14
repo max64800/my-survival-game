@@ -116,6 +116,47 @@ func _ready() -> void:
 	_update_label()
 
 
+## Only looks: a quick white flash and a little "punch" when something hits us.
+func hit_flash() -> void:
+	if model == null:
+		return
+	var glow := StandardMaterial3D.new()
+	glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	glow.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	glow.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	glow.albedo_color = Color(1.0, 0.95, 0.85, 0.75)
+	for mi: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
+		mi.material_overlay = glow
+	var base := model.scale
+	var t := create_tween()
+	t.tween_property(model, "scale", base * Vector3(1.12, 0.9, 1.12), 0.05)
+	t.tween_property(model, "scale", base, 0.12)
+	t.parallel().tween_property(glow, "albedo_color:a", 0.0, 0.16)
+	t.tween_callback(func():
+		for mi: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
+			if mi.material_overlay == glow:
+				mi.material_overlay = null)
+
+
+## Only looks: the monster is already gone from the game. Its body tips over and sinks into
+## the ground in a puff of dust, instead of popping out of existence.
+func die_visual() -> void:
+	set_physics_process(false)
+	set_process(false)
+	collision_layer = 0
+	collision_mask = 0
+	for l in find_children("*", "Label3D", true, false):
+		l.visible = false
+	if _bars:
+		_bars.visible = false
+	var t := create_tween()
+	t.tween_property(model, "rotation:z", deg_to_rad(80.0) * (1.0 if uid % 2 == 0 else -1.0), 0.35) 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	t.tween_interval(0.3)
+	t.tween_property(model, "position:y", model.position.y - 0.6, 0.6)
+	t.parallel().tween_property(model, "scale", model.scale * 0.3, 0.6)
+	t.tween_callback(queue_free)
+
+
 func max_hp() -> float:
 	return Monsters.max_hp(kind, leader, variant)
 

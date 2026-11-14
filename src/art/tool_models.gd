@@ -6,14 +6,35 @@ class_name ToolModels
 ## Convention: the handle runs along +Y from the hand (0,0,0); the "business end" is up.
 ## Sizes in metres, before the 0.8 hand scale of the rigged dwarf.
 
+## Only these are drawn in the hand. Anything else (empty, stone, food…) shows an empty fist.
+const TOOLS := ["pickaxe", "axe", "axe_2h", "sword", "mace", "mace_2h", "spear", "hammer", "shield", "crossbow"]
 const WOOD := Color(0.45, 0.31, 0.19)
 const LEATHER := Color(0.30, 0.19, 0.11)
 const IRON := Color(0.55, 0.55, 0.58)
 
 
 ## A finished model for `look` (Combat.weapon_of / Items.kind), with `col` = the item's colour.
-static func build(look: String, col: Color, layers: int) -> Node3D:
+static func build(look: String, col: Color, layers: int, item_id: String = "") -> Node3D:
 	var root := Node3D.new()
+	# The asset forge's 3D model of this item, if there is one (Claude 2's rules: handle along +Y,
+	# grip end at the origin, flat side to +Z, real sizes). Our own shapes below are the fallback.
+	if look not in TOOLS:
+		return root  # empty hand, stone, food, ore…: nothing in the hand (owner feedback F22)
+	var model := Look.forged("items", item_id) if item_id != "" else null
+	if model:
+		match look:
+			"pickaxe", "axe", "axe_2h", "sword", "mace", "mace_2h", "spear", "hammer":
+				model.position = Vector3.DOWN * 0.1  # hold it a little above the end of the handle
+			"shield":
+				model.rotation.y = PI / 2.0  # its face points out from the back of the hand
+				model.position = Vector3(0.07, -0.25, 0)
+			"crossbow":
+				model.rotation.x = -PI / 2.0  # stock along the arm, bow pointing forward
+				model.position = Vector3(0, 0.05, 0.1)
+		root.add_child(model)
+		for mi in root.find_children("*", "MeshInstance3D", true, false):
+			mi.layers = layers
+		return root
 	var head_surface := _head_surface(col)
 	match look:
 		"pickaxe":
@@ -70,11 +91,8 @@ static func build(look: String, col: Color, layers: int) -> Node3D:
 			var bow := _add(root, _cyl(0.018, 0.018, 0.6, 6), col, head_surface, Vector3(0, 0.07, -0.38), Vector3(0, 0, PI / 2.0))
 			bow.scale = Vector3(1, 1, 1)
 			_add(root, _box(Vector3(0.04, 0.12, 0.05)), LEATHER, "leather", Vector3(0, -0.04, 0.02))
-		"fists", "":
-			pass
 		_:
-			# Food, crystals, potions, ore…: a small lump of the item's colour in the hand.
-			_add(root, _sphere(0.07), col, "", Vector3(0, 0.06, 0)).scale = Vector3(1, 0.8, 1.1)
+			pass
 	for mi in root.find_children("*", "MeshInstance3D", true, false):
 		mi.layers = layers
 	return root

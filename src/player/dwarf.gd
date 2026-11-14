@@ -230,12 +230,14 @@ func _process(delta: float) -> void:
 		model.set_held(fight.item())
 		model.set_pose(fight.is_blocking(), fight.aiming(), fight.has_shield())
 		# Friends see what we hold and how we stand (sent only when it changes).
-		var look := [fight.item(), fight.is_blocking(), fight.aiming(), fight.has_shield()]
+		var worn := _worn_items()
+		model.set_wear(worn)
+		var look := [fight.item(), fight.is_blocking(), fight.aiming(), fight.has_shield(), worn]
 		_look_timer -= delta
 		if (look != _sent_look or _look_timer <= 0.0) and _online():
 			_sent_look = look
 			_look_timer = 2.0  # also every 2 s, so friends who join late catch up
-			_net_look.rpc(look[0], look[1], look[2], look[3])
+			_net_look.rpc(look[0], look[1], look[2], look[3], look[4])
 	if not is_local:
 		var before := global_position
 		global_position = global_position.lerp(_net_pos, minf(1.0, delta * 15.0))
@@ -393,6 +395,8 @@ func _footsteps(delta: float, speed: float) -> void:
 	if _step_t <= 0.0:
 		_step_t = 0.42 if speed < 5.0 else 0.3
 		Sfx.play("step", global_position, -14.0)
+		if speed >= 5.0:  # running kicks up a little dust
+			Fx.dust(get_parent(), global_position + Vector3.UP * 0.05, Color(0.5, 0.45, 0.38), 2, 0.25)
 
 
 # ---------------------------------------------------------------- fighting (see DwarfFight)
@@ -507,9 +511,24 @@ func _net_swing() -> void:
 
 ## A friend's dwarf: what they hold, and whether they block / aim (only looks).
 @rpc("authority", "reliable")
-func _net_look(item: String, blocking: bool, aiming: bool, shield: bool) -> void:
+func _net_look(item: String, blocking: bool, aiming: bool, shield: bool, worn: Array = []) -> void:
 	model.set_held(item)
 	model.set_pose(blocking, aiming, shield)
+	model.set_wear(worn)
+
+
+## Wearable things that count as "on": kind "wear" items on the hotbar (like the Spore Mask,
+## which works from the hotbar; see MonsterManager._has_mask).
+func _worn_items() -> Array:
+	var out := []
+	var auth := GameAuthority.instance
+	var ps: GameAuthority.PlayerState = auth.get_player(peer_id) if auth else null
+	if ps:
+		for i in Inventory.HOTBAR_SIZE:
+			var id: String = ps.inventory.get_slot(i).get("id", "")
+			if id != "" and Items.kind(id) == "wear" and id not in out:
+				out.append(id)
+	return out
 
 
 ## A friend's dwarf flinched, ate, threw, shot… (only looks).
