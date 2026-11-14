@@ -3,8 +3,9 @@ extends Node3D
 ## The dwarf's lantern. Bright while it has fuel; a small dim glow when empty,
 ## so the cave is never pitch black. Fuel is kept by the GameAuthority.
 
-const FULL_RANGE := 14.0
-const FULL_ENERGY := 1.7
+const FULL_RANGE := 16.0
+const FULL_ENERGY := 1.9
+const ATTENUATION := 0.85  ## how fast light fades with distance (lower = reaches further)
 const EMPTY_RANGE := 4.5
 const EMPTY_ENERGY := 0.45
 const WARM := Color(1.0, 0.78, 0.52)
@@ -41,10 +42,16 @@ func _ready() -> void:
 	cap.material_override = dark
 	cap.position = Vector3(0, 0.01, 0)
 	add_child(cap)
+	# The light sits inside the lantern's glass box. If the box (or the dwarf
+	# holding it) cast shadows, they'd block the light: like holding a torch
+	# behind your back. So neither of them casts shadows from this light.
+	frame.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	cap.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	light = OmniLight3D.new()
 	light.shadow_enabled = true
+	light.shadow_caster_mask = 0xFFFFF & ~DwarfModel.VISUAL_LAYER
 	light.light_color = WARM
-	light.omni_attenuation = 1.2
+	light.omni_attenuation = ATTENUATION
 	light.position = Vector3(0, -0.1, 0)
 	add_child(light)
 
