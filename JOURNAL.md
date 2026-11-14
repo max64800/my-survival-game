@@ -409,6 +409,19 @@ Why branches? Our rule says each step must be playable and approved before the n
 - TripoSR colors come out paler than the picture, and shapes are a bit soft. Fine for rocks/mushrooms; boxy things (workbench) are better built by Claude with AI textures.
 - The test chair was deleted afterwards (it was TripoSR's example picture, not our art).
 
+### Day 3, afternoon: everything merged into main (Claude 1)
+
+**What we did**
+- You played Step 1 and said the world felt empty, and listed a lot of things (F9–F17 in `FEEDBACK.md`). Many of them (crafting, enemies, ruins) were already built on the later branches, so you chose to **merge everything into main**.
+- Claude merged all the steps plus the Fungal Jungle into main, in a separate copy of the folder (a "worktree"), so the other Claudes' work wasn't disturbed. Only 4 files clashed. Then today's lantern, ledge, jump and sound fixes were added back on top.
+- **214 auto-checks pass**, and the autopilot played the whole game in one run: crafting, building a hut, fighting monsters, ruins, 4 bosses waking up, through the copper gate into the Jungle.
+- The "no sound" you heard was because you were still playing the window opened *before* the sounds were added. Not a bug.
+
+**Hurdles / mistakes (Claude's)**
+- **Claude lost its own fixes during the merge.** It told git which version of `dwarf.gd` to keep, *then* re-added the ledge/jump/camera fixes, but never told git to save the file again. The tests passed because they read the unsaved file, so nobody noticed. Then Claude deleted that copy of the folder. git even warned "this folder has unsaved changes," and Claude forced it anyway. **Fix:** Claude noticed the warning right after, checked main (the fixes were missing), and redid them.
+  **Lessons:** check that the saved version has the changes (`git show`), not just the files on disk. And a "you have unsaved changes" warning means stop and look, not force.
+- Claude also saved before a test had finished. The test then "failed" only because Godot's list of code files was out of date after the merge (one import run fixed it). Nothing was broken, but saving should always wait for the tests.
+
 ---
 
 ## Day 3, later — November 14, 2026: The new look, part 1 (branch `visuals`)
