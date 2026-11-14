@@ -98,8 +98,11 @@ func _ready() -> void:
 			debug_script = "res://src/debug/savecheck.gd"
 	# (startcheck is a robot too, but it plays the real new-game start on purpose.)
 	_robot_run = (debug_script != "" and not debug_script.ends_with("startcheck.gd")) or _jungle_kit
-	# Every test robot (startcheck too) leaves the real mouse alone (F27).
+	# Every test robot (startcheck too) leaves the real mouse alone (F27), and its window
+	# never takes the keyboard/mouse focus from whatever the owner is doing.
 	Controls.robot = debug_script != ""
+	if Controls.robot:
+		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_NO_FOCUS, true)
 	if debug_script != "":
 		var dbg: Node = load(debug_script).new()
 		dbg.name = "Debug"
