@@ -611,3 +611,49 @@ Why branches? Our rule says each step must be playable and approved before the n
 - A test message had a "%" sign that the text formatter misread ("90% less"), which crashed that check. Fix: wrote "90%%".
 - The shell's spiral rings were first hidden inside the shell, and the bat wings were too skinny. Fixed after looking at studio pictures.
 - The main game folder had other Claudes' unsaved work, so Claude 3 uploaded without touching that folder; Claude 1 brings it in there safely.
+
+
+---
+
+## Day 3, night — November 14, 2026: Building finished (B5), kiln + smelters, decor (Claude 1, owner away)
+
+**What we did**
+- **Build menu tabs**: Foundations, Floors, Walls, Roofs, Supports, Getting around, Mining, Decor.
+  - Pieces your stations can't make yet are greyed out and say why ("Needs Workbench level 2 (build a Chopping Block next to it)").
+  - Only the four Mossy materials are shown (Rootwood, Cut Stone, Clay Brick, Copper), each with the station it needs.
+- **Blueprint book (V)** now lists the four ready-made buildings (Miner's Homestead, Stone Hall, Forge Workshop, Watchtower Cabin).
+- **The Builder's Chest finds its own spot**: just outside the building, on the side nearest you, on open floor (never inside rock).
+  A yellow see-through box shows where it will appear before you click.
+- **Built ladders can be climbed** (like rope ladders). They snap flat onto the face of a wall you aim at.
+- **Doors open and close** with E. They swing on a hinge, and the open/closed state is saved.
+- **F32 (yours): Kiln + furnaces that run themselves.**
+  - Kiln: wood → coal, from a chest within 5 m.
+  - Smelter: ore + coal (or wood) from nearby chests (the Ore Crate counts); the bars go back into a chest.
+  - Twin Smelter: one side smelts, the other makes coal.
+- **F33 (yours): the Ore Crate fills up visibly.** Claude 2's ore-pile model rises as the crate fills.
+- **Decor tab (14 pieces)**: stacking column base / shaft / capital, table, bench, chair, shelf, barrel, supply crate, rug,
+  banner, wall shield, glowing wall sconce, weapon rack. Wall pieces hang flat on the wall, facing out.
+  Sizes agreed with Claude 2, whose hand-made models load automatically when they're there.
+- **Hook for Claude 2's building models**: if `assets/models/build/<piece>__<material>.glb` exists, the game uses it as the look;
+  bumping into it still uses the simple shape.
+
+**Hurdles / mistakes (including Claude's)**
+- **Tabs that couldn't be switched.** The first build menu jumped back to the tab of the piece you were holding, so clicking
+  another tab did nothing. Claude spotted it while re-reading the code before testing, and removed that line.
+- **Ladders hidden inside walls.** In the photo robot's picture the ladder was invisible: it sat on the same line as the wall.
+  In the real game this also meant "Something is already there" when putting a ladder on a wall. Fixed by snapping ladders
+  (and later banners, shields and sconces) onto the wall's face.
+- **A new script name wasn't found** ("AutoSmelt not declared") until Godot's import step ran. This happened before;
+  new class names always need `--import` first.
+- **The picture test failed** after adding Coal and Kiln (no icons yet). Claude 2 made both icons within the hour.
+- **Two Claudes, one piece list**: Claude 2's furniture sizes were a little different from Claude 1's first guess.
+  Claude 1 switched to Claude 2's sizes, so the models and the solid shapes line up.
+- **Claude 1 wiped Claude 2's unsaved journal notes (a real mistake).** Claude 1 wanted to save only its own lines, so it
+  used a little helper program to edit this journal. The program crashed on an arrow character (→) because Windows used
+  the wrong text code, and the next step still copied its empty result over JOURNAL.md. The saved journal came back from
+  git, but Claude 2's new notes (not saved yet) were gone, and there was no backup copy. Claude 2 was asked to write them
+  again.
+  **Lessons:**
+  - Always run helper programs with UTF-8 text (`PYTHONIOENCODING=utf-8`).
+  - Never copy a result over a real file without first checking it isn't empty or much shorter than before.
+  - For shared files, prefer the normal edit tool, which keeps backups.
