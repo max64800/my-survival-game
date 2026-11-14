@@ -17,7 +17,10 @@ const STEP_HEIGHT := 0.5        ## ledges up to this tall are stepped up without
 const ACCEL := 14.0
 const AIR_ACCEL := 4.0
 const SWING_TIME := 0.55
-const CAMERA_DISTANCE := 3.4
+const CAMERA_DISTANCE := 3.4  ## starting camera distance (and the longest reach used for aiming)
+const ZOOM_MIN := 1.4
+const ZOOM_MAX := 8.0
+const ZOOM_STEP := 0.5
 const SHOULDER := Vector3(0.55, 1.5, 0.0)
 const POSE_SEND_TIME := 0.05  ## send our position 20 times a second
 const RUN_STAMINA := 8.0  ## per second
@@ -39,6 +42,7 @@ var bot_jump := false
 var _since_floor := 0.0
 var _jump_wanted := 0.0
 var _cam_y := NAN
+var _zoom := CAMERA_DISTANCE  ## where the mouse wheel wants the camera
 
 var _yaw := 0.0
 var _pitch := -0.25
@@ -123,13 +127,14 @@ func _unhandled_input(event: InputEvent) -> void:
 	if auth == null:
 		return
 	var ps := auth.get_player(peer_id)
-	for i in 8:
+	for i in Inventory.HOTBAR_SIZE:
 		if event.is_action_pressed("hotbar_%d" % (i + 1)):
 			auth.ask_select_slot(i)
-	if ps and event.is_action_pressed("hotbar_next"):
-		auth.ask_select_slot((ps.selected_slot + 1) % Inventory.HOTBAR_SIZE)
-	if ps and event.is_action_pressed("hotbar_prev"):
-		auth.ask_select_slot((ps.selected_slot + Inventory.HOTBAR_SIZE - 1) % Inventory.HOTBAR_SIZE)
+	# Mouse wheel: camera closer / farther (feedback F18).
+	if event.is_action_pressed("zoom_in"):
+		_zoom = maxf(ZOOM_MIN, _zoom - ZOOM_STEP)
+	if event.is_action_pressed("zoom_out"):
+		_zoom = minf(ZOOM_MAX, _zoom + ZOOM_STEP)
 	if event.is_action_pressed("refill_lantern"):
 		if fight and fight.is_crossbow():
 			fight.start_reload()  # R reloads while you hold the crossbow (doc 1.5)
@@ -234,6 +239,7 @@ func _process(delta: float) -> void:
 	_cam_yaw.rotation.y = _yaw
 	_cam_pitch.rotation.x = _pitch
 	_spring.position = Vector3(SHOULDER.x, 0, 0)
+	_spring.spring_length = lerpf(_spring.spring_length, _zoom, minf(1.0, delta * 10.0))  # smooth zoom
 	_shake = maxf(0.0, _shake - delta * 4.0)
 	camera.fov = lerpf(camera.fov, 48.0 if fight and fight.aiming() else 72.0, minf(1.0, delta * 10.0))  # crossbow zoom
 	camera.h_offset = randf_range(-1, 1) * _shake * 0.06
@@ -244,7 +250,7 @@ func _process(delta: float) -> void:
 func aim_far(reach: float) -> Dictionary:
 	var from := camera.global_position
 	var forward := -camera.global_basis.z
-	var q := PhysicsRayQueryParameters3D.create(from, from + forward * (CAMERA_DISTANCE + reach + 2.0))
+	var q := PhysicsRayQueryParameters3D.create(from, from + forward * (_spring.spring_length + reach + 2.0))
 	q.collision_mask = World.TERRAIN_LAYER | GlowField.GLOW_LAYER | Station.STATION_LAYER | Monster.MONSTER_LAYER | PoiField.POI_LAYER | PieceNode.PIECE_LAYER
 	q.exclude = [get_rid()]
 	var hit := get_world_3d().direct_space_state.intersect_ray(q)
@@ -258,7 +264,7 @@ func aim() -> Dictionary:
 	var from := camera.global_position
 	var forward := -camera.global_basis.z
 	var space := get_world_3d().direct_space_state
-	var q := PhysicsRayQueryParameters3D.create(from, from + forward * (CAMERA_DISTANCE + GameAuthority.REACH + 2.0))
+	var q := PhysicsRayQueryParameters3D.create(from, from + forward * (_spring.spring_length + GameAuthority.REACH + 2.0))
 	q.collision_mask = World.TERRAIN_LAYER | GlowField.GLOW_LAYER | Station.STATION_LAYER | Monster.MONSTER_LAYER | PoiField.POI_LAYER
 	q.exclude = [get_rid()]
 	var hit := space.intersect_ray(q)

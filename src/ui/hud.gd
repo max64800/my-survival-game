@@ -215,7 +215,7 @@ func _build() -> void:
 
 	_help = _label(root, 14)
 	_help.position = Vector2(16, 12)
-	_help.text = "WASD walk · Shift run · Space jump · Mouse look\nLeft click dig/harvest · Right click eat/place · E use station\n1-8 / wheel hotbar · R refill lantern · Tab bag + crafting\nK skills · M map · Esc pause"
+	_help.text = "WASD walk · Shift run · Space jump · Mouse look\nLeft click dig/harvest · Right click eat/place · E use station\n1-9 hotbar · Wheel zoom · R refill lantern · Tab bag + crafting\nK skills · M map · Esc pause"
 
 	_pause = _overlay(root, "Paused", "Click to keep digging")
 	_loading = _overlay(root, "Digging out the cave…", "")

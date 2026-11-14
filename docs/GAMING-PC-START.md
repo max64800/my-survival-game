@@ -32,7 +32,8 @@ If Godot says the Voxel add-on is missing: the Windows file is
 | Space | jump |
 | Mouse | look around |
 | Left click (hold) | swing the pickaxe |
-| 1-8 / mouse wheel | pick a hotbar slot |
+| 1-9 | pick a hotbar slot |
+| Mouse wheel | zoom the camera in / out |
 | R | refill the lantern with a glow crystal |
 | Tab | open the bag |
 | F3 | show/hide frame rate |
