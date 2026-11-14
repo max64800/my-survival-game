@@ -206,6 +206,7 @@ func _physics_process(delta: float) -> void:
 	elif ladder and not is_on_floor():
 		velocity.y = maxf(velocity.y, -1.5)  # hold on: slide down slowly
 	move_and_slide()
+	model.set_climbing(ladder != null and not is_on_floor(), delta)  # hands on the rungs
 	if on_floor and not ladder and velocity.y <= 0.01 and dir.length() > 0.1 and is_on_wall():
 		_try_step_up(dir * speed * delta)
 

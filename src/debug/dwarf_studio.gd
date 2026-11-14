@@ -148,6 +148,13 @@ func _run() -> void:
 	_model.attack(0.5, true)
 	await _wait(0.3)
 	await _both("11_trail")
+	_model.set_held("")
+	for i in 40:
+		_model.set_climbing(true, 0.05)
+		await process_frame
+	await _both("12_climb")
+	await _wait(0.25)
+	await _both("12b_climb")
 	quit()
 
 

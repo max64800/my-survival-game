@@ -221,6 +221,12 @@ func set_motion(speed: float, on_floor: bool, rolling: bool) -> void:
 		_rig_play(want, 0.45 if want == "Roll" else 0.0)
 
 
+## On a rope ladder (DwarfRig plays the climbing loop).
+func set_climbing(on: bool, delta: float) -> void:
+	if dwarf_rig:
+		dwarf_rig.set_climbing(on, delta)
+
+
 ## What the dwarf wears (armor, Spore Mask…): item ids. See DwarfRig.set_wear.
 func set_wear(ids: Array) -> void:
 	if dwarf_rig:

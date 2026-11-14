@@ -25,7 +25,7 @@ const BEARD_COLOR := Color(0.62, 0.32, 0.14)
 const ANIMS := {
 	idle = "Idle", walk = "Walk", jog = "Jog_Fwd", sprint = "Sprint",
 	air = "Jump", roll = "Roll", hit = "Hit_Chest", knock = "b/Hit_Knockback",
-	dig = "x/Pickaxe_Mine", chop = "b/TreeChopping", wake = "b/LayToIdle", attack_a = "b/Sword_Regular_A", attack_b = "b/Sword_Regular_B",
+	dig = "x/Pickaxe_Mine", climb = "x/Ladder_Climb", chop = "b/TreeChopping", wake = "b/LayToIdle", attack_a = "b/Sword_Regular_A", attack_b = "b/Sword_Regular_B",
 	heavy = "b/Sword_Regular_C", eat = "b/Consume", use = "Interact", throw = "b/OverhandThrow",
 	# Held poses (as long as the button is down):
 	block = "b/Sword_Block", shield = "b/Idle_Shield", aim = "Pistol_Aim_Neutral",
@@ -41,6 +41,16 @@ const MADE := {
 	"Pickaxe_Mine": [
 		[0.0, "b/TreeChopping", 0.9], [0.38, "b/TreeChopping", 0.7], [0.55, "Sword_Attack", 0.36],
 		[0.7, "Sword_Attack", 0.5], [1.0, "b/TreeChopping", 0.9]],
+}
+
+## Animations stitched from two sources: the upper body (spine and up) from one, the legs from
+## another. Each key: [time 0..1, upper source, moment, lower source, moment]. They loop.
+const MADE_SPLIT := {
+	# Climbing a rope ladder: hands high on the rungs (from a "hold the rail overhead" pose)
+	# while the legs step up in turns (from the jog).
+	"Ladder_Climb": [
+		[0.0, "b/Idle_Rail_Call", 0.25, "Jog_Fwd", 0.0], [0.5, "b/Idle_Rail_Call", 0.45, "Jog_Fwd", 0.5],
+		[1.0, "b/Idle_Rail_Call", 0.25, "Jog_Fwd", 1.0]],
 }
 
 static var _libs := {}
@@ -106,6 +116,15 @@ func _process(delta: float) -> void:
 		h.scale = Vector3.ONE / p.global_transform.basis.get_scale()
 	_hold_amount = move_toward(_hold_amount, 1.0 if _hold != "" else 0.0, delta * 8.0)
 	tree.set("parameters/hold/blend_amount", _hold_amount)
+
+
+## On a ladder: the whole body plays the climbing loop (it fades in and out).
+var _climb := 0.0
+
+
+func set_climbing(on: bool, delta: float) -> void:
+	_climb = move_toward(_climb, 1.0 if on else 0.0, delta * 6.0)
+	tree.set("parameters/climb/blend_amount", _climb)
 
 
 ## A pose held with the upper body while a button is down: "block", "shield", "aim" or "" (none).
@@ -185,8 +204,15 @@ func _build_tree(body: Node3D) -> void:
 	bt.add_node("air", AnimationNodeBlend2.new(), Vector2(200, 0))
 	bt.connect_node("air", 0, "move")
 	bt.connect_node("air", 1, "jump")
+	# Ladders: the climbing loop over everything below it.
+	var climb := AnimationNodeAnimation.new()
+	climb.animation = ANIMS.climb
+	bt.add_node("climb_anim", climb)
+	bt.add_node("climb", AnimationNodeBlend2.new())
+	bt.connect_node("climb", 0, "air")
+	bt.connect_node("climb", 1, "climb_anim")
 	# Whole-body one-shots (roll, hit).
-	_add_oneshot(bt, "full", "air", false)
+	_add_oneshot(bt, "full", "climb", false)
 	# Held upper-body poses (block, shield up, crossbow aim). Non-looping ones hold their last frame.
 	var hold_anim := AnimationNodeAnimation.new()
 	hold_anim.animation = ANIMS.block
@@ -501,7 +527,44 @@ static func _made_library() -> AnimationLibrary:
 				else:
 					out.position_track_insert_key(nt, k[0], a.position_track_interpolate(st, at))
 		_made.add_animation(anim_name, out)
+	for anim_name in MADE_SPLIT:
+		_made.add_animation(anim_name, _split_anim(src, MADE_SPLIT[anim_name]))
 	return _made
+
+
+## See MADE_SPLIT. Which bones are "upper body" is read from the bone names in the track paths.
+const UPPER_ROOTS := ["spine_", "neck_", "Head", "clavicle", "upperarm", "lowerarm", "hand_",
+	"index_", "middle_", "pinky_", "ring_", "thumb_"]
+
+
+static func _split_anim(src: Dictionary, keys: Array) -> Animation:
+	var out := Animation.new()
+	out.length = 1.0
+	out.loop_mode = Animation.LOOP_LINEAR
+	var first := _source(src, keys[0][1])
+	for t in first.get_track_count():
+		var kind := first.track_get_type(t)
+		if kind != Animation.TYPE_ROTATION_3D and kind != Animation.TYPE_POSITION_3D:
+			continue
+		var path := first.track_get_path(t)
+		var bone := String(path.get_concatenated_subnames())
+		var upper := false
+		for r in UPPER_ROOTS:
+			if bone.begins_with(r):
+				upper = true
+		var nt := out.add_track(kind)
+		out.track_set_path(nt, path)
+		for k in keys:
+			var a := _source(src, k[1] if upper else k[3])
+			var st := a.find_track(path, kind)
+			if st < 0:
+				continue
+			var at: float = (k[2] if upper else k[4]) * a.length
+			if kind == Animation.TYPE_ROTATION_3D:
+				out.rotation_track_insert_key(nt, k[0], a.rotation_track_interpolate(st, at))
+			else:
+				out.position_track_insert_key(nt, k[0], a.position_track_interpolate(st, at))
+	return out
 
 
 static func _source(src: Dictionary, full_name: String) -> Animation:
