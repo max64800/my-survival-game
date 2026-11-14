@@ -260,3 +260,15 @@ Why branches? Our rule says each step must be playable and approved before the n
 - The Crystal Sconce doesn't use up crystals over time yet (it shines forever).
 - Rope ladders always stand 6 m tall.
 
+
+---
+
+## Day 3 — November 14, 2026: Back on the gaming PC
+
+**What we did**
+- Downloaded (pulled) all the MacBook work onto the gaming PC. Nothing clashed.
+- Ran all 37 auto-checks on Windows: **all passed**. So the Windows digging add-on file works.
+- Ran the autopilot on the PC (an RTX 3060 Ti graphics card). The cave loads in 4.3 seconds. Digging, walking and the lantern refill all work, and the screenshots look right.
+
+**Hurdles / things to look into**
+- **Frame rate is only about 50 FPS**, about the same as the MacBook. A 3060 Ti should do much better, so something is probably slowing it down that isn't the graphics card (maybe the lights, or the cave being rebuilt). The "lowest 1 FPS" was the moment the cave loaded. **Next:** find out what's slowing it down, after your play-test.
