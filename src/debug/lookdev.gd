@@ -54,16 +54,16 @@ func _teleport(dwarf: Dwarf, to: Vector3, look_at: Vector3) -> void:
 
 
 ## A camera in front of the dwarf, looking at them (the normal camera only sees their back).
-func _portrait(dwarf: Dwarf, name: String) -> void:
+func _portrait(dwarf: Dwarf, name: String, delay: float = 0.3, side_amount: float = 0.9) -> void:
 	var cam := Camera3D.new()
 	cam.fov = 45.0
 	add_child(cam)
 	var fwd := -Basis(Vector3.UP, dwarf._yaw).z
 	var side := Basis(Vector3.UP, dwarf._yaw).x
-	cam.global_position = dwarf.global_position + fwd * 2.6 + side * 0.9 + Vector3.UP * 1.3
-	cam.look_at(dwarf.global_position + Vector3.UP * 0.8)
+	cam.global_position = dwarf.global_position + fwd * 2.6 + side * side_amount * 2.6 + Vector3.UP * 1.3
+	cam.look_at(dwarf.global_position + Vector3.UP * 0.75)
 	cam.make_current()
-	await _wait(0.3)
+	await _wait(delay)
 	await _shot(name)
 	dwarf.camera.make_current()
 	cam.queue_free()
@@ -81,15 +81,27 @@ func _run() -> void:
 	await _wait(2.0)
 	await _shot("a_spawn")
 	await _portrait(dwarf, "b_dwarf_portrait")
+	await _portrait(dwarf, "b1_dwarf_side", 0.3, -1.0)
+	dwarf.model.swing(0.55)
+	await _portrait(dwarf, "b2_dig_windup", 0.18, 1.2)
+	dwarf.model.swing(0.55)
+	await _wait(0.6)
+	dwarf.model.swing(0.55)
+	await _portrait(dwarf, "b3_dig_strike", 0.32, 1.2)
+	await _wait(0.6)
+	dwarf.bot_move = Vector2(0, -1)
+	await _wait(0.6)
+	await _portrait(dwarf, "b4_walking", 0.02, 1.4)
+	dwarf.bot_move = Vector2.ZERO
 	dwarf._yaw += PI * 0.66
 	dwarf._pitch = 0.1
 	await _wait(0.8)
 	await _shot("c_spawn_look")
 	# Walk forward for a moment (animations).
-	Input.action_press("move_forward")
-	await _wait(0.5)
+	dwarf.bot_move = Vector2(0, -1)
+	await _wait(0.7)
 	await _shot("d_walking")
-	Input.action_release("move_forward")
+	dwarf.bot_move = Vector2.ZERO
 	var ruin: Dictionary = maker.pois_of("ruin")[0]
 	await _teleport(dwarf, ruin.pos + Vector3(0, 1.0, 6.0), ruin.pos)
 	await _shot("e_ruin")

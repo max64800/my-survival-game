@@ -1,7 +1,8 @@
 class_name DwarfModel
 extends Node3D
-## A placeholder dwarf built from simple shapes (body, head, big beard, helmet),
-## until we pick a real art pack. Faces -Z (Godot's "forward").
+## The dwarf's body. Normally the real rigged, animated dwarf (DwarfRig, src/player/dwarf_rig.gd).
+## The old placeholder made of simple shapes is still here as a backup: -- art=shapes
+## Faces -Z (Godot's "forward").
 ## The right arm holds the pickaxe and can swing; the left hand holds the lantern.
 
 signal swing_impact  ## the pickaxe just hit (time to dig)
@@ -13,9 +14,10 @@ const TUNIC := Color(0.25, 0.38, 0.55)
 const TUNICS := [Color(0.25, 0.38, 0.55), Color(0.6, 0.22, 0.2), Color(0.25, 0.48, 0.25), Color(0.7, 0.55, 0.2)]
 
 var tunic := TUNIC
-## Which look: "shapes" (built from boxes and spheres) or "quaternius" (a CC0 rigged model with
-## real animations, from assets/art_candidates). Pick with the command line: -- art=quaternius
-static var art := "shapes"
+## Which look: "dwarf" (the real rigged dwarf, default), "shapes" (boxes and spheres) or
+## "quaternius" (an older CC0 test model from assets/art_candidates). Command line: -- art=shapes
+static var art := "dwarf"
+var dwarf_rig: DwarfRig
 const RIG_PATH := "res://assets/art_candidates/quaternius_adventurer.glb"
 var rig: Node3D
 var anim: AnimationPlayer
@@ -34,9 +36,15 @@ var _held := "?"
 ## Dwarf bodies live on their own visual layer (layer 2). Lanterns don't let this
 ## layer cast shadows, so a dwarf never blocks their own lantern light.
 const VISUAL_LAYER := 2
+## How a tool sits in the rigged dwarf's right hand (handle through the fist).
+static var hand_tool_rot := Vector3(PI / 2.0, 0, 0)  ## tool "up" = the hand bone's Z (the thumb side)
+static var hand_tool_pos := Vector3(0, 0.08, 0)
 
 
 func _ready() -> void:
+	if art == "dwarf":
+		_build_dwarf_rig()
+		return
 	if art == "quaternius" and ResourceLoader.exists(RIG_PATH):
 		_build_rig()
 		return
@@ -89,6 +97,11 @@ func swing(duration: float) -> void:
 	if swinging:
 		return
 	swinging = true
+	if dwarf_rig:
+		dwarf_rig.play_upper("dig", duration)
+		get_tree().create_timer(duration * 0.55).timeout.connect(func(): swing_impact.emit())
+		get_tree().create_timer(duration).timeout.connect(func(): swinging = false)
+		return
 	if rig:
 		_rig_play("Sword_Slash", duration)
 		var t0 := get_tree().create_timer(duration * 0.6)
@@ -106,6 +119,10 @@ func swing(duration: float) -> void:
 ## Weapon attack: wind up, strike at 40% of the time, recover.
 func attack(duration: float, heavy: bool) -> void:
 	swinging = true
+	if dwarf_rig:
+		dwarf_rig.attack(duration, heavy)
+		get_tree().create_timer(duration).timeout.connect(func(): swinging = false)
+		return
 	if rig:
 		_rig_play("Sword_Slash" if heavy else "Punch_Right", duration)
 		get_tree().create_timer(duration).timeout.connect(func(): swinging = false)
@@ -200,6 +217,9 @@ func _rig_play(name: String, duration: float = 0.0) -> void:
 
 ## Walking/running/rolling animation for the rigged look (the shapes look ignores this).
 func set_motion(speed: float, on_floor: bool, rolling: bool) -> void:
+	if dwarf_rig:
+		dwarf_rig.set_motion(speed, on_floor, rolling)
+		return
 	if rig == null or (swinging and not rolling):
 		return
 	var want := "Idle"
@@ -213,6 +233,23 @@ func set_motion(speed: float, on_floor: bool, rolling: bool) -> void:
 		want = "Walk"
 	if want != _rig_anim:
 		_rig_play(want, 0.45 if want == "Roll" else 0.0)
+
+
+## The real dwarf (see DwarfRig). Tools go in its right hand, the lantern in its left.
+func _build_dwarf_rig() -> void:
+	dwarf_rig = DwarfRig.new()
+	dwarf_rig.name = "Rig"
+	add_child(dwarf_rig)
+	dwarf_rig.build(tunic)
+	_hand = Node3D.new()
+	_hand.rotation = hand_tool_rot
+	_hand.position = hand_tool_pos
+	_hand.scale = Vector3.ONE * 0.8  # tools were sized for the old, bigger placeholder
+	dwarf_rig.right_hand.add_child(_hand)
+	left_hand = dwarf_rig.left_hand
+	right_arm = Node3D.new()  # (only used by the shapes look; kept so other code works)
+	add_child(right_arm)
+	set_held("")
 
 
 func _rest() -> void:
@@ -233,12 +270,7 @@ func _part(mesh: Mesh, color: Color, pos: Vector3, parent: Node3D = self) -> Mes
 
 
 func _mat(c: Color) -> Material:
-	if not _mats.has(c):
-		var m := StandardMaterial3D.new()
-		m.albedo_color = c
-		m.roughness = 0.8
-		_mats[c] = m
-	return _mats[c]
+	return Look.mat(c)
 
 
 func _cyl(top: float, bottom: float, h: float) -> Mesh:
