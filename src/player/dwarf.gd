@@ -5,7 +5,10 @@ extends CharacterBody3D
 
 const WALK_SPEED := 4.0
 const RUN_SPEED := 6.5
-const JUMP_SPEED := 5.0
+const JUMP_SPEED := 5.5         ## about 1.5 m high
+const COYOTE_TIME := 0.15       ## you can still jump this long after walking off an edge
+const JUMP_BUFFER := 0.15       ## a jump pressed this long before landing still counts
+const STEP_HEIGHT := 0.5        ## ledges up to this tall are stepped up without jumping
 const ACCEL := 14.0
 const AIR_ACCEL := 4.0
 const SWING_TIME := 0.55
@@ -17,6 +20,13 @@ var model: DwarfModel
 var lantern: Lantern
 var camera: Camera3D
 var input_enabled := true
+## For tests and robots: move/jump without a keyboard. (x = right, y = back, like the keys.)
+var bot_move := Vector2.ZERO
+var bot_jump := false
+
+var _since_floor := 0.0
+var _jump_wanted := 0.0
+var _cam_y := NAN
 
 var _yaw := 0.0
 var _pitch := -0.25
@@ -102,21 +112,37 @@ func _physics_process(delta: float) -> void:
 	var dir := Vector3.ZERO
 	var running := false
 	var playing := input_enabled and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
+	var iv := Vector2.ZERO
 	if playing:
-		var iv := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
-		dir = (Basis(Vector3.UP, _yaw) * Vector3(iv.x, 0, iv.y))
+		iv = Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 		running = Input.is_action_pressed("run")
+	if bot_move != Vector2.ZERO:
+		iv = bot_move
+	dir = (Basis(Vector3.UP, _yaw) * Vector3(iv.x, 0, iv.y))
 	var speed := RUN_SPEED if running else WALK_SPEED
 	var target := dir * speed
-	var a := ACCEL if is_on_floor() else AIR_ACCEL
+	var on_floor := is_on_floor()
+	var a := ACCEL if on_floor else AIR_ACCEL
 	velocity.x = move_toward(velocity.x, target.x, a * speed * delta)
 	velocity.z = move_toward(velocity.z, target.z, a * speed * delta)
-	if is_on_floor():
-		if playing and Input.is_action_just_pressed("jump"):
-			velocity.y = JUMP_SPEED
+
+	# Jumping, made forgiving: bumpy cave floors can make "am I standing?" flicker,
+	# so a jump still works a moment after leaving the ground or just before landing.
+	_since_floor = 0.0 if on_floor else _since_floor + delta
+	if (playing and Input.is_action_just_pressed("jump")) or bot_jump:
+		_jump_wanted = JUMP_BUFFER
+		bot_jump = false
 	else:
+		_jump_wanted = maxf(0.0, _jump_wanted - delta)
+	if _jump_wanted > 0.0 and _since_floor <= COYOTE_TIME and velocity.y <= 0.5:
+		velocity.y = JUMP_SPEED
+		_jump_wanted = 0.0
+		_since_floor = COYOTE_TIME + 1.0  # no double jump
+	elif not on_floor:
 		velocity.y -= _gravity * delta
 	move_and_slide()
+	if on_floor and velocity.y <= 0.01 and dir.length() > 0.1 and is_on_wall():
+		_try_step_up(dir * speed * delta)
 
 	# Face where we're going, or where we're digging.
 	var face_dir := dir
@@ -135,8 +161,33 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector3.ZERO
 
 
+## Walked into something low (a ledge, the edge of a dug hole)? If there's room
+## above it and floor on top, hop up onto it, like climbing a stair.
+func _try_step_up(motion: Vector3) -> void:
+	motion = motion.normalized() * maxf(motion.length(), 0.12)
+	var start := global_transform
+	var up := Vector3.UP * STEP_HEIGHT
+	if test_move(start, up):
+		return  # no head room
+	var raised := start.translated(up)
+	if test_move(raised, motion):
+		return  # still blocked up there: it's a wall, not a step
+	var ahead := raised.translated(motion)
+	var hit := KinematicCollision3D.new()
+	if not test_move(ahead, -up, hit):
+		return  # nothing to stand on
+	if hit.get_normal().angle_to(Vector3.UP) > floor_max_angle:
+		return  # too steep to stand on
+	global_position = ahead.origin + hit.get_travel()
+
+
 func _process(delta: float) -> void:
-	_cam_yaw.global_position = global_position + Vector3.UP * SHOULDER.y
+	# The camera follows smoothly up and down, so stepping up a ledge doesn't jolt.
+	var want_y := global_position.y + SHOULDER.y
+	if is_nan(_cam_y) or absf(_cam_y - want_y) > 2.0:
+		_cam_y = want_y
+	_cam_y = lerpf(_cam_y, want_y, minf(1.0, delta * 14.0))
+	_cam_yaw.global_position = Vector3(global_position.x, _cam_y, global_position.z)
 	_cam_yaw.rotation.y = _yaw
 	_cam_pitch.rotation.x = _pitch
 	_spring.position = Vector3(SHOULDER.x, 0, 0)

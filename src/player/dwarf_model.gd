@@ -18,6 +18,11 @@ var swinging := false
 var _mats := {}
 
 
+## Dwarf bodies live on their own visual layer (layer 2). Lanterns don't let this
+## layer cast shadows, so a dwarf never blocks their own lantern light.
+const VISUAL_LAYER := 2
+
+
 func _ready() -> void:
 	# Legs
 	for x in [-0.13, 0.13]:
@@ -89,6 +94,7 @@ func _part(mesh: Mesh, color: Color, pos: Vector3, parent: Node3D = self) -> Mes
 	mi.mesh = mesh
 	mi.material_override = _mat(color)
 	mi.position = pos
+	mi.layers = VISUAL_LAYER  # so the dwarf's own lantern can ignore its body for shadows
 	parent.add_child(mi)
 	return mi
 

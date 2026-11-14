@@ -1,7 +1,7 @@
 # Dwarf Game play-session report.
 #
 # Started by auto_record.ps1 after each play session. In plain words:
-#   1. Pops up a small box: "How was it? Anything weird?" -> feedback.txt
+#   1. (Only with -AskFeedback) pops up "How was it?" -> feedback.txt. Normally the owner tells Claude in chat.
 #   2. Takes snapshots from the video (about 60 at most) -> snapshots\
 #   3. Runs Claude in the background, READ-ONLY, to compare what the owner said
 #      with what the snapshots and the game's log show -> report.md
@@ -10,12 +10,12 @@
 # Claude here can only read files. It cannot change the game. Fixes happen
 # later, in a normal chat, after the owner has seen the report.
 #
-# Usage: powershell -STA -ExecutionPolicy Bypass -File session_report.ps1 -SessionDir "<folder>" [-NoClaude] [-NoPopup]
+# Usage: powershell -STA -ExecutionPolicy Bypass -File session_report.ps1 -SessionDir "<folder>" [-NoClaude] [-AskFeedback]
 
 param(
     [Parameter(Mandatory = $true)][string]$SessionDir,
     [switch]$NoClaude,
-    [switch]$NoPopup
+    [switch]$AskFeedback   # off by default: the owner gives feedback in the chat instead
 )
 
 $ErrorActionPreference = 'Stop'
@@ -213,7 +213,7 @@ try {
     if (-not (Test-Path $SessionDir)) { throw "No session folder: $SessionDir" }
     Log "Working on $SessionDir"
 
-    if (-not $NoPopup) {
+    if ($AskFeedback) {
         $fb = Ask-Feedback
         if ($fb) {
             [IO.File]::WriteAllText((Join-Path $SessionDir 'feedback.txt'), $fb + "`r`n", $Utf8NoBom)

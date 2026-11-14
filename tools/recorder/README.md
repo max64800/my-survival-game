@@ -16,7 +16,8 @@ No button to press.
 3. You close the game. Recording stops, OBS closes, and a session folder is made:
    `Videos\Dwarf Game Recordings\<date time>\`
 4. `session_report.ps1` then:
-   - pops up **"How was it?"**: type a few words or press Skip (it closes itself after 15 minutes),
+   - (only with `-AskFeedback`, off by default) pops up **"How was it?"**. Normally you tell Claude in chat,
+     and it goes into `FEEDBACK.md`,
    - takes up to 60 snapshots from the video (`snapshots\t0130.jpg` = 1 min 30 s in),
    - runs Claude **read-only** with `analysis_prompt.md` to write `report.md`,
    - shows a "report ready" bubble near the clock.

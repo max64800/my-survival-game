@@ -16,8 +16,11 @@ If `feedback.txt` starts with "(TEST", this is Claude testing the tools; still w
 | `game-log.txt` | Everything the game printed: errors, warnings, messages (may be missing) |
 | `video.mp4` | The video (you can't watch it; use the snapshots) |
 
-The game's code is in the current folder (`src/`, `tests/`, `docs/`). Read `CLAUDE.md` and the
-latest entry of `JOURNAL.md` first so you know what the game should do right now. Use `session.json`'s
+The game's code is in the current folder (`src/`, `tests/`, `docs/`). Read `CLAUDE.md`, `FEEDBACK.md`
+(the owner's master feedback list) and the latest entry of `JOURNAL.md` first so you know what the game
+should do right now. The owner usually gives feedback **in the chat, not in `feedback.txt`**, so the open
+items in `FEEDBACK.md` are what they care about. Also check the crossed-out (fixed) items: if one of them
+is happening again in this session, that's the most important thing to report (a fix that didn't hold). Use `session.json`'s
 branch to know which features exist (later steps live on branches; see `docs/GAMING-PC-START.md`).
 
 ## Steps
@@ -44,6 +47,12 @@ branch to know which features exist (later steps live on branches; see `docs/GAM
 
 ## What I saw
 - <time> <what was happening>   (one line per interesting moment, not per snapshot)
+
+## Fixed things that came back 🔁
+<any crossed-out FEEDBACK.md item seen happening again, with proof; or "None seen.">
+
+## Open feedback items: what I saw
+<for each open FEEDBACK.md item: did this session show it? yes/no/can't tell, with proof>
 
 ## Problems you mentioned (I'll fix these when you say go)
 For each:
