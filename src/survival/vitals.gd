@@ -25,6 +25,8 @@ var hunger := 100.0
 var thirst := 100.0
 var buffs: Array[Dictionary] = []  ## {id, time_left (seconds)}
 var upset_time := 0.0
+var cozy_time := 0.0  ## the "Cozy" rest buff (see Comfort): seconds left
+var cozy_points := 0  ## how cozy the place was
 var ailments := Ailments.new()  ## poison, burn, chill (only on the dwarf's own computer)
 var _since_damage := 999.0
 var _since_stamina := 999.0
@@ -64,15 +66,26 @@ func max_stamina() -> float:
 
 
 func health_regen_mult() -> float:
+	var cozy := Comfort.HEALTH_MULT if cozy_time > 0.0 else 1.0
 	match status():
-		"well_fed": return 1.2
-		"peckish": return 0.75
-		"starving": return 0.4
-	return 1.0
+		"well_fed": return 1.2 * cozy
+		"peckish": return 0.75 * cozy
+		"starving": return 0.4 * cozy
+	return cozy
+
+
+## Resting somewhere cozy: the buff starts (or refreshes) at the place's comfort.
+func set_cozy(points: int) -> void:
+	if points <= 0:
+		return
+	cozy_points = points
+	cozy_time = maxf(cozy_time, Comfort.duration(points))
 
 
 func stamina_regen_mult() -> float:
 	var m := 1.0 + buff_total("stamina_regen")
+	if cozy_time > 0.0:
+		m += Comfort.STAMINA_PER_POINT * cozy_points
 	if is_tired():
 		m *= 0.7
 	if upset_time > 0.0:
@@ -89,6 +102,7 @@ func tick(delta: float, resting: bool = false) -> void:
 	_since_damage += delta
 	_since_stamina += delta
 	upset_time = maxf(0.0, upset_time - delta)
+	cozy_time = maxf(0.0, cozy_time - delta)
 	for i in range(buffs.size() - 1, -1, -1):
 		buffs[i].time_left -= delta
 		if buffs[i].time_left <= 0.0:
@@ -166,6 +180,7 @@ func _add_buff(id: String) -> void:
 ## Dying clears buffs and refills the body (you wake at your bed).
 func respawn() -> void:
 	buffs.clear()
+	cozy_time = 0.0
 	ailments.clear()
 	upset_time = 0.0
 	health = max_health()

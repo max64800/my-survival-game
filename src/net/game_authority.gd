@@ -39,7 +39,11 @@ var _drops: Dictionary = {}  ## drop_id -> Drop
 var _next_drop_id := 1
 var _pending_digs: Array[Vector4] = []  ## digs waiting for that part of the cave to load
 var _fuel_sync := 0.0
-var _auto_timer := 0.0  ## host: self-running furnaces look in their chests once a second
+var _auto_timer := 0.0
+const REST_FOR_COZY := 5.0
+var _rest_seconds := 0.0  ## our dwarf: how long we've rested by a fire/bed
+var _comfort_timer := 0.0
+var comfort_here := 0  ## our dwarf's comfort right now (0 = not resting)  ## host: self-running furnaces look in their chests once a second
 var stations: Dictionary = {}  ## station id -> Station node
 var stations_root: Node3D
 var rune_slab := RuneSlab.new()  ## one per world, shared by everyone
@@ -1537,6 +1541,16 @@ func _tick_vitals(ps: PlayerState, delta: float) -> void:
 			ps.dying = true
 			ask_died()
 		return
+	# The Cozy buff: rest by a fire or bed for a few seconds (Comfort).
+	_rest_seconds = _rest_seconds + delta if resting else 0.0
+	_comfort_timer -= delta
+	if resting and _rest_seconds >= REST_FOR_COZY and _comfort_timer <= 0.0:
+		_comfort_timer = 1.0
+		var pieces: Dictionary = builder.structure.pieces if builder else {}
+		comfort_here = Comfort.score(ps.node.global_position, stations, pieces)
+		v.set_cozy(comfort_here)
+	elif not resting:
+		comfort_here = 0
 	var hunger_before := v.hunger
 	var thirst_before := v.thirst
 	v.tick(delta, resting)
