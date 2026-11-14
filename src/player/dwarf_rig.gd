@@ -311,6 +311,8 @@ func set_wear(ids: Array) -> void:
 ## Armor sets (docs/design/armor.md): colour + surface of each material.
 const ARMOR := {
 	"hide": [Color(0.42, 0.28, 0.17), "leather"],
+	"leather": [Color(0.48, 0.32, 0.2), "leather"],
+	"shell": [Color(0.55, 0.5, 0.44), "stone"],
 	"copper": [Color(0.78, 0.47, 0.25), "metal"],
 	"husk": [Color(0.44, 0.4, 0.27), "fungus"],
 	"silver": [Color(0.8, 0.82, 0.88), "metal"],
@@ -343,6 +345,10 @@ func _wear_armor(id: String) -> Node3D:
 				var arm := _on_bone("upperarm_" + side, holder)
 				_piece(arm, _ball(0.5, true), col, surf, Vector3(0, 0.02, 0), Vector3(0.2, 0.16, 0.2))  # shoulder guard
 				_piece(arm, _ring(0.085, 0.1), trim, "metal", Vector3(0, 0.0, 0), Vector3.ONE)
+		"legs":
+			for side in ["l", "r"]:
+				var thigh := _on_bone("thigh_" + side, holder)
+				_piece(thigh, _tube(0.12, 0.1, 0.2), col, surf, Vector3(0, 0.12, 0.01), Vector3(1.0, 1.0, 1.05))  # thigh guard
 		"feet":
 			for side in ["l", "r"]:
 				var shin := _on_bone("calf_" + side, holder)
@@ -359,12 +365,12 @@ func _helmet_shape(att: Node3D, tier: String, col: Color, surf: String) -> void:
 	var band := col.darkened(0.3) if tier != "hide" else Color(0.3, 0.2, 0.12)
 	_piece(att, _ring(0.124, 0.142), band, "metal", Vector3(0, 0.12, -0.02), Vector3(1.0, 0.6, 1.1))
 	match tier:
-		"hide":
+		"hide", "leather":
 			for x in [-1.0, 1.0]:  # ear flaps
 				_piece(att, _ball(0.5), col, surf, Vector3(x * 0.12, 0.05, -0.01), Vector3(0.04, 0.12, 0.1))
 		"copper":
 			_piece(att, BoxMesh.new(), col, surf, Vector3(0, 0.08, 0.14), Vector3(0.026, 0.1, 0.02))  # nose guard
-		"husk":
+		"husk", "shell":
 			for i in 3:  # shell ridges
 				_piece(att, _ball(0.5), col.darkened(0.15), surf, Vector3(0, 0.2 + i * 0.01, -0.09 + i * 0.07), Vector3(0.05, 0.05, 0.08))
 		"silver":

@@ -60,6 +60,11 @@ const DATA := {
 	"pickaxe_fang": {name = "Fanged Pickaxe", stack = 1, color = Color(0.85, 0.82, 0.75), short = "Pf", kind = "pickaxe", power = 13, tier = 0},
 	"shield_shell": {name = "Shell Shield", stack = 1, color = Color(0.55, 0.5, 0.44), short = "Ss", kind = "shield", weapon = "shield", tier = 1},
 	"glow_lamp": {name = "Glow Lamp", stack = 5, color = Color(0.5, 0.95, 0.6), short = "GL", kind = "station"},
+	# Shell armor (owner's choice): between leather (22%) and copper (48%): 19 armor = 38% less damage.
+	"helm_shell": {name = "Shell Helm", stack = 1, color = Color(0.58, 0.53, 0.46), short = "SH", kind = "wear", slot = "head", armor = 4, look = "shell"},
+	"plate_shell": {name = "Shell Plate", stack = 1, color = Color(0.56, 0.51, 0.45), short = "SP", kind = "wear", slot = "chest", armor = 7, look = "shell"},
+	"greaves_shell": {name = "Shell Greaves", stack = 1, color = Color(0.54, 0.49, 0.43), short = "SG", kind = "wear", slot = "legs", armor = 5, look = "shell"},
+	"boots_shell": {name = "Shell Boots", stack = 1, color = Color(0.52, 0.47, 0.41), short = "SB", kind = "wear", slot = "feet", armor = 3, look = "shell"},
 	# Fungal Jungle monster parts (combat doc 5.3, 8.5; doc 5.5 maps horns, stalker meat and glow spores to old items)
 	"spore_powder": {name = "Spore Powder", color = Color(0.7, 0.65, 0.5), short = "Sp"},
 	"needle": {name = "Mite Needle", color = Color(0.75, 0.85, 0.9), short = "Nd"},

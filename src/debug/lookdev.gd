@@ -74,7 +74,7 @@ func _run() -> void:
 		await _wait(0.25)
 	var dwarf: Dwarf = _main.dwarf
 	var maker: CaveMaker = _main.world.maker
-	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	Controls.set_captured(true)  # robots never grab the real mouse (Controls handles it)
 	_main.hud.set_paused(false)
 	if _clean:
 		_main.hud.visible = false
@@ -106,6 +106,21 @@ func _run() -> void:
 	await _wait(0.7)
 	await _shot("d_walking")
 	dwarf.bot_move = Vector2.ZERO
+	# The first three creatures, in the cave: a snail and a beetle ahead, a bat hanging above.
+	var mm: MonsterManager = GameAuthority.instance.monsters
+	var fwd := -Basis(Vector3.UP, dwarf._yaw).z
+	var side := Basis(Vector3.UP, dwarf._yaw).x
+	var place := func(kind: String, off: Vector3) -> void:
+		var at: Vector3 = maker.find_floor(dwarf.global_position.x + off.x, dwarf.global_position.z + off.z, dwarf.global_position.y + 2.0)
+		mm._ev_spawn(mm._next_uid, kind, at + Vector3.UP * 0.3, false, 0)
+		mm._next_uid += 1
+	place.call("rock_snail", fwd * 4.0 - side * 1.5)
+	place.call("rock_beetle", fwd * 4.5 + side * 1.6)
+	place.call("cave_bat", fwd * 6.0 + Vector3.UP * 2.5)
+	await _wait(1.5)
+	await _shot("d2_creatures")
+	for m in mm.monsters.values():
+		mm._ev_remove(m.uid)
 	var ruin: Dictionary = maker.pois_of("ruin")[0]
 	await _teleport(dwarf, ruin.pos + Vector3(0, 1.0, 6.0), ruin.pos)
 	await _shot("e_ruin")

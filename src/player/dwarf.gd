@@ -533,17 +533,23 @@ func _net_look(item: String, blocking: bool, aiming: bool, shield: bool, worn: A
 	model.set_wear(worn)
 
 
-## Wearable things that count as "on": kind "wear" items on the hotbar (like the Spore Mask,
-## which works from the hotbar; see MonsterManager._has_mask).
+## What the dwarf wears, from the equipment slots (head, chest, legs, feet), as the looks
+## DwarfRig knows: "spore_mask", or "armor_<slot>_<look>" (look = leather, copper, shell…).
 func _worn_items() -> Array:
 	var out := []
 	var auth := GameAuthority.instance
 	var ps: GameAuthority.PlayerState = auth.get_player(peer_id) if auth else null
-	if ps:
-		for i in Inventory.HOTBAR_SIZE:
-			var id: String = ps.inventory.get_slot(i).get("id", "")
-			if id != "" and Items.kind(id) == "wear" and id not in out:
-				out.append(id)
+	if ps == null:
+		return out
+	for part in ["head", "chest", "legs", "feet"]:
+		var id := ps.inventory.equipped(part)
+		if id == "":
+			continue
+		var look: String = Items.info(id).get("look", "")
+		if look == "mask":
+			out.append("spore_mask")
+		elif look != "":
+			out.append("armor_%s_%s" % [part, look])
 	return out
 
 
