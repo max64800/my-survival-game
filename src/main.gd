@@ -113,6 +113,8 @@ func _ready() -> void:
 
 ## What happened when a monster's attack reached us (shown briefly at the top of the screen).
 func _on_defended(r: Dictionary) -> void:
+	if dwarf and r.result == "hit":
+		dwarf.model.react("hit")
 	match r.result:
 		"block":
 			hud.show_toast("Blocked %s (−%d)" % [r.name, roundi(r.damage)], 1.2)

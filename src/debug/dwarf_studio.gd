@@ -68,6 +68,10 @@ func _both(name: String) -> void:
 
 func _run() -> void:
 	await _wait(0.5)
+	if "fire" in OS.get_cmdline_user_args():
+		await _fire_test()
+		quit()
+		return
 	if "rots" in OS.get_cmdline_user_args():
 		await _rot_lineup()
 		quit()
@@ -95,6 +99,31 @@ func _run() -> void:
 		_model.set_motion(4.0, true, false)
 		await process_frame
 	await _both("4_jog")
+	for i in 20:
+		_model.set_motion(0.0, true, false)
+		await process_frame
+	_model.set_held("sword_stone")
+	_model.set_pose(true, false, false)
+	await _wait(0.5)
+	await _both("5_block")
+	_model.set_held("shield_stone")
+	_model.set_pose(true, false, true)
+	await _wait(0.5)
+	await _both("6_shield")
+	_model.set_held("crossbow_stone")
+	_model.set_pose(false, true, false)
+	await _wait(0.5)
+	await _both("7_aim")
+	_model.set_pose(false, false, false)
+	_model.set_held("")
+	await _wait(0.4)
+	_model.react("hit")
+	await _wait(0.15)
+	await _both("8_hit")
+	await _wait(0.6)
+	_model.react("eat")
+	await _wait(0.6)
+	await _both("9_eat")
 	quit()
 
 
@@ -120,3 +149,30 @@ func _rot_lineup() -> void:
 	await _wait(0.33)
 	_view(Vector3(0.3, 0.1, -1), 6.5, 0.6)
 	await _shot("r_strike_front")
+
+
+## Tuning aid: a campfire in the dark next to the dwarf. Prints the frame rate.
+func _fire_test() -> void:
+	var we: WorldEnvironment = root.find_children("*", "WorldEnvironment", true, false)[0]
+	we.environment.background_color = Color(0.02, 0.02, 0.03)
+	we.environment.ambient_light_energy = 0.08
+	we.environment.glow_enabled = true
+	for l in root.find_children("*", "DirectionalLight3D", true, false):
+		l.visible = false
+	var fire := Fire.new(1.0)
+	fire.position = Vector3(0.9, 0, -0.4)
+	root.add_child(fire)
+	var light := OmniLight3D.new()
+	light.light_color = Color(1.0, 0.6, 0.3)
+	light.omni_range = 9.0
+	light.light_energy = 1.8
+	light.position = fire.position + Vector3.UP * 0.6
+	root.add_child(light)
+	_model.set_held("pickaxe_stone")
+	_view(Vector3(0.6, 0.15, -1), 3.6, 0.6)
+	await _wait(0.3)
+	print("  fps right away: ", Engine.get_frames_per_second())
+	await _shot("f_fire_early")
+	await _wait(3.0)
+	print("  fps after 3 s: ", Engine.get_frames_per_second())
+	await _shot("f_fire_later")

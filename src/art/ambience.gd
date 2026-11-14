@@ -27,6 +27,7 @@ var _cur := {}
 var _dust: GPUParticles3D
 var _spores: GPUParticles3D
 var _dust_mat: StandardMaterial3D
+var _warmed := false
 
 
 func _ready() -> void:
@@ -78,6 +79,8 @@ func _process(delta: float) -> void:
 	var cam := get_viewport().get_camera_3d()
 	if cam == null:
 		return
+	if not _warmed:
+		_warm_up(cam)
 	var at := cam.global_position
 	_dust.global_position = at
 	_spores.global_position = at
@@ -153,3 +156,18 @@ func _make_motes(count: int, size: float, glowing: bool) -> GPUParticles3D:
 	p.draw_pass_1 = q
 	add_child(p)
 	return p
+
+
+## Godot prepares each new kind of effect the first time it is drawn, which freezes the game
+## for a moment (we measured 2 FPS for a second when the first campfire appeared). So while
+## the cave loads, we draw one tiny fire and one burst of chips right in front of the camera,
+## too small to notice. After that, the real ones appear smoothly.
+func _warm_up(cam: Camera3D) -> void:
+	_warmed = true
+	var at := cam.global_position - cam.global_basis.z * 1.5
+	var fire := Fire.new(0.02)
+	add_child(fire)
+	fire.global_position = at
+	Fx.burst(self, at, Color(0.5, 0.48, 0.45), 6, 0.1)
+	Fx.burst(self, at, Color(0.4, 0.75, 1.0), 2, 0.1)
+	get_tree().create_timer(2.0).timeout.connect(fire.queue_free)

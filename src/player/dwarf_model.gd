@@ -134,37 +134,19 @@ func attack(duration: float, heavy: bool) -> void:
 	t.tween_callback(func(): swinging = false)
 
 
-## Shows the right thing in the hand: pickaxe, sword, mace…
+## Shows the right thing in the hand: pickaxe, sword, mace… (models in src/art/tool_models.gd)
 func set_held(item: String) -> void:
 	if item == _held:
 		return
 	_held = item
 	for c in _hand.get_children():
 		c.queue_free()
-	var col := Items.color(item) if item != "" else Color(0.55, 0.53, 0.5)
-	var handle := Color(0.5, 0.35, 0.2)
-	var look := Combat.weapon_of(item) if Items.kind(item) in ["weapon", "shield", "axe"] else Items.kind(item)
-	match look:
-		"sword":
-			_part(_box(Vector3(0.06, 0.08, 0.8)), col, Vector3(0, 0.1, -0.45), _hand)
-			_part(_box(Vector3(0.25, 0.04, 0.04)), handle, Vector3(0, 0.1, -0.05), _hand)
-		"mace", "mace_2h":
-			_part(_cyl(0.03, 0.03, 0.7), handle, Vector3(0, 0.35, 0), _hand)
-			_part(_sphere(0.14 if look == "mace_2h" else 0.1), col, Vector3(0, 0.72, 0), _hand)
-		"spear":
-			_part(_cyl(0.025, 0.025, 1.6), handle, Vector3(0, 0.6, 0), _hand)
-			_part(_cyl(0.0, 0.06, 0.25), col, Vector3(0, 1.5, 0), _hand)
-		"axe", "axe_2h":
-			_part(_cyl(0.03, 0.03, 0.8), handle, Vector3(0, 0.35, 0), _hand)
-			_part(_box(Vector3(0.05, 0.25, 0.3)), col, Vector3(0, 0.65, -0.12), _hand)
-		"shield":
-			_part(_cyl(0.3, 0.3, 0.06), col, Vector3(0, 0.0, -0.1), _hand).rotation.x = PI / 2.0
-		"hammer":
-			_part(_cyl(0.025, 0.025, 0.6), handle, Vector3(0, 0.25, 0), _hand)
-			_part(_box(Vector3(0.12, 0.12, 0.22)), col, Vector3(0, 0.55, 0), _hand)
-		_:
-			_part(_cyl(0.025, 0.025, 0.85), handle, Vector3(0, 0.25, 0), _hand)
-			_part(_box(Vector3(0.07, 0.07, 0.55)), col, Vector3(0, 0.62, 0.02), _hand).rotation.x = deg_to_rad(8)
+	if item == "":
+		return
+	var col := Items.color(item)
+	var kind := Items.kind(item)
+	var look := Combat.weapon_of(item) if kind in ["weapon", "shield", "axe"] else kind
+	_hand.add_child(ToolModels.build(look, col, VISUAL_LAYER))
 
 
 ## The rigged look: a CC0 character squashed into dwarf proportions, tools in its right hand,
@@ -233,6 +215,27 @@ func set_motion(speed: float, on_floor: bool, rolling: bool) -> void:
 		want = "Walk"
 	if want != _rig_anim:
 		_rig_play(want, 0.45 if want == "Roll" else 0.0)
+
+
+## Held poses for the rigged dwarf: block (sword up), shield up, crossbow aim.
+func set_pose(blocking: bool, aiming: bool, shield: bool) -> void:
+	if dwarf_rig:
+		dwarf_rig.set_hold("aim" if aiming else (("shield" if shield else "block") if blocking else ""))
+
+
+## A short reaction: "hit", "knock", "block", "eat", "throw".
+func react(what: String) -> void:
+	if dwarf_rig == null:
+		return
+	match what:
+		"hit":
+			dwarf_rig.play_full("hit", 0.45)
+		"knock":
+			dwarf_rig.play_full("knock", 0.9)
+		"eat":
+			dwarf_rig.play_upper("eat", 1.2)
+		"throw":
+			dwarf_rig.play_upper("throw", 0.6)
 
 
 ## The real dwarf (see DwarfRig). Tools go in its right hand, the lantern in its left.

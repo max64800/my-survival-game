@@ -115,8 +115,10 @@ func _build_look() -> void:
 			for i in 3:
 				var log := _part(_cyl(0.06, 0.06, 0.7), Color(0.4, 0.27, 0.15), Vector3(0, 0.12, 0))
 				log.rotation = Vector3(PI / 2.0, i * PI / 3.0, 0)
-			var flame := _part(_cyl(0.0, 0.18, 0.45), Color(1.0, 0.6, 0.2), Vector3(0, 0.35, 0), true)
-			flame.rotation.y = 0.3
+			_part(_cyl(0.12, 0.2, 0.08), Color(1.0, 0.45, 0.12), Vector3(0, 0.08, 0), true)  # glowing coals
+			var fire := Fire.new(1.0)
+			fire.position = Vector3.UP * 0.12
+			add_child(fire)
 			_fire = OmniLight3D.new()
 			_fire.light_color = Color(1.0, 0.6, 0.3)
 			_fire.omni_range = 9.0
@@ -127,6 +129,9 @@ func _build_look() -> void:
 			_part(_cyl(0.45, 0.6, sz.y), c, Vector3.UP * sz.y * 0.5)
 			_part(_box(Vector3(0.4, 0.35, 0.1)), Color(1.0, 0.5, 0.15), Vector3(0, 0.35, -0.55), true)
 			_part(_cyl(0.15, 0.18, 0.6), c.darkened(0.3), Vector3.UP * (sz.y + 0.3))
+			var mouth := Fire.new(0.45, false)
+			mouth.position = Vector3(0, 0.22, -0.62)
+			add_child(mouth)
 		"gem_bench":
 			_part(_box(Vector3(sz.x, 0.12, sz.z)), Color(0.4, 0.3, 0.22), Vector3.UP * 0.8)
 			for x in [-0.6, 0.6]:

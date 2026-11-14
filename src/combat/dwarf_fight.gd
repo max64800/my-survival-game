@@ -95,11 +95,13 @@ func defense_state() -> Dictionary:
 
 
 func guard_break() -> void:
+	dwarf.model.react("knock")
 	stagger = 1.2
 	message.emit("Guard broken!", Color(1.0, 0.4, 0.3))
 
 
 func knock_down() -> void:
+	dwarf.model.react("knock")
 	stagger = 1.0
 	message.emit("Knocked down!", Color(1.0, 0.4, 0.3))
 

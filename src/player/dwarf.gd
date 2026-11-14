@@ -137,6 +137,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			auth.ask_refill()
 	if event.is_action_pressed("use") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and not _holding_hammer() and not fight.weapon_mode():
 		var hit := aim_far(20.0) if ps and Items.kind(ps.selected_item()) == "throw" else aim()  # you can throw far
+		var using := Items.kind(ps.selected_item()) if ps else ""
+		if using in ["food", "drink", "tonic", "waterskin"]:
+			model.react("eat")
+		elif using == "throw":
+			model.react("throw")
 		auth.ask_use(hit.get("position", Vector3.INF), hit.get("normal", Vector3.ZERO), model.rotation.y + PI)
 
 
@@ -217,6 +222,7 @@ func _physics_process(delta: float) -> void:
 func _process(delta: float) -> void:
 	if is_local and fight:
 		model.set_held(fight.item())
+		model.set_pose(fight.is_blocking(), fight.aiming(), fight.has_shield())
 	if not is_local:
 		global_position = global_position.lerp(_net_pos, minf(1.0, delta * 15.0))
 		model.rotation.y = lerp_angle(model.rotation.y, _net_yaw, minf(1.0, delta * 15.0))

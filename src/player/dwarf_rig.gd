@@ -2,9 +2,10 @@ class_name DwarfRig
 extends Node3D
 ## The real dwarf: a rigged, animated model built from free CC0 Quaternius packs
 ## (credits in CREDITS.md), put together in code:
-##   - clothes: "Ranger" outfit (hood, leather tunic, belt, boots)
+##   - clothes: "Ranger" outfit (leather tunic, belt, boots; its hood is swapped for a dwarf helmet)
 ##   - head + eyes + eyebrows from the base character (only the head part; the clothes cover the rest)
-##   - a big beard
+##   - a big beard (the pack's short beard, stretched long and full in code)
+##   - a metal helmet with a nose guard, made from simple shapes, riding on the head bone
 ##   - DwarfProportions: short legs, big head and hands
 ##   - animations from the Universal Animation Library 1 + 2, mixed by an AnimationTree:
 ##       legs: idle -> walk -> jog -> sprint by speed, a jump pose in the air
@@ -23,9 +24,11 @@ const BEARD_COLOR := Color(0.62, 0.32, 0.14)
 ## "_Loop" ending from the file's names when it imports them, and makes those animations loop.
 const ANIMS := {
 	idle = "Idle", walk = "Walk", jog = "Jog_Fwd", sprint = "Sprint",
-	air = "Jump", roll = "Roll", hit = "Hit_Chest",
+	air = "Jump", roll = "Roll", hit = "Hit_Chest", knock = "b/Hit_Knockback",
 	dig = "Sword_Attack", attack_a = "b/Sword_Regular_A", attack_b = "b/Sword_Regular_B",
-	heavy = "b/Sword_Regular_C", block = "b/Sword_Block", eat = "b/Consume", use = "Interact",
+	heavy = "b/Sword_Regular_C", eat = "b/Consume", use = "Interact", throw = "b/OverhandThrow",
+	# Held poses (as long as the button is down):
+	block = "b/Sword_Block", shield = "b/Idle_Shield", aim = "Pistol_Aim_Neutral",
 }
 ## Speeds (m/s) where each move animation fits best.
 const MOVE_POINTS := {idle = 0.0, walk = 1.6, jog = 4.0, sprint = 6.5}
@@ -40,6 +43,8 @@ var left_hand: Node3D   ## the lantern hangs here
 var _air := 0.0
 var _rolling := false
 var _attack_flip := false
+var _hold := ""        ## which held pose is on ("" = none)
+var _hold_amount := 0.0
 
 
 func build(tint: Color) -> void:
@@ -54,9 +59,14 @@ func build(tint: Color) -> void:
 			mi.mesh = _head_only(mi))
 	_borrow_meshes(BEARD, func(mi: MeshInstance3D):
 		var m := mi.get_active_material(0).duplicate() as BaseMaterial3D
+		mi.mesh = _big_beard(mi)
 		if m:
 			m.albedo_color = BEARD_COLOR * 1.6  # the hair texture is light grey: tint it ginger
+			m.cull_mode = BaseMaterial3D.CULL_DISABLED  # a stretched beard shows its inside
 			mi.material_override = m)
+	var hood := skeleton.get_node_or_null("Male_Ranger_Head_Hood") as Node3D
+	if hood:
+		hood.visible = false
 	_tint_clothes(tint)
 	for mi in find_children("*", "MeshInstance3D", true, false):
 		mi.layers = DwarfModel.VISUAL_LAYER
@@ -72,13 +82,28 @@ func build(tint: Color) -> void:
 	# Hands: things held keep their own size (cancel the dwarf scale and the big-hand scale).
 	right_hand = _hand_socket("hand_r")
 	left_hand = _hand_socket("hand_l")
+	_build_helmet()
 	_build_tree(body)
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	for h in [right_hand, left_hand]:
 		var p := h.get_parent() as Node3D
 		h.scale = Vector3.ONE / p.global_transform.basis.get_scale()
+	_hold_amount = move_toward(_hold_amount, 1.0 if _hold != "" else 0.0, delta * 8.0)
+	tree.set("parameters/hold/blend_amount", _hold_amount)
+
+
+## A pose held with the upper body while a button is down: "block", "shield", "aim" or "" (none).
+func set_hold(what: String) -> void:
+	if what == _hold:
+		return
+	_hold = what
+	if what == "":
+		return  # fades out in _process
+	var node := (tree.tree_root as AnimationNodeBlendTree).get_node("hold_anim") as AnimationNodeAnimation
+	node.animation = ANIMS.get(what, what)
+	tree.set("parameters/hold_seek/seek_request", 0.0)
 
 
 ## Legs follow `speed` (m/s); in the air we blend to the jump pose; a dodge rolls the whole body.
@@ -140,8 +165,19 @@ func _build_tree(body: Node3D) -> void:
 	bt.connect_node("air", 1, "jump")
 	# Whole-body one-shots (roll, hit).
 	_add_oneshot(bt, "full", "air", false)
+	# Held upper-body poses (block, shield up, crossbow aim). Non-looping ones hold their last frame.
+	var hold_anim := AnimationNodeAnimation.new()
+	hold_anim.animation = ANIMS.block
+	bt.add_node("hold_anim", hold_anim)
+	bt.add_node("hold_seek", AnimationNodeTimeSeek.new())
+	bt.connect_node("hold_seek", 0, "hold_anim")
+	var hold := AnimationNodeBlend2.new()
+	_upper_filter(hold)
+	bt.add_node("hold", hold)
+	bt.connect_node("hold", 0, "full")
+	bt.connect_node("hold", 1, "hold_seek")
 	# Upper-body one-shots (dig, attack): only the spine and up, so the legs keep walking.
-	_add_oneshot(bt, "upper", "full", true)
+	_add_oneshot(bt, "upper", "hold", true)
 	bt.connect_node("output", 0, "upper")
 	tree.tree_root = bt
 	body.add_child(tree)  # root_node ".." = the model, where "Armature/Skeleton3D" lives
@@ -158,17 +194,22 @@ func _add_oneshot(bt: AnimationNodeBlendTree, layer: String, below: String, uppe
 	shot.fadein_time = 0.08
 	shot.fadeout_time = 0.2
 	if upper_only:
-		shot.filter_enabled = true
-		var spine := skeleton.find_bone("spine_01")
-		for i in skeleton.get_bone_count():
-			var b := i
-			while b >= 0 and b != spine:
-				b = skeleton.get_bone_parent(b)
-			if b == spine:
-				shot.set_filter_path(NodePath("Armature/Skeleton3D:" + skeleton.get_bone_name(i)), true)
+		_upper_filter(shot)
 	bt.add_node(layer, shot)
 	bt.connect_node(layer, 0, below)
 	bt.connect_node(layer, 1, layer + "_speed")
+
+
+## Let a blend node only touch the spine and everything above it (arms, head).
+func _upper_filter(node: AnimationNode) -> void:
+	node.filter_enabled = true
+	var spine := skeleton.find_bone("spine_01")
+	for i in skeleton.get_bone_count():
+		var b := i
+		while b >= 0 and b != spine:
+			b = skeleton.get_bone_parent(b)
+		if b == spine:
+			node.set_filter_path(NodePath("Armature/Skeleton3D:" + skeleton.get_bone_name(i)), true)
 
 
 func _hand_socket(bone: String) -> Node3D:
@@ -192,10 +233,87 @@ func _borrow_meshes(path: String, fix: Callable) -> void:
 	other.free()
 
 
+## A dwarf helmet on the head bone. Sizes are in the head bone's own units (measured: the skull
+## is about ±0.15 wide, its top at +0.21 up, the face toward +Z).
+func _build_helmet() -> void:
+	var att := BoneAttachment3D.new()
+	att.bone_name = "Head"
+	skeleton.add_child(att)
+	var iron := Color(0.5, 0.5, 0.53)
+	var dome := MeshInstance3D.new()
+	var sm := SphereMesh.new()
+	sm.radius = 0.142
+	sm.height = 0.142
+	sm.is_hemisphere = true
+	sm.radial_segments = 16
+	sm.rings = 6
+	dome.mesh = sm
+	dome.position = Vector3(0, 0.115, -0.02)
+	dome.scale = Vector3(1.0, 1.25, 1.1)
+	dome.material_override = Look.mat(iron, "metal")
+	att.add_child(dome)
+	var rim := MeshInstance3D.new()
+	var tm := TorusMesh.new()
+	tm.inner_radius = 0.138
+	tm.outer_radius = 0.158
+	tm.rings = 20
+	tm.ring_segments = 6
+	rim.mesh = tm
+	rim.position = Vector3(0, 0.12, -0.02)
+	rim.scale = Vector3(1.0, 0.6, 1.1)
+	rim.material_override = Look.mat(Color(0.55, 0.38, 0.2), "metal")  # a bronze band
+	att.add_child(rim)
+	var ridge := MeshInstance3D.new()
+	var rb := BoxMesh.new()
+	rb.size = Vector3(0.025, 0.03, 0.2)
+	ridge.mesh = rb
+	ridge.position = Vector3(0, 0.27, -0.02)
+	ridge.material_override = Look.mat(Color(0.55, 0.38, 0.2), "metal")
+	att.add_child(ridge)
+	var nose := MeshInstance3D.new()
+	var nb := BoxMesh.new()
+	nb.size = Vector3(0.026, 0.1, 0.02)
+	nose.mesh = nb
+	nose.position = Vector3(0, 0.08, 0.14)
+	nose.material_override = Look.mat(iron, "metal")
+	att.add_child(nose)
+	for mi in [dome, rim, ridge, nose]:
+		mi.layers = DwarfModel.VISUAL_LAYER
+
+
+## The pack's short chin beard, stretched into a big dwarf beard: longer down onto the chest,
+## fuller and pushed forward. Works in the head bone's space (where the face points to +Z).
+static func _big_beard(mi: MeshInstance3D) -> Mesh:
+	var bind := -1
+	for i in mi.skin.get_bind_count():
+		if String(mi.skin.get_bind_name(i)) == "Head":
+			bind = i
+	if bind < 0:
+		return mi.mesh
+	var to_head := mi.skin.get_bind_pose(bind)
+	var from_head := to_head.affine_inverse()
+	var arrays := mi.mesh.surface_get_arrays(0)
+	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var pivot := Vector3(0, 0.075, 0.05)  # just under the nose
+	for i in verts.size():
+		var d := to_head * verts[i] - pivot
+		var t := clampf(-d.y / 0.05, 0.0, 1.0)  # 0 = moustache, 1 = the hanging part
+		var k := Vector3(1.25, 1.2, 1.3).lerp(Vector3(1.45, 3.2, 1.9), t)
+		verts[i] = from_head * (pivot + d * k + Vector3(0, 0, 0.02 * t))
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	arrays[Mesh.ARRAY_NORMAL] = arrays[Mesh.ARRAY_NORMAL]
+	var m := ArrayMesh.new()
+	var bones: PackedInt32Array = arrays[Mesh.ARRAY_BONES]
+	var flags := Mesh.ARRAY_FLAG_USE_8_BONE_WEIGHTS if bones.size() == verts.size() * 8 else 0
+	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays, [], {}, flags)
+	m.surface_set_material(0, mi.mesh.surface_get_material(0))
+	return m
+
+
 ## Each player's shirt and hood get their own colour (host blue, then red, green, gold).
 func _tint_clothes(tint: Color) -> void:
 	var soft := Color.WHITE.lerp(tint * 1.8, 0.6)
-	for part in ["Male_Ranger_Body", "Male_Ranger_Head_Hood"]:
+	for part in ["Male_Ranger_Body"]:
 		var mi := skeleton.get_node_or_null(part) as MeshInstance3D
 		if mi == null:
 			continue

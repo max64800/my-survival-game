@@ -18,35 +18,39 @@ var _flicker := 0.0
 
 
 func _ready() -> void:
-	var frame := MeshInstance3D.new()
-	var box := BoxMesh.new()
-	box.size = Vector3(0.14, 0.2, 0.14)
-	frame.mesh = box
+	# The look: glowing glass inside a dark iron cage (4 posts, a cap, a carry ring, a base).
 	_glass_mat = StandardMaterial3D.new()
 	_glass_mat.albedo_color = WARM
 	_glass_mat.emission_enabled = true
 	_glass_mat.emission = WARM
 	_glass_mat.emission_energy_multiplier = 3.0
-	frame.material_override = _glass_mat
-	frame.position = Vector3(0, -0.12, 0)
-	add_child(frame)
-	var cap := MeshInstance3D.new()
-	var cm := CylinderMesh.new()
-	cm.top_radius = 0.02
-	cm.bottom_radius = 0.1
-	cm.height = 0.07
-	cm.radial_segments = 6
-	cap.mesh = cm
-	var dark := StandardMaterial3D.new()
-	dark.albedo_color = Color(0.2, 0.18, 0.16)
-	cap.material_override = dark
-	cap.position = Vector3(0, 0.01, 0)
-	add_child(cap)
-	# The light sits inside the lantern's glass box. If the box (or the dwarf
-	# holding it) cast shadows, they'd block the light: like holding a torch
-	# behind your back. So neither of them casts shadows from this light.
-	frame.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	cap.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var glass := BoxMesh.new()
+	glass.size = Vector3(0.1, 0.15, 0.1)
+	_piece(glass, _glass_mat, Vector3(0, -0.13, 0))
+	var iron := Look.mat(Color(0.22, 0.2, 0.18), "metal")
+	var post := BoxMesh.new()
+	post.size = Vector3(0.018, 0.19, 0.018)
+	for x in [-0.06, 0.06]:
+		for z in [-0.06, 0.06]:
+			_piece(post, iron, Vector3(x, -0.13, z))
+	var cap := CylinderMesh.new()
+	cap.top_radius = 0.025
+	cap.bottom_radius = 0.095
+	cap.height = 0.06
+	cap.radial_segments = 8
+	_piece(cap, iron, Vector3(0, -0.01, 0)).rotation.y = PI / 8.0
+	var base := CylinderMesh.new()
+	base.top_radius = 0.09
+	base.bottom_radius = 0.08
+	base.height = 0.03
+	base.radial_segments = 8
+	_piece(base, iron, Vector3(0, -0.235, 0)).rotation.y = PI / 8.0
+	var ring := TorusMesh.new()
+	ring.inner_radius = 0.03
+	ring.outer_radius = 0.042
+	ring.rings = 12
+	ring.ring_segments = 5
+	_piece(ring, iron, Vector3(0, 0.04, 0)).rotation.x = PI / 2.0
 	light = OmniLight3D.new()
 	light.shadow_enabled = true
 	light.shadow_caster_mask = 0xFFFFF & ~DwarfModel.VISUAL_LAYER
@@ -54,6 +58,17 @@ func _ready() -> void:
 	light.omni_attenuation = ATTENUATION
 	light.position = Vector3(0, -0.1, 0)
 	add_child(light)
+
+
+## One piece of the lantern's look. None of them cast shadows (they'd block the lantern's own light).
+func _piece(mesh: Mesh, mat: Material, pos: Vector3) -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	mi.mesh = mesh
+	mi.material_override = mat
+	mi.position = pos
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(mi)
+	return mi
 
 
 ## The back lantern (progression doc 5.4) sits above your head and frees both hands.
@@ -77,6 +92,10 @@ func _process(delta: float) -> void:
 		if model:
 			reparent(model if back else (model as DwarfModel).left_hand, false)
 			position = Vector3(0, 1.75, 0.25) if back else Vector3.ZERO
+	if not back:
+		# Hang straight down from the hand, whatever the hand is doing (it swings, it doesn't tilt).
+		var yaw := global_basis.z
+		global_basis = Basis(Vector3.UP, atan2(yaw.x, yaw.z))
 	var full_range := 16.0 if back else FULL_RANGE
 	var t := 1.0 if fuel > 0.0 else 0.0
 	if fuel > 0.0 and fuel < LOW_FUEL:
