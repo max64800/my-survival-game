@@ -453,3 +453,31 @@ Why branches? Our rule says each step must be playable and approved before the n
 - Monsters and stations are still simple shapes (with the new painted look). Later: real models.
 - Frame rate is about the same as before (~53 average). The fog and bounced light cost a little; the old slowness (C1) is still there.
 - To try it: open the folder `Dwarf Game - visuals` (next to the game folder) in Godot and press F5, or say "merge visuals".
+
+---
+
+## Day 3, later — November 14, 2026: The new look, part 2 (branch `visuals`)
+
+**What we did** (owner: "continue the rest of the design, as much as you can")
+- **A proper dwarf:** the green hood is swapped for a **metal helmet** (dome, bronze band, ridge, nose guard) riding on the head bone. The small chin beard is **stretched into a big ginger beard** down onto the chest, in code. A soft outline glow ("rim light") makes the dwarf stand out against the dark cave.
+- **Real tools in the hand** (`src/art/tool_models.gd`): pickaxe with two curved spikes, axes, sword with a cross-guard, flanged maces, spear, hammer, round wooden shield with an iron rim, crossbow. Wooden handles with a leather grip. Food, crystals and potions show as a small lump instead of a pickaxe (that was a bug).
+- **More animations hooked up:** sword up while blocking, shield up, crossbow aiming (all held while the button is down), flinching when hit, knocked back on a guard break, eating, throwing.
+- **Fire** (`src/art/fire.gd`): the campfire's orange cone became real flames, sparks drifting up and a thin smoke. The smelters glow with fire in their mouths.
+- **Digging:** chips are little tumbling rocks of different sizes, with a puff of dust. Crystal hits and "too hard!" sparks glow.
+- **The lantern** is now an iron lantern (cage, cap, carry ring) that hangs straight down from the hand.
+- **Spore clouds** are soft drifting mist instead of a pile of see-through balls.
+- **Roots and props:** their painted grain now follows their real size (a 6 m root gets 6 m of bark, not one stretched tile).
+- New auto-checks: `tests/test_visuals.gd` (6 checks). All 220 checks pass; the full autopilot runs to the end.
+
+**Mistakes and hurdles (including Claude's)**
+- **The first helmet was a soup bowl** that covered the eyes, with its top ridge floating above it. Fix: measured the head in its own units, made the helmet smaller, higher and taller.
+- **The shield was held flat like a plate.** Fix: turned it to face out from the back of the hand.
+- **Claude's test asked for an item called "crossbow"**, which doesn't exist (the real one is "crossbow_stone"), so a purple lump showed up. A test mistake, not a game bug.
+- **The first fire was a white blob, and the game froze to 2 frames per second when it appeared.** Two problems: too many bright flames stacked on top of each other, and Godot "preparing" each new effect the first time it's drawn. Fix: fewer, dimmer, taller flames; and while the cave loads, the game now draws one tiny fire and one chip burst in front of the camera, so later ones appear smoothly (the freeze went from 6 FPS to 39 FPS in the same autopilot moment; there is still a small hitch).
+- **A shadow-casting campfire light** costs a lot of speed, so it doesn't cast shadows (the lantern still does).
+- **Looked at a free pack of 50 animated monsters and said no:** they're bright and googly-eyed, which would make the game *more* Roblox-like. Our monsters keep their own designs with the painted look; real models can come later from the asset forge.
+- Merging `main` collided in `JOURNAL.md` (both windows added an entry at the end). Fix: kept both.
+
+**Not done yet**
+- Monsters, stations and building pieces are still simple shapes (with the painted look). Best next step: real models from the asset forge in our style.
+- Frame rate is about the same as before (~53 average). The small "first time" hitch for new effects is smaller but not gone.

@@ -44,8 +44,8 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F15. A menu to mute/unmute the sound** (and change the volume). *From: you. Said: 1×*
 - [ ] **F17. There are no pictures for resources/items.** → Claude 2 (pictures from ChatGPT) and Claude 3 (how the game looks) are on this. Claude 1 makes sure their pictures plug in. *From: you. Said: 1×*
 - [ ] **F18. The game looks too "Roblox-y".** Make it look more like Valheim (and Grounded if possible): real textures, better colours and shapes, not super realistic. → First pass done Nov 14 on the `visuals` branch: hand-painted rock textures, a darker cave with fog and floating dust, painted grain on every object. Waiting for you to try it. *From: you. Said: 1×*
-- [ ] **F19. I want animations: running, jumping, swinging…** → First pass done Nov 14 on the `visuals` branch: a real 3D dwarf with idle, walk, jog, sprint, jump, pickaxe swing, sword attacks and a dodge roll. Waiting for you to try it. *From: you. Said: 1×*
-- [ ] **F20. The dwarf doesn't look like a dwarf: dwarves are short, fat and wide.** → Fixed on the `visuals` branch (much shorter legs, 45% wider, bigger chest, head, hands and feet). Waiting for you to say if it's dwarfy enough. *From: you. Said: 1×*
+- [ ] **F19. I want animations: running, jumping, swinging…** → Done Nov 14 on the `visuals` branch: a real 3D dwarf with idle, walk, jog, sprint, jump, pickaxe swing, sword attacks, dodge roll, block, shield, crossbow aim, getting hit, knock-back, eating and throwing. Waiting for you to try it. *From: you. Said: 1×*
+- [ ] **F20. The dwarf doesn't look like a dwarf: dwarves are short, fat and wide.** → Fixed on the `visuals` branch (much shorter legs, 45% wider, bigger chest, head, hands and feet), plus a metal helmet and a big ginger beard. Waiting for you to say if it's dwarfy enough. *From: you. Said: 1×*
 
 **Claude noticed, waiting for your OK** (not fixed until you say so):
 - [ ] **C1. The game runs at only ~50 FPS on your RTX 3060 Ti.** It should be much higher, so something is slowing it down. (Found Nov 14 on the first PC run.)
