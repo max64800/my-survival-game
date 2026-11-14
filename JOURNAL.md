@@ -220,3 +220,43 @@ Why branches? Our rule says each step must be playable and approved before the n
 - Thallus doesn't have his spore sacs or underground "rooting" phase yet; Orrumhal's heartstone weak spot isn't built yet.
 - The lair's stone door doesn't grow shut (the locked walls do the same job for now).
 
+---
+
+## Night 2, last round — November 14, 2026: water, rune recipes, and a second bug hunt
+
+**What we did (all on `fungal-jungle`)**
+- **Water finally exists.** Before this, nothing in the game gave you water, so most cooking recipes couldn't be made. Now some ceilings have **dripping stalactites** (look for little falling drops). Put a **Drip Bucket** under one and it fills with 1 bucket of clean water every 4 minutes (holds 5). Press E on it: it fills your empty waterskins first, then gives buckets of water. The rune-taught **Copper Drip Basin** holds 15 and fills twice as fast. A bucket placed where nothing drips says so.
+- **All 19 rune recipes now exist.** Before, carving those runes taught nothing. New things:
+  - **Lights:** Crystal Sconce (a light post) and Glow Marker (a flag that shows on your map).
+  - **Getting around:** Rope Ladder (place it and hold W to climb, 6 m).
+  - **Throwables:** Blasting Pod (throw it to blow a 2 m hole) and Spore Bomb (a poison cloud for monsters).
+  - **Tools:** Prospector's Lens (hold it and aim at rock: it shows how hard it is and what's 3 m behind) and Training Dummy (hit it to train Fighting).
+  - **Fight boosts:** Whetstone (+5% damage, 10 min), Bugbane Oil (+15% against bugs) and War Horn (friends within 15 m hit 10% harder for a minute).
+  - **Building:** ruin-style Ancient Brick and mushroom bricks.
+  - **Storage:** Copper-bound Chest (36 slots) and Ore Crate (60 slots, ore only).
+  - **Smelting:** Twin Smelter (smelts 2 things at once).
+  - **Drinks:** Moss Ale and Spore Mead.
+  - **Gear:** Spore Mask (keep it on your hotbar: spore clouds hurt half as much).
+- **Old Recipe Pages:** every ruin chest holds 2. Using one teaches everybody a recipe that's "found in ruins" (7 recipes had no way to be learned before).
+- **Food that adds damage now actually adds damage in fights.** The host does the fight math, and it couldn't see your food buffs before.
+
+**Second bug hunt (a reviewer helper read all the new code)**
+- **Claude's mistake:** the first reviewer got confused because Claude switched branches (to update the journal) while it was still reading the files. **Fix:** Claude saved a frozen copy of the new code for the reviewer to read instead.
+- Found and fixed:
+  - A cheating friend could spam friendly-fire hits; now they're limited to how fast the weapon really swings.
+  - A broken number in a parry message could break a monster's stun.
+  - Crossbow hits must now be on the bolt's actual line.
+  - "I blocked" messages need a real swing that was aimed at you.
+  - Stunned animals chased you; now they run.
+  - The altar now checks it can call the boss *before* taking your offering.
+  - Aiming at the altar said "Rune shrine".
+  - Cave building got a bit faster.
+- Leech healing could have "healed" a dwarf who had already fallen. **Fix:** it can't.
+- The co-op robot failed once because the friend's XP report was a moment behind the host (XP travels in little batches twice a second). Ran it 3 more times: all passed. **Fix:** the robot now allows that small delay.
+
+**Not done yet / known limits**
+- **Older branches (`step-3` to `step-7`) still have no water source.** Only `fungal-jungle` has drips. Use `fungal-jungle` for play-testing survival.
+- Streams and pools of water (doc 6.4) aren't in the cave yet; drips are the only source besides juicy bellcaps.
+- The Crystal Sconce doesn't use up crystals over time yet (it shines forever).
+- Rope ladders always stand 6 m tall.
+
