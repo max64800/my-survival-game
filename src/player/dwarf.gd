@@ -5,6 +5,7 @@ extends CharacterBody3D
 ## In co-op, other players' dwarfs are "puppets" (is_local = false): no camera,
 ## no controls, they just copy the position their owner sends over the network.
 
+const BODY_LAYER := 8  ## players' bodies (friendly fire bolts can hit them)
 const WALK_SPEED := 4.0
 const RUN_SPEED := 6.5
 const JUMP_SPEED := 5.0
@@ -41,7 +42,7 @@ var _net_yaw := 0.0
 
 
 func _ready() -> void:
-	collision_layer = 8
+	collision_layer = BODY_LAYER
 	collision_mask = World.TERRAIN_LAYER
 	floor_max_angle = deg_to_rad(52)
 	floor_snap_length = 0.45

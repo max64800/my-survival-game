@@ -168,6 +168,29 @@ func test_crossbow_shot() -> void:
 	_teardown()
 
 
+func test_friendly_fire() -> void:
+	await _setup()
+	var friend := Node3D.new()
+	player.get_parent().add_child(friend)
+	friend.global_position = player.global_position + Vector3(1.0, 0, 0)
+	var fs := auth.add_player(2, friend)
+	fs.inventory.add("sword_stone", 1)
+	for i in Inventory.HOTBAR_SIZE:
+		if fs.inventory.get_slot(i).get("id", "") == "sword_stone":
+			fs.selected_slot = i
+	check_eq(auth.monsters.request_hit_friend(2, 1, false), 5, "a friend's sword: half of 10")
+	check_near(ps.vitals.health, 95.0, 0.01, "it hurt")
+	fs.inventory.add("crossbow_stone", 1)
+	for i in Inventory.HOTBAR_SIZE:
+		if fs.inventory.get_slot(i).get("id", "") == "crossbow_stone":
+			fs.selected_slot = i
+	check_eq(auth.monsters.request_hit_friend(2, 1, true, "bolt_blight", 1.0), 19, "a blight bolt: half of 34 × 0.9 + 6 = 37")
+	check_near(ps.vitals.ailments.buildup.poison, 25.0, 0.01, "half the poison buildup")
+	auth.set_friendly_fire(false)
+	check_eq(auth.monsters.request_hit_friend(2, 1, false), 0, "switched off: no friendly fire")
+	_teardown()
+
+
 func test_sneak_attack_doubles() -> void:
 	await _setup()
 	ps.inventory.add("sword_stone", 1)

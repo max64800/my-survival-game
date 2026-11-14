@@ -351,6 +351,49 @@ func _hurt_monster(m: Monster, peer: int, dmg: int, stun_amount: float) -> void:
 		monster_changed(m)
 
 
+# ================================================================== friendly fire (doc 2.7)
+
+## Our swing (or bolt) hit a friend. Half damage as if they had no armor, half elemental buildup,
+## never stun or knockdown.
+func ask_hit_friend(target: int, heavy: bool, bolt: String = "", dist: float = 0.0) -> void:
+	if auth.is_host():
+		request_hit_friend(auth.local_peer_id(), target, heavy, bolt, dist)
+	else:
+		_rpc_hit_friend.rpc_id(1, target, heavy, bolt, dist)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_hit_friend(target: int, heavy: bool, bolt: String, dist: float) -> void:
+	if auth.is_host() and is_finite(dist):
+		request_hit_friend(multiplayer.get_remote_sender_id(), target, heavy, bolt, dist)
+
+
+func request_hit_friend(peer: int, target: int, heavy: bool, bolt: String = "", dist: float = 0.0) -> int:
+	var ps := auth.get_player(peer)
+	var tp := auth.get_player(target)
+	if not auth.friendly_fire() or ps == null or tp == null or peer == target or tp.dying:
+		return 0
+	var item := ps.selected_item()
+	var w := Combat.weapon_of(item)
+	var tier := maxi(Items.tier(item), 0)
+	var gap := ps.node.global_position.distance_to(tp.node.global_position)
+	var dmg := 0.0
+	var buildup := {}
+	if bolt != "":
+		if w != "crossbow" or not Combat.BOLTS.has(bolt) or gap > Combat.BOLT_MAX + 2.0:
+			return 0
+		dmg = Combat.shot_damage(heavy, tier, bolt, {armor = 0}, gap)
+		for k in BOLT_BUILDUP.get(bolt, {}):
+			buildup[k] = BOLT_BUILDUP[bolt][k] * Combat.FRIENDLY_FIRE
+	else:
+		if w == "crossbow" or gap > Combat.WEAPONS[w].reach + 1.5:
+			return 0
+		dmg = Combat.damage(w, heavy, tier, {armor = 0})
+	var dealt := roundi(dmg * Combat.FRIENDLY_FIRE)
+	auth.hurt(target, dealt, buildup)
+	return dealt
+
+
 # ================================================================== crossbow (doc 3.6)
 
 ## Our bolt flew from `from` to `point` (and hit monster `uid`, or -1). The host judges it.

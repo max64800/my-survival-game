@@ -973,22 +973,39 @@ func _respawn_here(wake: Vector3) -> void:
 
 ## Something hurt a player (falling rock now, monsters in Step 5). Their own computer
 ## owns their body, so the host sends it there.
-func hurt(peer_id: int, amount: float) -> void:
+func hurt(peer_id: int, amount: float, buildup: Dictionary = {}) -> void:
 	var ps := get_player(peer_id)
 	if ps == null:
 		return
 	if peer_id == local_peer_id():
-		ps.vitals.take_damage(amount)
-		Sfx.ui("hit_heavy", 0.0)
+		_take_hurt(ps, amount, buildup)
 	else:
-		_rpc_hurt.rpc_id(peer_id, amount)
+		_rpc_hurt.rpc_id(peer_id, amount, buildup)
 
 
 @rpc("authority", "reliable")
-func _rpc_hurt(amount: float) -> void:
+func _rpc_hurt(amount: float, buildup: Dictionary = {}) -> void:
 	var me := get_player(local_peer_id())
 	if me:
-		me.vitals.take_damage(amount)
+		_take_hurt(me, amount, buildup)
+
+
+func _take_hurt(ps: PlayerState, amount: float, buildup: Dictionary) -> void:
+	ps.vitals.take_damage(amount)
+	Sfx.ui("hit_heavy", 0.0)
+	for k in buildup:
+		ps.vitals.ailments.add(k, buildup[k])
+
+
+## Host only: friendly fire on/off (combat doc 2.7: on by default).
+func set_friendly_fire(on: bool) -> void:
+	if is_host():
+		world_state.friendly_fire = on
+		_ev_state.rpc(world_state)
+
+
+func friendly_fire() -> bool:
+	return world_state.get("friendly_fire", true)
 
 
 ## XP from the host. Goes to the skill and the character level, then syncs to the player.

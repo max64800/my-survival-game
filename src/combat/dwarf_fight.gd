@@ -210,6 +210,19 @@ func _impact(heavy: bool, combo_step: int, riposte: bool) -> void:
 	if not uids.is_empty():
 		auth.monsters.ask_attack(uids, heavy, combo_step, riposte)
 		dwarf.add_shake(0.3 if heavy else 0.15)
+	# Friendly fire (doc 2.7): friends standing in the swing get hit too.
+	if auth.friendly_fire():
+		for pid in auth.players:
+			var other: Node3D = auth.players[pid].node
+			if pid == dwarf.peer_id or other == null:
+				continue
+			var to := other.global_position - dwarf.global_position
+			var flat := Vector3(to.x, 0, to.z)
+			if flat.length() > reach or absf(to.y) > 2.0:
+				continue
+			if arc < 360.0 and rad_to_deg(fwd.angle_to(flat.normalized())) > arc * 0.5:
+				continue
+			auth.monsters.ask_hit_friend(pid, heavy)
 
 
 # ---------------------------------------------------------------- crossbow (doc 3.6)
@@ -270,7 +283,7 @@ func _shoot(aimed: bool) -> void:
 		var spread := deg_to_rad(Combat.HIP_SPREAD) * sqrt(randf())
 		dir = dir.rotated(cam.global_basis.y, cos(randf() * TAU) * spread).rotated(cam.global_basis.x, sin(randf() * TAU) * spread)
 	var q := PhysicsRayQueryParameters3D.create(from, from + dir * Combat.BOLT_MAX)
-	q.collision_mask = World.TERRAIN_LAYER | Monster.MONSTER_LAYER | PieceNode.PIECE_LAYER
+	q.collision_mask = World.TERRAIN_LAYER | Monster.MONSTER_LAYER | PieceNode.PIECE_LAYER | Dwarf.BODY_LAYER
 	q.exclude = [dwarf.get_rid()]
 	var hit := dwarf.get_world_3d().direct_space_state.intersect_ray(q)
 	var point: Vector3 = hit.get("position", from + dir * Combat.BOLT_MAX)
@@ -281,6 +294,9 @@ func _shoot(aimed: bool) -> void:
 	var auth := GameAuthority.instance
 	if auth and auth.monsters:
 		auth.monsters.ask_shoot(b, aimed, uid, from, point)
+		var friend = hit.get("collider")
+		if friend is Dwarf and auth.friendly_fire():
+			auth.monsters.ask_hit_friend(friend.peer_id, aimed, b, from.distance_to(point))  # bolts hit the first body in line
 
 
 func _ps() -> GameAuthority.PlayerState:

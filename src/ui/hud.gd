@@ -437,6 +437,18 @@ func open_station(st: Station) -> void:
 
 func set_paused(on: bool) -> void:
 	_pause.visible = on
+	var auth := GameAuthority.instance
+	var ff: CheckButton = _pause.find_child("FriendlyFire", true, false)
+	if ff == null:
+		ff = CheckButton.new()
+		ff.name = "FriendlyFire"
+		ff.text = "Friendly fire (your hits can hurt friends, half damage)"
+		ff.focus_mode = Control.FOCUS_NONE
+		ff.toggled.connect(func(v: bool): if GameAuthority.instance: GameAuthority.instance.set_friendly_fire(v))
+		(_pause.find_child("Sub", true, false) as Label).get_parent().add_child(ff)
+	ff.visible = auth != null and auth.is_host()
+	if auth:
+		ff.set_pressed_no_signal(auth.friendly_fire())
 	(_pause.find_child("Sub", true, false) as Label).text = "Click to keep digging\n\nCave seed: %s" % seed_text
 
 
