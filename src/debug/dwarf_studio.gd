@@ -85,6 +85,10 @@ func _run() -> void:
 		await _armor_lineup()
 		quit()
 		return
+	if "three" in OS.get_cmdline_user_args():
+		await _three_lineup()
+		quit()
+		return
 	if "fire" in OS.get_cmdline_user_args():
 		await _fire_test()
 		quit()
@@ -297,3 +301,30 @@ func _armor_lineup() -> void:
 	await _shot("a_armor_front")
 	_view(Vector3(0.9, 0.1, -0.5), 6.5, 0.6)
 	await _shot("a_armor_side")
+
+
+## Tuning aid: the first three creatures (snail out + hiding, bat flying + roosting, beetle front + back).
+func _three_lineup() -> void:
+	_model.position = Vector3(-2.6, 0, 0)
+	var make := func(shape: String, col: Color, size: float, at: Vector3, yaw: float) -> Node3D:
+		var m := MonsterModel.build(shape, col, size, false)
+		m.position = at
+		m.rotation.y = yaw
+		root.add_child(m)
+		return m
+	var snail: Node3D = make.call("rock_snail", Color(0.48, 0.44, 0.38), 1.0, Vector3(-1.2, 0, 0), 0.6)
+	var hiding: Node3D = make.call("rock_snail", Color(0.48, 0.44, 0.38), 1.0, Vector3(-1.2, 0, 1.6), 0.6)
+	MonsterModel.set_shell(hiding, true)
+	var bat: Node3D = make.call("cave_bat", Color(0.3, 0.26, 0.28), 1.0, Vector3(0.6, 0.6, 0), 0.4)
+	var roost: Node3D = make.call("cave_bat", Color(0.3, 0.26, 0.28), 1.0, Vector3(0.6, 1.4, 1.8), 0.4)
+	roost.set_meta("roosting", true)
+	var beetle: Node3D = make.call("rock_beetle", Color(0.42, 0.39, 0.35), 0.9, Vector3(2.4, 0, 0), 0.7)
+	var back: Node3D = make.call("rock_beetle", Color(0.42, 0.39, 0.35), 0.9, Vector3(2.4, 0, 1.8), 0.7 + PI)
+	for m in [snail, bat, beetle, back]:
+		MonsterModel.animate(m, 2.0, 1.0, 0.4)
+	MonsterModel.animate(roost, 0.0, 1.0, 0.4)
+	await _wait(0.6)
+	_view(Vector3(0.2, 0.35, -1), 7.0, 0.5)
+	await _shot("t_three")
+	_view(Vector3(0.9, 0.25, -0.4), 6.0, 0.5)
+	await _shot("t_three_side")

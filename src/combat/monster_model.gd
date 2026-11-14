@@ -174,6 +174,82 @@ static func build(shape: String, color: Color, size: float, leader: bool, kind: 
 					_add(root, _cyl(0.05, 0.05, 0.3), dark, Vector3(x * 0.22, 0.15, z))
 			eye_y = 0.62
 			eye_z = -0.66
+		"rock_snail":
+			# A big rock snail: a heavy spiral shell of stone on a soft grey body, eyes on stalks.
+			# Parts tagged "soft" pull into the shell when it hides (set_shell).
+			var flesh := Look.mat(Color(0.6, 0.57, 0.52), "fungus", 0.0, 0.02)
+			var foot := _add(root, _capsule(0.2, 1.25), flesh, Vector3(0, 0.16, -0.05), Vector3(1.15, 0.7, 1.0), Vector3(PI / 2.0, 0, 0))
+			foot.set_meta("soft", true)
+			var head := _add(root, _sphere(0.17, 0.15), flesh, Vector3(0, 0.3, -0.58))
+			head.set_meta("soft", true)
+			for x in [-1.0, 1.0]:
+				var stalk := _add(root, _cyl(0.018, 0.03, 0.3), flesh, Vector3(x * 0.07, 0.48, -0.62))
+				stalk.rotation = Vector3(-0.35, 0, x * 0.25)
+				stalk.set_meta("soft", true)
+			var rock := Look.mat(color, "stone", 0.0, 0.05)
+			var shell := _add(root, _sphere(0.44, 0.44), rock, Vector3(0, 0.62, 0.15), Vector3(0.8, 1.0, 1.0))
+			shell.set_meta("shell", true)
+			for i in 3:  # the spiral: rings getting smaller toward the middle
+				var ring := MeshInstance3D.new()
+				var tm := TorusMesh.new()
+				tm.inner_radius = 0.3 - i * 0.09
+				tm.outer_radius = 0.38 - i * 0.09
+				tm.rings = 18
+				tm.ring_segments = 6
+				ring.mesh = tm
+				ring.material_override = Look.mat(color.darkened(0.15 + i * 0.05), "stone", 0.0, 0.03)
+				ring.rotation.z = PI / 2.0  # lies flat against the side of the shell
+				ring.set_meta("shell", true)
+				for side in [-1.0, 1.0]:
+					var r2 := ring if side < 0.0 else ring.duplicate() as MeshInstance3D
+					r2.position = Vector3(side * (0.3 + i * 0.03), 0.64 + i * 0.02, 0.15 - i * 0.02)
+					root.add_child(r2)
+			eye_y = 0.63
+			eye_z = -0.7
+		"cave_bat":
+			# A dog-sized cave bat: furry body, big ears, fangs, and real membrane wings (~1.5 m).
+			var fur := Look.mat(color, "cloth", 0.0, 0.02)
+			_add(root, _capsule(0.15, 0.48), fur, Vector3(0, 1.3, 0.05), Vector3.ONE, Vector3(0.3, 0, 0))
+			_add(root, _sphere(0.14, 0.13), fur, Vector3(0, 1.52, -0.12))
+			_add(root, _sphere(0.06, 0.05), dark, Vector3(0, 1.49, -0.25))  # snout
+			for x in [-1.0, 1.0]:
+				var ear := _add(root, _cyl(0.0, 0.06, 0.2), fur, Vector3(x * 0.08, 1.68, -0.1))
+				ear.rotation.z = -x * 0.3
+				_add(root, _cyl(0.0, 0.012, 0.07), _mat(Color(0.92, 0.9, 0.85)), Vector3(x * 0.025, 1.42, -0.27)).rotation.x = PI  # fang
+				var wing := MeshInstance3D.new()
+				wing.mesh = _bat_wing(x)
+				wing.material_override = Look.mat(color.darkened(0.25), "leather", 0.0, 0.0)
+				wing.position = Vector3(x * 0.1, 1.38, 0.0)
+				wing.set_meta("wing", x)
+				root.add_child(wing)
+				_add(root, _cyl(0.02, 0.025, 0.14), dark, Vector3(x * 0.07, 1.06, 0.12))  # little legs
+			eye_y = 1.56
+			eye_z = -0.24
+		"rock_beetle":
+			# A rock beetle: a domed stone shell in front, horn and mandibles, and a pale soft back
+			# end with a glowing gland: its weak spot (and where the glow gland drop comes from).
+			var plate := Look.mat(color, "stone", 0.0, 0.04)
+			_add(root, _sphere(0.5, 0.5), plate, Vector3(0, 0.46, -0.05), Vector3(0.95, 0.62, 1.1))  # shell dome
+			_add(root, _box(Vector3(0.025, 0.04, 0.8)), _mat(color.darkened(0.4)), Vector3(0, 0.74, -0.05))  # shell seam
+			_add(root, _sphere(0.3, 0.3), plate, Vector3(0, 0.42, -0.58), Vector3(1.1, 0.7, 0.8))  # front plate
+			_add(root, _sphere(0.18, 0.18), dark, Vector3(0, 0.36, -0.86))  # head
+			var horn := _add(root, _cyl(0.015, 0.08, 0.45), _mat(Color(0.78, 0.72, 0.6)), Vector3(0, 0.55, -1.0))
+			horn.rotation.x = -0.75
+			for x in [-1.0, 1.0]:
+				var jaw := _add(root, _cyl(0.0, 0.04, 0.22), dark, Vector3(x * 0.08, 0.3, -1.0))
+				jaw.rotation = Vector3(-PI / 2.0, 0, x * 0.5)
+			var soft := Look.mat(Color(0.82, 0.68, 0.5), "fungus", 0.0, 0.02)
+			for i in 3:  # soft ringed back end
+				_add(root, _sphere(0.26 - i * 0.05, 0.2), soft, Vector3(0, 0.36 - i * 0.02, 0.5 + i * 0.13), Vector3(1.2, 0.8, 0.7))
+			_add(root, _sphere(0.08, 0.08), Look.mat(Color(0.5, 0.9, 0.6), "smooth", 2.0), Vector3(0, 0.3, 0.72))  # glow gland
+			for i in 6:
+				var side := -1.0 if i < 3 else 1.0
+				var z := -0.45 + (i % 3) * 0.38
+				var upper := _add(root, _cyl(0.035, 0.045, 0.32), dark, Vector3(side * 0.45, 0.28, z))
+				upper.rotation.z = side * 1.0
+				_add(root, _cyl(0.025, 0.035, 0.3), dark, Vector3(side * 0.62, 0.12, z)).rotation.z = side * 0.25
+			eye_y = 0.42
+			eye_z = -0.98
 		"snail":
 			# A slow snail with a glowing green shell.
 			_add(root, _capsule(0.12, 0.7), _mat(Color(0.75, 0.7, 0.6)), Vector3(0, 0.12, 0), Vector3.ONE, Vector3(PI / 2.0, 0, 0))
@@ -225,6 +301,43 @@ static func build(shape: String, color: Color, size: float, leader: bool, kind: 
 	return root
 
 
+## A bat wing: a membrane spanning thin finger bones, with a scalloped back edge.
+## Built flat (both sides visible), reaching out along x (side = -1 left, +1 right).
+static func _bat_wing(side: float) -> Mesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var tips := [Vector3(0.82, 0.12, -0.12), Vector3(0.74, -0.05, 0.3), Vector3(0.5, -0.08, 0.46), Vector3(0.22, -0.06, 0.42)]
+	var root_front := Vector3(0.0, 0.04, -0.1)
+	var root_back := Vector3(0.0, -0.08, 0.26)
+	var pts := [root_front, Vector3(0.4, 0.14, -0.18), tips[0]]
+	for i in range(1, tips.size()):
+		var mid: Vector3 = (tips[i - 1] + tips[i]) * 0.5 + Vector3(-0.05, 0.02, -0.06)  # scallop dips in
+		pts.append(mid)
+		pts.append(tips[i])
+	pts.append(root_back)
+	for i in range(1, pts.size() - 1):
+		for v in [pts[0], pts[i], pts[i + 1], pts[0], pts[i + 1], pts[i]]:  # both sides
+			st.add_vertex(Vector3(v.x * side, v.y, v.z))
+	st.generate_normals()
+	return st.commit()
+
+
+## Rock Snail: pull the soft body into the shell (hidden = true) or come back out.
+static func set_shell(model: Node3D, hidden: bool) -> void:
+	for c in model.get_children():
+		if c is MeshInstance3D and c.has_meta("soft"):
+			var mi := c as MeshInstance3D
+			if not mi.has_meta("out_scale"):
+				mi.set_meta("out_scale", mi.scale)
+				mi.set_meta("out_pos", mi.position)
+			var t := mi.create_tween()
+			var to_pos: Vector3 = mi.get_meta("out_pos")
+			if hidden:
+				to_pos = Vector3(0, 0.5, 0.1)
+			t.tween_property(mi, "scale", (mi.get_meta("out_scale") as Vector3) * (0.15 if hidden else 1.0), 0.25)
+			t.parallel().tween_property(mi, "position", to_pos, 0.25)
+
+
 # ------------------------------------------------------------ coming alive (only looks)
 
 ## Finds the parts that move: legs (thin tubes near the ground), wings (thin flat boxes on
@@ -237,7 +350,9 @@ static func _tag_parts(root: Node3D, shape: String) -> void:
 			continue
 		var mi := c as MeshInstance3D
 		_unbox(mi, shape)
-		if mi.mesh is BoxMesh and (mi.mesh as BoxMesh).size.y < 0.05 and shape in ["moth", "bat"]:
+		if mi.has_meta("wing"):
+			wings.append([mi, mi.rotation, float(mi.get_meta("wing"))])
+		elif mi.mesh is BoxMesh and (mi.mesh as BoxMesh).size.y < 0.05 and shape in ["moth", "bat"]:
 			wings.append([mi, mi.rotation, signf(mi.position.x)])
 		elif (mi.mesh is CylinderMesh or mi.mesh is CapsuleMesh) and mi.position.y < 0.3 and mi.position.length() > 0.05:
 			# Neighbouring legs move in turns: by side and by front/back position.
@@ -245,7 +360,7 @@ static func _tag_parts(root: Node3D, shape: String) -> void:
 			legs.append([mi, mi.rotation, phase])
 	root.set_meta("legs", legs)
 	root.set_meta("wings", wings)
-	root.set_meta("flyer", shape in ["moth", "bat", "puffpod"])
+	root.set_meta("flyer", shape in ["moth", "bat", "puffpod", "cave_bat"])
 	root.set_meta("rest_y", root.position.y)
 
 
@@ -281,12 +396,22 @@ static func animate(model: Node3D, speed: float, size: float, clock: float) -> v
 	for leg in model.get_meta("legs"):
 		var mi: MeshInstance3D = leg[0]
 		mi.rotation = leg[1] + Vector3(sin(stride + leg[2]) * 0.55 * go, 0, 0)
+	var roosting: bool = model.get_meta("roosting", false)
 	for wing in model.get_meta("wings"):
 		var mi: MeshInstance3D = wing[0]
-		mi.rotation = wing[1] + Vector3(0, 0, sin(clock * 16.0) * 0.55 * wing[2])
+		if roosting:
+			mi.rotation = wing[1] + Vector3(0, 0, -1.25 * wing[2])  # folded around the body
+		else:
+			mi.rotation = wing[1] + Vector3(0, 0, sin(clock * 9.0) * 0.6 * wing[2])
 	var rest_y: float = model.get_meta("rest_y")
+	if roosting:
+		model.position.y = rest_y
+		model.rotation = Vector3(0, model.rotation.y, PI)  # hanging upside down from the ceiling
+		return
 	if model.get_meta("flyer"):
 		model.position.y = rest_y + sin(clock * 2.2) * 0.12 * size  # hovering
+		if absf(model.rotation.z) > 3.0:
+			model.rotation.z = 0.0  # woke up: right way up again
 	else:
 		var bob := absf(sin(stride)) * 0.06 * size * go
 		var breath := sin(clock * 2.0) * 0.012 * size * (1.0 - go)

@@ -40,6 +40,11 @@ var _bar_fill: MeshInstance3D
 var _stun_fill: MeshInstance3D
 var _bars: Node3D
 var _flash := 0.0
+## Rock Snail (data.shell_hide): seconds left hidden in the shell, and hits taken since it last hid.
+var shell_left := 0.0
+var shell_hits := 0
+var _charge_dir := Vector3.ZERO  ## straight_charge: the direction locked when the charge starts
+var _alt := INF                  ## swoops: the height this flyer is heading for
 var _last_pos := Vector3.ZERO
 var _speed := 0.0
 var _clock := 0.0
@@ -119,6 +124,11 @@ func _ready() -> void:
 	_stun_fill = _bar(Color(1.0, 0.8, 0.3), 0.002, 0.0, -0.07)
 	_net_pos = global_position
 	_update_label()
+
+
+## Only looks: the snail pulls into its shell (or comes back out). The host decides when.
+func show_shell(hidden: bool) -> void:
+	MonsterModel.set_shell(model, hidden)
 
 
 ## Only looks: a quick white flash and a little "punch" when something hits us.
@@ -241,6 +251,12 @@ func think(delta: float, mgr: Node) -> void:
 	if ailments.has("frozen"):
 		_move(delta, Vector3.ZERO, 0.0)
 		return
+	if shell_left > 0.0:
+		shell_left -= delta
+		_move(delta, Vector3.ZERO, 0.0)
+		if shell_left <= 0.0:
+			mgr.monster_shell(self, false)  # comes back out
+		return
 	if stun.is_stunned():
 		state = State.STUNNED
 		velocity = Vector3(0, velocity.y, 0)
@@ -258,6 +274,17 @@ func think(delta: float, mgr: Node) -> void:
 		_think = 0.3
 		_perceive(mgr)
 	var target: Node3D = mgr.player_node(target_peer)
+	if data.get("swoops", false):
+		# Cruise high above you, dive down to bite, climb away again (owner's bat design).
+		var ground := target.global_position.y if target else home.y - 2.5
+		if state == State.ATTACK:
+			_alt = ground + 0.9
+		elif state in [State.CHASE, State.ALERT, State.RECOVER]:
+			_alt = ground + 3.0
+		elif state == State.SLEEP:
+			_alt = global_position.y
+		else:
+			_alt = home.y - 1.5
 	match state:
 		State.SLEEP:
 			_move(delta, Vector3.ZERO, 0.0)
@@ -325,7 +352,8 @@ func think(delta: float, mgr: Node) -> void:
 			_move(delta, to.normalized(), speed)
 			_face(target)
 		State.ATTACK:
-			_face(target)
+			if _charge_dir == Vector3.ZERO:
+				_face(target)
 			if _timer <= 0.0 and _attack.has("cloud"):
 				var c: Dictionary = _attack.cloud
 				var at := global_position
@@ -338,8 +366,14 @@ func think(delta: float, mgr: Node) -> void:
 				# Charges and pounces: rush at the target during the last part of the wind-up.
 				var rush := target.global_position - global_position
 				rush.y = 0
-				if rush.length() > 1.2:
-					_move(delta, rush.normalized(), maxf(data.run * 2.0, _attack.reach / maxf(_attack.tell * 0.6, 0.1)))
+				var charge_speed := maxf(data.run * 2.0, _attack.reach / maxf(_attack.tell * 0.6, 0.1))
+				if data.get("straight_charge", false):
+					# A charge doesn't steer: sidestep and it thunders past (then its back is open).
+					if _charge_dir == Vector3.ZERO:
+						_charge_dir = rush.normalized()
+					_move(delta, _charge_dir, charge_speed)
+				elif rush.length() > 1.2:
+					_move(delta, rush.normalized(), charge_speed)
 				else:
 					_move(delta, Vector3.ZERO, 0.0)
 			else:
@@ -362,9 +396,11 @@ func think(delta: float, mgr: Node) -> void:
 					_start_attack(next, mgr)
 				else:
 					state = State.RECOVER
-					_timer = RECOVER_TIME
+					_timer = data.get("recover", RECOVER_TIME)
+					_charge_dir = Vector3.ZERO
 					if data.get("hit_and_run", false):
-						_wander_to = global_position - (target.global_position - global_position).normalized() * 3.0 if target else home
+						var away: float = data.get("retreat", 3.0)
+						_wander_to = global_position - (target.global_position - global_position).normalized() * away if target else home
 		State.RECOVER:
 			if data.get("hit_and_run", false) and _wander_to != Vector3.INF:
 				var back := _wander_to - global_position
@@ -445,6 +481,7 @@ func _pick_attack(dist: float) -> Dictionary:
 
 func _start_attack(atk: Dictionary, mgr: Node) -> void:
 	_attack = atk
+	_charge_dir = Vector3.ZERO  # a new charge picks its own straight line
 	_stun_at_tell = stun.value
 	state = State.ATTACK
 	_timer = atk.tell
@@ -465,6 +502,8 @@ func _move(delta: float, dir: Vector3, speed: float) -> void:
 	if data.get("flies", false):
 		velocity = dir * speed
 		velocity.y = 0.0
+		if data.get("swoops", false) and _alt != INF:
+			velocity.y = clampf((_alt - global_position.y) * 3.0, -7.0, 6.0)
 	else:
 		velocity.x = move_toward(velocity.x, dir.x * speed, 20.0 * delta)
 		velocity.z = move_toward(velocity.z, dir.z * speed, 20.0 * delta)
@@ -517,13 +556,16 @@ func _process(delta: float) -> void:
 	_last_pos = global_position
 	_speed = lerpf(_speed, moved / maxf(delta, 0.001), minf(1.0, delta * 8.0))
 	_clock += delta
+	model.set_meta("roosting", data.get("roosts", false) and state == State.SLEEP)
 	MonsterModel.animate(model, _speed, _size, _clock + uid * 0.37)
 	if _flash > 0.0:
 		_flash -= delta
 		MonsterModel.set_glow(model, 1.0 if _flash < 0.25 else 0.35)  # bright gleam in the last 250 ms
 	else:
 		MonsterModel.set_glow(model, 0.0)
-	if stun.is_stunned():
+	if model.get_meta("roosting", false):
+		pass  # hanging upside down (MonsterModel.animate)
+	elif stun.is_stunned():
 		model.rotation.z = sin(Time.get_ticks_msec() * 0.01) * 0.15
 	else:
 		model.rotation.z = sin(_clock * (5.0 + _speed * 2.5)) * 0.07 * clampf(_speed / 3.0, 0.0, 1.0)  # waddle
