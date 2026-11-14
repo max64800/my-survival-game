@@ -94,6 +94,12 @@ func _ready() -> void:
 		elif arg == "artpreview":
 			debug_script = "res://src/debug/artpreview.gd"
 			_saving = false
+		elif arg == "buildcheck":
+			debug_script = "res://src/debug/buildcheck.gd"
+			_saving = false
+			_monsters = false
+			if mode == "menu":
+				mode = "solo"
 		elif arg == "ruincheck":
 			debug_script = "res://src/debug/ruincheck.gd"
 			_saving = false

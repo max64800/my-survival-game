@@ -50,34 +50,21 @@ func rebuild(p_piece: String, p_family: String) -> void:
 
 func _build() -> void:
 	var s: Vector3 = Pieces.LIST[piece].size
-	match piece:
-		"doorway", "window_wall":
-			var hole: Vector3 = Pieces.LIST[piece].opening
-			var side := (s.x - hole.x) * 0.5
-			var bottom: float = hole.z
-			var top := s.y - bottom - hole.y
-			_box(Vector3(side, s.y, s.z), Vector3(-(hole.x + side) * 0.5, s.y * 0.5, 0))
-			_box(Vector3(side, s.y, s.z), Vector3((hole.x + side) * 0.5, s.y * 0.5, 0))
-			if top > 0.01:
-				_box(Vector3(hole.x, top, s.z), Vector3(0, s.y - top * 0.5, 0))
-			if bottom > 0.01:
-				_box(Vector3(hole.x, bottom, s.z), Vector3(0, bottom * 0.5, 0))
-		"stairs":
-			for i in 4:
-				var h := (i + 1) * s.y / 4.0
-				_box(Vector3(s.x, h, s.z / 4.0), Vector3(0, h * 0.5, s.z * 0.5 - (i + 0.5) * s.z / 4.0), false)
-			if not ghost:
-				_ramp_shape(s)
-		"mine_prop":
-			_box(Vector3(0.3, s.y - 0.3, 0.3), Vector3(-0.8, (s.y - 0.3) * 0.5, 0))
-			_box(Vector3(0.3, s.y - 0.3, 0.3), Vector3(0.8, (s.y - 0.3) * 0.5, 0))
-			_box(Vector3(s.x, 0.3, s.z), Vector3(0, s.y - 0.15, 0))
-		"pillar":
-			_box(s, Vector3(0, s.y * 0.5, 0))
-			_box(Vector3(s.x + 0.15, 0.15, s.z + 0.15), Vector3(0, 0.075, 0), false)
-			_box(Vector3(s.x + 0.15, 0.15, s.z + 0.15), Vector3(0, s.y - 0.075, 0), false)
-		_:
-			_box(s, Vector3(0, s.y * 0.5, 0))
+	# The look: one shared, detailed shape per piece + material (PieceMesh, spec §6).
+	var mi := MeshInstance3D.new()
+	mi.mesh = PieceMesh.visual(piece, family)
+	mi.material_override = _ghost_mat if ghost else _mat(family)
+	if ghost:
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(mi)
+	# The solid shape: a smooth ramp for steps (nice to walk up), the plain outline for the rest.
+	if not ghost:
+		if Pieces.LIST[piece].get("walkable_slope", false):
+			_ramp_shape(s)
+		else:
+			var cs := CollisionShape3D.new()
+			cs.shape = PieceMesh.solid(piece).create_trimesh_shape()
+			add_child(cs)
 	if Pieces.FAMILIES[family].get("glow", false) and not ghost:
 		var l := OmniLight3D.new()
 		l.light_color = Pieces.FAMILIES[family].color
