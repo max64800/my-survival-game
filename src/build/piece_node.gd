@@ -117,13 +117,36 @@ func rebuild(p_piece: String, p_family: String) -> void:
 	_build()
 
 
+static var _forged_meshes := {}
+
+
+## Claude 2's hand-made model for this piece + material (assets/models/build/<piece>__<family>.glb),
+## or null to use the shape made in code. Built in the same piece space as PieceMesh, so it lines up
+## with the solid shape. Only the look changes; bumping into it still uses PieceMesh.solid().
+static func forged_mesh(p_piece: String, p_family: String) -> Mesh:
+	var key := p_piece + "__" + p_family
+	if not _forged_meshes.has(key):
+		var m: Mesh = null
+		var scene := Look.forged("build", key)
+		if scene:
+			var parts := scene.find_children("*", "MeshInstance3D", true, false)
+			if parts.size() == 1:
+				m = (parts[0] as MeshInstance3D).mesh  # one baked mesh, as agreed with Claude 2
+			elif parts.size() > 1:
+				push_warning("%s.glb has %d meshes; expected 1 (using the code shape)" % [key, parts.size()])
+			scene.free()
+		_forged_meshes[key] = m
+	return _forged_meshes[key]
+
+
 func _build() -> void:
 	var s: Vector3 = Pieces.LIST[piece].size
 	# The look: one shared, detailed shape per piece + material (PieceMesh, spec §6).
 	var mi := MeshInstance3D.new()
 	_look = mi
-	mi.mesh = PieceMesh.visual(piece, family)
-	mi.material_override = _ghost_mat if ghost else _mat(family)
+	var made := forged_mesh(piece, family) if not ghost else null
+	mi.mesh = made if made else PieceMesh.visual(piece, family)
+	mi.material_override = _ghost_mat if ghost else (null if made else _mat(family))
 	if ghost:
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(mi)

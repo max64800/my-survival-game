@@ -39,6 +39,7 @@ var _drops: Dictionary = {}  ## drop_id -> Drop
 var _next_drop_id := 1
 var _pending_digs: Array[Vector4] = []  ## digs waiting for that part of the cave to load
 var _fuel_sync := 0.0
+var _auto_timer := 0.0  ## host: self-running furnaces look in their chests once a second
 var stations: Dictionary = {}  ## station id -> Station node
 var stations_root: Node3D
 var rune_slab := RuneSlab.new()  ## one per world, shared by everyone
@@ -188,9 +189,19 @@ func _process(delta: float) -> void:
 		_tick_vitals(me, delta)
 	_apply_pending_digs()
 	if is_host():
+		_auto_timer -= delta
+		var feed_now := _auto_timer <= 0.0
+		if feed_now:
+			_auto_timer = 1.0
 		for st in stations.values():
 			for done in st.tick(delta):
-				spawn_drop(done[0], done[1], st.global_position + Vector3.UP * 1.2)
+				var left: int = done[1]
+				if done[2] and storage:
+					left = AutoSmelt.store(st, storage, done[0], left)  # self-running furnaces fill a chest
+				if left > 0:
+					spawn_drop(done[0], left, st.global_position + Vector3.UP * 1.2)
+			if feed_now and storage and st.kind in AutoSmelt.KINDS:
+				AutoSmelt.feed(st, storage)
 			if st.tick_water(delta):
 				_ev_water.rpc(st.station_id, st.water, st.under_drip)
 		_progress_sync -= delta
@@ -1007,7 +1018,7 @@ func request_craft(peer_id: int, recipe_id: String, station_id: int = 0) -> bool
 		return false
 	var fuel_item := ""
 	if r.get("fuel", 0) > 0:
-		for f in ["rootwood", "mushroom_wood"]:
+		for f in ["coal", "rootwood", "mushroom_wood"]:
 			if ps.inventory.count_of(f) >= r.fuel:
 				fuel_item = f
 				break

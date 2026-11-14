@@ -71,6 +71,10 @@ func _run() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("family="):
 			only = arg.trim_prefix("family=")
+		if arg == "part=extras":
+			await _extras(dwarf, base, lamp)
+			get_tree().quit()
+			return
 	# Six pieces at a time, 3.5 m apart, photographed from 7 m; built where the last batch was
 	# (each batch is cleared first), so they never run into the cave walls.
 	for fam in Pieces.MOSSY_FAMILIES:
@@ -114,3 +118,37 @@ func _run() -> void:
 		n += 1
 		bx += Vector3(16, 0, 0)
 	get_tree().quit()
+
+
+## `part=extras`: a door (closed, then open), a built ladder, the Kiln and Smelter, and three Ore Crates
+## (empty, half, full) to check the ore pile rises.
+func _extras(dwarf: Dwarf, base: Vector3, lamp: OmniLight3D) -> void:
+	var auth: GameAuthority = _main.authority
+	for x in range(-3, 4):
+		for z in range(-2, 2):
+			_place("foundation", "cut_stone", base + Vector3(x * 2, -1, z * 2), 0)
+	_place("doorway", "plank_root", base + Vector3(-4, 0, -1), 0)
+	_place("door", "plank_root", base + Vector3(-4, 0, -1), 0)
+	var door_uid := _uid - 1
+	_place("wall", "plank_root", base + Vector3(-2, 0, -1), 0)
+	_place("ladder", "plank_root", base + Vector3(-2, 0, -0.75), 0)
+	auth._ev_place_station(990001, "kiln", base + Vector3(1, 0, -1), 0.0)
+	auth._ev_place_station(990002, "smelter", base + Vector3(3, 0, -1), 0.0)
+	var fills := [0, 150, 500]
+	for i in 3:
+		var id: int = auth.storage.create_box("crate_ore", base + Vector3(0.5 + i * 1.6, 0, 1.5), 0.0)
+		if fills[i] > 0:
+			auth.storage.put(id, "copper_ore", fills[i])
+	await _wait(0.8)
+	lamp.global_position = base + Vector3(0, 5, 5)
+	_look(dwarf, base + Vector3(0, 1.8, 6.5), base + Vector3(0, 0.7, 0))
+	dwarf._zoom = 5.0
+	await _wait(1.0)
+	await _shot("extras_closed")
+	auth.builder._ev_door(door_uid, true)
+	await _wait(0.8)
+	await _shot("extras_door_open")
+	_look(dwarf, base + Vector3(2.4, 1.2, 4.0), base + Vector3(2.0, 0.2, 1.5))
+	dwarf._zoom = 2.5
+	await _wait(0.8)
+	await _shot("extras_crates")

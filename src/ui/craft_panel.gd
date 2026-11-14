@@ -60,6 +60,8 @@ func refresh() -> void:
 		_title.text += "  ·  level %d of %d" % [station.level(), Station.max_level(station.kind)]
 		if nxt != "" and _status.text == "":
 			_status.text = "Place a %s within 4 m to reach level %d." % [Items.display_name(nxt), station.level() + 1]
+	if station and station.kind in AutoSmelt.KINDS and _status.text == "":
+		_status.text = "Works by itself: put %s in a chest within 5 m." % 			("wood" if station.kind == "kiln" else "ore and coal (or wood)")
 	for c in _list.get_children():
 		c.queue_free()
 	var shown := 0

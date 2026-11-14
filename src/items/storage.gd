@@ -185,6 +185,30 @@ func _ev_box(id: int, data: Array) -> void:
 	var box := get_box(id)
 	if not box.is_empty():
 		box.inv.load_data(data)
+		if box.kind == "crate_ore":
+			show_fill(box.node, box.inv)
+
+
+const CRATE_FULL := 400  ## the ore pile looks heaped-up at this many items (feedback F33)
+
+
+## How full the Ore Crate looks: 0 = empty, 1 = heaped up.
+static func fill_level(inv: Inventory) -> float:
+	var n := 0
+	for sl in inv.slots:
+		if not sl.is_empty():
+			n += int(sl.count)
+	return clampf(float(n) / CRATE_FULL, 0.0, 1.0)
+
+
+## The Ore Crate's pile of ore rises as you fill it (Claude 2's crate_ore_fill model).
+static func show_fill(body: Node3D, inv: Inventory) -> void:
+	var pile := body.get_node_or_null("Fill") as Node3D
+	if pile == null:
+		return
+	var f := fill_level(inv)
+	pile.visible = f > 0.0
+	pile.scale = Vector3(1.0, 0.3 + 0.75 * sqrt(f), 1.0)  # a few ores already show; it heaps up slowly
 
 
 @rpc("authority", "call_local", "reliable")
@@ -209,6 +233,12 @@ func _build_look(body: StaticBody3D, kind: String) -> void:
 	if model:
 		model.rotation.y = PI  # forged models face +Z; boxes face -Z
 		body.add_child(model)
+		var pile := Look.forged("stations", "crate_ore_fill") if kind == "crate_ore" else null
+		if pile:
+			pile.name = "Fill"
+			pile.rotation.y = PI
+			pile.visible = false
+			body.add_child(pile)
 	elif kind == "grave":
 		# A little cairn of stones with a soft beam of light so you can find it again.
 		for i in 5:
@@ -254,7 +284,7 @@ func _build_look(body: StaticBody3D, kind: String) -> void:
 		lid.material_override = _mat(color.darkened(0.3))
 		body.add_child(lid)
 	var label := Label3D.new()
-	label.text = {"chest_small": "Chest", "chest_stone": "Stone Chest", "builder": "Builder's Chest", "grave": "Grave"}.get(kind, kind)
+	label.text = {"builder": "Builder's Chest", "grave": "Grave"}.get(kind, Items.display_name(kind))
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	label.position = Vector3.UP * 1.3
 	label.pixel_size = 0.004

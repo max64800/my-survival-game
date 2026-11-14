@@ -25,6 +25,7 @@ const LIST := {
 	"bed": {station = "workbench", inputs = {plank_root = 6, moss = 4, leather = 2}, output = "bed", count = 1, unlock = []},
 	"tanning_rack": {station = "workbench", inputs = {plank_root = 6, rope = 4}, output = "tanning_rack", count = 1, unlock = ["critter_hide"]},
 	"smelter": {station = "workbench", inputs = {stone = 20, clay = 15}, output = "smelter", count = 1, unlock = ["copper_ore"]},
+	"kiln": {station = "workbench", inputs = {stone = 15, clay = 8}, output = "kiln", count = 1, unlock = ["clay"]},
 	"farm_plot": {station = "workbench", inputs = {dirt = 10, moss = 5, plank_root = 4}, output = "farm_plot", count = 1, unlock = ["glowcap", "hollowcap", "bellcap", "root_tuber"]},
 	"chest_small": {station = "workbench", inputs = {plank_root = 8, rope = 2}, output = "chest_small", count = 1, unlock = []},
 	"chest_stone": {station = "workbench", inputs = {cut_stone = 10, copper_ingot = 2}, output = "chest_stone", count = 1, unlock = ["cut_stone"]},
@@ -52,6 +53,8 @@ const LIST := {
 	"satchel": {station = "workbench", inputs = {leather = 4, rope = 2}, output = "satchel", count = 1, unlock = ["leather"]},
 	# --- tanning rack (60 s each)
 	"leather": {station = "tanning_rack", inputs = {critter_hide = 1}, output = "leather", count = 1, seconds = 60, unlock = ["critter_hide"]},
+	# --- kiln (F32): wood → coal. Also runs by itself from a chest within 5 m (AutoSmelt).
+	"coal": {station = "kiln", inputs = {rootwood = 2}, output = "coal", count = 1, seconds = 20, unlock = []},
 	# --- smelter (needs wood fuel; times from doc 4.2)
 	"copper_ingot": {station = "smelter", inputs = {copper_ore = 2}, output = "copper_ingot", count = 1, seconds = 20, fuel = 1, unlock = ["copper_ore"]},
 	"copper_from_scrap": {station = "smelter", inputs = {rusty_scrap = 3}, output = "copper_ingot", count = 1, seconds = 20, fuel = 1, unlock = ["rusty_scrap"]},

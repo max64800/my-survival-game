@@ -207,6 +207,15 @@ static func snap(piece: String, p: Vector3, n: Vector3, yaw: float, rot: int, li
 						pos[axis] = anchor.get_center()[axis]
 					else:
 						pos[axis] = anchor.position[axis] if absf(p[axis] - anchor.position[axis]) < absf(p[axis] - anchor.end[axis]) else anchor.end[axis]
+	elif has_anchor and absf(n.y) < 0.5 and info.get("shape", "") == "ladder":
+		# A ladder on the side of a wall: flat against the face we're looking at, not inside the wall.
+		var across := 0 if absf(n.x) > absf(n.z) else 2
+		var side := signf(n[across])
+		q = 0 if across == 2 else 1
+		s = turned_size(piece, q)
+		pos = _on_grid("edge", p, s, q)
+		pos[across] = (anchor.end[across] if side > 0.0 else anchor.position[across]) + side * s[across] * 0.5
+		pos.y = anchor.position.y
 	elif has_anchor and absf(n.y) < 0.5 and info.place == "cell" and info.get("group", "") in ["floor", "foundation"] and anchor.size.y <= 1.05:
 		# Next to the floor/foundation we're looking at, at the same height.
 		var axis := 0 if absf(n.x) > absf(n.z) else 2

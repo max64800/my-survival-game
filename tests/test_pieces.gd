@@ -170,3 +170,19 @@ func test_stations_by_material() -> void:
 	check_eq(Pieces.needed_level("column", "cut_stone"), 2, "carved columns need Mason level 2")
 	check(not Pieces.allowed("foundation", "plank_root"), "no wooden foundations")
 	check(not Pieces.allowed("arch", "plank_root"), "arches are stone or brick")
+
+
+func test_ladder_snaps_onto_a_wall_face() -> void:
+	var st := Structure.new()
+	st.add(1, "wall", "plank_root", Vector3(0, 0, 0), 0, true)  # spans X, 0.3 thick at z = 0
+	var wall := st.box_of(1)
+	var t := Pieces.snap("ladder", Vector3(0.3, 1.0, 0.15), Vector3(0, 0, 1), 0.0, 0, 0.0, wall)
+	check_near(t.pos.z, 0.25, 0.001, "on the wall's front face, not inside it")
+	check_eq(t.rot % 2, 0, "turned the same way as the wall")
+	check_near(t.pos.y, 0.0, 0.001, "standing at the wall's foot")
+	check(not st.overlaps("ladder", t.pos, t.rot), "so it doesn't count as 'something is already there'")
+	var side := Structure.new()
+	side.add(2, "wall", "plank_root", Vector3(0, 0, 0), 1, true)  # spans Z
+	var t2 := Pieces.snap("ladder", Vector3(-0.15, 1.0, 0.2), Vector3(-1, 0, 0), 0.0, 0, 0.0, side.box_of(2))
+	check_near(t2.pos.x, -0.25, 0.001, "works on a wall facing the other way too")
+	check_eq(t2.rot % 2, 1, "and turns to match it")
