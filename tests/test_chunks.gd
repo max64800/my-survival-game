@@ -30,4 +30,11 @@ func test_bits_are_only_for_looks() -> void:
 	tree.root.add_child(root)
 	var s := ChunkSwarm.burst(root, Vector3.ZERO, Color.GRAY, root, 40)
 	check(s.get_child_count() == 0, "no extra nodes or bodies (one MultiMesh draws every bit)")
+	var s2 := ChunkSwarm.burst(root, Vector3.ZERO, Color.GRAY, root, 40)
+	check(s.multimesh.mesh == s2.multimesh.mesh, "same color reuses the same bit shape + material (fast)")
+	var t := Time.get_ticks_usec()
+	for i in 20:
+		ChunkSwarm.burst(root, Vector3.ZERO, Color.GRAY, root, 50)
+	var ms := (Time.get_ticks_usec() - t) / 20000.0
+	check(ms < 3.0, "a burst is quick to start (%.2f ms)" % ms)
 	root.queue_free()

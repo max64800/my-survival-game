@@ -67,6 +67,9 @@ var _poi_biome := "mossy"  ## while planning: which biome new places belong to
 var _wall_noise := FastNoiseLite.new()
 var _ore_noise := FastNoiseLite.new()
 var _dirt_noise := FastNoiseLite.new()
+var _rock_noise := FastNoiseLite.new()
+var _style_noise := FastNoiseLite.new()
+const ROCKY_AMP := 2.8  ## how far sharp rock juts out or cuts in (meters)
 
 
 func _init(p_seed: int = 1, big_caverns: int = 3, small_rooms: int = 12) -> void:
@@ -97,9 +100,39 @@ func _init(p_seed: int = 1, big_caverns: int = 3, small_rooms: int = 12) -> void
 	_plan_pois(fpoi, r0, rooms.size(), s0, s1, gates[0].pos, "fungal", BIOMES[1].cx)
 	# Last, so it never moves anything above: the small room where you wake up.
 	cavern_spawn = spawn_point
+	_plan_colonnades()
 	_plan_start()
 	if not start.is_empty():
 		spawn_point = start.spawn
+
+
+## Rows of great old columns standing in the big caverns (feedback F9/F21), 1-2 per cavern,
+## only where the floor is open and the ceiling is high enough. Planned last, with their own
+## dice, so nothing else moves.
+func _plan_colonnades() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed + 5150
+	for ri in rooms.size():
+		var room: Dictionary = rooms[ri]
+		if not room.big or room.get("sealed", false):
+			continue
+		var c: Vector3 = room.center
+		var r: Vector3 = room.radii
+		var placed := 0
+		var want := rng.randi_range(1, 2)
+		for attempt in 12:
+			if placed >= want:
+				break
+			var a := rng.randf_range(0.0, TAU)
+			var dist := rng.randf_range(0.25, 0.55)
+			var at := c + Vector3(cos(a) * r.x * dist, 0.0, sin(a) * r.z * dist)
+			var fl := find_floor(at.x, at.z, c.y)
+			if sdf_at(fl + Vector3.UP * 8.0) <= 0.0 or not _far_from_pois(fl, 12.0):
+				continue  # ceiling too low, or something else is already here
+			_poi_biome = room.get("biome", "mossy")
+			_add_poi("colonnade", fl, Vector3.UP, ri)
+			pois[-1].yaw = rng.randf_range(0.0, TAU)
+			placed += 1
 
 
 # ---------------------------------------------------------------- the start (feedback F10)
@@ -305,6 +338,18 @@ func _setup_noise() -> void:
 	_ore_noise.fractal_type = FastNoiseLite.FRACTAL_NONE
 	_dirt_noise.seed = seed + 202
 	_dirt_noise.frequency = 0.05
+	# Sharp, rocky walls (feedback F19): "cellular" noise makes angular facets, like broken stone.
+	_rock_noise.seed = seed + 303
+	_rock_noise.noise_type = FastNoiseLite.TYPE_CELLULAR
+	_rock_noise.frequency = 0.11
+	_rock_noise.cellular_distance_function = FastNoiseLite.DISTANCE_EUCLIDEAN
+	_rock_noise.cellular_return_type = FastNoiseLite.RETURN_DISTANCE2_SUB
+	_rock_noise.fractal_type = FastNoiseLite.FRACTAL_NONE
+	# Which parts of the cave are rocky and which are round: big slow patches, about half each.
+	_style_noise.seed = seed + 404
+	_style_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
+	_style_noise.frequency = 0.012
+	_style_noise.fractal_type = FastNoiseLite.FRACTAL_NONE
 
 
 func _place_rooms(rng: RandomNumberGenerator, big_count: int, small_count: int, cx: float, biome: String) -> void:
@@ -364,8 +409,9 @@ func _connect_rooms(rng: RandomNumberGenerator, r0: int, cx: float) -> void:
 					best = Vector2i(i, j)
 		in_tree[best.y] = true
 		edges.append(best)
-	# Two loops.
-	for k in 2:
+	var s0 := segments.size()
+	# Loops (6, was 2): more than one way between places.
+	for k in 6:
 		var i := rng.randi_range(r0, n - 1)
 		var j := rng.randi_range(r0, n - 1)
 		if i != j:
@@ -373,11 +419,21 @@ func _connect_rooms(rng: RandomNumberGenerator, r0: int, cx: float) -> void:
 	for e in edges:
 		_dig_worm(rng, rooms[e.x].center, rooms[e.y].center, cx)
 	# Dead ends.
-	for k in 4:
+	for k in 6:
 		var start: Vector3 = rooms[rng.randi_range(r0, n - 1)].center
 		var angle := rng.randf_range(0, TAU)
 		var end := start + Vector3(cos(angle), rng.randf_range(-0.3, 0.3), sin(angle)) * rng.randf_range(40, 80)
 		_dig_worm(rng, start, _clamp_inside(end, cx), cx)
+	# Side passages (feedback F20, "more tunnels like Minecraft"): narrower, twisty tunnels that
+	# branch off the ones above, wander up and down, cross each other, and sometimes go nowhere.
+	var s1 := segments.size()
+	for k in 16:
+		var seg: Dictionary = segments[rng.randi_range(s0 if s1 > s0 else 0, s1 - 1)]
+		var from: Vector3 = (seg.a + seg.b) * 0.5
+		var angle := rng.randf_range(0, TAU)
+		var dir := Vector3(cos(angle), rng.randf_range(-0.4, 0.4), sin(angle)).normalized()
+		var end := _clamp_inside(from + dir * rng.randf_range(35.0, 110.0), cx)
+		_dig_worm(rng, from, end, cx, 1.7, 2.6)
 
 
 ## Two gate tunnels through the Mossy/Fungal slab (world doc 1.3). Each side's tunnel stops
@@ -426,7 +482,7 @@ func _nearest_room(p: Vector3, r0: int, r1: int) -> Vector3:
 
 
 ## A wandering tunnel from a to b, made of short tubes.
-func _dig_worm(rng: RandomNumberGenerator, a: Vector3, b: Vector3, cx: float) -> void:
+func _dig_worm(rng: RandomNumberGenerator, a: Vector3, b: Vector3, cx: float, r_min: float = 2.3, r_max: float = 3.3) -> void:
 	const STEP := 6.0
 	var pos := a
 	var guard := 0
@@ -437,9 +493,9 @@ func _dig_worm(rng: RandomNumberGenerator, a: Vector3, b: Vector3, cx: float) ->
 		dir = (dir + wander * 0.65).normalized()
 		dir.y = clampf(dir.y, -0.42, 0.42)  # keep slopes walkable for a dwarf
 		var next := _clamp_inside(pos + dir.normalized() * STEP, cx)
-		segments.append({a = pos, b = next, r = rng.randf_range(2.3, 3.3)})
+		segments.append({a = pos, b = next, r = rng.randf_range(r_min, r_max)})
 		pos = next
-	segments.append({a = pos, b = b, r = rng.randf_range(2.3, 3.3)})
+	segments.append({a = pos, b = b, r = rng.randf_range(r_min, r_max)})
 
 
 func _clamp_inside(p: Vector3, cx: float) -> Vector3:
@@ -751,11 +807,53 @@ func _sdf_with(p: Vector3, room_ids: PackedInt32Array, seg_ids: PackedInt32Array
 	for i in room_ids:
 		d = _smin(d, _room_dist(p, i), BLEND)
 	for i in seg_ids:
+		# Quick skip: a tunnel whose box is farther than (closest so far + blend) can't change
+		# the answer (the soft blend only reaches BLEND meters). Many tunnels meet in caverns.
+		var mn := _seg_min[i]
+		var mx := _seg_max[i]
+		var gap := Vector3(maxf(maxf(mn.x - p.x, p.x - mx.x), 0.0), maxf(maxf(mn.y - p.y, p.y - mx.y), 0.0), maxf(maxf(mn.z - p.z, p.z - mx.z), 0.0))
+		if d < 1e8 and gap.length() >= d + BLEND:
+			continue
 		d = _smin(d, _seg_dist(p, i), BLEND)
-	var s := -d + _wall_noise.get_noise_3dv(p) * WALL_NOISE_AMP
+	# Bumps only matter near a wall (they move it by 3 m at most). Deep inside rock or far out
+	# in the air, skip them: much faster to build, and the wall ends up exactly the same.
+	var s := -d
+	if absf(s) < 6.5:
+		s += _wall_bumps(p)
 	if _near_start(p):
 		s = maxf(s, -_start_dist(p))
 	return minf(s, _region_dist(p))
+
+
+## How much the wall is pushed in or out at p. Round parts: smooth bumps. Rocky parts:
+## angular facets, more on walls and ceilings than on floors so you can still walk.
+func _wall_bumps(p: Vector3) -> float:
+	var round_bumps := _wall_noise.get_noise_3dv(p) * WALL_NOISE_AMP
+	var rocky := rockiness_at(p)
+	if rocky <= 0.0:
+		return round_bumps
+	# Cellular noise is mostly near -0.8 (range -1..0): centered so walls stay put on average,
+	# with angular ridges cutting in and flat faces jutting out.
+	var facets := (_rock_noise.get_noise_3dv(p) + 0.8) * ROCKY_AMP
+	return lerpf(round_bumps, facets + round_bumps * 0.35, rocky)
+
+
+## 0 = smooth and round, 1 = sharp and rocky (soft blend between big patches).
+func rockiness_at(p: Vector3) -> float:
+	return clampf(_style_noise.get_noise_3dv(p) * 4.0 + 0.5, 0.0, 1.0)
+
+
+## For tests: a z where the Mossy/Fungal border has no gate tunnel through it.
+static func gate_free_z(p_seed: int) -> float:
+	var c := CaveMaker.new(p_seed)
+	for z in [0.0, 60.0, -60.0, 120.0, -120.0, 30.0, -30.0]:
+		var clear := true
+		for g in c.gates:
+			if absf((g.pos as Vector3).z - z) < 25.0:
+				clear = false
+		if clear:
+			return z
+	return 0.0
 
 
 ## Distance to the inside of a room (negative = inside the air).

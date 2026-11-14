@@ -367,7 +367,8 @@ func _on_swing_impact() -> void:
 	if mon >= 0:
 		auth.monsters.ask_attack(PackedInt32Array([mon]), false, 0, false)  # a pickaxe works in a pinch
 		return
-	if hit.collider is Station or hit.collider is PieceNode or Storage.box_id_of(hit.collider) >= 0:
+	if hit.collider is Station or hit.collider is PieceNode or Storage.box_id_of(hit.collider) >= 0 \
+			or (hit.collider is Node and (hit.collider as Node).is_in_group(RuinKit.GROUP)):
 		return  # don't dig through your own furniture or buildings
 	auth.ask_hit(hit.position, hit.normal)
 

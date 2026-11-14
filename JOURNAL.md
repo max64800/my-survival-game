@@ -467,6 +467,24 @@ Why branches? Our rule says each step must be playable and approved before the n
 **Passed to Claude 3 (looks):** the beard (F24), short and wide dwarf proportions (F25, said twice now), and roots that look like icicles, plus real stalactites (F26).
 
 **Still open:** F9/F21 (better ruins and columns), F19 (sharper, rockier caves, 50-50), F20 (more Minecraft-like tunnels), F23 (equipment slots).
+
+### Day 3, evening: sharper caves, more tunnels, carved columns, zoom, 1-9 hotbar (Claude 1)
+
+**What we did**
+- **Caves: half round, half sharp (F19).** A big, slow pattern decides which parts of the cave are smooth and round, and which are angular like broken stone ("cellular" noise). Measured: 49.6% rocky.
+- **More tunnels (F20).** About 3x more passages: extra loops, dead ends, and twisty side tunnels that branch off, cross, and go up and down.
+- **Carved dwarf columns (F9/F21).** A new "ruin kit" builds real columns: a stepped base, a banded 8-sided shaft, and a wide top. Broken ones have jagged tops and their fallen pieces lying around. Ruins get a ring of columns and crumbling block walls, the Great Hall and the boss lair use them too, and every big cavern gets 1-2 rows of great columns. You bump into them, and the pickaxe doesn't dig through them.
+- **Mouse wheel = zoom (1.4-8 m), hotbar = keys 1-9 (F18)**, a sound menu (F15), and item pictures in the slots (F17).
+- A new photo robot (`-- ruincheck`) visits a ruin, a column row and the Great Hall and takes a picture of each.
+
+**Hurdles / mistakes**
+- **The caves got 3x slower to build** (13 → 40 ms per block). Claude first guessed it was the new rock pattern and added a skip, which didn't help. Then Claude *measured*: the pattern costs under 1 ms. The real cost was that 12 tunnels now meet in the first cavern, and every point measured its distance to all of them. **Fix:** skip tunnels that are clearly too far away to matter (the result is exactly the same). Now about 35 ms in the busiest spot. It's built in the background, so the game stays smooth, but the first load takes 1-2 s longer. **Lesson:** measure before fixing.
+- **Two "border rock can't be dug" checks broke.** The extra tunnels used up more random numbers, so a gate to the Jungle moved and landed exactly on the spot those checks test. The border is *supposed* to be open at a gate. **Fix:** the checks now pick a spot away from the gates.
+- **The flaky check from earlier was found:** "lantern fuel is back after loading". The lantern keeps burning while the world loads, and it only allowed 2 seconds. **Fix:** ±6 seconds, which still catches a fuel reset.
+- The shell tool turned a line break into a literal "\n" in the code. Caught in review and fixed with the editor (the same lesson as the backslashes).
+- One broken column piece seems to float a little in the Great Hall picture. Noted for later.
+
+**Next:** equipment slots (F23): pickaxe, lantern, head, chest, legs, feet, weapon, shield, backpack/belt.
 ## Day 3, later — November 14, 2026: The new look, part 1 (branch `visuals`)
 
 **What we did**

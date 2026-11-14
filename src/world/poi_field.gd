@@ -83,12 +83,24 @@ func _make(p: Dictionary) -> Node3D:
 			rune.add_child(l)
 			_label(root, "Rune shrine · E", 1.8)
 		"ruin":
-			# Broken old dwarf pillars and a half wall around the room.
-			for i in 5:
-				var a := i * TAU / 5.0 + 0.4
-				var h := 1.0 + fmod(i * 1.7, 2.2)
-				_part(root, _box(Vector3(0.6, h, 0.6)), _mat(Color(0.82, 0.8, 0.76)), Vector3(cos(a) * 4.5, h * 0.5, sin(a) * 4.5))
-			_part(root, _box(Vector3(4.0, 1.2, 0.4)), _mat(Color(0.55, 0.42, 0.35)), Vector3(0, 0.6, -3.5))
+			# An old dwarf hall, fallen in (F9/F21): a ring of carved columns (most broken),
+			# stretches of block wall with gaps, and a doorway of two columns.
+			var rng := _rng_for(p)
+			for i in 6:
+				var a := i * TAU / 6.0 + 0.4
+				var at := _on_floor(p, Vector3(cos(a), 0, sin(a)) * 4.6)
+				RuinKit.column(root, at, rng.randf_range(3.6, 4.6), 0.7, 0.0 if rng.randf() < 0.3 else rng.randf_range(0.2, 0.75), rng)
+			RuinKit.broken_wall(root, _on_floor(p, Vector3(-2.5, 0, -3.6)), _on_floor(p, Vector3(2.5, 0, -3.6)), 3, rng)
+			RuinKit.broken_wall(root, _on_floor(p, Vector3(-3.8, 0, 1.0)), _on_floor(p, Vector3(-3.8, 0, -2.2)), 2, rng)
+		"colonnade":
+			# A row of great columns standing in a cavern, some broken (F9/F21).
+			var rng := _rng_for(p)
+			var count := rng.randi_range(3, 5)
+			var along := Vector3(cos(p.get("yaw", 0.0)), 0, sin(p.get("yaw", 0.0)))
+			for i in count:
+				var off: Vector3 = along * (float(i) - (count - 1) * 0.5) * 3.8
+				var whole := rng.randf() < 0.4
+				RuinKit.column(root, _on_floor(p, off), rng.randf_range(5.0, 7.0), 0.95, 0.0 if whole else rng.randf_range(0.15, 0.7), rng)
 		"camp":
 			_part(root, _box(Vector3(0.9, 0.12, 1.9)), _mat(Color(0.45, 0.3, 0.25)), Vector3(1.2, 0.06, 0))  # bedroll
 			for i in 6:
@@ -108,16 +120,32 @@ func _make(p: Dictionary) -> Node3D:
 			_label(root, "Summoning altar · E", 2.4)
 			_part(root, _cyl(1.6, 2.0, 1.0), _mat(Color(0.4, 0.42, 0.4)), Vector3(0, 0.5, 0))
 			_part(root, _sphere(0.5), _mat(Color(0.3, 1.0, 0.7), 2.0), Vector3(0, 1.4, 0))
+			var lrng := _rng_for(p)
 			for i in 4:
 				var a := i * TAU / 4.0 + PI / 4.0
-				_part(root, _box(Vector3(1.2, 9.0, 1.2)), _mat(Color(0.5, 0.5, 0.48)), Vector3(cos(a) * 9.0, 4.5, sin(a) * 9.0))
+				RuinKit.column(root, _on_floor(p, Vector3(cos(a), 0, sin(a)) * 9.0), 9.0, 1.3, 0.0, lrng, Color(0.5, 0.5, 0.48))
 		"great_hall":
+			var grng := _rng_for(p)
 			for i in 8:
 				var a := i * TAU / 8.0
-				_part(root, _box(Vector3(1.0, 6.0, 1.0)), _mat(Color(0.85, 0.83, 0.8)), Vector3(cos(a) * 10.0, 3.0, sin(a) * 10.0))
+				RuinKit.column(root, _on_floor(p, Vector3(cos(a), 0, sin(a)) * 10.0), 6.5, 1.1, 0.0 if i % 3 != 2 else grng.randf_range(0.3, 0.7), grng, Color(0.8, 0.78, 0.74))
 		_:
 			return null
 	return root
+
+
+## Same dice for the same place on every computer (co-op friends see the same broken columns).
+static func _rng_for(p: Dictionary) -> RandomNumberGenerator:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(Vector3i((p.pos as Vector3).round())) + int(p.get("id", 0))
+	return rng
+
+
+## A spot `offset` away from the place's center, dropped onto the floor there (local to the place).
+func _on_floor(p: Dictionary, offset: Vector3) -> Vector3:
+	var c: Vector3 = p.pos
+	var f := maker.find_floor(c.x + offset.x, c.z + offset.z, c.y + 1.5)
+	return Vector3(offset.x, f.y - c.y, offset.z)
 
 
 func _label(parent: Node3D, text: String, y: float) -> void:
