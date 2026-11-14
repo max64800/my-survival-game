@@ -589,3 +589,25 @@ Why branches? Our rule says each step must be playable and approved before the n
 - Claude's timing lines printed in the middle of the measurement, and printing is slow, so the first numbers were muddled. Fix: store the numbers and print at the end.
 - The first breastplate sat on the upper-chest bone, so it ended up at the neck with a ring floating at shoulder height. Fix: moved it to the middle of the body.
 - A new check was too strict (it counted thin handles as "toy blocks"). Fixed the check.
+
+---
+
+## Day 3, later — November 14, 2026: The first three creatures, and the new look goes into main
+
+**What we did**
+- **The owner designed the first creatures** in a multiple-choice chat with Claude 3 (`docs/design/monsters-first-three.md`):
+  - **Rock Snail** (Mossy Hollows): very slow, hits hard; after 3 hits it hides in its shell for 3 s and takes 90% less damage. Drops snail meat + shell pieces → Shell Shield and a Shell armor set (helm, plate, greaves, boots).
+  - **Cave Bat** (caverns everywhere): dog-sized, ~1.5 m wings, hangs asleep from the ceiling, then swoops in, bites, flies off ~7 m and comes back. Drops wing leather (→ leather, waterskin) + fangs (→ Fang Bolts, Fanged Pickaxe).
+  - **Rock Beetle** (small, Mossy) and **Great Rock Beetle** (big, Jungle): charge in a straight line (sidestep!), stone shell in front, soft glowing back = double damage. Drops bug meat + glow gland (→ lantern fuel that lasts twice as long, glow bolts, a placeable Glow Lamp).
+  - Food: Cooked Snail, Roasted Bug (campfire), Snail & Mushroom Stew, Bug & Mushroom Stew (cooking pot).
+  - All other regular monsters and animals are **hidden for now** (still in the code); bosses unchanged.
+- New bodies built in code for all three (spiral stone shell, membrane bat wings, horned beetle with a pale soft back); new checks for the shell hiding (3 hits → hides → ~90% less) and the soft back (~2×).
+- Worked with Claude 1's new equipment slots: the dwarf now shows whatever is in the head/chest/legs/feet slots (leather, copper, shell, Spore Mask). Claude 2 made 18 icons for the new items.
+- **The owner said yes: the new look is now in main and on GitHub** (all 245 checks pass, co-op check passes).
+
+**Mistakes and hurdles (including Claude's)**
+- The first try to upload was refused: main had 2 new small commits. Fix: merged them, ran every check again, then uploaded.
+- Both Claudes had used the feedback numbers F27/F28 for different things. Fix: kept main's, renumbered Claude 3's to F29-F31.
+- A test message had a "%" sign that the text formatter misread ("90% less"), which crashed that check. Fix: wrote "90%%".
+- The shell's spiral rings were first hidden inside the shell, and the bat wings were too skinny. Fixed after looking at studio pictures.
+- The main game folder had other Claudes' unsaved work, so Claude 3 uploaded without touching that folder; Claude 1 brings it in there safely.
