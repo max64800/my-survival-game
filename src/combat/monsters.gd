@@ -196,6 +196,11 @@ const BOSSES := {
 			smoke_gill = {name = "Smoke Gill", tell = 1.0, damage = 10, type = "poison", reach = 6.0, parry = "any"}}},
 }
 
+## Re-summon offerings at a main boss's altar (combat doc 8.2, 8.4). "shard" = 1 rune shard, any colour.
+const OFFERINGS := {
+	"orrumhal": {copper_ingot = 10, crystal_blue = 5, shard = 1},
+	"thallus": {silver_ingot = 10, crystal_green = 5, mushroom_flesh = 3},
+}
 const BOSS_RESET_DISTANCE := 60.0
 const BOSS_RESET_TIME := 30.0
 const BOSS_DROP_RANGE := 60.0

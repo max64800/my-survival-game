@@ -451,6 +451,8 @@ func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
 		return {state = "air"}
 	normal = normal.normalized()  # a stretched normal would dig far past the reach check
 	var center := point - normal * 0.55
+	if monsters and monsters.lair_locked(center):
+		return {state = "blocked", point = point, why = "The lair walls glow. No digging until the fight ends!"}
 	var mat := world.rock_material_near(point - normal * 0.3, 1.1)
 	if mat < 0:
 		return {state = "air"}
@@ -603,6 +605,8 @@ func request_poi(peer_id: int, poi_id: int) -> String:
 				give_xp(pid, 100)  # clues are shared: everyone learns from them
 			_ev_state.rpc(world_state)
 			return "clue"
+		"lair":
+			return _altar(ps, poi)
 		"shrine":
 			if world_state.shrines.has(poi_id):
 				return "empty"
@@ -615,6 +619,37 @@ func request_poi(peer_id: int, poi_id: int) -> String:
 			_ev_state.rpc(world_state)
 			return "rune"
 	return ""
+
+
+## The summoning altar in a main boss lair: an offering brings a beaten boss back (doc 8.1).
+func _altar(ps: PlayerState, poi: Dictionary) -> String:
+	var boss := ""
+	for id in Monsters.OFFERINGS:
+		if Monsters.BOSSES[id].biome == poi.biome:
+			boss = id
+	if boss == "" or not world_state.bosses_dead.has(boss):
+		return "sleeping"  # the boss still lives here
+	if monsters._boss_alive(boss):
+		return "awake"
+	var need: Dictionary = Monsters.OFFERINGS[boss]
+	var shard := ""
+	for item in need:
+		if item == "shard":
+			for c in rune_slab.shards:
+				if rune_slab.shards[c] > 0:
+					shard = c
+			if shard == "":
+				return "need_offering"
+		elif ps.inventory.count_of(item) < need[item]:
+			return "need_offering"
+	for item in need:
+		if item != "shard":
+			ps.inventory.remove(item, need[item])
+	if shard != "":
+		rune_slab.shards[shard] -= 1
+		_ev_slab.rpc(rune_slab.to_data())
+	monsters.summon_boss(boss)
+	return "summoned"
 
 
 ## Carving a rune you carry into the Rune Slab (you must stand at one).

@@ -128,3 +128,39 @@ func test_side_boss_cavern_becomes_a_raid_source() -> void:
 	auth.monsters._wake_bosses()
 	check(auth.world_state.lairs_found.has("skerra"), "Skerra's cavern discovered")
 	_teardown()
+
+
+func test_altar_resummons_a_beaten_boss() -> void:
+	await _setup()
+	var lair: Dictionary = world.maker.lair_poi("mossy")
+	player.global_position = lair.pos + Vector3(2, 0.5, 0)
+	check_eq(auth.request_poi(1, lair.id), "sleeping", "Orrumhal still lives: the altar is cold")
+	auth.world_state.bosses_dead.append("orrumhal")
+	check_eq(auth.request_poi(1, lair.id), "need_offering", "beaten, but no offering yet")
+	ps.inventory.add("copper_ingot", 10)
+	ps.inventory.add("crystal_blue", 5)
+	auth.rune_slab.shards.ochre = 1
+	check_eq(auth.request_poi(1, lair.id), "summoned", "the offering calls him back")
+	check(auth.monsters._boss_alive("orrumhal"), "Orrumhal is here")
+	check_eq(ps.inventory.count_of("copper_ingot"), 0, "ingots spent")
+	check_eq(auth.rune_slab.shards.ochre, 0, "shard spent")
+	check_eq(auth.request_poi(1, lair.id), "awake", "can't call him twice")
+	_teardown()
+
+
+func test_lair_walls_lock_during_the_fight() -> void:
+	await _setup()
+	var lair: Dictionary = world.maker.lair_poi("mossy")
+	var room: Dictionary = world.maker.rooms[lair.room]
+	var wall: Vector3 = room.center + Vector3(room.radii.x + 2.0, 0, 0)
+	check(not auth.monsters.lair_locked(wall), "no fight: walls can be dug")
+	auth.monsters.summon_boss("orrumhal")
+	var boss: Monster = null
+	for m: Monster in auth.monsters.monsters.values():
+		if m.kind == "orrumhal":
+			boss = m
+	check(not auth.monsters.lair_locked(wall), "sleeping boss: still diggable (that's how you get in)")
+	boss.target_peer = 1
+	check(auth.monsters.lair_locked(wall), "fight on: the walls glow and lock")
+	check(not auth.monsters.lair_locked(room.center + Vector3(room.radii.x + 30.0, 0, 0)), "rock far away is fine")
+	_teardown()

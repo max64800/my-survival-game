@@ -532,6 +532,36 @@ func _wake_bosses() -> void:
 			_ev_spawn.rpc(uid, id, at + Vector3.UP * 0.5, false, 1000 + poi[0].id)
 
 
+## Host: brings a main boss back at its altar (after an offering).
+func summon_boss(id: String) -> bool:
+	var b: Dictionary = Monsters.BOSSES.get(id, {})
+	if b.is_empty() or _boss_alive(id):
+		return false
+	var poi: Array = auth.world.maker.pois_of(b.room, b.biome)
+	if poi.is_empty():
+		return false
+	var uid := _next_uid
+	_next_uid += 1
+	_ev_spawn.rpc(uid, id, poi[0].pos + Vector3.UP * 0.5, false, 1000 + poi[0].id)
+	return true
+
+
+## During a main boss fight its lair walls can't be dug (combat doc 8.1): no tunnelling around it.
+func lair_locked(p: Vector3) -> bool:
+	var maker: CaveMaker = auth.world.maker
+	for m: Monster in monsters.values():
+		if not m.is_boss() or m.data.boss != "main" or (m.target_peer == 0 and m.hp >= m.max_hp()):
+			continue  # no fight going on
+		var lair := maker.lair_poi(m.data.biome)
+		if lair.is_empty():
+			continue
+		var room: Dictionary = maker.rooms[lair.room]
+		var q: Vector3 = (p - room.center) / (room.radii + Vector3.ONE * 5.0)
+		if q.length() < 1.0:
+			return true
+	return false
+
+
 func _boss_alive(id: String) -> bool:
 	for m: Monster in monsters.values():
 		if m.kind == id:
@@ -566,8 +596,8 @@ func _boss_drops(m: Monster) -> void:
 		for d in m.data.drops:
 			if randf() < d[2]:
 				gifts.append([d[0], d[1]])
-		if m.data.has("epic_choice") and not auth.world_state.bosses_dead.has(m.kind):
-			gifts.append([Gems.item_id(m.data.epic_choice.pick_random()), 1])  # first kill: one epic gem
+		if m.data.has("epic_choice") and (not auth.world_state.bosses_dead.has(m.kind) or randf() < 0.2):
+			gifts.append([Gems.item_id(m.data.epic_choice.pick_random()), 1])  # first kill: one epic gem; re-summons: 20%
 		for r in m.data.get("runes", 0):
 			var rune := auth.rune_slab.pick_drop(GameAuthority.rune_biome_at(m.global_position), [randf(), randf(), randf(), randf()])
 			if rune != "":
@@ -576,7 +606,8 @@ func _boss_drops(m: Monster) -> void:
 			var left: int = ps.inventory.add(g[0], g[1])
 			if left > 0:
 				auth.spawn_drop(g[0], left, ps.node.global_position + Vector3.UP)
-	auth.world_state.bosses_dead.append(m.kind)
+	if not auth.world_state.bosses_dead.has(m.kind):
+		auth.world_state.bosses_dead.append(m.kind)
 	auth._ev_state.rpc(auth.world_state)
 
 

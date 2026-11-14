@@ -456,7 +456,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		if info.has("poi_id"):
 			authority.ask_poi(info.poi_id)
 			var t: String = world.maker.pois[info.poi_id].type
-			hud.show_toast("You copy the old carving onto your map (M)." if t == "marking" else "You take the rune. Carve it at a Rune Slab.", 4.0)
+			if t == "lair":
+				hud.show_toast(_altar_text(world.maker.pois[info.poi_id].biome), 6.0)
+			else:
+				hud.show_toast("You copy the old carving onto your map (M)." if t == "marking" else "You take the rune. Carve it at a Rune Slab.", 4.0)
 			return
 		var st: Station = info.get("station")
 		if st == null:
@@ -469,6 +472,21 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event is InputEventMouseButton and event.pressed and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED and not hud.is_bag_open():
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		hud.set_paused(false)
+
+
+## What the summoning altar tells you (the host does the real check).
+func _altar_text(biome: String) -> String:
+	for id in Monsters.OFFERINGS:
+		if Monsters.BOSSES[id].biome != biome:
+			continue
+		var boss: String = Monsters.BOSSES[id].name.get_slice(",", 0)
+		if not authority.world_state.bosses_dead.has(id):
+			return "The altar is cold. %s still lives here." % boss
+		var parts := []
+		for item in Monsters.OFFERINGS[id]:
+			parts.append("%d %s" % [Monsters.OFFERINGS[id][item], "rune shard" if item == "shard" else Items.display_name(item)])
+		return "Offering to call %s back: %s. (If you carry it all, it's taken and the fight begins!)" % [boss, ", ".join(parts)]
+	return ""
 
 
 func _set_bag(open: bool) -> void:

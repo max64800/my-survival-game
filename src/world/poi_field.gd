@@ -101,7 +101,11 @@ func _make(p: Dictionary) -> Node3D:
 				_part(root, _sphere(0.3), _mat(Color(0.75, 0.72, 0.55)), Vector3(cos(a), 0.2, sin(a)) * 1.2)  # eggs
 			_part(root, _cyl(1.8, 2.2, 0.4), _mat(Color(0.35, 0.28, 0.18)), Vector3(0, 0.1, 0))
 		"lair":
-			# The summoning altar in the middle of the sealed hall.
+			# The summoning altar in the middle of the sealed hall. E with an offering re-summons a beaten boss.
+			root.collision_layer = POI_LAYER
+			root.set_meta("poi_id", p.id)
+			_shape(root, Vector3(3.6, 1.6, 3.6), Vector3(0, 0.8, 0))
+			_label(root, "Summoning altar · E", 2.4)
 			_part(root, _cyl(1.6, 2.0, 1.0), _mat(Color(0.4, 0.42, 0.4)), Vector3(0, 0.5, 0))
 			_part(root, _sphere(0.5), _mat(Color(0.3, 1.0, 0.7), 2.0), Vector3(0, 1.4, 0))
 			for i in 4:
