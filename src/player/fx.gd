@@ -34,5 +34,6 @@ static func material_color(mat: int) -> Color:
 		Mat.MOSS: return Color(0.3, 0.5, 0.2)
 		Mat.DIRT: return Color(0.4, 0.28, 0.18)
 		Mat.COPPER: return Color(0.9, 0.55, 0.25)
-		Mat.BORDER: return Color(0.6, 0.4, 1.0)
+		Mat.BORDER, Mat.EDGE: return Color(0.6, 0.4, 1.0)
+		Mat.CLAY: return Color(0.8, 0.45, 0.25)
 	return Color(0.5, 0.48, 0.45)

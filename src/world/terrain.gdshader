@@ -1,6 +1,7 @@
 shader_type spatial;
 // Colors the dig-anywhere rock. Each voxel has a material number (see mat.gd):
-// 0 moss, 1 stone, 2 dirt, 3 copper ore, 4 border rock.
+// 0 moss, 1 stone, 2 dirt, 3 copper ore, 4 border rock, 5 clay,
+// 8 mycelium, 9 silver ore, 11 amberrock, 13 sporestone, 15 the world's edge.
 // The look: flat-shaded low-poly facets + soft color noise. No image textures yet.
 
 uniform vec3 moss_color : source_color = vec3(0.24, 0.40, 0.17);
@@ -9,6 +10,11 @@ uniform vec3 dirt_color : source_color = vec3(0.36, 0.25, 0.16);
 uniform vec3 copper_color : source_color = vec3(0.78, 0.45, 0.22);
 uniform vec3 border_color : source_color = vec3(0.13, 0.10, 0.17);
 uniform vec3 border_glow : source_color = vec3(0.35, 0.18, 0.65);
+uniform vec3 clay_color : source_color = vec3(0.78, 0.42, 0.22);
+uniform vec3 mycelium_color : source_color = vec3(0.78, 0.74, 0.68);
+uniform vec3 silver_color : source_color = vec3(0.82, 0.85, 0.92);
+uniform vec3 amber_color : source_color = vec3(0.86, 0.62, 0.22);
+uniform vec3 sporestone_color : source_color = vec3(0.34, 0.28, 0.38);
 uniform float flat_shading = 1.0;
 
 varying vec4 v_indices;
@@ -50,6 +56,22 @@ vec3 mat_color(float idx, vec3 wp, out vec3 emit) {
 		float speck = step(0.86, vnoise(wp * 3.1));
 		emit = copper_color * speck * 0.35;
 		return mix(stone_color * 0.8, copper_color, 0.55 + 0.45 * n);
+	} else if (idx > 14.5) {
+		return border_color * (0.6 + 0.2 * n);  // the world's edge: dark, no glowing veins
+	} else if (idx > 12.5) {
+		float strata2 = sin(wp.y * 1.3 + vnoise(wp * 0.12) * 5.0) * 0.5 + 0.5;
+		emit = vec3(0.25, 0.1, 0.35) * step(0.88, vnoise(wp * 1.7)) * 0.4;  // faint spore specks
+		return sporestone_color * (0.8 + 0.25 * n + 0.1 * strata2);
+	} else if (idx > 10.5) {
+		return amber_color * (0.8 + 0.3 * n);
+	} else if (idx > 8.5) {
+		float speck2 = step(0.84, vnoise(wp * 3.3));
+		emit = silver_color * speck2 * 0.45;
+		return mix(sporestone_color, silver_color, 0.55 + 0.45 * n);
+	} else if (idx > 7.5) {
+		return mycelium_color * (0.8 + 0.25 * n);
+	} else if (idx > 4.5) {
+		return clay_color * (0.85 + 0.25 * n);
 	} else {
 		float vein = smoothstep(0.78, 0.86, vnoise(wp * 0.6));
 		emit = border_glow * vein * 0.8;

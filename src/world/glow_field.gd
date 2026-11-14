@@ -14,12 +14,16 @@ var _lights: Array[OmniLight3D] = []
 var _light_timer := 0.0
 var _crystal_mesh: Mesh
 var _mushroom_mesh: Mesh
+var _fiber_mesh: Mesh
+var _root_mesh: Mesh
 var _materials := {}
 
 
 func build(spots: Array[Dictionary]) -> void:
 	_crystal_mesh = _make_crystal_mesh()
 	_mushroom_mesh = _make_mushroom_mesh()
+	_fiber_mesh = _make_fiber_mesh()
+	_root_mesh = _make_root_mesh()
 	for s in spots:
 		_spots[s.id] = s
 		_add_node(s)
@@ -48,6 +52,15 @@ func spots_near(p: Vector3, radius: float) -> Array[Dictionary]:
 	return out
 
 
+## A root was chopped: remember how many chops it has left.
+func set_chops(id: int, left: int) -> void:
+	if _spots.has(id):
+		_spots[id].chops = left
+		var n: Node3D = _nodes.get(id)
+		if n:
+			n.scale = n.scale * Vector3(0.85, 1.0, 0.85)  # a bit thinner after each chop
+
+
 func remove_spot(id: int) -> void:
 	_spots.erase(id)
 	var n: Node = _nodes.get(id)
@@ -65,19 +78,39 @@ func id_of(collider: Object) -> int:
 
 
 func _add_node(s: Dictionary) -> void:
+	if s.kind == GlowPlacer.DRIP:
+		_add_drip(s)
+		return
 	var body := StaticBody3D.new()
 	body.collision_layer = GLOW_LAYER
 	body.collision_mask = 0
 	body.set_meta("glow_id", s.id)
 	var shape := CollisionShape3D.new()
-	var sphere := SphereShape3D.new()
-	sphere.radius = 0.4 * s.scale
-	shape.shape = sphere
-	shape.position = Vector3.UP * 0.3 * s.scale
+	var is_root: bool = s.kind in GlowPlacer.TALL
+	if is_root:
+		var cap := CapsuleShape3D.new()
+		cap.radius = 0.35 if s.kind == GlowPlacer.ROOT else 0.45
+		cap.height = maxf(s.length, 0.8)
+		shape.shape = cap
+		shape.position = Vector3.UP * s.length * 0.5
+	else:
+		var sphere := SphereShape3D.new()
+		sphere.radius = 0.4 * s.scale
+		shape.shape = sphere
+		shape.position = Vector3.UP * 0.3 * s.scale
 	body.add_child(shape)
 	var mi := MeshInstance3D.new()
-	mi.mesh = _crystal_mesh if s.kind == GlowPlacer.CRYSTAL else _mushroom_mesh
-	mi.material_override = _material_for(s.color)
+	match s.kind:
+		"crystal", "crystal_green", "crystal_amber": mi.mesh = _crystal_mesh
+		"fiber": mi.mesh = _fiber_mesh
+		"root":
+			mi.mesh = _root_mesh
+			mi.scale = Vector3(1, s.length, 1) / s.scale  # stretch to reach toward the floor
+		GlowPlacer.GIANT: mi.mesh = _giant_mesh(s.length)
+		_: mi.mesh = _mushroom_mesh
+	mi.material_override = _material_for(s.color, GlowPlacer.KINDS[s.kind].get("glow", false))
+	if s.kind == GlowPlacer.GIANT:
+		mi.material_override = null  # the giant mushroom mesh brings its own stalk + cap colors
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	body.add_child(mi)
 	add_child(body)
@@ -88,15 +121,52 @@ func _add_node(s: Dictionary) -> void:
 	_nodes[s.id] = body
 
 
-func _material_for(c: Color) -> Material:
-	var key := c.to_html()
+## A little wet stalactite with drops falling from its tip (not something you can hit).
+func _add_drip(s: Dictionary) -> void:
+	var root := Node3D.new()
+	add_child(root)
+	root.global_position = s.pos
+	var tip := MeshInstance3D.new()
+	var cone := CylinderMesh.new()
+	cone.top_radius = 0.18
+	cone.bottom_radius = 0.0
+	cone.height = 0.6
+	cone.radial_segments = 6
+	tip.mesh = cone
+	tip.material_override = _material_for(Color(0.5, 0.55, 0.62), false)
+	tip.position = Vector3.DOWN * 0.3
+	root.add_child(tip)
+	var drops := CPUParticles3D.new()
+	drops.amount = 3
+	drops.lifetime = 1.6
+	drops.emission_shape = CPUParticles3D.EMISSION_SHAPE_POINT
+	drops.direction = Vector3.DOWN
+	drops.spread = 0.0
+	drops.initial_velocity_min = 0.0
+	drops.initial_velocity_max = 0.2
+	drops.gravity = Vector3(0, -6.0, 0)
+	var dm := SphereMesh.new()
+	dm.radius = 0.03
+	dm.height = 0.08
+	dm.radial_segments = 4
+	dm.rings = 2
+	drops.mesh = dm
+	drops.material_override = _material_for(s.color, true)
+	drops.position = Vector3.DOWN * 0.6
+	root.add_child(drops)
+	_nodes[s.id] = root
+
+
+func _material_for(c: Color, glows: bool = true) -> Material:
+	var key := c.to_html() + str(glows)
 	if not _materials.has(key):
 		var m := StandardMaterial3D.new()
-		m.albedo_color = c.darkened(0.3)
+		m.albedo_color = c.darkened(0.3) if glows else c
 		m.emission_enabled = true
 		m.emission = c
-		m.emission_energy_multiplier = 2.2
-		m.roughness = 0.25
+		# Glowing things shine; the rest get a faint glow so they're findable in the dark.
+		m.emission_energy_multiplier = 2.2 if glows else 0.35
+		m.roughness = 0.25 if glows else 0.85
 		_materials[key] = m
 	return _materials[key]
 
@@ -110,7 +180,7 @@ func _process(delta: float) -> void:
 	if cam == null:
 		return
 	var from := cam.global_position
-	var near := _spots.values()
+	var near := _spots.values().filter(func(s): return GlowPlacer.KINDS[s.kind].get("glow", false))
 	near.sort_custom(func(a, b): return a.pos.distance_squared_to(from) < b.pos.distance_squared_to(from))
 	for i in LIGHT_COUNT:
 		var l := _lights[i]
@@ -118,12 +188,61 @@ func _process(delta: float) -> void:
 			var s: Dictionary = near[i]
 			l.global_position = s.pos + s.normal * 0.6
 			l.light_color = s.color
-			l.light_energy = 1.1 if s.kind == GlowPlacer.CRYSTAL else 0.7
+			l.light_energy = 1.1 if s.kind.begins_with("crystal") else 0.7
 		else:
 			l.light_energy = 0.0
 
 
 # ------------------------------------------------------------ simple low-poly meshes
+
+var _giants := {}  ## height (half meters) -> mesh
+
+
+## A giant mushroom `h` meters tall: a pale stalk and a wide glowing-rimmed cap.
+func _giant_mesh(h: float) -> Mesh:
+	var key := int(round(h * 2.0))
+	if _giants.has(key):
+		return _giants[key]
+	h = key * 0.5
+	var mesh := ArrayMesh.new()
+	var stalk := CylinderMesh.new()
+	stalk.radial_segments = 8
+	stalk.rings = 2
+	stalk.top_radius = 0.22
+	stalk.bottom_radius = 0.38
+	stalk.height = h
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	st.append_from(stalk, 0, Transform3D(Basis(), Vector3.UP * h * 0.5))
+	st.generate_normals()
+	st.commit(mesh)
+	var stalk_mat := StandardMaterial3D.new()
+	stalk_mat.albedo_color = Color(0.86, 0.82, 0.74)
+	stalk_mat.roughness = 0.9
+	stalk_mat.emission_enabled = true
+	stalk_mat.emission = Color(0.86, 0.82, 0.74)
+	stalk_mat.emission_energy_multiplier = 0.12
+	mesh.surface_set_material(0, stalk_mat)
+	var cap := SphereMesh.new()
+	cap.radial_segments = 12
+	cap.rings = 4
+	cap.radius = 0.9 + h * 0.18
+	cap.height = 0.7 + h * 0.08
+	cap.is_hemisphere = true
+	var st2 := SurfaceTool.new()
+	st2.begin(Mesh.PRIMITIVE_TRIANGLES)
+	st2.append_from(cap, 0, Transform3D(Basis(), Vector3.UP * (h - 0.15)))
+	st2.generate_normals()
+	st2.commit(mesh)
+	var cap_mat := StandardMaterial3D.new()
+	cap_mat.albedo_color = Color(0.55, 0.32, 0.62)
+	cap_mat.roughness = 0.6
+	cap_mat.emission_enabled = true
+	cap_mat.emission = Color(0.72, 0.4, 0.9)
+	cap_mat.emission_energy_multiplier = 0.6
+	mesh.surface_set_material(1, cap_mat)
+	_giants[key] = mesh
+	return mesh
 
 func _make_crystal_mesh() -> Mesh:
 	var st := SurfaceTool.new()
@@ -163,5 +282,50 @@ func _make_mushroom_mesh() -> Mesh:
 	var small := Transform3D(Basis().scaled(Vector3.ONE * 0.55), Vector3(0.22, 0.0, 0.1))
 	st.append_from(stem, 0, small * Transform3D(Basis(), Vector3.UP * 0.2))
 	st.append_from(cap, 0, small * Transform3D(Basis(), Vector3.UP * 0.38))
+	st.generate_normals()
+	return st.commit()
+
+
+func _make_fiber_mesh() -> Mesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for i in 7:
+		var blade := CylinderMesh.new()
+		blade.radial_segments = 3
+		blade.rings = 0
+		blade.top_radius = 0.0
+		blade.bottom_radius = 0.025
+		blade.height = 0.35 + 0.05 * (i % 3)
+		var a := i * 0.9
+		var t := Transform3D(Basis(Vector3.UP, a) * Basis(Vector3.RIGHT, 0.35), Vector3(cos(a), 0, sin(a)) * 0.08)
+		t.origin += t.basis.y * blade.height * 0.5
+		st.append_from(blade, 0, t)
+	st.generate_normals()
+	return st.commit()
+
+
+## A root 1 m long (stretched to fit), thick at the ceiling and thin at the tip,
+## with a few twists so it looks organic.
+func _make_root_mesh() -> Mesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var main := CylinderMesh.new()
+	main.radial_segments = 7
+	main.rings = 4
+	main.top_radius = 0.06
+	main.bottom_radius = 0.28
+	main.height = 1.0
+	st.append_from(main, 0, Transform3D(Basis(), Vector3.UP * 0.5))
+	for i in 3:
+		var side := CylinderMesh.new()
+		side.radial_segments = 5
+		side.rings = 1
+		side.top_radius = 0.02
+		side.bottom_radius = 0.1
+		side.height = 0.45
+		var a := i * 2.1
+		var t := Transform3D(Basis(Vector3.UP, a) * Basis(Vector3.RIGHT, 0.7), Vector3(cos(a), 0, sin(a)) * 0.15 + Vector3.UP * (0.15 + 0.2 * i))
+		t.origin += t.basis.y * 0.2
+		st.append_from(side, 0, t)
 	st.generate_normals()
 	return st.commit()

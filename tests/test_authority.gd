@@ -11,6 +11,8 @@ var ps: GameAuthority.PlayerState
 func _setup(seed: int, at: Vector3 = Vector3.INF) -> void:
 	var root := Node3D.new()
 	tree.root.add_child(root)
+	var stations_root := Node3D.new()
+	root.add_child(stations_root)
 	world = World.new()
 	root.add_child(world)
 	world.setup(seed)
@@ -23,6 +25,7 @@ func _setup(seed: int, at: Vector3 = Vector3.INF) -> void:
 	auth.world = world
 	auth.glow = glow
 	auth.drops_root = drops
+	auth.stations_root = stations_root
 	root.add_child(auth)
 	player = Node3D.new()
 	root.add_child(player)
@@ -128,10 +131,10 @@ func test_lantern_refill_uses_a_crystal() -> void:
 	check(not auth.request_refill(1), "full lantern can't be refilled")
 	ps.fuel = 10.0
 	check(not auth.request_refill(1), "no crystal, no refill")
-	ps.inventory.add("glow_crystal", 2)
+	ps.inventory.add("crystal_blue", 2)
 	check(auth.request_refill(1), "refill with a crystal")
-	check_eq(ps.inventory.count_of("glow_crystal"), 1, "one crystal used")
-	check_near(ps.fuel, 10.0 + Items.fuel_seconds("glow_crystal"), 0.01, "fuel went up")
+	check_eq(ps.inventory.count_of("crystal_blue"), 1, "one crystal used")
+	check_near(ps.fuel, 10.0 + Items.fuel_seconds("crystal_blue"), 0.01, "fuel went up")
 	_teardown()
 
 
@@ -145,16 +148,119 @@ func test_fuel_burns_down_but_not_below_zero() -> void:
 
 func test_breaking_glow_crystal_gives_crystals() -> void:
 	await _setup(42)
-	var spot: Dictionary = {}
-	for id in glow._spots:
-		if glow._spots[id].kind == GlowPlacer.CRYSTAL:
-			spot = glow._spots[id]
-			break
+	var spot := _first_spot(GlowPlacer.CRYSTAL)
 	player.global_position = spot.pos + spot.normal * 1.5 - Vector3.UP
-	check(auth.request_break_glow(1, spot.id), "break approved")
+	check_eq(auth.request_harvest(1, spot.id).get("state"), "hit", "crystal needs 2 hits with a stone pickaxe")
+	check_eq(auth.request_harvest(1, spot.id).get("state"), "done", "second hit breaks it")
 	check(glow.get_spot(spot.id).is_empty(), "crystal removed")
 	check_eq(auth.drop_count(), 1, "crystal drop spawned")
-	check(not auth.request_break_glow(1, spot.id), "can't break it twice")
+	check_eq(auth.request_harvest(1, spot.id).get("state"), "gone", "can't break it twice")
+	check(ps.progress.skill_xp.mining > 0, "mining XP for the crystal")
+	_teardown()
+
+
+func _first_spot(kind: String) -> Dictionary:
+	for id in glow._spots:
+		if glow._spots[id].kind == kind:
+			return glow._spots[id]
+	return {}
+
+
+func test_roots_give_wood_four_times() -> void:
+	await _setup(42)
+	var root := _first_spot(GlowPlacer.ROOT)
+	check(not root.is_empty(), "the cave has hanging roots")
+	if root.is_empty():
+		_teardown()
+		return
+	player.global_position = root.pos + Vector3.DOWN * (root.length + 0.5)
+	# Stone pickaxe chops at half power: 30 / 5 = 6 hits per chop-through.
+	var chops := 0
+	for i in 30:
+		if auth.request_harvest(1, root.id).get("state") == "done":
+			chops += 1
+	check_eq(chops, 4, "4 chop-throughs before the root is gone")
+	check(glow.get_spot(root.id).is_empty(), "root gone after 4")
+	check_eq(auth.drop_count(), 4, "4 piles of rootwood")
+	_teardown()
+
+
+func test_mushrooms_by_hand() -> void:
+	await _setup(42)
+	var cap := _first_spot("glowcap")
+	player.global_position = cap.pos + Vector3.UP * 0.2
+	auth.request_select_slot(1, 5)  # empty hand
+	check_eq(auth.request_harvest(1, cap.id).get("state"), "done", "picked by hand in one go")
+	_teardown()
+
+
+func test_eat_from_hotbar() -> void:
+	await _setup(42)
+	ps.inventory.add("dish_hollowcap_stew", 1)
+	auth.request_select_slot(1, 1)
+	ps.vitals.hunger = 20
+	check_eq(auth.request_use(1, Vector3.INF, Vector3.ZERO, 0.0), "ate", "ate the stew")
+	check_eq(ps.inventory.count_of("dish_hollowcap_stew"), 0, "stew used up")
+	check_near(ps.vitals.hunger, 70.0, 0.01, "+50 hunger")
+	check_near(ps.vitals.max_health(), 120.0, 0.01, "+20% max health buff")
+	_teardown()
+
+
+func test_waterskin_has_five_sips() -> void:
+	await _setup(42)
+	ps.inventory.add("waterskin_clean", 1)
+	auth.request_select_slot(1, 1)
+	for i in 5:
+		ps.vitals.thirst = 0
+		auth.request_use(1, Vector3.INF, Vector3.ZERO, 0.0)
+	check_eq(ps.inventory.count_of("waterskin_empty"), 1, "empty after 5 sips")
+	check_near(ps.vitals.thirst, 35.0, 0.01, "each sip +35")
+	_teardown()
+
+
+func test_craft_campfire_and_place_it() -> void:
+	await _setup(42)
+	ps.inventory.add("stone", 5)
+	ps.inventory.add("rootwood", 3)
+	check(auth.request_craft(1, "campfire"), "campfire crafted by hand")
+	check(ps.progress.skill_xp.smithing > 0, "smithing XP for crafting")
+	var slot := -1
+	for i in Inventory.HOTBAR_SIZE:
+		if ps.inventory.get_slot(i).get("id", "") == "campfire":
+			slot = i
+	auth.request_select_slot(1, slot)
+	var floor_p := world.maker.find_floor(player.global_position.x + 1.5, player.global_position.z, player.global_position.y + 1.0)
+	check_eq(auth.request_use(1, floor_p, Vector3.UP, 0.0), "placed", "placed on the floor")
+	check_eq(auth.stations.size(), 1, "one station in the world")
+	check_eq(ps.inventory.count_of("campfire"), 0, "campfire left the bag")
+	_teardown()
+
+
+func test_smelter_takes_time_and_fuel() -> void:
+	await _setup(42)
+	auth._ev_place_station(7, "smelter", player.global_position + Vector3(1.5, 0, 0), 0.0)
+	ps.inventory.add("copper_ore", 4)
+	check(not auth.request_craft(1, "copper_ingot", 7), "no wood fuel, no smelting")
+	ps.inventory.add("rootwood", 2)
+	check(auth.request_craft(1, "copper_ingot", 7), "smelting started")
+	check_eq(ps.inventory.count_of("copper_ore"), 2, "ore went in")
+	check_eq(ps.inventory.count_of("rootwood"), 1, "one wood burned")
+	check_eq(auth.drop_count(), 0, "not done yet")
+	var st: Station = auth.stations[7]
+	st.jobs[0].left = 0.05
+	await tree.create_timer(0.2).timeout
+	check_eq(auth.drop_count(), 1, "ingot popped out")
+	check(not auth.request_craft(1, "copper_ingot", 99), "unknown station refused")
+	_teardown()
+
+
+func test_digging_gives_mining_xp() -> void:
+	await _setup(42)
+	var p := _find_rock(Mat.STONE)
+	for i in 3:
+		auth.request_hit(1, p, Vector3.UP)
+	check_eq(ps.progress.skill_xp.mining, Mat.DIG_XP[Mat.STONE], "2 mining XP for stone")
+	check_eq(ps.progress.xp, Mat.DIG_XP[Mat.STONE], "and 2 character XP")
 	_teardown()
 
 

@@ -58,3 +58,11 @@ func test_border_rock_cannot_be_dug() -> void:
 	check(not counts.has(Mat.BORDER), "border rock must not be removed")
 	check(world.sdf_at(edge) < 0.0, "border spot is still solid")
 	world.queue_free()
+
+
+func test_dig_size_survives_the_network_packing() -> void:
+	for t in [0, 1, 2]:
+		for r in [0.8, 1.35]:
+			var u := GameAuthority.unpack_dig(GameAuthority.pack_dig(t, r))
+			check_eq(int(u.x), t, "tier %d" % t)
+			check_near(u.y, r, 0.0001, "radius %.2f exactly" % r)

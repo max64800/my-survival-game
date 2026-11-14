@@ -11,8 +11,15 @@ var terrain: VoxelTerrain
 var _tool: VoxelTool
 
 
+## Caves already planned this session (same seed = same cave, and planning takes ~1.5 s).
+## Safe to share: a CaveMaker never changes after it's made.
+static var _planned := {}
+
+
 func setup(seed: int) -> void:
-	maker = CaveMaker.new(seed)
+	if not _planned.has(seed):
+		_planned[seed] = CaveMaker.new(seed)
+	maker = _planned[seed]
 	terrain = VoxelTerrain.new()
 	terrain.name = "Terrain"
 	var fmt := VoxelFormat.new()
@@ -27,8 +34,8 @@ func setup(seed: int) -> void:
 	terrain.max_view_distance = VIEW_DISTANCE
 	terrain.generate_collisions = true
 	terrain.collision_layer = TERRAIN_LAYER
-	var lo := Vector3i(-CaveMaker.HALF_SIZE - 16, CaveMaker.Y_MIN - 16, -CaveMaker.HALF_SIZE - 16)
-	var hi := Vector3i(CaveMaker.HALF_SIZE + 16, CaveMaker.Y_MAX + 16, CaveMaker.HALF_SIZE + 16)
+	var lo := Vector3i(CaveMaker.X_MIN - 16, CaveMaker.Y_MIN - 16, -CaveMaker.HALF_SIZE - 16)
+	var hi := Vector3i(CaveMaker.X_MAX + 16, CaveMaker.Y_MAX + 16, CaveMaker.HALF_SIZE + 16)
 	terrain.bounds = AABB(Vector3(lo), Vector3(hi - lo))
 	var mat := ShaderMaterial.new()
 	mat.shader = preload("res://src/world/terrain.gdshader")
@@ -84,9 +91,9 @@ func _material_of(v: Vector3i) -> int:
 	return m
 
 
-## Carves a ball of rock away. Border rock is never removed.
+## Carves a ball of rock away. Rock too hard for `tool_tier` (like border rock) is left alone.
 ## Returns how many voxels of each material turned into air: {Mat.STONE: 7, ...}
-func apply_dig(center: Vector3, radius: float) -> Dictionary:
+func apply_dig(center: Vector3, radius: float, tool_tier: int = 0) -> Dictionary:
 	var counts := {}
 	var lo := Vector3i((center - Vector3.ONE * (radius + 1.0)).floor())
 	var hi := Vector3i((center + Vector3.ONE * (radius + 1.0)).ceil())
@@ -107,10 +114,51 @@ func apply_dig(center: Vector3, radius: float) -> Dictionary:
 				if carve <= old:
 					continue
 				var m := buf.get_voxel(x, y, z, VoxelBuffer.CHANNEL_INDICES)
-				if not Mat.is_diggable(m):
+				if not Mat.is_diggable(m, tool_tier):
 					continue
 				buf.set_voxel_f(carve, x, y, z, VoxelBuffer.CHANNEL_SDF)
 				if old < 0.0 and carve >= 0.0:
 					counts[m] = counts.get(m, 0) + 1
 	_tool.paste(lo, buf, mask)
 	return counts
+
+
+## Turns these rock voxels into air (a cave-in). Border rock is left alone.
+## Returns how many voxels of each material fell: {Mat.STONE: 40, ...}
+func remove_voxels(points: PackedVector3Array) -> Dictionary:
+	var counts := {}
+	if points.is_empty():
+		return counts
+	var lo := Vector3i(points[0])
+	var hi := lo
+	for p in points:
+		lo = lo.min(Vector3i(p))
+		hi = hi.max(Vector3i(p))
+	var size := hi - lo + Vector3i.ONE
+	if not _tool.is_area_editable(AABB(Vector3(lo), Vector3(size))):
+		return counts
+	var buf := VoxelBuffer.new()
+	buf.create(size.x, size.y, size.z)
+	buf.set_channel_depth(VoxelBuffer.CHANNEL_INDICES, VoxelBuffer.DEPTH_8_BIT)
+	var mask := (1 << VoxelBuffer.CHANNEL_SDF) | (1 << VoxelBuffer.CHANNEL_INDICES)
+	_tool.copy(lo, buf, mask)
+	for p in points:
+		var v := Vector3i(p) - lo
+		var m := buf.get_voxel(v.x, v.y, v.z, VoxelBuffer.CHANNEL_INDICES)
+		if m == Mat.BORDER or m == Mat.EDGE or buf.get_voxel_f(v.x, v.y, v.z, VoxelBuffer.CHANNEL_SDF) >= 0.0:
+			continue
+		buf.set_voxel_f(0.6, v.x, v.y, v.z, VoxelBuffer.CHANNEL_SDF)
+		counts[m] = counts.get(m, 0) + 1
+	_tool.paste(lo, buf, mask)
+	return counts
+
+
+## Copies the voxels in a box (for the cave-in check, which must not touch the live world).
+func copy_area(origin: Vector3i, size: Vector3i) -> VoxelBuffer:
+	if not _tool.is_area_editable(AABB(Vector3(origin), Vector3(size))):
+		return null
+	var buf := VoxelBuffer.new()
+	buf.create(size.x, size.y, size.z)
+	buf.set_channel_depth(VoxelBuffer.CHANNEL_INDICES, VoxelBuffer.DEPTH_8_BIT)
+	_tool.copy(origin, buf, (1 << VoxelBuffer.CHANNEL_SDF) | (1 << VoxelBuffer.CHANNEL_INDICES))
+	return buf

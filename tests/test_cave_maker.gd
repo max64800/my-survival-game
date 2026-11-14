@@ -21,12 +21,13 @@ func test_different_seed_different_cave() -> void:
 	check(a.rooms[0].center != b.rooms[0].center, "seeds 1 and 2 should differ")
 
 
-func test_two_big_caverns_far_apart() -> void:
+func test_three_big_caverns_far_apart() -> void:
 	for s in [1, 2, 3, 77, 4242]:
 		var c := CaveMaker.new(s)
-		var big := c.rooms.filter(func(r): return r.big)
-		check_eq(big.size(), 2, "seed %d big cavern count" % s)
-		if big.size() == 2:
+		var big := c.rooms.filter(func(r): return r.big and r.biome == "mossy")
+		big = big.filter(func(r): return not r.sealed)
+		check_eq(big.size(), 3, "seed %d big cavern count" % s)
+		if big.size() >= 2:
 			check(big[0].center.distance_to(big[1].center) > 60.0, "seed %d caverns too close" % s)
 
 
@@ -48,6 +49,8 @@ func test_tunnels_join_every_room() -> void:
 	# Walk the tunnel tubes as a graph: every room must touch the network.
 	var c := CaveMaker.new(31)
 	for room in c.rooms:
+		if room.sealed or room.kind == "shrine":
+			continue  # sealed places are reached by digging; shrines are alcoves on a tunnel
 		var touched := false
 		for s in c.segments:
 			if s.a.distance_to(room.center) < 1.0 or s.b.distance_to(room.center) < 1.0:
@@ -58,9 +61,37 @@ func test_tunnels_join_every_room() -> void:
 
 func test_outside_box_is_border_rock() -> void:
 	var c := CaveMaker.new(7)
-	for p in [Vector3i(205, -20, 0), Vector3i(0, -70, 0), Vector3i(0, 20, 0), Vector3i(-210, 0, -210)]:
+	for p in [Vector3i(0, -70, 0), Vector3i(0, 20, 0), Vector3i(-210, 0, -210), Vector3i(630, -20, 0), Vector3i(420, -20, 205)]:
 		check(c.sdf_at(Vector3(p)) < 0.0, "%s should be solid" % p)
-		check_eq(c.material_at(p), Mat.BORDER, "%s should be border rock" % p)
+		check_eq(c.material_at(p), Mat.EDGE, "%s is the world's edge" % p)
+	# The slab between Mossy and Fungal is border rock, except the gate stubs.
+	var gz: float = c.gates[0].pos.z
+	var z := gz + 60.0 if absf(c.gates[1].pos.z - (gz + 60.0)) > 20.0 else gz - 60.0
+	for x in [201, 210, 219]:
+		var p := Vector3i(x, -20, int(z))
+		check(c.sdf_at(Vector3(p)) < 0.0, "%s should be solid" % p)
+		check_eq(c.material_at(p), Mat.BORDER, "%s is border rock" % p)
+
+
+func test_two_biomes_joined_by_gates() -> void:
+	var c := CaveMaker.new(7)
+	check_eq(c.gates.size(), 2, "two gates")
+	var fungal := c.rooms.filter(func(r): return r.biome == "fungal")
+	check(fungal.size() >= 12, "the Jungle has rooms")
+	for r in fungal:
+		check(r.center.x > 220.0 and r.center.x < 620.0, "jungle room inside its box")
+	for g in c.gates:
+		var p: Vector3 = g.pos
+		check(c.sdf_at(p) < 0.0, "the plug is rock")
+		check_eq(c.material_at(Vector3i(p.round())), Mat.BORDER, "the plug is border rock (copper pickaxe)")
+		var floor_y: float = p.y - 1.0
+		check(c.sdf_at(Vector3(p.x - 4.0, floor_y + 0.5, p.z)) > 0.0, "open tunnel on the Mossy side of the plug")
+		check(c.sdf_at(Vector3(p.x + 4.0, floor_y + 0.5, p.z)) > 0.0, "open tunnel on the Jungle side of the plug")
+	check(not c.lair_poi("fungal").is_empty(), "the Jungle has a hidden lair")
+	check_eq(c.clue_circles("fungal").size(), 3, "and its own clue circles")
+	check_eq(c.pois_of("marking", "fungal").size(), 3, "3 jungle markings")
+	check(c.pois_of("silver_vault").size() == 1, "side-boss caverns are planned")
+	check_eq(c.material_at(Vector3i(c.rooms[0].center.round()) + Vector3i(0, -40, 0)) in [Mat.STONE, Mat.COPPER, Mat.DIRT, Mat.CLAY, Mat.MOSS], true, "Mossy rock under the start")
 
 
 func test_copper_is_present_but_rare() -> void:
@@ -127,3 +158,44 @@ func test_generation_speed() -> void:
 	var ms := (Time.get_ticks_usec() - t) / 5000.0
 	print("        (cave block takes %.1f ms)" % ms)
 	check(ms < 150.0, "a cave block should generate in under 150 ms (took %.1f)" % ms)
+
+
+func test_there_is_clay_for_a_smelter() -> void:
+	# The smelter needs 15 clay, so every cave must have clay near its open spaces.
+	for s in [1, 42, 99]:
+		var c := CaveMaker.new(s)
+		var clay := 0
+		for room in c.rooms:
+			for i in 400:
+				var a := float(i) * 0.37
+				var p := Vector3i((room.center + Vector3(cos(a) * room.radii.x, -room.radii.y * 0.6 - (i % 4), sin(a) * room.radii.z) * (0.3 + 0.7 * fmod(i * 0.618, 1.0))).round())
+				if c.sdf_at(Vector3(p)) < 0.0 and c.material_at(p) == Mat.CLAY:
+					clay += 1
+		check(clay >= 15, "seed %d: clay voxels near rooms (found %d)" % [s, clay])
+
+
+
+func test_special_places_are_planned() -> void:
+	for s in [1, 42, 99]:
+		var c := CaveMaker.new(s)
+		var lair := c.lair_poi()
+		check(not lair.is_empty(), "seed %d: a boss lair" % s)
+		if lair.is_empty():
+			continue
+		check(lair.pos.distance_to(c.spawn_point) >= 145.0, "seed %d: lair far from the start" % s)
+		var room: Dictionary = c.rooms[lair.room]
+		check(room.sealed, "seed %d: lair is sealed" % s)
+		check(c._solid_around(room.center, room.radii + Vector3.ONE * 5.0) == false, "seed %d: (lair is air inside now)" % s)
+		check(c.sdf_at(room.center) > 0.0, "seed %d: lair is open inside" % s)
+		var shell := 0
+		for dir in [Vector3.LEFT, Vector3.RIGHT, Vector3.FORWARD, Vector3.BACK]:
+			if c.sdf_at(room.center + dir * (room.radii.x + 4.0)) < 0.0:
+				shell += 1
+		check_eq(shell, 4, "seed %d: rock all around the lair" % s)
+		check_eq(c.pois_of("marking", "mossy").size(), 3, "seed %d: 3 wall markings" % s)
+		for m in c.pois_of("marking", "mossy"):
+			check(m.pos.distance_to(lair.pos) >= 79.0, "seed %d: marking far from the lair" % s)
+		check(c.pois_of("ruin").size() >= 2, "seed %d: ruins" % s)
+		check(c.pois_of("shrine").size() >= 3, "seed %d: rune shrines (%d)" % [s, c.pois_of("shrine").size()])
+		check(c.pois_of("geode").size() >= 2, "seed %d: crystal geodes (%d)" % [s, c.pois_of("geode").size()])
+		check(not c.pois_of("nest_cavern").is_empty() and not c.pois_of("great_hall").is_empty(), "seed %d: side-boss caverns" % s)

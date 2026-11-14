@@ -13,9 +13,21 @@ const KEYS := {
 	"pause": [KEY_ESCAPE],
 	"toggle_fps": [KEY_F3],
 	"screenshot": [KEY_F12],
+	"interact": [KEY_E],
+	"toggle_skills": [KEY_K],
+	"toggle_map": [KEY_M],
+	"rotate_piece": [KEY_Q],
+	"lift_up": [KEY_PAGEUP, KEY_EQUAL],
+	"lift_down": [KEY_PAGEDOWN, KEY_MINUS],
+	"build_menu": [KEY_B],
+	"capture": [KEY_C],
+	"blueprints": [KEY_V],
+	"dodge": [KEY_CTRL],
+	"quicksave": [KEY_F5],
 }
 const MOUSE := {
 	"dig": [MOUSE_BUTTON_LEFT],
+	"use": [MOUSE_BUTTON_RIGHT],
 	"hotbar_next": [MOUSE_BUTTON_WHEEL_DOWN],
 	"hotbar_prev": [MOUSE_BUTTON_WHEEL_UP],
 }

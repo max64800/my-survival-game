@@ -24,6 +24,21 @@ var _help_timer := 25.0
 var _pause: Control
 var _loading: Control
 var _swap_from := -1
+var _bars := {}  ## "health"/"stamina"/"hunger"/"thirst" -> ProgressBar
+var _level_label: Label
+var _buff_label: Label
+var craft: CraftPanel
+var skills: SkillsPanel
+var map_panel: MapPanel
+var build_menu: BuildMenu
+var blueprint_menu: BlueprintMenu
+var box_panel: BoxPanel
+var build_mode: BuildMode
+var _build_label: Label
+var _boss_label: Label
+var _boss_bar: ProgressBar
+var map_data := MapData.new()
+var _map_timer := 0.0
 var _slot_style_cache := {}
 
 
@@ -110,6 +125,84 @@ func _build() -> void:
 	_fuel_bar.add_theme_stylebox_override("fill", fill)
 	fuel_box.add_child(_fuel_bar)
 
+	# Body bars (bottom left, above the lantern).
+	var bars := VBoxContainer.new()
+	bars.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+	bars.position += Vector2(20, -190)
+	bars.add_theme_constant_override("separation", 3)
+	root.add_child(bars)
+	for b in [["health", Color(0.85, 0.25, 0.25)], ["stamina", Color(0.95, 0.85, 0.3)], ["hunger", Color(0.9, 0.55, 0.25)], ["thirst", Color(0.35, 0.6, 1.0)]]:
+		var row := HBoxContainer.new()
+		bars.add_child(row)
+		var l := _label(row, 13)
+		l.text = b[0].capitalize()
+		l.custom_minimum_size = Vector2(62, 0)
+		var pb := ProgressBar.new()
+		pb.custom_minimum_size = Vector2(150, 10)
+		pb.show_percentage = false
+		var bar_fill := StyleBoxFlat.new()
+		bar_fill.bg_color = b[1]
+		pb.add_theme_stylebox_override("fill", bar_fill)
+		row.add_child(pb)
+		_bars[b[0]] = pb
+	_buff_label = _label(bars, 13)
+	_level_label = _label(root, 16)
+	_level_label.anchor_left = 1.0
+	_level_label.anchor_right = 1.0
+	_level_label.offset_left = -460
+	_level_label.offset_right = -16
+	_level_label.offset_top = 36
+	_level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+
+	craft = CraftPanel.new()
+	craft.peer_id = peer_id
+	craft.visible = false
+	root.add_child(craft)
+	craft.resized.connect(func(): craft.position = Vector2(root.size.x - craft.size.x - 30, 90))
+
+	skills = SkillsPanel.new()
+	skills.peer_id = peer_id
+	skills.visible = false
+	root.add_child(skills)
+	skills.resized.connect(func(): skills.position = (root.size - skills.size) * 0.5)
+	box_panel = BoxPanel.new()
+	box_panel.visible = false
+	root.add_child(box_panel)
+	box_panel.resized.connect(func(): box_panel.position = Vector2(root.size.x - box_panel.size.x - 30, 90))
+	build_menu = BuildMenu.new()
+	build_menu.peer_id = peer_id
+	build_menu.visible = false
+	root.add_child(build_menu)
+	build_menu.resized.connect(func(): build_menu.position = (root.size - build_menu.size) * 0.5)
+	blueprint_menu = BlueprintMenu.new()
+	blueprint_menu.visible = false
+	root.add_child(blueprint_menu)
+	blueprint_menu.resized.connect(func(): blueprint_menu.position = (root.size - blueprint_menu.size) * 0.5)
+	_build_label = _label(root, 16)
+	_build_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	_build_label.position += Vector2(-300, -110)
+	_build_label.custom_minimum_size = Vector2(600, 0)
+	_build_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	map_panel = MapPanel.new()
+	map_panel.visible = false
+	root.add_child(map_panel)
+	map_panel.resized.connect(func(): map_panel.position = (root.size - map_panel.size) * 0.5)
+
+	_boss_label = _label(root, 20)
+	_boss_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	_boss_label.position += Vector2(-300, 120)
+	_boss_label.custom_minimum_size = Vector2(600, 0)
+	_boss_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_boss_bar = ProgressBar.new()
+	_boss_bar.show_percentage = false
+	_boss_bar.custom_minimum_size = Vector2(600, 14)
+	_boss_bar.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	_boss_bar.position += Vector2(-300, 150)
+	var boss_fill := StyleBoxFlat.new()
+	boss_fill.bg_color = Color(0.75, 0.15, 0.15)
+	_boss_bar.add_theme_stylebox_override("fill", boss_fill)
+	root.add_child(_boss_bar)
+
 	_fps_label = _label(root, 15)
 	_fps_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
 	_fps_label.position += Vector2(-130, 10)
@@ -122,7 +215,7 @@ func _build() -> void:
 
 	_help = _label(root, 14)
 	_help.position = Vector2(16, 12)
-	_help.text = "WASD walk · Shift run · Space jump · Mouse look\nLeft click dig · 1-8 / wheel pick hotbar · R refill lantern\nTab bag · F3 frame rate · F12 screenshot · Esc pause"
+	_help.text = "WASD walk · Shift run · Space jump · Mouse look\nLeft click dig/harvest · Right click eat/place · E use station\n1-8 / wheel hotbar · R refill lantern · Tab bag + crafting\nK skills · M map · Esc pause"
 
 	_pause = _overlay(root, "Paused", "Click to keep digging")
 	_loading = _overlay(root, "Digging out the cave…", "")
@@ -201,6 +294,8 @@ func _slot_style(color: Color, border: Color) -> StyleBoxFlat:
 
 
 func _refresh_slots() -> void:
+	if craft and craft.visible:
+		craft.refresh()
 	var auth := GameAuthority.instance
 	var ps: GameAuthority.PlayerState = auth.get_player(peer_id) if auth else null
 	if ps == null:
@@ -226,10 +321,13 @@ func _on_slot_input(event: InputEvent, index: int) -> void:
 		return
 	if not _bag_panel.visible:
 		return
+	if box_panel.visible:
+		GameAuthority.instance.storage.ask_transfer(box_panel.box_id, false, index)
+		return
 	if _swap_from < 0:
 		_swap_from = index
 	else:
-		GameAuthority.instance.request_swap(peer_id, _swap_from, index)
+		GameAuthority.instance.ask_swap(_swap_from, index)
 		_swap_from = -1
 	_refresh_slots()
 
@@ -247,7 +345,7 @@ func _on_dig_feedback(pid: int, result: Dictionary) -> void:
 			_dig_bar.value = _dig_bar.max_value
 			_dig_bar_timer = 0.25
 		"blocked":
-			show_toast("Too hard! This rock needs a better pickaxe.")
+			show_toast(result.get("why", "Too hard! This rock needs a better pickaxe."))
 		"no_tool":
 			show_toast("Pick your pickaxe in the hotbar (key 1).")
 
@@ -273,10 +371,84 @@ func set_bag_open(open: bool) -> void:
 	_bag_panel.visible = open
 	_swap_from = -1
 	_refresh_slots()
+	box_panel.visible = false
+	if open:
+		craft.open_for(null)
+	else:
+		craft.visible = false
+
+
+## E at a chest or grave: your bag on the left, the box on the right.
+func open_box(id: int) -> void:
+	_bag_panel.visible = true
+	_refresh_slots()
+	craft.visible = false
+	box_panel.open(id)
+
+
+func is_build_menu_open() -> bool:
+	return build_menu.visible
+
+
+func set_build_menu_open(open: bool) -> void:
+	build_menu.mode = build_mode
+	build_menu.visible = open
+	if open:
+		build_menu.refresh()
+
+
+func is_blueprints_open() -> bool:
+	return blueprint_menu.visible
+
+
+func set_blueprints_open(open: bool) -> void:
+	blueprint_menu.mode = build_mode
+	blueprint_menu.visible = open
+	if open:
+		blueprint_menu.refresh()
+
+
+func is_map_open() -> bool:
+	return map_panel.visible
+
+
+func set_map_open(open: bool) -> void:
+	map_panel.visible = open
+	var d := _local_dwarf()
+	if open and d:
+		map_panel.open(map_data, d.global_position, d.model.rotation.y + PI, GameAuthority.instance.stations.values())
+
+
+func is_skills_open() -> bool:
+	return skills.visible
+
+
+func set_skills_open(open: bool) -> void:
+	skills.visible = open
+	if open:
+		skills.refresh()
+
+
+func open_station(st: Station) -> void:
+	_bag_panel.visible = true
+	_refresh_slots()
+	craft.open_for(st)
 
 
 func set_paused(on: bool) -> void:
 	_pause.visible = on
+	var auth := GameAuthority.instance
+	var ff: CheckButton = _pause.find_child("FriendlyFire", true, false)
+	if ff == null:
+		ff = CheckButton.new()
+		ff.name = "FriendlyFire"
+		ff.text = "Friendly fire (your hits can hurt friends, half damage)"
+		ff.focus_mode = Control.FOCUS_NONE
+		ff.toggled.connect(func(v: bool): if GameAuthority.instance: GameAuthority.instance.set_friendly_fire(v))
+		(_pause.find_child("Sub", true, false) as Label).get_parent().add_child(ff)
+	ff.visible = auth != null and auth.is_host()
+	if auth:
+		ff.set_pressed_no_signal(auth.friendly_fire())
 	(_pause.find_child("Sub", true, false) as Label).text = "Click to keep digging\n\nCave seed: %s" % seed_text
 
 
@@ -284,13 +456,40 @@ func _process(delta: float) -> void:
 	var auth := GameAuthority.instance
 	var ps: GameAuthority.PlayerState = auth.get_player(peer_id) if auth else null
 	if ps:
+		var v := ps.vitals
+		_bars.health.max_value = v.max_health()
+		_bars.health.value = v.health
+		_bars.stamina.max_value = v.max_stamina()
+		_bars.stamina.value = v.stamina
+		_bars.hunger.value = v.hunger
+		_bars.thirst.value = v.thirst
+		var buffs := []
+		for b in v.buffs:
+			buffs.append("%s %d:%02d" % [Items.display_name(b.id), int(b.time_left) / 60, int(b.time_left) % 60])
+		var mood: String = {"well_fed": "Well fed", "peckish": "Peckish", "starving": "Starving (tired)"}.get(v.status(), "")
+		_buff_label.text = "\n".join(([mood] if mood != "" else []) + buffs + Array(v.ailments.describe()))
+		var p := ps.progress
+		_level_label.text = "Level %d  (%d/%d XP)%s\nMining %d · Fighting %d · Smithing %d · Survival %d" % [
+			p.level, p.xp, Progression.xp_to_next(p.level), "  · %d perk points" % p.points_free() if p.points_free() > 0 else "",
+			p.skill_level.mining, p.skill_level.fighting, p.skill_level.smithing, p.skill_level.survival]
+		if craft.visible and craft.station:
+			craft._status.text = craft.station.busy_text()
 		_fuel_bar.value = ps.fuel
-		var crystals := ps.inventory.count_of("glow_crystal")
+		var crystals := 0
+		for id in GameAuthority.FUEL_ORDER:
+			crystals += ps.inventory.count_of(id)
 		var mins := int(ps.fuel) / 60
 		var secs := int(ps.fuel) % 60
-		_fuel_label.text = "Lantern %d:%02d   (R: refill, %d crystal%s)" % [mins, secs, crystals, "" if crystals == 1 else "s"]
+		_fuel_label.text = "Lantern %d:%02d   (R: refill, %d fuel)" % [mins, secs, crystals]
 		if ps.fuel <= 0.0:
 			_fuel_label.text = "Lantern is out!  Mine a glow crystal, press R"
+		var me := _local_dwarf()
+		if me and me.fight and me.fight.is_crossbow():
+			var bolts := 0
+			for id in Combat.BOLT_ORDER:
+				bolts += ps.inventory.count_of(id)
+			var state := "loaded" if me.fight.loaded else ("reloading %.1f s" % me.fight.reload_left if me.fight.reload_left >= 0.0 else "empty: R to reload")
+			_fuel_label.text = "Lantern %d:%02d   ·   Crossbow %s, %d bolts" % [mins, secs, state, bolts]
 		_refresh_selection(ps.selected_slot)
 	var dwarf := _local_dwarf()
 	if dwarf:
@@ -298,12 +497,27 @@ func _process(delta: float) -> void:
 		if info.is_empty():
 			_aim_label.text = ""
 		elif info.kind == "rock":
-			var power := Items.dig_power(ps.selected_item()) if ps else 1
-			var hits := Mat.hits_needed(info.material, maxi(power, 1))
-			_aim_label.text = "%s · %s" % [info.name, "can't dig yet" if hits == 0 else "%d hit%s" % [hits, "" if hits == 1 else "s"]]
+			var tool := ps.selected_item() if ps else ""
+			var power := Items.dig_power(tool) if Items.dig_power(tool) > 0 else 10
+			var hits := Mat.hits_needed(info.material, power, maxi(Items.tier(tool), 0))
+			_aim_label.text = "%s · %s" % [info.name, "needs a %s pickaxe" % Mat.TIER_NAMES[Mat.min_tier(info.material)] if hits == 0 else "%d hit%s" % [hits, "" if hits == 1 else "s"]]
 		else:
 			_aim_label.text = info.name
 	_fps_label.text = "%d FPS" % Engine.get_frames_per_second()
+	_update_boss_bar(dwarf)
+	if build_mode and build_mode.active() and build_mode.blueprint:
+		_build_label.text = "Blueprint: %s (%s)\nQ turn · left click place · right click cancel" % [build_mode.blueprint.name, BuildMenu._cost_text(build_mode.blueprint.cost())]
+	elif build_mode and build_mode.active():
+		var c := BuildMenu._cost_text(Pieces.cost(build_mode.piece, build_mode.family))
+		_build_label.text = "%s · %s (%s)%s\nB choose · Q turn · PgUp/PgDn lift · right click take down · C save blueprint · V blueprints" % [
+			Pieces.LIST[build_mode.piece].name, Pieces.FAMILIES[build_mode.family].name, c,
+			"" if build_mode.problem == "" else "  —  " + build_mode.problem]
+	else:
+		_build_label.text = ""
+	_map_timer -= delta
+	if _map_timer <= 0.0 and dwarf and auth and auth.world:
+		_map_timer = 0.5
+		map_data.reveal(dwarf.global_position, auth.world.sdf_at)
 	_dig_bar_timer -= delta
 	if _dig_bar_timer <= 0.0:
 		_dig_bar.visible = false
@@ -320,6 +534,22 @@ func _refresh_selection(sel: int) -> void:
 	if sel != _last_selected:
 		_last_selected = sel
 		_refresh_slots()
+
+
+## A big health bar at the top while a boss is near.
+func _update_boss_bar(dwarf: Dwarf) -> void:
+	var auth := GameAuthority.instance
+	var boss: Monster = null
+	if dwarf and auth and auth.monsters:
+		for m: Monster in auth.monsters.monsters.values():
+			if m.is_boss() and m.global_position.distance_to(dwarf.global_position) < 50.0:
+				boss = m
+	_boss_label.visible = boss != null
+	_boss_bar.visible = boss != null
+	if boss:
+		_boss_label.text = boss.data.name + ("  —  DAZED!" if boss.stun.is_stunned() else "")
+		_boss_bar.max_value = boss.max_hp()
+		_boss_bar.value = boss.hp
 
 
 func _local_dwarf() -> Dwarf:
