@@ -27,6 +27,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	OS.add_logger(errors)
+	Controls.robot = true  # tests never hold the real mouse, and save into user://robot_saves
 	var only := ""
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("only="):
