@@ -69,6 +69,34 @@ func set_tint(c: Color) -> void:
 	_look.material_overlay = _tints[c]
 
 
+## Doors swing open on their left hinge (look and solid shape together), so an open door
+## stands against the wall's side and you can still aim at it to close it.
+var is_open := false
+var _swing := 0.0  ## 0 = closed, 1 = fully open
+var _swing_tween: Tween
+
+
+func set_open(open: bool) -> void:
+	is_open = open
+	if not is_inside_tree():
+		_apply_swing(1.0 if open else 0.0)
+		return
+	if _swing_tween:
+		_swing_tween.kill()
+	_swing_tween = create_tween()
+	_swing_tween.tween_method(_apply_swing, _swing, 1.0 if open else 0.0, 0.35).set_trans(Tween.TRANS_SINE)
+
+
+func _apply_swing(t: float) -> void:
+	_swing = t
+	var hinge := Vector3(-Pieces.LIST[piece].size.x * 0.5, 0, 0)
+	var xf := Transform3D(Basis(Vector3.UP, -t * PI / 2.0), Vector3.ZERO)
+	xf = Transform3D(Basis(), hinge) * xf * Transform3D(Basis(), -hinge)
+	for c in get_children():
+		if c is MeshInstance3D or c is CollisionShape3D:
+			(c as Node3D).transform = xf
+
+
 func set_ghost_ok(ok: bool) -> void:
 	if _ghost_mat:
 		_ghost_mat.albedo_color = Color(0.3, 1.0, 0.4, 0.35) if ok else Color(1.0, 0.25, 0.2, 0.35)

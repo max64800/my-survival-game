@@ -494,8 +494,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		_set_bag(not hud.is_bag_open())
 	elif event.is_action_pressed("interact") and not hud.is_bag_open():
 		var info := dwarf._aim_info()
-		if info.has("box_id") or info.has("poi_id") or info.has("station"):
+		if info.has("box_id") or info.has("poi_id") or info.has("station") or info.has("door_uid"):
 			dwarf.model.react("use")  # reach out to open / touch it
+		if info.has("door_uid"):
+			authority.builder.ask_door(info.door_uid)
+			return
 		if info.has("box_id"):
 			hud.open_box(info.box_id)
 			Controls.set_captured(false)

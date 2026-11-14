@@ -147,5 +147,5 @@ func to_data() -> Array:
 	var out := []
 	for uid in pieces:
 		var p: Dictionary = pieces[uid]
-		out.append([uid, p.piece, p.family, p.pos, p.rot, p.anchored])
+		out.append([uid, p.piece, p.family, p.pos, p.rot, p.anchored, p.get("open", false)])
 	return out

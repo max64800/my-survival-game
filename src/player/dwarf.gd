@@ -203,7 +203,7 @@ func _physics_process(delta: float) -> void:
 		_since_floor = COYOTE_TIME + 1.0  # no double jump
 	elif not on_floor:
 		velocity.y -= _gravity * delta
-	# Rope ladders: hold forward (or jump) to climb, 4 stamina a second (doc 6.2).
+	# Ladders (rope or built): hold forward (or jump) to climb, 4 stamina a second (doc 6.2).
 	var ladder := _ladder_here()
 	if ladder and playing and (Input.is_action_pressed("move_forward") or Input.is_action_pressed("jump")) \
 			and (body == null or body.drain_stamina(LADDER_STAMINA, delta)):
@@ -211,7 +211,7 @@ func _physics_process(delta: float) -> void:
 	elif ladder and not is_on_floor():
 		velocity.y = maxf(velocity.y, -1.5)  # hold on: slide down slowly
 	move_and_slide()
-	model.set_climbing(ladder != null and not is_on_floor(), delta)  # hands on the rungs
+	model.set_climbing(ladder and not is_on_floor(), delta)  # hands on the rungs
 	if on_floor and not ladder and velocity.y <= 0.01 and dir.length() > 0.1 and is_on_wall():
 		_try_step_up(dir * speed * delta)
 
@@ -324,6 +324,9 @@ func _aim_info() -> Dictionary:
 		elif spot.get("kind") == GlowPlacer.GIANT:
 			nm = "Giant Mushroom (%d chops left · copper axe)" % spot.get("chops", 1)
 		return {kind = "glow", name = nm}
+	if hit.collider is PieceNode and (hit.collider as PieceNode).piece == "door":
+		var door: PieceNode = hit.collider
+		return {kind = "door", name = "Door · E to %s" % ("close" if door.is_open else "open"), door_uid = door.uid}
 	if hit.collider is Station:
 		var st: Station = hit.collider
 		return {kind = "station", name = "%s · E to use" % Items.display_name(st.kind), station = st}
@@ -441,18 +444,18 @@ func add_shake(amount: float) -> void:
 	_shake = maxf(_shake, amount)
 
 
-## A rope ladder we're touching, or null.
-func _ladder_here() -> Station:
+## Are we touching a ladder (a rope ladder station, or a built Ladder piece)?
+func _ladder_here() -> bool:
 	var auth := GameAuthority.instance
 	if auth == null:
-		return null
+		return false
 	for st in auth.stations.values():
 		if st.kind != "rope_ladder":
 			continue
 		var d: Vector3 = global_position - st.global_position
 		if Vector2(d.x, d.z).length() < 0.9 and d.y > -0.5 and d.y < Station.LADDER_HEIGHT + 0.5:
-			return st
-	return null
+			return true
+	return auth.builder != null and auth.builder.ladder_at(global_position)
 
 
 ## Turn to face where the camera looks (when attacking).

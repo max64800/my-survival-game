@@ -14,6 +14,7 @@ const RUBBLE_DAMAGE := 15.0
 var auth: GameAuthority
 var structure := Structure.new()
 var nodes := {}  ## uid -> PieceNode
+var ladders := {}  ## uid -> true for every built ladder (dwarves climb them)
 var pieces_root: Node3D
 var fall_log: Array[PackedVector3Array] = []  ## every cave-in, for friends who join later
 var _next_uid := 1
@@ -53,6 +54,20 @@ func ask_remove(uid: int) -> void:
 		request_remove(auth.local_peer_id(), uid)
 	else:
 		_rpc_remove.rpc_id(1, uid)
+
+
+## Open or close a built door (E while looking at it).
+func ask_door(uid: int) -> void:
+	if auth.is_host():
+		request_door(auth.local_peer_id(), uid)
+	else:
+		_rpc_door.rpc_id(1, uid)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_door(uid: int) -> void:
+	if auth.is_host():
+		request_door(multiplayer.get_remote_sender_id(), uid)
 
 
 @rpc("any_peer", "reliable")
@@ -139,6 +154,52 @@ func request_remove(peer_id: int, uid: int) -> bool:
 const STATION_KIND := {"workbench": "workbench", "mason": "masonry_table", "anvil": "anvil"}
 
 
+## Host: a player wants to open/close door `uid`. They must be close to it.
+func request_door(peer_id: int, uid: int) -> bool:
+	var ps := auth.get_player(peer_id)
+	var p: Dictionary = structure.pieces.get(uid, {})
+	if ps == null or p.is_empty() or p.piece != "door":
+		return false
+	if ps.node and ps.node.global_position.distance_to(p.pos) > Pieces.BUILD_REACH:
+		return false
+	_ev_door.rpc(uid, not p.get("open", false))
+	return true
+
+
+## Is there a built ladder at `pos` (a dwarf's feet)? Same reach as rope ladders.
+func ladder_at(pos: Vector3) -> bool:
+	for uid in ladders:
+		var p: Dictionary = structure.pieces.get(uid, {})
+		if p.is_empty():
+			continue
+		var d: Vector3 = pos - p.pos
+		if Vector2(d.x, d.z).length() < 0.8 and d.y > -0.5 and d.y < Pieces.LIST.ladder.size.y + 0.3:
+			return true
+	return false
+
+
+## Where a blueprint's Builder's Chest goes: just outside the building, on the side nearest
+## `from` (the player), on open floor. Tries all four sides. Vector3.INF = nowhere fits.
+static func chest_spot(size: Vector3, origin: Vector3, rot: int, from: Vector3, sdf: Callable) -> Vector3:
+	var sides := []
+	for k in 4:
+		var dir := Basis(Vector3.UP, (rot + k) * PI / 2.0) * Vector3(0, 0, 1)
+		var reach: float = (size.z if k % 2 == 0 else size.x) * 0.5 + 1.5
+		sides.append(origin + dir * reach)
+	sides.sort_custom(func(a: Vector3, b: Vector3) -> bool: return a.distance_to(from) < b.distance_to(from))
+	for c: Vector3 in sides:
+		# Look for a floor from 2 m above the building's base down to 3 m below it.
+		var y := origin.y + 2.0
+		while y > origin.y - 3.0:
+			var here := Vector3(c.x, y, c.z)
+			if float(sdf.call(here)) <= 0.0:
+				if float(sdf.call(here + Vector3.UP * 0.5)) > 0.0 and float(sdf.call(here + Vector3.UP * 1.2)) > 0.0:
+					return here + Vector3.UP * 0.25
+				break  # rock straight away: this side is inside the mountain
+			y -= 0.25
+	return Vector3.INF
+
+
 func station_problem(piece: String, family: String, pos: Vector3) -> String:
 	var kind: String = STATION_KIND[Pieces.station_for(family)]
 	var need := Pieces.needed_level(piece, family)
@@ -174,6 +235,8 @@ func _ev_add_piece(uid: int, piece: String, family: String, pos: Vector3, rot: i
 	n.global_position = pos
 	n.rotation.y = rot * PI / 2.0
 	nodes[uid] = n
+	if piece == "ladder":
+		ladders[uid] = true
 	_next_uid = maxi(_next_uid, uid + 1)
 	if auth.is_host():
 		_queue_shaky()
@@ -183,6 +246,7 @@ func _ev_add_piece(uid: int, piece: String, family: String, pos: Vector3, rot: i
 func _ev_remove_piece(uid: int) -> void:
 	var p: Dictionary = structure.pieces.get(uid, {})
 	structure.remove(uid)
+	ladders.erase(uid)
 	var n: Node = nodes.get(uid)
 	nodes.erase(uid)
 	if n:
@@ -191,6 +255,16 @@ func _ev_remove_piece(uid: int) -> void:
 		_queue_shaky()
 		if Pieces.LIST[p.piece].get("supports_rock", false):
 			queue_check(Pieces.box(p.piece, p.pos, p.rot).end, 1.5)  # was holding rock up!
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_door(uid: int, open: bool) -> void:
+	if not structure.pieces.has(uid):
+		return
+	structure.pieces[uid]["open"] = open
+	Sfx.play("build", structure.pieces[uid].pos, -8.0, 1.6 if open else 1.3)
+	if nodes.has(uid):
+		(nodes[uid] as PieceNode).set_open(open)
 
 
 @rpc("authority", "call_local", "reliable")
@@ -652,6 +726,8 @@ func load_snapshot(s: Dictionary) -> void:
 		_pending_falls.append(f)
 	for p in s.get("pieces", []):
 		_ev_add_piece(p[0], p[1], p[2], p[3], p[4], p[5])
+		if p.size() > 6 and p[6]:
+			_ev_door(p[0], true)
 	_next_uid = s.get("next", _next_uid)
 	for st in s.get("sites", []):
 		_ev_site(st[0], st[1], st[2], st[3], st[4])

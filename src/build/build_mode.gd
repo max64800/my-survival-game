@@ -20,6 +20,8 @@ var blueprint: Blueprint = null  ## not null = placing a whole blueprint
 var _bp_json := ""
 var _bp_ghosts: Node3D
 var _bp_origin := Vector3.INF
+var _bp_chest := Vector3.INF  ## where its Builder's Chest will appear (INF = no room)
+var _bp_chest_ghost: MeshInstance3D
 var capture_corner := Vector3.INF  ## first corner while saving a blueprint (C)
 
 
@@ -64,6 +66,18 @@ func start_blueprint(json: String) -> void:
 		g.piece = p.id
 		g.family = p.mat
 		_bp_ghosts.add_child(g)
+	# A see-through chest shows where the Builder's Chest will appear.
+	_bp_chest_ghost = MeshInstance3D.new()
+	var bm := BoxMesh.new()
+	bm.size = Vector3(1.0, 0.7, 0.6)
+	_bp_chest_ghost.mesh = bm
+	var m := StandardMaterial3D.new()
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.albedo_color = Color(1.0, 0.8, 0.3, 0.45)
+	_bp_chest_ghost.material_override = m
+	_bp_chest_ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_bp_ghosts.add_child(_bp_chest_ghost)
 	message.emit("Placing \"%s\": aim, Q to turn, left click to place, right click to cancel" % blueprint.name)
 
 
@@ -124,6 +138,12 @@ func _process(delta: float) -> void:
 			var g: Node3D = _bp_ghosts.get_child(i)
 			g.global_position = placed[i].pos
 			g.rotation.y = placed[i].rot * PI / 2.0
+		var auth_bp := GameAuthority.instance
+		_bp_chest = Builder.chest_spot(blueprint.size, _bp_origin, rot, dwarf.global_position, auth_bp.world.sdf_at)
+		_bp_chest_ghost.visible = _bp_chest.is_finite()
+		if _bp_chest.is_finite():
+			_bp_chest_ghost.global_position = _bp_chest + Vector3.UP * 0.35
+			_bp_chest_ghost.rotation.y = rot * PI / 2.0
 		return
 	var hit := dwarf.aim_far(Pieces.BUILD_REACH)
 	if hit.is_empty():
@@ -150,9 +170,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	var auth := GameAuthority.instance
 	if blueprint:
 		if event.is_action_pressed("dig") and _bp_origin != Vector3.INF:
-			var front := Basis(Vector3.UP, rot * PI / 2.0) * Vector3(0, 0, blueprint.size.z * 0.5 + 1.5)
-			var chest: Vector3 = auth.world.maker.find_floor(_bp_origin.x + front.x, _bp_origin.z + front.z, _bp_origin.y + 3.0)
-			auth.builder.ask_place_blueprint(_bp_json, _bp_origin, rot, chest)
+			if not _bp_chest.is_finite():
+				message.emit("No room for the Builder's Chest next to it. Turn it (Q) or pick a spot with open floor beside it.")
+				get_viewport().set_input_as_handled()
+				return
+			auth.builder.ask_place_blueprint(_bp_json, _bp_origin, rot, _bp_chest)
 			message.emit("Blueprint placed. Put materials in its Builder's Chest (E) and it builds itself!")
 			stop_blueprint()
 			get_viewport().set_input_as_handled()

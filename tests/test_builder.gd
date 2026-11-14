@@ -220,3 +220,25 @@ func test_blueprint_builds_itself() -> void:
 	print("        (lodge: %d of 20 pieces built, status: %s)" % [built, auth.builder.site_status(box_id)])
 	check(built >= 15, "most of the lodge got built (%d of 20)" % built)
 	_teardown()
+
+
+func test_doors_open_and_ladders_climb() -> void:
+	await _setup()
+	var pos := player.global_position + Vector3(1, 0, 0)
+	auth.builder._ev_add_piece(500, "door", "plank_root", pos, 0, true)
+	var node: PieceNode = auth.builder.nodes[500]
+	check(auth.builder.request_door(1, 500), "you can open a door next to you")
+	check(auth.builder.structure.pieces[500].open, "it's open")
+	check(node.is_open, "the door swings open")
+	var saved: Dictionary = auth.builder.snapshot()
+	check(auth.builder.request_door(1, 500), "and close it again")
+	check(not auth.builder.structure.pieces[500].open, "closed")
+	check(saved.pieces[0][6], "an open door stays open after saving")
+	auth.builder._ev_add_piece(501, "wall", "plank_root", pos + Vector3(4, 0, 0), 0, true)
+	check(not auth.builder.request_door(1, 501), "walls don't open")
+	auth.builder._ev_add_piece(502, "ladder", "plank_root", pos + Vector3(0, 0, 3), 0, true)
+	check(auth.builder.ladder_at(pos + Vector3(0.3, 1.0, 3.2)), "standing at a built ladder = climbing")
+	check(not auth.builder.ladder_at(pos + Vector3(0, 1.0, 6)), "away from it = not climbing")
+	auth.builder._ev_remove_piece(502)
+	check(not auth.builder.ladder_at(pos + Vector3(0.3, 1.0, 3.2)), "a taken-down ladder can't be climbed")
+	_teardown()
