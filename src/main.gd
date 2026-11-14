@@ -229,7 +229,8 @@ func _on_peer_connected(id: int) -> void:
 	player_slots[id] = _free_slot()
 	var others := []
 	for d in players_root.get_children():
-		others.append([d.peer_id, d.global_position])
+		if d is Dwarf:  # dig sparkles live here too for a moment
+			others.append([d.peer_id, d.global_position])
 	_welcome.rpc_id(id, seed, authority.snapshot(), others, player_slots)
 	var pos := _spawn_spot(id)
 	var puppet := _spawn_dwarf(id, pos, false)
