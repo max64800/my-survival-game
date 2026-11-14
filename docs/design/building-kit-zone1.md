@@ -83,6 +83,23 @@ New detail from the house worth keeping: **flat stone footings under every log l
    floors edge to edge.
 4. Textures: block wall, flagstone floor, dark timber with copper rivets, hammered copper band with rivets.
 
+**Hearthbrick reference pictures, all done (same chat):**
+1. Kit sheet (19 pieces, 7 × 3): hand-made bricks in **4 warm tones** (deep red-brown, terracotta, ochre, a few dark
+   burnt bricks) with pale mortar; pale stone corner blocks, sills and keystones; herringbone floors, wall panel and
+   gable; foundations on little brick arches; tall arched window with leaded panes; gable with a round vent; round
+   doorway with a stone keystone; **deep green** round door with copper hinges and ring; curved terracotta tile roof,
+   ridge cap with a copper finial; round brick pillar; timber beam with copper rivets; railing with small arches.
+   Watch out: its outer roof corner looks like a little pyramid; the model must be a hollow hip corner.
+2. Finished cottage: two storeys on arched brick piers, porch on a brick pillar, arched railing, chimney with smoke,
+   hipped tile roof with a copper finial, copper lantern by the green door.
+3. Joins: corners interlock with pale stone quoins; wall on foundation with a pale stone capping row; roof eave
+   with rafters on the wall top and a row of upright bricks under it; ceiling = herringbone underside held by dark
+   timber joists with copper brackets; roof underside = rafters + battens + tile backs; hip corner = two slopes with
+   copper-strapped ridge tiles along a diagonal ridge.
+4. Textures: brick running bond, herringbone floor, curved terracotta tiles, pale limestone trim.
+
+All three Zone 1 styles are fully designed (4 pictures each, 12 in total).
+
 Order: **Delver's Shack first** (style sheet → house picture → owner reviews → models → test in game), then
 Stonehold, then Hearthbrick.
 
