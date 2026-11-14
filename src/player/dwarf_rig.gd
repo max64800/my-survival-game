@@ -25,7 +25,7 @@ const BEARD_COLOR := Color(0.62, 0.32, 0.14)
 const ANIMS := {
 	idle = "Idle", walk = "Walk", jog = "Jog_Fwd", sprint = "Sprint",
 	air = "Jump", roll = "Roll", hit = "Hit_Chest", knock = "b/Hit_Knockback",
-	dig = "Sword_Attack", attack_a = "b/Sword_Regular_A", attack_b = "b/Sword_Regular_B",
+	dig = "x/Pickaxe_Mine", chop = "b/TreeChopping", wake = "b/LayToIdle", attack_a = "b/Sword_Regular_A", attack_b = "b/Sword_Regular_B",
 	heavy = "b/Sword_Regular_C", eat = "b/Consume", use = "Interact", throw = "b/OverhandThrow",
 	# Held poses (as long as the button is down):
 	block = "b/Sword_Block", shield = "b/Idle_Shield", aim = "Pistol_Aim_Neutral",
@@ -33,7 +33,18 @@ const ANIMS := {
 ## Speeds (m/s) where each move animation fits best.
 const MOVE_POINTS := {idle = 0.0, walk = 1.6, jog = 4.0, sprint = 6.5}
 
+## Our own animations, stitched together from poses of the pack's animations (see _made_library).
+## Each entry: [time 0..1, source animation, moment in it (0..1 of its length)].
+const MADE := {
+	# A real mining swing: raise the pick high over the head, smash it down in front, recover.
+	# The strike lands at 0.55, the moment the dig happens (DwarfModel.swing).
+	"Pickaxe_Mine": [
+		[0.0, "b/TreeChopping", 0.9], [0.38, "b/TreeChopping", 0.7], [0.55, "Sword_Attack", 0.36],
+		[0.7, "Sword_Attack", 0.5], [1.0, "b/TreeChopping", 0.9]],
+}
+
 static var _libs := {}
+static var _made: AnimationLibrary
 static var _head_mesh: Mesh
 
 var skeleton: Skeleton3D
@@ -41,6 +52,7 @@ var tree: AnimationTree
 var right_hand: Node3D  ## tools go here
 var left_hand: Node3D   ## the lantern hangs here
 var _air := 0.0
+var _air_time := 0.0  ## how long we've been off the ground (for the landing dip)
 var _rolling := false
 var _attack_flip := false
 var _hold := ""        ## which held pose is on ("" = none)
@@ -110,7 +122,14 @@ func set_hold(what: String) -> void:
 ## Legs follow `speed` (m/s); in the air we blend to the jump pose; a dodge rolls the whole body.
 func set_motion(speed: float, on_floor: bool, rolling: bool) -> void:
 	tree.set("parameters/move/blend_position", speed)
-	_air = move_toward(_air, 0.0 if on_floor else 1.0, get_process_delta_time() * 6.0)
+	var dt := get_process_delta_time()
+	_air = move_toward(_air, 0.0 if on_floor else 1.0, dt * 6.0)
+	if on_floor:
+		if _air_time > 0.45 and not rolling:
+			play_full("Jump_Land", 0.35)  # a real fall, not a bump: bend the knees on landing
+		_air_time = 0.0
+	else:
+		_air_time += dt
 	tree.set("parameters/air/blend_amount", _air)
 	if rolling and not _rolling:
 		play_full("roll", 0.5)
@@ -148,6 +167,7 @@ func _build_tree(body: Node3D) -> void:
 	tree.name = "AnimationTree"
 	for lib_name in LIBS:
 		tree.add_animation_library(lib_name, _library(LIBS[lib_name]))
+	tree.add_animation_library("x", _made_library())
 	var bt := AnimationNodeBlendTree.new()
 	# Legs: blend between idle, walk, jog and sprint by speed.
 	var move := AnimationNodeBlendSpace1D.new()
@@ -340,6 +360,44 @@ func _tint_clothes(tint: Color) -> void:
 		if m:
 			m.albedo_color = soft
 			mi.set_surface_override_material(0, m)
+
+
+## Builds our own animations (MADE) once: for every bone, take its pose at the chosen moments of
+## the pack's animations and use those as keys (like a flip book made from other flip books).
+static func _made_library() -> AnimationLibrary:
+	if _made:
+		return _made
+	_made = AnimationLibrary.new()
+	var src := {"": _library(LIBS[""]), "b": _library(LIBS["b"])}
+	for anim_name in MADE:
+		var keys: Array = MADE[anim_name]
+		var out := Animation.new()
+		out.length = 1.0
+		var first := _source(src, keys[0][1])
+		for t in first.get_track_count():
+			var kind := first.track_get_type(t)
+			if kind != Animation.TYPE_ROTATION_3D and kind != Animation.TYPE_POSITION_3D:
+				continue
+			var path := first.track_get_path(t)
+			var nt := out.add_track(kind)
+			out.track_set_path(nt, path)
+			for k in keys:
+				var a := _source(src, k[1])
+				var st := a.find_track(path, kind)
+				if st < 0:
+					continue
+				var at: float = k[2] * a.length
+				if kind == Animation.TYPE_ROTATION_3D:
+					out.rotation_track_insert_key(nt, k[0], a.rotation_track_interpolate(st, at))
+				else:
+					out.position_track_insert_key(nt, k[0], a.position_track_interpolate(st, at))
+		_made.add_animation(anim_name, out)
+	return _made
+
+
+static func _source(src: Dictionary, full_name: String) -> Animation:
+	var lib := "b" if full_name.begins_with("b/") else ""
+	return (src[lib] as AnimationLibrary).get_animation(full_name.trim_prefix("b/"))
 
 
 ## The animations, loaded once and shared by every dwarf.

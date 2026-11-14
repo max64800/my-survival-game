@@ -51,6 +51,9 @@ var _respawn_point := Vector3.ZERO
 var _pose_timer := 0.0
 var _net_pos := Vector3.ZERO
 var _net_yaw := 0.0
+var _net_speed := 0.0  ## a friend's dwarf: how fast it moves on our screen (drives its legs)
+var _sent_look := []  ## what we last told friends we hold / how we stand
+var _look_timer := 0.0
 
 
 func _ready() -> void:
@@ -69,6 +72,9 @@ func _ready() -> void:
 	model.tunic = DwarfModel.TUNICS[color_index % DwarfModel.TUNICS.size()]
 	add_child(model)
 	model.swing_impact.connect(_on_swing_impact)
+	model.reacted.connect(func(what: String):
+		if is_local and _online():
+			_net_react.rpc(what))
 	lantern = Lantern.new()
 	lantern.peer_id = peer_id
 	model.left_hand.add_child(lantern)
@@ -223,9 +229,21 @@ func _process(delta: float) -> void:
 	if is_local and fight:
 		model.set_held(fight.item())
 		model.set_pose(fight.is_blocking(), fight.aiming(), fight.has_shield())
+		# Friends see what we hold and how we stand (sent only when it changes).
+		var look := [fight.item(), fight.is_blocking(), fight.aiming(), fight.has_shield()]
+		_look_timer -= delta
+		if (look != _sent_look or _look_timer <= 0.0) and _online():
+			_sent_look = look
+			_look_timer = 2.0  # also every 2 s, so friends who join late catch up
+			_net_look.rpc(look[0], look[1], look[2], look[3])
 	if not is_local:
+		var before := global_position
 		global_position = global_position.lerp(_net_pos, minf(1.0, delta * 15.0))
 		model.rotation.y = lerp_angle(model.rotation.y, _net_yaw, minf(1.0, delta * 15.0))
+		# A friend's legs walk/run at the speed their dwarf is moving on our screen.
+		var moved := Vector2(global_position.x - before.x, global_position.z - before.z).length()
+		_net_speed = lerpf(_net_speed, moved / maxf(delta, 0.001), minf(1.0, delta * 8.0))
+		model.set_motion(_net_speed, absf(global_position.y - before.y) < delta * 3.0, false)
 		return
 	_pose_timer -= delta
 	if _pose_timer <= 0.0 and _online():
@@ -485,3 +503,16 @@ func _net_pose(pos: Vector3, yaw: float) -> void:
 @rpc("authority", "reliable")
 func _net_swing() -> void:
 	model.swing(SWING_TIME)
+
+
+## A friend's dwarf: what they hold, and whether they block / aim (only looks).
+@rpc("authority", "reliable")
+func _net_look(item: String, blocking: bool, aiming: bool, shield: bool) -> void:
+	model.set_held(item)
+	model.set_pose(blocking, aiming, shield)
+
+
+## A friend's dwarf flinched, ate, threw, shot… (only looks).
+@rpc("authority", "reliable")
+func _net_react(what: String) -> void:
+	model.react(what)

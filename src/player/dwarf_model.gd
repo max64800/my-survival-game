@@ -6,6 +6,7 @@ extends Node3D
 ## The right arm holds the pickaxe and can swing; the left hand holds the lantern.
 
 signal swing_impact  ## the pickaxe just hit (time to dig)
+signal reacted(what: String)  ## a reaction played (the Dwarf sends it to co-op friends)
 
 const SKIN := Color(0.93, 0.72, 0.58)
 const BEARD := Color(0.72, 0.33, 0.14)
@@ -98,7 +99,8 @@ func swing(duration: float) -> void:
 		return
 	swinging = true
 	if dwarf_rig:
-		dwarf_rig.play_upper("dig", duration)
+		# An axe chops (roots); everything else digs with a big overhead mining swing.
+		dwarf_rig.play_upper("chop" if Items.kind(_held) == "axe" else "dig", duration)
 		get_tree().create_timer(duration * 0.55).timeout.connect(func(): swing_impact.emit())
 		get_tree().create_timer(duration).timeout.connect(func(): swinging = false)
 		return
@@ -225,6 +227,7 @@ func set_pose(blocking: bool, aiming: bool, shield: bool) -> void:
 
 ## A short reaction: "hit", "knock", "block", "eat", "throw".
 func react(what: String) -> void:
+	reacted.emit(what)
 	if dwarf_rig == null:
 		return
 	match what:
@@ -236,6 +239,14 @@ func react(what: String) -> void:
 			dwarf_rig.play_upper("eat", 1.2)
 		"throw":
 			dwarf_rig.play_upper("throw", 0.6)
+		"wake":
+			dwarf_rig.play_full("wake", 1.6)
+		"shoot":
+			dwarf_rig.play_upper("Pistol_Shoot", 0.4)
+		"reload":
+			dwarf_rig.play_upper("Pistol_Reload", 1.0)
+		"use":
+			dwarf_rig.play_upper("use", 0.7)
 
 
 ## The real dwarf (see DwarfRig). Tools go in its right hand, the lantern in its left.

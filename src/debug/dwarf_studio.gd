@@ -68,6 +68,11 @@ func _both(name: String) -> void:
 
 func _run() -> void:
 	await _wait(0.5)
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("sheet="):
+			await _anim_sheet(arg.trim_prefix("sheet=").split(","))
+			quit()
+			return
 	if "fire" in OS.get_cmdline_user_args():
 		await _fire_test()
 		quit()
@@ -176,3 +181,29 @@ func _fire_test() -> void:
 	await _wait(3.0)
 	print("  fps after 3 s: ", Engine.get_frames_per_second())
 	await _shot("f_fire_later")
+
+
+## Tuning aid: freeze each named animation at 5 moments and photograph it from the side.
+##   -- sheet=Sword_Attack,b/TreeChopping
+func _anim_sheet(names: Array) -> void:
+	_model.set_held("pickaxe_stone")
+	var rig := _model.dwarf_rig
+	rig.tree.active = false
+	var ap := AnimationPlayer.new()
+	rig.tree.get_parent().add_child(ap)
+	for lib in rig.tree.get_animation_library_list():
+		ap.add_animation_library(lib, rig.tree.get_animation_library(lib))
+	_view(Vector3(1, 0.1, -0.15), 3.4, 0.7)
+	for n in names:
+		if not ap.has_animation(n):
+			print("  no animation ", n)
+			continue
+		var length := ap.get_animation(n).length
+		for k in 5:
+			var t := length * (0.1 + 0.2 * k)
+			ap.play(n)
+			ap.seek(t, true)
+			ap.pause()
+			await process_frame
+			await process_frame
+			await _shot("s_%s_%d_t%.2f" % [n.replace("/", "_"), k, t])

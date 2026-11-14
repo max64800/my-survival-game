@@ -260,6 +260,7 @@ func start_reload() -> void:
 		message.emit("No bolts! Craft some at a Workbench.", Color(1.0, 0.6, 0.4))
 		return
 	reload_left = Combat.RELOAD[clampi(tier(), 0, 4)]
+	dwarf.model.react("reload")
 	message.emit("Reloading…", Color(0.9, 0.9, 0.9))
 
 
@@ -281,6 +282,7 @@ func _shoot(aimed: bool) -> void:
 		return
 	ps.vitals.use_stamina(minf(Combat.WEAPONS.crossbow.light_sta, ps.vitals.stamina))
 	loaded = false
+	dwarf.model.react("shoot")
 	_busy = Combat.WEAPONS.crossbow.heavy_speed if aimed else Combat.WEAPONS.crossbow.light_speed
 	var cam := dwarf.camera
 	var from := cam.global_position

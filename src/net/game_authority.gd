@@ -1322,6 +1322,8 @@ func _respawn_here(wake: Vector3) -> void:
 	me.node.global_position = wake
 	if me.node is CharacterBody3D:
 		(me.node as CharacterBody3D).velocity = Vector3.ZERO
+	if me.node is Dwarf:
+		(me.node as Dwarf).model.react("wake")  # you wake up and get to your feet
 
 
 ## Something hurt a player (falling rock now, monsters in Step 5). Their own computer
