@@ -74,7 +74,38 @@ func stop_blueprint() -> void:
 		_bp_ghosts = null
 
 
-func _process(_delta: float) -> void:
+var _tint_on := false
+var _tint_version := -1
+var _tint_timer := 0.0
+
+
+## Hammer out: every built piece glows faintly in its strength color (blue/green/yellow/red).
+func _update_tints(delta: float, on: bool) -> void:
+	var auth := GameAuthority.instance
+	if auth == null or auth.builder == null:
+		return
+	var b: Builder = auth.builder
+	if not on:
+		if _tint_on:
+			for uid in b.nodes:
+				(b.nodes[uid] as PieceNode).set_tint(Color(0, 0, 0, 0))
+			_tint_on = false
+		return
+	_tint_timer -= delta
+	if _tint_on and _tint_timer > 0.0 and _tint_version == b.structure.version:
+		return
+	_tint_timer = 0.5
+	if not auth.is_host():
+		b.structure.recompute()  # friends work out the steadiness themselves (the host does it anyway)
+	_tint_version = b.structure.version
+	for uid in b.nodes:
+		if b.structure.pieces.has(uid):
+			(b.nodes[uid] as PieceNode).set_tint(Structure.strength_color(b.structure.pieces[uid].stability))
+	_tint_on = true
+
+
+func _process(delta: float) -> void:
+	_update_tints(delta, active())
 	if not active():
 		_ghost.visible = false
 		if _bp_ghosts:

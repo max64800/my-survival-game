@@ -61,6 +61,47 @@ func test_needs_a_workbench_and_materials() -> void:
 	_teardown()
 
 
+## Soft physics (building polish spec §5): a piece that loses its support creaks and shakes for
+## about 2 s, then tumbles away harmlessly, dropping half its materials. Propped up in time = saved.
+func test_soft_collapse_warns_then_tumbles() -> void:
+	await _setup()
+	var b: Builder = auth.builder
+	var at := player.global_position + Vector3(0, 30, 0)  # up in the air: only what we say holds it
+	b._ev_add_piece(1, "pillar", "plank_root", at, 0, true)
+	b._ev_add_piece(2, "floor", "plank_root", at + Vector3(1, 2, 1), 0, false)
+	b._ev_add_piece(3, "floor", "plank_root", at + Vector3(3, 2, 1), 0, false)
+	var health := ps.vitals.health
+	var drops_before := auth.drops_root.get_child_count()
+	b._ev_remove_piece(1)  # the support goes
+	await frames(5)
+	check((b.nodes[2] as PieceNode)._shaking, "the floor starts shaking right away")
+	for i in 60:
+		await tree.physics_frame
+	check(b.structure.pieces.has(2), "...but is still there after 1 s (a warning, not an instant fall)")
+	for i in 120:
+		await tree.physics_frame
+	check(not b.structure.pieces.has(2) and not b.structure.pieces.has(3), "after the warning both floors gave way")
+	check(auth.drops_root.get_child_count() > drops_before, "half their materials dropped")
+	check_near(ps.vitals.health, health, 0.01, "falling pieces don't hurt anyone")
+	_teardown()
+
+
+func test_propped_up_in_time_is_saved() -> void:
+	await _setup()
+	var b: Builder = auth.builder
+	var at := player.global_position + Vector3(0, 30, 0)
+	b._ev_add_piece(1, "pillar", "plank_root", at, 0, true)
+	b._ev_add_piece(2, "floor", "plank_root", at + Vector3(1, 2, 1), 0, false)
+	b._ev_remove_piece(1)
+	await frames(5)
+	b._ev_add_piece(4, "pillar", "copper_ingot", at + Vector3(2, 0, 2), 0, true)  # a new support, in time
+	for i in 180:
+		await tree.physics_frame
+	check(b.structure.pieces.has(2), "propped up during the warning: the floor stays")
+	check(not (b.nodes[2] as PieceNode)._shaking, "...and stops shaking")
+	_teardown()
+
+
 func test_remove_gives_everything_back() -> void:
 	await _setup()
 	auth._ev_place_station(1, "workbench", player.global_position + Vector3(-3, 0, 0), 0.0)

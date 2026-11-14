@@ -8,12 +8,14 @@ extends RefCounted
 ##  - Below 10% a piece falls apart.
 
 var pieces := {}  ## uid -> {piece, family, pos, rot, hp, anchored, stability}
+var version := 0  ## goes up whenever a piece is added or removed (the hammer's colors refresh)
 
 
 func add(uid: int, piece: String, family: String, pos: Vector3, rot: int, anchored: bool) -> void:
 	anchored = anchored or is_foundation(piece)  # foundations are always steady (spec §5)
 	pieces[uid] = {piece = piece, family = family, pos = pos, rot = rot, hp = Pieces.hp(piece, family),
 		anchored = anchored, stability = 1.0 if anchored else 0.0}
+	version += 1
 
 
 static func is_foundation(piece: String) -> bool:
@@ -33,6 +35,7 @@ static func strength_color(s: float) -> Color:
 
 func remove(uid: int) -> void:
 	pieces.erase(uid)
+	version += 1
 
 
 func box_of(uid: int) -> AABB:

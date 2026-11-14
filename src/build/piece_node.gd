@@ -26,6 +26,47 @@ func _ready() -> void:
 		collision_mask = 0
 		set_meta("piece_uid", uid)
 	_build()
+	set_process(false)  # only trembling pieces need a per-frame update
+
+
+var _look: MeshInstance3D
+var _shaking := false
+var _shake_t := 0.0
+static var _tints := {}
+
+
+## Soft physics: a piece about to give way trembles (only its look moves, not its solid shape).
+func set_shaking(on: bool) -> void:
+	_shaking = on
+	set_process(on)
+	if not on and _look:
+		_look.position = Vector3.ZERO
+
+
+func _process(delta: float) -> void:
+	if not _shaking or _look == null:
+		return
+	_shake_t += delta
+	var a := 0.03 + 0.03 * minf(_shake_t / 2.0, 1.0)  # shakes harder as it gets closer to falling
+	_look.position = Vector3(randf_range(-a, a), randf_range(-a, a) * 0.5, randf_range(-a, a))
+
+
+## While the Build Hammer is out, every piece glows faintly in its strength color (spec §5).
+## Pass Color(0,0,0,0) to clear it.
+func set_tint(c: Color) -> void:
+	if _look == null:
+		return
+	if c.a <= 0.0:
+		_look.material_overlay = null
+		return
+	if not _tints.has(c):
+		var m := StandardMaterial3D.new()
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.albedo_color = Color(c.r, c.g, c.b, 0.28)
+		m.cull_mode = BaseMaterial3D.CULL_BACK
+		_tints[c] = m
+	_look.material_overlay = _tints[c]
 
 
 func set_ghost_ok(ok: bool) -> void:
@@ -52,6 +93,7 @@ func _build() -> void:
 	var s: Vector3 = Pieces.LIST[piece].size
 	# The look: one shared, detailed shape per piece + material (PieceMesh, spec §6).
 	var mi := MeshInstance3D.new()
+	_look = mi
 	mi.mesh = PieceMesh.visual(piece, family)
 	mi.material_override = _ghost_mat if ghost else _mat(family)
 	if ghost:
