@@ -78,7 +78,8 @@ Claude built Steps 2 to 5 on separate "branches" (parallel copies), each on top 
 | `git switch step-4-build` | + Build Hammer (B menu, C save blueprint, V blueprint book), chests, cave-ins |
 | `git switch step-5-fight` | + weapons and monsters (left click attack, hold for heavy, right click block/parry, Ctrl dodge) |
 | `git switch step-6-deeper` | + ruins, shrines, wall carvings (E), bosses, raids, sounds |
-| `git switch step-7-ready` | + save/continue (F5 saves), try the art option: `-- art=quaternius` (**newest everything**) |
+| `git switch step-7-ready` | + save/continue (F5 saves), try the art option: `-- art=quaternius` |
+| `git switch fungal-jungle` | + the **Fungal Jungle** behind the purple gate (copper pickaxe), poison, crystal monsters (**newest everything**) |
 
 After switching, press F5 in Godot. Run `git status` first: it must say "nothing to commit".
 
