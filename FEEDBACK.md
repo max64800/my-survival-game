@@ -49,7 +49,6 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 
 ## Done
 
-
 - [x] ~~**F27. The game grabs my mouse even when I'm in another program, and Claude's tests take my mouse.**~~ Fixed Nov 14. When you switch away (click another window or Alt+Tab), the game lets go of the mouse and pauses. Click back into the game to keep playing. Claude's test robots only *pretend* to hold the mouse now, so they never touch yours. *From: you. Said: 1×*
 - [x] ~~**F23. Real equipment slots.**~~ Done Nov 14. 9 slots in the bag window (Tab): Pickaxe, Lantern, Weapon, Shield, Head, Chest, Legs, Feet, Pack.
   - With an empty hand (or just holding rocks), you dig with the equipped pickaxe. **F** draws or puts away the equipped weapon.
