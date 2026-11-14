@@ -90,7 +90,7 @@ func test_moss_or_dirt_is_one_hit() -> void:
 
 
 func test_border_rock_is_blocked() -> void:
-	var edge := Vector3(CaveMaker.HALF_SIZE + 1.5, -30.0, 0.0)
+	var edge := Vector3(CaveMaker.HALF_SIZE + 1.5, -30.0, CaveMaker.gate_free_z(42))  # not at a gate (gates are open on purpose)
 	await _setup(42, edge + Vector3(-2.5, -1.0, 0))
 	var r := auth.request_hit(1, edge, Vector3.LEFT)
 	check_eq(r.get("state"), "blocked", "border rock can't be dug")

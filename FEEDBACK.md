@@ -14,7 +14,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 
 ## Things that keep coming back 🔁
 
-- **F25, the dwarf doesn't look dwarvish (said 2×).** 1st time: "short and wide". Claude 3 made a rigged dwarf, a bit better. 2nd time: "legs and arms should be shorter". Next try (Claude 3): short legs (about 1/3 of the height), short thick arms, barrel chest, wide shoulders, big hands, boots and head.
+- **F25, the dwarf doesn't look dwarvish (said 2×).** 1st time: "short and wide". Claude 3 made a rigged dwarf, a bit better. 2nd time: "legs and arms should be shorter". 2nd try (Claude 3): thick short bones, broad shoulders, barrel chest. 3rd time: "looks like a bulky guy". Next try: stout and round, not muscular. About 4 heads tall, a round belly, stubby legs, arms reaching the hips at most.
 
 ## Patterns (what kind of things you notice most)
 
@@ -40,7 +40,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F9. The world feels empty: it needs enemies, abandoned/destroyed structures, and columns.** Enemies + ruins already exist on the later branches. Merging brings them in. Columns are new. *From: you. Said: 1×*
 - [ ] **F23. Real equipment slots** for pickaxe, lantern, clothes, etc. (not just the hotbar). *From: you. Said: 1×*
 - [ ] **F24. The beard isn't attached to the face.** → Claude 3 (looks). *From: you. Said: 1×*
-- [ ] **F25. The dwarf doesn't look dwarvish.** Should be short and WIDE, with shorter legs and arms, not a "small guy". → Claude 3. *From: you. Said: 2×* (Nov 14: "short and wide"; later: "better now, but legs and arms should be shorter")
+- [ ] **F25. The dwarf doesn't look dwarvish.** Should be short and WIDE, with shorter legs and arms, not a "small guy". → Claude 3. *From: you. Said: 3×* (Nov 14: "short and wide"; then: "better, but legs and arms should be shorter"; then: "shorter legs, shorter arms, maybe fat: right now it looks like a bulky guy")
 - [ ] **F26. The long things hanging from the ceiling look like icicles,** the same width top to bottom. Real stalactites: wide at the top, getting thinner, a rounded tip, smaller ones around them. (They're actually roots, so roots should look like roots too.) → Claude 3. *From: you. Said: 1×*
 - [ ] **F19. Caves are too round.** Make them a 50-50 mix: some smooth and round, some sharp and rocky. *From: you. Said: 1×*
 - [ ] **F20. More tunnels, like Minecraft:** lots of passages crisscrossing, branching, and leading off in every direction. *From: you. Said: 1×*

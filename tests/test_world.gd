@@ -50,7 +50,7 @@ func test_digging_makes_air_and_counts_rock() -> void:
 
 
 func test_border_rock_cannot_be_dug() -> void:
-	var edge := Vector3(CaveMaker.HALF_SIZE + 1.0, -30.0, 0.0)  # just outside the biome box
+	var edge := Vector3(CaveMaker.HALF_SIZE + 1.0, -30.0, CaveMaker.gate_free_z(42))  # just outside the biome box, not at a gate
 	var world := _make_world(42, edge)
 	check(await _wait_ready(world, edge), "terrain should load at the border")
 	check_eq(world.material_at(edge), Mat.BORDER, "edge is border rock")
