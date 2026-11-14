@@ -124,6 +124,50 @@ func test_crystal_monster_hits_harder_and_drops_crystals() -> void:
 	_teardown()
 
 
+func test_animals_run_and_the_hog_fights_back() -> void:
+	await _setup()
+	ps.inventory.add("sword_stone", 1)
+	auth.request_select_slot(1, 1)
+	var shuffler := _spawn("moss_shuffler", Vector3(1.2, 0, 0))
+	for i in 60:
+		await tree.physics_frame
+	check(shuffler.state in [Monster.State.IDLE, Monster.State.WANDER], "a shuffler ignores you")
+	auth.monsters.request_attack(1, PackedInt32Array([shuffler.uid]), false, 0, false)
+	check_eq(shuffler.state, Monster.State.FLEE, "hit: it rolls up and runs")
+	check_eq(shuffler.stats().armor, 40, "rolled up: hard shell")
+	var hog := _spawn("truffle_hog", Vector3(-1.2, 0, 0))
+	hog.state = Monster.State.CHASE
+	auth.monsters.request_attack(1, PackedInt32Array([hog.uid]), false, 0, false)
+	check(hog.state != Monster.State.FLEE, "a healthy hog fights back")
+	hog.hp = 30.0
+	hog.state = Monster.State.IDLE
+	hog.alert(1)
+	check_eq(hog.state, Monster.State.FLEE, "a hurt hog runs")
+	_teardown()
+
+
+func test_crossbow_shot() -> void:
+	await _setup()
+	var m := _spawn("cairnling", Vector3(8.0, 0, 0))
+	m.state = Monster.State.CHASE  # it saw us
+	var from := player.global_position + Vector3.UP * 1.5
+	check_eq(auth.monsters.request_shoot(1, "bolt_stone", true, m.uid, from, m.global_position + Vector3.UP), 0, "no crossbow in hand: no shot")
+	ps.inventory.add("crossbow_stone", 1)
+	ps.inventory.add("bolt_stone", 3)
+	ps.inventory.add("bolt_ember", 1)
+	for i in Inventory.HOTBAR_SIZE:
+		if ps.inventory.get_slot(i).get("id", "") == "crossbow_stone":
+			auth.request_select_slot(1, i)
+	# Aimed stone bolt on a Cairnling: 34 × pierce 0.75 × 100/140 (armor 40) = 18.2 → 18
+	check_eq(auth.monsters.request_shoot(1, "bolt_stone", true, m.uid, from, m.global_position + Vector3.UP), 18, "aimed shot damage")
+	check_eq(ps.inventory.count_of("bolt_stone"), 2, "the bolt was used")
+	check_near(m.hp, 102.0, 0.01, "120 - 18")
+	auth.monsters.request_shoot(1, "bolt_ember", false, m.uid, from, m.global_position + Vector3.UP)
+	check_near(m.ailments.buildup.burn, 20.0, 0.01, "ember bolt: 40 burn buildup, halved by its 50% fire resist")
+	check_eq(auth.monsters.request_shoot(1, "bolt_ember", true, m.uid, from, m.global_position), 0, "out of ember bolts")
+	_teardown()
+
+
 func test_sneak_attack_doubles() -> void:
 	await _setup()
 	ps.inventory.add("sword_stone", 1)

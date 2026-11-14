@@ -63,6 +63,18 @@ const LIST := {
 	"axe_2h_silver": {station = "anvil", inputs = {silver_ingot = 8, plank_mushroom = 3, chitin_plate = 2}, output = "axe_2h_silver", count = 1, unlock = ["silver_ingot"]},
 	"mace_2h_copper": {station = "anvil", inputs = {copper_ingot = 9, plank_root = 3, leather = 2}, output = "mace_2h_copper", count = 1, unlock = ["copper_ingot"]},
 	"mace_2h_silver": {station = "anvil", inputs = {silver_ingot = 9, plank_mushroom = 3, chitin_plate = 2}, output = "mace_2h_silver", count = 1, unlock = ["silver_ingot"]},
+	# Crossbows and bolts (combat doc 3.6; "starting idea" recipes, tune in play-testing).
+	"crossbow_stone": {station = "workbench", inputs = {plank_root = 4, rope = 3, stone = 4}, output = "crossbow_stone", count = 1, unlock = ["rope"]},
+	"crossbow_copper": {station = "anvil", inputs = {copper_ingot = 4, plank_root = 3, rope = 2}, output = "crossbow_copper", count = 1, unlock = ["copper_ingot"]},
+	"crossbow_silver": {station = "anvil", inputs = {silver_ingot = 4, plank_mushroom = 3, sivix_silk = 1}, output = "crossbow_silver", count = 1, unlock = ["silver_ingot"]},
+	"bolt_stone": {station = "workbench", inputs = {plank_root = 1, stone = 2}, output = "bolt_stone", count = 10, unlock = ["rope"]},
+	"bolt_metal": {station = "anvil", inputs = {plank_root = 1, copper_ingot = 1}, output = "bolt_metal", count = 10, unlock = ["copper_ingot"]},
+	"bolt_metal_needle": {station = "workbench", inputs = {plank_mushroom = 1, needle = 3}, output = "bolt_metal", count = 10, unlock = ["needle"]},
+	"bolt_thumper": {station = "workbench", inputs = {plank_root = 1, stone = 2, rope = 1}, output = "bolt_thumper", count = 10, unlock = ["rope"]},
+	"bolt_ember": {station = "workbench", inputs = {bolt_metal = 10, crystal_red = 1}, output = "bolt_ember", count = 10, unlock = ["crystal_red"]},
+	"bolt_rime": {station = "workbench", inputs = {bolt_metal = 10, crystal_blue = 2}, output = "bolt_rime", count = 10, unlock = ["bolt_metal"]},
+	"bolt_blight": {station = "workbench", inputs = {bolt_metal = 10, venom_sac = 1}, output = "bolt_blight", count = 10, unlock = ["venom_sac"]},
+	"bolt_glow": {station = "workbench", inputs = {plank_root = 1, crystal_blue = 1}, output = "bolt_glow", count = 10, unlock = ["rope"]},
 	"lantern_back": {station = "anvil", inputs = {copper_ingot = 4, leather = 2, lantern_lens = 1, rope = 2}, output = "lantern_back", count = 1, unlock = ["copper_ingot"]},
 	# --- masonry table
 	"cut_stone": {station = "masonry_table", inputs = {stone = 2}, output = "cut_stone", count = 1, unlock = []},

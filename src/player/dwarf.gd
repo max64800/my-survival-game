@@ -118,7 +118,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	if ps and event.is_action_pressed("hotbar_prev"):
 		auth.ask_select_slot((ps.selected_slot + Inventory.HOTBAR_SIZE - 1) % Inventory.HOTBAR_SIZE)
 	if event.is_action_pressed("refill_lantern"):
-		auth.ask_refill()
+		if fight and fight.is_crossbow():
+			fight.start_reload()  # R reloads while you hold the crossbow (doc 1.5)
+		else:
+			auth.ask_refill()
 	if event.is_action_pressed("use") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and not _holding_hammer() and not fight.weapon_mode():
 		var hit := aim()
 		auth.ask_use(hit.get("position", Vector3.INF), hit.get("normal", Vector3.ZERO), model.rotation.y + PI)
@@ -191,6 +194,7 @@ func _process(delta: float) -> void:
 	_cam_pitch.rotation.x = _pitch
 	_spring.position = Vector3(SHOULDER.x, 0, 0)
 	_shake = maxf(0.0, _shake - delta * 4.0)
+	camera.fov = lerpf(camera.fov, 48.0 if fight and fight.aiming() else 72.0, minf(1.0, delta * 10.0))  # crossbow zoom
 	camera.h_offset = randf_range(-1, 1) * _shake * 0.06
 	camera.v_offset = randf_range(-1, 1) * _shake * 0.06
 

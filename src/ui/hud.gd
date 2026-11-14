@@ -471,6 +471,13 @@ func _process(delta: float) -> void:
 		_fuel_label.text = "Lantern %d:%02d   (R: refill, %d fuel)" % [mins, secs, crystals]
 		if ps.fuel <= 0.0:
 			_fuel_label.text = "Lantern is out!  Mine a glow crystal, press R"
+		var me := _local_dwarf()
+		if me and me.fight and me.fight.is_crossbow():
+			var bolts := 0
+			for id in Combat.BOLT_ORDER:
+				bolts += ps.inventory.count_of(id)
+			var state := "loaded" if me.fight.loaded else ("reloading %.1f s" % me.fight.reload_left if me.fight.reload_left >= 0.0 else "empty: R to reload")
+			_fuel_label.text = "Lantern %d:%02d   ·   Crossbow %s, %d bolts" % [mins, secs, state, bolts]
 		_refresh_selection(ps.selected_slot)
 	var dwarf := _local_dwarf()
 	if dwarf:

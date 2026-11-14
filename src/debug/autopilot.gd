@@ -296,8 +296,11 @@ func _visit_jungle(dwarf: Dwarf, ps: GameAuthority.PlayerState) -> void:
 	var kinds := ["wheezecap", "needlemite", "husk_charger", "gill_stalker", "cap_spitter"]
 	var fwd := Vector3(-sin(dwarf._yaw), 0, -cos(dwarf._yaw))
 	var side := fwd.cross(Vector3.UP)
+	kinds += ["truffle_hog", "lampshell_snail", "puffpod_grazer"]
 	for i in kinds.size():
-		var at: Vector3 = dwarf.global_position + fwd * 6.0 + side * (i - 2) * 2.2
+		var row := 0 if i < 5 else 1
+		var col: float = (i - 2) if row == 0 else (i - 6)
+		var at: Vector3 = dwarf.global_position + fwd * (6.0 + row * 3.5) + side * col * 2.2
 		at = maker.find_floor(at.x, at.z, dwarf.global_position.y + 2.0)
 		mm._ev_spawn(mm._next_uid, kinds[i], at + Vector3.UP * 0.3, i == 1, 999)
 		mm._next_uid += 1
@@ -305,6 +308,23 @@ func _visit_jungle(dwarf: Dwarf, ps: GameAuthority.PlayerState) -> void:
 	var look := dwarf.global_position + fwd * 6.0
 	await _teleport(dwarf, dwarf.global_position, look)
 	await _shot("27_jungle_monsters")
+	# Crossbow: aim at the Husk Charger and fire through the real controls code.
+	ps.inventory.add("crossbow_copper", 1)
+	ps.inventory.add("bolt_stone", 10)
+	_to_hotbar(ps, "crossbow_copper")
+	var husk: Monster = null
+	for m: Monster in mm.monsters.values():
+		if m.kind == "husk_charger":
+			husk = m
+	if husk:
+		await _teleport(dwarf, dwarf.global_position, husk.global_position + Vector3.UP * 0.6)
+		var before := husk.hp
+		dwarf.fight.loaded = true
+		dwarf.fight._shoot(true)
+		await _wait(0.06)
+		await _shot("27b_crossbow")
+		await _wait(0.3)
+		_report.append("step 7: crossbow bolt hit the Husk Charger for %.0f (bolts left %d)" % [before - husk.hp, ps.inventory.count_of("bolt_stone")])
 	for m: Monster in mm.monsters.values():
 		mm._ev_remove(m.uid)
 	mm.set_physics_process(true)

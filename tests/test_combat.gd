@@ -90,3 +90,18 @@ func test_boss_gets_harder_to_stun() -> void:
 	var b := StunMeter.new(100, 5.0, true)
 	b.add(100)
 	check_near(b.max_value, 130.0, 0.01, "+30% after each stun")
+
+
+func test_crossbow_numbers() -> void:
+	var plain := {armor = 0, slash = 1.0, blunt = 1.0, pierce = 1.0}
+	check_eq(Combat.shot_damage(false, 0, "bolt_stone", plain, 10.0), 24, "hip shot 24")
+	check_eq(Combat.shot_damage(true, 0, "bolt_stone", plain, 10.0), 34, "aimed shot 34")
+	check_eq(Combat.shot_damage(true, 0, "bolt_metal", plain, 10.0), 41, "metal tip ×1.2 = 40.8")
+	check_eq(Combat.shot_damage(true, 0, "bolt_stone", plain, 50.0), 17, "half damage at 50 m")
+	check_eq(Combat.shot_damage(true, 0, "bolt_stone", plain, 61.0), 0, "nothing past 60 m")
+	check_eq(Combat.shot_damage(true, 1, "bolt_stone", plain, 10.0), 44, "copper ×1.3 = 44.2")
+	var shell := {armor = 40, slash = 0.5, blunt = 1.5, pierce = 1.0}
+	check(Combat.shot_damage(true, 0, "bolt_thumper", shell, 10.0) > Combat.shot_damage(true, 0, "bolt_stone", shell, 10.0), "thumpers beat shells")
+	for b in Combat.BOLT_ORDER:
+		check(Items.exists(b) and Recipes.LIST.values().any(func(r): return r.output == b), "%s exists and can be crafted" % b)
+

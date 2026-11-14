@@ -15,6 +15,8 @@ const WEAPONS := {
 	"shield": {type = "blunt", light = 5, heavy = 12, light_speed = 0.60, heavy_speed = 1.00, reach = 1.4, light_sta = 6, heavy_sta = 16, light_stun = 10, heavy_stun = 30, parry_ms = 200, block = 0.50, hands = 1, combo = [1.0]},
 	# Tools still swing in a pinch (weak, but better than fists).
 	"pickaxe": {type = "pierce", light = 6, heavy = 12, light_speed = 0.55, heavy_speed = 1.10, reach = 1.6, light_sta = 5, heavy_sta = 12, light_stun = 4, heavy_stun = 10, parry_ms = 120, block = 0.20, hands = 1, combo = [1.0]},
+	# Crossbow (doc 3.2, 3.6): "light" = hip shot, "heavy" = aimed shot. Damage also × the bolt's multiplier.
+	"crossbow": {type = "pierce", light = 24, heavy = 34, light_speed = 0.30, heavy_speed = 0.40, reach = 40.0, light_sta = 4, heavy_sta = 4, light_stun = 15, heavy_stun = 20, parry_ms = 80, block = 0.15, hands = 2, combo = [1.0], ranged = true},
 	"fists": {type = "blunt", light = 3, heavy = 6, light_speed = 0.45, heavy_speed = 0.9, reach = 1.2, light_sta = 4, heavy_sta = 10, light_stun = 3, heavy_stun = 8, parry_ms = 100, block = 0.10, hands = 1, combo = [1.0, 1.0]},
 }
 
@@ -22,6 +24,24 @@ const WEAPONS := {
 const TIER_DAMAGE := [1.00, 1.30, 1.65, 2.05, 2.50]
 const TIER_STUN := [1.00, 1.10, 1.20, 1.30, 1.40]
 const SHIELD_BLOCK := [0.50, 0.60, 0.70, 0.80, 0.85]
+const RELOAD := [2.2, 2.0, 1.8, 1.6, 1.4]  ## crossbow reload seconds by tier
+
+# --- Crossbow bolts (doc 3.6)
+const BOLT_RANGE := 40.0  ## full damage this far...
+const BOLT_MAX := 60.0  ## ...then it fades out by here
+const BOLT_SPEED := 55.0
+const HIP_SPREAD := 3.0  ## degrees
+const BOLTS := {
+	"bolt_stone": {mult = 1.0},
+	"bolt_metal": {mult = 1.2},
+	"bolt_thumper": {mult = 1.1, type = "blunt", stun = 35.0, armor_break = 0.3},
+	"bolt_ember": {mult = 0.9, elemental = {fire = 8.0}},
+	"bolt_rime": {mult = 0.9, elemental = {frost = 8.0}},
+	"bolt_blight": {mult = 0.9, elemental = {poison = 6.0}},
+	"bolt_glow": {mult = 0.5, glow = 60.0},
+}
+## Which bolt gets fired: the first one found in this order (fancy bolts are kept for later).
+const BOLT_ORDER := ["bolt_stone", "bolt_metal", "bolt_thumper", "bolt_glow", "bolt_blight", "bolt_ember", "bolt_rime"]
 
 # --- Player (doc 1)
 const DODGE_STAMINA := 20.0
@@ -81,6 +101,25 @@ static func situation(sneak: bool, stunned: bool, first_heavy_on_stunned: bool, 
 	if riposte:
 		m = maxf(m, RIPOSTE)
 	return m
+
+
+## A crossbow bolt's damage. `dist` fades it out past 40 m.
+static func shot_damage(aimed: bool, tier: int, bolt: String, target: Dictionary, dist: float, situation: float = 1.0) -> int:
+	var b: Dictionary = BOLTS.get(bolt, BOLTS.bolt_stone)
+	var wd: Dictionary = WEAPONS.crossbow
+	var phys: float = (wd.heavy if aimed else wd.light) * TIER_DAMAGE[clampi(tier, 0, 4)] * b.mult
+	phys *= target.get(b.get("type", "pierce"), 1.0)
+	phys *= 100.0 / (100.0 + target.get("armor", 0.0) * (1.0 - b.get("armor_break", 0.0)))
+	phys *= situation * range_falloff(dist)
+	var elem := 0.0
+	var el: Dictionary = b.get("elemental", {})
+	for e in el:
+		elem += el[e] * (1.0 - minf(target.get(e, 0.0), 1.0))
+	return maxi(1, roundi(phys + elem)) if dist <= BOLT_MAX else 0
+
+
+static func range_falloff(dist: float) -> float:
+	return 1.0 if dist <= BOLT_RANGE else clampf(1.0 - (dist - BOLT_RANGE) / (BOLT_MAX - BOLT_RANGE), 0.0, 1.0)
 
 
 static func stun_value(w: String, heavy: bool, tier: int) -> float:

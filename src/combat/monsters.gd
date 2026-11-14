@@ -76,7 +76,33 @@ const LIST := {
 		attacks = [{name = "Spore Bomb", tell = 1.2, damage = 15, type = "blunt", reach = 20.0, parry = "any", ranged = true, buildup = {poison = 50}},
 			{name = "Root Snap", tell = 0.7, damage = 12, type = "pierce", reach = 2.0, parry = "any"}],
 		drops = [["spitter_gill", 2, 0.7], ["glow_slime", 3, 0.6]]},
+	# ---- Cave animals (combat doc 5.4): food you can hunt. passive = never attacks, runs when hit;
+	# neutral = fights back when hit, runs below half health. skill: which skill hunting trains.
+	"moss_shuffler": {name = "Moss Shuffler", size = 0.9, hp = 40, armor = 0, stun = 40, slash = 1.0, blunt = 1.5, pierce = 1.0,
+		fire = 0.0, frost = 0.0, poison = 0.0, walk = 0.8, run = 2.5, pack = [1, 3], xp = 4, skill = "survival",
+		color = Color(0.45, 0.5, 0.4), shape = "shuffler", passive = true, rolls = true, attacks = [],
+		drops = [["critter_meat", 3, 1.0], ["critter_hide", 1, 1.0]]},
+	"flitter": {name = "Flitter", size = 0.4, hp = 10, armor = 0, stun = 10, slash = 1.0, blunt = 1.0, pierce = 1.0,
+		fire = 0.0, frost = 0.0, poison = 0.0, walk = 3.0, run = 6.0, pack = [2, 4], xp = 2, skill = "survival",
+		color = Color(0.3, 0.3, 0.38), shape = "bat", passive = true, flies = true, attacks = [],
+		drops = [["critter_meat", 1, 1.0], ["critter_hide", 1, 0.5]]},
+	"truffle_hog": {name = "Truffle Hog", size = 1.0, hp = 90, armor = 5, stun = 60, slash = 1.0, blunt = 1.0, pierce = 1.0,
+		fire = 0.0, frost = 0.0, poison = 0.5, walk = 1.5, run = 4.5, pack = [1, 2], xp = 10, skill = "survival",
+		color = Color(0.6, 0.45, 0.4), shape = "hog", neutral = true,
+		attacks = [{name = "Tusk Shove", tell = 0.8, damage = 12, type = "blunt", reach = 1.8, parry = "any"}],
+		drops = [["beetle_meat", 4, 1.0], ["spore_truffle", 1, 0.4], ["critter_hide", 2, 1.0]]},
+	"lampshell_snail": {name = "Lampshell Snail", size = 0.6, hp = 30, armor = 10, stun = 30, slash = 1.0, blunt = 1.25, pierce = 1.0,
+		fire = 0.0, frost = 0.0, poison = 0.0, walk = 0.5, run = 1.0, pack = [1, 2], xp = 3, skill = "survival",
+		color = Color(0.45, 0.9, 0.5), shape = "snail", passive = true, attacks = [],
+		drops = [["beetle_meat", 2, 1.0], ["glow_slime", 2, 1.0]]},
+	"puffpod_grazer": {name = "Puffpod Grazer", size = 0.7, hp = 20, armor = 0, stun = 20, slash = 1.25, blunt = 1.0, pierce = 1.5,
+		fire = 0.0, frost = 0.0, poison = 1.0, walk = 0.8, run = 1.5, pack = [2, 3], xp = 3, skill = "survival",
+		color = Color(0.85, 0.7, 0.95), shape = "puffpod", passive = true, flies = true, attacks = [],
+		drops = [["bellcap", 2, 1.0]]},
 }
+## Cave animals per biome (they live in big caverns and every other room).
+const ANIMALS := {"mossy": ["moss_shuffler", "moss_shuffler", "flitter"], "fungal": ["truffle_hog", "lampshell_snail", "puffpod_grazer"]}
+const ANIMAL_RESPAWN := 1200.0  ## 20 minutes (doc 5.4)
 
 ## Bosses (combat doc 8.2, 8.3). boss: "main" or "side". phases: from full health down; each lists
 ## its attacks and what happens when it starts. summon attacks call monsters (interrupted by 30 stun).

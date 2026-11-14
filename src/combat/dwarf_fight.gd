@@ -4,6 +4,7 @@ extends Node
 ##   Left click tap = light attack · hold 0.3 s = heavy attack · keep clicking = combo
 ##   Right click hold = block · tap right before a hit = PERFECT PARRY
 ##   Left Ctrl (+ direction) = dodge-roll (safe from 0.05 s to 0.30 s into the roll)
+##   Crossbow: right click hold = aim (no spread, zoom) · left click = shoot · R = reload
 
 signal message(text: String, color: Color)
 
@@ -19,6 +20,8 @@ var _riposte_until := 0.0
 var _dodge_t := -1.0
 var _dodge_dir := Vector3.ZERO
 var stagger := 0.0  ## guard break / knockdown: can't act
+var loaded := true  ## crossbow: a bolt is in it
+var reload_left := -1.0  ## crossbow: seconds of reloading left (-1 = not reloading)
 
 
 func item() -> String:
@@ -63,8 +66,16 @@ func shield_tier() -> int:
 	return best
 
 
+func is_crossbow() -> bool:
+	return weapon() == "crossbow"
+
+
+func aiming() -> bool:
+	return is_crossbow() and stagger <= 0.0 and Input.is_action_pressed("use") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
+
+
 func is_blocking() -> bool:
-	return weapon_mode() and stagger <= 0.0 and _dodge_t < 0.0 and Input.is_action_pressed("use") \
+	return weapon_mode() and not is_crossbow() and stagger <= 0.0 and _dodge_t < 0.0 and Input.is_action_pressed("use") \
 		and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
 
 
@@ -122,6 +133,8 @@ func step(delta: float, playing: bool, move_dir: Vector3) -> float:
 	if not weapon_mode():
 		_hold = -1.0
 		return 1.0
+	if is_crossbow():
+		return _crossbow_step(delta)
 	if Input.is_action_just_pressed("use") and clock - _last_press >= Combat.PARRY_COOLDOWN:
 		_block_pressed_at = clock  # anti-spam: a new parry window only every 0.5 s
 		_last_press = clock
@@ -197,6 +210,77 @@ func _impact(heavy: bool, combo_step: int, riposte: bool) -> void:
 	if not uids.is_empty():
 		auth.monsters.ask_attack(uids, heavy, combo_step, riposte)
 		dwarf.add_shake(0.3 if heavy else 0.15)
+
+
+# ---------------------------------------------------------------- crossbow (doc 3.6)
+
+func _crossbow_step(delta: float) -> float:
+	if reload_left >= 0.0:
+		if dwarf.running:
+			reload_left = -1.0
+			message.emit("Reload stopped (running)", Color(0.9, 0.9, 0.9))
+		else:
+			reload_left -= delta
+			if reload_left < 0.0:
+				loaded = true
+				Sfx.play("clink", dwarf.global_position + Vector3.UP, -6.0, 1.3)
+	if Input.is_action_just_pressed("dig") and _busy <= 0.0:
+		if loaded:
+			_shoot(aiming())
+		else:
+			start_reload()
+	return 0.6 if aiming() or reload_left >= 0.0 else 1.0
+
+
+## R while holding the crossbow (or clicking when it's empty).
+func start_reload() -> void:
+	if not is_crossbow() or loaded or reload_left >= 0.0:
+		return
+	if bolt() == "":
+		message.emit("No bolts! Craft some at a Workbench.", Color(1.0, 0.6, 0.4))
+		return
+	reload_left = Combat.RELOAD[clampi(tier(), 0, 4)]
+	message.emit("Reloading…", Color(0.9, 0.9, 0.9))
+
+
+## The bolt the next shot uses (first one in Combat.BOLT_ORDER that we carry).
+func bolt() -> String:
+	var ps := _ps()
+	if ps:
+		for id in Combat.BOLT_ORDER:
+			if ps.inventory.count_of(id) > 0:
+				return id
+	return ""
+
+
+func _shoot(aimed: bool) -> void:
+	var ps := _ps()
+	var b := bolt()
+	if ps == null or b == "":
+		message.emit("No bolts! Craft some at a Workbench.", Color(1.0, 0.6, 0.4))
+		return
+	ps.vitals.use_stamina(minf(Combat.WEAPONS.crossbow.light_sta, ps.vitals.stamina))
+	loaded = false
+	_busy = Combat.WEAPONS.crossbow.heavy_speed if aimed else Combat.WEAPONS.crossbow.light_speed
+	var cam := dwarf.camera
+	var from := cam.global_position
+	var dir := -cam.global_basis.z
+	if not aimed:
+		# Hip shot: up to 3° off.
+		var spread := deg_to_rad(Combat.HIP_SPREAD) * sqrt(randf())
+		dir = dir.rotated(cam.global_basis.y, cos(randf() * TAU) * spread).rotated(cam.global_basis.x, sin(randf() * TAU) * spread)
+	var q := PhysicsRayQueryParameters3D.create(from, from + dir * Combat.BOLT_MAX)
+	q.collision_mask = World.TERRAIN_LAYER | Monster.MONSTER_LAYER | PieceNode.PIECE_LAYER
+	q.exclude = [dwarf.get_rid()]
+	var hit := dwarf.get_world_3d().direct_space_state.intersect_ray(q)
+	var point: Vector3 = hit.get("position", from + dir * Combat.BOLT_MAX)
+	var uid := MonsterManager.uid_of(hit.get("collider"))
+	dwarf.face_camera()
+	dwarf.model.attack(0.3, false)
+	Sfx.play("swing", dwarf.global_position + Vector3.UP, -4.0, 1.6)
+	var auth := GameAuthority.instance
+	if auth and auth.monsters:
+		auth.monsters.ask_shoot(b, aimed, uid, from, point)
 
 
 func _ps() -> GameAuthority.PlayerState:

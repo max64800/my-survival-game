@@ -134,6 +134,63 @@ static func build(shape: String, color: Color, size: float, leader: bool) -> Nod
 					_add(root, _cyl(0.02, 0.025, 0.7), dark, Vector3(x * 0.2, 0.32, z)).rotation.z = x * 0.35
 			eye_y = 1.54
 			eye_z = -0.25
+		"shuffler":
+			# A pig-sized pill-bug: banded shell segments, tiny legs, mossy back.
+			for i in 5:
+				_add(root, _sphere(0.42 - absf(i - 2) * 0.05, 0.3), body if i % 2 == 0 else dark, Vector3(0, 0.38, -0.36 + i * 0.18), Vector3(1.1, 1, 0.55))
+			_add(root, _sphere(0.25, 0.08), _mat(Color(0.3, 0.5, 0.22)), Vector3(0, 0.62, 0.0), Vector3(1.2, 1, 1.6))
+			for i in 8:
+				var side := -1.0 if i < 4 else 1.0
+				_add(root, _cyl(0.025, 0.02, 0.16), dark, Vector3(side * 0.36, 0.08, -0.3 + (i % 4) * 0.2))
+			eye_y = 0.35
+			eye_z = -0.52
+		"bat":
+			# A little cave bat with blue ear tufts.
+			_add(root, _sphere(0.12, 0.12), body, Vector3(0, 1.3, 0))
+			for x in [-1.0, 1.0]:
+				var wing := _add(root, _box(Vector3(0.38, 0.02, 0.22)), dark, Vector3(x * 0.25, 1.32, 0.02))
+				wing.rotation.z = x * 0.4
+				_add(root, _cyl(0.0, 0.04, 0.1), _mat(Color(0.4, 0.7, 1.0)), Vector3(x * 0.06, 1.44, -0.03))
+			eye_y = 1.33
+			eye_z = -0.1
+		"hog":
+			# Six-legged grazer with mushroom-cap ears and a long snout.
+			_add(root, _capsule(0.32, 1.0), body, Vector3(0, 0.5, 0.05), Vector3.ONE, Vector3(PI / 2.0, 0, 0))
+			_add(root, _sphere(0.22, 0.2), body, Vector3(0, 0.55, -0.5))
+			_add(root, _cyl(0.09, 0.12, 0.25), dark, Vector3(0, 0.48, -0.75)).rotation.x = PI / 2.0
+			for x in [-1.0, 1.0]:
+				_add(root, _sphere(0.13, 0.06), _mat(Color(0.75, 0.55, 0.45)), Vector3(x * 0.18, 0.75, -0.45))
+				for z in [-0.3, 0.05, 0.4]:
+					_add(root, _cyl(0.05, 0.05, 0.3), dark, Vector3(x * 0.22, 0.15, z))
+			eye_y = 0.62
+			eye_z = -0.66
+		"snail":
+			# A slow snail with a glowing green shell.
+			_add(root, _capsule(0.12, 0.7), _mat(Color(0.75, 0.7, 0.6)), Vector3(0, 0.12, 0), Vector3.ONE, Vector3(PI / 2.0, 0, 0))
+			var shell := StandardMaterial3D.new()
+			shell.albedo_color = color.darkened(0.2)
+			shell.emission_enabled = true
+			shell.emission = color
+			shell.emission_energy_multiplier = 1.4
+			_add(root, _sphere(0.28, 0.26), shell, Vector3(0, 0.38, 0.1))
+			for x in [-1.0, 1.0]:
+				_add(root, _cyl(0.015, 0.015, 0.2), dark, Vector3(x * 0.05, 0.28, -0.35)).rotation.x = -0.4
+			eye_y = 0.38
+			eye_z = -0.4
+		"puffpod":
+			# A floating jellyfish-like spore sack trailing soft threads.
+			var jelly := StandardMaterial3D.new()
+			jelly.albedo_color = Color(color.r, color.g, color.b, 0.7)
+			jelly.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+			jelly.emission_enabled = true
+			jelly.emission = color
+			jelly.emission_energy_multiplier = 0.6
+			_add(root, _sphere(0.32, 0.3), jelly, Vector3(0, 1.4, 0))
+			for i in 5:
+				var a := i * TAU / 5.0
+				_add(root, _cyl(0.01, 0.02, 0.5), jelly, Vector3(cos(a) * 0.15, 1.0, sin(a) * 0.15))
+			eye_y = 1.42
+			eye_z = -0.29
 	for x in [-0.07, 0.07]:
 		_add(root, _sphere(0.035, 0.035), eye, Vector3(x * (2.0 if shape == "golem" else 1.0), eye_y, eye_z))
 	if leader:

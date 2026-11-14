@@ -13,6 +13,7 @@ const DESPAWN_FAR := 100.0
 const RESPAWN := 600.0  ## a cleared room fills up again after 10 minutes
 const POSE_SEND := 0.1
 const SPAWN_CHECK := 2.0
+const ANIMAL_KEY := 100000  ## animal herds are kept apart from monster packs (room index + this)
 
 signal defended(result: Dictionary)  ## our own dwarf parried/blocked/took a hit (for the HUD)
 
@@ -120,6 +121,43 @@ func _spawn_and_despawn() -> void:
 				_ev_remove.rpc(u)
 			st.alive = []
 			st.cleared_at = -RESPAWN  # nobody fought them: free to come back
+		if room.big or i % 2 == 0:
+			_animals_step(i, room, near)
+
+
+## Cave animals: their own little herd per cavern (and every other room), back 20 min after a hunt.
+func _animals_step(i: int, room: Dictionary, near: float) -> void:
+	var key := ANIMAL_KEY + i
+	var st: Dictionary = _rooms.get(key, {alive = [], cleared_at = -Monsters.ANIMAL_RESPAWN})
+	_rooms[key] = st
+	st.alive = st.alive.filter(func(u): return monsters.has(u))
+	if st.alive.is_empty() and near < SPAWN_NEAR and _clock - st.cleared_at >= Monsters.ANIMAL_RESPAWN:
+		if auth.world.is_ready_at(room.center, 4.0):
+			st.alive = _spawn_herd(key, room)
+			st.cleared_at = _clock
+	elif not st.alive.is_empty() and near > DESPAWN_FAR:
+		for u in st.alive:
+			_ev_remove.rpc(u)
+		st.alive = []
+		st.cleared_at = -Monsters.ANIMAL_RESPAWN
+
+
+func _spawn_herd(key: int, room: Dictionary) -> Array:
+	var maker: CaveMaker = auth.world.maker
+	var kind: String = Monsters.ANIMALS[room.get("biome", "mossy")].pick_random()
+	var info: Dictionary = Monsters.LIST[kind]
+	var uids := []
+	for k in randi_range(info.pack[0], info.pack[1]):
+		var a := randf() * TAU
+		var r := randf_range(2.0, minf(room.radii.x, room.radii.z) * 0.6)
+		var spot := maker.find_floor(room.center.x + cos(a) * r, room.center.z + sin(a) * r, room.center.y)
+		if maker.sdf_at(spot + Vector3.UP) <= 0.0:
+			continue
+		var uid := _next_uid
+		_next_uid += 1
+		_ev_spawn.rpc(uid, kind, spot + Vector3.UP * 0.3, false, key)
+		uids.append(uid)
+	return uids
 
 
 func _spawn_pack(room_i: int, room: Dictionary) -> Array:
@@ -291,20 +329,112 @@ func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: 
 		var mult := 0.6 if (w == "axe" and n == 2) else 1.0
 		var dmg := roundi(Combat.damage(w, heavy, tier, m.stats(), combo_step, sit) * mult)
 		total += dmg
-		m.hp -= dmg
-		m.stun.add(Combat.stun_value(w, heavy, tier))
-		m.alert(peer)
-		alert_pack(m, peer)
-		auth.give_xp(peer, 1, "fighting")
-		_ev_hit.rpc(uid, dmg)
-		if m.hp <= 0.0:
-			_kill(m, peer)
-		else:
-			var entered := m.check_phase()
-			if entered.has("summon"):
-				boss_summon(m, entered.summon[0], entered.summon[1])
-			monster_changed(m)
+		_hurt_monster(m, peer, dmg, Combat.stun_value(w, heavy, tier))
 	return total
+
+
+## Host: one hit lands on a monster (sword, bolt...).
+func _hurt_monster(m: Monster, peer: int, dmg: int, stun_amount: float) -> void:
+	m.hp -= dmg
+	m.last_hitter = peer
+	m.stun.add(stun_amount)
+	m.alert(peer)
+	alert_pack(m, peer)
+	auth.give_xp(peer, 1, "fighting")
+	_ev_hit.rpc(m.uid, dmg)
+	if m.hp <= 0.0:
+		_kill(m, peer)
+	else:
+		var entered := m.check_phase()
+		if entered.has("summon"):
+			boss_summon(m, entered.summon[0], entered.summon[1])
+		monster_changed(m)
+
+
+# ================================================================== crossbow (doc 3.6)
+
+## Our bolt flew from `from` to `point` (and hit monster `uid`, or -1). The host judges it.
+func ask_shoot(bolt: String, aimed: bool, uid: int, from: Vector3, point: Vector3) -> void:
+	if auth.is_host():
+		request_shoot(auth.local_peer_id(), bolt, aimed, uid, from, point)
+	else:
+		_rpc_shoot.rpc_id(1, bolt, aimed, uid, from, point)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_shoot(bolt: String, aimed: bool, uid: int, from: Vector3, point: Vector3) -> void:
+	if auth.is_host() and from.is_finite() and point.is_finite():
+		request_shoot(multiplayer.get_remote_sender_id(), bolt, aimed, uid, from, point)
+
+
+## Host: takes the bolt, shows its flight to everyone, and hurts the monster it hit.
+## shortcut: the bolt hits instantly (no flight time or drop); upgrade if long shots feel too easy.
+func request_shoot(peer: int, bolt: String, aimed: bool, uid: int, from: Vector3, point: Vector3) -> int:
+	var ps := auth.get_player(peer)
+	if ps == null or Combat.weapon_of(ps.selected_item()) != "crossbow" or not Combat.BOLTS.has(bolt):
+		return 0
+	if from.distance_to(ps.node.global_position) > 6.0 or not ps.inventory.remove(bolt, 1):
+		return 0
+	var dist := from.distance_to(point)
+	if dist > Combat.BOLT_MAX:
+		point = from + (point - from).normalized() * Combat.BOLT_MAX
+		dist = Combat.BOLT_MAX
+	_ev_shot.rpc(from, point, bolt)
+	var b: Dictionary = Combat.BOLTS[bolt]
+	var dealt := 0
+	var m: Monster = monsters.get(uid)
+	if m and m.is_alive() and m.global_position.distance_to(point) < 2.0 + m.data.size * 1.5:
+		var tier := maxi(Items.tier(ps.selected_item()), 0)
+		var sneak: bool = m.state in [Monster.State.IDLE, Monster.State.WANDER, Monster.State.SLEEP]
+		var sit := Combat.situation(sneak, m.stun.is_stunned(), false, false)
+		dealt = Combat.shot_damage(aimed, tier, bolt, m.stats(), dist, sit)
+		var stun_amount: float = Combat.stun_value("crossbow", aimed, tier) + b.get("stun", 0.0)
+		for k in BOLT_BUILDUP.get(bolt, {}):
+			m.add_buildup(k, BOLT_BUILDUP[bolt][k])
+		_hurt_monster(m, peer, dealt, stun_amount)
+	if b.has("glow"):
+		_ev_glow_bolt.rpc(point, b.glow)
+	elif randf() < 0.5:
+		auth.spawn_drop(bolt, 1, point + (from - point).normalized() * 0.4)  # half the bolts can be picked up again
+	return dealt
+
+
+const BOLT_BUILDUP := {"bolt_ember": {burn = 40.0}, "bolt_rime": {chill = 40.0}, "bolt_blight": {poison = 50.0}}
+
+
+## Everyone: a bolt flies (a thin dart that zips along the line).
+@rpc("authority", "call_local", "reliable")
+func _ev_shot(from: Vector3, to: Vector3, bolt: String) -> void:
+	var dart := MeshInstance3D.new()
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(0.04, 0.04, 0.5)
+	dart.mesh = mesh
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Items.color(bolt)
+	mat.emission_enabled = true
+	mat.emission = Items.color(bolt)
+	mat.emission_energy_multiplier = 0.8
+	dart.material_override = mat
+	_root.add_child(dart)
+	dart.global_position = from
+	if from.distance_to(to) > 0.1:
+		dart.look_at_from_position(from, to, Vector3.UP if absf((to - from).normalized().y) < 0.99 else Vector3.RIGHT)
+	var tw := dart.create_tween()
+	tw.tween_property(dart, "global_position", to, from.distance_to(to) / Combat.BOLT_SPEED)
+	tw.tween_callback(dart.queue_free)
+	Sfx.play("clink", to, -10.0, 1.4)
+
+
+## Everyone: a glow bolt stuck here and lights a 6 m circle for a minute.
+@rpc("authority", "call_local", "reliable")
+func _ev_glow_bolt(at: Vector3, seconds: float) -> void:
+	var l := OmniLight3D.new()
+	l.light_color = Color(0.6, 0.9, 1.0)
+	l.omni_range = 6.0
+	l.light_energy = 1.6
+	_root.add_child(l)
+	l.global_position = at
+	get_tree().create_timer(seconds).timeout.connect(l.queue_free)
 
 
 ## How many monsters one swing can hit: axe cleaves 2, spear pokes through 2, great weapons sweep.
@@ -390,7 +520,7 @@ func _kill(m: Monster, peer: int) -> void:
 		auth.spawn_drop(v.crystal, v.count, m.global_position + Vector3.UP * 0.7)
 	for pid in auth.players:  # kills give XP to everyone nearby (progression doc 7.2)
 		if auth.players[pid].node.global_position.distance_to(m.global_position) < 30.0 or pid == peer:
-			auth.give_xp(pid, xp, "fighting")
+			auth.give_xp(pid, xp, m.data.get("skill", "fighting"))
 	for d in ([] if m.is_boss() else m.data.drops):
 		var times := 2 if m.leader else 1
 		for t in times:

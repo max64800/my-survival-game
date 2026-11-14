@@ -6,7 +6,7 @@ extends CharacterBody3D
 ## Idle → Wander → Alert → Chase → Attack (tell → hit) → Recover → Chase …
 ## Stunned (stun meter full) · Return (gave up: walks home, heals) · Sleep (Rustwights)
 
-enum State { IDLE, WANDER, ALERT, CHASE, ATTACK, RECOVER, STUNNED, RETURN, SLEEP }
+enum State { IDLE, WANDER, ALERT, CHASE, ATTACK, RECOVER, STUNNED, RETURN, SLEEP, FLEE }
 
 const MONSTER_LAYER := 64
 const RECOVER_TIME := 0.7
@@ -41,6 +41,10 @@ var _stun_fill: MeshInstance3D
 var _bars: Node3D
 var _flash := 0.0
 var _blink := 8.0
+var _ball := 0.0  ## Moss Shuffler: seconds left rolled up in its shell
+var ailments := Ailments.new()  ## host: burn / chill / poison on this monster (doc 2.6)
+var last_hitter := 0
+var _dot_sync := 0.0
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
 
 
@@ -122,6 +126,8 @@ func is_boss() -> bool:
 ## Numbers for damage math (a boss's phase can change its armor).
 func stats() -> Dictionary:
 	var s := Monsters.target_stats(kind, leader, variant)
+	if _ball > 0.0:
+		s.armor += 40  # rolled into a ball: hit it with something blunt
 	if is_boss() and data.phases[phase].has("armor"):
 		s.armor = data.phases[phase].armor
 	return s
@@ -169,6 +175,19 @@ func think(delta: float, mgr: Node) -> void:
 	stun.decay_mult = Monsters.PACK_BOOST.decay if boosted else 1.0
 	stun.tick(delta)
 	_timer -= delta
+	var dot := ailments.tick(delta)
+	if dot > 0.0:
+		hp -= dot
+		_dot_sync -= delta
+		if hp <= 0.0:
+			mgr._kill(self, last_hitter)
+			return
+		if _dot_sync <= 0.0:
+			_dot_sync = 1.0
+			mgr.monster_changed(self)
+	if ailments.has("frozen"):
+		_move(delta, Vector3.ZERO, 0.0)
+		return
 	if stun.is_stunned():
 		state = State.STUNNED
 		velocity = Vector3(0, velocity.y, 0)
@@ -209,6 +228,19 @@ func think(delta: float, mgr: Node) -> void:
 				state = State.CHASE
 				_best_dist = INF
 				_no_progress = 0.0
+		State.FLEE:
+			if _ball > 0.0:
+				_ball -= delta
+				_move(delta, Vector3.ZERO, 0.0)
+				return
+			if target == null or _timer <= 0.0:
+				state = State.IDLE
+				home = global_position  # its new safe spot
+				_timer = randf_range(3.0, 8.0)
+				return
+			var away := global_position - target.global_position
+			away.y = 0
+			_move(delta, away.normalized(), data.run)
 		State.CHASE:
 			if target == null:
 				state = State.RETURN
@@ -292,8 +324,10 @@ func think(delta: float, mgr: Node) -> void:
 
 
 func _perceive(mgr: Node) -> void:
-	if state in [State.ALERT, State.CHASE, State.ATTACK, State.RECOVER]:
+	if state in [State.ALERT, State.CHASE, State.ATTACK, State.RECOVER, State.FLEE]:
 		return
+	if data.get("passive", false) or data.get("neutral", false):
+		return  # animals mind their own business until you hit them
 	var found: int = mgr.nearest_noticer(self)
 	if found == 0:
 		return
@@ -306,6 +340,15 @@ func _perceive(mgr: Node) -> void:
 
 ## Woken up by being hit or by a pack-mate.
 func alert(peer: int) -> void:
+	var hurt := hp < max_hp() * 0.5
+	if data.get("passive", false) or (data.get("neutral", false) and hurt):
+		if state != State.FLEE:
+			target_peer = peer
+			state = State.FLEE
+			_timer = 6.0
+			if data.get("rolls", false):
+				_ball = 4.0
+		return
 	if state in [State.CHASE, State.ATTACK, State.RECOVER, State.STUNNED]:
 		return
 	target_peer = peer
@@ -346,7 +389,17 @@ func _start_attack(atk: Dictionary, mgr: Node) -> void:
 	mgr.send_tell(self, atk)
 
 
+## Elemental buildup from a bolt (resistance shrinks it; bosses can't be frozen solid).
+func add_buildup(kind: String, amount: float) -> void:
+	var resist: float = stats().get({"burn": "fire", "chill": "frost", "poison": "poison"}.get(kind, ""), 0.0)
+	var started := ailments.add(kind, amount * maxf(0.0, 1.0 - resist))
+	if started == "frozen" and is_boss():
+		ailments.active.erase("frozen")
+		ailments.active["chill"] = Ailments.EFFECTS.chill.time
+
+
 func _move(delta: float, dir: Vector3, speed: float) -> void:
+	speed *= ailments.speed_mult()
 	if data.get("flies", false):
 		velocity = dir * speed
 		velocity.y = 0.0
