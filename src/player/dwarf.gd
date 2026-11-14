@@ -455,6 +455,7 @@ func _on_dig_feedback(pid: int, result: Dictionary) -> void:
 			Sfx.play("dig_soft" if soft else "dig_rock", at)
 		"dug":
 			Fx.burst(get_parent(), at, col, 16, 4.0)
+			ChunkSwarm.burst(get_parent(), at, col, self)  # 25-50 bits fly into you (F13)
 			_shake = 0.8
 			Sfx.play("dig_soft" if soft else "dig_rock", at, 2.0, 0.85)
 		"blocked":

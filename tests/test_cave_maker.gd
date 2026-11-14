@@ -105,7 +105,8 @@ func test_copper_is_present_but_rare() -> void:
 		if c._is_ore(p):
 			ore += 1
 	var frac := float(ore) / N
-	check(frac > 0.01 and frac < 0.12, "copper fraction %.3f should be 1%%-12%%" % frac)
+	# Very rare since feedback F14 (about 1/6 of the old ~8%).
+	check(frac > 0.003 and frac < 0.025, "copper fraction %.3f should be 0.3%%-2.5%%" % frac)
 
 
 func test_generated_block_matches_queries() -> void:

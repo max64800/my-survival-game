@@ -32,7 +32,9 @@ const WALL_NOISE_AMP := 2.2  ## how bumpy walls are (meters)
 const BLEND := 3.0  ## how softly tunnels melt into caverns (meters)
 const CULL_MARGIN := 6.0  ## blocks farther than this from every shape are solid rock
 const ORE_CELL := 2  ## ore veins are decided on a 2 m grid
-const ORE_THRESHOLD := 0.66
+const ORE_THRESHOLD := 0.66  ## Jungle silver
+## Mossy copper is very rare (feedback F14): about 1.3% of wall rock, 1/6 of before (was 0.66 → 8%).
+const COPPER_THRESHOLD := 0.915
 const SOLID_FILL := -6.0  ## SDF value used for blocks that are all rock
 
 var seed: int
@@ -819,7 +821,8 @@ func _is_ore(p: Vector3i) -> bool:
 	var n := _ore_noise.get_noise_3dv(cell * ORE_CELL + Vector3.ONE * (ORE_CELL * 0.5))
 	# Deeper = a bit more copper.
 	var depth_bonus := clampf((-p.y) / 64.0, 0.0, 1.0) * 0.08
-	return n + depth_bonus > ORE_THRESHOLD
+	var threshold := COPPER_THRESHOLD if p.x < SLAB_X + SLAB_W * 0.5 else ORE_THRESHOLD
+	return n + depth_bonus > threshold
 
 
 # ---------------------------------------------------------------- voxel generation
