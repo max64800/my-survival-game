@@ -686,30 +686,49 @@ func spawn_cloud(pos: Vector3, radius: float, seconds: float, rate: float, dps: 
 
 @rpc("authority", "call_local", "reliable")
 func _ev_cloud(pos: Vector3, radius: float, seconds: float, rate: float, dps: float, by_player: bool = false) -> void:
-	# A lumpy bunch of soft see-through puffs (one shared material, so fading is one change).
+	# A drifting cloud of soft see-through puffs (particles). One shared material, so fading
+	# the whole cloud is one change (see _clouds_step).
 	var mi := Node3D.new()
 	var mat := StandardMaterial3D.new()
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	mat.albedo_texture = Fire._soft_tex()
 	mat.proximity_fade_enabled = true  # soft where it meets the ground
 	mat.proximity_fade_distance = 0.8
 	mat.albedo_color = CLOUD_COLOR if rate > 0.0 else Color(0.85, 0.75, 0.95, CLOUD_COLOR.a)
-	var rng := RandomNumberGenerator.new()
-	rng.seed = hash(pos)
-	for i in 6:
-		var puff := MeshInstance3D.new()
-		var s := SphereMesh.new()
-		var r := radius * rng.randf_range(0.45, 0.7)
-		s.radius = r
-		s.height = r * 1.6
-		s.radial_segments = 12
-		s.rings = 6
-		puff.mesh = s
-		puff.material_override = mat
-		puff.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		puff.position = Vector3(rng.randf_range(-1, 1), rng.randf_range(-0.2, 0.5), rng.randf_range(-1, 1)) * radius * 0.45
-		mi.add_child(puff)
+	var p := GPUParticles3D.new()
+	p.amount = 26
+	p.lifetime = 3.0
+	p.preprocess = 3.0
+	p.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	p.visibility_aabb = AABB(-Vector3.ONE * radius * 2.0, Vector3.ONE * radius * 4.0)
+	var pm := ParticleProcessMaterial.new()
+	pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
+	pm.emission_sphere_radius = radius * 0.55
+	pm.gravity = Vector3(0, 0.05, 0)
+	pm.initial_velocity_min = 0.05
+	pm.initial_velocity_max = 0.25
+	pm.spread = 180.0
+	pm.turbulence_enabled = true
+	pm.turbulence_noise_strength = 0.5
+	pm.angle_min = 0.0
+	pm.angle_max = 360.0
+	pm.scale_min = 0.8
+	pm.scale_max = 1.3
+	var swell := Curve.new()
+	swell.add_point(Vector2(0.0, 0.3))
+	swell.add_point(Vector2(0.3, 1.0))
+	swell.add_point(Vector2(1.0, 0.7))
+	var st := CurveTexture.new()
+	st.curve = swell
+	pm.scale_curve = st
+	p.process_material = pm
+	var q := QuadMesh.new()
+	q.size = Vector2.ONE * radius * 1.1
+	q.material = mat
+	p.draw_pass_1 = q
+	mi.add_child(p)
 	mi.set_meta("mat", mat)
 	_root.add_child(mi)
 	mi.global_position = pos
