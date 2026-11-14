@@ -2,7 +2,7 @@ extends TestCase
 ## The building pieces (building polish spec §1-§2): the catalog, the soft numbers, and snapping.
 
 const PLACES := ["cell", "edge", "corner", "free", "ceiling"]
-const GROUPS := ["foundation", "floor", "wall", "roof", "support", "around", "mining"]
+const GROUPS := ["foundation", "floor", "wall", "roof", "support", "around", "mining", "decor"]
 
 
 func test_every_piece_is_valid() -> void:
@@ -186,3 +186,19 @@ func test_ladder_snaps_onto_a_wall_face() -> void:
 	var t2 := Pieces.snap("ladder", Vector3(-0.15, 1.0, 0.2), Vector3(-1, 0, 0), 0.0, 0, 0.0, side.box_of(2))
 	check_near(t2.pos.x, -0.25, 0.001, "works on a wall facing the other way too")
 	check_eq(t2.rot % 2, 1, "and turns to match it")
+
+
+func test_wall_decor_hangs_facing_out() -> void:
+	var st := Structure.new()
+	st.add(1, "wall", "plank_root", Vector3(0, 0, 0), 0, true)
+	var wall := st.box_of(1)
+	var front := Pieces.snap("banner", Vector3(0.2, 1.3, 0.15), Vector3(0, 0, 1), 0.0, 0, 0.0, wall)
+	var back := Pieces.snap("banner", Vector3(0.2, 1.3, -0.15), Vector3(0, 0, -1), 0.0, 0, 0.0, wall)
+	check_eq(front.rot, 0, "on the front face it faces +z")
+	check_eq(back.rot, 2, "on the back face it's turned around")
+	check(front.pos.z > 0.15 and back.pos.z < -0.15, "outside the wall on both sides")
+	var sconce := Pieces.snap("wall_sconce", Vector3(0.2, 1.6, 0.15), Vector3(0, 0, 1), 0.0, 0, 0.0, wall)
+	check_near(sconce.pos.y, 1.25, 0.26, "a sconce hangs where you aim, not at the floor")
+	check(sconce.pos.y + Pieces.LIST.wall_sconce.size.y <= wall.end.y + 0.001, "and stays on the wall")
+	check(not st.overlaps("wall_sconce", sconce.pos, sconce.rot), "it doesn't count as inside the wall")
+	check(BuildMenu.pieces_in("decor").size() >= 12, "the Decor tab has the furniture")

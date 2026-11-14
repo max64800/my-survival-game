@@ -165,6 +165,42 @@ func _build() -> void:
 		l.light_energy = 0.6
 		l.position = Vector3(0, s.y * 0.5, 0)
 		add_child(l)
+	_decor_extras(s, made != null)
+
+
+## Decor pieces: cloth parts (rug, banner) in their own colour, and the sconce's glowing crystal.
+func _decor_extras(s: Vector3, has_model: bool) -> void:
+	var info: Dictionary = Pieces.LIST[piece]
+	if info.has("cloth") and not has_model:
+		var c: Color = info.cloth
+		if piece == "rug":
+			_cloth(Vector3(s.x - 0.12, 0.02, s.z - 0.12), Vector3(0, 0.03, 0), c)
+			_cloth(Vector3(s.x * 0.6, 0.02, s.z * 0.5), Vector3(0, 0.035, 0), Color(0.78, 0.6, 0.3))  # a gold middle
+		else:
+			_cloth(Vector3(s.x, s.y - 0.15, 0.03), Vector3(0, (s.y - 0.1) * 0.5, 0.0), c)
+			_cloth(Vector3(0.3, 0.3, 0.035), Vector3(0, s.y * 0.6, 0.0), Color(0.85, 0.65, 0.25))  # a gold emblem
+	if info.has("light"):
+		if not has_model:
+			_cloth(Vector3(0.1, 0.16, 0.1), Vector3(0, s.y * 0.45 + 0.12, 0.04), info.light, true)
+		if not ghost:
+			var l := OmniLight3D.new()
+			l.light_color = info.light
+			l.omni_range = 7.0
+			l.light_energy = 1.2
+			l.position = Vector3(0, s.y * 0.6, 0.25)
+			add_child(l)
+
+
+func _cloth(size: Vector3, pos: Vector3, c: Color, glow: bool = false) -> void:
+	var mi := MeshInstance3D.new()
+	var bm := BoxMesh.new()
+	bm.size = size
+	mi.mesh = bm
+	mi.position = pos
+	mi.material_override = _ghost_mat if ghost else Look.mat(c, "", 2.0 if glow else 0.0)
+	if ghost:
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(mi)
 
 
 func _box(size: Vector3, pos: Vector3, solid: bool = true) -> void:

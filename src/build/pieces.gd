@@ -101,7 +101,39 @@ const LIST := {
 	"ceiling_panel": {name = "Ceiling Panel", group = "mining", size = Vector3(2, 0.25, 2), units = 4, place = "ceiling", supports_rock = true, station = ALL},
 	"mine_prop": {name = "Mine Prop", group = "mining", size = Vector3(2, 3, 0.4), units = 4, place = "free", extra = {copper_ingot = 1}, supports_rock = true,
 		families = ["plank_root", "cut_stone", "copper_ingot"], station = ALL},
+	# --- decor (Claude 2 hand-makes models for these; code shapes until then). on_wall = snaps flat onto
+	# the face of a built wall you aim at. cloth = the colour of its cloth part. light = a glow it gives.
+	"column_base": {name = "Column Base", group = "decor", size = Vector3(0.8, 0.5, 0.8), units = 1, place = "corner", shape = "column_base",
+		families = STONE_KINDS, station = {"mason": 1}},
+	"column_shaft": {name = "Column Shaft", group = "decor", size = Vector3(0.8, 1.0, 0.8), units = 1, place = "corner", shape = "column_shaft",
+		families = STONE_KINDS, station = {"mason": 1}},
+	"column_capital": {name = "Column Capital", group = "decor", size = Vector3(0.8, 0.5, 0.8), units = 1, place = "corner", shape = "column_capital",
+		families = STONE_KINDS, station = {"mason": 2}},
+	"table": {name = "Table", group = "decor", size = Vector3(2.0, 0.9, 1.0), units = 3, place = "free", shape = "table",
+		families = WOODS + ["cut_stone"], station = {"workbench": 1, "mason": 2}},
+	"bench": {name = "Bench", group = "decor", size = Vector3(2.0, 0.5, 0.5), units = 2, place = "free", shape = "bench",
+		families = WOODS + ["cut_stone"], station = {"workbench": 1, "mason": 2}},
+	"chair": {name = "Chair", group = "decor", size = Vector3(0.6, 1.1, 0.6), units = 1, place = "free", shape = "chair",
+		families = WOODS, station = {"workbench": 1}},
+	"shelf": {name = "Shelf", group = "decor", size = Vector3(1.6, 1.8, 0.4), units = 3, place = "free", shape = "shelf",
+		families = WOODS, station = {"workbench": 2}},
+	"barrel": {name = "Barrel", group = "decor", size = Vector3(0.7, 0.9, 0.7), units = 2, place = "free", shape = "barrel",
+		families = WOODS, extra = {copper_ingot = 1}, station = {"workbench": 2}},
+	"crate": {name = "Supply Crate", group = "decor", size = Vector3(0.9, 0.8, 0.9), units = 2, place = "free", shape = "crate",
+		families = WOODS, station = {"workbench": 1}},
+	"rug": {name = "Rug", group = "decor", size = Vector3(2.0, 0.03, 1.4), units = 1, place = "free", shape = "rug",
+		families = WOODS, extra = {fiber = 8}, cloth = Color(0.55, 0.18, 0.14), station = {"workbench": 1}},
+	"banner": {name = "Banner", group = "decor", size = Vector3(1.0, 2.0, 0.1), units = 1, place = "edge", shape = "banner", on_wall = true,
+		families = WOODS + ["copper_ingot"], extra = {fiber = 6}, cloth = Color(0.5, 0.12, 0.12), station = {"workbench": 1, "anvil": 1}},
+	"wall_shield": {name = "Wall Shield", group = "decor", size = Vector3(0.7, 0.7, 0.12), units = 2, place = "edge", shape = "wall_shield", on_wall = true,
+		families = WOODS + ["copper_ingot"], station = {"workbench": 2, "anvil": 1}},
+	"wall_sconce": {name = "Wall Sconce", group = "decor", size = Vector3(0.4, 0.6, 0.3), units = 1, place = "edge", shape = "wall_sconce", on_wall = true,
+		families = ["copper_ingot", "cut_stone"], extra = {crystal_blue = 1}, light = Color(0.5, 0.8, 1.0), station = {"anvil": 1, "mason": 1}},
+	"weapon_rack": {name = "Weapon Rack", group = "decor", size = Vector3(1.4, 1.6, 0.5), units = 3, place = "free", shape = "weapon_rack",
+		families = WOODS, station = {"workbench": 2}},
 }
+const WOODS := ["plank_root", "plank_mushroom"]
+const STONE_KINDS := ["cut_stone", "cut_marble", "clay_brick", "basalt", "ancient_brick"]
 
 ## The materials offered in Mossy Hollows' build menu (owner's choice): wood, stone, brick, copper.
 const MOSSY_FAMILIES := ["plank_root", "cut_stone", "clay_brick", "copper_ingot"]
@@ -207,15 +239,18 @@ static func snap(piece: String, p: Vector3, n: Vector3, yaw: float, rot: int, li
 						pos[axis] = anchor.get_center()[axis]
 					else:
 						pos[axis] = anchor.position[axis] if absf(p[axis] - anchor.position[axis]) < absf(p[axis] - anchor.end[axis]) else anchor.end[axis]
-	elif has_anchor and absf(n.y) < 0.5 and info.get("shape", "") == "ladder":
-		# A ladder on the side of a wall: flat against the face we're looking at, not inside the wall.
+	elif has_anchor and absf(n.y) < 0.5 and (info.get("shape", "") == "ladder" or info.get("on_wall", false)):
+		# A ladder (or a banner, shield, sconce) on the side of a wall: flat against the face we're
+		# looking at, not inside the wall.
 		var across := 0 if absf(n.x) > absf(n.z) else 2
 		var side := signf(n[across])
-		q = 0 if across == 2 else 1
+		q = (0 if side > 0.0 else 2) if across == 2 else (1 if side > 0.0 else 3)  # its front (+z) faces out
 		s = turned_size(piece, q)
 		pos = _on_grid("edge", p, s, q)
 		pos[across] = (anchor.end[across] if side > 0.0 else anchor.position[across]) + side * s[across] * 0.5
 		pos.y = anchor.position.y
+		if info.get("on_wall", false):  # hangs where you aim, in 25 cm steps, but stays on the wall
+			pos.y = clampf(snappedf(p.y - h * 0.5, 0.25), anchor.position.y, maxf(anchor.position.y, anchor.end.y - h))
 	elif has_anchor and absf(n.y) < 0.5 and info.place == "cell" and info.get("group", "") in ["floor", "foundation"] and anchor.size.y <= 1.05:
 		# Next to the floor/foundation we're looking at, at the same height.
 		var axis := 0 if absf(n.x) > absf(n.z) else 2

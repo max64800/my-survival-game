@@ -68,9 +68,12 @@ func _run() -> void:
 	add_child(lamp)
 	var n := 0
 	var only := ""
+	var only_group := ""
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("family="):
 			only = arg.trim_prefix("family=")
+		if arg.begins_with("group="):
+			only_group = arg.trim_prefix("group=")
 		if arg == "part=extras":
 			await _extras(dwarf, base, lamp)
 			get_tree().quit()
@@ -82,7 +85,7 @@ func _run() -> void:
 			continue
 		var batch: Array = []
 		for id in Pieces.LIST:
-			if Pieces.allowed(id, fam) and Pieces.needed_level(id, fam) < 99:
+			if Pieces.allowed(id, fam) and Pieces.needed_level(id, fam) < 99 					and (only_group == "" or Pieces.LIST[id].get("group", "") == only_group):
 				batch.append(id)
 		var i := 0
 		while i < batch.size():
@@ -103,6 +106,9 @@ func _run() -> void:
 			n += 1
 			i += 6
 	_clear()
+	if only_group != "":
+		get_tree().quit()
+		return
 	# The blueprints, side by side further along.
 	var bx := base + Vector3(0, 0, 20)
 	for id in BlueprintLibrary.IDS:

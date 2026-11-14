@@ -68,6 +68,17 @@ static func _make(piece: String, style: String, detail: bool) -> ArrayMesh:
 		"steps": _steps(s, 2)
 		"triangle": _triangle(s)
 		"diagonal": _diagonal(piece, s)
+		"column_base", "column_shaft", "column_capital": _column_part(shape, s)
+		"table", "bench": _table(s, shape == "bench")
+		"chair": _chair(s)
+		"shelf": _shelf(s)
+		"barrel": _barrel(s)
+		"crate": _crate(s)
+		"rug": _box(Vector3(0, 0.01, 0), Vector3(s.x, 0.02, s.z))  # a thin backing; the cloth is drawn by PieceNode
+		"banner": _banner(s)
+		"wall_shield": _wall_shield(s)
+		"wall_sconce": _wall_sconce(s)
+		"weapon_rack": _weapon_rack(s)
 		_: _plain_piece(piece, s, info)
 	var mesh := _st.commit()
 	_st = null
@@ -241,6 +252,125 @@ static func _column(s: Vector3) -> void:
 			_cyl(Vector3(0, 0.2 + (s.y - 0.5) * f - 0.05, 0), w * 0.44, w * 0.44, 0.1)
 	_cyl(Vector3(0, s.y - 0.3, 0), w * 0.38, w * 0.5, 0.15)
 	_box(Vector3(0, s.y - 0.075, 0), Vector3(w, 0.15, w))
+
+
+# ---------------------------------------------------------------- decor (front = +z for wall pieces)
+
+## Stackable column parts: a square plinth with a round foot, a round shaft, a flared top.
+static func _column_part(shape: String, s: Vector3) -> void:
+	var w := s.x
+	match shape:
+		"column_base":
+			_box(Vector3(0, 0.12, 0), Vector3(w, 0.24, w))
+			_cyl(Vector3(0, 0.24, 0), w * 0.46, w * 0.4, 0.12)
+			_cyl(Vector3(0, 0.36, 0), w * 0.38, w * 0.36, s.y - 0.36)
+		"column_shaft":
+			_cyl(Vector3.ZERO, w * 0.36, w * 0.36, s.y)
+			if _detail:
+				_cyl(Vector3(0, s.y * 0.5 - 0.04, 0), w * 0.39, w * 0.39, 0.08)
+		"column_capital":
+			_cyl(Vector3.ZERO, w * 0.36, w * 0.38, 0.12)
+			_cyl(Vector3(0, 0.12, 0), w * 0.38, w * 0.52, s.y - 0.3)
+			_box(Vector3(0, s.y - 0.09, 0), Vector3(w, 0.18, w))
+
+
+## A table (or a lower, narrower bench): a thick top on four legs, with a stretcher between them.
+static func _table(s: Vector3, bench: bool) -> void:
+	var top := 0.08 if bench else 0.1
+	_slab(Vector3(0, s.y - top * 0.5, 0), Vector3(s.x, top, s.z), "floor")
+	var lx := s.x * 0.5 - 0.12
+	var lz := s.z * 0.5 - 0.1
+	var leg := 0.09 if bench else 0.11
+	for x in [-lx, lx]:
+		for z in ([0.0] if bench else [-lz, lz]):
+			_box(Vector3(x, (s.y - top) * 0.5, z), Vector3(leg, s.y - top, 0.3 if bench else leg))
+	_box(Vector3(0, 0.18, 0), Vector3(s.x - 0.24, 0.06, 0.06))
+
+
+static func _chair(s: Vector3) -> void:
+	var seat := 0.45
+	_slab(Vector3(0, seat - 0.03, 0), Vector3(s.x, 0.06, s.z), "floor")
+	var l := s.x * 0.5 - 0.05
+	for x in [-l, l]:
+		for z in [-l, l]:
+			_box(Vector3(x, (seat - 0.06) * 0.5, z), Vector3(0.06, seat - 0.06, 0.06))
+	for x in [-l, l]:  # the back posts and two slats, at the back (−z)
+		_box(Vector3(x, seat + (s.y - seat) * 0.5, -l), Vector3(0.06, s.y - seat, 0.06))
+	for y in [seat + 0.25, s.y - 0.08]:
+		_box(Vector3(0, y, -l), Vector3(s.x - 0.1, 0.08, 0.04))
+
+
+static func _shelf(s: Vector3) -> void:
+	for x in [-s.x * 0.5 + 0.04, s.x * 0.5 - 0.04]:
+		_box(Vector3(x, s.y * 0.5, 0), Vector3(0.08, s.y, s.z))
+	_box(Vector3(0, s.y * 0.5, -s.z * 0.5 + 0.02), Vector3(s.x, s.y, 0.04))  # back board
+	for i in 4:
+		_slab(Vector3(0, 0.05 + i * (s.y - 0.1) / 3.0, 0), Vector3(s.x - 0.16, 0.05, s.z - 0.04), "floor")
+	if _detail:  # a few pots and boxes on the shelves
+		_cyl(Vector3(-0.3, 0.08 + (s.y - 0.1) / 3.0, 0.02), 0.1, 0.08, 0.22)
+		_box(Vector3(0.25, 0.18 + (s.y - 0.1) / 3.0, 0.02), Vector3(0.3, 0.22, 0.22))
+		_cyl(Vector3(0.1, 0.08 + 2.0 * (s.y - 0.1) / 3.0, 0.02), 0.12, 0.1, 0.18)
+
+
+static func _barrel(s: Vector3) -> void:
+	var r := s.x * 0.5
+	_cyl(Vector3.ZERO, r * 0.82, r, s.y * 0.5)
+	_cyl(Vector3(0, s.y * 0.5, 0), r, r * 0.82, s.y * 0.5)
+	if _detail:  # hoops
+		for y in [0.12, s.y - 0.16]:
+			_cyl(Vector3(0, y, 0), r * 0.9, r * 0.9, 0.04)
+		_cyl(Vector3(0, s.y * 0.5 - 0.03, 0), r * 1.02, r * 1.02, 0.06)
+
+
+static func _crate(s: Vector3) -> void:
+	_box(Vector3(0, s.y * 0.5, 0), s - Vector3(0.06, 0.06, 0.06))
+	if _detail:  # a frame of thicker boards on each edge
+		var h := s * 0.5
+		for x in [-h.x + 0.04, h.x - 0.04]:
+			for z in [-h.z + 0.04, h.z - 0.04]:
+				_box(Vector3(x, h.y, z), Vector3(0.08, s.y, 0.08))
+		for y in [0.04, s.y - 0.04]:
+			_box(Vector3(0, y, -h.z + 0.04), Vector3(s.x, 0.08, 0.08))
+			_box(Vector3(0, y, h.z - 0.04), Vector3(s.x, 0.08, 0.08))
+			_box(Vector3(-h.x + 0.04, y, 0), Vector3(0.08, 0.08, s.z))
+			_box(Vector3(h.x - 0.04, y, 0), Vector3(0.08, 0.08, s.z))
+
+
+## A banner's pole and the cord it hangs from (the cloth itself is drawn by PieceNode).
+static func _banner(s: Vector3) -> void:
+	_box(Vector3(0, s.y - 0.05, 0), Vector3(s.x + 0.1, 0.06, 0.06))
+	for x in [-s.x * 0.5 - 0.05, s.x * 0.5 + 0.05]:
+		_box(Vector3(x, s.y - 0.05, 0), Vector3(0.09, 0.09, 0.09))
+
+
+## A round shield with a boss in the middle, hung flat on the wall.
+static func _wall_shield(s: Vector3) -> void:
+	var r := s.x * 0.5
+	_push(Transform3D(Basis(Vector3.RIGHT, PI / 2.0), Vector3(0, s.y * 0.5, -s.z * 0.5)))
+	_cyl(Vector3.ZERO, r, r, s.z * 0.6)
+	_cyl(Vector3(0, s.z * 0.6, 0), r * 0.25, r * 0.18, s.z * 0.4)
+	if _detail:
+		_cyl(Vector3(0, s.z * 0.6, 0), r * 0.98, r * 0.92, 0.015)  # a rim
+	_pop()
+
+
+## A bracket from the wall holding a little bowl (the crystal glows; PieceNode adds the light).
+static func _wall_sconce(s: Vector3) -> void:
+	_box(Vector3(0, s.y * 0.5, -s.z * 0.5 + 0.03), Vector3(0.12, s.y * 0.8, 0.06))
+	_box(Vector3(0, s.y * 0.35, -0.02), Vector3(0.05, 0.05, s.z * 0.8))
+	_cyl(Vector3(0, s.y * 0.45, 0.04), 0.06, 0.12, 0.08)
+
+
+static func _weapon_rack(s: Vector3) -> void:
+	for x in [-s.x * 0.5 + 0.05, s.x * 0.5 - 0.05]:
+		_box(Vector3(x, s.y * 0.5, 0), Vector3(0.1, s.y, 0.1))
+		_box(Vector3(x, 0.04, 0), Vector3(0.12, 0.08, s.z))  # feet
+	for y in [0.35, s.y - 0.25]:
+		_slab(Vector3(0, y, 0), Vector3(s.x, 0.08, 0.1), "beam")
+	if _detail:  # three spears leaning in it
+		for i in 3:
+			_box(Vector3(-0.4 + i * 0.4, s.y * 0.5 + 0.05, 0.08), Vector3(0.04, s.y - 0.1, 0.04))
+			_box(Vector3(-0.4 + i * 0.4, s.y + 0.05, 0.08), Vector3(0.08, 0.16, 0.02))
 
 
 ## A diagonal brace: a beam from the bottom-left to the top-right corner.
