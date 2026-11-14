@@ -98,7 +98,7 @@ static func _fill(buf: VoxelBuffer, start: Vector3i, size: Vector3i, visited: Pa
 	while not stack.is_empty() and not held:
 		var v: Vector3i = stack.pop_back()
 		if v.x == 0 or v.y == 0 or v.z == 0 or v.x == size.x - 1 or v.y == size.y - 1 or v.z == size.z - 1 \
-				or anchor_cells.has(v) or buf.get_voxel(v.x, v.y, v.z, VoxelBuffer.CHANNEL_INDICES) == Mat.BORDER \
+				or anchor_cells.has(v) or buf.get_voxel(v.x, v.y, v.z, VoxelBuffer.CHANNEL_INDICES) in [Mat.BORDER, Mat.EDGE] \
 				or seen.size() > cap:
 			held = true
 			break

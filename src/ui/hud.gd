@@ -345,7 +345,7 @@ func _on_dig_feedback(pid: int, result: Dictionary) -> void:
 			_dig_bar.value = _dig_bar.max_value
 			_dig_bar_timer = 0.25
 		"blocked":
-			show_toast("Too hard! This rock needs a better pickaxe.")
+			show_toast(result.get("why", "Too hard! This rock needs a better pickaxe."))
 		"no_tool":
 			show_toast("Pick your pickaxe in the hotbar (key 1).")
 

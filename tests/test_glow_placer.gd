@@ -35,6 +35,21 @@ func test_roots_hang_within_reach() -> void:
 			check(tip.distance_to(floor_p) < 4.0, "root %d tip is %.1f m above the floor" % [s.id, tip.distance_to(floor_p)])
 
 
+func test_jungle_grows_its_own_things() -> void:
+	var maker := CaveMaker.new(12)
+	var kinds := {}
+	for s in GlowPlacer.place(maker):
+		var b := CaveMaker.biome_at(s.pos)
+		kinds[b + ":" + s.kind] = kinds.get(b + ":" + s.kind, 0) + 1
+		if s.kind == GlowPlacer.GIANT:
+			check(s.length >= 2.5 and maker.sdf_at(s.pos + Vector3.UP * (s.length + 0.8)) > 0.0, "giant mushroom fits under the ceiling")
+	check(kinds.get("fungal:giant_mushroom", 0) >= 15, "plenty of giant mushrooms (wood) in the Jungle: %d" % kinds.get("fungal:giant_mushroom", 0))
+	check(kinds.get("fungal:crystal_amber", 0) >= 10, "amber crystals in the Jungle")
+	check(kinds.get("fungal:spore_truffle", 0) >= 10, "truffles in the Jungle")
+	check_eq(kinds.get("mossy:giant_mushroom", 0), 0, "no giant mushrooms in Mossy")
+	check_eq(kinds.get("fungal:root", 0), 0, "no hanging roots in the Jungle")
+
+
 func test_spots_sit_on_rock_surface() -> void:
 	var maker := CaveMaker.new(12)
 	var spots := GlowPlacer.place(maker)

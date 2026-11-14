@@ -57,6 +57,7 @@ func _ready() -> void:
 		elif arg == "autopilot":
 			debug_script = "res://src/debug/autopilot.gd"
 			_saving = false
+			_monsters = false  # random critters at the start would eat the robot's swings; it spawns its own
 			if mode == "menu":
 				mode = "solo"
 		elif arg == "netcheck":

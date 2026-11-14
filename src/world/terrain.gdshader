@@ -1,6 +1,7 @@
 shader_type spatial;
 // Colors the dig-anywhere rock. Each voxel has a material number (see mat.gd):
-// 0 moss, 1 stone, 2 dirt, 3 copper ore, 4 border rock.
+// 0 moss, 1 stone, 2 dirt, 3 copper ore, 4 border rock, 5 clay,
+// 8 mycelium, 9 silver ore, 11 amberrock, 13 sporestone, 15 the world's edge.
 // The look: flat-shaded low-poly facets + soft color noise. No image textures yet.
 
 uniform vec3 moss_color : source_color = vec3(0.24, 0.40, 0.17);
@@ -55,6 +56,8 @@ vec3 mat_color(float idx, vec3 wp, out vec3 emit) {
 		float speck = step(0.86, vnoise(wp * 3.1));
 		emit = copper_color * speck * 0.35;
 		return mix(stone_color * 0.8, copper_color, 0.55 + 0.45 * n);
+	} else if (idx > 14.5) {
+		return border_color * (0.6 + 0.2 * n);  // the world's edge: dark, no glowing veins
 	} else if (idx > 12.5) {
 		float strata2 = sin(wp.y * 1.3 + vnoise(wp * 0.12) * 5.0) * 0.5 + 0.5;
 		emit = vec3(0.25, 0.1, 0.35) * step(0.88, vnoise(wp * 1.7)) * 0.4;  // faint spore specks

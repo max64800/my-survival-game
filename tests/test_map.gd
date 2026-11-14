@@ -14,13 +14,27 @@ func test_reveal_draws_open_and_rock() -> void:
 	var at := Vector3(0, -30, 0)
 	m.reveal(at, sdf)
 	var f := MapData.floor_of(at.y)
-	var img := m.floors[f]
+	var img: Image = m.floors_at(at)[f]
 	var c := m.to_pixel(at)
 	check(_same(img.get_pixel(c.x - 6, c.y), MapData.OPEN), "left side drawn as open")
 	check(_same(img.get_pixel(c.x + 6, c.y), MapData.ROCK), "right side drawn as rock")
 	check_eq(img.get_pixel(c.x + 40, c.y).a, 0.0, "far away still unseen")
 	check(m.seen_fraction(f) > 0.0, "something seen on this floor")
 	check_eq(m.seen_fraction((f + 1) % 4), 0.0, "other floors untouched")
+
+
+func test_each_biome_has_its_own_pages() -> void:
+	var m := MapData.new()
+	var sdf := func(_p: Vector3) -> float: return 1.0
+	var jungle := Vector3(420, -30, 0)
+	m.reveal(jungle, sdf)
+	var f := MapData.floor_of(jungle.y)
+	check(m.seen_fraction(f, "fungal") > 0.0, "the Jungle page got drawn")
+	check_eq(m.seen_fraction(f, "mossy"), 0.0, "the Mossy page didn't")
+	check_eq(m.to_pixel(jungle), Vector2i(200, 200), "the Jungle's middle is the middle of its page")
+	var back := MapData.new()
+	back.load_data(m.to_data())
+	check(back.seen_fraction(f, "fungal") > 0.0, "jungle pages are saved and loaded")
 
 
 func test_climbing_leaves_markers() -> void:

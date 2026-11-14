@@ -18,7 +18,12 @@ const QUIET_AFTER_FOUND := 3600.0  ## no raid in the first hour after a new sour
 const SOURCES := {
 	"skerra": [["mossnipper", 5, true], ["skitterling", 2, false]],  ## [kind, count, first one is a leader]: Elder + 4 + 2 = 7
 	"brask": [["rustwight", 3, true], ["cairnling", 1, false]],
+	"old_ironshell": [["husk_charger", 2, false], ["wheezecap", 3, false]],  ## doc 8.6 table
+	"sivix": [["needlemite", 7, true]],  ## Broodkeeper + 6
+	"gloamstalker": [["gill_stalker", 2, false], ["cap_spitter", 2, false]],
 }
+## Each biome's main boss: killing it stops that biome's raids.
+const MAIN_BOSS := {"mossy": "orrumhal", "fungal": "thallus"}
 
 var auth: GameAuthority
 var clock := 0.0
@@ -50,9 +55,9 @@ func _process(delta: float) -> void:
 ## Raid sources right now: found side-boss caverns whose boss lives, unless the main boss is dead.
 func sources() -> Array:
 	var out := []
-	if auth.world_state.bosses_dead.has("orrumhal"):
-		return out
 	for s in SOURCES:
+		if auth.world_state.bosses_dead.has(MAIN_BOSS[Monsters.BOSSES[s].biome]):
+			continue
 		if auth.world_state.lairs_found.has(s) and not auth.world_state.bosses_dead.has(s):
 			if clock - _found_at.get(s, clock) >= QUIET_AFTER_FOUND:
 				out.append(s)

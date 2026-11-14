@@ -388,7 +388,7 @@ func request_place_blueprint(peer_id: int, json: String, origin: Vector3, rot: i
 		return "The chest can't go inside rock"
 	var bp: Blueprint = r.blueprint
 	for c in bp.carve_cells(origin, rot):
-		if auth.world.sdf_at(c) < 0.0 and auth.world.material_at(c) == Mat.BORDER:
+		if auth.world.sdf_at(c) < 0.0 and auth.world.material_at(c) in [Mat.BORDER, Mat.EDGE]:
 			return "It would carve border rock"
 	var box_id: int = auth.storage.create_box("builder", chest_pos, rot * PI / 2.0, peer_id)
 	_ev_site.rpc(box_id, json, origin, rot, [])

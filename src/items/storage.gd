@@ -120,7 +120,8 @@ func request_take_all(peer_id: int, box_id: int) -> int:
 static func accepts(kind: String, item: String) -> bool:
 	if kind != "builder":
 		return true
-	return Pieces.FAMILIES.has(item) or item in ["stone", "dirt", "moss", "clay", "copper_ore", "copper_ingot"]
+	return Pieces.FAMILIES.has(item) or item in ["stone", "dirt", "moss", "clay", "copper_ore", "copper_ingot",
+		"sporestone", "amberrock", "silver_ore", "mushroom_flesh"]  # what a builder carves out of the Jungle
 
 
 ## Host: make a new box. Returns its id.

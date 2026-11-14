@@ -383,12 +383,16 @@ func request_harvest(peer_id: int, glow_id: int) -> Dictionary:
 	var spot := glow.get_spot(glow_id)
 	if spot.is_empty():
 		return {state = "gone"}
-	if _chest(ps).distance_to(spot.pos) > REACH + (spot.get("length", 0.0) if spot.kind == GlowPlacer.ROOT else 0.0) + 1.0:
+	if _chest(ps).distance_to(spot.pos) > REACH + (spot.get("length", 0.0) if spot.kind in GlowPlacer.TALL else 0.0) + 1.0:
 		return {state = "too_far"}
 	var k: Dictionary = GlowPlacer.KINDS[spot.kind]
 	var needed := 1
 	if k.tool != "hand":
 		var tool := ps.selected_item()
+		if Items.tier(tool) < k.get("min_tier", 0):
+			var r := {state = "blocked", point = spot.pos, why = "Too tough! This needs a copper axe."}
+			_tell_feedback(peer_id, r)
+			return r
 		var power := 0.0
 		if Items.kind(tool) == "pickaxe":
 			power = Items.dig_power(tool) * ps.progress.dig_power_mult() * (0.5 if k.tool == "axe" else 1.0)
@@ -413,6 +417,8 @@ func request_harvest(peer_id: int, glow_id: int) -> Dictionary:
 	if GlowPlacer.is_plant(spot.kind) and ps.progress.perk_rank("forager") > 0:
 		count += 1
 	spawn_drop(k.item, count, spot.pos + spot.normal * 0.6)
+	if k.has("extra"):
+		spawn_drop(k.extra, 1, spot.pos + spot.normal * 0.6 + Vector3.UP * 0.3)
 	give_xp(peer_id, k.xp, k.skill)
 	var left: int = spot.get("chops", 1) - 1
 	if left > 0:
@@ -502,7 +508,7 @@ func request_poi(peer_id: int, poi_id: int) -> String:
 		"shrine":
 			if world_state.shrines.has(poi_id):
 				return "empty"
-			var rune := rune_slab.pick_drop("m", [randf(), randf(), randf()])
+			var rune := rune_slab.pick_drop(rune_biome_at(poi.pos), [randf(), randf(), randf(), randf()])
 			world_state.shrines.append(poi_id)
 			if rune != "":
 				var left := ps.inventory.add("rune_" + rune, 1)
@@ -775,6 +781,25 @@ func _ev_slab(data: Dictionary) -> void:
 	rune_slab.load_data(data)
 
 
+## "m" or "f": which biome's runes drop at p.
+static func rune_biome_at(p: Vector3) -> String:
+	return "f" if CaveMaker.biome_at(p) == "fungal" else "m"
+
+
+func _seed_fungal_loot(rng: RandomNumberGenerator, id: int, ruin: bool) -> void:
+	if ruin:
+		storage.put(id, "silver_ingot", rng.randi_range(1, 3))
+		storage.put(id, "crystal_amber", rng.randi_range(2, 4))
+		storage.put(id, ["dish_truffle_risotto", "dish_chitin_crunch", "drink_spore_mead"][rng.randi_range(0, 2)], 1)
+		if rng.randf() < 0.3:
+			storage.put(id, "rune_" + rune_slab.pick_drop("f", [rng.randf(), rng.randf(), rng.randf(), rng.randf()]), 1)
+		storage.put(id, "rusty_scrap", rng.randi_range(2, 5))
+	else:
+		storage.put(id, "crystal_amber", rng.randi_range(1, 2))
+		storage.put(id, "rope", rng.randi_range(1, 3))
+		storage.put(id, ["spore_truffle", "ember_morel", "mushroom_flesh"][rng.randi_range(0, 2)], rng.randi_range(2, 4))
+
+
 ## Host, new world only: fill the ruin and camp chests with old loot (world doc 3.1).
 func seed_poi_loot() -> void:
 	var rng := RandomNumberGenerator.new()
@@ -784,6 +809,9 @@ func seed_poi_loot() -> void:
 			continue
 		var at: Vector3 = world.maker.find_floor(poi.pos.x + 1.5, poi.pos.z + 1.0, poi.pos.y + 3.0)
 		var id := storage.create_box("chest_small", at, rng.randf() * TAU)
+		if poi.get("biome", "mossy") == "fungal":
+			_seed_fungal_loot(rng, id, poi.type == "ruin")
+			continue
 		if poi.type == "ruin":
 			storage.put(id, "copper_ingot", rng.randi_range(2, 4))
 			storage.put(id, "crystal_blue", rng.randi_range(2, 5))

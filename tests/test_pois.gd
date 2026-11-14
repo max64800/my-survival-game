@@ -78,7 +78,11 @@ func test_ruin_and_camp_chests_have_loot() -> void:
 	var copper := 0
 	for b in auth.storage.boxes.values():
 		copper += b.inv.count_of("copper_ingot")
-	check(copper >= 2 * world.maker.pois_of("ruin").size(), "ruins hold copper ingots")
+	check(copper >= 2 * world.maker.pois_of("ruin", "mossy").size(), "Mossy ruins hold copper ingots")
+	var silver := 0
+	for b in auth.storage.boxes.values():
+		silver += b.inv.count_of("silver_ingot")
+	check(silver >= world.maker.pois_of("ruin", "fungal").size(), "Jungle ruins hold silver ingots")
 	_teardown()
 
 

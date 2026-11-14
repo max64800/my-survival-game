@@ -238,6 +238,9 @@ func _run() -> void:
 		if m.is_boss():
 			bosses.append(m.data.name.get_slice(",", 0))
 	_report.append("step 6: bosses awake: %s; raid sources found: %s" % [bosses, auth.world_state.lairs_found])
+	for m: Monster in auth.monsters.monsters.values():
+		auth.monsters._ev_remove(m.uid)
+	await _visit_jungle(dwarf, ps)
 	# Look up at the ceiling for hanging roots.
 	dwarf._pitch = 0.6
 	await _wait(0.8)
@@ -256,6 +259,73 @@ func _run() -> void:
 		print("  ", line)
 	print("============================")
 	get_tree().quit()
+
+
+## The Fungal Jungle: the gate, digging the plug, giant mushrooms, jungle monsters, Thallus.
+func _visit_jungle(dwarf: Dwarf, ps: GameAuthority.PlayerState) -> void:
+	var auth: GameAuthority = _main.authority
+	var maker: CaveMaker = _main.world.maker
+	auth.monsters.enabled = false
+	var gate: Dictionary = maker.pois_of("gate", "mossy")[0]
+	await _teleport(dwarf, gate.pos + Vector3(-6.0, 0.6, 0), gate.pos + Vector3.UP * 1.0)
+	await _shot("24_jungle_gate")
+	dwarf.global_position = gate.pos + Vector3(-2.0, 0.2, 0)
+	var stone_try := auth.request_hit(auth.local_peer_id(), gate.pos + Vector3(0.05, 0.4, 0), Vector3.LEFT)
+	ps.inventory.add("pickaxe_copper", 1)
+	_to_hotbar(ps, "pickaxe_copper")
+	var digs := 0
+	for step in 8:
+		dwarf.global_position = gate.pos + Vector3(-2.0 + step * 0.7, 0.2, 0)
+		var at: Vector3 = gate.pos + Vector3(step * 0.7 + 0.3, 0.4, 0)
+		for i in 12:
+			var r := auth.request_hit(auth.local_peer_id(), at, Vector3.LEFT)
+			if r.get("state") != "hit":
+				if r.get("state") == "dug":
+					digs += 1
+				break
+		await _wait(0.15)
+	var open: bool = _main.world.sdf_at(maker.gates[0].pos + Vector3(0, -0.6, 0)) > 0.0
+	_report.append("step 7: stone pickaxe on the plug -> %s; copper pickaxe dug %d times; plug open: %s" % [stone_try.get("state"), digs, open])
+	await _teleport(dwarf, gate.pos + Vector3(-4.0, 0.6, 0), gate.pos + Vector3(6.0, 0.6, 0))
+	await _shot("25_through_the_plug")
+	var grove: Dictionary = maker.pois_of("lantern_grove")[0]
+	await _teleport(dwarf, grove.pos + Vector3(0, 1.5, 14.0), grove.pos + Vector3.UP * 2.5)
+	await _shot("26_giant_mushrooms")
+	var mm := auth.monsters
+	mm.set_physics_process(false)  # a still life: they'd knock the robot out before the picture
+	var kinds := ["wheezecap", "needlemite", "husk_charger", "gill_stalker", "cap_spitter"]
+	var fwd := Vector3(-sin(dwarf._yaw), 0, -cos(dwarf._yaw))
+	var side := fwd.cross(Vector3.UP)
+	for i in kinds.size():
+		var at: Vector3 = dwarf.global_position + fwd * 6.0 + side * (i - 2) * 2.2
+		at = maker.find_floor(at.x, at.z, dwarf.global_position.y + 2.0)
+		mm._ev_spawn(mm._next_uid, kinds[i], at + Vector3.UP * 0.3, i == 1, 999)
+		mm._next_uid += 1
+	await _wait(0.8)
+	var look := dwarf.global_position + fwd * 6.0
+	await _teleport(dwarf, dwarf.global_position, look)
+	await _shot("27_jungle_monsters")
+	for m: Monster in mm.monsters.values():
+		mm._ev_remove(m.uid)
+	mm.set_physics_process(true)
+	_main.hud.set_map_open(true)
+	await _wait(0.5)
+	await _shot("28_jungle_map")
+	_main.hud.set_map_open(false)
+	mm.enabled = true
+	var lair: Dictionary = maker.lair_poi("fungal")
+	await _teleport(dwarf, lair.pos + Vector3(0, 1.0, 13.0), lair.pos + Vector3.UP * 3.0)
+	mm._wake_bosses()
+	await _wait(2.5)
+	await _shot("29_thallus")
+	var bosses := []
+	for m: Monster in mm.monsters.values():
+		if m.is_boss():
+			bosses.append(m.data.name.get_slice(",", 0))
+	_report.append("step 7: jungle bosses awake: %s" % [bosses])
+	for m: Monster in mm.monsters.values():
+		mm._ev_remove(m.uid)
+	mm.enabled = false
 
 
 ## Like a player dragging an item onto hotbar slot 8 and selecting it.

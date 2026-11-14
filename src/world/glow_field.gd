@@ -83,10 +83,10 @@ func _add_node(s: Dictionary) -> void:
 	body.collision_mask = 0
 	body.set_meta("glow_id", s.id)
 	var shape := CollisionShape3D.new()
-	var is_root: bool = s.kind == GlowPlacer.ROOT
+	var is_root: bool = s.kind in GlowPlacer.TALL
 	if is_root:
 		var cap := CapsuleShape3D.new()
-		cap.radius = 0.35
+		cap.radius = 0.35 if s.kind == GlowPlacer.ROOT else 0.45
 		cap.height = maxf(s.length, 0.8)
 		shape.shape = cap
 		shape.position = Vector3.UP * s.length * 0.5
@@ -98,13 +98,16 @@ func _add_node(s: Dictionary) -> void:
 	body.add_child(shape)
 	var mi := MeshInstance3D.new()
 	match s.kind:
-		"crystal", "crystal_green": mi.mesh = _crystal_mesh
+		"crystal", "crystal_green", "crystal_amber": mi.mesh = _crystal_mesh
 		"fiber": mi.mesh = _fiber_mesh
 		"root":
 			mi.mesh = _root_mesh
 			mi.scale = Vector3(1, s.length, 1) / s.scale  # stretch to reach toward the floor
+		GlowPlacer.GIANT: mi.mesh = _giant_mesh(s.length)
 		_: mi.mesh = _mushroom_mesh
 	mi.material_override = _material_for(s.color, GlowPlacer.KINDS[s.kind].get("glow", false))
+	if s.kind == GlowPlacer.GIANT:
+		mi.material_override = null  # the giant mushroom mesh brings its own stalk + cap colors
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	body.add_child(mi)
 	add_child(body)
@@ -152,6 +155,55 @@ func _process(delta: float) -> void:
 
 
 # ------------------------------------------------------------ simple low-poly meshes
+
+var _giants := {}  ## height (half meters) -> mesh
+
+
+## A giant mushroom `h` meters tall: a pale stalk and a wide glowing-rimmed cap.
+func _giant_mesh(h: float) -> Mesh:
+	var key := int(round(h * 2.0))
+	if _giants.has(key):
+		return _giants[key]
+	h = key * 0.5
+	var mesh := ArrayMesh.new()
+	var stalk := CylinderMesh.new()
+	stalk.radial_segments = 8
+	stalk.rings = 2
+	stalk.top_radius = 0.22
+	stalk.bottom_radius = 0.38
+	stalk.height = h
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	st.append_from(stalk, 0, Transform3D(Basis(), Vector3.UP * h * 0.5))
+	st.generate_normals()
+	st.commit(mesh)
+	var stalk_mat := StandardMaterial3D.new()
+	stalk_mat.albedo_color = Color(0.86, 0.82, 0.74)
+	stalk_mat.roughness = 0.9
+	stalk_mat.emission_enabled = true
+	stalk_mat.emission = Color(0.86, 0.82, 0.74)
+	stalk_mat.emission_energy_multiplier = 0.12
+	mesh.surface_set_material(0, stalk_mat)
+	var cap := SphereMesh.new()
+	cap.radial_segments = 12
+	cap.rings = 4
+	cap.radius = 0.9 + h * 0.18
+	cap.height = 0.7 + h * 0.08
+	cap.is_hemisphere = true
+	var st2 := SurfaceTool.new()
+	st2.begin(Mesh.PRIMITIVE_TRIANGLES)
+	st2.append_from(cap, 0, Transform3D(Basis(), Vector3.UP * (h - 0.15)))
+	st2.generate_normals()
+	st2.commit(mesh)
+	var cap_mat := StandardMaterial3D.new()
+	cap_mat.albedo_color = Color(0.55, 0.32, 0.62)
+	cap_mat.roughness = 0.6
+	cap_mat.emission_enabled = true
+	cap_mat.emission = Color(0.72, 0.4, 0.9)
+	cap_mat.emission_energy_multiplier = 0.6
+	mesh.surface_set_material(1, cap_mat)
+	_giants[key] = mesh
+	return mesh
 
 func _make_crystal_mesh() -> Mesh:
 	var st := SurfaceTool.new()

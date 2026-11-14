@@ -86,4 +86,10 @@ func test_killing_bosses_stops_raids() -> void:
 	check_eq(auth.raids.sources(), ["brask"], "Skerra dead: only Brask raids")
 	auth.world_state.bosses_dead.append("orrumhal")
 	check(auth.raids.sources().is_empty(), "main boss dead: no raids at all")
+	# Each biome's main boss only stops its own biome's raids.
+	auth.world_state.lairs_found.append("sivix")
+	auth.raids._found_at.sivix = 0.0
+	check_eq(auth.raids.sources(), ["sivix"], "Orrumhal's death doesn't stop Sivix")
+	auth.world_state.bosses_dead.append("thallus")
+	check(auth.raids.sources().is_empty(), "Thallus dead: the Jungle goes quiet too")
 	_teardown()

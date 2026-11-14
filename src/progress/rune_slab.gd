@@ -130,8 +130,16 @@ func taught_recipes() -> Dictionary:
 
 ## Which rune a lucky drop gives (doc 8.2): own biome's sets, even colour odds, and 75% of the
 ## time a rune the world is still missing. `rolls` = three 0..1 numbers (pass randf() ×3).
+## biome "m" or "f". In the Jungle, a 4th roll under 0.2 gives a missing Mossy rune instead
+## (progression doc 8: Fungal backfills Mossy sets until they're done).
 func pick_drop(biome: String, rolls: Array) -> String:
 	var colour: String = COLOURS.keys()[int(rolls[0] * 4.0) % 4]
+	if biome == "f" and rolls.size() > 3 and rolls[3] < 0.2:
+		var missing_m: Array = []
+		for c in COLOURS:
+			missing_m.append_array(runes_in_set(c + "_m").filter(func(r): return not carved_runes.has(r)))
+		if not missing_m.is_empty():
+			return missing_m[int(rolls[2] * missing_m.size()) % missing_m.size()]
 	var pool := runes_in_set(colour + "_" + biome)
 	if pool.is_empty():
 		return ""

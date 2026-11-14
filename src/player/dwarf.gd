@@ -236,6 +236,8 @@ func _aim_info() -> Dictionary:
 		var nm := Items.display_name(k.get("item", ""))
 		if spot.get("kind") == GlowPlacer.ROOT:
 			nm = "Hanging Root (%d chops left)" % spot.get("chops", 1)
+		elif spot.get("kind") == GlowPlacer.GIANT:
+			nm = "Giant Mushroom (%d chops left · copper axe)" % spot.get("chops", 1)
 		return {kind = "glow", name = nm}
 	if hit.collider is Station:
 		var st: Station = hit.collider
@@ -370,7 +372,7 @@ func _on_dig_feedback(pid: int, result: Dictionary) -> void:
 			Sfx.play("clink", at)
 		"done":
 			var k: String = result.get("kind", "")
-			Sfx.play("crystal" if k.begins_with("crystal") else ("chop" if k == "root" else "pickup"), at)
+			Sfx.play("crystal" if k.begins_with("crystal") else ("chop" if k in GlowPlacer.TALL else "pickup"), at)
 
 
 # ---------------------------------------------------------------- network pose

@@ -221,7 +221,16 @@ func think(delta: float, mgr: Node) -> void:
 			_face(target)
 		State.ATTACK:
 			_face(target)
-			_move(delta, Vector3.ZERO, 0.0)
+			if _attack.get("lunge", false) and target and _timer < _attack.tell * 0.6:
+				# Charges and pounces: rush at the target during the last part of the wind-up.
+				var rush := target.global_position - global_position
+				rush.y = 0
+				if rush.length() > 1.2:
+					_move(delta, rush.normalized(), maxf(data.run * 2.0, _attack.reach / maxf(_attack.tell * 0.6, 0.1)))
+				else:
+					_move(delta, Vector3.ZERO, 0.0)
+			else:
+				_move(delta, Vector3.ZERO, 0.0)
 			if _timer <= 0.0:
 				if _attack.has("summon"):
 					# Interrupted if it took 30 stun during the call (doc 8.3).

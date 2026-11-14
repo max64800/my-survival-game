@@ -34,8 +34,8 @@ func setup(seed: int) -> void:
 	terrain.max_view_distance = VIEW_DISTANCE
 	terrain.generate_collisions = true
 	terrain.collision_layer = TERRAIN_LAYER
-	var lo := Vector3i(-CaveMaker.HALF_SIZE - 16, CaveMaker.Y_MIN - 16, -CaveMaker.HALF_SIZE - 16)
-	var hi := Vector3i(CaveMaker.HALF_SIZE + 16, CaveMaker.Y_MAX + 16, CaveMaker.HALF_SIZE + 16)
+	var lo := Vector3i(CaveMaker.X_MIN - 16, CaveMaker.Y_MIN - 16, -CaveMaker.HALF_SIZE - 16)
+	var hi := Vector3i(CaveMaker.X_MAX + 16, CaveMaker.Y_MAX + 16, CaveMaker.HALF_SIZE + 16)
 	terrain.bounds = AABB(Vector3(lo), Vector3(hi - lo))
 	var mat := ShaderMaterial.new()
 	mat.shader = preload("res://src/world/terrain.gdshader")
@@ -145,7 +145,7 @@ func remove_voxels(points: PackedVector3Array) -> Dictionary:
 	for p in points:
 		var v := Vector3i(p) - lo
 		var m := buf.get_voxel(v.x, v.y, v.z, VoxelBuffer.CHANNEL_INDICES)
-		if m == Mat.BORDER or buf.get_voxel_f(v.x, v.y, v.z, VoxelBuffer.CHANNEL_SDF) >= 0.0:
+		if m == Mat.BORDER or m == Mat.EDGE or buf.get_voxel_f(v.x, v.y, v.z, VoxelBuffer.CHANNEL_SDF) >= 0.0:
 			continue
 		buf.set_voxel_f(0.6, v.x, v.y, v.z, VoxelBuffer.CHANNEL_SDF)
 		counts[m] = counts.get(m, 0) + 1

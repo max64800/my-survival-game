@@ -58,6 +58,15 @@ func _make(p: Dictionary) -> Node3D:
 			glyph.name = "Glyph"
 			root.look_at_from_position(Vector3.ZERO, -p.normal, Vector3.UP)
 			_label(root, "Old carving · E to read", 2.6)
+		"gate":
+			# The plug of border rock between two biomes: a carved arch with a glowing seal.
+			var arch_mat := _mat(Color(0.4, 0.36, 0.45))
+			_part(root, _box(Vector3(0.6, 3.6, 0.6)), arch_mat, Vector3(-2.0, 1.2, 0.2))
+			_part(root, _box(Vector3(0.6, 3.6, 0.6)), arch_mat, Vector3(2.0, 1.2, 0.2))
+			_part(root, _box(Vector3(4.6, 0.6, 0.6)), arch_mat, Vector3(0, 3.0, 0.2))
+			_part(root, _box(Vector3(1.4, 1.4, 0.06)), _mat(Color(0.65, 0.4, 1.0), 1.6), Vector3(0, 1.2, 0.05))
+			root.look_at_from_position(Vector3.ZERO, -p.normal, Vector3.UP)
+			_label(root, "Border rock · a Copper Pickaxe breaks it" if p.biome == "mossy" else "Border rock · the way back to Mossy Hollows", 3.6)
 		"shrine":
 			root.collision_layer = POI_LAYER
 			root.set_meta("poi_id", p.id)

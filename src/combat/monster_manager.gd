@@ -124,15 +124,26 @@ func _spawn_and_despawn() -> void:
 
 func _spawn_pack(room_i: int, room: Dictionary) -> Array:
 	var maker: CaveMaker = auth.world.maker
-	var choices: Array = Monsters.SPAWNS.big if room.big else Monsters.SPAWNS.small
+	var biome: String = room.get("biome", "mossy")
+	var lists: Dictionary = Monsters.SPAWNS[biome]
+	var choices: Array = lists.big if room.big else lists.small
 	var kind: String = choices.pick_random()
-	match room.get("kind", ""):
-		"spawn":
-			kind = ["mossnipper", "wickwing"].pick_random()  # weak critters near the start (world doc 3.1)
-		"ruin", "great_hall":
-			kind = "rustwight"  # sleeping armor guards old ruins
-		"nest", "nest_cavern":
-			kind = ["mossnipper", "skitterling"].pick_random()
+	if biome == "fungal":
+		match room.get("kind", ""):
+			"nest", "brood_hollow":
+				kind = "needlemite"
+			"ruin", "silver_vault":
+				kind = ["husk_charger", "wheezecap"].pick_random()
+			"lantern_grove":
+				kind = ["gill_stalker", "wheezecap"].pick_random()
+	else:
+		match room.get("kind", ""):
+			"spawn":
+				kind = ["mossnipper", "wickwing"].pick_random()  # weak critters near the start (world doc 3.1)
+			"ruin", "great_hall":
+				kind = "rustwight"  # sleeping armor guards old ruins
+			"nest", "nest_cavern":
+				kind = ["mossnipper", "skitterling"].pick_random()
 	var info: Dictionary = Monsters.LIST[kind]
 	var has_leader: bool = randf() < info.get("leader_chance", 0.0) or room.get("kind", "") == "nest"  # nests always have a leader
 	var count := randi_range(info.pack[0], info.pack[1]) + (1 if has_leader else 0)
@@ -293,7 +304,7 @@ func _wake_bosses() -> void:
 	var maker: CaveMaker = auth.world.maker
 	for id in Monsters.BOSSES:
 		var b: Dictionary = Monsters.BOSSES[id]
-		var poi: Array = maker.pois_of(b.room)
+		var poi: Array = maker.pois_of(b.room, b.biome)
 		if poi.is_empty():
 			continue
 		var at: Vector3 = poi[0].pos
@@ -344,7 +355,7 @@ func _boss_drops(m: Monster) -> void:
 		for d in m.data.drops:
 			gifts.append([d[0], d[1]])
 		for r in m.data.get("runes", 0):
-			var rune := auth.rune_slab.pick_drop("m", [randf(), randf(), randf()])
+			var rune := auth.rune_slab.pick_drop(GameAuthority.rune_biome_at(m.global_position), [randf(), randf(), randf(), randf()])
 			if rune != "":
 				gifts.append(["rune_" + rune, 1])
 		for g in gifts:
@@ -368,7 +379,7 @@ func _kill(m: Monster, peer: int) -> void:
 			if randf() < d[2]:
 				auth.spawn_drop(d[0], d[1], m.global_position + Vector3.UP * 0.5)
 	if m.leader and randf() < 0.1:
-		var rune := auth.rune_slab.pick_drop("m", [randf(), randf(), randf()])
+		var rune := auth.rune_slab.pick_drop(GameAuthority.rune_biome_at(m.global_position), [randf(), randf(), randf(), randf()])
 		if rune != "":
 			auth.spawn_drop("rune_" + rune, 1, m.global_position + Vector3.UP * 0.6)
 	var room: Dictionary = _rooms.get(m.pack_id, {})

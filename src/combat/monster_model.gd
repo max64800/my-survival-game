@@ -79,14 +79,71 @@ static func build(shape: String, color: Color, size: float, leader: bool) -> Nod
 			_add(root, _box(Vector3(0.35, 0.3, 0.02)), runes, Vector3(0, 0.8, -0.31))
 			eye_y = 1.35
 			eye_z = -0.23
+		"mushroom":
+			# A walking (or rooted) mushroom: stubby stem, wide spotted cap, a gill "mouth".
+			_add(root, _cyl(0.2, 0.26, 0.6), _mat(Color(0.88, 0.84, 0.76)), Vector3(0, 0.3, 0))
+			_add(root, _sphere(0.48, 0.3), body, Vector3(0, 0.62, 0), Vector3(1, 1, 1))
+			for i in 5:
+				var a := i * 1.3
+				_add(root, _sphere(0.07, 0.04), _mat(color.lightened(0.45)), Vector3(cos(a) * 0.28, 0.82, sin(a) * 0.28))
+			_add(root, _box(Vector3(0.22, 0.06, 0.04)), dark, Vector3(0, 0.38, -0.21))
+			for x in [-1.0, 1.0]:
+				_add(root, _cyl(0.05, 0.07, 0.2), dark, Vector3(x * 0.13, 0.08, 0))
+			eye_y = 0.5
+			eye_z = -0.2
+		"mite":
+			# Glassy-legged mite with a long needle mouth.
+			_add(root, _sphere(0.28, 0.2), body, Vector3(0, 0.35, 0.1), Vector3(1, 1, 1.3))
+			_add(root, _sphere(0.16, 0.13), dark, Vector3(0, 0.38, -0.25))
+			var needle := _add(root, _cyl(0.0, 0.03, 0.4), _mat(Color(0.85, 0.95, 1.0)), Vector3(0, 0.36, -0.55))
+			needle.rotation.x = -PI / 2.0
+			var glass := _mat(Color(0.8, 0.92, 1.0))
+			glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+			glass.albedo_color.a = 0.6
+			for i in 6:
+				var side := -1.0 if i < 3 else 1.0
+				var leg := _add(root, _cyl(0.015, 0.02, 0.55), glass, Vector3(side * 0.3, 0.22, -0.15 + (i % 3) * 0.18))
+				leg.rotation.z = side * 0.75
+			eye_y = 0.45
+			eye_z = -0.36
+		"beetle":
+			# A huge horned beetle: dark bronze shell, small head, one big horn.
+			_add(root, _sphere(0.6, 0.38), body, Vector3(0, 0.5, 0.1), Vector3(1.0, 1.0, 1.35))
+			_add(root, _box(Vector3(0.04, 0.5, 1.3)), _mat(color.darkened(0.5)), Vector3(0, 0.82, 0.1))  # shell seam
+			_add(root, _sphere(0.26, 0.2), dark, Vector3(0, 0.42, -0.7))
+			var horn := _add(root, _cyl(0.02, 0.09, 0.55), _mat(Color(0.82, 0.76, 0.6)), Vector3(0, 0.62, -0.95))
+			horn.rotation.x = -0.9
+			for i in 6:
+				var side := -1.0 if i < 3 else 1.0
+				var leg := _add(root, _cyl(0.04, 0.05, 0.45), dark, Vector3(side * 0.55, 0.2, -0.35 + (i % 3) * 0.4))
+				leg.rotation.z = side * 0.8
+			eye_y = 0.5
+			eye_z = -0.88
+		"mantis":
+			# Tall thin stalker with folded scythe arms and a gilled head.
+			_add(root, _capsule(0.12, 0.9), body, Vector3(0, 1.0, 0.1), Vector3.ONE, Vector3(0.35, 0, 0))
+			_add(root, _capsule(0.1, 0.6), dark, Vector3(0, 0.55, 0.35), Vector3.ONE, Vector3(1.2, 0, 0))
+			_add(root, _sphere(0.14, 0.12), body, Vector3(0, 1.5, -0.12))
+			for x in [-1.0, 1.0]:
+				_add(root, _box(Vector3(0.05, 0.12, 0.2)), _mat(color.lightened(0.3)), Vector3(x * 0.13, 1.52, -0.05))  # gills
+				var arm := _add(root, _box(Vector3(0.05, 0.6, 0.06)), dark, Vector3(x * 0.18, 1.2, -0.3))
+				arm.rotation.x = 0.6
+				var blade := _add(root, _box(Vector3(0.03, 0.55, 0.1)), _mat(Color(0.8, 0.8, 0.85)), Vector3(x * 0.18, 1.05, -0.55))
+				blade.rotation.x = -0.5
+				for z in [-0.1, 0.35]:
+					_add(root, _cyl(0.02, 0.025, 0.7), dark, Vector3(x * 0.2, 0.32, z)).rotation.z = x * 0.35
+			eye_y = 1.54
+			eye_z = -0.25
 	for x in [-0.07, 0.07]:
 		_add(root, _sphere(0.035, 0.035), eye, Vector3(x * (2.0 if shape == "golem" else 1.0), eye_y, eye_z))
 	if leader:
 		# A glowing gold moss crown, so you can spot the pack leader.
 		var crown_mat := StandardMaterial3D.new()
-		crown_mat.albedo_color = Color(1.0, 0.8, 0.3)
+		# Jungle leaders wear an orange frill instead of the gold moss crown (combat doc 6.2).
+		var gold := Color(1.0, 0.45, 0.15) if shape in ["mushroom", "mite", "beetle", "mantis"] else Color(1.0, 0.75, 0.2)
+		crown_mat.albedo_color = gold.lightened(0.1)
 		crown_mat.emission_enabled = true
-		crown_mat.emission = Color(1.0, 0.75, 0.2)
+		crown_mat.emission = gold
 		crown_mat.emission_energy_multiplier = 2.0
 		var crown := MeshInstance3D.new()
 		var tm := TorusMesh.new()
