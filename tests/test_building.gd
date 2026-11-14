@@ -44,29 +44,31 @@ func test_wood_tower_and_bridge() -> void:
 	s.add(2, "wall", "plank_root", Vector3(1, 2, 0), 0, false)
 	s.add(3, "wall", "plank_root", Vector3(1, 4, 0), 0, false)
 	s.recompute()
-	check_near(s.pieces[2].stability, 0.9, 0.001, "one up: -10%")
-	check_near(s.pieces[3].stability, 0.8, 0.001, "two up: -20%")
+	# Soft physics (building polish spec §5): wood loses 0.08 going up, 0.16 sideways.
+	check_near(s.pieces[2].stability, 0.92, 0.001, "one up: -8%")
+	check_near(s.pieces[3].stability, 0.84, 0.001, "two up: -16%")
 	# A wooden bridge sticking out sideways from the top.
 	for i in 6:
 		s.add(10 + i, "floor", "plank_root", Vector3(3 + i * 2, 6, 0), 0, false)
 	var falling := s.recompute()
-	check_near(s.pieces[10].stability, 0.7, 0.001, "first bridge floor rests on the wall's top: 0.8 - 0.1")
-	check_near(s.pieces[11].stability, 0.5, 0.001, "next one is sideways: 0.7 - 0.2")
-	check(falling.has(14) and falling.has(15), "far end of a long wooden bridge falls")
-	check(not falling.has(12), "near part stays")
+	check_near(s.pieces[10].stability, 0.76, 0.001, "first bridge floor rests on the wall's top: 0.84 - 0.08")
+	check_near(s.pieces[11].stability, 0.60, 0.001, "next one is sideways: 0.76 - 0.16")
+	check(falling.has(15), "far end of a long wooden bridge (6th piece) falls")
+	check(not falling.has(14), "5 pieces out still hold (softer than before)")
 
 
 func test_metal_reaches_further_than_stone() -> void:
 	for fam in ["cut_stone", "copper_ingot"]:
 		var s := Structure.new()
 		s.add(1, "floor", fam, Vector3(1, 0, 1), 0, true)
-		for i in 7:
+		for i in 11:
 			s.add(2 + i, "floor", fam, Vector3(3 + i * 2, 0, 1), 0, false)
 		var falling := s.recompute()
+		# Soft physics: stone loses 0.10 sideways (9 pieces out hold), copper 0.06 (11 hold).
 		if fam == "cut_stone":
-			check(falling.size() >= 4, "stone: only ~3 pieces sideways (falling %d)" % falling.size())
+			check(falling.size() == 2, "stone: the 10th and 11th pieces out fall (falling %d)" % falling.size())
 		else:
-			check(falling.is_empty(), "copper: 7 pieces sideways is fine")
+			check(falling.is_empty(), "copper: 11 pieces sideways is fine")
 
 
 func test_overlap_blocks_duplicates() -> void:
