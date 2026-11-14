@@ -193,5 +193,5 @@ Why branches? Our rule says each step must be playable and approved before the n
 
 **Next (for you, on the gaming PC)**
 1. `git pull --ff-only`, then `git switch fungal-jungle` for the newest everything (see `docs/GAMING-PC-START.md`).
-2. To see the jungle quickly without beating Orrumhal: start a world, then look in the Mossy cave for the purple glowing arch (the gate). Or ask Claude for a "debug: give copper pickaxe" key.
+2. To see the jungle quickly without beating Orrumhal, start the game with `-- jungle` (see the PC guide): you appear next to the purple gate with a copper pickaxe, axe, sword and shield. Dig through the plug and you're in.
 
