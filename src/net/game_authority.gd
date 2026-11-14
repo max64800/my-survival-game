@@ -1,5 +1,7 @@
 class_name GameAuthority
 extends Node
+
+signal hud_message(text: String)  ## a line for our own screen
 ## The referee. Every action that changes the shared world goes through here:
 ##
 ##   1. A player ASKS for something       (ask_*: called by the player's own computer)
@@ -68,6 +70,11 @@ class PlayerState:
 	var seen := {}  ## every item id this player has held (unlocks recipes)
 	var bed_pos := Vector3.INF  ## where you wake up after dying (INF = the world start)
 	var dying := false
+	## Host: timed fight boosts it can see (food damage buffs, whetstone, bug oil, war horn).
+	## name -> {damage, bugs, until (host seconds)}
+	var boosts := {}
+	var train_hits := 0
+	var train_at := 0.0
 
 	func _init() -> void:
 		inventory.changed.connect(_note_seen)
@@ -148,6 +155,8 @@ func _process(delta: float) -> void:
 		for st in stations.values():
 			for done in st.tick(delta):
 				spawn_drop(done[0], done[1], st.global_position + Vector3.UP * 1.2)
+			if st.tick_water(delta):
+				_ev_water.rpc(st.station_id, st.water, st.under_drip)
 		_progress_sync -= delta
 		if _progress_sync <= 0.0 and not _progress_dirty.is_empty():
 			_progress_sync = PROGRESS_SYNC_TIME
@@ -552,7 +561,37 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 				Sfx.ui("eat", -4.0)
 			else:
 				_rpc_consumed.rpc_id(peer_id, id, roll)
+			# The host does the fighting math, so it remembers food damage buffs itself.
+			var fb: Dictionary = Foods.buff_of(id) if Foods.is_buff_food(id) else {}
+			if fb.has("damage"):
+				add_boost(ps, id, {damage = fb.damage}, Foods.minutes_of(id) * 60.0)
 			return "ate"
+		"tonic":
+			if not ps.inventory.remove(id, 1):
+				return ""
+			var info := Items.info(id)
+			add_boost(ps, id, info.tonic, info.seconds)
+			return "used"
+		"horn":
+			# War Horn: friends within 15 m hit 10% harder for 60 s. 5 minute cooldown.
+			if ps.boosts.has("horn_cooldown") and ps.boosts.horn_cooldown.until > now():
+				return "cooldown"
+			add_boost(ps, "horn_cooldown", {}, 300.0)
+			for pid in players:
+				if players[pid].node.global_position.distance_to(ps.node.global_position) <= 15.0:
+					add_boost(players[pid], "war_horn", {damage = 0.10}, 60.0)
+			_ev_horn.rpc(ps.node.global_position)
+			return "used"
+		"throw":
+			if not aim_point.is_finite() or _chest(ps).distance_to(aim_point) > 22.0 or not ps.inventory.remove(id, 1):
+				return ""
+			_ev_throw.rpc(_chest(ps), aim_point, id)
+			if id == "spore_bomb":
+				monsters.spawn_cloud(aim_point + Vector3.UP * 0.6, 3.0, 5.0, 40.0, 6.0, true)
+			elif id == "blasting_pod":
+				var counts := _host_dig(aim_point, 1, 2.0)  # copper-tier strength, 2 m hole
+				_give_dig_drops(ps, counts, aim_point + aim_normal * 1.0)
+			return "thrown"
 		"station":
 			if not aim_point.is_finite() or aim_normal.normalized().y < 0.6 or _chest(ps).distance_to(aim_point) > REACH + 1.0:
 				return ""
@@ -564,6 +603,9 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 			var sid := _next_station_id
 			_next_station_id += 1
 			_ev_place_station.rpc(sid, id, aim_point, yaw)
+			if Station.WATER.has(id):
+				var drip := glow != null and GlowPlacer.drip_near(glow.spots_near(aim_point, 20.0), aim_point)
+				_ev_water.rpc(sid, 0, drip)
 			if id == "bed":
 				ps.bed_pos = aim_point + Vector3.UP * 0.5
 			return "placed"
@@ -575,6 +617,140 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 			storage.create_box(id, aim_point, yaw, peer_id)
 			return "placed"
 	return ""
+
+
+# ---------------------------------------------------------------- water (doc 6.4)
+
+func ask_collect_water(station_id: int) -> void:
+	if is_host():
+		request_collect_water(local_peer_id(), station_id)
+	else:
+		_rpc_collect_water.rpc_id(1, station_id)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_collect_water(station_id: int) -> void:
+	if is_host():
+		request_collect_water(multiplayer.get_remote_sender_id(), station_id)
+
+
+## Empties a drip bucket: fills your empty waterskins first, the rest becomes buckets of water.
+## Returns how much water you took.
+func request_collect_water(peer_id: int, station_id: int) -> int:
+	var ps := get_player(peer_id)
+	var st: Station = stations.get(station_id)
+	if ps == null or st == null or st.water <= 0 or st.global_position.distance_to(ps.node.global_position) > STATION_REACH + 1.0:
+		return 0
+	var took := 0
+	for i in ps.inventory.slots.size():
+		if st.water <= 0:
+			break
+		if ps.inventory.slots[i].get("id", "") == "waterskin_empty":
+			ps.inventory.slots[i] = {id = "waterskin_clean", count = 1}
+			st.water -= 1
+			took += 1
+	if st.water > 0:
+		var left := ps.inventory.add("water_bucket", st.water)
+		took += st.water - left
+		st.water = left
+	ps.inventory.changed.emit()
+	_ev_water.rpc(station_id, st.water, st.under_drip)
+	return took
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_water(station_id: int, amount: int, under_drip: bool) -> void:
+	var st: Station = stations.get(station_id)
+	if st:
+		st.under_drip = under_drip
+		st.set_water(amount)
+
+
+# ---------------------------------------------------------------- boosts (host)
+
+static func now() -> float:
+	return Time.get_ticks_msec() / 1000.0
+
+
+func add_boost(ps: PlayerState, name: String, data: Dictionary, seconds: float) -> void:
+	var b := data.duplicate()
+	b.until = now() + seconds
+	ps.boosts[name] = b  # the same boost again refreshes it
+
+
+## Extra damage share from active boosts. Bug oil counts only against bugs.
+func damage_boost(ps: PlayerState, target_kind: String = "") -> float:
+	var t := now()
+	var total := 0.0
+	for name in ps.boosts.keys():
+		var b: Dictionary = ps.boosts[name]
+		if b.until <= t:
+			ps.boosts.erase(name)
+			continue
+		total += b.get("damage", 0.0)
+		if Monsters.LIST.get(target_kind, {}).get("shape", "") in BUG_SHAPES:
+			total += b.get("bugs", 0.0)
+	return total
+
+
+const BUG_SHAPES := ["mite", "beetle", "mantis", "crab", "moth"]
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_horn(at: Vector3) -> void:
+	Sfx.play("dig_break", at, 6.0, 0.4)  # a deep blast
+	var me := get_player(local_peer_id())
+	if me and me.node.global_position.distance_to(at) <= 15.0:
+		hud_message.emit("The War Horn sounds! +10% damage for 60 s")
+
+
+## Everyone: something thrown flies in an arc.
+@rpc("authority", "call_local", "reliable")
+func _ev_throw(from: Vector3, to: Vector3, item: String) -> void:
+	var ball := MeshInstance3D.new()
+	var s := SphereMesh.new()
+	s.radius = 0.15
+	s.height = 0.3
+	ball.mesh = s
+	var m := StandardMaterial3D.new()
+	m.albedo_color = Items.color(item)
+	m.emission_enabled = true
+	m.emission = Items.color(item)
+	ball.material_override = m
+	drops_root.add_child(ball)
+	ball.global_position = from
+	var t := 0.15 + from.distance_to(to) / 18.0
+	var tw := ball.create_tween()
+	tw.tween_method(func(k: float): ball.global_position = from.lerp(to, k) + Vector3.UP * sin(k * PI) * from.distance_to(to) * 0.25, 0.0, 1.0, t)
+	tw.tween_callback(ball.queue_free)
+	Sfx.play("dig_break" if item == "blasting_pod" else "dig_soft", to, 2.0, 0.7)
+
+
+## Training Dummy: hitting it trains Fighting at 25% (1 XP every 4 hits).
+func ask_train(station_id: int) -> void:
+	if is_host():
+		request_train(local_peer_id(), station_id)
+	else:
+		_rpc_train.rpc_id(1, station_id)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_train(station_id: int) -> void:
+	if is_host():
+		request_train(multiplayer.get_remote_sender_id(), station_id)
+
+
+func request_train(peer_id: int, station_id: int) -> bool:
+	var ps := get_player(peer_id)
+	var st: Station = stations.get(station_id)
+	if ps == null or st == null or st.kind != "training_dummy" or now() - ps.train_at < 0.4 \
+			or st.global_position.distance_to(ps.node.global_position) > 3.5:
+		return false
+	ps.train_at = now()
+	ps.train_hits += 1
+	if ps.train_hits % 4 == 0:
+		give_xp(peer_id, 1, "fighting")
+	return true
 
 
 func _take_sip(ps: PlayerState, slot_i: int) -> void:
@@ -642,13 +818,14 @@ func _altar(ps: PlayerState, poi: Dictionary) -> String:
 				return "need_offering"
 		elif ps.inventory.count_of(item) < need[item]:
 			return "need_offering"
+	if not monsters.summon_boss(boss):
+		return "awake"  # (checked before taking the offering, so nothing is lost)
 	for item in need:
 		if item != "shard":
 			ps.inventory.remove(item, need[item])
 	if shard != "":
 		rune_slab.shards[shard] -= 1
 		_ev_slab.rpc(rune_slab.to_data())
-	monsters.summon_boss(boss)
 	return "summoned"
 
 
@@ -694,7 +871,7 @@ func request_craft(peer_id: int, recipe_id: String, station_id: int = 0) -> bool
 	var st: Station = stations.get(station_id)
 	if r.station == Recipes.HAND:
 		st = null
-	elif st == null or st.kind != r.station or _chest(ps).distance_to(st.global_position) > STATION_REACH + 1.0:
+	elif st == null or Recipes.station_type(st.kind) != r.station or _chest(ps).distance_to(st.global_position) > STATION_REACH + 1.0:
 		return false
 	var fuel_item := ""
 	if r.get("fuel", 0) > 0:
@@ -997,7 +1174,7 @@ func snapshot() -> Dictionary:
 	var sts := []
 	for id in stations:
 		var st: Station = stations[id]
-		sts.append([id, st.kind, st.global_position, st.rotation.y, st.jobs.duplicate(true)])
+		sts.append([id, st.kind, st.global_position, st.rotation.y, st.jobs.duplicate(true), st.water, st.under_drip])
 	var chops := {}
 	if glow:
 		for id in glow._spots:
@@ -1022,6 +1199,9 @@ func load_snapshot(snap: Dictionary) -> void:
 		_ev_place_station(st[0], st[1], st[2], st[3])
 		if st.size() > 4 and stations.has(st[0]):
 			stations[st[0]].jobs.assign(st[4])  # smelting/cooking in progress survives a save
+		if st.size() > 6 and stations.has(st[0]):
+			stations[st[0]].under_drip = st[6]
+			stations[st[0]].set_water(st[5])
 	for id in snap.get("chops", {}):
 		if glow:
 			glow.set_chops(id, snap.chops[id])

@@ -78,6 +78,9 @@ func id_of(collider: Object) -> int:
 
 
 func _add_node(s: Dictionary) -> void:
+	if s.kind == GlowPlacer.DRIP:
+		_add_drip(s)
+		return
 	var body := StaticBody3D.new()
 	body.collision_layer = GLOW_LAYER
 	body.collision_mask = 0
@@ -116,6 +119,42 @@ func _add_node(s: Dictionary) -> void:
 	var basis := Basis(side, up, side.cross(up)).orthonormalized()
 	body.global_transform = Transform3D(basis.rotated(up, s.spin).scaled(Vector3.ONE * s.scale), s.pos - up * 0.1)
 	_nodes[s.id] = body
+
+
+## A little wet stalactite with drops falling from its tip (not something you can hit).
+func _add_drip(s: Dictionary) -> void:
+	var root := Node3D.new()
+	add_child(root)
+	root.global_position = s.pos
+	var tip := MeshInstance3D.new()
+	var cone := CylinderMesh.new()
+	cone.top_radius = 0.18
+	cone.bottom_radius = 0.0
+	cone.height = 0.6
+	cone.radial_segments = 6
+	tip.mesh = cone
+	tip.material_override = _material_for(Color(0.5, 0.55, 0.62), false)
+	tip.position = Vector3.DOWN * 0.3
+	root.add_child(tip)
+	var drops := CPUParticles3D.new()
+	drops.amount = 3
+	drops.lifetime = 1.6
+	drops.emission_shape = CPUParticles3D.EMISSION_SHAPE_POINT
+	drops.direction = Vector3.DOWN
+	drops.spread = 0.0
+	drops.initial_velocity_min = 0.0
+	drops.initial_velocity_max = 0.2
+	drops.gravity = Vector3(0, -6.0, 0)
+	var dm := SphereMesh.new()
+	dm.radius = 0.03
+	dm.height = 0.08
+	dm.radial_segments = 4
+	dm.rings = 2
+	drops.mesh = dm
+	drops.material_override = _material_for(s.color, true)
+	drops.position = Vector3.DOWN * 0.6
+	root.add_child(drops)
+	_nodes[s.id] = root
 
 
 func _material_for(c: Color, glows: bool = true) -> Material:

@@ -219,6 +219,7 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	dwarf.fight.message.connect(func(t: String, _c: Color): hud.show_toast(t, 1.5))
 	authority.monsters.defended.connect(_on_defended)
 	authority.raids.warning.connect(func(t: String): hud.show_toast(t, 8.0))
+	authority.hud_message.connect(func(t: String): hud.show_toast(t, 3.0))
 	hud.peer_id = me
 	hud.seed_text = str(seed)
 	add_child(hud)
@@ -464,6 +465,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		var st: Station = info.get("station")
 		if st == null:
 			st = authority.station_near(dwarf.global_position, 2.5)
+		if st and Station.WATER.has(st.kind):
+			if st.water > 0:
+				authority.ask_collect_water(st.station_id)
+				hud.show_toast("You fill up with clean water.", 2.0)
+			else:
+				hud.show_toast("Still empty. It fills one bucket every few minutes." if st.under_drip else "No drips here! Place it under a dripping stalactite (look for falling drops).", 4.0)
+			return
 		if st:
 			hud.open_station(st)
 			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE

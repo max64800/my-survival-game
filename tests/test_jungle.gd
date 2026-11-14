@@ -69,6 +69,8 @@ func test_jungle_rocks() -> void:
 
 func test_glow_items_exist() -> void:
 	for k in GlowPlacer.KINDS:
+		if GlowPlacer.KINDS[k].item == "":
+			continue  # drips mark water spots; there's nothing to pick
 		check(Items.exists(GlowPlacer.KINDS[k].item), "%s gives a real item" % k)
 		if GlowPlacer.KINDS[k].has("extra"):
 			check(Items.exists(GlowPlacer.KINDS[k].extra), "%s extra is a real item" % k)

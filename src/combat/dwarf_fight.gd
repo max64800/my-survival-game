@@ -210,6 +210,11 @@ func _impact(heavy: bool, combo_step: int, riposte: bool) -> void:
 	if not uids.is_empty():
 		auth.monsters.ask_attack(uids, heavy, combo_step, riposte)
 		dwarf.add_shake(0.3 if heavy else 0.15)
+	else:
+		var dummy: Station = auth.station_near(dwarf.global_position + fwd * 1.2, reach)
+		if dummy and dummy.kind == "training_dummy":
+			auth.ask_train(dummy.station_id)
+			dwarf.add_shake(0.1)
 	# Friendly fire (doc 2.7): friends standing in the swing get hit too.
 	if auth.friendly_fire():
 		for pid in auth.players:

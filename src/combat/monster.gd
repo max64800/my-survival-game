@@ -201,7 +201,8 @@ func think(delta: float, mgr: Node) -> void:
 		_move(delta, Vector3.ZERO, 0.0)
 		return
 	if state == State.STUNNED:
-		state = State.CHASE
+		state = State.FLEE if data.get("passive", false) or (data.get("neutral", false) and hp < max_hp() * 0.5) else State.CHASE
+		_timer = 6.0
 	for k in _cooldowns.keys():
 		_cooldowns[k] -= delta
 		if _cooldowns[k] <= 0.0:

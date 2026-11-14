@@ -27,11 +27,15 @@ const KINDS := {
 	# Fungal Jungle. Giant mushrooms are the jungle's wood: tall stalks that need a copper axe
 	# (or copper pickaxe at half power), and each chop also drops some flesh.
 	"giant_mushroom": {item = "mushroom_wood", count = [3, 3], extra = "mushroom_flesh", tool = "axe", hardness = 40, min_tier = 1, chops = 4, color = Color(0.72, 0.5, 0.78), xp = 4, skill = "survival"},
+	"drip": {item = "", tool = "none", color = Color(0.55, 0.75, 0.95)},
 	"crystal_amber": {item = "crystal_amber", count = [2, 3], tool = "pickaxe", hardness = 22, glow = true, color = Color(1.0, 0.72, 0.28), xp = 5, skill = "mining"},
 	"spore_truffle": {item = "spore_truffle", count = [1, 2], tool = "hand", color = Color(0.45, 0.33, 0.52), xp = 1, skill = "survival"},
 	"ember_morel": {item = "ember_morel", count = [1, 1], tool = "hand", glow = true, color = Color(1.0, 0.45, 0.15), xp = 2, skill = "survival"},
 }
 const GIANT := "giant_mushroom"
+## Dripping stalactites: not harvestable, they mark where a Drip Bucket collects water (doc 6.4).
+const DRIP := "drip"
+const DRIP_REACH := 3.0  ## a bucket within this many meters (sideways) of a drip fills up
 ## Kinds that stand tall (or hang long): their size is `length`, not `scale`.
 const TALL := ["root", "giant_mushroom"]
 
@@ -126,6 +130,8 @@ static func _pick_kind(n: Vector3, rng: RandomNumberGenerator) -> String:
 		return "firecap"
 	if n.y < -0.55 and r < 0.6:  # ceiling
 		return ROOT
+	if n.y < -0.55 and r < 0.7:
+		return DRIP
 	return "crystal_green" if r > 0.88 else CRYSTAL
 
 
@@ -139,6 +145,8 @@ static func _pick_fungal(n: Vector3, rng: RandomNumberGenerator) -> String:
 		if r < 0.78: return "fiber"
 		if r < 0.88: return "ember_morel"
 		return "hollowcap"
+	if n.y < -0.55 and r < 0.15:
+		return DRIP
 	if r < 0.3:
 		return "crystal_amber"
 	return "crystal_green" if r > 0.9 else CRYSTAL
@@ -165,6 +173,14 @@ static func normal_at(maker: CaveMaker, p: Vector3) -> Vector3:
 		maker.sdf_at(p + Vector3(0, E, 0)) - maker.sdf_at(p - Vector3(0, E, 0)),
 		maker.sdf_at(p + Vector3(0, 0, E)) - maker.sdf_at(p - Vector3(0, 0, E)))
 	return g.normalized() if g.length() > 0.0001 else Vector3.UP
+
+
+## Drip spots near p (sideways distance), for Drip Buckets.
+static func drip_near(spots: Array, p: Vector3) -> bool:
+	for s in spots:
+		if s.kind == DRIP and Vector2(s.pos.x - p.x, s.pos.z - p.z).length() <= DRIP_REACH and s.pos.y > p.y and s.pos.y - p.y < 15.0:
+			return true
+	return false
 
 
 static func is_plant(kind: String) -> bool:

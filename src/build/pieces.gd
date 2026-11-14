@@ -36,6 +36,7 @@ const FAMILIES := {
 	# Fungal Jungle styles (world doc 6.3): Spore Brick (dark) and Kiln Clay (warm amber + silver trim).
 	"sporestone_block": {name = "Sporestone", hp = 520, up = 0.05, side = 0.30, color = Color(0.36, 0.3, 0.42), damage = 0.6},
 	"amber_block": {name = "Amber", hp = 450, up = 0.05, side = 0.30, color = Color(0.88, 0.64, 0.25), damage = 0.65},
+	"ancient_brick": {name = "Ancient Brick", hp = 650, up = 0.05, side = 0.30, color = Color(0.55, 0.42, 0.35), damage = 0.55},
 	"silver_ingot": {name = "Silver", hp = 1000, up = 0.04, side = 0.12, color = Color(0.82, 0.85, 0.92), damage = 0.35},
 }
 

@@ -28,6 +28,8 @@ var _pose_timer := 0.0
 var _spawn_timer := 0.0
 var _incoming: Array[Dictionary] = []  ## hits on OUR dwarf waiting to land: {uid, at, ...}
 var _boss_alone := {}  ## boss uid -> seconds with no player within 60 m (resets at 30)
+var _block_ok := {}  ## host: like _parry_ok, for Blight-gem blocks
+var _ff_ready := {}  ## host: peer -> seconds (clock) when their next friendly-fire hit may count
 var _parry_ok := {}  ## host: monster uid -> the player its last swing was aimed at
 
 
@@ -334,7 +336,7 @@ func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: 
 		var crush := heavy and m.stun.take_crush()
 		var sit := Combat.situation(sneak, m.stun.is_stunned(), crush, riposte)
 		var mult := 0.6 if (w == "axe" and n == 2) else 1.0
-		var dmg := roundi(Combat.damage(w, heavy, tier, m.stats(), combo_step, sit, 0.0, 0.0, buff, elem) * mult)
+		var dmg := roundi(Combat.damage(w, heavy, tier, m.stats(), combo_step, sit, 0.0, 0.0, buff + auth.damage_boost(ps, m.kind), elem) * mult)
 		total += dmg
 		_gem_buildup(m, gb)
 		_hurt_monster(m, peer, dmg, Combat.stun_value(w, heavy, tier) * (1.0 + gb.get("stun", 0.0)))
@@ -392,12 +394,15 @@ func request_hit_friend(peer: int, target: int, heavy: bool, bolt: String = "", 
 	var item := ps.selected_item()
 	var w := Combat.weapon_of(item)
 	var tier := maxi(Items.tier(item), 0)
+	if _clock < _ff_ready.get(peer, 0.0):
+		return 0  # faster than the weapon can swing: not a real hit
 	var gap := ps.node.global_position.distance_to(tp.node.global_position)
 	var dmg := 0.0
 	var buildup := {}
 	if bolt != "":
 		if w != "crossbow" or not Combat.BOLTS.has(bolt) or gap > Combat.BOLT_MAX + 2.0:
 			return 0
+		_ff_ready[peer] = _clock + Combat.RELOAD[clampi(tier, 0, 4)] * 0.8  # one bolt per reload
 		dmg = Combat.shot_damage(heavy, tier, bolt, {armor = 0}, gap)
 		for k in BOLT_BUILDUP.get(bolt, {}):
 			buildup[k] = BOLT_BUILDUP[bolt][k] * Combat.FRIENDLY_FIRE
@@ -405,6 +410,7 @@ func request_hit_friend(peer: int, target: int, heavy: bool, bolt: String = "", 
 		if w == "crossbow" or gap > Combat.WEAPONS[w].reach + 1.5:
 			return 0
 		dmg = Combat.damage(w, heavy, tier, {armor = 0})
+		_ff_ready[peer] = _clock + Combat.WEAPONS[w].light_speed * 0.8
 	var dealt := roundi(dmg * Combat.FRIENDLY_FIRE)
 	auth.hurt(target, dealt, buildup)
 	return dealt
@@ -442,7 +448,13 @@ func request_shoot(peer: int, bolt: String, aimed: bool, uid: int, from: Vector3
 	var b: Dictionary = Combat.BOLTS[bolt]
 	var dealt := 0
 	var m: Monster = monsters.get(uid)
-	if m and m.is_alive() and m.global_position.distance_to(point) < 2.0 + m.data.size * 1.5:
+	var near_line := false
+	if m:
+		var seg := point - from
+		var t := clampf((m.global_position - from).dot(seg) / maxf(seg.length_squared(), 0.001), 0.0, 1.0)
+		near_line = (from + seg * t).distance_to(m.global_position + Vector3.UP * 0.5 * m.data.size) < 1.5 + m.data.size
+		# shortcut: no host-side rock check (the host may not have that rock loaded); add one if cheating shows up.
+	if m and m.is_alive() and near_line and m.global_position.distance_to(point) < 2.0 + m.data.size * 1.5:
 		var tier := maxi(Items.tier(ps.selected_item()), 0)
 		var gb := Gems.bonus(ps.inventory.get_slot(ps.selected_slot))  # crossbow gems ride on every bolt
 		var elem := {}
@@ -451,7 +463,7 @@ func request_shoot(peer: int, bolt: String, aimed: bool, uid: int, from: Vector3
 				elem[e] = gb[e]
 		var sneak: bool = m.state in [Monster.State.IDLE, Monster.State.WANDER, Monster.State.SLEEP]
 		var sit := Combat.situation(sneak, m.stun.is_stunned(), false, false)
-		dealt = Combat.shot_damage(aimed, tier, bolt, m.stats(), dist, sit, gb.get("keen", 0.0), elem)
+		dealt = Combat.shot_damage(aimed, tier, bolt, m.stats(), dist, sit, gb.get("keen", 0.0) + auth.damage_boost(ps, m.kind), elem)
 		var stun_amount: float = (Combat.stun_value("crossbow", aimed, tier) + b.get("stun", 0.0)) * (1.0 + gb.get("stun", 0.0))
 		for k in BOLT_BUILDUP.get(bolt, {}):
 			m.add_buildup(k, BOLT_BUILDUP[bolt][k])
@@ -655,6 +667,7 @@ func _ev_tell(uid: int, target: int, tell: float, dmg: float, reach: float, crus
 		m.show_tell(tell)
 	if auth.is_host():
 		_parry_ok[uid] = target  # only this player may parry this swing, once
+		_block_ok[uid] = target
 	if target == auth.local_peer_id() and dmg > 0.0:
 		_incoming.append({uid = uid, at = _clock + tell, damage = dmg, reach = reach, crushing = crushing, kd = kd, name = attack_name, buildup = buildup})
 
@@ -666,12 +679,13 @@ var clouds: Array[Dictionary] = []  ## {pos, radius, left, rate, dps, node}
 
 
 ## Host: a spore cloud appears (everyone sees it; each player's own computer feels it).
-func spawn_cloud(pos: Vector3, radius: float, seconds: float, rate: float, dps: float) -> void:
-	_ev_cloud.rpc(pos, radius, seconds, rate, dps)
+## by_player: a Spore Bomb. It poisons monsters, and friends only at half (friendly fire).
+func spawn_cloud(pos: Vector3, radius: float, seconds: float, rate: float, dps: float, by_player: bool = false) -> void:
+	_ev_cloud.rpc(pos, radius, seconds, rate, dps, by_player)
 
 
 @rpc("authority", "call_local", "reliable")
-func _ev_cloud(pos: Vector3, radius: float, seconds: float, rate: float, dps: float) -> void:
+func _ev_cloud(pos: Vector3, radius: float, seconds: float, rate: float, dps: float, by_player: bool = false) -> void:
 	# A lumpy bunch of soft see-through puffs (one shared material, so fading is one change).
 	var mi := Node3D.new()
 	var mat := StandardMaterial3D.new()
@@ -699,7 +713,7 @@ func _ev_cloud(pos: Vector3, radius: float, seconds: float, rate: float, dps: fl
 	mi.set_meta("mat", mat)
 	_root.add_child(mi)
 	mi.global_position = pos
-	clouds.append({pos = pos, radius = radius, left = seconds, total = seconds, rate = rate, dps = dps, node = mi})
+	clouds.append({pos = pos, radius = radius, left = seconds, total = seconds, rate = rate, dps = dps, node = mi, by_player = by_player})
 	Sfx.play("dig_soft", pos, -6.0, 0.6)
 
 
@@ -716,13 +730,30 @@ func _clouds_step(delta: float) -> void:
 		var mat: StandardMaterial3D = c.node.get_meta("mat")
 		mat.albedo_color.a = CLOUD_COLOR.a * clampf(c.left / 1.0, 0.0, 1.0)  # fades out in its last second
 		c.node.scale = Vector3.ONE * (0.6 + 0.4 * minf(1.0, (c.total - c.left) / 0.5))  # puffs up
-		if me and me.node and not me.dying and me.node.global_position.distance_to(c.pos) < c.radius + 0.3:
-			var ward := 1.0 - me.vitals.buff_total("spore_resist")  # Spore Ward Stew halves it
+		if c.by_player and auth.is_host():
+			for m: Monster in monsters.values():
+				if m.is_alive() and m.global_position.distance_to(c.pos) < c.radius + 0.5:
+					m.add_buildup("poison", c.rate * delta)
+					m.hp -= c.dps * delta
+					if m.hp <= 0.0:
+						_kill(m, 0)
+		var friendly: float = (Combat.FRIENDLY_FIRE if auth.friendly_fire() else 0.0) if c.by_player else 1.0
+		if friendly > 0.0 and me and me.node and not me.dying and me.node.global_position.distance_to(c.pos) < c.radius + 0.3:
+			var ward := (1.0 - me.vitals.buff_total("spore_resist")) * friendly  # Spore Ward Stew halves it
+			if _has_mask(me):
+				ward *= 0.5  # Spore Mask
 			me.vitals.ailments.add("poison", c.rate * delta * ward)
 			if c.dps > 0.0:
 				me.vitals.take_damage(c.dps * delta * ward)
 		still.append(c)
 	clouds = still
+
+
+func _has_mask(ps: GameAuthority.PlayerState) -> bool:
+	for i in Inventory.HOTBAR_SIZE:
+		if ps.inventory.get_slot(i).get("id", "") == "spore_mask":
+			return true
+	return false
 
 
 func _judge_incoming() -> void:
@@ -793,6 +824,9 @@ func _rpc_blocked(uid: int) -> void:
 
 
 func request_blocked(uid: int, peer: int) -> void:
+	if _block_ok.get(uid, -1) != peer:
+		return  # only a swing that was aimed at you, once
+	_block_ok.erase(uid)
 	var m: Monster = monsters.get(uid)
 	var ps := auth.get_player(peer)
 	if m == null or ps == null or ps.node.global_position.distance_to(m.global_position) > 8.0:
@@ -818,7 +852,7 @@ func ask_parried(uid: int, stun_amount: float) -> void:
 @rpc("any_peer", "reliable")
 func _rpc_parried(uid: int, stun_amount: float) -> void:
 	var sender := multiplayer.get_remote_sender_id()
-	if auth.is_host() and _parry_ok.get(uid, -1) == sender:
+	if auth.is_host() and is_finite(stun_amount) and _parry_ok.get(uid, -1) == sender:
 		_parry_ok.erase(uid)
 		request_parried(uid, stun_amount, sender)
 

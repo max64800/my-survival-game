@@ -6,7 +6,9 @@ extends Node
 
 const BOX_LAYER := 16  ## same layer as stations, so you can aim at them and press E
 const REACH := 4.5
-const SIZES := {"chest_small": 12, "chest_stone": 24, "grave": Inventory.SIZE, "builder": 24}
+const SIZES := {"chest_small": 12, "chest_stone": 24, "chest_copper": 36, "crate_ore": 60, "grave": Inventory.SIZE, "builder": 24}
+## The Ore Crate only takes ores, stone types, clay and crystals (doc 8 storage table).
+const ORE_CRATE := ["stone", "dirt", "moss", "clay", "copper_ore", "silver_ore", "sporestone", "amberrock", "marble", "basalt", "brown_rock"]
 
 var auth: GameAuthority
 var boxes := {}  ## id -> {kind, inv: Inventory, node: Node3D, owner: int}
@@ -118,6 +120,8 @@ func request_take_all(peer_id: int, box_id: int) -> int:
 
 ## What a box will hold. Builder's Chests only take building materials (and the rock they carve).
 static func accepts(kind: String, item: String) -> bool:
+	if kind == "crate_ore":
+		return item in ORE_CRATE or item.begins_with("crystal_")
 	if kind != "builder":
 		return true
 	return Pieces.FAMILIES.has(item) or item in ["stone", "dirt", "moss", "clay", "copper_ore", "copper_ingot",

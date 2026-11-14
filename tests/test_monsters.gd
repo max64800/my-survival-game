@@ -180,6 +180,8 @@ func test_friendly_fire() -> void:
 			fs.selected_slot = i
 	check_eq(auth.monsters.request_hit_friend(2, 1, false), 5, "a friend's sword: half of 10")
 	check_near(ps.vitals.health, 95.0, 0.01, "it hurt")
+	check_eq(auth.monsters.request_hit_friend(2, 1, false), 0, "a 2nd hit faster than a swing doesn't count")
+	auth.monsters._ff_ready.clear()
 	fs.inventory.add("crossbow_stone", 1)
 	for i in Inventory.HOTBAR_SIZE:
 		if fs.inventory.get_slot(i).get("id", "") == "crossbow_stone":

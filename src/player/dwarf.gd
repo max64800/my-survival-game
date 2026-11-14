@@ -7,6 +7,8 @@ extends CharacterBody3D
 
 const BODY_LAYER := 8  ## players' bodies (friendly fire bolts can hit them)
 const WALK_SPEED := 4.0
+const LADDER_SPEED := 2.5
+const LADDER_STAMINA := 4.0
 const RUN_SPEED := 6.5
 const JUMP_SPEED := 5.0
 const ACCEL := 14.0
@@ -124,7 +126,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			auth.ask_refill()
 	if event.is_action_pressed("use") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and not _holding_hammer() and not fight.weapon_mode():
-		var hit := aim()
+		var hit := aim_far(20.0) if ps and Items.kind(ps.selected_item()) == "throw" else aim()  # you can throw far
 		auth.ask_use(hit.get("position", Vector3.INF), hit.get("normal", Vector3.ZERO), model.rotation.y + PI)
 
 
@@ -156,6 +158,13 @@ func _physics_process(delta: float) -> void:
 			velocity.y = JUMP_SPEED
 	else:
 		velocity.y -= _gravity * delta
+	# Rope ladders: hold forward (or jump) to climb, 4 stamina a second (doc 6.2).
+	var ladder := _ladder_here()
+	if ladder and playing and (Input.is_action_pressed("move_forward") or Input.is_action_pressed("jump")) \
+			and (body == null or body.drain_stamina(LADDER_STAMINA, delta)):
+		velocity.y = LADDER_SPEED
+	elif ladder and not is_on_floor():
+		velocity.y = maxf(velocity.y, -1.5)  # hold on: slide down slowly
 	move_and_slide()
 
 	# Face where we're going, or where we're digging.
@@ -250,7 +259,8 @@ func _aim_info() -> Dictionary:
 	var poi_id := PoiField.poi_id_of(hit.collider)
 	if poi_id >= 0 and auth:
 		var t: String = auth.world.maker.pois[poi_id].type
-		return {kind = "poi", poi_id = poi_id, name = "Old carving · E to read" if t == "marking" else "Rune shrine · E to take"}
+		var label: String = {"marking": "Old carving · E to read", "lair": "Summoning altar · E"}.get(t, "Rune shrine · E to take")
+		return {kind = "poi", poi_id = poi_id, name = label}
 	var box_id := Storage.box_id_of(hit.collider)
 	if box_id >= 0 and auth:
 		var box := auth.storage.get_box(box_id)
@@ -259,7 +269,15 @@ func _aim_info() -> Dictionary:
 	if auth and auth.world:
 		var mat := auth.world.rock_material_near(hit.position - hit.normal * 0.3, 1.1)
 		if mat >= 0:
-			return {kind = "rock", material = mat, name = Mat.NAMES.get(mat, "?")}
+			var nm: String = Mat.NAMES.get(mat, "?")
+			var ps := auth.get_player(peer_id)
+			if ps and ps.selected_item() == "prospectors_lens":
+				# The lens shows how hard the rock is and what's 3 m behind it.
+				var behind := auth.world.sdf_at(hit.position - hit.normal * 3.0)
+				var behind_mat := auth.world.material_at(hit.position - hit.normal * 3.0)
+				nm = "%s · hardness %d%s · 3 m behind: %s" % [nm, Mat.hardness(mat), " (needs a better pickaxe)" if Mat.min_tier(mat) > 0 else "",
+					"open air!" if behind > 0.0 else Mat.NAMES.get(behind_mat, "rock")]
+			return {kind = "rock", material = mat, name = nm}
 	return {}
 
 
@@ -327,6 +345,20 @@ func got_parry() -> void:
 
 func add_shake(amount: float) -> void:
 	_shake = maxf(_shake, amount)
+
+
+## A rope ladder we're touching, or null.
+func _ladder_here() -> Station:
+	var auth := GameAuthority.instance
+	if auth == null:
+		return null
+	for st in auth.stations.values():
+		if st.kind != "rope_ladder":
+			continue
+		var d: Vector3 = global_position - st.global_position
+		if Vector2(d.x, d.z).length() < 0.9 and d.y > -0.5 and d.y < Station.LADDER_HEIGHT + 0.5:
+			return st
+	return null
 
 
 ## Turn to face where the camera looks (when attacking).

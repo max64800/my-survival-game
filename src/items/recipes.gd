@@ -77,6 +77,26 @@ const LIST := {
 	"bolt_rime": {station = "workbench", inputs = {bolt_metal = 10, crystal_blue = 2}, output = "bolt_rime", count = 10, unlock = ["bolt_metal"]},
 	"bolt_blight": {station = "workbench", inputs = {bolt_metal = 10, venom_sac = 1}, output = "bolt_blight", count = 10, unlock = ["venom_sac"]},
 	"bolt_glow": {station = "workbench", inputs = {plank_root = 1, crystal_blue = 1}, output = "bolt_glow", count = 10, unlock = ["rope"]},
+	# Taught by runes (progression doc 8). unlock = "rune": you learn it by carving the rune.
+	"crystal_sconce": {station = "workbench", inputs = {stone = 4, crystal_blue = 2}, output = "crystal_sconce", count = 1, unlock = "rune"},
+	"rope_ladder": {station = "workbench", inputs = {rope = 3, plank_root = 2}, output = "rope_ladder", count = 4, unlock = "rune"},
+	"blasting_pod": {station = "workbench", inputs = {spitter_gill = 1, crystal_red = 1, clay = 2}, output = "blasting_pod", count = 2, unlock = "rune"},
+	"glow_marker": {station = "workbench", inputs = {plank_mushroom = 2, crystal_amber = 1}, output = "glow_marker", count = 3, unlock = "rune"},
+	"prospectors_lens": {station = "anvil", inputs = {silver_ingot = 1, crystal_white = 1, scythe_blade = 1}, output = "prospectors_lens", count = 1, unlock = "rune"},
+	"training_dummy": {station = "workbench", inputs = {plank_root = 4, fiber = 6, critter_hide = 1}, output = "training_dummy", count = 1, unlock = "rune"},
+	"whetstone": {station = "workbench", inputs = {stone = 4, copper_ingot = 1}, output = "whetstone", count = 2, unlock = "rune"},
+	"spore_bomb": {station = "workbench", inputs = {spore_powder = 2, spitter_gill = 1, rope = 1}, output = "spore_bomb", count = 3, unlock = "rune"},
+	"bugbane_oil": {station = "cooking_pot", inputs = {venom_sac = 1, spore_powder = 2, mushroom_flesh = 1}, output = "bugbane_oil", count = 2, seconds = 20, unlock = "rune"},
+	"war_horn": {station = "anvil", inputs = {ironshell_plate = 1, silver_ingot = 2, critter_hide = 2}, output = "war_horn", count = 1, unlock = "rune"},
+	"ruin_style": {station = "masonry_table", inputs = {stone = 3, clay = 1}, output = "ancient_brick", count = 2, unlock = "rune"},
+	"chest_copper": {station = "anvil", inputs = {plank_root = 10, copper_ingot = 6}, output = "chest_copper", count = 1, unlock = "rune"},
+	"crate_ore": {station = "anvil", inputs = {plank_root = 12, copper_ingot = 4}, output = "crate_ore", count = 1, unlock = "rune"},
+	"mushroom_style": {station = "masonry_table", inputs = {mushroom_flesh = 2, sporestone = 1}, output = "mushroom_brick", count = 3, unlock = "rune"},
+	"twin_smelter": {station = "anvil", inputs = {silver_ingot = 4, clay = 10, sporestone = 10}, output = "twin_smelter", count = 1, unlock = "rune"},
+	"copper_drip_basin": {station = "anvil", inputs = {copper_ingot = 4, plank_root = 2}, output = "copper_drip_basin", count = 1, unlock = "rune"},
+	"drink_moss_ale": {station = "cooking_pot", inputs = {root_tuber = 3, hollowcap = 1, water_bucket = 2}, output = "drink_moss_ale", count = 3, seconds = 30, unlock = "rune"},
+	"drink_spore_mead": {station = "cooking_pot", inputs = {spore_truffle = 2, ember_morel = 1, water_bucket = 2}, output = "drink_spore_mead", count = 3, seconds = 30, unlock = "rune"},
+	"spore_mask": {station = "workbench", inputs = {leather = 2, spore_powder = 3, fiber = 4}, output = "spore_mask", count = 1, unlock = "rune"},
 	"lantern_back": {station = "anvil", inputs = {copper_ingot = 4, leather = 2, lantern_lens = 1, rope = 2}, output = "lantern_back", count = 1, unlock = ["copper_ingot"]},
 	# --- masonry table
 	"cut_stone": {station = "masonry_table", inputs = {stone = 2}, output = "cut_stone", count = 1, unlock = []},
@@ -112,8 +132,14 @@ static func get_recipe(id: String) -> Dictionary:
 	return LIST.get(id, {})
 
 
+## The Twin Smelter makes everything a Smelter does (two at a time).
+static func station_type(kind: String) -> String:
+	return "smelter" if kind == "twin_smelter" else kind
+
+
 static func for_station(station: String) -> Array:
 	var out := []
+	station = station_type(station)
 	for id in LIST:
 		if LIST[id].station == station:
 			out.append(id)

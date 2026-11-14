@@ -678,27 +678,32 @@ func generate_block(buf: VoxelBuffer, origin: Vector3i) -> void:
 			var base := gi
 			if not one_biome:
 				pal = fungal if origin.x + x >= split_x else mossy
+			var p_rock: int = pal.rock
+			var p_floor: int = pal.floor
+			var p_under: int = pal.under
+			var p_ore: int = pal.ore
+			var p_patch: int = pal.patch
 			for y in sy:
 				var s := grid[base + y]
 				buf.set_voxel_f(s, x, y, z, SDF)
 				if s > 0.0:
-					buf.set_voxel(pal.rock, x, y, z, IDX)  # air: material unused
+					buf.set_voxel(p_rock, x, y, z, IDX)  # air: material unused
 					continue
 				var pi := Vector3i(origin.x + x, origin.y + y, origin.z + z)
-				var m: int = pal.rock
+				var m: int = p_rock
 				var wall := _wall_rock(Vector3(pi)) if touches_border else -1
 				if wall >= 0:
 					m = wall
 				elif _is_ore(pi):
-					m = pal.ore
+					m = p_ore
 				elif grid[base + y + 1] > 0.0:
-					m = pal.floor
+					m = p_floor
 				elif grid[base + y + 2] > 0.0:
-					m = pal.under
-				elif s > -3.0 and _is_patch(Vector3(pi), pal.patch):
-					m = pal.patch
+					m = p_under
+				elif s > -3.0 and _is_patch(Vector3(pi), p_patch):
+					m = p_patch
 				elif s > -2.5 and _dirt_noise.get_noise_3dv(Vector3(pi)) > 0.35:
-					m = pal.under
+					m = p_under
 				buf.set_voxel(m, x, y, z, IDX)
 			gi += col
 
