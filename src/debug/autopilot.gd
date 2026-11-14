@@ -18,8 +18,17 @@ func _ready() -> void:
 	_run.call_deferred()
 
 
-func _process(_d: float) -> void:
-	_fps_samples.append(Engine.get_frames_per_second())
+var _hitches: Array[String] = []  ## frames that took over 0.25 s, and what the robot was doing
+var _clock := 0.0
+var _last_shot := "start"
+
+
+func _process(d: float) -> void:
+	if _main and _main.is_ready_to_play() and _clock > 3.0:
+		_fps_samples.append(Engine.get_frames_per_second())  # not while the cave is still loading
+	_clock += d
+	if d > 0.25 and _main and _main.is_ready_to_play():
+		_hitches.append("%.2f s at %.0f s (after '%s')" % [d, _clock, _last_shot])
 
 
 func _wait(seconds: float) -> void:
@@ -27,6 +36,7 @@ func _wait(seconds: float) -> void:
 
 
 func _shot(name: String) -> void:
+	_last_shot = name
 	await RenderingServer.frame_post_draw
 	var path: String = _main.take_screenshot(_shots.path_join(name + ".png"))
 	_report.append("screenshot: " + path)
@@ -276,7 +286,8 @@ func _run() -> void:
 		low = minf(low, f)
 	if not _fps_samples.is_empty():
 		avg /= _fps_samples.size()
-	_report.append("fps: average %.0f, lowest %.0f" % [avg, low])
+	_report.append("fps while playing: average %.0f, lowest %.0f" % [avg, low])
+	_report.append("freezes over 0.25 s while playing: %s" % (", ".join(_hitches) if not _hitches.is_empty() else "none"))
 	print("\n===== AUTOPILOT REPORT =====")
 	for line in _report:
 		print("  ", line)
