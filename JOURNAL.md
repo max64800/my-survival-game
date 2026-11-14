@@ -481,3 +481,33 @@ Why branches? Our rule says each step must be playable and approved before the n
 **Not done yet**
 - Monsters, stations and building pieces are still simple shapes (with the painted look). Best next step: real models from the asset forge in our style.
 - Frame rate is about the same as before (~53 average). The small "first time" hitch for new effects is smaller but not gone.
+
+---
+
+## Day 3, later — November 14, 2026: The new look, part 3 (branch `visuals`)
+
+**What we did** (owner: "work on the things we still don't have"; Claude 2 has made 170 item icons and is now turning them into 3D models)
+- **Working with Claude 2:** agreed how their 3D models plug in. Any model they make appears automatically: stations and chests (`assets/models/stations/<id>.glb`), things lying on the ground and tools/weapons in the hand (`assets/models/items/<id>.glb`). Our own shapes stay as the fallback until a model exists. One shared loader: `Look.forged()`.
+- **The dwarf, three rounds of owner feedback (F24, F25 ×3):** "the beard isn't attached to the face", "it's a small guy", then "a bulky guy, not a dwarf". Now: about a third of the height is legs (measured: 34%), short arms that end at the hips, a round belly, a big head, big hands and boots. A real full beard grows from the jaw down over the chest (the pack's beard stays small, on the face).
+- **Empty hand (F22):** an empty hand, stone or food now shows an empty fist, never a pickaxe.
+- **New animations:** a real **mining swing** (raise the pick over the head, smash down in front) built by stitching together poses from other animations, an **axe chop** for roots, **getting up** when you wake at your bed, a **landing** dip after a real fall, crossbow **shoot** and **reload**, reaching out to **use** things.
+- **Co-op:** friends' dwarfs now walk and run on your screen (they used to slide around standing still), hold their tools, block, aim, and flinch/eat/throw. Only small messages are sent, and only when something changes.
+- **Monsters:** a white flash and a little "punch" when hit; when they die they tip over and sink into the ground in a puff of dust instead of vanishing.
+- **Effects:** a pale swoosh behind weapon swings; running kicks up dust.
+- **The Spore Mask shows on the face** while it's on the hotbar. The same "wear" system is ready for armor when it's designed.
+- **Cave decoration** (`src/art/clutter.gd`): pebbles, rocks, old bones, twigs and fungus nubs on floors, and **stone stalactite clusters** on ceilings (owner F26: wide at the top, thinner toward a rounded tip, smaller ones around a big one). They disappear when the rock under them is dug. About 8,000 pieces, drawn in a few batches, so the frame rate didn't change.
+- **Roots (F26):** redrawn as twisted, knobbly wood with side roots forking off and thin strands at the tip, so nobody mistakes them for stone.
+- All 220 auto-checks pass; the co-op robot and the full autopilot pass.
+
+**Mistakes and hurdles (including Claude's)**
+- **The first co-op check failed** (the friend never placed their campfire). Same check on plain `main`: passed. Two more runs on our branch: both passed. Cause: the very first run after importing new files is slow, and the robot only waits fixed times. Not a game bug.
+- **The crossbow "missed" and the campfire was "missing" in one autopilot run:** the robot uses the real mouse, and the PC's mouse moved during the run. The next run hit for 63 as always. Lesson: don't use the mouse while a robot run is on screen.
+- **Measuring the dwarf gave nonsense at first** (legs 44% no matter what we changed). Godot applies the dwarf proportions *after* the moment Claude was reading the bones, so Claude was measuring the plain human. Fix: measure right after the proportions are applied. That also uncovered a real bug: the size calculation mixed two directions and made the dwarf only 0.7 m tall; fixed.
+- **"The feet are floating 8 cm!"** was Claude reading the ankle joint, which is naturally above the floor. The toes were on the ground. (A one-time "check where the feet are" step now makes sure of it anyway.)
+- **The first full beard and the first stalactites were invisible from the outside** (their surfaces faced inward). Fix: turned the faces around.
+- **Stalactites are hard to see from far away** because cave ceilings are dark; they show up when the lantern or a crystal lights them. That's on purpose (dark caves), but tell us if you want them easier to see.
+
+**Not done yet**
+- Monsters still have simple shapes; no real monster models yet.
+- Climbing ladders and swimming have no animation (the game has no swimming yet).
+- Armor pieces aren't designed yet (the dwarf can show them once they are).
