@@ -147,11 +147,10 @@ func _physics_process(delta: float) -> void:
 	var iv := Vector2.ZERO
 	if playing:
 		iv = Input.get_vector("move_left", "move_right", "move_forward", "move_back")
-		running = Input.is_action_pressed("run")
+		running = Input.is_action_pressed("run") and iv.length() > 0.1
 	if bot_move != Vector2.ZERO:
 		iv = bot_move
 	dir = (Basis(Vector3.UP, _yaw) * Vector3(iv.x, 0, iv.y))
-	running = running and iv.length() > 0.1
 	var body := _vitals()
 	if running and body and not body.drain_stamina(RUN_STAMINA, delta):
 		running = false  # out of breath
@@ -168,7 +167,6 @@ func _physics_process(delta: float) -> void:
 		var dv := fight.dodge_velocity()
 		velocity.x = dv.x
 		velocity.z = dv.z
-
 	# Jumping, made forgiving: bumpy cave floors can make "am I standing?" flicker,
 	# so a jump still works a moment after leaving the ground or just before landing.
 	_since_floor = 0.0 if on_floor else _since_floor + delta
@@ -177,7 +175,8 @@ func _physics_process(delta: float) -> void:
 		bot_jump = false
 	else:
 		_jump_wanted = maxf(0.0, _jump_wanted - delta)
-	if _jump_wanted > 0.0 and _since_floor <= COYOTE_TIME and velocity.y <= 0.5 and (body == null or body.use_stamina(JUMP_STAMINA)):
+	if _jump_wanted > 0.0 and _since_floor <= COYOTE_TIME and velocity.y <= 0.5 \
+			and (body == null or body.use_stamina(JUMP_STAMINA)):
 		velocity.y = JUMP_SPEED
 		_jump_wanted = 0.0
 		_since_floor = COYOTE_TIME + 1.0  # no double jump
@@ -191,7 +190,7 @@ func _physics_process(delta: float) -> void:
 	elif ladder and not is_on_floor():
 		velocity.y = maxf(velocity.y, -1.5)  # hold on: slide down slowly
 	move_and_slide()
-	if on_floor and velocity.y <= 0.01 and dir.length() > 0.1 and is_on_wall():
+	if on_floor and not ladder and velocity.y <= 0.01 and dir.length() > 0.1 and is_on_wall():
 		_try_step_up(dir * speed * delta)
 
 	# Face where we're going, or where we're digging.
@@ -213,26 +212,6 @@ func _physics_process(delta: float) -> void:
 	if global_position.y < CaveMaker.Y_MIN - 30.0:
 		global_position = _respawn_point
 		velocity = Vector3.ZERO
-
-
-## Walked into something low (a ledge, the edge of a dug hole)? If there's room
-## above it and floor on top, hop up onto it, like climbing a stair.
-func _try_step_up(motion: Vector3) -> void:
-	motion = motion.normalized() * maxf(motion.length(), 0.12)
-	var start := global_transform
-	var up := Vector3.UP * STEP_HEIGHT
-	if test_move(start, up):
-		return  # no head room
-	var raised := start.translated(up)
-	if test_move(raised, motion):
-		return  # still blocked up there: it's a wall, not a step
-	var ahead := raised.translated(motion)
-	var hit := KinematicCollision3D.new()
-	if not test_move(ahead, -up, hit):
-		return  # nothing to stand on
-	if hit.get_normal().angle_to(Vector3.UP) > floor_max_angle:
-		return  # too steep to stand on
-	global_position = ahead.origin + hit.get_travel()
 
 
 func _process(delta: float) -> void:
@@ -356,6 +335,26 @@ func _on_swing_impact() -> void:
 	if hit.collider is Station or hit.collider is PieceNode or Storage.box_id_of(hit.collider) >= 0:
 		return  # don't dig through your own furniture or buildings
 	auth.ask_hit(hit.position, hit.normal)
+
+
+## Walked into something low (a ledge, the edge of a dug hole)? If there's room
+## above it and floor on top, hop up onto it, like climbing a stair.
+func _try_step_up(motion: Vector3) -> void:
+	motion = motion.normalized() * maxf(motion.length(), 0.12)
+	var start := global_transform
+	var up := Vector3.UP * STEP_HEIGHT
+	if test_move(start, up):
+		return  # no head room
+	var raised := start.translated(up)
+	if test_move(raised, motion):
+		return  # still blocked up there: it's a wall, not a step
+	var ahead := raised.translated(motion)
+	var hit := KinematicCollision3D.new()
+	if not test_move(ahead, -up, hit):
+		return  # nothing to stand on
+	if hit.get_normal().angle_to(Vector3.UP) > floor_max_angle:
+		return  # too steep to stand on
+	global_position = ahead.origin + hit.get_travel()
 
 
 var _step_t := 0.0

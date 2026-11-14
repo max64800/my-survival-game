@@ -294,3 +294,117 @@ Why branches? Our rule says each step must be playable and approved before the n
 - The first few seconds (while OBS starts, about 5–7 seconds) aren't recorded. That's mostly the cave loading.
 - A thin strip of the window border shows at the top of the video.
 - `main` has no game sounds yet, so the sound track is silent until we're on a branch with sounds.
+
+---
+
+## Day 3, later — November 14, 2026: Planning the new look (research only)
+
+**What we did**
+- The owner said the game looks "Roblox-y" and asked for a plan to make it feel more like Valheim, plus real animations (running, jumping, swinging).
+- Claude studied our current look and did web research: how Valheim's style works, where to get free textures, models and animations, and which licences are safe.
+- Wrote the plan: `docs/design/visuals-plan.md`. No game code changed.
+
+**What we learned**
+- Valheim's trick is "cheap stuff, expensive light": simple shapes and small rough textures, but fancy light, fog and shadows.
+- Our toy look comes from: flat colors with no textures, a dwarf made of perfect balls and tubes, no walking animation, bright colors, and a cave that is lit everywhere.
+- Best free source of animations: Quaternius (CC0), 250+ animations on one skeleton, made to work in Godot.
+
+**Hurdles / mistakes**
+- **Mixamo and Synty look tempting but are a trap for us:** our GitHub repo is public, so anything in it counts as "shared", and their licences don't allow sharing the raw files. Decision: CC0 only in the repo.
+- Godot's automatic bounced light (SDFGI) is made for worlds that don't change. Ours changes with every dig, so the plan skips it.
+- The PC only runs at ~50 FPS. Fancy light costs speed, so the plan fixes speed first (step V0).
+
+---
+
+## Day 3, later — November 14, 2026: Can AI make our 3D objects? (research only)
+
+**What we did**
+- The owner asked: can we ask ChatGPT for pictures of a thing (like a workbench) from all sides, and turn them into a real object in the game?
+- Claude researched the tools and wrote `docs/design/ai-art-pipeline.md`. No game code changed.
+
+**What we learned**
+- Yes, it works, but ChatGPT only makes the *pictures*. A second tool ("image → 3D", like Meshy or Tripo) turns pictures into a 3D model. Then a cleanup step (a Blender script) makes the model small, matching our style, and the right size.
+- Box-like things (workbench, chests, walls) come out better if Claude builds the simple shape and AI only paints the textures. AI 3D is best for lumpy natural things (mushrooms, crystals, rocks, monsters).
+- Easiest AI win: inventory icons and textures (picture in, picture out).
+
+**Hurdles / mistakes**
+- Many "best AI 3D tool" articles are written by the tool makers themselves, so Claude treated their rankings as rough and used official pages for prices and licences where possible.
+- Free plans are a trap for selling: Meshy free = must credit them, Tripo free = not for selling. Paid plans are fine.
+- Hunyuan3D (a free tool) is not allowed in the EU, UK or South Korea, so we may not be able to use it.
+- OpenAI's terms page blocked Claude's web reader, so the "we own the pictures" answer comes from summaries. The owner should read the terms once.
+- Our graphics card (8 GB) is too small to run the best free tool (TRELLIS.2) comfortably.
+
+### Later on Day 3: desktop icon + Claude looks at every play session
+
+**What we did**
+- **Desktop icons:** "Dwarf Game" starts the game straight away. "Dwarf Game Sessions" opens the folder of your play videos and reports.
+- **Every play session now gets a report.** When you close the game:
+  1. A box pops up: *"How was it?"* Type a few words, or press Skip.
+  2. Its own folder gets made with the video, the game's log (its errors and warnings) and up to 60 snapshots.
+  3. A Claude runs in the background, **read-only** (it can look but not change anything). It compares what you said with what it sees and writes `report.md`: bugs with proof, where in the code the cause probably is, and FPS.
+  4. A little bubble near the clock says the report is ready.
+- **Fixing rule (yours):** bugs you mentioned get fixed. Bugs Claude found that you didn't mention, it asks you about first.
+- **Only your games count.** A game started from a script or terminal (that's how Claude runs it) is never recorded.
+- **Test runs are muted now** (you asked). The rule is in `CLAUDE.md` for every Claude.
+
+**Hurdles / mistakes (including Claude's)**
+- **The feedback box was invisible.** The helper starts "hidden," and Windows makes a hidden program's first window hidden too. **Fix:** the script uses up that first "hide" on its own invisible console window, then shows the box. A screenshot proved it now appears.
+- **The folder path got cut off** at the first space ("Videos\Dwarf"), because of quote marks in Claude's instructions. **Fix:** use single quotes.
+- **The report had chatty text before the title.** **Fix:** the report must start with the title, and anything before it gets cut.
+- **Claude's tool mistake:** Claude's command-line tool turned a `\a` in a Windows path into an invisible "beep" character, so the log path broke. It took 3 tries to notice. **Fix:** Claude edited it with PowerShell. Lesson: don't write Windows paths through that tool.
+- **A tricky case found while testing:** another Claude was running the game at the same time. The recorder must never treat that as you playing. **Fix:** it checks *who* started the game. The desktop icon or the Godot editor means you; a script means a robot. Both were tested.
+- The test report found two real things: the dwarf's own body blocks the lantern light (that's why it feels dim), and the dwarf can't step up small ledges. They're waiting for your OK.
+
+### Later on Day 3: brighter lantern, stepping up ledges, better jump, and the feedback list
+
+**What we did**
+- **Lantern (F1):** it was dim because of 2 things blocking its own light: the dwarf's body *and* the lantern's little glass box (the light sits inside it). Now neither one blocks the lantern's light, and the light reaches a bit further. The screenshots show the tunnel walls lit up warm orange.
+- **Ledges (F2):** the dwarf now steps up anything up to 50 cm by itself, like stairs. Taller walls still need a jump. The camera glides up smoothly, so stepping doesn't jolt.
+- **Jump (F3):** Space already jumped, but on bumpy cave floors the game often wasn't sure the dwarf was standing, so jumps got "eaten." Now a jump still works a moment after you step off an edge, and when you press it just before landing. It's also a little higher, about 1.5 m.
+- **5 new auto-checks** cover all three, in a simple test room: jump height, early jump press, stepping up a 35 cm ledge, *not* climbing a 1.2 m wall, and the lantern shadow rule. 42 checks in total, all passing.
+- **`FEEDBACK.md`**, the master feedback list: everything you've said, with fixed items crossed out (never deleted), a count of how often you've said each one, and a "keeps coming back 🔁" section to catch fixes that didn't stick.
+- **The feedback pop-up is off.** You give feedback in chat. The background Claude now also checks each session for open feedback items, and for fixed ones coming back.
+
+**Hurdles / mistakes**
+- All the new checks passed on the first try. That can mean a test doesn't really test anything, so Claude switched step-up off on purpose: the ledge test failed, as it should. Then Claude switched it back on.
+- In the autopilot run, the robot still only walked 4.6 m. That's not a bug: it was standing in its own trench, which is deeper than a step, so it needs a jump.
+- Two other Claudes were working at the same time. Claude checked with them first (they weren't touching the dwarf files), and saved only its own files.
+
+### Later on Day 3: sound in Step 1
+
+**What we did**
+- You asked for the game to be muted only during Claude's tests, with sound when you play. That was already how it worked. The real reason you heard nothing: **Step 1 had no sounds at all.** They'd only been built on the Step 6 branch.
+- Claude brought the sound helper and **11 sounds** (42 small files, free CC0 sounds by Kenney) over to Step 1: pickaxe swing, digging (soft for moss and dirt, hard for stone), rock breaking, a "clink" when rock is too hard, crystals breaking, footsteps (quicker when running), pickups, lantern refill, and opening and closing the bag.
+- 2 new auto-checks: every sound loads, and every sound the code asks for really exists. 44 checks in total, all passing.
+- Added Kenney's sound packs to `CREDITS.md`.
+
+**Hurdles / mistakes**
+- **The same backslash problem as before:** Claude's command-line tool ate the backslashes in a pattern in the new test, so the test didn't even load. **Fix:** Claude rewrote the pattern without backslashes, using the editor. Lesson (again): write code files with the editor, not through the command line.
+
+---
+
+## Day 3, later — November 14, 2026: Building the free "asset forge" (picture → 3D model)
+
+**What we did**
+- The owner wants free tools only. Claude set up a free pipeline on the gaming PC and tested it end to end:
+  ChatGPT picture → 3D model → Blender cleanup → a `.glb` file Godot loads.
+- Installed Blender 5.3 and TripoSR (a free AI that turns one picture into a 3D model in ~20 seconds on our graphics card).
+  Connected to the free TRELLIS.2 website (better quality, but a small daily limit).
+- Wrote `tools/asset_forge/forge.py` (one command does everything) and `blender_cleanup.py` (makes every model game-ready),
+  plus a ChatGPT style prompt for our "between Valheim and Grounded" look in `tools/asset_forge/README.md`.
+- Tested on a sample chair: picture → model in 22 seconds, 83,664 triangles cut to 2,500, right size, standing on the floor in Godot.
+
+**Hurdles / mistakes (including Claude's)**
+- **Only 40 GB free on C: at the start**, so the big local TRELLIS.2 install (~20 GB+, and too much for our 8 GB graphics card) was skipped; we use its free website instead.
+- **TripoSR needed a compiler** for one part. Fix: swapped in a ready-made equivalent (scikit-image).
+- **Old pinned versions** wouldn't install on our Python, and the newest `transformers` (v5) renamed its insides so TripoSR couldn't load its brain. Fix: unpinned, then `transformers<5`.
+- **Two libraries fought** over a shared piece. Fix: two separate Python setups (one for TripoSR, one for the website).
+- **Licence trap caught:** the background cutter (rembg) quietly switched its default to BRIA, which is *not* free for games we sell, and the TRELLIS website uses BRIA too. Fix: we force the free ISNet cutter and cut the background ourselves before sending anything.
+- **Claude's bug 1:** the cleanup threw the whole model away as "crumbs", because model files store every triangle separately. Fix: weld matching corners first.
+- **Claude's bug 2:** turning the model did nothing, because the importer stores turns in a different format ("quaternions"). Fix: turn the points directly. TripoSR models also come out lying on their back; the forge now stands them up automatically.
+- **Claude's bug 3:** colors vanished in Godot (all white). Godot ignores "corner colors". Fix: bake them into a small 256-pixel texture, which suits our crunchy style anyway.
+- **Website limit:** without an account the TRELLIS website gives only ~2 minutes a day; the shape got made but the download step ran out. A free Hugging Face account gives more.
+
+**Known limits**
+- TripoSR colors come out paler than the picture, and shapes are a bit soft. Fine for rocks/mushrooms; boxy things (workbench) are better built by Claude with AI textures.
+- The test chair was deleted afterwards (it was TripoSR's example picture, not our art).
