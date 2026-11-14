@@ -88,7 +88,8 @@ You went to sleep and asked Claude to build, test and prepare as much as possibl
 | `step-4-build` | + **building, blueprints, chests, cave-ins, dying & graves** | Tested; needs play-testing |
 | `step-5-fight` | + **weapons, monsters, parry, dodge** (Mossy Hollows) | Tested; needs play-testing |
 | `step-6-deeper` | + **ruins, rune shrines, boss clues, 3 bosses, raids, sounds** (Mossy Hollows finished) | Tested; needs play-testing |
-| `step-7-ready` | + **save & continue**, art candidates (try `-- art=quaternius`) | Tested; **the newest everything** |
+| `step-7-ready` | + **save & continue**, art candidates (try `-- art=quaternius`) | Tested |
+| `fungal-jungle` | + **the Fungal Jungle** (biome 2), poison/burn/chill, crystal monsters | Tested; **the newest everything** |
 
 Why branches? Our rule says each step must be playable and approved before the next one. So `main` stays Step 1 until you've tried it. The later steps wait on their own branches, ready to merge when you say yes.
 
@@ -134,8 +135,7 @@ Why branches? Our rule says each step must be playable and approved before the n
 - No sounds yet.
 - Steam lobbies are written but untested. They need Steam running and two accounts or PCs.
 - Runes can only drop from pack leaders so far (ruins and shrines come with Step 6), and there's no Rune Slab screen yet. The map isn't shared between friends yet.
-- Not built yet from the combat doc: crossbow, gems, elemental effects (burn/chill/poison), crystal-variant monsters, friendly fire. Boss arenas don't seal shut yet, and boss altars (re-summoning) aren't built.
-- **Fungal Jungle (biome 2) isn't built yet.** The Copper pickaxe can already dig the border rock, but there's nothing behind it so far.
+- Not built yet from the combat doc: crossbow, gems, friendly fire. Boss arenas don't seal shut yet, and boss altars (re-summoning) aren't built. (Poison/burn/chill and crystal monsters came later in the night: see below.)
 - Friends' health/hunger aren't saved (their bag and skills are).
 - A cave-in check takes ~17 ms after each dig on the host. Fine for now; it can move to a background thread later.
 
@@ -145,3 +145,53 @@ Why branches? Our rule says each step must be playable and approved before the n
 3. To try a later step: `git switch step-5-fight` (or another branch name), then press F5 in Godot. `git switch main` goes back.
 4. If you like a step: say "merge step 2" (then 3, 4, 5). Each branch already contains the ones before it.
 5. Skim the 26 questions in `docs/design/README.md`.
+
+---
+
+## Night 2, later — November 14, 2026 (morning): a bug hunt, then the Fungal Jungle
+
+**What we did**
+- **A second pair of eyes:** Claude sent a separate "reviewer" helper through the finished code to hunt for bugs. It found real ones (list below). All fixed on `step-7-ready`, with a new test file (`tests/test_safety.gd`) so they can't come back.
+- **The Fungal Jungle (new branch `fungal-jungle`):** the second biome, east of Mossy Hollows.
+  - **The way in:** a 20 m wall of border rock between the two biomes, with **2 gate tunnels** dug most of the way through. Only a 4 m "plug" is left, and the stone pickaxe bounces off it ("Too hard!"). The **Copper pickaxe** (from Orrumhal's Heartstone) breaks through. A glowing carved arch marks each gate.
+  - **New rock:** dark purple **sporestone** (the jungle's stone), pale **mycelium** floors, yellow **amberrock** bands, and **silver ore** (needs the copper pickaxe).
+  - **New things growing:** **giant mushrooms** 3–6 m tall (the jungle's wood: needs a copper axe, gives timber and flesh), **spore truffles**, glowing **ember morels**, **amber crystals** (lantern fuel).
+  - **5 new monsters** (combat doc 5.3): Wheezecap (walking mushroom, poison puffs), Needlemite (glassy mite packs, poison jabs), Husk Charger (huge horned beetle that charges 12 m), Gill Stalker (mantis that hides and lunges), Cap Spitter (rooted mushroom that lobs spore bombs from 20 m).
+  - **4 new bosses:** **Thallus, the Grey Bloom** (main boss, 4400 HP, 3 phases, sealed lair found with 3 wall carvings, drops the Bloomheart Core for the Silver pickaxe), plus side bosses **Old Ironshell** (Silver Vault), **Sivix, Mother of Needles** (Brood Hollow) and **the Gloamstalker** (Lantern Grove). Each side boss sends raids once found.
+  - Jungle ruins hold silver and jungle food; jungle shrines give jungle runes (and sometimes a missing Mossy rune, as the doc says). The map keeps separate pages for each biome. 3 new building styles: Sporestone, Amber, Silver.
+  - **The world's edge** is now its own rock that **nothing** can ever dig. Before, the Copper pickaxe could have dug out of the world.
+- **Poison, burn and chill** (combat doc 2.6): poisonous hits fill a meter. When it's full you're **Poisoned** (3 damage a second for 10 s, no healing). Burn is the same but hotter. Chill slows you, and getting chilled twice freezes you. Parrying stops the buildup and blocking halves it. Shown under your health bars.
+- **Crystal monsters** (combat doc 7): about 1 in 25 Mossy monsters and 1 in 14 jungle monsters has glowing crystals on its back: red (fire), blue (frost), green (poison), violet (teleports next to you), amber (stone skin). They're tougher, give double XP and drop 4 crystals.
+- **Faster:** the cave planner now uses a "lookup grid" (like an index in a book: it only checks the cave shapes near a spot instead of all of them). Planning both biomes takes **0.2 s instead of 4 s**, placing plants 0.5 s instead of 14 s, and the whole test robot runs in **~75 s** (was 123 s with one biome).
+
+**Bugs the reviewer found (all fixed)**
+- **A friend's bag could be copied or lost:** if a friend left and came back, they got their *old* bag from the save (so items they'd put in a chest existed twice), and a friend who was offline during a save lost their dwarf. **Fix:** the host keeps each friend's dwarf when they leave and puts it in every save.
+- **Smelting and cooking were lost on save:** the ingredients were taken, but the job in the smelter wasn't saved. **Fix:** saved now.
+- **Cheating holes:** a friend's computer could send "broken numbers" (NaN, "not a number") that slipped past every distance check, or a stretched aim direction that dug 20 m away. **Fix:** the host now refuses broken numbers and shortens aim directions to normal length. Only the right player can parry a monster's swing, and attack messages are cleaned up.
+- **A half-empty waterskin refilled itself** when you put it in a chest and took it out. **Fix:** items keep their own data in chests.
+- **An unknown rune vanished** when carved. **Fix:** it stays in your bag.
+- **Build-site ghosts mixed up** for friends who joined late. **Fix:** chests load before build sites.
+- **Pickups far from the host could fail** (the host's copy of a dropped item could fall through unloaded ground). **Fix:** where the item first appeared also counts.
+- One reported issue was left on purpose: a friend could "die" on purpose to teleport home, but that only loses their own bag into a grave. In a friends-only game that's fine.
+
+**Hurdles / mistakes (including Claude's)**
+- The first jungle plan put some jungle shrines on the *Mossy* side, because the gate tunnels cross both biomes. **Fix:** jungle places only use jungle tunnels.
+- Where a gate tunnel met the biome, a paper-thin wall of rock appeared (two "boxes" touching at exactly 0). **Fix:** the gate's box reaches 6 m into each biome.
+- One jungle boss cavern was missing (the code skipped the first room of every biome, which is right for Mossy's start room but not the jungle). **Fix:** only Mossy skips it.
+- Everything got 2.5× slower with two biomes (twice the shapes, asked twice as often). **Fix:** the lookup grid, which made it faster than before.
+- Some hanging roots measured their length from a nearby wall instead of the floor (an old bug, found by a jungle test). **Fix:** roots need clear space below.
+- Claude first invented 3 new items (horn, stalker meat, glow spores) that the combat doc says should be old items (chitin plate, beetle meat, glow slime). **Fix:** they follow the doc now.
+- The world's-edge rock would have looked like jungle sporestone (wrong color number in the shader). Caught by reading the shader. **Fix:** its own dark look.
+- The autopilot's first digging was eaten by random wickwings that came to say hello, and in the jungle the Gill Stalker knocked the robot out before its photo. **Fix:** the robot turns monsters off for its photos and spawns its own.
+- A safety check stopped Claude from cleaning a log folder with a risky delete command. **Fix:** used a fresh folder instead.
+
+**Not done yet / known limits**
+- Spore **clouds** that hang in the air, blinding, and the Gill Stalker's real hiding are simplified: a cloud is one big dose of poison on hit for now.
+- Gems (and gem drops from crystal monsters), the crossbow and friendly fire still wait.
+- The jungle's boss arena needs its "rooting" phase and spore sacs (Thallus fights with his normal attacks for now).
+- Recipes for the new monster parts (needles, venom sacs, Sivix silk…) aren't designed yet; they're collectibles for now.
+
+**Next (for you, on the gaming PC)**
+1. `git pull --ff-only`, then `git switch fungal-jungle` for the newest everything (see `docs/GAMING-PC-START.md`).
+2. To see the jungle quickly without beating Orrumhal: start a world, then look in the Mossy cave for the purple glowing arch (the gate). Or ask Claude for a "debug: give copper pickaxe" key.
+
