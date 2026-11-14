@@ -84,6 +84,33 @@ Tips (same as the forge README):
 - Image-to-3D handles solid shapes best. Avoid thin see-through wing membranes, long thin antennae and fur
   strands (ask for "solid chunky wings", "short thick antennae", "painted fur, not strands").
 
+## Approved concepts (November 14, 2026): 3 creatures × 4 variants = 12
+
+Made in the owner's ChatGPT (Plus account), in the chat **"Creature Image Prompt"**. The owner approved all 12.
+The workbench screenshot was attached as the style reference.
+
+| Creature | Picture to forge the 3D model from | Variants (in one 2×2 grid picture) | How variants are built |
+|---|---|---|---|
+| **Rock Snail** | The single snail **with the mossy mustache**, which keeps the grumpy eyelids (the grid made the face rounder) | Mossy · Frost (slate shell, ice crystals, white mustache) · Ember (iron-ore shell with glowing cracks, ginger mustache) · Spore (purple shell with glowing mushrooms, purple mustache) | One model; variants are recolored textures. Spore needs a small swap-on mushroom piece instead of crystals |
+| **Cave Bat** | The single front-facing bat (wings spread, grumpy eyelids, piggy nose, two fangs) | Cave (rusty brown) · Frost (grey frosty fur, blue icy wings) · Ember (charcoal fur, glowing lava-vein wings) · Spore (purple fur, wings with glowing spots) | One model; recolored textures only |
+| **Rock Beetle** | The single beetle (stone plates, one horn, glowing amber dome on its back, 6 spread-out segmented legs) | Mossy · Frost (icicle ridge, forked ice horn, cyan back) · Ember (basalt plates with lava cracks, hammer horn, amber crystals) · Spore (mushroom-cap plates, antler horn with mushrooms, violet back) | **One shared body with legs** + **4 armour sets (shell + horn)** that snap on top. Legs and walk are made once |
+
+Variant names for the code: `mossy`, `frost`, `ember`, `spore`. Frost and Ember fit the later biomes; Spore fits the
+Fungal Jungle. The **Great Rock Beetle** has no separate concept: the owner is happy with these 12, so it can be
+a scaled-up Rock Beetle (pick a variant per biome).
+
+Prompt notes that worked:
+- Start every creature with "same painting style, chunky bevelled shapes, brush strokes and grumpy character feel
+  as the snail" and keep it all in the one chat.
+- For many-legged creatures, add "legs spread out wide and clearly separate from the body (not tucked under)".
+- Ask for "solid chunky wing membranes with thick wing bones (no see-through parts)".
+- For variants with new shapes, say "keep the same body, legs, pose and face; give each its OWN horn, shell
+  formation and crystals".
+
+**To do on the PC:** download the 3 single pictures and the 3 grids from that ChatGPT chat in full size into
+`assets/concepts/creatures/` (rock_snail.png, rock_snail_variants.png, cave_bat.png, cave_bat_variants.png,
+rock_beetle.png, rock_beetle_variants.png), and log them in `CREDITS.md` as our own ChatGPT pictures.
+
 ## Step 2: turn the pictures into models
 
 Follow `tools/asset_forge/README.md`: "forge this as a big prop called rock_snail" and so on.
