@@ -24,6 +24,7 @@ var player_slots := {1: 0}
 var _monsters := true
 var _saving := true  ## off for robot test runs
 var _autosave := 300.0
+var _jungle_kit := false  ## "-- jungle": start at the jungle gate with copper tools (for testing)
 var _loaded := {}  ## the save we started from (friends' dwarfs are restored from it when they rejoin)  ## peer id -> player number (0 = host, 1-3 = friends)
 
 
@@ -66,6 +67,10 @@ func _ready() -> void:
 			_saving = false
 		elif arg == "nomonsters":
 			_monsters = false
+		elif arg == "jungle":
+			_jungle_kit = true
+			if mode == "menu":
+				mode = "solo"
 		elif arg == "continue":
 			mode = "continue"
 		elif arg.begins_with("art="):
@@ -194,6 +199,12 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 			SaveGame.apply_player(authority.get_player(me), save.players[0])
 	elif authority.is_host():
 		authority.seed_poi_loot()
+	if _jungle_kit:
+		# Test kit: what you'd have after beating Orrumhal and Brask.
+		var kit := authority.get_player(me).inventory
+		for item in [["pickaxe_copper", 1], ["axe_copper", 1], ["sword_copper", 1], ["shield_copper", 1], ["crystal_blue", 20],
+				["dish_hollowcap_stew", 3], ["waterskin_clean", 1]]:
+			kit.add(item[0], item[1])
 
 	var bm := BuildMode.new()
 	bm.name = "BuildMode"
@@ -244,6 +255,9 @@ func _spawn_dwarf(peer_id: int, pos: Vector3, local: bool) -> Dwarf:
 ## Friends appear in a little circle around the start point.
 func _spawn_spot(peer_id: int) -> Vector3:
 	var base := world.maker.spawn_point
+	if _jungle_kit:
+		var gate: Dictionary = world.maker.pois_of("gate", "mossy")[0]
+		base = world.maker.find_floor(gate.pos.x - 5.0, gate.pos.z, gate.pos.y + 1.5) + Vector3.UP
 	if peer_id == 1:
 		return base
 	var a := float(peer_id % 7) * 0.9
