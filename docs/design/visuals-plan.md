@@ -176,7 +176,7 @@ Same as the other docs: ★ is the default. Say the number and letter to change 
 - **V2. Spend ~$15–35** on the full Quaternius packs (more animations, source files)? (A) ★ yes, (B) free versions only.
 - **V3. Rock look:** (A) ★ try smooth + textures and compare with screenshots, (B) keep the flat facets.
 - **V4. How dark:** (A) ★ really dark outside the lantern (survival, cozy-scary), (B) medium, always see a bit.
-- **V5. Camera:** visuals look very different first-person vs third-person. Keep the current camera? (A) ★ yes, (B) let's talk.
+- **V5. Order:** the camera is behind the dwarf, so you stare at the dwarf all game. (A) ★ do light + rock first (V1–V2), then the dwarf (V4), (B) do the dwarf and animations first.
 
 ## 8. Sources
 
