@@ -28,3 +28,16 @@
 2. Turnaround sheet of the same dwarf: front, side, back (for checking the 3D result and fixing it in Blender).
 3. Head and beard close-up: front and side.
 4. Each outfit WORN on the A-pose dwarf, front and back (3 pictures: Leather, Copper, Shell), to show how the pieces sit.
+
+## Done (November 15): the 6 pictures, in ChatGPT chat "Generate Building Kit Sheet"
+Chosen body: **Happy** (short, barrel-chested, big round nose, bushy eyebrows, thick red-brown hair, bald on top,
+big red beard in **three braids with copper rings**). Later classes change only the **face and beard**.
+1. Front A-pose in underclothes: off-white linen shirt with rolled sleeves and laced collar, brown linen shorts with
+   rolled cuffs, cloth foot wraps. **Use this one for the 3D tool.**
+2. Turnaround: front, side, back, same A-pose.
+3. Head sheet: front + side, calm closed-mouth smile (for animating the face), shows the 3 braids and ring positions.
+4. Wearing Leather (front + back). 5. Wearing Copper, the aged version (front + back). 6. Wearing Shell (front + back).
+The beard always sits over the chest armor; helmets cover the hair; trousers tuck into the boots.
+
+Also approved earlier: the separate outfit sheets (Leather; Copper = the second, aged version; Shell).
+
