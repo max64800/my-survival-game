@@ -31,6 +31,12 @@ static func save(main: Node) -> String:
 		var ps: GameAuthority.PlayerState = auth.players[pid]
 		var slot: int = main.player_slots.get(pid, 0)
 		players[slot] = player_data(ps)
+	# Friends who are offline right now keep the dwarf they had when they left.
+	var offline = main.get("_loaded")
+	if offline is Dictionary:
+		for slot in offline.get("players", {}):
+			if not players.has(slot):
+				players[slot] = offline.players[slot]
 	var map: MapData = main.hud.map_data if main.hud else null
 	var data := {
 		version = VERSION, seed = main.seed, saved_at = Time.get_datetime_string_from_system(),

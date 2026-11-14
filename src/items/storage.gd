@@ -74,13 +74,34 @@ func request_transfer(peer_id: int, box_id: int, from_box: bool, slot: int) -> b
 		return false
 	if not from_box and not accepts(box.kind, s.id):
 		return false
-	var left := dst.add(s.id, s.count)
-	var moved: int = s.count - left
-	if moved == 0:
+	if _move_slot(src, slot, dst) == 0:
 		return false
-	src.remove(s.id, moved)
 	_changed(box_id)
 	return true
+
+
+## Moves one slot into another bag. Slots with their own data (a half-empty waterskin's sips)
+## move whole, so that data isn't lost. Returns how many items moved.
+static func _move_slot(src: Inventory, i: int, dst: Inventory) -> int:
+	var s := src.get_slot(i)
+	if s.is_empty():
+		return 0
+	if s.size() > 2:
+		for j in dst.slots.size():
+			if dst.slots[j].is_empty():
+				dst.slots[j] = s
+				src.slots[i] = {}
+				src.changed.emit()
+				dst.changed.emit()
+				return s.count
+		return 0
+	var moved: int = s.count - dst.add(s.id, s.count)
+	if moved > 0:
+		s.count -= moved
+		if s.count <= 0:
+			src.slots[i] = {}
+		src.changed.emit()
+	return moved
 
 
 func request_take_all(peer_id: int, box_id: int) -> int:
@@ -90,13 +111,7 @@ func request_take_all(peer_id: int, box_id: int) -> int:
 		return 0
 	var moved := 0
 	for i in box.inv.slots.size():
-		var s: Dictionary = box.inv.slots[i]
-		if s.is_empty():
-			continue
-		var n: int = s.count - ps.inventory.add(s.id, s.count)
-		if n > 0:
-			box.inv.remove(s.id, n)
-			moved += n
+		moved += _move_slot(box.inv, i, ps.inventory)
 	_changed(box_id)
 	return moved
 

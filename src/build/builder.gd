@@ -56,7 +56,7 @@ func ask_remove(uid: int) -> void:
 
 @rpc("any_peer", "reliable")
 func _rpc_place(piece: String, family: String, pos: Vector3, rot: int) -> void:
-	if auth.is_host():
+	if auth.is_host() and pos.is_finite():
 		request_place(multiplayer.get_remote_sender_id(), piece, family, pos, rot)
 
 
@@ -99,8 +99,9 @@ func problem(ps: GameAuthority.PlayerState, piece: String, family: String, pos: 
 
 func request_place(peer_id: int, piece: String, family: String, pos: Vector3, rot: int) -> String:
 	var ps := auth.get_player(peer_id)
-	if ps == null or not Pieces.LIST.has(piece):
+	if ps == null or not Pieces.LIST.has(piece) or not pos.is_finite():
 		return "?"
+	rot = posmod(rot, 4)
 	var why := problem(ps, piece, family, pos, rot)
 	if why != "":
 		return why
@@ -363,7 +364,7 @@ func ask_place_blueprint(json: String, origin: Vector3, rot: int, chest_pos: Vec
 
 @rpc("any_peer", "reliable")
 func _rpc_place_blueprint(json: String, origin: Vector3, rot: int, chest_pos: Vector3) -> void:
-	if auth.is_host():
+	if auth.is_host() and origin.is_finite() and chest_pos.is_finite():
 		request_place_blueprint(multiplayer.get_remote_sender_id(), json, origin, rot, chest_pos)
 
 
@@ -371,8 +372,9 @@ func _rpc_place_blueprint(json: String, origin: Vector3, rot: int, chest_pos: Ve
 ## and starts a build site. Returns "" or why not.
 func request_place_blueprint(peer_id: int, json: String, origin: Vector3, rot: int, chest_pos: Vector3) -> String:
 	var ps := auth.get_player(peer_id)
-	if ps == null:
+	if ps == null or not origin.is_finite() or not chest_pos.is_finite():
 		return "?"
+	rot = posmod(rot, 4)
 	var r := Blueprint.from_json(json)
 	if not r.ok:
 		return r.error
@@ -382,6 +384,8 @@ func request_place_blueprint(peer_id: int, json: String, origin: Vector3, rot: i
 		return "Too far away"
 	if chest_pos.distance_to(origin) > CHEST_RANGE:
 		return "The chest must be within 16 m"
+	if auth.world.sdf_at(chest_pos + Vector3.UP * 0.5) < 0.0:
+		return "The chest can't go inside rock"
 	var bp: Blueprint = r.blueprint
 	for c in bp.carve_cells(origin, rot):
 		if auth.world.sdf_at(c) < 0.0 and auth.world.material_at(c) == Mat.BORDER:

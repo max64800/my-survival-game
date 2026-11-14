@@ -10,6 +10,7 @@ class FakeMain extends Node:
 	var seed := SEED
 	var player_slots := {1: 0}
 	var hud = null
+	var _loaded := {}
 
 
 func _world(root: Node) -> Array:
@@ -107,8 +108,10 @@ func test_backups_and_broken_saves() -> void:
 	var main := FakeMain.new()
 	main.authority = a[0]
 	root.add_child(main)
+	main._loaded = {players = {2: {inv = [], note = "offline friend"}}}
 	for i in 4:
 		SaveGame.save(main)
+	check_eq(SaveGame.read(SaveGame.path_for(SEED)).players.get(2, {}).get("note"), "offline friend", "an offline friend's dwarf is kept in the save")
 	for i in [1, 2, 3]:
 		check(FileAccess.file_exists("%s.%d" % [SaveGame.path_for(SEED), i]), "backup .%d kept" % i)
 	# Break the newest save: loading falls back to a backup.

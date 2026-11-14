@@ -290,6 +290,12 @@ func _on_peer_disconnected(id: int) -> void:
 	if d:
 		d.queue_free()
 	if authority:
+		var ps := authority.get_player(id)
+		if ps and multiplayer.is_server() and player_slots.has(id):
+			# Keep their dwarf for when they come back (and for the next save).
+			if not _loaded.has("players"):
+				_loaded.players = {}
+			_loaded.players[player_slots[id]] = SaveGame.player_data(ps)
 		authority.remove_player(id)
 	if hud:
 		hud.show_toast("%s left." % player_name(id))

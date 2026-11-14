@@ -258,7 +258,7 @@ func _rpc_select_slot(slot: int) -> void:
 
 @rpc("any_peer", "reliable")
 func _rpc_hit(point: Vector3, normal: Vector3) -> void:
-	if is_host():
+	if is_host() and point.is_finite() and normal.is_finite():
 		request_hit(multiplayer.get_remote_sender_id(), point, normal)
 
 
@@ -270,7 +270,8 @@ func _rpc_harvest(glow_id: int) -> void:
 
 @rpc("any_peer", "reliable")
 func _rpc_use(aim_point: Vector3, aim_normal: Vector3, yaw: float) -> void:
-	if is_host():
+	# INF means "aiming at nothing"; NaN (x != x) is never allowed.
+	if is_host() and aim_point == aim_point and aim_normal.is_finite() and is_finite(yaw):
 		request_use(multiplayer.get_remote_sender_id(), aim_point, aim_normal, yaw)
 
 
@@ -348,6 +349,9 @@ func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
 		return {state = "no_tool"}
 	if _chest(ps).distance_to(point) > REACH + 1.0:
 		return {state = "too_far"}
+	if normal.length_squared() < 0.25:
+		return {state = "air"}
+	normal = normal.normalized()  # a stretched normal would dig far past the reach check
 	var center := point - normal * 0.55
 	var mat := world.rock_material_near(point - normal * 0.3, 1.1)
 	if mat < 0:
@@ -444,7 +448,7 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 				_rpc_consumed.rpc_id(peer_id, id, roll)
 			return "ate"
 		"station":
-			if aim_point == Vector3.INF or aim_normal.y < 0.6 or _chest(ps).distance_to(aim_point) > REACH + 1.0:
+			if not aim_point.is_finite() or aim_normal.normalized().y < 0.6 or _chest(ps).distance_to(aim_point) > REACH + 1.0:
 				return ""
 			for st in stations.values():
 				if st.global_position.distance_to(aim_point) < 1.5:
@@ -458,7 +462,7 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 				ps.bed_pos = aim_point + Vector3.UP * 0.5
 			return "placed"
 		"chest":
-			if aim_point == Vector3.INF or aim_normal.y < 0.6 or _chest(ps).distance_to(aim_point) > REACH + 1.0:
+			if not aim_point.is_finite() or aim_normal.normalized().y < 0.6 or _chest(ps).distance_to(aim_point) > REACH + 1.0:
 				return ""
 			if not ps.inventory.remove(id, 1):
 				return ""
@@ -520,6 +524,8 @@ func request_carve(peer_id: int, item_id: String) -> String:
 			near = true
 	if not near:
 		return "no_slab"
+	if not RuneSlab.RUNES.has(item_id.trim_prefix("rune_")):
+		return ""  # unknown rune: keep the item instead of eating it
 	ps.inventory.remove(item_id, 1)
 	var result := rune_slab.offer(item_id.trim_prefix("rune_"))
 	if result == "carved":
@@ -583,7 +589,11 @@ func request_craft(peer_id: int, recipe_id: String, station_id: int = 0) -> bool
 func request_pickup(peer_id: int, drop_id: int) -> bool:
 	var ps := get_player(peer_id)
 	var d: Drop = _drops.get(drop_id)
-	if ps == null or d == null or _chest(ps).distance_to(d.global_position) > PICKUP_RANGE:
+	if ps == null or d == null:
+		return false
+	# Each computer bounces drops on its own, and far from the host the host's copy may have
+	# no floor loaded and fall away. So where it first appeared counts too.
+	if _chest(ps).distance_to(d.global_position) > PICKUP_RANGE and _chest(ps).distance_to(d.home) > PICKUP_RANGE + 4.0:
 		return false
 	var left := ps.inventory.add(d.item_id, d.count)
 	if left == d.count:
@@ -714,6 +724,7 @@ func _ev_spawn_drop(drop_id: int, item_id: String, count: int, pos: Vector3, vel
 	d.count = count
 	drops_root.add_child(d)
 	d.global_position = pos
+	d.home = pos
 	d.linear_velocity = vel
 	_drops[drop_id] = d
 	_next_drop_id = maxi(_next_drop_id, drop_id + 1)
@@ -819,7 +830,7 @@ func snapshot() -> Dictionary:
 	var sts := []
 	for id in stations:
 		var st: Station = stations[id]
-		sts.append([id, st.kind, st.global_position, st.rotation.y])
+		sts.append([id, st.kind, st.global_position, st.rotation.y, st.jobs.duplicate(true)])
 	var chops := {}
 	if glow:
 		for id in glow._spots:
@@ -842,15 +853,17 @@ func load_snapshot(snap: Dictionary) -> void:
 	_next_drop_id = snap.next_drop
 	for st in snap.get("stations", []):
 		_ev_place_station(st[0], st[1], st[2], st[3])
+		if st.size() > 4 and stations.has(st[0]):
+			stations[st[0]].jobs.assign(st[4])  # smelting/cooking in progress survives a save
 	for id in snap.get("chops", {}):
 		if glow:
 			glow.set_chops(id, snap.chops[id])
 	if snap.has("runes"):
 		rune_slab.load_data(snap.runes)
+	if snap.has("boxes"):
+		storage.load_snapshot(snap.boxes)  # before build: build sites sort their plan by their chest
 	if snap.has("build"):
 		builder.load_snapshot(snap.build)
-	if snap.has("boxes"):
-		storage.load_snapshot(snap.boxes)
 	if snap.has("monsters"):
 		monsters.load_snapshot(snap.monsters)
 	if snap.has("state"):
