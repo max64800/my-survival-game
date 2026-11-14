@@ -57,6 +57,18 @@ roof edge on wall, floor seen from below = the ceiling), and one texture sheet (
 weathered plank, log end-rings). Dark bark-covered logs for frames, lighter split planks, a few grey weathered
 boards, pale straw rope lashings, copper hinges, a stone ring around the round doorway.
 
+**Delver's Shack reference pictures, all done (same ChatGPT chat "Generate Building Kit Sheet"):**
+1. Kit sheet v2 (21 pieces).
+2. Finished house: tall log legs on flat stone footings, stairs up to a porch with a log railing, round door with a
+   lantern beside it, shuttered windows, gable end, shingle roof with rope-lashed ridge log and one hipped corner.
+3. "How it joins" sheet: wall corner = a shared bark-covered corner post with the planks butting in and a rope
+   lashing at the top; wall on foundation = bottom log pegged onto the foundation's top beam; roof edge = rafters
+   on the wall's top log with a short overhang; ceiling = floor underside with 2 cross beams and pegged planks;
+   roof underside = rafters + battens + shingle backs; triangle + square floors meet edge to edge.
+4. Texture sheet: bark log, light split planks with iron pegs, grey weathered planks with moss in the gaps,
+   log end-rings with a bark rim. (The first request silently failed; asking again worked.)
+New detail from the house worth keeping: **flat stone footings under every log leg.**
+
 Order: **Delver's Shack first** (style sheet → house picture → owner reviews → models → test in game), then
 Stonehold, then Hearthbrick.
 
