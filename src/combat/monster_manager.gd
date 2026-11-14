@@ -27,6 +27,7 @@ var _pose_timer := 0.0
 var _spawn_timer := 0.0
 var _incoming: Array[Dictionary] = []  ## hits on OUR dwarf waiting to land: {uid, at, ...}
 var _boss_alone := {}  ## boss uid -> seconds with no player within 60 m (resets at 30)
+var _parry_ok := {}  ## host: monster uid -> the player its last swing was aimed at
 
 
 func _ready() -> void:
@@ -230,7 +231,11 @@ func ask_attack(uids: PackedInt32Array, heavy: bool, combo_step: int, riposte: b
 @rpc("any_peer", "reliable")
 func _rpc_attack(uids: PackedInt32Array, heavy: bool, combo_step: int, riposte: bool) -> void:
 	if auth.is_host():
-		request_attack(multiplayer.get_remote_sender_id(), uids, heavy, combo_step, riposte)
+		var unique := PackedInt32Array()
+		for u in uids:
+			if not unique.has(u) and unique.size() < 8:
+				unique.append(u)
+		request_attack(multiplayer.get_remote_sender_id(), unique, heavy, clampi(combo_step, 0, 9), riposte)
 
 
 ## Host: works out the damage (doc 2.2) for each monster hit. Returns total damage dealt.
@@ -382,6 +387,8 @@ func _ev_tell(uid: int, target: int, tell: float, dmg: float, reach: float, crus
 	var m: Monster = monsters.get(uid)
 	if m:
 		m.show_tell(tell)
+	if auth.is_host():
+		_parry_ok[uid] = target  # only this player may parry this swing, once
 	if target == auth.local_peer_id() and dmg > 0.0:
 		_incoming.append({uid = uid, at = _clock + tell, damage = dmg, reach = reach, crushing = crushing, kd = kd, name = attack_name})
 
@@ -442,8 +449,9 @@ func ask_parried(uid: int, stun_amount: float) -> void:
 
 @rpc("any_peer", "reliable")
 func _rpc_parried(uid: int, stun_amount: float) -> void:
-	if auth.is_host():
-		request_parried(uid, minf(stun_amount, Combat.STUN_SHIELD_PARRY))
+	if auth.is_host() and _parry_ok.get(uid, -1) == multiplayer.get_remote_sender_id():
+		_parry_ok.erase(uid)
+		request_parried(uid, clampf(stun_amount, 0.0, Combat.STUN_SHIELD_PARRY))
 
 
 func request_parried(uid: int, stun_amount: float) -> void:

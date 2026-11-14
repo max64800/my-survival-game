@@ -11,6 +11,7 @@ const DROP_LAYER := 4
 var drop_id := 0
 var item_id := ""
 var count := 1
+var home := Vector3.ZERO  ## where it first appeared
 
 var _age := 0.0
 var _flying := false
