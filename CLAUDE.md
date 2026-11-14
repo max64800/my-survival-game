@@ -23,6 +23,7 @@ Full design: `docs/superpowers/specs/2026-11-14-dwarf-survival-game-design.md`
 - `src/items/`: item list, inventory, drops. `src/ui/hud.gd`: everything on screen.
 - `src/debug/autopilot.gd`: scripted play run with screenshots.
 - Design docs for later steps: `docs/design/` (start with its README).
+- Making or remaking creatures: follow `docs/art/CREATURE-STYLE.md` (match the Forge workbench look; build through the asset forge, not code shapes).
 
 ## Play sessions (Windows PC)
 - Every time the owner plays (desktop icon or Godot F5), `tools/recorder/` records it with OBS and makes a folder in
