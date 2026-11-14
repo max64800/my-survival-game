@@ -43,10 +43,10 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F26. The long things hanging from the ceiling look like icicles,** the same width top to bottom. Real stalactites: wide at the top, getting thinner, a rounded tip, smaller ones around them. (They're actually roots, so roots should look like roots too.) → Claude 3. *From: you. Said: 1×*
 
 **Claude noticed, waiting for your OK** (not fixed until you say so):
-- [ ] **C1. The game runs at only ~50 FPS on your RTX 3060 Ti.** It should be much higher, so something is slowing it down. (Found Nov 14 on the first PC run.)
 
 ## Done
 
+- [x] ~~**C1. The game only runs at ~50 FPS on the RTX 3060 Ti.**~~ Explained + sped up Nov 14. Claude 3 measured it: the ~50-60 is just the frame cap. Your screen is 60 Hz and "vsync" holds the game to it. Without the cap it runs ~200-300 FPS. Speed-ups along the way: glowing things are now found through a grid instead of checking every one (Claude 3), and the block-breaking burst reuses its shapes (Claude 1). A few small hitches remain, from the cave re-building itself after digging. *From: Claude (first PC run). Said: 1×*
 - [x] ~~**F21. Columns should look better, like great dwarf halls, not just blocks.**~~ Done Nov 14. Carved columns: a stepped base, an 8-sided shaft with 2 bands that narrows toward the top, and a wide stepped top. Broken ones snap off with a jagged top, and their fallen pieces and rubble lie around them. *From: you. Said: 1×*
 - [x] ~~**F20. More tunnels, like Minecraft.**~~ Done Nov 14. About 3x the tunnels: more loops, more dead ends, and 16 twisty side passages per area that branch, cross, climb and dip. *From: you. Said: 1×*
 - [x] ~~**F19. Caves too round: make a 50-50 mix of smooth and sharp/rocky.**~~ Done Nov 14. Big patches of the cave are either smooth and round, or sharp and angular like broken stone. Measured: 49.6% rocky. *From: you. Said: 1×*
