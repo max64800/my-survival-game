@@ -408,3 +408,35 @@ Why branches? Our rule says each step must be playable and approved before the n
 **Known limits**
 - TripoSR colors come out paler than the picture, and shapes are a bit soft. Fine for rocks/mushrooms; boxy things (workbench) are better built by Claude with AI textures.
 - The test chair was deleted afterwards (it was TripoSR's example picture, not our art).
+
+---
+
+## Day 3, later — November 14, 2026: The new look, part 1 (branch `visuals`)
+
+**What we did**
+- The owner said: less "Roblox", more Valheim (Grounded if possible), and real animations. Then: "dwarves are short, fat and wide."
+- Worked in a **separate copy of the project** (a git "worktree" next to the game folder), so the other Claude windows and the recorder were never disturbed.
+- **Rock:** real textures instead of flat colours. Free CC0 photos from ambientCG, made to look hand-painted by a "paint filter" (Kuwahara) and pushed toward our earthy colours, by a script anyone can re-run (`tools/art/bake_terrain_textures.py`). Ore veins shine and glow. The rock is now smooth with bumps that catch the lantern light, instead of flat toy facets.
+- **Everything else** (mushrooms, crystals, roots, ruins, stations, building pieces, monsters, dropped chunks) now asks one helper (`src/art/look.gd`) for its look: its colour plus a painted grain (stone, wood, fungus, cloth, leather, metal, bark), a little lumpiness so nothing is a perfect ball or tube, and a soft rim light.
+- **Mood** (`src/art/ambience.gd`): a darker cave so the lantern matters, fog that light glows in, light bouncing off nearby walls, floating dust (glowing spores in the jungle), and each biome has its own colours that blend as you walk between them.
+- **The dwarf:** a real 3D character with real animations, all free CC0 from Quaternius: a hooded ranger outfit, a bearded head, and 86 animations. Code puts the pieces together and makes it a dwarf: very short legs, 45% wider, bigger chest, head, hands and feet. Legs walk/jog/sprint by speed, the upper body swings the pickaxe or sword **while the legs keep walking**, a dodge rolls the whole body. The old block dwarf is still there as a backup (`-- art=shapes`).
+- **Two new test robots:** `lookdev` (same cave spots photographed every time, before/after) and `dwarf_studio` (the dwarf in bright light, front and side, in several poses).
+- Merged the newest `main` in twice. All 214 auto-checks pass; the full autopilot runs to the end.
+
+**Mistakes and hurdles (including Claude's)**
+- **Black squares instead of textures:** shrinking a picture with a see-through layer wiped out the colour wherever the glow layer was empty. **Fix:** shrink colour and glow separately.
+- **Three textures got the same ID** because Claude copied a settings file that Godot had already stamped with an ID. **Fix:** removed the copied IDs so Godot made new ones.
+- **A wrong "type" name** for the stacked textures crashed the helper. **Fix:** used the general type.
+- **The wobble made monsters change shape while moving** (it used their position in the world). Caught before running. **Fix:** wobble only depends on the shape itself.
+- **The dwarf stood in a "T-pose"** (arms straight out, frozen). Godot renames animations when it imports them ("Idle_Loop" becomes "Idle"), so nothing matched. Claude's own "make loops loop" code would also have switched every loop off. **Fix:** used the real names, deleted that code.
+- **The pickaxe was held like a sword sticking out of the fingers**, then sideways. Guessing four grips didn't settle it, so Claude **measured the hand's directions in numbers** and turned the handle to go through the fist.
+- **"Doesn't look like a dwarf"** (owner): the first version was a small thin human. **Fix:** much shorter legs, wider, bigger upper body, head, hands and feet.
+- Merging `main` hit the same jump/step-up lines twice (both windows had fixed them). **Fix:** kept main's version.
+- The itch.io store pages for the free packs need a browser click; Claude found the store's own download links for free files, so no account was needed.
+
+**Not done yet / next**
+- The dwarf still wears a green hood; a helmet and a bigger beard would be more dwarfy. Tools in the hand are still simple boxes.
+- Only the pickaxe, sword and roll have animations hooked up; eating, getting hit, blocking and dying are ready in the packs but not connected yet.
+- Monsters and stations are still simple shapes (with the new painted look). Later: real models.
+- Frame rate is about the same as before (~53 average). The fog and bounced light cost a little; the old slowness (C1) is still there.
+- To try it: open the folder `Dwarf Game - visuals` (next to the game folder) in Godot and press F5, or say "merge visuals".
