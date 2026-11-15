@@ -304,7 +304,7 @@ def check_roof(name, tris):
 	thick = []
 	holes = 0
 	low = 0
-	g = [-0.7 + 0.2 * i for i in range(8)]
+	g = [-0.8 + 0.05 * i for i in range(33)]  # 5 cm apart, so rafters are always measured
 	for x in g:
 		for z in g:
 			top = bvh.ray_cast(Vector((x, 10, z)), Vector((0, -1, 0)))
@@ -317,15 +317,22 @@ def check_roof(name, tris):
 				if bot[0].y < 0.02 and top[0].y > 0.4:
 					low += 1  # filled down to the floor here
 	out = []
+	spots = len(g) * len(g)
 	if holes:
-		out.append("%d of 64 spots you can see the sky through (holes)" % holes)
+		out.append("%d of %d spots you can see the sky through (holes)" % (holes, spots))
 	if thick:
+		# Layered roofs (rafters under boards under shingles) are thin between the rafters, so:
+		# too thick = the usual spot (median) is over 30 cm; too thin = even the thickest spots
+		# (top 5%, where the rafters are) are under 8 cm.
 		thick.sort()
 		med = thick[len(thick) // 2]
-		if med > 0.30 or med < 0.08:
+		top5 = thick[min(len(thick) - 1, int(len(thick) * 0.95))]
+		if med > 0.30:
 			out.append("panel is %.0f cm thick (should be 15-25 cm)" % (med * 100))
-	if low > 6:
-		out.append("filled underneath (%d of 64 spots solid down to the floor), should be open" % low)
+		elif top5 < 0.08:
+			out.append("panel is only %.0f cm thick even at the rafters (should be 15-25 cm)" % (top5 * 100))
+	if low > spots // 10:
+		out.append("filled underneath (%d of %d spots solid down to the floor), should be open" % (low, spots))
 	return out
 
 
