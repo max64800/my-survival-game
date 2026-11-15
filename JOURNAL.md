@@ -1109,7 +1109,7 @@ Important pieces (workbench, smelter, anvil) can be redone later with a better t
 - **Evening (Mac): every Zone 1 model photographed and reviewed.**
   - Owner's notes: tanning rack ropes not attached again (F82 🔁), silver sword too wide and blunt (F83), split the 3D page into Zone 1 and later (F84, done).
   - A helper sorted all 484 models into Zone 1 (Mossy Hollows) or later zones from the design docs. Surprises: shell items are Zone 1 (the Rock Snail lives there); the docs disagree on marble/basalt/ancient brick, coal and the violet/amber crystals.
-  - New photo tool `tools/model_review/`: Chrome (no window) draws each model from 4 sides, 3-5 per sheet. 360 models, 77 sheets. Four helpers reviewed the sheets against the model rules: 146 major, 150 minor, 64 ok. Report: `docs/art/review-2026-11-15/`. Owner said yes to fixing all four groups (F86) and to doing outfits now.
+  - New photo tool `tools/model_review/`: Chrome (no window) draws each model from 4 sides, 3-5 per sheet. 360 models, 77 sheets. Four helpers reviewed the sheets against the model rules: 147 major, 149 minor, 64 ok. Report: `docs/art/review-2026-11-15/`. Owner said yes to fixing all four groups (F86) and to doing outfits now.
 - **Mistakes and hurdles (including Claude's):**
   - The first photo run left the last model on each sheet blank (the page ran out of time). Fixed with fewer models per sheet and a longer wait; 11 blanks were re-shot. The workbench file is too big for the photo page (it's the style reference, so it was skipped).
   - Claude started the four review helpers with the multi-helper "workflow" tool without asking first; it should have asked or used plain helpers. It cost about the same, but the owner gets to choose next time.
