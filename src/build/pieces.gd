@@ -211,8 +211,14 @@ static func station_for(family: String) -> String:
 
 
 ## The station level needed to build `piece` from `family` (99 = this station can't make it).
+## Building styles unlock with station levels (owner, Nov 15, F114): wood from the start, stone with a
+## Mason's Table, brick only once the Mason's Table is level 2 (a Chisel Rack placed nearby).
+const MIN_LEVEL := {"clay_brick": 2}
+
+
 static func needed_level(piece: String, family: String) -> int:
-	return int(LIST[piece].get("station", ALL).get(station_for(family), 99))
+	var lv := int(LIST[piece].get("station", ALL).get(station_for(family), 99))
+	return lv if lv >= 99 else maxi(lv, int(MIN_LEVEL.get(family, 1)))
 
 const MIN_STABILITY := 0.10
 const ROCK_SINK_OK := 0.35  ## pieces may poke this far into rock

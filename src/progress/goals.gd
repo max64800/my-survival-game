@@ -17,6 +17,7 @@ const STEPS := [
 	["build_hammer", "Make a Build Hammer at the Workbench"],
 	["masonry_table", "Make a Mason's Table at the Workbench and place it"],
 	["shelter", "Build a shelter: hold the hammer, B to choose foundation, walls, a doorway"],
+	["brick", "For brick buildings: place a Chisel Rack near your Mason's Table (level 2)"],
 	["copper_ore", "Find green-streaked copper ore deeper in the caves"],
 	["copper_ingot", "Make a Smelter and smelt the copper ore"],
 	["pickaxe_copper", "Make an Anvil, then a Copper Pickaxe"],
@@ -33,6 +34,11 @@ static func done(id: String, ps: GameAuthority.PlayerState, auth: GameAuthority)
 			return false
 		"shelter":
 			return auth.builder != null and auth.builder.structure.pieces.size() >= 4
+		"brick":
+			for st in auth.stations.values():
+				if st.kind == "masonry_table" and st.level() >= 2:
+					return true
+			return false
 	return ps.seen.has(id) or ps.inventory.count_of(id) > 0
 
 

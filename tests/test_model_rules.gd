@@ -132,3 +132,11 @@ func _files(dir: String, ext: String) -> Array:
 		if not sub.begins_with(".") and sub != "__pycache__":
 			out.append_array(_files(dir + "/" + sub, ext))
 	return out
+
+
+## F114: wood from the start, stone needs a Mason's Table, brick needs it at level 2.
+func test_building_styles_unlock_with_station_levels() -> void:
+	check_eq(Pieces.station_for("plank_root"), "workbench", "wood is built at the Workbench")
+	check_eq(Pieces.needed_level("wall", "cut_stone"), 1, "stone walls: any Mason's Table")
+	check(Pieces.needed_level("wall", "clay_brick") >= 2, "brick walls: Mason's Table level 2")
+	check(Pieces.needed_level("floor", "clay_brick") >= 2, "brick floors too")

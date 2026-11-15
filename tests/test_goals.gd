@@ -35,6 +35,7 @@ func test_next_steps_tick_off() -> void:
 	for s in Goals.STEPS:
 		ps.seen[s[0]] = true
 	auth._ev_place_station(6, "masonry_table", player.global_position + Vector3(-2, 0, 0), 0.0)
+	auth._ev_place_station(7, "chisel_rack", player.global_position + Vector3(-3.5, 0, 0), 0.0)  # Mason's Table level 2: brick
 	for i in 4:
 		auth.builder.structure.add(100 + i, "floor", "cut_stone", Vector3(i * 2, 0, 0), 0, true)
 	check(Goals.next_steps(ps, auth).is_empty(), "all done: the list disappears")
