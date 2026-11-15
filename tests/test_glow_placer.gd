@@ -65,3 +65,18 @@ func test_ids_are_unique_and_spaced() -> void:
 	for s in spots:
 		ids[s.id] = true
 	check_eq(ids.size(), spots.size(), "unique ids")
+
+
+## F140: the first cavern always has a dripping stalactite (water).
+func test_first_cavern_has_a_drip() -> void:
+	for sd in [1, 42, 1234]:
+		var maker := CaveMaker.new(sd)
+		var first: Dictionary = {}
+		for room in maker.rooms:
+			if room.get("kind", "") == "spawn":
+				first = room
+		var found := false
+		for s in GlowPlacer.place(maker):
+			if s.kind == GlowPlacer.DRIP and s.pos.distance_to(first.center) < maxf(first.radii.x, first.radii.z):
+				found = true
+		check(found, "seed %d: a drip in the first cavern" % sd)

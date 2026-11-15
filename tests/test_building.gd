@@ -29,7 +29,8 @@ func test_snap_wall_to_edge() -> void:
 
 func test_inside_rock_is_refused() -> void:
 	check_eq(Pieces.rock_problem("wall", Vector3(1, 0, 0), 0, flat_ground), "", "wall standing on the ground is fine")
-	check_eq(Pieces.rock_problem("wall", Vector3(1, -1, 0), 0, flat_ground), "Inside rock", "half buried wall is refused")
+	check(Pieces.rock_problem("wall", Vector3(1, -1, 0), 0, flat_ground).begins_with("Inside rock"), "half buried wall is refused")
+	check(Pieces.rock_problem("wall", Vector3(1, -1, 0), 0, flat_ground).contains("bottom"), "and it says where: the bottom (F139)")
 	check_eq(Pieces.rock_problem("floor", Vector3(1, -0.4, 1), 0, flat_ground), "", "floors may sink a little")
 
 

@@ -759,15 +759,13 @@ func _process(delta: float) -> void:
 	var dwarf := _local_dwarf()
 	if dwarf:
 		var info := dwarf._aim_info()
-		if info.is_empty():
+		# No names or hit counts for what you're aiming at (owner F134: other games don't; you find out by
+		# digging it and reading it in your bag). Only what a key does: "E to open", "E to use"...
+		if info.is_empty() or info.kind in ["rock", "glow"]:
 			_aim_label.text = ""
-		elif info.kind == "rock":
-			var tool := ps.selected_item() if ps else ""
-			var power := Items.dig_power(tool) if Items.dig_power(tool) > 0 else 10
-			var hits := Mat.hits_needed(info.material, power, maxi(Items.tier(tool), 0))
-			_aim_label.text = "%s · %s" % [info.name, "needs a %s pickaxe" % Mat.TIER_NAMES[Mat.min_tier(info.material)] if hits == 0 else "%d hit%s" % [hits, "" if hits == 1 else "s"]]
 		else:
-			_aim_label.text = info.name
+			var nm: String = info.name
+			_aim_label.text = nm.get_slice("· ", 1) if nm.contains("· ") else nm
 	_fps_label.text = "%d FPS" % Engine.get_frames_per_second()
 	_update_boss_bar(dwarf)
 	if build_mode and build_mode.active() and build_mode.blueprint:

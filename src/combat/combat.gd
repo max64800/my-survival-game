@@ -5,6 +5,16 @@ class_name Combat
 
 # --- Weapons (doc 3.2, Stone tier). speed = seconds per attack; hits land at 40% of that.
 # type: slash / blunt / pierce. armor_break = share of armor ignored. hands: 1 or 2.
+## Critical hits (owner, Nov 15, F137): every weapon has a small chance to hit much harder.
+## Quick, pointy weapons crit a bit more often; big slow ones a bit less.
+const CRIT_MULT := 1.75
+const CRIT := {"sword": 0.08, "spear": 0.10, "axe": 0.07, "mace": 0.06, "axe_2h": 0.06, "mace_2h": 0.05, "pickaxe": 0.05, "fists": 0.05, "shield": 0.04, "crossbow": 0.08}
+
+
+static func crit_chance(weapon: String) -> float:
+	return float(CRIT.get(weapon, 0.06))
+
+
 const WEAPONS := {
 	"sword": {type = "slash", light = 10, heavy = 22, light_speed = 0.55, heavy_speed = 1.10, reach = 1.8, light_sta = 8, heavy_sta = 18, light_stun = 6, heavy_stun = 18, parry_ms = 180, block = 0.35, hands = 1, combo = [1.0, 1.0, 1.25]},
 	"axe": {type = "slash", light = 12, heavy = 26, light_speed = 0.70, heavy_speed = 1.30, reach = 1.7, light_sta = 10, heavy_sta = 20, light_stun = 8, heavy_stun = 22, parry_ms = 150, block = 0.35, hands = 1, combo = [1.0, 1.1, 1.3], cleave = 0.6},

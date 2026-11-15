@@ -14,6 +14,7 @@ const GROUP := "ruin_stone"  ## the pickaxe doesn't dig "through" these
 ## A column standing at `pos` (local to `parent`). `height` = full height when whole.
 ## broken_at: 0 = whole, otherwise the fraction of the shaft that's left (0.2-0.8).
 static func column(parent: Node3D, pos: Vector3, height: float, width: float, broken_at: float, rng: RandomNumberGenerator, color: Color = STONE) -> void:
+	var drums: Array = []  # [transform, radius, length] of the fallen drums lying around
 	var col := Node3D.new()
 	col.position = pos
 	col.rotation.y = rng.randf_range(0.0, TAU)
@@ -50,12 +51,14 @@ static func column(parent: Node3D, pos: Vector3, height: float, width: float, br
 		# The fallen part lies nearby as round drums, plus rubble.
 		var fallen := shaft_h - left
 		var dir := rng.randf_range(0.0, TAU)
+		drums.clear()
 		var along := w * 1.2
 		while fallen > 0.3:
 			var piece := minf(fallen, rng.randf_range(0.6, 1.1))
 			var drum := _mesh(col, _cyl(w * 0.5, w * 0.52, piece), m, Vector3(cos(dir) * (along + piece * 0.5), w * 0.5, sin(dir) * (along + piece * 0.5)))
 			drum.rotation = Vector3(PI / 2.0, 0.0, 0.0)
 			drum.rotation.y = -dir + PI / 2.0 + rng.randf_range(-0.3, 0.3)
+			drums.append([drum.transform, w * 0.5, piece])  # solid too (owner F136: you ran through them)
 			along += piece + rng.randf_range(0.1, 0.5)
 			fallen -= piece
 		for k in rng.randi_range(3, 6):
@@ -76,6 +79,14 @@ static func column(parent: Node3D, pos: Vector3, height: float, width: float, br
 	cs.shape = shape
 	cs.position = Vector3(0, solid_h * 0.5, 0)
 	body.add_child(cs)
+	for d in drums:
+		var dcs := CollisionShape3D.new()
+		var cyl := CylinderShape3D.new()
+		cyl.radius = d[1]
+		cyl.height = d[2]
+		dcs.shape = cyl
+		dcs.transform = d[0]
+		body.add_child(dcs)
 	col.add_child(body)
 
 

@@ -221,7 +221,8 @@ static func needed_level(piece: String, family: String) -> int:
 	return lv if lv >= 99 else maxi(lv, int(MIN_LEVEL.get(family, 1)))
 
 const MIN_STABILITY := 0.10
-const ROCK_SINK_OK := 0.35  ## pieces may poke this far into rock
+const ROCK_SINK_OK := 0.6  ## pieces may poke this far into rock (was 0.35; owner F139: a little is fine)
+const SLOPE_SINK_OK := 1.0  ## stairs and ramps: their upper corners are mostly empty air
 const BOTTOM_SINK_OK := 0.6  ## floors/pillars/stairs/props may sink their bottom this deep
 const BUILD_REACH := 8.0
 const WORKBENCH_RANGE := 20.0
@@ -585,12 +586,23 @@ static func check_points(piece: String, pos: Vector3, rot: int) -> Array:
 ## Why a piece can't go here because of rock ("" = fine). `sdf` = Callable(Vector3) -> float.
 static func rock_problem(piece: String, pos: Vector3, rot: int, sdf: Callable) -> String:
 	var sinks: bool = LIST[piece].place in ["cell", "corner", "free"]
+	var slope: bool = LIST[piece].get("walkable_slope", false)
+	var mid := box(piece, pos, rot).get_center()
 	for cp in check_points(piece, pos, rot):
 		var d: float = sdf.call(cp[0])
-		var limit := BOTTOM_SINK_OK if (cp[1] and sinks) else ROCK_SINK_OK
+		var limit := BOTTOM_SINK_OK if (cp[1] and sinks) else (SLOPE_SINK_OK if slope else ROCK_SINK_OK)
 		if d < -limit:
-			return "Inside rock"
+			return "Inside rock" + _where_rock(cp[0] - mid)  # say where, so you know what to dig (F139)
 	return ""
+
+
+## " at the top", " on the left"... from the middle of the piece toward the spot that's in rock.
+static func _where_rock(off: Vector3) -> String:
+	if off.y >= maxf(absf(off.x), absf(off.z)) * 0.8:
+		return " at the top: dig out the rock above it"
+	if -off.y >= maxf(absf(off.x), absf(off.z)) * 0.8:
+		return " at the bottom: dig the floor a bit lower"
+	return " at the side: dig back the wall there"
 
 
 ## Does this piece touch rock (and so is 100% steady)?

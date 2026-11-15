@@ -105,3 +105,11 @@ func test_crossbow_numbers() -> void:
 	for b in Combat.BOLT_ORDER:
 		check(Items.exists(b) and Recipes.LIST.values().any(func(r): return r.output == b), "%s exists and can be crafted" % b)
 
+
+
+## F137: every weapon has a small critical-hit chance.
+func test_every_weapon_can_crit() -> void:
+	for w in Combat.WEAPONS:
+		var c := Combat.crit_chance(w)
+		check(c >= 0.03 and c <= 0.12, "%s crits sometimes, not often (%.2f)" % [w, c])
+	check(Combat.CRIT_MULT > 1.4 and Combat.CRIT_MULT < 2.1, "a critical hit hits clearly harder")

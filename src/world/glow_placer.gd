@@ -80,6 +80,7 @@ static func _place(maker: CaveMaker) -> Array[Dictionary]:
 	# Added after everything above (with their own dice), so older spots never move.
 	_add_low_crystals(maker, spots)
 	_add_start_spots(maker, spots)
+	_add_first_drip(maker, spots)
 	for i in spots.size():
 		spots[i].id = i
 	return spots
@@ -118,6 +119,32 @@ static func _add_low_crystals(maker: CaveMaker, spots: Array[Dictionary]) -> voi
 				kind = "crystal_amber" if rng.randf() < 0.35 else CRYSTAL
 			_add_spot(spots, hit, normal_at(maker, hit), kind, rng.randf_range(1.3, 2.0), rng.randf_range(0, TAU), 0.0)
 			want -= 1
+
+
+## The first cavern always has a dripping stalactite, so you learn early how to get water (owner F140).
+## Hung from the ceiling over open floor, a few metres from the middle.
+static func _add_first_drip(maker: CaveMaker, spots: Array[Dictionary]) -> void:
+	var first: Dictionary = {}
+	for room in maker.rooms:
+		if room.get("kind", "") == "spawn":
+			first = room
+	if first.is_empty():
+		return
+	var c: Vector3 = first.center
+	for s in spots:
+		if s.kind == DRIP and s.pos.distance_to(c) < maxf(first.radii.x, first.radii.z):
+			return  # it already has one
+	for k in 8:
+		var a := k * TAU / 8.0
+		var r := minf(first.radii.x, first.radii.z) * 0.35
+		var fl := maker.find_floor(c.x + cos(a) * r, c.z + sin(a) * r, c.y)
+		if maker.sdf_at(fl + Vector3.UP * 1.0) <= 0.0:
+			continue
+		var top := _march(maker, fl + Vector3.UP * 1.0, Vector3.UP, 20.0)
+		if top == Vector3.INF:
+			continue
+		_add_spot(spots, top, Vector3.DOWN, DRIP, 1.0, 0.0, 0.0)
+		return
 
 
 ## The starting room: roots to pull, glowing mushrooms, and the crystals you see through the peephole.

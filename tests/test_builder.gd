@@ -176,7 +176,7 @@ func test_cant_build_inside_rock() -> void:
 	auth._ev_place_station(1, "workbench", player.global_position + Vector3(-3, 0, 0), 0.0)
 	ps.inventory.add("plank_root", 10)
 	var s := _floor_spot("wall", 3.0)
-	check_eq(auth.builder.problem(ps, "wall", "plank_root", s.pos + Vector3.DOWN * 3.0, s.rot), "Inside rock", "buried wall refused")
+	check(auth.builder.problem(ps, "wall", "plank_root", s.pos + Vector3.DOWN * 3.0, s.rot).begins_with("Inside rock"), "buried wall refused")
 	_teardown()
 
 

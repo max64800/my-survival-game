@@ -102,14 +102,14 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F131. The build keys (switch piece, turn...) should be listed clearly on the right side** while holding the Build Hammer, not hidden behind the hotbar. *From: you. Said: 1×*
 - [ ] **F132. Building pieces should have pictures** in the build menu (not so much reading). *From: you. Said: 1×*
 - [ ] **F133. Couldn't build any roofs, and didn't know why.** Hovering a piece should show what you have and what's missing. (Found: roofs needed a level-2 Workbench.) *From: you. Said: 1×*
-- [ ] **F134. Don't show how many hits a material takes, or what you're looking at.** Other games don't; players find out by chopping it and reading it in the bag. *From: you. Said: 1×*
-- [ ] **F135. Roots are too thin to aim at.** Make them easier to hit (wider). *From: you. Said: 1×*
-- [ ] **F136. Fallen columns still have no collision:** you can run through them. *From: you. Said: 1×*
-- [ ] **F137. Every weapon should have a small chance of a critical hit.** *From: you. Said: 1×*
-- [ ] 🔁 **F138. The snail still finishes its attack after hiding in its shell.** As soon as it hides, the attack must stop. (F105 came back.) *From: you. Said: 2×*
-- [ ] **F139. Stairs sometimes won't place,** even with the rock underneath cleared. Always say why, and allow a piece to poke a little into rock. *From: you. Said: 1×*
-- [ ] **F140. The very first cave should have a dripping stalactite**, so players learn how to get water. *From: you. Said: 1×*
-- [ ] **F141. Tunnel exits high up in the cave ceiling.** One of the first cave's two exits is up in the ceiling; you'd need lots of stairs. The first cave and all of Zone 1 should be easy to walk around. *From: you. Said: 1×*
+- [x] ~~**F134. Don't show how many hits a material takes, or what you're looking at.** Other games don't; players find out by chopping it and reading it in the bag.~~ Done Nov 15 (PC): rock, roots, crystals and plants show no label; doors, chests, stations and carvings only show the key ("E to open"). *From: you. Said: 1×*
+- [x] ~~**F135. Roots are too thin to aim at.**~~ Make them easier to hit (wider). Done Nov 15 (PC): roots look 1.6x thicker and the spot you can hit is about twice as wide. *From: you. Said: 1×*
+- [x] ~~**F136. Fallen columns still have no collision:**~~ you can run through them. Fixed Nov 15 (PC): these were the old ruins' fallen column drums (only the standing stump was solid); every drum is solid now. *From: you. Said: 1×*
+- [x] ~~**F137. Every weapon should have a small chance of a critical hit.**~~ Done Nov 15 (PC): 4-10% depending on the weapon (spear and sword most, shield least), 1.75x damage, "Critical!" over the monster. Test: `test_combat`. *From: you. Said: 1×*
+- [x] ~~🔁 **F138. The snail still finishes its attack after hiding in its shell.**~~ As soon as it hides, the attack must stop. (F105 came back.) Fixed Nov 15 (PC), the real cause this time: the bite had already been sent to your screen when the snail hid, so it still landed. Hiding now also cancels any bite on its way. *From: you. Said: 2×*
+- [x] ~~**F139. Stairs sometimes won't place,**~~ even with the rock underneath cleared. Always say why, and allow a piece to poke a little into rock. Done Nov 15 (PC): pieces may poke 60 cm into rock (was 35), stairs and ramps 1 m; the message says where ("Inside rock at the top: dig out the rock above it"), shown on the right while building. *From: you. Said: 1×*
+- [x] ~~**F140. The very first cave should have a dripping stalactite**~~, so players learn how to get water. Done Nov 15 (PC): every first cavern gets one over open floor near the middle. Test: `test_glow_placer`. *From: you. Said: 1×*
+- [x] ~~**F141. Tunnel exits high up in the cave ceiling.**~~ One of the first cave's two exits is up in the ceiling; you'd need lots of stairs. The first cave and all of Zone 1 should be easy to walk around. Fixed Nov 15 (PC): tunnels now leave every cavern at floor height. This changes the shape of existing worlds a little, so start a new world to test. Test: `test_cave_maker`. *From: you. Said: 1×*
 - [x] ~~**F126. Lantern refill time.**~~ You checked: 10 minutes is fine, no change. *From: you. Said: 1×*
 
 - [ ] **F95. A way to make stone if you lose your pickaxe.** Same as F89 (bare hands dig soft rock and dirt for stone). *From: you. Said: 1×*

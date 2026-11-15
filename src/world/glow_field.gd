@@ -17,6 +17,7 @@ var _nodes: Dictionary = {}  ## id -> StaticBody3D
 var _lights: Array[OmniLight3D] = []
 var _light_spot: Array[int] = []  ## which spot each light is on (-1 = none)
 var _light_target: Array[float] = []  ## how bright each light is fading toward
+const ROOT_WIDTH := 1.6  ## roots look thicker than before (owner F135: they were hard to aim at)
 const FADE_SPEED := 1.2  ## light energy per second
 const LIGHT_REACH := 40.0
 var _light_timer := 0.0
@@ -144,7 +145,7 @@ func _add_node(s: Dictionary) -> void:
 	var is_root: bool = s.kind in GlowPlacer.TALL
 	if is_root:
 		var cap := CapsuleShape3D.new()
-		cap.radius = 0.35 if s.kind == GlowPlacer.ROOT or s.kind == GlowPlacer.ROOT_DANGLE else 0.45
+		cap.radius = 0.75 if s.kind == GlowPlacer.ROOT or s.kind == GlowPlacer.ROOT_DANGLE else 0.45  # easy to aim at (F135)
 		cap.height = maxf(s.length, 0.8)
 		shape.shape = cap
 		shape.position = Vector3.UP * s.length * 0.5
@@ -160,7 +161,7 @@ func _add_node(s: Dictionary) -> void:
 		"fiber": mi.mesh = _fiber_mesh
 		"root", "root_dangle":
 			mi.mesh = _root_mesh
-			mi.scale = Vector3(1, s.length, 1) / s.scale  # stretch to reach toward the floor
+			mi.scale = Vector3(ROOT_WIDTH, s.length, ROOT_WIDTH) / s.scale  # stretch to reach toward the floor; thicker (F135)
 		GlowPlacer.GIANT: mi.mesh = _giant_mesh(s.length)
 		_: mi.mesh = _mushroom_mesh
 	mi.material_override = _material_for(s.color, GlowPlacer.KINDS[s.kind].get("glow", false), _surface_of(s.kind))

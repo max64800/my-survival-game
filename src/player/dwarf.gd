@@ -346,7 +346,7 @@ func _aim_info() -> Dictionary:
 	var poi_id := PoiField.poi_id_of(hit.collider)
 	if poi_id >= 0 and auth:
 		var t: String = auth.world.maker.pois[poi_id].type
-		var label: String = {"marking": "Old carving · E to read", "lair": "Summoning altar · E"}.get(t, "Rune shrine · E to take")
+		var label: String = {"marking": "Old carving · E to read", "lair": "Summoning altar · E to make an offering"}.get(t, "Rune shrine · E to take")
 		return {kind = "poi", poi_id = poi_id, name = label}
 	var box_id := Storage.box_id_of(hit.collider)
 	if box_id >= 0 and auth:

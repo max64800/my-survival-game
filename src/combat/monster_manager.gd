@@ -355,6 +355,9 @@ func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: 
 		var sit := Combat.situation(sneak, m.stun.is_stunned(), crush, riposte)
 		var mult := 0.6 if (w == "axe" and n == 2) else 1.0
 		var dmg := roundi(Combat.damage(w, heavy, tier, m.stats(), combo_step, sit, 0.0, Upgrades.bonus(ps.inventory.get_slot(ps.hand_slot())), buff + auth.damage_boost(ps, m.kind), elem) * mult)
+		if not Controls.robot and randf() < Combat.crit_chance(w):  # now and then a critical hit (owner F137; never in tests: they need exact numbers)
+			dmg = roundi(dmg * Combat.CRIT_MULT)
+			_ev_note.rpc(m.uid, "Critical!")
 		total += dmg
 		_gem_buildup(m, gb)
 		_hurt_monster(m, peer, dmg, Combat.stun_value(w, heavy, tier) * (1.0 + gb.get("stun", 0.0)))
