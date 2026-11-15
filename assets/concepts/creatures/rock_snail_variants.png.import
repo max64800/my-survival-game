@@ -2,7 +2,11 @@
 
 importer="texture"
 type="CompressedTexture2D"
+<<<<<<< HEAD
 uid="uid://kmd0mxd0ry3m"
+=======
+uid="uid://k4wotvxuny6e"
+>>>>>>> f7c4315 (Commit leftover working files: refreshed kit preview pictures, Godot import files for creature art and docs, early Shack comparison shots)
 path="res://.godot/imported/rock_snail_variants.png-4288fa1a711a5b23ae721ab1a14fd277.ctex"
 metadata={
 "vram_texture": false

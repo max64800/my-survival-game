@@ -2,7 +2,11 @@
 
 importer="texture"
 type="CompressedTexture2D"
+<<<<<<< HEAD
 uid="uid://bd0nqrr62yac"
+=======
+uid="uid://dm7p1jkmtekir"
+>>>>>>> f7c4315 (Commit leftover working files: refreshed kit preview pictures, Godot import files for creature art and docs, early Shack comparison shots)
 path="res://.godot/imported/rock_beetle_variants.png-53be25aae78aaa8c92973c652d37eb42.ctex"
 metadata={
 "vram_texture": false

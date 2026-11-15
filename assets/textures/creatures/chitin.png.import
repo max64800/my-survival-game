@@ -2,7 +2,11 @@
 
 importer="texture"
 type="CompressedTexture2D"
+<<<<<<< HEAD
 uid="uid://ig0oafm44mew"
+=======
+uid="uid://bkya6aawevrcs"
+>>>>>>> f7c4315 (Commit leftover working files: refreshed kit preview pictures, Godot import files for creature art and docs, early Shack comparison shots)
 path="res://.godot/imported/chitin.png-813c07ca41b148c6fda629339cc8c317.ctex"
 metadata={
 "vram_texture": false

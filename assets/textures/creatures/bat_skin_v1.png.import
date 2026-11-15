@@ -2,7 +2,11 @@
 
 importer="texture"
 type="CompressedTexture2D"
+<<<<<<< HEAD
 uid="uid://ow8aicm72200"
+=======
+uid="uid://ba566go2rqx07"
+>>>>>>> f7c4315 (Commit leftover working files: refreshed kit preview pictures, Godot import files for creature art and docs, early Shack comparison shots)
 path="res://.godot/imported/bat_skin_v1.png-983716a8c116f6ca3b7f4e52c30a68df.ctex"
 metadata={
 "vram_texture": false

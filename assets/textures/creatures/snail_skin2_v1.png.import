@@ -2,7 +2,11 @@
 
 importer="texture"
 type="CompressedTexture2D"
+<<<<<<< HEAD
 uid="uid://evnp3d71adun"
+=======
+uid="uid://c0pnsaxyt82wv"
+>>>>>>> f7c4315 (Commit leftover working files: refreshed kit preview pictures, Godot import files for creature art and docs, early Shack comparison shots)
 path="res://.godot/imported/snail_skin2_v1.png-65f9bbc034f9f095e11377b47562af75.ctex"
 metadata={
 "vram_texture": false
