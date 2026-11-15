@@ -15,6 +15,10 @@ const CELL := 4.0
 var _grid := {}  ## Vector3i -> Array of spot ids
 var _nodes: Dictionary = {}  ## id -> StaticBody3D
 var _lights: Array[OmniLight3D] = []
+var _light_spot: Array[int] = []  ## which spot each light is on (-1 = none)
+var _light_target: Array[float] = []  ## how bright each light is fading toward
+const FADE_SPEED := 1.2  ## light energy per second
+const LIGHT_REACH := 40.0
 var _light_timer := 0.0
 var _crystal_mesh: Mesh
 var _mushroom_mesh: Mesh
@@ -39,6 +43,8 @@ func build(spots: Array[Dictionary]) -> void:
 		l.light_energy = 0.0
 		add_child(l)
 		_lights.append(l)
+		_light_spot.append(-1)
+		_light_target.append(0.0)
 
 
 func get_spot(id: int) -> Dictionary:
@@ -206,6 +212,9 @@ func _material_for(c: Color, glows: bool = true, surface: String = "") -> Materi
 
 
 func _process(delta: float) -> void:
+	# Lights fade in and out instead of popping like light switches (owner, Nov 15, F107).
+	for i in _lights.size():
+		_lights[i].light_energy = move_toward(_lights[i].light_energy, _light_target[i], delta * FADE_SPEED)
 	_light_timer -= delta
 	if _light_timer > 0.0:
 		return
@@ -215,17 +224,37 @@ func _process(delta: float) -> void:
 		return
 	var from := cam.global_position
 	# Only spots within 40 m can get a light, so only look in the squares around us.
-	var near := spots_near(from, 40.0).filter(func(s): return GlowPlacer.KINDS[s.kind].get("glow", false))
+	var near := spots_near(from, LIGHT_REACH).filter(func(s): return GlowPlacer.KINDS[s.kind].get("glow", false))
 	near.sort_custom(func(a, b): return a.pos.distance_squared_to(from) < b.pos.distance_squared_to(from))
-	for i in LIGHT_COUNT:
-		var l := _lights[i]
-		if i < near.size() and near[i].pos.distance_to(from) < 40.0:
-			var s: Dictionary = near[i]
-			l.global_position = s.pos + s.normal * 0.6
-			l.light_color = s.color
-			l.light_energy = 1.1 if s.kind.begins_with("crystal") else 0.7
+	near = near.slice(0, LIGHT_COUNT)
+	var want := {}  # spot id -> how bright its light should be
+	for rank in near.size():
+		var s: Dictionary = near[rank]
+		var d := s.pos.distance_to(from) as float
+		# Dimmer the farther away, and the last few of the nearest set are dimmer too, so a spot
+		# that drops out of the set (or a new one coming in) is already nearly dark.
+		var fade := clampf((LIGHT_REACH - d) / 15.0, 0.0, 1.0) * clampf((LIGHT_COUNT - rank) / 4.0, 0.0, 1.0)
+		want[s.id] = (1.1 if s.kind.begins_with("crystal") else 0.7) * fade
+	# Lights already on a wanted spot keep it; the others fade out, and once dark take a new spot.
+	var taken := {}
+	for i in _lights.size():
+		var sid: int = _light_spot[i]
+		if want.has(sid):
+			_light_target[i] = want[sid]
+			taken[sid] = true
 		else:
-			l.light_energy = 0.0
+			_light_target[i] = 0.0
+	for s in near:
+		if taken.has(s.id):
+			continue
+		for i in _lights.size():
+			if _light_target[i] == 0.0 and _lights[i].light_energy < 0.03:
+				_light_spot[i] = s.id
+				_lights[i].global_position = s.pos + s.normal * 0.6
+				_lights[i].light_color = s.color
+				_light_target[i] = want[s.id]
+				taken[s.id] = true
+				break
 
 
 # ------------------------------------------------------------ simple low-poly meshes

@@ -62,7 +62,8 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F104. Broken-rock chunks are all the same-size cubes.** You like that a block breaks into many pieces you pick up; make them different shapes, sizes and colours. *From: you. Said: 1×*
 - [x] ~~**F105. A Rock Snail can still hit you while it hides in its shell.**~~ Fixed Nov 15 (PC): pulling into its shell now calls off any bite it was winding up, and it needs a moment after coming out before it can bite again. Test: `test_bosses`. *From: you. Said: 1×*
 - [ ] **F106. Rootwood runs out.** Once the first big cave's roots are used up there's no more wood. Roots should grow back. *From: you. Said: 1×*
-- [ ] **F107. Crystals switch their glow on and off with distance** (glow up close, dark from far away), like light switches. Their glow should stay, fading smoothly. *From: you. Said: 1×*
+- [ ] **F107. Crystals switch their glow on and off with distance** (glow up close, dark from far away), like light switches. Their glow should stay, fading smoothly. Nov 15 (PC): the 12 real lights now fade in and out (dimmer with distance, and a light only moves to another crystal once it has faded out); the crystals' own glow never switches off. *From: you. Said: 1×*
+- [ ] **F108. Don't know where to go next.** After exploring the first cavern there's no sign of where to dig. *From: you. Said: 1×*
 - [ ] **F95. A way to make stone if you lose your pickaxe.** Same as F89 (bare hands dig soft rock and dirt for stone). *From: you. Said: 1×*
 
 *(Nov 15, your notes on the 3D building pieces and monsters. Rules written in `docs/art/MODEL-RULES.md`.)*
