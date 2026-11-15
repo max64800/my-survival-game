@@ -35,7 +35,8 @@ const LIST := {
 	"half_wall": {name = "Half Wall", group = "wall", size = Vector3(2, 1, 0.3), units = 2, place = "edge", station = ALL},
 	"doorway": {name = "Doorway", group = "wall", size = Vector3(2, 2, 0.3), units = 4, place = "edge", extra = {copper_ingot = 2},
 		opening = Vector3(1.0, 1.8, 0), round = true, station = ALL},  # round-topped (F57)
-	"arch_doorway": {name = "Arched Doorway", group = "wall", size = Vector3(2, 2, 0.3), units = 4, place = "edge", shape = "arch_doorway",
+	# Round doors only (MODEL-RULES rule 5, F75): the arched doorway stays only so old saves load.
+	"arch_doorway": {name = "Arched Doorway", group = "legacy", size = Vector3(2, 2, 0.3), units = 4, place = "edge", shape = "arch_doorway",
 		opening = Vector3(1.2, 1.8, 0), families = ["cut_stone", "clay_brick"], station = {"mason": 2}},
 	"window_wall": {name = "Small Window", group = "wall", size = Vector3(2, 2, 0.3), units = 3, place = "edge",
 		opening = Vector3(1.0, 0.8, 0.6), station = {"workbench": 2, "mason": 1, "anvil": 1}},
@@ -56,7 +57,7 @@ const LIST := {
 	"battlement_corner": {name = "Battlement Corner", group = "roof", size = Vector3(0.6, 1.3, 0.6), units = 2, place = "corner",
 		shape = "battlement_corner", families = ["cut_stone", "cut_marble", "clay_brick", "basalt", "ancient_brick"], station = {"mason": 1}},
 	"door": {name = "Door", group = "wall", size = Vector3(1, 1.8, 0.12), units = 2, place = "edge", shape = "door",
-		families = ["plank_root", "plank_mushroom", "copper_ingot"], station = {"workbench": 1, "anvil": 1}},
+		families = ["plank_root", "plank_mushroom", "cut_stone", "clay_brick", "copper_ingot"], station = {"workbench": 1, "mason": 1, "anvil": 1}},
 	# --- roofs: they climb `rise` meters from the front (z = +depth/2) to the back. Q turns them.
 	"roof_26": {name = "Roof (gentle)", group = "roof", size = Vector3(2, 1, 2), units = 3, place = "cell", shape = "roof", rise = 1.0,
 		station = {"workbench": 2, "mason": 2, "anvil": 2}},
@@ -78,7 +79,7 @@ const LIST := {
 	"beam": {name = "Beam", group = "support", size = Vector3(2, 0.3, 0.3), units = 2, place = "edge", station = ALL},
 	"beam_half": {name = "Short Beam", group = "support", size = Vector3(1, 0.3, 0.3), units = 1, place = "edge", station = ALL},
 	"brace": {name = "Diagonal Brace", group = "support", size = Vector3(2, 2, 0.25), units = 2, place = "edge", shape = "brace",
-		families = ["plank_root", "plank_mushroom", "copper_ingot", "silver_ingot"], station = {"workbench": 2, "anvil": 1}},
+		families = ["plank_root", "plank_mushroom", "silver_ingot"], station = {"workbench": 2, "anvil": 1}},
 	"pillar": {name = "Pillar", group = "support", size = Vector3(0.4, 2, 0.4), units = 3, place = "corner", station = ALL},
 	"column": {name = "Carved Column", group = "support", size = Vector3(0.8, 2, 0.8), units = 4, place = "corner", shape = "column",
 		families = ["cut_stone", "cut_marble", "clay_brick", "basalt", "ancient_brick"], station = {"mason": 2}},
@@ -89,9 +90,9 @@ const LIST := {
 	"ramp": {name = "Ramp", group = "around", size = Vector3(2, 1, 2), units = 4, place = "cell", shape = "ramp", walkable_slope = true,
 		station = ALL},  # a smooth slope, rising toward the back (−z) like stairs
 	"ladder": {name = "Ladder", group = "around", size = Vector3(1, 2, 0.2), units = 2, place = "edge", shape = "ladder",
-		families = ["plank_root", "plank_mushroom", "copper_ingot"], station = {"workbench": 1, "anvil": 1}},
+		families = ["plank_root", "plank_mushroom"], station = {"workbench": 1, "anvil": 1}},
 	"railing": {name = "Railing", group = "around", size = Vector3(2, 1, 0.15), units = 1, place = "edge", shape = "railing",
-		families = ["plank_root", "plank_mushroom", "copper_ingot", "silver_ingot"], station = {"workbench": 1, "anvil": 1}},
+		families = ["plank_root", "plank_mushroom", "silver_ingot"], station = {"workbench": 1, "anvil": 1}},
 	# --- triangles (building kit, Nov 15): EQUILATERAL, every side 2 m (one wall length), so any wall
 	# fits any edge and six make a hexagon. The origin is the triangle's middle (centroid); rot 0 has
 	# one edge facing +z (at z = +0.577) and the point at z = −1.155. They turn in 30° steps and
@@ -115,7 +116,7 @@ const LIST := {
 	# --- mining
 	"ceiling_panel": {name = "Ceiling Panel", group = "mining", size = Vector3(2, 0.25, 2), units = 4, place = "ceiling", supports_rock = true, station = ALL},
 	"mine_prop": {name = "Mine Prop", group = "mining", size = Vector3(2, 3, 0.4), units = 4, place = "free", extra = {copper_ingot = 1}, supports_rock = true,
-		families = ["plank_root", "cut_stone", "copper_ingot"], station = ALL},
+		families = ["plank_root", "cut_stone"], station = ALL},
 	# --- decor (Claude 2 hand-makes models for these; code shapes until then). on_wall = snaps flat onto
 	# the face of a built wall you aim at. cloth = the colour of its cloth part. light = a glow it gives.
 	"column_base": {name = "Column Base", group = "decor", size = Vector3(0.8, 0.5, 0.8), units = 1, place = "corner", shape = "column_base",
@@ -144,6 +145,28 @@ const LIST := {
 		families = WOODS + ["copper_ingot"], station = {"workbench": 2, "anvil": 1}},
 	"wall_sconce": {name = "Wall Sconce", group = "decor", size = Vector3(0.4, 0.6, 0.3), units = 1, place = "edge", shape = "wall_sconce", on_wall = true,
 		families = ["copper_ingot", "cut_stone"], extra = {crystal_blue = 1}, light = Color(0.5, 0.8, 1.0), station = {"anvil": 1, "mason": 1}},
+	# Wall decor (owner, Nov 15): hand-made models in assets/models/decor (model = folder/name), hung flat
+	# on a wall like the banner. Size agreed with the 3D Claudes: back flat at z = -depth/2, nothing behind it.
+	"banner_anvil": {name = "Anvil Banner", group = "decor", size = Vector3(1.0, 1.6, 0.1), units = 1, place = "edge", shape = "plaque", on_wall = true,
+		model = "decor/banner_anvil", families = WOODS, extra = {fiber = 6}, station = {"workbench": 1}},
+	"banner_landscape": {name = "Hollow Banner", group = "decor", size = Vector3(1.0, 1.6, 0.1), units = 1, place = "edge", shape = "plaque", on_wall = true,
+		model = "decor/banner_landscape", families = WOODS, extra = {fiber = 6}, station = {"workbench": 1}},
+	"bat_trophy": {name = "Bat Trophy", group = "decor", size = Vector3(0.8, 0.6, 0.25), units = 1, place = "edge", shape = "plaque", on_wall = true,
+		model = "decor/bat_trophy", families = WOODS, station = {"workbench": 1}},
+	"crossed_pickaxes": {name = "Crossed Pickaxes", group = "decor", size = Vector3(0.9, 0.7, 0.15), units = 1, place = "edge", shape = "plaque", on_wall = true,
+		model = "decor/crossed_pickaxes", families = WOODS, extra = {copper_ingot = 1}, station = {"workbench": 1}},
+	"fossil_plaque": {name = "Fossil Plaque", group = "decor", size = Vector3(0.7, 0.5, 0.12), units = 1, place = "edge", shape = "plaque", on_wall = true,
+		model = "decor/fossil_plaque", families = WOODS, station = {"workbench": 1}},
+	"horn_plaque": {name = "Horn Plaque", group = "decor", size = Vector3(0.6, 0.5, 0.4), units = 1, place = "edge", shape = "plaque", on_wall = true,
+		model = "decor/horn_plaque", families = WOODS, station = {"workbench": 1}},
+	"map_board": {name = "Map Board", group = "decor", size = Vector3(1.0, 0.8, 0.1), units = 1, place = "edge", shape = "plaque", on_wall = true,
+		model = "decor/map_board", families = WOODS, extra = {fiber = 2}, station = {"workbench": 1}},
+	"rune_shield": {name = "Rune Shield", group = "decor", size = Vector3(0.7, 0.7, 0.15), units = 2, place = "edge", shape = "plaque", on_wall = true,
+		model = "decor/rune_shield", families = WOODS, station = {"workbench": 2}},
+	"peg_rack": {name = "Peg Rack", group = "decor", size = Vector3(1.0, 0.5, 0.25), units = 1, place = "edge", shape = "plaque", on_wall = true,
+		model = "decor/shack_peg_rack", families = WOODS, station = {"workbench": 1}},
+	"wall_torch": {name = "Wall Torch", group = "decor", size = Vector3(0.3, 0.7, 0.35), units = 1, place = "edge", shape = "wall_sconce", on_wall = true,
+		model = "decor/wall_torch", families = WOODS, light = Color(1.0, 0.65, 0.3), station = {"workbench": 1}},
 	"weapon_rack": {name = "Weapon Rack", group = "decor", size = Vector3(1.4, 1.6, 0.5), units = 3, place = "free", shape = "weapon_rack",
 		families = WOODS, station = {"workbench": 2}},
 }
@@ -204,8 +227,27 @@ static func cost(piece: String, family: String) -> Dictionary:
 	return c
 
 
+## Roof rules (MODEL-RULES rule 4, F79): Stonehold has flat roofs and battlements only; the Delver's
+## Shack and Hearthbrick have sloped roofs only.
+const SLOPED_ROOFS := ["roof_26", "roof_45", "roof_26_ridge", "roof_45_ridge", "roof_26_outer", "roof_26_inner",
+	"roof_45_outer", "roof_45_inner", "gable_26", "gable_45"]
+const NOT_FOR := {
+	"cut_stone": SLOPED_ROOFS,
+	"plank_root": ["flat_roof"],
+	"clay_brick": ["flat_roof"],
+}
+## Copper is for decor and doors only (owner, Nov 15): a piece is made of copper only when it names it.
+const DECOR_ONLY := ["copper_ingot"]
+
+
 static func allowed(piece: String, family: String) -> bool:
-	return LIST.has(piece) and FAMILIES.has(family) and (not LIST[piece].has("families") or family in LIST[piece].families)
+	if not (LIST.has(piece) and FAMILIES.has(family)):
+		return false
+	if piece in NOT_FOR.get(family, []):
+		return false
+	if LIST[piece].has("families"):
+		return family in LIST[piece].families
+	return not family in DECOR_ONLY
 
 
 static func hp(piece: String, family: String) -> float:

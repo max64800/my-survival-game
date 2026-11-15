@@ -130,9 +130,10 @@ static func forged_mesh(p_piece: String, p_family: String) -> Mesh:
 	if not use_models:
 		return null
 	var key := p_piece + "__" + p_family
+	var model: String = Pieces.LIST[p_piece].get("model", "build/" + key)  # wall decor: one model for every wood
 	if not _forged_meshes.has(key):
 		var m: Mesh = null
-		var scene := Look.forged("build", key)
+		var scene := Look.forged(model.get_slice("/", 0), model.get_slice("/", 1))
 		if scene:
 			var parts := scene.find_children("*", "MeshInstance3D", true, false)
 			if parts.size() == 1:

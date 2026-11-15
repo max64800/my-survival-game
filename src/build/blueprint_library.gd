@@ -97,7 +97,7 @@ func _homestead() -> void:
 	_add("crate", WOOD, Vector3(4.2, y, -3.1), 0)
 
 
-## A stone hall on a foundation: columns inside, an arched doorway, gables and a steep roof.
+## A stone hall on a foundation: columns inside, a round doorway, brick gables and a steep roof.
 func _stone_hall() -> void:
 	_start(Vector3(6, 8, 8))
 	for x in [-2, 0, 2]:
@@ -105,7 +105,7 @@ func _stone_hall() -> void:
 			_add("foundation", STONE, Vector3(x, 0, z), 0)
 	var y := 1.0
 	_wall_x("wall", -2, 4, y, STONE)
-	_wall_x("arch_doorway", 0, 4, y, STONE)
+	_wall_x("doorway", 0, 4, y, STONE)
 	_add("door", WOOD, Vector3(0, y, 4), 0)
 	_wall_x("wall", 2, 4, y, STONE)
 	for x in [-2, 0, 2]:
@@ -133,12 +133,12 @@ func _stone_hall() -> void:
 		_add("roof_45", BRICK, Vector3(x, top + 2.0, -1), 2)
 	# Closing the ends under the roof: gables and the wall pieces under the upper gables.
 	for side in [-3, 3]:
-		_add("gable_45", STONE, Vector3(side, top, 3), 1)
-		_add("gable_45", STONE, Vector3(side, top, -3), 3)
+		_add("gable_45", BRICK, Vector3(side, top, 3), 1)
+		_add("gable_45", BRICK, Vector3(side, top, -3), 3)
 		_add("wall", STONE, Vector3(side, top, 1), 1)
 		_add("wall", STONE, Vector3(side, top, -1), 1)
-		_add("gable_45", STONE, Vector3(side, top + 2.0, 1), 1)
-		_add("gable_45", STONE, Vector3(side, top + 2.0, -1), 3)
+		_add("gable_45", BRICK, Vector3(side, top + 2.0, 1), 1)
+		_add("gable_45", BRICK, Vector3(side, top + 2.0, -1), 3)
 
 
 ## An open-front workshop: stone floor, half walls on three sides, a roof sloping to the back,

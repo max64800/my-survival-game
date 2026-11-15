@@ -82,6 +82,7 @@ static func _make(piece: String, style: String, detail: bool) -> ArrayMesh:
 		"rug": _box(Vector3(0, 0.01, 0), Vector3(s.x, 0.02, s.z))  # a thin backing; the cloth is drawn by PieceNode
 		"banner": _banner(s)
 		"wall_shield": _wall_shield(s)
+		"plaque": _plaque(s)
 		"wall_sconce": _wall_sconce(s)
 		"weapon_rack": _weapon_rack(s)
 		_: _plain_piece(piece, s, info)
@@ -385,6 +386,12 @@ static func _banner(s: Vector3) -> void:
 
 
 ## A round shield with a boss in the middle, hung flat on the wall.
+## Wall decor before its model is ready: a board on the wall with a raised middle.
+static func _plaque(s: Vector3) -> void:
+	_slab(Vector3(0, s.y * 0.5, -s.z * 0.5 + 0.03), Vector3(s.x, s.y, 0.06), "wall")
+	_box(Vector3(0, s.y * 0.5, -s.z * 0.5 + 0.06 + minf(s.z - 0.06, 0.08) * 0.5), Vector3(s.x * 0.6, s.y * 0.6, minf(s.z - 0.06, 0.08)))
+
+
 static func _wall_shield(s: Vector3) -> void:
 	var r := s.x * 0.5
 	_push(Transform3D(Basis(Vector3.RIGHT, PI / 2.0), Vector3(0, s.y * 0.5, -s.z * 0.5)))

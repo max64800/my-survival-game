@@ -740,8 +740,14 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 				_give_dig_drops(ps, counts, aim_point + aim_normal * 1.0)
 			return "thrown"
 		"station":
-			if not aim_point.is_finite() or aim_normal.normalized().y < 0.6 or _chest(ps).distance_to(aim_point) > REACH + 1.0:
+			var on_wall := id in Station.ON_WALL and aim_normal.is_finite() and absf(aim_normal.normalized().y) < 0.3
+			if not aim_point.is_finite() or (aim_normal.normalized().y < 0.6 and not on_wall) or _chest(ps).distance_to(aim_point) > REACH + 1.0:
 				return ""
+			var spot := aim_point
+			if on_wall:  # back flat on the wall, facing out, hung where you aim (in 25 cm steps)
+				var out := Vector3(aim_normal.x, 0.0, aim_normal.z).normalized()
+				spot = wall_spot(id, aim_point, out)
+				yaw = atan2(out.x, out.z)
 			for st in stations.values():
 				if st.global_position.distance_to(aim_point) < 1.5:
 					return ""  # too close to another station
@@ -749,7 +755,7 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 				return ""
 			var sid := _next_station_id
 			_next_station_id += 1
-			_ev_place_station.rpc(sid, id, aim_point, yaw)
+			_ev_place_station.rpc(sid, id, spot, yaw)
 			if Station.WATER.has(id):
 				var drip := glow != null and GlowPlacer.drip_near(glow.spots_near(aim_point, 20.0), aim_point)
 				_ev_water.rpc(sid, 0, drip)
@@ -1189,6 +1195,14 @@ func _ev_remove_glow(glow_id: int) -> void:
 func _ev_spot_chops(glow_id: int, left: int) -> void:
 	if glow:
 		glow.set_chops(glow_id, left)
+
+
+## Where a wall station goes: its back on the wall at `aim`, its bottom 25 cm-snapped below the aim point.
+static func wall_spot(kind: String, aim: Vector3, out: Vector3) -> Vector3:
+	var size := Station.size_of(kind)
+	var spot := aim + out * (size.z * 0.5 + 0.005)
+	spot.y = snappedf(aim.y - size.y * 0.5, 0.25)
+	return spot
 
 
 @rpc("authority", "call_local", "reliable")

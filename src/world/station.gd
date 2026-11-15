@@ -12,6 +12,8 @@ var station_id := 0
 var kind := "workbench"
 var jobs: Array[Dictionary] = []  ## {item, count, left (seconds)}
 ## Drip Buckets (doc 6.4): water collected so far, and how it fills.
+## Stations that hang flat on a wall instead of standing on the floor (owner, Nov 15). Their back is at z = -depth/2.
+const ON_WALL := ["tool_rack"]
 const WATER := {"drip_bucket": {holds = 5, every = 240.0}, "copper_drip_basin": {holds = 15, every = 120.0}}
 var water := 0
 var water_timer := 0.0
@@ -134,7 +136,11 @@ func busy_text() -> String:
 
 
 func _size() -> Vector3:
-	match kind:
+	return size_of(kind)
+
+
+static func size_of(p_kind: String) -> Vector3:
+	match p_kind:
 		"campfire": return Vector3(1.0, 0.5, 1.0)
 		"workbench", "masonry_table": return Vector3(1.8, 1.0, 0.9)
 		"smelter": return Vector3(1.2, 1.6, 1.2)
