@@ -18,6 +18,7 @@ Rule: only things allowed in a game you sell (best: CC0).
 | Surface grain for props (stone, wood, fungus, cloth, leather, metal, bark), in `assets/textures/props/` (by `tools/art/bake_prop_textures.py`): ambientCG Rock030, Wood049, Plaster001, Fabric030, Leather026, Metal032, Bark007 | https://ambientcg.com | CC0 | 2026-11-14 |
 | The dwarf's clothes: "Male Ranger" outfit from "Modular Character Outfits – Fantasy" (Standard) by Quaternius, in `assets/characters/dwarf/` (textures shrunk to 1024 px) | https://quaternius.com/packs/modularcharacteroutfitsfantasy.html | CC0 | 2026-11-14 |
 | The dwarf's head, eyes, eyebrows and beard: "Universal Base Characters" (Standard) by Quaternius, in `assets/characters/dwarf/` | https://quaternius.com/packs/universalbasecharacters.html | CC0 | 2026-11-14 |
+| **AI-made.** Concept pictures in `assets/concepts/night-2026-11-15/` (32: dwarf heads, stations, model-fix references, material items, decor): made by us with ChatGPT image generation (owner's ChatGPT Plus). Reference only, not shipped in the game | Prompts and list: `docs/art/NIGHT-PICTURES-2026-11-15.md` | Ours (OpenAI terms give the output to the user) | 2026-11-15 |
 | The dwarf's animations: "Universal Animation Library" 1 and 2 (Standard) by Quaternius, in `assets/characters/anims/` | https://quaternius.com/packs/universalanimationlibrary.html · https://quaternius.com/packs/universalanimationlibrary2.html | CC0 | 2026-11-14 |
 
 No music yet. The monsters, crystals, mushrooms and building pieces are still made from simple

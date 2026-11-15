@@ -4,9 +4,8 @@ The owner asked for as many useful pictures as Claude could make alone overnight
 preview page in the morning. All were made in the owner's ChatGPT, chat **"Generate Building Kit Sheet"**, in the
 order below. Preview page (private): https://claude.ai/artifact/Wnj7oBDYjr5Gxvg2oCPTuG
 
-**Not downloaded yet.** Downloads need the owner's OK, so the pictures live in that chat (and in Chrome's storage for
-chatgpt.com, under the name `dwarfnight`). Once the owner says yes: save them to `assets/concepts/night-2026-11-15/`,
-log them in `CREDITS.md` as our own ChatGPT pictures, and republish the preview with the pictures.
+**Saved** in `assets/concepts/night-2026-11-15/` (1400 px wide JPEGs, owner said yes to the download on
+November 15). Full-size originals stay in that ChatGPT chat. Logged in `CREDITS.md`.
 
 | Group | Picture (file name) | Score | Fix when modelling |
 |---|---|---|---|
