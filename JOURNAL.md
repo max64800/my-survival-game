@@ -1236,3 +1236,30 @@ Important pieces (workbench, smelter, anvil) can be redone later with a better t
 - Small "same place" spots under 60 cm² are still listed for a few hidden inside faces (brick foundation, railing,
   shingles); they're inside the piece and can't be seen, but they're on the list for the next pass.
 
+---
+
+## November 15, 2026, evening (PC, Claude 3): Rock Beetle v2, a real creature-making process
+
+**What we did**
+- The owner said the hand-built beetle still looked like a toy ("Roblox"): simple shapes glued together. We planned first:
+  1 creature, 1 look (mossy), grey shape before paint, the owner checks each step.
+- Made a turnaround picture in ChatGPT (front, side, back, top; owner's OK) and a tool (`creature_fit.py`) that lays the
+  model's outline over the drawing in all 4 views and scores the overlap (about 80%; the 4 drawings don't fully agree).
+- New shell: the shell's own surface is cut into patches (one per plate, centres read off the top view) and each patch is
+  lifted into a stone slab: straight sides, rounded edges, a few flat chisel cuts, mirror-matched left and right.
+- The studio way, by script (`creature_sculpt.py`): a dense "sculpt" copy gets carved detail (stone grain, chips, a few
+  cracks; moss cushions in the cracks; dents on the legs), then the detail and a painted look (dark cavities, light worn
+  edges, light tops, painted light from the front, moss) are baked onto the light game copy as pictures.
+- Legs: separate faceted armour segments (like a real beetle leg), thin dark joints, two hooked claws per foot.
+- 3D page with just this beetle: Rock Beetle (sculpt test). Face, horn, belly and eyes are the next round.
+
+**Mistakes and hurdles (including Claude's)**
+- Colours came out almost white: Claude typed colours as you'd pick them in a paint program, but Blender's shader wants
+  "linear" numbers. Fixed with a converter.
+- First sculpt: cracks everywhere like a cracked teacup, and the leg melted into a lumpy log. Fewer cracks, less smoothing.
+- The "droplet" on the claw tips (owner spotted it): the tube maker flips its sideways direction when a curve points straight
+  down, pinching the tip. Same bug as the horn earlier; fixed by fixing the sideways direction. A small claw hiding behind
+  the foot also looked like a drip; it now sits beside the big claw.
+- The glowing window was measured as an angle on the dome, which bends oddly near the top (it covered the whole back). Now
+  it's an oval measured like the drawings: from above.
+- Claude accidentally deleted the plate list while replacing the window code; the build failed and it was put back.
