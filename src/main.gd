@@ -315,6 +315,7 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	hud.build_mode = bm
 	hud.pause_pressed.connect(pause_action)
 	bm.message.connect(func(t: String): hud.show_toast(t, 5.0))
+	authority.builder.message.connect(func(t: String): hud.show_toast(t, 4.0))
 	dwarf.fight.message.connect(func(t: String, _c: Color): hud.show_toast(t, 1.5))
 	authority.monsters.defended.connect(_on_defended)
 	authority.raids.warning.connect(func(t: String): hud.show_toast(t, 8.0))

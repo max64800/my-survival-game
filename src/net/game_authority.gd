@@ -388,6 +388,46 @@ func _rpc_heal(amount: float) -> void:
 	heal(local_peer_id(), amount)
 
 
+## Picking a crafting station back up with the build hammer (owner, Nov 15, F100): you always
+## get the whole station back, as long as nothing is cooking in it.
+func ask_pickup_station(station_id: int) -> void:
+	if is_host():
+		request_pickup_station(local_peer_id(), station_id)
+	else:
+		_rpc_pickup_station.rpc_id(1, station_id)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_pickup_station(station_id: int) -> void:
+	if is_host():
+		request_pickup_station(multiplayer.get_remote_sender_id(), station_id)
+
+
+func request_pickup_station(peer_id: int, station_id: int) -> String:
+	var ps := get_player(peer_id)
+	var st: Station = stations.get(station_id)
+	if ps == null or st == null:
+		return "?"
+	if ps.node.global_position.distance_to(st.global_position) > REACH + 1.0:
+		return "too_far"
+	if not st.jobs.is_empty():
+		return "busy"
+	var left := ps.inventory.add(st.kind, 1)
+	if left > 0:
+		spawn_drop(st.kind, left, st.global_position + Vector3.UP)
+	_ev_remove_station.rpc(station_id)
+	return ""
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_remove_station(station_id: int) -> void:
+	var st: Station = stations.get(station_id)
+	if st:
+		Sfx.play("build", st.global_position)
+		stations.erase(station_id)
+		st.queue_free()
+
+
 func ask_carve(item_id: String) -> void:
 	if is_host():
 		request_carve(local_peer_id(), item_id)

@@ -213,7 +213,14 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("use"):
 		var hit := dwarf.aim_far(Pieces.BUILD_REACH)
 		if hit.get("collider") is PieceNode:
-			auth.builder.ask_remove(hit.collider.uid)
+			auth.builder.ask_remove(hit.collider.uid)  # careful pick-up: all back, right after placing (F100)
+		elif hit.get("collider") is Station:
+			auth.ask_pickup_station((hit.collider as Station).station_id)  # stations always come back whole
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("break_piece"):
+		var hit := dwarf.aim_far(Pieces.BUILD_REACH)
+		if hit.get("collider") is PieceNode:
+			auth.builder.ask_remove(hit.collider.uid, true)  # break it: 80% back
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("rotate_piece"):
 		rot = (rot + 1) % (12 if Pieces.is_tri(piece) else 4)  # triangles turn in 30° steps

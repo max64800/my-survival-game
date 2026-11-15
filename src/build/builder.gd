@@ -19,6 +19,12 @@ var pieces_root: Node3D
 var fall_log: Array[PackedVector3Array] = []  ## every cave-in, for friends who join later
 var _next_uid := 1
 var _clock := 0.0
+signal message(text: String)  ## a short note for this player (shown at the top of the screen)
+var _placed_at := {}  ## host: uid -> when it was placed (careful pick-up works for PICKUP_TIME seconds)
+## Taking pieces down (owner, Nov 15, F100): a careful pick-up gives everything back, but only right
+## after placing (a misclick); breaking a piece gives back BREAK_SHARE of what it cost.
+const PICKUP_TIME := 10.0
+const BREAK_SHARE := 0.8
 var _checks := []  ## host: [time, center, radius]
 var _falls := []  ## host: [time, points]
 var _breaks := []  ## host: [time, uid]
@@ -49,11 +55,14 @@ func ask_place(piece: String, family: String, pos: Vector3, rot: int) -> void:
 		_rpc_place.rpc_id(1, piece, family, pos, rot)
 
 
-func ask_remove(uid: int) -> void:
+## smash = false: careful pick-up (all back, only right after placing); true: break it (80% back).
+func ask_remove(uid: int, smash: bool = false) -> void:
 	if auth.is_host():
-		request_remove(auth.local_peer_id(), uid)
+		var why := request_remove(auth.local_peer_id(), uid, smash)
+		if why != "":
+			message.emit(why)
 	else:
-		_rpc_remove.rpc_id(1, uid)
+		_rpc_remove.rpc_id(1, uid, smash)
 
 
 ## Open or close a built door (E while looking at it).
@@ -77,9 +86,17 @@ func _rpc_place(piece: String, family: String, pos: Vector3, rot: int) -> void:
 
 
 @rpc("any_peer", "reliable")
-func _rpc_remove(uid: int) -> void:
+func _rpc_remove(uid: int, smash: bool = false) -> void:
 	if auth.is_host():
-		request_remove(multiplayer.get_remote_sender_id(), uid)
+		var why := request_remove(multiplayer.get_remote_sender_id(), uid, smash)
+		if why != "":
+			_ev_message.rpc_id(multiplayer.get_remote_sender_id(), why)
+
+
+## A note for one player (why their take-down didn't work).
+@rpc("authority", "reliable")
+func _ev_message(text: String) -> void:
+	message.emit(text)
 
 
 # ================================================================== approve (host)
@@ -129,25 +146,33 @@ func request_place(peer_id: int, piece: String, family: String, pos: Vector3, ro
 	var uid := _next_uid
 	_next_uid += 1
 	_ev_add_piece.rpc(uid, piece, family, pos, rot, Pieces.touches_rock(piece, pos, rot, auth.world.sdf_at))
+	_placed_at[uid] = _clock
 	auth.give_xp(peer_id, 2, "smithing")
 	return ""
 
 
-## Taking your own piece down gives back everything it cost.
-func request_remove(peer_id: int, uid: int) -> bool:
+## Host: take piece `uid` down. Returns "" when done, or why not (shown to the player).
+## Careful pick-up (smash = false) gives back everything, but only within PICKUP_TIME seconds of
+## placing it; breaking it (smash = true) works any time and gives back 80% (rounded down, at least 1).
+func request_remove(peer_id: int, uid: int, smash: bool = false) -> String:
 	var ps := auth.get_player(peer_id)
 	if ps == null or not structure.pieces.has(uid):
-		return false
+		return "?"
 	var p: Dictionary = structure.pieces[uid]
 	if ps.node.global_position.distance_to(p.pos) > Pieces.BUILD_REACH + 1.0:
-		return false
+		return "Too far away"
+	var fresh: bool = _clock - float(_placed_at.get(uid, -INF)) <= PICKUP_TIME
+	if not smash and not fresh:
+		return "Too late to pick it up (only right after placing). Press X to break it for 80%."
 	var cost := Pieces.cost(p.piece, p.family)
 	for item in cost:
-		var left := ps.inventory.add(item, cost[item])
+		var n: int = cost[item] if not smash else maxi(1, floori(cost[item] * BREAK_SHARE))
+		var left := ps.inventory.add(item, n)
 		if left > 0:
 			auth.spawn_drop(item, left, p.pos + Vector3.UP)
+	_placed_at.erase(uid)
 	_ev_remove_piece.rpc(uid)
-	return true
+	return ""
 
 
 ## Building polish spec §3: wood pieces need a Workbench, stone/brick a Mason's Table, copper an

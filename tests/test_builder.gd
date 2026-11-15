@@ -127,7 +127,7 @@ func test_station_levels_unlock_pieces() -> void:
 	_teardown()
 
 
-func test_remove_gives_everything_back() -> void:
+func test_pick_up_right_after_placing_or_break_for_80_percent() -> void:
 	await _setup()
 	auth._ev_place_station(1, "workbench", player.global_position + Vector3(-3, 0, 0), 0.0)
 	auth._ev_place_station(2, "masonry_table", player.global_position + Vector3(-3, 0, 3), 0.0)
@@ -135,9 +135,21 @@ func test_remove_gives_everything_back() -> void:
 	var s := _floor_spot("floor", 3.0)
 	auth.builder.request_place(1, "floor", "cut_stone", s.pos, s.rot)
 	var uid: int = auth.builder.structure.pieces.keys()[0]
-	check(auth.builder.request_remove(1, uid), "removed")
+	check_eq(auth.builder.request_remove(1, uid), "", "picked up right after placing")
 	check_eq(ps.inventory.count_of("cut_stone"), 4, "100% back")
 	check(auth.builder.structure.pieces.is_empty(), "gone")
+	# Later than 10 s: no free pick-up; breaking it gives 80% (4 stone -> 3).
+	auth.builder.request_place(1, "floor", "cut_stone", s.pos, s.rot)
+	uid = auth.builder.structure.pieces.keys()[0]
+	auth.builder._clock += Builder.PICKUP_TIME + 1.0
+	check(auth.builder.request_remove(1, uid) != "", "too late for a careful pick-up")
+	check(auth.builder.structure.pieces.has(uid), "so it stays")
+	check_eq(auth.builder.request_remove(1, uid, true), "", "breaking it works any time")
+	check_eq(ps.inventory.count_of("cut_stone"), 3, "and gives back 80%")
+	# Crafting stations always come back whole.
+	auth._ev_place_station(9, "campfire", player.global_position + Vector3(2, 0, 0), 0.0)
+	check_eq(auth.request_pickup_station(1, 9), "", "a station can be picked up any time")
+	check(not auth.stations.has(9) and ps.inventory.count_of("campfire") == 1, "and you get the campfire back")
 	_teardown()
 
 

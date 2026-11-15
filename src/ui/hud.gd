@@ -749,7 +749,7 @@ func _process(delta: float) -> void:
 		_build_label.text = "Blueprint: %s (%s)\nQ turn · left click place · right click cancel" % [build_mode.blueprint.name, BuildMenu._cost_text(build_mode.blueprint.cost())]
 	elif build_mode and build_mode.active():
 		var c := BuildMenu._cost_text(Pieces.cost(build_mode.piece, build_mode.family))
-		_build_label.text = "%s · %s (%s)%s\nB choose · Q turn · Shift+wheel raise/lower%s · right click take down · C save blueprint · V blueprints" % [
+		_build_label.text = "%s · %s (%s)%s\nB choose · Q turn · Shift+wheel raise/lower%s · right click pick up (10 s) · X break (80%%) · C save blueprint · V blueprints" % [
 			Pieces.LIST[build_mode.piece].name, Pieces.FAMILIES[build_mode.family].name, c,
 			"" if build_mode.problem == "" else "  —  " + build_mode.problem,
 			" (now %+.1f m)" % build_mode.lift if build_mode.lift != 0.0 else ""]
