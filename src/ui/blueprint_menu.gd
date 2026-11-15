@@ -25,7 +25,7 @@ func _ready() -> void:
 	_list = VBoxContainer.new()
 	v.add_child(_list)
 	_note = Label.new()
-	_note.text = "Pick one, aim, Q to turn, left click to place it with its Builder's Chest.\nFill the chest with materials and it builds itself.\nTo save your own: press C at one corner of your building, then C at the other."
+	_note.text = "Pick one, aim, Q to turn, left click to place it. It can go into the rock: the chest digs the room out.\nIts Builder's Chest (the yellow box) appears beside it. Fill the chest with materials and it builds itself.\nTo save your own: press C at one corner of your building, then C at the other."
 	v.add_child(_note)
 
 
@@ -40,22 +40,27 @@ static func all_files() -> Array:
 	return out
 
 
+## Every blueprint in the book: the game's ready-made buildings first, then files. [{name, json}]
+static func entries() -> Array:
+	var out := []
+	for id in BlueprintLibrary.IDS:
+		out.append({name = id, json = BlueprintLibrary.make(id).to_json()})
+	for path in all_files():
+		out.append({name = path.get_file(), json = FileAccess.get_file_as_string(path)})
+	return out
+
+
 func refresh() -> void:
 	for c in _list.get_children():
 		c.queue_free()
-	var files := all_files()
-	if files.is_empty():
-		var l := Label.new()
-		l.text = "No blueprints yet."
-		_list.add_child(l)
-	for path in files:
-		var json := FileAccess.get_file_as_string(path)
+	for e in entries():
+		var json: String = e.json
 		var r := Blueprint.from_json(json)
 		var b := Button.new()
 		b.custom_minimum_size = Vector2(520, 44)
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		if not r.ok:
-			b.text = "%s  (broken: %s)" % [path.get_file(), r.error]
+			b.text = "%s  (broken: %s)" % [e.name, r.error]
 			b.disabled = true
 		else:
 			var bp: Blueprint = r.blueprint

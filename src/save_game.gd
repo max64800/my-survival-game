@@ -10,12 +10,17 @@ class_name SaveGame
 ## Loading only reads plain data (store_var without objects), so a tampered save can't run code.
 
 const FOLDER := "user://saves"
+const ROBOT_FOLDER := "user://robot_saves"  ## test robots save here, so they never touch a real save
+
+
+static func folder() -> String:
+	return ROBOT_FOLDER if Controls.robot else FOLDER
 const VERSION := 1
 const BACKUPS := 3
 
 
 static func path_for(seed: int) -> String:
-	return FOLDER.path_join("world_%d.save" % seed)
+	return folder().path_join("world_%d.save" % seed)
 
 
 ## Writes the save. Returns "" or an error message.
@@ -23,7 +28,7 @@ static func save(main: Node) -> String:
 	var auth: GameAuthority = main.authority
 	if auth == null or not auth.is_host():
 		return "Only the host saves the world."
-	DirAccess.make_dir_recursive_absolute(FOLDER)
+	DirAccess.make_dir_recursive_absolute(folder())
 	var snap := auth.snapshot()
 	snap.erase("monsters")  # monsters come back on their own
 	var players := {}
@@ -76,13 +81,13 @@ static func read(path: String) -> Dictionary:
 
 ## The newest save (for "Continue"), trying backups if the newest is broken.
 static func newest() -> Dictionary:
-	if not DirAccess.dir_exists_absolute(FOLDER):
+	if not DirAccess.dir_exists_absolute(folder()):
 		return {}
 	var best := ""
 	var best_time := 0
-	for f in DirAccess.get_files_at(FOLDER):
+	for f in DirAccess.get_files_at(folder()):
 		if f.ends_with(".save"):
-			var p := FOLDER.path_join(f)
+			var p := folder().path_join(f)
 			var t := FileAccess.get_modified_time(p)
 			if t > best_time:
 				best_time = t

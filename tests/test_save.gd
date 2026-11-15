@@ -124,3 +124,11 @@ func test_backups_and_broken_saves() -> void:
 	check(not SaveGame.newest().is_empty(), "Continue still works from a backup")
 	root.queue_free()
 	_clean()
+
+
+func test_robots_never_touch_real_saves() -> void:
+	check(Controls.robot, "tests run as a robot")
+	check(SaveGame.path_for(5).begins_with(SaveGame.ROBOT_FOLDER), "robot saves go to their own folder")
+	Controls.robot = false
+	check(SaveGame.path_for(5).begins_with(SaveGame.FOLDER + "/"), "a person's saves go to the normal folder")
+	Controls.robot = true

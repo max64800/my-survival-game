@@ -25,6 +25,7 @@ const LIST := {
 	"bed": {station = "workbench", inputs = {plank_root = 6, moss = 4, leather = 2}, output = "bed", count = 1, unlock = []},
 	"tanning_rack": {station = "workbench", inputs = {plank_root = 6, rope = 4}, output = "tanning_rack", count = 1, unlock = ["critter_hide"]},
 	"smelter": {station = "workbench", inputs = {stone = 20, clay = 15}, output = "smelter", count = 1, unlock = ["copper_ore"]},
+	"kiln": {station = "workbench", inputs = {stone = 15, clay = 8}, output = "kiln", count = 1, unlock = ["clay"]},
 	"farm_plot": {station = "workbench", inputs = {dirt = 10, moss = 5, plank_root = 4}, output = "farm_plot", count = 1, unlock = ["glowcap", "hollowcap", "bellcap", "root_tuber"]},
 	"chest_small": {station = "workbench", inputs = {plank_root = 8, rope = 2}, output = "chest_small", count = 1, unlock = []},
 	"chest_stone": {station = "workbench", inputs = {cut_stone = 10, copper_ingot = 2}, output = "chest_stone", count = 1, unlock = ["cut_stone"]},
@@ -34,7 +35,16 @@ const LIST := {
 		unlock = ["gem_ember", "gem_rime", "gem_blight", "gem_leech", "gem_jolt", "gem_swift", "gem_bulwark", "gem_keen", "gem_burrow"]},
 	"anvil": {station = "workbench", inputs = {stone = 10, copper_ingot = 6}, output = "anvil", count = 1, unlock = ["copper_ingot"]},
 	"cooking_pot": {station = "workbench", inputs = {copper_ingot = 4, stone = 4}, output = "cooking_pot", count = 1, unlock = ["copper_ingot"]},
-	"masonry_table": {station = "workbench", inputs = {stone = 10, plank_root = 6, copper_ingot = 2}, output = "masonry_table", count = 1, unlock = ["copper_ingot"]},
+	# The Mason's Table makes stone/brick building pieces, so it's early (no copper any more).
+	"masonry_table": {station = "workbench", inputs = {stone = 12, plank_root = 4}, output = "masonry_table", count = 1, unlock = []},
+	# Station extras (building polish spec §3): each one placed near its station raises its level.
+	"chopping_block": {station = "workbench", inputs = {rootwood = 6, stone = 2}, output = "chopping_block", count = 1, unlock = []},
+	"carpenters_vise": {station = "workbench", inputs = {plank_root = 8, copper_ingot = 1}, output = "carpenters_vise", count = 1, unlock = []},
+	"tool_rack": {station = "workbench", inputs = {plank_root = 6, rope = 2, copper_ingot = 2}, output = "tool_rack", count = 1, unlock = []},
+	"chisel_rack": {station = "masonry_table", inputs = {cut_stone = 6, plank_root = 4}, output = "chisel_rack", count = 1, unlock = []},
+	"stone_saw": {station = "masonry_table", inputs = {cut_stone = 8, copper_ingot = 2}, output = "stone_saw", count = 1, unlock = []},
+	"bellows": {station = "anvil", inputs = {leather = 3, plank_root = 4}, output = "bellows", count = 1, unlock = []},
+	"grindstone": {station = "anvil", inputs = {cut_stone = 6, plank_root = 4, copper_ingot = 2}, output = "grindstone", count = 1, unlock = []},
 	# Clothes and a backpack (feedback F23): leather from the tanning rack.
 	"cap_leather": {station = "workbench", inputs = {leather = 2, fiber = 2}, output = "cap_leather", count = 1, unlock = ["leather"]},
 	"tunic_leather": {station = "workbench", inputs = {leather = 4, rope = 1}, output = "tunic_leather", count = 1, unlock = ["leather"]},
@@ -43,6 +53,8 @@ const LIST := {
 	"satchel": {station = "workbench", inputs = {leather = 4, rope = 2}, output = "satchel", count = 1, unlock = ["leather"]},
 	# --- tanning rack (60 s each)
 	"leather": {station = "tanning_rack", inputs = {critter_hide = 1}, output = "leather", count = 1, seconds = 60, unlock = ["critter_hide"]},
+	# --- kiln (F32): wood → coal. Also runs by itself from a chest within 5 m (AutoSmelt).
+	"coal": {station = "kiln", inputs = {rootwood = 2}, output = "coal", count = 1, seconds = 20, unlock = []},
 	# --- smelter (needs wood fuel; times from doc 4.2)
 	"copper_ingot": {station = "smelter", inputs = {copper_ore = 2}, output = "copper_ingot", count = 1, seconds = 20, fuel = 1, unlock = ["copper_ore"]},
 	"copper_from_scrap": {station = "smelter", inputs = {rusty_scrap = 3}, output = "copper_ingot", count = 1, seconds = 20, fuel = 1, unlock = ["rusty_scrap"]},

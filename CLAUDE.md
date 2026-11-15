@@ -11,6 +11,7 @@ Full design: `docs/superpowers/specs/2026-11-14-dwarf-survival-game-design.md`
 - Build in the roadmap order. Each step must be playable before the next starts.
 - Keep gameplay actions "co-op ready": request → host approves → everyone updates.
 - Only use assets licensed for commercial use (prefer CC0). Log every asset in `CREDITS.md`.
+- **Art style rule (owner):** every model (stations, gear, outfits, building pieces, materials) is made in the same style as the workbenches: hand-painted, chunky, no perfect boxes or circles, every part touching. Each building material gets its own design, not a reskin. Make ChatGPT pictures whenever they help, no need to ask.
 - Never copy names, characters, art, maps, or music from other games.
 - The GitHub repo is public: never commit personal paths, usernames, keys, or Steam credentials.
 - Use Voxel Tools and GodotSteam **GDExtension** editions with the official Godot build (never the module builds).
@@ -23,6 +24,7 @@ Full design: `docs/superpowers/specs/2026-11-14-dwarf-survival-game-design.md`
 - `src/items/`: item list, inventory, drops. `src/ui/hud.gd`: everything on screen.
 - `src/debug/autopilot.gd`: scripted play run with screenshots.
 - Design docs for later steps: `docs/design/` (start with its README).
+- Making or remaking creatures: follow `docs/art/CREATURE-STYLE.md` (match the Forge workbench look; build through the asset forge, not code shapes).
 
 ## Play sessions (Windows PC)
 - Every time the owner plays (desktop icon or Godot F5), `tools/recorder/` records it with OBS and makes a folder in

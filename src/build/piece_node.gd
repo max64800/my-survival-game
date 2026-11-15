@@ -26,6 +26,75 @@ func _ready() -> void:
 		collision_mask = 0
 		set_meta("piece_uid", uid)
 	_build()
+	set_process(false)  # only trembling pieces need a per-frame update
+
+
+var _look: MeshInstance3D
+var _shaking := false
+var _shake_t := 0.0
+static var _tints := {}
+
+
+## Soft physics: a piece about to give way trembles (only its look moves, not its solid shape).
+func set_shaking(on: bool) -> void:
+	_shaking = on
+	set_process(on)
+	if not on and _look:
+		_look.position = Vector3.ZERO
+
+
+func _process(delta: float) -> void:
+	if not _shaking or _look == null:
+		return
+	_shake_t += delta
+	var a := 0.03 + 0.03 * minf(_shake_t / 2.0, 1.0)  # shakes harder as it gets closer to falling
+	_look.position = Vector3(randf_range(-a, a), randf_range(-a, a) * 0.5, randf_range(-a, a))
+
+
+## While the Build Hammer is out, every piece glows faintly in its strength color (spec §5).
+## Pass Color(0,0,0,0) to clear it.
+func set_tint(c: Color) -> void:
+	if _look == null:
+		return
+	if c.a <= 0.0:
+		_look.material_overlay = null
+		return
+	if not _tints.has(c):
+		var m := StandardMaterial3D.new()
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.albedo_color = Color(c.r, c.g, c.b, 0.28)
+		m.cull_mode = BaseMaterial3D.CULL_BACK
+		_tints[c] = m
+	_look.material_overlay = _tints[c]
+
+
+## Doors swing open on their left hinge (look and solid shape together), so an open door
+## stands against the wall's side and you can still aim at it to close it.
+var is_open := false
+var _swing := 0.0  ## 0 = closed, 1 = fully open
+var _swing_tween: Tween
+
+
+func set_open(open: bool) -> void:
+	is_open = open
+	if not is_inside_tree():
+		_apply_swing(1.0 if open else 0.0)
+		return
+	if _swing_tween:
+		_swing_tween.kill()
+	_swing_tween = create_tween()
+	_swing_tween.tween_method(_apply_swing, _swing, 1.0 if open else 0.0, 0.35).set_trans(Tween.TRANS_SINE)
+
+
+func _apply_swing(t: float) -> void:
+	_swing = t
+	var hinge := Vector3(-Pieces.LIST[piece].size.x * 0.5, 0, 0)
+	var xf := Transform3D(Basis(Vector3.UP, -t * PI / 2.0), Vector3.ZERO)
+	xf = Transform3D(Basis(), hinge) * xf * Transform3D(Basis(), -hinge)
+	for c in get_children():
+		if c is MeshInstance3D or c is CollisionShape3D:
+			(c as Node3D).transform = xf
 
 
 func set_ghost_ok(ok: bool) -> void:
@@ -48,36 +117,47 @@ func rebuild(p_piece: String, p_family: String) -> void:
 	_build()
 
 
+static var _forged_meshes := {}
+
+
+## Claude 2's hand-made model for this piece + material (assets/models/build/<piece>__<family>.glb),
+## or null to use the shape made in code. Built in the same piece space as PieceMesh, so it lines up
+## with the solid shape. Only the look changes; bumping into it still uses PieceMesh.solid().
+static func forged_mesh(p_piece: String, p_family: String) -> Mesh:
+	var key := p_piece + "__" + p_family
+	if not _forged_meshes.has(key):
+		var m: Mesh = null
+		var scene := Look.forged("build", key)
+		if scene:
+			var parts := scene.find_children("*", "MeshInstance3D", true, false)
+			if parts.size() == 1:
+				m = (parts[0] as MeshInstance3D).mesh  # one baked mesh, as agreed with Claude 2
+			elif parts.size() > 1:
+				push_warning("%s.glb has %d meshes; expected 1 (using the code shape)" % [key, parts.size()])
+			scene.free()
+		_forged_meshes[key] = m
+	return _forged_meshes[key]
+
+
 func _build() -> void:
 	var s: Vector3 = Pieces.LIST[piece].size
-	match piece:
-		"doorway", "window_wall":
-			var hole: Vector3 = Pieces.LIST[piece].opening
-			var side := (s.x - hole.x) * 0.5
-			var bottom: float = hole.z
-			var top := s.y - bottom - hole.y
-			_box(Vector3(side, s.y, s.z), Vector3(-(hole.x + side) * 0.5, s.y * 0.5, 0))
-			_box(Vector3(side, s.y, s.z), Vector3((hole.x + side) * 0.5, s.y * 0.5, 0))
-			if top > 0.01:
-				_box(Vector3(hole.x, top, s.z), Vector3(0, s.y - top * 0.5, 0))
-			if bottom > 0.01:
-				_box(Vector3(hole.x, bottom, s.z), Vector3(0, bottom * 0.5, 0))
-		"stairs":
-			for i in 4:
-				var h := (i + 1) * s.y / 4.0
-				_box(Vector3(s.x, h, s.z / 4.0), Vector3(0, h * 0.5, s.z * 0.5 - (i + 0.5) * s.z / 4.0), false)
-			if not ghost:
-				_ramp_shape(s)
-		"mine_prop":
-			_box(Vector3(0.3, s.y - 0.3, 0.3), Vector3(-0.8, (s.y - 0.3) * 0.5, 0))
-			_box(Vector3(0.3, s.y - 0.3, 0.3), Vector3(0.8, (s.y - 0.3) * 0.5, 0))
-			_box(Vector3(s.x, 0.3, s.z), Vector3(0, s.y - 0.15, 0))
-		"pillar":
-			_box(s, Vector3(0, s.y * 0.5, 0))
-			_box(Vector3(s.x + 0.15, 0.15, s.z + 0.15), Vector3(0, 0.075, 0), false)
-			_box(Vector3(s.x + 0.15, 0.15, s.z + 0.15), Vector3(0, s.y - 0.075, 0), false)
-		_:
-			_box(s, Vector3(0, s.y * 0.5, 0))
+	# The look: one shared, detailed shape per piece + material (PieceMesh, spec §6).
+	var mi := MeshInstance3D.new()
+	_look = mi
+	var made := forged_mesh(piece, family) if not ghost else null
+	mi.mesh = made if made else PieceMesh.visual(piece, family)
+	mi.material_override = _ghost_mat if ghost else (null if made else _mat(family))
+	if ghost:
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(mi)
+	# The solid shape: a smooth ramp for steps (nice to walk up), the plain outline for the rest.
+	if not ghost:
+		if Pieces.LIST[piece].get("walkable_slope", false):
+			_ramp_shape(s)
+		else:
+			var cs := CollisionShape3D.new()
+			cs.shape = PieceMesh.solid(piece).create_trimesh_shape()
+			add_child(cs)
 	if Pieces.FAMILIES[family].get("glow", false) and not ghost:
 		var l := OmniLight3D.new()
 		l.light_color = Pieces.FAMILIES[family].color
@@ -85,6 +165,42 @@ func _build() -> void:
 		l.light_energy = 0.6
 		l.position = Vector3(0, s.y * 0.5, 0)
 		add_child(l)
+	_decor_extras(s, made != null)
+
+
+## Decor pieces: cloth parts (rug, banner) in their own colour, and the sconce's glowing crystal.
+func _decor_extras(s: Vector3, has_model: bool) -> void:
+	var info: Dictionary = Pieces.LIST[piece]
+	if info.has("cloth") and not has_model:
+		var c: Color = info.cloth
+		if piece == "rug":
+			_cloth(Vector3(s.x - 0.12, 0.02, s.z - 0.12), Vector3(0, 0.03, 0), c)
+			_cloth(Vector3(s.x * 0.6, 0.02, s.z * 0.5), Vector3(0, 0.035, 0), Color(0.78, 0.6, 0.3))  # a gold middle
+		else:
+			_cloth(Vector3(s.x, s.y - 0.15, 0.03), Vector3(0, (s.y - 0.1) * 0.5, 0.0), c)
+			_cloth(Vector3(0.3, 0.3, 0.035), Vector3(0, s.y * 0.6, 0.0), Color(0.85, 0.65, 0.25))  # a gold emblem
+	if info.has("light"):
+		if not has_model:
+			_cloth(Vector3(0.1, 0.16, 0.1), Vector3(0, s.y * 0.45 + 0.12, 0.04), info.light, true)
+		if not ghost:
+			var l := OmniLight3D.new()
+			l.light_color = info.light
+			l.omni_range = 7.0
+			l.light_energy = 1.2
+			l.position = Vector3(0, s.y * 0.6, 0.25)
+			add_child(l)
+
+
+func _cloth(size: Vector3, pos: Vector3, c: Color, glow: bool = false) -> void:
+	var mi := MeshInstance3D.new()
+	var bm := BoxMesh.new()
+	bm.size = size
+	mi.mesh = bm
+	mi.position = pos
+	mi.material_override = _ghost_mat if ghost else Look.mat(c, "", 2.0 if glow else 0.0)
+	if ghost:
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(mi)
 
 
 func _box(size: Vector3, pos: Vector3, solid: bool = true) -> void:

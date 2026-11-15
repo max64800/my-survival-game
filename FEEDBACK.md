@@ -24,12 +24,13 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 | Moving around (walking, jumping, climbing) | F2, F3 | |
 | Controls + camera | F18, F23, F27 | |
 | Making the game / tools | F4, F5, F6, F7, F16 | |
-| Sound | F8, F15, F35 | Sounds must feel old-world: wood, stone, leather, metal. No beeps or whooshes |
+| Sound | F8, F15, F67 | Sounds must feel old-world: wood, stone, leather, metal. No beeps or whooshes |
 | The start of the game (first 5 minutes) | F10, F11 | |
 | A world that feels alive (enemies, ruins) | F9, F21 | Columns asked for twice (F9, F21) |
 | Cave shapes (round vs sharp, tunnels) | F19, F20 | |
 | Digging feel + resources | F13, F14 | |
-| Pictures / looks | F17, F22, F24, F25, F26, F28, F29, F30, F31, F36, F37, F38, F39, F40 | **The dwarf's look keeps coming up (F25 said twice)** |
+| Pictures / looks | F17, F22, F24, F25, F26, F28, F29, F30, F31, F68, F69, F70, F71, F72 | **The dwarf's look keeps coming up (F25 said twice)** |
+| Model quality (stations, gear, building pieces) | F34-F66 | Most common: parts floating / not touching (8 notes), too-perfect shapes, flat colour, loose rope |
 
 ---
 
@@ -45,19 +46,63 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F30. Animations: running, jumping, swinging…** → Claude 3, on the `visuals` branch: a real 3D dwarf with idle, walk, jog, sprint, jump + landing, mining swing, axe chop, sword attacks, roll, block, shield, crossbow, getting hit, eating, climbing ladders, getting up; friends see it in co-op. *From: you. Said: 1×*
 
 - [ ] **F31. Monsters: start with snails, bats and a beetle, polish them first.** Snails slow but hit hard, hide in the shell after a few hits (90% less damage); big bats that swoop in, attack, fly out; a beetle. Drops and uses chosen in a multiple-choice session (docs/design/monsters-first-three.md). → Claude 3, on the `visuals` branch: built; the other monsters are hidden for now. Waiting for you to try it. *From: you. Said: 1×*
+- [ ] **F34. Hand-built station models: second pass.** Anvil too simple (horn looks like a pyramid); bed too blocky (mattress, pillow, cover); fires are blobs (campfire, cooking pot, smelters, sconce); chest has big blocks at the bottom; copper chest should look different from the normal chest; stone chest → a stone crate; water in the copper basin and drip bucket (and the odd drop); farm-plot mushrooms; glow torch rope and top need more detail; ore crate ores float; rope doesn't look like rope; rune too simple; stray green bits on the rune slab and smelter; tanning-rack hide looks wacky; training dummy should be stone with more detail; cooking pot has a stick going into the pot. Loved: workbench, gem bench, masonry table, top of the chest. → Claude 2, in progress. *From: you. Said: 1×*
+
+*(Nov 14, your notes on every station, weapon, outfit and building piece. Full details, grouped by kind of problem: `docs/art/MODEL-FEEDBACK-2026-11-14.md`. New rule: every model in the workbench style; ChatGPT pictures whenever they help.)*
+
+- [ ] **F34. Bellows need a lot of work.** Boards, handles and nozzle float apart; remake as one hinged piece with leather pleats. *From: you. Said: 1×*
+- [ ] **F35. The campfire still floats a bit.** ("still": it was meant to be fixed before.) *From: you. Said: 1×*
+- [ ] **F36. The carpentry table needs more stuff on it.** *From: you. Said: 1×*
+- [ ] **F37. The chest's base is still wider than the lid; make them match.** *From: you. Said: 1×*
+- [ ] **F38. Chopping block: the axe doesn't look like an axe; the tree rings stick out and are perfect circles.** *From: you. Said: 1×*
+- [ ] **F39. Cooking pot soup looks the same everywhere; needs a gradient and texture.** *From: you. Said: 1×*
+- [ ] **F40. Copper drip basin water is one flat shade.** *From: you. Said: 1×*
+- [ ] **F41. Grindstone: the side wood blocks aren't attached; the blue bottom needs a darker gradient.** *From: you. Said: 1×*
+- [ ] **F42. Ore Crate: the gems float above the pile** (the F33 pile). *From: you. Said: 1×*
+- [ ] **F43. Rune slab: the top-left of the frame is missing.** *From: you. Said: 1×*
+- [ ] **F44. The stone saw floats, not attached to anything.** *From: you. Said: 1×*
+- [ ] **F45. Tanning rack: lean it back with supports (like Valheim).** *From: you. Said: 1×*
+- [ ] **F46. Tool rack: hang it on the wall instead of standing.** *From: you. Said: 1×*
+- [ ] **F47. Training dummy: a lumpy, not-perfect square head.** *From: you. Said: 1×*
+- [ ] **F48. Bolts: better feathers; tips in different crystal colours.** *From: you. Said: 1×*
+- [ ] **F49. Building hammer: no spikes, just iron plates on the sides (it's for building).** *From: you. Said: 1×*
+- [ ] **F50. Crossbow string must be tight.** *From: you. Said: 1×*
+- [ ] **F51. Shield back: a big forearm strap + a hand grip near the edge (Spartan style), not 2 sticks.** *From: you. Said: 1×*
+- [ ] **F52. Copper spear: tighter rope.** *From: you. Said: 1×*
+- [ ] **F53. Copper sword: tight rope along the whole handle, no gaps.** *From: you. Said: 1×*
+- [ ] **F54. Stone tools too perfect: chip them more. Stone sword has rope sticking out.** *From: you. Said: 1×*
+- [ ] **F55. All outfits too blocky and simple; remake (ChatGPT pictures).** *From: you. Said: 1×*
+- [ ] **F56. Material items need remaking too.** *From: you. Said: 1×*
+- [ ] **F57. Doorway should be round, like a hobbit door.** *From: you. Said: 1×*
+- [ ] **F58. White stuff shows on the edges of pieces when you turn** (doorway, stone, arches in clay brick and copper). *From: you. Said: 2×* (doorway/stone; arches)
+- [ ] **F59. Arches (clay brick, copper) look weird.** *From: you. Said: 1×*
+- [ ] **F60. Each building material should have its own design, not a reskin; each tier a bit fancier.** *From: you. Said: 1×*
+- [ ] **F61. Barrel rings don't touch each other.** *From: you. Said: 1×*
+- [ ] **F62. Beams: halves don't touch, a beam can't be 2 bricks; no perfect rectangles anywhere (curves, scratches, texture).** *From: you. Said: 1×*
+- [x] ~~**F63. Drop 3 mine props from the decor set: pickaxe in a rock pile, winch with bucket, tunnel support frame.**~~ Done Nov 15: mine props picture redone with only the other 5. *From: you. Said: 1×*
+- [x] ~~**F64. Cooking pot tripod needs a third leg behind.**~~ Done Nov 15 (picture): new pot on a real 3-leg tripod. The 3D model still needs it. *From: you. Said: 1×*
+- [x] ~~**F65. Stone saw: the station is decent, but the saw on top is not physically possible.**~~ Done Nov 15 (picture): a frame saw whose blade sits in a cut in the stone. The 3D model still needs it. *From: you. Said: 1×*
+- [x] ~~**F66. Lineup: change the smart dwarf to the old one (match his head sheet).**~~ Done Nov 15: new lineup, old smart dwarf with the long forked beard; happy and strong unchanged. *From: you. Said: 1×*
 
 **Claude noticed, waiting for your OK** (not fixed until you say so):
 
 ## Done
 
-- [x] ~~**F40. Creatures need variety, like the cave itself.**~~ Done Nov 14 (Claude 3, waiting for your look). Every part has its own texture (waxy shell, rock knobs, three pebble colors, mossy rock, glowing gem clusters, grainy shield). Each creature now has hand-built versions and the game picks one per creature, plus a slightly different size: beetles 4 each (horn curved / bent / broken / forked, gems amber / teal / violet, more or less moss), bats 4 colors (+ torn ears), snails 3 colors. Co-op friends see the same individual. *From: you. Said: 1×*
-- [x] ~~**F39. Rock Beetles, 2nd pass.**~~ Done Nov 14 (Claude 3, waiting for your look). Rebuilt after real "ironclad" beetles: two wing cases with a groove, a waxy shell with black drops, rows of knobs (rock, pebbles, mossy stones), four big knobs at the back, a flared spiky rim, a grainy front shield with humps and spiky corners. Charging: head down, back end up, red eyes, and the cracks in the shell glow like coals. Standing still, all six feet are on the ground; walking uses a real insect walk (two sets of three legs in turns). The Great one has spike rows, bigger spikes and side horns. *From: you. Said: 1×*
-- [x] ~~**F38. Cave Bat asleep: it lies flat on the ceiling.**~~ Fixed Nov 14 (Claude 3, waiting for your look). It now hangs head-down by its feet, with folded wings wrapped round its body like a cloak (built as their own pieces, shown only while it sleeps). In flight the wings half-fold on each upstroke and the body lifts with each beat. Four fur colors (brown, ash grey, rust, sandy); some have a torn ear. *From: you. Said: 1×*
-- [x] ~~**F37. Rock Snail, 2nd pass.**~~ Done Nov 14 (Claude 3, waiting for your look). Hiding: the whole body, tail too, shrinks into the shell, the shell settles onto the ground, and only two small eyes peek out. New body: real snail skin (little bumps with grooves), a fleshy collar where it meets the shell, a breathing hole on its side, a ridge and dark stripe down the tail, an ochre wavy skirt edge, snout lobes, ringed eye stalks that sway as it looks around, and the body ripples as it crawls. Three versions: slate, olive, rusty (shells grey, sandy, dark slate; one grows a violet crystal). *From: you. Said: 1×*
+- [x] ~~**F72. Creatures need variety, like the cave itself.**~~ Done Nov 14 (Claude 3, waiting for your look). Every part has its own texture (waxy shell, rock knobs, three pebble colors, mossy rock, glowing gem clusters, grainy shield). Each creature now has hand-built versions and the game picks one per creature, plus a slightly different size: beetles 4 each (horn curved / bent / broken / forked, gems amber / teal / violet, more or less moss), bats 4 colors (+ torn ears), snails 3 colors. Co-op friends see the same individual. *From: you. Said: 1×*
+- [x] ~~**F71. Rock Beetles, 2nd pass.**~~ Done Nov 14 (Claude 3, waiting for your look). Rebuilt after real "ironclad" beetles: two wing cases with a groove, a waxy shell with black drops, rows of knobs (rock, pebbles, mossy stones), four big knobs at the back, a flared spiky rim, a grainy front shield with humps and spiky corners. Charging: head down, back end up, red eyes, and the cracks in the shell glow like coals. Standing still, all six feet are on the ground; walking uses a real insect walk (two sets of three legs in turns). The Great one has spike rows, bigger spikes and side horns. *From: you. Said: 1×*
+- [x] ~~**F70. Cave Bat asleep: it lies flat on the ceiling.**~~ Fixed Nov 14 (Claude 3, waiting for your look). It now hangs head-down by its feet, with folded wings wrapped round its body like a cloak (built as their own pieces, shown only while it sleeps). In flight the wings half-fold on each upstroke and the body lifts with each beat. Four fur colors (brown, ash grey, rust, sandy); some have a torn ear. *From: you. Said: 1×*
+- [x] ~~**F69. Rock Snail, 2nd pass.**~~ Done Nov 14 (Claude 3, waiting for your look). Hiding: the whole body, tail too, shrinks into the shell, the shell settles onto the ground, and only two small eyes peek out. New body: real snail skin (little bumps with grooves), a fleshy collar where it meets the shell, a breathing hole on its side, a ridge and dark stripe down the tail, an ochre wavy skirt edge, snout lobes, ringed eye stalks that sway as it looks around, and the body ripples as it crawls. Three versions: slate, olive, rusty (shells grey, sandy, dark slate; one grows a violet crystal). *From: you. Said: 1×*
 
-- [x] ~~**F36. The monsters look like raw blocks. Build them the way Claude 2 hand-built the anvil.**~~ Done Nov 14 (Claude 3, `visuals`, version 1, waiting for your look). All three are now hand-built in Blender with Claude 2's kit plus a new "creature" add-on: the Rock Snail has a real spiral stone shell with growth ridges and moss, and one soft, damp body that pulls in when it hides; the Cave Bat has real bat wings (finger bones with skin between, scalloped edges), fur, big ears and fangs; the Rock Beetle has a domed stone shell, a curved horn, hooked jaws, six jointed legs and the glowing soft back end. The Great Rock Beetle gets side horns, a darker shell and more moss. Legs walk, wings flap and the snail's body hides in the game. See them in the 3D viewer. *From: you. Said: 1×*
+- [x] ~~**F68. The monsters look like raw blocks. Build them the way Claude 2 hand-built the anvil.**~~ Done Nov 14 (Claude 3, `visuals`, version 1, waiting for your look). All three are now hand-built in Blender with Claude 2's kit plus a new "creature" add-on: the Rock Snail has a real spiral stone shell with growth ridges and moss, and one soft, damp body that pulls in when it hides; the Cave Bat has real bat wings (finger bones with skin between, scalloped edges), fur, big ears and fangs; the Rock Beetle has a domed stone shell, a curved horn, hooked jaws, six jointed legs and the glowing soft back end. The Great Rock Beetle gets side horns, a darker shell and more moss. Legs walk, wings flap and the snail's body hides in the game. See them in the 3D viewer. *From: you. Said: 1×*
 
-- [x] ~~**F35. The sounds feel futuristic; they don't match a medieval game.**~~ Fixed Nov 14 (Claude 3, `visuals`). Claude drew every sound as a picture to find the "computer" ones: the bag open/close was a rising sci-fi whoosh, the pickup was a synth pluck, the lantern refill was a pure beep, and the monster death was an electronic tone. All 4 are now real recordings of cloth, leather and a metal latch, and a heavy thud for deaths. The new creature sounds are built only from real recordings too: a door creak sped up = bat squeal, cloth = wing beats, a heavy thump = snail slam. Waiting for you to listen. *From: you. Said: 1×*
+- [x] ~~**F67. The sounds feel futuristic; they don't match a medieval game.**~~ Fixed Nov 14 (Claude 3, `visuals`). Claude drew every sound as a picture to find the "computer" ones: the bag open/close was a rising sci-fi whoosh, the pickup was a synth pluck, the lantern refill was a pure beep, and the monster death was an electronic tone. All 4 are now real recordings of cloth, leather and a metal latch, and a heavy thud for deaths. The new creature sounds are built only from real recordings too: a door creak sped up = bat squeal, cloth = wing beats, a heavy thump = snail slam. Waiting for you to listen. *From: you. Said: 1×*
+
+- [x] ~~**F32. Kiln + smelter that work on their own.**~~ Done Nov 14. New **Kiln** (Workbench: 15 stone, 8 clay) and **Coal**.
+  - Put a chest (or the Ore Crate) within 5 m. The Kiln takes wood from it and puts coal back in.
+  - The **Smelter** takes ore and fuel (coal first, then wood) from nearby chests and puts the bars into a chest.
+  - The **Twin Smelter** does both: one side smelts, the other makes coal. Coal also works as fuel when you smelt by hand.
+  *From: you. Said: 1×*
+- [x] ~~**F33. The Ore Crate should look fuller the more you put in.**~~ Done Nov 14. A pile of ore (Claude 2's model) shows inside the crate and rises as you fill it: a few ores already show, and it's heaped up at about 400 items. *From: you. Said: 1×*
 
 - [x] ~~**F27. The game grabs my mouse even when I'm in another program, and Claude's tests take my mouse.**~~ Fixed Nov 14. When you switch away (click another window or Alt+Tab), the game lets go of the mouse and pauses. Click back into the game to keep playing. Claude's test robots only *pretend* to hold the mouse now, so they never touch yours. *From: you. Said: 1×*
 - [x] ~~**F23. Real equipment slots.**~~ Done Nov 14. 9 slots in the bag window (Tab): Pickaxe, Lantern, Weapon, Shield, Head, Chest, Legs, Feet, Pack.

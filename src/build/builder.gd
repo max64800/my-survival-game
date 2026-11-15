@@ -7,12 +7,14 @@ extends Node
 const PIECE_SCRIPT := preload("res://src/build/piece_node.gd")
 const CHECK_DELAY := 0.05  ## cave-in checks run a moment after a dig
 const WARN_TIME := 1.0  ## dust and rumble before rock falls
-const BREAK_DELAY := 0.5  ## shaky pieces wait a moment, then fall apart one by one
+const BREAK_DELAY := 2.0  ## soft physics (spec §5): shaky pieces creak and shake for 2 s first
+const DEBRIS_TIME := 4.0  ## a fallen piece tumbles, then fades away
 const RUBBLE_DAMAGE := 15.0
 
 var auth: GameAuthority
 var structure := Structure.new()
 var nodes := {}  ## uid -> PieceNode
+var ladders := {}  ## uid -> true for every built ladder (dwarves climb them)
 var pieces_root: Node3D
 var fall_log: Array[PackedVector3Array] = []  ## every cave-in, for friends who join later
 var _next_uid := 1
@@ -54,6 +56,20 @@ func ask_remove(uid: int) -> void:
 		_rpc_remove.rpc_id(1, uid)
 
 
+## Open or close a built door (E while looking at it).
+func ask_door(uid: int) -> void:
+	if auth.is_host():
+		request_door(auth.local_peer_id(), uid)
+	else:
+		_rpc_door.rpc_id(1, uid)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_door(uid: int) -> void:
+	if auth.is_host():
+		request_door(multiplayer.get_remote_sender_id(), uid)
+
+
 @rpc("any_peer", "reliable")
 func _rpc_place(piece: String, family: String, pos: Vector3, rot: int) -> void:
 	if auth.is_host() and pos.is_finite():
@@ -75,8 +91,9 @@ func problem(ps: GameAuthority.PlayerState, piece: String, family: String, pos: 
 		return "Can't be made from %s" % Pieces.FAMILIES.get(family, {}).get("name", family)
 	if ps.node.global_position.distance_to(pos) > Pieces.BUILD_REACH + 1.0:
 		return "Too far away"
-	if not _workbench_near(pos):
-		return "Needs a Workbench within 20 m"
+	var station_why := station_problem(piece, family, pos)
+	if station_why != "":
+		return station_why
 	var rock := Pieces.rock_problem(piece, pos, rot, auth.world.sdf_at)
 	if rock != "":
 		return rock
@@ -132,11 +149,76 @@ func request_remove(peer_id: int, uid: int) -> bool:
 	return true
 
 
-func _workbench_near(pos: Vector3) -> bool:
-	for st in auth.stations.values():
-		if st.kind == "workbench" and st.global_position.distance_to(pos) <= Pieces.WORKBENCH_RANGE:
+## Building polish spec §3: wood pieces need a Workbench, stone/brick a Mason's Table, copper an
+## Anvil, within 20 m and at the piece's level (more extras around the station = higher level).
+const STATION_KIND := {"workbench": "workbench", "mason": "masonry_table", "anvil": "anvil"}
+
+
+## Host: a player wants to open/close door `uid`. They must be close to it.
+func request_door(peer_id: int, uid: int) -> bool:
+	var ps := auth.get_player(peer_id)
+	var p: Dictionary = structure.pieces.get(uid, {})
+	if ps == null or p.is_empty() or p.piece != "door":
+		return false
+	if ps.node and ps.node.global_position.distance_to(p.pos) > Pieces.BUILD_REACH:
+		return false
+	_ev_door.rpc(uid, not p.get("open", false))
+	return true
+
+
+## Is there a built ladder at `pos` (a dwarf's feet)? Same reach as rope ladders.
+func ladder_at(pos: Vector3) -> bool:
+	for uid in ladders:
+		var p: Dictionary = structure.pieces.get(uid, {})
+		if p.is_empty():
+			continue
+		var d: Vector3 = pos - p.pos
+		if Vector2(d.x, d.z).length() < 0.8 and d.y > -0.5 and d.y < Pieces.LIST.ladder.size.y + 0.3:
 			return true
 	return false
+
+
+## Where a blueprint's Builder's Chest goes: just outside the building, on the side nearest
+## `from` (the player), on open floor. Tries all four sides. Vector3.INF = nowhere fits.
+static func chest_spot(size: Vector3, origin: Vector3, rot: int, from: Vector3, sdf: Callable) -> Vector3:
+	var sides := []
+	for k in 4:
+		var dir := Basis(Vector3.UP, (rot + k) * PI / 2.0) * Vector3(0, 0, 1)
+		var reach: float = (size.z if k % 2 == 0 else size.x) * 0.5 + 1.5
+		sides.append(origin + dir * reach)
+	sides.sort_custom(func(a: Vector3, b: Vector3) -> bool: return a.distance_to(from) < b.distance_to(from))
+	for c: Vector3 in sides:
+		# Look for a floor from 2 m above the building's base down to 3 m below it.
+		var y := origin.y + 2.0
+		while y > origin.y - 3.0:
+			var here := Vector3(c.x, y, c.z)
+			if float(sdf.call(here)) <= 0.0:
+				if float(sdf.call(here + Vector3.UP * 0.5)) > 0.0 and float(sdf.call(here + Vector3.UP * 1.2)) > 0.0:
+					return here + Vector3.UP * 0.25
+				break  # rock straight away: this side is inside the mountain
+			y -= 0.25
+	return Vector3.INF
+
+
+func station_problem(piece: String, family: String, pos: Vector3) -> String:
+	var kind: String = STATION_KIND[Pieces.station_for(family)]
+	var need := Pieces.needed_level(piece, family)
+	var best := 0
+	var nearest: Station = null
+	for st in auth.stations.values():
+		if st.kind == kind and st.global_position.distance_to(pos) <= Pieces.WORKBENCH_RANGE:
+			var lvl: int = (st as Station).level()
+			if lvl > best:
+				best = lvl
+				nearest = st
+	var name := Items.display_name(kind)
+	if nearest == null:
+		return "Needs a %s within 20 m" % name
+	if best < need:
+		var extra := nearest.next_extra()
+		return "Needs %s level %d (build a %s next to it)" % [name, need, Items.display_name(extra)] if extra != "" \
+			else "Needs %s level %d" % [name, need]
+	return ""
 
 
 # ================================================================== everyone updates
@@ -153,6 +235,8 @@ func _ev_add_piece(uid: int, piece: String, family: String, pos: Vector3, rot: i
 	n.global_position = pos
 	n.rotation.y = rot * PI / 2.0
 	nodes[uid] = n
+	if piece == "ladder":
+		ladders[uid] = true
 	_next_uid = maxi(_next_uid, uid + 1)
 	if auth.is_host():
 		_queue_shaky()
@@ -162,6 +246,7 @@ func _ev_add_piece(uid: int, piece: String, family: String, pos: Vector3, rot: i
 func _ev_remove_piece(uid: int) -> void:
 	var p: Dictionary = structure.pieces.get(uid, {})
 	structure.remove(uid)
+	ladders.erase(uid)
 	var n: Node = nodes.get(uid)
 	nodes.erase(uid)
 	if n:
@@ -170,6 +255,16 @@ func _ev_remove_piece(uid: int) -> void:
 		_queue_shaky()
 		if Pieces.LIST[p.piece].get("supports_rock", false):
 			queue_check(Pieces.box(p.piece, p.pos, p.rot).end, 1.5)  # was holding rock up!
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_door(uid: int, open: bool) -> void:
+	if not structure.pieces.has(uid):
+		return
+	structure.pieces[uid]["open"] = open
+	Sfx.play("build", structure.pieces[uid].pos, -8.0, 1.6 if open else 1.3)
+	if nodes.has(uid):
+		(nodes[uid] as PieceNode).set_open(open)
 
 
 @rpc("authority", "call_local", "reliable")
@@ -242,13 +337,17 @@ func _process(delta: float) -> void:
 		_ev_cave_in.rpc(_falls.pop_front()[1])
 	while not _breaks.is_empty() and _breaks[0][0] <= _clock:
 		var uid: int = _breaks.pop_front()[1]
-		if structure.pieces.has(uid):
-			var p: Dictionary = structure.pieces[uid]
-			for item in Pieces.cost(p.piece, p.family):
-				var half: int = Pieces.cost(p.piece, p.family)[item] / 2
-				if half > 0:
-					auth.spawn_drop(item, half, p.pos + Vector3.UP * 0.5)
-			_ev_remove_piece.rpc(uid)
+		if not structure.pieces.has(uid):
+			continue
+		if not structure.recompute().has(uid):
+			_ev_shake.rpc(uid, false)  # someone propped it up in time: saved!
+			continue
+		var p: Dictionary = structure.pieces[uid]
+		for item in Pieces.cost(p.piece, p.family):
+			var half: int = Pieces.cost(p.piece, p.family)[item] / 2
+			if half > 0:
+				auth.spawn_drop(item, half, p.pos + Vector3.UP * 0.5)
+		_ev_collapse.rpc(uid)
 
 
 func _run_check(center: Vector3, radius: float, tries: int = 0) -> Array:
@@ -307,7 +406,49 @@ func _queue_shaky() -> void:
 			if br[1] == uid:
 				already = true
 		if not already:
-			_breaks.append([_clock + BREAK_DELAY + 0.1 * _breaks.size(), uid])
+			_breaks.append([_clock + BREAK_DELAY + 0.15 * _breaks.size(), uid])
+			_ev_shake.rpc(uid, true)
+
+
+## Everyone: a piece starts (or stops) creaking and shaking.
+@rpc("authority", "call_local", "reliable")
+func _ev_shake(uid: int, on: bool) -> void:
+	var n: PieceNode = nodes.get(uid)
+	if n:
+		n.set_shaking(on)
+		if on:
+			Sfx.play("dig_soft", n.global_position, -4.0, 0.55)  # a low creak
+
+
+## Everyone: a piece gives way. It tumbles down as loose debris and fades out (no damage).
+@rpc("authority", "call_local", "reliable")
+func _ev_collapse(uid: int) -> void:
+	var p: Dictionary = structure.pieces.get(uid, {})
+	var n: PieceNode = nodes.get(uid)
+	if n and not p.is_empty():
+		var rb := RigidBody3D.new()
+		rb.collision_layer = 0
+		rb.collision_mask = World.TERRAIN_LAYER
+		rb.mass = 2.0
+		var cs := CollisionShape3D.new()
+		var sh := BoxShape3D.new()
+		sh.size = (Pieces.LIST[p.piece].size as Vector3).max(Vector3.ONE * 0.2)
+		cs.shape = sh
+		cs.position = Vector3.UP * sh.size.y * 0.5
+		rb.add_child(cs)
+		var mi := MeshInstance3D.new()
+		mi.mesh = PieceMesh.visual(p.piece, p.family)
+		mi.material_override = PieceNode._mat(p.family)
+		rb.add_child(mi)
+		add_child(rb)
+		rb.global_transform = n.global_transform
+		rb.angular_velocity = Vector3(randf_range(-1, 1), randf_range(-0.5, 0.5), randf_range(-1, 1))
+		Sfx.play("dig_break", n.global_position, -4.0, 0.8)
+		var tw := rb.create_tween()
+		tw.tween_interval(DEBRIS_TIME - 0.6)
+		tw.tween_property(mi, "scale", Vector3.ONE * 0.01, 0.6)
+		tw.tween_callback(rb.queue_free)
+	_ev_remove_piece(uid)
 
 
 # ================================================================== looks
@@ -585,6 +726,8 @@ func load_snapshot(s: Dictionary) -> void:
 		_pending_falls.append(f)
 	for p in s.get("pieces", []):
 		_ev_add_piece(p[0], p[1], p[2], p[3], p[4], p[5])
+		if p.size() > 6 and p[6]:
+			_ev_door(p[0], true)
 	_next_uid = s.get("next", _next_uid)
 	for st in s.get("sites", []):
 		_ev_site(st[0], st[1], st[2], st[3], st[4])

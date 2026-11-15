@@ -36,6 +36,8 @@ def parse_args():
 	p.add_argument("--rotate-z", type=float, default=0.0, help="extra turn in degrees to face forward")
 	p.add_argument("--srgb-corners", action="store_true",
 		help="the model's corner colors are stored as screen colors (TripoSR does this); convert them")
+	p.add_argument("--level", action="store_true",
+		help="boxy things only: undo a forward/back tilt by finding the angle where the box is tightest")
 	p.add_argument("--crumbs", type=float, default=0.02, help="drop loose parts smaller than this share of the model")
 	p.add_argument("--preview", default="", help="png path for a preview picture")
 	return p.parse_args(argv)
@@ -114,11 +116,31 @@ def _bounds(obj):
 	return lo, hi
 
 
+def auto_level(obj):
+	"""Pictures seen from above can make the model lean forward. Try tilts around the left-right
+	axis and keep the one with the smallest bounding box (a level box fits tightest)."""
+	co = np.array([v.co[:] for v in obj.data.vertices])
+	if len(co) > 4000:
+		co = co[:: len(co) // 4000]
+	best, best_vol = 0.0, None
+	for deg in np.arange(-35, 35.1, 1.0):
+		r = math.radians(deg)
+		y = co[:, 1] * math.cos(r) - co[:, 2] * math.sin(r)
+		z = co[:, 1] * math.sin(r) + co[:, 2] * math.cos(r)
+		vol = np.ptp(co[:, 0]) * np.ptp(y) * np.ptp(z)
+		if best_vol is None or vol < best_vol:
+			best, best_vol = deg, vol
+	obj.data.transform(Matrix.Rotation(math.radians(best), 4, "X"))
+	return best
+
+
 def place(obj, a):
 	# Turn and scale the points themselves. (Setting the object's rotation does nothing here:
 	# the glTF importer stores turns as "quaternions", so rotation_euler is ignored.)
 	turn = Matrix.Rotation(math.radians(a.rotate_z), 4, "Z") @ Matrix.Rotation(math.radians(a.rotate_x), 4, "X")
 	obj.data.transform(turn)
+	if a.level:
+		print("FORGE_LEVEL", auto_level(obj))
 	lo, hi = _bounds(obj)
 	dims = hi - lo
 	ref = dims.z if a.fit == "height" else max(dims)

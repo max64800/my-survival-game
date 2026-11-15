@@ -108,9 +108,11 @@ def cleanup(raw, dst, preview, a):
 	size, tris, tex = KINDS[a.kind]
 	cmd = [find_blender(), "--background", "--factory-startup", "--python", str(HERE / "blender_cleanup.py"), "--",
 		str(raw), str(dst), "--size", str(a.size or size), "--tris", str(a.tris or tris), "--tex", str(tex),
-		"--rotate-x", str(a.rotate_x + ENGINE_TURN_X[a.engine]), "--rotate-z", str(a.rotate_z), "--fit", a.fit, "--preview", str(preview)]
+		"--rotate-x", str(a.rotate_x + ENGINE_TURN_X[a.engine]), "--rotate-z", str(a.rotate_z), "--fit", a.fit, "--preview", str(preview),
+		"--crumbs", str(a.crumbs)] + (["--level"] if a.level else [])
 	if a.engine == "triposr":
-		cmd.append("--srgb-corners")
+		# TripoSR colors come out faded: fix their color system and give back some strength.
+		cmd += ["--srgb-corners", "--saturation", "1.25", "--warmth", "0.0"]
 	res = subprocess.run(cmd, capture_output=True, text=True)
 	for line in res.stdout.splitlines():
 		if line.startswith("FORGE_REPORT "):
@@ -131,6 +133,8 @@ def main():
 	p.add_argument("--rotate-x", type=float, default=0.0)
 	p.add_argument("--rotate-z", type=float, default=0.0)
 	p.add_argument("--seed", type=int, default=0)
+	p.add_argument("--level", action="store_true", help="auto-straighten a boxy model that leans")
+	p.add_argument("--crumbs", type=float, default=0.02, help="drop loose parts smaller than this share (thin tools: 0.005)")
 	p.add_argument("--raw", help="skip step 1 and clean this existing model instead (give --engine it came from)")
 	a = p.parse_args()
 

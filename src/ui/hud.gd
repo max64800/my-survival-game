@@ -351,7 +351,7 @@ func _refresh_slots() -> void:
 		icon.visible = not s.is_empty() and tex == null
 		if not s.is_empty():
 			icon.add_theme_stylebox_override("panel", _slot_style(Items.color(s.id).darkened(0.15), Items.color(s.id).lightened(0.3)))
-			panel.tooltip_text = Items.display_name(s.id)
+			panel.tooltip_text = Upgrades.display_name(s)  # "Copper Sword +2"
 		(panel.get_node("Short") as Label).text = "" if s.is_empty() or tex != null else Items.short_label(s.id)
 		(panel.get_node("Count") as Label).text = "" if s.is_empty() or s.count <= 1 else str(s.count)
 
@@ -639,6 +639,8 @@ func _process(delta: float) -> void:
 		for b in v.buffs:
 			buffs.append("%s %d:%02d" % [Items.display_name(b.id), int(b.time_left) / 60, int(b.time_left) % 60])
 		var mood: String = {"well_fed": "Well fed", "peckish": "Peckish", "starving": "Starving (tired)"}.get(v.status(), "")
+		if v.cozy_time > 0.0:
+			buffs.append("Cozy (comfort %d) %d:%02d" % [v.cozy_points, int(v.cozy_time) / 60, int(v.cozy_time) % 60])
 		_buff_label.text = "\n".join(([mood] if mood != "" else []) + buffs + Array(v.ailments.describe()))
 		var p := ps.progress
 		_level_label.text = "Level %d  (%d/%d XP)%s\nMining %d · Fighting %d · Smithing %d · Survival %d" % [
@@ -689,6 +691,10 @@ func _process(delta: float) -> void:
 		_build_label.text = "%s · %s (%s)%s\nB choose · Q turn · PgUp/PgDn lift · right click take down · C save blueprint · V blueprints" % [
 			Pieces.LIST[build_mode.piece].name, Pieces.FAMILIES[build_mode.family].name, c,
 			"" if build_mode.problem == "" else "  —  " + build_mode.problem]
+		var aimed: Dictionary = auth.builder.structure.pieces.get(build_mode.aimed_uid, {}) if auth and auth.builder else {}
+		if not aimed.is_empty():
+			_build_label.text = "Looking at: %s (%s) · %s\n" % [Pieces.LIST[aimed.piece].name, Pieces.FAMILIES[aimed.family].name,
+				steadiness_text(aimed)] + _build_label.text
 	else:
 		_build_label.text = ""
 	_map_timer -= delta
@@ -738,3 +744,13 @@ func _local_dwarf() -> Dwarf:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("toggle_fps"):
 		_fps_label.visible = not _fps_label.visible
+
+
+## "rock-steady", "85% steady", "shaky (31%)": how well a built piece is held up.
+static func steadiness_text(p: Dictionary) -> String:
+	if p.get("anchored", false):
+		return "rock-steady (on rock or a foundation)"
+	var pct := roundi(float(p.get("stability", 0.0)) * 100.0)
+	if pct < 25:
+		return "shaky! (%d%%) prop it up" % pct
+	return "%d%% steady" % pct

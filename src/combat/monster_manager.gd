@@ -321,7 +321,7 @@ func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: 
 	var w := Combat.weapon_of(item)
 	var tier := maxi(Items.tier(item), 0)
 	var wd: Dictionary = Combat.WEAPONS[w]
-	var gb := Gems.bonus(ps.inventory.get_slot(ps.selected_slot))
+	var gb := Gems.bonus(ps.inventory.get_slot(ps.hand_slot()))
 	var elem := {}
 	for e in ["fire", "frost", "poison"]:
 		if gb.has(e):
@@ -343,7 +343,7 @@ func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: 
 		var crush := heavy and m.stun.take_crush()
 		var sit := Combat.situation(sneak, m.stun.is_stunned(), crush, riposte)
 		var mult := 0.6 if (w == "axe" and n == 2) else 1.0
-		var dmg := roundi(Combat.damage(w, heavy, tier, m.stats(), combo_step, sit, 0.0, 0.0, buff + auth.damage_boost(ps, m.kind), elem) * mult)
+		var dmg := roundi(Combat.damage(w, heavy, tier, m.stats(), combo_step, sit, 0.0, Upgrades.bonus(ps.inventory.get_slot(ps.hand_slot())), buff + auth.damage_boost(ps, m.kind), elem) * mult)
 		total += dmg
 		_gem_buildup(m, gb)
 		_hurt_monster(m, peer, dmg, Combat.stun_value(w, heavy, tier) * (1.0 + gb.get("stun", 0.0)))
@@ -483,7 +483,7 @@ func request_shoot(peer: int, bolt: String, aimed: bool, uid: int, from: Vector3
 		# shortcut: no host-side rock check (the host may not have that rock loaded); add one if cheating shows up.
 	if m and m.is_alive() and near_line and m.global_position.distance_to(point) < 2.0 + m.data.size * 1.5:
 		var tier := maxi(Items.tier(ps.selected_item()), 0)
-		var gb := Gems.bonus(ps.inventory.get_slot(ps.selected_slot))  # crossbow gems ride on every bolt
+		var gb := Gems.bonus(ps.inventory.get_slot(ps.hand_slot()))  # crossbow gems ride on every bolt
 		var elem := {}
 		for e in ["fire", "frost", "poison"]:
 			if gb.has(e):

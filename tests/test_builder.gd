@@ -61,9 +61,76 @@ func test_needs_a_workbench_and_materials() -> void:
 	_teardown()
 
 
+## Soft physics (building polish spec §5): a piece that loses its support creaks and shakes for
+## about 2 s, then tumbles away harmlessly, dropping half its materials. Propped up in time = saved.
+func test_soft_collapse_warns_then_tumbles() -> void:
+	await _setup()
+	var b: Builder = auth.builder
+	var at := player.global_position + Vector3(0, 30, 0)  # up in the air: only what we say holds it
+	b._ev_add_piece(1, "pillar", "plank_root", at, 0, true)
+	b._ev_add_piece(2, "floor", "plank_root", at + Vector3(1, 2, 1), 0, false)
+	b._ev_add_piece(3, "floor", "plank_root", at + Vector3(3, 2, 1), 0, false)
+	var health := ps.vitals.health
+	var drops_before := auth.drops_root.get_child_count()
+	b._ev_remove_piece(1)  # the support goes
+	await frames(5)
+	check((b.nodes[2] as PieceNode)._shaking, "the floor starts shaking right away")
+	for i in 60:
+		await tree.physics_frame
+	check(b.structure.pieces.has(2), "...but is still there after 1 s (a warning, not an instant fall)")
+	for i in 120:
+		await tree.physics_frame
+	check(not b.structure.pieces.has(2) and not b.structure.pieces.has(3), "after the warning both floors gave way")
+	check(auth.drops_root.get_child_count() > drops_before, "half their materials dropped")
+	check_near(ps.vitals.health, health, 0.01, "falling pieces don't hurt anyone")
+	_teardown()
+
+
+func test_propped_up_in_time_is_saved() -> void:
+	await _setup()
+	var b: Builder = auth.builder
+	var at := player.global_position + Vector3(0, 30, 0)
+	b._ev_add_piece(1, "pillar", "plank_root", at, 0, true)
+	b._ev_add_piece(2, "floor", "plank_root", at + Vector3(1, 2, 1), 0, false)
+	b._ev_remove_piece(1)
+	await frames(5)
+	b._ev_add_piece(4, "pillar", "copper_ingot", at + Vector3(2, 0, 2), 0, true)  # a new support, in time
+	for i in 180:
+		await tree.physics_frame
+	check(b.structure.pieces.has(2), "propped up during the warning: the floor stays")
+	check(not (b.nodes[2] as PieceNode)._shaking, "...and stops shaking")
+	_teardown()
+
+
+## Building polish spec §3: stations and their levels.
+func test_station_levels_unlock_pieces() -> void:
+	await _setup()
+	var at := player.global_position + Vector3(-3, 0, 0)
+	auth._ev_place_station(1, "workbench", at, 0.0)
+	ps.inventory.add("plank_root", 20)
+	ps.inventory.add("cut_stone", 20)
+	var s := _floor_spot("roof_26", 3.0)
+	check_eq(auth.builder.station_problem("roof_26", "plank_root", s.pos), "Needs Workbench level 2 (build a Chopping Block next to it)",
+		"a wooden roof needs Workbench level 2")
+	auth._ev_place_station(2, "chopping_block", at + Vector3(6, 0, 0), 0.0)
+	check_eq((auth.stations[1] as Station).level(), 1, "an extra 6 m away doesn't count")
+	auth._ev_place_station(3, "chopping_block", at + Vector3(2, 0, 0), 0.0)
+	auth._ev_place_station(4, "chopping_block", at + Vector3(0, 0, 2), 0.0)
+	check_eq((auth.stations[1] as Station).level(), 2, "two Chopping Blocks nearby: still only level 2 (each extra counts once)")
+	check_eq(auth.builder.station_problem("roof_26", "plank_root", s.pos), "", "now the roof is allowed")
+	check_eq(auth.builder.station_problem("floor", "cut_stone", s.pos), "Needs a Mason's Table within 20 m", "stone needs a Mason's Table")
+	auth._ev_place_station(5, "masonry_table", at + Vector3(0, 0, -3), 0.0)
+	check_eq(auth.builder.station_problem("floor", "cut_stone", s.pos), "", "with the Mason's Table, stone floors are fine")
+	check_eq(auth.builder.station_problem("column", "cut_stone", s.pos), "Needs Mason's Table level 2 (build a Chisel Rack next to it)",
+		"carved columns need a Chisel Rack")
+	check_eq(Station.max_level("workbench"), 4, "the Workbench goes up to level 4")
+	_teardown()
+
+
 func test_remove_gives_everything_back() -> void:
 	await _setup()
 	auth._ev_place_station(1, "workbench", player.global_position + Vector3(-3, 0, 0), 0.0)
+	auth._ev_place_station(2, "masonry_table", player.global_position + Vector3(-3, 0, 3), 0.0)
 	ps.inventory.add("cut_stone", 4)
 	var s := _floor_spot("floor", 3.0)
 	auth.builder.request_place(1, "floor", "cut_stone", s.pos, s.rot)
@@ -152,4 +219,26 @@ func test_blueprint_builds_itself() -> void:
 	var built := auth.builder.structure.pieces.size()
 	print("        (lodge: %d of 20 pieces built, status: %s)" % [built, auth.builder.site_status(box_id)])
 	check(built >= 15, "most of the lodge got built (%d of 20)" % built)
+	_teardown()
+
+
+func test_doors_open_and_ladders_climb() -> void:
+	await _setup()
+	var pos := player.global_position + Vector3(1, 0, 0)
+	auth.builder._ev_add_piece(500, "door", "plank_root", pos, 0, true)
+	var node: PieceNode = auth.builder.nodes[500]
+	check(auth.builder.request_door(1, 500), "you can open a door next to you")
+	check(auth.builder.structure.pieces[500].open, "it's open")
+	check(node.is_open, "the door swings open")
+	var saved: Dictionary = auth.builder.snapshot()
+	check(auth.builder.request_door(1, 500), "and close it again")
+	check(not auth.builder.structure.pieces[500].open, "closed")
+	check(saved.pieces[0][6], "an open door stays open after saving")
+	auth.builder._ev_add_piece(501, "wall", "plank_root", pos + Vector3(4, 0, 0), 0, true)
+	check(not auth.builder.request_door(1, 501), "walls don't open")
+	auth.builder._ev_add_piece(502, "ladder", "plank_root", pos + Vector3(0, 0, 3), 0, true)
+	check(auth.builder.ladder_at(pos + Vector3(0.3, 1.0, 3.2)), "standing at a built ladder = climbing")
+	check(not auth.builder.ladder_at(pos + Vector3(0, 1.0, 6)), "away from it = not climbing")
+	auth.builder._ev_remove_piece(502)
+	check(not auth.builder.ladder_at(pos + Vector3(0.3, 1.0, 3.2)), "a taken-down ladder can't be climbed")
 	_teardown()

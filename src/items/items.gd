@@ -34,6 +34,7 @@ const DATA := {
 	"glow_slime": {name = "Glow Slime", color = Color(0.6, 1.0, 0.6), short = "Sl", kind = "fuel", fuel = 60.0},
 	# --- wood, plants, mushrooms
 	"rootwood": {name = "Rootwood", color = Color(0.5, 0.35, 0.2), short = "Rw", kind = "fuel", fuel = 60.0},
+	"coal": {name = "Coal", color = Color(0.16, 0.15, 0.15), short = "Co", kind = "fuel", fuel = 120.0},  # from the Kiln (F32)
 	"mushroom_wood": {name = "Mushroom Timber", color = Color(0.75, 0.65, 0.55), short = "Mw", kind = "fuel", fuel = 60.0},
 	"fiber": {name = "Cave Fiber", color = Color(0.55, 0.65, 0.35), short = "Fb"},
 	"root_tuber": {name = "Root Tuber", color = Color(0.7, 0.5, 0.3), short = "Tu", kind = "food", hunger = 0},
@@ -110,10 +111,19 @@ const DATA := {
 	"campfire": {name = "Campfire", stack = 1, color = Color(1.0, 0.55, 0.2), short = "Fi", kind = "station"},
 	"workbench": {name = "Workbench", stack = 1, color = Color(0.6, 0.45, 0.3), short = "Wk", kind = "station"},
 	"smelter": {name = "Smelter", stack = 1, color = Color(0.7, 0.4, 0.3), short = "Sm", kind = "station"},
+	"kiln": {name = "Kiln", stack = 1, color = Color(0.62, 0.42, 0.32), short = "Ki", kind = "station"},
 	"anvil": {name = "Anvil", stack = 1, color = Color(0.35, 0.35, 0.38), short = "An", kind = "station"},
 	"cooking_pot": {name = "Cooking Pot", stack = 1, color = Color(0.85, 0.5, 0.3), short = "CP", kind = "station"},
 	"tanning_rack": {name = "Tanning Rack", stack = 1, color = Color(0.6, 0.45, 0.3), short = "TR", kind = "station"},
-	"masonry_table": {name = "Masonry Table", stack = 1, color = Color(0.6, 0.6, 0.6), short = "MT", kind = "station"},
+	"masonry_table": {name = "Mason's Table", stack = 1, color = Color(0.6, 0.6, 0.6), short = "MT", kind = "station"},
+	# Station extras (building polish spec §3): place within 4 m of their station to raise its level.
+	"chopping_block": {name = "Chopping Block", stack = 1, color = Color(0.5, 0.36, 0.22), short = "CB", kind = "station"},
+	"carpenters_vise": {name = "Carpenter's Vise", stack = 1, color = Color(0.55, 0.42, 0.3), short = "CV", kind = "station"},
+	"tool_rack": {name = "Tool Rack", stack = 1, color = Color(0.5, 0.38, 0.26), short = "TR", kind = "station"},
+	"chisel_rack": {name = "Chisel Rack", stack = 1, color = Color(0.55, 0.55, 0.55), short = "CR", kind = "station"},
+	"stone_saw": {name = "Stone Saw", stack = 1, color = Color(0.62, 0.6, 0.58), short = "SS", kind = "station"},
+	"bellows": {name = "Bellows", stack = 1, color = Color(0.45, 0.3, 0.2), short = "Be", kind = "station"},
+	"grindstone": {name = "Grindstone", stack = 1, color = Color(0.58, 0.56, 0.53), short = "Gs", kind = "station"},
 	"bed": {name = "Bed", stack = 1, color = Color(0.5, 0.35, 0.5), short = "Bd", kind = "station"},
 	# Rune-taught things (progression doc 8 rune tables)
 	"copper_drip_basin": {name = "Copper Drip Basin", stack = 1, color = Color(0.9, 0.55, 0.3), short = "DB", kind = "station"},

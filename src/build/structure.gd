@@ -8,15 +8,34 @@ extends RefCounted
 ##  - Below 10% a piece falls apart.
 
 var pieces := {}  ## uid -> {piece, family, pos, rot, hp, anchored, stability}
+var version := 0  ## goes up whenever a piece is added or removed (the hammer's colors refresh)
 
 
 func add(uid: int, piece: String, family: String, pos: Vector3, rot: int, anchored: bool) -> void:
+	anchored = anchored or is_foundation(piece)  # foundations are always steady (spec §5)
 	pieces[uid] = {piece = piece, family = family, pos = pos, rot = rot, hp = Pieces.hp(piece, family),
 		anchored = anchored, stability = 1.0 if anchored else 0.0}
+	version += 1
+
+
+static func is_foundation(piece: String) -> bool:
+	return Pieces.LIST.get(piece, {}).get("foundation", false)
+
+
+## The hammer's strength colors (spec §5): blue ≥ 0.75, green ≥ 0.5, yellow ≥ 0.25, red below.
+static func strength_color(s: float) -> Color:
+	if s >= 0.75:
+		return Color(0.35, 0.6, 1.0)
+	if s >= 0.5:
+		return Color(0.35, 0.9, 0.4)
+	if s >= 0.25:
+		return Color(1.0, 0.85, 0.25)
+	return Color(1.0, 0.3, 0.25)
 
 
 func remove(uid: int) -> void:
 	pieces.erase(uid)
+	version += 1
 
 
 func box_of(uid: int) -> AABB:
@@ -29,9 +48,34 @@ func box_of(uid: int) -> AABB:
 func overlaps(piece: String, pos: Vector3, rot: int) -> bool:
 	var mine := _shrunk(Pieces.box(piece, pos, rot), 0.16)
 	for uid in pieces:
+		if fits_inside(piece, pieces[uid].piece) or fits_inside(pieces[uid].piece, piece):
+			continue  # a door goes inside a doorway
+		if _other_half(piece, pos, rot, pieces[uid]):
+			continue  # two triangles filling the two halves of one square
 		if _shrunk(box_of(uid), 0.16).intersects(mine):
 			return true
 	return false
+
+
+## Two half-square pieces (triangles, diagonal walls) in the same spot, turned opposite ways,
+## use opposite halves of the square (spec: triangles). Diagonal pieces stand on the line between.
+static func _other_half(piece: String, pos: Vector3, rot: int, other: Dictionary) -> bool:
+	var a: String = Pieces.LIST[piece].get("shape", "")
+	var b: String = Pieces.LIST[other.piece].get("shape", "")
+	if not (a in ["triangle", "diagonal"] and b in ["triangle", "diagonal"]):
+		return false
+	if (pos - (other.pos as Vector3)) * Vector3(1, 0, 1) != Vector3.ZERO:
+		return false
+	if a == "diagonal" and b == "diagonal":
+		return false  # two diagonal walls in one square cross or sit on the same line: the normal check decides
+	if a == "triangle" and b == "triangle":
+		return posmod(rot - int(other.rot), 4) == 2
+	return true  # a diagonal wall standing on (or under) a triangle's slanted edge
+
+
+## Pieces made to sit inside another one's opening.
+static func fits_inside(inner: String, outer: String) -> bool:
+	return inner == "door" and outer in ["doorway", "arch_doorway"]
 
 
 ## Shrinks a box on every side, but never past its middle (thin walls stay valid boxes).
@@ -51,7 +95,7 @@ func neighbors(uid: int) -> Array:
 
 ## How steady a piece WOULD be if placed here (for the green/red ghost).
 func preview_stability(piece: String, family: String, pos: Vector3, rot: int, anchored: bool) -> float:
-	if anchored:
+	if anchored or is_foundation(piece):
 		return 1.0
 	var b := Pieces.box(piece, pos, rot)
 	var best := 0.0
@@ -59,7 +103,7 @@ func preview_stability(piece: String, family: String, pos: Vector3, rot: int, an
 		var nb := box_of(uid)
 		if not b.grow(0.06).intersects(nb):
 			continue
-		best = maxf(best, pieces[uid].stability - _loss(family, nb, b))
+		best = maxf(best, pieces[uid].stability - _loss(family, nb, b, piece))
 	return best
 
 
@@ -78,7 +122,7 @@ func recompute() -> Array:
 				continue
 			var my_box := box_of(uid)
 			for other in neighbors(uid):
-				var s: float = pieces[other].stability - _loss(me.family, box_of(other), my_box)
+				var s: float = pieces[other].stability - _loss(me.family, box_of(other), my_box, me.piece)
 				if s > me.stability + 0.0001:
 					me.stability = s
 					changed = true
@@ -90,9 +134,12 @@ func recompute() -> Array:
 
 
 ## Loss for `family` sitting next to a neighbour box: "up" if the neighbour is underneath.
-static func _loss(family: String, neighbor: AABB, me: AABB) -> float:
+## Pillars and columns carry weight straight down very well (spec §5: only 0.02 going up).
+static func _loss(family: String, neighbor: AABB, me: AABB, piece: String = "") -> float:
 	var f: Dictionary = Pieces.FAMILIES[family]
 	var below := neighbor.end.y <= me.position.y + 0.05
+	if below and piece in ["pillar", "column"]:
+		return minf(Pieces.PILLAR_UP_LOSS, f.up)
 	return f.up if below else f.side
 
 
@@ -100,5 +147,5 @@ func to_data() -> Array:
 	var out := []
 	for uid in pieces:
 		var p: Dictionary = pieces[uid]
-		out.append([uid, p.piece, p.family, p.pos, p.rot, p.anchored])
+		out.append([uid, p.piece, p.family, p.pos, p.rot, p.anchored, p.get("open", false)])
 	return out

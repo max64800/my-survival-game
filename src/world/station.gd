@@ -19,6 +19,52 @@ var under_drip := false  ## host decides when it's placed
 var _label: Label3D
 var _fire: OmniLight3D
 
+## Station levels (building polish spec §3): a station is level 1, plus 1 for each DIFFERENT extra
+## of its own standing within 4 m. Levels unlock building pieces and gear upgrades.
+const EXTRAS := {
+	"workbench": ["chopping_block", "carpenters_vise", "tool_rack"],
+	"masonry_table": ["chisel_rack", "stone_saw"],
+	"anvil": ["bellows", "grindstone"],
+}
+const EXTRA_RANGE := 4.0
+var _label_timer := 0.0
+
+
+func level() -> int:
+	return 1 + _extras_near().size()
+
+
+static func max_level(p_kind: String) -> int:
+	return 1 + EXTRAS.get(p_kind, []).size()
+
+
+## The next extra to build for a higher level ("" = already at the top).
+func next_extra() -> String:
+	var have := _extras_near()
+	for e in EXTRAS.get(kind, []):
+		if not have.has(e):
+			return e
+	return ""
+
+
+func _extras_near() -> Dictionary:
+	var found := {}
+	var auth := GameAuthority.instance
+	if auth == null or not EXTRAS.has(kind):
+		return found
+	for st in auth.stations.values():
+		if st.kind in EXTRAS[kind] and (st as Station).global_position.distance_to(global_position) <= EXTRA_RANGE:
+			found[st.kind] = true
+	return found
+
+
+func _process(delta: float) -> void:
+	_label_timer -= delta
+	if _label_timer > 0.0 or _label == null:
+		return
+	_label_timer = 1.0
+	_label.text = "%s · level %d" % [Items.display_name(kind), level()]
+
 
 func _ready() -> void:
 	collision_layer = STATION_LAYER | World.TERRAIN_LAYER  # you can stand on it and aim at it
@@ -33,6 +79,7 @@ func _ready() -> void:
 	shape.position = Vector3.UP * box.size.y * 0.5
 	add_child(shape)
 	_build_look()
+	set_process(EXTRAS.has(kind))  # only levelled stations update their name tag
 
 
 func can_queue() -> bool:
@@ -43,7 +90,8 @@ func queue_job(item: String, count: int, seconds: float) -> void:
 	jobs.append({item = item, count = count, left = seconds})
 
 
-## Runs the first job's timer. Returns finished jobs as [[item, count], ...].
+## Runs the first job's timer. Returns finished jobs as [[item, count, auto], ...]
+## (auto = started by the furnace itself from a nearby chest, so it goes back into a chest).
 func tick(delta: float) -> Array:
 	var done := []
 	if jobs.is_empty():
@@ -53,7 +101,7 @@ func tick(delta: float) -> Array:
 		jobs[i].left -= delta
 		if jobs[i].left <= 0.0:
 			var j: Dictionary = jobs.pop_at(i)
-			done.append([j.item, j.count])
+			done.append([j.item, j.count, j.get("auto", false)])
 	if _fire:
 		_fire.light_energy = 1.6 + randf() * 0.4
 	return done
@@ -90,6 +138,7 @@ func _size() -> Vector3:
 		"campfire": return Vector3(1.0, 0.5, 1.0)
 		"workbench", "masonry_table": return Vector3(1.8, 1.0, 0.9)
 		"smelter": return Vector3(1.2, 1.6, 1.2)
+		"kiln": return Vector3(1.3, 1.3, 1.3)
 		"anvil": return Vector3(0.9, 0.8, 0.5)
 		"cooking_pot": return Vector3(0.9, 0.7, 0.9)
 		"bed": return Vector3(1.0, 0.5, 2.0)
@@ -100,6 +149,12 @@ func _size() -> Vector3:
 		"rope_ladder": return Vector3(0.7, LADDER_HEIGHT, 0.15)
 		"gem_bench": return Vector3(1.4, 0.9, 0.8)
 		"farm_plot": return Vector3(2.0, 0.2, 2.0)
+		"chopping_block": return Vector3(0.7, 0.6, 0.7)
+		"carpenters_vise", "chisel_rack": return Vector3(1.0, 1.0, 0.6)
+		"tool_rack": return Vector3(1.4, 1.6, 0.3)
+		"stone_saw": return Vector3(1.4, 1.1, 0.8)
+		"bellows": return Vector3(1.0, 0.6, 0.6)
+		"grindstone": return Vector3(0.8, 1.0, 0.6)
 	return Vector3(1.0, 1.0, 1.0)
 
 
@@ -144,6 +199,16 @@ func _build_look() -> void:
 			_part(_cyl(0.15, 0.18, 0.6), c.darkened(0.3), Vector3.UP * (sz.y + 0.3))
 			var mouth := Fire.new(0.45, false)
 			mouth.position = Vector3(0, 0.22, -0.62)
+			add_child(mouth)
+		"kiln":
+			# A round clay dome with a glowing mouth and a short chimney.
+			_part(_cyl(0.6, 0.65, 0.5), c.darkened(0.15), Vector3.UP * 0.25)
+			var dome := _part(_sphere_mesh(0.62), c, Vector3.UP * 0.55)
+			dome.scale = Vector3(1, 0.95, 1)
+			_part(_box(Vector3(0.42, 0.3, 0.12)), Color(1.0, 0.45, 0.12), Vector3(0, 0.3, -0.6), true)
+			_part(_cyl(0.12, 0.15, 0.45), c.darkened(0.3), Vector3(0.2, 1.25, 0.15))
+			var mouth := Fire.new(0.35, false)
+			mouth.position = Vector3(0, 0.2, -0.62)
 			add_child(mouth)
 		"gem_bench":
 			_part(_box(Vector3(sz.x, 0.12, sz.z)), Color(0.4, 0.3, 0.22), Vector3.UP * 0.8)
@@ -193,6 +258,43 @@ func _build_look() -> void:
 			_part(_cyl(0.25, 0.28, 0.7), c, Vector3.UP * 1.0)
 			_part(_box(Vector3(1.0, 0.1, 0.1)), Color(0.4, 0.3, 0.2), Vector3.UP * 1.2)
 			_part(_sphere_mesh(0.18), c.lightened(0.1), Vector3.UP * 1.5)
+		# --- station extras (simple shapes until the asset forge makes models)
+		"chopping_block":
+			_part(_cyl(0.32, 0.36, 0.5), Color(0.45, 0.32, 0.2), Vector3.UP * 0.25)  # a stump
+			var axe := _part(_cyl(0.025, 0.025, 0.6), Color(0.5, 0.35, 0.2), Vector3(0.05, 0.75, 0))
+			axe.rotation.z = 0.5
+			_part(_box(Vector3(0.05, 0.16, 0.2)), Color(0.6, 0.6, 0.62), Vector3(-0.08, 0.55, 0))
+		"carpenters_vise", "chisel_rack":
+			_part(_box(Vector3(sz.x, 0.1, sz.z)), Color(0.45, 0.32, 0.2), Vector3.UP * (sz.y - 0.05))
+			for x in [-0.4, 0.4]:
+				_part(_box(Vector3(0.1, sz.y - 0.1, sz.z - 0.1)), Color(0.38, 0.27, 0.17), Vector3(x, (sz.y - 0.1) * 0.5, 0))
+			if kind == "carpenters_vise":
+				_part(_box(Vector3(0.3, 0.2, 0.2)), Color(0.4, 0.4, 0.42), Vector3(0.3, sz.y + 0.1, 0))  # the iron vise
+			else:
+				for i in 5:
+					_part(_box(Vector3(0.03, 0.25, 0.03)), Color(0.6, 0.6, 0.62), Vector3(-0.3 + i * 0.15, sz.y + 0.12, 0))  # chisels
+		"tool_rack":
+			_part(_box(Vector3(sz.x, sz.y, 0.06)), Color(0.42, 0.3, 0.19), Vector3(0, sz.y * 0.5, 0.1))
+			for i in 4:
+				_part(_box(Vector3(0.05, 0.6, 0.05)), Color(0.5, 0.36, 0.22), Vector3(-0.5 + i * 0.33, 0.9, 0.0))
+				_part(_box(Vector3(0.18, 0.1, 0.05)), Color(0.6, 0.6, 0.62), Vector3(-0.5 + i * 0.33, 1.25, 0.0))
+		"stone_saw":
+			_part(_box(Vector3(sz.x, 0.12, sz.z)), Color(0.55, 0.53, 0.5), Vector3.UP * 0.8)
+			for x in [-0.6, 0.6]:
+				_part(_box(Vector3(0.12, 0.8, sz.z - 0.1)), Color(0.45, 0.43, 0.4), Vector3(x, 0.4, 0))
+			var blade := _part(_cyl(0.3, 0.3, 0.03), Color(0.7, 0.7, 0.72), Vector3(0, 0.95, 0))
+			blade.rotation.x = PI / 2.0
+		"bellows":
+			_part(_box(Vector3(0.8, 0.15, 0.5)), Color(0.4, 0.28, 0.18), Vector3.UP * 0.1)
+			var top := _part(_box(Vector3(0.8, 0.08, 0.5)), Color(0.4, 0.28, 0.18), Vector3(0, 0.4, 0))
+			top.rotation.z = 0.25
+			_part(_box(Vector3(0.7, 0.25, 0.45)), Color(0.5, 0.33, 0.2), Vector3(-0.05, 0.27, 0))  # leather
+			_part(_cyl(0.04, 0.06, 0.4), Color(0.5, 0.35, 0.2), Vector3(0.55, 0.25, 0)).rotation.z = PI / 2.0
+		"grindstone":
+			for x in [-0.3, 0.3]:
+				_part(_box(Vector3(0.1, 0.7, 0.1)), Color(0.42, 0.3, 0.19), Vector3(x, 0.35, 0))
+			var wheel := _part(_cyl(0.32, 0.32, 0.12), Color(0.6, 0.58, 0.55), Vector3(0, 0.6, 0))
+			wheel.rotation.z = PI / 2.0
 		"drip_bucket", "copper_drip_basin":
 			var big := kind == "copper_drip_basin"
 			_part(_cyl(0.32 if not big else 0.55, 0.26 if not big else 0.5, 0.5 if not big else 0.4), c, Vector3.UP * 0.25)

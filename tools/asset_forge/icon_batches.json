@@ -192,5 +192,51 @@
  ],
  [
   "lantern"
+ ],
+ [
+  "cap_leather",
+  "tunic_leather",
+  "trousers_leather",
+  "boots_leather",
+  "helm_copper",
+  "mail_copper",
+  "greaves_copper",
+  "boots_copper",
+  "satchel"
+ ],
+ [
+  "snail_meat",
+  "shell_piece",
+  "wing_leather",
+  "bat_fang",
+  "bug_meat",
+  "glow_gland",
+  "bolt_fang",
+  "pickaxe_fang",
+  "shield_shell",
+  "glow_lamp",
+  "dish_cooked_snail",
+  "dish_roasted_bug",
+  "dish_snail_stew",
+  "dish_bug_stew"
+ ],
+ [
+  "helm_shell",
+  "plate_shell",
+  "greaves_shell",
+  "boots_shell"
+ ],
+ [
+  "chopping_block",
+  "carpenters_vise",
+  "tool_rack",
+  "chisel_rack",
+  "stone_saw",
+  "bellows",
+  "grindstone"
+ ],
+ [
+  "coal",
+  "kiln"
  ]
 ]

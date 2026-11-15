@@ -15,11 +15,14 @@ var rot := 0
 var lift := 0.0
 var problem := ""  ## why the ghost is red ("" = it's fine)
 var target := {}  ## {pos, rot} where the piece would go
+var aimed_uid := -1  ## the built piece under the crosshair (-1 = none), for the "how steady is it" line
 var _ghost: PieceNode
 var blueprint: Blueprint = null  ## not null = placing a whole blueprint
 var _bp_json := ""
 var _bp_ghosts: Node3D
 var _bp_origin := Vector3.INF
+var _bp_chest := Vector3.INF  ## where its Builder's Chest will appear (INF = no room)
+var _bp_chest_ghost: MeshInstance3D
 var capture_corner := Vector3.INF  ## first corner while saving a blueprint (C)
 
 
@@ -64,6 +67,18 @@ func start_blueprint(json: String) -> void:
 		g.piece = p.id
 		g.family = p.mat
 		_bp_ghosts.add_child(g)
+	# A see-through chest shows where the Builder's Chest will appear.
+	_bp_chest_ghost = MeshInstance3D.new()
+	var bm := BoxMesh.new()
+	bm.size = Vector3(1.0, 0.7, 0.6)
+	_bp_chest_ghost.mesh = bm
+	var m := StandardMaterial3D.new()
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.albedo_color = Color(1.0, 0.8, 0.3, 0.45)
+	_bp_chest_ghost.material_override = m
+	_bp_chest_ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_bp_ghosts.add_child(_bp_chest_ghost)
 	message.emit("Placing \"%s\": aim, Q to turn, left click to place, right click to cancel" % blueprint.name)
 
 
@@ -74,7 +89,38 @@ func stop_blueprint() -> void:
 		_bp_ghosts = null
 
 
-func _process(_delta: float) -> void:
+var _tint_on := false
+var _tint_version := -1
+var _tint_timer := 0.0
+
+
+## Hammer out: every built piece glows faintly in its strength color (blue/green/yellow/red).
+func _update_tints(delta: float, on: bool) -> void:
+	var auth := GameAuthority.instance
+	if auth == null or auth.builder == null:
+		return
+	var b: Builder = auth.builder
+	if not on:
+		if _tint_on:
+			for uid in b.nodes:
+				(b.nodes[uid] as PieceNode).set_tint(Color(0, 0, 0, 0))
+			_tint_on = false
+		return
+	_tint_timer -= delta
+	if _tint_on and _tint_timer > 0.0 and _tint_version == b.structure.version:
+		return
+	_tint_timer = 0.5
+	if not auth.is_host():
+		b.structure.recompute()  # friends work out the steadiness themselves (the host does it anyway)
+	_tint_version = b.structure.version
+	for uid in b.nodes:
+		if b.structure.pieces.has(uid):
+			(b.nodes[uid] as PieceNode).set_tint(Structure.strength_color(b.structure.pieces[uid].stability))
+	_tint_on = true
+
+
+func _process(delta: float) -> void:
+	_update_tints(delta, active())
 	if not active():
 		_ghost.visible = false
 		if _bp_ghosts:
@@ -93,17 +139,30 @@ func _process(_delta: float) -> void:
 			var g: Node3D = _bp_ghosts.get_child(i)
 			g.global_position = placed[i].pos
 			g.rotation.y = placed[i].rot * PI / 2.0
+		var auth_bp := GameAuthority.instance
+		_bp_chest = Builder.chest_spot(blueprint.size, _bp_origin, rot, dwarf.global_position, auth_bp.world.sdf_at)
+		_bp_chest_ghost.visible = _bp_chest.is_finite()
+		if _bp_chest.is_finite():
+			_bp_chest_ghost.global_position = _bp_chest + Vector3.UP * 0.35
+			_bp_chest_ghost.rotation.y = rot * PI / 2.0
 		return
 	var hit := dwarf.aim_far(Pieces.BUILD_REACH)
+	aimed_uid = -1
 	if hit.is_empty():
 		_ghost.visible = false
 		target = {}
 		return
-	target = Pieces.snap(piece, hit.position, hit.normal, dwarf.model.rotation.y + PI, rot, lift)
+	var auth := GameAuthority.instance
+	# Aiming at something already built? Snap to it (its top edge, corner, or side).
+	var anchor := AABB()
+	var hit_node: Object = hit.get("collider")
+	if hit_node is PieceNode and auth.builder.structure.pieces.has((hit_node as PieceNode).uid):
+		anchor = auth.builder.structure.box_of((hit_node as PieceNode).uid)
+		aimed_uid = (hit_node as PieceNode).uid
+	target = Pieces.snap(piece, hit.position, hit.normal, dwarf.model.rotation.y + PI, rot, lift, anchor)
 	_ghost.visible = true
 	_ghost.global_position = target.pos
 	_ghost.rotation = Vector3(0, target.rot * PI / 2.0, 0)
-	var auth := GameAuthority.instance
 	problem = auth.builder.problem(auth.get_player(dwarf.peer_id), piece, family, target.pos, target.rot)
 	_ghost.set_ghost_ok(problem == "")
 
@@ -114,9 +173,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	var auth := GameAuthority.instance
 	if blueprint:
 		if event.is_action_pressed("dig") and _bp_origin != Vector3.INF:
-			var front := Basis(Vector3.UP, rot * PI / 2.0) * Vector3(0, 0, blueprint.size.z * 0.5 + 1.5)
-			var chest: Vector3 = auth.world.maker.find_floor(_bp_origin.x + front.x, _bp_origin.z + front.z, _bp_origin.y + 3.0)
-			auth.builder.ask_place_blueprint(_bp_json, _bp_origin, rot, chest)
+			if not _bp_chest.is_finite():
+				message.emit("No room for the Builder's Chest next to it. Turn it (Q) or pick a spot with open floor beside it.")
+				get_viewport().set_input_as_handled()
+				return
+			auth.builder.ask_place_blueprint(_bp_json, _bp_origin, rot, _bp_chest)
 			message.emit("Blueprint placed. Put materials in its Builder's Chest (E) and it builds itself!")
 			stop_blueprint()
 			get_viewport().set_input_as_handled()

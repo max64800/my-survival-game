@@ -11,3 +11,12 @@ steam_appid.txt
 .DS_Store
 Thumbs.db
 desktop.ini
+# Claude settings for one computer only (personal permissions)
+.claude/settings.local.json
+# Python's own temporary files
+__pycache__/
+# Godot pulls the textures out of each model when it imports it; it remakes them by itself
+assets/models/**/*.jpg
+assets/models/**/*.jpg.import
+# The "after" models in the journey are the same files as assets/models; keep only their preview pictures
+journey/3d/v2_hand_built/**/*.glb

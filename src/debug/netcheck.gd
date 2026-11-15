@@ -11,6 +11,7 @@ var _main: Node
 var _shots := "user://netcheck"
 var _client_report := {}
 var _fight_requested := false
+var _door_requested := false
 
 
 func _ready() -> void:
@@ -70,6 +71,15 @@ func _run_client() -> void:
 	var spot: Vector3 = _main.world.maker.find_floor(dwarf.global_position.x + 1.5, dwarf.global_position.z, dwarf.global_position.y + 1.5)
 	auth.ask_use(spot, Vector3.UP, 0.0)
 	await _wait(2.0)
+	# Step 4: ask the host to build a door next to us, then open it (E) like a player would.
+	_want_door.rpc_id(1)
+	for t in 20:
+		if auth.builder.structure.pieces.has(990):
+			break
+		await _wait(0.25)
+	auth.builder.ask_door(990)
+	await _wait(1.0)
+	var door_open: bool = auth.builder.structure.pieces.get(990, {}).get("open", false)
 	# Step 5: ask the host for a Cairnling next to us, then hit it with the sword.
 	_ready_to_fight.rpc_id(1)
 	var mm: MonsterManager = auth.monsters
@@ -116,6 +126,7 @@ func _run_client() -> void:
 		xp = me.progress.xp,
 		smithing = me.progress.skill_xp.smithing,
 		monster_hp = hp_seen,
+		door_open = door_open,
 	}
 	print("CLIENT REPORT: ", report, " answers: ", states)
 	_report.rpc_id(1, report)
@@ -145,6 +156,11 @@ func _run_host() -> void:
 				friend.inventory.add("rootwood", 3)
 				friend.inventory.add("sword_stone", 1)
 				gave = true
+		if _door_requested and not multiplayer.get_peers().is_empty():
+			_door_requested = false
+			var fpos: Vector3 = _main.authority.get_player(multiplayer.get_peers()[0]).node.global_position
+			var door_at: Vector3 = _main.world.maker.find_floor(fpos.x + 2.0, fpos.z, fpos.y + 2.0)  # on the floor, or it falls
+			_main.authority.builder._ev_add_piece.rpc(990, "door", "plank_root", door_at, 0, true)
 		if _fight_requested and not multiplayer.get_peers().is_empty():
 			_fight_requested = false
 			var fp: Vector3 = _main.authority.get_player(multiplayer.get_peers()[0]).node.global_position
@@ -195,6 +211,8 @@ func _run_host() -> void:
 	elif absf(host_hp - r.monster_hp) > 0.5:
 		fails.append("Cairnling HP differs: host %.0f, friend %.0f" % [host_hp, r.monster_hp])
 	print("HOST: Cairnling HP %.0f / %.0f (friend sees %.0f)" % [host_hp, Monsters.max_hp("cairnling", false), r.monster_hp])
+	if not r.get("door_open", false) or not auth.builder.structure.pieces.get(990, {}).get("open", false):
+		fails.append("the friend's door didn't open on both computers (friend %s, host %s)" % [r.get("door_open"), auth.builder.structure.pieces.get(990, {}).get("open")])
 	if not _main.players_root.has_node("Dwarf_%d" % cid):
 		fails.append("host can't see the friend's dwarf")
 	print("HOST: edits %d, friend's bag on host: dirt %d stone %d" % [auth.edit_log.size(), ps.inventory.count_of("dirt") if ps else -1, ps.inventory.count_of("stone") if ps else -1])
@@ -211,3 +229,8 @@ func _report(r: Dictionary) -> void:
 @rpc("any_peer", "reliable")
 func _ready_to_fight() -> void:
 	_fight_requested = true
+
+
+@rpc("any_peer", "reliable")
+func _want_door() -> void:
+	_door_requested = true

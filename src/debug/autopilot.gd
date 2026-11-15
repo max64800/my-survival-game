@@ -18,8 +18,17 @@ func _ready() -> void:
 	_run.call_deferred()
 
 
-func _process(_d: float) -> void:
-	_fps_samples.append(Engine.get_frames_per_second())
+var _hitches: Array[String] = []  ## frames that took over 0.25 s, and what the robot was doing
+var _clock := 0.0
+var _last_shot := "start"
+
+
+func _process(d: float) -> void:
+	if _main and _main.is_ready_to_play() and _clock > 3.0:
+		_fps_samples.append(Engine.get_frames_per_second())  # not while the cave is still loading
+	_clock += d
+	if d > 0.25 and _main and _main.is_ready_to_play():
+		_hitches.append("%.2f s at %.0f s (after '%s')" % [d, _clock, _last_shot])
 
 
 func _wait(seconds: float) -> void:
@@ -27,6 +36,7 @@ func _wait(seconds: float) -> void:
 
 
 func _shot(name: String) -> void:
+	_last_shot = name
 	await RenderingServer.frame_post_draw
 	var path: String = _main.take_screenshot(_shots.path_join(name + ".png"))
 	_report.append("screenshot: " + path)
@@ -134,21 +144,42 @@ func _run() -> void:
 	ps.inventory.add("plank_root", 80)
 	ps.inventory.add("cut_stone", 40)
 	ps.inventory.add("copper_ingot", 6)
+	# Stone pieces need a Mason's Table nearby (building polish spec §3).
+	var auth_ref: GameAuthority = _main.authority
+	auth_ref._ev_place_station(auth_ref._next_station_id, "masonry_table", dwarf.global_position + Vector3(-3, 0, -2), 0.0)
 	_to_hotbar(ps, "build_hammer")
 	dwarf._pitch = -0.3
 	var fwd := -Basis(Vector3.UP, dwarf._yaw).z
-	var base: Vector3 = _main.world.maker.find_floor(dwarf.global_position.x + fwd.x * 5.0, dwarf.global_position.z + fwd.z * 5.0, dwarf.global_position.y + 2.0)
 	var results := []
 	var plan := [["floor", "cut_stone", Vector3(0, 0, 0), 0], ["floor", "cut_stone", Vector3(2, 0, 0), 0],
 		["wall", "plank_root", Vector3(0, 0.25, -1.0), 0], ["wall", "plank_root", Vector3(2, 0.25, -1.0), 0],
 		["doorway", "plank_root", Vector3(0, 0.25, 1.0), 0], ["wall", "plank_root", Vector3(2, 0.25, 1.0), 0],
 		["wall", "plank_root", Vector3(-1.0, 0.25, 0), 1], ["wall", "plank_root", Vector3(3.0, 0.25, 0), 1],
 		["pillar", "cut_stone", Vector3(3.0, 0.25, 1.0), 0]]
-	var origin: Vector3 = Pieces.snap("floor", base, Vector3.UP, 0.0, 0).pos
+	# Like a player would: look around for a flat, open spot where the whole hut fits (not into rock).
+	var origin := Vector3.INF
+	var best_bad := 99
+	for tries in 24:
+		var ang := dwarf._yaw + (tries % 8) * PI / 4.0
+		var dist := 4.0 + float(tries / 8) * 2.0
+		var dir := -Basis(Vector3.UP, ang).z
+		var b: Vector3 = _main.world.maker.find_floor(dwarf.global_position.x + dir.x * dist, dwarf.global_position.z + dir.z * dist, dwarf.global_position.y + 2.0)
+		var o: Vector3 = Pieces.snap("floor", b, Vector3.UP, 0.0, 0).pos
+		var bad := 0
+		for step in plan:
+			var pp := _hut_pos(o, step)
+			if auth.builder.problem(ps, step[0], step[1], pp, step[3]).contains("rock"):
+				bad += 1
+		if bad < best_bad:
+			best_bad = bad
+			origin = o
+		if bad == 0:
+			break
 	for step in plan:
-		var pos: Vector3 = origin + step[2]
-		pos.y = _main.world.maker.find_floor(pos.x, pos.z, origin.y + 2.0).y + step[2].y if step[0] != "floor" else _main.world.maker.find_floor(pos.x, pos.z, origin.y + 2.0).y
+		var pos := _hut_pos(origin, step)
 		results.append("%s:%s" % [step[0], auth.builder.request_place(auth.local_peer_id(), step[0], step[1], pos, step[3])])
+	var to_hut := origin + Vector3(1, 0, 0) - dwarf.global_position
+	dwarf._yaw = atan2(-to_hut.x, -to_hut.z)  # look at the hut for the photo
 	await _wait(1.2)
 	_report.append("step 4: " + ", ".join(results))
 	_report.append("step 4: %d pieces stand" % auth.builder.structure.pieces.size())
@@ -160,7 +191,9 @@ func _run() -> void:
 	# Step 4: place the starter lodge blueprint and feed its Builder's Chest.
 	var json := FileAccess.get_file_as_string("res://blueprints/small_rootwood_lodge.dwbp")
 	var bp_origin: Vector3 = _main.world.maker.find_floor(dwarf.global_position.x - fwd.x * 8.0, dwarf.global_position.z - fwd.z * 8.0, dwarf.global_position.y + 3.0).round()
-	var chest_at: Vector3 = _main.world.maker.find_floor(bp_origin.x + 5.0, bp_origin.z, bp_origin.y + 3.0)
+	var chest_at: Vector3 = Builder.chest_spot(Blueprint.from_json(json).blueprint.size, bp_origin, 0, dwarf.global_position, _main.world.sdf_at)
+	if not chest_at.is_finite():
+		chest_at = _main.world.maker.find_floor(bp_origin.x + 5.0, bp_origin.z, bp_origin.y + 3.0)
 	var placed_bp := auth.builder.request_place_blueprint(auth.local_peer_id(), json, bp_origin, 0, chest_at)
 	_report.append("step 4: blueprint placed: '%s'" % placed_bp)
 	dwarf._yaw += PI
@@ -254,7 +287,8 @@ func _run() -> void:
 		low = minf(low, f)
 	if not _fps_samples.is_empty():
 		avg /= _fps_samples.size()
-	_report.append("fps: average %.0f, lowest %.0f" % [avg, low])
+	_report.append("fps while playing: average %.0f, lowest %.0f" % [avg, low])
+	_report.append("freezes over 0.25 s while playing: %s" % (", ".join(_hitches) if not _hitches.is_empty() else "none"))
 	print("\n===== AUTOPILOT REPORT =====")
 	for line in _report:
 		print("  ", line)
@@ -418,3 +452,11 @@ func _teleport(dwarf: Dwarf, to: Vector3, look_at: Vector3) -> void:
 	await _wait(0.6)
 	dwarf.set_physics_process(true)
 	await _wait(0.4)
+
+
+## Where one piece of the test hut goes: its offset from the hut's corner, on the floor there.
+func _hut_pos(origin: Vector3, step: Array) -> Vector3:
+	var pos: Vector3 = origin + step[2]
+	var floor_y: float = _main.world.maker.find_floor(pos.x, pos.z, origin.y + 2.0).y
+	pos.y = floor_y + step[2].y if step[0] != "floor" else floor_y
+	return pos
