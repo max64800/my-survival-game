@@ -962,3 +962,43 @@ Important pieces (workbench, smelter, anvil) can be redone later with a better t
     skips the journey folder, and only its preview pictures go to GitHub. Godot's own pulled-out textures are not saved
     either, because Godot remakes them by itself. The upload went from about 500 MB to 107 MB.
   - The budget guard runs on this PC but has no usage numbers yet, so it can't stop anything here.
+
+---
+
+## Day 4 — November 15, 2026: The approved creatures, forged from the pictures (Claude 3, PC)
+
+**What we did**
+- Pulled the latest version (the Mac's work: the creature style guide, building kit plans, night pictures).
+- With the owner's OK, downloaded the 6 approved creature pictures from the ChatGPT chat "Creature Image Prompt" into
+  `assets/concepts/creatures/` (Chrome needed "remote debugging" switched on first; the owner did that).
+- Built all **3 creatures × 4 looks** (mossy, frost, ember, spore) with one new command, `forge_creatures.py`:
+  - the 2×2 grids cut into one picture per look, background removed
+  - the forge turned each into a 3D statue (TripoSR on the PC)
+  - a new Blender step (`creature_forge.py`): lines a camera up with the picture, paints the face from it, pulls the
+    forge's pale colours toward the picture's, turns the creature to face forward, splits it into moving parts
+    (snail shell / soft body / eye stalks / peeking eyes, bat wings, six beetle legs), gives eyes and glowing bits
+    their own materials
+- In the game: crystal variants now wear their look (Ember-crested = ember, Rime-crested = frost, Blight-crested =
+  spore, normal = mossy). The Great Rock Beetle is a bigger Rock Beetle. Collision sizes unchanged (checked).
+  Eyes flash before an attack; a beetle's glowing back blazes when it charges; creatures without found eyes glow
+  faintly all over as their warning.
+- The art preview has a new `creatures` mode: each creature in all 4 looks next to the workbench, in the cave with
+  lantern light, plus real game monsters showing the attack warning. Pictures: `docs/art/creatures-2026-11-15/`.
+- Last night's hand-built creature models were removed from the game (their build scripts stay).
+- New test for the forged creatures. **294 checks, all pass.**
+- Honest scores: bat 6/10, snail 5/10, beetle 5/10 (the workbench is ~8). Next step to improve: a free Hugging Face
+  key → the TRELLIS website forge (much sharper), same one command.
+
+**Mistakes and hurdles (including Claude's)**
+- The notes files had leftover merge marks from another Claude's pull; Claude 2 had cleaned them. Claude 3 backed them
+  up first and touched nothing. Later, merging into Claude 3's copy, the feedback numbers clashed again (the Mac used
+  F32–F66): Claude 3's creature items became F67–F72.
+- Chrome first refused the connection; it needed "remote debugging" switched on.
+- The TRELLIS website refused without a key (about 2 minutes a day). The forge on the PC made pale, melted shapes.
+- Claude 3's first painting idea (project the whole picture onto the model) smeared, because a forged shape never
+  matches the painting exactly. Also: the surfaces pointed inward (flipped), the creature was turned backwards (a sign
+  mistake), the camera search sometimes picked the bat's back instead of its front, and one colour fix turned
+  everything olive mud. What worked: the forge's own colours, pulled toward the picture, plus the face painted from it.
+- Eye finding missed the pale yellow beetle eyes (the test caught it). Fixed, plus a whole-body glow as a safety net.
+- Beetle legs split 3 + 1 when the body wasn't centred; now they split by position, 3 and 3.
+- Running the art preview with the word "autopilot" started the test robot instead (its fight picture was useful).

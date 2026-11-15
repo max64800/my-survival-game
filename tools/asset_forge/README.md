@@ -88,3 +88,16 @@ Check them all: `blender --background --factory-startup --python tools/asset_for
 
 Tips learned: pictures seen from above make models lean, so ask for a low front view; diagonal tools come out flat,
 so ask for them standing straight up; thin parts (chains, fire) come out as blobs.
+
+## Creatures from the approved pictures (`forge_creatures.py`, by Claude 3)
+
+```
+<AI3D_HOME>/venv-web/Scripts/python tools/asset_forge/forge_creatures.py             # all 3 creatures x 4 looks
+<AI3D_HOME>/venv-web/Scripts/python tools/asset_forge/forge_creatures.py only=cave_bat skip_forge
+```
+
+Pictures in `assets/concepts/creatures/` → `creature_sources.py` (one cut-out per look) → `forge.py` (TRELLIS when
+`<AI3D_HOME>/hf_token.txt` holds a free Hugging Face key, else TripoSR) → `creature_forge.py` in Blender (paints the face
+from the picture, fixes colours, faces forward, splits into moving parts with `eye` and `glow` materials) →
+`assets/models/creatures/<creature>_<mossy|frost|ember|spore>.glb`. The forge's raw statues stay in
+`<AI3D_HOME>/work/creatures/forged/` (not game files). Part names: see `docs/design/creature-craft.md`.

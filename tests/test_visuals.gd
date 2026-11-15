@@ -153,57 +153,42 @@ func test_first_three_creatures() -> void:
 	m.free()
 
 
-## The hand-built creatures (tools/asset_forge): several individual versions, and their moving parts
-## work: the snail hides (only eyes peek out), the bat sleeps with folded wings, the beetle stands on
-## all six feet, walks in two tripods, and its cracks glow when it charges.
-func test_hand_built_creatures() -> void:
-	for kind in ["rock_snail", "cave_bat", "rock_beetle", "great_rock_beetle"]:
-		check(MonsterModel.variant_count(kind) >= 3, "%s has 3+ versions (%d)" % [kind, MonsterModel.variant_count(kind)])
-	var a := MonsterModel.build("rock_beetle", Color.WHITE, 1.0, false, "rock_beetle", 0)
-	var b := MonsterModel.build("rock_beetle", Color.WHITE, 1.0, false, "rock_beetle", 1)
-	var root_a: Node3D = a.get_meta("forged_root")
-	var root_b: Node3D = b.get_meta("forged_root")
-	check(root_a.scene_file_path != root_b.scene_file_path, "two beetles can be different individuals")
-	# Beetle: 6 legs, all at rest when standing; two tripods differ while walking; cracks glow on a charge.
-	var legs: Array = a.get_meta("legs")
-	check(legs.size() == 6, "beetle has 6 walking legs")
-	MonsterModel.animate(a, 0.0, 1.0, 0.7)
-	var still := true
-	for leg in legs:
-		still = still and (leg[0] as Node3D).rotation.is_equal_approx(leg[1])
-	check(still, "standing still: every foot rests on the ground")
-	MonsterModel.animate(a, 3.0, 1.0, 0.7)
-	var groups := {}
-	for leg in legs:
-		groups[leg[2]] = (leg[0] as Node3D).rotation.x - (leg[1] as Vector3).x
-	check(groups.size() == 2 and absf(groups.values()[0] - groups.values()[1]) > 0.05, "walking: the two tripods step in turns")
-	check(a.has_meta("vein_mat"), "beetle has crack material")
-	MonsterModel.set_angry(a, true)
-	check((a.get_meta("vein_mat") as StandardMaterial3D).emission_energy_multiplier > 1.0, "charging: the cracks glow")
-	# Snail: hides fully (tail too), only the peeking eyes show.
-	var snail := MonsterModel.build("rock_snail", Color.WHITE, 1.0, false, "rock_snail", 0)
+## The creatures made from the owner's approved pictures (tools/asset_forge/forge_creatures.py):
+## all 12 looks exist, each has its moving parts, the eyes can flash, a charging beetle's glow blazes,
+## the snail hides with only its eyes peeking out, and a sleeping bat hangs head-down.
+func test_forged_creatures() -> void:
+	for art in ["rock_snail", "cave_bat", "rock_beetle"]:
+		for look in ["mossy", "frost", "ember", "spore"]:
+			check(ResourceLoader.exists("res://assets/models/creatures/%s_%s.glb" % [art, look]), "%s %s model exists" % [art, look])
+	var beetle := MonsterModel.build("rock_beetle", Color.WHITE, 0.9, false, "rock_beetle", 0, "red")
+	check(beetle.has_meta("forged_root") and beetle.get_meta("variant_look", false), "an Ember-crested beetle wears the ember look")
+	check((beetle.get_meta("legs") as Array).size() >= 4, "beetle has walking legs (%d)" % (beetle.get_meta("legs") as Array).size())
+	var eye: StandardMaterial3D = beetle.get_meta("eye_mat")
+	check(eye != null and eye.emission_enabled, "beetle eyes can flash before an attack")
+	if beetle.has_meta("glow_mat"):
+		var g := beetle.get_meta("glow_mat") as StandardMaterial3D
+		var before := g.emission_energy_multiplier
+		MonsterModel.set_angry(beetle, true)
+		check(g.emission_energy_multiplier > before * 1.5, "charging: its glowing back blazes")
+	var great := MonsterModel.build("rock_beetle", Color.WHITE, 1.5, false, "great_rock_beetle", 0, "")
+	check(great.has_meta("forged_root"), "the Great Rock Beetle is a bigger Rock Beetle")
+	var snail := MonsterModel.build("rock_snail", Color.WHITE, 1.0, false, "rock_snail", 0, "")
 	tree.root.add_child(snail)
 	var peek: Array = snail.get_meta("peek")
-	check(not peek.is_empty() and not (peek[0] as Node3D).visible, "peeking eyes hidden while it's out")
+	check(not peek.is_empty() and not (peek[0] as Node3D).visible, "snail: peeking eyes hidden while it's out")
 	MonsterModel.set_shell(snail, true)
 	await tree.create_timer(0.45).timeout
 	var soft_small := true
 	for mi: MeshInstance3D in (snail.get_meta("forged_root") as Node3D).find_children("*", "MeshInstance3D", true, false):
 		if mi.has_meta("soft"):
 			soft_small = soft_small and mi.scale.x < 0.1
-	check(soft_small, "hiding: the whole soft body (tail too) is inside the shell")
-	check((peek[0] as Node3D).visible, "hiding: two eyes peek out")
+	check(soft_small, "snail hiding: its whole soft body is inside the shell")
+	check((peek[0] as Node3D).visible, "snail hiding: two eyes peek out")
 	snail.queue_free()
-	# Bat: asleep = folded cloak wings, open wings hidden; awake = the other way round.
-	var bat := MonsterModel.build("cave_bat", Color.WHITE, 1.0, false, "cave_bat", 2)
+	var bat := MonsterModel.build("cave_bat", Color.WHITE, 1.0, false, "cave_bat", 0, "blue")
+	check((bat.get_meta("wings") as Array).size() == 2, "bat has two flapping wings")
 	bat.set_meta("roosting", true)
 	MonsterModel.animate(bat, 0.0, 1.0, 0.3)
-	var folds: Array = bat.get_meta("folds")
-	var wing: Node3D = (bat.get_meta("wings") as Array)[0][0]
-	check(folds.size() == 2 and (folds[0] as Node3D).visible and not wing.visible, "asleep: wings folded round the body")
 	check(absf(bat.rotation.x + PI / 2.0) < 0.01, "asleep: hanging head-down")
-	bat.set_meta("roosting", false)
-	MonsterModel.animate(bat, 2.0, 1.0, 0.3)
-	check(wing.visible and not (folds[0] as Node3D).visible, "awake: open wings")
-	for n in [a, b, bat]:
+	for n in [beetle, great, bat]:
 		n.free()

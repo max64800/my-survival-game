@@ -69,3 +69,11 @@ Each piece turns around its own hinge, set with `with ck.part("leg_l0", hinge=(x
 - **Blender's JPEGs need `glb_jpeg_fix.py`** or the model turns white in Godot (kit and creature kit run it).
 - Watch triangle counts (aim ≤ 25,000 per creature). Lots of small blobs add up: use `detail=1, subsurf=0`.
 - Look at front, side and back pictures; and at the game studio's pictures before calling it done.
+
+## Update, November 15, 2026: forged from the approved pictures
+
+The game's Rock Snail, Cave Bat and Rock Beetles now come from the owner's approved ChatGPT pictures
+(`docs/art/CREATURE-STYLE.md`), forged and split by `tools/asset_forge/forge_creatures.py` →
+`assets/models/creatures/<creature>_<mossy|frost|ember|spore>.glb`. The same part names apply, plus material
+`glow*` (always glows a little, blazes on a charge). The hand-built models above are no longer in the game;
+their build scripts stay (`build_creatures.py`) in case they're wanted again.

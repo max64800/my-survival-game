@@ -29,3 +29,5 @@ No music yet. The monsters, crystals, mushrooms and building pieces are still ma
 shapes in our own code (now with the shared painted look from `src/art/look.gd`).
 Quaternius asks (but doesn't require) a credit: "Characters and animations by Quaternius". Kenney asks (but doesn't require) a credit:
 "Sounds by Kenney (www.kenney.nl)" goes in the game's credits screen in Step 7.
+| **AI-made.** Creature concept pictures in `assets/concepts/creatures/` (Rock Snail, Cave Bat, Rock Beetle + a 2×2 grid of 4 variants each): made by us with ChatGPT image generation (owner's ChatGPT Plus, chat "Creature Image Prompt"), saved with the owner's OK | Prompts: `docs/art/CREATURE-STYLE.md` | Ours (OpenAI terms give the output to the user). Steam: disclose as pre-generated AI content | 2026-11-15 |
+| **AI-made.** 3D creatures in `assets/models/creatures/` (3 creatures × 4 looks): forged from the concept pictures above with TripoSR (MIT, run on our PC), then painted, split into moving parts and textured by our own Blender script `tools/asset_forge/creature_forge.py` | `tools/asset_forge/forge_creatures.py` | Ours. Steam: disclose as pre-generated AI content | 2026-11-15 |

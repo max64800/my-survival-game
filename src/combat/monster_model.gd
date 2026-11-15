@@ -5,11 +5,23 @@ class_name MonsterModel
 
 ## seed: makes each creature an individual (which hand-built version, and a slightly different
 ## size). Use the monster's uid, so every player in co-op sees the same creature the same way.
-static func build(shape: String, color: Color, size: float, leader: bool, kind: String = "", seed: int = 0) -> Node3D:
-	# A hand-built model, when one exists for this monster: res://assets/models/monsters/<kind>_v<N>.glb
-	# (several individual versions) or <kind>.glb (front +Z, feet at the bottom, ~1 m = size 1).
+## Creatures made from the owner's approved ChatGPT pictures (docs/art/CREATURE-STYLE.md):
+## res://assets/models/creatures/<art>_<look>.glb. The Great Rock Beetle is a bigger Rock Beetle.
+const CREATURE_ART := {"rock_snail": "rock_snail", "cave_bat": "cave_bat", "rock_beetle": "rock_beetle", "great_rock_beetle": "rock_beetle"}
+## Crystal variants (Monsters.VARIANTS) wear their own look: ember, frost, spore. Normal ones are mossy.
+const VARIANT_ART := {"": "mossy", "red": "ember", "blue": "frost", "green": "spore"}
+
+
+static func build(shape: String, color: Color, size: float, leader: bool, kind: String = "", seed: int = 0, variant: String = "") -> Node3D:
+	# 1. A creature forged from the approved pictures, in this variant's look.
+	# 2. Else a hand-built model: res://assets/models/monsters/<kind>_v<N>.glb or <kind>.glb.
+	# (front +Z, feet at the bottom, ~1 m = size 1). 3. Else simple shapes made here.
 	var forged: Node3D = null
-	if kind != "":
+	var art_look := false
+	if CREATURE_ART.has(kind):
+		forged = Look.forged("creatures", "%s_%s" % [CREATURE_ART[kind], VARIANT_ART.get(variant, "mossy")])
+		art_look = forged != null and VARIANT_ART.has(variant)
+	if forged == null and kind != "":
 		var count := variant_count(kind)
 		forged = Look.forged("monsters", "%s_v%d" % [kind, posmod(seed, count)]) if count > 0 else Look.forged("monsters", kind)
 	if forged:
@@ -18,6 +30,7 @@ static func build(shape: String, color: Color, size: float, leader: bool, kind: 
 		holder.add_child(forged)
 		var jitter := 1.0 + (float(posmod(seed * 7919, 1000)) / 1000.0 - 0.5) * 0.12  # each one a little bigger or smaller
 		holder.scale = Vector3.ONE * size * jitter
+		holder.set_meta("variant_look", art_look)  # it already shows its variant (no extra crystals needed)
 		_tag_forged(holder, forged, shape)
 		if leader:
 			_forged_crown(holder, forged, shape)
@@ -455,7 +468,7 @@ static func _tag_forged(holder: Node3D, forged: Node3D, shape: String) -> void:
 			if not m is StandardMaterial3D:
 				continue
 			var mname := String(m.resource_name)
-			for prefix in ["eye", "vein"]:
+			for prefix in ["eye", "vein", "glow"]:
 				if mname.begins_with(prefix):
 					if not mats.has(prefix):
 						var own := (m as StandardMaterial3D).duplicate() as StandardMaterial3D
@@ -463,11 +476,26 @@ static func _tag_forged(holder: Node3D, forged: Node3D, shape: String) -> void:
 						if prefix == "vein":
 							own.emission = Color(1.0, 0.32, 0.08)
 							own.emission_energy_multiplier = 0.0  # dark until it charges
+						if prefix == "glow":  # lava cracks, glowing backs, spore spots: always glow a little
+							own.emission = Color.WHITE
+							own.set_meta("base_energy", maxf(0.8, own.emission_energy_multiplier))
 						mats[prefix] = own
 					mi.set_surface_override_material(i, mats[prefix])
-	holder.set_meta("eye_mat", mats.get("eye", StandardMaterial3D.new()))
+	if mats.has("eye"):
+		holder.set_meta("eye_mat", mats["eye"])
+	else:
+		# No eyes found on the model: the attack warning makes the whole body glow faintly instead.
+		var tell := StandardMaterial3D.new()
+		tell.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		tell.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		tell.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+		tell.albedo_color = Color(1.0, 0.75, 0.4, 0.0)
+		holder.set_meta("tell_mat", tell)
+		holder.set_meta("eye_mat", StandardMaterial3D.new())
 	if mats.has("vein"):
 		holder.set_meta("vein_mat", mats["vein"])
+	if mats.has("glow"):
+		holder.set_meta("glow_mat", mats["glow"])
 	holder.set_meta("legs", legs)
 	holder.set_meta("wings", wings)
 	holder.set_meta("stalks", stalks)
@@ -620,6 +648,14 @@ static func make_glowy(model: Node3D, color: Color) -> void:
 
 ## 0 = normal eyes, 1 = bright flash (the "tell" just before a hit lands).
 static func set_glow(model: Node3D, amount: float) -> void:
+	if model.has_meta("tell_mat"):
+		var t := model.get_meta("tell_mat") as StandardMaterial3D
+		var a := amount * 0.3
+		if (t.albedo_color.a > 0.0) != (a > 0.0):
+			for mi: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
+				if mi.material_overlay == null or mi.material_overlay == t:
+					mi.material_overlay = t if a > 0.0 else null
+		t.albedo_color = (Color(1.0, 0.3, 0.1) if model.get_meta("angry", false) else Color(1.0, 0.75, 0.4)) * Color(1, 1, 1, 0) + Color(0, 0, 0, a)
 	var m: StandardMaterial3D = model.get_meta("eye_mat")
 	# Red eyes glow less: very bright light turns white on screen (AgX tone mapping), losing the red.
 	m.emission_energy_multiplier = 0.6 + amount * (0.9 if model.get_meta("angry", false) else 8.0)
@@ -633,6 +669,9 @@ static func set_angry(model: Node3D, angry: bool) -> void:
 	m.albedo_color = Color(0.7, 0.05, 0.0) if angry else Color(1.0, 0.9, 0.5)
 	if model.has_meta("vein_mat"):  # the cracks in its stone shell glow like coals while it charges
 		(model.get_meta("vein_mat") as StandardMaterial3D).emission_energy_multiplier = 2.2 if angry else 0.0
+	if model.has_meta("glow_mat"):  # its glowing parts blaze while it charges
+		var g := model.get_meta("glow_mat") as StandardMaterial3D
+		g.emission_energy_multiplier = float(g.get_meta("base_energy", 1.0)) * (2.6 if angry else 1.0)
 
 
 static func _add(parent: Node3D, mesh: Mesh, mat: Material, pos: Vector3, scale := Vector3.ONE, rot := Vector3.ZERO) -> MeshInstance3D:

@@ -89,7 +89,7 @@ func _ready() -> void:
 	shape.shape = cap
 	shape.position = Vector3.UP * cap.height * 0.5
 	add_child(shape)
-	model = MonsterModel.build(data.shape, data.color, s, leader, kind, uid)  # uid: same individual for everyone
+	model = MonsterModel.build(data.shape, data.color, s, leader, kind, uid, variant)  # uid: same individual for everyone
 	_size = s
 	add_child(model)
 	if is_boss():
@@ -102,9 +102,11 @@ func _ready() -> void:
 		add_child(glow)
 		MonsterModel.make_glowy(model, data.color.lightened(0.3))
 	if variant != "":
-		# Crystal variants: glowing crystals on the back that light up the cave around them.
+		# Crystal variants: glowing crystals on the back that light up the cave around them
+		# (creatures made from the approved pictures already wear their variant's look).
 		var vc: Color = Monsters.VARIANTS[variant].color
-		MonsterModel.add_crystals(model, vc)
+		if not model.get_meta("variant_look", false):
+			MonsterModel.add_crystals(model, vc)
 		var light := OmniLight3D.new()
 		light.light_color = vc
 		light.omni_range = 5.0 + s * 2.0

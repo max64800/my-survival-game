@@ -107,7 +107,8 @@ Prompt notes that worked:
 - For variants with new shapes, say "keep the same body, legs, pose and face; give each its OWN horn, shell
   formation and crystals".
 
-**To do on the PC:** download the 3 single pictures and the 3 grids from that ChatGPT chat in full size into
+**Done (Nov 15, Claude 3, with the owner's OK):** the 6 pictures are in `assets/concepts/creatures/`.
+~~**To do on the PC:** download the 3 single pictures and the 3 grids from that ChatGPT chat in full size into
 `assets/concepts/creatures/` (rock_snail.png, rock_snail_variants.png, cave_bat.png, cave_bat_variants.png,
 rock_beetle.png, rock_beetle_variants.png), and log them in `CREDITS.md` as our own ChatGPT pictures.
 
@@ -129,12 +130,34 @@ in this order:
 
 Whichever way: keep the code's attack warning (eyes flash before a hit) and the monster's collision size.
 
+## How they were built (November 15, 2026)
+
+One command does it all: `tools/asset_forge/forge_creatures.py` (see the forge README, "Creatures").
+1. `creature_sources.py` cuts each grid into its 4 variants and removes the background (12 pictures).
+2. `forge.py` turns each picture into a 3D statue. **TRELLIS** (website) when a free Hugging Face key is in
+   `<AI3D_HOME>/hf_token.txt`; otherwise **TripoSR** on the PC (used this time: the website allows ~2 minutes a day
+   without a key, not enough for 12).
+3. `creature_forge.py` (Blender): lines a camera up with the picture (outline match), paints the **face** from the
+   picture (eyes with pupils, fangs), pulls the forge's colours toward the picture's, turns it to face forward,
+   splits it into moving parts (snail: shell, soft body, eye stalks, peeking eyes; bat: two wings; beetle: six legs)
+   and gives the eyes and glowing bits their own materials (eyes flash before an attack, glow blazes on a charge).
+   Each variant is forged from its own picture, so the beetle's horns and the spore mushrooms keep their own shapes.
+4. In the game (`monster_model.gd`): crystal variants wear their look (red = ember, blue = frost, green = spore,
+   normal = mossy); the Great Rock Beetle is a bigger Rock Beetle. Collision sizes are unchanged.
+
+Screenshots next to the workbench: `docs/art/creatures-2026-11-15/` (art preview: `-- seed=42 nomonsters artpreview creatures`).
+
+**Scores (Claude, honest, vs the pictures; the workbench is about 8/10):** Cave Bat 6/10, Rock Snail 5/10,
+Rock Beetle 5/10. They read as the approved designs, but TripoSR shapes are soft and blobby (the snail's mustache
+is lost, beetle legs are short). **To improve:** put a free Hugging Face key in `<AI3D_HOME>/hf_token.txt` and run
+the one command again: TRELLIS gives much sharper shapes and textures.
+
 ## Done when
 
-- [ ] Next to the workbench in the art preview, the creature looks like it came from the same game.
-- [ ] Its outline reads clearly as a black shape.
-- [ ] 2–3 colours; darker belly, lighter back; painted shading.
-- [ ] Face has big eyes with a pupil and a highlight.
-- [ ] Its weak spot or special part is easy to see.
-- [ ] It moves (parts or bones) and still warns before attacking.
-- [ ] Logged in `CREDITS.md` (our own ChatGPT pictures + the forge tools) and in `JOURNAL.md`.
+- [ ] Next to the workbench in the art preview, the creature looks like it came from the same game. *(Close, not yet: 5–6 vs 8.)*
+- [x] Its outline reads clearly as a black shape.
+- [x] 2–3 colours; darker belly, lighter back; painted shading. *(From the forge, pulled toward the picture.)*
+- [ ] Face has big eyes with a pupil and a highlight. *(Bats yes; snail and beetle eyes are small and soft.)*
+- [x] Its weak spot or special part is easy to see. *(Glowing beetle backs, the snail's shell, the bat's fangs.)*
+- [x] It moves (parts) and still warns before attacking.
+- [x] Logged in `CREDITS.md` (our own ChatGPT pictures + the forge tools) and in `JOURNAL.md`.
