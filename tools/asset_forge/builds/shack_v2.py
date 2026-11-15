@@ -1428,5 +1428,7 @@ if __name__ == "__main__":
 		else:
 			paint()
 		fname = GAME_NAME[name] if install else name
-		kit.save(str(out_dir / f"{fname}__plank_root.glb"), None, recenter=False, tex_size=512)
+		# install: also save the preview picture (journey/...) that make_piece_icons.py turns into the build-menu icon
+		png = str(K.JOUR / f"{fname}__plank_root.png") if install else None
+		kit.save(str(out_dir / f"{fname}__plank_root.glb"), png, recenter=False, tex_size=512)
 		print("PIECE_OK", name)
