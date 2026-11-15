@@ -11,7 +11,7 @@ November 15). Full-size originals stay in that ChatGPT chat. Logged in `CREDITS.
 |---|---|---|---|
 | Dwarf | dwarf_strong_head | 9 | |
 | Dwarf | dwarf_smart_head_old (owner's change: old, white beard, sarcastic smile) | 9 | glasses came out as goggles |
-| Dwarf | dwarf_lineup_v2_final (3 heads, same body, Leather) | 9 | |
+| Dwarf | dwarf_lineup_v3_final (3 heads, same body, Leather; smart dwarf matches his head sheet, F66) | 9 | |
 | Station | station_twin_smelter | 9 | |
 | Station | station_gem_bench | 9 | drop some small clutter |
 | Station | station_drip_bucket_and_basin | 8 | leave out the floating ceiling rocks |
@@ -23,12 +23,14 @@ November 15). Full-size originals stay in that ChatGPT chat. Logged in `CREDITS.
 | F37, F38 | fix_F38_F37_chopping_block_chest | 9 | |
 | F36, F45 | fix_F36_F45_carpentry_tanning | 8.5 | tilt the rack back more |
 | F46, F47 | fix_F46_F47_tool_rack_dummy | 9 | |
-| F39, F61 | fix_F61_F39_barrel_cooking_pot | 9 | |
-| F41, F44 | fix_F41_F44_grindstone_stone_saw | 8.5 | simpler saw handles |
+| F61 | fix_F61_F39_barrel_cooking_pot (use the barrel only) | 9 | |
+| F64 | fix_F39_F64_cooking_pot_tripod (3-leg tripod) | 9 | |
+| F41 | fix_F41_F44_grindstone_stone_saw (use the grindstone only) | 8.5 | |
+| F65 | fix_F44_F65_stone_saw (frame saw sitting in the cut) | 9 | |
 | F35 | fix_F35_campfire_fire_pit | 9 | |
 | F56 | materials_1_crafted, materials_2_raw, materials_3_creature_parts, materials_4_crystals_food | 8.5–9 | |
 | Decor | decor_furniture_shack / _stonehold / _hearthbrick | 9 / 8.5 / 9.5 | Hearthbrick: drop the clover shapes |
-| Decor | decor_lights, decor_storage_clutter, decor_mine_props, decor_wall_trophies, decor_fungal_garden | 9 | |
+| Decor | decor_lights, decor_storage_clutter, decor_mine_props (5 props: no pickaxe pile, winch or tunnel support, F63), decor_wall_trophies, decor_fungal_garden | 9 | |
 | Decor | decor_creative_beams (Valheim-style beams) | 8.5 | set the real 26° and 45° angles in Blender |
 
 ## Prompt notes that worked
@@ -38,3 +40,5 @@ November 15). Full-size originals stay in that ChatGPT chat. Logged in `CREDITS.
   ITEM ICON sheet"** and gentler words fixed it.
 - Item sheets: "12 items in a neat 4 x 3 grid, each on its own with space around it".
 - ChatGPT sometimes shows two versions ("Which image do you like more?"); pick the one with more space around items.
+
+Owner's morning notes (F63–F66) were redone the same day; the young-smart lineup, the young ginger head and the first old-smart lineup were removed.
