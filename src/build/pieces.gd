@@ -82,7 +82,7 @@ const LIST := {
 		families = ["plank_root", "plank_mushroom", "silver_ingot"], station = {"workbench": 2, "anvil": 1}},
 	"pillar": {name = "Pillar", group = "support", size = Vector3(0.4, 2, 0.4), units = 3, place = "corner", station = ALL},
 	"column": {name = "Carved Column", group = "support", size = Vector3(0.8, 2, 0.8), units = 4, place = "corner", shape = "column",
-		families = ["cut_stone", "cut_marble", "clay_brick", "basalt", "ancient_brick"], station = {"mason": 2}},
+		families = ["plank_root"] + STONE_KINDS, station = {"workbench": 2, "mason": 2}},  # Shack columns are wood (owner, Nov 15)
 	"arch": {name = "Stone Arch", group = "support", size = Vector3(2, 1, 0.4), units = 3, place = "edge", shape = "arch",
 		families = ["cut_stone", "cut_marble", "clay_brick", "basalt", "ancient_brick"], station = {"mason": 2}},
 	# --- getting around
@@ -120,11 +120,11 @@ const LIST := {
 	# --- decor (Claude 2 hand-makes models for these; code shapes until then). on_wall = snaps flat onto
 	# the face of a built wall you aim at. cloth = the colour of its cloth part. light = a glow it gives.
 	"column_base": {name = "Column Base", group = "decor", size = Vector3(0.8, 0.5, 0.8), units = 1, place = "corner", shape = "column_base",
-		families = STONE_KINDS, station = {"mason": 1}},
+		families = ["plank_root"] + STONE_KINDS, station = {"workbench": 1, "mason": 1}},
 	"column_shaft": {name = "Column Shaft", group = "decor", size = Vector3(0.8, 1.0, 0.8), units = 1, place = "corner", shape = "column_shaft",
-		families = STONE_KINDS, station = {"mason": 1}},
+		families = ["plank_root"] + STONE_KINDS, station = {"workbench": 1, "mason": 1}},
 	"column_capital": {name = "Column Capital", group = "decor", size = Vector3(0.8, 0.5, 0.8), units = 1, place = "corner", shape = "column_capital",
-		families = STONE_KINDS, station = {"mason": 2}},
+		families = ["plank_root"] + STONE_KINDS, station = {"workbench": 2, "mason": 2}},
 	"table": {name = "Table", group = "decor", size = Vector3(2.0, 0.9, 1.0), units = 3, place = "free", shape = "table",
 		families = WOODS + ["cut_stone"], station = {"workbench": 1, "mason": 2}},
 	"bench": {name = "Bench", group = "decor", size = Vector3(2.0, 0.5, 0.5), units = 2, place = "free", shape = "bench",

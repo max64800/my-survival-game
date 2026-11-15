@@ -1156,6 +1156,17 @@ Important pieces (workbench, smelter, anvil) can be redone later with a better t
     touching. That's why the tanning rack passed in the game but fails in the robot.
   - The robot reads piece sizes straight from the game's code, but its first try missed most pieces (multi-line
     entries). Fixed.
+- **Later (PC, code Claude): after Claude 2's batch 1.**
+  - Claude 2 asked about the roof check: their new Shack roofs are built in layers (log rafters, boards, shingles),
+    so between the rafters the roof is only a few boards thick, and the check called it "too thin". Fair point: changed it.
+    The rays are now 5 cm apart so they always hit the rafters. Too thick = the usual spot over 30 cm. Too thin = even
+    the rafters under 8 cm. "Filled underneath" is checked as before.
+  - Shack columns can be wood now (the column pieces allow Rootwood), as the owner wanted.
+  - **Doorway shimmer gone (F76), seen in the game:** same robot, same angles, two pictures 2 degrees apart. The doorway
+    ends stay the same now. Before/after: `journey/kit_zone1/shimmer_f76_before.jpg` and `shimmer_f76_after.jpg`.
+  - All building tests pass, including the dwarf walking test on the new pieces. The Blender check on the new kit pieces
+    finds only tiny hidden shimmer spots (5-280 cm²). What's left is the old-style pieces (Claude 2's step 2), plus the
+    copper and diagonal models that the menu no longer offers.
 
 ---
 
