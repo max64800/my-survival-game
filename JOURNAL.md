@@ -965,6 +965,47 @@ Important pieces (workbench, smelter, anvil) can be redone later with a better t
 
 ---
 
+## Day 4 — November 15, 2026: Testing every building piece; 60° triangles; white edges and round doors (Claude 1, PC)
+
+**What we did**
+- **60° triangles (building kit):** triangle foundations and floors are now equilateral: every side is 2 m, the same
+  as a wall. They snap edge to edge onto squares and onto each other, six make a hexagon, and walls and doorways stand
+  on their slanted sides. Pieces can now turn in 30° steps. Old saves still work: the old 90° turns keep their numbers,
+  and the old 45° pieces are hidden but still load.
+- **White edges fixed (F58):** the cause was the shader's "rim light". It brightened every surface seen edge-on,
+  even with no light behind it, so every little gap between stones flashed white as you turned. It's off for
+  building pieces now. Proven with side-by-side pictures (rim on / rim off).
+- **Arches fixed (F59)** and **round doors (F57):** a real curve of wedge stones. The Doorway and the Door are round-topped.
+- **New kit pieces:** Sloped Wall, Flat Roof, Battlement, Battlement Corner. Rootwood foundations (the Delver's Shack's log legs).
+- **New automatic tests (302 checks):**
+  - **Snapping and gaps:** triangles on squares, a ring of six triangles, walls on triangle sides, squares in a row.
+    Each must share a whole side, with no gap and no overlap.
+  - **Floating or sunk:** every piece's shape sits exactly on its base and stays inside its own space.
+  - **Floating parts:** finds bits of a model that don't touch the rest.
+  - **Hand-made models:** the game checks each of Claude 2's models. If one doesn't fit its piece or has floating bits,
+    it's skipped and the shape made in code is used instead. Today that's 16 misfits and 22 with floating bits, all sent to Claude 2.
+  - **Walking:** a stand-in dwarf with the same body walks across floors, up stairs, a ramp, both roofs and the
+    foundation steps, over a triangle seam, and through both round doorways, without getting stuck. A wall in the
+    way must stop it, to prove the test can fail.
+  - **Taking a support out:** one pillar of two gone and the deck stays; both gone and it falls; the foundations stay.
+- **Photo robot `-- buildcheck part=house`:** builds a stone house with triangle sides, a round doorway and a door,
+  and a hexagon tower. The real dwarf walks up stairs onto a roof, and pillars are pulled out of a deck.
+  `part=edges` takes the white-edge close-ups.
+
+**Hurdles / mistakes (including Claude's)**
+- **Pulling the Mac's work clashed** with unsaved notes from the other Claudes in the shared files. Claude backed
+  them up first. Another Claude finished the merge at the same moment, and nothing was lost.
+- **My code shapes had real problems, found by the new tests:**
+  - wooden planks with see-through gaps and nothing behind them (a backing board was added)
+  - roof shingles floating above the roof surface, because of a wrong slope formula, so feet sank into them
+  - the arched doorway's stone ring poking 13 cm out of the top
+  - spears sticking out of the weapon rack
+  - the brace poking into the floor
+- **My own test mistakes:** the first hexagon test picked the wrong side, and in the house robot the deck was put
+  beside its pillars instead of on them, the dwarf walked off the end of the roof, and the hexagon's middle was
+  looked for in the wrong place. The snapping itself was right every time. Lesson: when a test fails, first check
+  the test.
+- The shell choked on a long script with quote marks, so the edits went into small script files instead.
 ## Day 4 — November 15, 2026: The approved creatures, forged from the pictures (Claude 3, PC)
 
 **What we did**

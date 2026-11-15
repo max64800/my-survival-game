@@ -6,7 +6,8 @@ func test_every_piece_is_on_a_tab() -> void:
 	var seen := 0
 	for g in BuildMenu.TABS:
 		seen += BuildMenu.pieces_in(g).size()
-	check_eq(seen, Pieces.LIST.size(), "every piece shows up on exactly one tab")
+	var legacy := BuildMenu.pieces_in("legacy").size()
+	check_eq(seen + legacy, Pieces.LIST.size(), "every piece shows up on exactly one tab (old 45° pieces hidden)")
 	check(BuildMenu.pieces_in("roof").has("roof_45"), "roofs on the Roofs tab")
 	check_eq(BuildMenu.station_item("cut_stone"), "masonry_table", "stone is worked at the Mason's Table")
 

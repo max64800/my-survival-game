@@ -123,7 +123,12 @@ static var _forged_meshes := {}
 ## Claude 2's hand-made model for this piece + material (assets/models/build/<piece>__<family>.glb),
 ## or null to use the shape made in code. Built in the same piece space as PieceMesh, so it lines up
 ## with the solid shape. Only the look changes; bumping into it still uses PieceMesh.solid().
+static var use_models := true  ## false = always the shapes made in code (robots: `nomodels`)
+
+
 static func forged_mesh(p_piece: String, p_family: String) -> Mesh:
+	if not use_models:
+		return null
 	var key := p_piece + "__" + p_family
 	if not _forged_meshes.has(key):
 		var m: Mesh = null
@@ -132,11 +137,34 @@ static func forged_mesh(p_piece: String, p_family: String) -> Mesh:
 			var parts := scene.find_children("*", "MeshInstance3D", true, false)
 			if parts.size() == 1:
 				m = (parts[0] as MeshInstance3D).mesh  # one baked mesh, as agreed with Claude 2
+				var why := model_misfit(p_piece, m.get_aabb())
+				if why == "" and PieceMesh.islands(m).size() > 1:
+					why = "%d separate parts: something floats" % PieceMesh.islands(m).size()
+				if why != "":
+					print("Model skipped: %s.glb doesn't fit its piece (%s); using the code shape" % [key, why])
+					m = null
 			elif parts.size() > 1:
 				push_warning("%s.glb has %d meshes; expected 1 (using the code shape)" % [key, parts.size()])
 			scene.free()
 		_forged_meshes[key] = m
 	return _forged_meshes[key]
+
+
+## Why a model's box doesn't match the piece it's for ("" = it fits). Catches models made for an
+## old shape (the half-square triangles became 60° ones), sunk in or floating above the base,
+## or built off-centre. A model may be up to 20% (at least 16 cm) bigger: sills, handles, wider
+## pillar feet, overhanging shingles. Smaller is fine down to half (a slim sconce).
+static func model_misfit(p_piece: String, box: AABB) -> String:
+	var want := Pieces.box(p_piece, Vector3.ZERO, 0)
+	if absf(box.position.y) > 0.1:
+		return "bottom at %.2f m, should be 0" % box.position.y
+	for axis in [0, 2]:
+		var w: float = want.size[axis]
+		if box.size[axis] > w + maxf(0.2 * w, 0.16) or box.size[axis] < 0.5 * w:
+			return "%s size %.2f m, should be %.2f" % ["xyz"[axis], box.size[axis], w]
+		if absf(box.get_center()[axis] - want.get_center()[axis]) > maxf(0.1 * w, 0.12):
+			return "%s middle at %.2f m, should be %.2f" % ["xyz"[axis], box.get_center()[axis], want.get_center()[axis]]
+	return ""
 
 
 func _build() -> void:
@@ -247,5 +275,12 @@ static func _mat(fam: String) -> Material:
 			surface = "metal"
 		elif f.get("glow", false):
 			surface = "smooth"
-		_mats[fam] = Look.mat(f.color, surface, 1.5 if f.get("glow", false) else 0.0)
+		var m := Look.mat(f.color, surface, 1.5 if f.get("glow", false) else 0.0)
+		# No rim light on building pieces (F58): Godot's rim brightens every surface seen edge-on, no
+		# matter where the light is. A stone wall is dozens of small blocks with gaps, so turning the
+		# camera made white streaks on all their edges. Props and monsters keep their rim.
+		if m is ShaderMaterial:
+			m = m.duplicate()
+			(m as ShaderMaterial).set_shader_parameter("rim", 0.0)
+		_mats[fam] = m
 	return _mats[fam]

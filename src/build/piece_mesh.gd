@@ -68,6 +68,10 @@ static func _make(piece: String, style: String, detail: bool) -> ArrayMesh:
 		"steps": _steps(s, 2)
 		"ramp": _ramp(s)
 		"triangle": _triangle(s)
+		"tri": _tri(s)
+		"flat_roof": _flat_roof(s)
+		"battlement": _battlement(s)
+		"battlement_corner": _battlement_corner(s)
 		"diagonal": _diagonal(piece, s)
 		"column_base", "column_shaft", "column_capital": _column_part(shape, s)
 		"table", "bench": _table(s, shape == "bench")
@@ -91,7 +95,10 @@ static func _make(piece: String, style: String, detail: bool) -> ArrayMesh:
 static func _plain_piece(piece: String, s: Vector3, info: Dictionary) -> void:
 	var group: String = info.get("group", "")
 	if info.has("opening"):
-		_wall_with_hole(s.x, s.y, s.z, info.opening)
+		if info.get("round", false):
+			_round_hole(s, info.opening, false)
+		else:
+			_wall_with_hole(s.x, s.y, s.z, info.opening)
 		return
 	match piece:
 		"stairs":
@@ -101,8 +108,8 @@ static func _plain_piece(piece: String, s: Vector3, info: Dictionary) -> void:
 			_box(Vector3(0, 0.075, 0), Vector3(s.x + 0.15, 0.15, s.z + 0.15))
 			_box(Vector3(0, s.y - 0.075, 0), Vector3(s.x + 0.15, 0.15, s.z + 0.15))
 		"mine_prop":
-			_slab(Vector3(-0.8, (s.y - 0.3) * 0.5, 0), Vector3(0.3, s.y - 0.3, 0.3), "post")
-			_slab(Vector3(0.8, (s.y - 0.3) * 0.5, 0), Vector3(0.3, s.y - 0.3, 0.3), "post")
+			_slab(Vector3(-0.8, (s.y - 0.25) * 0.5, 0), Vector3(0.3, s.y - 0.25, 0.3), "post")
+			_slab(Vector3(0.8, (s.y - 0.25) * 0.5, 0), Vector3(0.3, s.y - 0.25, 0.3), "post")
 			_slab(Vector3(0, s.y - 0.15, 0), Vector3(s.x, 0.3, s.z), "beam")
 		_:
 			match group:
@@ -229,32 +236,51 @@ static func _arch(s: Vector3) -> void:
 	_slab(Vector3(-hx + 0.15, s.y * 0.5, 0), Vector3(0.3, s.y, d), "post")
 	_slab(Vector3(hx - 0.15, s.y * 0.5, 0), Vector3(0.3, s.y, d), "post")
 	_slab(Vector3(0, s.y - 0.12, 0), Vector3(s.x, 0.24, d), "beam")
-	_arc_stones(Vector3(0, s.y - 0.24 - 0.7, 0), 0.7, d, 7)
+	var r := hx - 0.3
+	_round_top(r, s.y - 0.24 - r, s.y - 0.24, d, 0.22, d + 0.04)
 
 
+## A round-topped opening in a wall (F57: round doors, like a hobbit hole): side walls, a wall
+## above, and the curve between them filled in; stone and brick get a ring of wedge stones.
 static func _arch_doorway(s: Vector3, opening: Vector3) -> void:
+	_round_hole(s, opening, true)
+
+
+static func _round_hole(s: Vector3, opening: Vector3, stones: bool) -> void:
+	var r := opening.x * 0.5
 	var side := (s.x - opening.x) * 0.5
-	var spring := opening.y - opening.x * 0.5  # where the round top starts
 	_slab(Vector3(-(opening.x + side) * 0.5, s.y * 0.5, 0), Vector3(side, s.y, s.z), "wall")
 	_slab(Vector3((opening.x + side) * 0.5, s.y * 0.5, 0), Vector3(side, s.y, s.z), "wall")
 	var top := s.y - opening.y
 	if top > 0.01:
 		_slab(Vector3(0, s.y - top * 0.5, 0), Vector3(opening.x, top, s.z), "wall")
-	# Fill the corners above the round top, then the curved stones.
-	var r := opening.x * 0.5
-	_box(Vector3(-r + 0.15, spring + r * 0.7, 0), Vector3(0.3, r * 0.6, s.z))
-	_box(Vector3(r - 0.15, spring + r * 0.7, 0), Vector3(0.3, r * 0.6, s.z))
-	_arc_stones(Vector3(0, spring, 0), r, s.z + (0.04 if _detail else 0.0), 7)
+	var ring := minf(0.24, s.y - opening.y - 0.005) if stones and _style in ["stone", "brick"] else 0.07
+	ring = maxf(ring, 0.07)
+	var ring_d := s.z + (0.04 if ring > 0.1 else 0.06)
+	_round_top(r, opening.y - r, opening.y, s.z - 0.02, ring if _detail else 0.0, ring_d)
+	if _detail:  # straight trim down both sides of the opening, under the ring
+		for x in [-r - ring * 0.5, r + ring * 0.5]:
+			_box(Vector3(x, (opening.y - r) * 0.5, 0), Vector3(ring, opening.y - r, ring_d - 0.01))
 
 
-## Wedge stones along a half circle (centre `c`, radius `r`), each one turned to the curve.
-static func _arc_stones(c: Vector3, r: float, depth: float, count: int) -> void:
+## The curved top of an opening: radius `r` around (0, spring). Fills the corners up to `top`
+## (so nothing pokes into the opening), plus a ring of `count` wedges `ring` thick (0 = none).
+## Every part meets the next edge to edge; nothing overlaps on the same flat face.
+static func _round_top(r: float, spring: float, top: float, fill_d: float, ring: float, ring_d: float, count: int = 9) -> void:
 	for i in count:
-		var a := PI * (i + 0.5) / count
-		var p := c + Vector3(-cos(a) * (r + 0.12), sin(a) * (r + 0.12), 0)
-		_push(Transform3D(Basis(Vector3.BACK, a - PI * 0.5), p))
-		_box(Vector3.ZERO, Vector3(PI * r / count - 0.02, 0.26, depth))
-		_pop()
+		var a0 := PI * i / count
+		var a1 := PI * (i + 1) / count
+		var p0 := Vector2(cos(a0) * r, spring + sin(a0) * r)
+		var p1 := Vector2(cos(a1) * r, spring + sin(a1) * r)
+		if top - maxf(p0.y, p1.y) > 0.005 or top - minf(p0.y, p1.y) > 0.005:
+			_prism_z([p0, p1, Vector2(p1.x, top), Vector2(p0.x, top)], -fill_d * 0.5, fill_d * 0.5)
+		if ring > 0.0:
+			var g := 0.012 if ring > 0.1 else 0.0  # mortar between wedge stones
+			var b0 := a0 + g
+			var b1 := a1 - g
+			var q := [Vector2(cos(b0) * r, spring + sin(b0) * r), Vector2(cos(b0) * (r + ring), spring + sin(b0) * (r + ring)),
+				Vector2(cos(b1) * (r + ring), spring + sin(b1) * (r + ring)), Vector2(cos(b1) * r, spring + sin(b1) * r)]
+			_prism_z(q, -ring_d * 0.5, ring_d * 0.5)
 
 
 ## Carved column: square plinth, 8-sided shaft with two bands, flared capital.
@@ -384,15 +410,15 @@ static func _weapon_rack(s: Vector3) -> void:
 		_slab(Vector3(0, y, 0), Vector3(s.x, 0.08, 0.1), "beam")
 	if _detail:  # three spears leaning in it
 		for i in 3:
-			_box(Vector3(-0.4 + i * 0.4, s.y * 0.5 + 0.05, 0.08), Vector3(0.04, s.y - 0.1, 0.04))
-			_box(Vector3(-0.4 + i * 0.4, s.y + 0.05, 0.08), Vector3(0.08, 0.16, 0.02))
+			_box(Vector3(-0.4 + i * 0.4, (s.y - 0.16) * 0.5 + 0.04, 0.08), Vector3(0.04, s.y - 0.24, 0.04))
+			_box(Vector3(-0.4 + i * 0.4, s.y - 0.1, 0.08), Vector3(0.08, 0.16, 0.02))
 
 
 ## A diagonal brace: a beam from the bottom-left to the top-right corner.
 static func _brace(s: Vector3) -> void:
 	var seg_len := Vector2(s.x, s.y).length()
 	_push(Transform3D(Basis(Vector3.BACK, atan2(s.y, s.x)), Vector3(0, s.y * 0.5, 0)))
-	_slab(Vector3.ZERO, Vector3(seg_len - 0.1, 0.22, s.z), "beam")
+	_slab(Vector3.ZERO, Vector3(seg_len - 0.25, 0.22, s.z), "beam")  # its ends stay above the floor
 	_pop()
 
 
@@ -411,12 +437,55 @@ static func _railing(s: Vector3) -> void:
 	_box(Vector3(0, s.y * 0.5, 0), Vector3(s.x, 0.06, 0.06))
 
 
+## Stonehold's flat roof: a thick slab, with a slightly raised rim so rain (and eyes) see an edge.
+static func _flat_roof(s: Vector3) -> void:
+	_slab(Vector3(0, (s.y - 0.05) * 0.5, 0), Vector3(s.x, s.y - 0.05, s.z), "floor")
+	_box(Vector3(0, s.y - 0.025, 0), Vector3(s.x - 0.08, 0.05, s.z - 0.08))
+
+
+## A low wall with two raised blocks (merlons) on top, on a grid line like a wall.
+static func _battlement(s: Vector3) -> void:
+	var low := s.y - 0.4
+	_slab(Vector3(0, low * 0.5, 0), Vector3(s.x, low, s.z), "wall")
+	for x in [-0.5, 0.5]:
+		_slab(Vector3(x, low + 0.2, 0), Vector3(0.6, 0.4, s.z), "wall_x")
+
+
+## A square post that caps the corner where two battlements meet.
+static func _battlement_corner(s: Vector3) -> void:
+	_slab(Vector3(0, (s.y - 0.12) * 0.5, 0), Vector3(s.x, s.y - 0.12, s.z), "wall_x")
+	_box(Vector3(0, s.y - 0.06, 0), Vector3(s.x, 0.12, s.z))  # a cap stone
+
+
+## An equilateral triangle (building kit): every side 2 m, the middle at the origin, one edge
+## facing +z. Foundations get a top lip like the square ones.
+static func _tri(s: Vector3) -> void:
+	var k := s.x * 0.5
+	var r_in := Pieces.TRI_IN * k
+	var r_out := Pieces.TRI_OUT * k
+	var tri := [Vector2(-k, r_in), Vector2(k, r_in), Vector2(0, -r_out)]
+	if s.y > 0.5:
+		_prism_y(tri, 0.0, s.y - 0.1)
+		var f := (r_in - 0.03) / r_in
+		_prism_y([tri[0] * f, tri[1] * f, tri[2] * f], s.y - 0.1, s.y)  # a top lip
+	else:
+		_prism_y(tri, 0.0, s.y)
+
+
+## A round-topped door (F57): planks up to where the curve starts, then a half circle.
 static func _door(s: Vector3) -> void:
-	_slab(Vector3(0, s.y * 0.5, 0), s, "door")
+	var r := s.x * 0.5
+	var spring := s.y - r
+	_slab(Vector3(0, spring * 0.5, 0), Vector3(s.x, spring, s.z), "door")
+	var half := []
+	for i in 10:
+		var a := PI * i / 9.0
+		half.append(Vector2(cos(a) * r, spring + sin(a) * r))
+	_prism_z(half, -s.z * 0.5, s.z * 0.5)
 	if _detail:
-		for y in [0.35, s.y - 0.35]:
+		for y in [0.35, spring - 0.1]:
 			_box(Vector3(0, y, 0), Vector3(s.x - 0.04, 0.08, s.z + 0.03))  # iron bands
-		_box(Vector3(s.x * 0.35, s.y * 0.5, s.z * 0.5 + 0.03), Vector3(0.06, 0.12, 0.06))  # handle
+		_box(Vector3(s.x * 0.3, spring * 0.6, s.z * 0.5 + 0.03), Vector3(0.07, 0.07, 0.06))  # round knob
 
 
 ## A triangle: half of the square, the half on the −x/+z side of the line (−1,−1)→(1,1).
@@ -467,10 +536,20 @@ static func _slab(c: Vector3, size: Vector3, kind: String) -> void:
 ## Planks: across the long side, with 1.5 cm gaps and every other plank a little proud.
 static func _wood(c: Vector3, size: Vector3, kind: String) -> void:
 	if kind in ["beam", "post"]:
-		_box(c, size - Vector3.ONE * 0.01)
+		# Slightly thinner, but the full length, so a post still touches the beam it holds.
+		var long := 0 if size.x >= size.y and size.x >= size.z else (1 if size.y >= size.z else 2)
+		var shrink := Vector3.ONE * 0.01
+		shrink[long] = 0.0
+		_box(c, size - shrink)
 		return
 	var along := 1 if kind in ["wall", "door"] else 2  # walls: planks stacked up y; floors: across z
 	var span: float = size[along]
+	# A board behind the planks: the gaps between planks show it (no see-through slits), and the
+	# planks are all held together (nothing floating).
+	var back_thin := 2 if kind in ["wall", "door"] else 1
+	var backing := size
+	backing[back_thin] = maxf(size[back_thin] - 0.04, 0.01)
+	_box(c, backing)
 	var n := maxi(1, roundi(span / 0.25))
 	var step := span / n
 	for i in n:
@@ -558,12 +637,14 @@ static func _axis(i: int) -> Vector3:
 static func _shingles(w: float, d: float, rise: float, t: float) -> void:
 	if not _detail:
 		return
-	var slope := atan2(rise, d)
-	var seg_len := Vector2(d, rise).length()
+	# The roof's top runs from height t at the front (z = +d/2) to `rise` at the back. The shingles
+	# lie ON that slope (they used to float above it, so feet sank into them).
+	var slope := atan2(rise - t, d)
+	var seg_len := Vector2(d, rise - t).length()
 	var rows := maxi(2, roundi(seg_len / 0.33))
 	for r in rows:
 		var f := (r + 0.5) / rows
-		var p := Vector3(0, t + rise * f + 0.03, d * 0.5 - d * f)
+		var p := Vector3(0, t + (rise - t) * f, d * 0.5 - d * f) + Basis(Vector3.RIGHT, slope) * Vector3(0, 0.025, 0)
 		_push(Transform3D(Basis(Vector3.RIGHT, slope), p))
 		_box(Vector3.ZERO, Vector3(w + 0.06, 0.05, seg_len / rows + 0.08))
 		_pop()
@@ -675,3 +756,59 @@ static func _face(pts: Array, outward: Vector3) -> void:
 			_st.set_normal(normal)
 			_st.set_uv(Vector2((v as Vector3).x + (v as Vector3).z, (v as Vector3).y))
 			_st.add_vertex(v)
+
+## The separate parts of a mesh after joining the ones that touch or nearly touch (1 cm).
+## One part = everything holds together; more = something floats (owner's model notes F34-F62).
+static func islands(mesh: Mesh) -> Array:
+	var boxes: Array = []
+	for si in mesh.get_surface_count():
+		var arr := mesh.surface_get_arrays(si)
+		var verts: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+		var idx := PackedInt32Array()
+		if arr[Mesh.ARRAY_INDEX] != null:
+			idx = arr[Mesh.ARRAY_INDEX]
+		if idx.is_empty():
+			for i in verts.size():
+				idx.append(i)
+		# Triangles sharing a corner position belong together (union-find on positions to 1 mm).
+		var parent := {}
+		var keys := []
+		keys.resize(verts.size())
+		for i in verts.size():
+			var v := verts[i]
+			var k := Vector3i(roundi(v.x * 1000.0), roundi(v.y * 1000.0), roundi(v.z * 1000.0))
+			keys[i] = k
+			if not parent.has(k):
+				parent[k] = k
+		for i in range(0, idx.size() - 2, 3):
+			var r0: Vector3i = _root(parent, keys[idx[i]])
+			for j in [1, 2]:
+				var r: Vector3i = _root(parent, keys[idx[i + j]])
+				if r != r0:
+					parent[r] = r0
+		var part := {}
+		for k in parent:
+			var r: Vector3i = _root(parent, k)
+			var p := Vector3(k) / 1000.0
+			part[r] = (part[r] as AABB).expand(p) if part.has(r) else AABB(p, Vector3.ZERO)
+		boxes.append_array(part.values())
+	var merged := true
+	while merged:
+		merged = false
+		for i in boxes.size():
+			for j in range(i + 1, boxes.size()):
+				if (boxes[i] as AABB).grow(0.01).intersects(boxes[j]):
+					boxes[i] = (boxes[i] as AABB).merge(boxes[j])
+					boxes.remove_at(j)
+					merged = true
+					break
+			if merged:
+				break
+	return boxes
+
+
+static func _root(parent: Dictionary, k: Vector3i) -> Vector3i:
+	while parent[k] != k:
+		parent[k] = parent[parent[k]]
+		k = parent[k]
+	return k

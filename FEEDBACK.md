@@ -73,9 +73,9 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F54. Stone tools too perfect: chip them more. Stone sword has rope sticking out.** *From: you. Said: 1×*
 - [ ] **F55. All outfits too blocky and simple; remake (ChatGPT pictures).** *From: you. Said: 1×*
 - [ ] **F56. Material items need remaking too.** *From: you. Said: 1×*
-- [ ] **F57. Doorway should be round, like a hobbit door.** *From: you. Said: 1×*
-- [ ] **F58. White stuff shows on the edges of pieces when you turn** (doorway, stone, arches in clay brick and copper). *From: you. Said: 2×* (doorway/stone; arches)
-- [ ] **F59. Arches (clay brick, copper) look weird.** *From: you. Said: 1×*
+- [x] ~~**F57. Doorway should be round, like a hobbit door.**~~ Done Nov 15 (game code): the Doorway and the Door are round-topped (curve starts at 1.3 m). The stone Arched Doorway has a ring of wedge stones. Claude 2's hand-made door and doorway models are still square, and are being remade round. *From: you. Said: 1×*
+- [x] ~~**F58. White stuff shows on the edges of pieces when you turn** (doorway, stone, arches in clay brick and copper).~~ Done Nov 15. Cause: the shader's "rim light" lit up every surface seen edge-on, no matter where the light was. A stone wall is dozens of small blocks with gaps, so turning made white streaks on all their edges. The rim light is now off for building pieces (props and monsters keep it). *From: you. Said: 2×* (doorway/stone; arches)
+- [x] ~~**F59. Arches (clay brick, copper) look weird.**~~ Done Nov 15. The curved stones were separate boxes poking into the opening, overlapping the beam on the same flat face (that flickers). Now the arch is a real curve of wedge stones that meet edge to edge, with the corners above filled in. *From: you. Said: 1×*
 - [ ] **F60. Each building material should have its own design, not a reskin; each tier a bit fancier.** *From: you. Said: 1×*
 - [ ] **F61. Barrel rings don't touch each other.** *From: you. Said: 1×*
 - [ ] **F62. Beams: halves don't touch, a beam can't be 2 bricks; no perfect rectangles anywhere (curves, scratches, texture).** *From: you. Said: 1×*
