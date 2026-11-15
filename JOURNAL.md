@@ -1334,3 +1334,32 @@ when there was a choice, I asked you with multiple-choice questions first.
     double-click the desktop icon yourself if you want a recording.
   - A cleanup command was blocked by a safety check (it could have deleted the wrong folder if a name was empty);
     Claude used a fixed folder path instead.
+
+## Nov 15, 2026 (PC, Claude 2): the Delver's Shack, one set at a time (F116-F124)
+**What we did:** the owner stopped the "fix all 360 models" job ("let's nail down 1 set of buildings and start with 4
+pieces") and we rebuilt the Delver's Shack's first set with an OK at every step.
+- **Pictures first.** Connected to the owner's Chrome (they switched on remote debugging) and, in the ChatGPT chat that
+  made the Shack kit sheet, asked for a turnaround sheet (front/side/back/top of foundation, wall, doorway + door, roof),
+  then texture sheets: 8 different planks, 4 barks, 4 chopped log ends, 8 shingles. Saved in `assets/concepts/building-kit/`.
+- **White shape, then paint.** Each piece was built in plain white first, shown on a small 3D page (Shack Set 1), then painted.
+- **The owner's notes, step by step:** no rope crosses; a flat foundation top; a real round hobbit door (Claude 1
+  changed the game's door size); "stretched" paint -> each board gets its own painting at real size; every board and
+  log different; log ends chopped, not ring targets; logs stacked, never passing through; wooden pegs; and from two
+  options the owner picked A's top boards on B's hand-hewn beams.
+- **Texture rule:** the owner chose by multiple choice; it's now Rule 6 in `docs/art/MODEL-RULES.md`.
+- **In the game:** foundation, wall, round doorway, round door and roof (`builds/shack_v2.py`) replace the old Shack
+  pieces; model check clean, game tests pass (197 models, 0 misfits). Picture: the Shack Set 1 3D page.
+
+**Mistakes and hurdles (including mine):**
+- My first paint wrapped ONE picture over each whole part, so long posts and boards looked stretched; fixed by using
+  the paintings at their real size and a different one per part.
+- My first "beetle style" logs were 6-7-sided with steep chopped ends: the owner said they looked cartoonish. Cause:
+  pencil-shaped ends, flat crayon facets, a too-big bark pattern, perfectly straight logs.
+- The cross logs passed through the side logs; now they're stacked in notches.
+- The back brace had a gap because the hewn legs' flat faces were a little further in than I had measured; now both
+  braces press 1.5 cm into the legs.
+- The roof picked up the old shingle paintings because a folder path pointed one level too high; fixed.
+- The peg heads sat exactly on their own dowels (shimmer); dowels are thinner now.
+- The Chrome tool couldn't connect until the owner switched on remote debugging and clicked Allow.
+- The owner also asked for my notes on the Rock Beetle; they went to Claude 3 (creatures), who owns it.
+

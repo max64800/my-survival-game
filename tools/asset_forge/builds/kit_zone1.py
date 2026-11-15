@@ -65,7 +65,7 @@ def mesh(verts, faces, m, smooth=False):
 	return fix_normals(kit._mesh_obj("part", [G(v) for v in verts], faces, m, smooth=smooth))
 
 
-def log(p0, p1, r, m=None, seg=8, rings=3, ends=True, bend=0.08, end_m=None):
+def log(p0, p1, r, m=None, seg=8, rings=3, ends=True, bend=0.08, end_m=None, ru=1.0, rv=1.0):
 	"""A log or pole from p0 to p1: an uneven round section, a slight bend, light end-grain caps."""
 	p0, p1 = Vector(p0), Vector(p1)
 	d = p1 - p0
@@ -83,7 +83,7 @@ def log(p0, p1, r, m=None, seg=8, rings=3, ends=True, bend=0.08, end_m=None):
 		for k in range(seg):
 			a = 2 * math.pi * k / seg
 			rr = prof[k] * (1 + J(0.03))
-			verts.append(tuple(c + u * math.cos(a) * rr + v * math.sin(a) * rr))
+			verts.append(tuple(c + u * math.cos(a) * rr * ru + v * math.sin(a) * rr * rv))
 	faces = []
 	for i in range(rings):
 		for k in range(seg):
@@ -95,7 +95,7 @@ def log(p0, p1, r, m=None, seg=8, rings=3, ends=True, bend=0.08, end_m=None):
 	if ends and r > 0.035:
 		em = end_m or kit.tex_mat("wood", "c")
 		for p, s_ in ((p0, -1), (p1, 1)):
-			log(tuple(p + ax * s_ * 0.004), tuple(p + ax * s_ * 0.016), r * 0.8, em, seg=seg, rings=1, ends=False, bend=0)
+			log(tuple(p + ax * s_ * 0.004), tuple(p + ax * s_ * 0.016), r * 0.8, em, seg=seg, rings=1, ends=False, bend=0, ru=ru, rv=rv)
 	return o
 
 
@@ -1438,7 +1438,7 @@ SIZE = {
 	"foundation": (2, 1, 2), "foundation_half": (2, 1, 1), "foundation_steps": (2, 1, 2), "floor": (2, 0.25, 2),
 	"ceiling_panel": (2, 0.25, 2), "wall": (2, 2, 0.3), "half_wall": (2, 1, 0.3), "doorway": (2, 2, 0.3),
 	"window_wall": (2, 2, 0.3), "sloped_wall": (2, 2, 0.3), "gable_26": (2, 1, 0.3), "gable_45": (2, 2, 0.3),
-	"flat_roof": (2, 0.3, 2), "battlement": (2, 0.9, 0.4), "battlement_corner": (0.6, 1.3, 0.6), "door": (1, 1.8, 0.12),
+	"flat_roof": (2, 0.3, 2), "battlement": (2, 0.9, 0.4), "battlement_corner": (0.6, 1.3, 0.6), "door": (1.56, 1.48, 0.12),
 	"roof_26": (2, 1, 2), "roof_45": (2, 2, 2), "roof_26_ridge": (2, 0.5, 2), "roof_45_ridge": (2, 1, 2),
 	"roof_26_outer": (2, 1, 2), "roof_26_inner": (2, 1, 2), "roof_45_outer": (2, 2, 2), "roof_45_inner": (2, 2, 2),
 	"beam": (2, 0.3, 0.3), "beam_half": (1, 0.3, 0.3), "pillar": (0.4, 2, 0.4), "railing": (2, 1, 0.15), "stairs": (2, 2, 2),
@@ -1485,6 +1485,9 @@ if __name__ == "__main__":
 		keys = [f"{p}__{keys[0]}" for p in KIT[keys[0]]]
 	OUT.mkdir(parents=True, exist_ok=True)
 	JOUR.mkdir(parents=True, exist_ok=True)
+	# These Delver's Shack pieces are now made by builds/shack_v2.py (owner-approved v3 style, Nov 15):
+	SHACK_V2 = {"foundation__plank_root", "wall__plank_root", "doorway__plank_root", "door__plank_root", "roof_26__plank_root"}
+	keys = [k for k in keys if k not in SHACK_V2]
 	for key in keys:
 		piece, family = key.split("__")
 		S = STYLE_OF[family]

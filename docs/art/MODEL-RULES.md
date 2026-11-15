@@ -52,7 +52,24 @@ Up to four layers, back to front:
 
 ## Rule 5: Round doors only
 - One round doorway and one round door per style. No square openings, no second doorway kind.
+- The door is a real circle (hobbit style), cut flat at the floor: radius 0.78 m, centre 0.70 m above the floor.
 - **Check:** the build menu lists one doorway per style; picture of each with and without the door.
+
+## Rule 6: Textures (owner, Nov 15, 2026, multiple-choice answers)
+The look to match is the approved creature pictures (the Rock Beetle): chunky, chisel-cut faces, hand-painted.
+- **Many paintings, not one:** every surface (planks, bark, log ends, stone...) comes from a ChatGPT *variant
+  sheet* in the same chat and style as the piece's picture: 6-8 different planks, 4 barks, 4 log ends, 4 stones.
+  Each part picks a different painting, so no two neighbouring planks match.
+- **Medium variety:** neighbours are clearly different (lighter, darker, redder), but stay in one wood family.
+- **Never stretched:** paintings are used at their real size (a plank painting covers one plank's width; bark
+  repeats every ~0.8 m along a log). Never pull one picture across a whole long part.
+- **Bright worn edges, dark gaps:** every board/log/stone edge gets a lighter worn rim and every gap or joint is
+  darker, like the beetle's stone plates.
+- **Log ends are chopped:** pale fresh wood with axe-cut facets and a dark bark rim (no ring "target").
+- **Joints:** logs that cross are stacked and notched (one rests on the other); nothing passes through anything.
+- **Fasteners:** wooden pegs with domed heads (iron only where the picture shows iron).
+- **Check:** 4-side photos next to the picture; look at three neighbouring planks: are they clearly different?
+  Any stretched grain? Any part passing through another? White shape first, then paint, owner OK at each step.
 
 ## Why rules used to get lost (and what changed)
 - They were buried in long plan documents, and the code was never changed to follow them (example: the plan
