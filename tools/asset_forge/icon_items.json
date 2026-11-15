@@ -1,0 +1,1032 @@
+[
+ {
+  "id": "dirt",
+  "name": "Dirt",
+  "kind": "material"
+ },
+ {
+  "id": "moss",
+  "name": "Moss Clump",
+  "kind": "material"
+ },
+ {
+  "id": "stone",
+  "name": "Stone",
+  "kind": "material"
+ },
+ {
+  "id": "clay",
+  "name": "Orange Clay",
+  "kind": "material"
+ },
+ {
+  "id": "marble",
+  "name": "White Marble",
+  "kind": "material"
+ },
+ {
+  "id": "basalt",
+  "name": "Dark Basalt",
+  "kind": "material"
+ },
+ {
+  "id": "brown_rock",
+  "name": "Brown Rock",
+  "kind": "material"
+ },
+ {
+  "id": "ancient_brick",
+  "name": "Ancient Brick",
+  "kind": "material"
+ },
+ {
+  "id": "sporestone",
+  "name": "Sporestone",
+  "kind": "material"
+ },
+ {
+  "id": "amberrock",
+  "name": "Amberrock",
+  "kind": "material"
+ },
+ {
+  "id": "copper_ore",
+  "name": "Copper Ore",
+  "kind": "material"
+ },
+ {
+  "id": "silver_ore",
+  "name": "Silver Ore",
+  "kind": "material"
+ },
+ {
+  "id": "crystal_blue",
+  "name": "Blue Glow Crystal",
+  "kind": "fuel"
+ },
+ {
+  "id": "crystal_green",
+  "name": "Green Glow Crystal",
+  "kind": "fuel"
+ },
+ {
+  "id": "crystal_violet",
+  "name": "Violet Glow Crystal",
+  "kind": "fuel"
+ },
+ {
+  "id": "crystal_amber",
+  "name": "Amber Glow Crystal",
+  "kind": "fuel"
+ },
+ {
+  "id": "crystal_white",
+  "name": "White Glow Crystal",
+  "kind": "fuel"
+ },
+ {
+  "id": "crystal_red",
+  "name": "Red Glow Crystal",
+  "kind": "fuel"
+ },
+ {
+  "id": "rusty_scrap",
+  "name": "Rusty Scrap",
+  "kind": "material"
+ },
+ {
+  "id": "glow_slime",
+  "name": "Glow Slime",
+  "kind": "fuel"
+ },
+ {
+  "id": "rootwood",
+  "name": "Rootwood",
+  "kind": "fuel"
+ },
+ {
+  "id": "mushroom_wood",
+  "name": "Mushroom Timber",
+  "kind": "fuel"
+ },
+ {
+  "id": "fiber",
+  "name": "Cave Fiber",
+  "kind": "material"
+ },
+ {
+  "id": "root_tuber",
+  "name": "Root Tuber",
+  "kind": "food"
+ },
+ {
+  "id": "glowcap",
+  "name": "Glowcap",
+  "kind": "food"
+ },
+ {
+  "id": "hollowcap",
+  "name": "Hollowcap",
+  "kind": "food"
+ },
+ {
+  "id": "bellcap",
+  "name": "Juicy Bellcap",
+  "kind": "food"
+ },
+ {
+  "id": "firecap",
+  "name": "Firecap",
+  "kind": "material"
+ },
+ {
+  "id": "mushroom_flesh",
+  "name": "Giant Mushroom Flesh",
+  "kind": "material"
+ },
+ {
+  "id": "spore_truffle",
+  "name": "Spore Truffle",
+  "kind": "material"
+ },
+ {
+  "id": "ember_morel",
+  "name": "Ember Morel",
+  "kind": "material"
+ },
+ {
+  "id": "critter_meat",
+  "name": "Critter Meat",
+  "kind": "food"
+ },
+ {
+  "id": "critter_hide",
+  "name": "Critter Hide",
+  "kind": "material"
+ },
+ {
+  "id": "beetle_meat",
+  "name": "Beetle Meat",
+  "kind": "food"
+ },
+ {
+  "id": "chitin_plate",
+  "name": "Chitin Plate",
+  "kind": "material"
+ },
+ {
+  "id": "spore_powder",
+  "name": "Spore Powder",
+  "kind": "material"
+ },
+ {
+  "id": "needle",
+  "name": "Mite Needle",
+  "kind": "material"
+ },
+ {
+  "id": "venom_sac",
+  "name": "Venom Sac",
+  "kind": "material"
+ },
+ {
+  "id": "scythe_blade",
+  "name": "Scythe Blade",
+  "kind": "material"
+ },
+ {
+  "id": "spitter_gill",
+  "name": "Spitter Gill",
+  "kind": "material"
+ },
+ {
+  "id": "ironshell_plate",
+  "name": "Ironshell Plate",
+  "kind": "material"
+ },
+ {
+  "id": "sivix_silk",
+  "name": "Sivix Silk",
+  "kind": "material"
+ },
+ {
+  "id": "gloam_scythe",
+  "name": "Gloam Scythe",
+  "kind": "material"
+ },
+ {
+  "id": "waterskin_empty",
+  "name": "Waterskin (empty)",
+  "kind": "waterskin"
+ },
+ {
+  "id": "waterskin_dirty",
+  "name": "Waterskin (pool water)",
+  "kind": "drink"
+ },
+ {
+  "id": "waterskin_clean",
+  "name": "Waterskin (clean)",
+  "kind": "drink"
+ },
+ {
+  "id": "water_bucket",
+  "name": "Bucket of Clean Water",
+  "kind": "drink"
+ },
+ {
+  "id": "plank_root",
+  "name": "Rootwood Plank",
+  "kind": "material"
+ },
+ {
+  "id": "plank_mushroom",
+  "name": "Mushroom Plank",
+  "kind": "material"
+ },
+ {
+  "id": "rope",
+  "name": "Rope",
+  "kind": "material"
+ },
+ {
+  "id": "leather",
+  "name": "Leather",
+  "kind": "material"
+ },
+ {
+  "id": "copper_ingot",
+  "name": "Copper Ingot",
+  "kind": "material"
+ },
+ {
+  "id": "silver_ingot",
+  "name": "Silver Ingot",
+  "kind": "material"
+ },
+ {
+  "id": "clay_brick",
+  "name": "Clay Brick",
+  "kind": "material"
+ },
+ {
+  "id": "lantern_lens",
+  "name": "Crystal Lens",
+  "kind": "material"
+ },
+ {
+  "id": "cut_stone",
+  "name": "Cut Stone",
+  "kind": "material"
+ },
+ {
+  "id": "cut_marble",
+  "name": "Cut Marble",
+  "kind": "material"
+ },
+ {
+  "id": "sporestone_block",
+  "name": "Sporestone Block",
+  "kind": "material"
+ },
+ {
+  "id": "amber_block",
+  "name": "Amber Block",
+  "kind": "material"
+ },
+ {
+  "id": "mushroom_brick",
+  "name": "Mushroom Brick",
+  "kind": "material"
+ },
+ {
+  "id": "keeper_heartstone",
+  "name": "Keeper's Heartstone",
+  "kind": "material"
+ },
+ {
+  "id": "bloomheart_core",
+  "name": "Bloomheart Core",
+  "kind": "material"
+ },
+ {
+  "id": "pickaxe_stone",
+  "name": "Stone Pickaxe",
+  "kind": "pickaxe"
+ },
+ {
+  "id": "pickaxe_copper",
+  "name": "Copper Pickaxe",
+  "kind": "pickaxe"
+ },
+ {
+  "id": "pickaxe_silver",
+  "name": "Silver Pickaxe",
+  "kind": "pickaxe"
+ },
+ {
+  "id": "axe_stone",
+  "name": "Stone Axe",
+  "kind": "axe"
+ },
+ {
+  "id": "axe_copper",
+  "name": "Copper Axe",
+  "kind": "axe"
+ },
+ {
+  "id": "axe_silver",
+  "name": "Silver Axe",
+  "kind": "axe"
+ },
+ {
+  "id": "build_hammer",
+  "name": "Build Hammer",
+  "kind": "hammer"
+ },
+ {
+  "id": "lantern_back",
+  "name": "Back Lantern",
+  "kind": "lantern"
+ },
+ {
+  "id": "campfire",
+  "name": "Campfire",
+  "kind": "station"
+ },
+ {
+  "id": "workbench",
+  "name": "Workbench",
+  "kind": "station"
+ },
+ {
+  "id": "smelter",
+  "name": "Smelter",
+  "kind": "station"
+ },
+ {
+  "id": "anvil",
+  "name": "Anvil",
+  "kind": "station"
+ },
+ {
+  "id": "cooking_pot",
+  "name": "Cooking Pot",
+  "kind": "station"
+ },
+ {
+  "id": "tanning_rack",
+  "name": "Tanning Rack",
+  "kind": "station"
+ },
+ {
+  "id": "masonry_table",
+  "name": "Masonry Table",
+  "kind": "station"
+ },
+ {
+  "id": "bed",
+  "name": "Bed",
+  "kind": "station"
+ },
+ {
+  "id": "copper_drip_basin",
+  "name": "Copper Drip Basin",
+  "kind": "station"
+ },
+ {
+  "id": "crystal_sconce",
+  "name": "Crystal Sconce",
+  "kind": "station"
+ },
+ {
+  "id": "glow_marker",
+  "name": "Glow Marker",
+  "kind": "station"
+ },
+ {
+  "id": "twin_smelter",
+  "name": "Twin Smelter",
+  "kind": "station"
+ },
+ {
+  "id": "training_dummy",
+  "name": "Training Dummy",
+  "kind": "station"
+ },
+ {
+  "id": "chest_copper",
+  "name": "Copper-bound Chest",
+  "kind": "chest"
+ },
+ {
+  "id": "crate_ore",
+  "name": "Ore Crate",
+  "kind": "chest"
+ },
+ {
+  "id": "whetstone",
+  "name": "Whetstone",
+  "kind": "tonic"
+ },
+ {
+  "id": "bugbane_oil",
+  "name": "Bugbane Oil",
+  "kind": "tonic"
+ },
+ {
+  "id": "war_horn",
+  "name": "War Horn",
+  "kind": "horn"
+ },
+ {
+  "id": "spore_bomb",
+  "name": "Spore Bomb",
+  "kind": "throw"
+ },
+ {
+  "id": "blasting_pod",
+  "name": "Blasting Pod",
+  "kind": "throw"
+ },
+ {
+  "id": "spore_mask",
+  "name": "Spore Mask",
+  "kind": "wear"
+ },
+ {
+  "id": "prospectors_lens",
+  "name": "Prospector's Lens",
+  "kind": "lens"
+ },
+ {
+  "id": "recipe_page",
+  "name": "Old Recipe Page",
+  "kind": "page"
+ },
+ {
+  "id": "rope_ladder",
+  "name": "Rope Ladder",
+  "kind": "station"
+ },
+ {
+  "id": "gem_bench",
+  "name": "Gem Bench",
+  "kind": "station"
+ },
+ {
+  "id": "rune_slab",
+  "name": "Rune Slab",
+  "kind": "station"
+ },
+ {
+  "id": "farm_plot",
+  "name": "Farm Plot",
+  "kind": "station"
+ },
+ {
+  "id": "drip_bucket",
+  "name": "Drip Bucket",
+  "kind": "station"
+ },
+ {
+  "id": "crossbow_stone",
+  "name": "Wooden Crossbow",
+  "kind": "weapon"
+ },
+ {
+  "id": "crossbow_copper",
+  "name": "Copper Crossbow",
+  "kind": "weapon"
+ },
+ {
+  "id": "crossbow_silver",
+  "name": "Silver Crossbow",
+  "kind": "weapon"
+ },
+ {
+  "id": "bolt_stone",
+  "name": "Stone-tip Bolt",
+  "kind": "ammo"
+ },
+ {
+  "id": "bolt_metal",
+  "name": "Metal-tip Bolt",
+  "kind": "ammo"
+ },
+ {
+  "id": "bolt_thumper",
+  "name": "Thumper Bolt",
+  "kind": "ammo"
+ },
+ {
+  "id": "bolt_ember",
+  "name": "Ember Bolt",
+  "kind": "ammo"
+ },
+ {
+  "id": "bolt_rime",
+  "name": "Rime Bolt",
+  "kind": "ammo"
+ },
+ {
+  "id": "bolt_blight",
+  "name": "Blight Bolt",
+  "kind": "ammo"
+ },
+ {
+  "id": "bolt_glow",
+  "name": "Glow Bolt",
+  "kind": "ammo"
+ },
+ {
+  "id": "sword_stone",
+  "name": "Stone Sword",
+  "kind": "weapon"
+ },
+ {
+  "id": "mace_stone",
+  "name": "Stone Mace",
+  "kind": "weapon"
+ },
+ {
+  "id": "spear_stone",
+  "name": "Stone Spear",
+  "kind": "weapon"
+ },
+ {
+  "id": "shield_stone",
+  "name": "Wooden Shield",
+  "kind": "shield"
+ },
+ {
+  "id": "axe_2h_stone",
+  "name": "Stone Great Axe",
+  "kind": "weapon"
+ },
+ {
+  "id": "mace_2h_stone",
+  "name": "Stone Great Maul",
+  "kind": "weapon"
+ },
+ {
+  "id": "sword_copper",
+  "name": "Copper Sword",
+  "kind": "weapon"
+ },
+ {
+  "id": "mace_copper",
+  "name": "Copper Mace",
+  "kind": "weapon"
+ },
+ {
+  "id": "spear_copper",
+  "name": "Copper Spear",
+  "kind": "weapon"
+ },
+ {
+  "id": "shield_copper",
+  "name": "Copper Shield",
+  "kind": "shield"
+ },
+ {
+  "id": "axe_2h_copper",
+  "name": "Copper Great Axe",
+  "kind": "weapon"
+ },
+ {
+  "id": "mace_2h_copper",
+  "name": "Copper Great Maul",
+  "kind": "weapon"
+ },
+ {
+  "id": "sword_silver",
+  "name": "Silver Sword",
+  "kind": "weapon"
+ },
+ {
+  "id": "mace_silver",
+  "name": "Silver Mace",
+  "kind": "weapon"
+ },
+ {
+  "id": "spear_silver",
+  "name": "Silver Spear",
+  "kind": "weapon"
+ },
+ {
+  "id": "shield_silver",
+  "name": "Silver Shield",
+  "kind": "shield"
+ },
+ {
+  "id": "axe_2h_silver",
+  "name": "Silver Great Axe",
+  "kind": "weapon"
+ },
+ {
+  "id": "mace_2h_silver",
+  "name": "Silver Great Maul",
+  "kind": "weapon"
+ },
+ {
+  "id": "chest_small",
+  "name": "Chest",
+  "kind": "chest"
+ },
+ {
+  "id": "chest_stone",
+  "name": "Stone Chest",
+  "kind": "chest"
+ },
+ {
+  "id": "gem_ember",
+  "name": "Ember Gem",
+  "kind": "gem"
+ },
+ {
+  "id": "gem_rime",
+  "name": "Rime Gem",
+  "kind": "gem"
+ },
+ {
+  "id": "gem_blight",
+  "name": "Blight Gem",
+  "kind": "gem"
+ },
+ {
+  "id": "gem_leech",
+  "name": "Leech Gem",
+  "kind": "gem"
+ },
+ {
+  "id": "gem_jolt",
+  "name": "Jolt Gem",
+  "kind": "gem"
+ },
+ {
+  "id": "gem_swift",
+  "name": "Swift Gem",
+  "kind": "gem"
+ },
+ {
+  "id": "gem_bulwark",
+  "name": "Bulwark Gem",
+  "kind": "gem"
+ },
+ {
+  "id": "gem_keen",
+  "name": "Keen Gem",
+  "kind": "gem"
+ },
+ {
+  "id": "gem_burrow",
+  "name": "Burrow Gem",
+  "kind": "gem"
+ },
+ {
+  "id": "gem_cinder_wake",
+  "name": "Cinder Wake (large rare glowing gem)",
+  "kind": "gem"
+ },
+ {
+  "id": "gem_hoarfrost_pulse",
+  "name": "Hoarfrost Pulse (large rare glowing gem)",
+  "kind": "gem"
+ },
+ {
+  "id": "gem_echoing_guard",
+  "name": "Echoing Guard (large rare glowing gem)",
+  "kind": "gem"
+ },
+ {
+  "id": "gem_rootbound_heart",
+  "name": "Rootbound Heart (large rare glowing gem)",
+  "kind": "gem"
+ },
+ {
+  "id": "gem_bloomrot",
+  "name": "Bloomrot (large rare glowing gem)",
+  "kind": "gem"
+ },
+ {
+  "id": "gem_shiftstep",
+  "name": "Shiftstep (large rare glowing gem)",
+  "kind": "gem"
+ },
+ {
+  "id": "dish_glowcap_skewer",
+  "name": "Glowcap Skewer",
+  "kind": "food"
+ },
+ {
+  "id": "dish_seared_critter",
+  "name": "Seared Critter",
+  "kind": "food"
+ },
+ {
+  "id": "dish_firecap_skewer",
+  "name": "Firecap Skewer",
+  "kind": "food"
+ },
+ {
+  "id": "dish_tuber_mash",
+  "name": "Tuber Mash",
+  "kind": "food"
+ },
+ {
+  "id": "dish_hollowcap_stew",
+  "name": "Hollowcap Stew",
+  "kind": "food"
+ },
+ {
+  "id": "dish_glow_broth",
+  "name": "Glow Broth",
+  "kind": "food"
+ },
+ {
+  "id": "dish_miners_pie",
+  "name": "Miner's Pie",
+  "kind": "food"
+ },
+ {
+  "id": "dish_hearth_stew",
+  "name": "Old Hearth Stew",
+  "kind": "food"
+ },
+ {
+  "id": "dish_beetle_roast",
+  "name": "Beetle Roast",
+  "kind": "food"
+ },
+ {
+  "id": "dish_stalk_steak",
+  "name": "Stalk Steak",
+  "kind": "food"
+ },
+ {
+  "id": "dish_ember_skewer",
+  "name": "Ember Skewer",
+  "kind": "food"
+ },
+ {
+  "id": "dish_truffle_risotto",
+  "name": "Truffle Risotto",
+  "kind": "food"
+ },
+ {
+  "id": "dish_chitin_crunch",
+  "name": "Shell Crunch",
+  "kind": "food"
+ },
+ {
+  "id": "dish_spore_ward_stew",
+  "name": "Spore Ward Stew",
+  "kind": "food"
+ },
+ {
+  "id": "dish_bug_hotpot",
+  "name": "Bug Hotpot",
+  "kind": "food"
+ },
+ {
+  "id": "dish_jungle_pie",
+  "name": "Jungle Pie",
+  "kind": "food"
+ },
+ {
+  "id": "drink_bellcap_juice",
+  "name": "Bellcap Juice",
+  "kind": "drink"
+ },
+ {
+  "id": "drink_glowcap_tea",
+  "name": "Glowcap Tea",
+  "kind": "drink"
+ },
+ {
+  "id": "drink_firecap_cordial",
+  "name": "Firecap Cordial",
+  "kind": "drink"
+ },
+ {
+  "id": "drink_moss_ale",
+  "name": "Moss Ale",
+  "kind": "drink"
+ },
+ {
+  "id": "drink_spore_mead",
+  "name": "Spore Mead",
+  "kind": "drink"
+ },
+ {
+  "id": "drink_deep_stout",
+  "name": "Deep Stout",
+  "kind": "drink"
+ },
+ {
+  "id": "rune_ochre",
+  "name": "Carved stone rune tablet glowing ochre-yellow",
+  "kind": "rune"
+ },
+ {
+  "id": "rune_crimson",
+  "name": "Carved stone rune tablet glowing crimson-red",
+  "kind": "rune"
+ },
+ {
+  "id": "rune_cobalt",
+  "name": "Carved stone rune tablet glowing cobalt-blue",
+  "kind": "rune"
+ },
+ {
+  "id": "rune_verdant",
+  "name": "Carved stone rune tablet glowing green",
+  "kind": "rune"
+ },
+ {
+  "id": "lantern",
+  "name": "Lantern",
+  "kind": "lantern"
+ },
+ {
+  "id": "cap_leather",
+  "name": "Leather Cap",
+  "kind": "wear"
+ },
+ {
+  "id": "tunic_leather",
+  "name": "Leather Tunic",
+  "kind": "wear"
+ },
+ {
+  "id": "trousers_leather",
+  "name": "Leather Trousers",
+  "kind": "wear"
+ },
+ {
+  "id": "boots_leather",
+  "name": "Leather Boots",
+  "kind": "wear"
+ },
+ {
+  "id": "helm_copper",
+  "name": "Copper Helm",
+  "kind": "wear"
+ },
+ {
+  "id": "mail_copper",
+  "name": "Copper Mail",
+  "kind": "wear"
+ },
+ {
+  "id": "greaves_copper",
+  "name": "Copper Greaves",
+  "kind": "wear"
+ },
+ {
+  "id": "boots_copper",
+  "name": "Copper-shod Boots",
+  "kind": "wear"
+ },
+ {
+  "id": "satchel",
+  "name": "Leather Satchel",
+  "kind": "wear"
+ },
+ {
+  "id": "snail_meat",
+  "name": "Snail Meat",
+  "kind": "material"
+ },
+ {
+  "id": "shell_piece",
+  "name": "Shell Piece",
+  "kind": "material"
+ },
+ {
+  "id": "wing_leather",
+  "name": "Wing Leather",
+  "kind": "material"
+ },
+ {
+  "id": "bat_fang",
+  "name": "Bat Fang",
+  "kind": "material"
+ },
+ {
+  "id": "bug_meat",
+  "name": "Bug Meat",
+  "kind": "material"
+ },
+ {
+  "id": "glow_gland",
+  "name": "Glow Gland",
+  "kind": "material"
+ },
+ {
+  "id": "bolt_fang",
+  "name": "Fang Bolt",
+  "kind": "ammo"
+ },
+ {
+  "id": "pickaxe_fang",
+  "name": "Fang Pickaxe",
+  "kind": "pickaxe"
+ },
+ {
+  "id": "shield_shell",
+  "name": "Shell Shield",
+  "kind": "shield"
+ },
+ {
+  "id": "glow_lamp",
+  "name": "Glow Lamp",
+  "kind": "station"
+ },
+ {
+  "id": "dish_cooked_snail",
+  "name": "Cooked Snail",
+  "kind": "food"
+ },
+ {
+  "id": "dish_roasted_bug",
+  "name": "Roasted Bug",
+  "kind": "food"
+ },
+ {
+  "id": "dish_snail_stew",
+  "name": "Snail Stew",
+  "kind": "food"
+ },
+ {
+  "id": "dish_bug_stew",
+  "name": "Bug Stew",
+  "kind": "food"
+ },
+ {
+  "id": "helm_shell",
+  "name": "Shell Helm",
+  "kind": "wear"
+ },
+ {
+  "id": "plate_shell",
+  "name": "Shell Plate",
+  "kind": "wear"
+ },
+ {
+  "id": "greaves_shell",
+  "name": "Shell Greaves",
+  "kind": "wear"
+ },
+ {
+  "id": "boots_shell",
+  "name": "Shell Boots",
+  "kind": "wear"
+ },
+ {
+  "id": "chopping_block",
+  "name": "Chopping Block",
+  "kind": "station"
+ },
+ {
+  "id": "carpenters_vise",
+  "name": "Carpenter's Vise",
+  "kind": "station"
+ },
+ {
+  "id": "tool_rack",
+  "name": "Tool Rack",
+  "kind": "station"
+ },
+ {
+  "id": "chisel_rack",
+  "name": "Chisel Rack",
+  "kind": "station"
+ },
+ {
+  "id": "stone_saw",
+  "name": "Stone Saw",
+  "kind": "station"
+ },
+ {
+  "id": "bellows",
+  "name": "Bellows",
+  "kind": "station"
+ },
+ {
+  "id": "grindstone",
+  "name": "Grindstone",
+  "kind": "station"
+ },
+ {
+  "id": "coal",
+  "name": "Coal",
+  "kind": "fuel"
+ },
+ {
+  "id": "kiln",
+  "name": "Kiln",
+  "kind": "station"
+ }
+]

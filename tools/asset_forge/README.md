@@ -70,3 +70,21 @@ a preview.
 
 Licences: TRELLIS.2 and TripoSR are MIT (fine to sell). Log every forged asset in `CREDITS.md`
 and mark it as AI-made (Steam asks).
+
+## Many at once: icons → 3D (`batch3d.py`)
+
+```
+<AI3D_HOME>/venv-web/Scripts/python tools/asset_forge/batch3d.py            # every item not made yet
+<AI3D_HOME>/venv-web/Scripts/python tools/asset_forge/batch3d.py anvil bed  # remake these
+```
+
+Cuts each item's full-size picture from its ChatGPT sheet (`<AI3D_HOME>/work/icon_sheets/`) and forges it with TripoSR.
+Stations + chests → `assets/models/stations/`, everything else → `assets/models/items/`.
+Tools/weapons come from separate straight-up sheets (`tool_batches.json`), so handle = +Y, grip at the origin.
+
+Model rules (what the game code relies on): front faces +Z, origin = bottom centre, +Y up, meters, one matte mesh.
+
+Check them all: `blender --background --factory-startup --python tools/asset_forge/overview.py -- assets/models/items out.png 13`
+
+Tips learned: pictures seen from above make models lean, so ask for a low front view; diagonal tools come out flat,
+so ask for them standing straight up; thin parts (chains, fire) come out as blobs.

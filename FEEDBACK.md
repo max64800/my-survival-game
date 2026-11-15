@@ -45,6 +45,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F29. The game looks too "Roblox-y".** Make it look more like Valheim (Grounded if possible): real textures, better colours and shapes, not super realistic. → Claude 3, on the `visuals` branch: hand-painted rock, darker cave with fog and dust, painted grain on everything, fire, lantern, effects, cave clutter, monsters that move. Waiting for you to try it. *From: you. Said: 1×*
 - [ ] **F30. Animations: running, jumping, swinging…** → Claude 3, on the `visuals` branch: a real 3D dwarf with idle, walk, jog, sprint, jump + landing, mining swing, axe chop, sword attacks, roll, block, shield, crossbow, getting hit, eating, climbing ladders, getting up; friends see it in co-op. *From: you. Said: 1×*
 - [ ] **F31. Monsters: start with snails, bats and a beetle, polish them first.** Snails slow but hit hard, hide in the shell after a few hits (90% less damage); big bats that swoop in, attack, fly out; a beetle. Drops and uses chosen in a multiple-choice session (docs/design/monsters-first-three.md). → Claude 3, on the `visuals` branch: built; the other monsters are hidden for now. Waiting for you to try it. *From: you. Said: 1×*
+- [ ] **F34. Hand-built station models: second pass.** Anvil too simple (horn looks like a pyramid); bed too blocky (mattress, pillow, cover); fires are blobs (campfire, cooking pot, smelters, sconce); chest has big blocks at the bottom; copper chest should look different from the normal chest; stone chest → a stone crate; water in the copper basin and drip bucket (and the odd drop); farm-plot mushrooms; glow torch rope and top need more detail; ore crate ores float; rope doesn't look like rope; rune too simple; stray green bits on the rune slab and smelter; tanning-rack hide looks wacky; training dummy should be stone with more detail; cooking pot has a stick going into the pot. Loved: workbench, gem bench, masonry table, top of the chest. → Claude 2, in progress. *From: you. Said: 1×*
 
 *(Nov 14, your notes on every station, weapon, outfit and building piece. Full details, grouped by kind of problem: `docs/art/MODEL-FEEDBACK-2026-11-14.md`. New rule: every model in the workbench style; ChatGPT pictures whenever they help.)*
 
@@ -86,8 +87,13 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 
 ## Done
 
-- [x] ~~**F33. The Ore Crate should fill up visibly.**~~ Done Nov 14. The ore pile rises as the crate fills. (Added back: it was in the journal but missing here. Gems float, see F42.) *From: you. Said: 1×*
-- [x] ~~**F32. Kiln + furnaces that run themselves.**~~ Done Nov 14. Kiln: wood → coal. Smelter pulls ore + fuel from chests within 5 m; bars go back into a chest. Twin Smelter does both. (Added back: it was in the journal but missing here.) *From: you. Said: 1×*
+- [x] ~~**F32. Kiln + smelter that work on their own.**~~ Done Nov 14. New **Kiln** (Workbench: 15 stone, 8 clay) and **Coal**.
+  - Put a chest (or the Ore Crate) within 5 m. The Kiln takes wood from it and puts coal back in.
+  - The **Smelter** takes ore and fuel (coal first, then wood) from nearby chests and puts the bars into a chest.
+  - The **Twin Smelter** does both: one side smelts, the other makes coal. Coal also works as fuel when you smelt by hand.
+  *From: you. Said: 1×*
+- [x] ~~**F33. The Ore Crate should look fuller the more you put in.**~~ Done Nov 14. A pile of ore (Claude 2's model) shows inside the crate and rises as you fill it: a few ores already show, and it's heaped up at about 400 items. *From: you. Said: 1×*
+
 - [x] ~~**F27. The game grabs my mouse even when I'm in another program, and Claude's tests take my mouse.**~~ Fixed Nov 14. When you switch away (click another window or Alt+Tab), the game lets go of the mouse and pauses. Click back into the game to keep playing. Claude's test robots only *pretend* to hold the mouse now, so they never touch yours. *From: you. Said: 1×*
 - [x] ~~**F23. Real equipment slots.**~~ Done Nov 14. 9 slots in the bag window (Tab): Pickaxe, Lantern, Weapon, Shield, Head, Chest, Legs, Feet, Pack.
   - With an empty hand (or just holding rocks), you dig with the equipped pickaxe. **F** draws or puts away the equipped weapon.

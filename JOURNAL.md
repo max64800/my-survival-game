@@ -693,3 +693,151 @@ Why branches? Our rule says each step must be playable and approved before the n
     The preview page shows the list and scores, and gets the pictures after the owner says yes.
   - The budget file (`~/.claude/usage-latest.json`) doesn't exist on this Mac, so the 35% cap couldn't be measured.
     Kept it lean instead: about 35 requests and small screenshots, no helper agents.
+
+---
+
+> *Restored by Claude 2 on Nov 14 after an accidental wipe (Claude 1's helper crashed on a "→" and copied an empty file over the journal; see Claude 1's entry). Text re-added from Claude 2's own session, unchanged.*
+
+## Day 3, later — November 14, 2026: 3D models for (almost) everything
+
+**What we did**
+- Turned the icon pictures into **3D models with TripoSR** (free, on our PC): **22 stations and chests** (`assets/models/stations/`) and **157 items** (`assets/models/items/`): materials, food, drinks, gems, runes, equipment, and all **35 tools and weapons**.
+- Tools were re-drawn by ChatGPT **standing straight up** (3 new sheets), so the 3D tool comes out straight with the handle down: ready for the dwarf's hand.
+- New helpers: `tools/asset_forge/batch3d.py` (many models in one go), `overview.py` (one picture of all models), `icons.py slots` (faint empty-slot outlines).
+- Made 9 equipment icons (leather/copper armor, satchel) + 9 empty-slot outlines for Claude 1's new equipment panel.
+- Claude 3 hooked the models into the game (on their `visuals` branch): stations, chests, dropped items and held tools use our files when they exist, the old look otherwise.
+
+**Hurdles / mistakes (including Claude's)**
+- **Claude's bug:** the tool batch failed all 35 in 4 seconds: Claude passed a setting ("crumbs") the forge didn't know yet. Fix: added it, re-ran.
+- **Diagonal tools:** icons show tools at an angle, so the 3D pickaxe came out diagonal and flat. Fix: new straight-up pictures.
+- **Tilted stations:** the ore crate, gem bench and farm plot leaned, because the icons look down on them. An automatic "leveling" trick only half worked (it stood the farm plot up like a wall). Fix: new low, front-view pictures from ChatGPT.
+- **Faded colors** again: fixed by giving TripoSR models a bit more color strength in the cleanup.
+- The old blobby workbench test file made the batch skip the workbench. Fix: remade it from its icon.
+- Claude nearly added a "stash" step to a save command that would have hidden Claude 1's unsaved work; the safety check blocked it. Fix: saved only our own files.
+
+**Quality, honestly:** "good placeholder". Clearly the right objects from the front, softer and darker from the back.
+Important pieces (workbench, smelter, anvil) can be redone later with a better tool and swapped in without code changes.
+
+---
+
+## Day 3, evening — November 14, 2026: From "Play-Doh" to hand-built
+
+**What happened**
+- The owner looked at the AI models in the new 3D viewer page and said the gem bench "looks like it has been made of Play-Doh and squished". Fair: the free AI (TripoSR) can only make soft shapes.
+- New way: **Claude builds each model by hand in Blender with code**, from chunky parts (cut stone blocks, planks, beams, metal bands, rivets, gems), plus **hand-painted tiling textures** (stone, wood) made with ChatGPT. Kit: `tools/asset_forge/kit.py`, one script per model in `tools/asset_forge/builds/`.
+- First two done: **Gem Bench** and **Workbench** (the workbench follows the owner's own ChatGPT picture).
+- **Before/after kept for the videos** (owner's request): `journey/3d/v1_ai_triposr/` (all 179 AI models + overview pictures + the owner's "Play-Doh" screenshot) and `journey/3d/v2_hand_built/` (each rebuilt model + picture + the concept it was built from).
+- Made 18 more icons for the other Claudes: 14 for the new creatures (Rock Snail, Cave Bat, Rock Beetle items) and 4 for the Shell armor set.
+- 3D viewer page (a private web page with every model, spin/zoom, dwarf-for-scale, cave light): https://claude.ai/artifact/BBuhnNtmUdsJ48WiwUfsij
+
+**Hurdles / mistakes (including Claude's)**
+- **"Weird lines everywhere":** thin stripes across every model in the viewer. Cause: the viewer's shadow fell on the model's own surface ("shadow acne"). Fix: a shadow bias setting. It was the viewer, not the models.
+- **Models wouldn't load on the web page:** the page host doesn't serve `.glb` files and blocks the way three.js loads pictures inside models. Fix: ship models as text (JSON) and rebuild them in the page.
+- **Grabbed the wrong ChatGPT picture once:** the long chat had scrolled, so the newest picture wasn't loaded yet. Fix: scroll to the bottom first, and always look at the picture before using it.
+- First flat-color hand-built version looked like a toy (the "Roblox" problem again). Fix: hand-painted textures.
+
+**Later the same evening: all 22 stations hand-built**
+- The owner loved the hand-built gem bench and asked for the same everywhere. Done for **all 22 stations and chests**:
+  anvil, bed, campfire, 3 chests, cooking pot, copper drip basin, ore crate, crystal sconce, drip bucket, farm plot,
+  gem bench, glow marker, masonry table, rope ladder, rune slab, smelter, twin smelter, tanning rack, training dummy, workbench.
+- Six more hand-painted textures from ChatGPT: iron, copper, fur, straw, leather, soil (copper, straw and fur toned down; they came out too bright).
+- Every model also saved in `journey/3d/v2_hand_built/` with its picture and concept; overview: `journey/3d/v2_hand_built/overview_stations.png`.
+
+**Hurdles / mistakes**
+- **Smelters looked like a pile of rocks** (blocks stacked in rings). Fix: one solid stone dome with a ring of big blocks at its foot and a clear glowing mouth.
+- **Basin and bucket looked like closed drums:** the water was hidden under the shape's solid top. Fix: lower body, water on top, a rim ring for the wall.
+- **Glowing parts burned to plain white** (runes, crystals, fire). Fix: much lower glow strength so the color shows.
+- **Claude's quoting slip:** a long shell command with all 11 scripts broke on a quote and wrote nothing. Fix: wrote them with a small Python generator instead.
+- **Merge tidy-up:** Claude 3 committed the same 18 icons Claude 2 had made; Claude 2 checked they were byte-identical before removing its own copies so Claude 1 could update the main folder.
+
+**Second pass after the owner's review (F34)**
+- Owner reviewed every station. Loved: workbench, gem bench, masonry table, ore crate, top of the chest. Fixed the rest:
+  real curling flame tongues instead of glowing blobs (campfire, cooking pot, both smelters); a detailed anvil (stepped feet,
+  tapered waist, heel, hardy hole, curved horn, stump with root flares); a soft bed (rounded mattress and pillow, fur blanket
+  draping over the sides); no blocks under the chest; a copper strongbox that looks different from the normal chest; the stone
+  chest is now a **stone crate**; water with ripples and a proper drop; six-sided crystal clusters; real mushrooms; twisted-rope
+  texture (and rope wound around posts); a richer carved rune circle; a real hide shape; a stone training dummy; the cooking pot
+  hangs on a chain (no more stick); no stray moss bits.
+- **Ore crate fills up (F33):** `crate_ore.glb` (empty) + `crate_ore_fill.glb` (the heap), for the game to grow with the fill level.
+- **Twin smelter = kiln + smelter:** left half a charcoal kiln with a log pile, right half the ore smelter with a glowing crucible.
+- New game idea written down as **F32**: the kiln makes coal from wood in a nearby chest; the smelter takes coal and ore from nearby chests by itself.
+
+**Hurdles / mistakes**
+- The anvil's heel flew off to the side: Claude turned it around the world's centre instead of its own. Fix: built it in place.
+- The basin's water disappeared again under a solid copper band Claude added. Fix: a ring instead.
+- Fire and crystals were still too bright (nearly white). Fix: much lower glow, deeper orange and amber colours.
+- The shell choked on quotes in a long command twice. Fix: write scripts to files first, then run them.
+- **Files were too big** (2–5 MB per station, 55 MB in all): every model carried its own PNG copies of the textures, and an open Godot editor had unpacked even more copies (plus leftovers from the old AI models). Fix: textures inside models saved as JPEG (about 5× smaller) and the throwaway unpacked copies cleared. All stations now: 13 MB.
+
+**Third pass + first hand-built items (same evening)**
+- Owner's third review of the stations, all fixed: anvil sits on the ground and its horn grows smoothly out of the face; bed = the frame + one
+  **dirty, lumpy, sagging sackcloth mattress** (new grimy texture from ChatGPT); straight log teepee in the campfire; chain links that hook
+  into each other; rope on the cooking-pot corners; no block under the chest; a hipped copper lid; open stone crate; ropes that really touch
+  the hide, the stones and the ladder bar; richer rune slab (border, double ring, glyph columns, capstone); no stray green bits; tidy twin smelter.
+- **Fire:** the game already has animated fire (Claude 3's particles: flames, sparks, smoke). So the models no longer have frozen flames;
+  they carry invisible **fire spots** (`fire_spot_<size>`) where the game plays the real fire. Claude 3 will hook them up in `station.gd`.
+- **All 35 tools and weapons hand-built** by one builder script (`builds/items_tools.py`): pickaxes, axes, great axes, swords, maces, mauls,
+  spears, crossbows, shields, bolts and the build hammer, in stone / copper / new **silver** texture. Straight up, grip at the bottom.
+
+**Hurdles / mistakes**
+- **Models turned WHITE in the game** after Claude 2's JPEG switch. Claude 3 found why: Blender writes a tiny EXIF block into each JPEG and
+  Godot 4.7.2 can't read it. Fix: Claude 3's `glb_jpeg_fix.py` strips it; the kit now runs it after every save. Checked in Godot: textures load.
+- Claude 2 rotated the anvil's heel around the world centre (it flew off) and later left two junk lines in the bed script; both caught before use.
+
+**Fourth review (stations) + second review (tools), and gear**
+- Stations: chest body rebuilt from stacked planks (the "giant block at the bottom" is gone); cooking-pot chain shortened so it hooks
+  straight onto the pot handle; the stone crate's grey floor is now stone. Owner: bed, anvil, campfire, copper chest, farm plot, rope ladder,
+  rune slab, smelters, stone crate, tanning rack, training dummy, twin smelter all good.
+- Tools v2: shaped hafts (taper, leather-wrapped grip, end knob, metal langets), rough knapped stone heads tied with crossed lashing,
+  a hand-chipped lumpy stone sword, real swept feather fletching on bolts with proper arrowheads, a crossbow with stock, trigger lever,
+  lashed recurved bow and stirrup, shields with a grip bar and arm strap on the back, a shaped build hammer.
+- **22 gear and armor items** hand-built (`builds/items_gear.py`): hand + back lantern, leather/copper/shell helmets, chest armor,
+  greaves and boots, satchel, spore mask, prospector's lens, war horn, waterskins, bucket.
+- **7 new station extras** for Claude 1's station levels: icons + hand-built models (chopping block, carpenter's vise, tool rack,
+  chisel rack, stone saw, bellows, grindstone).
+
+**Hurdles / mistakes**
+- Chest-armor shoulder pads flew off to the side again (a rotation around the wrong point) and a stray disc lay next to the war horn. Fixed.
+
+---
+
+## Day 3, night — November 14, 2026: Every item hand-built, research, and building pieces (Claude 2, owner away)
+
+**What we did**
+- **Studied first** (owner's request): stylized prop design (silhouette first; big → medium → small shapes; chunky, never perfectly
+  straight; consistent bevels; build from separate pieces; spend triangles on outlines), game fire (particles + noise shaders,
+  embers, flickering light) and animation basics. Written down as rules: `tools/asset_forge/STYLE_NOTES.md`.
+- **All remaining items hand-built** with one builder per group:
+  - `builds/items_materials.py` (88): rocks in 7 tinted stone textures, ores, glowing crystal clusters on rock, cut blocks, bricks,
+    stacked ingots, tied planks, roots, fiber bundles, rope coil, leather, hides, meats with bone and fat, mushrooms, monster parts
+    (shell plates, glands, venom sacs, fangs, scythe blades, silk), gems (six-sided crystals; epic ones in silver settings), runes,
+    bombs, oil, page, whetstone, heartstones.
+  - `builds/items_food.py` (26): stews in bowls and pots, skewers, pies with lattice, roasts on boards, mash, risotto, tankards with
+    foam, cups, a cordial bottle, a mead jug.
+  - Creature extras: fang bolt, fang pickaxe, shell shield, glow lamp station. For Claude 1: kiln station + coal and kiln icons.
+- **Building pieces** (owner: "like Conan Exiles"): `builds/build_pieces.py` builds **all 44 piece types in 4 materials = 176 models**
+  (rootwood planks with frames and iron straps, staggered cut-stone blocks over mortar, clay bricks, riveted copper plates),
+  plus new **column base / shaft / capital** pieces. They match Claude 1's piece code exactly (same origin, sizes and directions),
+  and Claude 1's code already loads them (`assets/models/build/<piece>__<family>.glb`, visual only).
+- **Decor** for Claude 1's new Decor tab (37 models): stackable column base/shaft/capital in 5 stone families, table, bench, chair,
+  shelf, barrel, crate, rug, banner, wall shield, wall sconce, weapon rack, in the families Claude 1 allows.
+- New ChatGPT textures: roof **shingles** and **slate**; tinted rock textures (marble, basalt, clay, brown rock, amberrock,
+  sporestone, brick), pale mushroom wood, red banner cloth and rug cloth made from existing ones.
+
+**Hurdles / mistakes (including Claude's)**
+- Gems first looked like flat pale discs (too much glow, wrong tilt) → switched to the classic six-sided "game gem" shape.
+- Organic things (slime, glands, meat) were plain eggs → bumps, drips, fat layers, bones. Veins first stuck out like spikes → removed.
+- Stews were hidden under the bowl's solid top (third time this mistake happened: basin, bucket, bowls) → liquid always above the rim now.
+- Grill marks kept standing up like fins; dropped for now.
+- A brick wall came out at 27,000 triangles, and all building pieces together at 55 MB → simpler bricks, fewer rivets, no "wobble"
+  on building blocks, 256-pixel textures for building pieces (they're placed by the hundred). Now 43 MB for 176 pieces; sharing
+  one copy of each texture across all pieces would shrink it a lot more (needs a different file format; a later step).
+- Gables flickered: the flat backing was exactly as thick as the stones, so the two surfaces fought. Fix: thinner, darker backing.
+- Claude's quick text searches for item lists missed entries twice (several items on one line); fixed by reading the lists properly.
+- **Journal wiped by accident** (Claude 1's helper crashed on a "→" and an empty file replaced the journal). Claude 2 re-added all its
+  entries from its own session. Lesson for everyone: commit the journal often, and always read/write it as UTF-8.
+- **Viewer update:** the 3D viewer page now has a **Building pieces** tab with all 207 building and decor models (38 MB), and its
+  subtitle no longer calls the models "AI placeholders". Claude 2 had counted 213 pieces; the real number is 207 (a counting slip).
+- **Ramp** (asked for by Claude 1): a sloped wedge piece in 4 materials, with stone or wood slabs up the slope and 4 wooden grip
+  strips across it. Mistake: in the first try the slabs tilted the wrong way and stuck out like broken steps. Claude 2 flipped the
+  tilt and checked the size and direction against Claude 1's code.

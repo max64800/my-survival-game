@@ -3,6 +3,7 @@
     python icons.py prompts items.json        -> writes icon_batches.json + ICON_PROMPTS.md
     python icons.py cut 3 sheet.png           -> cuts batch 3's 4x4 sheet into assets/icons/<id>.png
     python icons.py contact                   -> makes a contact sheet of all icons (to check them)
+    python icons.py slots                     -> faint silhouettes for empty equipment slots (slot_<name>.png)
 
 items.json comes from Godot (every id, name, kind). Each batch is 16 items = one 4x4 ChatGPT sheet.
 Background removal uses rembg with ISNet (Apache-2.0), never rembg's default (BRIA, not free to sell).
@@ -89,6 +90,23 @@ def cut(batch_no, sheet_path):
 	print(f"Sheet {batch_no}: {len(ids)} icons -> {ICONS}")
 
 
+# Empty equipment slot -> which item's outline to show (faint, so it reads as "put a ... here").
+SLOTS = {"pickaxe": "pickaxe_stone", "lantern": "lantern", "weapon": "sword_stone", "shield": "shield_stone",
+	"head": "helm_copper", "chest": "tunic_leather", "legs": "trousers_leather", "feet": "boots_leather",
+	"pack": "satchel"}
+
+
+def slots():
+	from PIL import Image
+	for slot, item_id in SLOTS.items():
+		src = Image.open(ICONS / f"{item_id}.png").convert("RGBA")
+		alpha = src.getchannel("A").point(lambda a: int(a * 0.28))
+		sil = Image.new("RGBA", src.size, (225, 215, 200, 0))
+		sil.putalpha(alpha)
+		sil.save(ICONS / f"slot_{slot}.png")
+		print(f"  slot_{slot} <- {item_id}")
+
+
 def contact():
 	from PIL import Image
 	files = sorted(ICONS.glob("*.png"))
@@ -111,6 +129,8 @@ if __name__ == "__main__":
 		make_prompts(sys.argv[2])
 	elif cmd == "cut":
 		cut(int(sys.argv[2]), sys.argv[3])
+	elif cmd == "slots":
+		slots()
 	elif cmd == "contact":
 		contact()
 	else:
