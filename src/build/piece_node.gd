@@ -165,6 +165,9 @@ static func model_misfit(p_piece: String, box: AABB) -> String:
 			return "%s size %.2f m, should be %.2f" % ["xyz"[axis], box.size[axis], w]
 		if absf(box.get_center()[axis] - want.get_center()[axis]) > maxf(0.1 * w, 0.12):
 			return "%s middle at %.2f m, should be %.2f" % ["xyz"[axis], box.get_center()[axis], want.get_center()[axis]]
+	# Wall decor hangs on the wall: a model still standing on a floor post is too tall.
+	if Pieces.LIST[p_piece].get("on_wall", false) and box.size.y > want.size.y * 1.2 + 0.05:
+		return "y size %.2f m, should be %.2f (hangs on a wall, no floor post)" % [box.size.y, want.size.y]
 	return ""
 
 

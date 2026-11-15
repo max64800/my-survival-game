@@ -179,16 +179,19 @@ func _extras(dwarf: Dwarf, base: Vector3, lamp: OmniLight3D) -> void:
 	await _shot("extras_crates")
 
 
-## `part=edges` (feedback F58/F59): a doorway, a Stone Arch and an Arched Doorway in stone, brick and
-## copper, photographed close up from several angles, lit by a small warm lamp by the camera (like the
-## lantern). `norim` turns the shader's rim light off, to compare.
+## `part=edges` (feedback F58/F59/F76): in each style a doorway built next to a wall (like a real house) and
+## one doorway on its own (its open ends show), photographed close up from several angles, lit by a small
+## warm lamp by the camera (like the lantern). Two shots 2° apart at each angle: shimmer shows as stripes
+## that change between them. `norim` turns the shader's rim light off, to compare.
 func _edges(dwarf: Dwarf, base: Vector3, lamp: OmniLight3D) -> void:
-	var fams := ["cut_stone", "clay_brick", "copper_ingot"]
+	var fams := ["cut_stone", "clay_brick", "plank_root"]
 	for i in fams.size():
-		for j in 3:
-			var p := base + Vector3((j - 1) * 3.0, 0, -i * 3.0)
-			_place("foundation", "cut_stone", p + Vector3(0, -1, 0), 0)
-			_place(["doorway", "arch", "arch_doorway"][j], fams[i], p, 0)
+		var row := base + Vector3(0, 0, -i * 4.0)
+		for x in [-4.0, 0.0, 2.0]:
+			_place("foundation", fams[i] if fams[i] != "plank_root" else "cut_stone", row + Vector3(x, -1, 0), 0)
+		_place("doorway", fams[i], row + Vector3(-4.0, 0, 0), 0)  # on its own
+		_place("wall", fams[i], row, 0)
+		_place("doorway", fams[i], row + Vector3(2.0, 0, 0), 0)  # beside the wall
 	await _wait(0.8)
 	if OS.get_cmdline_user_args().has("norim"):
 		for m in Look._cache.values():
@@ -198,18 +201,17 @@ func _edges(dwarf: Dwarf, base: Vector3, lamp: OmniLight3D) -> void:
 	lamp.light_color = Color(1.0, 0.75, 0.45)
 	lamp.omni_range = 9.0
 	lamp.light_energy = 1.6
-	var n := 0
 	for row in 3:
-		for ang in [0.0, 35.0, 70.0]:
-			var a := deg_to_rad(ang)
-			var at := base + Vector3(0, 1.1, -row * 3.0)
-			var from := at + Vector3(sin(a) * 3.2, 0.5, cos(a) * 3.2)
-			_look(dwarf, from - Vector3.UP * 1.5, at)
-			dwarf._zoom = 0.0
-			lamp.global_position = from + Vector3(0.4, 0.3, 0)
-			await _wait(0.5)
-			await _shot("edges_%s_%02d" % [fams[row], int(ang)])
-			n += 1
+		for view in [[2.0, 0.0], [2.0, 40.0], [1.0, -60.0], [-4.0, 75.0], [-4.0, -110.0]]:
+			for wiggle in [0.0, 2.0]:
+				var a := deg_to_rad(view[1] + wiggle)
+				var at := base + Vector3(view[0], 1.1, -row * 4.0)
+				var from := at + Vector3(sin(a) * 2.6, 0.4, cos(a) * 2.6)
+				_look(dwarf, from - Vector3.UP * 1.5, at)
+				dwarf._zoom = 0.0
+				lamp.global_position = from + Vector3(0.4, 0.3, 0)
+				await _wait(0.4)
+				await _shot("edges_%s_%+04d%s" % [fams[row], int(view[1]), "b" if wiggle > 0.0 else ""])
 
 
 # ================================================================== part=house (owner's test list, Nov 15)

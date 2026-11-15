@@ -81,6 +81,10 @@ func test_wall_decor_models_exist() -> void:
 		var model: String = Pieces.LIST[id].get("model", "")
 		if model != "":
 			check(ResourceLoader.exists("res://assets/models/%s.glb" % model), "%s has its model %s" % [id, model])
+			# Until a model fits its wall spot (flat back, agreed size) the game shows a plain board instead.
+			var mesh := PieceNode.forged_mesh(id, "plank_root")
+			if mesh == null:
+				print("        %s: model not used yet (doesn't fit %s)" % [model, Pieces.LIST[id].size])
 
 
 ## Rule 1: every model in the game is hand-built by a script in tools/asset_forge (no Play-Doh).

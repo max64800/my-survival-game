@@ -1113,3 +1113,46 @@ Important pieces (workbench, smelter, anvil) can be redone later with a better t
 - **Mistakes and hurdles (including Claude's):**
   - The first photo run left the last model on each sheet blank (the page ran out of time). Fixed with fewer models per sheet and a longer wait; 11 blanks were re-shot. The workbench file is too big for the photo page (it's the style reference, so it was skipped).
   - Claude started the four review helpers with the multi-helper "workflow" tool without asking first; it should have asked or used plain helpers. It cost about the same, but the owner gets to choose next time.
+
+---
+
+## November 15, 2026 (PC, code Claude): the build menu follows the model rules; a robot that measures every model
+- **Who did what:** all three PC Claudes got the same Zone 1 brief. We split it by message: Claude 2 remakes the building
+  models, Claude 3 does monsters and outfits, and this Claude (the code Claude) does the game code and the checks.
+- **What we did:**
+  - **Build menu follows the rules** (`src/build/pieces.gd`):
+    - Stonehold gets the flat roof and battlements, and no sloped roofs, ridges, corners or gables.
+    - The Shack and Hearthbrick get sloped roofs only (F79).
+    - Round doors only: the arched doorway is hidden from the menu, and every style has one round doorway and its own door (F75).
+    - Copper only makes banners, wall shields, sconces and doors.
+    - Old saves with the removed pieces still load.
+  - **Wall decor hangs on walls** (F86c): banners, bat trophy, crossed pickaxes, fossil and horn plaques, map board,
+    rune shield, peg rack and wall torch snap flat onto the wall you aim at. The tool rack station hangs on walls too.
+    The old models still stand on floor posts, so the game shows a plain board until each one is remade with a flat back.
+    Sizes were sent to the 3D Claudes.
+  - **Model check robot** (`tools/model_check/`). It opens every model in Blender and measures the real surfaces, the way a
+    ruler would, not just a box around them. Five checks:
+    - FLOAT: a part touches nothing.
+    - SHIMMER: two faces are in the same place where you can see them.
+    - OUTLINE: something sticks past the 2 m grid or the triangle.
+    - ROOF: a roof piece is too thick, filled underneath, or has holes.
+    - SCRIPT: no build script makes the model.
+    First full run: 496 models, 255 ok. Full list: `docs/art/model-check.md`. Proof it measures right: it found
+    the floating tanning-rack hide (F82, 2.4 cm from the frame), the waterskin strap, a floating trellis leaf, the holes
+    in the Shack's roof corner (F80) and the 6 cm-too-wide foundations, all things the review photos showed.
+  - **The doorway shimmer (F76), found:** the robot and the game camera (`buildcheck part=edges`, two pictures 2 degrees
+    apart) both show it. Behind the round opening sits a hidden back panel. Its ends are in exactly the same place as the
+    ends of the stones and bricks, so the game flips between them. Picture: `journey/kit_zone1/shimmer_f76_before.jpg`.
+    Claude 2 has the fix: make the panel 1 cm shorter.
+  - The game's own model check: all 208 building models fit and hold together (this morning: 16 misfits and 22 with
+    floating parts). The game's check is looser than the new robot, so the robot's list is the one to fix.
+  - New test file `tests/test_model_rules.gd`. All 312 game checks pass.
+- **Mistakes and hurdles (including Claude's):**
+  - The first time, the robot said 68 models had no build script. That was wrong: names like `gem_ember` are put
+    together in a loop, so the full name never appears in the script. Fixed: it now also looks for both halves.
+  - The robot first counted shimmer on faces nobody can see (the bottom of a foundation on the ground, faces covered
+    by other stones). Fixed: it now only counts a spot if it can "see out" from it.
+  - The game's old floating-parts check only compares rough boxes, so a rope inside the frame's box counted as
+    touching. That's why the tanning rack passed in the game but fails in the robot.
+  - The robot reads piece sizes straight from the game's code, but its first try missed most pieces (multi-line
+    entries). Fixed.
