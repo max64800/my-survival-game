@@ -1362,4 +1362,10 @@ pieces") and we rebuilt the Delver's Shack's first set with an OK at every step.
 - The peg heads sat exactly on their own dowels (shimmer); dowels are thinner now.
 - The Chrome tool couldn't connect until the owner switched on remote debugging and clicked Allow.
 - The owner also asked for my notes on the Rock Beetle; they went to Claude 3 (creatures), who owns it.
+- Follow-up (same evening): the owner said the round doorway and door were "too perfect" and the copper hinges stuck
+  out. Now the doorway ring and the door rim are rough hand-made board pieces (each a different width, depth, gap and
+  angle, wavy edges); the door boards differ in width and thickness with ragged round ends; the hinge straps lie flat
+  on the boards inside the circle. New: the Shack window wall in the same style (hewn frame, rough boards, crooked
+  cross bars, two narrow plank shutters on flat copper hinges). The 3D page got big switch buttons on the left.
+  Hurdle: a pasted fix had a line break inside a Python string and broke the patch script; fixed with chr(10).
 

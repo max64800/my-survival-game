@@ -466,6 +466,32 @@ def foundation_v3(w=2.0, h=1.0, dd=2.0, parts=("under", "deck")):
 
 
 # ---------------- the rest of the first Shack set, in the approved foundation's style (Nov 15) ----------------
+def rough_ring(cx, cy, r_in, fw, n, d, z=0.0, a0=0.0, a1=math.pi, keep_in=None):
+	"""A hand-made ring of board pieces round a circle: every piece a little different in width, depth, gap and
+	angle, the edges wavy (nothing perfect). keep_in = smallest inner radius allowed (so the door never touches)."""
+	fr = K.Frame()
+	objs = []
+	cuts = [a0] + sorted(a0 + (a1 - a0) * (k + K.rng.uniform(-0.18, 0.18)) / n for k in range(1, n)) + [a1]
+	for k in range(n):
+		g = K.rng.uniform(0.004, 0.016) / max(r_in, 0.1)
+		sa, sb = cuts[k] + g, cuts[k + 1] - g
+		ri = r_in + K.rng.uniform(0.0, 0.018)
+		if keep_in:
+			ri = max(ri, keep_in)
+		ro = ri + fw + J(0.018)
+		steps = 5
+		inner = [(cx + math.cos(sa + (sb - sa) * t / steps) * (ri + J(0.005)), cy + math.sin(sa + (sb - sa) * t / steps) * (ri + J(0.005))) for t in range(steps + 1)]
+		if keep_in:
+			inner = [(x, y) if math.hypot(x - cx, y - cy) >= keep_in else (cx + (x - cx) * keep_in / math.hypot(x - cx, y - cy), cy + (y - cy) * keep_in / math.hypot(x - cx, y - cy)) for x, y in inner]
+		outer = [(cx + math.cos(sb - (sb - sa) * t / steps) * (ro + J(0.012)), cy + math.sin(sb - (sb - sa) * t / steps) * (ro + J(0.012))) for t in range(steps + 1)]
+		pts = [(x, max(E, y)) for x, y in inner + outer]
+		o = K.slab_poly(fr, pts, z + J(0.003), d * K.rng.uniform(0.9, 1.0), T("wood"))
+		_flat(o)
+		o["role"] = "board"
+		objs.append((o, (sa + sb) / 2, (ri + ro) / 2))
+	return objs
+
+
 def rough_vboard(x0, x1, y0, y1, z, d, m=None, broken_top=False, knot=None):
 	"""An upright hand-split board: wavy sides, chipped corners, a slightly uneven front, optionally a broken
 	jagged top or a knot bite out of one side (knot = (side, y, size))."""
@@ -543,13 +569,9 @@ def doorway_v3(w=2.0, h=2.0, d=0.3):
 	fw = 0.11
 	R = r + 0.05
 	a0 = math.asin(-cy / (r + fw))
-	before = set(bpy.data.objects)
-	K.arch_ring(fr, 0.0, cy, r + 0.004, r + fw, 12, 0.22, lambda: T("wood", "b"), gap=0.008, a0=a0, a1=math.pi - a0)
-	for o in set(bpy.data.objects) - before:
-		o["role"] = "board"
-	for k in range(12):
-		a = a0 + (math.pi - 2 * a0) * (k + 0.5) / 12
-		pegs_on(math.cos(a) * (r + fw / 2), cy + math.sin(a) * (r + fw / 2), 0.11)
+	for (o, am, rm) in rough_ring(0.0, cy, r + 0.008, fw, 11, 0.22, a0=a0, a1=math.pi - a0, keep_in=r + 0.008):
+		if K.rng.random() < 0.8:
+			pegs_on(math.cos(am) * rm + J(0.01), cy + math.sin(am) * rm, 0.098)
 	# upright boards between the end posts, cut round the circle
 	xa, xb = -px + 0.05, px - 0.05
 	widths = [0.31, 0.27, 0.36, 0.3, 0.33]
@@ -557,8 +579,8 @@ def doorway_v3(w=2.0, h=2.0, d=0.3):
 	x = xa
 	top = lambda xx: 1.69
 	for i, bw in enumerate(widths):
-		a, b = x + 0.006, x + bw - 0.006
-		dz = J(0.006)
+		a, b = x + K.rng.uniform(0.004, 0.012), x + bw - K.rng.uniform(0.004, 0.012)
+		dz = J(0.01)
 		segs = []
 		if b <= -R or a >= R:
 			segs.append((a, b, lambda xx: E, top))
@@ -587,44 +609,103 @@ def doorway_v3(w=2.0, h=2.0, d=0.3):
 
 
 def door_v3(w=None, h=None, d=0.12):
-	"""Round Shack door: five hand-split boards of different widths cut to the circle (flat at the floor), a rim
-	of board segments pegged on, long copper hinge straps and a round copper knob in the middle. It stays 1 cm
-	inside the doorway ring all round."""
-	r, cy = DOOR_R - 0.006, DOOR_CY
+	"""Round Shack door, hand-made: five split boards of different widths and thickness, their round ends a
+	little ragged, a rim of uneven board pieces pegged on, two long copper hinge straps lying flat on the boards
+	(inside the circle), a round copper knob. It stays inside the doorway ring all round."""
+	r, cy = DOOR_R - 0.012, DOOR_CY
 	fr = K.Frame()
-	widths = [0.3, 0.33, 0.27, 0.32]
+	widths = [0.3, 0.34, 0.26, 0.33]
 	widths.append(2 * r - sum(widths))
 	x = -r
 	for i, bw in enumerate(widths):
-		a, b = x + 0.004, x + bw - 0.004
+		a, b = x + K.rng.uniform(0.003, 0.008), x + bw - K.rng.uniform(0.003, 0.008)
+		short = K.rng.uniform(0.0, 0.025)
 		lo = lambda xx: max(E, cy - math.sqrt(max(0.0, r * r - xx * xx)))
-		hi = lambda xx: cy + math.sqrt(max(0.0, r * r - xx * xx)) - abs(J(0.006))
+		hi = (lambda sh: (lambda xx: cy + math.sqrt(max(0.0, r * r - xx * xx)) - sh - abs(J(0.012))))(short)
 		before = set(bpy.data.objects)
-		K.plank_shape(fr, a, b, lo, hi, -0.006 + J(0.002), 0.06, T("wood"), k=8)
+		K.plank_shape(fr, a, b, lo, hi, -0.006 + J(0.004), 0.06 * K.rng.uniform(0.9, 1.0), T("wood"), k=8)
 		for o in set(bpy.data.objects) - before:
 			o["role"] = "board"
+			_flat(o)
 		x += bw
 	a0 = math.asin(-cy / r)
-	before = set(bpy.data.objects)
-	K.arch_ring(fr, 0.0, cy, r - 0.085, r - 0.002, 12, 0.022, lambda: T("wood", "dark"), z=0.036, gap=0.006, a0=a0, a1=math.pi - a0)
-	for o in set(bpy.data.objects) - before:
-		o["role"] = "board"
-	for k in range(12):
-		a = a0 + (math.pi - 2 * a0) * (k + 0.5) / 12
-		kit.rivet(K.G((math.cos(a) * (r - 0.043), cy + math.sin(a) * (r - 0.043), 0.045)), T("wood", "dark"), r=0.014)
-	cu = kit.tex_mat("copper", "b")
-	for y in (cy - 0.36, cy + 0.36):
-		blk((-r + 0.5, y, 0.031), (0.86, 0.075, 0.012), cu, bevel=0.004)
-		for xx in (-r + 0.16, -r + 0.5, -r + 0.84):
-			kit.rivet(K.G((xx, y, 0.036)), kit.tex_mat("copper", "dark"), r=0.011)
-	kit.cylinder(0.07, 0.014, K.G((0, cy, 0.031)), cu, rot=(90, 0, 0), verts=16, bevel=0.005)
-	kit.rivet(K.G((0, cy, 0.036)), cu, r=0.024)
+	for (o, am, rm) in rough_ring(0.0, cy, r - 0.1, 0.066, 10, 0.022, z=0.035, a0=a0, a1=math.pi - a0):
+		kit.rivet(K.G((math.cos(am) * rm, cy + math.sin(am) * rm, 0.044)), T("wood", "dark"), r=0.013)
+	cu = kit.tex_mat("copper", "a")
+	for y in (cy - 0.33, cy + 0.33):
+		hw = math.sqrt(max(0.0, (r - 0.1) ** 2 - (y - cy) ** 2))  # stays inside the rim, on the boards
+		x0, x1 = -hw + 0.02, -hw + 0.02 + min(0.8, 1.4 * hw)
+		before = set(bpy.data.objects)
+		K.slab_poly(fr, [(x0, y - 0.035), (x1 - 0.06, y - 0.03), (x1, y), (x1 - 0.06, y + 0.03), (x0, y + 0.035)], 0.028, 0.008, cu)
+		for xx in (x0 + 0.08, (x0 + x1) / 2, x1 - 0.1):
+			kit.rivet(K.G((xx, y, 0.03)), kit.tex_mat("copper", "dark"), r=0.009)
+	kit.cylinder(0.065, 0.01, K.G((0, cy, 0.029)), cu, rot=(90, 0, 0), verts=12, bevel=0.003)
+	kit.rivet(K.G((0, cy, 0.034)), cu, r=0.024)
 	for y in (cy - 0.3, cy + 0.3):  # back battens
 		hw = math.sqrt(max(0.0, (r - 0.1) ** 2 - (y - cy) ** 2))
 		before = set(bpy.data.objects)
-		blk((0, y, -0.045), (2 * hw, 0.11, 0.02), T("wood", "dark"), bevel=0.006)
+		blk((J(0.02), y, -0.045), (2 * hw - 0.04, 0.11, 0.02), T("wood", "dark"), bevel=0.006, rz=J(2))
 		for o in set(bpy.data.objects) - before:
 			o["role"] = "board"
+
+
+def window_wall_v3(w=2.0, h=2.0, d=0.3, ow=1.0, oh=0.8, ob=0.6):
+	"""Shack window wall: like the wall (hewn posts and beams, split boards), with a window opening framed by
+	hand-hewn sill and lintel pieces and rough side boards, a crooked cross bar, and two narrow plank shutters
+	swung open on copper hinges. Everything a little uneven."""
+	px = w / 2 - 0.006 - 0.145
+	for s_ in (-1, 1):
+		hewn((s_ * px, 0.012, 0.0), (s_ * px + J(0.008), h - 0.014, J(0.006)), 0.14)
+	hewn((-px, 0.115, 0.0), (px, 0.115 + J(0.008), 0.0), 0.1)
+	hewn((-px, 1.8, 0.0), (px, 1.8 + J(0.008), 0.0), 0.12)
+	top = ob + oh
+	x0, x1 = -px + 0.13, px - 0.13
+	fr = K.Frame()
+	widths = [0.27, 0.36, 0.31, 0.33]
+	widths.append((x1 - x0) - sum(widths))
+	x = x0
+	for i, bw in enumerate(widths):
+		a, b = x + K.rng.uniform(0.007, 0.014), x + bw - K.rng.uniform(0.007, 0.014)
+		dz = J(0.008)
+		hl, hr = -ow / 2 - 0.02, ow / 2 + 0.02
+		parts = []
+		if b <= hl or a >= hr:
+			parts.append((a, b, 0.17, 1.72))
+		else:
+			if a < hl:
+				parts.append((a, hl - 0.008, 0.17, 1.72))
+			if b > hr:
+				parts.append((hr + 0.008, b, 0.17, 1.72))
+			ca, cb = max(a, hl + 0.008), min(b, hr - 0.008)
+			parts.append((ca, cb, 0.17, ob - 0.06))
+			parts.append((ca, cb, top + 0.07, 1.72))
+		for (pa, pb, y0, y1) in parts:
+			if pb - pa > 0.03 and y1 - y0 > 0.05:
+				rough_vboard(pa, pb, y0, y1, dz, 0.07, broken_top=(i == 4 and y1 > 1.7))
+		x += bw
+	# window frame: hewn sill and lintel, rough side boards, all pegged
+	hewn((-ow / 2 - 0.12, ob - 0.05, 0.02), (ow / 2 + 0.12, ob - 0.05 + J(0.01), 0.02), 0.065)
+	hewn((-ow / 2 - 0.14, top + 0.06, 0.02), (ow / 2 + 0.14, top + 0.06 + J(0.01), 0.02), 0.07)
+	for s_ in (-1, 1):
+		rough_vboard(s_ * ow / 2 + (0.0 if s_ > 0 else -0.09), s_ * ow / 2 + (0.09 if s_ > 0 else 0.0), ob - 0.02, top + 0.02, 0.03, 0.06)
+		for y in (ob + 0.1, top - 0.1):
+			pegs_on(s_ * (ow / 2 + 0.045), y, 0.065)
+	for xx in (-ow / 2 - 0.08, ow / 2 + 0.08):
+		pegs_on(xx, ob - 0.05, 0.085)
+		pegs_on(xx, top + 0.06, 0.09)
+	# a crooked cross bar and a middle bar
+	blk((J(0.01), ob + oh / 2, 0.02), (0.05, oh, 0.045), T("wood", "dark"), bevel=0.008, rz=J(2))["role"] = "brace"
+	blk((0, ob + oh / 2 + J(0.02), 0.02), (ow, 0.045, 0.045), T("wood", "dark"), bevel=0.008, rz=J(2))["role"] = "brace"
+	# two narrow shutters swung open against the boards, on flat copper hinges
+	cu = kit.tex_mat("copper", "a")
+	for s_ in (-1, 1):
+		sx0 = s_ * (ow / 2 + 0.08)
+		for k in range(2):
+			a, b = sx0 + s_ * (0.004 + k * 0.062), sx0 + s_ * (0.004 + k * 0.062 + 0.058)
+			rough_vboard(min(a, b), max(a, b), ob - 0.01 + J(0.01), top - 0.01 + J(0.01), 0.072, 0.03)
+		for y in (ob + 0.15, top - 0.15):
+			K.slab_poly(fr, [(sx0, y - 0.025), (sx0 + s_ * 0.1, y - 0.02), (sx0 + s_ * 0.12, y), (sx0 + s_ * 0.1, y + 0.02), (sx0, y + 0.025)], 0.091, 0.008, cu)
+			kit.rivet(K.G((sx0 + s_ * 0.06, y, 0.093)), kit.tex_mat("copper", "dark"), r=0.009)
 
 
 def roof_v3(w=2.0, rise=1.0, dd=2.0):
@@ -880,7 +961,8 @@ def _mix():
 
 
 PIECES = {"foundation3": foundation_v3, "foundation_hewn": _hewn, "foundation_mix": _mix,
-	"wall_v3": wall_v3, "doorway_v3": doorway_v3, "door_v3": door_v3, "roof_26_v3": lambda: roof_v3(2.0, 1.0), "foundation": foundation, "wall": wall, "doorway": doorway, "door": door, "roof_26": lambda: roof(2.0, 1.0)}
+	"wall_v3": wall_v3, "doorway_v3": doorway_v3, "door_v3": door_v3, "roof_26_v3": lambda: roof_v3(2.0, 1.0),
+	"window_wall_v3": window_wall_v3, "foundation": foundation, "wall": wall, "doorway": doorway, "door": door, "roof_26": lambda: roof(2.0, 1.0)}
 
 
 def make_grey():
@@ -901,7 +983,8 @@ if __name__ == "__main__":
 	names = [a for a in args if a in PIECES] or list(PIECES)
 	out_dir.mkdir(parents=True, exist_ok=True)
 	# install=1: write the approved v3 pieces under their game names (assets/models/build/<piece>__plank_root.glb)
-	GAME_NAME = {"foundation_mix": "foundation", "wall_v3": "wall", "doorway_v3": "doorway", "door_v3": "door", "roof_26_v3": "roof_26"}
+	GAME_NAME = {"foundation_mix": "foundation", "wall_v3": "wall", "doorway_v3": "doorway", "door_v3": "door", "roof_26_v3": "roof_26",
+		"window_wall_v3": "window_wall"}
 	install = "install=1" in args
 	if install:
 		names = [n for n in names if n in GAME_NAME] or list(GAME_NAME)
