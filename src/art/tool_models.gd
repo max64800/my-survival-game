@@ -19,7 +19,7 @@ static func build(look: String, col: Color, layers: int, item_id: String = "") -
 	# The asset forge's 3D model of this item, if there is one (Claude 2's rules: handle along +Y,
 	# grip end at the origin, flat side to +Z, real sizes). Our own shapes below are the fallback.
 	if look not in TOOLS:
-		# Not a tool (stone, food, a crystal...): hold a small copy of it (owner F118: hold what you picked).
+		# Not a tool (stone, food, a crystal...): hold a small copy of it (owner F151: hold what you picked).
 		var thing := Look.forged("items", item_id) if item_id != "" else null
 		if thing:
 			thing.scale = Vector3.ONE * 0.6

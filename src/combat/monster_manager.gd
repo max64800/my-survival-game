@@ -109,7 +109,7 @@ func _spawn_and_despawn() -> void:
 	for i in maker.rooms.size():
 		var room: Dictionary = maker.rooms[i]
 		if room.get("sealed", false) or room.get("kind", "") in ["shrine", "lair", "spawn"]:
-			continue  # no enemies in the first cavern (owner F121)
+			continue  # no enemies in the first cavern (owner F154)
 		var st: Dictionary = _rooms.get(i, {alive = [], cleared_at = -RESPAWN})
 		_rooms[i] = st
 		st.alive = st.alive.filter(func(u): return monsters.has(u))

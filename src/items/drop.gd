@@ -11,7 +11,7 @@ const FLY_SPEED := 9.0
 const DROP_LAYER := 4
 ## How big dropped things look (owner, Nov 15, F93: "5 times bigger"; it was 0.7). Every chunk
 ## also gets its own size, squash and tumble, so a pile of broken rock isn't a pile of equal cubes (F104).
-const LOOK_SCALE := 1.75  ## F120: 3.5 was too big; now 2.5x the old size
+const LOOK_SCALE := 1.75  ## F153: 3.5 was too big; now 2.5x the old size
 const BODY_RADIUS := 0.3
 
 var drop_id := 0

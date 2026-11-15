@@ -15,7 +15,7 @@ signal hud_message(text: String)  ## a line for our own screen
 signal dig_feedback(peer_id: int, result: Dictionary)
 signal fuel_changed(peer_id: int, fuel: float)
 
-const REACH := 3.0  ## meters from the dwarf's chest to what they're hitting (was 4.5; owner F116: walk up to things)
+const REACH := 3.0  ## meters from the dwarf's chest to what they're hitting (was 4.5; owner F149: walk up to things)
 const DIG_RADIUS := 1.35  ## size of the scoop one finished dig removes
 const PICKUP_RANGE := 6.0
 const MAX_FUEL := 600.0  ## 10 minutes of full lantern light
@@ -112,7 +112,7 @@ class PlayerState:
 		if weapon_drawn and inventory.equipped("weapon") != "":
 			return Inventory.equip_index("weapon")
 		var picked: String = inventory.get_slot(selected_slot).get("id", "")
-		if picked == "":  # an empty hotbar slot = your pickaxe (owner F118: otherwise you hold what you picked)
+		if picked == "":  # an empty hotbar slot = your pickaxe (owner F151: otherwise you hold what you picked)
 			if inventory.equipped("pickaxe") != "":
 				return Inventory.equip_index("pickaxe")
 			var carried := inventory.best_of_kind("pickaxe")  # a pickaxe in the hotbar or bag still digs (F88)

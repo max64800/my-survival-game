@@ -301,7 +301,7 @@ func test_spawner_fills_nearby_caves() -> void:
 		var r: Dictionary = world.maker.rooms[0]
 		if m.global_position.distance_to(r.center) < maxf(r.radii.x, r.radii.z):
 			in_first += 1
-	check_eq(in_first, 0, "no enemies in the first cavern (F121)")
+	check_eq(in_first, 0, "no enemies in the first cavern (F154)")
 	# Walk to another cavern: monsters appear there.
 	for i in world.maker.rooms.size():
 		var room: Dictionary = world.maker.rooms[i]

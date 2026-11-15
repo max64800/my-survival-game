@@ -35,7 +35,7 @@ var _help_timer := 25.0
 var _pause: Control
 var _loading: Control
 var _swap_from := -1
-var _hover_slot := -1  ## the bag slot under the mouse (for "press 1-9 to put it on the hotbar", F122)
+var _hover_slot := -1  ## the bag slot under the mouse (for "press 1-9 to put it on the hotbar", F155)
 var _bars := {}  ## "health"/"stamina"/"hunger"/"thirst" -> ProgressBar
 var _level_label: Label
 var _buff_label: Label
@@ -112,7 +112,7 @@ func _build() -> void:
 	bag_bg.set_content_margin_all(14)
 	_bag_panel.add_theme_stylebox_override("panel", bag_bg)
 	root.add_child(_bag_panel)
-	# Equipped things on the left, everything you carry on the right (owner F117).
+	# Equipped things on the left, everything you carry on the right (owner F150).
 	var bag_row := HBoxContainer.new()
 	bag_row.add_theme_constant_override("separation", 18)
 	_bag_panel.add_child(bag_row)
@@ -541,7 +541,7 @@ func is_bag_open() -> bool:
 
 ## The hotbar at the bottom middle of the screen.
 func _place_hotbar() -> void:
-	# Pinned to the bottom middle by its anchors, so it stays centred at any window size (F119).
+	# Pinned to the bottom middle by its anchors, so it stays centred at any window size (F152).
 	var w := float((SLOT_SIZE + 6) * Inventory.HOTBAR_SIZE - 6)
 	_hotbar.anchor_left = 0.5
 	_hotbar.anchor_right = 0.5
@@ -842,7 +842,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		_fps_label.visible = not _fps_label.visible
 
 
-## Bag open, mouse over a slot, press 1-9: that item goes to that hotbar slot (owner F122).
+## Bag open, mouse over a slot, press 1-9: that item goes to that hotbar slot (owner F155).
 func _input(event: InputEvent) -> void:
 	var k := event as InputEventKey
 	if k == null or not k.pressed or k.echo or not _bag_panel.visible or box_panel.visible or _hover_slot < 0:

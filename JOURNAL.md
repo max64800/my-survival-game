@@ -1477,7 +1477,7 @@ rope, and every board and shingle has its own painting.
 
 ---
 
-## November 15, 2026, night (PC, code Claude): your second play test (F116-F141)
+## November 15, 2026, night (PC, code Claude): your second play test (F149-F157, F127-F141)
 - **What we did:** fixed everything from your notes while you played. Questions where there was a choice:
   - **Reach:** you can dig, hit and harvest from 3 m now, not 4.5.
   - **Hands:** the dwarf holds what you picked.

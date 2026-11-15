@@ -313,7 +313,7 @@ func _upgrade_rows(inv: Inventory) -> void:
 func _row(recipe_id: String, inv: Inventory) -> Control:
 	var r := Recipes.get_recipe(recipe_id)
 	var row := HBoxContainer.new()
-	var pic := TextureRect.new()  # a picture of what it makes (owner F123)
+	var pic := TextureRect.new()  # a picture of what it makes (owner F156)
 	pic.texture = Items.icon(r.output)
 	pic.custom_minimum_size = Vector2(44, 44)
 	pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
