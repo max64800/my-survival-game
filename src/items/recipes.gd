@@ -186,6 +186,42 @@ static func for_station(station: String) -> Array:
 	return out
 
 
+## Raw things you gather instead of make (F103: "where do I get this?").
+const GATHER := {
+	"stone": "dig rock with a pickaxe (or bare hands), or pick up loose stones",
+	"rootwood": "pull thin hanging roots by hand, or chop big roots with an axe",
+	"fiber": "pull the green fiber tufts on cave floors by hand",
+	"dirt": "dig the soft brown ground",
+	"clay": "dig the reddish clay patches",
+	"moss": "dig the green mossy ground",
+	"copper_ore": "mine green-streaked copper rock (stone pickaxe is enough)",
+	"crystal_blue": "mine the glowing blue crystals with a pickaxe",
+	"critter_hide": "hunt small cave critters",
+	"leather": "tan critter hides on a Tanning Rack",
+	"mushroom_wood": "chop giant mushrooms with a copper axe",
+}
+
+
+## Where to get `item`: "made by hand", "made at the Workbench", or how to gather it ("" = unknown).
+static func how_to_get(item: String) -> String:
+	if GATHER.has(item):
+		return GATHER[item]
+	for id in LIST:
+		if LIST[id].output == item:
+			return "made by hand (Tab)" if LIST[id].station == HAND else "made at the %s" % Items.display_name(LIST[id].station)
+	return ""
+
+
+## What has to happen before a locked recipe shows ("" = it isn't locked).
+static func unlock_hint(id: String) -> String:
+	var u = LIST[id].unlock
+	if u is String:
+		return "learned from Old Recipe Pages in ruins"
+	if u.is_empty():
+		return ""
+	return "shows up once you've found: " + " or ".join(u.map(func(x): return Items.display_name(x)))
+
+
 ## True if picking up/having these items makes the recipe show up.
 ## `seen` = every item id the player (or world) has ever held. `taught` = recipe ids learned from runes/ruins.
 static func is_unlocked(id: String, seen: Dictionary, taught: Dictionary) -> bool:

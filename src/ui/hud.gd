@@ -26,6 +26,8 @@ const EQUIP_NAMES := ["Pick", "Lamp", "Weapon", "Shield", "Head", "Chest", "Legs
 var _fuel_bar: ProgressBar
 var _fuel_label: Label
 var _fps_label: Label
+var _goals_label: Label  ## "Next steps" in the top-right corner (F103)
+var _goals_wait := 0.0
 var _toast: Label
 var _toast_timer := 0.0
 var _help: Label
@@ -234,6 +236,14 @@ func _build() -> void:
 	_fps_label = _label(root, 15)
 	_fps_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
 	_fps_label.position += Vector2(-130, 10)
+	_goals_label = _label(root, 15)
+	_goals_label.name = "Goals"
+	_goals_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	_goals_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_goals_label.custom_minimum_size = Vector2(420, 0)
+	_goals_label.position += Vector2(-440, 40)
+	_goals_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	_goals_label.add_theme_color_override("font_color", Color(1.0, 0.88, 0.62))
 
 	_toast = _label(root, 20)
 	_toast.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
@@ -688,6 +698,13 @@ func _ensure_sound_controls() -> void:
 func _process(delta: float) -> void:
 	var auth := GameAuthority.instance
 	var ps: GameAuthority.PlayerState = auth.get_player(peer_id) if auth else null
+	_goals_wait -= delta
+	if ps and _goals_wait <= 0.0:
+		_goals_wait = 1.0
+		var steps := Goals.next_steps(ps, auth)
+		_goals_label.text = "" if steps.is_empty() else "Next steps
+" + "
+".join(steps.map(func(t): return "• " + t))
 	if ps:
 		var v := ps.vitals
 		_bars.health.max_value = v.max_health()

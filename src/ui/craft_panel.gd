@@ -65,11 +65,22 @@ func refresh() -> void:
 	for c in _list.get_children():
 		c.queue_free()
 	var shown := 0
+	var locked := []
 	for id in Recipes.for_station(where):
 		if not Recipes.is_unlocked(id, ps.seen, auth.taught_recipes()):
+			locked.append(id)
 			continue
 		shown += 1
 		_list.add_child(_row(id, ps.inventory))
+	# Recipes you can't make yet show too, greyed out, with what unlocks them (F103).
+	for id in locked:
+		var l := RichTextLabel.new()
+		l.bbcode_enabled = true
+		l.fit_content = true
+		l.scroll_active = false
+		l.text = "[color=#8a8580][b]%s[/b]  [font_size=13](%s)[/font_size][/color]" % [Items.display_name(Recipes.LIST[id].output), Recipes.unlock_hint(id)]
+		_list.add_child(l)
+		shown += 1
 	if shown == 0:
 		var l := Label.new()
 		l.text = "Nothing to make here yet. Explore and collect more!"
@@ -148,7 +159,13 @@ func _row(recipe_id: String, inv: Inventory) -> Control:
 		parts.append("+ %d wood fuel" % r.fuel)
 	var out := Items.display_name(r.output) + ("" if r.count == 1 else " ×%d" % r.count)
 	var timer := "" if r.get("seconds", 0) == 0 else "  (%ds)" % r.seconds
-	text.text = "[b]%s[/b]%s\n[font_size=13]%s[/font_size]" % [out, timer, ", ".join(parts)]
+	# Missing ingredients: say where to get them (F103).
+	var tips := []
+	for item in r.inputs:
+		if inv.count_of(item) < int(r.inputs[item]) and Recipes.how_to_get(item) != "":
+			tips.append("%s: %s" % [Items.display_name(item), Recipes.how_to_get(item)])
+	var tip_text := "" if tips.is_empty() else "\n[font_size=12][color=#d8c08a]%s[/color][/font_size]" % "\n".join(tips)
+	text.text = "[b]%s[/b]%s\n[font_size=13]%s[/font_size]%s" % [out, timer, ", ".join(parts), tip_text]
 	row.add_child(text)
 	var b := Button.new()
 	b.text = "Make"
