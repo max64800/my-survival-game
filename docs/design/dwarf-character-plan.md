@@ -41,3 +41,12 @@ The beard always sits over the chest armor; helmets cover the hair; trousers tuc
 
 Also approved earlier: the separate outfit sheets (Leather; Copper = the second, aged version; Shell).
 
+## Done (November 15, night): the other two heads, same chat
+- **Strong head** (front + side): stern square face, scar over one eyebrow, long grey-brown beard in one thick braid
+  plus two side braids, dark iron rings.
+- **Smart head, changed by the owner:** he is **OLD and smart**, not young. White forked beard tied with copper beads,
+  wrinkled clever face, sarcastic half-smile, white hair balding on top, eye-glasses pushed up on his forehead (they came
+  out as goggles). The young ginger version is rejected.
+- **Check lineup:** all three in Leather on the same Happy body. The bodies match, so one skeleton and one set of armor
+  fits all three; only the head mesh (face, hair, beard) swaps.
+
