@@ -137,3 +137,17 @@ func test_crafting_takes_a_moment() -> void:
 		check(t == 0.0 or (t >= 1.0 and t <= 3.0), "%s takes 1-3 s" % id)
 		if Recipes.LIST[id].get("seconds", 0) > 0:
 			check_eq(t, 0.0, "%s already has its own station timer" % id)
+
+
+## F127/F129: recipes sorted into tabs; "how many can I make" for the ×5 / ×10 / All buttons.
+func test_crafting_tabs_and_amounts() -> void:
+	check_eq(CraftPanel.tab_of("pickaxe_stone"), "Tools", "pickaxes under Tools")
+	check_eq(CraftPanel.tab_of("sword_stone"), "Weapons", "swords under Weapons")
+	check_eq(CraftPanel.tab_of("workbench"), "Stations", "stations under Stations")
+	check_eq(CraftPanel.tab_of("plank_root"), "Materials", "planks under Materials")
+	for id in Recipes.LIST:
+		check(CraftPanel.tab_of(id) in CraftPanel.TABS, "%s has a tab" % id)
+	var inv := Inventory.new()
+	inv.add("rootwood", 7)
+	check_eq(CraftPanel.can_make_count("plank_root", inv), 7, "7 rootwood: 7 planks crafts")
+	check_eq(CraftPanel.can_make_count("pickaxe_stone", inv), 0, "no stone: no pickaxe")

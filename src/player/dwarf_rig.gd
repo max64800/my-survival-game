@@ -177,7 +177,11 @@ func _play(layer: String, what: String, duration: float) -> void:
 		return
 	var node := (tree.tree_root as AnimationNodeBlendTree).get_node(layer + "_anim") as AnimationNodeAnimation
 	node.animation = anim_name
-	var length := tree.get_animation(anim_name).length
+	var anim := tree.get_animation(anim_name)
+	# A one-shot must end. Some animations from the pack are made as loops (the axe's TreeChopping), and a
+	# looping one never finishes, so the dwarf kept chopping forever (owner F128).
+	anim.loop_mode = Animation.LOOP_NONE
+	var length := anim.length
 	tree.set("parameters/%s_speed/scale" % layer, length / duration if duration > 0.0 else 1.0)
 	tree.set("parameters/%s/request" % layer, AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE)
 

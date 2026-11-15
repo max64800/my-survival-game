@@ -14,6 +14,14 @@ var _making := {}  ## {id, left, total, from (where you stood)}
 var _bar: ProgressBar
 var _work_beat := 0.0
 const CANCEL_DISTANCE := 0.6
+## Recipes sorted into tabs (owner F127) by what they make.
+const TABS := ["Tools", "Weapons", "Armor", "Stations", "Materials", "Food"]
+var _tab := ""
+var _tabs: HBoxContainer
+var _scroll: ScrollContainer
+## How many to make with one click (owner F129): 1, 5, 10 or -1 = as many as you can.
+var amount := 1
+var _amount_row: HBoxContainer
 
 
 func _ready() -> void:
@@ -39,13 +47,54 @@ func _ready() -> void:
 	fill.bg_color = Color(1.0, 0.75, 0.35)
 	_bar.add_theme_stylebox_override("fill", fill)
 	box.add_child(_bar)
+	_tabs = HBoxContainer.new()
+	_tabs.add_theme_constant_override("separation", 4)
+	box.add_child(_tabs)
+	_amount_row = HBoxContainer.new()
+	box.add_child(_amount_row)
+	var how := Label.new()
+	how.text = "Make:"
+	_amount_row.add_child(how)
+	for a in [1, 5, 10, -1]:
+		var b := Button.new()
+		b.name = "Amount%d" % a
+		b.text = "×%d" % a if a > 0 else "All"
+		b.toggle_mode = true
+		b.focus_mode = Control.FOCUS_NONE
+		b.button_pressed = a == amount
+		var pick: int = a
+		b.pressed.connect(func(): amount = pick; _paint_amounts())
+		_amount_row.add_child(b)
 	var scroll := ScrollContainer.new()
 	scroll.custom_minimum_size = Vector2(410, 360)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	box.add_child(scroll)
+	_scroll = scroll
 	_list = VBoxContainer.new()
 	_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_list)
+
+
+func _paint_amounts() -> void:
+	for b in _amount_row.get_children():
+		if b is Button:
+			(b as Button).set_pressed_no_signal(b.name == "Amount%d" % amount)
+
+
+## Which tab a recipe goes in, by the kind of thing it makes.
+static func tab_of(recipe_id: String) -> String:
+	match Items.kind(Recipes.get_recipe(recipe_id).output):
+		"pickaxe", "axe", "hammer", "lantern", "lens", "waterskin", "tonic", "throw", "horn":
+			return "Tools"
+		"weapon", "shield", "ammo":
+			return "Weapons"
+		"wear", "pack":
+			return "Armor"
+		"station", "chest":
+			return "Stations"
+		"food", "drink":
+			return "Food"
+	return "Materials"
 
 
 func open_for(st: Station) -> void:
@@ -78,25 +127,38 @@ func refresh() -> void:
 			_status.text = "Place a %s within 4 m to reach level %d." % [Items.display_name(nxt), station.level() + 1]
 	if station and station.kind in AutoSmelt.KINDS and _status.text == "":
 		_status.text = "Works by itself: put %s in a chest within 5 m." % 			("wood" if station.kind == "kiln" else "ore and coal (or wood)")
+	var keep_scroll := _scroll.scroll_vertical  # the list stays where it was after you make something (F129)
 	for c in _list.get_children():
 		c.queue_free()
-	var shown := 0
-	var locked := []
+	for c in _tabs.get_children():
+		c.queue_free()
+	# Only recipes you've unlocked, in tabs (owner F127). Missing materials still show in red, with where to get them.
+	var by_tab := {}
 	for id in Recipes.for_station(where):
-		if not Recipes.is_unlocked(id, ps.seen, auth.taught_recipes()):
-			locked.append(id)
+		if Recipes.is_unlocked(id, ps.seen, auth.taught_recipes()):
+			by_tab[tab_of(id)] = by_tab.get(tab_of(id), []) + [id]
+	if not by_tab.has(_tab):
+		_tab = ""
+		for t in TABS:
+			if by_tab.has(t):
+				_tab = t
+				break
+	for t in TABS:
+		if not by_tab.has(t):
 			continue
+		var tb := Button.new()
+		tb.text = "%s (%d)" % [t, by_tab[t].size()]
+		tb.toggle_mode = true
+		tb.button_pressed = t == _tab
+		tb.focus_mode = Control.FOCUS_NONE
+		var pick: String = t
+		tb.pressed.connect(func(): _tab = pick; _scroll.scroll_vertical = 0; refresh())
+		_tabs.add_child(tb)
+	var shown := 0
+	for id in by_tab.get(_tab, []):
 		shown += 1
 		_list.add_child(_row(id, ps.inventory))
-	# Recipes you can't make yet show too, greyed out, with what unlocks them (F103).
-	for id in locked:
-		var l := RichTextLabel.new()
-		l.bbcode_enabled = true
-		l.fit_content = true
-		l.scroll_active = false
-		l.text = "[color=#8a8580][b]%s[/b]  [font_size=13](%s)[/font_size][/color]" % [Items.display_name(Recipes.LIST[id].output), Recipes.unlock_hint(id)]
-		_list.add_child(l)
-		shown += 1
+	_scroll.set_deferred("scroll_vertical", keep_scroll)
 	if shown == 0:
 		var l := Label.new()
 		l.text = "Nothing to make here yet. Explore and collect more!"
@@ -118,20 +180,35 @@ static func craft_time(recipe_id: String) -> float:
 	return clampf(amount / 6.0, 1.0, 3.0)
 
 
-func start_making(recipe_id: String) -> void:
+## How many of a recipe you can make right now with what you carry.
+static func can_make_count(recipe_id: String, inv: Inventory) -> int:
+	var r := Recipes.get_recipe(recipe_id)
+	var most := 999
+	for item in r.inputs:
+		most = mini(most, inv.count_of(item) / maxi(1, int(r.inputs[item])))
+	return most
+
+
+func start_making(recipe_id: String, count: int = -2) -> void:
 	if not _making.is_empty():
 		return
+	if count == -2:  # from the Make button: the chosen amount (owner F129)
+		var me_ps := GameAuthority.instance.get_player(peer_id) if GameAuthority.instance else null
+		var can := can_make_count(recipe_id, me_ps.inventory) if me_ps else 1
+		count = can if amount < 0 else mini(amount, maxi(can, 1))
+	count = maxi(count, 1)
 	var t := craft_time(recipe_id)
 	if t <= 0.0:
-		_finish(recipe_id)
+		for i in count:
+			_finish(recipe_id)
 		return
 	var me := _me()
-	_making = {id = recipe_id, left = t, total = t, from = me.global_position if me else Vector3.ZERO}
+	_making = {id = recipe_id, left = t, total = t, from = me.global_position if me else Vector3.ZERO, more = count - 1}
 	_work_beat = 0.0
 	_bar.visible = true
 	_bar.max_value = t
 	_bar.value = 0.0
-	_status.text = "Making %s…" % Items.display_name(Recipes.get_recipe(recipe_id).output)
+	_status.text = "Making %s…%s" % [Items.display_name(Recipes.get_recipe(recipe_id).output), "" if count <= 1 else "  (%d more after this)" % (count - 1)]
 	refresh()
 
 
@@ -173,10 +250,16 @@ func _process(delta: float) -> void:
 	_bar.value = _making.total - _making.left
 	if _making.left <= 0.0:
 		var id: String = _making.id
+		var more: int = _making.get("more", 0)
 		_making = {}
 		_bar.visible = false
 		_status.text = ""
 		_finish(id)
+		if more > 0:  # making several: start the next one (stops by itself when materials run out)
+			get_tree().create_timer(0.2).timeout.connect(func():
+				var ps := GameAuthority.instance.get_player(peer_id) if GameAuthority.instance else null
+				if ps and visible and can_make_count(id, ps.inventory) > 0:
+					start_making(id, more))
 
 
 ## Gear upgrades (building polish spec §4): everything you carry or wear that this station can improve.
@@ -230,6 +313,12 @@ func _upgrade_rows(inv: Inventory) -> void:
 func _row(recipe_id: String, inv: Inventory) -> Control:
 	var r := Recipes.get_recipe(recipe_id)
 	var row := HBoxContainer.new()
+	var pic := TextureRect.new()  # a picture of what it makes (owner F123)
+	pic.texture = Items.icon(r.output)
+	pic.custom_minimum_size = Vector2(44, 44)
+	pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	row.add_child(pic)
 	var text := RichTextLabel.new()
 	text.bbcode_enabled = true
 	text.fit_content = true
