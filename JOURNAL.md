@@ -841,3 +841,18 @@ Important pieces (workbench, smelter, anvil) can be redone later with a better t
 - **Ramp** (asked for by Claude 1): a sloped wedge piece in 4 materials, with stone or wood slabs up the slope and 4 wooden grip
   strips across it. Mistake: in the first try the slabs tilted the wrong way and stuck out like broken steps. Claude 2 flipped the
   tilt and checked the size and direction against Claude 1's code.
+
+## November 15, 2026 (PC, Claude 2): pulled the Mac's work, saved all hand-built models to GitHub
+- **What we did:** pulled the Mac's 15 saves (building kit plan, night pictures, handoff note). Then saved every
+  hand-built model made on this PC to GitHub in one go (commit `22d3f5c`): 31 stations, every item, 207 building
+  pieces and decor plus the new ramp, the hand-painted textures, the Blender build scripts and the before/after journey.
+  The owner chose: hand-build stations, materials and decor in Blender from the night pictures (not picture-to-3D),
+  and download the 12 building-kit pictures from ChatGPT.
+- **Hurdles:**
+  - The pull clashed with unsaved local edits in `JOURNAL.md` and `FEEDBACK.md`. Fixed by keeping both sides (a backup
+    was made first). `FEEDBACK.md` also had two "×" signs saved in the wrong text format; repaired.
+  - Claude 3 saw the clash marks for a moment while Claude 2 was fixing them. Told Claude 3 when they were gone.
+  - The journey folder held a second copy of every model (381 MB), and Godot was loading those copies too. Now Godot
+    skips the journey folder, and only its preview pictures go to GitHub. Godot's own pulled-out textures are not saved
+    either, because Godot remakes them by itself. The upload went from about 500 MB to 107 MB.
+  - The budget guard runs on this PC but has no usage numbers yet, so it can't stop anything here.
