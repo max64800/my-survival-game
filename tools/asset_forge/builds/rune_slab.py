@@ -27,11 +27,10 @@ def groove(size, loc, rot=0, glow=True):
 		kit.box((size[0], 0.016, size[1]), (loc[0], y, loc[1]), g, bevel=0.004, wobble=0, rot=(0, rot, 0))
 
 
-# Carved (dark, not glowing) border around the face.
-groove((0.7, 0.02), (0, 1.47), glow=False)
-groove((0.7, 0.02), (0, 0.3), glow=False)
-groove((0.02, 1.17), (-0.35, 0.885), glow=False)
-groove((0.02, 1.17), (0.35, 0.885), glow=False)
+# Carved border around the face: a raised dark frame, set a little forward so the uneven stone face
+# never swallows a corner (F43: the top-left was missing).
+for (sz, loc) in (((0.74, 0.035), (0, 1.47)), ((0.74, 0.035), (0, 0.3)), ((0.035, 1.205), (-0.355, 0.885)), ((0.035, 1.205), (0.355, 0.885))):
+	kit.box((sz[0], 0.04, sz[1]), (loc[0], y - 0.004, loc[1]), carve, bevel=0.004, wobble=0)
 # The rune circle with a double ring.
 kit.ring(0.22, 0.014, (0, y, 0.92), g, rot=(90, 0, 0), seg=32)
 kit.ring(0.22, 0.024, (0, y + 0.008, 0.92), carve, rot=(90, 0, 0), seg=32)

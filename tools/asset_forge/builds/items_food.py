@@ -69,13 +69,13 @@ def pie(top, mushrooms=False):
 	lattice = col("crust_d", (0.7, 0.45, 0.22))
 	for k in range(3):
 		for rz in (0, 90):
-			kit.box((0.17, 0.016, 0.01), (0, 0, 0.088), lattice, bevel=0.004, wobble=0.002, rot=(0, 0, rz)).location = (
-				(0, -0.045 + k * 0.045, 0.072) if rz == 0 else (-0.045 + k * 0.045, 0, 0.074))
+			loc = (0, -0.045 + k * 0.045, 0.082) if rz == 0 else (-0.045 + k * 0.045, 0, 0.086)
+			kit.box((0.17, 0.016, 0.012), loc, lattice, bevel=0.004, wobble=0, rot=(0, 0, rz))
 	if mushrooms:
 		for (x, y) in ((-0.04, 0.02), (0.05, -0.03)):
 			kit.mushroom((x, y, 0.07), 0.3, cap=top, seed=int(x * 100))
 	else:
-		chunks(0, 0, 0.09, 0.05, [top], n=3, size=0.02)
+		chunks(0, 0, 0.07, 0.05, [top], n=3, size=0.02)
 
 
 def board(food):

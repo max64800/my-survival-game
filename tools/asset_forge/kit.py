@@ -20,7 +20,7 @@ _mats = {}
 # Hand-painted tiling textures (made with ChatGPT, see CREDITS.md). Variants a/b/c/dark = brightness copies.
 TEX = Path(__file__).resolve().parents[2] / "assets" / "textures" / "kit"
 TILE = {"stone": 0.9, "wood": 0.7, "iron": 0.5, "copper": 0.5, "cloth": 0.8, "straw": 0.5,
-	"leather": 0.6, "soil": 0.8, "rope": 0.22, "ropev": 0.22, "silver": 0.5, "sack": 0.75, "marble": 0.9, "basalt": 0.9, "clay": 0.9, "brownrock": 0.9, "amberrock": 0.9, "sporestone": 0.9, "brick": 0.9, "mushwood": 0.7, "shingle": 0.6, "slate": 0.6, "rooftile": 0.6, "bannercloth": 0.8, "rugcloth": 0.8}   # meters one texture repeat covers
+	"leather": 0.6, "soil": 0.8, "rope": 0.22, "ropev": 0.22, "silver": 0.5, "sack": 0.75, "marble": 0.9, "basalt": 0.9, "clay": 0.9, "brownrock": 0.9, "amberrock": 0.9, "sporestone": 0.9, "brick": 0.9, "mushwood": 0.7, "shingle": 0.6, "slate": 0.6, "rooftile": 0.6, "bannercloth": 0.8, "rugcloth": 0.8, "bark": 0.6, "greywood": 0.7, "limestone": 0.9, "brickochre": 0.9, "greenpaint": 0.7}   # meters one texture repeat covers
 
 # Palette: earthy and a little warm (style bible: muted colors, bright only for gems/fire/magic).
 COLORS = {

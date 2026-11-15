@@ -52,5 +52,5 @@ kit.tcyl("clay", 0.12, 0.3, (0.12, 0.08, H + 0.22), verts=12, variant="c")
 kit.ring(0.125, 0.022, (0.12, 0.08, H + 0.36), kit.tex_mat("clay", "dark"), seg=14)
 kit.cylinder(0.08, 0.02, (0.12, 0.08, H + 0.375), kit.mat("charcoal"), verts=12, bevel=0)
 # Logs waiting to be burned.
-_parts.log_pile(R + 0.32, 0.05, n_bottom=2, length=0.5)
+_parts.log_pile(R + 0.19, 0.05, n_bottom=2, length=0.5)
 kit.save(out, preview)

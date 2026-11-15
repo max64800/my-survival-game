@@ -96,7 +96,7 @@ def legs(set_):
 def boots(set_):
 	m = mat_of(set_) if set_ != "shell" else kit.tex_mat("leather")
 	for s in (-1, 1):
-		x = s * 0.09
+		x = s * 0.056  # the pair stands together, soles touching (nothing floats apart)
 		kit.tbox("leather", (0.1, 0.22, 0.07), (x, -0.04, 0.035), variant="b", bevel=0.03)
 		kit.tcyl("leather", 0.055, 0.16, (x, 0.02, 0.15), verts=12)
 		kit.ring(0.058, 0.014, (x, 0.02, 0.22), kit.tex_mat("leather", "dark"), seg=14)

@@ -401,7 +401,7 @@ def column_parts(w=0.8, h=2.0, part="all"):
 		for k in range(8):
 			a = 2 * math.pi * k / 8
 			kit.gem(G((math.cos(a) * w * 0.42, y0 + 0.14, math.sin(a) * w * 0.42)), (0.06, 0.06, 0.05), dark, seed=k)
-		gbox((0, y0 + 0.24 if part == "all" else 0.43, 0), (w, 0.12 if part == "all" else 0.14, w), stone, bevel=0.025)
+		gbox((0, y0 + 0.24 if part == "all" else 0.4, 0), (w, 0.12 if part == "all" else 0.17, w), stone, bevel=0.025)
 
 
 def beam(w=2.0, s=0.3):
@@ -583,16 +583,28 @@ def shelf():
 
 
 def barrel():
+	"""F61: wide copper bands that hug the bulging staves (sized to the barrel at their height), a lid with
+	a handle, and a copper tap."""
 	o = kit.cylinder(0.33, 0.9, G((0, 0.45, 0)), tm(None, "b") if STYLE == "wood" else kit.tex_mat("wood", "b"), verts=16, bevel=0.02)
 	for v in o.data.vertices:
 		t = v.co.z / 0.45
 		k = 1.0 + 0.1 * (1 - t * t)
 		v.co.x *= k
 		v.co.y *= k
-	for y in (0.1, 0.3, 0.6, 0.8):
-		kit.ring(0.34 + (0.03 if 0.2 < y < 0.7 else 0.0), 0.016, G((0, y, 0)), kit.tex_mat("iron"), seg=24)
-	kit.cylinder(0.3, 0.02, G((0, 0.9, 0)), kit.tex_mat("wood", "c"), verts=16, bevel=0)
-	kit.tcyl("wood", 0.03, 0.08, G((0, 0.35, 0.36)), rot=(90, 0, 0), verts=8, variant="dark")
+	band = kit.tex_mat("copper", "b")
+	for y in (0.12, 0.32, 0.58, 0.78):
+		t = (y - 0.45) / 0.45
+		r = 0.33 * (1.0 + 0.1 * (1 - t * t)) * math.cos(math.pi / 16) + 0.006
+		kit.cylinder(r, 0.07, G((0, y, 0)), band, verts=16, bevel=0.004)
+		for k in range(4):
+			a = 2 * math.pi * k / 4 + 0.4
+			kit.rivet(G((math.cos(a) * (r + 0.004), y, math.sin(a) * (r + 0.004))), kit.tex_mat("copper", "dark"), r=0.012)
+	kit.cylinder(0.31, 0.03, G((0, 0.905, 0)), kit.tex_mat("wood", "c"), verts=16, bevel=0.004)
+	gbox((0, 0.94, 0), (0.22, 0.04, 0.05), kit.tex_mat("copper", "b"), bevel=0.008)
+	for x in (-0.1, 0.1):
+		gbox((x, 0.925, 0), (0.04, 0.04, 0.05), kit.tex_mat("copper", "b"), bevel=0.006)
+	kit.cylinder(0.025, 0.1, G((0, 0.25, 0.37)), kit.tex_mat("copper", "b"), rot=(90, 0, 0), verts=8, bevel=0.004)
+	gbox((0, 0.22, 0.41), (0.03, 0.06, 0.03), kit.tex_mat("copper", "b"), bevel=0.004)
 
 
 def crate():

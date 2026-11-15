@@ -44,7 +44,7 @@ def fr(axis, a0, a1, c0, c1, s0, s1, material, bevel=0.005):
 
 def stoneify(o, seed):
 	"""Make a stone part look knapped: chipped, uneven faces."""
-	kit.roughen(o, amount=0.007, cuts=2, seed=seed)
+	kit.roughen(o, amount=0.013, cuts=2, seed=seed)  # F54: chipped, not perfect
 	for m in list(o.modifiers):
 		o.modifiers.remove(m)
 	return o
@@ -128,7 +128,8 @@ def great_axe(m):
 def sword(m):
 	stone = m == "stone"
 	kit.cone(0.022, 0.02, 0.17, (0, 0, 0.1), kit.tex_mat("wood", "b"), verts=8)
-	kit.rope_wrap((0, 0, 0), 0.025, 0.03, 0.17, 6, thick=0.008, material=kit.tex_mat("leather", "dark"))
+	grip = kit.tex_mat("rope") if m == "copper" else kit.tex_mat("leather", "dark")
+	kit.rope_wrap((0, 0, 0), 0.025, 0.03, 0.175, 10, thick=0.0085, material=grip)  # F53: tight, the whole handle
 	kit.gem((0, 0, 0.02), (0.035, 0.035, 0.03), kit.tex_mat("iron" if stone else m), seed=2)
 	if stone:
 		guard = stoneify(kit.tbox("stone", (0.2, 0.06, 0.045), (0, 0, 0.19), variant="dark", bevel=0), 3)
@@ -148,8 +149,7 @@ def sword(m):
 				faces.append((a, b, b + 4, a + 4))
 		faces.append((3, 2, 1, 0))
 		faces.append(tuple(range((levels - 1) * 4, levels * 4)))
-		kit._mesh_obj("blade", verts, faces, kit.tex_mat("stone", "c"), smooth=False)
-		kit.rope_wrap((0, 0, 0), 0.028, 0.2, 0.25, 3, thick=0.008)
+		kit.roughen(kit._mesh_obj("blade", verts, faces, kit.tex_mat("stone", "c"), smooth=False), amount=0.004, cuts=1, seed=14)
 		return
 	kit.tbox(m, (0.22, 0.05, 0.035), (0, 0, 0.19), bevel=0.01)
 	for s in (-1, 1):
@@ -199,7 +199,9 @@ def great_maul(m):
 def spear(m):
 	stone = m == "stone"
 	kit.cone(0.024, 0.019, 1.26, (0, 0, 0.63), kit.tex_mat("wood", "b"), verts=10)
-	kit.rope_wrap((0, 0, 0), 0.026, 0.45, 0.68, 9, thick=0.008, material=kit.tex_mat("leather", "dark"))
+	kit.rope_wrap((0, 0, 0), 0.026, 0.45, 0.68, 15, thick=0.0085, material=kit.tex_mat("rope") if m == "copper" else kit.tex_mat("leather", "dark"))
+	if m == "copper":  # F52: tight binding under the head too
+		kit.rope_wrap((0, 0, 0), 0.025, 1.12, 1.2, 6, thick=0.0075, material=kit.tex_mat("rope"))
 	kit.cone(0.02, 0.0, 0.07, (0, 0, -0.01), kit.tex_mat("iron"), rot=(180, 0, 0), verts=6)
 	kit.ring(0.026, 0.008, (0, 0, 0.04), kit.tex_mat("iron"), seg=10)
 	if stone:
@@ -216,13 +218,17 @@ def spear(m):
 
 
 def build_hammer():
+	"""F49: a builder's mallet: wooden head with iron plates on both striking faces and an iron band, no spikes."""
 	handle(0.7, cap="wood", langet=(0.6, kit.tex_mat("iron")))
 	z = 0.64
 	fr("x", -0.13, 0.13, (0, z), (0, z), (0.13, 0.13), (0.13, 0.13), kit.tex_mat("wood", "c"), bevel=0.02)
 	for s in (-1, 1):
-		fr("x", s * 0.13, s * 0.15, (0, z), (0, z), (0.11, 0.11), (0.09, 0.09), kit.tex_mat("wood", "dark"), bevel=0.008)
-		kit.ring(0.078, 0.012, (s * 0.1, 0, z), kit.tex_mat("iron"), rot=(0, 90, 0), seg=4).rotation_euler.x = math.radians(45)
-	kit.tbox("iron", (0.025, 0.06, 0.02), (0, 0, z + 0.07), bevel=0.003)
+		fr("x", s * 0.13, s * 0.15, (0, z), (0, z), (0.135, 0.135), (0.125, 0.125), kit.tex_mat("iron", "dark"), bevel=0.008)
+		for (dy, dz) in ((-0.04, -0.04), (0.04, -0.04), (-0.04, 0.04), (0.04, 0.04)):
+			kit.rivet((s * 0.152, dy, z + dz), kit.tex_mat("iron"), r=0.009)
+		kit.box((0.03, 0.14, 0.14), (s * 0.08, 0, z), kit.tex_mat("iron"), bevel=0.004, wobble=0)
+	kit.box((0.04, 0.012, 0.11), (0, -0.068, z), kit.tex_mat("iron"), bevel=0.003, wobble=0)
+	kit.box((0.04, 0.012, 0.11), (0, 0.068, z), kit.tex_mat("iron"), bevel=0.003, wobble=0)
 
 
 def crossbow(m):
@@ -245,8 +251,9 @@ def crossbow(m):
 		fr("x", s * 0.2, s * 0.33, (0, 0.58), (0.03, 0.52), (0.035, 0.035), (0.02, 0.02), arm)
 		fr("x", s * 0.33, s * 0.37, (0.03, 0.52), (0.0, 0.53), (0.02, 0.02), (0.015, 0.015), arm)
 	kit.rope_wrap((0, 0.62), 0.045, -0.06, 0.06, 4, thick=0.009, axis="x")
-	for s in (-1, 1):
-		kit.rope((s * 0.36, 0.0, 0.53), (0, -0.03, 0.42), r=0.004)
+	for s in (-1, 1):  # F50: a tight string, tip to nut, in straight lines
+		kit.rope((s * 0.365, 0.0, 0.53), (0, -0.03, 0.415), r=0.0055)
+		kit.ring(0.014, 0.004, (s * 0.355, 0.0, 0.53), kit.tex_mat("rope"), rot=(0, 90, 0), seg=8)
 	# Stirrup at the front for cocking with a foot.
 	kit.ring(0.06, 0.011, (0, 0, 0.71), metal, rot=(90, 0, 0), seg=14)
 	if not stone:
@@ -268,56 +275,71 @@ def shield(m):
 	if m == "stone":
 		for dz in (0.12, -0.12):
 			kit.box((0.6, 0.012, 0.05), (0, -0.026, z + dz), kit.tex_mat("iron"), bevel=0.004, wobble=0)
-	# Back: a wooden grip bar across the middle and a leather arm strap.
-	kit.tbox("wood", (0.26, 0.05, 0.05), (0, 0.06, z), variant="dark", bevel=0.01)
-	for s in (-1, 1):
-		kit.tbox("iron", (0.03, 0.05, 0.06), (s * 0.13, 0.045, z), bevel=0.004)
-	kit.tbox("leather", (0.05, 0.02, 0.3), (0.0, 0.035, z + 0.02), variant="dark", rot=(0, 90, 0), bevel=0.004)
-	kit.tbox("leather", (0.2, 0.03, 0.04), (0, 0.075, z + 0.13), variant="dark", bevel=0.004)
+	shield_back(r, z, hm(m) if m != "stone" else kit.tex_mat("iron"))
+
+
+def shield_back(r, z, metal):
+	"""F51 (like a Spartan shield): two cross battens, a big leather forearm strap with a buckle in the middle,
+	and an upright hand grip near the rim."""
+	for dz in (0.11, -0.11):
+		kit.box((0.56, 0.025, 0.06), (0, 0.036, z + dz), kit.tex_mat("wood", "dark"), bevel=0.006, wobble=0)
+	kit.box((0.16, 0.035, 0.24), (-0.04, 0.05, z), kit.tex_mat("leather", "dark"), bevel=0.01, wobble=0)
+	kit.box((0.2, 0.04, 0.06), (-0.04, 0.062, z), kit.tex_mat("leather", "a"), bevel=0.006, wobble=0)
+	kit.ring(0.03, 0.007, (-0.04, 0.085, z), metal, rot=(90, 0, 0), seg=4)
+	for dz in (-0.1, 0.1):
+		kit.rivet((-0.11, 0.07, z + dz), metal, r=0.009)
+		kit.rivet((0.03, 0.07, z + dz), metal, r=0.009)
+	gx = r * 0.62
+	for dz in (-0.1, 0.1):
+		kit.box((0.04, 0.05, 0.04), (gx, 0.05, z + dz), metal, bevel=0.005, wobble=0)
+	kit.cylinder(0.022, 0.24, (gx, 0.08, z), kit.tex_mat("wood", "b"), verts=8, bevel=0.003)
+	kit.rope_wrap((gx, 0.08), 0.024, z - 0.08, z + 0.08, 9, thick=0.007, material=kit.tex_mat("leather", "dark"))
 
 
 def bolt(tip):
-	# Shaft with bindings.
-	kit.cone(0.009, 0.008, 0.33, (0, 0, 0.165), kit.tex_mat("wood", "c"), verts=6, bevel=0)
-	kit.rope_wrap((0, 0, 0), 0.0105, 0.1, 0.115, 2, thick=0.003)
-	kit.rope_wrap((0, 0, 0), 0.0105, 0.29, 0.31, 2, thick=0.003)
-	# Fletching: three swept feather vanes, angled like real feathers.
-	feather = kit.tex_mat("cloth", "c")
+	"""F48: a long shaft with rope bindings, three real feathers, a copper socket and a big crystal tip
+	(stone grey, ember red, rime blue, blight green, glow amber)."""
+	L = 0.46
+	kit.cone(0.0095, 0.0085, L, (0, 0, L / 2), kit.tex_mat("wood", "c"), verts=8, bevel=0)
+	kit.rope_wrap((0, 0, 0), 0.011, 0.14, 0.16, 3, thick=0.0035, material=kit.tex_mat("rope"))
+	kit.rope_wrap((0, 0, 0), 0.011, 0.015, 0.035, 3, thick=0.0035, material=kit.tex_mat("rope"))
+	feather = kit.mat("bone", 0.05, rough=0.9)
+	quill = kit.mat("wood_dark", 0.1)
 	for k in range(3):
 		a = math.radians(k * 120 + 15)
 		cx, cy = math.cos(a), math.sin(a)
-		pts = [(0.0, 0.02), (0.0, 0.11), (0.032, 0.05), (0.036, 0.015)]
-		verts, faces = [], [(0, 1, 2, 3), (3, 2, 1, 0)]
-		for (rad, z) in pts:
-			rr = 0.009 + rad
-			# A slight sideways twist (like real fletching that spins the bolt).
-			tw = 0.006 * (z - 0.06) / 0.05
-			verts.append((cx * rr - cy * tw, cy * rr + cx * tw, z))
-		kit._mesh_obj("vane", verts, faces, feather, smooth=False)
-	z = 0.32
-	tips = {"stone": kit.tex_mat("stone", "b"), "metal": kit.tex_mat("iron", "c")}
+		# a feather: a long leaf shape with a ragged edge, standing out from the shaft
+		outline = [(0.0, 0.03), (0.012, 0.035), (0.03, 0.06), (0.038, 0.09), (0.034, 0.12), (0.022, 0.14), (0.0, 0.15)]
+		r_ = random.Random(k + 3)
+		verts = []
+		for (rad, zz) in outline:
+			rr = 0.009 + rad * (1 + r_.uniform(-0.12, 0.12))
+			verts.append((cx * rr, cy * rr, zz))
+		n = len(verts)
+		faces = [tuple(range(n)), tuple(reversed(range(n)))]
+		kit._mesh_obj("feather", verts, faces, feather, smooth=False)
+		kit.box((0.003, 0.003, 0.12), (cx * 0.0105, cy * 0.0105, 0.09), quill, bevel=0, wobble=0)
+	z = L - 0.01
+	kit.cone(0.013, 0.016, 0.04, (0, 0, z + 0.015), kit.tex_mat("copper", "b"), verts=8, bevel=0.002)
+	kit.ring(0.016, 0.004, (0, 0, z), kit.tex_mat("copper", "dark"), seg=10)
 	if tip == "thumper":
-		kit.tcyl("iron", 0.026, 0.04, (0, 0, z + 0.02), verts=10)
-		kit.gem((0, 0, z + 0.05), (0.032, 0.032, 0.025), kit.tex_mat("iron"), seed=1)
-		for k in range(4):
-			kit.box((0.012, 0.06, 0.012), (0, 0, z + 0.03), kit.tex_mat("iron", "dark"), bevel=0, wobble=0, rot=(0, 0, k * 45))
+		kit.tcyl("iron", 0.026, 0.04, (0, 0, z + 0.05), verts=10)
+		kit.gem((0, 0, z + 0.08), (0.032, 0.032, 0.025), kit.tex_mat("iron"), seed=1)
 		return
-	# A real arrowhead: flat diamond with a socket and two barbs.
-	head = tips.get(tip, kit.tex_mat("iron", "dark"))
-	kit.cone(0.013, 0.011, 0.03, (0, 0, z + 0.005), head, verts=6)
-	fr("z", z + 0.01, z + 0.035, (0, 0), (0, 0), (0.016, 0.008), (0.05, 0.008), head, bevel=0.002)
-	fr("z", z + 0.035, z + 0.095, (0, 0), (0, 0), (0.05, 0.008), (0.003, 0.003), head, bevel=0.002)
-	if tip == "stone":
-		stoneify(fr("z", z + 0.035, z + 0.09, (0, 0), (0, 0), (0.046, 0.014), (0.004, 0.004), head), 13)
-	glow = {"ember": kit.glow("fire", 0.8), "rime": kit.glow("crystal_blue", 0.6), "blight": kit.glow("sprout", 0.7),
-		"glow": kit.glow("spot", 0.6)}
 	if tip == "fang":
-		bone_fang((0, 0, z + 0.005), 0.1, (0, 0, 0))
+		bone_fang((0, 0, z + 0.035), 0.1, (0, 0, 0))
 		return
-	if tip in glow:
-		kit.crystal((0, 0, z + 0.03), 0.012, 0.06, glow[tip])
-		for s in (-1, 1):
-			kit.crystal((s * 0.014, 0, z + 0.02), 0.006, 0.03, glow[tip], tilt=(0, s * 30, 0))
+	colours = {"ember": ("fire", 0.8), "rime": ("crystal_blue", 0.6), "blight": ("sprout", 0.7), "glow": ("crystal_amber", 0.7)}
+	if tip in colours:
+		g = kit.glow(*colours[tip])
+		kit.crystal((0, 0, z + 0.03), 0.02, 0.09, g, sides=6)
+		return
+	head = kit.tex_mat("stone", "b") if tip == "stone" else kit.tex_mat("iron", "c")
+	o = fr("z", z + 0.03, z + 0.06, (0, 0), (0, 0), (0.02, 0.012), (0.05, 0.014), head, bevel=0.002)
+	o2 = fr("z", z + 0.06, z + 0.12, (0, 0), (0, 0), (0.05, 0.014), (0.004, 0.004), head, bevel=0.002)
+	if tip == "stone":
+		stoneify(o, 13)
+		stoneify(o2, 15)
 
 
 def bone_fang(base, length, tilt, s=1.0):
@@ -347,8 +369,7 @@ def shield_shell():
 		kit.ring(0.05, 0.022, (math.cos(a) * 0.18, -0.05, z + math.sin(a) * 0.18), kit.tex_mat("stone", "b"), rot=(90, 0, 0), seg=12)
 	for k in range(4):
 		kit.ring(0.1 - k * 0.022, 0.028 - k * 0.004, (0, -0.04 - k * 0.018, z), shell, rot=(90, 0, 0), seg=16)
-	kit.tbox("wood", (0.26, 0.05, 0.05), (0, 0.06, z), variant="dark", bevel=0.01)
-	kit.tbox("leather", (0.2, 0.03, 0.04), (0, 0.075, z + 0.13), variant="dark", bevel=0.004)
+	shield_back(r, z, kit.tex_mat("iron"))
 
 
 BUILD = {}

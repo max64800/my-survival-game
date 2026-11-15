@@ -155,7 +155,7 @@ def blob(colour, rgb, glow=0.0, size=(0.13, 0.11, 0.07), seed=2, bumps=0.012, ve
 	if drips:
 		for k in range(4):
 			a = k * 1.7
-			d = kit.gem((math.cos(a) * size[0] * 1.05, math.sin(a) * size[1] * 1.05, 0.01), (0.03, 0.025, 0.01), col(colour, rgb, glow=glow, rough=0.2), seed=k)
+			d = kit.gem((math.cos(a) * size[0] * 0.85, math.sin(a) * size[1] * 0.85, 0.012), (0.04, 0.032, 0.012), col(colour, rgb, glow=glow, rough=0.2), seed=k)
 			kit.soft(d, 1)
 	return o
 

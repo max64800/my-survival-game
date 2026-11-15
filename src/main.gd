@@ -100,6 +100,12 @@ func _ready() -> void:
 			_monsters = false
 			if mode == "menu":
 				mode = "solo"
+		elif arg == "kitcheck":
+			debug_script = "res://src/debug/kitcheck.gd"
+			_saving = false
+			_monsters = false
+			if mode == "menu":
+				mode = "solo"
 		elif arg == "ruincheck":
 			debug_script = "res://src/debug/ruincheck.gd"
 			_saving = false
