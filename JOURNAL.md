@@ -1043,3 +1043,42 @@ Important pieces (workbench, smelter, anvil) can be redone later with a better t
 - Eye finding missed the pale yellow beetle eyes (the test caught it). Fixed, plus a whole-body glow as a safety net.
 - Beetle legs split 3 + 1 when the body wasn't centred; now they split by position, 3 and 3.
 - Running the art preview with the word "autopilot" started the test robot instead (its fight picture was useful).
+
+## November 15, 2026 (PC, Claude 2): the Zone 1 building kit and everything from the night pictures, built by hand
+- **What we did:**
+  - **Building kit:** three styles, each its own design (F60).
+    - **Delver's Shack:** bark logs, uneven split planks, rope lashings, stone footings, shingle roofs.
+    - **Stonehold:** stone blocks in 4 colours with dark mortar, copper bands, timber lintels, a flat roof with
+      battlements.
+    - **Hearthbrick:** bricks in 4 colours, pale limestone corners, brick arches under the foundations, an arched
+      leaded window, a green round door, terracotta tile roofs.
+    - Every style has the new 60° triangles, the sloped wall, and the round doorway with its round door. Roofs are
+      hollow panels, open underneath.
+    - A new test robot (`kitcheck`) builds a small house in each style and photographs it. Screenshots are in
+      `journey/kit_zone1/`.
+    - Scores: Shack 8, Stonehold 8, Hearthbrick 8.5.
+  - **From the night pictures:** 17 stations remade (the 6 missing ones plus every station note F34-F47), 48
+    material items (F56), 68 decor pieces (`assets/models/decor/`: furniture for each style, lights, storage, mine
+    props, wall trophies, fungal garden, creative beams at real 26° and 45°), and the weapon and tool notes F48-F54.
+    The barrel's bands now hug it (F61).
+  - **Floating check:** a "does anything float?" check for every model (`tools/asset_forge/islands.py`, the same
+    rule as Claude 1's game test). All 484 models pass.
+- **Hurdles / mistakes (including Claude's):**
+  - Chrome couldn't be reached by either browser tool, so the 12 building-kit pictures stayed in ChatGPT. Built
+    from the written plan instead. Six missing textures were made by recolouring our own textures instead of new
+    ChatGPT ones.
+  - Claude 1 was editing the building code at the same time. Claude 2 only made models, and agreed the exact sizes
+    with Claude 1 by message.
+  - Claude's mistakes, each caught in the preview pictures and fixed:
+    - Shack: the round door's top looked like jagged teeth; a plank ran across the doorway and the window; the
+      gables showed stair-steps under the slope. Fixed by cutting each plank exactly to the curve or slope.
+    - Stone and brick: the sloped walls showed stair-step gaps, and the triangle floors were half empty. Fixed the
+      same way, with exact cuts.
+    - The copper basin's water was hidden under a solid top again. That's the 4th time; it's now a known trap.
+    - The twin smelter's ledge hid the furnace mouths.
+    - The pie's lattice top floated above the pie: old code moved it after building it, and the move didn't take.
+  - Things the floating check caught: shutters 11 cm off the wall, stacked stones with 2 cm gaps, a log pile beside
+    the kiln, boots standing apart, slime drips beside the slime, flowers above a pot, a venom pod built as half a
+    ball.
+  - A long code patch broke on the shell's quote handling. Fixed by writing the new code as its own file.
+  - Not done: F55 (outfits). Its pictures are only in ChatGPT.

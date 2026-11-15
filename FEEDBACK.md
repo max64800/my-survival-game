@@ -50,35 +50,35 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 
 *(Nov 14, your notes on every station, weapon, outfit and building piece. Full details, grouped by kind of problem: `docs/art/MODEL-FEEDBACK-2026-11-14.md`. New rule: every model in the workbench style; ChatGPT pictures whenever they help.)*
 
-- [ ] **F34. Bellows need a lot of work.** Boards, handles and nozzle float apart; remake as one hinged piece with leather pleats. *From: you. Said: 1×*
-- [ ] **F35. The campfire still floats a bit.** ("still": it was meant to be fixed before.) *From: you. Said: 1×*
-- [ ] **F36. The carpentry table needs more stuff on it.** *From: you. Said: 1×*
-- [ ] **F37. The chest's base is still wider than the lid; make them match.** *From: you. Said: 1×*
-- [ ] **F38. Chopping block: the axe doesn't look like an axe; the tree rings stick out and are perfect circles.** *From: you. Said: 1×*
-- [ ] **F39. Cooking pot soup looks the same everywhere; needs a gradient and texture.** *From: you. Said: 1×*
-- [ ] **F40. Copper drip basin water is one flat shade.** *From: you. Said: 1×*
-- [ ] **F41. Grindstone: the side wood blocks aren't attached; the blue bottom needs a darker gradient.** *From: you. Said: 1×*
-- [ ] **F42. Ore Crate: the gems float above the pile** (the F33 pile). *From: you. Said: 1×*
-- [ ] **F43. Rune slab: the top-left of the frame is missing.** *From: you. Said: 1×*
-- [ ] **F44. The stone saw floats, not attached to anything.** *From: you. Said: 1×*
-- [ ] **F45. Tanning rack: lean it back with supports (like Valheim).** *From: you. Said: 1×*
-- [ ] **F46. Tool rack: hang it on the wall instead of standing.** *From: you. Said: 1×*
-- [ ] **F47. Training dummy: a lumpy, not-perfect square head.** *From: you. Said: 1×*
-- [ ] **F48. Bolts: better feathers; tips in different crystal colours.** *From: you. Said: 1×*
-- [ ] **F49. Building hammer: no spikes, just iron plates on the sides (it's for building).** *From: you. Said: 1×*
-- [ ] **F50. Crossbow string must be tight.** *From: you. Said: 1×*
-- [ ] **F51. Shield back: a big forearm strap + a hand grip near the edge (Spartan style), not 2 sticks.** *From: you. Said: 1×*
-- [ ] **F52. Copper spear: tighter rope.** *From: you. Said: 1×*
-- [ ] **F53. Copper sword: tight rope along the whole handle, no gaps.** *From: you. Said: 1×*
-- [ ] **F54. Stone tools too perfect: chip them more. Stone sword has rope sticking out.** *From: you. Said: 1×*
+- [x] ~~**F34. Bellows need a lot of work.** Boards, handles and nozzle float apart; remake as one hinged piece with leather pleats.~~ Done Nov 15 (Claude 2): New bellows from the night picture: one piece, two pear-shaped boards with handle loops, pleated leather between them, copper nozzle and hinge strap, on a stand. *From: you. Said: 1×*
+- [x] ~~**F35. The campfire still floats a bit.** ("still": it was meant to be fixed before.)~~ Done Nov 15 (Claude 2): New campfire: stones sitting in a dirt patch, logs resting on the embers; the automatic check finds nothing floating. *From: you. Said: 1×*
+- [x] ~~**F36. The carpentry table needs more stuff on it.**~~ Done Nov 15 (Claude 2): Carpentry bench now covered in work: plank stack, saw, mallet, square, shavings, pegs, a vise, a shelf with a tool box. *From: you. Said: 1×*
+- [x] ~~**F37. The chest's base is still wider than the lid; make them match.**~~ Done Nov 15 (Claude 2): New chest: base exactly as wide as the lid, copper straps and corners, lock plate, rope handles. *From: you. Said: 1×*
+- [x] ~~**F38. Chopping block: the axe doesn't look like an axe; the tree rings stick out and are perfect circles.**~~ Done Nov 15 (Claude 2): New stump with roots and bark, uneven rings, a real axe (wedge head, leather grip) bitten into it. *From: you. Said: 1×*
+- [x] ~~**F39. Cooking pot soup looks the same everywhere; needs a gradient and texture.**~~ Done Nov 15 (Claude 2): Stew now has a dark broth, a red middle and chunks; the pot hangs from a real 3-leg tripod (F64). *From: you. Said: 1×*
+- [x] ~~**F40. Copper drip basin water is one flat shade.**~~ Done Nov 15 (Claude 2): Water now has depth: a dark bottom layer, a lighter top and a pale ring (basin, bucket, grindstone, fountain). *From: you. Said: 1×*
+- [x] ~~**F41. Grindstone: the side wood blocks aren't attached; the blue bottom needs a darker gradient.**~~ Done Nov 15 (Claude 2): New grindstone: every block on one base, iron brackets, crank, stone trough with darker water. *From: you. Said: 1×*
+- [x] ~~**F42. Ore Crate: the gems float above the pile** (the F33 pile).~~ Done Nov 15 (Claude 2): The ore now sits on a real heap shape, with the lumps and crystals sunk into it. *From: you. Said: 1×*
+- [x] ~~**F43. Rune slab: the top-left of the frame is missing.**~~ Done Nov 15 (Claude 2): The carved border is now a raised frame set forward, so all four corners show. *From: you. Said: 1×*
+- [x] ~~**F44. The stone saw floats, not attached to anything.**~~ Done Nov 15 (Claude 2): New stone saw: the frame saw stands in the cut of the stone (F65), on a heavy sawhorse. *From: you. Said: 1×*
+- [x] ~~**F45. Tanning rack: lean it back with supports (like Valheim).**~~ Done Nov 15 (Claude 2): New tanning rack: leans back on two lashed props, the hide is laced on with rope. *From: you. Said: 1×*
+- [x] ~~**F46. Tool rack: hang it on the wall instead of standing.**~~ Done Nov 15 (Claude 2): New tool rack is a wall board (flat back). Claude 1 still has to let it snap onto walls in the game. *From: you. Said: 1×*
+- [x] ~~**F47. Training dummy: a lumpy, not-perfect square head.**~~ Done Nov 15 (Claude 2): New dummy: lumpy stitched sack head with an angry face, straw arms, straw skirt. *From: you. Said: 1×*
+- [x] ~~**F48. Bolts: better feathers; tips in different crystal colours.**~~ Done Nov 15 (Claude 2): Bolts are longer, with three real feathers and big crystal tips: grey, red, blue, green, amber. *From: you. Said: 1×*
+- [x] ~~**F49. Building hammer: no spikes, just iron plates on the sides (it's for building).**~~ Done Nov 15 (Claude 2): The building hammer is now a mallet with iron plates on both faces, no spikes. *From: you. Said: 1×*
+- [x] ~~**F50. Crossbow string must be tight.**~~ Done Nov 15 (Claude 2): The string runs tight and straight from each bow tip to the nut. *From: you. Said: 1×*
+- [x] ~~**F51. Shield back: a big forearm strap + a hand grip near the edge (Spartan style), not 2 sticks.**~~ Done Nov 15 (Claude 2): Shield backs now have a wide leather forearm strap with a buckle and a wrapped hand grip near the rim. *From: you. Said: 1×*
+- [x] ~~**F52. Copper spear: tighter rope.**~~ Done Nov 15 (Claude 2): The spear's rope is wound tight with no gaps, plus a binding under the head. *From: you. Said: 1×*
+- [x] ~~**F53. Copper sword: tight rope along the whole handle, no gaps.**~~ Done Nov 15 (Claude 2): The sword's rope covers the whole handle with no gaps. *From: you. Said: 1×*
+- [x] ~~**F54. Stone tools too perfect: chip them more. Stone sword has rope sticking out.**~~ Done Nov 15 (Claude 2): Stone heads are chipped much more; the stone sword lost the rope that stuck out of its blade. *From: you. Said: 1×*
 - [ ] **F55. All outfits too blocky and simple; remake (ChatGPT pictures).** *From: you. Said: 1×*
-- [ ] **F56. Material items need remaking too.** *From: you. Said: 1×*
+- [x] ~~**F56. Material items need remaking too.**~~ Done Nov 15 (Claude 2): All 48 material items remade from the 4 night pictures. *From: you. Said: 1×*
 - [x] ~~**F57. Doorway should be round, like a hobbit door.**~~ Done Nov 15 (game code): the Doorway and the Door are round-topped (curve starts at 1.3 m). The stone Arched Doorway has a ring of wedge stones. Claude 2's hand-made door and doorway models are still square, and are being remade round. *From: you. Said: 1×*
 - [x] ~~**F58. White stuff shows on the edges of pieces when you turn** (doorway, stone, arches in clay brick and copper).~~ Done Nov 15. Cause: the shader's "rim light" lit up every surface seen edge-on, no matter where the light was. A stone wall is dozens of small blocks with gaps, so turning made white streaks on all their edges. The rim light is now off for building pieces (props and monsters keep it). *From: you. Said: 2×* (doorway/stone; arches)
 - [x] ~~**F59. Arches (clay brick, copper) look weird.**~~ Done Nov 15. The curved stones were separate boxes poking into the opening, overlapping the beam on the same flat face (that flickers). Now the arch is a real curve of wedge stones that meet edge to edge, with the corners above filled in. *From: you. Said: 1×*
-- [ ] **F60. Each building material should have its own design, not a reskin; each tier a bit fancier.** *From: you. Said: 1×*
-- [ ] **F61. Barrel rings don't touch each other.** *From: you. Said: 1×*
-- [ ] **F62. Beams: halves don't touch, a beam can't be 2 bricks; no perfect rectangles anywhere (curves, scratches, texture).** *From: you. Said: 1×*
+- [x] ~~**F60. Each building material should have its own design, not a reskin; each tier a bit fancier.**~~ Done Nov 15 (Claude 2): Three styles, each its own design: Delver's Shack (logs, planks, shingles), Stonehold (stone in 4 tones, copper bands, flat roof, battlements), Hearthbrick (bricks, limestone, terracotta tiles). *From: you. Said: 1×*
+- [x] ~~**F61. Barrel rings don't touch each other.**~~ Done Nov 15 (Claude 2): Wide copper bands now hug the barrel's bulge at every height; a lid handle and a copper tap. *From: you. Said: 1×*
+- [x] ~~**F62. Beams: halves don't touch, a beam can't be 2 bricks; no perfect rectangles anywhere (curves, scratches, texture).**~~ Done Nov 15 (Claude 2): Beams are single rough logs or timbers now (no halves, no bricks); every block is a little uneven and tilted. *From: you. Said: 1×*
 - [x] ~~**F63. Drop 3 mine props from the decor set: pickaxe in a rock pile, winch with bucket, tunnel support frame.**~~ Done Nov 15: mine props picture redone with only the other 5. *From: you. Said: 1×*
 - [x] ~~**F64. Cooking pot tripod needs a third leg behind.**~~ Done Nov 15 (picture): new pot on a real 3-leg tripod. The 3D model still needs it. *From: you. Said: 1×*
 - [x] ~~**F65. Stone saw: the station is decent, but the saw on top is not physically possible.**~~ Done Nov 15 (picture): a frame saw whose blade sits in a cut in the stone. The 3D model still needs it. *From: you. Said: 1×*
