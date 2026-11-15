@@ -39,3 +39,23 @@ func test_next_steps_tick_off() -> void:
 		auth.builder.structure.add(100 + i, "floor", "cut_stone", Vector3(i * 2, 0, 0), 0, true)
 	check(Goals.next_steps(ps, auth).is_empty(), "all done: the list disappears")
 	root.queue_free()
+
+
+## F96: the placing preview uses the host's rules: floors yes, walls only for wall stations, not on top of another.
+func test_placing_preview_rules() -> void:
+	var root := Node3D.new()
+	tree.root.add_child(root)
+	var stations := Node3D.new()
+	root.add_child(stations)
+	var auth := GameAuthority.new()
+	auth.stations_root = stations
+	root.add_child(auth)
+	var me := Vector3.ZERO
+	var floor_spot := PlaceGhost.where("workbench", Vector3(2, 0, 0), Vector3.UP, 0.0, me, auth)
+	check(floor_spot.ok, "a workbench fits on the floor nearby")
+	check(not PlaceGhost.where("workbench", Vector3(2, 1, 0), Vector3.LEFT, 0.0, me, auth).ok, "not on a wall")
+	check(PlaceGhost.where("tool_rack", Vector3(2, 1, 0), Vector3.LEFT, 0.0, me, auth).ok, "the tool rack goes on a wall")
+	check(not PlaceGhost.where("workbench", Vector3(20, 0, 0), Vector3.UP, 0.0, me, auth).ok, "not too far away")
+	auth._ev_place_station(1, "campfire", Vector3(2.5, 0, 0), 0.0)
+	check(not PlaceGhost.where("workbench", Vector3(2, 0, 0), Vector3.UP, 0.0, me, auth).ok, "not on top of another station")
+	root.queue_free()

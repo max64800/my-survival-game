@@ -519,7 +519,7 @@ func request_hit_rubble(peer_id: int, rid: int) -> String:
 func _ev_rubble_hit(rid: int) -> void:
 	var rb: Rubble = rubble.get(rid)
 	if rb:
-		Sfx.play("dig", rb.global_position, -4.0)
+		Sfx.play("dig_soft", rb.global_position, -4.0)
 
 
 @rpc("authority", "call_local", "reliable")

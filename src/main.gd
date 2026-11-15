@@ -307,6 +307,9 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	bm.name = "BuildMode"
 	bm.dwarf = dwarf
 	dwarf.build_mode = bm
+	var place_ghost := PlaceGhost.new()  # see where a workbench/chest will go before placing it (F96)
+	place_ghost.dwarf = dwarf
+	add_child(place_ghost)
 	add_child(bm)
 
 	hud = Hud.new()
