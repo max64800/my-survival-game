@@ -24,7 +24,7 @@ var _fire: OmniLight3D
 ## Station levels (building polish spec §3): a station is level 1, plus 1 for each DIFFERENT extra
 ## of its own standing within 4 m. Levels unlock building pieces and gear upgrades.
 const EXTRAS := {
-	"workbench": ["chopping_block", "carpenters_vise", "tool_rack"],
+	"workbench": ["chopping_block", "tool_rack", "carpenters_vise"],  # level 2, 3 (both copper-free), 4 (copper)
 	"masonry_table": ["chisel_rack", "stone_saw"],
 	"anvil": ["bellows", "grindstone"],
 }

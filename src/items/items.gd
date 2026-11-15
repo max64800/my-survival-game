@@ -58,7 +58,7 @@ const DATA := {
 	"bug_meat": {name = "Bug Meat", color = Color(0.75, 0.55, 0.45), short = "Bg", kind = "food", hunger = 10, upset = 0.3},
 	"glow_gland": {name = "Glow Gland", color = Color(0.5, 0.9, 0.6), short = "Gg", kind = "fuel", fuel = 480.0},  # twice a crystal
 	"bolt_fang": {name = "Fang Bolt", color = Color(0.9, 0.88, 0.82), short = "Bf", kind = "ammo"},
-	"pickaxe_fang": {name = "Fanged Pickaxe", stack = 1, color = Color(0.85, 0.82, 0.75), short = "Pf", kind = "pickaxe", power = 13, tier = 0},
+	"pickaxe_fang": {name = "Fanged Pickaxe", stack = 1, color = Color(0.85, 0.82, 0.75), short = "Pf", kind = "pickaxe", power = 13, tier = 0, copper = true},  ## the first pickaxe that can mine copper (F115)
 	"shield_shell": {name = "Shell Shield", stack = 1, color = Color(0.55, 0.5, 0.44), short = "Ss", kind = "shield", weapon = "shield", tier = 1},
 	"glow_lamp": {name = "Glow Lamp", stack = 5, color = Color(0.5, 0.95, 0.6), short = "GL", kind = "station"},
 	# Shell armor (owner's choice): between leather (22%) and copper (48%): 19 armor = 38% less damage.

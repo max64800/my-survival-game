@@ -38,6 +38,11 @@ const COPPER_THRESHOLD := 0.915
 const SOLID_FILL := -6.0  ## SDF value used for blocks that are all rock
 
 var seed: int
+## The Copper Deeps (owner, Nov 15, F115): the only copper in Mossy Hollows, around 1-2 far, low caverns.
+## {center, reach}: ore can appear in rock within `reach` of the center.
+var deeps: Array[Dictionary] = []
+const DEEPS_COUNT := 2
+const DEEPS_THRESHOLD := 0.80  ## rich veins there (it's the only copper in the zone)
 var rooms: Array[Dictionary] = []  ## {center: Vector3, radii: Vector3, big: bool, kind: String, sealed: bool}
 ## Special places (world doc 3.1): {id, type, pos, normal, room}. type: lair, nest_cavern,
 ## great_hall, ruin, nest, camp, shrine, geode, marking.
@@ -82,6 +87,7 @@ func _init(p_seed: int = 1, big_caverns: int = 3, small_rooms: int = 12) -> void
 	_connect_rooms(rng, 0, 0.0)
 	_bake_shapes()
 	spawn_point = _find_spawn()
+	_pick_deeps(rooms.size())
 	var poi_rng := RandomNumberGenerator.new()
 	poi_rng.seed = p_seed + 999  # its own dice, so adding places never moves the caves
 	_plan_pois(poi_rng, 0, rooms.size(), 0, segments.size(), rooms[0].center, "mossy", 0.0)
@@ -914,13 +920,40 @@ func _is_patch(p: Vector3, patch: int) -> bool:
 	return _dirt_noise.get_noise_3d(p.x * 0.6 + 500.0, p.y * 1.4, p.z * 0.6) < -0.3
 
 
+## The Copper Deeps: of Mossy's rooms (0..count-1), the ones that are both far from where you start and
+## low down. Picked from the cave's own layout, so the same seed always gives the same Deeps.
+func _pick_deeps(count: int) -> void:
+	var scored := []
+	for i in count:
+		var rm: Dictionary = rooms[i]
+		if rm.get("biome", "mossy") != "mossy" or rm.get("sealed", false):
+			continue
+		var c: Vector3 = rm.center
+		var far := Vector2(c.x - spawn_point.x, c.z - spawn_point.z).length()
+		scored.append([far + (spawn_point.y - c.y) * 1.5, i])
+	scored.sort_custom(func(a, b): return a[0] > b[0])
+	for k in mini(DEEPS_COUNT, scored.size()):
+		var rm: Dictionary = rooms[scored[k][1]]
+		var rr: Vector3 = rm.radii
+		deeps.append({center = rm.center, reach = maxf(rr.x, maxf(rr.y, rr.z)) + 6.0, room = scored[k][1]})
+
+
+func in_deeps(p: Vector3) -> bool:
+	for d in deeps:
+		if p.distance_to(d.center) < d.reach:
+			return true
+	return false
+
+
 func _is_ore(p: Vector3i) -> bool:
 	var cell := Vector3(floori(p.x / float(ORE_CELL)), floori(p.y / float(ORE_CELL)), floori(p.z / float(ORE_CELL)))
 	var n := _ore_noise.get_noise_3dv(cell * ORE_CELL + Vector3.ONE * (ORE_CELL * 0.5))
 	# Deeper = a bit more copper.
+	if p.x < SLAB_X + SLAB_W * 0.5:
+		# Mossy Hollows: copper only in the Copper Deeps (F115).
+		return in_deeps(Vector3(p)) and n > DEEPS_THRESHOLD
 	var depth_bonus := clampf((-p.y) / 64.0, 0.0, 1.0) * 0.08
-	var threshold := COPPER_THRESHOLD if p.x < SLAB_X + SLAB_W * 0.5 else ORE_THRESHOLD
-	return n + depth_bonus > threshold
+	return n + depth_bonus > ORE_THRESHOLD
 
 
 # ---------------------------------------------------------------- voxel generation

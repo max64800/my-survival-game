@@ -637,6 +637,14 @@ func request_hit(peer_id: int, point: Vector3, normal: Vector3) -> Dictionary:
 	return result
 
 
+## Copper is too hard for plain stone (F115): you need a Fang Pickaxe (Workbench level 2) or better.
+## Returns why not ("" = this pickaxe can mine it). `tool` "" = bare hands.
+static func ore_too_hard(mat: int, tool: String) -> String:
+	if mat != Mat.COPPER or Items.tier(tool) >= 1 or Items.info(tool).get("copper", false):
+		return ""
+	return "Copper is too hard for stone. Make a Fang Pickaxe (Workbench level 2: 4 bat fangs, 1 leather)."
+
+
 func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
 	var power: float = Items.dig_power(ps.selected_item()) * ps.progress.dig_power_mult() \
 		* (1.0 + Gems.bonus(ps.inventory.get_slot(ps.hand_slot())).get("dig", 0.0)) 		* (1.0 + Upgrades.bonus(ps.inventory.get_slot(ps.hand_slot())))  # +15% per upgrade step
@@ -660,6 +668,9 @@ func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
 	if mat < 0:
 		return {state = "air"}
 	var tool_tier := 0 if bare else Items.tier(ps.selected_item())
+	var too_hard := ore_too_hard(mat, "" if bare else ps.selected_item())
+	if too_hard != "":
+		return {state = "blocked", material = mat, point = point, why = too_hard}
 	var needed := Mat.hits_needed(mat, power, tool_tier)
 	if needed == 0:
 		return {state = "blocked", material = mat, point = point}
@@ -1023,16 +1034,33 @@ func request_poi(peer_id: int, poi_id: int) -> String:
 	return ""
 
 
+## How many of this biome's wall markings (boss clues) the group has read.
+func markings_found(biome: String) -> int:
+	var n := 0
+	for id in world_state.get("clues", []):
+		var poi: Dictionary = world.maker.pois[id]
+		if poi.type == "marking" and poi.get("biome", "mossy") == biome:
+			n += 1
+	return n
+
+
+## How many you need before the boss can be called: 3 (or all of them, if a cave has fewer).
+func markings_needed(biome: String) -> int:
+	return mini(3, world.maker.pois_of("marking", biome).size())
+
+
 ## The summoning altar in a main boss lair: an offering brings a beaten boss back (doc 8.1).
 func _altar(ps: PlayerState, poi: Dictionary) -> String:
 	var boss := ""
 	for id in Monsters.OFFERINGS:
 		if Monsters.BOSSES[id].biome == poi.biome:
 			boss = id
-	if boss == "" or not world_state.bosses_dead.has(boss):
-		return "sleeping"  # the boss still lives here
+	if boss == "":
+		return "sleeping"
 	if monsters._boss_alive(boss):
 		return "awake"
+	if markings_found(poi.biome) < markings_needed(poi.biome):
+		return "need_markings"  # find the wall markings that point here first (F115)
 	var need: Dictionary = Monsters.OFFERINGS[boss]
 	var shard := ""
 	for item in need:
@@ -1099,6 +1127,8 @@ func request_craft(peer_id: int, recipe_id: String, station_id: int = 0) -> bool
 		st = null
 	elif st == null or Recipes.station_type(st.kind) != r.station or _chest(ps).distance_to(st.global_position) > STATION_REACH + 1.0:
 		return false
+	if st and st.level() < int(r.get("level", 1)):
+		return false  # needs a better-equipped station (F115)
 	var fuel_item := ""
 	if r.get("fuel", 0) > 0:
 		for f in ["coal", "rootwood", "mushroom_wood"]:

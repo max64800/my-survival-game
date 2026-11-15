@@ -130,20 +130,24 @@ func test_side_boss_cavern_becomes_a_raid_source() -> void:
 	_teardown()
 
 
-func test_altar_resummons_a_beaten_boss() -> void:
+## F115: the boss sleeps until you've read the wall markings and bring the offering
+## (5 copper ingots, 3 bat fangs, 2 glow glands). The same altar calls him back after he's beaten.
+func test_altar_needs_markings_then_an_offering() -> void:
 	await _setup()
 	var lair: Dictionary = world.maker.lair_poi("mossy")
 	player.global_position = lair.pos + Vector3(2, 0.5, 0)
-	check_eq(auth.request_poi(1, lair.id), "sleeping", "Orrumhal still lives: the altar is cold")
-	auth.world_state.bosses_dead.append("orrumhal")
-	check_eq(auth.request_poi(1, lair.id), "need_offering", "beaten, but no offering yet")
-	ps.inventory.add("copper_ingot", 10)
-	ps.inventory.add("crystal_blue", 5)
-	auth.rune_slab.shards.ochre = 1
-	check_eq(auth.request_poi(1, lair.id), "summoned", "the offering calls him back")
+	auth.monsters._wake_bosses()
+	check(not auth.monsters._boss_alive("orrumhal"), "walking up to his lair doesn't wake him any more")
+	check_eq(auth.request_poi(1, lair.id), "need_markings", "first, find the wall markings")
+	for poi in world.maker.pois_of("marking", "mossy"):
+		auth.world_state.clues.append(poi.id)
+	check_eq(auth.request_poi(1, lair.id), "need_offering", "markings read, but no offering yet")
+	ps.inventory.add("copper_ingot", 5)
+	ps.inventory.add("bat_fang", 3)
+	ps.inventory.add("glow_gland", 2)
+	check_eq(auth.request_poi(1, lair.id), "summoned", "the offering calls him")
 	check(auth.monsters._boss_alive("orrumhal"), "Orrumhal is here")
-	check_eq(ps.inventory.count_of("copper_ingot"), 0, "ingots spent")
-	check_eq(auth.rune_slab.shards.ochre, 0, "shard spent")
+	check_eq(ps.inventory.count_of("copper_ingot") + ps.inventory.count_of("bat_fang") + ps.inventory.count_of("glow_gland"), 0, "the offering is spent")
 	check_eq(auth.request_poi(1, lair.id), "awake", "can't call him twice")
 	_teardown()
 

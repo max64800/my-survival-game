@@ -586,12 +586,14 @@ func _altar_text(biome: String) -> String:
 		if Monsters.BOSSES[id].biome != biome:
 			continue
 		var boss: String = Monsters.BOSSES[id].name.get_slice(",", 0)
-		if not authority.world_state.bosses_dead.has(id):
-			return "The altar is cold. %s still lives here." % boss
+		var found := authority.markings_found(biome)
+		var needed := authority.markings_needed(biome)
+		if found < needed:
+			return "The altar is cold. Find the wall markings that tell of %s first (%d of %d read)." % [boss, found, needed]
 		var parts := []
 		for item in Monsters.OFFERINGS[id]:
 			parts.append("%d %s" % [Monsters.OFFERINGS[id][item], "rune shard" if item == "shard" else Items.display_name(item)])
-		return "Offering to call %s back: %s. (If you carry it all, it's taken and the fight begins!)" % [boss, ", ".join(parts)]
+		return "Offering to call %s: %s. (If you carry it all, it's taken and the fight begins!)" % [boss, ", ".join(parts)]
 	return ""
 
 

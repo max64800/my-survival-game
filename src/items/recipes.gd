@@ -40,7 +40,7 @@ const LIST := {
 	# Station extras (building polish spec §3): each one placed near its station raises its level.
 	"chopping_block": {station = "workbench", inputs = {rootwood = 6, stone = 2}, output = "chopping_block", count = 1, unlock = []},
 	"carpenters_vise": {station = "workbench", inputs = {plank_root = 8, copper_ingot = 1}, output = "carpenters_vise", count = 1, unlock = []},
-	"tool_rack": {station = "workbench", inputs = {plank_root = 6, rope = 2, copper_ingot = 2}, output = "tool_rack", count = 1, unlock = []},
+	"tool_rack": {station = "workbench", inputs = {plank_root = 6, rope = 3}, output = "tool_rack", count = 1, unlock = []},  # copper-free: Workbench level 3 before copper (F115)
 	"chisel_rack": {station = "masonry_table", inputs = {cut_stone = 6, plank_root = 4}, output = "chisel_rack", count = 1, unlock = []},
 	"stone_saw": {station = "masonry_table", inputs = {cut_stone = 8, copper_ingot = 2}, output = "stone_saw", count = 1, unlock = []},
 	"bellows": {station = "anvil", inputs = {leather = 3, plank_root = 4}, output = "bellows", count = 1, unlock = []},
@@ -142,7 +142,7 @@ const LIST := {
 	"waterskin_wing": {station = HAND, inputs = {wing_leather = 2, rope = 1}, output = "waterskin_empty", count = 1, unlock = ["wing_leather"]},
 	"shield_shell": {station = "workbench", inputs = {shell_piece = 6, leather = 1}, output = "shield_shell", count = 1, unlock = ["shell_piece"]},
 	"bolt_fang": {station = "workbench", inputs = {plank_root = 1, bat_fang = 1}, output = "bolt_fang", count = 6, unlock = ["bat_fang"]},
-	"pickaxe_fang": {station = "workbench", inputs = {pickaxe_stone = 1, bat_fang = 4, leather = 1}, output = "pickaxe_fang", count = 1, unlock = ["bat_fang"]},
+	"pickaxe_fang": {station = "workbench", level = 2, inputs = {pickaxe_stone = 1, bat_fang = 4, leather = 1}, output = "pickaxe_fang", count = 1, unlock = ["bat_fang"]},  # mines copper (F115)
 	"bolt_glow_gland": {station = "workbench", inputs = {plank_root = 1, glow_gland = 1}, output = "bolt_glow", count = 10, unlock = ["glow_gland"]},
 	"glow_lamp": {station = "workbench", inputs = {stone = 3, glow_gland = 2}, output = "glow_lamp", count = 1, unlock = ["glow_gland"]},
 	"helm_shell": {station = "workbench", inputs = {shell_piece = 3, leather = 1}, output = "helm_shell", count = 1, unlock = ["shell_piece"]},
@@ -194,7 +194,9 @@ const GATHER := {
 	"dirt": "dig the soft brown ground",
 	"clay": "dig the reddish clay patches",
 	"moss": "dig the green mossy ground",
-	"copper_ore": "mine green-streaked copper rock (stone pickaxe is enough)",
+	"copper_ore": "mine copper in the Copper Deeps (far, low caverns) with a Fang Pickaxe",
+	"bat_fang": "hunt cave bats",
+	"glow_gland": "hunt rock beetles",
 	"crystal_blue": "mine the glowing blue crystals with a pickaxe",
 	"critter_hide": "hunt small cave critters",
 	"leather": "tan critter hides on a Tanning Rack",

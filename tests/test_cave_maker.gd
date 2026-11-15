@@ -94,19 +94,34 @@ func test_two_biomes_joined_by_gates() -> void:
 	check_eq(c.material_at(Vector3i(c.rooms[0].center.round()) + Vector3i(0, -40, 0)) in [Mat.STONE, Mat.COPPER, Mat.DIRT, Mat.CLAY, Mat.MOSS], true, "Mossy rock under the start")
 
 
-func test_copper_is_present_but_rare() -> void:
-	var c := CaveMaker.new(8)
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 1
-	var ore := 0
-	const N := 4000
-	for i in N:
-		var p := Vector3i(rng.randi_range(-190, 190), rng.randi_range(-60, 10), rng.randi_range(-190, 190))
-		if c._is_ore(p):
-			ore += 1
-	var frac := float(ore) / N
-	# Very rare since feedback F14 (about 1/6 of the old ~8%).
-	check(frac > 0.003 and frac < 0.025, "copper fraction %.3f should be 0.3%%-2.5%%" % frac)
+## F115: Mossy copper only in the Copper Deeps (far from the start, low down), and rich there.
+func test_copper_only_in_the_deeps() -> void:
+	for sd in [8, 42, 1234]:
+		var c := CaveMaker.new(sd)
+		check_eq(c.deeps.size(), CaveMaker.DEEPS_COUNT, "seed %d: two Copper Deeps" % sd)
+		var rng := RandomNumberGenerator.new()
+		rng.seed = sd
+		var outside := 0
+		for i in 3000:
+			var p := Vector3i(rng.randi_range(-190, -10), rng.randi_range(-60, 10), rng.randi_range(-190, 190))
+			if not c.in_deeps(Vector3(p)) and c._is_ore(p):
+				outside += 1
+		check_eq(outside, 0, "seed %d: no copper outside the Deeps" % sd)
+		var inside := 0
+		var tries := 0
+		for d in c.deeps:
+			for i in 1500:
+				var p := Vector3i((d.center + Vector3(rng.randf_range(-1, 1), rng.randf_range(-1, 1), rng.randf_range(-1, 1)) * d.reach).round())
+				if c.in_deeps(Vector3(p)):
+					tries += 1
+					if c._is_ore(p):
+						inside += 1
+		var frac := float(inside) / maxf(tries, 1)
+		check(frac > 0.02, "seed %d: the Deeps are rich in copper (%.3f)" % [sd, frac])
+		var far := 0.0
+		for d in c.deeps:
+			far = maxf(far, Vector2(d.center.x - c.spawn_point.x, d.center.z - c.spawn_point.z).length())
+		check(far > 40.0, "seed %d: the Deeps are far from the start (%.0f m)" % [sd, far])
 
 
 func test_generated_block_matches_queries() -> void:

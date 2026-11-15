@@ -1368,4 +1368,19 @@ pieces") and we rebuilt the Delver's Shack's first set with an OK at every step.
   on the boards inside the circle. New: the Shack window wall in the same style (hewn frame, rough boards, crooked
   cross bars, two narrow plank shutters on flat copper hinges). The 3D page got big switch buttons on the left.
   Hurdle: a pasted fix had a line break inside a Python string and broke the patch script; fixed with chr(10).
-
+- **Later: Zone 1 progression (F115).** You asked for Valheim-like pacing: a struggle, but rewarding, and copper as a
+  real milestone. You chose, in two rounds of multiple-choice questions:
+  - Zone 1 should take 3-5 hours.
+  - Copper only in the **Copper Deeps**: the two caverns farthest from the start and lowest down. They're guarded by
+    bigger beetle packs, always with a leader.
+  - Only the **Fang Pickaxe** can mine copper. It needs a level-2 Workbench (a Chopping Block beside it) plus 4 bat
+    fangs and a leather; a stone pickaxe "bounces off" and tells you what you need.
+  - Workbench levels 2 and 3 are copper-free (Chopping Block, then a Tool Rack of planks and rope);
+    level 4 (the Carpenter's Vise) needs copper.
+  - The boss sleeps until you've read the 3 wall markings, then you call it at its altar with 5 copper ingots,
+    3 bat fangs and 2 glow glands.
+  - Next steps walks you through all of it. Plan written down in `docs/design/zone1-progression.md`.
+  - **Hurdles:**
+    - A test couldn't find copper because the game only loads rock near the start, and the Deeps are far away.
+      The copper rule became a small helper that is tested directly.
+    - A wrong variable name ("i" instead of "room_i") broke the monster code; the tests caught it at once.

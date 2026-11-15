@@ -308,3 +308,19 @@ func test_blueprint_steps_go_floor_by_floor() -> void:
 	inv.add("plank_root", 3)
 	var need := Builder.missing_for(plan, [2], inv)
 	check_eq(need.get("plank_root", 0), Pieces.cost("floor", "plank_root").plank_root - 3, "it counts what's already in the chest")
+
+
+## F115: the Fang Pickaxe needs a level-2 Workbench (a Chopping Block next to it).
+func test_fang_pickaxe_needs_workbench_level_2() -> void:
+	await _setup()
+	auth._ev_place_station(40, "workbench", player.global_position + Vector3(2, 0, 0), 0.0)
+	ps.seen["bat_fang"] = true
+	ps.inventory.add("pickaxe_stone", 1)
+	ps.inventory.add("bat_fang", 4)
+	ps.inventory.add("leather", 1)
+	check(not auth.request_craft(1, "pickaxe_fang", 40), "a plain Workbench can't make it")
+	auth._ev_place_station(41, "chopping_block", player.global_position + Vector3(3.5, 0, 1.5), 0.0)
+	check_eq(auth.stations[40].level(), 2, "with a Chopping Block it's level 2")
+	check(auth.request_craft(1, "pickaxe_fang", 40), "now it can")
+	check_eq(ps.inventory.count_of("pickaxe_fang"), 1, "a Fang Pickaxe")
+	_teardown()

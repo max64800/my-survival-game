@@ -18,9 +18,13 @@ const STEPS := [
 	["masonry_table", "Make a Mason's Table at the Workbench and place it"],
 	["shelter", "Build a shelter: hold the hammer, B to choose foundation, walls, a doorway"],
 	["brick", "For brick buildings: place a Chisel Rack near your Mason's Table (level 2)"],
-	["copper_ore", "Find green-streaked copper ore deeper in the caves"],
+	["chopping_block", "Place a Chopping Block by your Workbench (Workbench level 2)"],
+	["pickaxe_fang", "Hunt bats for 4 fangs, tan a hide, then make a Fang Pickaxe"],
+	["copper_ore", "Find the Copper Deeps (far, low caverns) and mine copper with the Fang Pickaxe"],
 	["copper_ingot", "Make a Smelter and smelt the copper ore"],
-	["pickaxe_copper", "Make an Anvil, then a Copper Pickaxe"],
+	["markings", "Read 3 wall markings: they tell of the Keeper's lair"],
+	["boss", "Call the Keeper at its altar: 5 copper ingots, 3 bat fangs, 2 glow glands"],
+	["pickaxe_copper", "Beat it, then make a Copper Pickaxe at the Anvil (it opens the way on)"],
 ]
 
 
@@ -34,6 +38,15 @@ static func done(id: String, ps: GameAuthority.PlayerState, auth: GameAuthority)
 			return false
 		"shelter":
 			return auth.builder != null and auth.builder.structure.pieces.size() >= 4
+		"chopping_block":
+			for st in auth.stations.values():
+				if st.kind == "chopping_block":
+					return true
+			return ps.seen.has("pickaxe_fang")
+		"markings":
+			return auth.markings_found("mossy") >= auth.markings_needed("mossy")
+		"boss":
+			return auth.world_state.get("bosses_dead", []).has("orrumhal")
 		"brick":
 			for st in auth.stations.values():
 				if st.kind == "masonry_table" and st.level() >= 2:

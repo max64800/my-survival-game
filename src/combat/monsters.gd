@@ -231,7 +231,7 @@ const BOSSES := {
 
 ## Re-summon offerings at a main boss's altar (combat doc 8.2, 8.4). "shard" = 1 rune shard, any colour.
 const OFFERINGS := {
-	"orrumhal": {copper_ingot = 10, crystal_blue = 5, shard = 1},
+	"orrumhal": {copper_ingot = 5, bat_fang = 3, glow_gland = 2},  # owner, Nov 15 (F115): the Deeps AND hunting
 	"thallus": {silver_ingot = 10, crystal_green = 5, mushroom_flesh = 3},
 }
 const BOSS_RESET_DISTANCE := 60.0

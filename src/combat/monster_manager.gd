@@ -185,9 +185,16 @@ func _spawn_pack(room_i: int, room: Dictionary) -> Array:
 				kind = "rock_snail"  # slow: near the start you can always walk away
 			"ruin", "great_hall", "nest", "nest_cavern":
 				kind = "rock_beetle"
+	# The Copper Deeps are guarded (F115): always rock beetles, a bigger pack, always with a leader.
+	var deeps := false
+	for d in maker.deeps:
+		if d.room == room_i:
+			deeps = true
+	if deeps:
+		kind = "rock_beetle"
 	var info: Dictionary = Monsters.LIST[kind]
-	var has_leader: bool = randf() < info.get("leader_chance", 0.0) or room.get("kind", "") == "nest"  # nests always have a leader
-	var count := randi_range(info.pack[0], info.pack[1]) + (1 if has_leader else 0)
+	var has_leader: bool = randf() < info.get("leader_chance", 0.0) or room.get("kind", "") == "nest" or deeps  # nests always have a leader
+	var count := randi_range(info.pack[0], info.pack[1]) + (1 if has_leader else 0) + (1 if deeps else 0)
 	var uids := []
 	for k in count:
 		var a := randf() * TAU
@@ -568,6 +575,8 @@ func _wake_bosses() -> void:
 			auth._ev_state.rpc(auth.world_state)
 		if auth.world_state.bosses_dead.has(id) or _boss_alive(id):
 			continue
+		if b.boss == "main":
+			continue  # main bosses sleep until called at their altar (3 markings + an offering, F115)
 		var wake := 25.0 if b.boss == "main" else 35.0
 		if near < wake and auth.world.is_ready_at(at, 4.0):
 			var uid := _next_uid

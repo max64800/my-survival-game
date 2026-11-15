@@ -253,6 +253,10 @@ func _row(recipe_id: String, inv: Inventory) -> Control:
 	for item in r.inputs:
 		if inv.count_of(item) < int(r.inputs[item]) and Recipes.how_to_get(item) != "":
 			tips.append("%s: %s" % [Items.display_name(item), Recipes.how_to_get(item)])
+	if station and station.level() < int(r.get("level", 1)):
+		ok = false
+		tips.push_front("Needs %s level %d: place a %s within 4 m" % [Items.display_name(station.kind), int(r.level),
+			Items.display_name(Station.EXTRAS.get(station.kind, [""])[mini(int(r.level) - 2, Station.EXTRAS.get(station.kind, []).size() - 1)])])
 	var tip_text := "" if tips.is_empty() else "\n[font_size=12][color=#d8c08a]%s[/color][/font_size]" % "\n".join(tips)
 	text.text = "[b]%s[/b]%s\n[font_size=13]%s[/font_size]%s" % [out, timer, ", ".join(parts), tip_text]
 	row.add_child(text)

@@ -293,3 +293,12 @@ func test_unknown_player_is_ignored() -> void:
 	check(auth.request_hit(99, Vector3.ZERO, Vector3.UP).is_empty(), "unknown player gets nothing")
 	check(not auth.request_pickup(99, 1), "unknown player can't pick up")
 	_teardown()
+
+
+## F115: copper is too hard for a stone pickaxe (or bare hands); the Fang Pickaxe mines it.
+func test_copper_needs_the_fang_pickaxe() -> void:
+	check(GameAuthority.ore_too_hard(Mat.COPPER, "pickaxe_stone").contains("Fang Pickaxe"), "stone bounces off copper and says what you need")
+	check(GameAuthority.ore_too_hard(Mat.COPPER, "") != "", "so do bare hands")
+	check_eq(GameAuthority.ore_too_hard(Mat.COPPER, "pickaxe_fang"), "", "the Fang Pickaxe mines it")
+	check_eq(GameAuthority.ore_too_hard(Mat.COPPER, "pickaxe_copper"), "", "and anything better")
+	check_eq(GameAuthority.ore_too_hard(Mat.STONE, "pickaxe_stone"), "", "plain stone is still fine")
