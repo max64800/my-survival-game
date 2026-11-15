@@ -107,3 +107,21 @@ func test_carried_pickaxe_is_found() -> void:
 	check_eq(inv.best_of_kind("pickaxe"), 3, "or the one on the hotbar")
 	inv.slots[3] = {}
 	check_eq(inv.best_of_kind("pickaxe"), -1, "none carried")
+
+
+## F98: ready-made blueprints are hidden until an Old Blueprint page teaches one; your own files always show.
+func test_blueprints_are_learned_from_pages() -> void:
+	var ready := BlueprintMenu.ready_made_keys()
+	check(ready.size() >= 4, "the ready-made buildings exist")
+	var root := Node.new()
+	tree.root.add_child(root)
+	var auth := GameAuthority.new()
+	root.add_child(auth)
+	auth.world_state = {}
+	for e in BlueprintMenu.entries():
+		check(not e.name in ready and not str(e.name).get_basename() in ready, "%s isn't there before you find it" % e.name)
+	auth.world_state = {blueprints = ["stone_hall"]}
+	var names := BlueprintMenu.entries().map(func(e): return e.name)
+	check(names.has("stone_hall"), "after reading its page, the Stone Hall is in the book")
+	check_eq(BlueprintMenu.still_hidden(), ready.size() - 1, "and the rest are still waiting in ruins")
+	root.queue_free()

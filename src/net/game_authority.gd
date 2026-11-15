@@ -367,6 +367,11 @@ func taught_recipes() -> Dictionary:
 
 
 @rpc("authority", "call_local", "reliable")
+func _ev_learned_blueprint(what: String) -> void:
+	hud_message.emit("The old blueprint shows everyone how to build: %s (V to open your blueprints)" % what)
+
+
+@rpc("authority", "call_local", "reliable")
 func _ev_learned(what: String) -> void:
 	hud_message.emit("The old page teaches everyone: %s" % what)
 
@@ -745,6 +750,18 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 				add_boost(ps, id, {damage = fb.damage}, Foods.minutes_of(id) * 60.0)
 			return "ate"
 		"page":
+			if id == "blueprint_page":
+				# An old blueprint from a ruin: the whole group can now place that ready-made building (F98).
+				var unknown := BlueprintMenu.ready_made_keys().filter(func(k): return not world_state.get("blueprints", []).has(k))
+				if unknown.is_empty() or not ps.inventory.remove(id, 1):
+					return "nothing_new"
+				var key: String = unknown[randi() % unknown.size()]
+				var known: Array = world_state.get("blueprints", []).duplicate()
+				known.append(key)
+				world_state.blueprints = known
+				_ev_state.rpc(world_state)
+				_ev_learned_blueprint.rpc(BlueprintMenu.ready_made_name(key))
+				return "learned"
 			# An old recipe page from a ruin: the whole group learns a recipe nobody knew yet.
 			var left := Recipes.LIST.keys().filter(func(r): return Recipes.LIST[r].unlock is String and Recipes.LIST[r].unlock == "ruin" \
 				and not world_state.get("learned", []).has(r))
@@ -1359,21 +1376,20 @@ func seed_poi_loot() -> void:
 		if poi.get("biome", "mossy") == "fungal":
 			_seed_fungal_loot(rng, id, poi.type == "ruin")
 			continue
+		# Rare finds only, no free building materials (owner, Nov 15, F102).
 		if poi.type == "ruin":
 			storage.put(id, "recipe_page", 2)  # every old ruin keeps forgotten recipes
+			storage.put(id, "blueprint_page", 1)  # and an old building plan (F98)
 			for g in [["keen", 0.03], ["ember", 0.03]]:  # doc 4.2: rare gems in old chests
 				if rng.randf() < g[1]:
 					storage.put(id, Gems.item_id(g[0]), 1)
-			storage.put(id, "copper_ingot", rng.randi_range(2, 4))
-			storage.put(id, "crystal_blue", rng.randi_range(2, 5))
-			storage.put(id, ["dish_hollowcap_stew", "dish_tuber_mash", "drink_glowcap_tea"][rng.randi_range(0, 2)], 1)
 			if rng.randf() < 0.3:
 				storage.put(id, "rune_" + rune_slab.pick_drop("m", [rng.randf(), rng.randf(), rng.randf()]), 1)
-			storage.put(id, "rusty_scrap", rng.randi_range(1, 4))
 		else:
-			storage.put(id, "crystal_blue", rng.randi_range(1, 3))
-			storage.put(id, "rope", rng.randi_range(1, 3))
-			storage.put(id, ["critter_meat", "glowcap", "bellcap"][rng.randi_range(0, 2)], rng.randi_range(2, 4))
+			# A camp someone left: a page, and maybe one bite of food.
+			storage.put(id, "recipe_page" if rng.randf() < 0.6 else "blueprint_page", 1)
+			if rng.randf() < 0.5:
+				storage.put(id, ["dish_hollowcap_stew", "dish_tuber_mash", "drink_glowcap_tea"][rng.randi_range(0, 2)], 1)
 
 
 @rpc("authority", "reliable")

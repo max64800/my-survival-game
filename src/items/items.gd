@@ -153,6 +153,7 @@ const DATA := {
 	"satchel": {name = "Leather Satchel", stack = 1, color = Color(0.6, 0.42, 0.25), short = "Sa", kind = "pack"},
 	"prospectors_lens": {name = "Prospector's Lens", stack = 1, color = Color(0.85, 0.9, 1.0), short = "Ln", kind = "lens"},
 	"recipe_page": {name = "Old Recipe Page", color = Color(0.85, 0.78, 0.6), short = "Pg", kind = "page"},
+	"blueprint_page": {name = "Old Blueprint", color = Color(0.55, 0.68, 0.85), short = "Bp", kind = "page"},  ## teaches a ready-made building (F98)
 	"rope_ladder": {name = "Rope Ladder", stack = 10, color = Color(0.75, 0.65, 0.45), short = "RL", kind = "station"},
 	"gem_bench": {name = "Gem Bench", stack = 1, color = Color(0.45, 0.6, 0.75), short = "GB", kind = "station"},
 	"rune_slab": {name = "Rune Slab", stack = 1, color = Color(0.5, 0.5, 0.6), short = "RS", kind = "station"},

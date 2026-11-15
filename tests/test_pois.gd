@@ -75,10 +75,15 @@ func test_ruin_and_camp_chests_have_loot() -> void:
 	auth.seed_poi_loot()
 	var expect := world.maker.pois_of("ruin").size() + world.maker.pois_of("camp").size()
 	check_eq(auth.storage.boxes.size(), expect, "one chest per ruin and camp")
-	var copper := 0
+	# Mossy Hollows: rare finds only, no free building materials (owner, Nov 15, F102).
+	var pages := 0
+	var free_stuff := 0
 	for b in auth.storage.boxes.values():
-		copper += b.inv.count_of("copper_ingot")
-	check(copper >= 2 * world.maker.pois_of("ruin", "mossy").size(), "Mossy ruins hold copper ingots")
+		pages += b.inv.count_of("blueprint_page") + b.inv.count_of("recipe_page")
+		for m in ["copper_ingot", "crystal_blue", "stone", "plank_root", "cut_stone", "clay_brick"]:
+			free_stuff += b.inv.count_of(m)
+	check(pages >= world.maker.pois_of("ruin", "mossy").size(), "Mossy ruins and camps hold old pages")
+	check_eq(free_stuff, 0, "no free copper, crystals or building materials in Mossy chests")
 	var silver := 0
 	for b in auth.storage.boxes.values():
 		silver += b.inv.count_of("silver_ingot")
