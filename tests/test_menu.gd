@@ -125,3 +125,15 @@ func test_blueprints_are_learned_from_pages() -> void:
 	check(names.has("stone_hall"), "after reading its page, the Stone Hall is in the book")
 	check_eq(BlueprintMenu.still_hidden(), ready.size() - 1, "and the rest are still waiting in ruins")
 	root.queue_free()
+
+
+## F92: crafting takes 1-3 s (by how much goes in); smelting/cooking keep their own station timer.
+func test_crafting_takes_a_moment() -> void:
+	check_eq(CraftPanel.craft_time("rope"), 1.0, "rope (3 fiber): 1 s")
+	check(CraftPanel.craft_time("workbench") >= 2.5, "a workbench (16 things): about 3 s")
+	check(CraftPanel.craft_time("sword_stone") > 1.0 and CraftPanel.craft_time("sword_stone") <= 3.0, "a stone sword: in between")
+	for id in Recipes.LIST:
+		var t := CraftPanel.craft_time(id)
+		check(t == 0.0 or (t >= 1.0 and t <= 3.0), "%s takes 1-3 s" % id)
+		if Recipes.LIST[id].get("seconds", 0) > 0:
+			check_eq(t, 0.0, "%s already has its own station timer" % id)

@@ -8,6 +8,12 @@ var station: Station = null  ## null = crafting by hand
 var _title: Label
 var _status: Label
 var _list: VBoxContainer
+## Making something takes a moment (owner, Nov 15, F92): a bar fills while the dwarf works.
+## Walking away cancels it; nothing is used up until it's done.
+var _making := {}  ## {id, left, total, from (where you stood)}
+var _bar: ProgressBar
+var _work_beat := 0.0
+const CANCEL_DISTANCE := 0.6
 
 
 func _ready() -> void:
@@ -25,6 +31,14 @@ func _ready() -> void:
 	_status = Label.new()
 	_status.add_theme_color_override("font_color", Color(1.0, 0.8, 0.5))
 	box.add_child(_status)
+	_bar = ProgressBar.new()
+	_bar.custom_minimum_size = Vector2(0, 14)
+	_bar.show_percentage = false
+	_bar.visible = false
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = Color(1.0, 0.75, 0.35)
+	_bar.add_theme_stylebox_override("fill", fill)
+	box.add_child(_bar)
 	var scroll := ScrollContainer.new()
 	scroll.custom_minimum_size = Vector2(410, 360)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -54,6 +68,8 @@ func refresh() -> void:
 	var where := Recipes.HAND if station == null else station.kind
 	_title.text = "Craft by hand" if station == null else Items.display_name(station.kind)
 	_status.text = station.busy_text() if station else ""
+	if not _making.is_empty():
+		_status.text = "Making %s…" % Items.display_name(Recipes.get_recipe(_making.id).output)
 	if station and Station.EXTRAS.has(station.kind):
 		# Station levels (building polish spec §3): show the level and how to raise it.
 		var nxt := station.next_extra()
@@ -88,6 +104,79 @@ func refresh() -> void:
 		_list.add_child(l)
 	if station and station.kind in ["workbench", "anvil"]:
 		_upgrade_rows(ps.inventory)
+
+
+## How long making it takes: 1 s for small things up to 3 s for big ones (by how much goes in).
+## Recipes that already run on a station's own timer (smelting, cooking) start right away.
+static func craft_time(recipe_id: String) -> float:
+	var r := Recipes.get_recipe(recipe_id)
+	if r.get("seconds", 0) > 0:
+		return 0.0
+	var amount := 0
+	for item in r.inputs:
+		amount += int(r.inputs[item])
+	return clampf(amount / 6.0, 1.0, 3.0)
+
+
+func start_making(recipe_id: String) -> void:
+	if not _making.is_empty():
+		return
+	var t := craft_time(recipe_id)
+	if t <= 0.0:
+		_finish(recipe_id)
+		return
+	var me := _me()
+	_making = {id = recipe_id, left = t, total = t, from = me.global_position if me else Vector3.ZERO}
+	_work_beat = 0.0
+	_bar.visible = true
+	_bar.max_value = t
+	_bar.value = 0.0
+	_status.text = "Making %s…" % Items.display_name(Recipes.get_recipe(recipe_id).output)
+	refresh()
+
+
+func cancel_making(why: String) -> void:
+	if _making.is_empty():
+		return
+	_making = {}
+	_bar.visible = false
+	_status.text = why
+	refresh()
+
+
+func _finish(recipe_id: String) -> void:
+	GameAuthority.instance.ask_craft(recipe_id, station.station_id if station else 0)
+	get_tree().create_timer(0.15).timeout.connect(refresh)
+
+
+func _me() -> Node3D:
+	var auth := GameAuthority.instance
+	var ps: GameAuthority.PlayerState = auth.get_player(peer_id) if auth else null
+	return ps.node if ps else null
+
+
+func _process(delta: float) -> void:
+	if _making.is_empty():
+		return
+	var me := _me()
+	if not visible or me == null:
+		cancel_making("")
+		return
+	if me.global_position.distance_to(_making.from) > CANCEL_DISTANCE:
+		cancel_making("You walked away: nothing was used up.")
+		return
+	_work_beat -= delta
+	if _work_beat <= 0.0 and me is Dwarf:
+		_work_beat = 0.7
+		(me as Dwarf).model.react("use")  # hands busy at the work
+	_making.left -= delta
+	_bar.value = _making.total - _making.left
+	if _making.left <= 0.0:
+		var id: String = _making.id
+		_making = {}
+		_bar.visible = false
+		_status.text = ""
+		_finish(id)
 
 
 ## Gear upgrades (building polish spec §4): everything you carry or wear that this station can improve.
@@ -171,9 +260,8 @@ func _row(recipe_id: String, inv: Inventory) -> Control:
 	b.text = "Make"
 	b.disabled = not ok
 	b.custom_minimum_size = Vector2(70, 0)
-	b.pressed.connect(func():
-		GameAuthority.instance.ask_craft(recipe_id, station.station_id if station else 0)
-		get_tree().create_timer(0.15).timeout.connect(refresh))
+	b.disabled = not ok or not _making.is_empty()
+	b.pressed.connect(func(): start_making(recipe_id))
 	row.add_child(b)
 	return row
 
