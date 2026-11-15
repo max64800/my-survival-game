@@ -97,7 +97,17 @@ for n, lp in all_legs.items():
 	chi = cs.detail_copy(clo, 1, n + "_claw_high")
 	cs.carve_chitin(chi, dents=0.001, grain=0.0004)
 	cs.uv_only(clo)
-	LEG_JOBS.append((hi, lo, chi, clo, lp["chitin_dark"]))
+	LEG_JOBS.append((hi, lo, chi, clo, lp.get("chitin_dark")))
+# Face: one melted skin (head, cheeks, sockets, lids, nose ridge, lips), sculpted; tusks and feelers/belly as hard pieces.
+high_face = cs.melt([parts["face_skin"]], voxel=0.0028, smooth=3, name="face_high")
+cs.carve_chitin(high_face, dents=0.0015, grain=0.0006, seed=7)
+body_chitin = parts["chitin"]
+high_body = cs.detail_copy(body_chitin, 1, "bodychitin_high")
+cs.carve_chitin(high_body, dents=0.002, grain=0.0007, seed=8)
+cs.uv_only(body_chitin)
+tusks = parts["claw"]
+high_tusks = cs.detail_copy(tusks, 1, "tusks_high")
+cs.uv_only(tusks)
 print("melt+carve", round(time.time() - t0), "s; stone tris", len(high_stone.data.polygons))
 
 # ---- paint materials on the dense sculpts
@@ -108,7 +118,7 @@ high_moss.data.materials.clear()
 high_moss.data.materials.append(cs.paint_material("paint_moss", base=(0.5, 0.6, 0.16), dark=(0.16, 0.24, 0.05), light=(0.74, 0.82, 0.32),
 	strokes=0.16, top_light=0.25, edge=0.3, seed=4))
 amber_obj.data.materials.clear()
-amber_obj.data.materials.append(cs.glow_paint("paint_amber", core=(1.0, 0.82, 0.25), rim=(0.88, 0.33, 0.02), lines=0.45))
+amber_obj.data.materials.append(cs.glow_paint("paint_amber", core=(1.0, 0.68, 0.14), rim=(0.82, 0.27, 0.0), lines=0.5))
 paint_chitin = cs.paint_material("paint_chitin", base=(0.45, 0.22, 0.13), dark=(0.24, 0.1, 0.06), light=(0.72, 0.44, 0.3),
 	strokes=0.1, top_light=0.3, edge=0.6, seed=2, key=0.45)
 paint_claw = cs.paint_material("paint_claw", base=(0.8, 0.66, 0.46), dark=(0.52, 0.38, 0.22), light=(0.95, 0.87, 0.7),
@@ -118,19 +128,37 @@ for hi, lo, chi, clo, jo in LEG_JOBS:
 	hi.data.materials.append(paint_chitin)
 	chi.data.materials.clear()
 	chi.data.materials.append(paint_claw)
+high_face.data.materials.clear()
+high_face.data.materials.append(cs.paint_material("paint_face", base=(0.42, 0.19, 0.11), dark=(0.2, 0.08, 0.05), light=(0.66, 0.38, 0.25),
+	strokes=0.08, top_light=0.25, edge=0.5, seed=5, key=0.4))
+high_body.data.materials.clear()
+high_body.data.materials.append(paint_chitin)
+high_tusks.data.materials.clear()
+high_tusks.data.materials.append(paint_claw)
+for name, rgb in (("eye", (0.95, 0.9, 0.78)), ("iris", (0.42, 0.24, 0.1)), ("pupil", (0.03, 0.02, 0.02)), ("chitin_dark", (0.27, 0.12, 0.07))):
+	if name in parts:
+		bsdf = parts[name].data.materials[0].node_tree.nodes["Principled BSDF"]
+		bsdf.inputs["Base Color"].default_value = (*cs.lin(rgb), 1)
+		if name in ("eye", "iris", "pupil"):
+			bsdf.inputs["Roughness"].default_value = 0.15
 # ---- 3. light game copies + 4. bake
 low_stone = cs.game_copy(high_stone, 9000, "stone_low")
 low_moss = cs.game_copy(high_moss, 3000, "moss_low")
 low_amber = cs.game_copy(amber_obj, 2000, "amber_low")
 cs.bake(high_stone, low_stone, 2048, "stone_baked")
+low_face = cs.game_copy(high_face, 5000, "face_low")
+cs.bake(high_face, low_face, 1024, "face_baked")
+cs.bake(high_body, body_chitin, 1024, "bodychitin_baked")
+cs.bake(high_tusks, tusks, 512, "tusks_baked")
 cs.bake(high_moss, low_moss, 1024, "moss_baked")
 cs.bake(amber_obj, low_amber, 1024, "glow_amber_baked", normal=False, emissive=0.35)
 for k, (hi, lo, chi, clo, jo) in enumerate(LEG_JOBS):
 	cs.bake(hi, lo, 512, f"leg{k}_baked")
 	cs.bake(chi, clo, 256, f"claw{k}_baked")
-	jo.data.materials[0].node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (*cs.lin((0.3, 0.14, 0.08)), 1)
+	if jo:
+		jo.data.materials[0].node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (*cs.lin((0.3, 0.14, 0.08)), 1)
 print("bake", round(time.time() - t0), "s")
-for o in [high_stone, high_moss, amber_obj] + [j[0] for j in LEG_JOBS] + [j[2] for j in LEG_JOBS]:
+for o in [high_stone, high_moss, amber_obj, high_face, high_body, high_tusks] + [j[0] for j in LEG_JOBS] + [j[2] for j in LEG_JOBS]:
 	o.hide_render = True
 	o.hide_set(True)
 shoot("after.png", (0, 0, 0.5), 1.7)

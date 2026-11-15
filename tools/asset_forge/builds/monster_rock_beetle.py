@@ -43,6 +43,7 @@ crack = ck.color("crack", (0.05, 0.05, 0.03), rough=1.0)
 crack.node_tree.nodes["Principled BSDF"].inputs["Specular IOR Level"].default_value = 0.0
 chitin = ck.color("chitin", (0.36, 0.17, 0.09), rough=0.55)
 chitin_dark = ck.color("chitin_dark", (0.22, 0.1, 0.05), rough=0.6)
+face_skin = ck.color("face_skin", (0.32, 0.14, 0.08), rough=0.6)  # the face: one melted skin in the sculpt pass
 claw = ck.color("claw", (0.8, 0.64, 0.42), rough=0.5)
 amber = ck.color("glow_back", (1.0, 0.55, 0.08), rough=0.2)
 amber.node_tree.nodes["Principled BSDF"].inputs["Emission Color"].default_value = (1.0, 0.55, 0.1, 1)
@@ -54,11 +55,11 @@ shine = ck.color("shine", (1, 1, 1), rough=0.1, glow=0.6)
 
 # ---------------------------------------------------------------- the shell: the top of an ellipsoid
 C = Vector((0.0, 0.03, 0.52))       # centre
-A, B, CZ = 0.39, 0.53, 0.42          # half-width, half-length, half-height of the dome UNDER the plates (plates add ~0.1)
-RIM_Z = 0.42                         # the shell's lower edge
+A, B, CZ = 0.43, 0.56, 0.4          # half-width, half-length, half-height of the dome UNDER the plates (plates add ~0.1)
+RIM_Z = 0.37                         # the shell's lower edge (it comes down over the tops of the legs)
 
 
-FULL = 0.74    # < 1: a fuller, boxier dome than an ellipsoid (the drawing's shell is full at the front top)
+FULL = 0.86    # < 1: a little fuller than an ellipsoid, but round from head to tail like the picture
 TAPER = 0.14   # egg shape seen from above: narrower at the head, wider at the back
 
 
@@ -70,7 +71,7 @@ def surf(d):
 	"""Point on the shell for a direction d (unit sphere) and its outward normal (close enough for placing plates)."""
 	q = Vector((_sp(d.x), _sp(d.y), _sp(d.z)))
 	front = max(0.0, -q.y)  # the shell slopes down toward the head (the drawing's side view)
-	p = Vector((q.x * A * (1 + TAPER * q.y), q.y * B, q.z * CZ * (1 - 0.22 * front * max(0.0, q.z)))) + C
+	p = Vector((q.x * A * (1 + TAPER * q.y), q.y * B, q.z * CZ * (1 - 0.12 * front * max(0.0, q.z)))) + C
 	n = Vector((d.x / A, d.y / B, d.z / CZ)).normalized()
 	return p, n
 
@@ -123,7 +124,7 @@ for s in (-1, 1):
 	for x, y in ((0.17, -0.3), (0.3, -0.18), (0.14, -0.1), (0.36, 0.0), (0.15, 0.1), (0.37, 0.2), (0.35, 0.4), (0.24, 0.56), (0.09, 0.63)):
 		SEEDS.append(dir_xy(s * x, y))
 	for y in (-0.4, -0.12, 0.16, 0.42):
-		SEEDS.append(dir_side(y, 0.5, s))         # the lower row along each side (the skirt over the legs)
+		SEEDS.append(dir_side(y, 0.46, s))        # the lower row along each side (the skirt over the legs)
 	for y in (-0.25, 0.05):
 		SEEDS.append(dir_side(y, 0.73, s))        # the middle row along each side
 	SEEDS.append(dir_back(s * 0.24, 0.52))        # under the glowing window, seen from the back
@@ -245,7 +246,7 @@ under = bpy.context.object
 under.name = "shell_under"
 bm = bmesh.new()
 bm.from_mesh(under.data)
-bmesh.ops.delete(bm, geom=[v for v in bm.verts if surf(v.co.normalized())[0].z < RIM_Z - 0.03 or amber_at(v.co.normalized(), -math.radians(3)) > 0],
+bmesh.ops.delete(bm, geom=[v for v in bm.verts if surf(v.co.normalized())[0].z < RIM_Z - 0.06],
 	context="VERTS")  # (no moss under the glowing window)
 for v in bm.verts:
 	v.co = C + (surf(v.co.normalized())[0] - C) * 0.975
@@ -258,8 +259,8 @@ for p in under.data.polygons:
 # The plates: the shell's own surface cut into patches (each seed gets the part of the shell nearest to it), each
 # patch's edge smoothed and pulled in for the crack, then lifted into a cushion (thick in the middle, rounded at the
 # edge) with a few flat chisel cuts on top, so it reads as a hand-cut stone that bends with the shell.
-GAP = 0.012       # half the crack between two plates (m)
-ROUND = 0.045     # how far in from the edge a plate reaches its full thickness (m)
+GAP = 0.0015      # half the crack between two plates (m): the stones touch, like the painting
+ROUND = 0.065     # how far in from the edge a plate reaches its full thickness (m)
 
 
 def in_plate_area(d):
@@ -404,7 +405,7 @@ def cushion_plates(seeds, material, seed=1):
 			sp, sn = surf(dirs[v])
 			k = min(1.0, dist[v] / ROUND)
 			dome = 0.018 * min(1.0, dist[v] / 0.12)  # a gentle dome over the whole top
-			top[v] = sp + sn * (thick * (0.35 + 0.65 * math.sin(k * math.pi / 2)) + dome)  # a rounded bevel up to the top
+			top[v] = sp + sn * (thick * (0.12 + 0.88 * math.sin(k * math.pi / 2) ** 0.75) + dome)  # rounded down into a small canyon
 		# Chisel cuts: 3-4 flat planes slice the top, leaving big flat facets like a hand-cut stone.
 		cp, cn = surf(cdir)
 		peak = cp + cn * thick
@@ -470,29 +471,69 @@ for p in glow.data.polygons:
 
 # ---------------------------------------------------------------- body underneath: dark segmented belly
 BELLY = [(-0.44, 0.16, 0.1), (-0.3, 0.26, 0.15), (0.0, 0.31, 0.16), (0.35, 0.28, 0.14), (0.55, 0.16, 0.09)]
-ck.loft("belly", [((0, y, 0.35), w, h * 0.92) for y, w, h in BELLY], chitin_dark, sides=16)
-for i, y in enumerate((-0.28, -0.12, 0.04, 0.2, 0.36)):
-	j = max(k for k in range(len(BELLY) - 1) if BELLY[k][0] <= y)
-	f = (y - BELLY[j][0]) / (BELLY[j + 1][0] - BELLY[j][0])
-	w = BELLY[j][1] + (BELLY[j + 1][1] - BELLY[j][1]) * f + 0.014
-	h = BELLY[j][2] + (BELLY[j + 1][2] - BELLY[j][2]) * f + 0.014
-	ck.loft(f"belly_ring{i}", [((0, y - 0.025, 0.35), w * 0.97, h * 0.89), ((0, y, 0.35), w, h * 0.92), ((0, y + 0.025, 0.35), w * 0.97, h * 0.89)], chitin, sides=16, subsurf=0)
+
+
+def belly_at(y):
+	j = max(k for k in range(len(BELLY) - 1) if BELLY[k][0] <= y) if y > BELLY[0][0] else 0
+	j = min(j, len(BELLY) - 2)
+	f = max(0.0, min(1.0, (y - BELLY[j][0]) / (BELLY[j + 1][0] - BELLY[j][0])))
+	return BELLY[j][1] + (BELLY[j + 1][1] - BELLY[j][1]) * f, BELLY[j][2] + (BELLY[j + 1][2] - BELLY[j][2]) * f
+
+
+ck.loft("belly", [((0, y, 0.35), w * 0.94, h * 0.88) for y, w, h in BELLY], chitin_dark, sides=16)
+# Shingled bands, front to back: each band flares at its back edge and covers the front of the next one (no joints seen).
+YS = [-0.42, -0.3, -0.17, -0.04, 0.09, 0.22, 0.35, 0.47]
+for i, (y0, y1) in enumerate(zip(YS, YS[1:])):
+	ln = y1 - y0
+	w0, h0 = belly_at(y0)
+	w1, h1 = belly_at(y1)
+	ck.loft(f"belly_band{i}", [((0, y0, 0.35), w0 * 0.96, h0 * 0.9), ((0, y0 + ln * 0.5, 0.35), (w0 + w1) / 2 + 0.01, (h0 + h1) / 2 * 0.95 + 0.008),
+		((0, y1 + ln * 0.12, 0.352), w1 + 0.022, h1 + 0.02), ((0, y1 + ln * 0.2, 0.352), w1 + 0.012, h1 + 0.012)], chitin, sides=16, subsurf=0)
 
 # ---------------------------------------------------------------- the face, under the front edge
-ck.loft("head", [((0, -0.36, 0.38), 0.19, 0.15), ((0, -0.47, 0.38), 0.2, 0.15), ((0, -0.55, 0.36), 0.17, 0.13),
-	((0, -0.6, 0.33), 0.1, 0.08)], chitin, sides=16)
-ck.loft("snout", [((0, -0.56, 0.32), 0.09, 0.06), ((0, -0.62, 0.31), 0.08, 0.05)], chitin, sides=12)
-ck.loft("lip", [((0, -0.6, 0.27), 0.06, 0.025), ((0, -0.625, 0.27), 0.055, 0.02)], chitin_dark, sides=12)
+# Read off the drawings: a wide red-brown face mask, cheeks, a ridge down the middle to a pouty mouth, big eyes in
+# dark sockets under thick angry lids, stone brows (shell plates) in a V, two pale tusks, segmented feelers.
+EYE_R = 0.088
+EYES = [Vector((s * 0.128, -0.6, 0.45)) for s in (-1, 1)]
+ck.loft("head", [((0, -0.32, 0.38), 0.23, 0.16), ((0, -0.45, 0.39), 0.27, 0.19), ((0, -0.55, 0.39), 0.25, 0.18),
+	((0, -0.61, 0.37), 0.19, 0.14), ((0, -0.645, 0.35), 0.1, 0.09)], face_skin, sides=20)
 for s in (-1, 1):
-	c = Vector((s * 0.105, -0.555, 0.465))
-	bpy.ops.mesh.primitive_uv_sphere_add(segments=24, ring_count=14, radius=0.076, location=c)
+	ck.blob((s * 0.19, -0.57, 0.36), (0.085, 0.07, 0.095), face_skin, seed=21 + s, jitter=0.05)        # cheeks
+	c = EYES[(s + 1) // 2]
+	# eye socket: a thick rim around the eye, so it sits IN the face
+	look = Vector((s * 0.3, -1, 0.05)).normalized()
+	ck.loft(f"socket{s}", [(c - look * 0.035, EYE_R * 1.02, EYE_R * 1.02), (c + look * 0.005, EYE_R * 1.2, EYE_R * 1.18),
+		(c + look * 0.03, EYE_R * 1.1, EYE_R * 1.08)], face_skin, sides=24, subsurf=0, up=Vector((0, 0, 1)))
+	# angry upper lid: a thick cap over the top of the eye, lower toward the nose
+	bpy.ops.mesh.primitive_uv_sphere_add(segments=28, ring_count=16, radius=EYE_R * 1.12, location=(0, 0, 0))
+	lid = bpy.context.object
+	cut = Vector((-s * 0.45, -0.35, 1)).normalized()
+	bm = bmesh.new()
+	bm.from_mesh(lid.data)
+	bmesh.ops.delete(bm, geom=[v for v in bm.verts if v.co.normalized().dot(cut) < 0.38], context="VERTS")
+	bm.to_mesh(lid.data)
+	bm.free()
+	lid.location = c
+	lid.data.materials.append(face_skin)
+	sol = lid.modifiers.new("thick", "SOLIDIFY")
+	sol.thickness = 0.02
+	for p in lid.data.polygons:
+		p.use_smooth = True
+# nose ridge down to the mouth, and a pouty mouth
+ck.loft("ridge", [((0, -0.63, 0.5), 0.035, 0.03), ((0, -0.66, 0.41), 0.048, 0.035), ((0, -0.675, 0.34), 0.06, 0.04)], face_skin, sides=12)
+ck.blob((0, -0.68, 0.295), (0.085, 0.042, 0.036), face_skin, seed=31, jitter=0.03)   # upper lip
+ck.blob((0, -0.67, 0.255), (0.066, 0.038, 0.03), face_skin, seed=32, jitter=0.03)    # lower lip
+ck.blob((0, -0.672, 0.276), (0.064, 0.024, 0.009), pupil, seed=33, jitter=0.0, subsurf=0)  # the mouth line
+for s in (-1, 1):
+	c = EYES[(s + 1) // 2]
+	bpy.ops.mesh.primitive_uv_sphere_add(segments=28, ring_count=16, radius=EYE_R, location=c)
 	o = bpy.context.object
 	o.data.materials.append(eye)
 	for p in o.data.polygons:
 		p.use_smooth = True
-	look = Vector((s * 0.25, -1, 0.0)).normalized()
-	for rad, off, flat, m in ((0.054, 0.062, 0.4, iris), (0.029, 0.074, 0.4, pupil)):
-		bpy.ops.mesh.primitive_uv_sphere_add(segments=18, ring_count=10, radius=1)
+	look = Vector((s * 0.22, -1, -0.05)).normalized()
+	for rad, off, flat, m in ((0.066, 0.069, 0.4, iris), (0.035, 0.083, 0.4, pupil)):
+		bpy.ops.mesh.primitive_uv_sphere_add(segments=20, ring_count=12, radius=1)
 		q = bpy.context.object
 		q.scale = (rad, rad, rad * flat)
 		bpy.ops.object.transform_apply(scale=True)
@@ -500,28 +541,30 @@ for s in (-1, 1):
 		q.data.materials.append(m)
 		for p in q.data.polygons:
 			p.use_smooth = True
-	ck.blob(tuple(c + look * 0.079 + Vector((s * -0.014, 0, 0.02))), (0.012, 0.007, 0.011), shine, seed=3, subsurf=0)
-	# A dark eye socket ring, so the eye sits in the face.
-	ck.loft(f"socket{s}", [(c - look * 0.02, 0.083, 0.083), (c + look * 0.014, 0.086, 0.086), (c + look * 0.034, 0.079, 0.079)], chitin_dark, sides=20,
-		subsurf=0, up=Vector((0, 0, 1)))
-	# Jaws: pale hooked tusks curving down and in.
-	jaw = ck.bezier((s * 0.08, -0.58, 0.36), (s * 0.14, -0.67, 0.31), (s * 0.05, -0.66, 0.22), n=9)
-	ck.loft(f"jaw{s}", [(p, 0.04 * (1 - 0.82 * i / 8), 0.05 * (1 - 0.82 * i / 8)) for i, p in enumerate(jaw)], claw, sides=8, subsurf=0)
-	# Feelers: segments ending in a club, from above the eyes.
-	path = ck.bezier((s * 0.12, -0.5, 0.55), (s * 0.26, -0.58, 0.66), (s * 0.34, -0.66, 0.58), n=8)
+	ck.blob(tuple(c + look * 0.09 + Vector((s * -0.02, 0, 0.026))), (0.016, 0.009, 0.016), shine, seed=3, subsurf=0)
+	# tusks: thick pale jaws from the corners of the mouth, curving forward, down and in
+	root = Vector((s * 0.1, -0.62, 0.33))
+	pts = ck.bezier(root, root + Vector((s * 0.06, -0.12, -0.02)), Vector((s * 0.035, -0.74, 0.17)), n=12)
+	ck.loft(f"tusk{s}", [(p, 0.05 * (1 - 0.95 * (j / 11) ** 1.4), 0.043 * (1 - 0.95 * (j / 11) ** 1.4)) for j, p in enumerate(pts)], claw,
+		sides=12, subsurf=0, smooth=True, up=Vector((s, 0, 0)))
+	# feelers: shingled segments (like the legs), from above the eye, curving up and out, ending in a club
+	path = ck.bezier((s * 0.12, -0.6, 0.56), (s * 0.27, -0.7, 0.7), (s * 0.4, -0.74, 0.6), n=8)
 	for i in range(len(path) - 1):
 		a, b = path[i], path[i + 1]
-		ck.loft(f"feeler{s}{i}", [(a.lerp(b, -0.1), 0.026, 0.026), (a.lerp(b, 0.5), 0.032, 0.032), (b.lerp(a, -0.1), 0.026, 0.026)], chitin, sides=8, subsurf=0)
-	ck.loft(f"club{s}", [(path[-1], 0.04, 0.04), (path[-1] + (path[-1] - path[-2]).normalized() * 0.07, 0.044, 0.044)], chitin, sides=10, subsurf=1)
-# Heavy brow plates over the eyes (the grumpy look): lower on the inner side.
+		d = b - a
+		ck.loft(f"feeler{s}{i}", [(a - d * 0.1, 0.022, 0.022), (a + d * 0.5, 0.027, 0.027), (b - d * 0.05, 0.031, 0.031), (b + d * 0.02, 0.026, 0.026)],
+			chitin, sides=10, subsurf=0)
+	ck.loft(f"club{s}", [(path[-1], 0.034, 0.034), (path[-1] + (path[-1] - path[-2]).normalized() * 0.05, 0.04, 0.038),
+		(path[-1] + (path[-1] - path[-2]).normalized() * 0.09, 0.03, 0.03)], chitin, sides=12, subsurf=1)
+# Heavy stone brows over the eyes (the grumpy V): lower on the inner side.
 for s in (-1, 1):
-	c = Vector((s * 0.11, -0.55, 0.555))
-	n = Vector((s * 0.15, -0.75, 0.65)).normalized()
-	pts = [(-0.1, -0.035), (0.1, -0.06), (0.11, 0.04), (-0.08, 0.06)]
+	c = Vector((s * 0.135, -0.6, 0.555))
+	n = Vector((s * 0.12, -0.7, 0.7)).normalized()
+	pts = [(-0.13, -0.045), (0.12, -0.09), (0.135, 0.045), (-0.11, 0.075)]
 	outline = [(x * s, y) for x, y in pts]
 	if s < 0:
 		outline.reverse()
-	plate(f"brow{s}", outline, c, n, 0.07, stone, seed=900 + s, gap=0.0)
+	plate(f"brow{s}", outline, c, n, 0.075, stone, seed=900 + s, gap=0.0)
 
 # ---------------------------------------------------------------- the horn: thick, flat-sided, leaning forward
 hp = ck.bezier((0, -0.4, 0.64), (0, -0.56, 0.86), (0, -0.6, 1.05), n=8)
@@ -531,12 +574,11 @@ ck.loft("horn_root", [((0, -0.36, 0.62), 0.12, 0.17), ((0, -0.43, 0.72), 0.1, 0.
 
 # ---------------------------------------------------------------- six fat legs, each its own part (turns at the hip)
 def barrel(name, a, b, r0, r1, material, sides=8):
-	"""One leg segment like the painting's: a chunky faceted barrel (8 flat sides), rounded chamfers at both ends,
-	a little fatter in the middle, slightly flattened like a shield. Soft bevels catch the light on each facet."""
+	"""One leg segment like the painting's: a chunky faceted armour piece (8 flat sides) that widens toward its far end
+	into a lip, so it covers the start of the next segment like a shingle (the joint stays hidden inside)."""
 	d = b - a
-	m = (r0 + r1) / 2 * 1.05
-	o = ck.loft(name, [(a, r0 * 0.74, r0 * 0.68), (a + d * 0.05, r0 * 0.94, r0 * 0.87), (a + d * 0.15, r0, r0 * 0.93),
-		(a + d * 0.55, m, m * 0.93), (b - d * 0.15, r1, r1 * 0.93), (b - d * 0.05, r1 * 0.94, r1 * 0.87), (b, r1 * 0.74, r1 * 0.68)],
+	o = ck.loft(name, [(a, r0 * 0.78, r0 * 0.72), (a + d * 0.12, r0 * 0.9, r0 * 0.84), (a + d * 0.55, (r0 + r1) / 2, (r0 + r1) / 2 * 0.93),
+		(b - d * 0.14, r1 * 1.1, r1 * 1.02), (b - d * 0.02, r1 * 1.16, r1 * 1.08), (b, r1 * 1.08, r1 * 1.0)],
 		material, sides=sides, subsurf=0, smooth=False, seed=len(name))
 	bv = o.modifiers.new("bevel", "BEVEL")
 	bv.width = 0.006
@@ -560,27 +602,23 @@ def leg(s, i, hip, knee, ankle, toe):
 	up_dir = (knee - hip).normalized()
 	low_dir = (ankle - knee).normalized()
 	with ck.part(f"leg_{'l' if s < 0 else 'r'}{i}", hinge=tuple(hip)):
-		G = 0.016  # the soft joint between two armour segments
-		c1 = hip + (knee - hip) * 0.32
-		barrel("coxa", hip - up_dir * 0.03, c1 - up_dir * G / 2, 0.094, 0.098, chitin)
-		barrel("femur", c1 + up_dir * G / 2, knee + low_dir * 0.035, 0.1, 0.092, chitin)  # overlaps the shin at the knee
-		t1 = knee + (ankle - knee) * 0.55
-		barrel("tibia", knee + low_dir * 0.01, t1 - low_dir * G / 2, 0.09, 0.082, chitin)
-		barrel("tarsus", t1 + low_dir * G / 2, ankle, 0.08, 0.068, chitin)
-		for k, (p, d, rr) in enumerate(((c1, up_dir, 0.068), (t1, low_dir, 0.058))):  # dark soft joints in the gaps
-			ck.loft(f"joint{k}", [(p - d * 0.03, rr, rr * 0.93), (p, rr * 1.02, rr * 0.95), (p + d * 0.03, rr, rr * 0.93)], chitin_dark, sides=12, subsurf=0)
+		# Segments overlap like shingles: each one starts inside the lip of the one before it.
+		c1 = hip + (knee - hip) * 0.34
+		barrel("coxa", hip - up_dir * 0.04, c1, 0.1, 0.104, chitin)
+		barrel("femur", c1 - up_dir * 0.04, knee + low_dir * 0.01, 0.097, 0.1, chitin)
+		t1 = knee + (ankle - knee) * 0.52
+		barrel("tibia", knee - low_dir * 0.035, t1, 0.092, 0.088, chitin)
+		barrel("tarsus", t1 - low_dir * 0.04, ankle, 0.08, 0.072, chitin)
 		out_dir = Vector((toe.x - ankle.x, toe.y - ankle.y, 0)).normalized()
 		root = ankle - low_dir * 0.06  # the claw grows out from inside the last segment
-		talon("claw", root, Vector((toe.x, toe.y, 0.0)), 0.05, out_dir * 0.07 + Vector((0, 0, 0.07)), claw)
-		side = Vector((0, 0, 1)).cross(out_dir).normalized() * (1 if (i + (s > 0)) % 2 else -1)
-		tip2 = Vector((toe.x, toe.y, 0.0)) + side * 0.05 - out_dir * 0.035
-		talon("claw2", root + side * 0.025, tip2 + Vector((0, 0, 0.004)), 0.034, out_dir * 0.02 + Vector((0, 0, 0.04)), claw)  # a smaller second claw beside it
+		talon("claw", root, toe, 0.058, out_dir * 0.07 + Vector((0, 0, 0.07)), claw)
 
 
 LEGS = [  # hip, knee, ankle, claw tip   (+X side; mirrored)
-	((0.2, -0.25, 0.35), (0.36, -0.33, 0.31), (0.42, -0.41, 0.1), (0.45, -0.5, 0.0)),
-	((0.25, 0.0, 0.34), (0.48, 0.04, 0.31), (0.58, 0.1, 0.1), (0.63, 0.16, 0.0)),
-	((0.23, 0.28, 0.35), (0.44, 0.36, 0.31), (0.53, 0.46, 0.1), (0.57, 0.56, 0.0)),
+	((0.18, -0.25, 0.28), (0.44, -0.34, 0.24), (0.5, -0.43, -0.02), (0.54, -0.52, -0.11)),
+	((0.24, 0.0, 0.27), (0.54, 0.04, 0.24), (0.63, 0.1, -0.02), (0.68, 0.17, -0.11)),
+	((0.22, 0.28, 0.28), (0.5, 0.37, 0.24), (0.58, 0.48, -0.02), (0.62, 0.57, -0.11)),
+	# (ankles at 0 and claw tips at -0.1: the save puts the claw tips on the ground, lifting the body 10 cm)
 ]
 for s in (-1, 1):
 	for i, pts in enumerate(LEGS):
