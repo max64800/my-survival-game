@@ -384,6 +384,11 @@ func _on_swing_impact() -> void:
 	if mon >= 0:
 		auth.monsters.ask_attack(PackedInt32Array([mon]), false, 0, false)  # a pickaxe works in a pinch
 		return
+	if hit.collider is Rubble:  # clearing fallen pieces (F90)
+		auth.builder.ask_hit_rubble((hit.collider as Rubble).rubble_id)
+		Fx.burst(get_parent(), hit.position, Pieces.FAMILIES[(hit.collider as Rubble).family].color, 6)
+		_shake = 0.3
+		return
 	if hit.collider is Station or hit.collider is PieceNode or Storage.box_id_of(hit.collider) >= 0 \
 			or (hit.collider is Node and (hit.collider as Node).is_in_group(RuinKit.GROUP)):
 		return  # don't dig through your own furniture or buildings

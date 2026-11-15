@@ -8,7 +8,7 @@ const PIECE_SCRIPT := preload("res://src/build/piece_node.gd")
 const CHECK_DELAY := 0.05  ## cave-in checks run a moment after a dig
 const WARN_TIME := 1.0  ## dust and rumble before rock falls
 const BREAK_DELAY := 2.0  ## soft physics (spec §5): shaky pieces creak and shake for 2 s first
-const DEBRIS_TIME := 4.0  ## a fallen piece tumbles, then fades away
+
 const RUBBLE_DAMAGE := 15.0
 
 var auth: GameAuthority
@@ -19,6 +19,8 @@ var pieces_root: Node3D
 var fall_log: Array[PackedVector3Array] = []  ## every cave-in, for friends who join later
 var _next_uid := 1
 var _clock := 0.0
+var rubble := {}  ## rubble id -> Rubble (fallen pieces lying around, F90)
+var _next_rubble := 1
 signal message(text: String)  ## a short note for this player (shown at the top of the screen)
 var _placed_at := {}  ## host: uid -> when it was placed (careful pick-up works for PICKUP_TIME seconds)
 ## Taking pieces down (owner, Nov 15, F100): a careful pick-up gives everything back, but only right
@@ -368,12 +370,10 @@ func _process(delta: float) -> void:
 		if not structure.recompute().has(uid):
 			_ev_shake.rpc(uid, false)  # someone propped it up in time: saved!
 			continue
-		var p: Dictionary = structure.pieces[uid]
-		for item in Pieces.cost(p.piece, p.family):
-			var half: int = Pieces.cost(p.piece, p.family)[item] / 2
-			if half > 0:
-				auth.spawn_drop(item, half, p.pos + Vector3.UP * 0.5)
-		_ev_collapse.rpc(uid)
+		# It falls and lands as rubble; its materials come back when you clear the rubble (F90).
+		var rid := _next_rubble
+		_next_rubble += 1
+		_ev_collapse.rpc(uid, rid, _landing_for(uid))
 
 
 func _run_check(center: Vector3, radius: float, tries: int = 0) -> Array:
@@ -446,35 +446,89 @@ func _ev_shake(uid: int, on: bool) -> void:
 			Sfx.play("dig_soft", n.global_position, -4.0, 0.55)  # a low creak
 
 
-## Everyone: a piece gives way. It tumbles down as loose debris and fades out (no damage).
+## Everyone: a piece gives way. It tumbles to where the host says it lands and stays there as
+## solid rubble (F90): you bump into it, stand on it, and clear it with a pickaxe for half its materials.
 @rpc("authority", "call_local", "reliable")
-func _ev_collapse(uid: int) -> void:
+func _ev_collapse(uid: int, rid: int, end: Transform3D) -> void:
 	var p: Dictionary = structure.pieces.get(uid, {})
 	var n: PieceNode = nodes.get(uid)
 	if n and not p.is_empty():
-		var rb := RigidBody3D.new()
-		rb.collision_layer = 0
-		rb.collision_mask = World.TERRAIN_LAYER
-		rb.mass = 2.0
-		var cs := CollisionShape3D.new()
-		var sh := BoxShape3D.new()
-		sh.size = (Pieces.LIST[p.piece].size as Vector3).max(Vector3.ONE * 0.2)
-		cs.shape = sh
-		cs.position = Vector3.UP * sh.size.y * 0.5
-		rb.add_child(cs)
-		var mi := MeshInstance3D.new()
-		mi.mesh = PieceMesh.visual(p.piece, p.family)
-		mi.material_override = PieceNode._mat(p.family)
-		rb.add_child(mi)
-		add_child(rb)
-		rb.global_transform = n.global_transform
-		rb.angular_velocity = Vector3(randf_range(-1, 1), randf_range(-0.5, 0.5), randf_range(-1, 1))
 		Sfx.play("dig_break", n.global_position, -4.0, 0.8)
-		var tw := rb.create_tween()
-		tw.tween_interval(DEBRIS_TIME - 0.6)
-		tw.tween_property(mi, "scale", Vector3.ONE * 0.01, 0.6)
-		tw.tween_callback(rb.queue_free)
+		_add_rubble(rid, p.piece, p.family, n.global_transform, end, true)
 	_ev_remove_piece(uid)
+
+
+func _add_rubble(rid: int, piece: String, family: String, start: Transform3D, end: Transform3D, animate: bool) -> void:
+	var rb := Rubble.new()
+	add_child(rb)
+	rb.setup(rid, piece, family, start, end, animate)
+	rubble[rid] = rb
+	_next_rubble = maxi(_next_rubble, rid + 1)
+
+
+## Host: where a falling piece lands (the first solid thing under it, not itself).
+func _landing_for(uid: int) -> Transform3D:
+	var n: PieceNode = nodes[uid]
+	var from := n.global_position + Vector3.UP * 0.5
+	var floor_y := n.global_position.y
+	if n.is_inside_tree():
+		var q := PhysicsRayQueryParameters3D.create(from, from + Vector3.DOWN * 60.0)
+		q.collision_mask = World.TERRAIN_LAYER
+		q.exclude = [n.get_rid()]
+		var hit := n.get_world_3d().direct_space_state.intersect_ray(q)
+		if not hit.is_empty():
+			floor_y = hit.position.y
+	return Rubble.landing(structure.pieces[uid].piece, n.global_transform, floor_y, randf_range(-0.25, 0.25), randf_range(-0.4, 0.4))
+
+
+func ask_hit_rubble(rid: int) -> void:
+	if auth.is_host():
+		request_hit_rubble(auth.local_peer_id(), rid)
+	else:
+		_rpc_hit_rubble.rpc_id(1, rid)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_hit_rubble(rid: int) -> void:
+	if auth.is_host():
+		request_hit_rubble(multiplayer.get_remote_sender_id(), rid)
+
+
+## Host: a pickaxe hit on rubble. After Rubble.HITS hits it's cleared and gives back half its materials.
+func request_hit_rubble(peer_id: int, rid: int) -> String:
+	var ps := auth.get_player(peer_id)
+	var rb: Rubble = rubble.get(rid)
+	if ps == null or rb == null:
+		return "?"
+	if ps.node.global_position.distance_to(rb.global_position) > Pieces.BUILD_REACH + 2.0:
+		return "too_far"
+	rb.hits += 1
+	if rb.hits < Rubble.HITS:
+		_ev_rubble_hit.rpc(rid)
+		return "hit"
+	var cost := Pieces.cost(rb.piece, rb.family)
+	for item in cost:
+		var half: int = cost[item] / 2
+		if half > 0:
+			auth.spawn_drop(item, half, rb.global_position + Vector3.UP * 0.6)
+	_ev_remove_rubble.rpc(rid)
+	return "cleared"
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_rubble_hit(rid: int) -> void:
+	var rb: Rubble = rubble.get(rid)
+	if rb:
+		Sfx.play("dig", rb.global_position, -4.0)
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_remove_rubble(rid: int) -> void:
+	var rb: Rubble = rubble.get(rid)
+	rubble.erase(rid)
+	if rb:
+		Sfx.play("dig_break", rb.global_position, -3.0)
+		rb.queue_free()
 
 
 # ================================================================== looks
@@ -743,7 +797,11 @@ func snapshot() -> Dictionary:
 			if st.plan[i].built:
 				built.append(i)
 		site_list.append([box_id, st.json, st.origin, st.rot, built])
-	return {pieces = structure.to_data(), falls = fall_log.duplicate(), next = _next_uid, sites = site_list}
+	var rubble_list := []
+	for rid in rubble:
+		var rb: Rubble = rubble[rid]
+		rubble_list.append([rid, rb.piece, rb.family, rb.global_transform, rb.hits])
+	return {pieces = structure.to_data(), falls = fall_log.duplicate(), next = _next_uid, sites = site_list, rubble = rubble_list}
 
 
 func load_snapshot(s: Dictionary) -> void:
@@ -757,3 +815,6 @@ func load_snapshot(s: Dictionary) -> void:
 	_next_uid = s.get("next", _next_uid)
 	for st in s.get("sites", []):
 		_ev_site(st[0], st[1], st[2], st[3], st[4])
+	for r in s.get("rubble", []):
+		_add_rubble(r[0], r[1], r[2], r[3], r[3], false)
+		rubble[r[0]].hits = r[4]

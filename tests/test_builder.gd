@@ -81,8 +81,17 @@ func test_soft_collapse_warns_then_tumbles() -> void:
 	for i in 120:
 		await tree.physics_frame
 	check(not b.structure.pieces.has(2) and not b.structure.pieces.has(3), "after the warning both floors gave way")
-	check(auth.drops_root.get_child_count() > drops_before, "half their materials dropped")
+	check_eq(b.rubble.size(), 2, "both landed as rubble (F90)")
 	check_near(ps.vitals.health, health, 0.01, "falling pieces don't hurt anyone")
+	var rb: Rubble = b.rubble.values()[0]
+	check(rb.collision_layer & World.TERRAIN_LAYER, "rubble is solid: you bump into it and can stand on it")
+	ps.node.global_position = rb.global_position + Vector3(1, 0, 0)
+	for i in Rubble.HITS - 1:
+		check_eq(b.request_hit_rubble(1, rb.rubble_id), "hit", "pickaxe hit on rubble")
+	check_eq(b.request_hit_rubble(1, rb.rubble_id), "cleared", "cleared after %d hits" % Rubble.HITS)
+	check(auth.drops_root.get_child_count() > drops_before, "clearing it gives back half its materials")
+	var snap := b.snapshot()
+	check_eq(snap.rubble.size(), 1, "the other rubble is saved with the world")
 	_teardown()
 
 
