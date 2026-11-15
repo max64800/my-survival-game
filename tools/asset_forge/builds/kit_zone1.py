@@ -509,7 +509,21 @@ def doorway(w=2.0, h=2.0, d=0.3, ow=1.0, top=1.8, ring_w=None):
 				y += hh
 		return
 	ring = ring_w or (0.2 if S == "stone" else 0.13)
+	arch_backing(w, h, d, r, spring)
 	voussoirs(r, spring, ring, d, keystone=True)
+
+
+def arch_backing(w, h, d, r, spring, fr=None):
+	"""Two wall halves cut EXACTLY to the round opening (stone or brick surface), set just behind the blocks,
+	so the stepped block ends never leave square notches at the arch's shoulders (F57: it must read round)."""
+	fr = fr or Frame()
+	m = T("stone", "b") if S == "stone" else T("brick", "dark")
+	for s_ in (-1, 1):
+		arc = [(s_ * r * math.cos(math.pi / 2 * k / 10), spring + r * math.sin(math.pi / 2 * k / 10)) for k in range(11)]
+		pts = [(s_ * w / 2, 0.0), (s_ * r, 0.0)] + arc + [(0.0, h), (s_ * w / 2, h)]
+		if s_ < 0:
+			pts = list(reversed(pts))
+		slab_poly(fr, pts, 0.0, d * 0.86, m)
 
 
 def voussoirs(r, spring, ring, d, keystone=True, n=None):
@@ -620,7 +634,7 @@ def leaded(ow, ob, spring, r):
 def door(w=1.0, h=1.8, d=0.12):
 	r = w / 2
 	spring = h - r
-	m = (lambda: T("wood")) if S == "shack" else (lambda: T("wood", rng.choice(["c", "dark"]))) if S == "stone" else (lambda: T("greenpaint"))
+	m = (lambda: T("wood")) if S == "shack" else (lambda: T("wood", "dark")) if S == "stone" else (lambda: T("greenpaint"))
 	n = 5
 	pw = w / n
 	fr = Frame()

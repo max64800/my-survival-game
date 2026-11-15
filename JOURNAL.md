@@ -1082,3 +1082,8 @@ Important pieces (workbench, smelter, anvil) can be redone later with a better t
     ball.
   - A long code patch broke on the shell's quote handling. Fixed by writing the new code as its own file.
   - Not done: F55 (outfits). Its pictures are only in ChatGPT.
+- **Follow-up (Claude 1 spotted it):** the stone doorway still looked square-topped. Claude 2's mistake: the stones are
+  laid in rows, and stopping each row short of the curve left square notches at the arch's shoulders. Fixed with a
+  stone (or brick) backing cut exactly to the round opening, sitting just behind the blocks. Close-up photos of all three
+  doorways with and without doors: `journey/kit_zone1/ingame_round_doors.jpg`. The Stonehold door is now dark planks,
+  as the plan says.

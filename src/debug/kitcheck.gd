@@ -109,6 +109,10 @@ func _run() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("family="):
 			only = arg.trim_prefix("family=")
+		if arg == "part=doors":
+			await _doors(dwarf, base, lamp)
+			get_tree().quit()
+			return
 		if arg == "part=stations":
 			await _stations(dwarf, base, lamp)
 			get_tree().quit()
@@ -164,3 +168,27 @@ func _stations(dwarf: Dwarf, base: Vector3, lamp: OmniLight3D) -> void:
 		dwarf.visible = false
 		await _wait(0.9)
 		await _shot("stations_%d" % r)
+
+
+## `part=doors` (F57): the round doorway with its door in each style, side by side, close up; then the
+## doorways alone, so the round top of the opening shows.
+func _doors(dwarf: Dwarf, base: Vector3, lamp: OmniLight3D) -> void:
+	var fams := ["plank_root", "cut_stone", "clay_brick"]
+	for with_door in [true, false]:
+		var b: Builder = _main.authority.builder
+		for uid in b.structure.pieces.keys():
+			if int(uid) >= 950000:
+				b._ev_remove_piece(uid)
+		for i in fams.size():
+			var p := base + Vector3((i - 1) * 2.0, 0, 0)
+			_place("foundation", "cut_stone", p + Vector3(0, -1, -1), 0)
+			_place("doorway", fams[i], p, 0)
+			if with_door:
+				_place("door", fams[i], p, 0)
+		await _wait(0.8)
+		lamp.global_position = base + Vector3(0, 2.5, 3.5)
+		_look(dwarf, base + Vector3(0, 0.6, 4.2), base + Vector3(0, 1.0, 0))
+		dwarf._zoom = 1.0
+		dwarf.visible = false
+		await _wait(0.9)
+		await _shot("doors_closed" if with_door else "doorways_open")
