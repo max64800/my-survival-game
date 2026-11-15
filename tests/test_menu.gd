@@ -151,3 +151,10 @@ func test_crafting_tabs_and_amounts() -> void:
 	inv.add("rootwood", 7)
 	check_eq(CraftPanel.can_make_count("plank_root", inv), 7, "7 rootwood: 7 planks crafts")
 	check_eq(CraftPanel.can_make_count("pickaxe_stone", inv), 0, "no stone: no pickaxe")
+
+
+## F122: number keys 1-9 mean hotbar slots 0-8.
+func test_number_keys_mean_hotbar_slots() -> void:
+	check_eq(Hud.hotbar_key(KEY_1), 0, "1 = the first hotbar slot")
+	check_eq(Hud.hotbar_key(KEY_9), 8, "9 = the last")
+	check_eq(Hud.hotbar_key(KEY_A), -1, "letters don't count")

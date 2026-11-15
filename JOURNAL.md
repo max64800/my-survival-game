@@ -1473,3 +1473,46 @@ rope, and every board and shingle has its own painting.
   It now stops behind the amber and the face.
 - The game tests first failed to compile: after pulling the other Claudes' work, Godot needed an import first.
 - Long patch scripts typed straight into the terminal broke on quotes again; they go in script files now.
+
+
+---
+
+## November 15, 2026, night (PC, code Claude): your second play test (F116-F141)
+- **What we did:** fixed everything from your notes while you played. Questions where there was a choice:
+  - **Reach:** you can dig, hit and harvest from 3 m now, not 4.5.
+  - **Hands:** the dwarf holds what you picked.
+- **Bag and hotbar:**
+  - Equipment sits in a column on the left of the bag.
+  - With the bag open, point at an item and press 1-9 to move it to that hotbar slot.
+  - The hotbar is centred again.
+  - Drops are smaller (2.5x the original).
+- **Monsters:**
+  - The first cavern has no monsters.
+  - Snails leave you alone until you hit them, and a snail hiding in its shell cancels its bite
+    (the real cause this time: the bite was already on its way to your screen).
+  - You can't dig the rock a monster stands on, and monsters won't walk into holes deeper than 1.6 m.
+  - Every weapon has a small critical-hit chance.
+- **Crafting:**
+  - Tabs, only recipes you've unlocked, a picture for each, and Make x1/x5/x10/All.
+  - The list doesn't jump after each one.
+- **Building:**
+  - Piece pictures, hover to see what you have and what's missing, real material names.
+  - All the keys are listed on the right while holding the hammer.
+  - Gentle roofs only need a level-1 Workbench (that's why you couldn't make roofs: they needed level 2).
+  - Pieces may poke a bit into rock, and the message says where.
+- **The cave:**
+  - No labels for what you're aiming at.
+  - Thicker roots.
+  - Fallen ruin columns are solid.
+  - A drip in the first cavern.
+  - Tunnels now leave caverns at floor height, not high in the wall.
+- **Mistakes and hurdles (including Claude's):**
+  - The endless chopping was a looping animation from the free animation pack being used as a "play once";
+    one-shots are now forced to play once.
+  - Moving the tunnels changed the cave near the start, so two building tests that placed pieces "3 m to the
+    right" landed in rock; the tests now look around for open floor.
+  - A `sed` command turned "\n" into real line breaks inside a GDScript text and broke the HUD file; fixed with the
+    Edit tool. Lesson again: no `sed` for strings with backslashes.
+  - Random critical hits would make exact-damage tests fail now and then, so crits are off in test runs.
+  - A python patch failed on the multiplication sign in FEEDBACK.md (Windows code page); the script now lives in a
+    UTF-8 file.

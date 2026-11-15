@@ -35,6 +35,7 @@ var _help_timer := 25.0
 var _pause: Control
 var _loading: Control
 var _swap_from := -1
+var _hover_slot := -1  ## the bag slot under the mouse (for "press 1-9 to put it on the hotbar", F122)
 var _bars := {}  ## "health"/"stamina"/"hunger"/"thirst" -> ProgressBar
 var _level_label: Label
 var _buff_label: Label
@@ -111,8 +112,14 @@ func _build() -> void:
 	bag_bg.set_content_margin_all(14)
 	_bag_panel.add_theme_stylebox_override("panel", bag_bg)
 	root.add_child(_bag_panel)
+	# Equipped things on the left, everything you carry on the right (owner F117).
+	var bag_row := HBoxContainer.new()
+	bag_row.add_theme_constant_override("separation", 18)
+	_bag_panel.add_child(bag_row)
+	var equip_col := VBoxContainer.new()
+	bag_row.add_child(equip_col)
 	var bag_box := VBoxContainer.new()
-	_bag_panel.add_child(bag_box)
+	bag_row.add_child(bag_box)
 	var title := _label(bag_box, 18)
 	title.text = "Bag  (click two slots to swap · right-click to equip / take off)"
 	# The hotbar moves in here while the bag is open, so everything you carry is in one place (F88).
@@ -132,13 +139,16 @@ func _build() -> void:
 	bag_box.add_child(pack_grid)
 	for i in Inventory.PACK_SIZE:
 		pack_grid.add_child(_make_slot(Inventory.PACK_START + i, ""))
-	_equip_title = _label(bag_box, 15)
+	_equip_title = _label(equip_col, 15)
+	_equip_title.custom_minimum_size = Vector2(2 * (SLOT_SIZE + 4), 0)
+	_equip_title.autowrap_mode = TextServer.AUTOWRAP_WORD
 	var equip_grid := GridContainer.new()
-	equip_grid.columns = Inventory.EQUIP.size()
-	bag_box.add_child(equip_grid)
+	equip_grid.columns = 2
+	equip_col.add_child(equip_grid)
 	for i in Inventory.EQUIP.size():
 		equip_grid.add_child(_make_slot(Inventory.EQUIP_START + i, EQUIP_NAMES[i]))
-	_bag_panel.resized.connect(func(): _bag_panel.position = (root.size - _bag_panel.size) * 0.5)
+	# Centred in the space left of the crafting list (it sits on the right), so they never overlap.
+	_bag_panel.resized.connect(func(): _bag_panel.position = Vector2(maxf(10.0, (root.size.x - 470.0 - _bag_panel.size.x) * 0.5), (root.size.y - _bag_panel.size.y) * 0.5))
 	_bag_panel.visibility_changed.connect(_dock_hotbar)
 
 	var fuel_box := VBoxContainer.new()
@@ -297,6 +307,8 @@ func _make_slot(index: int, key: String) -> Control:
 	panel.custom_minimum_size = Vector2(SLOT_SIZE, SLOT_SIZE)
 	panel.name = "Slot%d" % index
 	panel.gui_input.connect(_on_slot_input.bind(index))
+	panel.mouse_entered.connect(func(): _hover_slot = index)
+	panel.mouse_exited.connect(func(): if _hover_slot == index: _hover_slot = -1)
 	_slot_panels[index] = panel
 	var icon := Panel.new()
 	icon.name = "Icon"
@@ -351,7 +363,7 @@ func _refresh_slots() -> void:
 	var pack_open := ps.inventory.pack_open()
 	if _pack_title:
 		_pack_title.text = "Backpack" if pack_open else "Backpack  (wear a Leather Satchel to open these)"
-		_equip_title.text = "Equipped  ·  armor soaks up %d%% of damage  ·  F: draw / put away weapon" % roundi(ps.armor_cut() * 100.0)
+		_equip_title.text = "Equipped\narmor: %d%%\nF: draw weapon" % roundi(ps.armor_cut() * 100.0)
 	var hand := ps.hand_slot()
 	for key in _slot_panels:
 		var i: int = key
@@ -828,6 +840,28 @@ func _local_dwarf() -> Dwarf:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("toggle_fps"):
 		_fps_label.visible = not _fps_label.visible
+
+
+## Bag open, mouse over a slot, press 1-9: that item goes to that hotbar slot (owner F122).
+func _input(event: InputEvent) -> void:
+	var k := event as InputEventKey
+	if k == null or not k.pressed or k.echo or not _bag_panel.visible or box_panel.visible or _hover_slot < 0:
+		return
+	var n := hotbar_key(k.keycode)
+	if n < 0 or n == _hover_slot:
+		return
+	var inv: Inventory = GameAuthority.instance.get_player(peer_id).inventory if GameAuthority.instance else null
+	if inv and inv.swap_allowed(_hover_slot, n):
+		GameAuthority.instance.ask_swap(_hover_slot, n)
+		_refresh_slots.call_deferred()
+	get_viewport().set_input_as_handled()
+
+
+## Which hotbar slot a number key means (1 = slot 0 ... 9 = slot 8), or -1.
+static func hotbar_key(code: int) -> int:
+	if code >= KEY_1 and code <= KEY_9:
+		return code - KEY_1
+	return -1
 
 
 ## "rock-steady", "85% steady", "shaky (31%)": how well a built piece is held up.
