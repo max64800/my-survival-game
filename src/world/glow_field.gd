@@ -89,8 +89,31 @@ func set_chops(id: int, left: int) -> void:
 			n.scale = n.scale * Vector3(0.85, 1.0, 0.85)  # a bit thinner after each chop
 
 
+## Roots grow back (F106): a removed spot is remembered so it can return.
+var _gone := {}
+
+
+## A root grows back where it was: fresh (all its chops), starting small and growing to full size.
+func restore_spot(id: int) -> void:
+	if _spots.has(id) or not _gone.has(id):
+		return
+	var s: Dictionary = _gone[id]
+	_gone.erase(id)
+	s.chops = GlowPlacer.KINDS[s.kind].get("chops", 1)
+	_spots[id] = s
+	_grid_add(s)
+	_add_node(s)
+	var n: Node3D = _nodes.get(id)
+	if n and n.is_inside_tree():
+		var full := n.scale
+		n.scale = full * 0.15
+		n.create_tween().tween_property(n, "scale", full, 4.0)
+	_light_timer = 0.0
+
+
 func remove_spot(id: int) -> void:
 	if _spots.has(id):
+		_gone[id] = (_spots[id] as Dictionary).duplicate()
 		var c := _cell(_spots[id].pos)
 		if _grid.has(c):
 			_grid[c].erase(id)

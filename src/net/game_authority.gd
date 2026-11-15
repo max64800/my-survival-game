@@ -35,6 +35,9 @@ var drops_root: Node3D
 var players: Dictionary = {}  ## peer_id -> PlayerState
 var edit_log: Array[Vector4] = []  ## every dig: center (xyz) + packed tier & size (w, see pack_dig), for late joiners
 var removed_glow: Array[int] = []
+## Host: chopped roots growing back (F106): glow id -> seconds left.
+var regrow := {}
+const REGROW_TIME := 600.0  ## 10 minutes
 var _drops: Dictionary = {}  ## drop_id -> Drop
 var _next_drop_id := 1
 var _pending_digs: Array[Vector4] = []  ## digs waiting for that part of the cave to load
@@ -198,6 +201,7 @@ func _process(delta: float) -> void:
 		_tick_vitals(me, delta)
 	_apply_pending_digs()
 	if is_host():
+		_tick_regrow(delta)
 		_auto_timer -= delta
 		var feed_now := _auto_timer <= 0.0
 		if feed_now:
@@ -725,6 +729,7 @@ func request_harvest(peer_id: int, glow_id: int) -> Dictionary:
 	else:
 		removed_glow.append(glow_id)
 		_ev_remove_glow.rpc(glow_id)
+		_start_regrow(spot)
 	var done := {state = "done", hits = needed, needed = needed, point = spot.pos, kind = spot.kind}
 	_tell_feedback(peer_id, done)
 	return done
@@ -1204,6 +1209,7 @@ func _host_dig(center: Vector3, tool_tier: int = 0, radius: float = DIG_RADIUS) 
 func _host_remove_glow(spot: Dictionary) -> void:
 	removed_glow.append(spot.id)
 	_ev_remove_glow.rpc(spot.id)
+	_start_regrow(spot)
 	var k: Dictionary = GlowPlacer.KINDS[spot.kind]
 	spawn_drop(k.item, k.count[0], spot.pos + spot.normal * 0.5)
 
@@ -1251,6 +1257,33 @@ func _apply_pending_digs() -> void:
 		else:
 			still.append(e)
 	_pending_digs = still
+
+
+## Roots (thin and big) grow back after REGROW_TIME (owner, Nov 15, F106).
+func _start_regrow(spot: Dictionary) -> void:
+	if spot.get("kind", "") in [GlowPlacer.ROOT, GlowPlacer.ROOT_DANGLE]:
+		regrow[spot.id] = REGROW_TIME
+
+
+## Host: count down; a root comes back only if the rock it hangs from is still there.
+func _tick_regrow(delta: float) -> void:
+	for id in regrow.keys():
+		regrow[id] -= delta
+		if regrow[id] > 0.0:
+			continue
+		regrow.erase(id)
+		var s: Dictionary = glow._gone.get(id, {}) if glow else {}
+		if s.is_empty() or world.sdf_at(s.pos - s.normal * 0.4) >= 0.0:
+			continue  # its ceiling was dug away
+		removed_glow.erase(id)
+		_ev_restore_glow.rpc(id)
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_restore_glow(glow_id: int) -> void:
+	removed_glow.erase(glow_id)
+	if glow:
+		glow.restore_spot(glow_id)
 
 
 @rpc("authority", "call_local", "reliable")
@@ -1439,7 +1472,7 @@ func snapshot() -> Dictionary:
 			if glow._spots[id].get("chops", 1) != GlowPlacer.KINDS[glow._spots[id].kind].get("chops", 1):
 				chops[id] = glow._spots[id].chops
 	return {edits = edit_log.duplicate(), glow = removed_glow.duplicate(), drops = drops, next_drop = _next_drop_id,
-		stations = sts, chops = chops, runes = rune_slab.to_data(), build = builder.snapshot(), boxes = storage.snapshot(), monsters = monsters.snapshot(), state = world_state}
+		stations = sts, chops = chops, regrow = regrow.duplicate(), runes = rune_slab.to_data(), build = builder.snapshot(), boxes = storage.snapshot(), monsters = monsters.snapshot(), state = world_state}
 
 
 func load_snapshot(snap: Dictionary) -> void:
@@ -1460,6 +1493,12 @@ func load_snapshot(snap: Dictionary) -> void:
 		if st.size() > 6 and stations.has(st[0]):
 			stations[st[0]].under_drip = st[6]
 			stations[st[0]].set_water(st[5])
+	for id in snap.get("regrow", {}):
+		regrow[id] = snap.regrow[id]
+	if glow:  # saves from before roots grew back: their chopped roots start growing now
+		for id in removed_glow:
+			if not regrow.has(id) and glow._gone.get(id, {}).get("kind", "") in [GlowPlacer.ROOT, GlowPlacer.ROOT_DANGLE]:
+				regrow[id] = REGROW_TIME
 	for id in snap.get("chops", {}):
 		if glow:
 			glow.set_chops(id, snap.chops[id])
