@@ -263,3 +263,14 @@ func test_doors_open_and_ladders_climb() -> void:
 	auth.builder._ev_remove_piece(502)
 	check(not auth.builder.ladder_at(pos + Vector3(0.3, 1.0, 3.2)), "a taken-down ladder can't be climbed")
 	_teardown()
+
+
+## F113: cave-in rocks are lumpy rocks in several different shapes, not cubes.
+func test_falling_rocks_are_rock_shaped() -> void:
+	var a := Builder.rock_mesh(0)
+	var b := Builder.rock_mesh(1)
+	check(a.get_faces().size() > 36, "more faces than a cube")
+	check(a.get_faces() != b.get_faces(), "different variants have different shapes")
+	check_eq(Builder.rock_mesh(0), a, "the same variant is reused (no new mesh every time)")
+	var box := a.get_aabb()
+	check(box.size.x > 0.6 and box.size.x < 1.4, "about 1 m across")

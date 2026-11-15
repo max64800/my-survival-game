@@ -542,22 +542,63 @@ func _rubble(b: AABB, counts: Dictionary) -> void:
 		var rb := RigidBody3D.new()
 		rb.collision_layer = 0
 		rb.collision_mask = World.TERRAIN_LAYER
+		# A jagged lump of rock, every one a different shape and size (F113: they were perfect cubes).
+		var sz := clampf(pow(total / float(n), 1.0 / 3.0), 0.4, 1.6) * randf_range(0.7, 1.2)
+		var rock := rock_mesh(randi() % ROCK_SHAPES)
+		var squash := Vector3(randf_range(0.75, 1.3), randf_range(0.6, 1.0), randf_range(0.75, 1.3)) * sz
 		var cs := CollisionShape3D.new()
-		var sh := BoxShape3D.new()
-		var sz := clampf(pow(total / float(n), 1.0 / 3.0), 0.4, 1.6)
-		sh.size = Vector3.ONE * sz
-		cs.shape = sh
+		var hull := ConvexPolygonShape3D.new()  # squashed points, not a squashed shape (physics dislikes that)
+		var pts := PackedVector3Array()
+		for v in rock.get_faces():
+			pts.append(v * squash)
+		hull.points = pts
+		cs.shape = hull
 		rb.add_child(cs)
 		var mi := MeshInstance3D.new()
-		var bm := BoxMesh.new()
-		bm.size = sh.size
-		mi.mesh = bm
-		mi.material_override = Look.mat(Color(0.42, 0.39, 0.36), "stone")
+		mi.mesh = rock
+		mi.scale = squash
+		var shade := randf_range(-0.05, 0.05)
+		mi.material_override = Look.mat(Color(0.42 + shade, 0.39 + shade, 0.36 + shade * 0.5), "stone")
 		rb.add_child(mi)
 		add_child(rb)
 		rb.global_position = b.position + Vector3(randf() * b.size.x, randf() * b.size.y, randf() * b.size.z)
 		rb.rotation = Vector3(randf(), randf(), randf()) * TAU
 		get_tree().create_timer(4.0).timeout.connect(rb.queue_free)
+
+
+const ROCK_SHAPES := 8
+static var _rock_meshes := {}
+
+
+## A rough rock about 1 m across: a ball with each corner pushed in or out at random, flat-shaded
+## so it shows sharp facets. Variant `k` always gives the same shape (cached).
+static func rock_mesh(k: int) -> ArrayMesh:
+	if _rock_meshes.has(k):
+		return _rock_meshes[k]
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7000 + k
+	var sphere := SphereMesh.new()
+	sphere.radius = 0.5
+	sphere.height = 1.0
+	sphere.radial_segments = 7 + k % 3
+	sphere.rings = 4 + k % 2
+	var arr := sphere.get_mesh_arrays()
+	var verts: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+	var idx: PackedInt32Array = arr[Mesh.ARRAY_INDEX]
+	var push := {}  # same corner, same push (no cracks)
+	for i in verts.size():
+		var key := Vector3i((verts[i] * 1000.0).round())
+		if not push.has(key):
+			push[key] = rng.randf_range(0.7, 1.25)
+		verts[i] *= push[key]
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for t in idx:
+		st.add_vertex(verts[t])
+	st.generate_normals()  # every triangle its own normal: sharp facets
+	var mesh := st.commit()
+	_rock_meshes[k] = mesh
+	return mesh
 
 
 static func _bounds(pts: PackedVector3Array) -> AABB:
