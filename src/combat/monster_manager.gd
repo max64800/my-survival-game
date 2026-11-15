@@ -278,7 +278,11 @@ func send_tell(m: Monster, atk: Dictionary) -> void:
 			buildup[k] = buildup.get(k, 0.0) + v.buildup[k]
 	# Amber skin: its heaviest attack can only be parried with a shield (doc 7.1).
 	var crushing: bool = atk.parry == "shield" or (m.variant == "amber" and atk.damage >= _heaviest(m))
-	_ev_tell.rpc(m.uid, m.target_peer, atk.tell, dmg, atk.reach, crushing, atk.get("knockdown", false), atk.name, buildup)
+	# A charge reaches far while it winds up, but it only hits if the monster really gets to you
+	# (F111: it was hitting from 9 m away): at the end it counts as touching range.
+	var reach: float = atk.reach if not atk.get("lunge", false) else float(m.data.get("size", 1.0)) * 0.6 + 0.8
+	_ev_tell.rpc(m.uid, m.target_peer, atk.tell, dmg, reach, crushing, atk.get("knockdown", false), atk.name, buildup,
+		atk.get("lunge", false))
 
 
 func _heaviest(m: Monster) -> float:
@@ -688,7 +692,7 @@ func _kill(m: Monster, peer: int) -> void:
 
 ## Everyone: a monster starts an attack. Only the target's own computer judges it.
 @rpc("authority", "call_local", "reliable")
-func _ev_tell(uid: int, target: int, tell: float, dmg: float, reach: float, crushing: bool, kd: bool, attack_name: String, buildup: Dictionary = {}) -> void:
+func _ev_tell(uid: int, target: int, tell: float, dmg: float, reach: float, crushing: bool, kd: bool, attack_name: String, buildup: Dictionary = {}, charge: bool = false) -> void:
 	var m: Monster = monsters.get(uid)
 	if m:
 		m.show_tell(tell, attack_name)
@@ -696,7 +700,7 @@ func _ev_tell(uid: int, target: int, tell: float, dmg: float, reach: float, crus
 		_parry_ok[uid] = target  # only this player may parry this swing, once
 		_block_ok[uid] = target
 	if target == auth.local_peer_id() and dmg > 0.0:
-		_incoming.append({uid = uid, at = _clock + tell, damage = dmg, reach = reach, crushing = crushing, kd = kd, name = attack_name, buildup = buildup})
+		_incoming.append({uid = uid, at = _clock + tell, damage = dmg, reach = reach, crushing = crushing, kd = kd, name = attack_name, buildup = buildup, charge = charge})
 
 
 # ================================================================== spore clouds
@@ -844,6 +848,8 @@ func _judge_incoming() -> void:
 						dwarf.guard_break()
 				if result.result == "hit" and hit.kd and dwarf.has_method("knock_down"):
 					dwarf.knock_down()
+				if result.result in ["hit", "block"] and hit.get("charge", false) and dwarf.has_method("shove"):
+					dwarf.shove(charge_shove(m, dwarf.global_position))
 				if result.result == "parry" and dwarf.has_method("got_parry"):
 					dwarf.got_parry()
 		result.name = hit.name
@@ -882,6 +888,23 @@ func request_blocked(uid: int, peer: int) -> void:
 	var sb := Gems.bonus(Gems.shield_slot(ps.inventory))
 	if sb.has("block_poison"):
 		m.add_buildup("poison", sb.block_poison)
+
+
+## Host: a short word over a monster's head for everyone ("Dazed!").
+func note(m: Monster, text: String) -> void:
+	_ev_note.rpc(m.uid, text)
+
+
+## Which way a charge knocks you (F111): off to the side it hit you on, plus a little forward.
+static func charge_shove(m: Monster, dwarf_pos: Vector3) -> Vector3:
+	var fwd := -m.global_basis.z
+	fwd.y = 0.0
+	fwd = fwd.normalized() if fwd.length() > 0.01 else Vector3.FORWARD
+	var to := dwarf_pos - m.global_position
+	to.y = 0.0
+	var side := fwd.cross(Vector3.UP).normalized()  # the monster's right
+	var which := 1.0 if to.dot(side) >= 0.0 else -1.0
+	return (side * which * 7.0 + fwd * 3.0)
 
 
 func _in_reach(m: Monster, dwarf: Node3D, reach: float) -> bool:

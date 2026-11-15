@@ -28,6 +28,7 @@ var phase := 0  ## bosses: which phase (0 = first)
 var _cooldowns := {}  ## bosses: attack name -> seconds until it can be used again
 var _stun_at_tell := 0.0
 var _timer := 0.0
+const CHARGE_DAZE := 3.0  ## seconds a monster stands dazed after a charge (F111)
 var _think := 0.0
 var _attack: Dictionary = {}
 var _wander_to := Vector3.INF
@@ -414,6 +415,10 @@ func think(delta: float, mgr: Node) -> void:
 				else:
 					state = State.RECOVER
 					_timer = data.get("recover", RECOVER_TIME)
+					if _attack.get("lunge", false):
+						# After a charge it stands dazed for a moment: your chance to hit it (F111).
+						_timer = maxf(_timer, CHARGE_DAZE)
+						mgr.note(self, "Dazed!")
 					_charge_dir = Vector3.ZERO
 					if data.get("hit_and_run", false):
 						var away: float = data.get("retreat", 3.0)

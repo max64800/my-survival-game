@@ -219,6 +219,10 @@ func _physics_process(delta: float) -> void:
 		velocity.y = LADDER_SPEED
 	elif ladder and not is_on_floor():
 		velocity.y = maxf(velocity.y, -1.5)  # hold on: slide down slowly
+	if _shove.length() > 0.05:  # knocked aside by a charge (F111): fades out quickly
+		velocity.x += _shove.x
+		velocity.z += _shove.z
+		_shove = _shove.move_toward(Vector3.ZERO, SHOVE_FADE * delta)
 	move_and_slide()
 	model.set_climbing(ladder and not is_on_floor(), delta)  # hands on the rungs
 	if on_floor and not ladder and velocity.y <= 0.01 and dir.length() > 0.1 and is_on_wall():
@@ -443,6 +447,16 @@ func is_invulnerable() -> bool:
 
 func guard_break() -> void:
 	fight.guard_break()
+
+
+## Knocked to one side (a beetle's charge hit you, F111): `push` is the sideways speed in m/s.
+var _shove := Vector3.ZERO
+const SHOVE_FADE := 18.0
+
+
+func shove(push: Vector3) -> void:
+	_shove = Vector3(push.x, 0.0, push.z)
+	_shake = maxf(_shake, 0.6)
 
 
 func knock_down() -> void:

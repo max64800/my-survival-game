@@ -177,3 +177,25 @@ func test_snail_in_its_shell_cant_bite() -> void:
 	auth.monsters.monster_shell(snail, true)
 	check(snail.state != Monster.State.ATTACK and snail._attack.is_empty(), "hiding in the shell calls the bite off")
 	_teardown()
+
+
+## F111: a beetle's charge only hits up close, knocks you to the side it hit, and leaves it dazed.
+func test_beetle_charge() -> void:
+	await _setup()
+	var b := _boss("rock_beetle")
+	b.global_position = player.global_position + Vector3(0, 0, -3)
+	b.look_at(player.global_position, Vector3.UP)
+	var charge := {}
+	for a in b.data.attacks:
+		if a.get("lunge", false):
+			charge = a
+	check(not charge.is_empty(), "the beetle has a charge")
+	var push := MonsterManager.charge_shove(b, b.global_position + (-b.global_basis.z) * 1.0 + b.global_basis.x * 0.4)
+	check(push.dot(b.global_basis.x) > 0.0, "hit on its right side: knocked to the right")
+	push = MonsterManager.charge_shove(b, b.global_position + (-b.global_basis.z) * 1.0 - b.global_basis.x * 0.4)
+	check(push.dot(b.global_basis.x) < 0.0, "hit on its left side: knocked to the left")
+	b._start_attack(charge, auth.monsters)
+	b._timer = 0.0
+	b.think(0.016, auth.monsters)
+	check(b.state == Monster.State.RECOVER and b._timer >= Monster.CHARGE_DAZE - 0.1, "after the charge it stands dazed for a moment")
+	_teardown()
