@@ -2,7 +2,7 @@ extends TestCase
 ## The building pieces (building polish spec §1-§2): the catalog, the soft numbers, and snapping.
 
 const PLACES := ["cell", "edge", "corner", "free", "ceiling"]
-const GROUPS := ["foundation", "floor", "wall", "roof", "support", "around", "mining", "decor"]
+const GROUPS := ["foundation", "floor", "wall", "roof", "support", "around", "mining", "decor", "legacy"]
 
 
 func test_every_piece_is_valid() -> void:
@@ -13,6 +13,8 @@ func test_every_piece_is_valid() -> void:
 		check(int(p.units) > 0, "%s costs something" % id)
 		check(p.place in PLACES, "%s snaps a known way" % id)
 		check(p.get("group", "") in GROUPS, "%s is in a menu group" % id)
+		if p.group == "legacy":
+			continue  # old 45° pieces, only kept so old saves load
 		var mossy := 0
 		for f in Pieces.MOSSY_FAMILIES:
 			if Pieces.allowed(id, f) and Pieces.needed_level(id, f) < 99:
@@ -129,36 +131,7 @@ func test_strength_colors() -> void:
 	check_eq(Structure.strength_color(0.12), Color(1.0, 0.3, 0.25), "barely = red")
 
 
-# ---------------------------------------------------------------- triangles (owner's Conan idea, 45°)
-
-func test_two_triangles_fill_one_square() -> void:
-	var s := Structure.new()
-	s.add(1, "floor_triangle", "cut_stone", Vector3(1, 0, 1), 0, true)
-	check(not s.overlaps("floor_triangle", Vector3(1, 0, 1), 2), "the opposite half fits")
-	check(s.overlaps("floor_triangle", Vector3(1, 0, 1), 0), "the same half twice doesn't")
-	check(s.overlaps("floor_triangle", Vector3(1, 0, 1), 1), "a quarter-turned one overlaps")
-	check(s.overlaps("floor", Vector3(1, 0, 1), 0), "a square floor on top of a triangle doesn't fit")
-	check(not s.overlaps("wall_diagonal", Vector3(1, 0.25, 1), 0), "a diagonal wall stands on the triangle's edge")
-
-
-func test_octagon_tower_ring_is_valid() -> void:
-	# 3×3 squares; the 4 corner squares are triangles with diagonal walls: an octagon.
-	var s := Structure.new()
-	var uid := 1
-	var corners := {Vector2i(-2, -2): 0, Vector2i(2, -2): 1, Vector2i(2, 2): 2, Vector2i(-2, 2): 3}
-	for x in [-2, 0, 2]:
-		for z in [-2, 0, 2]:
-			var k := Vector2i(x, z)
-			if corners.has(k):
-				check(not s.overlaps("foundation_triangle", Vector3(x, 0, z), corners[k]), "corner triangle %s fits" % k)
-				s.add(uid, "foundation_triangle", "cut_stone", Vector3(x, 0, z), corners[k], true)
-				uid += 1
-				check(not s.overlaps("wall_diagonal", Vector3(x, 1, z), corners[k]), "diagonal wall %s fits" % k)
-				s.add(uid, "wall_diagonal", "cut_stone", Vector3(x, 1, z), corners[k], false)
-			else:
-				s.add(uid, "foundation", "cut_stone", Vector3(x, 0, z), 0, true)
-			uid += 1
-	check(s.recompute().is_empty(), "the octagon tower's base stands")
+# Triangles are 60° (equilateral) now: see tests/test_build_geometry.gd.
 
 
 func test_stations_by_material() -> void:
@@ -168,7 +141,8 @@ func test_stations_by_material() -> void:
 	check_eq(Pieces.station_for("copper_ingot"), "anvil", "copper → Anvil")
 	check_eq(Pieces.needed_level("roof_26", "plank_root"), 2, "wooden roofs need Workbench level 2")
 	check_eq(Pieces.needed_level("column", "cut_stone"), 2, "carved columns need Mason level 2")
-	check(not Pieces.allowed("foundation", "plank_root"), "no wooden foundations")
+	check(Pieces.allowed("foundation", "plank_root"), "wooden log-leg foundations (Delver's Shack)")
+	check(not Pieces.allowed("foundation", "copper_ingot"), "no copper foundations")
 	check(not Pieces.allowed("arch", "plank_root"), "arches are stone or brick")
 
 

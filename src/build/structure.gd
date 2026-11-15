@@ -43,34 +43,38 @@ func box_of(uid: int) -> AABB:
 	return Pieces.box(p.piece, p.pos, p.rot)
 
 
-## Would a new piece overlap something already built? Boxes are shrunk a little first, so
-## pieces that just touch (a wall on a floor's edge, two walls meeting at a corner) are fine.
+## Would a new piece overlap something already built? Outlines are shrunk a little first, so
+## pieces that just touch (a wall on a floor's edge, two walls meeting at a corner, two triangles
+## side by side) are fine. Uses the real outline seen from above (triangles, 30°/60° turns).
 func overlaps(piece: String, pos: Vector3, rot: int) -> bool:
-	var mine := _shrunk(Pieces.box(piece, pos, rot), 0.16)
+	var mine_y := _y_range(piece, pos, -0.16)
+	var mine := Pieces.footprint(piece, pos, rot, -0.16)
 	for uid in pieces:
-		if fits_inside(piece, pieces[uid].piece) or fits_inside(pieces[uid].piece, piece):
+		var o: Dictionary = pieces[uid]
+		if fits_inside(piece, o.piece) or fits_inside(o.piece, piece):
 			continue  # a door goes inside a doorway
-		if _other_half(piece, pos, rot, pieces[uid]):
-			continue  # two triangles filling the two halves of one square
-		if _shrunk(box_of(uid), 0.16).intersects(mine):
+		var oy := _y_range(o.piece, o.pos, -0.16)
+		if mine_y.y <= oy.x or oy.y <= mine_y.x:
+			continue
+		if Pieces.outlines_overlap(mine, Pieces.footprint(o.piece, o.pos, o.rot, -0.16)):
 			return true
 	return false
 
 
-## Two half-square pieces (triangles, diagonal walls) in the same spot, turned opposite ways,
-## use opposite halves of the square (spec: triangles). Diagonal pieces stand on the line between.
-static func _other_half(piece: String, pos: Vector3, rot: int, other: Dictionary) -> bool:
-	var a: String = Pieces.LIST[piece].get("shape", "")
-	var b: String = Pieces.LIST[other.piece].get("shape", "")
-	if not (a in ["triangle", "diagonal"] and b in ["triangle", "diagonal"]):
+## Bottom and top of a piece, grown (or shrunk, never past its middle).
+static func _y_range(piece: String, pos: Vector3, grow: float) -> Vector2:
+	var h: float = Pieces.LIST[piece].size.y
+	var g := maxf(grow, -(h * 0.5 - 0.01))
+	return Vector2(pos.y - g, pos.y + h + g)
+
+
+## Do two pieces touch (or nearly: 6 cm)?
+func _touching(piece: String, pos: Vector3, rot: int, other: Dictionary) -> bool:
+	var a := _y_range(piece, pos, 0.06)
+	var b := _y_range(other.piece, other.pos, 0.0)
+	if a.y < b.x or b.y < a.x:
 		return false
-	if (pos - (other.pos as Vector3)) * Vector3(1, 0, 1) != Vector3.ZERO:
-		return false
-	if a == "diagonal" and b == "diagonal":
-		return false  # two diagonal walls in one square cross or sit on the same line: the normal check decides
-	if a == "triangle" and b == "triangle":
-		return posmod(rot - int(other.rot), 4) == 2
-	return true  # a diagonal wall standing on (or under) a triangle's slanted edge
+	return Pieces.outlines_overlap(Pieces.footprint(piece, pos, rot, 0.06), Pieces.footprint(other.piece, other.pos, other.rot, 0.0))
 
 
 ## Pieces made to sit inside another one's opening.
@@ -85,10 +89,10 @@ static func _shrunk(b: AABB, amount: float) -> AABB:
 
 
 func neighbors(uid: int) -> Array:
-	var b := box_of(uid).grow(0.06)
+	var me: Dictionary = pieces[uid]
 	var out := []
 	for other in pieces:
-		if other != uid and b.intersects(box_of(other)):
+		if other != uid and _touching(me.piece, me.pos, me.rot, pieces[other]):
 			out.append(other)
 	return out
 
@@ -101,7 +105,7 @@ func preview_stability(piece: String, family: String, pos: Vector3, rot: int, an
 	var best := 0.0
 	for uid in pieces:
 		var nb := box_of(uid)
-		if not b.grow(0.06).intersects(nb):
+		if not _touching(piece, pos, rot, pieces[uid]):
 			continue
 		best = maxf(best, pieces[uid].stability - _loss(family, nb, b, piece))
 	return best

@@ -62,7 +62,7 @@ func world_pieces(origin: Vector3, rot: int) -> Array:
 	var out := []
 	var basis := Basis(Vector3.UP, rot * PI / 2.0)
 	for p in pieces:
-		out.append({piece = p.id, family = p.mat, pos = origin + basis * p.pos, rot = (p.rot + rot) % 4})
+		out.append({piece = p.id, family = p.mat, pos = origin + basis * p.pos, rot = Pieces.add_rot(p.rot, rot)})
 	return out
 
 

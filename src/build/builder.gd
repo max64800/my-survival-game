@@ -118,7 +118,8 @@ func request_place(peer_id: int, piece: String, family: String, pos: Vector3, ro
 	var ps := auth.get_player(peer_id)
 	if ps == null or not Pieces.LIST.has(piece) or not pos.is_finite():
 		return "?"
-	rot = posmod(rot, 4)
+	if not Pieces.valid_rot(rot):
+		rot = 0
 	var why := problem(ps, piece, family, pos, rot)
 	if why != "":
 		return why
@@ -233,7 +234,7 @@ func _ev_add_piece(uid: int, piece: String, family: String, pos: Vector3, rot: i
 	n.family = family
 	pieces_root.add_child(n)
 	n.global_position = pos
-	n.rotation.y = rot * PI / 2.0
+	n.rotation.y = Pieces.yaw_of(rot)
 	nodes[uid] = n
 	if piece == "ladder":
 		ladders[uid] = true
@@ -558,7 +559,7 @@ func _ev_site(box_id: int, json: String, origin: Vector3, rot: int, built: Array
 		g.family = plan[i].family
 		ghost_root.add_child(g)
 		g.global_position = plan[i].pos
-		g.rotation.y = plan[i].rot * PI / 2.0
+		g.rotation.y = Pieces.yaw_of(plan[i].rot)
 		g.set_ghost_plan.call_deferred()
 		g.visible = not plan[i].built
 		plan[i].ghost = g

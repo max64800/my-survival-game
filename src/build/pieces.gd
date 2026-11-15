@@ -17,10 +17,11 @@ const ALL := {"workbench": 1, "mason": 1, "anvil": 1}
 
 const LIST := {
 	# --- foundations: thick blocks that can sink into uneven ground; always steady.
+	# Rootwood foundations are the Delver's Shack's log-leg platforms (building kit, Nov 15).
 	"foundation": {name = "Foundation", group = "foundation", size = Vector3(2, 1, 2), units = 8, place = "cell", foundation = true,
-		families = ["cut_stone", "clay_brick"], station = {"mason": 1}},
+		families = ["plank_root", "cut_stone", "clay_brick"], station = {"workbench": 1, "mason": 1}},
 	"foundation_half": {name = "Half Foundation", group = "foundation", size = Vector3(2, 1, 1), units = 4, place = "cell", foundation = true,
-		families = ["cut_stone", "clay_brick"], station = {"mason": 1}},
+		families = ["plank_root", "cut_stone", "clay_brick"], station = {"workbench": 1, "mason": 1}},
 	"foundation_steps": {name = "Foundation Steps", group = "foundation", size = Vector3(2, 1, 2), units = 6, place = "cell", foundation = true,
 		shape = "steps", walkable_slope = true, families = ["cut_stone", "clay_brick"], station = {"mason": 2}},
 	# --- floors
@@ -33,9 +34,9 @@ const LIST := {
 		station = {"workbench": 2, "mason": 1, "anvil": 1}},
 	"half_wall": {name = "Half Wall", group = "wall", size = Vector3(2, 1, 0.3), units = 2, place = "edge", station = ALL},
 	"doorway": {name = "Doorway", group = "wall", size = Vector3(2, 2, 0.3), units = 4, place = "edge", extra = {copper_ingot = 2},
-		opening = Vector3(1.0, 1.8, 0), station = ALL},
+		opening = Vector3(1.0, 1.8, 0), round = true, station = ALL},  # round-topped (F57)
 	"arch_doorway": {name = "Arched Doorway", group = "wall", size = Vector3(2, 2, 0.3), units = 4, place = "edge", shape = "arch_doorway",
-		opening = Vector3(1.2, 1.9, 0), families = ["cut_stone", "clay_brick"], station = {"mason": 2}},
+		opening = Vector3(1.2, 1.8, 0), families = ["cut_stone", "clay_brick"], station = {"mason": 2}},
 	"window_wall": {name = "Small Window", group = "wall", size = Vector3(2, 2, 0.3), units = 3, place = "edge",
 		opening = Vector3(1.0, 0.8, 0.6), station = {"workbench": 2, "mason": 1, "anvil": 1}},
 	"window_wide": {name = "Wide Window", group = "wall", size = Vector3(2, 2, 0.3), units = 3, place = "edge",
@@ -44,6 +45,16 @@ const LIST := {
 		station = {"workbench": 2, "mason": 2, "anvil": 2}},
 	"gable_45": {name = "Gable (steep)", group = "roof", size = Vector3(2, 2, 0.3), units = 3, place = "edge", shape = "gable", rise = 2.0,
 		station = {"workbench": 2, "mason": 2, "anvil": 2}},
+	# Building kit (docs/design/building-kit-zone1.md): a wall cut corner to corner (beside stairs,
+	# under the sides of a sloped roof), Stonehold's flat roof and its battlements.
+	"sloped_wall": {name = "Sloped Wall", group = "wall", size = Vector3(2, 2, 0.3), units = 3, place = "edge", shape = "gable", rise = 2.0,
+		station = {"workbench": 1, "mason": 1, "anvil": 1}},
+	"flat_roof": {name = "Flat Roof", group = "roof", size = Vector3(2, 0.3, 2), units = 4, place = "cell", shape = "flat_roof",
+		station = {"workbench": 2, "mason": 1, "anvil": 2}},
+	"battlement": {name = "Battlement", group = "roof", size = Vector3(2, 0.9, 0.4), units = 3, place = "edge", shape = "battlement",
+		families = ["cut_stone", "cut_marble", "clay_brick", "basalt", "ancient_brick"], station = {"mason": 1}},
+	"battlement_corner": {name = "Battlement Corner", group = "roof", size = Vector3(0.6, 1.3, 0.6), units = 2, place = "corner",
+		shape = "battlement_corner", families = ["cut_stone", "cut_marble", "clay_brick", "basalt", "ancient_brick"], station = {"mason": 1}},
 	"door": {name = "Door", group = "wall", size = Vector3(1, 1.8, 0.12), units = 2, place = "edge", shape = "door",
 		families = ["plank_root", "plank_mushroom", "copper_ingot"], station = {"workbench": 1, "anvil": 1}},
 	# --- roofs: they climb `rise` meters from the front (z = +depth/2) to the back. Q turns them.
@@ -81,23 +92,25 @@ const LIST := {
 		families = ["plank_root", "plank_mushroom", "copper_ingot"], station = {"workbench": 1, "anvil": 1}},
 	"railing": {name = "Railing", group = "around", size = Vector3(2, 1, 0.15), units = 1, place = "edge", shape = "railing",
 		families = ["plank_root", "plank_mushroom", "copper_ingot", "silver_ingot"], station = {"workbench": 1, "anvil": 1}},
-	# --- triangles (owner's Conan Exiles idea; 45°): a triangle is half a 2×2 square, cut corner to
-	# corner. Rot 0 keeps the half on the −x/+z side of the line (−1,−1)→(1,1); Q turns which corner
-	# is cut. Diagonal pieces stand on that line (2.83 m long). Octagons and cut corners on our grid.
-	"foundation_triangle": {name = "Triangle Foundation", group = "foundation", size = Vector3(2, 1, 2), units = 4, place = "cell",
-		foundation = true, shape = "triangle", families = ["cut_stone", "clay_brick"], station = {"mason": 1}},
-	"floor_triangle": {name = "Triangle Floor", group = "floor", size = Vector3(2, 0.25, 2), units = 2, place = "cell", shape = "triangle",
+	# --- triangles (building kit, Nov 15): EQUILATERAL, every side 2 m (one wall length), so any wall
+	# fits any edge and six make a hexagon. The origin is the triangle's middle (centroid); rot 0 has
+	# one edge facing +z (at z = +0.577) and the point at z = −1.155. They turn in 30° steps and
+	# snap edge to edge onto squares and other triangles. size.z = the triangle's depth (1.732).
+	"foundation_triangle": {name = "Triangle Foundation", group = "foundation", size = Vector3(2, 1, TRI_DEPTH), units = 4, place = "cell",
+		foundation = true, shape = "tri", families = ["plank_root", "cut_stone", "clay_brick"], station = {"workbench": 1, "mason": 1}},
+	"floor_triangle": {name = "Triangle Floor", group = "floor", size = Vector3(2, 0.25, TRI_DEPTH), units = 2, place = "cell", shape = "tri",
 		station = {"workbench": 2, "mason": 1, "anvil": 1}},
-	"wall_diagonal": {name = "Diagonal Wall", group = "wall", size = Vector3(2, 2, 2), units = 6, place = "cell", shape = "diagonal",
+	# The old 45° diagonal pieces stay only so old saves still load (hidden from the build menu).
+	"wall_diagonal": {name = "Diagonal Wall", group = "legacy", size = Vector3(2, 2, 2), units = 6, place = "cell", shape = "diagonal",
 		families = ["plank_root", "plank_mushroom", "cut_stone", "cut_marble", "clay_brick", "basalt", "ancient_brick"],
 		station = {"workbench": 2, "mason": 2}},
-	"half_wall_diagonal": {name = "Diagonal Half Wall", group = "wall", size = Vector3(2, 1, 2), units = 3, place = "cell", shape = "diagonal",
+	"half_wall_diagonal": {name = "Diagonal Half Wall", group = "legacy", size = Vector3(2, 1, 2), units = 3, place = "cell", shape = "diagonal",
 		families = ["plank_root", "plank_mushroom", "cut_stone", "cut_marble", "clay_brick", "basalt", "ancient_brick"],
 		station = {"workbench": 2, "mason": 2}},
-	"window_diagonal": {name = "Diagonal Window", group = "wall", size = Vector3(2, 2, 2), units = 5, place = "cell", shape = "diagonal",
+	"window_diagonal": {name = "Diagonal Window", group = "legacy", size = Vector3(2, 2, 2), units = 5, place = "cell", shape = "diagonal",
 		opening = Vector3(1.0, 0.8, 0.6), families = ["plank_root", "plank_mushroom", "cut_stone", "cut_marble", "clay_brick", "basalt", "ancient_brick"],
 		station = {"workbench": 3, "mason": 2}},
-	"railing_diagonal": {name = "Diagonal Railing", group = "around", size = Vector3(2, 1, 2), units = 2, place = "cell", shape = "diagonal",
+	"railing_diagonal": {name = "Diagonal Railing", group = "legacy", size = Vector3(2, 1, 2), units = 2, place = "cell", shape = "diagonal",
 		families = ["plank_root", "plank_mushroom", "copper_ingot", "silver_ingot"], station = {"workbench": 2, "anvil": 1}},
 	# --- mining
 	"ceiling_panel": {name = "Ceiling Panel", group = "mining", size = Vector3(2, 0.25, 2), units = 4, place = "ceiling", supports_rock = true, station = ALL},
@@ -199,15 +212,138 @@ static func hp(piece: String, family: String) -> float:
 	return FAMILIES[family].hp * LIST[piece].units / 4.0
 
 
+## Turning. `rot` is one small number, saved and sent as it always was:
+##   0..3  = quarter turns (90°), as before, so old saves and blueprints still work;
+##   4..15 = 30° steps: rot 4 + k means k × 30° (only made when a 30°/60° angle is needed).
+const FINE_ROT := 4
+const TRI_DEPTH := 1.7320508  ## an equilateral triangle with 2 m sides is √3 m deep
+const TRI_IN := 0.57735027  ## centre → edge, for 2 m sides (scaled by size.x / 2)
+const TRI_OUT := 1.1547005  ## centre → corner
+
+
+static func steps_of(rot: int) -> int:
+	return rot * 3 if rot < FINE_ROT else rot - FINE_ROT
+
+
+## The number to store for k × 30° (a quarter turn when it is one).
+static func rot_from_steps(k: int) -> int:
+	k = posmod(k, 12)
+	return k / 3 if k % 3 == 0 else FINE_ROT + k
+
+
+static func yaw_of(rot: int) -> float:
+	return steps_of(rot) * PI / 6.0
+
+
+static func valid_rot(rot: int) -> bool:
+	return rot >= 0 and rot < FINE_ROT + 12
+
+
+static func add_rot(a: int, b: int) -> int:
+	return rot_from_steps(steps_of(a) + steps_of(b))
+
+
+static func is_tri(piece: String) -> bool:
+	return LIST[piece].get("shape", "") == "tri"
+
+
+## A piece is "square-turned" when it lies on the normal grid (0/90/180/270° and not a triangle).
+static func on_square_grid(piece: String, rot: int) -> bool:
+	return rot < FINE_ROT and not is_tri(piece)
+
+
 ## Size after turning by `rot` quarter turns (odd turns swap width and depth).
 static func turned_size(piece: String, rot: int) -> Vector3:
 	var s: Vector3 = LIST[piece].size
-	return Vector3(s.z, s.y, s.x) if rot % 2 == 1 else s
+	return Vector3(s.z, s.y, s.x) if steps_of(rot) % 6 == 3 else s
+
+
+## The piece's outline seen from above, in its own space (x, z): a rectangle, or the triangle.
+static func outline(piece: String, grow: float = 0.0) -> PackedVector2Array:
+	var s: Vector3 = LIST[piece].size
+	if is_tri(piece):
+		var k := s.x * 0.5
+		var r_in := TRI_IN * k
+		var f := maxf(r_in + grow, 0.01) / r_in  # grow/shrink every edge by `grow`
+		return PackedVector2Array([Vector2(-k, r_in) * f, Vector2(k, r_in) * f, Vector2(0, -TRI_OUT * k) * f])
+	var hx := maxf(s.x * 0.5 + grow, 0.005)
+	var hz := maxf(s.z * 0.5 + grow, 0.005)
+	return PackedVector2Array([Vector2(-hx, -hz), Vector2(hx, -hz), Vector2(hx, hz), Vector2(-hx, hz)])
+
+
+## The outline in the world (x, z), turned and moved. `grow` < 0 shrinks it (never past its middle).
+static func footprint(piece: String, pos: Vector3, rot: int, grow: float = 0.0) -> PackedVector2Array:
+	var b := Basis(Vector3.UP, yaw_of(rot))
+	var out := PackedVector2Array()
+	for q in outline(piece, grow):
+		var w := b * Vector3(q.x, 0, q.y)
+		out.append(Vector2(pos.x + w.x, pos.z + w.z))
+	return out
 
 
 static func box(piece: String, pos: Vector3, rot: int) -> AABB:
-	var s := turned_size(piece, rot)
-	return AABB(pos - Vector3(s.x * 0.5, 0, s.z * 0.5), s)
+	if on_square_grid(piece, rot):
+		var s := turned_size(piece, rot)
+		return AABB(pos - Vector3(s.x * 0.5, 0, s.z * 0.5), s)
+	var fp := footprint(piece, pos, rot)
+	var lo := fp[0]
+	var hi := fp[0]
+	for q in fp:
+		lo = Vector2(minf(lo.x, q.x), minf(lo.y, q.y))
+		hi = Vector2(maxf(hi.x, q.x), maxf(hi.y, q.y))
+	return AABB(Vector3(lo.x, pos.y, lo.y), Vector3(hi.x - lo.x, LIST[piece].size.y, hi.y - lo.y))
+
+
+## The sides of a piece's outline: [{mid: Vector3 (at the piece's base), normal: Vector3 (out), len}].
+static func edges(piece: String, pos: Vector3, rot: int) -> Array:
+	var fp := footprint(piece, pos, rot)
+	var c := Vector2.ZERO
+	for q in fp:
+		c += q
+	c /= fp.size()
+	var out := []
+	for i in fp.size():
+		var a := fp[i]
+		var b2 := fp[(i + 1) % fp.size()]
+		var mid := (a + b2) * 0.5
+		var d := (b2 - a).normalized()
+		var nrm := Vector2(d.y, -d.x)
+		if nrm.dot(mid - c) < 0.0:
+			nrm = -nrm
+		out.append({mid = Vector3(mid.x, pos.y, mid.y), normal = Vector3(nrm.x, 0, nrm.y), len = a.distance_to(b2)})
+	return out
+
+
+## Do two convex outlines overlap (more than just touching)? Separating-axis test.
+static func outlines_overlap(a: PackedVector2Array, b: PackedVector2Array) -> bool:
+	for poly in [a, b]:
+		for i in poly.size():
+			var e: Vector2 = poly[(i + 1) % poly.size()] - poly[i]
+			var axis := Vector2(-e.y, e.x)
+			var a_lo := INF
+			var a_hi := -INF
+			for q in a:
+				var t := axis.dot(q)
+				a_lo = minf(a_lo, t)
+				a_hi = maxf(a_hi, t)
+			var b_lo := INF
+			var b_hi := -INF
+			for q in b:
+				var t := axis.dot(q)
+				b_lo = minf(b_lo, t)
+				b_hi = maxf(b_hi, t)
+			if a_hi <= b_lo + 0.0001 or b_hi <= a_lo + 0.0001:
+				return false
+	return true
+
+
+## Yaw (radians) whose front (+z) points along `dir` (flat).
+static func _yaw_toward(dir: Vector3) -> float:
+	return atan2(dir.x, dir.z)
+
+
+static func _steps_for(yaw: float) -> int:
+	return roundi(yaw / (PI / 6.0))
 
 
 ## Where a piece goes when you aim at `p` (surface point) with surface normal `n`,
@@ -217,8 +353,19 @@ static func box(piece: String, pos: Vector3, rot: int) -> AABB:
 ##    nearest corner, roofs/floors line up on the 1 m grid (so a wall never lands mid-floor).
 ##  - aiming at the SIDE of a floor/foundation with a floor/foundation: the new one goes right next to it.
 ##  - otherwise: the 1 m grid (2 m pieces + 1 m halves), heights in 0.5 m steps.
-static func snap(piece: String, p: Vector3, n: Vector3, yaw: float, rot: int, lift: float = 0.0, anchor: AABB = AABB()) -> Dictionary:
+## `anchor_piece` = that built piece's entry ({piece, pos, rot}); with it, triangles and anything
+## turned 30°/60° snap edge to edge (see _snap_to_edges). `rot` = Q presses: quarter turns, or
+## 30° steps for triangles.
+static func snap(piece: String, p: Vector3, n: Vector3, yaw: float, rot: int, lift: float = 0.0, anchor: AABB = AABB(),
+		anchor_piece: Dictionary = {}) -> Dictionary:
 	var info: Dictionary = LIST[piece]
+	if not anchor_piece.is_empty():
+		var e := _snap_to_edges(piece, p, n, anchor_piece)
+		if not e.is_empty():
+			e.pos.y += lift
+			return e
+	if is_tri(piece):
+		return _snap_tri_free(piece, p, n, yaw, rot, lift)
 	var q := (posmod(roundi(yaw / (PI / 2.0)), 4) + rot) % 4
 	var s := turned_size(piece, q)
 	var h: float = info.size.y
@@ -265,6 +412,73 @@ static func snap(piece: String, p: Vector3, n: Vector3, yaw: float, rot: int, li
 	return {pos = pos, rot = q}
 
 
+## Snapping to the real edges of a built piece (60° triangles, and anything turned 30°/60°).
+## Returns {} when the normal square-grid rules should decide instead.
+static func _snap_to_edges(piece: String, p: Vector3, n: Vector3, a: Dictionary) -> Dictionary:
+	var info: Dictionary = LIST[piece]
+	var ainfo: Dictionary = LIST[a.piece]
+	var a_cell: bool = ainfo.place == "cell" and ainfo.get("group", "") in ["floor", "foundation"]
+	var me_cell: bool = info.place == "cell" and info.get("group", "") in ["floor", "foundation"]
+	var a_odd := not on_square_grid(a.piece, a.rot)
+	var a_top: float = (a.pos as Vector3).y + float(ainfo.size.y)
+	# The anchor's side nearest to where we aim.
+	var best := {}
+	var best_d := INF
+	for e in edges(a.piece, a.pos, a.rot):
+		var d := Vector2(p.x - e.mid.x, p.z - e.mid.z).length()
+		if d < best_d:
+			best_d = d
+			best = e
+	if best.is_empty():
+		return {}
+	var nrm: Vector3 = best.normal
+	var mid: Vector3 = best.mid
+	# A floor/foundation next to the side of a floor/foundation (any shape): edge to edge, same height.
+	if me_cell and a_cell and absf(n.y) < 0.5 and (a_odd or is_tri(piece)):
+		var k: int
+		var centre: Vector3
+		if is_tri(piece):
+			k = _steps_for(_yaw_toward(-nrm))  # our front edge lies on theirs
+			centre = mid + nrm * TRI_IN * float(info.size.x) * 0.5
+		else:
+			k = _steps_for(_yaw_toward(nrm))
+			centre = mid + nrm * float(info.size.z) * 0.5
+		return {pos = Vector3(centre.x, (a.pos as Vector3).y, centre.z), rot = rot_from_steps(k)}
+	# Standing on top of a triangle (or a turned piece).
+	if n.y > 0.5 and a_odd:
+		if info.place == "edge":  # walls, doorways, windows, railings, gables: on the nearest side
+			return {pos = Vector3(mid.x, a_top, mid.z), rot = rot_from_steps(_steps_for(_yaw_toward(nrm)))}
+		if info.place == "corner":  # pillars and columns: on the nearest corner
+			var fp := footprint(a.piece, a.pos, a.rot)
+			var c := fp[0]
+			for q in fp:
+				if Vector2(p.x, p.z).distance_to(q) < Vector2(p.x, p.z).distance_to(c):
+					c = q
+			return {pos = Vector3(c.x, a_top, c.y), rot = rot_from_steps(steps_of(a.rot))}
+		if me_cell and is_tri(piece) == is_tri(a.piece) and absf(float(info.size.x) - float(ainfo.size.x)) < 0.01:
+			return {pos = Vector3((a.pos as Vector3).x, a_top, (a.pos as Vector3).z), rot = a.rot}  # stacking the same shape
+	return {}
+
+
+## A triangle on open ground: its front edge on a 1 m grid line, its middle 1 m along it.
+## `rot` = 30° steps added by Q.
+static func _snap_tri_free(piece: String, p: Vector3, n: Vector3, yaw: float, rot: int, lift: float) -> Dictionary:
+	var k := posmod(roundi(yaw / (PI / 2.0)), 4) * 3 + rot
+	var r := rot_from_steps(k)
+	var f := Basis(Vector3.UP, yaw_of(r)) * Vector3(0, 0, 1)
+	var r_in := TRI_IN * float(LIST[piece].size.x) * 0.5
+	var m := p + f * r_in
+	var centre: Vector3
+	if steps_of(r) % 3 == 0:
+		m = Vector3(roundf(m.x / FINE) * FINE, 0, roundf(m.z / FINE) * FINE)
+		centre = m - f * r_in
+	else:
+		centre = Vector3(snappedf(p.x, 0.5), 0, snappedf(p.z, 0.5))
+	var h: float = LIST[piece].size.y
+	centre.y = (snappedf(p.y, 0.5) if n.y > 0.5 else snappedf(p.y - h * 0.5, 0.5)) + lift
+	return {pos = centre, rot = r}
+
+
 ## The piece's spot on the 1 m grid (x and z only).
 static func _on_grid(place: String, p: Vector3, s: Vector3, q: int) -> Vector3:
 	# Footprint edges on grid lines: centre = nearest grid line from the low edge, + half the size.
@@ -289,6 +503,20 @@ static func _on_grid(place: String, p: Vector3, s: Vector3, q: int) -> Vector3:
 ## Points used to test for rock: 8 corners (shrunk 0.1 m), the centre and 6 face centres.
 ## Returns [[point, is_bottom], ...].
 static func check_points(piece: String, pos: Vector3, rot: int) -> Array:
+	if not on_square_grid(piece, rot):
+		# Triangles and turned pieces: the corners of their real outline, at the bottom and the top.
+		var h: float = LIST[piece].size.y
+		var pts := []
+		var c := Vector2.ZERO
+		var fp := footprint(piece, pos, rot, -0.1)
+		for q in fp:
+			c += q
+			pts.append([Vector3(q.x, pos.y + minf(0.1, h * 0.3), q.y), true])
+			pts.append([Vector3(q.x, pos.y + h - minf(0.1, h * 0.3), q.y), false])
+		c /= fp.size()
+		pts.append([Vector3(c.x, pos.y + h * 0.5, c.y), false])
+		pts.append([Vector3(c.x, pos.y + minf(0.1, h * 0.3), c.y), true])
+		return pts
 	var b := box(piece, pos, rot).grow(-0.1)
 	var out := []
 	for i in 8:

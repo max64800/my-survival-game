@@ -138,7 +138,7 @@ func _process(delta: float) -> void:
 		for i in placed.size():
 			var g: Node3D = _bp_ghosts.get_child(i)
 			g.global_position = placed[i].pos
-			g.rotation.y = placed[i].rot * PI / 2.0
+			g.rotation.y = Pieces.yaw_of(placed[i].rot)
 		var auth_bp := GameAuthority.instance
 		_bp_chest = Builder.chest_spot(blueprint.size, _bp_origin, rot, dwarf.global_position, auth_bp.world.sdf_at)
 		_bp_chest_ghost.visible = _bp_chest.is_finite()
@@ -155,14 +155,16 @@ func _process(delta: float) -> void:
 	var auth := GameAuthority.instance
 	# Aiming at something already built? Snap to it (its top edge, corner, or side).
 	var anchor := AABB()
+	var anchor_piece := {}
 	var hit_node: Object = hit.get("collider")
 	if hit_node is PieceNode and auth.builder.structure.pieces.has((hit_node as PieceNode).uid):
 		anchor = auth.builder.structure.box_of((hit_node as PieceNode).uid)
+		anchor_piece = auth.builder.structure.pieces[(hit_node as PieceNode).uid]
 		aimed_uid = (hit_node as PieceNode).uid
-	target = Pieces.snap(piece, hit.position, hit.normal, dwarf.model.rotation.y + PI, rot, lift, anchor)
+	target = Pieces.snap(piece, hit.position, hit.normal, dwarf.model.rotation.y + PI, rot, lift, anchor, anchor_piece)
 	_ghost.visible = true
 	_ghost.global_position = target.pos
-	_ghost.rotation = Vector3(0, target.rot * PI / 2.0, 0)
+	_ghost.rotation = Vector3(0, Pieces.yaw_of(target.rot), 0)
 	problem = auth.builder.problem(auth.get_player(dwarf.peer_id), piece, family, target.pos, target.rot)
 	_ghost.set_ghost_ok(problem == "")
 
@@ -207,7 +209,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			auth.builder.ask_remove(hit.collider.uid)
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("rotate_piece"):
-		rot = (rot + 1) % 4
+		rot = (rot + 1) % (12 if Pieces.is_tri(piece) else 4)  # triangles turn in 30° steps
 		changed.emit()
 	elif event.is_action_pressed("lift_up"):
 		lift += 0.5
