@@ -238,10 +238,9 @@ func _build() -> void:
 	_fps_label.position += Vector2(-130, 10)
 	_goals_label = _label(root, 15)
 	_goals_label.name = "Goals"
-	_goals_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	_goals_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_goals_label.custom_minimum_size = Vector2(420, 0)
-	_goals_label.position += Vector2(-440, 40)
+	_goals_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	_goals_label.custom_minimum_size = Vector2(440, 0)
+	_goals_label.position = Vector2(16, 112)  # under the controls help, top left
 	_goals_label.autowrap_mode = TextServer.AUTOWRAP_WORD
 	_goals_label.add_theme_color_override("font_color", Color(1.0, 0.88, 0.62))
 

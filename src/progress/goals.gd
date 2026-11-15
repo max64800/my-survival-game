@@ -33,7 +33,7 @@ static func done(id: String, ps: GameAuthority.PlayerState, auth: GameAuthority)
 			return false
 		"shelter":
 			return auth.builder != null and auth.builder.structure.pieces.size() >= 4
-	return ps.seen.has(id)
+	return ps.seen.has(id) or ps.inventory.count_of(id) > 0
 
 
 ## The next few steps not done yet (texts). Empty when everything is done.

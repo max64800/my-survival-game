@@ -62,6 +62,7 @@ var _progress_sync := 0.0
 
 ## Item kinds you hold in your hand to use. Anything else picked on the hotbar (rocks, ore,
 ## crystals...) leaves your hand free, so the equipped pickaxe is used.
+const HAND_DIG := 1.0 / 3.0  ## bare hands dig at a third of a stone pickaxe's power (F89)
 const HAND_KINDS := ["pickaxe", "axe", "hammer", "weapon", "shield", "food", "drink", "station", "chest",
 	"throw", "tonic", "waterskin", "horn", "lens", "page", "rune"]
 
@@ -635,8 +636,14 @@ func request_hit(peer_id: int, point: Vector3, normal: Vector3) -> Dictionary:
 func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
 	var power: float = Items.dig_power(ps.selected_item()) * ps.progress.dig_power_mult() \
 		* (1.0 + Gems.bonus(ps.inventory.get_slot(ps.hand_slot())).get("dig", 0.0)) 		* (1.0 + Upgrades.bonus(ps.inventory.get_slot(ps.hand_slot())))  # +15% per upgrade step
+	var bare := false
 	if power <= 0:
-		return {state = "no_tool"}
+		# No pickaxe at all: dig with bare hands, three times slower, so you can never get stuck
+		# without stone (owner, Nov 15, F89). Holding another tool or weapon still says "no tool".
+		if Items.kind(ps.selected_item()) in HAND_KINDS:
+			return {state = "no_tool"}
+		power = Items.dig_power("pickaxe_stone") * HAND_DIG
+		bare = true
 	if _chest(ps).distance_to(point) > REACH + 1.0:
 		return {state = "too_far"}
 	if normal.length_squared() < 0.25:
@@ -648,7 +655,7 @@ func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
 	var mat := world.rock_material_near(point - normal * 0.3, 1.1)
 	if mat < 0:
 		return {state = "air"}
-	var tool_tier := Items.tier(ps.selected_item())
+	var tool_tier := 0 if bare else Items.tier(ps.selected_item())
 	var needed := Mat.hits_needed(mat, power, tool_tier)
 	if needed == 0:
 		return {state = "blocked", material = mat, point = point}

@@ -9,6 +9,10 @@ var pickup_radius := PICKUP_RADIUS
 const SETTLE_TIME := 0.45  ## let it fall out before it starts flying to you
 const FLY_SPEED := 9.0
 const DROP_LAYER := 4
+## How big dropped things look (owner, Nov 15, F93: "5 times bigger"; it was 0.7). Every chunk
+## also gets its own size, squash and tumble, so a pile of broken rock isn't a pile of equal cubes (F104).
+const LOOK_SCALE := 3.5
+const BODY_RADIUS := 0.3
 
 var drop_id := 0
 var item_id := ""
@@ -29,20 +33,21 @@ func _ready() -> void:
 	continuous_cd = true
 	var shape := CollisionShape3D.new()
 	var sphere := SphereShape3D.new()
-	sphere.radius = 0.16
+	sphere.radius = BODY_RADIUS
 	shape.shape = sphere
 	add_child(shape)
 	var model := Look.forged("items", item_id)  # a real model from the asset forge, if made
-	if model:
-		model.scale = Vector3.ONE * 0.7  # forged items are 0.4 m; a dropped chunk is smaller
-		model.position = Vector3.DOWN * 0.12
-		model.rotation.y = randf() * TAU
-		add_child(model)
-		return
-	var mi := MeshInstance3D.new()
-	mi.mesh = _mesh_for(item_id)
-	mi.rotation = Vector3(randf() * TAU, randf() * TAU, 0)
-	add_child(mi)
+	var look: Node3D = model
+	if look == null:
+		var mi := MeshInstance3D.new()
+		mi.mesh = _mesh_for(item_id)
+		look = mi
+	var size := randf_range(0.75, 1.25)
+	var squash := Vector3(randf_range(0.8, 1.2), randf_range(0.7, 1.15), randf_range(0.8, 1.2))
+	look.scale = squash * size * (LOOK_SCALE if model else LOOK_SCALE * 0.5)
+	look.position = Vector3.DOWN * BODY_RADIUS * 0.8
+	look.rotation = Vector3(randf_range(-0.5, 0.5), randf() * TAU, randf_range(-0.5, 0.5))
+	add_child(look)
 
 
 static func _mesh_for(id: String) -> Mesh:

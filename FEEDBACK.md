@@ -61,6 +61,8 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F103. Don't know how to progress:** built the Mason's Table and Workbench, but couldn't find how to make a sword or a shield. A stone sword should come quickly. (Found: the stone sword is at the Workbench but needs rope, made from fiber, and nothing tells you.) You chose: a "Next steps" goals list on screen, and every recipe shown at a station even if you can't make it yet, greyed out with what's missing and where to find it. *From: you. Said: 1×*
 - [ ] **F104. Broken-rock chunks are all the same-size cubes.** You like that a block breaks into many pieces you pick up; make them different shapes, sizes and colours. *From: you. Said: 1×*
 - [x] ~~**F105. A Rock Snail can still hit you while it hides in its shell.**~~ Fixed Nov 15 (PC): pulling into its shell now calls off any bite it was winding up, and it needs a moment after coming out before it can bite again. Test: `test_bosses`. *From: you. Said: 1×*
+- [ ] **F106. Rootwood runs out.** Once the first big cave's roots are used up there's no more wood. Roots should grow back. *From: you. Said: 1×*
+- [ ] **F107. Crystals switch their glow on and off with distance** (glow up close, dark from far away), like light switches. Their glow should stay, fading smoothly. *From: you. Said: 1×*
 - [ ] **F95. A way to make stone if you lose your pickaxe.** Same as F89 (bare hands dig soft rock and dirt for stone). *From: you. Said: 1×*
 
 *(Nov 15, your notes on the 3D building pieces and monsters. Rules written in `docs/art/MODEL-RULES.md`.)*

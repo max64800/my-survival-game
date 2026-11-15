@@ -78,6 +78,26 @@ func test_stone_takes_three_hits_and_drops_stone() -> void:
 	_teardown()
 
 
+## F89: lost your pickaxe? Bare hands still dig stone, just three times slower, so you can't get stuck.
+func test_bare_hands_dig_stone_slowly() -> void:
+	await _setup(42)
+	var p := _find_rock(Mat.STONE)
+	if p == Vector3.INF:
+		_teardown()
+		return
+	for i in ps.inventory.slots.size():
+		if Items.kind(ps.inventory.get_slot(i).get("id", "")) == "pickaxe":
+			ps.inventory.slots[i] = {}
+	var r := auth.request_hit(1, p, Vector3.UP)
+	check_eq(r.get("state"), "hit", "bare hands hit the rock")
+	var needed: int = r.get("needed", 0)
+	check(needed >= 7 and needed <= 9, "stone takes about 3 times the hits by hand (3 with a stone pickaxe), got %d" % needed)
+	for i in needed - 1:
+		r = auth.request_hit(1, p, Vector3.UP)
+	check_eq(r.get("state"), "dug", "and then it breaks")
+	_teardown()
+
+
 func test_moss_or_dirt_is_one_hit() -> void:
 	await _setup(42)
 	var p := _find_rock(Mat.MOSS)
@@ -104,7 +124,9 @@ func test_needs_pickaxe_selected() -> void:
 	auth.request_select_slot(1, 3)
 	check(auth.request_hit(1, p, Vector3.UP).get("state") != "no_tool", "empty hand digs with the equipped pickaxe (F23)")
 	auth.get_player(1).inventory.slots[Inventory.equip_index("pickaxe")] = {}
-	check_eq(auth.request_hit(1, p, Vector3.UP).get("state"), "no_tool", "no pickaxe at all: can't dig")
+	check(auth.request_hit(1, p, Vector3.UP).get("state") != "no_tool", "no pickaxe at all: bare hands still dig (F89)")
+	auth.get_player(1).inventory.slots[3] = {id = "sword_stone", count = 1}
+	check_eq(auth.request_hit(1, p, Vector3.UP).get("state"), "no_tool", "but a sword in your hand doesn't dig")
 	_teardown()
 
 

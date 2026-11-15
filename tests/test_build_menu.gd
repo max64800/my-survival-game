@@ -12,7 +12,13 @@ func test_every_piece_is_on_a_tab() -> void:
 	check_eq(BuildMenu.station_item("cut_stone"), "masonry_table", "stone is worked at the Mason's Table")
 
 
+## Ready-made buildings are learned from Old Blueprint pages (F98); once known, all are in the book and load.
 func test_blueprint_book_has_the_ready_made_buildings() -> void:
+	var root := Node.new()
+	tree.root.add_child(root)
+	var auth := GameAuthority.new()
+	root.add_child(auth)
+	auth.world_state = {blueprints = BlueprintMenu.ready_made_keys()}
 	var names := []
 	for e in BlueprintMenu.entries():
 		var r := Blueprint.from_json(e.json)
@@ -21,6 +27,7 @@ func test_blueprint_book_has_the_ready_made_buildings() -> void:
 			names.append(r.blueprint.name)
 	for id in BlueprintLibrary.IDS:
 		check(names.has(BlueprintLibrary.NAMES[id]), "%s is in the book" % BlueprintLibrary.NAMES[id])
+	root.queue_free()
 
 
 func test_chest_goes_on_the_open_side_nearest_you() -> void:
