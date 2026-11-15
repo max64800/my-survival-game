@@ -14,6 +14,8 @@ approved it, so it always wins. The three docs below add the details and numbers
 | [`progression-and-economy.md`](progression-and-economy.md) | Every item, digging hardness, tools and tiers, stations, lantern, food and water, levels, skills, runes, death, bag, pacing. | Step 3 (some Step 1) |
 | [`ai-art-pipeline.md`](ai-art-pipeline.md) | Using ChatGPT + "image → 3D" tools to make props, textures and icons, and getting them into the game. | Visual steps V3+ |
 | [`visuals-plan.md`](visuals-plan.md) | How the game gets its look: light, fog, rock textures, shapes, the dwarf model, animations, where to get assets. | Visual steps V0–V5 |
+| [`monsters-first-three.md`](monsters-first-three.md) | The owner's first three creatures (Rock Snail, Cave Bat, Rock Beetle): how they fight, drops, food. | Monsters |
+| [`creature-craft.md`](creature-craft.md) | How the creatures are built in Blender and animated: part names, versions, what real animals taught us, lessons. | Monsters (art) |
 | [`world-and-building.md`](world-and-building.md) | The star of 7 biomes, how caves are made, special places, the map, building pieces, cave-ins, blueprints, co-op world edits. | Steps 1, 3, 4, 6 |
 
 **Who owns what** (if two docs ever disagree again, this decides):

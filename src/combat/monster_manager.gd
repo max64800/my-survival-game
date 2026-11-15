@@ -691,7 +691,7 @@ func _kill(m: Monster, peer: int) -> void:
 func _ev_tell(uid: int, target: int, tell: float, dmg: float, reach: float, crushing: bool, kd: bool, attack_name: String, buildup: Dictionary = {}) -> void:
 	var m: Monster = monsters.get(uid)
 	if m:
-		m.show_tell(tell)
+		m.show_tell(tell, attack_name)
 	if auth.is_host():
 		_parry_ok[uid] = target  # only this player may parry this swing, once
 		_block_ok[uid] = target
@@ -982,8 +982,13 @@ func _ev_note(uid: int, text: String) -> void:
 func _ev_hit(uid: int, dmg: int) -> void:
 	var m: Monster = monsters.get(uid)
 	if m:
-		Fx.burst(_root, m.global_position + Vector3.UP * 0.5, Color(1.0, 0.9, 0.7), 6, 2.0)
-		Sfx.play("hit_heavy" if dmg >= 20 else "hit", m.global_position)
+		if m.shell_shut:
+			# Hitting a hidden snail: a hard stony clank and sparks (it's barely hurt).
+			Fx.burst(_root, m.global_position + Vector3.UP * 0.6, Color(1.0, 0.75, 0.35), 10, 4.0)
+			Sfx.play("shell_clank", m.global_position)
+		else:
+			Fx.burst(_root, m.global_position + Vector3.UP * 0.5, Color(1.0, 0.9, 0.7), 6, 2.0)
+			Sfx.play("hit_heavy" if dmg >= 20 else "hit", m.global_position)
 		m.hit_flash()
 		_float_number(m.global_position + Vector3.UP * 1.4, str(dmg))
 

@@ -611,3 +611,110 @@ Why branches? Our rule says each step must be playable and approved before the n
 - A test message had a "%" sign that the text formatter misread ("90% less"), which crashed that check. Fix: wrote "90%%".
 - The shell's spiral rings were first hidden inside the shell, and the bat wings were too skinny. Fixed after looking at studio pictures.
 - The main game folder had other Claudes' unsaved work, so Claude 3 uploaded without touching that folder; Claude 1 brings it in there safely.
+
+---
+
+## Day 3, evening — November 14, 2026: Creature sounds, and no more "computer" sounds
+
+**What we did**
+- **Each creature now sounds like itself, and warns you with sound:**
+  - Cave Bat: a raspy squeal right before it dives at you, and a leathery flap on every wing beat.
+  - Rock Snail: a deep thump with a wet flop when the Shell Slam lands; a stony knock when it pulls into its shell.
+  - Hitting a hiding snail: a hard **clank with sparks** instead of the normal hit sound, so you can hear that it's barely hurt.
+  - Rock Beetle: a clicking hiss before it snaps; before it charges, a **rising rumble with scraping feet**, its eyes turn **angry red**, it paws dust, then leaves a **dust trail** as it thunders past.
+  - Small hit reactions: monsters jolt back (head tips up) when hit.
+  - Bigger creatures sound deeper (the Great Rock Beetle is lower than the small one).
+- **Owner, mid-way:** *"make sure the sounds are not futuristic... they do not match medieval."*
+  - Claude can't hear, so it drew each sound as a picture of its pitches (a "spectrogram"). A beep shows as one thin clean line; a real sound looks like a messy cloud. Four of the game's old sounds were computer sounds: **bag open/close** (a rising sci-fi whoosh), **pickup** (a synth pluck), **lantern refill** (a pure beep), **monster death** (an electronic tone). All four are now real recordings: cloth and leather rustles, a metal latch, a heavy thud.
+  - The new creature sounds are made only from real recordings (Kenney's free CC0 packs), pitched, sped up and layered, like a film's sound-effects artist: a creaking door sped up = bat squeal; cloth snapped fast = wings; a door slam slowed down = the shell shutting.
+  - The recipe is in `tools/art/make_creature_sounds.py`, so the sounds can be remade or swapped for real recordings later.
+- New check: every sound a creature names really exists, the hiding snail is marked "shut", and a charging beetle's eyes turn red.
+
+**Mistakes and hurdles (including Claude's)**
+- **Claude's first creature sounds were made from pure computer tones** (sine waves). That's exactly what makes a laser "pew". The owner's message came just in time; Claude threw them away and started again from real recordings.
+- The first script crashed: two sound pieces were one sample apart in length. Fixed by measuring length in samples, not seconds.
+- Installing a sound-reading helper wasn't allowed. Fix: used ffmpeg (a free audio converter already on the PC) instead.
+- Kenney's site doesn't let a script download the pack. Fix: the same CC0 pack is mirrored on OpenGameArt.
+- The first bat squeal was sped up so much it became plain hiss. Fix: half the speed-up, less breath noise.
+- The beetle's red eyes first showed up **peach**: very bright light turns white on screen (like an over-bright photo). Fix: angry eyes glow less brightly, so the red survives.
+- **A 3D creature viewer for the owner** (like Claude 2's Forge Models page): `src/debug/monster_export.gd` saves the creatures from the game as 3D files (8 poses: snail out / hiding / leader, bat flying / asleep, beetle / charging, great beetle), and a private web page shows them with a dwarf for scale, a Play sound button for each, and a notes box.
+  - Hurdle: the page host won't serve `.glb` 3D files. Fix: stored them as text (glTF) and reused Claude 2's trick to rebuild them in the page.
+  - Limit: the viewer shows shapes and colors only. The painted stone/leather texture is a game-only effect, so it can't come along.
+
+---
+
+## Day 3, evening — November 14, 2026: Hand-built creatures
+
+**What we did**
+- **Owner:** *"All of them are looking like raw blocks monsters... use the same process as Claude 2 used to create way better 3D anvils."*
+- Claude 3 learned Claude 2's method: every model is a Blender script that builds it piece by piece from a shared kit (painted textures, rounded edges, a little hand-made wobble). Claude 2 agreed the monsters are Claude 3's job.
+- New **creature add-on** (`tools/asset_forge/creature_kit.py`): the kit melts a model into one solid piece, which is right for an anvil, but a creature's legs and wings must move. The add-on keeps them as separate named parts, each turning around its own hinge (hip, shoulder, shell mouth). It also adds smooth "clay tube" shapes (bodies, legs, horns), a stretched-skin maker for bat wings, and soft blobs (moss, fur tufts).
+- **The four creatures:**
+  - Rock Snail: a real spiral shell (a coil that shrinks as it winds in, the way real shells grow), growth ridges, moss in the dips, one damp body with eye stalks.
+  - Cave Bat: wings with arm and finger bones and skin between them, scalloped back edge, a furry body and shaggy ruff, big ears, a pug snout with fangs, clawed feet.
+  - Rock Beetle: a domed stone shell with a seam and ribs, a front shield with a dark curved horn (pale tip), hooked jaws, clubbed feelers, six spiky jointed legs, the pale soft back end with the glowing gland.
+  - Great Rock Beetle: same script, plus side horns, a darker shell and more moss.
+- New skin textures (`creature_textures.py`): calmer, tinted copies of Claude 2's painted ones (no cow spots).
+- The game now finds the named parts: legs walk, wings flap, the snail's body shrinks into its shell, and each creature's own eyes flash (and turn red on a charge).
+- The owner's 3D viewer page now shows the hand-built versions. All 246 checks pass.
+
+**Mistakes and hurdles (including Claude's)**
+- The save step merged parts before sorting them into groups and crashed. Fix: sort first, then merge.
+- The first snail shell was **thin as a coin** from the front: Claude mixed up the shell tube's width and depth directions, so it grew fat the wrong way and the moss floated. Fix: swapped them.
+- First versions: the snail's body looked like sausages joined together (made of separate pieces), the skin had cow spots, the bat's ruff looked like pale lamb's wool, the wing edges were saw teeth, the beetle's legs were spider-long and its horn goat-white, the moss looked like lily pads. Each fixed after looking at the pictures.
+- The models were too heavy (the snail had 45,000 triangles, mostly moss). Fix: cheaper moss clumps, now about 15,000 each.
+- **Big one: the textures came out white in the game, Claude 2's too.** Blender adds a tiny info block (EXIF) to every JPEG picture, and Godot's JPEG reader refuses those pictures. Claude 3 wrote `tools/asset_forge/glb_jpeg_fix.py` to remove the block. Claude 2 ran it on all 238 of their models (572 pictures fixed) and both kits now run it after every save.
+- The sleeping bat's wings folded up through the ceiling instead of down around its body. Fixed.
+
+---
+
+## Day 3, night — November 14, 2026: Creatures, second and third pass (owner away)
+
+**What the owner asked**
+- Snail: when it hides, the tail goes in too and only two eyes peek out; a richer body (color, shape, texture).
+- Bat ("really good, complex, I like it"): asleep it lay flat on the ceiling; it should hang upside down with tucked wings.
+- Beetles: legs and mouth good; the shell too simple. Look at real rock beetles; more detail and spikes; a real charge pose (head down, back end up, a different look); legs on one side didn't touch the ground.
+- Then: variety. Each part its own texture (mossy rocks, gem rocks, different sizes and shapes); every individual a bit different (horns bent or broken, bats in 3–4 colors).
+- "Before you change anything, learn how to do animations and monsters... take your time, debug and see how they look."
+
+**What Claude 3 did**
+- **Learned first:**
+  - the Godot animation guide (picked code-driven part animation over Blender clips: our creatures are solid parts, and code adapts to how fast they really move)
+  - real ironclad beetles (stone-like, knobbly armor with four big knobs at the back)
+  - how insects walk (the tripod gait)
+  - how bats sleep (head-down, wings folded like an umbrella)
+  - All written down in `docs/design/creature-craft.md`.
+- **Snail:**
+  - new bumpy snail skin made by our own code
+  - a fleshy collar with a breathing hole, a ridge and stripe on the tail, an ochre wavy skirt, snout lobes
+  - eye stalks are separate parts that sway (looking around); the body ripples as it crawls
+  - hiding: everything goes in, the shell settles down, two eyes peek out of the shell's mouth
+- **Bat:**
+  - asleep it hangs head-down with folded "cloak" wings (separate pieces, only shown while asleep)
+  - in flight the wings half-fold on the upstroke and the body lifts with each beat
+- **Beetles:**
+  - rebuilt after ironclad beetles: two wing cases with a groove, a waxy shell with black drops, rows of knobs, four big back knobs, a spiky rim, a grainy front shield
+  - charging: head down, back end up, red eyes, and the shell's cracks glow like coals
+  - standing, all six feet are down; walking, legs step in two sets of three
+- **Variety:**
+  - every part its own texture (rock, three pebble colors, mossy rock, glowing gem clusters)
+  - 15 hand-built versions:
+    - beetles: horn curved, bent, broken or forked; amber, teal or violet gems
+    - bats: brown, ash grey, rust or sandy; some with torn ears
+    - snails: slate, olive or rusty, one with a crystal
+  - the game picks one per creature from its ID and varies the size a little, so co-op friends see the same individual
+- **Tools:**
+  - `build_creatures.py` rebuilds all 15 at once
+  - the studio has `creatures` (every pose) and `variety` (every version) photo modes
+  - the robot's fight test now fights the real creatures
+- New test: versions exist and differ; the beetle stands on all six feet and walks in tripods; cracks glow on a charge; the snail hides fully with eyes peeking; the bat sleeps with folded wings and hangs head-down. **All checks pass.**
+- The owner's 3D viewer now shows all 20 versions and poses.
+
+**Mistakes and hurdles (including Claude's)**
+- The first snail collar was a pale "bread roll", the skin bumps were too small (like chain mail), and the skirt was too bright. Fixed after pictures.
+- Beetle knobs on the front shield were placed at height zero, so **pebbles lay on the ground** in front of every beetle. Fixed.
+- The new beetle shell first came out **almost black** in the game's light (fine in Blender). Lightened to stone grey-brown.
+- The first sleeping-bat wings: rotating and squashing the flying wings made thin sticks. Then flat panels like boards. Finally real curved cloak wings, built as their own pieces.
+- A picture made it look as if the bat's wings beat out of step. Measuring and a straight-on front picture showed it was just the camera angle.
+- Twice the shell refused a command because of quote marks; the edit scripts were saved as files instead. A safety check refused a file-delete written with a variable path; rewritten with a plain path.
+- Godot complained 144 times after old texture files were deleted (it pulled them out of the models again); a second import showed 0 errors.

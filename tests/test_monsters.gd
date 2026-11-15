@@ -349,3 +349,32 @@ func test_rock_beetle_soft_back() -> void:
 	var behind := hp0 - m.hp
 	check(behind >= front * 1.8, "from behind: about double (%.0f vs %.0f)" % [behind, front])
 	_teardown()
+
+
+## The first three creatures' sounds (warn_sound / land_sound / flap_sound) all exist as files,
+## and the snail's shell / a beetle's charge show it to everyone.
+func test_creature_sounds_and_tells() -> void:
+	var named := []
+	for kind in ["rock_snail", "cave_bat", "rock_beetle", "great_rock_beetle"]:
+		var d: Dictionary = Monsters.LIST[kind]
+		if d.has("flap_sound"):
+			named.append(d.flap_sound)
+		for a: Dictionary in d.attacks:
+			for key in ["warn_sound", "land_sound"]:
+				if a.has(key):
+					named.append(a[key])
+	named.append_array(["shell_clunk", "shell_clank", "death", "open", "close", "pickup", "refill"])
+	check(named.size() >= 12, "the creatures name their sounds (%d)" % named.size())
+	for n in named:
+		check(not Sfx._variants(n).is_empty(), "sound files for '%s'" % n)
+	await _setup()
+	var snail := _spawn("rock_snail", Vector3(1.5, 0, 0))
+	snail.show_shell(true)
+	check(snail.shell_shut, "hiding snail is marked shut (hits clank)")
+	snail.show_shell(false)
+	check(not snail.shell_shut, "snail came out")
+	var beetle := _spawn("rock_beetle", Vector3(-2.5, 0, 0))
+	beetle.show_tell(1.1, "Charge")
+	var eye: StandardMaterial3D = beetle.model.get_meta("eye_mat")
+	check(eye.emission.g < 0.5, "charging beetle's eyes turn red")
+	_teardown()

@@ -24,12 +24,12 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 | Moving around (walking, jumping, climbing) | F2, F3 | |
 | Controls + camera | F18, F23, F27 | |
 | Making the game / tools | F4, F5, F6, F7, F16 | |
-| Sound | F8, F15 | |
+| Sound | F8, F15, F35 | Sounds must feel old-world: wood, stone, leather, metal. No beeps or whooshes |
 | The start of the game (first 5 minutes) | F10, F11 | |
 | A world that feels alive (enemies, ruins) | F9, F21 | Columns asked for twice (F9, F21) |
 | Cave shapes (round vs sharp, tunnels) | F19, F20 | |
 | Digging feel + resources | F13, F14 | |
-| Pictures / looks | F17, F22, F24, F25, F26, F28, F29, F30, F31 | **The dwarf's look keeps coming up (F25 said twice)** |
+| Pictures / looks | F17, F22, F24, F25, F26, F28, F29, F30, F31, F36, F37, F38, F39, F40 | **The dwarf's look keeps coming up (F25 said twice)** |
 
 ---
 
@@ -43,11 +43,21 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F26. The long things hanging from the ceiling look like icicles,** the same width top to bottom. Real stalactites: wide at the top, getting thinner, a rounded tip, smaller ones around them. (They're actually roots, so roots should look like roots too.) → Claude 3, on the `visuals` branch: roots are twisted, knobbly wood that forks into thin strands, and real stone stalactite clusters hang from the ceilings. Waiting for you to look. *From: you. Said: 1×*
 - [ ] **F29. The game looks too "Roblox-y".** Make it look more like Valheim (Grounded if possible): real textures, better colours and shapes, not super realistic. → Claude 3, on the `visuals` branch: hand-painted rock, darker cave with fog and dust, painted grain on everything, fire, lantern, effects, cave clutter, monsters that move. Waiting for you to try it. *From: you. Said: 1×*
 - [ ] **F30. Animations: running, jumping, swinging…** → Claude 3, on the `visuals` branch: a real 3D dwarf with idle, walk, jog, sprint, jump + landing, mining swing, axe chop, sword attacks, roll, block, shield, crossbow, getting hit, eating, climbing ladders, getting up; friends see it in co-op. *From: you. Said: 1×*
+
 - [ ] **F31. Monsters: start with snails, bats and a beetle, polish them first.** Snails slow but hit hard, hide in the shell after a few hits (90% less damage); big bats that swoop in, attack, fly out; a beetle. Drops and uses chosen in a multiple-choice session (docs/design/monsters-first-three.md). → Claude 3, on the `visuals` branch: built; the other monsters are hidden for now. Waiting for you to try it. *From: you. Said: 1×*
 
 **Claude noticed, waiting for your OK** (not fixed until you say so):
 
 ## Done
+
+- [x] ~~**F40. Creatures need variety, like the cave itself.**~~ Done Nov 14 (Claude 3, waiting for your look). Every part has its own texture (waxy shell, rock knobs, three pebble colors, mossy rock, glowing gem clusters, grainy shield). Each creature now has hand-built versions and the game picks one per creature, plus a slightly different size: beetles 4 each (horn curved / bent / broken / forked, gems amber / teal / violet, more or less moss), bats 4 colors (+ torn ears), snails 3 colors. Co-op friends see the same individual. *From: you. Said: 1×*
+- [x] ~~**F39. Rock Beetles, 2nd pass.**~~ Done Nov 14 (Claude 3, waiting for your look). Rebuilt after real "ironclad" beetles: two wing cases with a groove, a waxy shell with black drops, rows of knobs (rock, pebbles, mossy stones), four big knobs at the back, a flared spiky rim, a grainy front shield with humps and spiky corners. Charging: head down, back end up, red eyes, and the cracks in the shell glow like coals. Standing still, all six feet are on the ground; walking uses a real insect walk (two sets of three legs in turns). The Great one has spike rows, bigger spikes and side horns. *From: you. Said: 1×*
+- [x] ~~**F38. Cave Bat asleep: it lies flat on the ceiling.**~~ Fixed Nov 14 (Claude 3, waiting for your look). It now hangs head-down by its feet, with folded wings wrapped round its body like a cloak (built as their own pieces, shown only while it sleeps). In flight the wings half-fold on each upstroke and the body lifts with each beat. Four fur colors (brown, ash grey, rust, sandy); some have a torn ear. *From: you. Said: 1×*
+- [x] ~~**F37. Rock Snail, 2nd pass.**~~ Done Nov 14 (Claude 3, waiting for your look). Hiding: the whole body, tail too, shrinks into the shell, the shell settles onto the ground, and only two small eyes peek out. New body: real snail skin (little bumps with grooves), a fleshy collar where it meets the shell, a breathing hole on its side, a ridge and dark stripe down the tail, an ochre wavy skirt edge, snout lobes, ringed eye stalks that sway as it looks around, and the body ripples as it crawls. Three versions: slate, olive, rusty (shells grey, sandy, dark slate; one grows a violet crystal). *From: you. Said: 1×*
+
+- [x] ~~**F36. The monsters look like raw blocks. Build them the way Claude 2 hand-built the anvil.**~~ Done Nov 14 (Claude 3, `visuals`, version 1, waiting for your look). All three are now hand-built in Blender with Claude 2's kit plus a new "creature" add-on: the Rock Snail has a real spiral stone shell with growth ridges and moss, and one soft, damp body that pulls in when it hides; the Cave Bat has real bat wings (finger bones with skin between, scalloped edges), fur, big ears and fangs; the Rock Beetle has a domed stone shell, a curved horn, hooked jaws, six jointed legs and the glowing soft back end. The Great Rock Beetle gets side horns, a darker shell and more moss. Legs walk, wings flap and the snail's body hides in the game. See them in the 3D viewer. *From: you. Said: 1×*
+
+- [x] ~~**F35. The sounds feel futuristic; they don't match a medieval game.**~~ Fixed Nov 14 (Claude 3, `visuals`). Claude drew every sound as a picture to find the "computer" ones: the bag open/close was a rising sci-fi whoosh, the pickup was a synth pluck, the lantern refill was a pure beep, and the monster death was an electronic tone. All 4 are now real recordings of cloth, leather and a metal latch, and a heavy thud for deaths. The new creature sounds are built only from real recordings too: a door creak sped up = bat squeal, cloth = wing beats, a heavy thump = snail slam. Waiting for you to listen. *From: you. Said: 1×*
 
 - [x] ~~**F27. The game grabs my mouse even when I'm in another program, and Claude's tests take my mouse.**~~ Fixed Nov 14. When you switch away (click another window or Alt+Tab), the game lets go of the mouse and pauses. Click back into the game to keep playing. Claude's test robots only *pretend* to hold the mouse now, so they never touch yours. *From: you. Said: 1×*
 - [x] ~~**F23. Real equipment slots.**~~ Done Nov 14. 9 slots in the bag window (Tab): Pickaxe, Lantern, Weapon, Shield, Head, Chest, Legs, Feet, Pack.

@@ -89,6 +89,14 @@ func _run() -> void:
 		await _three_lineup()
 		quit()
 		return
+	if "creatures" in OS.get_cmdline_user_args():
+		await _creature_shoot()
+		quit()
+		return
+	if "variety" in OS.get_cmdline_user_args():
+		await _variety_shoot()
+		quit()
+		return
 	if "fire" in OS.get_cmdline_user_args():
 		await _fire_test()
 		quit()
@@ -307,7 +315,7 @@ func _armor_lineup() -> void:
 func _three_lineup() -> void:
 	_model.position = Vector3(-2.6, 0, 0)
 	var make := func(shape: String, col: Color, size: float, at: Vector3, yaw: float) -> Node3D:
-		var m := MonsterModel.build(shape, col, size, false)
+		var m := MonsterModel.build(shape, col, size, false, shape)  # the hand-built model when there is one
 		m.position = at
 		m.rotation.y = yaw
 		root.add_child(m)
@@ -328,3 +336,140 @@ func _three_lineup() -> void:
 	await _shot("t_three")
 	_view(Vector3(0.9, 0.25, -0.4), 6.0, 0.5)
 	await _shot("t_three_side")
+	# A beetle winding up its charge: red eyes and a dust trail behind it.
+	MonsterModel.set_angry(beetle, true)
+	MonsterModel.set_glow(beetle, 1.0)
+	var front := -Basis(Vector3.UP, beetle.rotation.y).z
+	for i in 6:
+		Fx.dust(root, beetle.position - front * (0.5 + 0.3 * i), Color(0.45, 0.4, 0.33), 3, 0.45)
+		await _wait(0.04)
+	_cam.global_position = beetle.position + front * 3.4 + Vector3.UP * 0.9
+	_cam.look_at(beetle.position + front * 0.6 + Vector3.UP * 0.35)
+	await _shot("t_charge")
+
+
+# ---------------------------------------------------------------- creature photo shoot
+## One creature at a time, close up, in each pose the game uses (walking frames, hiding, asleep,
+## charging, leader). For checking the hand-built models (tools/asset_forge/builds/monster_*.py).
+var _stand: Node3D
+
+
+func _creature(kind: String, shape: String, size: float, leader := false, at_y := 0.0) -> Node3D:
+	if _stand:
+		_stand.queue_free()
+	_stand = Node3D.new()  # animate() moves the model's own height, so lift a stand instead
+	_stand.position = Vector3(0, at_y, 0)
+	root.add_child(_stand)
+	var m := MonsterModel.build(shape, Color(0.45, 0.42, 0.38), size, leader, kind, 0)
+	_stand.add_child(m)
+	return m
+
+
+func _aim(target: Vector3, dir: Vector3, dist: float) -> void:
+	_cam.global_position = target + dir.normalized() * dist
+	_cam.look_at(target)
+
+
+func _creature_shoot() -> void:
+	_model.visible = false
+	# Rock Snail: crawling, eye stalks looking around
+	var m := _creature("rock_snail", "rock_snail", 1.0)
+	MonsterModel.animate(m, 0.6, 1.0, 0.7)
+	await _wait(0.2)
+	_aim(Vector3(0, 0.5, 0), Vector3(-0.8, 0.45, -1.0), 2.9)
+	await _shot("c_snail")
+	_aim(Vector3(0, 0.5, 0), Vector3(1, 0.25, 0), 2.9)
+	await _shot("c_snail_side")
+	# ... hiding: only two eyes peek out
+	MonsterModel.set_shell(m, true)
+	await _wait(0.5)
+	_aim(Vector3(0, 0.4, 0), Vector3(-0.8, 0.45, -1.0), 2.6)
+	await _shot("c_snail_hiding")
+	m = _creature("rock_snail", "rock_snail", 1.3, true)
+	MonsterModel.animate(m, 0.0, 1.3, 0.2)
+	await _wait(0.2)
+	_aim(Vector3(0, 0.8, 0), Vector3(-0.8, 0.5, -1.0), 3.8)
+	await _shot("c_snail_leader")
+	# Cave Bat: flying (two moments of the wing beat), then asleep under a ceiling
+	m = _creature("cave_bat", "cave_bat", 1.0, false, 0.6)
+	for k in [0.0, 0.17]:
+		MonsterModel.animate(m, 2.0, 1.0, 0.3 + k)
+		await _wait(0.1)
+		_aim(Vector3(0, 1.1, 0), Vector3(-0.7, 0.5, -1.0), 2.6)
+		await _shot("c_bat_fly_%d" % roundi(k * 100))
+		_aim(Vector3(0, 1.1, 0), Vector3(0, 0.05, -1.0), 2.8)
+		await _shot("c_bat_front_%d" % roundi(k * 100))
+	m = _creature("cave_bat", "cave_bat", 1.0, false, 2.2)
+	var ceiling := MeshInstance3D.new()
+	var slab := BoxMesh.new()
+	slab.size = Vector3(2.0, 0.2, 2.0)
+	ceiling.mesh = slab
+	ceiling.position = Vector3(0, 2.6, 0)
+	_stand.add_child(ceiling)
+	ceiling.position = Vector3(0, 0.62, 0)
+	m.set_meta("roosting", true)
+	MonsterModel.animate(m, 0.0, 1.0, 0.3)
+	await _wait(0.1)
+	_aim(Vector3(0, 2.1, 0), Vector3(-1.0, -0.1, -0.8), 2.4)
+	await _shot("c_bat_asleep")
+	_aim(Vector3(0, 2.1, 0), Vector3(1, -0.05, 0), 2.4)
+	await _shot("c_bat_asleep_side")
+	# Rock Beetle: standing (all feet down), four walking frames from the side, charging
+	m = _creature("rock_beetle", "rock_beetle", 0.9)
+	MonsterModel.animate(m, 0.0, 0.9, 0.3)
+	await _wait(0.1)
+	_aim(Vector3(0, 0.35, 0), Vector3(-0.3, 0.12, -1.0), 2.6)
+	await _shot("c_beetle_stand_front")
+	_aim(Vector3(0, 0.4, 0), Vector3(-0.8, 0.5, -1.0), 2.8)
+	await _shot("c_beetle")
+	for k in 4:
+		MonsterModel.animate(m, 2.5, 0.9, 0.3 + k * 0.09)
+		await _wait(0.05)
+		_aim(Vector3(0, 0.35, 0), Vector3(1, 0.15, 0), 2.6)
+		await _shot("c_beetle_walk%d" % k)
+	MonsterModel.animate(m, 0.0, 0.9, 0.3)
+	MonsterModel.set_angry(m, true)
+	MonsterModel.set_glow(m, 0.35)
+	m.rotation.x -= 0.22  # the charge pose (Monster._creature_fx does this in the game)
+	m.position.y += 0.05 * 0.9
+	for i in 5:
+		Fx.dust(_stand, Vector3(0.15 * (i % 2), 0, 0.3 + 0.25 * i), Color(0.45, 0.4, 0.33), 3, 0.45)
+	await _wait(0.12)
+	_aim(Vector3(0, 0.4, 0), Vector3(-0.8, 0.45, -1.0), 2.8)
+	await _shot("c_beetle_charge")
+	_aim(Vector3(0, 0.4, 0), Vector3(1, 0.2, 0.15), 2.8)
+	await _shot("c_beetle_charge_side")
+	m = _creature("great_rock_beetle", "rock_beetle", 1.5)
+	MonsterModel.animate(m, 0.0, 1.5, 0.3)
+	await _wait(0.1)
+	_aim(Vector3(0, 0.7, 0), Vector3(-0.8, 0.5, -1.0), 4.4)
+	await _shot("c_great")
+	_aim(Vector3(0, 0.7, 0), Vector3(0.7, 0.6, 1.0), 4.4)
+	await _shot("c_great_back")
+
+
+## Every individual version side by side, one row per creature (seed = version number).
+func _variety_shoot() -> void:
+	_model.visible = false
+	var rows := [["rock_beetle", "rock_beetle", 0.9, 0.0], ["great_rock_beetle", "rock_beetle", 1.5, 0.0],
+		["cave_bat", "cave_bat", 1.0, 0.4], ["rock_snail", "rock_snail", 1.0, 0.0]]
+	for r in rows.size():
+		var row: Array = rows[r]
+		var n := MonsterModel.variant_count(row[0])
+		var gap := 1.7 * float(row[2]) + 0.4
+		var group := Node3D.new()
+		root.add_child(group)
+		for v in n:
+			var m := MonsterModel.build(row[1], Color.WHITE, row[2], false, row[0], v)
+			var stand := Node3D.new()
+			stand.position = Vector3((v - (n - 1) / 2.0) * gap, row[3], 0)
+			stand.rotation.y = 0.5
+			group.add_child(stand)
+			stand.add_child(m)
+			MonsterModel.animate(m, 0.0 if row[0] != "cave_bat" else 2.0, row[2], 0.35 + v * 0.1)
+		await _wait(0.15)
+		var w := gap * n
+		_aim(Vector3(0, 0.5 * row[2] + row[3], 0), Vector3(-0.15, 0.45, -1.0), w * 0.95 + 1.2)
+		await _shot("v_%s" % row[0])
+		group.queue_free()
+		await _wait(0.05)

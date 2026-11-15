@@ -43,6 +43,11 @@ var _flash := 0.0
 ## Rock Snail (data.shell_hide): seconds left hidden in the shell, and hits taken since it last hid.
 var shell_left := 0.0
 var shell_hits := 0
+var shell_shut := false  ## everyone: the snail is hiding right now (hits on it clank)
+var _charging := 0.0     ## only looks: seconds of a beetle charge left (red eyes, dust trail)
+var _dust_t := 0.0
+var _flap_was := 0.0
+var _flinch := 0.0       ## only looks: a quick jolt back when hit
 var _charge_dir := Vector3.ZERO  ## straight_charge: the direction locked when the charge starts
 var _alt := INF                  ## swoops: the height this flyer is heading for
 var _last_pos := Vector3.ZERO
@@ -84,7 +89,7 @@ func _ready() -> void:
 	shape.shape = cap
 	shape.position = Vector3.UP * cap.height * 0.5
 	add_child(shape)
-	model = MonsterModel.build(data.shape, data.color, s, leader, kind)
+	model = MonsterModel.build(data.shape, data.color, s, leader, kind, uid)  # uid: same individual for everyone
 	_size = s
 	add_child(model)
 	if is_boss():
@@ -129,6 +134,14 @@ func _ready() -> void:
 ## Only looks: the snail pulls into its shell (or comes back out). The host decides when.
 func show_shell(hidden: bool) -> void:
 	MonsterModel.set_shell(model, hidden)
+	if hidden and not shell_shut:
+		Sfx.play("shell_clunk", global_position, 0.0, _voice())
+	shell_shut = hidden
+
+
+## Bigger creatures sound deeper.
+func _voice() -> float:
+	return clampf(1.0 / sqrt(maxf(_size, 0.3)), 0.6, 1.4)
 
 
 ## Only looks: a quick white flash and a little "punch" when something hits us.
@@ -142,7 +155,9 @@ func hit_flash() -> void:
 	glow.albedo_color = Color(1.0, 0.95, 0.85, 0.75)
 	for mi: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
 		mi.material_overlay = glow
-	var base := model.scale
+	_flinch = 1.0  # jolts back (see _process)
+	var base: Vector3 = model.get_meta("base_scale", model.scale)
+	model.set_meta("base_scale", base)
 	var t := create_tween()
 	t.tween_property(model, "scale", base * Vector3(1.12, 0.9, 1.12), 0.05)
 	t.tween_property(model, "scale", base, 0.12)
@@ -536,9 +551,22 @@ func puppet_step(delta: float) -> void:
 	model.rotation.y = lerp_angle(model.rotation.y, _net_yaw, minf(1.0, delta * 12.0))
 
 
-## The warning before a hit: eyes flash and the body leans in.
-func show_tell(seconds: float) -> void:
+## The warning before a hit: eyes flash and the body leans in. Each attack can name a sound
+## for the warning (warn_sound) and for the moment it lands (land_sound), in Monsters.LIST.
+## A beetle's charge also turns its eyes red and kicks up dust.
+func show_tell(seconds: float, attack_name: String = "") -> void:
 	_flash = seconds
+	var atk: Dictionary = {}
+	for a: Dictionary in data.get("attacks", []):
+		if a.name == attack_name:
+			atk = a
+	if atk.has("warn_sound"):
+		Sfx.play(atk.warn_sound, global_position, 0.0, _voice())
+	if atk.has("land_sound"):
+		get_tree().create_timer(seconds).timeout.connect(_land_sound.bind(atk.land_sound))
+	if atk.get("lunge", false) and data.get("straight_charge", false):
+		_charging = seconds + 0.6
+		MonsterModel.set_angry(model, true)
 	# Squash relative to the monster's own size (bosses and leaders are bigger than 1).
 	var base: Vector3 = model.get_meta("base_scale", model.scale)
 	model.set_meta("base_scale", base)
@@ -546,6 +574,11 @@ func show_tell(seconds: float) -> void:
 	t.tween_property(model, "scale", base * Vector3(1.0, 0.85, 1.15), seconds * 0.8).set_trans(Tween.TRANS_SINE)
 	t.tween_property(model, "scale", base * Vector3(1.0, 1.1, 0.9), 0.08)
 	t.tween_property(model, "scale", base, 0.2)
+
+
+func _land_sound(sound: String) -> void:
+	if is_alive():
+		Sfx.play(sound, global_position, 0.0, _voice())
 
 
 func _process(delta: float) -> void:
@@ -563,12 +596,38 @@ func _process(delta: float) -> void:
 		MonsterModel.set_glow(model, 1.0 if _flash < 0.25 else 0.35)  # bright gleam in the last 250 ms
 	else:
 		MonsterModel.set_glow(model, 0.0)
+	_creature_fx(delta)
 	if model.get_meta("roosting", false):
 		pass  # hanging upside down (MonsterModel.animate)
 	elif stun.is_stunned():
 		model.rotation.z = sin(Time.get_ticks_msec() * 0.01) * 0.15
 	else:
 		model.rotation.z = sin(_clock * (5.0 + _speed * 2.5)) * 0.07 * clampf(_speed / 3.0, 0.0, 1.0)  # waddle
+
+
+## Only looks and sounds: charge dust, wing beats, the jolt when hit.
+func _creature_fx(delta: float) -> void:
+	if _charging > 0.0:
+		_charging -= delta
+		_dust_t -= delta
+		if _dust_t <= 0.0:
+			var fast := _speed > 2.5
+			_dust_t = 0.06 if fast else 0.25  # pawing the ground, then a trail while it thunders along
+			Fx.dust(get_parent(), global_position, Color(0.45, 0.4, 0.33), 3 if fast else 1, 0.5 * _size)
+		if _charging <= 0.0:
+			MonsterModel.set_angry(model, false)
+	if data.has("flap_sound") and not model.get_meta("roosting", false) and is_alive():
+		var wing := sin((_clock + uid * 0.37) * 9.0)  # same beat as MonsterModel.animate's wings
+		if _flap_was > 0.0 and wing <= 0.0:
+			Sfx.play(data.flap_sound, global_position, -10.0, _voice())  # one beat per downstroke
+		_flap_was = wing
+	if _charging > 0.0 and data.get("straight_charge", false):
+		model.rotation.x -= 0.22  # charging: head down, back end up
+		model.position.y += 0.05 * _size
+	if _flinch > 0.0:
+		_flinch = maxf(0.0, _flinch - delta * 6.0)
+		model.rotation.x += 0.3 * _flinch  # head tips back
+		model.position.y += 0.06 * _flinch * _size
 
 
 func set_hp(value: float, stun_frac: float, stunned: bool) -> void:

@@ -3,18 +3,24 @@ class_name MonsterModel
 ## Every model has glowing eyes; they flash right before an attack lands.
 
 
-static func build(shape: String, color: Color, size: float, leader: bool, kind: String = "") -> Node3D:
-	# A real model from the asset forge (Claude 2), when one exists for this monster:
-	# res://assets/models/monsters/<kind>.glb (front +Z, feet at the bottom, ~1 m = size 1).
-	var forged := Look.forged("monsters", kind) if kind != "" else null
+## seed: makes each creature an individual (which hand-built version, and a slightly different
+## size). Use the monster's uid, so every player in co-op sees the same creature the same way.
+static func build(shape: String, color: Color, size: float, leader: bool, kind: String = "", seed: int = 0) -> Node3D:
+	# A hand-built model, when one exists for this monster: res://assets/models/monsters/<kind>_v<N>.glb
+	# (several individual versions) or <kind>.glb (front +Z, feet at the bottom, ~1 m = size 1).
+	var forged: Node3D = null
+	if kind != "":
+		var count := variant_count(kind)
+		forged = Look.forged("monsters", "%s_v%d" % [kind, posmod(seed, count)]) if count > 0 else Look.forged("monsters", kind)
 	if forged:
 		var holder := Node3D.new()
 		forged.rotation.y = PI  # forged models face +Z; monsters face -Z
 		holder.add_child(forged)
-		var no_eyes := StandardMaterial3D.new()  # forged models have painted eyes; nothing to flash
-		holder.set_meta("eye_mat", no_eyes)
-		holder.scale = Vector3.ONE * size
-		_tag_parts(holder, shape)
+		var jitter := 1.0 + (float(posmod(seed * 7919, 1000)) / 1000.0 - 0.5) * 0.12  # each one a little bigger or smaller
+		holder.scale = Vector3.ONE * size * jitter
+		_tag_forged(holder, forged, shape)
+		if leader:
+			_forged_crown(holder, forged, shape)
 		return holder
 	var root := Node3D.new()
 	var body := _mat(color)
@@ -324,21 +330,152 @@ static func _bat_wing(side: float) -> Mesh:
 
 ## Rock Snail: pull the soft body into the shell (hidden = true) or come back out.
 static func set_shell(model: Node3D, hidden: bool) -> void:
-	for c in model.get_children():
-		if c is MeshInstance3D and c.has_meta("soft"):
+	model.set_meta("hidden", hidden)
+	if model.has_meta("forged_root"):
+		_forged_shell(model, hidden)
+		return
+	for c in model.find_children("*", "MeshInstance3D", true, false):
+		if c.has_meta("soft"):
 			var mi := c as MeshInstance3D
 			if not mi.has_meta("out_scale"):
 				mi.set_meta("out_scale", mi.scale)
 				mi.set_meta("out_pos", mi.position)
 			var t := mi.create_tween()
 			var to_pos: Vector3 = mi.get_meta("out_pos")
-			if hidden:
+			if hidden and not mi.has_meta("forged"):
 				to_pos = Vector3(0, 0.5, 0.1)
-			t.tween_property(mi, "scale", (mi.get_meta("out_scale") as Vector3) * (0.15 if hidden else 1.0), 0.25)
+			# Hand-built models shrink toward their hinge, deep under the shell (creature_kit.py).
+			var shrink := (0.45 if mi.has_meta("forged") else 0.15) if hidden else 1.0
+			t.tween_property(mi, "scale", (mi.get_meta("out_scale") as Vector3) * shrink, 0.25)
 			t.parallel().tween_property(mi, "position", to_pos, 0.25)
 
 
 # ------------------------------------------------------------ coming alive (only looks)
+
+## Hand-built snail hiding: the whole soft body (tail too) shrinks into the shell, the shell settles
+## onto the ground, and only two small eyes peek out of the shell's mouth.
+static func _forged_shell(model: Node3D, hidden: bool) -> void:
+	var root: Node3D = model.get_meta("forged_root")
+	var parts := root.find_children("*", "MeshInstance3D", true, false)
+	var drop := 0.0
+	for mi: MeshInstance3D in parts:
+		if String(mi.name) == "body":  # the shell: how high its bottom sits above the ground
+			drop = maxf(0.0, (mi.get_aabb().position.y + mi.position.y) - 0.04)
+	for mi: MeshInstance3D in parts:
+		if not mi.has_meta("out_pos"):
+			mi.set_meta("out_pos", mi.position)
+			mi.set_meta("out_scale", mi.scale)
+		var t := mi.create_tween().set_trans(Tween.TRANS_QUAD)
+		var pos: Vector3 = mi.get_meta("out_pos")
+		t.tween_property(mi, "position", pos + Vector3.DOWN * (drop if hidden else 0.0), 0.3)
+		if mi.has_meta("soft"):
+			t.parallel().tween_property(mi, "scale", (mi.get_meta("out_scale") as Vector3) * (0.02 if hidden else 1.0), 0.3)
+	for p: MeshInstance3D in model.get_meta("peek", []):
+		p.visible = hidden
+
+
+## A glowing gold crown above a hand-built leader, so you can spot it in the pack.
+static func _forged_crown(holder: Node3D, forged: Node3D, shape: String) -> void:
+	var top := 0.0
+	for mi: MeshInstance3D in forged.find_children("*", "MeshInstance3D", true, false):
+		var box := mi.get_aabb()
+		top = maxf(top, mi.position.y + box.position.y + box.size.y)
+	var gold := Color(1.0, 0.45, 0.15) if shape in ["rock_beetle"] else Color(1.0, 0.75, 0.2)
+	var m := StandardMaterial3D.new()
+	m.albedo_color = gold.lightened(0.1)
+	m.emission_enabled = true
+	m.emission = gold
+	m.emission_energy_multiplier = 1.5
+	var crown := MeshInstance3D.new()
+	var tm := TorusMesh.new()
+	tm.inner_radius = 0.1
+	tm.outer_radius = 0.15
+	crown.mesh = tm
+	crown.material_override = m
+	crown.position = Vector3(0, top + 0.12, 0)
+	holder.add_child(crown)
+	for k in 5:  # little points on the crown
+		var a := k * TAU / 5.0
+		var pt := MeshInstance3D.new()
+		var cm := CylinderMesh.new()
+		cm.top_radius = 0.0
+		cm.bottom_radius = 0.025
+		cm.height = 0.08
+		pt.mesh = cm
+		pt.material_override = m
+		pt.position = crown.position + Vector3(cos(a) * 0.125, 0.05, sin(a) * 0.125)
+		holder.add_child(pt)
+
+static var _variants := {}
+
+
+## How many hand-built versions a creature has (<kind>_v0.glb, _v1...). 0 = none.
+static func variant_count(kind: String) -> int:
+	if not _variants.has(kind):
+		var n := 0
+		while n < 16 and ResourceLoader.exists("res://assets/models/monsters/%s_v%d.glb" % [kind, n]):
+			n += 1
+		_variants[kind] = n
+	return _variants[kind]
+
+
+## Hand-built creatures (tools/asset_forge/creature_kit.py) name their moving parts:
+## leg* walk, wing_l / wing_r flap, soft* pull into the shell, material "eye*" flashes.
+## Each part turns around its own hinge (hip, shoulder, shell mouth).
+static func _tag_forged(holder: Node3D, forged: Node3D, shape: String) -> void:
+	var legs := []
+	var wings := []
+	var stalks := []
+	var peek := []
+	var folds := []
+	var mats := {}  # material name prefix -> this monster's own copy (eyes flash, cracks glow on their own)
+	for mi: MeshInstance3D in forged.find_children("*", "MeshInstance3D", true, false):
+		var n := String(mi.name)
+		mi.set_meta("forged", true)
+		if n.begins_with("leg"):
+			# Insect walk: two tripods (front + back on one side, middle on the other) step in turns.
+			var idx := int(n.right(1)) if n.right(1).is_valid_int() else 0
+			var side := signf(mi.position.x)
+			var group := (idx + (0 if side < 0.0 else 1)) % 2
+			legs.append([mi, mi.rotation, float(group) * PI, side, 0.03 * idx])
+		elif n.begins_with("wing"):
+			wings.append([mi, mi.rotation, signf(mi.position.x)])
+		elif n.begins_with("soft"):
+			mi.set_meta("soft", true)
+			if n.begins_with("soft_stalk"):
+				stalks.append([mi, mi.rotation, stalks.size() * 1.7])
+		elif n.begins_with("peek"):
+			mi.visible = false  # only shows while hiding in the shell
+			peek.append(mi)
+		elif n.begins_with("fold"):
+			mi.visible = false  # folded sleeping wings: only while it roosts
+			folds.append(mi)
+		for i in mi.mesh.get_surface_count() if mi.mesh else 0:
+			var m := mi.get_active_material(i)
+			if not m is StandardMaterial3D:
+				continue
+			var mname := String(m.resource_name)
+			for prefix in ["eye", "vein"]:
+				if mname.begins_with(prefix):
+					if not mats.has(prefix):
+						var own := (m as StandardMaterial3D).duplicate() as StandardMaterial3D
+						own.emission_enabled = true
+						if prefix == "vein":
+							own.emission = Color(1.0, 0.32, 0.08)
+							own.emission_energy_multiplier = 0.0  # dark until it charges
+						mats[prefix] = own
+					mi.set_surface_override_material(i, mats[prefix])
+	holder.set_meta("eye_mat", mats.get("eye", StandardMaterial3D.new()))
+	if mats.has("vein"):
+		holder.set_meta("vein_mat", mats["vein"])
+	holder.set_meta("legs", legs)
+	holder.set_meta("wings", wings)
+	holder.set_meta("stalks", stalks)
+	holder.set_meta("peek", peek)
+	holder.set_meta("folds", folds)
+	holder.set_meta("forged_root", forged)
+	holder.set_meta("flyer", shape in ["moth", "bat", "puffpod", "cave_bat"])
+	holder.set_meta("rest_y", 0.0)
 
 ## Finds the parts that move: legs (thin tubes near the ground), wings (thin flat boxes on
 ## flyers) and a tail. Remembers their resting angle so the movement swings around it.
@@ -395,21 +532,52 @@ static func animate(model: Node3D, speed: float, size: float, clock: float) -> v
 	var stride := clock * (5.0 + speed * 2.5) / maxf(size, 0.6)
 	for leg in model.get_meta("legs"):
 		var mi: MeshInstance3D = leg[0]
-		mi.rotation = leg[1] + Vector3(sin(stride + leg[2]) * 0.55 * go, 0, 0)
+		if leg.size() > 3:
+			# Insect tripod walk: the planted legs push back in a straight sweep; the others lift in an
+			# arc and swing forward. Standing still, all six feet rest on the ground.
+			var cyc := fposmod((stride + leg[2]) / TAU + leg[4], 1.0)
+			var sweep: float
+			var lift := 0.0
+			if cyc < 0.5:
+				sweep = lerpf(-0.28, 0.28, cyc / 0.5)
+			else:
+				var k := (cyc - 0.5) / 0.5
+				sweep = lerpf(0.28, -0.28, smoothstep(0.0, 1.0, k))
+				lift = sin(k * PI) * 0.32
+			mi.rotation = leg[1] + Vector3(sweep * go, 0, leg[3] * lift * go)
+		else:
+			mi.rotation = leg[1] + Vector3(sin(stride + leg[2]) * 0.55 * go, 0, 0)
+	for st in model.get_meta("stalks", []):  # a snail looking around with its eye stalks
+		var mi: MeshInstance3D = st[0]
+		mi.rotation = st[1] + Vector3(sin(clock * 0.9 + st[2]) * 0.12, 0, sin(clock * 1.3 + st[2] * 2.0) * 0.16)
+	if model.has_meta("forged_root") and not model.get_meta("hidden", false):
+		for c in (model.get_meta("forged_root") as Node3D).get_children():
+			if String(c.name) == "soft_body":  # crawling: the body stretches and squeezes in waves
+				(c as Node3D).scale = Vector3(1.0 - 0.03 * sin(clock * 4.0) * go, 1.0, 1.0 + 0.06 * sin(clock * 4.0) * go)
 	var roosting: bool = model.get_meta("roosting", false)
+	var folds: Array = model.get_meta("folds", [])
+	for f: MeshInstance3D in folds:
+		f.visible = roosting  # asleep: the folded wings, wrapped round the body like a cloak
 	for wing in model.get_meta("wings"):
 		var mi: MeshInstance3D = wing[0]
+		mi.visible = not (roosting and not folds.is_empty())
 		if roosting:
 			mi.rotation = wing[1] + Vector3(0, 0, -1.25 * wing[2])  # folded around the body
 		else:
-			mi.rotation = wing[1] + Vector3(0, 0, sin(clock * 9.0) * 0.6 * wing[2])
+			var beat := sin(clock * 9.0)
+			mi.rotation = wing[1] + Vector3(0, 0, beat * 0.6 * wing[2])
+			if model.has_meta("forged_root"):
+				mi.scale = Vector3(1.0 - 0.22 * maxf(0.0, cos(clock * 9.0)), 1.0, 1.0)  # half-folds on the upstroke
 	var rest_y: float = model.get_meta("rest_y")
 	if roosting:
 		model.position.y = rest_y
-		model.rotation = Vector3(0, model.rotation.y, PI)  # hanging upside down from the ceiling
+		if model.has_meta("forged_root"):
+			model.rotation = Vector3(-PI / 2.0, model.rotation.y, 0.0)  # hanging head-down by its feet
+		else:
+			model.rotation = Vector3(0, model.rotation.y, PI)  # hanging upside down from the ceiling
 		return
 	if model.get_meta("flyer"):
-		model.position.y = rest_y + sin(clock * 2.2) * 0.12 * size  # hovering
+		model.position.y = rest_y + sin(clock * 2.2) * 0.12 * size + sin(clock * 9.0) * 0.03 * size  # hovering, lifts with each beat
 		if absf(model.rotation.z) > 3.0:
 			model.rotation.z = 0.0  # woke up: right way up again
 	else:
@@ -453,7 +621,18 @@ static func make_glowy(model: Node3D, color: Color) -> void:
 ## 0 = normal eyes, 1 = bright flash (the "tell" just before a hit lands).
 static func set_glow(model: Node3D, amount: float) -> void:
 	var m: StandardMaterial3D = model.get_meta("eye_mat")
-	m.emission_energy_multiplier = 0.6 + amount * 8.0
+	# Red eyes glow less: very bright light turns white on screen (AgX tone mapping), losing the red.
+	m.emission_energy_multiplier = 0.6 + amount * (0.9 if model.get_meta("angry", false) else 8.0)
+
+
+## Angry eyes: they burn red-orange while a beetle winds up a charge (a warning you can read).
+static func set_angry(model: Node3D, angry: bool) -> void:
+	model.set_meta("angry", angry)
+	var m: StandardMaterial3D = model.get_meta("eye_mat")
+	m.emission = Color(1.0, 0.08, 0.0) if angry else Color(1.0, 0.85, 0.4)
+	m.albedo_color = Color(0.7, 0.05, 0.0) if angry else Color(1.0, 0.9, 0.5)
+	if model.has_meta("vein_mat"):  # the cracks in its stone shell glow like coals while it charges
+		(model.get_meta("vein_mat") as StandardMaterial3D).emission_energy_multiplier = 2.2 if angry else 0.0
 
 
 static func _add(parent: Node3D, mesh: Mesh, mat: Material, pos: Vector3, scale := Vector3.ONE, rot := Vector3.ZERO) -> MeshInstance3D:
