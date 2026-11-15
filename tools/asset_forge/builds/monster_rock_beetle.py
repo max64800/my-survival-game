@@ -259,7 +259,7 @@ for p in under.data.polygons:
 # The plates: the shell's own surface cut into patches (each seed gets the part of the shell nearest to it), each
 # patch's edge smoothed and pulled in for the crack, then lifted into a cushion (thick in the middle, rounded at the
 # edge) with a few flat chisel cuts on top, so it reads as a hand-cut stone that bends with the shell.
-GAP = 0.0015      # half the crack between two plates (m): the stones touch, like the painting
+GAP = -0.014      # < 0: each plate grows past its boundary, so neighbours press together (only a V-canyon between)
 ROUND = 0.065     # how far in from the edge a plate reaches its full thickness (m)
 
 
@@ -383,7 +383,8 @@ def cushion_plates(seeds, material, seed=1):
 		R = (surf(cdir)[0] - C).length
 		for v in loop:
 			ang = v.co.angle(cdir)
-			v.co = cdir.slerp(v.co, max(0.0, (ang - GAP / R) / max(ang, 1e-6))) if ang > 1e-6 else v.co
+			if ang > 1e-6:
+				v.co = Matrix.Rotation(max(0.0, ang - GAP / R), 3, cdir.cross(v.co).normalized()) @ cdir
 		# Distance from the edge (walking over the plate), for the cushion profile.
 		dist = {v: (0.0 if v in set(loop) else 9.0) for v in bm.verts}
 		changed = True
@@ -507,23 +508,37 @@ for s in (-1, 1):
 	# angry upper lid: a thick cap over the top of the eye, lower toward the nose
 	bpy.ops.mesh.primitive_uv_sphere_add(segments=28, ring_count=16, radius=EYE_R * 1.12, location=(0, 0, 0))
 	lid = bpy.context.object
-	cut = Vector((-s * 0.45, -0.35, 1)).normalized()
+	cut = Vector((-s * 0.5, -0.85, 0.8)).normalized()  # the lid comes down over the front of the eye, lower toward the nose
 	bm = bmesh.new()
 	bm.from_mesh(lid.data)
-	bmesh.ops.delete(bm, geom=[v for v in bm.verts if v.co.normalized().dot(cut) < 0.38], context="VERTS")
+	bmesh.ops.delete(bm, geom=[v for v in bm.verts if v.co.normalized().dot(cut) < 0.3], context="VERTS")
 	bm.to_mesh(lid.data)
 	bm.free()
 	lid.location = c
 	lid.data.materials.append(face_skin)
 	sol = lid.modifiers.new("thick", "SOLIDIFY")
-	sol.thickness = 0.02
+	sol.thickness = 0.022
 	for p in lid.data.polygons:
+		p.use_smooth = True
+	# lower lid: a thin cap from below (the squint)
+	bpy.ops.mesh.primitive_uv_sphere_add(segments=28, ring_count=16, radius=EYE_R * 1.1, location=(0, 0, 0))
+	low = bpy.context.object
+	bm = bmesh.new()
+	bm.from_mesh(low.data)
+	bmesh.ops.delete(bm, geom=[v for v in bm.verts if v.co.normalized().dot(Vector((s * 0.2, -0.3, -1)).normalized()) < 0.55], context="VERTS")
+	bm.to_mesh(low.data)
+	bm.free()
+	low.location = c
+	low.data.materials.append(face_skin)
+	sol = low.modifiers.new("thick", "SOLIDIFY")
+	sol.thickness = 0.016
+	for p in low.data.polygons:
 		p.use_smooth = True
 # nose ridge down to the mouth, and a pouty mouth
 ck.loft("ridge", [((0, -0.63, 0.5), 0.035, 0.03), ((0, -0.66, 0.41), 0.048, 0.035), ((0, -0.675, 0.34), 0.06, 0.04)], face_skin, sides=12)
-ck.blob((0, -0.68, 0.295), (0.085, 0.042, 0.036), face_skin, seed=31, jitter=0.03)   # upper lip
-ck.blob((0, -0.67, 0.255), (0.066, 0.038, 0.03), face_skin, seed=32, jitter=0.03)    # lower lip
-ck.blob((0, -0.672, 0.276), (0.064, 0.024, 0.009), pupil, seed=33, jitter=0.0, subsurf=0)  # the mouth line
+ck.blob((0, -0.665, 0.3), (0.06, 0.035, 0.028), face_skin, seed=31, jitter=0.03)    # upper lip
+ck.blob((0, -0.655, 0.268), (0.048, 0.032, 0.024), face_skin, seed=32, jitter=0.03)  # lower lip
+ck.blob((0, -0.66, 0.285), (0.046, 0.02, 0.008), pupil, seed=33, jitter=0.0, subsurf=0)  # the mouth line
 for s in (-1, 1):
 	c = EYES[(s + 1) // 2]
 	bpy.ops.mesh.primitive_uv_sphere_add(segments=28, ring_count=16, radius=EYE_R, location=c)
@@ -531,7 +546,7 @@ for s in (-1, 1):
 	o.data.materials.append(eye)
 	for p in o.data.polygons:
 		p.use_smooth = True
-	look = Vector((s * 0.22, -1, -0.05)).normalized()
+	look = Vector((s * 0.12, -1, -0.12)).normalized()  # a glare, a little down and in
 	for rad, off, flat, m in ((0.066, 0.069, 0.4, iris), (0.035, 0.083, 0.4, pupil)):
 		bpy.ops.mesh.primitive_uv_sphere_add(segments=20, ring_count=12, radius=1)
 		q = bpy.context.object
@@ -543,9 +558,9 @@ for s in (-1, 1):
 			p.use_smooth = True
 	ck.blob(tuple(c + look * 0.09 + Vector((s * -0.02, 0, 0.026))), (0.016, 0.009, 0.016), shine, seed=3, subsurf=0)
 	# tusks: thick pale jaws from the corners of the mouth, curving forward, down and in
-	root = Vector((s * 0.1, -0.62, 0.33))
-	pts = ck.bezier(root, root + Vector((s * 0.06, -0.12, -0.02)), Vector((s * 0.035, -0.74, 0.17)), n=12)
-	ck.loft(f"tusk{s}", [(p, 0.05 * (1 - 0.95 * (j / 11) ** 1.4), 0.043 * (1 - 0.95 * (j / 11) ** 1.4)) for j, p in enumerate(pts)], claw,
+	root = Vector((s * 0.105, -0.6, 0.36))
+	pts = ck.bezier(root, root + Vector((s * 0.07, -0.13, -0.07)), Vector((s * 0.03, -0.71, 0.22)), n=12, p3=Vector((s * 0.012, -0.69, 0.25)))
+	ck.loft(f"tusk{s}", [(p, 0.056 * (1 - 0.95 * (j / 11) ** 1.3), 0.048 * (1 - 0.95 * (j / 11) ** 1.3)) for j, p in enumerate(pts)], claw,
 		sides=12, subsurf=0, smooth=True, up=Vector((s, 0, 0)))
 	# feelers: shingled segments (like the legs), from above the eye, curving up and out, ending in a club
 	path = ck.bezier((s * 0.12, -0.6, 0.56), (s * 0.27, -0.7, 0.7), (s * 0.4, -0.74, 0.6), n=8)
@@ -610,15 +625,16 @@ def leg(s, i, hip, knee, ankle, toe):
 		barrel("tibia", knee - low_dir * 0.035, t1, 0.092, 0.088, chitin)
 		barrel("tarsus", t1 - low_dir * 0.04, ankle, 0.08, 0.072, chitin)
 		out_dir = Vector((toe.x - ankle.x, toe.y - ankle.y, 0)).normalized()
-		root = ankle - low_dir * 0.06  # the claw grows out from inside the last segment
-		talon("claw", root, toe, 0.058, out_dir * 0.07 + Vector((0, 0, 0.07)), claw)
+		root = ankle - low_dir * 0.05  # a short hooked claw tip grows out of the end of the foot
+		tip = Vector((ankle.x, ankle.y, -0.11)) + out_dir * 0.075  # the claw is the foot's tip and reaches the ground
+		talon("claw", root, tip, 0.062, out_dir * 0.035 + Vector((0, 0, 0.03)), claw)
 
 
 LEGS = [  # hip, knee, ankle, claw tip   (+X side; mirrored)
-	((0.18, -0.25, 0.28), (0.44, -0.34, 0.24), (0.5, -0.43, -0.02), (0.54, -0.52, -0.11)),
-	((0.24, 0.0, 0.27), (0.54, 0.04, 0.24), (0.63, 0.1, -0.02), (0.68, 0.17, -0.11)),
-	((0.22, 0.28, 0.28), (0.5, 0.37, 0.24), (0.58, 0.48, -0.02), (0.62, 0.57, -0.11)),
-	# (ankles at 0 and claw tips at -0.1: the save puts the claw tips on the ground, lifting the body 10 cm)
+	((0.18, -0.25, 0.28), (0.44, -0.34, 0.24), (0.5, -0.43, -0.03), (0.54, -0.52, -0.11)),
+	((0.24, 0.0, 0.27), (0.54, 0.04, 0.24), (0.63, 0.1, -0.03), (0.68, 0.17, -0.11)),
+	((0.22, 0.28, 0.28), (0.5, 0.37, 0.24), (0.58, 0.48, -0.03), (0.62, 0.57, -0.11)),
+	# (the foot almost on the ground; the save puts the lowest point on the ground, lifting the body ~11 cm)
 ]
 for s in (-1, 1):
 	for i, pts in enumerate(LEGS):
