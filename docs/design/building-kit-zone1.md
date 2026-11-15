@@ -31,6 +31,7 @@ Plus the roof set:
 Total: **55 models** (19 + 19 + 17). Ladder, mine prop and decor stay shared (one look each).
 
 ### Rules for the shapes
+**Read `docs/art/MODEL-RULES.md` first** (no Play-Doh, no shimmer, clean layers, roofs, round doors). In short for roofs: Stonehold gets flat roofs only and Shack/Hearthbrick sloped roofs only; the build menu must only offer those.
 - **Roofs are hollow:** a sloped roof piece is a thin slanted panel (like a lean-to), open underneath. Corners are
   two slanted panels meeting at an edge. Never a solid wedge or pyramid.
 - **A ceiling is the floor seen from below:** the floor piece's underside shows beams and boards (wood) or

@@ -1,5 +1,8 @@
 # Asset forge: ChatGPT picture → 3D model in the game
 
+> **Owner, Nov 15, 2026: the picture → 3D step makes "Play-Doh" models and must NOT be used for final game models.**
+> Final models are hand-built in Blender by script (`kit.py`, `creature_kit.py`, `builds/`). See `docs/art/MODEL-RULES.md`.
+
 Free tools only. See `docs/design/ai-art-pipeline.md` for the why.
 
 ```

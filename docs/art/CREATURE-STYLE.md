@@ -1,5 +1,9 @@
 # Creature style guide: make monsters look like the Forge workbench
 
+> **Owner, November 15, 2026: creatures are HAND-BUILT in Blender by script, never picture-to-3D.**
+> The forged (TripoSR) creatures came out soft and melted ("Play-Doh"), the same problem the crafting stations had.
+> Follow `docs/art/MODEL-RULES.md` (Rule 1). The approved ChatGPT pictures are the design reference only.
+
 **Read this before making or remaking any creature.** (Owner's request, November 14, 2026.)
 
 ## The problem
@@ -7,12 +11,13 @@
 The Forge **workbench** looks great. The **Rock Snail, Cave Bat and Rock Beetles** look plain. The reason is
 mostly *how* they were made, not the description:
 
-- **Workbench:** a real 3D model with **hand-painted textures** (made with the asset forge, `tools/asset_forge/`).
+- **Workbench:** a real 3D model **hand-built in Blender by script** from the shared kit (`tools/asset_forge/kit.py`), with **hand-painted textures**.
 - **Monsters:** built in code (`src/combat/monster_model.gd`) from balls, tubes and cones, with one
   computer pattern stretched over the whole body.
 
-**So: rebuild the creatures the same way as the workbench** (ChatGPT picture → asset forge → Blender
-cleanup), using the rules below. Keep the code-built bodies only as a fallback.
+**So: build the creatures the same way as the workbench**: a Blender script per creature, from the shared kit plus
+the creature add-on (`creature_kit.py`, moving parts), matching the approved pictures by eye. Keep the code-built
+bodies only as a fallback.
 
 ## What makes the workbench work (and the monsters plain)
 
@@ -112,25 +117,26 @@ Prompt notes that worked:
 `assets/concepts/creatures/` (rock_snail.png, rock_snail_variants.png, cave_bat.png, cave_bat_variants.png,
 rock_beetle.png, rock_beetle_variants.png), and log them in `CREDITS.md` as our own ChatGPT pictures.
 
-## Step 2: turn the pictures into models
+## Step 2: build them by hand (Blender script), to match the pictures
 
-Follow `tools/asset_forge/README.md`: "forge this as a big prop called rock_snail" and so on.
-- Snail, small beetle and bat: `--kind prop` (about 1 m). Great Rock Beetle: `--kind big` (3.5 m).
-- Save them as `assets/models/creatures/<monster_id>.glb`, matching the ids in `src/combat/monsters.gd`.
+- Start from the Nov 14 hand-built scripts (`tools/asset_forge/build_creatures.py`, `creature_kit.py`,
+  `creature_textures.py`): they already have moving parts, poses (snail hiding, bat asleep, beetle charging) and
+  15 individual versions. Rebuild their shapes and colours to match the approved pictures above.
+- Write down what each picture shows first (body proportions, face, colours, horn/shell/wings), then check every
+  step with a side-by-side picture: reference vs. model, same camera angle.
+- **The 4 looks share one body:** mossy, frost, ember and spore are paint swaps plus add-ons (moss tufts, ice
+  crystals, glowing cracks, little mushrooms), so they read as one family.
+- One creature first (**Rock Beetle**), owner approves, then the other two.
+- Save as `assets/models/creatures/<monster_id>_<look>.glb` (the names the game loads today).
 
 ## Step 3: make them move (important)
 
-A forged model is one solid statue with no skeleton, so legs and wings can't move by themselves. Pick one,
-in this order:
-1. **Split into parts in Blender** (body, shell, head, each wing, legs as one or two groups). The game then
-   moves the parts like it does today: bob, tilt, wing flaps, a little leg shuffle. This is the quickest, and it
-   looks fine for stylized creatures.
-2. **Rig and animate in Blender** (bones, walk/attack/hurt clips) for the best result. It takes more work per
-   creature.
+The creature add-on keeps legs, wings, shell and eye stalks as separate named parts, each turning around its own
+hinge; the game moves them (walk in tripods, wing beats, hiding). Keep the code's attack warning (eyes flash
+before a hit) and the monster's collision size. Run the floating-parts check (`tools/asset_forge/islands.py`):
+no loose legs.
 
-Whichever way: keep the code's attack warning (eyes flash before a hit) and the monster's collision size.
-
-## How they were built (November 15, 2026)
+## Rejected: how the forged versions were built (November 15, 2026, replaced by Step 2)
 
 One command does it all: `tools/asset_forge/forge_creatures.py` (see the forge README, "Creatures").
 1. `creature_sources.py` cuts each grid into its 4 variants and removes the background (12 pictures).

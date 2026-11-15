@@ -12,6 +12,13 @@ Full design: `docs/superpowers/specs/2026-11-14-dwarf-survival-game-design.md`
 - Keep gameplay actions "co-op ready": request → host approves → everyone updates.
 - Only use assets licensed for commercial use (prefer CC0). Log every asset in `CREDITS.md`.
 - **Art style rule (owner):** every model (stations, gear, outfits, building pieces, materials) is made in the same style as the workbenches: hand-painted, chunky, no perfect boxes or circles, every part touching. Each building material gets its own design, not a reskin. Make ChatGPT pictures whenever they help, no need to ask.
+- **Model rules (owner): read `docs/art/MODEL-RULES.md` before making or changing any model.** In short:
+  1. No Play-Doh: every model is hand-built in Blender by script (never picture-to-3D as the final model).
+  2. No shimmer: no two surfaces in the same place (join them or keep 1 cm apart).
+  3. Building pieces in clean layers (backing, material, trim, decor), nothing poking out, calm colours.
+  4. Roofs: Stonehold flat only; Shack and Hearthbrick sloped only; sloped roof pieces are thin and open underneath.
+  5. Round doors only.
+  Every rule has an automatic check; a model isn't done until they pass. When a rule changes, delete the old text that disagrees.
 - Never copy names, characters, art, maps, or music from other games.
 - The GitHub repo is public: never commit personal paths, usernames, keys, or Steam credentials.
 - Use Voxel Tools and GodotSteam **GDExtension** editions with the official Godot build (never the module builds).
@@ -24,7 +31,7 @@ Full design: `docs/superpowers/specs/2026-11-14-dwarf-survival-game-design.md`
 - `src/items/`: item list, inventory, drops. `src/ui/hud.gd`: everything on screen.
 - `src/debug/autopilot.gd`: scripted play run with screenshots.
 - Design docs for later steps: `docs/design/` (start with its README).
-- Making or remaking creatures: follow `docs/art/CREATURE-STYLE.md` (match the Forge workbench look; build through the asset forge, not code shapes).
+- Making or remaking creatures: follow `docs/art/CREATURE-STYLE.md` and `docs/art/MODEL-RULES.md`: hand-built in Blender by script (`tools/asset_forge/creature_kit.py`, `build_creatures.py`), matching the approved pictures in `assets/concepts/creatures/`. Never picture-to-3D.
 
 ## Play sessions (Windows PC)
 - Every time the owner plays (desktop icon or Godot F5), `tools/recorder/` records it with OBS and makes a folder in

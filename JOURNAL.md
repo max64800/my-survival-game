@@ -1098,3 +1098,11 @@ Important pieces (workbench, smelter, anvil) can be redone later with a better t
 - **Hurdles / mistakes (including Claude's):**
   - Claude's first convert command did nothing: the Mac's shell (zsh) does not split a list stored in one text variable. Fixed by using a proper list.
   - Spotted while looking at the pictures: the spore Rock Beetle has a floating leg. Added as N1 under "Claude noticed, waiting for your OK".
+
+- **Later the same day (Mac): the owner's review of the 3D pages, and new model rules.**
+  - Removed from the Forge Models page what we won't use: 33 copper building pieces (copper is decor only) and the 16 old diagonal pieces.
+  - Owner's notes F73-F80 (stone/brick colours, round doors only, shimmer, triangle floor overlap, grey planks, roofs, odd pieces) and F68 🔁 (monsters must be hand-built).
+  - New `docs/art/MODEL-RULES.md`: no Play-Doh (hand-built only), no shimmer, clean layers on building pieces, roof rules, round doors only. Each rule has a check. Linked from `CLAUDE.md`.
+- **Mistakes and hurdles (including Claude's):**
+  - **Claude's mistake on the Mac:** the creature guide (Nov 14) and the PC prompt both said "make the monsters with the 3D forge", after the owner had asked for hand-built (F68). Claude 3 on the PC followed it and replaced the hand-built monsters with melted ones. Fixed: the guide, the forge README and `CLAUDE.md` now say hand-built only.
+  - **Why rules got lost:** they lived only in long plan files and the code never followed them (the build menu still offers every roof to every material). Fix: one rules page, each rule with an automatic check, and old text that disagrees gets deleted the same day.

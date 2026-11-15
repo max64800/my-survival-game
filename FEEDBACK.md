@@ -16,6 +16,9 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 
 - **F25, the dwarf doesn't look dwarvish (said 2×).** 1st time: "short and wide". Claude 3 made a rigged dwarf, a bit better. 2nd time: "legs and arms should be shorter". 2nd try (Claude 3): thick short bones, broad shoulders, barrel chest. 3rd time: "looks like a bulky guy". Next try: stout and round, not muscular. About 4 heads tall, a round belly, stubby legs, arms reaching the hips at most.
 
+- **F68, the monsters look like blobs / Play-Doh (said 2×).** 1st time (Nov 14): "raw blocks; build them the way Claude 2 hand-built the anvil". Claude 3 hand-built them. Then the Mac's creature guide and PC prompt said "use the 3D forge", so on Nov 15 Claude 3 replaced them with forged ones: soft and melted. 2nd time (Nov 15): "rebuild by hand, like the crafting tables". **Different approach now:** a written rule with a check (`docs/art/MODEL-RULES.md`, Rule 1: hand-built only, every model needs its build script), the creature guide rewritten, and the hand-built versions rebuilt to match the approved pictures, Rock Beetle first.
+- **F79, rules that don't stick: roofs (said 1×, but the plan already said it on Nov 14).** The plan said Stonehold = flat roof only, sloped roofs hollow, but the build menu still offers every roof to every material and some roof pieces came out filled. **Different approach:** Rule 4 in `MODEL-RULES.md`, enforced in the build menu code with a test, plus a thickness test for roof pieces.
+
 ## Patterns (what kind of things you notice most)
 
 | Area | Items | Notes |
@@ -30,11 +33,24 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 | Cave shapes (round vs sharp, tunnels) | F19, F20 | |
 | Digging feel + resources | F13, F14 | |
 | Pictures / looks | F17, F22, F24, F25, F26, F28, F29, F30, F31, F68, F69, F70, F71, F72 | **The dwarf's look keeps coming up (F25 said twice)** |
-| Model quality (stations, gear, building pieces) | F34-F66 | Most common: parts floating / not touching (8 notes), too-perfect shapes, flat colour, loose rope |
+| Model quality (stations, gear, building pieces) | F34-F66, F73-F80 | Most common: parts floating / not touching (8 notes), too-perfect shapes, flat colour, loose rope |
 
 ---
 
 ## Open (still to do)
+
+*(Nov 15, your notes on the 3D building pieces and monsters. Rules written in `docs/art/MODEL-RULES.md`.)*
+
+- [ ] 🔁 **F68. Monsters: rebuild them by hand (no Play-Doh), like the crafting tables.** Plan: the Nov 14 hand-built scripts, reshaped to match the approved pictures; 4 looks on one body; Rock Beetle first for your OK. On the PC. *From: you. Said: 2×*
+- [ ] **F73. Stonehold stone colours are too drastic** (white, black and brown blocks together). Calm greys, a few warm stones. *From: you. Said: 1×*
+- [ ] **F74. Hearthbrick has too much discolouration** (yellow and dark bricks in the floor and foundation). Closer warm reds. *From: you. Said: 1×*
+- [ ] **F75. Round doors only.** One round doorway and one round door per style; remove the second doorway kind and anything square. *From: you. Said: 1× (first said Nov 14)*
+- [ ] **F76. Shimmer still shows** on the Hearthbrick and Stonehold doorways. Rule 2 + an automatic "same place" check. *From: you. Said: 1× (F58 was the white edges, a different cause)*
+- [ ] **F77. Hearthbrick triangle floor: bricks stick out past the edge.** Cut them to the triangle. *From: you. Said: 1×*
+- [ ] **F78. Shack floor: no grey planks.** *From: you. Said: 1×*
+- [ ] **F79. Roof rules don't stick.** Stonehold = flat roofs only; Shack and Hearthbrick = sloped only; some sloped/triangle roofs are filled instead of thin. *From: you. Said: 1×*
+- [ ] **F80. Pieces from your screenshots that look wrong:** Hearthbrick inner roof corner looks like logs and its tiles cross over each other; Shack outer roof corner has holes along the ridge; Hearthbrick foundation top is a messy cut-up brick pattern. *From: you. Said: 1×*
+- [x] ~~**F81. Write rules for shimmer, clean building layers and no Play-Doh.**~~ Done Nov 15 (Mac): `docs/art/MODEL-RULES.md` (5 rules, each with a check), linked from `CLAUDE.md`; the creature guide and forge guide no longer say "use the 3D forge". *From: you. Said: 1×*
 
 *(Nov 14, after your first real play session. You chose: merge everything into main; start kit = rocks + roots + 1 crystal; 25–50 chunks; copper very rare.)*
 
