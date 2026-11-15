@@ -86,6 +86,8 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 
 **Claude noticed, waiting for your OK** (not fixed until you say so):
 
+- [ ] **N1. Spore Rock Beetle: one leg floats loose under the body** (seen in `docs/art/creatures-2026-11-15/all_12_models.jpg`, bottom right). Found by Claude on the Mac, Nov 15. Fix when you say yes.
+
 ## Done
 
 - [x] ~~**F72. Creatures need variety, like the cave itself.**~~ Done Nov 14 (Claude 3, waiting for your look). Every part has its own texture (waxy shell, rock knobs, three pebble colors, mossy rock, glowing gem clusters, grainy shield). Each creature now has hand-built versions and the game picks one per creature, plus a slightly different size: beetles 4 each (horn curved / bent / broken / forked, gems amber / teal / violet, more or less moss), bats 4 colors (+ torn ears), snails 3 colors. Co-op friends see the same individual. *From: you. Said: 1×*

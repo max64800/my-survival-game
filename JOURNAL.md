@@ -1087,3 +1087,14 @@ Important pieces (workbench, smelter, anvil) can be redone later with a better t
   stone (or brick) backing cut exactly to the round opening, sitting just behind the blocks. Close-up photos of all three
   doorways with and without doors: `journey/kit_zone1/ingame_round_doors.jpg`. The Stonehold door is now dark planks,
   as the plan says.
+
+---
+
+## November 15, 2026 (Mac): pulled the PC's work, picture page for monsters and the building kit
+- **What we did:**
+  - Pulled the three PC Claudes' work (building code, Zone 1 kit, night-picture models, forged creatures). Nothing was left unsaved; no personal paths in the files.
+  - New picture page "Monsters and Building Kit" (private): https://claude.ai/artifact/RsSVR1FWp29aTnqXtv7x2t. Your creature pictures next to the 3D models in the game, plus the three house styles and the round doors.
+  - Updated the 3D viewer pages: "Dwarf Cave Creatures" now shows the 12 forged creatures (the old hand-built ones are gone, as in the game); "Dwarf Forge Models" got the last round-doorway fix (5 models).
+- **Hurdles / mistakes (including Claude's):**
+  - Claude's first convert command did nothing: the Mac's shell (zsh) does not split a list stored in one text variable. Fixed by using a proper list.
+  - Spotted while looking at the pictures: the spore Rock Beetle has a floating leg. Added as N1 under "Claude noticed, waiting for your OK".
