@@ -1,0 +1,3048 @@
+[
+ {
+  "model": "build/arch__clay_brick",
+  "verdict": "major",
+  "issues": [
+   "Not a real curved arch: square opening with tilted brick blocks jammed into the two top corners",
+   "Tilted corner bricks stick out at odd angles and look glued on (F59 said arches would be a curve of wedge stones)",
+   "Looks like the OLD plain style, not the Zone 1 Hearthbrick kit"
+  ],
+  "fix": "Rebuild as a true curve of wedge bricks meeting edge to edge, same kit as the round doorway"
+ },
+ {
+  "model": "build/arch__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "Same square-with-tilted-corner-blocks shape as the clay arch, not a curve",
+   "Corner stones angled and poking into the opening",
+   "Back face is much greyer than the front (two different colours on one piece)"
+  ],
+  "fix": "Rebuild as a curved ring of wedge stones; one calm grey family front and back"
+ },
+ {
+  "model": "build/arch__plank_root",
+  "verdict": "major",
+  "issues": [
+   "Wooden 'arch' is a box beam with tilted plank chunks stuck in the corners; looks random and unsupported",
+   "Black iron bands are perfect straight strips; whole piece reads as old plain style"
+  ],
+  "fix": "Make it a log lintel with two curved knee braces pegged/lashed into posts, like the Shack doorway"
+ },
+ {
+  "model": "build/arch_doorway__clay_brick",
+  "verdict": "major",
+  "issues": [
+   "Second doorway kind (there is also doorway__clay_brick): breaks round-doors-only rule F75",
+   "Sides are cream/white stone with red bricks only around the arch: white+red mix, not warm reds",
+   "Arch bricks are stair-stepped (jagged), not a smooth curve; white keystone pokes up above the top",
+   "Side view is a dark plain slab"
+  ],
+  "fix": "Delete this piece; keep only one round doorway per style"
+ },
+ {
+  "model": "build/arch_doorway__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "Second doorway kind (F75)",
+   "Black, white and brown stones all mixed: the 'too drastic' colours of F73",
+   "Arch stones are loose tilted boxes with gaps; keystone with an X sits above the outline",
+   "Small yellow bits poke out of the right edge; side view shows a flat grey untextured strip (backing showing)",
+   "Shimmer-prone doorway (F76 confirmed by layout)"
+  ],
+  "fix": "Delete; keep one round Stonehold doorway in calm greys"
+ },
+ {
+  "model": "build/arch_doorway__plank_root",
+  "verdict": "major",
+  "issues": [
+   "Second doorway kind and the opening is SQUARE (breaks round-doors-only)",
+   "Tilted plank chunks stuck across the top corners look random and floating"
+  ],
+  "fix": "Delete; keep one round Shack doorway"
+ },
+ {
+  "model": "build/banner__copper_ingot",
+  "verdict": "minor",
+  "issues": [
+   "Exactly the same model as banner__plank_root (no copper look at all, a pure duplicate)",
+   "Cloth is a perfectly flat sheet, one flat bright red; very saturated next to calm building colours"
+  ],
+  "fix": "Give copper banner copper rod/finials and trim, add a slight cloth sag and darker red shading"
+ },
+ {
+  "model": "build/banner__plank_root",
+  "verdict": "minor",
+  "issues": [
+   "Cloth is a perfectly flat sheet in one loud red",
+   "Identical to the copper banner"
+  ],
+  "fix": "Add a gentle wave/sag and a hand-painted pattern; wooden rod with rope ties"
+ },
+ {
+  "model": "build/barrel__plank_root",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "build/battlement__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "Black, white, brown and red-brown stones in one short wall (F73 too drastic)",
+   "Reddish wood-looking ledge between layers clashes",
+   "Small yellow-green bits stick out at the bottom edge (maybe moss, reads as poking)"
+  ],
+  "fix": "Repaint in one calm grey family with ~1 in 8 warm stones"
+ },
+ {
+  "model": "build/battlement_corner__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "Stack of four separate blocks in stripes: cream, brown, cream, black (very drastic)",
+   "Looks like stacked boxes, not a built stone corner"
+  ],
+  "fix": "Rebuild as interlocking grey corner stones matching the battlement wall"
+ },
+ {
+  "model": "build/beam__clay_brick",
+  "verdict": "minor",
+  "issues": [
+   "Same model as beam__cut_stone (reskin), a straight box timber",
+   "Perfect rectangle shape (F62 asked for no perfect rectangles)"
+  ],
+  "fix": "Give each family its own beam: Hearthbrick timber with brick-red end caps or brick lintel look"
+ },
+ {
+  "model": "build/beam__cut_stone",
+  "verdict": "minor",
+  "issues": [
+   "Wooden box beam identical to the clay_brick one: no Stonehold design",
+   "Perfect rectangle"
+  ],
+  "fix": "Make a stone or copper-banded Stonehold beam"
+ },
+ {
+  "model": "build/beam__plank_root",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "build/beam_half__clay_brick",
+  "verdict": "minor",
+  "issues": [
+   "Same box timber as cut_stone half beam (reskin)",
+   "Perfect rectangle, end caps look like separate blocks"
+  ],
+  "fix": "Match whatever new Hearthbrick beam design is chosen"
+ },
+ {
+  "model": "build/beam_half__cut_stone",
+  "verdict": "minor",
+  "issues": [
+   "Wooden box beam in Stonehold, identical to clay_brick half (reskin)"
+  ],
+  "fix": "Match new Stonehold beam design"
+ },
+ {
+  "model": "build/beam_half__plank_root",
+  "verdict": "ok",
+  "issues": [
+   "Rope bands look a bit thick (maybe)"
+  ],
+  "fix": ""
+ },
+ {
+  "model": "build/bench__cut_stone",
+  "verdict": "minor",
+  "issues": [
+   "Thin stone slab on thin stone legs with a thin stone stretcher bar: stone that thin would snap (not believable)",
+   "Plain straight-edged, old style"
+  ],
+  "fix": "Make it chunky: thick slab on two block legs, no stretcher"
+ },
+ {
+  "model": "build/bench__plank_root",
+  "verdict": "minor",
+  "issues": [
+   "Very plain, straight perfect boards; looks like the old simple style next to the new Shack kit (no rope, no logs)"
+  ],
+  "fix": "Add log legs, pegs or rope lashings like the Shack foundation"
+ },
+ {
+  "model": "build/brace__clay_brick",
+  "verdict": "ok",
+  "issues": [
+   "Very thin diagonal stick for 2 m; maybe too thin to read as structural"
+  ],
+  "fix": ""
+ },
+ {
+  "model": "build/brace__cut_stone",
+  "verdict": "minor",
+  "issues": [
+   "2.9 m long thin stone stick on a diagonal: physically impossible, stone would snap",
+   "Brown wood end caps on a stone brace look odd"
+  ],
+  "fix": "Make the Stonehold brace a wooden or copper-strapped timber, or a stone corbel"
+ },
+ {
+  "model": "build/brace__plank_root",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "build/ceiling_panel__clay_brick",
+  "verdict": "major",
+  "issues": [
+   "Very blotchy bricks: yellow, dark brown and red mixed (F74)",
+   "Has little feet underneath like a floor; a ceiling panel should not have legs"
+  ],
+  "fix": "Calm warm reds; reuse a clean floor kit without the feet, or with beams underneath"
+ },
+ {
+  "model": "build/ceiling_panel__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "White, black and brown tiles (F73)",
+   "Small feet underneath like a floor"
+  ],
+  "fix": "Calm grey tiles; underside beams instead of feet"
+ },
+ {
+  "model": "build/ceiling_panel__plank_root",
+  "verdict": "minor",
+  "issues": [
+   "Some planks noticeably paler/greyer than others",
+   "Round log ends poke out at the edges underneath"
+  ],
+  "fix": "Keep all planks warm brown; keep log ends inside the outline"
+ },
+ {
+  "model": "build/chair__plank_root",
+  "verdict": "ok",
+  "issues": [
+   "Plain style but sturdy; maybe add a peg or two to match Shack kit"
+  ],
+  "fix": ""
+ },
+ {
+  "model": "build/column__clay_brick",
+  "verdict": "major",
+  "issues": [
+   "column is plain white/grey marble stone, no clay brick at all; identical to the plank_root version (reskin of nothing)",
+   "Hearthbrick column should be warm red brick"
+  ],
+  "fix": "Build a red brick column with brick courses and a terracotta cap"
+ },
+ {
+  "model": "build/column__cut_stone",
+  "verdict": "minor",
+  "issues": [
+   "Perfectly round shaft with even ribs; brown stone tone differs from Stonehold walls' greys",
+   "Same shape as the other two columns (only recoloured)"
+  ],
+  "fix": "Make it chunkier/uneven; match Stonehold palette"
+ },
+ {
+  "model": "build/column__plank_root",
+  "verdict": "major",
+  "issues": [
+   "Shack column is white marble stone, not wood",
+   "Identical to column__clay_brick"
+  ],
+  "fix": "Make a rough log post with rope bands and a stone footing, like the Shack foundation legs"
+ },
+ {
+  "model": "build/column_base__clay_brick",
+  "verdict": "major",
+  "issues": [
+   "White stone, no brick: wrong material for Hearthbrick",
+   "Perfect circle on perfect square"
+  ],
+  "fix": "Red brick plinth"
+ },
+ {
+  "model": "build/column_base__cut_stone",
+  "verdict": "ok",
+  "issues": [
+   "Plain round-on-square; brown tone slightly off Stonehold greys (maybe)"
+  ],
+  "fix": ""
+ },
+ {
+  "model": "build/column_base__plank_root",
+  "verdict": "major",
+  "issues": [
+   "White stone base for the wooden Shack: wrong material, reskin of clay base"
+  ],
+  "fix": "Use the flat stone footing from the Shack foundation legs, or a log stump base"
+ },
+ {
+  "model": "build/column_capital__clay_brick",
+  "verdict": "major",
+  "issues": [
+   "White stone capital, no brick: wrong material"
+  ],
+  "fix": "Brick/terracotta capital"
+ },
+ {
+  "model": "build/column_capital__cut_stone",
+  "verdict": "ok",
+  "issues": [
+   "Little stud points around the rim look like spikes (maybe)"
+  ],
+  "fix": ""
+ },
+ {
+  "model": "build/column_capital__plank_root",
+  "verdict": "major",
+  "issues": [
+   "White stone capital on a wooden style: wrong material"
+  ],
+  "fix": "Wooden cap block / log crosspiece with rope"
+ },
+ {
+  "model": "build/column_shaft__clay_brick",
+  "verdict": "major",
+  "issues": [
+   "White stone, perfect cylinder: no clay brick, identical to plank_root shaft"
+  ],
+  "fix": "Red brick shaft"
+ },
+ {
+  "model": "build/column_shaft__cut_stone",
+  "verdict": "minor",
+  "issues": [
+   "Perfect cylinder with evenly spaced ribs (too perfect)"
+  ],
+  "fix": "Add wobble and uneven ribs"
+ },
+ {
+  "model": "build/column_shaft__plank_root",
+  "verdict": "major",
+  "issues": [
+   "White stone shaft for the wooden Shack: wrong material"
+  ],
+  "fix": "Log shaft with bark and rope bands"
+ },
+ {
+  "model": "build/crate__plank_root",
+  "verdict": "minor",
+  "issues": [
+   "Light grey/white slits show between the front and back planks (backing seen through gaps, Rule 3 says backing must be dark)",
+   "Black iron corner posts are perfectly straight"
+  ],
+  "fix": "Make the backing dark or close the plank gaps"
+ },
+ {
+  "model": "build/door__clay_brick",
+  "verdict": "ok",
+  "issues": [
+   "Dark green paint is unique among doors; fine if intended for Hearthbrick (maybe check with owner)"
+  ],
+  "fix": ""
+ },
+ {
+  "model": "build/door__copper_ingot",
+  "verdict": "major",
+  "issues": [
+   "SQUARE door: breaks round-doors-only rule (F75)",
+   "Planks use a rusty brick-like texture, does not read as copper",
+   "Thicker (0.27 m) than the other doors (0.16 m)"
+  ],
+  "fix": "Remove or rebuild as a round door with copper plates over wood"
+ },
+ {
+  "model": "build/door__cut_stone",
+  "verdict": "minor",
+  "issues": [
+   "Basically the Shack door in a darker brown (reskin, F60)"
+  ],
+  "fix": "Give the Stonehold door its own look: heavier planks with copper bands/studs and a stone-grey frame"
+ },
+ {
+  "model": "build/door__plank_root",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "build/doorway__clay_brick",
+  "verdict": "major",
+  "issues": [
+   "Checkerboard of white stone and red brick on the sides: harsh white/red mix",
+   "White keystone stands above the top line",
+   "Two Hearthbrick doorway kinds exist (with arch_doorway) (F75); shimmer reported on this one (F76)"
+  ],
+  "fix": "Warm red bricks with a few accents; one round doorway only; keep keystone inside the outline"
+ },
+ {
+  "model": "build/doorway__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "Drastic white/black/brown blocks (F73).",
+   "Arch wedge stones sit loose and tilted; the curve is jagged.",
+   "Small yellow-green bits poke out of the sides."
+  ],
+  "fix": "Calm greys; even ring of wedge stones cut to the round opening; nothing past the outline."
+ },
+ {
+  "model": "build/doorway__plank_root",
+  "verdict": "major",
+  "issues": [
+   "Square log frame with an arch of loose white stone blocks inside: stones in a wooden Shack, colour clash",
+   "Arch stones are separate tilted boxes with gaps, look stuck on, not touching each other cleanly",
+   "Lower stones on the sides reach the floor unevenly"
+  ],
+  "fix": "Make the round opening from bent planks or log segments; drop the white stones"
+ },
+ {
+  "model": "build/flat_roof__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "White, black and brown slabs (F73)",
+   "Wooden feet/pegs underneath, like the floor piece (a roof on legs?)"
+  ],
+  "fix": "Calm grey slabs; flat underside or beams; correct piece type (flat roof is allowed)"
+ },
+ {
+  "model": "build/floor__clay_brick",
+  "verdict": "major",
+  "issues": [
+   "Blotchy yellow, dark and red bricks (F74 confirmed)",
+   "Little feet under the floor"
+  ],
+  "fix": "Closer warm reds, ~1 in 8 accents"
+ },
+ {
+  "model": "build/floor__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "Black, white, brown tiles in big blocks (F73 confirmed)"
+  ],
+  "fix": "Calm greys with a few warm stones"
+ },
+ {
+  "model": "build/floor__plank_root",
+  "verdict": "major",
+  "issues": [
+   "Grey planks in the Shack floor (F78 confirmed)",
+   "Round log ends poke out past the edge underneath"
+  ],
+  "fix": "All planks warm brown; log ends inside the outline"
+ },
+ {
+  "model": "build/floor_half__clay_brick",
+  "verdict": "major",
+  "issues": [
+   "Old plain style: neat thin bricks on a big pale beige box base; does not match the full floor",
+   "Pale backing visible on all sides (Rule 3: backing must be dark and hidden)"
+  ],
+  "fix": "Rebuild as a half-size copy of the new floor__clay_brick"
+ },
+ {
+  "model": "build/floor_half__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "Old plain style: four flat grey tiles on a beige box; doesn't match the full Stonehold floor",
+   "Pale untextured sides"
+  ],
+  "fix": "Rebuild as half of the new floor__cut_stone (same layers and depth)"
+ },
+ {
+  "model": "build/floor_half__plank_root",
+  "verdict": "minor",
+  "issues": [
+   "Different from the full Shack floor: no nails, no log bearers, one dark plank stripe; two half floors next to a full one won't match"
+  ],
+  "fix": "Copy the full floor's plank/nail/log layout at half size"
+ },
+ {
+  "model": "build/floor_triangle__clay_brick",
+  "verdict": "major",
+  "issues": [
+   "Thick cream/white stone border around a small red brick centre: white+red mix, unlike the full brick floor",
+   "Border looks like a separate frame; F77 'bricks past the edge' maybe now hidden by this border rather than fixed"
+  ],
+  "fix": "Cut red bricks to the triangle edge, thin brick edging, no white border"
+ },
+ {
+  "model": "build/floor_triangle__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "Black, white and brown stones (F73)",
+   "Stones look jumbled and overlapping at the corners (maybe poking past edge)"
+  ],
+  "fix": "Calm greys, stones cut to the triangle"
+ },
+ {
+  "model": "build/floor_triangle__plank_root",
+  "verdict": "major",
+  "issues": [
+   "Planks are stair-stepped along the long edge instead of cut to the triangle (Rule 3)",
+   "A grey stone/dark block sits at one corner, poking out",
+   "Size 1.81 x 1.53 m doesn't match the other triangles (2.00 x 1.73)"
+  ],
+  "fix": "Cut planks at the triangle angle; match 2.00 x 1.73 m"
+ },
+ {
+  "model": "build/foundation__clay_brick",
+  "verdict": "major",
+  "issues": [
+   "Cream/white corner bricks plus red bricks: harsh mix (F74)",
+   "Arched holes on every side show a flat grey backing panel inside",
+   "Top is a messy cut-up brick pattern (F80 confirmed)"
+  ],
+  "fix": "Warm red brick foundation, solid or dark-filled arches, clean top course"
+ },
+ {
+  "model": "build/foundation__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "Black, white, brown, cream stones (F73)",
+   "Side views show plain untextured beige blocks (backing/frame visible as a strange colour)",
+   "2.12 m wide: sticks past the 2 m grid (maybe overlaps neighbours)"
+  ],
+  "fix": "Calm greys, textured all round, keep inside 2 m"
+ },
+ {
+  "model": "build/foundation__plank_root",
+  "verdict": "ok",
+  "issues": [
+   "Grey-ish plank tone on deck maybe; otherwise nice log stilts, rope, stone footings"
+  ],
+  "fix": ""
+ },
+ {
+  "model": "build/foundation_half__clay_brick",
+  "verdict": "major",
+  "issues": [
+   "Same white+red mix and arch holes as the full foundation",
+   "Side view: a red brick strip between plain white stone columns looks pasted on"
+  ],
+  "fix": "Match fixed full foundation"
+ },
+ {
+  "model": "build/foundation_half__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "Black/white/brown stones (F73)",
+   "Side view shows flat untextured beige panels (backing showing)",
+   "2.12 m wide past grid"
+  ],
+  "fix": "Calm greys, texture all faces, fit inside outline"
+ },
+ {
+  "model": "build/foundation_half__plank_root",
+  "verdict": "minor",
+  "issues": [
+   "A grey plank in the deck (like F78)"
+  ],
+  "fix": "Warm brown planks only"
+ },
+ {
+  "model": "build/foundation_steps__clay_brick",
+  "verdict": "minor",
+  "issues": [
+   "Cream/white stone treads on red brick: white+red mix"
+  ],
+  "fix": "Brick or terracotta tread caps in warm tones"
+ },
+ {
+  "model": "build/foundation_steps__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "Steps alternate black and white: zebra stripes, very drastic",
+   "Side view shows plain untextured beige blocks"
+  ],
+  "fix": "One calm grey family, textured sides"
+ },
+ {
+  "model": "build/foundation_steps__plank_root",
+  "verdict": "minor",
+  "issues": [
+   "2.14 m wide, past the 2 m grid",
+   "Open stairs are nice; legs on stone footings fine"
+  ],
+  "fix": "Trim to 2.0 m"
+ },
+ {
+  "model": "build/foundation_triangle__clay_brick",
+  "verdict": "major",
+  "issues": [
+   "White stone corner blocks and white rim with red bricks: harsh mix",
+   "Rim stones overhang past the brick walls; 2.11 x 1.88 m is bigger than the 2.00 x 1.73 triangle",
+   "Arched holes show grey backing"
+  ],
+  "fix": "Cut to the triangle outline; warm reds; dark or filled openings"
+ },
+ {
+  "model": "build/foundation_triangle__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "Black/white/brown stones (F73)",
+   "2.11 x 1.88 m: pokes past the triangle; top rim stones stick out at corners"
+  ],
+  "fix": "Calm greys; keep inside outline"
+ },
+ {
+  "model": "build/foundation_triangle__plank_root",
+  "verdict": "major",
+  "issues": [
+   "Grey planks in deck",
+   "Planks stair-step along the long edge, not cut to the triangle"
+  ],
+  "fix": "Cut planks at the angle; warm brown only"
+ },
+ {
+  "model": "build/gable_26__clay_brick",
+  "verdict": "minor",
+  "issues": [
+   "Pale stone coping on top extends past the bottom-left corner of the outline (pokes out)",
+   "Some yellow/dark bricks (F74)"
+  ],
+  "fix": "Keep coping inside outline; calmer bricks; consider terracotta coping"
+ },
+ {
+  "model": "build/gable_26__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "Stonehold must not have gables (Rule 4, F79)",
+   "Wooden plank coping and flat untextured side face"
+  ],
+  "fix": "Remove from Stonehold build menu and models"
+ },
+ {
+  "model": "build/gable_26__plank_root",
+  "verdict": "minor",
+  "issues": [
+   "Some grey planks in the infill",
+   "Triangle frame is fine, but infill planks look like flat stripes"
+  ],
+  "fix": "Warm brown planks only"
+ },
+ {
+  "model": "build/gable_45__clay_brick",
+  "verdict": "minor",
+  "issues": [
+   "Round vent hole has jagged, uneven brick edges (maybe intended)",
+   "Pale coping pokes past the outline at the bottom"
+  ],
+  "fix": "Neater round vent ring; coping inside the outline"
+ },
+ {
+  "model": "build/gable_45__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "Stonehold must not have gables (Rule 4)",
+   "Flat untextured side"
+  ],
+  "fix": "Remove"
+ },
+ {
+  "model": "build/gable_45__plank_root",
+  "verdict": "minor",
+  "issues": [
+   "Alternating grey and orange planks make loud stripes (grey planks again)"
+  ],
+  "fix": "Warm brown planks only"
+ },
+ {
+  "model": "build/half_wall__clay_brick",
+  "verdict": "minor",
+  "issues": [
+   "Cream/white zig-zag corner bricks at both ends against dark red: white+red mix",
+   "Side face plain stone"
+  ],
+  "fix": "Use darker brick or terracotta quoins, ~1 in 8 accents"
+ },
+ {
+  "model": "build/half_wall__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "Colours too drastic: white, near-black and dark brown blocks side by side (confirms F73)",
+   "Small green/yellow slivers poke out under the bottom edge (moss bits past the outline)",
+   "Side/end face is a flat plain beige slab with no stone texture (old style)"
+  ],
+  "fix": "Calm greys with 1 in 8 warm stones; remove the poking moss bits; give the end faces real stones."
+ },
+ {
+  "model": "build/half_wall__plank_root",
+  "verdict": "minor",
+  "issues": [
+   "Round log ends at the bottom corners poke below and past the piece outline",
+   "One plank has a pale grey edge strip in the middle of the panel"
+  ],
+  "fix": "Trim the bottom log ends to the outline and recolour the grey plank warm brown."
+ },
+ {
+  "model": "build/ladder__clay_brick",
+  "verdict": "major",
+  "issues": [
+   "Same plain ladder as the other two, just painted brick-red: a reskin (F60)",
+   "A wooden ladder textured like brick makes no sense; perfectly straight rungs and rails (old plain style)"
+  ],
+  "fix": "Give Hearthbrick its own ladder (e.g. wood ladder with terracotta/limestone brackets) or share one wooden ladder for all styles."
+ },
+ {
+  "model": "build/ladder__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "Reskin of the same ladder, textured as pale stone",
+   "A 10 cm thick stone ladder with thin stone rungs is physically impossible",
+   "Pegs/nails stick out of the side rails in the side view"
+  ],
+  "fix": "Make it a wood ladder with iron/stone fittings, or iron rungs set in a stone frame, in the Stonehold kit style."
+ },
+ {
+  "model": "build/ladder__plank_root",
+  "verdict": "minor",
+  "issues": [
+   "Too perfect: straight square rails and rungs, no wobble or lashing like the Shack wall/railing (old plain style)",
+   "Peg heads stick out of the rail sides"
+  ],
+  "fix": "Rough log rails with rope-lashed rungs to match the Shack kit."
+ },
+ {
+  "model": "build/mine_prop__clay_brick",
+  "verdict": "major",
+  "issues": [
+   "Identical to the cut_stone and plank_root mine props (not even recoloured): no Hearthbrick design at all",
+   "Plain straight boxes (old plain style); black diagonal straps look like flat stickers"
+  ],
+  "fix": "Either one shared wooden mine prop for all styles, or a brick/limestone version in the Hearthbrick kit."
+ },
+ {
+  "model": "build/mine_prop__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "Identical copy of the other mine props, all wood, no stone at all",
+   "Plain perfect boxes, old style"
+  ],
+  "fix": "Stone-footed timber prop with copper bands in the Stonehold kit, or merge into one shared piece."
+ },
+ {
+  "model": "build/mine_prop__plank_root",
+  "verdict": "minor",
+  "issues": [
+   "Perfect square beams with no wobble, rope or log look like the new Shack kit",
+   "Black diagonal straps look painted on, not like iron that holds anything"
+  ],
+  "fix": "Rough log posts and lintel with rope lashing/iron cleats that wrap the joint."
+ },
+ {
+  "model": "build/pillar__clay_brick",
+  "verdict": "minor",
+  "issues": [
+   "Brick colours blotchy with yellow/dark bricks (F74)",
+   "Bricks look slightly uneven past the outline just under the top cap (maybe)"
+  ],
+  "fix": "Warmer, closer reds; trim bricks inside the cap outline."
+ },
+ {
+  "model": "build/pillar__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "Stack of mismatched blocks: grey-brown cap, black block, white, a brown band, black again: very drastic colours",
+   "Reads as random blocks piled up rather than a column"
+  ],
+  "fix": "Calm grey drums of similar size with one copper band; drop the black and brown blocks."
+ },
+ {
+  "model": "build/pillar__plank_root",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "build/railing__clay_brick",
+  "verdict": "major",
+  "issues": [
+   "Jagged wedge bricks stick into the three arched openings (messy, poking past the arch outline)",
+   "Brick colours blotchy"
+  ],
+  "fix": "Cut a clean wedge-brick arch (like the F59 arch fix) and calm the reds."
+ },
+ {
+  "model": "build/railing__cut_stone",
+  "verdict": "minor",
+  "issues": [
+   "Frame is a perfect rectangle with a thin flat top rail; balusters look very regular"
+  ],
+  "fix": "Add wobble/chips to the frame and vary the balusters a little."
+ },
+ {
+  "model": "build/railing__plank_root",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "build/ramp__clay_brick",
+  "verdict": "minor",
+  "issues": [
+   "A filled wedge with a red cobble texture and raised strips: no real bricks, old plain style",
+   "Back face is a flat dark slab"
+  ],
+  "fix": "Build the slope from laid bricks with limestone edging, like the Hearthbrick stairs."
+ },
+ {
+  "model": "build/ramp__cut_stone",
+  "verdict": "minor",
+  "issues": [
+   "Filled textured wedge (old plain style); back face much darker than the top (colour jump)",
+   "Wooden tread strips on a stone ramp may look out of place"
+  ],
+  "fix": "Lay real stone slabs on the slope and keep one calm grey tone all round."
+ },
+ {
+  "model": "build/ramp__plank_root",
+  "verdict": "minor",
+  "issues": [
+   "Filled wooden wedge with flat plank texture; no log frame or rope like the Shack kit"
+  ],
+  "fix": "Plank deck on log stringers, open or log-faced at the sides."
+ },
+ {
+  "model": "build/roof_26__clay_brick",
+  "verdict": "minor",
+  "issues": [
+   "Half-round tiles at this size read as rows of round logs (owner: tiles never logs)"
+  ],
+  "fix": "Make tiles tapered, overlapping S-curves with visible ends, not full cylinders."
+ },
+ {
+  "model": "build/roof_26__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "Stonehold must have flat roofs only: this sloped roof should not exist (F79)",
+   "It is a filled stepped block, not a thin panel; black gaps between steps"
+  ],
+  "fix": "Delete it and remove it from the build menu for cut_stone."
+ },
+ {
+  "model": "build/roof_26__plank_root",
+  "verdict": "minor",
+  "issues": [
+   "Shingles patchy: dark and light squares like a checkerboard"
+  ],
+  "fix": "Smaller colour variation between shingles, random not blocky."
+ },
+ {
+  "model": "build/roof_26_inner__clay_brick",
+  "verdict": "major",
+  "issues": [
+   "Tiles look like logs and cross over each other along the valley (confirms F80)",
+   "Valley is covered by a log lying on top instead of tiles dipping into a gutter"
+  ],
+  "fix": "Cut tiles cleanly to the valley line on both sides and use a sunken valley channel, no log."
+ },
+ {
+  "model": "build/roof_26_inner__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "Sloped roof corner for Stonehold breaks the flat-roof rule",
+   "Filled solid block, not a thin open panel"
+  ],
+  "fix": "Delete it and remove it from the cut_stone menu."
+ },
+ {
+  "model": "build/roof_26_inner__plank_root",
+  "verdict": "minor",
+  "issues": [
+   "A log lies on top of the valley (an inner corner should dip, not have a beam on top)",
+   "Shingles patchy light/dark squares"
+  ],
+  "fix": "Replace the top log with shingles meeting in a valley; even out shingle colours."
+ },
+ {
+  "model": "build/roof_26_outer__clay_brick",
+  "verdict": "minor",
+  "issues": [
+   "Tiles read as logs; tile rows end in a jagged stair-step under the hip log",
+   "Small spike finial on the top end looks odd"
+  ],
+  "fix": "Cut tiles to the hip line and use a proper ridge-tile hip cap."
+ },
+ {
+  "model": "build/roof_26_outer__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "Sloped roof corner for Stonehold breaks the flat-roof rule",
+   "Filled pyramid, not a thin panel"
+  ],
+  "fix": "Delete it and remove it from the cut_stone menu."
+ },
+ {
+  "model": "build/roof_26_outer__plank_root",
+  "verdict": "major",
+  "issues": [
+   "Shingle rows stop in steps along the hip log, leaving gaps/holes along the ridge (confirms F80)",
+   "Patchy checkerboard shingle colours"
+  ],
+  "fix": "Cut shingles to the hip line on both faces so they meet under the hip log with no gaps."
+ },
+ {
+  "model": "build/roof_26_ridge__clay_brick",
+  "verdict": "ok",
+  "issues": [
+   "Maybe: no separate ridge-cap tiles along the top"
+  ],
+  "fix": "Optional: add a row of ridge-cap tiles."
+ },
+ {
+  "model": "build/roof_26_ridge__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "Sloped ridge for Stonehold breaks the flat-roof rule",
+   "Filled block with a wooden ridge cap"
+  ],
+  "fix": "Delete it and remove it from the cut_stone menu."
+ },
+ {
+  "model": "build/roof_26_ridge__plank_root",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "build/roof_45__clay_brick",
+  "verdict": "minor",
+  "issues": [
+   "Same log-looking round tiles as the 26-degree version"
+  ],
+  "fix": "Tapered S-curve tiles."
+ },
+ {
+  "model": "build/roof_45__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "Sloped roof for Stonehold breaks the flat-roof rule",
+   "Filled 2 m stepped wedge with black gaps, not a thin panel"
+  ],
+  "fix": "Delete it and remove it from the cut_stone menu."
+ },
+ {
+  "model": "build/roof_45__plank_root",
+  "verdict": "minor",
+  "issues": [
+   "Patchy shingle colours; some long dark crack lines across the shingles"
+  ],
+  "fix": "Even out shingle colours and drop the long crack lines."
+ },
+ {
+  "model": "build/roof_45_inner__clay_brick",
+  "verdict": "major",
+  "issues": [
+   "Tiles look like logs and cross each other along the valley (same as F80 on the 26-degree one)",
+   "A log lies on top of the valley"
+  ],
+  "fix": "Cut tiles to the valley line; sunken valley, no log."
+ },
+ {
+  "model": "build/roof_45_inner__plank_root",
+  "verdict": "minor",
+  "issues": [
+   "A log lies on top of the valley instead of a dip",
+   "Patchy shingle colours"
+  ],
+  "fix": "Shingles meeting in a valley, no top log."
+ },
+ {
+  "model": "build/roof_45_outer__clay_brick",
+  "verdict": "minor",
+  "issues": [
+   "Log-looking tiles end in a jagged stair-step under the hip log",
+   "Spike finial on top"
+  ],
+  "fix": "Cut tiles to the hip and use hip-cap tiles."
+ },
+ {
+  "model": "build/roof_45_outer__plank_root",
+  "verdict": "minor",
+  "issues": [
+   "Shingle rows step along the hip log; maybe small gaps like F80",
+   "Patchy shingle colours"
+  ],
+  "fix": "Cut shingles to the hip line on both faces, check from above for holes."
+ },
+ {
+  "model": "build/roof_45_ridge__clay_brick",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "build/roof_45_ridge__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "Sloped ridge for Stonehold breaks the flat-roof rule",
+   "Filled solid block with a wooden cap"
+  ],
+  "fix": "Delete it and remove it from the cut_stone menu."
+ },
+ {
+  "model": "build/roof_45_ridge__plank_root",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "build/rug__plank_root",
+  "verdict": "minor",
+  "issues": [
+   "Perfect flat rectangle with plain nested rectangles of flat colour",
+   "Fringe tassels are tiny dots, only visible on the short ends"
+  ],
+  "fix": "Uneven edges, a woven/fur pattern and a slight wrinkle; thicker tassels."
+ },
+ {
+  "model": "build/shelf__plank_root",
+  "verdict": "minor",
+  "issues": [
+   "Plain box bookcase with perfect boxes and cylinders (old plain style, no logs/rope like the Shack kit)",
+   "Back is a flat very dark slab"
+  ],
+  "fix": "Rough planks on log uprights with rope or pegs; more varied clutter."
+ },
+ {
+  "model": "build/sloped_wall__clay_brick",
+  "verdict": "minor",
+  "issues": [
+   "Bricks blotchy with yellow and very dark bricks (F74)",
+   "Brick grid very regular"
+  ],
+  "fix": "Closer warm reds; slight brick wobble."
+ },
+ {
+  "model": "build/sloped_wall__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "Drastic white/black/brown stones (F73); plain grey side face."
+  ],
+  "fix": "Calm greys; textured sides."
+ },
+ {
+  "model": "build/sloped_wall__plank_root",
+  "verdict": "minor",
+  "issues": [
+   "One grey plank (F78)."
+  ],
+  "fix": "All warm planks."
+ },
+ {
+  "model": "build/small_floor__clay_brick",
+  "verdict": "major",
+  "issues": [
+   "Old style: bricks on a big pale beige box whose plain sides show."
+  ],
+  "fix": "Rebuild like the new Hearthbrick floor, cut to 1x1 m, no pale box."
+ },
+ {
+  "model": "build/small_floor__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "Old plain style: a flat untextured beige box with four stone tiles inset on top",
+   "Sides are flat single-colour (one side grey, one beige); perfect box"
+  ],
+  "fix": "Rebuild as real stone slabs with chipped edges, matching the Stonehold floor."
+ },
+ {
+  "model": "build/small_floor__plank_root",
+  "verdict": "minor",
+  "issues": [
+   "One plank noticeably darker; very clean box planks"
+  ],
+  "fix": "Even the plank colour and add wobble."
+ },
+ {
+  "model": "build/stairs__clay_brick",
+  "verdict": "minor",
+  "issues": [
+   "Solid filled block; bricks blotchy",
+   "Pale limestone treads and side contrast strongly with the dark bricks (maybe fine as trim)"
+  ],
+  "fix": "Calmer reds; keep limestone only as tread nosing."
+ },
+ {
+  "model": "build/stairs__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "Very drastic colours: black bottom tread, black blocks, white and brown blocks (F73)",
+   "Side faces are flat untextured beige panels (old style)"
+  ],
+  "fix": "Calm grey stones, textured sides, no black tread."
+ },
+ {
+  "model": "build/stairs__plank_root",
+  "verdict": "minor",
+  "issues": [
+   "Grey treads alternate with orange ones: grey planks in the Shack (same as F78)",
+   "Bottom treads overhang the log stringer in the side view (maybe not resting on it)"
+  ],
+  "fix": "All warm brown treads, each sitting fully on both stringers."
+ },
+ {
+  "model": "build/table__cut_stone",
+  "verdict": "minor",
+  "issues": [
+   "Thin stone stretcher bars between the legs are physically unlikely",
+   "Black flat disc on the top is a perfect circle and odd colour"
+  ],
+  "fix": "Thicker stone or wood stretchers; make the disc a chipped clay plate."
+ },
+ {
+  "model": "build/table__plank_root",
+  "verdict": "minor",
+  "issues": [
+   "Black flat disc on the top is a perfect circle and odd colour"
+  ],
+  "fix": "Swap for a wooden bowl/plate with a rim."
+ },
+ {
+  "model": "build/wall__clay_brick",
+  "verdict": "minor",
+  "issues": [
+   "Bricks blotchy with yellow and very dark bricks (confirms F74)"
+  ],
+  "fix": "Closer warm reds, about 1 in 8 accent bricks."
+ },
+ {
+  "model": "build/wall__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "Drastic colours: black, dark brown, white and beige blocks mixed (confirms F73)",
+   "Tiny yellow-green bits poke out of the mortar lines"
+  ],
+  "fix": "Calm greys with a few warm stones; remove the poking bits."
+ },
+ {
+  "model": "build/wall__plank_root",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "build/wall_narrow__clay_brick",
+  "verdict": "major",
+  "issues": [
+   "Old style: no limestone corner stones like wall__clay_brick, so two side by side won't match",
+   "Side face is mostly flat untextured grey; top shows a messy cut-brick pattern"
+  ],
+  "fix": "Rebuild from the same kit as wall__clay_brick (limestone quoins, brick to the edge)."
+ },
+ {
+  "model": "build/wall_narrow__cut_stone",
+  "verdict": "minor",
+  "issues": [
+   "Side faces have flat untextured beige patches",
+   "Calm colours here do not match the drastic full wall (siblings mismatch; this one is closer to the target)"
+  ],
+  "fix": "Texture the side faces; use this palette for all Stonehold walls."
+ },
+ {
+  "model": "build/wall_narrow__plank_root",
+  "verdict": "major",
+  "issues": [
+   "Old style: a framed plank panel with no corner logs or rope like wall__plank_root",
+   "Will not line up visually next to the full Shack wall"
+  ],
+  "fix": "Rebuild with the Shack kit: log posts, rope ties, vertical planks."
+ },
+ {
+  "model": "build/wall_sconce__copper_ingot",
+  "verdict": "minor",
+  "issues": [
+   "Backplate is a plain flat near-black slab (odd colour, perfect rectangle)",
+   "Same shape as the cut_stone sconce, only recoloured (reskin)"
+  ],
+  "fix": "Copper backplate with rivets and a scroll bracket so it looks fancier than the stone one."
+ },
+ {
+  "model": "build/wall_sconce__cut_stone",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "build/wall_shield__copper_ingot",
+  "verdict": "minor",
+  "issues": [
+   "Identical to the plank_root shield except the rim colour (reskin)",
+   "The two crossed bars are plain black straight sticks that read like an 'X' crossing it out"
+  ],
+  "fix": "Copper boss and rivets, and crossed axes/swords behind it instead of bars."
+ },
+ {
+  "model": "build/wall_shield__plank_root",
+  "verdict": "minor",
+  "issues": [
+   "Crossed bars are plain black straight sticks (look like an 'X', not weapons)",
+   "Shield is a perfect circle"
+  ],
+  "fix": "Crossed weapons or a wooden hanger; wobble the rim."
+ },
+ {
+  "model": "build/weapon_rack__plank_root",
+  "verdict": "minor",
+  "issues": [
+   "Spears lean at angles that maybe pass through the crossbar instead of resting in notches",
+   "Small black square hangs on the right post with no clear hook (looks floating)",
+   "Plain square beams (old plain style)"
+  ],
+  "fix": "Notched crossbar holding the spears upright; hang the black item on a peg; log uprights with rope."
+ },
+ {
+  "model": "build/window_wall__clay_brick",
+  "verdict": "major",
+  "issues": [
+   "Jagged wedge bricks around the arch poke into the window opening (messy outline)",
+   "Sill pokes past the wall outline in the side view (maybe)",
+   "Bricks blotchy"
+  ],
+  "fix": "Clean wedge-brick arch cut to the opening; keep the sill inside the outline."
+ },
+ {
+  "model": "build/window_wall__cut_stone",
+  "verdict": "major",
+  "issues": [
+   "Drastic colours: black, brown and white blocks (F73)",
+   "Yellow-green slivers poke out of the left and right edges"
+  ],
+  "fix": "Calm greys, remove the poking bits."
+ },
+ {
+  "model": "build/window_wall__plank_root",
+  "verdict": "minor",
+  "issues": [
+   "Grey plank panels/shutters beside the window (grey planks in the Shack, like F78)",
+   "Shutters lie flat on the wall; maybe flush surfaces could shimmer"
+  ],
+  "fix": "Warm brown shutters held 1 cm off the wall on hinges."
+ },
+ {
+  "model": "build/window_wide__clay_brick",
+  "verdict": "major",
+  "issues": [
+   "Old style: wooden box frame in brick, no limestone quoins like wall__clay_brick / window_wall__clay_brick",
+   "Side face flat untextured grey; top shows pale cut-brick mess"
+  ],
+  "fix": "Rebuild from the Hearthbrick kit (limestone quoins, lintel, sill)."
+ },
+ {
+  "model": "build/window_wide__cut_stone",
+  "verdict": "minor",
+  "issues": [
+   "Does not match its siblings (plain light stone, no copper/wood trim like window_wall__cut_stone)",
+   "Side face partly untextured"
+  ],
+  "fix": "Rebuild with the Stonehold kit and the calm grey palette."
+ },
+ {
+  "model": "build/window_wide__plank_root",
+  "verdict": "major",
+  "issues": [
+   "Old style: plain vertical planks with square frame, no logs or rope like wall__plank_root / window_wall__plank_root"
+  ],
+  "fix": "Rebuild with the Shack kit: log posts, rope, plank infill."
+ },
+ {
+  "model": "decor/banner_anvil",
+  "verdict": "major",
+  "issues": [
+   "Old plain style: flat smooth cloth, flat single colour",
+   "Anvil emblem is a 3D white triangle + box that sticks far out sideways (seen in side view)",
+   "Banner on a floor stake instead of hanging"
+  ],
+  "fix": "Paint the emblem onto the cloth (or stitch it flat), add cloth folds/fraying, hang from a wall or ceiling bar."
+ },
+ {
+  "model": "decor/banner_landscape",
+  "verdict": "major",
+  "issues": [
+   "Same as banner_anvil: flat cloth, emblem triangles poke far out of the cloth in side view",
+   "Abstract triangles do not read as a landscape"
+  ],
+  "fix": "Paint a mountain/cave picture flat on the cloth with folds; same fix as banner_anvil."
+ },
+ {
+  "model": "decor/bat_trophy",
+  "verdict": "major",
+  "issues": [
+   "Bat is a faceted ball with flat pink triangle wings, old low-poly style",
+   "Wings stick out past the board edges",
+   "Wall trophy stands on a floor stake"
+  ],
+  "fix": "Rebuild the bat in the creature style (match the game's bat), sized to the board, make it a wall piece."
+ },
+ {
+  "model": "decor/beam_1m",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "decor/beam_2m",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "decor/beam_2m_26",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "decor/beam_2m_45",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "decor/brace_corner",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "decor/brazier",
+  "verdict": "minor",
+  "issues": [
+   "Bowl is a perfect smooth black cone, flat colour",
+   "Thin wooden legs under a fire bowl (would burn)",
+   "Coals are flat pale chips, no glow/flame"
+  ],
+  "fix": "Iron bowl with rim dents and rivets on iron legs, heaped glowing coals."
+ },
+ {
+  "model": "decor/candle_cluster",
+  "verdict": "minor",
+  "issues": [
+   "Candles are perfect white cylinders with no flames",
+   "Hardly any wax drips"
+  ],
+  "fix": "Uneven candle heights with melted tops, drips onto the base, small flames."
+ },
+ {
+  "model": "decor/chandelier",
+  "verdict": "minor",
+  "issues": [
+   "A chandelier standing on a floor pole (reads as a maypole); chandeliers hang",
+   "Candles are thin white sticks"
+  ],
+  "fix": "Hang it from a chain (ceiling piece) or rename to a standing candelabra with thicker candles."
+ },
+ {
+  "model": "decor/cheese_shelf",
+  "verdict": "minor",
+  "issues": [
+   "Cheese wheels are perfect smooth pale cylinders",
+   "Maybe: cheese wheels poke through the right side board (3/4 view)"
+  ],
+  "fix": "Uneven wheels with rind colour and a cut wedge; keep them inside the shelf."
+ },
+ {
+  "model": "decor/crate_stack",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "decor/crossed_pickaxes",
+  "verdict": "major",
+  "issues": [
+   "Pickaxe heads are straight flat black bars, do not read as pickaxes",
+   "Heads stick out above the board",
+   "Wall plaque on a floor stake"
+  ],
+  "fix": "Curved pointed pick heads within the board outline; make it a wall piece."
+ },
+ {
+  "model": "decor/crystal_lamp_post",
+  "verdict": "minor",
+  "issues": [
+   "Crystal is a perfect white hexagonal prism"
+  ],
+  "fix": "Uneven tinted crystal cluster."
+ },
+ {
+  "model": "decor/firefly_jar",
+  "verdict": "major",
+  "issues": [
+   "Solid cream-coloured smooth jar: no glass, no fireflies visible",
+   "Old smooth style, flat single colour"
+  ],
+  "fix": "See-through glass jar with glowing dots inside, cork and string tie."
+ },
+ {
+  "model": "decor/firewood_rack",
+  "verdict": "minor",
+  "issues": [
+   "Logs are identical octagons in a perfect grid",
+   "Maybe: log ends overlap the side posts in the front view"
+  ],
+  "fix": "Vary log size, shape and bark; keep logs inside the frame."
+ },
+ {
+  "model": "decor/fossil_plaque",
+  "verdict": "minor",
+  "issues": [
+   "Wall plaque on a floor stake"
+  ],
+  "fix": "Make it a wall piece (flat back) like the tool rack."
+ },
+ {
+  "model": "decor/glow_trellis",
+  "verdict": "major",
+  "issues": [
+   "Lattice only fills the lower half; leaves at the top float in empty air",
+   "Leaves are not joined by any vine stems"
+  ],
+  "fix": "Run lattice to the top and grow a vine stem through it that every leaf attaches to."
+ },
+ {
+  "model": "decor/grain_sacks",
+  "verdict": "minor",
+  "issues": [
+   "Sacks are faceted low-poly white lumps (old style, Play-Doh look)",
+   "Flat off-white colour"
+  ],
+  "fix": "Burlap sacks with weave texture, folds, tied necks and a darker tan colour."
+ },
+ {
+  "model": "decor/hanging_basket",
+  "verdict": "ok",
+  "issues": [
+   "Plain but attached"
+  ],
+  "fix": ""
+ },
+ {
+  "model": "decor/hanging_herbs",
+  "verdict": "major",
+  "issues": [
+   "Herb bundles are smooth pastel cones (purple, pink, mint) that look like paper umbrellas, not herbs",
+   "Odd candy colours",
+   "Small extra block halfway up the side post (side view)"
+  ],
+  "fix": "Leafy dried bundles in greens/browns tied with string; remove or explain the side block."
+ },
+ {
+  "model": "decor/hanging_lantern",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "decor/hearth_bed",
+  "verdict": "major",
+  "issues": [
+   "Pastel candy-stripe blanket on a dark lumpy brown layer that looks like rubble",
+   "Arch bricks on the headboard have gaps and look loose",
+   "Mint-green posts clash with red brick"
+  ],
+  "fix": "Warm woven blanket in brick-family colours, solid mattress, arch bricks touching each other."
+ },
+ {
+  "model": "decor/hearth_chair",
+  "verdict": "minor",
+  "issues": [
+   "Very dark green, almost black, with a flat salmon cushion: odd colour mix",
+   "Back is a perfect rounded rectangle"
+  ],
+  "fix": "Lighter painted wood, cushion with folds, uneven back shape."
+ },
+ {
+  "model": "decor/hearth_dresser",
+  "verdict": "minor",
+  "issues": [
+   "Plates are perfect flat white discs",
+   "Near-black green body with a bright orange top clashes; back is a flat dark slab"
+  ],
+  "fix": "Plates with rims and patterns, calmer body colour matching Hearthbrick wood."
+ },
+ {
+  "model": "decor/hearth_fireplace",
+  "verdict": "major",
+  "issues": [
+   "Bricks are strict alternating red and pale stripes (too stripey/blotchy, same as owner's Hearthbrick note)",
+   "Opening is filled with bricks from the front; the back shows a black hole, so it may be facing the wrong way",
+   "No fire, logs or hearth floor"
+  ],
+  "fix": "Calm brick colours, open firebox on the front side with logs and embers."
+ },
+ {
+  "model": "decor/hearth_planter",
+  "verdict": "major",
+  "issues": [
+   "Dark soil disc sticks out past both sides of the planter (side view)",
+   "Mushrooms sit on the stone top, not in soil",
+   "Green blobs stuck on the front face"
+  ],
+  "fix": "Sink the soil inside the box with a rim, plant mushrooms in it, attach the leaves to stems."
+ },
+ {
+  "model": "decor/hearth_pot_rack",
+  "verdict": "minor",
+  "issues": [
+   "Dark green block on top looks unrelated",
+   "Frying pan is a flat black disc"
+  ],
+  "fix": "Wooden or iron top bar matching the posts; give the pan a rim and handle shape."
+ },
+ {
+  "model": "decor/hearth_rug",
+  "verdict": "minor",
+  "issues": [
+   "Perfect concentric circles like a target, pale pastel colours"
+  ],
+  "fix": "Braided oval rug with uneven rings in warm reds/browns."
+ },
+ {
+  "model": "decor/hearth_table",
+  "verdict": "minor",
+  "issues": [
+   "Dark green top on a brick column clashes",
+   "Column bricks mix red and pale (blotchy)"
+  ],
+  "fix": "Wood top in Hearthbrick wood colour; calm brick colours."
+ },
+ {
+  "model": "decor/horn_plaque",
+  "verdict": "major",
+  "issues": [
+   "Horn is a perfect pure-white cone sticking straight out",
+   "Horn tip shows as a white disc through the back of the board",
+   "Wall plaque on a floor stake"
+  ],
+  "fix": "Curved, ridged horn in bone colours, mounted to the front only, wall piece."
+ },
+ {
+  "model": "decor/keg",
+  "verdict": "minor",
+  "issues": [
+   "Metal hoops stand proud of the keg like separate rings (F61 issue)",
+   "Body is almost a straight cylinder, no bulge"
+  ],
+  "fix": "Bulge the staves and wrap the hoops flush on the surface."
+ },
+ {
+  "model": "decor/map_board",
+  "verdict": "minor",
+  "issues": [
+   "Map is a blank cream sheet with three lines",
+   "Wall board on a floor stake"
+  ],
+  "fix": "Paint a real map (tunnels, marks), pins, curled corners; wall piece."
+ },
+ {
+  "model": "decor/mine_cart",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "decor/mossy_bench",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "decor/mushroom_fountain",
+  "verdict": "major",
+  "issues": [
+   "Ring stones are cubes in white, black and brown (breaks the calm-colour rule)",
+   "Mushroom is a smooth plain shape (old style)",
+   "Water streams are thin lines"
+  ],
+  "fix": "Rounded stones in one colour family, textured mushroom with gills, thicker falling water."
+ },
+ {
+  "model": "decor/mushroom_planter",
+  "verdict": "major",
+  "issues": [
+   "Round soil disc pokes out past the box sides (side view)",
+   "Planter mixes plain old style with new crate style"
+  ],
+  "fix": "Fill soil inside the box walls; texture the mushrooms."
+ },
+ {
+  "model": "decor/mushroom_stool",
+  "verdict": "major",
+  "issues": [
+   "Smooth low-poly mushroom with no texture: old Play-Doh style",
+   "Flat single colours"
+  ],
+  "fix": "Rebuild in the kit style: gills, cap spots painted, chunky stem with grain."
+ },
+ {
+  "model": "decor/ore_basket",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "decor/pole_1m",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "decor/pole_2m",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "decor/potted_fungus",
+  "verdict": "minor",
+  "issues": [
+   "Smooth candy-pink cap on a plain white stem (old style, odd colour)"
+  ],
+  "fix": "Textured cap in a cave colour, gills, bent stem."
+ },
+ {
+  "model": "decor/rail_track",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "decor/rope_fence",
+  "verdict": "ok",
+  "issues": [
+   "Rope sags (natural for a fence, but the owner dislikes loose rope)"
+  ],
+  "fix": "Optional: pull the rope a bit tighter."
+ },
+ {
+  "model": "decor/rune_shield",
+  "verdict": "minor",
+  "issues": [
+   "Wall shield on a floor stake"
+  ],
+  "fix": "Make it a wall piece."
+ },
+ {
+  "model": "decor/shack_bed",
+  "verdict": "minor",
+  "issues": [
+   "Mattress is a grey stone-looking slab",
+   "Pastel candy-stripe blanket (pink/blue/cream) clashes with the Shack's browns"
+  ],
+  "fix": "Straw/wool mattress in tan, blanket in earthy colours."
+ },
+ {
+  "model": "decor/shack_bench",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "decor/shack_nightstand",
+  "verdict": "minor",
+  "issues": [
+   "Body is a perfect cube"
+  ],
+  "fix": "Uneven planks, a drawer or open shelf, wobble the outline."
+ },
+ {
+  "model": "decor/shack_peg_rack",
+  "verdict": "minor",
+  "issues": [
+   "Wall peg rack on a floor stake; the post runs through the middle of the hanging cloth",
+   "Cloth is a flat stiff sheet"
+  ],
+  "fix": "Wall piece; cloth hangs from a peg with folds."
+ },
+ {
+  "model": "decor/shack_rug",
+  "verdict": "minor",
+  "issues": [
+   "Flat pastel peach/cream rectangle, no weave texture"
+  ],
+  "fix": "Woven rug texture in earthy colours, uneven edges."
+ },
+ {
+  "model": "decor/shack_shelf",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "decor/shack_stool",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "decor/shack_table",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "decor/signpost",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "decor/stepping_stones",
+  "verdict": "minor",
+  "issues": [
+   "Stones are near-perfect round discs"
+  ],
+  "fix": "Irregular flat stones."
+ },
+ {
+  "model": "decor/stone_bed",
+  "verdict": "major",
+  "issues": [
+   "Base is a checkerboard of white, black and brown blocks (breaks calm-colour rule)",
+   "Flat salmon mattress on a dark lumpy brown layer that looks like rubble"
+  ],
+  "fix": "Stone in one grey family with few accents, padded mattress with fur blanket."
+ },
+ {
+  "model": "decor/stone_chest",
+  "verdict": "major",
+  "issues": [
+   "Stone blocks mix white, black and brown",
+   "Wooden lid is puffy and pillow-shaped (soft, Play-Doh look)"
+  ],
+  "fix": "One stone colour family; a flat or gently curved plank lid with iron bands."
+ },
+ {
+  "model": "decor/stone_lantern",
+  "verdict": "minor",
+  "issues": [
+   "One leg is black and the other grey (mismatched)",
+   "Light panels are flat cream squares"
+  ],
+  "fix": "Match the legs; make the light panel glow or show a candle."
+ },
+ {
+  "model": "decor/stone_rug",
+  "verdict": "minor",
+  "issues": [
+   "Reskin of shack_rug (same shape and zigzag, grey border)",
+   "Flat pastel colours"
+  ],
+  "fix": "Own design for the Stonehold rug (e.g. fur hide or geometric runes)."
+ },
+ {
+  "model": "decor/stone_stool",
+  "verdict": "major",
+  "issues": [
+   "Legs mix white, black and brown stone",
+   "Seat cushion is a smooth flat salmon slab"
+  ],
+  "fix": "Matching stone legs; textured leather/fur cushion."
+ },
+ {
+  "model": "decor/stone_table",
+  "verdict": "major",
+  "issues": [
+   "Legs mix white, black and brown; middle leg has a broken white patch with black chunks (texture glitch)",
+   "Top slabs are uneven heights and not aligned to the legs"
+  ],
+  "fix": "Same-colour legs, one solid top or flush slabs resting on the legs."
+ },
+ {
+  "model": "decor/stone_throne",
+  "verdict": "major",
+  "issues": [
+   "Back posts mismatch (one black, one brown); pale stone block perched on top",
+   "Mix of black, white, brown and orange"
+  ],
+  "fix": "One stone family, matching posts, carved headrest joined to the back."
+ },
+ {
+  "model": "decor/stone_wall_shelf",
+  "verdict": "minor",
+  "issues": [
+   "Back is a checkerboard of brown, cream, grey and black blocks",
+   "Mugs are plain black"
+  ],
+  "fix": "Calm stone colours; mugs in pewter/clay."
+ },
+ {
+  "model": "decor/stone_weapon_plaque",
+  "verdict": "minor",
+  "issues": [
+   "Black accent stones stand out; back shows a dark hole/missing stone"
+  ],
+  "fix": "Fill the back gap; tone down the black stones."
+ },
+ {
+  "model": "decor/tavern_table",
+  "verdict": "minor",
+  "issues": [
+   "Rope ring around the legs is a perfect circle that floats outside the legs, not tied to them"
+  ],
+  "fix": "Tie the rope tight around each leg or replace with wooden stretchers."
+ },
+ {
+  "model": "decor/timber_stack",
+  "verdict": "major",
+  "issues": [
+   "Rope loops are big loose circles that do not touch the stack (classic loose-rope problem)",
+   "Planks are perfect boxes"
+  ],
+  "fix": "Wrap the rope tight around the stack; vary plank sizes and edges."
+ },
+ {
+  "model": "decor/wall_torch",
+  "verdict": "minor",
+  "issues": [
+   "Wall torch stands on a floor pole",
+   "No flame on the torch"
+  ],
+  "fix": "Wall piece with flat back plate; add a flame."
+ },
+ {
+  "model": "items/ancient_brick",
+  "verdict": "minor",
+  "issues": [
+   "Pale green moss is a smooth perfect oval sitting on top like a pat of butter"
+  ],
+  "fix": "Make the moss a ragged, thin patch that follows the brick surface and creeps into the cracks"
+ },
+ {
+  "model": "items/axe_2h_copper",
+  "verdict": "major",
+  "issues": [
+   "1.40 m tall: taller than the 1.35 m dwarf",
+   "Head is two thin flat plates with no thicker middle and no sharpened edge",
+   "Grip wraps are separate rings with gaps (the loose-rope problem)",
+   "Odd black slot cut into the haft under the head"
+  ],
+  "fix": "Shorten to ~1.1 m, give the blades a thick middle tapering to a bright edge, wrap the grip tight, remove the slot"
+ },
+ {
+  "model": "items/axe_2h_stone",
+  "verdict": "major",
+  "issues": [
+   "1.37 m tall: as tall as the dwarf",
+   "Stone blades look like flat paper-thin sheets, not knapped stone",
+   "Small lashing at the head seems too weak to hold two big blades",
+   "Grip wraps gappy"
+  ],
+  "fix": "Shorten, make thicker wedge-shaped flint heads, bigger tight lashing"
+ },
+ {
+  "model": "items/axe_copper",
+  "verdict": "minor",
+  "issues": [
+   "Head is a flat plate with no wedge or edge",
+   "Black slot in the haft under the head"
+  ],
+  "fix": "Thicken the head toward the eye, add a sharpened edge band, drop the slot"
+ },
+ {
+  "model": "items/axe_stone",
+  "verdict": "minor",
+  "issues": [
+   "Stone head reads as a thin flat sheet from the front"
+  ],
+  "fix": "Make the stone head a thicker chipped wedge"
+ },
+ {
+  "model": "items/basalt",
+  "verdict": "minor",
+  "issues": [
+   "Almost pure black, faces barely readable; plainer than the newer painted materials"
+  ],
+  "fix": "Lift to dark grey-blue with painted highlights on edges"
+ },
+ {
+  "model": "items/bat_fang",
+  "verdict": "major",
+  "issues": [
+   "Old plain style: smooth untextured white cone",
+   "A brown lump sits on top of the fang and doesn't read as anything (gum? root?)",
+   "Fang is a straight cone, not curved"
+  ],
+  "fix": "Remake: curved, chipped, ivory fang with a painted root end, no loose lump"
+ },
+ {
+  "model": "items/bellcap",
+  "verdict": "major",
+  "issues": [
+   "Old untextured plastic style: white smooth mushroom on a dirt disc, perfect shapes."
+  ],
+  "fix": "Hand-build in the painted style like the other mushrooms."
+ },
+ {
+  "model": "items/bolt_ember",
+  "verdict": "minor",
+  "issues": [
+   "Fletching is one flat white shape, not 3 feathers; pale yellow tip."
+  ],
+  "fix": "Three real feathers (as F48), stronger ember colour on the tip."
+ },
+ {
+  "model": "items/bolt_fang",
+  "verdict": "minor",
+  "issues": [
+   "Fletching is one flat white shape, not 3 feathers."
+  ],
+  "fix": "Three real feathers (as F48)."
+ },
+ {
+  "model": "items/bolt_glow",
+  "verdict": "minor",
+  "issues": [
+   "Fletching is one flat white oval, not three feathers with vanes (the F48 complaint)",
+   "Crystal tip is a plain flat-colour prism, no painted facets or glow"
+  ],
+  "fix": "Make three real feathers with split vanes; paint the crystal tips"
+ },
+ {
+  "model": "items/bolt_metal",
+  "verdict": "minor",
+  "issues": [
+   "Fletching is one flat white oval, not three feathers with vanes (the F48 complaint)"
+  ],
+  "fix": "Make three real feathers with split vanes; paint the crystal tips"
+ },
+ {
+  "model": "items/bolt_rime",
+  "verdict": "minor",
+  "issues": [
+   "Fletching is one flat white oval, not three feathers with vanes (the F48 complaint)",
+   "Crystal tip is a plain flat-colour prism, no painted facets or glow"
+  ],
+  "fix": "Make three real feathers with split vanes; paint the crystal tips"
+ },
+ {
+  "model": "items/bolt_stone",
+  "verdict": "minor",
+  "issues": [
+   "Fletching is one flat white oval, not three feathers with vanes (the F48 complaint)"
+  ],
+  "fix": "Make three real feathers with split vanes; paint the crystal tips"
+ },
+ {
+  "model": "items/bolt_thumper",
+  "verdict": "minor",
+  "issues": [
+   "Fletching is one flat white oval, not three feathers with vanes (the F48 complaint)",
+   "Blunt black head is a plain block; maybe fine for a blunt bolt"
+  ],
+  "fix": "Make three real feathers with split vanes; paint the crystal tips"
+ },
+ {
+  "model": "items/boots_copper",
+  "verdict": "major",
+  "issues": [
+   "Both boots stand on one shared slab (looks like a display base)",
+   "Tube-shaped shafts and blocky soles (F55 still open)",
+   "Copper boots are the leather boots plus a band and toe caps: a reskin"
+  ],
+  "fix": "Remake from a picture: separate boots, shaped shafts, real copper plates over the shin/toe"
+ },
+ {
+  "model": "items/boots_leather",
+  "verdict": "major",
+  "issues": [
+   "Straight tube shafts and blocky feet on a shared slab",
+   "Too simple, no laces, seams or folds (F55)"
+  ],
+  "fix": "Remake with laces, folds, a turned cuff and separate soles"
+ },
+ {
+  "model": "items/boots_shell",
+  "verdict": "major",
+  "issues": [
+   "Same mesh as the leather boot with a pale band and shell discs: a reskin",
+   "Shell disc on each toe sticks up like a thin wheel, not attached flat"
+  ],
+  "fix": "Give shell boots their own shape; shell plates should lie on the boot"
+ },
+ {
+  "model": "items/brown_rock",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "items/bug_meat",
+  "verdict": "major",
+  "issues": [
+   "Smooth white Play-Doh blobs with no texture",
+   "An untextured flat green shard sticks out of one end",
+   "Doesn't read as meat"
+  ],
+  "fix": "Remake as painted bug flesh: segmented, glossy, with a bit of shell"
+ },
+ {
+  "model": "items/build_hammer",
+  "verdict": "minor",
+  "issues": [
+   "Head is a near-perfect box"
+  ],
+  "fix": "Bevel and dent the head a little, slight taper"
+ },
+ {
+  "model": "items/cap_leather",
+  "verdict": "major",
+  "issues": [
+   "Perfectly smooth dome on a flat ring: too simple (F55)",
+   "Tiny stray white speck on the rim in two views"
+  ],
+  "fix": "Remake with panels, seams, a turned brim; remove the speck"
+ },
+ {
+  "model": "items/clay",
+  "verdict": "minor",
+  "issues": [
+   "Crumpled low-poly look, different from the smooth painted siblings",
+   "Almost the same shape and colour as dirt, easy to confuse"
+  ],
+  "fix": "Make clay a smooth wet lump with finger marks, more orange-grey than dirt"
+ },
+ {
+  "model": "items/clay_brick",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "items/coal",
+  "verdict": "major",
+  "issues": [
+   "Old plain style: untextured low-poly facets",
+   "Looks grey with near-white facets, not black coal"
+  ],
+  "fix": "Remake: dark glossy coal lumps with painted sheen"
+ },
+ {
+  "model": "items/copper_ingot",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "items/copper_ore",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "items/critter_hide",
+  "verdict": "minor",
+  "issues": [
+   "The flat flap under the roll looks like a stiff wooden board, not soft hide",
+   "Roll end is a perfect ring"
+  ],
+  "fix": "Make the flap thinner and wavy, roll end uneven"
+ },
+ {
+  "model": "items/critter_meat",
+  "verdict": "major",
+  "issues": [
+   "Old plain style: smooth untextured pink meat and plastic-white bone",
+   "Bone knob is a low-poly crystal shape"
+  ],
+  "fix": "Remake with painted meat (fat, grain) and a knobbly bone"
+ },
+ {
+  "model": "items/crossbow_copper",
+  "verdict": "minor",
+  "issues": [
+   "Almost no copper visible: looks like the stone crossbow (reskin)"
+  ],
+  "fix": "Add copper prod/fittings so tiers look different"
+ },
+ {
+  "model": "items/crossbow_stone",
+  "verdict": "minor",
+  "issues": [
+   "Same model as the copper crossbow"
+  ],
+  "fix": "Give the lower tier a rougher, lashed design"
+ },
+ {
+  "model": "items/crystal_blue",
+  "verdict": "minor",
+  "issues": [
+   "Same mesh as the other 3 crystals, only the colour changes",
+   "Flat pastel colour, no inner shading or glow",
+   "Small yellow-green bits at the base (like the stray green bits on the rune slab)"
+  ],
+  "fix": "Vary the cluster shape per crystal, paint inner gradients, remove the green bits"
+ },
+ {
+  "model": "items/crystal_green",
+  "verdict": "minor",
+  "issues": [
+   "Same mesh as the other 3 crystals, only the colour changes",
+   "Flat pastel colour, no inner shading or glow",
+   "Small yellow-green bits at the base (like the stray green bits on the rune slab)"
+  ],
+  "fix": "Vary the cluster shape per crystal, paint inner gradients, remove the green bits"
+ },
+ {
+  "model": "items/crystal_red",
+  "verdict": "minor",
+  "issues": [
+   "Same mesh as the other 3 crystals, only the colour changes",
+   "Flat pastel colour, no inner shading or glow",
+   "Small yellow-green bits at the base (like the stray green bits on the rune slab)"
+  ],
+  "fix": "Vary the cluster shape per crystal, paint inner gradients, remove the green bits"
+ },
+ {
+  "model": "items/crystal_white",
+  "verdict": "minor",
+  "issues": [
+   "Same mesh as the other 3 crystals, only the colour changes",
+   "Flat pastel colour, no inner shading or glow",
+   "Small yellow-green bits at the base (like the stray green bits on the rune slab)"
+  ],
+  "fix": "Vary the cluster shape per crystal, paint inner gradients, remove the green bits"
+ },
+ {
+  "model": "items/cut_marble",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "items/cut_stone",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "items/dirt",
+  "verdict": "minor",
+  "issues": [
+   "Crumpled low-poly heap, nearly identical to clay"
+  ],
+  "fix": "Darker, crumblier soil with pebbles so it reads differently from clay"
+ },
+ {
+  "model": "items/dish_bug_stew",
+  "verdict": "minor",
+  "issues": [
+   "Stew is one flat cream disc (the F39 flat-colour problem)",
+   "Same bowl as 3 other stews"
+  ],
+  "fix": "Paint a gradient and chunks into the stew; vary the bowl"
+ },
+ {
+  "model": "items/dish_cooked_snail",
+  "verdict": "major",
+  "issues": [
+   "Shell is stacked perfect rings like a tiered cake, untextured",
+   "A long stick goes straight through it and sticks out far on both sides"
+  ],
+  "fix": "Remake: a real spiral shell, shorter skewer, painted"
+ },
+ {
+  "model": "items/dish_firecap_skewer",
+  "verdict": "minor",
+  "issues": [
+   "Mushrooms are smooth flat-colour blobs, don't read as mushrooms"
+  ],
+  "fix": "Small cap-and-stem shapes with seared marks"
+ },
+ {
+  "model": "items/dish_glow_broth",
+  "verdict": "minor",
+  "issues": [
+   "Broth is a flat pale blue disc, no gradient or glow"
+  ],
+  "fix": "Darker centre, lighter rim, glowing specks"
+ },
+ {
+  "model": "items/dish_glowcap_skewer",
+  "verdict": "minor",
+  "issues": [
+   "Same as firecap skewer, recoloured",
+   "Blobs don't read as mushrooms"
+  ],
+  "fix": "Give it its own shape"
+ },
+ {
+  "model": "items/dish_hearth_stew",
+  "verdict": "minor",
+  "issues": [
+   "Stew surface is a flat tan disc",
+   "Pot is nearly pure black"
+  ],
+  "fix": "Paint the stew; warm the pot to dark iron grey"
+ },
+ {
+  "model": "items/dish_hollowcap_stew",
+  "verdict": "minor",
+  "issues": [
+   "Flat tan disc stew, same bowl as other stews"
+  ],
+  "fix": "Gradient and chunks; vary the bowl"
+ },
+ {
+  "model": "items/dish_miners_pie",
+  "verdict": "minor",
+  "issues": [
+   "Lattice strips are perfect round sticks",
+   "Crust is one plain cream colour"
+  ],
+  "fix": "Flatten the lattice, add browned crust colour"
+ },
+ {
+  "model": "items/dish_roasted_bug",
+  "verdict": "major",
+  "issues": [
+   "Just a smooth cream blob on a board: doesn't look like a bug"
+  ],
+  "fix": "Model a roasted bug: legs, segments, browned shell"
+ },
+ {
+  "model": "items/dish_seared_critter",
+  "verdict": "minor",
+  "issues": [
+   "Smooth untextured meat and plastic-white bone (same old style as critter_meat)"
+  ],
+  "fix": "Paint sear marks and a knobbly bone"
+ },
+ {
+  "model": "items/dish_snail_stew",
+  "verdict": "minor",
+  "issues": [
+   "Flat colour stew, same bowl reused"
+  ],
+  "fix": "Gradient and chunks"
+ },
+ {
+  "model": "items/dish_tuber_mash",
+  "verdict": "minor",
+  "issues": [
+   "Small yellow butter cube maybe floats just above the mash"
+  ],
+  "fix": "Sink the butter into the mash, make it a melting pat"
+ },
+ {
+  "model": "items/drink_bellcap_juice",
+  "verdict": "major",
+  "issues": [
+   "From above, the liquid is a flat white surface and a brown block of the cup wall pokes through it (overlap, may shimmer)",
+   "Same cup as glowcap tea"
+  ],
+  "fix": "Fit the liquid inside the cup wall with a gap, give it colour and a gradient"
+ },
+ {
+  "model": "items/drink_firecap_cordial",
+  "verdict": "major",
+  "issues": [
+   "Old plain style: untextured flat orange body and flat pale-blue cone, plastic look"
+  ],
+  "fix": "Remake as a painted clay or glass bottle with rope neck"
+ },
+ {
+  "model": "items/drink_glowcap_tea",
+  "verdict": "major",
+  "issues": [
+   "Same cup as bellcap juice with the same brown block poking through the liquid",
+   "Liquid is a flat pale colour"
+  ],
+  "fix": "Fix the liquid fit; give the tea its own cup"
+ },
+ {
+  "model": "items/drink_moss_ale",
+  "verdict": "minor",
+  "issues": [
+   "Foam is a perfect flat white disc on top"
+  ],
+  "fix": "Lumpy foam that spills slightly over the rim"
+ },
+ {
+  "model": "items/fiber",
+  "verdict": "minor",
+  "issues": [
+   "Strands are perfect identical cylinders",
+   "Tie looks like a wooden ring, not twine"
+  ],
+  "fix": "Uneven strands, a twine knot instead of a ring"
+ },
+ {
+  "model": "items/firecap",
+  "verdict": "major",
+  "issues": [
+   "Old plain style: untextured cap and white stalk",
+   "Spots are little white cubes sticking out of the cap"
+  ],
+  "fix": "Paint the cap and stalk, make spots flat painted flecks"
+ },
+ {
+  "model": "items/gem_blight",
+  "verdict": "major",
+  "issues": [
+   "Plain untextured polyhedron, flat colour",
+   "Same shape as 7 other gems (reskins)"
+  ],
+  "fix": "Paint facets with inner light, give each gem its own cut"
+ },
+ {
+  "model": "items/gem_burrow",
+  "verdict": "major",
+  "issues": [
+   "Plain untextured polyhedron",
+   "Brown colour makes it look like a rock, not a gem",
+   "Same shape as other gems"
+  ],
+  "fix": "Own cut, painted facets, warmer amber tone"
+ },
+ {
+  "model": "items/gem_cinder_wake",
+  "verdict": "major",
+  "issues": [
+   "A black stone ring cuts straight through the gem (parts overlap)",
+   "White peg on top floats at the ring's top",
+   "Gem itself is untextured flat yellow"
+  ],
+  "fix": "Seat the gem inside the ring with prongs; paint the gem"
+ },
+ {
+  "model": "items/gem_ember",
+  "verdict": "major",
+  "issues": [
+   "Plain untextured polyhedron, flat colour, same shape as other gems"
+  ],
+  "fix": "Own cut, painted facets"
+ },
+ {
+  "model": "items/gem_hoarfrost_pulse",
+  "verdict": "major",
+  "issues": [
+   "Same ring-through-gem overlap as cinder_wake",
+   "Untextured pale gem"
+  ],
+  "fix": "Seat the gem in the ring with prongs; paint it"
+ },
+ {
+  "model": "items/gem_jolt",
+  "verdict": "major",
+  "issues": [
+   "Plain untextured polyhedron, same shape as other gems",
+   "Mustard colour looks dull"
+  ],
+  "fix": "Own cut, painted facets, brighter yellow"
+ },
+ {
+  "model": "items/gem_keen",
+  "verdict": "major",
+  "issues": [
+   "Plain untextured grey-white polyhedron: reads as a rock",
+   "Same shape as other gems"
+  ],
+  "fix": "Own cut, painted clear facets"
+ },
+ {
+  "model": "items/gem_leech",
+  "verdict": "major",
+  "issues": [
+   "Plain untextured polyhedron, same shape as other gems"
+  ],
+  "fix": "Own cut, painted facets"
+ },
+ {
+  "model": "items/gem_rime",
+  "verdict": "major",
+  "issues": [
+   "Plain untextured polyhedron, same shape as other gems"
+  ],
+  "fix": "Own cut, painted facets"
+ },
+ {
+  "model": "items/glow_gland",
+  "verdict": "major",
+  "issues": [
+   "A perfect smooth green sphere with a cork: looks like a potion bottle, not a gland",
+   "Small brown chips stick out of its sides, not attached to anything"
+  ],
+  "fix": "Remake as an organic glowing sac with veins; remove the stray chips"
+ },
+ {
+  "model": "items/glowcap",
+  "verdict": "major",
+  "issues": [
+   "Same mesh as firecap/hollowcap, only recoloured",
+   "White cube spots stick out of the cap",
+   "Untextured cap and stalk"
+  ],
+  "fix": "Own shape per mushroom, painted, glowing cap"
+ },
+ {
+  "model": "items/greaves_copper",
+  "verdict": "major",
+  "issues": [
+   "Looks like a stool or Stonehenge: two tubes under a flat slab, not leg armour",
+   "Copper reads as dark red rock",
+   "Too simple (F55)"
+  ],
+  "fix": "Remake from a picture: shaped shin plates with straps, no slab"
+ },
+ {
+  "model": "items/greaves_shell",
+  "verdict": "major",
+  "issues": [
+   "Same stool shape as copper greaves (reskin)",
+   "Stone tubes with shell spirals, doesn't read as armour"
+  ],
+  "fix": "Own design with shell plates over a padded legging"
+ },
+ {
+  "model": "items/helm_copper",
+  "verdict": "major",
+  "issues": [
+   "A long stick lies across the top and pokes past the helmet's outline",
+   "Dome is a near-perfect half sphere"
+  ],
+  "fix": "Remove or shorten the bar into a proper crest attached to the dome; dent the dome"
+ },
+ {
+  "model": "items/helm_shell",
+  "verdict": "major",
+  "issues": [
+   "Same bar poking past the outline",
+   "Same helmet with shell discs stuck on the sides (reskin)"
+  ],
+  "fix": "Fix the bar; own design for the shell helm"
+ },
+ {
+  "model": "items/hollowcap",
+  "verdict": "major",
+  "issues": [
+   "Same mesh as firecap/glowcap, only recoloured",
+   "Spots are little cubes sticking out",
+   "Untextured"
+  ],
+  "fix": "Own shape (a hollow, cupped cap?), painted"
+ },
+ {
+  "model": "items/keeper_heartstone",
+  "verdict": "major",
+  "issues": [
+   "Pink gem is an untextured smooth blob",
+   "Black rock base is nearly pure black, harsh next to pastel pink"
+  ],
+  "fix": "Paint a glowing heart-shaped crystal; dark grey textured base"
+ },
+ {
+  "model": "items/lantern",
+  "verdict": "minor",
+  "issues": [
+   "Glass is a flat light-blue panel and the flame is a tiny flat yellow shape",
+   "Body is a perfect hexagon"
+  ],
+  "fix": "Glass with a warm glow gradient, a visible flame, slight wobble"
+ },
+ {
+  "model": "items/lantern_back",
+  "verdict": "minor",
+  "issues": [
+   "Back board slats float beside the lantern with no strap or bracket joining them (maybe)"
+  ],
+  "fix": "Add straps/brackets so the board clearly holds the lantern"
+ },
+ {
+  "model": "items/lantern_lens",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "items/leather",
+  "verdict": "major",
+  "issues": [
+   "Looks like stacked wooden boards and a log, not leather",
+   "White stitch dashes float above the top edge"
+  ],
+  "fix": "Remake as folded/rolled soft hide; stitches sit on the leather"
+ },
+ {
+  "model": "items/mace_2h_copper",
+  "verdict": "major",
+  "issues": [
+   "1.37 m: as tall as the dwarf",
+   "Head is a box with spikes; grip wraps have gaps",
+   "Black slot in the haft"
+  ],
+  "fix": "Shorten to ~1.1 m, shaped head, tight wrap"
+ },
+ {
+  "model": "items/mace_2h_stone",
+  "verdict": "major",
+  "issues": [
+   "1.33 m: as tall as the dwarf",
+   "Stone head just sits on the stick: no lashing, collar or socket holding it"
+  ],
+  "fix": "Shorten; add heavy lashing joining head and haft"
+ },
+ {
+  "model": "items/mace_copper",
+  "verdict": "minor",
+  "issues": [
+   "Black slot in the haft (same as the other copper weapons)"
+  ],
+  "fix": "Remove the slot"
+ },
+ {
+  "model": "items/mace_stone",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "items/mail_copper",
+  "verdict": "major",
+  "issues": [
+   "Looks like a box or barrel, not mail armour",
+   "Shoulder lumps are flat discs; copper looks like rock (F55)"
+  ],
+  "fix": "Remake from a picture: rings/scales, shaped torso and shoulders"
+ },
+ {
+  "model": "items/marble",
+  "verdict": "minor",
+  "issues": [
+   "Harsh black-and-white faceted crumple, old plain look",
+   "Doesn't match the smooth painted cut_marble"
+  ],
+  "fix": "Smoother white-grey lump with painted veins"
+ },
+ {
+  "model": "items/moss",
+  "verdict": "major",
+  "issues": [
+   "Moss tufts are untextured pale-green polyhedra: look like gems or popcorn, not moss"
+  ],
+  "fix": "Soft fuzzy painted tufts hugging the dirt"
+ },
+ {
+  "model": "items/pickaxe_copper",
+  "verdict": "minor",
+  "issues": [
+   "Picks are thin flat plates, no thickness",
+   "Black slot in the haft"
+  ],
+  "fix": "Thicker tapering pick arms, remove the slot"
+ },
+ {
+  "model": "items/pickaxe_fang",
+  "verdict": "minor",
+  "issues": [
+   "Fangs are smooth untextured white spikes, plain compared with the rest"
+  ],
+  "fix": "Paint ivory with cracks; curve them slightly"
+ },
+ {
+  "model": "items/pickaxe_stone",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "items/plank_root",
+  "verdict": "major",
+  "issues": [
+   "Rope bands are round hoops much bigger than the square stack: they don't touch the planks (loose rope)",
+   "Planks are clean boxes"
+  ],
+  "fix": "Wrap the rope tight around the stack's square shape; roughen the planks"
+ },
+ {
+  "model": "items/plate_shell",
+  "verdict": "major",
+  "issues": [
+   "Same box shape as mail_copper (reskin): looks like a stone block or tombstone, not armour"
+  ],
+  "fix": "Own design: shell plates over a leather jerkin"
+ },
+ {
+  "model": "items/recipe_page",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "items/root_tuber",
+  "verdict": "major",
+  "issues": [
+   "Reads as a log on stick legs (like a little animal), not a tuber",
+   "Roots are straight perfect cones; sprouts are flat"
+  ],
+  "fix": "Rounder knobbly tuber with curly roots and leafy sprouts"
+ },
+ {
+  "model": "items/rootwood",
+  "verdict": "minor",
+  "issues": [
+   "Side roots are straight perfect spikes",
+   "Flat pale-green hexagon leaves stuck on top"
+  ],
+  "fix": "Curved, tapering roots; small painted moss instead of hexagons"
+ },
+ {
+  "model": "items/rope",
+  "verdict": "minor",
+  "issues": [
+   "Coil is a stack of separate perfect rings, not one wound rope",
+   "Loose end is a short stubby cylinder"
+  ],
+  "fix": "One continuous spiral with a tapered loose end"
+ },
+ {
+  "model": "items/rune_cobalt",
+  "verdict": "major",
+  "issues": [
+   "The rune symbol is a separate flat-colour stick shape floating in front of the stone (side view shows a gap)",
+   "Same stone and same symbol as the other 3 runes, only colour changes"
+  ],
+  "fix": "Carve the rune into the stone and paint/glow it inside the groove; a different symbol per rune"
+ },
+ {
+  "model": "items/rune_crimson",
+  "verdict": "major",
+  "issues": [
+   "The rune symbol is a separate flat-colour stick shape floating in front of the stone (side view shows a gap)",
+   "Same stone and same symbol as the other 3 runes, only colour changes"
+  ],
+  "fix": "Carve the rune into the stone and paint/glow it inside the groove; a different symbol per rune"
+ },
+ {
+  "model": "items/rune_ochre",
+  "verdict": "major",
+  "issues": [
+   "The rune symbol is a separate flat-colour stick shape floating in front of the stone (side view shows a gap)",
+   "Same stone and same symbol as the other 3 runes, only colour changes"
+  ],
+  "fix": "Carve the rune into the stone and paint/glow it inside the groove; a different symbol per rune"
+ },
+ {
+  "model": "items/rune_verdant",
+  "verdict": "major",
+  "issues": [
+   "The rune symbol is a separate flat-colour stick shape floating in front of the stone (side view shows a gap)",
+   "Same stone and same symbol as the other 3 runes, only colour changes"
+  ],
+  "fix": "Carve the rune into the stone and paint/glow it inside the groove; a different symbol per rune"
+ },
+ {
+  "model": "items/rusty_scrap",
+  "verdict": "minor",
+  "issues": [
+   "Scraps lie flat and overlap each other on one plane; may shimmer where gear and plate meet"
+  ],
+  "fix": "Pile the scraps with small gaps or real contact"
+ },
+ {
+  "model": "items/satchel",
+  "verdict": "minor",
+  "issues": [
+   "Blocky box bag; side pocket is a plain block; handle a perfect arch"
+  ],
+  "fix": "Softer sagging leather, stitched pocket, uneven strap"
+ },
+ {
+  "model": "items/shell_piece",
+  "verdict": "major",
+  "issues": [
+   "Grey low-poly clump of swirls on a little stand: unreadable, doesn't look like a shell piece"
+  ],
+  "fix": "Remake as one curved broken shell fragment with painted ridges"
+ },
+ {
+  "model": "items/shield_copper",
+  "verdict": "minor",
+  "issues": [
+   "Mostly wood; only the boss is copper (tier not obvious)"
+  ],
+  "fix": "Add copper rim or bands"
+ },
+ {
+  "model": "items/shield_shell",
+  "verdict": "minor",
+  "issues": [
+   "Shells are perfect donut rings in a neat flower pattern"
+  ],
+  "fix": "Irregular overlapping shell plates"
+ },
+ {
+  "model": "items/shield_stone",
+  "verdict": "minor",
+  "issues": [
+   "No stone on it: wood with black iron bands, so the name doesn't match the look"
+  ],
+  "fix": "Add stone facing or rename"
+ },
+ {
+  "model": "items/snail_meat",
+  "verdict": "major",
+  "issues": [
+   "Smooth untextured pinkish-white Play-Doh blobs"
+  ],
+  "fix": "Painted glossy snail flesh with texture"
+ },
+ {
+  "model": "items/spear_copper",
+  "verdict": "minor",
+  "issues": [
+   "1.47 m: taller than the dwarf (maybe fine for a spear)"
+  ],
+  "fix": "Check length against the dwarf in game"
+ },
+ {
+  "model": "items/spear_stone",
+  "verdict": "minor",
+  "issues": [
+   "1.46 m: taller than the dwarf (maybe fine for a spear)"
+  ],
+  "fix": "Check length against the dwarf in game"
+ },
+ {
+  "model": "items/stone",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "items/sword_copper",
+  "verdict": "minor",
+  "issues": [
+   "Blade reads dark brown, not copper",
+   "0.76 m: a little short against the 0.8-1 m target",
+   "No pommel"
+  ],
+  "fix": "Brighter copper blade with an edge highlight, a bit longer, add a pommel"
+ },
+ {
+  "model": "items/sword_stone",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "items/trousers_leather",
+  "verdict": "major",
+  "issues": [
+   "Looks like a stool: two tubes under a flat slab, not trousers",
+   "Too simple (F55)"
+  ],
+  "fix": "Remake from a picture: shaped legs, waist, belt"
+ },
+ {
+  "model": "items/tunic_leather",
+  "verdict": "major",
+  "issues": [
+   "Looks like a crate with shoulder lumps, not a tunic",
+   "Two white lines float on the front"
+  ],
+  "fix": "Remake from a picture: shaped body, sleeves, laces; stitches on the surface"
+ },
+ {
+  "model": "items/water_bucket",
+  "verdict": "minor",
+  "issues": [
+   "Ripple on the water is a perfect white circle"
+  ],
+  "fix": "Irregular ripple ring"
+ },
+ {
+  "model": "items/waterskin_clean",
+  "verdict": "major",
+  "issues": [
+   "A flat ring circles the bag like Saturn's ring, passing through it: doesn't read as a strap",
+   "Cork is a square block"
+  ],
+  "fix": "Make the strap a loop tied at the neck; round, tapered cork"
+ },
+ {
+  "model": "items/waterskin_dirty",
+  "verdict": "major",
+  "issues": [
+   "Same Saturn ring through the bag",
+   "Flat green shard pokes out of the bag"
+  ],
+  "fix": "Same fix; show dirt with a stain, not a shard"
+ },
+ {
+  "model": "items/waterskin_empty",
+  "verdict": "major",
+  "issues": [
+   "The flat bag floats above the ring strap, not touching it"
+  ],
+  "fix": "Bag lies on the ground with the strap attached at the neck"
+ },
+ {
+  "model": "items/whetstone",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "items/wing_leather",
+  "verdict": "major",
+  "issues": [
+   "Old plain style: flat untextured pink panels with sticks",
+   "Same model as wingskin"
+  ],
+  "fix": "Remake as painted leathery wing skin with bone struts"
+ },
+ {
+  "model": "items/wingskin",
+  "verdict": "major",
+  "issues": [
+   "Old plain style: flat untextured pink panels",
+   "Same model as wing_leather, slightly pinker"
+  ],
+  "fix": "Remake, or merge with wing_leather if they are one item"
+ },
+ {
+  "model": "stations/anvil",
+  "verdict": "minor",
+  "issues": [
+   "Horn is still a thin straight spike/pyramid (owner F34 said horn looks like a pyramid)"
+  ],
+  "fix": "Make the horn a thick curved cone that tapers smoothly from the body, chunkier and rounded."
+ },
+ {
+  "model": "stations/bed",
+  "verdict": "major",
+  "issues": [
+   "Still just a thin flat grey slab for a mattress: no pillow, no blanket (F34 asked for mattress, pillow, cover)",
+   "Mattress colour is a flat grey-brown, looks like stone"
+  ],
+  "fix": "Add a thick lumpy mattress, a pillow and a folded fur/wool blanket with warm colours."
+ },
+ {
+  "model": "stations/bellows",
+  "verdict": "minor",
+  "issues": [
+   "Leather pleats look like a stack of wooden discs (wood-coloured, perfectly round), not soft leather",
+   "Handle loops are flat perfect rings stuck to the side"
+  ],
+  "fix": "Make the pleats darker leather with folds that pinch toward the hinge; give the handles a carved grip shape."
+ },
+ {
+  "model": "stations/campfire",
+  "verdict": "major",
+  "issues": [
+   "Ring stones are near-perfect cubes",
+   "Stones are white next to black next to brown (breaks the calm-colour rule)",
+   "No flames visible; logs barely show"
+  ],
+  "fix": "Use rounded, chipped grey-brown river stones in one colour family and add visible flame/ember shapes on the logs."
+ },
+ {
+  "model": "stations/carpenters_vise",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "stations/chest_copper",
+  "verdict": "major",
+  "issues": [
+   "No visible copper at all: corners are dark brown lumpy blocks, body is plain wood",
+   "Reads as a slightly different wooden chest, not the copper tier"
+  ],
+  "fix": "Add bright copper corner caps, straps, rivets and lock plate so it clearly reads as copper."
+ },
+ {
+  "model": "stations/chest_small",
+  "verdict": "minor",
+  "issues": [
+   "Plank ends stick out past the corners like a log cabin, edges look stepped",
+   "Lid line hard to see; reads as a crate more than a chest"
+  ],
+  "fix": "Cut planks flush at the corners under the straps and give the lid a clear rounded/overhanging shape."
+ },
+ {
+  "model": "stations/chest_stone",
+  "verdict": "minor",
+  "issues": [
+   "Open box with no lid",
+   "Black iron corner bars stick up past the stone rim and down past the base"
+  ],
+  "fix": "Trim the corner bars to the box height and add a stone or wood lid."
+ },
+ {
+  "model": "stations/chisel_rack",
+  "verdict": "minor",
+  "issues": [
+   "Chisels are plain round dowels with no metal tips",
+   "Loose pebbles sit away from the model on the ground"
+  ],
+  "fix": "Give each chisel a metal blade tip and a handle; drop or tuck the stray pebbles against the base."
+ },
+ {
+  "model": "stations/chopping_block",
+  "verdict": "minor",
+  "issues": [
+   "Roots are evenly spaced straight cones, look like stool legs or spider legs"
+  ],
+  "fix": "Make roots uneven, curved and flowing into the trunk at different sizes."
+ },
+ {
+  "model": "stations/cooking_pot",
+  "verdict": "ok",
+  "issues": [
+   "Pot is a flat pure black (maybe too dark)"
+  ],
+  "fix": "Optional: add a dark iron grey with soot highlights."
+ },
+ {
+  "model": "stations/copper_drip_basin",
+  "verdict": "minor",
+  "issues": [
+   "Water still reads as a pale flat disc with a white centre, more like ice than water",
+   "Tiny cup on the side pillar looks tacked on"
+  ],
+  "fix": "Darker blue-green water with depth gradient; join the side cup into the overflow spout clearly."
+ },
+ {
+  "model": "stations/crate_ore",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "stations/crate_ore_fill",
+  "verdict": "minor",
+  "issues": [
+   "Maybe: has its own stone tray rim, which would show as a stone box inside the wooden ore crate",
+   "Crystals are small and pale"
+  ],
+  "fix": "Check it in-game inside crate_ore; if the rim shows, remove it and keep only the heap."
+ },
+ {
+  "model": "stations/crystal_sconce",
+  "verdict": "minor",
+  "issues": [
+   "Crystal is a perfect hexagonal prism with a pyramid top, pure white",
+   "Stray green blob at the bottom left of the back plate (like the old rune slab green bits)"
+  ],
+  "fix": "Make an uneven crystal cluster with a tint; remove or blend the green bit."
+ },
+ {
+  "model": "stations/drip_bucket",
+  "verdict": "ok",
+  "issues": [
+   "Water is pale and flat (minor)"
+  ],
+  "fix": "Optional: darker water gradient."
+ },
+ {
+  "model": "stations/farm_plot",
+  "verdict": "ok",
+  "issues": [
+   "Mushroom stems are smooth white tubes (slightly plain)"
+  ],
+  "fix": "Optional: add stem texture and a little bend."
+ },
+ {
+  "model": "stations/gem_bench",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "stations/glow_lamp",
+  "verdict": "minor",
+  "issues": [
+   "Post just stands between two loose rocks, could tip over; not clearly fixed",
+   "Lantern top is a plain black cage (F34 wanted more detail on torch top and rope)"
+  ],
+  "fix": "Sink the post into a rock pile or a footed base; add detail to the lantern cap."
+ },
+ {
+  "model": "stations/grindstone",
+  "verdict": "minor",
+  "issues": [
+   "Wheel is a near-perfect circle; otherwise attached and readable."
+  ],
+  "fix": "Chip the wheel edge a little."
+ },
+ {
+  "model": "stations/kiln",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "stations/masonry_table",
+  "verdict": "ok",
+  "issues": [
+   "Loose stone chips on the floor around it (fine as clutter)"
+  ],
+  "fix": ""
+ },
+ {
+  "model": "stations/rope_ladder",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "stations/rune_slab",
+  "verdict": "minor",
+  "issues": [
+   "Back is a much darker stone than the front and sides, looks like a different material"
+  ],
+  "fix": "Use the same stone colour all around."
+ },
+ {
+  "model": "stations/smelter",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "stations/stone_saw",
+  "verdict": "minor",
+  "issues": [
+   "Maybe: the saw blade is at the top of the frame above the stone, not in a cut in the stone (F65 picture)",
+   "Stone block is an almost perfect box"
+  ],
+  "fix": "Lower the blade into a visible slot in the stone; chip the stone block's edges."
+ },
+ {
+  "model": "stations/tanning_rack",
+  "verdict": "major",
+  "issues": [
+   "Confirmed: the lacing ropes stop short and do not reach the hide; hide floats in the middle",
+   "Hide is a flat blob with no stretch marks or lace holes"
+  ],
+  "fix": "Stretch the hide almost to the frame and run each rope from the frame to a hole in the hide edge."
+ },
+ {
+  "model": "stations/tool_rack",
+  "verdict": "ok",
+  "issues": [],
+  "fix": ""
+ },
+ {
+  "model": "stations/training_dummy",
+  "verdict": "minor",
+  "issues": [
+   "Sack head is low-poly and faceted; body is grey lumpy sack."
+  ],
+  "fix": "Smoother stitched sack with painted texture."
+ },
+ {
+  "model": "stations/workbench",
+  "verdict": "ok",
+  "issues": [
+   "Not re-photographed (file too big for the photo page); it is the style reference."
+  ],
+  "fix": ""
+ }
+]

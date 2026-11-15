@@ -1,0 +1,78 @@
+decor_00: decor/banner_anvil decor/banner_landscape decor/bat_trophy decor/beam_1m decor/beam_2m
+items_00: items/ancient_brick items/axe_2h_copper items/axe_2h_stone items/axe_copper items/axe_stone
+build_00: build/arch__clay_brick build/arch__cut_stone build/arch__plank_root build/arch_doorway__clay_brick build/arch_doorway__cut_stone
+stations_00: stations/anvil stations/bed stations/bellows stations/campfire stations/carpenters_vise
+decor_01: decor/beam_2m_26 decor/beam_2m_45 decor/brace_corner decor/brazier decor/candle_cluster
+items_01: items/basalt items/bat_fang items/bellcap items/bolt_ember items/bolt_fang
+build_01: build/arch_doorway__plank_root build/banner__copper_ingot build/banner__plank_root build/barrel__plank_root build/battlement__cut_stone
+stations_01: stations/chest_copper stations/chest_small stations/chest_stone stations/chisel_rack stations/chopping_block
+decor_02: decor/chandelier decor/cheese_shelf decor/crate_stack decor/crossed_pickaxes decor/crystal_lamp_post
+items_02: items/bolt_glow items/bolt_metal items/bolt_rime items/bolt_stone items/bolt_thumper
+build_02: build/battlement_corner__cut_stone build/beam__clay_brick build/beam__cut_stone build/beam__plank_root build/beam_half__clay_brick
+stations_02: stations/cooking_pot stations/copper_drip_basin stations/crate_ore stations/crate_ore_fill stations/crystal_sconce
+decor_03: decor/firefly_jar decor/firewood_rack decor/fossil_plaque decor/glow_trellis decor/grain_sacks
+build_03: build/beam_half__cut_stone build/beam_half__plank_root build/bench__cut_stone build/bench__plank_root build/brace__clay_brick
+items_03: items/boots_copper items/boots_leather items/boots_shell items/brown_rock items/bug_meat
+stations_03: stations/drip_bucket stations/farm_plot stations/gem_bench stations/glow_lamp stations/grindstone
+decor_04: decor/hanging_basket decor/hanging_herbs decor/hanging_lantern decor/hearth_bed decor/hearth_chair
+build_04: build/brace__cut_stone build/brace__plank_root build/ceiling_panel__clay_brick build/ceiling_panel__cut_stone build/ceiling_panel__plank_root
+items_04: items/build_hammer items/cap_leather items/clay items/clay_brick items/coal
+stations_04: stations/kiln stations/masonry_table stations/rope_ladder stations/rune_slab stations/smelter
+decor_05: decor/hearth_dresser decor/hearth_fireplace decor/hearth_planter decor/hearth_pot_rack decor/hearth_rug
+build_05: build/chair__plank_root build/column__clay_brick build/column__cut_stone build/column__plank_root build/column_base__clay_brick
+items_05: items/copper_ingot items/copper_ore items/critter_hide items/critter_meat items/crossbow_copper
+stations_05: stations/stone_saw stations/tanning_rack stations/tool_rack stations/training_dummy stations/workbench
+decor_06: decor/hearth_table decor/horn_plaque decor/keg decor/map_board decor/mine_cart
+build_06: build/column_base__cut_stone build/column_base__plank_root build/column_capital__clay_brick build/column_capital__cut_stone build/column_capital__plank_root
+items_06: items/crossbow_stone items/crystal_blue items/crystal_green items/crystal_red items/crystal_white
+build_07: build/column_shaft__clay_brick build/column_shaft__cut_stone build/column_shaft__plank_root build/crate__plank_root build/door__clay_brick
+decor_07: decor/mossy_bench decor/mushroom_fountain decor/mushroom_planter decor/mushroom_stool decor/ore_basket
+items_07: items/cut_marble items/cut_stone items/dirt items/dish_bug_stew items/dish_cooked_snail
+build_08: build/door__copper_ingot build/door__cut_stone build/door__plank_root build/doorway__clay_brick build/doorway__cut_stone
+decor_08: decor/pole_1m decor/pole_2m decor/potted_fungus decor/rail_track decor/rope_fence
+items_08: items/dish_firecap_skewer items/dish_glow_broth items/dish_glowcap_skewer items/dish_hearth_stew items/dish_hollowcap_stew
+decor_09: decor/rune_shield decor/shack_bed decor/shack_bench decor/shack_nightstand decor/shack_peg_rack
+build_09: build/doorway__plank_root build/flat_roof__cut_stone build/floor__clay_brick build/floor__cut_stone build/floor__plank_root
+items_09: items/dish_miners_pie items/dish_roasted_bug items/dish_seared_critter items/dish_snail_stew items/dish_tuber_mash
+build_10: build/floor_half__clay_brick build/floor_half__cut_stone build/floor_half__plank_root build/floor_triangle__clay_brick build/floor_triangle__cut_stone
+decor_10: decor/shack_rug decor/shack_shelf decor/shack_stool decor/shack_table decor/signpost
+items_10: items/drink_bellcap_juice items/drink_firecap_cordial items/drink_glowcap_tea items/drink_moss_ale items/fiber
+decor_11: decor/stepping_stones decor/stone_bed decor/stone_chest decor/stone_lantern decor/stone_rug
+build_11: build/floor_triangle__plank_root build/foundation__clay_brick build/foundation__cut_stone build/foundation__plank_root build/foundation_half__clay_brick
+items_11: items/firecap items/gem_blight items/gem_burrow items/gem_cinder_wake items/gem_ember
+decor_12: decor/stone_stool decor/stone_table decor/stone_throne decor/stone_wall_shelf decor/stone_weapon_plaque
+items_12: items/gem_hoarfrost_pulse items/gem_jolt items/gem_keen items/gem_leech items/gem_rime
+build_12: build/foundation_half__cut_stone build/foundation_half__plank_root build/foundation_steps__clay_brick build/foundation_steps__cut_stone build/foundation_steps__plank_root
+decor_13: decor/tavern_table decor/timber_stack decor/wall_torch
+items_13: items/glow_gland items/glowcap items/greaves_copper items/greaves_shell items/helm_copper
+build_13: build/foundation_triangle__clay_brick build/foundation_triangle__cut_stone build/foundation_triangle__plank_root build/gable_26__clay_brick build/gable_26__cut_stone
+items_14: items/helm_shell items/hollowcap items/keeper_heartstone items/lantern items/lantern_back
+build_14: build/gable_26__plank_root build/gable_45__clay_brick build/gable_45__cut_stone build/gable_45__plank_root build/half_wall__clay_brick
+build_15: build/half_wall__cut_stone build/half_wall__plank_root build/ladder__clay_brick build/ladder__cut_stone build/ladder__plank_root
+items_15: items/lantern_lens items/leather items/mace_2h_copper items/mace_2h_stone items/mace_copper
+build_16: build/mine_prop__clay_brick build/mine_prop__cut_stone build/mine_prop__plank_root build/pillar__clay_brick build/pillar__cut_stone
+items_16: items/mace_stone items/mail_copper items/marble items/moss items/pickaxe_copper
+build_17: build/pillar__plank_root build/railing__clay_brick build/railing__cut_stone build/railing__plank_root build/ramp__clay_brick
+items_17: items/pickaxe_fang items/pickaxe_stone items/plank_root items/plate_shell items/recipe_page
+build_18: build/ramp__cut_stone build/ramp__plank_root build/roof_26__clay_brick build/roof_26__cut_stone build/roof_26__plank_root
+items_18: items/root_tuber items/rootwood items/rope items/rune_cobalt items/rune_crimson
+build_19: build/roof_26_inner__clay_brick build/roof_26_inner__cut_stone build/roof_26_inner__plank_root build/roof_26_outer__clay_brick build/roof_26_outer__cut_stone
+items_19: items/rune_ochre items/rune_verdant items/rusty_scrap items/satchel items/shell_piece
+build_20: build/roof_26_outer__plank_root build/roof_26_ridge__clay_brick build/roof_26_ridge__cut_stone build/roof_26_ridge__plank_root build/roof_45__clay_brick
+items_20: items/shield_copper items/shield_shell items/shield_stone items/snail_meat items/spear_copper
+build_21: build/roof_45__cut_stone build/roof_45__plank_root build/roof_45_inner__clay_brick build/roof_45_inner__plank_root build/roof_45_outer__clay_brick
+items_21: items/spear_stone items/stone items/sword_copper items/sword_stone items/trousers_leather
+build_22: build/roof_45_outer__plank_root build/roof_45_ridge__clay_brick build/roof_45_ridge__cut_stone build/roof_45_ridge__plank_root build/rug__plank_root
+items_22: items/tunic_leather items/water_bucket items/waterskin_clean items/waterskin_dirty items/waterskin_empty
+build_23: build/shelf__plank_root build/sloped_wall__clay_brick build/sloped_wall__cut_stone build/sloped_wall__plank_root build/small_floor__clay_brick
+items_23: items/whetstone items/wing_leather items/wingskin
+build_24: build/small_floor__cut_stone build/small_floor__plank_root build/stairs__clay_brick build/stairs__cut_stone build/stairs__plank_root
+build_25: build/table__cut_stone build/table__plank_root build/wall__clay_brick build/wall__cut_stone build/wall__plank_root
+build_26: build/wall_narrow__clay_brick build/wall_narrow__cut_stone build/wall_narrow__plank_root build/wall_sconce__copper_ingot build/wall_sconce__cut_stone
+build_27: build/wall_shield__copper_ingot build/wall_shield__plank_root build/weapon_rack__plank_root build/window_wall__clay_brick build/window_wall__cut_stone
+build_28: build/window_wall__plank_root build/window_wide__clay_brick build/window_wide__cut_stone build/window_wide__plank_root
+redo1_00: items/bellcap items/bolt_ember items/bolt_fang
+redo2_00: stations/tool_rack stations/training_dummy stations/workbench
+redo1_01: build/small_floor__clay_brick
+redo2_01: build/sloped_wall__cut_stone build/sloped_wall__plank_root
+redo3_00: stations/grindstone build/doorway__cut_stone

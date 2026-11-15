@@ -19,6 +19,8 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - **F68, the monsters look like blobs / Play-Doh (said 2×).** 1st time (Nov 14): "raw blocks; build them the way Claude 2 hand-built the anvil". Claude 3 hand-built them. Then the Mac's creature guide and PC prompt said "use the 3D forge", so on Nov 15 Claude 3 replaced them with forged ones: soft and melted. 2nd time (Nov 15): "rebuild by hand, like the crafting tables". **Different approach now:** a written rule with a check (`docs/art/MODEL-RULES.md`, Rule 1: hand-built only, every model needs its build script), the creature guide rewritten, and the hand-built versions rebuilt to match the approved pictures, Rock Beetle first.
 - **F79, rules that don't stick: roofs (said 1×, but the plan already said it on Nov 14).** The plan said Stonehold = flat roof only, sloped roofs hollow, but the build menu still offers every roof to every material and some roof pieces came out filled. **Different approach:** Rule 4 in `MODEL-RULES.md`, enforced in the build menu code with a test, plus a thickness test for roof pieces.
 
+- **F82, tanning rack ropes not attached (said 2×, rope problems overall many times).** F45 (Nov 15) said "the hide is laced on with rope", but the lacing ropes still stop short of the hide, so it floats. **Different approach:** Rule 1 of MODEL-RULES plus the photo sheets (`tools/model_review/`): every rope must be checked from the side view, and the floating-parts check must treat the hide and ropes as separate parts that have to touch.
+
 ## Patterns (what kind of things you notice most)
 
 | Area | Items | Notes |
@@ -33,7 +35,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 | Cave shapes (round vs sharp, tunnels) | F19, F20 | |
 | Digging feel + resources | F13, F14 | |
 | Pictures / looks | F17, F22, F24, F25, F26, F28, F29, F30, F31, F68, F69, F70, F71, F72 | **The dwarf's look keeps coming up (F25 said twice)** |
-| Model quality (stations, gear, building pieces) | F34-F66, F73-F80 | Most common: parts floating / not touching (8 notes), too-perfect shapes, flat colour, loose rope |
+| Model quality (stations, gear, building pieces) | F34-F66, F73-F80, F82-F86 | Most common: parts floating / not touching (8 notes), too-perfect shapes, flat colour, loose rope |
 
 ---
 
@@ -50,6 +52,12 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F78. Shack floor: no grey planks.** *From: you. Said: 1×*
 - [ ] **F79. Roof rules don't stick.** Stonehold = flat roofs only; Shack and Hearthbrick = sloped only; some sloped/triangle roofs are filled instead of thin. *From: you. Said: 1×*
 - [ ] **F80. Pieces from your screenshots that look wrong:** Hearthbrick inner roof corner looks like logs and its tiles cross over each other; Shack outer roof corner has holes along the ridge; Hearthbrick foundation top is a messy cut-up brick pattern. *From: you. Said: 1×*
+- [ ] 🔁 **F82. Tanning rack: the ropes are not attached to the hide (again).** *From: you. Said: 2×*
+- [ ] **F83. Silver sword too wide and not sharp.** Narrower blade, real edges and a point. (Silver is a later zone; fix with the weapons pass.) *From: you. Said: 1×*
+- [x] ~~**F84. 3D page: separate Zone 1 items from the rest; you only want to work on Zone 1 now.**~~ Done Nov 15 (Mac): the Forge Models page opens on "Zone 1: Mossy Hollows" (360 models), with a switch to "Later zones" (75). Zone list from the design docs. *From: you. Said: 1×*
+- [x] ~~**F85. Go through every finished model, rotate it, take pictures, list the problems.**~~ Done Nov 15 (Mac): all 360 Zone 1 models photographed from 4 sides; report `docs/art/review-2026-11-15/README.md` (146 major, 150 minor, 64 ok). *From: you. Said: 1×*
+- [ ] **F86. Fix what the review found (you said yes to all four groups):** (a) old plain style + reskins, (b) harsh colours + pieces poking out / past the 2 m grid, (c) floating parts + wall items standing on floor posts, (d) weapons + copper that doesn't look like copper. Details per model in the review report. *From: Claude, approved by you Nov 15.*
+- [ ] **F55 moves up: outfits are rebuilt now** by the monsters-and-armor Claude, after the Rock Beetle (you said Nov 15).
 - [x] ~~**F81. Write rules for shimmer, clean building layers and no Play-Doh.**~~ Done Nov 15 (Mac): `docs/art/MODEL-RULES.md` (5 rules, each with a check), linked from `CLAUDE.md`; the creature guide and forge guide no longer say "use the 3D forge". *From: you. Said: 1×*
 
 *(Nov 14, after your first real play session. You chose: merge everything into main; start kit = rocks + roots + 1 crystal; 25–50 chunks; copper very rare.)*
