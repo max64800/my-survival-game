@@ -1263,3 +1263,74 @@ Important pieces (workbench, smelter, anvil) can be redone later with a better t
 - The glowing window was measured as an angle on the dome, which bends oddly near the top (it covered the whole back). Now
   it's an oval measured like the drawings: from above.
 - Claude accidentally deleted the plate list while replacing the window code; the build failed and it was put back.
+
+---
+
+## November 15, 2026, evening (PC, code Claude): your play test, then fixing what you found
+You played the game I started for you and sent notes while I worked. Each one went into FEEDBACK.md (F87-F114);
+when there was a choice, I asked you with multiple-choice questions first.
+
+- **What we did (in the order you asked):**
+  - **Menus (F87):**
+    - Escape now opens a menu: Resume, Save, Save and go to the main menu, Save and quit. Escape again closes it.
+    - The main menu lists your worlds (Play, Host, Delete; Delete asks "are you sure?") and makes new named worlds.
+      Two worlds can share a cave seed without overwriting each other.
+  - **Bag (F88):**
+    - The hotbar shows inside the bag.
+    - A pickaxe you carry digs even when it isn't in the pickaxe slot. That's what happened to "my pickaxe broke":
+      it was on the hotbar, not equipped.
+  - **Bare hands (F89):** with no pickaxe at all you can still dig, three times slower, so you can never get stuck.
+  - **Fallen building pieces (F90):** they land as solid rubble you bump into and stand on. Three pickaxe hits
+    clear it and give back half its materials. Everyone sees it in the same place, and it's saved.
+  - **Crafting (F92):** it takes 1-3 s with a progress bar while the dwarf works. Walking away cancels it,
+    and nothing is used up.
+  - **Bigger drops (F93, F104):** dropped things are 5 times bigger, and every chunk gets its own size, squash and tilt.
+  - **Preview (F96):** holding a workbench, chest or other station shows a see-through preview, green or red.
+  - **Lifting pieces (F97):** Shift + mouse wheel raises or lowers the piece you're building, and shows how high it is.
+  - **Blueprints (F98, F101, F102):**
+    - Ready-made blueprints are learned from Old Blueprint pages found in ruins.
+    - Ruin chests hold rare finds only, no free building materials.
+    - Choosing a piece in the B menu always leaves blueprint mode. That was the "everything is blue" problem:
+      each click was making a blue build site.
+  - **Taking things down (F100):**
+    - Right-click picks a piece up for everything back, but only within 10 s of placing it.
+    - X breaks a piece for 80% back.
+    - Stations always pick up whole.
+  - **Where to go next (F103):**
+    - A "Next steps" list on screen.
+    - Every recipe shows, with where to get each missing thing.
+    - Locked recipes show greyed out with what unlocks them.
+  - **Rock Snail (F105):** it can't bite from inside its shell.
+  - **Roots (F106):** they grow back after 10 minutes.
+  - **Crystals (F107):** the crystal lights fade instead of switching on and off.
+  - **Rock Beetle (F111):**
+    - Its charge only hurts if it really reaches you.
+    - It knocks you to the side it hit.
+    - After a charge it stands dazed for 3 s.
+  - **Blueprint chest (F112):** a blueprint is built floor by floor. The chest asks for everything the step needs at
+    once, plus what the whole building still needs.
+  - **Cave-in rocks (F113):** they are jagged lumps in 8 shapes, not cubes.
+  - **Brick (F114):** brick needs a level 2 Mason's Table (stone already needed the table, and wood is free).
+  - **Round doors (with Claude 2):** a real hobbit-style round doorway and door. The circle is 0.78 m around
+    a point 0.70 m up, cut flat at the floor. The stand-in dwarf walks through it in the tests.
+  - **New tests:**
+    - test_menu, test_goals, test_regrow, plus more checks in test_builder, test_bosses, test_authority and test_pois.
+    - All 326+ game checks pass.
+- **Still open:**
+  - F91: roots rebuilt by hand. Claude 2 has it queued.
+  - F99: blueprint pictures.
+  - F108: cracked walls that show hidden tunnels. You said later.
+  - F109/F110: a bigger world with more caverns, maze tunnels and jagged rock. You chose this first in the world work.
+- **Mistakes and hurdles (including Claude's):**
+  - Claude used a sound called "dig" that doesn't exist. The sound test caught it, and it now uses "dig_soft".
+  - A GDScript word mix-up: `sqrtf` doesn't exist in GDScript (it's `sqrt`). The tests wouldn't even start until fixed.
+  - Two variables with the same name ("blocked") in one function stopped the builder from loading.
+    The tests caught it straight away.
+  - The first round-doorway shape had 1 cm gaps between its strips in the stone style; the "floating parts" test
+    caught it, and the strips now overlap a little.
+  - The "Next steps" list first sat on top of the level text in the corner and didn't count things already in your
+    bag. Seen in the robot's screenshots; moved to the left and fixed.
+  - Claude started your test game itself, so the recorder skipped it (it never records Claude's runs). Next time,
+    double-click the desktop icon yourself if you want a recording.
+  - A cleanup command was blocked by a safety check (it could have deleted the wrong folder if a name was empty);
+    Claude used a fixed folder path instead.
