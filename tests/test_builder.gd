@@ -227,9 +227,22 @@ func test_blueprint_builds_itself() -> void:
 	for i in 400:
 		auth.builder._site_ticks += 1
 		auth.builder._tick_sites()
-		if auth.builder.site_status(box_id).begins_with("Paused"):
+		if auth.builder.site_status(box_id).contains("needs"):
 			break
-	check(auth.builder.site_status(box_id).begins_with("Paused: needs"), "asks for materials (%s)" % auth.builder.site_status(box_id))
+	var status := auth.builder.site_status(box_id)
+	check(status.begins_with("Step 1 of"), "asks for materials step by step (%s)" % status)
+	# Step 1 asks for ALL of its materials at once, not a few at a time.
+	var site: Dictionary = auth.builder.sites[box_id]
+	var steps := Builder.site_steps(site.plan)
+	if steps.count > 1:
+		check(status.contains("Whole building still needs"), "and shows what the whole building needs (F112)")
+	var step1 := []
+	for i in site.plan.size():
+		if steps.band_of[i] == steps.current:
+			step1.append(i)
+	var need := Builder.missing_for(site.plan, step1, auth.storage.get_box(box_id).inv)
+	for item in need:
+		check(status.contains("%d %s" % [need[item], Items.display_name(item)]), "step 1 asks for all %d %s" % [need[item], Items.display_name(item)])
 	for item in {plank_root = 39, cut_stone = 36, copper_ingot = 2}:
 		auth.storage.put(box_id, item, {plank_root = 39, cut_stone = 36, copper_ingot = 2}[item])
 	for i in 120:
@@ -274,3 +287,24 @@ func test_falling_rocks_are_rock_shaped() -> void:
 	check_eq(Builder.rock_mesh(0), a, "the same variant is reused (no new mesh every time)")
 	var box := a.get_aabb()
 	check(box.size.x > 0.6 and box.size.x < 1.4, "about 1 m across")
+
+
+## F112: a two-floor plan is built in two steps, the lower floor first.
+func test_blueprint_steps_go_floor_by_floor() -> void:
+	var plan := [
+		{piece = "floor", family = "plank_root", pos = Vector3(0, 0, 0), rot = 0, built = false},
+		{piece = "wall", family = "plank_root", pos = Vector3(0, 0.25, 1), rot = 0, built = false},
+		{piece = "floor", family = "plank_root", pos = Vector3(0, 2.25, 0), rot = 0, built = false},
+	]
+	var steps := Builder.site_steps(plan)
+	check_eq(steps.count, 2, "two steps: ground floor, upper floor")
+	check_eq(steps.number, 1, "starts with step 1")
+	check(steps.band_of[0] == steps.current and steps.band_of[1] == steps.current, "the floor and its walls are step 1")
+	check(steps.band_of[2] != steps.current, "the upper floor waits")
+	plan[0].built = true
+	plan[1].built = true
+	check_eq(Builder.site_steps(plan).number, 2, "then step 2")
+	var inv := Inventory.new()
+	inv.add("plank_root", 3)
+	var need := Builder.missing_for(plan, [2], inv)
+	check_eq(need.get("plank_root", 0), Pieces.cost("floor", "plank_root").plank_root - 3, "it counts what's already in the chest")

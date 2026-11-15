@@ -760,15 +760,69 @@ func _carve_step(box_id: int, site: Dictionary, chest: Dictionary) -> bool:
 	return false
 
 
+## A blueprint is built in steps, one floor (2 m band) at a time, bottom first (F112).
+const STEP_HEIGHT := 2.0
+
+
+static func site_steps(plan: Array, blocked: Dictionary = {}) -> Dictionary:
+	var base := INF
+	for p in plan:
+		base = minf(base, p.pos.y)
+	var bands := {}
+	var current := 1 << 30
+	for i in plan.size():
+		var band := floori((plan[i].pos.y - base + 0.25) / STEP_HEIGHT)
+		bands[i] = band
+		if not plan[i].built and not blocked.has(i):  # something in the way doesn't hold up the next step
+			current = mini(current, band)
+	var all_bands := {}
+	for i in bands:
+		all_bands[bands[i]] = true
+	var order := all_bands.keys()
+	order.sort()
+	return {band_of = bands, current = current, count = order.size(), number = order.find(current) + 1}
+
+
+## What's still missing (beyond what's in the chest) for these plan pieces: item -> count.
+static func missing_for(plan: Array, which: Array, inv: Inventory) -> Dictionary:
+	var need := {}
+	for i in which:
+		var p: Dictionary = plan[i]
+		var cost := Pieces.cost(p.piece, p.family)
+		for item in cost:
+			need[item] = need.get(item, 0) + cost[item]
+	var out := {}
+	for item in need:
+		var short: int = need[item] - inv.count_of(item)
+		if short > 0:
+			out[item] = short
+	return out
+
+
+static func _list_text(items: Dictionary) -> String:
+	var parts := []
+	for item in items:
+		parts.append("%d %s" % [items[item], Items.display_name(item)])
+	return ", ".join(parts)
+
+
 func _build_step(box_id: int, site: Dictionary, chest: Dictionary) -> void:
 	var inv: Inventory = chest.inv
 	var first_missing := {}
 	var done := 0
+	var in_the_way := {}
+	for i in site.plan.size():
+		var q: Dictionary = site.plan[i]
+		if not q.built and (structure.overlaps(q.piece, q.pos, q.rot) or Pieces.rock_problem(q.piece, q.pos, q.rot, auth.world.sdf_at) != ""):
+			in_the_way[i] = true
+	var steps := site_steps(site.plan, in_the_way)
 	for i in site.plan.size():
 		var p: Dictionary = site.plan[i]
 		if p.built:
 			done += 1
 			continue
+		if steps.band_of[i] != steps.current:
+			continue  # finish this step (floor) before starting the next
 		if _identical_exists(p):
 			_ev_site_piece.rpc(box_id, i)
 			return
@@ -806,10 +860,19 @@ func _build_step(box_id: int, site: Dictionary, chest: Dictionary) -> void:
 		_set_status(box_id, "Done!")
 		_ev_site_done.rpc(box_id)
 	elif not first_missing.is_empty():
-		var parts := []
-		for item in first_missing:
-			parts.append("%d %s" % [first_missing[item], Items.display_name(item)])
-		_set_status(box_id, "Paused: needs " + ", ".join(parts))
+		# Everything this step still needs at once, and what the whole building needs (F112).
+		var this_step := []
+		var rest := []
+		for i in site.plan.size():
+			if not site.plan[i].built:
+				rest.append(i)
+				if steps.band_of[i] == steps.current:
+					this_step.append(i)
+		var step_text := _list_text(missing_for(site.plan, this_step, inv))
+		var all_text := _list_text(missing_for(site.plan, rest, inv))
+		_set_status(box_id, "Step %d of %d needs: %s" % [steps.number, steps.count, step_text if step_text != "" else "nothing more"] +
+			("" if steps.count <= 1 else "
+Whole building still needs: %s" % all_text))
 	else:
 		_set_status(box_id, "Waiting: something is in the way")
 
