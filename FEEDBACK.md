@@ -108,6 +108,8 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F137. Every weapon should have a small chance of a critical hit.** *From: you. Said: 1×*
 - [ ] 🔁 **F138. The snail still finishes its attack after hiding in its shell.** As soon as it hides, the attack must stop. (F105 came back.) *From: you. Said: 2×*
 - [ ] **F139. Stairs sometimes won't place,** even with the rock underneath cleared. Always say why, and allow a piece to poke a little into rock. *From: you. Said: 1×*
+- [ ] **F140. The very first cave should have a dripping stalactite**, so players learn how to get water. *From: you. Said: 1×*
+- [ ] **F141. Tunnel exits high up in the cave ceiling.** One of the first cave's two exits is up in the ceiling; you'd need lots of stairs. The first cave and all of Zone 1 should be easy to walk around. *From: you. Said: 1×*
 - [x] ~~**F126. Lantern refill time.**~~ You checked: 10 minutes is fine, no change. *From: you. Said: 1×*
 
 - [ ] **F95. A way to make stone if you lose your pickaxe.** Same as F89 (bare hands dig soft rock and dirt for stone). *From: you. Said: 1×*

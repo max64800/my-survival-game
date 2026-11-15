@@ -423,10 +423,10 @@ func _connect_rooms(rng: RandomNumberGenerator, r0: int, cx: float) -> void:
 		if i != j:
 			edges.append(Vector2i(i, j))
 	for e in edges:
-		_dig_worm(rng, rooms[e.x].center, rooms[e.y].center, cx)
+		_dig_worm(rng, mouth(rooms[e.x]), mouth(rooms[e.y]), cx)
 	# Dead ends.
 	for k in 6:
-		var start: Vector3 = rooms[rng.randi_range(r0, n - 1)].center
+		var start: Vector3 = mouth(rooms[rng.randi_range(r0, n - 1)])
 		var angle := rng.randf_range(0, TAU)
 		var end := start + Vector3(cos(angle), rng.randf_range(-0.3, 0.3), sin(angle)) * rng.randf_range(40, 80)
 		_dig_worm(rng, start, _clamp_inside(end, cx), cx)
@@ -488,6 +488,15 @@ func _nearest_room(p: Vector3, r0: int, r1: int) -> Vector3:
 
 
 ## A wandering tunnel from a to b, made of short tubes.
+## Where a tunnel leaves a room: in the middle, but down at floor height, so you can walk in and out
+## (owner F141: exits high up in a tall cavern's wall needed lots of stairs). Tunnels are about 2.3-3.3 m
+## wide around this line, so their floor meets the room's flat floor.
+static func mouth(room: Dictionary) -> Vector3:
+	var c: Vector3 = room.center
+	var floor_y: float = c.y - (room.radii as Vector3).y * 0.55
+	return Vector3(c.x, minf(c.y, floor_y + 1.9), c.z)
+
+
 func _dig_worm(rng: RandomNumberGenerator, a: Vector3, b: Vector3, cx: float, r_min: float = 2.3, r_max: float = 3.3) -> void:
 	const STEP := 6.0
 	var pos := a

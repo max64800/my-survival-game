@@ -41,9 +41,17 @@ func _teardown() -> void:
 
 
 ## A spot on the floor a few meters from the player, snapped like the build ghost does it.
+## A flat, open spot about `dx` m from the player for this piece (looks around if the first try is in rock).
 func _floor_spot(piece: String, dx: float) -> Dictionary:
-	var p := world.maker.find_floor(player.global_position.x + dx, player.global_position.z, player.global_position.y + 2.0)
-	return Pieces.snap(piece, p, Vector3.UP, 0.0, 0)
+	var first := {}
+	for off in [Vector2(dx, 0), Vector2(-dx, 0), Vector2(0, dx), Vector2(0, -dx), Vector2(dx, dx), Vector2(-dx, -dx), Vector2(dx, -dx), Vector2(-dx, dx)]:
+		var p := world.maker.find_floor(player.global_position.x + off.x, player.global_position.z + off.y, player.global_position.y + 2.0)
+		var s := Pieces.snap(piece, p, Vector3.UP, 0.0, 0)
+		if first.is_empty():
+			first = s
+		if Pieces.rock_problem(piece, s.pos, s.rot, world.sdf_at) == "":
+			return s
+	return first
 
 
 func test_needs_a_workbench_and_materials() -> void:

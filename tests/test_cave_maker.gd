@@ -53,7 +53,8 @@ func test_tunnels_join_every_room() -> void:
 			continue  # sealed places are reached by digging; shrines are alcoves on a tunnel
 		var touched := false
 		for s in c.segments:
-			if s.a.distance_to(room.center) < 1.0 or s.b.distance_to(room.center) < 1.0:
+			var m := CaveMaker.mouth(room)  # tunnels leave at floor height (F141)
+			if s.a.distance_to(m) < 1.0 or s.b.distance_to(m) < 1.0:
 				touched = true
 				break
 		check(touched, "room at %s has no tunnel" % room.center)
@@ -215,3 +216,13 @@ func test_special_places_are_planned() -> void:
 		check(c.pois_of("shrine").size() >= 3, "seed %d: rune shrines (%d)" % [s, c.pois_of("shrine").size()])
 		check(c.pois_of("geode").size() >= 2, "seed %d: crystal geodes (%d)" % [s, c.pois_of("geode").size()])
 		check(not c.pois_of("nest_cavern").is_empty() and not c.pois_of("great_hall").is_empty(), "seed %d: side-boss caverns" % s)
+
+
+## F141: tunnels leave a room at floor height, not high up in its walls.
+func test_tunnel_mouths_are_at_floor_height() -> void:
+	var c := CaveMaker.new(31)
+	for room in c.rooms:
+		if room.sealed:
+			continue
+		var floor_y: float = room.center.y - room.radii.y * 0.55
+		check(CaveMaker.mouth(room).y - floor_y <= 2.0, "a tunnel mouth at most 2 m above the floor (room at %s)" % room.center)

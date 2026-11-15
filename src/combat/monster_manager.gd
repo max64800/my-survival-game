@@ -1016,6 +1016,9 @@ func _ev_shell(uid: int, hidden: bool) -> void:
 	var m: Monster = monsters.get(uid)
 	if m:
 		m.show_shell(hidden)
+	if hidden:
+		# A bite it was winding up was already sent to everyone's screen; it must not land now (F105/F138).
+		_incoming = _incoming.filter(func(h): return h.uid != uid)
 		if hidden:
 			_float_number(m.global_position + Vector3.UP * 1.3, "Hides in its shell!")
 
