@@ -560,6 +560,11 @@ static func _unbox(mi: MeshInstance3D, shape: String) -> void:
 ## Every frame: walking (legs swing in turns, the body bobs and waddles, leans into the run),
 ## wings flap, and a slow breath when standing still. `speed` in m/s, `size` = monster size.
 static func animate(model: Node3D, speed: float, size: float, clock: float) -> void:
+	# Glowing parts hum: a slow breath of light, in and out (owner, round 5). Charging keeps them blazing (set_angry).
+	var hum := 0.7 + 0.3 * sin(clock * 1.8)  # one breath every 3.5 s
+	var blaze := 2.6 if model.get_meta("angry", false) else 1.0
+	for g: StandardMaterial3D in model.get_meta("glow_mats", []):
+		g.emission_energy_multiplier = float(g.get_meta("base_energy", 1.0)) * blaze * hum
 	if not model.has_meta("legs"):
 		return
 	var go := clampf(speed / 3.0, 0.0, 1.0)            # 0 = standing, 1 = running

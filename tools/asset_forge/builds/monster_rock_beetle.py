@@ -188,7 +188,7 @@ def simplify(poly, n=7):
 	return poly
 
 
-def plate(name, outline, centre, n, thick, material, seed, gap=0.013, sink=0.06, curved=False):
+def plate(name, outline, centre, n, thick, material, seed, gap=0.013, sink=0.06, curved=False, tilt=None):
 	"""One chunky stone plate fitted to its patch of the shell, rounded chamfer. curved: it bends with the dome
 	(each corner sits on the shell and stands out along the shell's normal), like the drawing's armour plates."""
 	r = random.Random(seed)
@@ -197,7 +197,7 @@ def plate(name, outline, centre, n, thick, material, seed, gap=0.013, sink=0.06,
 	mid = sum(pts, Vector()) / len(pts)
 	bm = bmesh.new()
 	rings = []
-	tilt = (r.uniform(-0.05, 0.05), r.uniform(-0.05, 0.05))  # each slab's top a little off-level: hand-cut
+	tilt = tilt or (r.uniform(-0.05, 0.05), r.uniform(-0.05, 0.05))  # each slab's top a little off-level: hand-cut
 	for z, shrink in ((-sink, gap + 0.004), (thick * 0.6, gap), (thick, gap + 0.035)):
 		ring = []
 		for p in pts:
@@ -246,8 +246,10 @@ under = bpy.context.object
 under.name = "shell_under"
 bm = bmesh.new()
 bm.from_mesh(under.data)
-bmesh.ops.delete(bm, geom=[v for v in bm.verts if surf(v.co.normalized())[0].z < RIM_Z - 0.06],
-	context="VERTS")  # (no moss under the glowing window)
+bmesh.ops.delete(bm, geom=[v for v in bm.verts if surf(v.co.normalized())[0].z < RIM_Z - 0.06
+	or amber_at(v.co.normalized(), math.radians(4)) > 0
+	or (v.co.normalized().dot(FACE_DIR) > math.cos(math.radians(30)) and surf(v.co.normalized())[0].z < 0.62)],
+	context="VERTS")  # no moss behind the amber or the face: the sculpt grows it up to 7.5 cm, through the lids
 for v in bm.verts:
 	v.co = C + (surf(v.co.normalized())[0] - C) * 0.975
 bm.to_mesh(under.data)
@@ -452,23 +454,48 @@ def cushion_plates(seeds, material, seed=1):
 
 plates = cushion_plates(SEEDS, stone)
 
-# The glowing amber window: a smooth bulging dome (lit from inside), its edge tucked under the framing plates.
-bpy.ops.mesh.primitive_uv_sphere_add(segments=48, ring_count=24, radius=1)
-glow = bpy.context.object
-glow.name = "amber"
-bm = bmesh.new()
-bm.from_mesh(glow.data)
+# The glowing amber window: a cut gem like the picture's amber. Points are spread over the bulging dome and wrapped
+# in the tightest flat-sided shell around them (a convex hull), so every facet is perfectly flat with crisp straight
+# edges; the edge points sit a little lower, tucked under the framing plates.
 GROW = math.radians(9)  # its edge reaches well under the framing plates
-bmesh.ops.delete(bm, geom=[v for v in bm.verts if amber_at(v.co.normalized(), GROW) < 0], context="VERTS")
-for v in bm.verts:
-	d = v.co.normalized()
+
+
+def amber_point(d, sink=0.0):
 	t = max(0.0, amber_at(d, GROW))
-	v.co = C + (surf(d)[0] - C) * (1.0 + 0.1 * math.sqrt(t))
-bm.to_mesh(glow.data)
+	return C + (surf(d)[0] - C) * (1.0 + 0.1 * math.sqrt(t) - sink)
+
+
+bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=5, radius=1)
+probe = bpy.context.object
+pb = bmesh.new()
+pb.from_mesh(probe.data)
+bpy.data.objects.remove(probe)
+inside = {v for v in pb.verts if amber_at(v.co.normalized(), GROW) >= 0}
+rim = [v.co.normalized() for v in inside if any(e.other_vert(v) not in inside for e in v.link_edges)]
+fr = random.Random(23)
+inner = []
+for v in sorted(inside, key=lambda _: fr.random()):
+	d = v.co.normalized()
+	if amber_at(d, GROW) > 0.12 and all(d.angle(q) > 0.16 for q in inner):  # big chunky facets
+		inner.append(d)
+pb.free()
+bm = bmesh.new()
+for d in rim:
+	bm.verts.new(amber_point(d, sink=0.03))
+for d in inner:
+	bm.verts.new(amber_point(d, sink=fr.uniform(-0.004, 0.012)))  # each facet point a little in or out: hand-cut
+hull = bmesh.ops.convex_hull(bm, input=bm.verts[:])
+bm.faces.ensure_lookup_table()
+bmesh.ops.delete(bm, geom=[f for f in bm.faces if f.normal.dot((f.calc_center_median() - C).normalized()) < 0.3], context="FACES")
+bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
+me = bpy.data.meshes.new("amber")
+bm.to_mesh(me)
 bm.free()
+glow = bpy.data.objects.new("amber", me)
+bpy.context.scene.collection.objects.link(glow)
 glow.data.materials.append(amber)
 for p in glow.data.polygons:
-	p.use_smooth = True
+	p.use_smooth = False  # flat facets
 
 # ---------------------------------------------------------------- body underneath: dark segmented belly
 BELLY = [(-0.44, 0.16, 0.1), (-0.3, 0.26, 0.15), (0.0, 0.31, 0.16), (0.35, 0.28, 0.14), (0.55, 0.16, 0.09)]
@@ -492,94 +519,122 @@ for i, (y0, y1) in enumerate(zip(YS, YS[1:])):
 		((0, y1 + ln * 0.12, 0.352), w1 + 0.022, h1 + 0.02), ((0, y1 + ln * 0.2, 0.352), w1 + 0.012, h1 + 0.012)], chitin, sides=16, subsurf=0)
 
 # ---------------------------------------------------------------- the face, under the front edge
-# Read off the drawings: a wide red-brown face mask, cheeks, a ridge down the middle to a pouty mouth, big eyes in
-# dark sockets under thick angry lids, stone brows (shell plates) in a V, two pale tusks, segmented feelers.
-EYE_R = 0.088
-EYES = [Vector((s * 0.128, -0.6, 0.45)) for s in (-1, 1)]
-ck.loft("head", [((0, -0.32, 0.38), 0.23, 0.16), ((0, -0.45, 0.39), 0.27, 0.19), ((0, -0.55, 0.39), 0.25, 0.18),
-	((0, -0.61, 0.37), 0.19, 0.14), ((0, -0.645, 0.35), 0.1, 0.09)], face_skin, sides=20)
+# Round 5 (owner): a small face tucked in under the shell (not puffy), no nose, a mouth you barely see; each eye one
+# clean ball (iris, pupil and shine are PAINTED on in the sculpt pass, no stacked discs); a heavy lid under each stone
+# brow for the grumpy look; sickle fangs with a blade edge, growth rings and one sharp tip; feelers growing out of the
+# gaps above the brows, their roots melted into the face skin.
+EYE_R = 0.084
+EYE_LOOK = [Vector((s * 0.12, -1, -0.1)).normalized() for s in (-1, 1)]   # (sculpt_test_beetle.py paints along these)
+EYES = [Vector((s * 0.122, -0.585, 0.455)) for s in (-1, 1)]
+ck.loft("head", [((0, -0.3, 0.39), 0.2, 0.15), ((0, -0.44, 0.4), 0.215, 0.16), ((0, -0.54, 0.39), 0.2, 0.15),
+	((0, -0.6, 0.355), 0.14, 0.11), ((0, -0.625, 0.325), 0.075, 0.07)], face_skin, sides=20)
+ck.blob((0, -0.6, 0.31), (0.07, 0.045, 0.05), face_skin, seed=31, jitter=0.02)       # a small muzzle between the fangs
+mouth = ck.bezier((-0.032, -0.638, 0.298), (0, -0.648, 0.309), (0.032, -0.638, 0.298), n=7)
+ck.loft("mouth", [(p, 0.0055, 0.0035) for p in mouth], pupil, sides=8, subsurf=0)    # a thin frown, mostly sunk in
+
+
+def fang(name, pts, r0, material, s):
+	"""A sickle fang: thick at the root, a teardrop cross-section (a blade edge along the inside of the curve), two
+	growth rings near the root, tapering to ONE sharp point. The cross-section is carried along the curve without
+	twisting (parallel transport), so the tip can't crumple."""
+	n = len(pts)
+	tans = [(pts[min(i + 1, n - 1)] - pts[max(i - 1, 0)]).normalized() for i in range(n)]
+	ref = Vector((-s, 0, -0.4))  # the blade faces in toward the other fang and a little down
+	sides = 14
+	verts, faces = [], []
+	x = (ref - tans[0] * ref.dot(tans[0])).normalized()
+	for i in range(n - 1):
+		if i:
+			x = (x - tans[i] * x.dot(tans[i])).normalized()  # carry the frame along
+		y = tans[i].cross(x)
+		t = i / (n - 1)
+		groove = 1 - 0.09 * math.exp(-((t - 0.1) / 0.025) ** 2) - 0.07 * math.exp(-((t - 0.19) / 0.025) ** 2)
+		rr = r0 * (1 - t) ** 0.8 * groove
+		for k in range(sides):
+			a = 2 * math.pi * k / sides
+			blade = 1 + 0.45 * max(0.0, math.cos(a)) ** 6  # a ridge on the inner edge
+			verts.append(tuple(pts[i] + x * math.cos(a) * rr * blade + y * math.sin(a) * rr * 0.82))
+	for i in range(n - 2):
+		for k in range(sides):
+			a0, a1 = i * sides + k, i * sides + (k + 1) % sides
+			faces.append((a0, a1, a1 + sides, a0 + sides))
+	verts.append(tuple(pts[-1]))  # the sharp tip
+	tip = len(verts) - 1
+	last = (n - 2) * sides
+	for k in range(sides):
+		faces.append((last + k, last + (k + 1) % sides, tip))
+	verts.append(tuple(pts[0] - tans[0] * r0 * 0.3))  # root cap (buried in the jaw)
+	base = len(verts) - 1
+	for k in range(sides):
+		faces.append(((k + 1) % sides, k, base))
+	o = kit._mesh_obj(name, verts, faces, material, smooth=True)
+	ck._fix_normals(o)
+	return o
+
+
 for s in (-1, 1):
-	ck.blob((s * 0.19, -0.57, 0.36), (0.085, 0.07, 0.095), face_skin, seed=21 + s, jitter=0.05)        # cheeks
-	c = EYES[(s + 1) // 2]
-	# eye socket: a thick rim around the eye, so it sits IN the face
-	look = Vector((s * 0.3, -1, 0.05)).normalized()
-	ck.loft(f"socket{s}", [(c - look * 0.035, EYE_R * 1.02, EYE_R * 1.02), (c + look * 0.005, EYE_R * 1.2, EYE_R * 1.18),
-		(c + look * 0.03, EYE_R * 1.1, EYE_R * 1.08)], face_skin, sides=24, subsurf=0, up=Vector((0, 0, 1)))
-	# angry upper lid: a thick cap over the top of the eye, lower toward the nose
-	bpy.ops.mesh.primitive_uv_sphere_add(segments=28, ring_count=16, radius=EYE_R * 1.12, location=(0, 0, 0))
+	k = (s + 1) // 2
+	c, look = EYES[k], EYE_LOOK[k]
+	# socket: a rim of face skin hugging the eye (a ring), so the eye sits IN the face
+	bpy.ops.mesh.primitive_torus_add(major_radius=EYE_R * 1.04, minor_radius=0.022, major_segments=32, minor_segments=12)
+	ring = bpy.context.object
+	ring.name = f"socket{s}"
+	ring.matrix_world = Matrix.Translation(c - look * 0.004) @ frame(look).to_4x4()
+	ring.data.materials.append(face_skin)
+	# heavy upper lid: a thick cap over the top of the eye, coming lower on the nose side; its edge stops above the
+	# pupil, so the eye glares from under it
+	bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=18, radius=EYE_R + 0.01, location=(0, 0, 0))
 	lid = bpy.context.object
-	cut = Vector((-s * 0.5, -0.85, 0.8)).normalized()  # the lid comes down over the front of the eye, lower toward the nose
+	lid.name = f"lid{s}"
+	cut = Vector((-s * 0.3, -0.25, 1)).normalized()
 	bm = bmesh.new()
 	bm.from_mesh(lid.data)
-	bmesh.ops.delete(bm, geom=[v for v in bm.verts if v.co.normalized().dot(cut) < 0.3], context="VERTS")
+	bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], plane_co=cut * (EYE_R + 0.01) * 0.42,
+		plane_no=cut, clear_inner=True)  # one clean straight cut (no saw-tooth edge)
 	bm.to_mesh(lid.data)
 	bm.free()
 	lid.location = c
 	lid.data.materials.append(face_skin)
 	sol = lid.modifiers.new("thick", "SOLIDIFY")
-	sol.thickness = 0.022
+	sol.thickness = 0.022  # (inward: it sinks into the eye, no gap)
 	for p in lid.data.polygons:
 		p.use_smooth = True
-	# lower lid: a thin cap from below (the squint)
-	bpy.ops.mesh.primitive_uv_sphere_add(segments=28, ring_count=16, radius=EYE_R * 1.1, location=(0, 0, 0))
-	low = bpy.context.object
-	bm = bmesh.new()
-	bm.from_mesh(low.data)
-	bmesh.ops.delete(bm, geom=[v for v in bm.verts if v.co.normalized().dot(Vector((s * 0.2, -0.3, -1)).normalized()) < 0.55], context="VERTS")
-	bm.to_mesh(low.data)
-	bm.free()
-	low.location = c
-	low.data.materials.append(face_skin)
-	sol = low.modifiers.new("thick", "SOLIDIFY")
-	sol.thickness = 0.016
-	for p in low.data.polygons:
-		p.use_smooth = True
-# nose ridge down to the mouth, and a pouty mouth
-ck.loft("ridge", [((0, -0.63, 0.5), 0.035, 0.03), ((0, -0.66, 0.41), 0.048, 0.035), ((0, -0.675, 0.34), 0.06, 0.04)], face_skin, sides=12)
-ck.blob((0, -0.665, 0.3), (0.06, 0.035, 0.028), face_skin, seed=31, jitter=0.03)    # upper lip
-ck.blob((0, -0.655, 0.268), (0.048, 0.032, 0.024), face_skin, seed=32, jitter=0.03)  # lower lip
-ck.blob((0, -0.66, 0.285), (0.046, 0.02, 0.008), pupil, seed=33, jitter=0.0, subsurf=0)  # the mouth line
-for s in (-1, 1):
-	c = EYES[(s + 1) // 2]
-	bpy.ops.mesh.primitive_uv_sphere_add(segments=28, ring_count=16, radius=EYE_R, location=c)
+	# the eyeball: plain cream here; sculpt_test_beetle.py paints the iris, pupil and shine on it
+	bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=18, radius=EYE_R, location=c)
 	o = bpy.context.object
+	o.name = f"eye{s}"
 	o.data.materials.append(eye)
 	for p in o.data.polygons:
 		p.use_smooth = True
-	look = Vector((s * 0.12, -1, -0.12)).normalized()  # a glare, a little down and in
-	for rad, off, flat, m in ((0.066, 0.069, 0.4, iris), (0.035, 0.083, 0.4, pupil)):
-		bpy.ops.mesh.primitive_uv_sphere_add(segments=20, ring_count=12, radius=1)
-		q = bpy.context.object
-		q.scale = (rad, rad, rad * flat)
-		bpy.ops.object.transform_apply(scale=True)
-		q.matrix_world = Matrix.Translation(c + look * off) @ frame(look).to_4x4()
-		q.data.materials.append(m)
-		for p in q.data.polygons:
-			p.use_smooth = True
-	ck.blob(tuple(c + look * 0.09 + Vector((s * -0.02, 0, 0.026))), (0.016, 0.009, 0.016), shine, seed=3, subsurf=0)
-	# tusks: thick pale jaws from the corners of the mouth, curving forward, down and in
-	root = Vector((s * 0.105, -0.6, 0.36))
-	pts = ck.bezier(root, root + Vector((s * 0.07, -0.13, -0.07)), Vector((s * 0.03, -0.71, 0.22)), n=12, p3=Vector((s * 0.012, -0.69, 0.25)))
-	ck.loft(f"tusk{s}", [(p, 0.056 * (1 - 0.95 * (j / 11) ** 1.3), 0.048 * (1 - 0.95 * (j / 11) ** 1.3)) for j, p in enumerate(pts)], claw,
-		sides=12, subsurf=0, smooth=True, up=Vector((s, 0, 0)))
-	# feelers: shingled segments (like the legs), from above the eye, curving up and out, ending in a club
-	path = ck.bezier((s * 0.12, -0.6, 0.56), (s * 0.27, -0.7, 0.7), (s * 0.4, -0.74, 0.6), n=8)
+	# fangs: from a jaw knob under each eye, out and down, hooking in toward each other
+	ck.blob((s * 0.1, -0.585, 0.35), (0.05, 0.045, 0.045), face_skin, seed=41, jitter=0.02)   # jaw knob
+	pts = ck.bezier((s * 0.1, -0.59, 0.35), (s * 0.19, -0.665, 0.33), (s * 0.16, -0.735, 0.24), n=40, p3=(s * 0.055, -0.725, 0.215))
+	fang(f"fang{s}", pts, 0.05, claw, s)
+	# feelers: out of the gap above the brow (a knob of face skin fills the gap, so they grow out of the body),
+	# shingled segments curving up, out and forward, ending in a club
+	ck.blob((s * 0.15, -0.5, 0.54), (0.075, 0.07, 0.07), face_skin, seed=51, jitter=0.02)      # forehead
+	ck.blob((s * 0.17, -0.545, 0.6), (0.045, 0.045, 0.045), face_skin, seed=61, jitter=0.02)   # feeler socket
+	path = ck.bezier((s * 0.17, -0.55, 0.6), (s * 0.26, -0.65, 0.73), (s * 0.36, -0.71, 0.68), n=8)
 	for i in range(len(path) - 1):
-		a, b = path[i], path[i + 1]
-		d = b - a
-		ck.loft(f"feeler{s}{i}", [(a - d * 0.1, 0.022, 0.022), (a + d * 0.5, 0.027, 0.027), (b - d * 0.05, 0.031, 0.031), (b + d * 0.02, 0.026, 0.026)],
-			chitin, sides=10, subsurf=0)
-	ck.loft(f"club{s}", [(path[-1], 0.034, 0.034), (path[-1] + (path[-1] - path[-2]).normalized() * 0.05, 0.04, 0.038),
-		(path[-1] + (path[-1] - path[-2]).normalized() * 0.09, 0.03, 0.03)], chitin, sides=12, subsurf=1)
-# Heavy stone brows over the eyes (the grumpy V): lower on the inner side.
+		a, b2 = path[i], path[i + 1]
+		d = b2 - a
+		r0 = 0.03 - 0.0015 * i
+		ck.loft(f"feeler{s}{i}", [(a - d * 0.12, r0 * 0.8, r0 * 0.8), (a + d * 0.5, r0, r0), (b2 - d * 0.05, r0 * 1.12, r0 * 1.12),
+			(b2 + d * 0.02, r0 * 0.95, r0 * 0.95)], chitin, sides=10, subsurf=0)
+	ck.loft(f"club{s}", [(path[-1], 0.03, 0.03), (path[-1] + (path[-1] - path[-2]).normalized() * 0.05, 0.038, 0.036),
+		(path[-1] + (path[-1] - path[-2]).normalized() * 0.09, 0.028, 0.028)], chitin, sides=12, subsurf=1)
+# Heavy stone brows over the eyes (the grumpy V): lower on the inner side, pressing on the lids.
 for s in (-1, 1):
-	c = Vector((s * 0.135, -0.6, 0.555))
+	c = Vector((s * 0.13, -0.59, 0.588))
 	n = Vector((s * 0.12, -0.7, 0.7)).normalized()
-	pts = [(-0.13, -0.045), (0.12, -0.09), (0.135, 0.045), (-0.11, 0.075)]
-	outline = [(x * s, y) for x, y in pts]
+	pts = [(-0.125, -0.035), (-0.03, -0.07), (0.115, -0.085), (0.14, 0.0), (0.1, 0.07), (-0.06, 0.08), (-0.115, 0.045)]
+	outline = [(x * s, y + 0.3 * x) for x, y in pts]  # the inner end lower: the grumpy V
 	if s < 0:
 		outline.reverse()
-	plate(f"brow{s}", outline, c, n, 0.075, stone, seed=900 + s, gap=0.0)
+	o = plate(f"brow{s}", outline, c, n, 0.07, stone, seed=900, gap=0.0, tilt=(0.0, 0.04), sink=0.02)  # mirror images; sunk only
+	# 2 cm (deeper, its buried bottom ran along the lid and poked through it in dark patches)
+	o.modifiers["bevel"].width = 0.022
+	o.modifiers["bevel"].segments = 3  # a rough cut stone like the shell's, not a box
 
 # ---------------------------------------------------------------- the horn: thick, flat-sided, leaning forward
 hp = ck.bezier((0, -0.4, 0.64), (0, -0.56, 0.86), (0, -0.6, 1.05), n=8)
@@ -625,16 +680,23 @@ def leg(s, i, hip, knee, ankle, toe):
 		barrel("tibia", knee - low_dir * 0.035, t1, 0.092, 0.088, chitin)
 		barrel("tarsus", t1 - low_dir * 0.04, ankle, 0.08, 0.072, chitin)
 		out_dir = Vector((toe.x - ankle.x, toe.y - ankle.y, 0)).normalized()
-		root = ankle - low_dir * 0.05  # a short hooked claw tip grows out of the end of the foot
-		tip = Vector((ankle.x, ankle.y, -0.11)) + out_dir * 0.075  # the claw is the foot's tip and reaches the ground
-		talon("claw", root, tip, 0.062, out_dir * 0.035 + Vector((0, 0, 0.03)), claw)
+		# One claw lying FLAT on the ground like a toe (owner, round 5): its underside rests on the ground all along,
+		# from under the foot out to a point. Its root is tucked into the end of the last segment.
+		rings = []
+		for j in range(14):
+			t = j / 13
+			w = 0.06 * (1 - 0.96 * t ** 1.4)
+			h = 0.04 * (1 - 0.96 * t ** 1.4)
+			p = Vector((ankle.x, ankle.y, GROUND + h + 0.006 * math.sin(math.pi * t))) + out_dir * (-0.035 + 0.18 * t)
+			rings.append((p, w, h))
+		ck.loft("claw", rings, claw, sides=12, subsurf=0, smooth=True, up=Vector((0, 0, 1)))
 
 
-LEGS = [  # hip, knee, ankle, claw tip   (+X side; mirrored)
-	((0.18, -0.25, 0.28), (0.44, -0.34, 0.24), (0.5, -0.43, -0.03), (0.54, -0.52, -0.11)),
-	((0.24, 0.0, 0.27), (0.54, 0.04, 0.24), (0.63, 0.1, -0.03), (0.68, 0.17, -0.11)),
-	((0.22, 0.28, 0.28), (0.5, 0.37, 0.24), (0.58, 0.48, -0.03), (0.62, 0.57, -0.11)),
-	# (the foot almost on the ground; the save puts the lowest point on the ground, lifting the body ~11 cm)
+GROUND = -0.11  # where the claws lie (the save puts the lowest point on the ground, lifting the body 11 cm)
+LEGS = [  # hip, knee, ankle, which way the claw points   (+X side; mirrored)
+	((0.18, -0.25, 0.28), (0.44, -0.34, 0.24), (0.5, -0.43, -0.05), (0.54, -0.52, -0.11)),
+	((0.24, 0.0, 0.27), (0.54, 0.04, 0.24), (0.63, 0.1, -0.05), (0.68, 0.17, -0.11)),
+	((0.22, 0.28, 0.28), (0.5, 0.37, 0.24), (0.58, 0.48, -0.05), (0.62, 0.57, -0.11)),
 ]
 for s in (-1, 1):
 	for i, pts in enumerate(LEGS):

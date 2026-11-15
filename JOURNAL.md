@@ -1432,3 +1432,44 @@ rope, and every board and shingle has its own painting.
     I built into a temporary check folder there and deleted it afterwards.
   - **Foundation still identical.** I changed the foundation code so the half foundation could reuse it. Then I
     checked that the approved foundation came out exactly the same as before: same shape, nothing moved.
+---
+
+## November 15, 2026, late (PC, Claude 3): Rock Beetle rounds 3 to 5, the face, flat claws, worn stones, a humming gem
+
+**What we did**
+- Rounds 3 and 4 (the owner's notes): the stones now press together (each grows a little past its edge, so only a small
+  mossy canyon is left between neighbours); the shell is a rounder dome; one claw per leg; leg segments overlap like
+  shingles so no joint shows; a shingled belly.
+- Round 5, the owner's list: "stand on the legs with the claws flat to the ground; revamp the face (bloated, weird eyes,
+  odd tusks, no nose, a mouth you barely see); feelers into the gaps above the brows, blended; stones too smooth and one
+  colour; more detail in the yellow part and a humming animation; save all the rules for the other creatures".
+  - Claws: each one lies flat on the ground like a toe, under the foot and out to a point; the leg stands on it.
+  - Face: small and tucked in; no nose; a thin sunk frown for a mouth; each eye one ball with the iris, pupil and shine
+    painted on (no stacked discs); a heavy lid cut with one clean flat cut; stone brows in a V; sickle fangs with a blade
+    edge, two growth rings, a darker root and one sharp point.
+  - Feelers grow out of a knob of face skin that fills each gap above the brows (melted into the head).
+  - Stones: each its own shade (warmer, cooler, darker, lighter), thin pale scratches (also cut into the bumps the light
+    sees), darker grime, lighter worn edges.
+  - Amber: a cut gem of big flat facets (the tightest flat-sided shell around points on the dome), glowing edges, cloudy
+    depths, little bubbles. It hums: a slow breath of light every 3.5 s, in the game and on the 3D page; it still blazes
+    when the beetle charges.
+  - The rules: `docs/art/CREATURE-RECIPE.md` (the owner's 20 rules in plain words + how each is built, and the mistakes
+    to avoid); a close-up camera tool `tools/asset_forge/creature_closeup.py`. FEEDBACK F142-F148.
+- Pictures: `docs/art/rock-beetle-v2/step5_*.jpg`. 3D page "Rock Beetle (sculpt test)", round 5. Score: about 7.5/10.
+- Checks: test_monsters, test_bosses, test_model_rules all pass (39 checks).
+
+**Mistakes and hurdles (including Claude's)**
+- The first new lids had a saw-tooth edge (Claude cut the sphere by deleting points). Fixed with one clean flat cut.
+- The old socket ring around each eye was a closed tube: its end cap was a disc **in front of the eye**, and the old lid
+  was aimed forward over the iris. That was the "red smudges" in the eyes in round 4.
+- The old fang curve turned back up at its end, which crumpled the tip. The new one ends going forward into the point.
+- Dark speckled patches on both eyelids took seven tries. Claude guessed wrong five times (a shadow from the brow stones,
+  grainy shadows, the brow's buried bottom, the normal map, the moss layer) before checking properly: a ray test showed the patches were
+  on the face's light game copy, and a look at the melted skin alone showed it was clean. The real cause: thinning the
+  face for the game folded a few triangles over on the thin lids, and the bake painted the inside of the lid onto them.
+  Fixed by building the face's light copy as an even remesh. Lesson (now in the recipe): test where a problem lives
+  before guessing at causes.
+- One wrong guess was still worth it: the moss layer under the plates did grow up through the amber (little dark specks).
+  It now stops behind the amber and the face.
+- The game tests first failed to compile: after pulling the other Claudes' work, Godot needed an import first.
+- Long patch scripts typed straight into the terminal broke on quotes again; they go in script files now.
