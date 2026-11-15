@@ -123,6 +123,14 @@ func _build_camera() -> void:
 	camera.current = true
 
 
+## Set by Main: the build hammer's mode (Shift + wheel lifts its piece instead of zooming, F97).
+var build_mode: BuildMode
+
+
+func build_lifts() -> bool:
+	return build_mode != null and build_mode.active()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not input_enabled or not is_local:
 		return
@@ -141,10 +149,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			fight.message.emit("No weapon equipped. Put one in the Weapon slot (Tab).", Color.WHITE)
 		else:
 			auth.ask_draw_weapon(not ps.weapon_drawn)
-	# Mouse wheel: camera closer / farther (feedback F18).
-	if event.is_action_pressed("zoom_in"):
+	# Mouse wheel: camera closer / farther (feedback F18). Shift + wheel lifts a building piece instead (F97).
+	var lifting := event is InputEventMouseButton and (event as InputEventMouseButton).shift_pressed and build_lifts()
+	if event.is_action_pressed("zoom_in") and not lifting:
 		_zoom = maxf(ZOOM_MIN, _zoom - ZOOM_STEP)
-	if event.is_action_pressed("zoom_out"):
+	if event.is_action_pressed("zoom_out") and not lifting:
 		_zoom = minf(ZOOM_MAX, _zoom + ZOOM_STEP)
 	if event.is_action_pressed("refill_lantern"):
 		if fight and fight.is_crossbow():

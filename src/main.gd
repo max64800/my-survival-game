@@ -306,6 +306,7 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	var bm := BuildMode.new()
 	bm.name = "BuildMode"
 	bm.dwarf = dwarf
+	dwarf.build_mode = bm
 	add_child(bm)
 
 	hud = Hud.new()

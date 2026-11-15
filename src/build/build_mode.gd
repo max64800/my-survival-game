@@ -3,7 +3,7 @@ extends Node3D
 ## Build mode: active while the Build Hammer is in your hand.
 ##   Left click  = place the piece (the ghost shows where; green = OK, red = not allowed)
 ##   Right click = take down the piece you aim at (you get everything back)
-##   Q = turn · PageUp / PageDown = lift up / down · B = choose piece and material
+##   Q = turn · Shift + mouse wheel (or PageUp / PageDown) = lift up / down · B = choose piece and material
 
 signal changed  ## piece/material/rotation changed (the HUD shows it)
 signal message(text: String)  ## something to tell the player (blueprint saved, etc.)
@@ -199,6 +199,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			_save_blueprint(capture_corner, chit.position)
 			capture_corner = Vector3.INF
+		return
+	var wheel := event as InputEventMouseButton
+	if wheel and wheel.pressed and wheel.shift_pressed and wheel.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
+		# Shift + mouse wheel: raise / lower the piece half a metre (F97). Page Up / Down still work.
+		lift += 0.5 if wheel.button_index == MOUSE_BUTTON_WHEEL_UP else -0.5
+		changed.emit()
+		get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed("dig") and not target.is_empty():
 		auth.builder.ask_place(piece, family, target.pos, target.rot)
