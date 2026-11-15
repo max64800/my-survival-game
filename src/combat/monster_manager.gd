@@ -958,6 +958,11 @@ func _ev_hp(uid: int, hp: float, stun_frac: float, stunned: bool) -> void:
 
 ## Host: the snail pulled into its shell (or came out). Everyone sees it.
 func monster_shell(m: Monster, hidden: bool) -> void:
+	# Inside its shell a snail can't bite (F105): a bite it was winding up is called off, and when it
+	# comes back out it needs a moment before it can start a new one.
+	m.state = Monster.State.RECOVER
+	m._attack = {}
+	m._timer = 1.0
 	_ev_shell.rpc(m.uid, hidden)
 
 

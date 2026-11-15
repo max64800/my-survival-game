@@ -746,7 +746,7 @@ func _process(delta: float) -> void:
 	_fps_label.text = "%d FPS" % Engine.get_frames_per_second()
 	_update_boss_bar(dwarf)
 	if build_mode and build_mode.active() and build_mode.blueprint:
-		_build_label.text = "Blueprint: %s (%s)\nQ turn · left click place · right click cancel" % [build_mode.blueprint.name, BuildMenu._cost_text(build_mode.blueprint.cost())]
+		_build_label.text = "Blueprint: %s (%s)\nQ turn · left click place (a blue build site) · right click or B: back to single pieces" % [build_mode.blueprint.name, BuildMenu._cost_text(build_mode.blueprint.cost())]
 	elif build_mode and build_mode.active():
 		var c := BuildMenu._cost_text(Pieces.cost(build_mode.piece, build_mode.family))
 		_build_label.text = "%s · %s (%s)%s\nB choose · Q turn · Shift+wheel raise/lower%s · right click pick up (10 s) · X break (80%%) · C save blueprint · V blueprints" % [

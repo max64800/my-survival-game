@@ -44,6 +44,9 @@ func active() -> bool:
 
 
 func choose(p_piece: String, p_family: String) -> void:
+	if blueprint:  # picking a piece in the B menu always goes back to single pieces (F101)
+		stop_blueprint()
+		message.emit("Back to building single pieces.")
 	piece = p_piece
 	family = p_family if Pieces.allowed(p_piece, p_family) else Pieces.LIST[p_piece].get("families", [p_family])[0]
 	_ghost.rebuild(piece, family)
@@ -79,7 +82,7 @@ func start_blueprint(json: String) -> void:
 	_bp_chest_ghost.material_override = m
 	_bp_chest_ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_bp_ghosts.add_child(_bp_chest_ghost)
-	message.emit("Placing \"%s\": aim, Q to turn, left click to place, right click to cancel" % blueprint.name)
+	message.emit("Placing blueprint \"%s\" (blue = a build site that fills in as you add materials): aim, Q to turn, left click to place, right click or B to go back to single pieces" % blueprint.name)
 
 
 func stop_blueprint() -> void:

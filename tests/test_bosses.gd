@@ -164,3 +164,16 @@ func test_lair_walls_lock_during_the_fight() -> void:
 	check(auth.monsters.lair_locked(wall), "fight on: the walls glow and lock")
 	check(not auth.monsters.lair_locked(room.center + Vector3(room.radii.x + 30.0, 0, 0)), "rock far away is fine")
 	_teardown()
+
+
+## F105: a Rock Snail hiding in its shell can't bite: hiding calls off a bite it was winding up.
+func test_snail_in_its_shell_cant_bite() -> void:
+	await _setup()
+	var snail := _boss("rock_snail")
+	var atks: Array = snail.attack_options()
+	snail._start_attack(atks[0] if not atks.is_empty() else {tell = 0.6}, auth.monsters)
+	check_eq(snail.state, Monster.State.ATTACK, "winding up a bite")
+	snail.shell_left = 3.0
+	auth.monsters.monster_shell(snail, true)
+	check(snail.state != Monster.State.ATTACK and snail._attack.is_empty(), "hiding in the shell calls the bite off")
+	_teardown()
