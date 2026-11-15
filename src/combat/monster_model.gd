@@ -470,17 +470,21 @@ static func _tag_forged(holder: Node3D, forged: Node3D, shape: String) -> void:
 			var mname := String(m.resource_name)
 			for prefix in ["eye", "vein", "glow"]:
 				if mname.begins_with(prefix):
-					if not mats.has(prefix):
+					# One copy per material name (so a beetle's amber facets and its lava keep their own colours),
+					# shared by all its parts; this monster's copies flash and blaze on their own.
+					var key: String = prefix if prefix != "glow" else mname
+					if not mats.has(key):
 						var own := (m as StandardMaterial3D).duplicate() as StandardMaterial3D
 						own.emission_enabled = true
 						if prefix == "vein":
 							own.emission = Color(1.0, 0.32, 0.08)
 							own.emission_energy_multiplier = 0.0  # dark until it charges
 						if prefix == "glow":  # lava cracks, glowing backs, spore spots: always glow a little
-							own.emission = Color.WHITE
+							# Painted glow (forged models) is in the texture; hand-built ones glow in their own colour.
+							own.emission = Color.WHITE if own.emission_texture else own.albedo_color
 							own.set_meta("base_energy", maxf(0.8, own.emission_energy_multiplier))
-						mats[prefix] = own
-					mi.set_surface_override_material(i, mats[prefix])
+						mats[key] = own
+					mi.set_surface_override_material(i, mats[key])
 	if mats.has("eye"):
 		holder.set_meta("eye_mat", mats["eye"])
 	else:
@@ -494,8 +498,10 @@ static func _tag_forged(holder: Node3D, forged: Node3D, shape: String) -> void:
 		holder.set_meta("eye_mat", StandardMaterial3D.new())
 	if mats.has("vein"):
 		holder.set_meta("vein_mat", mats["vein"])
-	if mats.has("glow"):
-		holder.set_meta("glow_mat", mats["glow"])
+	var glows: Array = mats.keys().filter(func(k: String) -> bool: return k.begins_with("glow")).map(func(k: String) -> StandardMaterial3D: return mats[k])
+	if not glows.is_empty():
+		holder.set_meta("glow_mat", glows[0])
+		holder.set_meta("glow_mats", glows)
 	holder.set_meta("legs", legs)
 	holder.set_meta("wings", wings)
 	holder.set_meta("stalks", stalks)
@@ -669,9 +675,8 @@ static func set_angry(model: Node3D, angry: bool) -> void:
 	m.albedo_color = Color(0.7, 0.05, 0.0) if angry else Color(1.0, 0.9, 0.5)
 	if model.has_meta("vein_mat"):  # the cracks in its stone shell glow like coals while it charges
 		(model.get_meta("vein_mat") as StandardMaterial3D).emission_energy_multiplier = 2.2 if angry else 0.0
-	if model.has_meta("glow_mat"):  # its glowing parts blaze while it charges
-		var g := model.get_meta("glow_mat") as StandardMaterial3D
-		g.emission_energy_multiplier = float(g.get_meta("base_energy", 1.0)) * (2.6 if angry else 1.0)
+	for g: StandardMaterial3D in model.get_meta("glow_mats", [model.get_meta("glow_mat")] if model.has_meta("glow_mat") else []):
+		g.emission_energy_multiplier = float(g.get_meta("base_energy", 1.0)) * (2.6 if angry else 1.0)  # its glowing parts blaze while it charges
 
 
 static func _add(parent: Node3D, mesh: Mesh, mat: Material, pos: Vector3, scale := Vector3.ONE, rot := Vector3.ZERO) -> MeshInstance3D:

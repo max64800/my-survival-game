@@ -43,7 +43,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 
 *(Nov 15, your notes on the 3D building pieces and monsters. Rules written in `docs/art/MODEL-RULES.md`.)*
 
-- [ ] 🔁 **F68. Monsters: rebuild them by hand (no Play-Doh), like the crafting tables.** Plan: the Nov 14 hand-built scripts, reshaped to match the approved pictures; 4 looks on one body; Rock Beetle first for your OK. On the PC. *From: you. Said: 2×*
+- [ ] 🔁 **F68. Monsters: rebuild them by hand (no Play-Doh), like the crafting tables.** Plan: the Nov 14 hand-built scripts, reshaped to match the approved pictures; 4 looks on one body; Rock Beetle first for your OK. On the PC. *From: you. Said: 2×* **Nov 15 (Claude 3): Rock Beetle hand-built in all 4 looks, waiting for your OK** (pictures in `docs/art/creatures-hand-built-2026-11-15/`, 3D page Dwarf Cave Creatures). Snail and bat after your OK.
 - [ ] **F73. Stonehold stone colours are too drastic** (white, black and brown blocks together). Calm greys, a few warm stones. *From: you. Said: 1×*
 - [ ] **F74. Hearthbrick has too much discolouration** (yellow and dark bricks in the floor and foundation). Closer warm reds. *From: you. Said: 1×*
 - [ ] **F75. Round doors only.** One round doorway and one round door per style; remove the second doorway kind and anything square. *From: you. Said: 1× (first said Nov 14)*

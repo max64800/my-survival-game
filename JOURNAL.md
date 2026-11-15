@@ -1156,3 +1156,35 @@ Important pieces (workbench, smelter, anvil) can be redone later with a better t
     touching. That's why the tanning rack passed in the game but fails in the robot.
   - The robot reads piece sizes straight from the game's code, but its first try missed most pieces (multi-line
     entries). Fixed.
+
+---
+
+## November 15, 2026 (PC, Claude 3): the Rock Beetle, hand-built to match the approved pictures
+
+**What we did**
+- The owner rejected the forged creatures ("Play-Doh", F68 came back). The three Claudes split the work by message:
+  Claude 2 the building kit, Claude 1 the code and the model-check robot, Claude 3 creatures and outfits.
+- Wrote down what the approved beetle picture shows first (a low wide dome of big stone plates with moss in the cracks, a
+  glowing amber back, one thick stone horn, a grumpy red-brown face with big eyes and pale tusks, six chunky legs).
+- Rebuilt the Rock Beetle by hand in Blender (script, no picture-to-3D), all 4 looks on one body: mossy, frost (snow, ice
+  spikes, forked ice horn), ember (lava cracks, amber crystals, hammer horn), spore (glowing mushrooms, antler horn).
+  Six legs still walk; eyes flash before an attack; the glowing back blazes when it charges; same size and collision as before.
+- New tool `creature_compare.py`: the approved picture next to the model from the same angle. Used it after every change.
+- The game now shows hand-built glow in its own colour (it made every glow white before).
+- Model check robot: all 4 looks OK (nothing floating, no shimmer). Game checks: 312, all pass.
+- 3D page "Dwarf Cave Creatures" updated (beetle first). Old forged beetles kept in `journey/` until the owner says yes.
+- Honest score: 6.5/10 (the workbench is about 8).
+
+**Mistakes and hurdles (including Claude's)**
+- First try: plates were separate rocks placed on a dome. It looked like a rock pile, the crack layer showed as a green ball
+  underneath, and the glowing back floated off the back like a big yellow ball. Fixed: plates fitted to their patch of the dome,
+  a dark layer under them, and the glowing back made from the same dome, bulging out.
+- The cracks looked pale pink in the photos: a very dark colour under a bright grey sky still reads mid-grey. Made them near-black.
+- The horn looked like two stacked blocks: the kit's tube maker flips its direction when a curve turns straight up. Fixed by
+  telling it which way is "up" for the horn.
+- The robot found a moss tuft floating 1.1 cm off the horn, belly rings exactly on the belly (shimmer), snow lying flat on plates
+  and crystals sharing one base. All fixed.
+- In the game the glowing back was a white blob, and every glowing part shared one colour. Fixed in `monster_model.gd`.
+- Python wrote a Windows path with `\b` in it, which became an invisible "backspace" character, so the build script couldn't find
+  Blender. Fixed with forward slashes.
+- Keeping the old forged beetles in the models folder failed the "every model has a build script" check; moved them to `journey/`.

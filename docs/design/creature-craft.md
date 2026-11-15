@@ -77,3 +77,16 @@ The game's Rock Snail, Cave Bat and Rock Beetles now come from the owner's appro
 `assets/models/creatures/<creature>_<mossy|frost|ember|spore>.glb`. The same part names apply, plus material
 `glow*` (always glows a little, blazes on a charge). The hand-built models above are no longer in the game;
 their build scripts stay (`build_creatures.py`) in case they're wanted again.
+
+## Update, November 15, 2026 (evening): hand-built again, to match the pictures
+
+The owner rejected the forged creatures (Play-Doh, F68). The Rock Beetle is rebuilt by hand (`builds/monster_rock_beetle.py`):
+- **Fitted shell plates:** seed points in loose rows over a dome; every point of the dome goes to its nearest seed; each seed's
+  patch becomes one plate (its outline, pulled in 1 cm for the crack, one flat cut top, a chamfered edge). Seeds over the
+  glowing back and the face get no plate. This is what made it look like the picture (separate rocks looked like a rock pile).
+- **4 looks, one body:** the same plates, face and legs; only paint (kit textures recoloured) and extras change (moss strips in
+  the cracks, snow and ice spikes, lava cracks and amber crystals, mushrooms). The horn is the look's own (stone, forked ice,
+  hammer, mushroom antler), as in the approved grid.
+- **Glow in its own colour:** the game used to set every glow to white (right for forged models whose glow is in the
+  picture). Hand-built ones glow in their material colour, and each glow material keeps its own copy (amber facets, lava).
+- Check every change with `creature_compare.py` (picture | model, same angle) and `tools/model_check/check_models.py`.

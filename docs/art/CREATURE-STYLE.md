@@ -127,6 +127,14 @@ rock_beetle.png, rock_beetle_variants.png), and log them in `CREDITS.md` as our 
 - **The 4 looks share one body:** mossy, frost, ember and spore are paint swaps plus add-ons (moss tufts, ice
   crystals, glowing cracks, little mushrooms), so they read as one family.
 - One creature first (**Rock Beetle**), owner approves, then the other two.
+- **Rock Beetle: hand-built Nov 15 (Claude 3), waiting for the owner's OK.** Script: `tools/asset_forge/builds/monster_rock_beetle.py`
+  (`look=mossy|frost|ember|spore`); all four: `python tools/asset_forge/build_creatures.py <game>/assets/models only=rock_beetle`.
+  The shell is ~25 fitted stone plates: seeds are scattered over the dome and each plate takes the patch of dome nearest its
+  seed, so the plates fit like armour with thin dark cracks. Side-by-side check: `tools/asset_forge/creature_compare.py`
+  (approved picture next to the model, same angle). Pictures: `docs/art/creatures-hand-built-2026-11-15/`.
+  Score (Claude, honest): **6.5/10** vs the picture (the workbench ~8). Close: shape, plates, glowing back, horn, legs, face, all
+  4 looks. Not yet: the plates are smoother and less chunky than the painting, the face is smaller, the legs are thinner.
+  The old forged beetles are kept in `journey/forged_creatures_2026-11-15/` until the owner approves.
 - Save as `assets/models/creatures/<monster_id>_<look>.glb` (the names the game loads today).
 
 ## Step 3: make them move (important)
