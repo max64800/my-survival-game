@@ -657,3 +657,39 @@ Why branches? Our rule says each step must be playable and approved before the n
   - Always run helper programs with UTF-8 text (`PYTHONIOENCODING=utf-8`).
   - Never copy a result over a real file without first checking it isn't empty or much shorter than before.
   - For shared files, prefer the normal edit tool, which keeps backups.
+
+## Nov 14 (late): the owner's 29 notes on the models
+- **What we did:** wrote up the owner's notes on every station, weapon, outfit and building piece as F34-F62 in `FEEDBACK.md`,
+  with the full analysis in `docs/art/MODEL-FEEDBACK-2026-11-14.md` (5 kinds of problem: floating parts, too-perfect shapes,
+  flat colour, loose rope, too simple / reskins). Nothing fixed yet.
+- **New rule** (in `CLAUDE.md`): every model in the workbench style; ChatGPT pictures whenever they help.
+- **Hurdle:** F32 and F33 were in this journal but missing from `FEEDBACK.md` (another session's unsaved edit was lost). Added them back
+  so the numbers stay in order.
+
+## Nov 14 (night): daily Claude budget guard
+- **What we did:** the owner's rule: the weekly Claude limit (resets Sat 3:00 pm Dubai) is split into 7 days, ~14% each,
+  and unused room carries over (Sat 14%, Sun 29%, Mon 43%...). When *total* weekly usage reaches today's line, work on this
+  game stops until the next day starts. Typing "budget override" unlocks the rest of that day.
+- **How it works:** the Mac status line (`~/.claude/usage-statusline.py`, outside the repo) saves the weekly % to
+  `~/.claude/usage-latest.json`. This project's hooks (`.claude/settings.json`) run `tools/claude-budget/check.py`
+  before every message and every step. Self-check: `python3 tools/claude-budget/test_check.py`.
+- **Hurdle:** Claude can't look up the limit by itself; only the status line receives it. If the status line doesn't run
+  (or on the PC, until it's set up there too), the guard finds no numbers and never blocks.
+
+## November 15, 2026 (overnight, Mac): dwarf heads finished + 32-picture night batch
+- **What we did:** finished the dwarf set (Strong head; Smart head redone as OLD with a white beard and sarcastic smile,
+  per the owner; all three on one body in Leather). Then, alone overnight, made pictures for the 6 stations never
+  redone, nearly every model note F34–F61, all material items (4 sheets), and 9 decor sheets (furniture for each
+  building style, lights, storage, mine props, Valheim-style beams, wall trophies, fungal garden). List and scores:
+  `docs/art/NIGHT-PICTURES-2026-11-15.md`. Preview page: https://claude.ai/artifact/Wnj7oBDYjr5Gxvg2oCPTuG
+- **Hurdles:**
+  - ChatGPT refused 2 requests (bolts, creature parts) over words like "poison" and "fang". Fixed by asking for
+    "cartoony game item icons" with gentler words.
+  - ChatGPT only keeps nearby pictures loaded on the page. Fixed by saving each new picture right away into the
+    browser's own storage, and by scrolling back up to fetch the Strong head.
+  - Claude's mistake: the saver could grab a small side thumbnail when ChatGPT showed two versions. Fixed by only
+    taking the big displayed picture, then re-saving.
+  - Chrome's safety check blocked the one-file download, because downloads need the owner's OK. Not worked around.
+    The preview page shows the list and scores, and gets the pictures after the owner says yes.
+  - The budget file (`~/.claude/usage-latest.json`) doesn't exist on this Mac, so the 35% cap couldn't be measured.
+    Kept it lean instead: about 35 requests and small screenshots, no helper agents.

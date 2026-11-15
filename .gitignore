@@ -11,3 +11,5 @@ steam_appid.txt
 .DS_Store
 Thumbs.db
 desktop.ini
+# Claude settings for one computer only (personal permissions)
+.claude/settings.local.json

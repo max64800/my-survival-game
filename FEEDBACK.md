@@ -30,6 +30,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 | Cave shapes (round vs sharp, tunnels) | F19, F20 | |
 | Digging feel + resources | F13, F14 | |
 | Pictures / looks | F17, F22, F24, F25, F26, F28, F29, F30, F31 | **The dwarf's look keeps coming up (F25 said twice)** |
+| Model quality (stations, gear, building pieces) | F34-F66 | Most common: parts floating / not touching (8 notes), too-perfect shapes, flat colour, loose rope |
 
 ---
 
@@ -45,10 +46,48 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F30. Animations: running, jumping, swinging…** → Claude 3, on the `visuals` branch: a real 3D dwarf with idle, walk, jog, sprint, jump + landing, mining swing, axe chop, sword attacks, roll, block, shield, crossbow, getting hit, eating, climbing ladders, getting up; friends see it in co-op. *From: you. Said: 1×*
 - [ ] **F31. Monsters: start with snails, bats and a beetle, polish them first.** Snails slow but hit hard, hide in the shell after a few hits (90% less damage); big bats that swoop in, attack, fly out; a beetle. Drops and uses chosen in a multiple-choice session (docs/design/monsters-first-three.md). → Claude 3, on the `visuals` branch: built; the other monsters are hidden for now. Waiting for you to try it. *From: you. Said: 1×*
 
+*(Nov 14, your notes on every station, weapon, outfit and building piece. Full details, grouped by kind of problem: `docs/art/MODEL-FEEDBACK-2026-11-14.md`. New rule: every model in the workbench style; ChatGPT pictures whenever they help.)*
+
+- [ ] **F34. Bellows need a lot of work.** Boards, handles and nozzle float apart; remake as one hinged piece with leather pleats. *From: you. Said: 1×*
+- [ ] **F35. The campfire still floats a bit.** ("still": it was meant to be fixed before.) *From: you. Said: 1×*
+- [ ] **F36. The carpentry table needs more stuff on it.** *From: you. Said: 1×*
+- [ ] **F37. The chest's base is still wider than the lid; make them match.** *From: you. Said: 1×*
+- [ ] **F38. Chopping block: the axe doesn't look like an axe; the tree rings stick out and are perfect circles.** *From: you. Said: 1×*
+- [ ] **F39. Cooking pot soup looks the same everywhere; needs a gradient and texture.** *From: you. Said: 1×*
+- [ ] **F40. Copper drip basin water is one flat shade.** *From: you. Said: 1×*
+- [ ] **F41. Grindstone: the side wood blocks aren't attached; the blue bottom needs a darker gradient.** *From: you. Said: 1×*
+- [ ] **F42. Ore Crate: the gems float above the pile** (the F33 pile). *From: you. Said: 1×*
+- [ ] **F43. Rune slab: the top-left of the frame is missing.** *From: you. Said: 1×*
+- [ ] **F44. The stone saw floats, not attached to anything.** *From: you. Said: 1×*
+- [ ] **F45. Tanning rack: lean it back with supports (like Valheim).** *From: you. Said: 1×*
+- [ ] **F46. Tool rack: hang it on the wall instead of standing.** *From: you. Said: 1×*
+- [ ] **F47. Training dummy: a lumpy, not-perfect square head.** *From: you. Said: 1×*
+- [ ] **F48. Bolts: better feathers; tips in different crystal colours.** *From: you. Said: 1×*
+- [ ] **F49. Building hammer: no spikes, just iron plates on the sides (it's for building).** *From: you. Said: 1×*
+- [ ] **F50. Crossbow string must be tight.** *From: you. Said: 1×*
+- [ ] **F51. Shield back: a big forearm strap + a hand grip near the edge (Spartan style), not 2 sticks.** *From: you. Said: 1×*
+- [ ] **F52. Copper spear: tighter rope.** *From: you. Said: 1×*
+- [ ] **F53. Copper sword: tight rope along the whole handle, no gaps.** *From: you. Said: 1×*
+- [ ] **F54. Stone tools too perfect: chip them more. Stone sword has rope sticking out.** *From: you. Said: 1×*
+- [ ] **F55. All outfits too blocky and simple; remake (ChatGPT pictures).** *From: you. Said: 1×*
+- [ ] **F56. Material items need remaking too.** *From: you. Said: 1×*
+- [ ] **F57. Doorway should be round, like a hobbit door.** *From: you. Said: 1×*
+- [ ] **F58. White stuff shows on the edges of pieces when you turn** (doorway, stone, arches in clay brick and copper). *From: you. Said: 2×* (doorway/stone; arches)
+- [ ] **F59. Arches (clay brick, copper) look weird.** *From: you. Said: 1×*
+- [ ] **F60. Each building material should have its own design, not a reskin; each tier a bit fancier.** *From: you. Said: 1×*
+- [ ] **F61. Barrel rings don't touch each other.** *From: you. Said: 1×*
+- [ ] **F62. Beams: halves don't touch, a beam can't be 2 bricks; no perfect rectangles anywhere (curves, scratches, texture).** *From: you. Said: 1×*
+- [x] ~~**F63. Drop 3 mine props from the decor set: pickaxe in a rock pile, winch with bucket, tunnel support frame.**~~ Done Nov 15: mine props picture redone with only the other 5. *From: you. Said: 1×*
+- [x] ~~**F64. Cooking pot tripod needs a third leg behind.**~~ Done Nov 15 (picture): new pot on a real 3-leg tripod. The 3D model still needs it. *From: you. Said: 1×*
+- [x] ~~**F65. Stone saw: the station is decent, but the saw on top is not physically possible.**~~ Done Nov 15 (picture): a frame saw whose blade sits in a cut in the stone. The 3D model still needs it. *From: you. Said: 1×*
+- [x] ~~**F66. Lineup: change the smart dwarf to the old one (match his head sheet).**~~ Done Nov 15: new lineup, old smart dwarf with the long forked beard; happy and strong unchanged. *From: you. Said: 1×*
+
 **Claude noticed, waiting for your OK** (not fixed until you say so):
 
 ## Done
 
+- [x] ~~**F33. The Ore Crate should fill up visibly.**~~ Done Nov 14. The ore pile rises as the crate fills. (Added back: it was in the journal but missing here. Gems float, see F42.) *From: you. Said: 1×*
+- [x] ~~**F32. Kiln + furnaces that run themselves.**~~ Done Nov 14. Kiln: wood → coal. Smelter pulls ore + fuel from chests within 5 m; bars go back into a chest. Twin Smelter does both. (Added back: it was in the journal but missing here.) *From: you. Said: 1×*
 - [x] ~~**F27. The game grabs my mouse even when I'm in another program, and Claude's tests take my mouse.**~~ Fixed Nov 14. When you switch away (click another window or Alt+Tab), the game lets go of the mouse and pauses. Click back into the game to keep playing. Claude's test robots only *pretend* to hold the mouse now, so they never touch yours. *From: you. Said: 1×*
 - [x] ~~**F23. Real equipment slots.**~~ Done Nov 14. 9 slots in the bag window (Tab): Pickaxe, Lantern, Weapon, Shield, Head, Chest, Legs, Feet, Pack.
   - With an empty hand (or just holding rocks), you dig with the equipped pickaxe. **F** draws or puts away the equipped weapon.
