@@ -34,7 +34,9 @@ const LIST := {
 		station = {"workbench": 2, "mason": 1, "anvil": 1}},
 	"half_wall": {name = "Half Wall", group = "wall", size = Vector3(2, 1, 0.3), units = 2, place = "edge", station = ALL},
 	"doorway": {name = "Doorway", group = "wall", size = Vector3(2, 2, 0.3), units = 4, place = "edge", extra = {copper_ingot = 2},
-		opening = Vector3(1.0, 1.8, 0), round = true, station = ALL},  # round-topped (F57)
+		opening = Vector3(1.56, 1.48, 0), round = true, circle = 0.70, station = ALL},
+	# A hobbit-style round doorway (owner, Nov 15; numbers agreed with Claude 2): a circle of radius 0.78
+	# around a point 0.70 m up, cut flat at the floor. 1.56 wide in the middle, 0.69 at the floor, 1.48 tall.
 	# Round doors only (MODEL-RULES rule 5, F75): the arched doorway stays only so old saves load.
 	"arch_doorway": {name = "Arched Doorway", group = "legacy", size = Vector3(2, 2, 0.3), units = 4, place = "edge", shape = "arch_doorway",
 		opening = Vector3(1.2, 1.8, 0), families = ["cut_stone", "clay_brick"], station = {"mason": 2}},
@@ -56,7 +58,7 @@ const LIST := {
 		families = ["cut_stone", "cut_marble", "clay_brick", "basalt", "ancient_brick"], station = {"mason": 1}},
 	"battlement_corner": {name = "Battlement Corner", group = "roof", size = Vector3(0.6, 1.3, 0.6), units = 2, place = "corner",
 		shape = "battlement_corner", families = ["cut_stone", "cut_marble", "clay_brick", "basalt", "ancient_brick"], station = {"mason": 1}},
-	"door": {name = "Door", group = "wall", size = Vector3(1, 1.8, 0.12), units = 2, place = "edge", shape = "door",
+	"door": {name = "Door", group = "wall", size = Vector3(1.56, 1.48, 0.12), units = 2, place = "edge", shape = "door", circle = 0.70,
 		families = ["plank_root", "plank_mushroom", "cut_stone", "clay_brick", "copper_ingot"], station = {"workbench": 1, "mason": 1, "anvil": 1}},
 	# --- roofs: they climb `rise` meters from the front (z = +depth/2) to the back. Q turns them.
 	"roof_26": {name = "Roof (gentle)", group = "roof", size = Vector3(2, 1, 2), units = 3, place = "cell", shape = "roof", rise = 1.0,

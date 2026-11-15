@@ -64,7 +64,7 @@ static func _make(piece: String, style: String, detail: bool) -> ArrayMesh:
 		"brace": _brace(s)
 		"ladder": _ladder(s)
 		"railing": _railing(s)
-		"door": _door(s)
+		"door": _circle_door(s, float(info.circle)) if info.has("circle") else _door(s)
 		"steps": _steps(s, 2)
 		"ramp": _ramp(s)
 		"triangle": _triangle(s)
@@ -96,7 +96,9 @@ static func _make(piece: String, style: String, detail: bool) -> ArrayMesh:
 static func _plain_piece(piece: String, s: Vector3, info: Dictionary) -> void:
 	var group: String = info.get("group", "")
 	if info.has("opening"):
-		if info.get("round", false):
+		if info.has("circle"):
+			_circle_hole(s, info.opening.x * 0.5, float(info.circle))
+		elif info.get("round", false):
 			_round_hole(s, info.opening, false)
 		else:
 			_wall_with_hole(s.x, s.y, s.z, info.opening)
@@ -480,6 +482,50 @@ static func _tri(s: Vector3) -> void:
 
 
 ## A round-topped door (F57): planks up to where the curve starts, then a half circle.
+## Half the width of a circle (radius r, centre cy) over the strip y0..y1, measured where it's
+## narrowest, so the solid never pokes into the round opening. 0 = the strip misses the circle.
+static func _circle_half(r: float, cy: float, y0: float, y1: float) -> float:
+	var far := maxf(absf(y0 - cy), absf(y1 - cy))
+	if minf(absf(y0 - cy), absf(y1 - cy)) >= r and signf(y0 - cy) == signf(y1 - cy):
+		return 0.0
+	return sqrt(maxf(0.0, r * r - far * far)) if far < r else 0.0
+
+
+## A wall with a hobbit-style round hole (circle radius r around (0, cy), flat at the floor), built from
+## thin strips: solid to the left and right of the circle in each strip, solid above it.
+static func _circle_hole(s: Vector3, r: float, cy: float) -> void:
+	var strip := 0.04
+	var y := 0.0
+	var top := minf(cy + r, s.y)
+	_slab(Vector3(-(s.x * 0.5 + r) * 0.5, s.y * 0.5, 0), Vector3(s.x * 0.5 - r, s.y, s.z), "wall")
+	_slab(Vector3((s.x * 0.5 + r) * 0.5, s.y * 0.5, 0), Vector3(s.x * 0.5 - r, s.y, s.z), "wall")
+	if s.y - top > 0.005:
+		_slab(Vector3(0, (top + s.y) * 0.5, 0), Vector3(r * 2.0, s.y - top, s.z), "wall")
+	while y < top - 0.001:
+		var y1 := minf(y + strip, top)
+		var hw := _circle_half(r, cy, y, y1)
+		if r - hw > 0.002:
+			for side in [-1.0, 1.0]:  # each strip reaches 1.5 cm into the side wall and the strip above, so all touch
+				_box(Vector3(side * (hw + r + 0.015) * 0.5, (y + y1 + 0.01) * 0.5, 0), Vector3(r + 0.015 - hw, y1 - y + 0.01, s.z))
+		y = y1
+
+
+## A round hobbit door: the same circle, flat at the bottom, built from thin strips.
+static func _circle_door(s: Vector3, cy: float) -> void:
+	var r := s.x * 0.5
+	var strip := 0.04
+	var y := 0.0
+	while y < s.y - 0.001:
+		var y1 := minf(y + strip, s.y)
+		var mid := (y + y1) * 0.5
+		var hw := sqrt(maxf(0.0, r * r - (mid - cy) * (mid - cy)))
+		if hw > 0.01:
+			_box(Vector3(0, mid, 0), Vector3(hw * 2.0, y1 - y, s.z))
+		y = y1
+	if _detail:
+		_box(Vector3(r * 0.45, cy, s.z * 0.5 + 0.03), Vector3(0.08, 0.08, 0.06))  # a round knob in the middle
+
+
 static func _door(s: Vector3) -> void:
 	var r := s.x * 0.5
 	var spring := s.y - r
