@@ -72,7 +72,7 @@ def _crack(p, scale):
 	return max(0.0, 1.0 - (d[1] - d[0]) / 0.09) ** 2
 
 
-def carve_stone(o, seed=1, grain=0.003, crack=0.005, chips=0.014):
+def carve_stone(o, seed=1, grain=0.0022, crack=0.004, chips=0.008, soften=2):
 	"""Stone: rough grain, a few hairline cracks, and chipped corners (high curvature parts knocked off)."""
 	off = Vector((seed * 13.1, seed * 7.7, seed * 3.3))
 
@@ -86,8 +86,8 @@ def carve_stone(o, seed=1, grain=0.003, crack=0.005, chips=0.014):
 		return h
 	_displace(o, fn)
 	s = o.modifiers.new("soften", "SMOOTH")
-	s.iterations = 1
-	s.factor = 0.4
+	s.iterations = soften
+	s.factor = 0.5
 	_apply_all(o)
 
 
@@ -99,6 +99,31 @@ def carve_chitin(o, seed=2, dents=0.003, grain=0.0012):
 		q = p + off
 		return dents * noise.noise(q * 9) + grain * noise.fractal(q * 60, 0.5, 2.0, 3)
 	_displace(o, fn)
+
+
+def detail_copy(o, levels=2, name=None):
+	"""A dense copy (simple subdivision, shape unchanged) to carve small detail into; the original stays the game copy."""
+	_select_only(o)
+	bpy.ops.object.duplicate()
+	h = bpy.context.view_layer.objects.active
+	h.name = name or (o.name + "_high")
+	_apply_all(h)
+	m = h.modifiers.new("dense", "SUBSURF")
+	m.subdivision_type = "SIMPLE"
+	m.levels = levels
+	m.render_levels = levels
+	_apply_all(h)
+	return h
+
+
+def uv_only(o):
+	"""Give a mesh a UV map without changing its shape (apply its modifiers first)."""
+	_apply_all(o)
+	bpy.ops.object.mode_set(mode="EDIT")
+	bpy.ops.mesh.select_all(action="SELECT")
+	bpy.ops.uv.smart_project(angle_limit=math.radians(50), island_margin=0.006)
+	bpy.ops.object.mode_set(mode="OBJECT")
+	return o
 
 
 def game_copy(high, tris, name):
@@ -137,7 +162,8 @@ def lin(c):
 	return tuple(((v + 0.055) / 1.055) ** 2.4 if v > 0.04045 else v / 12.92 for v in c)
 
 
-def paint_material(name, base, dark, light, moss=None, moss_amount=0.0, strokes=0.12, top_light=0.18, edge=0.35, seed=0.0):
+def paint_material(name, base, dark, light, moss=None, moss_amount=0.0, strokes=0.12, top_light=0.18, edge=0.35, seed=0.0,
+		key=0.35, key_dir=(0.35, -0.45, 0.82)):
 	"""A 'hand-painted' look as a shader: base colour with brush-stroke variation, darker in cavities (ambient
 	occlusion), lighter on worn edges (pointiness) and on tops (facing up), moss in the up-facing cavities.
 	Colours are (r, g, b) 0..1 as picked by eye (sRGB). Meant to be BAKED (Cycles) into a colour picture."""
@@ -223,11 +249,84 @@ def paint_material(name, base, dark, light, moss=None, moss_amount=0.0, strokes=
 		nt.links.new(shade.outputs[2], mossmix.inputs[6])
 		mossmix.inputs[7].default_value = (*moss, 1)
 		last = mossmix
+	if key:
+		# painted light from the upper front: faces turned to it lighter, faces turned away darker (the painting's light)
+		dp = _node(nt, "ShaderNodeVectorMath", operation="DOT_PRODUCT")
+		nt.links.new(geo.outputs["Normal"], dp.inputs[0])
+		dp.inputs[1].default_value = Vector(key_dir).normalized()
+		kr = _node(nt, "ShaderNodeMapRange", **{"From Min": -0.4, "From Max": 1.0, "To Min": 1 - key, "To Max": 1 + key * 0.6})
+		nt.links.new(dp.outputs["Value"], kr.inputs["Value"])
+		kc = _node(nt, "ShaderNodeCombineXYZ")
+		for k in ("X", "Y", "Z"):
+			nt.links.new(kr.outputs[0], kc.inputs[k])
+		lit = _node(nt, "ShaderNodeMix", data_type="RGBA", blend_type="MULTIPLY")
+		lit.inputs[0].default_value = 1.0
+		nt.links.new(last.outputs[2], lit.inputs[6])
+		nt.links.new(kc.outputs[0], lit.inputs[7])
+		last = lit
 	nt.links.new(last.outputs[2], emit.inputs["Color"])
 	return m
 
 
-def bake(high, low, tex_size=1024, name="baked", normal=True):
+def glow_paint(name, core, rim, lines=0.35, cells=7.0):
+	"""A glowing gem/amber look: bright core facing you, deeper colour at the rim, honeycomb facet lines."""
+	core, rim = lin(core), lin(rim)
+	m = bpy.data.materials.new(name)
+	m.use_nodes = True
+	nt = m.node_tree
+	nt.nodes.clear()
+	outn = _node(nt, "ShaderNodeOutputMaterial")
+	emit = _node(nt, "ShaderNodeEmission")
+	nt.links.new(emit.outputs[0], outn.inputs["Surface"])
+	coord = _node(nt, "ShaderNodeTexCoord")
+	geo = _node(nt, "ShaderNodeNewGeometry")
+	# "core": how much the surface faces outward from the dome's middle (bright middle, deep rim)
+	vor = _node(nt, "ShaderNodeTexVoronoi", feature="DISTANCE_TO_EDGE", **{"Scale": cells})
+	nt.links.new(coord.outputs["Object"], vor.inputs["Vector"])
+	ln = _node(nt, "ShaderNodeMapRange", **{"From Min": 0.0, "From Max": 0.06, "To Min": 1.0 - lines, "To Max": 1.0})
+	nt.links.new(vor.outputs["Distance"], ln.inputs["Value"])
+	vor2 = _node(nt, "ShaderNodeTexVoronoi", **{"Scale": cells})
+	nt.links.new(coord.outputs["Object"], vor2.inputs["Vector"])
+	cell = _node(nt, "ShaderNodeMapRange", **{"From Min": 0.0, "From Max": 1.0, "To Min": 0.85, "To Max": 1.15})
+	nt.links.new(vor2.outputs["Color"], cell.inputs["Value"])
+	sep = _node(nt, "ShaderNodeSeparateXYZ")
+	nt.links.new(geo.outputs["Normal"], sep.inputs[0])
+	mix = _node(nt, "ShaderNodeMix", data_type="RGBA", blend_type="MIX")
+	mix.inputs[6].default_value = (*rim, 1)
+	mix.inputs[7].default_value = (*core, 1)
+	upr = _node(nt, "ShaderNodeMapRange", **{"From Min": 0.0, "From Max": 0.9, "To Min": 0.0, "To Max": 1.0})
+	nt.links.new(sep.outputs["Z"], upr.inputs["Value"])
+	nt.links.new(upr.outputs[0], mix.inputs[0])
+	mul = _node(nt, "ShaderNodeMath", operation="MULTIPLY")
+	nt.links.new(ln.outputs[0], mul.inputs[0])
+	nt.links.new(cell.outputs[0], mul.inputs[1])
+	cc = _node(nt, "ShaderNodeCombineXYZ")
+	for k in ("X", "Y", "Z"):
+		nt.links.new(mul.outputs[0], cc.inputs[k])
+	fin = _node(nt, "ShaderNodeMix", data_type="RGBA", blend_type="MULTIPLY")
+	fin.inputs[0].default_value = 1.0
+	nt.links.new(mix.outputs[2], fin.inputs[6])
+	nt.links.new(cc.outputs[0], fin.inputs[7])
+	nt.links.new(fin.outputs[2], emit.inputs["Color"])
+	return m
+
+
+def carve_moss(o, seed=4, height=0.03, cover=0.15):
+	"""Moss growing in the cracks: soft lumpy cushions where noise says so, bare dark ground elsewhere."""
+	off = Vector((seed * 3.7, seed * 1.9, seed * 8.1))
+
+	def fn(p, n):
+		q = p + off
+		f = noise.fractal(q * 11, 0.55, 2.0, 4) + cover
+		return height * max(0.0, f) ** 0.7 + 0.004 * noise.noise(q * 70)
+	_displace(o, fn)
+	s = o.modifiers.new("soften", "SMOOTH")
+	s.iterations = 2
+	s.factor = 0.5
+	_apply_all(o)
+
+
+def bake(high, low, tex_size=1024, name="baked", normal=True, emissive=0.0):
 	"""Bake the dense sculpt (with its paint material) onto the light copy: colour + normal map. Returns the low
 	copy's new game material (painted colour, normal map)."""
 	scene = bpy.context.scene
@@ -240,7 +339,8 @@ def bake(high, low, tex_size=1024, name="baked", normal=True):
 	m.use_nodes = True
 	nt = m.node_tree
 	b = nt.nodes["Principled BSDF"]
-	b.inputs["Roughness"].default_value = 0.85
+	b.inputs["Roughness"].default_value = 0.95
+	b.inputs["Specular IOR Level"].default_value = 0.15  # painted look: little plastic shine
 	tcol = nt.nodes.new("ShaderNodeTexImage")
 	tcol.image = col
 	nt.links.new(tcol.outputs["Color"], b.inputs["Base Color"])
@@ -252,6 +352,9 @@ def bake(high, low, tex_size=1024, name="baked", normal=True):
 		nm = nt.nodes.new("ShaderNodeNormalMap")
 		nt.links.new(tn.outputs["Color"], nm.inputs["Color"])
 		nt.links.new(nm.outputs["Normal"], b.inputs["Normal"])
+	if emissive:  # glowing parts: the painted colour also lights itself
+		nt.links.new(tcol.outputs["Color"], b.inputs["Emission Color"])
+		b.inputs["Emission Strength"].default_value = emissive
 	low.data.materials.clear()
 	low.data.materials.append(m)
 	bpy.ops.object.select_all(action="DESELECT")

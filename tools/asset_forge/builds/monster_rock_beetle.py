@@ -102,23 +102,26 @@ def dir_side(y, z, s):
 
 # The glowing window in the upper back: an oval, measured on the drawings (back view: from just above the shell's
 # widest point up to near the top; top view: reaching forward to the middle of the back).
-AMB_EL, AMB_ELH, AMB_AZW = math.radians(47), math.radians(29), math.radians(50)
+AMB_C, AMB_W, AMB_L, AMB_Z = 0.28, 0.34, 0.26, 0.56   # oval seen from above: centre y, half-width, half-length; lowest z
 
 
 def amber_at(d, grow=0.0):
-	"""How far inside the glowing window direction d is: > 0 inside (1 = its middle), < 0 outside."""
-	if d.y <= 0:
+	"""How far inside the glowing window direction d is: > 0 inside (1 = its middle), < 0 outside.
+	The window is an oval seen from above (the drawings' top and side views); grow (radians, ~0.45 m each) enlarges it."""
+	p = surf(d)[0]
+	g = grow * 0.45
+	if p.z < AMB_Z - g:
 		return -1.0
-	el = math.asin(max(-1.0, min(1.0, d.z)))
-	az = math.atan2(d.x, d.y)
-	return 1 - (az / (AMB_AZW + grow)) ** 2 - ((el - AMB_EL) / (AMB_ELH + grow)) ** 2
+	return 1 - (p.x / (AMB_W + g)) ** 2 - ((p.y - AMB_C) / (AMB_L + g)) ** 2
+
+
 FACE_DIR = Vector((0, -1, -0.12)).normalized()
 
-# Plate seeds, read off the top view (x, y) and the side view (y, z), mirrored left/right.
-SEEDS = [dir_xy(0, -0.38), dir_xy(0, -0.15)]
+# Plate centres read off the turnaround's top view one by one (x, y in metres; y = back), mirrored left/right.
+SEEDS = [dir_xy(0, -0.37), dir_xy(0, -0.18), dir_xy(0, 0.0)]
 for s in (-1, 1):
-	for x, y in ((0.21, -0.3), (0.32, -0.08), (0.13, -0.02), (0.33, 0.17), (0.1, 0.16), (0.3, 0.42), (0.13, 0.6)):
-		SEEDS.append(dir_xy(s * x, y))            # top, read off the top view
+	for x, y in ((0.17, -0.3), (0.3, -0.18), (0.14, -0.1), (0.36, 0.0), (0.15, 0.1), (0.37, 0.2), (0.35, 0.4), (0.24, 0.56), (0.09, 0.63)):
+		SEEDS.append(dir_xy(s * x, y))
 	for y in (-0.4, -0.12, 0.16, 0.42):
 		SEEDS.append(dir_side(y, 0.5, s))         # the lower row along each side (the skirt over the legs)
 	for y in (-0.25, 0.05):
@@ -127,7 +130,19 @@ for s in (-1, 1):
 SEEDS.append(dir_back(0, 0.5))
 HOLES = [FACE_DIR, (FACE_DIR + Vector((0.25, 0, 0))).normalized(), (FACE_DIR + Vector((-0.25, 0, 0))).normalized()]
 jr = random.Random(5)
-SEEDS = [(d + Vector((jr.uniform(-1, 1), jr.uniform(-1, 1), jr.uniform(-1, 1))) * 0.035).normalized() for d in SEEDS]  # hand-laid, not in rows
+_jit = {}
+
+
+def _jitter(d):
+	"""Hand-laid, not in rows, but mirror-matched left/right (the drawing is symmetric)."""
+	key = (round(abs(d.x), 4), round(d.y, 4), round(d.z, 4))
+	if key not in _jit:
+		_jit[key] = Vector((jr.uniform(-1, 1), jr.uniform(-1, 1), jr.uniform(-1, 1))) * 0.03
+	j = _jit[key]
+	return (d + Vector((math.copysign(j.x, d.x) if abs(d.x) > 1e-4 else 0.0, j.y, j.z))).normalized()
+
+
+SEEDS = [_jitter(d) for d in SEEDS]
 SEEDS = [d for d in SEEDS if amber_at(d, math.radians(5)) < 0 and d.dot(FACE_DIR) < 0.93]
 
 
@@ -230,7 +245,8 @@ under = bpy.context.object
 under.name = "shell_under"
 bm = bmesh.new()
 bm.from_mesh(under.data)
-bmesh.ops.delete(bm, geom=[v for v in bm.verts if surf(v.co.normalized())[0].z < RIM_Z - 0.03], context="VERTS")
+bmesh.ops.delete(bm, geom=[v for v in bm.verts if surf(v.co.normalized())[0].z < RIM_Z - 0.03 or amber_at(v.co.normalized(), -math.radians(3)) > 0],
+	context="VERTS")  # (no moss under the glowing window)
 for v in bm.verts:
 	v.co = C + (surf(v.co.normalized())[0] - C) * 0.975
 bm.to_mesh(under.data)
@@ -243,12 +259,42 @@ for p in under.data.polygons:
 # patch's edge smoothed and pulled in for the crack, then lifted into a cushion (thick in the middle, rounded at the
 # edge) with a few flat chisel cuts on top, so it reads as a hand-cut stone that bends with the shell.
 GAP = 0.012       # half the crack between two plates (m)
-ROUND = 0.04      # how far in from the edge a plate reaches its full thickness (m)
+ROUND = 0.045     # how far in from the edge a plate reaches its full thickness (m)
 
 
 def in_plate_area(d):
 	p = surf(d)[0]
 	return p.z >= RIM_Z and amber_at(d) <= 0 and not (d.dot(FACE_DIR) > math.cos(math.radians(30)) and p.z < 0.62)
+
+
+def corner_indices(pts, most=7):
+	"""Indices of the few points that keep a closed outline's shape (Douglas-Peucker, loosened until <= most)."""
+	n = len(pts)
+	start = max(range(n), key=lambda i: pts[i].length)
+	far = max(range(n), key=lambda i: (pts[i] - pts[start]).length)
+
+	def dp(i, j, eps, keep):
+		a, b = pts[i], pts[j]
+		best, bi = -1.0, None
+		k = (i + 1) % n
+		while k != j:
+			ab = b - a
+			d = abs(ab.cross(pts[k] - a).z) / max(ab.length, 1e-9)
+			if d > best:
+				best, bi = d, k
+			k = (k + 1) % n
+		if bi is not None and best > eps:
+			keep.add(bi)
+			dp(i, bi, eps, keep)
+			dp(bi, j, eps, keep)
+	eps = 0.006
+	while True:
+		keep = {start, far}
+		dp(start, far, eps, keep)
+		dp(far, start, eps, keep)
+		if len(keep) <= most:
+			return sorted(keep)
+		eps *= 1.25
 
 
 def boundary_loop(bm):
@@ -304,18 +350,31 @@ def cushion_plates(seeds, material, seed=1):
 		loop = boundary_loop(bm)
 		inner = [v for v in bm.verts if v not in set(loop)]
 		cdir = sum((v.co for v in bm.verts), Vector()).normalized()
-		# Round off the jagged triangle edge (on the unit sphere) without shrinking the plate, then pull it in for the crack.
-		before = [v.co.angle(cdir) for v in loop]
-		for _ in range(4):
+		# Straight-sided outline, like a cut stone: find the 5-7 corners that matter (Douglas-Peucker on a flat map of
+		# the plate, where straight lines stay straight on the shell), then lay the edge on straight lines between them.
+		e1 = (Vector((0, 0, 1)) if abs(cdir.z) < 0.95 else Vector((1, 0, 0))).cross(cdir).normalized()
+		e2 = cdir.cross(e1)
+		flat2 = [Vector((v.co.dot(e1) / v.co.dot(cdir), v.co.dot(e2) / v.co.dot(cdir), 0)) for v in loop]
+		corners = corner_indices(flat2, 7)
+		for ci, cj in zip(corners, corners[1:] + corners[:1]):
+			idx = [(ci + k) % len(loop) for k in range(((cj - ci) % len(loop)) + 1)]
+			lens = [0.0]
+			for u, w in zip(idx, idx[1:]):
+				lens.append(lens[-1] + (flat2[w] - flat2[u]).length)
+			for k, vi in enumerate(idx[1:-1], 1):
+				q = flat2[ci].lerp(flat2[cj], lens[k] / max(lens[-1], 1e-9))
+				loop[vi].co = (cdir + e1 * q.x + e2 * q.y).normalized()
+		# Round the corners a little (river-stone slabs, like the painting), keeping the plate's size.
+		before = sum(v.co.angle(cdir) for v in loop)
+		for _ in range(3):
 			new = [((loop[k - 1].co + loop[k].co * 2 + loop[(k + 1) % len(loop)].co) / 4).normalized() for k in range(len(loop))]
-			for v, n in zip(loop, new):
-				v.co = n
-		grow = (sum(before) / len(before)) / max(1e-6, sum(v.co.angle(cdir) for v in loop) / len(loop))
+			for v, nv in zip(loop, new):
+				v.co = nv
+		grow = before / max(1e-6, sum(v.co.angle(cdir) for v in loop))
 		for v in loop:
 			ang = v.co.angle(cdir)
 			if ang > 1e-6:
-				axis = cdir.cross(v.co).normalized()
-				v.co = Matrix.Rotation(ang * grow, 3, axis) @ cdir
+				v.co = Matrix.Rotation(ang * grow, 3, cdir.cross(v.co).normalized()) @ cdir
 		for _ in range(2):  # relax the inside so it follows the new edge
 			for v in inner:
 				nb = [e.other_vert(v).co for e in v.link_edges]
@@ -338,19 +397,20 @@ def cushion_plates(seeds, material, seed=1):
 				if dist[b] + L < dist[a] - 1e-9:
 					dist[a] = dist[b] + L
 					changed = True
-		thick = r.uniform(0.085, 0.11)
+		thick = r.uniform(0.1, 0.13)
 		dirs = {v: v.co.copy() for v in bm.verts}
 		top = {}
 		for v in bm.verts:
 			sp, sn = surf(dirs[v])
 			k = min(1.0, dist[v] / ROUND)
-			top[v] = sp + sn * thick * (0.42 + 0.58 * k)  # a straight bevel up to a flat-ish top
+			dome = 0.018 * min(1.0, dist[v] / 0.12)  # a gentle dome over the whole top
+			top[v] = sp + sn * (thick * (0.35 + 0.65 * math.sin(k * math.pi / 2)) + dome)  # a rounded bevel up to the top
 		# Chisel cuts: 3-4 flat planes slice the top, leaving big flat facets like a hand-cut stone.
 		cp, cn = surf(cdir)
 		peak = cp + cn * thick
-		for _ in range(r.randint(3, 4)):
-			pn = (cn + Vector((r.uniform(-1, 1), r.uniform(-1, 1), r.uniform(-1, 1))) * 0.45).normalized()
-			off = r.uniform(-0.022, -0.008)
+		for _ in range(r.randint(2, 3)):  # gentle cuts: the plate still lies along the shell
+			pn = (cn + Vector((r.uniform(-1, 1), r.uniform(-1, 1), r.uniform(-1, 1))) * 0.3).normalized()
+			off = r.uniform(-0.016, -0.006)
 			for v in bm.verts:
 				h = (top[v] - peak).dot(pn) - off
 				if h > 0:
@@ -396,7 +456,7 @@ glow = bpy.context.object
 glow.name = "amber"
 bm = bmesh.new()
 bm.from_mesh(glow.data)
-GROW = math.radians(5)  # its edge reaches a little under the framing plates
+GROW = math.radians(9)  # its edge reaches well under the framing plates
 bmesh.ops.delete(bm, geom=[v for v in bm.verts if amber_at(v.co.normalized(), GROW) < 0], context="VERTS")
 for v in bm.verts:
 	d = v.co.normalized()
@@ -471,27 +531,50 @@ ck.loft("horn_root", [((0, -0.36, 0.62), 0.12, 0.17), ((0, -0.43, 0.72), 0.1, 0.
 
 # ---------------------------------------------------------------- six fat legs, each its own part (turns at the hip)
 def barrel(name, a, b, r0, r1, material, sides=8):
-	"""One faceted leg barrel from a to b, bulging a little in the middle, chamfered ends."""
+	"""One leg segment like the painting's: a chunky faceted barrel (8 flat sides), rounded chamfers at both ends,
+	a little fatter in the middle, slightly flattened like a shield. Soft bevels catch the light on each facet."""
 	d = b - a
-	return ck.loft(name, [(a, r0 * 0.86, r0 * 0.86), (a + d * 0.12, r0, r0), (a + d * 0.55, (r0 + r1) / 2 * 1.06, (r0 + r1) / 2 * 1.06),
-		(a + d * 0.88, r1, r1), (b, r1 * 0.86, r1 * 0.86)], material, sides=sides, subsurf=0, smooth=False, seed=len(name))
+	m = (r0 + r1) / 2 * 1.05
+	o = ck.loft(name, [(a, r0 * 0.74, r0 * 0.68), (a + d * 0.05, r0 * 0.94, r0 * 0.87), (a + d * 0.15, r0, r0 * 0.93),
+		(a + d * 0.55, m, m * 0.93), (b - d * 0.15, r1, r1 * 0.93), (b - d * 0.05, r1 * 0.94, r1 * 0.87), (b, r1 * 0.74, r1 * 0.68)],
+		material, sides=sides, subsurf=0, smooth=False, seed=len(name))
+	bv = o.modifiers.new("bevel", "BEVEL")
+	bv.width = 0.006
+	bv.segments = 2
+	bv.limit_method = "ANGLE"
+	bv.angle_limit = math.radians(20)
+	return o
+
+
+def talon(name, root, tip, r, bend, material, sides=12):
+	"""A curved hooked claw: wide where it grows out of the foot, curving down to a sharp point. The tube's sideways
+	direction is fixed to the horizontal, so it can't twist into a blob where the claw points straight down."""
+	pts = ck.bezier(root, root.lerp(tip, 0.5) + bend, tip, n=12)
+	rings = [(p, r * (1 - 0.97 * (j / 11) ** 1.35), r * 0.85 * (1 - 0.97 * (j / 11) ** 1.35)) for j, p in enumerate(pts)]
+	side = Vector((tip.x - root.x, tip.y - root.y, 0)).normalized()
+	return ck.loft(name, rings, material, sides=sides, subsurf=0, smooth=True, up=side)
 
 
 def leg(s, i, hip, knee, ankle, toe):
 	hip, knee, ankle, toe = Vector(hip), Vector(knee), Vector(ankle), Vector(toe)
+	up_dir = (knee - hip).normalized()
+	low_dir = (ankle - knee).normalized()
 	with ck.part(f"leg_{'l' if s < 0 else 'r'}{i}", hinge=tuple(hip)):
-		barrel("coxa", hip - (knee - hip).normalized() * 0.04, hip.lerp(knee, 0.5), 0.082, 0.086, chitin)
-		barrel("femur", hip.lerp(knee, 0.5), knee, 0.086, 0.082, chitin)
-		barrel("tibia", knee, knee.lerp(ankle, 0.5), 0.082, 0.076, chitin)
-		barrel("tarsus", knee.lerp(ankle, 0.5), ankle, 0.076, 0.068, chitin)
-		for k, p in enumerate((hip.lerp(knee, 0.5), knee, knee.lerp(ankle, 0.5))):  # dark joint rings
-			d = ((knee - hip) if k == 0 else (ankle - knee)).normalized()
-			rr = 0.064 - 0.005 * k  # narrower than the barrels: a groove between segments
-			ck.loft(f"joint{k}", [(p - d * 0.012, rr, rr), (p + d * 0.012, rr, rr)], chitin_dark, sides=8, subsurf=0, smooth=False)
+		G = 0.016  # the soft joint between two armour segments
+		c1 = hip + (knee - hip) * 0.32
+		barrel("coxa", hip - up_dir * 0.03, c1 - up_dir * G / 2, 0.094, 0.098, chitin)
+		barrel("femur", c1 + up_dir * G / 2, knee + low_dir * 0.035, 0.1, 0.092, chitin)  # overlaps the shin at the knee
+		t1 = knee + (ankle - knee) * 0.55
+		barrel("tibia", knee + low_dir * 0.01, t1 - low_dir * G / 2, 0.09, 0.082, chitin)
+		barrel("tarsus", t1 + low_dir * G / 2, ankle, 0.08, 0.068, chitin)
+		for k, (p, d, rr) in enumerate(((c1, up_dir, 0.068), (t1, low_dir, 0.058))):  # dark soft joints in the gaps
+			ck.loft(f"joint{k}", [(p - d * 0.03, rr, rr * 0.93), (p, rr * 1.02, rr * 0.95), (p + d * 0.03, rr, rr * 0.93)], chitin_dark, sides=12, subsurf=0)
 		out_dir = Vector((toe.x - ankle.x, toe.y - ankle.y, 0)).normalized()
-		start = ankle - (ankle - knee).normalized() * 0.03
-		cl = ck.bezier(start, start + out_dir * 0.09 + Vector((0, 0, 0.0)), Vector((toe.x, toe.y, 0.0)), n=9)
-		ck.loft("claw", [(p, 0.064 * (1 - 0.9 * (j / 8) ** 1.5), 0.058 * (1 - 0.9 * (j / 8) ** 1.5)) for j, p in enumerate(cl)], claw, sides=8, subsurf=1)
+		root = ankle - low_dir * 0.06  # the claw grows out from inside the last segment
+		talon("claw", root, Vector((toe.x, toe.y, 0.0)), 0.05, out_dir * 0.07 + Vector((0, 0, 0.07)), claw)
+		side = Vector((0, 0, 1)).cross(out_dir).normalized() * (1 if (i + (s > 0)) % 2 else -1)
+		tip2 = Vector((toe.x, toe.y, 0.0)) + side * 0.05 - out_dir * 0.035
+		talon("claw2", root + side * 0.025, tip2 + Vector((0, 0, 0.004)), 0.034, out_dir * 0.02 + Vector((0, 0, 0.04)), claw)  # a smaller second claw beside it
 
 
 LEGS = [  # hip, knee, ankle, claw tip   (+X side; mirrored)
