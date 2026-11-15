@@ -15,6 +15,8 @@ var _aim_label: Label
 var _dig_bar: ProgressBar
 var _dig_bar_timer := 0.0
 var _hotbar: HBoxContainer
+var _hotbar_home: Control  ## where the hotbar lives while playing (bottom of the screen)
+var _hotbar_dock: VBoxContainer  ## where it moves while the bag is open (F88)
 var _bag_panel: PanelContainer
 var _bag_grid: GridContainer
 var _slot_panels := {}  ## inventory index -> its slot Panel (hotbar, bag, backpack, equipment)
@@ -92,9 +94,9 @@ func _build() -> void:
 
 	_hotbar = HBoxContainer.new()
 	_hotbar.add_theme_constant_override("separation", 6)
-	_hotbar.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
-	_hotbar.position += Vector2(-((SLOT_SIZE + 6) * Inventory.HOTBAR_SIZE - 6) / 2.0, -SLOT_SIZE - 18)  # centered for any hotbar size
+	_hotbar_home = root
 	root.add_child(_hotbar)
+	_place_hotbar()
 	for i in Inventory.HOTBAR_SIZE:
 		_hotbar.add_child(_make_slot(i, str(i + 1)))
 
@@ -111,6 +113,11 @@ func _build() -> void:
 	_bag_panel.add_child(bag_box)
 	var title := _label(bag_box, 18)
 	title.text = "Bag  (click two slots to swap · right-click to equip / take off)"
+	# The hotbar moves in here while the bag is open, so everything you carry is in one place (F88).
+	_hotbar_dock = VBoxContainer.new()
+	bag_box.add_child(_hotbar_dock)
+	var hb_title := _label(_hotbar_dock, 15)
+	hb_title.text = "Hotbar (keys 1-9)"
 	_bag_grid = GridContainer.new()
 	_bag_grid.columns = 10
 	bag_box.add_child(_bag_grid)
@@ -130,6 +137,7 @@ func _build() -> void:
 	for i in Inventory.EQUIP.size():
 		equip_grid.add_child(_make_slot(Inventory.EQUIP_START + i, EQUIP_NAMES[i]))
 	_bag_panel.resized.connect(func(): _bag_panel.position = (root.size - _bag_panel.size) * 0.5)
+	_bag_panel.visibility_changed.connect(_dock_hotbar)
 
 	var fuel_box := VBoxContainer.new()
 	fuel_box.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
@@ -507,6 +515,26 @@ func set_loading(on: bool, text: String = "") -> void:
 
 func is_bag_open() -> bool:
 	return _bag_panel.visible
+
+
+## The hotbar at the bottom middle of the screen.
+func _place_hotbar() -> void:
+	_hotbar.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	_hotbar.position += Vector2(-((SLOT_SIZE + 6) * Inventory.HOTBAR_SIZE - 6) / 2.0, -SLOT_SIZE - 18)  # centered for any hotbar size
+
+
+## While the bag is open the hotbar sits inside it (same slots, so you can move things between them);
+## when it closes it goes back to the bottom of the screen (F88).
+func _dock_hotbar() -> void:
+	if _bag_panel.visible and _hotbar.get_parent() != _hotbar_dock:
+		_hotbar.reparent(_hotbar_dock, false)
+	elif not _bag_panel.visible and _hotbar.get_parent() != _hotbar_home:
+		_hotbar.reparent(_hotbar_home, false)
+		_place_hotbar()
+
+
+func is_hotbar_in_bag() -> bool:
+	return _hotbar.get_parent() == _hotbar_dock
 
 
 func set_bag_open(open: bool) -> void:

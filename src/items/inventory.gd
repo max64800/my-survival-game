@@ -58,6 +58,18 @@ func equipped(slot_name: String) -> String:
 	return get_slot(equip_index(slot_name)).get("id", "") if is_player else ""
 
 
+## The slot with the strongest item of this kind you carry (hotbar, bag, backpack), or -1.
+func best_of_kind(kind: String) -> int:
+	var best := -1
+	var best_power := -1.0
+	for i in EQUIP_START:
+		var id: String = slots[i].get("id", "") if i < slots.size() else ""
+		if id != "" and Items.kind(id) == kind and float(Items.info(id).get("power", 0)) > best_power:
+			best = i
+			best_power = float(Items.info(id).get("power", 0))
+	return best
+
+
 func pack_open() -> bool:
 	return is_player and equipped("pack") != ""
 

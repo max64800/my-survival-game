@@ -108,8 +108,12 @@ class PlayerState:
 		if weapon_drawn and inventory.equipped("weapon") != "":
 			return Inventory.equip_index("weapon")
 		var picked: String = inventory.get_slot(selected_slot).get("id", "")
-		if not Items.kind(picked) in HAND_KINDS and inventory.equipped("pickaxe") != "":
-			return Inventory.equip_index("pickaxe")
+		if not Items.kind(picked) in HAND_KINDS:
+			if inventory.equipped("pickaxe") != "":
+				return Inventory.equip_index("pickaxe")
+			var carried := inventory.best_of_kind("pickaxe")  # a pickaxe in the hotbar or bag still digs (F88)
+			if carried >= 0:
+				return carried
 		return selected_slot
 
 	## How much worn clothes/armor soak up: 2% per armor point, at most 60%.

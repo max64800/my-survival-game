@@ -81,3 +81,29 @@ func test_escape_menu_buttons() -> void:
 			(box.get_node(b) as Button).pressed.emit()
 	check_eq(got, ["resume", "save", "menu", "quit"], "Resume, Save, main menu and Quit all work")
 	hud.queue_free()
+
+
+## F88: opening the bag shows the hotbar inside it (same slots); closing puts it back at the bottom.
+func test_hotbar_shows_in_the_bag() -> void:
+	var hud := Hud.new()
+	tree.root.add_child(hud)
+	await tree.process_frame
+	check(not hud.is_hotbar_in_bag(), "while playing, the hotbar is at the bottom of the screen")
+	hud.set_bag_open(true)
+	check(hud.is_hotbar_in_bag(), "open the bag: the hotbar is inside it")
+	hud.set_bag_open(false)
+	check(not hud.is_hotbar_in_bag(), "close the bag: back at the bottom")
+	hud.queue_free()
+
+
+## F88: a pickaxe you carry (hotbar or bag) is found even when the pickaxe slot is empty.
+func test_carried_pickaxe_is_found() -> void:
+	var inv := Inventory.new()
+	inv.is_player = true
+	inv.slots[3] = {id = "pickaxe_stone", count = 1}
+	inv.slots[Inventory.HOTBAR_SIZE + 5] = {id = "pickaxe_copper", count = 1}
+	check_eq(inv.best_of_kind("pickaxe"), Inventory.HOTBAR_SIZE + 5, "the strongest carried pickaxe")
+	inv.slots[Inventory.HOTBAR_SIZE + 5] = {}
+	check_eq(inv.best_of_kind("pickaxe"), 3, "or the one on the hotbar")
+	inv.slots[3] = {}
+	check_eq(inv.best_of_kind("pickaxe"), -1, "none carried")
