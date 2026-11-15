@@ -208,11 +208,12 @@ func _build() -> void:
 	blueprint_menu.visible = false
 	root.add_child(blueprint_menu)
 	blueprint_menu.resized.connect(func(): blueprint_menu.position = (root.size - blueprint_menu.size) * 0.5)
+	# While the Build Hammer is out: what you're building and every key, on the right side (owner F131).
 	_build_label = _label(root, 16)
-	_build_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
-	_build_label.position += Vector2(-300, -110)
-	_build_label.custom_minimum_size = Vector2(600, 0)
-	_build_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_build_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_RIGHT)
+	_build_label.custom_minimum_size = Vector2(340, 0)
+	_build_label.position += Vector2(-360, -170)
+	_build_label.autowrap_mode = TextServer.AUTOWRAP_WORD
 	map_panel = MapPanel.new()
 	map_panel.visible = false
 	root.add_child(map_panel)
@@ -773,14 +774,13 @@ func _process(delta: float) -> void:
 		_build_label.text = "Blueprint: %s (%s)\nQ turn · left click place (a blue build site) · right click or B: back to single pieces" % [build_mode.blueprint.name, BuildMenu._cost_text(build_mode.blueprint.cost())]
 	elif build_mode and build_mode.active():
 		var c := BuildMenu._cost_text(Pieces.cost(build_mode.piece, build_mode.family))
-		_build_label.text = "%s · %s (%s)%s\nB choose · Q turn · Shift+wheel raise/lower%s · right click pick up (10 s) · X break (80%%) · C save blueprint · V blueprints" % [
+		_build_label.text = "Building: %s (%s)\nCost: %s%s%s\n\nB  choose another piece or material\nLeft click  place it\nQ  turn it\nShift + mouse wheel  raise / lower\nRight click  pick up (first 10 s)\nX  break it (80%% back)\nV  blueprints  ·  C  save your own" % [
 			Pieces.LIST[build_mode.piece].name, Pieces.FAMILIES[build_mode.family].name, c,
-			"" if build_mode.problem == "" else "  —  " + build_mode.problem,
-			" (now %+.1f m)" % build_mode.lift if build_mode.lift != 0.0 else ""]
+			" (now %+.1f m)" % build_mode.lift if build_mode.lift != 0.0 else "",
+			"" if build_mode.problem == "" else "\nCan't place: " + build_mode.problem]
 		var aimed: Dictionary = auth.builder.structure.pieces.get(build_mode.aimed_uid, {}) if auth and auth.builder else {}
 		if not aimed.is_empty():
-			_build_label.text = "Looking at: %s (%s) · %s\n" % [Pieces.LIST[aimed.piece].name, Pieces.FAMILIES[aimed.family].name,
-				steadiness_text(aimed)] + _build_label.text
+			_build_label.text = "Aimed piece: %s\n\n" % steadiness_text(aimed) + _build_label.text
 	else:
 		_build_label.text = ""
 	_map_timer -= delta

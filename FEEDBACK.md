@@ -99,6 +99,15 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F128. Stuck in the axe's chopping animation** after chopping; switching tools doesn't stop it. *From: you. Said: 1×*
 - [ ] **F129. Making many planks takes one click each, and the list jumps after each craft.** Keep the list still, and let you choose how many to make. *From: you. Said: 1×*
 - [ ] **F130. Build costs show codes like "2 CI"** instead of the material's name. Show the real materials. (Also: the dwarf may be a bit small for the round doorway; leave it for now.) *From: you. Said: 1×*
+- [ ] **F131. The build keys (switch piece, turn...) should be listed clearly on the right side** while holding the Build Hammer, not hidden behind the hotbar. *From: you. Said: 1×*
+- [ ] **F132. Building pieces should have pictures** in the build menu (not so much reading). *From: you. Said: 1×*
+- [ ] **F133. Couldn't build any roofs, and didn't know why.** Hovering a piece should show what you have and what's missing. (Found: roofs needed a level-2 Workbench.) *From: you. Said: 1×*
+- [ ] **F134. Don't show how many hits a material takes, or what you're looking at.** Other games don't; players find out by chopping it and reading it in the bag. *From: you. Said: 1×*
+- [ ] **F135. Roots are too thin to aim at.** Make them easier to hit (wider). *From: you. Said: 1×*
+- [ ] **F136. Fallen columns still have no collision:** you can run through them. *From: you. Said: 1×*
+- [ ] **F137. Every weapon should have a small chance of a critical hit.** *From: you. Said: 1×*
+- [ ] 🔁 **F138. The snail still finishes its attack after hiding in its shell.** As soon as it hides, the attack must stop. (F105 came back.) *From: you. Said: 2×*
+- [ ] **F139. Stairs sometimes won't place,** even with the rock underneath cleared. Always say why, and allow a piece to poke a little into rock. *From: you. Said: 1×*
 - [x] ~~**F126. Lantern refill time.**~~ You checked: 10 minutes is fine, no change. *From: you. Said: 1×*
 
 - [ ] **F95. A way to make stone if you lose your pickaxe.** Same as F89 (bare hands dig soft rock and dirt for stone). *From: you. Said: 1×*

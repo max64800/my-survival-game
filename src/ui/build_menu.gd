@@ -60,27 +60,19 @@ func refresh() -> void:
 	_grid.add_child(pieces)
 	var where: Vector3 = ps.node.global_position if ps.node else Vector3.ZERO
 	for id in pieces_in(tab):
-		var b := Button.new()
 		var fam: String = mode.family if Pieces.allowed(id, mode.family) else Pieces.LIST[id].get("families", [mode.family])[0]
 		var lock := auth.builder.station_problem(id, fam, where) if auth.builder else ""
-		b.text = "%s
-%s" % [Pieces.LIST[id].name, _cost_text(Pieces.cost(id, fam)) if lock == "" else lock.replace(" within 20 m", "")]
-		b.custom_minimum_size = Vector2(190, 52)
-		b.toggle_mode = true
-		b.button_pressed = id == mode.piece
-		if lock != "":
-			b.modulate = Color(1, 1, 1, 0.45)
-			b.tooltip_text = lock
-		b.pressed.connect(func(): mode.choose(id, mode.family); refresh())
-		pieces.add_child(b)
+		pieces.add_child(_piece_button(id, fam, lock, ps.inventory))
 	_grid.add_child(_header("Material (you have)"))
 	var fams := GridContainer.new()
 	fams.columns = 4
 	_grid.add_child(fams)
 	for f in Pieces.MOSSY_FAMILIES:
 		var b := Button.new()
-		b.text = "%s
-(%d) · %s" % [Pieces.FAMILIES[f].name, ps.inventory.count_of(f), Items.display_name(BuildMenu.station_item(f))]
+		b.text = "%s (%d)" % [Pieces.FAMILIES[f].name, ps.inventory.count_of(f)]
+		b.icon = Items.icon(f)
+		b.expand_icon = true
+		b.tooltip_text = "Made at the %s. You have %d." % [Items.display_name(BuildMenu.station_item(f)), ps.inventory.count_of(f)]
 		b.custom_minimum_size = Vector2(190, 52)
 		b.toggle_mode = true
 		b.button_pressed = f == mode.family
@@ -88,9 +80,8 @@ func refresh() -> void:
 		b.pressed.connect(func(): mode.choose(mode.piece, f); refresh())
 		fams.add_child(b)
 	var help := Label.new()
-	help.text = "Left click place · Right click take down (all back) · Q turn · PageUp/PageDown lift
-Wood needs a Workbench, stone and brick a Mason's Table, copper an Anvil (within 20 m).
-Build extras next to a station to unlock greyed-out pieces. Pieces touching rock or on foundations are steadiest."
+	help.text = "Hover a piece to see what it needs. Greyed out = you're missing something (hover to see what).
+Wood needs a Workbench, stone and brick a Mason's Table (brick: level 2), within 20 m."
 	_grid.add_child(help)
 
 
@@ -109,5 +100,55 @@ func _header(t: String) -> Label:
 static func _cost_text(c: Dictionary) -> String:
 	var parts := []
 	for item in c:
-		parts.append("%d %s" % [c[item], Items.short_label(item)])
+		parts.append("%d %s" % [c[item], Items.display_name(item)])  # real names, not codes like "CI" (F130)
 	return ", ".join(parts)
+
+
+## One piece: its picture and name (owner F132: pictures, not reading). Hover: what it needs, what you
+## have and what's missing, and any station it still needs (F133). Greyed out when you can't build it.
+func _piece_button(id: String, fam: String, lock: String, inv: Inventory) -> Button:
+	var b := Button.new()
+	b.text = Pieces.LIST[id].name
+	b.icon = piece_picture(id, fam)
+	b.expand_icon = true
+	b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	b.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
+	b.custom_minimum_size = Vector2(118, 118)
+	b.toggle_mode = true
+	b.button_pressed = id == mode.piece
+	var tip := needs_text(id, fam, inv)
+	if lock != "":
+		tip += "
+" + lock
+	b.tooltip_text = tip
+	if lock != "" or not missing(id, fam, inv).is_empty():
+		b.modulate = Color(1, 1, 1, 0.5)
+	b.pressed.connect(func(): mode.choose(id, mode.family); refresh())
+	return b
+
+
+static func piece_picture(id: String, fam: String) -> Texture2D:
+	var path := "res://assets/icons/build/%s__%s.png" % [id, fam]
+	return load(path) if ResourceLoader.exists(path) else null
+
+
+## What's missing to build one (item -> how many more you need).
+static func missing(id: String, fam: String, inv: Inventory) -> Dictionary:
+	var out := {}
+	var cost := Pieces.cost(id, fam)
+	for item in cost:
+		if inv.count_of(item) < cost[item]:
+			out[item] = cost[item] - inv.count_of(item)
+	return out
+
+
+## "Needs: 4 Rootwood Plank (you have 2, 2 missing) ..." for the hover note.
+static func needs_text(id: String, fam: String, inv: Inventory) -> String:
+	var lines := ["%s in %s" % [Pieces.LIST[id].name, Pieces.FAMILIES[fam].name]]
+	var cost := Pieces.cost(id, fam)
+	for item in cost:
+		var have := inv.count_of(item)
+		lines.append("%d %s: you have %d%s" % [cost[item], Items.display_name(item), have,
+			"" if have >= cost[item] else " (%d missing)" % (cost[item] - have)])
+	return "
+".join(lines)
