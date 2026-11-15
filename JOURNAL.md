@@ -1384,3 +1384,51 @@ pieces") and we rebuilt the Delver's Shack's first set with an OK at every step.
     - A test couldn't find copper because the game only loads rock near the start, and the Deeps are far away.
       The copper rule became a small helper that is tested directly.
     - A wrong variable name ("i" instead of "room_i") broke the monster code; the tests caught it at once.
+
+## Nov 15, 2026, late (PC, Claude 2): the rest of the Delver's Shack kit (sets 2-5)
+
+You asked for the rest of the Shack pack: corner roofs, steep roofs, stairs, "all of that". I built it in four themed
+sets, each in the approved set-1 style. That means hand-hewn timbers with bark on the corners, rough split boards
+(each one different, with gaps, a knot bite, a broken end), wooden pegs, and lumpy stones under posts. There's no
+rope, and every board and shingle has its own painting.
+- **Set 2, roofs (10):**
+  - The steep roof.
+  - Four corner roofs:
+    - Outside corners: two slopes meet on a diagonal under a pegged hip log.
+    - Inside corners: the slopes meet in a dark board valley.
+  - Two ridge caps.
+  - Two gables and the sloped wall, with a thick barge board (the board that runs along the roof edge) that fills
+    the thin tip.
+- **Set 3, stairs and supports (10):**
+  - Stairs and foundation steps: zig-zag side boards under split-plank steps.
+  - Ramp: planks with grip strips, touching the ground at the front.
+  - Ladder: rungs pegged in from the side.
+  - Railing: split pickets.
+  - Beam, short beam, pillar and diagonal brace.
+  - Mine prop: flat copper straps, because it costs a copper bar.
+- **Set 4, floors (7):**
+  - Floor, half floor and small floor.
+  - Ceiling panel.
+  - Triangle floor, with boards cut exactly to the edge.
+  - Half foundation and triangle foundation.
+- **Set 5, walls (3):** half wall, narrow wall, wide window.
+- **Checks:** all 30 pass the model checker (no floating parts, no shimmer). They're on the Shack 3D page as
+  "new". They go into the game only after your OK, the same as set 1.
+- **Mistakes and hurdles (mine):**
+  - **Floor beams ran the wrong way.** I first ran the floor beams the same direction as the boards, so some boards
+    sat on nothing (the checker caught them "floating"). Real floors have beams going across the boards; fixed.
+  - **Gables too short.** The first gables stopped 30-60 cm short of the low tip, which would leave a hole under the
+    roof. A thick slanted barge board now runs the whole slope.
+  - **Ridge log floating.** The top log of the ridge caps floated 2.8 cm above the shingles, because the shingles
+    end before the peak. It now rests on the boards.
+  - **Shingle chips in the valley.** Tiny shingle chips floated in the inside-corner valley. Very small pieces are
+    now dropped on corner roofs.
+  - **Shimmer spots.** Two places where surfaces sat on top of each other: a post bottom on a sill bottom, and a
+    railing post top on its rail top. The mine prop's copper straps also lay exactly on the wood. All moved apart or
+    pressed in.
+  - **Shell typing tool failed again.** The shell's text tool (heredoc) broke on the long patch again, so I wrote
+    patch files with the file tool instead.
+  - **Checker only reads the game folder.** The model checker only reads models inside the game's models folder.
+    I built into a temporary check folder there and deleted it afterwards.
+  - **Foundation still identical.** I changed the foundation code so the half foundation could reuse it. Then I
+    checked that the approved foundation came out exactly the same as before: same shape, nothing moved.

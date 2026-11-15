@@ -422,6 +422,8 @@ def foundation_v3(w=2.0, h=1.0, dd=2.0, parts=("under", "deck")):
 	LOG_STYLE round = believable round logs, hewn = axe-squared beams with bark on the corners."""
 	st = LOG_STYLE
 	c = w / 2 - 0.22
+	cz = dd / 2 - 0.22
+	czs = (-cz, 0.0, cz) if dd > 1.5 else (-cz, cz)
 	deck_bot = h - 0.11
 	r_up, r_lo = (0.095, 0.11) if st == "round" else (0.09, 0.1)
 	y_up = deck_bot - r_up + 0.012
@@ -429,15 +431,15 @@ def foundation_v3(w=2.0, h=1.0, dd=2.0, parts=("under", "deck")):
 	leg_top = y_lo - r_lo + 0.03
 	for sx in ((-1, 1) if "under" in parts else ()):
 		for sz in (-1, 1):
-			x, z = sx * c, sz * c
-			boulder((x + J(0.02), 0.07, z + J(0.02)), 0.21, 0.1, 0.2)
+			x, z = sx * c, sz * cz
+			boulder((x + J(0.02), 0.07, z + J(0.02)), 0.21 if dd > 1.5 else 0.16, 0.1, 0.2 if dd > 1.5 else 0.16)
 			real_log((x, 0.1, z), (x + J(0.012), leg_top, z + J(0.012)), 0.165, st, stub=False)
 	for sx in ((-1, 1) if "under" in parts else ()):
 		real_log((sx * c, y_lo, -dd / 2 + 0.05), (sx * c + J(0.01), y_lo, dd / 2 - 0.05), r_lo, st)
-	for z in ((-c, 0.0, c) if "under" in parts else ()):
+	for z in (czs if "under" in parts else ()):
 		real_log((-w / 2 + 0.05, y_up, z + J(0.02)), (w / 2 - 0.05, y_up, z + J(0.02)), r_up, st)
 	for sz in ((-1, 1) if "under" in parts else ()):  # a rough diagonal brace board, pegged into the MIDDLE of each leg
-		z = sz * (c + 0.13)
+		z = sz * (cz + 0.13)
 		a, b = (-c, 0.3), (c, leg_top - 0.1)
 		Lb = math.hypot(b[0] - a[0], b[1] - a[1]) + 0.16
 		br = blk(((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, z), (Lb, 0.13, 0.045), T("wood", "b"), bevel=0.012,
@@ -458,7 +460,7 @@ def foundation_v3(w=2.0, h=1.0, dd=2.0, parts=("under", "deck")):
 		special = dict(notch=(1, 0.35, 0.09)) if i == 1 else dict(broken="front") if i == 3 else {}
 		z1 = dd / 2 - 0.006 - (0.05 if i == 3 else 0.0)
 		rough_board(a, b, -dd / 2 + 0.006, z1, deck_bot, h - 0.006, T("wood", "abc"[i % 3]), warp=J(0.01), **special)
-		for zz in (-c, 0.0, c):
+		for zz in czs:
 			peg((a + b) / 2 + J(0.04), h - 0.032, zz + J(0.015))
 		x += bw
 
@@ -496,6 +498,9 @@ def rough_vboard(x0, x1, y0, y1, z, d, m=None, broken_top=False, knot=None):
 	"""An upright hand-split board: wavy sides, chipped corners, a slightly uneven front, optionally a broken
 	jagged top or a knot bite out of one side (knot = (side, y, size))."""
 	pts = []
+	ya, yb = (y1, y1) if not isinstance(y1, tuple) else y1
+	top = lambda xx: ya + (yb - ya) * (xx - x0) / max(1e-4, x1 - x0)
+	y1 = max(ya, yb)
 	H = y1 - y0
 	ny = max(3, int(H / 0.3))
 	cut = [K.rng.uniform(0.015, 0.045) if K.rng.random() < 0.5 else 0.0 for _ in range(4)]
@@ -508,15 +513,16 @@ def rough_vboard(x0, x1, y0, y1, z, d, m=None, broken_top=False, knot=None):
 	pts.append((x0 + cut[0], y0))
 	pts.append((x1 - cut[1], y0))
 	for k in range(1, ny):
-		yy = y0 + H * k / ny
+		yy = y0 + (top(x1) - y0) * k / ny
 		pts.append((edge(x1, 1, yy), yy))
-	pts.append((x1, y1 - cut[2]))
+	pts.append((x1, top(x1) - cut[2]))
 	if broken_top:
 		for k in range(3, 0, -1):
-			pts.append((x0 + (x1 - x0) * k / 4, y1 - K.rng.uniform(0.03, 0.1)))
-	pts.append((x0 + cut[3], y1))
+			xx = x0 + (x1 - x0) * k / 4
+			pts.append((xx, top(xx) - K.rng.uniform(0.03, 0.1)))
+	pts.append((x0 + cut[3], top(x0 + cut[3])))
 	for k in range(ny - 1, 0, -1):
-		yy = y0 + H * k / ny
+		yy = y0 + (top(x0) - y0) * k / ny
 		pts.append((edge(x0, -1, yy), yy))
 	n = len(pts)
 	front = [z + d / 2 + J(0.004) for _ in pts]
@@ -649,13 +655,13 @@ def door_v3(w=None, h=None, d=0.12):
 			o["role"] = "board"
 
 
-def window_wall_v3(w=2.0, h=2.0, d=0.3, ow=1.0, oh=0.8, ob=0.6):
+def window_wall_v3(w=2.0, h=2.0, d=0.3, ow=1.0, oh=0.8, ob=0.6, shutters=True, sides=True, post_r=0.14):
 	"""Shack window wall: like the wall (hewn posts and beams, split boards), with a window opening framed by
 	hand-hewn sill and lintel pieces and rough side boards, a crooked cross bar, and two narrow plank shutters
 	swung open on copper hinges. Everything a little uneven."""
 	px = w / 2 - 0.006 - 0.145
 	for s_ in (-1, 1):
-		hewn((s_ * px, 0.012, 0.0), (s_ * px + J(0.008), h - 0.014, J(0.006)), 0.14)
+		hewn((s_ * px, 0.012 if post_r >= 0.14 else 0.03, 0.0), (s_ * px + J(0.008), h - 0.014, J(0.006)), post_r)
 	hewn((-px, 0.115, 0.0), (px, 0.115 + J(0.008), 0.0), 0.1)
 	hewn((-px, 1.8, 0.0), (px, 1.8 + J(0.008), 0.0), 0.12)
 	top = ob + oh
@@ -686,11 +692,11 @@ def window_wall_v3(w=2.0, h=2.0, d=0.3, ow=1.0, oh=0.8, ob=0.6):
 	# window frame: hewn sill and lintel, rough side boards, all pegged
 	hewn((-ow / 2 - 0.12, ob - 0.05, 0.02), (ow / 2 + 0.12, ob - 0.05 + J(0.01), 0.02), 0.065)
 	hewn((-ow / 2 - 0.14, top + 0.06, 0.02), (ow / 2 + 0.14, top + 0.06 + J(0.01), 0.02), 0.07)
-	for s_ in (-1, 1):
+	for s_ in ((-1, 1) if sides else ()):
 		rough_vboard(s_ * ow / 2 + (0.0 if s_ > 0 else -0.09), s_ * ow / 2 + (0.09 if s_ > 0 else 0.0), ob - 0.02, top + 0.02, 0.03, 0.06)
 		for y in (ob + 0.1, top - 0.1):
 			pegs_on(s_ * (ow / 2 + 0.045), y, 0.065)
-	for xx in (-ow / 2 - 0.08, ow / 2 + 0.08):
+	for xx in ((-ow / 2 - 0.08, ow / 2 + 0.08) if sides else (-ow / 2 + 0.1, ow / 2 - 0.1)):
 		pegs_on(xx, ob - 0.05, 0.085)
 		pegs_on(xx, top + 0.06, 0.09)
 	# a crooked cross bar and a middle bar
@@ -698,7 +704,7 @@ def window_wall_v3(w=2.0, h=2.0, d=0.3, ow=1.0, oh=0.8, ob=0.6):
 	blk((0, ob + oh / 2 + J(0.02), 0.02), (ow, 0.045, 0.045), T("wood", "dark"), bevel=0.008, rz=J(2))["role"] = "brace"
 	# two narrow shutters swung open against the boards, on flat copper hinges
 	cu = kit.tex_mat("copper", "a")
-	for s_ in (-1, 1):
+	for s_ in ((-1, 1) if shutters else ()):
 		sx0 = s_ * (ow / 2 + 0.08)
 		for k in range(2):
 			a, b = sx0 + s_ * (0.004 + k * 0.062), sx0 + s_ * (0.004 + k * 0.062 + 0.058)
@@ -708,40 +714,448 @@ def window_wall_v3(w=2.0, h=2.0, d=0.3, ow=1.0, oh=0.8, ob=0.6):
 			kit.rivet(K.G((sx0 + s_ * 0.06, y, 0.093)), kit.tex_mat("copper", "dark"), r=0.009)
 
 
+def _inside(u, v, pl, m=0.0):
+	return all(a_ * u + b_ * v <= c_ - m for (a_, b_, c_) in pl)
+
+
+def shingle_slope(sl, extra=(), rafters=(-0.82, 0.82), sark_cut=(), sh_cut=(), base=0.0):
+	"""One Shack roof slope, in layers from below: hand-hewn rafters, a board deck (sarking), then courses of big
+	stepped shingles, each a different painting, pegged. `extra` = diagonal cuts (corner roofs); sark_cut /
+	sh_cut = cuts for the deck / shingles only (they stop short of a valley board); base = lower everything
+	(thin pieces with no rafters)."""
+	pl = sl.planes(extra)
+	for v in rafters:
+		if not extra:
+			d0, d1 = 0.1, sl.run - 0.08
+		else:
+			rg = sl.d_range(v, pl, half=0.1)
+			if not rg or rg[1] - rg[0] < 0.35:
+				continue
+			d0, d1 = rg[0] + 0.1, rg[1] - 0.08
+		hewn(sl.P(sl.u(d0), v, 0.09 - base), sl.P(sl.u(d1), v, 0.09 - base), 0.088)
+	before = set(bpy.data.objects)
+	sl.strip(0.0, sl.run, sl.vlo, sl.vhi, sl.planes(list(extra) + list(sark_cut)), lambda u: 0.165 - base, lambda u: 0.185 - base, T("wood", "dark"))
+	for o in set(bpy.data.objects) - before:
+		o["role"] = "board"
+	Er, OV, TH = 0.46, 0.14, 0.05
+	cuts = list(extra) + list(sh_cut)
+	i = 0
+	while i * Er < sl.run - 0.1:
+		d0, d1 = i * Er, min(i * Er + Er + OV, sl.run - 0.16)
+		hb = (lambda a_: (lambda u: 0.183 - base + 0.06 * (1 - (sl.d(u) - a_) / (Er + OV))))(d0)
+		ht = (lambda f: (lambda u: f(u) + TH))(hb)
+		v = sl.vlo + (0.0 if i % 2 == 0 else -0.16)
+		pl = sl.planes([(a_, b_, c_ - 0.004 * (i % 2)) for (a_, b_, c_) in cuts], e=K.E_IN + 0.005 * (i % 2))  # course ends never share a plane
+		while v < sl.vhi - 0.02:
+			sw = 0.31 + J(0.04)
+			before = set(bpy.data.objects)
+			poly = sl.strip(d0, d1, max(sl.vlo, v) + 0.008, min(sl.vhi, v + sw) - 0.008, pl, hb, ht, T("shingle", "a"), min_area=0.004 if not cuts else 0.012)
+			for o in set(bpy.data.objects) - before:
+				o["role"] = "shingle"
+				o["down"] = 1 if sl.axis == "z" else 0
+			if poly and min(sl.vhi, v + sw) - max(sl.vlo, v) > 0.15:
+				vm = (max(sl.vlo, v) + min(sl.vhi, v + sw)) / 2
+				if _inside(sl.u(d0 + 0.08), vm, pl, 0.04):
+					pp = sl.P(sl.u(d0 + 0.08), vm, hb(sl.u(d0 + 0.08)) + TH - 0.004)
+					kit.rivet(K.G(pp), T("wood", "dark"), r=0.02)
+			v += sw
+		i += 1
+
+
 def roof_v3(w=2.0, rise=1.0, dd=2.0):
 	"""Shack roof (the owner liked it): the same big stepped shingles, now each one a different painting, on
 	hand-hewn rafters, a hewn ridge beam at the top, wooden pegs instead of iron bolts."""
 	sl = K.Slope("z", dd / 2, -dd / 2, rise, 0.33, vlo=-w / 2, vhi=w / 2)
-	pl = sl.planes()
-	for v in (-0.82, 0.82):
-		a, b = sl.P(sl.u(0.1), v, 0.09), sl.P(sl.u(sl.run - 0.08), v, 0.09)
-		hewn(a, b, 0.088)
-	before = set(bpy.data.objects)
-	sl.strip(0.0, sl.run, sl.vlo, sl.vhi, pl, lambda u: 0.165, lambda u: 0.185, T("wood", "dark"))
-	for o in set(bpy.data.objects) - before:
-		o["role"] = "board"
-	Er, OV, TH = 0.46, 0.14, 0.05
-	i = 0
-	while i * Er < sl.run - 0.1:
-		d0, d1 = i * Er, min(i * Er + Er + OV, sl.run - 0.16)
-		hb = (lambda a_: (lambda u: 0.183 + 0.06 * (1 - (sl.d(u) - a_) / (Er + OV))))(d0)
-		ht = (lambda f: (lambda u: f(u) + TH))(hb)
-		v = sl.vlo + (0.0 if i % 2 == 0 else -0.16)
-		pl = sl.planes(e=K.E_IN + 0.005 * (i % 2))  # course ends never share a plane
-		while v < sl.vhi - 0.02:
-			sw = 0.31 + J(0.04)
-			before = set(bpy.data.objects)
-			poly = sl.strip(d0, d1, max(sl.vlo, v) + 0.008, min(sl.vhi, v + sw) - 0.008, pl, hb, ht, T("shingle", "a"), min_area=0.004)
-			for o in set(bpy.data.objects) - before:
-				o["role"] = "shingle"
-			if poly and min(sl.vhi, v + sw) - max(sl.vlo, v) > 0.15:
-				vm = (max(sl.vlo, v) + min(sl.vhi, v + sw)) / 2
-				pp = sl.P(sl.u(d0 + 0.08), vm, hb(sl.u(d0 + 0.08)) + TH - 0.004)
-				kit.rivet(K.G(pp), T("wood", "dark"), r=0.02)
-			v += sw
-		i += 1
+	shingle_slope(sl)
 	a, b = sl.P(sl.u(sl.run - 0.1), sl.vlo + 0.03, 0.235), sl.P(sl.u(sl.run - 0.1), sl.vhi - 0.03, 0.235)
 	hewn(a, b, 0.075)
+
+
+def roof_corner_v3(w=2.0, rise=1.0, dd=2.0, inner=False):
+	"""Shack corner roof. Outer (hip): high at the back-left corner, two slopes meet on a diagonal under a hewn
+	hip log pegged on top. Inner (valley): high along the back and left edges, the slopes meet in a dark board
+	valley, the shingles stop just short of it. Same layers as the roof; cut exactly on the diagonal (F80)."""
+	g = 0.005
+	cut = [(-1.0, 1.0, -g)] if not inner else [(1.0, -1.0, -g)]
+	slz = K.Slope("z", dd / 2, -dd / 2, rise, 0.33, vlo=-w / 2, vhi=w / 2)
+	slx = K.Slope("x", w / 2, -w / 2, rise, 0.33, vlo=-dd / 2, vhi=dd / 2)
+	sark, shc = ([(1.0, -1.0, -0.2)], [(1.0, -1.0, -0.2)]) if inner else ((), ())
+	for sl in (slz, slx):
+		shingle_slope(sl, cut, rafters=(-0.82, 0.0, 0.82), sark_cut=sark, sh_cut=shc)
+
+	def diag(f, h):
+		u = (dd / 2 - 0.13) - f * (dd - 0.26)
+		return slz.P(u, u, h)
+	hewn(diag(0.0, 0.09), diag(1.0, 0.09), 0.088)  # the hip / valley rafter
+	if inner:  # the valley: a dark board down each side of the diagonal, under the shingle ends
+		for sl in (slz, slx):
+			before = set(bpy.data.objects)
+			sl.strip(0.0, sl.run, sl.vlo, sl.vhi, sl.planes([(1.0, -1.0, -g), (-1.0, 1.0, 0.26)], e=K.E_IN + 0.008),
+				lambda u: 0.15, lambda u: 0.178, T("wood", "dark"))
+			for o in set(bpy.data.objects) - before:
+				o["role"] = "board"
+		return
+	r = 0.072
+	h = 0.268
+	f_hi = 1.0
+	while Vector(diag(f_hi, h)).y + r * 1.3 > rise - E:
+		f_hi -= 0.02
+	hewn(diag(0.0, h), diag(f_hi, h), r)
+	for f in (0.2, 0.5, 0.8):
+		p = diag(f * f_hi, h + r * 0.9)
+		peg(p[0], p[1], p[2], "y")
+
+
+def ridge_v3(w=2.0, rise=0.5, dd=2.0):
+	"""Shack ridge cap: two short slopes (deck + shingles, no rafters: thin, open underneath) leaning on a
+	hewn beam under the peak, and a hewn ridge log on top, pegged."""
+	cap = 0.07
+	sls = []
+	for lo in (dd / 2, -dd / 2):
+		sl = K.Slope("z", lo, 0.0, rise - cap, 0.14, vlo=-w / 2, vhi=w / 2)
+		shingle_slope(sl, rafters=(), base=0.16)
+		sls.append(sl)
+	sl = sls[0]
+	top_deck = sl.P(sl.u(sl.run), 0.0, 0.005)[1]
+	hewn((-w / 2 + 0.05, top_deck - 0.058, 0.0), (w / 2 - 0.05, top_deck - 0.058 + J(0.006), 0.0), 0.075)
+	r = 0.075
+	y = min(rise - E - r * 1.2, top_deck + 0.02 + r * 0.55)  # resting on the deck at the peak
+	hewn((-w / 2 + 0.03, y, J(0.01)), (w / 2 - 0.03, y + J(0.006), J(0.01)), r)
+	for x in (-0.6, 0.0, 0.6):
+		peg(x + J(0.05), y + r * 0.7, 0.0, "y")
+
+
+def gable_v3(w=2.0, rise=1.0, d=0.3):
+	"""Shack gable / sloped wall (a right triangle, high at +x): a hewn corner post, a hewn sill, a thick rough
+	barge board along the whole slope (it fills the thin tip), and upright split boards cut to the slope
+	(gaps, a knot, a broken end), all pegged."""
+	px = w / 2 - 0.162
+	slope = lambda x: (x + w / 2) / w * rise
+	ys, rs = 0.142, 0.1
+	xs = (ys + rs * 1.15 + 0.03) * w / rise - w / 2      # the sill's chopped end stays under the slope
+	hewn((px, 0.03, 0.0), (px + J(0.006), slope(px - 0.16) - 0.02, J(0.005)), 0.12)
+	hewn((xs, ys, 0.0), (px, ys + J(0.008), 0.0), rs)
+	# the barge board: a thick hand-cut timber following the slope, down to the ground at the tip
+	BH = 0.17
+	xl = 0.03 * w / rise - w / 2
+	n = 9
+	xsamp = [xl + (w / 2 - 0.03 - xl) * k / n for k in range(n + 1)]
+	top = [(x, slope(x) - 0.012 - abs(J(0.006))) for x in xsamp]
+	bot = [(x, 0.006 if x < xs + 0.06 else max(0.006, slope(x) - BH + J(0.008))) for x in reversed(xsamp)]
+	o = K.slab_poly(K.Frame(), top + bot, J(0.004), 0.17, T("wood"))
+	_flat(o)
+	o["role"] = "board"
+	x0 = (0.35 + 0.05) * w / rise - w / 2 + 0.02  # boards start where they are 30 cm tall
+	x1 = px - 0.13
+	x = x0
+	gaps = [0.012, 0.024, 0.016, 0.02, 0.014]
+	i = 0
+	while x < x1 - 0.06:
+		bw = min(K.rng.uniform(0.3, 0.42), x1 - x)
+		if x1 - (x + bw) < 0.12:
+			bw = x1 - x
+		a, b = x + (gaps[i % 5] / 2 if i else 0.0), x + bw - gaps[(i + 1) % 5] / 2
+		rough_vboard(a, b, 0.17, (slope(a) - 0.06, slope(b) - 0.06), J(0.008), 0.07, broken_top=(i == 2),
+			knot=(1, 0.5 * (0.17 + slope(a)), 0.06) if i == 1 else None)
+		xm = (a + b) / 2
+		pegs_on(xm + J(0.03), ys, 0.093)
+		pegs_on(xm, slope(xm) - 0.09, 0.083)
+		x += bw
+		i += 1
+
+
+# ---------------- set 3: stairs and supports (same rules: hewn timber, split boards, wooden pegs, stones) ----------------
+K.SIZE.update({"ramp": (2, 1, 2), "ladder": (1, 2, 0.2), "brace": (2, 2, 0.25), "mine_prop": (2, 3, 0.4)})
+
+
+def board_x(x0, x1, z0, z1, y0, y1, **kw):
+	"""A rough split board seen from above that runs along x (wavy front and back edges)."""
+	o = rough_board(z0, z1, x0, x1, y0, y1, **kw)
+	for v in o.data.vertices:
+		bx, by, bz = v.co
+		v.co = (-by, -bx, bz)
+	K.fix_normals(o)
+	return o
+
+
+def side_board(x, pts, d, m=None):
+	"""A thick board standing on edge along z at x (outline pts [(z, y)...]), like a stair stringer."""
+	fr = K.Frame(x, 0.0, 90)
+	o = K.slab_poly(fr, [(-z + J(0.003), max(E, y + J(0.003))) for z, y in pts], 0.0, d, m or T("wood"))
+	_flat(o)
+	o["role"] = "board"
+	return o
+
+
+def stairs_v3(w=2.0, h=2.0, dd=2.0, n=5):
+	"""Shack stairs: two zig-zag stringers cut from thick split boards, a thick split plank on every step
+	(pegged down), and hewn back posts on lumpy stones holding up the top."""
+	dz, rise, t = dd / n, h / n, 0.07
+	tops = [min(h - 0.008, (i + 1) * rise) - abs(J(0.004)) for i in range(n)]
+	zf = [dd / 2 - 0.006 - i * dz for i in range(n)]
+	zb = [max(-dd / 2 + 0.006, z - dz) for z in zf]
+	D = min(0.3, rise * 0.9)
+	for s_ in (-1, 1):
+		X = s_ * (w / 2 - 0.1)
+		pts = [(dd / 2 - 0.03, E)]
+		for i in range(n):
+			fl = tops[i] - t + 0.006
+			pts += [(zf[i] - 0.03, fl), (zb[i] + (0.0 if i < n - 1 else 0.024), fl)]
+		zbl = zb[-1] + 0.024
+		yb = tops[-1] - t - D
+		pts.append((zbl, yb))
+		zg = zbl + (yb - E) * dz / rise
+		pts.append((min(dd / 2 - 0.05, zg), E))
+		side_board(X, pts, 0.075)
+		px = s_ * (w / 2 - 0.23)
+		boulder((px, 0.06, -dd / 2 + 0.24), 0.16, 0.08, 0.16)
+		hewn((px, 0.1, -dd / 2 + 0.24), (px + J(0.006), tops[-1] - t - 0.01, -dd / 2 + 0.24 + J(0.006)), 0.085)
+	for i in range(n):
+		board_x(-w / 2 + 0.03, w / 2 - 0.03, zb[i] + 0.006, zf[i] - 0.006, tops[i] - t, tops[i], warp=J(0.006),
+			broken="front" if i == 2 else None)
+		for s_ in (-1, 1):
+			peg(s_ * (w / 2 - 0.1) + J(0.01), tops[i] - 0.032, (zf[i] + zb[i]) / 2 + J(0.04), "y")
+
+
+def ramp_v3(w=2.0, h=1.0, dd=2.0):
+	"""Shack ramp (low at the front): rough planks across the slope with grip strips pegged on, two thick
+	side timbers under them that reach the ground at the front, and hewn posts on stones under the high end."""
+	sl = K.Slope("z", dd / 2, -dd / 2, h, 0.085, vlo=-w / 2, vhi=w / 2)
+	d = 0.0
+	k = 0
+	while d < sl.run - 0.05:
+		pw = min(K.rng.uniform(0.2, 0.27), sl.run - d)
+		if sl.run - (d + pw) < 0.1:
+			pw = sl.run - d
+		d0, d1 = d + 0.006, d + pw - 0.006
+		va, vb = sl.vlo + 0.02, sl.vhi - 0.02
+		poly = [(sl.u(d0 + J(0.004)), va + K.rng.uniform(0, 0.02)), (sl.u(d1 + J(0.004)), va + K.rng.uniform(0, 0.02))]
+		poly += [(sl.u(d1 + J(0.005)), va + (vb - va) * f) for f in (0.33, 0.66)]
+		poly += [(sl.u(d1 + J(0.004)), vb - K.rng.uniform(0, 0.02)), (sl.u(d0 + J(0.004)), vb - K.rng.uniform(0, 0.02))]
+		poly += [(sl.u(d0 + J(0.005)), va + (vb - va) * f) for f in (0.66, 0.33)]
+		poly = [(max(-dd / 2 + 0.008, min(dd / 2 - 0.008, u)), v) for u, v in poly]
+		o = sl.slab(poly, lambda u: 0.0, lambda u: 0.045 - abs(J(0.004)), T("wood"))
+		_flat(o)
+		o["role"] = "board"
+		if k % 2 == 1:  # a grip strip across
+			dm = (d0 + d1) / 2
+			o = sl.slab([(sl.u(dm - 0.025), -0.82), (sl.u(dm + 0.025), -0.82), (sl.u(dm + 0.025), 0.82), (sl.u(dm - 0.025), 0.82)],
+				lambda u: 0.042, lambda u: 0.078, T("wood", "dark"))
+			_flat(o)
+			o["role"] = "brace"
+		for x in (-0.75, 0.75):
+			pp = sl.P(sl.u((d0 + d1) / 2 + J(0.03)), x, 0.024)
+			peg(pp[0], pp[1], pp[2], "y")
+		d += pw
+		k += 1
+	under = lambda z: sl.P(z, 0.0, 0.0)[1] - 0.004
+	for x in (-0.75, 0.75):
+		zs = [dd / 2 - 0.02 - (dd - 0.04) * f / 8 for f in range(9)]
+		top = [(z, under(z)) for z in zs]
+		bot = [(z, max(E, under(z) - 0.2)) for z in reversed(zs)]
+		side_board(x, [(top[0][0], E)] + top[1:] + bot, 0.1)
+	for z in (-dd / 2 + 0.16, 0.0):
+		for x in (-0.75, 0.75):
+			yt = under(z) - 0.15
+			if yt > 0.2:
+				px = x + (0.11 if x > 0 else -0.11)
+				boulder((px, 0.05, z), 0.1, 0.07, 0.12)
+				hewn((px, 0.08, z), (px + J(0.006), under(z) - 0.004, z + J(0.006)), 0.07)
+
+
+def ladder_v3(w=1.0, h=2.0, d=0.2):
+	"""Shack ladder: two round poles, hewn rungs set into them and held by wooden pegs from the side."""
+	for s_ in (-1, 1):
+		real_log((s_ * 0.38, 0.022, 0.0), (s_ * 0.38 + J(0.01), h - 0.022, J(0.01)), 0.048, "round", stub=False)
+	y = 0.26
+	while y < h - 0.12:
+		yy = y + J(0.015)
+		hewn((-0.38, yy, 0.0), (0.38, yy + J(0.01), 0.0), 0.03)
+		for s_ in (-1, 1):
+			peg(s_ * (0.38 + 0.042), yy, 0.0, "x", s_)
+		y += 0.3
+
+
+def railing_v3(w=2.0, h=1.0, d=0.15):
+	"""Shack railing: hewn posts, a hewn top rail and bottom rail, and split pickets between them, pegged."""
+	for x in (-w / 2 + 0.072, J(0.03), w / 2 - 0.072):
+		hewn((x, 0.02, 0.0), (x + J(0.006), h - 0.052, J(0.004)), 0.056)
+	hewn((-w / 2 + 0.03, h - 0.075, 0.0), (w / 2 - 0.03, h - 0.075 + J(0.008), 0.0), 0.044)
+	hewn((-w / 2 + 0.08, 0.14, 0.0), (w / 2 - 0.08, 0.14 + J(0.008), 0.0), 0.045)
+	for half in (-1, 1):
+		a0, a1 = (-w / 2 + 0.14, -0.07) if half < 0 else (0.07, w / 2 - 0.14)
+		n = 6
+		for i in range(n):
+			xc = a0 + (a1 - a0) * (i + 0.5) / n + J(0.01)
+			bw = K.rng.uniform(0.07, 0.1)
+			rough_vboard(xc - bw / 2, xc + bw / 2, 0.12, h - 0.09 + J(0.01), J(0.004), 0.032, broken_top=(i == 3 and half > 0))
+	for x in (-w / 2 + 0.072, w / 2 - 0.072):
+		peg(x, h - 0.075 + 0.05 * 0.82, J(0.006), "y")
+
+
+def beam_v3(w=2.0, s=0.3):
+	"""Shack beam: one hand-hewn timber with the bark left on its corners, pegged at the ends."""
+	hewn((-w / 2 + 0.03, s / 2, 0.0), (w / 2 - 0.03, s / 2 + J(0.008), J(0.006)), 0.128)
+	for x in (-w / 2 + 0.16, w / 2 - 0.16):
+		peg(x + J(0.02), s / 2 + 0.128 * 0.82, J(0.02), "y")
+
+
+def pillar_v3(w=0.4, h=2.0):
+	"""Shack pillar: a hewn post on a lumpy stone, with a short hewn bolster on top, pegged through."""
+	boulder((0.0, 0.06, 0.0), 0.16, 0.08, 0.16)
+	hewn((0.0, 0.1, 0.0), (J(0.008), h - 0.15, J(0.008)), 0.148)
+	hewn((-w / 2 + 0.025, h - 0.104, J(0.006)), (w / 2 - 0.025, h - 0.104 + J(0.004), J(0.006)), 0.08)
+	peg(J(0.02), h - 0.104 + 0.08 * 0.8, 0.0, "y")
+
+
+def brace_v3(w=2.0, h=2.0, d=0.25):
+	"""Shack diagonal brace: a hewn timber from bottom left to top right, its ends on short hewn shoes,
+	pegged through."""
+	a, b = (-w / 2 + 0.14, 0.14), (w / 2 - 0.14, h - 0.14)
+	hewn((a[0], a[1], 0.0), (b[0], b[1], J(0.004)), 0.09)
+	hewn((-w / 2 + 0.03, 0.114, 0.0), (-w / 2 + 0.5, 0.114 + J(0.006), 0.0), 0.088)
+	hewn((w / 2 - 0.5, h - 0.1, 0.0), (w / 2 - 0.03, h - 0.1 + J(0.006), 0.0), 0.088)
+	for (x, y) in ((a[0] + 0.05, a[1] + 0.03), (b[0] - 0.05, b[1] - 0.03)):
+		pegs_on(x, y, 0.082)
+
+
+def mine_prop_v3(w=2.0, h=3.0, d=0.4):
+	"""Shack mine prop (holds the rock up): two big hewn posts on stones, a hewn cap beam across the top, two
+	knee braces, and flat copper straps nailed over the joints (it costs one copper bar)."""
+	cu = kit.tex_mat("copper", "a")
+	fr = K.Frame()
+	for s_ in (-1, 1):
+		x = s_ * 0.8
+		boulder((x, 0.06, 0.0), 0.155, 0.08, 0.155)
+		hewn((x, 0.1, 0.0), (x + J(0.008), h - 0.3, J(0.008)), 0.15)
+		hewn((x - s_ * 0.06, h - 0.62, 0.0), (s_ * 0.42, h - 0.27, 0.0), 0.062)  # knee brace
+		pegs_on(x - s_ * 0.13, h - 0.58, 0.056)
+		# a flat copper strap over the post-cap joint, on the front
+		y0 = h - 0.5
+		o = K.slab_poly(fr, [(x - 0.07, y0), (x + 0.07, y0 + 0.01), (x + 0.075, h - 0.1), (x - 0.07, h - 0.11)], 0.147, 0.024, cu)
+		for yy in (y0 + 0.07, h - 0.17):
+			kit.rivet(K.G((x + J(0.01), yy, 0.16)), kit.tex_mat("copper", "dark"), r=0.009)
+	hewn((-w / 2 + 0.03, h - 0.18, 0.0), (w / 2 - 0.03, h - 0.18 + J(0.008), J(0.006)), 0.15)
+
+
+# ---------------- set 4: floors and foundations ----------------
+K.SIZE.update({"floor_half": (2, 0.25, 1), "small_floor": (1, 0.25, 1)})
+
+
+def deck_boards(x0, x1, z0, z1, y0, y1, pl=None, peg_z=(), peg_ok=None, peg_x=None):
+	"""Uneven split boards along z side by side (different widths, gaps, a knot bite, a broken end), cut exactly
+	to the outline planes `pl` when given (triangles), pegged down at the beams under them (peg_z)."""
+	x = x0
+	i = 0
+	while x < x1 - 0.05:
+		bw = min(K.rng.uniform(0.3, 0.45), x1 - x)
+		if x1 - (x + bw) < 0.16:
+			bw = x1 - x
+		a = x + (K.rng.uniform(0.005, 0.015) if i else 0.0)
+		b = x + bw - (K.rng.uniform(0.005, 0.015) if x + bw < x1 - 0.01 else 0.0)
+		if pl is None:
+			special = dict(notch=(1, J(0.4), 0.08)) if i == 1 else dict(broken="front") if i == 3 else {}
+			rough_board(a, b, z0 + 0.006, z1 - 0.006 - (0.05 if i == 3 else 0.0), y0, y1, warp=J(0.008), **special)
+		else:
+			nz = 6
+			pts = [(a + J(0.004), z0 + (z1 - z0) * k / nz) for k in range(nz + 1)] + [(b + J(0.004), z1 - (z1 - z0) * k / nz) for k in range(nz + 1)]
+			poly = K.clip_poly(pts, pl)
+			if poly and K.area(poly) > 0.01:
+				o = K.floor_poly(poly, y0, y1 - abs(J(0.006)), T("wood"))
+				_flat(o)
+				o["role"] = "board"
+		pxs = [(a + b) / 2 + J(0.04)] if peg_x is None else [xx + J(0.01) for xx in peg_x if a + 0.05 < xx < b - 0.05]
+		for zz in peg_z:
+			for px in pxs:
+				if peg_ok is None or peg_ok(px, zz):
+					peg(px, y1 - 0.026, zz + J(0.015), "y")
+		x += bw
+		i += 1
+
+
+def floor_v3(w=2.0, dd=2.0, t=0.25):
+	"""Shack floor / ceiling panel: hand-hewn joists running across, a deck of uneven split boards along z resting
+	on them, pegged into every joist."""
+	zs = (-dd / 2 + 0.2, 0.0, dd / 2 - 0.2) if dd > 1.5 else (-dd / 2 + 0.2, dd / 2 - 0.2)
+	for z in zs:
+		hewn((-w / 2 + 0.03, 0.088, z + J(0.01)), (w / 2 - 0.03, 0.088 + J(0.004), z + J(0.01)), 0.07)
+	deck_boards(-w / 2 + 0.012, w / 2 - 0.012, -dd / 2, dd / 2, 0.148, t - 0.015, peg_z=zs)
+
+
+def floor_triangle_v3(t=0.25):
+	"""Shack triangle floor: hewn joists across, cut short of the slanted edges, split boards cut exactly to the
+	triangle, pegged."""
+	ti, to = K.TRI_IN, K.TRI_OUT
+	zs = (0.32, -0.12, -0.52)
+	for z in zs:
+		half = K.tri_half(z) - 0.17
+		if half > 0.12:
+			hewn((-half, 0.088, z + J(0.01)), (half, 0.088 + J(0.004), z + J(0.01)), 0.07)
+	deck_boards(-1.0, 1.0, -to, ti, 0.148, t - 0.015, pl=K.tri_planes(1.0, 0.006), peg_z=zs,
+		peg_ok=lambda px, zz: abs(px) < K.tri_half(zz) - 0.22)
+
+
+def _hewn_style(f):
+	def run():
+		global LOG_STYLE
+		LOG_STYLE = "hewn"
+		f()
+		LOG_STYLE = "round"
+	return run
+
+
+def foundation_triangle_v3(h=1.0):
+	"""Shack triangle foundation: three hewn legs on lumpy stones, two hewn beams from the back leg to the front
+	legs, hewn cross logs resting on them, and split deck boards cut exactly to the triangle, pegged."""
+	ti, to = K.TRI_IN, K.TRI_OUT
+	legs = [(x * 0.55, z * 0.55) for x, z in K.tri_pts()]
+	deck_bot = h - 0.11
+	r_up, r_lo = 0.09, 0.1
+	y_up = deck_bot - r_up + 0.012
+	y_lo = y_up - r_up - r_lo + 0.035
+	leg_top = y_lo - r_lo + 0.03
+	for (x, z) in legs:
+		boulder((x + J(0.015), 0.07, z + J(0.015)), 0.18, 0.1, 0.18)
+		hewn((x, 0.1, z), (x + J(0.012), leg_top, z + J(0.012)), 0.165)
+	back = legs[2]
+	for (x, z) in legs[:2]:
+		hewn((back[0], y_lo, back[1] + 0.02), (x * 1.08, y_lo + J(0.006), z * 1.08), r_lo)
+	cross = (0.22, -0.28)
+	for zz in cross:
+		half = K.tri_half(zz) - 0.2
+		hewn((-half, y_up, zz + J(0.015)), (half, y_up + J(0.006), zz + J(0.015)), r_up)
+	deck_boards(-1.0, 1.0, -to, ti, deck_bot, h - 0.006, pl=K.tri_planes(1.0, 0.006), peg_z=cross,
+		peg_ok=lambda px, zz: abs(px) < K.tri_half(zz) - 0.26)
+
+
+# ---------------- set 5: the other walls ----------------
+K.SIZE.update({"wall_narrow": (1, 2, 0.3), "window_wide": (2, 2, 0.3)})
+
+
+def wall_any_v3(w=2.0, h=2.0, d=0.3):
+	"""Shack wall of any size (half wall, narrow wall): hewn corner posts, a hewn sill and top beam, upright split
+	boards of different widths with gaps, a knot bite and a broken top, pegged to both beams."""
+	px = w / 2 - 0.151
+	rt = 0.12 if h > 1.5 else 0.1
+	yt = h - 0.2 if h > 1.5 else h - 0.13
+	for s_ in (-1, 1):
+		hewn((s_ * px, 0.03, 0.0), (s_ * px + J(0.006), h - 0.016, J(0.005)), 0.126)
+	hewn((-px, 0.115, 0.0), (px, 0.115 + J(0.008), 0.0), 0.1)
+	hewn((-px, yt, 0.0), (px, yt + J(0.008), 0.0), rt)
+	x0, x1 = -px + 0.13, px - 0.13
+	x = x0
+	i = 0
+	while x < x1 - 0.05:
+		bw = min(K.rng.uniform(0.3, 0.42), x1 - x)
+		if x1 - (x + bw) < 0.14:
+			bw = x1 - x
+		a = x + (K.rng.uniform(0.006, 0.012) if i else 0.0)
+		b = x + bw - (K.rng.uniform(0.006, 0.012) if x + bw < x1 - 0.01 else 0.0)
+		rough_vboard(a, b, 0.17, yt - rt + 0.04, J(0.008), 0.07, broken_top=(i == 2), knot=(1, 0.5 + 0.2 * h, 0.07) if i == 1 else None)
+		for y, zf in ((0.115, 0.093), (yt, rt * 0.93)):
+			pegs_on((a + b) / 2 + J(0.04), y, zf)
+		x += bw
+		i += 1
 
 
 # ---------------- paint: one painted picture per part, like the turnaround sheet ----------------
@@ -922,7 +1336,7 @@ def paint3():
 			lo = [min(vv[k] for vv in vs) for k in range(3)]
 			hi = [max(vv[k] for vv in vs) for k in range(3)]
 			ext = [max(1e-4, hi[k] - lo[k]) for k in range(3)]
-			ln = 1 if ext[1] >= ext[0] else 0  # Blender y = down the slope for a z-axis roof
+			ln = int(o["down"]) if "down" in o else (1 if ext[1] >= ext[0] else 0)  # Blender y = down a z-axis slope
 			wd = 1 - ln
 			for poly in me.polygons:
 				for li in poly.loop_indices:
@@ -962,7 +1376,20 @@ def _mix():
 
 PIECES = {"foundation3": foundation_v3, "foundation_hewn": _hewn, "foundation_mix": _mix,
 	"wall_v3": wall_v3, "doorway_v3": doorway_v3, "door_v3": door_v3, "roof_26_v3": lambda: roof_v3(2.0, 1.0),
-	"window_wall_v3": window_wall_v3, "foundation": foundation, "wall": wall, "doorway": doorway, "door": door, "roof_26": lambda: roof(2.0, 1.0)}
+	"window_wall_v3": window_wall_v3,
+	"roof_45_v3": lambda: roof_v3(2.0, 2.0),
+	"roof_26_outer_v3": lambda: roof_corner_v3(2.0, 1.0), "roof_26_inner_v3": lambda: roof_corner_v3(2.0, 1.0, inner=True),
+	"roof_45_outer_v3": lambda: roof_corner_v3(2.0, 2.0), "roof_45_inner_v3": lambda: roof_corner_v3(2.0, 2.0, inner=True),
+	"roof_26_ridge_v3": lambda: ridge_v3(2.0, 0.5), "roof_45_ridge_v3": lambda: ridge_v3(2.0, 1.0),
+	"gable_26_v3": lambda: gable_v3(2.0, 1.0), "gable_45_v3": lambda: gable_v3(2.0, 2.0), "sloped_wall_v3": lambda: gable_v3(2.0, 2.0),
+	"stairs_v3": stairs_v3, "foundation_steps_v3": lambda: stairs_v3(2.0, 1.0, 2.0, 4), "ramp_v3": ramp_v3, "ladder_v3": ladder_v3,
+	"railing_v3": railing_v3, "beam_v3": beam_v3, "beam_half_v3": lambda: beam_v3(1.0), "pillar_v3": pillar_v3, "brace_v3": brace_v3,
+	"mine_prop_v3": mine_prop_v3,
+	"floor_v3": floor_v3, "floor_half_v3": lambda: floor_v3(2.0, 1.0), "small_floor_v3": lambda: floor_v3(1.0, 1.0),
+	"ceiling_panel_v3": floor_v3, "floor_triangle_v3": floor_triangle_v3,
+	"half_wall_v3": lambda: wall_any_v3(2.0, 1.0), "wall_narrow_v3": lambda: wall_any_v3(1.0, 2.0),
+	"window_wide_v3": lambda: window_wall_v3(ow=1.6, oh=0.9, ob=0.6, shutters=False, sides=False, post_r=0.126),
+	"foundation_half_v3": _hewn_style(lambda: foundation_v3(2.0, 1.0, 1.0)), "foundation_triangle_v3": foundation_triangle_v3, "foundation": foundation, "wall": wall, "doorway": doorway, "door": door, "roof_26": lambda: roof(2.0, 1.0)}
 
 
 def make_grey():
@@ -985,6 +1412,7 @@ if __name__ == "__main__":
 	# install=1: write the approved v3 pieces under their game names (assets/models/build/<piece>__plank_root.glb)
 	GAME_NAME = {"foundation_mix": "foundation", "wall_v3": "wall", "doorway_v3": "doorway", "door_v3": "door", "roof_26_v3": "roof_26",
 		"window_wall_v3": "window_wall"}
+	GAME_NAME.update({n: n[:-3] for n in PIECES if n.endswith("_v3") and n[:-3] not in GAME_NAME.values()})
 	install = "install=1" in args
 	if install:
 		names = [n for n in names if n in GAME_NAME] or list(GAME_NAME)
