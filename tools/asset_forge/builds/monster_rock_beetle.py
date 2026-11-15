@@ -486,7 +486,7 @@ def leg(s, i, hip, knee, ankle, toe):
 		barrel("tarsus", knee.lerp(ankle, 0.5), ankle, 0.076, 0.068, chitin)
 		for k, p in enumerate((hip.lerp(knee, 0.5), knee, knee.lerp(ankle, 0.5))):  # dark joint rings
 			d = ((knee - hip) if k == 0 else (ankle - knee)).normalized()
-			rr = 0.09 - 0.006 * k
+			rr = 0.064 - 0.005 * k  # narrower than the barrels: a groove between segments
 			ck.loft(f"joint{k}", [(p - d * 0.012, rr, rr), (p + d * 0.012, rr, rr)], chitin_dark, sides=8, subsurf=0, smooth=False)
 		out_dir = Vector((toe.x - ankle.x, toe.y - ankle.y, 0)).normalized()
 		start = ankle - (ankle - knee).normalized() * 0.03
