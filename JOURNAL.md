@@ -1188,3 +1188,40 @@ Important pieces (workbench, smelter, anvil) can be redone later with a better t
 - Python wrote a Windows path with `\b` in it, which became an invisible "backspace" character, so the build script couldn't find
   Blender. Fixed with forward slashes.
 - Keeping the old forged beetles in the models folder failed the "every model has a build script" check; moved them to `journey/`.
+
+## Nov 15, 2026 (PC, Claude 2): Zone 1 model fix-up, batch 1: the building kit (F73-F80)
+**What we did:** the owner's notes on the three building styles, using the new model rules (`docs/art/MODEL-RULES.md`).
+- **Calm colours.** Stonehold now uses one grey stone family (new `greystone` textures, made by recolouring our own
+  stone picture) with about 1 stone in 8 slightly warm. Hearthbrick uses only red bricks with a few orange ones, and
+  its trim is terracotta instead of cream stone. The Shack has no grey planks anywhere.
+- **Everything inside its box.** A size check in the build script measures every piece against its box from
+  `pieces.gd`. Foundations were 2.11-2.14 m; now every piece is 2.00 m (faces 0.5 cm inside the edge).
+- **Round doors only.** The second doorway kind is deleted. Arches are now cut as exact ring pieces, so the opening
+  is a clean curve. The copper door is round (copper plates over dark planks).
+- **No shimmer (F76).** Cause: the hidden panel behind the doorway reached the piece's ends, so its end faces sat in the
+  same place as the stones' end faces and the game flickered between them. Now it stops 3 cm inside.
+- **Roofs.** Stonehold's sloped roofs and gables are deleted (flat roof + battlements only). Every Shack/Hearthbrick roof
+  piece is a thin layered panel: rafters, boards, then shingles (Shack) or real curved half-round tiles in overlapping
+  rows (Hearthbrick). Corners are cut exactly on the diagonal. Inner corners have no log: the shingles meet, and the
+  tiles stop at a sunken copper gutter.
+- **Clean tops and triangles.** Foundation tops are a border course around a basket-weave floor; triangle floors are
+  cut exactly to the triangle.
+- Pictures: `journey/kit_zone1/batch1_after_*.jpg` (4 sides) and `batch1_ingame_*.jpg` (the test house in the game).
+  Scores: Shack 8.5, Stonehold 8, Hearthbrick 8.5.
+
+**Mistakes and hurdles (including mine):**
+- Three Claudes got the same job list. We split it by message: Claude 2 = all models, Claude 1 = build menu + checks,
+  Claude 3 = creatures and outfits.
+- My new floor helper was called `piece`, the same name as a variable in the script, so the triangle floors crashed.
+  Renamed it `tile_piece`.
+- Claude 1's new checker found many "same place" faces I couldn't see: mortar ends level with stone ends, tiles sitting
+  exactly on their mortar bed, shingle courses ending in the same plane, and the leaded window lines lying exactly on the
+  glass. Each one was moved at least 0.5-1 cm apart or made to overlap.
+- First roof try: the checker said the Shack roofs were 3 cm thick, because it measured to the first surface seen from
+  below. Claude 1 changed the check to count the rafters, and I added boards under the shingles so no sky shows through.
+- The Hearthbrick hip tiles floated 2-3 cm above the roof. They now sit lower, on a mortar bed.
+- Stone and brick stairs counted as "5 loose parts" in the game's check (each step 1-2 cm apart); each tread now reaches
+  under the next step.
+- Small "same place" spots under 60 cm² are still listed for a few hidden inside faces (brick foundation, railing,
+  shingles); they're inside the piece and can't be seen, but they're on the list for the next pass.
+
