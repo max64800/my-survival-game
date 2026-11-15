@@ -20,6 +20,8 @@ var session: Session
 var players_root: Node3D
 var _ready_to_play := false
 var _menu: Node
+var world_file := ""  ## the save file of the world being played (F87)
+var world_name := ""
 var player_slots := {1: 0}
 var _monsters := true
 var _saving := true  ## off for robot test runs
@@ -171,20 +173,51 @@ func _on_defended(r: Dictionary) -> void:
 func _show_menu() -> void:
 	_menu = load("res://src/ui/start_menu.gd").new()
 	add_child(_menu)
-	_menu.connect("play_alone", func(s: int): _close_menu(); start_game(s if s > 0 else seed))
+	_menu.connect("play_alone", func(s: int, wname: String): _close_menu(); _new_world(s, wname))
 	_menu.connect("continue_game", func(data: Dictionary): _close_menu(); start_game(data.seed, {}, data))
-	_menu.connect("host_direct", func(s: int):
+	_menu.connect("host_world", func(data: Dictionary):
 		_close_menu()
-		start_game(s if s > 0 else seed)
+		start_game(data.seed, {}, data)
 		session.host_direct())
+	_menu.connect("host_direct", func(s: int, wname: String):
+		_close_menu()
+		_new_world(s, wname)
+		session.host_direct())
+	_menu.connect("quit_game", func(): get_tree().quit())
 	_menu.connect("join_direct", func(addr: String):
 		_menu.call("set_status", "Connecting to %s…" % addr)
 		session.join_direct(addr))
-	_menu.connect("host_steam", func(s: int):
+	_menu.connect("host_steam", func(s: int, wname: String):
 		if session.host_steam():
 			_close_menu()
-			start_game(s if s > 0 else seed))
+			_new_world(s, wname))
 	session.status_changed.connect(func(t: String): if _menu: _menu.call("set_status", t))
+
+
+## A brand-new world: its own save file and name (F87).
+func _new_world(s: int, wname: String) -> void:
+	var sd := s if s > 0 else seed
+	world_file = SaveGame.new_path(sd)
+	world_name = wname if wname != "" else "Cave %d" % sd
+	start_game(sd)
+
+
+## The Escape menu's buttons (F87).
+func pause_action(what: String) -> void:
+	match what:
+		"resume":
+			Controls.set_captured(true)
+			hud.set_paused(false)
+		"save":
+			save_now()
+		"menu":
+			save_now("Saved")
+			_ready_to_play = false
+			session.leave()
+			get_tree().reload_current_scene()
+		"quit":
+			save_now("Saved")
+			get_tree().quit()
 
 
 func _close_menu() -> void:
@@ -254,6 +287,8 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 		authority.load_snapshot(snap)
 	elif not save.is_empty():
 		_loaded = save
+		world_file = str(save.get("path", world_file))
+		world_name = SaveGame.world_name(save)
 		authority.load_snapshot(save.snap)
 		if save.players.has(0):
 			SaveGame.apply_player(authority.get_player(me), save.players[0])
@@ -277,6 +312,7 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	if not save.is_empty() and save.get("map", {}).size() > 0:
 		hud.map_data.load_data(save.map)
 	hud.build_mode = bm
+	hud.pause_pressed.connect(pause_action)
 	bm.message.connect(func(t: String): hud.show_toast(t, 5.0))
 	dwarf.fight.message.connect(func(t: String, _c: Color): hud.show_toast(t, 1.5))
 	authority.monsters.defended.connect(_on_defended)
@@ -493,6 +529,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause"):
 		if hud.is_bag_open():
 			_set_bag(false)
+		elif hud.is_paused():
+			pause_action("resume")
 		else:
 			Controls.set_captured(false)
 			hud.set_paused(true)

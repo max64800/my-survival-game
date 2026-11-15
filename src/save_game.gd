@@ -23,6 +23,55 @@ static func path_for(seed: int) -> String:
 	return folder().path_join("world_%d.save" % seed)
 
 
+## A file for a brand-new world. Two worlds may share a cave seed, so the time is part of the name.
+static func new_path(seed: int) -> String:
+	return folder().path_join("world_%d_%d.save" % [seed, int(Time.get_unix_time_from_system())])
+
+
+## Every saved world, newest first: [{path, name, seed, saved_at}]. Broken files show their backup.
+static func list_worlds() -> Array:
+	var out := []
+	if not DirAccess.dir_exists_absolute(folder()):
+		return out
+	for f in DirAccess.get_files_at(folder()):
+		if not f.ends_with(".save"):
+			continue
+		var p := folder().path_join(f)
+		for candidate in [p, p + ".1", p + ".2", p + ".3"]:
+			var d := read(candidate)
+			if not d.is_empty():
+				out.append({path = p, name = world_name(d), seed = d.seed, saved_at = str(d.saved_at),
+					time = FileAccess.get_modified_time(p)})
+				break
+	out.sort_custom(func(a, b): return a.time > b.time)
+	return out
+
+
+## One world's save (or its newest good backup), with `path` set so playing saves back to it.
+static func load_world(path: String) -> Dictionary:
+	for candidate in [path, path + ".1", path + ".2", path + ".3"]:
+		var d := read(candidate)
+		if not d.is_empty():
+			d.path = path
+			return d
+	return {}
+
+
+## Deletes a world and its backups. Only files inside the saves folder.
+static func delete_world(path: String) -> void:
+	if not path.begins_with(folder()) or not path.ends_with(".save"):
+		return
+	for p in [path, path + ".1", path + ".2", path + ".3", path + ".tmp"]:
+		if FileAccess.file_exists(p):
+			DirAccess.remove_absolute(p)
+
+
+## The world's name (older saves had none: "Cave 1234").
+static func world_name(data: Dictionary) -> String:
+	var n: String = str(data.get("name", ""))
+	return n if n != "" else "Cave %d" % int(data.get("seed", 0))
+
+
 ## Writes the save. Returns "" or an error message.
 static func save(main: Node) -> String:
 	var auth: GameAuthority = main.authority
@@ -44,11 +93,12 @@ static func save(main: Node) -> String:
 				players[slot] = offline.players[slot]
 	var map: MapData = main.hud.map_data if main.hud else null
 	var data := {
-		version = VERSION, seed = main.seed, saved_at = Time.get_datetime_string_from_system(),
+		version = VERSION, seed = main.seed, name = str(main.get("world_name") if main.get("world_name") != null else ""), saved_at = Time.get_datetime_string_from_system(),
 		snap = snap, players = players,
 		map = map.to_data() if map else {},
 	}
-	var path := path_for(main.seed)
+	var file = main.get("world_file")
+	var path: String = file if file is String and file != "" else path_for(main.seed)
 	var tmp := path + ".tmp"
 	var f := FileAccess.open_compressed(tmp, FileAccess.WRITE, FileAccess.COMPRESSION_ZSTD)
 	if f == null:
@@ -97,6 +147,7 @@ static func newest() -> Dictionary:
 	for candidate in [best, best + ".1", best + ".2", best + ".3"]:
 		var d := read(candidate)
 		if not d.is_empty():
+			d.path = best
 			return d
 	return {}
 

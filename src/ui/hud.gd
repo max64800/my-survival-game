@@ -5,6 +5,9 @@ extends CanvasLayer
 
 const SLOT_SIZE := 58
 
+## A button on the Escape menu was pressed: "resume", "save", "menu" or "quit" (F87).
+signal pause_pressed(what: String)
+
 var peer_id := 1
 var seed_text := ""
 
@@ -576,9 +579,14 @@ func open_station(st: Station) -> void:
 	craft.open_for(st)
 
 
+func is_paused() -> bool:
+	return _pause.visible
+
+
 func set_paused(on: bool) -> void:
 	_pause.visible = on
 	var auth := GameAuthority.instance
+	_ensure_pause_buttons(auth == null or auth.is_host())
 	var ff: CheckButton = _pause.find_child("FriendlyFire", true, false)
 	if ff == null:
 		ff = CheckButton.new()
@@ -591,7 +599,32 @@ func set_paused(on: bool) -> void:
 	if auth:
 		ff.set_pressed_no_signal(auth.friendly_fire())
 	_ensure_sound_controls()
-	(_pause.find_child("Sub", true, false) as Label).text = "Click to keep digging\n\nCave seed: %s" % seed_text
+	(_pause.find_child("Sub", true, false) as Label).text = "Esc or click to keep digging\n\nCave seed: %s" % seed_text
+
+
+## The Escape menu's buttons (F87): keep playing, save, back to the main menu, quit.
+## A friend in someone else's game can't save it, so they only get "Leave".
+func _ensure_pause_buttons(host: bool) -> void:
+	var box: VBoxContainer = _pause.find_child("PauseButtons", true, false)
+	if box == null:
+		box = VBoxContainer.new()
+		box.name = "PauseButtons"
+		box.add_theme_constant_override("separation", 8)
+		for b in [["resume", "Resume"], ["save", "Save"], ["menu", "Save and go to main menu"], ["quit", "Save and quit to desktop"]]:
+			var btn := Button.new()
+			btn.name = b[0]
+			btn.text = b[1]
+			btn.custom_minimum_size = Vector2(320, 44)
+			btn.focus_mode = Control.FOCUS_NONE
+			var what: String = b[0]
+			btn.pressed.connect(func(): pause_pressed.emit(what))
+			box.add_child(btn)
+		var sub := _pause.find_child("Sub", true, false) as Label
+		sub.get_parent().add_child(box)
+		sub.get_parent().move_child(box, sub.get_index() + 1)
+	(box.get_node("save") as Button).visible = host
+	(box.get_node("menu") as Button).text = "Save and go to main menu" if host else "Leave the game"
+	(box.get_node("quit") as Button).text = "Save and quit to desktop" if host else "Quit to desktop"
 
 
 ## Sound on the pause screen (feedback F15): a volume slider and a Mute switch, remembered.

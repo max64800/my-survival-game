@@ -41,6 +41,20 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 
 ## Open (still to do)
 
+*(Nov 15 evening, your play test on the PC. You chose the fixes from multiple-choice questions.)*
+
+- [ ] **F87. Menu (priority).** Escape doesn't let you leave the game; you can't make a new world or delete one. Plan: Escape menu with Resume, Save, Save and go to the main menu, Quit to desktop; the main menu lists your worlds (play / delete with "are you sure?") and makes new named worlds. *From: you. Said: 1×*
+- [ ] **F88. Hotbar items aren't shown in the bag (priority).** You had a pickaxe on the hotbar but not equipped, so it looked lost. Plan: the bag shows the hotbar row too; a pickaxe you carry is used for digging even if it isn't in the pickaxe slot. *From: you. Said: 1×*
+- [ ] **F89. Losing your pickaxe can leave you stuck** (no stone without a pickaxe, no pickaxe without stone). You chose: dig with bare hands, slower, so you can always get stone. *From: you. Said: 1×*
+- [ ] **F90. Fallen pillars/walls are ghosts** (you walk through them). You chose: they land as solid rubble you bump into and stand on, and you mine it back for some of the material. *From: you. Said: 1×*
+- [ ] **F91. The hanging roots don't look good.** You chose: rebuilt by hand in Blender in the workbench style (gnarled, twisting, little side roots, a soil clump at the top), and some glow faintly at the tips. *From: you. Said: 1×*
+- [ ] **F92. Crafting should take a little time.** You chose: 1-3 s, a progress bar fills and the dwarf does a working motion; walking away cancels it and you keep your materials. *From: you. Said: 1×*
+- [ ] **F93. Dropped items are tiny.** Make them about 5 times bigger. *From: you. Said: 1×*
+- [x] ~~**F94. The roll animation.**~~ You liked it; keep it as it is. *From: you. Said: 1×*
+- [ ] **F96. See where things go before placing them.** When you place a workbench (or any station, chest, bed, campfire, lamp...), show a see-through preview of it where it will land, green when it fits and red when it doesn't, like the build hammer's ghost pieces. *From: you. Said: 1×*
+- [ ] **F97. Raising a piece's height with Page Up / Page Down is awkward and hard to discover.** Hold Shift and turn the mouse wheel to raise or lower what you're building (foundations and everything else), with a hint on screen. *From: you. Said: 1×*
+- [ ] **F95. A way to make stone if you lose your pickaxe.** Same as F89 (bare hands dig soft rock and dirt for stone). *From: you. Said: 1×*
+
 *(Nov 15, your notes on the 3D building pieces and monsters. Rules written in `docs/art/MODEL-RULES.md`.)*
 
 - [ ] 🔁 **F68. Monsters: rebuild them by hand (no Play-Doh), like the crafting tables.** Plan: the Nov 14 hand-built scripts, reshaped to match the approved pictures; 4 looks on one body; Rock Beetle first for your OK. On the PC. *From: you. Said: 2×* **Nov 15 (Claude 3): Rock Beetle hand-built in all 4 looks, waiting for your OK** (pictures in `docs/art/creatures-hand-built-2026-11-15/`, 3D page Dwarf Cave Creatures). Snail and bat after your OK.
