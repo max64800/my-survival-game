@@ -296,7 +296,24 @@ func test_spawner_fills_nearby_caves() -> void:
 	await _setup()
 	auth.monsters.enabled = true
 	auth.monsters._spawn_and_despawn()
-	check(auth.monsters.monsters.size() > 0, "monsters appeared near us (%d)" % auth.monsters.monsters.size())
+	var in_first := 0
+	for m: Monster in auth.monsters.monsters.values():
+		var r: Dictionary = world.maker.rooms[0]
+		if m.global_position.distance_to(r.center) < maxf(r.radii.x, r.radii.z):
+			in_first += 1
+	check_eq(in_first, 0, "no enemies in the first cavern (F121)")
+	# Walk to another cavern: monsters appear there.
+	for i in world.maker.rooms.size():
+		var room: Dictionary = world.maker.rooms[i]
+		if not room.get("sealed", false) and room.get("kind", "") in ["cavern", "room", "great_hall", "ruin"]:
+			player.global_position = room.center
+			break
+	for i in 120:
+		if world.is_ready_at(player.global_position, 4.0):
+			break
+		await tree.process_frame
+	auth.monsters._spawn_and_despawn()
+	check(auth.monsters.monsters.size() > 0, "monsters appeared in the next cave (%d)" % auth.monsters.monsters.size())
 	_teardown()
 
 

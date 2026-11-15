@@ -108,8 +108,8 @@ func _spawn_and_despawn() -> void:
 	_wake_bosses()
 	for i in maker.rooms.size():
 		var room: Dictionary = maker.rooms[i]
-		if room.get("sealed", false) or room.get("kind", "") in ["shrine", "lair"]:
-			continue
+		if room.get("sealed", false) or room.get("kind", "") in ["shrine", "lair", "spawn"]:
+			continue  # no enemies in the first cavern (owner F121)
 		var st: Dictionary = _rooms.get(i, {alive = [], cleared_at = -RESPAWN})
 		_rooms[i] = st
 		st.alive = st.alive.filter(func(u): return monsters.has(u))
@@ -897,6 +897,19 @@ func request_blocked(uid: int, peer: int) -> void:
 	var sb := Gems.bonus(Gems.shield_slot(ps.inventory))
 	if sb.has("block_poison"):
 		m.add_buildup("poison", sb.block_poison)
+
+
+## True if a live monster stands on (or just above) the rock at `p`: you can't dig the ground out from
+## under it so it falls into a pit (owner, Nov 15, F125).
+func standing_over(p: Vector3) -> bool:
+	for m: Monster in monsters.values():
+		if not m.is_alive() or m.data.get("flies", false):
+			continue
+		var feet := m.global_position
+		var flat := Vector2(p.x - feet.x, p.z - feet.z).length()
+		if flat < float(m.data.get("size", 1.0)) * 0.6 + 1.0 and p.y < feet.y + 0.3 and p.y > feet.y - 3.0:
+			return true
+	return false
 
 
 ## Host: a short word over a monster's head for everyone ("Dazed!").

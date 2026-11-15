@@ -15,7 +15,7 @@ const LIST := {
 	# soft_back: hits from behind do `back_mult` damage. straight_charge: a charge doesn't steer.
 	"rock_snail": {name = "Rock Snail", size = 1.0, hp = 110, armor = 20, stun = 90, slash = 0.75, blunt = 1.25, pierce = 1.0,
 		fire = 0.0, frost = 0.0, poison = 0.0, walk = 0.6, run = 1.1, pack = [1, 2], xp = 14, leader = "Old Shellback", leader_chance = 0.15,
-		color = Color(0.48, 0.44, 0.38), shape = "rock_snail", shell_hide = {hits = 3, seconds = 3.0, cut = 0.9},
+		color = Color(0.48, 0.44, 0.38), shape = "rock_snail", neutral = true, shell_hide = {hits = 3, seconds = 3.0, cut = 0.9},
 		attacks = [{name = "Shell Slam", land_sound = "snail_slam", tell = 1.2, damage = 20, type = "blunt", reach = 1.9, parry = "any"},
 			{name = "Lunging Bite", tell = 0.9, damage = 14, type = "pierce", reach = 1.7, parry = "any"}],
 		drops = [["snail_meat", 1, 1.0], ["snail_meat", 1, 0.5], ["shell_piece", 2, 0.8]]},

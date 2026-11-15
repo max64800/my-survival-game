@@ -15,7 +15,7 @@ signal hud_message(text: String)  ## a line for our own screen
 signal dig_feedback(peer_id: int, result: Dictionary)
 signal fuel_changed(peer_id: int, fuel: float)
 
-const REACH := 4.5  ## meters from the dwarf's chest to what they're hitting
+const REACH := 3.0  ## meters from the dwarf's chest to what they're hitting (was 4.5; owner F116: walk up to things)
 const DIG_RADIUS := 1.35  ## size of the scoop one finished dig removes
 const PICKUP_RANGE := 6.0
 const MAX_FUEL := 600.0  ## 10 minutes of full lantern light
@@ -112,7 +112,7 @@ class PlayerState:
 		if weapon_drawn and inventory.equipped("weapon") != "":
 			return Inventory.equip_index("weapon")
 		var picked: String = inventory.get_slot(selected_slot).get("id", "")
-		if not Items.kind(picked) in HAND_KINDS:
+		if picked == "":  # an empty hotbar slot = your pickaxe (owner F118: otherwise you hold what you picked)
 			if inventory.equipped("pickaxe") != "":
 				return Inventory.equip_index("pickaxe")
 			var carried := inventory.best_of_kind("pickaxe")  # a pickaxe in the hotbar or bag still digs (F88)
@@ -652,8 +652,8 @@ func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
 	if power <= 0:
 		# No pickaxe at all: dig with bare hands, three times slower, so you can never get stuck
 		# without stone (owner, Nov 15, F89). Holding another tool or weapon still says "no tool".
-		if Items.kind(ps.selected_item()) in HAND_KINDS:
-			return {state = "no_tool"}
+		if ps.selected_item() != "":
+			return {state = "no_tool"}  # holding something else (stones, a sword...): pick your pickaxe to dig
 		power = Items.dig_power("pickaxe_stone") * HAND_DIG
 		bare = true
 	if _chest(ps).distance_to(point) > REACH + 1.0:
@@ -664,6 +664,8 @@ func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
 	var center := point - normal * 0.55
 	if monsters and monsters.lair_locked(center):
 		return {state = "blocked", point = point, why = "The lair walls glow. No digging until the fight ends!"}
+	if monsters and monsters.standing_over(center):
+		return {state = "blocked", point = point, why = "Something is standing on that rock."}  # no pit traps (F125)
 	var mat := world.rock_material_near(point - normal * 0.3, 1.1)
 	if mat < 0:
 		return {state = "air"}

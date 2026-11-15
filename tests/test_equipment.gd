@@ -54,7 +54,12 @@ func test_hand_uses_equipped_pickaxe_and_drawn_weapon() -> void:
 	check(ps.inventory.swap(0, Inventory.equip_index("weapon")), "...and right-click equips it")
 	ps.inventory.add("stone", 4)
 	ps.selected_slot = 0  # the stones
-	check_eq(ps.selected_item(), "pickaxe_stone", "holding rocks: you still dig with the equipped pickaxe")
+	check_eq(ps.selected_item(), "stone", "picking rocks: you hold the rocks (F118)")
+	for i in Inventory.HOTBAR_SIZE:
+		if ps.inventory.get_slot(i).is_empty():
+			ps.selected_slot = i
+			break
+	check_eq(ps.selected_item(), "pickaxe_stone", "an empty hotbar slot: your equipped pickaxe")
 	ps.weapon_drawn = true
 	check_eq(ps.selected_item(), "sword_copper", "F draws the equipped weapon")
 	ps.weapon_drawn = false

@@ -19,7 +19,15 @@ static func build(look: String, col: Color, layers: int, item_id: String = "") -
 	# The asset forge's 3D model of this item, if there is one (Claude 2's rules: handle along +Y,
 	# grip end at the origin, flat side to +Z, real sizes). Our own shapes below are the fallback.
 	if look not in TOOLS:
-		return root  # empty hand, stone, food, ore…: nothing in the hand (owner feedback F22)
+		# Not a tool (stone, food, a crystal...): hold a small copy of it (owner F118: hold what you picked).
+		var thing := Look.forged("items", item_id) if item_id != "" else null
+		if thing:
+			thing.scale = Vector3.ONE * 0.6
+			thing.position = Vector3(0, 0.05, 0.05)
+			root.add_child(thing)
+			for mi in root.find_children("*", "MeshInstance3D", true, false):
+				mi.layers = layers
+		return root
 	var model := Look.forged("items", item_id) if item_id != "" else null
 	if model:
 		match look:

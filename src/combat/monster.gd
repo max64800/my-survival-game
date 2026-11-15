@@ -510,6 +510,19 @@ func _start_attack(atk: Dictionary, mgr: Node) -> void:
 	mgr.send_tell(self, atk)
 
 
+## Is there a drop deeper than MAX_DROP just ahead (a hole it couldn't climb back out of)?
+const MAX_DROP := 1.6
+
+
+func _drop_ahead(dir: Vector3) -> bool:
+	if not is_inside_tree():
+		return false
+	var ahead := global_position + Vector3(dir.x, 0.0, dir.z).normalized() * (float(data.get("size", 1.0)) * 0.5 + 0.6)
+	var q := PhysicsRayQueryParameters3D.create(ahead + Vector3.UP * 0.6, ahead + Vector3.DOWN * (MAX_DROP + 0.1))
+	q.collision_mask = World.TERRAIN_LAYER
+	return get_world_3d().direct_space_state.intersect_ray(q).is_empty()
+
+
 ## Elemental buildup from a bolt (resistance shrinks it; bosses can't be frozen solid).
 func add_buildup(kind: String, amount: float) -> void:
 	var resist: float = stats().get({"burn": "fire", "chill": "frost", "poison": "poison"}.get(kind, ""), 0.0)
@@ -521,6 +534,8 @@ func add_buildup(kind: String, amount: float) -> void:
 
 func _move(delta: float, dir: Vector3, speed: float) -> void:
 	speed *= ailments.speed_mult()
+	if dir.length() > 0.1 and not data.get("flies", false) and is_on_floor() and _drop_ahead(dir):
+		dir = Vector3.ZERO  # a pit it couldn't climb out of: stop at the edge and find another way (F125)
 	if data.get("flies", false):
 		velocity = dir * speed
 		velocity.y = 0.0

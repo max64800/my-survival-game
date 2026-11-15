@@ -528,8 +528,16 @@ func is_bag_open() -> bool:
 
 ## The hotbar at the bottom middle of the screen.
 func _place_hotbar() -> void:
-	_hotbar.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
-	_hotbar.position += Vector2(-((SLOT_SIZE + 6) * Inventory.HOTBAR_SIZE - 6) / 2.0, -SLOT_SIZE - 18)  # centered for any hotbar size
+	# Pinned to the bottom middle by its anchors, so it stays centred at any window size (F119).
+	var w := float((SLOT_SIZE + 6) * Inventory.HOTBAR_SIZE - 6)
+	_hotbar.anchor_left = 0.5
+	_hotbar.anchor_right = 0.5
+	_hotbar.anchor_top = 1.0
+	_hotbar.anchor_bottom = 1.0
+	_hotbar.offset_left = -w * 0.5
+	_hotbar.offset_right = w * 0.5
+	_hotbar.offset_top = -SLOT_SIZE - 18.0
+	_hotbar.offset_bottom = -18.0
 
 
 ## While the bag is open the hotbar sits inside it (same slots, so you can move things between them);

@@ -83,6 +83,24 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [x] ~~**F122. A rule for proper textures (your multiple-choice answers).**~~ Done Nov 15 (PC, Claude 2): Rule 6 in `docs/art/MODEL-RULES.md`: ChatGPT variant sheets (8 planks, 12 barks, 4 chopped log ends, 8 shingles), medium variety, never stretched, worn edges + dark gaps, axe-chopped log ends, stacked/notched joints, wooden pegs. *From: you. Said: 1×*
 - [x] ~~**F123. The logs under the floor looked cartoonish (pencil-sharpened, same texture everywhere, passing through each other).**~~ Fixed Nov 15 (PC, Claude 2): you picked option A's top boards on option B's hand-hewn beams (axe-squared, bark on the corners); ends cut almost square; every log its own bark; logs stacked, nothing passes through. *From: you. Said: 2×*
 - [x] ~~**F124. The diagonal brace boards: pegs at the very end, one side not attached (a gap).**~~ Fixed Nov 15 (PC, Claude 2): both braces pressed into the legs and pegged into the middle of each leg. *From: you. Said: 2×*
+*(Nov 15, late: your second play test.)*
+
+- [ ] **F116. You can dig, hit and harvest from too far away.** Lower the reach (about 3 m instead of 4.5). *From: you. Said: 1×*
+- [ ] **F117. Equipped things (pickaxe, armor...) should be on the left side of the bag**, not under it. *From: you. Said: 1×*
+- [ ] **F118. Picking a hotbar slot still shows the pickaxe in your hand.** You chose: the dwarf holds what you picked; to dig, pick the pickaxe. *From: you. Said: 1×*
+- [ ] **F119. The hotbar at the bottom isn't centred any more.** *From: you. Said: 1×*
+- [ ] **F120. Dropped things are now too big** (after F93's 5×). Make them smaller. *From: you. Said: 1×*
+- [ ] **F121. No enemies in the first cavern** (leave the snail out of it for now). *From: you. Said: 1×*
+- [ ] **F122. Hover an item in the bag and press a number (1-9) to put it in that hotbar slot.** *From: you. Said: 1×*
+- [ ] **F123. Crafting (by hand or at the Workbench) needs pictures of the items.** *From: you. Said: 1×*
+- [ ] **F124. Snails should be passive until you attack them.** *From: you. Said: 1×*
+- [ ] **F125. You shouldn't be able to dig under enemies so they fall into a pit,** and enemies should see a trap/hole they can't get out of and walk around it. *From: you. Said: 1×*
+- [ ] **F127. The Workbench shows too many recipes all together.** Split them into menus (tabs), and don't show what you can't make. *From: you. Said: 1×*
+- [ ] **F128. Stuck in the axe's chopping animation** after chopping; switching tools doesn't stop it. *From: you. Said: 1×*
+- [ ] **F129. Making many planks takes one click each, and the list jumps after each craft.** Keep the list still, and let you choose how many to make. *From: you. Said: 1×*
+- [ ] **F130. Build costs show codes like "2 CI"** instead of the material's name. Show the real materials. (Also: the dwarf may be a bit small for the round doorway; leave it for now.) *From: you. Said: 1×*
+- [x] ~~**F126. Lantern refill time.**~~ You checked: 10 minutes is fine, no change. *From: you. Said: 1×*
+
 - [ ] **F95. A way to make stone if you lose your pickaxe.** Same as F89 (bare hands dig soft rock and dirt for stone). *From: you. Said: 1×*
 
 *(Nov 15, your notes on the 3D building pieces and monsters. Rules written in `docs/art/MODEL-RULES.md`.)*
