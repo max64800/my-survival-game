@@ -39,8 +39,9 @@ Code layout, recorder details, how to run robots: `docs/CLAUDE-REFERENCE.md` (re
 
 ## Saving tokens (owner, Nov 16)
 - RTK shrinks terminal output (installed on the Mac and the PC). If a result is empty or garbled, re-run with `rtk bypass <cmd>`.
-- Default thinking is medium. Before hard jobs (netcode, save files, big rebuilds, a bug that two tries didn't fix), tell the
-  owner in one line to type ultrathink. Helpers (Agent tool) use effort low for searching/reading, medium for normal work.
+- Default thinking is medium, also for big jobs (owner, Nov 16: "just try with medium, you pick ultrathink too often").
+  Only suggest ultrathink for a problem medium has already failed on twice. Helpers (Agent tool) use effort low for
+  searching/reading, medium for normal work.
 - Never read big files whole. `JOURNAL.md`: append new entries at the end without reading it (Grep or the last ~40 lines for
   format). Design specs, `MODEL-RULES.md`, `CREATURE-STYLE.md`: Grep the heading, read only that section.
 - Pictures cost a lot: look at the fewest screenshots that answer the question (usually 1–3), use crops/zoom, not full sets.
