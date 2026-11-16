@@ -17,9 +17,10 @@ static var _planned := {}
 
 
 func setup(seed: int) -> void:
-	if not _planned.has(seed):
-		_planned[seed] = CaveMaker.new(seed)
-	maker = _planned[seed]
+	var key := "%d:%d" % [seed, CaveMaker.layout]  # the same seed makes different caves in each layout (F211)
+	if not _planned.has(key):
+		_planned[key] = CaveMaker.new(seed)
+	maker = _planned[key]
 	terrain = VoxelTerrain.new()
 	terrain.name = "Terrain"
 	var fmt := VoxelFormat.new()

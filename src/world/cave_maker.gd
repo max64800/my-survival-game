@@ -10,22 +10,44 @@ extends RefCounted
 ## The cave is made from simple shapes of "air": big caverns (squashed balls with
 ## flat floors) and twisty tunnels (chains of tubes with flat floors).
 ##
-## The world is a row of biomes (world doc 1): Mossy Hollows in the middle (x -200…200), the
-## Fungal Jungle to the east (x 220…620). Between them is a 20 m slab of border rock with
-## two gate tunnels dug most of the way through; a copper pickaxe breaks the last 4 m.
-## Outside everything is the world's edge, which nothing can dig.
+## The world is a row of biomes (world doc 1): Mossy Hollows in the middle, the Fungal Jungle to
+## the east. Between them is a 20 m slab of border rock with two gate tunnels dug most of the way
+## through; a copper pickaxe breaks the last 4 m. Outside everything is the world's edge, which
+## nothing can dig.
+##
+## Two cave layouts (F211, Nov 16, 2026). A save remembers which one it was made with, so old saves
+## keep their old caves (the owner's choice):
+##   1 = the first caves: 400 m areas (Mossy x -200…200, Jungle x 220…620), squashed balls and tubes.
+##   2 = real-shaped caves: 800 m areas (Mossy x -400…400, Jungle x 420…1220), about 4x the rooms,
+##       passages and halls shaped the way water shapes real caves (see "layout 2" below).
+const LAYOUT_LATEST := 2
+## What brand-new worlds get. Stays 1 until layout 2 (F211 step 1) is finished, tested and OK'd by the
+## owner; robots can try layout 2 with "-- layout=2".
+const LAYOUT_DEFAULT := 1
+static var layout := LAYOUT_DEFAULT
 
-# --- Size of one biome (meters; 1 voxel = 1 meter) ---
-const HALF_SIZE := 200.0
+# --- Size of one biome (meters; 1 voxel = 1 meter). Set by use_layout(); these are layout 1's. ---
+static var HALF_SIZE := 200.0
 const Y_MIN := -64.0
 const Y_MAX := 16.0
 ## Biomes: id, center x. Each is a box ±HALF_SIZE around its center.
-const BIOMES := [{id = "mossy", cx = 0.0}, {id = "fungal", cx = 420.0}]
-const SLAB_X := 200.0  ## the Mossy/Fungal border slab runs from x 200 to 220
+static var BIOMES: Array = [{id = "mossy", cx = 0.0}, {id = "fungal", cx = 420.0}]
+static var SLAB_X := 200.0  ## the Mossy/Fungal border slab runs from SLAB_X to SLAB_X + 20
 const SLAB_W := 20.0
 const PLUG := 4.0  ## rock left in the middle of each gate tunnel
-const X_MIN := -HALF_SIZE
-const X_MAX := 620.0
+static var X_MIN := -200.0
+static var X_MAX := 620.0
+
+
+## Picks the cave layout for the next CaveMaker (and the World, map and borders that go with it).
+static func use_layout(v: int) -> void:
+	layout = clampi(v, 1, LAYOUT_LATEST)
+	var half := 200.0 if layout == 1 else 400.0
+	HALF_SIZE = half
+	SLAB_X = half
+	X_MIN = -half
+	BIOMES = [{id = "mossy", cx = 0.0}, {id = "fungal", cx = half + SLAB_W + half}]
+	X_MAX = half + SLAB_W + half * 2.0
 
 # --- Shape tuning ---
 const WALL_NOISE_AMP := 2.2  ## how bumpy walls are (meters)
@@ -38,6 +60,10 @@ const COPPER_THRESHOLD := 0.915
 const SOLID_FILL := -6.0  ## SDF value used for blocks that are all rock
 
 var seed: int
+var made_layout := LAYOUT_DEFAULT  ## the layout this cave was made with (fixed when it's made)
+## Layout 2: which way the rock layers tilt (meters up per meter along x and z). Flat ceilings and
+## the stacked ledges on walls follow it, like real bedding planes.
+var _dip := Vector2.ZERO
 ## The Copper Deeps (owner, Nov 15, F115): the only copper in Mossy Hollows, around 1-2 far, low caverns.
 ## {center, reach}: ore can appear in rock within `reach` of the center.
 var deeps: Array[Dictionary] = []
@@ -64,6 +90,9 @@ var _seg_b := PackedVector3Array()
 var _seg_r := PackedFloat32Array()
 var _seg_min := PackedVector3Array()
 var _seg_max := PackedVector3Array()
+var _seg_k := PackedInt32Array()  ## passage kind (TUBE, CANYON, ...); layout 1 = all tubes
+var _seg_h := PackedFloat32Array()  ## the kind's size number (canyon height, low passage half-width...)
+var _room_shape := PackedInt32Array()  ## SHAPE_DOME, SHAPE_FLAT or SHAPE_FALLEN
 ## Lookup grid: which shapes are near each 16 m cell, so sdf_at() only checks those.
 const GRID := 16
 var _grid := {}  ## Vector3i cell -> [PackedInt32Array rooms, PackedInt32Array segments]
@@ -81,6 +110,8 @@ static var rock_style := "mixed"
 var _slab_noise := FastNoiseLite.new()
 var _layer_noise := FastNoiseLite.new()
 var _chip_noise := FastNoiseLite.new()
+var _block_noise := FastNoiseLite.new()  ## layout 2: fallen blocks (one height per cell)
+var _block_dist_noise := FastNoiseLite.new()  ## the same cells: how far from a block's middle
 const SLAB_AMP := 1.2  ## how far a slab sticks out or sinks in (m)
 const LEDGE_AMP := 1.0  ## how far a rock layer steps in or out (m)
 const LAYER_H := 1.1  ## how tall one rock layer is (m)
@@ -90,12 +121,16 @@ const ROCKY_AMP := 2.8  ## how far sharp rock juts out or cuts in (meters)
 
 func _init(p_seed: int = 1, big_caverns: int = 3, small_rooms: int = 12) -> void:
 	seed = p_seed
+	made_layout = layout
 	_setup_noise()
+	if made_layout >= 2:
+		var drng := RandomNumberGenerator.new()
+		drng.seed = p_seed + 6060
+		_dip = Vector2(drng.randf_range(-0.05, 0.05), drng.randf_range(-0.05, 0.05))
 	# Mossy Hollows first, with the same dice as before biomes existed (old caves stay the same).
 	var rng := RandomNumberGenerator.new()
 	rng.seed = p_seed
-	_place_rooms(rng, big_caverns, small_rooms, 0.0, "mossy")
-	_connect_rooms(rng, 0, 0.0)
+	_lay_out(rng, big_caverns, small_rooms, 0.0, "mossy")
 	_bake_shapes()
 	spawn_point = _find_spawn()
 	_pick_deeps(rooms.size())
@@ -107,8 +142,7 @@ func _init(p_seed: int = 1, big_caverns: int = 3, small_rooms: int = 12) -> void
 	frng.seed = p_seed + 7000
 	var r0 := rooms.size()
 	var s0 := segments.size()
-	_place_rooms(frng, big_caverns, small_rooms, BIOMES[1].cx, "fungal")
-	_connect_rooms(frng, r0, BIOMES[1].cx)
+	_lay_out(frng, big_caverns, small_rooms, BIOMES[1].cx, "fungal")
 	var s1 := segments.size()  # the gate tunnels (added next) cross both biomes: no jungle shrines on them
 	_dig_gates(frng, r0)
 	_bake_shapes()
@@ -124,6 +158,17 @@ func _init(p_seed: int = 1, big_caverns: int = 3, small_rooms: int = 12) -> void
 		spawn_point = start.spawn
 
 
+## One biome's rooms and the tunnels that join them, in this cave's layout.
+func _lay_out(rng: RandomNumberGenerator, big_caverns: int, small_rooms: int, cx: float, biome: String) -> void:
+	var r0 := rooms.size()
+	if made_layout >= 2:
+		_place_rooms_v2(rng, cx, biome)
+		_connect_rooms_v2(rng, r0, cx)
+	else:
+		_place_rooms(rng, big_caverns, small_rooms, cx, biome)
+		_connect_rooms(rng, r0, cx)
+
+
 ## Rows of great old columns standing in the big caverns (feedback F9/F21), 1-2 per cavern,
 ## only where the floor is open and the ceiling is high enough. Planned last, with their own
 ## dice, so nothing else moves.
@@ -132,8 +177,8 @@ func _plan_colonnades() -> void:
 	rng.seed = seed + 5150
 	for ri in rooms.size():
 		var room: Dictionary = rooms[ri]
-		if not room.big or room.get("sealed", false):
-			continue
+		if not room.big or room.get("sealed", false) or room.get("shape", SHAPE_DOME) == SHAPE_FALLEN:
+			continue  # (fallen-roof halls have their own big blocks instead)
 		var c: Vector3 = room.center
 		var r: Vector3 = room.radii
 		var placed := 0
@@ -360,6 +405,15 @@ func _setup_noise() -> void:
 	_chip_noise.frequency = 0.55
 	_chip_noise.cellular_return_type = FastNoiseLite.RETURN_DISTANCE2_SUB
 	_chip_noise.fractal_type = FastNoiseLite.FRACTAL_NONE
+	# Fallen blocks (layout 2): cells about 7 m across, each one flat block.
+	for n: FastNoiseLite in [_block_noise, _block_dist_noise]:
+		n.seed = seed + 707
+		n.noise_type = FastNoiseLite.TYPE_CELLULAR
+		n.frequency = 0.14
+		n.fractal_type = FastNoiseLite.FRACTAL_NONE
+		n.cellular_jitter = 0.8
+	_block_noise.cellular_return_type = FastNoiseLite.RETURN_CELL_VALUE
+	_block_dist_noise.cellular_return_type = FastNoiseLite.RETURN_DISTANCE
 	_wall_noise.seed = seed
 	_wall_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
 	_wall_noise.frequency = 0.07
@@ -474,17 +528,18 @@ func _dig_gates(rng: RandomNumberGenerator, fungal_r0: int) -> void:
 	var tries := 0
 	while gates.size() < 2 and tries < 100:
 		tries += 1
-		var gz := rng.randf_range(-150, 150)
+		var gz := rng.randf_range(-(HALF_SIZE - 50.0), HALF_SIZE - 50.0)  # (±150 m in layout 1)
 		var gy := rng.randf_range(-40, -12)
 		if gates.size() == 1 and absf(gates[0].pos.z - gz) < 90.0:
 			continue
 		var mid := Vector3(SLAB_X + SLAB_W * 0.5, gy, gz)
 		var west_end := Vector3(mid.x - PLUG * 0.5, gy, gz)
 		var east_end := Vector3(mid.x + PLUG * 0.5, gy, gz)
-		_dig_worm(rng, _nearest_room(mid, 0, fungal_r0), Vector3(BIOMES[0].cx + 185.0, gy, gz), BIOMES[0].cx)
-		segments.append({a = Vector3(BIOMES[0].cx + 185.0, gy, gz), b = west_end, r = 3.4})
-		_dig_worm(rng, _nearest_room(mid, fungal_r0, rooms.size()), Vector3(BIOMES[1].cx - 185.0, gy, gz), BIOMES[1].cx)
-		segments.append({a = Vector3(BIOMES[1].cx - 185.0, gy, gz), b = east_end, r = 3.4})
+		var stub := HALF_SIZE - 15.0  # where each side's tunnel reaches the slab (185 m in layout 1)
+		_dig_worm(rng, _nearest_room(mid, 0, fungal_r0), Vector3(BIOMES[0].cx + stub, gy, gz), BIOMES[0].cx)
+		segments.append({a = Vector3(BIOMES[0].cx + stub, gy, gz), b = west_end, r = 3.4})
+		_dig_worm(rng, _nearest_room(mid, fungal_r0, rooms.size()), Vector3(BIOMES[1].cx - stub, gy, gz), BIOMES[1].cx)
+		segments.append({a = Vector3(BIOMES[1].cx - stub, gy, gz), b = east_end, r = 3.4})
 		# The stubs' box reaches 6 m into each biome so there's no paper-thin wall where they meet.
 		var half := Vector3(6.0, 5.5, 5.5)
 		gates.append({pos = mid, min = Vector3(SLAB_X, gy, gz) - half, max = Vector3(SLAB_X + SLAB_W, gy, gz) + half})
@@ -540,27 +595,426 @@ func _dig_worm(rng: RandomNumberGenerator, a: Vector3, b: Vector3, cx: float, r_
 
 
 func _clamp_inside(p: Vector3, cx: float) -> Vector3:
-	const M := 185.0
+	var M := HALF_SIZE - 15.0  # (185 m in layout 1)
 	return Vector3(clampf(p.x, cx - M, cx + M), clampf(p.y, Y_MIN + 8.0, Y_MAX - 8.0), clampf(p.z, -M, M))
+
+
+# ---------------------------------------------------------------- layout 2: real-shaped caves (F211)
+# Real caves are carved by water following rock layers and cracks (research, docs/design/epic-caves-plan.md):
+# along a layer you get flat ceilings and wide, low passages; along a crack, tall narrow slots; a stream
+# cutting down makes a canyon, and a round tube over a canyon is a "keyhole". The biggest rooms are where
+# the roof fell in: a tall arched ceiling over a floor of big fallen blocks. F110 (owner): 800 m areas,
+# many more caverns and rooms, twisting branching tunnels with side passages and dead ends.
+
+const V2_BIG := 8  ## big caverns per area (layout 1: 3)
+const V2_HALLS := 14  ## middle-sized halls, 26-38 m across (new)
+const V2_SMALL := 40  ## small chambers (layout 1: 12)
+const V2_LOOPS := 18  ## extra tunnels between near rooms, so there's more than one way round
+const V2_DEAD_ENDS := 20
+const V2_SIDE := 90  ## narrower side passages that wander off, cross and sometimes go nowhere (layout 1: 16)
+
+## Room shapes.
+const SHAPE_DOME := 0  ## a squashed ball with a flat floor (all of layout 1)
+const SHAPE_FLAT := 1  ## follows a rock layer: steep walls and a flat, slightly tilted ceiling
+const SHAPE_FALLEN := 2  ## the roof fell in: a tall arched ceiling over big fallen blocks
+const SHAPE_NAMES := ["dome", "flat", "fallen"]
+## Passage kinds. Every kind has its floor at the same height (centre line - 0.6 r), so they join cleanly.
+const TUBE := 0  ## a round tube (all of layout 1)
+const CANYON := 1  ## a stream cut down: tall and narrow (h = height)
+const KEYHOLE := 2  ## a slot below, a round tube above (h = slot height)
+const LOW := 3  ## along a rock layer: wide and low with a flat ceiling (h = half-width)
+const RIFT := 4  ## along a crack: very tall and narrow, fairly straight (h = height)
+const KIND_NAMES := ["tube", "canyon", "keyhole", "low", "rift"]
+## How much the bumpy-wall noise may move a kind's walls near its floor. Both walls of a passage move
+## the same way, so narrow kinds get less, or they'd pinch shut. Higher up they get the full amount.
+const KIND_BUMPS := [1.0, 0.3, 0.3, 0.4, 0.25]
+const LOW_CEIL := 3.4  ## clear height of a low passage before the rock detail (the dwarf is 1.35 m)
+
+
+func _place_rooms_v2(rng: RandomNumberGenerator, cx: float, biome: String) -> void:
+	var r0 := rooms.size()
+	var span := HALF_SIZE - 50.0
+	# Big caverns, spread out so there's a journey between them. The first one (you start next to it)
+	# is near the middle, so there's cave to explore in every direction.
+	var tries := 0
+	while _count_big(r0) < V2_BIG and tries < 1200:
+		tries += 1
+		var reach := 110.0 if rooms.size() == r0 else span
+		var c := Vector3(cx + rng.randf_range(-reach, reach), rng.randf_range(-38, -18), rng.randf_range(-reach, reach))
+		var r := Vector3(rng.randf_range(24, 34), rng.randf_range(10, 14), rng.randf_range(24, 34))
+		if _far_from_rooms(c, 170.0 if tries < 700 else 120.0):
+			rooms.append({center = c, radii = r, big = true, kind = "cavern", sealed = false, biome = biome})
+	# Middle-sized halls.
+	var placed := 0
+	tries = 0
+	while placed < V2_HALLS and tries < 2000:
+		tries += 1
+		var c := Vector3(cx + rng.randf_range(-span, span), rng.randf_range(-48, -10), rng.randf_range(-span, span))
+		var r := Vector3(rng.randf_range(13, 19), rng.randf_range(6, 9), rng.randf_range(13, 19))
+		if _far_from_rooms(c, 75.0):
+			rooms.append({center = c, radii = r, big = false, kind = "room", sealed = false, biome = biome, hall = true})
+			placed += 1
+	# Small chambers along the way, on every level.
+	placed = 0
+	tries = 0
+	while placed < V2_SMALL and tries < 4000:
+		tries += 1
+		var c := Vector3(cx + rng.randf_range(-span, span), rng.randf_range(-54, -2), rng.randf_range(-span, span))
+		var r := Vector3(rng.randf_range(7, 12), rng.randf_range(5, 7), rng.randf_range(7, 12))
+		if _far_from_rooms(c, 45.0):
+			rooms.append({center = c, radii = r, big = false, kind = "room", sealed = false, biome = biome})
+			placed += 1
+
+
+## Going up or down costs more, so tunnels prefer to stay on one level (world doc 2.3).
+static func _link_cost(a: Vector3, b: Vector3) -> float:
+	return Vector2(a.x - b.x, a.z - b.z).length() + 2.5 * absf(a.y - b.y)
+
+
+func _connect_rooms_v2(rng: RandomNumberGenerator, r0: int, cx: float) -> void:
+	var n := rooms.size() - r0
+	if n <= 0:
+		return
+	# The cheapest set of tunnels that reaches every room (Prim's method): nothing needs digging.
+	var key := PackedFloat32Array()
+	key.resize(n)
+	key.fill(INF)
+	var parent := PackedInt32Array()
+	parent.resize(n)
+	parent.fill(-1)
+	var done := PackedByteArray()
+	done.resize(n)
+	key[0] = 0.0
+	var edges: Array[Vector2i] = []
+	var linked := {}
+	for step in n:
+		var u := -1
+		for j in n:
+			if done[j] == 0 and (u < 0 or key[j] < key[u]):
+				u = j
+		done[u] = 1
+		if parent[u] >= 0:
+			edges.append(Vector2i(r0 + parent[u], r0 + u))
+			linked[Vector2i(mini(parent[u], u), maxi(parent[u], u))] = true
+		for j in n:
+			if done[j] == 0:
+				var cost := _link_cost(rooms[r0 + u].center, rooms[r0 + j].center)
+				if cost < key[j]:
+					key[j] = cost
+					parent[j] = u
+	# Loops: a room joins one of its nearest rooms that it isn't joined to yet (a real shortcut).
+	for k in V2_LOOPS:
+		var i := rng.randi_range(0, n - 1)
+		var near := []
+		for j in n:
+			if j != i and not linked.has(Vector2i(mini(i, j), maxi(i, j))):
+				near.append([_link_cost(rooms[r0 + i].center, rooms[r0 + j].center), j])
+		if near.is_empty():
+			continue
+		near.sort_custom(func(x, y): return x[0] < y[0])
+		var j: int = near[rng.randi_range(0, mini(2, near.size() - 1))][1]
+		linked[Vector2i(mini(i, j), maxi(i, j))] = true
+		edges.append(Vector2i(r0 + i, r0 + j))
+	var s0 := segments.size()
+	for e in edges:
+		_dig_passage(rng, e.x, e.y, cx)
+	# Dead ends: a wander away from a room that just stops.
+	for k in V2_DEAD_ENDS:
+		var from_room := r0 + rng.randi_range(0, n - 1)
+		var start := mouth(rooms[from_room])
+		var angle := rng.randf_range(0, TAU)
+		var end := _clamp_inside(start + Vector3(cos(angle), rng.randf_range(-0.25, 0.25), sin(angle)) * rng.randf_range(30, 80), cx)
+		_dig_worm_v2(rng, start, end, cx, _pick_kind(rng, start, end, true), 2.0, 2.8, from_room)
+	# Side passages (F20, F110): narrower tunnels that branch off the ones above, wander up and down,
+	# cross each other, and sometimes go nowhere.
+	var s1 := segments.size()
+	for k in V2_SIDE:
+		var seg: Dictionary = segments[rng.randi_range(s0, s1 - 1)]
+		var from: Vector3 = (seg.a + seg.b) * 0.5
+		var angle := rng.randf_range(0, TAU)
+		var dir := Vector3(cos(angle), rng.randf_range(-0.35, 0.35), sin(angle)).normalized()
+		var end := _clamp_inside(from + dir * rng.randf_range(35.0, 110.0), cx)
+		_dig_worm_v2(rng, from, end, cx, _pick_kind(rng, from, end, true), 1.8, 2.6)
+
+
+## A tunnel between two rooms. Just outside a big cavern it pinches into a low or keyhole passage, so
+## the cavern opens up all at once when you step in ("squeeze, then wow").
+func _dig_passage(rng: RandomNumberGenerator, i: int, j: int, cx: float) -> void:
+	var a := mouth(rooms[i])
+	var b := mouth(rooms[j])
+	var s0 := segments.size()
+	_dig_worm_v2(rng, a, b, cx, _pick_kind(rng, a, b, false), 2.3, 3.3, i, j)
+	for idx in [i, j]:
+		var room: Dictionary = rooms[idx]
+		if not room.big:
+			continue
+		var c: Vector3 = room.center
+		var rr: Vector3 = room.radii
+		for k in range(s0, segments.size()):
+			var sg: Dictionary = segments[k]
+			var mid: Vector3 = (sg.a + sg.b) * 0.5
+			var e := Vector2((mid.x - c.x) / rr.x, (mid.z - c.z) / rr.z).length()
+			if e > 1.0 and e < 1.0 + 16.0 / minf(rr.x, rr.z):
+				var level := absf((sg.b as Vector3).y - (sg.a as Vector3).y) < 1.0
+				sg.k = LOW if level else KEYHOLE
+				sg.h = rng.randf_range(5.0, 8.0) if level else rng.randf_range(2.6, 3.2)
+
+
+## Which kind a passage from a to b is. LOW only where it can stay nearly level (rock layers are flat).
+func _pick_kind(rng: RandomNumberGenerator, a: Vector3, b: Vector3, side: bool) -> int:
+	var level := absf(b.y - a.y) <= 0.12 * Vector2(b.x - a.x, b.z - a.z).length()
+	var roll := rng.randf()
+	var kind: int
+	if side:
+		kind = TUBE if roll < 0.25 else (CANYON if roll < 0.5 else (RIFT if roll < 0.7 else LOW))
+	else:
+		kind = TUBE if roll < 0.3 else (CANYON if roll < 0.5 else (KEYHOLE if roll < 0.7 else LOW))
+	if kind == LOW and not level:
+		kind = TUBE if side else KEYHOLE
+	return kind
+
+
+## The kind's size number (see the kinds above).
+static func _kind_size(rng: RandomNumberGenerator, kind: int) -> float:
+	match kind:
+		CANYON:
+			return rng.randf_range(6.0, 11.0)
+		RIFT:
+			return rng.randf_range(8.0, 13.0)
+		KEYHOLE:
+			return rng.randf_range(2.6, 3.4)
+		LOW:
+			return rng.randf_range(5.0, 9.0)
+	return 0.0
+
+
+## A wandering tunnel of one kind from a to b, made of 6 m pieces. Low passages stay nearly level;
+## rifts wander less (cracks run fairly straight).
+## `room_a` / `room_b`: the rooms it starts and ends in (-1 = none), for tidying up inside them.
+func _dig_worm_v2(rng: RandomNumberGenerator, a: Vector3, b: Vector3, cx: float, kind: int, r_min: float, r_max: float,
+		room_a: int = -1, room_b: int = -1) -> void:
+	const STEP := 6.0
+	var climb := 0.1 if kind == LOW else 0.42
+	var wander_amount := 0.35 if kind == RIFT else 0.65
+	var h := _kind_size(rng, kind)
+	var s0 := segments.size()
+	var pos := a
+	var guard := 0
+	while pos.distance_to(b) > STEP and guard < 300:
+		guard += 1
+		var dir := (b - pos).normalized()
+		var wander := Vector3(rng.randf_range(-1, 1), rng.randf_range(-0.3, 0.3), rng.randf_range(-1, 1))
+		dir = (dir + wander * wander_amount).normalized()
+		dir.y = clampf(dir.y, -climb, climb)
+		var next := _clamp_inside(pos + dir.normalized() * STEP, cx)
+		segments.append({a = pos, b = next, r = rng.randf_range(r_min, r_max), k = kind, h = h})
+		pos = next
+	segments.append({a = pos, b = b, r = rng.randf_range(r_min, r_max), k = kind, h = h})
+	if room_a >= 0 or room_b >= 0:
+		_trim_in_rooms(s0, room_a, room_b)
+
+
+## Every tunnel starts in the middle of its room, so a pile of tunnel pieces lay inside each room,
+## adding nothing (it's all open air) but slowing the terrain down. The pieces deep inside a room become
+## one straight piece from the middle to where the tunnel leaves.
+func _trim_in_rooms(s0: int, room_a: int, room_b: int) -> void:
+	var seg := segments.slice(s0)
+	segments.resize(s0)
+	var first := 0
+	if room_a >= 0:
+		while first < seg.size() - 1 and _deep_inside(seg[first].b, room_a):
+			first += 1
+	var last := seg.size() - 1
+	if room_b >= 0:
+		while last > first and _deep_inside(seg[last].a, room_b):
+			last -= 1
+	var start_a: Vector3 = seg[0].a
+	var end_b: Vector3 = seg[seg.size() - 1].b
+	for k in range(first, last + 1):
+		var s: Dictionary = seg[k]
+		if k == first:
+			s.a = start_a
+		if k == last:
+			s.b = end_b
+		segments.append(s)
+
+
+func _deep_inside(p: Vector3, idx: int) -> bool:
+	var rm: Dictionary = rooms[idx]
+	var q := (p - (rm.center as Vector3)) / (rm.radii as Vector3)
+	return Vector2(q.x, q.z).length() < 0.7 and absf(q.y) < 0.8
+
+
+## Plain caverns and rooms get their real-cave shapes (special places keep theirs). Own dice, so it
+## never moves anything else.
+func _assign_shapes(r0: int, r1: int) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed + 3131 + r0
+	for i in range(r0, r1):
+		var rm: Dictionary = rooms[i]
+		var roll := rng.randf()
+		if rm.kind == "cavern":
+			rm.shape = SHAPE_FLAT if roll < 0.3 else (SHAPE_FALLEN if roll < 0.6 else SHAPE_DOME)
+		elif rm.kind == "room" and rm.get("hall", false):
+			rm.shape = SHAPE_FLAT if roll < 0.45 else (SHAPE_FALLEN if roll < 0.8 else SHAPE_DOME)
+		elif rm.kind == "room":
+			rm.shape = SHAPE_FLAT if roll < 0.4 else SHAPE_DOME
+
+
+## Layout 2's distance to open air: like _sdf_with, plus the new shapes, and the bumpy-wall noise
+## turned down near the floor of narrow passages so they stay open.
+func _sdf_with_v2(p: Vector3, room_ids: PackedInt32Array, seg_ids: PackedInt32Array) -> float:
+	var d := 1e9
+	var scale := 1.0  # how much wall noise is allowed here: a narrow passage within 3 m turns it down
+	for i in room_ids:
+		d = _smin(d, _room_dist_v2(p, i), BLEND)
+	for i in seg_ids:
+		var mn := _seg_min[i]
+		var mx := _seg_max[i]
+		var gap := Vector3(maxf(maxf(mn.x - p.x, p.x - mx.x), 0.0), maxf(maxf(mn.y - p.y, p.y - mx.y), 0.0), maxf(maxf(mn.z - p.z, p.z - mx.z), 0.0))
+		if d < 1e8 and gap.length() >= d + BLEND:
+			continue
+		if _seg_k[i] == TUBE:
+			# (the round tube written out here: it's the most common piece and this runs for every voxel)
+			var a := _seg_a[i]
+			var ab := _seg_b[i] - a
+			var t := clampf((p - a).dot(ab) / maxf(ab.length_squared(), 0.0001), 0.0, 1.0)
+			var cp := a + ab * t
+			var r := _seg_r[i]
+			var td := maxf(p.distance_to(cp) - r, (cp.y - r * 0.6) - p.y)
+			var hh := clampf(0.5 + 0.5 * (td - d) / BLEND, 0.0, 1.0)  # _smin(d, td, BLEND)
+			d = lerpf(td, d, hh) - BLEND * hh * (1.0 - hh)
+			continue
+		var sh := _seg_shape(p, i)
+		d = _smin(d, sh.x, BLEND)
+		if sh.y < 1.0:
+			scale = minf(scale, lerpf(1.0, sh.y, clampf(1.0 - maxf(sh.x, 0.0) / 3.0, 0.0, 1.0)))
+	var s := -d
+	if absf(s) < 6.5:
+		s += _wall_bumps(p) * scale
+		if rock_style != "blocks" and not _near_start(p):
+			s += _rock_detail(p) * _floor_guard(p, room_ids) * scale
+		for i in room_ids:
+			var rr := _room_r[i]
+			if maxf(rr.x, maxf(rr.y, rr.z)) < 4.0:
+				s = maxf(s, rr.x * 0.6 - p.distance_to(_room_c[i]))
+	if _near_start(p):
+		s = maxf(s, -_start_dist(p))
+	return minf(s, _region_dist(p))
+
+
+func _room_dist_v2(p: Vector3, i: int) -> float:
+	var shape := _room_shape[i]
+	if shape == SHAPE_DOME:
+		return _room_dist(p, i)
+	var c := _room_c[i]
+	var r := _room_r[i]
+	var floor_y := c.y - r.y * 0.55
+	if shape == SHAPE_FLAT:
+		# Steep walls; the ceiling is a rock layer: flat, tilted the same way as all the layers here.
+		var re := Vector3(r.x, r.y * 1.6, r.z)
+		var d := ((p - c) / re).length() - 1.0
+		d *= minf(re.x, minf(re.y, re.z))
+		var ceil_y := floor_y + r.y * 1.25 + (p.x - c.x) * _dip.x + (p.z - c.z) * _dip.y
+		return maxf(maxf(d, floor_y - p.y), p.y - ceil_y)
+	# Fallen roof: a taller arch, and big fallen blocks on the floor (not in the middle or at the edges,
+	# where tunnels come in).
+	var re := Vector3(r.x, r.y * 1.3, r.z)
+	var d := (((p - c) / re).length() - 1.0) * minf(re.x, minf(re.y, re.z))
+	return maxf(d, floor_y + _fallen_block(p, c, r) - p.y)
+
+
+## How tall the fallen block at p is (0 = open floor). Each noise cell is one block, 1.5 to 5.5 m tall,
+## its top sloping down toward its edges, like a broken slab lying at an angle.
+func _fallen_block(p: Vector3, c: Vector3, r: Vector3) -> float:
+	var e := Vector2((p.x - c.x) / r.x, (p.z - c.z) / r.z).length()
+	var fade := smoothstep(0.28, 0.4, e) * (1.0 - smoothstep(0.78, 0.9, e))
+	if fade <= 0.0:
+		return 0.0
+	var cv := _block_noise.get_noise_2d(p.x, p.z)
+	if cv < 0.3:
+		return 0.0
+	var mid := clampf(_block_dist_noise.get_noise_2d(p.x, p.z) + 1.0, 0.0, 1.0)  # 0 = middle of the block
+	return (1.5 + (cv - 0.3) * 5.7) * (1.0 - 0.4 * mid) * fade
+
+
+## Distance to one passage piece (x) and how much wall noise is allowed at p (y).
+## TUBE is the old round tube. The others are measured in an upright cross-section (walls stand
+## straight up even where the passage slopes), from the passage's floor.
+func _seg_shape(p: Vector3, i: int) -> Vector2:
+	var k := _seg_k[i]
+	if k == TUBE:
+		return Vector2(_seg_dist(p, i), 1.0)
+	var a := _seg_a[i]
+	var ab := _seg_b[i] - a
+	var t := clampf(((p.x - a.x) * ab.x + (p.z - a.z) * ab.z) / maxf(ab.x * ab.x + ab.z * ab.z, 0.0001), 0.0, 1.0)
+	var lat := Vector2(p.x - (a.x + ab.x * t), p.z - (a.z + ab.z * t)).length()
+	var r := _seg_r[i]
+	var h := _seg_h[i]
+	var v := p.y - (a.y + ab.y * t - r * 0.6)  # height above this passage's floor
+	var d: float
+	match k:
+		CANYON, RIFT:
+			var w := clampf(r * (0.75 if k == CANYON else 0.6), 1.5, 2.2)
+			var hh := h * 0.5
+			var vc := hh - (1.0 if k == CANYON else 1.6)  # sunk a little, so the floor is wide enough
+			d = (Vector2(lat / w, (v - vc) / hh).length() - 1.0) * w
+		KEYHOLE:
+			var slot := (Vector2(lat / 1.35, (v - h * 0.4) / (h * 0.6)).length() - 1.0) * 1.35
+			var rt := r * 0.8
+			var tube := Vector2(lat, v - (h + rt * 0.55)).length() - rt
+			d = minf(slot, tube)
+		LOW:
+			d = (Vector2(lat / h, (v - 1.5) / 2.1).length() - 1.0) * 2.1
+			d = maxf(d, v - LOW_CEIL)
+		_:
+			d = _seg_dist(p, i)
+	d = maxf(d, -v)  # flat floor
+	# Near the floor narrow passages keep their walls; from ~2.5 m up the rock can be as rough as anywhere.
+	var bumps: float = lerpf(KIND_BUMPS[k], 1.0, clampf((v - 2.5) / 3.0, 0.0, 1.0)) if k != LOW else KIND_BUMPS[k]
+	return Vector2(d, bumps)
 
 
 func _bake_shapes() -> void:
 	_corner_cache.clear()  # the shapes change: remembered block corners are out of date
-	for arr in [_room_c, _room_r, _room_min, _room_max, _seg_a, _seg_b, _seg_r, _seg_min, _seg_max]:
+	for arr in [_room_c, _room_r, _room_min, _room_max, _seg_a, _seg_b, _seg_r, _seg_min, _seg_max, _seg_k, _seg_h, _room_shape]:
 		arr.clear()
 	var pad := Vector3.ONE * (WALL_NOISE_AMP + BLEND + 1.0)
 	for room in rooms:
+		var shape := int(room.get("shape", SHAPE_DOME))
+		var reach: Vector3 = room.radii
+		if shape == SHAPE_FLAT:
+			reach.y *= 1.6  # (its ellipsoid is taller; the flat ceiling cuts it)
+		elif shape == SHAPE_FALLEN:
+			reach.y *= 1.3
 		_room_c.append(room.center)
 		_room_r.append(room.radii)
-		_room_min.append(room.center - room.radii - pad)
-		_room_max.append(room.center + room.radii + pad)
+		_room_shape.append(shape)
+		_room_min.append(room.center - reach - pad)
+		_room_max.append(room.center + reach + pad)
 	for s in segments:
+		var k := int(s.get("k", TUBE))
+		var h := float(s.get("h", 0.0))
 		_seg_a.append(s.a)
 		_seg_b.append(s.b)
 		_seg_r.append(s.r)
-		var rv: Vector3 = Vector3.ONE * float(s.r)
-		_seg_min.append(s.a.min(s.b) - rv - pad)
-		_seg_max.append(s.a.max(s.b) + rv + pad)
+		_seg_k.append(k)
+		_seg_h.append(h)
+		# How far the shape reaches from its centre line: sideways (x, z), down, up.
+		var r := float(s.r)
+		var side := r
+		var up := r
+		match k:
+			CANYON, RIFT:
+				side = maxf(r, 2.2)
+				up = maxf(r, h)
+			LOW:
+				side = maxf(r, h)
+				up = maxf(r, LOW_CEIL)
+			KEYHOLE:
+				up = h + 1.6 * r
+		_seg_min.append(s.a.min(s.b) - Vector3(side, r, side) - pad)
+		_seg_max.append(s.a.max(s.b) + Vector3(side, up, side) + pad)
 	_grid.clear()
 	for i in _room_c.size():
 		_grid_add(_room_min[i], _room_max[i], 0, i)
@@ -619,6 +1073,12 @@ func _plan_pois(rng: RandomNumberGenerator, r0: int, r1: int, s0: int, s1: int, 
 			smalls.append(i)
 	smalls.sort_custom(func(a, b): return rooms[a].center.distance_to(spawn) > rooms[b].center.distance_to(spawn))
 	var plan := ["ruin", "nest", "ruin", "camp", "nest", "ruin", "camp", "nest", "camp", "camp"]
+	if made_layout >= 2 and smalls.size() > plan.size():
+		# 800 m areas: spread them from far to near, instead of all at the far edges.
+		var spread := []
+		for j in plan.size():
+			spread.append(smalls[roundi(float(j) * (smalls.size() - 1) / float(plan.size() - 1))])
+		smalls = spread
 	var k := 0
 	for i in smalls:
 		if k >= plan.size():
@@ -629,9 +1089,13 @@ func _plan_pois(rng: RandomNumberGenerator, r0: int, r1: int, s0: int, s1: int, 
 		rooms[i].kind = t
 		_add_poi(t, find_floor(rooms[i].center.x, rooms[i].center.z, rooms[i].center.y), Vector3.UP, i)
 		k += 1
+	if made_layout >= 2:
+		_assign_shapes(r0, r1)  # plain caverns and rooms get their real-cave shapes
+		_bake_shapes()
 	# The main boss lair: a sealed dome, 6+ m of rock all around, 150+ m from the start.
+	var lair_reach := HALF_SIZE - 35.0  # (165 m in layout 1)
 	for attempt in 600:
-		var c := Vector3(cx + rng.randf_range(-165, 165), rng.randf_range(-40, -16), rng.randf_range(-165, 165))
+		var c := Vector3(cx + rng.randf_range(-lair_reach, lair_reach), rng.randf_range(-40, -16), rng.randf_range(-lair_reach, lair_reach))
 		if c.distance_to(spawn) < 150.0:
 			continue
 		var r := Vector3(18, 9, 18)
@@ -916,6 +1380,8 @@ func _wall_rock(p: Vector3) -> int:
 
 
 func _sdf_with(p: Vector3, room_ids: PackedInt32Array, seg_ids: PackedInt32Array) -> float:
+	if made_layout >= 2:
+		return _sdf_with_v2(p, room_ids, seg_ids)
 	var d := 1e9
 	for i in room_ids:
 		d = _smin(d, _room_dist(p, i), BLEND)
@@ -984,6 +1450,7 @@ func _rock_detail(p: Vector3) -> float:
 ## Stacked rock layers: each ~1 m layer steps in or out a little; the layers tilt and wander.
 func _ledge(p: Vector3) -> float:
 	var warp := _layer_noise.get_noise_2d(p.x * 0.04, p.z * 0.04) * 2.5
+	warp -= p.x * _dip.x + p.z * _dip.y  # layout 2: the layers tilt with the flat ceilings (0 in layout 1)
 	var layer := floorf((p.y + warp) / LAYER_H)
 	return _layer_noise.get_noise_1d(layer * 13.7 + 0.5) * LEDGE_AMP
 
@@ -1087,7 +1554,11 @@ func _pick_deeps(count: int) -> void:
 			continue
 		var c: Vector3 = rm.center
 		var far := Vector2(c.x - spawn_point.x, c.z - spawn_point.z).length()
-		scored.append([far + (spawn_point.y - c.y) * 1.5, i])
+		var score := far + (spawn_point.y - c.y) * 1.5
+		if made_layout >= 2:
+			# 800 m areas: a real trip (140-320 m), not the far corner; lower = better.
+			score = (spawn_point.y - c.y) * 1.5 + (200.0 if far >= 140.0 and far <= 320.0 else -absf(far - 230.0))
+		scored.append([score, i])
 	scored.sort_custom(func(a, b): return a[0] > b[0])
 	for k in mini(DEEPS_COUNT, scored.size()):
 		var rm: Dictionary = rooms[scored[k][1]]
@@ -1125,12 +1596,20 @@ func generate_block(buf: VoxelBuffer, origin: Vector3i) -> void:
 	var seg_ids := PackedInt32Array()
 	var lo := bmin - Vector3.ONE * CULL_MARGIN
 	var hi := bmax + Vector3.ONE * CULL_MARGIN
-	for i in _room_c.size():
-		if _overlaps(lo, hi, _room_min[i], _room_max[i]):
-			room_ids.append(i)
-	for i in _seg_a.size():
-		if _overlaps(lo, hi, _seg_min[i], _seg_max[i]):
-			seg_ids.append(i)
+	if made_layout >= 2 and size == Vector3i.ONE * GRID and origin % GRID == Vector3i.ZERO:
+		# Layout 2 has thousands of tunnel pieces: the lookup grid already lists the ones near this block
+		# (no entry = nothing near = solid rock).
+		var cell = _grid.get(Vector3i(origin / GRID))
+		if cell != null:
+			room_ids = cell[0]
+			seg_ids = cell[1]
+	else:
+		for i in _room_c.size():
+			if _overlaps(lo, hi, _room_min[i], _room_max[i]):
+				room_ids.append(i)
+		for i in _seg_a.size():
+			if _overlaps(lo, hi, _seg_min[i], _seg_max[i]):
+				seg_ids.append(i)
 
 	const SDF := VoxelBuffer.CHANNEL_SDF
 	const IDX := VoxelBuffer.CHANNEL_INDICES
@@ -1141,7 +1620,13 @@ func generate_block(buf: VoxelBuffer, origin: Vector3i) -> void:
 
 	var near_start := _start_overlaps(lo, hi)
 	var blocky := rock_style == "blocks"
-	if room_ids.is_empty() and seg_ids.is_empty() and one_biome and not near_start:
+	var all_rock := room_ids.is_empty() and seg_ids.is_empty()
+	if not all_rock and made_layout >= 2 and one_biome and not near_start and not blocky:
+		# Shapes are listed nearby, but if the middle of the block is far inside rock, so is all of it:
+		# half the block's diagonal (13.9 m) + the most the wall noise and rock detail move a wall (~5 m)
+		# + the soft blend (3 m).
+		all_rock = _sdf_with(bmin + Vector3(size) * 0.5, room_ids, seg_ids) < -22.0
+	if all_rock and one_biome and not near_start:
 		# Solid rock block: fast path.
 		buf.fill_f(SOLID_FILL, SDF)
 		buf.fill(pal.rock, IDX)

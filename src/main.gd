@@ -31,6 +31,8 @@ var _jungle_kit := false  ## "-- jungle": start at the jungle gate with copper t
 ## Test robots and test kits start in the big cavern with tools, like before.
 ## Real games start in the small room with nothing (feedback F10/F11).
 var _robot_run := false
+## Cave layout for brand-new worlds (F211). Saves and friends' games use the layout they were made with.
+var _new_layout := CaveMaker.LAYOUT_DEFAULT
 var _loaded := {}  ## the save we started from (friends' dwarfs are restored from it when they rejoin)  ## peer id -> player number (0 = host, 1-3 = friends)
 
 
@@ -90,6 +92,8 @@ func _ready() -> void:
 				mode = "solo"
 		elif arg.begins_with("rock="):
 			CaveMaker.rock_style = arg.trim_prefix("rock=")  # compare rock styles (blocks, slabs, ledges, mixed)
+		elif arg.begins_with("layout="):
+			_new_layout = arg.trim_prefix("layout=").to_int()  # new worlds in an older cave layout (comparing)
 		elif arg == "lookdev":
 			debug_script = "res://src/debug/lookdev.gd"
 			_saving = false
@@ -272,7 +276,15 @@ func _close_menu() -> void:
 ## `save` is a save file's data when continuing.
 func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> void:
 	seed = p_seed
-	print("Cave seed: ", seed)
+	# Which cave layout (F211): a save keeps its own (saves from before layouts existed = 1, the old
+	# caves); a friend joining gets the host's; a new world gets CaveMaker.LAYOUT_DEFAULT.
+	if not save.is_empty():
+		CaveMaker.use_layout(int(save.get("layout", 1)))
+	elif snap.has("layout"):
+		CaveMaker.use_layout(int(snap.layout))
+	else:
+		CaveMaker.use_layout(_new_layout)
+	print("Cave seed: ", seed, " (cave layout ", CaveMaker.layout, ")")
 	_make_environment()
 	world = World.new()
 	world.name = "World"
@@ -441,7 +453,9 @@ func _on_peer_connected(id: int) -> void:
 	for d in players_root.get_children():
 		if d is Dwarf:  # dig sparkles live here too for a moment
 			others.append([d.peer_id, d.global_position])
-	_welcome.rpc_id(id, seed, authority.snapshot(), others, player_slots)
+	var snap := authority.snapshot()
+	snap.layout = CaveMaker.layout  # the friend must make the same caves (F211)
+	_welcome.rpc_id(id, seed, snap, others, player_slots)
 	var pos := _spawn_spot(id)
 	var puppet := _spawn_dwarf(id, pos, false)
 	_player_joined.rpc(id, pos, player_slots)

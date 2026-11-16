@@ -93,7 +93,7 @@ static func save(main: Node) -> String:
 				players[slot] = offline.players[slot]
 	var map: MapData = main.hud.map_data if main.hud else null
 	var data := {
-		version = VERSION, seed = main.seed, name = str(main.get("world_name") if main.get("world_name") != null else ""), saved_at = Time.get_datetime_string_from_system(),
+		version = VERSION, seed = main.seed, layout = CaveMaker.layout, name = str(main.get("world_name") if main.get("world_name") != null else ""), saved_at = Time.get_datetime_string_from_system(),
 		snap = snap, players = players,
 		map = map.to_data() if map else {},
 	}

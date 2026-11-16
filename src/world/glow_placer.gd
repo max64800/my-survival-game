@@ -42,15 +42,16 @@ const DRIP_REACH := 3.0  ## a bucket within this many meters (sideways) of a dri
 const TALL := ["root", "giant_mushroom", "root_dangle"]
 const ROOT_DANGLE := "root_dangle"
 
-static var _placed := {}  ## seed -> spots (copied out, because a GlowField changes its own copy)
+static var _placed := {}  ## "seed:layout" -> spots (copied out, because a GlowField changes its own copy)
 
 
 ## Returns an Array of {id, pos, normal, kind, color, scale, spin, length}.
 static func place(maker: CaveMaker) -> Array[Dictionary]:
-	if not _placed.has(maker.seed):
-		_placed[maker.seed] = _place(maker)
+	var key := "%d:%d" % [maker.seed, maker.made_layout]
+	if not _placed.has(key):
+		_placed[key] = _place(maker)
 	var out: Array[Dictionary] = []
-	for s in _placed[maker.seed]:
+	for s in _placed[key]:
 		out.append(s.duplicate())
 	return out
 

@@ -2372,3 +2372,48 @@ learn how to do hair animation and implement that."
   ~500 px, so they stay 512 px, not the 1024 the plan said. (4) Another chat had unsaved work in world.gd and the
   journal, so Claude committed only its own lines.
 - Paused by the owner. Next: the 4 ChatGPT sheets, then run the cutter and compare screenshots.
+
+## November 16, 2026 (PC, cave Claude): epic caves, research and plan (F211)
+- **What we did:** looked at the owner's 6 cave pictures, read F109, F110, F188-F190 and the cave code, researched
+  real caves and fallen dwarf halls, and wrote `docs/design/epic-caves-plan.md` with 8 choices. No code yet.
+- **The big finding:** real caves are shaped by water following rock layers and cracks (flat ceilings, tall slots,
+  canyons, hills of fallen blocks). Ours are built from balls and tubes, which is why "too round" keeps coming back.
+- **What every reference picture shares:** something tiny for scale, one strong far light, mirror water, one rock type
+  per place, and a view through a frame.
+- **Cavers really find hidden caves by feeling air blow through cracks**, then digging. That matches the owner's
+  "peek crack" idea, so it went into the plan.
+- **Hurdle:** the world is built from 1 m blocks and the dwarf is 72 cm wide, so a real crack thin enough to block him
+  would close up (the start room's glowing crack has the same limit). Plan: a real opening filled with a hand-made
+  cracked slab you can see through, then dig.
+- **Hurdle:** the two research helpers ran fewer web searches than asked and filled in from general knowledge. Claude
+  checked the key facts with its own searches (Carlsbad, the blue marble caves, lava tubes, basalt columns, cave
+  digging). The plan says the numbers are rounded.
+- **Care taken:** picture 6 is a famous fantasy mine from a book and its films. The plan takes only the feeling
+  (pillars fading into the dark, one beam of light), never names, shapes or layouts. The reference pictures stay out of
+  the public repo (small copies only in Claude's temp folder).
+- 10 play-session recordings are waiting, not reviewed.
+- **Later: the owner's picks (asked as multiple-choice questions):** wonders in every cavern with a sample of each type
+  now; future area themes decided later; waterfall shaft as the first wonder; one giant hall per area; a fallen dwarf
+  hall per area now; see-through cracks hiding treasure and shortcuts; wade and swim (diving later); the work split
+  with the cave-life Claude as suggested. Written at the top of the plan.
+
+## November 16, 2026 (PC, cave Claude): real-shaped caves, step 1 (F211 + F110), first half
+- **The owner's choices first:** old saves keep their old caves; new areas are 800 x 800 m (4x the ground).
+- **Two cave layouts.** Layout 1 = the old caves. Layout 2 = the new ones. Each save remembers its layout, and a
+  friend who joins gets the host's. Before changing anything, Claude took a "fingerprint" of the old caves (exact
+  numbers at 400 spots); after the change the old caves came out identical to 4 decimals.
+- **Layout 2:** per area 8 big caverns, 14 halls, 40 small rooms (old: 3 + 12), more loops, dead ends and side
+  passages. New passage shapes like real caves: canyons, keyholes, wide low passages with flat ceilings, tall rifts.
+  New rooms: flat ceilings along rock layers, and fallen-roof halls with big blocks. Tunnels squeeze just before a big
+  cavern, so it opens up all at once.
+- **Hurdle: it got slow.** The first try took 6.7 s to place crystals (old: 0.8 s) and 94 ms per block of rock (old:
+  30 ms). Cause: every tunnel starts in a room's middle, so piles of useless tunnel pieces sat inside each room, and
+  the new tall passages had over-sized boxes. Fixed by merging those pieces, tighter boxes, and a faster round-tunnel
+  path: now 4.2 s and ~55 ms. Still too slow; next time.
+- **Hurdle: Claude's own mistake.** A test helper had `quit()` stuck inside the wrong function; caught by Godot's
+  error and fixed.
+- **Hurdle: another chat mid-change.** The real game check couldn't start, because another chat was halfway through
+  adding rock looks to `world.gd`. Claude stopped the stuck run and didn't touch their work.
+- **Paused at the owner's request.** To keep everyone's games safe, new worlds still get the old caves until step 1
+  is finished and the owner OKs it (robots can try `-- layout=2`). Cave tests pass. Commit has only this chat's
+  changes. What's left is listed in `docs/design/epic-caves-plan.md` ("Progress").

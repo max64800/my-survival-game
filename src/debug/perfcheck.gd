@@ -43,6 +43,7 @@ func _line(name: String, r: Dictionary, base: Dictionary = {}) -> void:
 func _run() -> void:
 	while not _main.is_ready_to_play():
 		await _wait(0.25)
+	print("ready to play %.1f s after the program started (cave layout %d)" % [Time.get_ticks_msec() / 1000.0, CaveMaker.layout])
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	Engine.max_fps = 0
 	var dwarf: Dwarf = _main.dwarf
