@@ -2006,3 +2006,26 @@ You tried the dev menu and asked for four things:
 - The first prompt was sent without the text box focused (ChatGPT had reloaded the page); it went through anyway.
 - The picture-download script only looked for pictures already loaded on screen, so it missed the newest one and
   timed out. Fixed by scrolling to the last picture first.
+
+## November 16, 2026 (PC, Claude 2): mirror-shiny crystals (round 4)
+
+**What we did**
+- The owner: "the crystals are matte, make them shiny, a bit like a mirror, cool and expensive" (F184 came back,
+  now in "Things that keep coming back").
+- The crystal shader now:
+  - makes the glass dark and tinted;
+  - reflects a whole made-up cave: a near-black floor, warm banded rock above, bright lamps;
+  - turns a face seen side-on into a full mirror;
+  - bends the reflection by position, so streaks slide across each face as you move;
+  - splits the flashes into a little rainbow, like a cut gem;
+  - turns its own glow way down, so the reflections show.
+- The 3D page uses the same shader, ported to the web, so the page and the game match.
+
+**Mistakes and hurdles (including Claude's)**
+- Round 3 was still matte: the crystals' own glow was brighter than their reflections.
+- On the page, three tries with three.js's own materials did nothing:
+  - A "metal" setting tints reflections blue, so they blend in.
+  - An evenly lit pretend room reflects the same grey on every face.
+  - The test browser (no graphics card) may not show those reflections at all.
+  Porting the game's shader fixed it in one go.
+- Claude opened a tab in the owner's real Chrome by mistake (the browser tool uses it); closed it at once.
