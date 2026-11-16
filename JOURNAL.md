@@ -1706,3 +1706,20 @@ the stones all looked grey)
   through it (the second spot). Moving the claw to the front of the foot and adding a flat sole fixed both.
 - Moving the legs closer in (round 7) made the beetle look worse to the owner, not better. Lesson: change one big thing per
   round, so the owner can judge each change on its own.
+
+## November 16, 2026 (PC, Claude 3): Rock Beetle animations on the 3D page
+
+**What we did**
+- The owner is happy with round 8 and asked for animation buttons on the 3D page. Added a row: Standing (breathing),
+  Walk, Run, Charge attack, Gets hit, Dazed. They copy what the game does: an insect walk (two sets of three legs step
+  in turns), body bob and waddle, the charge warning (red eyes, blazing amber, head down, pawing), the run, a thump,
+  then 3 s dazed; feelers sway the whole time, faster when dazed; the amber hums.
+- The page no longer spins by itself (the standing rule; it had been left on).
+
+**Mistakes and hurdles (including Claude's)**
+- The first walk code moved the feet the wrong way (pushing forward while planted); caught by working out the turn
+  directions before publishing.
+- The test browser wouldn't connect, so instead Claude checked the model file: all 9 moving parts (6 legs, 2 feelers,
+  body) are there with their hinges at the hips and feeler holes.
+- Noticed, not changed yet (needs the owner's OK): the game's walk turns each insect leg around its own length (a roll)
+  instead of swinging it forward and back, so in the game the beetle's legs may barely seem to step.
