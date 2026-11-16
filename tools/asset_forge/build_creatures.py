@@ -13,6 +13,9 @@ import os
 import shutil
 import subprocess
 import tempfile
+
+import glb_jpeg_fix
+import glb_scale
 import sys
 from pathlib import Path
 
@@ -28,9 +31,10 @@ CREATURES = {
 
 
 # Looks that go through the sculpt-and-bake pass (docs/art/CREATURE-RECIPE.md) after the grey build.
-# OFF for now (Nov 16): the baked beetle loads in Godot without its pictures (white). Turn on once that is fixed:
-# SCULPTED = {("rock_beetle", "look=mossy"): "sculpt_test_beetle.py"}
-SCULPTED = {}
+# Creatures that go through the sculpt-and-bake pass (docs/art/CREATURE-RECIPE.md) after the grey build, every look.
+SCULPTED = {"rock_beetle": "sculpt_test_beetle.py"}
+# The game's size for the finished model (the baked beetle is 1.54 m long; the game's beetle and its collision ~1.36 m).
+GAME_SCALE = {"rock_beetle": 0.88}
 
 
 def blender():
@@ -58,12 +62,14 @@ def main():
 			args += extra + words
 			res = subprocess.run(args, capture_output=True, text=True, encoding="utf-8", errors="replace")
 			done = [line for line in res.stdout.splitlines() if line.startswith("KIT_DONE")]
-			if done and (kind, words[0]) in SCULPTED:  # sculpt, paint and bake the grey model into the finished one
+			if done and kind in SCULPTED:  # sculpt, paint and bake the grey model into the finished one
 				with tempfile.TemporaryDirectory() as tmp:
-					sc = subprocess.run([blender(), "--background", "--factory-startup", "--python", str(HERE / SCULPTED[(kind, words[0])]),
-						"--", str(glb), tmp], capture_output=True, text=True, encoding="utf-8", errors="replace")
+					sc = subprocess.run([blender(), "--background", "--factory-startup", "--python", str(HERE / SCULPTED[kind]),
+						"--", str(glb), tmp] + words, capture_output=True, text=True, encoding="utf-8", errors="replace")
 					if (Path(tmp) / "test.glb").exists():
 						shutil.copy(Path(tmp) / "test.glb", glb)
+						glb_jpeg_fix.fix(str(glb))  # (the sculpt pass already did; harmless twice)
+						glb_scale.set_scale(glb, GAME_SCALE.get(kind, 1.0))
 						print(f"  sculpted + baked {glb.name}")
 					else:
 						print(f"SCULPT FAILED {glb.name}:\n{sc.stdout[-1500:]}\n{sc.stderr[-1500:]}")

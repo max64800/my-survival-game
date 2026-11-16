@@ -453,6 +453,9 @@ static func _vary_stone(forged: Node3D, seed: int) -> void:
 					own[m] = (m as StandardMaterial3D).duplicate()
 					(own[m] as StandardMaterial3D).albedo_color *= tint
 				mi.set_surface_override_material(i, own[m])
+	# Keep the copies alive on the model root too (like the eye and glow copies): if they lived only in the parts,
+	# deleting the whole world at once could free a copy before the engine let go of its part (an engine error).
+	forged.set_meta("stone_mats", own.values())
 
 
 static func _tag_forged(holder: Node3D, forged: Node3D, shape: String) -> void:

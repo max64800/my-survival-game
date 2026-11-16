@@ -280,4 +280,6 @@ for o in bpy.context.scene.objects:
 		o.select_set(True)
 bpy.ops.export_scene.gltf(filepath=str(out / "test.glb"), export_format="GLB", use_selection=True, export_yup=True,
 	export_image_format="JPEG", export_image_quality=88)
+import glb_jpeg_fix  # noqa: E402  every Blender export with JPEG pictures needs this, or Godot shows it white (F164)
+glb_jpeg_fix.fix(str(out / "test.glb"))
 print("SCULPT_TEST done", round(time.time() - t0), "s; parts", sorted(o.name for o in scene.objects if o.type == "MESH" and not o.hide_get()))
