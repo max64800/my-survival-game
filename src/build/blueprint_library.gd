@@ -51,49 +51,86 @@ static func make(id: String) -> Blueprint:
 
 # ---------------------------------------------------------------- the buildings
 
-## F161, the starter hut (Delver's Shack pieces): an L of five 2 m rooms on log-leg foundations (the legs
-## reach the ground on uneven floors), a round door with steps up to it at the front of the short arm,
-## lean-to roofs falling to the outside on every side, joined by a corner roof, gables on the ends.
-## Box: x -3..3, z -4..4. Back row = cells (-2|0|2, -3); front arm = cells (-2, -1|1); steps at (-2, 3).
+## F161, the starter hut (Delver's Shack pieces), made bigger on Nov 16 (owner: two stories, a less simple
+## shape, the yard closed off). A two-story main house (8 x 4 m) with a peaked roof; a one-story wing coming
+## forward on the left with its own peaked roof running into the house wall; between them a yard closed by
+## railings, with an entrance gap. Round front door (steps) at the front of the wing, a second door from the
+## yard into the house (steps), stairs inside up to the second floor. All on log-leg foundations (they reach
+## the ground on uneven floors). No copper anywhere: it can be built from day one. Empty inside: you furnish it.
+## Box: x -4..4, z -5..5. House cells x -3|-1|1|3, z -4|-2. Wing cells x -3|-1, z 0|2. Yard x 0..4, z -1..3.
 func _delvers_hut() -> void:
-	_start(Vector3(6, 4, 8))
-	for c in [Vector3(-2, 0, -3), Vector3(0, 0, -3), Vector3(2, 0, -3), Vector3(-2, 0, -1), Vector3(-2, 0, 1)]:
-		_add("foundation", WOOD, c, 0)
-	_add("foundation_steps", WOOD, Vector3(-2, 0, 3), 0)  # climbs from the front up to the door
+	_start(Vector3(8, 7, 10))
+	for x in [-3, -1, 1, 3]:
+		for z in [-4, -2]:
+			_add("foundation", WOOD, Vector3(x, 0, z), 0)
+	for x in [-3, -1]:
+		for z in [0, 2]:
+			_add("foundation", WOOD, Vector3(x, 0, z), 0)
+	_add("foundation_steps", WOOD, Vector3(-3, 0, 4), 0)  # up to the round front door
+	_add("foundation_steps", WOOD, Vector3(3, 0, 0), 0)   # from the yard up to the house door
 	var y := 1.0
-	# Walls round the L. Front of the short arm: the round door.
-	_wall_x("doorway", -2, 2, y, WOOD)
-	_add("door", WOOD, Vector3(-2, y, 2), 0)
-	_wall_x("wall", -2, -4, y, WOOD)
-	_wall_x("window_wall", 0, -4, y, WOOD)
-	_wall_x("wall", 2, -4, y, WOOD)
-	_wall_z("window_wall", 3, -3, y, WOOD)
-	_wall_x("wall", 0, -2, y, WOOD)              # the inner corner, facing the yard
-	_wall_x("window_wall", 2, -2, y, WOOD)
-	_wall_z("wall", -1, -1, y, WOOD)
-	_wall_z("window_wall", -1, 1, y, WOOD)
-	_wall_z("wall", -3, -3, y, WOOD)
-	_wall_z("window_wall", -3, -1, y, WOOD)
-	_wall_z("wall", -3, 1, y, WOOD)
-	# Roof: every slope falls to the outside; the high edges sit on half walls round the inner corner.
-	var top := y + 2.0
-	_add("roof_26", WOOD, Vector3(0, top, -3), 2)         # back arm: low at the back
-	_add("roof_26", WOOD, Vector3(2, top, -3), 2)
-	_add("roof_26", WOOD, Vector3(-2, top, -1), 3)        # front arm: low on the left
-	_add("roof_26", WOOD, Vector3(-2, top, 1), 3)
-	_add("roof_26_outer", WOOD, Vector3(-2, top, -3), 2)  # the back-left corner where they meet
-	_wall_x("half_wall", 0, -2, top, WOOD)
-	_wall_x("half_wall", 2, -2, top, WOOD)
-	_wall_z("half_wall", -1, -1, top, WOOD)
-	_wall_z("half_wall", -1, 1, top, WOOD)
-	_add("gable_26", WOOD, Vector3(3, top, -3), 3)        # right end (high toward the yard)
-	_add("gable_26", WOOD, Vector3(-2, top, 2), 0)        # over the door (high toward the yard)
-	# A few things inside.
-	_add("table", WOOD, Vector3(1, y, -3.2), 0)
-	_add("bench", WOOD, Vector3(1, y, -2.5), 0)
-	_add("rug", WOOD, Vector3(-2, y, -1.5), 1)
-	_on_wall_z("barrel", WOOD, 2.4, -4, y, 1)
-	_add("crate", WOOD, Vector3(-2.4, y, 0.8), 0)
+	# --- ground floor: the house
+	_wall_x("wall", -3, -5, y, WOOD)
+	_wall_x("window_wall", -1, -5, y, WOOD)
+	_wall_x("window_wall", 1, -5, y, WOOD)
+	_wall_x("wall", 3, -5, y, WOOD)
+	_wall_z("wall", -4, -4, y, WOOD)
+	_wall_z("window_wall", -4, -2, y, WOOD)
+	_wall_z("window_wall", 4, -4, y, WOOD)
+	_wall_z("wall", 4, -2, y, WOOD)
+	_wall_x("window_wall", 1, -1, y, WOOD)        # facing the yard
+	_wall_x("doorway", 3, -1, y, WOOD)            # the yard door
+	_add("door", WOOD, Vector3(3, y, -1), 0)
+	# --- ground floor: the wing (open into the house at the back)
+	_wall_z("window_wall", -4, 0, y, WOOD)
+	_wall_z("wall", -4, 2, y, WOOD)
+	_wall_z("wall", 0, 0, y, WOOD)
+	_wall_z("window_wall", 0, 2, y, WOOD)
+	_wall_x("doorway", -3, 3, y, WOOD)            # the round front door
+	_add("door", WOOD, Vector3(-3, y, 3), 0)
+	_wall_x("window_wall", -1, 3, y, WOOD)
+	# --- stairs in the house's front-left room, climbing to the back, up to the second floor
+	_add("stairs", WOOD, Vector3(-3, y, -2), 0)
+	# --- second floor over the house (a hole over the stairs, a railing round it)
+	var y2 := y + 2.0
+	for x in [-3, -1, 1, 3]:
+		for z in [-4, -2]:
+			if not (x == -3 and z == -2):
+				_add("floor", WOOD, Vector3(x, y2, z), 0)
+	var y3 := y2 + 0.25
+	_wall_z("railing", -2, -2, y3, WOOD)
+	_wall_x("wall", -3, -5, y3, WOOD)
+	_wall_x("window_wall", -1, -5, y3, WOOD)
+	_wall_x("window_wall", 1, -5, y3, WOOD)
+	_wall_x("wall", 3, -5, y3, WOOD)
+	_wall_x("wall", -3, -1, y3, WOOD)            # behind the wing's roof
+	_wall_x("wall", -1, -1, y3, WOOD)
+	_wall_x("window_wall", 1, -1, y3, WOOD)      # looking down into the yard
+	_wall_x("window_wide", 3, -1, y3, WOOD)
+	_wall_z("window_wall", -4, -4, y3, WOOD)
+	_wall_z("wall", -4, -2, y3, WOOD)
+	_wall_z("wall", 4, -4, y3, WOOD)
+	_wall_z("window_wall", 4, -2, y3, WOOD)
+	# --- the house roof: peaked, ridge along x, gables at both ends
+	var top := y3 + 2.0
+	for x in [-3, -1, 1, 3]:
+		_add("roof_26", WOOD, Vector3(x, top, -2), 0)   # front slope
+		_add("roof_26", WOOD, Vector3(x, top, -4), 2)   # back slope
+	for side in [-4, 4]:
+		_add("gable_26", WOOD, Vector3(side, top, -2), 1)
+		_add("gable_26", WOOD, Vector3(side, top, -4), 3)
+	# --- the wing roof: peaked, ridge along z, running into the house wall; gables over the front door
+	var wtop := y + 2.0
+	for z in [0, 2]:
+		_add("roof_26", WOOD, Vector3(-3, wtop, z), 3)  # left slope
+		_add("roof_26", WOOD, Vector3(-1, wtop, z), 1)  # right slope
+	_add("gable_26", WOOD, Vector3(-3, wtop, 3), 0)
+	_add("gable_26", WOOD, Vector3(-1, wtop, 3), 2)
+	# --- the yard: railings round it, a gap at the front-left to walk in
+	_wall_z("railing", 4, 0, 0.0, WOOD)
+	_wall_z("railing", 4, 2, 0.0, WOOD)
+	_wall_x("railing", 3, 3, 0.0, WOOD)
+	# No furniture: you furnish it yourself (owner, Nov 16).
 
 
 # ---------------------------------------------------------------- the four found in ruins

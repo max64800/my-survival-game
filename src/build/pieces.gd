@@ -232,6 +232,8 @@ static func cost(piece: String, family: String) -> Dictionary:
 	var p: Dictionary = LIST[piece]
 	var c := {family: p.units}
 	for item in p.get("extra", {}):
+		if item == "copper_ingot" and family == "plank_root" and piece == "doorway":
+			continue  # the Shack's round doorway hangs on wooden hinges, no copper (owner, Nov 16)
 		c[item] = c.get(item, 0) + p.extra[item]
 	return c
 

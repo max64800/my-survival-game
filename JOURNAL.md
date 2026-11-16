@@ -1594,3 +1594,18 @@ You loved the whole Shack kit, so all 36 pieces went into the game with fresh bu
   - **A test didn't know the leg parts.** The model-rules test couldn't find the two leg parts' names in a build
     script, because their names were made automatically. I wrote them out plainly.
   - **I ran the 36-piece install twice by accident.** No harm; the second run wrote the same files again.
+- **Later the same day (Delver's Hut, round 2):**
+  - **Copper.** The first hut cost 3 Copper Ingots (2 for the round doorway's hinges, 1 for a barrel's hoops). That
+    doesn't work for a day-one hut, because copper comes much later. You picked wooden hinges, so the Shack doorway
+    is copper-free and the Shack door's straps and knob are dark wood now. The barrel left the hut.
+  - **Bigger hut.** You asked for a bigger hut: two stories, a less simple shape, and the yard closed off. It's now a
+    two-story house with stairs and a peaked roof, plus a one-story wing with the round front door. A railed yard
+    sits between them, with steps up to a second door. 83 pieces, 313 planks and 16 fiber.
+  - **My mistake: the hut page didn't load for you.** I'd forgotten something I solved before on the Shack page:
+    artifact pages may not fetch the built-in "data:" links that hold a model's pictures. The hut page now uses the
+    Shack page's loader. It also loads each kind of piece once and places copies of it, so 83 pieces stay small
+    (18 files instead of one 16 MB file).
+  - **Furniture out, gaps found.** You took the furniture out (people furnish it themselves): 74 pieces, 296 planks.
+    You also found big gaps where the roofs meet the walls and between the two floors. A plan to fix them is waiting
+    for your OK.
+  - **Old test expected copper.** An old test still expected the wooden doorway to cost copper; I updated it.

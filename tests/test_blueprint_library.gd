@@ -67,8 +67,13 @@ func test_starter_hut_known_from_the_start() -> void:
 	check(names.has("delvers_hut"), "the hut is in the book right away")
 	var bp := BlueprintLibrary.make("delvers_hut")
 	var cells := {}
+	var upstairs := 0
 	for p in bp.pieces:
 		if p.id == "foundation":
 			cells[Vector2(p.pos.x, p.pos.z)] = true
-	check_eq(cells.size(), 5, "five rooms in an L")
-	check(not cells.has(Vector2(0, -1)) and cells.has(Vector2(-2, 1)), "an L, not a box")
+		if p.id == "floor" and p.pos.y > 2.5:
+			upstairs += 1
+	check_eq(cells.size(), 12, "a house of 8 rooms plus a wing of 4")
+	check(not cells.has(Vector2(1, 0)) and cells.has(Vector2(-1, 2)), "an L round a yard, not a box")
+	check(upstairs >= 6, "two stories")
+	check(bp.pieces.any(func(p): return p.id == "railing" and p.pos.y < 0.5), "the yard is closed off with railings")

@@ -616,8 +616,8 @@ def doorway_v3(w=2.0, h=2.0, d=0.3):
 
 def door_v3(w=None, h=None, d=0.12):
 	"""Round Shack door, hand-made: five split boards of different widths and thickness, their round ends a
-	little ragged, a rim of uneven board pieces pegged on, two long copper hinge straps lying flat on the boards
-	(inside the circle), a round copper knob. It stays inside the doorway ring all round."""
+	little ragged, a rim of uneven board pieces pegged on, two long dark-wood hinge straps lying flat on the boards
+	(inside the circle), a round wooden knob. It stays inside the doorway ring all round."""
 	r, cy = DOOR_R - 0.012, DOOR_CY
 	fr = K.Frame()
 	widths = [0.3, 0.34, 0.26, 0.33]
@@ -637,14 +637,14 @@ def door_v3(w=None, h=None, d=0.12):
 	a0 = math.asin(-cy / r)
 	for (o, am, rm) in rough_ring(0.0, cy, r - 0.1, 0.066, 10, 0.022, z=0.035, a0=a0, a1=math.pi - a0):
 		kit.rivet(K.G((math.cos(am) * rm, cy + math.sin(am) * rm, 0.044)), T("wood", "dark"), r=0.013)
-	cu = kit.tex_mat("copper", "a")
+	cu = T("wood", "dark")  # wooden hinges and knob: the Shack door needs no copper (owner, Nov 16)
 	for y in (cy - 0.33, cy + 0.33):
 		hw = math.sqrt(max(0.0, (r - 0.1) ** 2 - (y - cy) ** 2))  # stays inside the rim, on the boards
 		x0, x1 = -hw + 0.02, -hw + 0.02 + min(0.8, 1.4 * hw)
 		before = set(bpy.data.objects)
 		K.slab_poly(fr, [(x0, y - 0.035), (x1 - 0.06, y - 0.03), (x1, y), (x1 - 0.06, y + 0.03), (x0, y + 0.035)], 0.028, 0.008, cu)
 		for xx in (x0 + 0.08, (x0 + x1) / 2, x1 - 0.1):
-			kit.rivet(K.G((xx, y, 0.03)), kit.tex_mat("copper", "dark"), r=0.009)
+			kit.rivet(K.G((xx, y, 0.03)), T("wood", "dark"), r=0.009)
 	kit.cylinder(0.065, 0.01, K.G((0, cy, 0.029)), cu, rot=(90, 0, 0), verts=12, bevel=0.003)
 	kit.rivet(K.G((0, cy, 0.034)), cu, r=0.024)
 	for y in (cy - 0.3, cy + 0.3):  # back battens
@@ -658,7 +658,7 @@ def door_v3(w=None, h=None, d=0.12):
 def window_wall_v3(w=2.0, h=2.0, d=0.3, ow=1.0, oh=0.8, ob=0.6, shutters=True, sides=True, post_r=0.14):
 	"""Shack window wall: like the wall (hewn posts and beams, split boards), with a window opening framed by
 	hand-hewn sill and lintel pieces and rough side boards, a crooked cross bar, and two narrow plank shutters
-	swung open on copper hinges. Everything a little uneven."""
+	swung open on wooden hinges. Everything a little uneven."""
 	px = w / 2 - 0.006 - 0.145
 	for s_ in (-1, 1):
 		hewn((s_ * px, 0.012 if post_r >= 0.14 else 0.03, 0.0), (s_ * px + J(0.008), h - 0.014, J(0.006)), post_r)
@@ -702,8 +702,8 @@ def window_wall_v3(w=2.0, h=2.0, d=0.3, ow=1.0, oh=0.8, ob=0.6, shutters=True, s
 	# a crooked cross bar and a middle bar
 	blk((J(0.01), ob + oh / 2, 0.02), (0.05, oh, 0.045), T("wood", "dark"), bevel=0.008, rz=J(2))["role"] = "brace"
 	blk((0, ob + oh / 2 + J(0.02), 0.028), (ow, 0.045, 0.045), T("wood", "dark"), bevel=0.008, rz=J(2))["role"] = "brace"  # 8 mm in front of the upright bar: no shared faces where they cross
-	# two narrow shutters swung open against the boards, on flat copper hinges
-	cu = kit.tex_mat("copper", "a")
+	# two narrow shutters swung open against the boards, on flat wooden hinges
+	cu = T("wood", "dark")  # wooden shutter hinges (owner, Nov 16: wood, not copper)
 	for s_ in ((-1, 1) if shutters else ()):
 		sx0 = s_ * (ow / 2 + 0.08)
 		for k in range(2):
@@ -711,7 +711,7 @@ def window_wall_v3(w=2.0, h=2.0, d=0.3, ow=1.0, oh=0.8, ob=0.6, shutters=True, s
 			rough_vboard(min(a, b), max(a, b), ob - 0.01 + J(0.01), top - 0.01 + J(0.01), 0.072, 0.03)
 		for y in (ob + 0.15, top - 0.15):
 			K.slab_poly(fr, [(sx0, y - 0.025), (sx0 + s_ * 0.1, y - 0.02), (sx0 + s_ * 0.12, y), (sx0 + s_ * 0.1, y + 0.02), (sx0, y + 0.025)], 0.091, 0.008, cu)
-			kit.rivet(K.G((sx0 + s_ * 0.06, y, 0.093)), kit.tex_mat("copper", "dark"), r=0.009)
+			kit.rivet(K.G((sx0 + s_ * 0.06, y, 0.093)), T("wood", "dark"), r=0.009)
 
 
 def _inside(u, v, pl, m=0.0):
