@@ -142,7 +142,9 @@ func test_generated_block_matches_queries() -> void:
 				var p := origin + Vector3i(x, y, z)
 				var want := c.sdf_at(Vector3(p))
 				var got := buf.get_voxel_f(x, y, z, VoxelBuffer.CHANNEL_SDF)
-				check_near(got, clampf(want, -500, 500), 0.05, "sdf at %s" % p)
+				# Chunky rock (F109): the terrain stores "rock or air" with a fixed random strength.
+				check_near(got, c.block_value(c._smooth_at(Vector3(p)), p, c._smooth_at(Vector3(p + Vector3i.UP))), 0.03, "block value at %s (the terrain stores it a little rounded)" % p)
+				check(signf(got) == signf(want) or want == 0.0, "rock/air at %s agrees with the query" % p)
 				if want > 0:
 					air += 1
 				else:
@@ -226,3 +228,24 @@ func test_tunnel_mouths_are_at_floor_height() -> void:
 			continue
 		var floor_y: float = room.center.y - room.radii.y * 0.55
 		check(CaveMaker.mouth(room).y - floor_y <= 2.0, "a tunnel mouth at most 2 m above the floor (room at %s)" % room.center)
+
+
+## F109: chunky rock. The terrain stores only "rock" or "air" at each 1 m point, with a random strength
+## between BLOCK_MIN and 1 that never changes; sdf_at follows the same blocks near walls.
+func test_rock_is_chunky_blocks() -> void:
+	var c := CaveMaker.new(42)
+	var room: Dictionary = c.rooms[0]
+	var strengths := {}
+	for i in 200:
+		var g := Vector3i((room.center + Vector3(randf_range(-8, 8), randf_range(-6, 6), randf_range(-8, 8))).round())
+		var up := c._smooth_at(Vector3(g + Vector3i.UP))
+		var v := c.block_value(c._smooth_at(Vector3(g)), g, up)
+		check(absf(v) >= CaveMaker.BLOCK_MIN - 0.001 and absf(v) <= 1.001, "a block point is plain rock or air (%.2f)" % v)
+		check_near(c.block_value(c._smooth_at(Vector3(g)), g, up), v, 0.0001, "the same point always gets the same strength")
+		strengths[snappedf(absf(v), 0.05)] = true
+	check(strengths.size() > 4, "blocks are lopsided: different strengths (%d kinds)" % strengths.size())
+	# Exactly at a grid point, sdf_at gives the stored block value (so things sit on the real surface).
+	var g0 := Vector3i(room.center.round())
+	while absf(c._smooth_at(Vector3(g0))) > CaveMaker.NEAR_BLOCKS and g0.y > room.center.y - 30:
+		g0.y -= 1  # walk down to the floor: near a wall
+	check_near(c.sdf_at(Vector3(g0)), CaveMaker.BLEND_SAFE * c.block_value(c._smooth_at(Vector3(g0)), g0, c._smooth_at(Vector3(g0 + Vector3i.UP))), 0.0001, "near a wall, sdf_at matches the blocks at grid points")

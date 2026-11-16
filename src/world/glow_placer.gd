@@ -202,6 +202,8 @@ static func _try_add(maker: CaveMaker, rng: RandomNumberGenerator, spots: Array[
 		if s.pos.distance_to(hit) < MIN_SPACING:
 			return
 	var n := normal_at(maker, hit)
+	if maker.sdf_at(hit - n * 0.8) >= 0.0 or maker.sdf_at(hit + n * 0.8) <= 0.0:
+		return  # the tip of a jagged block: no solid rock behind it, or rock in front (chunky rock, F109)
 	var kind := _pick_kind(n, rng) if biome == "mossy" else _pick_fungal(n, rng)
 	if kind == ROOT and maker.sdf_at(hit + Vector3.DOWN * 0.6) <= 0.3:
 		kind = CRYSTAL  # too close to a wall to hang straight down here

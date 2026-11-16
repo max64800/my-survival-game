@@ -41,6 +41,7 @@ func setup(seed: int) -> void:
 	mat.shader = preload("res://src/world/terrain.gdshader")
 	mat.set_shader_parameter("albedo_tex", preload("res://assets/textures/terrain/terrain_albedo.png"))
 	mat.set_shader_parameter("normal_tex", preload("res://assets/textures/terrain/terrain_normal.png"))
+	mat.set_shader_parameter("flat_shading", 1.0)  # crisp block faces for the chunky rock (F109)
 	terrain.material_override = mat
 	add_child(terrain)
 	_tool = terrain.get_voxel_tool()

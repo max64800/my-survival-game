@@ -108,6 +108,7 @@ func _init(p_seed: int = 1, big_caverns: int = 3, small_rooms: int = 12) -> void
 	cavern_spawn = spawn_point
 	_plan_colonnades()
 	_plan_start()
+	_corner_cache.clear()  # the start room was just carved: forget block corners remembered before it
 	if not start.is_empty():
 		spawn_point = start.spawn
 
@@ -239,7 +240,7 @@ func _start_fits(plan: Dictionary) -> bool:
 		checks.append(p - side * 3.0)
 		checks.append(p + Vector3.UP * 3.0)
 	for p in checks:
-		if sdf_at(p) > -1.0 or _region_dist(p) < 4.0:
+		if _smooth_at(p) > -1.0 or _region_dist(p) < 4.0:  # planning: the plain shape, before blocks
 			return false
 	return true
 
@@ -519,6 +520,7 @@ func _clamp_inside(p: Vector3, cx: float) -> Vector3:
 
 
 func _bake_shapes() -> void:
+	_corner_cache.clear()  # the shapes change: remembered block corners are out of date
 	for arr in [_room_c, _room_r, _room_min, _room_max, _seg_a, _seg_b, _seg_r, _seg_min, _seg_max]:
 		arr.clear()
 	var pad := Vector3.ONE * (WALL_NOISE_AMP + BLEND + 1.0)
@@ -708,7 +710,7 @@ func _solid_around(c: Vector3, half: Vector3) -> bool:
 	for x in [-1.0, 0.0, 1.0]:
 		for y in [-1.0, 0.0, 1.0]:
 			for z in [-1.0, 0.0, 1.0]:
-				if sdf_at(c + Vector3(x, y, z) * half) >= -0.5:
+				if _smooth_at(c + Vector3(x, y, z) * half) >= -0.5:  # planning: the plain shape, before blocks
 					return false
 	return true
 
@@ -774,8 +776,77 @@ static func biome_at(p: Vector3) -> String:
 
 # ---------------------------------------------------------------- queries
 
-## Signed distance: positive = open air, negative = inside rock.
+# ---------------------------------------------------------------- chunky rock (F19/F109)
+
+## Chunky rock, like 7 Days to Die (owner, Nov 16): every 1 m point of the cave is either rock or air,
+## with a random strength between BLOCK_MIN and 1 (always the same for the same point). The terrain
+## mesher draws its surface between rock and air points, so it comes out as lopsided 1 m blocks with
+## cut corners instead of round shapes.
+const BLOCK_MIN := 0.5
+## Farther than this from a wall, the blocky field has the same sign as the smooth shape, so sdf_at
+## just returns the smooth distance (fast for marching). Nearer, it blends the 8 block points.
+const NEAR_BLOCKS := 2.0
+const BLEND_SAFE := 0.6  ## near a wall, sdf_at = blended block values x this (a safe distance to step)
+const BLOCK_SLACK := 1.5  ## how much nearer the chunky wall can be than the smooth shape (blocks + jagged edges)
+var _corner_cache := {}  ## main thread only (the terrain's worker threads use generate_block)
+
+
+## Cracked, chunky walls: right at a wall or ceiling, single blocks may stick out or be missing,
+## up to JAG/2 m from the smooth shape. Floors stay walkable (no random blocks on them).
+const JAG := 1.6
+
+
+## The value the terrain stores at grid point `g`. `s` = the smooth shape there, `s_up` = 1 m above
+## (to tell floors from walls). Rock = negative, air = positive.
+func block_value(s: float, g: Vector3i, s_up: float) -> float:
+	var m := BLOCK_MIN + (1.0 - BLOCK_MIN) * _hash01(g)
+	var edge := 0.0
+	if absf(s) < JAG * 0.5 and not _near_start(Vector3(g)):  # the room you wake up in stays clean
+		var wall := clampf((0.92 - (s_up - s)) / 0.35, 0.0, 1.0)  # flat floor = 0; slopes, walls, ceilings up to 1
+		edge = (_hash01(g + Vector3i(911, -337, 1777)) - 0.5) * JAG * wall
+	return -m if s < edge else m
+
+
+## A fixed random number 0..1 for a grid point (same seed, same point = same number).
+func _hash01(g: Vector3i) -> float:
+	var h: int = (g.x * 73856093) ^ (g.y * 19349663) ^ (g.z * 83492791) ^ (seed * 2654435761)
+	h = (h ^ (h >> 13)) * 1274126177
+	h = h ^ (h >> 16)
+	return float(h & 0xFFFF) / 65535.0
+
+
+func _corner(g: Vector3i) -> float:
+	var v = _corner_cache.get(g)
+	if v == null:
+		if _corner_cache.size() > 400000:
+			_corner_cache.clear()
+		v = block_value(_smooth_at(Vector3(g)), g, _smooth_at(Vector3(g + Vector3i.UP)))
+		_corner_cache[g] = v
+	return v
+
+
+## Signed distance: positive = open air, negative = inside rock. Near walls it follows the chunky
+## blocks exactly like the terrain does (along every 1 m edge), so things placed on walls and floors
+## sit on the real surface.
 func sdf_at(p: Vector3) -> float:
+	var s := _smooth_at(p)
+	if absf(s) > NEAR_BLOCKS:
+		# Far from a wall: the real (chunky) wall may be up to BLOCK_SLACK closer than the smooth shape,
+		# so say that much less. Searches that step by this distance never jump over a block.
+		return s - BLOCK_SLACK if s > 0.0 else s + BLOCK_SLACK
+	var g := Vector3i(p.floor())
+	var f := p - Vector3(g)
+	var x00 := lerpf(_corner(g), _corner(g + Vector3i(1, 0, 0)), f.x)
+	var x10 := lerpf(_corner(g + Vector3i(0, 1, 0)), _corner(g + Vector3i(1, 1, 0)), f.x)
+	var x01 := lerpf(_corner(g + Vector3i(0, 0, 1)), _corner(g + Vector3i(1, 0, 1)), f.x)
+	var x11 := lerpf(_corner(g + Vector3i(0, 1, 1)), _corner(g + Vector3i(1, 1, 1)), f.x)
+	# A block value of 1 can be only 0.67 m from the surface (next to a 0.5 point), so the blended value
+	# is scaled down: searches that step by it never jump past the tip of a block.
+	return lerpf(lerpf(x00, x10, f.y), lerpf(x01, x11, f.y), f.z) * BLEND_SAFE
+
+
+## The smooth shape before it's cut into blocks (positive = air).
+func _smooth_at(p: Vector3) -> float:
 	var cell = _grid.get(Vector3i((p / GRID).floor()))
 	if cell == null:
 		var s := minf(SOLID_FILL, _region_dist(p))  # no cave within 6 m: solid rock (like generate_block)
@@ -796,10 +867,10 @@ func material_at(p: Vector3i) -> int:
 	var pal: Dictionary = Mat.PALETTES[biome_at(pf)]
 	if _is_ore(p):
 		return pal.ore
-	var s := sdf_at(pf)
-	if sdf_at(pf + Vector3.UP) > 0.0:
+	var s := _smooth_at(pf)
+	if _smooth_at(pf + Vector3.UP) > 0.0:
 		return pal.floor
-	if sdf_at(pf + Vector3.UP * 2.0) > 0.0:
+	if _smooth_at(pf + Vector3.UP * 2.0) > 0.0:
 		return pal.under
 	if s > -3.0 and _is_patch(pf, pal.patch):
 		return pal.patch
@@ -835,6 +906,12 @@ func _sdf_with(p: Vector3, room_ids: PackedInt32Array, seg_ids: PackedInt32Array
 	var s := -d
 	if absf(s) < 6.5:
 		s += _wall_bumps(p)
+		# Small rooms (shrines, geodes) keep an open core: wall bumps up to 2.8 m could otherwise fill a
+		# 2.8 m room, and the chunky blocks would close what's left (F109).
+		for i in room_ids:
+			var rr := _room_r[i]
+			if maxf(rr.x, maxf(rr.y, rr.z)) < 4.0:
+				s = maxf(s, rr.x * 0.6 - p.distance_to(_room_c[i]))
 	if _near_start(p):
 		s = maxf(s, -_start_dist(p))
 	return minf(s, _region_dist(p))
@@ -1031,8 +1108,9 @@ func generate_block(buf: VoxelBuffer, origin: Vector3i) -> void:
 			var p_patch: int = pal.patch
 			for y in sy:
 				var s := grid[base + y]
-				buf.set_voxel_f(s, x, y, z, SDF)
-				if s > 0.0:
+				var bv := block_value(s, Vector3i(origin.x + x, origin.y + y, origin.z + z), grid[base + y + 1])
+				buf.set_voxel_f(bv, x, y, z, SDF)  # chunky rock
+				if bv > 0.0:
 					buf.set_voxel(p_rock, x, y, z, IDX)  # air: material unused
 					continue
 				var pi := Vector3i(origin.x + x, origin.y + y, origin.z + z)

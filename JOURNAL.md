@@ -1609,3 +1609,25 @@ You loved the whole Shack kit, so all 36 pieces went into the game with fresh bu
     You also found big gaps where the roofs meet the walls and between the two floors. A plan to fix them is waiting
     for your OK.
   - **Old test expected copper.** An old test still expected the wooden doorway to cost copper; I updated it.
+
+
+---
+
+## November 16, 2026 (PC, code Claude): chunky rock, step 1 (F109 / F19 came back)
+- **What we did:** planned flattening and chunky rock with you (multiple-choice: blocks everywhere like 7 Days to Die,
+  one block per dig, all worlds switch, automatic flattening when placing with a 1 m limit, filling costs dirt/stone,
+  blueprints flatten their footprint + 1 m). Step 1 is the look: every 1 m point of the cave is now plain rock or air
+  with a fixed random strength, so the terrain mesher draws lopsided 1 m blocks with cut corners; walls, ceilings and
+  slopes also get single blocks sticking out or missing (cracked, chunky); flat floors stay walkable; the room you wake
+  up in stays clean; the shading shows each face crisply. Speed is the same (54 frames per second).
+  Picture: `journey/terrain/chunky_rock_step1.jpg` (before left, after right).
+- **Mistakes and hurdles (including Claude's):**
+  - Claude's first try only snapped the shape to blocks: smooth slopes became big flat planes, not chunky blocks.
+    Added the jagged block edges on walls, ceilings and slopes.
+  - Claude's own bug: a memory of block corners kept answers from before the cave planner added shrines and the
+    start room, so those spaces came out as rock. The memory is now cleared whenever the shapes change.
+  - Searches that step through the rock (where to hang roots, where crystals go) could jump past the tip of a block;
+    near walls they now take smaller, safe steps, and crystals need solid rock behind them.
+  - The planner that hides geodes deep in the rock found no deep-enough spots with the blocky numbers; planning now
+    uses the plain shape.
+  - One render round more than the 2-round rule before showing the owner (3 rounds); stopped to ask.
