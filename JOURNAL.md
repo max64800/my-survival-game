@@ -2307,3 +2307,11 @@ learn how to do hair animation and implement that."
   trail for a few seconds. Picked by multiple choice: almost everywhere, dark until touched, teal-blue, trails from
   dwarfs and creatures, bend and sway; glow threads on the ceiling; nothing else new on the ground for now.
 - Saved as batch 1b in `docs/design/cave-life-plan.md` (to build next, in a fresh chat), F216 and F217 in FEEDBACK.md.
+
+## November 17, 2026 (Mac, night): a game font
+
+- The owner OK'd a free font (SIL Open Font Licence, fine in a paid game) and went to sleep. Claude compared four
+  heading fonts on the kit's plaque and gold button (`docs/design/fonts_compare.png`: Cinzel, MedievalSharp, Pirata
+  One, Grenze Gotisch) and picked **Cinzel Bold** for titles and buttons (closest to the mock-ups) and **Alegreya
+  Sans** for all other text (project default font). Easy to swap in `UiKit.heading_font()` if the owner prefers another.
+- Credits + licence files added (`assets/fonts/`).

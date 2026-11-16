@@ -12,6 +12,10 @@ config/features=PackedStringArray("4.7", "Forward Plus")
 window/size/viewport_width=1600
 window/size/viewport_height=900
 
+[gui]
+
+theme/custom_font="res://assets/fonts/AlegreyaSans-Medium.ttf"
+
 [physics]
 
 common/physics_ticks_per_second=60

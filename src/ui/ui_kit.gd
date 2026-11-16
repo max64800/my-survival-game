@@ -21,6 +21,18 @@ const DARK_TEXT := Color(0.18, 0.1, 0.04)  ## on gold buttons
 const MISSING := Color(1.0, 0.45, 0.4)  ## not enough of something
 
 static var _styles := {}
+static var _heading: Font
+
+
+## Titles and buttons: Cinzel Bold (SIL Open Font Licence, assets/fonts/). Everything else uses the game's
+## default font, Alegreya Sans (project setting gui/theme/custom_font).
+static func heading_font() -> Font:
+	if _heading == null:
+		var f := FontVariation.new()
+		f.base_font = load("res://assets/fonts/Cinzel.ttf")
+		f.variation_opentype = {TextServerManager.get_primary_interface().name_to_tag("wght"): 700}
+		_heading = f
+	return _heading
 
 
 ## A stretchable style from one kit piece. `pad` = extra space between the frame and what's inside;
@@ -57,6 +69,7 @@ static func title(parent: Node, text: String) -> Label:
 	plate.custom_minimum_size = Vector2(170, 0)
 	parent.add_child(plate)
 	var l := label(plate, text, 21, AMBER)
+	l.add_theme_font_override("font", heading_font())
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.add_theme_constant_override("outline_size", 4)
 	l.add_theme_color_override("font_outline_color", Color(0.08, 0.04, 0.02))
@@ -83,6 +96,7 @@ static func gold_button(b: Button, font_size: int = 16) -> Button:
 		b.add_theme_color_override(c, DARK_TEXT)
 	b.add_theme_color_override("font_disabled_color", DIM)
 	b.add_theme_font_size_override("font_size", font_size)
+	b.add_theme_font_override("font", heading_font())
 	b.focus_mode = Control.FOCUS_NONE
 	return b
 
@@ -100,6 +114,7 @@ static func dark_button(b: Button, font_size: int = 14) -> Button:
 	b.add_theme_color_override("font_pressed_color", AMBER)
 	b.add_theme_color_override("font_hover_pressed_color", AMBER)
 	b.add_theme_font_size_override("font_size", font_size)
+	b.add_theme_font_override("font", heading_font())
 	b.focus_mode = Control.FOCUS_NONE
 	return b
 
