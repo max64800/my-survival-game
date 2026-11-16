@@ -68,3 +68,25 @@ is in `dwarf_lineup_old_smart.png` / `dwarf_lineup_latest.png`), `dwarf_wearing_
 5. Sculpt and bake like the beetle; copy bone weights from the Quaternius body (Data Transfer); test in the game,
    muted, with screenshots. Known blocker: baked pictures load white in Godot (F164); solve that first or the dwarf
    will be white in the game too.
+
+## Round 1 done (November 16, Claude 3): the grey dwarf, animated, waiting for the owner's OK
+What the picture shows (written before building): ~4.8 heads tall without the beard; a very wide barrel body (~0.44 m
+across on a 1.13 m dwarf); short thick legs, knees low; a big round head, bald on top, a ring of thick red-brown hair
+from the temples round the back; bushy brows, a big round nose, rosy cheeks, ears; a grin under a curling moustache; a
+huge beard to the belly in three braids, each with a copper ring (side braids to the chest, the middle one to the
+belly); an off-white linen shirt with short rolled sleeves, hem at the hips; baggy brown knee shorts with rolled cuffs;
+cloth wraps from mid-calf over the feet; thick hairy forearms, big hands.
+
+How it's built and put in the game:
+- `tools/asset_forge/dwarf_skeleton_dump.gd` writes the game skeleton, shaped by DwarfProportions and standing at rest
+  (`DwarfRig.dwarf_rest_poses()`), to JSON. `tools/asset_forge/builds/dwarf_body.py` builds every part around those
+  bones (grey: plain colours), adds the skeleton, lets Blender work out the bone weights (head, face, hair, beard and
+  braids ride on the head bone), max 4 bones per point, nothing on the "root" bone, then exports
+  `assets/characters/dwarf/dwarf_body.glb`.
+- `DwarfRig._wear_body()` hides the pack's stand-in meshes and binds each part to the shaped rest pose, so standing
+  still it looks as built and all 120+ animations bend it along. **Off until the owner's OK:** start the game with
+  `-- newdwarf`, or set `DwarfRig.BODY_ON = true`. Test: `test_dwarf.test_hand_built_body_fits_the_skeleton`.
+- `tools/asset_forge/dwarf_anim_export.gd` records the dwarf playing 9 clips (with the shaped bones) into one .glb
+  for the 3D page ("Dwarf Body"). Pictures: `docs/art/dwarf-round1/`.
+- Next (after the owner's notes): sculpt, paint and bake it like the beetle (the head and beard first), then the
+  outfits (F55) and the other two heads.

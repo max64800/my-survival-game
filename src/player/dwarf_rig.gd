@@ -16,6 +16,13 @@ extends Node3D
 const OUTFIT := "res://assets/characters/dwarf/Male_Ranger.gltf"
 const BASE := "res://assets/characters/dwarf/Superhero_Male_FullBody.gltf"
 const BEARD := "res://assets/characters/dwarf/Hair_Beard.gltf"
+## Our own hand-built dwarf (tools/asset_forge/builds/dwarf_body.py, approved picture assets/concepts/dwarf/). When it
+## exists it replaces the pack's outfit, head and beard above; the skeleton and every animation stay the same.
+const BODY := "res://assets/characters/dwarf/dwarf_body.glb"
+## Round 1 of the hand-built dwarf is a grey shape waiting for the owner's OK, so it is only worn when switched on:
+## start the game with "newdwarf" (godot --path . -- newdwarf), or set use_body before build(). After the OK: true.
+const BODY_ON := false
+var use_body := BODY_ON or "newdwarf" in OS.get_cmdline_user_args()
 const LIBS := {"": "res://assets/characters/anims/UAL1.glb", "b": "res://assets/characters/anims/UAL2.glb"}
 const HEIGHT := 0.98  ## where the head bone ends up (metres); with the helmet the dwarf is ~1.3 m tall
 const WIDTH := 1.2    ## a little extra width overall (most of the bulk comes from DwarfProportions)
@@ -58,6 +65,7 @@ static var _made: AnimationLibrary
 static var _head_mesh: Mesh
 
 var skeleton: Skeleton3D
+var proportions: DwarfProportions
 var tree: AnimationTree
 var right_hand: Node3D  ## tools go here
 var left_hand: Node3D   ## the lantern hangs here
@@ -97,6 +105,7 @@ func build(tint: Color) -> void:
 	var prop := DwarfProportions.new()
 	skeleton.add_child(prop)
 	prop.setup(skeleton)
+	proportions = prop
 	# Size: put the head bone at HEIGHT, and make the dwarf a bit wider.
 	var head := skeleton.find_bone("Head")
 	var head_y := prop._rest_global(skeleton, head, true).origin.y - prop.drop_height
@@ -105,9 +114,64 @@ func build(tint: Color) -> void:
 	# Hands: things held keep their own size (cancel the dwarf scale and the big-hand scale).
 	right_hand = _hand_socket("hand_r")
 	left_hand = _hand_socket("hand_l")
-	_build_helmet()
-	_build_beard()
+	if use_body and ResourceLoader.exists(BODY):
+		_wear_body(BODY)  # (bareheaded like the picture: no starting cap; armour helmets still work)
+	else:
+		_build_helmet()
+		_build_beard()
 	_build_tree(body)
+
+
+## Put the hand-built body on our skeleton. It was modelled around the bones standing at rest, shaped by
+## DwarfProportions (dwarf_rest_poses), so each part is bound to exactly that pose: standing still it looks as built,
+## and every animation bends it along. The pack's stand-in meshes are hidden.
+func _wear_body(path: String) -> void:
+	for mi: MeshInstance3D in skeleton.find_children("*", "MeshInstance3D", true, false):
+		mi.visible = false
+	var poses := dwarf_rest_poses()
+	# The .glb is in "model space" (facing +Z); the player's look space faces -Z. Look space = our parent's space.
+	var skel_in_look := Transform3D()
+	var n: Node3D = skeleton
+	while n != null and n != self:
+		skel_in_look = n.transform * skel_in_look
+		n = n.get_parent_node_3d()
+	skel_in_look = transform * skel_in_look
+	var model_to_skel := skel_in_look.affine_inverse() * Transform3D(Basis(Vector3.UP, PI), Vector3.ZERO)
+	var src: Node = (load(path) as PackedScene).instantiate()
+	for mi: MeshInstance3D in src.find_children("*", "MeshInstance3D", true, false):
+		var skin := Skin.new()
+		if mi.skin:
+			for b in mi.skin.get_bind_count():
+				var bname := String(mi.skin.get_bind_name(b))
+				var bone := skeleton.find_bone(bname)
+				var pose: Transform3D = poses[bone] if bone >= 0 else Transform3D()
+				skin.add_named_bind(bname, pose.affine_inverse() * model_to_skel)
+		mi.owner = null
+		mi.get_parent().remove_child(mi)
+		skeleton.add_child(mi)
+		mi.transform = Transform3D()
+		mi.skin = skin
+		mi.skeleton = NodePath("..")
+		mi.layers = DwarfModel.VISUAL_LAYER
+		_add_rim(mi)
+	src.free()
+
+
+## Every bone as the dwarf stands at rest, shaped by DwarfProportions (skeleton space, each bone's thickness included).
+## The hand-built dwarf body is modelled around exactly these (tools/asset_forge/dwarf_skeleton_dump.gd) and bound to
+## them, so standing still it looks exactly as built and every animation bends it along.
+func dwarf_rest_poses() -> Array:
+	skeleton.reset_bone_poses()
+	for i in proportions._pos:
+		skeleton.set_bone_pose_position(i, proportions._pos[i])
+	for i in proportions._scale:
+		skeleton.set_bone_pose_scale(i, proportions._scale[i])
+	if proportions._pelvis >= 0:
+		skeleton.set_bone_pose_position(proportions._pelvis, skeleton.get_bone_rest(proportions._pelvis).origin - proportions._drop)
+	var out := []
+	for i in skeleton.get_bone_count():
+		out.append(skeleton.get_bone_global_pose(i))
+	return out
 
 
 func _process(delta: float) -> void:

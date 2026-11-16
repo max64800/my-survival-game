@@ -1939,3 +1939,29 @@ You tried the dev menu and asked for four things:
   A test in bright red is what showed where the problem was.
 - One root stood on a thin ledge with nothing under it. Fixed: roots need rock under the middle and under both ends.
 - Another Claude's change (more fiber on floors, F175) landed at the same time; the floor mix keeps its 40% fiber.
+
+## November 16, 2026 (PC, Claude 3): the hand-built dwarf, round 1 (grey, animated)
+
+**What we did**
+- Read the game's dwarf: a free Quaternius skeleton with 120+ animations, shaped into a dwarf every frame by
+  DwarfProportions. Kept all of it. A Godot tool writes every bone of the shaped dwarf standing at rest to a file; the
+  Blender build places every part around those real bones (shirt, rolled sleeves, thick arms, big hands with fingers on
+  the finger bones, shorts, wraps, feet, the round head with nose, brows, ears, hair ring, beard, moustache, three
+  braids with copper rings), adds the skeleton and lets Blender work out which bones move which parts.
+- In the game, the dwarf binds the new body to the same shaped pose, so it stands exactly as built and every animation
+  bends it along (checked with photos: standing, walking, a sword swing, red markers right on the wrists). It's off
+  until the owner's OK (start with `-- newdwarf`). New test: every part uses bones the game skeleton really has.
+- A recorder plays the dwarf's animations in Godot and saves the shaped bones frame by frame into one file, so the new
+  3D page "Dwarf Body" plays 9 real clips (standing, walk, run, sprint, mining, chopping, sword, roll, jump).
+
+**Mistakes and hurdles (including Claude's)**
+- First shape: a giant egg swallowing the head (the head sits ABOVE the shoulders' bone line in this skeleton) and a
+  torso 45% too wide; measured on the picture and fixed. Feet floated; sleeve cuffs showed flat discs.
+- Hands came apart (the game's hand bones are scaled 2.2x) and the thumb was a long stick; bigger palm, shorter thumb.
+- Godot renamed six bones ("calf_l_2") because some body parts had the same names as bones; parts are now "body_...".
+- On the 3D page the shorts stretched into a spike to the floor. Claude guessed twice (more than 4 bones per point;
+  points with no bones) before reading the file: the shorts followed the skeleton's "root" bone, which runs from the
+  floor up through the crotch. Nothing follows the root now. (The 4-bone limit was still a real missing step from the
+  dwarf plan, and is in.)
+- Opening test pages in the owner's browser while the owner uses the PC: the tabs got closed. Checked the file directly
+  instead.

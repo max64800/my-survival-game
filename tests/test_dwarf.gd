@@ -160,3 +160,26 @@ func test_lantern_ignores_dwarf_body_for_shadows() -> void:
 	check(meshes.size() > 10, "found the dwarf's parts")
 	check(bad == 0, "every body part is on the dwarf layer and the lantern casts no shadow (%d wrong)" % bad)
 	root.queue_free()
+
+
+## The hand-built body (Nov 16): every part is bound to bones the game skeleton really has, at the shaped rest pose.
+func test_hand_built_body_fits_the_skeleton() -> void:
+	if not ResourceLoader.exists(DwarfRig.BODY):
+		return
+	var holder := Node3D.new()
+	tree.root.add_child(holder)
+	var rig := DwarfRig.new()
+	rig.use_body = true
+	holder.add_child(rig)
+	rig.build(Color(0.6, 0.45, 0.3))
+	var parts := 0
+	var bad := []
+	for mi: MeshInstance3D in rig.skeleton.find_children("body_*", "MeshInstance3D", true, false):
+		parts += 1
+		check(mi.visible and mi.skin != null, "%s is shown and has its bones" % mi.name)
+		for b in mi.skin.get_bind_count():
+			if rig.skeleton.find_bone(String(mi.skin.get_bind_name(b))) < 0:
+				bad.append(String(mi.skin.get_bind_name(b)))
+	check(parts > 20, "the hand-built body has its parts (%d)" % parts)
+	check(bad.is_empty(), "every bone it uses exists in the game skeleton (missing: %s)" % [bad])
+	holder.free()
