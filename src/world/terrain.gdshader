@@ -3,13 +3,14 @@ shader_type spatial;
 // 0 moss, 1 stone, 2 dirt, 3 copper ore, 4 border rock, 5 clay,
 // 8 mycelium, 9 silver ore, 11 amberrock, 13 sporestone, 15 the world's edge.
 //
-// The look: hand-painted textures (baked by tools/art/bake_terrain_textures.py), one slice
+// The look: hand-painted textures (tools/art/bake_terrain_looks.py), 4 slices (looks)
 // per material number in two texture arrays. Smooth terrain has no UV "wrapping paper",
 // so each texture is projected from 3 sides (top, front, side) and blended: "triplanar".
 // The albedo's alpha channel marks veins/specks that glow (ores, border rock, spores).
 
 uniform sampler2DArray albedo_tex : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
 uniform sampler2DArray normal_tex : filter_linear_mipmap_anisotropic, repeat_enable;
+const int LOOKS = 4;  // looks per material in the arrays: slice = material * 4 + look (bake_terrain_looks.py)
 uniform float tex_scale = 0.33;  // one texture tile every ~3 m
 uniform float bump_strength = 1.0;
 uniform float flat_shading = 0.0;  // 1 = old low-poly facets
@@ -103,6 +104,11 @@ void fragment() {
 	float metal = 0.0;
 	float ids[4] = float[4](v_indices.x, v_indices.y, v_indices.z, v_indices.w);
 	float ws[4] = float[4](w.x, w.y, w.z, w.w);
+	// Which of the 4 looks of each material shows here (owner F213): big patches from world-position noise, so every
+	// computer shows the same; the last 25% of each patch fades into the next look.
+	float lv = clamp((vnoise(v_world * 0.07 + vec3(40.0, 13.0, 71.0)) - 0.2) / 0.6, 0.0, 0.9999) * float(LOOKS);
+	float look = floor(lv);
+	float look_mix = smoothstep(0.75, 1.0, fract(lv)) * step(look, float(LOOKS) - 1.5);
 	for (int k = 0; k < 4; k++) {
 		if (ws[k] < 0.02) {
 			continue;  // skip materials that barely show (saves texture reads)
@@ -110,7 +116,15 @@ void fragment() {
 		int id = clamp(int(ids[k] + 0.5), 0, 15);
 		vec4 a;
 		vec3 n;
-		triplanar(float(id), p, bw, wn, a, n);
+		float slice = float(id * LOOKS) + look;
+		triplanar(slice, p, bw, wn, a, n);
+		if (look_mix > 0.01) {  // only where two looks meet: read the next look too
+			vec4 a2;
+			vec3 n2;
+			triplanar(slice + 1.0, p, bw, wn, a2, n2);
+			a = mix(a, a2, look_mix);
+			n = mix(n, n2, look_mix);
+		}
 		col += a.rgb * ws[k];
 		emit += GLOW[id] * a.a * ws[k];
 		nrm += n * ws[k];

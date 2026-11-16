@@ -7,8 +7,9 @@ What it does, in plain words:
   3. Finds the veins in ore / border rock and stores them in the alpha channel,
      so the shader can make them glow.
   4. Stacks all 16 layers (one per rock material number, see src/world/mat.gd) into
-     two tall pictures: terrain_albedo.png and terrain_normal.png.
-     Godot imports each as a Texture2DArray (16 slices, top to bottom).
+     two tall pictures in assets/textures/terrain/base/ (the "base" look of each material).
+     Then run tools/art/bake_terrain_looks.py: it adds the hand-painted looks (F213) and
+     writes the game's terrain_albedo.png / terrain_normal.png (16 materials x 4 looks).
 
 Usage:  python tools/art/bake_terrain_textures.py <cache_folder>
 Needs:  Python 3 with numpy, scipy, pillow.
@@ -25,7 +26,7 @@ from scipy.ndimage import uniform_filter, gaussian_filter
 
 SIZE = 512
 LAYERS = 16
-OUT_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "assets", "textures", "terrain")
+OUT_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "assets", "textures", "terrain", "base")
 
 # layer index (= Mat number): source texture, tint color, how much tint, contrast, glow rule
 STONE_TINT = (0.50, 0.44, 0.38)
@@ -151,8 +152,8 @@ def main():
         a, b = baked.get(i, baked[FILLER])
         albedo.paste(a, (0, i * SIZE))
         normal.paste(b, (0, i * SIZE))
-    albedo.save(os.path.join(OUT_DIR, "terrain_albedo.png"), optimize=True)
-    normal.save(os.path.join(OUT_DIR, "terrain_normal.png"), optimize=True)
+    albedo.save(os.path.join(OUT_DIR, "terrain_albedo_16.png"), optimize=True)
+    normal.save(os.path.join(OUT_DIR, "terrain_normal_16.png"), optimize=True)
     # A preview sheet for humans (not used by the game).
     prev = Image.new("RGB", (256 * 4, 256 * 4))
     for k, i in enumerate(sorted(baked)):

@@ -29,3 +29,14 @@ made out of". Picked by multiple choice:
 4. Check: `lookdev` wall shots (`w_wall`, `w_wall2`) before/after, three neighbouring patches clearly different,
    no visible seams or repeats; speed check (`perfcheck`) stays about the same.
 5. Credits: the ChatGPT sheets are AI-made (log in `CREDITS.md`, Steam disclosure like the kit textures).
+
+## Status
+- **Nov 16 (Mac): batch 1 built, not yet seen in the game.** Sheets in `assets/concepts/terrain/` (ChatGPT chat
+  "Generate Cave Texture Sheet"). `tools/art/bake_terrain_looks.py` cuts them (gap detection, falls back to halves),
+  makes them seamless, matches each tile's average colour 80% to the material's old colour, and makes bumps from the
+  painting. The game arrays are now 64 slices (material x 4 + look); materials without a sheet use their old look
+  mirrored 4 ways. The old one-look bake now writes to `assets/textures/terrain/base/` (ignored by Godot), the input of
+  the new script. Shader: `look` from `vnoise(v_world * 0.07)`, ~14 m patches, the last 25% fades into the next look
+  (two texture reads only there).
+- **Next (PC):** reimport, `run_tests`, lookdev wall shots before/after, `perfcheck`, owner's OK; then ores, border rock
+  and jungle rocks (ores need vein alpha kept).

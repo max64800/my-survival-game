@@ -2254,3 +2254,19 @@ learn how to do hair animation and implement that."
   Claude looked at how they're made today (one painted photo per material, repeating everywhere) and asked multiple
   choice questions. Picked: 3-4 hand-painted looks per material from ChatGPT variant sheets, looks only, stone, dirt,
   clay and moss first. Saved as `docs/design/rock-textures-plan.md`; a fresh chat builds it (token rule).
+
+## November 16, 2026 (Mac): rock textures, batch 1 (F213)
+
+**What we did**
+- In the owner's ChatGPT (new chat "Generate Cave Texture Sheet"), made 4 hand-painted sheets: stone, dirt, clay,
+  moss, each with 4 different looks (slabs, layers, rubble, smooth; cracked earth, crumbly soil; grooved, cracked,
+  banded, lumpy clay; cushion, patchy, fine, lichen moss). Saved with the owner's OK in `assets/concepts/terrain/`.
+- New tool `tools/art/bake_terrain_looks.py` cuts each sheet into 4 tiles, makes them repeat without seams, keeps
+  their colour close to the old one, makes bump maps from the painting, and stacks 16 materials x 4 looks.
+- The terrain shader now picks one of the 4 looks in big soft patches (about 14 m), so the same painting doesn't
+  repeat across a cave. Ores and jungle rocks keep their old look (mirrored 4 ways) until batch 2.
+
+**Mistakes and hurdles (including Claude's)**
+- Godot isn't installed on the Mac, so the new look hasn't been seen in the game yet: check on the PC.
+- Pillow's blur doesn't work on float pictures; replaced by a small blur that wraps around the tile's edges.
+- Chrome saved the downloads into the project folder, not Downloads; moved them to `assets/concepts/terrain/`.

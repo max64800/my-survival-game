@@ -16,8 +16,8 @@ func test_look_materials_are_shared_and_textured() -> void:
 func test_terrain_textures_have_one_slice_per_material() -> void:
 	var albedo = load("res://assets/textures/terrain/terrain_albedo.png")
 	var normal = load("res://assets/textures/terrain/terrain_normal.png")
-	check(albedo is TextureLayered and albedo.get_layers() == 16, "rock colours: 16 slices (one per Mat number)")
-	check(normal is TextureLayered and normal.get_layers() == 16, "rock bumps: 16 slices")
+	check(albedo is TextureLayered and albedo.get_layers() == 64, "rock colours: 64 slices (4 looks per Mat number)")
+	check(normal is TextureLayered and normal.get_layers() == 64, "rock bumps: 64 slices")
 
 
 func test_rigged_dwarf_builds_and_animates() -> void:
