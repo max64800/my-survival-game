@@ -4,6 +4,13 @@ Every fixed (crossed-out) item from `FEEDBACK.md`, moved here unchanged on Nov 1
 Nothing was deleted. Newest fixes go at the top of their group. If a fixed thing comes back, give it 🔁 and add it to
 "Things that keep coming back" in `FEEDBACK.md`.
 
+*(Nov 16, your notes on the whole Delver's Shack kit: "amazing, I love every single one of them".)*
+
+- [x] ~~**F158. The window wall and the wide window shimmer where the planks cross.**~~ Fixed Nov 16 (PC, Claude 2): the upright bar and the cross bar sat at exactly the same depth, so their faces overlapped where they cross; the cross bar now sits 8 mm in front. *From: you. Said: 1×*
+- [x] ~~**F160. The door should open both ways, away from whoever opens it.**~~ Fixed Nov 16 (PC, Claude 2): the host checks which side of the door you stand on and swings it away from you; it remembers which way it swung (old saves still load). Test: `test_builder`. *From: you. Said: 1×*
+- [x] ~~**F161. A starter blueprint: a small hut, not a box, L-shaped, there from the start.**~~ Done Nov 16 (PC, Claude 2): the **Delver's Hut**, five 2 m rooms in an L on log-leg foundations, round door with steps, windows, lean-to roofs joined by a corner roof, gables, a table, bench, rug, barrel and crate. It's in the blueprint book from day one (ruin pages never "teach" it); you place it and bring the materials. Wooden foundation steps are now allowed (Workbench 1). 3D view on the Shack page. Test: `test_blueprint_library`. *From: you. Said: 1×*
+- [x] ~~**F162. On a slope, each foundation leg should reach down to the ground by itself** (some legs long, some on the floor).~~ Done Nov 16 (PC, Claude 2): Shack foundations (square, half, triangle) grow hewn log legs down to the rock, up to 3 m, each with a foot stone, in the green preview too. A foundation whose legs reach rock counts as standing on the ground. Stone and brick foundations don't have legs yet. Test: `test_building`. *From: you. Said: 1×*
+
 *(Nov 15 evening, your play test on the PC. You chose the fixes from multiple-choice questions.)*
 
 - [x] ~~**F94. The roll animation.**~~ You liked it; keep it as it is. *From: you. Said: 1×*

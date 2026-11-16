@@ -7,8 +7,12 @@ class_name BlueprintLibrary
 ## (doors face +z, and the Builder's Chest appears in front). Pieces sit on a 1 m grid; 2 m pieces.
 ## Every cell of the box is marked "air", so placed inside rock the chest carves the room out first.
 
-const IDS := ["miners_homestead", "stone_hall", "forge_workshop", "watchtower_cabin"]
+const IDS := ["delvers_hut", "miners_homestead", "stone_hall", "forge_workshop", "watchtower_cabin"]
+## Known from the very start (F161): you place them and bring the materials. The rest are learned from
+## Old Blueprints found in ruins (F98).
+const STARTER := ["delvers_hut"]
 const NAMES := {
+	"delvers_hut": "Delver's Hut",
 	"miners_homestead": "Miner's Homestead",
 	"stone_hall": "Stone Hall",
 	"forge_workshop": "Forge Workshop",
@@ -33,6 +37,7 @@ static func list() -> Array[Dictionary]:
 static func make(id: String) -> Blueprint:
 	var lib := BlueprintLibrary.new()
 	match id:
+		"delvers_hut": lib._delvers_hut()
 		"miners_homestead": lib._homestead()
 		"stone_hall": lib._stone_hall()
 		"forge_workshop": lib._forge()
@@ -44,7 +49,54 @@ static func make(id: String) -> Blueprint:
 	return lib._bp
 
 
-# ---------------------------------------------------------------- the four buildings
+# ---------------------------------------------------------------- the buildings
+
+## F161, the starter hut (Delver's Shack pieces): an L of five 2 m rooms on log-leg foundations (the legs
+## reach the ground on uneven floors), a round door with steps up to it at the front of the short arm,
+## lean-to roofs falling to the outside on every side, joined by a corner roof, gables on the ends.
+## Box: x -3..3, z -4..4. Back row = cells (-2|0|2, -3); front arm = cells (-2, -1|1); steps at (-2, 3).
+func _delvers_hut() -> void:
+	_start(Vector3(6, 4, 8))
+	for c in [Vector3(-2, 0, -3), Vector3(0, 0, -3), Vector3(2, 0, -3), Vector3(-2, 0, -1), Vector3(-2, 0, 1)]:
+		_add("foundation", WOOD, c, 0)
+	_add("foundation_steps", WOOD, Vector3(-2, 0, 3), 0)  # climbs from the front up to the door
+	var y := 1.0
+	# Walls round the L. Front of the short arm: the round door.
+	_wall_x("doorway", -2, 2, y, WOOD)
+	_add("door", WOOD, Vector3(-2, y, 2), 0)
+	_wall_x("wall", -2, -4, y, WOOD)
+	_wall_x("window_wall", 0, -4, y, WOOD)
+	_wall_x("wall", 2, -4, y, WOOD)
+	_wall_z("window_wall", 3, -3, y, WOOD)
+	_wall_x("wall", 0, -2, y, WOOD)              # the inner corner, facing the yard
+	_wall_x("window_wall", 2, -2, y, WOOD)
+	_wall_z("wall", -1, -1, y, WOOD)
+	_wall_z("window_wall", -1, 1, y, WOOD)
+	_wall_z("wall", -3, -3, y, WOOD)
+	_wall_z("window_wall", -3, -1, y, WOOD)
+	_wall_z("wall", -3, 1, y, WOOD)
+	# Roof: every slope falls to the outside; the high edges sit on half walls round the inner corner.
+	var top := y + 2.0
+	_add("roof_26", WOOD, Vector3(0, top, -3), 2)         # back arm: low at the back
+	_add("roof_26", WOOD, Vector3(2, top, -3), 2)
+	_add("roof_26", WOOD, Vector3(-2, top, -1), 3)        # front arm: low on the left
+	_add("roof_26", WOOD, Vector3(-2, top, 1), 3)
+	_add("roof_26_outer", WOOD, Vector3(-2, top, -3), 2)  # the back-left corner where they meet
+	_wall_x("half_wall", 0, -2, top, WOOD)
+	_wall_x("half_wall", 2, -2, top, WOOD)
+	_wall_z("half_wall", -1, -1, top, WOOD)
+	_wall_z("half_wall", -1, 1, top, WOOD)
+	_add("gable_26", WOOD, Vector3(3, top, -3), 3)        # right end (high toward the yard)
+	_add("gable_26", WOOD, Vector3(-2, top, 2), 0)        # over the door (high toward the yard)
+	# A few things inside.
+	_add("table", WOOD, Vector3(1, y, -3.2), 0)
+	_add("bench", WOOD, Vector3(1, y, -2.5), 0)
+	_add("rug", WOOD, Vector3(-2, y, -1.5), 1)
+	_on_wall_z("barrel", WOOD, 2.4, -4, y, 1)
+	_add("crate", WOOD, Vector3(-2.4, y, 0.8), 0)
+
+
+# ---------------------------------------------------------------- the four found in ruins
 
 ## Carved into the mountain: a front hall with 2 columns, a door and 2 windows; a bedroom and a
 ## storage room behind it, each through its own doorway.

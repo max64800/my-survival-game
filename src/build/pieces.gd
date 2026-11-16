@@ -23,7 +23,7 @@ const LIST := {
 	"foundation_half": {name = "Half Foundation", group = "foundation", size = Vector3(2, 1, 1), units = 4, place = "cell", foundation = true,
 		families = ["plank_root", "cut_stone", "clay_brick"], station = {"workbench": 1, "mason": 1}},
 	"foundation_steps": {name = "Foundation Steps", group = "foundation", size = Vector3(2, 1, 2), units = 6, place = "cell", foundation = true,
-		shape = "steps", walkable_slope = true, families = ["cut_stone", "clay_brick"], station = {"mason": 2}},
+		shape = "steps", walkable_slope = true, families = ["plank_root", "cut_stone", "clay_brick"], station = {"workbench": 1, "mason": 2}},  # wood: the Shack steps (F161)
 	# --- floors
 	"floor": {name = "Floor", group = "floor", size = Vector3(2, 0.25, 2), units = 4, place = "cell", station = ALL},
 	"floor_half": {name = "Half Floor", group = "floor", size = Vector3(2, 0.25, 1), units = 2, place = "cell", station = ALL},
@@ -605,8 +605,42 @@ static func _where_rock(off: Vector3) -> String:
 	return " at the side: dig back the wall there"
 
 
-## Does this piece touch rock (and so is 100% steady)?
-static func touches_rock(piece: String, pos: Vector3, rot: int, sdf: Callable) -> bool:
+## F162: Shack foundations stand on log legs. On a slope each leg reaches down to the rock by itself
+## (up to LEG_MAX), so one corner can stand on the floor while the downhill ones go all the way down.
+const LEG_MAX := 3.0
+const LEG_SPOTS := {  ## where the legs stand (x, z in the piece's own space), from the models (shack_v2.py)
+	"foundation": [Vector2(-0.78, -0.78), Vector2(0.78, -0.78), Vector2(0.78, 0.78), Vector2(-0.78, 0.78)],
+	"foundation_half": [Vector2(-0.78, -0.28), Vector2(0.78, -0.28), Vector2(0.78, 0.28), Vector2(-0.78, 0.28)],
+	"foundation_triangle": [Vector2(-0.55, 0.3175), Vector2(0.55, 0.3175), Vector2(0.0, -0.635)],
+}
+
+
+static func leg_spots(piece: String, family: String) -> Array:
+	return LEG_SPOTS.get(piece, []) if family == "plank_root" else []
+
+
+## How far down each leg must reach to stand on rock: 0 = already on it, -1 = no rock within LEG_MAX.
+static func leg_drops(piece: String, family: String, pos: Vector3, rot: int, sdf: Callable) -> Array:
+	var out := []
+	var turn := Basis(Vector3.UP, yaw_of(rot))
+	for s in leg_spots(piece, family):
+		var foot: Vector3 = pos + turn * Vector3(s.x, 0.0, s.y)
+		var d := -1.0
+		var y := 0.0
+		while y <= LEG_MAX:
+			if sdf.call(foot + Vector3.DOWN * (y + 0.05)) < 0.0:
+				d = y
+				break
+			y += 0.1
+		out.append(d)
+	return out
+
+
+## Does this piece touch rock (and so is 100% steady)? Legs that reach the rock count (F162).
+static func touches_rock(piece: String, pos: Vector3, rot: int, sdf: Callable, family: String = "") -> bool:
+	for d in leg_drops(piece, family, pos, rot, sdf):
+		if d >= 0.0:
+			return true
 	var b := box(piece, pos, rot)
 	var mid := b.get_center()
 	for axis in 3:

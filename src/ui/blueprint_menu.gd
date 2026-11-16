@@ -43,7 +43,7 @@ static func all_files() -> Array:
 ## The game's ready-made buildings (library + the old ones shipped in res://blueprints). Each is
 ## learned by reading an Old Blueprint found in ruins (F98). Your own saved builds are always there.
 static func ready_made_keys() -> Array:
-	var out: Array = BlueprintLibrary.IDS.duplicate()
+	var out: Array = BlueprintLibrary.IDS.filter(func(k): return not BlueprintLibrary.STARTER.has(k))
 	for path in all_files():
 		if path.begins_with("res://"):
 			out.append(path.get_file().get_basename())
@@ -66,7 +66,7 @@ static func entries() -> Array:
 	var out := []
 	var known := _known()
 	for id in BlueprintLibrary.IDS:
-		if known.has(id):
+		if known.has(id) or BlueprintLibrary.STARTER.has(id):  # starters: from the very start (F161)
 			out.append({name = id, json = BlueprintLibrary.make(id).to_json()})
 	for path in all_files():
 		if path.begins_with("res://") and not known.has(path.get_file().get_basename()):

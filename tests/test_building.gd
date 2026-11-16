@@ -39,6 +39,26 @@ func test_ground_pieces_are_anchored() -> void:
 	check(not Pieces.touches_rock("floor", Vector3(1, 3, 1), 0, flat_ground), "floating floor doesn't")
 
 
+## F162: on a slope, each Shack foundation leg reaches down to the rock by itself.
+func test_foundation_legs_reach_the_ground() -> void:
+	var slope := func(p: Vector3) -> float: return p.y + p.x  # ground falls away toward +x (45 degrees)
+	var drops := Pieces.leg_drops("foundation", "plank_root", Vector3(0, 0, 0), 0, slope)
+	check_eq(drops.size(), 4, "four legs")
+	check(drops[0] < 0.1 and drops[3] < 0.1, "the uphill legs stand on the floor")
+	check(absf(drops[1] - 0.8) < 0.15 and absf(drops[2] - 0.8) < 0.15, "the downhill legs reach 0.8 m down")
+	check(Pieces.touches_rock("foundation", Vector3(0, 2, 0), 0, flat_ground, "plank_root"), "a Shack foundation 2 m up stands on its legs")
+	check(not Pieces.touches_rock("foundation", Vector3(0, 2, 0), 0, flat_ground, "cut_stone"), "a stone one (no legs) doesn't")
+	check(not Pieces.touches_rock("foundation", Vector3(0, 4, 0), 0, flat_ground, "plank_root"), "legs reach at most 3 m")
+	check_eq(Pieces.leg_drops("foundation_triangle", "plank_root", Vector3.ZERO, 0, flat_ground).size(), 3, "triangles have 3 legs")
+	var n: PieceNode = preload("res://src/build/piece_node.gd").new()
+	n.piece = "foundation"
+	n.family = "plank_root"
+	tree.root.add_child(n)
+	n.set_legs([0.0, 1.6, 1.6, 0.0])
+	check_eq(n._legs.get_child_count(), 6, "two legs of 2 sections each + 2 foot stones")
+	n.queue_free()
+
+
 func test_wood_tower_and_bridge() -> void:
 	var s := Structure.new()
 	s.add(1, "wall", "plank_root", Vector3(1, 0, 0), 0, true)

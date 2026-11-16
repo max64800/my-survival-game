@@ -3,7 +3,7 @@ extends TestCase
 
 
 func test_four_blueprints_exist() -> void:
-	check_eq(BlueprintLibrary.IDS.size(), 4, "four blueprints")
+	check_eq(BlueprintLibrary.IDS.size(), 5, "five blueprints (the starter hut + four found in ruins)")
 	for id in BlueprintLibrary.IDS:
 		check(BlueprintLibrary.make(id) != null, "%s can be made" % id)
 
@@ -58,3 +58,17 @@ func test_json_round_trip() -> void:
 func test_homestead_carves_its_rooms() -> void:
 	var bp := BlueprintLibrary.make("miners_homestead")
 	check(bp.carve_cells(Vector3.ZERO, 0).size() >= 200, "the homestead carves out its rooms when placed in rock")
+
+
+## F161: the Delver's Hut is in the blueprint book from the start; ruin pages only teach the others.
+func test_starter_hut_known_from_the_start() -> void:
+	check(not BlueprintMenu.ready_made_keys().has("delvers_hut"), "old blueprint pages never 'teach' the hut")
+	var names := BlueprintMenu.entries().map(func(e): return e.name)
+	check(names.has("delvers_hut"), "the hut is in the book right away")
+	var bp := BlueprintLibrary.make("delvers_hut")
+	var cells := {}
+	for p in bp.pieces:
+		if p.id == "foundation":
+			cells[Vector2(p.pos.x, p.pos.z)] = true
+	check_eq(cells.size(), 5, "five rooms in an L")
+	check(not cells.has(Vector2(0, -1)) and cells.has(Vector2(-2, 1)), "an L, not a box")

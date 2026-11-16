@@ -123,7 +123,7 @@ func problem(ps: GameAuthority.PlayerState, piece: String, family: String, pos: 
 		var body: Vector3 = auth.players[pid].node.global_position
 		if b.grow(0.1).has_point(body + Vector3.UP * 0.3) or b.grow(0.1).has_point(body + Vector3.UP * 1.1):
 			return "Someone is in the way"
-	var anchored := Pieces.touches_rock(piece, pos, rot, auth.world.sdf_at)
+	var anchored := Pieces.touches_rock(piece, pos, rot, auth.world.sdf_at, family)
 	if structure.preview_stability(piece, family, pos, rot, anchored) < Pieces.MIN_STABILITY:
 		return "Not steady enough here"
 	var cost := Pieces.cost(piece, family)
@@ -147,7 +147,7 @@ func request_place(peer_id: int, piece: String, family: String, pos: Vector3, ro
 		ps.inventory.remove(item, cost[item])
 	var uid := _next_uid
 	_next_uid += 1
-	_ev_add_piece.rpc(uid, piece, family, pos, rot, Pieces.touches_rock(piece, pos, rot, auth.world.sdf_at))
+	_ev_add_piece.rpc(uid, piece, family, pos, rot, Pieces.touches_rock(piece, pos, rot, auth.world.sdf_at, family))
 	_placed_at[uid] = _clock
 	auth.give_xp(peer_id, 2, "smithing")
 	return ""
@@ -190,7 +190,15 @@ func request_door(peer_id: int, uid: int) -> bool:
 		return false
 	if ps.node and ps.node.global_position.distance_to(p.pos) > Pieces.BUILD_REACH:
 		return false
-	_ev_door.rpc(uid, not p.get("open", false))
+	if int(p.get("open", 0)) != 0:
+		_ev_door.rpc(uid, 0)
+		return true
+	# Open AWAY from the player: which side of the door are they on? (door front = its +z)
+	var side := 1.0
+	if ps.node:
+		var to_player: Vector3 = Basis(Vector3.UP, Pieces.yaw_of(p.rot)).inverse() * (ps.node.global_position - p.pos)
+		side = signf(to_player.z) if absf(to_player.z) > 0.01 else 1.0
+	_ev_door.rpc(uid, -1 if side > 0.0 else 1)
 	return true
 
 
@@ -262,6 +270,8 @@ func _ev_add_piece(uid: int, piece: String, family: String, pos: Vector3, rot: i
 	pieces_root.add_child(n)
 	n.global_position = pos
 	n.rotation.y = Pieces.yaw_of(rot)
+	if auth and auth.world and not Pieces.leg_spots(piece, family).is_empty():
+		n.set_legs(Pieces.leg_drops(piece, family, pos, rot, auth.world.sdf_at))  # F162: legs down to the rock
 	nodes[uid] = n
 	if piece == "ladder":
 		ladders[uid] = true
@@ -286,11 +296,11 @@ func _ev_remove_piece(uid: int) -> void:
 
 
 @rpc("authority", "call_local", "reliable")
-func _ev_door(uid: int, open: bool) -> void:
+func _ev_door(uid: int, open: int) -> void:  ## 0 = closed, 1 = swung to the door's front (+z), -1 = to its back
 	if not structure.pieces.has(uid):
 		return
 	structure.pieces[uid]["open"] = open
-	Sfx.play("build", structure.pieces[uid].pos, -8.0, 1.6 if open else 1.3)
+	Sfx.play("build", structure.pieces[uid].pos, -8.0, 1.6 if open != 0 else 1.3)
 	if nodes.has(uid):
 		(nodes[uid] as PieceNode).set_open(open)
 
@@ -339,7 +349,7 @@ func reanchor_near(center: Vector3, radius: float) -> void:
 		var p: Dictionary = structure.pieces[uid]
 		if not p.anchored or p.pos.distance_to(center) > radius + 4.0:
 			continue
-		if not Pieces.touches_rock(p.piece, p.pos, p.rot, auth.world.sdf_at):
+		if not Pieces.touches_rock(p.piece, p.pos, p.rot, auth.world.sdf_at, p.family):
 			p.anchored = false
 			changed = true
 	if changed:
@@ -837,7 +847,7 @@ func _build_step(box_id: int, site: Dictionary, chest: Dictionary) -> void:
 			if first_missing.is_empty():
 				first_missing = missing
 			continue  # skip ahead to something we can afford
-		var anchored := Pieces.touches_rock(p.piece, p.pos, p.rot, auth.world.sdf_at)
+		var anchored := Pieces.touches_rock(p.piece, p.pos, p.rot, auth.world.sdf_at, p.family)
 		if structure.preview_stability(p.piece, p.family, p.pos, p.rot, anchored) < Pieces.MIN_STABILITY:
 			continue  # wait until what holds it up is built
 		var blocked := false
@@ -915,7 +925,7 @@ func load_snapshot(s: Dictionary) -> void:
 	for p in s.get("pieces", []):
 		_ev_add_piece(p[0], p[1], p[2], p[3], p[4], p[5])
 		if p.size() > 6 and p[6]:
-			_ev_door(p[0], true)
+			_ev_door(p[0], int(p[6]))  # old saves stored true (= 1)
 	_next_uid = s.get("next", _next_uid)
 	for st in s.get("sites", []):
 		_ev_site(st[0], st[1], st[2], st[3], st[4])

@@ -170,7 +170,7 @@ func _extras(dwarf: Dwarf, base: Vector3, lamp: OmniLight3D) -> void:
 	dwarf._zoom = 5.0
 	await _wait(1.0)
 	await _shot("extras_closed")
-	auth.builder._ev_door(door_uid, true)
+	auth.builder._ev_door(door_uid, 1)
 	await _wait(0.8)
 	await _shot("extras_door_open")
 	_look(dwarf, base + Vector3(2.4, 1.2, 4.0), base + Vector3(2.0, 0.2, 1.5))

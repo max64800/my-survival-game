@@ -168,6 +168,7 @@ func _process(delta: float) -> void:
 	_ghost.visible = true
 	_ghost.global_position = target.pos
 	_ghost.rotation = Vector3(0, Pieces.yaw_of(target.rot), 0)
+	_ghost.set_legs(Pieces.leg_drops(piece, family, target.pos, target.rot, auth.world.sdf_at))
 	problem = auth.builder.problem(auth.get_player(dwarf.peer_id), piece, family, target.pos, target.rot)
 	_ghost.set_ghost_ok(problem == "")
 

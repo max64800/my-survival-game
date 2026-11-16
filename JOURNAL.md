@@ -1571,3 +1571,26 @@ rope, and every board and shingle has its own painting.
   it changes slowly, and on a small part that covers a big area. Small parts now get carved grooves only.
 - The first mandibles had a ring at every slice (each slice got its own random size). Now a few gentle bumps along it.
 - The first mandibles hung down like ram's horns; they now reach forward flat, like pincers.
+
+## Nov 16, 2026 (PC, Claude 2): Shack kit in the game, doors both ways, legs on slopes, the Delver's Hut
+
+You loved the whole Shack kit, so all 36 pieces went into the game with fresh build-menu pictures. Then:
+- **F158 (window shimmer):** in both windows, the upright bar and the cross bar sat at the same depth, so their front
+  faces lay on top of each other where they cross. The cross bar now sits 8 mm in front. My mistake: the automatic
+  checker missed it because the shared patch is tiny, and I didn't look closely enough at the window photos.
+- **F160 (door both ways):** the host now checks which side of the door you stand on and swings it away from you.
+  A door remembers which way it swung (0 = closed, 1 or -1 = open one way or the other); old saves (true) still load.
+- **F162 (legs on slopes):** a Shack foundation now looks straight down under each of its legs and adds hewn log
+  sections down to the rock (up to 3 m, at most stretched to 1 m each), with a foot stone. You see them in the green
+  preview too. Legs that reach the rock make the foundation count as standing on the ground.
+- **F161 (starter hut):** the Delver's Hut blueprint, an L of five rooms, in the blueprint book from day one. To show
+  it in 3D, I made a small tool that writes a blueprint out, then put the real models together in Blender at those
+  spots. Wooden foundation steps had to be allowed (they were stone-only), because the hut uses them.
+- **Hurdles:**
+  - **Feedback numbers clashed again.** Another Claude took F159 for "flatten the ground" while I was working, so my
+    legs item became F162.
+  - **The hut file was too big at first.** Each piece brought its own copy of the same paintings (13 MB). Sharing
+    one copy of each, at 256 px, brought it down to 7 MB.
+  - **A test didn't know the leg parts.** The model-rules test couldn't find the two leg parts' names in a build
+    script, because their names were made automatically. I wrote them out plainly.
+  - **I ran the 36-piece install twice by accident.** No harm; the second run wrote the same files again.

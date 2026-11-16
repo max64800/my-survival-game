@@ -70,21 +70,23 @@ func set_tint(c: Color) -> void:
 
 
 ## Doors swing open on their left hinge (look and solid shape together), so an open door
-## stands against the wall's side and you can still aim at it to close it.
+## stands against the wall's side and you can still aim at it to close it. They open either way:
+## away from whoever opens them (1 = toward the door's front, -1 = toward its back).
 var is_open := false
-var _swing := 0.0  ## 0 = closed, 1 = fully open
+var _swing := 0.0  ## 0 = closed, 1 / -1 = fully open one way or the other
 var _swing_tween: Tween
 
 
-func set_open(open: bool) -> void:
-	is_open = open
+func set_open(open: int) -> void:
+	is_open = open != 0
+	var target := float(signi(open))
 	if not is_inside_tree():
-		_apply_swing(1.0 if open else 0.0)
+		_apply_swing(target)
 		return
 	if _swing_tween:
 		_swing_tween.kill()
 	_swing_tween = create_tween()
-	_swing_tween.tween_method(_apply_swing, _swing, 1.0 if open else 0.0, 0.35).set_trans(Tween.TRANS_SINE)
+	_swing_tween.tween_method(_apply_swing, _swing, target, 0.35).set_trans(Tween.TRANS_SINE)
 
 
 func _apply_swing(t: float) -> void:
@@ -109,7 +111,82 @@ func set_ghost_plan() -> void:
 
 
 ## Rebuild for a different piece/material (the ghost changes when you pick something else).
+## F162: log legs under a Shack foundation, each reaching down to the rock by itself (`drops` from
+## Pieces.leg_drops: metres per leg; 0 or -1 = no extra leg). Stacked 1 m hewn sections, a stone at the foot.
+var _legs: Node3D
+var _leg_key := ""
+
+
+func set_legs(drops: Array) -> void:
+	var key := ",".join(drops.map(func(d): return str(snappedf(d, 0.1))))
+	if key == _leg_key:
+		return
+	_leg_key = key
+	if _legs:
+		_legs.queue_free()
+		_legs = null
+	var spots := Pieces.leg_spots(piece, family)
+	_legs = Node3D.new()
+	add_child(_legs)
+	for i in mini(spots.size(), drops.size()):
+		var d: float = drops[i]
+		if d < 0.05:
+			continue
+		var top := 0.15  # the new section starts inside the model's own leg
+		var length := d + top
+		var n := int(ceil(length / 1.0))
+		var at := Vector3(spots[i].x, top, spots[i].y)
+		for k in n:
+			var mi := MeshInstance3D.new()
+			mi.mesh = _part_mesh("foundation_leg__plank_root")
+			if mi.mesh == null:
+				var cm := CylinderMesh.new()
+				cm.top_radius = 0.16
+				cm.bottom_radius = 0.16
+				cm.height = 1.0
+				mi.mesh = cm
+				mi.position.y = -0.5
+			var seg := Node3D.new()
+			seg.position = at + Vector3.DOWN * (length / n) * k
+			seg.scale = Vector3(1, length / n, 1)  # at most stretched to 1 m, at least half
+			seg.add_child(mi)
+			_legs.add_child(seg)
+			if ghost:
+				mi.material_override = _ghost_mat
+				mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		var foot := MeshInstance3D.new()
+		foot.mesh = _part_mesh("foundation_foot__plank_root")
+		if foot.mesh:
+			foot.position = Vector3(spots[i].x, -d, spots[i].y)
+			if ghost:
+				foot.material_override = _ghost_mat
+			_legs.add_child(foot)
+		if not ghost:  # you bump into the legs
+			var cs := CollisionShape3D.new()
+			var cyl := CylinderShape3D.new()
+			cyl.radius = 0.16
+			cyl.height = length
+			cs.shape = cyl
+			cs.position = Vector3(spots[i].x, top - length * 0.5, spots[i].y)
+			add_child(cs)
+
+
+static func _part_mesh(model: String) -> Mesh:
+	if not _forged_meshes.has(model):
+		var m: Mesh = null
+		var scene := Look.forged("build", model) if use_models else null
+		if scene:
+			var parts := scene.find_children("*", "MeshInstance3D", true, false)
+			if not parts.is_empty():
+				m = (parts[0] as MeshInstance3D).mesh
+			scene.free()
+		_forged_meshes[model] = m
+	return _forged_meshes[model]
+
+
 func rebuild(p_piece: String, p_family: String) -> void:
+	_leg_key = ""
+	_legs = null
 	piece = p_piece
 	family = p_family
 	for c in get_children():

@@ -1158,6 +1158,18 @@ def wall_any_v3(w=2.0, h=2.0, d=0.3):
 		i += 1
 
 
+# ---------------- foundation legs on slopes (F162): the game stacks these under a leg down to the rock ----------------
+def foundation_leg_v3():
+	"""One 1 m section of the foundation's hand-hewn leg, origin at its TOP (y 0 .. -1). The game stacks and
+	stretches a few of them (at most 2x) so a leg reaches the ground on a slope."""
+	hewn((0.0, 0.0, 0.0), (J(0.006), -1.0, J(0.006)), 0.16)
+
+
+def foundation_foot_v3():
+	"""The lumpy stone a lengthened leg stands on (origin at its bottom, like the foundation's own stones)."""
+	boulder((J(0.01), 0.07, J(0.01)), 0.21, 0.1, 0.2)
+
+
 # ---------------- paint: one painted picture per part, like the turnaround sheet ----------------
 # Textures from the ChatGPT texture sheet (assets/textures/kit/shack_*.png): bark, plank, shingle, logend, footing, darkwood.
 PAINT = {"bark": "shackbark", "wood": "shackplank", "shingle": "shackshingle", "greystone": "shackstone", "wood_dark": "shackdark"}
@@ -1387,6 +1399,7 @@ PIECES = {"foundation3": foundation_v3, "foundation_hewn": _hewn, "foundation_mi
 	"mine_prop_v3": mine_prop_v3,
 	"floor_v3": floor_v3, "floor_half_v3": lambda: floor_v3(2.0, 1.0), "small_floor_v3": lambda: floor_v3(1.0, 1.0),
 	"ceiling_panel_v3": floor_v3, "floor_triangle_v3": floor_triangle_v3,
+	"foundation_leg_v3": foundation_leg_v3, "foundation_foot_v3": foundation_foot_v3,
 	"half_wall_v3": lambda: wall_any_v3(2.0, 1.0), "wall_narrow_v3": lambda: wall_any_v3(1.0, 2.0),
 	"window_wide_v3": lambda: window_wall_v3(ow=1.6, oh=0.9, ob=0.6, shutters=False, sides=False, post_r=0.126),
 	"foundation_half_v3": _hewn_style(lambda: foundation_v3(2.0, 1.0, 1.0)), "foundation_triangle_v3": foundation_triangle_v3, "foundation": foundation, "wall": wall, "doorway": doorway, "door": door, "roof_26": lambda: roof(2.0, 1.0)}
@@ -1413,6 +1426,7 @@ if __name__ == "__main__":
 	GAME_NAME = {"foundation_mix": "foundation", "wall_v3": "wall", "doorway_v3": "doorway", "door_v3": "door", "roof_26_v3": "roof_26",
 		"window_wall_v3": "window_wall"}
 	GAME_NAME.update({n: n[:-3] for n in PIECES if n.endswith("_v3") and n[:-3] not in GAME_NAME.values()})
+	GAME_NAME.update({"foundation_leg_v3": "foundation_leg", "foundation_foot_v3": "foundation_foot"})  # leg parts (F162)
 	install = "install=1" in args
 	if install:
 		names = [n for n in names if n in GAME_NAME] or list(GAME_NAME)

@@ -271,12 +271,24 @@ func test_doors_open_and_ladders_climb() -> void:
 	auth.builder._ev_add_piece(500, "door", "plank_root", pos, 0, true)
 	var node: PieceNode = auth.builder.nodes[500]
 	check(auth.builder.request_door(1, 500), "you can open a door next to you")
-	check(auth.builder.structure.pieces[500].open, "it's open")
+	check(auth.builder.structure.pieces[500].open != 0, "it's open")
 	check(node.is_open, "the door swings open")
 	var saved: Dictionary = auth.builder.snapshot()
 	check(auth.builder.request_door(1, 500), "and close it again")
-	check(not auth.builder.structure.pieces[500].open, "closed")
-	check(saved.pieces[0][6], "an open door stays open after saving")
+	check_eq(auth.builder.structure.pieces[500].open, 0, "closed")
+	check(saved.pieces[0][6] != 0, "an open door stays open after saving")
+	# F160: it opens AWAY from you, from either side
+	player.global_position = pos + Vector3(0, 0, 1.5)  # in front of the door
+	auth.builder.request_door(1, 500)
+	check_eq(auth.builder.structure.pieces[500].open, -1, "from the front it swings to the back")
+	auth.builder.request_door(1, 500)
+	player.global_position = pos + Vector3(0, 0, -1.5)  # behind it
+	auth.builder.request_door(1, 500)
+	check_eq(auth.builder.structure.pieces[500].open, 1, "from the back it swings to the front")
+	auth.builder._ev_door(500, 0)
+	auth.builder.load_snapshot({pieces = [[503, "door", "plank_root", pos + Vector3(0, 0, 8), 0, true, true]]})
+	check_eq(auth.builder.structure.pieces[503].open, 1, "an old save's open door (true) still opens")
+	player.global_position = pos - Vector3(1, 0, 0)
 	auth.builder._ev_add_piece(501, "wall", "plank_root", pos + Vector3(4, 0, 0), 0, true)
 	check(not auth.builder.request_door(1, 501), "walls don't open")
 	auth.builder._ev_add_piece(502, "ladder", "plank_root", pos + Vector3(0, 0, 3), 0, true)
