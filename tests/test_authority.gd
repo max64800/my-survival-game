@@ -205,7 +205,7 @@ func test_roots_give_wood_four_times() -> void:
 			chops += 1
 	check_eq(chops, 4, "4 chop-throughs before the root is gone")
 	check(glow.get_spot(root.id).is_empty(), "root gone after 4")
-	check_eq(auth.drop_count(), 4, "4 piles of rootwood")
+	check_eq(auth.drop_count(), 8, "4 piles of rootwood + 4 bits of fiber (F182)")
 	_teardown()
 
 

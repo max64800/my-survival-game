@@ -22,14 +22,14 @@ const KINDS := {
 	"hollowcap": {item = "hollowcap", count = [1, 1], tool = "hand", color = Color(0.55, 0.38, 0.26), xp = 1, skill = "survival"},
 	"bellcap": {item = "bellcap", count = [1, 1], tool = "hand", color = Color(0.55, 0.7, 1.0), xp = 1, skill = "survival"},
 	"firecap": {item = "firecap", count = [1, 1], tool = "hand", glow = true, color = Color(1.0, 0.35, 0.2), xp = 1, skill = "survival"},
-	"fiber": {item = "fiber", count = [2, 2], tool = "hand", color = Color(0.5, 0.65, 0.3), xp = 1, skill = "survival"},
-	"root": {item = "rootwood", count = [3, 3], tool = "axe", hardness = 30, chops = 4, color = Color(0.42, 0.29, 0.18), xp = 3, skill = "survival"},
+	"fiber": {item = "fiber", count = [2, 3], tool = "hand", color = Color(0.5, 0.65, 0.3), xp = 1, skill = "survival"},
+	"root": {item = "rootwood", count = [3, 3], extra = "fiber", tool = "axe", hardness = 30, chops = 4, color = Color(0.42, 0.29, 0.18), xp = 3, skill = "survival"},
 	# Fungal Jungle. Giant mushrooms are the jungle's wood: tall stalks that need a copper axe
 	# (or copper pickaxe at half power), and each chop also drops some flesh.
 	"giant_mushroom": {item = "mushroom_wood", count = [3, 3], extra = "mushroom_flesh", tool = "axe", hardness = 40, min_tier = 1, chops = 4, color = Color(0.72, 0.5, 0.78), xp = 4, skill = "survival"},
 	"drip": {item = "", tool = "none", color = Color(0.55, 0.75, 0.95)},
 	# Thin roots in the starting room: pull them by hand for your first pickaxe handle (feedback F11).
-	"root_dangle": {item = "rootwood", count = [1, 1], tool = "hand", color = Color(0.45, 0.31, 0.19), xp = 1, skill = "survival"},
+	"root_dangle": {item = "rootwood", count = [1, 1], extra = "fiber", tool = "hand", color = Color(0.45, 0.31, 0.19), xp = 1, skill = "survival"},
 	"crystal_amber": {item = "crystal_amber", count = [2, 3], tool = "pickaxe", hardness = 22, glow = true, color = Color(1.0, 0.72, 0.28), xp = 5, skill = "mining"},
 	"spore_truffle": {item = "spore_truffle", count = [1, 2], tool = "hand", color = Color(0.45, 0.33, 0.52), xp = 1, skill = "survival"},
 	"ember_morel": {item = "ember_morel", count = [1, 1], tool = "hand", glow = true, color = Color(1.0, 0.45, 0.15), xp = 2, skill = "survival"},
@@ -233,9 +233,10 @@ static func _try_add(maker: CaveMaker, rng: RandomNumberGenerator, spots: Array[
 static func _pick_kind(n: Vector3, rng: RandomNumberGenerator) -> String:
 	var r := rng.randf()
 	if n.y > 0.65:  # floor
-		if r < 0.40: return "glowcap"
-		if r < 0.58: return "hollowcap"
-		if r < 0.70: return "bellcap"
+		# Lots more fiber on the floor (owner F175): 40% of floor plants, was 22%.
+		if r < 0.28: return "glowcap"
+		if r < 0.42: return "hollowcap"
+		if r < 0.52: return "bellcap"
 		if r < 0.92: return "fiber"
 		return "firecap"
 	if n.y < -0.55 and r < 0.6:  # ceiling

@@ -1859,3 +1859,22 @@ You tried the dev menu and asked for four things:
   Fixed: side roots now hang down along the trunk, and the knots are smaller.
 - Still open (Claude 3's notes): baked paint pictures load white in Godot. Before painting these, test that the
   pictures load on one small model first.
+
+## November 16, 2026 (PC, code Claude): planting, crystal torches, more fiber, cleaner crafting (F174–F182)
+
+**What we did**
+- Farm Plots work now (F176): press E with a mushroom or tuber to plant it, it grows by itself (little mushrooms get
+  bigger), then E picks 3. The sign shows what's growing and the time left. Saved with the world, co-op ready.
+- New Crystal Torch (F177): by hand, 1 rootwood + 1 blue crystal = 2. A stick with a glowing crystal to light your way.
+- The Workbench also lists everything you can make by hand (F174).
+- "Upgrade gear" moved into its own panel, left of the bag (F178).
+- Removed all the yellow "where to get it" lines from crafting (F179).
+- Much more fiber on cave floors (40% of floor plants, was 22%), and roots drop a little fiber when chopped (F175, F182).
+- Flattening: told the owner it isn't built yet; it's the next planned step (F159, said twice now).
+
+**Mistakes and hurdles (including Claude's)**
+- Planting "didn't work" because it was never built: the Farm Plot was only a model with a recipe. Built it now.
+- The new torch had no bag picture, so the picture check failed. Made one from the glow marker's picture, squeezed thinner.
+- Roots now drop fiber too, so an older check counting 4 drop piles saw 8. Updated the check.
+- A patch script missed one block of the crafting code (it couldn't find the exact text); replaced that block by
+  position instead.

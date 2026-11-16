@@ -858,6 +858,58 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 	return ""
 
 
+# ---------------------------------------------------------------- farming (owner F176)
+
+func ask_farm(station_id: int, seed_item: String = "") -> void:
+	if is_host():
+		request_farm(local_peer_id(), station_id, seed_item)
+	else:
+		_rpc_farm.rpc_id(1, station_id, seed_item)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_farm(station_id: int, seed_item: String) -> void:
+	if is_host():
+		request_farm(multiplayer.get_remote_sender_id(), station_id, seed_item)
+
+
+## A Farm Plot: empty → plant one mushroom/tuber from your bag (`seed_item`, or the first one you have);
+## ready → pick the crop. Returns "planted", "picked", "growing", "no_seed" or "".
+func request_farm(peer_id: int, station_id: int, seed_item: String = "") -> String:
+	var ps := get_player(peer_id)
+	var st: Station = stations.get(station_id)
+	if ps == null or st == null or st.kind != "farm_plot" or st.global_position.distance_to(ps.node.global_position) > STATION_REACH + 1.0:
+		return ""
+	if st.crop_ripe():
+		var give: int = Station.CROPS[st.crop].give
+		var left := ps.inventory.add(st.crop, give)
+		if left > 0:
+			spawn_drop(st.crop, left, st.global_position + Vector3.UP * 0.8)
+		give_xp(peer_id, 3, "survival")
+		_ev_farm.rpc(station_id, "", 0.0)
+		return "picked"
+	if st.crop != "":
+		return "growing"
+	if not Station.CROPS.has(seed_item) or ps.inventory.count_of(seed_item) <= 0:
+		seed_item = ""
+		for c in Station.CROPS:
+			if ps.inventory.count_of(c) > 0:
+				seed_item = c
+				break
+	if seed_item == "":
+		return "no_seed"
+	ps.inventory.remove(seed_item, 1)
+	_ev_farm.rpc(station_id, seed_item, Station.CROPS[seed_item].grow)
+	return "planted"
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_farm(station_id: int, crop: String, left: float) -> void:
+	var st: Station = stations.get(station_id)
+	if st:
+		st.set_crop(crop, left)
+
+
 # ---------------------------------------------------------------- water (doc 6.4)
 
 func ask_collect_water(station_id: int) -> void:
@@ -1497,7 +1549,7 @@ func snapshot() -> Dictionary:
 	var sts := []
 	for id in stations:
 		var st: Station = stations[id]
-		sts.append([id, st.kind, st.global_position, st.rotation.y, st.jobs.duplicate(true), st.water, st.under_drip])
+		sts.append([id, st.kind, st.global_position, st.rotation.y, st.jobs.duplicate(true), st.water, st.under_drip, st.crop, st.crop_left])
 	var chops := {}
 	if glow:
 		for id in glow._spots:
@@ -1525,6 +1577,8 @@ func load_snapshot(snap: Dictionary) -> void:
 		if st.size() > 6 and stations.has(st[0]):
 			stations[st[0]].under_drip = st[6]
 			stations[st[0]].set_water(st[5])
+		if st.size() > 8 and stations.has(st[0]):
+			stations[st[0]].set_crop(st[7], st[8])  # what's growing on a farm plot
 	for id in snap.get("regrow", {}):
 		regrow[id] = snap.regrow[id]
 	if glow:  # saves from before roots grew back: their chopped roots start growing now

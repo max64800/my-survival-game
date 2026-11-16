@@ -617,6 +617,21 @@ func _unhandled_input(event: InputEvent) -> void:
 		var st: Station = info.get("station")
 		if st == null:
 			st = authority.station_near(dwarf.global_position, 2.5)
+		if st and st.kind == "farm_plot":
+			# Plant what you're holding if it's a mushroom/tuber, else the first one in your bag (F176).
+			var me := authority.get_player(authority.local_peer_id())
+			var held: String = me.inventory.get_slot(me.selected_slot).get("id", "")
+			if st.crop_ripe():
+				hud.show_toast("You pick the %s." % Items.display_name(st.crop), 2.0)
+			elif st.crop != "":
+				hud.show_toast("Still growing. Come back in %d:%02d." % [int(st.crop_left) / 60, int(st.crop_left) % 60], 2.5)
+			else:
+				var has_seed := false
+				for c in Station.CROPS:
+					has_seed = has_seed or me.inventory.count_of(c) > 0
+				hud.show_toast("Planted!" if has_seed else "Plant a Glowcap, Hollowcap, Bellcap or Root Tuber here.", 3.0)
+			authority.ask_farm(st.station_id, held)
+			return
 		if st and Station.WATER.has(st.kind):
 			if st.water > 0:
 				authority.ask_collect_water(st.station_id)

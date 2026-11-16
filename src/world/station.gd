@@ -18,6 +18,12 @@ const WATER := {"drip_bucket": {holds = 5, every = 240.0}, "copper_drip_basin": 
 var water := 0
 var water_timer := 0.0
 var under_drip := false  ## host decides when it's placed
+## Farm Plots (owner F176): plant a mushroom or tuber, it grows by itself, then you pick more than you planted.
+const CROPS := {"glowcap": {grow = 240.0, give = 3}, "hollowcap": {grow = 240.0, give = 3},
+	"bellcap": {grow = 300.0, give = 3}, "root_tuber": {grow = 180.0, give = 3}}
+var crop := ""  ## what's planted ("" = empty)
+var crop_left := 0.0  ## seconds until it's ready (everyone counts down; the host decides)
+var _crop_node: Node3D
 var _label: Label3D
 var _fire: OmniLight3D
 
@@ -61,7 +67,14 @@ func _extras_near() -> Dictionary:
 
 
 func _process(delta: float) -> void:
+	if crop != "" and crop_left > 0.0:
+		crop_left = maxf(crop_left - delta, 0.0)
 	_label_timer -= delta
+	if kind == "farm_plot" and _label and _label_timer <= 0.0:
+		_label_timer = 0.5
+		_label.text = farm_text()
+		_show_crop()
+		return
 	if _label_timer > 0.0 or _label == null:
 		return
 	_label_timer = 1.0
@@ -122,6 +135,57 @@ func tick_water(delta: float) -> bool:
 	return true
 
 
+func crop_ripe() -> bool:
+	return crop != "" and crop_left <= 0.0
+
+
+func set_crop(id: String, left: float) -> void:
+	crop = id
+	crop_left = left
+	_show_crop()
+	if _label:
+		_label.text = farm_text()
+
+
+func farm_text() -> String:
+	if crop == "":
+		return "Farm Plot · empty · E with a mushroom or tuber"
+	if crop_ripe():
+		return "%s ready! · E to pick" % Items.display_name(crop)
+	return "%s growing · %d:%02d" % [Items.display_name(crop), int(crop_left) / 60, int(crop_left) % 60]
+
+
+## Little mushrooms (or tuber leaves) on the plot that get bigger as they grow.
+func _show_crop() -> void:
+	if kind != "farm_plot":
+		return
+	if crop == "":
+		if _crop_node:
+			_crop_node.queue_free()
+			_crop_node = null
+		return
+	if _crop_node == null:
+		_crop_node = Node3D.new()
+		add_child(_crop_node)
+		var c := Items.color(crop)
+		for i in 5:
+			var a := i * TAU / 5.0 + 0.4
+			var at := Vector3(cos(a) * 0.55, 0.2, sin(a) * 0.55) if i > 0 else Vector3(0, 0.2, 0)
+			var stem := MeshInstance3D.new()
+			stem.mesh = _cyl(0.04, 0.05, 0.25)
+			stem.position = at + Vector3.UP * 0.12
+			stem.material_override = Look.mat(Color(0.85, 0.82, 0.7), "", 0.0)
+			_crop_node.add_child(stem)
+			var cap := MeshInstance3D.new()
+			cap.mesh = _cyl(0.04, 0.16, 0.1)
+			cap.position = at + Vector3.UP * 0.28
+			cap.material_override = Look.mat(c, "", 3.0 if crop == "glowcap" else 0.0)
+			_crop_node.add_child(cap)
+	var total: float = CROPS.get(crop, {}).get("grow", 1.0)
+	var f := 1.0 - crop_left / total
+	_crop_node.scale = Vector3.ONE * lerpf(0.25, 1.0, clampf(f, 0.0, 1.0))
+
+
 func set_water(n: int) -> void:
 	water = n
 	if _label and WATER.has(kind):
@@ -151,6 +215,7 @@ static func size_of(p_kind: String) -> Vector3:
 		"rune_slab": return Vector3(1.6, 1.8, 0.4)
 		"twin_smelter": return Vector3(2.0, 1.6, 1.2)
 		"crystal_sconce", "glow_marker", "glow_lamp": return Vector3(0.4, 1.2, 0.4)
+		"crystal_torch": return Vector3(0.25, 1.0, 0.25)
 		"training_dummy": return Vector3(0.6, 1.6, 0.6)
 		"rope_ladder": return Vector3(0.7, LADDER_HEIGHT, 0.15)
 		"gem_bench": return Vector3(1.4, 0.9, 0.8)
@@ -188,6 +253,8 @@ func _build_look() -> void:
 		add_child(model)
 		if kind == "campfire":
 			_add_fire()
+		if kind == "farm_plot":
+			_add_label(sz)  # shows what's growing
 		return
 	match kind:
 		"campfire":
@@ -250,6 +317,19 @@ func _build_look() -> void:
 			l.light_energy = 1.4 if not marker else 0.8
 			l.position = Vector3.UP * 1.2
 			add_child(l)
+		"crystal_torch":
+			# A simple stick with a blue crystal tied on top (owner F177: cheap light for exploring).
+			_part(_cyl(0.035, 0.05, 0.9), Color(0.42, 0.3, 0.19), Vector3.UP * 0.45)
+			_part(_cyl(0.06, 0.06, 0.1), Color(0.55, 0.5, 0.35), Vector3.UP * 0.86)  # rope wrap
+			var gem := _part(_cyl(0.0, 0.08, 0.24), c, Vector3.UP * 1.0, true)
+			gem.rotation.y = 0.5
+			var tl := OmniLight3D.new()
+			tl.light_color = c
+			tl.omni_range = 7.0
+			tl.light_energy = 1.1
+			tl.position = Vector3.UP * 1.05
+			add_child(tl)
+			return  # no name tag floating over every torch
 		"twin_smelter":
 			for x in [-0.5, 0.5]:
 				_part(_cyl(0.42, 0.55, sz.y), c, Vector3(x, sz.y * 0.5, 0))
@@ -313,6 +393,10 @@ func _build_look() -> void:
 					_part(_box(Vector3(0.12, sz.y - 0.12, 0.12)), c.darkened(0.25), Vector3(x * (sz.x * 0.5 - 0.1), (sz.y - 0.12) * 0.5, z * (sz.z * 0.5 - 0.1)))
 			if kind == "masonry_table":
 				_part(_box(Vector3(0.5, 0.3, 0.4)), Color(0.6, 0.6, 0.6), Vector3(0.3, sz.y + 0.15, 0))
+	_add_label(sz)
+
+
+func _add_label(sz: Vector3) -> void:
 	var label := Label3D.new()
 	_label = label
 	label.text = Items.display_name(kind)

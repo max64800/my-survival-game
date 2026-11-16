@@ -207,6 +207,10 @@ func _build() -> void:
 	root.add_child(craft)
 	craft.resized.connect(_layout_panels)
 	craft.visibility_changed.connect(_layout_panels)
+	var up := craft.make_upgrade_panel()
+	root.add_child(up)
+	up.resized.connect(_layout_panels)
+	up.visibility_changed.connect(_layout_panels)
 
 	skills = SkillsPanel.new()
 	skills.peer_id = peer_id
@@ -583,6 +587,8 @@ func _layout_panels() -> void:
 	var side: Control = craft if craft.visible else (box_panel if box_panel.visible else null)
 	var gap := 16.0
 	var panels: Array[Control] = []
+	if craft.upgrade_panel and craft.upgrade_panel.visible:
+		panels.append(craft.upgrade_panel)  # gear upgrades: left of the bag (owner F178)
 	if _bag_panel.visible:
 		panels.append(_bag_panel)
 	if side:

@@ -4,6 +4,24 @@ Every fixed (crossed-out) item from `FEEDBACK.md`, moved here unchanged on Nov 1
 Nothing was deleted. Newest fixes go at the top of their group. If a fixed thing comes back, give it 🔁 and add it to
 "Things that keep coming back" in `FEEDBACK.md`.
 
+- [x] ~~**F174. Anything you can craft by hand should also be craftable at the Workbench.**~~ Fixed Nov 16 (PC, code Claude): the Workbench list now shows every by-hand recipe too, in the same tabs. *From: you. Said: 1×*
+
+- [x] ~~**F175. Need a lot more fiber on the ground.**~~ Fixed Nov 16 (PC, code Claude): fiber is now 40% of floor plants (was 22%) and each tuft gives 2–3 (was 2). *From: you. Said: 1×*
+
+- [x] ~~**F176. Can't plant anything in the planters (Farm Plot).**~~ Fixed Nov 16 (PC, code Claude): planting didn't exist yet, the plot was only a model. Now: press E at a Farm Plot to plant a Glowcap, Hollowcap, Bellcap or Root Tuber (the one in your hand, or the first in your bag). It grows by itself (3–5 min, little mushrooms get bigger), then E picks 3. The sign shows what's growing and how long is left. Saved with the world; co-op ready. *From: you. Said: 1×*
+
+- [x] ~~**F177. Simple crystal torches on a stick, easy to craft, to place while exploring.**~~ Fixed Nov 16 (PC, code Claude): new Crystal Torch: by hand, 1 rootwood + 1 blue crystal = 2 torches. A stick with a glowing blue crystal, soft blue light, no name sign over it. Stacks to 20. *From: you. Said: 1×*
+
+- [x] ~~**F178. Upgrades should be a separate panel left of the bag at the Workbench/Anvil.**~~ Fixed Nov 16 (PC, code Claude): the "Upgrade gear" list now has its own panel on the left; crafting stays on the right of the bag. *From: you. Said: 1×*
+
+- [x] ~~**F179. Crafting has too much yellow explanation text: remove it all.**~~ Fixed Nov 16 (PC, code Claude): removed the yellow "where to get it" lines (from F103). Only a short red "needs level 2" stays when the station level is too low. *From: you. Said: 1×*
+
+- [x] ~~**F180. How do I flatten the ground?**~~ Fixed Nov 16 (PC, code Claude): answered: not built yet, it's the planned next steps of F159 (stays open there). *From: you. Said: 1×*
+
+- [x] ~~**F181. "Can't plant anything".**~~ Fixed Nov 16 (PC, code Claude): same problem as F176, fixed there. *From: you. Said: 1×*
+
+- [x] ~~**F182. Roots should give a bit of fiber too.**~~ Fixed Nov 16 (PC, code Claude): every chop of a hanging root drops 1 fiber (4 per root), pulled thin roots give 1 too. *From: you. Said: 1×*
+
 - [x] ~~**F172. The bag and crafting menus aren't centred and overlap** (wide screen).~~ Fixed Nov 16 (PC, code Claude): the bag and the panel beside it (crafting list or chest) are now placed side by side as one centred group, never overlapping; the crafting list keeps a fixed width (long recipe lines wrap onto a second line, the tabs wrap too). *From: you. Said: 1×*
 
 *(Nov 16, your notes on the whole Delver's Shack kit: "amazing, I love every single one of them".)*

@@ -12,6 +12,8 @@ const LIST := {
 	# Your first tools, made from what's lying in the starting room (feedback F11).
 	"pickaxe_stone": {station = HAND, inputs = {stone = 3, rootwood = 2}, output = "pickaxe_stone", count = 1, unlock = []},
 	"lantern": {station = HAND, inputs = {stone = 2, rootwood = 1, crystal_blue = 1}, output = "lantern", count = 1, unlock = []},
+	# A stick with a blue crystal on top: cheap light to mark your way (owner F177).
+	"crystal_torch": {station = HAND, inputs = {rootwood = 1, crystal_blue = 1}, output = "crystal_torch", count = 2, unlock = ["crystal_blue"]},
 	"rope":{station = HAND, inputs = {fiber = 3}, output = "rope", count = 1, unlock = []},
 	"campfire": {station = HAND, inputs = {stone = 5, rootwood = 3}, output = "campfire", count = 1, unlock = []},
 	"workbench": {station = HAND, inputs = {rootwood = 10, stone = 6}, output = "workbench", count = 1, unlock = []},

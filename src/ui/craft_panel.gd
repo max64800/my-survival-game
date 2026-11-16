@@ -22,6 +22,9 @@ var _scroll: ScrollContainer
 ## How many to make with one click (owner F129): 1, 5, 10 or -1 = as many as you can.
 var amount := 1
 var _amount_row: HBoxContainer
+## Gear upgrades sit in their own panel, left of the bag, at a workbench or anvil (owner F178).
+var upgrade_panel: PanelContainer
+var _up_list: VBoxContainer
 
 
 func _ready() -> void:
@@ -73,6 +76,29 @@ func _ready() -> void:
 	_list = VBoxContainer.new()
 	_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_list)
+
+
+## The separate "Upgrade gear" panel. The HUD adds it to the screen and places it.
+func make_upgrade_panel() -> PanelContainer:
+	upgrade_panel = PanelContainer.new()
+	var bg := StyleBoxFlat.new()
+	bg.bg_color = Color(0.06, 0.05, 0.05, 0.9)
+	bg.set_corner_radius_all(10)
+	bg.set_content_margin_all(12)
+	upgrade_panel.add_theme_stylebox_override("panel", bg)
+	upgrade_panel.custom_minimum_size = Vector2(330, 0)
+	upgrade_panel.visible = false
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(310, 440)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	upgrade_panel.add_child(scroll)
+	_up_list = VBoxContainer.new()
+	_up_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(_up_list)
+	visibility_changed.connect(func():
+		if not visible:
+			upgrade_panel.visible = false)
+	return upgrade_panel
 
 
 func _paint_amounts() -> void:
@@ -134,7 +160,10 @@ func refresh() -> void:
 		c.queue_free()
 	# Only recipes you've unlocked, in tabs (owner F127). Missing materials still show in red, with where to get them.
 	var by_tab := {}
-	for id in Recipes.for_station(where):
+	var ids := Recipes.for_station(where)
+	if station and station.kind == "workbench":
+		ids = Recipes.for_station(Recipes.HAND) + ids  # anything you can make by hand, you can make here too (owner F174)
+	for id in ids:
 		if Recipes.is_unlocked(id, ps.seen, auth.taught_recipes()):
 			by_tab[tab_of(id)] = by_tab.get(tab_of(id), []) + [id]
 	if not by_tab.has(_tab):
@@ -164,8 +193,11 @@ func refresh() -> void:
 		l.text = "Nothing to make here yet. Explore and collect more!"
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD
 		_list.add_child(l)
-	if station and station.kind in ["workbench", "anvil"]:
-		_upgrade_rows(ps.inventory)
+	var upgrades := station != null and station.kind in ["workbench", "anvil"]
+	if upgrade_panel:
+		upgrade_panel.visible = upgrades
+		if upgrades:
+			_upgrade_rows(ps.inventory)
 
 
 ## How long making it takes: 1 s for small things up to 3 s for big ones (by how much goes in).
@@ -264,10 +296,16 @@ func _process(delta: float) -> void:
 
 ## Gear upgrades (building polish spec §4): everything you carry or wear that this station can improve.
 func _upgrade_rows(inv: Inventory) -> void:
+	for c in _up_list.get_children():
+		c.queue_free()
 	var heading := Label.new()
-	heading.text = "Upgrade gear (+15% each step, up to +3)"
-	heading.add_theme_font_size_override("font_size", 17)
-	_list.add_child(heading)
+	heading.text = "Upgrade gear"
+	heading.add_theme_font_size_override("font_size", 20)
+	_up_list.add_child(heading)
+	var sub := Label.new()
+	sub.text = "+15% each step, up to +3"
+	sub.add_theme_font_size_override("font_size", 13)
+	_up_list.add_child(sub)
 	var any := false
 	for i in inv.slots.size():
 		var s := inv.get_slot(i)
@@ -304,11 +342,12 @@ func _upgrade_rows(inv: Inventory) -> void:
 			GameAuthority.instance.ask_upgrade(slot_index, station.station_id)
 			get_tree().create_timer(0.15).timeout.connect(refresh))
 		row.add_child(b)
-		_list.add_child(row)
+		_up_list.add_child(row)
 	if not any:
 		var l := Label.new()
 		l.text = "Nothing to upgrade here. (%s)" % ("copper and silver gear" if station.kind == "anvil" else "stone, wood, leather and shell gear")
-		_list.add_child(l)
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_up_list.add_child(l)
 
 
 func _row(recipe_id: String, inv: Inventory) -> Control:
@@ -339,17 +378,13 @@ func _row(recipe_id: String, inv: Inventory) -> Control:
 		parts.append("+ %d wood fuel" % r.fuel)
 	var out := Items.display_name(r.output) + ("" if r.count == 1 else " ×%d" % r.count)
 	var timer := "" if r.get("seconds", 0) == 0 else "  (%ds)" % r.seconds
-	# Missing ingredients: say where to get them (F103).
-	var tips := []
-	for item in r.inputs:
-		if inv.count_of(item) < int(r.inputs[item]) and Recipes.how_to_get(item) != "":
-			tips.append("%s: %s" % [Items.display_name(item), Recipes.how_to_get(item)])
-	if station and station.level() < int(r.get("level", 1)):
+	# No yellow "where to get it" lines any more (owner F179: too much text). Only a short red note
+	# when the station's level is too low.
+	if station and r.station != Recipes.HAND and station.level() < int(r.get("level", 1)):
 		ok = false
-		tips.push_front("Needs %s level %d: place a %s within 4 m" % [Items.display_name(station.kind), int(r.level),
-			Items.display_name(Station.EXTRAS.get(station.kind, [""])[mini(int(r.level) - 2, Station.EXTRAS.get(station.kind, []).size() - 1)])])
-	var tip_text := "" if tips.is_empty() else "\n[font_size=12][color=#d8c08a]%s[/color][/font_size]" % "\n".join(tips)
-	text.text = "[b]%s[/b]%s\n[font_size=13]%s[/font_size]%s" % [out, timer, ", ".join(parts), tip_text]
+		parts.append("[color=#ff7070]needs level %d[/color]" % int(r.level))
+	text.text = "[b]%s[/b]%s
+[font_size=13]%s[/font_size]" % [out, timer, ", ".join(parts)]
 	row.add_child(text)
 	var b := Button.new()
 	b.text = "Make"

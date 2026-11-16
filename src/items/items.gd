@@ -128,6 +128,7 @@ const DATA := {
 	# Rune-taught things (progression doc 8 rune tables)
 	"copper_drip_basin": {name = "Copper Drip Basin", stack = 1, color = Color(0.9, 0.55, 0.3), short = "DB", kind = "station"},
 	"crystal_sconce": {name = "Crystal Sconce", stack = 5, color = Color(0.5, 0.8, 1.0), short = "Sc", kind = "station"},
+	"crystal_torch": {name = "Crystal Torch", stack = 20, color = Color(0.45, 0.8, 1.0), short = "CT", kind = "station"},
 	"glow_marker": {name = "Glow Marker", stack = 10, color = Color(1.0, 0.75, 0.3), short = "GM", kind = "station"},
 	"twin_smelter": {name = "Twin Smelter", stack = 1, color = Color(0.75, 0.45, 0.35), short = "TS", kind = "station"},
 	"training_dummy": {name = "Training Dummy", stack = 1, color = Color(0.75, 0.65, 0.45), short = "TD", kind = "station"},
