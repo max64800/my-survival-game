@@ -79,6 +79,11 @@ func _run() -> void:
 		clutter.visible = false
 		_line("- cave clutter + stalactites", await _measure(3.0), base)
 		clutter.visible = true
+	var life := _main.get_node_or_null("CaveLife") as Node3D
+	if life:
+		life.visible = false
+		_line("- cave life (moss, grass, small roots, lichen, ferns)", await _measure(3.0), base)
+		life.visible = true
 	var parts := get_tree().root.find_children("*", "GPUParticles3D", true, false)
 	for p: GPUParticles3D in parts:
 		p.visible = false

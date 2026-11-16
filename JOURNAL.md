@@ -2038,3 +2038,54 @@ You tried the dev menu and asked for four things:
 - Saved as `docs/design/cave-life-plan.md`, in three batches of four: F188 ground cover, F189 big shapes, F190 things
   that move. A fresh chat starts batch 1.
 - The owner also asked to put the shiny crystals in: they were already in the game (every crystal uses the new shader).
+
+## November 16, 2026 (PC, cave-life Claude): cave life batch 1, ground cover (F188)
+
+**What we did**
+- Built batch 1 of the cave-life plan, so the caves stop looking hollow. A new Blender script
+  (`tools/asset_forge/builds/cave_cover.py`) hand-builds, paints and bakes seven models, the cave-plants way:
+  - **Moss:** a cushion of soft pillows, plus a version that spills over the edge of a ledge.
+  - **Pale cave grass:** a tuft of thin, limp blades on a clump of soil.
+  - **Two small roots:** one poking out of the ground and curling over, with hair roots; three thin roots out of one
+    crack (curled, broken off, snaking along the ground).
+  - **Lichen:** a crust of lobes with ruffled rims and little cups.
+  - **A small curly fern:** fronds that roll under at the tips, and two young fronds still rolled up.
+- In the game (`src/art/cave_life.gd`):
+  - Everything grows in **patches** round glowing things, drips (damp, so the moss there is fuzzier) and roots. Plain
+    mushrooms and fiber get no patch, so there is bare rock in between (the owner's pick).
+  - **Fuzzy moss:** each cushion is drawn 12 times, each layer a tiny bit further out. Each layer keeps only the dots
+    where a moss strand is still that tall, like a stack of paper with holes punched in it. Together they look like
+    soft velvet.
+  - **Grass and ferns lean away** from every dwarf walking through them, and breathe a little in the cave air.
+  - **Lichen is tinted** orange or teal (more teal in the Fungal Jungle); grass whitish-yellow or blue-green.
+  - Digging or a cave-in near them makes them disappear (nothing floats). The same seed gives the same patches on
+    every computer, so co-op needs no network messages for them.
+  - Cheap: drawn in batches per 20 m square, not drawn far away. The speed check says they cost about 0.2 ms per
+    frame in the first big cavern.
+- New check `test_cave_life` (pictures load, moss has its layers, same patches every time, everything near life
+  and on rock, digging removes them). New photo robot: `lookdev cover`. The 3D page shows all seven models, with the
+  moss fuzz drawn the game's way.
+
+**Mistakes and hurdles (including Claude's)**
+- **Lichen came out as loose flakes:** the melt step drops very thin edges, and every lobe's edge was thin. Fixed
+  with thicker lobes on a shared bed.
+- **The moss curtain** first hung like icicles; then its open back baked stripy. Fixed with wide tongues that melt
+  into one curtain, kept closed.
+- **The soil round the small roots** was a flat puddle. Fixed: small mounds.
+- **Placing was far too slow (almost 5 seconds).** The cave has 1,440 glow spots, patches went round all of them
+  (lush everywhere), and every test ray asked the cave's slow shape formula about 30 times. Fixed three ways:
+  - patches only near light, water and roots;
+  - searches use the rock as it is drawn, remembering each corner;
+  - the placing runs in the background while the cave loads.
+- **7% of plants had no rock right under them:** the drawn rock sits a few cm off the cave's exact shape. Fixed by
+  using the drawn rock everywhere (that also made it faster).
+- **The digging check failed** only because the test computer has no graphics card, so it can't read positions back
+  from the drawing batches. Fixed: the plants keep their own list of where they are.
+- Claude first turned the moss curtain the wrong way round; caught by checking before the first run.
+- **Photos were blocked** by ruin walls and the dwarf's own head. The photo robot now tries 8 directions until
+  nothing is in the way.
+- Still open, for the owner to judge: the moss curtain over a ledge shows its fuzz layers as stripes when seen from
+  the side.
+- Another Claude was editing `main.gd` and `FEEDBACK.md` at the same time (menus). Only this session's lines were
+  committed.
+- Full test run: 359 checks, all passed.

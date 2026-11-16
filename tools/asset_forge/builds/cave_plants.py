@@ -563,12 +563,8 @@ def pictures(name, objs):
 TINT = {"crystal": (0.35, 0.75, 1.0), "glowcap": (0.25, 0.95, 0.85), "giant": (1.0, 1.0, 1.0)}  # the game's colours (glow_placer KINDS)
 BUILDS = {"root": build_root, "root_b": lambda: build_root(12, "b"), "root_c": lambda: build_root(13, "c"), "glowcap": build_glowcap, "crystal": build_crystal, "giant": build_giant}
 
-for name, fn in BUILDS.items():
-	if ONLY and name not in ONLY:
-		continue
-	kit.reset()
-	ck.reset()
-	objs = finish(name, fn())
+def export(name, objs):
+	"""Writes <name>.glb (pictures fixed for Godot) and returns its triangle count."""
 	tris = sum(len(p.vertices) - 2 for o in objs for p in o.data.polygons)
 	bpy.ops.object.select_all(action="DESELECT")
 	for o in objs:
@@ -579,4 +575,15 @@ for name, fn in BUILDS.items():
 		export_image_format="JPEG", export_image_quality=88)
 	fixed = glb_jpeg_fix.fix(path)
 	print(f"PLANT_DONE {name} {tris} triangles, parts {[o.name for o in objs]}, {fixed} pictures fixed for Godot")
-	pictures(name, objs)
+	return tris
+
+
+if __name__ == "__main__":  # (cave_cover.py imports the helpers above without building these)
+	for name, fn in BUILDS.items():
+		if ONLY and name not in ONLY:
+			continue
+		kit.reset()
+		ck.reset()
+		objs = finish(name, fn())
+		export(name, objs)
+		pictures(name, objs)

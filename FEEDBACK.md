@@ -48,7 +48,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 
 *(Nov 15 evening, your play test on the PC. You chose the fixes from multiple-choice questions.)*
 
-- [ ] **F188. The caves look hollow: ground cover.** Fluffy moss, pale grass here and there, small roots sticking out of the ground, lichen and ferns. In patches (near light, water and roots). Plan: `docs/design/cave-life-plan.md`, batch 1. *From: you. Said: 1×*
+- [ ] **F188. The caves look hollow: ground cover.** Fluffy moss, pale grass here and there, small roots sticking out of the ground, lichen and ferns. In patches (near light, water and roots). Plan: `docs/design/cave-life-plan.md`, batch 1. *From: you. Said: 1×* — **Nov 16: built and in the game (fuzzy moss, moss over ledges, pale grass that leans away, two small roots, orange/teal lichen, curly ferns); on the 3D page; waiting for your OK.**
 - [ ] **F189. Big natural shapes in the caves.** Rock columns, giant root pillars and bridges that connect small openings, root curtains in doorways, arches and mossy boulders. Batch 2 of the plan. *From: you. Said: 1×*
 - [ ] **F190. Things that move, so the caves feel alive.** Drifting glowing spores, tiny critters, water (puddles, streams, mist), glowing veins and shelf fungi. Batch 3 of the plan. *From: you. Said: 1×*
 - [ ] **F87. Menu (priority).** Escape doesn't let you leave the game; you can't make a new world or delete one. Plan: Escape menu with Resume, Save, Save and go to the main menu, Quit to desktop; the main menu lists your worlds (play / delete with "are you sure?") and makes new named worlds. *From: you. Said: 1×*

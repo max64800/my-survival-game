@@ -19,6 +19,12 @@ Then it goes in the game and gets a cave close-up (`lookdev plants`).
 3. **Small roots poking out** of floors and walls: curled ends with hair roots.
 4. **Lichen and cave ferns:** orange or teal crusts on walls; small curly ferns round glowing things.
 
+**Status (Nov 16): built, waiting for the owner's OK.** Models: `tools/asset_forge/builds/cave_cover.py` (moss,
+moss_drape, grass, rootlet, rootlet_b, lichen, fern). Game: `src/art/cave_life.gd` (patches round glowing things,
+drips and roots; plain mushrooms and fiber get none), `moss_shell.gdshader` (fuzz as 12 stacked layers),
+`plant_bend.gdshader` (grass and ferns lean away from dwarfs). Close-ups: `lookdev cover`. Cost: ~0.2 ms per frame
+in the first big cavern; the placing runs in the background while the cave loads (~2-3 s). Test: `test_cave_life`.
+
 ### Batch 2: big shapes (F189)
 1. **Natural rock columns:** a stalactite and stalagmite grown together. Some are pinched in the middle, some have
    drip-stone curtains.

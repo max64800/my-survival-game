@@ -10,6 +10,7 @@ var _shots := "user://lookdev"
 var _fps: Array[float] = []
 var _clean := false  ## true = hide the HUD in the pictures
 var _plants := false  ## true = only close-ups of the cave plants and crystals (cave_plants.py models), then quit
+var _cover := false  ## true = only close-ups of the cave life (moss, grass, small roots, lichen, ferns; cave_cover.py)
 
 
 func _ready() -> void:
@@ -21,6 +22,8 @@ func _ready() -> void:
 			_clean = true
 		elif arg == "plants":
 			_plants = true
+		elif arg == "cover":
+			_cover = true
 	DirAccess.make_dir_recursive_absolute(_shots)
 	_run.call_deferred()
 
@@ -138,6 +141,84 @@ func _plant_shots(dwarf: Dwarf) -> void:
 			cam.queue_free()
 
 
+## Close-ups of the cave life nearest the start (moss, moss over a ledge, grass, both small roots, lichen, a fern),
+## lit like a lantern; then the patch round the first moss from a dwarf's height, and the dwarf standing in grass
+## (it leans away).
+func _cover_shots(dwarf: Dwarf) -> void:
+	var life: CaveLife = _main.cave_life
+	if life == null:
+		return
+	print("  cave life: %d plants" % life.count())
+	var home := dwarf.global_position
+	var lamp_cam := func(at: Vector3, look: Vector3, name: String) -> void:
+		var cam := Camera3D.new()
+		cam.fov = 45.0
+		add_child(cam)
+		cam.global_position = at
+		cam.look_at(look, Vector3.UP)
+		var lamp := OmniLight3D.new()
+		lamp.omni_range = 12.0
+		lamp.light_energy = 1.6
+		lamp.light_color = Color(1.0, 0.85, 0.65)
+		cam.add_child(lamp)
+		cam.make_current()
+		await _wait(1.0)
+		await _shot(name)
+		dwarf.camera.make_current()
+		cam.queue_free()
+	for kind in ["moss", "moss_drape", "grass", "rootlet", "rootlet_b", "lichen", "fern"]:
+		var xf := life.nearest(kind, home)
+		if xf.origin == Vector3.INF:
+			print("  no %s in this cave" % kind)
+			continue
+		var n := xf.basis.y.normalized()
+		var size := 1.7 if kind == "moss_drape" else 1.2
+		var target := xf.origin + n * 0.12
+		var side := n.cross(Vector3.FORWARD if absf(n.y) > 0.9 else Vector3.UP).normalized()
+		if kind == "moss_drape":  # look at the curtain from the drop side
+			side = xf.basis.z.normalized() * -1.0
+			n = Vector3.UP
+			target = xf.origin + Vector3.DOWN * 0.15
+		await _teleport(dwarf, target + n * 1.2 + n.cross(side) * 2.4, target)  # loads the rock round it; the dwarf stands aside
+		var at := _clear_view(dwarf, target, n, side, size, size * 0.5)
+		if at == Vector3.INF:
+			print("  %s: no clear view" % kind)
+			continue
+		await lamp_cam.call(at, target, "q_" + kind)
+	# What a player sees: the normal camera behind the dwarf, a few metres from the patch round the nearest moss.
+	var m := life.nearest("moss", home)
+	if m.origin != Vector3.INF:
+		var stand := _clear_view(dwarf, m.origin + Vector3.UP * 0.3, Vector3.UP, Vector3.RIGHT, 4.5, 0.6)
+		if stand != Vector3.INF:
+			await _teleport(dwarf, stand, m.origin)
+			await _shot("q_patch")
+	# The dwarf standing in grass: it leans away.
+	var g := life.nearest("grass", home)
+	if g.origin != Vector3.INF:
+		await _teleport(dwarf, g.origin + Vector3.UP * 0.4, g.origin + Vector3(1, 0, 0))
+		var at := _clear_view(dwarf, g.origin + Vector3.UP * 0.35, Vector3.UP, Vector3.RIGHT, 2.8, 1.0)
+		if at != Vector3.INF:
+			await lamp_cam.call(at, g.origin + Vector3.UP * 0.35, "q_grass_push")
+
+
+## A camera spot `dist` from target (lifted `lift` along up) with nothing in between: no ruin wall, rock or dwarf in
+## the way, and not inside anything. Tries 8 directions round `up`, starting at `side`. INF when all are blocked.
+func _clear_view(dwarf: Dwarf, target: Vector3, up: Vector3, side: Vector3, dist: float, lift: float) -> Vector3:
+	var space := dwarf.get_world_3d().direct_space_state
+	for k in 8:
+		var at := target + side.rotated(up, k * TAU / 8.0) * dist + up * lift + Vector3.UP * 0.15
+		var there := PhysicsRayQueryParameters3D.create(at, target)
+		there.exclude = [dwarf.get_rid()]
+		var hit := space.intersect_ray(there)
+		if not hit.is_empty() and (hit.position as Vector3).distance_to(target) > 0.3:
+			continue
+		var back := PhysicsRayQueryParameters3D.create(target + up * 0.05, at)  # (a ray from inside a wall doesn't see it)
+		back.exclude = [dwarf.get_rid()]
+		if space.intersect_ray(back).is_empty():
+			return at
+	return Vector3.INF
+
+
 func _run() -> void:
 	while not _main.is_ready_to_play():
 		await _wait(0.25)
@@ -150,6 +231,10 @@ func _run() -> void:
 	await _wait(2.0)
 	if _plants:
 		await _plant_shots(dwarf)
+		get_tree().quit()
+		return
+	if _cover:
+		await _cover_shots(dwarf)
 		get_tree().quit()
 		return
 	await _shot("a_spawn")

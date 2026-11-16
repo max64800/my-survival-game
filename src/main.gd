@@ -13,6 +13,7 @@ extends Node3D
 var seed := 0
 var world: World
 var glow: GlowField
+var cave_life: CaveLife
 var authority: GameAuthority
 var dwarf: Dwarf
 var hud: Hud
@@ -283,6 +284,11 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	add_child(clutter)
 	clutter.build(world.maker, world)
 
+	cave_life = CaveLife.new()  # moss, grass, small roots, lichen, ferns in patches (only looks; F188)
+	cave_life.name = "CaveLife"
+	add_child(cave_life)
+	cave_life.build(world.maker, GlowPlacer.place(world.maker), world, true)  # placed in the background while the cave loads
+
 	var pf := PoiField.new()
 	pf.name = "Pois"
 	add_child(pf)
@@ -306,6 +312,7 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 
 	players_root = Node3D.new()
 	players_root.name = "Players"
+	cave_life.walkers = players_root  # grass and ferns lean away from every dwarf
 	add_child(players_root)
 	var stations_root := Node3D.new()
 	stations_root.name = "Stations"
@@ -520,7 +527,7 @@ func _process(delta: float) -> void:
 		if world.terrain.is_area_meshed(AABB(p - Vector3.ONE * r, Vector3.ONE * r * 2.0)):
 			rings_ready += 1
 	hud.set_loading_progress(0.15 + 0.85 * rings_ready / 5.0)
-	if world.terrain.is_area_meshed(area):
+	if world.terrain.is_area_meshed(area) and (cave_life == null or cave_life.is_built()):
 		_ready_to_play = true
 		dwarf.set_physics_process(true)
 		hud.set_loading(false)
