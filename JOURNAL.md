@@ -1740,3 +1740,21 @@ Builder's Chest fills the chest with every material it needs, so you can watch i
   - **Shared files.** The main game file and the screen file also held another Claude's unsaved work (a loading
     bar). I saved only my own lines from them, so their half-done work wasn't sent to GitHub.
   - **A small test typo.** The test didn't compile at first (a missing type); fixed.
+
+## November 16, 2026 (PC, Claude 3): Rock Beetle animations, round 2
+
+**What we did** (the owner's notes on the first animations)
+- The body (shell, face, feelers, mandibles) now rides on its own pivot, so it can rise, tip and sway while the six feet
+  stay planted: breathing lifts only the body; getting hit jolts the body up and back; dazed sways the body back and forth.
+- Walk and run: each leg keeps its own lane (front legs reach forward, back legs reach back, a smaller swing), so the
+  middle and back legs no longer hit each other.
+- Charge: red eyes, the amber blazes, the mandibles click three times, head down and butt up, the middle and back legs
+  stretch back and push, it runs, thumps to a stop, then stands dazed with yellow eyes. All six feet stay on the ground.
+- The mandibles are now their own moving parts (`mandible_l` / `mandible_r`), sculpted and baked on their own.
+
+**Mistakes and hurdles (including Claude's)**
+- First version moved the whole beetle (legs too) for breathing, the charge and the hit, so the feet floated or left the
+  ground. Fixed with the body pivot.
+- Legs swinging the same amount from the same resting angle made neighbours meet in the middle of their swings.
+- A one-line fix to a patch script didn't apply, which left an extra bracket in the bake script; caught by a syntax check
+  before running Blender.

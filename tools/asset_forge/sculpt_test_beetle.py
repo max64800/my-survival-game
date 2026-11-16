@@ -40,7 +40,7 @@ def split_by_material(o):
 body = bpy.data.objects["body"]
 parts = split_by_material(body)
 leg = bpy.data.objects["leg_l0"]
-LEG_NAMES = [o.name for o in bpy.context.scene.objects if o.name.startswith(("leg_", "soft_stalk"))]  # legs + feelers
+LEG_NAMES = [o.name for o in bpy.context.scene.objects if o.name.startswith(("leg_", "soft_stalk", "mandible_"))]  # moving parts
 all_legs = {n: split_by_material(bpy.data.objects[n]) for n in LEG_NAMES}
 legparts = all_legs["leg_l0"]
 print("materials:", sorted(parts), sorted(legparts))
@@ -96,6 +96,8 @@ cs.tint_islands(high_stone, stone_pieces, seed=3, spread=0.2)  # visible mix of 
 # (dents, grain) whose detail is baked onto the original faceted segment.
 LEG_JOBS = []
 for n, lp in all_legs.items():
+	if "chitin" not in lp:
+		continue  # (the mandibles: below)
 	lo = lp["chitin"]
 	hi = cs.detail_copy(lo, 2, n + "_high")
 	cs.carve_chitin(hi, dents=0.004, grain=0.001, seed=len(LEG_JOBS) + 2, grooves=0.0025, groove_scale=7.0, pits=0.0018)  # worn armour
@@ -119,11 +121,15 @@ belly = parts["chitin_dark"]  # the belly core (round 7: painted too)
 high_belly = cs.detail_copy(belly, 1, "belly_high")
 cs.carve_chitin(high_belly, dents=0.003, grain=0.0008, seed=9, grooves=0.002, groove_scale=6.0)
 cs.uv_only(belly)
-tusks = parts["mandible"]
-high_tusks = cs.detail_copy(tusks, 2, "tusks_high")
-cs.carve_chitin(high_tusks, dents=0.0025, grain=0.0008, seed=11, pits=0.0015)  # worn, chipped
-cs.gradient_attr(high_tusks)
-cs.uv_only(tusks)
+TUSK_JOBS = []  # the mandibles: moving parts (they click), each sculpted and baked on its own
+for n, lp in all_legs.items():
+	if "mandible" in lp:
+		lo = lp["mandible"]
+		hi = cs.detail_copy(lo, 2, n + "_high")
+		cs.carve_chitin(hi, dents=0.0025, grain=0.0008, seed=11 + len(TUSK_JOBS), pits=0.0015)  # worn, chipped
+		cs.gradient_attr(hi)
+		cs.uv_only(lo)
+		TUSK_JOBS.append((hi, lo))
 # Eyes: one ball each; the iris, pupil and shine are painted on (looking where the build aims them: EYE_LOOK).
 eyes = parts["eye"]
 high_eyes = cs.detail_copy(eyes, 3, "eyes_high")
@@ -160,9 +166,11 @@ high_face.data.materials.append(cs.paint_material("paint_face", base=(0.37, 0.23
 	strokes=0.16, top_light=0.25, edge=0.7, seed=5, key=0.4, ao_local=True, grime=0.4))  # (painted scratches blotch on small parts)
 high_body.data.materials.clear()
 high_body.data.materials.append(paint_chitin)
-high_tusks.data.materials.clear()
-high_tusks.data.materials.append(cs.paint_material("paint_mandible", base=(0.6, 0.58, 0.55), dark=(0.32, 0.31, 0.3),
+paint_mandible = (cs.paint_material("paint_mandible", base=(0.6, 0.58, 0.55), dark=(0.32, 0.31, 0.3),
 	light=(0.86, 0.85, 0.82), strokes=0.1, top_light=0.15, edge=0.5, seed=6, root=(0.3, 0.27, 0.25), grime=0.25))
+for hi, lo in TUSK_JOBS:
+	hi.data.materials.clear()
+	hi.data.materials.append(paint_mandible)
 high_eyes.data.materials.clear()
 high_eyes.data.materials.append(cs.paint_eye("paint_eye", iris_out=(0.12, 0.3, 0.08), iris_in=(0.5, 0.78, 0.25),
 	ring=(0.04, 0.1, 0.03)))  # green eyes (owner, round 6)
@@ -178,7 +186,8 @@ cs.bake(high_stone, low_stone, 2048, "stone_baked")
 low_face = cs.game_copy(high_face, 0, "face_low", remesh=0.007)
 cs.bake(high_face, low_face, 1024, "face_baked")
 cs.bake(high_body, body_chitin, 1024, "bodychitin_baked")
-cs.bake(high_tusks, tusks, 512, "tusks_baked")
+for k, (hi, lo) in enumerate(TUSK_JOBS):
+	cs.bake(hi, lo, 512, f"tusks{k}_baked")
 cs.bake(high_belly, belly, 512, "belly_baked")
 cs.bake(high_moss, low_moss, 1024, "moss_baked")
 cs.bake(high_amber, amber_obj, 1024, "glow_amber_baked", normal=False, emissive=0.35)
@@ -191,7 +200,7 @@ for k, (hi, lo, chi, clo, jo) in enumerate(LEG_JOBS):
 	if jo:
 		jo.data.materials[0].node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (*cs.lin((0.24, 0.14, 0.09)), 1)
 print("bake", round(time.time() - t0), "s")
-for o in [high_stone, high_moss, high_amber, high_face, high_body, high_tusks, high_eyes, high_belly] + [j[0] for j in LEG_JOBS] + [j[2] for j in LEG_JOBS if j[2]]:
+for o in [high_stone, high_moss, high_amber, high_face, high_body, high_eyes, high_belly] + [j[0] for j in TUSK_JOBS] + [j[0] for j in LEG_JOBS] + [j[2] for j in LEG_JOBS if j[2]]:
 	o.hide_render = True
 	o.hide_set(True)
 shoot("after.png", (0, 0, 0.5), 1.7)

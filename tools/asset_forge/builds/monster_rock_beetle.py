@@ -627,7 +627,8 @@ for s in (-1, 1):
 	# mandibles: from a jaw knob low on each side of the face, forward and a little down, curling in like pincers
 	ck.blob((s * 0.09, -0.58, 0.33), (0.055, 0.05, 0.045), face_skin, seed=41 + s, jitter=0.05)   # jaw knob
 	pts = ck.bezier((s * 0.09, -0.585, 0.33), (s * 0.2, -0.67, 0.325), (s * 0.18, -0.81, 0.315), n=48, p3=(s * 0.05, -0.83, 0.3))  # flat pincers
-	mandible(f"mandible{s}", pts, 0.048, mandible_mat, s, seed=70 + s)
+	with ck.part(f"mandible_{'l' if s < 0 else 'r'}", hinge=tuple(pts[0])):  # its own part: it can open and snap shut
+		mandible(f"mandible{s}", pts, 0.048, mandible_mat, s, seed=70 + s)
 	# feelers (round 6): each comes out of a ROUND hole in the gap between the horn and the brow: a ring of stone
 	# (melted into the shell in the sculpt pass) with dark skin at the bottom; shingled segments curve up, out and
 	# forward, ending in a club
