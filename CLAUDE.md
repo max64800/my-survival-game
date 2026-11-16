@@ -49,6 +49,12 @@ Full design: `docs/superpowers/specs/2026-11-14-dwarf-survival-game-design.md`
   did *not* mention: ask first, one yes/no each. After handling a session, write `reviewed.txt` in its folder (date + what was done).
 - Runs Claude starts (from a terminal/script, or with `autopilot`/`netcheck`) are never recorded; only games a person starts.
 
+## Token saver: RTK (added 2026-11-16, owner's request)
+RTK shrinks terminal output before Claude reads it, so sessions use fewer tokens. It's set up on the Mac; the owner wants it on the Windows PC too.
+- **At the start of the next chat on the Windows PC:** run `rtk --version`. If it's missing, install it with `winget install rtk-ai.rtk` (don't add auto-confirm flags), then run `rtk init -g --dry-run`, read what it will change, and only then run `rtk init -g`. Restart Claude Code afterwards and check it works with `rtk gain`.
+- If the Windows version can't add its Claude Code hook, stop and tell the owner simply (no workarounds).
+- Once it's working, tell the owner in one line, add a JOURNAL.md entry, and delete this "next chat" bullet.
+
 ## Keep test runs silent
 - The owner is often using the PC while Claude tests. **Every game run Claude starts must be muted:** add
   `--audio-driver Dummy` before `--path`, e.g. `godot --audio-driver Dummy --path . -- autopilot seed=42`.

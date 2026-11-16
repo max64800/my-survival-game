@@ -1516,3 +1516,10 @@ rope, and every board and shingle has its own painting.
   - Random critical hits would make exact-damage tests fail now and then, so crits are off in test runs.
   - A python patch failed on the multiplication sign in FEEDBACK.md (Windows code page); the script now lives in a
     UTF-8 file.
+
+## 2026-11-16: Token saver (RTK) for Claude
+- **What we did:** installed RTK on the Mac. It squeezes long terminal output (test runs, logs) before Claude reads it,
+  so chats cost fewer tokens. It's switched on for this game on the Mac only (local settings, not in git).
+- **PC:** CLAUDE.md now tells the next PC chat to install it there too (`winget install rtk-ai.rtk`, then `rtk init -g`).
+- **Hurdles:** Homebrew tried to build RTK from scratch on this Mac and hung for 10+ minutes, so Claude used the
+  official ready-made Mac download from RTK's GitHub page instead (checked its fingerprint first).
