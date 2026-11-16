@@ -90,3 +90,55 @@ How it's built and put in the game:
   for the 3D page ("Dwarf Body"). Pictures: `docs/art/dwarf-round1/`.
 - Next (after the owner's notes): sculpt, paint and bake it like the beetle (the head and beard first), then the
   outfits (F55) and the other two heads.
+
+## Round 2 done (November 16, Claude): the head and beard, waiting for the owner's notes
+Owner's round 1 notes (F183): sausages and balls, needs much more detail; the beard clips through the body; the feet are
+far too long; 3 chunky fingers plus a thumb is fine. Plan: the Rock Beetle way, one area per round, head and beard first.
+
+How it's built (`tools/asset_forge/builds/dwarf_head.py`, called by `dwarf_body.py`; ~45 s with the bake):
+- Measured on `dwarf_happy_head.png` (1 px = 0.725 mm; crown at 1.19 m): head 24 cm crown to chin, 23.6 cm wide; eyes
+  4.6 cm from the middle; nose ball 7 cm, tip 19 cm in front of the skull's middle; moustache 29 cm; beard 43 cm wide.
+- Face = one piece of clay (`Clay`: blended ellipsoids and tubes with set fillet sizes, scooped eye sockets, turned into a
+  mesh by surface nets). Lids = one shell per eye with an almond opening (smiling). Ears = rim, bowl, ridge, lobe.
+- Hair = a clay mass (below the hairline, behind the temples, notches for the ears) with flame locks on it like
+  shingles. Brows: 3 layers of thin strands. Moustache: 3 locks a side from under the nose. Beard: sideburns, flaring
+  outer locks, locks between the braids; 3 braids (`braid()`: slanting leaf lobes, a core pinched under a copper ring,
+  a flame tuft). Every lock is built 1.2 cm off the body; the melted skin is then pushed out where it still touches.
+- All melted into one skin (2.2 mm), sculpted (`sculpt_face`), a 44,000-triangle game copy, colour + normal pictures
+  baked (2048). Eyes and copper rings are their own baked pieces. Clay colours: one paint, each point carrying its own
+  colour (skin or hair), so the hairline is soft. The real paint (rosy cheeks, hair streaks, hammered copper) is next.
+- Bones: face and top of the head on the Head bone; below the chin the beard and back hair follow the shirt under them
+  (blended over 0.865-0.96 m). The shirt never follows Head or neck_01 (that bone sits inside the upper chest). With the
+  hand-built body the head keeps 35% of each animation's neck and head turning (`DwarfRig.BODY_HEAD_FOLLOW`).
+- Checks: `fast review=<pic>` prints MEASURE lines (sizes vs the picture, eyes/ears/nose visible) and renders the
+  picture-vs-model sheet; `dwarf_pose_dump.gd` + `dwarf_clip_check.py` measure clipping in every clip with Godot's own
+  bending. Now: standing, walking, jumping 0-3 mm; run, mining, sword, roll 2-8 cm (the round 1 shirt's sides and
+  shoulders swing into the beard: body round).
+- Pictures: `docs/art/dwarf-round2/`. 3D page "Dwarf Body": round 2 and round 1 side by side, with the picture.
+- Round 2b (owner's notes F191-F194, Nov 16): dark creases in the beard, hair squeezed inside the rings, the cheek gaps
+  filled, a kinder brow arch, and swinging ring + tuft (swing bones "hair_braid_<m|a|b>_1..2" built in `dwarf_body.py`,
+  added to the game skeleton by `DwarfRig._add_swing_bones`, moved by `src/player/hair_swing.gd`; Godot's
+  SpringBoneSimulator3D can't be used: the skeleton is scaled).
+- Round 2c (owner's notes: no visible shading, side braids clash, "learn how to do hair animation"): hard lines from each
+  lock's seams and grooves (`hard_lines()`); side braids at 14 cm; real hair chains: "hair_braid_<m|a|b>_1..7" down each
+  whole braid and "hair_back_<l|m|r>_1..4" down the back hair, added by `DwarfRig._add_swing_bones` under the skeleton
+  root (not the stretched head) and placed every frame by `HairSwing` (verlet chain, 30 degree bend limit, collision
+  balls from `DwarfRig._fit_colliders`). Fast moves still push the swinging braids into round 1's shirt: body round.
+
+## Next session first (owner, Nov 16 evening: "we will finish tomorrow")
+- F214: thicker front braids.
+- F215: a real skeleton for the big ponytail down the back, like the front braids (one long 7-bone chain on back
+  collision balls), so it visibly swings; check it in the recorded file.
+- Then the body round below.
+
+## Round 3, the body: how to start (owner, Nov 16: "do this for his entire body now")
+Read the Round 2 notes above and `docs/art/CREATURE-RECIPE.md` Part 4 first. The head is done; keep `dwarf_head.py`.
+1. Measure the turnaround (`dwarf_turnaround.png`) for the body like the head was: torso width and depth per height,
+   shirt hem, sleeves, arms, hands (3 chunky fingers + thumb is fine), shorts, calves, wraps, and **short feet** (F183:
+   far too long now).
+2. Build the shirt, shorts, arms and feet as clay (`Clay` in `dwarf_head.py`), with the same sculpt-and-bake, clay colours.
+   The chest front should be fairly upright under the beard (round 1's slopes forward 30 degrees and tilts the braids).
+3. Weights are the real fight: the shirt's sides and shoulders must not bulge with the arms (that is what still pushes
+   the beard tufts in when running) and nothing on the body follows Head or neck_01. Check every change with
+   `dwarf_pose_dump.gd` + `dwarf_clip_check.py` (Godot's own bending), not with pictures.
+4. Then let the back hair swing too (F192), with something that keeps it off the back.

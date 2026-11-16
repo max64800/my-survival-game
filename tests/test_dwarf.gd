@@ -183,3 +183,29 @@ func test_hand_built_body_fits_the_skeleton() -> void:
 	check(parts > 20, "the hand-built body has its parts (%d)" % parts)
 	check(bad.is_empty(), "every bone it uses exists in the game skeleton (missing: %s)" % [bad])
 	holder.free()
+
+
+## The braid tufts swing when the dwarf moves (F192): the swing bones arrive with the body and the spring moves them.
+func test_braid_tufts_swing_when_moving() -> void:
+	if not ResourceLoader.exists(DwarfRig.BODY):
+		return
+	var holder := Node3D.new()
+	tree.root.add_child(holder)
+	var rig := DwarfRig.new()
+	rig.use_body = true
+	holder.add_child(rig)
+	rig.build(Color(0.6, 0.45, 0.3))
+	var swing := rig.skeleton.get_node_or_null("HairSwing") as HairSwing
+	check(swing != null, "the hair swing is on the skeleton")
+	if swing == null:
+		holder.free()
+		return
+	check(rig.skeleton.find_bone("hair_braid_m_7") >= 0, "the middle braid's 7 swing bones were added to the skeleton")
+	check(rig.skeleton.find_bone("hair_back_m_4") >= 0, "the back hair's swing bones were added too")
+	for i in 30:  # dash forward, then stop
+		holder.position.z -= 0.12 if i < 15 else 0.0
+		await tree.process_frame
+	check(swing.biggest_swing > 3.0, "the hair swings when he moves (%.1f degrees)" % swing.biggest_swing)
+	# (on its own a link bends at most MAX_BEND; the body pushing the hair aside may bend it more, never back on itself)
+	check(swing.biggest_fold < 90.0, "no link folds back on itself (sharpest bend %.1f degrees)" % swing.biggest_fold)
+	holder.free()

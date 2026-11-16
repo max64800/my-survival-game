@@ -23,6 +23,9 @@ const BODY := "res://assets/characters/dwarf/dwarf_body.glb"
 ## start the game with "newdwarf" (godot --path . -- newdwarf), or set use_body before build(). After the OK: true.
 const BODY_ON := false
 var use_body := BODY_ON or "newdwarf" in OS.get_cmdline_user_args()
+## With the hand-built body the head keeps only this much of each animation's neck and head turning: it sits right on
+## the shoulders with a big beard on the chest, so a full human nod pushed the face into the chest (F183).
+const BODY_HEAD_FOLLOW := 0.35
 const LIBS := {"": "res://assets/characters/anims/UAL1.glb", "b": "res://assets/characters/anims/UAL2.glb"}
 const HEIGHT := 0.98  ## where the head bone ends up (metres); with the helmet the dwarf is ~1.3 m tall
 const WIDTH := 1.2    ## a little extra width overall (most of the bulk comes from DwarfProportions)
@@ -105,6 +108,8 @@ func build(tint: Color) -> void:
 	var prop := DwarfProportions.new()
 	skeleton.add_child(prop)
 	prop.setup(skeleton)
+	if use_body and ResourceLoader.exists(BODY):
+		prop.head_follow = BODY_HEAD_FOLLOW
 	proportions = prop
 	# Size: put the head bone at HEIGHT, and make the dwarf a bit wider.
 	var head := skeleton.find_bone("Head")
@@ -138,6 +143,8 @@ func _wear_body(path: String) -> void:
 	skel_in_look = transform * skel_in_look
 	var model_to_skel := skel_in_look.affine_inverse() * Transform3D(Basis(Vector3.UP, PI), Vector3.ZERO)
 	var src: Node = (load(path) as PackedScene).instantiate()
+	var chains := _add_swing_bones(src, poses, model_to_skel)
+	var colliders := _fit_colliders(src, poses, model_to_skel)
 	for mi: MeshInstance3D in src.find_children("*", "MeshInstance3D", true, false):
 		var skin := Skin.new()
 		if mi.skin:
@@ -155,6 +162,104 @@ func _wear_body(path: String) -> void:
 		mi.layers = DwarfModel.VISUAL_LAYER
 		_add_rim(mi)
 	src.free()
+	var head := skeleton.find_bone("Head")
+	_add_springs(chains, colliders, poses[head] if head >= 0 else Transform3D(), head)
+
+
+## Collision balls inside the torso for the swinging hair (HairSwing): a grid of points inside the shirt, each the
+## biggest ball that fits there (touching the shirt), kept if it's big enough, riding on the nearest spine bone.
+func _fit_colliders(src: Node, poses: Array, model_to_skel: Transform3D) -> Array:
+	var out := []
+	var shirt := src.find_child("body_shirt_body*", true, false) as MeshInstance3D
+	if shirt == null:
+		return out
+	var verts: PackedVector3Array = shirt.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]  # model space: metres, y up, front +z
+	var lo := Vector3.INF
+	var hi := -Vector3.INF
+	for v in verts:
+		lo = lo.min(v)
+		hi = hi.max(v)
+	var spine := []
+	for b in ["pelvis", "spine_01", "spine_02", "spine_03"]:
+		var i := skeleton.find_bone(b)
+		if i >= 0:
+			spine.append([i, (model_to_skel.affine_inverse() * (poses[i] as Transform3D)).origin.y])
+	var y := lo.y + 0.06
+	while y < hi.y - 0.03:
+		for x in [-0.15, 0.0, 0.15]:
+			var z := lo.z + 0.06
+			while z < hi.z - 0.05:
+				var c := Vector3(x, y, z)
+				var r := INF
+				for v in verts:
+					r = minf(r, c.distance_to(v))
+				if r >= 0.07:
+					var best: Array = spine[0]
+					for s in spine:
+						if absf(float(s[1]) - y) < absf(float(best[1]) - y):
+							best = s
+					var b: int = best[0]
+					out.append({"bone": b, "local": (poses[b] as Transform3D).affine_inverse() * (model_to_skel * c), "radius": r - 0.004})
+				z += 0.06
+		y += 0.07
+	# the shoulders and upper arms (the shirt bulges with them when the arms swing): balls along each upper arm
+	for side in ["l", "r"]:
+		var a := skeleton.find_bone("upperarm_" + side)
+		var e := skeleton.find_bone("lowerarm_" + side)
+		if a < 0 or e < 0:
+			continue
+		var sa := (poses[a] as Transform3D).origin
+		var se := (poses[e] as Transform3D).origin
+		for f in [0.0, 0.35, 0.7]:
+			var c := sa.lerp(se, f)
+			out.append({"bone": a, "local": (poses[a] as Transform3D).affine_inverse() * c, "radius": 0.11})
+	return out
+
+
+## The hand-built body brings its own swing bones (the braids and the back hair: "hair_<chain>_1..n", F192). Add them
+## to our skeleton where the body was built, each hanging from its parent bone; returns {chain: [bone indices]}.
+func _add_swing_bones(src: Node, poses: Array, model_to_skel: Transform3D) -> Dictionary:
+	var chains := {}
+	var found := src.find_children("*", "Skeleton3D", true, false)
+	if found.is_empty():
+		return chains
+	var ssk := found[0] as Skeleton3D
+	var to_model := Transform3D()  # the source skeleton's place in the model
+	var n: Node = ssk
+	while n != null and n != src:
+		if n is Node3D:
+			to_model = (n as Node3D).transform * to_model
+		n = n.get_parent()
+	for i in ssk.get_bone_count():
+		var bname := ssk.get_bone_name(i)
+		if not bname.begins_with("hair_") or skeleton.find_bone(bname) >= 0:
+			continue
+		# Hair bones hang off the skeleton's root, not the head: every bone under the head inherits its uneven stretch
+		# (the dwarf shaping), so a turning hair bone also stretched and skewed. HairSwing places each hair bone
+		# directly every frame, following the head. Each is a plain turn + position (no stretch), bound where built.
+		var global: Transform3D = model_to_skel * to_model * ssk.get_bone_global_rest(i)
+		global = Transform3D(Basis(global.basis.get_rotation_quaternion()), global.origin)
+		var root := 0
+		var idx := skeleton.add_bone(bname)
+		skeleton.set_bone_parent(idx, root)
+		skeleton.set_bone_rest(idx, (poses[root] as Transform3D).affine_inverse() * global)
+		skeleton.reset_bone_pose(idx)
+		poses.append(global)
+		var chain := bname.rsplit("_", true, 1)[0]
+		if not chains.has(chain):
+			chains[chain] = []
+		chains[chain].append(idx)
+	return chains
+
+
+## Springs on the swing bones: the tufts trail behind when the dwarf moves and bounce back (HairSwing).
+func _add_springs(chains: Dictionary, colliders: Array, head_rest: Transform3D, head: int) -> void:
+	if chains.is_empty() or head < 0:
+		return
+	var swing := HairSwing.new()
+	swing.name = "HairSwing"
+	skeleton.add_child(swing)  # (after DwarfProportions: it swings the shaped dwarf)
+	swing.setup(chains, colliders, head, head_rest)
 
 
 ## Every bone as the dwarf stands at rest, shaped by DwarfProportions (skeleton space, each bone's thickness included).

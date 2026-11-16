@@ -32,3 +32,21 @@ func test_creatures_load_with_their_pictures() -> void:
 			check(missing.is_empty(), "%s: every baked part has its picture (missing: %s)" % [f, missing])
 			seen += 1
 	check(seen > 0, "found creature models to check")
+
+
+## The hand-built dwarf (round 2, Nov 16): its sculpted head, eyes and copper rings are baked too.
+func test_dwarf_body_loads_with_its_pictures() -> void:
+	if not ResourceLoader.exists(DwarfRig.BODY):
+		return
+	var missing := _baked_without_picture(DwarfRig.BODY)
+	check(missing.is_empty(), "the dwarf's baked parts have their pictures (missing: %s)" % [missing])
+	var scene: PackedScene = load(DwarfRig.BODY)
+	var root := scene.instantiate()
+	var baked := 0
+	for mi: MeshInstance3D in root.find_children("*", "MeshInstance3D", true, false):
+		for i in mi.mesh.get_surface_count():
+			var m := mi.mesh.surface_get_material(i)
+			if m is StandardMaterial3D and String(m.resource_name).ends_with("_baked"):
+				baked += 1
+	root.free()
+	check(baked >= 3, "the head, eyes and copper rings are baked (%d baked parts)" % baked)

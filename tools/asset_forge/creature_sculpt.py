@@ -646,9 +646,10 @@ def carve_moss(o, seed=4, height=0.03, cover=0.15):
 	_apply_all(o)
 
 
-def bake(high, low, tex_size=1024, name="baked", normal=True, emissive=0.0):
+def bake(high, low, tex_size=1024, name="baked", normal=True, emissive=0.0, ext=0.03):
 	"""Bake the dense sculpt (with its paint material) onto the light copy: colour + normal map. Returns the low
-	copy's new game material (painted colour, normal map)."""
+	copy's new game material (painted colour, normal map). ext: how far (m) the bake looks out from the light copy
+	for the sculpt (smaller for parts packed close together, like hair locks, so it doesn't pick up a neighbour)."""
 	scene = bpy.context.scene
 	scene.render.engine = "CYCLES"
 	scene.cycles.samples = 24
@@ -681,7 +682,6 @@ def bake(high, low, tex_size=1024, name="baked", normal=True, emissive=0.0):
 	high.select_set(True)
 	low.select_set(True)
 	bpy.context.view_layer.objects.active = low
-	ext = 0.03
 	nt.nodes.active = tcol
 	bpy.ops.object.bake(type="EMIT", use_selected_to_active=True, cage_extrusion=ext, max_ray_distance=ext * 2, margin=8)
 	if normal:

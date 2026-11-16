@@ -120,3 +120,29 @@ legs, belly, face) and `EXTRA_PAINT` (ice, crystals, wood, mushrooms). Snow on t
 amount))`. Lava: the crack layer carved flat (`moss_h=0.012`) and baked as `glow_lava_baked` with its own glow.
 Mistakes made: a hammer horn on a short post was buried in the front stones (the head must clear the shell top);
 the first add-ons were too small to see; the first snow covered whole stones (only the tops, `normal.z > 0.55`).
+
+## Part 4: faces, hair and beards (learned on the dwarf, round 2, Nov 16)
+
+The worked example: `tools/asset_forge/builds/dwarf_head.py`. What carried over from the beetle and what was new:
+1. **Measure the picture first, and check numbers before pictures.** `measure()` prints sizes against the picture and
+   whether the eyes, ears and nose can be seen (rays from the front and side). It caught a missing face for free.
+2. **Faces are clay, not glued blobs.** Melting blobs keeps them looking like balls. `Clay` blends shapes with a chosen
+   fillet (soft union), scoops sockets out, and makes the mesh (surface nets). Keep every shape inside the grid.
+3. **Eyes sit in scooped sockets** under the brow ridge; one lid shell per eye with an almond opening (lower lid higher =
+   a smile), sunk 1.5 mm into the ball. A socket deeper than the lids fill looks like dark rings.
+4. **Hair = a mass plus locks.** A clay mass gives the shape; flame locks (`lock()`: flat, swelling then pointed, grooves
+   along it) lie on it like shingles with the tips lifting. Long locks pointing outward look like a sunburst.
+5. **Beards lie on the body.** Every lock is built 1.2 cm off the body, then the melted skin is pushed out where it still
+   touches. Braids: slanting leaf lobes from each side in turn (`braid()`); filler in front of them shows as balls.
+6. **One paint, soft borders.** Give each point its colour (a `tint` attribute) instead of switching materials per face:
+   switching per face makes a staircase hairline.
+7. **Clipping is checked in motion, in Godot** (`dwarf_pose_dump.gd` + `dwarf_clip_check.py`). Blender bends unevenly
+   stretched bones differently, so its numbers were wrong. Below the chin the beard follows the bones of the shirt it
+   lies on, and nothing on the body may follow a bone that sits inside it (this skeleton's Head bone is in the chest).
+8. **Hard lines, not soft shade** (owner): paint a crisp dark line where one lock meets the next and down each groove,
+   from each lock's id and groove stored before melting (`hard_lines()`). Crease-depth shading was invisible once baked.
+9. **Hair that swings** (`src/player/hair_swing.gd`): chains of many bones (7 per braid), each joint keeps its speed,
+   drag, pulled back toward where the head carries it, at most 30 degrees bend per joint, fixed lengths, collision balls
+   inside the body. On this scaled skeleton the hair bones hang from the root and are placed directly each frame (bones
+   under the stretched head skew; Godot's SpringBoneSimulator3D fails for the same reason). Check it in numbers inside
+   the modifier (Godot reports the human-sized pose there).

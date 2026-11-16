@@ -1,6 +1,10 @@
 # The player dwarf's body, hand-built around the game's real skeleton (Claude 3, Nov 16, 2026; MODEL-RULES Rule 1).
 #
-#   blender --background --factory-startup --python tools/asset_forge/builds/dwarf_body.py -- <skeleton.json> <out.glb> [preview.png]
+#   blender --background --factory-startup --python tools/asset_forge/builds/dwarf_body.py -- <skeleton.json> <out.glb> [fast] [review=<pic.png>]
+#
+# fast: build the head, hair and beard without the light copy and the bake, and stop (shape checks, ~1 min).
+# review=<pic.png>: also photograph the head front and side next to the approved head picture.
+# Round 2 (Nov 16): the head, hair and beard come from dwarf_head.py (melted into one sculpted skin, laid on the body).
 #
 # <skeleton.json> comes from tools/asset_forge/dwarf_skeleton_dump.gd: every bone of the game dwarf, shaped by
 # DwarfProportions and standing in its rest pose (a T-pose), in the player's look space (metres, feet at y=0, facing -Z).
@@ -28,11 +32,14 @@ import bpy
 from mathutils import Matrix, Vector
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 import creature_kit as ck  # noqa: E402
+import dwarf_head as dh  # noqa: E402
 
 ARGS = sys.argv[sys.argv.index("--") + 1:]
 SKEL, OUT = ARGS[0], ARGS[1]
-PREVIEW = ARGS[2] if len(ARGS) > 2 and ARGS[2] else None
+FAST = "fast" in ARGS[2:]
+REVIEW = next((a[7:] for a in ARGS[2:] if a.startswith("review=")), None)
 ck.reset()
 R = random.Random(11)
 
@@ -61,10 +68,6 @@ skin = ck.color("skin", (0.86, 0.6, 0.48), rough=0.7)
 shirt = ck.color("shirt", (0.86, 0.8, 0.68), rough=0.9)
 shorts = ck.color("shorts", (0.46, 0.31, 0.2), rough=0.9)
 wraps = ck.color("wraps", (0.8, 0.72, 0.58), rough=0.9)
-hair = ck.color("hair", (0.72, 0.33, 0.14), rough=0.8)
-copper = ck.color("copper", (0.78, 0.46, 0.26), rough=0.4, metal=0.6)
-eye_white = ck.color("eye", (0.95, 0.92, 0.86), rough=0.3)
-pupil = ck.color("pupil", (0.08, 0.05, 0.04), rough=0.3)
 
 UP = Vector((0, 0, 1))
 FWD = Vector((0, -1, 0))  # Blender: the dwarf faces -Y
@@ -133,56 +136,18 @@ for s in (-1, 1):
 		(Vector((ball.x, ball.y, 0.055)), 0.088, 0.055), (Vector((toe.x, toe.y - 0.02, 0.04)), 0.07, 0.038)], wraps, sides=16, up=UP)
 ring_loft("shorts_seat", [(0.3, 0.27, 0.2, 0.15), (0.38, 0.29, 0.25, 0.18), (0.44, 0.29, 0.27, 0.18)], shorts, sides=24)
 
-# ---------------------------------------------------------------- the head
+# ---------------------------------------------------------------- the head, hair and beard (round 2: dwarf_head.py)
+# One melted, sculpted skin built around the body (the beard and hair lie ON it with a 1.2 cm gap), separate eyes and
+# copper rings. Placed from the picture: crown at 1.19 m, the skull's middle above the body's middle.
 head = B("Head")
-skull_c = head + Vector((0, -0.03, 0.18))  # the round head sits high: the shoulders are above the head bone
-ck.blob(tuple(skull_c), (0.15, 0.15, 0.16), skin, seed=21, jitter=0.02)               # the round head, bald on top
-ck.blob(tuple(skull_c + Vector((0, -0.13, -0.05))), (0.058, 0.055, 0.05), skin, seed=22, jitter=0.03)  # the big round nose
-for s in (-1, 1):
-	ck.blob(tuple(skull_c + Vector((s * 0.085, -0.115, -0.05))), (0.045, 0.035, 0.04), skin, seed=23 + s, jitter=0.03)  # cheeks
-	ck.blob(tuple(skull_c + Vector((s * 0.152, 0.0, -0.01))), (0.025, 0.035, 0.05), skin, seed=25 + s, jitter=0.03)    # ears
-	e = skull_c + Vector((s * 0.055, -0.13, 0.02))
-	ck.blob(tuple(e), (0.024, 0.02, 0.024), eye_white, seed=27, jitter=0.0)
-	ck.blob(tuple(e + Vector((0, -0.017, 0))), (0.012, 0.008, 0.012), pupil, seed=28, jitter=0.0)
-	ck.loft(f"brow_{s}", [(skull_c + Vector((s * 0.02, -0.14, 0.06)), 0.02, 0.016), (skull_c + Vector((s * 0.06, -0.142, 0.065)), 0.03, 0.02),
-		(skull_c + Vector((s * 0.1, -0.12, 0.055)), 0.02, 0.015)], hair, sides=10)                                      # bushy brows
-# the ring of hair: from the temples round the back, thick and lumpy, the top stays bald
-for k in range(13):
-	a = math.radians(-115 + k * (230 / 12))  # 0 = the back of the head
-	c = skull_c + Vector((math.sin(a) * 0.14, math.cos(a) * 0.13, 0.02 + 0.02 * math.cos(a)))
-	ck.blob(tuple(c), (0.06, 0.06, 0.075), hair, seed=40 + k, jitter=0.12)
-
-# ---------------------------------------------------------------- the beard, moustache and three braids
-jaw = skull_c + Vector((0, -0.1, -0.12))
-ck.blob(tuple(jaw), (0.16, 0.09, 0.09), hair, seed=60, jitter=0.1)                             # the beard round the jaw
-ck.blob(tuple(P(0, 0.83, -0.18)), (0.16, 0.08, 0.1), hair, seed=61, jitter=0.1)                # down over the chest, in front of it
-ck.blob(tuple(P(0, 0.73, -0.27)), (0.13, 0.07, 0.08), hair, seed=62, jitter=0.1)
-for s in (-1, 1):
-	m0 = skull_c + Vector((0, -0.17, -0.085))
-	ck.loft(f"moustache_{s}", [(m0, 0.035, 0.025), (m0 + Vector((s * 0.06, 0.0, -0.01)), 0.035, 0.025),
-		(m0 + Vector((s * 0.11, 0.03, 0.0)), 0.025, 0.02), (m0 + Vector((s * 0.14, 0.04, 0.025)), 0.012, 0.012)], hair, sides=10)
-
-
-def braid(name, top, bottom, r):
-	"""A braid: plump bumps along it (the plaits), a copper ring two-thirds down, a little tuft at the end."""
-	pts, radii = [], []
-	n = 9
-	for k in range(n):
-		t = k / (n - 1)
-		pts.append(top.lerp(bottom, t))
-		radii.append(r * (1.0 - 0.25 * t) * (1.0 + 0.12 * math.cos(k * math.pi)))
-	tube(name, pts, radii, hair, sides=12)
-	ringp = top.lerp(bottom, 0.66)
-	d = (bottom - top).normalized()
-	ck.loft(name + "_ring", [(ringp - d * 0.025, r * 0.95, r * 0.95), (ringp, r * 1.12, r * 1.12), (ringp + d * 0.025, r * 0.95, r * 0.95)],
-		copper, sides=16, subsurf=0)
-	ck.blob(tuple(bottom + d * 0.025), (r * 0.8, r * 0.8, r * 1.1), hair, seed=hash(name) % 97, jitter=0.15)
-
-
-belly_front = 0.36  # look z (front = -z): the braids hang just in front of the shirt
-braid("braid_mid", P(0, 0.7, -0.3), P(0, 0.5, -belly_front), 0.045)
-for s in (-1, 1):
-	braid(f"braid_{'l' if s < 0 else 'r'}", P(-s * 0.1, 0.8, -0.24), P(-s * 0.13, 0.62, -0.33), 0.038)
+BODY_PARTS = [o for o in bpy.context.scene.objects if o.type == "MESH"]
+HEAD = dh.build(BODY_PARTS, fast=FAST)
+if REVIEW:
+	dh.review(REVIEW)
+if FAST:
+	print("DWARF_FAST_DONE")
+	sys.exit(0)
+HEAD_OBJS = [HEAD["head"], HEAD["eyes"], HEAD["rings"]]
 
 # ---------------------------------------------------------------- the skeleton, and which bones move which part
 meshes = [o for o in bpy.context.scene.objects if o.type == "MESH"]
@@ -220,28 +185,66 @@ for i, b in enumerate(DATA):
 for i, b in enumerate(DATA):
 	if b["parent"] >= 0:
 		ebones[i].parent = ebones[b["parent"]]
+# Swing bones (owner, F192: the braids and the back hair were glued to the body): a chain down each braid, from under
+# the chin to the tuft's tip, hanging from the chest; and one down the back hair, hanging from the head. The game adds
+# them to its skeleton and lets them swing (DwarfRig: spring bones).
+CHAINS = {}  # chain name -> [(bone name, head, tail)]
+
+
+def chain_along(pts, fracs):
+	d = [0.0]
+	for p, q in zip(pts[:-1], pts[1:]):
+		d.append(d[-1] + (q - p).length)
+
+	def at(f):
+		s = f * d[-1]
+		for k in range(len(pts) - 1):
+			if d[k + 1] >= s:
+				return pts[k].lerp(pts[k + 1], (s - d[k]) / max(d[k + 1] - d[k], 1e-9))
+		return pts[-1].copy()
+	return [at(f) for f in fracs]
+
+
+def path_s(pts, p):
+	"""How far along the polyline the point nearest to p is."""
+	best, s0 = (1e9, 0.0), 0.0
+	for a, b in zip(pts[:-1], pts[1:]):
+		ab = b - a
+		t = min(max((p - a).dot(ab) / max(ab.length_squared, 1e-12), 0.0), 1.0)
+		d = (a + ab * t - p).length
+		if d < best[0]:
+			best = (d, s0 + t * ab.length)
+		s0 += ab.length
+	return best[1], s0
+
+
+# Real hair chains (owner, round 2b: "the 3 braids need a lot of skeleton points where it bends"): 7 bones down each
+# whole braid, from under the chin to the tuft's tip, and 4 down each of three strands of back hair, all hanging from
+# the head. The game swings them and keeps them out of the body with collision balls (HairSwing).
+for bd, tag in zip(dh.BRAIDS, ("m", "a", "b")):
+	joints = chain_along(bd["path"], [k / 7 for k in range(8)])
+	CHAINS[f"hair_braid_{tag}"] = (bd, joints, "Head")
+for k, pts in enumerate(dh.BACKS):
+	CHAINS[f"hair_back_{'lmr'[k] if len(dh.BACKS) == 3 else k}"] = (None, chain_along(pts, [i / 4 for i in range(5)]), "Head")
+for cname, (bd, joints, parent) in CHAINS.items():
+	prev = arm_data.edit_bones[parent]
+	for k in range(len(joints) - 1):
+		eb = arm_data.edit_bones.new(f"{cname}_{k + 1}")
+		eb.head, eb.tail = joints[k], joints[k + 1]
+		eb.parent = prev
+		eb.use_deform = False  # (off while Blender weighs the body: the shirt must not follow the hair)
+		prev = eb
 bpy.ops.object.mode_set(mode="OBJECT")
 
-HEAD_PARTS = ("brow", "moustache", "braid", "Blob")
 bpy.ops.object.select_all(action="DESELECT")
-rigid_head = []
 for o in meshes:
-	c = sum((Vector(v) for v in o.bound_box), Vector()) / 8
-	if o.data.materials and o.data.materials[0].name in ("hair", "eye", "pupil", "copper") or (c.z > head.z - 0.02 and abs(c.x) < 0.2):
-		rigid_head.append(o)  # head, face, hair, beard, braids and their rings ride on the head bone
-for o in meshes:
-	if o in rigid_head:
-		o.parent = arm
-		o.parent_type = "OBJECT"
-		vg = o.vertex_groups.new(name="Head")
-		vg.add(list(range(len(o.data.vertices))), 1.0, "REPLACE")
-		mod = o.modifiers.new("skeleton", "ARMATURE")
-		mod.object = arm
-	else:
+	if o not in HEAD_OBJS:
 		o.select_set(True)
 arm.select_set(True)
 bpy.context.view_layer.objects.active = arm
 bpy.ops.object.parent_set(type="ARMATURE_AUTO")  # Blender works out the bone weights from the shape
+for bone in arm_data.bones:
+	bone.use_deform = True
 # Nothing follows the "root" bone (the skeleton's anchor on the floor between the feet: it runs up through the crotch,
 # so the automatic weighting gives it the seat of the shorts). Its share goes to the hips (pelvis).
 for o in meshes:
@@ -255,9 +258,143 @@ for o in meshes:
 				cur = next((x.weight for x in v.groups if x.group == pg.index), 0.0)
 				pg.add([v.index], cur + g.weight, "REPLACE")
 	o.vertex_groups.remove(rg)
+# Nothing on the body follows the neck or the head either: in this skeleton the Head bone sits INSIDE the upper chest
+# (0.85 m, below the shoulders), so the automatic weighting gave it the shirt's chest, which then swung up into the
+# face and beard whenever the head nodded (round 2's clipping check). Their share goes to the upper chest (spine_03).
+for o in meshes:
+	if o in HEAD_OBJS:
+		continue
+	cg = o.vertex_groups.get("spine_03") or o.vertex_groups.new(name="spine_03")
+	for bone in ("Head", "neck_01"):
+		g = o.vertex_groups.get(bone)
+		if g is None:
+			continue
+		for v in o.data.vertices:
+			for x in v.groups:
+				if x.group == g.index and x.weight > 0.0:
+					cur = next((y.weight for y in v.groups if y.group == cg.index), 0.0)
+					cg.add([v.index], cur + x.weight, "REPLACE")
+		o.vertex_groups.remove(g)
+# The head, hair and beard: the face and the top of the head ride on the Head bone. Lower down, the beard and the hair on
+# the back follow the shirt they lie on (its bones, copied from the nearest shirt point), blended in over 10 cm under the
+# chin. (Owner, F183: all on the head bone, the long beard swung through the belly when the head moved: the Head bone
+# turns at shoulder height, 40 cm above the beard's tip.)
+from mathutils import kdtree  # noqa: E402
+LOW, HIGH = 0.865, 0.96  # metres: below LOW only the shirt's bones, above HIGH only the head
+sp, sw = [], []
+for o in meshes:
+	if o in HEAD_OBJS or not o.data.materials or o.data.materials[0].name != "shirt":
+		continue
+	names = {vg.index: vg.name for vg in o.vertex_groups}
+	for v in o.data.vertices:
+		sp.append(o.matrix_world @ v.co)
+		sw.append({names[g.group]: g.weight for g in v.groups if g.weight > 0.0})
+skd = kdtree.KDTree(len(sp))
+for i, p in enumerate(sp):
+	skd.insert(p, i)
+skd.balance()
+
+
+def head_share(z):
+	x = min(max((z - LOW) / (HIGH - LOW), 0.0), 1.0)
+	return x * x * (3 - 2 * x)
+
+
+def set_weights(o, per_vertex):
+	o.parent = arm
+	o.parent_type = "OBJECT"
+	groups = {}
+	for i, ws in enumerate(per_vertex):
+		for name, w in ws.items():
+			if name not in groups:
+				groups[name] = o.vertex_groups.new(name=name)
+			groups[name].add([i], w, "REPLACE")
+	o.modifiers.new("skeleton", "ARMATURE").object = arm
+
+
+head_w = []
+for v in HEAD["head"].data.vertices:
+	p = HEAD["head"].matrix_world @ v.co
+	t = head_share(p.z)
+	ws = {"Head": t} if t > 0 else {}
+	if t < 1:
+		for name, w in sw[skd.find(p)[1]].items():
+			ws[name] = ws.get(name, 0.0) + (1 - t) * w
+	head_w.append(ws)
+
+
+def along(pts, p):
+	"""(distance along the polyline, distance from it) of point p."""
+	best, s0 = (1e9, 0.0), 0.0
+	for a, b in zip(pts[:-1], pts[1:]):
+		ab = b - a
+		t = min(max((p - a).dot(ab) / max(ab.length_squared, 1e-12), 0.0), 1.0)
+		d = (a + ab * t - p).length
+		if d < best[0]:
+			best = (d, s0 + t * ab.length)
+		s0 += ab.length
+	return best[1], best[0], s0
+
+
+def smooth01(x):
+	x = min(max(x, 0.0), 1.0)
+	return x * x * (3 - 2 * x)
+
+
+# the braids and the back hair follow their swing bones (blended in below the chin, so the beard stays joined to the face)
+back_owner = {}  # head point -> its nearest back-hair strand
+backs = {c: j for c, (bd, j, _) in CHAINS.items() if bd is None}
+if backs:
+	for vi, v in enumerate(HEAD["head"].data.vertices):
+		p = HEAD["head"].matrix_world @ v.co
+		if dh.C.y - p.y > -0.05:
+			continue
+		back_owner[vi] = min(backs, key=lambda c: along(backs[c], p)[1])
+for cname, (bd, joints, parent) in CHAINS.items():
+	nb = len(joints) - 1
+	jd = [0.0]
+	for p, q in zip(joints[:-1], joints[1:]):
+		jd.append(jd[-1] + (q - p).length)
+	for vi, v in enumerate(HEAD["head"].data.vertices):
+		p = HEAD["head"].matrix_world @ v.co
+		s, d, total = along(joints, p)
+		if bd is not None:  # the whole braid (blended in over its top 3 cm, under the chin)
+			m = smooth01(s / 0.03) * (1.0 - smooth01((d - bd["reach"]) / (bd["reach"] * 0.6)))
+		else:  # the back hair: behind the skull, from the nape down; each point goes with its nearest strand
+			v_, w_ = p.z - dh.C.z, dh.C.y - p.y
+			if back_owner.get(vi) != cname:
+				continue
+			m = smooth01((0.0 - v_) / 0.05) * smooth01((-w_ - 0.05) / 0.04) * (1.0 - smooth01((d - 0.1) / 0.05))
+		if m <= 0.0:
+			continue
+		c = 0.0  # where along the chain, in bones (bone k's middle = k)
+		for k in range(nb):
+			if s <= jd[k + 1] or k == nb - 1:
+				c = k + min(max((s - jd[k]) / max(jd[k + 1] - jd[k], 1e-9), 0.0), 1.0) - 0.5
+				break
+		ws = {name: w * (1 - m) for name, w in head_w[vi].items()}
+		for k in range(nb):
+			wk = max(0.0, 1.0 - abs(min(max(c, 0.0), nb - 1) - k))
+			if wk > 0:
+				ws[f"{cname}_{k + 1}"] = ws.get(f"{cname}_{k + 1}", 0.0) + m * wk
+		head_w[vi] = ws
+print("DWARF swing bones:", {k: len(j) - 1 for k, (_, j, _) in CHAINS.items()})
+set_weights(HEAD["head"], head_w)
+set_weights(HEAD["eyes"], [{"Head": 1.0}] * len(HEAD["eyes"].data.vertices))
+hkd = kdtree.KDTree(len(head_w))
+for v in HEAD["head"].data.vertices:
+	hkd.insert(HEAD["head"].matrix_world @ v.co, v.index)
+hkd.balance()
+ring_w = [None] * len(HEAD["rings"].data.vertices)
+for isl in dh.cs.islands(HEAD["rings"]):  # each ring moves as one piece, with the braid it's on
+	c = sum((HEAD["rings"].matrix_world @ HEAD["rings"].data.vertices[i].co for i in isl), Vector()) / len(isl)
+	ws = head_w[hkd.find(c)[1]]
+	for i in isl:
+		ring_w[i] = ws
+set_weights(HEAD["rings"], ring_w)
+print("DWARF head weights: head share at the chin", round(head_share(0.944), 2), "; shirt points", len(sp))
 # Points the automatic weighting couldn't reach (e.g. a cap's middle between the legs) get the bones of their nearest
 # weighted neighbour: a point with no bone at all is pulled to the floor's middle by most engines (a long spike).
-from mathutils import kdtree  # noqa: E402
 unweighted_total = 0
 for o in meshes:
 	vs = o.data.vertices
@@ -287,12 +424,14 @@ for o in meshes:
 			o.vertex_groups[names[gi]].remove([v.index])
 		for w, gi in keep:
 			o.vertex_groups[names[gi]].add([v.index], w / total, "REPLACE")
-bad = [o.name for o in meshes if o not in rigid_head and not any(len(vg.name) for vg in o.vertex_groups)]
+bad = [o.name for o in meshes if not any(len(vg.name) for vg in o.vertex_groups)]
 print("DWARF auto-weights missing on:", bad)
 
 bpy.ops.object.select_all(action="SELECT")
 bpy.ops.export_scene.gltf(filepath=OUT, export_format="GLB", use_selection=True, export_yup=True, export_skins=True,
-	export_animations=False, export_apply=False)
+	export_animations=False, export_apply=False, export_image_format="JPEG", export_image_quality=88)
+import glb_jpeg_fix  # noqa: E402  every Blender export with JPEG pictures needs this, or Godot shows it white (F164)
+glb_jpeg_fix.fix(OUT)
 lo = Vector([min(min((o.matrix_world @ Vector(v))[k] for v in o.bound_box) for o in meshes) for k in range(3)])
 hi = Vector([max(max((o.matrix_world @ Vector(v))[k] for v in o.bound_box) for o in meshes) for k in range(3)])
-print(f"DWARF_DONE {OUT} size {hi.x - lo.x:.2f} x {hi.y - lo.y:.2f} x {hi.z - lo.z:.2f} m, {len(meshes)} parts, {len(rigid_head)} on the head bone")
+print(f"DWARF_DONE {OUT} size {hi.x - lo.x:.2f} x {hi.y - lo.y:.2f} x {hi.z - lo.z:.2f} m, {len(meshes)} parts")

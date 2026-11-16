@@ -37,6 +37,13 @@ const LENGTHS := {
 	"neck_01": 0.3, "Head": 0.5,                # hardly any neck
 }
 
+## How much of the animation's neck and head turning the dwarf keeps (1 = all of it). The hand-built body sets this
+## lower: its head sits right on the shoulders and its beard lies on the chest, so a human-sized nod (up to 90 degrees
+## in the sword swing) pushed the face and the beard into the chest (F183; tools/asset_forge/dwarf_clip_check.py).
+var head_follow := 1.0
+var _turners := PackedInt32Array()  ## neck_01 and Head
+var _turn_anim := {}     ## bone -> the rotation the animation wrote
+var _turn_written := {}  ## bone -> the rotation we wrote (to tell if the animation wrote a new one)
 var _pos := {}    ## bone index -> new local position
 var _scale := {}  ## bone index -> scale
 var _pelvis := -1
@@ -64,6 +71,9 @@ func setup(sk: Skeleton3D) -> void:
 		var above: Vector3 = total[p] if p >= 0 else Vector3.ONE
 		_pos[i] = sk.get_bone_rest(i).origin * LENGTHS[b] / above
 	_pelvis = sk.find_bone("pelvis")
+	for b in ["neck_01", "Head"]:
+		if sk.find_bone(b) >= 0:
+			_turners.append(sk.find_bone(b))
 	for b in ["ball_l", "ball_r", "foot_l", "foot_r"]:
 		if sk.find_bone(b) >= 0:
 			_feet.append(sk.find_bone(b))
@@ -118,6 +128,14 @@ func _process_modification_with_delta(_delta: float) -> void:
 		sk.set_bone_pose_position(i, _pos[i])
 	for i in _scale:
 		sk.set_bone_pose_scale(i, _scale[i])
+	if head_follow < 1.0:
+		for i in _turners:  # keep only part of the turn away from the rest pose; like the hips, never shrink it twice
+			var now := sk.get_bone_pose_rotation(i)
+			if not (_turn_written.has(i) and now.is_equal_approx(_turn_written[i])):
+				_turn_anim[i] = now
+			var rest := sk.get_bone_rest(i).basis.get_rotation_quaternion()
+			_turn_written[i] = rest.slerp(_turn_anim[i], head_follow)
+			sk.set_bone_pose_rotation(i, _turn_written[i])
 	if _pelvis >= 0:
 		# Only lower the hips from what the animation wrote, never twice (if the animation
 		# skipped a frame, the pose still holds our own lowered value).

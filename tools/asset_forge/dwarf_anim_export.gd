@@ -61,6 +61,8 @@ func _init() -> void:
 	root.add_child(scene)
 	await process_frame
 	var doc := GLTFDocument.new()
+	doc.image_format = "JPEG"  # (round 2: the baked head pictures; PNG would make the 3D page ~4x bigger)
+	doc.lossy_quality = 0.88
 	var st := GLTFState.new()
 	var err := doc.append_from_scene(scene, st)
 	err = err if err != OK else doc.write_to_filesystem(st, out)
@@ -128,7 +130,7 @@ func _record(rig: DwarfRig, clip: String, seconds: float, what: String) -> Anima
 	var t := 0.0
 	var start := Time.get_ticks_usec()
 	while t <= seconds:
-		await process_frame
+		await sk.skeleton_updated  # (the final pose, after every modifier: hair swing, dwarf shaping)
 		t = (Time.get_ticks_usec() - start) / 1000000.0
 		if t > seconds:
 			break

@@ -2090,6 +2090,71 @@ You tried the dev menu and asked for four things:
   committed.
 - Full test run: 359 checks, all passed.
 
+## November 16, 2026 (PC, Claude): the hand-built dwarf, round 2 (the head and beard, F183)
+
+**What we did**
+- Rebuilt the dwarf's head, hair and beard the Rock Beetle way, in a new script (`tools/asset_forge/builds/dwarf_head.py`,
+  called by `dwarf_body.py`). Sizes were measured on the approved head picture first: head 24 cm from crown to chin,
+  nose ball 7 cm, moustache 29 cm tip to tip, beard 43 cm wide, the middle braid down to the belly.
+- The face is built like clay: skull, cheeks, nose, lips and chin flow into each other the way clay does when you smooth
+  it with your thumb, and the eye sockets are scooped out. (How: a grid of points that each know how far they are from
+  the surface, a "signed distance", turned into a mesh.)
+- Brown eyes with lids (smiling: the round cheeks push the lower lids up), crow's feet, forehead wrinkles, smile bags,
+  nostrils, a mouth line.
+- Hair: a puffy mass round the back of the head with about 80 flame locks laid on it like roof shingles, tips curling.
+  Bushy brows of thin strands, a curling handlebar moustache growing from under the nose, sideburns, a wide beard, and
+  three real three-strand braids (fat lobes slanting in from each side in turn) with copper rings and flame tufts.
+- Face, ears, lids, hair and beard are melted into ONE skin, then a light copy for the game (44,000 triangles) gets
+  the sculpted detail baked on as pictures. Clay colours only: shape first, paint after the owner's OK.
+- The beard and hair lie ON the body with a 1.2 cm gap, and the lower beard moves with the chest (it copies the bones of
+  the shirt under it) instead of swinging with the head.
+- New automatic checks: number checks before any picture (eyes visible, nose not covered by the moustache, ears
+  visible, sizes against the picture); a clipping check that plays every animation in Godot itself and measures how deep
+  anything goes inside the body (`tools/asset_forge/dwarf_pose_dump.gd` + `dwarf_clip_check.py`); a test that the dwarf
+  arrives in the game with its pictures, not white (`test_model_pictures`).
+- The 3D page "Dwarf Body" shows round 2 (round 1 stays in the list to compare), the approved picture beside it, and
+  Claude's honest score. Pictures: `docs/art/dwarf-round2/`.
+
+**Mistakes and hurdles (including Claude's)**
+- First try: the beard's filler balls landed on the cheeks and buried the moustache, and the hair stuck out like a spiky
+  sunburst. Fixed: the filler went under the jaw, the hair sweeps back.
+- After 2 picture checks the face was still "balls glued together" with the eyes buried. Claude asked the owner for 2
+  more checks (the owner's limit is 2) and rebuilt the face as clay.
+- The clay face once lost its whole front: the neck reached past the edge of the clay grid, which left a hole, and the
+  melt step could no longer tell inside from outside. A number check caught it without a picture (nose tip at 0 cm
+  instead of 19). Fixed: the grid is closed at its edges.
+- The moustache covered half the nose, the ears hid behind the hair, the hairline was a jagged staircase, and 9 filler
+  balls stood in front of the braids. All fixed.
+- The first clipping check ran in Blender and gave wrong numbers: Blender bends this dwarf's unevenly stretched bones
+  differently from Godot. Rebuilt it to use Godot's own bending.
+- The real reasons the beard went into the body: (1) in this skeleton the head bone sits INSIDE the upper chest, so the
+  automatic weighting made the shirt's chest follow the head; (2) the human animations nod the head up to 90 degrees.
+  Fixed: the shirt never follows the head or neck bones, and the new body keeps only 35% of the animations' neck and
+  head turning (`DwarfRig.BODY_HEAD_FOLLOW`). Worst case went from 16 cm to 8.6 cm.
+- Still open (for the body round): standing, walking and jumping are clean (0 to 3 mm), but running, mining, the sword
+  swing and the roll still push the beard 2 to 8 cm into the body. The round 1 shirt's sides and shoulders swing with the
+  arms into the beard.
+- The animation recorder opens a Godot window (it needs one); every run was muted.
+- Full test run: 359 checks, all passed.
+
+**Later the same day: the owner's first look (F203-F207)**
+- Owner: "really good", plus five notes. Fixed four: empty tabs now fade to grey (not black); the Craft button
+  turns into Stop while making (also stops a batch in the short wait between two items); long names shrink until
+  every word fits its card (a check tries every recipe name); bigger cards, 4 per row, bigger text, brighter grey.
+- The hand-built Crystal Torch (F205) is model work with the Blender rules, so it waits for its own chat.
+- Hurdle: Stop had to work in the 0.2 s gap between two items of a batch, when nothing is "being made"; a batch
+  number that Stop changes makes the waiting next item give up.
+
+**Later still: upgrade stats, titles, turning stations (F208-F210)**
+- Hover an upgrade card: each stat now and after the next step (green when better). Gear in the bag shows its stats.
+- Title plaques moved down so they sit under the top frame instead of on it.
+- Q / E turn a station or chest while placing it: a tap is 10 degrees, holding keeps turning. E normally opens
+  stations, so while you're placing something E turns it instead.
+- Hurdle (again): Claude's edit script turned a backslash-n into a real line break in a tooltip; caught and fixed.
+  From now on such text is written with the editor tool, not the script.
+- F-number clash: Claude 2 took F195-F198 for cave-life notes at the same moment, so the menu notes became
+  F203-F210 (crystal torch F205) and the cave research request F211.
+
 ## November 16, 2026 (PC, cave-life Claude): cave life round 2 (F188 again, F195-F198)
 
 **What we did**
@@ -2145,6 +2210,43 @@ behind the nose, the rings clip through the hair; then do the whole body.
 - While Claude was halfway through `hair_swing.gd`, another Claude's test run printed its errors.
 - Clipping now (beard below the chin): standing, walking, jumping 0 mm; sword, chopping 2 cm; run, sprint, mining,
   roll 3 to 4 cm, at the belly's sides where round 1's shirt bulges out with the arms. For the body round.
+- Full test run: 364 checks, all passed.
+
+## November 16, 2026 (PC, dwarf Claude): round 2c, hard lines and real hair animation (F191 🔁, F192, F212)
+
+The owner on round 2b: "I don't see a lot of difference", the side braids clash in the middle, "we need hard lines on
+the beard", the rings are nice, "the animation is not good... the 3 braids need a lot of skeleton points... please
+learn how to do hair animation and implement that."
+
+**What we did**
+- Hard lines: every hair lock remembers which lock it is and where its grooves are before melting; after melting, a
+  crisp dark line is painted wherever one lock meets the next and down each groove (41,000 points; the crease-depth
+  shading of round 2b reached only 360 and was invisible once baked).
+- Side braids moved out (14 cm from the middle) and the slanting locks between the braids replaced by short straight
+  ones; two leftover filler balls under the moustache became locks.
+- Hair animation, the usual game way (spring bones / verlet chains): 7 bones down each whole braid, 3 chains of 4 down
+  the back hair. Each joint keeps its speed, loses some (drag), is pulled back toward where the head would carry it,
+  may bend at most 30 degrees from its resting direction (never folds), keeps its length, and is pushed out of
+  collision balls fitted inside the shirt and along the upper arms (`src/player/hair_swing.gd`). New test: the hair
+  swings and never folds back on itself.
+
+**Mistakes and hurdles (including Claude's)**
+- Several false starts, each found by measuring instead of guessing: (1) gravity piled up down the chain and sagged the
+  tips 21 cm while standing; (2) inside a skeleton modifier, Godot reports the human-sized pose, not the dwarf one;
+  (3) bones under the unevenly stretched head skewed when they turned (the reason Godot's own spring node also failed),
+  so the hair bones now hang from the skeleton root and are placed directly every frame; (4) following only the joint
+  above drifted 10 cm; (5) without an angle limit the chain folded over. All fixed.
+- A measurement mixed up two meanings of "swing" for a while (trailing behind the head vs. a joint folding); the test
+  now checks both separately.
+- Still open (honest): with the braids swinging freely, fast moves (run, roll, sword) push them up to 11 cm into round
+  1's shirt where it bulges with the arms; standing is clean. The body round rebuilds that shirt and its bending.
+- Full test run: 364 checks, all passed.
+- **The owner then saw "no hair moves" on the 3D page, with the braids hanging by his knees.** Claude's mistake: the
+  page recorder read the bones at the start of each frame, before Godot runs the hair and dwarf-shaping steps (Godot
+  undoes their changes after drawing), so it recorded only the hair bones' resting spot, which now hangs from the
+  root on the floor. Fixed: the recorder (and the clipping dump) read the bones when Godot signals the frame's final
+  pose (`skeleton_updated`), and Claude checked the recording itself in numbers before republishing: the braid bones
+  now move a lot when running and barely when standing. Lesson: check the recording file itself, not just the game.
 
 ## November 16, 2026 (PC, cave-life Claude): rock textures plan (F213)
 
