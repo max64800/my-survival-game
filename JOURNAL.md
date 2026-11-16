@@ -1818,3 +1818,5 @@ You tried the dev menu and asked for four things:
 - Ember's hammer horn sat on a short post and was buried in the front stones; the post is taller now.
 - The first crystals and mushrooms were too small to see, and the frost stones too pale (snow over whole stones).
   Fixed in a second round; the snow on top is still a bit faint.
+
+- **Later (Nov 16, code Claude): menus centred (F172).** On your wide screen the crafting list stretched to the right edge and covered the bag. Cause: recipe lines never wrapped, so the panel grew as wide as its longest line, and the bag and the list were placed separately. Now they sit side by side as one centred group; long lines and tabs wrap. Picture: `journey/ui_bag_crafting_centred.jpg`.

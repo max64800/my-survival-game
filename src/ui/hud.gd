@@ -153,8 +153,10 @@ func _build() -> void:
 	for i in Inventory.EQUIP.size():
 		equip_grid.add_child(_make_slot(Inventory.EQUIP_START + i, EQUIP_NAMES[i]))
 	# Centred in the space left of the crafting list (it sits on the right), so they never overlap.
-	_bag_panel.resized.connect(func(): _bag_panel.position = Vector2(maxf(10.0, (root.size.x - 470.0 - _bag_panel.size.x) * 0.5), (root.size.y - _bag_panel.size.y) * 0.5))
+	_bag_panel.resized.connect(_layout_panels)
+	root.resized.connect(_layout_panels)
 	_bag_panel.visibility_changed.connect(_dock_hotbar)
+	_bag_panel.visibility_changed.connect(_layout_panels)
 
 	var fuel_box := VBoxContainer.new()
 	fuel_box.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
@@ -203,7 +205,8 @@ func _build() -> void:
 	craft.peer_id = peer_id
 	craft.visible = false
 	root.add_child(craft)
-	craft.resized.connect(func(): craft.position = Vector2(root.size.x - craft.size.x - 30, 90))
+	craft.resized.connect(_layout_panels)
+	craft.visibility_changed.connect(_layout_panels)
 
 	skills = SkillsPanel.new()
 	skills.peer_id = peer_id
@@ -213,7 +216,8 @@ func _build() -> void:
 	box_panel = BoxPanel.new()
 	box_panel.visible = false
 	root.add_child(box_panel)
-	box_panel.resized.connect(func(): box_panel.position = Vector2(root.size.x - box_panel.size.x - 30, 90))
+	box_panel.resized.connect(_layout_panels)
+	box_panel.visibility_changed.connect(_layout_panels)
 	build_menu = BuildMenu.new()
 	build_menu.peer_id = peer_id
 	build_menu.visible = false
@@ -570,6 +574,29 @@ func set_loading(on: bool, text: String = "") -> void:
 
 func is_bag_open() -> bool:
 	return _bag_panel.visible
+
+
+## The bag and the panel beside it (crafting list or a chest) sit side by side as one group, centred on
+## the screen, never overlapping (owner, Nov 16: "not centred, overlap"). Alone, each is centred.
+func _layout_panels() -> void:
+	var screen: Vector2 = _bag_panel.get_parent().size
+	var side: Control = craft if craft.visible else (box_panel if box_panel.visible else null)
+	var gap := 16.0
+	var panels: Array[Control] = []
+	if _bag_panel.visible:
+		panels.append(_bag_panel)
+	if side:
+		panels.append(side)
+	var total := -gap
+	var tallest := 0.0
+	for p in panels:
+		total += p.size.x + gap
+		tallest = maxf(tallest, p.size.y)
+	var x := maxf(10.0, (screen.x - total) * 0.5)
+	var top := maxf(10.0, (screen.y - tallest) * 0.5 - 30.0)  # a little above the middle, clear of the hotbar
+	for p in panels:
+		p.position = Vector2(x, top)
+		x += p.size.x + gap
 
 
 ## The hotbar at the bottom middle of the screen.

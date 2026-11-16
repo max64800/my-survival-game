@@ -4,6 +4,8 @@ Every fixed (crossed-out) item from `FEEDBACK.md`, moved here unchanged on Nov 1
 Nothing was deleted. Newest fixes go at the top of their group. If a fixed thing comes back, give it 🔁 and add it to
 "Things that keep coming back" in `FEEDBACK.md`.
 
+- [x] ~~**F172. The bag and crafting menus aren't centred and overlap** (wide screen).~~ Fixed Nov 16 (PC, code Claude): the bag and the panel beside it (crafting list or chest) are now placed side by side as one centred group, never overlapping; the crafting list keeps a fixed width (long recipe lines wrap onto a second line, the tabs wrap too). *From: you. Said: 1×*
+
 *(Nov 16, your notes on the whole Delver's Shack kit: "amazing, I love every single one of them".)*
 
 - [x] ~~**F168. When the building is done, its Builder's Chest should disappear.**~~ Done Nov 16 (PC, Claude 2): when the last piece is built the chest goes away; anything left in it drops beside it. Test: `test_builder`. *From: you. Said: 1×*

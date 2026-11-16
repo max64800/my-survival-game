@@ -17,7 +17,7 @@ const CANCEL_DISTANCE := 0.6
 ## Recipes sorted into tabs (owner F127) by what they make.
 const TABS := ["Tools", "Weapons", "Armor", "Stations", "Materials", "Food"]
 var _tab := ""
-var _tabs: HBoxContainer
+var _tabs: HFlowContainer
 var _scroll: ScrollContainer
 ## How many to make with one click (owner F129): 1, 5, 10 or -1 = as many as you can.
 var amount := 1
@@ -47,7 +47,7 @@ func _ready() -> void:
 	fill.bg_color = Color(1.0, 0.75, 0.35)
 	_bar.add_theme_stylebox_override("fill", fill)
 	box.add_child(_bar)
-	_tabs = HBoxContainer.new()
+	_tabs = HFlowContainer.new()  # tabs wrap onto a second line instead of widening the panel
 	_tabs.add_theme_constant_override("separation", 4)
 	box.add_child(_tabs)
 	_amount_row = HBoxContainer.new()
@@ -276,6 +276,7 @@ func _upgrade_rows(inv: Inventory) -> void:
 		any = true
 		var row := HBoxContainer.new()
 		var text := RichTextLabel.new()
+		text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # long lines wrap: the panel keeps its width
 		text.bbcode_enabled = true
 		text.fit_content = true
 		text.scroll_active = false
@@ -320,6 +321,7 @@ func _row(recipe_id: String, inv: Inventory) -> Control:
 	pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	row.add_child(pic)
 	var text := RichTextLabel.new()
+	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # long lines wrap: the panel keeps its width
 	text.bbcode_enabled = true
 	text.fit_content = true
 	text.scroll_active = false
