@@ -129,51 +129,93 @@ def twisted(name, path, radius, strands, turns, spread, seed, up_ref):
 	return out
 
 
-# ---------------------------------------------------------------- the root breaking out of the floor
-def build_root(seed=11):
+# ---------------------------------------------------------------- the roots breaking out of the floor
+def arch_path(a, b, height, n=30, wander=0.06, seed=0):
+	"""A root path out of the ground at a, up to `height`, and back into the ground at b (both just below the floor)."""
+	r = random.Random(seed)
+	a, b = Vector(a), Vector(b)
+	pts = []
+	for t in (0.0, 0.12, 0.33, 0.62, 0.86, 1.0):
+		p = a.lerp(b, t)
+		lift = math.sin(math.pi * t) ** 0.8 * height
+		side = Vector((-(b - a).y, (b - a).x, 0)).normalized()
+		pts.append(p + Vector((0, 0, lift)) + side * r.uniform(-wander, wander))
+	return smooth_path(pts, n)
+
+
+def build_root(seed=11, variant="a"):
+	"""Three looks (owner, Nov 16: "different variations of roots"): a = one big arch and a broken standing root;
+	b = a broken-off stump with thick roots spreading out into the ground all round; c = a tangle of three arches."""
 	r = random.Random(seed)
 	Y = Vector((0, 1, 0))
-	# The big arch: out of the ground, up to knee/hip height, and back in, two strands twisted together.
-	arch = smooth_path([(-0.8, 0.05, -0.2), (-0.62, 0.0, 0.28), (-0.25, 0.06, 0.66), (0.22, -0.04, 0.62), (0.58, 0.02, 0.24), (0.78, 0.08, -0.2)], 30)
-	parts = twisted("arch", arch, lambda u: 0.105 - 0.035 * u, 2, 1.4, lambda u: 0.07 - 0.02 * u, seed, Y)
-	# The standing root: up out of the ground, leaning, gnarled, its top broken off and splintered.
-	stand = smooth_path([(-0.3, -0.38, -0.2), (-0.26, -0.33, 0.35), (-0.14, -0.36, 0.75), (-0.18, -0.3, 1.02)], 18)
-	parts += twisted("stand", stand, lambda u: 0.085 - 0.02 * u, 3, 0.9, lambda u: 0.055 - 0.015 * u, seed + 5, Vector((1, 0, 0)))
-	top = stand[-1]
-	for k in range(7):  # splinters round the broken top, different heights
-		a = k * 2 * math.pi / 7 + r.uniform(-0.3, 0.3)
-		o = Vector((math.cos(a), math.sin(a), 0))
-		base = top + o * r.uniform(0.03, 0.07) - Vector((0, 0, 0.05))
-		tip = base + o * r.uniform(0.0, 0.03) + Vector((0, 0, r.uniform(0.05, 0.16)))
-		parts.append(tube(f"splinter{k}", [base, (base + tip) / 2, tip], [0.028, 0.02, 0.006], sides=5, wobble=0.15, seed=seed + 40 + k))
+	parts, arches, stands = [], [], []
+	if variant == "a":
+		arches.append((smooth_path([(-0.8, 0.05, -0.2), (-0.62, 0.0, 0.28), (-0.25, 0.06, 0.66), (0.22, -0.04, 0.62), (0.58, 0.02, 0.24), (0.78, 0.08, -0.2)], 30), 0.105, 2))
+		stands.append((smooth_path([(-0.3, -0.38, -0.2), (-0.26, -0.33, 0.35), (-0.14, -0.36, 0.75), (-0.18, -0.3, 1.02)], 18), 0.085, 3))
+	elif variant == "b":
+		stands.append((smooth_path([(0.0, 0.0, -0.2), (0.03, -0.02, 0.3), (-0.04, 0.03, 0.6), (0.02, 0.0, 0.82)], 18), 0.15, 4))
+		for k in range(5):  # thick roots spreading out from the stump's foot and diving into the ground
+			a = k * 2 * math.pi / 5 + r.uniform(-0.25, 0.25)
+			o = Vector((math.cos(a), math.sin(a), 0))
+			ln = r.uniform(0.7, 0.95)
+			path = smooth_path([o * 0.05 + Vector((0, 0, 0.42)), o * 0.25 + Vector((0, 0, 0.3)), o * ln * 0.6 + Vector((0, 0, 0.14)), o * ln + Vector((0, 0, -0.2))], 18)
+			arches.append((path, 0.085 - 0.01 * (k % 2), 2))
+	else:
+		arches.append((arch_path((-0.85, -0.1, -0.2), (0.75, 0.2, -0.2), 0.62, seed=seed), 0.1, 2))
+		arches.append((arch_path((-0.35, 0.65, -0.2), (0.3, -0.7, -0.2), 0.45, seed=seed + 1), 0.08, 2))
+		arches.append((arch_path((0.25, 0.45, -0.2), (0.85, -0.25, -0.2), 0.3, n=22, seed=seed + 2), 0.065, 2))
+		stands.append((smooth_path([(-0.55, -0.45, -0.2), (-0.52, -0.42, 0.2), (-0.47, -0.45, 0.48)], 12), 0.07, 2))
+	for k, (path, r0, strands) in enumerate(arches):
+		parts += twisted(f"arch{k}_", path, lambda u, r0=r0: r0 * (1 - 0.33 * u), strands, 1.4, lambda u, r0=r0: r0 * 0.67 * (1 - 0.3 * u), seed + 10 * k, Y if variant != "b" else Vector((0, 0, 1)))
+	for k, (path, r0, strands) in enumerate(stands):
+		parts += twisted(f"stand{k}_", path, lambda u, r0=r0: r0 * (1 - 0.24 * u), strands, 0.9, lambda u, r0=r0: r0 * 0.65 * (1 - 0.27 * u), seed + 5 + 10 * k, Vector((1, 0, 0)))
+		top, rr = path[-1], r0 * 0.9
+		for j in range(7):  # splinters round the broken top, different heights
+			a = j * 2 * math.pi / 7 + r.uniform(-0.3, 0.3)
+			o = Vector((math.cos(a), math.sin(a), 0))
+			base = top + o * rr * r.uniform(0.35, 0.8) - Vector((0, 0, 0.05))
+			tip = base + o * r.uniform(0.0, 0.03) + Vector((0, 0, r.uniform(0.05, 0.16) * (1 + rr * 3)))
+			parts.append(tube(f"splinter{k}_{j}", [base, (base + tip) / 2, tip], [rr * 0.33, rr * 0.24, 0.006], sides=5, wobble=0.15, seed=seed + 40 + j))
 	# Knots (burls) where old side roots broke off.
-	for k, (p, w) in enumerate(((arch[8], 0.07), (arch[19], 0.06), (stand[9], 0.06))):
+	for k in range(4):
+		path, r0, _ = (arches + stands)[k % len(arches + stands)]
+		p = path[int(len(path) * (0.28 + 0.17 * k)) % len(path)]
+		w = r0 * 0.7
 		a = r.uniform(0, 2 * math.pi)
 		parts.append(lump(f"knot{k}", tuple(p + Vector((math.cos(a), 0.6 * math.sin(a), 0.5)) * w), (w, w, w * 0.8), seed + 20 + k, jitter=0.3, detail=2))
-	# Rootlets: thinner roots leaving the arch and diving into the ground.
+	# Rootlets: thinner roots leaving the arches and diving into the ground.
 	fine = []
-	for k, (i, side, ln) in enumerate(((6, 1, 0.45), (13, -1, 0.5), (22, 1, 0.4), (25, -1, 0.3))):
-		p = arch[i]
-		ctrl = [p, p + Vector((0.05, side * 0.18, -0.08)), p + Vector((0.1, side * ln * 0.7, -p.z * 0.6)), p + Vector((0.08, side * ln, -p.z - 0.12))]
-		parts.append(tube(f"rootlet{k}", smooth_path(ctrl, 10), [0.04 * (1 - j / 9) + 0.012 for j in range(10)], sides=8, seed=seed + 30 + k))
+	for k in range(4):
+		path, r0, _ = arches[k % len(arches)]
+		p = path[int(len(path) * (0.2 + 0.2 * k)) % len(path)]
+		if p.z < 0.12:
+			continue
+		side = 1 if k % 2 else -1
+		ln = r.uniform(0.3, 0.5)
+		t = (path[min(len(path) - 1, 1 + int(len(path) * (0.2 + 0.2 * k)) % len(path))] - p).normalized()
+		o = t.cross(Vector((0, 0, 1))).normalized() * side
+		ctrl = [p, p + o * 0.18 + Vector((0, 0, -0.08)), p + o * ln * 0.7 + Vector((0, 0, -p.z * 0.6)), p + o * ln + Vector((0, 0, -p.z - 0.12))]
+		parts.append(tube(f"rootlet{k}", smooth_path(ctrl, 10), [r0 * 0.4 * (1 - j / 9) + 0.012 for j in range(10)], sides=8, seed=seed + 30 + k))
+	ends = [a[0][0] for a in arches] + [a[0][-1] for a in arches if a[0][-1].z < 0] + [s_[0][0] for s_ in stands]
 	# Hair roots poking out of the soil.
-	for k in range(10):
+	for k in range(12):
 		a = r.uniform(0, 2 * math.pi)
 		o = Vector((math.cos(a), math.sin(a), 0))
-		end = (arch[0], arch[-1], stand[0])[k % 3]
+		end = ends[k % len(ends)]
 		base = Vector((end.x, end.y, 0.0)) + o * r.uniform(0.15, 0.3)
 		ctrl = [base - Vector((0, 0, 0.03)), base + o * 0.05 + Vector((0, 0, 0.05)), base + o * 0.12 + Vector((0, 0, r.uniform(0.02, 0.07)))]
 		fine.append(tube(f"hair{k}", smooth_path(ctrl, 6), [0.007 - 0.0008 * j for j in range(6)], sides=5, seed=seed + 80 + k))
 	# Soil heaped where the roots come out of the ground, broken clods round it.
 	soil = []
-	for k, end in enumerate((arch[0], arch[-1], stand[0])):
+	for k, end in enumerate(ends):
 		c = Vector((end.x, end.y, -0.07))
-		soil.append(lump(f"heap{k}", tuple(c), (0.3, 0.26, 0.13), seed + 50 + k, jitter=0.22, detail=4))
+		big = 1.5 if variant == "b" and k == len(ends) - 1 else 1.0  # the stump's foot gets a wide heap
+		soil.append(lump(f"heap{k}", tuple(c), (0.3 * big, 0.26 * big, 0.13), seed + 50 + k, jitter=0.22, detail=4))
 		for j in range(3):
 			a = r.uniform(0, 2 * math.pi)
-			soil.append(lump(f"clod{k}{j}", tuple(c + Vector((math.cos(a) * 0.3, math.sin(a) * 0.26, 0.0))), (r.uniform(0.05, 0.08),) * 2 + (0.04,),
+			soil.append(lump(f"clod{k}{j}", tuple(c + Vector((math.cos(a) * 0.3 * big, math.sin(a) * 0.26 * big, 0.0))), (r.uniform(0.05, 0.08),) * 2 + (0.04,),
 				seed + 60 + 3 * k + j, jitter=0.3, detail=2))
-	pebbles = [lump(f"pebble{k}", tuple(Vector(((-0.8, 0.78, -0.3)[k % 3], (0.05, 0.08, -0.38)[k % 3], 0.02)) + Vector((math.cos(k * 2.3), math.sin(k * 2.3), 0)) * 0.24),
+	pebbles = [lump(f"pebble{k}", tuple(Vector((ends[k % len(ends)].x, ends[k % len(ends)].y, 0.02)) + Vector((math.cos(k * 2.3), math.sin(k * 2.3), 0)) * 0.24),
 		(0.035 + 0.006 * (k % 3), 0.03, 0.026), seed + 70 + k, jitter=0.12, detail=2) for k in range(6)]
 
 	bark = cs.melt(parts, voxel=0.005, smooth=4, name="bark")
@@ -327,8 +369,8 @@ def prism(name, base, d, L, rad, seed, broken=False, chips=2):
 	o = bpy.data.objects.new(name, me)
 	bpy.context.scene.collection.objects.link(o)
 	o.data.materials.append(grey())
-	bv = o.modifiers.new("bevel", "BEVEL")  # a hair of bevel: the edges catch the light
-	bv.width = min(0.004, rad * 0.06)
+	bv = o.modifiers.new("bevel", "BEVEL")  # a narrow flat cut along every edge: catches the light as a hard bright line
+	bv.width = min(0.007, rad * 0.09)
 	bv.segments = 1
 	cs._apply_all(o)
 	return o
@@ -396,10 +438,10 @@ def build_giant(seed=41, H=4.0):
 		edge = min(1.0, flat.length / cr) ** 1.6
 		v.co += tilt * cr * 0.09 * edge * math.sin(7 * ang + seed) + flat.normalized() * cr * 0.03 * edge * math.sin(3 * ang)
 	caps = [cap]
-	for k in range(26):  # warts / scales on top
-		a, b = r.uniform(0, 2 * math.pi), r.uniform(0.0, 0.8)
+	for k in range(70):  # warts / scales on top, bigger in the middle, small ones toward the rim
+		a, b = r.uniform(0, 2 * math.pi), r.uniform(0.0, 0.85) ** 0.8
 		p = top + tilt * cr * (0.41 - 0.42 * b * b) + (side * math.cos(a) + s2 * math.sin(a)) * cr * b * 0.95
-		w = r.uniform(0.07, 0.15)
+		w = r.uniform(0.05, 0.13) * (1.2 - 0.6 * b)
 		caps.append(lump(f"wart{k}", tuple(p), (w, w * 0.9, w * 0.45), seed + 20 + k, jitter=0.3, detail=2))
 	gills = []
 	for k in range(90):
@@ -416,15 +458,26 @@ def build_giant(seed=41, H=4.0):
 		o = side * math.cos(a) + s2 * math.sin(a)
 		bites.append((top - tilt * cr * 0.1 + o * cr * 1.04, top, r.uniform(0.2, 0.32)))
 	stem = cs.melt(stalk, voxel=0.018, smooth=4, name="stem")
-	carve(stem, lambda p, n: -0.012 * abs(noise.noise(Vector((p.x * 14 + seed, p.y * 14, p.z * 1.6)))) ** 0.7 + 0.004 * noise.fractal(p * 20, 0.5, 2.0, 3), soften=1)
+	def stalk_fn(p, n):  # long fibres up the stalk (big ridges, fine streaks), flaky patches, grain (owner: "a bit of texture")
+		ridges = -0.018 * abs(noise.noise(Vector((p.x * 18 + seed, p.y * 18, p.z * 1.2)))) ** 0.6
+		streaks = -0.005 * abs(noise.noise(Vector((p.x * 75, p.y * 75, p.z * 4))))
+		flakes = -0.007 if noise.noise(p * 5 + Vector((seed, 2, 7))) > 0.45 else 0.0
+		return ridges + streaks + flakes + 0.003 * noise.fractal(p * 30, 0.5, 2.0, 3)
+	carve(stem, stalk_fn, soften=1)
 	capm = cs.melt(caps, voxel=0.018, smooth=3, name="glow_cap")
 	bite(capm, bites)
-	carve(capm, lambda p, n: 0.008 * noise.fractal(p * 6, 0.5, 2.0, 3) + 0.003 * noise.noise(p * 30) - 0.006 * max(0.0, noise.noise(p * 4) - 0.45), soften=1)
+	def cap_fn(p, n):  # the cap's skin cracked into patches (like an old mushroom), lumps, pits and fine grain
+		cracks = -0.014 * cs._crack(p, 2.4) * (1.0 if n.z > -0.2 else 0.0)  # cracks on top only, not in the gills
+		pits = -0.006 * max(0.0, noise.noise(p * 9 + Vector((seed, 0, 0))) - 0.4)
+		return 0.008 * noise.fractal(p * 6, 0.5, 2.0, 3) + 0.003 * noise.fractal(p * 40, 0.5, 2.0, 3) + cracks + pits
+	carve(capm, cap_fn, soften=1)
 	gl = join(gills, "gills")
 	bite(gl, bites)
 	return [
-		(stem, 4000, 1024, lambda n: cs.paint_material(n, (0.8, 0.75, 0.66), (0.4, 0.35, 0.28), (0.94, 0.91, 0.84), strokes=0.12, grime=0.4, scratches=0.5, scratch_width=2.0, edge=0.35, seed=10.0)),
-		(capm, 4000, 1024, lambda n: cs.paint_material(n, (0.5, 0.3, 0.58), (0.2, 0.09, 0.26), (0.8, 0.58, 0.9), strokes=0.15, grime=0.4, scratches=0.5, scratch_width=2.0, edge=0.5, seed=11.0)),
+		(stem, 6000, 2048, lambda n: cs.paint_material(n, (0.8, 0.75, 0.66), (0.36, 0.3, 0.24), (0.95, 0.92, 0.85), strokes=0.22, grime=0.55, scratches=0.6, scratch_width=2.0, edge=0.5,
+			moss=(0.5, 0.36, 0.55), moss_amount=0.25, seed=10.0)),
+		(capm, 6000, 2048, lambda n: cs.paint_material(n, (0.5, 0.3, 0.58), (0.16, 0.07, 0.22), (0.86, 0.66, 0.94), strokes=0.25, grime=0.5, scratches=0.6, scratch_width=2.0, edge=0.7,
+			moss=(0.88, 0.8, 0.9), moss_amount=0.3, top_light=0.25, seed=11.0)),
 		(gl, 1500, 512, lambda n: cs.paint_material(n, (0.7, 0.58, 0.68), (0.28, 0.2, 0.27), (0.86, 0.76, 0.84), grime=0.2, key=0.15, seed=12.0)),
 	]
 
@@ -508,7 +561,7 @@ def pictures(name, objs):
 
 
 TINT = {"crystal": (0.35, 0.75, 1.0), "glowcap": (0.25, 0.95, 0.85), "giant": (1.0, 1.0, 1.0)}  # the game's colours (glow_placer KINDS)
-BUILDS = {"root": build_root, "glowcap": build_glowcap, "crystal": build_crystal, "giant": build_giant}
+BUILDS = {"root": build_root, "root_b": lambda: build_root(12, "b"), "root_c": lambda: build_root(13, "c"), "glowcap": build_glowcap, "crystal": build_crystal, "giant": build_giant}
 
 for name, fn in BUILDS.items():
 	if ONLY and name not in ONLY:

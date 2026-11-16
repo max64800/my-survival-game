@@ -1965,3 +1965,26 @@ You tried the dev menu and asked for four things:
   dwarf plan, and is in.)
 - Opening test pages in the owner's browser while the owner uses the PC: the tabs got closed. Checked the file directly
   instead.
+
+## November 16, 2026 (PC, Claude 2): three kinds of root, shiny crystals, giant mushroom texture (round 3)
+
+**What we did**
+- The owner loved the giant mushroom ("the biggest hit") and asked for:
+  - a bit more texture on it;
+  - crystals that shine differently depending on where you stand, with hard edges;
+  - different kinds of roots that regrow.
+- **Giant mushroom:** deep fibres and flaky patches up the stalk. The cap's skin is cracked into patches, with pits
+  and 70 scales. Stronger paint and bigger pictures.
+- **Crystals:** a new crystal shader (`src/art/crystal.gdshader`).
+  - A cave has almost nothing for glass to reflect, so each facet reflects a made-up "cave of lights". Facets flash
+    and go dark as you walk round, and the rims glint.
+  - The cut edges are wider, so they catch the light as hard lines.
+  - On the 3D page the crystals reflect a pretend room for the same effect.
+- **Roots:** three looks, `root`, `root_b` and `root_c`: an arch with a broken standing root, a broken stump with
+  roots spreading out, and a tangle of three arches. Each spot gets one, the same for every co-op player. Regrowing
+  was already in (F106) and still works.
+
+**Mistakes and hurdles (including Claude's)**
+- The first try at shine (a glossy, clear-coated material) changed nothing: shine needs something bright to reflect,
+  and the crystals' own glow drowned it out. A shader with pretend reflections fixed it. A second pass added more
+  sparkles and darker faces in between, because the faces were still too even.

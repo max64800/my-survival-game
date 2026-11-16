@@ -163,12 +163,14 @@ func _add_node(s: Dictionary) -> void:
 	var mi := MeshInstance3D.new()
 	var glows: bool = GlowPlacer.KINDS[s.kind].get("glow", false)
 	var model := _model_of(s.kind)
+	if model == "root":  # each root spot gets one of the three looks, the same for everyone (from its id)
+		model = ROOT_LOOKS[posmod(int(s.id) * 7 + 3, ROOT_LOOKS.size())]
 	if model != "" and _cave_mesh(model) != null:
 		# Hand-built, sculpted and painted models (owner, Nov 16; tools/asset_forge/builds/cave_plants.py).
 		mi.mesh = _cave_mesh(model)
 		_tint_glow_parts(mi, model, s.color, glows)
 		match model:
-			"root": mi.scale = Vector3.ONE * s.length / s.scale  # length = its size (about its height in metres)
+			"root", "root_b", "root_c": mi.scale = Vector3.ONE * s.length / s.scale  # length = its size (about its height in metres)
 			"giant": mi.scale = Vector3.ONE * s.length / 4.0  # the model is 4 m tall
 	else:
 		match s.kind:
@@ -200,11 +202,15 @@ func _add_node(s: Dictionary) -> void:
 
 ## Which hand-built model each kind uses ("" = the simple shapes made here).
 const CAVE_MODELS := {
-	"root": "res://assets/models/cave/root.glb",
+	"root": "res://assets/models/cave/root.glb",  # three looks (owner, Nov 16): arch, stump, tangle
+	"root_b": "res://assets/models/cave/root_b.glb",
+	"root_c": "res://assets/models/cave/root_c.glb",
 	"glowcap": "res://assets/models/cave/glowcap.glb",
 	"crystal": "res://assets/models/cave/crystal.glb",
 	"giant": "res://assets/models/cave/giant.glb",
 }
+const CRYSTAL_SHADER := preload("res://src/art/crystal.gdshader")
+const ROOT_LOOKS := ["root", "root_b", "root_c"]
 var _cave_meshes := {}  ## model -> ArrayMesh (null if it failed to load)
 var _glow_mats := {}  ## tinted copies of the glowing parts' materials
 
@@ -266,8 +272,16 @@ func _tint_glow_parts(mi: MeshInstance3D, model: String, c: Color, glows: bool) 
 			t.emission_operator = BaseMaterial3D.EMISSION_OP_MULTIPLY  # colour x picture (the default ADDS them: white glow)
 			t.emission_energy_multiplier = 0.9 if glows else (0.3 if model == "giant" else 0.12)
 			if model == "crystal":
-				t.normal_enabled = false  # flat facets need no bump picture
-			_glow_mats[key] = t
+				# Shiny like glass (owner, Nov 16): src/art/crystal.gdshader. Facets flash as you walk round, rims glint,
+				# the cut edges light up as hard lines.
+				var sm := ShaderMaterial.new()
+				sm.shader = CRYSTAL_SHADER
+				sm.set_shader_parameter("albedo_tex", m.albedo_texture)
+				sm.set_shader_parameter("tint", Color.from_hsv(c.h, minf(1.0, c.s * 1.15), c.v))
+				sm.set_shader_parameter("glow", 0.45 if glows else 0.1)
+				_glow_mats[key] = sm
+			else:
+				_glow_mats[key] = t
 		mi.set_surface_override_material(i, _glow_mats[key])
 
 

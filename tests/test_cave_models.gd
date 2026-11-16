@@ -18,7 +18,7 @@ func test_every_part_has_its_painted_pictures() -> void:
 				check(m != null and m.normal_texture != null, "%s %s has its normal map" % [model, mi.name])
 				if m and m.resource_name.begins_with("glow_"):
 					glow += 1
-		check(model == "root" or glow > 0, "%s has a glowing part" % model)
+		check(model.begins_with("root") or glow > 0, "%s has a glowing part" % model)
 		inst.free()
 
 
