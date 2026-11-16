@@ -44,6 +44,7 @@ var skills: SkillsPanel
 var map_panel: MapPanel
 var build_menu: BuildMenu
 var blueprint_menu: BlueprintMenu
+var dev_menu: DevMenu  ## P in dev builds
 var box_panel: BoxPanel
 var build_mode: BuildMode
 var _build_label: Label
@@ -218,6 +219,10 @@ func _build() -> void:
 	blueprint_menu.visible = false
 	root.add_child(blueprint_menu)
 	blueprint_menu.resized.connect(func(): blueprint_menu.position = (root.size - blueprint_menu.size) * 0.5)
+	dev_menu = DevMenu.new()
+	dev_menu.visible = false
+	root.add_child(dev_menu)
+	dev_menu.resized.connect(func(): dev_menu.position = (root.size - dev_menu.size) * 0.5)
 	# While the Build Hammer is out: what you're building and every key, on the right side (owner F131).
 	_build_label = _label(root, 16)
 	_build_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_RIGHT)
@@ -597,6 +602,25 @@ func set_build_menu_open(open: bool) -> void:
 	build_menu.visible = open
 	if open:
 		build_menu.refresh()
+
+
+func is_dev_menu_open() -> bool:
+	return dev_menu.visible
+
+
+func set_dev_menu_open(open: bool) -> void:
+	dev_menu.mode = build_mode
+	dev_menu.visible = open
+	if open:
+		dev_menu.refresh()
+
+
+## The Builder's Chest open right now (the box panel showing a build site's chest), or -1.
+func open_builder_chest() -> int:
+	if not is_bag_open() or not box_panel.visible or box_panel.box_id < 0:
+		return -1
+	var auth := GameAuthority.instance
+	return box_panel.box_id if auth and auth.builder.sites.has(box_panel.box_id) else -1
 
 
 func is_blueprints_open() -> bool:

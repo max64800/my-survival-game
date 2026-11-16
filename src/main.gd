@@ -511,6 +511,18 @@ func _unhandled_input(event: InputEvent) -> void:
 		save_now("Saved (F5)")
 	if not _ready_to_play:
 		return
+	if DevMenu.enabled() and (event.is_action_pressed("dev_menu") or (event.is_action_pressed("pause") and hud.is_dev_menu_open())):
+		# Dev menu (owner, Nov 16): P with a Builder's Chest open fills it; otherwise P opens/closes the menu.
+		var chest := hud.open_builder_chest()
+		if chest >= 0 and event.is_action_pressed("dev_menu"):
+			authority.builder.ask_dev_fill(chest)
+			return
+		var open_d := not hud.is_dev_menu_open()
+		if open_d and hud.is_bag_open():
+			_set_bag(false)
+		hud.set_dev_menu_open(open_d)
+		Controls.set_captured(false) if open_d else Input.MOUSE_MODE_CAPTURED
+		return
 	if event.is_action_pressed("blueprints") or (event.is_action_pressed("pause") and hud.is_blueprints_open()):
 		var open_v := not hud.is_blueprints_open() and hud.build_mode.active()
 		hud.set_blueprints_open(open_v)
