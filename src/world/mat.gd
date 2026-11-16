@@ -19,8 +19,8 @@ const EDGE := 15  ## the end of the world: no pickaxe ever digs it
 const NAMES := {MOSS: "Moss", STONE: "Stone", DIRT: "Dirt", COPPER: "Copper ore", BORDER: "Border rock", CLAY: "Orange clay",
 	MYCELIUM: "Mycelium", SILVER: "Silver ore", AMBERROCK: "Amberrock", SPORESTONE: "Sporestone", EDGE: "World's edge"}
 
-## How much digging a spot of this rock needs.
-const HARDNESS := {MOSS: 10, DIRT: 10, STONE: 26, COPPER: 45, BORDER: 80, CLAY: 15,
+## How much digging a spot of this rock needs. Moss 20: the mossy top layer takes 2 hits with a stone pickaxe (owner, F196).
+const HARDNESS := {MOSS: 20, DIRT: 10, STONE: 26, COPPER: 45, BORDER: 80, CLAY: 15,
 	MYCELIUM: 10, SILVER: 55, AMBERROCK: 25, SPORESTONE: 30, EDGE: 999}
 ## The weakest pickaxe tier that can dig it (0 stone, 1 copper, 2 silver).
 const MIN_TIER := {MOSS: 0, DIRT: 0, STONE: 0, COPPER: 0, BORDER: 1, CLAY: 0,

@@ -2089,3 +2089,59 @@ You tried the dev menu and asked for four things:
 - Another Claude was editing `main.gd` and `FEEDBACK.md` at the same time (menus). Only this session's lines were
   committed.
 - Full test run: 359 checks, all passed.
+
+## November 16, 2026 (PC, cave-life Claude): cave life round 2 (F188 again, F195-F198)
+
+**What we did**
+- The owner liked batch 1 ("really good touches", loves how grass and ferns move) but said the cave still looks empty,
+  and asked for: more movement, the mossy ground taking 2 hits, plants breaking into fiber, and crystals sitting right.
+  Claude asked multiple-choice questions; the owner picked gravel, tiny pale mushrooms and coloured floor stains.
+- **Almost everywhere now:** gravel drifts (every stone its own shade, tinted to the local rock), loose gravel sprays
+  and little groups of tiny pale mushrooms on the floors of every room and tunnel (about 15,000 more, still ~0.1 ms
+  per frame). The rock itself got damp dark patches, green mould on floors and orange mineral streaks down walls.
+- **More movement (F198):** grass and ferns bend about twice as far and wobble while a dwarf is in them; small roots
+  wiggle a little.
+- **Plants break (F197):** a swing that lands on grass, a fern or a small root breaks it with a green puff and drops 1
+  fiber. The host decides, every player sees it, and it's saved. Every plant has a number that is the same on every
+  computer, so the host only has to say "plant 1234 broke".
+- **Mossy ground: 2 hits (F196).**
+- **Crystals (F195):** they now sit on the rock as it is drawn, tilted to match it, sunk a fixed small bit, so the rock
+  base always shows.
+
+**Mistakes and hurdles (including Claude's)**
+- The tiny mushrooms first sat on a pale mould mat that looked like a grey plate from a distance. Removed the mat.
+- The gravel was too pale and stood out like eggs. Darkened.
+- A patch script broke on an `if false: pass` placeholder Claude wrote; replaced with the real branch.
+- The owner briefly sent an unrelated request (a sales lead list), then said to ignore it; nothing was built for it.
+- The speed check printed errors from another Claude's unfinished dwarf-hair file (`hair_swing.gd`), not from this work.
+
+## November 16, 2026 (PC, dwarf Claude): round 2b, the owner's notes on the head (F191-F194)
+
+The owner: "looks very impressive, I love it"; then: the beard looks flat, the braids and back hair should swing, a hole
+behind the nose, the rings clip through the hair; then do the whole body.
+
+**What we did**
+- Dark shading in the beard (F191): every point's depth in a crease (below a smoothed copy of the surface) darkens the
+  hair there, so the gaps between locks and round the braid lobes are dark red-brown, like the back of the hair.
+- The copper rings (F194): the hair inside each ring is squeezed just inside its hole and eases back out.
+- The face (F193): the dark gap between each cheek and the hair is filled with beard locks; shallower eye sockets (no
+  dark rings); the brows arch up at the inner ends (kinder, happier).
+- Swinging tufts (F192): two swing bones from just above each ring to the tuft's tip; the game adds them to its
+  skeleton and our own spring (`src/player/hair_swing.gd`) lets the tufts trail behind and bounce back, about 25
+  degrees when he walks, runs or swings a tool, never back into his body. New test: `test_braid_tufts_swing_when_moving`.
+  The 3D page shows it (it records the game's own bones).
+
+**Mistakes and hurdles (including Claude's)**
+- First swing design: a chain down the whole braid from the chest. The belly bends on its own bones, so the braids
+  went 10 cm into it even standing. Now only what hangs free swings (ring + tuft); the rest keeps lying on the body.
+- The back hair tied to swing bones cut into the back the same way: left out for now (needs the body round).
+- Godot's own spring node (SpringBoneSimulator3D) did nothing: its manual says it doesn't work on a scaled skeleton,
+  and the dwarf's skeleton is scaled. The new clipping tools showed it (same numbers with springs on and off). Replaced
+  by our own small spring that works in metres.
+- A first swing measurement compared two recordings frame by frame, but they run in real time, so the frames weren't
+  the same moments ("tufts moved 50 cm"). Measured inside the spring instead.
+- The new cheek filler first showed as round balls (picture check), then as locks they covered the ears' front edge
+  (number check). Fixed both.
+- While Claude was halfway through `hair_swing.gd`, another Claude's test run printed its errors.
+- Clipping now (beard below the chin): standing, walking, jumping 0 mm; sword, chopping 2 cm; run, sprint, mining,
+  roll 3 to 4 cm, at the belly's sides where round 1's shirt bulges out with the arms. For the body round.

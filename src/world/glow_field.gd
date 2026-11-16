@@ -30,6 +30,7 @@ var _mushroom_mesh: Mesh
 var _fiber_mesh: Mesh
 var _root_mesh: Mesh
 var _materials := {}
+var rock: CaveLife.Rock  ## the rock as it is drawn (main sets it): crystals sit on it, base showing (F195)
 
 
 func build(spots: Array[Dictionary]) -> void:
@@ -194,9 +195,18 @@ func _add_node(s: Dictionary) -> void:
 	body.add_child(mi)
 	add_child(body)
 	var up: Vector3 = s.normal
+	var at: Vector3 = s.pos - up * 0.1
+	if rock and String(s.kind).begins_with("crystal"):
+		# The spot was found on the cave's exact shape; the drawn rock can be several cm off and tilted, so the
+		# crystal's rock base floated or sank out of sight (owner F195). Sit it on the drawn rock, tilted to match,
+		# sunk a fixed bit so the base always shows.
+		var hit := rock.march(s.pos + up * 0.8, -up, 1.6)
+		if hit != Vector3.INF:
+			up = rock.normal(hit)
+			at = hit - up * 0.035 * s.scale
 	var side := up.cross(Vector3.FORWARD if absf(up.y) > 0.9 else Vector3.UP).normalized()
 	var basis := Basis(side, up, side.cross(up)).orthonormalized()
-	body.global_transform = Transform3D(basis.rotated(up, s.spin).scaled(Vector3.ONE * s.scale), s.pos - up * 0.1)
+	body.global_transform = Transform3D(basis.rotated(up, s.spin).scaled(Vector3.ONE * s.scale), at)
 	_nodes[s.id] = body
 
 

@@ -56,7 +56,7 @@ func test_patches_near_life_on_real_rock() -> void:
 		var up: Vector3 = p.xform.basis.y.normalized()
 		if rock.at(at - up * 0.3) >= 0.0:
 			floating += 1  # no rock just under it
-		if j % 4 != 0:
+		if j % 4 != 0 or p.kind in ["gravel", "gravel_b", "tinycaps"]:  # (those go almost everywhere)
 			continue
 		var near := false
 		for s in spots:
@@ -67,8 +67,8 @@ func test_patches_near_life_on_real_rock() -> void:
 		if not near:
 			lonely += 1
 	print("        %s" % counts)
-	check(plants.size() >= 300, "enough patches (got %d plants)" % plants.size())
-	for kind in ["moss", "grass", "fern", "rootlet", "lichen"]:
+	check(plants.size() >= 2000, "a cave that doesn't look empty (got %d plants)" % plants.size())
+	for kind in ["moss", "grass", "fern", "rootlet", "lichen", "gravel", "gravel_b", "tinycaps"]:
 		check(counts.get(kind, 0) >= 10, "enough %s (got %d)" % [kind, counts.get(kind, 0)])
 	check_eq(lonely, 0, "everything grows in a patch near a glowing thing, a drip or a root")
 	check(floating <= plants.size() / 50, "(almost) everything has rock right under it (%d floating)" % floating)
@@ -83,4 +83,19 @@ func test_digging_removes_what_grew_there() -> void:
 	life._on_rock_changed(x.origin, 0.5)
 	var y := life.nearest("moss", x.origin)
 	check(y.origin.distance_to(x.origin) > 0.01, "the moss where the rock was dug is gone (%s, %s)" % [x.origin, y.origin])
+	life.free()
+
+
+## Owner F197: a swing that lands on grass, a fern or a small root breaks it; every computer removes it.
+func test_hitting_grass_breaks_it() -> void:
+	var maker := CaveMaker.new(12)
+	var life := CaveLife.new()
+	life.build(maker, GlowPlacer.place(maker))
+	var g := life.nearest("grass", Vector3.ZERO)
+	check(g.origin != Vector3.INF, "there is grass")
+	var id := life.breakable_at(g.origin + Vector3(0.1, 0.0, 0.05))
+	check(id >= 0, "a swing next to the tuft finds it")
+	life.remove_plant(id)
+	check(life.position_of(id) == Vector3.INF, "it's gone")
+	check(life.breakable_at(life.nearest("lichen", Vector3.ZERO).origin, 0.05) == -1, "lichen doesn't break (only grass, ferns, small roots)")
 	life.free()

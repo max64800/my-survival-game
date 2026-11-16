@@ -18,12 +18,22 @@ const MOSS_SHELLS := 12  ## how many layers the moss fuzz is drawn in
 const KINDS := {
 	"moss": {model = "res://assets/models/cave/moss.glb", view = 45.0, size = [0.65, 1.3], look = "moss", gap = 0.5},
 	"moss_drape": {model = "res://assets/models/cave/moss_drape.glb", view = 45.0, size = [0.8, 1.15], look = "moss", gap = 0.6},
-	"grass": {model = "res://assets/models/cave/grass.glb", view = 35.0, size = [1.0, 1.7], look = "bend", height = 0.24, gap = 0.28},
-	"fern": {model = "res://assets/models/cave/fern.glb", view = 40.0, size = [1.1, 1.8], look = "bend", height = 0.2, gap = 0.45},
-	"rootlet": {model = "res://assets/models/cave/rootlet.glb", view = 40.0, size = [0.9, 1.5], look = "plain", gap = 0.45},
-	"rootlet_b": {model = "res://assets/models/cave/rootlet_b.glb", view = 40.0, size = [0.9, 1.5], look = "plain", gap = 0.45},
+	"grass": {model = "res://assets/models/cave/grass.glb", view = 35.0, size = [1.0, 1.7], look = "bend", height = 0.24, gap = 0.28, breaks = true},
+	"fern": {model = "res://assets/models/cave/fern.glb", view = 40.0, size = [1.1, 1.8], look = "bend", height = 0.2, gap = 0.45, breaks = true},
+	"rootlet": {model = "res://assets/models/cave/rootlet.glb", view = 40.0, size = [0.9, 1.5], look = "bend", height = 0.3, push = 0.35,
+		bend_parts = ["bark", "rootlets"], gap = 0.45, breaks = true},
+	"rootlet_b": {model = "res://assets/models/cave/rootlet_b.glb", view = 40.0, size = [0.9, 1.5], look = "bend", height = 0.3, push = 0.35,
+		bend_parts = ["bark", "rootlets"], gap = 0.45, breaks = true},
 	"lichen": {model = "res://assets/models/cave/lichen.glb", view = 50.0, size = [1.0, 2.2], look = "plain", gap = 0.3},
+	# Almost everywhere (owner, F188 said twice: "the cave still looks empty"): gravel drifts and tiny pale mushrooms.
+	"gravel": {model = "res://assets/models/cave/gravel.glb", view = 40.0, size = [0.8, 1.6], look = "plain", gap = 0.5},
+	"gravel_b": {model = "res://assets/models/cave/gravel_b.glb", view = 35.0, size = [0.9, 1.6], look = "plain", gap = 0.4},
+	"tinycaps": {model = "res://assets/models/cave/tinycaps.glb", view = 30.0, size = [0.8, 1.5], look = "plain", gap = 0.3},
 }
+const EVERY_BIG_ROOM := 220  ## tries for the everywhere cover per big room
+const EVERY_ROOM := 50
+const EVERY_TUNNEL := 5
+const FIBER_DROP := "fiber"  ## what a broken grass tuft, fern or small root drops (owner, F197)
 
 ## What grows round each kind of life, by surface: floor (flat), slope, wall. (rootlet = either small root look)
 const MIX := {
@@ -43,6 +53,8 @@ var _bend_mats: Array[ShaderMaterial] = []
 var _task := -1  ## the background placing job (-1 = none)
 var _planned: Array[Dictionary] = []
 var _pending := []  ## rock changes that came in while placing: [center, radius]
+var _index := {}  ## plant id -> [cell, kind, i] (ids are the plan's order: the same on every computer)
+var _pending_breaks: Array[int] = []  ## plants broken (save, host) before the placing was done
 static var _meshes := {}  ## kind -> Mesh, built once (moss with its fuzz layers)
 static var _mats := {}  ## kind/surface -> Material
 
@@ -64,7 +76,9 @@ func is_built() -> bool:
 
 func _make_all(picks: Array[Dictionary]) -> void:
 	var by_cell := {}
-	for p: Dictionary in picks:
+	for id in picks.size():
+		var p: Dictionary = picks[id]
+		p.id = id
 		var c := _cell(p.xform.origin)
 		if not by_cell.has(c):
 			by_cell[c] = {}
@@ -75,6 +89,58 @@ func _make_all(picks: Array[Dictionary]) -> void:
 		_cells[c] = {}
 		for kind in by_cell[c]:
 			_cells[c][kind] = _make_set(kind, by_cell[c][kind])
+			var ids: PackedInt32Array = _cells[c][kind].ids
+			for i in ids.size():
+				_index[ids[i]] = [c, kind, i]
+	for id in _pending_breaks:
+		remove_plant(id)
+	_pending_breaks.clear()
+
+
+## A grass tuft, fern or small root right where a swing landed (owner F197: people will hit them by accident, they
+## break and drop fiber): its id, or -1.
+func breakable_at(point: Vector3, reach: float = 0.45) -> int:
+	var best := -1
+	var bd := INF
+	var c0 := _cell(point)
+	for x in range(-1, 2):
+		for y in range(-1, 2):
+			for z in range(-1, 2):
+				var cell: Dictionary = _cells.get(c0 + Vector3i(x, y, z), {})
+				for kind in cell:
+					if not KINDS[kind].get("breaks", false):
+						continue
+					var where: PackedVector3Array = cell[kind].where
+					for i in where.size():
+						var d := where[i].distance_to(point)
+						var r: float = reach * maxf(1.0, (cell[kind].xforms[i] as Transform3D).basis.y.length())
+						if d < r and d < bd:
+							bd = d
+							best = cell[kind].ids[i]
+	return best
+
+
+## Where plant `id` grows (INF if it's gone or unknown).
+func position_of(id: int) -> Vector3:
+	var at: Array = _index.get(id, [])
+	if at.is_empty():
+		return Vector3.INF
+	return (_cells[at[0]][at[1]].where as PackedVector3Array)[at[2]]
+
+
+## A plant was broken (the host said so): it's gone on this computer.
+func remove_plant(id: int) -> void:
+	if _task >= 0:
+		_pending_breaks.append(id)
+		return
+	var at: Array = _index.get(id, [])
+	if at.is_empty():
+		return
+	var set: Dictionary = _cells[at[0]][at[1]]
+	var where: PackedVector3Array = set.where
+	(set.mmi as MultiMeshInstance3D).multimesh.set_instance_transform(at[2], Transform3D(Basis().scaled(Vector3.ZERO), where[at[2]]))
+	where[at[2]] = Vector3.INF
+	set.where = where
 
 
 func _exit_tree() -> void:
@@ -177,7 +243,50 @@ static func plan(maker: CaveMaker, spots: Array[Dictionary]) -> Array[Dictionary
 			var shape := Basis.from_scale(Vector3(size, size * (0.45 if kind == "lichen" else 1.0), size))  # lichen: wide but a thin crust
 			out.append({kind = kind, xform = Transform3D(basis * shape, at - up * sink),
 				color = _tint(kind, tint_roll, CaveMaker.biome_at(at), life), custom = Color(_fuzz(kind, src.type, life), life, 0, 0)})
+	_plan_everywhere(maker, rock, taken, out)
 	return out
+
+
+## Almost everywhere (owner, F188 said twice: "the cave still looks empty"): gravel drifts and carpets of tiny pale
+## mushrooms on the floors of every room and tunnel, in little clusters, thicker in big rooms. After the patches, with
+## their own dice, so the patch plants keep their ids.
+static func _plan_everywhere(maker: CaveMaker, rock: Rock, taken: Dictionary, out: Array[Dictionary]) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = maker.seed + 6161
+	var starts := []
+	for room in maker.rooms:
+		for i in (EVERY_BIG_ROOM if room.big else EVERY_ROOM):
+			starts.append([room.center, Vector3(rng.randf_range(-1, 1), -rng.randf_range(0.35, 1.0), rng.randf_range(-1, 1)).normalized(), 60.0])
+	for sg: Dictionary in maker.segments:
+		for i in EVERY_TUNNEL:
+			starts.append([(sg.a as Vector3).lerp(sg.b, rng.randf()), Vector3(rng.randf_range(-0.3, 0.3), -1, rng.randf_range(-0.3, 0.3)).normalized(), 14.0])
+	for st in starts:
+		var roll := rng.randf()
+		var many := rng.randi_range(1, 4)
+		var offs := []
+		for j in 4:
+			offs.append([Vector3(rng.randf_range(-1.1, 1.1), 0.0, rng.randf_range(-1.1, 1.1)), rng.randf() * TAU, rng.randf(), rng.randi()])
+		var hit := rock.march(st[0], st[1], st[2])
+		if hit == Vector3.INF or rock.normal(hit).y < 0.72:
+			continue
+		var kind := "tinycaps" if roll < 0.4 else ("gravel" if roll < 0.75 else "gravel_b")
+		for j in many:
+			var at := hit
+			if j > 0:  # the rest of the cluster: dropped onto the floor round the first
+				at = rock.march(hit + offs[j][0] + Vector3.UP * 0.5, Vector3.DOWN, 1.4)
+				if at == Vector3.INF:
+					continue
+			var n := rock.normal(at)
+			if n.y < 0.72:
+				continue
+			var k: Dictionary = KINDS[kind]
+			var size: float = lerpf(k.size[0], k.size[1], offs[j][2])
+			if not _free(taken, at, k.gap * size):
+				continue
+			_take(taken, at, k.gap * size)
+			var sink: float = {"gravel": 0.008, "gravel_b": 0.004, "tinycaps": 0.004}[kind] * size
+			out.append({kind = kind, xform = Transform3D(_upright(n, offs[j][1]) * Basis.from_scale(Vector3.ONE * size), at - n * sink),
+				color = _tint(kind, offs[j][3], CaveMaker.biome_at(at), 0.0), custom = Color(1, 0, 0, 0)})
 
 
 ## How long the moss fuzz is: longer where it's damp (owner: "thicker where it's damp"), short on a hanging curtain
@@ -232,6 +341,11 @@ static func _tint(kind: String, roll: int, biome: String, life: float) -> Color:
 			return LICHEN_TINTS[3 + (roll >> 6) % 2] if teal else LICHEN_TINTS[(roll >> 6) % 3]
 		"fern":
 			return FERN_TINTS[(roll >> 3) % FERN_TINTS.size()]
+		"gravel", "gravel_b":  # the local rock: grey-brown stone, purple-grey sporestone in the jungle
+			var v := 0.85 + 0.15 * float((roll >> 3) % 5) / 4.0
+			return Color(0.47, 0.43, 0.38) * v if biome != "fungal" else Color(0.44, 0.37, 0.48) * v  # (paler stood out like eggs)
+		"tinycaps":  # white, cream or pale brown
+			return [Color(1.0, 1.0, 0.97), Color(1.0, 0.94, 0.8), Color(0.86, 0.74, 0.6), Color(0.95, 0.9, 1.0)][(roll >> 3) % 4]
 		"moss", "moss_drape":  # greener and darker where it's most alive, a little yellower at the edges
 			var v := 0.88 + 0.12 * float((roll >> 3) % 5) / 4.0
 			return Color(v * (1.05 - 0.1 * life), v, v * (0.9 + 0.1 * life))
@@ -360,12 +474,14 @@ func _make_set(kind: String, picks: Array) -> Dictionary:
 	mm.instance_count = picks.size()
 	var where := PackedVector3Array()
 	var xforms := []
+	var ids := PackedInt32Array()
 	for i in picks.size():
 		mm.set_instance_transform(i, picks[i].xform)
 		mm.set_instance_color(i, picks[i].color)
 		mm.set_instance_custom_data(i, picks[i].custom)
 		where.append(picks[i].xform.origin)
 		xforms.append(picks[i].xform)
+		ids.append(picks[i].get("id", -1))
 	var mmi := MultiMeshInstance3D.new()
 	mmi.multimesh = mm
 	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -378,7 +494,7 @@ func _make_set(kind: String, picks: Array) -> Dictionary:
 			if m is ShaderMaterial and not _bend_mats.has(m):
 				_bend_mats.append(m)
 	add_child(mmi)
-	return {mmi = mmi, where = where, xforms = xforms}
+	return {mmi = mmi, where = where, xforms = xforms, ids = ids}
 
 
 ## The model as one mesh, each part with its game material: moss gets its fuzz layers and the fuzzy shader, the
@@ -453,6 +569,13 @@ static func _shell_mesh(src: ArrayMesh, shells: int) -> ArrayMesh:
 	return m
 
 
+static func _bend_part(k: Dictionary, name: String) -> bool:
+	for part in k.get("bend_parts", []):
+		if name.begins_with(part + "_"):
+			return true
+	return false
+
+
 static func _material(kind: String, m: StandardMaterial3D) -> Material:
 	var k: Dictionary = KINDS[kind]
 	var key := "%s/%s" % [kind, m.resource_name if m else ""]
@@ -466,17 +589,22 @@ static func _material(kind: String, m: StandardMaterial3D) -> Material:
 		sm.shader = preload("res://src/art/moss_shell.gdshader")
 		sm.set_shader_parameter("albedo_tex", m.albedo_texture)
 		out = sm
-	elif m.resource_name.begins_with("tint_"):
-		if k.look == "bend":
-			var sm := ShaderMaterial.new()
-			sm.shader = preload("res://src/art/plant_bend.gdshader")
-			sm.set_shader_parameter("albedo_tex", m.albedo_texture)
-			sm.set_shader_parameter("plant_height", k.height)
-			out = sm
-		else:  # lichen: the painted crust times each plant's colour
-			var t := m.duplicate() as StandardMaterial3D
-			t.vertex_color_use_as_albedo = true
-			out = t
+	elif k.look == "bend" and (m.resource_name.begins_with("tint_") or _bend_part(k, m.resource_name)):
+		var sm := ShaderMaterial.new()
+		sm.shader = preload("res://src/art/plant_bend.gdshader")
+		sm.set_shader_parameter("albedo_tex", m.albedo_texture)
+		sm.set_shader_parameter("plant_height", k.height)
+		sm.set_shader_parameter("push_scale", k.get("push", 1.0))
+		if m.normal_texture:
+			sm.set_shader_parameter("normal_tex", m.normal_texture)
+			sm.set_shader_parameter("use_normal", 1.0)
+		if not m.resource_name.begins_with("tint_"):
+			sm.set_shader_parameter("tinted", 0.0)
+		out = sm
+	elif m.resource_name.begins_with("tint_"):  # lichen, gravel, tiny mushrooms: the painting times each plant's colour
+		var t := m.duplicate() as StandardMaterial3D
+		t.vertex_color_use_as_albedo = true
+		out = t
 	_mats[key] = out
 	return out
 

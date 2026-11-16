@@ -120,6 +120,19 @@ void fragment() {
 	// Big soft light/dark patches so the texture repeats are hard to spot.
 	float macro = vnoise(v_world * 0.07) * 0.6 + vnoise(v_world * 0.21) * 0.4;
 	col *= 0.78 + 0.4 * macro;
+	// Stains on the rock (owner F188, "the cave still looks empty"; picked: coloured floor stains): damp dark patches
+	// and green mould on floors, orange mineral streaks running down walls. From the position only, so every computer
+	// shows the same, and dug rock shows them too.
+	float up = smoothstep(0.55, 0.9, wn.y);
+	float damp = smoothstep(0.55, 0.75, vnoise(v_world * 0.18 + vec3(3.1, 0.0, 7.7)));
+	col *= mix(1.0, 0.62, damp * up);
+	rough = mix(rough, rough * 0.65, damp * up);  // damp: a little shiny
+	float mould = smoothstep(0.6, 0.78, vnoise(v_world * 0.35 + vec3(11.0, 2.0, 5.0))) * smoothstep(0.3, 0.7, vnoise(v_world * 2.3));
+	col = mix(col, col * vec3(0.55, 0.85, 0.4) + vec3(0.02, 0.05, 0.0), mould * up * 0.75);
+	float side = 1.0 - smoothstep(0.35, 0.6, abs(wn.y));
+	float streak = smoothstep(0.68, 0.85, vnoise(vec3(v_world.x * 1.6, v_world.y * 0.15, v_world.z * 1.6) + vec3(0.0, 9.0, 4.0)));
+	streak *= smoothstep(0.45, 0.6, vnoise(v_world * 0.12 + vec3(20.0)));  // only in some places
+	col = mix(col, col * vec3(1.35, 0.8, 0.45) + vec3(0.06, 0.02, 0.0), streak * side * 0.7);
 
 	ALBEDO = col;
 	EMISSION = emit;

@@ -98,14 +98,16 @@ func test_bare_hands_dig_stone_slowly() -> void:
 	_teardown()
 
 
-func test_moss_or_dirt_is_one_hit() -> void:
+func test_dirt_is_one_hit_moss_two() -> void:
 	await _setup(42)
-	var p := _find_rock(Mat.MOSS)
-	if p == Vector3.INF:
-		p = _find_rock(Mat.DIRT)
-	check(p != Vector3.INF, "found moss/dirt near spawn")
+	var p := _find_rock(Mat.DIRT)
 	if p != Vector3.INF:
-		check_eq(auth.request_hit(1, p, Vector3.UP).get("state"), "dug", "soft ground digs in 1 hit")
+		check_eq(auth.request_hit(1, p, Vector3.UP).get("state"), "dug", "dirt digs in 1 hit")
+	var m := _find_rock(Mat.MOSS)
+	check(p != Vector3.INF or m != Vector3.INF, "found moss/dirt near spawn")
+	if m != Vector3.INF:  # the mossy top layer takes 2 hits (owner, F196)
+		check_eq(auth.request_hit(1, m, Vector3.UP).get("state"), "hit", "moss: the first hit only cracks it")
+		check_eq(auth.request_hit(1, m, Vector3.UP).get("state"), "dug", "moss: the second hit digs it")
 	_teardown()
 
 

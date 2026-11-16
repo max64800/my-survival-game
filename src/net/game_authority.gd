@@ -35,6 +35,8 @@ var drops_root: Node3D
 var players: Dictionary = {}  ## peer_id -> PlayerState
 var edit_log: Array[Vector4] = []  ## every dig: center (xyz) + packed tier & size (w, see pack_dig), for late joiners
 var removed_glow: Array[int] = []
+var cave_life: CaveLife  ## grass, ferns, small roots... (only looks, but they break when hit: F197)
+var removed_plants: Array[int] = []  ## cave-life plants broken so far (saved, sent to late joiners)
 ## Host: chopped roots growing back (F106): glow id -> seconds left.
 var regrow := {}
 const REGROW_TIME := 600.0  ## 10 minutes
@@ -646,6 +648,16 @@ static func ore_too_hard(mat: int, tool: String) -> String:
 
 
 func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
+	# A grass tuft, fern or small root where the swing landed breaks first and drops fiber (owner F197: people will
+	# hit them by accident). Any swing does it, even bare hands; the rock under it is dug by the next swing.
+	if cave_life and _chest(ps).distance_to(point) <= REACH + 1.0:
+		var plant := cave_life.breakable_at(point)
+		if plant >= 0:
+			var at := cave_life.position_of(plant)
+			removed_plants.append(plant)
+			_ev_break_plant.rpc(plant)
+			spawn_drop(CaveLife.FIBER_DROP, 1, at + Vector3.UP * 0.3)
+			return {state = "done", hits = 1, needed = 1, point = at, kind = "fiber"}
 	var power: float = Items.dig_power(ps.selected_item()) * ps.progress.dig_power_mult() \
 		* (1.0 + Gems.bonus(ps.inventory.get_slot(ps.hand_slot())).get("dig", 0.0)) 		* (1.0 + Upgrades.bonus(ps.inventory.get_slot(ps.hand_slot())))  # +15% per upgrade step
 	var bare := false
@@ -1371,6 +1383,12 @@ func _ev_restore_glow(glow_id: int) -> void:
 
 
 @rpc("authority", "call_local", "reliable")
+func _ev_break_plant(plant_id: int) -> void:
+	if cave_life:
+		cave_life.remove_plant(plant_id)
+
+
+@rpc("authority", "call_local", "reliable")
 func _ev_remove_glow(glow_id: int) -> void:
 	if glow:
 		glow.remove_spot(glow_id)
@@ -1555,7 +1573,7 @@ func snapshot() -> Dictionary:
 		for id in glow._spots:
 			if glow._spots[id].get("chops", 1) != GlowPlacer.KINDS[glow._spots[id].kind].get("chops", 1):
 				chops[id] = glow._spots[id].chops
-	return {edits = edit_log.duplicate(), glow = removed_glow.duplicate(), drops = drops, next_drop = _next_drop_id,
+	return {edits = edit_log.duplicate(), glow = removed_glow.duplicate(), plants = removed_plants.duplicate(), drops = drops, next_drop = _next_drop_id,
 		stations = sts, chops = chops, regrow = regrow.duplicate(), runes = rune_slab.to_data(), build = builder.snapshot(), boxes = storage.snapshot(), monsters = monsters.snapshot(), state = world_state}
 
 
@@ -1564,6 +1582,10 @@ func load_snapshot(snap: Dictionary) -> void:
 		removed_glow.append(id)
 		if glow:
 			glow.remove_spot(id)
+	for id in snap.get("plants", []):  # broken grass, ferns, small roots
+		removed_plants.append(id)
+		if cave_life:
+			cave_life.remove_plant(id)
 	for c in snap.edits:
 		edit_log.append(c)
 		_pending_digs.append(c)

@@ -19,6 +19,8 @@
 #   rootlet_b   three thin roots out of one crack: one curled, one broken, one snaking along the ground.
 #   lichen      a lichen crust for walls: lobes in rough rings, ruffled raised rims, little cups (painted pale, the
 #               game tints it orange or teal).
+#   gravel      a drift of broken stones (big ones round the foot), gravel_b a loose spray of chips; tinycaps a carpet of
+#               tiny pale mushrooms on a mould mat. These three go almost everywhere (owner: "the cave still looks empty").
 #   fern        a small curly cave fern: fronds arching out of a hairy crown, curling at the tips, leaflets with
 #               lobed edges, two young fronds still rolled up (painted green, the game tints it a little).
 #
@@ -417,9 +419,69 @@ def build_fern(seed=91):
 	]
 
 
-TINTS = {"grass": (0.95, 0.93, 0.8), "lichen": (0.95, 0.55, 0.2), "fern": (0.9, 1.0, 0.92)}  # how the pictures tint tint_ parts (the game picks per plant)
+# ---------------------------------------------------------------- everywhere: gravel drifts (owner: "the cave still looks empty")
+def build_gravel(seed=101, variant="a"):
+	"""a = a drift: an oval heap of broken stones, big ones round the foot, small ones on top (gathers along walls and
+	in dips); b = a loose spray of chips and pebbles. Every stone gets its own shade (texture rule: neighbours differ);
+	painted pale-ish so the game tints it to the local rock (grey-brown stone, purple sporestone)."""
+	r = random.Random(seed)
+	stones = []
+	if variant == "a":
+		for k in range(34):
+			u = r.random() ** 0.7  # 0 = middle .. 1 = the edge
+			a = r.uniform(0, 2 * math.pi)
+			x, y = math.cos(a) * u * 0.36, math.sin(a) * u * 0.2
+			w = r.uniform(0.022, 0.05) * (1.35 - 0.6 * (1 - u)) if k > 5 else r.uniform(0.05, 0.075)
+			z = (1 - u * u) * 0.055 + w * 0.3
+			stones.append(cp.lump(f"stone{k}", (x, y, z - 0.012), (w, w * r.uniform(0.7, 1.0), w * r.uniform(0.5, 0.8)), seed + k, jitter=0.35, detail=1))
+	else:
+		for k in range(26):
+			u = r.random() ** 0.5
+			a = r.uniform(0, 2 * math.pi)
+			w = r.uniform(0.012, 0.04)
+			stones.append(cp.lump(f"chip{k}", (math.cos(a) * u * 0.32, math.sin(a) * u * 0.28, w * 0.25 - 0.006), (w, w * r.uniform(0.6, 1.0), w * r.uniform(0.4, 0.7)),
+				seed + k, jitter=0.4, detail=1))
+	for o in stones:
+		o.rotation_euler = (r.uniform(-0.3, 0.3), r.uniform(-0.3, 0.3), r.uniform(0, 2 * math.pi))
+	g = fix_xf(cp.join(stones, "tint_stones"))
+	kd = cs.island_kd(g)
+	cs.carve_stone(g, seed=seed, grain=0.0008, crack=0.0012, chips=0.004, soften=1)
+	cs.tint_islands(g, kd, seed=seed, spread=0.16)
+	cut_below(g, -0.01)
+	return [(g, 520 if variant == "a" else 380, 512, lambda n: cs.paint_material(n, (0.78, 0.76, 0.72), (0.36, 0.34, 0.32), (0.95, 0.93, 0.9), tint_attr="tint",
+		scratches=0.5, grime=0.35, edge=0.6, seed=25.0))]
+
+
+# ---------------------------------------------------------------- everywhere: tiny pale mushrooms (the cave's "grass")
+def build_tinycaps(seed=111):
+	"""A little carpet of tiny mushrooms (1-5 cm) standing in the ground. Painted pale (the game tints them
+	white, cream or brown)."""
+	r = random.Random(seed)
+	shrooms = []
+	for k in range(15):
+		u = r.random() ** 0.6
+		a = r.uniform(0, 2 * math.pi)
+		base = Vector((math.cos(a) * u * 0.12, math.sin(a) * u * 0.1, -0.004))
+		h = r.uniform(0.012, 0.045) * (1.2 - 0.5 * u)
+		lean = Vector((r.uniform(-1, 1), r.uniform(-1, 1), 0)) * h * 0.25
+		top = base + Z * h + lean
+		sr = 0.0018 + h * 0.06
+		shrooms.append(cp.tube(f"stem{k}", [base, (base + top) / 2 + lean * 0.3, top], [sr * 1.3, sr, sr * 0.9], sides=5, wobble=0.05, seed=seed + k))
+		cr = h * r.uniform(0.3, 0.45) + 0.003
+		shrooms.append(ck.loft(f"cap{k}", [(top - Z * cr * 0.15, cr * 0.35, cr * 0.35), (top - Z * cr * 0.1, cr, cr), (top + Z * cr * 0.25, cr * 0.8, cr * 0.8),
+			(top + Z * cr * 0.45, cr * 0.3, cr * 0.3)], cp.grey(), sides=8, subsurf=0, wobble=0.06, seed=seed + 30 + k))
+	# (no mould mat: in the cave it read as a grey plate from a distance; the stems stand in the ground)
+	caps = cp.join(shrooms, "tint_caps")
+	cs.gradient_attr(caps)
+	return [
+		(caps, "self", 256, lambda n: cs.paint_material(n, (0.92, 0.9, 0.84), (0.6, 0.56, 0.5), (1.0, 0.99, 0.96), root=(0.7, 0.66, 0.58), strokes=0.12, edge=0.3,
+			grime=0.2, ao_samples=8, seed=27.0)),
+	]
+
+
+TINTS = {"grass": (0.95, 0.93, 0.8), "lichen": (0.95, 0.55, 0.2), "fern": (0.9, 1.0, 0.92), "gravel": (0.62, 0.58, 0.53), "gravel_b": (0.62, 0.58, 0.53), "tinycaps": (1.0, 0.95, 0.85)}  # how the pictures tint tint_ parts (the game picks per plant)
 BUILDS = {"moss": build_moss, "moss_drape": build_moss_drape, "grass": build_grass, "rootlet": build_rootlet, "rootlet_b": lambda: build_rootlet(72, "b"),
-	"lichen": build_lichen, "fern": build_fern}
+	"lichen": build_lichen, "fern": build_fern, "gravel": build_gravel, "gravel_b": lambda: build_gravel(102, "b"), "tinycaps": build_tinycaps}
 
 
 def tint_for_pictures(name, objs):

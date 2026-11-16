@@ -277,6 +277,7 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	glow = GlowField.new()
 	glow.name = "Glow"
 	add_child(glow)
+	glow.rock = CaveLife.Rock.new(world.maker)  # crystals sit on the rock as it's drawn (F195)
 	glow.build(GlowPlacer.place(world.maker))
 
 	var clutter := Clutter.new()  # pebbles, rocks, bones, twigs on the floors (only looks)
@@ -306,6 +307,7 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	authority.name = "Authority"
 	authority.world = world
 	authority.glow = glow
+	authority.cave_life = cave_life
 	authority.drops_root = drops
 	authority.poi_field = pf
 	add_child(authority)

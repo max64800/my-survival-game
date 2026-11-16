@@ -539,6 +539,8 @@ func _on_dig_feedback(pid: int, result: Dictionary) -> void:
 			Sfx.play("clink", at)
 		"done":
 			var k: String = result.get("kind", "")
+			if k == "fiber":  # a grass tuft, fern or small root broke (F197): a puff of green bits
+				Fx.burst(get_parent(), at + Vector3.UP * 0.15, Color(0.6, 0.66, 0.38), 12, 2.5)
 			Sfx.play("crystal" if k.begins_with("crystal") else ("chop" if k in GlowPlacer.TALL else "pickup"), at)
 
 
