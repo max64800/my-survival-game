@@ -2145,3 +2145,10 @@ behind the nose, the rings clip through the hair; then do the whole body.
 - While Claude was halfway through `hair_swing.gd`, another Claude's test run printed its errors.
 - Clipping now (beard below the chin): standing, walking, jumping 0 mm; sword, chopping 2 cm; run, sprint, mining,
   roll 3 to 4 cm, at the belly's sides where round 1's shirt bulges out with the arms. For the body round.
+
+## November 16, 2026 (PC, cave-life Claude): rock textures plan (F213)
+
+- The owner liked round 2 ("looks better") and asked for better rock, clay and other cave textures, with variations.
+  Claude looked at how they're made today (one painted photo per material, repeating everywhere) and asked multiple
+  choice questions. Picked: 3-4 hand-painted looks per material from ChatGPT variant sheets, looks only, stone, dirt,
+  clay and moss first. Saved as `docs/design/rock-textures-plan.md`; a fresh chat builds it (token rule).
