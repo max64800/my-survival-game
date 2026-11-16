@@ -1,6 +1,6 @@
 class_name GlowPlacer
 ## Glow Placer: picks spots on cave surfaces for things you can harvest:
-## glowing crystals (walls), hanging roots (ceilings, the first wood!), and mushrooms
+## glowing crystals (walls, ceilings), roots (breaking out of floors, the first wood!), and mushrooms
 ## and fiber tufts (floors). Same seed = same spots, so every co-op player sees the
 ## same things, and each spot has an id the host can refer to.
 ##
@@ -70,7 +70,7 @@ static func _place(maker: CaveMaker) -> Array[Dictionary]:
 				if i % 3 == 0:
 					dir.y = -absf(dir.y) - 0.6  # aim at the floor (mushrooms, fiber)
 				elif i % 5 == 1:
-					dir.y = absf(dir.y) + 0.8  # aim at the ceiling (roots)
+					dir.y = absf(dir.y) + 0.8  # aim at the ceiling (crystals, drips)
 				_try_add(maker, rng, spots, room.center, dir.normalized(), 70.0, biome)
 		for i in range(0, maker.segments.size(), 2):
 			var s: Dictionary = maker.segments[i]
@@ -152,13 +152,11 @@ static func _add_start_spots(maker: CaveMaker, spots: Array[Dictionary]) -> void
 	var st := maker.start
 	if st.is_empty():
 		return
-	for p in st.roots:
-		var top := _march(maker, p, Vector3.UP, 6.0)
-		if top == Vector3.INF:
+	for p in st.roots:  # small roots sticking out of the floor (owner, Nov 16: roots grow out of the ground)
+		var fl := _march(maker, p, Vector3.DOWN, 8.0)
+		if fl == Vector3.INF:
 			continue
-		var below := _march(maker, top + Vector3.DOWN * 0.3, Vector3.DOWN, 8.0)
-		var gap := top.distance_to(below) if below != Vector3.INF else 3.0
-		_add_spot(spots, top, Vector3.DOWN, ROOT_DANGLE, 1.0, 0.0, clampf(gap - 1.9, 0.6, 1.6))
+		_add_spot(spots, fl, Vector3.UP, ROOT_DANGLE, 1.0, fposmod(p.x * 3.7 + p.z * 1.3, TAU), 0.55)
 	for p in st.caps:
 		var fl := _march(maker, p + Vector3.UP * 1.0, Vector3.DOWN, 4.0)
 		if fl != Vector3.INF:
@@ -203,15 +201,14 @@ static func _try_add(maker: CaveMaker, rng: RandomNumberGenerator, spots: Array[
 			return
 	var n := normal_at(maker, hit)
 	var kind := _pick_kind(n, rng) if biome == "mossy" else _pick_fungal(n, rng)
-	if kind == ROOT and maker.sdf_at(hit + Vector3.DOWN * 0.6) <= 0.3:
-		kind = CRYSTAL  # too close to a wall to hang straight down here
+	if kind == ROOT and (maker.sdf_at(hit + Vector3.UP * 1.0) <= 0.4 or not _solid_ground(maker, hit)):
+		kind = MUSHROOM  # no room above, or no solid ground for the root's ends to dive into
 	var length := 0.0
 	if kind == ROOT:
-		# Roots hang straight down toward the floor, ending about a dwarf's reach above it.
-		n = Vector3.DOWN
-		var below := _march(maker, hit + Vector3.DOWN * 0.6, Vector3.DOWN, 40.0)
-		var gap := hit.distance_to(below) if below != Vector3.INF else 3.0
-		length = maxf(gap - 1.6, 1.2)
+		# Roots break out of the floor (owner, Nov 16), standing straight up; `length` = how big (about its height).
+		# Sized from the spot itself, not the dice, so the spots after it keep their places.
+		n = Vector3.UP
+		length = 0.85 + 0.35 * fposmod(hit.x * 7.3 + hit.z * 3.1, 1.0)
 	elif kind == GIANT:
 		# Giant mushrooms stand straight up, 3-6 m tall, never touching the ceiling.
 		n = Vector3.UP
@@ -230,18 +227,25 @@ static func _try_add(maker: CaveMaker, rng: RandomNumberGenerator, spots: Array[
 		spin = rng.randf_range(0, TAU), length = length, chops = KINDS[kind].get("chops", 1)})
 
 
+## Rock under the middle and all round (a root is ~1.6 m wide and turns any way): no ends hanging in the air.
+static func _solid_ground(maker: CaveMaker, p: Vector3) -> bool:
+	for o in [Vector3(0, -0.5, 0), Vector3(0.8, -0.3, 0), Vector3(-0.8, -0.3, 0), Vector3(0, -0.3, 0.8), Vector3(0, -0.3, -0.8)]:
+		if maker.sdf_at(p + o) >= 0.0:
+			return false
+	return true
+
+
 static func _pick_kind(n: Vector3, rng: RandomNumberGenerator) -> String:
 	var r := rng.randf()
 	if n.y > 0.65:  # floor
 		# Lots more fiber on the floor (owner F175): 40% of floor plants, was 22%.
-		if r < 0.28: return "glowcap"
-		if r < 0.42: return "hollowcap"
+		if r < 0.18: return ROOT  # roots break out of the ground (owner, Nov 16; they used to hang from the ceiling)
+		if r < 0.32: return "glowcap"
+		if r < 0.43: return "hollowcap"
 		if r < 0.52: return "bellcap"
 		if r < 0.92: return "fiber"
 		return "firecap"
-	if n.y < -0.55 and r < 0.6:  # ceiling
-		return ROOT
-	if n.y < -0.55 and r < 0.7:
+	if n.y < -0.55 and r < 0.1:  # ceiling
 		return DRIP
 	return "crystal_green" if r > 0.88 else CRYSTAL
 

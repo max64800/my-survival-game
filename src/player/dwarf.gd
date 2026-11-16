@@ -334,9 +334,9 @@ func _aim_info() -> Dictionary:
 		var k: Dictionary = GlowPlacer.KINDS.get(spot.get("kind", ""), {})
 		var nm := Items.display_name(k.get("item", ""))
 		if spot.get("kind") == GlowPlacer.ROOT:
-			nm = "Hanging Root (%d chops left)" % spot.get("chops", 1)
+			nm = "Root (%d chops left)" % spot.get("chops", 1)
 		elif spot.get("kind") == GlowPlacer.ROOT_DANGLE:
-			nm = "Thin Root · click to pull it down"
+			nm = "Thin Root · click to pull it out"
 		elif spot.get("kind") == GlowPlacer.GIANT:
 			nm = "Giant Mushroom (%d chops left · copper axe)" % spot.get("chops", 1)
 		return {kind = "glow", name = nm}

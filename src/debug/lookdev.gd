@@ -9,6 +9,7 @@ var _main: Node
 var _shots := "user://lookdev"
 var _fps: Array[float] = []
 var _clean := false  ## true = hide the HUD in the pictures
+var _plants := false  ## true = only close-ups of the cave plants and crystals (cave_plants.py models), then quit
 
 
 func _ready() -> void:
@@ -18,6 +19,8 @@ func _ready() -> void:
 			_shots = arg.trim_prefix("shots=")
 		elif arg == "clean":
 			_clean = true
+		elif arg == "plants":
+			_plants = true
 	DirAccess.make_dir_recursive_absolute(_shots)
 	_run.call_deferred()
 
@@ -98,6 +101,43 @@ func _wall_shot(maker: CaveMaker, name: String, turn: float) -> void:
 	cam.queue_free()
 
 
+## Close-ups of the nearest root, mushroom, crystal and giant mushroom, lit like a lantern, from two sides each.
+func _plant_shots(dwarf: Dwarf) -> void:
+	var glow: GlowField = _main.glow
+	var want := {"root": [GlowPlacer.ROOT], "glowcap": ["glowcap", "hollowcap", "bellcap"], "crystal": ["crystal", "crystal_green"],
+		"giant": [GlowPlacer.GIANT]}
+	var all := glow._spots.values()
+	for name in want:
+		var best := {}
+		for s in all:
+			if s.kind in want[name] and (best.is_empty() or s.pos.distance_to(dwarf.global_position) < best.pos.distance_to(dwarf.global_position)):
+				best = s
+		if best.is_empty():
+			continue
+		var size := 6.0 if name == "giant" else (2.2 if name == "root" else 1.6)
+		var n: Vector3 = best.normal
+		for k in 2:
+			var a := float(k) * 2.0 + 0.6
+			var side := n.cross(Vector3.FORWARD if absf(n.y) > 0.9 else Vector3.UP).normalized().rotated(n, a)
+			var target: Vector3 = best.pos + n * size * 0.3
+			await _teleport(dwarf, target + side * (size + 1.5) + Vector3.UP * 0.5, target)
+			var cam := Camera3D.new()
+			cam.fov = 45.0
+			add_child(cam)
+			cam.global_position = target + side * size + n * size * 0.35
+			cam.look_at(target, Vector3.UP)
+			var lamp := OmniLight3D.new()
+			lamp.omni_range = 12.0
+			lamp.light_energy = 1.6
+			lamp.light_color = Color(1.0, 0.85, 0.65)
+			cam.add_child(lamp)
+			cam.make_current()
+			await _wait(1.0)
+			await _shot("p_%s_%d" % [name, k])
+			dwarf.camera.make_current()
+			cam.queue_free()
+
+
 func _run() -> void:
 	while not _main.is_ready_to_play():
 		await _wait(0.25)
@@ -108,6 +148,10 @@ func _run() -> void:
 	if _clean:
 		_main.hud.visible = false
 	await _wait(2.0)
+	if _plants:
+		await _plant_shots(dwarf)
+		get_tree().quit()
+		return
 	await _shot("a_spawn")
 	# Cave walls up close, lit like a lantern (to compare rock styles: rock=blocks|slabs|ledges|mixed|round).
 	await _wall_shot(maker, "w_wall", 0.0)

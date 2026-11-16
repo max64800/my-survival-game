@@ -5,6 +5,10 @@ extends Node3D
 ## a real light; all the others just glow (shiny material + bloom).
 
 const GLOW_LAYER := 2
+## The hand-built plants and crystals are drawn on their own layer, which the glow lights skip: a glow light sits 0.6 m
+## above its spot, inside a big crystal or under a mushroom cap, and lit them blinding white from close up (Nov 16).
+## They shine by themselves (emission); the lantern and everything else still light them.
+const PLANT_LAYER := 1 << 10
 const LIGHT_COUNT := 12
 const LIGHT_UPDATE := 0.3
 
@@ -42,6 +46,7 @@ func build(spots: Array[Dictionary]) -> void:
 		l.shadow_enabled = false
 		l.omni_range = 6.0
 		l.light_energy = 0.0
+		l.light_cull_mask = ~PLANT_LAYER  # lights the cave round a glowing spot, not the plants themselves (see PLANT_LAYER)
 		add_child(l)
 		_lights.append(l)
 		_light_spot.append(-1)
@@ -156,17 +161,33 @@ func _add_node(s: Dictionary) -> void:
 		shape.position = Vector3.UP * 0.3 * s.scale
 	body.add_child(shape)
 	var mi := MeshInstance3D.new()
-	match s.kind:
-		"crystal", "crystal_green", "crystal_amber": mi.mesh = _crystal_mesh
-		"fiber": mi.mesh = _fiber_mesh
-		"root", "root_dangle":
-			mi.mesh = _root_mesh
-			mi.scale = Vector3(ROOT_WIDTH, s.length, ROOT_WIDTH) / s.scale  # stretch to reach toward the floor; thicker (F135)
-		GlowPlacer.GIANT: mi.mesh = _giant_mesh(s.length)
-		_: mi.mesh = _mushroom_mesh
-	mi.material_override = _material_for(s.color, GlowPlacer.KINDS[s.kind].get("glow", false), _surface_of(s.kind))
-	if s.kind == GlowPlacer.GIANT:
-		mi.material_override = null  # the giant mushroom mesh brings its own stalk + cap colors
+	var glows: bool = GlowPlacer.KINDS[s.kind].get("glow", false)
+	var model := _model_of(s.kind)
+	if model != "" and _cave_mesh(model) != null:
+		# Hand-built, sculpted and painted models (owner, Nov 16; tools/asset_forge/builds/cave_plants.py).
+		mi.mesh = _cave_mesh(model)
+		_tint_glow_parts(mi, model, s.color, glows)
+		match model:
+			"root": mi.scale = Vector3.ONE * s.length / s.scale  # length = its size (about its height in metres)
+			"giant": mi.scale = Vector3.ONE * s.length / 4.0  # the model is 4 m tall
+	else:
+		match s.kind:
+			"crystal", "crystal_green", "crystal_amber": mi.mesh = _crystal_mesh
+			"fiber": mi.mesh = _fiber_mesh
+			"root", "root_dangle":
+				mi.mesh = _root_mesh
+				mi.scale = Vector3(ROOT_WIDTH, s.length, ROOT_WIDTH) / s.scale
+			GlowPlacer.GIANT: mi.mesh = _giant_mesh(s.length)
+			_: mi.mesh = _mushroom_mesh
+		mi.material_override = _material_for(s.color, glows, _surface_of(s.kind))
+		if s.kind == GlowPlacer.GIANT:
+			mi.material_override = null  # the giant mushroom mesh brings its own stalk + cap colors
+	# far away they're not drawn (the cave fog hides them anyway): many detailed plants stay cheap
+	if model != "":
+		mi.layers = PLANT_LAYER
+	mi.visibility_range_end = 70.0
+	mi.visibility_range_end_margin = 8.0
+	mi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	body.add_child(mi)
 	add_child(body)
@@ -175,6 +196,79 @@ func _add_node(s: Dictionary) -> void:
 	var basis := Basis(side, up, side.cross(up)).orthonormalized()
 	body.global_transform = Transform3D(basis.rotated(up, s.spin).scaled(Vector3.ONE * s.scale), s.pos - up * 0.1)
 	_nodes[s.id] = body
+
+
+## Which hand-built model each kind uses ("" = the simple shapes made here).
+const CAVE_MODELS := {
+	"root": "res://assets/models/cave/root.glb",
+	"glowcap": "res://assets/models/cave/glowcap.glb",
+	"crystal": "res://assets/models/cave/crystal.glb",
+	"giant": "res://assets/models/cave/giant.glb",
+}
+var _cave_meshes := {}  ## model -> ArrayMesh (null if it failed to load)
+var _glow_mats := {}  ## tinted copies of the glowing parts' materials
+
+
+func _model_of(kind: String) -> String:
+	if kind.begins_with("crystal"):
+		return "crystal"
+	if kind == GlowPlacer.ROOT or kind == GlowPlacer.ROOT_DANGLE:
+		return "root"
+	if kind == GlowPlacer.GIANT:
+		return "giant"
+	if kind == "fiber" or kind == GlowPlacer.DRIP:
+		return ""
+	return "glowcap"  # every small mushroom kind: the same cluster, its caps tinted
+
+
+## One mesh with all the model's parts (each part keeps its own painted material), loaded once.
+func _cave_mesh(model: String) -> ArrayMesh:
+	if _cave_meshes.has(model):
+		return _cave_meshes[model]
+	var mesh: ArrayMesh = null
+	var ps := load(CAVE_MODELS[model]) as PackedScene
+	if ps:
+		var inst := ps.instantiate()
+		mesh = ArrayMesh.new()
+		for mi in inst.find_children("*", "MeshInstance3D", true, false):
+			var xf := Transform3D()
+			var n: Node = mi
+			while n != inst:
+				xf = (n as Node3D).transform * xf
+				n = n.get_parent()
+			for i in (mi as MeshInstance3D).mesh.get_surface_count():
+				var st := SurfaceTool.new()
+				st.append_from(mi.mesh, i, xf)
+				st.commit(mesh)
+				mesh.surface_set_material(mesh.get_surface_count() - 1, mi.mesh.surface_get_material(i))
+		inst.free()
+	_cave_meshes[model] = mesh
+	return mesh
+
+
+## The glowing parts (materials named glow_*) are painted pale: tint them with the kind's colour and let them shine.
+func _tint_glow_parts(mi: MeshInstance3D, model: String, c: Color, glows: bool) -> void:
+	for i in mi.mesh.get_surface_count():
+		var m := mi.mesh.surface_get_material(i) as StandardMaterial3D
+		if m == null or not m.resource_name.begins_with("glow_"):
+			continue
+		var key := "%s/%d/%s/%s" % [model, i, c.to_html(), glows]
+		if not _glow_mats.has(key):
+			var t := m.duplicate() as StandardMaterial3D
+			# Not too bright: the painted detail (bruises, cracks, facets) must still show (too strong = plain white blobs).
+			if model != "giant":  # the giant's cap is painted in its own colours
+				# the paint is near-white: a deep, extra-saturated tint keeps the colour (the AgX tonemapper turns bright colours white)
+				t.albedo_color = Color.from_hsv(c.h, minf(1.0, c.s * 1.2), c.v * (0.7 if glows else 0.9))
+			var ec := Color.from_hsv(c.h, minf(1.0, c.s * 1.2), c.v)
+			t.emission_enabled = true
+			t.emission = ec if model != "giant" else Color(0.75, 0.55, 0.85)
+			t.emission_texture = m.albedo_texture
+			t.emission_operator = BaseMaterial3D.EMISSION_OP_MULTIPLY  # colour x picture (the default ADDS them: white glow)
+			t.emission_energy_multiplier = 0.9 if glows else (0.3 if model == "giant" else 0.12)
+			if model == "crystal":
+				t.normal_enabled = false  # flat facets need no bump picture
+			_glow_mats[key] = t
+		mi.set_surface_override_material(i, _glow_mats[key])
 
 
 ## A little wet stalactite with drops falling from its tip (not something you can hit).

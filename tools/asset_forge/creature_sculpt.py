@@ -389,7 +389,8 @@ def paint_material(name, base, dark, light, moss=None, moss_amount=0.0, strokes=
 	return m
 
 
-def glow_paint(name, core, rim, lines=0.35, cells=7.0, facets=0.0, cloud=0.0, bubbles=0.0, creases=0.0, key_dir=(0.35, -0.45, 0.82), depth=0.0):
+def glow_paint(name, core, rim, lines=0.35, cells=7.0, facets=0.0, cloud=0.0, bubbles=0.0, creases=0.0, key_dir=(0.35, -0.45, 0.82), depth=0.0,
+		speck=(1.0, 0.92, 0.6), crease_col=(1.0, 0.85, 0.5)):
 	"""A glowing gem/amber look: bright core facing you, deeper colour at the rim, fracture lines inside.
 	Round 5: facets = each flat facet catches the light differently; cloud = cloudy darker depths; bubbles = small
 	bright specks trapped inside; creases = the facet edges light up."""
@@ -469,7 +470,7 @@ def glow_paint(name, core, rim, lines=0.35, cells=7.0, facets=0.0, cloud=0.0, bu
 		bmix = _node(nt, "ShaderNodeMix", data_type="RGBA", blend_type="MIX")
 		nt.links.new(bm2.outputs[0], bmix.inputs[0])
 		nt.links.new(last.outputs[2], bmix.inputs[6])
-		bmix.inputs[7].default_value = (1.0, 0.92, 0.6, 1)
+		bmix.inputs[7].default_value = (*speck, 1)  # warm specks in amber; white in crystals the game tints (cave_plants)
 		last = bmix
 	if depth:  # light from deep inside: the middle of the gem (seen from above) glows brighter, like a lantern
 		gc = _node(nt, "ShaderNodeVectorMath", operation="LENGTH")
@@ -491,7 +492,7 @@ def glow_paint(name, core, rim, lines=0.35, cells=7.0, facets=0.0, cloud=0.0, bu
 		cm = _node(nt, "ShaderNodeMix", data_type="RGBA", blend_type="SCREEN")
 		nt.links.new(pr.outputs[0], cm.inputs[0])
 		nt.links.new(last.outputs[2], cm.inputs[6])
-		cm.inputs[7].default_value = (1.0, 0.85, 0.5, 1)
+		cm.inputs[7].default_value = (*crease_col, 1)
 		last = cm
 	nt.links.new(last.outputs[2], emit.inputs["Color"])
 	return m

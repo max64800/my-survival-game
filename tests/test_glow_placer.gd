@@ -19,20 +19,23 @@ func test_enough_of_every_kind() -> void:
 	check(spots.size() >= 100, "at least 100 spots (got %d)" % spots.size())
 	check(counts.get("crystal", 0) >= 30, "crystals on walls")
 	check(counts.get("glowcap", 0) >= 15, "glowcaps on floors")
-	check(counts.get("root", 0) >= 8, "enough hanging roots for wood (got %d)" % counts.get("root", 0))
+	check(counts.get("root", 0) >= 8, "enough roots for wood (got %d)" % counts.get("root", 0))
 	check(counts.get("fiber", 0) >= 5, "fiber for rope")
 	check(counts.get("hollowcap", 0) >= 5, "hollowcaps for stew")
 
 
-func test_roots_hang_within_reach() -> void:
+## Roots break out of the floor (owner, Nov 16): standing up, rock under them, room above them.
+func test_roots_grow_out_of_the_floor() -> void:
 	var maker := CaveMaker.new(12)
+	var n := 0
 	for s in GlowPlacer.place(maker):
 		if s.kind != GlowPlacer.ROOT:
 			continue
-		var tip: Vector3 = s.pos + s.normal * s.length
-		var floor_p := GlowPlacer._march(maker, tip, Vector3.DOWN, 40.0)
-		if floor_p != Vector3.INF:
-			check(tip.distance_to(floor_p) < 4.0, "root %d tip is %.1f m above the floor" % [s.id, tip.distance_to(floor_p)])
+		n += 1
+		check(s.normal == Vector3.UP, "root %d stands up" % s.id)
+		check(maker.sdf_at(s.pos + Vector3.DOWN * 0.5) < 0.0, "root %d has rock under it" % s.id)
+		check(s.length >= 0.8 and s.length <= 1.25, "root %d is a sensible size (%.2f)" % [s.id, s.length])
+	check(n > 0, "the cave has roots")
 
 
 func test_jungle_grows_its_own_things() -> void:
@@ -47,7 +50,7 @@ func test_jungle_grows_its_own_things() -> void:
 	check(kinds.get("fungal:crystal_amber", 0) >= 10, "amber crystals in the Jungle")
 	check(kinds.get("fungal:spore_truffle", 0) >= 10, "truffles in the Jungle")
 	check_eq(kinds.get("mossy:giant_mushroom", 0), 0, "no giant mushrooms in Mossy")
-	check_eq(kinds.get("fungal:root", 0), 0, "no hanging roots in the Jungle")
+	check_eq(kinds.get("fungal:root", 0), 0, "no roots in the Jungle")
 
 
 func test_spots_sit_on_rock_surface() -> void:

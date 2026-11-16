@@ -4,6 +4,8 @@ Every fixed (crossed-out) item from `FEEDBACK.md`, moved here unchanged on Nov 1
 Nothing was deleted. Newest fixes go at the top of their group. If a fixed thing comes back, give it 🔁 and add it to
 "Things that keep coming back" in `FEEDBACK.md`.
 
+- [x] ~~**F173. Roots, mushrooms and crystals made by hand, as detailed as the Rock Beetle.**~~ Done Nov 16 (PC, Claude 2): hand-built, sculpted and painted in Blender (`cave_plants.py`) with wear and tear (chipped crystals and rock, bites out of the mushroom rims, bruises, cracked and peeling bark, scratches); crystals grow in packed nodes of six; the game uses them for every crystal, small mushroom, root and giant mushroom (glowing parts tinted per kind). *From: you. Said: 1×*
+- [x] ~~**F91. The hanging roots don't look good.**~~ Done Nov 16 (PC, Claude 2): rebuilt by hand (F173), and on your word roots now break out of the floor instead of hanging from the ceiling: a thick twisted root arching out of the ground and a broken, splintered one standing up, soil heaped where they come out. *From: you. Said: 1×*
 - [x] ~~**F174. Anything you can craft by hand should also be craftable at the Workbench.**~~ Fixed Nov 16 (PC, code Claude): the Workbench list now shows every by-hand recipe too, in the same tabs. *From: you. Said: 1×*
 
 - [x] ~~**F175. Need a lot more fiber on the ground.**~~ Fixed Nov 16 (PC, code Claude): fiber is now 40% of floor plants (was 22%) and each tuft gives 2–3 (was 2). *From: you. Said: 1×*

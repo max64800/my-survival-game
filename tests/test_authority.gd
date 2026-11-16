@@ -193,11 +193,11 @@ func _first_spot(kind: String) -> Dictionary:
 func test_roots_give_wood_four_times() -> void:
 	await _setup(42)
 	var root := _first_spot(GlowPlacer.ROOT)
-	check(not root.is_empty(), "the cave has hanging roots")
+	check(not root.is_empty(), "the cave has roots")
 	if root.is_empty():
 		_teardown()
 		return
-	player.global_position = root.pos + Vector3.DOWN * (root.length + 0.5)
+	player.global_position = root.pos + Vector3(1.2, 0.9, 0.0)  # beside the root (they grow out of the floor)
 	# Stone pickaxe chops at half power: 30 / 5 = 6 hits per chop-through.
 	var chops := 0
 	for i in 30:

@@ -32,7 +32,7 @@ func test_roots_grow_back() -> void:
 	check(glow.get_spot(id).is_empty(), "the root is gone")
 	auth._tick_regrow(GameAuthority.REGROW_TIME * 0.5)
 	check(glow.get_spot(id).is_empty(), "not back after 5 minutes")
-	# Its ceiling may have been dug away by the test world's carving; only check when the rock is there.
+	# Its floor may have been dug away by the test world's carving; only check when the rock is there.
 	var still_rock := world.sdf_at(spot.pos - spot.normal * 0.4) < 0.0
 	auth._tick_regrow(GameAuthority.REGROW_TIME * 0.6)
 	if still_rock:

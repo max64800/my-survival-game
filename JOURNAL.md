@@ -1902,3 +1902,40 @@ You tried the dev menu and asked for four things:
   like the eye and glow copies.
 - "Spawner fills nearby caves" failed twice and passed twice: it waits a fixed number of frames for the ground to load,
   so it fails when the PC is busy. Not caused by these changes; told the code Claude.
+
+## November 16, 2026 (PC, Claude 2): roots, mushrooms and crystals painted and in the game (round 2)
+
+**What we did**
+- The owner asked: paint them with wear and tear and chipped parts, crystals in packs of 5-6, roots wide and coming
+  out of the ground, not the ceiling.
+- `cave_plants.py` now paints and bakes each model, the Rock Beetle way:
+  - **Root:** a thick root of two twisted strands arches out of the floor and back in. A second root stands up with a
+    broken, splintered top. It has knots, rootlets, soil heaped where the roots come out, and pebbles. The bark has
+    cracked plates, knocked-off patches, scratches and a little moss.
+  - **Crystal:** a node of six crystals packed on a rock, with chipped corners and two broken tips.
+  - **Mushrooms:** bites out of the cap rims, bruises and stains.
+- In the game:
+  - Every crystal, small mushroom, root and giant mushroom uses the new models. The glowing parts are painted pale
+    and tinted per kind: blue, green and amber crystals; teal, brown and red mushrooms.
+  - Roots now grow from floors, only where there's solid ground under both ends and room above. The starting room's
+    pull-by-hand roots stick out of the floor too.
+  - Things you can't see from more than 70 m away aren't drawn, so the detailed models stay cheap.
+- New test `test_cave_models` checks every part has its pictures. New look-test option `lookdev plants` takes
+  close-ups of each one in the cave.
+- The 3D page shows the painted models.
+
+**Mistakes and hurdles (including Claude's)**
+- **The "white beetle" puzzle:** Blender's JPEG pictures carry an extra info block that Godot can't read. The bake
+  export for the beetle skipped the clean-up step (`glb_jpeg_fix`). The plants used it from the start and loaded
+  fine, and Claude 3 then fixed the beetle the same way.
+- Claude's "join pieces" step only joined the last piece, so 5 of the 6 crystals (and some gills and pebbles) stayed
+  loose and unpainted. Fixed: apply everything first, then select and join.
+- Crystals in the game came out white, and it took four tries to find out why:
+  1. Each glow spot's light sits 0.6 m up, inside the crystal. Fixed: the plants are on their own layer that those
+     lights skip.
+  2. The crystals' baked bump picture flattened every facet. Fixed: switched off for crystals.
+  3. The real cause: Godot ADDS a material's glow colour and glow picture by default. The near-white picture added
+     white to everything. Fixed: multiply.
+  A test in bright red is what showed where the problem was.
+- One root stood on a thin ledge with nothing under it. Fixed: roots need rock under the middle and under both ends.
+- Another Claude's change (more fiber on floors, F175) landed at the same time; the floor mix keeps its 40% fiber.
