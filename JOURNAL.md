@@ -2029,3 +2029,12 @@ You tried the dev menu and asked for four things:
   - The test browser (no graphics card) may not show those reflections at all.
   Porting the game's shader fixed it in one go.
 - Claude opened a tab in the owner's real Chrome by mistake (the browser tool uses it); closed it at once.
+
+## November 16, 2026 (PC, Claude 2): cave life brainstorm
+
+- The owner wants the caves to feel alive, not hollow. Claude suggested ideas in four groups: ground cover, big
+  shapes, things that move, and the rock itself. The owner picked every idea, with life in patches (lush near light,
+  water and roots).
+- Saved as `docs/design/cave-life-plan.md`, in three batches of four: F188 ground cover, F189 big shapes, F190 things
+  that move. A fresh chat starts batch 1.
+- The owner also asked to put the shiny crystals in: they were already in the game (every crystal uses the new shader).

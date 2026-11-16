@@ -35,7 +35,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 | Making the game / tools | F4, F5, F6, F7, F16 | |
 | Sound | F8, F15, F67 | Sounds must feel old-world: wood, stone, leather, metal. No beeps or whooshes |
 | The start of the game (first 5 minutes) | F10, F11 | |
-| A world that feels alive (enemies, ruins) | F9, F21 | Columns asked for twice (F9, F21) |
+| A world that feels alive (enemies, ruins, cave life) | F9, F21, F188-F190 | Columns asked for 3× (F9, F21, F189); caves feel hollow/empty (F9, F188) |
 | Cave shapes (round vs sharp, tunnels) | F19, F20 | |
 | Digging feel + resources | F13, F14 | |
 | Pictures / looks | F17, F22, F24, F25, F26, F28, F29, F30, F31, F68, F69, F70, F71, F72 | **The dwarf's look keeps coming up (F25 said twice)** |
@@ -48,6 +48,9 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 
 *(Nov 15 evening, your play test on the PC. You chose the fixes from multiple-choice questions.)*
 
+- [ ] **F188. The caves look hollow: ground cover.** Fluffy moss, pale grass here and there, small roots sticking out of the ground, lichen and ferns. In patches (near light, water and roots). Plan: `docs/design/cave-life-plan.md`, batch 1. *From: you. Said: 1×*
+- [ ] **F189. Big natural shapes in the caves.** Rock columns, giant root pillars and bridges that connect small openings, root curtains in doorways, arches and mossy boulders. Batch 2 of the plan. *From: you. Said: 1×*
+- [ ] **F190. Things that move, so the caves feel alive.** Drifting glowing spores, tiny critters, water (puddles, streams, mist), glowing veins and shelf fungi. Batch 3 of the plan. *From: you. Said: 1×*
 - [ ] **F87. Menu (priority).** Escape doesn't let you leave the game; you can't make a new world or delete one. Plan: Escape menu with Resume, Save, Save and go to the main menu, Quit to desktop; the main menu lists your worlds (play / delete with "are you sure?") and makes new named worlds. *From: you. Said: 1×*
 - [ ] **F88. Hotbar items aren't shown in the bag (priority).** You had a pickaxe on the hotbar but not equipped, so it looked lost. Plan: the bag shows the hotbar row too; a pickaxe you carry is used for digging even if it isn't in the pickaxe slot. *From: you. Said: 1×*
 - [ ] **F89. Losing your pickaxe can leave you stuck** (no stone without a pickaxe, no pickaxe without stone). You chose: dig with bare hands, slower, so you can always get stone. *From: you. Said: 1×*
