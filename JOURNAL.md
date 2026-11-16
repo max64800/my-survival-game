@@ -1775,3 +1775,15 @@ You tried the dev menu and asked for four things:
   - **An older test broke.** Another Claude's new chunky rock put that test's fixed chest spot inside rock. The test
     now looks for open floor nearby.
   - **Shared files again.** I saved only my own lines of the screen file; the other Claude's loading bar stays theirs.
+
+## November 16, 2026 (PC, Claude 3): Rock Beetle, red eyes and eye sockets
+
+**What we did** (the owner: the animations are really good; two things)
+- Charge: the whole eye now turns red (and yellow when dazed). Before, only a red glow was added on top of the white
+  paint, so the eyes looked pinkish-white.
+- From the side you could see the round back of the eyeballs (the head was narrower than the eyes). The eyes now sit a
+  little deeper in the head, and a cup of face skin wraps the side and back of each eye, melted into the head; from the
+  side only a thin sliver of the eye's front shows.
+
+**Mistakes and hurdles (including Claude's)**
+- The first cup sat only behind the eye, so the side of the eyeball still showed; moved outward and the eyes set deeper.

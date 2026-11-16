@@ -533,7 +533,7 @@ for i, (y0, y1) in enumerate(zip(YS, YS[1:])):
 # gaps above the brows, their roots melted into the face skin.
 EYE_R = 0.084
 EYE_LOOK = [Vector((s * 0.12, -1, -0.1)).normalized() for s in (-1, 1)]   # (sculpt_test_beetle.py paints along these)
-EYES = [Vector((s * 0.122, -0.585, 0.455)) for s in (-1, 1)]
+EYES = [Vector((s * 0.115, -0.58, 0.455)) for s in (-1, 1)]  # set into the head
 ck.loft("head", [((0, -0.3, 0.39), 0.2, 0.15), ((0, -0.44, 0.4), 0.215, 0.16), ((0, -0.54, 0.39), 0.2, 0.15),
 	((0, -0.6, 0.355), 0.14, 0.11), ((0, -0.625, 0.325), 0.075, 0.07)], face_skin, sides=20)
 # (round 6, owner: no mouth and no muzzle; the mandibles are the mouth)
@@ -599,6 +599,9 @@ for s in (-1, 1):
 	ring.name = f"socket{s}"
 	ring.matrix_world = Matrix.Translation(c - look * 0.004) @ frame(look).to_4x4()
 	ring.data.materials.append(face_skin)
+	# the eye's cup: skin wrapped round the back half of the eyeball, so from the side you see the head, not the back of
+	# a ball (owner, Nov 16)
+	ck.blob(tuple(c - look * 0.03 + Vector((s * 0.04, 0, 0))), (0.085, 0.08, 0.09), face_skin, seed=81, jitter=0.02)
 	# heavy upper lid: a thick cap over the top of the eye, coming lower on the nose side; its edge stops above the
 	# pupil, so the eye glares from under it
 	bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=18, radius=EYE_R + 0.01, location=(0, 0, 0))
