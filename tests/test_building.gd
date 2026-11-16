@@ -109,3 +109,22 @@ func test_removing_support_drops_the_rest() -> void:
 	check(s.recompute().is_empty(), "floor resting on a pillar is fine")
 	s.remove(1)
 	check_eq(s.recompute(), [2], "without the pillar the floor falls")
+
+
+## Owner, Nov 16: you can walk under the stairs (the solid shape is a slanted slab, not a solid wedge).
+func test_room_under_the_stairs() -> void:
+	var n: PieceNode = preload("res://src/build/piece_node.gd").new()
+	n.piece = "stairs"
+	n.family = "plank_root"
+	tree.root.add_child(n)
+	var shape: Shape3D = null
+	for c in n.get_children():
+		if c is CollisionShape3D:
+			shape = (c as CollisionShape3D).shape
+	check(shape is ConvexPolygonShape3D, "the stairs have a solid shape to walk up")
+	var lowest_under_back := INF
+	for p in (shape as ConvexPolygonShape3D).points:
+		if p.z < -0.9:
+			lowest_under_back = minf(lowest_under_back, p.y)
+	check(lowest_under_back > 1.4, "under the high end there's room to walk (underside at %.2f m)" % lowest_under_back)
+	n.queue_free()

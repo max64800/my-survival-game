@@ -129,7 +129,29 @@ func _update_tints(delta: float, on: bool) -> void:
 	_tint_on = true
 
 
+var work_site := -1  ## the build site you're working on (by its chest, hammer in hand), or -1
+var _work_t := 0.0
+
+
+## Hammer in hand by a Builder's Chest: the dwarf hammers away and the site builds (owner, Nov 16).
+## Walk away or put the hammer down to stop; come back to carry on.
+func _update_work(delta: float) -> void:
+	var auth := GameAuthority.instance
+	work_site = -1
+	if auth == null or dwarf == null or blueprint or not active():
+		return
+	var site := auth.builder.work_site_for(dwarf.global_position)
+	if site < 0 or auth.builder.site_progress(site) >= 1.0:
+		return
+	work_site = site
+	_work_t -= delta
+	if _work_t <= 0.0:
+		_work_t = 1.0
+		dwarf.model.work(0.9)
+
+
 func _process(delta: float) -> void:
+	_update_work(delta)
 	_update_tints(delta, active())
 	if not active():
 		_ghost.visible = false

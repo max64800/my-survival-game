@@ -1758,3 +1758,20 @@ Builder's Chest fills the chest with every material it needs, so you can watch i
 - Legs swinging the same amount from the same resting angle made neighbours meet in the middle of their swings.
 - A one-line fix to a patch script didn't apply, which left an extra bracket in the bake script; caught by a syntax check
   before running Blender.
+
+## Nov 16, 2026, evening (PC, Claude 2): building a blueprint by hand, open stairs, closer zoom (F168-F171)
+
+You tried the dev menu and asked for four things:
+- **F168:** the Builder's Chest disappears when the building is done (leftovers drop beside it).
+- **F169:** you can walk under the stairs. Their solid shape is now a slanted slab instead of a solid wedge.
+- **F170:** a blueprint only builds while someone stands by its chest holding the Build Hammer. The dwarf hammers
+  away and a progress bar shows the whole building. Walk away or put the hammer down to stop; come back to
+  continue. The host checks who's working, so it works in co-op.
+- **F171:** zooming in now closes in on the dwarf itself. The camera's over-the-shoulder offset shrinks as you zoom
+  in, aiming at his chest.
+- **Hurdles:**
+  - **The work swing.** The normal pickaxe swing "hits" (it digs where you aim), so I made a separate swing that
+    only looks like work.
+  - **An older test broke.** Another Claude's new chunky rock put that test's fixed chest spot inside rock. The test
+    now looks for open floor nearby.
+  - **Shared files again.** I saved only my own lines of the screen file; the other Claude's loading bar stays theirs.

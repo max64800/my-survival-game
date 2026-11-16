@@ -226,12 +226,18 @@ func test_blueprint_builds_itself() -> void:
 	await _setup()
 	var json := FileAccess.get_file_as_string("res://blueprints/small_rootwood_lodge.dwbp")
 	var origin := world.maker.find_floor(player.global_position.x + 6.0, player.global_position.z, player.global_position.y + 2.0).round()
-	var chest_pos := world.maker.find_floor(origin.x, origin.z + 5.0, origin.y + 3.0)
+	var chest_pos := _chest_spot(origin, 5.0)
 	check_eq(auth.builder.request_place_blueprint(1, "nonsense", origin, 0, chest_pos), "This isn't a blueprint file.", "junk refused")
 	check_eq(auth.builder.request_place_blueprint(1, json, origin, 0, chest_pos), "", "lodge placed")
 	check_eq(auth.builder.sites.size(), 1, "one build site")
 	var box_id: int = auth.builder.sites.keys()[0]
 	check_eq(auth.storage.get_box(box_id).kind, "builder", "a Builder's Chest came with it")
+	# Nobody working on it: nothing happens (owner, Nov 16: you build it by the chest, hammer in hand).
+	for i in 6:
+		auth.builder._site_ticks += 1
+		auth.builder._tick_sites()
+	check(auth.builder.site_status(box_id).begins_with("Paused: stand by"), "it waits for someone with a Build Hammer")
+	_work_by(box_id)
 	# Run the site with an empty chest: it carves, then waits for materials.
 	for i in 400:
 		auth.builder._site_ticks += 1
@@ -265,13 +271,33 @@ func test_blueprint_builds_itself() -> void:
 	_teardown()
 
 
+## A spot on open floor about `dist` m in front of the blueprint for its Builder's Chest (the chunky rock, F109,
+## can put a lump right where a fixed spot would be).
+func _chest_spot(origin: Vector3, dist: float) -> Vector3:
+	for dx in [0.0, 1.0, -1.0, 2.0, -2.0]:
+		for dz in [0.0, 1.0, 2.0, -1.0]:
+			var p := world.maker.find_floor(origin.x + dx, origin.z + dist + dz, origin.y + 3.0)
+			if world.sdf_at(p + Vector3.UP * 0.5) > 0.0:
+				return p
+	return world.maker.find_floor(origin.x, origin.z + dist, origin.y + 3.0)
+
+
+## Stand by the site's chest with the Build Hammer in hand (that's how a blueprint gets built).
+func _work_by(box_id: int) -> void:
+	ps.inventory.add("build_hammer", 1)
+	ps.selected_slot = ps.inventory.best_of_kind("hammer")
+	var chest: Dictionary = auth.storage.get_box(box_id)
+	var away: Vector3 = (chest.node.global_position - auth.builder.sites[box_id].origin) * Vector3(1, 0, 1)
+	player.global_position = chest.node.global_position + away.normalized() * 1.5
+
+
 ## Dev menu (P): any ready-made blueprint, then P in its Builder's Chest fills it with everything still needed.
 func test_dev_fill_builders_chest() -> void:
 	await _setup()
 	check_eq(DevMenu.all_blueprints().size(), BlueprintLibrary.IDS.size() + 1, "every ready-made blueprint, learned or not")
 	var json := BlueprintLibrary.make("delvers_hut").to_json()
 	var origin := world.maker.find_floor(player.global_position.x + 6.0, player.global_position.z, player.global_position.y + 2.0).round()
-	var chest_pos := world.maker.find_floor(origin.x, origin.z + 7.0, origin.y + 3.0)
+	var chest_pos := _chest_spot(origin, 7.0)
 	check_eq(auth.builder.request_place_blueprint(1, json, origin, 0, chest_pos), "", "hut placed")
 	var box_id: int = auth.builder.sites.keys()[0]
 	check(auth.builder.request_dev_fill(1, box_id).begins_with("Dev: filled"), "P fills the chest")
@@ -285,6 +311,15 @@ func test_dev_fill_builders_chest() -> void:
 	check_eq(in_chest + dropped, 296, "exactly what the hut needs: 296 planks (in the chest, the rest beside it)")
 	check(Builder.missing_for(site.plan, all, auth.storage.get_box(box_id).inv).is_empty() or dropped > 0, "nothing missing")
 	check(auth.builder.request_dev_fill(1, 9999).begins_with("Dev: that's not"), "only Builder's Chests")
+	# Build it all: when it stands, the Builder's Chest goes away (owner, Nov 16).
+	_work_by(box_id)
+	for i in 900:
+		auth.builder._site_ticks += 1
+		auth.builder._tick_sites()
+		if auth.builder.sites.is_empty():
+			break
+	check(auth.builder.sites.is_empty(), "the whole hut got built (%s)" % auth.builder.site_status(box_id))
+	check(auth.storage.get_box(box_id).is_empty(), "and its Builder's Chest is gone")
 	_teardown()
 
 

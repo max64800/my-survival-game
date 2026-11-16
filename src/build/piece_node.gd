@@ -340,6 +340,13 @@ func _ramp_shape(s: Vector3) -> void:
 	sh.points = PackedVector3Array([
 		Vector3(-hx, 0, hz), Vector3(hx, 0, hz), Vector3(-hx, 0, -hz), Vector3(hx, 0, -hz),
 		Vector3(-hx, s.y, -hz), Vector3(hx, s.y, -hz)])
+	if piece == "stairs":
+		# A slanted slab you walk up, open underneath so you can walk under the stairs (owner, Nov 16).
+		var t := 0.45  # how thick the slab is, straight down
+		var zt := hz - t * (2.0 * hz / s.y)  # where its underside meets the floor
+		sh.points = PackedVector3Array([
+			Vector3(-hx, 0, hz), Vector3(hx, 0, hz), Vector3(-hx, 0, zt), Vector3(hx, 0, zt),
+			Vector3(-hx, s.y, -hz), Vector3(hx, s.y, -hz), Vector3(-hx, s.y - t, -hz), Vector3(hx, s.y - t, -hz)])
 	cs.shape = sh
 	add_child(cs)
 

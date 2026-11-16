@@ -45,6 +45,9 @@ var map_panel: MapPanel
 var build_menu: BuildMenu
 var blueprint_menu: BlueprintMenu
 var dev_menu: DevMenu  ## P in dev builds
+var _work_box: VBoxContainer  ## by a Builder's Chest: what's being built, how far along (owner, Nov 16)
+var _work_label: Label
+var _work_bar: ProgressBar
 var box_panel: BoxPanel
 var build_mode: BuildMode
 var _build_label: Label
@@ -223,6 +226,19 @@ func _build() -> void:
 	dev_menu.visible = false
 	root.add_child(dev_menu)
 	dev_menu.resized.connect(func(): dev_menu.position = (root.size - dev_menu.size) * 0.5)
+	_work_box = VBoxContainer.new()
+	_work_box.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	_work_box.custom_minimum_size = Vector2(460, 0)
+	_work_box.position += Vector2(-230, -190)
+	_work_box.visible = false
+	root.add_child(_work_box)
+	_work_label = _label(_work_box, 16)
+	_work_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_work_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	_work_bar = ProgressBar.new()
+	_work_bar.custom_minimum_size = Vector2(460, 20)
+	_work_bar.show_percentage = false
+	_work_box.add_child(_work_bar)
 	# While the Build Hammer is out: what you're building and every key, on the right side (owner F131).
 	_build_label = _label(root, 16)
 	_build_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_RIGHT)
@@ -739,9 +755,30 @@ func _ensure_sound_controls() -> void:
 	(box.get_node("Mute") as CheckButton).set_pressed_no_signal(SoundSettings.muted)
 
 
+## By a Builder's Chest: a progress bar for the whole building. Hammer out = you're building it.
+func _update_work_bar(auth: GameAuthority) -> void:
+	var me := _local_dwarf()
+	var site := auth.builder.work_site_for(me.global_position) if auth and auth.builder and me else -1
+	_work_box.visible = site >= 0
+	if site < 0:
+		return
+	var f := auth.builder.site_progress(site)
+	var nm: String = auth.builder.sites[site].get("name", "Blueprint")
+	_work_bar.value = f * 100.0
+	var working := build_mode != null and build_mode.work_site == site
+	var status := auth.builder.site_status(site)
+	if working:
+		_work_label.text = "Building %s: %d%%
+%s" % [nm, roundi(f * 100.0), status]
+	else:
+		_work_label.text = "%s: %d%% built
+Take out your Build Hammer here to build it (walk away to stop)." % [nm, roundi(f * 100.0)]
+
+
 func _process(delta: float) -> void:
 	var auth := GameAuthority.instance
 	var ps: GameAuthority.PlayerState = auth.get_player(peer_id) if auth else null
+	_update_work_bar(auth)
 	_goals_wait -= delta
 	if ps and _goals_wait <= 0.0:
 		_goals_wait = 1.0

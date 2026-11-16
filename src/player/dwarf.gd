@@ -18,7 +18,7 @@ const ACCEL := 14.0
 const AIR_ACCEL := 4.0
 const SWING_TIME := 0.55
 const CAMERA_DISTANCE := 3.4  ## starting camera distance (and the longest reach used for aiming)
-const ZOOM_MIN := 1.4
+const ZOOM_MIN := 1.1
 const ZOOM_MAX := 8.0
 const ZOOM_STEP := 0.5
 const SHOULDER := Vector3(0.55, 1.5, 0.0)
@@ -276,14 +276,17 @@ func _process(delta: float) -> void:
 		_pose_timer = POSE_SEND_TIME
 		_net_pose.rpc(global_position, model.rotation.y)
 	# The camera follows smoothly up and down, so stepping up a ledge doesn't jolt.
-	var want_y := global_position.y + SHOULDER.y
+	# Zoomed in, the camera looks at the dwarf itself (chest height, no shoulder offset); zoomed out, over the
+	# shoulder as before (owner, Nov 16: zooming went to the middle of the screen, not to the dwarf).
+	var near := clampf((_spring.spring_length - ZOOM_MIN) / (CAMERA_DISTANCE - ZOOM_MIN), 0.0, 1.0)
+	var want_y := global_position.y + lerpf(1.0, SHOULDER.y, near)
 	if is_nan(_cam_y) or absf(_cam_y - want_y) > 2.0:
 		_cam_y = want_y
 	_cam_y = lerpf(_cam_y, want_y, minf(1.0, delta * 14.0))
 	_cam_yaw.global_position = Vector3(global_position.x, _cam_y, global_position.z)
 	_cam_yaw.rotation.y = _yaw
 	_cam_pitch.rotation.x = _pitch
-	_spring.position = Vector3(SHOULDER.x, 0, 0)
+	_spring.position = Vector3(lerpf(0.08, SHOULDER.x, near), 0, 0)
 	_spring.spring_length = lerpf(_spring.spring_length, _zoom, minf(1.0, delta * 10.0))  # smooth zoom
 	_shake = maxf(0.0, _shake - delta * 4.0)
 	camera.fov = lerpf(camera.fov, 48.0 if fight and fight.aiming() else 72.0, minf(1.0, delta * 10.0))  # crossbow zoom

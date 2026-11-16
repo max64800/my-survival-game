@@ -37,6 +37,7 @@ var _site_ticks := 0
 const MAX_SITES := 3
 const SITE_TICK := 0.5  ## carve every 0.5 s, build every 1 s
 const CHEST_RANGE := 16.0
+const WORK_RANGE := 4.0  ## a blueprint only builds while someone with the Build Hammer stands this close to its chest
 const CARVE_RADIUS := 0.8  ## gentle scoops, so the floor under the building stays
 const CARVES_PER_TICK := 3
 
@@ -734,7 +735,7 @@ func _ev_site(box_id: int, json: String, origin: Vector3, rot: int, built: Array
 	var carve := bp.carve_cells(origin, rot)
 	carve.sort_custom(func(a, b): return a.distance_to(chest_pos) < b.distance_to(chest_pos))
 	sites[box_id] = {json = json, origin = origin, rot = rot, plan = plan, carve = carve, ghosts = ghost_root,
-		status = "Starting…", leftovers = {}}
+		status = "Starting…", leftovers = {}, name = bp.name}
 
 
 @rpc("authority", "call_local", "reliable")
@@ -760,6 +761,42 @@ func _ev_site_done(box_id: int) -> void:
 		site.ghosts.queue_free()
 
 
+## Everyone: the build site whose Builder's Chest is within reach of `pos` (where you'd work on it), or -1.
+func work_site_for(pos: Vector3) -> int:
+	var best := -1
+	var best_d := WORK_RANGE
+	for box_id in sites:
+		var chest: Dictionary = auth.storage.get_box(box_id)
+		if chest.is_empty() or chest.node == null:
+			continue
+		var d: float = chest.node.global_position.distance_to(pos)
+		if d <= best_d:
+			best_d = d
+			best = box_id
+	return best
+
+
+## Everyone: how much of a build site is built (0..1).
+func site_progress(box_id: int) -> float:
+	var site: Dictionary = sites.get(box_id, {})
+	if site.is_empty() or site.plan.is_empty():
+		return 0.0
+	var built := 0
+	for p in site.plan:
+		if p.built:
+			built += 1
+	return float(built) / site.plan.size()
+
+
+## Host: is anyone working on this site? (Standing by its chest with the Build Hammer in hand, owner Nov 16.)
+func _someone_building(chest: Dictionary) -> bool:
+	for pid in auth.players:
+		var ps: GameAuthority.PlayerState = auth.players[pid]
+		if ps.node and ps.selected_item() == "build_hammer" and ps.node.global_position.distance_to(chest.node.global_position) <= WORK_RANGE:
+			return true
+	return false
+
+
 ## Host: one step of every build site. Carving first (rock goes into the chest), then pieces.
 func _tick_sites() -> void:
 	for box_id in sites.keys():
@@ -767,6 +804,9 @@ func _tick_sites() -> void:
 		var chest: Dictionary = auth.storage.get_box(box_id)
 		if chest.is_empty():
 			_set_status(box_id, "Paused: the Builder's Chest is gone")
+			continue
+		if not _someone_building(chest):
+			_set_status(box_id, "Paused: stand by the Builder's Chest with your Build Hammer to build")
 			continue
 		if _carve_step(box_id, site, chest):
 			continue
@@ -907,6 +947,11 @@ func _build_step(box_id: int, site: Dictionary, chest: Dictionary) -> void:
 	if done == site.plan.size():
 		_set_status(box_id, "Done!")
 		_ev_site_done.rpc(box_id)
+		# The Builder's Chest goes away once the building stands (owner, Nov 16); what's left in it drops beside it.
+		for slot in inv.slots:
+			if not slot.is_empty():
+				auth.spawn_drop(slot.id, slot.count, chest.node.global_position + Vector3.UP * 0.6)
+		auth.storage._ev_remove_box.rpc(box_id)
 	elif not first_missing.is_empty():
 		# Everything this step still needs at once, and what the whole building needs (F112).
 		var this_step := []

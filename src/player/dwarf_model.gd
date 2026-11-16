@@ -93,6 +93,15 @@ func _ready() -> void:
 	_rest()
 
 
+## Working on a build site with the Build Hammer: the same strong overhead swing, but it hits nothing.
+func work(duration: float) -> void:
+	if swinging or dwarf_rig == null:
+		return
+	swinging = true
+	dwarf_rig.play_upper("dig", duration)
+	get_tree().create_timer(duration).timeout.connect(func(): swinging = false)
+
+
 ## Swing the pickaxe: wind up, strike (emits swing_impact), recover.
 func swing(duration: float) -> void:
 	if swinging:
