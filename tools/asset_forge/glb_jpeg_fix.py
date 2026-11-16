@@ -1,8 +1,10 @@
 """Makes Blender's JPEG textures inside .glb models readable by Godot.
 
-Blender 5.3 writes a tiny EXIF block (APP1) into every JPEG it saves. Godot 4.7.2's JPEG reader
-rejects those pictures ("Parse error"), so the model shows up WHITE in the game. This removes the
-extra info blocks (APP1..APP15; the picture itself is untouched) and rewrites the .glb.
+Blender 5.3 writes extra info blocks into every JPEG it saves. Godot 4.7.2's JPEG reader rejects those
+pictures ("Couldn't load image ... image/jpeg"), so the model shows up WHITE in the game. Tested Nov 16: the
+one that breaks it is the colour profile (APP2 "ICC_PROFILE"); the small EXIF block (APP1) is harmless. This
+removes all the extra blocks (APP1..APP15; the picture itself is untouched) and rewrites the .glb.
+EVERY script that exports a .glb with JPEG pictures must call it (the bake script didn't: that was F164).
 
     python tools/asset_forge/glb_jpeg_fix.py model.glb [more.glb ...]
 or from code (also inside Blender): import glb_jpeg_fix; glb_jpeg_fix.fix(path)

@@ -96,9 +96,10 @@ The beetle is the worked example: `tools/asset_forge/builds/monster_rock_beetle.
 - The dark layer under the shell plates must stop behind the face and the amber: the sculpt grows its moss up to 7.5 cm,
   right through the lids and the gem.
 - Long Python patches typed straight into the terminal break on quotes: write them to a script file first.
-- **Open (Nov 16):** the baked beetle shows up **white** in Godot (its 42 pictures don't load on import, though the 3D page
-  shows them). Until it's solved, the game keeps the old beetle and `build_creatures.py` doesn't install the baked one.
-  Godot only re-imports a model when its contents change: to force it, delete its files in `.godot/imported/`.
+- **Every export with JPEG pictures must run `glb_jpeg_fix.fix()`** (Blender 5.3 puts a colour profile in each JPEG and
+  Godot 4.7 can't read it: the model loads WHITE). The bake script once skipped it (F164); `tests/test_model_pictures.gd`
+  now catches that. Test where a problem is before guessing: load the file in Godot and read the error.
+- Godot only re-imports a model when its contents change: to force it, delete its files in `.godot/imported/`.
 
 ## Part 3: the looks (variants)
 

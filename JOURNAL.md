@@ -1878,3 +1878,27 @@ You tried the dev menu and asked for four things:
 - Roots now drop fiber too, so an older check counting 4 drop piles saw 8. Updated the check.
 - A patch script missed one block of the crafting code (it couldn't find the exact text); replaced that block by
   position instead.
+
+## November 16, 2026 (PC, Claude 3): F164 fixed, the baked Rock Beetles are in the game
+
+**What we did**
+- The "baked models load white in Godot" bug: this time tested instead of guessed. Loading the beetle in Godot gave
+  "Couldn't load image ... image/jpeg". Pulling one picture out and testing it piece by piece showed the culprit: the
+  colour profile Blender 5.3 writes into every JPEG. Godot 4.7 can't read a JPEG that has one.
+- A fix already existed: `glb_jpeg_fix.py`, written by Claude on Nov 14, used by every other export. The new bake script
+  never called it. That one missing line was the whole bug. It's called now, and the tool's notes say the real cause.
+- New check `tests/test_model_pictures.gd`: every baked creature material must arrive with its picture (shown failing
+  on a broken file and passing on the fixed ones).
+- All four Rock Beetle looks are in the game, painted, at the old beetle's size (scaled to 88%; `glb_scale.py`), and
+  `build_creatures.py` sculpts and bakes every look again. Cave preview: all four next to the workbench, painted.
+- Beetle feedback items F143-F147, F163, F164, F166 crossed out and moved to `FEEDBACK-done.md` (owner approved).
+
+**Mistakes and hurdles (including Claude's)**
+- Claude re-diagnosed a problem it had already solved two days earlier and first wrote a second, duplicate fix; found
+  the old tool while wiring the new one in, deleted the duplicate, and used the old one.
+- Putting the new beetles in made a game check fail with an engine error ("material is null"). Cause: the per-beetle
+  stone shade (from round 8) made material copies that only the beetle's parts held on to; when a test deleted the whole
+  world at once, a copy could be freed before the engine let go of it. Fixed by keeping the copies on the beetle itself,
+  like the eye and glow copies.
+- "Spawner fills nearby caves" failed twice and passed twice: it waits a fixed number of frames for the ground to load,
+  so it fails when the PC is busy. Not caused by these changes; told the code Claude.
