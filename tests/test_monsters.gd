@@ -308,11 +308,18 @@ func test_spawner_fills_nearby_caves() -> void:
 		if not room.get("sealed", false) and room.get("kind", "") in ["cavern", "room", "great_hall", "ruin"]:
 			player.global_position = room.center
 			break
-	for i in 120:
+	# Wait until the ground there is loaded (slow when the PC is busy), then try spawning a few times
+	# (it was flaky with a fixed 120-frame wait: Claude 3, Nov 16).
+	for i in 1500:
 		if world.is_ready_at(player.global_position, 4.0):
 			break
 		await tree.process_frame
-	auth.monsters._spawn_and_despawn()
+	for tries in 10:
+		auth.monsters._spawn_and_despawn()
+		if auth.monsters.monsters.size() > 0:
+			break
+		for f in 30:
+			await tree.process_frame
 	check(auth.monsters.monsters.size() > 0, "monsters appeared in the next cave (%d)" % auth.monsters.monsters.size())
 	_teardown()
 
