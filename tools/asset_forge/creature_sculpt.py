@@ -91,13 +91,20 @@ def carve_stone(o, seed=1, grain=0.0022, crack=0.004, chips=0.008, soften=2):
 	_apply_all(o)
 
 
-def carve_chitin(o, seed=2, dents=0.003, grain=0.0012):
-	"""Chitin (beetle shell skin): broad shallow dents and a fine grain."""
+def carve_chitin(o, seed=2, dents=0.003, grain=0.0012, grooves=0.0, groove_scale=9.0, pits=0.0):
+	"""Chitin (beetle shell skin): broad shallow dents and a fine grain. grooves: lines that split it into armour
+	plates (like a real beetle's face); pits: small round dents (wear). Round 6: the face was too smooth."""
 	off = Vector((seed * 5.3, seed * 2.1, seed * 9.9))
 
 	def fn(p, n):
 		q = p + off
-		return dents * noise.noise(q * 9) + grain * noise.fractal(q * 60, 0.5, 2.0, 3)
+		h = dents * noise.noise(q * 9) + grain * noise.fractal(q * 60, 0.5, 2.0, 3)
+		if grooves:
+			h -= grooves * _crack(q, groove_scale)
+		if pits:
+			pv = noise.voronoi(q * 45, distance_metric="DISTANCE")[0]
+			h -= pits * max(0.0, 1.0 - pv[0] / 0.25) ** 2 * (1.0 if noise.noise(q * 7) > 0.1 else 0.0)
+		return h
 	_displace(o, fn)
 
 
@@ -171,7 +178,8 @@ def lin(c):
 
 
 def paint_material(name, base, dark, light, moss=None, moss_amount=0.0, strokes=0.12, top_light=0.18, edge=0.35, seed=0.0,
-		key=0.35, key_dir=(0.35, -0.45, 0.82), tint_attr=None, scratches=0.0, grime=0.0, root=None, root_attr="grad", ao_samples=16, ao_local=False):
+		key=0.35, key_dir=(0.35, -0.45, 0.82), tint_attr=None, scratches=0.0, grime=0.0, root=None, root_attr="grad", ao_samples=16, ao_local=False,
+		scratch_width=1.0):
 	"""A 'hand-painted' look as a shader: base colour with brush-stroke variation, darker in cavities (ambient
 	occlusion), lighter on worn edges (pointiness) and on tops (facing up), moss in the up-facing cavities.
 	Colours are (r, g, b) 0..1 as picked by eye (sRGB). Meant to be BAKED (Cycles) into a colour picture.
@@ -269,7 +277,7 @@ def paint_material(name, base, dark, light, moss=None, moss_amount=0.0, strokes=
 		last = gm
 	if scratches:  # thin scratches: pale fresh stone in the line, and cut in (bump -> baked into the normal map)
 		mask = None
-		for k, (sc, stretch) in enumerate(((5.0, (1.0, 1.0, 1.0)), (8.0, (1.6, 0.6, 1.0)), (12.0, (0.7, 1.4, 1.2)))):
+		for k, (sc, stretch) in enumerate(((4.0, (1.0, 1.0, 1.0)), (6.5, (1.6, 0.6, 1.0)), (10.0, (0.7, 1.4, 1.2)))):
 			mp = _node(nt, "ShaderNodeMapping")
 			mp.inputs["Scale"].default_value = stretch
 			mp.inputs["Location"].default_value = (seed + k * 11.3, k * 5.1, k * 2.7)
@@ -281,11 +289,11 @@ def paint_material(name, base, dark, light, moss=None, moss_amount=0.0, strokes=
 			ab.inputs[1].default_value = 0.5
 			ab2 = _node(nt, "ShaderNodeMath", operation="ABSOLUTE")
 			nt.links.new(ab.outputs[0], ab2.inputs[0])
-			line = _node(nt, "ShaderNodeMapRange", **{"From Min": 0.0, "From Max": 0.006 + 0.002 * k, "To Min": 1.0, "To Max": 0.0})
+			line = _node(nt, "ShaderNodeMapRange", **{"From Min": 0.0, "From Max": (0.006 + 0.002 * k) * scratch_width, "To Min": 1.0, "To Max": 0.0})
 			nt.links.new(ab2.outputs[0], line.inputs["Value"])
 			mk = _node(nt, "ShaderNodeTexNoise", **{"Scale": sc * 1.7, "Detail": 1.0})
 			nt.links.new(mp.outputs[0], mk.inputs["Vector"])
-			mkr = _node(nt, "ShaderNodeMapRange", **{"From Min": 0.56, "From Max": 0.64, "To Min": 0.0, "To Max": 1.0})
+			mkr = _node(nt, "ShaderNodeMapRange", **{"From Min": 0.53, "From Max": 0.6, "To Min": 0.0, "To Max": 1.0})
 			nt.links.new(mk.outputs["Fac"], mkr.inputs["Value"])
 			one = _node(nt, "ShaderNodeMath", operation="MULTIPLY")
 			nt.links.new(line.outputs[0], one.inputs[0])
@@ -301,11 +309,22 @@ def paint_material(name, base, dark, light, moss=None, moss_amount=0.0, strokes=
 		nt.links.new(mask.outputs[0], sf.inputs[0])
 		sf.inputs[1].default_value = scratches
 		sm = _node(nt, "ShaderNodeMix", data_type="RGBA", blend_type="MIX")
-		nt.links.new(sf.outputs[0], sm.inputs[0])
-		nt.links.new(last.outputs[2], sm.inputs[6])
-		sm.inputs[7].default_value = (*[min(1.0, c * 1.15) for c in light], 1)
+		# a dark crease on one side of each scratch, a pale fresh line inside it: readable from far away
+		dk = _node(nt, "ShaderNodeMath", operation="MULTIPLY", use_clamp=True)
+		nt.links.new(sf.outputs[0], dk.inputs[0])
+		dk.inputs[1].default_value = 0.5
+		dm = _node(nt, "ShaderNodeMix", data_type="RGBA", blend_type="MIX")
+		nt.links.new(dk.outputs[0], dm.inputs[0])
+		nt.links.new(last.outputs[2], dm.inputs[6])
+		dm.inputs[7].default_value = (*[c * 0.35 for c in dark], 1)
+		sm.inputs[7].default_value = (*[min(1.0, c * 1.3) for c in light], 1)
+		cm2 = _node(nt, "ShaderNodeMapRange", **{"From Min": 0.45, "From Max": 0.8, "To Min": 0.0, "To Max": 1.0})
+		nt.links.new(sf.outputs[0], cm2.inputs["Value"])
+		nt.links.new(dm.outputs[2], sm.inputs[6])
+		sm.inputs[0].default_value = 0.0
+		nt.links.new(cm2.outputs[0], sm.inputs[0])
 		last = sm
-		disp = _node(nt, "ShaderNodeDisplacement", **{"Midlevel": 0.0, "Scale": -0.0015})
+		disp = _node(nt, "ShaderNodeDisplacement", **{"Midlevel": 0.0, "Scale": -0.004 * scratch_width})
 		nt.links.new(mask.outputs[0], disp.inputs["Height"])
 		nt.links.new(disp.outputs[0], outn.inputs["Displacement"])
 		for holder in (m, getattr(m, "cycles", None)):  # bump only (the shape stays), so the bake's normal map gets the cuts

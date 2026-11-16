@@ -45,6 +45,7 @@ chitin = ck.color("chitin", (0.36, 0.17, 0.09), rough=0.55)
 chitin_dark = ck.color("chitin_dark", (0.22, 0.1, 0.05), rough=0.6)
 face_skin = ck.color("face_skin", (0.32, 0.14, 0.08), rough=0.6)  # the face: one melted skin in the sculpt pass
 claw = ck.color("claw", (0.8, 0.64, 0.42), rough=0.5)
+mandible_mat = ck.color("mandible", (0.6, 0.58, 0.55), rough=0.5)  # grey (owner, round 6)
 amber = ck.color("glow_back", (1.0, 0.55, 0.08), rough=0.2)
 amber.node_tree.nodes["Principled BSDF"].inputs["Emission Color"].default_value = (1.0, 0.55, 0.1, 1)
 amber.node_tree.nodes["Principled BSDF"].inputs["Emission Strength"].default_value = 0.5
@@ -528,37 +529,47 @@ EYE_LOOK = [Vector((s * 0.12, -1, -0.1)).normalized() for s in (-1, 1)]   # (scu
 EYES = [Vector((s * 0.122, -0.585, 0.455)) for s in (-1, 1)]
 ck.loft("head", [((0, -0.3, 0.39), 0.2, 0.15), ((0, -0.44, 0.4), 0.215, 0.16), ((0, -0.54, 0.39), 0.2, 0.15),
 	((0, -0.6, 0.355), 0.14, 0.11), ((0, -0.625, 0.325), 0.075, 0.07)], face_skin, sides=20)
-ck.blob((0, -0.6, 0.31), (0.07, 0.045, 0.05), face_skin, seed=31, jitter=0.02)       # a small muzzle between the fangs
-mouth = ck.bezier((-0.032, -0.638, 0.298), (0, -0.648, 0.309), (0.032, -0.638, 0.298), n=7)
-ck.loft("mouth", [(p, 0.0055, 0.0035) for p in mouth], pupil, sides=8, subsurf=0)    # a thin frown, mostly sunk in
+# (round 6, owner: no mouth and no muzzle; the mandibles are the mouth)
 
 
-def fang(name, pts, r0, material, s):
-	"""A sickle fang: thick at the root, a teardrop cross-section (a blade edge along the inside of the curve), two
-	growth rings near the root, tapering to ONE sharp point. The cross-section is carried along the curve without
-	twisting (parallel transport), so the tip can't crumple."""
+def mandible(name, pts, r0, material, s, seed):
+	"""A beetle mandible (pincer): thick where it grows out of the jaw, flattened top to bottom, a cutting edge with
+	3 jagged teeth along the inside of the curve, tapering to one point. Hand-made, not perfect: every ring is a little
+	lumpy and the two sides differ (owner, round 6). The cross-section is carried along the curve without twisting."""
+	r = random.Random(seed)
 	n = len(pts)
+	pts = [p + Vector((r.uniform(-1, 1), r.uniform(-1, 1), r.uniform(-1, 1))) * 0.003 * math.sin(math.pi * i / (n - 1)) for i, p in enumerate(pts)]
 	tans = [(pts[min(i + 1, n - 1)] - pts[max(i - 1, 0)]).normalized() for i in range(n)]
-	ref = Vector((-s, 0, -0.4))  # the blade faces in toward the other fang and a little down
-	sides = 14
+	ref = Vector((-s, 0, -0.15))  # the cutting edge faces in toward the other mandible
+	sides = 16
+	teeth = [(r.uniform(0.3, 0.36), r.uniform(0.5, 0.65)), (r.uniform(0.5, 0.56), r.uniform(0.6, 0.8)), (r.uniform(0.68, 0.74), r.uniform(0.4, 0.6))]
 	verts, faces = [], []
 	x = (ref - tans[0] * ref.dot(tans[0])).normalized()
+	ctrl = [r.uniform(0.9, 1.1) for _ in range(7)]  # a few gentle bumps along it (not rings at every slice)
+	lumps = []
+	for i in range(n):
+		f = i / (n - 1) * 6
+		j = min(int(f), 5)
+		w = (1 - math.cos(math.pi * (f - j))) / 2
+		lumps.append(ctrl[j] * (1 - w) + ctrl[j + 1] * w)
 	for i in range(n - 1):
 		if i:
-			x = (x - tans[i] * x.dot(tans[i])).normalized()  # carry the frame along
+			x = (x - tans[i] * x.dot(tans[i])).normalized()
 		y = tans[i].cross(x)
 		t = i / (n - 1)
-		groove = 1 - 0.09 * math.exp(-((t - 0.1) / 0.025) ** 2) - 0.07 * math.exp(-((t - 0.19) / 0.025) ** 2)
-		rr = r0 * (1 - t) ** 0.8 * groove
+		groove = 1 - 0.08 * math.exp(-((t - 0.1) / 0.025) ** 2)
+		rr = r0 * (1 - t) ** 0.75 * groove * lumps[i]
+		tooth = sum(h * math.exp(-((t - tt) / 0.03) ** 2) for tt, h in teeth)
 		for k in range(sides):
 			a = 2 * math.pi * k / sides
-			blade = 1 + 0.45 * max(0.0, math.cos(a)) ** 6  # a ridge on the inner edge
-			verts.append(tuple(pts[i] + x * math.cos(a) * rr * blade + y * math.sin(a) * rr * 0.82))
+			edge = max(0.0, math.cos(a)) ** 5
+			blade = 1 + (0.35 + tooth) * edge
+			verts.append(tuple(pts[i] + x * math.cos(a) * rr * blade + y * math.sin(a) * rr * 0.62))
 	for i in range(n - 2):
 		for k in range(sides):
 			a0, a1 = i * sides + k, i * sides + (k + 1) % sides
 			faces.append((a0, a1, a1 + sides, a0 + sides))
-	verts.append(tuple(pts[-1]))  # the sharp tip
+	verts.append(tuple(pts[-1]))  # the point
 	tip = len(verts) - 1
 	last = (n - 2) * sides
 	for k in range(sides):
@@ -606,15 +617,22 @@ for s in (-1, 1):
 	o.data.materials.append(eye)
 	for p in o.data.polygons:
 		p.use_smooth = True
-	# fangs: from a jaw knob under each eye, out and down, hooking in toward each other
-	ck.blob((s * 0.1, -0.585, 0.35), (0.05, 0.045, 0.045), face_skin, seed=41, jitter=0.02)   # jaw knob
-	pts = ck.bezier((s * 0.1, -0.59, 0.35), (s * 0.19, -0.665, 0.33), (s * 0.16, -0.735, 0.24), n=40, p3=(s * 0.055, -0.725, 0.215))
-	fang(f"fang{s}", pts, 0.05, claw, s)
-	# feelers: out of the gap above the brow (a knob of face skin fills the gap, so they grow out of the body),
-	# shingled segments curving up, out and forward, ending in a club
+	# mandibles: from a jaw knob low on each side of the face, forward and a little down, curling in like pincers
+	ck.blob((s * 0.09, -0.58, 0.33), (0.055, 0.05, 0.045), face_skin, seed=41 + s, jitter=0.05)   # jaw knob
+	pts = ck.bezier((s * 0.09, -0.585, 0.33), (s * 0.2, -0.67, 0.325), (s * 0.18, -0.81, 0.315), n=48, p3=(s * 0.05, -0.83, 0.3))  # flat pincers
+	mandible(f"mandible{s}", pts, 0.048, mandible_mat, s, seed=70 + s)
+	# feelers (round 6): each comes out of a ROUND hole in the gap between the horn and the brow: a ring of stone
+	# (melted into the shell in the sculpt pass) with dark skin at the bottom; shingled segments curve up, out and
+	# forward, ending in a club
 	ck.blob((s * 0.15, -0.5, 0.54), (0.075, 0.07, 0.07), face_skin, seed=51, jitter=0.02)      # forehead
-	ck.blob((s * 0.17, -0.545, 0.6), (0.045, 0.045, 0.045), face_skin, seed=61, jitter=0.02)   # feeler socket
-	path = ck.bezier((s * 0.17, -0.55, 0.6), (s * 0.26, -0.65, 0.73), (s * 0.36, -0.71, 0.68), n=8)
+	path = ck.bezier((s * 0.105, -0.515, 0.62), (s * 0.2, -0.63, 0.8), (s * 0.34, -0.71, 0.75), n=8)
+	axis = (path[1] - path[0]).normalized()
+	ck.blob(tuple(path[0] - axis * 0.03), (0.045, 0.045, 0.045), face_skin, seed=61, jitter=0.02)  # the hole's bottom
+	bpy.ops.mesh.primitive_torus_add(major_radius=0.045, minor_radius=0.02, major_segments=24, minor_segments=10)
+	rim = bpy.context.object
+	rim.name = f"feeler_hole{s}"
+	rim.matrix_world = Matrix.Translation(path[0] + axis * 0.012) @ frame(axis).to_4x4()
+	rim.data.materials.append(stone)
 	for i in range(len(path) - 1):
 		a, b2 = path[i], path[i + 1]
 		d = b2 - a
@@ -643,13 +661,25 @@ ck.loft("horn_root", [((0, -0.36, 0.62), 0.12, 0.17), ((0, -0.43, 0.72), 0.1, 0.
 
 
 # ---------------------------------------------------------------- six fat legs, each its own part (turns at the hip)
+LEG_RND = random.Random(77)
+
+
 def barrel(name, a, b, r0, r1, material, sides=8):
 	"""One leg segment like the painting's: a chunky faceted armour piece (8 flat sides) that widens toward its far end
-	into a lip, so it covers the start of the next segment like a shingle (the joint stays hidden inside)."""
+	into a lip, so it covers the start of the next segment like a shingle (the joint stays hidden inside).
+	Round 6 (owner: "too perfect"): every segment is a little different: thickness, squash, a twist so the flat sides
+	don't line up, uneven facets, and a lip that sits a bit off-centre."""
+	r = LEG_RND
 	d = b - a
-	o = ck.loft(name, [(a, r0 * 0.78, r0 * 0.72), (a + d * 0.12, r0 * 0.9, r0 * 0.84), (a + d * 0.55, (r0 + r1) / 2, (r0 + r1) / 2 * 0.93),
-		(b - d * 0.14, r1 * 1.1, r1 * 1.02), (b - d * 0.02, r1 * 1.16, r1 * 1.08), (b, r1 * 1.08, r1 * 1.0)],
-		material, sides=sides, subsurf=0, smooth=False, seed=len(name))
+	k, sq, tw = r.uniform(0.92, 1.08), r.uniform(0.9, 1.04), r.uniform(-14, 14)
+	side = d.cross(Vector((0, 0, 1)))
+	side = side.normalized() if side.length > 1e-6 else Vector((1, 0, 0))
+	off = side * r.uniform(-0.008, 0.008) + Vector((0, 0, r.uniform(-0.006, 0.006)))
+	r0, r1 = r0 * k, r1 * k * r.uniform(0.95, 1.05)
+	o = ck.loft(name, [(a, r0 * 0.78, r0 * 0.72 * sq, tw), (a + d * 0.12, r0 * 0.9, r0 * 0.84 * sq, tw),
+		(a + d * 0.55, (r0 + r1) / 2, (r0 + r1) / 2 * 0.93 * sq, tw + r.uniform(-4, 4)),
+		(b - d * 0.14 + off, r1 * 1.1, r1 * 1.02 * sq, tw), (b - d * 0.02 + off, r1 * 1.16, r1 * 1.08 * sq, tw), (b + off, r1 * 1.08, r1 * 1.0 * sq, tw)],
+		material, sides=sides, subsurf=0, smooth=False, wobble=0.045, seed=r.randint(1, 9999))
 	bv = o.modifiers.new("bevel", "BEVEL")
 	bv.width = 0.006
 	bv.segments = 2

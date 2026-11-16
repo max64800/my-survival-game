@@ -1552,3 +1552,22 @@ rope, and every board and shingle has its own painting.
 - **Mistakes and hurdles:**
   - `rtk init -g` stopped at its yes/no question (non-interactive terminal) and did not patch settings.json; the hook was
     added by hand from RTK's own printed instructions. The owner was told, and can remove it by restoring the backup.
+
+## November 16, 2026 (PC, Claude 3): Rock Beetle round 6, wear and tear, mandibles, green eyes
+
+**What we did** (the owner's notes on round 5)
+- Scratches on the stones are about twice as wide and deeper, each a pale line with a dark crease, so they read from far
+  away on a big creature.
+- Legs: every armour segment is a little different (thickness, squash, twist, off-centre lip, uneven facets) and worn
+  (dents, grooves, pits, scratches, grime).
+- Face: rough armour instead of a smooth cartoon face; the mouth and muzzle are gone; the tusks became grey mandibles
+  (pincers reaching forward and curling in, three jagged teeth, lumpy, a little different on each side); green eyes.
+- Feelers come out of round stone-rimmed holes in the gaps between the horn and the brows.
+- Recipe updated (`docs/art/CREATURE-RECIPE.md`), FEEDBACK F143-F146 updated, pictures `docs/art/rock-beetle-v2/step6_*.jpg`,
+  3D page round 6.
+
+**Mistakes and hurdles (including Claude's)**
+- Painted scratches on small parts (face, mandibles) turned into dark blotches and bands: the scratch pattern widens where
+  it changes slowly, and on a small part that covers a big area. Small parts now get carved grooves only.
+- The first mandibles had a ring at every slice (each slice got its own random size). Now a few gentle bumps along it.
+- The first mandibles hung down like ram's horns; they now reach forward flat, like pincers.

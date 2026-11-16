@@ -95,7 +95,7 @@ LEG_JOBS = []
 for n, lp in all_legs.items():
 	lo = lp["chitin"]
 	hi = cs.detail_copy(lo, 2, n + "_high")
-	cs.carve_chitin(hi, dents=0.0025, grain=0.0008, seed=len(LEG_JOBS) + 2)
+	cs.carve_chitin(hi, dents=0.004, grain=0.001, seed=len(LEG_JOBS) + 2, grooves=0.0025, groove_scale=7.0, pits=0.0018)  # worn armour
 	cs.uv_only(lo)
 	clo = lp["claw"]
 	chi = cs.detail_copy(clo, 1, n + "_claw_high")
@@ -105,13 +105,14 @@ for n, lp in all_legs.items():
 	LEG_JOBS.append((hi, lo, chi, clo, lp.get("chitin_dark")))
 # Face: one melted skin (head, cheeks, sockets, lids, nose ridge, lips), sculpted; tusks and feelers/belly as hard pieces.
 high_face = cs.melt([parts["face_skin"]], voxel=0.0028, smooth=3, name="face_high")
-cs.carve_chitin(high_face, dents=0.0015, grain=0.0006, seed=7)
+cs.carve_chitin(high_face, dents=0.0035, grain=0.0012, seed=7, grooves=0.003, groove_scale=9.0, pits=0.002)  # rough armour, not smooth
 body_chitin = parts["chitin"]
 high_body = cs.detail_copy(body_chitin, 1, "bodychitin_high")
 cs.carve_chitin(high_body, dents=0.002, grain=0.0007, seed=8)
 cs.uv_only(body_chitin)
-tusks = parts["claw"]
-high_tusks = cs.detail_copy(tusks, 1, "tusks_high")
+tusks = parts["mandible"]
+high_tusks = cs.detail_copy(tusks, 2, "tusks_high")
+cs.carve_chitin(high_tusks, dents=0.0025, grain=0.0008, seed=11, pits=0.0015)  # worn, chipped
 cs.gradient_attr(high_tusks)
 cs.uv_only(tusks)
 # Eyes: one ball each; the iris, pupil and shine are painted on (looking where the build aims them: EYE_LOOK).
@@ -124,7 +125,8 @@ print("melt+carve", round(time.time() - t0), "s; stone tris", len(high_stone.dat
 # ---- paint materials on the dense sculpts
 high_stone.data.materials.clear()
 high_stone.data.materials.append(cs.paint_material("paint_stone", base=(0.52, 0.45, 0.39), dark=(0.3, 0.25, 0.26), light=(0.78, 0.7, 0.6),
-	moss=(0.5, 0.58, 0.18), moss_amount=0.85, strokes=0.16, edge=0.5, seed=1, tint_attr="tint", scratches=0.8, grime=0.35))
+	moss=(0.5, 0.58, 0.18), moss_amount=0.85, strokes=0.16, edge=0.5, seed=1, tint_attr="tint", scratches=1.0, grime=0.35,
+	scratch_width=2.2))  # big, readable scratches (owner, round 6)
 high_moss.data.materials.clear()
 high_moss.data.materials.append(cs.paint_material("paint_moss", base=(0.5, 0.6, 0.16), dark=(0.16, 0.24, 0.05), light=(0.74, 0.82, 0.32),
 	strokes=0.16, top_light=0.25, edge=0.3, seed=4))
@@ -132,7 +134,7 @@ high_amber.data.materials.clear()
 high_amber.data.materials.append(cs.glow_paint("paint_amber", core=(1.0, 0.68, 0.14), rim=(0.82, 0.27, 0.0), lines=0.3, cells=3.5,
 	facets=0.45, cloud=0.35, bubbles=0.85, creases=0.6))
 paint_chitin = cs.paint_material("paint_chitin", base=(0.45, 0.22, 0.13), dark=(0.24, 0.1, 0.06), light=(0.72, 0.44, 0.3),
-	strokes=0.1, top_light=0.3, edge=0.6, seed=2, key=0.45)
+	strokes=0.14, top_light=0.3, edge=0.7, seed=2, key=0.45, scratches=0.8, grime=0.35, scratch_width=1.4)  # worn legs
 paint_claw = cs.paint_material("paint_claw", base=(0.8, 0.66, 0.46), dark=(0.52, 0.38, 0.22), light=(0.95, 0.87, 0.7),
 	strokes=0.08, top_light=0.1, edge=0.4, seed=3, root=(0.42, 0.26, 0.15))
 for hi, lo, chi, clo, jo in LEG_JOBS:
@@ -141,14 +143,16 @@ for hi, lo, chi, clo, jo in LEG_JOBS:
 	chi.data.materials.clear()
 	chi.data.materials.append(paint_claw)
 high_face.data.materials.clear()
-high_face.data.materials.append(cs.paint_material("paint_face", base=(0.42, 0.19, 0.11), dark=(0.2, 0.08, 0.05), light=(0.66, 0.38, 0.25),
-	strokes=0.08, top_light=0.25, edge=0.5, seed=5, key=0.4, ao_local=True))
+high_face.data.materials.append(cs.paint_material("paint_face", base=(0.38, 0.2, 0.12), dark=(0.17, 0.08, 0.05), light=(0.62, 0.4, 0.27),
+	strokes=0.16, top_light=0.25, edge=0.7, seed=5, key=0.4, ao_local=True, grime=0.4))  # (painted scratches blotch on small parts)
 high_body.data.materials.clear()
 high_body.data.materials.append(paint_chitin)
 high_tusks.data.materials.clear()
-high_tusks.data.materials.append(paint_claw)
+high_tusks.data.materials.append(cs.paint_material("paint_mandible", base=(0.6, 0.58, 0.55), dark=(0.32, 0.31, 0.3),
+	light=(0.86, 0.85, 0.82), strokes=0.1, top_light=0.15, edge=0.5, seed=6, root=(0.3, 0.27, 0.25), grime=0.25))
 high_eyes.data.materials.clear()
-high_eyes.data.materials.append(cs.paint_eye("paint_eye"))
+high_eyes.data.materials.append(cs.paint_eye("paint_eye", iris_out=(0.12, 0.3, 0.08), iris_in=(0.5, 0.78, 0.25),
+	ring=(0.04, 0.1, 0.03)))  # green eyes (owner, round 6)
 for name, rgb in (("pupil", (0.13, 0.05, 0.03)), ("chitin_dark", (0.27, 0.12, 0.07))):  # (pupil = the thin mouth line)
 	if name in parts:
 		bsdf = parts[name].data.materials[0].node_tree.nodes["Principled BSDF"]
