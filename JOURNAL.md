@@ -1988,3 +1988,21 @@ You tried the dev menu and asked for four things:
 - The first try at shine (a glossy, clear-coated material) changed nothing: shine needs something bright to reflect,
   and the crystals' own glow drowned it out. A shader with pretend reflections fixed it. A second pass added more
   sparkles and darker faces in between, because the faces were still too even.
+
+## November 16, 2026 (PC, code Claude): menu overhaul, pictures first (F187)
+
+**What we did**
+- The owner asked for an overhaul of every menu: messy layout and too many clicks. The owner picked:
+  - the "dwarf workshop" look;
+  - pictures first;
+  - Shift+Click quick move, right-click split, and recipe cards with one big Craft button.
+- In the owner's ChatGPT (through Chrome), made 4 mock-ups: bag + crafting, start + pause, build + blueprint book,
+  map + skills. The owner OK'd them. Then made a "UI kit" sheet: frames, slots, buttons, tabs, slider, cards and
+  tooltip, each on a pink background so they can be cut out.
+- The plan and decisions are in `docs/design/MENU-OVERHAUL.md`. Building starts in a new chat (token rule: one chat
+  per task).
+
+**Mistakes and hurdles (including Claude's)**
+- The first prompt was sent without the text box focused (ChatGPT had reloaded the page); it went through anyway.
+- The picture-download script only looked for pictures already loaded on screen, so it missed the newest one and
+  timed out. Fixed by scrolling to the last picture first.

@@ -68,6 +68,8 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F110. The world is too small.** Only about three big caverns and a few tunnels; at the edge of the map it just says "you need a better pickaxe". You hoped for more tunnels and maze-like passages. (Goes with F109.) Nov 16: you chose to do it (with F108) after the chunky rock and flattening are done. You chose to do this first in the world work: about twice as many caverns and rooms, twisting branching tunnels with side passages and dead ends, jagged rock, and the edge much farther away. *From: you. Said: 1×*
 - [ ] **F115. Progression: Zone 1 should be a struggle but rewarding, copper shouldn't come fast** (like Valheim: wood first, metal is a milestone). You chose: Zone 1 takes 3-5 hours; copper only in the Copper Deeps (far, low caverns) and only a Fang Pickaxe (Workbench level 2) can mine it; you grow through station levels (copper-free Workbench add-ons for levels 2-3); the boss is summoned after finding the 3 markings with 5 copper ingots + 3 bat fangs + 2 glow glands. Plan: `docs/design/zone1-progression.md`. *From: you. Said: 1×*
 
+- [ ] **F187. Overhaul all the menus: good and easy to understand** (messy layout, too many clicks). Look chosen: "dwarf workshop"; 4 mock-ups + a UI kit sheet OK'd (`assets/concepts/ui/`). Plan and decisions: `docs/design/MENU-OVERHAUL.md`. Order: bag+crafting, start+pause, build+blueprints, map+skills. *From: you. Said: 1×*
+
 *(Nov 15, late: your second play test. These were first numbered F116-F124, the same numbers Claude 2 used at the same moment for the Shack notes, so they became F149-F157.)*
 
 - [ ] **F153. Dropped things are now too big** (after F93's 5×). Make them smaller. *From: you. Said: 1×*
