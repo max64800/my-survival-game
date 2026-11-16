@@ -638,6 +638,9 @@ func _creature_fx(delta: float) -> void:
 			Fx.dust(get_parent(), global_position, Color(0.45, 0.4, 0.33), 3 if fast else 1, 0.5 * _size)
 		if _charging <= 0.0:
 			MonsterModel.set_angry(model, false)
+			if data.get("straight_charge", false):  # the charge ends with a thump: stone chips and dust shake off its shell
+				Fx.burst(get_parent(), global_position + Vector3.UP * 0.7 * _size, Color(0.5, 0.46, 0.42), 8, 2.0)
+				Fx.dust(get_parent(), global_position, Color(0.45, 0.4, 0.33), 4, 0.6 * _size)
 	if data.has("flap_sound") and not model.get_meta("roosting", false) and is_alive():
 		var wing := sin((_clock + uid * 0.37) * 9.0)  # same beat as MonsterModel.animate's wings
 		if _flap_was > 0.0 and wing <= 0.0:

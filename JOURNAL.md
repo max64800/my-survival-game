@@ -1610,6 +1610,36 @@ You loved the whole Shack kit, so all 36 pieces went into the game with fresh bu
     for your OK.
   - **Old test expected copper.** An old test still expected the wooden doorway to cost copper; I updated it.
 
+## November 16, 2026 (PC, Claude 3): Rock Beetle round 7, Claude's 9-point list to reach 10
+
+**What we did** (the owner chose all 9 points, plus: the shell's bottom is still flat, and the horn may be bigger but flat)
+- Shell: wider and lower; its bottom edge is now a curve (low over the legs in the middle of each side, higher at the head
+  and tail), and the dome rounds under.
+- Horn: bigger and flat-sided like a cut slab, the tip curling back.
+- Legs: fat and short, closer to the body. Claws still lie flat but their tips hook down a little.
+- Colours: browner legs and face, olive moss, deep orange amber with a lantern-bright middle and darker cracks; the belly
+  is painted now.
+- Alive in the game: the feelers are their own moving parts (the game sways them); a charge ends with stone chips and
+  dust shaking off the shell (seen by every player in co-op).
+- The bake step now also builds the game model (legs and feelers as moving parts turning at their hinges).
+- Cave test (art preview): **the new beetle shows up white in the game.** Its pictures don't load when Godot imports it.
+  Not solved yet, so the old beetle stays in the game for now; the builder's install step is switched off with a note.
+- Recipe updated (rules 7, 9, 11, 21, 22 and the open problem), FEEDBACK F163-F164, pictures `docs/art/rock-beetle-v2/step7_*`,
+  3D page round 7. Checks: test_monsters, test_bosses, test_model_rules pass (39).
+
+**Mistakes and hurdles (including Claude's)**
+- The first bigger horn was a giant fin; cut back to about 15% bigger.
+- Painted scratches made red blotches on the legs (the small-parts lesson from round 6, missed again); the legs get
+  carved wear only, and the paint's light on each flat side is softer.
+- The bright amber middle first washed the whole gem out to pale yellow; toned down.
+- The white beetle in Godot: tried re-importing (touching the file doesn't count as a change, so nothing re-imported),
+  then packing the pictures inside the model (Godot crashed packing 42 pictures), then clearing Godot's copy and
+  re-importing twice: still white. Two tries failed, so Claude stopped, put the old beetle back and wrote it down.
+- Found while there: about 40 shared picture import files had leftover merge-conflict marks (from two Claudes' saves
+  crossing); Godot's re-import cleaned them, and the clean ones are saved now.
+- The final message line of the bake script pointed at a piece that had already been joined into the body (the model
+  was saved fine); fixed.
+
 
 ---
 

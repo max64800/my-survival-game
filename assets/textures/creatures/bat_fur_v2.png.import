@@ -2,11 +2,7 @@
 
 importer="texture"
 type="CompressedTexture2D"
-<<<<<<< HEAD
-uid="uid://bdfwdd7ddu73j"
-=======
 uid="uid://dbpom6bdd0b35"
->>>>>>> f7c4315 (Commit leftover working files: refreshed kit preview pictures, Godot import files for creature art and docs, early Shack comparison shots)
 path="res://.godot/imported/bat_fur_v2.png-682ca99184fa93a2caf03a92cb737482.ctex"
 metadata={
 "vram_texture": false

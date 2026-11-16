@@ -18,16 +18,19 @@ Part 1 is the owner's rules in plain words. Part 2 is how we do each one (the to
 ### Shell and armour (stone plates)
 6. **The stones touch.** No gaps and no see-through between them. Where two stones meet there is only a small rounded
    "canyon" (a dimple), with moss in it.
-7. **The shell is round** from head to tail and covers the body, like a dome, not a flat lid.
+7. **The shell is round** from head to tail and covers the body, like a dome, not a flat lid. **Its bottom edge curves**
+   (low over the legs in the middle of each side, higher at the head and tail) and the dome rounds under; never a flat cut.
+   Wide and low, like a little tank. **Horns are flat-sided** (a cut stone slab), big is fine.
 8. **Every stone looks worn and different:** its own shade (some warmer, some cooler, some darker), **big scratches you
    can see from far away** (it's a big creature), chipped and lighter worn edges, darker grime. Never all one smooth colour.
 
 ### Legs
 9. **Armour segments overlap like shingles.** Each segment's lip covers the start of the next one, so you never see a
    joint. **No two segments alike:** each a little thicker or thinner, twisted, uneven, chipped, cracked and scratched.
+   Legs are **fat and short, close to the body**: it should look heavy and strong, not like a spider.
 10. **One claw per leg.**
 11. **It stands on its legs.** The claw lies **flat on the ground** like a toe: its underside rests on the ground, and it
-    ends in a point. The claw is never a stilt it balances on.
+    ends in a point whose tip hooks down a little. The claw is never a stilt it balances on.
 12. **The body underneath is shingled too** (overlapping belly bands).
 
 ### Face
@@ -50,6 +53,10 @@ Part 1 is the owner's rules in plain words. Part 2 is how we do each one (the to
 20. **Glowing parts hum:** a slow breath of light in and out (about one breath every 3.5 seconds). They blaze when
     the creature charges.
 
+### In the game
+21. **Test it in the cave**, next to the workbench, with lantern light (the art preview), not only on a grey background.
+22. **It feels alive:** feelers or stalks sway, it breathes when standing, and big moves end with a little dust or stone chips.
+
 ## Part 2: how we do it (for Claude)
 
 The beetle is the worked example: `tools/asset_forge/builds/monster_rock_beetle.py` (shape) and
@@ -63,7 +70,7 @@ The beetle is the worked example: `tools/asset_forge/builds/monster_rock_beetle.
 | 7 | The dome is a superellipsoid (`FULL = 0.86`), rounder than an ellipsoid, egg-shaped from above (`TAPER`). |
 | 8 | `island_kd()` before melting + `tint_islands()` after: each stone gets its own shade (±13% light, some warm, some blue-grey). `paint_material(..., tint_attr="tint", scratches=1.0, scratch_width=2.2, grime=0.35, edge=0.5)`: each scratch is a pale line with a dark crease, also cut in as bump (baked into the normal map). **Painted scratches only on big parts:** on small ones (face, mandibles) the scratch lines spread into dark blotches. |
 | 9 | `barrel()`: an 8-sided faceted segment that flares into a lip at its far end; the next segment starts inside that lip. Each segment gets random thickness, squash, twist, an off-centre lip and uneven facets (`wobble`); the sculpt carves dents, grooves and pits (`carve_chitin(grooves=, pits=)`) and the paint adds scratches and grime. |
-| 10, 11 | One claw per leg as a loft lying along the ground: ring centre height = `GROUND + h`, so the underside is flat on the ground all the way; root tucked into the last segment; the ankle sits ~6 cm above the ground. |
+| 10, 11 | One claw per leg as a loft lying along the ground: ring centre height = `GROUND + h`, so the underside is flat on the ground all the way; root tucked into the last segment; the ankle sits ~6 cm above the ground. The last 30% dips up to 1.6 cm (a hooked tip). |
 | 12 | Belly bands (`belly_band{i}`): each flares at its back edge over the next. |
 | 13, 14 | A compact head loft (half-width ≤ 0.22 for a ~1 m creature), no muzzle, no mouth. `carve_chitin(dents=0.0035, grooves=0.003, groove_scale=9, pits=0.002)` makes it rough armour; painted browner with grime. |
 | 15 | The eyeball is one smooth sphere. `eye_attrs()` stores, per point, how straight it faces the look direction; `paint_eye(iris_out=, iris_in=, ring=)` paints white, iris (33°), dark ring, pupil (15°) and shine (6.5°) and it is baked onto the ball. Lid = a sphere cap cut with ONE clean plane (`bisect_plane`, never deleting vertices: that leaves a saw-tooth), solidified inward so it sinks into the eye with no gap. A torus of skin round the eye is the socket. |
@@ -72,6 +79,9 @@ The beetle is the worked example: `tools/asset_forge/builds/monster_rock_beetle.
 | 18 | A stone torus (melted into the shell) round the feeler's first segment, in the gap beside the horn, with a face-skin blob at the bottom of the hole. |
 | 19 | The gem: points spread over the bulging dome (min. 0.16 rad apart, each a little in or out) + the window's rim sunk 3%, wrapped by `bmesh.ops.convex_hull`, the bottom faces removed: perfectly flat facets. Painted with `glow_paint(..., facets=0.45, cloud=0.35, bubbles=0.85, creases=0.6)` on a dense copy, baked onto the flat gem. |
 | 20 | `monster_model.gd animate()`: `emission = base x (0.7 + 0.3 sin(1.8 t))`, x2.6 while angry. The creature page does the same for materials named `glow*`. |
+| 7 | `rim_z(y)`: the lower edge is a curve (0.29 m in the middle of a side, ~0.4 m at the ends); `A, B, CZ = 0.47, 0.56, 0.38`. Horn: `ck.loft(..., sides=6, smooth=False)` (flat sides), ~15% bigger than round 6. |
+| 21 | `godot --audio-driver Dummy --path . -- seed=42 nomonsters artpreview creatures shots=<folder>`; look at `creature_rock_beetle_closeup.png` and `creature_live_charge_closeup.png`. |
+| 22 | Name a moving part `soft_stalk_*` (the game sways it, `monster_model.gd animate()`); `sculpt_test_beetle.py` keeps legs and stalks as separate parts turning at their hinges. Charge end: stone chips + dust (`monster.gd _creature_fx`). |
 
 ### Mistakes to avoid (each one happened on the beetle)
 - Colours picked by eye are sRGB: convert with `lin()` before putting them in a shader, or everything turns pale.
@@ -84,3 +94,6 @@ The beetle is the worked example: `tools/asset_forge/builds/monster_rock_beetle.
 - The dark layer under the shell plates must stop behind the face and the amber: the sculpt grows its moss up to 7.5 cm,
   right through the lids and the gem.
 - Long Python patches typed straight into the terminal break on quotes: write them to a script file first.
+- **Open (Nov 16):** the baked beetle shows up **white** in Godot (its 42 pictures don't load on import, though the 3D page
+  shows them). Until it's solved, the game keeps the old beetle and `build_creatures.py` doesn't install the baked one.
+  Godot only re-imports a model when its contents change: to force it, delete its files in `.godot/imported/`.

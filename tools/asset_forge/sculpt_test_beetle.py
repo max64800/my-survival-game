@@ -1,8 +1,10 @@
-"""Small test of the sculpt-and-bake process on the Rock Beetle's shell plates and one leg (by Claude 3).
+"""The Rock Beetle's sculpt-and-bake pass (by Claude 3): the grey hand-built beetle in, the finished game beetle out.
 
     blender --background --factory-startup --python tools/asset_forge/sculpt_test_beetle.py -- <grey beetle.glb> <out folder>
 
-Writes <out>/before.png, <out>/after.png (same camera), <out>/leg_before.png, <out>/leg_after.png and <out>/test.glb.
+Writes <out>/before.png, <out>/after.png (same camera), <out>/leg_before.png, <out>/leg_after.png and <out>/test.glb:
+the game model (body + moving parts leg_l0..r2 and soft_stalk_l/r, each turning at its own hinge, baked pictures).
+build_creatures.py runs this for the mossy look. Recipe and rules: docs/art/CREATURE-RECIPE.md.
 """
 import math
 import sys
@@ -22,6 +24,7 @@ t0 = time.time()
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=str(Path(glb).resolve()))
+HINGES = {o.name: o.matrix_world.translation.copy() for o in bpy.context.scene.objects if o.type == "MESH"}  # moving parts turn here
 for o in list(bpy.context.scene.objects):
 	if o.type == "MESH":
 		cs._select_only(o)
@@ -37,7 +40,7 @@ def split_by_material(o):
 body = bpy.data.objects["body"]
 parts = split_by_material(body)
 leg = bpy.data.objects["leg_l0"]
-LEG_NAMES = [o.name for o in bpy.context.scene.objects if o.name.startswith("leg_")]
+LEG_NAMES = [o.name for o in bpy.context.scene.objects if o.name.startswith(("leg_", "soft_stalk"))]  # legs + feelers
 all_legs = {n: split_by_material(bpy.data.objects[n]) for n in LEG_NAMES}
 legparts = all_legs["leg_l0"]
 print("materials:", sorted(parts), sorted(legparts))
@@ -97,11 +100,13 @@ for n, lp in all_legs.items():
 	hi = cs.detail_copy(lo, 2, n + "_high")
 	cs.carve_chitin(hi, dents=0.004, grain=0.001, seed=len(LEG_JOBS) + 2, grooves=0.0025, groove_scale=7.0, pits=0.0018)  # worn armour
 	cs.uv_only(lo)
-	clo = lp["claw"]
-	chi = cs.detail_copy(clo, 1, n + "_claw_high")
-	cs.carve_chitin(chi, dents=0.001, grain=0.0004)
-	cs.gradient_attr(chi)
-	cs.uv_only(clo)
+	clo = lp.get("claw")
+	chi = None
+	if clo:
+		chi = cs.detail_copy(clo, 1, n + "_claw_high")
+		cs.carve_chitin(chi, dents=0.001, grain=0.0004)
+		cs.gradient_attr(chi)
+		cs.uv_only(clo)
 	LEG_JOBS.append((hi, lo, chi, clo, lp.get("chitin_dark")))
 # Face: one melted skin (head, cheeks, sockets, lids, nose ridge, lips), sculpted; tusks and feelers/belly as hard pieces.
 high_face = cs.melt([parts["face_skin"]], voxel=0.0028, smooth=3, name="face_high")
@@ -110,6 +115,10 @@ body_chitin = parts["chitin"]
 high_body = cs.detail_copy(body_chitin, 1, "bodychitin_high")
 cs.carve_chitin(high_body, dents=0.002, grain=0.0007, seed=8)
 cs.uv_only(body_chitin)
+belly = parts["chitin_dark"]  # the belly core (round 7: painted too)
+high_belly = cs.detail_copy(belly, 1, "belly_high")
+cs.carve_chitin(high_belly, dents=0.003, grain=0.0008, seed=9, grooves=0.002, groove_scale=6.0)
+cs.uv_only(belly)
 tusks = parts["mandible"]
 high_tusks = cs.detail_copy(tusks, 2, "tusks_high")
 cs.carve_chitin(high_tusks, dents=0.0025, grain=0.0008, seed=11, pits=0.0015)  # worn, chipped
@@ -125,25 +134,29 @@ print("melt+carve", round(time.time() - t0), "s; stone tris", len(high_stone.dat
 # ---- paint materials on the dense sculpts
 high_stone.data.materials.clear()
 high_stone.data.materials.append(cs.paint_material("paint_stone", base=(0.52, 0.45, 0.39), dark=(0.3, 0.25, 0.26), light=(0.78, 0.7, 0.6),
-	moss=(0.5, 0.58, 0.18), moss_amount=0.85, strokes=0.16, edge=0.5, seed=1, tint_attr="tint", scratches=1.0, grime=0.35,
+	moss=(0.44, 0.5, 0.2), moss_amount=0.85, strokes=0.16, edge=0.5, seed=1, tint_attr="tint", scratches=1.0, grime=0.35,
 	scratch_width=2.2))  # big, readable scratches (owner, round 6)
 high_moss.data.materials.clear()
-high_moss.data.materials.append(cs.paint_material("paint_moss", base=(0.5, 0.6, 0.16), dark=(0.16, 0.24, 0.05), light=(0.74, 0.82, 0.32),
+high_moss.data.materials.append(cs.paint_material("paint_moss", base=(0.42, 0.48, 0.18), dark=(0.15, 0.19, 0.06), light=(0.62, 0.68, 0.3),
 	strokes=0.16, top_light=0.25, edge=0.3, seed=4))
 high_amber.data.materials.clear()
-high_amber.data.materials.append(cs.glow_paint("paint_amber", core=(1.0, 0.68, 0.14), rim=(0.82, 0.27, 0.0), lines=0.3, cells=3.5,
-	facets=0.45, cloud=0.35, bubbles=0.85, creases=0.6))
-paint_chitin = cs.paint_material("paint_chitin", base=(0.45, 0.22, 0.13), dark=(0.24, 0.1, 0.06), light=(0.72, 0.44, 0.3),
-	strokes=0.14, top_light=0.3, edge=0.7, seed=2, key=0.45, scratches=0.8, grime=0.35, scratch_width=1.4)  # worn legs
+high_amber.data.materials.append(cs.glow_paint("paint_amber", core=(1.0, 0.66, 0.16), rim=(0.72, 0.2, 0.0), lines=0.45, cells=3.0,
+	facets=0.45, cloud=0.45, bubbles=0.85, creases=0.6, depth=0.3))  # deep orange, a lantern-bright middle
+paint_chitin = cs.paint_material("paint_chitin", base=(0.4, 0.29, 0.22), dark=(0.2, 0.14, 0.1), light=(0.6, 0.47, 0.37),
+	strokes=0.14, top_light=0.3, edge=0.7, seed=2, key=0.22, grime=0.3)  # worn legs (carved wear; painted scratches blotch on small parts)
 paint_claw = cs.paint_material("paint_claw", base=(0.8, 0.66, 0.46), dark=(0.52, 0.38, 0.22), light=(0.95, 0.87, 0.7),
-	strokes=0.08, top_light=0.1, edge=0.4, seed=3, root=(0.42, 0.26, 0.15))
+	strokes=0.08, top_light=0.1, edge=0.4, seed=3, root=(0.33, 0.2, 0.12))
 for hi, lo, chi, clo, jo in LEG_JOBS:
 	hi.data.materials.clear()
 	hi.data.materials.append(paint_chitin)
-	chi.data.materials.clear()
-	chi.data.materials.append(paint_claw)
+	if chi:
+		chi.data.materials.clear()
+		chi.data.materials.append(paint_claw)
+high_belly.data.materials.clear()
+high_belly.data.materials.append(cs.paint_material("paint_belly", base=(0.3, 0.18, 0.12), dark=(0.13, 0.07, 0.05), light=(0.5, 0.34, 0.24),
+	strokes=0.14, top_light=0.1, edge=0.6, seed=12, grime=0.3))
 high_face.data.materials.clear()
-high_face.data.materials.append(cs.paint_material("paint_face", base=(0.38, 0.2, 0.12), dark=(0.17, 0.08, 0.05), light=(0.62, 0.4, 0.27),
+high_face.data.materials.append(cs.paint_material("paint_face", base=(0.37, 0.23, 0.15), dark=(0.16, 0.09, 0.06), light=(0.6, 0.42, 0.3),
 	strokes=0.16, top_light=0.25, edge=0.7, seed=5, key=0.4, ao_local=True, grime=0.4))  # (painted scratches blotch on small parts)
 high_body.data.materials.clear()
 high_body.data.materials.append(paint_chitin)
@@ -153,7 +166,7 @@ high_tusks.data.materials.append(cs.paint_material("paint_mandible", base=(0.6, 
 high_eyes.data.materials.clear()
 high_eyes.data.materials.append(cs.paint_eye("paint_eye", iris_out=(0.12, 0.3, 0.08), iris_in=(0.5, 0.78, 0.25),
 	ring=(0.04, 0.1, 0.03)))  # green eyes (owner, round 6)
-for name, rgb in (("pupil", (0.13, 0.05, 0.03)), ("chitin_dark", (0.27, 0.12, 0.07))):  # (pupil = the thin mouth line)
+for name, rgb in ():  # (nothing plain left on the body)
 	if name in parts:
 		bsdf = parts[name].data.materials[0].node_tree.nodes["Principled BSDF"]
 		bsdf.inputs["Base Color"].default_value = (*cs.lin(rgb), 1)
@@ -166,25 +179,49 @@ low_face = cs.game_copy(high_face, 0, "face_low", remesh=0.007)
 cs.bake(high_face, low_face, 1024, "face_baked")
 cs.bake(high_body, body_chitin, 1024, "bodychitin_baked")
 cs.bake(high_tusks, tusks, 512, "tusks_baked")
+cs.bake(high_belly, belly, 512, "belly_baked")
 cs.bake(high_moss, low_moss, 1024, "moss_baked")
 cs.bake(high_amber, amber_obj, 1024, "glow_amber_baked", normal=False, emissive=0.35)
 cs.bake(high_eyes, eyes, 512, "eye_baked", normal=False)
 eyes.data.materials[0].node_tree.nodes["Principled BSDF"].inputs["Roughness"].default_value = 0.2  # wet shine
 for k, (hi, lo, chi, clo, jo) in enumerate(LEG_JOBS):
 	cs.bake(hi, lo, 512, f"leg{k}_baked")
-	cs.bake(chi, clo, 256, f"claw{k}_baked")
+	if chi:
+		cs.bake(chi, clo, 256, f"claw{k}_baked")
 	if jo:
-		jo.data.materials[0].node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (*cs.lin((0.3, 0.14, 0.08)), 1)
+		jo.data.materials[0].node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (*cs.lin((0.24, 0.14, 0.09)), 1)
 print("bake", round(time.time() - t0), "s")
-for o in [high_stone, high_moss, high_amber, high_face, high_body, high_tusks, high_eyes] + [j[0] for j in LEG_JOBS] + [j[2] for j in LEG_JOBS]:
+for o in [high_stone, high_moss, high_amber, high_face, high_body, high_tusks, high_eyes, high_belly] + [j[0] for j in LEG_JOBS] + [j[2] for j in LEG_JOBS if j[2]]:
 	o.hide_render = True
 	o.hide_set(True)
 shoot("after.png", (0, 0, 0.5), 1.7)
 shoot("leg_after.png", lc, 0.6, az=-80, el=12, res=(600, 600))
+# ---- 5. the game model: each moving part joined into one piece turning at its hinge; everything else is the body
+moving = set()
+for n, lp in all_legs.items():
+	pieces = [o for o in lp.values() if o.name in bpy.data.objects and not o.hide_get()]
+	bpy.ops.object.select_all(action="DESELECT")
+	for o in pieces:
+		o.select_set(True)
+	bpy.context.view_layer.objects.active = pieces[0]
+	if len(pieces) > 1:
+		bpy.ops.object.join()
+	part = bpy.context.view_layer.objects.active
+	part.name = n
+	scene.cursor.location = HINGES[n]
+	bpy.ops.object.origin_set(type="ORIGIN_CURSOR")
+	moving.add(part)
+rest = [o for o in scene.objects if o.type == "MESH" and not o.hide_get() and o not in moving]
+bpy.ops.object.select_all(action="DESELECT")
+for o in rest:
+	o.select_set(True)
+bpy.context.view_layer.objects.active = rest[0]
+bpy.ops.object.join()
+bpy.context.view_layer.objects.active.name = "body"
 bpy.ops.object.select_all(action="DESELECT")
 for o in bpy.context.scene.objects:
 	if o.type == "MESH" and not o.hide_get():
 		o.select_set(True)
 bpy.ops.export_scene.gltf(filepath=str(out / "test.glb"), export_format="GLB", use_selection=True, export_yup=True,
 	export_image_format="JPEG", export_image_quality=88)
-print("SCULPT_TEST done", round(time.time() - t0), "s; low tris stone", sum(len(p.vertices) - 2 for p in low_stone.data.polygons))
+print("SCULPT_TEST done", round(time.time() - t0), "s; parts", sorted(o.name for o in scene.objects if o.type == "MESH" and not o.hide_get()))
