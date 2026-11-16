@@ -25,6 +25,34 @@ drips and roots; plain mushrooms and fiber get none), `moss_shell.gdshader` (fuz
 `plant_bend.gdshader` (grass and ferns lean away from dwarfs). Close-ups: `lookdev cover`. Cost: ~0.2 ms per frame
 in the first big cavern; the placing runs in the background while the cave loads (~2-3 s). Test: `test_cave_life`.
 
+### Batch 1b: glowing mushroom meadows + glow threads (owner, Nov 17; F216, F217) — build this next
+The owner (Mac chat): "not grass but little long-ish mushrooms like grass… make it glow and leave a trail behind us for a
+few seconds". Picked by multiple choice:
+- **Mushroom grass instead of grass, almost everywhere** on flat floors (a carpet like Valheim's grass): thin,
+  long-stalked little mushrooms with tiny caps, in tufts of 5-9. Bare only on steep rock, close to walls, on dug
+  spots and on built floors. It replaces the pale cave grass (moss, ferns, roots, gravel and tiny mushrooms stay).
+- **Dark until touched:** pale stalks (the lantern still shows them up close), no glow on their own. Where a dwarf
+  **or a creature** walks, the stalks light up **teal-blue** (the glow-crystal colour) and fade over about 5 seconds,
+  leaving a glowing trail. So you can spot a beetle crossing a dark meadow by its trail.
+- **Bend and sway:** a slow draft sway everywhere, and they bend away as you walk through (like the grass now, F198).
+- **Ceiling: glow threads**, like real glow-worm caves: clusters of 10-40 thin threads (0.3-1.5 m) with tiny beads,
+  hanging from cavern ceilings and overhangs, always glowing faintly teal-blue with a slow twinkle, swaying a little.
+  The black ceiling becomes a soft starry sky. Nothing new on the ground besides the mushroom grass ("nothing for now").
+
+How (for the builder):
+1. Model: one tuft hand-built in Blender by script the cave-cover way (`builds/cave_cover.py`), 2-3 variants; the
+   glow thread as a thin strip with beads. MODEL-RULES apply (no Play-Doh, no shimmer). Show on the 3D page first.
+2. Placing: MultiMesh per chunk over floors with an upward normal (y > 0.7), same seed = same carpet on every
+   computer; thick near you, thinning out to ~45 m, nothing beyond (visibility range), so speed stays OK
+   (`perfcheck` before/after; the owner's PC is the judge).
+3. Trail: a small node keeps the last ~48 "touch" points (position + time) of every dwarf and creature (positions
+   every ~0.3 m moved). It's looks only, so every computer works it out from the positions it already has (no network).
+   The stalk shader adds teal emission by distance to each point x (1 - age / 5 s). No real lights.
+4. Glow threads: ceiling spots (normal y < -0.7) in caverns, a few hundred clusters; emissive shader with a slow twinkle
+   and sway. Looks only, not breakable.
+5. Tests: the carpet covers most flat floor in a test cave and none on steep rock; a touch point lights stalks and is
+   gone after 5 s; trails from a monster too. Close-ups with `lookdev` (meadow at night with a trail, the ceiling).
+
 ### Batch 2: big shapes (F189)
 1. **Natural rock columns:** a stalactite and stalagmite grown together. Some are pinched in the middle, some have
    drip-stone curtains.

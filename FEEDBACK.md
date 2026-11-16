@@ -48,6 +48,8 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 
 ## Open (still to do)
 
+- [ ] **F216. Mushroom grass that glows where you walk.** Instead of grass: thin, long-ish little mushrooms almost everywhere on the floor, dark until touched; dwarfs and creatures leave a teal-blue glowing trail that fades in about 5 s; they sway and bend. Plan: `docs/design/cave-life-plan.md`, batch 1b. *From: you (Mac, Nov 17). Said: 1×*
+- [ ] **F217. Glow threads on the ceiling** (like real glow-worm caves), so the black ceiling looks like a soft starry sky. Plan: batch 1b. *From: you (Mac, Nov 17). Said: 1×*
 *(Nov 15 evening, your play test on the PC. You chose the fixes from multiple-choice questions.)*
 
 - [ ] **F188. The caves look hollow: ground cover.** Fluffy moss, pale grass here and there, small roots sticking out of the ground, lichen and ferns. In patches (near light, water and roots). Plan: `docs/design/cave-life-plan.md`, batch 1. *From: you. Said: 2×* — **Nov 16: built and in the game (fuzzy moss, moss over ledges, pale grass that leans away, two small roots, orange/teal lichen, curly ferns). You liked it ("really good touches"), but the cave still looks empty: you want something everywhere, like grass in outdoor games. You chose: gravel and pebble drifts, carpets of tiny pale mushrooms, coloured stains on the floor rock.** Nov 16: all three in (gravel drifts and sprays, tiny mushroom groups on every floor; damp patches, green mould and orange wall streaks painted on the rock); check in the game.

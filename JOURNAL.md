@@ -2297,3 +2297,13 @@ learn how to do hair animation and implement that."
   22 px clear of the ends and the amount buttons are wider. The "Next steps" list ran over the bag; it hides while
   the bag is open.
 - The first autopilot pictures had the pause screen on top (the game window lost focus while the owner used the Mac).
+
+## November 17, 2026 (Mac): plan for glowing mushroom meadows and glow threads (F216, F217)
+
+- The owner asked what to put on the ground and ceiling to make the caves feel alive, like Valheim's grass.
+  Claude looked at today's pictures first: the floor is mostly bare between small patches, and the ceiling is pitch
+  black, so anything up there must glow a little to be seen.
+- The owner's own idea: not grass but thin, long-ish mushrooms like grass that light up where you walk and leave a
+  trail for a few seconds. Picked by multiple choice: almost everywhere, dark until touched, teal-blue, trails from
+  dwarfs and creatures, bend and sway; glow threads on the ceiling; nothing else new on the ground for now.
+- Saved as batch 1b in `docs/design/cave-life-plan.md` (to build next, in a fresh chat), F216 and F217 in FEEDBACK.md.
