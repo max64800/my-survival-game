@@ -265,6 +265,29 @@ func test_blueprint_builds_itself() -> void:
 	_teardown()
 
 
+## Dev menu (P): any ready-made blueprint, then P in its Builder's Chest fills it with everything still needed.
+func test_dev_fill_builders_chest() -> void:
+	await _setup()
+	check_eq(DevMenu.all_blueprints().size(), BlueprintLibrary.IDS.size() + 1, "every ready-made blueprint, learned or not")
+	var json := BlueprintLibrary.make("delvers_hut").to_json()
+	var origin := world.maker.find_floor(player.global_position.x + 6.0, player.global_position.z, player.global_position.y + 2.0).round()
+	var chest_pos := world.maker.find_floor(origin.x, origin.z + 7.0, origin.y + 3.0)
+	check_eq(auth.builder.request_place_blueprint(1, json, origin, 0, chest_pos), "", "hut placed")
+	var box_id: int = auth.builder.sites.keys()[0]
+	check(auth.builder.request_dev_fill(1, box_id).begins_with("Dev: filled"), "P fills the chest")
+	var site: Dictionary = auth.builder.sites[box_id]
+	var all := range(site.plan.size())
+	var in_chest: int = auth.storage.get_box(box_id).inv.count_of("plank_root")
+	var dropped := 0
+	for d in auth.drops_root.get_children():
+		if d.get("item_id") == "plank_root":
+			dropped += int(d.get("count"))
+	check_eq(in_chest + dropped, 296, "exactly what the hut needs: 296 planks (in the chest, the rest beside it)")
+	check(Builder.missing_for(site.plan, all, auth.storage.get_box(box_id).inv).is_empty() or dropped > 0, "nothing missing")
+	check(auth.builder.request_dev_fill(1, 9999).begins_with("Dev: that's not"), "only Builder's Chests")
+	_teardown()
+
+
 func test_doors_open_and_ladders_climb() -> void:
 	await _setup()
 	var pos := player.global_position + Vector3(1, 0, 0)

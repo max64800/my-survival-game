@@ -1723,3 +1723,20 @@ the stones all looked grey)
   body) are there with their hinges at the hips and feeler holes.
 - Noticed, not changed yet (needs the owner's OK): the game's walk turns each insect leg around its own length (a roll)
   instead of swinging it forward and back, so in the game the beetle's legs may barely seem to step.
+
+## Nov 16, 2026, evening (PC, Claude 2): the dev menu (P) for previewing blueprints (F167)
+
+You asked for a dev button: P opens a menu where you pick a blueprint to preview and place, and P inside its
+Builder's Chest fills the chest with every material it needs, so you can watch it build.
+- **The P menu (purple, only in dev builds):**
+  - It lists every ready-made blueprint, including ones not learned yet. Pick one and place it like from the
+    blueprint book, no Build Hammer needed.
+  - With a Builder's Chest open, P asks the host to add whatever the unbuilt pieces still need. Anything that
+    doesn't fit drops beside the chest.
+  - A finished game for players (a "release build") has no dev menu.
+- **Hurdles:**
+  - **Stale chest number.** The chest panel never forgets its last chest. P could have filled an old chest when
+    you only opened your bag, so it now checks that the chest panel is really showing.
+  - **Shared files.** The main game file and the screen file also held another Claude's unsaved work (a loading
+    bar). I saved only my own lines from them, so their half-done work wasn't sent to GitHub.
+  - **A small test typo.** The test didn't compile at first (a missing type); fixed.

@@ -26,6 +26,7 @@ const KEYS := {
 	"dodge": [KEY_CTRL],
 	"draw_weapon": [KEY_F],  ## draw / put away the equipped weapon (F23)
 	"quicksave": [KEY_F5],
+	"dev_menu": [KEY_P],  ## dev builds only: blueprint preview + fill a Builder's Chest (DevMenu)
 }
 const MOUSE := {
 	"dig": [MOUSE_BUTTON_LEFT],

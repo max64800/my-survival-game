@@ -625,6 +625,44 @@ func site_status(box_id: int) -> String:
 
 # ================================================================== blueprints & build sites
 
+## Dev menu (P, dev builds only): fill a Builder's Chest with everything its building still needs.
+func ask_dev_fill(box_id: int) -> void:
+	if auth.is_host():
+		auth.hud_message.emit(request_dev_fill(auth.local_peer_id(), box_id))
+	else:
+		_rpc_dev_fill.rpc_id(1, box_id)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_dev_fill(box_id: int) -> void:
+	if auth.is_host():
+		request_dev_fill(multiplayer.get_remote_sender_id(), box_id)
+
+
+## Host: puts what the site still needs (every piece not built yet, minus what's in the chest) into its chest.
+## Anything that doesn't fit drops beside it. Returns what happened, for the message line.
+func request_dev_fill(peer_id: int, box_id: int) -> String:
+	var ps := auth.get_player(peer_id)
+	if ps == null or not DevMenu.enabled():
+		return ""
+	var site: Dictionary = sites.get(box_id, {})
+	var chest: Dictionary = auth.storage.get_box(box_id)
+	if site.is_empty() or chest.is_empty():
+		return "Dev: that's not a Builder's Chest of a blueprint being built."
+	var todo := []
+	for i in site.plan.size():
+		if not site.plan[i].built:
+			todo.append(i)
+	var need := missing_for(site.plan, todo, chest.inv)
+	if need.is_empty():
+		return "Dev: the chest already has everything it needs."
+	for item in need:
+		var left: int = auth.storage.put(box_id, item, need[item])
+		if left > 0:
+			auth.spawn_drop(item, left, chest.node.global_position + Vector3.UP)
+	return "Dev: filled the Builder's Chest with %s." % _list_text(need)
+
+
 func ask_place_blueprint(json: String, origin: Vector3, rot: int, chest_pos: Vector3) -> void:
 	if auth.is_host():
 		request_place_blueprint(auth.local_peer_id(), json, origin, rot, chest_pos)

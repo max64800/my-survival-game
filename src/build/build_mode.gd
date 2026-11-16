@@ -39,6 +39,8 @@ func active() -> bool:
 	var auth := GameAuthority.instance
 	if auth == null or dwarf == null:
 		return false
+	if dev_place and blueprint:  # placing a blueprint from the dev menu (P): no hammer needed
+		return true
 	var ps := auth.get_player(dwarf.peer_id)
 	return ps != null and ps.selected_item() == "build_hammer"
 
@@ -53,13 +55,17 @@ func choose(p_piece: String, p_family: String) -> void:
 	changed.emit()
 
 
-## Pick a blueprint from the book: its ghost follows your aim until you click.
-func start_blueprint(json: String) -> void:
+var dev_place := false  ## this blueprint came from the dev menu (P)
+
+
+## Pick a blueprint from the book: its ghost follows your aim until you click. `dev` = from the dev menu.
+func start_blueprint(json: String, dev: bool = false) -> void:
 	var r := Blueprint.from_json(json)
 	if not r.ok:
 		message.emit(r.error)
 		return
 	stop_blueprint()
+	dev_place = dev and DevMenu.enabled()
 	blueprint = r.blueprint
 	_bp_json = json
 	_bp_ghosts = Node3D.new()
@@ -87,6 +93,7 @@ func start_blueprint(json: String) -> void:
 
 func stop_blueprint() -> void:
 	blueprint = null
+	dev_place = false
 	if _bp_ghosts:
 		_bp_ghosts.queue_free()
 		_bp_ghosts = null
