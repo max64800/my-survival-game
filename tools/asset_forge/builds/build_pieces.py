@@ -728,7 +728,11 @@ P = {
 args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 OUT.mkdir(parents=True, exist_ok=True)
 JOUR.mkdir(parents=True, exist_ok=True)
+SHACK_V2 = {f"{n}__plank_root" for n in ("ramp", "ladder", "brace", "mine_prop", "wall_narrow", "window_wide")}  # made by shack_v2.py now
 for key in args:
+	if key in SHACK_V2:
+		print(f"SKIP {key}: built by builds/shack_v2.py")
+		continue
 	piece, family = key.split("__")
 	STYLE, TEX, TRIM = FAM[family]
 	if ROOF_TEX[STYLE] and not (kit.TEX / f"{ROOF_TEX[STYLE]}_a.png").exists():

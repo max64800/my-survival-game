@@ -1486,8 +1486,10 @@ if __name__ == "__main__":
 	OUT.mkdir(parents=True, exist_ok=True)
 	JOUR.mkdir(parents=True, exist_ok=True)
 	# These Delver's Shack pieces are now made by builds/shack_v2.py (owner-approved v3 style, Nov 15):
-	SHACK_V2 = {"foundation__plank_root", "wall__plank_root", "doorway__plank_root", "door__plank_root", "roof_26__plank_root",
-		"window_wall__plank_root"}
+	SHACK_V2 = {f"{n}__plank_root" for n in ("foundation", "wall", "doorway", "door", "roof_26", "window_wall", "roof_45",
+		"roof_26_outer", "roof_26_inner", "roof_45_outer", "roof_45_inner", "roof_26_ridge", "roof_45_ridge", "gable_26", "gable_45",
+		"sloped_wall", "stairs", "foundation_steps", "railing", "beam", "beam_half", "pillar", "floor", "floor_half", "small_floor",
+		"ceiling_panel", "floor_triangle", "foundation_half", "foundation_triangle", "half_wall")}
 	keys = [k for k in keys if k not in SHACK_V2]
 	for key in keys:
 		piece, family = key.split("__")

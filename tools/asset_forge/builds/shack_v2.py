@@ -701,7 +701,7 @@ def window_wall_v3(w=2.0, h=2.0, d=0.3, ow=1.0, oh=0.8, ob=0.6, shutters=True, s
 		pegs_on(xx, top + 0.06, 0.09)
 	# a crooked cross bar and a middle bar
 	blk((J(0.01), ob + oh / 2, 0.02), (0.05, oh, 0.045), T("wood", "dark"), bevel=0.008, rz=J(2))["role"] = "brace"
-	blk((0, ob + oh / 2 + J(0.02), 0.02), (ow, 0.045, 0.045), T("wood", "dark"), bevel=0.008, rz=J(2))["role"] = "brace"
+	blk((0, ob + oh / 2 + J(0.02), 0.028), (ow, 0.045, 0.045), T("wood", "dark"), bevel=0.008, rz=J(2))["role"] = "brace"  # 8 mm in front of the upright bar: no shared faces where they cross
 	# two narrow shutters swung open against the boards, on flat copper hinges
 	cu = kit.tex_mat("copper", "a")
 	for s_ in ((-1, 1) if shutters else ()):
