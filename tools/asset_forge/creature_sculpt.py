@@ -372,7 +372,7 @@ def paint_material(name, base, dark, light, moss=None, moss_amount=0.0, strokes=
 	return m
 
 
-def glow_paint(name, core, rim, lines=0.35, cells=7.0, facets=0.0, cloud=0.0, bubbles=0.0, creases=0.0, key_dir=(0.35, -0.45, 0.82)):
+def glow_paint(name, core, rim, lines=0.35, cells=7.0, facets=0.0, cloud=0.0, bubbles=0.0, creases=0.0, key_dir=(0.35, -0.45, 0.82), depth=0.0):
 	"""A glowing gem/amber look: bright core facing you, deeper colour at the rim, fracture lines inside.
 	Round 5: facets = each flat facet catches the light differently; cloud = cloudy darker depths; bubbles = small
 	bright specks trapped inside; creases = the facet edges light up."""
@@ -454,6 +454,20 @@ def glow_paint(name, core, rim, lines=0.35, cells=7.0, facets=0.0, cloud=0.0, bu
 		nt.links.new(last.outputs[2], bmix.inputs[6])
 		bmix.inputs[7].default_value = (1.0, 0.92, 0.6, 1)
 		last = bmix
+	if depth:  # light from deep inside: the middle of the gem (seen from above) glows brighter, like a lantern
+		gc = _node(nt, "ShaderNodeVectorMath", operation="LENGTH")
+		gsep = _node(nt, "ShaderNodeSeparateXYZ")
+		nt.links.new(coord.outputs["Object"], gsep.inputs[0])
+		gxy = _node(nt, "ShaderNodeCombineXYZ")
+		nt.links.new(gsep.outputs["X"], gxy.inputs["X"])
+		gy = _node(nt, "ShaderNodeMath", operation="SUBTRACT")
+		nt.links.new(gsep.outputs["Y"], gy.inputs[0])
+		gy.inputs[1].default_value = 0.28  # the window's middle (beetle: AMB_C)
+		nt.links.new(gy.outputs[0], gxy.inputs["Y"])
+		nt.links.new(gxy.outputs[0], gc.inputs[0])
+		gr = _node(nt, "ShaderNodeMapRange", **{"From Min": 0.05, "From Max": 0.4, "To Min": 1.0 + depth, "To Max": 1.0 - depth * 0.35})
+		nt.links.new(gc.outputs["Value"], gr.inputs["Value"])
+		last = mult(gr.outputs[0])
 	if creases:
 		pr = _node(nt, "ShaderNodeMapRange", **{"From Min": 0.505, "From Max": 0.54, "To Min": 0.0, "To Max": creases})
 		nt.links.new(geo.outputs["Pointiness"], pr.inputs["Value"])

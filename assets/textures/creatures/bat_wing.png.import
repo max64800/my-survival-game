@@ -2,11 +2,7 @@
 
 importer="texture"
 type="CompressedTexture2D"
-<<<<<<< HEAD
-uid="uid://c3b1juajeac1k"
-=======
 uid="uid://c6wwhgw52x0xs"
->>>>>>> f7c4315 (Commit leftover working files: refreshed kit preview pictures, Godot import files for creature art and docs, early Shack comparison shots)
 path="res://.godot/imported/bat_wing.png-3a3b081582aa9179bd4c36456a3b7853.ctex"
 metadata={
 "vram_texture": false
