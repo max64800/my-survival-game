@@ -34,6 +34,7 @@ var _help: Label
 var _help_timer := 25.0
 var _pause: Control
 var _loading: Control
+var _loading_bar: ProgressBar
 var _swap_from := -1
 var _hover_slot := -1  ## the bag slot under the mouse (for "press 1-9 to put it on the hotbar", F155)
 var _bars := {}  ## "health"/"stamina"/"hunger"/"thirst" -> ProgressBar
@@ -289,6 +290,11 @@ func _build() -> void:
 	_pause = _overlay(root, "Paused", "Click to keep digging")
 	_loading = _overlay(root, "Digging out the cave…", "")
 	_loading.visible = true
+	_loading_bar = ProgressBar.new()  # how far the cave around you is ready (owner, Nov 16)
+	_loading_bar.custom_minimum_size = Vector2(420, 18)
+	_loading_bar.show_percentage = false
+	_loading_bar.value = 15
+	(_loading.find_child("Sub", true, false) as Label).get_parent().add_child(_loading_bar)
 
 
 func _label(parent: Node, size: int) -> Label:
@@ -548,6 +554,12 @@ func _in_start_room() -> bool:
 func show_toast(text: String, seconds: float = 2.5) -> void:
 	_toast.text = text
 	_toast_timer = seconds
+
+
+## 0..1: how much of the cave around you is ready.
+func set_loading_progress(f: float) -> void:
+	if _loading_bar:
+		_loading_bar.value = maxf(_loading_bar.value, clampf(f, 0.0, 1.0) * 100.0)
 
 
 func set_loading(on: bool, text: String = "") -> void:

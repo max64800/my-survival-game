@@ -143,7 +143,10 @@ func test_generated_block_matches_queries() -> void:
 				var want := c.sdf_at(Vector3(p))
 				var got := buf.get_voxel_f(x, y, z, VoxelBuffer.CHANNEL_SDF)
 				# Chunky rock (F109): the terrain stores "rock or air" with a fixed random strength.
-				check_near(got, c.block_value(c._smooth_at(Vector3(p)), p, c._smooth_at(Vector3(p + Vector3i.UP))), 0.03, "block value at %s (the terrain stores it a little rounded)" % p)
+				if CaveMaker.rock_style == "blocks":
+					check_near(got, c.block_value(c._smooth_at(Vector3(p)), p, c._smooth_at(Vector3(p + Vector3i.UP))), 0.03, "block value at %s (the terrain stores it a little rounded)" % p)
+				else:
+					check_near(got, clampf(want, -500, 500), 0.05, "sdf at %s" % p)
 				check(signf(got) == signf(want) or want == 0.0, "rock/air at %s agrees with the query" % p)
 				if want > 0:
 					air += 1
@@ -233,6 +236,8 @@ func test_tunnel_mouths_are_at_floor_height() -> void:
 ## F109: chunky rock. The terrain stores only "rock" or "air" at each 1 m point, with a random strength
 ## between BLOCK_MIN and 1 that never changes; sdf_at follows the same blocks near walls.
 func test_rock_is_chunky_blocks() -> void:
+	var style := CaveMaker.rock_style
+	CaveMaker.rock_style = "blocks"
 	var c := CaveMaker.new(42)
 	var room: Dictionary = c.rooms[0]
 	var strengths := {}
@@ -248,4 +253,7 @@ func test_rock_is_chunky_blocks() -> void:
 	var g0 := Vector3i(room.center.round())
 	while absf(c._smooth_at(Vector3(g0))) > CaveMaker.NEAR_BLOCKS and g0.y > room.center.y - 30:
 		g0.y -= 1  # walk down to the floor: near a wall
+	CaveMaker.rock_style = style  # (checked below with blocks on; put the style back after)
+	CaveMaker.rock_style = "blocks"
 	check_near(c.sdf_at(Vector3(g0)), CaveMaker.BLEND_SAFE * c.block_value(c._smooth_at(Vector3(g0)), g0, c._smooth_at(Vector3(g0 + Vector3i.UP))), 0.0001, "near a wall, sdf_at matches the blocks at grid points")
+	CaveMaker.rock_style = style

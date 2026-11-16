@@ -87,6 +87,8 @@ func _ready() -> void:
 			_monsters = false
 			if mode == "menu":
 				mode = "solo"
+		elif arg.begins_with("rock="):
+			CaveMaker.rock_style = arg.trim_prefix("rock=")  # compare rock styles (blocks, slabs, ledges, mixed)
 		elif arg == "lookdev":
 			debug_script = "res://src/debug/lookdev.gd"
 			_saving = false
@@ -173,16 +175,19 @@ func _on_defended(r: Dictionary) -> void:
 func _show_menu() -> void:
 	_menu = load("res://src/ui/start_menu.gd").new()
 	add_child(_menu)
-	_menu.connect("play_alone", func(s: int, wname: String): _close_menu(); _new_world(s, wname))
-	_menu.connect("continue_game", func(data: Dictionary): _close_menu(); start_game(data.seed, {}, data))
+	# Making a world takes a few seconds: a loading screen with a bar shows first (owner, Nov 16).
+	_menu.connect("play_alone", func(s: int, wname: String): _close_menu(); _with_loading(func(): _new_world(s, wname)))
+	_menu.connect("continue_game", func(data: Dictionary): _close_menu(); _with_loading(func(): start_game(data.seed, {}, data)))
 	_menu.connect("host_world", func(data: Dictionary):
 		_close_menu()
-		start_game(data.seed, {}, data)
-		session.host_direct())
+		_with_loading(func():
+			start_game(data.seed, {}, data)
+			session.host_direct()))
 	_menu.connect("host_direct", func(s: int, wname: String):
 		_close_menu()
-		_new_world(s, wname)
-		session.host_direct())
+		_with_loading(func():
+			_new_world(s, wname)
+			session.host_direct()))
 	_menu.connect("quit_game", func(): get_tree().quit())
 	_menu.connect("join_direct", func(addr: String):
 		_menu.call("set_status", "Connecting to %s…" % addr)
@@ -192,6 +197,37 @@ func _show_menu() -> void:
 			_close_menu()
 			_new_world(s, wname))
 	session.status_changed.connect(func(t: String): if _menu: _menu.call("set_status", t))
+
+
+## Shows a loading screen first, waits two frames so it's really on screen, then does `job` (which
+## freezes the game for a moment while the cave is made). The in-game bar takes over after that.
+func _with_loading(job: Callable) -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = 100
+	var bg := ColorRect.new()
+	bg.color = Color(0.04, 0.035, 0.05)
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	layer.add_child(bg)
+	var box := VBoxContainer.new()
+	box.custom_minimum_size = Vector2(420, 0)
+	bg.add_child(box)
+	var title := Label.new()
+	title.text = "Making your world…"
+	title.add_theme_font_size_override("font_size", 32)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	box.add_child(title)
+	var bar := ProgressBar.new()
+	bar.custom_minimum_size = Vector2(420, 18)
+	bar.value = 5
+	bar.show_percentage = false
+	box.add_child(bar)
+	box.resized.connect(func(): box.position = (bg.size - box.size) * 0.5)
+	bg.resized.connect(func(): box.position = (bg.size - box.size) * 0.5)
+	add_child(layer)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	job.call()
+	layer.queue_free()
 
 
 ## A brand-new world: its own save file and name (F87).
@@ -478,6 +514,12 @@ func _process(delta: float) -> void:
 		return
 	var p := dwarf.global_position
 	var area := AABB(p - Vector3(6, 6, 6), Vector3(12, 12, 12))
+	# Loading bar: how much of the ground around you is ready (rings from 2 m out to 6 m).
+	var rings_ready := 0
+	for r in [2.0, 3.0, 4.0, 5.0, 6.0]:
+		if world.terrain.is_area_meshed(AABB(p - Vector3.ONE * r, Vector3.ONE * r * 2.0)):
+			rings_ready += 1
+	hud.set_loading_progress(0.15 + 0.85 * rings_ready / 5.0)
 	if world.terrain.is_area_meshed(area):
 		_ready_to_play = true
 		dwarf.set_physics_process(true)

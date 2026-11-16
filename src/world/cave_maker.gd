@@ -74,6 +74,17 @@ var _ore_noise := FastNoiseLite.new()
 var _dirt_noise := FastNoiseLite.new()
 var _rock_noise := FastNoiseLite.new()
 var _style_noise := FastNoiseLite.new()
+## Rock styles to compare (owner, Nov 16: "try a few different things"). "blocks" = step 1's chunky
+## blocks; the others keep the smooth surface and add broken-stone shapes on walls and ceilings:
+## "slabs" (irregular slabs pushed in/out), "ledges" (stacked layers), "mixed" (both + small chips).
+static var rock_style := "mixed"
+var _slab_noise := FastNoiseLite.new()
+var _layer_noise := FastNoiseLite.new()
+var _chip_noise := FastNoiseLite.new()
+const SLAB_AMP := 1.2  ## how far a slab sticks out or sinks in (m)
+const LEDGE_AMP := 1.0  ## how far a rock layer steps in or out (m)
+const LAYER_H := 1.1  ## how tall one rock layer is (m)
+const CHIP_AMP := 0.8  ## small chipped facets (m)
 const ROCKY_AMP := 2.8  ## how far sharp rock juts out or cuts in (meters)
 
 
@@ -335,6 +346,20 @@ func in_start_plug(p: Vector3) -> bool:
 # ---------------------------------------------------------------- layout
 
 func _setup_noise() -> void:
+	# Broken-stone detail (rock styles): one flat value per irregular cell = a slab; layers by height.
+	_slab_noise.seed = seed + 404
+	_slab_noise.noise_type = FastNoiseLite.TYPE_CELLULAR
+	_slab_noise.frequency = 0.24
+	_slab_noise.cellular_return_type = FastNoiseLite.RETURN_CELL_VALUE
+	_slab_noise.fractal_type = FastNoiseLite.FRACTAL_NONE
+	_layer_noise.seed = seed + 505
+	_layer_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
+	_layer_noise.frequency = 1.0
+	_chip_noise.seed = seed + 606
+	_chip_noise.noise_type = FastNoiseLite.TYPE_CELLULAR
+	_chip_noise.frequency = 0.55
+	_chip_noise.cellular_return_type = FastNoiseLite.RETURN_DISTANCE2_SUB
+	_chip_noise.fractal_type = FastNoiseLite.FRACTAL_NONE
 	_wall_noise.seed = seed
 	_wall_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
 	_wall_noise.frequency = 0.07
@@ -722,7 +747,7 @@ func _march_wall(start: Vector3, dir: Vector3, max_dist: float) -> Vector3:
 		var d := sdf_at(p)
 		if d < 0.05:
 			return p
-		t += maxf(d * 0.8, 0.2)
+		t += maxf((d - march_slack()) * 0.8, 0.2)
 	return Vector3.INF
 
 
@@ -830,6 +855,8 @@ func _corner(g: Vector3i) -> float:
 ## sit on the real surface.
 func sdf_at(p: Vector3) -> float:
 	var s := _smooth_at(p)
+	if rock_style != "blocks":
+		return s
 	if absf(s) > NEAR_BLOCKS:
 		# Far from a wall: the real (chunky) wall may be up to BLOCK_SLACK closer than the smooth shape,
 		# so say that much less. Searches that step by this distance never jump over a block.
@@ -906,6 +933,8 @@ func _sdf_with(p: Vector3, room_ids: PackedInt32Array, seg_ids: PackedInt32Array
 	var s := -d
 	if absf(s) < 6.5:
 		s += _wall_bumps(p)
+		if rock_style != "blocks" and not _near_start(p):
+			s += _rock_detail(p) * _floor_guard(p, room_ids)
 		# Small rooms (shrines, geodes) keep an open core: wall bumps up to 2.8 m could otherwise fill a
 		# 2.8 m room, and the chunky blocks would close what's left (F109).
 		for i in room_ids:
@@ -928,6 +957,48 @@ func _wall_bumps(p: Vector3) -> float:
 	# with angular ridges cutting in and flat faces jutting out.
 	var facets := (_rock_noise.get_noise_3dv(p) + 0.8) * ROCKY_AMP
 	return lerpf(round_bumps, facets + round_bumps * 0.35, rocky)
+
+
+## How much nearer a wall can be than sdf_at says, right where rock slabs and ledges step
+## (searches that step by the distance subtract this so they never jump past an edge).
+func march_slack() -> float:
+	match rock_style:
+		"slabs": return SLAB_AMP
+		"ledges": return LEDGE_AMP
+		"mixed": return SLAB_AMP * 0.6 + LEDGE_AMP * 0.7 + CHIP_AMP
+	return 0.0
+
+
+## Broken-stone detail for the rock styles (meters the wall moves; + = more air).
+func _rock_detail(p: Vector3) -> float:
+	match rock_style:
+		"slabs":
+			return _slab_noise.get_noise_3dv(p) * SLAB_AMP
+		"ledges":
+			return _ledge(p)
+		"mixed":
+			return _slab_noise.get_noise_3dv(p) * SLAB_AMP * 0.6 + _ledge(p) * 0.7 + (_chip_noise.get_noise_3dv(p) + 0.8) * CHIP_AMP
+	return 0.0
+
+
+## Stacked rock layers: each ~1 m layer steps in or out a little; the layers tilt and wander.
+func _ledge(p: Vector3) -> float:
+	var warp := _layer_noise.get_noise_2d(p.x * 0.04, p.z * 0.04) * 2.5
+	var layer := floorf((p.y + warp) / LAYER_H)
+	return _layer_noise.get_noise_1d(layer * 13.7 + 0.5) * LEDGE_AMP
+
+
+## Less detail right at a cavern's floor, so floors stay walkable (no knee-high steps).
+func _floor_guard(p: Vector3, room_ids: PackedInt32Array) -> float:
+	for i in room_ids:
+		var c := _room_c[i]
+		var r := _room_r[i]
+		var fy := c.y - r.y * 0.55
+		if p.y < fy + 1.2 and p.y > fy - 1.5:
+			var q := Vector2((p.x - c.x) / r.x, (p.z - c.z) / r.z)
+			if q.length() < 0.95:
+				return 0.2
+	return 1.0
 
 
 ## 0 = smooth and round, 1 = sharp and rocky (soft blend between big patches).
@@ -1069,6 +1140,7 @@ func generate_block(buf: VoxelBuffer, origin: Vector3i) -> void:
 	var pal: Dictionary = Mat.PALETTES[mid]
 
 	var near_start := _start_overlaps(lo, hi)
+	var blocky := rock_style == "blocks"
 	if room_ids.is_empty() and seg_ids.is_empty() and one_biome and not near_start:
 		# Solid rock block: fast path.
 		buf.fill_f(SOLID_FILL, SDF)
@@ -1108,7 +1180,7 @@ func generate_block(buf: VoxelBuffer, origin: Vector3i) -> void:
 			var p_patch: int = pal.patch
 			for y in sy:
 				var s := grid[base + y]
-				var bv := block_value(s, Vector3i(origin.x + x, origin.y + y, origin.z + z), grid[base + y + 1])
+				var bv := block_value(s, Vector3i(origin.x + x, origin.y + y, origin.z + z), grid[base + y + 1]) if blocky else s
 				buf.set_voxel_f(bv, x, y, z, SDF)  # chunky rock
 				if bv > 0.0:
 					buf.set_voxel(p_rock, x, y, z, IDX)  # air: material unused

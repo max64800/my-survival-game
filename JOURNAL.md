@@ -1775,3 +1775,17 @@ You tried the dev menu and asked for four things:
   - **An older test broke.** Another Claude's new chunky rock put that test's fixed chest spot inside rock. The test
     now looks for open floor nearby.
   - **Shared files again.** I saved only my own lines of the screen file; the other Claude's loading bar stays theirs.
+
+- **Later the same day: you didn't like the blocks (triangles and pyramids everywhere, odd holes, floating bits), but liked the
+  falling-pieces physics.** You chose soft shading like before and digging that breaks off rough chunks, and asked to try a few
+  things. Claude added a loading screen with a bar (the world freezes for a moment while it's made; the bar then shows how much
+  of the cave around you is ready), and three rock styles that keep the smooth surface and add broken stone on walls:
+  **slabs** (irregular 3-5 m slabs pushed in or out up to 1.2 m), **ledges** (stacked ~1 m rock layers stepping in and out) and
+  **mixed** (both plus small chips). The game uses "mixed" until you pick. Picture: `journey/terrain/rock_styles_compare.jpg`.
+  - Why the blocks looked like pyramids: a single rock point surrounded by air is drawn as a pyramid. The new styles move whole
+    slabs and layers, so there are no single points, no floating bits and no holes.
+  - The first try of the styles was too gentle (0.5 m) to see; doubled. A robot shot of a cave wall up close was added to
+    `lookdev` to compare styles fairly (floors hid the differences).
+  - Making a world had become slower because of the block math (crystal placing 1.9 s instead of 0.4 s); the new styles skip it.
+  - Slab edges are sudden steps, so searches stepping through the rock now allow for them (roots and crystals stay on rock).
+  - The other Claudes saved work in the same folder during a test run, so a few tests failed for a moment; they pass on their own.

@@ -69,6 +69,35 @@ func _portrait(dwarf: Dwarf, name: String, delay: float = 0.3, side_amount: floa
 	cam.queue_free()
 
 
+## A free camera 3.5 m from the nearest wall of the first cavern, looking at it with a warm light.
+func _wall_shot(maker: CaveMaker, name: String, turn: float) -> void:
+	var from: Vector3 = maker.cavern_spawn + Vector3.UP * 1.6
+	var best := Vector3.INF
+	for k in 16:
+		var a := turn + k * TAU / 16.0
+		var hit := GlowPlacer._march(maker, from, Vector3(cos(a), 0.0, sin(a)), 30.0)
+		if hit != Vector3.INF and from.distance_to(hit) > 4.5:
+			best = hit
+			break
+	if best == Vector3.INF:
+		return
+	var cam := Camera3D.new()
+	add_child(cam)
+	var back := (from - best).normalized()
+	cam.global_position = best + back * 3.5 + Vector3.UP * 0.4
+	cam.look_at(best + Vector3.UP * 0.2)
+	var lamp := OmniLight3D.new()
+	lamp.omni_range = 14.0
+	lamp.light_energy = 2.2
+	lamp.light_color = Color(1.0, 0.85, 0.65)
+	cam.add_child(lamp)
+	cam.make_current()
+	await _wait(0.8)
+	await _shot(name)
+	_main.dwarf.camera.make_current()
+	cam.queue_free()
+
+
 func _run() -> void:
 	while not _main.is_ready_to_play():
 		await _wait(0.25)
@@ -80,6 +109,9 @@ func _run() -> void:
 		_main.hud.visible = false
 	await _wait(2.0)
 	await _shot("a_spawn")
+	# Cave walls up close, lit like a lantern (to compare rock styles: rock=blocks|slabs|ledges|mixed|round).
+	await _wall_shot(maker, "w_wall", 0.0)
+	await _wall_shot(maker, "w_wall2", PI)
 	await _portrait(dwarf, "b_dwarf_portrait")
 	await _portrait(dwarf, "b1_dwarf_side", 0.3, -1.0)
 	dwarf.model.swing(0.55)

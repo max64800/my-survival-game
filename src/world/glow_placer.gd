@@ -202,8 +202,6 @@ static func _try_add(maker: CaveMaker, rng: RandomNumberGenerator, spots: Array[
 		if s.pos.distance_to(hit) < MIN_SPACING:
 			return
 	var n := normal_at(maker, hit)
-	if maker.sdf_at(hit - n * 0.8) >= 0.0 or maker.sdf_at(hit + n * 0.8) <= 0.0:
-		return  # the tip of a jagged block: no solid rock behind it, or rock in front (chunky rock, F109)
 	var kind := _pick_kind(n, rng) if biome == "mossy" else _pick_fungal(n, rng)
 	if kind == ROOT and maker.sdf_at(hit + Vector3.DOWN * 0.6) <= 0.3:
 		kind = CRYSTAL  # too close to a wall to hang straight down here
@@ -226,6 +224,8 @@ static func _try_add(maker: CaveMaker, rng: RandomNumberGenerator, spots: Array[
 	var scale := rng.randf_range(0.7, 1.3) * (1.8 if kind.begins_with("crystal") else 1.0)
 	if kind in TALL:
 		scale = 1.0  # stretched by `length` instead
+	if maker.sdf_at(hit - n * 0.8) >= 0.0 or maker.sdf_at(hit + n * 0.8) <= 0.0:
+		return  # on the edge of a rock slab or block: no solid rock behind it, or rock in front (F109)
 	spots.append({id = -1, pos = hit, normal = n, kind = kind, color = KINDS[kind].color, scale = scale,
 		spin = rng.randf_range(0, TAU), length = length, chops = KINDS[kind].get("chops", 1)})
 
@@ -271,7 +271,7 @@ static func _march(maker: CaveMaker, start: Vector3, dir: Vector3, max_dist: flo
 		var d := maker.sdf_at(p)
 		if d < 0.05:
 			return p
-		t += maxf(d * 0.8, 0.2)
+		t += maxf((d - maker.march_slack()) * 0.8, 0.2)  # rock slab edges can be nearer than d (F109)
 	return Vector3.INF
 
 
