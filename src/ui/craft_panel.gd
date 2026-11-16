@@ -19,29 +19,32 @@ const TABS := ["Tools", "Weapons", "Armor", "Stations", "Materials", "Food"]
 var _tab := ""
 var _tabs: HFlowContainer
 var _scroll: ScrollContainer
-## How many to make with one click (owner F129): 1, 5, 10 or -1 = as many as you can.
+## How many to make with one click (owner F129): 1, 5 or -1 = as many as you can.
 var amount := 1
 var _amount_row: HBoxContainer
+## Recipe cards (owner F187): click a card, it shows big at the bottom with one Craft button.
+const CARD := 86
+const CARD_COLUMNS := 5
+var _picked := ""
+var _detail: PanelContainer
+var _detail_pic: TextureRect
+var _detail_name: Label
+var _detail_needs: GridContainer
+var _craft_button: Button
 ## Gear upgrades sit in their own panel, left of the bag, at a workbench or anvil (owner F178).
 var upgrade_panel: PanelContainer
 var _up_list: VBoxContainer
 
 
 func _ready() -> void:
-	var bg := StyleBoxFlat.new()
-	bg.bg_color = Color(0.06, 0.05, 0.05, 0.9)
-	bg.set_corner_radius_all(10)
-	bg.set_content_margin_all(12)
-	add_theme_stylebox_override("panel", bg)
-	custom_minimum_size = Vector2(430, 0)
+	UiKit.panel(self)  # "dwarf workshop" look (owner F187)
+	custom_minimum_size = Vector2(500, 0)
 	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 8)
 	add_child(box)
-	_title = Label.new()
-	_title.add_theme_font_size_override("font_size", 20)
-	box.add_child(_title)
-	_status = Label.new()
-	_status.add_theme_color_override("font_color", Color(1.0, 0.8, 0.5))
-	box.add_child(_status)
+	_title = UiKit.title(box, "Crafting")
+	_status = UiKit.label(box, "", 14, UiKit.AMBER)
+	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_bar = ProgressBar.new()
 	_bar.custom_minimum_size = Vector2(0, 14)
 	_bar.show_percentage = false
@@ -51,41 +54,67 @@ func _ready() -> void:
 	_bar.add_theme_stylebox_override("fill", fill)
 	box.add_child(_bar)
 	_tabs = HFlowContainer.new()  # tabs wrap onto a second line instead of widening the panel
-	_tabs.add_theme_constant_override("separation", 4)
+	_tabs.add_theme_constant_override("h_separation", 4)
+	_tabs.add_theme_constant_override("v_separation", 4)
 	box.add_child(_tabs)
-	_amount_row = HBoxContainer.new()
-	box.add_child(_amount_row)
-	var how := Label.new()
-	how.text = "Make:"
-	_amount_row.add_child(how)
-	for a in [1, 5, 10, -1]:
-		var b := Button.new()
-		b.name = "Amount%d" % a
-		b.text = "×%d" % a if a > 0 else "All"
-		b.toggle_mode = true
-		b.focus_mode = Control.FOCUS_NONE
-		b.button_pressed = a == amount
-		var pick: int = a
-		b.pressed.connect(func(): amount = pick; _paint_amounts())
-		_amount_row.add_child(b)
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(410, 360)
+	scroll.custom_minimum_size = Vector2(470, 250)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	box.add_child(scroll)
 	_scroll = scroll
 	_list = VBoxContainer.new()
 	_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_list)
+	# The picked recipe, big, with have / need and one Craft button (owner F187).
+	_detail = PanelContainer.new()
+	_detail.add_theme_stylebox_override("panel", UiKit.style("tooltip", 14))
+	box.add_child(_detail)
+	var dv := VBoxContainer.new()
+	_detail.add_child(dv)
+	var top := HBoxContainer.new()
+	top.add_theme_constant_override("separation", 12)
+	dv.add_child(top)
+	var pic_frame := PanelContainer.new()
+	pic_frame.add_theme_stylebox_override("panel", UiKit.style("slot", 6))
+	top.add_child(pic_frame)
+	_detail_pic = TextureRect.new()
+	_detail_pic.custom_minimum_size = Vector2(78, 78)
+	_detail_pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_detail_pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	pic_frame.add_child(_detail_pic)
+	var info := VBoxContainer.new()
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top.add_child(info)
+	_detail_name = UiKit.label(info, "", 19, UiKit.AMBER)
+	_detail_needs = GridContainer.new()
+	_detail_needs.columns = 3
+	_detail_needs.add_theme_constant_override("h_separation", 8)
+	info.add_child(_detail_needs)
+	_amount_row = HBoxContainer.new()
+	_amount_row.add_theme_constant_override("separation", 6)
+	dv.add_child(_amount_row)
+	for a in [1, 5, -1]:
+		var b := UiKit.dark_button(Button.new(), 15)
+		b.name = "Amount%d" % a
+		b.text = "×%d" % a if a > 0 else "All"
+		b.toggle_mode = true
+		b.custom_minimum_size = Vector2(76, 42)
+		b.button_pressed = a == amount
+		var pick: int = a
+		b.pressed.connect(func(): amount = pick; _paint_amounts())
+		_amount_row.add_child(b)
+	_craft_button = UiKit.gold_button(Button.new(), 22)
+	_craft_button.text = "Craft"
+	_craft_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_craft_button.custom_minimum_size = Vector2(0, 44)
+	_craft_button.pressed.connect(func(): if _picked != "": start_making(_picked))
+	_amount_row.add_child(_craft_button)
 
 
 ## The separate "Upgrade gear" panel. The HUD adds it to the screen and places it.
 func make_upgrade_panel() -> PanelContainer:
 	upgrade_panel = PanelContainer.new()
-	var bg := StyleBoxFlat.new()
-	bg.bg_color = Color(0.06, 0.05, 0.05, 0.9)
-	bg.set_corner_radius_all(10)
-	bg.set_content_margin_all(12)
-	upgrade_panel.add_theme_stylebox_override("panel", bg)
+	UiKit.panel(upgrade_panel)
 	upgrade_panel.custom_minimum_size = Vector2(330, 0)
 	upgrade_panel.visible = false
 	var scroll := ScrollContainer.new()
@@ -134,6 +163,9 @@ func refresh() -> void:
 	var ps: GameAuthority.PlayerState = auth.get_player(peer_id) if auth else null
 	if ps == null or not is_inside_tree():
 		return
+	var special := station != null and station.kind in ["rune_slab", "gem_bench"]
+	_detail.visible = not special
+	_tabs.visible = not special
 	if station and station.kind == "rune_slab":
 		_rune_slab(ps, auth)
 		return
@@ -141,7 +173,7 @@ func refresh() -> void:
 		_gem_bench(ps)
 		return
 	var where := Recipes.HAND if station == null else station.kind
-	_title.text = "Craft by hand" if station == null else Items.display_name(station.kind)
+	_title.text = "Crafting" if station == null else Items.display_name(station.kind)
 	_status.text = station.busy_text() if station else ""
 	if not _making.is_empty():
 		_status.text = "Making %s…" % Items.display_name(Recipes.get_recipe(_making.id).output)
@@ -175,18 +207,30 @@ func refresh() -> void:
 	for t in TABS:
 		if not by_tab.has(t):
 			continue
-		var tb := Button.new()
-		tb.text = "%s (%d)" % [t, by_tab[t].size()]
+		var tb := UiKit.dark_button(Button.new(), 13)
+		tb.text = t
+		tb.icon = Items.icon(Recipes.get_recipe(by_tab[t][0]).output)  # a picture of the tab's first thing
+		tb.expand_icon = true
+		tb.add_theme_constant_override("icon_max_width", 22)
+		tb.custom_minimum_size = Vector2(0, 38)
 		tb.toggle_mode = true
 		tb.button_pressed = t == _tab
-		tb.focus_mode = Control.FOCUS_NONE
 		var pick: String = t
 		tb.pressed.connect(func(): _tab = pick; _scroll.scroll_vertical = 0; refresh())
 		_tabs.add_child(tb)
 	var shown := 0
-	for id in by_tab.get(_tab, []):
+	var cards := GridContainer.new()
+	cards.columns = CARD_COLUMNS
+	cards.add_theme_constant_override("h_separation", 6)
+	cards.add_theme_constant_override("v_separation", 6)
+	_list.add_child(cards)
+	var tab_ids: Array = by_tab.get(_tab, [])
+	if not _picked in tab_ids:
+		_picked = tab_ids[0] if not tab_ids.is_empty() else ""
+	for id in tab_ids:
 		shown += 1
-		_list.add_child(_row(id, ps.inventory))
+		cards.add_child(_card(id, ps.inventory))
+	_show_detail(ps.inventory)
 	_scroll.set_deferred("scroll_vertical", keep_scroll)
 	if shown == 0:
 		var l := Label.new()
@@ -350,50 +394,84 @@ func _upgrade_rows(inv: Inventory) -> void:
 		_up_list.add_child(l)
 
 
-func _row(recipe_id: String, inv: Inventory) -> Control:
+## Can you make it right now (enough of everything, station level high enough)?
+func _ready_to_make(recipe_id: String, inv: Inventory) -> bool:
 	var r := Recipes.get_recipe(recipe_id)
-	var row := HBoxContainer.new()
-	var pic := TextureRect.new()  # a picture of what it makes (owner F156)
-	pic.texture = Items.icon(r.output)
-	pic.custom_minimum_size = Vector2(44, 44)
-	pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	row.add_child(pic)
-	var text := RichTextLabel.new()
-	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # long lines wrap: the panel keeps its width
-	text.bbcode_enabled = true
-	text.fit_content = true
-	text.scroll_active = false
-	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var parts := []
-	var ok := true
-	for item in r.inputs:
-		var have := inv.count_of(item)
-		var need: int = r.inputs[item]
-		var col := "white" if have >= need else "#ff7070"
-		if have < need:
-			ok = false
-		parts.append("[color=%s]%d/%d %s[/color]" % [col, mini(have, need), need, Items.display_name(item)])
-	if r.get("fuel", 0) > 0:
-		parts.append("+ %d wood fuel" % r.fuel)
-	var out := Items.display_name(r.output) + ("" if r.count == 1 else " ×%d" % r.count)
+	if station and r.station != Recipes.HAND and station.level() < int(r.get("level", 1)):
+		return false
+	return can_make_count(recipe_id, inv) > 0 and _fuel_have(inv) >= int(r.get("fuel", 0))
+
+
+## Fuel is paid with whichever you have enough of: coal, rootwood or mushroom wood (game_authority).
+static func _fuel_have(inv: Inventory) -> int:
+	return maxi(inv.count_of("coal"), maxi(inv.count_of("rootwood"), inv.count_of("mushroom_wood")))
+
+
+## One recipe card: the picture and the name. Dim when you can't make it yet; gold frame when picked.
+func _card(recipe_id: String, inv: Inventory) -> Control:
+	var r := Recipes.get_recipe(recipe_id)
+	var b := Button.new()
+	b.name = "Card_" + recipe_id
+	b.custom_minimum_size = Vector2(CARD, CARD)
+	b.focus_mode = Control.FOCUS_NONE
+	b.icon = Items.icon(r.output)
+	b.expand_icon = true
+	b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	b.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
+	b.add_theme_constant_override("icon_max_width", 46)
+	b.text = Items.display_name(r.output) + ("" if r.count == 1 else " ×%d" % r.count)
+	b.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	b.clip_text = true
+	b.add_theme_font_size_override("font_size", 12)
+	b.add_theme_color_override("font_color", UiKit.TEXT)
+	b.add_theme_color_override("font_hover_color", UiKit.AMBER)
+	b.tooltip_text = Items.display_name(r.output)
+	var picked := recipe_id == _picked
+	var normal := UiKit.style("slot_selected" if picked else "card", 6)
+	for st in ["normal", "pressed", "focus"]:
+		b.add_theme_stylebox_override(st, normal)
+	b.add_theme_stylebox_override("hover", UiKit.style("slot_selected", 6))
+	if not _ready_to_make(recipe_id, inv):
+		b.modulate = Color(1, 1, 1, 0.5)
+	b.pressed.connect(func(): _picked = recipe_id; refresh())
+	return b
+
+
+## The picked recipe at the bottom: big picture, every ingredient as have / need (missing in red).
+func _show_detail(inv: Inventory) -> void:
+	for c in _detail_needs.get_children():
+		c.queue_free()
+	if _picked == "":
+		_detail.visible = false
+		return
+	_detail.visible = true
+	var r := Recipes.get_recipe(_picked)
+	_detail_pic.texture = Items.icon(r.output)
 	var timer := "" if r.get("seconds", 0) == 0 else "  (%ds)" % r.seconds
-	# No yellow "where to get it" lines any more (owner F179: too much text). Only a short red note
+	_detail_name.text = Items.display_name(r.output) + ("" if r.count == 1 else " ×%d" % r.count) + timer
+	var needs: Dictionary = r.inputs.duplicate()
+	if r.get("fuel", 0) > 0:
+		needs["fuel"] = int(r.fuel)
+	for item in needs:
+		var have := _fuel_have(inv) if item == "fuel" else inv.count_of(item)
+		var need: int = needs[item]
+		var col := UiKit.TEXT if have >= need else UiKit.MISSING
+		var pic := TextureRect.new()
+		pic.texture = Items.icon("coal" if item == "fuel" else item)
+		pic.custom_minimum_size = Vector2(22, 22)
+		pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		_detail_needs.add_child(pic)
+		var n := UiKit.label(_detail_needs, "Fuel (coal or wood)" if item == "fuel" else Items.display_name(item), 14, col)
+		n.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		UiKit.label(_detail_needs, "%d / %d" % [have, need], 14, col)
+	# No yellow "where to get it" lines (owner F179: too much text). Only a short red note
 	# when the station's level is too low.
 	if station and r.station != Recipes.HAND and station.level() < int(r.get("level", 1)):
-		ok = false
-		parts.append("[color=#ff7070]needs level %d[/color]" % int(r.level))
-	text.text = "[b]%s[/b]%s
-[font_size=13]%s[/font_size]" % [out, timer, ", ".join(parts)]
-	row.add_child(text)
-	var b := Button.new()
-	b.text = "Make"
-	b.disabled = not ok
-	b.custom_minimum_size = Vector2(70, 0)
-	b.disabled = not ok or not _making.is_empty()
-	b.pressed.connect(func(): start_making(recipe_id))
-	row.add_child(b)
-	return row
+		_detail_needs.add_child(Control.new())
+		UiKit.label(_detail_needs, "needs level %d" % int(r.level), 14, UiKit.MISSING)
+		_detail_needs.add_child(Control.new())
+	_craft_button.disabled = not _ready_to_make(_picked, inv) or not _making.is_empty()
 
 
 ## The Gem Bench (combat doc 4.4): every item with sockets, its gems, and the gems you carry.

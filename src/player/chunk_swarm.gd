@@ -14,7 +14,7 @@ var _pos: PackedVector3Array
 var _vel: PackedVector3Array
 var _spin: PackedVector3Array
 var _rot: PackedVector3Array
-var _size: PackedFloat32Array
+var _size: PackedVector3Array  ## per-bit stretch on each side, so bits aren't equal cubes (F104)
 var _alive: PackedByteArray
 var _age := 0.0
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
@@ -44,6 +44,7 @@ static func _mesh_for(color: Color) -> BoxMesh:
 		box.size = Vector3.ONE * 0.09
 		var mat := StandardMaterial3D.new()
 		mat.albedo_color = color
+		mat.vertex_color_use_as_albedo = true  # each bit's own shade (F104)
 		mat.roughness = 0.9
 		box.material = mat
 		_meshes[key] = box
@@ -53,6 +54,7 @@ static func _mesh_for(color: Color) -> BoxMesh:
 func _setup(at: Vector3, color: Color, count: int) -> void:
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_colors = true
 	mm.mesh = _mesh_for(color)
 	mm.instance_count = count
 	multimesh = mm
@@ -69,7 +71,9 @@ func _setup(at: Vector3, color: Color, count: int) -> void:
 		_vel[i] = out * randf_range(2.0, 5.5)
 		_spin[i] = Vector3(randf_range(-9, 9), randf_range(-9, 9), randf_range(-9, 9))
 		_rot[i] = Vector3(randf() * TAU, randf() * TAU, randf() * TAU)
-		_size[i] = randf_range(0.55, 1.45)
+		_size[i] = Vector3(randf_range(0.6, 1.6), randf_range(0.4, 1.1), randf_range(0.6, 1.5)) * randf_range(0.6, 1.4)
+		var shade := randf_range(0.7, 1.2)
+		mm.set_instance_color(i, Color(shade * randf_range(0.95, 1.05), shade, shade * randf_range(0.95, 1.05)))
 		_alive[i] = 1
 	_write()
 
@@ -102,6 +106,6 @@ func _process(delta: float) -> void:
 
 func _write() -> void:
 	for i in _pos.size():
-		var sc := _size[i] if _alive[i] == 1 else 0.0
-		var b := Basis.from_euler(_rot[i]).scaled(Vector3.ONE * sc)
+		var sc := _size[i] if _alive[i] == 1 else Vector3.ZERO
+		var b := Basis.from_euler(_rot[i]) * Basis.from_scale(sc)
 		multimesh.set_instance_transform(i, Transform3D(b, _pos[i]))

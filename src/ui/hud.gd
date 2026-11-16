@@ -4,6 +4,7 @@ extends CanvasLayer
 ## dig progress, the hotbar (Item Bar), the bag, lantern fuel, frame rate, pause screen.
 
 const SLOT_SIZE := 58
+const BAG_HINT := "Click: pick up / swap  ·  Shift+Click: quick move  ·  Double-click: equip  ·  Right-click: split"
 
 ## A button on the Escape menu was pressed: "resume", "save", "menu" or "quit" (F87).
 signal pause_pressed(what: String)
@@ -111,22 +112,20 @@ func _build() -> void:
 	_bag_panel = PanelContainer.new()
 	_bag_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	_bag_panel.visible = false
-	var bag_bg := StyleBoxFlat.new()
-	bag_bg.bg_color = Color(0.06, 0.05, 0.05, 0.88)
-	bag_bg.set_corner_radius_all(10)
-	bag_bg.set_content_margin_all(14)
-	_bag_panel.add_theme_stylebox_override("panel", bag_bg)
+	UiKit.panel(_bag_panel)  # "dwarf workshop" frame (owner F187)
 	root.add_child(_bag_panel)
+	var bag_outer := VBoxContainer.new()
+	bag_outer.add_theme_constant_override("separation", 8)
+	_bag_panel.add_child(bag_outer)
+	UiKit.title(bag_outer, "Bag")
 	# Equipped things on the left, everything you carry on the right (owner F150).
 	var bag_row := HBoxContainer.new()
 	bag_row.add_theme_constant_override("separation", 18)
-	_bag_panel.add_child(bag_row)
+	bag_outer.add_child(bag_row)
 	var equip_col := VBoxContainer.new()
 	bag_row.add_child(equip_col)
 	var bag_box := VBoxContainer.new()
 	bag_row.add_child(bag_box)
-	var title := _label(bag_box, 18)
-	title.text = "Bag  (click two slots to swap · right-click to equip / take off)"
 	# The hotbar moves in here while the bag is open, so everything you carry is in one place (F88).
 	_hotbar_dock = VBoxContainer.new()
 	bag_box.add_child(_hotbar_dock)
@@ -152,11 +151,16 @@ func _build() -> void:
 	equip_col.add_child(equip_grid)
 	for i in Inventory.EQUIP.size():
 		equip_grid.add_child(_make_slot(Inventory.EQUIP_START + i, EQUIP_NAMES[i]))
+	# One short hint line, no long explanations (owner F179, F187).
+	UiKit.divider(bag_outer)
+	var hint := UiKit.label(bag_outer, BAG_HINT, 13, UiKit.DIM)
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	# Centred in the space left of the crafting list (it sits on the right), so they never overlap.
 	_bag_panel.resized.connect(_layout_panels)
 	root.resized.connect(_layout_panels)
 	_bag_panel.visibility_changed.connect(_dock_hotbar)
 	_bag_panel.visibility_changed.connect(_layout_panels)
+	_bag_panel.visibility_changed.connect(func(): _goals_label.visible = not _bag_panel.visible)  # it'd run over the bag
 
 	var fuel_box := VBoxContainer.new()
 	fuel_box.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
@@ -408,8 +412,7 @@ func _refresh_slots() -> void:
 		var s := ps.inventory.get_slot(i)
 		var selected: bool = i == ps.selected_slot or (i == hand and Inventory.is_equip_index(i))
 		var swap_pick := i == _swap_from
-		var border := Color(1, 0.85, 0.4) if selected or swap_pick else Color(0.4, 0.38, 0.35, 0.9)
-		panel.add_theme_stylebox_override("panel", _slot_style(Color(0.08, 0.07, 0.07, 0.75), border))
+		panel.add_theme_stylebox_override("panel", UiKit.style("slot_selected" if selected or swap_pick else "slot"))
 		var icon: Panel = panel.get_node("Icon")
 		var pic: TextureRect = panel.get_node("Pic")
 		var tex: Texture2D = null if s.is_empty() else Items.icon(s.id)
@@ -429,10 +432,26 @@ func _on_slot_input(event: InputEvent, index: int) -> void:
 		return
 	if not _bag_panel.visible:
 		return
-	if event.button_index == MOUSE_BUTTON_RIGHT and not box_panel.visible:
-		_quick_equip(index)
+	var auth := GameAuthority.instance
+	# Fewer clicks (owner F187): right-click splits a stack, Shift+Click moves it straight across,
+	# double-click equips / takes off.
+	if event.button_index == MOUSE_BUTTON_RIGHT:
+		auth.ask_split(index)
 		return
 	if event.button_index != MOUSE_BUTTON_LEFT:
+		return
+	if event.double_click and not box_panel.visible:
+		_swap_from = -1
+		_quick_equip(index)
+		_refresh_slots()
+		return
+	if event.shift_pressed and not box_panel.visible:
+		_swap_from = -1
+		if Inventory.is_equip_index(index):
+			_quick_equip(index)  # take it off into the bag
+		else:
+			auth.ask_quick_move(index)
+		_refresh_slots()
 		return
 	if _swap_from >= 0 and not box_panel.visible:
 		var inv: Inventory = GameAuthority.instance.get_player(peer_id).inventory
@@ -462,7 +481,7 @@ static func _slot_outline(slot_name: String) -> Texture2D:
 	return _outlines[slot_name]
 
 
-## Right-click: equip an item into its slot (swapping out what was there), or take an
+## Double-click: equip an item into its slot (swapping out what was there), or take an
 ## equipped item off into the first free bag slot.
 func _quick_equip(index: int) -> void:
 	var auth := GameAuthority.instance

@@ -12,29 +12,21 @@ var _status: Label
 
 
 func _ready() -> void:
-	var bg := StyleBoxFlat.new()
-	bg.bg_color = Color(0.08, 0.06, 0.05, 0.92)
-	bg.set_corner_radius_all(10)
-	bg.set_content_margin_all(12)
-	add_theme_stylebox_override("panel", bg)
+	UiKit.panel(self)  # "dwarf workshop" look (owner F187)
 	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 8)
 	add_child(v)
-	var row := HBoxContainer.new()
-	v.add_child(row)
-	_title = Label.new()
-	_title.add_theme_font_size_override("font_size", 20)
-	_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(_title)
-	var take := Button.new()
-	take.text = "Take all"
-	take.pressed.connect(func(): GameAuthority.instance.storage.ask_take_all(box_id))
-	row.add_child(take)
-	_status = Label.new()
-	_status.add_theme_color_override("font_color", Color(1.0, 0.8, 0.5))
-	v.add_child(_status)
+	_title = UiKit.title(v, "Chest")
+	_status = UiKit.label(v, "", 14, UiKit.AMBER)
 	_grid = GridContainer.new()
 	_grid.columns = 8
 	v.add_child(_grid)
+	var take := UiKit.gold_button(Button.new())
+	take.text = "Take all"
+	take.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	take.custom_minimum_size = Vector2(150, 0)
+	take.pressed.connect(func(): GameAuthority.instance.storage.ask_take_all(box_id))
+	v.add_child(take)
 
 
 func open(id: int) -> void:
@@ -58,14 +50,30 @@ func refresh() -> void:
 		for i in inv.slots.size():
 			var b := Button.new()
 			b.custom_minimum_size = Vector2(SLOT, SLOT)
+			b.focus_mode = Control.FOCUS_NONE
+			b.expand_icon = true
+			b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			b.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
+			b.alignment = HORIZONTAL_ALIGNMENT_RIGHT
+			b.add_theme_constant_override("icon_max_width", SLOT - 14)
+			b.add_theme_font_size_override("font_size", 13)
+			for look in ["normal", "pressed", "disabled", "focus"]:
+				b.add_theme_stylebox_override(look, UiKit.style("slot", 5))
+			b.add_theme_stylebox_override("hover", UiKit.style("slot_selected", 5))
 			b.pressed.connect(func(): GameAuthority.instance.storage.ask_transfer(box_id, true, i))
 			_grid.add_child(b)
 	for i in inv.slots.size():
 		var b: Button = _grid.get_child(i)
 		var s: Dictionary = inv.slots[i]
-		b.text = "" if s.is_empty() else "%s\n%d" % [Items.short_label(s.id), s.count]
+		var tex: Texture2D = null if s.is_empty() else Items.icon(s.id)
+		b.icon = tex
+		if s.is_empty():
+			b.text = ""
+		elif tex == null:  # no picture yet: the short name, like the bag does
+			b.text = "%s\n%d" % [Items.short_label(s.id), s.count]
+		else:
+			b.text = "" if int(s.count) <= 1 else str(s.count)
 		b.tooltip_text = "" if s.is_empty() else Items.display_name(s.id)
-		b.modulate = Color.WHITE if s.is_empty() else Items.color(s.id).lightened(0.4)
 
 
 func _process(_d: float) -> void:

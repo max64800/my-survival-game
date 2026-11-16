@@ -38,3 +38,11 @@ and **too many clicks**.
 3. Then start/pause, build/blueprint, map/skills, each with an OK from the owner before the next.
 4. Tests: kit loads, each piece has the 9-slice margins, shift-click/split requests, card select → Craft.
 5. Credits: the kit and mock-ups are our own ChatGPT pictures (log in CREDITS.md like the icons).
+
+## Status
+- **Nov 17 (Mac): step 1 + 2 built (bag, crafting, upgrades, chests).** `tools/ui_kit/cut_ui_kit.py` cuts the sheet at
+  half size (the sheet is drawn big); `src/ui/ui_kit.gd` hands out the 9-slice styles, a title plaque, gold and dark
+  buttons, a divider and text colours. New host requests `ask_split` / `ask_quick_move` (Inventory `split`, `quick_move`),
+  tests in `tests/test_ui_kit.gd`. Right-click equip moved to double-click. Not done yet: drag and drop was not picked;
+  the slider piece is cut but unused until the settings menu.
+- **Next:** the owner's look at the bag + crafting, then step 3 (start + Escape/pause + settings).

@@ -2270,3 +2270,30 @@ learn how to do hair animation and implement that."
 - Godot isn't installed on the Mac, so the new look hasn't been seen in the game yet: check on the PC.
 - Pillow's blur doesn't work on float pictures; replaced by a small blur that wraps around the tile's edges.
 - Chrome saved the downloads into the project folder, not Downloads; moved them to `assets/concepts/terrain/`.
+
+## November 17, 2026 (Mac): Godot on the Mac, quick fixes checked, menu overhaul step 1 (F187)
+
+**What we did**
+- Installed Godot 4.7.2 on the Mac (the add-ons already had Mac versions). All tests run here now, and the
+  autopilot takes pictures. The new rock textures (F213) work in the game: the stone slabs show on the walls.
+- The owner asked for 6 quick fixes. Five were already done on Nov 15 (bare-hands digging F89/F95, hotbar in the bag
+  F88, crafting time F92, drop size F93/F153, Shift + wheel F97) but never crossed off; checked each in the code and
+  moved them to `FEEDBACK-done.md`. The Escape menu (F87) was done too. The sixth, F104, was half done: the little
+  bits that burst out of broken rock were still equal cubes in one colour; now each is stretched or flattened
+  differently and has its own shade.
+- Menu overhaul step 1: the approved kit sheet is cut into 14 see-through pieces; one shared style script
+  (`src/ui/ui_kit.gd`). The bag, crafting, gear upgrades and chests now wear the "dwarf workshop" frames. Crafting
+  is picture cards; the picked recipe shows big at the bottom with have/need (missing in red), ×1 ×5 All and one gold
+  Craft button. Shift+Click moves a stack between the hotbar and the bag, right-click splits it in half,
+  double-click equips. Both new actions go through the host (co-op ready). New test file `test_ui_kit.gd`.
+  Full test run: 358 checks, all passed.
+
+**Mistakes and hurdles (including Claude's)**
+- Claude listed six "quick fixes" from the open feedback list without checking the code first; five were already
+  built. Lesson: grep the code before offering an open item as work.
+- The chunk test first checked the drawing data, which the screen-less test run doesn't keep; it now checks the bits'
+  own sizes.
+- First picture: the small buttons (Tools, ×1, ×5, All) squashed their words between the riveted ends; text now keeps
+  22 px clear of the ends and the amount buttons are wider. The "Next steps" list ran over the bag; it hides while
+  the bag is open.
+- The first autopilot pictures had the pause screen on top (the game window lost focus while the owner used the Mac).

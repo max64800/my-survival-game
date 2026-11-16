@@ -628,6 +628,45 @@ func request_swap(peer_id: int, a: int, b: int) -> void:
 		ps.inventory.swap(a, b)
 
 
+## Right-click in the bag: split a stack in half (F187). Shift+Click: quick move hotbar <-> bag (F187).
+func ask_split(slot: int) -> void:
+	if is_host():
+		request_split(local_peer_id(), slot)
+	else:
+		_rpc_split.rpc_id(1, slot)
+
+
+func ask_quick_move(slot: int) -> void:
+	if is_host():
+		request_quick_move(local_peer_id(), slot)
+	else:
+		_rpc_quick_move.rpc_id(1, slot)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_split(slot: int) -> void:
+	if is_host():
+		request_split(multiplayer.get_remote_sender_id(), slot)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_quick_move(slot: int) -> void:
+	if is_host():
+		request_quick_move(multiplayer.get_remote_sender_id(), slot)
+
+
+func request_split(peer_id: int, slot: int) -> void:
+	var ps := get_player(peer_id)
+	if ps:
+		ps.inventory.split(slot)
+
+
+func request_quick_move(peer_id: int, slot: int) -> void:
+	var ps := get_player(peer_id)
+	if ps:
+		ps.inventory.quick_move(slot)
+
+
 ## A pickaxe swing landed on rock at `point` (surface) facing `normal`.
 ## Result: {state = "hit"|"dug"|"blocked"|"no_tool"|"too_far"|"air", hits, needed, material}
 func request_hit(peer_id: int, point: Vector3, normal: Vector3) -> Dictionary:

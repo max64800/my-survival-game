@@ -195,6 +195,50 @@ func swap_allowed(a: int, b: int) -> bool:
 	return true
 
 
+## Right-click (owner F187): half of a stack (rounded down) moves to the first empty slot you carry.
+func split(i: int) -> bool:
+	var s := get_slot(i)
+	if s.is_empty() or int(s.count) < 2 or (is_player and is_equip_index(i)):
+		return false
+	for j in slots.size():
+		if j != i and _carry(j) and not (is_player and is_equip_index(j)) and slots[j].is_empty():
+			var half := int(s.count) / 2
+			s.count -= half
+			slots[j] = {id = s.id, count = half}
+			changed.emit()
+			return true
+	return false
+
+
+## Shift+Click (owner F187): hotbar -> bag, bag or backpack -> hotbar. Fills matching stacks first,
+## then empty slots. Returns true if anything moved (what doesn't fit stays where it was).
+func quick_move(i: int) -> bool:
+	var s := get_slot(i)
+	if s.is_empty() or (is_player and is_equip_index(i)):
+		return false
+	var to := range(HOTBAR_SIZE, SIZE) if i < HOTBAR_SIZE else range(0, HOTBAR_SIZE)
+	if i < HOTBAR_SIZE and pack_open():
+		to += range(PACK_START, EQUIP_START)
+	var max_stack := Items.stack_size(s.id)
+	var before := int(s.count)
+	for j in to:  # top up matching stacks
+		var t := slots[j]
+		if t.get("id", "") == s.id and int(t.count) < max_stack and s.count > 0:
+			var put := mini(max_stack - int(t.count), int(s.count))
+			t.count += put
+			s.count -= put
+	for j in to:  # then the first empty slot
+		if s.count > 0 and slots[j].is_empty():
+			slots[j] = s.duplicate(true)
+			s.count = 0
+	if int(s.count) == before:
+		return false
+	if s.count <= 0:
+		slots[i] = {}
+	changed.emit()
+	return true
+
+
 func _pack_slots_empty() -> bool:
 	for i in range(PACK_START, EQUIP_START):
 		if not slots[i].is_empty():

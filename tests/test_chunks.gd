@@ -32,6 +32,9 @@ func test_bits_are_only_for_looks() -> void:
 	check(s.get_child_count() == 0, "no extra nodes or bodies (one MultiMesh draws every bit)")
 	var s2 := ChunkSwarm.burst(root, Vector3.ZERO, Color.GRAY, root, 40)
 	check(s.multimesh.mesh == s2.multimesh.mesh, "same color reuses the same bit shape + material (fast)")
+	# (the headless test run keeps no MultiMesh data, so check the bits' own sizes)
+	check(s._size[0] != s._size[1] and s._size[0].x != s._size[0].y, "bits have different sizes and shapes (F104)")
+	check(s.multimesh.use_colors, "bits have their own shades (F104)")
 	var t := Time.get_ticks_usec()
 	for i in 20:
 		ChunkSwarm.burst(root, Vector3.ZERO, Color.GRAY, root, 50)

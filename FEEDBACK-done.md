@@ -4,6 +4,16 @@ Every fixed (crossed-out) item from `FEEDBACK.md`, moved here unchanged on Nov 1
 Nothing was deleted. Newest fixes go at the top of their group. If a fixed thing comes back, give it 🔁 and add it to
 "Things that keep coming back" in `FEEDBACK.md`.
 
+- [x] ~~**F87. Menu (priority).**~~ Done Nov 15 (f5a67f0): Escape menu (resume, save, main menu, quit); the main menu lists your worlds (play, host, delete) and makes new named ones. Found still open Nov 17 (Mac) and moved here. *From: you. Said: 1×*
+- [x] ~~**F88. Hotbar items aren't shown in the bag (priority).**~~ Done Nov 15 (aad100f): the bag shows the hotbar row; a carried pickaxe digs even when not in the pickaxe slot. Found still open Nov 17 (Mac) and moved here. *From: you. Said: 1×*
+- [x] ~~**F89. Losing your pickaxe can leave you stuck**~~ Done Nov 15 (58c27f0): bare hands dig at a third of a stone pickaxe's speed. Found still open Nov 17 (Mac) and moved here. *From: you. Said: 1×*
+- [x] ~~**F92. Crafting should take a little time.**~~ Done Nov 15 (e6b962a): crafting takes 1-3 s with a progress bar and a working motion; walking away cancels it. Moved here Nov 17. *From: you. Said: 1×*
+- [x] ~~**F93. Dropped items are tiny.**~~ Done Nov 15 (58c27f0), then made smaller by F153. Moved here Nov 17. *From: you. Said: 1×*
+- [x] ~~**F97. Raising a piece's height with Page Up / Page Down is awkward and hard to discover.**~~ Done Nov 15 (9c30f13): Shift + mouse wheel lifts/lowers the piece, height shown on screen. Moved here Nov 17. *From: you. Said: 1×*
+- [x] ~~**F104. Broken-rock chunks are all the same-size cubes.**~~ Done: the item you pick up got its own size and squash on Nov 15 (58c27f0); Nov 17 (Mac): the 25-50 bits that burst out are now stretched/flattened differently and each has its own shade too. *From: you. Said: 1×*
+- [x] ~~**F153. Dropped things are now too big**~~ Done (LOOK_SCALE 3.5 -> 1.75, 2.5x the old size). Moved here Nov 17. *From: you. Said: 1×*
+- [x] ~~**F95. A way to make stone if you lose your pickaxe.**~~ Same fix as F89 (bare hands dig, Nov 15, 58c27f0). Moved here Nov 17. *From: you. Said: 1×*
+
 - [x] ~~**F191. Dwarf beard looks flat: needs dark shading between the locks and round the braids, like the back of the hair.**~~ Fixed Nov 16 (PC, dwarf Claude, round 2b): the creases between the locks and round every braid lobe are painted dark red-brown (measured from how deep each point sits below a smoothed copy of the surface). *From: you (round 2). Said: 1×*
 - [x] ~~**F193. Dwarf face: a hole behind his nose; he doesn't look super happy (you: "that's fine").**~~ Fixed Nov 16 (round 2b): the dark gap between each cheek and the hair is filled with beard locks; shallower eye sockets (no dark rings); the brows' inner ends raised into a kind arch. *From: you (round 2). Said: 1×*
 - [x] ~~**F194. The copper rings clip through the beard hair.**~~ Fixed Nov 16 (round 2b): the hair inside each ring is squeezed 2.5 mm inside the ring's hole and eases back out above and below it. *From: you (round 2). Said: 1×*
