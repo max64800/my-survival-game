@@ -1,0 +1,311 @@
+<title>Delver's Hut</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@500;700&family=Alegreya+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one cave-lit 3D stage, a narrow plan sheet beside it (stacks under it on phones).
+   One look on purpose: the hut lives underground, so the page is a lantern-lit cave in any theme. */
+:root {
+	--rock: #17130f;        /* page: cave rock */
+	--sheet: #221b15;       /* the side panel, like an old plan sheet on a dark bench */
+	--line: #4a3b2c;        /* edges and rules */
+	--ink: #efe3cf;         /* text */
+	--dim: #b9a68b;         /* quiet text */
+	--lantern: #e7a24a;     /* accent: lantern glow */
+	--lantern-ink: #1d140b; /* text on the accent */
+	--room: #3a2e22;        /* rooms on the plan */
+	--display: "Alegreya SC", Georgia, "Times New Roman", serif;
+	--body: "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+	--mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+	color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--rock); color: var(--ink); font: 16px/1.5 var(--body); }
+.wrap { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 330px; grid-template-rows: minmax(0, 1fr); gap: 16px;
+	padding-block: 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); box-sizing: border-box; }
+.stage { position: relative; min-height: 420px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #0d0a08; }
+canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.tools { position: absolute; left: 12px; right: 12px; bottom: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+button { font: 600 14px var(--body); color: var(--ink); background: #1d1711dd; border: 1px solid var(--line); border-radius: 6px; padding: 7px 12px; cursor: pointer; }
+button:hover { border-color: var(--lantern); }
+button:focus-visible { outline: 2px solid var(--lantern); outline-offset: 2px; }
+button[aria-pressed="true"] { background: var(--lantern); color: var(--lantern-ink); border-color: var(--lantern); }
+.hint { margin-left: auto; color: var(--dim); font: 13px var(--body); }
+#loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--dim); font: 14px var(--mono); pointer-events: none; text-align: center; padding: 16px; }
+aside { background: var(--sheet); border: 1px solid var(--line); border-radius: 8px; padding: 20px 18px; display: flex; flex-direction: column; gap: 18px; min-width: 0; overflow-y: auto; }
+h1 { font: 700 32px/1.1 var(--display); margin: 0; letter-spacing: .01em; text-wrap: balance; }
+.lede { margin: 6px 0 0; color: var(--dim); }
+h2 { font: 700 13px var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--lantern); margin: 0 0 8px; }
+.plan { width: 100%; height: auto; display: block; }
+ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+li { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dashed var(--line); padding-bottom: 3px; }
+li span:last-child { font: 500 14px var(--mono); font-variant-numeric: tabular-nums; color: var(--dim); }
+.cost li span:last-child { color: var(--ink); }
+.note { font-size: 14px; color: var(--dim); margin: 8px 0 0; }
+@media (max-width: 860px) {
+	.wrap { height: auto; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; }
+	.stage { min-height: 70vh; }
+	aside { overflow: visible; }
+	.hint { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+	<div class="stage" id="stage">
+		<div id="loading">Building the hut&hellip;</div>
+		<div class="tools" role="group" aria-label="Look at the hut">
+			<button id="roof" aria-pressed="true">Roof on</button>
+			<button id="upper" aria-pressed="true">Second floor on</button>
+			<button id="doorOut">Open doors outward</button>
+			<button id="doorIn">Open doors inward</button>
+			<button id="doorShut" aria-pressed="true">Doors closed</button>
+			<button id="reset">Reset view</button>
+			<span class="hint">Drag to turn &middot; scroll or pinch to zoom &middot; right-drag to move</span>
+		</div>
+	</div>
+	<aside>
+		<header>
+			<h1>Delver's Hut</h1>
+			<p class="lede">Your starter blueprint, in the book from day one: a two-story house, a wing with the round front door, and a fenced yard. Place it, fill its Builder's Chest, then furnish it your way.</p>
+		</header>
+		<section>
+			<h2>Floor plan, seen from above</h2>
+			<svg class="plan" viewBox="0 0 260 300" role="img" aria-label="A two-story house four rooms wide at the back, a one-story wing of four rooms forward on the left, a fenced yard on the right with steps up to a second door, and steps up to the round front door at the front of the wing">
+				<g fill="var(--room)" stroke="var(--lantern)" stroke-width="2">
+					<rect x="20" y="20" width="220" height="110"/>
+					<rect x="20" y="130" width="110" height="110"/>
+				</g>
+				<g stroke="var(--lantern)" stroke-width="0.8" stroke-dasharray="3 3" fill="none">
+					<line x1="75" y1="20" x2="75" y2="130"/><line x1="130" y1="20" x2="130" y2="130"/><line x1="185" y1="20" x2="185" y2="130"/>
+					<line x1="20" y1="75" x2="240" y2="75"/><line x1="75" y1="130" x2="75" y2="240"/><line x1="20" y1="185" x2="130" y2="185"/>
+				</g>
+				<rect x="25" y="80" width="45" height="45" fill="none" stroke="var(--dim)" stroke-width="1"/>
+				<g stroke="var(--dim)" stroke-width="1"><line x1="25" y1="92" x2="70" y2="92"/><line x1="25" y1="103" x2="70" y2="103"/><line x1="25" y1="114" x2="70" y2="114"/></g>
+				<g fill="none" stroke="var(--dim)" stroke-width="2" stroke-dasharray="6 4">
+					<polyline points="240,130 240,240 185,240"/>
+				</g>
+				<g fill="#2a2119" stroke="var(--dim)" stroke-width="1.2">
+					<rect x="20" y="240" width="55" height="45"/><rect x="185" y="130" width="55" height="45"/>
+				</g>
+				<circle cx="47" cy="240" r="8" fill="var(--lantern)"/>
+				<circle cx="212" cy="130" r="8" fill="var(--lantern)"/>
+				<g fill="var(--ink)" font-family="IBM Plex Mono, monospace" font-size="11" text-anchor="middle">
+					<text x="130" y="52">house &middot; 2 stories</text>
+					<text x="102" y="160">wing</text>
+					<text x="185" y="205" fill="var(--dim)">yard</text>
+					<text x="47" y="297" fill="var(--dim)">steps</text>
+				</g>
+				<g fill="var(--dim)" font-family="IBM Plex Mono, monospace" font-size="10">
+					<text x="20" y="13">8 &times; 4 m house, 4 &times; 4 m wing</text>
+					<text x="78" y="122">stairs</text>
+				</g>
+			</svg>
+			<p class="note">Dots: the two round doors. Dashed line: the yard railing, with a gap to walk in at the front.</p>
+		</section>
+		<section class="cost">
+			<h2>What it costs</h2>
+			<ul>
+				<li><span>Rootwood Plank</span><span>296</span></li>
+			</ul>
+			<p class="note">No copper: the Shack's round doors hang on wooden hinges, so you can build it from day one.</p>
+		</section>
+		<section>
+			<h2>What's in it</h2>
+			<ul id="parts"></ul>
+		</section>
+	</aside>
+</div>
+
+<script type="importmap">
+{ "imports": {
+	"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+	"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+const NAMES = { wall: "Wall", window_wall: "Window wall", window_wide: "Wide window", foundation: "Foundation (log legs)", roof_26: "Roof",
+	gable_26: "Gable", foundation_steps: "Foundation steps", doorway: "Round doorway", door: "Round door", stairs: "Stairs", floor: "Floor",
+	railing: "Railing", table: "Table", bench: "Bench", rug: "Rug", crate: "Crate", chair: "Chair", shelf: "Shelf" };
+const loadingEl = document.getElementById("loading");
+
+const stage = document.getElementById("stage");
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.shadowMap.enabled = true;
+stage.prepend(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d0a08);
+scene.fog = new THREE.Fog(0x0d0a08, 28, 60);
+const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 200);
+const HOME = { pos: new THREE.Vector3(13, 10, 16), at: new THREE.Vector3(0, 2.5, 0) };
+camera.position.copy(HOME.pos);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.copy(HOME.at);
+controls.enableDamping = true;
+controls.maxPolarAngle = Math.PI * 0.49;
+controls.minDistance = 3;
+controls.maxDistance = 45;
+
+// Cave light: a cool fill from above, a warm lantern on the yard side, a dim glow inside.
+scene.add(new THREE.HemisphereLight(0x9fb2c8, 0x2a1d12, 0.9));
+const sun = new THREE.DirectionalLight(0xffd9a8, 2.2);
+sun.position.set(9, 16, 12);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12 });
+scene.add(sun);
+for (const p of [[-2, 2.6, -3], [1, 4.8, -3], [-2, 2.4, 1.5]]) {
+	const l = new THREE.PointLight(0xffb060, 5, 8, 1.6);
+	l.position.set(...p);
+	scene.add(l);
+}
+const floor = new THREE.Mesh(new THREE.CircleGeometry(34, 64), new THREE.MeshStandardMaterial({ color: 0x2b241d, roughness: 1 }));
+floor.rotation.x = -Math.PI / 2;
+floor.receiveShadow = true;
+scene.add(floor);
+const grid = new THREE.GridHelper(44, 22, 0x4a3b2c, 0x332a21);  // the 2 m building grid
+grid.position.y = 0.003;
+scene.add(grid);
+
+// The page may not fetch blob:/data: URLs, which three.js uses for pictures inside a model.
+// So: rebuild each model into one binary file here, and load its pictures as plain <img> (TextureLoader).
+globalThis.createImageBitmap = undefined;
+const loader = new GLTFLoader();
+async function loadModel(url) {
+	const j = await (await fetch(url)).json();
+	const uri = j.buffers[0].uri, b64 = uri.slice(uri.indexOf(",") + 1);
+	const raw = atob(b64), bin = new Uint8Array(raw.length);
+	for (let i = 0; i < raw.length; i++) bin[i] = raw.charCodeAt(i);
+	delete j.buffers[0].uri; j.buffers[0].byteLength = bin.length;
+	const js = new TextEncoder().encode(JSON.stringify(j));
+	const pad = n => (4 - (n % 4)) % 4;
+	const jsLen = js.length + pad(js.length), binLen = bin.length + pad(bin.length);
+	const out = new Uint8Array(12 + 8 + jsLen + 8 + binLen), dv = new DataView(out.buffer);
+	dv.setUint32(0, 0x46546C67, true); dv.setUint32(4, 2, true); dv.setUint32(8, out.length, true);
+	dv.setUint32(12, jsLen, true); dv.setUint32(16, 0x4E4F534A, true);
+	out.set(js, 20); out.fill(0x20, 20 + js.length, 20 + jsLen);
+	const b0 = 20 + jsLen;
+	dv.setUint32(b0, binLen, true); dv.setUint32(b0 + 4, 0x004E4942, true);
+	out.set(bin, b0 + 8);
+	return (await loader.parseAsync(out.buffer, "")).scene;
+}
+
+const roofParts = [], upperParts = [], doors = [];
+const hut = new THREE.Group();
+scene.add(hut);
+try {
+	const bp = await (await fetch("bp.json")).json();
+	const kinds = [...new Set(bp.pieces.map(p => p.id))];
+	let done = 0;
+	const models = {};
+	await Promise.all(kinds.map(async (id) => {
+		models[id] = await loadModel(`m/${id}.json`);
+		models[id].traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+		loadingEl.textContent = `Building the hut… ${++done} of ${kinds.length} kinds of piece`;
+	}));
+	const counts = {};
+	for (const p of bp.pieces) {
+		const [x, y, z] = p.pos;
+		const node = models[p.id].clone();
+		node.position.set(x, y, z);
+		node.rotation.y = p.rot * Math.PI / 2;
+		counts[p.id] = (counts[p.id] || 0) + 1;
+		if (p.id === "door") {  // hinge on the door's left edge, 0.78 m from its middle
+			const pivot = new THREE.Group();
+			node.updateMatrix();
+			pivot.position.copy(new THREE.Vector3(-0.78, 0, 0).applyMatrix4(node.matrix));
+			node.position.sub(pivot.position);
+			pivot.add(node);
+			hut.add(pivot);
+			doors.push(pivot);
+		} else {
+			hut.add(node);
+		}
+		if (p.id.startsWith("roof") || p.id.startsWith("gable")) roofParts.push(node);
+		else if (y > 2.5) upperParts.push(node);
+	}
+	const list = document.getElementById("parts");
+	for (const [id, n] of Object.entries(counts).sort((a, b) => b[1] - a[1])) {
+		const li = document.createElement("li");
+		li.innerHTML = `<span>${NAMES[id] || id}</span><span>${n}</span>`;
+		list.append(li);
+	}
+	const total = document.createElement("li");
+	total.innerHTML = `<span><b>All pieces</b></span><span>${bp.pieces.length}</span>`;
+	list.append(total);
+	frame(hut);
+	loadingEl.hidden = true;
+} catch (err) {
+	loadingEl.textContent = "Couldn't build the hut: " + err.message;
+	console.error(err);
+}
+
+// Fit the whole hut in view from the front-right corner, a little above (like standing past the yard).
+function frame(obj) {
+	const box = new THREE.Box3().setFromObject(obj);
+	const c = box.getCenter(new THREE.Vector3()), r = box.getSize(new THREE.Vector3()).length() * 0.5;
+	const dist = r / Math.sin(THREE.MathUtils.degToRad(camera.fov * 0.5)) * 1.02;
+	HOME.at.copy(c);
+	HOME.pos.copy(c).add(new THREE.Vector3(0.6, 0.5, 0.75).normalize().multiplyScalar(dist));
+	camera.position.copy(HOME.pos);
+	controls.target.copy(HOME.at);
+	const cam = new URLSearchParams(location.search).get("cam");  // test views: ?cam=x,y,z,tx,ty,tz
+	if (cam) {
+		const v = cam.split(",").map(Number);
+		camera.position.set(v[0], v[1], v[2]);
+		controls.target.set(v[3], v[4], v[5]);
+	}
+}
+
+function toggle(btn, parts, onText, offText, extra) {
+	btn.onclick = () => {
+		const on = btn.getAttribute("aria-pressed") !== "true";
+		btn.setAttribute("aria-pressed", on);
+		btn.textContent = on ? onText : offText;
+		parts.forEach(p => (p.visible = on));
+		if (extra) extra(on);
+	};
+}
+const roofBtn = document.getElementById("roof"), upperBtn = document.getElementById("upper");
+toggle(roofBtn, roofParts, "Roof on", "Roof off");
+// Taking the second floor off also takes the house roof off, so you can look into the ground floor.
+toggle(upperBtn, upperParts, "Second floor on", "Second floor off", (on) => {
+	roofParts.forEach(p => { if (p.position.y > 4) p.visible = on && roofBtn.getAttribute("aria-pressed") === "true"; });
+});
+
+// The doors swing both ways (like in the game: away from whoever opens them).
+let doorTarget = 0, doorNow = 0;
+const doorBtns = { doorOut: -Math.PI / 2, doorIn: Math.PI / 2, doorShut: 0 };
+for (const [id, angle] of Object.entries(doorBtns)) {
+	document.getElementById(id).onclick = () => {
+		doorTarget = angle;
+		for (const other of Object.keys(doorBtns)) document.getElementById(other).setAttribute("aria-pressed", other === id);
+	};
+}
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+document.getElementById("reset").onclick = () => { camera.position.copy(HOME.pos); controls.target.copy(HOME.at); };
+
+function resize() {
+	const w = stage.clientWidth, h = stage.clientHeight;
+	renderer.setSize(w, h, false);
+	camera.aspect = w / h;
+	camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(stage);
+resize();
+renderer.setAnimationLoop(() => {
+	doorNow += reduce ? doorTarget - doorNow : (doorTarget - doorNow) * 0.12;
+	doors.forEach(d => (d.rotation.y = doorNow));
+	controls.update();
+	renderer.render(scene, camera);
+});
+</script>
