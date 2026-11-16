@@ -179,7 +179,7 @@ def lin(c):
 
 def paint_material(name, base, dark, light, moss=None, moss_amount=0.0, strokes=0.12, top_light=0.18, edge=0.35, seed=0.0,
 		key=0.35, key_dir=(0.35, -0.45, 0.82), tint_attr=None, scratches=0.0, grime=0.0, root=None, root_attr="grad", ao_samples=16, ao_local=False,
-		scratch_width=1.0):
+		scratch_width=1.0, cap=None):
 	"""A 'hand-painted' look as a shader: base colour with brush-stroke variation, darker in cavities (ambient
 	occlusion), lighter on worn edges (pointiness) and on tops (facing up), moss in the up-facing cavities.
 	Colours are (r, g, b) 0..1 as picked by eye (sRGB). Meant to be BAKED (Cycles) into a colour picture.
@@ -353,6 +353,23 @@ def paint_material(name, base, dark, light, moss=None, moss_amount=0.0, strokes=
 		nt.links.new(shade.outputs[2], mossmix.inputs[6])
 		mossmix.inputs[7].default_value = (*moss, 1)
 		last = mossmix
+	if cap:  # snow (or frost) lying on the tops: up-facing parts, broken up by noise. cap = (colour, amount)
+		cz = _node(nt, "ShaderNodeMapRange", **{"From Min": 0.55, "From Max": 0.8, "To Min": 0.0, "To Max": 1.0})  # only the tops
+		nt.links.new(sep.outputs["Z"], cz.inputs["Value"])
+		cn = _node(nt, "ShaderNodeTexNoise", **{"Scale": 6.0, "Detail": 4.0})
+		cnr = _node(nt, "ShaderNodeMapRange", **{"From Min": 0.38, "From Max": 0.5, "To Min": 0.0, "To Max": 1.0})
+		nt.links.new(cn.outputs["Fac"], cnr.inputs["Value"])
+		cm = _node(nt, "ShaderNodeMath", operation="MULTIPLY")
+		nt.links.new(cz.outputs[0], cm.inputs[0])
+		nt.links.new(cnr.outputs[0], cm.inputs[1])
+		ca = _node(nt, "ShaderNodeMath", operation="MULTIPLY", use_clamp=True)
+		nt.links.new(cm.outputs[0], ca.inputs[0])
+		ca.inputs[1].default_value = cap[1]
+		cmix = _node(nt, "ShaderNodeMix", data_type="RGBA", blend_type="MIX")
+		nt.links.new(ca.outputs[0], cmix.inputs[0])
+		nt.links.new(last.outputs[2], cmix.inputs[6])
+		cmix.inputs[7].default_value = (*lin(cap[0]), 1)
+		last = cmix
 	if key:
 		# painted light from the upper front: faces turned to it lighter, faces turned away darker (the painting's light)
 		dp = _node(nt, "ShaderNodeVectorMath", operation="DOT_PRODUCT")

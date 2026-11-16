@@ -99,3 +99,23 @@ The beetle is the worked example: `tools/asset_forge/builds/monster_rock_beetle.
 - **Open (Nov 16):** the baked beetle shows up **white** in Godot (its 42 pictures don't load on import, though the 3D page
   shows them). Until it's solved, the game keeps the old beetle and `build_creatures.py` doesn't install the baked one.
   Godot only re-imports a model when its contents change: to force it, delete its files in `.godot/imported/`.
+
+## Part 3: the looks (variants)
+
+1. **One body for all looks.** The same plates, legs, face, eyes, mandibles and moving parts; a look changes only the
+   paint, the horn, and its add-ons. (The owner's green eyes stay on every look.)
+2. **Each look reads at a glance** (from the approved variants picture): Rock Beetle frost = dark slate stones with
+   snow on their tops and in the cracks, ice crystals, a forked ice horn, a cyan back; ember = basalt stones with
+   glowing lava in the cracks, orange crystals, a hammer horn, an orange-red back; spore = purple fungus stones, small
+   glowing mushrooms, an antler horn of old wood with mushrooms, a violet back.
+3. **Add-ons grow out of the stones:** their feet sunk into a plate, never on the amber window, never floating. Big
+   enough to see from a few metres away (crystals 18-26 cm, mushroom caps 7-10 cm across on a ~1.3 m beetle).
+4. **Anything that glows is named `glow_*`** (the lava, the crystals, the mushroom caps), so the game makes it glow,
+   hum and blaze on a charge.
+
+How: `monster_rock_beetle.py look=<look>` builds the horn and add-ons (`crystal_cluster()`, `mushroom()`, `on_shell()`);
+`sculpt_test_beetle.py <grey.glb> <out> look=<look>` paints from its `PALETTE` (stone, moss/snow/lava layer, amber,
+legs, belly, face) and `EXTRA_PAINT` (ice, crystals, wood, mushrooms). Snow on the tops: `paint_material(cap=(colour,
+amount))`. Lava: the crack layer carved flat (`moss_h=0.012`) and baked as `glow_lava_baked` with its own glow.
+Mistakes made: a hammer horn on a short post was buried in the front stones (the head must clear the shell top);
+the first add-ons were too small to see; the first snow covered whole stones (only the tops, `normal.z > 0.55`).

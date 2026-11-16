@@ -53,6 +53,12 @@ eye = ck.eye_mat((0.95, 0.9, 0.8))
 iris = ck.color("iris", (0.35, 0.2, 0.09), rough=0.3)
 pupil = ck.color("pupil", (0.03, 0.02, 0.02), rough=0.2)
 shine = ck.color("shine", (1, 1, 1), rough=0.1, glow=0.6)
+# The other looks' own parts (plain colours here; sculpt_test_beetle.py paints and bakes them per look)
+ice = ck.color("ice", (0.7, 0.86, 0.96), rough=0.25)                 # frost: the forked horn and ice crystals
+crystal = ck.color("glow_crystal", (1.0, 0.6, 0.15), rough=0.25)     # ember: glowing amber crystals
+wood = ck.color("wood", (0.45, 0.33, 0.24), rough=0.8)               # spore: the antler horn
+mush_cap = ck.color("glow_spore", (0.72, 0.4, 0.9), rough=0.5)       # spore: glowing mushroom caps
+mush_stem = ck.color("mush_stem", (0.85, 0.8, 0.75), rough=0.7)
 
 # ---------------------------------------------------------------- the shell: the top of an ellipsoid
 C = Vector((0.0, 0.03, 0.52))       # centre
@@ -668,9 +674,79 @@ for s in (-1, 1):
 
 # ---------------------------------------------------------------- the horn: thick, flat-sided, leaning forward
 # Round 7 (owner): bigger, but still flat-sided like a cut stone slab; it leans forward and its tip curls back.
-hp = ck.bezier((0, -0.39, 0.63), (0, -0.6, 0.88), (0, -0.57, 1.1), n=10)
-ck.loft("horn", [(p, 0.115 - 0.055 * i / 9, 0.21 - 0.1 * i / 9) for i, p in enumerate(hp)], stone, sides=6, subsurf=0, smooth=False, up=Vector((0, -1, 0)))
+# Each look has its own horn on the same root (the approved variants picture): mossy slab, frost forked ice,
+# ember hammer, spore antler with mushrooms.
 ck.loft("horn_root", [((0, -0.35, 0.61), 0.135, 0.19), ((0, -0.43, 0.72), 0.115, 0.17)], stone, sides=6, subsurf=0, smooth=False, up=Vector((0, -1, 0)))
+
+
+def mushroom(pos, n, height, cap_r, seed):
+	"""A small mushroom growing out of the shell: a pale stem (its foot sunk in) and a round glowing cap."""
+	r = random.Random(seed)
+	n = (n + Vector((r.uniform(-0.2, 0.2), r.uniform(-0.2, 0.2), 0))).normalized()
+	top = pos + n * height
+	ck.loft(f"stem{seed}", [(pos - n * 0.03, cap_r * 0.32, cap_r * 0.32), (pos + n * height * 0.5, cap_r * 0.26, cap_r * 0.26),
+		(top, cap_r * 0.3, cap_r * 0.3)], mush_stem, sides=10, subsurf=0)
+	ck.loft(f"cap{seed}", [(top - n * cap_r * 0.15, cap_r * 0.25, cap_r * 0.25), (top - n * cap_r * 0.05, cap_r * 1.0, cap_r * 1.0),
+		(top + n * cap_r * 0.25, cap_r * 0.9, cap_r * 0.9), (top + n * cap_r * 0.6, cap_r * 0.45, cap_r * 0.45)], mush_cap, sides=16, subsurf=1)
+
+
+def crystal_cluster(pos, n, length, material, seed, count=3):
+	"""A cluster of 2-4 six-sided crystals with pointed tips, their feet sunk into the stone."""
+	r = random.Random(seed)
+	for k in range(count):
+		d = (n + Vector((r.uniform(-0.45, 0.45), r.uniform(-0.45, 0.45), r.uniform(-0.1, 0.3)))).normalized()
+		L = length * r.uniform(0.6, 1.1)
+		rad = L * r.uniform(0.17, 0.22)
+		base = pos + Vector((r.uniform(-1, 1), r.uniform(-1, 1), 0)) * length * 0.25 - d * 0.04
+		ck.loft(f"crystal{seed}_{k}", [(base, rad, rad), (base + d * L * 0.7, rad, rad), (base + d * L * 0.98, rad * 0.15, rad * 0.15)],
+			material, sides=6, subsurf=0, smooth=False, seed=seed + k)
+
+
+def on_shell(d, sink=0.06):
+	sp, sn = surf(d)
+	return sp + sn * sink, sn
+
+
+if LOOK == "frost":
+	# a forked ice horn: two flat-sided prongs from one base
+	hp = ck.bezier((0, -0.39, 0.63), (0, -0.58, 0.88), (0, -0.55, 1.12), n=10)
+	ck.loft("horn", [(p, 0.105 - 0.075 * i / 9, 0.19 - 0.14 * i / 9) for i, p in enumerate(hp)], ice, sides=6, subsurf=0, smooth=False, up=Vector((0, -1, 0)))
+	hp2 = ck.bezier(hp[4] + Vector((0, 0.02, -0.02)), (0, -0.75, 0.86), (0, -0.82, 1.02), n=8)
+	ck.loft("horn_fork", [(p, 0.07 - 0.055 * i / 7, 0.11 - 0.085 * i / 7) for i, p in enumerate(hp2)], ice, sides=6, subsurf=0, smooth=False, up=Vector((0, -1, 0)))
+	for k, (x, y, ln) in enumerate(((0.0, -0.2, 0.26), (0.0, -0.04, 0.22), (0.14, -0.12, 0.18), (-0.14, -0.12, 0.18))):
+		p, n = on_shell(dir_xy(x, y))
+		crystal_cluster(p, (n + Vector((0, 0.5, 0.6))).normalized(), ln, ice, seed=300 + k, count=3)   # icicle ridge, leaning back
+	for sd in (-1, 1):
+		p, n = on_shell(dir_side(0.3, 0.6, sd))
+		crystal_cluster(p, n, 0.18, ice, seed=320 + sd, count=4)   # a cluster by the glowing back
+elif LOOK == "ember":
+	# a hammer horn: a short thick post with a flat block across the top
+	hp = ck.bezier((0, -0.39, 0.63), (0, -0.53, 0.88), (0, -0.55, 1.1), n=7)
+	ck.loft("horn", [(p, 0.105 - 0.02 * i / 6, 0.19 - 0.05 * i / 6) for i, p in enumerate(hp)], stone, sides=6, subsurf=0, smooth=False, up=Vector((0, -1, 0)))
+	ck.loft("horn_head", [((0, -0.36, 1.13), 0.085, 0.08), ((0, -0.39, 1.14), 0.12, 0.105), ((0, -0.73, 1.16), 0.12, 0.105), ((0, -0.76, 1.15), 0.085, 0.08)],
+		stone, sides=6, subsurf=0, smooth=False, up=Vector((0, 0, 1)))
+	for k, (x, y, ln) in enumerate(((0.0, -0.18, 0.26), (0.14, -0.04, 0.22), (-0.15, -0.1, 0.2))):
+		p, n = on_shell(dir_xy(x, y))
+		crystal_cluster(p, n, ln, crystal, seed=400 + k, count=4)
+	for sd in (-1, 1):
+		p, n = on_shell(dir_side(0.3, 0.58, sd))
+		crystal_cluster(p, n, 0.2, crystal, seed=420 + sd, count=4)
+elif LOOK == "spore":
+	# an antler of old wood, branching, with little mushrooms on its tips
+	hp = ck.bezier((0, -0.39, 0.62), (0, -0.62, 0.85), (0, -0.56, 1.1), n=10)
+	ck.loft("horn", [(p, 0.1 - 0.05 * i / 9, 0.1 - 0.05 * i / 9) for i, p in enumerate(hp)], wood, sides=10, subsurf=0, smooth=True, wobble=0.04)
+	for k, (sd, j) in enumerate(((1, 4), (-1, 6))):
+		bp = ck.bezier(hp[j], hp[j] + Vector((sd * 0.12, -0.04, 0.06)), hp[j] + Vector((sd * 0.2, -0.02, 0.17)), n=6)
+		ck.loft(f"antler{k}", [(p, 0.055 - 0.025 * i / 5, 0.055 - 0.025 * i / 5) for i, p in enumerate(bp)], wood, sides=8, subsurf=0, smooth=True, wobble=0.04)
+		mushroom(bp[-1] - Vector((0, 0, 0.02)), Vector((sd * 0.3, 0, 1)), 0.06, 0.07, seed=500 + k)
+	mushroom(hp[-1] - Vector((0, 0, 0.02)), Vector((0, 0, 1)), 0.07, 0.08, seed=510)
+	for k, (x, y, h, cr) in enumerate(((0.07, -0.14, 0.13, 0.095), (-0.09, -0.04, 0.1, 0.08), (0.3, 0.1, 0.09, 0.07),
+			(-0.2, -0.17, 0.14, 0.1), (-0.33, 0.2, 0.08, 0.065))):
+		p, n = on_shell(dir_xy(x, y))
+		mushroom(p, n, h, cr, seed=520 + k)
+else:
+	hp = ck.bezier((0, -0.39, 0.63), (0, -0.6, 0.88), (0, -0.57, 1.1), n=10)
+	ck.loft("horn", [(p, 0.115 - 0.055 * i / 9, 0.21 - 0.1 * i / 9) for i, p in enumerate(hp)], stone, sides=6, subsurf=0, smooth=False, up=Vector((0, -1, 0)))
 
 
 # ---------------------------------------------------------------- six fat legs, each its own part (turns at the hip)

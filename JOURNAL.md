@@ -1801,3 +1801,20 @@ You tried the dev menu and asked for four things:
 
 **Mistakes and hurdles (including Claude's)**
 - The first cup sat only behind the eye, so the side of the eyeball still showed; moved outward and the eyes set deeper.
+
+## November 16, 2026 (PC, Claude 3): Rock Beetle frost, ember and spore looks
+
+**What we did**
+- The three other looks, built on the mossy beetle's exact body (same plates, legs, face, green eyes, mandibles and
+  moving parts), each with its own paint, horn and add-ons, read off the approved variants picture:
+  frost = dark slate stones with snow, ice crystals, a forked ice horn, a cyan back; ember = basalt stones with glowing
+  lava cracks, orange crystals, a hammer horn, an orange-red back; spore = purple fungus stones, glowing mushrooms, an
+  antler horn of old wood with mushrooms, a violet back.
+- All four are on the 3D page with the animation buttons. Recipe: new "Part 3: the looks".
+  Picture: `docs/art/rock-beetle-v2/step9_frost_ember_spore.jpg`.
+
+**Mistakes and hurdles (including Claude's)**
+- Some add-on spots first fell inside the amber window; moved onto the stones around it before building.
+- Ember's hammer horn sat on a short post and was buried in the front stones; the post is taller now.
+- The first crystals and mushrooms were too small to see, and the frost stones too pale (snow over whole stones).
+  Fixed in a second round; the snow on top is still a bit faint.

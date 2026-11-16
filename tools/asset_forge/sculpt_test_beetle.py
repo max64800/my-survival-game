@@ -19,6 +19,36 @@ import creature_sculpt as cs  # noqa: E402
 
 a = sys.argv[sys.argv.index("--") + 1:]
 glb, out = a[0], Path(a[1])
+LOOK = next((x[5:] for x in a[2:] if x.startswith("look=")), "mossy")
+# Each look's paint (approved variants picture). Colours as picked by eye: (base, dark, light).
+PALETTE = {
+	"mossy": dict(stone=((0.52, 0.45, 0.39), (0.3, 0.25, 0.26), (0.78, 0.7, 0.6)), stone_moss=((0.44, 0.5, 0.2), 0.85), cap=None,
+		moss=((0.42, 0.48, 0.18), (0.15, 0.19, 0.06), (0.62, 0.68, 0.3)), moss_h=0.075, moss_glow=0.0,
+		amber=((1.0, 0.66, 0.16), (0.72, 0.2, 0.0)), chitin=((0.4, 0.29, 0.22), (0.2, 0.14, 0.1), (0.6, 0.47, 0.37)),
+		belly=((0.3, 0.18, 0.12), (0.13, 0.07, 0.05), (0.5, 0.34, 0.24)), face=((0.37, 0.23, 0.15), (0.16, 0.09, 0.06), (0.6, 0.42, 0.3))),
+	"frost": dict(stone=((0.27, 0.31, 0.39), (0.1, 0.12, 0.17), (0.47, 0.53, 0.63)), stone_moss=((0.85, 0.9, 0.97), 0.4),
+		cap=((0.93, 0.96, 1.0), 0.75),  # snow on the tops of the stones
+		moss=((0.86, 0.91, 0.98), (0.58, 0.67, 0.8), (1.0, 1.0, 1.0)), moss_h=0.05, moss_glow=0.0,  # snow in the cracks
+		amber=((0.75, 1.0, 1.0), (0.05, 0.5, 0.8)), chitin=((0.36, 0.38, 0.45), (0.15, 0.16, 0.21), (0.58, 0.61, 0.7)),
+		belly=((0.26, 0.27, 0.32), (0.11, 0.12, 0.15), (0.44, 0.46, 0.53)), face=((0.33, 0.34, 0.4), (0.14, 0.15, 0.19), (0.55, 0.57, 0.65))),
+	"ember": dict(stone=((0.29, 0.26, 0.25), (0.1, 0.08, 0.08), (0.5, 0.44, 0.41)), stone_moss=((0.95, 0.4, 0.08), 0.35), cap=None,
+		moss=((1.0, 0.45, 0.08), (0.65, 0.12, 0.0), (1.0, 0.8, 0.35)), moss_h=0.012, moss_glow=0.9,  # glowing lava in the cracks
+		amber=((1.0, 0.6, 0.12), (0.72, 0.12, 0.0)), chitin=((0.4, 0.26, 0.2), (0.19, 0.11, 0.08), (0.6, 0.44, 0.35)),
+		belly=((0.28, 0.16, 0.11), (0.12, 0.06, 0.04), (0.48, 0.32, 0.22)), face=((0.36, 0.22, 0.15), (0.15, 0.08, 0.06), (0.58, 0.4, 0.29))),
+	"spore": dict(stone=((0.52, 0.36, 0.52), (0.23, 0.13, 0.25), (0.76, 0.58, 0.74)), stone_moss=((0.4, 0.46, 0.2), 0.55), cap=None,
+		moss=((0.34, 0.4, 0.18), (0.13, 0.15, 0.07), (0.52, 0.58, 0.28)), moss_h=0.06, moss_glow=0.0,
+		amber=((0.95, 0.7, 1.0), (0.45, 0.08, 0.68)), chitin=((0.43, 0.3, 0.39), (0.2, 0.12, 0.18), (0.63, 0.48, 0.59)),
+		belly=((0.3, 0.19, 0.27), (0.13, 0.07, 0.12), (0.5, 0.35, 0.46)), face=((0.39, 0.26, 0.34), (0.16, 0.09, 0.14), (0.6, 0.44, 0.54))),
+}
+P = PALETTE[LOOK]
+# The looks' own parts: material name -> (base, dark, light, glow strength)
+EXTRA_PAINT = {
+	"ice": ((0.72, 0.88, 0.98), (0.3, 0.52, 0.74), (0.96, 1.0, 1.0), 0.0),
+	"glow_crystal": ((1.0, 0.66, 0.2), (0.8, 0.28, 0.02), (1.0, 0.9, 0.55), 0.6),
+	"wood": ((0.45, 0.34, 0.25), (0.2, 0.14, 0.1), (0.66, 0.53, 0.4), 0.0),
+	"glow_spore": ((0.74, 0.42, 0.92), (0.38, 0.12, 0.55), (0.95, 0.75, 1.0), 0.5),
+	"mush_stem": ((0.84, 0.79, 0.74), (0.55, 0.48, 0.45), (0.97, 0.94, 0.9), 0.0),
+}
 out.mkdir(parents=True, exist_ok=True)
 t0 = time.time()
 
@@ -86,7 +116,7 @@ stone = parts["stone_plate"]
 stone_pieces = cs.island_kd(stone)  # which stone is which, remembered before melting (each gets its own shade)
 high_stone = cs.melt([stone], voxel=0.004, smooth=2, name="stone_high")
 high_moss = cs.melt([parts["crack"]], voxel=0.006, smooth=1, name="moss_high")
-cs.carve_moss(high_moss, height=0.075, cover=0.3)
+cs.carve_moss(high_moss, height=P["moss_h"], cover=0.3)
 amber_obj = parts["glow_back"]  # the cut gem: its flat facets stay the game copy; a dense copy gets painted
 high_amber = cs.detail_copy(amber_obj, 3, "amber_high")
 cs.uv_only(amber_obj)
@@ -135,20 +165,31 @@ eyes = parts["eye"]
 high_eyes = cs.detail_copy(eyes, 3, "eyes_high")
 cs.eye_attrs(high_eyes, lambda side: (side * 0.12, -1, -0.1))
 cs.uv_only(eyes)
+EXTRA_JOBS = []
+for name, (eb, ed, el, eg) in EXTRA_PAINT.items():
+	if name in parts:
+		lo = parts[name]
+		hi = cs.detail_copy(lo, 1, name + "_high")
+		cs.carve_chitin(hi, dents=0.002, grain=0.0008, seed=13 + len(EXTRA_JOBS))
+		cs.uv_only(lo)
+		hi.data.materials.clear()
+		hi.data.materials.append(cs.glow_paint("paint_" + name, core=el, rim=ed, lines=0.3, cells=4.0, facets=0.4) if eg else
+			cs.paint_material("paint_" + name, base=eb, dark=ed, light=el, strokes=0.12, top_light=0.2, edge=0.6, seed=14, grime=0.2))
+		EXTRA_JOBS.append((hi, lo, name, eg))
 print("melt+carve", round(time.time() - t0), "s; stone tris", len(high_stone.data.polygons))
 
 # ---- paint materials on the dense sculpts
 high_stone.data.materials.clear()
-high_stone.data.materials.append(cs.paint_material("paint_stone", base=(0.52, 0.45, 0.39), dark=(0.3, 0.25, 0.26), light=(0.78, 0.7, 0.6),
-	moss=(0.44, 0.5, 0.2), moss_amount=0.85, strokes=0.16, edge=0.5, seed=1, tint_attr="tint", scratches=1.0, grime=0.35,
+high_stone.data.materials.append(cs.paint_material("paint_stone", base=P["stone"][0], dark=P["stone"][1], light=P["stone"][2],
+	moss=P["stone_moss"][0], moss_amount=P["stone_moss"][1], cap=P["cap"], strokes=0.16, edge=0.5, seed=1, tint_attr="tint", scratches=1.0, grime=0.35,
 	scratch_width=2.2))  # big, readable scratches (owner, round 6)
 high_moss.data.materials.clear()
-high_moss.data.materials.append(cs.paint_material("paint_moss", base=(0.42, 0.48, 0.18), dark=(0.15, 0.19, 0.06), light=(0.62, 0.68, 0.3),
+high_moss.data.materials.append(cs.paint_material("paint_moss", base=P["moss"][0], dark=P["moss"][1], light=P["moss"][2],
 	strokes=0.16, top_light=0.25, edge=0.3, seed=4))
 high_amber.data.materials.clear()
-high_amber.data.materials.append(cs.glow_paint("paint_amber", core=(1.0, 0.66, 0.16), rim=(0.72, 0.2, 0.0), lines=0.45, cells=3.0,
+high_amber.data.materials.append(cs.glow_paint("paint_amber", core=P["amber"][0], rim=P["amber"][1], lines=0.45, cells=3.0,
 	facets=0.45, cloud=0.45, bubbles=0.85, creases=0.6, depth=0.3))  # deep orange, a lantern-bright middle
-paint_chitin = cs.paint_material("paint_chitin", base=(0.4, 0.29, 0.22), dark=(0.2, 0.14, 0.1), light=(0.6, 0.47, 0.37),
+paint_chitin = cs.paint_material("paint_chitin", base=P["chitin"][0], dark=P["chitin"][1], light=P["chitin"][2],
 	strokes=0.14, top_light=0.3, edge=0.7, seed=2, key=0.22, grime=0.3)  # worn legs (carved wear; painted scratches blotch on small parts)
 paint_claw = cs.paint_material("paint_claw", base=(0.8, 0.66, 0.46), dark=(0.52, 0.38, 0.22), light=(0.95, 0.87, 0.7),
 	strokes=0.08, top_light=0.1, edge=0.4, seed=3, root=(0.33, 0.2, 0.12))
@@ -159,10 +200,10 @@ for hi, lo, chi, clo, jo in LEG_JOBS:
 		chi.data.materials.clear()
 		chi.data.materials.append(paint_claw)
 high_belly.data.materials.clear()
-high_belly.data.materials.append(cs.paint_material("paint_belly", base=(0.3, 0.18, 0.12), dark=(0.13, 0.07, 0.05), light=(0.5, 0.34, 0.24),
+high_belly.data.materials.append(cs.paint_material("paint_belly", base=P["belly"][0], dark=P["belly"][1], light=P["belly"][2],
 	strokes=0.14, top_light=0.1, edge=0.6, seed=12, grime=0.3))
 high_face.data.materials.clear()
-high_face.data.materials.append(cs.paint_material("paint_face", base=(0.37, 0.23, 0.15), dark=(0.16, 0.09, 0.06), light=(0.6, 0.42, 0.3),
+high_face.data.materials.append(cs.paint_material("paint_face", base=P["face"][0], dark=P["face"][1], light=P["face"][2],
 	strokes=0.16, top_light=0.25, edge=0.7, seed=5, key=0.4, ao_local=True, grime=0.4))  # (painted scratches blotch on small parts)
 high_body.data.materials.clear()
 high_body.data.materials.append(paint_chitin)
@@ -189,9 +230,11 @@ cs.bake(high_body, body_chitin, 1024, "bodychitin_baked")
 for k, (hi, lo) in enumerate(TUSK_JOBS):
 	cs.bake(hi, lo, 512, f"tusks{k}_baked")
 cs.bake(high_belly, belly, 512, "belly_baked")
-cs.bake(high_moss, low_moss, 1024, "moss_baked")
+cs.bake(high_moss, low_moss, 1024, "glow_lava_baked" if P["moss_glow"] else "moss_baked", emissive=P["moss_glow"])  # ember: lava glows
 cs.bake(high_amber, amber_obj, 1024, "glow_amber_baked", normal=False, emissive=0.35)
 cs.bake(high_eyes, eyes, 512, "eye_baked", normal=False)
+for hi, lo, name, eg in EXTRA_JOBS:
+	cs.bake(hi, lo, 512, name + "_baked", normal=not eg, emissive=eg)
 eyes.data.materials[0].node_tree.nodes["Principled BSDF"].inputs["Roughness"].default_value = 0.2  # wet shine
 for k, (hi, lo, chi, clo, jo) in enumerate(LEG_JOBS):
 	cs.bake(hi, lo, 512, f"leg{k}_baked")
@@ -200,7 +243,7 @@ for k, (hi, lo, chi, clo, jo) in enumerate(LEG_JOBS):
 	if jo:
 		jo.data.materials[0].node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (*cs.lin((0.24, 0.14, 0.09)), 1)
 print("bake", round(time.time() - t0), "s")
-for o in [high_stone, high_moss, high_amber, high_face, high_body, high_eyes, high_belly] + [j[0] for j in TUSK_JOBS] + [j[0] for j in LEG_JOBS] + [j[2] for j in LEG_JOBS if j[2]]:
+for o in [high_stone, high_moss, high_amber, high_face, high_body, high_eyes, high_belly] + [j[0] for j in TUSK_JOBS] + [j[0] for j in EXTRA_JOBS] + [j[0] for j in LEG_JOBS] + [j[2] for j in LEG_JOBS if j[2]]:
 	o.hide_render = True
 	o.hide_set(True)
 shoot("after.png", (0, 0, 0.5), 1.7)
