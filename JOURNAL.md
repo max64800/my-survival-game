@@ -1631,3 +1631,29 @@ You loved the whole Shack kit, so all 36 pieces went into the game with fresh bu
   - The planner that hides geodes deep in the rock found no deep-enough spots with the blocky numbers; planning now
     uses the plain shape.
   - One render round more than the 2-round rule before showing the owner (3 rounds); stopped to ask.
+
+## Nov 16, 2026, later (PC, Claude 2): closing the gaps in the Shack pieces (F165)
+
+You found big gaps on the hut: under the roofs and between the two floors. Each gap came from a piece stopping
+short of its own edge, so I fixed the pieces themselves (every building gets it):
+- **Walls:** the hewn top beam now reaches the top of the wall (it ended 8 cm low). This covers walls, half walls,
+  window walls and the doorway. The corner posts end inside the beam.
+- **Floors and ceiling panels:** a hewn rim beam runs round every edge, from the bottom up to the planks. Between
+  stories it now looks like a solid timber band. The middle beams stop at the rim; nothing passes through anything.
+- **Roofs:**
+  - A log along the low edge sits on the wall top.
+  - The side beams moved out to the very sides, so the sloped sides are closed.
+  - This applies to the plain, steep and corner roofs.
+- **Gables:** the slanted top now follows the roof's real slope, up into its boards. Before, it was steeper than
+  the roof and 18 cm short at the low end.
+- **Mistakes and hurdles:**
+  - **Edge beams wrong at first.** My first version set two of the four floor edge beams too far in, and let the
+    middle beams poke through the side ones. I caught both reading my code back, before building.
+  - **Shimmer spots.** The checker found 5 spots where surfaces sat on top of each other:
+    - The post tops lined up with the wall's top beam.
+    - A beam corner leaned at the same angle as the steep roof's boards. It's now a round log, which has no flat
+      corner.
+    - A middle beam ran under the valley gutter board; it now stops before the gutter.
+    All fixed; every changed piece passes.
+  - **GitHub update blocked.** Another Claude's untracked files blocked the update from GitHub. I left their files
+    alone and merged carefully.
