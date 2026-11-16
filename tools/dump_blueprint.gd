@@ -9,4 +9,11 @@ func _init() -> void:
 	var f := FileAccess.open(args[1] if args.size() > 1 else "user://blueprint.json", FileAccess.WRITE)
 	f.store_string(bp.to_json())
 	f.close()
+	var total := {}  # what the whole building costs, by item name
+	for p in bp.pieces:
+		var c := Pieces.cost(p.id, p.mat)
+		for item in c:
+			var nm := Items.display_name(item)
+			total[nm] = total.get(nm, 0) + c[item]
+	print("COST ", JSON.stringify(total))
 	quit()
