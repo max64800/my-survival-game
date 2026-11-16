@@ -1833,3 +1833,29 @@ You tried the dev menu and asked for four things:
 **Mistakes and hurdles (including Claude's)**
 - The chat loads only the part on screen, so the first search found no dwarf pictures; scanning it slowly from top to
   bottom found all 59 pictures and the request above each one.
+
+## November 16, 2026 (PC, Claude 2): roots, mushrooms and crystals by hand, round 1 (grey)
+
+**What we did**
+- The owner asked for the cave roots, mushrooms and crystals to be made by hand, as detailed as the Rock Beetle.
+  Until now they were simple shapes the game code put together (cones, half-balls, bent tubes).
+- New Blender script `tools/asset_forge/builds/cave_plants.py` builds four models with the beetle's sculpt tools
+  (melt pieces into one skin, then carve detail):
+  - a hanging root: soil clump with pebbles, three strands twisting into one gnarled trunk, knots, side roots, hair
+    roots, and a tip that will glow;
+  - a glowcap cluster: five mushrooms on a mound with mycelium threads, bulging feet, rings, curled caps, warts and
+    gills;
+  - a crystal cluster: six-sided crystals with real faceted points (two chipped) on a carved rock, with small shards;
+  - a giant mushroom: a ribbed stalk with root buttresses and a ragged skirt, and a wide wavy cap with warts and
+    gills.
+- Grey shapes are on a 3D page for the owner's OK (the beetle rule: grey shape first, then paint).
+
+**Mistakes and hurdles (including Claude's)**
+- The first rock under the crystals came out shredded: fine balls with random bumps turn spiky. Fixed with coarse
+  balls that are smoothed afterwards.
+- The gills poked out past the cap edge like teeth. Fixed by hollowing the cap's underside and tucking the gills in.
+- The first giant cap looked like a bread bun. Fixed with a higher dome, a thinner rim and bigger waves.
+- From one side the root looked like a creature waving its arms (side roots sticking out, a knot like a nose).
+  Fixed: side roots now hang down along the trunk, and the knots are smaller.
+- Still open (Claude 3's notes): baked paint pictures load white in Godot. Before painting these, test that the
+  pictures load on one small model first.
