@@ -160,7 +160,7 @@ function Run-Claude {
     $psi = New-Object Diagnostics.ProcessStartInfo
     $psi.FileName = $claude
     # Read-only on purpose: Claude can look, not change anything.
-    $psi.Arguments = "-p `"$prompt`" --add-dir `"$SessionDir`" --output-format text --max-turns 80 " +
+    $psi.Arguments = "-p `"$prompt`" --add-dir `"$SessionDir`" --output-format text --model sonnet --max-turns 30 " +
                      "--allowedTools Read Glob Grep " +
                      "--disallowedTools Bash PowerShell Edit Write NotebookEdit WebFetch WebSearch Agent"
     $psi.WorkingDirectory = $ProjectDir

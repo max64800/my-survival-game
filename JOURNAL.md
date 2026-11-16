@@ -1523,3 +1523,32 @@ rope, and every board and shingle has its own painting.
 - **PC:** CLAUDE.md now tells the next PC chat to install it there too (`winget install rtk-ai.rtk`, then `rtk init -g`).
 - **Hurdles:** Homebrew tried to build RTK from scratch on this Mac and hung for 10+ minutes, so Claude used the
   official ready-made Mac download from RTK's GitHub page instead (checked its fingerprint first).
+
+
+---
+
+## November 16, 2026 (PC, code Claude): saving tokens, same as the Mac
+- **What we did (owner's list, in order):**
+  1. **RTK** (shrinks terminal output before Claude reads it): installed with winget (1.2.0), checked the dry run, then
+     `rtk init -g`. It couldn't add its Claude Code hook by itself (it asks a yes/no question this terminal can't answer),
+     so Claude added the exact lines RTK printed as its "manual step" to `~/.claude/settings.json` (backed up first as
+     `settings.json.bak-2026-11-16`). It starts working after Claude Code restarts; `rtk gain` shows the savings.
+  2. **Thinking level:** default medium; Claude says "type ultrathink" before hard jobs (rule in CLAUDE.md).
+  3. **Add-ons:** 9 plugins off on this PC (superpowers, claude-seo, last30days, hookify, pr-review-toolkit,
+     typescript-lsp, frontend-design, security-guidance, claude-md-management); godot-prompter stays on. 141 personal
+     marketing/SEO/writing skills set to "name-only" (still usable by name, no longer listed in every chat); the 3 game
+     skills (audio-design, game-feel, game-ui-ux) stay fully on. These are user-wide settings: other projects see them too.
+  4. **Big files:** every fixed item moved unchanged from FEEDBACK.md into the new `FEEDBACK-done.md` (119 items;
+     FEEDBACK.md went from 56 KB to 20 KB; a check made sure every line is in exactly one of the two files).
+     CLAUDE.md now says: Grep both files by keyword, never read them whole; append to JOURNAL.md without reading it.
+  5. **Start of chat:** only count the unreviewed play sessions; read reports only on "check my last session".
+  6. **Play report:** the background report now runs on Sonnet with at most 30 turns (was the default model, 80 turns),
+     and looks at no more than 8 snapshots.
+  7. **Rules for screenshots and tests** added to CLAUDE.md (few pictures, single tests while fixing, only failing lines,
+     2 render rounds before asking, one chat per task).
+  8. The budget check (`tools/claude-budget`) is unchanged.
+  9. CLAUDE.md: about 1,600 tokens before, about 1,150 after; the "how" parts (code layout, recorder details, robots)
+     moved to `docs/CLAUDE-REFERENCE.md`, read only when needed.
+- **Mistakes and hurdles:**
+  - `rtk init -g` stopped at its yes/no question (non-interactive terminal) and did not patch settings.json; the hook was
+    added by hand from RTK's own printed instructions. The owner was told, and can remove it by restoring the backup.

@@ -26,7 +26,9 @@ branch to know which features exist (later steps live on branches; see `docs/GAM
 ## Steps
 
 1. Read `session.json`, `feedback.txt`, and `game-log.txt` (search the log for `ERROR`, `WARNING`, `SCRIPT ERROR`, `Invalid`, `null`, `crash`).
-2. Look at **every** snapshot, in time order. Notice: what the player is doing, FPS number (top right),
+2. Look at **at most 8 snapshots** (pictures cost a lot). List the file names first, then pick the 8 most useful:
+   the moments the owner's feedback or the log's errors point to, plus a few spread over the session. In those, notice:
+   what the player is doing, FPS number (top right),
    anything that looks wrong (holes in walls, floating things, falling through the floor, black screens,
    missing textures, UI overlapping, stuck player, too dark to see, frozen picture between shots).
 3. Compare what the owner **said** with what you **saw**.

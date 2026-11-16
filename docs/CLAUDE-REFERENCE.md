@@ -1,0 +1,32 @@
+# Claude reference (read only the part you need)
+
+Moved out of `CLAUDE.md` on Nov 16, 2026 to save tokens. The rules are still in `CLAUDE.md`; this page is the "how".
+
+## How the code is laid out
+- `src/world/`: Cave Maker (seed → SDF + materials), World (Voxel Tools terrain, digging), Glow Placer/Field, terrain shader, `mat.gd` (materials + hardness).
+- `src/net/game_authority.gd`: the referee. Every world change is `request_*` (approve) → `_do_*`/`_ev_*` (everyone applies). Keep it that way for co-op.
+- `src/build/`: pieces catalog (`pieces.gd`), builder (placing, collapse, rubble, blueprint sites), piece looks, build mode.
+- `src/player/`: Dwarf (movement, camera, swing), model/rig, lantern, controls, fx, placing preview.
+- `src/items/`: item list, recipes, inventory, drops. `src/ui/`: HUD, menus, crafting and build panels.
+- `src/progress/`: XP, perks, Next-steps goals. `src/combat/`: monsters, fights.
+- `src/debug/`: robots (`autopilot`, `buildcheck`, `kitcheck`, `netcheck`...), scripted runs with screenshots.
+- Design docs: `docs/design/` (start with its README). Zone 1 pacing: `docs/design/zone1-progression.md`.
+- Creatures: `docs/art/CREATURE-STYLE.md` + `docs/art/MODEL-RULES.md`; hand-built in Blender by script
+  (`tools/asset_forge/creature_kit.py`, `build_creatures.py`), matching `assets/concepts/creatures/`. Never picture-to-3D.
+- Model checks: `tools/model_check/` (Blender: floating parts, shimmer, outline, roofs, build script);
+  piece pictures for the build menu: `python tools/model_check/make_piece_icons.py`.
+
+## Play-session recordings (Windows PC)
+- Every time the owner plays (desktop icon or Godot F5), `tools/recorder/` records it with OBS into
+  `Videos\Dwarf Game Recordings\<date time>\`: `video.mp4`, `game-log.txt`, `session.json`, `feedback.txt`,
+  `snapshots\tMMSS.jpg`, and `report.md` (a background read-only Claude on Sonnet, per `tools/recorder/analysis_prompt.md`).
+- The feedback pop-up is off (owner gives feedback in chat). `session_report.ps1 -AskFeedback` turns it back on.
+- Runs Claude starts (terminal/script, `autopilot`/`netcheck`) are never recorded; only games a person starts.
+- After handling a session, write `reviewed.txt` in its folder (date + what was done).
+
+## Running the game and checks
+- Auto-checks: `tools/run_tests.sh` (Mac) / `tools\run_tests.bat` (Windows). Set `GODOT` to the Godot program.
+  `only=name` runs one file. Every new system gets a `tests/test_*.gd`.
+- Autopilot: `godot --audio-driver Dummy --path . -- autopilot seed=42 shots=<folder>`: a report (load time, items dug, FPS) + screenshots.
+- `godot --audio-driver Dummy --path . -- seed=1234` starts a specific cave. Robots: `-- buildcheck part=house|edges`, `-- kitcheck`.
+- Budget hook: `.claude/settings.json` runs `tools/claude-budget/check.py` before every step (keep it as it is).
