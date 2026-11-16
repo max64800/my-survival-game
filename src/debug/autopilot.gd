@@ -188,6 +188,10 @@ func _run() -> void:
 	await _wait(0.5)
 	await _shot("13_build_menu")
 	_main.hud.set_build_menu_open(false)
+	_main.hud.set_blueprints_open(true)
+	await _wait(0.8)
+	await _shot("13b_blueprint_book")
+	_main.hud.set_blueprints_open(false)
 	# Step 4: place the starter lodge blueprint and feed its Builder's Chest.
 	var json := FileAccess.get_file_as_string("res://blueprints/small_rootwood_lodge.dwbp")
 	var bp_origin: Vector3 = _main.world.maker.find_floor(dwarf.global_position.x - fwd.x * 8.0, dwarf.global_position.z - fwd.z * 8.0, dwarf.global_position.y + 3.0).round()

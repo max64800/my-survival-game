@@ -39,3 +39,22 @@ func test_shift_click_moves_between_hotbar_and_bag() -> void:
 	inv.slots[Inventory.HOTBAR_SIZE] = {id = "stone", count = 3}
 	check(not inv.quick_move(Inventory.HOTBAR_SIZE), "a full hotbar: nothing moves")
 	check_eq(int(inv.get_slot(Inventory.HOTBAR_SIZE).count), 3, "the stone stays put")
+
+
+## F99: the blueprint book shows the picked building in 3D, in its own little world.
+func test_blueprint_preview_builds_the_pieces() -> void:
+	var r := Blueprint.from_json(BlueprintLibrary.make(BlueprintLibrary.IDS[0]).to_json())
+	check(r.ok, "a ready-made blueprint loads")
+	if not r.ok:
+		return
+	var bp: Blueprint = r.blueprint
+	var pv := BlueprintPreview.new()
+	tree.root.add_child(pv)
+	pv.show_blueprint(bp)
+	var turn: Node3D = pv.get_child(0).get_child(2)
+	check_eq(turn.get_child_count(), bp.pieces.size(), "every piece is in the preview")
+	check(pv.get_child(0).own_world_3d, "in its own world, not the game's")
+	pv.show_blueprint(null)
+	await tree.process_frame
+	check_eq(turn.get_child_count(), 0, "cleared when nothing is picked")
+	pv.queue_free()

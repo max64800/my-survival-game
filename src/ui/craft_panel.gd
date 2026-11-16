@@ -45,6 +45,7 @@ func _ready() -> void:
 	_title = UiKit.title(box, "Crafting")
 	_status = UiKit.label(box, "", 14, UiKit.AMBER)
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_status.custom_minimum_size = Vector2(460, 0)  # a wrapping label needs a width, or it grows very tall
 	_bar = ProgressBar.new()
 	_bar.custom_minimum_size = Vector2(0, 14)
 	_bar.show_percentage = false

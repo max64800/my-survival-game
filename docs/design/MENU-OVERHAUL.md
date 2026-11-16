@@ -45,4 +45,6 @@ and **too many clicks**.
   buttons, a divider and text colours. New host requests `ask_split` / `ask_quick_move` (Inventory `split`, `quick_move`),
   tests in `tests/test_ui_kit.gd`. Right-click equip moved to double-click. Not done yet: drag and drop was not picked;
   the slider piece is cut but unused until the settings menu.
-- **Next:** the owner's look at the bag + crafting, then step 3 (start + Escape/pause + settings).
+- **Nov 17 night: all four steps built** (start + Escape + Settings with mouse speed; build menu; blueprint book with a
+  turning 3D preview; map; skills as readable perk cards). Fonts: Cinzel Bold + Alegreya Sans. Not done: map zoom,
+  Music/Effects sliders (no music yet), world thumbnails on the start screen. **Next:** the owner's look at all of it.

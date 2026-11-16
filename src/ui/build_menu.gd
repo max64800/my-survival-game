@@ -8,12 +8,9 @@ var _grid: VBoxContainer
 
 
 func _ready() -> void:
-	var bg := StyleBoxFlat.new()
-	bg.bg_color = Color(0.06, 0.05, 0.05, 0.94)
-	bg.set_corner_radius_all(10)
-	bg.set_content_margin_all(14)
-	add_theme_stylebox_override("panel", bg)
+	UiKit.panel(self)  # "dwarf workshop" look (owner F187)
 	_grid = VBoxContainer.new()
+	_grid.add_theme_constant_override("separation", 8)
 	add_child(_grid)
 
 
@@ -39,62 +36,73 @@ func refresh() -> void:
 	var ps: GameAuthority.PlayerState = auth.get_player(peer_id) if auth else null
 	if ps == null or mode == null:
 		return
-	var title := Label.new()
-	title.text = "Build: %s in %s  ·  B to close" % [Pieces.LIST[mode.piece].name, Pieces.FAMILIES[mode.family].name]
-	title.add_theme_font_size_override("font_size", 20)
-	_grid.add_child(title)
-	# Tabs
-	var tabs := HBoxContainer.new()
+	UiKit.title(_grid, "Build")
+	var sub := UiKit.label(_grid, "%s in %s" % [Pieces.LIST[mode.piece].name, Pieces.FAMILIES[mode.family].name], 14, UiKit.DIM)
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	# Tabs, each with a picture of its first piece.
+	var tabs := HFlowContainer.new()
+	tabs.add_theme_constant_override("h_separation", 4)
+	tabs.add_theme_constant_override("v_separation", 4)
+	tabs.custom_minimum_size = Vector2(640, 0)
 	_grid.add_child(tabs)
 	for g in TABS:
-		var t := Button.new()
+		var t := UiKit.dark_button(Button.new(), 13)
 		t.text = TABS[g]
+		var first: Array = pieces_in(g)
+		if not first.is_empty():
+			t.icon = piece_picture(first[0], _family_for(first[0]))
+		t.expand_icon = true
+		t.add_theme_constant_override("icon_max_width", 24)
+		t.custom_minimum_size = Vector2(0, 40)
 		t.toggle_mode = true
 		t.button_pressed = g == tab
 		var group: String = g
 		t.pressed.connect(func(): tab = group; refresh())
 		tabs.add_child(t)
-	# Pieces on this tab. Locked ones (station level too low) are greyed out with the reason.
+	# Pieces on this tab. Locked ones (station level too low) are faded, with the reason on hover.
 	var pieces := GridContainer.new()
-	pieces.columns = 4
+	pieces.columns = 5
+	pieces.add_theme_constant_override("h_separation", 6)
+	pieces.add_theme_constant_override("v_separation", 6)
 	_grid.add_child(pieces)
 	var where: Vector3 = ps.node.global_position if ps.node else Vector3.ZERO
 	for id in pieces_in(tab):
-		var fam: String = mode.family if Pieces.allowed(id, mode.family) else Pieces.LIST[id].get("families", [mode.family])[0]
+		var fam := _family_for(id)
 		var lock := auth.builder.station_problem(id, fam, where) if auth.builder else ""
 		pieces.add_child(_piece_button(id, fam, lock, ps.inventory))
-	_grid.add_child(_header("Material (you have)"))
-	var fams := GridContainer.new()
-	fams.columns = 4
-	_grid.add_child(fams)
+	UiKit.divider(_grid)
+	var fam_row := HFlowContainer.new()
+	fam_row.add_theme_constant_override("h_separation", 6)
+	fam_row.add_theme_constant_override("v_separation", 6)
+	_grid.add_child(fam_row)
+	UiKit.label(fam_row, "Material:", 16, UiKit.AMBER)
 	for f in Pieces.MOSSY_FAMILIES:
-		var b := Button.new()
+		var b := UiKit.dark_button(Button.new(), 14)
 		b.text = "%s (%d)" % [Pieces.FAMILIES[f].name, ps.inventory.count_of(f)]
 		b.icon = Items.icon(f)
 		b.expand_icon = true
+		b.add_theme_constant_override("icon_max_width", 24)
 		b.tooltip_text = "Made at the %s. You have %d." % [Items.display_name(BuildMenu.station_item(f)), ps.inventory.count_of(f)]
-		b.custom_minimum_size = Vector2(190, 52)
+		b.custom_minimum_size = Vector2(0, 42)
 		b.toggle_mode = true
 		b.button_pressed = f == mode.family
 		b.disabled = not Pieces.allowed(mode.piece, f)
+		if b.disabled:
+			b.modulate = Color(1, 1, 1, 0.45)
 		b.pressed.connect(func(): mode.choose(mode.piece, f); refresh())
-		fams.add_child(b)
-	var help := Label.new()
-	help.text = "Hover a piece to see what it needs. Greyed out = you're missing something (hover to see what).
-Wood needs a Workbench, stone and brick a Mason's Table (brick: level 2), within 20 m."
-	_grid.add_child(help)
+		fam_row.add_child(b)
+	var help := UiKit.label(_grid, "Q turn  ·  Shift+Wheel height  ·  Left click place  ·  Right click pick up  ·  X break  ·  B close", 13, UiKit.DIM)
+	help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
+
+## The material a piece is shown in: the chosen one if it allows it, else its first.
+func _family_for(id: String) -> String:
+	return mode.family if Pieces.allowed(id, mode.family) else Pieces.LIST[id].get("families", [mode.family])[0]
 
 
 ## The station item that works this material (for the material buttons).
 static func station_item(family: String) -> String:
 	return Builder.STATION_KIND[Pieces.station_for(family)]
-
-
-func _header(t: String) -> Label:
-	var l := Label.new()
-	l.text = t
-	l.add_theme_color_override("font_color", Color(1.0, 0.8, 0.5))
-	return l
 
 
 static func _cost_text(c: Dictionary) -> String:
@@ -108,18 +116,52 @@ static func _cost_text(c: Dictionary) -> String:
 ## have and what's missing, and any station it still needs (F133). Greyed out when you can't build it.
 func _piece_button(id: String, fam: String, lock: String, inv: Inventory) -> Button:
 	var b := Button.new()
-	b.text = Pieces.LIST[id].name
-	b.icon = piece_picture(id, fam)
-	b.expand_icon = true
-	b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	b.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
-	b.custom_minimum_size = Vector2(118, 118)
+	b.name = "Piece_" + id
+	b.custom_minimum_size = Vector2(122, 148)
+	b.focus_mode = Control.FOCUS_NONE
 	b.toggle_mode = true
 	b.button_pressed = id == mode.piece
+	var normal := UiKit.style("slot_selected" if id == mode.piece else "card", 6)
+	for st in ["normal", "pressed", "focus", "hover_pressed"]:
+		b.add_theme_stylebox_override(st, normal)
+	b.add_theme_stylebox_override("hover", UiKit.style("slot_selected", 6))
+	# Picture, name, and the cost under it (missing amounts in red), drawn on top of the button.
+	var v := VBoxContainer.new()
+	v.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 8)
+	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	v.add_theme_constant_override("separation", 2)
+	b.add_child(v)
+	var pic := TextureRect.new()
+	pic.texture = piece_picture(id, fam)
+	pic.custom_minimum_size = Vector2(0, 76)
+	pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	pic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	v.add_child(pic)
+	var name_l := UiKit.label(v, Pieces.LIST[id].name, 13, UiKit.TEXT)
+	name_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	name_l.clip_text = true
+	var costs := HBoxContainer.new()
+	costs.alignment = BoxContainer.ALIGNMENT_CENTER
+	costs.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	v.add_child(costs)
+	var cost := Pieces.cost(id, fam)
+	for item in cost:
+		var ic := TextureRect.new()
+		ic.texture = Items.icon(item)
+		ic.custom_minimum_size = Vector2(16, 16)
+		ic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		costs.add_child(ic)
+		UiKit.label(costs, str(cost[item]), 13, UiKit.TEXT if inv.count_of(item) >= cost[item] else UiKit.MISSING)
+	for c in v.get_children():
+		if c is Control:
+			(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var tip := needs_text(id, fam, inv)
 	if lock != "":
-		tip += "
-" + lock
+		tip += "\n" + lock
 	b.tooltip_text = tip
 	if lock != "" or not missing(id, fam, inv).is_empty():
 		b.modulate = Color(1, 1, 1, 0.5)

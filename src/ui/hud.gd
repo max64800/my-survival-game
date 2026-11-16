@@ -160,7 +160,6 @@ func _build() -> void:
 	root.resized.connect(_layout_panels)
 	_bag_panel.visibility_changed.connect(_dock_hotbar)
 	_bag_panel.visibility_changed.connect(_layout_panels)
-	_bag_panel.visibility_changed.connect(func(): _goals_label.visible = not _bag_panel.visible)  # it'd run over the bag
 
 	var fuel_box := VBoxContainer.new()
 	fuel_box.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
@@ -709,6 +708,7 @@ func is_blueprints_open() -> bool:
 
 func set_blueprints_open(open: bool) -> void:
 	blueprint_menu.mode = build_mode
+	blueprint_menu.peer_id = peer_id
 	blueprint_menu.visible = open
 	if open:
 		blueprint_menu.refresh()
@@ -850,6 +850,8 @@ func _process(delta: float) -> void:
 		_goals_label.text = "" if steps.is_empty() else "Next steps
 " + "
 ".join(steps.map(func(t): return "• " + t))
+	# "Next steps" would run over any big panel (F187): hidden while one is open.
+	_goals_label.visible = not (_bag_panel.visible or skills.visible or map_panel.visible or build_menu.visible or blueprint_menu.visible)
 	if ps:
 		var v := ps.vitals
 		_bars.health.max_value = v.max_health()

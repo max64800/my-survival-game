@@ -25,24 +25,41 @@ const PERK_TEXT := {
 var peer_id := 1
 var _body: VBoxContainer
 var _points: Label
+var _level: Label
+const ICONS := {mining = "pickaxe_stone", fighting = "sword_stone", smithing = "anvil", survival = "campfire"}
 
 
+## "Dwarf workshop" look (owner F187): a column per skill, each perk a card with what it does.
+## Learned ranks glow gold; ones you can't take yet are faded (hover says why).
 func _ready() -> void:
-	var bg := StyleBoxFlat.new()
-	bg.bg_color = Color(0.06, 0.05, 0.05, 0.94)
-	bg.set_corner_radius_all(10)
-	bg.set_content_margin_all(14)
-	add_theme_stylebox_override("panel", bg)
+	UiKit.panel(self)
 	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 8)
 	add_child(box)
-	_points = Label.new()
-	_points.add_theme_font_size_override("font_size", 20)
-	box.add_child(_points)
+	var top := HBoxContainer.new()
+	top.add_theme_constant_override("separation", 16)
+	box.add_child(top)
+	_level = UiKit.label(top, "", 16, UiKit.DIM)
+	_level.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_level.size_flags_stretch_ratio = 1.0
+	UiKit.title(top, "Skills")
+	var plate := PanelContainer.new()
+	plate.add_theme_stylebox_override("panel", UiKit.style("tab_selected", 6, 24))
+	plate.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	plate.size_flags_stretch_ratio = 1.0
+	top.add_child(plate)
+	_points = UiKit.label(plate, "", 17, UiKit.AMBER)
+	_points.add_theme_font_override("font", UiKit.heading_font())
+	_points.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(1160, 560)
+	scroll.custom_minimum_size = Vector2(1180, 540)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	box.add_child(scroll)
 	_body = VBoxContainer.new()
+	_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_body)
+	var foot := UiKit.label(box, "Perk points come from levelling up. Each perk also needs some skill, which grows by doing that work.  ·  K close", 13, UiKit.DIM)
+	foot.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 
 func refresh() -> void:
@@ -51,37 +68,73 @@ func refresh() -> void:
 	if ps == null:
 		return
 	var p := ps.progress
-	_points.text = "Level %d · %d perk point%s to spend · K to close" % [p.level, p.points_free(), "" if p.points_free() == 1 else "s"]
+	_level.text = "Level %d" % p.level
+	_points.text = "Perk points: %d" % p.points_free()
 	for c in _body.get_children():
 		c.queue_free()
 	var columns := HBoxContainer.new()
-	columns.add_theme_constant_override("separation", 18)
+	columns.add_theme_constant_override("separation", 12)
 	_body.add_child(columns)
 	for br in BRANCHES:
+		var frame := PanelContainer.new()
+		frame.add_theme_stylebox_override("panel", UiKit.style("card", 10))
+		columns.add_child(frame)
 		var col := VBoxContainer.new()
 		col.custom_minimum_size = Vector2(270, 0)
-		columns.add_child(col)
-		var head := Label.new()
-		head.text = "%s  (skill %d)" % [br[1], p.skill_level[br[0]]]
-		head.add_theme_font_size_override("font_size", 18)
-		head.add_theme_color_override("font_color", Color(1.0, 0.8, 0.5))
+		col.add_theme_constant_override("separation", 6)
+		frame.add_child(col)
+		var head := PanelContainer.new()
+		head.add_theme_stylebox_override("panel", UiKit.style("tab", 6, 22))
 		col.add_child(head)
+		var hrow := HBoxContainer.new()
+		hrow.alignment = BoxContainer.ALIGNMENT_CENTER
+		head.add_child(hrow)
+		var ic := TextureRect.new()
+		ic.texture = Items.icon(ICONS.get(br[0], ""))
+		ic.custom_minimum_size = Vector2(26, 26)
+		ic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		hrow.add_child(ic)
+		UiKit.label(hrow, br[1], 16, UiKit.AMBER).add_theme_font_override("font", UiKit.heading_font())
+		var lvl := UiKit.label(col, "skill %d" % p.skill_level[br[0]], 13, UiKit.DIM)
+		lvl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		for id in Progression.PERKS:
 			if Progression.PERKS[id][0] != br[0]:
 				continue
-			col.add_child(_perk_button(id, p))
+			col.add_child(_perk_card(id, p))
 
 
-func _perk_button(id: String, p: Progression) -> Button:
+func _perk_card(id: String, p: Progression) -> Control:
 	var info: Array = Progression.PERKS[id]
-	var b := Button.new()
+	var rank := p.perk_rank(id)
 	var why := p.why_not(id)
-	b.text = "%s  %d/%d\n%s" % [id.capitalize(), p.perk_rank(id), info[1], PERK_TEXT.get(id, "")]
-	b.tooltip_text = why if why != "" else "Costs %d point%s" % [info[2], "" if info[2] == 1 else "s"]
+	var card := PanelContainer.new()
+	card.name = "Perk_" + id
+	card.add_theme_stylebox_override("panel", UiKit.style("slot_selected" if rank > 0 else "slot", 8, 12))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	card.add_child(row)
+	var text := VBoxContainer.new()
+	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	text.add_theme_constant_override("separation", 0)
+	row.add_child(text)
+	UiKit.label(text, "%s  %d/%d" % [id.capitalize(), rank, info[1]], 15, UiKit.AMBER if rank > 0 else UiKit.TEXT)
+	var eff := UiKit.label(text, PERK_TEXT.get(id, ""), 13, UiKit.DIM)
+	eff.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	eff.custom_minimum_size = Vector2(170, 0)
+	var b := UiKit.gold_button(Button.new(), 13)
+	b.name = "Learn"
+	b.text = "Learn"
+	b.custom_minimum_size = Vector2(70, 36)
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	b.disabled = why != ""
-	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	b.custom_minimum_size = Vector2(260, 52)
+	b.tooltip_text = why if why != "" else "Costs %d point%s" % [info[2], "" if info[2] == 1 else "s"]
+	card.tooltip_text = b.tooltip_text
+	b.visible = rank < int(info[1])
 	b.pressed.connect(func():
 		GameAuthority.instance.ask_buy_perk(id)
 		get_tree().create_timer(0.15).timeout.connect(refresh))
-	return b
+	row.add_child(b)
+	if why != "" and rank == 0:
+		card.modulate = Color(1, 1, 1, 0.55)
+	return card

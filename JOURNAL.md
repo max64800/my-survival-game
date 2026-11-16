@@ -2334,3 +2334,29 @@ learn how to do hair animation and implement that."
 **Mistakes and hurdles (including Claude's)**
 - No test run photographs the start screen, so Claude used a one-off script (not in the game) that opens each screen
   and saves a picture, with two pretend saved worlds that it removed again afterwards.
+
+## November 17, 2026 (Mac, night): menus step 3 and 4, build menu, blueprint book, map, skills (F187, F99)
+
+**What we did**
+- **Build menu (B):** kit frame and "Build" plaque; tabs with a picture of each tab's first piece; piece cards with
+  the picture, the name and the cost under it (icon + number, red when you're short); material buttons with icons and
+  how many you have; one tip line with the real controls.
+- **Blueprint book (V):** two pages like the mock-up. Left: the list. Right: the picked building as a **slowly
+  turning 3D model** built from its real pieces in its own little world (`src/ui/blueprint_preview.gd`, F99), its
+  size and piece count, every material as have / need, and one gold "Place Blueprint" button.
+- **Map (M):** the map in a frame; beside it a floor switcher (▲ / ▼, "Floor 2 of 5", biome and depth) and a legend.
+- **Skills (K):** level on the left, "Skills" plaque, "Perk points: N" plaque on the right; one framed column per
+  skill with its icon; each perk is a card with what it does, gold when learned, faded when you can't take it yet
+  (hover says why), and a gold Learn button. The mock-up's round-node trees were kept as readable cards (each perk's
+  effect stays written on it, owner F179: easy to understand).
+- New test: the blueprint preview holds every piece and clears itself.
+
+**Mistakes and hurdles (including Claude's)**
+- The build menu's first tip line said "Right click take down"; the game's real controls are right click = pick up
+  (first 10 s) and X = break. Fixed.
+- Not done (honest): the mock-up's map zoom slider (the map has no zoom yet) and the Music / Effects sliders (no music).
+- The map panel first came out taller than the screen (title off the top). Cause: the little depth text wraps its
+  words, and a wrapping label with no width set is measured as if one letter wide, so it grew very tall. Gave it (and
+  two similar labels in crafting and skills) a width. Boss-clue circles now stop at the map's edge. "Next steps" now
+  hides while any big panel is open (it ran over the skills and build screens too).
+- All 9 menu pictures for the owner: `docs/art/menus-2026-11-17/`. Full test run: 360 checks, all passed.
