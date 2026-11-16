@@ -12,6 +12,7 @@ const MARGINS := {
 	button_gold = Vector4(16, 14, 16, 14), button_gold_hover = Vector4(16, 14, 16, 14),
 	button_gold_pressed = Vector4(16, 14, 16, 14), button_dark = Vector4(16, 14, 16, 14),
 	tab = Vector4(24, 14, 24, 14), tab_selected = Vector4(24, 14, 24, 14),
+	slider_track = Vector4(16, 0, 16, 0), slider_fill = Vector4(16, 0, 16, 0),
 	card = Vector4(14, 14, 14, 14), tooltip = Vector4(16, 16, 16, 16), divider = Vector4(20, 0, 20, 0),
 }
 const AMBER := Color(1.0, 0.8, 0.45)  ## titles and headings
@@ -117,6 +118,33 @@ static func dark_button(b: Button, font_size: int = 14) -> Button:
 	b.add_theme_font_override("font", heading_font())
 	b.focus_mode = Control.FOCUS_NONE
 	return b
+
+
+## A slider in the kit's look: gold fill, dark track, a gold gem knob.
+static func slider(s: HSlider) -> HSlider:
+	var track := style("slider_track")
+	track.content_margin_top = 7
+	track.content_margin_bottom = 7
+	var fill := style("slider_fill")
+	s.add_theme_stylebox_override("slider", track)
+	s.add_theme_stylebox_override("grabber_area", fill)
+	s.add_theme_stylebox_override("grabber_area_highlight", fill)
+	var knob: Texture2D = load(DIR + "slider_knob.png")
+	s.add_theme_icon_override("grabber", knob)
+	s.add_theme_icon_override("grabber_highlight", knob)
+	s.focus_mode = Control.FOCUS_NONE
+	s.custom_minimum_size.y = 30
+	return s
+
+
+## A text box: dark inset, amber when you're typing in it.
+static func line_edit(e: LineEdit) -> LineEdit:
+	e.add_theme_stylebox_override("normal", style("card", 10, 14))
+	e.add_theme_stylebox_override("focus", style("slot_selected", 10, 14))
+	e.add_theme_color_override("font_color", TEXT)
+	e.add_theme_color_override("font_placeholder_color", DIM)
+	e.add_theme_font_size_override("font_size", 16)
+	return e
 
 
 ## A thin gold line between parts of a panel.

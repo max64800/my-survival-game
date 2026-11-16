@@ -1,6 +1,6 @@
 class_name SoundSettings
-## Volume and mute (feedback F15), set on the pause screen (Esc) and remembered between games
-## in user://settings.cfg on this computer.
+## Volume and mute (feedback F15) and mouse speed (F187), set on the Settings panel and remembered
+## between games in user://settings.cfg on this computer.
 
 const PATH := "user://settings.cfg"
 
@@ -14,6 +14,7 @@ static func load_and_apply(path: String = PATH) -> void:
 	if cfg.load(path) == OK:
 		volume = clampf(float(cfg.get_value("sound", "volume", volume)), 0.0, 1.0)
 		muted = bool(cfg.get_value("sound", "muted", muted))
+		Controls.mouse_scale = clampf(float(cfg.get_value("controls", "mouse_scale", Controls.mouse_scale)), 0.25, 3.0)
 	apply()
 
 
@@ -35,9 +36,15 @@ static func set_muted(m: bool, path: String = PATH) -> void:
 	save(path)
 
 
+static func set_mouse_scale(m: float, path: String = PATH) -> void:
+	Controls.mouse_scale = clampf(m, 0.25, 3.0)
+	save(path)
+
+
 static func save(path: String = PATH) -> void:
 	var cfg := ConfigFile.new()
 	cfg.load(path)  # keep any other settings already in the file
 	cfg.set_value("sound", "volume", volume)
 	cfg.set_value("sound", "muted", muted)
+	cfg.set_value("controls", "mouse_scale", Controls.mouse_scale)
 	cfg.save(path)

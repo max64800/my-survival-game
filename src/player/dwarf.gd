@@ -135,8 +135,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not input_enabled or not is_local:
 		return
 	if event is InputEventMouseMotion and Controls.captured():
-		_yaw -= event.relative.x * Controls.MOUSE_SENSITIVITY
-		_pitch = clampf(_pitch - event.relative.y * Controls.MOUSE_SENSITIVITY, -1.35, 1.1)
+		var sens := Controls.MOUSE_SENSITIVITY * Controls.mouse_scale
+		_yaw -= event.relative.x * sens
+		_pitch = clampf(_pitch - event.relative.y * sens, -1.35, 1.1)
 	var auth := GameAuthority.instance
 	if auth == null:
 		return

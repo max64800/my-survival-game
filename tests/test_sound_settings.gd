@@ -22,3 +22,17 @@ func test_mute_and_volume_change_the_sound_and_are_remembered() -> void:
 	SoundSettings.volume = old_v
 	SoundSettings.muted = old_m
 	SoundSettings.apply()
+
+
+## The Settings panel's mouse speed (F187) is remembered too, and kept in a sane range.
+func test_mouse_speed_is_remembered() -> void:
+	var old := Controls.mouse_scale
+	SoundSettings.set_mouse_scale(1.6, TEST_PATH)
+	Controls.mouse_scale = 1.0
+	SoundSettings.load_and_apply(TEST_PATH)
+	check_near(Controls.mouse_scale, 1.6, 0.001, "mouse speed came back from the saved file")
+	SoundSettings.set_mouse_scale(50.0, TEST_PATH)
+	check(Controls.mouse_scale <= 3.0, "never absurdly fast")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_PATH))
+	Controls.mouse_scale = old
+	SoundSettings.load_and_apply()

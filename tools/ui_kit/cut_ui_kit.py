@@ -50,7 +50,23 @@ def main():
         piece = Image.fromarray(rgba[y0 - 2:y1 + 3, x0 - 2:x1 + 3])
         piece = piece.resize((round(piece.width * SCALE), round(piece.height * SCALE)), Image.LANCZOS)
         piece.save(os.path.join(OUT, name + ".png"))
+    split_slider()
     print("cut", len(PIECES), "pieces into", OUT)
+
+
+def split_slider():
+    """The kit draws the slider as one picture (gold fill, knob, empty track). Split it into three
+    pieces for Godot's HSlider: the filled part and the empty track (each given a matching end cap
+    by mirroring) and the knob."""
+    a = np.asarray(Image.open(os.path.join(OUT, "slider.png")))
+    track = a[9:39]  # the bar's rows (the knob is taller)
+    cap = 16
+    fill = np.concatenate([track[:, :104], track[:, :cap][:, ::-1]], axis=1)
+    empty = np.concatenate([track[:, 146:][:, ::-1][:, :cap], track[:, 146:]], axis=1)
+    Image.fromarray(np.ascontiguousarray(fill)).save(os.path.join(OUT, "slider_fill.png"))
+    Image.fromarray(np.ascontiguousarray(empty)).save(os.path.join(OUT, "slider_track.png"))
+    knob = Image.fromarray(np.ascontiguousarray(a[:, 113:140]))
+    knob.resize((knob.width * 30 // knob.height, 30), Image.LANCZOS).save(os.path.join(OUT, "slider_knob.png"))
 
 
 if __name__ == "__main__":

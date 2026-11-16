@@ -17,12 +17,15 @@ var _addr_edit: LineEdit
 var _worlds_box: VBoxContainer
 var _confirm: ConfirmationDialog
 var _delete_path := ""
+var _new_box: VBoxContainer
+var _join_box: HBoxContainer
+var _settings: SettingsPanel
 
 
 func _ready() -> void:
 	Controls.set_captured(false)
 	var bg := ColorRect.new()
-	bg.color = Color(0.04, 0.035, 0.05)
+	bg.color = Color(0.07, 0.05, 0.04)
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(bg)
 	var scroll := ScrollContainer.new()
@@ -33,85 +36,125 @@ func _ready() -> void:
 	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	center.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.add_child(center)
+	var page := HBoxContainer.new()  # the menu, and Settings beside it when open
+	page.add_theme_constant_override("separation", 16)
+	center.add_child(page)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 12)
-	box.custom_minimum_size = Vector2(560, 0)
-	center.add_child(box)
+	box.custom_minimum_size = Vector2(620, 0)
+	page.add_child(box)
+	_settings = SettingsPanel.new()
+	_settings.visible = false
+	_settings.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	page.add_child(_settings)
 
-	var title := Label.new()
-	title.text = "Dwarf Game"
-	title.add_theme_font_size_override("font_size", 52)
-	title.add_theme_color_override("font_color", Color(1.0, 0.8, 0.5))
+	# "Dwarf workshop" look (owner F187): the game's name, then one framed panel with your worlds.
+	var title := UiKit.label(box, "Dwarf Game", 64, UiKit.AMBER)
+	title.add_theme_font_override("font", UiKit.heading_font())
+	title.add_theme_constant_override("outline_size", 10)
+	title.add_theme_color_override("font_outline_color", Color(0.1, 0.05, 0.02))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	box.add_child(title)
-
-	_heading(box, "Your worlds")
+	var panel := PanelContainer.new()
+	UiKit.panel(panel, 24)
+	box.add_child(panel)
+	var pv := VBoxContainer.new()
+	pv.add_theme_constant_override("separation", 10)
+	panel.add_child(pv)
+	UiKit.title(pv, "Your Worlds")
 	_worlds_box = VBoxContainer.new()
 	_worlds_box.add_theme_constant_override("separation", 6)
-	box.add_child(_worlds_box)
-	_fill_worlds()
+	pv.add_child(_worlds_box)
+	UiKit.divider(pv)
+	var big := HBoxContainer.new()
+	big.add_theme_constant_override("separation", 12)
+	pv.add_child(big)
+	_gold(big, "New World", func(): _show_part(_new_box)).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_gold(big, "Join Friend", func(): _show_part(_join_box)).size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
-	_heading(box, "New world")
-	_name_edit = _field(box, "World name (empty = \"Cave\" + its number)")
-	_seed_edit = _field(box, "Cave seed (empty = random)")
+	# New world: name and seed, then play alone or host (hidden until "New World").
+	_new_box = VBoxContainer.new()
+	_new_box.add_theme_constant_override("separation", 8)
+	pv.add_child(_new_box)
+	_name_edit = _field(_new_box, "World name (empty = \"Cave\" + its number)")
+	_seed_edit = _field(_new_box, "Cave seed (empty = random)")
 	var new_row := HBoxContainer.new()
 	new_row.add_theme_constant_override("separation", 8)
-	box.add_child(new_row)
-	_button(new_row, "Create and play", func(): play_alone.emit(_seed(), _name())).size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_button(new_row, "Create and host for friends", func(): host_direct.emit(_seed(), _name())).size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_button(box, "Create and host on Steam (friends join from Steam)", func(): host_steam.emit(_seed(), _name()))
+	_new_box.add_child(new_row)
+	_gold(new_row, "Create and Play", func(): play_alone.emit(_seed(), _name())).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_button(new_row, "Host for Friends", func(): host_direct.emit(_seed(), _name())).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_button(_new_box, "Host on Steam (friends join from Steam)", func(): host_steam.emit(_seed(), _name()))
 
-	_heading(box, "Join a friend")
-	var row := HBoxContainer.new()
-	box.add_child(row)
-	_addr_edit = _field(row, "Host's IP address")
+	# Join a friend by IP (hidden until "Join Friend").
+	_join_box = HBoxContainer.new()
+	_join_box.add_theme_constant_override("separation", 8)
+	pv.add_child(_join_box)
+	_addr_edit = _field(_join_box, "Host's IP address")
 	_addr_edit.text = "127.0.0.1"
 	_addr_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_button(row, "Join", func(): join_direct.emit(_addr_edit.text.strip_edges()))
+	_gold(_join_box, "Join", func(): join_direct.emit(_addr_edit.text.strip_edges())).custom_minimum_size.x = 120
 
-	box.add_child(HSeparator.new())
-	_button(box, "Quit game", func(): quit_game.emit())
-	_status = Label.new()
+	var small := HBoxContainer.new()
+	small.add_theme_constant_override("separation", 12)
+	small.alignment = BoxContainer.ALIGNMENT_CENTER
+	box.add_child(small)
+	_button(small, "Settings", func(): _settings.visible = not _settings.visible).custom_minimum_size.x = 190
+	_button(small, "Quit", func(): quit_game.emit()).custom_minimum_size.x = 190
+	_status = UiKit.label(box, "", 15, UiKit.AMBER)
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD
 	_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_status.custom_minimum_size = Vector2(560, 50)
-	box.add_child(_status)
+	_status.custom_minimum_size = Vector2(620, 40)
 
 	_confirm = ConfirmationDialog.new()
 	_confirm.ok_button_text = "Delete forever"
 	_confirm.cancel_button_text = "Keep it"
 	_confirm.confirmed.connect(_delete_confirmed)
 	add_child(_confirm)
+	_fill_worlds()
 
 
-## One row per saved world: name and when it was saved, then Play / Host / Delete.
+## "New World" / "Join Friend" open their part of the panel (one at a time; again = close).
+func _show_part(part: Control) -> void:
+	var open := not part.visible
+	_new_box.visible = false
+	_join_box.visible = false
+	part.visible = open
+
+
+## One card per saved world: its name and when it was saved, then Play / Host / Delete.
 func _fill_worlds() -> void:
 	for c in _worlds_box.get_children():
 		c.queue_free()
 	var worlds := SaveGame.list_worlds()
+	_join_box.visible = false
+	_new_box.visible = worlds.is_empty()  # no worlds yet: show "make one" straight away
 	if worlds.is_empty():
-		var none := Label.new()
-		none.text = "No saved worlds yet. Make one below!"
-		none.add_theme_color_override("font_color", Color(0.7, 0.68, 0.64))
-		_worlds_box.add_child(none)
+		var none := UiKit.label(_worlds_box, "No saved worlds yet. Make your first one!", 16, UiKit.DIM)
+		none.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		return
 	for w in worlds:
+		var card := PanelContainer.new()
+		card.add_theme_stylebox_override("panel", UiKit.style("card", 10, 14))
+		_worlds_box.add_child(card)
 		var row := HBoxContainer.new()
 		row.name = "World_" + str(w.path).get_file().get_basename()
 		row.add_theme_constant_override("separation", 8)
-		_worlds_box.add_child(row)
-		var lbl := Label.new()
-		lbl.text = "%s\n   saved %s · seed %d" % [w.name, str(w.saved_at).replace("T", " ").left(16), w.seed]
-		lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		row.add_child(lbl)
+		card.add_child(row)
+		var info := VBoxContainer.new()
+		info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		info.add_theme_constant_override("separation", 0)
+		row.add_child(info)
+		UiKit.label(info, str(w.name), 20, UiKit.AMBER).add_theme_font_override("font", UiKit.heading_font())
+		UiKit.label(info, "saved %s  ·  seed %d" % [str(w.saved_at).replace("T", " ").left(16), w.seed], 13, UiKit.DIM)
 		var path: String = w.path
-		var play := _button(row, "Play", func(): _open_world(path, false))
+		var play := _gold(row, "Play", func(): _open_world(path, false))
 		play.name = "Play"
-		play.add_theme_color_override("font_color", Color(1.0, 0.85, 0.5))
-		_button(row, "Host", func(): _open_world(path, true)).name = "Host"
+		play.custom_minimum_size = Vector2(96, 44)
+		var host := _button(row, "Host", func(): _open_world(path, true))
+		host.name = "Host"
 		var del := _button(row, "Delete", func(): ask_delete(path, w.name))
 		del.name = "Delete"
-		del.add_theme_color_override("font_color", Color(1.0, 0.55, 0.45))
+		del.add_theme_color_override("font_color", UiKit.MISSING)
+		del.add_theme_font_size_override("font_size", 13)
 
 
 func _open_world(path: String, host: bool) -> void:
@@ -152,27 +195,29 @@ func _name() -> String:
 	return _name_edit.text.strip_edges().left(40)
 
 
-func _heading(parent: Node, text: String) -> void:
-	parent.add_child(HSeparator.new())
-	var h := Label.new()
-	h.text = text
-	h.add_theme_font_size_override("font_size", 22)
-	h.add_theme_color_override("font_color", Color(0.95, 0.75, 0.5))
-	parent.add_child(h)
-
-
 func _field(parent: Node, hint: String) -> LineEdit:
-	var e := LineEdit.new()
+	var e := UiKit.line_edit(LineEdit.new())
 	e.placeholder_text = hint
-	e.custom_minimum_size = Vector2(0, 40)
+	e.custom_minimum_size = Vector2(0, 44)
 	parent.add_child(e)
 	return e
 
 
+## A dark kit button.
 func _button(parent: Node, text: String, cb: Callable) -> Button:
-	var b := Button.new()
+	var b := UiKit.dark_button(Button.new(), 15)
 	b.text = text
 	b.custom_minimum_size = Vector2(0, 44)
+	b.pressed.connect(cb)
+	parent.add_child(b)
+	return b
+
+
+## A big gold kit button.
+func _gold(parent: Node, text: String, cb: Callable) -> Button:
+	var b := UiKit.gold_button(Button.new(), 19)
+	b.text = text
+	b.custom_minimum_size = Vector2(0, 50)
 	b.pressed.connect(cb)
 	parent.add_child(b)
 	return b

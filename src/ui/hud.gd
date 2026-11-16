@@ -6,7 +6,7 @@ extends CanvasLayer
 const SLOT_SIZE := 58
 const BAG_HINT := "Click: pick up / swap  ·  Shift+Click: quick move  ·  Double-click: equip  ·  Right-click: split"
 
-## A button on the Escape menu was pressed: "resume", "save", "menu" or "quit" (F87).
+## A button on the Escape menu was pressed: "resume", "save", "invite", "menu" or "quit" (F87).
 signal pause_pressed(what: String)
 
 var peer_id := 1
@@ -299,7 +299,7 @@ func _build() -> void:
 	_help.position = Vector2(16, 12)
 	_help.text = "WASD walk · Shift run · Space jump · Mouse look\nLeft click dig/harvest · Right click eat/place · E use station\n1-9 hotbar · Wheel zoom · R refill lantern · Tab bag + crafting\nK skills · M map · Esc pause"
 
-	_pause = _overlay(root, "Paused", "Click to keep digging")
+	_pause = _build_pause(root)
 	_loading = _overlay(root, "Digging out the cave…", "")
 	_loading.visible = true
 	_loading_bar = ProgressBar.new()  # how far the cave around you is ready (owner, Nov 16)
@@ -748,75 +748,75 @@ func is_paused() -> bool:
 func set_paused(on: bool) -> void:
 	_pause.visible = on
 	var auth := GameAuthority.instance
-	_ensure_pause_buttons(auth == null or auth.is_host())
+	var host := auth == null or auth.is_host()
+	var box: VBoxContainer = _pause.find_child("PauseButtons", true, false)
+	# A friend in someone else's game can't save it, so they get "Leave" instead.
+	(box.get_node("save") as Button).visible = host
+	(box.get_node("menu") as Button).text = "Save & Quit to Menu" if host else "Leave the Game"
+	(box.get_node("quit") as Button).text = "Quit Game"
 	var ff: CheckButton = _pause.find_child("FriendlyFire", true, false)
-	if ff == null:
-		ff = CheckButton.new()
-		ff.name = "FriendlyFire"
-		ff.text = "Friendly fire (your hits can hurt friends, half damage)"
-		ff.focus_mode = Control.FOCUS_NONE
-		ff.toggled.connect(func(v: bool): if GameAuthority.instance: GameAuthority.instance.set_friendly_fire(v))
-		(_pause.find_child("Sub", true, false) as Label).get_parent().add_child(ff)
-	ff.visible = auth != null and auth.is_host()
+	ff.visible = auth != null and host
 	if auth:
 		ff.set_pressed_no_signal(auth.friendly_fire())
-	_ensure_sound_controls()
-	(_pause.find_child("Sub", true, false) as Label).text = "Esc or click to keep digging\n\nCave seed: %s" % seed_text
+	(_pause.find_child("Sub", true, false) as Label).text = "Cave seed: %s  ·  Esc or click outside to keep digging" % seed_text
 
 
-## The Escape menu's buttons (F87): keep playing, save, back to the main menu, quit.
-## A friend in someone else's game can't save it, so they only get "Leave".
-func _ensure_pause_buttons(host: bool) -> void:
-	var box: VBoxContainer = _pause.find_child("PauseButtons", true, false)
-	if box == null:
-		box = VBoxContainer.new()
-		box.name = "PauseButtons"
-		box.add_theme_constant_override("separation", 8)
-		for b in [["resume", "Resume"], ["save", "Save"], ["menu", "Save and go to main menu"], ["quit", "Save and quit to desktop"]]:
-			var btn := Button.new()
-			btn.name = b[0]
-			btn.text = b[1]
-			btn.custom_minimum_size = Vector2(320, 44)
-			btn.focus_mode = Control.FOCUS_NONE
-			var what: String = b[0]
-			btn.pressed.connect(func(): pause_pressed.emit(what))
-			box.add_child(btn)
-		var sub := _pause.find_child("Sub", true, false) as Label
-		sub.get_parent().add_child(box)
-		sub.get_parent().move_child(box, sub.get_index() + 1)
-	(box.get_node("save") as Button).visible = host
-	(box.get_node("menu") as Button).text = "Save and go to main menu" if host else "Leave the game"
-	(box.get_node("quit") as Button).text = "Save and quit to desktop" if host else "Quit to desktop"
-
-
-## Sound on the pause screen (feedback F15): a volume slider and a Mute switch, remembered.
-func _ensure_sound_controls() -> void:
-	var box: HBoxContainer = _pause.find_child("SoundBox", true, false)
-	if box == null:
-		box = HBoxContainer.new()
-		box.name = "SoundBox"
-		box.add_theme_constant_override("separation", 14)
-		var title := Label.new()
-		title.text = "Sound"
-		box.add_child(title)
-		var slider := HSlider.new()
-		slider.name = "Volume"
-		slider.min_value = 0
-		slider.max_value = 100
-		slider.step = 5
-		slider.custom_minimum_size = Vector2(220, 24)
-		slider.focus_mode = Control.FOCUS_NONE
-		slider.value_changed.connect(func(v: float): SoundSettings.set_volume(v / 100.0))
-		box.add_child(slider)
-		var mute := CheckButton.new()
-		mute.name = "Mute"
-		mute.text = "Mute"
-		mute.focus_mode = Control.FOCUS_NONE
-		mute.toggled.connect(func(m: bool): SoundSettings.set_muted(m))
-		box.add_child(mute)
-		(_pause.find_child("Sub", true, false) as Label).get_parent().add_child(box)
-	(box.get_node("Volume") as HSlider).set_value_no_signal(SoundSettings.volume * 100.0)
-	(box.get_node("Mute") as CheckButton).set_pressed_no_signal(SoundSettings.muted)
+## The Escape screen (F87, look F187): the Paused panel (Resume, Save, Invite Friends, Save & Quit to
+## Menu, Quit Game) with the Settings panel beside it, over the dimmed game.
+func _build_pause(root: Control) -> Control:
+	var bg := ColorRect.new()
+	bg.color = Color(0.02, 0.02, 0.04, 0.72)
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.visible = false
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE  # a click outside the panels resumes (main.gd)
+	root.add_child(bg)
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bg.add_child(center)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 16)
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	center.add_child(row)
+	var paused := PanelContainer.new()
+	UiKit.panel(paused)
+	paused.custom_minimum_size = Vector2(340, 0)
+	row.add_child(paused)
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 10)
+	paused.add_child(v)
+	UiKit.title(v, "Paused")
+	var box := VBoxContainer.new()
+	box.name = "PauseButtons"
+	box.add_theme_constant_override("separation", 8)
+	v.add_child(box)
+	for b in [["resume", "Resume"], ["save", "Save"], ["invite", "Invite Friends"], ["menu", "Save & Quit to Menu"], ["quit", "Quit Game"]]:
+		var btn := Button.new()
+		btn.name = b[0]
+		btn.text = b[1]
+		btn.custom_minimum_size = Vector2(0, 46)
+		if b[0] == "resume":
+			UiKit.gold_button(btn, 19)
+		else:
+			UiKit.dark_button(btn, 16)
+		var what: String = b[0]
+		btn.pressed.connect(func(): pause_pressed.emit(what))
+		box.add_child(btn)
+	var ff := CheckButton.new()
+	ff.name = "FriendlyFire"
+	ff.text = "Friendly fire (half damage)"
+	ff.tooltip_text = "Your hits can hurt friends, at half damage."
+	ff.focus_mode = Control.FOCUS_NONE
+	ff.add_theme_color_override("font_color", UiKit.TEXT)
+	ff.toggled.connect(func(on: bool): if GameAuthority.instance: GameAuthority.instance.set_friendly_fire(on))
+	v.add_child(ff)
+	var sub := UiKit.label(v, "", 13, UiKit.DIM)
+	sub.name = "Sub"
+	sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	sub.custom_minimum_size = Vector2(290, 0)
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	row.add_child(SettingsPanel.new())
+	return bg
 
 
 ## By a Builder's Chest: a progress bar for the whole building. Hammer out = you're building it.

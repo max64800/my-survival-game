@@ -2315,3 +2315,22 @@ learn how to do hair animation and implement that."
   One, Grenze Gotisch) and picked **Cinzel Bold** for titles and buttons (closest to the mock-ups) and **Alegreya
   Sans** for all other text (project default font). Easy to swap in `UiKit.heading_font()` if the owner prefers another.
 - Credits + licence files added (`assets/fonts/`).
+
+## November 17, 2026 (Mac, night): menus step 2, start screen + Escape menu + Settings (F187)
+
+**What we did**
+- Start screen in the "dwarf workshop" look: "Dwarf Game" in Cinzel, one framed "Your Worlds" panel with a card per
+  world (name, when saved, seed; Play gold, Host, Delete red, still asks "are you sure?"), then two big gold buttons,
+  New World and Join Friend, that open their part of the panel (name + seed + Create and Play / Host for Friends /
+  Host on Steam; or the IP box + Join). With no worlds yet, New World is open straight away. Settings and Quit below.
+- Escape screen: the Paused panel (Resume in gold, Save, Invite Friends, Save & Quit to Menu, Quit Game, Friendly fire
+  for the host, the cave seed) beside the Settings panel. Invite Friends opens Steam's invite window when you host on
+  Steam; otherwise it says how friends can join.
+- One shared Settings panel (`src/ui/settings_panel.gd`): sound volume, mute, and a new **mouse speed** slider
+  (remembered in settings.cfg). The kit's slider picture is split into track, gold fill and gem knob by the cutter.
+  The mock-up's separate Music / Effects sliders wait until the game has music.
+- Pictures for the owner: `docs/art/menus-2026-11-17/`. Full test run: 359 checks, all passed.
+
+**Mistakes and hurdles (including Claude's)**
+- No test run photographs the start screen, so Claude used a one-off script (not in the game) that opens each screen
+  and saves a picture, with two pretend saved worlds that it removed again afterwards.

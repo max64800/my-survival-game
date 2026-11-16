@@ -255,6 +255,11 @@ func pause_action(what: String) -> void:
 		"quit":
 			save_now("Saved")
 			get_tree().quit()
+		"invite":  # Steam's own invite window, when you're hosting on Steam (F187)
+			if session.lobby_id != 0 and session.steam_available():
+				session.steam.activateGameOverlayInviteDialog(session.lobby_id)
+			else:
+				hud.show_toast("Host on Steam to invite friends from here. (Or friends join with your IP address.)", 4.0)
 
 
 func _close_menu() -> void:

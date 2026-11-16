@@ -36,7 +36,9 @@ const MOUSE := {
 	"zoom_out": [MOUSE_BUTTON_WHEEL_DOWN],
 }
 
-const MOUSE_SENSITIVITY := 0.0025
+const MOUSE_SENSITIVITY := 0.0025  ## the default
+## Set on the Settings panel (F187), saved by SoundSettings in user://settings.cfg. 1.0 = the default speed.
+static var mouse_scale := 1.0
 
 ## Test robots never grab the real mouse (feedback F27: it was stealing the owner's mouse while
 ## they used other programs). For robots, "captured" is only pretend.
