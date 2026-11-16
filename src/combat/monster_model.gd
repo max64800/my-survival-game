@@ -32,6 +32,7 @@ static func build(shape: String, color: Color, size: float, leader: bool, kind: 
 		holder.scale = Vector3.ONE * size * jitter
 		holder.set_meta("variant_look", art_look)  # it already shows its variant (no extra crystals needed)
 		_tag_forged(holder, forged, shape)
+		_vary_stone(forged, seed)
 		if leader:
 			_forged_crown(holder, forged, shape)
 		return holder
@@ -435,6 +436,25 @@ static func variant_count(kind: String) -> int:
 ## Hand-built creatures (tools/asset_forge/creature_kit.py) name their moving parts:
 ## leg* walk, wing_l / wing_r flap, soft* pull into the shell, material "eye*" flashes.
 ## Each part turns around its own hinge (hip, shoulder, shell mouth).
+## Every creature that spawns wears its stones a little differently (owner, Nov 16): its stone materials get their own
+## slight shade, warmer or cooler, lighter or darker. Uses the monster's seed, so co-op friends see the same one.
+static func _vary_stone(forged: Node3D, seed: int) -> void:
+	var r := RandomNumberGenerator.new()
+	r.seed = hash(seed * 31 + 7)
+	var v := r.randf_range(0.88, 1.1)
+	var warm := r.randf_range(-0.07, 0.07)
+	var tint := Color(v * (1.0 + warm), v * (1.0 + warm * 0.3), v * (1.0 - warm))
+	var own := {}
+	for mi: MeshInstance3D in forged.find_children("*", "MeshInstance3D", true, false):
+		for i in mi.mesh.get_surface_count() if mi.mesh else 0:
+			var m := mi.get_active_material(i)
+			if m is StandardMaterial3D and String(m.resource_name).begins_with("stone"):
+				if not own.has(m):
+					own[m] = (m as StandardMaterial3D).duplicate()
+					(own[m] as StandardMaterial3D).albedo_color *= tint
+				mi.set_surface_override_material(i, own[m])
+
+
 static func _tag_forged(holder: Node3D, forged: Node3D, shape: String) -> void:
 	var legs := []
 	var wings := []

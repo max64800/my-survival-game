@@ -673,22 +673,23 @@ ck.loft("horn_root", [((0, -0.35, 0.61), 0.135, 0.19), ((0, -0.43, 0.72), 0.115,
 LEG_RND = random.Random(77)
 
 
-def barrel(name, a, b, r0, r1, material, sides=8):
+def barrel(name, a, b, r0, r1, material, sides=8, sole=False):
 	"""One leg segment like the painting's: a chunky faceted armour piece (8 flat sides) that widens toward its far end
 	into a lip, so it covers the start of the next segment like a shingle (the joint stays hidden inside).
 	Round 6 (owner: "too perfect"): every segment is a little different: thickness, squash, a twist so the flat sides
 	don't line up, uneven facets, and a lip that sits a bit off-centre."""
 	r = LEG_RND
 	d = b - a
-	k, sq, tw = r.uniform(0.92, 1.08), r.uniform(0.9, 1.04), r.uniform(-14, 14)
+	k, sq, tw = r.uniform(0.94, 1.06), r.uniform(0.93, 1.03), r.uniform(-6, 6)  # gentle: big twists crumple the overlaps
 	side = d.cross(Vector((0, 0, 1)))
 	side = side.normalized() if side.length > 1e-6 else Vector((1, 0, 0))
-	off = side * r.uniform(-0.008, 0.008) + Vector((0, 0, r.uniform(-0.006, 0.006)))
+	off = side * r.uniform(-0.005, 0.005) + Vector((0, 0, r.uniform(-0.004, 0.004)))
 	r0, r1 = r0 * k, r1 * k * r.uniform(0.95, 1.05)
 	o = ck.loft(name, [(a, r0 * 0.78, r0 * 0.72 * sq, tw), (a + d * 0.12, r0 * 0.9, r0 * 0.84 * sq, tw),
-		(a + d * 0.55, (r0 + r1) / 2, (r0 + r1) / 2 * 0.93 * sq, tw + r.uniform(-4, 4)),
-		(b - d * 0.14 + off, r1 * 1.1, r1 * 1.02 * sq, tw), (b - d * 0.02 + off, r1 * 1.16, r1 * 1.08 * sq, tw), (b + off, r1 * 1.08, r1 * 1.0 * sq, tw)],
-		material, sides=sides, subsurf=0, smooth=False, wobble=0.045, seed=r.randint(1, 9999))
+		(a + d * 0.55, (r0 + r1) / 2, (r0 + r1) / 2 * 0.93 * sq, tw),
+		(b - d * 0.14 + off, r1 * 1.1, r1 * 1.02 * sq, tw), (b - d * 0.02 + off, r1 * 1.16, r1 * 1.08 * sq, tw), (b + off, r1 * 1.08, r1 * 1.0 * sq, tw)]
+		+ ([(b + off + d * 0.012, r1 * 0.75, r1 * 0.7 * sq, tw)] if sole else []),  # a foot: a nearly flat sole, not a point
+		material, sides=sides, subsurf=0, smooth=False, wobble=0.015, seed=r.randint(1, 9999))
 	bv = o.modifiers.new("bevel", "BEVEL")
 	bv.width = 0.006
 	bv.segments = 2
@@ -717,7 +718,7 @@ def leg(s, i, hip, knee, ankle, toe):
 		barrel("femur", c1 - up_dir * 0.04, knee + low_dir * 0.01, 0.122, 0.125, chitin)
 		t1 = knee + (ankle - knee) * 0.52
 		barrel("tibia", knee - low_dir * 0.035, t1, 0.116, 0.11, chitin)
-		barrel("tarsus", t1 - low_dir * 0.04, ankle, 0.1, 0.09, chitin)
+		barrel("tarsus", t1 - low_dir * 0.04, ankle, 0.1, 0.09, chitin, sole=True)
 		out_dir = Vector((toe.x - ankle.x, toe.y - ankle.y, 0)).normalized()
 		# One claw lying FLAT on the ground like a toe (owner, round 5): its underside rests on the ground all along,
 		# from under the foot out to a point. Its root is tucked into the end of the last segment.
@@ -726,17 +727,18 @@ def leg(s, i, hip, knee, ankle, toe):
 			t = j / 13
 			w = 0.06 * (1 - 0.96 * t ** 1.4)
 			h = 0.04 * (1 - 0.96 * t ** 1.4)
-			hook = 0.016 * max(0.0, (t - 0.7) / 0.3) ** 2  # the last bit bends down: a hooked tip that bites in
-			p = Vector((ankle.x, ankle.y, GROUND + h + 0.006 * math.sin(math.pi * t) - hook)) + out_dir * (-0.035 + 0.18 * t)
+			# Round 8 (owner): the claw comes out of the FRONT of the foot at sole level and runs flat along the ground
+			# (before, it started under the foot and the foot's end cap poked through it)
+			p = Vector((ankle.x, ankle.y, GROUND + h + 0.004 * math.sin(math.pi * t))) + out_dir * (0.045 + 0.19 * t)
 			rings.append((p, w, h))
 		ck.loft("claw", rings, claw, sides=12, subsurf=0, smooth=True, up=Vector((0, 0, 1)))
 
 
 GROUND = -0.11  # where the claws lie (the save puts the lowest point on the ground, lifting the body 11 cm)
 LEGS = [  # hip, knee, ankle, which way the claw points   (+X side; mirrored)
-	((0.2, -0.25, 0.27), (0.43, -0.33, 0.2), (0.47, -0.41, -0.04), (0.52, -0.5, -0.11)),
-	((0.25, 0.0, 0.26), (0.5, 0.03, 0.2), (0.56, 0.07, -0.04), (0.62, 0.13, -0.11)),
-	((0.23, 0.27, 0.27), (0.47, 0.35, 0.2), (0.53, 0.44, -0.04), (0.57, 0.53, -0.11)),
+	((0.18, -0.25, 0.28), (0.44, -0.34, 0.24), (0.5, -0.43, -0.06), (0.54, -0.52, -0.11)),   # round 6 pose (owner), thick
+	((0.24, 0.0, 0.27), (0.54, 0.04, 0.24), (0.63, 0.1, -0.06), (0.68, 0.17, -0.11)),
+	((0.22, 0.28, 0.28), (0.5, 0.37, 0.24), (0.58, 0.48, -0.06), (0.62, 0.57, -0.11)),
 ]
 for s in (-1, 1):
 	for i, pts in enumerate(LEGS):

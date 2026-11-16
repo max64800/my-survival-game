@@ -1687,3 +1687,22 @@ short of its own edge, so I fixed the pieces themselves (every building gets it)
     All fixed; every changed piece passes.
   - **GitHub update blocked.** Another Claude's untracked files blocked the update from GitHub. I left their files
     alone and merged carefully.
+
+## November 16, 2026 (PC, Claude 3): Rock Beetle round 8, the older legs back, flat claws, stone shades
+
+**What we did** (the owner: round 7's legs were not better; the claws sat under the feet; two weird spots in the legs;
+the stones all looked grey)
+- Legs back in the round-6 pose, but kept thick. The randomness is gentler (small twists), so the knee overlaps are clean.
+- Each foot has a nearly flat sole; the claw comes out of the front of the foot at sole level and lies flat on the ground.
+- Stones: a clearly visible mix of shades (brown-warm, blue-grey and plain, lighter and darker), like the stone foundation.
+- Game: every Rock Beetle that spawns gets its own slight stone shade (from its id, so co-op friends see the same one).
+  It shows once the new beetle is in the game (it still loads white there).
+- Recipe rules 8, 9 and 11 updated; FEEDBACK F143 and F146 updated, one new item for the per-spawn shade; pictures
+  `docs/art/rock-beetle-v2/step8_*`; 3D page round 8. Checks pass (39).
+
+**Mistakes and hurdles (including Claude's)**
+- Round 7's random twists of up to 14° made the overlapping segment lips at the knee cross each other (the crumpled spot).
+- The claw started 3.5 cm behind the middle of the foot, so it sat under the foot, and the foot's pointed end cap poked
+  through it (the second spot). Moving the claw to the front of the foot and adding a flat sole fixed both.
+- Moving the legs closer in (round 7) made the beetle look worse to the owner, not better. Lesson: change one big thing per
+  round, so the owner can judge each change on its own.

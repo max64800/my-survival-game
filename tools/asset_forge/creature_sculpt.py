@@ -577,7 +577,7 @@ def tint_islands(high, kd_owner, seed=1, spread=0.13, name="tint"):
 	for k in set(owner.values()):
 		r = random.Random(seed * 1000 + k)
 		v = 1.0 + r.uniform(-spread, spread * 0.6)
-		warm = r.choice((-1, 0, 0, 1)) * r.uniform(0.03, 0.08)  # some brown-warm, some blue-grey, most in between
+		warm = r.choice((-1, -1, 0, 1, 1, 1)) * r.uniform(0.05, 0.13)  # brown-warm, blue-grey or plain: clearly different stones
 		shades[k] = (v * (1 + warm), v * (1 + warm * 0.3), v * (1 - warm), 1.0)
 	at = high.data.color_attributes.new(name, "FLOAT_COLOR", "POINT")
 	mw = high.matrix_world

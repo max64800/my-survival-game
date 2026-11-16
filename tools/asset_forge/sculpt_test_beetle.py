@@ -91,7 +91,7 @@ amber_obj = parts["glow_back"]  # the cut gem: its flat facets stay the game cop
 high_amber = cs.detail_copy(amber_obj, 3, "amber_high")
 cs.uv_only(amber_obj)
 cs.carve_stone(high_stone, seed=3)
-cs.tint_islands(high_stone, stone_pieces, seed=3)
+cs.tint_islands(high_stone, stone_pieces, seed=3, spread=0.2)  # visible mix of shades (owner, round 8)
 # Legs: the armour segments stay separate hard pieces (like a real beetle leg); each gets a dense detailed copy
 # (dents, grain) whose detail is baked onto the original faceted segment.
 LEG_JOBS = []

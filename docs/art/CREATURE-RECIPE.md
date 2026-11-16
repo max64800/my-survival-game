@@ -22,15 +22,17 @@ Part 1 is the owner's rules in plain words. Part 2 is how we do each one (the to
    (low over the legs in the middle of each side, higher at the head and tail) and the dome rounds under; never a flat cut.
    Wide and low, like a little tank. **Horns are flat-sided** (a cut stone slab), big is fine.
 8. **Every stone looks worn and different:** its own shade (some warmer, some cooler, some darker), **big scratches you
-   can see from far away** (it's a big creature), chipped and lighter worn edges, darker grime. Never all one smooth colour.
+   can see from far away** (it's a big creature), chipped and lighter worn edges, darker grime. Never all one smooth colour:
+   a **clearly visible mix of shades** (like the stone foundation), and every creature that spawns a little different.
 
 ### Legs
 9. **Armour segments overlap like shingles.** Each segment's lip covers the start of the next one, so you never see a
    joint. **No two segments alike:** each a little thicker or thinner, twisted, uneven, chipped, cracked and scratched.
-   Legs are **fat and short, close to the body**: it should look heavy and strong, not like a spider.
+   Legs are **fat** (thick segments) so it looks heavy and strong. Keep the randomness gentle: big twists make the
+   overlapping lips at the knee crumple into a mess.
 10. **One claw per leg.**
-11. **It stands on its legs.** The claw lies **flat on the ground** like a toe: its underside rests on the ground, and it
-    ends in a point whose tip hooks down a little. The claw is never a stilt it balances on.
+11. **It stands on its legs.** The foot has a flat sole; the claw comes out of the **front of the foot at sole level** and
+    lies **flat on the ground** like a toe, ending in a point. Never under the foot, never a stilt it balances on.
 12. **The body underneath is shingled too** (overlapping belly bands).
 
 ### Face
