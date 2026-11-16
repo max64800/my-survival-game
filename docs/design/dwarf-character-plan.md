@@ -51,3 +51,20 @@ Also approved earlier: the separate outfit sheets (Leather; Copper = the second,
 - **Check lineup:** all three in Leather on the same Happy body. The bodies match, so one skeleton and one set of armor
   fits all three; only the head mesh (face, hair, beard) swaps.
 
+
+## Saved in the project (November 16, owner's OK)
+`assets/concepts/dwarf/`: `dwarf_happy_apose.png` (the main reference), `dwarf_turnaround.png` (front, side, back),
+`dwarf_happy_head.png`, `dwarf_strong_head.png`, `dwarf_smart_head_young.png` (rejected young version; the OLD smart head
+is in `dwarf_lineup_old_smart.png` / `dwarf_lineup_latest.png`), `dwarf_wearing_leather/copper/shell.png`, three lineups.
+`assets/concepts/outfits/`: `outfit_leather.png`, `outfit_copper_aged.png`, `outfit_shell.png`.
+
+## Round 1, how to start (for the Claude doing it)
+1. Read `docs/art/CREATURE-RECIPE.md` (the beetle lessons) and `docs/art/MODEL-RULES.md`.
+2. Write down what `dwarf_turnaround.png` shows (proportions in heads, belly, beard, hands, feet) before building.
+3. Find the game's skeleton and how the current dwarf is loaded (`src/player/dwarf_rig.gd`, `assets/characters/`); keep
+   it and its animations. Measure its bone positions so the new body is built around them.
+4. Build by script (`tools/asset_forge/builds/`): body, head and beard grey first; compare with
+   `creature_compare.py` / `creature_closeup.py`; the owner checks the grey shape before paint.
+5. Sculpt and bake like the beetle; copy bone weights from the Quaternius body (Data Transfer); test in the game,
+   muted, with screenshots. Known blocker: baked pictures load white in Godot (F164); solve that first or the dwarf
+   will be white in the game too.

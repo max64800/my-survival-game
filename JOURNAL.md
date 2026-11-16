@@ -1820,3 +1820,16 @@ You tried the dev menu and asked for four things:
   Fixed in a second round; the snow on top is still a bit faint.
 
 - **Later (Nov 16, code Claude): menus centred (F172).** On your wide screen the crafting list stretched to the right edge and covered the bag. Cause: recipe lines never wrapped, so the panel grew as wide as its longest line, and the bag and the list were placed separately. Now they sit side by side as one centred group; long lines and tabs wrap. Picture: `journey/ui_bag_crafting_centred.jpg`.
+## November 16, 2026 (PC, Claude 3): getting ready for the dwarf
+
+**What we did**
+- The owner chose: the dwarf is hand-built the Rock Beetle way (no picture-to-3D); download the approved pictures;
+  round 1 = the base body in underclothes + the Happy head and braided beard, animated, on a 3D page.
+- The dwarf plan now says so (the old "AI picture-to-3D" text is gone).
+- Downloaded 14 approved pictures from the owner's ChatGPT chat "Generate Building Kit Sheet" (owner's OK): the dwarf
+  in A-pose, turnaround, heads, the dwarf in each outfit, lineups, and the 3 outfit sheets. Logged in CREDITS.
+- Wrote a "how to start round 1" list in `docs/design/dwarf-character-plan.md` for a fresh chat.
+
+**Mistakes and hurdles (including Claude's)**
+- The chat loads only the part on screen, so the first search found no dwarf pictures; scanning it slowly from top to
+  bottom found all 59 pictures and the request above each one.
