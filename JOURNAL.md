@@ -3199,3 +3199,14 @@ the body."
 - Owner: axes aren't better at cutting wood. They were (3 vs 6 hits) but not clearly, and only the pickaxe got a
   skill bonus. Now axe x1.5 power + survival skill bonus, pickaxe 0.3 on wood: 2 vs 10 hits. Test added.
 - Spear stab animation: asked the dwarf session (it is editing dwarf_rig.gd) to avoid two sessions in one file.
+
+## November 17, 2026 (PC, rock-textures Claude): the Mason's Shovel (F269)
+- Model: hand-built in items_tools.py like the stone axe (haft, leather grip, wooden collar, lashing, flat stone
+  blade). Round 1 the axe's knapping made the thin blade a lump; round 2 lightly chipped and flat. Icon cut from
+  the model's own picture (no ChatGPT sheet for one item).
+- Play: Workbench recipe; in the hand it's a tool; a swing shaves 9 balls above your feet line and fills 9 below it
+  (1 dirt or stone). Fills are a new saved edit (negative w in edit_log); replay keeps edits in order where they
+  overlap (a fill then a dig differs from a dig then a fill).
+- **Hurdles:** (1) the test's bump never appeared: the rock is stored in 1 m steps, a 0.5 m ball hardly shows;
+  the shovel's fill balls (0.6 m) had the same problem, now 1 m. (2) Shared files with other sessions' unsaved
+  lines (items, recipes, authority): only my lines copied into the commit.

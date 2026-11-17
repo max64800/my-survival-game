@@ -22,6 +22,7 @@ const LIST := {
 	# --- workbench
 	"plank_root": {station = "workbench", inputs = {rootwood = 1}, output = "plank_root", count = 2, unlock = []},
 	"plank_mushroom": {station = "workbench", inputs = {mushroom_wood = 1}, output = "plank_mushroom", count = 2, unlock = ["mushroom_wood"]},
+	"masons_shovel": {station = "workbench", inputs = {stone = 4, rootwood = 3}, output = "masons_shovel", count = 1, unlock = []},
 	"axe_stone": {station = "workbench", inputs = {stone = 3, rootwood = 2, rope = 2}, output = "axe_stone", count = 1, unlock = []},
 	"build_hammer": {station = "workbench", inputs = {stone = 3, rootwood = 2}, output = "build_hammer", count = 1, unlock = []},
 	"bed": {station = "workbench", inputs = {plank_root = 6, moss = 4, leather = 2}, output = "bed", count = 1, unlock = []},

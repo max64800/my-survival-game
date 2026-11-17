@@ -73,6 +73,38 @@ func sdf_at(p: Vector3) -> float:
 	return _tool.get_voxel_f(Vector3i(p.round()))
 
 
+## The Mason's Shovel filling a dip (owner, Nov 17): makes a ball of rock of material `mat` where there is air.
+## Returns how many voxels became rock. The opposite of apply_dig.
+func apply_fill(center: Vector3, radius: float, mat: int) -> int:
+	var lo := Vector3i((center - Vector3.ONE * (radius + 1.0)).floor())
+	var hi := Vector3i((center + Vector3.ONE * (radius + 1.0)).ceil())
+	var size := hi - lo + Vector3i.ONE
+	if not _tool.is_area_editable(AABB(Vector3(lo), Vector3(size))):
+		return 0
+	var buf := VoxelBuffer.new()
+	buf.create(size.x, size.y, size.z)
+	buf.set_channel_depth(VoxelBuffer.CHANNEL_INDICES, VoxelBuffer.DEPTH_8_BIT)
+	var mask := (1 << VoxelBuffer.CHANNEL_SDF) | (1 << VoxelBuffer.CHANNEL_INDICES)
+	_tool.copy(lo, buf, mask)
+	var filled := 0
+	for z in size.z:
+		for y in size.y:
+			for x in size.x:
+				var old := buf.get_voxel_f(x, y, z, VoxelBuffer.CHANNEL_SDF)
+				var p := Vector3(lo + Vector3i(x, y, z))
+				var solid := p.distance_to(center) - radius  # below 0 inside the ball
+				if solid >= old:
+					continue
+				buf.set_voxel_f(solid, x, y, z, VoxelBuffer.CHANNEL_SDF)
+				if old >= 0.0 and solid < 0.0:
+					buf.set_voxel(mat, x, y, z, VoxelBuffer.CHANNEL_INDICES)
+					filled += 1
+	_tool.paste(lo, buf, mask)
+	if filled > 0:
+		changed.emit(center, radius)
+	return filled
+
+
 ## Like sdf_at, but blended from the 8 voxels around p (sdf_at snaps to the nearest whole metre), for checks that
 ## care about a few centimetres, like "is this table touching the wall" (Station.in_rock).
 func sdf_smooth(p: Vector3) -> float:

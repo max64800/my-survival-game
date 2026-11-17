@@ -7,7 +7,7 @@ class_name ToolModels
 ## Sizes in metres, before the 0.8 hand scale of the rigged dwarf.
 
 ## Only these are drawn in the hand. Anything else (empty, stone, food…) shows an empty fist.
-const TOOLS := ["pickaxe", "axe", "axe_2h", "sword", "mace", "mace_2h", "spear", "hammer", "shield", "crossbow"]
+const TOOLS := ["pickaxe", "axe", "axe_2h", "sword", "mace", "mace_2h", "spear", "hammer", "shield", "crossbow", "shovel"]
 const WOOD := Color(0.45, 0.31, 0.19)
 const LEATHER := Color(0.30, 0.19, 0.11)
 const IRON := Color(0.55, 0.55, 0.58)
@@ -31,7 +31,7 @@ static func build(look: String, col: Color, layers: int, item_id: String = "") -
 	var model := Look.forged("items", item_id) if item_id != "" else null
 	if model:
 		match look:
-			"pickaxe", "axe", "axe_2h", "sword", "mace", "mace_2h", "spear", "hammer":
+			"pickaxe", "axe", "axe_2h", "sword", "mace", "mace_2h", "spear", "hammer", "shovel":
 				model.position = Vector3.DOWN * 0.1  # hold it a little above the end of the handle
 			"shield":
 				model.rotation.y = PI / 2.0  # its face points out from the back of the hand

@@ -399,3 +399,33 @@ func test_station_in_the_wall_is_refused() -> void:
 		check(Station.in_rock("workbench", p - Vector3.UP * 0.5, 0.0, world), "a workbench inside the rock doesn't fit")
 	check(Station.size_of("workbench").y <= 0.85, "the workbench is dwarf-sized (%.2f m)" % Station.size_of("workbench").y)
 	_teardown()
+
+
+## The Mason's Shovel (owner, Nov 17): one swing flattens the patch you aim at to your feet height: bumps go,
+## dips are filled with dirt from the bag. Fills are saved like digs.
+func test_masons_shovel_levels_the_ground() -> void:
+	await _setup(42)
+	var feet := player.global_position
+	var fl := world.maker.find_floor(feet.x, feet.z, feet.y + 1.0)
+	if fl != Vector3.INF:
+		player.global_position = fl
+		feet = fl
+	var at := feet + Vector3(2.0, 0.0, 0.0)
+	world.apply_fill(at + Vector3.UP * 0.3, 1.0, Mat.STONE)  # a bump on the floor (the rock is stored in 1 m steps)
+	world.apply_dig(at + Vector3(0.6, -1.0, 0.0), 1.0, 0)  # and a dip beside it
+	check(world.sdf_smooth(at + Vector3.UP * 0.5) < 0.0, "there's a bump to flatten")
+	ps.inventory.slots[0] = {id = "masons_shovel", count = 1}
+	auth.request_select_slot(1, 0)
+	ps.inventory.add("dirt", 3)
+	var r := auth.request_hit(1, at, Vector3.UP)
+	check_eq(r.get("state"), "dug", "the shovel works")
+	check(world.sdf_smooth(at + Vector3.UP * 0.5) > 0.0, "the bump is gone")
+	check(world.sdf_smooth(at + Vector3(0.6, -0.3, 0.0)) < 0.0, "the dip is filled")
+	check_eq(ps.inventory.count_of("dirt"), 2, "filling used 1 dirt")
+	var fills := 0
+	for e in auth.edit_log:
+		if e.w < 0.0:
+			fills += 1
+	check(fills > 0, "the fill is saved with the digs")
+	check(Recipes.LIST.has("masons_shovel") and Recipes.LIST.masons_shovel.station == "workbench", "made at the Workbench")
+	_teardown()

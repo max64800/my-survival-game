@@ -231,6 +231,26 @@ def build_hammer():
 	kit.box((0.04, 0.012, 0.11), (0, 0.068, z), kit.tex_mat("iron"), bevel=0.003, wobble=0)
 
 
+def masons_shovel():
+	"""Owner, Nov 17: the Mason's Shovel levels the ground. Same family as the stone axe: a shaped haft with a leather
+	grip, and a broad knapped stone blade (slightly cupped, chipped edge) bedded in a wooden collar and lashed on."""
+	handle(0.66, cap="wood")
+	z = 0.66
+	kit.cone(0.034, 0.03, 0.09, (0, 0, z + 0.03), kit.tex_mat("wood", "c"), verts=10, bevel=0.006)  # the collar
+	cross_lash(z + 0.03, 0.045, r=0.036)
+	# The blade: wide at its shoulders, narrowing a little to a rounded, chipped digging edge; thicker at the back.
+	# (lightly chipped: the axe's knapping is too rough for a thin blade, it turned into a lump)
+	parts = [
+		fr("z", z + 0.07, z + 0.15, (0, 0.0), (0, 0.004), (0.08, 0.05), (0.25, 0.034), hm("stone"), bevel=0.008),
+		fr("z", z + 0.15, z + 0.34, (0, 0.004), (0, 0.01), (0.25, 0.034), (0.23, 0.02), hm("stone", "b"), bevel=0.006),
+		fr("z", z + 0.34, z + 0.42, (0, 0.01), (0, 0.012), (0.23, 0.02), (0.08, 0.012), hm("stone", "b"), bevel=0.004),
+	]
+	for i, o in enumerate(parts):
+		kit.roughen(o, amount=0.003, cuts=2, seed=11 + i)
+		for mod in list(o.modifiers):
+			o.modifiers.remove(mod)
+
+
 def crossbow(m):
 	stone = m == "stone"
 	wood, dark = kit.tex_mat("wood", "b"), kit.tex_mat("wood", "dark")
@@ -384,6 +404,7 @@ for m in ("stone", "copper", "silver"):
 	BUILD[f"crossbow_{m}"] = (lambda m=m: crossbow(m))
 	BUILD[f"shield_{m}"] = (lambda m=m: shield(m))
 BUILD["build_hammer"] = build_hammer
+BUILD["masons_shovel"] = masons_shovel
 BUILD["pickaxe_fang"] = pickaxe_fang
 BUILD["shield_shell"] = shield_shell
 for t in ("stone", "metal", "thumper", "ember", "rime", "blight", "glow", "fang"):

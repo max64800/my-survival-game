@@ -101,6 +101,7 @@ const DATA := {
 	"pickaxe_stone": {name = "Stone Pickaxe", stack = 1, color = Color(0.7, 0.68, 0.62), short = "Pk", kind = "pickaxe", power = 10, tier = 0},
 	"pickaxe_copper": {name = "Copper Pickaxe", stack = 1, color = Color(0.9, 0.55, 0.3), short = "Pk", kind = "pickaxe", power = 13, tier = 1},
 	"pickaxe_silver": {name = "Silver Pickaxe", stack = 1, color = Color(0.85, 0.87, 0.92), short = "Pk", kind = "pickaxe", power = 17, tier = 2},
+	"masons_shovel": {name = "Mason's Shovel", stack = 1, color = Color(0.66, 0.62, 0.55), short = "Sh", kind = "shovel", tier = 0},  ## levels the ground (owner, Nov 17)
 	"axe_stone": {name = "Stone Axe", stack = 1, color = Color(0.7, 0.68, 0.62), short = "Ax", kind = "axe", power = 10, tier = 0},
 	"axe_copper": {name = "Copper Axe", stack = 1, color = Color(0.9, 0.55, 0.3), short = "Ax", kind = "axe", power = 13, tier = 1},
 	"axe_silver": {name = "Silver Axe", stack = 1, color = Color(0.85, 0.87, 0.92), short = "Ax", kind = "axe", power = 17, tier = 2},

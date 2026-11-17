@@ -764,6 +764,8 @@ func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
 	var plant_hit := _break_plant_at(ps, point)
 	if not plant_hit.is_empty():
 		return plant_hit
+	if Items.kind(ps.selected_item()) == "shovel":
+		return _judge_level(ps, point)
 	var power: float = Items.dig_power(ps.selected_item()) * ps.progress.dig_power_mult() \
 		* (1.0 + Gems.bonus(ps.inventory.get_slot(ps.hand_slot())).get("dig", 0.0)) 		* (1.0 + Upgrades.bonus(ps.inventory.get_slot(ps.hand_slot())))  # +15% per upgrade step
 	var bare := false
@@ -807,6 +809,58 @@ func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
 	_give_dig_drops(ps, counts, center + normal * 0.8)
 	give_xp(_peer_of(ps), Mat.DIG_XP.get(mat, 1), "mining")
 	return {state = "dug", hits = needed, needed = needed, material = mat, point = point}
+
+
+const LEVEL_R := 1.0  ## the Mason's Shovel flattens a patch this far around where you aim (about 2 m across)
+const LEVEL_HEAD := 1.9  ## and clears rock up to this high above your feet
+const FILL_R := 1.0  ## (the rock is stored in 1 m steps: smaller balls hardly change it)
+
+
+## The Mason's Shovel (owner, Nov 17: "leveling the ground"): one swing flattens the patch where you aim to the height
+## of your feet: bumps up to head height are shaved off (what it removes drops, like digging) and small dips are
+## filled with 1 dirt or stone from your bag (dirt first). Same rules as digging: too-hard rock stays.
+func _judge_level(ps: PlayerState, point: Vector3) -> Dictionary:
+	var feet: Vector3 = ps.node.global_position
+	if _chest(ps).distance_to(point) > REACH + 1.0:
+		return {state = "too_far"}
+	var c := Vector3(point.x, feet.y, point.z)
+	if Vector2(c.x - feet.x, c.z - feet.z).length() > 3.2:
+		return {state = "too_far"}
+	if monsters and (monsters.lair_locked(c) or monsters.standing_over(c)):
+		return {state = "blocked", point = point, why = "Something is in the way."}
+	var counts := {}
+	var spots: Array[Vector3] = []
+	for ix in range(-1, 2):
+		for iz in range(-1, 2):
+			spots.append(c + Vector3(ix, 0.0, iz) * LEVEL_R * 0.6)
+	# shave: balls resting on the floor line, up to LEVEL_HEAD
+	var r := LEVEL_HEAD * 0.5
+	for s in spots:
+		var more := _host_dig(s + Vector3.UP * (r + 0.02), Items.tier("pickaxe_stone"), r)
+		for m in more:
+			counts[m] = counts.get(m, 0) + more[m]
+	# fill: balls hanging just under the floor line, only if there's dirt or stone to fill with
+	var mat := Mat.DIRT if ps.inventory.count_of("dirt") > 0 else (Mat.STONE if ps.inventory.count_of("stone") > 0 else -1)
+	var filled := 0
+	if mat >= 0:
+		for s in spots:
+			var f := s - Vector3.UP * (FILL_R + 0.02)
+			if world.sdf_at(f + Vector3.UP * (FILL_R * 0.5)) <= 0.0:
+				continue  # already solid there
+			var n := world.apply_fill(f, FILL_R, mat)
+			if n > 0:
+				filled += n
+				var edit := Vector4(f.x, f.y, f.z, pack_fill(mat, FILL_R))
+				edit_log.append(edit)
+				_ev_dig.rpc(edit)
+		if filled > 0:
+			ps.inventory.remove("dirt" if mat == Mat.DIRT else "stone", 1)
+			_send_inventory(_peer_of(ps))
+	if counts.is_empty() and filled == 0:
+		return {state = "air", point = point}
+	_give_dig_drops(ps, counts, c + Vector3.UP * 0.8)
+	give_xp(_peer_of(ps), 1, "mining")
+	return {state = "dug", hits = 1, needed = 1, material = Mat.STONE, point = point, levelled = true}
 
 
 const RAMP_R := 1.05  ## the size of the scoops that clear a natural ramp (a dwarf fits under them)
@@ -1495,9 +1549,19 @@ func _apply_pending_digs() -> void:
 	var still: Array[Vector4] = []
 	for e in _pending_digs:
 		var c := Vector3(e.x, e.y, e.z)
-		var tr := unpack_dig(e.w)
-		if world.is_ready_at(c, tr.y + 1.0):
-			world.apply_dig(c, tr.y, int(tr.x))  # carving is order-independent, so late is fine
+		var tr := unpack_dig(absf(e.w))
+		# Digs alone could go in any order, but a fill and a dig in the same place can't: anything near an edit that is
+		# still waiting waits too, so they always happen in the order they were made.
+		var behind := false
+		for w in still:
+			if c.distance_to(Vector3(w.x, w.y, w.z)) < tr.y + unpack_dig(absf(w.w)).y + 1.0:
+				behind = true
+				break
+		if not behind and world.is_ready_at(c, tr.y + 1.0):
+			if e.w < 0.0:
+				world.apply_fill(c, tr.y, int(tr.x))
+			else:
+				world.apply_dig(c, tr.y, int(tr.x))
 		else:
 			still.append(e)
 	_pending_digs = still
@@ -1964,6 +2028,11 @@ func station_near(p: Vector3, radius: float = STATION_REACH) -> Station:
 
 ## A dig's pickaxe tier and size, squeezed into one number: tier × 1000 + radius in cm.
 ## (Exact to the centimeter, so every computer carves exactly the same hole.)
+## A fill (Mason's Shovel) is saved in the same list with a negative w: -(material * 1000 + radius * 100).
+static func pack_fill(mat: int, radius: float) -> float:
+	return -(mat * 1000.0 + roundf(radius * 100.0))
+
+
 static func pack_dig(tool_tier: int, radius: float) -> float:
 	return tool_tier * 1000.0 + roundf(radius * 100.0)
 
