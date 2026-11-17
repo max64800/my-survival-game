@@ -57,7 +57,7 @@ func test_start_room_has_roots_mushrooms_and_a_glow_behind_the_wall() -> void:
 				roots += 1
 			elif s.kind == GlowPlacer.MUSHROOM:
 				caps += 1
-		if s.kind == GlowPlacer.CRYSTAL and s.pos.distance_to(a0) < 4.5:
+		if String(s.kind).begins_with("crystal") and not s.get("hidden", false) and s.pos.distance_to(a0) < 4.5:  # (any colour)
 			tunnel_crystals += 1
 	check(roots >= 2, "roots to pull by hand (%d)" % roots)
 	check(caps >= 1, "a glowing mushroom so it isn't pitch black (%d)" % caps)

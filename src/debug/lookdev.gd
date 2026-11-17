@@ -341,20 +341,17 @@ func _kind_shots(dwarf: Dwarf, maker: CaveMaker) -> void:
 		var fc: Vector3 = first.center
 		var ffl := maker.find_floor(fc.x + 20.0, fc.z, fc.y)
 		var feye := (ffl if ffl != Vector3.INF else fc) + Vector3.UP * 1.7
+		await _teleport(dwarf, feye - Vector3.UP * 1.4, fc)
+		await _wait(10.0)  # (eyes adjust to the dark over several seconds, owner Nov 17)
 		await _lamp_shot(dwarf, feye, fc + Vector3(-25.0, (first.radii as Vector3).y * 0.9, 5.0), "f_first_cavern", 1.0)
-		# Layout 5: its stone columns (owner F263), with every light on (F7) so the whole hall shows.
+		# Layout 5: its stone columns (owner F263), in the cavern's own (star) light.
 		if not maker._cols.is_empty():
-			var amb: Ambience = _main.get_node_or_null("Ambience")
-			if amb:
-				amb.set_dev_bright(true)
 			var o: Vector4 = maker._cols[0]
 			var away := (Vector2(o.x, o.y) - Vector2(fc.x, fc.z)).normalized()
 			var ep := Vector2(o.x, o.y) - away * (o.z * 1.4 + 22.0)  # in front of it, toward the middle
 			var efl := maker.find_floor(ep.x, ep.y, fc.y)
 			var ceye := (efl if efl != Vector3.INF else Vector3(ep.x, fc.y, ep.y)) + Vector3.UP * 9.0
-			await _lamp_shot(dwarf, ceye, Vector3(o.x, (maker._col_floor + maker._col_top) * 0.5, o.y), "f_columns_lit", 1.0)
-			if amb:
-				amb.set_dev_bright(false)
+			await _lamp_shot(dwarf, ceye, Vector3(o.x, (maker._col_floor + maker._col_top) * 0.5, o.y), "f_columns", 1.0)
 	# The star snake (terrain.gdshader snake()): where the head of the snake over the nearest big cavern is now.
 	var big := _nearest_room(maker, home, func(r: Dictionary) -> bool: return r.big and (r.radii as Vector3).y > 9.0)
 	if not big.is_empty():

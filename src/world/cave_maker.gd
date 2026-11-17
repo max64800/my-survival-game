@@ -20,13 +20,14 @@ extends RefCounted
 ##   1 = the first caves: 400 m areas (Mossy x -200…200, Jungle x 220…620), squashed balls and tubes.
 ##   2 = real-shaped caves: 800 m areas (Mossy x -400…400, Jungle x 420…1220), about 4x the rooms,
 ##       passages and halls shaped the way water shapes real caves (see "layout 2" below).
-const LAYOUT_LATEST := 5
+const LAYOUT_LATEST := 6
 ## What brand-new worlds get. Layout 2: the real-shaped caves (F211 step 1, OK'd by the owner Nov 17). Layout 3: the
 ## same plus tall/wide/joined caverns and cliff exits with ledge paths (F230, F231). Old saves keep the layout they were
 ## made with; robots can try older caves with "-- layout=1" or "-- layout=2". Layout 4: the same plus a huge first
 ## cavern, its ceiling all glow-worm stars with several snakes (owner, Nov 17, F260). Layout 5: the same plus huge
-## natural stone columns standing in that cavern (owner, Nov 17, F263).
-const LAYOUT_DEFAULT := 5
+## natural stone columns standing in that cavern (owner, Nov 17, F263). Layout 6: the columns keep out of the ruined
+## watchtower's ground (owner, Nov 17: "the pillars are spawning inside the tower").
+const LAYOUT_DEFAULT := 6
 static var layout := LAYOUT_DEFAULT
 
 
@@ -234,6 +235,10 @@ func _column_fits(at: Vector2, rad: float, near_segs: Array[int]) -> bool:
 		if at.distance_to(Vector2(o.x, o.y)) < foot + o.z * 1.4 + 12.0:
 			return false
 	if at.distance_to(Vector2(cavern_spawn.x, cavern_spawn.z)) < foot + 14.0:
+		return false
+	# Rule (owner, Nov 17): what the world grows never stands inside something built. The ruined watchtower
+	# (RuinTower.find_spot) stands up to 24 m from where you come in, 4.2 m wide each way: keep all of that clear.
+	if made_layout >= 6 and at.distance_to(Vector2(cavern_spawn.x, cavern_spawn.z)) < foot + TOWER_GROUND:
 		return false
 	for q in pois:
 		if at.distance_to(Vector2(q.pos.x, q.pos.z)) < foot + 7.0:
@@ -783,6 +788,7 @@ func _place_rooms_v2(rng: RandomNumberGenerator, cx: float, biome: String) -> vo
 # cavern goes into a wide cavern... some exits at the very top, like a cliff". Decided after the rooms are placed, with
 # their own dice, so the places don't move; each keeps its floor height (tunnels are dug after, to the new mouths).
 
+const TOWER_GROUND := 31.0  ## layout 6: no column within this of where you come in (the watchtower's ground)
 const FIRST_CAVERN_R := 58.0  ## layout 4: the first cavern's half-width (m)
 
 

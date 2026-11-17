@@ -20,6 +20,9 @@ Code layout, recorder details, how to run robots: `docs/CLAUDE-REFERENCE.md` (re
   4. Roofs: Stonehold flat only; Shack and Hearthbrick sloped only; sloped roof pieces are thin and open underneath.
   5. Round doors only.
   Every rule has an automatic check; a model isn't done until they pass. When a rule changes, delete the old text that disagrees.
+- **Placement rule (owner, Nov 17):** nothing the world grows (stone columns, rocks, crystals, roots, plants) may stand
+  inside something built (ruins, towers, buildings, places) or on its paths and stairs. Every new placement keeps
+  clear of them and gets an automatic test (like `test_columns_keep_out_of_the_tower`).
 - Never copy names, characters, art, maps, or music from other games.
 - The GitHub repo is public: never commit personal paths, usernames, keys, or Steam credentials.
 - Use Voxel Tools and GodotSteam **GDExtension** editions with the official Godot build (never the module builds).

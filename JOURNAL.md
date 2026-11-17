@@ -3128,3 +3128,17 @@ the body."
   away; the second, with every light on, shows the column but it blends with the rock behind; stopped after 2
   rounds for the owner to look in the game. (4) The owner's tower request touched files another session was
   editing, so it was passed to that session (it built it as F264).
+
+## November 17, 2026 (PC, rock-textures Claude): columns out of the tower, star light, eyes adjust (F263, F265)
+- Owner loves the stone pillars, but some stood inside the ruined watchtower; and the huge cavern was too dark
+  to see roots and pillars. Multiple choice: star light + brighter there + eyes adjust, "moonlit", keep the size.
+- Tower: the tower picks its spot up to 24 m from where you come in, the columns only kept 14 m clear. Cave layout
+  6 keeps all columns 31 m + their foot away; layout 5 fingerprints added. New owner rule in CLAUDE.md: nothing the
+  world grows stands inside something built or on its paths, each with a test.
+- Light (Ambience): a soft teal light from above with no shadows and no fog glow, on only inside the huge cavern;
+  more soft light there; eyes adjust: twice a second the game feels whether there's rock within 12 m in 10
+  directions, and in big open places the picture slowly gets up to 45% brighter. Built my own instead of Godot's
+  auto exposure, which would have changed every cave in hard-to-control ways.
+- **Hurdles:** (1) the start-room test counted only blue crystals; since crystals got colours (F255 era) the
+  others weren't counted: fixed the test. (2) Full suite: 3 other failures are other sessions' work in progress
+  (lodge builder, hair swing, the outpost's round-doorway rule), not touched.

@@ -24,13 +24,32 @@ func test_old_caves_unchanged() -> void:
 	CaveMaker.use_layout(4)  # worlds made before the stone columns (layout 5) keep theirs too
 	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5332 pois=162 r0=(-83.95856, -20.99115, -44.3989) sum=-9894.0944", "seed 42, layout 4")
 	check_eq(_fingerprint(CaveMaker.new(7)), "rooms=197 segs=5554 pois=163 r0=(-15.06847, -20.1193, 88.08862) sum=-8555.4642", "seed 7, layout 4")
+	CaveMaker.use_layout(5)  # worlds made before the columns kept out of the tower (layout 6) keep theirs too
+	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5332 pois=162 r0=(-83.95856, -20.99115, -44.3989) sum=-9894.0944", "seed 42, layout 5")
+	check_eq(_fingerprint(CaveMaker.new(7)), "rooms=197 segs=5554 pois=163 r0=(-15.06847, -20.1193, 88.08862) sum=-8655.5548", "seed 7, layout 5")
+	CaveMaker.use_layout(was)
+
+
+## Rule (owner, Nov 17): what the world grows never stands inside something built. The watchtower's spot is clear
+## of the stone columns, on several seeds.
+func test_columns_keep_out_of_the_tower() -> void:
+	var was := CaveMaker.layout
+	CaveMaker.use_layout(CaveMaker.LAYOUT_LATEST)
+	var plan := RuinTower.load_plan()
+	var rad := float(plan.get("radius", 4.2))
+	for sd in [42, 7, 1234, 99]:
+		var c := CaveMaker.new(sd)
+		var spot := RuinTower.find_spot(c, rad, float(plan.get("height", 9.0)))
+		if spot.is_empty():
+			continue
+		check(not c._in_column(spot.pos, rad + 1.0), "seed %d: no column inside the tower at %s" % [sd, str(spot.pos)])
 	CaveMaker.use_layout(was)
 
 
 ## Layout 5 (owner F263): huge natural stone columns stand in the first cavern, solid rock, clear of where you start.
 func test_first_cavern_columns() -> void:
 	var was := CaveMaker.layout
-	CaveMaker.use_layout(5)
+	CaveMaker.use_layout(CaveMaker.LAYOUT_LATEST)
 	for sd in [42, 7]:
 		var c := CaveMaker.new(sd)
 		check(c._cols.size() >= 4 and c._cols.size() <= 7, "seed %d: 4 to 7 columns (5 to 7 wanted, fewer if the paths leave no room) (got %d)" % [sd, c._cols.size()])

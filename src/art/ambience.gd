@@ -69,6 +69,16 @@ func _ready() -> void:
 	var we := WorldEnvironment.new()
 	we.environment = env
 	add_child(we)
+	# The glow-worms' light, falling softly from the huge cavern's ceiling (only on while you're in there).
+	_moon = DirectionalLight3D.new()
+	_moon.rotation_degrees = Vector3(-72.0, 25.0, 0.0)
+	_moon.light_color = MOON_COLOR
+	_moon.light_energy = 0.0
+	_moon.light_specular = 0.2
+	_moon.shadow_enabled = false  # (its shadows would all fall from the rock ceiling above)
+	_moon.light_volumetric_fog_energy = 0.0  # (no glowing haze: it would hide the stars)
+	_moon.visible = false
+	add_child(_moon)
 	_cur = MOODS.mossy.duplicate()
 	_apply()
 	_dust = _make_motes(320, 0.022, false)
@@ -88,7 +98,59 @@ func _process(delta: float) -> void:
 	var t := clampf(delta * BLEND_SPEED, 0.0, 1.0)
 	for k in want:
 		_cur[k] = lerp(_cur[k], want[k], t)
+	_big = move_toward(_big, _in_big_cavern(at), delta * 0.5)
+	_look_around(at, delta)
 	_apply()
+
+
+# ---------------------------------------------------------------- the huge star cavern and dark-adapted eyes
+# Owner, Nov 17: the huge first cavern was so dark you "barely understand what is happening". Picked: star light
+# (the glow-worms light the cavern softly from above, "moonlit"), a little more soft light there, and eyes that
+# adjust in big dark places. None of it dims the stars.
+const MOON_ENERGY := 0.32  ## the star light at full (moonlit: shapes and roots show, colours stay dim)
+const MOON_COLOR := Color(0.55, 0.78, 0.85)
+const BIG_AMBIENT := 0.2  ## extra soft light inside the huge cavern
+const EYES_MAX := 0.45  ## eyes adjusted to a big dark space: up to 45% brighter
+const EYES_SPEED := 0.12  ## how fast eyes adjust (per second, a few seconds like real eyes)
+var _moon: DirectionalLight3D
+var _big := 0.0  ## 0..1: how far inside the huge cavern the camera is
+var _eyes := 0.0  ## 0..1: how adjusted to the dark the eyes are
+var _open := 0.0  ## 0..1: how open the space around the camera is
+var _look_t := 0.0
+
+
+## How far inside the huge first cavern p is (0 = outside, 1 = well inside).
+func _in_big_cavern(p: Vector3) -> float:
+	var w = get_parent().get("world") if get_parent() else null
+	if w == null or w.maker == null:
+		return 0.0
+	var f: Dictionary = w.maker.first_cavern()
+	if f.is_empty():
+		return 0.0
+	var c: Vector3 = f.center
+	var r: Vector3 = f.radii
+	if p.y < c.y - r.y * 0.55 - 4.0 or p.y > c.y + r.y + 2.0:
+		return 0.0
+	var rr := maxf(r.x, r.z)
+	return 1.0 - smoothstep(rr * 0.8, rr * 1.02, Vector2(p.x - c.x, p.z - c.z).length())
+
+
+## Eyes adjust (like real eyes): twice a second, feel how open it is around the camera (rock within 12 m in 10
+## directions or not). In a big open dark space the eyes slowly open up; near walls they slowly go back.
+func _look_around(p: Vector3, delta: float) -> void:
+	_look_t -= delta
+	if _look_t <= 0.0:
+		_look_t = 0.5
+		var w = get_parent().get("world") if get_parent() else null
+		if w != null and w.maker != null:
+			var air := 0
+			const DIRS := [Vector3(1, 0, 0), Vector3(-1, 0, 0), Vector3(0, 0, 1), Vector3(0, 0, -1), Vector3(0.7, 0.7, 0),
+				Vector3(-0.7, 0.7, 0), Vector3(0, 0.7, 0.7), Vector3(0, 0.7, -0.7), Vector3(0, 1, 0), Vector3(0.6, -0.3, 0.6)]
+			for d in DIRS:
+				if w.maker.sdf_at(p + d * 12.0) > 0.0:
+					air += 1
+			_open = smoothstep(0.5, 1.0, air / float(DIRS.size()))
+	_eyes = move_toward(_eyes, _open, delta * EYES_SPEED)
 
 
 ## Dev only (F7, owner Nov 17): every light on: bright even light everywhere and no fog, to see the whole cave.
@@ -103,8 +165,12 @@ func set_dev_bright(on: bool) -> void:
 
 
 func _apply() -> void:
-	env.ambient_light_color = Color(0.85, 0.85, 0.85) if dev_bright else _cur.ambient
-	env.ambient_light_energy = 2.2 if dev_bright else _cur.ambient_energy
+	env.ambient_light_color = Color(0.85, 0.85, 0.85) if dev_bright else (_cur.ambient as Color).lerp(MOON_COLOR, _big * 0.4)
+	env.ambient_light_energy = 2.2 if dev_bright else _cur.ambient_energy + BIG_AMBIENT * _big
+	env.tonemap_exposure = 1.15 * (1.0 + EYES_MAX * _eyes)
+	if _moon:
+		_moon.light_energy = MOON_ENERGY * _big
+		_moon.visible = _big > 0.01 and not dev_bright
 	env.fog_light_color = _cur.fog
 	env.volumetric_fog_emission = _cur.fog_emit
 	if _dust_mat:
