@@ -145,6 +145,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	for i in Inventory.HOTBAR_SIZE:
 		if event.is_action_pressed("hotbar_%d" % (i + 1)):
 			auth.ask_select_slot(i)
+	if ps and event.is_action_pressed("stow_lantern") and Lantern.has_lantern(ps):
+		auth.ask_stow_lantern(not ps.lantern_stowed)
+		fight.message.emit("Lantern put away (L to take it out)." if ps.lantern_stowed else "Lantern out.", Color.WHITE)
 	if ps and event.is_action_pressed("draw_weapon"):
 		if ps.inventory.equipped("weapon") == "":
 			fight.message.emit("No weapon equipped. Put one in the Weapon slot (Tab).", Color.WHITE)

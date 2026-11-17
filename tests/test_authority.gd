@@ -330,3 +330,17 @@ func test_same_hotbar_number_puts_the_tool_away() -> void:
 	auth.ask_select_slot(1)
 	check(not ps.hands_empty, "another number: that slot, hands not empty")
 	_teardown()
+
+
+## Owner, Nov 17: L puts the lantern away: no light, no fuel used; L again takes it out.
+func test_lantern_put_away_uses_no_fuel() -> void:
+	await _setup(42)
+	ps.fuel = 100.0
+	auth.ask_stow_lantern(true)
+	check(ps.lantern_stowed, "put away")
+	await frames(30)
+	check_eq(ps.fuel, 100.0, "no fuel burnt while it's put away")
+	auth.ask_stow_lantern(false)
+	await frames(30)
+	check(ps.fuel < 100.0, "burning again once it's out")
+	_teardown()

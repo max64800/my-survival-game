@@ -110,7 +110,7 @@ float snake(vec3 p) {
 		}
 		prev = q;
 	}
-	float width = 0.45 * (1.0 - 0.5 * along);  // (round 2: thinner, so it reads as stars lighting up, not a glowing worm)
+	float width = 1.6 * (1.0 - 0.5 * along);  // (round 3: no line of its own; a wider band of stars lights up)
 	return (1.0 - smoothstep(0.0, width, best)) * (1.0 - along);
 }
 
@@ -208,11 +208,10 @@ void fragment() {
 	float ceiling = smoothstep(0.45, 0.8, -wn.y);
 	if (ceiling > 0.0) {
 		float sn = snake(v_world);
-		emit += STAR_COLOR * sn * sn * 0.18 * ceiling;  // the snake's glowing line, on any ceiling
 		float patches = smoothstep(0.45, 0.68, vnoise(v_world * 0.05 + vec3(7.0, 1.0, 3.0)));
 		if (patches > 0.0) {
 			vec3 stars = star_layer(v_world, 0.16, 0.012, 0.75) + star_layer(v_world + vec3(31.0, 5.0, 17.0), 0.45, 0.02, 0.5);  // many tiny points
-			emit += stars * (1.0 + 9.0 * sn) * patches * ceiling * star_brightness;  // stars light up as the snake passes
+			emit += stars * (1.0 + 14.0 * sn) * patches * ceiling * star_brightness;  // stars light up as the snake passes
 
 		}
 	}

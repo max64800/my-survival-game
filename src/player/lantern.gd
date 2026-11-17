@@ -98,7 +98,7 @@ var _on_back := false
 func _process(delta: float) -> void:
 	var auth := GameAuthority.instance
 	var ps: GameAuthority.PlayerState = auth.get_player(peer_id) if auth else null
-	visible = has_lantern(ps)
+	visible = has_lantern(ps) and not (ps != null and ps.lantern_stowed)  # L puts it away (owner, Nov 17)
 	if not visible:
 		return
 	var fuel := ps.fuel if ps else GameAuthority.MAX_FUEL

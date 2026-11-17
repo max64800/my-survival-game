@@ -3050,3 +3050,10 @@ the body."
   game. Robot test runs skip the tower unless asked (`ruin=1`), so their tests stay steady.
 - Hurdles: carving can only touch loaded rock, so the job waits for the cave to load first (the test skips that
   wait); two type hints missing in the first try; the plans item needed a picture (icon test caught it).
+
+## November 17, 2026 (PC, rock-textures Claude): lantern key, dots-only snake (F257, F258)
+
+- L puts the lantern away (`lantern_stowed`: hidden, no light, no fuel burnt) and takes it out; test added.
+- The snake had its own glowing line; the owner wanted the dots themselves to make it. Line removed; the band of stars
+  that lights up is wider (1.6 m) and they flare more (x15). It only shows where there are dots, as asked; a still
+  aimed at the head this time found a ceiling without a star patch, so nothing showed (expected).

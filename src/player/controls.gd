@@ -25,6 +25,7 @@ const KEYS := {
 	"break_piece": [KEY_X],  ## build hammer: break the aimed piece for 80% of its materials (F100)
 	"dodge": [KEY_CTRL],
 	"draw_weapon": [KEY_F],  ## draw / put away the equipped weapon (F23)
+	"stow_lantern": [KEY_L],  ## put the lantern away / take it out (owner, Nov 17)
 	"quicksave": [KEY_F5],
 	"dev_menu": [KEY_P],  ## dev builds only: blueprint preview + fill a Builder's Chest (DevMenu)
 }

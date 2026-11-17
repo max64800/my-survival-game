@@ -81,6 +81,7 @@ class PlayerState:
 	var hands_empty := false  ## the picked hotbar number pressed again: tool put away (owner, Nov 17)
 	var fuel := GameAuthority.MAX_FUEL
 	var needs_lantern := false  ## true = started with nothing: no light until a Lantern is made
+	var lantern_stowed := false  ## L: the lantern put away (no light, no fuel used) (owner, Nov 17)
 	var dig_target := Vector3.INF
 	var dig_hits := 0
 	var harvest_id := -1
@@ -200,7 +201,7 @@ func get_player(peer_id: int) -> PlayerState:
 func _process(delta: float) -> void:
 	for id in players:
 		var ps: PlayerState = players[id]
-		if ps.fuel > 0.0 and Lantern.has_lantern(ps):  # no lantern yet = nothing burning
+		if ps.fuel > 0.0 and Lantern.has_lantern(ps) and not ps.lantern_stowed:  # no lantern yet / put away = nothing burning
 			ps.fuel = maxf(0.0, ps.fuel - delta)
 	var me := get_player(local_peer_id())
 	if me:
@@ -627,6 +628,29 @@ func request_select_slot(peer_id: int, slot: int) -> void:
 			ps.hands_empty = slot == ps.selected_slot and not ps.hands_empty and not ps.weapon_drawn
 		ps.selected_slot = slot
 		ps.weapon_drawn = false  # picking a hotbar slot puts the weapon away
+
+
+## L: put the lantern away (dark, no fuel used) or take it out again (owner, Nov 17).
+func ask_stow_lantern(stowed: bool) -> void:
+	var me := get_player(local_peer_id())
+	if me:
+		me.lantern_stowed = stowed  # show it right away
+	if is_host():
+		request_stow_lantern(local_peer_id(), stowed)
+	else:
+		_rpc_stow_lantern.rpc_id(1, stowed)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_stow_lantern(stowed: bool) -> void:
+	if is_host():
+		request_stow_lantern(multiplayer.get_remote_sender_id(), stowed)
+
+
+func request_stow_lantern(peer_id: int, stowed: bool) -> void:
+	var ps := get_player(peer_id)
+	if ps:
+		ps.lantern_stowed = stowed
 
 
 ## F: draw or put away the equipped weapon (feedback F23).
