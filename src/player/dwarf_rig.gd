@@ -186,10 +186,11 @@ func _wear_body(path: String) -> void:
 ## biggest ball that fits there (touching the shirt), kept if it's big enough, riding on the nearest spine bone.
 func _fit_colliders(src: Node, poses: Array, model_to_skel: Transform3D) -> Array:
 	var out := []
-	var shirt := src.find_child("body_shirt_body*", true, false) as MeshInstance3D
+	var shirt := _torso_mesh(src)
 	if shirt == null:
 		return out
 	var verts: PackedVector3Array = shirt.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]  # model space: metres, y up, front +z
+	var norms: PackedVector3Array = shirt.mesh.surface_get_arrays(0)[Mesh.ARRAY_NORMAL]
 	var lo := Vector3.INF
 	var hi := -Vector3.INF
 	for v in verts:
@@ -207,9 +208,16 @@ func _fit_colliders(src: Node, poses: Array, model_to_skel: Transform3D) -> Arra
 			while z < hi.z - 0.05:
 				var c := Vector3(x, y, z)
 				var r := INF
-				for v in verts:
-					r = minf(r, c.distance_to(v))
-				if r >= 0.07:
+				var near := 0
+				for k in verts.size():
+					var dk := c.distance_to(verts[k])
+					if dk < r:
+						r = dk
+						near = k
+				# only INSIDE the body (Nov 18: the bare body's round belly left grid points in front of the chest, as
+				# far from the skin as the balls inside: balls there sat where the braids hang and folded them)
+				var inside := norms.size() == verts.size() and (c - verts[near]).dot(norms[near]) < 0.0
+				if r >= 0.07 and inside:
 					var best: Array = spine[0]
 					for s in spine:
 						if absf(float(s[1]) - y) < absf(float(best[1]) - y):
@@ -278,7 +286,7 @@ func _add_swing_bones(src: Node, poses: Array, model_to_skel: Transform3D, built
 ## Returns {chain: [{weights: {bone: weight}, out: direction (skeleton space)} per joint, the last bone's tip included]}.
 func _hair_on_shirt(src: Node, built: Dictionary, model_to_skel: Transform3D) -> Dictionary:
 	var out := {}
-	var shirt := src.find_child("body_shirt_body*", true, false) as MeshInstance3D
+	var shirt := _torso_mesh(src)
 	var chest := skeleton.find_bone("spine_03")
 	if shirt == null or shirt.skin == null or chest < 0:
 		return out
@@ -316,6 +324,15 @@ func _hair_on_shirt(src: Node, built: Dictionary, model_to_skel: Transform3D) ->
 			list.append({"weights": ws if not ws.is_empty() else {chest: 1.0}, "out": away})
 		out[chain] = list
 	return out
+
+
+## The body's torso mesh: the bare torso (Nov 18: the dwarf in underpants, clothes go on later as layers), or the shirt.
+func _torso_mesh(src: Node) -> MeshInstance3D:
+	for n in ["body_torso*", "body_shirt_body*"]:
+		var mi := src.find_child(n, true, false) as MeshInstance3D
+		if mi != null:
+			return mi
+	return null
 
 
 ## Springs on the swing bones: the tufts trail behind when the dwarf moves and bounce back (HairSwing). Below the head

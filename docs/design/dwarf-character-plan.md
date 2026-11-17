@@ -194,7 +194,13 @@ left uncovered after the lids were narrowed; measure first. The braids still hav
   fingers + thumb. Done: `HAND_SIZE` 0.43, two-finger hands, slimmer arms, narrower shorts/hem, hem at ~0.405 m; the feet
   settle to the bind pose's foot height (`DwarfProportions._rest_low`, set by `DwarfRig._wear_body`): they had sunk ~8 cm.
   Clip check: standing/sprint/roll <= 1 cm; side braids by the arms 2-5 cm in walk, run, mining, sword, chopping.
-- Next: the owner's look at the 3D page; then the side braids by the arms, the roll, the back-hair sway; then sculpt + bake.
+- Round 3b (owner, Nov 18: "build him in the underpants first"): `dwarf_body.py` builds the bare body by default
+  (`torso`: one clay skin neck-to-ankles incl. arms; `foot_l/r`; `pants`: a linen wrap made as a shell on the torso's
+  distance field; hands shared). `clothes` on the command line builds round 3's clothes instead (to become layers that
+  copy the body's weights and get spring bones, F245). The rig, pose dump and clip check find `body_torso*` first.
+  Collision balls are only placed inside the body now. Clip check: standing 1 cm, jump 0, middle braid into the belly
+  6-9 cm in run/sprint/sword/chopping (open).
+- Next: the owner's look at the bare body; then the clothes as layers (F245), the braid vs belly, paint + bake.
 
 ## Round 3, the body: how to start (owner, Nov 16: "do this for his entire body now")
 Read the Round 2 notes above and `docs/art/CREATURE-RECIPE.md` Part 4 first. The head is done; keep `dwarf_head.py`.

@@ -180,7 +180,7 @@ func test_hand_built_body_fits_the_skeleton() -> void:
 		for b in mi.skin.get_bind_count():
 			if rig.skeleton.find_bone(String(mi.skin.get_bind_name(b))) < 0:
 				bad.append(String(mi.skin.get_bind_name(b)))
-	check(parts >= 12, "the hand-built body has its parts (%d)" % parts)  # (round 3, Nov 18: 13 clay parts, not 20+ tubes and balls)
+	check(parts >= 8, "the hand-built body has its parts (%d)" % parts)  # (Nov 18: the bare body is 9 clay parts)
 	check(bad.is_empty(), "every bone it uses exists in the game skeleton (missing: %s)" % [bad])
 	holder.free()
 

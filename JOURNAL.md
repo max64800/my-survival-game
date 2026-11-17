@@ -2819,6 +2819,18 @@ the body."
     fingers and a thumb. Clip check after: standing, sprint, roll at most 1 cm; side braids by the arms 2-5 cm.
   - Lesson: look at the model the way the owner does (in the game/page, moving) before calling it done: the Blender
     pictures stand on their own floor, so sunk feet never showed there.
+- The owner (Nov 18): "a lot better, not ideal yet"; forearms still too large; can the clothes bounce like the hair
+  (logged F245)? Claude listed what it takes to reach 8/10 (paint, sleeves, arms, legs, feet, shirt shape, bouncy
+  clothes, a happier face, softer braids). Owner's call: first build him bare, in underpants, as detailed as the head.
+- Round 3b, the bare body: one seamless clay skin from the neck to the ankles with the arms (round hanging belly, navel,
+  chest, collarbones, round shoulders, biceps, triceps, slim forearms, shoulder blades, spine, buttocks, kneecaps,
+  calves), bare feet (ankle bones, arch, four toes), the 2-finger hands, and a linen wrap lying on the skin with rolled
+  edges and a knot. The clothes code stays in the script behind a `clothes` switch, to go on later as layers.
+- Hurdles: a long shell command broke on quote marks again (written to a file instead). The first wrap was cut too
+  high at the sides and read as modern briefs: lowered. The collision balls for the braids were placed without
+  checking they were INSIDE the body: with the round belly some sat in front of the chest where the braids hang and
+  folded a braid back on itself (122 degrees): now only inside. Still open: the middle braid swings 6-9 cm into the
+  belly in run, sprint, sword and chopping; the back hair sways 12 cm in a dash (the test allows 10).
 
 - **Owner's round 2 notes:** clear gaps between the stone rows and between stones; the battlement's copper band
   sticks out; ruins should have no door hanging, rather a broken door lying nearby. Fixes: stones now touch (only

@@ -27,8 +27,10 @@ func _init() -> void:
 	var sk := rig.skeleton
 	var head := sk.find_child("body_head*", true, false) as MeshInstance3D
 	var torso: Array[MeshInstance3D] = []
-	for n in ["body_shirt_body*", "body_shorts_seat*"]:
-		torso.append(sk.find_child(n, true, false) as MeshInstance3D)
+	for n in ["body_torso*", "body_pants*", "body_shirt_body*", "body_shorts_seat*"]:  # (bare body, or the clothes)
+		var mi := sk.find_child(n, true, false) as MeshInstance3D
+		if mi != null:
+			torso.append(mi)
 	var tris := PackedInt32Array()
 	var base := 0
 	for mi in torso:

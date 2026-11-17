@@ -40,6 +40,7 @@ ARGS = sys.argv[sys.argv.index("--") + 1:]
 SKEL, OUT = ARGS[0], ARGS[1]
 FAST = "fast" in ARGS[2:]
 REVIEW = next((a[7:] for a in ARGS[2:] if a.startswith("review=")), None)
+CLOTHES = "clothes" in ARGS[2:]  # (Nov 18: the bare dwarf in linen underpants first; the clothes go on later as layers)
 ck.reset()
 R = random.Random(11)
 
@@ -258,62 +259,63 @@ def crease(cl, pts, front, depth=0.0035, width=0.016, ridge=0.002):
 		press(cl, segs, -ridge, width * 1.2)
 
 
-# ---- the shirt: barrel, shoulders, short rolled sleeves, collar, hem, folds, seams
-cl = clay((-0.47, 0.31, -0.36), (0.47, 0.98, 0.33))
-cl.add(loft(cl, TORSO), 0.01)
-for side in ("l", "r"):
-	sh, el = B(f"upperarm_{side}"), B(f"lowerarm_{side}")
-	d = el - sh
-	inward = -1 if sh.x > 0 else 1
-	ax = QD(sh, el)
-	# the shoulder: a low, wide cap flowing into the sleeve with a big fillet (draft 2: a ball on a can, boxy)
-	cl.add(cl.ell(QV(sh + Vector((inward * 0.05, 0, -0.035))), (0.13, 0.115, 0.1)), 0.08)
-	cl.add(cl.tube(QV(sh + Vector((inward * 0.04, 0, 0))), QV(sh + d * 0.5), 0.112, 0.104), 0.05)  # the sleeve
-	cl.add(torus(cl, QV(sh + d * 0.53), ax, 0.106, 0.021), 0.012)                                    # rolled cuff
-	cl.add(torus(cl, QV(sh + d * 0.6), ax, 0.098, 0.017), 0.01)
-	for t, tl in ((0.2, 0.25), (0.36, -0.2)):                                                        # soft sleeve folds
-		tor = torus(cl, QV(sh + d * t), (ax[0], ax[1] + tl, ax[2]), 0.112, 0.0)
-		cl.D += (0.003 * np.exp(-(tor / 0.012) ** 2)).astype(np.float32)
-		del tor
-# the hem: cut along an uneven line (hanging lower over the belly, side slits), then a rolled lip along that line
-th = np.arctan2(cl.U + HC.x, -(HC.y - cl.W))
-hu = hem_up(th)
-cl.keep(hu - (cl.V + HC.z), 0.004)
-e = loft(cl, TORSO, cap=False) + 0.006  # (the lip's middle 6 mm in: it stands out ~6 mm)
-cl.add(np.sqrt(e * e + ((cl.V + HC.z) - (hu + 0.009)) ** 2) - 0.012, 0.012)
-del th, hu, e
-# the collar: a soft rolled band round the neck, with a laced slit at the front
-cl.add(body_ring(cl, TORSO, 0.9, 0.0, 0.017), 0.015)
-cl.cut(cl.tube(on_torso(0, 0.9, True, -0.01), on_torso(0, 0.8, True, -0.01), 0.008, 0.004), 0.006)
-# long soft folds (not dents): pulled from the armpits toward the belly, one hanging from the belly to the hem each
-# side, and on the back from the shoulder blades down
-for s_ in (-1, 1):
-	crease(cl, [(s_ * 0.2, 0.8), (s_ * 0.15, 0.7), (s_ * 0.07, 0.6)], True)
-	crease(cl, [(s_ * 0.21, 0.68), (s_ * 0.16, 0.59), (s_ * 0.1, 0.52)], True, depth=0.0025, ridge=0.0)
-	crease(cl, [(s_ * 0.19, 0.84), (s_ * 0.11, 0.72), (s_ * 0.06, 0.6)], False)
-crease(cl, [(-0.12, 0.5), (-0.135, 0.44), (-0.125, 0.38)], True, depth=0.0025, ridge=0.0)
-crease(cl, [(0.15, 0.49), (0.16, 0.39)], True, depth=0.0025, ridge=0.0)
-crease(cl, [(0.08, 0.57), (0.095, 0.49), (0.1, 0.4)], False, depth=0.0025, ridge=0.0)
-# side seams with stitches
-for s in (-1, 1):
-	for up in np.arange(0.44, 0.8, 0.035):
-		hw, f, b = torso_at(up)
-		cl.add(cl.ell(Q(s * (hw - 0.001), up, (b - f) / 2), (0.004, 0.008, 0.004)), 0.003)
-finish(cl.mesh("shirt_body", shirt, PARTS), 7000)
-del cl
-
-# ---- arms (skin): upper arm in the sleeve, elbow, thick forearm, wrist
-for side in ("l", "r"):
-	sh, el, wr = B(f"upperarm_{side}"), B(f"lowerarm_{side}"), B(f"hand_{side}")
-	cl = clay((min(sh.x, wr.x) - 0.15, sh.z - 0.15, sh.y - 0.15), (max(sh.x, wr.x) + 0.15, sh.z + 0.15, sh.y + 0.15), 0.004)
-	d = wr - el
-	cl.add(cl.tube(QV(sh + (el - sh) * 0.3), QV(el), 0.07, 0.064), 0.02)
-	cl.add(cl.ell(QV(el), (0.056, 0.056, 0.056)), 0.03)                                      # elbow
-	cl.add(cl.ell(QV(el + d * 0.35 + Vector((0, 0, 0.008))), (0.085, 0.056, 0.058)), 0.04)  # the forearm muscle (slimmer: owner Nov 18 "massive")
-	cl.add(cl.tube(QV(el), QV(wr), 0.056, 0.045), 0.03)
-	cl.add(cl.ell(QV(wr), (0.034, 0.042, 0.046)), 0.02)                                    # wrist
-	finish(cl.mesh(f"arm_{side}", skin, PARTS), 2500)
+if CLOTHES:  # (the clothes of round 3, kept for when they go on over the bare body: owner, Nov 18)
+	# ---- the shirt: barrel, shoulders, short rolled sleeves, collar, hem, folds, seams
+	cl = clay((-0.47, 0.31, -0.36), (0.47, 0.98, 0.33))
+	cl.add(loft(cl, TORSO), 0.01)
+	for side in ("l", "r"):
+		sh, el = B(f"upperarm_{side}"), B(f"lowerarm_{side}")
+		d = el - sh
+		inward = -1 if sh.x > 0 else 1
+		ax = QD(sh, el)
+		# the shoulder: a low, wide cap flowing into the sleeve with a big fillet (draft 2: a ball on a can, boxy)
+		cl.add(cl.ell(QV(sh + Vector((inward * 0.05, 0, -0.035))), (0.13, 0.115, 0.1)), 0.08)
+		cl.add(cl.tube(QV(sh + Vector((inward * 0.04, 0, 0))), QV(sh + d * 0.5), 0.112, 0.104), 0.05)  # the sleeve
+		cl.add(torus(cl, QV(sh + d * 0.53), ax, 0.106, 0.021), 0.012)                                    # rolled cuff
+		cl.add(torus(cl, QV(sh + d * 0.6), ax, 0.098, 0.017), 0.01)
+		for t, tl in ((0.2, 0.25), (0.36, -0.2)):                                                        # soft sleeve folds
+			tor = torus(cl, QV(sh + d * t), (ax[0], ax[1] + tl, ax[2]), 0.112, 0.0)
+			cl.D += (0.003 * np.exp(-(tor / 0.012) ** 2)).astype(np.float32)
+			del tor
+	# the hem: cut along an uneven line (hanging lower over the belly, side slits), then a rolled lip along that line
+	th = np.arctan2(cl.U + HC.x, -(HC.y - cl.W))
+	hu = hem_up(th)
+	cl.keep(hu - (cl.V + HC.z), 0.004)
+	e = loft(cl, TORSO, cap=False) + 0.006  # (the lip's middle 6 mm in: it stands out ~6 mm)
+	cl.add(np.sqrt(e * e + ((cl.V + HC.z) - (hu + 0.009)) ** 2) - 0.012, 0.012)
+	del th, hu, e
+	# the collar: a soft rolled band round the neck, with a laced slit at the front
+	cl.add(body_ring(cl, TORSO, 0.9, 0.0, 0.017), 0.015)
+	cl.cut(cl.tube(on_torso(0, 0.9, True, -0.01), on_torso(0, 0.8, True, -0.01), 0.008, 0.004), 0.006)
+	# long soft folds (not dents): pulled from the armpits toward the belly, one hanging from the belly to the hem each
+	# side, and on the back from the shoulder blades down
+	for s_ in (-1, 1):
+		crease(cl, [(s_ * 0.2, 0.8), (s_ * 0.15, 0.7), (s_ * 0.07, 0.6)], True)
+		crease(cl, [(s_ * 0.21, 0.68), (s_ * 0.16, 0.59), (s_ * 0.1, 0.52)], True, depth=0.0025, ridge=0.0)
+		crease(cl, [(s_ * 0.19, 0.84), (s_ * 0.11, 0.72), (s_ * 0.06, 0.6)], False)
+	crease(cl, [(-0.12, 0.5), (-0.135, 0.44), (-0.125, 0.38)], True, depth=0.0025, ridge=0.0)
+	crease(cl, [(0.15, 0.49), (0.16, 0.39)], True, depth=0.0025, ridge=0.0)
+	crease(cl, [(0.08, 0.57), (0.095, 0.49), (0.1, 0.4)], False, depth=0.0025, ridge=0.0)
+	# side seams with stitches
+	for s in (-1, 1):
+		for up in np.arange(0.44, 0.8, 0.035):
+			hw, f, b = torso_at(up)
+			cl.add(cl.ell(Q(s * (hw - 0.001), up, (b - f) / 2), (0.004, 0.008, 0.004)), 0.003)
+	finish(cl.mesh("shirt_body", shirt, PARTS), 7000)
 	del cl
+
+	# ---- arms (skin): upper arm in the sleeve, elbow, thick forearm, wrist
+	for side in ("l", "r"):
+		sh, el, wr = B(f"upperarm_{side}"), B(f"lowerarm_{side}"), B(f"hand_{side}")
+		cl = clay((min(sh.x, wr.x) - 0.15, sh.z - 0.15, sh.y - 0.15), (max(sh.x, wr.x) + 0.15, sh.z + 0.15, sh.y + 0.15), 0.004)
+		d = wr - el
+		cl.add(cl.tube(QV(sh + (el - sh) * 0.3), QV(el), 0.07, 0.064), 0.02)
+		cl.add(cl.ell(QV(el), (0.056, 0.056, 0.056)), 0.03)                                      # elbow
+		cl.add(cl.ell(QV(el + d * 0.35 + Vector((0, 0, 0.008))), (0.085, 0.056, 0.058)), 0.04)  # the forearm muscle (slimmer: owner Nov 18 "massive")
+		cl.add(cl.tube(QV(el), QV(wr), 0.056, 0.045), 0.03)
+		cl.add(cl.ell(QV(wr), (0.034, 0.042, 0.046)), 0.02)                                    # wrist
+		finish(cl.mesh(f"arm_{side}", skin, PARTS), 2500)
+		del cl
 # ---- hands (clay): a thick palm, three chunky fingers and a thumb (owner, F183: "3 chunky fingers plus a thumb, like a
 # cartoon turtle, is fine"), each finger along its bones (the third along the middle of the ring and little-finger bones,
 # so it bends with both), knuckles on the back of the hand
@@ -350,78 +352,205 @@ for side in ("l", "r"):
 	finish(cl.mesh(f"hand_{side}", skin, PARTS), 4000)
 	del cl
 
-# ---- shorts: a baggy seat and legs, folds, rolled cuffs
-cl = clay((-0.34, 0.17, -0.33), (0.34, 0.47, 0.27))
-# (the top stays >= 1 cm inside the shirt: draft 2's waistband poked out under the hem and showed as a bar on the back)
-SEAT = [(0.28, 0.23, 0.19, 0.15), (0.35, 0.248, 0.225, 0.168), (0.44, 0.23, 0.21, 0.158)]
-cl.add(loft(cl, SEAT), 0.01)
-for side in ("l", "r"):
-	hip, knee = B(f"thigh_{side}"), B(f"calf_{side}")
-	out = 1 if knee.x > 0 else -1
-	top, cuff = hip + Vector((out * 0.02, 0, 0)), Vector((knee.x + out * 0.025, knee.y, 0.215))
-	cl.add(cl.tube(QV(top), QV(cuff), 0.118, 0.11), 0.05)
-	cl.add(torus(cl, QV(cuff + UP * 0.005), (0, 1, 0), 0.108, 0.021), 0.012)            # rolled cuff
-	cl.add(torus(cl, QV(cuff - UP * 0.025), (0, 1, 0), 0.102, 0.018), 0.01)
-	cl.cut(cl.tube(QV(cuff - UP * 0.06), QV(cuff - UP * 0.02), 0.084, 0.084), 0.01)    # open below (the calf comes out)
-	for a0, a1, u0, u1 in ((0.3, -0.5, 0.36, 0.27), (-0.9, -0.3, 0.33, 0.25), (1.2, 0.6, 0.34, 0.26)):   # leg folds
-		p0 = Vector((knee.x + out * math.sin(a0) * 0.13, knee.y - math.cos(a0) * 0.13, u0))
-		p1 = Vector((knee.x + out * math.sin(a1) * 0.128, knee.y - math.cos(a1) * 0.128, u1))
-		cl.cut(cl.tube(QV(p0), QV(p1), 0.006, 0.004), 0.007)
-cl.cut(cl.tube(Q(0, 0.37, -0.255), Q(0.0, 0.3, -0.25), 0.007, 0.005), 0.006)          # the front seam
-# above the hem the shorts stay 1 cm inside the shirt everywhere (draft 4: the seat's corners poked out through the
-# shirt at the back, so only the middle of the hem hung over them, like a tab)
-inside = loft(cl, TORSO, cap=False) + 0.01
-below = (cl.V + HC.z) - hem_up(np.arctan2(cl.U + HC.x, -(HC.y - cl.W))) + 0.01
-cl.keep(np.minimum(inside, below), 0.003)
-del inside, below
-finish(cl.mesh("shorts_seat", shorts, PARTS), 5000)
-del cl
-
-# ---- calves, cloth wraps in flat strips, short wrapped feet
-def strip(F, plane, half, lift=0.0045):
-	"""A flat cloth strip lying on the shape F (a distance field): a shell up to `lift` thick where |plane| < half.
-	Joined with a tiny fillet, so each strip shows its edges (draft 2's wraps were round rings: a round boot)."""
-	return np.maximum(np.abs(F - lift / 2 + 0.002) - (lift / 2 + 0.002), np.abs(plane) - half)
-
-
-def plane_d(cl, c, n):
-	n = np.array(n, np.float32)
-	n /= np.linalg.norm(n)
-	return (cl.U - c[0]) * n[0] + (cl.V - c[1]) * n[1] + (cl.W - c[2]) * n[2]
-
-
-for side in ("l", "r"):
-	knee, ank = B(f"calf_{side}"), B(f"foot_{side}")
-	out = 1 if knee.x > 0 else -1
-	cl = clay((knee.x - 0.13, 0.15, ank.y - 0.15), (knee.x + 0.13, 0.33, ank.y + 0.15), 0.004)
-	cl.add(cl.tube(QV(knee), Q(ank.x, 0.17, ank.y), 0.078, 0.07), 0.03)                   # the calf (under the cuff)
-	cl.add(cl.ell(Q(ank.x, 0.235, ank.y + 0.012), (0.074, 0.05, 0.07)), 0.03)             # (its muscle, at the back)
-	finish(cl.mesh(f"calf_{side}", skin, PARTS), 1500)
+if CLOTHES:
+	# ---- shorts: a baggy seat and legs, folds, rolled cuffs
+	cl = clay((-0.34, 0.17, -0.33), (0.34, 0.47, 0.27))
+	# (the top stays >= 1 cm inside the shirt: draft 2's waistband poked out under the hem and showed as a bar on the back)
+	SEAT = [(0.28, 0.23, 0.19, 0.15), (0.35, 0.248, 0.225, 0.168), (0.44, 0.23, 0.21, 0.158)]
+	cl.add(loft(cl, SEAT), 0.01)
+	for side in ("l", "r"):
+		hip, knee = B(f"thigh_{side}"), B(f"calf_{side}")
+		out = 1 if knee.x > 0 else -1
+		top, cuff = hip + Vector((out * 0.02, 0, 0)), Vector((knee.x + out * 0.025, knee.y, 0.215))
+		cl.add(cl.tube(QV(top), QV(cuff), 0.118, 0.11), 0.05)
+		cl.add(torus(cl, QV(cuff + UP * 0.005), (0, 1, 0), 0.108, 0.021), 0.012)            # rolled cuff
+		cl.add(torus(cl, QV(cuff - UP * 0.025), (0, 1, 0), 0.102, 0.018), 0.01)
+		cl.cut(cl.tube(QV(cuff - UP * 0.06), QV(cuff - UP * 0.02), 0.084, 0.084), 0.01)    # open below (the calf comes out)
+		for a0, a1, u0, u1 in ((0.3, -0.5, 0.36, 0.27), (-0.9, -0.3, 0.33, 0.25), (1.2, 0.6, 0.34, 0.26)):   # leg folds
+			p0 = Vector((knee.x + out * math.sin(a0) * 0.13, knee.y - math.cos(a0) * 0.13, u0))
+			p1 = Vector((knee.x + out * math.sin(a1) * 0.128, knee.y - math.cos(a1) * 0.128, u1))
+			cl.cut(cl.tube(QV(p0), QV(p1), 0.006, 0.004), 0.007)
+	cl.cut(cl.tube(Q(0, 0.37, -0.255), Q(0.0, 0.3, -0.25), 0.007, 0.005), 0.006)          # the front seam
+	# above the hem the shorts stay 1 cm inside the shirt everywhere (draft 4: the seat's corners poked out through the
+	# shirt at the back, so only the middle of the hem hung over them, like a tab)
+	inside = loft(cl, TORSO, cap=False) + 0.01
+	below = (cl.V + HC.z) - hem_up(np.arctan2(cl.U + HC.x, -(HC.y - cl.W))) + 0.01
+	cl.keep(np.minimum(inside, below), 0.003)
+	del inside, below
+	finish(cl.mesh("shorts_seat", shorts, PARTS), 5000)
 	del cl
-	cl = clay((knee.x - 0.13, -0.01, ank.y - 0.2), (knee.x + 0.13, 0.24, ank.y + 0.13), 0.003)
-	top = 0.19
-	# the foot (picture: flat and wrapped, ~0.24 m long: heel 7.5 cm behind the ankle, toes 16.5 cm in front; ~0.17 wide;
-	# ~6 cm high at the toes), then the leg's wrapping (~0.145 m across, draft 2's 0.18 read as a boot)
-	F = cl.tube(Q(ank.x, 0.06, ank.y), Q(ank.x, top, ank.y - 0.004), 0.07, 0.068)
-	F = dh._smin(F, cl.ell(Q(ank.x + out * 0.006, 0.032, ank.y - 0.045), (0.088, 0.044, 0.12)), 0.04)  # the foot
-	F = dh._smin(F, cl.ell(Q(ank.x, 0.042, ank.y + 0.035), (0.066, 0.046, 0.042)), 0.03)              # heel
-	F = dh._smin(F, cl.ell(Q(ank.x + out * 0.012, 0.022, ank.y - 0.115), (0.094, 0.028, 0.055)), 0.03)  # flat, wide toes
-	cl.add(F, 0.004)
-	R3 = random.Random(9 + out)
-	# up the leg: strips wound round it, each tilted its own way and overlapping the one below
-	lc = Q(ank.x, 0, ank.y)
-	on_leg = np.sqrt((cl.U - lc[0]) ** 2 + (cl.W - lc[2]) ** 2) - 0.1  # (only round the leg, not across the toes)
-	for k, up in enumerate(np.arange(0.075, top - 0.01, 0.022)):
-		n = (R3.uniform(-0.3, 0.3), 1.0, R3.uniform(-0.25, 0.25))
-		cl.add(np.maximum(strip(F, plane_d(cl, Q(ank.x, up, ank.y), n), 0.014), on_leg), 0.0012)
-	cl.add(torus(cl, Q(ank.x, top + 0.004, ank.y - 0.004), (0.08, 1.0, 0.0), 0.07, 0.012), 0.006)  # the top, folded over
-	# over the foot: strips crossing the instep and round the arch, and one round the heel
-	for c_, n in (((0, 0.05, -0.13), (0.15, 0.35, 1.0)), ((0, 0.055, -0.085), (-0.25, 0.4, 1.0)), ((0, 0.06, -0.04), (0.2, 0.6, 1.0)),
-			((0, 0.05, 0.03), (0.0, 1.0, -0.6))):
-		cl.add(strip(F, plane_d(cl, Q(ank.x + c_[0], c_[1], ank.y + c_[2]), (n[0], n[1], n[2])), 0.016), 0.0012)  # (c_: x, up, back)
-	cl.keep((0.0 - HC.z) - cl.V, 0.004)  # (the sole flat on the floor)
-	finish(cl.mesh(f"wrap_{side}", wraps, PARTS), 5000)
-	del cl, F, on_leg
+
+	# ---- calves, cloth wraps in flat strips, short wrapped feet
+	def strip(F, plane, half, lift=0.0045):
+		"""A flat cloth strip lying on the shape F (a distance field): a shell up to `lift` thick where |plane| < half.
+		Joined with a tiny fillet, so each strip shows its edges (draft 2's wraps were round rings: a round boot)."""
+		return np.maximum(np.abs(F - lift / 2 + 0.002) - (lift / 2 + 0.002), np.abs(plane) - half)
+
+
+	def plane_d(cl, c, n):
+		n = np.array(n, np.float32)
+		n /= np.linalg.norm(n)
+		return (cl.U - c[0]) * n[0] + (cl.V - c[1]) * n[1] + (cl.W - c[2]) * n[2]
+
+
+	for side in ("l", "r"):
+		knee, ank = B(f"calf_{side}"), B(f"foot_{side}")
+		out = 1 if knee.x > 0 else -1
+		cl = clay((knee.x - 0.13, 0.15, ank.y - 0.15), (knee.x + 0.13, 0.33, ank.y + 0.15), 0.004)
+		cl.add(cl.tube(QV(knee), Q(ank.x, 0.17, ank.y), 0.078, 0.07), 0.03)                   # the calf (under the cuff)
+		cl.add(cl.ell(Q(ank.x, 0.235, ank.y + 0.012), (0.074, 0.05, 0.07)), 0.03)             # (its muscle, at the back)
+		finish(cl.mesh(f"calf_{side}", skin, PARTS), 1500)
+		del cl
+		cl = clay((knee.x - 0.13, -0.01, ank.y - 0.2), (knee.x + 0.13, 0.24, ank.y + 0.13), 0.003)
+		top = 0.19
+		# the foot (picture: flat and wrapped, ~0.24 m long: heel 7.5 cm behind the ankle, toes 16.5 cm in front; ~0.17 wide;
+		# ~6 cm high at the toes), then the leg's wrapping (~0.145 m across, draft 2's 0.18 read as a boot)
+		F = cl.tube(Q(ank.x, 0.06, ank.y), Q(ank.x, top, ank.y - 0.004), 0.07, 0.068)
+		F = dh._smin(F, cl.ell(Q(ank.x + out * 0.006, 0.032, ank.y - 0.045), (0.088, 0.044, 0.12)), 0.04)  # the foot
+		F = dh._smin(F, cl.ell(Q(ank.x, 0.042, ank.y + 0.035), (0.066, 0.046, 0.042)), 0.03)              # heel
+		F = dh._smin(F, cl.ell(Q(ank.x + out * 0.012, 0.022, ank.y - 0.115), (0.094, 0.028, 0.055)), 0.03)  # flat, wide toes
+		cl.add(F, 0.004)
+		R3 = random.Random(9 + out)
+		# up the leg: strips wound round it, each tilted its own way and overlapping the one below
+		lc = Q(ank.x, 0, ank.y)
+		on_leg = np.sqrt((cl.U - lc[0]) ** 2 + (cl.W - lc[2]) ** 2) - 0.1  # (only round the leg, not across the toes)
+		for k, up in enumerate(np.arange(0.075, top - 0.01, 0.022)):
+			n = (R3.uniform(-0.3, 0.3), 1.0, R3.uniform(-0.25, 0.25))
+			cl.add(np.maximum(strip(F, plane_d(cl, Q(ank.x, up, ank.y), n), 0.014), on_leg), 0.0012)
+		cl.add(torus(cl, Q(ank.x, top + 0.004, ank.y - 0.004), (0.08, 1.0, 0.0), 0.07, 0.012), 0.006)  # the top, folded over
+		# over the foot: strips crossing the instep and round the arch, and one round the heel
+		for c_, n in (((0, 0.05, -0.13), (0.15, 0.35, 1.0)), ((0, 0.055, -0.085), (-0.25, 0.4, 1.0)), ((0, 0.06, -0.04), (0.2, 0.6, 1.0)),
+				((0, 0.05, 0.03), (0.0, 1.0, -0.6))):
+			cl.add(strip(F, plane_d(cl, Q(ank.x + c_[0], c_[1], ank.y + c_[2]), (n[0], n[1], n[2])), 0.016), 0.0012)  # (c_: x, up, back)
+		cl.keep((0.0 - HC.z) - cl.V, 0.004)  # (the sole flat on the floor)
+		finish(cl.mesh(f"wrap_{side}", wraps, PARTS), 5000)
+		del cl, F, on_leg
+
+# ---------------------------------------------------------------- round 3b (Nov 18): the bare dwarf in linen underpants
+# Owner (Nov 18): "build him in the underpants first", as detailed as the head; the clothes go on later as layers over this
+# body (so outfits can change, the clothes can swing on their own, and they copy the body's bending). One seamless clay
+# skin from the neck to the ankles (arms included, so the shoulders flow into the arms), bare feet and the hands apart,
+# and a linen wrap lying on the skin. Sizes: the turnaround picture minus the clothes' thickness.
+def on_surf(cl, x, up, front=True, inset=0.0):
+	"""The clay's real surface (not the outline's) at sideways x and height up, front or back, pushed in by inset."""
+	u, v = x - HC.x, up - HC.z
+	i = min(max(int(round((u - cl.lo[0]) / cl.h)), 0), cl.D.shape[0] - 1)
+	j = min(max(int(round((v - cl.lo[1]) / cl.h)), 0), cl.D.shape[1] - 1)
+	col = cl.D[i, j, :]
+	ins = np.nonzero(col < 0)[0]
+	if not len(ins):
+		return on_torso(x, up, front, inset)
+	k = int(ins[-1] if front else ins[0])
+	k2 = min(max(k + (1 if front else -1), 0), len(col) - 1)
+	t = float(col[k] / (col[k] - col[k2])) if col[k] != col[k2] else 0.0
+	w = cl.lo[2] + cl.h * (k + t * (k2 - k))
+	return (u, v, w - inset if front else w + inset)
+
+
+def groove(cl, pts, front, depth=0.003, width=0.01, n=2):
+	"""A soft line pressed into the skin along (x, up) points on its real surface (a fold, a crease, a dent);
+	a negative depth raises a soft ridge instead (a collarbone)."""
+	P = chaikin(pts, n)
+	m = len(P) - 1
+	prof = [math.sin(math.pi * (i + 1) / (m + 1)) ** 0.6 for i in range(m)]
+	press(cl, [(on_surf(cl, *P[i], front), on_surf(cl, *P[i + 1], front), prof[i]) for i in range(m)], depth, width)
+
+
+if not CLOTHES:
+	# the body's outline (height, half-width, front, back): a round belly that hangs low, a barrel chest, broad but
+	# sloping shoulders (the arms are added below), a thick neck under the beard
+	TORSO = [(0.33, 0.2, 0.15, 0.14), (0.4, 0.222, 0.19, 0.158), (0.47, 0.23, 0.24, 0.165), (0.55, 0.224, 0.265, 0.172),
+		(0.62, 0.216, 0.255, 0.18), (0.69, 0.21, 0.222, 0.19), (0.76, 0.21, 0.19, 0.195), (0.82, 0.198, 0.15, 0.19),
+		(0.87, 0.162, 0.11, 0.16), (0.93, 0.085, 0.07, 0.09)]
+	cl = clay((-0.72, 0.09, -0.36), (0.72, 1.0, 0.33))
+	cl.add(loft(cl, TORSO), 0.012)
+	cl.add(cl.ell(Q(0, 0.535, -0.125), (0.2, 0.175, 0.155)), 0.06)                       # the round belly, hanging a little
+	cl.add(cl.ell(Q(0, 0.43, -0.09), (0.17, 0.07, 0.12)), 0.05)                           # (its underside, over the pants)
+	for s in (-1, 1):
+		cl.add(cl.ell(Q(s * 0.085, 0.765, -0.152), (0.088, 0.056, 0.042)), 0.035)          # chest
+		cl.add(cl.ell(Q(s * 0.095, 0.77, 0.16), (0.08, 0.09, 0.032)), 0.06)               # shoulder blade (soft)
+		cl.add(cl.ell(Q(s * 0.082, 0.375, 0.095), (0.098, 0.088, 0.078)), 0.045)           # buttock
+		cl.add(cl.ell(Q(s * 0.19, 0.5, 0.0), (0.05, 0.1, 0.12)), 0.06)                     # the soft sides
+	for side in ("l", "r"):
+		sh, el, wr = B(f"upperarm_{side}"), B(f"lowerarm_{side}"), B(f"hand_{side}")
+		s = 1 if sh.x > 0 else -1
+		inward = -s
+		d, f_ = el - sh, wr - el
+		# the slope from the neck to the shoulder (trapezius) and the round shoulder muscle
+		cl.add(cl.tube(Q(s * 0.05, 0.925, 0.035), QV(sh + Vector((inward * 0.07, 0.035, 0.05))), 0.05, 0.056), 0.05)
+		cl.add(cl.ell(QV(sh + Vector((inward * 0.01, 0.0, 0.016))), (0.1, 0.092, 0.095)), 0.05)  # (round, broad)
+		# upper arm with the biceps in front and the triceps behind, the elbow
+		cl.add(cl.tube(QV(sh), QV(el), 0.076, 0.062), 0.03)  # (sturdy dwarf arms)
+		cl.add(cl.ell(QV(sh + d * 0.5 + Vector((0, -0.02, 0.008))), (0.078, 0.054, 0.056)), 0.03)
+		cl.add(cl.ell(QV(sh + d * 0.42 + Vector((0, 0.022, 0.0))), (0.085, 0.052, 0.05)), 0.03)
+		cl.add(cl.ell(QV(el + Vector((0, 0.014, 0))), (0.05, 0.052, 0.053)), 0.03)
+		# the forearm: thick by the elbow, tapering to a clear wrist (owner Nov 18: "the forearms are still too large")
+		cl.add(cl.tube(QV(el), QV(wr), 0.052, 0.036), 0.025)
+		cl.add(cl.ell(QV(el + f_ * 0.3 + Vector((0, 0, 0.006))), (0.068, 0.043, 0.045)), 0.03)
+		cl.add(cl.ell(QV(wr), (0.024, 0.031, 0.036)), 0.015)
+		cl.add(cl.ell(QV(wr + Vector((0, 0.022, 0.0))), (0.012, 0.011, 0.011)), 0.006)  # the wrist bone's knob
+		# hip, thigh, knee and kneecap, shin and calf muscle
+		th, kn, an = B(f"thigh_{side}"), B(f"calf_{side}"), B(f"foot_{side}")
+		cl.add(cl.tube(QV(th + Vector((s * 0.012, 0, 0))), QV(kn), 0.098, 0.068), 0.05)
+		cl.add(cl.ell(QV(kn), (0.058, 0.055, 0.056)), 0.03)
+		cl.add(cl.ell(QV(kn + Vector((0, -0.052, 0.006))), (0.03, 0.032, 0.018)), 0.015)
+		cl.add(cl.tube(QV(kn), Q(an.x, 0.15, an.y), 0.06, 0.04), 0.03)
+		cl.add(cl.ell(QV(kn + (an - kn) * 0.32 + Vector((0, 0.024, 0))), (0.056, 0.07, 0.048)), 0.035)
+	# soft lines: under the chest, the breastbone, the spine, the cleft, the navel, the belly's fold over the pants
+	groove(cl, [(-0.16, 0.718), (-0.08, 0.705), (-0.02, 0.712)], True, 0.0025, 0.009)
+	groove(cl, [(0.02, 0.712), (0.08, 0.705), (0.16, 0.718)], True, 0.0025, 0.009)
+	groove(cl, [(0.0, 0.82), (0.0, 0.73)], True, 0.0025, 0.01)
+	groove(cl, [(0.0, 0.87), (0.0, 0.7), (0.0, 0.5)], False, 0.003, 0.012)
+	groove(cl, [(0.0, 0.43), (0.0, 0.32)], False, 0.006, 0.01)
+	cl.cut(cl.ell(on_surf(cl, 0.0, 0.53, True, -0.004), (0.011, 0.014, 0.012)), 0.005)
+	groove(cl, [(-0.17, 0.42), (-0.08, 0.385), (0.0, 0.378), (0.08, 0.385), (0.17, 0.42)], True, 0.004, 0.01)
+	for s in (-1, 1):
+		groove(cl, [(s * 0.03, 0.88), (s * 0.1, 0.875), (s * 0.18, 0.86)], True, -0.004, 0.009)  # collarbone (a ridge)
+		cl.add(cl.ell(on_surf(cl, s * 0.088, 0.75, True, 0.002), (0.007, 0.007, 0.005)), 0.004)  # nipple
+	body_D = cl.D.copy()
+	finish(cl.mesh("torso", skin, PARTS), 16000)
+	# ---- the underpants: a linen wrap lying on the skin (its inside 4 mm under the skin, 8 mm thick), cut along the
+	# waist and the legs, with rolled edges, a knot in front and a few folds
+	pc = clay((-0.72, 0.09, -0.36), (0.72, 1.0, 0.33))
+	F = body_D
+	up_ = pc.V + HC.z
+	x_ = pc.U + HC.x
+	th_ = np.arctan2(x_, -(HC.y - pc.W))
+	top = 0.442 - 0.032 * np.clip(np.cos(th_), 0, None) + 0.02 * np.clip(-np.cos(th_), 0, None)
+	bot = 0.3 + 0.15 * np.clip(np.abs(x_) - 0.03, 0, None)  # (low on the legs: a linen wrap, not modern briefs)
+	pc.D = np.maximum(np.maximum(np.abs(F - 0.002) - 0.006, up_ - top), np.maximum(bot - up_, np.abs(x_) - 0.3)).astype(np.float32)
+	pc.add(np.maximum(np.sqrt((F - 0.006) ** 2 + (up_ - top + 0.004) ** 2) - 0.009, np.abs(x_) - 0.3), 0.004)  # rolled waist
+	pc.add(np.maximum(np.sqrt((F - 0.005) ** 2 + (up_ - bot - 0.004) ** 2) - 0.007, np.abs(x_) - 0.3), 0.004)  # leg edges
+	del up_, x_, th_, top, bot
+	for s in (-1, 1):
+		groove(pc, [(s * 0.2, 0.42), (s * 0.13, 0.37), (s * 0.07, 0.33)], True, 0.003, 0.008)
+		groove(pc, [(s * 0.19, 0.44), (s * 0.12, 0.4)], False, 0.003, 0.008)
+	k = on_surf(pc, 0.075, 0.418, True, -0.004)
+	pc.add(pc.ell(k, (0.02, 0.017, 0.015)), 0.006)                                                     # the knot
+	for dx, ln in ((-0.012, 0.06), (0.014, 0.045)):                                                    # its hanging ends
+		a = (k[0] + dx, k[1] - 0.01, k[2])
+		b = (k[0] + dx * 1.6, k[1] - ln, k[2] - 0.004)
+		pc.add(pc.tube(a, b, 0.009, 0.006), 0.004)
+	finish(pc.mesh("pants", wraps, PARTS), 6000)
+	del cl, pc, F, body_D
+	# ---- bare feet (finer clay): ankle and its bones, heel, arch, the ball of the foot and four chunky toes
+	for side in ("l", "r"):
+		an = B(f"foot_{side}")
+		out = 1 if an.x > 0 else -1
+		fc = clay((an.x - 0.1, -0.01, an.y - 0.21), (an.x + 0.1, 0.2, an.y + 0.12), 0.0025)
+		fc.add(fc.ell(Q(an.x, 0.13, an.y), (0.043, 0.05, 0.046)), 0.02)                                  # ankle
+		for s2 in (-1, 1):
+			fc.add(fc.ell(Q(an.x + s2 * 0.036, 0.122, an.y + 0.004), (0.015, 0.017, 0.015)), 0.008)        # ankle bones
+		fc.add(fc.ell(Q(an.x, 0.045, an.y + 0.032), (0.047, 0.045, 0.05)), 0.03)                          # heel
+		fc.add(fc.ell(Q(an.x + out * 0.004, 0.04, an.y - 0.05), (0.057, 0.04, 0.1)), 0.035)              # the foot
+		fc.add(fc.tube(Q(an.x, 0.11, an.y - 0.01), Q(an.x + out * 0.004, 0.05, an.y - 0.115), 0.042, 0.03), 0.03)  # instep
+		fc.add(fc.ell(Q(an.x + out * 0.006, 0.03, an.y - 0.112), (0.062, 0.03, 0.042)), 0.025)            # ball of the foot
+		for tx, tz, r in ((-0.03, -0.165, 0.021), (-0.002, -0.16, 0.016), (0.02, -0.153, 0.015), (0.039, -0.142, 0.014)):
+			fc.add(fc.ell(Q(an.x + out * tx, 0.022, an.y + tz), (r, r * 0.95, r * 1.35)), 0.004)            # toes
+		fc.cut(fc.ell(Q(an.x - out * 0.05, 0.0, an.y - 0.05), (0.026, 0.02, 0.05)), 0.012)               # the arch
+		fc.keep((0.0 - HC.z) - fc.V, 0.003)  # (the sole flat on the floor)
+		finish(fc.mesh(f"foot_{side}", skin, PARTS), 5000)
+		del fc
 
 # ---------------------------------------------------------------- the head, hair and beard (round 2: dwarf_head.py)
 # One melted, sculpted skin built around the body (the beard and hair lie ON it with a 1.2 cm gap), separate eyes and
@@ -577,7 +706,7 @@ from mathutils import kdtree  # noqa: E402
 LOW, HIGH = 0.865, 0.96  # metres: below LOW only the shirt's bones, above HIGH only the head
 sp, sw = [], []
 for o in meshes:
-	if o in HEAD_OBJS or not o.data.materials or o.data.materials[0].name != "shirt":
+	if o in HEAD_OBJS or not ("shirt_body" in o.name or "torso" in o.name):  # (the shirt, or the bare torso)
 		continue
 	names = {vg.index: vg.name for vg in o.vertex_groups}
 	for v in o.data.vertices:
