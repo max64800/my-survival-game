@@ -371,7 +371,9 @@ for cname, (bd, joints, parent) in CHAINS.items():
 			v_, w_ = p.z - dh.C.z, dh.C.y - p.y
 			if back_owner.get(vi) != cname:
 				continue
-			m = smooth01((0.07 - v_) / 0.05) * smooth01((-w_ - 0.05) / 0.03)
+			# (the hair right against the neck stays with the head: swinging it stretched the neck out, owner Nov 17)
+			r_neck = math.hypot(p.x - dh.C.x, p.y - dh.C.y)
+			m = smooth01((0.07 - v_) / 0.05) * smooth01((-w_ - 0.05) / 0.03) * smooth01((r_neck - 0.1) / 0.05)
 		if m <= 0.0:
 			continue
 		c = 0.0  # where along the chain, in bones (bone k's middle = k)
@@ -386,6 +388,15 @@ for cname, (bd, joints, parent) in CHAINS.items():
 				ws[f"{cname}_{k + 1}"] = ws.get(f"{cname}_{k + 1}", 0.0) + m * wk
 		head_w[vi] = ws
 print("DWARF swing bones:", {k: len(j) - 1 for k, (_, j, _) in CHAINS.items()})
+# The check for the owner's "sheets between the braids": no mesh edge may join two different braids' swinging parts
+# (where braids touched, melting glued them, and the glue stretched into a sheet when they swung apart).
+def main_chain(ws):
+	best = max(ws.items(), key=lambda kv: kv[1]) if ws else ("", 0.0)
+	return best[0].rsplit("_", 1)[0] if best[0].startswith("hair_braid") and best[1] > 0.3 else None
+ev = [(e.vertices[0], e.vertices[1]) for e in HEAD["head"].data.edges]
+glued = [(a, b) for a, b in ev if (ca := main_chain(head_w[a])) and (cb := main_chain(head_w[b])) and ca != cb]
+print(f"DWARF edges gluing two braids together: {len(glued)} (must be 0)",
+	[tuple(round(x, 3) for x in HEAD["head"].matrix_world @ HEAD["head"].data.vertices[a].co) for a, _ in glued[:3]])
 set_weights(HEAD["head"], head_w)
 set_weights(HEAD["eyes"], [{"Head": 1.0}] * len(HEAD["eyes"].data.vertices))
 hkd = kdtree.KDTree(len(head_w))

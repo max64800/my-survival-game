@@ -402,6 +402,19 @@ def build_lids(s, A=72, Bu=44, Bl=26, r_in=EYE_R - 0.0015, r_out=EYE_R + 0.0075,
 	o = kit._mesh_obj(f"lids_{s}", verts, faces, MS)
 	ck._fix_normals(o)
 	LIDS.append(o)
+	# the lids' rolled edges (owner, Nov 17: "there's no eyelids"): a plump upper lid rim and a thinner lower one along
+	# the opening, so each lid reads as its own fold over the eye, like the picture's
+	for upper in (True, False):
+		B = Bu if upper else Bl
+		pts, radii = [], []
+		for k in range(15):
+			psi = math.pi * k / 14 if upper else -math.pi * k / 14
+			rb = 1 / math.sqrt((math.cos(psi) / A) ** 2 + (math.sin(psi) / B) ** 2)
+			d = a * math.cos(rb) + (c * math.cos(psi) + b * math.sin(psi)) * math.sin(rb)
+			pts.append(E + d * (EYE_R + 0.0012))
+			taper = math.sin(math.pi * k / 14) ** 0.6
+			radii.append((0.0034 if upper else 0.0024) * (0.35 + 0.65 * taper))
+		tube(f"lid_rim_{s}_{'up' if upper else 'lo'}", pts, radii, MS, LIDS, sides=10, up=a)
 
 
 def build_ear(s):
@@ -504,6 +517,10 @@ def build_hair():
 			if P is not None:
 				pts.append(P - n * 0.022)
 		if len(pts) >= 4:
+			# one more joint at the very ends of the hair (owner, Nov 17: "the very end doesn't have a bone, it hooks
+			# into his body"): carry on past the last point down to the lowest locks
+			last = (pts[-1] - pts[-2]).normalized()
+			pts.append(pts[-1] + last * (0.1 if phi == 0 else 0.08))
 			BACKS.append(pts)
 	# the little curl on top of the bald head
 	for k, phi in enumerate((-14, 0, 16)):
@@ -710,7 +727,7 @@ def braid(name, u_top, v_top, v_ring, v_end, W0, W1, D0, D1, r_in, r_out, ring_h
 		pA, TA, NA, SA = at(s - 1.0 * step)
 		pB, TB, NB, SB = at(s)
 		pC, TC, NC, SC = at(min(s + 1.1 * step, stop + 0.006))
-		lock([pA + SA * (sig * 0.46 * Wd) - NA * (0.1 * Dd), pB + SB * (sig * 0.1 * Wd) + NB * (0.24 * Dd),
+		lock([pA + SA * (sig * 0.4 * Wd) - NA * (0.1 * Dd), pB + SB * (sig * 0.1 * Wd) + NB * (0.24 * Dd),
 			pC - SC * (sig * 0.3 * Wd) - NC * (0.16 * Dd)], 0.4 * Wd, 0.34 * Dd, NB, n=14, sides=18, grooves=2, rd=0.26,
 			name=f"{name}_lobe{k}", leaf=True)
 		k += 1
@@ -745,7 +762,8 @@ def braid(name, u_top, v_top, v_ring, v_end, W0, W1, D0, D1, r_in, r_out, ring_h
 def build_braids():
 	braid("braid_mid", 0.0, -0.14, -0.35, -0.49, 0.13, 0.09, 0.06, 0.05, 0.04, 0.048, 0.044, w_top=0.1, tuft_n=9, seed=1)  # (thicker: owner F214)
 	for s in (-1, 1):  # (further out: at 11.5 cm their tops clashed with the middle braid, owner round 2b)
-		braid(f"braid_{s}", s * 0.145, -0.13, -0.246, -0.37, 0.08, 0.064, 0.048, 0.042, 0.032, 0.039, 0.046, w_top=0.06, tuft_n=7, seed=2 + s)  # (thicker: F214)
+		# (at 14.5 cm the thicker braids touched the middle one and melted together: a sheet when they swung apart)
+		braid(f"braid_{s}", s * 0.168, -0.13, -0.246, -0.37, 0.08, 0.064, 0.048, 0.042, 0.032, 0.039, 0.046, w_top=0.06, tuft_n=7, seed=2 + s)  # (thicker: F214)
 
 
 # ---------------------------------------------------------------- melt, sculpt, lay on the body
@@ -807,6 +825,8 @@ def sculpt_face(high, skin):
 			groove(on_face([(c0[0] + s * 0.004 * math.cos(a), c0[1] + 0.004 * math.sin(a)),
 				(c0[0] + s * 0.019 * math.cos(a), c0[1] + 0.019 * math.sin(a))]), 0.0009, 0.0011)
 		groove(on_face([(s * 0.028, -0.016), (s * 0.046, -0.021), (s * 0.064, -0.015)]), 0.0012, 0.0016, 0.3)  # smile bags
+		groove(on_face([(s * 0.025, 0.01), (s * 0.035, 0.019), (s * 0.047, 0.023), (s * 0.06, 0.02), (s * 0.071, 0.011)]),
+			0.0013, 0.0013, 0.4)  # the fold above each upper lid
 	groove(on_face([(-0.034, -0.093), (-0.02, -0.099), (0.0, -0.1), (0.02, -0.099), (0.034, -0.093)]), 0.0025, 0.0014)  # mouth
 	for s in (-1, 1):  # nostrils, from below
 		loc, _, _, _ = BVH["face"].ray_cast(Hd(s * 0.014, -0.2, 0.15), UP, 0.3)
@@ -1150,6 +1170,15 @@ def build(body_objs, fast=False, log=print):
 	cols = cols * np.array([1.0, 0.92, 0.85])[None, :] ** (soft * deep)[:, None]  # (deeper red-brown, not grey)
 	# hard lines (owner, round 2b: "I don't see shades, we need hard lines on the beard"): a narrow, sharp-edged dark
 	# line in every groove and where one lock lies over the next, like the inked lines of the picture
+	# the lash lines: a dark line along each lid's edge where it meets the eye (thicker on the upper lid), so the lids
+	# read as lids (owner, Nov 17: "there's no eyelids")
+	co_, _ = arrays(high)
+	for s in (-1, 1):
+		E = np.array(tuple(eye_centre(s)))
+		gap = np.linalg.norm(co_ - E, axis=1) - EYE_R
+		above = (co_[:, 2] - E[2]) > 0
+		lash = np.clip(1.0 - gap / np.where(above, 0.0042, 0.0026), 0.0, 1.0) * (1 - soft)
+		cols = cols * (1.0 - np.where(above, 0.82, 0.6) * lash)[:, None]
 	# (round 2b's crease-depth lines were too faint to see once baked: now drawn from how the hair is built)
 	ink = hard_lines(high, PRE) * soft
 	cols = cols * (1.0 - 0.8 * ink)[:, None]

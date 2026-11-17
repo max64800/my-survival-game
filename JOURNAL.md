@@ -2461,3 +2461,24 @@ hair "jumps too much, looks too light, and it's attached to the body", and the e
   iris a little (brown, white around it). 2 picture checks used.
 - Clipping now (beard below the chin): standing 0, jumping 3 mm, walking under 1 cm; running up to 13 cm and sprint,
   sword, chopping, roll 5 to 7 cm, at the round 1 shirt's arm bulges (body round).
+
+## November 17, 2026 (PC, dwarf Claude): eyelids, braids kept apart, a bone at the hair's end, Pause (F215, F221, F222, F224)
+
+The owner: the sheets between the braids aren't fixed; the heavy back is done but its end has no bone (it hooks into his
+body) and the neck behind the hair looks stretched; a Pause button for screenshots; and "there's no eyelids".
+
+**What we did**
+- The sheets' real cause: the thicker braids touched the middle braid and melting glued them; glue stretches when they
+  swing apart. Side braids moved out to 16.8 cm, the plaits' sideways reach trimmed, and a new build check counts edges
+  that glue two braids (many before, now 1, under the chin where nothing swings).
+- The ponytail got a bone at its very end, a collision size matching the hair's thickness, and the hair right against
+  the neck now stays with the head (it stretched the neck when it swung).
+- Eyelids: a rolled upper lid rim and a thinner lower one on each eye, a fold above the eye, dark lash lines.
+- The 3D page has a Pause button (or Space).
+
+**Mistakes and hurdles (including Claude's)**
+- Last time Claude fixed the spike by giving each point one braid, without checking WHY two braids shared points: they
+  were glued by the melt. The new check measures it. Lesson: find the cause before the cure.
+- Moving the side braids out brought them nearer the round 1 shirt's arm bulge: running is still the worst case (side
+  braids up to 16 cm in); standing, walking (1 cm), jumping (3 mm) are clean. Body round.
+- 1 picture check used.

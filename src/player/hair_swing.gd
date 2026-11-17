@@ -19,7 +19,7 @@ const GRAVITY := 0.0  ## (the hair is built hanging; extra gravity piled up down
 ## (Owner, Nov 17: the livelier ponytail "jumps too much, looks too light": now heavier than the braids.)
 const KINDS := {
 	"braid": {"stiff": 0.15, "drag": 0.26, "radius": 0.04, "bend": 20.0},  # (radius: the thicker braids' half-depth + a gap)
-	"back": {"stiff": 0.14, "drag": 0.32, "radius": 0.022, "bend": 15.0},
+	"back": {"stiff": 0.14, "drag": 0.32, "radius": 0.035, "bend": 15.0},  # (radius: the hair layer's half-thickness)
 }
 const MAX_BEND := deg_to_rad(30.0)  ## the most one joint bends from its resting direction
 
