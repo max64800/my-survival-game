@@ -38,6 +38,7 @@ const KINDS := {
 	"braid": {"stiff": 0.17, "drag": 0.27, "radius": 0.04, "bend": 16.0, "air": 1.0},  # (radius: the thicker braids' half-depth + a gap)
 	# (back hair: livelier again, owner Nov 17 evening: "it barely moves"; it lies on the shirt now, so it sways, no visor)
 	"back": {"stiff": 0.14, "drag": 0.24, "radius": 0.035, "bend": 11.0, "air": 0.0},  # (radius: the hair layer's half-thickness)
+	"cloth": {"stiff": 0.22, "drag": 0.3, "radius": 0.02, "bend": 14.0, "air": 0.35},  # (the shirt hem: a light sway and bounce, Nov 18)
 }
 ## Where the back hair goes from riding on the head to lying on the shirt (metres above the floor as built: the same
 ## heights dwarf_body.py blends the beard and hair over, LOW..HIGH). Joints above HIGH sit on the skull: pinned.
@@ -81,7 +82,8 @@ func setup(chains: Dictionary, colliders: Array, head: int, head_rest: Transform
 		var pinned := []   # per joint: up on the skull, doesn't swing
 		var hs: Array = heights.get(name, [])
 		var lies: Array = under.get(name, [])
-		var is_back := name.begins_with("hair_back") and hs.size() == bones.size() and lies.size() == joints.size()
+		# (the back hair and the clothes' springy strips both rest on the body and move with it, swaying a little)
+		var is_back := (name.begins_with("hair_back") or name.begins_with("cloth_")) and hs.size() == bones.size() 				and lies.size() == joints.size()
 		for i in joints.size():
 			var h: float = 0.0
 			if is_back:
@@ -89,13 +91,13 @@ func setup(chains: Dictionary, colliders: Array, head: int, head_rest: Transform
 			var x := clampf((h - ON_BACK_LOW) / (ON_BACK_HIGH - ON_BACK_LOW), 0.0, 1.0)
 			on_back.append(1.0 - x * x * (3.0 - 2.0 * x) if is_back else 0.0)
 			pinned.append(i == 0 or (is_back and h >= ON_BACK_HIGH))
-		var kind: Dictionary = KINDS["back"] if name.begins_with("hair_back") else KINDS["braid"]
+		var kind: Dictionary = KINDS["cloth"] if name.begins_with("cloth_") else (KINDS["back"] if name.begins_with("hair_back") else KINDS["braid"])
 		# does each bone point along its own Y (then it can stretch along its length, like skin at the nape)
 		var along_y := []
 		for i in bones.size():
 			var d: Vector3 = (joints[i + 1] - joints[i]).normalized()
 			along_y.append(((bind_rot[i] as Quaternion).inverse() * d).dot(Vector3.UP) > 0.98)
-		_chains.append({"bones": bones, "joints": joints, "bind_rot": bind_rot, "kind": kind, "on_back": on_back,
+		_chains.append({"name": name, "bones": bones, "joints": joints, "bind_rot": bind_rot, "kind": kind, "on_back": on_back,
 			"under": lies if is_back else [], "pinned": pinned, "along_y": along_y,
 			"p": [], "prev": [], "was": [], "ready": false})
 

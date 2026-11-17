@@ -467,6 +467,7 @@ def etube(cl, a, b, r0, r1, sv, sw):
 	return (np.sqrt((pu - ba[0] * t) ** 2 + ((pv - ba[1] * t) / sv) ** 2 + ((pw - ba[2] * t) / sw) ** 2) - r) * min(sv, sw)
 
 
+CLOTH_CHAINS = {}  # springy cloth bones: name -> ([joints], angle round the body)
 if not CLOTHES:
 	# the body's outline (height, half-width, front, back): a round belly that hangs low, a barrel chest, broad but
 	# sloping shoulders (the arms are added below), a thick neck under the beard
@@ -548,6 +549,74 @@ if not CLOTHES:
 		b = (k[0] + dx * 1.6, k[1] - ln, k[2] - 0.004)
 		pc.add(pc.tube(a, b, 0.009, 0.006), 0.004)
 	finish(pc.mesh("pants", wraps, PARTS), 6000)
+	# ---- simple clothes as their own layers over the bare body (owner, Nov 18: "simplistic, but I want it to bounce a
+	# little when running"): each is a shell lying a little off the skin (made from the skin's own distance field, so
+	# it fits every bulge), with rolled edges. They copy the skin's bending (see the weights) and the shirt's hem gets
+	# springy bones (CLOTH_CHAINS) that the game swings like the hair.
+	def shell_of(c, off, inner=0.004):
+		"""The space between `inner` under the skin and `off` above it."""
+		return np.abs(F - (off - inner) / 2) - (off + inner) / 2
+
+	def lip(c, off, along, r):
+		"""A rolled edge where the cloth (at `off` from the skin) meets the cut `along` = 0."""
+		return np.sqrt((F - off + r * 0.4) ** 2 + along ** 2) - r
+
+	sl = {}
+	for side in ("l", "r"):
+		sh_, el_ = B(f"upperarm_{side}"), B(f"lowerarm_{side}")
+		sl[side] = sh_.x + (el_.x - sh_.x) * 0.5  # the sleeve ends halfway down the upper arm
+	# the shirt
+	sc = clay((-0.72, 0.09, -0.36), (0.72, 1.0, 0.33))
+	up_ = sc.V + HC.z
+	x_ = sc.U + HC.x
+	th_ = np.arctan2(x_, -(HC.y - sc.W))
+	hem = 0.415 - 0.02 * np.clip(np.cos(th_), 0, None) + 0.005 * np.sin(3 * th_ + 0.6)  # (a little lower over the belly)
+	off = 0.014 + 0.014 * np.clip((0.52 - up_) / 0.12, 0, 1) + 0.008 * np.clip((np.abs(x_) - 0.22) / 0.05, 0, 1)
+	arms = np.maximum(x_ - sl["l"], sl["r"] - x_) if sl["l"] > 0 else np.maximum(x_ - sl["r"], sl["l"] - x_)
+	sc.D = np.maximum(np.maximum(shell_of(sc, off), hem - up_), np.maximum(arms, up_ - 0.915)).astype(np.float32)
+	sc.add(np.maximum(lip(sc, off, up_ - hem - 0.006, 0.009), arms), 0.005)                     # the hem
+	sc.add(np.maximum(lip(sc, off, arms + 0.006, 0.009), hem - up_), 0.005)                     # the sleeve ends
+	sc.add(np.maximum(lip(sc, off, up_ - 0.909, 0.009), arms), 0.005)                           # the collar
+	del th_, off, arms
+	for s_ in (-1, 1):  # a few soft folds: from the armpits toward the belly, and hanging over the belly
+		groove(sc, [(s_ * 0.2, 0.74), (s_ * 0.13, 0.64), (s_ * 0.07, 0.58)], True, 0.003, 0.012)
+		groove(sc, [(s_ * 0.15, 0.5), (s_ * 0.16, 0.43)], True, 0.003, 0.012)
+		groove(sc, [(s_ * 0.17, 0.78), (s_ * 0.08, 0.64)], False, 0.003, 0.012)
+	groove(sc, [(0.0, 0.9), (0.0, 0.8)], True, 0.004, 0.006)                                    # the neck slit
+	# the hem's springy bones: six strips round the bottom edge, each 2 bones from 9 cm above the edge to the edge
+	for k in range(6):
+		a_ = k * math.pi / 3  # (front, front-sides, back-sides, back: not at the sides, where the hands hang)
+		joints = []
+		for dz in (0.09, 0.045, 0.0):  # (not 'dh': that's the head builder)
+			h0 = 0.415 - 0.02 * max(math.cos(a_), 0) + 0.005 * math.sin(3 * a_ + 0.6) + dz
+			best = None
+			for rr in np.arange(0.4, 0.05, -0.003):  # from outside in, to the shirt's surface
+				px, pb = math.sin(a_) * rr, -math.cos(a_) * rr
+				i = int(round((px - HC.x - sc.lo[0]) / sc.h))
+				j = int(round((h0 - HC.z - sc.lo[1]) / sc.h))
+				kk = int(round((HC.y - pb - sc.lo[2]) / sc.h))
+				if not (0 <= i < sc.D.shape[0] and 0 <= j < sc.D.shape[1] and 0 <= kk < sc.D.shape[2]):
+					continue
+				if sc.D[i, j, kk] < 0:
+					best = Vector((px, pb, h0))
+					break
+			joints.append(best if best is not None else Vector((math.sin(a_) * 0.25, -math.cos(a_) * 0.25, h0)))
+		CLOTH_CHAINS[f"cloth_hem_{k}"] = (joints, a_)
+	finish(sc.mesh("shirt", shirt, PARTS), 9000)
+	del sc
+	# the shorts: baggy, from under the shirt to just above the knee, rolled cuffs
+	oc = clay((-0.72, 0.09, -0.36), (0.72, 1.0, 0.33))  # (the body's grid: F fits it)
+	up_ = oc.V + HC.z
+	x_ = oc.U + HC.x
+	cuff = 0.275
+	off = 0.016 + 0.008 * np.clip((0.4 - up_) / 0.1, 0, 1)
+	oc.D = np.maximum(np.maximum(shell_of(oc, off), up_ - 0.47), np.maximum(cuff - up_, np.abs(x_) - 0.33)).astype(np.float32)
+	oc.add(np.maximum(lip(oc, off, up_ - cuff - 0.008, 0.011), np.abs(x_) - 0.33), 0.005)       # rolled cuffs
+	for s_ in (-1, 1):
+		groove(oc, [(s_ * 0.2, 0.4), (s_ * 0.17, 0.32)], True, 0.003, 0.01)
+		groove(oc, [(s_ * 0.06, 0.38), (s_ * 0.1, 0.31)], True, 0.003, 0.01)
+	finish(oc.mesh("shorts", shorts, PARTS), 6000)
+	del oc, up_, x_, off, hem
 	del cl, pc, F, body_D
 	# ---- bare feet (finer clay): ankle and its bones, heel, arch, the ball of the foot and four chunky toes
 	for side in ("l", "r"):
@@ -675,6 +744,14 @@ for cname, (bd, joints, parent) in CHAINS.items():
 		eb.parent = prev
 		eb.use_deform = False  # (off while Blender weighs the body: the shirt must not follow the hair)
 		prev = eb
+for cname, (joints, _a) in CLOTH_CHAINS.items():  # the shirt hem's springy bones (the game swings them like hair)
+	prev = arm_data.edit_bones["pelvis"]
+	for k in range(len(joints) - 1):
+		eb = arm_data.edit_bones.new(f"{cname}_{k + 1}")
+		eb.head, eb.tail = joints[k], joints[k + 1]
+		eb.parent = prev
+		eb.use_deform = False
+		prev = eb
 bpy.ops.object.mode_set(mode="OBJECT")
 
 bpy.ops.object.select_all(action="DESELECT")
@@ -728,7 +805,7 @@ if torso_o is not None:
 	tkd.balance()
 	tnames = {vg.index: vg.name for vg in torso_o.vertex_groups}
 	for o in meshes:
-		if not ("pants" in o.name):
+		if not ("pants" in o.name or o.name in ("body_shirt", "body_shorts")):
 			continue
 		for vg in list(o.vertex_groups):
 			o.vertex_groups.remove(vg)
@@ -739,6 +816,42 @@ if torso_o is not None:
 					gg = o.vertex_groups.get(tnames[g.group]) or o.vertex_groups.new(name=tnames[g.group])
 					gg.add([v.index], g.weight, "REPLACE")
 		print("DWARF clothes copy the skin's bones:", o.name)
+	# the shirt's bottom edge: up to 9 cm above it follows the hem's springy strips (each point its two nearest strips
+	# round the body, blended), so the edge sways and bounces when he runs; higher up only the skin's bones
+	shirt_o = next((o for o in meshes if o.name == "body_shirt"), None)
+	if shirt_o is not None and CLOTH_CHAINS:
+		names_s = {vg.index: vg.name for vg in shirt_o.vertex_groups}
+		angs = {c: a_ for c, (_j, a_) in CLOTH_CHAINS.items()}
+		for v in shirt_o.data.vertices:
+			p = shirt_o.matrix_world @ v.co
+			th = math.atan2(p.x, -p.y)
+			hem_v = 0.415 - 0.02 * max(math.cos(th), 0) + 0.005 * math.sin(3 * th + 0.6)
+			h = p.z - hem_v
+			q = min(max(h / 0.09, 0.0), 1.0)
+			m = 1.0 - q * q * (3 - 2 * q)
+			if m <= 0.0:
+				continue
+			share = {}
+			for c, a_ in angs.items():
+				d = abs((th - a_ + math.pi) % (2 * math.pi) - math.pi)
+				w = max(0.0, 1.0 - d / (math.pi / 3))
+				if w > 0:
+					share[c] = w
+			tot = sum(share.values()) or 1.0
+			t = min(max(1.0 - h / 0.09, 0.0), 1.0)  # 0 at the top of the strip, 1 at the edge
+			ws = {names_s[g.group]: g.weight * (1 - m) for g in v.groups if g.weight > 0}
+			for c, w in share.items():
+				ws[f"{c}_1"] = ws.get(f"{c}_1", 0.0) + m * w / tot * (1.0 - t)
+				ws[f"{c}_2"] = ws.get(f"{c}_2", 0.0) + m * w / tot * t
+			for g in list(v.groups):
+				shirt_o.vertex_groups[names_s[g.group]].remove([v.index])
+			for n_, w in ws.items():
+				if w <= 0:
+					continue
+				gg = shirt_o.vertex_groups.get(n_) or shirt_o.vertex_groups.new(name=n_)
+				gg.add([v.index], w, "REPLACE")
+				names_s[gg.index] = gg.name
+		print("DWARF shirt hem on its springy strips:", len(CLOTH_CHAINS))
 # The head, hair and beard: the face and the top of the head ride on the Head bone. Lower down, the beard and the hair on
 # the back follow the shirt they lie on (its bones, copied from the nearest shirt point), blended in over 10 cm under the
 # chin. (Owner, F183: all on the head bone, the long beard swung through the belly when the head moved: the Head bone

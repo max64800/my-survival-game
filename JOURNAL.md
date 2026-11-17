@@ -2859,6 +2859,20 @@ the body."
   close-up showed why: the ankle was a ball wider than the shin (a step) with the heel as a second lump under it.
   Fixed: oval arms (a new oval tube in the build), thighs longer and shins shorter in the skeleton (knee 31 -> 25 cm,
   same leg length), the leg runs straight down into a small blended heel, a low gently sloping foot.
+- Owner: "import this into the game so I can play as him; then the clothing: simple, but it should bounce a little".
+  - The hand-built dwarf is now the game's dwarf (it was switched off until the owner's OK). Tests that assumed the old
+    stand-in (its iron cap and helmet bone) now allow the bareheaded body. One test failed only in the full run: an
+    engine complaint while freeing a dwarf right after building it (earlier tests' players still being cleaned up);
+    waiting one frame first fixed it. Two cave tests fail from the cave chat's unfinished work (not touched).
+  - Simple clothes as their own layers over the body: a shirt (short sleeves, rolled edges, a few folds, neck slit)
+    and baggy shorts to just above the knee, each made as a shell a little off the skin. They copy the skin's bending.
+    The shirt's bottom edge has six springy strips (bones the game swings like the hair, with a "cloth" setting: rests
+    on the body, never sinks in): measured, it sways 3-4 cm in a dash.
+  - Hurdles: Claude named a loop variable `dh`, the same as the head builder: the next clay call broke. The strip
+    finder started outside the clay's box. The page file grew to 15.8 MB (the host serves ~14.6): the page copy's face
+    pictures are smaller and its animation keeps every other frame (13.6 MB, checked in a browser before publishing).
+  - Still open: the beard vs the body in fast moves got worse with the shirt 1.5-3 cm further out (8-16 cm in run and
+    sprint), the back hair sways 14 cm in a dash, a braid link folds sharply: the hair test fails.
 
 - **Owner's round 2 notes:** clear gaps between the stone rows and between stones; the battlement's copper band
   sticks out; ruins should have no door hanging, rather a broken door lying nearby. Fixes: stones now touch (only

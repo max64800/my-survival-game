@@ -203,9 +203,10 @@ func test_braid_tufts_swing_when_moving() -> void:
 		return
 	check(rig.skeleton.find_bone("hair_braid_m_7") >= 0, "the middle braid's 7 swing bones were added to the skeleton")
 	check(rig.skeleton.find_bone("hair_back_m_4") >= 0, "the back hair's swing bones were added too")
+	check(rig.skeleton.find_bone("cloth_hem_0_2") >= 0, "the shirt hem's springy bones were added (owner, Nov 18: clothes that bounce)")
 	var back: Dictionary = {}
 	for ch: Dictionary in swing._chains:
-		if not (ch.under as Array).is_empty():
+		if not (ch.under as Array).is_empty() and String(ch.get("name", "")).begins_with("hair_back"):
 			back = ch
 	check(not back.is_empty(), "the back hair lies on the shirt below the head (owner, Nov 17: 'a stiff visor')")
 	var lifted := 0.0

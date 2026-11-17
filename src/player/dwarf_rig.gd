@@ -257,7 +257,7 @@ func _add_swing_bones(src: Node, poses: Array, model_to_skel: Transform3D, built
 		n = n.get_parent()
 	for i in ssk.get_bone_count():
 		var bname := ssk.get_bone_name(i)
-		if not bname.begins_with("hair_") or skeleton.find_bone(bname) >= 0:
+		if not (bname.begins_with("hair_") or bname.begins_with("cloth_")) or skeleton.find_bone(bname) >= 0:  # (hair, and the clothes' springy strips)
 			continue
 		# Hair bones hang off the skeleton's root, not the head: every bone under the head inherits its uneven stretch
 		# (the dwarf shaping), so a turning hair bone also stretched and skewed. HairSwing places each hair bone
@@ -300,7 +300,7 @@ func _hair_on_shirt(src: Node, built: Dictionary, model_to_skel: Transform3D) ->
 	var arm := ["clavicle", "upperarm", "lowerarm", "hand", "thumb", "index", "middle", "ring", "pinky"]
 	for chain: String in built:
 		var at_list: Array = built[chain]
-		if not chain.begins_with("hair_back") or at_list.size() < 2:
+		if not (chain.begins_with("hair_back") or chain.begins_with("cloth_")) or at_list.size() < 2:
 			continue
 		var spots := at_list.duplicate()
 		spots.append(at_list[-1] + (at_list[-1] - at_list[-2]))  # (the last bone's tip, as HairSwing places it)
