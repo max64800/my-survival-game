@@ -11,7 +11,45 @@ func test_old_caves_unchanged() -> void:
 		"rooms=53 segs=1426 pois=65 r0=(-106.8563, -24.81935, -56.50769) sum=-11055.2929", "seed 42, layout 1")
 	check_eq(_fingerprint(CaveMaker.new(7)),
 		"rooms=54 segs=1342 pois=68 r0=(-19.17805, -23.8586, 112.1128) sum=-10639.7901", "seed 7, layout 1")
+	CaveMaker.use_layout(2)  # worlds made on Nov 17 before layout 3 keep theirs too
+	check_eq(_fingerprint(CaveMaker.new(42)),
+		"rooms=192 segs=5292 pois=162 r0=(-83.95856, -24.81935, -44.3989) sum=-9322.0347", "seed 42, layout 2")
+	check_eq(_fingerprint(CaveMaker.new(7)),
+		"rooms=192 segs=5191 pois=167 r0=(-15.06847, -23.8586, 88.08862) sum=-8536.2000", "seed 7, layout 2")
 	CaveMaker.use_layout(was)
+
+
+## Layout 3 (F230, F231): wide-and-low, tall-and-narrow and tall-and-wide caverns, caverns joined to a second part,
+## and tall caverns with a tunnel coming in high up and a ledge path down the wall that a dwarf fits along.
+func test_cavern_kinds_and_cliffs() -> void:
+	var was := CaveMaker.layout
+	CaveMaker.use_layout(3)
+	var c := CaveMaker.new(42)
+	CaveMaker.use_layout(was)
+	var props := {}
+	var lobes := 0
+	var cliffs := 0
+	for r in c.rooms:
+		props[int(r.get("prop", 0))] = props.get(int(r.get("prop", 0)), 0) + 1
+		lobes += 1 if r.has("lobe_of") else 0
+		cliffs += 1 if r.has("cliff") else 0
+	print("        (kinds %s, joined %d, cliffs %d)" % [props, lobes, cliffs])
+	for prop in range(1, CaveMaker.PROP_NAMES.size()):
+		check(props.get(prop, 0) >= 2, "some %s caverns (%d)" % [CaveMaker.PROP_NAMES[prop], props.get(prop, 0)])
+	check(lobes >= 3, "some caverns are joined to a second part (%d)" % lobes)
+	check(cliffs >= 3, "some tall caverns have a cliff exit (%d)" % cliffs)
+	var tot := 0
+	var bad := 0
+	for s in c.segments:
+		if not s.get("ledge", false):
+			continue
+		var d: Vector3 = s.b - s.a
+		check(absf(d.y) / Vector2(d.x, d.z).length() <= 0.42, "ledge at %s no steeper than a tunnel" % s.a)
+		var side := Vector3(-d.z, 0, d.x).normalized()
+		for f in [0.25, 0.5, 0.75]:
+			tot += 1
+			bad += 0 if _fits(c, (s.a as Vector3).lerp(s.b, f), side) else 1
+	check(tot > 0 and bad <= tot / 20, "a dwarf fits along the ledge paths (%d of %d spots too tight)" % [bad, tot])
 
 
 ## The new caves: many more rooms, every room shape and every passage kind, plenty of each.

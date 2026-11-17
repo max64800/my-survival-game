@@ -266,7 +266,48 @@ func _kind_shots(dwarf: Dwarf, maker: CaveMaker) -> void:
 		var fl := maker.find_floor(at.x, at.z, c.y)
 		var eye := (fl if fl != Vector3.INF else at) + Vector3.UP * 1.6
 		await _lamp_shot(dwarf, eye, c + Vector3(rad.x * 0.6, rad.y * 0.15, 0), "r_%d_%s" % [shape, CaveMaker.SHAPE_NAMES[shape]], 40.0)
+	# Layout 3 (F230, F231): one of each cavern proportion, a joined cavern, and a cliff exit (from the top, and the
+	# ledge path seen from the floor).
+	for prop in range(1, CaveMaker.PROP_NAMES.size()):
+		var best := _nearest_room(maker, home, func(r: Dictionary) -> bool: return int(r.get("prop", 0)) == prop and not r.has("lobe_of"))
+		if best.is_empty():
+			continue
+		var c: Vector3 = best.center
+		var rad: Vector3 = best.radii
+		var at := c + Vector3(-rad.x * 0.75, 0, 0)
+		var fl := maker.find_floor(at.x, at.z, c.y)
+		var eye := (fl if fl != Vector3.INF else at) + Vector3.UP * 1.6
+		var look := c + Vector3(rad.x * 0.6, rad.y * (0.6 if prop >= CaveMaker.PROP_TALL_NARROW else 0.1), 0)
+		await _lamp_shot(dwarf, eye, look, "p_%d_%s" % [prop, CaveMaker.PROP_NAMES[prop]], 70.0)
+	var lobe := _nearest_room(maker, home, func(r: Dictionary) -> bool: return r.has("lobe_of"))
+	if not lobe.is_empty():
+		var main_c: Vector3 = maker.rooms[int(lobe.lobe_of)].center
+		var lc: Vector3 = lobe.center
+		var fl := maker.find_floor(main_c.x, main_c.z, main_c.y)
+		var eye := (fl if fl != Vector3.INF else main_c) + Vector3.UP * 1.6 + (main_c - lc).normalized() * 6.0
+		await _lamp_shot(dwarf, eye, lc + Vector3.UP * 4.0, "j_joined", 80.0)
+	var cliff := _nearest_room(maker, home, func(r: Dictionary) -> bool: return r.has("cliff"))
+	if not cliff.is_empty():
+		var top: Vector3 = cliff.cliff
+		var c: Vector3 = cliff.center
+		var out := Vector3(top.x - c.x, 0, top.z - c.z).normalized()
+		await _lamp_shot(dwarf, top + out * 3.0 + Vector3.UP * 0.8, c + Vector3.DOWN * (cliff.radii as Vector3).y * 0.4, "c_cliff_top", 80.0)
+		var fl := maker.find_floor(c.x, c.z, c.y)
+		await _lamp_shot(dwarf, (fl if fl != Vector3.INF else c) + Vector3.UP * 1.6 - out * 4.0, top, "c_cliff_from_floor", 80.0)
 	print("  kinds: done")
+
+
+func _nearest_room(maker: CaveMaker, home: Vector3, ok: Callable) -> Dictionary:
+	var best: Dictionary = {}
+	var bd := INF
+	for r in maker.rooms:
+		if r.get("sealed", false) or not ok.call(r):
+			continue
+		var d: float = (r.center as Vector3).distance_to(home)
+		if d < bd:
+			bd = d
+			best = r
+	return best
 
 
 func _lamp_shot(dwarf: Dwarf, eye: Vector3, look: Vector3, name: String, reach: float) -> void:

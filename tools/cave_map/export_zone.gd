@@ -16,13 +16,14 @@ func _init() -> void:
 		if r.get("biome", "mossy") != biome:
 			continue
 		rooms.append({c = r2.call(r.center), r = r2.call(r.radii), big = r.big, kind = r.get("kind", "room"),
-			shape = CaveMaker.SHAPE_NAMES[int(r.get("shape", 0))], sealed = r.get("sealed", false)})
+			shape = CaveMaker.SHAPE_NAMES[int(r.get("shape", 0))], sealed = r.get("sealed", false),
+			prop = CaveMaker.PROP_NAMES[int(r.get("prop", 0))], lobe = r.has("lobe_of"), cliff = r.has("cliff")})
 	var segs := []
 	for s in m.segments:
 		if CaveMaker.biome_at((s.a + s.b) * 0.5) != biome:
 			continue
 		segs.append({a = r2.call(s.a), b = r2.call(s.b), r = snappedf(s.r, 0.1), k = int(s.get("k", 0)),
-			h = snappedf(float(s.get("h", 0.0)), 0.1), ramp = s.get("ramp", false)})
+			h = snappedf(float(s.get("h", 0.0)), 0.1), ramp = s.get("ramp", false), ledge = s.get("ledge", false)})
 	var pois := []
 	for p in m.pois:
 		if p.biome == biome:

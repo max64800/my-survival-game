@@ -54,6 +54,12 @@ func _ready() -> void:
 	light = OmniLight3D.new()
 	light.shadow_enabled = true
 	light.shadow_caster_mask = 0xFFFFF & ~DwarfModel.VISUAL_LAYER
+	# Soft shadow edges (owner, Nov 17: "the light is very sharp"): a pebble or a tool right by the lantern threw huge
+	# razor-edged shadows. A lantern flame is a few cm wide, so give the light that size (soft edges), blur a little,
+	# and let some light into the shadows.
+	light.light_size = 0.12
+	light.shadow_blur = 1.5
+	light.shadow_opacity = 0.85
 	light.light_color = WARM
 	light.omni_attenuation = ATTENUATION
 	light.position = Vector3(0, -0.1, 0)

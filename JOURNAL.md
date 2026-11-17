@@ -2577,3 +2577,21 @@ The owner: the sheet behind the hair still happens, make the hook at the very en
   "sometimes bigger" change: Claude had also boosted grass (not asked for), and 3x ferns look like spikes; the bend only
   reached 0.9 m from a plant's middle, so giant tufts never bent; and the bend pushes tips down, which squashed big
   mushrooms. Fixed: no boost for grass, ferns at most 1.6x, the bend reach grows with the plant, mushrooms only lean.
+
+## November 17, 2026 (PC, rock-textures Claude): cavern kinds, cliff exits, soft lantern shadows (F230-F232, F238)
+
+- The owner loves the new caves and asked for more kinds: wide-and-low (more), tall-and-narrow, tall-and-wide, caverns
+  that aren't round (a tall one opening into a wide one), some tunnels arriving at the top of a cavern like a cliff, and
+  things on walls and ceilings. Claude asked four multiple-choice questions: ledge path down from cliff exits; all
+  three new kinds plus joined caverns; dripstone, rock shelves, hanging roots/moss and glow threads (pictures first);
+  cavern shapes first.
+- Built as cave layout 3, so worlds made earlier today keep their caves (a test checks their fingerprints). Each tall
+  or wide cavern keeps its floor height; tunnels are dug to the new shapes. Joined caverns: a second part of the other
+  kind beside a big cavern, on the same floor. Cliff exits: one tunnel comes in high up the wall, and a low, flat
+  passage cut into the wall spirals down to the floor, open to the cavern on one side.
+- Hurdles: a bash quoting mix-up ate the first patch (nothing changed; rewritten as a file). Probing the ledges showed
+  their floor sits ~2.5 m under the path's middle line (rounded joins), not 1.2 m; the dwarf still fits along 97%.
+  The old "every room has a tunnel" check didn't know about cliff tunnels; taught it. The lookdev pictures were too dark
+  to judge big caverns, so the 3D map page got the new kinds and ledge paths instead.
+- Sharp shadows (F238): only the lantern casts shadows, and a tiny bright light next to a pebble or tool throws huge
+  razor-edged ones. The light now has a size (soft edges), a little blur and lighter shadows.

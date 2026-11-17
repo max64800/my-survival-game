@@ -56,7 +56,8 @@ func test_tunnels_join_every_room() -> void:
 		var touched := false
 		for s in c.segments:
 			var m := CaveMaker.mouth(room)  # tunnels leave at floor height (F141)
-			if s.a.distance_to(m) < 1.0 or s.b.distance_to(m) < 1.0:
+			var cl: Vector3 = room.get("cliff", Vector3.INF)  # (layout 3: a tall cavern's tunnel can come in high, F231)
+			if s.a.distance_to(m) < 1.0 or s.b.distance_to(m) < 1.0 or s.a.distance_to(cl) < 1.0 or s.b.distance_to(cl) < 1.0:
 				touched = true
 				break
 		check(touched, "room at %s has no tunnel" % room.center)

@@ -43,6 +43,8 @@
   <label><input type="checkbox" id="showBox" checked> Zone edges</label>
   <h2>Height stretch <span id="stretchVal"></span></h2>
   <input type="range" id="stretch" min="1" max="4" step="0.25" value="2">
+  <h2>Caverns</h2>
+  <div id="legendRooms"></div>
   <h2>Tunnel kinds</h2>
   <div id="legendTunnels"></div>
   <h2>Places</h2>
@@ -72,6 +74,7 @@ const TUNNEL = [
   { name: "Rift (very tall crack)", color: "#a77bd6" },
 ];
 const RAMP = { name: "Ramp up to a high tunnel", color: "#f2f2f2" };
+const LEDGE = { name: "Ledge path down a cliff", color: "#ff5fd2" };
 const PLACE = {
   spawn: ["Where you wake up", "#ffd75e"], ruin: ["Ruin", "#c9c2b4"], camp: ["Camp", "#ff9b42"], nest: ["Creature nest", "#e0504a"],
   shrine: ["Rune shrine", "#b98cff"], geode: ["Crystal pocket (sealed)", "#5fd6ff"], lair: ["Boss lair (sealed)", "#ff2f6d"],
@@ -79,6 +82,7 @@ const PLACE = {
   marking: ["Wall marking (boss clue)", "#ffffff"], gate: ["Gate to the Jungle", "#4fe0a3"], colonnade: ["Pillar row", "#d8d0bf"],
 };
 const ROOM_COLOR = { big: "#5e8f86", small: "#7d6a58", sealed: "#3c4a66" };
+const PROP = { wide_low: ["Wide and low", "#3fa9a0"], tall_narrow: ["Tall and narrow", "#d9734e"], tall_wide: ["Tall and wide", "#c9a03c"] };
 
 document.getElementById("sub").textContent =
   `Seed ${DATA.seed} · ${DATA.rooms.length} rooms · ${DATA.segs.length} tunnel pieces · ${DATA.pois.length} places · 800 × 800 m`;
@@ -91,7 +95,9 @@ function legend(el, items) {
     el.appendChild(r);
   }
 }
-legend(document.getElementById("legendTunnels"), [...TUNNEL.map(t => [t.name, t.color]), [RAMP.name, RAMP.color]]);
+legend(document.getElementById("legendTunnels"), [...TUNNEL.map(t => [t.name, t.color]), [RAMP.name, RAMP.color], [LEDGE.name, LEDGE.color]]);
+legend(document.getElementById("legendRooms"), [["Normal cavern", ROOM_COLOR.big], ["Room", ROOM_COLOR.small], ["Sealed (dig in)", ROOM_COLOR.sealed],
+  ...Object.values(PROP)]);
 const placeKinds = [...new Set(DATA.pois.map(p => p.t))].filter(t => PLACE[t]);
 legend(document.getElementById("legendPlaces"), [["Where you wake up", PLACE.spawn[1]], ...placeKinds.map(t => PLACE[t])]);
 
@@ -126,7 +132,7 @@ const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), col = new THREE.Colo
 DATA.rooms.forEach((r, i) => {
   m4.compose(P(r.c), q.identity(), new THREE.Vector3(r.r[0], r.r[1], r.r[2]));
   rooms.setMatrixAt(i, m4);
-  rooms.setColorAt(i, col.set(r.sealed ? ROOM_COLOR.sealed : (r.big ? ROOM_COLOR.big : ROOM_COLOR.small)));
+  rooms.setColorAt(i, col.set(r.sealed ? ROOM_COLOR.sealed : (PROP[r.prop] ? PROP[r.prop][1] : (r.big ? ROOM_COLOR.big : ROOM_COLOR.small))));
 });
 world.add(rooms);
 
@@ -152,7 +158,7 @@ DATA.segs.forEach((s, i) => {
   const basis = new THREE.Matrix4().makeBasis(side.multiplyScalar(w), dir.clone().multiplyScalar(len), vup.multiplyScalar(h));
   basis.setPosition(a.clone().add(b).multiplyScalar(0.5));
   tunnels.setMatrixAt(i, basis);
-  const c = s.ramp ? RAMP.color : TUNNEL[s.k].color;
+  const c = s.ledge ? LEDGE.color : (s.ramp ? RAMP.color : TUNNEL[s.k].color);
   tunnels.setColorAt(i, col.set(c));
   m4.compose(b, q.identity(), new THREE.Vector3(w, h, w));
   joints.setMatrixAt(i, m4);
@@ -225,11 +231,12 @@ renderer.domElement.addEventListener("pointermove", e => {
   let text = "";
   if (hit) {
     if (hit.object.userData.label) text = hit.object.userData.label;
-    else if (hit.object === tunnels) { const s = DATA.segs[hit.instanceId]; text = s.ramp ? RAMP.name : TUNNEL[s.k].name; }
+    else if (hit.object === tunnels) { const s = DATA.segs[hit.instanceId]; text = s.ledge ? LEDGE.name : (s.ramp ? RAMP.name : TUNNEL[s.k].name); }
     else if (hit.object === rooms) {
       const r = DATA.rooms[hit.instanceId];
       const size = Math.round(Math.max(r.r[0], r.r[2]) * 2);
-      text = `${r.big ? "Big cavern" : "Room"} · ${SHAPE[r.shape] || r.shape} · ~${size} m across${r.sealed ? " · sealed" : ""}${r.kind !== "room" && r.kind !== "cavern" ? " · " + r.kind.replace("_", " ") : ""}`;
+      const tall = Math.round(r.r[1] * 1.55);
+      text = `${PROP[r.prop] ? PROP[r.prop][0] : (r.big ? "Big cavern" : "Room")}${r.lobe ? " (joined to a cavern)" : ""}${r.cliff ? " · cliff exit" : ""} · ${SHAPE[r.shape] || r.shape} · ~${size} m across, ~${tall} m tall${r.sealed ? " · sealed" : ""}${r.kind !== "room" && r.kind !== "cavern" ? " · " + r.kind.replace("_", " ") : ""}`;
     }
   }
   tip.style.display = text ? "block" : "none";

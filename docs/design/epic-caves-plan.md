@@ -78,7 +78,13 @@ asked the owner.
 - Hurdle: switching layouts in tests replaced the shared list of areas while an earlier test's rock was still being
   built on other threads, and the game crashed; `use_layout` now changes the list in place.
 
-Next: step 2, the waterfall shaft (pictures first).
+**Layout 3 (Nov 17, F230, F231), new worlds only:** cavern proportions (wide-and-low with flat ceilings, tall-and-narrow,
+tall-and-wide; the first cavern stays normal), joined caverns (a second part of the other kind on the same floor), and
+cliff exits (one tunnel into most tall caverns comes in high, with a ledge path spiralling down the wall). Seed 42:
+12 wide-low, 16 tall-narrow, 3 tall-wide, 7 joined, 9 cliffs. Layouts 1 and 2 are unchanged (fingerprint tests).
+
+Next: walls and ceilings (F232: dripstone, rock shelves, hanging roots and moss, glow threads; ChatGPT pictures first,
+batches of ~4), then step 2, the waterfall shaft.
 
 *(Below: the research and the choices as first written.)*
 

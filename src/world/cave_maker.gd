@@ -20,10 +20,11 @@ extends RefCounted
 ##   1 = the first caves: 400 m areas (Mossy x -200…200, Jungle x 220…620), squashed balls and tubes.
 ##   2 = real-shaped caves: 800 m areas (Mossy x -400…400, Jungle x 420…1220), about 4x the rooms,
 ##       passages and halls shaped the way water shapes real caves (see "layout 2" below).
-const LAYOUT_LATEST := 2
-## What brand-new worlds get: layout 2, the real-shaped caves (F211 step 1, OK'd by the owner Nov 17). Old saves keep
-## the layout they were made with; robots can try the old caves with "-- layout=1".
-const LAYOUT_DEFAULT := 2
+const LAYOUT_LATEST := 3
+## What brand-new worlds get. Layout 2: the real-shaped caves (F211 step 1, OK'd by the owner Nov 17). Layout 3: the
+## same plus tall/wide/joined caverns and cliff exits with ledge paths (F230, F231). Old saves keep the layout they were
+## made with; robots can try older caves with "-- layout=1" or "-- layout=2".
+const LAYOUT_DEFAULT := 3
 static var layout := LAYOUT_DEFAULT
 
 
@@ -683,6 +684,127 @@ func _place_rooms_v2(rng: RandomNumberGenerator, cx: float, biome: String) -> vo
 		if _far_from_rooms(c, 45.0):
 			rooms.append({center = c, radii = r, big = false, kind = "room", sealed = false, biome = biome})
 			placed += 1
+	if made_layout >= 3:
+		_set_proportions(r0)
+
+
+# ---------------------------------------------------------------- layout 3: cavern proportions (F230, F231)
+# The owner (Nov 17): "I really like the wide but not tall caves... some tall and narrow, some tall and wide... a tall
+# cavern goes into a wide cavern... some exits at the very top, like a cliff". Decided after the rooms are placed, with
+# their own dice, so the places don't move; each keeps its floor height (tunnels are dug after, to the new mouths).
+
+const PROP_NORMAL := 0
+const PROP_WIDE_LOW := 1  ## wider, low, flat rock-layer ceiling
+const PROP_TALL_NARROW := 2  ## a deep shaft-like hall
+const PROP_TALL_WIDE := 3  ## a cathedral
+const PROP_NAMES := ["normal", "wide_low", "tall_narrow", "tall_wide"]
+const LEDGE_SLOPE := 0.32  ## the ledge path down a cliff: gentler than a tunnel
+
+func _set_proportions(r0: int) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed + 4242 + r0
+	var r1 := rooms.size()
+	for i in range(r0, r1):
+		var rm: Dictionary = rooms[i]
+		var roll := rng.randf()
+		if i == r0 or not (rm.big or rm.get("hall", false)):
+			continue  # the first cavern (you start beside it) stays easy
+		var prop := PROP_NORMAL
+		if rm.big:
+			prop = PROP_WIDE_LOW if roll < 0.3 else (PROP_TALL_NARROW if roll < 0.5 else (PROP_TALL_WIDE if roll < 0.7 else PROP_NORMAL))
+		else:
+			prop = PROP_WIDE_LOW if roll < 0.3 else (PROP_TALL_NARROW if roll < 0.5 else (PROP_TALL_WIDE if roll < 0.6 else PROP_NORMAL))
+		_reshape(rm, prop)
+	# Joined caverns: some big caverns open sideways into a second part of the other kind, on the same floor.
+	for i in range(r0, r1):
+		var rm: Dictionary = rooms[i]
+		var roll := rng.randf()
+		var ang := rng.randf() * TAU
+		if i == r0 or not rm.big or roll > 0.45:
+			continue
+		var prop := int(rm.get("prop", PROP_NORMAL))
+		var lobe_prop := PROP_WIDE_LOW if prop in [PROP_TALL_NARROW, PROP_TALL_WIDE] else PROP_TALL_NARROW
+		var r: Vector3 = rm.radii
+		var lobe := {center = rm.center, radii = Vector3(r.x * 0.65, r.y, r.z * 0.65), big = false, kind = "room",
+			sealed = false, biome = rm.biome, hall = true, lobe_of = i}
+		_reshape(lobe, lobe_prop)
+		var lr: Vector3 = lobe.radii
+		var dir := Vector3(cos(ang), 0, sin(ang))
+		var reach_p := 1.0 / Vector2(dir.x / r.x, dir.z / r.z).length()
+		var reach_l := 1.0 / Vector2(dir.x / lr.x, dir.z / lr.z).length()
+		var c: Vector3 = lobe.center + dir * (reach_p * 0.7 + reach_l * 0.7)
+		var m := HALF_SIZE - 20.0
+		var bx: float = BIOMES[0 if rm.biome == "mossy" else 1].cx
+		if absf(c.x - bx) > m - lr.x or absf(c.z) > m - lr.z:
+			continue
+		var clear := true
+		for j in rooms.size():
+			if j != i and (rooms[j].center as Vector3).distance_to(c) < maxf(lr.x, lr.z) + maxf(rooms[j].radii.x, rooms[j].radii.z) + 8.0:
+				clear = false
+				break
+		if clear:
+			lobe.center = c
+			rooms.append(lobe)
+
+
+## New radii for a room's proportion, keeping its floor where it was (and its ceiling under the world's roof).
+func _reshape(rm: Dictionary, prop: int) -> void:
+	var c: Vector3 = rm.center
+	var r: Vector3 = rm.radii
+	var floor_y := c.y - r.y * 0.55
+	match prop:
+		PROP_WIDE_LOW:
+			r = Vector3(r.x * 1.25, r.y * 0.62, r.z * 1.25)
+		PROP_TALL_NARROW:
+			r = Vector3(maxf(r.x * 0.5, 9.0), r.y * 2.3, maxf(r.z * 0.5, 9.0))
+		PROP_TALL_WIDE:
+			r = Vector3(r.x * 1.05, r.y * 2.0, r.z * 1.05)
+	r.y = minf(r.y, (Y_MAX - 6.0 - floor_y) / 1.55)
+	rm.radii = r
+	rm.center = Vector3(c.x, floor_y + r.y * 0.55, c.z)
+	rm.prop = prop
+
+
+## Tall caverns: a tunnel can come in high up the wall (F231).
+func _is_tall(i: int) -> bool:
+	return int(rooms[i].get("prop", PROP_NORMAL)) in [PROP_TALL_NARROW, PROP_TALL_WIDE]
+
+
+## Where a cliff tunnel comes into room i, on the side facing `toward`: high up (a bit over half its height), just
+## inside the wall.
+func _cliff_mouth(i: int, toward: Vector3) -> Vector3:
+	var c: Vector3 = rooms[i].center
+	var r: Vector3 = rooms[i].radii
+	var dir := Vector3(toward.x - c.x, 0, toward.z - c.z).normalized()
+	var y := c.y + r.y * 0.5
+	var f := sqrt(1.0 - 0.25)  # how wide the ellipsoid still is at that height
+	var reach := 1.0 / Vector2(dir.x / r.x, dir.z / r.z).length()
+	return Vector3(c.x + dir.x * reach * f * 0.85, y, c.z + dir.z * reach * f * 0.85)
+
+
+## The ledge path from a cliff mouth down to the floor: a low, flat-floored groove cut into the wall, open to the cavern
+## on one side, winding round the wall at LEDGE_SLOPE.
+func _dig_ledge(i: int, top: Vector3) -> void:
+	var c: Vector3 = rooms[i].center
+	var r: Vector3 = rooms[i].radii
+	var floor_y := c.y - r.y * 0.55
+	const R := 2.0  # the groove's floor is 1.2 m under its centre line
+	var y0 := top.y - 0.6
+	var y1 := floor_y + 1.2
+	var run := maxf((y0 - y1) / LEDGE_SLOPE, 10.0)
+	var n := ceili(run / 6.0)
+	var ang := atan2((top.z - c.z) / r.z, (top.x - c.x) / r.x)
+	var prev := Vector3.ZERO
+	for k in n + 1:
+		var y := lerpf(y0, y1, float(k) / n)
+		var f := sqrt(maxf(0.1, 1.0 - pow((y - c.y) / r.y, 2.0)))
+		var edge := Vector3(c.x + cos(ang) * r.x * f, y, c.z + sin(ang) * r.z * f)
+		var out := Vector3(edge.x - c.x, 0, edge.z - c.z).normalized()
+		var p := edge + out * 1.4
+		if k > 0:
+			segments.append({a = prev, b = p, r = R, k = LOW, h = 2.6, ledge = true})
+		prev = p
+		ang += (run / n) / maxf(Vector2(r.x, r.z).length() * 0.707 * f, 4.0)
 
 
 ## Going up or down costs more, so tunnels prefer to stay on one level (world doc 2.3).
@@ -761,8 +883,24 @@ func _connect_rooms_v2(rng: RandomNumberGenerator, r0: int, cx: float) -> void:
 func _dig_passage(rng: RandomNumberGenerator, i: int, j: int, cx: float) -> void:
 	var a := mouth(rooms[i])
 	var b := mouth(rooms[j])
+	var ra := i
+	var rb := j
+	var cliff := -1
+	if made_layout >= 3:
+		# One tunnel into most tall caverns comes in high up the wall, with a ledge path down (F231).
+		for idx in [i, j]:
+			if cliff < 0 and _is_tall(idx) and not rooms[idx].has("cliff") and posmod(idx * 7919 + seed, 10) < 7:
+				cliff = idx
+		if cliff == i:
+			a = _cliff_mouth(i, rooms[j].center)
+			ra = -1
+			rooms[i].cliff = a
+		elif cliff == j:
+			b = _cliff_mouth(j, rooms[i].center)
+			rb = -1
+			rooms[j].cliff = b
 	var s0 := segments.size()
-	_dig_worm_v2(rng, a, b, cx, _pick_kind(rng, a, b, false), 2.3, 3.3, i, j)
+	_dig_worm_v2(rng, a, b, cx, _pick_kind(rng, a, b, false), 2.3, 3.3, ra, rb)
 	for idx in [i, j]:
 		var room: Dictionary = rooms[idx]
 		if not room.big:
@@ -777,6 +915,8 @@ func _dig_passage(rng: RandomNumberGenerator, i: int, j: int, cx: float) -> void
 				var level := absf((sg.b as Vector3).y - (sg.a as Vector3).y) < 1.0
 				sg.k = LOW if level else KEYHOLE
 				sg.h = rng.randf_range(5.0, 8.0) if level else rng.randf_range(2.6, 3.2)
+	if cliff >= 0:
+		_dig_ledge(cliff, rooms[cliff].cliff)
 
 
 ## Which kind a passage from a to b is. LOW only where it can stay nearly level (rock layers are flat).
@@ -878,6 +1018,11 @@ func _assign_shapes(r0: int, r1: int) -> void:
 			rm.shape = SHAPE_FLAT if roll < 0.45 else (SHAPE_FALLEN if roll < 0.8 else SHAPE_DOME)
 		elif rm.kind == "room":
 			rm.shape = SHAPE_FLAT if roll < 0.4 else SHAPE_DOME
+		match int(rm.get("prop", PROP_NORMAL)):  # (layout 3)
+			PROP_WIDE_LOW:
+				rm.shape = SHAPE_FLAT  # a flat rock-layer ceiling over a wide floor
+			PROP_TALL_NARROW, PROP_TALL_WIDE:
+				rm.shape = SHAPE_DOME  # a tall vault (the ledge path follows its wall)
 
 
 ## Layout 2's distance to open air: like _sdf_with, plus the new shapes, and the bumpy-wall noise
@@ -1191,8 +1336,10 @@ func _ramp_high_holes(r0: int, r1: int, cx: float) -> void:
 			var sg: Dictionary = segments[si]
 			var a: Vector3 = sg.a
 			var b: Vector3 = sg.b
-			if a.distance_to(mo) < 1.0 or b.distance_to(mo) < 1.0:
-				continue  # starts or ends in this room, at floor height
+			if a.distance_to(mo) < 1.0 or b.distance_to(mo) < 1.0 or sg.get("ledge", false):
+				continue  # starts or ends in this room, at floor height (or it's a ledge path down a cliff)
+			if room.has("cliff") and ((room.cliff as Vector3).distance_to(a) < 14.0 or (room.cliff as Vector3).distance_to(b) < 14.0):
+				continue  # the cliff tunnel: high on purpose, its ledge path is the way down
 			var mn := a.min(b) - Vector3.ONE * 3.0
 			var mx := a.max(b) + Vector3.ONE * 3.0
 			if c.x + rad.x < mn.x or c.x - rad.x > mx.x or c.z + rad.z < mn.z or c.z - rad.z > mx.z 					or c.y + rad.y < mn.y or c.y - rad.y > mx.y:
