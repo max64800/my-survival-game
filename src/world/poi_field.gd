@@ -14,6 +14,8 @@ static var _mats := {}
 func build(p_maker: CaveMaker) -> void:
 	maker = p_maker
 	for p in maker.pois:
+		if p.type == "colonnade" and maker.is_reserved(p.pos, 4.0):
+			continue  # (its old columns would stand inside the ruined watchtower: the placement rule)
 		var n := _make(p)
 		if n:
 			add_child(n)

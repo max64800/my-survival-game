@@ -184,6 +184,7 @@ func _init(p_seed: int = 1, big_caverns: int = 3, small_rooms: int = 12) -> void
 	_corner_cache.clear()  # the start room was just carved: forget block corners remembered before it
 	if not start.is_empty():
 		spawn_point = start.spawn
+	_reserve_tower()
 
 
 ## One biome's rooms and the tunnels that join them, in this cave's layout.
@@ -225,6 +226,40 @@ func _seg_inside_room(sg: Dictionary, c: Vector3, r: Vector3) -> bool:
 		if Vector2((p.x - c.x) / r.x, (p.z - c.z) / r.z).length() > 0.7:
 			return false
 	return true
+
+
+# ---------------------------------------------------------------- ground kept clear for built things
+# Rule (owner, Nov 17): nothing the world grows stands inside something built or on its paths. Pebbles, plants, crystals
+# and the old columns are made fresh every time a world loads, so they ask is_reserved() and skip that ground.
+
+var reserved: Array[Dictionary] = []  ## {pos, r, h}: a circle of ground (r wide), from pos.y up to pos.y + h
+
+
+func reserve(pos: Vector3, r: float, h: float) -> void:
+	reserved.append({pos = pos, r = r, h = h})
+
+
+## Is p on ground kept clear for something built (or within `margin` of it)?
+func is_reserved(p: Vector3, margin := 0.0) -> bool:
+	for z in reserved:
+		var c: Vector3 = z.pos
+		if p.y > c.y - 1.5 and p.y < c.y + float(z.h) + 6.0 				and Vector2(p.x - c.x, p.z - c.z).length() < float(z.r) + margin:
+			return true
+	return false
+
+
+## The ruined watchtower by the first cavern (owner F254): it always picks the same spot from the cave (RuinTower.
+## find_spot), so its ground is known here. Its round body, and the steps in front of its door, plus a little room.
+## (Worlds made before the tower existed just get an empty patch there.)
+func _reserve_tower() -> void:
+	if made_layout < 3:
+		return
+	var plan := RuinTower.load_plan()
+	if plan.is_empty():
+		return
+	var spot := RuinTower.find_spot(self, float(plan.get("radius", 4.2)), float(plan.get("height", 9.0)))
+	if not spot.is_empty():
+		reserve(spot.pos, maxf(float(plan.get("radius", 4.2)), float(plan.get("front", 6.8))) + 1.5, float(plan.get("height", 9.0)))
 
 
 ## Layout 8 (owner, Nov 17): 1 or 2 smaller stone columns (5 to 11 m wide) in the plain big caverns, the same kind as

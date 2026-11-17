@@ -93,6 +93,9 @@ static func _place(maker: CaveMaker) -> Array[Dictionary]:
 	_add_twigs(maker, spots)
 	_mix_crystal_colours(spots)
 	_thin_crystals_under_stars(maker, spots)
+	for s in spots:
+		if maker.is_reserved(s.pos, 0.5):
+			s.hidden = true  # on a built thing's ground (the placement rule); kept in the list so ids stay the same
 	for i in spots.size():
 		spots[i].id = i
 	return spots

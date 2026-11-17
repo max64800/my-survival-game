@@ -3171,3 +3171,14 @@ the body."
   blocked nearly every spot; now a tunnel's line through the open middle of a cavern counts as floor (ramps,
   ledges and tunnel mouths still blocked). (2) A Python patch turned a GDScript line-continuation backslash into
   a joined line; fixed by hand.
+
+## November 17, 2026 (PC, rock-textures Claude): the tower's ground kept clear (F268)
+- Owner (screenshots): floating pebbles and mushrooms at the tower's door, pale old column pieces inside it. Owner
+  also: "the light and size is perfect".
+- Cause 1 (my mistake): since the pebbles are planned on a helper thread, they only started listening to digs
+  when done, so the tower's carving (during loading) was missed. Now they listen from the start and catch up.
+- Cause 2: decorations are made fresh on every load and never knew about the tower. The tower picks the same spot
+  from the cave every time, so CaveMaker now works it out too and keeps that ground clear (reserved/is_reserved):
+  crystals are hidden there (ids kept), plants, pebbles, dripstone, hanging roots and old colonnades skip it.
+  Works for saved worlds too. New test_keep_clear checks 2 seeds; a tower photo shows a clear doorstep.
+- The outpost's own ground can use the same reserve() (told its session).
