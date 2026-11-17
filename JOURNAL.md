@@ -2441,3 +2441,23 @@ learn how to do hair animation and implement that."
   starting a plan step.
 - A test that swapped in pretend textures ran while another chat was mid-pull, so its screenshots were mixed up;
   redone after the pull. The batch 1 stone looks painted and chunky in the game, no seams.
+
+## November 17, 2026 (PC, dwarf Claude): no more spikes, a heavier ponytail, nicer eyes (F215, F221, F222)
+
+The owner on the thicker braids and ponytail: the front collided again (a thin spike between the braids), the back
+hair "jumps too much, looks too light, and it's attached to the body", and the eyes are small and not nice.
+
+**What we did**
+- Each beard point now follows ONE braid (its nearest), and all of the back hair follows its nearest ponytail strand.
+- The ponytail is heavier than the braids (more drag, firmer, at most 15 degrees per joint); the braids' collision
+  size matches their new thickness (4 cm).
+- Eyes: bigger eyeballs, a wider, smiling opening, shallower sockets, a warm brown iris with white showing round it.
+
+**Mistakes and hurdles (including Claude's)**
+- The spike and the "slab" had one cause: points pulled by two skeletons at once (two braids, or a chain and the
+  shirt) stretch when the two move apart. One owner per point fixes it.
+- After the thicker braids, running got worse (19 cm): the swing's collision size was still the old thin braid's.
+- The first eye fix made the iris bigger but showed no white (amber dots); the second opened the lids and shrank the
+  iris a little (brown, white around it). 2 picture checks used.
+- Clipping now (beard below the chin): standing 0, jumping 3 mm, walking under 1 cm; running up to 13 cm and sprint,
+  sword, chopping, roll 5 to 7 cm, at the round 1 shirt's arm bulges (body round).

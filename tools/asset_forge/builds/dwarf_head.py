@@ -40,7 +40,7 @@ PX_PER_M = 1380.0  # the head picture's scale (crown y=35 px .. middle tuft y=87
 C = Vector((0.0, 0.02, 1.08))  # the skull's middle at eye level (Blender: x sideways, -y = front, z up)
 VOX = 0.0022                   # melt resolution (m): fine enough to keep the grooves on the hair locks
 GAP = 0.012                    # beard and hair stay this far off the body (MODEL-RULES Rule 2: 1 cm)
-EYE_R = 0.0185
+EYE_R = 0.021  # (bigger, friendlier eyes: owner Nov 17 "his eyes are small and not nice")
 R = random.Random(7)
 SKIN, LIDS, HAIR = [], [], []
 BVH = {}
@@ -364,7 +364,7 @@ def build_face():
 	cl.add(cl.ell((0, -0.124, 0.097), (0.039, 0.025, 0.033)), 0.015)             # chin
 	cl.add(cl.tube((0, -0.06, -0.005), (0, -0.2, 0.0), 0.07, 0.072), 0.02)       # neck (into the collar)
 	for s in (-1, 1):
-		cl.cut(cl.ell((s * 0.046, 0.002, 0.09), (0.024, 0.016, 0.018)), 0.008)   # eye socket (filled by the lids; deeper = dark rings)
+		cl.cut(cl.ell((s * 0.046, 0.002, 0.094), (0.026, 0.018, 0.018)), 0.008)   # eye socket (filled by the lids; deeper = dark rings)
 	cl.mesh("face", MS, SKIN)
 	del cl
 	for s in (-1, 1):
@@ -372,7 +372,7 @@ def build_face():
 		build_ear(s)
 
 
-def build_lids(s, A=62, Bu=30, Bl=14, r_in=EYE_R - 0.0015, r_out=EYE_R + 0.0075, rho_max=105, J=48, M=12):
+def build_lids(s, A=72, Bu=44, Bl=26, r_in=EYE_R - 0.0015, r_out=EYE_R + 0.0075, rho_max=105, J=48, M=12):
 	"""Both lids of one eye as one shell round the eyeball with an almond opening (the upper lid 30 degrees above the
 	look line, the lower lid only 14 below: a smiling eye). The shell sinks 1.5 mm into the ball, so the lid edge
 	never leaves a gap (beetle lesson), and it melts into the brow and the cheek."""
@@ -1133,7 +1133,7 @@ def build(body_objs, fast=False, log=print):
 		hi_eyes = eye_obj
 		cs.eye_attrs(hi_eyes, lambda side: (side * 0.08, -1, -0.03))
 		eye_obj.data.materials.clear()
-		eye_obj.data.materials.append(cs.paint_eye("paint_eye", iris_out=(0.32, 0.18, 0.08), iris_in=(0.6, 0.38, 0.17)))
+		eye_obj.data.materials.append(cs.paint_eye("paint_eye", iris_out=(0.3, 0.17, 0.08), iris_in=(0.56, 0.34, 0.15), iris_deg=30.0, pupil_deg=13.0, shine_deg=7.5))
 		high.name = "head"
 		log(f"HEAD done (fast) {time.time() - t0:.0f} s")
 		return {"head": high, "eyes": eye_obj, "rings": ring_obj, "mask": mask}
@@ -1163,7 +1163,7 @@ def build(body_objs, fast=False, log=print):
 	hi_eyes = cs.detail_copy(eye_obj, 2, "eyes_high")
 	cs.eye_attrs(hi_eyes, lambda side: (side * 0.08, -1, -0.03))
 	hi_eyes.data.materials.clear()
-	hi_eyes.data.materials.append(cs.paint_eye("paint_eye", iris_out=(0.32, 0.18, 0.08), iris_in=(0.6, 0.38, 0.17)))
+	hi_eyes.data.materials.append(cs.paint_eye("paint_eye", iris_out=(0.3, 0.17, 0.08), iris_in=(0.56, 0.34, 0.15), iris_deg=30.0, pupil_deg=13.0, shine_deg=7.5))
 	cs.uv_only(eye_obj)
 	cs.bake(hi_eyes, eye_obj, 512, "eye_baked", normal=False)
 	eye_obj.data.materials[0].node_tree.nodes["Principled BSDF"].inputs["Roughness"].default_value = 0.2

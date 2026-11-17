@@ -15,10 +15,11 @@ extends SkeletonModifier3D
 
 const GRAVITY := 0.0  ## (the hair is built hanging; extra gravity piled up down the chain and sagged it 21 cm)
 ## per kind of hair: stiffness (share of the way back to the resting shape per 1/60 s), drag (share of the speed lost
-## per 1/60 s), thickness (m). Heavy braids: firm and slow; the back hair a little livelier.
+## per 1/60 s), thickness (m), the most one joint may bend (degrees). Both heavy: they sway, they don't jump.
+## (Owner, Nov 17: the livelier ponytail "jumps too much, looks too light": now heavier than the braids.)
 const KINDS := {
-	"braid": {"stiff": 0.12, "drag": 0.2, "radius": 0.024},
-	"back": {"stiff": 0.07, "drag": 0.14, "radius": 0.02},  # (the big ponytail: livelier, so its swing shows, F215)
+	"braid": {"stiff": 0.15, "drag": 0.26, "radius": 0.04, "bend": 20.0},  # (radius: the thicker braids' half-depth + a gap)
+	"back": {"stiff": 0.14, "drag": 0.32, "radius": 0.022, "bend": 15.0},
 }
 const MAX_BEND := deg_to_rad(30.0)  ## the most one joint bends from its resting direction
 
@@ -116,10 +117,11 @@ func _step(sk: Skeleton3D, to_world: Transform3D, head_moved: Transform3D, head_
 		for _pass in 2:
 			var dir: Vector3 = next - (p[i - 1] as Vector3)
 			dir = dir.normalized() if dir.length() > 1e-6 else ref
-			if ref.angle_to(dir) > MAX_BEND:
+			var max_bend := deg_to_rad(float(kind.bend))
+			if ref.angle_to(dir) > max_bend:
 				var axis := ref.cross(dir)
 				if axis.length() > 1e-6:
-					dir = Quaternion(axis.normalized(), MAX_BEND) * ref
+					dir = Quaternion(axis.normalized(), max_bend) * ref
 			next = (p[i - 1] as Vector3) + dir * seg
 			for ball in balls:
 				var away: Vector3 = next - (ball[0] as Vector3)

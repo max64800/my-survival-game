@@ -342,14 +342,19 @@ def smooth01(x):
 
 
 # the braids and the back hair follow their swing bones (blended in below the chin, so the beard stays joined to the face)
-back_owner = {}  # head point -> its nearest back-hair strand
+# Each point follows ONE strand: its nearest braid, or its nearest ponytail strand (owner, Nov 17: a point between two
+# braids followed both and stretched into a spike when they swung apart; back hair half on the chain and half on the
+# shirt tore into a flat slab).
+back_owner = {}   # head point -> its nearest back-hair strand
+braid_owner = {}  # head point -> its nearest braid
 backs = {c: j for c, (bd, j, _) in CHAINS.items() if bd is None}
-if backs:
-	for vi, v in enumerate(HEAD["head"].data.vertices):
-		p = HEAD["head"].matrix_world @ v.co
-		if dh.C.y - p.y > -0.05:
-			continue
+braids = {c: j for c, (bd, j, _) in CHAINS.items() if bd is not None}
+for vi, v in enumerate(HEAD["head"].data.vertices):
+	p = HEAD["head"].matrix_world @ v.co
+	if backs and dh.C.y - p.y <= -0.05:
 		back_owner[vi] = min(backs, key=lambda c: along(backs[c], p)[1])
+	if braids:
+		braid_owner[vi] = min(braids, key=lambda c: along(braids[c], p)[1])
 for cname, (bd, joints, parent) in CHAINS.items():
 	nb = len(joints) - 1
 	jd = [0.0]
@@ -359,12 +364,14 @@ for cname, (bd, joints, parent) in CHAINS.items():
 		p = HEAD["head"].matrix_world @ v.co
 		s, d, total = along(joints, p)
 		if bd is not None:  # the whole braid (blended in over its top 3 cm, under the chin)
+			if braid_owner.get(vi) != cname:
+				continue
 			m = smooth01(s / 0.03) * (1.0 - smooth01((d - bd["reach"]) / (bd["reach"] * 0.6)))
-		else:  # the back hair: behind the skull, from the nape down; each point goes with its nearest strand
+		else:  # the back hair: ALL of it behind the skull, from the crown's back down, goes with its nearest strand
 			v_, w_ = p.z - dh.C.z, dh.C.y - p.y
 			if back_owner.get(vi) != cname:
 				continue
-			m = smooth01((0.04 - v_) / 0.06) * smooth01((-w_ - 0.05) / 0.04) * (1.0 - smooth01((d - 0.1) / 0.05))
+			m = smooth01((0.07 - v_) / 0.05) * smooth01((-w_ - 0.05) / 0.03)
 		if m <= 0.0:
 			continue
 		c = 0.0  # where along the chain, in bones (bone k's middle = k)
