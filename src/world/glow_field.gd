@@ -9,7 +9,7 @@ const GLOW_LAYER := 2
 ## above its spot, inside a big crystal or under a mushroom cap, and lit them blinding white from close up (Nov 16).
 ## They shine by themselves (emission); the lantern and everything else still light them.
 const PLANT_LAYER := 1 << 10
-const LIGHT_COUNT := 12
+const LIGHT_COUNT := 28  ## (owner, Nov 17: crystals should always light up, not only near you)
 const LIGHT_UPDATE := 0.3
 
 var _spots: Dictionary = {}  ## id -> spot data
@@ -23,7 +23,7 @@ var _light_spot: Array[int] = []  ## which spot each light is on (-1 = none)
 var _light_target: Array[float] = []  ## how bright each light is fading toward
 const ROOT_WIDTH := 1.6  ## roots look thicker than before (owner F135: they were hard to aim at)
 const FADE_SPEED := 1.2  ## light energy per second
-const LIGHT_REACH := 40.0
+const LIGHT_REACH := 75.0
 var _light_timer := 0.0
 var _crystal_mesh: Mesh
 var _mushroom_mesh: Mesh
@@ -41,6 +41,8 @@ func build(spots: Array[Dictionary]) -> void:
 	_twig_mesh = _make_twig_mesh()
 	_root_mesh = _make_root_mesh()
 	for s in spots:
+		if s.get("hidden", false):
+			continue  # a crystal left out under the glow-worm stars (GlowPlacer._thin_crystals_under_stars)
 		_spots[s.id] = s
 		_grid_add(s)
 		_add_node(s)
@@ -441,10 +443,32 @@ func _material_for(c: Color, glows: bool = true, surface: String = "") -> Materi
 	return _materials[key]
 
 
+## The same slow breath as crystal.gdshader's crystal_pulse() (0 = dim, 1 = bright), for a crystal's light on the rock.
+## TIME in shaders starts over every hour (Godot's default), so this does too, to stay in step.
+static func crystal_pulse(o: Vector3, t: float) -> float:
+	var period := 3.0 + 7.0 * fposmod(o.x * 0.137 + o.y * 0.271 + o.z * 0.419, 1.0)
+	var phase := fposmod(o.x * 0.71 + o.y * 0.29 + o.z * 0.53, 1.0)
+	var p := 0.5 - 0.5 * cos(TAU * (t / period + phase))
+	return p * p * (3.0 - 2.0 * p)
+
+
+var _light_base: Array[float] = []  ## each light's brightness before the crystal's breath (fades in and out)
+
+
 func _process(delta: float) -> void:
 	# Lights fade in and out instead of popping like light switches (owner, Nov 15, F107).
+	var t := fmod(Time.get_ticks_msec() / 1000.0, 3600.0)
+	if _light_base.size() != _lights.size():
+		_light_base.resize(_lights.size())
+		_light_base.fill(0.0)
 	for i in _lights.size():
-		_lights[i].light_energy = move_toward(_lights[i].light_energy, _light_target[i], delta * FADE_SPEED)
+		_light_base[i] = move_toward(_light_base[i], _light_target[i], delta * FADE_SPEED)
+		var s: Dictionary = _spots.get(_light_spot[i], {})
+		var breath := 1.0
+		if not s.is_empty() and String(s.kind).begins_with("crystal"):
+			# the node's origin is the spot's base; the shader uses the model's origin, the same point
+			breath = 0.3 + 1.1 * crystal_pulse((_nodes[s.id] as Node3D).global_position if _nodes.has(s.id) else s.pos, t)
+		_lights[i].light_energy = _light_base[i] * breath
 	_push_mushrooms()
 	_light_timer -= delta
 	if _light_timer > 0.0:
@@ -479,7 +503,7 @@ func _process(delta: float) -> void:
 		if taken.has(s.id):
 			continue
 		for i in _lights.size():
-			if _light_target[i] == 0.0 and _lights[i].light_energy < 0.03:
+			if _light_target[i] == 0.0 and _light_base[i] < 0.03:
 				_light_spot[i] = s.id
 				_lights[i].global_position = s.pos + s.normal * 0.6
 				_lights[i].light_color = s.color

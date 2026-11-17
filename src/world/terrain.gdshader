@@ -62,7 +62,7 @@ float vnoise(vec3 x) {
 // how many do); where the rock passes through a ball it shows a small round spot, the same from any angle (round 3:
 // dots painted from above were stretched into streaks on sloping rock). Sharp edge, no blur; each twinkles slowly.
 const vec3 STAR_COLOR = vec3(0.4, 0.88, 1.0);
-uniform float star_brightness = 1.6;
+uniform float star_brightness = 3.2;  // (owner: brighter; moving the camera smears tiny points a little)
 
 float star_layer(vec3 p, float cell, float radius, float keep) {
 	vec3 q = p / cell;

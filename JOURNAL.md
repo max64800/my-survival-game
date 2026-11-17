@@ -2917,3 +2917,15 @@ the body."
 - Hotbar: pressing the picked number again puts the tool away (`hands_empty`; the hand slot becomes "nothing").
   Hurdle: Claude's test assumed the first press picks the slot, but slot 1 is already picked at the start, so the first
   press already puts the pickaxe away (which is what the owner wants); the test was fixed, not the game.
+
+## November 17, 2026 (PC, rock-textures Claude): brighter stars, breathing crystals (F255)
+
+- Owner: the dots "look absolutely incredible", but dimmer while the camera moves (the anti-aliasing blends frames, so
+  tiny points smear while moving): brightness 1.6 -> 3.2.
+- "When I go out of the crystal distance it stops lighting up": only the 12 nearest glowing spots within 40 m had a real
+  light. Now 28 within 75 m.
+- Fewer crystals among the stars: `GlowPlacer.star_patch()` copies the rock shader's patch sum (its hash and noise), and
+  on ceilings inside a patch ~7 crystals in 8 are marked `hidden` (not built; ids unchanged). Seed 42: 710 of 1,601.
+- Breathing crystals: `crystal_pulse()` in crystal.gdshader and GlowField (same sum, from the crystal's position: 3-10 s
+  per breath), so the glow and its light on the rock rise and fall together. A test expected every cave model to have a
+  glowing part; the water dripstone is plain stone, so the test now allows it.

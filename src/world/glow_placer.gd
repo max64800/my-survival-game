@@ -92,6 +92,7 @@ static func _place(maker: CaveMaker) -> Array[Dictionary]:
 	_add_more_roots(maker, spots)
 	_add_twigs(maker, spots)
 	_mix_crystal_colours(spots)
+	_thin_crystals_under_stars(spots)
 	for i in spots.size():
 		spots[i].id = i
 	return spots
@@ -185,6 +186,40 @@ static func _mix_crystal_colours(spots: Array[Dictionary]) -> void:
 				s.kind = m[0]
 				s.color = KINDS[m[0]].color
 				break
+
+
+## Under the glow-worm stars (the ceiling patches the rock shader lights up), only about 1 crystal in 8 stays (owner,
+## Nov 17: "less crystals around the dots, not none, very rare"). The others are only marked `hidden` (the game doesn't
+## build them), so every spot keeps its id and saves still match.
+static func _thin_crystals_under_stars(spots: Array[Dictionary]) -> void:
+	for s in spots:
+		if not String(s.kind).begins_with("crystal") or (s.normal as Vector3).y > -0.3:
+			continue  # only crystals on ceilings and the tops of walls
+		if star_patch(s.pos) < 0.15:
+			continue
+		var p: Vector3 = s.pos
+		if float(posmod(hash(Vector3i((p * 7.0).round())), 1009)) / 1009.0 > 0.12:
+			s.hidden = true
+
+
+## How much the rock shader's glow-worm star patch covers p (0..1): the same sum as terrain.gdshader
+## (patches = smoothstep(0.45, 0.68, vnoise(v_world * 0.05 + vec3(7, 1, 3))), its hash() and vnoise() copied).
+static func star_patch(p: Vector3) -> float:
+	return smoothstep(0.45, 0.68, _vnoise(p * 0.05 + Vector3(7.0, 1.0, 3.0)))
+
+
+static func _shader_hash(p: Vector3) -> float:
+	var q := Vector3(fposmod(p.x * 0.3183099 + 0.1, 1.0), fposmod(p.y * 0.3183099 + 0.1, 1.0), fposmod(p.z * 0.3183099 + 0.1, 1.0)) * 17.0
+	return fposmod(q.x * q.y * q.z * (q.x + q.y + q.z), 1.0)
+
+
+static func _vnoise(x: Vector3) -> float:
+	var i := x.floor()
+	var f := x - i
+	f = f * f * (Vector3.ONE * 3.0 - 2.0 * f)
+	var a := lerpf(lerpf(_shader_hash(i), _shader_hash(i + Vector3(1, 0, 0)), f.x), lerpf(_shader_hash(i + Vector3(0, 1, 0)), _shader_hash(i + Vector3(1, 1, 0)), f.x), f.y)
+	var b := lerpf(lerpf(_shader_hash(i + Vector3(0, 0, 1)), _shader_hash(i + Vector3(1, 0, 1)), f.x), lerpf(_shader_hash(i + Vector3(0, 1, 1)), _shader_hash(i + Vector3(1, 1, 1)), f.x), f.y)
+	return lerpf(a, b, f.z)
 
 
 ## Twigs on the floors of Mossy rooms and caverns (they replace the old look-only twigs).

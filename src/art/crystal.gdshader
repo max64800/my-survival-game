@@ -38,6 +38,15 @@ vec3 fake_cave(vec3 r) {
 	return c * (0.15 + 1.3 * pow(bands, 1.5));
 }
 
+// Each crystal slowly lights up and fades on its own (owner, Nov 17): one breath every 3 to 10 seconds, its length and
+// start from where it sits. GlowField.crystal_pulse() is the same sum, so its light on the rock breathes along.
+float crystal_pulse(vec3 o, float t) {
+	float period = 3.0 + 7.0 * fract(o.x * 0.137 + o.y * 0.271 + o.z * 0.419);
+	float phase = fract(o.x * 0.71 + o.y * 0.29 + o.z * 0.53);
+	float p = 0.5 - 0.5 * cos(6.2831853 * (t / period + phase));
+	return p * p * (3.0 - 2.0 * p);
+}
+
 void fragment() {
 	vec3 paint = texture(albedo_tex, UV).rgb;
 	vec3 col = paint * tint.rgb;
@@ -58,6 +67,7 @@ void fragment() {
 	SPECULAR = 1.0;
 	// light from inside, brighter on facets turned toward you
 	vec3 inner = col * glow * (0.15 + 0.85 * facing * facing);
+	inner *= 0.25 + 2.2 * crystal_pulse(MODEL_MATRIX[3].xyz, TIME);  // dim, then glowing, then dim again
 	// the reflection: the made-up cave, tinted a little by the crystal's colour (coloured glass)
 	vec3 cave = fake_cave(r) * mix(vec3(1.0), tint.rgb, 0.55) * fres * mirror;
 	// flashes: white-hot, split into a little rainbow at their edge (a cut gem's fire)
