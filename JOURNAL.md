@@ -2885,6 +2885,13 @@ the body."
   - Hurdles: the painted page file was 17.5 MB (16 pictures and extra mesh data for the bumps); the page copy now has
     512-pixel pictures and no bump directions (the page works them out): 12.9 MB. Claude once sent a page command to
     the owner's open tab instead of its own test tab (it failed harmlessly); now only its own tab is used.
+- Owner (picture from below): the crotch area is not good; more texture on the tunic and shorts ("I don't see a lot of
+  change"); then: square sewn-on patches over holes. Causes: the body's bottom ended in a wide flat plate between the
+  legs (40 cm across) and the shorts were a thin hollow layer cut between the legs, so from below you saw cut edges and
+  the underpants. The weave pressed in was 0.35 mm: invisible. Fixed: a narrow rounded crotch; the shorts are solid
+  cloth (legs stay apart by themselves; given 2.5 cm of room, as solid cloth close to the skin looked like tight pants);
+  a 1 mm weave with painted light/dark threads both ways, checks on the shorts like the picture's; four patches (raised
+  3 mm, another shade, dashed stitches). New: the body pictures include a view from below.
 
 - **Owner's round 2 notes:** clear gaps between the stone rows and between stones; the battlement's copper band
   sticks out; ruins should have no door hanging, rather a broken door lying nearby. Fixes: stones now touch (only

@@ -467,12 +467,29 @@ def etube(cl, a, b, r0, r1, sv, sw):
 	return (np.sqrt((pu - ba[0] * t) ** 2 + ((pv - ba[1] * t) / sv) ** 2 + ((pw - ba[2] * t) / sw) ** 2) - r) * min(sv, sw)
 
 
+# Sewn-on square patches over old holes (owner, Nov 18): (piece, x, height, front?, half-width, half-height, tilt (rad),
+# colour against the cloth). Raised ~3 mm with crisp edges; painted another shade with dashed stitches round the edge.
+PATCHES = [("shirt", -0.12, 0.52, True, 0.036, 0.031, 0.14, (1.08, 0.9, 0.7)), ("shirt", 0.1, 0.7, False, 0.04, 0.034, -0.1, (0.85, 0.88, 0.95)),
+	("shorts", 0.16, 0.335, True, 0.03, 0.028, -0.18, (0.78, 0.82, 0.9)), ("shorts", -0.13, 0.39, False, 0.034, 0.03, 0.1, (1.15, 1.0, 0.8))]
+
+
+def patch_box(px, py, front, p):
+	"""How far outside a patch's square a point is (x, height), on its side of the body; < 0 inside."""
+	_, cx, cy, fr, hw, hh, tilt, _c = p
+	dx, dy = px - cx, py - cy
+	c_, s_ = math.cos(tilt), math.sin(tilt)
+	u, v = dx * c_ + dy * s_, -dx * s_ + dy * c_
+	side = np.where(front == fr, 0.0, 1.0)
+	return np.maximum(np.maximum(np.abs(u) - hw, np.abs(v) - hh), side)
+
+
 CLOTH_CHAINS = {}  # springy cloth bones: name -> ([joints], angle round the body)
 if not CLOTHES:
 	# the body's outline (height, half-width, front, back): a round belly that hangs low, a barrel chest, broad but
 	# sloping shoulders (the arms are added below), a thick neck under the beard
 	# (the back only gently curved: owner Nov 18, a deeper upper back looked "like he is gonna grow wings")
-	TORSO = [(0.33, 0.2, 0.15, 0.15), (0.4, 0.222, 0.19, 0.16), (0.47, 0.23, 0.24, 0.158), (0.55, 0.224, 0.265, 0.164),
+	TORSO = [(0.3, 0.06, 0.05, 0.05), (0.35, 0.16, 0.13, 0.13), (0.4, 0.222, 0.19, 0.16),  # (a narrow rounded crotch, not a flat plate: Nov 18)
+		 (0.47, 0.23, 0.24, 0.158), (0.55, 0.224, 0.265, 0.164),
 		(0.62, 0.216, 0.255, 0.175), (0.69, 0.21, 0.222, 0.177), (0.76, 0.21, 0.19, 0.177), (0.82, 0.198, 0.15, 0.17),
 		(0.87, 0.162, 0.11, 0.145), (0.93, 0.085, 0.07, 0.09)]
 	cl = clay((-0.72, 0.09, -0.36), (0.72, 1.0, 0.33))
@@ -577,6 +594,10 @@ if not CLOTHES:
 	sc.add(np.maximum(lip(sc, off, up_ - hem - 0.006, 0.009), arms), 0.005)                     # the hem
 	sc.add(np.maximum(lip(sc, off, arms + 0.004, 0.006), hem - up_), 0.004)                     # the sleeve ends (thin: Nov 18)
 	sc.add(np.maximum(lip(sc, off, up_ - 0.909, 0.009), arms), 0.005)                           # the collar
+	for pt in PATCHES:  # sewn-on patches: a raised square of cloth 3 mm over the shirt
+		if pt[0] == "shirt":
+			box = patch_box(x_, up_, (HC.y - sc.W) < 0, pt)
+			sc.add(np.maximum(box, F - off - 0.003), 0.0015)
 	del th_, off, arms
 	for s_ in (-1, 1):  # a few soft folds: from the armpits toward the belly, and hanging over the belly
 		groove(sc, [(s_ * 0.2, 0.74), (s_ * 0.13, 0.64), (s_ * 0.07, 0.58)], True, 0.003, 0.012)
@@ -609,11 +630,15 @@ if not CLOTHES:
 	up_ = oc.V + HC.z
 	x_ = oc.U + HC.x
 	cuff = 0.232  # (lower: the bottom peeked out under them, Nov 18)
-	off = 0.014 + 0.004 * np.clip((0.4 - up_) / 0.1, 0, 1)
-	oc.D = np.maximum(np.maximum(shell_of(oc, off), up_ - 0.47), np.maximum(cuff - up_, np.abs(x_) - 0.33)).astype(np.float32)
+	off = 0.024 + 0.006 * np.clip((0.4 - up_) / 0.1, 0, 1)  # (baggy: solid cloth this close looked like tight pants)
+	# (solid cloth over the skin, not a thin hollow layer: from below the hollow showed cut edges and the underpants)
+	oc.D = np.maximum(np.maximum(F - off, up_ - 0.47), np.maximum(cuff - up_, np.abs(x_) - 0.33)).astype(np.float32)
 	oc.add(np.maximum(lip(oc, off, up_ - cuff - 0.005, 0.007), np.abs(x_) - 0.33), 0.004)       # rolled cuffs (thin)
-	# two legs, not a skirt: cut between the legs below the crotch (owner, Nov 18: "no gap between his legs")
-	oc.cut(np.maximum(np.abs(x_) - 0.028 - 0.25 * np.clip(0.33 - up_, 0, None), up_ - 0.33), 0.006)
+	# (two legs, not a skirt: with the narrow crotch the two legs of the cloth stay apart by themselves)
+	for pt in PATCHES:
+		if pt[0] == "shorts":
+			box = patch_box(x_, up_, (HC.y - oc.W) < 0, pt)
+			oc.add(np.maximum(box, F - off - 0.003), 0.0015)
 	for s_ in (-1, 1):
 		groove(oc, [(s_ * 0.2, 0.4), (s_ * 0.17, 0.32)], True, 0.003, 0.01)
 		groove(oc, [(s_ * 0.06, 0.38), (s_ * 0.1, 0.31)], True, 0.003, 0.01)
@@ -653,9 +678,9 @@ HEAD = dh.build(BODY_PARTS, fast=FAST)
 PAINT = {
 	# (skin: scaled so its baked colour matches the face's, measured: the first try baked 180,135,113 vs the face 157,108,87)
 	"skin": dict(base=(0.75, 0.5, 0.385), dark=(0.435, 0.25, 0.19), light=(0.85, 0.66, 0.56), weave=0.0, per=1.0, size=2048),
-	"shirt": dict(base=(0.86, 0.8, 0.66), dark=(0.48, 0.41, 0.3), light=(0.98, 0.95, 0.86), weave=0.00035, per=0.0035, size=2048),
-	"shorts": dict(base=(0.47, 0.31, 0.19), dark=(0.22, 0.13, 0.07), light=(0.66, 0.48, 0.32), weave=0.0005, per=0.005, size=1024),
-	"wraps": dict(base=(0.84, 0.79, 0.67), dark=(0.48, 0.42, 0.32), light=(0.97, 0.94, 0.86), weave=0.0003, per=0.0035, size=1024),
+	"shirt": dict(base=(0.86, 0.8, 0.66), dark=(0.48, 0.41, 0.3), light=(0.98, 0.95, 0.86), weave=0.0011, per=0.008, size=2048, checks=0.0, threads=0.4),
+	"shorts": dict(base=(0.5, 0.33, 0.2), dark=(0.22, 0.13, 0.07), light=(0.68, 0.5, 0.33), weave=0.0011, per=0.008, size=2048, checks=0.045),
+	"wraps": dict(base=(0.84, 0.79, 0.67), dark=(0.48, 0.42, 0.32), light=(0.97, 0.94, 0.86), weave=0.0007, per=0.006, size=1024, checks=0.0),
 }
 
 
@@ -671,12 +696,38 @@ if not FAST:
 		pp = PAINT.get(mname)
 		if pp is None:
 			continue
-		hi = dh.cs.detail_copy(o, 2 if len(o.data.polygons) < 9000 else 1, o.name + "_high")
-		if pp["weave"] > 0:
+		cloth = pp["weave"] > 0
+		hi = dh.cs.detail_copy(o, 3 if cloth else (2 if len(o.data.polygons) < 9000 else 1), o.name + "_high")
+		tint = None
+		if cloth:
 			dh.cs._displace(hi, lambda q, n, a=pp["weave"], w=pp["per"]: weave(q, n, a, w))
+			# painted threads (owner, Nov 18: "more texture, I don't see a lot of change"): light and dark lines both ways,
+			# and on the shorts darker checks every few centimetres like the picture's
+			co = np.empty(len(hi.data.vertices) * 3)
+			hi.data.vertices.foreach_get("co", co)
+			co = co.reshape(-1, 3)
+			k = 2 * math.pi / pp["per"]
+			f = 0.5 * (np.abs(np.sin(k * 0.5 * (co[:, 0] + co[:, 1]))) + np.abs(np.sin(k * 0.5 * co[:, 2])))
+			mult = (1.0 - pp.get("threads", 0.28) / 2) + pp.get("threads", 0.28) * f  # (stronger threads on the shirt: Nov 18)
+			if pp["checks"] > 0:
+				kc = 2 * math.pi / pp["checks"]
+				band = np.maximum(np.clip((np.sin(kc * co[:, 2]) - 0.75) / 0.15, 0, 1), np.clip((np.sin(kc * (co[:, 0] + co[:, 1])) - 0.75) / 0.15, 0, 1))
+				mult = mult * (1.0 - 0.3 * band)
+			rgb = np.stack([mult, mult, mult], 1)
+			for pt in PATCHES:  # the patches: another shade, with dashed stitches just inside the edge
+				if pt[0] != o.name.replace("body_", ""):
+					continue
+				box = patch_box(co[:, 0], co[:, 2], co[:, 1] < 0, pt)
+				inside = box < 0.0
+				rgb[inside] *= np.array(pt[7])
+				edge = inside & (box > -0.005) & (np.sin((co[:, 0] + co[:, 2]) * 2 * math.pi / 0.008) > 0.0)
+				rgb[edge] *= 0.55
+			at = hi.data.color_attributes.new("tint", "FLOAT_COLOR", "POINT")
+			at.data.foreach_set("color", np.concatenate([rgb, np.ones((len(rgb), 1))], 1).ravel())
+			tint = "tint"
 		hi.data.materials.clear()
 		hi.data.materials.append(dh.cs.paint_material(f"paint_{o.name}", base=pp["base"], dark=pp["dark"], light=pp["light"],
-			strokes=0.05, top_light=0.12, edge=0.25, key=0.28, seed=3))
+			strokes=0.09 if cloth else 0.05, top_light=0.12, edge=0.25, key=0.28, seed=3, tint_attr=tint))
 		dh.cs.uv_only(o)
 		dh.cs.bake(hi, o, pp["size"], f"{o.name}_baked", ext=0.01)
 		bpy.data.objects.remove(hi, do_unlink=True)
@@ -1115,9 +1166,10 @@ if BODYREV:
 	scene.collection.objects.link(cam)
 	scene.camera = cam
 	shots = []
-	for tag, loc in (("front", Vector((0, -4, 0.6))), ("side", Vector((-4, 0, 0.6))), ("back", Vector((0, 4, 0.6)))):
+	for tag, loc, aim in (("front", Vector((0, -4, 0.6)), 0.6), ("side", Vector((-4, 0, 0.6)), 0.6), ("back", Vector((0, 4, 0.6)), 0.6),
+			("under", Vector((0.0, -2.2, -3.4)), 0.35)):  # (from below and in front: the crotch, owner Nov 18)
 		cam.location = loc
-		cam.rotation_euler = (Vector((0, 0, 0.6)) - loc).to_track_quat("-Z", "Y").to_euler()
+		cam.rotation_euler = (Vector((0, 0, aim)) - loc).to_track_quat("-Z", "Y").to_euler()
 		path = str(Path(BODYREV).with_name(Path(BODYREV).stem + f"_{tag}.png"))
 		scene.render.filepath = path
 		bpy.ops.render.render(write_still=True)
