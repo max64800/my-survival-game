@@ -232,6 +232,8 @@ static func plan(maker: CaveMaker, spots: Array[Dictionary]) -> Array[Dictionary
 					at = edge[1]
 			var k: Dictionary = KINDS[kind]
 			var size: float = lerpf(k.size[0], k.size[1], size_roll) * (0.75 + 0.35 * life)
+			if kind in ["fern", "grass", "rootlet", "rootlet_b"]:
+				size *= GlowPlacer.size_boost(at)  # sometimes bigger, never smaller (owner F218)
 			if not _free(taken, at, k.gap * size):
 				continue
 			_take(taken, at, k.gap * size)
@@ -280,7 +282,7 @@ static func _plan_everywhere(maker: CaveMaker, rock: Rock, taken: Dictionary, ou
 			if n.y < 0.72:
 				continue
 			var k: Dictionary = KINDS[kind]
-			var size: float = lerpf(k.size[0], k.size[1], offs[j][2])
+			var size: float = lerpf(k.size[0], k.size[1], offs[j][2]) * GlowPlacer.size_boost(at)  # (owner F218)
 			if not _free(taken, at, k.gap * size):
 				continue
 			_take(taken, at, k.gap * size)

@@ -332,6 +332,7 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	players_root = Node3D.new()
 	players_root.name = "Players"
 	cave_life.walkers = players_root  # grass and ferns lean away from every dwarf
+	glow.walkers = players_root  # and so do the little mushrooms (F219)
 	add_child(players_root)
 	var stations_root := Node3D.new()
 	stations_root.name = "Stations"

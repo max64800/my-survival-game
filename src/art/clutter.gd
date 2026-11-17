@@ -96,6 +96,8 @@ func _try(maker: CaveMaker, rng: RandomNumberGenerator, picks: Dictionary, start
 	var kind := _pick(rng, biome)
 	var k: Dictionary = KINDS[kind]
 	var size := rng.randf_range(k.size[0], k.size[1])
+	if kind in ["pebble", "rock", "nub"]:
+		size *= GlowPlacer.size_boost(hit)  # sometimes bigger, never smaller (owner F218)
 	var up := n
 	var side := up.cross(Vector3.FORWARD if absf(up.y) < 0.9 else Vector3.RIGHT).normalized()
 	var basis := Basis(side, up, side.cross(up)).orthonormalized().rotated(up, rng.randf() * TAU)

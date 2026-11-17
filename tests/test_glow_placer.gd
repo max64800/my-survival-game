@@ -83,3 +83,36 @@ func test_first_cavern_has_a_drip() -> void:
 			if s.kind == GlowPlacer.DRIP and s.pos.distance_to(first.center) < maxf(first.radii.x, first.radii.z):
 				found = true
 		check(found, "seed %d: a drip in the first cavern" % sd)
+
+
+## Ground things are sometimes bigger, never smaller (owner F218), the same on every computer.
+func test_size_boost_only_grows() -> void:
+	var big := 0
+	var huge := 0
+	for i in 2000:
+		var p := Vector3(i * 0.37, sin(i) * 3.0, i * -0.21)
+		var b := GlowPlacer.size_boost(p)
+		check(b >= 1.0 and b <= 3.2, "boost %.2f is never smaller" % b)
+		check_eq(b, GlowPlacer.size_boost(p), "same spot, same size")
+		big += 1 if b > 1.2 else 0
+		huge += 1 if b >= 1.9 else 0
+	print("        (%d of 2000 bigger, %d a lot bigger)" % [big, huge])
+	check(big > 400 and big < 900, "about 1 in 3 are bigger")
+	check(huge > 60 and huge < 300, "about 1 in 12 are a lot bigger")
+
+
+## Crystals and big roots are solid (owner F220), with the glow id so a swing still counts; mushrooms stay soft.
+func test_crystals_and_roots_are_solid() -> void:
+	var f := GlowField.new()
+	f.build([
+		{id = 1, pos = Vector3.ZERO, normal = Vector3.UP, kind = "crystal", color = Color.WHITE, scale = 1.0, spin = 0.0, length = 0.0},
+		{id = 2, pos = Vector3(5, 0, 0), normal = Vector3.UP, kind = "root", color = Color.WHITE, scale = 1.0, spin = 0.0, length = 1.0},
+		{id = 3, pos = Vector3(10, 0, 0), normal = Vector3.UP, kind = "glowcap", color = Color.WHITE, scale = 1.0, spin = 0.0, length = 0.0}])
+	var solid := {}
+	for b in f.find_children("*", "StaticBody3D", true, false):
+		if b.collision_layer & World.TERRAIN_LAYER:
+			solid[b.get_meta("glow_id")] = true
+	check(solid.has(1), "a crystal is solid")
+	check(solid.has(2), "a root is solid")
+	check(not solid.has(3), "a little mushroom is not")
+	f.free()

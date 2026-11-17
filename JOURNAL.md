@@ -2482,3 +2482,21 @@ body) and the neck behind the hair looks stretched; a Pause button for screensho
 - Moving the side braids out brought them nearer the round 1 shirt's arm bulge: running is still the worst case (side
   braids up to 16 cm in); standing, walking (1 cm), jumping (3 mm) are clean. Body round.
 - 1 picture check used.
+
+## November 17, 2026 (PC, rock-textures Claude): bigger ground things, bending mushrooms, solid crystals and roots (F218-F220)
+
+- The owner asked for more complex caves, sometimes-bigger ground things, mushrooms that bend like ferns, and no more
+  walking through crystals and roots. Claude first asked the cave Claude: more complex caves is its F211 step 1 (paused),
+  so it stays there. Logged F218-F220 and bumped F211 to "said 2x".
+- **Sizes (F218):** a "size boost" worked out from each thing's position (so every computer agrees and nothing else in
+  the cave moves): 2 in 3 stay, 1 in 4 get 1.25-1.7x bigger, 1 in 12 get 1.9-3.2x. Pebbles, rocks, little mushrooms,
+  ferns, grass, small roots, gravel and tiny mushrooms.
+- **Bending mushrooms (F219):** the fern's bend moved into a shared piece (`bend.gdshaderinc`); the little mushroom
+  model now uses it too, a bit stiffer. Same colours and glow as before.
+- **Solid (F220):** the dwarf only bumps into things on the "rock" layer; crystals and roots were only on the "aim"
+  layer. Each crystal, big root and giant mushroom now gets a second invisible shell shaped like its model on the rock
+  layer, with the same id, so swinging at it still works. The aim shell stays fat on purpose (easy to hit, F135).
+- Checks: 2 new tests (sizes never smaller; crystals and roots solid, mushrooms not), glow/cave-life/visual tests pass,
+  autopilot ran fine. Load time with and without the changes: 40.9 s vs 51.8 s (just noise). The slowest frame got a
+  bit lower (10 vs 19 fps for one moment), probably the new mushroom shader getting ready the first time.
+- Hurdle: another chat's feedback line sat next to Claude's, so Claude saved only its own lines.

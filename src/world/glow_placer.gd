@@ -219,13 +219,28 @@ static func _try_add(maker: CaveMaker, rng: RandomNumberGenerator, spots: Array[
 		if length < 2.5:
 			kind = "spore_truffle"
 			length = 0.0
-	var scale := rng.randf_range(0.7, 1.3) * (1.8 if kind.begins_with("crystal") else 1.0)
+	var scale := rng.randf_range(0.7, 1.3) * (1.8 if kind.begins_with("crystal") else size_boost(hit))
 	if kind in TALL:
 		scale = 1.0  # stretched by `length` instead
 	if maker.sdf_at(hit - n * 0.8) >= 0.0 or maker.sdf_at(hit + n * 0.8) <= 0.0:
 		return  # on the edge of a rock slab or block: no solid rock behind it, or rock in front (F109)
 	spots.append({id = -1, pos = hit, normal = n, kind = kind, color = KINDS[kind].color, scale = scale,
 		spin = rng.randf_range(0, TAU), length = length, chops = KINDS[kind].get("chops", 1)})
+
+
+## Ground things are sometimes bigger, never smaller (owner F218: "sometimes bigger, sometimes a lot bigger"):
+## about 2 in 3 stay as they are, 1 in 4 grow by 1.25-1.7x, 1 in 12 by 1.9-3.2x. Worked out from the spot's position,
+## not from the dice, so every computer gets the same and nothing else in the cave moves. Used by the little
+## mushrooms here, pebbles and rocks (Clutter), and ferns, grass, small roots, gravel, tiny mushrooms (CaveLife).
+static func size_boost(p: Vector3) -> float:
+	var h := hash(Vector3i((p * 20.0).round()))
+	var r := float(posmod(h, 10007)) / 10007.0
+	var t := float(posmod(h >> 14, 997)) / 997.0
+	if r < 0.67:
+		return 1.0
+	if r < 0.92:
+		return lerpf(1.25, 1.7, t)
+	return lerpf(1.9, 3.2, t)
 
 
 ## Rock under the middle and all round (a root is ~1.6 m wide and turns any way): no ends hanging in the air.

@@ -193,6 +193,7 @@ func _add_node(s: Dictionary) -> void:
 	mi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	body.add_child(mi)
+	_add_solid(body, mi, model, s)
 	add_child(body)
 	var up: Vector3 = s.normal
 	var at: Vector3 = s.pos - up * 0.1
@@ -208,6 +209,33 @@ func _add_node(s: Dictionary) -> void:
 	var basis := Basis(side, up, side.cross(up)).orthonormalized()
 	body.global_transform = Transform3D(basis.rotated(up, s.spin).scaled(Vector3.ONE * s.scale), at)
 	_nodes[s.id] = body
+
+
+var _solid_shapes := {}  ## model -> Shape3D (shared by every spot with that model)
+
+
+## Crystals, big roots and giant mushrooms are solid: dwarfs and creatures bump into them (owner F220: "I can walk
+## through crystals and roots"). The aim body above is fatter on purpose (easy to hit, F135) and only on the aim layer,
+## so this is a second body shaped like the model itself, on the rock layer. It carries the same glow id, so a swing
+## that hits it still counts as hitting the crystal or root. Little mushrooms, fiber and hanging roots stay soft.
+func _add_solid(body: StaticBody3D, mi: MeshInstance3D, model: String, s: Dictionary) -> void:
+	if not model in ["crystal", "root", "root_b", "root_c", "giant"] or s.kind == GlowPlacer.ROOT_DANGLE:
+		return
+	var mesh := mi.mesh as ArrayMesh
+	if mesh == null:
+		return
+	if not _solid_shapes.has(model):
+		# A crystal is a lump: its outline is enough. Roots arch and giants have a cap to stand under: the exact shape.
+		_solid_shapes[model] = mesh.create_convex_shape(true, true) if model == "crystal" else mesh.create_trimesh_shape()
+	var solid := StaticBody3D.new()
+	solid.collision_layer = World.TERRAIN_LAYER
+	solid.collision_mask = 0
+	solid.set_meta("glow_id", s.id)
+	solid.transform = mi.transform  # roots and giants are scaled to their length
+	var shape := CollisionShape3D.new()
+	shape.shape = _solid_shapes[model]
+	solid.add_child(shape)
+	body.add_child(solid)
 
 
 ## Which hand-built model each kind uses ("" = the simple shapes made here).
@@ -264,6 +292,9 @@ func _cave_mesh(model: String) -> ArrayMesh:
 
 ## The glowing parts (materials named glow_*) are painted pale: tint them with the kind's colour and let them shine.
 func _tint_glow_parts(mi: MeshInstance3D, model: String, c: Color, glows: bool) -> void:
+	if model == "glowcap":
+		_bend_mushroom(mi, c, glows)
+		return
 	for i in mi.mesh.get_surface_count():
 		var m := mi.mesh.surface_get_material(i) as StandardMaterial3D
 		if m == null or not m.resource_name.begins_with("glow_"):
@@ -293,6 +324,58 @@ func _tint_glow_parts(mi: MeshInstance3D, model: String, c: Color, glows: bool) 
 			else:
 				_glow_mats[key] = t
 		mi.set_surface_override_material(i, _glow_mats[key])
+
+
+const MUSHROOM_BEND := preload("res://src/art/mushroom_bend.gdshader")
+const MUSHROOM_HEIGHT := 0.45  ## the glowcap model's height (m) before the spot's own size
+var walkers: Node3D  ## the node holding every dwarf (main sets it): little mushrooms lean away from them (F219)
+var _bend_mats: Array[ShaderMaterial] = []
+
+
+## The little mushrooms lean away from dwarfs walking through them, like the ferns (owner F219). Every part of the
+## model (soil, stem, gills, cap) uses the bending shader, so the whole mushroom moves together; the base stays put.
+## Same colours as before: glowing parts get the kind's tint and glow, the rest keeps its painting.
+func _bend_mushroom(mi: MeshInstance3D, c: Color, glows: bool) -> void:
+	for i in mi.mesh.get_surface_count():
+		var m := mi.mesh.surface_get_material(i) as StandardMaterial3D
+		if m == null:
+			continue
+		var tinted := m.resource_name.begins_with("glow_")
+		var key := "bend/%d/%s/%s" % [i, c.to_html() if tinted else "", glows]
+		if not _glow_mats.has(key):
+			var sm := ShaderMaterial.new()
+			sm.shader = MUSHROOM_BEND
+			sm.set_shader_parameter("albedo_tex", m.albedo_texture)
+			sm.set_shader_parameter("plant_height", MUSHROOM_HEIGHT)
+			sm.set_shader_parameter("push_scale", 0.45)  # stiffer than a fern: a lean and a wobble, not flattened
+			sm.set_shader_parameter("roughness", m.roughness)
+			if m.normal_texture:
+				sm.set_shader_parameter("normal_tex", m.normal_texture)
+				sm.set_shader_parameter("use_normal", 1.0)
+			if tinted:
+				sm.set_shader_parameter("albedo_color", Color.from_hsv(c.h, minf(1.0, c.s * 1.2), c.v * (0.7 if glows else 0.9)))
+				sm.set_shader_parameter("emission_color", Color.from_hsv(c.h, minf(1.0, c.s * 1.2), c.v))
+				sm.set_shader_parameter("emission_energy", 0.9 if glows else 0.12)
+			else:
+				sm.set_shader_parameter("albedo_color", m.albedo_color)
+			_glow_mats[key] = sm
+			_bend_mats.append(sm)
+		mi.set_surface_override_material(i, _glow_mats[key])
+
+
+## Tell the bending mushrooms where every dwarf's feet are (up to 4), each frame.
+func _push_mushrooms() -> void:
+	if _bend_mats.is_empty() or walkers == null:
+		return
+	var feet: Array[Vector4] = [Vector4.ZERO, Vector4.ZERO, Vector4.ZERO, Vector4.ZERO]
+	var i := 0
+	for d in walkers.get_children():
+		if d is Node3D and i < 4:
+			var p := (d as Node3D).global_position
+			feet[i] = Vector4(p.x, p.y, p.z, 1.0)
+			i += 1
+	for m in _bend_mats:
+		m.set_shader_parameter("pushers", feet)
 
 
 ## A little wet stalactite with drops falling from its tip (not something you can hit).
@@ -357,6 +440,7 @@ func _process(delta: float) -> void:
 	# Lights fade in and out instead of popping like light switches (owner, Nov 15, F107).
 	for i in _lights.size():
 		_lights[i].light_energy = move_toward(_lights[i].light_energy, _light_target[i], delta * FADE_SPEED)
+	_push_mushrooms()
 	_light_timer -= delta
 	if _light_timer > 0.0:
 		return
