@@ -2561,3 +2561,11 @@ The owner: the sheet behind the hair still happens, make the hook at the very en
   stood inside the dwarf); hidden during the shot in round 2. Saved as `docs/design/pictures/caves-layout2-kinds.png`.
 - Counted the old F141 problem (tunnels through a room opening high in its wall): 17% of rooms in the new caves,
   23% in the old ones. Asked the owner before changing anything.
+
+- Evening: the owner looked at the pictures and said yes to all three: new worlds get the new caves, 3x the ruins,
+  camps, nests, shrines and crystal pockets, and ramps for the tunnels that open high in a room's wall. The first
+  ramp count went *up*, because the counter saw each ramp's own top as a hole; tagging the ramps and checking that a
+  dwarf fits along them was the real test (99%). Turning the new caves on for every test exposed a crash: switching
+  layouts replaced a shared list while rock was still being built on other threads; now it is changed in place.
+  Two more tests had the old 400 m map in them (rune area, map page). The full suite passes; the walking robot played
+  a fresh new-cave world without trouble.

@@ -82,7 +82,7 @@ func test_jungle_runes_and_backfill() -> void:
 	var slab := RuneSlab.new()
 	check(slab.pick_drop("f", [0.1, 0.9, 0.5, 0.9]).ends_with("f1") or slab.pick_drop("f", [0.1, 0.9, 0.5, 0.9]).contains("_f"), "jungle drops jungle runes")
 	check(slab.pick_drop("f", [0.1, 0.9, 0.5, 0.1]).contains("_m"), "sometimes a missing Mossy rune instead")
-	check_eq(GameAuthority.rune_biome_at(Vector3(400, -20, 0)), "f", "jungle position")
+	check_eq(GameAuthority.rune_biome_at(Vector3(CaveMaker.BIOMES[1].cx, -20, 0)), "f", "jungle position")
 	check_eq(GameAuthority.rune_biome_at(Vector3(0, -20, 0)), "m", "mossy position")
 
 

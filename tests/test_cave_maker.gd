@@ -22,6 +22,8 @@ func test_different_seed_different_cave() -> void:
 
 
 func test_three_big_caverns_far_apart() -> void:
+	if CaveMaker.layout >= 2:
+		return  # layout 1's own numbers (layout 2: tests/test_cave_layout2.gd)
 	for s in [1, 2, 3, 77, 4242]:
 		var c := CaveMaker.new(s)
 		var big := c.rooms.filter(func(r): return r.big and r.biome == "mossy")
@@ -172,6 +174,8 @@ func test_solid_block_fast_path() -> void:
 
 
 func test_generation_speed() -> void:
+	if CaveMaker.layout >= 2:
+		return  # layout 1's own numbers (layout 2: tests/test_cave_layout2.gd)
 	var c := CaveMaker.new(99)
 	var room: Dictionary = c.rooms[0]
 	var origin := Vector3i(floori(room.center.x / 16) * 16, floori(room.center.y / 16) * 16, floori(room.center.z / 16) * 16)

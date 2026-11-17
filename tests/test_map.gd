@@ -26,12 +26,13 @@ func test_reveal_draws_open_and_rock() -> void:
 func test_each_biome_has_its_own_pages() -> void:
 	var m := MapData.new()
 	var sdf := func(_p: Vector3) -> float: return 1.0
-	var jungle := Vector3(420, -30, 0)
+	var jungle := Vector3(CaveMaker.BIOMES[1].cx, -30, 0)  # (420 m in layout 1, 820 m in layout 2)
 	m.reveal(jungle, sdf)
 	var f := MapData.floor_of(jungle.y)
 	check(m.seen_fraction(f, "fungal") > 0.0, "the Jungle page got drawn")
 	check_eq(m.seen_fraction(f, "mossy"), 0.0, "the Mossy page didn't")
-	check_eq(m.to_pixel(jungle), Vector2i(200, 200), "the Jungle's middle is the middle of its page")
+	var mid := int(CaveMaker.HALF_SIZE)
+	check_eq(m.to_pixel(jungle), Vector2i(mid, mid), "the Jungle's middle is the middle of its page")
 	var back := MapData.new()
 	back.load_data(m.to_data())
 	check(back.seen_fraction(f, "fungal") > 0.0, "jungle pages are saved and loaded")

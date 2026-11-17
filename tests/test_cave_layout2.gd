@@ -1,6 +1,6 @@
 extends TestCase
 ## Cave layout 2 (F211, epic caves step 1): the old caves stay exactly the same, and the new ones are big, varied and
-## walkable. New worlds still get layout 1 until the owner OKs layout 2.
+## walkable. New worlds get layout 2 (owner's OK, Nov 17); old saves keep layout 1.
 
 
 ## Old saves keep their caves: the same rooms, tunnels, places and rock, to 4 decimals (fingerprints from Nov 16).
@@ -56,23 +56,52 @@ func test_new_passages_fit_a_dwarf() -> void:
 		check(rate < 0.05, "%s: %.1f%% of spots too tight for a dwarf" % [CaveMaker.KIND_NAMES[k], rate * 100.0])
 
 
-## The old cave checks (test_cave_maker.gd) pass in the new layout too.
-func test_old_checks_pass_in_new_layout() -> void:
+## The cave checks (test_cave_maker.gd) run in the new layout by default now; here they run in the old one too
+## (old saves keep it).
+func test_cave_checks_pass_in_old_layout() -> void:
 	var script: GDScript = load("res://tests/test_cave_maker.gd")
 	var was := CaveMaker.layout
 	for m in script.get_script_method_list():
-		if not String(m.name).begins_with("test_") or m.name in LAYOUT1_ONLY:
+		if not String(m.name).begins_with("test_"):
 			continue
 		var t: TestCase = script.new()
 		t.tree = tree
-		CaveMaker.use_layout(2)
+		CaveMaker.use_layout(1)
 		await t.call(m.name)
 		CaveMaker.use_layout(was)
 		for f in t.failures:
 			failures.append("%s: %s" % [m.name, f])
 
-## Checks that are about layout 1's own numbers (its three caverns, its speed): layout 2 has its own above.
-const LAYOUT1_ONLY := ["test_three_big_caverns_far_apart", "test_generation_speed"]
+
+## Every hole a passing tunnel leaves high in a room's wall gets a ramp down (F141), gentle and wide enough.
+func test_high_holes_have_ramps() -> void:
+	var c := _v2(42)
+	var ramps := []
+	for s in c.segments:
+		if s.get("ramp", false):
+			ramps.append(s)
+	check(ramps.size() >= 10, "ramps were dug (%d)" % (ramps.size() / 2))
+	var tot := 0
+	var bad := 0
+	for s in ramps:
+		var d: Vector3 = s.b - s.a
+		check(absf(d.y) / Vector2(d.x, d.z).length() <= 0.42, "ramp at %s no steeper than a tunnel" % s.a)
+		var side := Vector3(-d.z, 0, d.x).normalized()
+		for f in [0.2, 0.4, 0.6, 0.8]:
+			tot += 1
+			bad += 0 if _fits(c, (s.a as Vector3).lerp(s.b, f), side) else 1
+	check(bad <= tot / 50, "a dwarf fits along the ramps (%d of %d spots too tight)" % [bad, tot])
+
+
+## 4x bigger areas, 3x the places (owner, Nov 17).
+func test_more_places_in_new_caves() -> void:
+	var c := _v2(42)
+	var count := {}
+	for p in c.pois:
+		count[p.type] = count.get(p.type, 0) + 1
+	print("        (%s)" % count)
+	for kind in ["ruin", "camp", "nest", "shrine", "geode"]:
+		check(count.get(kind, 0) >= 12, "plenty of %s (%d)" % [kind, count.get(kind, 0)])
 
 
 func _v2(seed: int) -> CaveMaker:

@@ -21,10 +21,15 @@ extends RefCounted
 ##   2 = real-shaped caves: 800 m areas (Mossy x -400…400, Jungle x 420…1220), about 4x the rooms,
 ##       passages and halls shaped the way water shapes real caves (see "layout 2" below).
 const LAYOUT_LATEST := 2
-## What brand-new worlds get. Stays 1 until layout 2 (F211 step 1) is finished, tested and OK'd by the
-## owner; robots can try layout 2 with "-- layout=2".
-const LAYOUT_DEFAULT := 1
+## What brand-new worlds get: layout 2, the real-shaped caves (F211 step 1, OK'd by the owner Nov 17). Old saves keep
+## the layout they were made with; robots can try the old caves with "-- layout=1".
+const LAYOUT_DEFAULT := 2
 static var layout := LAYOUT_DEFAULT
+
+
+## The sizes below are layout 1's until use_layout() runs: make them match the default as soon as the class loads.
+static func _static_init() -> void:
+	use_layout(LAYOUT_DEFAULT)
 
 # --- Size of one biome (meters; 1 voxel = 1 meter). Set by use_layout(); these are layout 1's. ---
 static var HALF_SIZE := 200.0
@@ -46,7 +51,10 @@ static func use_layout(v: int) -> void:
 	HALF_SIZE = half
 	SLAB_X = half
 	X_MIN = -half
-	BIOMES = [{id = "mossy", cx = 0.0}, {id = "fungal", cx = half + SLAB_W + half}]
+	# Changed in place, never replaced: rock builders on other threads may be reading the list right now (a test
+	# switching layouts while an earlier test's terrain was still building crashed on the freed list).
+	BIOMES[0].cx = 0.0
+	BIOMES[1].cx = half + SLAB_W + half
 	X_MAX = half + SLAB_W + half * 2.0
 
 # --- Shape tuning ---
@@ -1084,6 +1092,8 @@ func _plan_pois(rng: RandomNumberGenerator, r0: int, r1: int, s0: int, s1: int, 
 			smalls.append(i)
 	smalls.sort_custom(func(a, b): return rooms[a].center.distance_to(spawn) > rooms[b].center.distance_to(spawn))
 	var plan := ["ruin", "nest", "ruin", "camp", "nest", "ruin", "camp", "nest", "camp", "camp"]
+	if made_layout >= 2:
+		plan = plan + plan + plan  # 4x bigger areas: 3x the ruins, nests and camps (owner, Nov 17: "yes, add more")
 	if made_layout >= 2 and smalls.size() > plan.size():
 		# 800 m areas: spread them from far to near, instead of all at the far edges.
 		var spread := []
@@ -1118,8 +1128,9 @@ func _plan_pois(rng: RandomNumberGenerator, r0: int, r1: int, s0: int, s1: int, 
 	var geodes := 0
 	var shrines_open := 0
 	var shrines_sealed := 0
-	for attempt in 800:
-		if geodes >= 6 and shrines_open >= 3 and shrines_sealed >= 2:
+	var more := 3 if made_layout >= 2 else 1  # (the same "add more", Nov 17)
+	for attempt in 800 * more:
+		if geodes >= 6 * more and shrines_open >= 3 * more and shrines_sealed >= 2 * more:
 			break
 		var sgi := rng.randi_range(s0, s1 - 1)
 		var sg: Dictionary = segments[sgi]
@@ -1131,7 +1142,7 @@ func _plan_pois(rng: RandomNumberGenerator, r0: int, r1: int, s0: int, s1: int, 
 		if side.length() < 0.5:
 			continue
 		side *= -1.0 if rng.randf() < 0.5 else 1.0
-		if shrines_open < 3:
+		if shrines_open < 3 * more:
 			var c: Vector3 = mid + side * (sg.r + 1.2)
 			if _far_from_pois(c, 20.0):
 				rooms.append({center = c, radii = Vector3(2.8, 2.8, 2.8), big = false, kind = "shrine", sealed = false, biome = biome})
@@ -1140,7 +1151,7 @@ func _plan_pois(rng: RandomNumberGenerator, r0: int, r1: int, s0: int, s1: int, 
 				continue
 		var dist: float = sg.r + rng.randf_range(5.0, 8.0)
 		var c := mid + side * dist
-		if geodes < 6:
+		if geodes < 6 * more:
 			# Pockets must be bigger than the wall bumpiness (2.2 m), or bumps could close them.
 			var gr := rng.randf_range(3.0, 4.5)
 			if _solid_around(c, Vector3.ONE * (gr + 2.5)) and _far_from_pois(c, 15.0):
@@ -1148,12 +1159,73 @@ func _plan_pois(rng: RandomNumberGenerator, r0: int, r1: int, s0: int, s1: int, 
 				_add_poi("geode", c, -side, rooms.size() - 1)
 				geodes += 1
 				continue
-		if shrines_sealed < 2 and _solid_around(c, Vector3.ONE * 5.3) and _far_from_pois(c, 20.0):
+		if shrines_sealed < 2 * more and _solid_around(c, Vector3.ONE * 5.3) and _far_from_pois(c, 20.0):
 			rooms.append({center = c, radii = Vector3(2.8, 2.8, 2.8), big = false, kind = "shrine", sealed = true, biome = biome})
 			_add_poi("shrine", c, -side, rooms.size() - 1)
 			shrines_sealed += 1
+	if made_layout >= 2:
+		_ramp_high_holes(r0, r1, cx)
 	_bake_shapes()
 	_place_markings(rng, biome)
+
+
+## F141 (owner, Nov 17: "yes, fix it"): a tunnel that passes through a room can open high up in its wall, out of
+## reach. For each such hole, a gentle ramp tunnel is dug through the rock beside the wall, from the hole down to the
+## room's floor (no steeper than other tunnels). Layout 2 only; uses no dice, so nothing else moves.
+const HIGH_HOLE := 3.0  ## an opening whose bottom is more than this above the room's floor is out of reach
+const RAMP_SLOPE := 0.38
+const RAMP_R := 1.9
+
+func _ramp_high_holes(r0: int, r1: int, cx: float) -> void:
+	var seg_count := segments.size()
+	for ri in range(r0, r1):
+		var room: Dictionary = rooms[ri]
+		var rad: Vector3 = room.radii
+		if room.get("sealed", false) or minf(rad.x, rad.z) < 6.0:
+			continue
+		var c: Vector3 = room.center
+		var floor_y := c.y - rad.y * 0.55
+		var mo := mouth(room)
+		var holes: Array[Vector3] = []
+		for si in seg_count:
+			var sg: Dictionary = segments[si]
+			var a: Vector3 = sg.a
+			var b: Vector3 = sg.b
+			if a.distance_to(mo) < 1.0 or b.distance_to(mo) < 1.0:
+				continue  # starts or ends in this room, at floor height
+			var mn := a.min(b) - Vector3.ONE * 3.0
+			var mx := a.max(b) + Vector3.ONE * 3.0
+			if c.x + rad.x < mn.x or c.x - rad.x > mx.x or c.z + rad.z < mn.z or c.z - rad.z > mx.z 					or c.y + rad.y < mn.y or c.y - rad.y > mx.y:
+				continue
+			for f in 11:
+				var p := a.lerp(b, f / 10.0)
+				var q := ((p - c) / rad).length()
+				if q < 1.0 and q > 0.75:
+					if p.y - float(sg.r) - floor_y > HIGH_HOLE:
+						var far := true
+						for h in holes:
+							far = far and h.distance_to(p) > 10.0
+						if far:
+							holes.append(p)
+					break
+		for e in holes:
+			_dig_ramp(e, c, rad, floor_y, cx)
+
+
+## From the hole e round the room's wall and down to its floor: two pieces, the middle pushed out into the rock.
+func _dig_ramp(e: Vector3, c: Vector3, rad: Vector3, floor_y: float, cx: float) -> void:
+	var drop := e.y - (floor_y + 1.9)  # down to mouth height (tunnels sit there in every room)
+	var run := maxf(drop / RAMP_SLOPE, 8.0)
+	var ang0 := atan2((e.z - c.z) / rad.z, (e.x - c.x) / rad.x)
+	var turn := run / maxf(minf(rad.x, rad.z), 1.0)  # roughly how far round the wall (radians) the ramp needs
+	var ang1 := ang0 + turn
+	var mid_ang := (ang0 + ang1) * 0.5
+	var push := RAMP_R + 1.5
+	var mid := Vector3(c.x + cos(mid_ang) * (rad.x + push), (e.y + floor_y + 1.9) * 0.5, c.z + sin(mid_ang) * (rad.z + push))
+	var end := Vector3(c.x + cos(ang1) * rad.x * 0.85, floor_y + 1.9, c.z + sin(ang1) * rad.z * 0.85)
+	mid = _clamp_inside(mid, cx)
+	segments.append({a = e, b = mid, r = RAMP_R, k = TUBE, h = 0.0, ramp = true})
+	segments.append({a = mid, b = end, r = RAMP_R, k = TUBE, h = 0.0, ramp = true})
 
 
 ## The 3 wall markings (boss clues): one in the Great Hall, one in a ruin, one on a

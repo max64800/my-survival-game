@@ -67,12 +67,18 @@ Weak shots: the canyon one faces a wall, the tube one is half a ruin pillar.
 25 of 147 rooms in layout 2 (17%), vs 12 of 53 rooms in layout 1 (23%): not worse than the old caves. Not fixed;
 asked the owner.
 
-Still to do:
-1. The owner's OK on the pictures (and the two questions below), then `LAYOUT_DEFAULT = 2`.
-2. Maybe: loading the new caves faster (41 s vs 13.5 s for the old ones; see the speed notes above).
+**Step 1 finished (Nov 17).** The owner OK'd the pictures and said yes to all three questions:
+- **New worlds get layout 2** (`LAYOUT_DEFAULT = 2`; `_static_init` sets the map size to match). Old saves keep theirs.
+- **More places:** 3x the ruins, nests and camps, and 3x the geodes and shrines in layout 2 (seed 42: 18 ruins,
+  18 nests, 24 camps, 30 shrines, 36 geodes).
+- **High holes (F141):** every tunnel opening more than 3 m above a room's floor gets a ramp tunnel dug through the
+  rock beside the wall down to the floor (`_ramp_high_holes`, slope at most 0.38; seed 42: 34 ramps, the dwarf fits
+  along 99% of them). Tested in `test_cave_layout2.gd`.
+- The cave tests now run in layout 2 by default and again in layout 1 (`test_cave_checks_pass_in_old_layout`).
+- Hurdle: switching layouts in tests replaced the shared list of areas while an earlier test's rock was still being
+  built on other threads, and the game crashed; `use_layout` now changes the list in place.
 
-Question for the owner (asked Nov 17): the areas are 4× bigger but have the same number of ruins, camps, nests and
-shrines as before. Add more?
+Next: step 2, the waterfall shaft (pictures first).
 
 *(Below: the research and the choices as first written.)*
 
