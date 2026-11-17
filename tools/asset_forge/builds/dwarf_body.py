@@ -327,7 +327,7 @@ for side in ("l", "r"):
 	fingers = [[a.lerp(b, 0.5) for a, b in zip(chains["index"], chains["middle"])],
 		[a.lerp(b, 0.5) for a, b in zip(chains["ring"], chains["pinky"])]]
 	mids = [a.lerp(b, 0.5) for a, b in zip(fingers[0], fingers[1])]
-	fingers = [[Vector((p.x, m.y + (p.y - m.y) * 0.95, p.z)) for p, m in zip(f, mids)] for f in fingers]  # (Nov 18: ~8 cm wide)
+	fingers = [[Vector((p.x, m.y + (p.y - m.y) * 1.1, p.z)) for p, m in zip(f, mids)] for f in fingers]  # (big chunky fists)
 	pts = [p for c in chains.values() for p in c] + [wr] + [p for f in fingers for p in f]
 	lo = Vector([min(p[i] for p in pts) - 0.06 for i in range(3)])
 	hi = Vector([max(p[i] for p in pts) + 0.06 for i in range(3)])
@@ -335,20 +335,20 @@ for side in ("l", "r"):
 	knuck = [f[0] for f in fingers]
 	mid = (knuck[0] + knuck[1]) / 2
 	along = (mid - wr).length
-	cl.add(cl.ell(QV(wr.lerp(mid, 0.55)), (along * 0.6, 0.027, (knuck[1] - knuck[0]).length / 2 + 0.022)), 0.014)  # the palm (flatter: Nov 18)
+	cl.add(cl.ell(QV(wr.lerp(mid, 0.55)), (along * 0.6, 0.032, (knuck[1] - knuck[0]).length / 2 + 0.03)), 0.014)  # the palm (flatter: Nov 18)
 	cl.add(cl.ell(QV(wr.lerp(mid, 0.1)), (0.034, 0.028, 0.036)), 0.02)                                          # the wrist end
 	for k, f in enumerate(fingers):
-		r0 = 0.022
+		r0 = 0.029
 		f = [f[0].lerp(wr, 0.25)] + f[1:]  # (from inside the palm)
 		for j in range(len(f) - 1):
 			cl.add(cl.tube(QV(f[j]), QV(f[j + 1]), r0 * (1 - 0.06 * j), r0 * (1 - 0.06 * (j + 1))), 0.004)
-		cl.add(cl.ell(QV(f[-1]), (0.019, 0.018, 0.019)), 0.006)                       # a round fingertip
-		cl.add(cl.ell(QV(f[1] + Vector((0, 0, 0.01))), (0.019, 0.012, 0.019)), 0.006)  # the knuckle on top
+		cl.add(cl.ell(QV(f[-1]), (0.025, 0.024, 0.025)), 0.006)                       # a round fingertip
+		cl.add(cl.ell(QV(f[1] + Vector((0, 0, 0.01))), (0.025, 0.015, 0.025)), 0.006)  # the knuckle on top
 	th = chains["thumb"]
 	th = [th[0].lerp(mid, 0.15)] + th[1:]
 	for j in range(len(th) - 1):
-		cl.add(cl.tube(QV(th[j]), QV(th[j + 1]), 0.023 * (1 - 0.07 * j), 0.023 * (1 - 0.07 * (j + 1))), 0.006)
-	cl.add(cl.ell(QV(th[-1]), (0.021, 0.021, 0.021)), 0.006)
+		cl.add(cl.tube(QV(th[j]), QV(th[j + 1]), 0.029 * (1 - 0.07 * j), 0.029 * (1 - 0.07 * (j + 1))), 0.006)
+	cl.add(cl.ell(QV(th[-1]), (0.026, 0.026, 0.026)), 0.006)
 	finish(cl.mesh(f"hand_{side}", skin, PARTS), 4000)
 	del cl
 
@@ -477,16 +477,16 @@ if not CLOTHES:
 		inward = -s
 		d, f_ = el - sh, wr - el
 		# the slope from the neck to the shoulder (trapezius) and the round shoulder muscle
-		cl.add(cl.tube(Q(s * 0.05, 0.925, 0.035), QV(sh + Vector((inward * 0.07, 0.035, 0.05))), 0.05, 0.056), 0.05)
-		cl.add(cl.ell(QV(sh + Vector((inward * 0.01, 0.0, 0.016))), (0.1, 0.092, 0.095)), 0.05)  # (round, broad)
+		cl.add(cl.tube(Q(s * 0.05, 0.925, 0.035), QV(sh + Vector((inward * 0.07, 0.03, 0.04))), 0.048, 0.05), 0.05)
+		cl.add(cl.ell(QV(sh + Vector((inward * 0.01, 0.0, 0.016))), (0.078, 0.07, 0.072)), 0.045)  # (round; slimmer: owner Nov 18, the arms too wide)
 		# upper arm with the biceps in front and the triceps behind, the elbow
-		cl.add(cl.tube(QV(sh), QV(el), 0.076, 0.062), 0.03)  # (sturdy dwarf arms)
-		cl.add(cl.ell(QV(sh + d * 0.5 + Vector((0, -0.02, 0.008))), (0.078, 0.054, 0.056)), 0.03)
-		cl.add(cl.ell(QV(sh + d * 0.42 + Vector((0, 0.022, 0.0))), (0.085, 0.052, 0.05)), 0.03)
-		cl.add(cl.ell(QV(el + Vector((0, 0.014, 0))), (0.05, 0.052, 0.053)), 0.03)
+		cl.add(cl.tube(QV(sh), QV(el), 0.056, 0.047), 0.025)
+		cl.add(cl.ell(QV(sh + d * 0.5 + Vector((0, -0.02, 0.008))), (0.068, 0.04, 0.044)), 0.025)
+		cl.add(cl.ell(QV(sh + d * 0.42 + Vector((0, 0.022, 0.0))), (0.072, 0.038, 0.04)), 0.025)
+		cl.add(cl.ell(QV(el + Vector((0, 0.012, 0))), (0.04, 0.042, 0.043)), 0.02)
 		# the forearm: thick by the elbow, tapering to a clear wrist (owner Nov 18: "the forearms are still too large")
-		cl.add(cl.tube(QV(el), QV(wr), 0.052, 0.036), 0.025)
-		cl.add(cl.ell(QV(el + f_ * 0.3 + Vector((0, 0, 0.006))), (0.068, 0.043, 0.045)), 0.03)
+		cl.add(cl.tube(QV(el), QV(wr), 0.042, 0.031), 0.02)
+		cl.add(cl.ell(QV(el + f_ * 0.3 + Vector((0, 0, 0.004))), (0.06, 0.036, 0.038)), 0.025)
 		cl.add(cl.ell(QV(wr), (0.024, 0.031, 0.036)), 0.015)
 		cl.add(cl.ell(QV(wr + Vector((0, 0.022, 0.0))), (0.012, 0.011, 0.011)), 0.006)  # the wrist bone's knob
 		# hip, thigh, knee and kneecap, shin and calf muscle
@@ -543,11 +543,11 @@ if not CLOTHES:
 		an = B(f"foot_{side}")
 		out = 1 if an.x > 0 else -1
 		fc = clay((an.x - 0.1, -0.01, an.y - 0.21), (an.x + 0.1, 0.2, an.y + 0.12), 0.0025)
-		fc.add(fc.ell(Q(an.x, 0.13, an.y), (0.036, 0.046, 0.038)), 0.02)                                  # ankle (slim: Nov 18)
+		fc.add(fc.ell(Q(an.x, 0.13, an.y), (0.034, 0.046, 0.032)), 0.02)                                  # ankle (slim: Nov 18)
 		for s2 in (-1, 1):
 			fc.add(fc.ell(Q(an.x + s2 * 0.03, 0.122, an.y + 0.002), (0.011, 0.014, 0.011)), 0.006)        # ankle bones
-		fc.add(fc.ell(Q(an.x, 0.04, an.y + 0.012), (0.04, 0.038, 0.036)), 0.025)                          # heel (tucked in: Nov 18)
-		fc.add(fc.ell(Q(an.x + out * 0.004, 0.04, an.y - 0.05), (0.057, 0.04, 0.1)), 0.035)              # the foot
+		fc.add(fc.ell(Q(an.x, 0.032, an.y + 0.002), (0.038, 0.032, 0.03)), 0.02)                          # heel (3 cm behind: Nov 18)
+		fc.add(fc.ell(Q(an.x + out * 0.004, 0.038, an.y - 0.065), (0.057, 0.038, 0.09)), 0.03)            # the foot
 		fc.add(fc.tube(Q(an.x, 0.11, an.y - 0.01), Q(an.x + out * 0.004, 0.05, an.y - 0.115), 0.042, 0.03), 0.03)  # instep
 		fc.add(fc.ell(Q(an.x + out * 0.006, 0.03, an.y - 0.112), (0.062, 0.03, 0.042)), 0.025)            # ball of the foot
 		for tx, tz, r in ((-0.03, -0.165, 0.021), (-0.002, -0.16, 0.016), (0.02, -0.153, 0.015), (0.039, -0.142, 0.014)):

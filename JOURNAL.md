@@ -2850,6 +2850,10 @@ the body."
   curving in above it. The underpants had their own automatic weights, so they bent differently from the skin under
   them: now each point copies the bones of the skin point under it (how the clothes will work too, F245).
 - Still open: the middle braid swings 6-11 cm into the belly in fast moves; the back hair sways 17 cm in a dash.
+- Owner (3 pictures with pink lines): "still too wide": the lines were across the ARMS. Claude had read "hands" as the
+  hands and narrowed them twice: wrong. Lesson: look at what the owner marked on the picture before changing anything.
+  Now: slimmer shoulders, upper arms, elbows and forearms; the fists bigger again (hand 0.43 -> 0.5); the foot and heel
+  end ~3 cm behind the ankle; he floated 0.7-1.4 cm (the standing pose tips the feet): lowered 1 cm, soles on the floor.
 
 - **Owner's round 2 notes:** clear gaps between the stone rows and between stones; the battlement's copper band
   sticks out; ruins should have no door hanging, rather a broken door lying nearby. Fixes: stones now touch (only

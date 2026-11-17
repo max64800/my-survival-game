@@ -139,7 +139,7 @@ func _wear_body(path: String) -> void:
 	var low := INF
 	for b in proportions._feet:
 		low = minf(low, (poses[b] as Transform3D).origin.y)
-	proportions._rest_low = low
+	proportions._rest_low = low - 0.01  # (standing tips the feet a little: the soles hovered 0.7-1.4 cm up, measured Nov 18)
 	# The .glb is in "model space" (facing +Z); the player's look space faces -Z. Look space = our parent's space.
 	var skel_in_look := Transform3D()
 	var n: Node3D = skeleton

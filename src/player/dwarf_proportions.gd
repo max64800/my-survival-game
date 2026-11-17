@@ -41,7 +41,7 @@ const LENGTHS := {
 ## The palm and fingers: how far each finger joint sits from the one before it, as a share of what the hand's
 ## thickness alone would give (owner, Nov 18: the hands were ~47 cm from wrist to fingertip, the picture's ~17 cm).
 ## A length change, not a thickness one: the tools held in the hand keep their size.
-const HAND_SIZE := 0.43  ## (Nov 18: 0.36 made fists far too small next to the arms)
+const HAND_SIZE := 0.5  ## (Nov 18: 0.36 made fists far too small next to the arms; the owner: "the fists can be bigger")
 const FINGERS := ["thumb_", "index_", "middle_", "ring_", "pinky_"]
 
 ## How far forward the shoulder joints move, as a share of the shoulder width (owner, Nov 18: the arms hung from the
