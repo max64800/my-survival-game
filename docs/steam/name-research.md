@@ -59,3 +59,6 @@ Unbroken Dwarves. Note: "Dwarves Eternal" has the same shape as DOOM Eternal (no
   Never Break, Never Forget, Never Surrender, Never Die Alone, Dwarves Always Return, Dwarves Die Hard, Never Die Dwarves.
 - Crowded patterns: "Don't Die" (6 games), "Never Yield" (Aerial_Knight). Empty: "Always Return", "Never Quit".
   "Never Forget" and "Never Fall" have one game each with exactly that title.
+
+## Decision (Nov 17): **Dwarves Never Fall**
+Free on Steam, itch.io and .com. One unrelated Steam game is called "Never Fall". Trademark search and buying the .com are still to do (owner).

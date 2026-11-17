@@ -35,7 +35,11 @@ The owner does the Steam steps himself on the gaming PC. Claude on the PC makes 
 
 ---
 
-## Step 1 (owner): pick the name. Nothing else can start before this.
+## Step 1 (owner): the name
+**Chosen Nov 17: "Dwarves Never Fall"** (the kingdom fell, but dwarves never fall). Free on Steam, itch.io and .com on Nov 17.
+Still to do: trademark search (tmsearch.uspto.gov, classes 9 and 41, plus EUIPO), then buy dwarvesneverfall.com.
+
+Earlier notes:
 The working name is "Dwarf Game". Searches on Nov 17 found:
 - **No Steam game called "Hollowbeard" or "Undermoss".**
 - "Delvers" is taken (a co-op dungeon game).
@@ -186,11 +190,11 @@ Cut any line that isn't.
 ## Prompt to paste into Claude on the gaming PC
 ```
 Pull main (git pull --ff-only). Read docs/steam/STEAM-PAGE-PLAN.md. We're making the Steam "Coming
-Soon" page so people can wishlist the game before my videos go out. The game's name is: <NAME>.
+Soon" page so people can wishlist the game before my videos go out. The game's name is: Dwarves Never Fall.
 I will log in to Steamworks and pay the fee myself; never type my password.
 
 Do steps 3a-3c:
-1. Logo: chunky carved-stone title letters for <NAME>.
+1. Logo: chunky carved-stone title letters for Dwarves Never Fall.
 2. The 4 store capsules at the exact sizes in the plan, each laid out for its size, bright and
    readable small. Key art from a ChatGPT picture in our hand-painted style; log it in CREDITS.md.
    Show me the capsules at real size and at 50%.

@@ -3404,3 +3404,5 @@ the body."
   - Roll animation plays over 0.75 s (the dodge itself unchanged, so fights stay fair). Jump: no trailing turn.
   - Sword combo from the pack's level sweep (no wind-up), both ways; it passes at face height, not chest (needs
     hand-made poses: asked the owner).
+
+- **Later (Mac): the game has a name: "Dwarves Never Fall".** Rounds of name ideas (Dwarfwake, Dwarves Reborn, Eternal Dwarves, Dwarves Never Die...), each checked on Steam, itch.io and .com. "___ Never Die" turned out crowded on Steam (Goblins/Pirates/Heroes Never Die), so the owner picked Dwarves Never Fall. Still to do: trademark search, buy the .com, rename the game in project.godot on the PC.

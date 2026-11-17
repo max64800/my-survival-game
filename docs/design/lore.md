@@ -22,10 +22,14 @@ what happened and to **break the curse that turned the dwarves to stone**, and t
 - **Name direction:** about the dwarves/clan, short and punchy, with "Dwarf"/"Dwarves" in it.
   - Spelling: **Dwarves** (the fantasy spelling) for the plural, Dwarf for one.
 
+## Name
+**Dwarves Never Fall** (owner, Nov 17). The meaning: the kingdom fell, but the dwarves never fell. They waited in stone and come back.
+Trailer and tagline idea: "The kingdom fell... but dwarves never fall."
+
 ## Open (decide later)
 - What turned the dwarves to stone, and who or what did it.
 - Your dwarf's own history.
-- The kingdom's name.
+- The kingdom's name (the game is "Dwarves Never Fall").
 - The final boss and The Abyss / Ancient Dwarf City zones' role in the story.
 
 ## Fits with what's already built

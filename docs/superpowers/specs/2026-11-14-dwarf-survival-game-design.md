@@ -1,7 +1,7 @@
 # Dwarf Survival Game — Design Plan
 
 *Written: November 14, 2026. Updated: November 14, 2026 (big Q&A session on the MacBook).*
-*Game name: not picked yet (working name "Dwarf Game").*
+*Game name: **Dwarves Never Fall** (owner, Nov 17, 2026; trademark check pending). Working name in code: "Dwarf Game".*
 
 This is our big plan. It says **what** we're making and **in what order**.
 Everything is written so a 5th grader can follow it.
