@@ -73,6 +73,20 @@ func sdf_at(p: Vector3) -> float:
 	return _tool.get_voxel_f(Vector3i(p.round()))
 
 
+## Like sdf_at, but blended from the 8 voxels around p (sdf_at snaps to the nearest whole metre), for checks that
+## care about a few centimetres, like "is this table touching the wall" (Station.in_rock).
+func sdf_smooth(p: Vector3) -> float:
+	_tool.channel = VoxelBuffer.CHANNEL_SDF
+	var g := Vector3i(p.floor())
+	var f := p - Vector3(g)
+	var v := 0.0
+	for i in 8:
+		var o := Vector3i(i & 1, (i >> 1) & 1, (i >> 2) & 1)
+		var w := (f.x if o.x else 1.0 - f.x) * (f.y if o.y else 1.0 - f.y) * (f.z if o.z else 1.0 - f.z)
+		v += _tool.get_voxel_f(g + o) * w
+	return v
+
+
 ## Finds the rock material nearest to `p` inside a small radius (what the pickaxe is touching).
 func rock_material_near(p: Vector3, radius: float = 1.2) -> int:
 	var best := -1

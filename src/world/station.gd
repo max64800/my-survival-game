@@ -203,7 +203,39 @@ func _size() -> Vector3:
 	return size_of(kind)
 
 
+## Shown smaller than its model was made (owner, Nov 17: "the crafting table is too big for the dwarf in terms of
+## height": 1.17 m, chest-high on a dwarf). Same look, dwarf-sized. Its solid box shrinks with it.
+const MODEL_SCALE := {"workbench": 0.8, "masonry_table": 0.8}
+
+
+static func scale_of(p_kind: String) -> float:
+	return MODEL_SCALE.get(p_kind, 1.0)
+
+
+## Its solid box (width, height, depth).
 static func size_of(p_kind: String) -> Vector3:
+	return _base_size(p_kind) * scale_of(p_kind)
+
+
+## Would a station placed here stand partly inside the rock (owner, Nov 17: "crafting tables that are touching the
+## wall become red, we cannot place them")? Feels the rock at points through its box, a little in from its sides
+## and above the floor it stands on. Wall-hung ones (tool rack) and ladders are meant to touch rock.
+static func in_rock(p_kind: String, pos: Vector3, yaw: float, world: World) -> bool:
+	if world == null or p_kind in ON_WALL or p_kind == "rope_ladder":
+		return false
+	var sz := size_of(p_kind)
+	var b := Basis(Vector3.UP, yaw)
+	for ix in 5:
+		for iz in 4:
+			for iy in 3:
+				var lo := maxf(0.45, sz.y * 0.5)  # (only its upper half: walls rise above it, bumps and slopes in the floor don't)
+				var local := Vector3((ix / 4.0 - 0.5) * (sz.x - 0.1), lo + iy / 2.0 * maxf(sz.y - 0.05 - lo, 0.0), (iz / 3.0 - 0.5) * (sz.z - 0.1))
+				if world.sdf_smooth(pos + b * local) < -0.1:
+					return true
+	return false
+
+
+static func _base_size(p_kind: String) -> Vector3:
 	match p_kind:
 		"campfire": return Vector3(1.0, 0.5, 1.0)
 		"workbench", "masonry_table": return Vector3(1.8, 1.0, 0.9)
@@ -250,6 +282,7 @@ func _build_look() -> void:
 	var model := Look.forged("stations", kind)
 	if model:
 		model.rotation.y = PI  # forged models face +Z; stations face -Z
+		model.scale = Vector3.ONE * scale_of(kind)
 		add_child(model)
 		if kind == "campfire":
 			_add_fire()

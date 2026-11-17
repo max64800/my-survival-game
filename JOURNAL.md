@@ -3182,3 +3182,15 @@ the body."
   crystals are hidden there (ids kept), plants, pebbles, dripstone, hanging roots and old colonnades skip it.
   Works for saved worlds too. New test_keep_clear checks 2 seeds; a tower photo shows a clear doorstep.
 - The outpost's own ground can use the same reserve() (told its session).
+
+## November 17, 2026 (PC, rock-textures Claude): natural ramps, tables vs walls, smaller tables (F269-F271)
+- Owner: ramps when digging up (like 7 Days to Die), leveling, tables touching walls should be red, the workbench
+  is too tall. Multiple choice: natural ramps (no pickaxe modes), a Mason's Shovel for leveling.
+- Ramps: _dig_ramp: if the new scoop is up and ahead (floor 0.35 m+ above the feet, under ~42 degrees), smaller
+  scoops along the line from the feet clear a walkable slope. Same tool rules; what they remove drops.
+- Tables: Station.in_rock feels the rock through the table's box; the ghost and the host both use it. Workbench
+  and masonry table 20% smaller (Station.MODEL_SCALE), box too.
+- **Hurdles:** (1) World.sdf_at snaps to whole metres, so a point 20 cm over the floor read as rock: new
+  sdf_smooth blends 8 voxels. (2) Still refused the campfire test: the floor slopes, its corners sat in it. Now
+  only the upper half of the box is felt (walls rise, floor bumps don't). (3) game_authority.gd had another
+  session's unsaved outpost lines: only my pieces were copied into the commit.

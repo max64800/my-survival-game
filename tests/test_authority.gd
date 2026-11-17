@@ -344,3 +344,41 @@ func test_lantern_put_away_uses_no_fuel() -> void:
 	await frames(30)
 	check(ps.fuel < 100.0, "burning again once it's out")
 	_teardown()
+
+
+## Natural ramps (owner, Nov 17): digging up and in front of you also clears a slope from your feet to the hole,
+## so you can walk up it; digging straight ahead doesn't.
+func test_digging_up_ahead_leaves_a_ramp() -> void:
+	await _setup(42)
+	var feet := player.global_position
+	var fl := world.maker.find_floor(feet.x, feet.z, feet.y + 1.0)
+	if fl != Vector3.INF:
+		player.global_position = fl
+		feet = fl
+	var before := auth.edit_log.size()
+	# a scoop 3 m ahead whose floor is 1.2 m above the feet
+	var center := feet + Vector3(3.0, 1.2 + GameAuthority.DIG_RADIUS, 0.0)
+	var counts := auth._host_dig(center, 0)
+	auth._dig_ramp(ps, center, 0, counts)
+	check(auth.edit_log.size() >= before + 4, "a few extra scoops clear the ramp (%d)" % (auth.edit_log.size() - before - 1))
+	var mid := feet + Vector3(1.6, 0.6 + 0.9, 0.0)  # above the slope halfway: room for a dwarf
+	check(world.sdf_at(mid) > 0.0, "there's room to walk up halfway")
+	before = auth.edit_log.size()
+	auth._dig_ramp(ps, feet + Vector3(3.0, GameAuthority.DIG_RADIUS, 0.0), 0, {})
+	check_eq(auth.edit_log.size(), before, "digging straight ahead adds no ramp")
+	_teardown()
+
+
+## Owner, Nov 17: a work table touching the wall can't be placed (its ghost is red), and the tables are dwarf-sized.
+func test_station_in_the_wall_is_refused() -> void:
+	await _setup(42)
+	var c: Vector3 = world.maker.rooms[0].center
+	var fl := world.maker.find_floor(c.x, c.z, c.y)
+	check(fl != Vector3.INF, "found the cavern floor")
+	if fl != Vector3.INF:
+		check(not Station.in_rock("workbench", fl, 0.0, world), "a workbench fits on the open floor")
+	var p := _find_rock(Mat.STONE)
+	if p != Vector3.INF:
+		check(Station.in_rock("workbench", p - Vector3.UP * 0.5, 0.0, world), "a workbench inside the rock doesn't fit")
+	check(Station.size_of("workbench").y <= 0.85, "the workbench is dwarf-sized (%.2f m)" % Station.size_of("workbench").y)
+	_teardown()

@@ -59,6 +59,8 @@ static func where(id: String, point: Vector3, normal: Vector3, yaw: float, from:
 		for st in auth.stations.values():
 			if st.global_position.distance_to(point) < 1.5:
 				ok = false  # too close to another station
+		if ok and Station.in_rock(id, pos, yaw, auth.world):
+			ok = false  # it would stand in the wall (owner, Nov 17)
 	return {pos = pos, yaw = yaw, ok = ok}
 
 
@@ -69,6 +71,8 @@ func _show(id: String) -> void:
 	if _look:
 		_look.queue_free()
 	_look = Look.forged("stations", id)
+	if _look:
+		_look.scale = Vector3.ONE * Station.scale_of(id)
 	if _look == null:
 		var mi := MeshInstance3D.new()
 		var box := BoxMesh.new()

@@ -803,9 +803,40 @@ func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
 	ps.dig_hits = 0
 	ps.dig_target = Vector3.INF
 	var counts := _host_dig(center, tool_tier)
+	_dig_ramp(ps, center, tool_tier, counts)
 	_give_dig_drops(ps, counts, center + normal * 0.8)
 	give_xp(_peer_of(ps), Mat.DIG_XP.get(mat, 1), "mining")
 	return {state = "dug", hits = needed, needed = needed, material = mat, point = point}
+
+
+const RAMP_R := 1.05  ## the size of the scoops that clear a natural ramp (a dwarf fits under them)
+const RAMP_STEEPEST := 0.9  ## steeper than this (rise per metre, ~42 degrees) = digging up at the ceiling: no ramp
+
+
+## Natural ramps (owner, Nov 17: "dig the tunnels up without making too big of a ledge... somehow natural"): when the
+## scoop you just dug is up and in front of you (its floor 0.35 m or more above your feet, not too steep), a few
+## smaller scoops also clear the rock between your feet and it, so its floor becomes a slope you can walk up. They
+## follow the same rules as any dig (too-hard rock stays, what they remove drops). Digging ahead, down or straight up
+## is unchanged.
+func _dig_ramp(ps: PlayerState, center: Vector3, tool_tier: int, counts: Dictionary) -> void:
+	if ps.node == null:
+		return
+	var feet: Vector3 = ps.node.global_position
+	var bottom := Vector3(center.x, center.y - DIG_RADIUS, center.z)  # the new scoop's floor
+	var run := Vector2(bottom.x - feet.x, bottom.z - feet.z).length()
+	var rise := bottom.y - feet.y
+	if rise < 0.35 or run < 0.8 or rise > run * RAMP_STEEPEST:
+		return
+	var dir := Vector3(bottom.x - feet.x, 0.0, bottom.z - feet.z) / run
+	var a := feet + dir * 0.3
+	var n := ceili(a.distance_to(bottom) / 0.5)
+	for i in range(1, n):
+		var f := a.lerp(bottom, float(i) / n) + Vector3.UP * (RAMP_R + 0.02)
+		if monsters and (monsters.lair_locked(f) or monsters.standing_over(f)):
+			continue
+		var more := _host_dig(f, tool_tier, RAMP_R)
+		for m in more:
+			counts[m] = counts.get(m, 0) + more[m]
 
 
 ## Hitting something that grows on the cave: crystals, mushrooms, fiber, roots.
@@ -958,6 +989,8 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 			for st in stations.values():
 				if st.global_position.distance_to(aim_point) < 1.5:
 					return ""  # too close to another station
+			if Station.in_rock(id, spot, yaw, world):
+				return ""  # it would stand in the wall (owner, Nov 17: the ghost shows red)
 			if not ps.inventory.remove(id, 1):
 				return ""
 			var sid := _next_station_id
