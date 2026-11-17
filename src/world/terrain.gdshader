@@ -79,7 +79,8 @@ vec3 star_layer(vec3 p, float cell, float radius, float keep) {
 	float twinkle = 0.7 + 0.3 * sin(TIME * (0.5 + 1.2 * hash(c + vec3(9.9))) + h * 40.0);
 	// mostly teal-blue, some green, a few pale (owner: "a little bit different colour sometimes, some green dots")
 	float hue = hash(c + vec3(2.2));
-	vec3 tone = hue < 0.72 ? STAR_COLOR : (hue < 0.93 ? vec3(0.45, 1.0, 0.55) : vec3(0.85, 0.95, 1.0));
+	// (round 2: greener greens, more of them, and purple ones, both a bit brighter so they stand out)
+	vec3 tone = hue < 0.55 ? STAR_COLOR : (hue < 0.82 ? vec3(0.3, 1.0, 0.35) * 1.5 : (hue < 0.95 ? vec3(0.78, 0.32, 1.0) * 1.9 : vec3(0.85, 0.95, 1.0)));
 	return tone * spot * twinkle * (0.55 + 0.45 * h / keep);
 }
 
@@ -211,7 +212,7 @@ void fragment() {
 		float patches = smoothstep(0.45, 0.68, vnoise(v_world * 0.05 + vec3(7.0, 1.0, 3.0)));
 		if (patches > 0.0) {
 			vec3 stars = star_layer(v_world, 0.16, 0.012, 0.75) + star_layer(v_world + vec3(31.0, 5.0, 17.0), 0.45, 0.02, 0.5);  // many tiny points
-			emit += stars * (1.0 + 14.0 * sn) * patches * ceiling * star_brightness;  // stars light up as the snake passes
+			emit += stars * (1.0 + 35.0 * sn) * patches * ceiling * star_brightness;  // stars light up as the snake passes
 
 		}
 	}

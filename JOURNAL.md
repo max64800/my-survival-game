@@ -3057,3 +3057,5 @@ the body."
 - The snake had its own glowing line; the owner wanted the dots themselves to make it. Line removed; the band of stars
   that lights up is wider (1.6 m) and they flare more (x15). It only shows where there are dots, as asked; a still
   aimed at the head this time found a ceiling without a star patch, so nothing showed (expected).
+
+- F259: owner: "the snake is working", wants it a lot brighter, and greens that show plus some purple dots. Snake flare x15 -> x36; dot colours 55% teal, 27% green (more saturated, x1.5), 13% purple (x1.9), 5% pale.
