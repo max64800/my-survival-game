@@ -2595,3 +2595,30 @@ The owner: the sheet behind the hair still happens, make the hook at the very en
   to judge big caverns, so the 3D map page got the new kinds and ledge paths instead.
 - Sharp shadows (F238): only the lantern casts shadows, and a tiny bright light next to a pebble or tool throws huge
   razor-edged ones. The light now has a size (soft edges), a little blur and lighter shadows.
+
+## Nov 17 (PC, cave Claude): menu box, loading cover, hotbar numbers, Alt+Tab (F225-F228)
+- **F225:** the "Delete this world?" box was Godot's plain grey computer box. Rebuilt with the menu's own pieces:
+  wood frame, gold title, a gold "Keep it" (the safe choice) and a red "Delete forever", with a dark veil behind it.
+  Hurdle: the menu test crashed because the box tried to put the keyboard "focus" on a button that can't take it
+  (the kit's buttons switch focus off). Fixed by only doing that when the button allows it.
+- **F226:** while a world loads you could see the dwarf. The second loading cover (in the HUD) was only 72% dark, like
+  tinted glass. Now it is solid and on its own top layer, the same colour as the first "Making your world" screen.
+- **F227:** the hotbar key numbers were tiny and stuck in the corner. Most games either tuck a small number in a corner
+  or put it on a little tag on the slot. Picked the tag: each number now sits on a small dark plate with a gold edge,
+  on the top rim of its slot, in the game's title font. The stack count is big and bright in the bottom-right.
+- **F228:** Alt+Tab (to take a screenshot) opened the pause menu. That came from F27 (let go of the mouse when you
+  leave the game). Now leaving only lets go of the mouse; coming back grabs it again, with no menu in the way.
+- F229 (nicer health/stamina/hunger/thirst bars) logged; the systems themselves already exist, only the bars are plain.
+- Claude's own hurdles: a text-replace script didn't match the old box's code (quote marks inside the text), so the
+  change was done with the editor tool instead; `godot` isn't on the command line on the PC, the full path is needed.
+- **F229 (owner picked "framed bars + icons"):** health and stamina now use the kit's framed bar pieces (the same
+  frame as the settings sliders), above the hotbar; hunger and thirst are two little round dials drawn by code, with
+  a mushroom and a water drop, whose colour sinks like water in a jar. Hurdle: Godot didn't know the new dial's
+  name yet (new names are only learned when the editor scans the files), so the HUD loads the dial file directly.
+  The build-progress bar moved up so it doesn't sit on the new bars.
+- **F239** (first logged as F230, but the cave chat had already used F230 for "more cavern kinds", so it was renumbered): Escape showed the pause screen but the world kept going. Alone in your world, pause now freezes the game;
+  the HUD stays awake so the pause buttons, Escape and "click outside" still work. Hurdle: in the full test run,
+  9 tests suddenly failed (dwarf couldn't walk, monsters didn't notice). The menu test opened the pause screen and
+  never closed it, so every later test ran in a frozen world. The test now closes it (and checks the freeze), and the
+  HUD unfreezes the world if it is ever removed while paused. Full suite: 369 checks, only the dwarf-hair test fails
+  (the dwarf chat is changing the hair right now).

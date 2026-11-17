@@ -80,6 +80,9 @@ func test_escape_menu_buttons() -> void:
 		if box and box.has_node(b):
 			(box.get_node(b) as Button).pressed.emit()
 	check_eq(got, ["resume", "save", "menu", "quit"], "Resume, Save, main menu and Quit all work")
+	check(tree.paused, "alone in your world, the pause screen freezes the game (F239)")
+	hud.set_paused(false)
+	check(not tree.paused, "closing it lets the game run again")
 	hud.queue_free()
 
 

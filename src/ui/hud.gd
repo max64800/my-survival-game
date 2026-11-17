@@ -39,7 +39,10 @@ var _loading: Control
 var _loading_bar: ProgressBar
 var _swap_from := -1
 var _hover_slot := -1  ## the bag slot under the mouse (for "press 1-9 to put it on the hotbar", F155)
-var _bars := {}  ## "health"/"stamina"/"hunger"/"thirst" -> ProgressBar
+var _bars := {}  ## "health"/"stamina" -> framed ProgressBar, "hunger"/"thirst" -> VitalDial (F229)
+var _vitals: HBoxContainer
+const VitalDialScript := preload("res://src/ui/vital_dial.gd")
+var _health_text: Label
 var _level_label: Label
 var _buff_label: Label
 var craft: CraftPanel
@@ -63,6 +66,7 @@ var _slot_style_cache := {}
 
 func _ready() -> void:
 	layer = 10
+	process_mode = Node.PROCESS_MODE_ALWAYS  # the pause screen keeps working while the world is frozen (F239)
 	_build()
 	var auth := GameAuthority.instance
 	if auth:
@@ -176,27 +180,53 @@ func _build() -> void:
 	_fuel_bar.add_theme_stylebox_override("fill", fill)
 	fuel_box.add_child(_fuel_bar)
 
-	# Body bars (bottom left, above the lantern).
-	var bars := VBoxContainer.new()
-	bars.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-	bars.position += Vector2(20, -190)
-	bars.add_theme_constant_override("separation", 3)
-	root.add_child(bars)
-	for b in [["health", Color(0.85, 0.25, 0.25)], ["stamina", Color(0.95, 0.85, 0.3)], ["hunger", Color(0.9, 0.55, 0.25)], ["thirst", Color(0.35, 0.6, 1.0)]]:
-		var row := HBoxContainer.new()
-		bars.add_child(row)
-		var l := _label(row, 13)
-		l.text = b[0].capitalize()
-		l.custom_minimum_size = Vector2(62, 0)
+	# Body (F229): hunger and thirst dials, then framed health and stamina bars, just above the
+	# left half of the hotbar. Same wood-and-brass kit pieces as the menus.
+	_vitals = HBoxContainer.new()
+	_vitals.name = "Vitals"
+	_vitals.add_theme_constant_override("separation", 8)
+	_vitals.anchor_left = 0.5
+	_vitals.anchor_right = 0.5
+	_vitals.anchor_top = 1.0
+	_vitals.anchor_bottom = 1.0
+	_vitals.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(_vitals)
+	for k in ["hunger", "thirst"]:
+		var d: Control = VitalDialScript.new(k)
+		d.name = k.capitalize()
+		d.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		_vitals.add_child(d)
+		_bars[k] = d
+	var stack := VBoxContainer.new()
+	stack.add_theme_constant_override("separation", 4)
+	stack.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	stack.alignment = BoxContainer.ALIGNMENT_CENTER
+	_vitals.add_child(stack)
+	for b in [["health", Color(1.0, 0.36, 0.3), 26], ["stamina", Color(1, 1, 1), 20]]:
 		var pb := ProgressBar.new()
-		pb.custom_minimum_size = Vector2(150, 10)
+		pb.name = b[0].capitalize()
+		pb.custom_minimum_size = Vector2(0, b[2])
 		pb.show_percentage = false
-		var bar_fill := StyleBoxFlat.new()
-		bar_fill.bg_color = b[1]
+		pb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		pb.add_theme_stylebox_override("background", UiKit.style("slider_track"))
+		var bar_fill: StyleBoxTexture = UiKit.style("slider_fill").duplicate()
+		bar_fill.modulate_color = b[1]
 		pb.add_theme_stylebox_override("fill", bar_fill)
-		row.add_child(pb)
+		stack.add_child(pb)
 		_bars[b[0]] = pb
-	_buff_label = _label(bars, 13)
+	_place_vitals()
+	_health_text = _label(_bars.health, 13)
+	_health_text.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_health_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_health_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	# Moods, food buffs and ailments: small text in the bottom-left, above the lantern.
+	_buff_label = _label(root, 13)
+	_buff_label.anchor_top = 1.0
+	_buff_label.anchor_bottom = 1.0
+	_buff_label.offset_left = 20
+	_buff_label.offset_top = -200
+	_buff_label.offset_bottom = -78
+	_buff_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 	_level_label = _label(root, 16)
 	_level_label.anchor_left = 1.0
 	_level_label.anchor_right = 1.0
@@ -242,7 +272,7 @@ func _build() -> void:
 	_work_box = VBoxContainer.new()
 	_work_box.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
 	_work_box.custom_minimum_size = Vector2(460, 0)
-	_work_box.position += Vector2(-230, -190)
+	_work_box.position += Vector2(-230, -250)  # above the body bars (F229)
 	_work_box.visible = false
 	root.add_child(_work_box)
 	_work_label = _label(_work_box, 16)
@@ -300,8 +330,20 @@ func _build() -> void:
 	_help.text = "WASD walk · Shift run · Space jump · Mouse look\nLeft click dig/harvest · Right click eat/place · E use station\n1-9 hotbar · Wheel zoom · R refill lantern · Tab bag + crafting\nK skills · M map · Esc pause"
 
 	_pause = _build_pause(root)
-	_loading = _overlay(root, "Digging out the cave…", "")
+	# Loading cover (F226): its own layer above everything, fully solid, so the dwarf and the cave
+	# never peek through before they're ready. Same dark colour as the "Making your world…" screen.
+	var cover := CanvasLayer.new()
+	cover.layer = 90
+	add_child(cover)
+	var cover_root := Control.new()
+	cover_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	cover_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cover.add_child(cover_root)
+	_loading = _overlay(cover_root, "Digging out the cave…", "")
+	(_loading as ColorRect).color = Color(0.04, 0.035, 0.05)
+	_loading.mouse_filter = Control.MOUSE_FILTER_STOP
 	_loading.visible = true
+	_loading.visibility_changed.connect(func(): cover.visible = _loading.visible)
 	_loading_bar = ProgressBar.new()  # how far the cave around you is ready (owner, Nov 16)
 	_loading_bar.custom_minimum_size = Vector2(420, 18)
 	_loading_bar.show_percentage = false
@@ -366,9 +408,26 @@ func _make_slot(index: int, key: String) -> Control:
 	var count := _label(panel, 14)
 	count.name = "Count"
 	count.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	var k := _label(panel, 11)
+	# The key number sits on a small dark plate on the slot's top rim (F227), not squeezed in a corner.
+	var badge := Panel.new()
+	badge.name = "KeyBadge"
+	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var bs := StyleBoxFlat.new()
+	bs.bg_color = Color(0.11, 0.07, 0.05)
+	bs.border_color = Color(0.62, 0.45, 0.24)
+	bs.set_border_width_all(2)
+	bs.set_corner_radius_all(7)
+	badge.add_theme_stylebox_override("panel", bs)
+	panel.add_child(badge)
+	var k := _label(badge, 11)
 	k.name = "Key"
 	k.text = key
+	k.add_theme_color_override("font_color", UiKit.AMBER)
+	k.add_theme_font_override("font", UiKit.heading_font())
+	k.add_theme_constant_override("outline_size", 0)
+	k.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	k.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	k.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_size_slot(panel, SLOT_SIZE)
 	return panel
 
@@ -390,13 +449,21 @@ func _size_slot(panel: Control, s: float) -> void:
 	short.add_theme_font_size_override("font_size", roundi(15 * f))
 	short.position = Vector2(0, s * 0.3)
 	short.size = Vector2(s, 20 * f)
+	# How many you have: big, bright and outlined, in the bottom-right inside the frame (F227).
 	var count: Label = panel.get_node("Count")
-	count.add_theme_font_size_override("font_size", roundi(14 * f))
-	count.position = Vector2(4, s - 22 * f)
-	count.size = Vector2(s - 4 - inset * 0.6, 20 * f)
-	var k: Label = panel.get_node("Key")
-	k.add_theme_font_size_override("font_size", roundi(11 * f))
-	k.position = Vector2(4 * f, 1)
+	var cf := roundi(s * 0.27)
+	count.add_theme_font_size_override("font_size", cf)
+	count.add_theme_constant_override("outline_size", roundi(s * 0.08))
+	count.add_theme_color_override("font_color", Color(1, 0.97, 0.9))
+	count.size = Vector2(s - inset, cf * 1.3)
+	count.position = Vector2(0, s - inset * 0.55 - cf * 1.3)
+	# Key plate: centred on the top rim, so it never covers the item or the count.
+	var badge: Control = panel.get_node("KeyBadge")
+	var bh := roundf(s * 0.26)
+	badge.size = Vector2(roundf(bh * 1.25), bh)
+	badge.position = Vector2(roundf((s - badge.size.x) * 0.5), roundf(-bh * 0.35))
+	var k: Label = badge.get_node("Key")
+	k.add_theme_font_size_override("font_size", roundi(bh * 0.72))
 
 
 func _slot_style(color: Color, border: Color) -> StyleBoxFlat:
@@ -659,6 +726,15 @@ func _place_hotbar() -> void:
 	_hotbar.offset_bottom = -18.0
 
 
+## Body dials and bars: just above the hotbar's left half (F229), clear of the key plates.
+func _place_vitals() -> void:
+	var w := float((HOTBAR_SLOT + 6) * Inventory.HOTBAR_SIZE - 6)
+	_vitals.offset_left = -w * 0.5
+	_vitals.offset_right = -24.0
+	_vitals.offset_bottom = -HOTBAR_SLOT - 18.0 - 16.0
+	_vitals.offset_top = _vitals.offset_bottom - 52.0
+
+
 func _size_hotbar(s: float) -> void:
 	for i in Inventory.HOTBAR_SIZE:
 		if _slot_panels.has(i):
@@ -776,6 +852,9 @@ func is_paused() -> bool:
 
 func set_paused(on: bool) -> void:
 	_pause.visible = on
+	# Alone in your world, the pause screen really stops the game: monsters, falling, hunger,
+	# time (F239). With friends in it, the world keeps going for them.
+	get_tree().paused = on and multiplayer.get_peers().is_empty()
 	var auth := GameAuthority.instance
 	var host := auth == null or auth.is_host()
 	var box: VBoxContainer = _pause.find_child("PauseButtons", true, false)
@@ -887,8 +966,9 @@ func _process(delta: float) -> void:
 		_bars.health.value = v.health
 		_bars.stamina.max_value = v.max_stamina()
 		_bars.stamina.value = v.stamina
-		_bars.hunger.value = v.hunger
-		_bars.thirst.value = v.thirst
+		_bars.hunger.set_value(v.hunger)
+		_bars.thirst.set_value(v.thirst)
+		_health_text.text = "%d / %d" % [ceili(v.health), roundi(v.max_health())]
 		var buffs := []
 		for b in v.buffs:
 			buffs.append("%s %d:%02d" % [Items.display_name(b.id), int(b.time_left) / 60, int(b.time_left) % 60])
@@ -993,9 +1073,22 @@ func _local_dwarf() -> Dwarf:
 	return ps.node as Dwarf if ps else null
 
 
+## Leaving the game (main menu, quitting) never leaves the world frozen (F239).
+func _exit_tree() -> void:
+	if _pause and _pause.visible and get_tree():
+		get_tree().paused = false
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("toggle_fps"):
 		_fps_label.visible = not _fps_label.visible
+	# While the world is frozen the game's own input handler sleeps too, so the pause screen
+	# answers Escape and "click outside" itself (F239).
+	if get_tree().paused and _pause.visible:
+		var click: bool = event is InputEventMouseButton and event.pressed
+		if event.is_action_pressed("pause") or click:
+			get_viewport().set_input_as_handled()
+			pause_pressed.emit("resume")
 
 
 ## Bag open, mouse over a slot, press 1-9: that item goes to that hotbar slot (owner F155).

@@ -15,7 +15,8 @@ var _seed_edit: LineEdit
 var _name_edit: LineEdit
 var _addr_edit: LineEdit
 var _worlds_box: VBoxContainer
-var _confirm: ConfirmationDialog
+var _confirm: ColorRect  ## the "are you sure?" box in the kit look (F225)
+var _confirm_text: Label
 var _delete_path := ""
 var _new_box: VBoxContainer
 var _join_box: HBoxContainer
@@ -104,11 +105,7 @@ func _ready() -> void:
 	_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_status.custom_minimum_size = Vector2(620, 40)
 
-	_confirm = ConfirmationDialog.new()
-	_confirm.ok_button_text = "Delete forever"
-	_confirm.cancel_button_text = "Keep it"
-	_confirm.confirmed.connect(_delete_confirmed)
-	add_child(_confirm)
+	_make_confirm()
 	_fill_worlds()
 
 
@@ -171,11 +168,60 @@ func _open_world(path: String, host: bool) -> void:
 ## Deleting asks first ("are you sure?").
 func ask_delete(path: String, world_name: String) -> void:
 	_delete_path = path
-	_confirm.dialog_text = "Delete \"%s\" forever?\nIts cave, buildings and your dwarf's things will be gone." % world_name
-	_confirm.popup_centered()
+	_confirm_text.text ="Delete \"%s\" forever?\nIts cave, buildings and your dwarf's things will be gone." % world_name
+	_confirm.visible = true
+
+
+## The "are you sure?" box in the menu's own look (F225): a framed panel over a dark veil,
+## "Keep it" (the safe choice, focused) and a red "Delete forever".
+func _make_confirm() -> void:
+	_confirm = ColorRect.new()
+	_confirm.name = "ConfirmDelete"
+	_confirm.color = Color(0, 0, 0, 0.6)
+	_confirm.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_confirm.mouse_filter = Control.MOUSE_FILTER_STOP  # clicks don't reach the menu behind
+	_confirm.visible = false
+	add_child(_confirm)
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_confirm.add_child(center)
+	var panel := PanelContainer.new()
+	UiKit.panel(panel, 26)
+	panel.custom_minimum_size = Vector2(520, 0)
+	center.add_child(panel)
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 14)
+	panel.add_child(v)
+	UiKit.title(v, "Delete World?")
+	_confirm_text = UiKit.label(v, "", 17, UiKit.TEXT)
+	_confirm_text.autowrap_mode = TextServer.AUTOWRAP_WORD
+	_confirm_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	UiKit.divider(v)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	v.add_child(row)
+	var keep := _gold(row, "Keep it", func(): _confirm.visible = false)
+	keep.name = "Keep"
+	keep.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var del := _button(row, "Delete forever", _delete_confirmed)
+	del.name = "DeleteForever"
+	del.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	del.custom_minimum_size.y = 50
+	del.add_theme_color_override("font_color", UiKit.MISSING)
+	del.add_theme_color_override("font_hover_color", Color(1.0, 0.6, 0.55))
+	_confirm.visibility_changed.connect(func():
+		if keep.is_visible_in_tree() and keep.focus_mode != Control.FOCUS_NONE:
+			keep.grab_focus.call_deferred())
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if _confirm and _confirm.visible and event.is_action_pressed("ui_cancel"):
+		_confirm.visible = false
+		get_viewport().set_input_as_handled()
 
 
 func _delete_confirmed() -> void:
+	_confirm.visible = false
 	SaveGame.delete_world(_delete_path)
 	_delete_path = ""
 	_fill_worlds()

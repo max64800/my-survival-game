@@ -20,6 +20,7 @@ var hud: Hud
 var session: Session
 var players_root: Node3D
 var _ready_to_play := false
+var _away := false  ## Alt+Tabbed out with the mouse in the game (F228)
 var _menu: Node
 var world_file := ""  ## the save file of the world being played (F87)
 var world_name := ""
@@ -252,11 +253,13 @@ func pause_action(what: String) -> void:
 		"save":
 			save_now()
 		"menu":
+			get_tree().paused = false
 			save_now("Saved")
 			_ready_to_play = false
 			session.leave()
 			get_tree().reload_current_scene()
 		"quit":
+			get_tree().paused = false
 			save_now("Saved")
 			get_tree().quit()
 		"invite":  # Steam's own invite window, when you're hosting on Steam (F187)
@@ -447,6 +450,7 @@ func _free_slot() -> int:
 
 
 func _on_peer_connected(id: int) -> void:
+	get_tree().paused = false  # a friend came in: a paused world starts again (F239)
 	if not multiplayer.is_server() or world == null:
 		return
 	player_slots[id] = _free_slot()
@@ -567,12 +571,15 @@ func save_now(note: String = "Saved") -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST and _ready_to_play:
 		save_now()  # saving when you quit (spec 5.11)
-	# You switched to another program (Alt+Tab, clicked another window): let go of the mouse
-	# and show the pause screen. Click back into the game to keep playing (feedback F27).
+	# You switched to another program (Alt+Tab, clicked another window): let go of the mouse (F27),
+	# but no pause menu, so screenshots of the game stay clean (F228). Coming back takes the mouse again.
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and not Controls.robot and Controls.captured():
 		Controls.set_captured(false)
-		if hud:
-			hud.set_paused(true)
+		_away = true
+	if what == NOTIFICATION_APPLICATION_FOCUS_IN and _away:
+		_away = false
+		if _ready_to_play and hud and not hud.is_paused():
+			Controls.set_captured(true)
 
 
 func _unhandled_input(event: InputEvent) -> void:
