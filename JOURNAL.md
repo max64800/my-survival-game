@@ -3093,3 +3093,8 @@ the body."
   allows that. (2) No water drip in one test cave: the dome is higher than the 20 m the drip search looked, and buckets
   only fill from 15 m below; the huge cavern now tries further out toward its walls (older layouts unchanged).
 - Picture from its floor: the whole ceiling stars, several snake trails glowing at once.
+
+## November 17, 2026 (Mac): Steam "Coming Soon" page plan
+- Owner: make a Steam page with a wishlist button before posting the 7 game videos. Plan: `docs/steam/STEAM-PAGE-PLAN.md` (Steam rules checked: $100 fee, 3-5 business days review, 2 weeks Coming Soon, AI disclosure; capsule sizes; store text draft; tags; screenshots list; prompt for the PC).
+- Name still to pick. Searches: no Steam game called Hollowbeard or Undermoss; Delvers is taken; Beardstone is close to Beard of Stone.
+- **Mistakes and hurdles:** none in the game; the EQT Social Media repo could not push (GitHub says its address is not found).
