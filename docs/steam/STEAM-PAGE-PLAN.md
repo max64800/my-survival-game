@@ -41,6 +41,15 @@ The working name is "Dwarf Game". Searches on Nov 17 found:
 - "Delvers" is taken (a co-op dungeon game).
 - "Beardstone" is very close to "Beard of Stone".
 
+No exact Steam match on Nov 17 for Hollowbeard, Undermoss, Deepkin or Lantern Deep. Lantern Deep is the weakest,
+because a survival game called "Lantern Forge" exists.
+
+A good name is:
+- easy to say and spell after hearing it once in a video;
+- about dwarves, caves or survival;
+- free on Steam;
+- free as a .com or similar and as social handles.
+
 Before paying, search Steam for the final name, plus a general web search and a trademark search
 (free: tmsearch.uspto.gov, euipo.europa.eu).
 
