@@ -2536,3 +2536,19 @@ The owner: the sheet behind the hair still happens, make the hook at the very en
   as no lids at all.
 - Still open: the back stretches up to about 7x in fast moves (better, not solved), and fast moves still push the
   beard into the round 1 shirt. Both wait for the body round. 2 picture checks used.
+
+## November 17, 2026 (PC, rock-textures Claude): caves step 1 taken over, loading 4x faster (F211)
+
+- The owner asked to continue step 1 of the epic caves plan. The cave Claude handed it over with notes (it is not
+  touching the cave files any more).
+- Claude measured before guessing. "Ready to play": old caves 53 s, new caves 92 s. The crystal placing (the plan's
+  guess) was only ~4 s of that. Timing each stage showed the rock was ready at 13.6 s but the plants' planning ran
+  until 53 s, although it takes 3.5 s on its own.
+- Hurdle: a "high priority" switch for the plants did nothing. A test copying the game (14 rock builders + the plants)
+  showed even unrelated engine calls got 17x slower: every script call into the engine goes through one shared desk,
+  and 14 builders queue there. 14 builders made fewer blocks per second than 1. Fix: Voxel Tools now uses a fifth of
+  the cores (at least 3). Old caves 53 → 13.5 s, new caves 92 → 41 s, and smoother play (183 → 310 fps).
+- Also: plant floors felt for by 3 helpers (same plants, checked), coarse rock blocks in the new caves (0 voxels
+  differ), a spacing grid for crystals. Claude's first spacing grid had a bug (a list taken out of a Dictionary is a
+  copy, so nothing was added): caught because the old caves came out different; fixed with a plain list.
+- The full test run: everything passes except the dwarf tests, which fail on the dwarf chat's half-done hair file.

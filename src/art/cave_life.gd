@@ -33,6 +33,7 @@ const KINDS := {
 const EVERY_BIG_ROOM := 220  ## tries for the everywhere cover per big room
 const EVERY_ROOM := 50
 const EVERY_TUNNEL := 5
+const EVERY_HELPERS := 3  ## threads that feel for the floors of the everywhere cover (big caves only)
 const FIBER_DROP := "fiber"  ## what a broken grass tuft, fern or small root drops (owner, F197)
 
 ## What grows round each kind of life, by surface: floor (flat), slope, wall. (rootlet = either small root look)
@@ -262,16 +263,59 @@ static func _plan_everywhere(maker: CaveMaker, rock: Rock, taken: Dictionary, ou
 	for sg: Dictionary in maker.segments:
 		for i in EVERY_TUNNEL:
 			starts.append([(sg.a as Vector3).lerp(sg.b, rng.randf()), Vector3(rng.randf_range(-0.3, 0.3), -1, rng.randf_range(-0.3, 0.3)).normalized(), 14.0])
+	var dice := []  # all dice first, in the same order as always (feeling for the rock never rolls any)
 	for st in starts:
+		var offs := []
 		var roll := rng.randf()
 		var many := rng.randi_range(1, 4)
-		var offs := []
 		for j in 4:
 			offs.append([Vector3(rng.randf_range(-1.1, 1.1), 0.0, rng.randf_range(-1.1, 1.1)), rng.randf() * TAU, rng.randf(), rng.randi()])
+		dice.append([roll, many, offs])
+	# The slow part, feeling for the floor, doesn't depend on what was placed before: helpers do it side by side
+	# (F211 speed: 3x more tunnels in layout 2), each with its own rock cache. Then the room checks run in the old
+	# order, so the result is exactly the same as doing it all in one go.
+	var found := []
+	found.resize(starts.size())
+	var helpers := EVERY_HELPERS if starts.size() > 2000 else 1
+	var threads: Array[Thread] = []
+	for h in helpers:
+		var lo := starts.size() * h / helpers
+		var hi := starts.size() * (h + 1) / helpers
+		if h == helpers - 1:
+			_feel_floors(maker, rock, starts, dice, found, lo, hi)  # this thread does the last share itself
+		else:
+			var th := Thread.new()
+			th.start(_feel_floors.bind(maker, Rock.new(maker), starts, dice, found, lo, hi))
+			threads.append(th)
+	for th in threads:
+		th.wait_to_finish()
+	for i in starts.size():
+		var kind := "tinycaps" if dice[i][0] < 0.4 else ("gravel" if dice[i][0] < 0.75 else "gravel_b")
+		var k: Dictionary = KINDS[kind]
+		for c: Array in found[i]:
+			var at: Vector3 = c[0]
+			var n: Vector3 = c[1]
+			var offs: Array = c[2]
+			var size: float = lerpf(k.size[0], k.size[1], offs[2]) * GlowPlacer.size_boost(at)  # (owner F218)
+			if not _free(taken, at, k.gap * size):
+				continue
+			_take(taken, at, k.gap * size)
+			var sink: float = {"gravel": 0.008, "gravel_b": 0.004, "tinycaps": 0.004}[kind] * size
+			out.append({kind = kind, xform = Transform3D(_upright(n, offs[1]) * Basis.from_scale(Vector3.ONE * size), at - n * sink),
+				color = _tint(kind, offs[3], CaveMaker.biome_at(at), 0.0), custom = Color(1, 0, 0, 0)})
+
+
+## For starts lo..hi-1: the floor spots of each cluster ([at, normal, its dice]), before the "is there room" check.
+static func _feel_floors(maker: CaveMaker, rock: Rock, starts: Array, dice: Array, found: Array, lo: int, hi: int) -> void:
+	for i in range(lo, hi):
+		var st: Array = starts[i]
+		var many: int = dice[i][1]
+		var offs: Array = dice[i][2]
+		var cl := []
+		found[i] = cl
 		var hit := rock.march(st[0], st[1], st[2])
 		if hit == Vector3.INF or rock.normal(hit).y < 0.72:
 			continue
-		var kind := "tinycaps" if roll < 0.4 else ("gravel" if roll < 0.75 else "gravel_b")
 		for j in many:
 			var at := hit
 			if j > 0:  # the rest of the cluster: dropped onto the floor round the first
@@ -281,14 +325,7 @@ static func _plan_everywhere(maker: CaveMaker, rock: Rock, taken: Dictionary, ou
 			var n := rock.normal(at)
 			if n.y < 0.72:
 				continue
-			var k: Dictionary = KINDS[kind]
-			var size: float = lerpf(k.size[0], k.size[1], offs[j][2]) * GlowPlacer.size_boost(at)  # (owner F218)
-			if not _free(taken, at, k.gap * size):
-				continue
-			_take(taken, at, k.gap * size)
-			var sink: float = {"gravel": 0.008, "gravel_b": 0.004, "tinycaps": 0.004}[kind] * size
-			out.append({kind = kind, xform = Transform3D(_upright(n, offs[j][1]) * Basis.from_scale(Vector3.ONE * size), at - n * sink),
-				color = _tint(kind, offs[j][3], CaveMaker.biome_at(at), 0.0), custom = Color(1, 0, 0, 0)})
+			cl.append([at, n, offs[j]])
 
 
 ## How long the moss fuzz is: longer where it's damp (owner: "thicker where it's damp"), short on a hanging curtain

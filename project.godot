@@ -19,3 +19,8 @@ theme/custom_font="res://assets/fonts/AlegreyaSans-Medium.ttf"
 [physics]
 
 common/physics_ticks_per_second=60
+
+[voxel]
+
+threads/count/minimum=3
+threads/count/ratio_over_max=0.2

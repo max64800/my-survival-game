@@ -60,6 +60,7 @@ static func _place(maker: CaveMaker) -> Array[Dictionary]:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = maker.seed + 777
 	var spots: Array[Dictionary] = []
+	var near := {}  # spacing grid (F211 speed): spots by 2.5 m box, so a new spot checks only its neighbours
 	# One biome after the other, so adding a biome never moves the spots of the ones before it.
 	for biome in ["mossy", "fungal"]:
 		for room in maker.rooms:
@@ -72,12 +73,12 @@ static func _place(maker: CaveMaker) -> Array[Dictionary]:
 					dir.y = -absf(dir.y) - 0.6  # aim at the floor (mushrooms, fiber)
 				elif i % 5 == 1:
 					dir.y = absf(dir.y) + 0.8  # aim at the ceiling (crystals, drips)
-				_try_add(maker, rng, spots, room.center, dir.normalized(), 70.0, biome)
+				_try_add(maker, rng, spots, near, room.center, dir.normalized(), 70.0, biome)
 		for i in range(0, maker.segments.size(), 2):
 			var s: Dictionary = maker.segments[i]
 			var mid: Vector3 = (s.a + s.b) * 0.5
 			if CaveMaker.biome_at(mid) == biome:
-				_try_add(maker, rng, spots, mid, _random_dir(rng), 12.0, biome)
+				_try_add(maker, rng, spots, near, mid, _random_dir(rng), 12.0, biome)
 	# Added after everything above (with their own dice), so older spots never move.
 	_add_low_crystals(maker, spots)
 	_add_start_spots(maker, spots)
@@ -92,6 +93,9 @@ static func _place(maker: CaveMaker) -> Array[Dictionary]:
 static func _add_low_crystals(maker: CaveMaker, spots: Array[Dictionary]) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = maker.seed + 778
+	var near := {}
+	for s in spots:
+		_grid_put(near, s.pos)
 	for room in maker.rooms:
 		if room.get("sealed", false):
 			continue
@@ -113,12 +117,13 @@ static func _add_low_crystals(maker: CaveMaker, spots: Array[Dictionary]) -> voi
 			var below := _march(maker, hit + Vector3.UP * 0.3 + (eye - hit).normalized() * 0.6, Vector3.DOWN, 6.0)
 			if below == Vector3.INF or hit.y - below.y > 2.2:
 				continue  # too high to reach from the floor here
-			if not _spaced(spots, hit):
+			if not _spaced_grid(near, hit):
 				continue
 			var kind := CRYSTAL
 			if room.get("biome", "mossy") == "fungal":
 				kind = "crystal_amber" if rng.randf() < 0.35 else CRYSTAL
 			_add_spot(spots, hit, normal_at(maker, hit), kind, rng.randf_range(1.3, 2.0), rng.randf_range(0, TAU), 0.0)
+			_grid_put(near, hit)
 			want -= 1
 
 
@@ -181,6 +186,28 @@ static func _spaced(spots: Array[Dictionary], p: Vector3) -> bool:
 	return true
 
 
+## The spacing grid: same answer as checking every spot (boxes as wide as the spacing, so the 27 boxes round a point
+## hold every spot that could be too close), but only looks at a few spots instead of thousands.
+static func _grid_put(near: Dictionary, p: Vector3) -> void:
+	var c := Vector3i((p / MIN_SPACING).floor())
+	if not near.has(c):
+		near[c] = []  # a plain Array: a PackedVector3Array taken out of a Dictionary is a copy, so appending to it is lost
+	(near[c] as Array).append(p)
+
+
+static func _spaced_grid(near: Dictionary, p: Vector3) -> bool:
+	var c := Vector3i((p / MIN_SPACING).floor())
+	for x in range(-1, 2):
+		for y in range(-1, 2):
+			for z in range(-1, 2):
+				var k := c + Vector3i(x, y, z)
+				if near.has(k):
+					for q: Vector3 in near[k]:
+						if q.distance_to(p) < MIN_SPACING:
+							return false
+	return true
+
+
 static func _add_spot(spots: Array[Dictionary], pos: Vector3, n: Vector3, kind: String, scale: float, spin: float, length: float) -> void:
 	spots.append({id = -1, pos = pos, normal = n, kind = kind, color = KINDS[kind].color,
 		scale = 1.0 if kind in TALL else scale, spin = spin, length = length, chops = KINDS[kind].get("chops", 1)})
@@ -191,15 +218,14 @@ static func _random_dir(rng: RandomNumberGenerator) -> Vector3:
 	return v.normalized() if v.length() > 0.01 else Vector3.UP
 
 
-static func _try_add(maker: CaveMaker, rng: RandomNumberGenerator, spots: Array[Dictionary], start: Vector3, dir: Vector3, max_dist: float, biome: String) -> void:
+static func _try_add(maker: CaveMaker, rng: RandomNumberGenerator, spots: Array[Dictionary], near: Dictionary, start: Vector3, dir: Vector3, max_dist: float, biome: String) -> void:
 	if maker.sdf_at(start) <= 0.0:
 		return
 	var hit := _march(maker, start, dir, max_dist)
 	if hit == Vector3.INF:
 		return
-	for s in spots:
-		if s.pos.distance_to(hit) < MIN_SPACING:
-			return
+	if not _spaced_grid(near, hit):
+		return
 	var n := normal_at(maker, hit)
 	var kind := _pick_kind(n, rng) if biome == "mossy" else _pick_fungal(n, rng)
 	if kind == ROOT and (maker.sdf_at(hit + Vector3.UP * 1.0) <= 0.4 or not _solid_ground(maker, hit)):
@@ -224,6 +250,7 @@ static func _try_add(maker: CaveMaker, rng: RandomNumberGenerator, spots: Array[
 		scale = 1.0  # stretched by `length` instead
 	if maker.sdf_at(hit - n * 0.8) >= 0.0 or maker.sdf_at(hit + n * 0.8) <= 0.0:
 		return  # on the edge of a rock slab or block: no solid rock behind it, or rock in front (F109)
+	_grid_put(near, hit)
 	spots.append({id = -1, pos = hit, normal = n, kind = kind, color = KINDS[kind].color, scale = scale,
 		spin = rng.randf_range(0, TAU), length = length, chops = KINDS[kind].get("chops", 1)})
 

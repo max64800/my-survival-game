@@ -106,7 +106,18 @@ var _style_noise := FastNoiseLite.new()
 ## Rock styles to compare (owner, Nov 16: "try a few different things"). "blocks" = step 1's chunky
 ## blocks; the others keep the smooth surface and add broken-stone shapes on walls and ceilings:
 ## "slabs" (irregular slabs pushed in/out), "ledges" (stacked layers), "mixed" (both + small chips).
-static var rock_style := "mixed"
+static var rock_style := "mixed":
+	set(v):
+		rock_style = v
+		_style = STYLES.find(v)
+## The same as a number, read by the rock checks (F211 speed): many threads build rock at once, and every one of them
+## reading the shared text made them all queue for it (the plants took 40 s instead of 3.5 s while the rock loaded).
+const STYLES := ["blocks", "slabs", "ledges", "mixed"]
+const BLOCKS := 0
+const SLABS := 1
+const LEDGES := 2
+const MIXED := 3
+static var _style := MIXED
 var _slab_noise := FastNoiseLite.new()
 var _layer_noise := FastNoiseLite.new()
 var _chip_noise := FastNoiseLite.new()
@@ -892,7 +903,7 @@ func _sdf_with_v2(p: Vector3, room_ids: PackedInt32Array, seg_ids: PackedInt32Ar
 	var s := -d
 	if absf(s) < 6.5:
 		s += _wall_bumps(p) * scale
-		if rock_style != "blocks" and not _near_start(p):
+		if _style != BLOCKS and not _near_start(p):
 			s += _rock_detail(p) * _floor_guard(p, room_ids) * scale
 		for i in room_ids:
 			var rr := _room_r[i]
@@ -1319,7 +1330,7 @@ func _corner(g: Vector3i) -> float:
 ## sit on the real surface.
 func sdf_at(p: Vector3) -> float:
 	var s := _smooth_at(p)
-	if rock_style != "blocks":
+	if _style != BLOCKS:
 		return s
 	if absf(s) > NEAR_BLOCKS:
 		# Far from a wall: the real (chunky) wall may be up to BLOCK_SLACK closer than the smooth shape,
@@ -1399,7 +1410,7 @@ func _sdf_with(p: Vector3, room_ids: PackedInt32Array, seg_ids: PackedInt32Array
 	var s := -d
 	if absf(s) < 6.5:
 		s += _wall_bumps(p)
-		if rock_style != "blocks" and not _near_start(p):
+		if _style != BLOCKS and not _near_start(p):
 			s += _rock_detail(p) * _floor_guard(p, room_ids)
 		# Small rooms (shrines, geodes) keep an open core: wall bumps up to 2.8 m could otherwise fill a
 		# 2.8 m room, and the chunky blocks would close what's left (F109).
@@ -1428,21 +1439,21 @@ func _wall_bumps(p: Vector3) -> float:
 ## How much nearer a wall can be than sdf_at says, right where rock slabs and ledges step
 ## (searches that step by the distance subtract this so they never jump past an edge).
 func march_slack() -> float:
-	match rock_style:
-		"slabs": return SLAB_AMP
-		"ledges": return LEDGE_AMP
-		"mixed": return SLAB_AMP * 0.6 + LEDGE_AMP * 0.7 + CHIP_AMP
+	match _style:
+		SLABS: return SLAB_AMP
+		LEDGES: return LEDGE_AMP
+		MIXED: return SLAB_AMP * 0.6 + LEDGE_AMP * 0.7 + CHIP_AMP
 	return 0.0
 
 
 ## Broken-stone detail for the rock styles (meters the wall moves; + = more air).
 func _rock_detail(p: Vector3) -> float:
-	match rock_style:
-		"slabs":
+	match _style:
+		SLABS:
 			return _slab_noise.get_noise_3dv(p) * SLAB_AMP
-		"ledges":
+		LEDGES:
 			return _ledge(p)
-		"mixed":
+		MIXED:
 			return _slab_noise.get_noise_3dv(p) * SLAB_AMP * 0.6 + _ledge(p) * 0.7 + (_chip_noise.get_noise_3dv(p) + 0.8) * CHIP_AMP
 	return 0.0
 
@@ -1619,7 +1630,7 @@ func generate_block(buf: VoxelBuffer, origin: Vector3i) -> void:
 	var pal: Dictionary = Mat.PALETTES[mid]
 
 	var near_start := _start_overlaps(lo, hi)
-	var blocky := rock_style == "blocks"
+	var blocky := _style == BLOCKS
 	var all_rock := room_ids.is_empty() and seg_ids.is_empty()
 	if not all_rock and made_layout >= 2 and one_biome and not near_start and not blocky:
 		# Shapes are listed nearby, but if the middle of the block is far inside rock, so is all of it:
@@ -1645,12 +1656,15 @@ func generate_block(buf: VoxelBuffer, origin: Vector3i) -> void:
 	var grid := PackedFloat32Array()
 	grid.resize(sx * (sy + 2) * sz)
 	var gi := 0
-	for z in sz:
-		for x in sx:
-			for y in sy + 2:
-				var p := Vector3(origin.x + x, origin.y + y, origin.z + z)
-				grid[gi] = _sdf_with(p, room_ids, seg_ids)
-				gi += 1
+	if made_layout >= 2 and not blocky and coarse_blocks:
+		_coarse_sdf(grid, origin, size, room_ids, seg_ids)
+	else:
+		for z in sz:
+			for x in sx:
+				for y in sy + 2:
+					var p := Vector3(origin.x + x, origin.y + y, origin.z + z)
+					grid[gi] = _sdf_with(p, room_ids, seg_ids)
+					gi += 1
 	var col := sy + 2
 	gi = 0
 	for z in sz:
@@ -1689,6 +1703,70 @@ func generate_block(buf: VoxelBuffer, origin: Vector3i) -> void:
 					m = p_under
 				buf.set_voxel(m, x, y, z, IDX)
 			gi += col
+
+
+## Layout 2 speed (F211): blocks near caves are measured on a coarse 2 m net first. A 2 m box whose 8 corners are all
+## deep in rock (or all well in the air) can't hold a wall, so its inside is blended from the corners; only boxes near
+## a wall measure every voxel. Margins: the wall can move at most ~1.5 m per metre, half a box's diagonal is 1.73 m,
+## and voxels down to 3 m inside the rock still need their exact depth (moss patches, dirt), so rock boxes need every
+## corner below -6 m and air boxes above +3 m. The tests compare this against measuring every voxel.
+static var coarse_blocks := true  ## false = measure every voxel (for the comparison test)
+const COARSE := 2
+const COARSE_ROCK := -6.0
+const COARSE_AIR := 3.0
+
+
+func _coarse_sdf(grid: PackedFloat32Array, origin: Vector3i, size: Vector3i, room_ids: PackedInt32Array, seg_ids: PackedInt32Array) -> void:
+	var sx := size.x
+	var col := size.y + 2  # voxels per column in `grid` (one extra layer on top, like the full pass)
+	var sz := size.z
+	var nx := sx / COARSE + 1
+	var ny := (col - 1 + COARSE - 1) / COARSE + 1  # net points cover y = 0 .. col-1 (and a bit above)
+	var nz := sz / COARSE + 1
+	var net := PackedFloat32Array()
+	net.resize(nx * ny * nz)
+	var o := Vector3(origin)
+	for k in nz:
+		for i in nx:
+			for j in ny:
+				net[(k * nx + i) * ny + j] = _sdf_with(o + Vector3(i * COARSE, j * COARSE, k * COARSE), room_ids, seg_ids)
+	var inv := 1.0 / float(COARSE)
+	for k in nz - 1:
+		for i in nx - 1:
+			for j in ny - 1:
+				var c000 := net[(k * nx + i) * ny + j]
+				var c010 := net[(k * nx + i) * ny + j + 1]
+				var c100 := net[(k * nx + i + 1) * ny + j]
+				var c110 := net[(k * nx + i + 1) * ny + j + 1]
+				var c001 := net[((k + 1) * nx + i) * ny + j]
+				var c011 := net[((k + 1) * nx + i) * ny + j + 1]
+				var c101 := net[((k + 1) * nx + i + 1) * ny + j]
+				var c111 := net[((k + 1) * nx + i + 1) * ny + j + 1]
+				var hi := maxf(maxf(maxf(c000, c010), maxf(c100, c110)), maxf(maxf(c001, c011), maxf(c101, c111)))
+				var lo := minf(minf(minf(c000, c010), minf(c100, c110)), minf(minf(c001, c011), minf(c101, c111)))
+				var blend := hi < COARSE_ROCK or lo > COARSE_AIR
+				for dz in COARSE:
+					var z := k * COARSE + dz
+					if z >= sz:
+						break
+					var fz := dz * inv
+					for dx in COARSE:
+						var x := i * COARSE + dx
+						if x >= sx:
+							break
+						var fx := dx * inv
+						var base := (z * sx + x) * col
+						for dy in COARSE:
+							var y := j * COARSE + dy
+							if y >= col:
+								break
+							if blend:
+								var fy := dy * inv
+								var a := lerpf(lerpf(c000, c100, fx), lerpf(c001, c101, fx), fz)
+								var b := lerpf(lerpf(c010, c110, fx), lerpf(c011, c111, fx), fz)
+								grid[base + y] = lerpf(a, b, fy)
+							else:
+								grid[base + y] = _sdf_with(o + Vector3(x, y, z), room_ids, seg_ids)
 
 
 func _block_inside_a_biome(bmin: Vector3, bmax: Vector3) -> bool:

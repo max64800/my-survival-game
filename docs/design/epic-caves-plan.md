@@ -38,11 +38,23 @@ Done:
 - Ruins, camps and nests are spread from near to far; the Copper Deeps are 140 to 320 m from the start.
 - Speed so far: planning 0.5 s. Tunnel pieces piled up inside rooms are merged; blocks use the lookup grid.
 
-Still to do (next chat; type **ultrathink**):
-1. **Speed:** placing crystals takes 4.2 s (old: 0.8 s), and building a block of rock near caves ~55 ms (old: 30 ms).
-   Ideas: fewer crystal spots per tunnel length, or place them in the background.
-2. **Real game check** (`-- seed=42 perfcheck autopilot layout=2`): loading time and smoothness. On Nov 16 the game
-   couldn't start because another chat was halfway through adding rock looks to `world.gd` (`RockLooks`).
+**Nov 17 (PC, taken over by the rock-textures Claude): speed, part 1 done.** Loading, from program start to
+"ready to play" (seed 42, this PC): **old caves 53 s → 13.5 s, new caves 92 s → 41 s**; frame rate 183 → 310+ fps.
+- The real cause, in both layouts: Voxel Tools ran 14 rock builders at once (half the cores). Every engine call from a
+  script (noise, lists) goes through one shared "check-in desk", so 14 builders mostly queued: they made 24 blocks/s,
+  1 builder alone makes 31, 4 builders 65. The plants' planning queued with them (3.5 s alone, 40 s in the game).
+  Now `project.godot [voxel]`: a fifth of the cores, at least 3.
+- Plant planning (`CaveLife._plan_everywhere`): helpers feel for floors side by side, then the room checks run in the
+  old order (exactly the same plants, checked by count + checksum, both layouts). 16.2 → 11.6 s alone (layout 2).
+- Rock blocks, layout 2 only: a coarse 2 m net first, every voxel only in boxes near a wall (`_coarse_sdf`); compared
+  with every-voxel on 150 blocks: 0 of 614,400 voxels differ. ~25% faster.
+- Crystal placing: a spacing grid instead of checking every spot (same spots, both layouts); small gain, the real cost
+  is feeling for the rock (3x more tunnel in layout 2: 25.5 km vs 8.5 km, same density per metre).
+- Rock style is kept as a number too (`_style`), so rock checks never read shared text.
+- Where the 41 s go now (layout 2): rock round the start ready at 26 s, plants at 41 s (the planning still queues with
+  the builders: 11.6 s alone, ~34 s in the game). Ideas left: fewer engine calls per rock check, plants near the start first.
+
+Still to do:
 3. **Tests for layout 2:** counts, every room reachable along its tunnels, narrow passages wide enough for the dwarf
    (72 cm), old caves unchanged (fingerprints in `tools/cave_stats.gd`, seed 42 and 7), and tests that assume 400 m
    areas.
