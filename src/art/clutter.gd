@@ -145,27 +145,42 @@ func _pick(rng: RandomNumberGenerator, biome: String) -> String:
 	return "pebble"
 
 
+## One batch per kind per 32 m square (owner, Nov 17: "yes", fix it): a single batch for the whole zone had its 45 m
+## draw distance measured from the zone's middle, so the pebbles, rocks, bones and twigs were never drawn.
 func _make_set(kind: String, xforms: Array) -> void:
 	if xforms.is_empty():
 		return
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	mm.mesh = _mesh(kind)
-	mm.instance_count = xforms.size()
-	var where := PackedVector3Array()
-	for i in xforms.size():
-		mm.set_instance_transform(i, xforms[i])
-		where.append(xforms[i].origin)
-	var mmi := MultiMeshInstance3D.new()
-	mmi.multimesh = mm
+	var cells := {}
+	for xf: Transform3D in xforms:
+		var c := Vector3i((xf.origin / DRIP_CELL).floor())
+		if not cells.has(c):
+			cells[c] = []
+		cells[c].append(xf)
 	var k: Dictionary = KINDS[kind]
-	mmi.material_override = Look.mat(k.color, k.surface, 0.0, 0.0)
-	mmi.visibility_range_end = 45.0  # far-away pebbles aren't worth drawing
-	if kind == "pebble":
-		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(mmi)
-	_sets[kind] = mmi
-	_where[kind] = where
+	var mat := Look.mat(k.color, k.surface, 0.0, 0.0)
+	var mesh := _mesh(kind)
+	for c in cells:
+		var group: Array = cells[c]
+		var mm := MultiMesh.new()
+		mm.transform_format = MultiMesh.TRANSFORM_3D
+		mm.mesh = mesh
+		mm.instance_count = group.size()
+		var where := PackedVector3Array()
+		for i in group.size():
+			mm.set_instance_transform(i, group[i])
+			where.append((group[i] as Transform3D).origin)
+		var mmi := MultiMeshInstance3D.new()
+		mmi.multimesh = mm
+		mmi.material_override = mat
+		mmi.visibility_range_end = 45.0  # far-away pebbles aren't worth drawing
+		mmi.visibility_range_end_margin = 5.0
+		mmi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
+		if kind == "pebble":
+			mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(mmi)
+		var key := "%s@%s" % [kind, c]  # (_on_rock_changed walks every batch the same way)
+		_sets[key] = mmi
+		_where[key] = where
 
 
 ## Dripstone, in 32 m squares per model: each square is its own batch with its own draw distance (one batch for the

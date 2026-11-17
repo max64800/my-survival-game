@@ -2664,3 +2664,6 @@ The owner: the sheet behind the hair still happens, make the hook at the very en
   the zone's middle, so it was never drawn. Now one batch per 32 m square. Speed check: 451 fps.
 - Claude noticed: the floor pebbles, rocks, bones and twigs use the same one-batch-per-zone setup with a 45 m limit,
   so they may never be drawn either. Not changed; asking the owner first.
+
+- Owner said yes to fixing the floor pebbles (F244): the floor clutter is now drawn per 32 m square too; pebbles
+  show round the start, 513 fps.
