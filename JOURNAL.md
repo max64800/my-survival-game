@@ -2842,6 +2842,14 @@ the body."
   behind, the heel 6 cm behind the ankle.
 - Still open: the middle braid swings 5-9 cm into the belly in fast moves; a braid link folds back sharply in a dash
   (95 degrees; the test fails, with the back-hair sway).
+- Owner (4 pictures from the page): hands still too wide from the front; the back of the foot still too big; "he
+  doesn't have an ass, his legs go right into his back". Also seen in the running picture: skin poking through the
+  underpants. Causes and fixes: the hand was ~11 cm wide but ~5 cm thick (fingers spread wider than the bones):
+  now ~8 cm wide. The ankle, its two bone bumps and the heel made one round puff: all slimmer, heel tucked in. The
+  buttocks only came 1 cm out past the back: now a round bottom 4 cm out, a crease under each cheek, the lower back
+  curving in above it. The underpants had their own automatic weights, so they bent differently from the skin under
+  them: now each point copies the bones of the skin point under it (how the clothes will work too, F245).
+- Still open: the middle braid swings 6-11 cm into the belly in fast moves; the back hair sways 17 cm in a dash.
 
 - **Owner's round 2 notes:** clear gaps between the stone rows and between stones; the battlement's copper band
   sticks out; ruins should have no door hanging, rather a broken door lying nearby. Fixes: stones now touch (only

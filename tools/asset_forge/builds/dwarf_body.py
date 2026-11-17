@@ -327,7 +327,7 @@ for side in ("l", "r"):
 	fingers = [[a.lerp(b, 0.5) for a, b in zip(chains["index"], chains["middle"])],
 		[a.lerp(b, 0.5) for a, b in zip(chains["ring"], chains["pinky"])]]
 	mids = [a.lerp(b, 0.5) for a, b in zip(fingers[0], fingers[1])]
-	fingers = [[Vector((p.x, m.y + (p.y - m.y) * 1.25, p.z)) for p, m in zip(f, mids)] for f in fingers]
+	fingers = [[Vector((p.x, m.y + (p.y - m.y) * 0.95, p.z)) for p, m in zip(f, mids)] for f in fingers]  # (Nov 18: ~8 cm wide)
 	pts = [p for c in chains.values() for p in c] + [wr] + [p for f in fingers for p in f]
 	lo = Vector([min(p[i] for p in pts) - 0.06 for i in range(3)])
 	hi = Vector([max(p[i] for p in pts) + 0.06 for i in range(3)])
@@ -335,19 +335,19 @@ for side in ("l", "r"):
 	knuck = [f[0] for f in fingers]
 	mid = (knuck[0] + knuck[1]) / 2
 	along = (mid - wr).length
-	cl.add(cl.ell(QV(wr.lerp(mid, 0.55)), (along * 0.6, 0.027, (knuck[1] - knuck[0]).length / 2 + 0.032)), 0.014)  # the palm (flatter: Nov 18)
-	cl.add(cl.ell(QV(wr.lerp(mid, 0.1)), (0.036, 0.03, 0.044)), 0.02)                                          # the wrist end
+	cl.add(cl.ell(QV(wr.lerp(mid, 0.55)), (along * 0.6, 0.027, (knuck[1] - knuck[0]).length / 2 + 0.022)), 0.014)  # the palm (flatter: Nov 18)
+	cl.add(cl.ell(QV(wr.lerp(mid, 0.1)), (0.034, 0.028, 0.036)), 0.02)                                          # the wrist end
 	for k, f in enumerate(fingers):
-		r0 = 0.026
+		r0 = 0.022
 		f = [f[0].lerp(wr, 0.25)] + f[1:]  # (from inside the palm)
 		for j in range(len(f) - 1):
 			cl.add(cl.tube(QV(f[j]), QV(f[j + 1]), r0 * (1 - 0.06 * j), r0 * (1 - 0.06 * (j + 1))), 0.004)
-		cl.add(cl.ell(QV(f[-1]), (0.022, 0.02, 0.022)), 0.006)                       # a round fingertip
-		cl.add(cl.ell(QV(f[1] + Vector((0, 0, 0.01))), (0.022, 0.013, 0.022)), 0.006)  # the knuckle on top
+		cl.add(cl.ell(QV(f[-1]), (0.019, 0.018, 0.019)), 0.006)                       # a round fingertip
+		cl.add(cl.ell(QV(f[1] + Vector((0, 0, 0.01))), (0.019, 0.012, 0.019)), 0.006)  # the knuckle on top
 	th = chains["thumb"]
 	th = [th[0].lerp(mid, 0.15)] + th[1:]
 	for j in range(len(th) - 1):
-		cl.add(cl.tube(QV(th[j]), QV(th[j + 1]), 0.026 * (1 - 0.07 * j), 0.026 * (1 - 0.07 * (j + 1))), 0.006)
+		cl.add(cl.tube(QV(th[j]), QV(th[j + 1]), 0.023 * (1 - 0.07 * j), 0.023 * (1 - 0.07 * (j + 1))), 0.006)
 	cl.add(cl.ell(QV(th[-1]), (0.021, 0.021, 0.021)), 0.006)
 	finish(cl.mesh(f"hand_{side}", skin, PARTS), 4000)
 	del cl
@@ -460,7 +460,7 @@ if not CLOTHES:
 	# the body's outline (height, half-width, front, back): a round belly that hangs low, a barrel chest, broad but
 	# sloping shoulders (the arms are added below), a thick neck under the beard
 	# (the back only gently curved: owner Nov 18, a deeper upper back looked "like he is gonna grow wings")
-	TORSO = [(0.33, 0.2, 0.15, 0.15), (0.4, 0.222, 0.19, 0.165), (0.47, 0.23, 0.24, 0.17), (0.55, 0.224, 0.265, 0.172),
+	TORSO = [(0.33, 0.2, 0.15, 0.15), (0.4, 0.222, 0.19, 0.16), (0.47, 0.23, 0.24, 0.158), (0.55, 0.224, 0.265, 0.164),
 		(0.62, 0.216, 0.255, 0.175), (0.69, 0.21, 0.222, 0.177), (0.76, 0.21, 0.19, 0.177), (0.82, 0.198, 0.15, 0.17),
 		(0.87, 0.162, 0.11, 0.145), (0.93, 0.085, 0.07, 0.09)]
 	cl = clay((-0.72, 0.09, -0.36), (0.72, 1.0, 0.33))
@@ -469,7 +469,7 @@ if not CLOTHES:
 	cl.add(cl.ell(Q(0, 0.43, -0.09), (0.17, 0.07, 0.12)), 0.05)                           # (its underside, over the pants)
 	for s in (-1, 1):
 		cl.add(cl.ell(Q(s * 0.085, 0.765, -0.152), (0.088, 0.056, 0.042)), 0.035)          # chest
-		cl.add(cl.ell(Q(s * 0.082, 0.375, 0.095), (0.098, 0.088, 0.078)), 0.045)           # buttock
+		cl.add(cl.ell(Q(s * 0.088, 0.36, 0.11), (0.1, 0.098, 0.098)), 0.04)                # buttock (round, sticking out: Nov 18)
 		cl.add(cl.ell(Q(s * 0.19, 0.5, 0.0), (0.05, 0.1, 0.12)), 0.06)                     # the soft sides
 	for side in ("l", "r"):
 		sh, el, wr = B(f"upperarm_{side}"), B(f"lowerarm_{side}"), B(f"hand_{side}")
@@ -502,6 +502,8 @@ if not CLOTHES:
 	groove(cl, [(0.0, 0.82), (0.0, 0.73)], True, 0.0025, 0.01)
 	groove(cl, [(0.0, 0.87), (0.0, 0.7), (0.0, 0.5)], False, 0.003, 0.012)
 	groove(cl, [(0.0, 0.43), (0.0, 0.32)], False, 0.006, 0.01)
+	for s in (-1, 1):  # the crease under each buttock, where it meets the thigh
+		groove(cl, [(s * 0.02, 0.29), (s * 0.08, 0.275), (s * 0.15, 0.29)], False, 0.006, 0.01)
 	for side in ("l", "r"):  # the hollow behind each knee
 		kn = B(f"calf_{side}")
 		press(cl, [(QV(kn + Vector((-0.02, 0.05, 0.0))), QV(kn + Vector((0.02, 0.05, 0.0))), 1.0)], 0.006, 0.012)
@@ -541,10 +543,10 @@ if not CLOTHES:
 		an = B(f"foot_{side}")
 		out = 1 if an.x > 0 else -1
 		fc = clay((an.x - 0.1, -0.01, an.y - 0.21), (an.x + 0.1, 0.2, an.y + 0.12), 0.0025)
-		fc.add(fc.ell(Q(an.x, 0.13, an.y), (0.043, 0.05, 0.046)), 0.02)                                  # ankle
+		fc.add(fc.ell(Q(an.x, 0.13, an.y), (0.036, 0.046, 0.038)), 0.02)                                  # ankle (slim: Nov 18)
 		for s2 in (-1, 1):
-			fc.add(fc.ell(Q(an.x + s2 * 0.036, 0.122, an.y + 0.004), (0.015, 0.017, 0.015)), 0.008)        # ankle bones
-		fc.add(fc.ell(Q(an.x, 0.045, an.y + 0.02), (0.046, 0.044, 0.042)), 0.03)                          # heel (not sticking out: Nov 18)
+			fc.add(fc.ell(Q(an.x + s2 * 0.03, 0.122, an.y + 0.002), (0.011, 0.014, 0.011)), 0.006)        # ankle bones
+		fc.add(fc.ell(Q(an.x, 0.04, an.y + 0.012), (0.04, 0.038, 0.036)), 0.025)                          # heel (tucked in: Nov 18)
 		fc.add(fc.ell(Q(an.x + out * 0.004, 0.04, an.y - 0.05), (0.057, 0.04, 0.1)), 0.035)              # the foot
 		fc.add(fc.tube(Q(an.x, 0.11, an.y - 0.01), Q(an.x + out * 0.004, 0.05, an.y - 0.115), 0.042, 0.03), 0.03)  # instep
 		fc.add(fc.ell(Q(an.x + out * 0.006, 0.03, an.y - 0.112), (0.062, 0.03, 0.042)), 0.025)            # ball of the foot
@@ -701,6 +703,29 @@ for o in meshes:
 					cur = next((y.weight for y in v.groups if y.group == cg.index), 0.0)
 					cg.add([v.index], cur + x.weight, "REPLACE")
 		o.vertex_groups.remove(g)
+# Clothes copy the skin's bending: each point of the underpants follows exactly the bones of the skin point under it
+# (Nov 18: weighed on their own, the skin poked through the pants when he ran). The clothes will do the same (F245).
+torso_o = next((o for o in meshes if "torso" in o.name), None)
+if torso_o is not None:
+	from mathutils import kdtree as _kd
+	tv = torso_o.data.vertices
+	tkd = _kd.KDTree(len(tv))
+	for v in tv:
+		tkd.insert(torso_o.matrix_world @ v.co, v.index)
+	tkd.balance()
+	tnames = {vg.index: vg.name for vg in torso_o.vertex_groups}
+	for o in meshes:
+		if not ("pants" in o.name):
+			continue
+		for vg in list(o.vertex_groups):
+			o.vertex_groups.remove(vg)
+		for v in o.data.vertices:
+			src = tv[tkd.find(o.matrix_world @ v.co)[1]]
+			for g in src.groups:
+				if g.weight > 0.0:
+					gg = o.vertex_groups.get(tnames[g.group]) or o.vertex_groups.new(name=tnames[g.group])
+					gg.add([v.index], g.weight, "REPLACE")
+		print("DWARF clothes copy the skin's bones:", o.name)
 # The head, hair and beard: the face and the top of the head ride on the Head bone. Lower down, the beard and the hair on
 # the back follow the shirt they lie on (its bones, copied from the nearest shirt point), blended in over 10 cm under the
 # chin. (Owner, F183: all on the head bone, the long beard swung through the belly when the head moved: the Head bone
