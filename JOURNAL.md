@@ -2885,3 +2885,14 @@ the body."
   new host request that never digs rock (`ask_pick_plant`; the plant-breaking part of a hit became `_break_plant_at`).
   The floor twigs were only looks: replaced by real twig spots (`GlowPlacer._add_twigs`, added last so older spots keep
   their ids; 1 rootwood each). Tests pass; the walking robot played a fresh world without errors.
+
+## November 17, 2026 (PC, rock-textures Claude): big dripstone, star ceilings, crystal colours (F217, F249)
+
+- Owner liked the dripstone cones: some really large ones, and blend them with the rock. About 1 in 6 main ones is
+  now 2-3.5x (the 2 m head room still caps them); the rock chunk is pushed fully into the ceiling and they only go
+  under flat-ish ceiling, so no pale chunk shows.
+- Star dots (F217): drawn by the rock shader on ceilings (`star_layer` in terrain.gdshader): two grids of soft teal
+  points, in patches, each twinkling. Round 1 dots were big enough to look like snow up close; round 2 tiny points.
+- Crystals: owner picked real crystals, strong ones rare. `GlowPlacer._mix_crystal_colours` gives each crystal its
+  colour from its position (blue 38%, green 24%, violet 18%, amber 14%, white 3%, red 3%); ids unchanged.
+- The water drip (F140) now uses the ringed dripstone model with its drop; the falling drops come from its tip.

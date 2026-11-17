@@ -33,6 +33,10 @@ const KINDS := {
 	# Thin roots in the starting room: pull them by hand for your first pickaxe handle (feedback F11).
 	"root_dangle": {item = "rootwood", count = [1, 1], extra = "fiber", tool = "hand", color = Color(0.45, 0.31, 0.19), xp = 1, skill = "survival"},
 	"crystal_amber": {item = "crystal_amber", count = [2, 3], tool = "pickaxe", hardness = 22, glow = true, color = Color(1.0, 0.72, 0.28), xp = 5, skill = "mining"},
+	# More colours (owner, Nov 17: "so many crystals are just blue"; picked: real crystals, the strong ones rare).
+	"crystal_violet": {item = "crystal_violet", count = [2, 3], tool = "pickaxe", hardness = 20, glow = true, color = Color(0.68, 0.42, 1.0), xp = 5, skill = "mining"},
+	"crystal_white": {item = "crystal_white", count = [1, 2], tool = "pickaxe", hardness = 26, glow = true, color = Color(0.92, 0.95, 1.0), xp = 8, skill = "mining"},
+	"crystal_red": {item = "crystal_red", count = [1, 2], tool = "pickaxe", hardness = 24, glow = true, color = Color(1.0, 0.32, 0.28), xp = 7, skill = "mining"},
 	"spore_truffle": {item = "spore_truffle", count = [1, 2], tool = "hand", color = Color(0.45, 0.33, 0.52), xp = 1, skill = "survival"},
 	"ember_morel": {item = "ember_morel", count = [1, 1], tool = "hand", glow = true, color = Color(1.0, 0.45, 0.15), xp = 2, skill = "survival"},
 }
@@ -87,6 +91,7 @@ static func _place(maker: CaveMaker) -> Array[Dictionary]:
 	_add_first_drip(maker, spots)
 	_add_more_roots(maker, spots)
 	_add_twigs(maker, spots)
+	_mix_crystal_colours(spots)
 	for i in spots.size():
 		spots[i].id = i
 	return spots
@@ -163,6 +168,23 @@ static func _add_more_roots(maker: CaveMaker, spots: Array[Dictionary]) -> void:
 				spin = rng.randf_range(0, TAU), length = length, chops = KINDS[ROOT].get("chops", 1), extra = true})
 			_grid_put(near, hit)
 			want -= 1
+
+
+## Every crystal gets its colour from its own spot (no dice, so nothing else moves; the same on every computer):
+## blue 38%, green 24%, violet 18%, amber 14%, and the strong ones rare: white 3% (burns 10 min), red 3% (Ember Bolts).
+const CRYSTAL_MIX := [["crystal", 0.38], ["crystal_green", 0.62], ["crystal_violet", 0.8], ["crystal_amber", 0.94], ["crystal_white", 0.97], ["crystal_red", 1.0]]
+
+static func _mix_crystal_colours(spots: Array[Dictionary]) -> void:
+	for s in spots:
+		if not String(s.kind).begins_with("crystal"):
+			continue
+		var p: Vector3 = s.pos
+		var h := float(posmod(hash(Vector3i((p * 10.0).round())), 10007)) / 10007.0
+		for m in CRYSTAL_MIX:
+			if h < m[1]:
+				s.kind = m[0]
+				s.color = KINDS[m[0]].color
+				break
 
 
 ## Twigs on the floors of Mossy rooms and caverns (they replace the old look-only twigs).

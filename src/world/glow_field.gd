@@ -249,6 +249,7 @@ const CAVE_MODELS := {
 	"glowcap": "res://assets/models/cave/glowcap.glb",
 	"crystal": "res://assets/models/cave/crystal.glb",
 	"giant": "res://assets/models/cave/giant.glb",
+	"drip": "res://assets/models/cave/drip_b.glb",  # the dripping stalactite: the ringed dripstone (owner, Nov 17)
 }
 const CRYSTAL_SHADER := preload("res://src/art/crystal.gdshader")
 const ROOT_LOOKS := ["root", "root_b", "root_c"]
@@ -387,15 +388,15 @@ func _add_drip(s: Dictionary) -> void:
 	var root := Node3D.new()
 	add_child(root)
 	root.global_position = s.pos
+	# The ringed dripstone with its drop (owner, Nov 17: "make those new stalactites the dripping stones"), hung upside
+	# down, its rock chunk pushed into the ceiling like the other dripstone; drops fall from its tip.
+	const SIZE := 0.9
+	const TIP := (1.15 - 0.14) * SIZE  # how far below the ceiling its tip hangs
 	var tip := MeshInstance3D.new()
-	var cone := CylinderMesh.new()
-	cone.top_radius = 0.18
-	cone.bottom_radius = 0.0
-	cone.height = 0.6
-	cone.radial_segments = 6
-	tip.mesh = cone
-	tip.material_override = _material_for(Color(0.5, 0.55, 0.62), false)
-	tip.position = Vector3.DOWN * 0.3
+	tip.mesh = _cave_mesh("drip")
+	tip.basis = (Basis(Vector3.RIGHT, PI) * Basis(Vector3.UP, s.pos.x * 1.7)).scaled(Vector3.ONE * SIZE)
+	tip.position = Vector3.UP * 0.14 * SIZE
+	tip.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	root.add_child(tip)
 	var drops := CPUParticles3D.new()
 	drops.amount = 3
@@ -413,7 +414,7 @@ func _add_drip(s: Dictionary) -> void:
 	dm.rings = 2
 	drops.mesh = dm
 	drops.material_override = _material_for(s.color, true)
-	drops.position = Vector3.DOWN * 0.6
+	drops.position = Vector3.DOWN * TIP
 	root.add_child(drops)
 	_nodes[s.id] = root
 

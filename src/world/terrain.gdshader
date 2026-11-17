@@ -58,6 +58,27 @@ float vnoise(vec3 x) {
 				   mix(hash(i + vec3(0, 1, 1)), hash(i + vec3(1, 1, 1)), f.x), f.y), f.z);
 }
 
+// Glow-worm stars (owner F217/F232): one dot in some of the cells of a grid `cell` metres wide on the ceiling; `size`
+// = the dot's radius as a share of the cell; `keep` = how many cells have one. Soft round dots, each its own
+// brightness, twinkling slowly.
+const vec3 STAR_COLOR = vec3(0.35, 0.85, 1.0);
+uniform float star_brightness = 2.2;
+
+float star_layer(vec2 xz, float cell, float size, float keep) {
+	vec2 q = xz / cell;
+	vec2 c = floor(q);
+	float h = hash(vec3(c, 3.7));
+	if (h > keep) {
+		return 0.0;
+	}
+	vec2 at = c + 0.25 + 0.5 * vec2(hash(vec3(c, 1.3)), hash(vec3(c, 8.1)));  // the dot's place in its cell
+	float d = length(q - at);
+	float r = size * (0.6 + 0.8 * hash(vec3(c, 5.5)));
+	float dot_ = smoothstep(r, r * 0.25, d);
+	float twinkle = 0.65 + 0.35 * sin(TIME * (0.6 + 1.4 * hash(vec3(c, 9.9))) + h * 40.0);
+	return dot_ * twinkle * (0.5 + h / keep);
+}
+
 // One material, projected from 3 sides. Returns colour+glow mask, and a world-space normal.
 void triplanar(float layer, vec3 p, vec3 bw, vec3 wn, out vec4 alb, out vec3 nrm) {
 	vec2 uvx = p.zy;
@@ -147,6 +168,16 @@ void fragment() {
 	float streak = smoothstep(0.68, 0.85, vnoise(vec3(v_world.x * 1.6, v_world.y * 0.15, v_world.z * 1.6) + vec3(0.0, 9.0, 4.0)));
 	streak *= smoothstep(0.45, 0.6, vnoise(v_world * 0.12 + vec3(20.0)));  // only in some places
 	col = mix(col, col * vec3(1.35, 0.8, 0.45) + vec3(0.06, 0.02, 0.0), streak * side * 0.7);
+	// Glow-worm stars on the ceilings (owner F217/F232, picked look: "star dots"): tiny soft teal-blue dots, denser in
+	// some patches, none in others, each twinkling slowly. Part of the rock's own paint, so it always sits on the rock.
+	float ceiling = smoothstep(0.45, 0.8, -wn.y);
+	if (ceiling > 0.0) {
+		float patches = smoothstep(0.45, 0.68, vnoise(v_world * 0.05 + vec3(7.0, 1.0, 3.0)));
+		if (patches > 0.0) {
+			float stars = star_layer(v_world.xz, 0.5, 0.055, 0.6) + star_layer(v_world.xz + vec2(31.0, 17.0), 1.7, 0.035, 0.35) * 1.6;  // tiny points (round 2: big dots looked like snow up close)
+			emit += STAR_COLOR * stars * patches * ceiling * star_brightness;
+		}
+	}
 
 	ALBEDO = col;
 	EMISSION = emit;

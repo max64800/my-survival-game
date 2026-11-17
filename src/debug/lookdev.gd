@@ -335,6 +335,11 @@ func _kind_shots(dwarf: Dwarf, maker: CaveMaker) -> void:
 			var sz := best.basis.get_scale().x
 			await _lamp_shot(dwarf, best.origin + out * 1.7 * sz + Vector3.UP * 0.5 * sz + best.basis.x.normalized() * 0.6 * sz,
 				best.origin + out * 0.15 * sz, "s_%s" % kind, 8.0)
+	# The water drip (the ringed dripstone with falling drops) in the first cavern, from the side.
+	for s in GlowPlacer.place(maker):
+		if s.kind == GlowPlacer.DRIP:
+			await _lamp_shot(dwarf, s.pos + Vector3(2.0, -1.6, 1.2), s.pos + Vector3.DOWN * 0.6, "w_water_drip", 8.0)
+			break
 	# Hanging roots (F232): the nearest of each kind, from below and to the side.
 	if clutter:
 		for kind in Clutter.HROOTS:

@@ -115,14 +115,17 @@ func _ceiling(maker: CaveMaker, rng: RandomNumberGenerator, picks: Dictionary, s
 		var kind: String = names[rng.randi_range(0, names.size() - 1)]
 		var d: Dictionary = DRIPS[kind]
 		var size := rng.randf_range(d.size[0], d.size[1]) * (1.0 if j == 0 else 0.6)
+		var giant_roll := rng.randf()
+		if j == 0 and giant_roll < 0.17:
+			size *= lerpf(2.0, 3.5, giant_roll / 0.17)  # some really large ones (owner, Nov 17), where the ceiling is high
 		var spin := rng.randf() * TAU
 		# slightly different colours (owner): a little warmer, cooler, lighter or darker; the jungle's are purplish
 		var tint := Color.from_hsv(rng.randf_range(0.04, 0.12), rng.randf_range(0.0, 0.14), rng.randf_range(0.85, 1.08))
 		if fungal:
 			tint *= Color(0.84, 0.74, 0.94)
 		var n := GlowPlacer.normal_at(maker, at)
-		if n.y > -0.5:
-			continue  # not under a ceiling here
+		if n.y > -0.75:
+			continue  # only under fairly flat ceiling: on a slope the rock chunk would poke out (owner: "not blending")
 		var floor_hit := GlowPlacer._march(maker, at + Vector3.DOWN * 0.3, Vector3.DOWN, 40.0)
 		var gap := at.distance_to(floor_hit) if floor_hit != Vector3.INF else 40.0
 		size = minf(size, (gap - 2.0) / float(d.length))  # keep 2 m clear below: nobody bumps their head
@@ -130,7 +133,8 @@ func _ceiling(maker: CaveMaker, rng: RandomNumberGenerator, picks: Dictionary, s
 			continue
 		# The model grows along its +Y away from its rock: hang it upside down, the rock pushed up into the ceiling.
 		var basis := Basis(Vector3.RIGHT, PI) * Basis(Vector3.UP, spin)
-		_drips[kind].append([Transform3D(basis.scaled(Vector3.ONE * size), at + Vector3.UP * 0.07 * size), tint])
+		# the rock chunk pushed all the way into the ceiling, so the cone comes straight out of the real rock (owner, Nov 17)
+		_drips[kind].append([Transform3D(basis.scaled(Vector3.ONE * size), at + Vector3.UP * 0.14 * size), tint])
 
 
 func _try(maker: CaveMaker, rng: RandomNumberGenerator, picks: Dictionary, start: Vector3, dir: Vector3, reach: float) -> void:
