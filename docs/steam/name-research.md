@@ -49,3 +49,13 @@ Eternal Dwarf, Everlasting Dwarves, Dwarves Everlasting, Undying Dwarves, Deathl
 Dwarves, Immortal Dwarves, Unending Dwarves, Enduring Dwarves, Dwarves Endure, Dwarves Never Die, Evermore Dwarves,
 Unbroken Dwarves. Note: "Dwarves Eternal" has the same shape as DOOM Eternal (not a conflict, but gamers may link them);
 "Eternal Dwarves" doesn't.
+
+## Owner likes "Dwarves Never Die" (Nov 17)
+- "Dwarves Never Die" itself: no Steam or itch.io game, .com free.
+- **But "___ Never Die" is a crowded pattern on Steam:** Goblins Never DIE (closest: a fantasy creature + "Never Die"),
+  Pirates Never Die, Heroes Never Die, Thugs Never Die, Agent 64: Spies Never Die, "STAND: ... Never Die"; and itch.io
+  has "Never Die (Survival Game)".
+- All free (Steam, .com, itch): Dwarfs Never Die, Dwarves Don't Die, Dwarves Never Fall, Never Quit, Never Yield,
+  Never Break, Never Forget, Never Surrender, Never Die Alone, Dwarves Always Return, Dwarves Die Hard, Never Die Dwarves.
+- Crowded patterns: "Don't Die" (6 games), "Never Yield" (Aerial_Knight). Empty: "Always Return", "Never Quit".
+  "Never Forget" and "Never Fall" have one game each with exactly that title.
