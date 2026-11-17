@@ -2854,6 +2854,11 @@ the body."
   hands and narrowed them twice: wrong. Lesson: look at what the owner marked on the picture before changing anything.
   Now: slimmer shoulders, upper arms, elbows and forearms; the fists bigger again (hand 0.43 -> 0.5); the foot and heel
   end ~3 cm behind the ankle; he floated 0.7-1.4 cm (the standing pose tips the feet): lowered 1 cm, soles on the floor.
+- Owner: arms 20% narrower from the front, 15% deeper from the side; the knee too high (close to the belly); the heel
+  still sticks out "like a toe on the back"; the top of the foot too steep (and a drawing of the foot he means). A side
+  close-up showed why: the ankle was a ball wider than the shin (a step) with the heel as a second lump under it.
+  Fixed: oval arms (a new oval tube in the build), thighs longer and shins shorter in the skeleton (knee 31 -> 25 cm,
+  same leg length), the leg runs straight down into a small blended heel, a low gently sloping foot.
 
 - **Owner's round 2 notes:** clear gaps between the stone rows and between stones; the battlement's copper band
   sticks out; ruins should have no door hanging, rather a broken door lying nearby. Fixes: stones now touch (only

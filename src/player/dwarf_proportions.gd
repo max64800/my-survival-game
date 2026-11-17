@@ -32,8 +32,8 @@ const LENGTHS := {
 	"lowerarm_l": 0.5, "lowerarm_r": 0.5,       # upper-arm length (short arms: hands reach the hips)
 	"hand_l": 0.5, "hand_r": 0.5,               # forearm length
 	"thigh_l": 1.2, "thigh_r": 1.2,             # hip width (planted stance)
-	"calf_l": 0.32, "calf_r": 0.32,             # thigh length (stubby legs: about 1/4 of the height)
-	"foot_l": 0.34, "foot_r": 0.34,             # shin length
+	"calf_l": 0.45, "calf_r": 0.45,             # thigh length (stubby legs: about 1/4 of the height; Nov 18: longer,
+	"foot_l": 0.215, "foot_r": 0.215,           # shin length   so the knee sits lower, away from the belly: owner)
 	"spine_02": 0.85, "spine_03": 0.85,         # a short, round body
 	"neck_01": 0.3, "Head": 0.5,                # hardly any neck
 }

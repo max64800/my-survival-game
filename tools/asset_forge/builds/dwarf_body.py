@@ -456,6 +456,17 @@ def groove(cl, pts, front, depth=0.003, width=0.01, n=2):
 	press(cl, [(on_surf(cl, *P[i], front), on_surf(cl, *P[i + 1], front), prof[i]) for i in range(m)], depth, width)
 
 
+def etube(cl, a, b, r0, r1, sv, sw):
+	"""A tube with an oval cross-section: sv times as wide up-down and sw times front-back (for an arm held out in the
+	rest pose, up-down is its width seen from the front once it hangs, front-back is its depth seen from the side)."""
+	a, b = np.array(a, np.float32), np.array(b, np.float32)
+	ba = b - a
+	pu, pv, pw = cl.U - a[0], cl.V - a[1], cl.W - a[2]
+	t = np.clip((pu * ba[0] + pv * ba[1] + pw * ba[2]) / float(ba @ ba), 0.0, 1.0)
+	r = r0 + (r1 - r0) * t
+	return (np.sqrt((pu - ba[0] * t) ** 2 + ((pv - ba[1] * t) / sv) ** 2 + ((pw - ba[2] * t) / sw) ** 2) - r) * min(sv, sw)
+
+
 if not CLOTHES:
 	# the body's outline (height, half-width, front, back): a round belly that hangs low, a barrel chest, broad but
 	# sloping shoulders (the arms are added below), a thick neck under the beard
@@ -478,15 +489,15 @@ if not CLOTHES:
 		d, f_ = el - sh, wr - el
 		# the slope from the neck to the shoulder (trapezius) and the round shoulder muscle
 		cl.add(cl.tube(Q(s * 0.05, 0.925, 0.035), QV(sh + Vector((inward * 0.07, 0.03, 0.04))), 0.048, 0.05), 0.05)
-		cl.add(cl.ell(QV(sh + Vector((inward * 0.01, 0.0, 0.016))), (0.078, 0.07, 0.072)), 0.045)  # (round; slimmer: owner Nov 18, the arms too wide)
+		cl.add(cl.ell(QV(sh + Vector((inward * 0.01, 0.0, 0.016))), (0.078, 0.07 * 0.8, 0.072 * 1.15)), 0.045)  # (round; narrow from the front, deeper from the side: Nov 18)
 		# upper arm with the biceps in front and the triceps behind, the elbow
-		cl.add(cl.tube(QV(sh), QV(el), 0.056, 0.047), 0.025)
-		cl.add(cl.ell(QV(sh + d * 0.5 + Vector((0, -0.02, 0.008))), (0.068, 0.04, 0.044)), 0.025)
-		cl.add(cl.ell(QV(sh + d * 0.42 + Vector((0, 0.022, 0.0))), (0.072, 0.038, 0.04)), 0.025)
-		cl.add(cl.ell(QV(el + Vector((0, 0.012, 0))), (0.04, 0.042, 0.043)), 0.02)
+		cl.add(etube(cl, QV(sh), QV(el), 0.056, 0.047, 0.8, 1.15), 0.025)  # (owner Nov 18: 20% narrower from the front, 15% deeper from the side)
+		cl.add(cl.ell(QV(sh + d * 0.5 + Vector((0, -0.02, 0.008))), (0.068, 0.04 * 0.8, 0.044 * 1.15)), 0.025)
+		cl.add(cl.ell(QV(sh + d * 0.42 + Vector((0, 0.022, 0.0))), (0.072, 0.038 * 0.8, 0.04 * 1.15)), 0.025)
+		cl.add(cl.ell(QV(el + Vector((0, 0.012, 0))), (0.04, 0.042 * 0.8, 0.043 * 1.15)), 0.02)
 		# the forearm: thick by the elbow, tapering to a clear wrist (owner Nov 18: "the forearms are still too large")
-		cl.add(cl.tube(QV(el), QV(wr), 0.042, 0.031), 0.02)
-		cl.add(cl.ell(QV(el + f_ * 0.3 + Vector((0, 0, 0.004))), (0.06, 0.036, 0.038)), 0.025)
+		cl.add(etube(cl, QV(el), QV(wr), 0.042, 0.031, 0.8, 1.15), 0.02)
+		cl.add(cl.ell(QV(el + f_ * 0.3 + Vector((0, 0, 0.004))), (0.06, 0.036 * 0.8, 0.038 * 1.15)), 0.025)
 		cl.add(cl.ell(QV(wr), (0.024, 0.031, 0.036)), 0.015)
 		cl.add(cl.ell(QV(wr + Vector((0, 0.022, 0.0))), (0.012, 0.011, 0.011)), 0.006)  # the wrist bone's knob
 		# hip, thigh, knee and kneecap, shin and calf muscle
@@ -494,7 +505,7 @@ if not CLOTHES:
 		cl.add(cl.tube(QV(th + Vector((s * 0.012, 0, 0))), QV(kn + Vector((0, 0, 0.03))), 0.098, 0.06), 0.05)  # (tapers into the knee)
 		cl.add(cl.ell(QV(kn), (0.054, 0.05, 0.05)), 0.02)                                 # the knee
 		cl.add(cl.ell(QV(kn + Vector((0, -0.05, 0.008))), (0.034, 0.036, 0.022)), 0.01)   # kneecap
-		cl.add(cl.tube(QV(kn + Vector((0, 0, -0.02))), Q(an.x, 0.15, an.y), 0.054, 0.038), 0.03)  # shin
+		cl.add(cl.tube(QV(kn + Vector((0, 0, -0.02))), Q(an.x, 0.105, an.y), 0.054, 0.036), 0.03)  # shin (into the foot, no step)
 		cl.add(cl.ell(QV(kn + (an - kn) * 0.32 + Vector((0, 0.024, 0))), (0.056, 0.07, 0.048)), 0.035)
 	# soft lines: under the chest, the breastbone, the spine, the cleft, the navel, the belly's fold over the pants
 	groove(cl, [(-0.16, 0.718), (-0.08, 0.705), (-0.02, 0.712)], True, 0.0025, 0.009)
@@ -543,15 +554,17 @@ if not CLOTHES:
 		an = B(f"foot_{side}")
 		out = 1 if an.x > 0 else -1
 		fc = clay((an.x - 0.1, -0.01, an.y - 0.21), (an.x + 0.1, 0.2, an.y + 0.12), 0.0025)
-		fc.add(fc.ell(Q(an.x, 0.13, an.y), (0.034, 0.046, 0.032)), 0.02)                                  # ankle (slim: Nov 18)
+		# (Nov 18, owner: the heel stuck out "like a toe on the back", the top of the foot too steep: the leg now runs
+		# straight down into a small heel blended in with a big fillet, and the top of the foot slopes gently)
+		fc.add(fc.tube(Q(an.x, 0.2, an.y), Q(an.x, 0.07, an.y + 0.004), 0.031, 0.038), 0.02)              # the ankle
 		for s2 in (-1, 1):
-			fc.add(fc.ell(Q(an.x + s2 * 0.03, 0.122, an.y + 0.002), (0.011, 0.014, 0.011)), 0.006)        # ankle bones
-		fc.add(fc.ell(Q(an.x, 0.032, an.y + 0.002), (0.038, 0.032, 0.03)), 0.02)                          # heel (3 cm behind: Nov 18)
-		fc.add(fc.ell(Q(an.x + out * 0.004, 0.038, an.y - 0.065), (0.057, 0.038, 0.09)), 0.03)            # the foot
-		fc.add(fc.tube(Q(an.x, 0.11, an.y - 0.01), Q(an.x + out * 0.004, 0.05, an.y - 0.115), 0.042, 0.03), 0.03)  # instep
-		fc.add(fc.ell(Q(an.x + out * 0.006, 0.03, an.y - 0.112), (0.062, 0.03, 0.042)), 0.025)            # ball of the foot
+			fc.add(fc.ell(Q(an.x + s2 * 0.031, 0.118, an.y + 0.002), (0.01, 0.013, 0.01)), 0.006)          # ankle bones
+		fc.add(fc.ell(Q(an.x, 0.03, an.y + 0.004), (0.036, 0.03, 0.03)), 0.03)                           # heel (small)
+		fc.add(fc.ell(Q(an.x + out * 0.004, 0.026, an.y - 0.065), (0.055, 0.03, 0.09)), 0.03)            # the foot (flat)
+		fc.add(fc.tube(Q(an.x, 0.085, an.y - 0.004), Q(an.x + out * 0.004, 0.04, an.y - 0.115), 0.034, 0.024), 0.03)  # instep
+		fc.add(fc.ell(Q(an.x + out * 0.006, 0.025, an.y - 0.112), (0.06, 0.025, 0.04)), 0.025)            # ball of the foot
 		for tx, tz, r in ((-0.03, -0.165, 0.021), (-0.002, -0.16, 0.016), (0.02, -0.153, 0.015), (0.039, -0.142, 0.014)):
-			fc.add(fc.ell(Q(an.x + out * tx, 0.022, an.y + tz), (r, r * 0.95, r * 1.35)), 0.004)            # toes
+			fc.add(fc.ell(Q(an.x + out * tx, 0.019, an.y + tz), (r, r * 0.85, r * 1.35)), 0.004)            # toes
 		fc.cut(fc.ell(Q(an.x - out * 0.05, 0.0, an.y - 0.05), (0.026, 0.02, 0.05)), 0.012)               # the arch
 		fc.keep((0.0 - HC.z) - fc.V, 0.003)  # (the sole flat on the floor)
 		finish(fc.mesh(f"foot_{side}", skin, PARTS), 5000)
