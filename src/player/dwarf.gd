@@ -174,7 +174,36 @@ func _unhandled_input(event: InputEvent) -> void:
 		auth.ask_use(hit.get("position", Vector3.INF), hit.get("normal", Vector3.ZERO), model.rotation.y + PI)
 
 
+## Dev only (F6, owner Nov 17): fly anywhere, straight through rock, to look at the whole cave.
+## Mouse aims, WASD moves, Space up, Ctrl down, Shift fast.
+var dev_fly := false
+const FLY_SPEED := 12.0
+const FLY_FAST := 45.0
+
+
+func set_dev_fly(on: bool) -> void:
+	dev_fly = on
+	collision_mask = 0 if on else World.TERRAIN_LAYER  # through rock (and back to solid)
+	_spring.collision_mask = 0 if on else World.TERRAIN_LAYER  # the camera too
+	velocity = Vector3.ZERO
+
+
+func _fly(delta: float) -> void:
+	var iv := Input.get_vector("move_left", "move_right", "move_forward", "move_back") if Controls.captured() else Vector2.ZERO
+	var look := Basis(Vector3.UP, _yaw) * Basis(Vector3.RIGHT, _pitch)
+	var dir := look * Vector3(iv.x, 0, iv.y)
+	if Controls.captured():
+		dir.y += (1.0 if Input.is_action_pressed("jump") else 0.0) - (1.0 if Input.is_action_pressed("dodge") else 0.0)
+	var speed := FLY_FAST if Input.is_action_pressed("run") else FLY_SPEED
+	velocity = velocity.lerp(dir.normalized() * speed if dir.length() > 0.1 else Vector3.ZERO, minf(1.0, delta * 8.0))
+	global_position += velocity * delta
+	model.set_motion(0.0, true, false)
+
+
 func _physics_process(delta: float) -> void:
+	if dev_fly and is_local:
+		_fly(delta)
+		return
 	var dir := Vector3.ZERO
 	var running := false
 	var playing := input_enabled and Controls.captured()

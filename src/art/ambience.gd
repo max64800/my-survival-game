@@ -91,9 +91,20 @@ func _process(delta: float) -> void:
 	_apply()
 
 
+## Dev only (F7, owner Nov 17): every light on: bright even light everywhere and no fog, to see the whole cave.
+var dev_bright := false
+
+
+func set_dev_bright(on: bool) -> void:
+	dev_bright = on
+	env.fog_enabled = not on
+	env.volumetric_fog_enabled = not on
+	_apply()
+
+
 func _apply() -> void:
-	env.ambient_light_color = _cur.ambient
-	env.ambient_light_energy = _cur.ambient_energy
+	env.ambient_light_color = Color(0.85, 0.85, 0.85) if dev_bright else _cur.ambient
+	env.ambient_light_energy = 2.2 if dev_bright else _cur.ambient_energy
 	env.fog_light_color = _cur.fog
 	env.volumetric_fog_emission = _cur.fog_emit
 	if _dust_mat:

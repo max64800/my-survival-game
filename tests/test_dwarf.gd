@@ -222,3 +222,24 @@ func test_braid_tufts_swing_when_moving() -> void:
 	# (on its own a link bends at most MAX_BEND; the body pushing the hair aside may bend it more, never back on itself)
 	check(swing.biggest_fold < 90.0, "no link folds back on itself (sharpest bend %.1f degrees)" % swing.biggest_fold)
 	holder.free()
+
+
+# ---------------------------------------------------------------- dev fly (F6)
+func test_dev_fly_floats_and_lands_again() -> void:
+	Controls.setup()
+	var root := _room([])
+	var dwarf := _dwarf_in(root)
+	for i in 30:
+		await tree.physics_frame
+	dwarf.set_dev_fly(true)
+	dwarf.global_position.y += 3.0
+	var y := dwarf.global_position.y
+	for i in 60:
+		await tree.physics_frame
+	check(absf(dwarf.global_position.y - y) < 0.05, "flying dwarf doesn't fall (moved %.2f)" % (dwarf.global_position.y - y))
+	check(dwarf.collision_mask == 0, "flying goes through rock")
+	dwarf.set_dev_fly(false)
+	for i in 90:
+		await tree.physics_frame
+	check(dwarf.is_on_floor(), "back on the floor after F6 again")
+	root.queue_free()

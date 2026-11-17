@@ -28,6 +28,8 @@ const KEYS := {
 	"stow_lantern": [KEY_L],  ## put the lantern away / take it out (owner, Nov 17)
 	"quicksave": [KEY_F5],
 	"dev_menu": [KEY_P],  ## dev builds only: blueprint preview + fill a Builder's Chest (DevMenu)
+	"dev_fly": [KEY_F6],  ## dev builds only: fly through rock (Space up, Ctrl down, Shift fast)
+	"dev_bright": [KEY_F7],  ## dev builds only: light up the whole cave, no fog
 }
 const MOUSE := {
 	"dig": [MOUSE_BUTTON_LEFT],

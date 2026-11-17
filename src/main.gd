@@ -598,6 +598,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		save_now("Saved (F5)")
 	if not _ready_to_play:
 		return
+	if DevMenu.enabled() and event.is_action_pressed("dev_fly") and dwarf:
+		dwarf.set_dev_fly(not dwarf.dev_fly)  # owner, Nov 17: fly around to see the whole cave
+		hud.show_toast("Dev: flying (Space up, Ctrl down, Shift fast) · F6 to land" if dwarf.dev_fly else "Dev: walking again", 3.0)
+		return
+	if DevMenu.enabled() and event.is_action_pressed("dev_bright"):
+		var amb: Ambience = get_node_or_null("Ambience")
+		if amb:
+			amb.set_dev_bright(not amb.dev_bright)
+			hud.show_toast("Dev: all lights on · F7 to turn off" if amb.dev_bright else "Dev: normal light", 3.0)
+		return
 	if DevMenu.enabled() and (event.is_action_pressed("dev_menu") or (event.is_action_pressed("pause") and hud.is_dev_menu_open())):
 		# Dev menu (owner, Nov 16): P with a Builder's Chest open fills it; otherwise P opens/closes the menu.
 		var chest := hud.open_builder_chest()

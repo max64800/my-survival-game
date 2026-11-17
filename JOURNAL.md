@@ -3100,3 +3100,14 @@ the body."
 - **Mistakes and hurdles:** none in the game; the EQT Social Media repo could not push (GitHub says its address is not found).
 
 - **Later (Mac): the game's story (lore).** Three rounds of questions with the owner. Saved in `docs/design/lore.md`: frozen in stone, no memory, the fallen kingdom of your own ancestors, heroic tone, rune memories tell the story, few hidden frozen dwarves, deeper monsters are more cursed, the curse breaks at the very end. The cause of the curse is still open. The name will have "Dwarves" in it (fantasy spelling).
+
+## November 17, 2026 (PC, rock-textures Claude): dev fly and all-lights keys (F262)
+- Owner asked for a dev button to fly and to turn on all the light, to see the cave all together.
+- Built, dev builds only (like the P dev menu): **F6** flies (no gravity, goes through rock, the camera too;
+  mouse aims, WASD, Space up, Ctrl down, Shift fast). **F7** turns the cave's soft background light way up and
+  switches off both fogs, so everything is evenly lit. Pressing again goes back to normal. A new test checks the
+  flying dwarf doesn't fall and stands on the floor again after landing.
+- **Hurdles:** (1) the toast function is `show_toast`, not `toast` (caught before running). (2) One old dwarf test
+  (back-hair swing) fails, but from another session's unsaved hair edits, not this work. (3) The online copy had moved
+  ahead and the shared notes files had other sessions' unsaved edits, so this commit was made in a separate clean copy
+  (a git worktree) and pushed from there, leaving their work untouched.
