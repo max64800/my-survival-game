@@ -15,6 +15,7 @@ var world: World
 var glow: GlowField
 var cave_life: CaveLife
 var _clutter: Clutter
+var _curtains: RootCurtains
 var authority: GameAuthority
 var dwarf: Dwarf
 var hud: Hud
@@ -321,6 +322,11 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	add_child(_clutter)
 	_clutter.build(world.maker, world)  # worked out on a helper thread while the rock loads
 
+	_curtains = RootCurtains.new()  # thin roots hanging across some tunnel mouths, parting as you walk through (F189)
+	_curtains.name = "RootCurtains"
+	add_child(_curtains)
+	_curtains.build(world.maker, world)
+
 	cave_life = CaveLife.new()  # moss, grass, small roots, lichen, ferns in patches (only looks; F188)
 	cave_life.name = "CaveLife"
 	add_child(cave_life)
@@ -354,6 +360,7 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	players_root.name = "Players"
 	cave_life.walkers = players_root  # grass and ferns lean away from every dwarf
 	glow.walkers = players_root  # and so do the little mushrooms (F219)
+	_curtains.walkers = players_root  # and the root curtains swing aside
 	add_child(players_root)
 	var stations_root := Node3D.new()
 	stations_root.name = "Stations"

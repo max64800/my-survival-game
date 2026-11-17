@@ -3241,3 +3241,11 @@ the body."
   a 1.6 m slab; now bumps calm near bridges and the slab is 2.2 m. (3) A python patch ate a GDScript `\`
   line-continuation again (joined line). (4) Another session's half-saved dwarf_rig.gd stopped all scripts
   compiling for a minute; waited and reran.
+
+## November 17, 2026 (PC, rock-textures Claude): root curtains (F189, part 2)
+- RootCurtains: strands planned from the cave (same seed, same curtains) at ~1 in 6 tunnel mouths into big
+  caverns, ceiling to a little above the floor; a game-made strand mesh (tapered, wobbly, side rootlets) in a
+  MultiMesh per 32 m square; hang_bend.gdshader sways them and swings them aside from dwarfs (pinned at the top).
+  Digging the rock at a strand's top removes it. Skips kept-clear ground. Test in test_keep_clear.
+- **Hurdles:** round 1 pale even spaghetti; round 2 thicker, twisty, ragged, bunched, but still pale: the strand
+  mesh had no vertex colours, so the per-strand colours were never applied. Fixed (owner checks the colour).

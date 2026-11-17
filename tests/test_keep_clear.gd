@@ -37,3 +37,22 @@ func test_tower_ground_is_kept_clear() -> void:
 		check_eq(bad, 0, "seed %d: no pebbles or dripstone there" % sd)
 		cl.free()
 	CaveMaker.use_layout(was)
+
+## F189 (owner, Nov 17): root curtains hang across some tunnel mouths, from the ceiling to a little above the floor,
+## and never on a built thing's ground.
+func test_root_curtains() -> void:
+	var was := CaveMaker.layout
+	CaveMaker.use_layout(CaveMaker.LAYOUT_LATEST)
+	var m := CaveMaker.new(42)
+	var strands := RootCurtains.plan(m)
+	check(strands.size() > 100, "a good number of strands (%d)" % strands.size())
+	var bad := 0
+	for it in strands:
+		var xf: Transform3D = it[0]
+		if m.is_reserved(xf.origin, 0.5):
+			bad += 1
+		var tip := xf.origin - xf.basis.y  # its free end (the mesh is 1 m, scaled)
+		if m.sdf_at(tip) <= 0.0:
+			bad += 1  # a free end stuck in the floor
+	check_eq(bad, 0, "none on kept-clear ground, none stuck in the floor")
+	CaveMaker.use_layout(was)
