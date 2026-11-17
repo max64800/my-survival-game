@@ -197,9 +197,10 @@ static func _thin_crystals_under_stars(maker: CaveMaker, spots: Array[Dictionary
 		if not String(s.kind).begins_with("crystal") or (s.normal as Vector3).y > -0.3:
 			continue  # only crystals on ceilings and the tops of walls
 		var big := 0.0
-		if not first.is_empty():  # the huge first cavern's ceiling is all stars (terrain.gdshader `inbig`)
+		if not first.is_empty():  # the huge first cavern has more star patches (terrain.gdshader `inbig`)
 			var rr := maxf(first.radii.x, first.radii.z)
 			big = 1.0 - smoothstep(rr * 0.8, rr * 1.05, Vector2(s.pos.x - first.center.x, s.pos.z - first.center.z).length())
+			big *= smoothstep(0.36, 0.56, _vnoise(s.pos * 0.05 + Vector3(7.0, 1.0, 3.0)))
 		if maxf(star_patch(s.pos), big) < 0.15:
 			continue
 		var p: Vector3 = s.pos

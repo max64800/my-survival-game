@@ -20,12 +20,13 @@ extends RefCounted
 ##   1 = the first caves: 400 m areas (Mossy x -200…200, Jungle x 220…620), squashed balls and tubes.
 ##   2 = real-shaped caves: 800 m areas (Mossy x -400…400, Jungle x 420…1220), about 4x the rooms,
 ##       passages and halls shaped the way water shapes real caves (see "layout 2" below).
-const LAYOUT_LATEST := 4
+const LAYOUT_LATEST := 5
 ## What brand-new worlds get. Layout 2: the real-shaped caves (F211 step 1, OK'd by the owner Nov 17). Layout 3: the
 ## same plus tall/wide/joined caverns and cliff exits with ledge paths (F230, F231). Old saves keep the layout they were
 ## made with; robots can try older caves with "-- layout=1" or "-- layout=2". Layout 4: the same plus a huge first
-## cavern, its ceiling all glow-worm stars with several snakes (owner, Nov 17, F260).
-const LAYOUT_DEFAULT := 4
+## cavern, its ceiling all glow-worm stars with several snakes (owner, Nov 17, F260). Layout 5: the same plus huge
+## natural stone columns standing in that cavern (owner, Nov 17, F263).
+const LAYOUT_DEFAULT := 5
 static var layout := LAYOUT_DEFAULT
 
 
@@ -172,6 +173,7 @@ func _init(p_seed: int = 1, big_caverns: int = 3, small_rooms: int = 12) -> void
 	_plan_pois(fpoi, r0, rooms.size(), s0, s1, gates[0].pos, "fungal", BIOMES[1].cx)
 	# Last, so it never moves anything above: the small room where you wake up.
 	cavern_spawn = spawn_point
+	_plan_columns()
 	_plan_colonnades()
 	_plan_start()
 	_corner_cache.clear()  # the start room was just carved: forget block corners remembered before it
@@ -188,6 +190,87 @@ func _lay_out(rng: RandomNumberGenerator, big_caverns: int, small_rooms: int, cx
 	else:
 		_place_rooms(rng, big_caverns, small_rooms, cx, biome)
 		_connect_rooms(rng, r0, cx)
+
+
+var _cols: Array[Vector4] = []  ## layout 5: the first cavern's stone columns (x, z, radius, twist)
+var _col_floor := 0.0
+var _col_top := 0.0
+
+
+## Layout 5 (owner, Nov 17, F263): huge natural stone columns in the huge first cavern, like a stalactite and a
+## stalagmite that grew together long ago: wide where they meet the floor and the roof, narrower in the middle,
+## leaning a little, with ribs running down them. 5 to 7 of them (fewer if paths leave no room), 7 to 21 m wide, kept clear of where you start,
+## the places, and every path that runs through the cavern. Their own dice, so nothing else moves.
+func _plan_columns() -> void:
+	if made_layout < 5 or rooms.is_empty():
+		return
+	var c: Vector3 = rooms[0].center
+	var r: Vector3 = rooms[0].radii
+	_col_floor = c.y - r.y * 0.55
+	_col_top = c.y + r.y
+	var near_segs: Array[int] = []  # the paths that run through the cavern (tunnel mouths, ramps, ledges)
+	for i in segments.size():
+		var sg: Dictionary = segments[i]
+		if Vector2(sg.a.x - c.x, sg.a.z - c.z).length() < FIRST_CAVERN_R + 10.0 				or Vector2(sg.b.x - c.x, sg.b.z - c.z).length() < FIRST_CAVERN_R + 10.0:
+			near_segs.append(i)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed + 8800
+	var want := rng.randi_range(5, 7)
+	for attempt in 300:
+		if _cols.size() >= want:
+			break
+		var a := rng.randf_range(0.0, TAU)
+		var dist := sqrt(rng.randf()) * FIRST_CAVERN_R * 0.72
+		var at := Vector2(c.x + cos(a) * dist, c.z + sin(a) * dist)
+		var rad := rng.randf_range(4.5, 8.0)
+		var twist := rng.randf_range(0.0, TAU)
+		if _column_fits(at, rad, near_segs):
+			_cols.append(Vector4(at.x, at.y, rad, twist))
+
+
+func _column_fits(at: Vector2, rad: float, near_segs: Array[int]) -> bool:
+	var foot := rad * 1.4  # how wide its foot spreads
+	for o in _cols:
+		if at.distance_to(Vector2(o.x, o.y)) < foot + o.z * 1.4 + 12.0:
+			return false
+	if at.distance_to(Vector2(cavern_spawn.x, cavern_spawn.z)) < foot + 14.0:
+		return false
+	for q in pois:
+		if at.distance_to(Vector2(q.pos.x, q.pos.z)) < foot + 7.0:
+			return false
+	for i in near_segs:
+		var sg: Dictionary = segments[i]
+		var a2 := Vector2(sg.a.x, sg.a.z)
+		var b2 := Vector2(sg.b.x, sg.b.z)
+		var ab := b2 - a2
+		var t := clampf((at - a2).dot(ab) / maxf(ab.length_squared(), 0.0001), 0.0, 1.0)
+		if at.distance_to(a2 + ab * t) < foot + float(sg.r) + 4.0:
+			return false
+	return true
+
+
+## Is p inside (or within `margin` of) one of the first cavern's columns? (Layout 5; always false before.)
+func _in_column(p: Vector3, margin: float) -> bool:
+	for o in _cols:
+		if Vector2(p.x - o.x, p.z - o.y).length() < o.z * 1.4 + margin:
+			return true
+	return false
+
+
+## The columns cut into the open air of the first cavern (d: distance to the air shape, below 0 = air).
+func _with_columns(p: Vector3, d: float) -> float:
+	var t := clampf((p.y - _col_floor) / (_col_top - _col_floor), 0.0, 1.0)
+	var w := 2.0 * t - 1.0
+	var flare := 0.75 + 0.55 * w * w  # an hourglass: wide at the floor and the roof, narrower in the middle
+	for o in _cols:
+		var dx := p.x - o.x - sin(p.y * 0.13 + o.w) * o.z * 0.2  # (leans and bends a little)
+		var dz := p.z - o.y - cos(p.y * 0.1 + o.w * 1.7) * o.z * 0.2
+		var reach := o.z * 1.6 + 6.0
+		if absf(dx) > reach or absf(dz) > reach:
+			continue
+		var rad := o.z * flare + 0.35 * sin(atan2(dz, dx) * 5.0 + p.y * 0.05 + o.w)  # ribs, like dripped stone
+		d = -_smin(-d, Vector2(dx, dz).length() - rad, 4.0)  # soft where it meets the floor and the roof
+	return d
 
 
 ## Rows of great old columns standing in the big caverns (feedback F9/F21), 1-2 per cavern,
@@ -211,7 +294,7 @@ func _plan_colonnades() -> void:
 			var dist := rng.randf_range(0.25, 0.55)
 			var at := c + Vector3(cos(a) * r.x * dist, 0.0, sin(a) * r.z * dist)
 			var fl := find_floor(at.x, at.z, c.y)
-			if sdf_at(fl + Vector3.UP * 8.0) <= 0.0 or not _far_from_pois(fl, 12.0):
+			if sdf_at(fl + Vector3.UP * 8.0) <= 0.0 or not _far_from_pois(fl, 12.0) or _in_column(fl, 6.0):
 				continue  # ceiling too low, or something else is already here
 			_poi_biome = room.get("biome", "mossy")
 			_add_poi("colonnade", fl, Vector3.UP, ri)
@@ -1080,6 +1163,8 @@ func _sdf_with_v2(p: Vector3, room_ids: PackedInt32Array, seg_ids: PackedInt32Ar
 		d = _smin(d, sh.x, BLEND)
 		if sh.y < 1.0:
 			scale = minf(scale, lerpf(1.0, sh.y, clampf(1.0 - maxf(sh.x, 0.0) / 3.0, 0.0, 1.0)))
+	if not _cols.is_empty():
+		d = _with_columns(p, d)
 	var s := -d
 	if absf(s) < 6.5:
 		s += _wall_bumps(p) * scale

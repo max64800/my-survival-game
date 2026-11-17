@@ -214,9 +214,12 @@ void fragment() {
 		float inbig = star_radius > 0.0 ? 1.0 - smoothstep(star_radius * 0.8, star_radius * 1.05, length(v_world.xz - star_center.xz)) : 0.0;
 		float sn = snake(v_world, 0.0);
 		if (inbig > 0.0) {
-			sn = max(sn, inbig * max(snake(v_world, 1.0), snake(v_world, 2.0)));  // several snakes at once there
+			sn = max(sn, inbig * snake(v_world, 1.0));  // a second snake there (round 2: two was too many)
 		}
-		float patches = max(smoothstep(0.45, 0.68, vnoise(v_world * 0.05 + vec3(7.0, 1.0, 3.0))), inbig);
+		// In the huge first cavern: more and bigger star patches than elsewhere, but with dark rock between them (owner,
+		// round 2: the whole ceiling was "a little bit too much"; the snakes can't cross the dark gaps).
+		float pn = vnoise(v_world * 0.05 + vec3(7.0, 1.0, 3.0));
+		float patches = max(smoothstep(0.45, 0.68, pn), inbig * smoothstep(0.36, 0.56, pn));
 		if (patches > 0.0) {
 			vec3 stars = star_layer(v_world, 0.16, 0.012, 0.75) + star_layer(v_world + vec3(31.0, 5.0, 17.0), 0.45, 0.02, 0.5);  // many tiny points
 			emit += stars * (1.0 + 35.0 * sn) * patches * ceiling * star_brightness;  // stars light up as the snake passes

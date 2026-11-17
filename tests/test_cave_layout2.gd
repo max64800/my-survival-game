@@ -21,6 +21,28 @@ func test_old_caves_unchanged() -> void:
 		"rooms=198 segs=5256 pois=162 r0=(-83.95856, -24.81935, -44.3989) sum=-9967.2001", "seed 42, layout 3")
 	check_eq(_fingerprint(CaveMaker.new(7)),
 		"rooms=197 segs=5492 pois=163 r0=(-15.06847, -23.8586, 88.08862) sum=-8989.8260", "seed 7, layout 3")
+	CaveMaker.use_layout(4)  # worlds made before the stone columns (layout 5) keep theirs too
+	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5332 pois=162 r0=(-83.95856, -20.99115, -44.3989) sum=-9894.0944", "seed 42, layout 4")
+	check_eq(_fingerprint(CaveMaker.new(7)), "rooms=197 segs=5554 pois=163 r0=(-15.06847, -20.1193, 88.08862) sum=-8555.4642", "seed 7, layout 4")
+	CaveMaker.use_layout(was)
+
+
+## Layout 5 (owner F263): huge natural stone columns stand in the first cavern, solid rock, clear of where you start.
+func test_first_cavern_columns() -> void:
+	var was := CaveMaker.layout
+	CaveMaker.use_layout(5)
+	for sd in [42, 7]:
+		var c := CaveMaker.new(sd)
+		check(c._cols.size() >= 4 and c._cols.size() <= 7, "seed %d: 4 to 7 columns (5 to 7 wanted, fewer if the paths leave no room) (got %d)" % [sd, c._cols.size()])
+		for o in c._cols:
+			var y := (c._col_floor + c._col_top) * 0.5
+			var mid := Vector3(o.x + sin(y * 0.13 + o.w) * o.z * 0.2, y, o.y + cos(y * 0.1 + o.w * 1.7) * o.z * 0.2)  # (it leans)
+			check(c.sdf_at(mid) < -1.0, "seed %d: a column at (%.0f, %.0f) is solid rock" % [sd, o.x, o.y])
+			check(o.z * 2.0 >= 7.0, "seed %d: columns are wide" % sd)
+		check(c.sdf_at(c.cavern_spawn + Vector3.UP) > 0.0, "seed %d: where you come in is open" % sd)
+		check(c.sdf_at(c.spawn_point + Vector3.UP) > 0.0, "seed %d: the wake-up spot is open" % sd)
+		for q in c.pois:
+			check(not c._in_column(q.pos, 0.0), "seed %d: %s isn't inside a column" % [sd, q.type])
 	CaveMaker.use_layout(was)
 
 

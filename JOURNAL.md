@@ -3111,3 +3111,20 @@ the body."
   (back-hair swing) fails, but from another session's unsaved hair edits, not this work. (3) The online copy had moved
   ahead and the shared notes files had other sessions' unsaved edits, so this commit was made in a separate clean copy
   (a git worktree) and pushed from there, leaving their work untouched.
+
+## November 17, 2026 (PC, rock-textures Claude): softer star cavern, stone columns (F260 round 2, F263)
+- Owner, in the new huge cavern: too many stars and snakes, "the previous cave had some balance"; wants dark patches
+  the snakes can't cross, and very big natural stone columns because the cave is so big.
+- Stars (shader only, so today's world gets it too): the big cavern uses the normal star-patch noise with a lower
+  threshold (more and bigger patches, dark rock between); one extra snake there instead of two. The crystal thinning
+  under stars uses the same sum.
+- Columns: cave layout 5 (new worlds). 4-7 hourglass columns (wide foot and top, narrow waist), leaning, ribbed, cut
+  out of the cavern's air with a soft blend so they melt into floor and roof. Planned last with their own dice, kept
+  clear of the way in, places and paths; the old colonnades avoid them. Layout 4 fingerprints added so today's
+  worlds stay the same.
+- **Hurdles:** (1) the column test said two columns weren't solid: they were, but it checked the straight-up middle
+  and the columns lean; also the thinnest ones were only 4 m wide at the waist, so all were made wider. (2) Wider
+  columns meant seed 42 only fits 4, so the test allows 4-7. (3) The first columns picture was taken from too far
+  away; the second, with every light on, shows the column but it blends with the rock behind; stopped after 2
+  rounds for the owner to look in the game. (4) The owner's tower request touched files another session was
+  editing, so it was passed to that session (it built it as F264).
