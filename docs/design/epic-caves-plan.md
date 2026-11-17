@@ -49,10 +49,15 @@ Done:
 - Rock blocks, layout 2 only: a coarse 2 m net first, every voxel only in boxes near a wall (`_coarse_sdf`); compared
   with every-voxel on 150 blocks: 0 of 614,400 voxels differ. ~25% faster.
 - Crystal placing: a spacing grid instead of checking every spot (same spots, both layouts); small gain, the real cost
-  is feeling for the rock (3x more tunnel in layout 2: 25.5 km vs 8.5 km, same density per metre).
+  is feeling for the rock (layout 2 has several times the tunnel, same density per metre).
 - Rock style is kept as a number too (`_style`), so rock checks never read shared text.
 - Where the 41 s go now (layout 2): rock round the start ready at 26 s, plants at 41 s (the planning still queues with
   the builders: 11.6 s alone, ~34 s in the game). Ideas left: fewer engine calls per rock check, plants near the start first.
+
+**Tests for layout 2: done (Nov 17)** in `tests/test_cave_layout2.gd`: old caves unchanged (fingerprints, seeds 42 and 7);
+the new caves have every room shape and passage kind (seed 42: 147 rooms, 18 big, 5224 tunnel pieces); every passage
+kind fits a dwarf (0.36 m each side, 1.5 m tall, with up to 1.2 m sidestep) at 95%+ of spots (old tubes: 99%); and
+every old check in `test_cave_maker.gd` runs in layout 2 too (its 400 m numbers now come from the map size).
 
 Still to do:
 3. **Tests for layout 2:** counts, every room reachable along its tunnels, narrow passages wide enough for the dwarf

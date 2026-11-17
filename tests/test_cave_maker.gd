@@ -62,13 +62,16 @@ func test_tunnels_join_every_room() -> void:
 
 func test_outside_box_is_border_rock() -> void:
 	var c := CaveMaker.new(7)
-	for p in [Vector3i(0, -70, 0), Vector3i(0, 20, 0), Vector3i(-210, 0, -210), Vector3i(630, -20, 0), Vector3i(420, -20, 205)]:
+	var h := int(CaveMaker.HALF_SIZE)  # (200 m in layout 1, 400 m in layout 2)
+	for p in [Vector3i(0, -70, 0), Vector3i(0, 20, 0), Vector3i(-h - 10, 0, -h - 10), Vector3i(int(CaveMaker.X_MAX) + 10, -20, 0),
+			Vector3i(int(CaveMaker.BIOMES[1].cx), -20, h + 5)]:
 		check(c.sdf_at(Vector3(p)) < 0.0, "%s should be solid" % p)
 		check_eq(c.material_at(p), Mat.EDGE, "%s is the world's edge" % p)
 	# The slab between Mossy and Fungal is border rock, except the gate stubs.
 	var gz: float = c.gates[0].pos.z
 	var z := gz + 60.0 if absf(c.gates[1].pos.z - (gz + 60.0)) > 20.0 else gz - 60.0
-	for x in [201, 210, 219]:
+	var sx := int(CaveMaker.SLAB_X)
+	for x in [sx + 1, sx + 10, sx + 19]:
 		var p := Vector3i(x, -20, int(z))
 		check(c.sdf_at(Vector3(p)) < 0.0, "%s should be solid" % p)
 		check_eq(c.material_at(p), Mat.BORDER, "%s is border rock" % p)
@@ -80,7 +83,7 @@ func test_two_biomes_joined_by_gates() -> void:
 	var fungal := c.rooms.filter(func(r): return r.biome == "fungal")
 	check(fungal.size() >= 12, "the Jungle has rooms")
 	for r in fungal:
-		check(r.center.x > 220.0 and r.center.x < 620.0, "jungle room inside its box")
+		check(r.center.x > CaveMaker.SLAB_X + CaveMaker.SLAB_W and r.center.x < CaveMaker.X_MAX, "jungle room inside its box")
 	for g in c.gates:
 		var p: Vector3 = g.pos
 		check(c.sdf_at(p) < 0.0, "the plug is rock")
@@ -145,7 +148,8 @@ func test_generated_block_matches_queries() -> void:
 				# Chunky rock (F109): the terrain stores "rock or air" with a fixed random strength.
 				if CaveMaker.rock_style == "blocks":
 					check_near(got, c.block_value(c._smooth_at(Vector3(p)), p, c._smooth_at(Vector3(p + Vector3i.UP))), 0.03, "block value at %s (the terrain stores it a little rounded)" % p)
-				else:
+				elif c.made_layout < 2 or (want > -3.0 and want <= 0.0):
+					# (layout 2 blends the depth deep in rock and out in the air: only rock near a wall needs it exact)
 					check_near(got, clampf(want, -500, 500), 0.05, "sdf at %s" % p)
 				check(signf(got) == signf(want) or want == 0.0, "rock/air at %s agrees with the query" % p)
 				if want > 0:
