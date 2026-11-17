@@ -4,6 +4,7 @@ extends CanvasLayer
 ## dig progress, the hotbar (Item Bar), the bag, lantern fuel, frame rate, pause screen.
 
 const SLOT_SIZE := 58
+const HOTBAR_SLOT := 88  ## the item bar at the bottom of the screen is bigger than the bag's slots
 const BAG_HINT := "Click: pick up / swap  ·  Shift+Click: quick move  ·  Double-click: equip  ·  Right-click: split"
 
 ## A button on the Escape menu was pressed: "resume", "save", "invite", "menu" or "quit" (F87).
@@ -105,9 +106,9 @@ func _build() -> void:
 	_hotbar.add_theme_constant_override("separation", 6)
 	_hotbar_home = root
 	root.add_child(_hotbar)
-	_place_hotbar()
 	for i in Inventory.HOTBAR_SIZE:
 		_hotbar.add_child(_make_slot(i, str(i + 1)))
+	_place_hotbar()
 
 	_bag_panel = PanelContainer.new()
 	_bag_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
@@ -350,33 +351,52 @@ func _make_slot(index: int, key: String) -> Control:
 	_slot_panels[index] = panel
 	var icon := Panel.new()
 	icon.name = "Icon"
-	icon.position = Vector2(9, 9)
-	icon.size = Vector2(SLOT_SIZE - 18, SLOT_SIZE - 18)
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(icon)
 	# The item's picture (feedback F17, pictures by Claude 2). Without one, the colored square shows.
 	var pic := TextureRect.new()
 	pic.name = "Pic"
-	pic.position = Vector2(4, 4)
-	pic.size = Vector2(SLOT_SIZE - 8, SLOT_SIZE - 8)
 	pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	pic.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(pic)
 	var short := _label(panel, 15)
 	short.name = "Short"
-	short.position = Vector2(0, 17)
-	short.size = Vector2(SLOT_SIZE, 20)
 	short.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var count := _label(panel, 14)
 	count.name = "Count"
-	count.position = Vector2(4, SLOT_SIZE - 22)
-	count.size = Vector2(SLOT_SIZE - 8, 20)
 	count.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	var k := _label(panel, 11)
+	k.name = "Key"
 	k.text = key
-	k.position = Vector2(4, 1)
+	_size_slot(panel, SLOT_SIZE)
 	return panel
+
+
+## Sizes a slot and everything in it. The picture stays inside the painted frame (owner, Nov 17:
+## "the items are going over the borders").
+func _size_slot(panel: Control, s: float) -> void:
+	panel.custom_minimum_size = Vector2(s, s)
+	panel.size = Vector2(s, s)
+	var inset := roundf(s * 0.17)  # the frame's rim
+	var icon: Control = panel.get_node("Icon")
+	icon.position = Vector2(inset + 3, inset + 3)
+	icon.size = Vector2(s - 2 * inset - 6, s - 2 * inset - 6)
+	var pic: Control = panel.get_node("Pic")
+	pic.position = Vector2(inset, inset)
+	pic.size = Vector2(s - 2 * inset, s - 2 * inset)
+	var f := s / SLOT_SIZE
+	var short: Label = panel.get_node("Short")
+	short.add_theme_font_size_override("font_size", roundi(15 * f))
+	short.position = Vector2(0, s * 0.3)
+	short.size = Vector2(s, 20 * f)
+	var count: Label = panel.get_node("Count")
+	count.add_theme_font_size_override("font_size", roundi(14 * f))
+	count.position = Vector2(4, s - 22 * f)
+	count.size = Vector2(s - 4 - inset * 0.6, 20 * f)
+	var k: Label = panel.get_node("Key")
+	k.add_theme_font_size_override("font_size", roundi(11 * f))
+	k.position = Vector2(4 * f, 1)
 
 
 func _slot_style(color: Color, border: Color) -> StyleBoxFlat:
@@ -626,21 +646,30 @@ func _layout_panels() -> void:
 ## The hotbar at the bottom middle of the screen.
 func _place_hotbar() -> void:
 	# Pinned to the bottom middle by its anchors, so it stays centred at any window size (F152).
-	var w := float((SLOT_SIZE + 6) * Inventory.HOTBAR_SIZE - 6)
+	# Bigger than the bag's slots while it's on its own (owner, Nov 17: "needs to be a lot larger").
+	_size_hotbar(HOTBAR_SLOT)
+	var w := float((HOTBAR_SLOT + 6) * Inventory.HOTBAR_SIZE - 6)
 	_hotbar.anchor_left = 0.5
 	_hotbar.anchor_right = 0.5
 	_hotbar.anchor_top = 1.0
 	_hotbar.anchor_bottom = 1.0
 	_hotbar.offset_left = -w * 0.5
 	_hotbar.offset_right = w * 0.5
-	_hotbar.offset_top = -SLOT_SIZE - 18.0
+	_hotbar.offset_top = -HOTBAR_SLOT - 18.0
 	_hotbar.offset_bottom = -18.0
+
+
+func _size_hotbar(s: float) -> void:
+	for i in Inventory.HOTBAR_SIZE:
+		if _slot_panels.has(i):
+			_size_slot(_slot_panels[i], s)
 
 
 ## While the bag is open the hotbar sits inside it (same slots, so you can move things between them);
 ## when it closes it goes back to the bottom of the screen (F88).
 func _dock_hotbar() -> void:
 	if _bag_panel.visible and _hotbar.get_parent() != _hotbar_dock:
+		_size_hotbar(SLOT_SIZE)  # bag size inside the bag
 		_hotbar.reparent(_hotbar_dock, false)
 	elif not _bag_panel.visible and _hotbar.get_parent() != _hotbar_home:
 		_hotbar.reparent(_hotbar_home, false)

@@ -48,6 +48,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 
 ## Open (still to do)
 
+- [ ] **F223. The item bar at the bottom should be a lot bigger, and items go over the slot borders.** *From: you (PC, Nov 17). Said: 1×* — Nov 17 (cave Claude): bar slots 58 → 88 px (back to bag size inside the open bag); pictures now sit inside the painted frame in every slot. Waiting for your look.
 - [ ] **F218. Ground things sometimes bigger, never smaller.** Pebbles, little mushrooms, ferns, roots: random sizes, sometimes a lot bigger. *From: you (PC, Nov 17). Said: 1×* — Nov 17: done. About 1 in 3 pebbles, rocks, little mushrooms, ferns, grass, small roots and gravel are 1.25-1.7x bigger, about 1 in 12 are 1.9-3.2x; none smaller. Check in the game.
 - [ ] **F219. The red and green mushrooms (firecaps, glowcaps) should react to you like ferns** (bend away when you walk through). *From: you (PC, Nov 17). Said: 1×* — Nov 17: done. All little pickable mushrooms (red firecaps, green glowcaps, and the others) lean away and wobble when you walk through, a bit stiffer than ferns. Check in the game.
 - [ ] **F220. You can walk through crystals and roots.** They should be solid. *From: you (PC, Nov 17). Said: 1×* — Nov 17: done. Crystals, big roots and giant mushrooms are solid now (shaped like the model; you can still walk under a root arch). Little mushrooms and thin hanging roots stay soft. Check in the game.

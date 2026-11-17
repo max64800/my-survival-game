@@ -2418,6 +2418,15 @@ learn how to do hair animation and implement that."
   is finished and the owner OKs it (robots can try `-- layout=2`). Cave tests pass. Commit has only this chat's
   changes. What's left is listed in `docs/design/epic-caves-plan.md` ("Progress").
 
+## November 17, 2026 (PC, cave Claude): pulled the Mac's 6 updates
+- Pulled menus steps 1-4, the game font, the mushroom-meadow plan and the Mac's rock textures batch 1.
+- Hurdles: (1) 59 files from other chats existed here unsaved and also on GitHub; Claude copied all unsaved work to a
+  backup folder outside the project first, then let GitHub's copies in. (2) The PC's paused rock-textures commit
+  clashed with the Mac's finished version: kept the Mac's shader, plan and rock pictures, and both journal entries.
+  (3) Git refused to continue while other chats were saving files (the dwarf files, project.godot); Claude set them
+  aside for a moment and put them back exactly. (4) F187 and F211 lines clashed in FEEDBACK: kept both.
+- Checks after: all scripts load, cave tests pass. The caves commit is on top, not yet on GitHub.
+
 ## November 17, 2026 (PC, dwarf Claude): thicker braids (F214) and a skeleton for the ponytail (F215)
 
 **What we did**
@@ -2461,6 +2470,10 @@ hair "jumps too much, looks too light, and it's attached to the body", and the e
   iris a little (brown, white around it). 2 picture checks used.
 - Clipping now (beard below the chin): standing 0, jumping 3 mm, walking under 1 cm; running up to 13 cm and sprint,
   sword, chopping, roll 5 to 7 cm, at the round 1 shirt's arm bulges (body round).
+- **Later (F223):** the item bar at the bottom is 88 px slots instead of 58 (it shrinks back to bag size inside the
+  open bag), and item pictures now sit inside each slot's painted frame everywhere. Hurdle: the menu-photo robot's
+  start switch is gone from main.gd (lost in the menu work, not this pull), so Claude used the play robot's
+  screenshots instead.
 
 ## November 17, 2026 (PC, dwarf Claude): eyelids, braids kept apart, a bone at the hair's end, Pause (F215, F221, F222, F224)
 
