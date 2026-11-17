@@ -496,7 +496,7 @@ func _pick_attack(dist: float) -> Dictionary:
 	for a in attack_options():
 		if _cooldowns.has(a.get("id", a.name)):
 			continue
-		if dist <= a.reach and (not a.get("lunge", false) or dist > 2.0) and (not a.get("ranged", false) or dist > 3.0 or not is_boss()):
+		if dist <= a.reach and dist >= a.get("min_reach", 0.0) and (not a.get("lunge", false) or dist > 2.0) and (not a.get("ranged", false) or dist > 3.0 or not is_boss()):
 			options.append(a)
 	return options.pick_random() if not options.is_empty() else {}
 
@@ -576,13 +576,18 @@ func puppet_step(delta: float) -> void:
 ## The warning before a hit: eyes flash and the body leans in. Each attack can name a sound
 ## for the warning (warn_sound) and for the moment it lands (land_sound), in Monsters.LIST.
 ## A beetle's charge also turns its eyes red and kicks up dust.
-func show_tell(seconds: float, attack_name: String = "") -> void:
+func show_tell(seconds: float, attack_name: String = "", aim: Node3D = null) -> void:
 	_flash = seconds
 	var atk: Dictionary = {}
 	for a: Dictionary in data.get("attacks", []):
 		if a.name == attack_name:
 			atk = a
-	if atk.has("warn_sound"):
+	if atk.get("spit", false):
+		# The Rock Snail's spit (owner, Nov 17): he rears up, snaps forward and a gob flies 2-3 m (MonsterModel._snail).
+		model.set_meta("spit_t0", _clock + uid * 0.37)  # (the clock MonsterModel.animate gets)
+		model.set_meta("spit_len", seconds)
+		get_tree().create_timer(seconds).timeout.connect(_spit_fx.bind(aim))
+		return
 		Sfx.play(atk.warn_sound, global_position, 0.0, _voice())
 	if atk.has("land_sound"):
 		get_tree().create_timer(seconds).timeout.connect(_land_sound.bind(atk.land_sound))
@@ -596,6 +601,39 @@ func show_tell(seconds: float, attack_name: String = "") -> void:
 	t.tween_property(model, "scale", base * Vector3(1.0, 0.85, 1.15), seconds * 0.8).set_trans(Tween.TRANS_SINE)
 	t.tween_property(model, "scale", base * Vector3(1.0, 1.1, 0.9), 0.08)
 	t.tween_property(model, "scale", base, 0.2)
+
+
+## Only looks: a gob of spit flies from the snail's mouth to the target in a low arc and splats.
+## (Whether it hurts is judged by the target's own computer, like every attack: a shield stops it completely.)
+func _spit_fx(aim: Node3D) -> void:
+	if not is_alive() or not is_inside_tree():
+		return
+	var fwd := -model.global_transform.basis.z.normalized()
+	var mouth := global_position + fwd * 0.6 * _size + Vector3.UP * 0.45 * _size
+	var to := mouth + fwd * 3.0 + Vector3.DOWN * 0.3
+	if aim and is_instance_valid(aim) and aim.global_position.distance_to(global_position) < 5.0:
+		to = aim.global_position + Vector3.UP * 0.9
+	var gob := MeshInstance3D.new()
+	var s := SphereMesh.new()
+	s.radius = 0.07
+	s.height = 0.12
+	gob.mesh = s
+	var m := StandardMaterial3D.new()
+	m.albedo_color = Color(0.55, 0.62, 0.2)
+	m.roughness = 0.15  # wet
+	gob.material_override = m
+	gob.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var world := get_parent()  # (the gob outlives the snail if it dies mid-spit)
+	world.add_child(gob)
+	gob.global_position = mouth
+	var t := gob.create_tween()
+	t.tween_method(func(k: float) -> void:
+		if is_instance_valid(gob):
+			gob.global_position = mouth.lerp(to, k) + Vector3.UP * sin(k * PI) * 0.25, 0.0, 1.0, 0.22)
+	t.tween_callback(func() -> void:
+		if is_instance_valid(world):
+			Fx.burst(world, to, Color(0.55, 0.62, 0.2), 8, 2.0)
+		gob.queue_free())
 
 
 func _land_sound(sound: String) -> void:
@@ -622,7 +660,9 @@ func _process(delta: float) -> void:
 	if model.get_meta("roosting", false):
 		pass  # hanging upside down (MonsterModel.animate)
 	elif stun.is_stunned():
-		model.rotation.z = sin(Time.get_ticks_msec() * 0.01) * 0.15
+		MonsterModel.dazed_sway(model, sin(Time.get_ticks_msec() * 0.01) * 0.15)  # (a snail sways, its foot stays put)
+	elif model.has_meta("foot"):
+		MonsterModel.dazed_sway(model, 0.0)  # a snail hops, it doesn't waddle
 	else:
 		model.rotation.z = sin(_clock * (5.0 + _speed * 2.5)) * 0.07 * clampf(_speed / 3.0, 0.0, 1.0)  # waddle
 
@@ -651,8 +691,11 @@ func _creature_fx(delta: float) -> void:
 		model.position.y += 0.05 * _size
 	if _flinch > 0.0:
 		_flinch = maxf(0.0, _flinch - delta * 6.0)
-		model.rotation.x += 0.3 * _flinch  # head tips back
-		model.position.y += 0.06 * _flinch * _size
+		if model.has_meta("foot"):
+			model.set_meta("flinch", _flinch)  # a snail: only the body jolts, its foot stays put (MonsterModel._snail)
+		else:
+			model.rotation.x += 0.3 * _flinch  # head tips back
+			model.position.y += 0.06 * _flinch * _size
 
 
 func set_hp(value: float, stun_frac: float, stunned: bool) -> void:

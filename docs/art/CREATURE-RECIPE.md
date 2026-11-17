@@ -146,3 +146,17 @@ The worked example: `tools/asset_forge/builds/dwarf_head.py`. What carried over 
    inside the body. On this scaled skeleton the hair bones hang from the root and are placed directly each frame (bones
    under the stretched head skew; Godot's SpringBoneSimulator3D fails for the same reason). Check it in numbers inside
    the modifier (Godot reports the human-sized pose there).
+
+## Part 5: spiral shells (learned on the Rock Snail, Nov 17)
+
+The worked example: `tools/asset_forge/builds/monster_rock_snail.py` (shape, sculpt, paint and bake in one script).
+1. **Read the picture's shell before building a real one.** A coiled tube looked like a barrel from the front; the
+   picture's shell is an egg whose sides bulge, with the spiral only cut into them.
+2. **Spiral blocks:** each point's band = which turn of the seam spiral it sits between; cut the band across every
+   ~1.25 band-widths, spaced by the band's MIDDLE radius (spacing by the point's own radius makes the cuts run along
+   the band: thin grooves). Top, front and back: nearest-seed stones as on the beetle (a grid looks like a brick wall).
+3. **One surface, raised stones:** melt the bare shell, then lift each stone into a cushion by its distance to its own
+   edge (0 at the edge = the canyon), with a few flat chisel cuts. No gaps by design. The moss is the bare shell
+   copied 2 mm out with low lumps, so it only shows in the canyons.
+4. **Pictures as paint:** cut the ChatGPT texture sheet into tiles and pass them to `paint_material(picture=...)`.
+   Don't carve strand grooves by height on a moustache (they read as stripes); the tile gives the strands.

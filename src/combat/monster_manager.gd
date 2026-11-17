@@ -289,7 +289,7 @@ func send_tell(m: Monster, atk: Dictionary) -> void:
 	# (F111: it was hitting from 9 m away): at the end it counts as touching range.
 	var reach: float = atk.reach if not atk.get("lunge", false) else float(m.data.get("size", 1.0)) * 0.6 + 0.8
 	_ev_tell.rpc(m.uid, m.target_peer, atk.tell, dmg, reach, crushing, atk.get("knockdown", false), atk.name, buildup,
-		atk.get("lunge", false))
+		atk.get("lunge", false), atk.get("shield_stops", false))
 
 
 func _heaviest(m: Monster) -> float:
@@ -704,15 +704,16 @@ func _kill(m: Monster, peer: int) -> void:
 
 ## Everyone: a monster starts an attack. Only the target's own computer judges it.
 @rpc("authority", "call_local", "reliable")
-func _ev_tell(uid: int, target: int, tell: float, dmg: float, reach: float, crushing: bool, kd: bool, attack_name: String, buildup: Dictionary = {}, charge: bool = false) -> void:
+func _ev_tell(uid: int, target: int, tell: float, dmg: float, reach: float, crushing: bool, kd: bool, attack_name: String, buildup: Dictionary = {}, charge: bool = false, shield_stops: bool = false) -> void:
 	var m: Monster = monsters.get(uid)
 	if m:
-		m.show_tell(tell, attack_name)
+		m.show_tell(tell, attack_name, player_node(target))
 	if auth.is_host():
 		_parry_ok[uid] = target  # only this player may parry this swing, once
 		_block_ok[uid] = target
 	if target == auth.local_peer_id() and dmg > 0.0:
-		_incoming.append({uid = uid, at = _clock + tell, damage = dmg, reach = reach, crushing = crushing, kd = kd, name = attack_name, buildup = buildup, charge = charge})
+		_incoming.append({uid = uid, at = _clock + tell, damage = dmg, reach = reach, crushing = crushing, kd = kd, name = attack_name, buildup = buildup, charge = charge,
+			shield_stops = shield_stops})
 
 
 # ================================================================== spore clouds
@@ -845,6 +846,8 @@ func _judge_incoming() -> void:
 				var swinging: bool = dwarf.get("fight") != null and dwarf.fight._busy > 0.0
 				if result.result == "hit" and swinging:
 					result.damage *= 1.0 - Gems.bonus(me.inventory.get_slot(me.selected_slot)).get("guard", 0.0)  # Bulwark gem
+				if result.result == "block" and def.shield and hit.get("shield_stops", false):
+					result.damage = 0.0  # spit: a shield stops it completely (owner, Nov 17)
 				if result.result == "block" and sb.has("block_poison"):
 					ask_blocked(hit.uid)
 				me.vitals.take_damage(result.damage)

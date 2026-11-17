@@ -3276,3 +3276,131 @@ the body."
   hit floor tunnel mouths; then hub tunnels drawn from the cave's middle blocked everything): fixed one by one with
   debug counts. Thin small bridges were hollow: thicker and calmer bumps. The other session asked how I commit:
   told it (worktree on origin/main, only my hunks) and kept its outpost lines out of mine.
+
+## November 18, 2026 (PC, dwarf Claude, later): round 3d: shirt over the shorts, brown patches, slower moves (F245, F261)
+- **Owner:** the shorts stick out of the shirt; brown patches of different sizes round the shirt (one on the chest where
+  he drew it); the animations are way too fast, in the game and on the 3D page.
+- **The shorts through the shirt:** near the shirt's bottom edge the shorts stood 2.4 cm off the skin and the shirt
+  only about 2.6 cm, so any bend pushed the shorts through. Now the shirt stands up to 4.2 cm off down low and the
+  shorts thin to 1.2 cm where the shirt covers them.
+- **Patches:** five brown ones on the shirt (chest, big low front, small by the shoulder, two on the back).
+- **Slower moves:** the standing/walk/run loops go through a speed dial in the animation tree, set to 70%
+  (`DwarfRig.LOOP_SPEED`). The 3D page's clips are recorded from the game, so the exporter now records one whole slower
+  loop (otherwise the loop would jump where it restarts). Feet may slide a little, as the walking speed is unchanged.
+- **Hurdle:** the clip check showed 7.9 cm inside the body while standing (was 3.8 cm). Same spot as before (the beard
+  against the chest); the slower standing loop just reaches a deeper pose. Part of the open hair work, not the clothes.
+- Still open: the beard into the chest/shirt, back hair sways 17 cm in a dash, a braid link folds (the one failing test).
+
+## November 17, 2026 (PC, snail Claude): the Rock Snail rebuilt the Rock Beetle way (F68, F31), round 1
+
+**What we did**
+- The owner asked for the Rock Snail to be rebuilt like the Rock Beetle. In the owner's ChatGPT (chat "Creature Image
+  Prompt") Claude made a turnaround picture (front, side, back, top) from the approved snail and a texture sheet (shell
+  stone, crack moss, body skin, moss moustache). Saved in `assets/concepts/creatures/`, the tiles cut into
+  `assets/textures/creatures/snail_*_tile.png`, logged in CREDITS.
+- New `tools/asset_forge/builds/monster_rock_snail.py` builds, sculpts, paints and bakes the snail in one go (`grey` =
+  the shape only). The shell is an egg with a spiral seam cut into each side; the bands between the seams are split
+  into big blocks, the top and back into uneven stones, all raised into "cushions" that press together with moss only
+  in the canyons. Each stone gets its own shade. The three crystals are named `glow_crystal`, so they breathe light
+  like the beetle's crystals (the owner asked for that during the build). Outline match with the turnaround: 0.85.
+- On a new 3D page "Rock Snail" (round 1). Not in the game yet: waiting for the owner's look. `build_creatures.py` now
+  builds only the snail's mossy look; the other looks keep the old snails until they are made.
+
+**Mistakes and hurdles (including Claude's)**
+- The Chrome helper tool didn't start in time. Chrome was open with remote control on, so Claude talked to it
+  directly with a small script that keeps one connection open (no repeated permission prompts).
+- Shell try 1: a spiral tube coiled side-on (like a real shell). From the front it looked like a barrel. Try 2 (more
+  turns) gave a deep funnel with tiny stones in the middle. The picture's shell is really an egg whose sides bulge,
+  with the spiral only cut into them: try 3 did that.
+- Claude's bug: the cuts across each spiral band were spaced by each point's own distance from the centre, so they
+  ran along the band and made a swirl of thin grooves. Spacing them by the band's middle fixed it.
+- The stones over the top first came out as a regular brick wall; nearest-seed stones (the beetle's way) look right.
+- Paint round 1: too much moss, the stones too purple (blue-grey shades), and the moustache striped (strand grooves cut
+  by height). Fixed in round 2 (less moss, warm shades, the tile gives the strands).
+- Still open for the owner's look: the moustache is too blobby and dark, the eye caps are small and the eyes don't
+  look forward with grumpy lids yet, moss lines thinner than the picture.
+- **Owner, on the tools page:** pickaxe and axe strike with the wrong side, wrong axe grip, the sword stabs himself;
+  add mace, spear, shield block; shield in the left hand. (F282)
+  - A Godot-animation helper measured each swing: every tool used one fixed grip, and the heads were turned 90° about
+    the handle. Now a grip table per tool and per move (DwarfRig.GRIPS), a new overhead axe chop, sword moves that
+    swing away from him (the pack's A/B swings went through his body), and moves for mace, spear, shield bash and
+    block, all from the Quaternius animation pack we already use (no new assets). The shield moved to the left arm
+    (it was in the right fist), shown only while a weapon is out. The held sword block now stays up.
+  - Page: recorded again with all 12 moves; the copy had to shrink (16.6 MB: every 6th frame, small pictures).
+  - Open: mace and sword chop share one move (the pack has no mace move); in the shield block the sword hangs low.
+
+## November 17, 2026 (PC, snail Claude, later): the Rock Snail hops, spits and sways (F288-F291)
+
+**What we did**
+- The owner looked at round 1 on the 3D page: he crawls (should hop), the eyeballs move separately from the lids,
+  add a short spit a shield blocks completely, and when dazed only he should move, not the foot.
+- Model: the foot is now its own part (`soft_foot`), hinged on the ground under the middle. The body's bottom stays
+  3 cm inside the foot (no two surfaces on the ground together). Stalk, lid and eyeball are one moving piece; the lid
+  is its own clean shell (smaller, grumpy V), painted and baked on its own.
+- Game: `MonsterModel._snail` draws the hop (foot gathers in and stretches up, body rises, the whole snail steps
+  forward, drops and splats) as a stepped version of the smooth real movement; the spit (rear up, snap, a gob flies
+  in an arc and splats, `Monster._spit_fx`); dazed sways only the body. New attack keys: `min_reach` (spit only from
+  1.6-3 m) and `shield_stops` (a shield block takes no damage). The new snail is in the game now (mossy look only).
+- 3D page "Rock Snail" round 2: Walk/Run hop across the stage, the Charge button is now Spit (with the gob), Dazed
+  keeps the foot still. Checked in Chrome: loads, no script errors.
+- Tests: `test_shield_stops_snail_spit`, `test_snail_foot_stays_put` (monster tests: all pass).
+
+**Mistakes and hurdles (including Claude's)**
+- Claude's first hop moved the body forward and back while the foot stayed: the body would slide over its foot.
+  The foot has to step with the body (planted while it gathers and splats, forward with the body in between); the
+  test now checks the body stays over its foot.
+- Claude wrote in the notes that the other snail looks were the old hand-built ones: they are the Nov 15 forged
+  (soft) snails. Corrected.
+- The test run first failed on another chat's new dwarf code (a new class Godot hadn't registered yet): re-importing
+  fixed it. Not our bug.
+- A text replacement script stopped halfway on a wrong tab count; it writes only at the end, so nothing was half-changed.
+- **Owner, round 3 of the tools page:** axe blade wrong side, sword looks like chopping (2-hit combos for sword and
+  mace), spear odd, roll and jump not working (pickaxe through the head), pickaxe backwards when walking.
+  - Axe model rebuilt with a bearded blade (edge reaching down toward the fist), handle shortened so nothing pokes
+    past the head, grip turned for the chop. Sword combo: forehand then backhand slash; mace combo: overhead smash
+    then side swing (combo_step now reaches the animation). Spear: aimed level, chest height (two hands don't reach
+    the shaft on a dwarf's short arms). Roll/jump: they worked in the game, but the page recorder only set the
+    movement once, so they never played on the page (my recorder bug); also the body no longer sinks into the floor
+    mid-roll and tools trail clear of the head. Walking pick carried upright, head on top.
+  - The squashed head (F280), new way: the neck and head get twin bones without the skew; nothing the arms hang on
+    changes. Side effect: the back-hair test (already failing) a little worse.
+  - Page re-recorded (12 moves, 16.7 MB).
+
+## November 17, 2026 (PC, snail Claude, round 3): the snail's foot stays attached, eyes in their bulbs, a pause button
+
+**What we did**
+- Owner on round 2: the hop is really good, but there was a gap between his body and the foot; he shouldn't run;
+  getting hit and dazed must move only the body; the eyes and lids still float; add a pause button (F288-F292).
+- Fixed the gap (a bug, below) and made the foot taller, so the body always sits in it. The snail never runs (game
+  speed run = walk; no Run button on the page). Getting hit in the game jolts only the body (`flinch` goes to
+  `MonsterModel._snail`). Each eye sits deep in its bulb and the lid is melted into the bulb (one skin, no seam).
+  The page: the foot stays on the ground for every move, and a Pause/Play button (checked: two screenshots a second
+  apart are identical). The model went from 87,000 to 39,000 triangles (the eye stalks were too fine).
+
+**Mistakes and hurdles (including Claude's)**
+- Claude's bug: the round shapes kept their position as an offset, so "nothing below 3 cm" was measured from the
+  middle of a sphere 20 cm up. It cut the body off 23 cm above the ground (and the foot 5 cm up). Shapes are now
+  placed in real metres before anything is measured.
+- The page put the game-size wrapper (which holds every part, the foot too) on the moving body, so the foot moved
+  when he was hit or dazed. The page now takes the foot off the body.
+- A comment typed into the middle of a line hid `leader_chance` behind it; caught before testing and fixed.
+- The page-check script grabbed a leftover frame from an earlier tab; it now picks the frame of the new version.
+
+## November 17, 2026 (PC, snail Claude, round 4): the snail's eyes rebuilt like the picture (F289)
+
+- Owner sent a close-up: "now work on the eyes". Next to the picture, ours were small balls pasted low on a smooth
+  bulb. The picture's eye is big, held in a cup of skin with a thick rim all the way round, and a heavy lid fold.
+- Rebuilt each eye from a cup (the ball's front shows), a rim (a ring where the ball comes out of the cup) and a thick
+  lid shell, melted with the stalk into one skin; the eyeball 5.6 → 6.8 cm, iris 33° → 40°, pupil 15° → 21°.
+- Two picture rounds: the first lid hid half the iris; raised so it covers only the top of the iris.
+- Claude's mistake: a closing bracket typed inside a comment broke the build script; the build tool only showed the
+  last line, so the failure looked like "no change" until the script was run on its own.
+- **Owner, round 4 of the tools page:** running through the pickaxe; axe not held by the handle; roll too fast; tool
+  swings back in the jump; a simple sword combo (full sweep right to left, then left to right). Spear underarm poke
+  later (F288).
+  - Running: the right arm blends into a shoulder-carry pose (handle over the shoulder, head behind), all tools.
+  - Grip: the fist's middle is 4 cm below the hand holder, and last round's axe slide pushed the handle end into the
+    fist; one GRIP_SLIDE for every handle now (fist ~9 cm up from the end).
+  - Roll animation plays over 0.75 s (the dodge itself unchanged, so fights stay fair). Jump: no trailing turn.
+  - Sword combo from the pack's level sweep (no wind-up), both ways; it passes at face height, not chest (needs
+    hand-made poses: asked the owner).

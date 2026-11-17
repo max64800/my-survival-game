@@ -25,7 +25,7 @@ LOOKS = ["mossy", "frost", "ember", "spore"]
 # kind: (build script, "looks" or number of versions, extra words)
 CREATURES = {
 	"rock_beetle": ("monster_rock_beetle", "looks", []),
-	"rock_snail": ("monster_rock_snail", 3, []),
+	"rock_snail": ("monster_rock_snail", ["mossy"], []),  # Nov 17 rebuild: one look first (frost, ember and spore keep the Nov 15 forged snails until then)
 	"cave_bat": ("monster_cave_bat", 4, []),
 }
 
@@ -34,7 +34,7 @@ CREATURES = {
 # Creatures that go through the sculpt-and-bake pass (docs/art/CREATURE-RECIPE.md) after the grey build, every look.
 SCULPTED = {"rock_beetle": "sculpt_test_beetle.py"}
 # The game's size for the finished model (the baked beetle is 1.54 m long; the game's beetle and its collision ~1.36 m).
-GAME_SCALE = {"rock_beetle": 0.88}
+GAME_SCALE = {"rock_beetle": 0.88, "rock_snail": 0.88}
 
 
 def blender():
@@ -53,7 +53,8 @@ def main():
 	for kind, (script, versions, extra) in CREATURES.items():
 		if only and kind != only:
 			continue
-		jobs = [(models / "creatures" / f"{kind}_{look}.glb", [f"look={look}"]) for look in LOOKS] if versions == "looks" else \
+		looks = LOOKS if versions == "looks" else versions if isinstance(versions, list) else None
+		jobs = [(models / "creatures" / f"{kind}_{look}.glb", [f"look={look}"]) for look in looks] if looks else \
 			[(models / "monsters" / f"{kind}_v{v}.glb", [f"v={v}"]) for v in range(versions)]
 		for glb, words in jobs:
 			glb.parent.mkdir(parents=True, exist_ok=True)
@@ -73,6 +74,8 @@ def main():
 						print(f"  sculpted + baked {glb.name}")
 					else:
 						print(f"SCULPT FAILED {glb.name}:\n{sc.stdout[-1500:]}\n{sc.stderr[-1500:]}")
+			if done and kind not in SCULPTED and GAME_SCALE.get(kind, 1.0) != 1.0:  # (the snail sculpts and bakes in its own build)
+				glb_scale.set_scale(glb, GAME_SCALE[kind])
 			print(done[0].replace(str(glb), glb.name) if done else f"FAILED {glb.name}:\n{res.stdout[-1500:]}\n{res.stderr[-1500:]}")
 
 

@@ -478,6 +478,8 @@ static func _tag_forged(holder: Node3D, forged: Node3D, shape: String) -> void:
 			wings.append([mi, mi.rotation, signf(mi.position.x)])
 		elif n.begins_with("soft"):
 			mi.set_meta("soft", true)
+			if n == "soft_foot":
+				holder.set_meta("foot", mi)  # the snail's creeping foot: it gathers and splats when he hops (_snail)
 			if n.begins_with("soft_stalk"):
 				stalks.append([mi, mi.rotation, stalks.size() * 1.7])
 		elif n.begins_with("peek"):
@@ -588,6 +590,9 @@ static func animate(model: Node3D, speed: float, size: float, clock: float) -> v
 	var blaze := 2.6 if model.get_meta("angry", false) else 1.0
 	for g: StandardMaterial3D in model.get_meta("glow_mats", []):
 		g.emission_energy_multiplier = float(g.get_meta("base_energy", 1.0)) * blaze * hum
+	if model.has_meta("foot"):
+		_snail(model, speed, clock)
+		return
 	if not model.has_meta("legs"):
 		return
 	var go := clampf(speed / 3.0, 0.0, 1.0)            # 0 = standing, 1 = running
@@ -647,6 +652,104 @@ static func animate(model: Node3D, speed: float, size: float, clock: float) -> v
 		var breath := sin(clock * 2.0) * 0.012 * size * (1.0 - go)
 		model.position.y = rest_y + bob + breath
 	model.rotation.x = -0.15 * go  # lean into the run
+
+
+## The Rock Snail moves in hops (owner, Nov 17): the foot gathers in and the body rises, the body moves forward, then
+## it drops and the foot splats out wide again. The real movement is smooth, so the hop is drawn as a step: the
+## body stays behind while it gathers, catches up and gets ahead while it moves, and settles back while it splats.
+## The spit (show_tell sets "spit_t0"/"spit_len"): he rears up a little, snaps forward to spit, and splats down.
+## Dazed ("sway"): only the body sways; the foot stays put on the ground.
+const HOP_TIME := 1.1    ## seconds per hop at walking speed
+const HOP_LIFT := 0.07   ## how high the body rises (m)
+const FOOT_TALL := 0.115 ## the foot's height in the model (m): it stretches up this much plus the lift
+
+
+static func _snail(model: Node3D, speed: float, clock: float) -> void:
+	var forged: Node3D = model.get_meta("forged_root")
+	var foot: MeshInstance3D = model.get_meta("foot")
+	if not model.is_inside_tree():
+		return
+	if not model.has_meta("foot_rest"):  # where the foot sits in the model, before anything moved it
+		model.set_meta("foot_rest", model.global_transform.affine_inverse() * foot.global_transform)
+		model.set_meta("forged_rest", forged.position)
+	for st in model.get_meta("stalks", []):  # looking around with the eye stalks
+		var mi: MeshInstance3D = st[0]
+		mi.rotation = st[1] + Vector3(sin(clock * 0.9 + st[2]) * 0.12, 0, sin(clock * 1.3 + st[2] * 2.0) * 0.16)
+	if model.get_meta("hidden", false):
+		forged.position = model.get_meta("forged_rest")  # settled (no hop, no sway)
+		forged.rotation = Vector3(0, forged.rotation.y, 0)
+		return  # in its shell: the hiding tween owns the foot (_forged_shell)
+	var lift := 0.0
+	var gather := 0.0    # 0 = flat foot, 1 = gathered in (narrower, taller)
+	var flat := 0.0      # > 0: the splat (wider, flatter)
+	var surge := 0.0     # forward (+) / behind (-) its true place, in model metres
+	var pitch := 0.0     # + dips the head, - lifts it
+	var go := clampf(speed / 0.4, 0.0, 1.0)
+	if go > 0.05:
+		var cyc := fposmod(clock / HOP_TIME, 1.0)
+		if cyc < 0.35:  # gather and rise
+			gather = smoothstep(0.0, 1.0, cyc / 0.35)
+			lift = HOP_LIFT * gather
+		elif cyc < 0.65:  # move forward, still up
+			gather = 1.0
+			lift = HOP_LIFT
+		else:  # drop and splat
+			var k := (cyc - 0.65) / 0.35
+			gather = 1.0 - smoothstep(0.0, 0.35, k)
+			lift = HOP_LIFT * gather
+			flat = sin(clampf(k / 0.8, 0.0, 1.0) * PI) * (1.0 - gather)
+		var step := smoothstep(0.35, 0.65, cyc)
+		surge = (step - cyc) * speed * HOP_TIME / maxf(model.scale.x, 0.01)
+		lift *= go
+		gather *= go
+		flat *= go
+		surge *= go
+	var t0: float = model.get_meta("spit_t0", -100.0)
+	var p := (clock - t0) / maxf(float(model.get_meta("spit_len", 1.0)), 0.1)
+	if p >= 0.0 and p < 1.5:  # the spit: rear up, snap forward, splat
+		if p < 0.8:
+			gather = smoothstep(0.0, 0.8, p)
+			lift = 0.1 * gather
+			pitch = -0.14 * gather
+		elif p < 1.0:
+			var k := (p - 0.8) / 0.2
+			gather = 1.0
+			lift = 0.1
+			pitch = lerpf(-0.14, 0.12, smoothstep(0.0, 1.0, k))
+			surge = 0.08 * k
+		else:
+			var k := (p - 1.0) / 0.5
+			gather = 1.0 - smoothstep(0.0, 0.4, k)
+			lift = 0.1 * gather
+			pitch = 0.12 * (1.0 - k)
+			surge = 0.08 * (1.0 - k)
+			flat = sin(clampf(k, 0.0, 1.0) * PI) * (1.0 - gather)
+	var flinch: float = model.get_meta("flinch", 0.0)  # hit: the body jolts up and back, the foot stays put
+	model.set_meta("flinch", 0.0)
+	lift += 0.06 * flinch
+	pitch -= 0.3 * flinch
+	surge -= 0.05 * flinch
+	var sway: float = model.get_meta("sway", 0.0)
+	var rest: Vector3 = model.get_meta("forged_rest")
+	forged.position = rest + Vector3(0, lift, -surge)  # (monsters face -Z)
+	forged.rotation = Vector3(pitch, forged.rotation.y, sway)
+	# The foot: always on the ground, gathered in (and stretched up to the body) or splatted.
+	var w := 1.0 - 0.18 * gather + 0.08 * flat
+	var tall := (1.0 + lift / FOOT_TALL) * (1.0 - 0.15 * flat)
+	var fr: Transform3D = model.get_meta("foot_rest")
+	# (it steps with the body: planted while it gathers and splats, forward with the body in between)
+	foot.global_transform = model.global_transform * Transform3D(fr.basis * Basis.from_scale(Vector3(w, tall, w)), fr.origin + Vector3(0, 0, -surge))
+	model.position.y = model.get_meta("rest_y")
+	model.rotation.x = 0.0
+
+
+## Dazed (stunned): sway the snail's body only, its foot stays put (owner, Nov 17). Other creatures tip as a whole.
+static func dazed_sway(model: Node3D, angle: float) -> void:
+	if model.has_meta("foot"):
+		model.set_meta("sway", angle)
+		model.rotation.z = 0.0
+	else:
+		model.rotation.z = angle
 
 
 ## Crystal variants: a cluster of glowing crystals on the monster's back.

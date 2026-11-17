@@ -402,3 +402,57 @@ func test_creature_sounds_and_tells() -> void:
 	var eye: StandardMaterial3D = beetle.model.get_meta("eye_mat")
 	check(eye.emission.g < 0.5, "charging beetle's eyes turn red")
 	_teardown()
+
+
+## Rock Snail spit (owner, Nov 17): short range, and a shield stops it completely (a weapon block doesn't).
+func test_shield_stops_snail_spit() -> void:
+	await _setup()
+	var m := _spawn("rock_snail", Vector3(2.5, 0, 0))
+	var spit: Dictionary = {}
+	for a: Dictionary in Monsters.LIST.rock_snail.attacks:
+		if a.name == "Spit":
+			spit = a
+	check(not spit.is_empty() and spit.reach <= 3.0 and spit.shield_stops, "the snail has a short spit a shield stops")
+	check(not m._pick_attack(1.0).get("spit", false), "too close: no spit")
+	check(m._pick_attack(2.5).get("spit", false), "2.5 m away: it spits")
+	var fake := player as FakeDwarf
+	fake.defense = {holding = true, pressed_ago = -1.0, weapon = "sword", shield = true, tier = 0}
+	auth.monsters._ev_tell(m.uid, 1, 0.0, 12.0, 3.0, false, false, "Spit", {}, false, true)
+	auth.monsters._judge_incoming()
+	check_eq(ps.vitals.health, 100.0, "shield up: no damage at all")
+	fake.defense = {holding = true, pressed_ago = -1.0, weapon = "sword", shield = false, tier = 0}
+	auth.monsters._ev_tell(m.uid, 1, 0.0, 12.0, 3.0, false, false, "Spit", {}, false, true)
+	auth.monsters._judge_incoming()
+	check(ps.vitals.health < 100.0, "blocked with a sword: some gets through")
+	_teardown()
+
+
+## Rock Snail hop and daze (owner, Nov 17): the body rises and sways, the foot stays planted on the ground.
+func test_snail_foot_stays_put() -> void:
+	await _setup()
+	var m := _spawn("rock_snail", Vector3(3.0, 0, 0))
+	var model := m.model
+	check(model.has_meta("foot"), "the snail model has its own foot")
+	if not model.has_meta("foot"):
+		_teardown()
+		return
+	m.set_process(false)  # we drive the animation by hand
+	var foot: MeshInstance3D = model.get_meta("foot")
+	var forged: Node3D = model.get_meta("forged_root")
+	MonsterModel.animate(model, 0.0, 1.0, 0.0)
+	var foot0 := foot.global_position
+	var body0 := forged.global_position
+	var rose := 0.0
+	for i in 12:  # walking: one whole hop
+		MonsterModel.animate(model, 0.6, 1.0, i * MonsterModel.HOP_TIME / 12.0)
+		check_near(foot.global_position.y, foot0.y, 0.001, "walking: the foot stays on the ground")
+		var gap := Vector2(foot.global_position.x - forged.global_position.x, foot.global_position.z - forged.global_position.z)
+		var gap0 := Vector2(foot0.x - body0.x, foot0.z - body0.z)
+		check_near(gap.distance_to(gap0), 0.0, 0.001, "walking: the body stays over its foot")
+		rose = maxf(rose, forged.global_position.y - body0.y)
+	check(rose > 0.04, "the body rises in the hop")
+	MonsterModel.dazed_sway(model, 0.15)
+	MonsterModel.animate(model, 0.0, 1.0, 5.0)
+	check_near(foot.global_position.distance_to(foot0), 0.0, 0.001, "dazed: the foot stays put")
+	check(absf(forged.rotation.z) > 0.1, "dazed: the body sways")
+	_teardown()
