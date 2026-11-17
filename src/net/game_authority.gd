@@ -78,6 +78,7 @@ class PlayerState:
 	var inventory := Inventory.new(Inventory.PLAYER_SIZE)  ## with backpack + equipment slots (F23)
 	var selected_slot := 0
 	var weapon_drawn := false  ## F: fighting with the equipped weapon (+ shield)
+	var hands_empty := false  ## the picked hotbar number pressed again: tool put away (owner, Nov 17)
 	var fuel := GameAuthority.MAX_FUEL
 	var needs_lantern := false  ## true = started with nothing: no light until a Lantern is made
 	var dig_target := Vector3.INF
@@ -114,6 +115,8 @@ class PlayerState:
 	func hand_slot() -> int:
 		if weapon_drawn and inventory.equipped("weapon") != "":
 			return Inventory.equip_index("weapon")
+		if hands_empty:
+			return -1  # nothing in hand (an empty slot: get_slot(-1) is {})
 		var picked: String = inventory.get_slot(selected_slot).get("id", "")
 		if picked == "":  # an empty hotbar slot = your pickaxe (owner F151: otherwise you hold what you picked)
 			if inventory.equipped("pickaxe") != "":
@@ -242,6 +245,7 @@ func _process(delta: float) -> void:
 func ask_select_slot(slot: int) -> void:
 	var me := get_player(local_peer_id())
 	if me:
+		me.hands_empty = slot == me.selected_slot and not me.hands_empty and not me.weapon_drawn  # same number again: put it away
 		me.selected_slot = slot  # show it right away
 	if is_host():
 		request_select_slot(local_peer_id(), slot)
@@ -619,6 +623,8 @@ func _rpc_swap(a: int, b: int) -> void:
 func request_select_slot(peer_id: int, slot: int) -> void:
 	var ps := get_player(peer_id)
 	if ps and slot >= 0 and slot < Inventory.HOTBAR_SIZE:
+		if peer_id != local_peer_id():  # (the host's own choice was already made in ask_select_slot)
+			ps.hands_empty = slot == ps.selected_slot and not ps.hands_empty and not ps.weapon_drawn
 		ps.selected_slot = slot
 		ps.weapon_drawn = false  # picking a hotbar slot puts the weapon away
 

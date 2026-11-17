@@ -312,3 +312,21 @@ func test_copper_needs_the_fang_pickaxe() -> void:
 	check_eq(GameAuthority.ore_too_hard(Mat.COPPER, "pickaxe_fang"), "", "the Fang Pickaxe mines it")
 	check_eq(GameAuthority.ore_too_hard(Mat.COPPER, "pickaxe_copper"), "", "and anything better")
 	check_eq(GameAuthority.ore_too_hard(Mat.STONE, "pickaxe_stone"), "", "plain stone is still fine")
+
+
+## Owner, Nov 17: pressing the picked hotbar number again puts the tool away (empty hands); again takes it back out.
+func test_same_hotbar_number_puts_the_tool_away() -> void:
+	await _setup(42)
+	auth.ask_select_slot(1)
+	auth.ask_select_slot(0)  # pick slot 1 (index 0)
+	check(not ps.hands_empty, "picked: something in hand")
+	auth.ask_select_slot(0)  # the same number again
+	check(ps.hands_empty, "pressed again: hands empty")
+	check_eq(ps.hand_slot(), -1, "nothing in hand")
+	check_eq(ps.selected_item(), "", "holding nothing")
+	auth.ask_select_slot(0)
+	check(not ps.hands_empty, "pressed again: the tool is back")
+	auth.ask_select_slot(0)
+	auth.ask_select_slot(1)
+	check(not ps.hands_empty, "another number: that slot, hands not empty")
+	_teardown()

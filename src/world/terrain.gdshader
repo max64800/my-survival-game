@@ -58,25 +58,26 @@ float vnoise(vec3 x) {
 				   mix(hash(i + vec3(0, 1, 1)), hash(i + vec3(1, 1, 1)), f.x), f.y), f.z);
 }
 
-// Glow-worm stars (owner F217/F232): one dot in some of the cells of a grid `cell` metres wide on the ceiling; `size`
-// = the dot's radius as a share of the cell; `keep` = how many cells have one. Soft round dots, each its own
-// brightness, twinkling slowly.
-const vec3 STAR_COLOR = vec3(0.35, 0.85, 1.0);
-uniform float star_brightness = 2.2;
+// Glow-worm stars (owner F217/F232). Each cell of a 3D grid `cell` metres wide may hold one tiny glowing ball (`keep` =
+// how many do); where the rock passes through a ball it shows a small round spot, the same from any angle (round 3:
+// dots painted from above were stretched into streaks on sloping rock). Sharp edge, no blur; each twinkles slowly.
+const vec3 STAR_COLOR = vec3(0.4, 0.88, 1.0);
+uniform float star_brightness = 1.6;
 
-float star_layer(vec2 xz, float cell, float size, float keep) {
-	vec2 q = xz / cell;
-	vec2 c = floor(q);
-	float h = hash(vec3(c, 3.7));
+float star_layer(vec3 p, float cell, float radius, float keep) {
+	vec3 q = p / cell;
+	vec3 c = floor(q);
+	float h = hash(c + vec3(3.7));
 	if (h > keep) {
 		return 0.0;
 	}
-	vec2 at = c + 0.25 + 0.5 * vec2(hash(vec3(c, 1.3)), hash(vec3(c, 8.1)));  // the dot's place in its cell
-	float d = length(q - at);
-	float r = size * (0.6 + 0.8 * hash(vec3(c, 5.5)));
-	float dot_ = smoothstep(r, r * 0.25, d);
-	float twinkle = 0.65 + 0.35 * sin(TIME * (0.6 + 1.4 * hash(vec3(c, 9.9))) + h * 40.0);
-	return dot_ * twinkle * (0.5 + h / keep);
+	vec3 at = c + 0.2 + 0.6 * vec3(hash(c + vec3(1.3)), hash(c + vec3(8.1)), hash(c + vec3(4.4)));
+	float d = length(q - at) * cell;  // metres from the ball's middle
+	float r = radius * (0.6 + 0.8 * hash(c + vec3(5.5)));
+	float aa = max(fwidth(d), 0.0005);  // one pixel of soft edge, no more
+	float spot = 1.0 - smoothstep(r - aa, r + aa, d);
+	float twinkle = 0.7 + 0.3 * sin(TIME * (0.5 + 1.2 * hash(c + vec3(9.9))) + h * 40.0);
+	return spot * twinkle * (0.55 + 0.45 * h / keep);
 }
 
 // One material, projected from 3 sides. Returns colour+glow mask, and a world-space normal.
@@ -174,7 +175,7 @@ void fragment() {
 	if (ceiling > 0.0) {
 		float patches = smoothstep(0.45, 0.68, vnoise(v_world * 0.05 + vec3(7.0, 1.0, 3.0)));
 		if (patches > 0.0) {
-			float stars = star_layer(v_world.xz, 0.5, 0.055, 0.6) + star_layer(v_world.xz + vec2(31.0, 17.0), 1.7, 0.035, 0.35) * 1.6;  // tiny points (round 2: big dots looked like snow up close)
+			float stars = star_layer(v_world, 0.16, 0.012, 0.75) + star_layer(v_world + vec3(31.0, 5.0, 17.0), 0.45, 0.02, 0.5);  // many tiny points
 			emit += STAR_COLOR * stars * patches * ceiling * star_brightness;
 		}
 	}

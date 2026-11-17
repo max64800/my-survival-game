@@ -24,8 +24,8 @@ const KINDS := {
 	"stal_mossy": {color = Color(0.5, 0.46, 0.41), surface = "stone", size = [0, 0], biome = "mossy", weight = 0},
 	"stal_fungal": {color = Color(0.4, 0.33, 0.46), surface = "stone", size = [0, 0], biome = "fungal", weight = 0},
 }
-const CLUSTERS_BIG_ROOM := 30
-const CLUSTERS_ROOM := 7
+const CLUSTERS_BIG_ROOM := 70  ## (owner, Nov 17: "a lot more stalactites on the roof")
+const CLUSTERS_ROOM := 16
 ## Rock shelves on walls (F232, tools/asset_forge/builds/cave_shelves.py): rock only; the game puts its own moss,
 ## mushrooms and recoloured crystals on top (owner: "use our existing mushrooms... crystals, a different colour").
 ## SHELF_TOPS: where things sit on each model (its own space: +Z = out of the wall, +Y = up), and what.
@@ -46,8 +46,8 @@ const WALL_SHELVES_ROOM := 4
 ## Roots hanging from ceilings (F232, tools/asset_forge/builds/cave_hanging.py; no rock chunk, they come out of the real
 ## ceiling). Owner: "I really like 3... make them very big and random... 1 is good too".
 const HROOTS := {
-	"hroot_a": {model = "res://assets/models/cave/hroot_a.glb", length = 1.25, size = [1.5, 4.0]},
-	"hroot_c": {model = "res://assets/models/cave/hroot_c.glb", length = 1.2, size = [1.5, 4.0]},
+	"hroot_a": {model = "res://assets/models/cave/hroot_a.glb", length = 1.25, size = [2.5, 6.0]},  # (owner: "a lot bigger")
+	"hroot_c": {model = "res://assets/models/cave/hroot_c.glb", length = 1.2, size = [2.5, 6.0]},
 }
 const HROOTS_BIG_ROOM := 12
 const HROOTS_ROOM := 3
@@ -104,7 +104,7 @@ func _ceiling(maker: CaveMaker, rng: RandomNumberGenerator, picks: Dictionary, s
 		return  # not a ceiling
 	var fungal := CaveMaker.biome_at(hit) == "fungal"
 	var names := DRIPS.keys()
-	var count := rng.randi_range(1, 3)  # a main one, maybe a smaller one or two beside it
+	var count := rng.randi_range(2, 4)  # a main one and a few smaller ones beside it
 	for j in count:
 		var at := hit
 		if j > 0:

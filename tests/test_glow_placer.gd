@@ -34,7 +34,7 @@ func test_roots_grow_out_of_the_floor() -> void:
 		n += 1
 		check(s.normal == Vector3.UP, "root %d stands up" % s.id)
 		check(maker.sdf_at(s.pos + Vector3.DOWN * 0.5) < 0.0, "root %d has rock under it" % s.id)
-		check(s.length >= 0.8 and s.length <= 1.25, "root %d is a sensible size (%.2f)" % [s.id, s.length])
+		check(s.length >= 1.15 and s.length <= 1.95, "root %d is a sensible size (%.2f)" % [s.id, s.length])  # (bigger: owner, Nov 17)
 	check(n > 0, "the cave has roots")
 
 

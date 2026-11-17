@@ -2900,3 +2900,15 @@ the body."
 - Crystals: owner picked real crystals, strong ones rare. `GlowPlacer._mix_crystal_colours` gives each crystal its
   colour from its position (blue 38%, green 24%, violet 18%, amber 14%, white 3%, red 3%); ids unchanged.
 - The water drip (F140) now uses the ringed dripstone model with its drop; the falling drops come from its tip.
+
+## November 17, 2026 (PC, rock-textures Claude): stars round 3, bigger roots, more dripstone, pickaxe away (F250-F252)
+
+- Owner on the stars: "a lot of dots... not polished... blurry... sometimes long instead of round". Why long: the dots
+  were drawn from straight above, so on sloping rock they smeared. Now each star is a tiny ball in 3D; where the rock
+  passes through one it shows a round spot from any angle; sharp edge (one pixel of softening), much smaller, ~3x more,
+  less bright so the glow doesn't blur them.
+- Hanging roots 2.5-6x; floor wood roots 1.2-1.9 m (from their position, ids unchanged); dripstone clusters 70 per big
+  cavern / 16 per room with 2-4 each.
+- Hotbar: pressing the picked number again puts the tool away (`hands_empty`; the hand slot becomes "nothing").
+  Hurdle: Claude's test assumed the first press picks the slot, but slot 1 is already picked at the start, so the first
+  press already puts the pickaxe away (which is what the owner wants); the test was fixed, not the game.

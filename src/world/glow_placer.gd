@@ -163,7 +163,7 @@ static func _add_more_roots(maker: CaveMaker, spots: Array[Dictionary]) -> void:
 				continue
 			if maker.sdf_at(hit - Vector3.UP * 0.8) >= 0.0:
 				continue
-			var length := 0.85 + 0.35 * fposmod(hit.x * 7.3 + hit.z * 3.1, 1.0)
+			var length := 1.2 + 0.7 * fposmod(hit.x * 7.3 + hit.z * 3.1, 1.0)
 			spots.append({id = -1, pos = hit, normal = Vector3.UP, kind = ROOT, color = KINDS[ROOT].color, scale = 1.0,
 				spin = rng.randf_range(0, TAU), length = length, chops = KINDS[ROOT].get("chops", 1), extra = true})
 			_grid_put(near, hit)
@@ -322,7 +322,7 @@ static func _try_add(maker: CaveMaker, rng: RandomNumberGenerator, spots: Array[
 		# Roots break out of the floor (owner, Nov 16), standing straight up; `length` = how big (about its height).
 		# Sized from the spot itself, not the dice, so the spots after it keep their places.
 		n = Vector3.UP
-		length = 0.85 + 0.35 * fposmod(hit.x * 7.3 + hit.z * 3.1, 1.0)
+		length = 1.2 + 0.7 * fposmod(hit.x * 7.3 + hit.z * 3.1, 1.0)
 	elif kind == GIANT:
 		# Giant mushrooms stand straight up, 3-6 m tall, never touching the ceiling.
 		n = Vector3.UP
