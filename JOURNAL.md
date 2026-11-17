@@ -2360,3 +2360,15 @@ learn how to do hair animation and implement that."
   two similar labels in crafting and skills) a width. Boss-clue circles now stop at the map's edge. "Next steps" now
   hides while any big panel is open (it ran over the skills and build screens too).
 - All 9 menu pictures for the owner: `docs/art/menus-2026-11-17/`. Full test run: 360 checks, all passed.
+## November 16, 2026 (PC, rock-textures Claude): rock textures, steps 2 and 3 (F213, paused)
+
+- Built the "cutter" (`tools/art/paint_terrain_looks.py`): it will turn the owner's ChatGPT sheets (4 paintings per
+  material) into game textures with no seams, a bump map made from the painting, and colours kept close to today's.
+- The rock shader now picks one of several paintings per spot from the position, with soft edges. Until the sheets
+  exist every material has 1 painting, so the game looks the same. The game ran with no shader errors.
+- Hurdles: (1) no OpenAI key on this PC, so Claude can't make the ChatGPT pictures itself; the owner makes them (prompt
+  in the plan). (2) A first idea stored the "where are the looks" list in a .json file, but Godot leaves plain files
+  out of the finished game, so the cutter writes a tiny GDScript file instead. (3) ChatGPT's 2 x 2 tiles are only
+  ~500 px, so they stay 512 px, not the 1024 the plan said. (4) Another chat had unsaved work in world.gd and the
+  journal, so Claude committed only its own lines.
+- Paused by the owner. Next: the 4 ChatGPT sheets, then run the cutter and compare screenshots.
