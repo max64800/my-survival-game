@@ -42,3 +42,10 @@ Dwarves Reborn, Dwarves Rising. Trademarks: still a manual check.
 No Steam game, .com free, no itch.io game with that name for: Dwarves Reborn, Reforged (an itch game "A Home Reforged";
 "Reforged" also recalls Warcraft III: Reforged), Rekindled, Reawakened, Unbroken, Undying, Eternal, Ascendant, Reclaimed,
 Restored, Returned, Remembered, Resurgent, Undaunted, Unchained, Revived. Trademarks: manual check still needed.
+
+## Owner likes "Eternal" (Nov 17): they always come back and never give up. 17 checked
+No Steam game, .com free, no itch.io game with that name for: Eternal Dwarves, Dwarves Eternal, The Eternal Dwarves,
+Eternal Dwarf, Everlasting Dwarves, Dwarves Everlasting, Undying Dwarves, Deathless Dwarves, Ageless Dwarves, Timeless
+Dwarves, Immortal Dwarves, Unending Dwarves, Enduring Dwarves, Dwarves Endure, Dwarves Never Die, Evermore Dwarves,
+Unbroken Dwarves. Note: "Dwarves Eternal" has the same shape as DOOM Eternal (not a conflict, but gamers may link them);
+"Eternal Dwarves" doesn't.
