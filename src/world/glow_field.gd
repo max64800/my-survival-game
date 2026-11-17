@@ -467,7 +467,8 @@ func _process(delta: float) -> void:
 		var breath := 1.0
 		if not s.is_empty() and String(s.kind).begins_with("crystal"):
 			# the node's origin is the spot's base; the shader uses the model's origin, the same point
-			breath = 0.3 + 1.1 * crystal_pulse((_nodes[s.id] as Node3D).global_position if _nodes.has(s.id) else s.pos, t)
+			var b := crystal_pulse((_nodes[s.id] as Node3D).global_position if _nodes.has(s.id) else s.pos, t)
+			breath = 2.6 * b * b  # no light at all when dim, a lot when bright (owner, round 2)
 		_lights[i].light_energy = _light_base[i] * breath
 	_push_mushrooms()
 	_light_timer -= delta

@@ -67,7 +67,8 @@ void fragment() {
 	SPECULAR = 1.0;
 	// light from inside, brighter on facets turned toward you
 	vec3 inner = col * glow * (0.15 + 0.85 * facing * facing);
-	inner *= 0.25 + 2.2 * crystal_pulse(MODEL_MATRIX[3].xyz, TIME);  // dim, then glowing, then dim again
+	float breath = crystal_pulse(MODEL_MATRIX[3].xyz, TIME);
+	inner *= 5.0 * breath * breath;  // all the way down to no glow (you still see the crystal), then much brighter (owner, round 2)
 	// the reflection: the made-up cave, tinted a little by the crystal's colour (coloured glass)
 	vec3 cave = fake_cave(r) * mix(vec3(1.0), tint.rgb, 0.55) * fres * mirror;
 	// flashes: white-hot, split into a little rainbow at their edge (a cut gem's fire)

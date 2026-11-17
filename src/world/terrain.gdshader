@@ -64,12 +64,12 @@ float vnoise(vec3 x) {
 const vec3 STAR_COLOR = vec3(0.4, 0.88, 1.0);
 uniform float star_brightness = 3.2;  // (owner: brighter; moving the camera smears tiny points a little)
 
-float star_layer(vec3 p, float cell, float radius, float keep) {
+vec3 star_layer(vec3 p, float cell, float radius, float keep) {
 	vec3 q = p / cell;
 	vec3 c = floor(q);
 	float h = hash(c + vec3(3.7));
 	if (h > keep) {
-		return 0.0;
+		return vec3(0.0);
 	}
 	vec3 at = c + 0.2 + 0.6 * vec3(hash(c + vec3(1.3)), hash(c + vec3(8.1)), hash(c + vec3(4.4)));
 	float d = length(q - at) * cell;  // metres from the ball's middle
@@ -77,7 +77,41 @@ float star_layer(vec3 p, float cell, float radius, float keep) {
 	float aa = max(fwidth(d), 0.0005);  // one pixel of soft edge, no more
 	float spot = 1.0 - smoothstep(r - aa, r + aa, d);
 	float twinkle = 0.7 + 0.3 * sin(TIME * (0.5 + 1.2 * hash(c + vec3(9.9))) + h * 40.0);
-	return spot * twinkle * (0.55 + 0.45 * h / keep);
+	// mostly teal-blue, some green, a few pale (owner: "a little bit different colour sometimes, some green dots")
+	float hue = hash(c + vec3(2.2));
+	vec3 tone = hue < 0.72 ? STAR_COLOR : (hue < 0.93 ? vec3(0.45, 1.0, 0.55) : vec3(0.85, 0.95, 1.0));
+	return tone * spot * twinkle * (0.55 + 0.45 * h / keep);
+}
+
+// The light snake (owner, Nov 17: "a snake that randomly goes around the sky... lights up some of the pieces"): each
+// 40 m square of ceiling has one glowing head wandering on its own slow looping path; behind it a fading trail. Returns
+// how much the snake lights this point (1 = right on the head). From the position and TIME only: the same everywhere.
+float snake(vec3 p) {
+	vec2 cell = floor(p.xz / 40.0);
+	vec2 mid = (cell + 0.5) * 40.0;
+	float h1 = hash(vec3(cell, 11.0));
+	float h2 = hash(vec3(cell, 23.0));
+	float speed = 0.05 + 0.05 * h1;  // a full loop takes a few minutes
+	float best = 1e9;
+	float along = 0.0;
+	vec2 prev = vec2(0.0);
+	for (int k = 0; k < 14; k++) {
+		float t = TIME * speed - float(k) * 0.035 + h2 * 50.0;
+		// a wandering loop: two slow waves each way, so it goes back and forth, here and there
+		vec2 q = mid + vec2(sin(t * 1.7) * 11.0 + sin(t * 3.1 + 1.3) * 5.0, sin(t * 1.3 + 2.0) * 11.0 + cos(t * 2.7) * 5.0);
+		if (k > 0) {
+			vec2 ab = q - prev;
+			float u = clamp(dot(p.xz - prev, ab) / max(dot(ab, ab), 0.0001), 0.0, 1.0);
+			float d = length(p.xz - (prev + ab * u));
+			if (d < best) {
+				best = d;
+				along = (float(k - 1) + u) / 13.0;  // 0 = head, 1 = tail end
+			}
+		}
+		prev = q;
+	}
+	float width = 0.45 * (1.0 - 0.5 * along);  // (round 2: thinner, so it reads as stars lighting up, not a glowing worm)
+	return (1.0 - smoothstep(0.0, width, best)) * (1.0 - along);
 }
 
 // One material, projected from 3 sides. Returns colour+glow mask, and a world-space normal.
@@ -173,10 +207,13 @@ void fragment() {
 	// some patches, none in others, each twinkling slowly. Part of the rock's own paint, so it always sits on the rock.
 	float ceiling = smoothstep(0.45, 0.8, -wn.y);
 	if (ceiling > 0.0) {
+		float sn = snake(v_world);
+		emit += STAR_COLOR * sn * sn * 0.18 * ceiling;  // the snake's glowing line, on any ceiling
 		float patches = smoothstep(0.45, 0.68, vnoise(v_world * 0.05 + vec3(7.0, 1.0, 3.0)));
 		if (patches > 0.0) {
-			float stars = star_layer(v_world, 0.16, 0.012, 0.75) + star_layer(v_world + vec3(31.0, 5.0, 17.0), 0.45, 0.02, 0.5);  // many tiny points
-			emit += STAR_COLOR * stars * patches * ceiling * star_brightness;
+			vec3 stars = star_layer(v_world, 0.16, 0.012, 0.75) + star_layer(v_world + vec3(31.0, 5.0, 17.0), 0.45, 0.02, 0.5);  // many tiny points
+			emit += stars * (1.0 + 9.0 * sn) * patches * ceiling * star_brightness;  // stars light up as the snake passes
+
 		}
 	}
 

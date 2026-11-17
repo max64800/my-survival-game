@@ -335,6 +335,20 @@ func _kind_shots(dwarf: Dwarf, maker: CaveMaker) -> void:
 			var sz := best.basis.get_scale().x
 			await _lamp_shot(dwarf, best.origin + out * 1.7 * sz + Vector3.UP * 0.5 * sz + best.basis.x.normalized() * 0.6 * sz,
 				best.origin + out * 0.15 * sz, "s_%s" % kind, 8.0)
+	# The star snake (terrain.gdshader snake()): where the head of the snake over the nearest big cavern is now.
+	var big := _nearest_room(maker, home, func(r: Dictionary) -> bool: return r.big and (r.radii as Vector3).y > 9.0)
+	if not big.is_empty():
+		var c: Vector3 = big.center
+		var cell := ((Vector2(c.x, c.z)) / 40.0).floor()
+		var mid := (cell + Vector2(0.5, 0.5)) * 40.0
+		var t := fmod(Time.get_ticks_msec() / 1000.0 + 2.5, 3600.0)  # (+ the shot's own wait)
+		var h1 := GlowPlacer._shader_hash(Vector3(cell.x, cell.y, 11.0))
+		var h2 := GlowPlacer._shader_hash(Vector3(cell.x, cell.y, 23.0))
+		var tt := t * (0.05 + 0.05 * h1) + h2 * 50.0
+		var head := mid + Vector2(sin(tt * 1.7) * 11.0 + sin(tt * 3.1 + 1.3) * 5.0, sin(tt * 1.3 + 2.0) * 11.0 + cos(tt * 2.7) * 5.0)
+		var up := GlowPlacer._march(maker, Vector3(head.x, c.y, head.y), Vector3.UP, 60.0)
+		if up != Vector3.INF:
+			await _lamp_shot(dwarf, up + Vector3(4.0, -9.0, 3.0), up, "z_star_snake", 1.0)
 	# The water drip (the ringed dripstone with falling drops) in the first cavern, from the side.
 	for s in GlowPlacer.place(maker):
 		if s.kind == GlowPlacer.DRIP:

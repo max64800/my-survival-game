@@ -2943,3 +2943,13 @@ the body."
 - Breathing crystals: `crystal_pulse()` in crystal.gdshader and GlowField (same sum, from the crystal's position: 3-10 s
   per breath), so the glow and its light on the rock rise and fall together. A test expected every cave model to have a
   glowing part; the water dripstone is plain stone, so the test now allows it.
+
+## November 17, 2026 (PC, rock-textures Claude): stronger crystal breathing, star colours, the star snake (F256)
+
+- Crystal breath now `5 * b^2` for the glow and `2.6 * b^2` for its light: nothing at the low point (the crystal
+  itself still shows), much brighter at the top, and dark a little longer than bright.
+- Stars get a colour each: ~72% teal, ~21% green, a few pale (star_layer returns a colour now).
+- The snake (`snake()` in terrain.gdshader): per 40 m square of ceiling, a head on a slow wandering loop (two waves
+  each way) and a 13-piece fading trail; the stars near it flare up (x10) and a thin faint line marks it. Stills can't
+  catch it by luck, so lookdev now works out where one head is and aims at it (`z_star_snake`). Round 1 was a thick
+  glowing worm; round 2 thinner and fainter so the stars carry it. Speed check: 300 fps.
