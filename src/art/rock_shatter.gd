@@ -7,7 +7,7 @@ extends RigidBody3D
 ## Only a look on your own screen (the stone you get still comes from the normal drop).
 
 const LIFE := 4.5  ## seconds before a chunk shrinks away
-const MAX_CHUNKS := 70  ## never more than this many at once (fast digging)
+const MAX_CHUNKS := 110  ## never more than this many at once (fast digging)
 
 static var _alive: Array[RockShatter] = []
 static var _shapes: Array = []  ## [ArrayMesh, ConvexPolygonShape3D] x 6 ready-made chunk shapes
@@ -24,7 +24,7 @@ static func burst(parent: Node, center: Vector3, out: Vector3, col: Color) -> vo
 		_make_shapes()
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
-	var n := rng.randi_range(10, 16)
+	var n := rng.randi_range(20, 28)  # (owner: "more of them")
 	out = out.normalized() if out.length_squared() > 0.01 else Vector3.UP
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = col
@@ -36,7 +36,7 @@ static func burst(parent: Node, center: Vector3, out: Vector3, col: Color) -> vo
 	for i in n:
 		var c := RockShatter.new()
 		var pick: Array = _shapes[rng.randi() % _shapes.size()]
-		c._size = rng.randf_range(0.15, 0.45) * (1.6 if i < 2 else 1.0)  # a couple of big ones
+		c._size = rng.randf_range(0.7, 1.05) if i < 3 else rng.randf_range(0.12, 0.45)  # 3 big slabs (owner: "some a lot bigger"), the rest smaller
 		var mi := MeshInstance3D.new()
 		mi.mesh = pick[0]
 		mi.material_override = mat

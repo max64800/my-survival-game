@@ -3262,3 +3262,17 @@ the body."
 - **Hurdles:** (1) the chunk texture I borrowed is a texture ARRAY, the script stopped and no chunks were made:
   now a NoiseTexture2D. (2) Round 2 chunks too dark/speckled: lighter, bigger cells (owner checks). (3) Untracked
   new files showed as 'deleted' when diffed against the online copy: they were fine.
+
+## November 17, 2026 (PC, rock-textures Claude): more pieces, bridges everywhere, glowing vines everywhere
+- Owner: more and bigger break pieces; a bridge in the starting area; all vines glowing in light colours; lots more
+  vines (also under bridges); more bridges even small ones; two in a room only if not parallel (two identical
+  stacked ones were seen at the boss); ramp's last step still needed a jump; later: plant vines (F273).
+- Cave layout 11: _plan_bridges_v11 (old planner kept for 9/10): small rooms too, start room always (fallback:
+  nearest big cavern), second bridge 50+ degrees off the first, room on top and air below, tower spot worked
+  out first and kept clear, slimmer ends (flare), tunnel pieces in a cave's open middle don't block.
+- Curtains: 7/10 mouths, 7% of tunnels, under every bridge; all glowing pale colours; ~5900 strands planned on a
+  helper thread (9 s on the main thread would freeze loading); saved breaks applied once ready.
+- **Hurdles:** no start bridges (the whole first cave is within the tower's 31 m circle; then the thick bridge ends
+  hit floor tunnel mouths; then hub tunnels drawn from the cave's middle blocked everything): fixed one by one with
+  debug counts. Thin small bridges were hollow: thicker and calmer bumps. The other session asked how I commit:
+  told it (worktree on origin/main, only my hunks) and kept its outpost lines out of mine.

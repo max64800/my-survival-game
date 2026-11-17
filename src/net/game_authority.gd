@@ -939,7 +939,7 @@ func _dig_ramp(ps: PlayerState, center: Vector3, tool_tier: int, counts: Diction
 	var bottom := Vector3(center.x, center.y - DIG_RADIUS, center.z)  # the new scoop's floor
 	var run := Vector2(bottom.x - feet.x, bottom.z - feet.z).length()
 	var rise := bottom.y - feet.y
-	if rise < 0.35 or run < 0.8 or rise > run * RAMP_STEEPEST:
+	if rise < 0.25 or run < 0.8 or rise > run * RAMP_STEEPEST:
 		return
 	var dir := Vector3(bottom.x - feet.x, 0.0, bottom.z - feet.z) / run
 	var a := feet + dir * 0.3
@@ -951,6 +951,13 @@ func _dig_ramp(ps: PlayerState, center: Vector3, tool_tier: int, counts: Diction
 		var more := _host_dig(f, tool_tier, RAMP_R)
 		for m in more:
 			counts[m] = counts.get(m, 0) + more[m]
+	# And a little past the hole, the same slope on (owner: "nearly at the end I still need to jump"): the lip where the
+	# ramp met the floor above was the last step.
+	var past := bottom + dir * 0.8 + Vector3.UP * (rise / run * 0.8 + RAMP_R + 0.02)
+	if not (monsters and (monsters.lair_locked(past) or monsters.standing_over(past))):
+		var extra := _host_dig(past, tool_tier, RAMP_R)
+		for m in extra:
+			counts[m] = counts.get(m, 0) + extra[m]
 
 
 ## Wood (roots, giant mushrooms): an axe is clearly the tool for it (owner, Nov 17: "axes aren't better at cutting

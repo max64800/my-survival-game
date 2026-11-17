@@ -5,7 +5,7 @@ extends Node3D
 ## Only looks: no collision, nothing to network. Planned from the cave (same seed, same curtains), skipping ground kept
 ## clear for built things. Rock dug away under a strand's top takes the strand with it.
 
-const SHARE := 0.4  ## about 2 in 5 tunnel mouths into a big cavern get a curtain (owner: "we do need more of those")
+const SHARE := 0.7  ## 7 in 10 tunnel mouths into a big cavern get a curtain (owner: "a lot more of them")
 const GAP := 0.26  ## metres between strands (in small bunches)
 const CELL := 32.0
 
@@ -13,15 +13,45 @@ var walkers: Node3D  ## main's Players
 var _mat: ShaderMaterial
 var _cells := {}  ## Vector2i -> {mmi, tops, bots: PackedVector3Array, ids: PackedInt32Array (index in plan())}
 var _where := {}  ## strand id -> [cell key, index in that cell]
-## Crystal colours for the coloured strands (owner, Nov 17: "random colors similar to crystals"): they glow a little.
-const GLOW_TINTS := [Color(0.35, 0.75, 1.0), Color(0.35, 1.0, 0.5), Color(0.68, 0.42, 1.0), Color(1.0, 0.72, 0.28)]
+## Every curtain glows (owner, Nov 17, round 2: "all of the vines should be glowing... from green to gray to white to
+## bluish, very light colours, like the green"): pale green, grey, white, light blue, pale teal.
+const GLOW_TINTS := [Color(0.35, 1.0, 0.5), Color(0.62, 1.0, 0.68), Color(0.74, 0.78, 0.8), Color(0.95, 0.96, 0.92),
+	Color(0.62, 0.82, 1.0), Color(0.55, 0.95, 0.88)]
 
 
-func build(maker: CaveMaker, world: World) -> void:
+var _thread: Thread
+var _built := false
+var _pending_hide := PackedInt32Array()  ## broken before the curtains were ready (a saved game loading)
+
+
+## Worked out on a helper thread (~6000 strands take seconds), made into meshes when done. `blocking` = all at once.
+func build(maker: CaveMaker, world: World, blocking := false) -> void:
 	_mat = ShaderMaterial.new()
 	_mat.shader = load("res://src/art/hang_bend.gdshader")
+	if world:
+		world.changed.connect(_on_rock_changed)
+	if blocking:
+		_finish(plan(maker))
+		return
+	_thread = Thread.new()
+	_thread.start(func() -> void:
+		var items := plan(maker)
+		_finish.call_deferred(items))
+
+
+func is_built() -> bool:
+	return _built
+
+
+func _exit_tree() -> void:
+	if _thread and _thread.is_started():
+		_thread.wait_to_finish()
+
+
+func _finish(items: Array) -> void:
+	if _thread and _thread.is_started():
+		_thread.wait_to_finish()
 	var mesh := _strand_mesh()
-	var items := plan(maker)
 	var by_cell := {}
 	for n in items.size():
 		items[n].append(n)  # its id
@@ -57,8 +87,10 @@ func build(maker: CaveMaker, world: World) -> void:
 		mmi.visibility_range_end_margin = 6.0
 		add_child(mmi)
 		_cells[k] = {mmi = mmi, tops = tops, bots = bots, ids = ids}
-	if world:
-		world.changed.connect(_on_rock_changed)
+	_built = true
+	if not _pending_hide.is_empty():
+		hide_strands(_pending_hide)
+		_pending_hide.clear()
 
 
 ## Every strand: [Transform3D (origin = its top, -Y down, Y scale = its length), colour]. Same cave, same curtains.
@@ -81,7 +113,7 @@ static func plan(maker: CaveMaker) -> Array:
 			along = along.normalized()
 			var side := along.cross(Vector3.UP).normalized()
 			var mouth := e + along * 1.2  # a little way into the tunnel, where it's narrow
-			var curtain_tint := rng.randi_range(0, GLOW_TINTS.size() - 1) if rng.randf() < 0.35 else -1
+			var curtain_tint := rng.randi_range(0, GLOW_TINTS.size() - 1)
 			var half := float(sg.r) * 0.85
 			var x := -half
 			while x <= half:
@@ -100,11 +132,79 @@ static func plan(maker: CaveMaker) -> Array:
 				var tint := Color(0.2, 0.13, 0.08).lerp(Color(0.34, 0.24, 0.15), rng.randf())  # dark, old roots
 				if CaveMaker.biome_at(top) == "fungal":
 					tint = tint.lerp(Color(0.45, 0.3, 0.5), 0.35)
-				if curtain_tint >= 0 and rng.randf() < 0.75:  # a coloured curtain: most of its strands glow softly
-					tint = GLOW_TINTS[curtain_tint].darkened(rng.randf_range(0.15, 0.4))
-					tint.a = 0.35  # (alpha below 1 = how much it glows, see hang_bend.gdshader)
+				# each curtain its own light colour, each strand a little different (a few strands a neighbouring colour)
+				var tc: Color = GLOW_TINTS[curtain_tint if rng.randf() < 0.8 else rng.randi_range(0, GLOW_TINTS.size() - 1)]
+				tint = tc.darkened(rng.randf_range(0.15, 0.4))
+				tint.a = 0.35  # (alpha below 1 = how much it glows, see hang_bend.gdshader)
 				out.append([Transform3D(basis, top + Vector3.UP * 0.05), tint])  # (its top tucked into the rock)
+	_plan_tunnels(maker, rng, out)
+	_plan_under_bridges(maker, rng, out)
 	return out
+
+
+## Curtains in the middle of some tunnels too (owner, Nov 17: "a lot more of them, throughout the caves").
+static func _plan_tunnels(maker: CaveMaker, rng: RandomNumberGenerator, out: Array) -> void:
+	for sg: Dictionary in maker.segments:
+		if rng.randf() > 0.07 or float(sg.r) < 1.2:
+			continue
+		var along := Vector3(sg.b.x - sg.a.x, 0.0, sg.b.z - sg.a.z)
+		if along.length() < 3.0:
+			continue
+		along = along.normalized()
+		var mid: Vector3 = (sg.a as Vector3).lerp(sg.b, rng.randf_range(0.3, 0.7))
+		_curtain_across(maker, rng, out, mid, along.cross(Vector3.UP).normalized(), float(sg.r) * 0.85, along)
+
+
+## Lots of long strands under every rock bridge (owner: "we can do a lot of hanging vines under those bridges").
+static func _plan_under_bridges(maker: CaveMaker, rng: RandomNumberGenerator, out: Array) -> void:
+	for br: Dictionary in maker._bridges:
+		var a: Vector3 = br.a
+		var b: Vector3 = br.b
+		var along := Vector3(b.x - a.x, 0.0, b.z - a.z).normalized()
+		var side := along.cross(Vector3.UP).normalized()
+		var tint := rng.randi_range(0, GLOW_TINTS.size() - 1)
+		var f := 0.12
+		while f < 0.88:
+			f += rng.randf_range(0.02, 0.07) if rng.randf() < 0.7 else rng.randf_range(0.1, 0.2)  # in bunches
+			var at := a.lerp(b, f) + side * rng.randf_range(-0.45, 0.45) * float(br.w)
+			var under := at - Vector3.UP * (float(br.t) + 0.6)
+			if maker.sdf_at(under) <= 0.2:
+				continue
+			var top := GlowPlacer._march(maker, under, Vector3.UP, 3.0)  # the bridge's underside
+			var fl := GlowPlacer._march(maker, under, Vector3.DOWN, 30.0)
+			if top == Vector3.INF or fl == Vector3.INF or maker.is_reserved(top, 1.0):
+				continue
+			var length := minf(rng.randf_range(1.2, 4.5), (top.y - fl.y) - 1.0)
+			if length < 0.6:
+				continue
+			_add_strand(rng, out, top, length, tint)
+
+
+## One curtain straight across at `mid`, `half` metres each way along `side`.
+static func _curtain_across(maker: CaveMaker, rng: RandomNumberGenerator, out: Array, mid: Vector3, side: Vector3, half: float, along: Vector3) -> void:
+	var tint := rng.randi_range(0, GLOW_TINTS.size() - 1)
+	var x := -half
+	while x <= half:
+		var base := mid + side * x + along * rng.randf_range(-0.2, 0.2)
+		x += GAP * (rng.randf_range(0.25, 0.5) if rng.randf() < 0.6 else rng.randf_range(1.2, 2.2))
+		if maker.sdf_at(base) <= 0.2:
+			continue
+		var top := GlowPlacer._march(maker, base, Vector3.UP, 5.0)
+		var fl := GlowPlacer._march(maker, base, Vector3.DOWN, 5.0)
+		if top == Vector3.INF or fl == Vector3.INF or maker.is_reserved(top, 1.0):
+			continue
+		var length := ((top.y - fl.y) - rng.randf_range(0.5, 1.1)) * rng.randf_range(0.45, 1.0)
+		if length < 0.6:
+			continue
+		_add_strand(rng, out, top, length, tint)
+
+
+static func _add_strand(rng: RandomNumberGenerator, out: Array, top: Vector3, length: float, tint_i: int) -> void:
+	var basis := Basis(Vector3.UP, rng.randf_range(0.0, TAU)).scaled(Vector3(rng.randf_range(0.8, 1.4), length, rng.randf_range(0.8, 1.4)))
+	var tc: Color = GLOW_TINTS[tint_i if rng.randf() < 0.8 else rng.randi_range(0, GLOW_TINTS.size() - 1)]
+	var tint := tc.darkened(rng.randf_range(0.15, 0.4))
+	tint.a = 0.35
+	out.append([Transform3D(basis, top + Vector3.UP * 0.05), tint])
 
 
 ## The big room whose wall this tunnel end sits on, or {}.
@@ -219,6 +319,9 @@ func top_of(id: int) -> Vector3:
 
 ## Broken (by anyone): these strands are gone.
 func hide_strands(ids: PackedInt32Array) -> void:
+	if not _built:
+		_pending_hide.append_array(ids)
+		return
 	for id in ids:
 		if not _where.has(id):
 			continue
@@ -231,6 +334,8 @@ func hide_strands(ids: PackedInt32Array) -> void:
 
 ## Rock dug away near a strand's top: the strand falls with it (it disappears).
 func _on_rock_changed(center: Vector3, radius: float) -> void:
+	if not _built:
+		return  # (digs during loading: the ruined tower's ground is kept clear of curtains anyway)
 	var r2 := (radius + 0.6) * (radius + 0.6)
 	var k0 := Vector2i(floori((center.x - radius) / CELL), floori((center.z - radius) / CELL))
 	var k1 := Vector2i(floori((center.x + radius) / CELL), floori((center.z + radius) / CELL))

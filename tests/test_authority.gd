@@ -454,7 +454,7 @@ func test_hanging_roots_break() -> void:
 	await _setup(42)
 	var rc := RootCurtains.new()
 	auth.get_parent().add_child(rc)
-	rc.build(world.maker, world)
+	rc.build(world.maker, world, true)
 	auth.curtains = rc
 	var strands := RootCurtains.plan(world.maker)
 	check(strands.size() > 0, "there are curtains")

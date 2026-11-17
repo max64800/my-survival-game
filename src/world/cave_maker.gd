@@ -20,7 +20,7 @@ extends RefCounted
 ##   1 = the first caves: 400 m areas (Mossy x -200…200, Jungle x 220…620), squashed balls and tubes.
 ##   2 = real-shaped caves: 800 m areas (Mossy x -400…400, Jungle x 420…1220), about 4x the rooms,
 ##       passages and halls shaped the way water shapes real caves (see "layout 2" below).
-const LAYOUT_LATEST := 10
+const LAYOUT_LATEST := 11
 ## What brand-new worlds get. Layout 2: the real-shaped caves (F211 step 1, OK'd by the owner Nov 17). Layout 3: the
 ## same plus tall/wide/joined caverns and cliff exits with ledge paths (F230, F231). Old saves keep the layout they were
 ## made with; robots can try older caves with "-- layout=1" or "-- layout=2". Layout 4: the same plus a huge first
@@ -32,7 +32,9 @@ const LAYOUT_LATEST := 10
 ## Layout 8: the same plus 1 or 2 smaller stone columns in the plain big caverns (owner, Nov 17: "yes, add one or two").
 ## Layout 9: the same plus natural rock bridges across some tall caverns (owner, Nov 17, F189).
 ## Layout 10: many more bridges (every tall cavern, the tallest get two; owner: "I didn't manage to find rock bridges").
-const LAYOUT_DEFAULT := 10
+## Layout 11: the first cavern always gets a bridge too, at least 4 m up (owner, Nov 17: "at least one bridge in the
+## starting area").
+const LAYOUT_DEFAULT := 11
 static var layout := LAYOUT_DEFAULT
 
 
@@ -380,7 +382,7 @@ func _in_column(p: Vector3, margin: float) -> bool:
 
 
 # ---------------------------------------------------------------- rock bridges (layout 9)
-# Owner, Nov 17 (F189): natural stone bridges spanning tall caverns, some you can walk across to reach high tunnels.
+# Owner, Nov 17 (F189; round 2: "I didn't manage to find rock bridges": every tall cavern now, the tallest get two): natural stone bridges spanning tall caverns, some you can walk across to reach high tunnels.
 # A bridge is a flat-topped slab of the cave's own rock, wall to wall: about 3.5 m wide and 2.2 m thick in the middle,
 # wider and much thicker where it grows out of the walls, so from below it's an arch. Where a tunnel opens high in the
 # wall, the bridge runs out from that tunnel's floor across the cavern.
@@ -393,6 +395,9 @@ var _br_grid := {}  ## Vector2i (32 m square) -> PackedInt32Array
 
 func _plan_bridges() -> void:
 	if made_layout < 9:
+		return
+	if made_layout >= 11:
+		_plan_bridges_v11()
 		return
 	var outpost := -1
 	if ResourceLoader.exists("res://src/world/ruin_outpost.gd"):
@@ -454,9 +459,118 @@ func _plan_bridges() -> void:
 					break
 
 
+## Layout 11 (owner, Nov 17: "a lot more bridges, even small ones, also in small rooms"; "at least one in the starting
+## area"; "two in one room is fine as long as they're not parallel"): every cavern 7 m+ tall may get one (big rooms
+## always, small rooms 3 in 5, the starting cave always), small rooms get narrower, thinner ones; a room 14 m+ tall gets
+## a second one, higher and crossing the first at 50 degrees or more. Each needs room to walk on top and air under it.
+func _plan_bridges_v11() -> void:
+	var outpost := -1
+	if ResourceLoader.exists("res://src/world/ruin_outpost.gd"):
+		var ro: Script = load("res://src/world/ruin_outpost.gd")
+		for m in ro.get_script_method_list():
+			if m.name == "pick_room":
+				outpost = ro.call("pick_room", self)
+				break
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed + 9200
+	# The starting area: the first cavern, and the next nearest cavern in case the first has no room for one.
+	var near_start := -1
+	var near_d := 110.0
+	for ri in range(1, rooms.size()):
+		var d := Vector2(rooms[ri].center.x - cavern_spawn.x, rooms[ri].center.z - cavern_spawn.z).length()
+		if rooms[ri].big and not rooms[ri].get("sealed", false) and ri != outpost and d < near_d:
+			near_d = d
+			near_start = ri
+	var start_has := false
+	# Where the ruined watchtower will stand (RuinTower.find_spot picks the same spot later: a bridge elsewhere only adds
+	# rock away from it, which can't make another spot better).
+	_tower_pre = {}
+	var tplan := RuinTower.load_plan()
+	if not tplan.is_empty():
+		_tower_pre = RuinTower.find_spot(self, float(tplan.get("radius", 4.2)), float(tplan.get("height", 9.0)))
+	for ri in rooms.size():
+		var room: Dictionary = rooms[ri]
+		var roll := rng.randf()
+		var ang := rng.randf_range(0.0, TAU)
+		var start_room := ri == 0 or (ri == near_start and not start_has)
+		if room.get("sealed", false) or ri == outpost or room.get("kind", "") in ["lair", "geode", "shrine"]:
+			continue
+		if not start_room and not room.big and roll > 0.6:
+			continue
+		var c: Vector3 = room.center
+		var r: Vector3 = room.radii
+		var fl := c.y - r.y * 0.55
+		var tall := r.y * 1.55
+		if tall < 7.0:
+			continue
+		var w := BRIDGE_W if room.big else 2.6
+		var t := BRIDGE_T if room.big else 2.0
+		var h := fl + maxf(6.5 if start_room else 4.0, tall * 0.5)
+		var mouth := -1
+		for i in segments.size():  # a tunnel coming in high up: the first bridge starts at its floor
+			var sg: Dictionary = segments[i]
+			for e in [sg.a, sg.b]:
+				var rel := Vector2((e.x - c.x) / r.x, (e.z - c.z) / r.z).length()
+				var floor_e: float = e.y - float(sg.r) * 0.6
+				if rel > 0.75 and rel < 1.25 and floor_e > fl + 4.0 and floor_e < fl + tall - 3.0:
+					mouth = i
+					h = floor_e
+					ang = atan2(c.z - e.z, c.x - e.x)
+					break
+			if mouth >= 0:
+				break
+		var want := 2 if tall >= 14.0 else 1
+		var first_dir := Vector3.ZERO
+		var first_y := 0.0
+		for n in want:
+			var y := h if n == 0 else maxf(first_y + 3.5 + t, fl + tall * 0.75)
+			for k in 12:
+				var dk := Vector3(cos(ang), 0.0, sin(ang)).rotated(Vector3.UP, k * PI / 12.0)
+				if n == 1 and absf(dk.dot(first_dir)) > 0.64:
+					continue  # not parallel to the first one (owner's rule): at least 50 degrees apart
+				var reach := Vector2(dk.x * r.x, dk.z * r.z).length() * 1.05
+				var a := Vector3(c.x, y, c.z) - dk * reach
+				var b := Vector3(c.x, y, c.z) + dk * reach
+				if _bridge_blocks(a, b, mouth if (n == 0 and k == 0) else -1, c, r, w, t, 0.5, 0.8, true) or not _bridge_has_room(a, b, t):
+					continue
+				if _over_tower_ground(a, b, y - t, w):
+					continue
+				_add_bridge(a, b, w, t, 0.5)  # (ends only 1.5x as thick: low bridges stay clear of floors and tunnel mouths)
+				if ri == 0 or ri == near_start:
+					start_has = true
+				first_dir = dk
+				first_y = y
+				break
+			if first_dir == Vector3.ZERO:
+				break  # no first one: no second either
+
+
+## The ruined watchtower, up to 9 m tall: a bridge (its lowest part at `bottom`) must cross well above it, or keep away
+## from its ground (the placement rule).
+var _tower_pre := {}  ## where the watchtower will stand ({pos, turn}), worked out before the bridges
+
+
+func _over_tower_ground(a: Vector3, b: Vector3, bottom: float, w: float) -> bool:
+	if _tower_pre.is_empty():
+		return false
+	var tp: Vector3 = _tower_pre.pos
+	var p2 := Vector2(tp.x, tp.z)
+	var d := Geometry2D.get_closest_point_to_segment(p2, Vector2(a.x, a.z), Vector2(b.x, b.z)).distance_to(p2)
+	return d < 8.5 + w and bottom < tp.y + 10.5  # (its body and the steps in front, plus room)
+
+
+## Room to walk on top (2.2 m of air above it) and air under it, at a quarter, half and three quarters of the way.
+func _bridge_has_room(a: Vector3, b: Vector3, t: float) -> bool:
+	for f in [0.25, 0.5, 0.75]:
+		var p := a.lerp(b, f)
+		if sdf_at(p + Vector3.UP * 2.2) < 0.3 or sdf_at(p - Vector3.UP * (t + 1.2)) < 0.3:
+			return false
+	return true
+
+
 ## Would a bridge from a to b cut through a ramp, a ledge path, a column or a place?
-func _bridge_blocks(a: Vector3, b: Vector3, mouth: int, c: Vector3, r: Vector3) -> bool:
-	var probe := {a = a, b = b, w = BRIDGE_W, t = BRIDGE_T}
+func _bridge_blocks(a: Vector3, b: Vector3, mouth: int, c: Vector3, r: Vector3, w := BRIDGE_W, t := BRIDGE_T, flare := 2.2, gap := 1.5, inner_free := false) -> bool:
+	var probe := {a = a, b = b, w = w, t = t, flare = flare}
 	for i in segments.size():
 		if i == mouth:
 			continue
@@ -467,9 +581,12 @@ func _bridge_blocks(a: Vector3, b: Vector3, mouth: int, c: Vector3, r: Vector3) 
 			continue  # a tunnel's line through the open middle is just floor, far below
 		for k in 5:
 			var q: Vector3 = (sg.a as Vector3).lerp(sg.b, k / 4.0)
-			if Vector2((q.x - c.x) / r.x, (q.z - c.z) / r.z).length() > 1.1:
+			var rel := Vector2((q.x - c.x) / r.x, (q.z - c.z) / r.z).length()
+			if rel > 1.1:
 				continue  # deep in the rock beyond the wall: the bridge doesn't reach there
-			if _bridge_dist(q, probe) < float(sg.r) + 1.5:
+			if inner_free and rel < 0.75 and not (sg.get("ramp", false) or sg.get("ledge", false)):
+				continue  # (layout 11) a tunnel's piece in the open middle of the cave is just its floor
+			if _bridge_dist(q, probe) < float(sg.r) + gap:
 				return true
 	for o in _cols:
 		if _bridge_dist(Vector3(o.x, a.y, o.y), probe) < o.z * 1.4 + 2.0:
@@ -480,11 +597,11 @@ func _bridge_blocks(a: Vector3, b: Vector3, mouth: int, c: Vector3, r: Vector3) 
 	return false
 
 
-func _add_bridge(a: Vector3, b: Vector3) -> void:
+func _add_bridge(a: Vector3, b: Vector3, w := BRIDGE_W, t := BRIDGE_T, flare := 2.2) -> void:
 	var i := _bridges.size()
-	_bridges.append({a = a, b = b, w = BRIDGE_W, t = BRIDGE_T})
-	var lo := Vector2(minf(a.x, b.x), minf(a.z, b.z)) - Vector2.ONE * (BRIDGE_W * 2.0 + 8.0)
-	var hi := Vector2(maxf(a.x, b.x), maxf(a.z, b.z)) + Vector2.ONE * (BRIDGE_W * 2.0 + 8.0)
+	_bridges.append({a = a, b = b, w = w, t = t, flare = flare})
+	var lo := Vector2(minf(a.x, b.x), minf(a.z, b.z)) - Vector2.ONE * (w * 2.0 + 8.0)
+	var hi := Vector2(maxf(a.x, b.x), maxf(a.z, b.z)) + Vector2.ONE * (w * 2.0 + 8.0)
 	for gx in range(floori(lo.x / COL_CELL), floori(hi.x / COL_CELL) + 1):
 		for gz in range(floori(lo.y / COL_CELL), floori(hi.y / COL_CELL) + 1):
 			var k := Vector2i(gx, gz)
@@ -503,7 +620,7 @@ func _bridge_dist(p: Vector3, br: Dictionary) -> float:
 	var e := 2.0 * t - 1.0
 	var e4 := e * e * e * e
 	var half_w: float = float(br.w) * 0.5 * (1.0 + 0.6 * e4)  # wider where it meets the walls
-	var thick: float = float(br.t) * (1.0 + 2.2 * e4)  # much thicker there: an arch from below
+	var thick: float = float(br.t) * (1.0 + float(br.get("flare", 2.2)) * e4)  # much thicker there: an arch from below
 	var top: float = a.y
 	var dx := lat - half_w
 	var dy := maxf(p.y - top, (top - thick) - p.y)
@@ -1455,7 +1572,8 @@ func _sdf_with_v2(p: Vector3, room_ids: PackedInt32Array, seg_ids: PackedInt32Ar
 		var bd := _bridges_min(p)
 		if bd < 1e8:
 			d = -_smin(-d, bd, 2.5)  # soft where it grows out of the walls
-			scale = minf(scale, clampf(0.25 + absf(bd) / 4.0, 0.25, 1.0))  # gentle bumps on a bridge: it stays whole
+			var calm := 0.08 if made_layout >= 11 else 0.25  # (layout 11: thinner bridges, calmer still)
+			scale = minf(scale, clampf(calm + absf(bd) / 4.0, calm, 1.0))  # gentle bumps on a bridge: it stays whole
 	var s := -d
 	if absf(s) < 6.5:
 		s += _wall_bumps(p) * scale
