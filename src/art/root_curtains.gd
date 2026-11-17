@@ -5,13 +5,16 @@ extends Node3D
 ## Only looks: no collision, nothing to network. Planned from the cave (same seed, same curtains), skipping ground kept
 ## clear for built things. Rock dug away under a strand's top takes the strand with it.
 
-const SHARE := 0.18  ## about 1 in 6 tunnel mouths into a big cavern gets a curtain
+const SHARE := 0.4  ## about 2 in 5 tunnel mouths into a big cavern get a curtain (owner: "we do need more of those")
 const GAP := 0.26  ## metres between strands (in small bunches)
 const CELL := 32.0
 
 var walkers: Node3D  ## main's Players
 var _mat: ShaderMaterial
-var _cells := {}  ## Vector2i -> {mmi, tops: PackedVector3Array}
+var _cells := {}  ## Vector2i -> {mmi, tops, bots: PackedVector3Array, ids: PackedInt32Array (index in plan())}
+var _where := {}  ## strand id -> [cell key, index in that cell]
+## Crystal colours for the coloured strands (owner, Nov 17: "random colors similar to crystals"): they glow a little.
+const GLOW_TINTS := [Color(0.35, 0.75, 1.0), Color(0.35, 1.0, 0.5), Color(0.68, 0.42, 1.0), Color(1.0, 0.72, 0.28)]
 
 
 func build(maker: CaveMaker, world: World) -> void:
@@ -20,6 +23,8 @@ func build(maker: CaveMaker, world: World) -> void:
 	var mesh := _strand_mesh()
 	var items := plan(maker)
 	var by_cell := {}
+	for n in items.size():
+		items[n].append(n)  # its id
 	for it in items:
 		var o: Vector3 = (it[0] as Transform3D).origin
 		var k := Vector2i(floori(o.x / CELL), floori(o.z / CELL))
@@ -34,10 +39,16 @@ func build(maker: CaveMaker, world: World) -> void:
 		mm.mesh = mesh
 		mm.instance_count = list.size()
 		var tops := PackedVector3Array()
+		var bots := PackedVector3Array()
+		var ids := PackedInt32Array()
 		for i in list.size():
-			mm.set_instance_transform(i, list[i][0])
+			var xf: Transform3D = list[i][0]
+			mm.set_instance_transform(i, xf)
 			mm.set_instance_color(i, list[i][1])
-			tops.append((list[i][0] as Transform3D).origin)
+			tops.append(xf.origin)
+			bots.append(xf.origin - xf.basis.y)
+			ids.append(list[i][2])
+			_where[list[i][2]] = [k, i]
 		var mmi := MultiMeshInstance3D.new()
 		mmi.multimesh = mm
 		mmi.material_override = _mat
@@ -45,7 +56,7 @@ func build(maker: CaveMaker, world: World) -> void:
 		mmi.visibility_range_end = 60.0
 		mmi.visibility_range_end_margin = 6.0
 		add_child(mmi)
-		_cells[k] = {mmi = mmi, tops = tops}
+		_cells[k] = {mmi = mmi, tops = tops, bots = bots, ids = ids}
 	if world:
 		world.changed.connect(_on_rock_changed)
 
@@ -70,6 +81,7 @@ static func plan(maker: CaveMaker) -> Array:
 			along = along.normalized()
 			var side := along.cross(Vector3.UP).normalized()
 			var mouth := e + along * 1.2  # a little way into the tunnel, where it's narrow
+			var curtain_tint := rng.randi_range(0, GLOW_TINTS.size() - 1) if rng.randf() < 0.35 else -1
 			var half := float(sg.r) * 0.85
 			var x := -half
 			while x <= half:
@@ -88,6 +100,9 @@ static func plan(maker: CaveMaker) -> Array:
 				var tint := Color(0.2, 0.13, 0.08).lerp(Color(0.34, 0.24, 0.15), rng.randf())  # dark, old roots
 				if CaveMaker.biome_at(top) == "fungal":
 					tint = tint.lerp(Color(0.45, 0.3, 0.5), 0.35)
+				if curtain_tint >= 0 and rng.randf() < 0.75:  # a coloured curtain: most of its strands glow softly
+					tint = GLOW_TINTS[curtain_tint].darkened(rng.randf_range(0.15, 0.4))
+					tint.a = 0.35  # (alpha below 1 = how much it glows, see hang_bend.gdshader)
 				out.append([Transform3D(basis, top + Vector3.UP * 0.05), tint])  # (its top tucked into the rock)
 	return out
 
@@ -154,6 +169,64 @@ func _process(_delta: float) -> void:
 			feet[i] = Vector4(p.x, p.y, p.z, 1.0)
 			i += 1
 	_mat.set_shader_parameter("pushers", feet)
+
+
+## The strand closest to the line from `from` to `to` (within `near` metres), or -1. For a swing: the roots have no
+## solid shape (thousands of them would slow the game), so the swing's aim line finds them.
+func strand_near_ray(from: Vector3, to: Vector3, near := 0.35) -> int:
+	var best := -1
+	var best_d := near
+	var lo := Vector2i(floori(minf(from.x, to.x) / CELL), floori(minf(from.z, to.z) / CELL))
+	var hi := Vector2i(floori(maxf(from.x, to.x) / CELL), floori(maxf(from.z, to.z) / CELL))
+	for x in range(lo.x, hi.x + 1):
+		for z in range(lo.y, hi.y + 1):
+			var cell: Dictionary = _cells.get(Vector2i(x, z), {})
+			if cell.is_empty():
+				continue
+			var tops: PackedVector3Array = cell.tops
+			var bots: PackedVector3Array = cell.bots
+			for i in tops.size():
+				if tops[i] == Vector3.INF:
+					continue
+				var pts := Geometry3D.get_closest_points_between_segments(from, to, tops[i], bots[i])
+				var d := (pts[0] as Vector3).distance_to(pts[1])
+				if d < best_d:
+					best_d = d
+					best = cell.ids[i]
+	return best
+
+
+## The strands within `radius` of strand `id` (a bunch breaks together), still there.
+func bunch_of(id: int, radius := 0.45) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	if not _where.has(id):
+		return out
+	var cell: Dictionary = _cells[_where[id][0]]
+	var at: Vector3 = cell.tops[_where[id][1]]
+	if at == Vector3.INF:
+		return out
+	for i in (cell.tops as PackedVector3Array).size():
+		if cell.tops[i] != Vector3.INF and Vector2(cell.tops[i].x - at.x, cell.tops[i].z - at.z).length() < radius:
+			out.append(cell.ids[i])
+	return out
+
+
+func top_of(id: int) -> Vector3:
+	if not _where.has(id):
+		return Vector3.INF
+	return _cells[_where[id][0]].tops[_where[id][1]]
+
+
+## Broken (by anyone): these strands are gone.
+func hide_strands(ids: PackedInt32Array) -> void:
+	for id in ids:
+		if not _where.has(id):
+			continue
+		var cell: Dictionary = _cells[_where[id][0]]
+		var i: int = _where[id][1]
+		var mm: MultiMesh = (cell.mmi as MultiMeshInstance3D).multimesh
+		mm.set_instance_transform(i, Transform3D(Basis().scaled(Vector3.ZERO), cell.tops[i]))
+		cell.tops[i] = Vector3.INF
 
 
 ## Rock dug away near a strand's top: the strand falls with it (it disappears).

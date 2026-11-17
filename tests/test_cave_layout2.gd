@@ -30,6 +30,8 @@ func test_old_caves_unchanged() -> void:
 	CaveMaker.use_layout(6)  # worlds made with the huge cavern and its columns keep theirs too
 	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5332 pois=162 r0=(-83.95856, -20.99115, -44.3989) sum=-9894.0944", "seed 42, layout 6")
 	check_eq(_fingerprint(CaveMaker.new(7)), "rooms=197 segs=5554 pois=163 r0=(-15.06847, -20.1193, 88.08862) sum=-8559.8592", "seed 7, layout 6")
+	CaveMaker.use_layout(9)  # worlds made with the first few bridges keep theirs
+	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5256 pois=161 r0=(-83.95856, -24.81935, -44.3989) sum=-9967.2001", "seed 42, layout 9")
 	CaveMaker.use_layout(8)  # worlds made before the rock bridges (layout 9) keep their caves
 	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5256 pois=161 r0=(-83.95856, -24.81935, -44.3989) sum=-9967.2001", "seed 42, layout 8")
 	CaveMaker.use_layout(8)  # (layout 8 only adds columns: the rooms, paths and places stay layout 3's)
@@ -94,7 +96,7 @@ func test_columns_in_big_caverns() -> void:
 ## Layout 9 (owner, Nov 17, F189): natural rock bridges across some tall caverns: solid, with room to walk on top.
 func test_rock_bridges() -> void:
 	var was := CaveMaker.layout
-	CaveMaker.use_layout(9)
+	CaveMaker.use_layout(CaveMaker.LAYOUT_LATEST)
 	var total := 0
 	for sd in [42, 7, 1234]:
 		var c := CaveMaker.new(sd)
@@ -103,7 +105,7 @@ func test_rock_bridges() -> void:
 			var mid: Vector3 = (br.a as Vector3).lerp(br.b, 0.5)
 			check(c.sdf_at(mid - Vector3.UP * 0.8) < 0.0, "seed %d: the bridge is rock in the middle" % sd)
 			check(c.sdf_at(mid + Vector3.UP * 1.6) > 0.0, "seed %d: room for a dwarf on top" % sd)
-	check(total >= 3, "a few tall caverns have a bridge (%d in 3 worlds)" % total)
+	check(total >= 15, "lots of tall caverns have a bridge (%d in 3 worlds)" % total)
 	CaveMaker.use_layout(was)
 
 

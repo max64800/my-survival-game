@@ -3249,3 +3249,16 @@ the body."
   Digging the rock at a strand's top removes it. Skips kept-clear ground. Test in test_keep_clear.
 - **Hurdles:** round 1 pale even spaghetti; round 2 thicker, twisty, ragged, bunched, but still pale: the strand
   mesh had no vertex colours, so the per-strand colours were never applied. Fixed (owner checks the colour).
+
+## November 17, 2026 (PC, rock-textures Claude): shattering rock, more bridges, breakable roots (F261, F189 round 2)
+- Owner: digging should break the rock into many pieces like a shattered column; no bridges found; more root
+  curtains, crystal colours, break for fiber, ceiling roots for wood.
+- RockShatter: 10-16 rigid chunks (a pushed-about icosahedron, flat faces), rock colour and a game-made cellular
+  pattern, thrown out of the hole, bouncing on the rock only, shrinking after 4.5 s (max 70 at once).
+- Bridges: cave layout 10 (layout 9 kept for its worlds): every tall cavern from 10 m, two in 16 m+ ones.
+- Curtains: share 0.18 -> 0.4, 35% coloured (crystal tints, glowing a little via the colour's alpha). Breaking:
+  the strands/roots have no colliders, so a swing tests its aim line against their segments (Geometry3D closest
+  points); host request_break_hanging gives fiber/rootwood; removed lists are saved (strands, hroots).
+- **Hurdles:** (1) the chunk texture I borrowed is a texture ARRAY, the script stopped and no chunks were made:
+  now a NoiseTexture2D. (2) Round 2 chunks too dark/speckled: lighter, bigger cells (owner checks). (3) Untracked
+  new files showed as 'deleted' when diffed against the online copy: they were fine.

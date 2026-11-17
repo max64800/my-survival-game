@@ -134,6 +134,9 @@ func _finish(plan: Dictionary, maker: CaveMaker, world: World) -> void:
 	_place_hanging_roots(maker, rng)
 	# _place_shelves(maker, rng)  # off (owner, Nov 17: "really bad... doesn't blend with walls"); ledges in the rock instead?
 	_built = true
+	for id in _pending_hroots:
+		hide_hroot(id)
+	_pending_hroots.clear()
 	for d in _pending_digs:  # (the ruined tower carves its ground while the cave is still loading)
 		_on_rock_changed(d[0], d[1])
 	_pending_digs.clear()
@@ -379,6 +382,59 @@ func _make_model_cells(key: String, mesh: Mesh, items: Array, custom := false) -
 		add_child(mmi)
 		holders.append(mmi)
 	_drip_cells[key] = holders
+
+
+## The big roots hanging from ceilings (owner, Nov 17: "when you break the roots on the ceiling, you get wood"). They
+## have no solid shape, so a swing's aim line finds the closest one. Id: "kind:batch:index" (the same on every computer,
+## the cave plans them the same way).
+func hroot_near_ray(from: Vector3, to: Vector3, near := 0.5) -> String:
+	var best := ""
+	var best_d := near
+	for kind in HROOTS:
+		var holders: Array = _drip_cells.get(kind, [])
+		for h in holders.size():
+			var mm: MultiMesh = (holders[h] as MultiMeshInstance3D).multimesh
+			for i in mm.instance_count:
+				var xf := mm.get_instance_transform(i)
+				if xf.basis.get_scale().x < 0.01:
+					continue  # already broken
+				var pts := Geometry3D.get_closest_points_between_segments(from, to, xf.origin, xf.origin + xf.basis.y * 0.9)
+				var d := (pts[0] as Vector3).distance_to(pts[1])
+				if d < best_d:
+					best_d = d
+					best = "%s:%d:%d" % [kind, h, i]
+	return best
+
+
+## Where that hanging root's top is (INF = no such root, or broken).
+func hroot_top(id: String) -> Vector3:
+	var mm := _hroot_mm(id)
+	if mm == null:
+		return Vector3.INF
+	var xf := mm.get_instance_transform(int(id.get_slice(":", 2)))
+	return xf.origin if xf.basis.get_scale().x > 0.01 else Vector3.INF
+
+
+var _pending_hroots: Array[String] = []  ## broken before the roots were placed (a saved game loading)
+
+
+func hide_hroot(id: String) -> void:
+	if not _built:
+		_pending_hroots.append(id)
+		return
+	var mm := _hroot_mm(id)
+	if mm:
+		var i := int(id.get_slice(":", 2))
+		mm.set_instance_transform(i, Transform3D(Basis().scaled(Vector3.ZERO), mm.get_instance_transform(i).origin))
+
+
+func _hroot_mm(id: String) -> MultiMesh:
+	var holders: Array = _drip_cells.get(id.get_slice(":", 0), [])
+	var h := int(id.get_slice(":", 1))
+	if h < 0 or h >= holders.size():
+		return null
+	var mm: MultiMesh = (holders[h] as MultiMeshInstance3D).multimesh
+	return mm if int(id.get_slice(":", 2)) < mm.instance_count else null
 
 
 ## Dripstone, in 32 m squares per model: each square is its own batch with its own draw distance (one batch for the

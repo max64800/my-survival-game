@@ -38,6 +38,7 @@ void vertex() {
 
 void fragment() {
 	ALBEDO = COLOR.rgb;
+	EMISSION = COLOR.rgb * (1.0 - COLOR.a) * 2.2;  // coloured strands (alpha below 1) glow softly, like crystals
 	ROUGHNESS = 0.9;
 	SPECULAR = 0.2;
 	BACKLIGHT = COLOR.rgb * 0.25;

@@ -352,6 +352,8 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	authority.world = world
 	authority.glow = glow
 	authority.cave_life = cave_life
+	authority.curtains = _curtains
+	authority.clutter = _clutter
 	authority.drops_root = drops
 	authority.poi_field = pf
 	add_child(authority)

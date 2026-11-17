@@ -447,3 +447,26 @@ func test_every_hit_pays() -> void:
 	check_eq(auth.request_hit(1, p, Vector3.UP).get("state"), "dug", "3rd hit breaks it")
 	check(ps.leftovers.get(Mat.STONE, 0) > -Mat.VOXELS_PER_ITEM[Mat.STONE] * 3, "the advance is paid back")
 	_teardown()
+
+
+## Owner, Nov 17: root-curtain strands break for fiber, big ceiling roots for wood; both stay broken in a save.
+func test_hanging_roots_break() -> void:
+	await _setup(42)
+	var rc := RootCurtains.new()
+	auth.get_parent().add_child(rc)
+	rc.build(world.maker, world)
+	auth.curtains = rc
+	var strands := RootCurtains.plan(world.maker)
+	check(strands.size() > 0, "there are curtains")
+	if strands.is_empty():
+		_teardown()
+		return
+	var top: Vector3 = (strands[0][0] as Transform3D).origin
+	player.global_position = top - Vector3.UP * 2.0
+	var before := auth.drop_count()
+	auth.request_break_hanging(1, "strand", "0")
+	check(auth.drop_count() > before, "breaking a curtain gives fiber")
+	check(auth.removed_strands.has(0), "the strand is gone")
+	check_eq(rc.top_of(0), Vector3.INF, "and hidden")
+	check(auth.snapshot().strands.has(0), "a save remembers it")
+	_teardown()

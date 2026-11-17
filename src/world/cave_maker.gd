@@ -20,7 +20,7 @@ extends RefCounted
 ##   1 = the first caves: 400 m areas (Mossy x -200…200, Jungle x 220…620), squashed balls and tubes.
 ##   2 = real-shaped caves: 800 m areas (Mossy x -400…400, Jungle x 420…1220), about 4x the rooms,
 ##       passages and halls shaped the way water shapes real caves (see "layout 2" below).
-const LAYOUT_LATEST := 9
+const LAYOUT_LATEST := 10
 ## What brand-new worlds get. Layout 2: the real-shaped caves (F211 step 1, OK'd by the owner Nov 17). Layout 3: the
 ## same plus tall/wide/joined caverns and cliff exits with ledge paths (F230, F231). Old saves keep the layout they were
 ## made with; robots can try older caves with "-- layout=1" or "-- layout=2". Layout 4: the same plus a huge first
@@ -31,7 +31,8 @@ const LAYOUT_LATEST := 9
 ## empty... the cave where we introduced the snakes was the best size"; huge caverns come back later, with big outposts).
 ## Layout 8: the same plus 1 or 2 smaller stone columns in the plain big caverns (owner, Nov 17: "yes, add one or two").
 ## Layout 9: the same plus natural rock bridges across some tall caverns (owner, Nov 17, F189).
-const LAYOUT_DEFAULT := 9
+## Layout 10: many more bridges (every tall cavern, the tallest get two; owner: "I didn't manage to find rock bridges").
+const LAYOUT_DEFAULT := 10
 static var layout := LAYOUT_DEFAULT
 
 
@@ -406,14 +407,14 @@ func _plan_bridges() -> void:
 		var room: Dictionary = rooms[ri]
 		var roll := rng.randf()
 		var ang := rng.randf_range(0.0, TAU)
-		if not room.big or room.get("sealed", false) or ri == outpost or roll > 0.5 \
+		if not room.big or room.get("sealed", false) or ri == outpost or roll > (1.0 if made_layout >= 10 else 0.5) \
 				or room.get("kind", "") not in ["cavern", "spawn", "great_hall", "nest_cavern", "lantern_grove"]:
 			continue
 		var c: Vector3 = room.center
 		var r: Vector3 = room.radii
 		var fl := c.y - r.y * 0.55
 		var tall := r.y * 1.55
-		if tall < 12.0:
+		if tall < (10.0 if made_layout >= 10 else 12.0):
 			continue  # too low for a bridge to be worth it
 		var h := fl + tall * 0.5
 		var dir := Vector3(cos(ang), 0.0, sin(ang))
@@ -436,14 +437,21 @@ func _plan_bridges() -> void:
 			tries.append([dir, h, mouth])
 		for k in 6:
 			tries.append([Vector3(cos(ang), 0.0, sin(ang)).rotated(Vector3.UP, k * PI / 6.0), fl + tall * 0.5, -1])
+		var made := 0
+		var want := 2 if tall >= 16.0 and made_layout >= 10 else 1  # the tallest caverns get a second one, higher up, crossing the first
 		for t in tries:
 			var dk: Vector3 = t[0]
+			var y: float = t[1] if made == 0 else fl + tall * 0.72
+			if made == 1:
+				dk = dk.rotated(Vector3.UP, PI / 2.0)
 			var reach := Vector2(dk.x * r.x, dk.z * r.z).length() * 1.05  # just into the wall, not through it
-			var a := Vector3(c.x, t[1], c.z) - dk * reach
-			var b := Vector3(c.x, t[1], c.z) + dk * reach
-			if not _bridge_blocks(a, b, t[2], c, r):
+			var a := Vector3(c.x, y, c.z) - dk * reach
+			var b := Vector3(c.x, y, c.z) + dk * reach
+			if not _bridge_blocks(a, b, t[2] if made == 0 else -1, c, r):
 				_add_bridge(a, b)
-				break
+				made += 1
+				if made >= want:
+					break
 
 
 ## Would a bridge from a to b cut through a ramp, a ledge path, a column or a place?

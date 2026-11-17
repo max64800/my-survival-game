@@ -413,7 +413,25 @@ func _on_swing_impact() -> void:
 		return
 	var auth := GameAuthority.instance
 	var hit := aim()
-	if auth == null or hit.is_empty():
+	if auth == null:
+		return
+	# Hanging roots between you and what you aim at break first (they have no solid shape: the aim line finds them).
+	var chest := global_position + Vector3.UP * 1.1
+	var reach_to: Vector3 = hit.position if not hit.is_empty() else chest + (-camera.global_basis.z) * GameAuthority.REACH
+	if auth.curtains:
+		var sid := auth.curtains.strand_near_ray(chest, reach_to)
+		if sid >= 0:
+			auth.ask_break_hanging("strand", str(sid))
+			Fx.burst(get_parent(), auth.curtains.top_of(sid).lerp(reach_to, 0.5), Color(0.4, 0.3, 0.2), 8, 2.0)
+			return
+	if auth.clutter:
+		var rid := auth.clutter.hroot_near_ray(chest, reach_to)
+		if rid != "":
+			auth.ask_break_hanging("hroot", rid)
+			Fx.burst(get_parent(), reach_to, Color(0.45, 0.32, 0.2), 10, 2.5)
+			_shake = 0.3
+			return
+	if hit.is_empty():
 		return
 	var glow_id := auth.glow.id_of(hit.collider) if auth.glow else -1
 	if glow_id >= 0:
@@ -569,6 +587,8 @@ func _on_dig_feedback(pid: int, result: Dictionary) -> void:
 			Sfx.play("dig_soft" if soft else "dig_rock", at)
 		"dug":
 			DigCracks.clear()
+			var n: Vector3 = result.get("normal", Vector3.UP)
+			RockShatter.burst(get_parent(), at - n * 0.55, n, col)  # the rock bursts into real chunks (F261)
 			Fx.burst(get_parent(), at, col, 16, 4.0)
 			ChunkSwarm.burst(get_parent(), at, col, self)  # 25-50 bits fly into you (F13)
 			_shake = 0.8

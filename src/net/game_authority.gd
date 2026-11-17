@@ -36,6 +36,10 @@ var players: Dictionary = {}  ## peer_id -> PlayerState
 var edit_log: Array[Vector4] = []  ## every dig: center (xyz) + packed tier & size (w, see pack_dig), for late joiners
 var removed_glow: Array[int] = []
 var cave_life: CaveLife  ## grass, ferns, small roots... (only looks, but they break when hit: F197)
+var curtains: RootCurtains  ## root curtains in tunnel mouths (break for fiber)
+var clutter: Clutter  ## pebbles, dripstone, the big hanging roots (those break for wood)
+var removed_strands: Array[int] = []  ## root-curtain strands broken so far (saved)
+var removed_hroots: Array[String] = []  ## big hanging roots broken so far (saved)
 var removed_plants: Array[int] = []  ## cave-life plants broken so far (saved, sent to late joiners)
 ## Host: chopped roots growing back (F106): glow id -> seconds left.
 var regrow := {}
@@ -259,6 +263,61 @@ func ask_hit(point: Vector3, normal: Vector3) -> void:
 		request_hit(local_peer_id(), point, normal)
 	else:
 		_rpc_hit.rpc_id(1, point, normal)
+
+
+## A swing through hanging roots (owner, Nov 17): "strand" = a root-curtain strand (its bunch breaks, gives fiber),
+## "hroot" = a big root hanging from the ceiling (gives rootwood).
+func ask_break_hanging(kind: String, id: String) -> void:
+	if is_host():
+		request_break_hanging(local_peer_id(), kind, id)
+	else:
+		_rpc_break_hanging.rpc_id(1, kind, id)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_break_hanging(kind: String, id: String) -> void:
+	if is_host():
+		request_break_hanging(multiplayer.get_remote_sender_id(), kind, id)
+
+
+func request_break_hanging(peer_id: int, kind: String, id: String) -> void:
+	var ps := get_player(peer_id)
+	if ps == null:
+		return
+	if kind == "strand" and curtains:
+		var top := curtains.top_of(int(id))
+		if top == Vector3.INF or Vector2(top.x - _chest(ps).x, top.z - _chest(ps).z).length() > REACH + 1.0:
+			return
+		var bunch := curtains.bunch_of(int(id))
+		for s in bunch:
+			removed_strands.append(s)
+		_ev_break_hanging.rpc("strand", ",".join(Array(bunch).map(func(x): return str(x))))
+		spawn_drop(CaveLife.FIBER_DROP, clampi(bunch.size() / 3, 1, 3), _chest(ps) + Vector3.UP * 0.3)
+	elif kind == "hroot" and clutter:
+		var top := clutter.hroot_top(id)
+		if top == Vector3.INF or Vector2(top.x - _chest(ps).x, top.z - _chest(ps).z).length() > REACH + 2.0:
+			return
+		removed_hroots.append(id)
+		_ev_break_hanging.rpc("hroot", id)
+		spawn_drop("rootwood", 2, _chest(ps) + Vector3.UP * 0.3)
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_break_hanging(kind: String, ids: String) -> void:
+	var at := Vector3.INF
+	if kind == "strand" and curtains:
+		at = curtains.top_of(int(ids.get_slice(",", 0)))
+	elif kind == "hroot" and clutter:
+		at = clutter.hroot_top(ids)
+	if at != Vector3.INF:
+		Sfx.play("chop" if kind == "hroot" else "pickup", at, -4.0)
+	if kind == "strand" and curtains:
+		var list := PackedInt32Array()
+		for x in ids.split(","):
+			list.append(int(x))
+		curtains.hide_strands(list)
+	elif kind == "hroot" and clutter:
+		clutter.hide_hroot(ids)
 
 
 ## E on grass, a fern or a small root: break it (fiber or wood). Never digs rock (owner, Nov 17).
@@ -809,7 +868,7 @@ func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
 	_dig_ramp(ps, center, tool_tier, counts)
 	_give_dig_drops(ps, counts, center + normal * 0.8)
 	give_xp(_peer_of(ps), Mat.DIG_XP.get(mat, 1), "mining")
-	return {state = "dug", hits = needed, needed = needed, material = mat, point = point}
+	return {state = "dug", hits = needed, needed = needed, material = mat, point = point, normal = normal}
 
 
 const LEVEL_R := 1.0  ## the Mason's Shovel flattens a patch this far around where you aim (about 2 m across)
@@ -1803,7 +1862,8 @@ func snapshot() -> Dictionary:
 		for id in glow._spots:
 			if glow._spots[id].get("chops", 1) != GlowPlacer.KINDS[glow._spots[id].kind].get("chops", 1):
 				chops[id] = glow._spots[id].chops
-	return {edits = edit_log.duplicate(), glow = removed_glow.duplicate(), plants = removed_plants.duplicate(), drops = drops, next_drop = _next_drop_id,
+	return {strands = removed_strands.duplicate(), hroots = removed_hroots.duplicate(),
+		edits = edit_log.duplicate(), glow = removed_glow.duplicate(), plants = removed_plants.duplicate(), drops = drops, next_drop = _next_drop_id,
 		stations = sts, chops = chops, regrow = regrow.duplicate(), plant_regrow = plant_regrow.duplicate(), runes = rune_slab.to_data(), build = builder.snapshot(), boxes = storage.snapshot(), monsters = monsters.snapshot(), state = world_state}
 
 
@@ -1816,6 +1876,14 @@ func load_snapshot(snap: Dictionary) -> void:
 		removed_plants.append(id)
 		if cave_life:
 			cave_life.remove_plant(id)
+	for id in snap.get("strands", []):
+		removed_strands.append(int(id))
+	if curtains and not removed_strands.is_empty():
+		curtains.hide_strands(PackedInt32Array(removed_strands))
+	for id in snap.get("hroots", []):
+		removed_hroots.append(String(id))
+		if clutter:
+			clutter.hide_hroot(String(id))
 	for id in snap.get("plant_regrow", {}):  # small roots growing back
 		plant_regrow[int(id)] = float(snap.plant_regrow[id])
 	for c in snap.edits:
