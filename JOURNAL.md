@@ -3406,3 +3406,6 @@ the body."
     hand-made poses: asked the owner).
 
 - **Later (Mac): the game has a name: "Dwarves Never Fall".** Rounds of name ideas (Dwarfwake, Dwarves Reborn, Eternal Dwarves, Dwarves Never Die...), each checked on Steam, itch.io and .com. "___ Never Die" turned out crowded on Steam (Goblins/Pirates/Heroes Never Die), so the owner picked Dwarves Never Fall. Still to do: trademark search, buy the .com, rename the game in project.godot on the PC.
+
+- **Nov 18 (Mac): Steam app created.** The owner paid the Steam Direct fee (369.99 AED) in Chrome; Claude created the paid game **Dwarves Never Fall, App ID 5649350**. Steam's Coming Soon checklist is in the Steam plan; library assets and the app and shortcut icons are needed too.
+  - Hurdles: the first Chrome had no Steam login, and paying needs a separate Steam store sign-in. Both sign-ins and the card details were done by the owner; Claude never types passwords or card numbers.

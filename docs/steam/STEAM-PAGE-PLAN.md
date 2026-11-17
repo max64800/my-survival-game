@@ -57,7 +57,18 @@ A good name is:
 Before paying, search Steam for the final name, plus a general web search and a trademark search
 (free: tmsearch.uspto.gov, euipo.europa.eu).
 
-## Step 2 (owner, 10 min): create the app
+## Step 2: create the app. DONE Nov 18, 2026
+- Fee paid by the owner (369.99 AED). The app was created as a **paid game**: **Dwarves Never Fall, App ID 5649350**.
+  Packages: 1946417 (store), 1946416 (beta testing), 1946415 (developer comp). Store item 1452168.
+- Steamworks page: https://partner.steamgames.com/apps/landing/5649350
+- **Steam's own "Coming Soon" checklist** (required for Coming Soon and for release):
+  - Basic Info, Descriptions, Supported Players, Content Survey, Planned Release Date, System Requirements (shows as done),
+    Controller Support Description, 5+ screenshots marked as gameplay, Capsule Images, **Library Assets**, Support Info,
+    Developer and Publisher Names, Store Page Descriptive Tags, **App Icon**, **Shortcut Icon**.
+  - Library assets and both icons are needed for Coming Soon too (the size table below said they could wait; they can't).
+  - Recommended: Cloud Saves, Achievements, Accessibility features.
+
+Old step 2 notes:
 1. Log in to partner.steamgames.com yourself (Claude never types passwords).
 2. Pay the $100 fee for a new app. Write down the **App ID**.
 3. Tell the code Claude the App ID. Co-op through Steam (GodotSteam) needs it. An App ID is not a secret, so it may
