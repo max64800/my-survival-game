@@ -43,6 +43,14 @@ const SHELF_TOPS := {
 const SHELF_CRYSTALS := [Color(0.72, 0.42, 1.0), Color(1.0, 0.68, 0.3), Color(1.0, 0.45, 0.6)]  # not the cave's blue
 const WALL_SHELVES_BIG_ROOM := 14
 const WALL_SHELVES_ROOM := 4
+## Roots hanging from ceilings (F232, tools/asset_forge/builds/cave_hanging.py; no rock chunk, they come out of the real
+## ceiling). Owner: "I really like 3... make them very big and random... 1 is good too".
+const HROOTS := {
+	"hroot_a": {model = "res://assets/models/cave/hroot_a.glb", length = 1.25, size = [1.5, 4.0]},
+	"hroot_c": {model = "res://assets/models/cave/hroot_c.glb", length = 1.2, size = [1.5, 4.0]},
+}
+const HROOTS_BIG_ROOM := 12
+const HROOTS_ROOM := 3
 ## Dripstone models: how far each hangs at size 1 (m), and its size range (owner: "different sizes").
 const DRIPS := {
 	"drip_a": {model = "res://assets/models/cave/drip_a.glb", length = 0.95, size = [0.8, 2.0]},
@@ -81,6 +89,7 @@ func build(maker: CaveMaker, world: World) -> void:
 		_make_set(k, picks[k])
 	for k in DRIPS:
 		_make_drip_set(k, _drips[k])
+	_place_hanging_roots(maker, rng)
 	# _place_shelves(maker, rng)  # off (owner, Nov 17: "really bad... doesn't blend with walls"); ledges in the rock instead?
 	world.changed.connect(_on_rock_changed)
 
@@ -199,6 +208,36 @@ func _make_set(kind: String, xforms: Array) -> void:
 		var key := "%s@%s" % [kind, c]  # (_on_rock_changed walks every batch the same way)
 		_sets[key] = mmi
 		_where[key] = where
+
+
+## Big roots hanging from room ceilings, very different sizes, a slight tint each; 2 m kept clear above the floor.
+func _place_hanging_roots(maker: CaveMaker, rng: RandomNumberGenerator) -> void:
+	var items := {}
+	for k in HROOTS:
+		items[k] = []
+	var names := HROOTS.keys()
+	for room in maker.rooms:
+		if room.get("sealed", false) or maker.sdf_at(room.center) <= 0.0:
+			continue
+		for i in (HROOTS_BIG_ROOM if room.big else HROOTS_ROOM):
+			var dir := Vector3(rng.randf_range(-1, 1), rng.randf_range(0.5, 1.0), rng.randf_range(-1, 1)).normalized()
+			var kind: String = names[rng.randi_range(0, names.size() - 1)]
+			var d: Dictionary = HROOTS[kind]
+			var size := rng.randf_range(d.size[0], d.size[1])
+			var spin := rng.randf() * TAU
+			var tint := Color.from_hsv(rng.randf_range(0.05, 0.1), rng.randf_range(0.0, 0.15), rng.randf_range(0.82, 1.06))
+			var hit := GlowPlacer._march(maker, room.center, dir, 60.0)
+			if hit == Vector3.INF or GlowPlacer.normal_at(maker, hit).y > -0.5:
+				continue  # not a ceiling
+			var floor_hit := GlowPlacer._march(maker, hit + Vector3.DOWN * 0.3, Vector3.DOWN, 40.0)
+			var gap := hit.distance_to(floor_hit) if floor_hit != Vector3.INF else 40.0
+			size = minf(size, (gap - 2.0) / float(d.length))  # nobody bumps their head
+			if size < 0.8:
+				continue
+			var basis := Basis(Vector3.RIGHT, PI) * Basis(Vector3.UP, spin)  # grows along +Y: hang it upside down
+			items[kind].append([Transform3D(basis.scaled(Vector3.ONE * size), hit + Vector3.UP * 0.04 * size), tint])
+	for k in HROOTS:
+		_make_model_cells(k, _model_mesh(HROOTS[k].model), items[k])
 
 
 ## Rock shelves on room walls, 0.8-6 m above the floor, different sizes and tints, with their moss, mushrooms and

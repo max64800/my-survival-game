@@ -2686,3 +2686,12 @@ The owner: the sheet behind the hair still happens, make the hook at the very en
   not sure they should be in the game at this quality". Turned off at once (`_place_shelves` not called; models kept).
   Lesson: a separate model stuck on a wall painted by the terrain shader never matches it; wall features should be
   part of the rock shape itself (like the pillars and holes the owner liked). Offered: ledges built into the rock.
+
+## November 17, 2026 (PC, rock-textures Claude): roots hanging from the ceilings (F232)
+
+- Owner picked "hanging roots, no rock chunks". `tools/asset_forge/builds/cave_hanging.py`, same bark as the floor roots.
+  Round 1: straight sticks, pale with red streaks. Round 2: each root splits into 2-3 smaller ones that split again,
+  warmer brown, less grime; still stiffer than the picture, shown to the owner, who liked look 3 (one root splitting
+  in three) and look 1 (the tangle): "make them very big and random". The curtain was dropped.
+- Placed by `clutter.gd` (`HROOTS`, `_place_hanging_roots`): on room ceilings, 1.5-4x (2-5 m long), random turn and
+  tint, 2 m kept clear above the floor, drawn per 32 m square; digging nearby removes them.

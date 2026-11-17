@@ -42,3 +42,7 @@ on top. Next: hanging roots and moss, then the star-dot glow threads.
 
 **Shelves turned off (Nov 17, owner: "doesn't blend with walls at all", too small).** Models kept in the repo, not placed.
 If wanted later: ledges built into the cave rock shape (terrain texture, big, walkable).
+
+## Hanging roots (done Nov 17)
+`tools/asset_forge/builds/cave_hanging.py` -> `hroot_a.glb`, `hroot_c.glb` (no rock chunk; the curtain was dropped).
+Placed by `clutter.gd` (`HROOTS`) on ceilings, 1.5-4x. Next: the star-dot glow threads.
