@@ -2873,6 +2873,18 @@ the body."
     pictures are smaller and its animation keeps every other frame (13.6 MB, checked in a browser before publishing).
   - Still open: the beard vs the body in fast moves got worse with the shirt 1.5-3 cm further out (8-16 cm in run and
     sprint), the back hair sways 14 cm in a dash, a braid link folds sharply: the hair test fails.
+- Owner: "looks great"; now texture on the tunic and shorts, skin colour on the legs and arms matching his face, a
+  nice paint job; thinner sleeve ends and cuffs; a gap between the legs (the shorts looked like a skirt); shorts a little
+  lower (his bottom peeked out); two toes like a lizard instead of five.
+  - Paint: the face's method for the whole body (a paint shader with darker creases and lighter edges, baked into
+    pictures). Linen shirt and underpants and brown shorts get a fine weave pressed into a detailed copy (shows as
+    little bumps in the light). Claude made the textures by script rather than ChatGPT pictures: same style as the face.
+  - Measured, not eyeballed: the body's baked skin came out paler than the face's (180,135,113 vs 157,108,87); the
+    colours were scaled to match (now 155,104,82 vs 145,99,80).
+  - Shorts cut between the legs below the crotch, cuffs at 23 cm (were 27.5), thinner rolled edges; two chunky toes.
+  - Hurdles: the painted page file was 17.5 MB (16 pictures and extra mesh data for the bumps); the page copy now has
+    512-pixel pictures and no bump directions (the page works them out): 12.9 MB. Claude once sent a page command to
+    the owner's open tab instead of its own test tab (it failed harmlessly); now only its own tab is used.
 
 - **Owner's round 2 notes:** clear gaps between the stone rows and between stones; the battlement's copper band
   sticks out; ruins should have no door hanging, rather a broken door lying nearby. Fixes: stones now touch (only

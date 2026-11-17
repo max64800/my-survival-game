@@ -571,11 +571,11 @@ if not CLOTHES:
 	x_ = sc.U + HC.x
 	th_ = np.arctan2(x_, -(HC.y - sc.W))
 	hem = 0.415 - 0.02 * np.clip(np.cos(th_), 0, None) + 0.005 * np.sin(3 * th_ + 0.6)  # (a little lower over the belly)
-	off = 0.014 + 0.014 * np.clip((0.52 - up_) / 0.12, 0, 1) + 0.008 * np.clip((np.abs(x_) - 0.22) / 0.05, 0, 1)
+	off = 0.014 + 0.014 * np.clip((0.52 - up_) / 0.12, 0, 1) + 0.002 * np.clip((np.abs(x_) - 0.22) / 0.05, 0, 1)
 	arms = np.maximum(x_ - sl["l"], sl["r"] - x_) if sl["l"] > 0 else np.maximum(x_ - sl["r"], sl["l"] - x_)
 	sc.D = np.maximum(np.maximum(shell_of(sc, off), hem - up_), np.maximum(arms, up_ - 0.915)).astype(np.float32)
 	sc.add(np.maximum(lip(sc, off, up_ - hem - 0.006, 0.009), arms), 0.005)                     # the hem
-	sc.add(np.maximum(lip(sc, off, arms + 0.006, 0.009), hem - up_), 0.005)                     # the sleeve ends
+	sc.add(np.maximum(lip(sc, off, arms + 0.004, 0.006), hem - up_), 0.004)                     # the sleeve ends (thin: Nov 18)
 	sc.add(np.maximum(lip(sc, off, up_ - 0.909, 0.009), arms), 0.005)                           # the collar
 	del th_, off, arms
 	for s_ in (-1, 1):  # a few soft folds: from the armpits toward the belly, and hanging over the belly
@@ -608,10 +608,12 @@ if not CLOTHES:
 	oc = clay((-0.72, 0.09, -0.36), (0.72, 1.0, 0.33))  # (the body's grid: F fits it)
 	up_ = oc.V + HC.z
 	x_ = oc.U + HC.x
-	cuff = 0.275
-	off = 0.016 + 0.008 * np.clip((0.4 - up_) / 0.1, 0, 1)
+	cuff = 0.232  # (lower: the bottom peeked out under them, Nov 18)
+	off = 0.014 + 0.004 * np.clip((0.4 - up_) / 0.1, 0, 1)
 	oc.D = np.maximum(np.maximum(shell_of(oc, off), up_ - 0.47), np.maximum(cuff - up_, np.abs(x_) - 0.33)).astype(np.float32)
-	oc.add(np.maximum(lip(oc, off, up_ - cuff - 0.008, 0.011), np.abs(x_) - 0.33), 0.005)       # rolled cuffs
+	oc.add(np.maximum(lip(oc, off, up_ - cuff - 0.005, 0.007), np.abs(x_) - 0.33), 0.004)       # rolled cuffs (thin)
+	# two legs, not a skirt: cut between the legs below the crotch (owner, Nov 18: "no gap between his legs")
+	oc.cut(np.maximum(np.abs(x_) - 0.028 - 0.25 * np.clip(0.33 - up_, 0, None), up_ - 0.33), 0.006)
 	for s_ in (-1, 1):
 		groove(oc, [(s_ * 0.2, 0.4), (s_ * 0.17, 0.32)], True, 0.003, 0.01)
 		groove(oc, [(s_ * 0.06, 0.38), (s_ * 0.1, 0.31)], True, 0.003, 0.01)
@@ -632,8 +634,8 @@ if not CLOTHES:
 		fc.add(fc.ell(Q(an.x + out * 0.004, 0.026, an.y - 0.065), (0.055, 0.03, 0.09)), 0.03)            # the foot (flat)
 		fc.add(fc.tube(Q(an.x, 0.085, an.y - 0.004), Q(an.x + out * 0.004, 0.04, an.y - 0.115), 0.034, 0.024), 0.03)  # instep
 		fc.add(fc.ell(Q(an.x + out * 0.006, 0.025, an.y - 0.112), (0.06, 0.025, 0.04)), 0.025)            # ball of the foot
-		for tx, tz, r in ((-0.03, -0.165, 0.021), (-0.002, -0.16, 0.016), (0.02, -0.153, 0.015), (0.039, -0.142, 0.014)):
-			fc.add(fc.ell(Q(an.x + out * tx, 0.019, an.y + tz), (r, r * 0.85, r * 1.35)), 0.004)            # toes
+		for tx, tz, r in ((-0.021, -0.162, 0.027), (0.023, -0.152, 0.025)):  # two chunky toes, a bit like a lizard's (owner, Nov 18)
+			fc.add(fc.ell(Q(an.x + out * tx, 0.02, an.y + tz), (r * 0.9, r * 0.8, r * 1.45)), 0.004)
 		fc.cut(fc.ell(Q(an.x - out * 0.05, 0.0, an.y - 0.05), (0.026, 0.02, 0.05)), 0.012)               # the arch
 		fc.keep((0.0 - HC.z) - fc.V, 0.003)  # (the sole flat on the floor)
 		finish(fc.mesh(f"foot_{side}", skin, PARTS), 5000)
@@ -645,6 +647,40 @@ if not CLOTHES:
 head = B("Head")
 BODY_PARTS = [o for o in bpy.context.scene.objects if o.type == "MESH"]
 HEAD = dh.build(BODY_PARTS, fast=FAST)
+# ---- the paint (Nov 18, owner: "a nice paint job"): the same hand-painted look as the face, baked into pictures. The
+# skin matches the face's; the shirt and the underpants are linen, the shorts brown wool, each with a fine weave pressed
+# into a detailed copy (it shows in the light through the baked bumps). Plain colours in the quick (fast) builds.
+PAINT = {
+	# (skin: scaled so its baked colour matches the face's, measured: the first try baked 180,135,113 vs the face 157,108,87)
+	"skin": dict(base=(0.75, 0.5, 0.385), dark=(0.435, 0.25, 0.19), light=(0.85, 0.66, 0.56), weave=0.0, per=1.0, size=2048),
+	"shirt": dict(base=(0.86, 0.8, 0.66), dark=(0.48, 0.41, 0.3), light=(0.98, 0.95, 0.86), weave=0.00035, per=0.0035, size=2048),
+	"shorts": dict(base=(0.47, 0.31, 0.19), dark=(0.22, 0.13, 0.07), light=(0.66, 0.48, 0.32), weave=0.0005, per=0.005, size=1024),
+	"wraps": dict(base=(0.84, 0.79, 0.67), dark=(0.48, 0.42, 0.32), light=(0.97, 0.94, 0.86), weave=0.0003, per=0.0035, size=1024),
+}
+
+
+def weave(q, n, amp, per):
+	"""A woven cloth's little bumps: two sets of threads crossing."""
+	k = 2 * math.pi / per
+	return amp * 0.5 * (math.sin(k * (q.x + q.z)) * math.cos(k * 0.5 * (q.y - q.z)) + math.sin(k * (q.y - q.z)) * math.cos(k * 0.5 * (q.x + q.z)))
+
+
+if not FAST:
+	for o in [o for o in BODY_PARTS if o.type == "MESH" and o.data.materials]:
+		mname = o.data.materials[0].name.split(".")[0]
+		pp = PAINT.get(mname)
+		if pp is None:
+			continue
+		hi = dh.cs.detail_copy(o, 2 if len(o.data.polygons) < 9000 else 1, o.name + "_high")
+		if pp["weave"] > 0:
+			dh.cs._displace(hi, lambda q, n, a=pp["weave"], w=pp["per"]: weave(q, n, a, w))
+		hi.data.materials.clear()
+		hi.data.materials.append(dh.cs.paint_material(f"paint_{o.name}", base=pp["base"], dark=pp["dark"], light=pp["light"],
+			strokes=0.05, top_light=0.12, edge=0.25, key=0.28, seed=3))
+		dh.cs.uv_only(o)
+		dh.cs.bake(hi, o, pp["size"], f"{o.name}_baked", ext=0.01)
+		bpy.data.objects.remove(hi, do_unlink=True)
+		print("DWARF painted", o.name, mname)
 if REVIEW:
 	dh.review(REVIEW)
 BODYREV = next((a[5:] for a in ARGS[2:] if a.startswith("body=")), None)
