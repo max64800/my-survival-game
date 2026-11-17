@@ -26,6 +26,23 @@ const KINDS := {
 }
 const CLUSTERS_BIG_ROOM := 30
 const CLUSTERS_ROOM := 7
+## Rock shelves on walls (F232, tools/asset_forge/builds/cave_shelves.py): rock only; the game puts its own moss,
+## mushrooms and recoloured crystals on top (owner: "use our existing mushrooms... crystals, a different colour").
+## SHELF_TOPS: where things sit on each model (its own space: +Z = out of the wall, +Y = up), and what.
+const SHELVES := {
+	"shelf_a": {model = "res://assets/models/cave/shelf_a.glb", size = [0.8, 2.2]},
+	"shelf_b": {model = "res://assets/models/cave/shelf_b.glb", size = [0.8, 2.0]},
+	"shelf_c": {model = "res://assets/models/cave/shelf_c.glb", size = [0.8, 1.8]},
+	"shelf_d": {model = "res://assets/models/cave/shelf_d.glb", size = [0.8, 1.8]},
+}
+const SHELF_TOPS := {
+	"shelf_b": [[Vector3(-0.08, 0.0, 0.16), "moss", 0.55], [Vector3(0.16, 0.0, 0.12), "moss", 0.4], [Vector3(0.02, -0.02, 0.36), "moss_drape", 0.5]],
+	"shelf_c": [[Vector3(-0.1, 0.24, 0.12), "cap", 0.32], [Vector3(0.15, -0.22, 0.18), "cap", 0.4]],
+	"shelf_d": [[Vector3(0.0, 0.0, 0.14), "crystal", 0.32]],
+}
+const SHELF_CRYSTALS := [Color(0.72, 0.42, 1.0), Color(1.0, 0.68, 0.3), Color(1.0, 0.45, 0.6)]  # not the cave's blue
+const WALL_SHELVES_BIG_ROOM := 14
+const WALL_SHELVES_ROOM := 4
 ## Dripstone models: how far each hangs at size 1 (m), and its size range (owner: "different sizes").
 const DRIPS := {
 	"drip_a": {model = "res://assets/models/cave/drip_a.glb", length = 0.95, size = [0.8, 2.0]},
@@ -64,6 +81,7 @@ func build(maker: CaveMaker, world: World) -> void:
 		_make_set(k, picks[k])
 	for k in DRIPS:
 		_make_drip_set(k, _drips[k])
+	_place_shelves(maker, rng)
 	world.changed.connect(_on_rock_changed)
 
 
@@ -183,6 +201,96 @@ func _make_set(kind: String, xforms: Array) -> void:
 		_where[key] = where
 
 
+## Rock shelves on room walls, 0.8-6 m above the floor, different sizes and tints, with their moss, mushrooms and
+## crystals. (After everything else, with the same dice, so nothing above moves.)
+func _place_shelves(maker: CaveMaker, rng: RandomNumberGenerator) -> void:
+	var items := {}
+	for k in SHELVES:
+		items[k] = []
+	var extras := {"moss": [], "moss_drape": [], "cap": [], "crystal0": [], "crystal1": [], "crystal2": []}
+	var names := SHELVES.keys()
+	for room in maker.rooms:
+		if room.get("sealed", false):
+			continue
+		for i in (WALL_SHELVES_BIG_ROOM if room.big else WALL_SHELVES_ROOM):
+			var ang := rng.randf() * TAU
+			var dir := Vector3(cos(ang), rng.randf_range(-0.25, 0.25), sin(ang)).normalized()
+			var kind: String = names[rng.randi_range(0, names.size() - 1)]
+			var size := rng.randf_range(SHELVES[kind].size[0], SHELVES[kind].size[1])
+			var tint := Color.from_hsv(rng.randf_range(0.04, 0.1), rng.randf_range(0.0, 0.12), rng.randf_range(0.85, 1.08))
+			var roll := rng.randi()
+			if maker.sdf_at(room.center) <= 0.0:
+				continue
+			var hit := GlowPlacer._march(maker, room.center, dir, 60.0)
+			if hit == Vector3.INF:
+				continue
+			var n := GlowPlacer.normal_at(maker, hit)
+			if absf(n.y) > 0.3:
+				continue  # walls only
+			var fl := GlowPlacer._march(maker, hit + Vector3(n.x, 0, n.z).normalized() * 0.8, Vector3.DOWN, 10.0)
+			if fl == Vector3.INF or hit.y - fl.y < 0.8 or hit.y - fl.y > 6.0:
+				continue
+			if CaveMaker.biome_at(hit) == "fungal":
+				tint *= Color(0.84, 0.74, 0.94)
+			var out := Vector3(n.x, 0, n.z).normalized()
+			var basis := Basis(Vector3.UP.cross(out), Vector3.UP, out)
+			var xf := Transform3D(basis.scaled(Vector3.ONE * size), hit - out * 0.05 * size)  # the wall slice pushed into the rock
+			items[kind].append([xf, tint])
+			for top in SHELF_TOPS.get(kind, []):
+				var at: Vector3 = xf * (top[0] as Vector3)
+				var s: float = top[2] * size
+				match top[1]:
+					"moss", "moss_drape":
+						var b := Basis(Vector3.UP, roll * 0.001) if top[1] == "moss" else Basis.looking_at(out, Vector3.UP)
+						extras[top[1]].append([Transform3D(b.scaled(Vector3.ONE * s), at), CaveLife._tint("moss", roll, CaveMaker.biome_at(at), 0.8),
+							Color(CaveLife._fuzz("moss", "damp", 0.8), 0.8, 0, 0)])
+					"cap":
+						extras.cap.append([Transform3D(Basis(Vector3.UP, roll * 0.002).scaled(Vector3.ONE * s), at), Color(0.92, 0.86, 0.74)])
+					"crystal":
+						extras["crystal%d" % (roll % SHELF_CRYSTALS.size())].append([Transform3D(Basis(Vector3.UP, roll * 0.003).scaled(Vector3.ONE * s), at), Color.WHITE])
+	for k in SHELVES:
+		_make_model_cells(k, _model_mesh(SHELVES[k].model), items[k])
+	_make_model_cells("moss", CaveLife.mesh_of("moss"), extras.moss, true)
+	_make_model_cells("moss_drape", CaveLife.mesh_of("moss_drape"), extras.moss_drape, true)
+	_make_model_cells("cap", _model_mesh("res://assets/models/cave/glowcap.glb"), extras.cap)
+	for c in SHELF_CRYSTALS.size():
+		_make_model_cells("crystal%d" % c, _model_mesh("res://assets/models/cave/crystal.glb", SHELF_CRYSTALS[c]), extras["crystal%d" % c])
+
+
+## Any model, in 32 m squares: items are [Transform3D, colour] (or [Transform3D, colour, custom data]).
+func _make_model_cells(key: String, mesh: Mesh, items: Array, custom := false) -> void:
+	if items.is_empty() or mesh == null:
+		return
+	var cells := {}
+	for it in items:
+		var c := Vector3i(((it[0] as Transform3D).origin / DRIP_CELL).floor())
+		if not cells.has(c):
+			cells[c] = []
+		cells[c].append(it)
+	var holders: Array[MultiMeshInstance3D] = []
+	for c in cells:
+		var group: Array = cells[c]
+		var mm := MultiMesh.new()
+		mm.transform_format = MultiMesh.TRANSFORM_3D
+		mm.use_colors = true
+		mm.use_custom_data = custom
+		mm.mesh = mesh
+		mm.instance_count = group.size()
+		for i in group.size():
+			mm.set_instance_transform(i, group[i][0])
+			mm.set_instance_color(i, group[i][1])
+			if custom:
+				mm.set_instance_custom_data(i, group[i][2])
+		var mmi := MultiMeshInstance3D.new()
+		mmi.multimesh = mm
+		mmi.visibility_range_end = 55.0
+		mmi.visibility_range_end_margin = 6.0
+		mmi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
+		add_child(mmi)
+		holders.append(mmi)
+	_drip_cells[key] = holders
+
+
 ## Dripstone, in 32 m squares per model: each square is its own batch with its own draw distance (one batch for the
 ## whole zone would be measured from the zone's middle, so it was never drawn, and drawing all of it would be heavy).
 const DRIP_CELL := 32.0
@@ -222,9 +330,10 @@ func _make_drip_set(kind: String, items: Array) -> void:
 static var _models := {}  ## path -> ArrayMesh (all the model's parts, their paint tinted by each copy's colour)
 
 
-static func _model_mesh(path: String) -> Mesh:
-	if _models.has(path):
-		return _models[path]
+static func _model_mesh(path: String, glow := Color(0, 0, 0, 0)) -> Mesh:
+	var key := "%s/%s" % [path, glow.to_html()]
+	if _models.has(key):
+		return _models[key]
 	var mesh := ArrayMesh.new()
 	var ps := load(path) as PackedScene
 	if ps:
@@ -252,10 +361,18 @@ static func _model_mesh(path: String) -> Mesh:
 				var m := mi.mesh.surface_get_material(sidx)
 				if m is StandardMaterial3D:
 					m = m.duplicate()
-					(m as StandardMaterial3D).vertex_color_use_as_albedo = true  # each copy's tint (MultiMesh colour)
+					var sm := m as StandardMaterial3D
+					sm.vertex_color_use_as_albedo = true  # each copy's tint (MultiMesh colour)
+					if glow.a > 0.0 and sm.resource_name.begins_with("glow_"):  # a crystal of another colour, glowing
+						sm.albedo_color = Color.from_hsv(glow.h, minf(1.0, glow.s * 1.2), glow.v * 0.75)
+						sm.emission_enabled = true
+						sm.emission = glow
+						sm.emission_texture = sm.albedo_texture
+						sm.emission_operator = BaseMaterial3D.EMISSION_OP_MULTIPLY
+						sm.emission_energy_multiplier = 0.9
 				mesh.surface_set_material(mesh.get_surface_count() - 1, m)
 		inst.free()
-	_models[path] = mesh
+	_models[key] = mesh
 	return mesh
 
 

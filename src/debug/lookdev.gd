@@ -316,6 +316,25 @@ func _kind_shots(dwarf: Dwarf, maker: CaveMaker) -> void:
 			var eye := best + Vector3(2.6, -3.2, 1.8)  # close, a little below and to the side (in the air is fine)
 			await _lamp_shot(dwarf, eye, best + Vector3.DOWN * 0.9, "d_%s" % kind, 14.0)
 			shots += 1
+	# Rock shelves (F232): the nearest of each kind, from in front of it.
+	if clutter:
+		for kind in Clutter.SHELVES:
+			var best := Transform3D()
+			var bd := INF
+			for mmi: MultiMeshInstance3D in clutter._drip_cells.get(kind, []):
+				for i in mmi.multimesh.instance_count:
+					var xf := mmi.multimesh.get_instance_transform(i)
+					var d := xf.origin.distance_to(home)
+					if d < bd:
+						bd = d
+						best = xf
+			if bd == INF:
+				print("  no %s" % kind)
+				continue
+			var out := best.basis.z.normalized()
+			var sz := best.basis.get_scale().x
+			await _lamp_shot(dwarf, best.origin + out * 1.7 * sz + Vector3.UP * 0.5 * sz + best.basis.x.normalized() * 0.6 * sz,
+				best.origin + out * 0.15 * sz, "s_%s" % kind, 8.0)
 	print("  kinds: done")
 
 

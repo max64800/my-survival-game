@@ -2667,3 +2667,17 @@ The owner: the sheet behind the hair still happens, make the hook at the very en
 
 - Owner said yes to fixing the floor pebbles (F244): the floor clutter is now drawn per 32 m square too; pebbles
   show round the start, 513 fps.
+
+## November 17, 2026 (PC, rock-textures Claude): rock shelves on the walls (F232)
+
+- Built `tools/asset_forge/builds/cave_shelves.py`. Round 1: soft blobs (Play-Doh), floating moss. Round 2: chisel-cut
+  rock (a skin wrapped round scattered points, like the crystals), but boxy. The owner, watching: "the moss looks like
+  snot", use the existing mushrooms and crystals (another colour), shelves 1 and 3 too flat, too many scratches, the back
+  wall too square, different sizes. Round 3 rewrite made the wall rocks float apart (broke "every part touching"); round
+  4 overlapped them onto one main rock; round 5 cleaned the paint. Hurdle: one rewrite didn't save (the file had changed
+  since read), so a build used the old script; caught from the pictures.
+- In the game (`clutter.gd`): shelves on room walls 0.8-6 m above the floor, size 0.8-2.2x, slight tints; the game's
+  own fuzzy moss (CaveLife.mesh_of) on the thick shelf, the glowcap mushrooms on the stepped one, crystals recoloured
+  purple, amber or pink on the wedge. All drawn per 32 m square; digging removes them.
+- Speed check said ~245 fps (before: 450-510), twice; but other game/Blender programs were running and turning the
+  decorations off made it *slower*, so the numbers aren't trustworthy right now. Recheck when the PC is quiet.

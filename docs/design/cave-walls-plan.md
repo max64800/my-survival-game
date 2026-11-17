@@ -34,3 +34,8 @@ Build order: **dripstone first**, then shelves, then roots and moss; glow thread
 `tools/asset_forge/builds/cave_dripstone.py` -> `assets/models/cave/drip_a|b|d.glb` (the curtain, drip_c, was dropped).
 Placed by `src/art/clutter.gd` (`DRIPS`, `_ceiling`): replaces the old procedural stalactites; one batch per 32 m
 square (a single zone-wide batch was never drawn: its draw distance is measured from its middle).
+
+## Rock shelves (done Nov 17)
+`tools/asset_forge/builds/cave_shelves.py` -> `assets/models/cave/shelf_a..d.glb` (rock only). Placed by
+`clutter.gd` (`SHELVES`, `SHELF_TOPS`, `_place_shelves`) with the game's moss, glowcap mushrooms and recoloured crystals
+on top. Next: hanging roots and moss, then the star-dot glow threads.
