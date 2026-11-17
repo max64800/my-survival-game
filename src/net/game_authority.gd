@@ -801,7 +801,8 @@ func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
 		ps.dig_hits = 0
 	ps.dig_hits += 1
 	if ps.dig_hits < needed:
-		return {state = "hit", hits = ps.dig_hits, needed = needed, material = mat, point = point}
+		_pay_hit(ps, mat, point + normal * 0.4)
+		return {state = "hit", hits = ps.dig_hits, needed = needed, material = mat, point = point, normal = normal}
 	ps.dig_hits = 0
 	ps.dig_target = Vector3.INF
 	var counts := _host_dig(center, tool_tier)
@@ -1855,6 +1856,17 @@ func load_snapshot(snap: Dictionary) -> void:
 
 # ================================================================== helpers
 
+## Every hit pays (owner, Nov 17, F261, like Conan Exiles): a hit that doesn't break the rock yet already gives 1 stone
+## (or ore). It's an advance: it's taken off what that rock gives when it breaks (ps.leftovers goes below zero for a
+## moment), so the total stays the same, and hitting a rock and walking away isn't free stone.
+func _pay_hit(ps: PlayerState, mat: int, pos: Vector3) -> void:
+	var item: String = Mat.DROP_ITEM.get(mat, "")
+	if item == "":
+		return
+	ps.leftovers[mat] = ps.leftovers.get(mat, 0) - int(Mat.VOXELS_PER_ITEM.get(mat, 3))
+	spawn_drop(item, 1, pos)
+
+
 func _give_dig_drops(ps: PlayerState, counts: Dictionary, pos: Vector3) -> void:
 	for mat in counts:
 		var item: String = Mat.DROP_ITEM.get(mat, "")
@@ -1862,11 +1874,11 @@ func _give_dig_drops(ps: PlayerState, counts: Dictionary, pos: Vector3) -> void:
 			continue
 		var voxels: int = counts[mat] + ps.leftovers.get(mat, 0)
 		var per: int = Mat.VOXELS_PER_ITEM.get(mat, 3)
-		var n := voxels / per
-		ps.leftovers[mat] = voxels % per
+		var n := maxi(voxels, 0) / per
+		ps.leftovers[mat] = voxels - n * per  # (below zero = hits paid in advance, taken off later digs)
 		var ore: bool = mat == Mat.COPPER or mat == Mat.SILVER
-		if ore:
-			n = maxi(n, 1)  # always feel rewarded for hitting ore
+		if ore and ps.leftovers[mat] >= 0:
+			n = maxi(n, 1)  # always feel rewarded for hitting ore (the hits already paid count too)
 			if randf() < Gems.bonus(ps.inventory.get_slot(ps.hand_slot())).get("extra_ore", 0.0):
 				n += 1  # Burrow gem
 			for i in n:

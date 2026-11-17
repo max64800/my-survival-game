@@ -429,3 +429,21 @@ func test_masons_shovel_levels_the_ground() -> void:
 	check(fills > 0, "the fill is saved with the digs")
 	check(Recipes.LIST.has("masons_shovel") and Recipes.LIST.masons_shovel.station == "workbench", "made at the Workbench")
 	_teardown()
+
+
+## F261 (owner, Nov 17): every hit pays, like Conan Exiles: a stone on each hit, the rest when it breaks. The early
+## stones are an advance on that rock, so over many digs the total is what it was.
+func test_every_hit_pays() -> void:
+	await _setup(42)
+	var p := _find_rock(Mat.STONE)
+	if p == Vector3.INF:
+		_teardown()
+		return
+	var before := auth.drop_count()
+	check_eq(auth.request_hit(1, p, Vector3.UP).get("state"), "hit", "1st hit")
+	check_eq(auth.drop_count(), before + 1, "the first hit already gives a stone")
+	check(ps.leftovers.get(Mat.STONE, 0) < 0, "it's an advance on that rock")
+	auth.request_hit(1, p, Vector3.UP)
+	check_eq(auth.request_hit(1, p, Vector3.UP).get("state"), "dug", "3rd hit breaks it")
+	check(ps.leftovers.get(Mat.STONE, 0) > -Mat.VOXELS_PER_ITEM[Mat.STONE] * 3, "the advance is paid back")
+	_teardown()

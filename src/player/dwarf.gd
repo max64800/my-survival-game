@@ -562,10 +562,13 @@ func _on_dig_feedback(pid: int, result: Dictionary) -> void:
 	var soft: bool = result.get("material", Mat.STONE) in [Mat.MOSS, Mat.DIRT, Mat.CLAY]
 	match result.get("state", ""):
 		"hit":
+			if not soft:  # cracks spread on rock with each hit (F261); dirt and moss just crumble
+				DigCracks.hit(get_parent(), at, result.get("normal", Vector3.UP), int(result.get("hits", 1)), int(result.get("needed", 3)))
 			Fx.burst(get_parent(), at, col, 6, 2.5)
 			_shake = 0.35
 			Sfx.play("dig_soft" if soft else "dig_rock", at)
 		"dug":
+			DigCracks.clear()
 			Fx.burst(get_parent(), at, col, 16, 4.0)
 			ChunkSwarm.burst(get_parent(), at, col, self)  # 25-50 bits fly into you (F13)
 			_shake = 0.8

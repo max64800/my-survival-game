@@ -3220,3 +3220,14 @@ the body."
   test of theirs (aim skips things behind the dwarf) errors: theirs, untouched. (3) A push failed on a network
   hiccup after the temporary copy was cleaned up: redone.
 - Note: standing still, the spear now points low and forward, tip near the ground.
+
+## November 17, 2026 (PC, rock-textures Claude): digging feel, round 1 (F261)
+- Looked up Conan Exiles: every strike gives resources (tool's harvest power), 3-7 hits per node, heavy thunk.
+  Couldn't confirm visible crack stages there. Owner picked: every hit pays + cracks grow (order: dig feel, then
+  shapes F189, then moving things F190, all options).
+- Every hit pays: _pay_hit gives 1 item per non-breaking hit and takes its voxels off ps.leftovers (can go below
+  zero), so totals stay the same and abandoned rocks aren't free. Test added.
+- Cracks: DigCracks, a Decal with game-drawn branching cracks in 4 stages. Round 1 looked drawn-on (thick pale
+  outline); round 2 tapered, jagged, faint rim.
+- **Hurdles:** a new class_name file needs Godot's scan (--import) before tests can see it: 8 tests failed until
+  then.
