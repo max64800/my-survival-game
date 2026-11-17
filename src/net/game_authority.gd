@@ -39,6 +39,7 @@ var cave_life: CaveLife  ## grass, ferns, small roots... (only looks, but they b
 var removed_plants: Array[int] = []  ## cave-life plants broken so far (saved, sent to late joiners)
 ## Host: chopped roots growing back (F106): glow id -> seconds left.
 var regrow := {}
+var plant_regrow := {}  ## small roots (cave-life plant id) -> seconds until they grow back (saved)
 const REGROW_TIME := 600.0  ## 10 minutes
 var _drops: Dictionary = {}  ## drop_id -> Drop
 var _next_drop_id := 1
@@ -693,10 +694,14 @@ func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
 		var plant := cave_life.breakable_at(point)
 		if plant >= 0:
 			var at := cave_life.position_of(plant)
+			var is_root := cave_life.kind_of(plant).begins_with("rootlet")
 			removed_plants.append(plant)
 			_ev_break_plant.rpc(plant)
-			spawn_drop(CaveLife.FIBER_DROP, 1, at + Vector3.UP * 0.3)
-			return {state = "done", hits = 1, needed = 1, point = at, kind = "fiber"}
+			# small roots give wood and grow back (owner, Nov 17: "I'm missing a ton of wood"); grass and ferns: fiber
+			spawn_drop("rootwood" if is_root else CaveLife.FIBER_DROP, 1, at + Vector3.UP * 0.3)
+			if is_root:
+				plant_regrow[plant] = REGROW_TIME
+			return {state = "done", hits = 1, needed = 1, point = at, kind = "rootwood" if is_root else "fiber"}
 	var power: float = Items.dig_power(ps.selected_item()) * ps.progress.dig_power_mult() \
 		* (1.0 + Gems.bonus(ps.inventory.get_slot(ps.hand_slot())).get("dig", 0.0)) 		* (1.0 + Upgrades.bonus(ps.inventory.get_slot(ps.hand_slot())))  # +15% per upgrade step
 	var bare := false
@@ -1402,6 +1407,16 @@ func _start_regrow(spot: Dictionary) -> void:
 
 ## Host: count down; a root comes back only if the rock it hangs from is still there.
 func _tick_regrow(delta: float) -> void:
+	for id in plant_regrow.keys():
+		plant_regrow[id] -= delta
+		if plant_regrow[id] > 0.0:
+			continue
+		plant_regrow.erase(id)
+		var home := cave_life.home_of(id) if cave_life else Vector3.INF
+		if home == Vector3.INF or world.sdf_at(home + Vector3.DOWN * 0.3) >= 0.0:
+			continue  # the rock it grew from was dug away
+		removed_plants.erase(id)
+		_ev_restore_plant.rpc(id)
 	for id in regrow.keys():
 		regrow[id] -= delta
 		if regrow[id] > 0.0:
@@ -1419,6 +1434,13 @@ func _ev_restore_glow(glow_id: int) -> void:
 	removed_glow.erase(glow_id)
 	if glow:
 		glow.restore_spot(glow_id)
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_restore_plant(plant_id: int) -> void:
+	removed_plants.erase(plant_id)
+	if cave_life:
+		cave_life.restore_plant(plant_id)
 
 
 @rpc("authority", "call_local", "reliable")
@@ -1613,7 +1635,7 @@ func snapshot() -> Dictionary:
 			if glow._spots[id].get("chops", 1) != GlowPlacer.KINDS[glow._spots[id].kind].get("chops", 1):
 				chops[id] = glow._spots[id].chops
 	return {edits = edit_log.duplicate(), glow = removed_glow.duplicate(), plants = removed_plants.duplicate(), drops = drops, next_drop = _next_drop_id,
-		stations = sts, chops = chops, regrow = regrow.duplicate(), runes = rune_slab.to_data(), build = builder.snapshot(), boxes = storage.snapshot(), monsters = monsters.snapshot(), state = world_state}
+		stations = sts, chops = chops, regrow = regrow.duplicate(), plant_regrow = plant_regrow.duplicate(), runes = rune_slab.to_data(), build = builder.snapshot(), boxes = storage.snapshot(), monsters = monsters.snapshot(), state = world_state}
 
 
 func load_snapshot(snap: Dictionary) -> void:
@@ -1625,6 +1647,8 @@ func load_snapshot(snap: Dictionary) -> void:
 		removed_plants.append(id)
 		if cave_life:
 			cave_life.remove_plant(id)
+	for id in snap.get("plant_regrow", {}):  # small roots growing back
+		plant_regrow[int(id)] = float(snap.plant_regrow[id])
 	for c in snap.edits:
 		edit_log.append(c)
 		_pending_digs.append(c)

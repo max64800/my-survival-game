@@ -144,6 +144,33 @@ func remove_plant(id: int) -> void:
 	set.where = where
 
 
+## Which kind plant `id` is ("" if unknown).
+func kind_of(id: int) -> String:
+	var at: Array = _index.get(id, [])
+	return at[1] if not at.is_empty() else ""
+
+
+## A broken plant grows back where it was (owner, Nov 17: small roots regrow like the big ones).
+func restore_plant(id: int) -> void:
+	var at: Array = _index.get(id, [])
+	if at.is_empty():
+		return
+	var set: Dictionary = _cells[at[0]][at[1]]
+	var xf: Transform3D = set.xforms[at[2]]
+	var where: PackedVector3Array = set.where
+	(set.mmi as MultiMeshInstance3D).multimesh.set_instance_transform(at[2], xf)
+	where[at[2]] = xf.origin
+	set.where = where
+
+
+## Where plant `id` grew, even if it's broken now (INF if unknown).
+func home_of(id: int) -> Vector3:
+	var at: Array = _index.get(id, [])
+	if at.is_empty():
+		return Vector3.INF
+	return (_cells[at[0]][at[1]].xforms[at[2]] as Transform3D).origin
+
+
 func _exit_tree() -> void:
 	if _task >= 0:  # never leave the helper thread working on a game that's gone
 		WorkerThreadPool.wait_for_task_completion(_task)
@@ -339,6 +366,8 @@ static func _fuzz(kind: String, type: String, life: float) -> float:
 
 ## What kind of life a glow spot brings: type, how far it reaches (m), how many tries round it ({} = none).
 static func _source(s: Dictionary) -> Dictionary:
+	if s.get("extra", false):
+		return {}  # (the extra wood roots: no new patches, so every plant keeps its id)
 	var kind: String = s.kind
 	if kind == GlowPlacer.DRIP:
 		return {type = "damp", reach = 4.0, tries = 18}

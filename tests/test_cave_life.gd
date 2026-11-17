@@ -99,3 +99,21 @@ func test_hitting_grass_breaks_it() -> void:
 	check(life.position_of(id) == Vector3.INF, "it's gone")
 	check(life.breakable_at(life.nearest("lichen", Vector3.ZERO).origin, 0.05) == -1, "lichen doesn't break (only grass, ferns, small roots)")
 	life.free()
+
+
+## Owner, Nov 17 ("I'm missing a ton of wood"): small roots are breakable roots (they drop wood) and grow back.
+func test_small_roots_break_and_grow_back() -> void:
+	var maker := CaveMaker.new(12)
+	var life := CaveLife.new()
+	life.build(maker, GlowPlacer.place(maker))
+	var r := life.nearest("rootlet", Vector3.ZERO)
+	check(r.origin != Vector3.INF, "there are small roots")
+	var id := life.breakable_at(r.origin + Vector3(0.05, 0.1, 0.0))
+	check(id >= 0 and life.kind_of(id).begins_with("rootlet"), "a swing finds the small root (kind %s)" % life.kind_of(id))
+	var home := life.home_of(id)
+	life.remove_plant(id)
+	check(life.position_of(id) == Vector3.INF, "it's gone")
+	check(life.home_of(id) == home, "the game still knows where it grew")
+	life.restore_plant(id)
+	check(life.position_of(id) == home, "it grows back in the same place")
+	life.free()

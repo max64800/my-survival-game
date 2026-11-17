@@ -83,6 +83,7 @@ static func _place(maker: CaveMaker) -> Array[Dictionary]:
 	_add_low_crystals(maker, spots)
 	_add_start_spots(maker, spots)
 	_add_first_drip(maker, spots)
+	_add_more_roots(maker, spots)
 	for i in spots.size():
 		spots[i].id = i
 	return spots
@@ -123,6 +124,40 @@ static func _add_low_crystals(maker: CaveMaker, spots: Array[Dictionary]) -> voi
 			if room.get("biome", "mossy") == "fungal":
 				kind = "crystal_amber" if rng.randf() < 0.35 else CRYSTAL
 			_add_spot(spots, hit, normal_at(maker, hit), kind, rng.randf_range(1.3, 2.0), rng.randf_range(0, TAU), 0.0)
+			_grid_put(near, hit)
+			want -= 1
+
+
+## More roots for wood (owner, Nov 17: "I'm missing a ton of wood... make more of them"): a few extra roots on the
+## floor of every room, more in big caverns. Added after everything else, with their own dice, so every older spot keeps
+## its id; marked `extra` so the cave plants don't grow new patches round them (the plants keep their ids too).
+const MORE_ROOTS_BIG := 6
+const MORE_ROOTS_ROOM := 2
+
+static func _add_more_roots(maker: CaveMaker, spots: Array[Dictionary]) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = maker.seed + 780
+	var near := {}
+	for s in spots:
+		_grid_put(near, s.pos)
+	for room in maker.rooms:
+		if room.get("sealed", false) or room.get("biome", "mossy") == "fungal" or maker.sdf_at(room.center) <= 0.0:
+			continue
+		var want: int = MORE_ROOTS_BIG if room.big else MORE_ROOTS_ROOM
+		for i in want * 4:
+			if want <= 0:
+				break
+			var dir := Vector3(rng.randf_range(-1, 1), -rng.randf_range(0.5, 1.0), rng.randf_range(-1, 1)).normalized()
+			var hit := _march(maker, room.center, dir, 60.0)
+			if hit == Vector3.INF or normal_at(maker, hit).y < 0.8:
+				continue  # floors only
+			if maker.sdf_at(hit + Vector3.UP * 1.0) <= 0.4 or not _solid_ground(maker, hit) or not _spaced_grid(near, hit):
+				continue
+			if maker.sdf_at(hit - Vector3.UP * 0.8) >= 0.0:
+				continue
+			var length := 0.85 + 0.35 * fposmod(hit.x * 7.3 + hit.z * 3.1, 1.0)
+			spots.append({id = -1, pos = hit, normal = Vector3.UP, kind = ROOT, color = KINDS[ROOT].color, scale = 1.0,
+				spin = rng.randf_range(0, TAU), length = length, chops = KINDS[ROOT].get("chops", 1), extra = true})
 			_grid_put(near, hit)
 			want -= 1
 

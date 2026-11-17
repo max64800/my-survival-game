@@ -2837,3 +2837,14 @@ the body."
   in three) and look 1 (the tangle): "make them very big and random". The curtain was dropped.
 - Placed by `clutter.gd` (`HROOTS`, `_place_hanging_roots`): on room ceilings, 1.5-4x (2-5 m long), random turn and
   tint, 2 m kept clear above the floor, drawn per 32 m square; digging nearby removes them.
+
+## November 17, 2026 (PC, rock-textures Claude): more wood (F246)
+
+- Owner: "I'm missing a ton of wood": more roots that give wood, small roots and twigs should give wood not fiber,
+  roots should regrow. Big roots already grew back after 10 minutes (F106); the small floor roots didn't.
+- More roots: `GlowPlacer._add_more_roots` adds 6 per big Mossy cavern and 2 per room, after every other spot (own
+  dice, marked `extra`), so old spots keep their ids and the cave plants don't grow new patches (their ids stay too).
+  New caves zone 1: 177 wood roots instead of 78; old-style caves 46 instead of 24. Hurdle: the first version put
+  roots in the Fungal Jungle too (a test caught it; jungle wood is the giant mushrooms).
+- Small roots: breaking one drops rootwood (grass and ferns still fiber) and it grows back after 10 minutes
+  (`plant_regrow`, saved; `CaveLife.restore_plant`). New test: a small root breaks and grows back in the same place.
