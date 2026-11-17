@@ -482,7 +482,7 @@ def patch_box(px, py, front, p):
 	dx, dy = px - cx, py - cy
 	c_, s_ = math.cos(tilt), math.sin(tilt)
 	u, v = dx * c_ + dy * s_, -dx * s_ + dy * c_
-	side = np.where(front == fr, 0.0, 1.0)
+	side = np.where(front == fr, -1.0, 1.0)  # (was 0.0 on its own side: then nothing was ever "inside", no patch showed, Nov 18)
 	return np.maximum(np.maximum(np.abs(u) - hw, np.abs(v) - hh), side)
 
 
