@@ -1,0 +1,33 @@
+# Game name research (Nov 17, 2026)
+
+Owner's direction: "Dwarf"/"Dwarves" in the name, short and punchy, about the dwarves/clan (story: `docs/design/lore.md`).
+Checked: the Steam store (821 dwarf titles, about 120 with "dwarf" in the name), itch.io, books/games/films (web), and .com
+(Verisign WHOIS). **Trademarks not checked** (USPTO blocked automated search): do a manual search at tmsearch.uspto.gov
+(classes 9 and 41) and EUIPO for the final pick, and register the .com at once.
+
+| # | Name | Closest existing thing | .com (Nov 17) | Risk |
+|---|---|---|---|---|
+| 1 | Dwarfwake | "Dragonwake" | free | low |
+| 2 | Dwarves Awake | none (a fan wiki phrase) | free | low |
+| 3 | Stonedwarves | "Stone: A Dwarven Saga" (tabletop), "Below the Stone" | free | low-med |
+| 4 | Dwarves Unearthed | none | free | low |
+| 5 | Dwarfkin | sounds like "Dwarf King"; Steam has "Dwarven King" | free | med |
+| 6 | Dwarfborn | echoes Skyrim's "Dragonborn" | free | med |
+| 7 | Dwarf Oath | Warhammer "Oathbreaker" novels | free | low-med |
+| 8 | Runedwarves | none; hard to say | free | low-med |
+
+Dropped (conflicts):
+- Dwarfhold: a Steam game, and the .com is taken.
+- Stonewake: 3 itch.io games, and the .com is taken.
+- Dwarfdeep: an itch.io game.
+- Deep Dwarves: Steam has "Dwarven Deeps".
+- The Last Dwarves: Steam has "The Last Dwarf", and there's a novel series.
+- Dwarfstone: the .com is taken.
+- Dwarfrune: the .com has been taken since 1998.
+- Oathbound: many itch.io games use it.
+- Dwarf Clan: too generic.
+- Dwarves Unbound: too close to "Dwarfzbound".
+- Cursed Dwarves: too close to "Doomed Dwarves".
+
+Story note: World of Warcraft has dwarves who came from stone beings (the Earthen, "Curse of Flesh"). It's not a name
+problem, but keep the page and trailer wording clearly our own.
