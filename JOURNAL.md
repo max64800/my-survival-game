@@ -2831,6 +2831,17 @@ the body."
   checking they were INSIDE the body: with the round belly some sat in front of the chest where the braids hang and
   folded a braid back on itself (122 degrees): now only inside. Still open: the middle braid swings 6-9 cm into the
   belly in run, sprint, sword and chopping; the back hair sways 12 cm in a dash (the test allows 10).
+- The page said "this model could not be loaded": the bare body's file (14.9 MB) was just over what the page host
+  delivers (round 3's 14.6 MB loaded). Found by loading the page from disk in a browser (it worked there). The head's
+  two pictures inside the page file are now saved more compactly: 13.7 MB.
+- Owner on the bare body (Nov 18): hands way too wide from the front, a big bump on the back ("like he is gonna grow
+  wings"), no knees, the heel sticks out. Causes: with the arm hanging, the front shows the hand's THICKNESS (the palm
+  was 7.6 cm thick); the upper back was 3-4 cm deeper than the lower back, plus shoulder-blade lumps; thigh, knee and
+  shin were one even tube; the heel reached 8 cm behind the ankle. Fixed: flatter palm and slimmer fingers, an almost
+  flat back with a slight curve and no blade lumps, the thigh tapering into a bony knee with a kneecap and a hollow
+  behind, the heel 6 cm behind the ankle.
+- Still open: the middle braid swings 5-9 cm into the belly in fast moves; a braid link folds back sharply in a dash
+  (95 degrees; the test fails, with the back-hair sway).
 
 - **Owner's round 2 notes:** clear gaps between the stone rows and between stones; the battlement's copper band
   sticks out; ruins should have no door hanging, rather a broken door lying nearby. Fixes: stones now touch (only

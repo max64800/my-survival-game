@@ -335,20 +335,20 @@ for side in ("l", "r"):
 	knuck = [f[0] for f in fingers]
 	mid = (knuck[0] + knuck[1]) / 2
 	along = (mid - wr).length
-	cl.add(cl.ell(QV(wr.lerp(mid, 0.55)), (along * 0.6, 0.038, (knuck[1] - knuck[0]).length / 2 + 0.034)), 0.014)  # the palm
-	cl.add(cl.ell(QV(wr.lerp(mid, 0.1)), (0.04, 0.036, 0.046)), 0.02)                                          # the wrist end
+	cl.add(cl.ell(QV(wr.lerp(mid, 0.55)), (along * 0.6, 0.027, (knuck[1] - knuck[0]).length / 2 + 0.032)), 0.014)  # the palm (flatter: Nov 18)
+	cl.add(cl.ell(QV(wr.lerp(mid, 0.1)), (0.036, 0.03, 0.044)), 0.02)                                          # the wrist end
 	for k, f in enumerate(fingers):
-		r0 = 0.031
+		r0 = 0.026
 		f = [f[0].lerp(wr, 0.25)] + f[1:]  # (from inside the palm)
 		for j in range(len(f) - 1):
 			cl.add(cl.tube(QV(f[j]), QV(f[j + 1]), r0 * (1 - 0.06 * j), r0 * (1 - 0.06 * (j + 1))), 0.004)
-		cl.add(cl.ell(QV(f[-1]), (0.026, 0.025, 0.026)), 0.006)                       # a round fingertip
-		cl.add(cl.ell(QV(f[1] + Vector((0, 0, 0.01))), (0.026, 0.018, 0.026)), 0.006)  # the knuckle on top
+		cl.add(cl.ell(QV(f[-1]), (0.022, 0.02, 0.022)), 0.006)                       # a round fingertip
+		cl.add(cl.ell(QV(f[1] + Vector((0, 0, 0.01))), (0.022, 0.013, 0.022)), 0.006)  # the knuckle on top
 	th = chains["thumb"]
 	th = [th[0].lerp(mid, 0.15)] + th[1:]
 	for j in range(len(th) - 1):
-		cl.add(cl.tube(QV(th[j]), QV(th[j + 1]), 0.031 * (1 - 0.07 * j), 0.031 * (1 - 0.07 * (j + 1))), 0.006)
-	cl.add(cl.ell(QV(th[-1]), (0.025, 0.025, 0.025)), 0.006)
+		cl.add(cl.tube(QV(th[j]), QV(th[j + 1]), 0.026 * (1 - 0.07 * j), 0.026 * (1 - 0.07 * (j + 1))), 0.006)
+	cl.add(cl.ell(QV(th[-1]), (0.021, 0.021, 0.021)), 0.006)
 	finish(cl.mesh(f"hand_{side}", skin, PARTS), 4000)
 	del cl
 
@@ -459,16 +459,16 @@ def groove(cl, pts, front, depth=0.003, width=0.01, n=2):
 if not CLOTHES:
 	# the body's outline (height, half-width, front, back): a round belly that hangs low, a barrel chest, broad but
 	# sloping shoulders (the arms are added below), a thick neck under the beard
-	TORSO = [(0.33, 0.2, 0.15, 0.14), (0.4, 0.222, 0.19, 0.158), (0.47, 0.23, 0.24, 0.165), (0.55, 0.224, 0.265, 0.172),
-		(0.62, 0.216, 0.255, 0.18), (0.69, 0.21, 0.222, 0.19), (0.76, 0.21, 0.19, 0.195), (0.82, 0.198, 0.15, 0.19),
-		(0.87, 0.162, 0.11, 0.16), (0.93, 0.085, 0.07, 0.09)]
+	# (the back only gently curved: owner Nov 18, a deeper upper back looked "like he is gonna grow wings")
+	TORSO = [(0.33, 0.2, 0.15, 0.15), (0.4, 0.222, 0.19, 0.165), (0.47, 0.23, 0.24, 0.17), (0.55, 0.224, 0.265, 0.172),
+		(0.62, 0.216, 0.255, 0.175), (0.69, 0.21, 0.222, 0.177), (0.76, 0.21, 0.19, 0.177), (0.82, 0.198, 0.15, 0.17),
+		(0.87, 0.162, 0.11, 0.145), (0.93, 0.085, 0.07, 0.09)]
 	cl = clay((-0.72, 0.09, -0.36), (0.72, 1.0, 0.33))
 	cl.add(loft(cl, TORSO), 0.012)
 	cl.add(cl.ell(Q(0, 0.535, -0.125), (0.2, 0.175, 0.155)), 0.06)                       # the round belly, hanging a little
 	cl.add(cl.ell(Q(0, 0.43, -0.09), (0.17, 0.07, 0.12)), 0.05)                           # (its underside, over the pants)
 	for s in (-1, 1):
 		cl.add(cl.ell(Q(s * 0.085, 0.765, -0.152), (0.088, 0.056, 0.042)), 0.035)          # chest
-		cl.add(cl.ell(Q(s * 0.095, 0.77, 0.16), (0.08, 0.09, 0.032)), 0.06)               # shoulder blade (soft)
 		cl.add(cl.ell(Q(s * 0.082, 0.375, 0.095), (0.098, 0.088, 0.078)), 0.045)           # buttock
 		cl.add(cl.ell(Q(s * 0.19, 0.5, 0.0), (0.05, 0.1, 0.12)), 0.06)                     # the soft sides
 	for side in ("l", "r"):
@@ -491,10 +491,10 @@ if not CLOTHES:
 		cl.add(cl.ell(QV(wr + Vector((0, 0.022, 0.0))), (0.012, 0.011, 0.011)), 0.006)  # the wrist bone's knob
 		# hip, thigh, knee and kneecap, shin and calf muscle
 		th, kn, an = B(f"thigh_{side}"), B(f"calf_{side}"), B(f"foot_{side}")
-		cl.add(cl.tube(QV(th + Vector((s * 0.012, 0, 0))), QV(kn), 0.098, 0.068), 0.05)
-		cl.add(cl.ell(QV(kn), (0.058, 0.055, 0.056)), 0.03)
-		cl.add(cl.ell(QV(kn + Vector((0, -0.052, 0.006))), (0.03, 0.032, 0.018)), 0.015)
-		cl.add(cl.tube(QV(kn), Q(an.x, 0.15, an.y), 0.06, 0.04), 0.03)
+		cl.add(cl.tube(QV(th + Vector((s * 0.012, 0, 0))), QV(kn + Vector((0, 0, 0.03))), 0.098, 0.06), 0.05)  # (tapers into the knee)
+		cl.add(cl.ell(QV(kn), (0.054, 0.05, 0.05)), 0.02)                                 # the knee
+		cl.add(cl.ell(QV(kn + Vector((0, -0.05, 0.008))), (0.034, 0.036, 0.022)), 0.01)   # kneecap
+		cl.add(cl.tube(QV(kn + Vector((0, 0, -0.02))), Q(an.x, 0.15, an.y), 0.054, 0.038), 0.03)  # shin
 		cl.add(cl.ell(QV(kn + (an - kn) * 0.32 + Vector((0, 0.024, 0))), (0.056, 0.07, 0.048)), 0.035)
 	# soft lines: under the chest, the breastbone, the spine, the cleft, the navel, the belly's fold over the pants
 	groove(cl, [(-0.16, 0.718), (-0.08, 0.705), (-0.02, 0.712)], True, 0.0025, 0.009)
@@ -502,6 +502,9 @@ if not CLOTHES:
 	groove(cl, [(0.0, 0.82), (0.0, 0.73)], True, 0.0025, 0.01)
 	groove(cl, [(0.0, 0.87), (0.0, 0.7), (0.0, 0.5)], False, 0.003, 0.012)
 	groove(cl, [(0.0, 0.43), (0.0, 0.32)], False, 0.006, 0.01)
+	for side in ("l", "r"):  # the hollow behind each knee
+		kn = B(f"calf_{side}")
+		press(cl, [(QV(kn + Vector((-0.02, 0.05, 0.0))), QV(kn + Vector((0.02, 0.05, 0.0))), 1.0)], 0.006, 0.012)
 	cl.cut(cl.ell(on_surf(cl, 0.0, 0.53, True, -0.004), (0.011, 0.014, 0.012)), 0.005)
 	groove(cl, [(-0.17, 0.42), (-0.08, 0.385), (0.0, 0.378), (0.08, 0.385), (0.17, 0.42)], True, 0.004, 0.01)
 	for s in (-1, 1):
@@ -541,7 +544,7 @@ if not CLOTHES:
 		fc.add(fc.ell(Q(an.x, 0.13, an.y), (0.043, 0.05, 0.046)), 0.02)                                  # ankle
 		for s2 in (-1, 1):
 			fc.add(fc.ell(Q(an.x + s2 * 0.036, 0.122, an.y + 0.004), (0.015, 0.017, 0.015)), 0.008)        # ankle bones
-		fc.add(fc.ell(Q(an.x, 0.045, an.y + 0.032), (0.047, 0.045, 0.05)), 0.03)                          # heel
+		fc.add(fc.ell(Q(an.x, 0.045, an.y + 0.02), (0.046, 0.044, 0.042)), 0.03)                          # heel (not sticking out: Nov 18)
 		fc.add(fc.ell(Q(an.x + out * 0.004, 0.04, an.y - 0.05), (0.057, 0.04, 0.1)), 0.035)              # the foot
 		fc.add(fc.tube(Q(an.x, 0.11, an.y - 0.01), Q(an.x + out * 0.004, 0.05, an.y - 0.115), 0.042, 0.03), 0.03)  # instep
 		fc.add(fc.ell(Q(an.x + out * 0.006, 0.03, an.y - 0.112), (0.062, 0.03, 0.042)), 0.025)            # ball of the foot
