@@ -3210,3 +3210,13 @@ the body."
 - **Hurdles:** (1) the test's bump never appeared: the rock is stored in 1 m steps, a 0.5 m ball hardly shows;
   the shovel's fill balls (0.6 m) had the same problem, now 1 m. (2) Shared files with other sessions' unsaved
   lines (items, recipes, authority): only my lines copied into the commit.
+
+## November 17, 2026 (PC, rock-textures Claude): spear stab (F272)
+- The animation packs have no spear attack; their straight right punch (Punch_Cross) with the spear held
+  pointing forward along the arm reads as a stab (studio photos). No sword swoosh on a stab.
+- **Hurdles:** (1) the dwarf session had closed with unsaved changes in dwarf_rig.gd, dwarf_model.gd and
+  dwarf_studio.gd: owner said take over; only my lines were committed, theirs left as they are (my studio
+  'speartest' stays local, the studio file's test section exists only in their unsaved copy). (2) A new unsaved
+  test of theirs (aim skips things behind the dwarf) errors: theirs, untouched. (3) A push failed on a network
+  hiccup after the temporary copy was cleaned up: redone.
+- Note: standing still, the spear now points low and forward, tip near the ground.

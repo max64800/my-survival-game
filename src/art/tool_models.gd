@@ -31,8 +31,12 @@ static func build(look: String, col: Color, layers: int, item_id: String = "") -
 	var model := Look.forged("items", item_id) if item_id != "" else null
 	if model:
 		match look:
-			"pickaxe", "axe", "axe_2h", "sword", "mace", "mace_2h", "spear", "hammer", "shovel":
-				model.position = Vector3.DOWN * 0.1  # hold it a little above the end of the handle
+			"pickaxe", "axe", "axe_2h", "sword", "mace", "mace_2h", "hammer", "shovel":
+				model.position = Vector3.DOWN * 0.1
+			"spear":
+				# Pointing forward along the arm, held a third of the way up the shaft, so a thrust is a stab (owner, Nov 17)
+				model.rotation.x = -PI / 2.0
+				model.position = Vector3(0, 0.0, 0.5)  # hold it a little above the end of the handle
 			"shield":
 				model.rotation.y = PI / 2.0  # its face points out from the back of the hand
 				model.position = Vector3(0.07, -0.25, 0)

@@ -131,9 +131,13 @@ func swing(duration: float) -> void:
 func attack(duration: float, heavy: bool) -> void:
 	swinging = true
 	if dwarf_rig:
-		dwarf_rig.attack(duration, heavy)
-		# A pale swoosh behind the blade (brighter for a heavy blow).
-		WeaponTrail.follow(_hand, duration * 0.7, Color(1.0, 0.95, 0.85, 0.55 if heavy else 0.35), 0.3, 0.9)
+		if Combat.weapon_of(_held) == "spear":
+			dwarf_rig.stab(duration)  # a thrust, not a swing (owner, Nov 17)
+		else:
+			dwarf_rig.attack(duration, heavy)
+		# A pale swoosh behind the blade (brighter for a heavy blow). Not for a spear's straight thrust.
+		if Combat.weapon_of(_held) != "spear":
+			WeaponTrail.follow(_hand, duration * 0.7, Color(1.0, 0.95, 0.85, 0.55 if heavy else 0.35), 0.3, 0.9)
 		get_tree().create_timer(duration).timeout.connect(func(): swinging = false)
 		return
 	if rig:

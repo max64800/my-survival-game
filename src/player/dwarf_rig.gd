@@ -36,7 +36,7 @@ const ANIMS := {
 	idle = "Idle", walk = "Walk", jog = "Jog_Fwd", sprint = "Sprint",
 	air = "Jump", roll = "Roll", hit = "Hit_Chest", knock = "b/Hit_Knockback",
 	dig = "x/Pickaxe_Mine", climb = "x/Ladder_Climb", chop = "b/TreeChopping", wake = "b/LayToIdle", attack_a = "b/Sword_Regular_A", attack_b = "b/Sword_Regular_B",
-	heavy = "b/Sword_Regular_C", eat = "b/Consume", use = "Interact", throw = "b/OverhandThrow",
+	heavy = "b/Sword_Regular_C", stab = "Punch_Cross", eat = "b/Consume", use = "Interact", throw = "b/OverhandThrow",
 	# Held poses (as long as the button is down):
 	block = "b/Sword_Block", shield = "b/Idle_Shield", aim = "Pistol_Aim_Neutral",
 }
@@ -423,6 +423,12 @@ func play_full(what: String, duration: float = 0.0) -> void:
 func attack(duration: float, heavy: bool) -> void:
 	_attack_flip = not _attack_flip
 	play_upper("heavy" if heavy else ("attack_a" if _attack_flip else "attack_b"), duration)
+
+
+## A spear thrust (owner, Nov 17: "spears should have a different attack animation, that he's actually spearing
+## something"): a straight punch with the spear pointing forward along the arm (ToolModels holds it that way).
+func stab(duration: float) -> void:
+	play_upper("stab", duration)
 
 
 func _play(layer: String, what: String, duration: float) -> void:
