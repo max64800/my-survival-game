@@ -21,7 +21,7 @@ const BEARD := "res://assets/characters/dwarf/Hair_Beard.gltf"
 const BODY := "res://assets/characters/dwarf/dwarf_body.glb"
 ## Round 1 of the hand-built dwarf is a grey shape waiting for the owner's OK, so it is only worn when switched on:
 ## start the game with "newdwarf" (godot --path . -- newdwarf), or set use_body before build(). After the OK: true.
-const BODY_ON := false
+const BODY_ON := true  # (owner, Nov 18: "import this into the game so I can play as him")
 var use_body := BODY_ON or "newdwarf" in OS.get_cmdline_user_args()
 ## With the hand-built body the head keeps only this much of each animation's neck and head turning: it sits right on
 ## the shoulders with a big beard on the chest, so a full human nod pushed the face into the chest (F183).

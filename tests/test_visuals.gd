@@ -28,7 +28,8 @@ func test_rigged_dwarf_builds_and_animates() -> void:
 	for what in ["idle", "walk", "jog", "sprint", "air", "roll", "dig", "attack_a", "block", "eat"]:
 		check(rig.tree.has_animation(DwarfRig.ANIMS[what]), "has the %s animation" % what)
 	check(m.left_hand != null and m._hand != null, "has hands for the lantern and tools")
-	check(rig.find_children("*", "BoneAttachment3D", true, false).size() >= 3, "helmet + two hands ride on bones")
+	# (the hand-built body is bareheaded like the approved picture: no starting cap, so only the two hands)
+	check(rig.find_children("*", "BoneAttachment3D", true, false).size() >= (2 if rig.use_body else 3), "helmet + two hands ride on bones")
 	var sk := rig.skeleton
 	var pelvis := sk.find_bone("pelvis")
 	var before := sk.get_bone_pose_rotation(sk.find_bone("upperarm_l"))
@@ -104,10 +105,11 @@ func test_armor_and_wear_show_on_the_dwarf() -> void:
 	check(after.size() > before + 8, "armor pieces and the mask appear (%d -> %d parts)" % [before, after.size()])
 	for mi: MeshInstance3D in after:
 		check(mi.layers == DwarfModel.VISUAL_LAYER, "every worn part is on the dwarf's layer (no lantern self-shadow)")
-	check(not m.dwarf_rig._cap.visible, "an armor helmet replaces the starting iron cap")
+	var cap := m.dwarf_rig._cap  # (none on the bareheaded hand-built body)
+	check(cap == null or not cap.visible, "an armor helmet replaces the starting iron cap")
 	m.set_wear([])
 	await frames(2)
-	check(m.dwarf_rig._cap.visible, "taking the helmet off brings the cap back")
+	check(cap == null or cap.visible, "taking the helmet off brings the cap back")
 	check(m.find_children("*", "MeshInstance3D", true, false).size() == before, "all armor parts are removed again")
 	m.free()
 

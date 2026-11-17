@@ -182,6 +182,7 @@ func test_hand_built_body_fits_the_skeleton() -> void:
 				bad.append(String(mi.skin.get_bind_name(b)))
 	check(parts >= 8, "the hand-built body has its parts (%d)" % parts)  # (Nov 18: the bare body is 9 clay parts)
 	check(bad.is_empty(), "every bone it uses exists in the game skeleton (missing: %s)" % [bad])
+	await frames(1)  # (let the earlier tests' players finish freeing first)
 	holder.free()
 
 
