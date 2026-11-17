@@ -121,34 +121,80 @@ How it's built (`tools/asset_forge/builds/dwarf_head.py`, called by `dwarf_body.
   SpringBoneSimulator3D can't be used: the skeleton is scaled).
 - Round 2c (owner's notes: no visible shading, side braids clash, "learn how to do hair animation"): hard lines from each
   lock's seams and grooves (`hard_lines()`); side braids at 14 cm; real hair chains: "hair_braid_<m|a|b>_1..7" down each
-  whole braid and "hair_back_<l|m|r>_1..4" down the back hair, added by `DwarfRig._add_swing_bones` under the skeleton
+  whole braid and (since Nov 17) one chain "hair_back_m_1..7" down the back hair, added by `DwarfRig._add_swing_bones` under the skeleton
   root (not the stretched head) and placed every frame by `HairSwing` (verlet chain, 30 degree bend limit, collision
   balls from `DwarfRig._fit_colliders`). Fast moves still push the swinging braids into round 1's shirt: body round.
 
-## The back hair: why every fix failed (analysis, Nov 17 evening, nothing changed yet)
-The owner (with pictures, after 5 rounds): the back hair lifts away from the back as a stiff slab ("visor"), the bare
-neck shows under it, the tip hooks. Measured on the game's own bending (`dwarf_pose_dump.gd` + a small analysis):
-- Built pose: the back hair hangs 7 deg from straight down. Standing/jumping: head tips 4-5 deg, hair fine.
-- Run/Mining/Sword/Chopping/Roll: the head tips 30-65 deg (he leans forward) and the back hair goes to 63-97 deg
-  from straight down (horizontal), lifting up to 9 cm off the neck.
-**Cause 1:** `HairSwing` defines the hair's resting shape as "where the head carries it" (`head_moved * joints`), and
-GRAVITY was set to 0. So the ponytail tips with the head like a rigid visor; real hair falls back onto the back.
-**Cause 2:** a render of the dwarf AS BUILT (no animation) shows the lower back hair is already a big smooth sheet: the
-clay hair-mass "hang down the back" tube in `build_hair()` has no locks on it. Part of the "sheet" was never stretching.
-(The stretch check found real but smaller tears too: arm bones, three strands, sharp borders; those are fixed.)
-**Planned fix (owner to OK):** (1) the lower back hair rests ON the back like the braids rest on the belly: it follows
-the upper back (spine_03 region), only the top near the head follows the head; the swing adds a small sway on top, with
-gravity and collision balls on the back; (2) cover the bare tube with hanging locks (or replace it with locks);
-(3) separately: a dark spot at the eye's outer corner seen from the side (owner's picture): probably the socket corner
-left uncovered after the lids were narrowed; measure first.
-Check with the stretch check, the angle-from-down number per clip, and a side render of the worst frame (all three
-were used for this analysis: pictures `side_built.png` / `side_run.png` were made from the dump).
+## The back hair "visor": fixed by measuring (Nov 17 evening, F215, waiting for the owner's look)
+The owner (with pictures, after 5 rounds): the back hair lifts off the back as a stiff slab ("visor"), the bare neck
+shows under it, the tip hooks. `dwarf_clip_check.py` now prints per clip how far the back hair lifts off the back and
+how many degrees it opens away from it (against the upper back's own lean). `dwarf_pose_dump.gd` options to split the
+causes: `backrigid` (the back hair held exactly where it rests), `nocol` (no collision balls), `nosway`.
+(The earlier analysis said the head tips 30-65 deg in fast moves: wrong, it tips 15-27 deg; the upper back leans 22-39
+and the head only 6-12 deg against it. The planned "gravity + balls" fix would not have helped.) The real causes, each
+tested on its own:
+1. The chain folded: rays below the hanging hair hit its underside up by the neck, so its last two bones pointed up
+   into the neck. The nape hair rode on its swinging end: the bare neck, the hook, and nape hair 1-8 cm inside the neck.
+   Now `build_hair()` stops at the first ray that isn't lower and ends the chain at the lowest hair in the middle.
+2. Drag against the world (`HairSwing`, "air"): running blew the ponytail out like a headwind. Back hair: air 0.
+3. Its resting place rode on the head. Now below the head it lies on the shirt: each joint copies the bones of the
+   shirt point under it (`DwarfRig._hair_on_shirt`), blended in over the neck (0.865-0.96 m, like the beard); joints
+   up on the skull are pinned to the head.
+4. The collision balls (one bone each; the arm ones fat) poked out of the bending shirt: up to 4 cm push. The back hair
+   no longer uses them: it may never sink below where it rests on the shirt, only lift off a little when it swings.
+5. Tear lines: the nearest point on a bent chain jumps between links, so hair beside a bend followed two bones on
+   either side of a line. Back hair weights now go by height down the chain (`along_by_height`); the bone over the neck
+   stretches along its length when the head moves against the back.
+6. The hanging part had almost no locks (a bare smooth sheet): four rows of hanging locks, tips flat.
+Result (worst per clip, before → after): lift off the back run 11.5 → 2.9 cm, sprint 8.2 → 3.4, mining 17.4 → 2.8,
+sword 11.0 → 2.3, chopping 11.9 → 1.4, roll 21.8 → 6.9 (the swing in the roll); opening 25-41 → 5-18 deg; worst back
+tear 8x → 4x. Held exactly at rest with no balls, run lifts 0.0 cm: the resting place is right, the rest is the sway.
+Still open: a dark spot at the eye's outer corner seen from the side (owner's picture): probably the socket corner
+left uncovered after the lids were narrowed; measure first. The braids still have the headwind and the balls (N2).
 
 ## Next session first (owner, Nov 16 evening: "we will finish tomorrow")
 - F214: thicker front braids.
-- F215: a real skeleton for the big ponytail down the back, like the front braids (one long 7-bone chain on back
-  collision balls), so it visibly swings; check it in the recorded file.
+- F215: a real skeleton for the big ponytail down the back, like the front braids: done Nov 17 (one chain of 7, lying
+  on the shirt; see "The back hair visor" above).
 - Then the body round below.
+
+## Round 3, the body: started Nov 17 night (draft, NOT in the game yet)
+- Measured: `python tools/asset_forge/dwarf_turnaround_measure.py [out.png]` prints width/depth per 2.5 cm of height
+  and the separate pieces (arm | body | arm, leg | leg). Torso ~0.50 m wide at the hem (0.43 m), ~0.43 at the chest,
+  ~0.45 m deep, belly out most at 0.60-0.65; shorts legs ~0.23 wide, cuffs ~0.20-0.23, crotch ~0.36; wraps to ~0.18;
+  feet ~0.19 wide; round 1's feet were 0.35 m long (toe bone 26 cm in front of the ankle), now ~0.24 m.
+- `dwarf_body.py` now builds the body as clay (`loft()`: one smooth surface through the measured rings; `torus`,
+  `body_ring` for cuffs, hem, collar, waistband; `finish()` cuts the faces down for the game). `body=<png>` renders the
+  whole body front/side/back. The game's `dwarf_body.glb` still has round 1's body until a full build is run.
+- Draft 2 (owner not shown yet), still wrong: the shirt reads as a can (boxy shoulders, flat bottom: needs sloping
+  shoulders into the sleeves, a hem that flares and hangs uneven), folds show as small dents (need long soft creases),
+  the shorts' waistband pokes out from under the shirt and a stray bar sits on the back of the seat, the feet read as
+  round boots (need a flatter, longer-toed wrapped foot with visible band edges), hands are still round 1's.
+- Then: weights (nothing on Head/neck_01; the shirt must not bulge with the arms), the clip check and back-hair numbers,
+  the 3D page, the owner's OK, then sculpt + bake.
+
+## Round 3, the body: draft in the game (Nov 18, waiting for the owner's look)
+- Owner's OKs (Nov 18): the skeleton now matches the turnaround picture (`DwarfProportions`): shoulders ~12 cm lower
+  (`clavicle` length 0.35), shoulders moved forward to hang from the middle of the body (`SHOULDER_FORWARD`), arms a
+  little shorter (0.5), hands ~17 cm instead of ~47 (`HAND_SIZE` 0.36: finger joints closer, not a thinner hand bone,
+  so held tools keep their size). Re-dump the skeleton (`dwarf_skeleton_dump.gd`) before any body build.
+- `dwarf_body.py`: shirt a barrel (widest at the flared hem and belly), hem cut along an uneven line with side slits and
+  a rolled lip; folds are `press()`ed soft dips (not tubes with big soft joins: a soft join much bigger than the fold
+  digs on its own); shorts trimmed to stay 1 cm inside the shirt above the hem; legs and feet wrapped in flat `strip()`s
+  with visible edges; clay hands (3 fingers + thumb); `finish()` merges the zero-size slivers the face cutting leaves.
+- `body=<png>` now renders AFTER the weights with the arms lowered 65 deg (the picture's pose): judge shoulders posed.
+- Head: `nose_pockets()` prints how shut-in the skin round the nose is (the dark-bake spots); review adds `_nose.png`.
+- Clip check (Godot's bending, every clip): walk 2 mm, sprint 2, run 10, mining 9, jump 2; side braids by the arms
+  39 mm standing, 32-37 sword/chopping; middle braid 100 mm in the roll. Back hair sways 14 cm in a dash (test limit 10).
+  Tried and undone: (1) fading the arm bones out of the shirt's body (made run 10 -> 149 mm: the beard copies the shirt's
+  bones, the arms are mapped to the chest for it already); (2) a "never sink below the shirt under it" floor for braid
+  joints like the back hair's (tore the braids, 100x stretch). The check itself was fooled by folded/zero-size
+  triangles: it now confirms "inside" by counting ray crossings.
+- Owner's notes on the page (Nov 18): hips too wide, feet in the ground, forearms massive, fists tiny, a sausage; 2 fat
+  fingers + thumb. Done: `HAND_SIZE` 0.43, two-finger hands, slimmer arms, narrower shorts/hem, hem at ~0.405 m; the feet
+  settle to the bind pose's foot height (`DwarfProportions._rest_low`, set by `DwarfRig._wear_body`): they had sunk ~8 cm.
+  Clip check: standing/sprint/roll <= 1 cm; side braids by the arms 2-5 cm in walk, run, mining, sword, chopping.
+- Next: the owner's look at the 3D page; then the side braids by the arms, the roll, the back-hair sway; then sculpt + bake.
 
 ## Round 3, the body: how to start (owner, Nov 16: "do this for his entire body now")
 Read the Round 2 notes above and `docs/art/CREATURE-RECIPE.md` Part 4 first. The head is done; keep `dwarf_head.py`.
@@ -160,4 +206,5 @@ Read the Round 2 notes above and `docs/art/CREATURE-RECIPE.md` Part 4 first. The
 3. Weights are the real fight: the shirt's sides and shoulders must not bulge with the arms (that is what still pushes
    the beard tufts in when running) and nothing on the body follows Head or neck_01. Check every change with
    `dwarf_pose_dump.gd` + `dwarf_clip_check.py` (Godot's own bending), not with pictures.
-4. Then let the back hair swing too (F192), with something that keeps it off the back.
+4. The back hair lies on the shirt (copies the bones of the shirt point under each joint): rebuild the body, and it
+   follows the new shirt by itself. Re-run the clip check's back-hair numbers after.

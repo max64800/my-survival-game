@@ -40,7 +40,8 @@ PX_PER_M = 1380.0  # the head picture's scale (crown y=35 px .. middle tuft y=87
 C = Vector((0.0, 0.02, 1.08))  # the skull's middle at eye level (Blender: x sideways, -y = front, z up)
 VOX = 0.0022                   # melt resolution (m): fine enough to keep the grooves on the hair locks
 GAP = 0.012                    # beard and hair stay this far off the body (MODEL-RULES Rule 2: 1 cm)
-EYE_R = 0.021  # (bigger, friendlier eyes: owner Nov 17 "his eyes are small and not nice")
+EYE_R = 0.025  # (bigger, friendlier eyes: owner Nov 17 "his eyes are small and not nice"; again Nov 17 evening:
+#   "his eyes can be bigger, compared to the pictures": 21 -> 25 mm)
 R = random.Random(7)
 SKIN, LIDS, HAIR = [], [], []
 BVH = {}
@@ -354,9 +355,18 @@ def build_face():
 	cl.add(cl.ell((0, -0.068, 0.02), (0.092, 0.062, 0.086)), 0.03)               # jaw and lower face
 	cl.add(cl.ell((0, 0.029, 0.078), (0.086, 0.019, 0.03)), 0.022)               # brow ridge
 	for s in (-1, 1):
-		cl.add(cl.ell((s * 0.072, -0.018, 0.058), (0.034, 0.022, 0.034)), 0.02)  # cheekbone
-		cl.add(cl.ell((s * 0.061, -0.043, 0.079), (0.033, 0.03, 0.031)), 0.018)  # round cheek, pushing the lower lid up
-		cl.add(cl.ell((s * 0.031, -0.054, 0.127), (0.017, 0.016, 0.018)), 0.008)  # nostril wing
+		cl.add(cl.ell((s * 0.072, -0.022, 0.056), (0.03, 0.02, 0.03)), 0.03)  # cheekbone (soft: owner Nov 17, "sausages")
+		# one big round cheek, pushing the lower lid up, touching the side of the nose and running down to the moustache
+		# (owner, Nov 17 evening: "it should just be round, touching the nose on both sides, all the way to the moustache";
+		# a cheek + a cheekbone + a filler read as sausages)
+		cl.add(cl.ell((s * 0.058, -0.05, 0.09), (0.044, 0.041, 0.039)), 0.03)  # (a bit fatter: owner, Nov 17 night)
+		# fill between the nose bridge, the round nose, the cheek and the eye's inner corner (owner, Nov 17 night: "there's
+		# literally holes in there", "it's okay if it's not small")
+		cl.add(cl.ell((s * 0.034, -0.024, 0.118), (0.02, 0.018, 0.02)), 0.022)  # (where the round nose meets the cheek)
+		cl.add(cl.ell((s * 0.031, -0.054, 0.127), (0.017, 0.016, 0.018)), 0.014)  # nostril wing (a softer join: lumpy, Nov 17)
+		# fill under the side of the nose: the pocket between the nostril wing, the cheek, the round nose's underside and
+		# the moustache baked as a dark hole (owner, Nov 17 night; measured by nose_pockets(): 66% shut in at u 5, v -6, w 13)
+		cl.add(cl.ell((s * 0.044, -0.06, 0.127), (0.02, 0.014, 0.02)), 0.02)
 	cl.add(cl.tube((0, 0.014, 0.088), (0, -0.02, 0.128), 0.013, 0.018), 0.012)   # nose bridge
 	cl.add(cl.ell((0, -0.042, 0.155), (0.034, 0.031, 0.033)), 0.012)             # the big round nose
 	cl.add(cl.ell((0, -0.083, 0.103), (0.054, 0.027, 0.04)), 0.02)               # upper lip (under the moustache)
@@ -364,7 +374,8 @@ def build_face():
 	cl.add(cl.ell((0, -0.124, 0.097), (0.039, 0.025, 0.033)), 0.015)             # chin
 	cl.add(cl.tube((0, -0.06, -0.005), (0, -0.2, 0.0), 0.07, 0.072), 0.02)       # neck (into the collar)
 	for s in (-1, 1):
-		cl.cut(cl.ell((s * 0.046, 0.002, 0.094), (0.026, 0.018, 0.018)), 0.008)   # eye socket (filled by the lids; deeper = dark rings)
+		cl.cut(cl.ell((s * 0.051, 0.002, 0.094), (0.026, 0.021, 0.021)), 0.008)   # eye socket (sized to the eye; its inner edge
+		# where it was: grown toward the nose it left a dark hole by the bridge the lids don't cover, Nov 17) (filled by the lids; deeper = dark rings)
 	cl.mesh("face", MS, SKIN)
 	del cl
 	for s in (-1, 1):
@@ -372,7 +383,7 @@ def build_face():
 		build_ear(s)
 
 
-def build_lids(s, A=70, Bu=26, Bl=18, r_in=EYE_R - 0.0015, r_out=EYE_R + 0.0075, rho_max=105, J=48, M=12):
+def build_lids(s, A=70, Bu=32, Bl=22, r_in=EYE_R - 0.0015, r_out=EYE_R + 0.0075, rho_max=105, J=48, M=12):
 	"""Both lids of one eye as one shell round the eyeball with an almond opening (the upper lid 30 degrees above the
 	look line, the lower lid only 14 below: a smiling eye). The shell sinks 1.5 mm into the ball, so the lid edge
 	never leaves a gap (beetle lesson), and it melts into the brow and the cheek."""
@@ -467,7 +478,10 @@ def build_hair():
 	cl.add(cl.ell((0, -0.005, -0.02), (0.156, 0.125, 0.146)), 0.01)
 	for s in (-1, 1):
 		cl.add(cl.ell((s * 0.122, 0.045, -0.07), (0.055, 0.06, 0.064)), 0.035)    # the side puffs, above and behind the ears
-	cl.add(cl.tube((0, -0.05, -0.12), (0, -0.22, -0.23), 0.072, 0.06), 0.04)       # down the back onto the upper back
+	# down the back onto the upper back: three strands side by side, fanning out a little (owner, Nov 17 evening: one
+	# round tube read as "a very big sausage"; three melt into a wider, flatter fall of hair)
+	for x0, x1 in ((-0.035, -0.06), (0.0, 0.0), (0.035, 0.06)):
+		cl.add(cl.tube((x0, -0.05, -0.12), (x1, -0.22 + 0.02 * abs(x1) / 0.06, -0.225), 0.05, 0.04), 0.03)
 	r = np.sqrt(cl.U ** 2 + cl.W ** 2)
 	phi = np.degrees(np.arctan2(cl.U, -cl.W))
 	el = np.degrees(np.arctan2(cl.V, r))
@@ -509,24 +523,67 @@ def build_hair():
 			if min((p - e).length for p in pts for e in ears) < 0.05:
 				continue  # (the ears stay uncovered, like the picture's)
 			lock(pts, 0.036 * R.uniform(0.9, 1.1), 0.021, n, grooves=2, rd=0.22, twist=jit(0.4))
-	# the paths of the back hair's swing chains (owner, round 2b: the back hair stuck to the body): three, from the nape
-	# down through the middle of the hair layer to its tips
-	# (owner F215: "add the skeleton to the big ponytail that slides down the back, similar to the braids": a long chain
-	# of 7 down the middle, from high on the back of the head to the lowest tips, and one of 5 down each side)
+	# The hanging part (the "ponytail" down onto the upper back) gets its own rows of locks round its back and sides,
+	# hanging down along it, tips lying flat (owner, Nov 17: the lower back hair was a bare smooth sheet: the rows above
+	# are spread round the whole head, so only one or two narrow locks landed on it).
+	A, Bt = Hd(0, -0.05, -0.12), Hd(0, -0.22, -0.23)  # (the clay tube "down the back" above)
+	ax = (Bt - A).normalized()
+	out = (BACK - ax * BACK.dot(ax)).normalized()  # the tube's back, square to its length
+	across = ax.cross(out).normalized()
+	RT = random.Random(23)  # (its own dice: the brows, beard and braids built after this keep their exact look)
+	for ri, t in enumerate((0.3, 0.52, 0.74, 0.95)):
+		cnt = 7 if ri % 2 == 0 else (8 if ri == 3 else 6)
+		for j in range(cnt):
+			th = math.radians(-112 + 224 * (j + 0.5) / cnt + RT.uniform(-5, 5))
+			radial = out * math.cos(th) + across * math.sin(th)
+			c = A.lerp(Bt, t)
+			R0, n, _, _ = BVH["hairmass"].ray_cast(c + radial * 0.3, -radial, 0.3)
+			if R0 is None or min((R0 - e).length for e in ears) < 0.06:
+				continue
+			# along the hanging hair and on past its end (flat against the round end, the lowest ones stuck out
+			# backward: a little visor of their own)
+			want = ax * 0.5 + DN * 0.8 + across * (0.12 * math.sin(th))
+			tdir = want - radial * want.dot(radial)
+			if tdir.length < 1e-4:
+				continue
+			tdir.normalize()
+			k = (0.09 + 0.02 * ri / 3) * RT.uniform(0.88, 1.12)
+			if ri == 3:  # (the bottom row: uneven lengths, a ragged fringe of separate tips, not one round end)
+				k = RT.uniform(0.08, 0.16)
+			pts = [R0 - radial * 0.012 - tdir * 0.01, R0 + tdir * 0.33 * k + radial * 0.003, R0 + tdir * 0.66 * k + radial * 0.002,
+				R0 + tdir * 0.9 * k + radial * 0.003, R0 + tdir * k + radial * 0.004]
+			lock(pts, 0.036 * RT.uniform(0.9, 1.1), 0.021, radial, grooves=2, rd=0.22, twist=RT.uniform(-0.4, 0.4))
+	# the path of the back hair's swing chain (owner F215: "add the skeleton to the big ponytail that slides down the
+	# back, similar to the braids"): one chain down the middle (three side by side swung apart and tore the hair between
+	# them, Nov 17), from high on the back of the head, through the middle of the hair layer, to the lowest tips
 	BACKS.clear()
-	# (one chain for the whole ponytail: three side by side swung apart and tore the hair between them, Nov 17)
-	for phi, els in ((0, (30, 15, 0, -15, -30, -42, -54, -64)),):
-		pts = []
-		for el in els:
-			P, n = hit_round("hairmass", phi, el)
-			if P is not None:
-				pts.append(P - n * 0.022)
-		if len(pts) >= 4:
-			# one more joint at the very ends of the hair (owner, Nov 17: "the very end doesn't have a bone, it hooks
-			# into his body"): carry on past the last point down to the lowest locks
-			last = (pts[-1] - pts[-2]).normalized()
-			pts.append(pts[-1] + last * (0.1 if phi == 0 else 0.08))
-			BACKS.append(pts)
+	pts = []
+	for el in (30, 15, 0, -15, -30, -42):
+		P, n = hit_round("hairmass", 0, el)
+		if P is None:
+			continue
+		q = P - n * 0.022
+		if pts and q.z > pts[-1].z - 0.01:
+			# (Nov 17: lower rays passed under the hanging hair and hit its underside back up by the neck, so the chain
+			# folded back up into the neck; the nape hair rode on its swinging end and lifted off: "the bare neck")
+			break
+		pts.append(q)
+	if len(pts) >= 4:
+		# ...and on to the lowest hair in the middle of the back (whichever lock reaches lowest), 1 cm up into it
+		end = None
+		for o in HAIR:
+			mw = o.matrix_world
+			for v in o.data.vertices:
+				q = mw @ v.co
+				if abs(q.x) < 0.04 and q.y > C.y + 0.15 and (end is None or q.z < end.z):
+					end = q
+		end = end + UP * 0.01 if end is not None else None
+		print(f"DWARF back-hair chain: {len(pts)} points down the head to {pts[-1].z:.3f} m, the lowest hair at "
+			f"{end.z if end else 0:.3f} m, {end.y - pts[-1].y if end else 0:+.3f} m further back")
+		if end is None or end.z > pts[-1].z - 0.04:
+			end = pts[-1] + ax * 0.1
+		pts += [pts[-1].lerp(end, 0.5), end]  # (two even links to the end: the game puts the last tip in line)
+		BACKS.append(pts)
 	# the little curl on top of the bald head
 	for k, phi in enumerate((-14, 0, 16)):
 		scalp_lock(phi, 72 + jit(2), [(0.012, 0.0, 0.006, -0.004), (0.026, 0.0, 0.004, -0.012), (0.03, 0.0, -0.006, -0.02)],
@@ -714,14 +771,17 @@ def braid(name, u_top, v_top, v_ring, v_end, W0, W1, D0, D1, r_in, r_out, ring_h
 		if s > s_ring + ring_h * 0.6:
 			break
 		Wd, Dd = size(s)
-		pinch = min(1.0, abs(s - s_ring) / (ring_h * 0.9))
-		rw = min(Wd * 0.3, (r_in - 0.002) + (Wd * 0.3 - r_in) * pinch)
-		rd_ = min(Dd * 0.3, (r_in - 0.002) + (Dd * 0.3 - r_in) * pinch)
+		# near the ring the core fills the ring's hole (owner, Nov 17: above the rings the braids were too thin and didn't
+		# touch the rings: the core stayed thinner than the hole), easing back to its own size 2.5 cm away
+		x = min(max((abs(s - s_ring) - ring_h * 0.5) / 0.025, 0.0), 1.0)
+		near = 1.0 - x * x * (3 - 2 * x)
+		rw = Wd * 0.3 + ((r_in - 0.002) - Wd * 0.3) * near
+		rd_ = Dd * 0.3 + ((r_in - 0.002) - Dd * 0.3) * near
 		core.append((B[i], max(rw, 0.008), max(rd_, 0.008)))
 	HAIR.append(ck.loft(name + "_core", core, MH, sides=16, subsurf=1, up=FWD))
 	# the lobes
 	s, k = 0.0, 0
-	stop = s_ring - ring_h * 0.5 - 0.002
+	stop = s_ring - ring_h * 0.5 + 0.004  # (the plaits run right into the ring: they stopped short of it)
 	while True:
 		Wd, Dd = size(s)
 		step = 0.42 * Wd
@@ -838,9 +898,16 @@ def sculpt_face(high, skin):
 		if loc is not None:
 			d = np.linalg.norm(co - np.array(tuple(loc)), axis=1)
 			h += -0.004 * np.exp(-(d / 0.0045) ** 2)
+	# round the nose, the nostril wings and the cheeks by them the skin stays smooth (owner, Nov 17 night: "smooth, not
+	# rocky"): the grain and bumps fade out there
+	rel = co - np.array(tuple(C))
+	calm = np.ones(len(co))
+	for s in (-1, 1, 0):
+		d = np.linalg.norm((rel - np.array([s * 0.04, -0.125, -0.055])) / np.array([0.045, 0.035, 0.035]), axis=1)
+		calm = np.minimum(calm, np.clip(d - 0.6, 0.0, 1.0) * 0.8 + 0.2)
 	for i in np.nonzero(near & (skin > 0.5))[0]:  # skin grain and a few soft bumps on the bald head
 		p = Vector(co[i])
-		h[i] += 0.00022 * noise.fractal(p * 320, 0.5, 2.0, 2) + 0.0005 * noise.noise(p * 30)
+		h[i] += calm[i] * (0.00022 * noise.fractal(p * 320, 0.5, 2.0, 2) + 0.0005 * noise.noise(p * 30))
 	h *= skin
 	put(high, co + no * h[:, None])
 
@@ -942,6 +1009,51 @@ def creases(high, iters=10):
 		np.add.at(acc, ev[:, 1], sm[ev[:, 0]])
 		sm = 0.5 * sm + 0.5 * acc / np.maximum(cnt, 1)[:, None]
 	return np.maximum(((sm - co) * no).sum(1), 0.0)
+
+
+def nose_pockets(high, mask, log=print, reach=0.02, rays=64):
+	"""How shut-in the skin is round the nose and the cheeks (owner, Nov 17: "a dark hole under the nose, at the side"):
+	for each skin point there, the share of rays (spread over the half-sphere it faces) that hit the head or the
+	moustache within `reach`. Deep pockets bake dark; the worst ones are printed in head space (u, v, w, cm)."""
+	co, no = arrays(high)
+	tree = bvh_of([high])
+	rel = co - np.array(tuple(C))
+	u, v, w = rel[:, 0], rel[:, 2], -rel[:, 1]
+	near_eye = np.zeros(len(co), bool)
+	for s in (-1, 1):  # (behind the lids and the eyeball: never seen)
+		near_eye |= np.linalg.norm(co - np.array(tuple(eye_centre(s))), axis=1) < EYE_R + 0.012
+	pick = np.nonzero((mask < 0.5) & ~near_eye & (np.abs(u) > 0.008) & (np.abs(u) < 0.095) & (v > -0.1) & (v < -0.005) & (w > 0.06))[0]
+	rr = random.Random(3)
+	dirs = []
+	while len(dirs) < rays:  # (even directions over a sphere; flipped onto each point's own side below)
+		d = Vector((rr.gauss(0, 1), rr.gauss(0, 1), rr.gauss(0, 1)))
+		if d.length > 1e-6:
+			dirs.append(d.normalized())
+	occ = np.zeros(len(pick))
+	for j, i in enumerate(pick):
+		n = Vector(no[i])
+		p = Vector(co[i]) + n * 0.0006
+		hit = 0
+		for d in dirs:
+			d2 = d if d.dot(n) > 0 else -d
+			if tree.ray_cast(p, d2, reach)[0] is not None:
+				hit += 1
+		occ[j] = hit / rays
+	seen = occ < 0.97  # (all rays blocked: covered by the moustache, can't be seen)
+	occ = np.where(seen, occ, 0.0)
+	log(f"HEAD nose pockets: {int(seen.sum())} visible skin points checked; shut in >50%: {int((occ > 0.5).sum())}, >65%: {int((occ > 0.65).sum())}")
+	low_ = v[pick] < -0.03  # (under the nose; the lid creases above are listed apart)
+	log(f"   under the nose: shut in >50%: {int((occ[low_] > 0.5).sum())}, >65%: {int((occ[low_] > 0.65).sum())}, worst {occ[low_].max() * 100:.0f}%")
+	shown = []
+	for j in np.argsort(-np.where(low_, occ, 0.0)):
+		i = pick[j]
+		if occ[j] < 0.5 or len(shown) >= 10:
+			break
+		if any(np.linalg.norm(co[i] - co[k]) < 0.006 for k in shown):
+			continue
+		shown.append(i)
+		log(f"   {occ[j] * 100:.0f}% at u {u[i] * 100:+.1f} v {v[i] * 100:+.1f} w {w[i] * 100:+.1f} cm")
+	return occ
 
 
 PRE = []  # the hair points before melting: [positions, lock ids, groove values]
@@ -1127,6 +1239,7 @@ def build(body_objs, fast=False, log=print):
 	log(f"HEAD hair kept inside the copper rings: {pinch_rings(high, mask)} points")
 	gap = body_gap(high, mask)
 	log(f"HEAD laid on the body: {moved} points moved; closest hair to the body {gap * 100:.2f} cm ({time.time() - t0:.0f} s)")
+	nose_pockets(high, mask, log)
 	# which faces are hair (for painting)
 	me = high.data
 	pv = np.empty(len(me.loops), dtype=np.int64)
@@ -1180,9 +1293,14 @@ def build(body_objs, fast=False, log=print):
 	co_, _ = arrays(high)
 	for s in (-1, 1):
 		E = np.array(tuple(eye_centre(s)))
-		gap = np.linalg.norm(co_ - E, axis=1) - EYE_R
+		dist = np.linalg.norm(co_ - E, axis=1)
+		gap = dist - EYE_R
 		above = (co_[:, 2] - E[2]) > 0
-		lash = np.clip(1.0 - np.abs(gap - 0.0012) / np.where(above, 0.0016, 0.001), 0.0, 1.0) * (1 - soft)  # (only AT the lid edge: a ring all round looked like no lids)
+		# (only round the front of the eye, where the lids are: skin deep in the socket's outer corner, behind the lids,
+		# also sat right against the eyeball and got the dark line: from the side it showed as "a hole behind his
+		# nose", owner Nov 17, F193)
+		front = np.clip(((E[1] - co_[:, 1]) / np.maximum(dist, 1e-6) - 0.45) / 0.15, 0.0, 1.0)
+		lash = np.clip(1.0 - np.abs(gap - 0.0012) / np.where(above, 0.0016, 0.001), 0.0, 1.0) * (1 - soft) * front  # (only AT the lid edge: a ring all round looked like no lids)
 		cols = cols * (1.0 - np.where(above, 0.82, 0.6) * lash)[:, None]
 	# (round 2b's crease-depth lines were too faint to see once baked: now drawn from how the hair is built)
 	ink = hard_lines(high, PRE) * soft
@@ -1286,5 +1404,28 @@ def review(out_png, log=print):
 	cam.location = tgt + Vector((-math.cos(az) * math.cos(el), math.sin(az) * math.cos(el), math.sin(el))) * 3
 	cam.rotation_euler = (tgt - cam.location).to_track_quat("-Z", "Y").to_euler()
 	scene.render.filepath = str(Path(out_png).with_name(Path(out_png).stem + "_face.png"))
+	bpy.ops.render.render(write_still=True)
+	# the side of the face, behind the nose and under the eye (owner, Nov 17: "a hole behind his nose", F193)
+	tgt = Hd(0.07, -0.03, 0.05)
+	cam.location = tgt + Vector((1.0, -0.4, 0.2)).normalized() * 3  # (from his left side, a little in front)
+	cam.rotation_euler = (tgt - cam.location).to_track_quat("-Z", "Y").to_euler()
+	scene.render.filepath = str(Path(out_png).with_name(Path(out_png).stem + "_cheek.png"))
+	bpy.ops.render.render(write_still=True)
+	# under the nose from the front-left and below: where the round nose, the nostril wing, the cheek and the moustache
+	# meet (owner, Nov 17 night: "still one dark hole under the nose")
+	cam.data.ortho_scale = 0.16
+	tgt = Hd(0.03, -0.055, 0.12)
+	cam.location = tgt + Vector((0.75, -1.0, -0.45)).normalized() * 3
+	cam.rotation_euler = (tgt - cam.location).to_track_quat("-Z", "Y").to_euler()
+	scene.render.filepath = str(Path(out_png).with_name(Path(out_png).stem + "_nose.png"))
+	bpy.ops.render.render(write_still=True)
+	cam.data.ortho_scale = 0.3
+	# the hair hanging down the back, from behind and a little to the side (owner, Nov 17: "a bare sheet")
+	cam.data.ortho_scale = 0.55
+	tgt = Hd(0, -0.13, -0.14)
+	az, el = math.radians(58), math.radians(10)
+	cam.location = tgt + Vector((-math.cos(az) * math.cos(el), math.sin(az) * math.cos(el), math.sin(el))) * 3
+	cam.rotation_euler = (tgt - cam.location).to_track_quat("-Z", "Y").to_euler()
+	scene.render.filepath = str(Path(out_png).with_name(Path(out_png).stem + "_back.png"))
 	bpy.ops.render.render(write_still=True)
 	log(f"REVIEW {out_png}")

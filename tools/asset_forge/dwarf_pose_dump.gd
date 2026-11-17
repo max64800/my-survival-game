@@ -45,6 +45,10 @@ func _init() -> void:
 		swing.active = false  # (to compare: the braids without their springs)
 	if swing is HairSwing and "nocol" in OS.get_cmdline_user_args():
 		(swing as HairSwing)._colliders = []  # (to compare: the hair without its collision balls)
+	if swing is HairSwing and "backrigid" in OS.get_cmdline_user_args():
+		for ch: Dictionary in (swing as HairSwing)._chains:  # (to compare: the back hair held exactly at its resting place)
+			if ch.kind == HairSwing.KINDS["back"]:
+				ch.kind = {"stiff": 1.0, "drag": 1.0, "radius": 0.035, "bend": 7.0, "air": 0.0}
 	print("SWING ", swing != null and swing.active)
 	var f := FileAccess.open(out, FileAccess.WRITE)
 	var clips := []

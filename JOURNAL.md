@@ -2577,6 +2577,64 @@ The owner: the sheet behind the hair still happens, make the hook at the very en
   "sometimes bigger" change: Claude had also boosted grass (not asked for), and 3x ferns look like spikes; the bend only
   reached 0.9 m from a plant's middle, so giant tufts never bent; and the bend pushes tips down, which squashed big
   mushrooms. Fixed: no boost for grass, ferns at most 1.6x, the bend reach grows with the plant, mushrooms only lean.
+## November 17, 2026 (PC, dwarf Claude, evening): the back hair "visor" (F215)
+
+The owner (with pictures, 5th time): the hair down his back lifts off like a stiff visor, his bare neck shows under it,
+and the end hooks. Earlier the same day a Claude wrote down why (an analysis, no changes). This session did the fix.
+
+**What we did**
+- Two new numbers in the dwarf check (`dwarf_clip_check.py`): how many cm the back hair lifts off his back, and how
+  many degrees it opens away from it. Plus switches in the recorder to test one cause at a time (`backrigid`, `nocol`).
+- Found five causes, each tested on its own:
+  1. The hair's bone chain folded back up into his neck at the end (like a fishing line hooked back on itself). The
+     hair at his nape rode on that swinging end: that was the bare neck AND the hook, and it went 1-8 cm into the neck.
+  2. The swing slowed the hair down against the world, so running worked like a strong headwind blowing it out flat.
+  3. The hair rested where the HEAD carried it. Now, below the head, it lies on the shirt and moves with the shirt
+     point under it, like a blanket on a back.
+  4. The collision balls inside the body (invisible "bumpers") poked out of the shirt when he bent and pushed the hair
+     up to 4 cm off. The back hair no longer uses them: it may lift off a little, never sink in.
+  5. Tear lines: beside a bend in the chain, the hair followed two different bones on either side of a line and ripped
+     into a sheet. Now the hair is matched to its bones by height, and the bone over the neck stretches like skin.
+  Plus: the hanging part had almost no locks (a bare smooth sheet): four rows of hanging locks now.
+- Result (worst moment per move, before → after): lift off the back running 11.5 → 2.9 cm, mining 17.4 → 2.8, sword
+  11.0 → 2.3, roll 21.8 → 6.9; worst tear 8x → 4x. 3D page "Dwarf Body" updated. Dwarf tests pass (one new check: the
+  hair's tip stays near its place on his back in a dash).
+
+**Mistakes and hurdles (including Claude's)**
+- The earlier analysis was partly wrong: it said the head tips 30-65 degrees. Measured: 15-27, and only 6-12 against
+  the back. Its planned fix (gravity + collision balls) would not have helped; the balls were one of the causes.
+- Claude's first guesses failed twice: copying the shirt's bones changed nothing (that spot of the shirt follows the
+  same bone anyway), and giving each joint "only the room it has" didn't stop the balls either. What worked: switching
+  one thing off at a time and measuring (held still + no balls = 0.0 cm lift: so the resting place was right).
+- Claude's own slips: reused a name in the code (`last`) and broke the script for a minute (another Claude was running
+  the game at the same time); the first new hanging locks stuck out backward at the round end (a mini visor), fixed by
+  making them follow the hair's length; the chain's end first fell back to a guess, so it now uses the real lowest hair.
+- Still open: a dark spot at the eye's outer corner (measure first); the braids have the same headwind (asked as N2).
+  2 picture rounds used.
+
+## November 17, 2026 (PC, dwarf Claude, late evening): sausage hair, livelier braids, the hole behind the nose, bigger eyes
+
+The owner looked at the 3D page: "not bad", but the back hair is now a very big sausage and barely moves, the front beard
+swung better before, there's still a hole behind his nose (picture), and the eyes should be bigger, like the pictures.
+
+**What we did**
+- Back hair: the hanging part was one round clay tube with locks all round it (a sausage). Now three strands fanned out
+  side by side, the bottom locks uneven (a ragged fringe), and a looser sway (4-7 cm in fast moves, no tearing).
+- Braids: git history showed a Claude made them swing less at noon. Put halfway back (bend 16 instead of 12): all the
+  way back (20) tore the beard by the middle braid into sheets again (stretch 18x in mining); halfway measures the same
+  as the tame setting.
+- The hole behind the nose: a side picture showed the big round nose overhangs the cheek, leaving a deep pocket that
+  bakes dark. Filled with a soft bit of cheek. The dark lash line now also stays at the front of the eye.
+- Eyes 21 → 25 mm, sockets to match, lids a little wider open. 3D page updated; dwarf tests pass.
+
+**Mistakes and hurdles (including Claude's)**
+- Claude first believed the noon note "the sheets came from glue, not the swing size" and put the full old braid swing
+  back: the stretch check showed sheets again (12-18x). Halfway fixed it. Lesson again: measure, don't trust old notes.
+- The new back-hair check in the test (tip stays within 5 cm in a dash) failed once the hair swung more: the owner
+  wants that sway, so the limit is now 10 cm (the old headwind would still fail it).
+- The first "side of the face" picture came out looking from the front (wrong camera maths); fixed.
+- New, not fixed: after filling the cheek pocket, a small dark spot shows at the inner corner of the eye beside the top
+  of the nose. 2 picture rounds used, so it waits for the owner.
 
 ## November 17, 2026 (PC, rock-textures Claude): cavern kinds, cliff exits, soft lantern shadows (F230-F232, F238)
 
@@ -2622,6 +2680,25 @@ The owner: the sheet behind the hair still happens, make the hook at the very en
   never closed it, so every later test ran in a frozen world. The test now closes it (and checks the freeze), and the
   HUD unfreezes the world if it is ever removed while paused. Full suite: 369 checks, only the dwarf-hair test fails
   (the dwarf chat is changing the hair right now).
+## November 17, 2026 (PC, dwarf Claude, night): round cheeks, braids that fill the rings
+
+The owner (pictures): the cheeks look like sausages (should be round, touching the nose, down to the moustache), and
+above the copper rings the braids are too thin and don't touch the rings. "I'm being too perfectionist; let's move to
+the body."
+
+**What we did**
+- Cheeks: three clay bumps (cheekbone, cheek, the filler added an hour earlier for the "hole") read as sausages. Now
+  one big round cheek each side, touching the nose and running into the moustache; the cheekbone softened.
+- Braids: the braid's core was always thinner than the ring's hole (about 1.9 cm vs 3.2 cm), and the plaits stopped
+  just above the ring: a thin neck with a gap. Now the core fills the hole near the ring and the plaits run into it.
+- 3D page updated; dwarf tests pass.
+
+**Mistakes and hurdles (including Claude's)**
+- The filler Claude added for the "hole behind the nose" was itself one of the sausages. Lesson: one round shape
+  beats patches.
+- The bigger eye socket reached toward the nose further than the lids cover: its inner edge is back where it was.
+- Still there after 2 picture rounds: a small dark gap beside the top of the nose (between the thin nose bridge, the
+  round nose and the cheek). Left for the owner to decide (a small filler there, or move on to the body).
 
 ## November 17, 2026 (PC, rock-textures Claude): wall and ceiling pictures, batch 1 (F232)
 
@@ -2633,6 +2710,21 @@ The owner: the sheet behind the hair still happens, make the hook at the very en
   (none of it through Claude's reading), and a small Python script turned it back into a PNG. The script also waits
   until ChatGPT has finished, which is much cheaper than reading the whole page over and over.
 - Claude closed the tab it opened and left the owner's other tabs alone.
+## November 17, 2026 (PC, dwarf Claude, late night): head finished, the body round started
+
+**What we did**
+- Owner OK'd a big fill beside the nose and fatter cheeks: filled where the round nose meets the cheek (a first try sat
+  too high and covered the inner corner of the eye: moved down); cheeks ~10% fatter; no holes front or side.
+- Body round started: a new tool measures the approved turnaround picture (width and depth every 2.5 cm, each piece
+  separately). Round 1's sizes were roughly right; its feet were 35 cm long (now ~24). `dwarf_body.py` now builds the
+  shirt, shorts, arms, wraps and feet as clay instead of tubes and balls, and can render the whole body.
+
+**Mistakes and hurdles (including Claude's)**
+- The first clay shirt stacked ovals and looked ribbed; the hem's bumps looked like buttons. Draft 2 uses one smooth
+  surface through the measured outline: smooth, but it reads as a can (boxy shoulders, flat hem), the folds are dents,
+  the shorts poke out under the shirt, the feet are round boots. 2 picture rounds used: stopped to check with the owner.
+- A long shell script broke on quote marks; written to a file instead.
+- The game still has round 1's body: the drafts only exist in the build script and scratch files.
 
 ## Nov 17 (PC, cave Claude): bigger body bars, hotbar stays with the bag open, pickaxe to the hotbar (F240-F243)
 - **F240:** the owner wanted the health and stamina bars fat and as long as the hotbar, and bigger food/water dials on
@@ -2686,6 +2778,56 @@ The owner: the sheet behind the hair still happens, make the hook at the very en
   not sure they should be in the game at this quality". Turned off at once (`_place_shelves` not called; models kept).
   Lesson: a separate model stuck on a wall painted by the terrain shader never matches it; wall features should be
   part of the rock shape itself (like the pillars and holes the owner liked). Offered: ledges built into the rock.
+## November 18, 2026 (PC, dwarf Claude): the last spot on the face, and the whole body (round 3) (F193, F183)
+
+**What we did**
+- Face: the owner's picture showed one dark hole under the side of the nose. A new check counts, for every bit of skin
+  round the nose, how much of the "sky" it can see (how much light gets in): the worst visible pocket sat exactly
+  where the nostril wing, the cheek and the moustache meet. Filled it with a soft bit of skin, joined the nostril wing
+  more softly, and let the fine skin bumps fade out round the nose ("rocky"). Pockets under the nose: 47 points to 11
+  (the nostrils themselves).
+- Body: rebuilt as clay like the head. The shirt is a barrel (widest at the flared hem and belly), the hem wavy with
+  side slits and a rolled edge, soft folds, rolled sleeves; the shorts stay tucked inside the shirt; the feet are flat
+  and wrapped in strips you can see the edges of; the hands have 3 chunky fingers and a thumb.
+- Next to the picture, the build itself was off: shoulders 12 cm too high, 15 cm too far back, hands 47 cm long
+  (picture: 17). The owner said yes to fixing all three, so the game's skeleton changed (DwarfProportions). Held tools
+  keep their size (the fingers moved closer together instead of shrinking the hand bone, which tools hang from).
+- The body pictures now show him with his arms down, bent by the real weights, like the game.
+- 3D page "Dwarf Body" updated with round 3 and a side-by-side picture. Game file built; still switched off until the OK.
+
+**Mistakes and hurdles (including Claude's)**
+- Folds came out as straps, twice. Cause found by maths, not pictures: the soft join (2 cm) was much bigger than the
+  fold (3 mm), and a soft join digs about a quarter of its size by itself. Folds are now soft dips pressed into the clay.
+- The waistband poked out and looked like a bar on his back; removing it was not enough: the shorts' corners still
+  came through the shirt. Now the shorts are trimmed to stay 1 cm inside the shirt.
+- Claude ran the pose recorder with `--headless`: it can't bend meshes without a screen. Its own instructions say
+  no `--headless`.
+- The clip check said the face was "19 cm inside the body" even standing. Two broken triangles from the face-cutting
+  step (one with no size, then a folded pair) fooled it. The build now removes such triangles, and the check counts
+  ray crossings before calling a point "inside".
+- Claude guessed the arms pulled the shirt's belly into the beard and removed the arms' share of the shirt. Measured
+  fairly, it made things far worse (run 1 cm to 15 cm): undone. Then tried the back hair's "never sink below the
+  shirt" rule for the braids: it tore them (stretched 100x): undone. Two tries, so it waits for the owner.
+- Still open: the side braids poke 3-4 cm into the shirt by the arms, the middle braid 10 cm in the roll; the back hair
+  sways 14 cm in a dash (the test's limit is 10 cm: that test fails; not loosened without the owner).
+- The owner looked at the page (picture): "the proportions are very, very off": hips incredibly wide, feet in the
+  ground, forearms massive, fists tiny, a sausage; and 2 fat fingers + a thumb, cartoon-turtle style.
+  - Feet in the ground: since round 1! The game matched the dwarf's toe bone to a human's, but the thick dwarf feet sit
+    higher on their bones: they sank ~8 cm. Claude's first fix worked the height out from the bone maths and was still
+    6 cm off; the right number is in the pose the body is bound to, so the rig now hands that over. Soles on the floor.
+  - Narrower shorts and hem flare, the hem raised to the picture's height, slimmer forearms, hands 20 cm with two fat
+    fingers and a thumb. Clip check after: standing, sprint, roll at most 1 cm; side braids by the arms 2-5 cm.
+  - Lesson: look at the model the way the owner does (in the game/page, moving) before calling it done: the Blender
+    pictures stand on their own floor, so sunk feet never showed there.
+
+- **Owner's round 2 notes:** clear gaps between the stone rows and between stones; the battlement's copper band
+  sticks out; ruins should have no door hanging, rather a broken door lying nearby. Fixes: stones now touch (only
+  faces open to the air get dents; the faces pressed against a neighbour stay flat, gap 3 mm, no tilt); the battlement
+  band lies in its own row of stone, set back so its face is level with the stones below; new `door_broken` piece
+  (the round door on its back, split where a plank broke out, straps and battens snapped there). Hurdles (mine): the
+  first keystone outline was drawn in the wrong order and folded into a black triangle; the quick way of cutting stones
+  round the ring dropped corners and left a small hole, so it now follows the exact arc; in the first broken door
+  the straps and a batten still bridged the gap, floating over nothing.
 
 ## November 17, 2026 (PC, rock-textures Claude): roots hanging from the ceilings (F232)
 

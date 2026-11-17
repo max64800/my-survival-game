@@ -180,7 +180,7 @@ func test_hand_built_body_fits_the_skeleton() -> void:
 		for b in mi.skin.get_bind_count():
 			if rig.skeleton.find_bone(String(mi.skin.get_bind_name(b))) < 0:
 				bad.append(String(mi.skin.get_bind_name(b)))
-	check(parts > 20, "the hand-built body has its parts (%d)" % parts)
+	check(parts >= 12, "the hand-built body has its parts (%d)" % parts)  # (round 3, Nov 18: 13 clay parts, not 20+ tubes and balls)
 	check(bad.is_empty(), "every bone it uses exists in the game skeleton (missing: %s)" % [bad])
 	holder.free()
 
@@ -202,10 +202,21 @@ func test_braid_tufts_swing_when_moving() -> void:
 		return
 	check(rig.skeleton.find_bone("hair_braid_m_7") >= 0, "the middle braid's 7 swing bones were added to the skeleton")
 	check(rig.skeleton.find_bone("hair_back_m_4") >= 0, "the back hair's swing bones were added too")
+	var back: Dictionary = {}
+	for ch: Dictionary in swing._chains:
+		if not (ch.under as Array).is_empty():
+			back = ch
+	check(not back.is_empty(), "the back hair lies on the shirt below the head (owner, Nov 17: 'a stiff visor')")
+	var lifted := 0.0
 	for i in 30:  # dash forward, then stop
 		holder.position.z -= 0.12 if i < 15 else 0.0
 		await tree.process_frame
+		if not back.is_empty() and not (back.was as Array).is_empty():
+			lifted = maxf(lifted, ((back.p as Array)[-1] as Vector3).distance_to((back.was as Array)[-1]))
 	check(swing.biggest_swing > 3.0, "the hair swings when he moves (%.1f degrees)" % swing.biggest_swing)
+	# (its drag used to work against the world: running blew the ponytail out flat behind him like a headwind; it may
+	# sway several cm when he starts and stops: owner, Nov 17 evening, "it barely moves")
+	check(lifted < 0.1, "the back hair's tip stays near its place on his back in a dash (%.1f cm away at most)" % (lifted * 100.0))
 	# (on its own a link bends at most MAX_BEND; the body pushing the hair aside may bend it more, never back on itself)
 	check(swing.biggest_fold < 90.0, "no link folds back on itself (sharpest bend %.1f degrees)" % swing.biggest_fold)
 	holder.free()

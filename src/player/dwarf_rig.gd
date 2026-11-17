@@ -134,6 +134,12 @@ func _wear_body(path: String) -> void:
 	for mi: MeshInstance3D in skeleton.find_children("*", "MeshInstance3D", true, false):
 		mi.visible = false
 	var poses := dwarf_rest_poses()
+	# standing, the feet go back to where they are in the pose the body was built in (sole on the floor: Nov 18, matching
+	# the human animation's toe bone sank the thick hand-built feet into the ground)
+	var low := INF
+	for b in proportions._feet:
+		low = minf(low, (poses[b] as Transform3D).origin.y)
+	proportions._rest_low = low
 	# The .glb is in "model space" (facing +Z); the player's look space faces -Z. Look space = our parent's space.
 	var skel_in_look := Transform3D()
 	var n: Node3D = skeleton
@@ -143,8 +149,10 @@ func _wear_body(path: String) -> void:
 	skel_in_look = transform * skel_in_look
 	var model_to_skel := skel_in_look.affine_inverse() * Transform3D(Basis(Vector3.UP, PI), Vector3.ZERO)
 	var src: Node = (load(path) as PackedScene).instantiate()
-	var chains := _add_swing_bones(src, poses, model_to_skel)
+	var built := {}
+	var chains := _add_swing_bones(src, poses, model_to_skel, built)
 	var colliders := _fit_colliders(src, poses, model_to_skel)
+	var under := _hair_on_shirt(src, built, model_to_skel)
 	for mi: MeshInstance3D in src.find_children("*", "MeshInstance3D", true, false):
 		var skin := Skin.new()
 		if mi.skin:
@@ -163,7 +171,15 @@ func _wear_body(path: String) -> void:
 		_add_rim(mi)
 	src.free()
 	var head := skeleton.find_bone("Head")
-	_add_springs(chains, colliders, poses[head] if head >= 0 else Transform3D(), head)
+	var heights := {}
+	for chain: String in built:
+		heights[chain] = (built[chain] as Array).map(func(at: Vector3) -> float: return at.y)
+	var rests := {}
+	for chain: String in under:
+		for spot: Dictionary in under[chain]:
+			for b: int in spot.weights:
+				rests[b] = poses[b]
+	_add_springs(chains, colliders, poses[head] if head >= 0 else Transform3D(), head, heights, under, rests)
 
 
 ## Collision balls inside the torso for the swinging hair (HairSwing): a grid of points inside the shirt, each the
@@ -217,8 +233,9 @@ func _fit_colliders(src: Node, poses: Array, model_to_skel: Transform3D) -> Arra
 
 
 ## The hand-built body brings its own swing bones (the braids and the back hair: "hair_<chain>_1..n", F192). Add them
-## to our skeleton where the body was built, each hanging from its parent bone; returns {chain: [bone indices]}.
-func _add_swing_bones(src: Node, poses: Array, model_to_skel: Transform3D) -> Dictionary:
+## to our skeleton where the body was built, each hanging from its parent bone; returns {chain: [bone indices]} and
+## fills `built` with {chain: [where each bone starts as built (the .glb's space: metres, y up)]}.
+func _add_swing_bones(src: Node, poses: Array, model_to_skel: Transform3D, built := {}) -> Dictionary:
 	var chains := {}
 	var found := src.find_children("*", "Skeleton3D", true, false)
 	if found.is_empty():
@@ -248,18 +265,69 @@ func _add_swing_bones(src: Node, poses: Array, model_to_skel: Transform3D) -> Di
 		var chain := bname.rsplit("_", true, 1)[0]
 		if not chains.has(chain):
 			chains[chain] = []
+			built[chain] = []
 		chains[chain].append(idx)
+		built[chain].append((to_model * ssk.get_bone_global_rest(i)).origin)
 	return chains
 
 
-## Springs on the swing bones: the tufts trail behind when the dwarf moves and bounce back (HairSwing).
-func _add_springs(chains: Dictionary, colliders: Array, head_rest: Transform3D, head: int) -> void:
+## Where each back-hair joint lies on the shirt (owner, Nov 17: the back hair lifted off the back): the bones and
+## weights of the nearest shirt point, so below the head the hair moves exactly like the shirt under it, and which way
+## is "out of the shirt" there (the hair may lift off, never sink in). The arms' share goes to the upper chest, like
+## the beard and hair in dwarf_body.py (raising the arms tore the beard).
+## Returns {chain: [{weights: {bone: weight}, out: direction (skeleton space)} per joint, the last bone's tip included]}.
+func _hair_on_shirt(src: Node, built: Dictionary, model_to_skel: Transform3D) -> Dictionary:
+	var out := {}
+	var shirt := src.find_child("body_shirt_body*", true, false) as MeshInstance3D
+	var chest := skeleton.find_bone("spine_03")
+	if shirt == null or shirt.skin == null or chest < 0:
+		return out
+	var arrays := shirt.mesh.surface_get_arrays(0)
+	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]  # (model space, like the bones in `built`)
+	var bones: PackedInt32Array = arrays[Mesh.ARRAY_BONES]
+	var weights: PackedFloat32Array = arrays[Mesh.ARRAY_WEIGHTS]
+	if verts.is_empty() or bones.size() != weights.size():
+		return out
+	var per := bones.size() / verts.size()
+	var arm := ["clavicle", "upperarm", "lowerarm", "hand", "thumb", "index", "middle", "ring", "pinky"]
+	for chain: String in built:
+		var at_list: Array = built[chain]
+		if not chain.begins_with("hair_back") or at_list.size() < 2:
+			continue
+		var spots := at_list.duplicate()
+		spots.append(at_list[-1] + (at_list[-1] - at_list[-2]))  # (the last bone's tip, as HairSwing places it)
+		var list := []
+		for at: Vector3 in spots:
+			var near := 0
+			for v in verts.size():
+				if verts[v].distance_squared_to(at) < verts[near].distance_squared_to(at):
+					near = v
+			var ws := {}
+			for k in per:
+				var w := weights[near * per + k]
+				if w <= 0.0:
+					continue
+				var bname := String(shirt.skin.get_bind_name(bones[near * per + k]))
+				var b := skeleton.find_bone(bname)
+				if b < 0 or arm.any(func(a: String) -> bool: return bname.begins_with(a)):
+					b = chest
+				ws[b] = float(ws.get(b, 0.0)) + w
+			var away: Vector3 = (model_to_skel.basis * (at - verts[near])).normalized()
+			list.append({"weights": ws if not ws.is_empty() else {chest: 1.0}, "out": away})
+		out[chain] = list
+	return out
+
+
+## Springs on the swing bones: the tufts trail behind when the dwarf moves and bounce back (HairSwing). Below the head
+## the back hair lies on the shirt (heights, under, rests: see HairSwing.setup).
+func _add_springs(chains: Dictionary, colliders: Array, head_rest: Transform3D, head: int, heights := {}, under := {},
+		rests := {}) -> void:
 	if chains.is_empty() or head < 0:
 		return
 	var swing := HairSwing.new()
 	swing.name = "HairSwing"
 	skeleton.add_child(swing)  # (after DwarfProportions: it swings the shaped dwarf)
-	swing.setup(chains, colliders, head, head_rest)
+	swing.setup(chains, colliders, head, head_rest, heights, under, rests)
 
 
 ## Every bone as the dwarf stands at rest, shaped by DwarfProportions (skeleton space, each bone's thickness included).

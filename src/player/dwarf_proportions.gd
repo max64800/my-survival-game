@@ -28,14 +28,25 @@ const THICK := {
 ## Where each joint sits, as a share of a human's distance from the joint before it.
 const LENGTHS := {
 	"upperarm_l": 1.15, "upperarm_r": 1.15,     # shoulder width (round, not a V-shape)
-	"lowerarm_l": 0.55, "lowerarm_r": 0.55,     # upper-arm length (short arms: hands reach the hips)
-	"hand_l": 0.55, "hand_r": 0.55,             # forearm length
+	"clavicle_l": 0.35, "clavicle_r": 0.35,     # shoulders ~12 cm lower, like the turnaround picture (owner, Nov 18: they sat up by the chin)
+	"lowerarm_l": 0.5, "lowerarm_r": 0.5,       # upper-arm length (short arms: hands reach the hips)
+	"hand_l": 0.5, "hand_r": 0.5,               # forearm length
 	"thigh_l": 1.2, "thigh_r": 1.2,             # hip width (planted stance)
 	"calf_l": 0.32, "calf_r": 0.32,             # thigh length (stubby legs: about 1/4 of the height)
 	"foot_l": 0.34, "foot_r": 0.34,             # shin length
 	"spine_02": 0.85, "spine_03": 0.85,         # a short, round body
 	"neck_01": 0.3, "Head": 0.5,                # hardly any neck
 }
+
+## The palm and fingers: how far each finger joint sits from the one before it, as a share of what the hand's
+## thickness alone would give (owner, Nov 18: the hands were ~47 cm from wrist to fingertip, the picture's ~17 cm).
+## A length change, not a thickness one: the tools held in the hand keep their size.
+const HAND_SIZE := 0.43  ## (Nov 18: 0.36 made fists far too small next to the arms)
+const FINGERS := ["thumb_", "index_", "middle_", "ring_", "pinky_"]
+
+## How far forward the shoulder joints move, as a share of the shoulder width (owner, Nov 18: the arms hung from the
+## back edge of the body, ~15 cm behind the middle; in the side picture they hang from the middle).
+const SHOULDER_FORWARD := 0.2
 
 ## How much of the animation's neck and head turning the dwarf keeps (1 = all of it). The hand-built body sets this
 ## lower: its head sits right on the shoulders and its beard lies on the chest, so a human-sized nod (up to 90 degrees
@@ -52,7 +63,8 @@ var drop_height := 0.0     ## the same, as plain height in skeleton space (metre
 var _from_anim := Vector3.ZERO
 var _frames := 0
 var _feet := PackedInt32Array()  ## toe + foot bones, for the one-time "are the feet on the floor?" check
-var _ground := 0.0               ## where the human's feet were in the same pose (skeleton space)
+var _ground := 0.0
+var _rest_low := 0.0  ## the dwarf's lowest foot bone above the floor at rest (skeleton space): where it stands               ## where the human's feet were in the same pose (skeleton space)
 var _written := Vector3.INF
 
 
@@ -70,6 +82,11 @@ func setup(sk: Skeleton3D) -> void:
 		var p := sk.get_bone_parent(i)
 		var above: Vector3 = total[p] if p >= 0 else Vector3.ONE
 		_pos[i] = sk.get_bone_rest(i).origin * LENGTHS[b] / above
+	for i in sk.get_bone_count():
+		var bn := sk.get_bone_name(i)
+		if FINGERS.any(func(f: String) -> bool: return bn.begins_with(f)):
+			_pos[i] = sk.get_bone_rest(i).origin * HAND_SIZE
+	_shoulders_forward(sk)
 	_pelvis = sk.find_bone("pelvis")
 	for b in ["neck_01", "Head"]:
 		if sk.find_bone(b) >= 0:
@@ -86,6 +103,35 @@ func setup(sk: Skeleton3D) -> void:
 		var to_parent := _rest_global(sk, parent, false).basis.inverse() if parent >= 0 else Basis()
 		_drop = to_parent * Vector3(0, after.y - before.y, 0)
 		drop_height = after.y - before.y
+		# Standing, the dwarf's lowest foot bone goes back to its own height above the floor at rest. (Nov 18: matching it to
+		# the human animation's toe bone sank the hand-built feet ~8 cm: the dwarf's thick feet sit higher on their bones.)
+		_rest_low = INF
+		for b in _feet:  # (the hand-built body sets this from its own bind pose: DwarfRig._wear_body)
+			_rest_low = minf(_rest_low, _rest_global(sk, b, true).origin.y - drop_height)
+
+
+## Moves both shoulder joints forward by SHOULDER_FORWARD x the shoulder width. Forward is worked out from the skeleton
+## itself (across the shoulders x up the spine, pointing the way the toes point), so it doesn't matter which way the
+## skeleton faces or what units it uses.
+func _shoulders_forward(sk: Skeleton3D) -> void:
+	var ul := sk.find_bone("upperarm_l")
+	var ur := sk.find_bone("upperarm_r")
+	var pel := sk.find_bone("pelvis")
+	var head := sk.find_bone("Head")
+	var foot := sk.find_bone("foot_l")
+	var ball := sk.find_bone("ball_l")
+	if mini(mini(ul, ur), mini(mini(pel, head), mini(foot, ball))) < 0:
+		return
+	var side := _rest_global(sk, ur, true).origin - _rest_global(sk, ul, true).origin
+	var up := _rest_global(sk, head, true).origin - _rest_global(sk, pel, true).origin
+	var fwd := up.cross(side).normalized()
+	if fwd.dot(_rest_global(sk, ball, true).origin - _rest_global(sk, foot, true).origin) < 0.0:
+		fwd = -fwd
+	var shift := fwd * SHOULDER_FORWARD * side.length()
+	for b in [ul, ur]:
+		var parent := sk.get_bone_parent(b)
+		var to_local := _rest_global(sk, parent, true).basis.inverse()
+		_pos[b] = (_pos[b] if _pos.has(b) else sk.get_bone_rest(b).origin) + to_local * shift
 
 
 ## A bone's own thickness times the thickness of every bone above it (per direction; close
@@ -155,7 +201,7 @@ func _process_modification_with_delta(_delta: float) -> void:
 ## animation had them, move the hips by exactly that much. The maths above gets close; this
 ## makes it exact, whatever the belly and leg changes did.
 func _settle_feet(sk: Skeleton3D) -> void:
-	var gap := _lowest_foot(sk, true) - _ground
+	var gap := _lowest_foot(sk, true) - _rest_low  # (standing, the feet flat: the lowest foot bone at its own rest height)
 	if absf(gap) < 0.002:
 		return
 	var parent := sk.get_bone_parent(_pelvis)
