@@ -2633,3 +2633,18 @@ The owner: the sheet behind the hair still happens, make the hook at the very en
   (none of it through Claude's reading), and a small Python script turned it back into a PNG. The script also waits
   until ChatGPT has finished, which is much cheaper than reading the whole page over and over.
 - Claude closed the tab it opened and left the owner's other tabs alone.
+
+## Nov 17 (PC, cave Claude): bigger body bars, hotbar stays with the bag open, pickaxe to the hotbar (F240-F243)
+- **F240:** the owner wanted the health and stamina bars fat and as long as the hotbar, and bigger food/water dials on
+  its left, with "x / 100" when you point at them. Done; the hover box uses the kit's tooltip frame. The lantern
+  text then ran into the hunger dial, so it and the "Well fed" text moved up.
+- **F241:** opening the bag no longer pulls the hotbar inside it (that was F88's way); it stays at the bottom and
+  the bag is placed so it never covers the hotbar or the bars. The test checks this on a 1600 x 900 screen, because
+  the test window is only 64 px and nothing fit (first try failed for that reason).
+- **F242:** the equipment slot names are gone. The "little dots" above the bag slots were **Claude's own mistake**
+  from F227 an hour earlier: the new key-number plates went on every slot, even ones with no key. Now only hotbar
+  slots get a plate. Lesson: look at every screen a shared piece shows up on, not just the one being changed.
+- **F243:** a new pickaxe no longer puts itself in the pickaxe slot; it goes in the hotbar (bag if the hotbar is
+  full). Digging already finds a pickaxe anywhere you carry it. Hurdle: 7 tests assumed the starting pickaxe sat in
+  its slot, so "hotbar slot 1" was free for their item; they now pick the first slot that isn't the pickaxe (a
+  small helper in the test base). Full suite: only the dwarf-hair test fails (the dwarf chat's live work).
