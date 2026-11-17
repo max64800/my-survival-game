@@ -86,6 +86,12 @@ cliff exits (one tunnel into most tall caverns comes in high, with a ledge path 
 Next: walls and ceilings (F232: dripstone, rock shelves, hanging roots and moss, glow threads; ChatGPT pictures first,
 batches of ~4), then step 2, the waterfall shaft.
 
+**Owner's note (Nov 17, F260): the very first cave should be really big, most of its ceiling the glow-worm stars, with
+several snakes at once.** The star ceiling and its snake are the owner's favourite look so far ("this looks unreal").
+How: a bigger first cavern needs a new cave layout (older worlds keep theirs); full star cover there and extra snakes
+are rock-shader changes (terrain.gdshader: `patches`, `snake()`), e.g. star cover = 1 near the start cavern and 2-3
+snake heads per square there.
+
 *(Below: the research and the choices as first written.)*
 
 ---

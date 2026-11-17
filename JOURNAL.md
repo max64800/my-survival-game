@@ -3071,3 +3071,5 @@ the body."
   aimed at the head this time found a ceiling without a star patch, so nothing showed (expected).
 
 - F259: owner: "the snake is working", wants it a lot brighter, and greens that show plus some purple dots. Snake flare x15 -> x36; dot colours 55% teal, 27% green (more saturated, x1.5), 13% purple (x1.9), 5% pale.
+
+- F260 noted (owner, amazed by the star ceiling and snake): the very first cave really big, most of its ceiling stars, several snakes at once. Written into FEEDBACK, cave-walls-plan and epic-caves-plan; not built yet.
