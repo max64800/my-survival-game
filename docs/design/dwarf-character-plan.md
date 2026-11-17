@@ -125,6 +125,25 @@ How it's built (`tools/asset_forge/builds/dwarf_head.py`, called by `dwarf_body.
   root (not the stretched head) and placed every frame by `HairSwing` (verlet chain, 30 degree bend limit, collision
   balls from `DwarfRig._fit_colliders`). Fast moves still push the swinging braids into round 1's shirt: body round.
 
+## The back hair: why every fix failed (analysis, Nov 17 evening, nothing changed yet)
+The owner (with pictures, after 5 rounds): the back hair lifts away from the back as a stiff slab ("visor"), the bare
+neck shows under it, the tip hooks. Measured on the game's own bending (`dwarf_pose_dump.gd` + a small analysis):
+- Built pose: the back hair hangs 7 deg from straight down. Standing/jumping: head tips 4-5 deg, hair fine.
+- Run/Mining/Sword/Chopping/Roll: the head tips 30-65 deg (he leans forward) and the back hair goes to 63-97 deg
+  from straight down (horizontal), lifting up to 9 cm off the neck.
+**Cause 1:** `HairSwing` defines the hair's resting shape as "where the head carries it" (`head_moved * joints`), and
+GRAVITY was set to 0. So the ponytail tips with the head like a rigid visor; real hair falls back onto the back.
+**Cause 2:** a render of the dwarf AS BUILT (no animation) shows the lower back hair is already a big smooth sheet: the
+clay hair-mass "hang down the back" tube in `build_hair()` has no locks on it. Part of the "sheet" was never stretching.
+(The stretch check found real but smaller tears too: arm bones, three strands, sharp borders; those are fixed.)
+**Planned fix (owner to OK):** (1) the lower back hair rests ON the back like the braids rest on the belly: it follows
+the upper back (spine_03 region), only the top near the head follows the head; the swing adds a small sway on top, with
+gravity and collision balls on the back; (2) cover the bare tube with hanging locks (or replace it with locks);
+(3) separately: a dark spot at the eye's outer corner seen from the side (owner's picture): probably the socket corner
+left uncovered after the lids were narrowed; measure first.
+Check with the stretch check, the angle-from-down number per clip, and a side render of the worst frame (all three
+were used for this analysis: pictures `side_built.png` / `side_run.png` were made from the dump).
+
 ## Next session first (owner, Nov 16 evening: "we will finish tomorrow")
 - F214: thicker front braids.
 - F215: a real skeleton for the big ponytail down the back, like the front braids (one long 7-bone chain on back
