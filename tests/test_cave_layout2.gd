@@ -30,6 +30,8 @@ func test_old_caves_unchanged() -> void:
 	CaveMaker.use_layout(6)  # worlds made with the huge cavern and its columns keep theirs too
 	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5332 pois=162 r0=(-83.95856, -20.99115, -44.3989) sum=-9894.0944", "seed 42, layout 6")
 	check_eq(_fingerprint(CaveMaker.new(7)), "rooms=197 segs=5554 pois=163 r0=(-15.06847, -20.1193, 88.08862) sum=-8559.8592", "seed 7, layout 6")
+	CaveMaker.use_layout(8)  # worlds made before the rock bridges (layout 9) keep their caves
+	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5256 pois=161 r0=(-83.95856, -24.81935, -44.3989) sum=-9967.2001", "seed 42, layout 8")
 	CaveMaker.use_layout(8)  # (layout 8 only adds columns: the rooms, paths and places stay layout 3's)
 	var l8 := _fingerprint(CaveMaker.new(42))
 	check(l8.begins_with("rooms=198 segs=5256 pois="), "layout 8 keeps layout 3's rooms and paths (%s)" % l8)
@@ -86,6 +88,22 @@ func test_columns_in_big_caverns() -> void:
 		for q in c.pois:
 			check(not c._in_column(q.pos, 0.0), "seed %d: %s isn't inside a column" % [sd, q.type])
 		check(not c.star_room().is_empty() and c.star_room().snakes == 2, "seed %d: the first cavern has the snake group" % sd)
+	CaveMaker.use_layout(was)
+
+
+## Layout 9 (owner, Nov 17, F189): natural rock bridges across some tall caverns: solid, with room to walk on top.
+func test_rock_bridges() -> void:
+	var was := CaveMaker.layout
+	CaveMaker.use_layout(9)
+	var total := 0
+	for sd in [42, 7, 1234]:
+		var c := CaveMaker.new(sd)
+		total += c._bridges.size()
+		for br in c._bridges:
+			var mid: Vector3 = (br.a as Vector3).lerp(br.b, 0.5)
+			check(c.sdf_at(mid - Vector3.UP * 0.8) < 0.0, "seed %d: the bridge is rock in the middle" % sd)
+			check(c.sdf_at(mid + Vector3.UP * 1.6) > 0.0, "seed %d: room for a dwarf on top" % sd)
+	check(total >= 3, "a few tall caverns have a bridge (%d in 3 worlds)" % total)
 	CaveMaker.use_layout(was)
 
 

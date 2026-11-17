@@ -20,7 +20,7 @@ extends RefCounted
 ##   1 = the first caves: 400 m areas (Mossy x -200…200, Jungle x 220…620), squashed balls and tubes.
 ##   2 = real-shaped caves: 800 m areas (Mossy x -400…400, Jungle x 420…1220), about 4x the rooms,
 ##       passages and halls shaped the way water shapes real caves (see "layout 2" below).
-const LAYOUT_LATEST := 8
+const LAYOUT_LATEST := 9
 ## What brand-new worlds get. Layout 2: the real-shaped caves (F211 step 1, OK'd by the owner Nov 17). Layout 3: the
 ## same plus tall/wide/joined caverns and cliff exits with ledge paths (F230, F231). Old saves keep the layout they were
 ## made with; robots can try older caves with "-- layout=1" or "-- layout=2". Layout 4: the same plus a huge first
@@ -30,7 +30,8 @@ const LAYOUT_LATEST := 8
 ## caves, the first cavern its old size again (owner, Nov 17: the huge one "is too big... half of the cave or more is
 ## empty... the cave where we introduced the snakes was the best size"; huge caverns come back later, with big outposts).
 ## Layout 8: the same plus 1 or 2 smaller stone columns in the plain big caverns (owner, Nov 17: "yes, add one or two").
-const LAYOUT_DEFAULT := 8
+## Layout 9: the same plus natural rock bridges across some tall caverns (owner, Nov 17, F189).
+const LAYOUT_DEFAULT := 9
 static var layout := LAYOUT_DEFAULT
 
 
@@ -179,6 +180,7 @@ func _init(p_seed: int = 1, big_caverns: int = 3, small_rooms: int = 12) -> void
 	cavern_spawn = spawn_point
 	_plan_columns()
 	_plan_cavern_columns()
+	_plan_bridges()
 	_plan_colonnades()
 	_plan_start()
 	_corner_cache.clear()  # the start room was just carved: forget block corners remembered before it
@@ -374,6 +376,140 @@ func _in_column(p: Vector3, margin: float) -> bool:
 		if Vector2(p.x - o.x, p.z - o.y).length() < o.z * 1.4 + margin:
 			return true
 	return false
+
+
+# ---------------------------------------------------------------- rock bridges (layout 9)
+# Owner, Nov 17 (F189): natural stone bridges spanning tall caverns, some you can walk across to reach high tunnels.
+# A bridge is a flat-topped slab of the cave's own rock, wall to wall: about 3.5 m wide and 2.2 m thick in the middle,
+# wider and much thicker where it grows out of the walls, so from below it's an arch. Where a tunnel opens high in the
+# wall, the bridge runs out from that tunnel's floor across the cavern.
+
+const BRIDGE_W := 3.5
+const BRIDGE_T := 2.2
+var _bridges: Array[Dictionary] = []  ## {a, b (ends, at the top surface), w, t}
+var _br_grid := {}  ## Vector2i (32 m square) -> PackedInt32Array
+
+
+func _plan_bridges() -> void:
+	if made_layout < 9:
+		return
+	var outpost := -1
+	if ResourceLoader.exists("res://src/world/ruin_outpost.gd"):
+		var ro: Script = load("res://src/world/ruin_outpost.gd")
+		for m in ro.get_script_method_list():
+			if m.name == "pick_room":
+				outpost = ro.call("pick_room", self)
+				break
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed + 9100
+	for ri in rooms.size():
+		var room: Dictionary = rooms[ri]
+		var roll := rng.randf()
+		var ang := rng.randf_range(0.0, TAU)
+		if not room.big or room.get("sealed", false) or ri == outpost or roll > 0.5 \
+				or room.get("kind", "") not in ["cavern", "spawn", "great_hall", "nest_cavern", "lantern_grove"]:
+			continue
+		var c: Vector3 = room.center
+		var r: Vector3 = room.radii
+		var fl := c.y - r.y * 0.55
+		var tall := r.y * 1.55
+		if tall < 12.0:
+			continue  # too low for a bridge to be worth it
+		var h := fl + tall * 0.5
+		var dir := Vector3(cos(ang), 0.0, sin(ang))
+		var mouth := -1
+		for i in segments.size():  # a tunnel coming in high up: the bridge starts at its floor
+			var sg: Dictionary = segments[i]
+			for e in [sg.a, sg.b]:
+				var rel := Vector2((e.x - c.x) / r.x, (e.z - c.z) / r.z).length()
+				var floor_e: float = e.y - float(sg.r) * 0.6
+				if rel > 0.75 and rel < 1.25 and floor_e > fl + 5.0 and floor_e < fl + tall - 4.0:
+					mouth = i
+					h = floor_e
+					dir = Vector3(c.x - e.x, 0.0, c.z - e.z).normalized()
+					break
+			if mouth >= 0:
+				break
+		# From the high tunnel if there is one and it's clear; else up to 6 directions at mid-height.
+		var tries: Array = []
+		if mouth >= 0:
+			tries.append([dir, h, mouth])
+		for k in 6:
+			tries.append([Vector3(cos(ang), 0.0, sin(ang)).rotated(Vector3.UP, k * PI / 6.0), fl + tall * 0.5, -1])
+		for t in tries:
+			var dk: Vector3 = t[0]
+			var reach := Vector2(dk.x * r.x, dk.z * r.z).length() * 1.05  # just into the wall, not through it
+			var a := Vector3(c.x, t[1], c.z) - dk * reach
+			var b := Vector3(c.x, t[1], c.z) + dk * reach
+			if not _bridge_blocks(a, b, t[2], c, r):
+				_add_bridge(a, b)
+				break
+
+
+## Would a bridge from a to b cut through a ramp, a ledge path, a column or a place?
+func _bridge_blocks(a: Vector3, b: Vector3, mouth: int, c: Vector3, r: Vector3) -> bool:
+	var probe := {a = a, b = b, w = BRIDGE_W, t = BRIDGE_T}
+	for i in segments.size():
+		if i == mouth:
+			continue
+		var sg: Dictionary = segments[i]
+		if Vector2(sg.a.x - c.x, sg.a.z - c.z).length() > maxf(r.x, r.z) * 1.4 and Vector2(sg.b.x - c.x, sg.b.z - c.z).length() > maxf(r.x, r.z) * 1.4:
+			continue
+		if not (sg.get("ramp", false) or sg.get("ledge", false)) and _seg_inside_room(sg, c, r):
+			continue  # a tunnel's line through the open middle is just floor, far below
+		for k in 5:
+			var q: Vector3 = (sg.a as Vector3).lerp(sg.b, k / 4.0)
+			if Vector2((q.x - c.x) / r.x, (q.z - c.z) / r.z).length() > 1.1:
+				continue  # deep in the rock beyond the wall: the bridge doesn't reach there
+			if _bridge_dist(q, probe) < float(sg.r) + 1.5:
+				return true
+	for o in _cols:
+		if _bridge_dist(Vector3(o.x, a.y, o.y), probe) < o.z * 1.4 + 2.0:
+			return true
+	for q in pois:
+		if _bridge_dist(q.pos, probe) < 3.0:
+			return true
+	return false
+
+
+func _add_bridge(a: Vector3, b: Vector3) -> void:
+	var i := _bridges.size()
+	_bridges.append({a = a, b = b, w = BRIDGE_W, t = BRIDGE_T})
+	var lo := Vector2(minf(a.x, b.x), minf(a.z, b.z)) - Vector2.ONE * (BRIDGE_W * 2.0 + 8.0)
+	var hi := Vector2(maxf(a.x, b.x), maxf(a.z, b.z)) + Vector2.ONE * (BRIDGE_W * 2.0 + 8.0)
+	for gx in range(floori(lo.x / COL_CELL), floori(hi.x / COL_CELL) + 1):
+		for gz in range(floori(lo.y / COL_CELL), floori(hi.y / COL_CELL) + 1):
+			var k := Vector2i(gx, gz)
+			if not _br_grid.has(k):
+				_br_grid[k] = PackedInt32Array()
+			_br_grid[k].append(i)
+
+
+## Distance from p to a bridge's rock (below 0 = inside it).
+func _bridge_dist(p: Vector3, br: Dictionary) -> float:
+	var a: Vector3 = br.a
+	var b: Vector3 = br.b
+	var ab := Vector2(b.x - a.x, b.z - a.z)
+	var t := clampf(Vector2(p.x - a.x, p.z - a.z).dot(ab) / maxf(ab.length_squared(), 0.0001), 0.0, 1.0)
+	var lat := Vector2(p.x - (a.x + ab.x * t), p.z - (a.z + ab.y * t)).length()
+	var e := 2.0 * t - 1.0
+	var e4 := e * e * e * e
+	var half_w: float = float(br.w) * 0.5 * (1.0 + 0.6 * e4)  # wider where it meets the walls
+	var thick: float = float(br.t) * (1.0 + 2.2 * e4)  # much thicker there: an arch from below
+	var top: float = a.y
+	var dx := lat - half_w
+	var dy := maxf(p.y - top, (top - thick) - p.y)
+	return Vector2(maxf(dx, 0.0), maxf(dy, 0.0)).length() + minf(maxf(dx, dy), 0.0)
+
+
+## Distance to the nearest bridge's rock (1e9 = none near).
+func _bridges_min(p: Vector3) -> float:
+	var near = _br_grid.get(Vector2i(floori(p.x / COL_CELL), floori(p.z / COL_CELL)))
+	var best := 1e9
+	if near != null:
+		for i in near:
+			best = minf(best, _bridge_dist(p, _bridges[i]))
+	return best
 
 
 ## The columns cut into the open air of their cavern (d: distance to the air shape, below 0 = air).
@@ -1307,6 +1443,11 @@ func _sdf_with_v2(p: Vector3, room_ids: PackedInt32Array, seg_ids: PackedInt32Ar
 			scale = minf(scale, lerpf(1.0, sh.y, clampf(1.0 - maxf(sh.x, 0.0) / 3.0, 0.0, 1.0)))
 	if not _cols.is_empty():
 		d = _with_columns(p, d)
+	if not _bridges.is_empty():
+		var bd := _bridges_min(p)
+		if bd < 1e8:
+			d = -_smin(-d, bd, 2.5)  # soft where it grows out of the walls
+			scale = minf(scale, clampf(0.25 + absf(bd) / 4.0, 0.25, 1.0))  # gentle bumps on a bridge: it stays whole
 	var s := -d
 	if absf(s) < 6.5:
 		s += _wall_bumps(p) * scale

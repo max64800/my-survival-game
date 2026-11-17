@@ -3231,3 +3231,13 @@ the body."
   outline); round 2 tapered, jagged, faint rim.
 - **Hurdles:** a new class_name file needs Godot's scan (--import) before tests can see it: 8 tests failed until
   then.
+
+## November 17, 2026 (PC, rock-textures Claude): rock bridges (F189, part 1)
+- Cave layout 9: _plan_bridges: tall caverns (12 m+), half of them, a slab 3.5 m wide, 2.2 m thick, wider and
+  thicker at the walls (an arch from below), flat top to walk on; from a high tunnel's floor when there is one.
+  Skips the outpost's cavern, ramps, ledges, columns and places. Layout 8 fingerprint added; test_rock_bridges.
+- **Hurdles:** (1) only 1 bridge in 3 worlds: one direction per cavern, and a blocked high-tunnel bridge gave up;
+  now up to 6 directions plus a mid-height fallback. (2) A bridge was hollow: the wall bumps (up to ~2.8 m) beat
+  a 1.6 m slab; now bumps calm near bridges and the slab is 2.2 m. (3) A python patch ate a GDScript `\`
+  line-continuation again (joined line). (4) Another session's half-saved dwarf_rig.gd stopped all scripts
+  compiling for a minute; waited and reran.
