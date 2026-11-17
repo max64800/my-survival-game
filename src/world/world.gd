@@ -44,18 +44,11 @@ func setup(seed: int) -> void:
 	mat.set_shader_parameter("normal_tex", preload("res://assets/textures/terrain/terrain_normal.png"))
 	mat.set_shader_parameter("flat_shading", 1.0 if CaveMaker.rock_style == "blocks" else 0.0)  # soft light, like before (owner)
 	terrain.material_override = mat
-	_set_rock_looks(mat)
 	add_child(terrain)
 	_tool = terrain.get_voxel_tool()
 
 
 ## True when the voxels around `p` are loaded and can be read/edited.
-## Tells the rock shader how many paintings each material has and where they sit (F213).
-func _set_rock_looks(mat: ShaderMaterial) -> void:
-	mat.set_shader_parameter("look_start", PackedInt32Array(RockLooks.START))
-	mat.set_shader_parameter("look_count", PackedInt32Array(RockLooks.COUNT))
-
-
 func is_ready_at(p: Vector3, radius: float = 2.0) -> bool:
 	var r := Vector3.ONE * radius
 	return _tool.is_area_editable(AABB(p - r, r * 2.0))

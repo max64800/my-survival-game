@@ -2432,3 +2432,12 @@ learn how to do hair animation and implement that."
   once staged one of them; the braid change was lost twice and the ponytail change once. Claude noticed because the
   new picture looked exactly like yesterday's (a reminder to always look at the result), asked both other sessions to
   leave the dwarf files alone (the cave Claude apologised and explained), redid the changes and committed right away.
+
+## November 17, 2026 (PC, rock-textures Claude): two chats built the same thing
+
+- The Mac chat had already made rock textures batch 1 from the owner's ChatGPT sheets the night before, while this
+  chat built its own cutter without knowing. Found it after a pull: the shader kept the Mac version, and this chat
+  removed its own duplicate (cutter, look list, `world.gd` hook). Lesson: pull and check the plan's Status before
+  starting a plan step.
+- A test that swapped in pretend textures ran while another chat was mid-pull, so its screenshots were mixed up;
+  redone after the pull. The batch 1 stone looks painted and chunky in the game, no seams.

@@ -40,3 +40,6 @@ made out of". Picked by multiple choice:
   (two texture reads only there).
 - **Next (PC):** reimport, `run_tests`, lookdev wall shots before/after, `perfcheck`, owner's OK; then ores, border rock
   and jungle rocks (ores need vein alpha kept).
+- **Nov 17 (PC): seen in the game.** Reimported; lookdev `w_wall`/`w_wall2` show the painted slabs, no seams, no
+  errors (seed 42, average 53 fps). A PC chat had built a second cutter the same night (`paint_terrain_looks.py`);
+  removed as a duplicate. Still to do: `perfcheck` before/after, the owner's OK, then batch 2.
