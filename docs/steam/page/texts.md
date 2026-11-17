@@ -15,11 +15,56 @@ the game at launch).
 - **Players:** Single-player, Online Co-op (2-4 players) ⚠ (co-op must work through Steam by launch)
 - **Genres:** Action, Adventure, Indie, Simulation (+ Early Access only if it launches as Early Access)
 
-## Short description (shown at the top; Steam allows about 300 characters, this is 212)
+## Short description (v2, owner's notes Nov 18: the big picture, not today's build; 228 of ~300 characters)
+A survival crafting RPG deep underground. Break free of the stone that held you for centuries, explore the ruins of your
+ancestors' kingdom, forge better gear, and build a fortress worth defending, alone or with up to 3 friends.
+
+## About this game (v2)
+**The kingdom fell. The dwarves never did.**
+
+Centuries ago, every dwarf in the kingdom was turned to stone. Now the stone is cracking. You break free in the ruins of your
+ancestors' home with no memory of what happened, and a whole world beneath the world to take back.
+
+**Explore the deep**
+Venture from mossy hollows into ever darker regions. Each one hides ruined halls, sealed shrines, monster lairs and forgotten
+treasure, and every region is stranger and more cursed than the last.
+
+**Dig anywhere**
+Carve your way through stone, moss and the creatures that live in the dark. Make your own tunnels, shortcuts and secret rooms.
+
+**Craft your way deeper**
+Start with stone tools and work up to copper and beyond. Forge stronger weapons, armour and tools, and break through rock
+that once stopped you cold.
+
+**Learn the old ways**
+Recover lost recipes and blueprints from the ruins. Carve ancient runes to grow your dwarf's skills, from miner to warrior.
+
+**Fight smart**
+Read your enemies, dodge their charges, parry their strikes, and hunt down the great beasts that guard each region.
+
+**Build a fortress and defend it**
+Raise a home from wood, stone or brick, from a rough shack to a fortress with walls and battlements. Then hold it when the
+creatures of the deep come knocking.
+
+**Keep the light alive**
+Your lantern burns on glowing crystals. In the deep, darkness itself is an enemy.
+
+**Uncover the truth**
+Runes carved into the walls hold memories of the kingdom before it fell. Follow them to the truth, and break the curse.
+
+**Never alone**
+Play solo or with up to 3 friends in online co-op.
+
+⚠ Steam only allows features that will be in the game at launch (Q1 2027). Everything above is in the design and the
+roadmap (regions, ruins, tiers, runes, dodge/parry, bosses, raids, darkness F293, rune memories, co-op). Before release,
+cut any line that won't make it, or launch as Early Access with a roadmap.
+
+## v1 (replaced): described the current build
+### Short description v1 (shown at the top; Steam allows about 300 characters, this is 212)
 You wake as a dwarf frozen in stone, in the ruins of your ancestors' fallen kingdom. Dig, build, craft and fight through
 cursed caves, alone or with up to 3 friends, and find out what turned your people to stone.
 
-## About this game
+### About this game v1
 **The kingdom fell. The dwarves never did.**
 
 You wake with stone crumbling off your skin and no memory of how you got here. Around you lie the ruins of a great dwarf
