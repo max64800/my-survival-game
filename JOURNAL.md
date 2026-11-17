@@ -3098,3 +3098,5 @@ the body."
 - Owner: make a Steam page with a wishlist button before posting the 7 game videos. Plan: `docs/steam/STEAM-PAGE-PLAN.md` (Steam rules checked: $100 fee, 3-5 business days review, 2 weeks Coming Soon, AI disclosure; capsule sizes; store text draft; tags; screenshots list; prompt for the PC).
 - Name still to pick. Searches: no Steam game called Hollowbeard or Undermoss; Delvers is taken; Beardstone is close to Beard of Stone.
 - **Mistakes and hurdles:** none in the game; the EQT Social Media repo could not push (GitHub says its address is not found).
+
+- **Later (Mac): the game's story (lore).** Three rounds of questions with the owner. Saved in `docs/design/lore.md`: frozen in stone, no memory, the fallen kingdom of your own ancestors, heroic tone, rune memories tell the story, few hidden frozen dwarves, deeper monsters are more cursed, the curse breaks at the very end. The cause of the curse is still open. The name will have "Dwarves" in it (fantasy spelling).
