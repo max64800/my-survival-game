@@ -2681,3 +2681,8 @@ The owner: the sheet behind the hair still happens, make the hook at the very en
   purple, amber or pink on the wedge. All drawn per 32 m square; digging removes them.
 - Speed check said ~245 fps (before: 450-510), twice; but other game/Blender programs were running and turning the
   decorations off made it *slower*, so the numbers aren't trustworthy right now. Recheck when the PC is quiet.
+
+- The owner saw the shelves in the game: "really bad... doesn't blend with walls at all, I thought they'd be very large;
+  not sure they should be in the game at this quality". Turned off at once (`_place_shelves` not called; models kept).
+  Lesson: a separate model stuck on a wall painted by the terrain shader never matches it; wall features should be
+  part of the rock shape itself (like the pillars and holes the owner liked). Offered: ledges built into the rock.

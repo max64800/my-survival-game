@@ -39,3 +39,6 @@ square (a single zone-wide batch was never drawn: its draw distance is measured 
 `tools/asset_forge/builds/cave_shelves.py` -> `assets/models/cave/shelf_a..d.glb` (rock only). Placed by
 `clutter.gd` (`SHELVES`, `SHELF_TOPS`, `_place_shelves`) with the game's moss, glowcap mushrooms and recoloured crystals
 on top. Next: hanging roots and moss, then the star-dot glow threads.
+
+**Shelves turned off (Nov 17, owner: "doesn't blend with walls at all", too small).** Models kept in the repo, not placed.
+If wanted later: ledges built into the cave rock shape (terrain texture, big, walkable).

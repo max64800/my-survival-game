@@ -81,7 +81,7 @@ func build(maker: CaveMaker, world: World) -> void:
 		_make_set(k, picks[k])
 	for k in DRIPS:
 		_make_drip_set(k, _drips[k])
-	_place_shelves(maker, rng)
+	# _place_shelves(maker, rng)  # off (owner, Nov 17: "really bad... doesn't blend with walls"); ledges in the rock instead?
 	world.changed.connect(_on_rock_changed)
 
 
