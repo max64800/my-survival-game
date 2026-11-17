@@ -347,7 +347,8 @@ func _bend_mushroom(mi: MeshInstance3D, c: Color, glows: bool) -> void:
 			sm.shader = MUSHROOM_BEND
 			sm.set_shader_parameter("albedo_tex", m.albedo_texture)
 			sm.set_shader_parameter("plant_height", MUSHROOM_HEIGHT)
-			sm.set_shader_parameter("push_scale", 0.45)  # stiffer than a fern: a lean and a wobble, not flattened
+			sm.set_shader_parameter("push_scale", 0.35)  # stiffer than a fern: a lean and a wobble
+			sm.set_shader_parameter("push_down", 0.0)  # never pushed down: big ones looked squashed flat (owner, Nov 17)
 			sm.set_shader_parameter("roughness", m.roughness)
 			if m.normal_texture:
 				sm.set_shader_parameter("normal_tex", m.normal_texture)

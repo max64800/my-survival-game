@@ -233,8 +233,9 @@ static func plan(maker: CaveMaker, spots: Array[Dictionary]) -> Array[Dictionary
 					at = edge[1]
 			var k: Dictionary = KINDS[kind]
 			var size: float = lerpf(k.size[0], k.size[1], size_roll) * (0.75 + 0.35 * life)
-			if kind in ["fern", "grass", "rootlet", "rootlet_b"]:
-				size *= GlowPlacer.size_boost(at)  # sometimes bigger, never smaller (owner F218)
+			if kind in ["fern", "rootlet", "rootlet_b"]:  # (not grass: giant blades looked like spikes, owner Nov 17)
+				# sometimes bigger, never smaller (owner F218); ferns at most 1.6x: 3x ferns looked like spikes too
+				size *= minf(GlowPlacer.size_boost(at), 1.6 if kind == "fern" else 9.0)
 			if not _free(taken, at, k.gap * size):
 				continue
 			_take(taken, at, k.gap * size)

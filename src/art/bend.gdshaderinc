@@ -8,6 +8,7 @@ uniform float plant_height = 0.25;  // the model's height in metres (before the 
 uniform float push_reach = 0.9;     // metres round a dwarf's feet
 uniform float push_strength = 1.15; // how far the tips move away, in plant heights (owner F198: twice as far as before)
 uniform float push_scale = 1.0;     // stiff things (small roots, mushrooms) move less
+uniform float push_down = 0.45;     // how much the tips also sink (grass, ferns); 0 = only lean (mushrooms keep their shape)
 uniform vec4 pushers[4];
 
 vec3 bend_offset(vec3 vertex, vec3 origin, vec3 up_axis_scaled, float time) {
@@ -25,12 +26,14 @@ vec3 bend_offset(vec3 vertex, vec3 origin, vec3 up_axis_scaled, float time) {
 		float below = d.y;
 		d.y = 0.0;
 		float dist = length(d);
-		float k = (1.0 - smoothstep(push_reach * 0.25, push_reach, dist)) * (1.0 - smoothstep(0.8, 1.6, abs(below)));
+		// bigger plants (F218) reach further: the dwarf touches their edge before their middle
+		float reach = push_reach * max(1.0, sc);
+		float k = (1.0 - smoothstep(reach * 0.25, reach, dist)) * (1.0 - smoothstep(0.8, 1.6, abs(below)));
 		vec3 away = dist > 0.01 ? d / dist : vec3(1.0, 0.0, 0.0);
 		// pushed away, with a quick wobble while a dwarf is in it (it springs about, then settles as they leave)
 		float wob = sin(time * 9.0 + origin.x * 3.1 + origin.z * 2.3) * 0.22;
 		off += (away * (1.0 + wob) + cross(away, vec3(0.0, 1.0, 0.0)) * wob * 0.6) * k * tall * push_strength;
-		off.y -= k * tall * push_strength * 0.45;
+		off.y -= k * tall * push_strength * push_down;
 	}
 	float t = time * 0.8 + origin.x * 1.7 + origin.z * 1.3;  // a slow breath of air, each plant its own beat
 	off += vec3(sin(t), 0.0, sin(t * 0.83 + 1.3)) * tall * 0.05;

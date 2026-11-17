@@ -2569,3 +2569,11 @@ The owner: the sheet behind the hair still happens, make the hook at the very en
   layouts replaced a shared list while rock was still being built on other threads; now it is changed in place.
   Two more tests had the old 400 m map in them (rune area, map page). The full suite passes; the walking robot played
   a fresh new-cave world without trouble.
+
+- Night: a 3D map page of zone 1 for the owner (`tools/cave_map/`: export_zone.gd writes the rooms, tunnels and places
+  as JSON, make_map.py puts them in a three.js page that opens from disk). Chrome remote control timed out, so it was
+  opened in the owner's Chrome directly.
+- Owner: grass "looks like spikes" and stopped bending; big mushrooms "turn very flat". Both came from Claude's
+  "sometimes bigger" change: Claude had also boosted grass (not asked for), and 3x ferns look like spikes; the bend only
+  reached 0.9 m from a plant's middle, so giant tufts never bent; and the bend pushes tips down, which squashed big
+  mushrooms. Fixed: no boost for grass, ferns at most 1.6x, the bend reach grows with the plant, mushrooms only lean.

@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zone 1 Cave Map</title>
+<style>
+  :root {
+    --bg: #0d0b0a; --panel: rgba(24, 20, 17, 0.92); --text: #eadfce; --muted: #a8998a; --line: #3b322b; --accent: #e3b45a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; overflow: hidden; }
+  #view { position: fixed; inset: 0; }
+  .panel { position: fixed; top: 12px; left: 12px; width: 270px; max-width: calc(100vw - 24px); max-height: calc(100vh - 24px);
+    overflow: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+  h1 { font-size: 17px; margin: 0 0 2px; color: var(--accent); }
+  .sub { color: var(--muted); font-size: 12px; margin-bottom: 10px; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 12px 0 6px; }
+  .row { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
+  .sw { width: 14px; height: 14px; border-radius: 3px; flex: none; border: 1px solid rgba(255,255,255,.15); }
+  label { cursor: pointer; display: flex; align-items: center; gap: 8px; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  .hint { color: var(--muted); font-size: 12px; margin-top: 10px; }
+  #tip { position: fixed; pointer-events: none; background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+    padding: 4px 8px; font-size: 13px; display: none; white-space: nowrap; }
+  #toggle { display: none; position: fixed; top: 12px; left: 12px; background: var(--panel); color: var(--text);
+    border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; }
+  @media (max-width: 600px) {
+    .panel { top: auto; bottom: 12px; max-height: 45vh; }
+  }
+</style>
+</head>
+<body>
+<div id="view"></div>
+<div class="panel" id="panel">
+  <h1>Zone 1: Mossy Hollows</h1>
+  <div class="sub" id="sub"></div>
+  <h2>Show</h2>
+  <label><input type="checkbox" id="showRooms" checked> Rooms and caverns</label>
+  <label><input type="checkbox" id="showTunnels" checked> Tunnels</label>
+  <label><input type="checkbox" id="showPlaces" checked> Special places</label>
+  <label><input type="checkbox" id="showBox" checked> Zone edges</label>
+  <h2>Height stretch <span id="stretchVal"></span></h2>
+  <input type="range" id="stretch" min="1" max="4" step="0.25" value="2">
+  <h2>Tunnel kinds</h2>
+  <div id="legendTunnels"></div>
+  <h2>Places</h2>
+  <div id="legendPlaces"></div>
+  <div class="hint">Drag to turn · right-drag to slide · scroll to zoom · point at something to see what it is.
+    Simplified shapes: the real rock is bumpy and full of plants.</div>
+</div>
+<div id="tip"></div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+const DATA = /*DATA*/null;
+
+const TUNNEL = [
+  { name: "Round tube", color: "#b98a5e" },
+  { name: "Canyon (tall, narrow)", color: "#e07a3f" },
+  { name: "Keyhole (slot under a tube)", color: "#e6c84f" },
+  { name: "Low passage (wide, flat)", color: "#7fb069" },
+  { name: "Rift (very tall crack)", color: "#a77bd6" },
+];
+const RAMP = { name: "Ramp up to a high tunnel", color: "#f2f2f2" };
+const PLACE = {
+  spawn: ["Where you wake up", "#ffd75e"], ruin: ["Ruin", "#c9c2b4"], camp: ["Camp", "#ff9b42"], nest: ["Creature nest", "#e0504a"],
+  shrine: ["Rune shrine", "#b98cff"], geode: ["Crystal pocket (sealed)", "#5fd6ff"], lair: ["Boss lair (sealed)", "#ff2f6d"],
+  great_hall: ["Great Hall (side boss)", "#ffcf7a"], nest_cavern: ["Nest cavern (side boss)", "#ff6f61"],
+  marking: ["Wall marking (boss clue)", "#ffffff"], gate: ["Gate to the Jungle", "#4fe0a3"], colonnade: ["Pillar row", "#d8d0bf"],
+};
+const ROOM_COLOR = { big: "#5e8f86", small: "#7d6a58", sealed: "#3c4a66" };
+
+document.getElementById("sub").textContent =
+  `Seed ${DATA.seed} · ${DATA.rooms.length} rooms · ${DATA.segs.length} tunnel pieces · ${DATA.pois.length} places · 800 × 800 m`;
+
+function legend(el, items) {
+  for (const [name, color] of items) {
+    const r = document.createElement("div");
+    r.className = "row";
+    r.innerHTML = `<span class="sw" style="background:${color}"></span><span>${name}</span>`;
+    el.appendChild(r);
+  }
+}
+legend(document.getElementById("legendTunnels"), [...TUNNEL.map(t => [t.name, t.color]), [RAMP.name, RAMP.color]]);
+const placeKinds = [...new Set(DATA.pois.map(p => p.t))].filter(t => PLACE[t]);
+legend(document.getElementById("legendPlaces"), [["Where you wake up", PLACE.spawn[1]], ...placeKinds.map(t => PLACE[t])]);
+
+// --- scene
+const view = document.getElementById("view");
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+view.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color("#0d0b0a");
+scene.fog = new THREE.Fog("#0d0b0a", 900, 1900);
+const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 1, 5000);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.autoRotate = false;
+scene.add(new THREE.HemisphereLight("#fff1dc", "#2a2018", 1.1));
+const sun = new THREE.DirectionalLight("#ffffff", 1.4);
+sun.position.set(300, 600, 200);
+scene.add(sun);
+
+const world = new THREE.Group();  // everything, so the height stretch is one scale
+scene.add(world);
+const cx = DATA.cx, half = DATA.half;
+const P = a => new THREE.Vector3(a[0] - cx, a[1], a[2]);
+
+// --- rooms: one ball each, squashed to its size
+const roomGeo = new THREE.SphereGeometry(1, 20, 14);
+const roomMat = new THREE.MeshStandardMaterial({ roughness: 0.8, transparent: true, opacity: 0.85 });
+const rooms = new THREE.InstancedMesh(roomGeo, roomMat, DATA.rooms.length);
+const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), col = new THREE.Color();
+DATA.rooms.forEach((r, i) => {
+  m4.compose(P(r.c), q.identity(), new THREE.Vector3(r.r[0], r.r[1], r.r[2]));
+  rooms.setMatrixAt(i, m4);
+  rooms.setColorAt(i, col.set(r.sealed ? ROOM_COLOR.sealed : (r.big ? ROOM_COLOR.big : ROOM_COLOR.small)));
+});
+world.add(rooms);
+
+// --- tunnels: a stretched cylinder per piece (tall for canyons/rifts, wide for low passages), balls at the joints
+const tubeGeo = new THREE.CylinderGeometry(1, 1, 1, 10, 1, true);
+const tubeMat = new THREE.MeshStandardMaterial({ roughness: 0.75, side: THREE.DoubleSide });
+const tunnels = new THREE.InstancedMesh(tubeGeo, tubeMat, DATA.segs.length);
+const joints = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 10, 8), tubeMat, DATA.segs.length);
+const up = new THREE.Vector3(0, 1, 0);
+DATA.segs.forEach((s, i) => {
+  const a = P(s.a), b = P(s.b);
+  const dir = b.clone().sub(a);
+  const len = Math.max(dir.length(), 0.01);
+  dir.divideScalar(len);
+  let side = new THREE.Vector3().crossVectors(dir, up);
+  if (side.lengthSq() < 1e-6) side.set(1, 0, 0);
+  side.normalize();
+  const vup = new THREE.Vector3().crossVectors(side, dir).normalize();
+  let w = s.r, h = s.r;  // half-width, half-height of the cross-section
+  if (s.k === 1 || s.k === 4) { w = Math.min(s.r, 1.6); h = Math.max(s.h / 2, s.r); }      // canyon, rift: tall
+  else if (s.k === 3) { w = Math.max(s.h, s.r); h = 1.7; }                                // low: wide, flat
+  else if (s.k === 2) { h = s.r + s.h / 2; }                                              // keyhole: slot below
+  const basis = new THREE.Matrix4().makeBasis(side.multiplyScalar(w), dir.clone().multiplyScalar(len), vup.multiplyScalar(h));
+  basis.setPosition(a.clone().add(b).multiplyScalar(0.5));
+  tunnels.setMatrixAt(i, basis);
+  const c = s.ramp ? RAMP.color : TUNNEL[s.k].color;
+  tunnels.setColorAt(i, col.set(c));
+  m4.compose(b, q.identity(), new THREE.Vector3(w, h, w));
+  joints.setMatrixAt(i, m4);
+  joints.setColorAt(i, col.set(c));
+});
+world.add(tunnels, joints);
+
+// --- places: a pin (stick + ball) above each
+const places = new THREE.Group();
+const pinHead = new THREE.SphereGeometry(2.2, 14, 10);
+const pinStick = new THREE.CylinderGeometry(0.35, 0.35, 10, 6);
+const pinTargets = [];
+function pin(pos, color, label, size = 1) {
+  const g = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.6 });
+  const stick = new THREE.Mesh(pinStick, mat); stick.position.y = 5 * size; stick.scale.setScalar(size);
+  const head = new THREE.Mesh(pinHead, mat); head.position.y = 10.5 * size; head.scale.setScalar(size);
+  head.userData.label = label; pinTargets.push(head);
+  g.add(stick, head); g.position.copy(pos);
+  places.add(g);
+}
+for (const p of DATA.pois) {
+  const k = PLACE[p.t] || [p.t, "#ffffff"];
+  pin(P(p.p), k[1], k[0]);
+}
+pin(P(DATA.spawn), PLACE.spawn[1], PLACE.spawn[0], 1.8);
+world.add(places);
+
+// --- zone edges: a wire box, and a faint grid on the deepest floor
+const box = new THREE.Group();
+const bx = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(half * 2, DATA.y_max - DATA.y_min, half * 2)),
+  new THREE.LineBasicMaterial({ color: "#5a4a3c" }));
+bx.position.set(0, (DATA.y_max + DATA.y_min) / 2, 0);
+const grid = new THREE.GridHelper(half * 2, 16, "#3b322b", "#241e19");
+grid.position.y = DATA.y_min;
+box.add(bx, grid);
+world.add(box);
+
+// --- view controls
+const stretch = document.getElementById("stretch");
+const setStretch = () => {
+  world.scale.y = +stretch.value;
+  // pins keep their size: undo the stretch on each pin
+  for (const g of places.children) g.scale.y = 1 / +stretch.value;
+  document.getElementById("stretchVal").textContent = `(${stretch.value}×)`;
+};
+stretch.addEventListener("input", setStretch);
+setStretch();
+const bind = (id, obj) => document.getElementById(id).addEventListener("change", e => { for (const o of [].concat(obj)) o.visible = e.target.checked; });
+bind("showRooms", rooms); bind("showTunnels", [tunnels, joints]); bind("showPlaces", places); bind("showBox", box);
+
+const sp = P(DATA.spawn);
+controls.target.set(0, sp.y, 0);
+camera.position.set(-half * 0.9, half * 0.9, half * 1.1);
+controls.update();
+
+// --- point at things
+const tip = document.getElementById("tip");
+const ray = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+const SHAPE = { dome: "dome", flat: "flat ceiling", fallen: "fallen roof" };
+renderer.domElement.addEventListener("pointermove", e => {
+  mouse.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  ray.setFromCamera(mouse, camera);
+  const targets = [];
+  if (places.visible) targets.push(...pinTargets);
+  if (tunnels.visible) targets.push(tunnels);
+  if (rooms.visible) targets.push(rooms);
+  const hit = ray.intersectObjects(targets, false)[0];
+  let text = "";
+  if (hit) {
+    if (hit.object.userData.label) text = hit.object.userData.label;
+    else if (hit.object === tunnels) { const s = DATA.segs[hit.instanceId]; text = s.ramp ? RAMP.name : TUNNEL[s.k].name; }
+    else if (hit.object === rooms) {
+      const r = DATA.rooms[hit.instanceId];
+      const size = Math.round(Math.max(r.r[0], r.r[2]) * 2);
+      text = `${r.big ? "Big cavern" : "Room"} · ${SHAPE[r.shape] || r.shape} · ~${size} m across${r.sealed ? " · sealed" : ""}${r.kind !== "room" && r.kind !== "cavern" ? " · " + r.kind.replace("_", " ") : ""}`;
+    }
+  }
+  tip.style.display = text ? "block" : "none";
+  if (text) { tip.textContent = text; tip.style.left = (e.clientX + 14) + "px"; tip.style.top = (e.clientY + 14) + "px"; }
+});
+
+addEventListener("resize", () => {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight);
+});
+renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
+</script>
+</body>
+</html>
