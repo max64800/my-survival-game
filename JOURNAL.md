@@ -3409,3 +3409,6 @@ the body."
 
 - **Nov 18 (Mac): Steam app created.** The owner paid the Steam Direct fee (369.99 AED) in Chrome; Claude created the paid game **Dwarves Never Fall, App ID 5649350**. Steam's Coming Soon checklist is in the Steam plan; library assets and the app and shortcut icons are needed too.
   - Hurdles: the first Chrome had no Steam login, and paying needs a separate Steam store sign-in. Both sign-ins and the card details were done by the owner; Claude never types passwords or card numbers.
+
+- **Nov 18 (Mac): first Steam screenshots.** New photo robot `-- steamshots ruin=1` (dwarf facing the camera with the tower and stars behind, the tower, Rock Beetle charging, Rock Snail; no HUD, no name tags). Drafts in `docs/steam/page/shots-draft-2026-11-18/`. The Fallen Outpost is not on GitHub yet, so no outpost shot.
+  - Hurdles: Godot on the Mac needed a re-import after the PC's new code (it didn't know the new classes). The robots took pictures of the loading screen: building the rock around the dwarf takes ~110-150 s on the Mac, so the robot now waits for "ready" and then lifts the loading cover. Round 1 the dwarf was burned white by an extra lamp, the snail faced away and name tags showed; fixed in round 2.

@@ -124,6 +124,11 @@ func _ready() -> void:
 			_monsters = false
 			if mode == "menu":
 				mode = "solo"
+		elif arg == "steamshots":  # Steam store pictures (Nov 18): dwarf + tower + stars, beetle, snail
+			debug_script = "res://src/debug/steamshots.gd"
+			_saving = false
+			if mode == "menu":
+				mode = "solo"
 		elif arg == "ruincheck":
 			debug_script = "res://src/debug/ruincheck.gd"
 			_saving = false
