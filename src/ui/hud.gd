@@ -18,7 +18,6 @@ var _dig_bar: ProgressBar
 var _dig_bar_timer := 0.0
 var _hotbar: HBoxContainer
 var _hotbar_home: Control  ## where the hotbar lives while playing (bottom of the screen)
-var _hotbar_dock: VBoxContainer  ## where it moves while the bag is open (F88)
 var _bag_panel: PanelContainer
 var _bag_grid: GridContainer
 var _slot_panels := {}  ## inventory index -> its slot Panel (hotbar, bag, backpack, equipment)
@@ -40,7 +39,9 @@ var _loading_bar: ProgressBar
 var _swap_from := -1
 var _hover_slot := -1  ## the bag slot under the mouse (for "press 1-9 to put it on the hotbar", F155)
 var _bars := {}  ## "health"/"stamina" -> framed ProgressBar, "hunger"/"thirst" -> VitalDial (F229)
-var _vitals: HBoxContainer
+var _vitals: VBoxContainer  ## health + stamina bars above the hotbar
+var _dials: HBoxContainer  ## hunger + thirst dials left of the hotbar
+const DIAL_SIZE := 72
 const VitalDialScript := preload("res://src/ui/vital_dial.gd")
 var _health_text: Label
 var _level_label: Label
@@ -131,11 +132,8 @@ func _build() -> void:
 	bag_row.add_child(equip_col)
 	var bag_box := VBoxContainer.new()
 	bag_row.add_child(bag_box)
-	# The hotbar moves in here while the bag is open, so everything you carry is in one place (F88).
-	_hotbar_dock = VBoxContainer.new()
-	bag_box.add_child(_hotbar_dock)
-	var hb_title := _label(_hotbar_dock, 15)
-	hb_title.text = "Hotbar (keys 1-9)"
+	# The hotbar stays at the bottom of the screen while the bag is open (owner F241); its slots
+	# work the same there (click, drag, Shift+click), so it isn't repeated in here.
 	_bag_grid = GridContainer.new()
 	_bag_grid.columns = 10
 	bag_box.add_child(_bag_grid)
@@ -155,7 +153,7 @@ func _build() -> void:
 	equip_grid.columns = 2
 	equip_col.add_child(equip_grid)
 	for i in Inventory.EQUIP.size():
-		equip_grid.add_child(_make_slot(Inventory.EQUIP_START + i, EQUIP_NAMES[i]))
+		equip_grid.add_child(_make_slot(Inventory.EQUIP_START + i, ""))  # no names, the pictures say it (owner F242)
 	# One short hint line, no long explanations (owner F179, F187).
 	UiKit.divider(bag_outer)
 	var hint := UiKit.label(bag_outer, BAG_HINT, 13, UiKit.DIM)
@@ -163,12 +161,11 @@ func _build() -> void:
 	# Centred in the space left of the crafting list (it sits on the right), so they never overlap.
 	_bag_panel.resized.connect(_layout_panels)
 	root.resized.connect(_layout_panels)
-	_bag_panel.visibility_changed.connect(_dock_hotbar)
 	_bag_panel.visibility_changed.connect(_layout_panels)
 
 	var fuel_box := VBoxContainer.new()
 	fuel_box.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-	fuel_box.position += Vector2(20, -70)
+	fuel_box.position += Vector2(20, -170)  # above the hunger/thirst dials (F240)
 	root.add_child(fuel_box)
 	_fuel_label = _label(fuel_box, 15)
 	_fuel_bar = ProgressBar.new()
@@ -180,29 +177,27 @@ func _build() -> void:
 	_fuel_bar.add_theme_stylebox_override("fill", fill)
 	fuel_box.add_child(_fuel_bar)
 
-	# Body (F229): hunger and thirst dials, then framed health and stamina bars, just above the
-	# left half of the hotbar. Same wood-and-brass kit pieces as the menus.
-	_vitals = HBoxContainer.new()
+	# Body (F229, owner F240): fat health and stamina bars as long as the hotbar, right above it;
+	# big hunger and thirst dials on the hotbar's left. Same wood-and-brass kit pieces as the menus.
+	_vitals = VBoxContainer.new()
 	_vitals.name = "Vitals"
-	_vitals.add_theme_constant_override("separation", 8)
-	_vitals.anchor_left = 0.5
-	_vitals.anchor_right = 0.5
-	_vitals.anchor_top = 1.0
-	_vitals.anchor_bottom = 1.0
+	_vitals.add_theme_constant_override("separation", 4)
 	_vitals.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(_vitals)
+	_dials = HBoxContainer.new()
+	_dials.name = "Dials"
+	_dials.add_theme_constant_override("separation", 10)
+	_dials.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(_dials)
 	for k in ["hunger", "thirst"]:
 		var d: Control = VitalDialScript.new(k)
 		d.name = k.capitalize()
+		d.custom_minimum_size = Vector2(DIAL_SIZE, DIAL_SIZE)
 		d.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		_vitals.add_child(d)
+		_dials.add_child(d)
 		_bars[k] = d
-	var stack := VBoxContainer.new()
-	stack.add_theme_constant_override("separation", 4)
-	stack.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	stack.alignment = BoxContainer.ALIGNMENT_CENTER
-	_vitals.add_child(stack)
-	for b in [["health", Color(1.0, 0.36, 0.3), 26], ["stamina", Color(1, 1, 1), 20]]:
+	var stack := _vitals
+	for b in [["health", Color(1.0, 0.36, 0.3), 32], ["stamina", Color(1, 1, 1), 24]]:
 		var pb := ProgressBar.new()
 		pb.name = b[0].capitalize()
 		pb.custom_minimum_size = Vector2(0, b[2])
@@ -215,7 +210,7 @@ func _build() -> void:
 		stack.add_child(pb)
 		_bars[b[0]] = pb
 	_place_vitals()
-	_health_text = _label(_bars.health, 13)
+	_health_text = _label(_bars.health, 16)
 	_health_text.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_health_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_health_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -224,8 +219,8 @@ func _build() -> void:
 	_buff_label.anchor_top = 1.0
 	_buff_label.anchor_bottom = 1.0
 	_buff_label.offset_left = 20
-	_buff_label.offset_top = -200
-	_buff_label.offset_bottom = -78
+	_buff_label.offset_top = -300
+	_buff_label.offset_bottom = -178
 	_buff_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 	_level_label = _label(root, 16)
 	_level_label.anchor_left = 1.0
@@ -408,7 +403,15 @@ func _make_slot(index: int, key: String) -> Control:
 	var count := _label(panel, 14)
 	count.name = "Count"
 	count.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	# The key number sits on a small dark plate on the slot's top rim (F227), not squeezed in a corner.
+	if key != "":
+		_add_key_plate(panel, key)
+	_size_slot(panel, SLOT_SIZE)
+	return panel
+
+
+## The key number sits on a small dark plate on the slot's top rim (F227), not squeezed in a corner.
+## Only hotbar slots have one (bag slots have no key, owner F242).
+func _add_key_plate(panel: Control, key: String) -> void:
 	var badge := Panel.new()
 	badge.name = "KeyBadge"
 	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -428,8 +431,6 @@ func _make_slot(index: int, key: String) -> Control:
 	k.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	k.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	k.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_size_slot(panel, SLOT_SIZE)
-	return panel
 
 
 ## Sizes a slot and everything in it. The picture stays inside the painted frame (owner, Nov 17:
@@ -458,6 +459,8 @@ func _size_slot(panel: Control, s: float) -> void:
 	count.size = Vector2(s - inset, cf * 1.3)
 	count.position = Vector2(0, s - inset * 0.55 - cf * 1.3)
 	# Key plate: centred on the top rim, so it never covers the item or the count.
+	if not panel.has_node("KeyBadge"):
+		return
 	var badge: Control = panel.get_node("KeyBadge")
 	var bh := roundf(s * 0.26)
 	badge.size = Vector2(roundf(bh * 1.25), bh)
@@ -705,6 +708,10 @@ func _layout_panels() -> void:
 		tallest = maxf(tallest, p.size.y)
 	var x := maxf(10.0, (screen.x - total) * 0.5)
 	var top := maxf(10.0, (screen.y - tallest) * 0.5 - 30.0)  # a little above the middle, clear of the hotbar
+	# The hotbar and body bars stay on screen under the bag (owner F241): never cover them.
+	var free_bottom := screen.y - (HOTBAR_SLOT + 18.0 + 14.0 + 60.0 + 10.0)
+	if top + tallest > free_bottom:
+		top = maxf(10.0, free_bottom - tallest)
 	for p in panels:
 		p.position = Vector2(x, top)
 		x += p.size.x + gap
@@ -726,13 +733,24 @@ func _place_hotbar() -> void:
 	_hotbar.offset_bottom = -18.0
 
 
-## Body dials and bars: just above the hotbar's left half (F229), clear of the key plates.
+## Body bars: exactly as wide as the hotbar, right above it (clear of the key plates);
+## the dials sit to the hotbar's left, level with it (owner F240).
 func _place_vitals() -> void:
 	var w := float((HOTBAR_SLOT + 6) * Inventory.HOTBAR_SIZE - 6)
+	for c in [_vitals, _dials]:
+		c.anchor_left = 0.5
+		c.anchor_right = 0.5
+		c.anchor_top = 1.0
+		c.anchor_bottom = 1.0
 	_vitals.offset_left = -w * 0.5
-	_vitals.offset_right = -24.0
-	_vitals.offset_bottom = -HOTBAR_SLOT - 18.0 - 16.0
-	_vitals.offset_top = _vitals.offset_bottom - 52.0
+	_vitals.offset_right = w * 0.5
+	_vitals.offset_bottom = -HOTBAR_SLOT - 18.0 - 14.0
+	_vitals.offset_top = _vitals.offset_bottom - 60.0
+	var dw := DIAL_SIZE * 2.0 + 10.0
+	_dials.offset_right = -w * 0.5 - 16.0
+	_dials.offset_left = _dials.offset_right - dw
+	_dials.offset_bottom = -18.0 - (HOTBAR_SLOT - DIAL_SIZE) * 0.5
+	_dials.offset_top = _dials.offset_bottom - DIAL_SIZE
 
 
 func _size_hotbar(s: float) -> void:
@@ -741,19 +759,9 @@ func _size_hotbar(s: float) -> void:
 			_size_slot(_slot_panels[i], s)
 
 
-## While the bag is open the hotbar sits inside it (same slots, so you can move things between them);
-## when it closes it goes back to the bottom of the screen (F88).
-func _dock_hotbar() -> void:
-	if _bag_panel.visible and _hotbar.get_parent() != _hotbar_dock:
-		_size_hotbar(SLOT_SIZE)  # bag size inside the bag
-		_hotbar.reparent(_hotbar_dock, false)
-	elif not _bag_panel.visible and _hotbar.get_parent() != _hotbar_home:
-		_hotbar.reparent(_hotbar_home, false)
-		_place_hotbar()
-
-
+## Always false now: the hotbar stays at the bottom of the screen (owner F241).
 func is_hotbar_in_bag() -> bool:
-	return _hotbar.get_parent() == _hotbar_dock
+	return false
 
 
 func set_bag_open(open: bool) -> void:

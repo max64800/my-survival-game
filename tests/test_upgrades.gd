@@ -29,7 +29,7 @@ func test_upgrading_at_a_station() -> void:
 	root.add_child(me)
 	var ps := auth.add_player(auth.local_peer_id(), me)  # gets a stone pickaxe (equipped)
 	auth._ev_place_station(1, "workbench", Vector3(2, 0, 0), 0.0)
-	var pick := Inventory.equip_index("pickaxe")
+	var pick := ps.inventory.best_of_kind("pickaxe")  # in the hotbar (F243)
 	ps.inventory.add("stone", 10)
 	ps.inventory.add("crystal_blue", 3)
 	check_eq(auth.request_upgrade(1, pick, 1), "Needs Workbench level 2.", "a plain Workbench can't upgrade yet")

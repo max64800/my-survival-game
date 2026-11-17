@@ -25,3 +25,13 @@ func check_near(a: float, b: float, tol: float, msg: String) -> void:
 func frames(n: int) -> void:
 	for i in n:
 		await tree.process_frame
+
+
+## The first hotbar slot holding something other than a pickaxe: where a test's freshly added item
+## lands, now that the starting pickaxe sits in the hotbar (owner F243). -1 = none.
+func first_item_slot(p: GameAuthority.PlayerState) -> int:
+	for i in Inventory.HOTBAR_SIZE:
+		var id: String = p.inventory.get_slot(i).get("id", "")
+		if id != "" and Items.kind(id) != "pickaxe":
+			return i
+	return -1

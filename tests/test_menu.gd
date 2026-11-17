@@ -86,16 +86,24 @@ func test_escape_menu_buttons() -> void:
 	hud.queue_free()
 
 
-## F88: opening the bag shows the hotbar inside it (same slots); closing puts it back at the bottom.
-func test_hotbar_shows_in_the_bag() -> void:
+## Owner F241: opening the bag keeps the hotbar (and body bars) at the bottom of the screen, uncovered.
+func test_hotbar_stays_when_the_bag_opens() -> void:
+	var old_size := tree.root.size
+	tree.root.size = Vector2i(1600, 900)  # a real screen (the test window is tiny)
 	var hud := Hud.new()
 	tree.root.add_child(hud)
 	await tree.process_frame
-	check(not hud.is_hotbar_in_bag(), "while playing, the hotbar is at the bottom of the screen")
 	hud.set_bag_open(true)
-	check(hud.is_hotbar_in_bag(), "open the bag: the hotbar is inside it")
+	for i in 3:
+		await tree.process_frame
+	var bar: Control = hud.get("_hotbar")
+	var bag: Control = hud.get("_bag_panel")
+	var vit: Control = hud.get("_vitals")
+	check(bar.is_visible_in_tree() and not hud.is_hotbar_in_bag(), "open the bag: the hotbar is still at the bottom")
+	check(not bag.get_global_rect().intersects(bar.get_global_rect()), "the bag doesn't cover the hotbar")
+	check(not bag.get_global_rect().intersects(vit.get_global_rect()), "...or the health and stamina bars")
 	hud.set_bag_open(false)
-	check(not hud.is_hotbar_in_bag(), "close the bag: back at the bottom")
+	tree.root.size = old_size
 	hud.queue_free()
 
 

@@ -11,12 +11,14 @@ func test_tools_and_clothes_go_into_their_slots_by_themselves() -> void:
 	inv.add("pickaxe_stone", 1)
 	inv.add("lantern", 1)
 	inv.add("cap_leather", 1)
-	check_eq(inv.equipped("pickaxe"), "pickaxe_stone", "a new pickaxe goes in the pickaxe slot")
+	check_eq(inv.equipped("pickaxe"), "", "a new pickaxe does NOT go in the pickaxe slot (owner F243)")
+	check_eq(inv.get_slot(0).get("id", ""), "pickaxe_stone", "it goes in the hotbar instead")
 	check_eq(inv.equipped("lantern"), "lantern", "a new lantern goes in the lantern slot")
 	check_eq(inv.equipped("head"), "cap_leather", "a cap goes on your head")
-	check(inv.get_slot(0).is_empty(), "the hotbar stays free")
+	for i in Inventory.HOTBAR_SIZE:
+		inv.slots[i] = {id = "stone", count = 1}
 	inv.add("pickaxe_stone", 1)
-	check_eq(inv.get_slot(0).get("id", ""), "pickaxe_stone", "a second pickaxe goes in the bag (slot already used)")
+	check_eq(inv.get_slot(Inventory.HOTBAR_SIZE).get("id", ""), "pickaxe_stone", "hotbar full: the next pickaxe goes in the bag")
 	check(Inventory.new().equipped("pickaxe") == "", "chests have no equipment slots")
 
 
@@ -49,7 +51,7 @@ func test_backpack_opens_ten_slots_and_must_be_empty_to_take_off() -> void:
 
 func test_hand_uses_equipped_pickaxe_and_drawn_weapon() -> void:
 	var ps := GameAuthority.PlayerState.new()
-	ps.inventory.add("pickaxe_stone", 1)  # equips itself
+	ps.inventory.slots[Inventory.equip_index("pickaxe")] = {id = "pickaxe_stone", count = 1}  # put on by hand (F243)
 	ps.inventory.add("sword_copper", 1)  # weapons go to the hotbar (slot 0)...
 	check(ps.inventory.swap(0, Inventory.equip_index("weapon")), "...and right-click equips it")
 	ps.inventory.add("stone", 4)

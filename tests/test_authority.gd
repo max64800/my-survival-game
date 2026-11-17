@@ -220,10 +220,18 @@ func test_mushrooms_by_hand() -> void:
 	_teardown()
 
 
+## Which hotbar slot holds this item (-1 = none).
+func _slot_of(id: String) -> int:
+	for i in Inventory.HOTBAR_SIZE:
+		if ps.inventory.get_slot(i).get("id", "") == id:
+			return i
+	return -1
+
+
 func test_eat_from_hotbar() -> void:
 	await _setup(42)
 	ps.inventory.add("dish_hollowcap_stew", 1)
-	auth.request_select_slot(1, 0)  # the pickaxe sits in its own slot now (F23), so items start at slot 1 (key 1)
+	auth.request_select_slot(1, _slot_of("dish_hollowcap_stew"))  # the start pickaxe is in the hotbar (F243)
 	ps.vitals.hunger = 20
 	check_eq(auth.request_use(1, Vector3.INF, Vector3.ZERO, 0.0), "ate", "ate the stew")
 	check_eq(ps.inventory.count_of("dish_hollowcap_stew"), 0, "stew used up")
@@ -235,7 +243,7 @@ func test_eat_from_hotbar() -> void:
 func test_waterskin_has_five_sips() -> void:
 	await _setup(42)
 	ps.inventory.add("waterskin_clean", 1)
-	auth.request_select_slot(1, 0)  # the pickaxe sits in its own slot now (F23), so items start at slot 1 (key 1)
+	auth.request_select_slot(1, _slot_of("waterskin_clean"))  # the start pickaxe is in the hotbar (F243)
 	for i in 5:
 		ps.vitals.thirst = 0
 		auth.request_use(1, Vector3.INF, Vector3.ZERO, 0.0)

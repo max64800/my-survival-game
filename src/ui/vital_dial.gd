@@ -7,6 +7,8 @@ var kind := "hunger"  ## "hunger" or "thirst"
 var value := 100.0
 var max_value := 100.0
 var _t := 0.0
+var _tip: PanelContainer  ## "Hunger 62 / 100" while the mouse is over the dial (owner F240)
+var _tip_text: Label
 
 const RING := Color(0.62, 0.45, 0.24)
 const RING_DARK := Color(0.25, 0.15, 0.08)
@@ -16,13 +18,31 @@ const BACK := Color(0.09, 0.06, 0.05, 0.92)
 func _init(p_kind: String = "hunger") -> void:
 	kind = p_kind
 	custom_minimum_size = Vector2(46, 46)
-	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	mouse_filter = Control.MOUSE_FILTER_PASS
+	_tip = PanelContainer.new()
+	_tip.add_theme_stylebox_override("panel", UiKit.style("tooltip", 8, 14))
+	_tip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_tip.visible = false
+	_tip.top_level = true  # drawn above everything, not squeezed by the row the dial sits in
+	add_child(_tip)
+	_tip_text = UiKit.label(_tip, "", 16, UiKit.TEXT)
+	_tip_text.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	mouse_entered.connect(func(): _tip.visible = true; _update_tip())
+	mouse_exited.connect(func(): _tip.visible = false)
+
+
+func _update_tip() -> void:
+	_tip_text.text = "%s  %d / %d" % ["Hunger" if kind == "hunger" else "Thirst", roundi(value), roundi(max_value)]
+	_tip.reset_size()
+	_tip.global_position = global_position + Vector2((size.x - _tip.size.x) * 0.5, -_tip.size.y - 8.0)
 
 
 func set_value(v: float) -> void:
 	if not is_equal_approx(v, value):
 		value = v
 		queue_redraw()
+		if _tip.visible:
+			_update_tip()
 
 
 func _process(delta: float) -> void:
@@ -42,11 +62,12 @@ func _fill_color() -> Color:
 func _draw() -> void:
 	var c := size * 0.5
 	var r := minf(size.x, size.y) * 0.5
+	var k := r / 23.0  # rings grow with the dial
 	draw_circle(c, r, RING_DARK)
-	draw_circle(c, r - 2.0, RING)
-	draw_circle(c, r - 4.5, BACK)
+	draw_circle(c, r - 2.0 * k, RING)
+	draw_circle(c, r - 4.5 * k, BACK)
 	# The liquid: the part of the inner circle below the level line.
-	var ri := r - 5.5
+	var ri := r - 5.5 * k
 	var f := _frac()
 	if f > 0.0:
 		var level := c.y + ri - 2.0 * ri * f

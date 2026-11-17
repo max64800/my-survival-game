@@ -80,7 +80,7 @@ func _carry(i: int) -> bool:
 
 
 ## Adds items. Fills matching stacks first; then, for a dwarf, puts a tool/lantern/clothes into its
-## empty equipment slot; then empty slots (hotbar first). Returns how many did NOT fit (0 = all fit).
+## empty equipment slot (not pickaxes, F243); then empty slots (hotbar first). Returns how many did NOT fit (0 = all fit).
 func add(id: String, count: int) -> int:
 	if count <= 0 or not Items.exists(id):
 		return count
@@ -95,10 +95,10 @@ func add(id: String, count: int) -> int:
 			s.count += put
 			left -= put
 	if left > 0 and is_player:
-		# Tools you always use, clothes and backpacks put themselves on. Weapons and shields
-		# go to the hotbar like before (right-click equips them).
+		# Lanterns, clothes and backpacks put themselves on. Pickaxes (owner F243), weapons and
+		# shields go to the hotbar like everything else (double-click equips them).
 		var es := equip_slot_for(id)
-		if es in ["pickaxe", "lantern", "head", "chest", "legs", "feet", "pack"] and slots[equip_index(es)].is_empty():
+		if es in ["lantern", "head", "chest", "legs", "feet", "pack"] and slots[equip_index(es)].is_empty():
 			slots[equip_index(es)] = {id = id, count = 1}
 			left -= 1
 	for i in slots.size():
