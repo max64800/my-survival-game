@@ -3142,3 +3142,19 @@ the body."
 - **Hurdles:** (1) the start-room test counted only blue crystals; since crystals got colours (F255 era) the
   others weren't counted: fixed the test. (2) Full suite: 3 other failures are other sessions' work in progress
   (lodge builder, hair swing, the outpost's round-doorway rule), not touched.
+
+## November 17, 2026 (PC, rock-textures Claude): logs, a loading freeze, first cave back to normal (F265-F267)
+- Owner: 3 FPS, then a frozen game; asked for the logs. They were gone: Godot keeps 5 logs and my test runs plus
+  another session's robot pushed the owner's out; the recorder had even copied my test run's log as the game log.
+  Fixed: 40 logs kept; a person's game prints PLAYER GAME first and the recorder copies the newest such log; new
+  FreezeWatch (src/debug/freeze_watch.gd) prints FPS every 30 s, SLOW FRAME and FROZEN/UNFROZEN (a helper thread
+  notices when the game stops) with what it was doing.
+- Causes: three heavy programs at once (owner's game, my 6-minute test run, the outpost robot), and the other
+  session's building check compared every piece with every other (minutes for a 700-piece ruin; they fixed it).
+  Mine: loading froze ~34 s; a stopwatch per step showed pebbles/dripstone (Clutter) took ~26 s (5000 tunnel
+  pieces in the new caves). Now planned on a helper thread (same dice), meshes made after: freeze ~10 s.
+- Owner: the huge first cave is too big, too tall, half empty, too bright. Cave layout 7 = layout 3 exactly (a test
+  checks the fingerprints match); eyes adjust off. Huge caverns and columns stay in layouts 4-6 for later.
+- **Hurdles:** (1) one test game froze for good, once, while the other session was changing building code; two
+  reruns were fine. (2) GlowPlacer already remembered its result, so sharing it saved little; the stopwatch found
+  the real cost. (3) Restarting the recorder for its fix has to wait until the owner closes the frozen game.

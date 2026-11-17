@@ -20,14 +20,16 @@ extends RefCounted
 ##   1 = the first caves: 400 m areas (Mossy x -200…200, Jungle x 220…620), squashed balls and tubes.
 ##   2 = real-shaped caves: 800 m areas (Mossy x -400…400, Jungle x 420…1220), about 4x the rooms,
 ##       passages and halls shaped the way water shapes real caves (see "layout 2" below).
-const LAYOUT_LATEST := 6
+const LAYOUT_LATEST := 7
 ## What brand-new worlds get. Layout 2: the real-shaped caves (F211 step 1, OK'd by the owner Nov 17). Layout 3: the
 ## same plus tall/wide/joined caverns and cliff exits with ledge paths (F230, F231). Old saves keep the layout they were
 ## made with; robots can try older caves with "-- layout=1" or "-- layout=2". Layout 4: the same plus a huge first
 ## cavern, its ceiling all glow-worm stars with several snakes (owner, Nov 17, F260). Layout 5: the same plus huge
 ## natural stone columns standing in that cavern (owner, Nov 17, F263). Layout 6: the columns keep out of the ruined
-## watchtower's ground (owner, Nov 17: "the pillars are spawning inside the tower").
-const LAYOUT_DEFAULT := 6
+## watchtower's ground (owner, Nov 17: "the pillars are spawning inside the tower"). Layout 7: back to layout 3's
+## caves, the first cavern its old size again (owner, Nov 17: the huge one "is too big... half of the cave or more is
+## empty... the cave where we introduced the snakes was the best size"; huge caverns come back later, with big outposts).
+const LAYOUT_DEFAULT := 7
 static var layout := LAYOUT_DEFAULT
 
 
@@ -203,7 +205,7 @@ var _col_top := 0.0
 ## leaning a little, with ribs running down them. 5 to 7 of them (fewer if paths leave no room), 7 to 21 m wide, kept clear of where you start,
 ## the places, and every path that runs through the cavern. Their own dice, so nothing else moves.
 func _plan_columns() -> void:
-	if made_layout < 5 or rooms.is_empty():
+	if made_layout < 5 or not huge_first():
 		return
 	var c: Vector3 = rooms[0].center
 	var r: Vector3 = rooms[0].radii
@@ -752,7 +754,7 @@ func _place_rooms_v2(rng: RandomNumberGenerator, cx: float, biome: String) -> vo
 		var c := Vector3(cx + rng.randf_range(-reach, reach), rng.randf_range(-38, -18), rng.randf_range(-reach, reach))
 		var r := Vector3(rng.randf_range(24, 34), rng.randf_range(10, 14), rng.randf_range(24, 34))
 		if _far_from_rooms(c, 170.0 if tries < 700 else 120.0):
-			if made_layout >= 4 and biome == "mossy" and rooms.size() == r0:
+			if huge_first() and biome == "mossy" and rooms.size() == r0:
 				# The first cavern, the one you start beside, is huge (owner, Nov 17: "the very first cave should be really
 				# big"): ~120 m across under a high dome; its floor stays where it was.
 				var floor_y := c.y - r.y * 0.55
@@ -794,15 +796,20 @@ const FIRST_CAVERN_R := 58.0  ## layout 4: the first cavern's half-width (m)
 
 ## Layout 4: other rooms keep clear of the huge first cavern (it would swallow them).
 func _clear_of_first(r0: int, biome: String, c: Vector3, own_r: float) -> bool:
-	if made_layout < 4 or biome != "mossy" or rooms.size() <= r0:
+	if not huge_first() or biome != "mossy" or rooms.size() <= r0:
 		return true
 	var f: Vector3 = rooms[r0].center
 	return Vector2(c.x - f.x, c.z - f.z).length() > FIRST_CAVERN_R + own_r + 10.0
 
 
-## Layout 4: the huge first cavern (where the ceiling is all stars), or {} in older layouts.
+## Layouts 4 to 6 have the huge first cavern (with stars, extra snakes and, from 5, stone columns); 7 doesn't.
+func huge_first() -> bool:
+	return made_layout >= 4 and made_layout <= 6
+
+
+## Layouts 4-6: the huge first cavern (where the ceiling is all stars), or {} in other layouts.
 func first_cavern() -> Dictionary:
-	if made_layout < 4 or rooms.is_empty():
+	if not huge_first() or rooms.is_empty():
 		return {}
 	return rooms[0]
 
@@ -1128,7 +1135,7 @@ func _assign_shapes(r0: int, r1: int) -> void:
 		var roll := rng.randf()
 		if rm.kind == "cavern":
 			rm.shape = SHAPE_FLAT if roll < 0.3 else (SHAPE_FALLEN if roll < 0.6 else SHAPE_DOME)
-			if made_layout >= 4 and i == 0:
+			if huge_first() and i == 0:
 				rm.shape = SHAPE_DOME  # the huge first cavern: a high dome for its star ceiling
 		elif rm.kind == "room" and rm.get("hall", false):
 			rm.shape = SHAPE_FLAT if roll < 0.45 else (SHAPE_FALLEN if roll < 0.8 else SHAPE_DOME)

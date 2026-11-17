@@ -423,8 +423,16 @@ function New-PlaySession($started, $ended, $videoPath, $title) {
         Start-Sleep -Seconds 1
         Move-Item -LiteralPath $videoPath -Destination (Join-Path $dir 'video.mp4') -Force
     }
-    if ((Test-Path $GameLogFile) -and (Get-Item $GameLogFile).LastWriteTime -ge $started.AddSeconds(-5)) {
-        Copy-Item -LiteralPath $GameLogFile -Destination (Join-Path $dir 'game-log.txt') -Force
+    # The player's own log: test robots write to the same folder (godot.log is whichever ran last), so take the
+    # newest log written during this session whose first lines say "PLAYER GAME" (owner, Nov 17).
+    $logDir = Split-Path $GameLogFile
+    $playerLog = Get-ChildItem -LiteralPath $logDir -Filter 'godot*.log' -File -ErrorAction SilentlyContinue |
+        Where-Object { $_.LastWriteTime -ge $started.AddSeconds(-5) } |
+        Sort-Object LastWriteTime -Descending |
+        Where-Object { (Get-Content -LiteralPath $_.FullName -TotalCount 40 -ErrorAction SilentlyContinue) -match 'PLAYER GAME' } |
+        Select-Object -First 1
+    if ($playerLog) {
+        Copy-Item -LiteralPath $playerLog.FullName -Destination (Join-Path $dir 'game-log.txt') -Force
     }
 
     $branch = (& git -C $ProjectDir rev-parse --abbrev-ref HEAD 2>$null)

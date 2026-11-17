@@ -64,7 +64,34 @@ var _drips := {}  ## dripstone kind -> Array of [Transform3D, tint]
 var _drip_cells := {}  ## dripstone kind -> Array of MultiMeshInstance3D (one per 32 m square)
 
 
-func build(maker: CaveMaker, world: World) -> void:
+## Where everything goes is worked out on a helper thread (owner, Nov 17: the game froze ~26 s while loading, mostly
+## here: the new caves have ~5000 tunnel pieces); the meshes are made back on the game's thread when it's done.
+## Same dice in the same order, so everything lands where it did before. `blocking` = all at once (tests).
+var _plan_thread: Thread
+var _built := false
+
+
+func build(maker: CaveMaker, world: World, blocking := false) -> void:
+	if blocking:
+		_finish(_plan(maker), maker, world)
+		return
+	_plan_thread = Thread.new()
+	_plan_thread.start(func() -> void:
+		var plan := _plan(maker)
+		_finish.call_deferred(plan, maker, world))
+
+
+func is_built() -> bool:
+	return _built
+
+
+func _exit_tree() -> void:
+	if _plan_thread and _plan_thread.is_started():
+		_plan_thread.wait_to_finish()
+
+
+## (helper thread) Where every pebble, rock and dripstone goes. Touches no nodes.
+func _plan(maker: CaveMaker) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = maker.seed + 4242
 	var picks := {}  ## kind -> Array of Transform3D
@@ -85,6 +112,15 @@ func build(maker: CaveMaker, world: World) -> void:
 		for i in (CLUSTERS_BIG_ROOM if room.big else CLUSTERS_ROOM):
 			var dir := Vector3(rng.randf_range(-1, 1), rng.randf_range(0.5, 1.0), rng.randf_range(-1, 1)).normalized()
 			_ceiling(maker, rng, picks, room.center, dir)
+	return {picks = picks, rng = rng}
+
+
+## (game thread) Make the meshes from the plan.
+func _finish(plan: Dictionary, maker: CaveMaker, world: World) -> void:
+	if _plan_thread and _plan_thread.is_started():
+		_plan_thread.wait_to_finish()
+	var picks: Dictionary = plan.picks
+	var rng: RandomNumberGenerator = plan.rng
 	for k in KINDS:
 		_make_set(k, picks[k])
 	for k in DRIPS:
@@ -92,6 +128,7 @@ func build(maker: CaveMaker, world: World) -> void:
 	_place_hanging_roots(maker, rng)
 	# _place_shelves(maker, rng)  # off (owner, Nov 17: "really bad... doesn't blend with walls"); ledges in the rock instead?
 	world.changed.connect(_on_rock_changed)
+	_built = true
 
 
 ## A cluster of stalactites where a ray from `start` hits the ceiling: one big one, a few small

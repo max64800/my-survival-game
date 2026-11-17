@@ -270,7 +270,7 @@ static func _add_first_drip(maker: CaveMaker, spots: Array[Dictionary]) -> void:
 			return  # it already has one
 	# (layout 4's first cavern is huge with a high dome: try further out toward its walls too, where the ceiling is low
 	# enough for a bucket under it to catch the drops: Drip Buckets fill from up to 15 m below)
-	var rings := [0.35] if maker.made_layout < 4 else [0.35, 0.6, 0.75, 0.85, 0.92]
+	var rings := [0.35, 0.6, 0.75, 0.85, 0.92] if maker.huge_first() else [0.35]
 	for frac in rings:
 		for k in 8:
 			var a := k * TAU / 8.0
@@ -279,7 +279,7 @@ static func _add_first_drip(maker: CaveMaker, spots: Array[Dictionary]) -> void:
 			if maker.sdf_at(fl + Vector3.UP * 1.0) <= 0.0:
 				continue
 			var top := _march(maker, fl + Vector3.UP * 1.0, Vector3.UP, 20.0)
-			if top == Vector3.INF or (maker.made_layout >= 4 and top.y - fl.y > 14.0):
+			if top == Vector3.INF or (maker.huge_first() and top.y - fl.y > 14.0):
 				continue
 			_add_spot(spots, top, Vector3.DOWN, DRIP, 1.0, 0.0, 0.0)
 			return

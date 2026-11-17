@@ -110,7 +110,7 @@ func _process(delta: float) -> void:
 const MOON_ENERGY := 0.32  ## the star light at full (moonlit: shapes and roots show, colours stay dim)
 const MOON_COLOR := Color(0.55, 0.78, 0.85)
 const BIG_AMBIENT := 0.2  ## extra soft light inside the huge cavern
-const EYES_MAX := 0.45  ## eyes adjusted to a big dark space: up to 45% brighter
+const EYES_MAX := 0.0  ## eyes adjusted to a big dark space: off (owner, Nov 17: "too bright... I don't need the lantern"; was 0.45)
 const EYES_SPEED := 0.12  ## how fast eyes adjust (per second, a few seconds like real eyes)
 var _moon: DirectionalLight3D
 var _big := 0.0  ## 0..1: how far inside the huge cavern the camera is

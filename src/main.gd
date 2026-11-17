@@ -14,6 +14,7 @@ var seed := 0
 var world: World
 var glow: GlowField
 var cave_life: CaveLife
+var _clutter: Clutter
 var authority: GameAuthority
 var dwarf: Dwarf
 var hud: Hud
@@ -141,6 +142,11 @@ func _ready() -> void:
 	# Every test robot (startcheck too) leaves the real mouse alone (F27), and its window
 	# never takes the keyboard/mouse focus from whatever the owner is doing.
 	Controls.robot = debug_script != ""
+	# Slowdowns and freezes go into the log (owner, Nov 17). A person's game says so on its first line, so the
+	# recorder copies this log and not a test robot's (they all write to the same log folder).
+	add_child(FreezeWatch.new())
+	if not Controls.robot:
+		print("PLAYER GAME (not a robot) started ", Time.get_datetime_string_from_system())
 	if Controls.robot:
 		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_NO_FOCUS, true)
 	if debug_script != "":
@@ -294,6 +300,7 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	else:
 		CaveMaker.use_layout(_new_layout)
 	print("Cave seed: ", seed, " (cave layout ", CaveMaker.layout, ")")
+	FreezeWatch.doing = "making the cave"
 	_make_environment()
 	world = World.new()
 	world.name = "World"
@@ -304,22 +311,27 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	glow.name = "Glow"
 	add_child(glow)
 	glow.rock = CaveLife.Rock.new(world.maker)  # crystals sit on the rock as it's drawn (F195)
-	glow.build(GlowPlacer.place(world.maker))
+	FreezeWatch.doing = "placing crystals and roots"
+	var spots := GlowPlacer.place(world.maker)  # (~6 s: worked out once, the plants below get a copy)
+	glow.build(spots)
 
-	var clutter := Clutter.new()  # pebbles, rocks, bones, twigs on the floors (only looks)
-	clutter.name = "Clutter"
-	add_child(clutter)
-	clutter.build(world.maker, world)
+	FreezeWatch.doing = "placing pebbles and dripstone"
+	_clutter = Clutter.new()  # pebbles, rocks, bones, twigs on the floors (only looks)
+	_clutter.name = "Clutter"
+	add_child(_clutter)
+	_clutter.build(world.maker, world)  # worked out on a helper thread while the rock loads
 
 	cave_life = CaveLife.new()  # moss, grass, small roots, lichen, ferns in patches (only looks; F188)
 	cave_life.name = "CaveLife"
 	add_child(cave_life)
-	cave_life.build(world.maker, GlowPlacer.place(world.maker), world, true)  # placed in the background while the cave loads
+	cave_life.build(world.maker, spots.duplicate(true), world, true)  # placed in the background while the cave loads
 
+	FreezeWatch.doing = "placing the cave's places"
 	var pf := PoiField.new()
 	pf.name = "Pois"
 	add_child(pf)
 	pf.build(world.maker)
+	FreezeWatch.doing = "loading the rock around you"
 	var peephole := Peephole.make(world)
 	if peephole:
 		peephole.name = "Peephole"
@@ -562,8 +574,10 @@ func _process(delta: float) -> void:
 		if world.terrain.is_area_meshed(AABB(p - Vector3.ONE * r, Vector3.ONE * r * 2.0)):
 			rings_ready += 1
 	hud.set_loading_progress(0.15 + 0.85 * rings_ready / 5.0)
-	if world.terrain.is_area_meshed(area) and (cave_life == null or cave_life.is_built()):
+	if world.terrain.is_area_meshed(area) and (cave_life == null or cave_life.is_built()) and (_clutter == null or _clutter.is_built()):
 		_ready_to_play = true
+		FreezeWatch.doing = "playing"
+		print("[%s] ready to play" % Time.get_time_string_from_system())
 		dwarf.set_physics_process(true)
 		hud.set_loading(false)
 
