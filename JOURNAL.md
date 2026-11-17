@@ -2648,3 +2648,19 @@ The owner: the sheet behind the hair still happens, make the hook at the very en
   full). Digging already finds a pickaxe anywhere you carry it. Hurdle: 7 tests assumed the starting pickaxe sat in
   its slot, so "hotbar slot 1" was free for their item; they now pick the first slot that isn't the pickaxe (a
   small helper in the test base). Full suite: only the dwarf-hair test fails (the dwarf chat's live work).
+
+## November 17, 2026 (PC, rock-textures Claude): dripstone on the ceilings (F232)
+
+- The owner OK'd the dripstone, shelves and roots sheets (curtain dropped), picked star dots for the glow threads, and
+  dripstone first: "fix the paint, different sizes, colours a bit, blend with existing rocks".
+- Built `tools/asset_forge/builds/cave_dripstone.py` the cave_plants way (melted, carved bands and runnels, baked
+  paint): a cluster, a big ringed stalactite with a drop, a stubby mossy cluster. Round 1 (grey): thin, fingers for the
+  curtain, floating drop; round 2: shapes close but pale flat paint (shown to the owner); round 3: warm banded paint,
+  rock in the cave's stone colour, worm-like scratch lines removed.
+- In the game (`clutter.gd`) they replace the simple ceiling stalactites: a main one with a smaller one or two beside
+  it, size 0.8-2.4x, a slight colour shift each (purplish in the jungle), the rock chunk pushed into the ceiling, 2 m
+  kept clear above the floor; digging nearby removes them.
+- Hurdle: placed (2,060 in zone 1) but invisible. One batch for the whole zone had a 60 m draw distance measured from
+  the zone's middle, so it was never drawn. Now one batch per 32 m square. Speed check: 451 fps.
+- Claude noticed: the floor pebbles, rocks, bones and twigs use the same one-batch-per-zone setup with a 45 m limit,
+  so they may never be drawn either. Not changed; asking the owner first.

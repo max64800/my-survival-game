@@ -2,8 +2,9 @@ class_name Clutter
 extends Node3D
 ## Small loose things on cave floors, only for looks: pebbles, chunky rocks, old bones,
 ## twigs (Mossy Hollows) and fungus nubs (Fungal Jungle). You can't pick them up.
-## And stone stalactites on the ceilings: wide at the top, thinning to a rounded tip, in
-## clusters (a big one with smaller ones around it), in the colour of the local rock.
+## And dripstone on the ceilings (F232, owner Nov 17): hand-built models (tools/asset_forge/builds/cave_dripstone.py:
+## a stalactite cluster, a big ringed one with a drop, a stubby cluster), each on a chunk of rock tucked into the
+## ceiling, in different sizes and slightly different colours, a main one with a smaller one or two beside it.
 ## - Same seed = same spots on every computer (no network needed).
 ## - Drawn in batches (one MultiMesh per kind), so thousands cost about as much as a few.
 ## - When rock is dug or caves in nearby, the things there disappear, so nothing floats.
@@ -25,9 +26,17 @@ const KINDS := {
 }
 const CLUSTERS_BIG_ROOM := 30
 const CLUSTERS_ROOM := 7
+## Dripstone models: how far each hangs at size 1 (m), and its size range (owner: "different sizes").
+const DRIPS := {
+	"drip_a": {model = "res://assets/models/cave/drip_a.glb", length = 0.95, size = [0.8, 2.0]},
+	"drip_b": {model = "res://assets/models/cave/drip_b.glb", length = 1.15, size = [0.8, 1.9]},
+	"drip_d": {model = "res://assets/models/cave/drip_d.glb", length = 0.45, size = [0.9, 2.4]},
+}
 
 var _sets := {}   ## kind -> MultiMeshInstance3D
 var _where := {}  ## kind -> PackedVector3Array (positions, for hiding near digs)
+var _drips := {}  ## dripstone kind -> Array of [Transform3D, tint]
+var _drip_cells := {}  ## dripstone kind -> Array of MultiMeshInstance3D (one per 32 m square)
 
 
 func build(maker: CaveMaker, world: World) -> void:
@@ -45,12 +54,16 @@ func build(maker: CaveMaker, world: World) -> void:
 		for i in PER_TUNNEL:
 			var at: Vector3 = (s.a as Vector3).lerp(s.b, rng.randf())
 			_try(maker, rng, picks, at, Vector3(rng.randf_range(-0.3, 0.3), -1, rng.randf_range(-0.3, 0.3)).normalized(), 10.0)
+	for k in DRIPS:
+		_drips[k] = []
 	for room in maker.rooms:
 		for i in (CLUSTERS_BIG_ROOM if room.big else CLUSTERS_ROOM):
 			var dir := Vector3(rng.randf_range(-1, 1), rng.randf_range(0.5, 1.0), rng.randf_range(-1, 1)).normalized()
 			_ceiling(maker, rng, picks, room.center, dir)
 	for k in KINDS:
 		_make_set(k, picks[k])
+	for k in DRIPS:
+		_make_drip_set(k, _drips[k])
 	world.changed.connect(_on_rock_changed)
 
 
@@ -62,25 +75,35 @@ func _ceiling(maker: CaveMaker, rng: RandomNumberGenerator, picks: Dictionary, s
 	var hit := GlowPlacer._march(maker, start, dir, 60.0)
 	if hit == Vector3.INF or GlowPlacer.normal_at(maker, hit).y > -0.6:
 		return  # not a ceiling
-	var kind := "stal_fungal" if CaveMaker.biome_at(hit) == "fungal" else "stal_mossy"
-	var small := rng.randi_range(2, 5)
-	for j in small + 1:
+	var fungal := CaveMaker.biome_at(hit) == "fungal"
+	var names := DRIPS.keys()
+	var count := rng.randi_range(1, 3)  # a main one, maybe a smaller one or two beside it
+	for j in count:
 		var at := hit
-		var big := j == 0
-		if not big:  # the small ones sit around the big one, a bit higher up on the rock
-			var off := Vector3(rng.randf_range(-0.7, 0.7), 0, rng.randf_range(-0.7, 0.7))
+		if j > 0:
+			var off := Vector3(rng.randf_range(-1.2, 1.2), 0, rng.randf_range(-1.2, 1.2))
 			at = GlowPlacer._march(maker, hit + off + Vector3.DOWN * 0.4, Vector3.UP, 3.0)
 			if at == Vector3.INF:
 				continue
+		var kind: String = names[rng.randi_range(0, names.size() - 1)]
+		var d: Dictionary = DRIPS[kind]
+		var size := rng.randf_range(d.size[0], d.size[1]) * (1.0 if j == 0 else 0.6)
+		var spin := rng.randf() * TAU
+		# slightly different colours (owner): a little warmer, cooler, lighter or darker; the jungle's are purplish
+		var tint := Color.from_hsv(rng.randf_range(0.04, 0.12), rng.randf_range(0.0, 0.14), rng.randf_range(0.85, 1.08))
+		if fungal:
+			tint *= Color(0.84, 0.74, 0.94)
+		var n := GlowPlacer.normal_at(maker, at)
+		if n.y > -0.5:
+			continue  # not under a ceiling here
 		var floor_hit := GlowPlacer._march(maker, at + Vector3.DOWN * 0.3, Vector3.DOWN, 40.0)
 		var gap := at.distance_to(floor_hit) if floor_hit != Vector3.INF else 40.0
-		var length := rng.randf_range(0.9, 2.4) if big else rng.randf_range(0.2, 0.75)
-		length = minf(length, gap - 2.0)  # keep 2 m clear below
-		if length < 0.15:
+		size = minf(size, (gap - 2.0) / float(d.length))  # keep 2 m clear below: nobody bumps their head
+		if size < 0.5:
 			continue
-		var radius := length * rng.randf_range(0.16, 0.24)
-		var basis := Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(radius, length, radius * rng.randf_range(0.8, 1.2)))
-		picks[kind].append(Transform3D(basis, at + Vector3.UP * 0.25 * length))  # tucked into the rock a bit
+		# The model grows along its +Y away from its rock: hang it upside down, the rock pushed up into the ceiling.
+		var basis := Basis(Vector3.RIGHT, PI) * Basis(Vector3.UP, spin)
+		_drips[kind].append([Transform3D(basis.scaled(Vector3.ONE * size), at + Vector3.UP * 0.07 * size), tint])
 
 
 func _try(maker: CaveMaker, rng: RandomNumberGenerator, picks: Dictionary, start: Vector3, dir: Vector3, reach: float) -> void:
@@ -143,6 +166,82 @@ func _make_set(kind: String, xforms: Array) -> void:
 	add_child(mmi)
 	_sets[kind] = mmi
 	_where[kind] = where
+
+
+## Dripstone, in 32 m squares per model: each square is its own batch with its own draw distance (one batch for the
+## whole zone would be measured from the zone's middle, so it was never drawn, and drawing all of it would be heavy).
+const DRIP_CELL := 32.0
+
+func _make_drip_set(kind: String, items: Array) -> void:
+	if items.is_empty():
+		return
+	var cells := {}
+	for it in items:
+		var o: Vector3 = (it[0] as Transform3D).origin
+		var c := Vector3i((o / DRIP_CELL).floor())
+		if not cells.has(c):
+			cells[c] = []
+		cells[c].append(it)
+	var where := PackedVector3Array()
+	var holders: Array[MultiMeshInstance3D] = []
+	for c in cells:
+		var group: Array = cells[c]
+		var mm := MultiMesh.new()
+		mm.transform_format = MultiMesh.TRANSFORM_3D
+		mm.use_colors = true
+		mm.mesh = _model_mesh(DRIPS[kind].model)
+		mm.instance_count = group.size()
+		for i in group.size():
+			mm.set_instance_transform(i, group[i][0])
+			mm.set_instance_color(i, group[i][1])
+		var mmi := MultiMeshInstance3D.new()
+		mmi.multimesh = mm
+		mmi.visibility_range_end = 60.0
+		mmi.visibility_range_end_margin = 6.0
+		mmi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
+		add_child(mmi)
+		holders.append(mmi)
+	_drip_cells[kind] = holders
+
+
+static var _models := {}  ## path -> ArrayMesh (all the model's parts, their paint tinted by each copy's colour)
+
+
+static func _model_mesh(path: String) -> Mesh:
+	if _models.has(path):
+		return _models[path]
+	var mesh := ArrayMesh.new()
+	var ps := load(path) as PackedScene
+	if ps:
+		var inst := ps.instantiate()
+		for mi: MeshInstance3D in inst.find_children("*", "MeshInstance3D", true, false):
+			var xf := Transform3D()
+			var node: Node = mi
+			while node != inst:
+				xf = (node as Node3D).transform * xf
+				node = node.get_parent()
+			for sidx in mi.mesh.get_surface_count():
+				var st := SurfaceTool.new()
+				st.create_from(mi.mesh, sidx)
+				var arrays := st.commit_to_arrays()
+				var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+				for v in verts.size():
+					verts[v] = xf * verts[v]
+				arrays[Mesh.ARRAY_VERTEX] = verts
+				var nrm = arrays[Mesh.ARRAY_NORMAL]
+				if nrm is PackedVector3Array:
+					for v in nrm.size():
+						nrm[v] = (xf.basis * nrm[v]).normalized()
+					arrays[Mesh.ARRAY_NORMAL] = nrm
+				mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+				var m := mi.mesh.surface_get_material(sidx)
+				if m is StandardMaterial3D:
+					m = m.duplicate()
+					(m as StandardMaterial3D).vertex_color_use_as_albedo = true  # each copy's tint (MultiMesh colour)
+				mesh.surface_set_material(mesh.get_surface_count() - 1, m)
+		inst.free()
+	_models[path] = mesh
+	return mesh
 
 
 ## The unit shape of each kind (the transform makes it the right size).
@@ -229,6 +328,14 @@ static func _stalactite_mesh() -> Mesh:
 ## Rock changed near here: anything resting there disappears (it fell with the rock).
 func _on_rock_changed(center: Vector3, radius: float) -> void:
 	var r2 := (radius + 0.6) * (radius + 0.6)
+	var rd := (radius + 1.2) * (radius + 1.2)  # dripstone hangs from a wider chunk of rock
+	for kind in _drip_cells:
+		for mmi: MultiMeshInstance3D in _drip_cells[kind]:
+			var mm := mmi.multimesh
+			for i in mm.instance_count:
+				var o := mm.get_instance_transform(i).origin
+				if o.distance_squared_to(center) < rd:
+					mm.set_instance_transform(i, Transform3D(Basis().scaled(Vector3.ZERO), o))
 	for kind in _sets:
 		var where: PackedVector3Array = _where[kind]
 		var mm: MultiMesh = (_sets[kind] as MultiMeshInstance3D).multimesh

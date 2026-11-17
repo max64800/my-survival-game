@@ -294,6 +294,28 @@ func _kind_shots(dwarf: Dwarf, maker: CaveMaker) -> void:
 		await _lamp_shot(dwarf, top + out * 3.0 + Vector3.UP * 0.8, c + Vector3.DOWN * (cliff.radii as Vector3).y * 0.4, "c_cliff_top", 80.0)
 		var fl := maker.find_floor(c.x, c.z, c.y)
 		await _lamp_shot(dwarf, (fl if fl != Vector3.INF else c) + Vector3.UP * 1.6 - out * 4.0, top, "c_cliff_from_floor", 80.0)
+	# Dripstone (F232): the nearest few to the start, from below, lit like a lantern.
+	var clutter := _main.get_node_or_null("Clutter") as Clutter
+	if clutter:
+		var shots := 0
+		for kind in Clutter.DRIPS:
+			var best := Vector3.INF
+			for it in clutter._drips[kind]:
+				var p: Vector3 = (it[0] as Transform3D).origin
+				if best == Vector3.INF or p.distance_to(home) < best.distance_to(home):
+					best = p
+			if best == Vector3.INF:
+				continue
+			var bx: Transform3D = clutter._drips[kind][0][0]
+			for it in clutter._drips[kind]:
+				if (it[0] as Transform3D).origin == best:
+					bx = it[0]
+			print("  %s: %d placed; nearest at %s (rock here %.2f, 0.5 m below %.2f, 1.5 m below %.2f), size %.2f, its up %s" % [kind,
+				clutter._drips[kind].size(), best.round(), maker.sdf_at(best), maker.sdf_at(best + Vector3.DOWN * 0.5),
+				maker.sdf_at(best + Vector3.DOWN * 1.5), bx.basis.get_scale().x, bx.basis.y.normalized().round()])
+			var eye := best + Vector3(2.6, -3.2, 1.8)  # close, a little below and to the side (in the air is fine)
+			await _lamp_shot(dwarf, eye, best + Vector3.DOWN * 0.9, "d_%s" % kind, 14.0)
+			shots += 1
 	print("  kinds: done")
 
 

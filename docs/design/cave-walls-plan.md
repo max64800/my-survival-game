@@ -19,9 +19,18 @@ references; batches of ~4 with the owner's OK.
 Prompts: in the chat (same wording style as the texture sheets: painted, chunky, no perfect shapes, every part
 touching, plain light-grey background, 2x2 grid, no text).
 
+## Owner's picks (Nov 17)
+All three model sheets OK'd (dripstone, rock shelves, hanging roots and moss). Glow threads: **look 2, star dots**.
+Build order: **dripstone first**, then shelves, then roots and moss; glow threads alongside.
+
 ## Next
-1. Owner's OK on the sheets and a pick for the glow-thread look.
+1. ~~Owner's OK on the sheets and a pick for the glow-thread look.~~ Done.
 2. Models, one batch at a time (each passes the model checks): dripstone (4), shelves (4), hanging roots/moss (4).
 3. Placing them: dripstone on ceilings (more in tall caverns and over water), shelves on walls (some carrying moss,
    mushrooms or crystals), roots and moss under ceilings near the surface and over ledges; glow threads on dark
    ceilings (a shader or particles, no model).
+
+## Dripstone (done Nov 17)
+`tools/asset_forge/builds/cave_dripstone.py` -> `assets/models/cave/drip_a|b|d.glb` (the curtain, drip_c, was dropped).
+Placed by `src/art/clutter.gd` (`DRIPS`, `_ceiling`): replaces the old procedural stalactites; one batch per 32 m
+square (a single zone-wide batch was never drawn: its draw distance is measured from its middle).
