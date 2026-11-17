@@ -49,10 +49,32 @@ test = np.nonzero(d0 > 0.006)[0]
 print(f"CLIP_CHECK testing {len(test)} head points (left out {nh - len(test)}: the neck in the collar); built pose: closest "
 	f"{d0[test].min() * 100:.2f} cm")
 beard = built_h[test][:, 1] < 0.95  # below the chin as built: beard, braids, tufts, the hair on the upper back
+# stretching (owner, Nov 17: flat "sheets" between the hair and the body): every head edge, how many times longer than
+# as built it gets; a sheet is an edge pulled to several times its length
+ht = np.array(info.get("head_tris", []), dtype=np.int64).reshape(-1, 3)
+edges = np.unique(np.sort(np.concatenate([ht[:, [0, 1]], ht[:, [1, 2]], ht[:, [2, 0]]]), axis=1), axis=0) if len(ht) else None
+if edges is not None:  # (only edges you can see: both ends outside the body as built)
+	seen = np.zeros(nh, bool)
+	seen[test] = True
+	edges = edges[seen[edges[:, 0]] & seen[edges[:, 1]]]
+	rest_len = np.linalg.norm(built_h[edges[:, 0]] - built_h[edges[:, 1]], axis=1) + 1e-6
 worst_all, k = 0.0, 1
 for name, frames in info["clips"][1:]:
 	worst, bad, where, worst_beard = 0.0, 0, None, 0.0
+	stretch, s_where, back_stretch, b_where = 1.0, None, 1.0, None
 	for f in range(k, k + frames):
+		if edges is not None:
+			h_ = data[f, :nh]
+			ratio = np.linalg.norm(h_[edges[:, 0]] - h_[edges[:, 1]], axis=1) / rest_len
+			j = int(np.argmax(ratio))
+			if ratio[j] > stretch:
+				stretch, s_where = float(ratio[j]), tuple(float(round(x, 2)) for x in built_h[edges[j, 0]])
+			behind = built_h[edges[:, 0]][:, 2] > 0.05  # (the back hair: behind the neck)
+			if behind.any():
+				jb = int(np.argmax(np.where(behind, ratio, 0.0)))
+				if ratio[jb] > back_stretch:
+					back_stretch = float(ratio[jb])
+					b_where = tuple(float(round(x, 2)) for x in built_h[edges[jb, 0]])
 		d = signed(data[f, nh:], data[f, :nh][test], flip)
 		i = int(np.argmin(d))
 		if d[i] < -0.002:
@@ -62,6 +84,7 @@ for name, frames in info["clips"][1:]:
 		worst_beard = min(worst_beard, d[beard].min())
 	k += frames
 	print(f"CLIP_CHECK {name}: deepest {-worst * 1000:.1f} mm inside the body ({bad} of {frames} frames over 2 mm); "
-		f"beard below the chin: {-worst_beard * 1000:.1f} mm" + (f"; worst point as built (x, height, z; front is -z): {where}" if where else ""))
+		f"beard below the chin: {-worst_beard * 1000:.1f} mm; most stretched edge x{stretch:.1f} at {s_where}; back hair x{back_stretch:.1f} at {b_where}"
+		+ (f"; worst point as built (x, height, z; front is -z): {where}" if where else ""))
 	worst_all = min(worst_all, worst)
 print(f"CLIP_CHECK {'PASS' if -worst_all * 1000 <= max_mm else 'FAIL'}: worst {-worst_all * 1000:.1f} mm (limit {max_mm:.0f} mm)")

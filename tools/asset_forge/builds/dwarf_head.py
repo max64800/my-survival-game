@@ -372,7 +372,7 @@ def build_face():
 		build_ear(s)
 
 
-def build_lids(s, A=72, Bu=44, Bl=26, r_in=EYE_R - 0.0015, r_out=EYE_R + 0.0075, rho_max=105, J=48, M=12):
+def build_lids(s, A=70, Bu=26, Bl=18, r_in=EYE_R - 0.0015, r_out=EYE_R + 0.0075, rho_max=105, J=48, M=12):
 	"""Both lids of one eye as one shell round the eyeball with an almond opening (the upper lid 30 degrees above the
 	look line, the lower lid only 14 below: a smiling eye). The shell sinks 1.5 mm into the ball, so the lid edge
 	never leaves a gap (beetle lesson), and it melts into the brow and the cheek."""
@@ -413,7 +413,7 @@ def build_lids(s, A=72, Bu=44, Bl=26, r_in=EYE_R - 0.0015, r_out=EYE_R + 0.0075,
 			d = a * math.cos(rb) + (c * math.cos(psi) + b * math.sin(psi)) * math.sin(rb)
 			pts.append(E + d * (EYE_R + 0.0012))
 			taper = math.sin(math.pi * k / 14) ** 0.6
-			radii.append((0.0034 if upper else 0.0024) * (0.35 + 0.65 * taper))
+			radii.append((0.0046 if upper else 0.003) * (0.35 + 0.65 * taper))
 		tube(f"lid_rim_{s}_{'up' if upper else 'lo'}", pts, radii, MS, LIDS, sides=10, up=a)
 
 
@@ -499,9 +499,13 @@ def build_hair():
 				continue
 			t.normalize()
 			k = L * R.uniform(0.85, 1.15)
-			curl = UP * (0.016 * (1 - low)) + n * (0.006 + 0.006 * low)
-			pts = [R0 - n * 0.012 - t * 0.01, R0 + t * 0.33 * k + n * 0.003, R0 + t * 0.66 * k + n * 0.005,
-				R0 + t * 0.9 * k + n * 0.011 + curl * 0.5, R0 + t * k + n * 0.016 + curl]
+			# the tips curl up and out on the upper rows; on the lowest rows they lie flat along the hair (owner, Nov 17:
+			# the curled tips at the ponytail's end hooked into his body)
+			flat = min(1.0, max(0.0, (low - 0.45) / 0.3))
+			curl = (UP * (0.016 * (1 - low)) + n * (0.006 + 0.006 * low)) * (1 - flat)
+			lift = 1.0 - 0.8 * flat
+			pts = [R0 - n * 0.012 - t * 0.01, R0 + t * 0.33 * k + n * 0.003, R0 + t * 0.66 * k + n * 0.005 * lift,
+				R0 + t * 0.9 * k + n * 0.011 * lift + curl * 0.5, R0 + t * k + n * 0.016 * lift + curl]
 			if min((p - e).length for p in pts for e in ears) < 0.05:
 				continue  # (the ears stay uncovered, like the picture's)
 			lock(pts, 0.036 * R.uniform(0.9, 1.1), 0.021, n, grooves=2, rd=0.22, twist=jit(0.4))
@@ -510,7 +514,8 @@ def build_hair():
 	# (owner F215: "add the skeleton to the big ponytail that slides down the back, similar to the braids": a long chain
 	# of 7 down the middle, from high on the back of the head to the lowest tips, and one of 5 down each side)
 	BACKS.clear()
-	for phi, els in ((-40, (25, 8, -10, -28, -44, -58)), (0, (30, 15, 0, -15, -30, -42, -54, -64)), (40, (25, 8, -10, -28, -44, -58))):
+	# (one chain for the whole ponytail: three side by side swung apart and tore the hair between them, Nov 17)
+	for phi, els in ((0, (30, 15, 0, -15, -30, -42, -54, -64)),):
 		pts = []
 		for el in els:
 			P, n = hit_round("hairmass", phi, el)
@@ -1177,7 +1182,7 @@ def build(body_objs, fast=False, log=print):
 		E = np.array(tuple(eye_centre(s)))
 		gap = np.linalg.norm(co_ - E, axis=1) - EYE_R
 		above = (co_[:, 2] - E[2]) > 0
-		lash = np.clip(1.0 - gap / np.where(above, 0.0042, 0.0026), 0.0, 1.0) * (1 - soft)
+		lash = np.clip(1.0 - np.abs(gap - 0.0012) / np.where(above, 0.0016, 0.001), 0.0, 1.0) * (1 - soft)  # (only AT the lid edge: a ring all round looked like no lids)
 		cols = cols * (1.0 - np.where(above, 0.82, 0.6) * lash)[:, None]
 	# (round 2b's crease-depth lines were too faint to see once baked: now drawn from how the hair is built)
 	ink = hard_lines(high, PRE) * soft

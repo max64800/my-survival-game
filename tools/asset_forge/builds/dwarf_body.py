@@ -225,7 +225,7 @@ for bd, tag in zip(dh.BRAIDS, ("m", "a", "b")):
 	joints = chain_along(bd["path"], [k / 7 for k in range(8)])
 	CHAINS[f"hair_braid_{tag}"] = (bd, joints, "Head")
 for k, pts in enumerate(dh.BACKS):
-	CHAINS[f"hair_back_{'lmr'[k] if len(dh.BACKS) == 3 else k}"] = (None, list(pts), "Head")  # (a bone per point: 7 / 5)
+	CHAINS[f"hair_back_{'lmr'[k] if len(dh.BACKS) == 3 else ('m' if len(dh.BACKS) == 1 else k)}"] = (None, list(pts), "Head")  # (a bone per point)
 for cname, (bd, joints, parent) in CHAINS.items():
 	prev = arm_data.edit_bones[parent]
 	for k in range(len(joints) - 1):
@@ -288,7 +288,17 @@ for o in meshes:
 	names = {vg.index: vg.name for vg in o.vertex_groups}
 	for v in o.data.vertices:
 		sp.append(o.matrix_world @ v.co)
-		sw.append({names[g.group]: g.weight for g in v.groups if g.weight > 0.0})
+		ws = {}
+		for g in v.groups:
+			if g.weight <= 0.0:
+				continue
+			# the beard and hair never follow the arms (near the shoulders the shirt does: raising the arms tore the
+			# beard beside the braids, owner Nov 17): the arms' share goes to the chest
+			name = names[g.group]
+			if name.startswith(("clavicle", "upperarm", "lowerarm", "hand", "thumb", "index", "middle", "ring", "pinky")):
+				name = "spine_03"
+			ws[name] = ws.get(name, 0.0) + g.weight
+		sw.append(ws)
 skd = kdtree.KDTree(len(sp))
 for i, p in enumerate(sp):
 	skd.insert(p, i)
@@ -351,8 +361,12 @@ backs = {c: j for c, (bd, j, _) in CHAINS.items() if bd is None}
 braids = {c: j for c, (bd, j, _) in CHAINS.items() if bd is not None}
 for vi, v in enumerate(HEAD["head"].data.vertices):
 	p = HEAD["head"].matrix_world @ v.co
-	if backs and dh.C.y - p.y <= -0.05:
-		back_owner[vi] = min(backs, key=lambda c: along(backs[c], p)[1])
+	if backs and dh.C.y - p.y <= -0.03:  # (shared softly between the near strands: a hard border between them tore too)
+		ds = {c: max(along(backs[c], p)[1], 0.005) for c in backs}
+		near = min(ds.values())
+		share = {c: (near / d) ** 4 for c, d in ds.items()}
+		tot = sum(share.values())
+		back_owner[vi] = {c: x / tot for c, x in share.items() if x / tot > 0.02}
 	if braids:
 		braid_owner[vi] = min(braids, key=lambda c: along(braids[c], p)[1])
 for cname, (bd, joints, parent) in CHAINS.items():
@@ -363,17 +377,19 @@ for cname, (bd, joints, parent) in CHAINS.items():
 	for vi, v in enumerate(HEAD["head"].data.vertices):
 		p = HEAD["head"].matrix_world @ v.co
 		s, d, total = along(joints, p)
-		if bd is not None:  # the whole braid (blended in over its top 3 cm, under the chin)
+		if bd is not None:  # the whole braid (blended in over its top 7 cm: a 3 cm hand-over stretched 10x when swinging)
 			if braid_owner.get(vi) != cname:
 				continue
-			m = smooth01(s / 0.03) * (1.0 - smooth01((d - bd["reach"]) / (bd["reach"] * 0.6)))
+			m = smooth01(s / 0.07) * (1.0 - smooth01((d - bd["reach"]) / (bd["reach"] * 0.6)))
 		else:  # the back hair: ALL of it behind the skull, from the crown's back down, goes with its nearest strand
 			v_, w_ = p.z - dh.C.z, dh.C.y - p.y
-			if back_owner.get(vi) != cname:
+			share = back_owner.get(vi, {}).get(cname, 0.0)
+			if share <= 0.0:
 				continue
-			# (the hair right against the neck stays with the head: swinging it stretched the neck out, owner Nov 17)
-			r_neck = math.hypot(p.x - dh.C.x, p.y - dh.C.y)
-			m = smooth01((0.07 - v_) / 0.05) * smooth01((-w_ - 0.05) / 0.03) * smooth01((r_neck - 0.1) / 0.05)
+			# a long, gradual hand-over from the head to the swinging bones over the first 10 cm down the strand (owner,
+			# Nov 17: sharp borders here, by height or distance from the neck, stretched into a flat sheet when it swung)
+			# (hair further to the sides follows the ponytail less and less, fading out gradually toward the ears)
+			m = smooth01(s / 0.1) * smooth01((-w_ - 0.03) / 0.05) * share * (1.0 - smooth01((d - 0.08) / 0.14))
 		if m <= 0.0:
 			continue
 		c = 0.0  # where along the chain, in bones (bone k's middle = k)

@@ -60,7 +60,8 @@ func _init() -> void:
 		clips.append([c[0], await _record(rig, f, head, torso, c[1], c[2])])
 		print("DUMPED ", c[0], "  biggest tuft swing: ", snappedf((swing as HairSwing).biggest_swing, 0.1) if swing is HairSwing else -1.0, " deg")
 	var t: Transform3D = head.global_transform
-	var info := {"head": _count(head), "torso": base, "tris": Array(tris), "clips": clips,
+	var head_tris: PackedInt32Array = head.mesh.surface_get_arrays(0)[Mesh.ARRAY_INDEX]
+	var info := {"head": _count(head), "torso": base, "tris": Array(tris), "head_tris": Array(head_tris), "clips": clips,
 		"world": [t.basis.x.x, t.basis.x.y, t.basis.x.z, t.basis.y.x, t.basis.y.y, t.basis.y.z, t.basis.z.x, t.basis.z.y, t.basis.z.z,
 			t.origin.x, t.origin.y, t.origin.z]}
 	var j := FileAccess.open(out + ".json", FileAccess.WRITE)

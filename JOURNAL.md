@@ -2513,3 +2513,26 @@ body) and the neck behind the hair looks stretched; a Pause button for screensho
   autopilot ran fine. Load time with and without the changes: 40.9 s vs 51.8 s (just noise). The slowest frame got a
   bit lower (10 vs 19 fps for one moment), probably the new mushroom shader getting ready the first time.
 - Hurdle: another chat's feedback line sat next to Claude's, so Claude saved only its own lines.
+
+## November 17, 2026 (PC, dwarf Claude): real eyelids, flat hair tips, one ponytail, a stretch check (F215, F221, F222)
+
+The owner: the sheet behind the hair still happens, make the hook at the very end flat, and "still no eyelids up and down".
+
+**What we did**
+- A new automatic check: how many times longer any visible edge of the head gets while he moves (a "sheet" is an edge
+  stretched to many times its length), front and back separately, with where.
+- Found with it: (1) near the shoulders the beard copied the shirt's ARM bones, so raising the arms tore it beside the
+  side braids (30x; now 7x: the beard and hair never follow the arms); (2) three ponytail strands side by side swung
+  apart and tore the hair between them (now one chain, the hair further out fading off it gradually); (3) sharp
+  borders between "follows the head" and "follows the ponytail" (now a gradual hand-over over 10 cm).
+- The lowest locks' tips lie flat (the hook). 0 edges glue two braids now.
+- Eyelids for real: the upper lid hangs over the top of the iris, the lower lid tucks under it (almond eyes), plumper
+  lid edges, the dark line only at the lid edges (before, it ringed the whole eye and the full round iris showed).
+
+**Mistakes and hurdles (including Claude's)**
+- Claude first guessed "swinging too far" for the sheets and shrank the swing: the stretch barely changed. The stretch
+  check then showed the real causes (the arm bones, the side-by-side strands, sharp borders). Lesson: measure first.
+- The eyelids took two tries: a lid you can see must cover part of the iris; a dark ring around a fully open eye reads
+  as no lids at all.
+- Still open: the back stretches up to about 7x in fast moves (better, not solved), and fast moves still push the
+  beard into the round 1 shirt. Both wait for the body round. 2 picture checks used.
