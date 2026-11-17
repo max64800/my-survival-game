@@ -2622,3 +2622,14 @@ The owner: the sheet behind the hair still happens, make the hook at the very en
   never closed it, so every later test ran in a frozen world. The test now closes it (and checks the freeze), and the
   HUD unfreezes the world if it is ever removed while paused. Full suite: 369 checks, only the dwarf-hair test fails
   (the dwarf chat is changing the hair right now).
+
+## November 17, 2026 (PC, rock-textures Claude): wall and ceiling pictures, batch 1 (F232)
+
+- The owner said to go ahead and use their PC for pictures. The Claude-in-Chrome extension wasn't connected, but the
+  Chrome DevTools connection reached the owner's real Chrome (signed in to ChatGPT Plus). Claude opened its own tab,
+  used the chat "Generate Cave Texture Sheet" (same style as the rock textures), and made 4 sheets: dripstone, rock
+  shelves, hanging roots and moss, and 4 glow-thread looks. Saved in `assets/concepts/cave-decor/`, logged in CREDITS.
+- Hurdle: getting the pictures out. A page script fetched each picture and wrote it as text straight into a file
+  (none of it through Claude's reading), and a small Python script turned it back into a PNG. The script also waits
+  until ChatGPT has finished, which is much cheaper than reading the whole page over and over.
+- Claude closed the tab it opened and left the owner's other tabs alone.
