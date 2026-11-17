@@ -340,6 +340,10 @@ func _aim_info() -> Dictionary:
 			nm = "Thin Root · click to pull it out"
 		elif spot.get("kind") == GlowPlacer.GIANT:
 			nm = "Giant Mushroom (%d chops left · copper axe)" % spot.get("chops", 1)
+		if k.get("tool", "") == "hand":  # mushrooms, fiber, twigs, thin roots: E picks them (owner, Nov 17)
+			if spot.get("kind") == GlowPlacer.ROOT_DANGLE:
+				nm = "Thin Root"
+			return {kind = "glow", name = nm + " · E to pick", pick_glow = auth.glow.id_of(hit.collider)}
 		return {kind = "glow", name = nm}
 	if hit.collider is PieceNode and (hit.collider as PieceNode).piece == "door":
 		var door: PieceNode = hit.collider

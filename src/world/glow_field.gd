@@ -28,6 +28,7 @@ var _light_timer := 0.0
 var _crystal_mesh: Mesh
 var _mushroom_mesh: Mesh
 var _fiber_mesh: Mesh
+var _twig_mesh: Mesh
 var _root_mesh: Mesh
 var _materials := {}
 var rock: CaveLife.Rock  ## the rock as it is drawn (main sets it): crystals sit on it, base showing (F195)
@@ -37,6 +38,7 @@ func build(spots: Array[Dictionary]) -> void:
 	_crystal_mesh = _make_crystal_mesh()
 	_mushroom_mesh = _make_mushroom_mesh()
 	_fiber_mesh = _make_fiber_mesh()
+	_twig_mesh = _make_twig_mesh()
 	_root_mesh = _make_root_mesh()
 	for s in spots:
 		_spots[s.id] = s
@@ -177,6 +179,7 @@ func _add_node(s: Dictionary) -> void:
 		match s.kind:
 			"crystal", "crystal_green", "crystal_amber": mi.mesh = _crystal_mesh
 			"fiber": mi.mesh = _fiber_mesh
+			"twig": mi.mesh = _twig_mesh
 			"root", "root_dangle":
 				mi.mesh = _root_mesh
 				mi.scale = Vector3(ROOT_WIDTH, s.length, ROOT_WIDTH) / s.scale
@@ -260,7 +263,7 @@ func _model_of(kind: String) -> String:
 		return "root"
 	if kind == GlowPlacer.GIANT:
 		return "giant"
-	if kind == "fiber" or kind == GlowPlacer.DRIP:
+	if kind == "fiber" or kind == "twig" or kind == GlowPlacer.DRIP:
 		return ""
 	return "glowcap"  # every small mushroom kind: the same cluster, its caps tinted
 
@@ -417,7 +420,7 @@ func _add_drip(s: Dictionary) -> void:
 
 ## Which painted grain each kind of plant/crystal gets (see Look.SURFACES).
 func _surface_of(kind: String) -> String:
-	if kind == "root":
+	if kind == "root" or kind == "twig":
 		return "bark"
 	if kind.begins_with("crystal"):
 		return "smooth"
@@ -562,6 +565,27 @@ func _make_mushroom_mesh() -> Mesh:
 	var small := Transform3D(Basis().scaled(Vector3.ONE * 0.55), Vector3(0.22, 0.0, 0.1))
 	st.append_from(stem, 0, small * Transform3D(Basis(), Vector3.UP * 0.2))
 	st.append_from(cap, 0, small * Transform3D(Basis(), Vector3.UP * 0.38))
+	st.generate_normals()
+	return st.commit()
+
+
+## A fallen twig lying on the floor: a crooked stick about 60 cm long with a side branch and a stub.
+func _make_twig_mesh() -> Mesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for part in [[Vector3(-0.3, 0.035, 0.0), Vector3(0.0, 0.04, 0.03), 0.028], [Vector3(0.0, 0.04, 0.03), Vector3(0.3, 0.03, -0.02), 0.022],
+			[Vector3(0.05, 0.04, 0.03), Vector3(0.18, 0.035, 0.16), 0.014], [Vector3(-0.12, 0.035, 0.01), Vector3(-0.15, 0.06, -0.05), 0.012]]:
+		var a: Vector3 = part[0]
+		var b: Vector3 = part[1]
+		var stick := CylinderMesh.new()
+		stick.radial_segments = 6
+		stick.rings = 1
+		stick.top_radius = part[2] * 0.7
+		stick.bottom_radius = part[2]
+		stick.height = a.distance_to(b)
+		var y := (b - a).normalized()
+		var x := y.cross(Vector3.UP if absf(y.y) < 0.9 else Vector3.RIGHT).normalized()
+		st.append_from(stick, 0, Transform3D(Basis(x, y, x.cross(y)), (a + b) * 0.5))
 	st.generate_normals()
 	return st.commit()
 

@@ -2860,3 +2860,9 @@ the body."
   roots in the Fungal Jungle too (a test caught it; jungle wood is the giant mushrooms).
 - Small roots: breaking one drops rootwood (grass and ferns still fiber) and it grows back after 10 minutes
   (`plant_regrow`, saved; `CaveLife.restore_plant`). New test: a small root breaks and grows back in the same place.
+
+- F248 (owner: "can twigs, mushrooms, fiber be picked up with E?"): E on anything picked by hand (mushrooms, fiber,
+  thin roots, twigs) asks the host to harvest it, like a hit; E on grass, ferns and small roots breaks them through a
+  new host request that never digs rock (`ask_pick_plant`; the plant-breaking part of a hit became `_break_plant_at`).
+  The floor twigs were only looks: replaced by real twig spots (`GlowPlacer._add_twigs`, added last so older spots keep
+  their ids; 1 rootwood each). Tests pass; the walking robot played a fresh world without errors.

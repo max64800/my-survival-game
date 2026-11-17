@@ -633,6 +633,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		_set_bag(not hud.is_bag_open())
 	elif event.is_action_pressed("interact") and not hud.is_bag_open():
 		var info := dwarf._aim_info()
+		if info.has("pick_glow"):  # mushrooms, fiber, twigs, thin roots (owner, Nov 17: "picked up with E")
+			dwarf.model.react("use")
+			authority.ask_harvest(info.pick_glow)
+			return
+		var aimed := dwarf.aim()
+		if not aimed.is_empty() and cave_life and cave_life.breakable_at(aimed.position) >= 0:
+			dwarf.model.react("use")
+			authority.ask_pick_plant(aimed.position)  # grass, ferns (fiber), small roots (wood)
+			return
 		if info.has("box_id") or info.has("poi_id") or info.has("station") or info.has("door_uid"):
 			dwarf.model.react("use")  # reach out to open / touch it
 		if info.has("door_uid"):

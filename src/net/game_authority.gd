@@ -256,6 +256,30 @@ func ask_hit(point: Vector3, normal: Vector3) -> void:
 		_rpc_hit.rpc_id(1, point, normal)
 
 
+## E on grass, a fern or a small root: break it (fiber or wood). Never digs rock (owner, Nov 17).
+func ask_pick_plant(point: Vector3) -> void:
+	if is_host():
+		request_pick_plant(local_peer_id(), point)
+	else:
+		_rpc_pick_plant.rpc_id(1, point)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_pick_plant(point: Vector3) -> void:
+	if is_host():
+		request_pick_plant(multiplayer.get_remote_sender_id(), point)
+
+
+func request_pick_plant(peer_id: int, point: Vector3) -> Dictionary:
+	var ps := get_player(peer_id)
+	if ps == null:
+		return {}
+	var r := _break_plant_at(ps, point)
+	if not r.is_empty():
+		_tell_feedback(peer_id, r)
+	return r
+
+
 func ask_harvest(glow_id: int) -> void:
 	if is_host():
 		request_harvest(local_peer_id(), glow_id)
@@ -687,9 +711,8 @@ static func ore_too_hard(mat: int, tool: String) -> String:
 	return "Copper is too hard for stone. Make a Fang Pickaxe (Workbench level 2: 4 bat fangs, 1 leather)."
 
 
-func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
-	# A grass tuft, fern or small root where the swing landed breaks first and drops fiber (owner F197: people will
-	# hit them by accident). Any swing does it, even bare hands; the rock under it is dug by the next swing.
+## A grass tuft, fern or small root at `point` breaks: fiber, or wood from a small root, which grows back. {} if none.
+func _break_plant_at(ps: PlayerState, point: Vector3) -> Dictionary:
 	if cave_life and _chest(ps).distance_to(point) <= REACH + 1.0:
 		var plant := cave_life.breakable_at(point)
 		if plant >= 0:
@@ -702,6 +725,15 @@ func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
 			if is_root:
 				plant_regrow[plant] = REGROW_TIME
 			return {state = "done", hits = 1, needed = 1, point = at, kind = "rootwood" if is_root else "fiber"}
+	return {}
+
+
+func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
+	# A grass tuft, fern or small root where the swing landed breaks first (owner F197: people will hit them by
+	# accident). Any swing does it, even bare hands; the rock under it is dug by the next swing.
+	var plant_hit := _break_plant_at(ps, point)
+	if not plant_hit.is_empty():
+		return plant_hit
 	var power: float = Items.dig_power(ps.selected_item()) * ps.progress.dig_power_mult() \
 		* (1.0 + Gems.bonus(ps.inventory.get_slot(ps.hand_slot())).get("dig", 0.0)) 		* (1.0 + Upgrades.bonus(ps.inventory.get_slot(ps.hand_slot())))  # +15% per upgrade step
 	var bare := false

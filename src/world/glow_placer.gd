@@ -23,6 +23,8 @@ const KINDS := {
 	"bellcap": {item = "bellcap", count = [1, 1], tool = "hand", color = Color(0.55, 0.7, 1.0), xp = 1, skill = "survival"},
 	"firecap": {item = "firecap", count = [1, 1], tool = "hand", glow = true, color = Color(1.0, 0.35, 0.2), xp = 1, skill = "survival"},
 	"fiber": {item = "fiber", count = [2, 3], tool = "hand", color = Color(0.5, 0.65, 0.3), xp = 1, skill = "survival"},
+	# Twigs lying on the floor: pick them up (E or a hit) for a bit of wood (owner, Nov 17: "missing a ton of wood").
+	"twig": {item = "rootwood", count = [1, 1], tool = "hand", color = Color(0.36, 0.25, 0.15), xp = 1, skill = "survival"},
 	"root": {item = "rootwood", count = [3, 3], extra = "fiber", tool = "axe", hardness = 30, chops = 4, color = Color(0.42, 0.29, 0.18), xp = 3, skill = "survival"},
 	# Fungal Jungle. Giant mushrooms are the jungle's wood: tall stalks that need a copper axe
 	# (or copper pickaxe at half power), and each chop also drops some flesh.
@@ -84,6 +86,7 @@ static func _place(maker: CaveMaker) -> Array[Dictionary]:
 	_add_start_spots(maker, spots)
 	_add_first_drip(maker, spots)
 	_add_more_roots(maker, spots)
+	_add_twigs(maker, spots)
 	for i in spots.size():
 		spots[i].id = i
 	return spots
@@ -159,6 +162,33 @@ static func _add_more_roots(maker: CaveMaker, spots: Array[Dictionary]) -> void:
 			spots.append({id = -1, pos = hit, normal = Vector3.UP, kind = ROOT, color = KINDS[ROOT].color, scale = 1.0,
 				spin = rng.randf_range(0, TAU), length = length, chops = KINDS[ROOT].get("chops", 1), extra = true})
 			_grid_put(near, hit)
+			want -= 1
+
+
+## Twigs on the floors of Mossy rooms and caverns (they replace the old look-only twigs).
+const TWIGS_BIG := 10
+const TWIGS_ROOM := 3
+
+static func _add_twigs(maker: CaveMaker, spots: Array[Dictionary]) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = maker.seed + 781
+	for room in maker.rooms:
+		if room.get("sealed", false) or room.get("biome", "mossy") == "fungal" or maker.sdf_at(room.center) <= 0.0:
+			continue
+		var want: int = TWIGS_BIG if room.big else TWIGS_ROOM
+		for i in want * 3:
+			if want <= 0:
+				break
+			var dir := Vector3(rng.randf_range(-1, 1), -rng.randf_range(0.4, 1.0), rng.randf_range(-1, 1)).normalized()
+			var spin := rng.randf_range(0, TAU)
+			var hit := _march(maker, room.center, dir, 60.0)
+			if hit == Vector3.INF:
+				continue
+			var n := normal_at(maker, hit)
+			if n.y < 0.8:
+				continue
+			spots.append({id = -1, pos = hit, normal = n, kind = "twig", color = KINDS["twig"].color, scale = rng.randf_range(0.8, 1.3),
+				spin = spin, length = 0.0, chops = 1, extra = true})
 			want -= 1
 
 

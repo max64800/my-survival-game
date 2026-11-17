@@ -116,3 +116,18 @@ func test_crystals_and_roots_are_solid() -> void:
 	check(solid.has(2), "a root is solid")
 	check(not solid.has(3), "a little mushroom is not")
 	f.free()
+
+
+## Twigs on Mossy floors give wood and are picked by hand (E), like mushrooms and fiber (owner, Nov 17).
+func test_twigs_on_mossy_floors() -> void:
+	var c := CaveMaker.new(12)
+	var twigs := 0
+	for s in GlowPlacer.place(c):
+		if s.kind != "twig":
+			continue
+		twigs += 1
+		check(CaveMaker.biome_at(s.pos) == "mossy", "twig %d is in the Mossy Hollows" % s.id)
+		check(s.normal.y >= 0.8, "twig %d lies on a floor" % s.id)
+	check(twigs >= 30, "plenty of twigs (%d)" % twigs)
+	check_eq(GlowPlacer.KINDS.twig.item, "rootwood", "a twig gives wood")
+	check(GlowPlacer.is_plant("twig"), "picked by hand (E)")
