@@ -43,10 +43,11 @@ func setup(seed: int) -> void:
 	mat.set_shader_parameter("albedo_tex", preload("res://assets/textures/terrain/terrain_albedo.png"))
 	mat.set_shader_parameter("normal_tex", preload("res://assets/textures/terrain/terrain_normal.png"))
 	mat.set_shader_parameter("flat_shading", 1.0 if CaveMaker.rock_style == "blocks" else 0.0)  # soft light, like before (owner)
-	var first := maker.first_cavern()  # layout 4: its ceiling is all glow-worm stars (owner F260)
-	if not first.is_empty():
-		mat.set_shader_parameter("star_center", first.center)
-		mat.set_shader_parameter("star_radius", maxf(first.radii.x, first.radii.z))
+	var star := maker.star_room()  # thicker glow-worm stars and a group of snakes there (owner F260, Nov 17)
+	if not star.is_empty():
+		mat.set_shader_parameter("star_center", star.center)
+		mat.set_shader_parameter("star_radius", star.radius)
+		mat.set_shader_parameter("star_snakes", float(star.snakes))
 	terrain.material_override = mat
 	add_child(terrain)
 	_tool = terrain.get_voxel_tool()

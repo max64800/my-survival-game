@@ -20,7 +20,7 @@ extends RefCounted
 ##   1 = the first caves: 400 m areas (Mossy x -200…200, Jungle x 220…620), squashed balls and tubes.
 ##   2 = real-shaped caves: 800 m areas (Mossy x -400…400, Jungle x 420…1220), about 4x the rooms,
 ##       passages and halls shaped the way water shapes real caves (see "layout 2" below).
-const LAYOUT_LATEST := 7
+const LAYOUT_LATEST := 8
 ## What brand-new worlds get. Layout 2: the real-shaped caves (F211 step 1, OK'd by the owner Nov 17). Layout 3: the
 ## same plus tall/wide/joined caverns and cliff exits with ledge paths (F230, F231). Old saves keep the layout they were
 ## made with; robots can try older caves with "-- layout=1" or "-- layout=2". Layout 4: the same plus a huge first
@@ -29,7 +29,8 @@ const LAYOUT_LATEST := 7
 ## watchtower's ground (owner, Nov 17: "the pillars are spawning inside the tower"). Layout 7: back to layout 3's
 ## caves, the first cavern its old size again (owner, Nov 17: the huge one "is too big... half of the cave or more is
 ## empty... the cave where we introduced the snakes was the best size"; huge caverns come back later, with big outposts).
-const LAYOUT_DEFAULT := 7
+## Layout 8: the same plus 1 or 2 smaller stone columns in the plain big caverns (owner, Nov 17: "yes, add one or two").
+const LAYOUT_DEFAULT := 8
 static var layout := LAYOUT_DEFAULT
 
 
@@ -177,6 +178,7 @@ func _init(p_seed: int = 1, big_caverns: int = 3, small_rooms: int = 12) -> void
 	# Last, so it never moves anything above: the small room where you wake up.
 	cavern_spawn = spawn_point
 	_plan_columns()
+	_plan_cavern_columns()
 	_plan_colonnades()
 	_plan_start()
 	_corner_cache.clear()  # the start room was just carved: forget block corners remembered before it
@@ -196,8 +198,83 @@ func _lay_out(rng: RandomNumberGenerator, big_caverns: int, small_rooms: int, cx
 
 
 var _cols: Array[Vector4] = []  ## layout 5: the first cavern's stone columns (x, z, radius, twist)
-var _col_floor := 0.0
+var _col_span: Array[Vector2] = []  ## each column's floor and top height (its hourglass runs between them)
+var _col_grid := {}  ## Vector2i (32 m square) -> PackedInt32Array: the columns that reach into it (fast lookups)
+var _col_floor := 0.0  ## (the huge first cavern's floor and top)
 var _col_top := 0.0
+const COL_CELL := 32.0
+
+
+func _add_column(at: Vector2, rad: float, twist: float, fl: float, top: float) -> void:
+	var i := _cols.size()
+	_cols.append(Vector4(at.x, at.y, rad, twist))
+	_col_span.append(Vector2(fl, top))
+	var reach := rad * 1.8 + 6.0  # (the farthest it reaches, leaning included)
+	for gx in range(floori((at.x - reach) / COL_CELL), floori((at.x + reach) / COL_CELL) + 1):
+		for gz in range(floori((at.y - reach) / COL_CELL), floori((at.y + reach) / COL_CELL) + 1):
+			var k := Vector2i(gx, gz)
+			if not _col_grid.has(k):
+				_col_grid[k] = PackedInt32Array()
+			_col_grid[k].append(i)
+
+
+## Does this tunnel piece lie in the open middle of the room (within 70% of its size), where it's just floor?
+## Its mouths near the walls are not, and ramps and ledge paths never count as floor.
+func _seg_inside_room(sg: Dictionary, c: Vector3, r: Vector3) -> bool:
+	for p in [sg.a, sg.b]:
+		if Vector2((p.x - c.x) / r.x, (p.z - c.z) / r.z).length() > 0.7:
+			return false
+	return true
+
+
+## Layout 8 (owner, Nov 17): 1 or 2 smaller stone columns (5 to 11 m wide) in the plain big caverns, the same kind as
+## the huge cavern's. Never in the Fallen Outpost's cavern or on the watchtower's ground (the placement rule), and
+## clear of paths and places. Their own dice, so nothing else moves.
+func _plan_cavern_columns() -> void:
+	if made_layout < 8:
+		return
+	var outpost := -1
+	if ResourceLoader.exists("res://src/world/ruin_outpost.gd"):
+		var ro: Script = load("res://src/world/ruin_outpost.gd")
+		for m in ro.get_script_method_list():
+			if m.name == "pick_room":
+				outpost = ro.call("pick_room", self)  # the outpost's cavern (the same answer on every computer)
+				break
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed + 8900
+	for ri in rooms.size():
+		var room: Dictionary = rooms[ri]
+		if not room.big or room.get("kind", "") not in ["cavern", "spawn", "great_hall", "nest_cavern", "lantern_grove"] \
+				or room.get("sealed", false) or ri == outpost or int(room.get("shape", SHAPE_DOME)) == SHAPE_FALLEN:
+			continue
+		var c: Vector3 = room.center
+		var r: Vector3 = room.radii
+		if r.y < 6.5:
+			continue  # too low for a column to look like one
+		var fl := c.y - r.y * 0.55
+		var top := fl + r.y * 1.55
+		var reach := maxf(r.x, r.z) + 10.0
+		var near_segs: Array[int] = []
+		for i in segments.size():
+			var sg: Dictionary = segments[i]
+			if Vector2(sg.a.x - c.x, sg.a.z - c.z).length() < reach or Vector2(sg.b.x - c.x, sg.b.z - c.z).length() < reach:
+				if sg.get("ramp", false) or sg.get("ledge", false) or not _seg_inside_room(sg, c, r):
+					near_segs.append(i)  # (a tunnel's line through the open middle of the cavern is just floor)
+		var want := rng.randi_range(1, 2)
+		var placed := 0
+		for attempt in 30:
+			if placed >= want:
+				break
+			var a := rng.randf_range(0.0, TAU)
+			var dist := rng.randf_range(0.15, 0.5)
+			var at := Vector2(c.x + cos(a) * r.x * dist, c.z + sin(a) * r.z * dist)
+			var rad := rng.randf_range(2.5, 4.0)
+			var twist := rng.randf_range(0.0, TAU)
+			if sdf_at(Vector3(at.x, fl + 2.0, at.y)) <= 0.5 or sdf_at(Vector3(at.x, fl + r.y, at.y)) <= 0.5:
+				continue  # a rock lump or a low ceiling here
+			if _column_fits(at, rad, near_segs):
+				_add_column(at, rad, twist, fl, top)
+				placed += 1
 
 
 ## Layout 5 (owner, Nov 17, F263): huge natural stone columns in the huge first cavern, like a stalactite and a
@@ -228,7 +305,7 @@ func _plan_columns() -> void:
 		var rad := rng.randf_range(4.5, 8.0)
 		var twist := rng.randf_range(0.0, TAU)
 		if _column_fits(at, rad, near_segs):
-			_cols.append(Vector4(at.x, at.y, rad, twist))
+			_add_column(at, rad, twist, _col_floor, _col_top)
 
 
 func _column_fits(at: Vector2, rad: float, near_segs: Array[int]) -> bool:
@@ -264,12 +341,17 @@ func _in_column(p: Vector3, margin: float) -> bool:
 	return false
 
 
-## The columns cut into the open air of the first cavern (d: distance to the air shape, below 0 = air).
+## The columns cut into the open air of their cavern (d: distance to the air shape, below 0 = air).
 func _with_columns(p: Vector3, d: float) -> float:
-	var t := clampf((p.y - _col_floor) / (_col_top - _col_floor), 0.0, 1.0)
-	var w := 2.0 * t - 1.0
-	var flare := 0.75 + 0.55 * w * w  # an hourglass: wide at the floor and the roof, narrower in the middle
-	for o in _cols:
+	var near = _col_grid.get(Vector2i(floori(p.x / COL_CELL), floori(p.z / COL_CELL)))
+	if near == null:
+		return d
+	for i in near:
+		var o := _cols[i]
+		var sp := _col_span[i]
+		var t := clampf((p.y - sp.x) / (sp.y - sp.x), 0.0, 1.0)
+		var w := 2.0 * t - 1.0
+		var flare := 0.75 + 0.55 * w * w  # an hourglass: wide at the floor and the roof, narrower in the middle
 		var dx := p.x - o.x - sin(p.y * 0.13 + o.w) * o.z * 0.2  # (leans and bends a little)
 		var dz := p.z - o.y - cos(p.y * 0.1 + o.w * 1.7) * o.z * 0.2
 		var reach := o.z * 1.6 + 6.0
@@ -805,6 +887,18 @@ func _clear_of_first(r0: int, biome: String, c: Vector3, own_r: float) -> bool:
 ## Layouts 4 to 6 have the huge first cavern (with stars, extra snakes and, from 5, stone columns); 7 doesn't.
 func huge_first() -> bool:
 	return made_layout >= 4 and made_layout <= 6
+
+
+## Where the glow-worm stars get thicker and the snakes come in a group: the huge first cavern (layouts 4-6, 1 extra
+## snake), or from layout 8 the ordinary first cavern (2 extra snakes: owner, Nov 17, "I was looking for some and
+## couldn't see them... 2 or 3 snakes here and there"). {} = nowhere. Keys: center, radius, snakes (extra ones).
+func star_room() -> Dictionary:
+	if huge_first():
+		var f := first_cavern()
+		return {center = f.center, radius = maxf(f.radii.x, f.radii.z), snakes = 1}
+	if made_layout >= 8 and not rooms.is_empty():
+		return {center = rooms[0].center, radius = maxf(rooms[0].radii.x, rooms[0].radii.z), snakes = 2}
+	return {}
 
 
 ## Layouts 4-6: the huge first cavern (where the ceiling is all stars), or {} in other layouts.

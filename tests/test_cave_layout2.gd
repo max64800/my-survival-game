@@ -30,6 +30,9 @@ func test_old_caves_unchanged() -> void:
 	CaveMaker.use_layout(6)  # worlds made with the huge cavern and its columns keep theirs too
 	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5332 pois=162 r0=(-83.95856, -20.99115, -44.3989) sum=-9894.0944", "seed 42, layout 6")
 	check_eq(_fingerprint(CaveMaker.new(7)), "rooms=197 segs=5554 pois=163 r0=(-15.06847, -20.1193, 88.08862) sum=-8559.8592", "seed 7, layout 6")
+	CaveMaker.use_layout(8)  # (layout 8 only adds columns: the rooms, paths and places stay layout 3's)
+	var l8 := _fingerprint(CaveMaker.new(42))
+	check(l8.begins_with("rooms=198 segs=5256 pois="), "layout 8 keeps layout 3's rooms and paths (%s)" % l8)
 	CaveMaker.use_layout(7)  # layout 7 is layout 3's caves again (owner: the huge first cavern was too big)
 	check_eq(_fingerprint(CaveMaker.new(42)),
 		"rooms=198 segs=5256 pois=162 r0=(-83.95856, -24.81935, -44.3989) sum=-9967.2001", "seed 42, layout 7 = layout 3")
@@ -50,6 +53,39 @@ func test_columns_keep_out_of_the_tower() -> void:
 		if spot.is_empty():
 			continue
 		check(not c._in_column(spot.pos, rad + 1.0), "seed %d: no column inside the tower at %s" % [sd, str(spot.pos)])
+	CaveMaker.use_layout(was)
+
+
+## Layout 8 (owner, Nov 17): 1 or 2 smaller stone columns in plain big caverns: solid, never on the watchtower's
+## ground, in the Fallen Outpost's cavern, or over a place.
+func test_columns_in_big_caverns() -> void:
+	var was := CaveMaker.layout
+	CaveMaker.use_layout(8)
+	var plan := RuinTower.load_plan()
+	var rad := float(plan.get("radius", 4.2))
+	for sd in [42, 7, 1234]:
+		var c := CaveMaker.new(sd)
+		check(c._cols.size() >= 4, "seed %d: columns in the big caverns (got %d)" % [sd, c._cols.size()])
+		for i in c._cols.size():
+			var o: Vector4 = c._cols[i]
+			var sp: Vector2 = c._col_span[i]
+			var y := sp.x + 3.0
+			var mid := Vector3(o.x + sin(y * 0.13 + o.w) * o.z * 0.2, y, o.y + cos(y * 0.1 + o.w * 1.7) * o.z * 0.2)
+			check(c.sdf_at(mid) < 0.0, "seed %d: column %d is solid rock" % [sd, i])
+		var spot := RuinTower.find_spot(c, rad, float(plan.get("height", 9.0)))
+		if not spot.is_empty():
+			check(not c._in_column(spot.pos, rad + 1.0), "seed %d: no column in the tower" % sd)
+		if ResourceLoader.exists("res://src/world/ruin_outpost.gd"):
+			var ro: Script = load("res://src/world/ruin_outpost.gd")
+			var orr: int = ro.call("pick_room", c)
+			if orr >= 0:
+				var oc: Vector3 = c.rooms[orr].center
+				var big := maxf(c.rooms[orr].radii.x, c.rooms[orr].radii.z)
+				for o in c._cols:
+					check(Vector2(o.x - oc.x, o.y - oc.z).length() > big, "seed %d: no column in the outpost's cavern" % sd)
+		for q in c.pois:
+			check(not c._in_column(q.pos, 0.0), "seed %d: %s isn't inside a column" % [sd, q.type])
+		check(not c.star_room().is_empty() and c.star_room().snakes == 2, "seed %d: the first cavern has the snake group" % sd)
 	CaveMaker.use_layout(was)
 
 

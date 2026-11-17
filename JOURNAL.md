@@ -3158,3 +3158,16 @@ the body."
 - **Hurdles:** (1) one test game froze for good, once, while the other session was changing building code; two
   reruns were fine. (2) GlowPlacer already remembered its result, so sharing it saved little; the stopwatch found
   the real cost. (3) Restarting the recorder for its fix has to wait until the owner closes the frozen game.
+
+## November 17, 2026 (PC, rock-textures Claude): pillars in big caverns, snakes in the first cave, a bit more light
+- Owner: yes to 1-2 pillars in normal big caves; a little brighter ("I want to see at least something") but the
+  lantern still needed; more snakes in the first room ("2 or 3 here and there").
+- Cave layout 8 = layout 7 + columns in big caverns (any number of columns now: per-column floor/top and a 32 m
+  lookup grid so the rock stays fast; layouts 5/6 give the same rock as before, fingerprints prove it). They skip
+  the outpost's cavern (RuinOutpost.pick_room, loaded only if it exists), the tower's ground, places and paths.
+- Shader: a star room (CaveMaker.star_room): the huge cavern in 4-6 (1 extra snake), the first cavern from 8
+  (2 extra snakes, the patchy extra stars). Soft light 0.32 -> 0.40 (mossy), eyes adjust 18%.
+- **Hurdles:** (1) only 4 columns at first: tunnels are drawn from cavern middle to middle, so "stay off paths"
+  blocked nearly every spot; now a tunnel's line through the open middle of a cavern counts as floor (ramps,
+  ledges and tunnel mouths still blocked). (2) A Python patch turned a GDScript line-continuation backslash into
+  a joined line; fixed by hand.

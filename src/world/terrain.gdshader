@@ -65,7 +65,8 @@ const vec3 STAR_COLOR = vec3(0.4, 0.88, 1.0);
 uniform float star_brightness = 3.2;
 // The huge first cavern (layout 4, owner F260): its ceiling is all stars, with extra snakes. star_radius 0 = none.
 uniform vec3 star_center = vec3(0.0);
-uniform float star_radius = 0.0;  // (owner: brighter; moving the camera smears tiny points a little)
+uniform float star_radius = 0.0;
+uniform float star_snakes = 1.0;  // extra snakes there (1 in the huge cavern, 2 in a normal first cavern)  // (owner: brighter; moving the camera smears tiny points a little)
 
 vec3 star_layer(vec3 p, float cell, float radius, float keep) {
 	vec3 q = p / cell;
@@ -214,7 +215,11 @@ void fragment() {
 		float inbig = star_radius > 0.0 ? 1.0 - smoothstep(star_radius * 0.8, star_radius * 1.05, length(v_world.xz - star_center.xz)) : 0.0;
 		float sn = snake(v_world, 0.0);
 		if (inbig > 0.0) {
-			sn = max(sn, inbig * snake(v_world, 1.0));  // a second snake there (round 2: two was too many)
+			float extra = snake(v_world, 1.0);  // a second snake there (huge cavern round 2: two extra was too many)
+			if (star_snakes > 1.5) {
+				extra = max(extra, snake(v_world, 2.0));  // a normal-sized first cavern: three (owner, Nov 17)
+			}
+			sn = max(sn, inbig * extra);
 		}
 		// In the huge first cavern: more and bigger star patches than elsewhere, but with dark rock between them (owner,
 		// round 2: the whole ceiling was "a little bit too much"; the snakes can't cross the dark gaps).
