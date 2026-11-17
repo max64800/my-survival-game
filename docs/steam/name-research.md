@@ -37,3 +37,8 @@ The Steam store search API returned no game for any of the 10 (tested: it does f
 for all 10 (Verisign WHOIS). itch.io: no game with these names; it only shows other dwarf games.
 Names: Dwarfwake, Dwarves Awake, Stonedwarves, Dwarves Unearthed, Dwarfkin, Dwarfborn, Dwarf Oath, Runedwarves,
 Dwarves Reborn, Dwarves Rising. Trademarks: still a manual check.
+
+## Owner likes "Dwarves Reborn" (Nov 17): 15 more in the same style, all checked
+No Steam game, .com free, no itch.io game with that name for: Dwarves Reborn, Reforged (an itch game "A Home Reforged";
+"Reforged" also recalls Warcraft III: Reforged), Rekindled, Reawakened, Unbroken, Undying, Eternal, Ascendant, Reclaimed,
+Restored, Returned, Remembered, Resurgent, Undaunted, Unchained, Revived. Trademarks: manual check still needed.
