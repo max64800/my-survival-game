@@ -10,6 +10,7 @@ var _shots := "user://lookdev"
 var _fps: Array[float] = []
 var _clean := false  ## true = hide the HUD in the pictures
 var _plants := false  ## true = only close-ups of the cave plants and crystals (cave_plants.py models), then quit
+var _kinds := false  ## true = one picture of each passage kind and room shape (cave layout 2, F211), then quit
 var _cover := false  ## true = only close-ups of the cave life (moss, grass, small roots, lichen, ferns; cave_cover.py)
 
 
@@ -24,6 +25,8 @@ func _ready() -> void:
 			_plants = true
 		elif arg == "cover":
 			_cover = true
+		elif arg == "kinds":
+			_kinds = true
 	DirAccess.make_dir_recursive_absolute(_shots)
 	_run.call_deferred()
 
@@ -219,6 +222,74 @@ func _clear_view(dwarf: Dwarf, target: Vector3, up: Vector3, side: Vector3, dist
 	return Vector3.INF
 
 
+## The nearest passage of each kind (tube, canyon, keyhole, low, rift) and room of each shape (dome, flat ceiling,
+## fallen roof) to the start, seen from a dwarf's eye height with a strong lantern (the owner's check, F211).
+##   godot --audio-driver Dummy --path . -- seed=42 layout=2 lookdev kinds clean shots=/folder_autopilot
+func _kind_shots(dwarf: Dwarf, maker: CaveMaker) -> void:
+	var home := dwarf.global_position
+	for k in CaveMaker.KIND_NAMES.size():
+		var best: Dictionary = {}
+		var bd := INF
+		for s in maker.segments:
+			if int(s.get("k", 0)) != k:
+				continue
+			var mid: Vector3 = ((s.a as Vector3) + s.b) * 0.5
+			var d := mid.distance_to(home)
+			if d < bd and (s.a as Vector3).distance_to(s.b) > 4.0 and maker.sdf_at(mid) > 0.5:
+				bd = d
+				best = s
+		if best.is_empty():
+			print("  no %s passage" % CaveMaker.KIND_NAMES[k])
+			continue
+		var a: Vector3 = best.a
+		var b: Vector3 = best.b
+		var fl := maker.find_floor(a.x, a.z, a.y)
+		var eye := (fl if fl != Vector3.INF else a) + Vector3.UP * 1.5
+		await _lamp_shot(dwarf, eye, b + (b - a).normalized() * 6.0 + Vector3.UP * 0.5, "k_%d_%s" % [k, CaveMaker.KIND_NAMES[k]], 14.0)
+	for shape in CaveMaker.SHAPE_NAMES.size():
+		var best: Dictionary = {}
+		var bd := INF
+		for r in maker.rooms:
+			if int(r.get("shape", 0)) != shape or r.get("sealed", false) or (r.radii as Vector3).x < 8.0:
+				continue
+			var d: float = (r.center as Vector3).distance_to(home)
+			if d < bd:
+				bd = d
+				best = r
+		if best.is_empty():
+			print("  no %s room" % CaveMaker.SHAPE_NAMES[shape])
+			continue
+		var c: Vector3 = best.center
+		var rad: Vector3 = best.radii
+		# From the room's edge, low down, looking across to the far side and up a little.
+		var at := c + Vector3(-rad.x * 0.7, 0, 0)
+		var fl := maker.find_floor(at.x, at.z, c.y)
+		var eye := (fl if fl != Vector3.INF else at) + Vector3.UP * 1.6
+		await _lamp_shot(dwarf, eye, c + Vector3(rad.x * 0.6, rad.y * 0.15, 0), "r_%d_%s" % [shape, CaveMaker.SHAPE_NAMES[shape]], 40.0)
+	print("  kinds: done")
+
+
+func _lamp_shot(dwarf: Dwarf, eye: Vector3, look: Vector3, name: String, reach: float) -> void:
+	await _teleport(dwarf, eye - Vector3.UP * 1.4, look)
+	var cam := Camera3D.new()
+	cam.fov = 70.0
+	add_child(cam)
+	cam.global_position = eye
+	cam.look_at(look, Vector3.UP)
+	var lamp := OmniLight3D.new()
+	lamp.omni_range = reach
+	lamp.light_energy = 2.2
+	lamp.light_color = Color(1.0, 0.86, 0.68)
+	cam.add_child(lamp)
+	cam.make_current()
+	dwarf.visible = false  # the camera stands where the dwarf is: its lantern and pickaxe would fill the picture
+	await _wait(1.5)
+	await _shot(name)
+	dwarf.visible = true
+	dwarf.camera.make_current()
+	cam.queue_free()
+
+
 func _run() -> void:
 	while not _main.is_ready_to_play():
 		await _wait(0.25)
@@ -235,6 +306,10 @@ func _run() -> void:
 		return
 	if _cover:
 		await _cover_shots(dwarf)
+		get_tree().quit()
+		return
+	if _kinds:
+		await _kind_shots(dwarf, maker)
 		get_tree().quit()
 		return
 	await _shot("a_spawn")

@@ -59,14 +59,19 @@ the new caves have every room shape and passage kind (seed 42: 147 rooms, 18 big
 kind fits a dwarf (0.36 m each side, 1.5 m tall, with up to 1.2 m sidestep) at 95%+ of spots (old tubes: 99%); and
 every old check in `test_cave_maker.gd` runs in layout 2 too (its 400 m numbers now come from the map size).
 
-Still to do:
-3. **Tests for layout 2:** counts, every room reachable along its tunnels, narrow passages wide enough for the dwarf
-   (72 cm), old caves unchanged (fingerprints in `tools/cave_stats.gd`, seed 42 and 7), and tests that assume 400 m
-   areas.
-4. **Pictures** of each new passage and room kind for the owner.
-5. The owner's OK, then `LAYOUT_DEFAULT = 2`.
+**Pictures: done (Nov 17)**: `docs/design/pictures/caves-layout2-kinds.png` (seed 42, the nearest of each passage kind
+and room shape to the start). Make them again: `-- seed=42 layout=2 lookdev kinds clean shots=<folder_autopilot>`.
+Weak shots: the canyon one faces a wall, the tube one is half a ruin pillar.
 
-Question for the owner (not asked yet): the areas are 4× bigger but have the same number of ruins, camps, nests and
+**High holes in room walls (F141 watch):** a tunnel passing through a third room opens a hole high in its wall in
+25 of 147 rooms in layout 2 (17%), vs 12 of 53 rooms in layout 1 (23%): not worse than the old caves. Not fixed;
+asked the owner.
+
+Still to do:
+1. The owner's OK on the pictures (and the two questions below), then `LAYOUT_DEFAULT = 2`.
+2. Maybe: loading the new caves faster (41 s vs 13.5 s for the old ones; see the speed notes above).
+
+Question for the owner (asked Nov 17): the areas are 4× bigger but have the same number of ruins, camps, nests and
 shrines as before. Add more?
 
 *(Below: the research and the choices as first written.)*

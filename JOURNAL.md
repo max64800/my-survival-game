@@ -2552,3 +2552,12 @@ The owner: the sheet behind the hair still happens, make the hook at the very en
   differ), a spacing grid for crystals. Claude's first spacing grid had a bug (a list taken out of a Dictionary is a
   copy, so nothing was added): caught because the old caves came out different; fixed with a plain list.
 - The full test run: everything passes except the dwarf tests, which fail on the dwarf chat's half-done hair file.
+
+- Later the same day: tests for the new caves (old caves unchanged to 4 decimals; every room shape and passage kind;
+  every passage fits a dwarf at 95%+ of spots; all old cave checks also run in the new layout, their hard-coded 400 m
+  numbers now come from the map size). Hurdle: Claude's own quick timing scripts had switched layouts the wrong way
+  (setting the number without `use_layout`), so they used the old map size; the in-game load times were right.
+- Pictures of each passage kind and room shape: the first round showed mostly the dwarf's glowing lantern (the camera
+  stood inside the dwarf); hidden during the shot in round 2. Saved as `docs/design/pictures/caves-layout2-kinds.png`.
+- Counted the old F141 problem (tunnels through a room opening high in its wall): 17% of rooms in the new caves,
+  23% in the old ones. Asked the owner before changing anything.
