@@ -116,6 +116,12 @@ func _ready() -> void:
 			_monsters = false
 			if mode == "menu":
 				mode = "solo"
+		elif arg == "towercheck":  # F254: photos of the ruined watchtower in the first cave
+			debug_script = "res://src/debug/towercheck.gd"
+			_saving = false
+			_monsters = false
+			if mode == "menu":
+				mode = "solo"
 		elif arg == "ruincheck":
 			debug_script = "res://src/debug/ruincheck.gd"
 			_saving = false
@@ -360,6 +366,9 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 			SaveGame.apply_player(authority.get_player(me), save.players[0])
 	elif authority.is_host():
 		authority.seed_poi_loot()
+		# The ruined Stone Watchtower in the first cave (owner F254). Robot runs only with "ruin" (keeps their tests steady).
+		if not _robot_run or OS.get_cmdline_user_args().has("ruin=1") or OS.get_cmdline_user_args().has("towercheck"):
+			authority.add_child(RuinTower.new(authority))
 		if authority.start_with_nothing:
 			authority.spawn_start_items()
 	if _jungle_kit:

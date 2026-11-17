@@ -94,7 +94,7 @@ const LIST := {
 	"ladder": {name = "Ladder", group = "around", size = Vector3(1, 2, 0.2), units = 2, place = "edge", shape = "ladder",
 		families = ["plank_root", "plank_mushroom"], station = {"workbench": 1, "anvil": 1}},
 	"railing": {name = "Railing", group = "around", size = Vector3(2, 1, 0.15), units = 1, place = "edge", shape = "railing",
-		families = ["plank_root", "plank_mushroom", "silver_ingot"], station = {"workbench": 1, "anvil": 1}},
+		families = ["plank_root", "plank_mushroom", "silver_ingot", "cut_stone"], station = {"workbench": 1, "anvil": 1, "mason": 1}},  # stone balustrade (Stonehold v2)
 	# --- triangles (building kit, Nov 15): EQUILATERAL, every side 2 m (one wall length), so any wall
 	# fits any edge and six make a hexagon. The origin is the triangle's middle (centroid); rot 0 has
 	# one edge facing +z (at z = +0.577) and the point at z = −1.155. They turn in 30° steps and
@@ -115,6 +115,16 @@ const LIST := {
 		station = {"workbench": 3, "mason": 2}},
 	"railing_diagonal": {name = "Diagonal Railing", group = "legacy", size = Vector3(2, 1, 2), units = 2, place = "cell", shape = "diagonal",
 		families = ["plank_root", "plank_mushroom", "copper_ingot", "silver_ingot"], station = {"workbench": 2, "anvil": 1}},
+	# Ruin pieces (Nov 17): the world places them in old ruins (src/world/ruin_tower.gd); nobody can build them
+	# (the build menu hides "legacy"). Models: tools/asset_forge/builds/stonehold_v2.py.
+	"ruin_wall_worn": {name = "Worn Wall", group = "legacy", size = Vector3(2, 2, 0.3), units = 4, place = "edge",
+		families = ["cut_stone"], station = {"mason": 99}},
+	"ruin_wall_collapsed": {name = "Collapsed Wall", group = "legacy", size = Vector3(2, 2, 0.3), units = 3, place = "edge",
+		families = ["cut_stone"], station = {"mason": 99}},
+	"ruin_rubble": {name = "Rubble", group = "legacy", size = Vector3(1.6, 0.7, 1.6), units = 2, place = "free",
+		families = ["cut_stone"], station = {"mason": 99}},
+	"door_broken": {name = "Broken Door", group = "legacy", size = Vector3(2.0, 0.3, 1.8), units = 1, place = "free",
+		families = ["cut_stone"], station = {"mason": 99}},
 	# --- mining
 	"ceiling_panel": {name = "Ceiling Panel", group = "mining", size = Vector3(2, 0.25, 2), units = 4, place = "ceiling", supports_rock = true, station = ALL},
 	"mine_prop": {name = "Mine Prop", group = "mining", size = Vector3(2, 3, 0.4), units = 4, place = "free", extra = {copper_ingot = 1}, supports_rock = true,

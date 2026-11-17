@@ -7,7 +7,7 @@ class_name BlueprintLibrary
 ## (doors face +z, and the Builder's Chest appears in front). Pieces sit on a 1 m grid; 2 m pieces.
 ## Every cell of the box is marked "air", so placed inside rock the chest carves the room out first.
 
-const IDS := ["delvers_hut", "miners_homestead", "stone_hall", "forge_workshop", "watchtower_cabin"]
+const IDS := ["delvers_hut", "miners_homestead", "stone_hall", "forge_workshop", "watchtower_cabin", "stone_watchtower"]
 ## Known from the very start (F161): you place them and bring the materials. The rest are learned from
 ## Old Blueprints found in ruins (F98).
 const STARTER := ["delvers_hut"]
@@ -17,6 +17,7 @@ const NAMES := {
 	"stone_hall": "Stone Hall",
 	"forge_workshop": "Forge Workshop",
 	"watchtower_cabin": "Watchtower & Cabin",
+	"stone_watchtower": "Stone Watchtower",
 }
 
 const WOOD := "plank_root"
@@ -42,6 +43,7 @@ static func make(id: String) -> Blueprint:
 		"stone_hall": lib._stone_hall()
 		"forge_workshop": lib._forge()
 		"watchtower_cabin": lib._watchtower()
+		"stone_watchtower": lib._stone_watchtower()
 		_: return null
 	lib._bp.name = NAMES[id]
 	lib._bp.author = "Dwarf Game"
@@ -316,6 +318,96 @@ func _watchtower() -> void:
 	_wall_x("railing", 2, -1, deck, WOOD)
 	_wall_z("railing", 1, 0, deck, WOOD)
 	_wall_z("railing", 3, 0, deck, WOOD)
+
+
+## Owner, Nov 17: the first stone place to find, a round 12-sided watchtower (3 floors + a lookout roof with
+## battlements), also a blueprint you learn from a page found inside its ruined twin. Stonehold (cut stone).
+## Plan from above: a hexagon of 6 triangles in the middle, a square on each of its 6 edges, and a triangle in
+## each gap between two squares: 12 outer edges, all 2 m (walls fit every one). Every outer edge is 3.73 m from
+## the middle, every outer corner 3.86 m. Directions are "yaw" steps of 30° (0 = +z, the front door's side).
+## Floors: foundations 0-1 m, walls from 1, 3.25 and 5.5 m, floors at 3 and 5.25 m, the roof deck at 7.5 m.
+## Stairs climb along the ring on a different side each floor; their hole has a railing round it.
+const _APO := 1.7320508      # middle hexagon: centre to edge
+const _EDGE := 3.7320508     # centre to every outer edge (apothem + one square)
+const _CORNER := 3.8637033   # centre to every outer corner
+
+
+static func _dir(steps: int) -> Vector3:
+	var a := steps * PI / 6.0
+	return Vector3(sin(a), 0.0, cos(a))
+
+
+func _rot(steps: int) -> int:
+	return Pieces.rot_from_steps(steps)
+
+
+## One flat layer of the 12-sided plan (foundations or floors); `skip_square` = a square left open (stairs hole).
+func _ring_layer(square_id: String, tri_id: String, y: float, skip_square: int = -1) -> void:
+	for k in 6:
+		var n := _dir(2 * k)
+		_add(tri_id, STONE, n * (_APO * 2.0 / 3.0) + Vector3(0, y, 0), _rot(2 * k))          # middle hexagon
+		if k != skip_square:
+			_add(square_id, STONE, n * (_APO + 1.0) + Vector3(0, y, 0), _rot(2 * k))         # square on its edge
+		var u := _dir(2 * k + 1)
+		_add(tri_id, STONE, u * (2.0 + 2.0 / sqrt(3.0)) + Vector3(0, y, 0), _rot(2 * k + 1))  # triangle in the gap
+
+
+## The 12 outer edges at height y: `pick(j)` says which piece goes on edge j ("" = nothing).
+func _ring_edges(y: float, pick: Callable) -> void:
+	for j in 12:
+		var id: String = pick.call(j)
+		if id != "":
+			_add(id, STONE, _dir(j) * _EDGE + Vector3(0, y, 0), _rot(j))
+
+
+## Stone pillars on the 12 outer corners (they cover the joints where two walls meet at an angle).
+func _ring_pillars(y: float) -> void:
+	for j in 12:
+		var a := (j + 0.5) * PI / 6.0
+		_add("pillar", STONE, Vector3(sin(a), 0, cos(a)) * (_CORNER - 0.05) + Vector3(0, y, 0), _rot(j))
+
+
+## Stairs in square `k` climbing along the ring (toward yaw step 2k+3).
+func _ring_stairs(k: int, y: float) -> void:
+	_add("stairs", STONE, _dir(2 * k) * (_APO + 1.0) + Vector3(0, y, 0), _rot(2 * k + 9))
+
+
+## Railings round the stairs hole in square `k` on the floor above: its inner edge and the side the stairs
+## start from (the far side stays open: that's where you step off).
+func _ring_rails(k: int, y: float) -> void:
+	var n := _dir(2 * k)
+	var t := _dir(2 * k + 3)
+	_add("railing", STONE, n * _APO + Vector3(0, y, 0), _rot(2 * k))
+	_add("railing", STONE, n * (_APO + 1.0) - t + Vector3(0, y, 0), _rot(2 * k + 3))
+
+
+func _stone_watchtower() -> void:
+	_start(Vector3(10, 9, 12))
+	_ring_layer("foundation", "foundation_triangle", 0.0)
+	_add("foundation_steps", STONE, _dir(0) * (_EDGE + 1.0), 0)                        # up to the front door
+	var g := 1.0
+	_ring_edges(g, func(j): return "doorway" if j == 0 else ("window_wall" if j in [4, 8] else "wall"))
+	_add("door", STONE, _dir(0) * _EDGE + Vector3(0, g, 0), 0)
+	_ring_pillars(g)
+	_ring_stairs(2, g)
+	var f2 := 3.0
+	_ring_layer("floor", "floor_triangle", f2, 2)
+	_ring_rails(2, f2 + 0.25)
+	var w2 := f2 + 0.25
+	_ring_edges(w2, func(j): return "window_wall" if j % 2 == 0 else "wall")
+	_ring_pillars(w2)
+	_ring_stairs(4, w2)
+	var f3 := w2 + 2.0
+	_ring_layer("floor", "floor_triangle", f3, 4)
+	_ring_rails(4, f3 + 0.25)
+	var w3 := f3 + 0.25
+	_ring_edges(w3, func(j): return "window_wall" if j % 2 == 1 else "wall")
+	_ring_pillars(w3)
+	_ring_stairs(0, w3)
+	var roof := w3 + 2.0
+	_ring_layer("floor", "floor_triangle", roof, 0)
+	_ring_rails(0, roof + 0.25)
+	_ring_edges(roof + 0.25, func(_j): return "battlement")
 
 
 # ---------------------------------------------------------------- helpers

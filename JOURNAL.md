@@ -2953,3 +2953,100 @@ the body."
   each way) and a 13-piece fading trail; the stars near it flare up (x10) and a thin faint line marks it. Stills can't
   catch it by luck, so lookdev now works out where one head is and aims at it (`z_star_snake`). Round 1 was a thick
   glowing worm; round 2 thinner and fainter so the stars carry it. Speed check: 300 fps.
+
+## Nov 17 (PC, cave Claude): places to discover (F237), then Stonehold set 1 as white shapes
+- **Talked through POIs/dungeons (F237).** Decided: dungeons are built into the cave world (no separate maps, so
+  co-op stays simple); creatures and loot come back; start with 1 dungeon + 1 broken building in Mossy; made from
+  the same building pieces players use (7 Days to Die way): mostly Stonehold, wood for supports and bridges,
+  Hearthbrick for homes and forges; inner pieces can be broken and give back a little raw material; an unbreakable
+  "Ancient stone" shell later (maybe one per zone). First job: finish the Stonehold pieces, the way the Shack was done.
+- **Pictures.** The Stonehold kit sheet and "how it joins" picture from Nov 14 were only inside the ChatGPT chat,
+  never saved in the project. Fetched them through Chrome and saved them to `assets/concepts/building-kit/`, then
+  asked the same chat for a turnaround sheet (front/side/back/top) of foundation, wall, round doorway with door, and
+  flat roof with battlement: `stonehold_turnaround_4pieces.png`.
+- **White shapes:** new build script `tools/asset_forge/builds/stonehold_v2.py` (chunky chisel-cut blocks: each face
+  dented inward a little and the edges chamfered flat, so no stone grows past its piece), plus a small render tool
+  `tools/asset_forge/sides4.py` for four-side pictures. Shown on a new 3D page "Stonehold Kit".
+- **Hurdles:** the first build had parts poking 0.3-1.4 cm out of their outline (rivet heads, the door's ring handle,
+  tilted stones), found by the fit check and tucked in over four rebuilds. Round 1 pictures showed a neat 3x3 grid
+  of flagstones (the picture has stones of all sizes) and thin slivers with see-through gaps beside the doorway
+  ring; round 2 splits flagstones at random spots and cuts the stones beside the ring exactly to its curve. The page
+  host refused `.gltf` model files; renamed to `.json`. Blender saved the first picture somewhere unexpected because
+  the path had spaces and wasn't quoted.
+- F159 (flatten the ground) asked again: said 3x.
+
+- **Owner's round 3 notes:** still see-through holes in walls and doorways; stones beside the doorway ring look like
+  flat bricks (should be chisel-cut like the rest); battlement gaps; "fill them with a flat piece inside the wall";
+  then "paint them right away". Cause of the holes: the dark filler behind the stones was one strip per row, with
+  gaps between strips, and the chisel cuts meet in V-shapes at stone corners, so you could look through. Fix: ONE
+  solid dark sheet inside each wall (doorways: two halves cut round the opening; a core in every merlon and foundation
+  post). New check `tools/asset_forge/holecheck.py` photographs a piece from front and back on an empty background
+  and counts background pixels inside its outline: wall 0, doorway 0 (battlement: only the outer ends' notches where
+  the next piece joins). First paint uses the game's existing grey/warm stone, dark wood and copper paintings.
+  Hurdles (mine): chisel-cutting the curved stones made spikes (splitting a curved outline went wrong), now only
+  their corners are cut; the battlement's only row counted as the "dark base row" and came out nearly black.
+- **Owner's round 4 notes:** take the dark "side things" off the battlement (the filler cores showed beside the
+  merlons and clipped through) and both copper bands off the round doorway; skip the battlement corner (a half wall
+  or battlement works in a corner); go on with windows, stairs, pillar, half wall, beam. Done: cores now sit deep
+  inside the merlons, no doorway bands. **Set 2:** half wall, narrow wall, small and wide window (iron grille, dark
+  timber lintel with copper plates, long sill stone), pillar (wide base and cap, copper band), beam and short beam
+  (copper end caps). All walls and windows pass the hole check (0). Hurdles (mine): the window bars came out lying
+  sideways through the wall (the cylinder was turned 90 degrees when it already stood upright); the windows came out
+  filled with a dark panel because each band of stone rows added its own filler sheet across the opening; beam
+  rivets poked 4 mm out. Also logged F247 (bag/crafting dead space, fatter bars, centred numbers).
+- **Set 3 (owner: "go ahead with stairs, railing, floors, foundations half and triangle, and sloped wall"):** solid
+  stone stairs and foundation steps (one slice of stone rows per step), a stone ramp (each stone cut to the slope),
+  a balustrade railing (end posts, two rails, three turned balusters), the stepped sloped wall (rows stop under the
+  slope; its dark filler follows the steps), floors / ceiling panel (flagstones on timber joists), the triangle floor
+  and triangle foundation (flagstones cut to the three edges), and the half foundation. The owner asked whether the
+  diagonal walls are needed: no, the game's triangles are already equilateral with 2 m sides, so normal walls fit
+  every triangle edge; the old diagonal pieces are from the earlier half-square triangles. Hurdles (mine): the long
+  patch broke the shell's quoting again, so it went into a file; the triangle floor's joists ran 62 cm past the
+  triangle's back edge (my length rule didn't know where the triangle ends).
+- **Owner's notes on set 3:** stairs show gaps from the side and have too many small bricks (wants fewer, bigger
+  steps and stones); foundation steps have side gaps too; the railing's balusters look like bars, not little columns
+  like the ChatGPT picture; the rest is fine; the triangle foundation "isn't loading". Fixes: stairs now 5 steps
+  (foundation steps 3), each row exactly one step tall so rows line up, bigger stones, and the slices press flat
+  against each other (the gaps came from the dents cut into faces that touch the next step); the railing has turned
+  vase-shaped balusters with a square foot and cap, fatter, between thicker rails (the game's railing is only 15 cm
+  deep, which limits how fat they can be). The triangle foundation loaded fine when checked in the browser (the page
+  is ~15 MB of models; it was probably still downloading).
+## Nov 17 (PC, cave Claude): Stonehold in the game, the Stone Watchtower and its ruin (F237, F253, F254)
+- **POI brainstorm:** three sizes (small stops, broken buildings to rebuild, dungeons); each place gives a reason to
+  go (blueprint pages, station parts, runes, map pieces, wall markings). Owner: pages must really teach recipes
+  (F253, not working today), no traps yet, the 3 boss wall markings go in the 3 big dungeons, start with a
+  watchtower about the size of the Delver's Hut. Owner picked (multiple choice) a 12-sided round tower, 3 floors and a
+  battlement roof, both as a ruin in the caves and as a blueprint you learn from a page in it.
+- **Stonehold pieces installed in the game** (25 pieces replace the old stone ones; icons remade). The model checker
+  found flicker spots (flagstone bottoms on the dark bed, window filler edges, beam cap plates, half-foundation
+  bands) and the curved doorway stones poking 1-2 cm out: Blender's automatic edge cut misbehaves on curved outlines,
+  so those stones now get a hand-made chisel edge. All 25 pass.
+- **The tower:** 6 triangles in the middle, 6 squares round them, 6 triangles in the gaps = 12 outer edges, 2 m each.
+  Blueprints could only store quarter turns; now they also keep 30° turns and exact spots for triangles. The stone
+  railing wasn't allowed in stone yet (added). 164 pieces, 534 cut stone + 2 copper ingots. All blueprint checks pass
+  (inside the box, no overlaps, nothing falls, saves and loads). 3D page "Stone Watchtower".
+- **Owner's notes on the tower:** railing columns in wood (done); "lines on the tower": each floor's edge showed its
+  dark joists and copper brackets between the walls, so every floor piece now has a stone band round its edge (the
+  joists sit inside); remove the door, make it worn, add chests and beetles: new ruin pieces (worn wall, collapsed
+  wall, rubble) plus the broken door, and a ruin layout with a chest on every floor (copper chest with the blueprint
+  page on the roof), crates, sacks, barrels and 6 Rock Beetles. 3D page "Watchtower Ruin" (a design preview: it isn't
+  placed in the caves yet).
+- **Hurdles (mine):** long patches broke the shell's quoting twice more (used files instead); a draft helper had a
+  junk line; the beetle has a skeleton, so the page copies it the skeleton-safe way; the first try at wooden
+  balusters would have been repainted as stone by the painter (they were tagged "stone").
+- Full test run: only the other chats' tests fail (cave dripstone glow, dwarf hair, start-room crystal glow).
+
+- **Owner, round 2-4 on the ruin:** "even more ruined, more from the front (floors 1 and 2)" -> breaches at the
+  front; then "the stairs float above the doorway, floor 3 should be covered" -> floor 3 keeps its front and the roof
+  over it; beetles only on floors 1, 3 and the roof.
+- **In the game (owner: "put this tower in the first cave, but with no monsters"):** the ruin's plan is now a data
+  file (`blueprints/ruins/watchtower_ruin.json`, made from the real blueprint by `tools/ruins/make_watchtower_ruin.py`).
+  `src/world/ruin_tower.gd`, on a fresh world (host): picks the flattest, emptiest spot 9-24 m from where you arrive
+  in the first cavern, waits until that rock has loaded, carves the space with ordinary digs (saved and sent to
+  friends like any dig), then adds the pieces through the Builder and 4 chests through Storage (also saved). The
+  worn/collapsed walls, rubble and broken door became real pieces, hidden from the build menu. New item "Watchtower
+  Plans" (roof chest) always teaches the Stone Watchtower. New test `test_ruin_tower` (seed 42: room found, 155
+  pieces and 4 chests built, plans in the roof chest) and a camera robot `towercheck` that photographs it in the
+  game. Robot test runs skip the tower unless asked (`ruin=1`), so their tests stay steady.
+- Hurdles: carving can only touch loaded rock, so the job waits for the cave to load first (the test skips that
+  wait); two type hints missing in the first try; the plans item needed a picture (icon test caught it).

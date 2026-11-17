@@ -869,9 +869,12 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 				add_boost(ps, id, {damage = fb.damage}, Foods.minutes_of(id) * 60.0)
 			return "ate"
 		"page":
-			if id == "blueprint_page":
+			if id == "blueprint_page" or Items.info(id).has("teaches"):
 				# An old blueprint from a ruin: the whole group can now place that ready-made building (F98).
+				# A named plan (Watchtower Plans, F254) teaches its own building; an Old Blueprint a random one.
 				var unknown := BlueprintMenu.ready_made_keys().filter(func(k): return not world_state.get("blueprints", []).has(k))
+				if Items.info(id).has("teaches"):
+					unknown = unknown.filter(func(k): return k == Items.info(id).teaches)
 				if unknown.is_empty() or not ps.inventory.remove(id, 1):
 					return "nothing_new"
 				var key: String = unknown[randi() % unknown.size()]

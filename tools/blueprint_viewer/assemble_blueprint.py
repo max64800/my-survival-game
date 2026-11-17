@@ -21,7 +21,8 @@ for p in bp["pieces"]:
 	root = bpy.data.objects.new(f"{p['id']}@{y:g}@{p['rot']}", None)  # the page finds roof/door by name
 	bpy.context.scene.collection.objects.link(root)
 	root.location = (x, -z, y)                       # Godot -> Blender
-	root.rotation_euler = (0, 0, p["rot"] * math.pi / 2)  # a turn about Godot's up = Blender's up
+	steps = p["rot"] * 3 if p["rot"] < 4 else p["rot"] - 4   # quarter turns, or 30° steps (rot 4+)
+	root.rotation_euler = (0, 0, steps * math.pi / 6)  # a turn about Godot's up = Blender's up
 	for o in new:
 		if o.parent is None:
 			o.parent = root
