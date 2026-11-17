@@ -225,7 +225,7 @@ for bd, tag in zip(dh.BRAIDS, ("m", "a", "b")):
 	joints = chain_along(bd["path"], [k / 7 for k in range(8)])
 	CHAINS[f"hair_braid_{tag}"] = (bd, joints, "Head")
 for k, pts in enumerate(dh.BACKS):
-	CHAINS[f"hair_back_{'lmr'[k] if len(dh.BACKS) == 3 else k}"] = (None, chain_along(pts, [i / 4 for i in range(5)]), "Head")
+	CHAINS[f"hair_back_{'lmr'[k] if len(dh.BACKS) == 3 else k}"] = (None, list(pts), "Head")  # (a bone per point: 7 / 5)
 for cname, (bd, joints, parent) in CHAINS.items():
 	prev = arm_data.edit_bones[parent]
 	for k in range(len(joints) - 1):
@@ -364,7 +364,7 @@ for cname, (bd, joints, parent) in CHAINS.items():
 			v_, w_ = p.z - dh.C.z, dh.C.y - p.y
 			if back_owner.get(vi) != cname:
 				continue
-			m = smooth01((0.0 - v_) / 0.05) * smooth01((-w_ - 0.05) / 0.04) * (1.0 - smooth01((d - 0.1) / 0.05))
+			m = smooth01((0.04 - v_) / 0.06) * smooth01((-w_ - 0.05) / 0.04) * (1.0 - smooth01((d - 0.1) / 0.05))
 		if m <= 0.0:
 			continue
 		c = 0.0  # where along the chain, in bones (bone k's middle = k)

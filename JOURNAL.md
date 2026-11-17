@@ -2417,3 +2417,18 @@ learn how to do hair animation and implement that."
 - **Paused at the owner's request.** To keep everyone's games safe, new worlds still get the old caves until step 1
   is finished and the owner OKs it (robots can try `-- layout=2`). Cave tests pass. Commit has only this chat's
   changes. What's left is listed in `docs/design/epic-caves-plan.md` ("Progress").
+
+## November 17, 2026 (PC, dwarf Claude): thicker braids (F214) and a skeleton for the ponytail (F215)
+
+**What we did**
+- The three front braids are about 20% wider and deeper; their copper rings and tufts grew to match.
+- The big ponytail down his back got its own skeleton like the braids: one long chain of 7 bones down the middle,
+  from high on the back of the head to the lowest tips, and a chain of 5 down each side. It is a little livelier than
+  the heavy braids. Checked in the recorded file itself (yesterday's lesson): its bones swing hard when he runs and
+  only drift gently when he stands. The 3D page is updated.
+
+**Mistakes and hurdles (including Claude's)**
+- While the cave Claude pulled the Mac's commits, its rebase twice put the dwarf files back to the saved version and
+  once staged one of them; the braid change was lost twice and the ponytail change once. Claude noticed because the
+  new picture looked exactly like yesterday's (a reminder to always look at the result), asked both other sessions to
+  leave the dwarf files alone (the cave Claude apologised and explained), redid the changes and committed right away.

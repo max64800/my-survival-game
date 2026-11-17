@@ -18,7 +18,7 @@ const GRAVITY := 0.0  ## (the hair is built hanging; extra gravity piled up down
 ## per 1/60 s), thickness (m). Heavy braids: firm and slow; the back hair a little livelier.
 const KINDS := {
 	"braid": {"stiff": 0.12, "drag": 0.2, "radius": 0.024},
-	"back": {"stiff": 0.1, "drag": 0.2, "radius": 0.02},
+	"back": {"stiff": 0.07, "drag": 0.14, "radius": 0.02},  # (the big ponytail: livelier, so its swing shows, F215)
 }
 const MAX_BEND := deg_to_rad(30.0)  ## the most one joint bends from its resting direction
 

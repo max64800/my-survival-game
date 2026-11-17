@@ -494,10 +494,12 @@ def build_hair():
 			lock(pts, 0.036 * R.uniform(0.9, 1.1), 0.021, n, grooves=2, rd=0.22, twist=jit(0.4))
 	# the paths of the back hair's swing chains (owner, round 2b: the back hair stuck to the body): three, from the nape
 	# down through the middle of the hair layer to its tips
+	# (owner F215: "add the skeleton to the big ponytail that slides down the back, similar to the braids": a long chain
+	# of 7 down the middle, from high on the back of the head to the lowest tips, and one of 5 down each side)
 	BACKS.clear()
-	for phi in (-38, 0, 38):
+	for phi, els in ((-40, (25, 8, -10, -28, -44, -58)), (0, (30, 15, 0, -15, -30, -42, -54, -64)), (40, (25, 8, -10, -28, -44, -58))):
 		pts = []
-		for el in (2, -14, -30, -44, -56, -66):
+		for el in els:
 			P, n = hit_round("hairmass", phi, el)
 			if P is not None:
 				pts.append(P - n * 0.022)
@@ -741,9 +743,9 @@ def braid(name, u_top, v_top, v_ring, v_end, W0, W1, D0, D1, r_in, r_out, ring_h
 
 
 def build_braids():
-	braid("braid_mid", 0.0, -0.14, -0.35, -0.49, 0.11, 0.075, 0.05, 0.04, 0.034, 0.041, 0.04, w_top=0.1, tuft_n=8, seed=1)
+	braid("braid_mid", 0.0, -0.14, -0.35, -0.49, 0.13, 0.09, 0.06, 0.05, 0.04, 0.048, 0.044, w_top=0.1, tuft_n=9, seed=1)  # (thicker: owner F214)
 	for s in (-1, 1):  # (further out: at 11.5 cm their tops clashed with the middle braid, owner round 2b)
-		braid(f"braid_{s}", s * 0.14, -0.13, -0.246, -0.37, 0.066, 0.052, 0.04, 0.034, 0.027, 0.033, 0.042, w_top=0.06, tuft_n=6, seed=2 + s)
+		braid(f"braid_{s}", s * 0.145, -0.13, -0.246, -0.37, 0.08, 0.064, 0.048, 0.042, 0.032, 0.039, 0.046, w_top=0.06, tuft_n=7, seed=2 + s)  # (thicker: F214)
 
 
 # ---------------------------------------------------------------- melt, sculpt, lay on the body
