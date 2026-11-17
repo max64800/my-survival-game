@@ -15,7 +15,7 @@ the game at launch).
 - **Players:** Single-player, Online Co-op (2-4 players) ⚠ (co-op must work through Steam by launch)
 - **Genres:** Action, Adventure, Indie, Simulation (+ Early Access only if it launches as Early Access)
 
-## Short description (shown at the top; Steam allows about 300 characters, this is 223)
+## Short description (shown at the top; Steam allows about 300 characters, this is 212)
 You wake as a dwarf frozen in stone, in the ruins of your ancestors' fallen kingdom. Dig, build, craft and fight through
 cursed caves, alone or with up to 3 friends, and find out what turned your people to stone.
 
