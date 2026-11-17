@@ -27,7 +27,12 @@ func _init() -> void:
 	var sk := rig.skeleton
 	var lib := AnimationLibrary.new()
 	for c in CLIPS:
-		var anim := await _record(rig, c[0], c[1], c[2])
+		var secs: float = c[1]
+		if c[2] in ["idle", "walk", "jog", "sprint"]:  # (the loops play slower now: record one whole loop so it joins up)
+			var src: String = DwarfRig.ANIMS[c[2]]
+			if rig.tree.has_animation(src):
+				secs = rig.tree.get_animation(src).length / DwarfRig.LOOP_SPEED
+		var anim := await _record(rig, c[0], secs, c[2])
 		lib.add_animation(c[0], anim)
 		print("RECORDED ", c[0], " ", anim.length, " s")
 	# The export scene: the skeleton (same bones and rest) with the body on it, facing +Z like the other models.

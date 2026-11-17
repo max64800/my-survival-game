@@ -469,7 +469,10 @@ def etube(cl, a, b, r0, r1, sv, sw):
 
 # Sewn-on square patches over old holes (owner, Nov 18): (piece, x, height, front?, half-width, half-height, tilt (rad),
 # colour against the cloth). Raised ~3 mm with crisp edges; painted another shade with dashed stitches round the edge.
-PATCHES = [("shirt", -0.12, 0.52, True, 0.036, 0.031, 0.14, (1.08, 0.9, 0.7)), ("shirt", 0.1, 0.7, False, 0.04, 0.034, -0.1, (0.85, 0.88, 0.95)),
+# (owner, Nov 18: brown patches of different sizes round the shirt too, one on the chest where he drew it)
+PATCHES = [("shirt", 0.05, 0.63, True, 0.027, 0.024, 0.12, (0.62, 0.46, 0.32)), ("shirt", -0.14, 0.5, True, 0.042, 0.036, -0.08, (0.55, 0.4, 0.28)),
+	("shirt", 0.15, 0.76, True, 0.017, 0.015, -0.2, (0.5, 0.37, 0.26)), ("shirt", 0.1, 0.7, False, 0.04, 0.034, -0.1, (0.6, 0.45, 0.31)),
+	("shirt", -0.13, 0.53, False, 0.023, 0.02, 0.2, (0.52, 0.38, 0.27)),
 	("shorts", 0.16, 0.335, True, 0.03, 0.028, -0.18, (0.78, 0.82, 0.9)), ("shorts", -0.13, 0.39, False, 0.034, 0.03, 0.1, (1.15, 1.0, 0.8))]
 
 
@@ -588,7 +591,8 @@ if not CLOTHES:
 	x_ = sc.U + HC.x
 	th_ = np.arctan2(x_, -(HC.y - sc.W))
 	hem = 0.415 - 0.02 * np.clip(np.cos(th_), 0, None) + 0.005 * np.sin(3 * th_ + 0.6)  # (a little lower over the belly)
-	off = 0.014 + 0.014 * np.clip((0.52 - up_) / 0.12, 0, 1) + 0.002 * np.clip((np.abs(x_) - 0.22) / 0.05, 0, 1)
+	# (lower down the shirt stands well off the shorts: Nov 18 the shorts' top showed through the shirt above the hem)
+	off = 0.016 + 0.026 * np.clip((0.52 - up_) / 0.1, 0, 1) + 0.002 * np.clip((np.abs(x_) - 0.22) / 0.05, 0, 1)
 	arms = np.maximum(x_ - sl["l"], sl["r"] - x_) if sl["l"] > 0 else np.maximum(x_ - sl["r"], sl["l"] - x_)
 	sc.D = np.maximum(np.maximum(shell_of(sc, off), hem - up_), np.maximum(arms, up_ - 0.915)).astype(np.float32)
 	sc.add(np.maximum(lip(sc, off, up_ - hem - 0.006, 0.009), arms), 0.005)                     # the hem
@@ -631,6 +635,7 @@ if not CLOTHES:
 	x_ = oc.U + HC.x
 	cuff = 0.232  # (lower: the bottom peeked out under them, Nov 18)
 	off = 0.024 + 0.006 * np.clip((0.4 - up_) / 0.1, 0, 1)  # (baggy: solid cloth this close looked like tight pants)
+	off = off - 0.012 * np.clip((up_ - 0.425) / 0.03, 0, 1)  # (thin where the shirt covers it, so it never shows through)
 	# (solid cloth over the skin, not a thin hollow layer: from below the hollow showed cut edges and the underpants)
 	oc.D = np.maximum(np.maximum(F - off, up_ - 0.47), np.maximum(cuff - up_, np.abs(x_) - 0.33)).astype(np.float32)
 	oc.add(np.maximum(lip(oc, off, up_ - cuff - 0.005, 0.007), np.abs(x_) - 0.33), 0.004)       # rolled cuffs (thin)

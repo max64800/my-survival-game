@@ -42,6 +42,8 @@ const ANIMS := {
 }
 ## Speeds (m/s) where each move animation fits best.
 const MOVE_POINTS := {idle = 0.0, walk = 1.6, jog = 4.0, sprint = 6.5}
+## How fast the standing/walk/run loops play (1 = as made; owner Nov 18: "way too fast").
+const LOOP_SPEED := 0.7
 
 ## Our own animations, stitched together from poses of the pack's animations (see _made_library).
 ## Each entry: [time 0..1, source animation, moment in it (0..1 of its length)].
@@ -462,11 +464,15 @@ func _build_tree(body: Node3D) -> void:
 	move.min_space = 0.0
 	move.max_space = 8.0
 	bt.add_node("move", move, Vector2(0, 0))
+	# (owner, Nov 18: "the animation is way too fast, in game and out of it": the standing/walk/run loops play slower)
+	var slow := AnimationNodeTimeScale.new()
+	bt.add_node("move_speed", slow, Vector2(100, 0))
+	bt.connect_node("move_speed", 0, "move")
 	var jump := AnimationNodeAnimation.new()
 	jump.animation = ANIMS.air
 	bt.add_node("jump", jump, Vector2(0, 200))
 	bt.add_node("air", AnimationNodeBlend2.new(), Vector2(200, 0))
-	bt.connect_node("air", 0, "move")
+	bt.connect_node("air", 0, "move_speed")
 	bt.connect_node("air", 1, "jump")
 	# Ladders: the climbing loop over everything below it.
 	var climb := AnimationNodeAnimation.new()
@@ -493,6 +499,7 @@ func _build_tree(body: Node3D) -> void:
 	bt.connect_node("output", 0, "upper")
 	tree.tree_root = bt
 	body.add_child(tree)  # root_node ".." = the model, where "Armature/Skeleton3D" lives
+	tree.set("parameters/move_speed/scale", LOOP_SPEED)
 	tree.active = true
 
 
