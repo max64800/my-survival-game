@@ -16,6 +16,30 @@ func test_old_caves_unchanged() -> void:
 		"rooms=192 segs=5292 pois=162 r0=(-83.95856, -24.81935, -44.3989) sum=-9322.0347", "seed 42, layout 2")
 	check_eq(_fingerprint(CaveMaker.new(7)),
 		"rooms=192 segs=5191 pois=167 r0=(-15.06847, -23.8586, 88.08862) sum=-8536.2000", "seed 7, layout 2")
+	CaveMaker.use_layout(3)  # worlds made before the huge first cavern (layout 4) keep theirs too
+	check_eq(_fingerprint(CaveMaker.new(42)),
+		"rooms=198 segs=5256 pois=162 r0=(-83.95856, -24.81935, -44.3989) sum=-9967.2001", "seed 42, layout 3")
+	check_eq(_fingerprint(CaveMaker.new(7)),
+		"rooms=197 segs=5492 pois=163 r0=(-15.06847, -23.8586, 88.08862) sum=-8989.8260", "seed 7, layout 3")
+	CaveMaker.use_layout(was)
+
+
+## Layout 4 (owner F260): the first cavern is huge (~120 m across, a dome) and no other room sits inside it.
+func test_huge_first_cavern() -> void:
+	var was := CaveMaker.layout
+	CaveMaker.use_layout(4)
+	for sd in [42, 7]:
+		var c := CaveMaker.new(sd)
+		var f := c.first_cavern()
+		check(not f.is_empty(), "seed %d: there is a first cavern" % sd)
+		check_eq((f.radii as Vector3).x, CaveMaker.FIRST_CAVERN_R, "seed %d: it's huge" % sd)
+		check(c.sdf_at(f.center) > 0.0, "seed %d: its middle is open air" % sd)
+		for i in range(1, c.rooms.size()):
+			var r: Dictionary = c.rooms[i]
+			if r.biome != "mossy" or r.get("lobe_of", -1) == 0:
+				continue
+			var d := Vector2(r.center.x - f.center.x, r.center.z - f.center.z).length()
+			check(d > CaveMaker.FIRST_CAVERN_R * 0.8 or r.kind in ["shrine", "geode", "lair"], "seed %d: room %d isn't swallowed by it (%.0f m)" % [sd, i, d])
 	CaveMaker.use_layout(was)
 
 

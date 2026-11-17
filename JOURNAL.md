@@ -3080,3 +3080,16 @@ the body."
 - F259: owner: "the snake is working", wants it a lot brighter, and greens that show plus some purple dots. Snake flare x15 -> x36; dot colours 55% teal, 27% green (more saturated, x1.5), 13% purple (x1.9), 5% pale.
 
 - F260 noted (owner, amazed by the star ceiling and snake): the very first cave really big, most of its ceiling stars, several snakes at once. Written into FEEDBACK, cave-walls-plan and epic-caves-plan; not built yet.
+
+## November 17, 2026 (PC, rock-textures Claude): the huge star cavern (F260 built)
+
+- Cave layout 4 (new worlds; layouts 1-3 fingerprinted unchanged): the first Mossy cavern is 58 m half-wide (~120 m)
+  under a high dome (floor kept where it was), halls and rooms keep clear of it (`_clear_of_first`).
+- The rock shader gets the cavern's middle and size (`star_center`, `star_radius`, set by world.gd): inside it the star
+  cover is full and two more snakes run in every 40 m square (`snake(p, which)`); GlowPlacer leaves most crystals out
+  of its ceiling with the same sum.
+- Hurdles: (1) a test said rock/air disagreed at two points; debugging showed both were 0.004 m from the surface and
+  the coarse and careful values were identical: the stored value is rounded right at the surface, so the test now
+  allows that. (2) No water drip in one test cave: the dome is higher than the 20 m the drip search looked, and buckets
+  only fill from 15 m below; the huge cavern now tries further out toward its walls (older layouts unchanged).
+- Picture from its floor: the whole ceiling stars, several snake trails glowing at once.

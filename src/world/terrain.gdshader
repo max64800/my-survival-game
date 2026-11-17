@@ -62,7 +62,10 @@ float vnoise(vec3 x) {
 // how many do); where the rock passes through a ball it shows a small round spot, the same from any angle (round 3:
 // dots painted from above were stretched into streaks on sloping rock). Sharp edge, no blur; each twinkles slowly.
 const vec3 STAR_COLOR = vec3(0.4, 0.88, 1.0);
-uniform float star_brightness = 3.2;  // (owner: brighter; moving the camera smears tiny points a little)
+uniform float star_brightness = 3.2;
+// The huge first cavern (layout 4, owner F260): its ceiling is all stars, with extra snakes. star_radius 0 = none.
+uniform vec3 star_center = vec3(0.0);
+uniform float star_radius = 0.0;  // (owner: brighter; moving the camera smears tiny points a little)
 
 vec3 star_layer(vec3 p, float cell, float radius, float keep) {
 	vec3 q = p / cell;
@@ -87,11 +90,11 @@ vec3 star_layer(vec3 p, float cell, float radius, float keep) {
 // The light snake (owner, Nov 17: "a snake that randomly goes around the sky... lights up some of the pieces"): each
 // 40 m square of ceiling has one glowing head wandering on its own slow looping path; behind it a fading trail. Returns
 // how much the snake lights this point (1 = right on the head). From the position and TIME only: the same everywhere.
-float snake(vec3 p) {
+float snake(vec3 p, float which) {
 	vec2 cell = floor(p.xz / 40.0);
 	vec2 mid = (cell + 0.5) * 40.0;
-	float h1 = hash(vec3(cell, 11.0));
-	float h2 = hash(vec3(cell, 23.0));
+	float h1 = hash(vec3(cell, 11.0 + which * 7.0));
+	float h2 = hash(vec3(cell, 23.0 + which * 7.0));
 	float speed = 0.05 + 0.05 * h1;  // a full loop takes a few minutes
 	float best = 1e9;
 	float along = 0.0;
@@ -208,8 +211,12 @@ void fragment() {
 	// some patches, none in others, each twinkling slowly. Part of the rock's own paint, so it always sits on the rock.
 	float ceiling = smoothstep(0.45, 0.8, -wn.y);
 	if (ceiling > 0.0) {
-		float sn = snake(v_world);
-		float patches = smoothstep(0.45, 0.68, vnoise(v_world * 0.05 + vec3(7.0, 1.0, 3.0)));
+		float inbig = star_radius > 0.0 ? 1.0 - smoothstep(star_radius * 0.8, star_radius * 1.05, length(v_world.xz - star_center.xz)) : 0.0;
+		float sn = snake(v_world, 0.0);
+		if (inbig > 0.0) {
+			sn = max(sn, inbig * max(snake(v_world, 1.0), snake(v_world, 2.0)));  // several snakes at once there
+		}
+		float patches = max(smoothstep(0.45, 0.68, vnoise(v_world * 0.05 + vec3(7.0, 1.0, 3.0))), inbig);
 		if (patches > 0.0) {
 			vec3 stars = star_layer(v_world, 0.16, 0.012, 0.75) + star_layer(v_world + vec3(31.0, 5.0, 17.0), 0.45, 0.02, 0.5);  // many tiny points
 			emit += stars * (1.0 + 35.0 * sn) * patches * ceiling * star_brightness;  // stars light up as the snake passes

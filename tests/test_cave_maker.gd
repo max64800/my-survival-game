@@ -154,7 +154,7 @@ func test_generated_block_matches_queries() -> void:
 				elif c.made_layout < 2 or (want > -3.0 and want <= 0.0):
 					# (layout 2 blends the depth deep in rock and out in the air: only rock near a wall needs it exact)
 					check_near(got, clampf(want, -500, 500), 0.05, "sdf at %s" % p)
-				check(signf(got) == signf(want) or want == 0.0, "rock/air at %s agrees with the query" % p)
+				check(signf(got) == signf(want) or absf(want) < 0.02, "rock/air at %s agrees with the query" % p)  # (right at the surface the stored value is rounded)
 				if want > 0:
 					air += 1
 				else:

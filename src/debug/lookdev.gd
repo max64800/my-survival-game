@@ -335,6 +335,13 @@ func _kind_shots(dwarf: Dwarf, maker: CaveMaker) -> void:
 			var sz := best.basis.get_scale().x
 			await _lamp_shot(dwarf, best.origin + out * 1.7 * sz + Vector3.UP * 0.5 * sz + best.basis.x.normalized() * 0.6 * sz,
 				best.origin + out * 0.15 * sz, "s_%s" % kind, 8.0)
+	# Layout 4: the huge first cavern's star ceiling, from its floor (owner F260).
+	var first := maker.first_cavern()
+	if not first.is_empty():
+		var fc: Vector3 = first.center
+		var ffl := maker.find_floor(fc.x + 20.0, fc.z, fc.y)
+		var feye := (ffl if ffl != Vector3.INF else fc) + Vector3.UP * 1.7
+		await _lamp_shot(dwarf, feye, fc + Vector3(-25.0, (first.radii as Vector3).y * 0.9, 5.0), "f_first_cavern", 1.0)
 	# The star snake (terrain.gdshader snake()): where the head of the snake over the nearest big cavern is now.
 	var big := _nearest_room(maker, home, func(r: Dictionary) -> bool: return r.big and (r.radii as Vector3).y > 9.0)
 	if not big.is_empty():

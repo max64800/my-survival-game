@@ -20,11 +20,12 @@ extends RefCounted
 ##   1 = the first caves: 400 m areas (Mossy x -200…200, Jungle x 220…620), squashed balls and tubes.
 ##   2 = real-shaped caves: 800 m areas (Mossy x -400…400, Jungle x 420…1220), about 4x the rooms,
 ##       passages and halls shaped the way water shapes real caves (see "layout 2" below).
-const LAYOUT_LATEST := 3
+const LAYOUT_LATEST := 4
 ## What brand-new worlds get. Layout 2: the real-shaped caves (F211 step 1, OK'd by the owner Nov 17). Layout 3: the
 ## same plus tall/wide/joined caverns and cliff exits with ledge paths (F230, F231). Old saves keep the layout they were
-## made with; robots can try older caves with "-- layout=1" or "-- layout=2".
-const LAYOUT_DEFAULT := 3
+## made with; robots can try older caves with "-- layout=1" or "-- layout=2". Layout 4: the same plus a huge first
+## cavern, its ceiling all glow-worm stars with several snakes (owner, Nov 17, F260).
+const LAYOUT_DEFAULT := 4
 static var layout := LAYOUT_DEFAULT
 
 
@@ -663,6 +664,12 @@ func _place_rooms_v2(rng: RandomNumberGenerator, cx: float, biome: String) -> vo
 		var c := Vector3(cx + rng.randf_range(-reach, reach), rng.randf_range(-38, -18), rng.randf_range(-reach, reach))
 		var r := Vector3(rng.randf_range(24, 34), rng.randf_range(10, 14), rng.randf_range(24, 34))
 		if _far_from_rooms(c, 170.0 if tries < 700 else 120.0):
+			if made_layout >= 4 and biome == "mossy" and rooms.size() == r0:
+				# The first cavern, the one you start beside, is huge (owner, Nov 17: "the very first cave should be really
+				# big"): ~120 m across under a high dome; its floor stays where it was.
+				var floor_y := c.y - r.y * 0.55
+				r = Vector3(FIRST_CAVERN_R, minf(20.0, (Y_MAX - 6.0 - floor_y) / 1.55), FIRST_CAVERN_R)
+				c.y = floor_y + r.y * 0.55
 			rooms.append({center = c, radii = r, big = true, kind = "cavern", sealed = false, biome = biome})
 	# Middle-sized halls.
 	var placed := 0
@@ -671,7 +678,7 @@ func _place_rooms_v2(rng: RandomNumberGenerator, cx: float, biome: String) -> vo
 		tries += 1
 		var c := Vector3(cx + rng.randf_range(-span, span), rng.randf_range(-48, -10), rng.randf_range(-span, span))
 		var r := Vector3(rng.randf_range(13, 19), rng.randf_range(6, 9), rng.randf_range(13, 19))
-		if _far_from_rooms(c, 75.0):
+		if _far_from_rooms(c, 75.0) and _clear_of_first(r0, biome, c, 19.0):
 			rooms.append({center = c, radii = r, big = false, kind = "room", sealed = false, biome = biome, hall = true})
 			placed += 1
 	# Small chambers along the way, on every level.
@@ -681,7 +688,7 @@ func _place_rooms_v2(rng: RandomNumberGenerator, cx: float, biome: String) -> vo
 		tries += 1
 		var c := Vector3(cx + rng.randf_range(-span, span), rng.randf_range(-54, -2), rng.randf_range(-span, span))
 		var r := Vector3(rng.randf_range(7, 12), rng.randf_range(5, 7), rng.randf_range(7, 12))
-		if _far_from_rooms(c, 45.0):
+		if _far_from_rooms(c, 45.0) and _clear_of_first(r0, biome, c, 12.0):
 			rooms.append({center = c, radii = r, big = false, kind = "room", sealed = false, biome = biome})
 			placed += 1
 	if made_layout >= 3:
@@ -692,6 +699,24 @@ func _place_rooms_v2(rng: RandomNumberGenerator, cx: float, biome: String) -> vo
 # The owner (Nov 17): "I really like the wide but not tall caves... some tall and narrow, some tall and wide... a tall
 # cavern goes into a wide cavern... some exits at the very top, like a cliff". Decided after the rooms are placed, with
 # their own dice, so the places don't move; each keeps its floor height (tunnels are dug after, to the new mouths).
+
+const FIRST_CAVERN_R := 58.0  ## layout 4: the first cavern's half-width (m)
+
+
+## Layout 4: other rooms keep clear of the huge first cavern (it would swallow them).
+func _clear_of_first(r0: int, biome: String, c: Vector3, own_r: float) -> bool:
+	if made_layout < 4 or biome != "mossy" or rooms.size() <= r0:
+		return true
+	var f: Vector3 = rooms[r0].center
+	return Vector2(c.x - f.x, c.z - f.z).length() > FIRST_CAVERN_R + own_r + 10.0
+
+
+## Layout 4: the huge first cavern (where the ceiling is all stars), or {} in older layouts.
+func first_cavern() -> Dictionary:
+	if made_layout < 4 or rooms.is_empty():
+		return {}
+	return rooms[0]
+
 
 const PROP_NORMAL := 0
 const PROP_WIDE_LOW := 1  ## wider, low, flat rock-layer ceiling
@@ -1014,6 +1039,8 @@ func _assign_shapes(r0: int, r1: int) -> void:
 		var roll := rng.randf()
 		if rm.kind == "cavern":
 			rm.shape = SHAPE_FLAT if roll < 0.3 else (SHAPE_FALLEN if roll < 0.6 else SHAPE_DOME)
+			if made_layout >= 4 and i == 0:
+				rm.shape = SHAPE_DOME  # the huge first cavern: a high dome for its star ceiling
 		elif rm.kind == "room" and rm.get("hall", false):
 			rm.shape = SHAPE_FLAT if roll < 0.45 else (SHAPE_FALLEN if roll < 0.8 else SHAPE_DOME)
 		elif rm.kind == "room":

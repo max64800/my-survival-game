@@ -92,7 +92,7 @@ static func _place(maker: CaveMaker) -> Array[Dictionary]:
 	_add_more_roots(maker, spots)
 	_add_twigs(maker, spots)
 	_mix_crystal_colours(spots)
-	_thin_crystals_under_stars(spots)
+	_thin_crystals_under_stars(maker, spots)
 	for i in spots.size():
 		spots[i].id = i
 	return spots
@@ -191,11 +191,16 @@ static func _mix_crystal_colours(spots: Array[Dictionary]) -> void:
 ## Under the glow-worm stars (the ceiling patches the rock shader lights up), only about 1 crystal in 8 stays (owner,
 ## Nov 17: "less crystals around the dots, not none, very rare"). The others are only marked `hidden` (the game doesn't
 ## build them), so every spot keeps its id and saves still match.
-static func _thin_crystals_under_stars(spots: Array[Dictionary]) -> void:
+static func _thin_crystals_under_stars(maker: CaveMaker, spots: Array[Dictionary]) -> void:
+	var first := maker.first_cavern()
 	for s in spots:
 		if not String(s.kind).begins_with("crystal") or (s.normal as Vector3).y > -0.3:
 			continue  # only crystals on ceilings and the tops of walls
-		if star_patch(s.pos) < 0.15:
+		var big := 0.0
+		if not first.is_empty():  # the huge first cavern's ceiling is all stars (terrain.gdshader `inbig`)
+			var rr := maxf(first.radii.x, first.radii.z)
+			big = 1.0 - smoothstep(rr * 0.8, rr * 1.05, Vector2(s.pos.x - first.center.x, s.pos.z - first.center.z).length())
+		if maxf(star_patch(s.pos), big) < 0.15:
 			continue
 		var p: Vector3 = s.pos
 		if float(posmod(hash(Vector3i((p * 7.0).round())), 1009)) / 1009.0 > 0.12:
@@ -262,17 +267,21 @@ static func _add_first_drip(maker: CaveMaker, spots: Array[Dictionary]) -> void:
 	for s in spots:
 		if s.kind == DRIP and s.pos.distance_to(c) < maxf(first.radii.x, first.radii.z):
 			return  # it already has one
-	for k in 8:
-		var a := k * TAU / 8.0
-		var r := minf(first.radii.x, first.radii.z) * 0.35
-		var fl := maker.find_floor(c.x + cos(a) * r, c.z + sin(a) * r, c.y)
-		if maker.sdf_at(fl + Vector3.UP * 1.0) <= 0.0:
-			continue
-		var top := _march(maker, fl + Vector3.UP * 1.0, Vector3.UP, 20.0)
-		if top == Vector3.INF:
-			continue
-		_add_spot(spots, top, Vector3.DOWN, DRIP, 1.0, 0.0, 0.0)
-		return
+	# (layout 4's first cavern is huge with a high dome: try further out toward its walls too, where the ceiling is low
+	# enough for a bucket under it to catch the drops: Drip Buckets fill from up to 15 m below)
+	var rings := [0.35] if maker.made_layout < 4 else [0.35, 0.6, 0.75, 0.85, 0.92]
+	for frac in rings:
+		for k in 8:
+			var a := k * TAU / 8.0
+			var r := minf(first.radii.x, first.radii.z) * float(frac)
+			var fl := maker.find_floor(c.x + cos(a) * r, c.z + sin(a) * r, c.y)
+			if maker.sdf_at(fl + Vector3.UP * 1.0) <= 0.0:
+				continue
+			var top := _march(maker, fl + Vector3.UP * 1.0, Vector3.UP, 20.0)
+			if top == Vector3.INF or (maker.made_layout >= 4 and top.y - fl.y > 14.0):
+				continue
+			_add_spot(spots, top, Vector3.DOWN, DRIP, 1.0, 0.0, 0.0)
+			return
 
 
 ## The starting room: roots to pull, glowing mushrooms, and the crystals you see through the peephole.
