@@ -31,3 +31,9 @@ Dropped (conflicts):
 
 Story note: World of Warcraft has dwarves who came from stone beings (the Earthen, "Curse of Flesh"). It's not a name
 problem, but keep the page and trailer wording clearly our own.
+
+## Re-check of 10 names (Nov 17, Mac, by script)
+The Steam store search API returned no game for any of the 10 (tested: it does find "Dwarf Delve"). The .com was free
+for all 10 (Verisign WHOIS). itch.io: no game with these names; it only shows other dwarf games.
+Names: Dwarfwake, Dwarves Awake, Stonedwarves, Dwarves Unearthed, Dwarfkin, Dwarfborn, Dwarf Oath, Runedwarves,
+Dwarves Reborn, Dwarves Rising. Trademarks: still a manual check.
