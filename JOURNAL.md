@@ -3194,3 +3194,8 @@ the body."
   sdf_smooth blends 8 voxels. (2) Still refused the campfire test: the floor slopes, its corners sat in it. Now
   only the upper half of the box is felt (walls rise, floor bumps don't). (3) game_authority.gd had another
   session's unsaved outpost lines: only my pieces were copied into the commit.
+
+## November 17, 2026 (PC, rock-textures Claude): axes are the wood tool (F272)
+- Owner: axes aren't better at cutting wood. They were (3 vs 6 hits) but not clearly, and only the pickaxe got a
+  skill bonus. Now axe x1.5 power + survival skill bonus, pickaxe 0.3 on wood: 2 vs 10 hits. Test added.
+- Spear stab animation: asked the dwarf session (it is editing dwarf_rig.gd) to avoid two sessions in one file.

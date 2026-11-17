@@ -839,6 +839,12 @@ func _dig_ramp(ps: PlayerState, center: Vector3, tool_tier: int, counts: Diction
 			counts[m] = counts.get(m, 0) + more[m]
 
 
+## Wood (roots, giant mushrooms): an axe is clearly the tool for it (owner, Nov 17: "axes aren't better at cutting
+## wood"). A stone axe chops a root in 2 hits, a stone pickaxe needs about 10.
+const AXE_ON_WOOD := 1.5
+const PICK_ON_WOOD := 0.3
+
+
 ## Hitting something that grows on the cave: crystals, mushrooms, fiber, roots.
 ## Result like request_hit: {state = "hit"|"done"|"no_tool"|"too_far"|"gone", hits, needed}
 func request_harvest(peer_id: int, glow_id: int) -> Dictionary:
@@ -860,9 +866,9 @@ func request_harvest(peer_id: int, glow_id: int) -> Dictionary:
 			return r
 		var power := 0.0
 		if Items.kind(tool) == "pickaxe":
-			power = Items.dig_power(tool) * ps.progress.dig_power_mult() * (0.5 if k.tool == "axe" else 1.0) 				* (1.0 + Upgrades.bonus(ps.inventory.get_slot(ps.hand_slot())))
+			power = Items.dig_power(tool) * ps.progress.dig_power_mult() * (PICK_ON_WOOD if k.tool == "axe" else 1.0) 				* (1.0 + Upgrades.bonus(ps.inventory.get_slot(ps.hand_slot())))
 		elif Items.kind(tool) == "axe" and k.tool == "axe":
-			power = Items.info(tool).power * (1.0 + Upgrades.bonus(ps.inventory.get_slot(ps.hand_slot())))
+			power = Items.info(tool).power * AXE_ON_WOOD * (1.0 + ps.progress.skill_level.survival * 0.003) 				* (1.0 + Upgrades.bonus(ps.inventory.get_slot(ps.hand_slot())))
 		if power <= 0.0:
 			var r := {state = "no_tool", point = spot.pos}
 			_tell_feedback(peer_id, r)
