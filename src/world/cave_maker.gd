@@ -243,7 +243,6 @@ func _seg_inside_room(sg: Dictionary, c: Vector3, r: Vector3) -> bool:
 # Rule (owner, Nov 17): nothing the world grows stands inside something built or on its paths. Pebbles, plants, crystals
 # and the old columns are made fresh every time a world loads, so they ask is_reserved() and skip that ground.
 
-var outpost_spot := {}  ## where the Fallen Outpost goes ({room, pos, turn}; worked out once, in _reserve_tower)
 var reserved: Array[Dictionary] = []  ## {pos, r, h}: a circle of ground (r wide), from pos.y up to pos.y + h
 
 
@@ -272,13 +271,6 @@ func _reserve_tower() -> void:
 	var spot := RuinTower.find_spot(self, float(plan.get("radius", 4.2)), float(plan.get("height", 9.0)))
 	if not spot.is_empty():
 		reserve(spot.pos, maxf(float(plan.get("radius", 4.2)), float(plan.get("front", 6.8))) + 1.5, float(plan.get("height", 9.0)))
-	# The Fallen Outpost (owner, Nov 17): its square (36 m across, round towers at two corners) kept clear too, so no
-	# pebbles, plants or loose stones are left hanging after it digs out its space. The spot is remembered for it.
-	var op := RuinTower.load_plan(RuinOutpost.OUTPOST_PLAN)
-	if not op.is_empty():
-		outpost_spot = RuinOutpost.pick(self, float(op.get("radius", 18.5)), float(op.get("height", 7.5)))
-		if not outpost_spot.is_empty():
-			reserve(outpost_spot.pos, float(op.get("radius", 18.5)) + 4.0, float(op.get("height", 7.5)))
 
 
 ## Layout 8 (owner, Nov 17): 1 or 2 smaller stone columns (5 to 11 m wide) in the plain big caverns, the same kind as
