@@ -20,7 +20,18 @@ Nothing gets installed from this research until every file of it is read (global
 - **KayKit Skeletons** — "def use these too" — https://kaylousberg.itch.io/kaykit-skeletons
 - Fab FANTASTIC Dungeon Pack: not claimed while free (now ~$90, paid), skip.
 - Rule 1 bent (owner, Nov 19): free packs may be reshaped and repainted by script (see MODEL-RULES.md).
-- More similar free packs: being searched (added to `assets-in-our-style.md`).
+- Round 2 picks (Nov 19, owner: "good for now, then test it"):
+  - **KayKit RPG Tools Bits** — anvil, grindstone, mallet, hammer, pick, shovel, scrolls, map — https://kaylousberg.itch.io/rpg-tools-bits
+  - **KayKit Fantasy Weapons Bits** — the weapons — https://kaylousberg.itch.io/fantasy-weapons-bits
+  - **KayKit Forest Nature** — boulders, trees with no leaves — https://kaylousberg.itch.io/kaykit-forest
+  - **KayKit Adventurers** — crossbow, shields, swords — https://kaylousberg.itch.io/kaykit-adventurers
+  - **Quaternius Ultimate RPG Pack** — chest, backpacks, weapons, books — https://quaternius.com/packs/ultimaterpg.html
+  - **Quaternius Modular Weapons** — swords, warhammers, shields — https://quaternius.com/packs/medievalweapons.html
+  - **Quaternius Easy Enemies** — the spider — https://quaternius.itch.io/animated-easy-enemies
+  - **flo-bit Low Poly Nature** — maybe some trees, adjusted — https://flo-bit.itch.io/low-poly-nature-pack
+- **Next (PC):** download the picked packs (check each licence file, log in CREDITS.md), bring a few in by build
+  script (reshape + repaint to our style, pass the model rules), and test them in the game. Full list of all packs:
+  `assets-in-our-style.md`.
 
 ## To do later
 - **F. Getting lost is the point.** Players find their way with torches. Idea: hidden **waypoint stones**
