@@ -14,7 +14,8 @@ Code layout, recorder details, how to run robots: `docs/CLAUDE-REFERENCE.md` (re
 - Only use assets licensed for commercial use (prefer CC0). Log every asset in `CREDITS.md`.
 - **Art style rule (owner):** every model (stations, gear, outfits, building pieces, materials) is made in the same style as the workbenches: hand-painted, chunky, no perfect boxes or circles, every part touching. Each building material gets its own design, not a reskin. Make ChatGPT pictures whenever they help, no need to ask.
 - **Model rules (owner): read the needed section of `docs/art/MODEL-RULES.md` before making or changing any model.** In short:
-  1. No Play-Doh: every model is hand-built in Blender by script (never picture-to-3D as the final model).
+  1. No Play-Doh: every model is built in Blender by script: hand-built, or a free CC0 pack model reshaped and
+     repainted to our style (never picture-to-3D as the final model).
   2. No shimmer: no two surfaces in the same place (join them or keep 1 cm apart).
   3. Building pieces in clean layers (backing, material, trim, decor), nothing poking out, calm colours.
   4. Roofs: Stonehold flat only; Shack and Hearthbrick sloped only; sloped roof pieces are thin and open underneath.

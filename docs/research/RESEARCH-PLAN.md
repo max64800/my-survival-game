@@ -13,6 +13,15 @@
 Skipped: E (Steam rules, already known from Deep Rise), G (playtests).
 Nothing gets installed from this research until every file of it is read (global rule).
 
+## Owner's asset picks (Nov 19, after previewing)
+- **Quaternius Fantasy Props MegaKit** — "def need it, it matches" — https://quaternius.itch.io/fantasy-props-megakit
+- **KayKit Character Animations** — download and see which animations we can use — https://kaylousberg.itch.io/kaykit-character-animations
+- **Quaternius Stylized Nature MegaKit** — some of the bare trees, boulders etc. — https://quaternius.com/packs/stylizednaturemegakit.html
+- **KayKit Skeletons** — "def use these too" — https://kaylousberg.itch.io/kaykit-skeletons
+- Fab FANTASTIC Dungeon Pack: not claimed while free (now ~$90, paid), skip.
+- Rule 1 bent (owner, Nov 19): free packs may be reshaped and repainted by script (see MODEL-RULES.md).
+- More similar free packs: being searched (added to `assets-in-our-style.md`).
+
 ## To do later
 - **F. Getting lost is the point.** Players find their way with torches. Idea: hidden **waypoint stones**
   that only show up when you pull out a map (or a map-like item).

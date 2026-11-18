@@ -4,13 +4,18 @@
 creatures). Each rule has a **check**: a rule without a check gets forgotten. A model is not done until every
 check passes. Breaking a rule because "it looked fine" is not allowed; ask the owner first.
 
-## Rule 1: No Play-Doh (hand-built only)
+## Rule 1: No Play-Doh (hand-built, or free packs rebuilt by script)
 Picture-to-3D tools (TripoSR, TRELLIS, the asset forge's 3D step) make soft, melted, lumpy shapes. It happened
 twice: the crafting stations (Nov 14) and the creatures (Nov 15, F68 🔁).
 - **Every model in the game is hand-built in Blender by a script**, from the shared kit (`tools/asset_forge/kit.py`,
   `creature_kit.py` for moving parts): chunky shapes, bevelled edges, painted textures, a little hand-made wobble.
 - ChatGPT pictures are the **design reference** only: match their shapes, colours and face by eye.
 - Picture-to-3D may be used only as a rough size/shape guide that is thrown away, never as the final model.
+- **Free packs may be imported and adapted (owner, Nov 19):** a build script loads a free pack model (CC0 first,
+  e.g. Quaternius, KayKit), reshapes it and repaints it with our kit textures so it passes every rule here. Pack
+  skeletons and animations may be used on our own creature bodies. Only free, commercial-OK packs whose files may sit
+  in the public repo (CC0; CC-BY only with a credit line). Paid, Fab, Unity, Synty or Mixamo files are never committed.
+  Log every pack in `CREDITS.md`. Picks: `docs/research/RESEARCH-PLAN.md`.
 - **Check:** every `.glb` in `assets/models/` has its build script in `tools/asset_forge/builds/` (or
   `build_creatures.py`); an automatic test fails if one is missing. Side-by-side picture: reference vs. model,
   same angle, before calling it done.
