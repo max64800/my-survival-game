@@ -70,6 +70,21 @@ uniform float star_snakes = 1.0;
 // The rock bridges (owner, Nov 18: glowing veins "under the bridges as well"): a = one end's top + width, b = the other
 // end's top + thickness. world.gd sends the 16 nearest to the camera, twice a second.
 uniform int bridge_count = 0;
+// Where the glowing veins gather: tunnel mouths that lead on to another cave (owner, Nov 18: "helping the player find
+// where to go next... not at dead ends"). world.gd sends the 16 nearest the camera.
+uniform int guide_count = 0;
+uniform vec3 guide_pts[16];
+
+float near_guide(vec3 p) {
+	float g = 0.0;
+	for (int i = 0; i < 16; i++) {
+		if (i >= guide_count) {
+			break;
+		}
+		g = max(g, 1.0 - smoothstep(3.5, 7.0, distance(p, guide_pts[i])));
+	}
+	return g;
+}
 uniform vec4 bridge_a[16];
 uniform vec4 bridge_b[16];
 
@@ -261,9 +276,10 @@ void fragment() {
 	float vwall = 1.0 - smoothstep(0.5, 0.85, wn.y);
 	float ub = (bridge_count > 0 && wn.y < -0.3) ? under_bridge(v_world) : 0.0;  // the undersides of the rock bridges
 	vwall = max(vwall, ub);
-	// Some places (a bit more often than before, so tunnels get them too), every bridge, and all of the first cave.
-	float vfirst = star_radius > 0.0 ? 1.0 - smoothstep(star_radius * 0.9, star_radius * 1.15, length(v_world.xz - star_center.xz)) : 0.0;
-	float vregion = max(max(smoothstep(0.58, 0.7, vnoise(v_world * 0.03 + vec3(19.0, 3.0, 11.0))), ub), vfirst);
+	// Gently placed (owner, Nov 18: the first cave's whole ceiling was too much): round the mouths of tunnels that lead on,
+	// under every bridge, and a few rare patches elsewhere.
+	float vguide = guide_count > 0 ? near_guide(v_world) : 0.0;
+	float vregion = max(max(smoothstep(0.7, 0.8, vnoise(v_world * 0.03 + vec3(19.0, 3.0, 11.0))), ub), vguide);
 	if (vwall * vregion > 0.0) {
 		float ridge = abs(vnoise(v_world * vec3(0.32, 0.8, 0.32) + vec3(5.0, 1.0, 9.0)) * 2.0 - 1.0);  // thin where it crosses 0.5
 		float vline = (1.0 - smoothstep(0.0, 0.032, ridge)) * max(smoothstep(0.42, 0.58, vnoise(v_world * 0.45 + vec3(3.0, 7.0, 2.0))), ub);  // thin, in broken pieces (whole under bridges)

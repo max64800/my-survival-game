@@ -237,7 +237,7 @@ var _bridge_t := 0.0
 
 func _process(delta: float) -> void:
 	_bridge_t -= delta
-	if _bridge_t > 0.0 or _rock_mat == null or maker == null or maker._bridges.is_empty():
+	if _bridge_t > 0.0 or _rock_mat == null or maker == null:
 		return
 	_bridge_t = 0.5
 	var cam := get_viewport().get_camera_3d()
@@ -257,3 +257,18 @@ func _process(delta: float) -> void:
 	_rock_mat.set_shader_parameter("bridge_count", n)
 	_rock_mat.set_shader_parameter("bridge_a", ba)
 	_rock_mat.set_shader_parameter("bridge_b", bb)
+	_send_guides(at)
+
+
+## The 16 tunnel mouths that lead on (CaveMaker.guide_points) nearest the camera, for the glowing veins.
+func _send_guides(at: Vector3) -> void:
+	var all := maker.guide_points()
+	if all.is_empty():
+		return
+	var list := Array(all)
+	list.sort_custom(func(x, y): return (x as Vector3).distance_squared_to(at) < (y as Vector3).distance_squared_to(at))
+	var pts := PackedVector3Array(list.slice(0, 16))
+	var n := pts.size()
+	pts.resize(16)
+	_rock_mat.set_shader_parameter("guide_count", n)
+	_rock_mat.set_shader_parameter("guide_pts", pts)

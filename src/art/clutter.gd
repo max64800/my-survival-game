@@ -113,11 +113,11 @@ func _plan(maker: CaveMaker) -> Dictionary:
 		for i in (CLUSTERS_BIG_ROOM if room.big else CLUSTERS_ROOM):
 			var dir := Vector3(rng.randf_range(-1, 1), rng.randf_range(0.5, 1.0), rng.randf_range(-1, 1)).normalized()
 			_ceiling(maker, rng, picks, room.center, dir)
-	if not maker.reserved.is_empty():  # nothing on a built thing's ground (owner's placement rule)
+	if not maker.reserved.is_empty() or not maker._bridges.is_empty():  # nothing on a built thing's ground or a bridge top
 		for k in picks:
-			picks[k] = (picks[k] as Array).filter(func(xf: Transform3D) -> bool: return not maker.is_reserved(xf.origin, 0.3))
+			picks[k] = (picks[k] as Array).filter(func(xf: Transform3D) -> bool: return not maker.is_reserved(xf.origin, 0.3) and not maker.on_bridge(xf.origin))
 		for k in _drips:
-			_drips[k] = (_drips[k] as Array).filter(func(it: Array) -> bool: return not maker.is_reserved((it[0] as Transform3D).origin, 0.3))
+			_drips[k] = (_drips[k] as Array).filter(func(it: Array) -> bool: return not maker.is_reserved((it[0] as Transform3D).origin, 0.3) and not maker.on_bridge((it[0] as Transform3D).origin))
 	return {picks = picks, rng = rng}
 
 
@@ -318,7 +318,7 @@ func _place_hanging_roots(maker: CaveMaker, rng: RandomNumberGenerator) -> void:
 			items[kind].append([Transform3D(basis.scaled(Vector3.ONE * size), hit + Vector3.UP * 0.04 * size), tint])
 	for k in HROOTS:
 		if not maker.reserved.is_empty():
-			items[k] = (items[k] as Array).filter(func(it: Array) -> bool: return not maker.is_reserved((it[0] as Transform3D).origin, 0.3))
+			items[k] = (items[k] as Array).filter(func(it: Array) -> bool: return not maker.is_reserved((it[0] as Transform3D).origin, 0.3) and not maker.on_bridge((it[0] as Transform3D).origin))
 		_make_model_cells(k, _model_mesh(HROOTS[k].model), items[k])
 
 

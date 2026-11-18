@@ -129,6 +129,9 @@ func _moth(m: Dictionary, cam: Vector3, delta: float) -> void:
 	var n: Node3D = m.node
 	if m.anchor == Vector3.INF or (m.anchor as Vector3).distance_to(cam) > NEAR:
 		m.anchor = _moth_anchor(cam)
+		if m.anchor == Vector3.INF:
+			n.visible = false  # no crystal near: no moths
+			return
 		n.global_position = m.anchor
 		n.visible = true
 	m.phase += delta
@@ -145,15 +148,14 @@ func _moth(m: Dictionary, cam: Vector3, delta: float) -> void:
 	(m.wings[1] as Node3D).rotation.z = -flap
 
 
-## A crystal (or other glowing thing) near the camera, or a spot in the air near it (they find your lantern).
+## A crystal near the camera: the moths fly round crystals only (owner, Nov 18). INF = none near: the moth hides.
 func _moth_anchor(cam: Vector3) -> Vector3:
-	if glow and _rng.randf() < 0.7:
-		var near: Array = glow.spots_near(cam, 18.0).filter(func(s): return String(s.kind).begins_with("crystal") and not s.get("hidden", false))
+	if glow:
+		var near: Array = glow.spots_near(cam, 20.0).filter(func(s): return String(s.kind).begins_with("crystal") and not s.get("hidden", false))
 		if not near.is_empty():
 			var s: Dictionary = near[_rng.randi() % near.size()]
 			return (s.pos as Vector3) + (s.normal as Vector3) * 0.5
-	var p := cam + Vector3(_rng.randf_range(-3, 3), _rng.randf_range(-0.5, 1.0), _rng.randf_range(-3, 3))
-	return p if world.sdf_smooth(p) > 0.8 else cam
+	return Vector3.INF
 
 
 # ---------------------------------------------------------------- crickets: hop away from you

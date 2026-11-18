@@ -6,7 +6,7 @@ extends Node3D
 ## late, so the pack is round at the front and draws out into a droplet's tail when it moves faster. They twinkle softly.
 ## Only looks; planned from the cave (same caves get them on every computer, though each screen moves its own).
 
-const SHARE := 0.33  ## of the caves get a swarm (the first cave gets two)
+const SHARE := 0.75  ## of the caves get a swarm (owner, Nov 18: "a lot more of them"; the first cave gets three)
 const ACTIVE := 80.0  ## swarms further than this from the camera hold still (nobody sees them move)
 const TINTS := [Color(0.4, 1.0, 0.85), Color(0.55, 1.0, 0.55), Color(1.0, 0.82, 0.4), Color(0.6, 0.85, 1.0)]
 
@@ -16,8 +16,8 @@ var _time := 0.0
 
 func build(maker: CaveMaker) -> void:
 	var mesh := SphereMesh.new()
-	mesh.radius = 0.028
-	mesh.height = 0.056
+	mesh.radius = 0.016  # (smaller: they were readable as little balls)
+	mesh.height = 0.032
 	mesh.radial_segments = 6
 	mesh.rings = 3
 	var rng := RandomNumberGenerator.new()
@@ -25,7 +25,7 @@ func build(maker: CaveMaker) -> void:
 	for ri in maker.rooms.size():
 		var room: Dictionary = maker.rooms[ri]
 		var roll := rng.randf()
-		var count := 2 if ri == 0 else (1 if roll < SHARE else 0)
+		var count := 3 if ri == 0 else (1 if roll < SHARE else 0)
 		if room.get("sealed", false) or room.radii.y < 3.0:
 			count = 0
 		for k in count:
@@ -84,7 +84,9 @@ func _head_at(sw: Dictionary, t: float) -> Vector3:
 	var x := sin(t * f.x + ph.x) * 0.55 + sin(t * f.x * 2.3 + ph.y) * 0.12
 	var z := cos(t * f.z + ph.z) * 0.55 + sin(t * f.z * 1.7 + ph.x) * 0.12
 	var y := 0.5 + 0.5 * sin(t * f.y + ph.y)
-	return Vector3(c.x + x * r.x, sw.fl + 1.5 + y * maxf(0.5, sw.tall * 0.66 - 1.5), c.z + z * r.z)
+	# high up, away from the floor (owner, Nov 18: "they usually fly a lot further from the ground")
+	var low: float = float(sw.fl) + minf(4.0, float(sw.tall) * 0.45)
+	return Vector3(c.x + x * r.x, low + y * maxf(0.5, sw.tall * 0.85 - (low - sw.fl)), c.z + z * r.z)
 
 
 func _process(delta: float) -> void:
@@ -96,7 +98,28 @@ func _process(delta: float) -> void:
 	for sw in _swarms:
 		if (sw.head as Vector3).distance_to(at) > ACTIVE:
 			continue
-		var head := _head_at(sw, _time)
+		# Shy (owner, Nov 18): when you come within 5 m they fade away, and gather again 10-15 m from you.
+		var fade: float = sw.get("fade", 1.0)
+		var head := _head_at(sw, _time + float(sw.get("skip", 0.0)))
+		if head.distance_to(at) < 5.0 and not sw.get("leaving", false):
+			sw.leaving = true
+		if sw.get("leaving", false):
+			fade = maxf(0.0, fade - delta * 1.2)
+			if fade <= 0.0:
+				for k in 40:  # further along its loop, until it's 10-15 m from you
+					sw.skip = float(sw.get("skip", 0.0)) + 3.0
+					head = _head_at(sw, _time + sw.skip)
+					if head.distance_to(at) > 10.0 and head.distance_to(at) < 25.0:
+						break
+				var pos0: PackedVector3Array = sw.pos
+				for i in pos0.size():
+					pos0[i] = head + Vector3(sw.off[i].x, 0.0, sw.off[i].y) * 0.8
+				sw.pos = pos0
+				sw.prev = head
+				sw.leaving = false
+		else:
+			fade = minf(1.0, fade + delta * 0.6)
+		sw.fade = fade
 		var vel := (head - (sw.prev as Vector3)) / maxf(delta, 0.001)
 		sw.prev = head
 		sw.head = head
@@ -118,7 +141,7 @@ func _process(delta: float) -> void:
 			pos[i] = pos[i].lerp(target, minf(1.0, delta * float(sw.lag[i])))
 			var glow := 0.55 + 0.45 * sin(_time * 2.0 + w * 3.0)
 			mm.set_instance_transform(i, Transform3D(Basis.from_scale(Vector3.ONE * (0.7 + 0.5 * glow)), pos[i]))
-			mm.set_instance_color(i, Color(sw.tint.r, sw.tint.g, sw.tint.b, 0.5 + 0.5 * glow))
+			mm.set_instance_color(i, Color(sw.tint.r, sw.tint.g, sw.tint.b, (0.5 + 0.5 * glow) * fade))
 		sw.pos = pos
 
 

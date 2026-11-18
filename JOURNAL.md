@@ -3475,3 +3475,18 @@ the body."
 - Chunks: icosphere(2) stretched into lumps/slabs/shards/wedges and squashed by 5-9 cut planes.
 - **Hurdles:** another session's half-saved monster file broke compiling for a while; crickets used the cave plan
   for floors (no digging, no built floors) and jumped in mid-air at the outpost: real physics rays now.
+
+## November 18, 2026 (PC, rock-textures Claude): veins as a guide, shy swarms, bridges higher and clean
+- Owner (playing a new world): bridges too close to the ground and with floating things on top; more, smaller
+  swarms that fly higher and keep away from you; too many veins (whole first-cave ceiling); veins should guide to
+  tunnels that lead on, not to dead ends; moths round crystals.
+- CaveMaker.guide_points(): where a tunnel crosses a big cave's wall and, following the tunnel pieces (an end-point
+  map, rounded to 0.5 m), reaches another cave (84 in the test world, 0.2 s); world.gd sends the 16 nearest to
+  terrain.gdshader; veins = round those, under bridges, rare patches (no more whole first cave).
+- Layout 13: BRIDGE_AIR 4.5 m under every bridge; on_bridge(): decorations skip bridge tops (all layouts).
+- Swarms: SHARE 0.75, first cave 3, motes 0.016 m, head flies 4 m+ up, fade out within 5 m and re-gather 10-15 m
+  away further along their loop. Moths: crystals only (none near: no moths).
+- **Mistake:** my previous commit carried the other session's 4 outpost lines in cave_maker.gd, which use
+  RuinOutpost, not online yet: the online copy couldn't load. Removed again at once (111edd4); the other session
+  had closed, so its outpost lines (and ruin_outpost.gd, test_keep_clear size 2) wait in the working folder for
+  whoever commits the outpost. Now I filter those hunks out explicitly.

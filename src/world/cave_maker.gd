@@ -20,7 +20,7 @@ extends RefCounted
 ##   1 = the first caves: 400 m areas (Mossy x -200…200, Jungle x 220…620), squashed balls and tubes.
 ##   2 = real-shaped caves: 800 m areas (Mossy x -400…400, Jungle x 420…1220), about 4x the rooms,
 ##       passages and halls shaped the way water shapes real caves (see "layout 2" below).
-const LAYOUT_LATEST := 12
+const LAYOUT_LATEST := 13
 ## What brand-new worlds get. Layout 2: the real-shaped caves (F211 step 1, OK'd by the owner Nov 17). Layout 3: the
 ## same plus tall/wide/joined caverns and cliff exits with ledge paths (F230, F231). Old saves keep the layout they were
 ## made with; robots can try older caves with "-- layout=1" or "-- layout=2". Layout 4: the same plus a huge first
@@ -36,7 +36,9 @@ const LAYOUT_LATEST := 12
 ## starting area").
 ## Layout 12: the first cave itself always gets a bridge (owner, Nov 18: "make sure the first cave always has some kind
 ## of a bridge"): if the usual tries fail, a patient second search there.
-const LAYOUT_DEFAULT := 12
+## Layout 13: every bridge has at least BRIDGE_AIR of air under it (owner, Nov 18: "the bridge should not be so close
+## to the ground").
+const LAYOUT_DEFAULT := 13
 static var layout := LAYOUT_DEFAULT
 
 
@@ -512,6 +514,8 @@ func _plan_bridges_v11() -> void:
 		var w := BRIDGE_W if room.big else 2.6
 		var t := BRIDGE_T if room.big else 2.0
 		var h := fl + maxf(6.5 if start_room else 4.0, tall * 0.5)
+		if made_layout >= 13:
+			h = maxf(h, fl + BRIDGE_AIR + t)
 		var mouth := -1
 		for i in segments.size():  # a tunnel coming in high up: the first bridge starts at its floor
 			var sg: Dictionary = segments[i]
@@ -572,7 +576,7 @@ func _over_tower_ground(a: Vector3, b: Vector3, bottom: float, w: float) -> bool
 ## Layout 12: the first cave's patient search: every height from 4 m up, 24 directions, a slightly smaller gap over
 ## tunnel tops; still clear of the tower, ramps, ledges and places. Returns the bridge's direction (ZERO = none).
 func _first_cave_bridge(c: Vector3, r: Vector3, fl: float, tall: float, w: float, t: float) -> Vector3:
-	var hh := 4.0
+	var hh := (BRIDGE_AIR + t) if made_layout >= 13 else 4.0
 	while hh <= tall - 3.0:
 		for k in 24:
 			var dk := Vector3(1, 0, 0).rotated(Vector3.UP, k * PI / 24.0)
@@ -590,12 +594,89 @@ func _first_cave_bridge(c: Vector3, r: Vector3, fl: float, tall: float, w: float
 
 
 ## Room to walk on top (2.2 m of air above it) and air under it, at a quarter, half and three quarters of the way.
+const BRIDGE_AIR := 4.5  ## layout 13: metres of air between a bridge's underside and the floor
+
+
 func _bridge_has_room(a: Vector3, b: Vector3, t: float) -> bool:
-	for f in [0.25, 0.5, 0.75]:
+	for f in ([0.2, 0.35, 0.5, 0.65, 0.8] if made_layout >= 13 else [0.25, 0.5, 0.75]):
 		var p := a.lerp(b, f)
 		if sdf_at(p + Vector3.UP * 2.2) < 0.3 or sdf_at(p - Vector3.UP * (t + 1.2)) < 0.3:
 			return false
+		if made_layout >= 13 and sdf_at(p - Vector3.UP * (t + BRIDGE_AIR)) < 0.3:
+			return false  # too close to the floor here
 	return true
+
+
+## Where the glowing veins gather (owner, Nov 18: "they appear where there are entrances to other caves... helping the
+## player find where to go next; not at dead ends"): the points where a tunnel leaves a big cave and, following the
+## tunnel pieces on, really reaches another cave. Worked out once (the same on every computer).
+var _guides: PackedVector3Array
+var _guides_done := false
+
+
+func guide_points() -> PackedVector3Array:
+	if _guides_done:
+		return _guides
+	_guides_done = true
+	_guides = PackedVector3Array()
+	var ends := {}  # a tunnel piece's end (rounded to 0.5 m) -> the pieces that touch it
+	for i in segments.size():
+		for e in [segments[i].a, segments[i].b]:
+			var k := Vector3i(((e as Vector3) * 2.0).round())
+			if not ends.has(k):
+				ends[k] = []
+			ends[k].append(i)
+	for ri in rooms.size():
+		var room: Dictionary = rooms[ri]
+		if not room.big or room.get("sealed", false):
+			continue
+		var c: Vector3 = room.center
+		var r: Vector3 = room.radii
+		for i in segments.size():
+			var sg: Dictionary = segments[i]
+			var ra := _rel(sg.a, c, r)
+			var rb := _rel(sg.b, c, r)
+			if (ra < 1.0) == (rb < 1.0):
+				continue  # not crossing this cave's wall
+			var inside: Vector3 = sg.a if ra < 1.0 else sg.b
+			var outside: Vector3 = sg.b if ra < 1.0 else sg.a
+			var t := (1.0 - minf(ra, rb)) / maxf(absf(rb - ra), 0.001)
+			var mouth := inside.lerp(outside, clampf(t, 0.0, 1.0))
+			if _leads_on(i, outside, ri, ends):
+				_guides.append(mouth)
+	return _guides
+
+
+func _rel(p: Vector3, c: Vector3, r: Vector3) -> float:
+	return Vector2((p.x - c.x) / r.x, (p.z - c.z) / r.z).length()
+
+
+## Following the tunnel pieces on from `start`, do we reach a cave other than `from_room` (before running out)?
+func _leads_on(first: int, start: Vector3, from_room: int, ends: Dictionary) -> bool:
+	var seen := {first: true}
+	var todo: Array[Vector3] = [start]
+	var steps := 0
+	while not todo.is_empty() and steps < 400:
+		steps += 1
+		var p: Vector3 = todo.pop_back()
+		for ri in rooms.size():
+			if ri != from_room and _rel(p, rooms[ri].center, rooms[ri].radii) < 1.0 and absf(p.y - rooms[ri].center.y) < rooms[ri].radii.y * 1.3:
+				return true
+		for j in ends.get(Vector3i((p * 2.0).round()), []):
+			if seen.has(j):
+				continue
+			seen[j] = true
+			var sg: Dictionary = segments[j]
+			todo.append(sg.b if (sg.a as Vector3).distance_to(p) < 0.6 else sg.a)
+	return false
+
+
+## Is p on top of a rock bridge (or within `margin` of its top)? Nothing is placed there (owner, Nov 18: "a lot of
+## things on the bridge, some of them floating").
+func on_bridge(p: Vector3, margin := 0.8) -> bool:
+	if _bridges.is_empty():
+		return false
+	return _bridges_min(p) < margin
 
 
 ## Would a bridge from a to b cut through a ramp, a ledge path, a column or a place?

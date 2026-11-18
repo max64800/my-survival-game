@@ -30,6 +30,8 @@ func test_old_caves_unchanged() -> void:
 	CaveMaker.use_layout(6)  # worlds made with the huge cavern and its columns keep theirs too
 	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5332 pois=162 r0=(-83.95856, -20.99115, -44.3989) sum=-9894.0944", "seed 42, layout 6")
 	check_eq(_fingerprint(CaveMaker.new(7)), "rooms=197 segs=5554 pois=163 r0=(-15.06847, -20.1193, 88.08862) sum=-8559.8592", "seed 7, layout 6")
+	CaveMaker.use_layout(12)  # worlds made before bridges kept 4.5 m off the floor keep theirs
+	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5256 pois=161 r0=(-83.95856, -24.81935, -44.3989) sum=-10044.4143", "seed 42, layout 12")
 	CaveMaker.use_layout(11)  # worlds made before the first cave always got a bridge keep theirs
 	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5256 pois=161 r0=(-83.95856, -24.81935, -44.3989) sum=-10044.4143", "seed 42, layout 11")
 	CaveMaker.use_layout(10)  # worlds made before the starting cave's bridge keep theirs
@@ -109,6 +111,9 @@ func test_rock_bridges() -> void:
 			var mid: Vector3 = (br.a as Vector3).lerp(br.b, 0.5)
 			check(c.sdf_at(mid - Vector3.UP * 0.8) < 0.0, "seed %d: the bridge is rock in the middle" % sd)
 			check(c.sdf_at(mid + Vector3.UP * 1.6) > 0.0, "seed %d: room for a dwarf on top" % sd)
+			if c.made_layout >= 13:
+				var t: float = br.t
+				check(c.sdf_at(mid - Vector3.UP * (t + CaveMaker.BRIDGE_AIR - 0.3)) > 0.0, "seed %d: 4.5 m of air under the bridge" % sd)
 	check(total >= 15, "lots of tall caverns have a bridge (%d in 3 worlds)" % total)
 	CaveMaker.use_layout(was)
 

@@ -275,10 +275,10 @@ static func plan(maker: CaveMaker, spots: Array[Dictionary]) -> Array[Dictionary
 			out.append({kind = kind, xform = Transform3D(basis * shape, at - up * sink),
 				color = _tint(kind, tint_roll, CaveMaker.biome_at(at), life), custom = Color(_fuzz(kind, src.type, life), life, 0, 0)})
 	_plan_everywhere(maker, rock, taken, out)
-	if not maker.reserved.is_empty():  # nothing grows on a built thing's ground (owner's placement rule)
+	if not maker.reserved.is_empty() or not maker._bridges.is_empty():  # nothing on built ground or bridge tops
 		var kept: Array[Dictionary] = []
 		for it in out:
-			if not maker.is_reserved((it.xform as Transform3D).origin, 0.3):
+			if not maker.is_reserved((it.xform as Transform3D).origin, 0.3) and not maker.on_bridge((it.xform as Transform3D).origin):
 				kept.append(it)
 		out = kept
 	return out

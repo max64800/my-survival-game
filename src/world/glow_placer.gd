@@ -95,7 +95,7 @@ static func _place(maker: CaveMaker) -> Array[Dictionary]:
 	_thin_crystals_under_stars(maker, spots)
 	_add_wood_everywhere(maker, spots)
 	for s in spots:
-		if maker.is_reserved(s.pos, 0.5):
+		if maker.is_reserved(s.pos, 0.5) or maker.on_bridge(s.pos):  # (built ground; bridge tops: owner Nov 18)
 			s.hidden = true  # on a built thing's ground (the placement rule); kept in the list so ids stay the same
 	for i in spots.size():
 		spots[i].id = i
