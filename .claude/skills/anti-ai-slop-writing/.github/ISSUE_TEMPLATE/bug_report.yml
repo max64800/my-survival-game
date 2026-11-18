@@ -1,0 +1,45 @@
+name: Bug report
+description: The detector flagged good writing, missed something, or crashed
+title: '[bug] '
+labels: ['bug']
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What happened
+      options:
+        - False positive – it flagged ordinary writing
+        - False negative – it missed a pattern it should catch
+        - Crash or wrong output
+        - The skill itself misbehaved
+    validations:
+      required: true
+
+  - type: textarea
+    id: input
+    attributes:
+      label: The text
+      description: The smallest sample that reproduces it. Wrap it in a code fence.
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: What the detector said
+      description: Output of `aislop <file>`, or the API result
+      render: shell
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version and Node
+      placeholder: '2.4.0, node 22.4.0'

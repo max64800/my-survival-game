@@ -20,3 +20,13 @@ assets/models/**/*.jpg
 assets/models/**/*.jpg.import
 # The "after" models in the journey are the same files as assets/models; keep only their preview pictures
 journey/3d/v2_hand_built/**/*.glb
+
+# Video studio (video/README.md): footage and builds stay out of git
+video/raw/
+video/work/
+video/out/
+video/editor/.venv*/
+video/editor/models/
+video/editor/motion/node_modules/
+video/editor/motion/public*/
+video/editor/motion/out/

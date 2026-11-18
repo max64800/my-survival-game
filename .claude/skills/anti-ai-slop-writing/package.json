@@ -1,0 +1,51 @@
+{
+  "name": "anti-ai-slop-writing",
+  "version": "3.0.0",
+  "description": "A cross-agent skill for natural English, Russian and Ukrainian prose, plus a zero-dependency detector for generic writing patterns",
+  "type": "module",
+  "license": "MIT",
+  "author": "Dmitrii Voitenko",
+  "homepage": "https://github.com/GitVoytenko/anti-ai-slop-writing#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GitVoytenko/anti-ai-slop-writing.git"
+  },
+  "bugs": {
+    "url": "https://github.com/GitVoytenko/anti-ai-slop-writing/issues"
+  },
+  "keywords": [
+    "ai-writing",
+    "claude",
+    "claude-code",
+    "claude-skill",
+    "codex",
+    "agent-skills",
+    "writing",
+    "linter",
+    "russian",
+    "ukrainian"
+  ],
+  "bin": {
+    "aislop": "detector/cli.js"
+  },
+  "exports": {
+    ".": "./detector/index.js",
+    "./detector": "./detector/index.js",
+    "./skill": "./SKILL.md"
+  },
+  "files": [
+    "SKILL.md",
+    "references/",
+    "detector/"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test",
+    "lint:skill": "node scripts/validate-skill.js",
+    "self-scan": "node scripts/self-scan.js",
+    "check": "npm test && npm run lint:skill && node scripts/self-scan.js --check",
+    "stats": "node scripts/stats.js"
+  }
+}

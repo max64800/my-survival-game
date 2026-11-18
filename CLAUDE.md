@@ -29,6 +29,9 @@ Code layout, recorder details, how to run robots: `docs/CLAUDE-REFERENCE.md` (re
 - Use the `godot` MCP to run the game and read errors; use GodotPrompter skills for Godot patterns.
 - **Every game run Claude starts is muted:** `--audio-driver Dummy` before `--path` (the owner is often using the PC).
 
+## Videos (Shorts about the game)
+- Editing the dwarf Shorts: `video/README.md` (pipeline, owner's video rules in `video/rules/`, scripts in `video/scripts/`).
+
 ## Feedback and play sessions
 - **Start of a chat on the PC:** only count the session folders in `Videos\Dwarf Game Recordings\` without `reviewed.txt`
   and tell the owner the number in one line. Read reports and snapshots only when the owner says "check my last session".

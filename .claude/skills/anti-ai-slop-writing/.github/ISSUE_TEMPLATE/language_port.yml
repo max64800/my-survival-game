@@ -1,0 +1,48 @@
+name: Language port
+description: Propose or claim a new language for the skill
+title: '[lang] '
+labels: ['language']
+body:
+  - type: input
+    id: language
+    attributes:
+      label: Language
+      placeholder: German (de)
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: fluency
+    attributes:
+      label: Fluency
+      options:
+        - label: I write this language at native or near-native level
+          required: true
+
+  - type: textarea
+    id: rules
+    attributes:
+      label: What the general rules get wrong here
+      description: >-
+        Every language needs at least one rule that overrides SKILL.md. English rations the em
+        dash; Russian and Ukrainian cannot, because тире is required grammar. What is the
+        equivalent in yours?
+    validations:
+      required: true
+
+  - type: textarea
+    id: exemplar
+    attributes:
+      label: Public-domain human exemplar
+      description: A real text whose rhythm a model can compare itself against. Author, year, and why it works.
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: What you plan to submit
+      options:
+        - label: rules.md
+        - label: banned.md
+        - label: patterns.md
+        - label: Test fixtures (slop + human)
+        - label: Detector support (tokenizer, structural tables)

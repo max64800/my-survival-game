@@ -1,0 +1,8 @@
+version: 2
+updates:
+  # The package has no runtime or dev dependencies; only the workflow actions
+  # need watching.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

@@ -1,0 +1,50 @@
+name: Pattern proposal
+description: A word, phrase or opener that gives a model away
+title: '[pattern] '
+labels: ['pattern']
+body:
+  - type: dropdown
+    id: language
+    attributes:
+      label: Language
+      options: [English, Russian, Ukrainian, Other]
+    validations:
+      required: true
+
+  - type: input
+    id: pattern
+    attributes:
+      label: The pattern
+      description: The exact word or phrase, as it would appear in banned.md
+      placeholder: 'В современном мире...'
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      options: [Vocabulary, Phrase, Opener, Structural pattern]
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Where you saw it
+      description: A sample of generated text, or what makes this a tell rather than ordinary writing
+    validations:
+      required: true
+
+  - type: input
+    id: condition
+    attributes:
+      label: Condition, if any
+      description: If the word is only banned in one sense, say which. It will ship at low severity.
+      placeholder: 'figurative only / как филлер / outside legal documents'
+
+  - type: textarea
+    id: replacement
+    attributes:
+      label: What to write instead
+      description: A concrete alternative, not a synonym of the banned word. If the fix is "rewrite the thought", say so.

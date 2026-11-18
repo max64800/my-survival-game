@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: How the detector works
+    url: https://github.com/GitVoytenko/anti-ai-slop-writing/blob/main/docs/detector.md
+    about: Every rule, its threshold, and what it deliberately cannot check
+  - name: Adding a language
+    url: https://github.com/GitVoytenko/anti-ai-slop-writing/blob/main/docs/adding-a-language.md
+    about: The five files a new language needs

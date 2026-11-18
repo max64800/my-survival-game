@@ -1,0 +1,45 @@
+# Video rules (copied from the owner's video studio, 2026-11-18)
+
+One rule per file. Open the ones that fit the task. "HARD" = never break.
+
+- [Refilm, don't rescue](refilm-dont-rescue.md) — mic dropouts, muffled audio or no clean take → tell Max to refilm, don't fix in edit
+- [Cover prompt + caption after every edit](after-edit-cover-prompt-and-caption.md) — exactly 2 items, in the SAME message as the finished video link: GPT cover prompt + ONE caption <100 chars for all 3
+- [Animation preferences](animation-ambition.md) — every sentence animated; flat clip-art stickers not rotating 3D; behind-head words; full-screen kinetic cards for punchlines; no copyrighted characters
+- [Editing taste profile](editing-taste-profile.md) — what Max loves from 18 reference TikToks (3D kinetic type, layout switching, UI cards, counters, transitions); rated 2026-10-05: gradual soft split, constant drift, slam hooks, no AI slop; loves @calsaistudio quiet-luxury minimal style
+- [Platform safe zones](platform-safe-zones.md) — no captions in top 250, right 180 px; captions now sit LOWER on the chest (bottom ≈ y 1620-1640, Max 2026-10-14)
+- [Render to the end](no-render-without-asking.md) — NEW 2026-10-22: run every new video through to the FULL render without stopping to ask; still never re-render posted videos for notes
+- [10 hooks with every script](ten-hooks-every-script.md) — every script/rewrite comes with 10 hook options, top 3 marked
+- [Motion flow rules](motion-flow-rules.md) — animations must hand off/morph into each other (never pop); through-line object, colour-block scenes, bookend logo
+- [Keep morph chain + zoom punches](keep-morph-and-zoom-punches.md) — every edit: one morphing graphic chain (kit4 Morph) + zoom in/out punches on key words inside sentences
+- [Reference library 2026-10-10](reference-library-2026-10-10.md) — karan.mp4_ caption spec (serif + script, zig-zag, blur-in, dim-out, behind head), bg-swap moments, 10 transition amps; change ~20% per video
+- [QA every render](qa-every-render.md) — SUPERSEDED 2026-10-13: render once, hand it to Max to review himself; no post-render QA/re-render unless he asks
+- [Culture video feedback](culture-video-feedback.md) — HARD RULES: big readable highlighted captions (levels); crisp flat shapes on a content-fitted plate (not full-width, no blur/glow); no bg-swap; no repeated grey-box+emoji formula (emoji/stickers fine as one tool among several)
+- [Shapes are one tool](shapes-are-one-tool.md) — shape storytelling liked but mix with emojis/clip-art/stickers; fitted plate sized to content; liquid "water" morphs between shapes
+- [Edit hard rules](edit-hard-rules.md) — sentence-level tight cuts (no breaths/dead air/bad takes), side angle brief, b-roll never slowed + no camera flashes between, graphics always on, numbers count up & never overflow; full repeat + false-start scan before delivery; camera card filled, no jump at cuts
+- [Vibe coders edit (kit7)](vibe-coders-edit-kit7.md) — 013 IMG_3882: face-fitted morphing plate, jump hand-offs, levelsBottom captions, stills.mjs QA
+- [Motion library 2026-10-12](motion-library-2026-10-12.md) — 100 motion demos (m1-m5) + 20 caption styles for Max to score; code, renders, gallery, tools
+- [Edit research 2026-10-12](edit-research-2026-10-12.md) — 26 "Claude edits" TikToks: Kelssie caption system, audio levels/music-drop advice, hooks, tools
+- [Motion taste rules](motion-taste-rules.md) — HARD rules from Max scoring 110 demos: explain > decorate, no "MS Paint" object art, no collisions/blending, whole-head bubbles, once-per-video caps, fix list, varied SFX
+- [Jenny Hoyos formula](jenny-hoyos-formula.md) — viral structure Max wants: problem + "so I'm going to…" + win condition in 3 s, foreshadow/FOMO, end right after the payoff
+- [Caption style rotation](caption-style-rotation.md) — never reuse the last 2-3 videos' caption style; chat bubbles + orange pills ARCHIVED 2026-10-16; 019 = levels
+- [Gold standard = 016](gold-standard-016.md) — website-ego edit (IMG_3912 v2) is Max's reference short; start new shorts from work/IMG_3912
+- [Talking-head rulebook](talking-head-rulebook.md) — 55 communication rules + fill-in template in video-scripts/talking-head-rulebook.md; apply to every script
+- [Graphics layout QA](graphics-layout-qa.md) — HARD: ≥24 px gaps, no centred changing-width rows (jitter), colour + picture on every card, real YT/TT/IG logos, full-size still QA
+- [Justyn editorial reference](justyn-editorial-reference.md) — Max's favourite reference edit (2026-10-16); full restyle REJECTED 2026-10-17, use only as the 20% new layer
+- [Script self-review](script-self-review.md) — every script: draft, audit line by line against ALL rules (rulebook, Jenny formula, length, payoff, ending), rewrite, then show final + audit table + 10 hooks
+- [Reference batch 7 (2026-10-17)](reference-batch-7-2026-10-17.md) — 20 TikToks: cards act out verbs, fill-up boards, proof first, self-rewriting headline, desk skits, crop switching, dead-frame QA
+- [Own style 80/20](own-style-80-20.md) — HARD: 80% his kit7 morphing-plate style + 20% new; big words partly behind head now and then; no cream panel, bar wipes or caption-repeating plates
+- [Bold plate (kit10)](bold-plate-kit10.md) — HARD: default plate = bright colour blocks + colour sweeps + slide hand-offs, Anton/Inter 900, NO emojis, outlined Anton behind-head words, fixed layouts
+- [Gradient glass style (kit11)](gradient-glass-style.md) — 2026-10-21 NEW DEFAULT replacing kit10: Stripe-like gradient app cards, colour theory from each video, fluid morphs, Inter, UI mockups, smooth push-ins, same SFX
+- [Person cut-out encoding](person-cutout-encoding.md) — constant 30 fps cut + VP9 -auto-alt-ref 0 or ghost heads; slim PUBLIC_DIR so bundles don't fill the disk
+- [Quality upgrade research 2026-10-22](quality-upgrade-research-2026-10-22.md) — 3 flat weeks → proof-first frame 1, no backstory before 8 s, quiet-edit A/B vs kit11, TikTok/IG account fixes; report in reports/
+- [Reference batch 10 (2026-10-25)](reference-batch-10-2026-10-25.md) — USE on next edits: result-on-top/face-below frame 1, keyword-comment CTA UI, fill-up lists + stopwatch, tonal SFX in key + 0.5 s silence drop, one story object, cut unless the idea changes, before/after, Trial Reels, 808K identity hook, new kit11 UI cards
+- [5th grade scripts](script-5th-grade-rule.md) — HARD 2026-10-26: every script at 5th grade reading level, measured and reported in the audit
+- [Max paraphrases scripts](max-paraphrases-scripts.md) — 2026-11-01: he says most of the script in his own words; edit from the transcript, match on-screen numbers to what he says ("over 3,000" → 3,000+)
+- [Cut timing HARD rules](cut-timing-hard-rules.md) — HARD 2026-11-01: no dead air at start or between lines (≤0.12 s), never clip word endings; find line ends from the audio + wav2vec check, not whisper timestamps
+- [Script + plan skills checklist](script-and-plan-skills-checklist.md) — HARD 2026-11-05: every script/plan RUNS humanizer, stop-slop, storytelling-hooks, b-roll-shot-list + reads rulebook, doctor, Jenny, audience check, Nakheel + long-form rules; audit only claims what ran
+- [Fact-check every statement](fact-check-every-statement.md) — HARD 2026-11-05: every spoken claim verified (DLD recomputed from raw, procedure types, independent source check), verdict table, re-check after rewrites
+- [Keep raw until Shorts](keep-raw-until-shorts.md) — HARD 7 Nov: never delete long-form raws before their Shorts are cut; deletions go to Trash, not rm
+- [Scheduling shorts on TikTok + IG](schedule-posts-nov9-15.md) — Claude schedules TikTok (Studio) + Instagram (instagram.com, NOT Business Suite) itself via chrome-devtools --autoConnect; copy files into out/ first; 035-041 done Nov 9-15 18:00
+- [Skin tone grade](skin-tone-grade.md) — 2026-11-10: Max looked too pale; cut.py GRADE now warm (5200K, sat 1.12, gamma 0.93), never desaturate skin reds
+- [Dwarf game video rules](dwarf-game-video-rules.md) — 2026-11-17: game/journey/mistakes are the hook, AI only one line; survival-game passion (Valheim, Grounded, 7 Days to Die, Conan Exiles); Deep Rise sometimes
