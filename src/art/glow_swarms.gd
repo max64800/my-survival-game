@@ -38,17 +38,13 @@ func build(maker: CaveMaker, trunks: Array = []) -> void:
 
 func _make(maker: CaveMaker, room: Dictionary, rng: RandomNumberGenerator, mesh: Mesh) -> Dictionary:
 	var n := 650 if room == maker.rooms[0] else rng.randi_range(300, 450)
-	var mat := StandardMaterial3D.new()
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.vertex_color_use_as_albedo = true
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	var tint: Color = TINTS[rng.randi_range(0, TINTS.size() - 1)]
-	mat.emission_enabled = true
-	mat.emission = tint
-	mat.emission_energy_multiplier = 3.0
+	var mat := ShaderMaterial.new()  # the graphics card places every firefly (owner, Nov 18: the speed-up run)
+	mat.shader = preload("res://src/art/firefly.gdshader")
+	mat.set_shader_parameter("tint", Color(tint.r * 1.6, tint.g * 1.6, tint.b * 1.6))
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
-	mm.use_colors = true
+	mm.use_custom_data = true
 	mm.mesh = mesh
 	mm.instance_count = n
 	var mmi := MultiMeshInstance3D.new()
@@ -58,8 +54,9 @@ func _make(maker: CaveMaker, room: Dictionary, rng: RandomNumberGenerator, mesh:
 	add_child(mmi)
 	var c: Vector3 = room.center
 	var r: Vector3 = room.radii
+	mmi.custom_aabb = AABB(c - r * 1.7, r * 3.4)  # (every firefly is moved on the card, so the box is the whole cave)
 	var fl := c.y - r.y * 0.55
-	var sw := {mmi = mmi, tint = tint, c = c, r = r, fl = fl, tall = r.y * 1.55,
+	var sw := {mmi = mmi, mat = mat, tint = tint, c = c, r = r, fl = fl, tall = r.y * 1.55,
 		f = Vector3(rng.randf_range(0.05, 0.09), rng.randf_range(0.07, 0.12), rng.randf_range(0.05, 0.09)),  # loop speeds
 		ph = Vector3(rng.randf() * TAU, rng.randf() * TAU, rng.randf() * TAU), head = Vector3.ZERO, prev = Vector3.ZERO,
 		along = PackedFloat32Array(), off = PackedVector2Array(), lag = PackedFloat32Array(), tw = PackedFloat32Array(),
@@ -156,46 +153,59 @@ func _process(delta: float) -> void:
 		sw.prev = head
 		sw.head = head
 		var speed := vel.length()
-		var fwd := vel.normalized() if speed > 0.01 else Vector3.FORWARD
-		var side := fwd.cross(Vector3.UP).normalized() if absf(fwd.y) < 0.95 else Vector3.RIGHT
-		var up := side.cross(fwd)
 		var length := 0.8 + speed * 1.4  # stretches out when it moves faster: a droplet
 		var radius := 0.45  # (owner, Nov 18: "a lot tighter together")
-		var pos: PackedVector3Array = sw.pos
-		var mm: MultiMesh = (sw.mmi as MultiMeshInstance3D).multimesh
-		var buf: PackedFloat32Array = sw.get("buf", PackedFloat32Array())
-		if buf.size() != pos.size() * 16:
-			buf.resize(pos.size() * 16)
-		var tr: float = sw.tint.r
-		var tg: float = sw.tint.g
-		var tb: float = sw.tint.b
-		for i in pos.size():
-			var s: float = sw.along[i]
-			var o: Vector2 = sw.off[i]
-			var w: float = sw.tw[i]
-			var spread := radius * (1.0 - 0.75 * s)  # wide at the front, thin at the tail
-			var target := head - fwd * s * length + (side * o.x + up * o.y) * spread \
-				+ Vector3(sin(_time * 1.3 + w), sin(_time * 1.7 + w * 1.3), cos(_time * 1.1 + w)) * 0.12
-			pos[i] = pos[i].lerp(target, minf(1.0, delta * float(sw.lag[i])))
-			if not _trunks.is_empty():
-				pos[i] = _round_trunks(pos[i], 0.3)
-			# a firefly's blink: mostly dim, then a short bright flash, each on its own beat (stars just twinkle)
-			var beat := fposmod(_time * (0.35 + 0.25 * fposmod(w, 1.0)) + w, 1.0)
-			var glow := 0.15 + 0.85 * clampf(1.0 - absf(beat - 0.5) * 6.0, 0.0, 1.0)
-			var sc := 0.7 + 0.5 * glow
-			var q := pos[i]
-			var bo := i * 16  # one firefly: its 3x4 transform, then its colour, all sent in one go (650 in a pack)
-			buf[bo] = sc; buf[bo + 1] = 0.0; buf[bo + 2] = 0.0; buf[bo + 3] = q.x
-			buf[bo + 4] = 0.0; buf[bo + 5] = sc; buf[bo + 6] = 0.0; buf[bo + 7] = q.y
-			buf[bo + 8] = 0.0; buf[bo + 9] = 0.0; buf[bo + 10] = sc; buf[bo + 11] = q.z
-			buf[bo + 12] = tr; buf[bo + 13] = tg; buf[bo + 14] = tb; buf[bo + 15] = (0.5 + 0.5 * glow) * fade
-		mm.buffer = buf
-		sw.buf = buf
-		sw.pos = pos
+		# The pack follows the path its head really flew (owner, Nov 18: "when the swarm turns, it turns the entirety of
+		# it, not in a wide arc"): the head leaves a trail and each firefly keeps its place ALONG that trail, so a turn
+		# sweeps through the pack like a snake's body instead of the whole pack swinging round at once.
+		var trail: PackedVector3Array = sw.get("trail", PackedVector3Array())
+		if trail.is_empty() or trail[0].distance_to(head) > 3.0:
+			trail = PackedVector3Array([head])
+		elif trail[0].distance_to(head) > 0.06:
+			trail.insert(0, head)
+		var total := 0.0
+		var cut := trail.size()
+		for k in range(1, trail.size()):
+			total += trail[k].distance_to(trail[k - 1])
+			if total > length + 0.5:
+				cut = k + 1
+				break
+		if cut < trail.size():
+			trail.resize(cut)
+		sw.trail = trail
+		# 17 points along the trail (0 = the head, 16 = the tail end), each with its own forward direction
+		var back := -(vel.normalized() if speed > 0.01 else Vector3.FORWARD)
+		var pts := PackedVector3Array()
+		var fw := PackedVector3Array()
+		var k2 := 1
+		var walked := 0.0
+		for b in 17:
+			var want := length * b / 16.0
+			while k2 < trail.size() and walked + trail[k2].distance_to(trail[k2 - 1]) < want:
+				walked += trail[k2].distance_to(trail[k2 - 1])
+				k2 += 1
+			if k2 >= trail.size():
+				var last := trail[trail.size() - 1]
+				var db := (last - trail[trail.size() - 2]).normalized() if trail.size() > 1 else back
+				if db.length() < 0.1:
+					db = back
+				pts.append(last + db * (want - walked))
+				fw.append(-db)
+			else:
+				var seg := trail[k2] - trail[k2 - 1]
+				var f := (want - walked) / maxf(seg.length(), 0.0001)
+				pts.append(trail[k2 - 1] + seg * f)
+				fw.append(-seg.normalized())
+		var fwd: Vector3 = fw[0]
+		var sm: ShaderMaterial = sw.mat
+		sm.set_shader_parameter("pts", pts)
+		sm.set_shader_parameter("fws", fw)
+		sm.set_shader_parameter("fade", fade)
+		sm.set_shader_parameter("radius", radius)
 
 
 func _place(sw: Dictionary) -> void:
 	var mm: MultiMesh = (sw.mmi as MultiMeshInstance3D).multimesh
 	for i in mm.instance_count:
-		mm.set_instance_transform(i, Transform3D(Basis(), sw.pos[i]))
-		mm.set_instance_color(i, sw.tint)
+		mm.set_instance_transform(i, Transform3D())
+		mm.set_instance_custom_data(i, Color(sw.along[i], sw.off[i].x, sw.off[i].y, sw.tw[i]))

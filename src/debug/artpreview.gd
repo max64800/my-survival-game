@@ -37,6 +37,10 @@ func _run() -> void:
 		await _procbench()
 		get_tree().quit()
 		return
+	if "perfbench" in OS.get_cmdline_user_args():
+		await _perfbench()
+		get_tree().quit()
+		return
 	if "treestages" in OS.get_cmdline_user_args():
 		await _treestages()
 		get_tree().quit()
@@ -500,3 +504,63 @@ func _treestages() -> void:
 		await _wait(1.0)
 		await RenderingServer.frame_post_draw
 		_main.take_screenshot(_shots.path_join("tree_%s.png" % stage))
+
+
+## The speed-up run (owner, Nov 18: "optimize the hell out of it"): no frame cap, the player's own view in the first
+## cave, then every big part switched off for a moment: how much faster does a frame get (drawing and game code)?
+func _perfbench() -> void:
+	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+	Engine.max_fps = 0
+	var vp := get_viewport().get_viewport_rid()
+	RenderingServer.viewport_set_measure_render_time(vp, true)
+	await _wait(20.0)
+	var parts: Array[Node] = []
+	for c in _main.get_children():
+		if c != self:
+			parts.append(c)
+	for c in _main.world.get_children():
+		parts.append(c)
+	for view in 2:
+		if view == 1:
+			_main.dwarf._yaw += PI * 0.6
+			await _wait(3.0)
+		var base := await _frame_cost()
+		print("PERF view %d: frame %.2f ms (cpu %.2f, gpu %.2f), %d draw calls, %dk triangles, %d nodes" % [view, base.x, base.y, base.z,
+			Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME), Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME) / 1000,
+			Performance.get_monitor(Performance.OBJECT_NODE_COUNT)])
+		for c in parts:
+			var n3 := c as Node3D
+			var cv := c as CanvasLayer
+			var was_vis := n3.visible if n3 else (cv.visible if cv else true)
+			var was_mode := c.process_mode
+			if n3:
+				n3.visible = false
+			elif cv:
+				cv.visible = false
+			c.process_mode = Node.PROCESS_MODE_DISABLED
+			var off := await _frame_cost()
+			if n3:
+				n3.visible = was_vis
+			elif cv:
+				cv.visible = was_vis
+			c.process_mode = was_mode
+			var on := await _frame_cost()
+			var saves := (base + on) * 0.5 - off
+			if saves.x > 0.25 or saves.z > 0.25:
+				print("PERF   %s: frame -%.2f ms (gpu -%.2f)" % [c.name, saves.x, saves.z])
+
+
+func _frame_cost() -> Vector3:
+	await _wait(0.3)
+	var vp := get_viewport().get_viewport_rid()
+	var n := 60
+	var t := 0.0
+	var cpu := 0.0
+	var gpu := 0.0
+	for k in n:
+		var u := Time.get_ticks_usec()
+		await get_tree().process_frame
+		t += (Time.get_ticks_usec() - u) / 1000.0
+		cpu += RenderingServer.viewport_get_measured_render_time_cpu(vp)
+		gpu += RenderingServer.viewport_get_measured_render_time_gpu(vp)
+	return Vector3(t / n, cpu / n, gpu / n)

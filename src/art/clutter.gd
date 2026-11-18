@@ -118,6 +118,21 @@ func _plan(maker: CaveMaker) -> Dictionary:
 			picks[k] = (picks[k] as Array).filter(func(xf: Transform3D) -> bool: return not maker.is_reserved(xf.origin, 0.3) and not maker.on_bridge(xf.origin))
 		for k in _drips:
 			_drips[k] = (_drips[k] as Array).filter(func(it: Array) -> bool: return not maker.is_reserved((it[0] as Transform3D).origin, 0.3) and not maker.on_bridge((it[0] as Transform3D).origin))
+	# Not inside a Root Tree (owner, Nov 18: "dripstone spawns in the tree and drips water inside it"): nothing within its
+	# trunk and root feet on the floor, no dripstone where its crown spreads over the ceiling.
+	var trees := RootPillars.plan(maker)
+	if not trees.is_empty():
+		var in_tree := func(p: Vector3, spread: float) -> bool:
+			for t in trees:
+				if p.y < (t.bottom as Vector3).y - 1.0 or p.y > (t.top as Vector3).y + 1.0:
+					continue
+				if Vector2(p.x - t.top.x, p.z - t.top.z).length() < float(t.width) * spread:
+					return true
+			return false
+		for k in picks:
+			picks[k] = (picks[k] as Array).filter(func(xf: Transform3D) -> bool: return not in_tree.call(xf.origin, 0.5))
+		for k in _drips:
+			_drips[k] = (_drips[k] as Array).filter(func(it: Array) -> bool: return not in_tree.call((it[0] as Transform3D).origin, 0.75))
 	return {picks = picks, rng = rng}
 
 
@@ -260,6 +275,12 @@ func _make_set(kind: String, xforms: Array) -> void:
 		var key := "%s@%s" % [kind, c]  # (_on_rock_changed walks every batch the same way)
 		_sets[key] = mmi
 		_where[key] = where
+		# onto the real rock once it's built (owner, Nov 18: floating bones and rocks)
+		GroundSnap.add_batch(mmi, {}, 0.0, func() -> void:
+			var w := PackedVector3Array()
+			for i in mm.instance_count:
+				w.append(mm.get_instance_transform(i).origin)
+			_where[key] = w)
 
 
 ## Big roots hanging from room ceilings, very different sizes, a slight tint each; 2 m kept clear above the floor.

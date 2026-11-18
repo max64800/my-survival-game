@@ -53,6 +53,8 @@ var _cells := {}  ## Vector3i -> {kind -> {mmi: MultiMeshInstance3D, where: Pack
 var _bend_mats: Array[ShaderMaterial] = []
 var _task := -1  ## the background placing job (-1 = none)
 var _planned: Array[Dictionary] = []
+## Plans worked out while the loading screen shows (main._with_loading): "seed:layout" -> plan(). Used once.
+static var prefetched := {}
 var _pending := []  ## rock changes that came in while placing: [center, radius]
 var _index := {}  ## plant id -> [cell, kind, i] (ids are the plan's order: the same on every computer)
 var _pending_breaks: Array[int] = []  ## plants broken (save, host) before the placing was done
@@ -67,6 +69,12 @@ func build(maker: CaveMaker, spots: Array[Dictionary], world: World = null, back
 		world.changed.connect(_on_rock_changed)
 	if not background:
 		_make_all(plan(maker, spots))
+		return
+	var key := "%d:%d" % [maker.seed, maker.made_layout]
+	if prefetched.has(key):  # already planned while the loading screen showed
+		var ready: Array[Dictionary] = prefetched[key]
+		prefetched.erase(key)
+		_task = WorkerThreadPool.add_task(func() -> void: _planned = ready, false, "cave life")
 		return
 	_task = WorkerThreadPool.add_task(func() -> void: _planned = plan(maker, spots), false, "cave life")
 
@@ -210,21 +218,36 @@ static func plan(maker: CaveMaker, spots: Array[Dictionary]) -> Array[Dictionary
 	var rock := Rock.new(maker)
 	for s in spots:  # nothing grows right on top of a harvestable thing
 		_take(taken, s.pos, 0.35 * float(s.get("scale", 1.0)) + 0.25)
-	for s: Dictionary in spots:  # (in id order: the same on every computer)
-		var src := _source(s)
-		if src.is_empty():
-			continue
-		var center: Vector3 = s.pos
-		var start: Vector3 = s.pos + s.normal * 0.6 + Vector3.UP * 0.25
-		if s.kind == GlowPlacer.DRIP:  # the damp patch is on the floor under the drip
-			var below := rock.march(s.pos + Vector3.DOWN * 0.7, Vector3.DOWN, 25.0)
-			if below == Vector3.INF:
+	# The slow part, feeling for the rock, doesn't depend on what was placed before (owner, Nov 18: the speed-up run):
+	# 1) where each spot's patch starts (helpers, side by side), 2) every try's dice, in the same order as always,
+	# 3) every try's hit on the rock (helpers again, each with its own rock cache), 4) the spacing checks in the old
+	# order. Exactly the same plants as doing it all in one go, a few times faster.
+	var n_spots := spots.size()
+	var begin := []
+	begin.resize(n_spots)
+	_parallel(n_spots, func(lo: int, hi: int, rk: Rock) -> void:
+		for si in range(lo, hi):
+			var s: Dictionary = spots[si]
+			if _source(s).is_empty():
 				continue
-			center = below
-			start = below + Vector3.UP * 0.8
-		if rock.at(start) <= 0.1:
+			var center: Vector3 = s.pos
+			var start: Vector3 = s.pos + s.normal * 0.6 + Vector3.UP * 0.25
+			if s.kind == GlowPlacer.DRIP:  # the damp patch is on the floor under the drip
+				var below := rk.march(s.pos + Vector3.DOWN * 0.7, Vector3.DOWN, 25.0)
+				if below == Vector3.INF:
+					continue
+				center = below
+				start = below + Vector3.UP * 0.8
+			if rk.at(start) <= 0.1:
+				continue
+			begin[si] = [center, start], rock)
+	var tries := []  # per spot: [[dir, roll, spin, size_roll, tint_roll], ...]
+	tries.resize(n_spots)
+	for si in n_spots:
+		if begin[si] == null:
 			continue
-		var clear := _clearance(s)
+		var src := _source(spots[si])
+		var list := []
 		for i in src.tries:
 			var dir := Vector3(rng.randf_range(-1, 1), rng.randf_range(-1, 1), rng.randf_range(-1, 1))
 			if i % 3 != 2:
@@ -234,13 +257,44 @@ static func plan(maker: CaveMaker, spots: Array[Dictionary]) -> Array[Dictionary
 			var spin := rng.randf() * TAU
 			var size_roll := rng.randf()
 			var tint_roll := rng.randi()
-			var hit := rock.march(start, dir, src.reach + 1.0)
-			if hit == Vector3.INF:
+			list.append([dir, roll, spin, size_roll, tint_roll])
+		tries[si] = list
+	var hits := []  # per spot, per try: [hit, normal, ledge] or null
+	hits.resize(n_spots)
+	_parallel(n_spots, func(lo: int, hi: int, rk: Rock) -> void:
+		for si in range(lo, hi):
+			if begin[si] == null:
 				continue
+			var src := _source(spots[si])
+			var res := []
+			for t: Array in tries[si]:
+				var hit := rk.march(begin[si][1], t[0], src.reach + 1.0)
+				if hit == Vector3.INF:
+					res.append(null)
+					continue
+				res.append([hit, rk.normal(hit)])
+			hits[si] = res, rock)
+	for si in n_spots:  # (in id order: the same on every computer)
+		if begin[si] == null:
+			continue
+		var s: Dictionary = spots[si]
+		var src := _source(s)
+		var center: Vector3 = begin[si][0]
+		var clear := _clearance(s)
+		for ti in (tries[si] as Array).size():
+			var t: Array = tries[si][ti]
+			var hr = hits[si][ti]
+			if hr == null:
+				continue
+			var roll: float = t[1]
+			var spin: float = t[2]
+			var size_roll: float = t[3]
+			var tint_roll: int = t[4]
+			var hit: Vector3 = hr[0]
 			var dist := hit.distance_to(center)
 			if dist > src.reach or dist < clear:
 				continue
-			var n := rock.normal(hit)
+			var n: Vector3 = hr[1]
 			var surf := "floor" if n.y >= 0.72 else ("slope" if n.y >= 0.4 else ("wall" if n.y > -0.45 else ""))
 			if surf == "":
 				continue
@@ -282,6 +336,24 @@ static func plan(maker: CaveMaker, spots: Array[Dictionary]) -> Array[Dictionary
 				kept.append(it)
 		out = kept
 	return out
+
+
+## Runs fn(lo, hi, rock) over 0..count-1 in a few helpers side by side, each with its own rock cache; the calling
+## thread does the last share itself with `rock`.
+static func _parallel(count: int, fn: Callable, rock: Rock) -> void:
+	var helpers := clampi(OS.get_processor_count() - 2, 1, 6) if count > 200 else 1
+	var threads: Array[Thread] = []
+	for h in helpers:
+		var lo := count * h / helpers
+		var hi := count * (h + 1) / helpers
+		if h == helpers - 1:
+			fn.call(lo, hi, rock)
+		else:
+			var th := Thread.new()
+			th.start(fn.bind(lo, hi, Rock.new(rock.maker)))
+			threads.append(th)
+	for th in threads:
+		th.wait_to_finish()
 
 
 ## Almost everywhere (owner, F188 said twice: "the cave still looks empty"): gravel drifts and carpets of tiny pale
@@ -569,7 +641,9 @@ func _make_set(kind: String, picks: Array) -> Dictionary:
 			if m is ShaderMaterial and not _bend_mats.has(m):
 				_bend_mats.append(m)
 	add_child(mmi)
-	return {mmi = mmi, where = where, xforms = xforms, ids = ids}
+	var set := {mmi = mmi, where = where, xforms = xforms, ids = ids}
+	GroundSnap.add_batch(mmi, set, 0.0)  # onto the real rock once it's built (owner, Nov 18: floating moss)
+	return set
 
 
 ## The model as one mesh, each part with its game material: moss gets its fuzz layers and the fuzzy shader, the

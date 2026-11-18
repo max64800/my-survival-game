@@ -31,7 +31,11 @@ func build(maker: CaveMaker, world: World, avoid: Callable = Callable()) -> void
 			if not found.is_empty():
 				mi = found[0]
 				_meshes.append(mi.mesh)
-				_mats.append(mi.get_active_material(0))
+				var mat := mi.get_active_material(0)
+				if mat is BaseMaterial3D:
+					mat = mat.duplicate()
+					(mat as BaseMaterial3D).vertex_color_use_as_albedo = true  # each tuft its own soft colour
+				_mats.append(mat)
 			inst.free()
 	if _meshes.size() != MODELS.size():
 		return
@@ -142,10 +146,12 @@ func _draw(key: Vector2i) -> void:
 			continue
 		var mm := MultiMesh.new()
 		mm.transform_format = MultiMesh.TRANSFORM_3D
+		mm.use_colors = true
 		mm.mesh = _meshes[m]
 		mm.instance_count = list.size()
 		for i in list.size():
 			mm.set_instance_transform(i, list[i])
+			mm.set_instance_color(i, colour_at((list[i] as Transform3D).origin))
 		var mmi := MultiMeshInstance3D.new()
 		mmi.multimesh = mm
 		mmi.material_override = _mats[m]
@@ -155,6 +161,21 @@ func _draw(key: Vector2i) -> void:
 		mmi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
 		add_child(mmi)
 		pt.nodes.append(mmi)
+		# onto the real rock once it's built (owner, Nov 18: "a lot of them are floating"); the patch keeps the new places
+		GroundSnap.add_batch(mmi, {xforms = list}, -0.015)
+
+
+## Soft colours in patches (owner, Nov 18: "make them a little bit different colors"): neighbours share a colour, a
+## little lighter or darker each, so the floor shows drifts of cream, tan, pale peach, cool grey and light lilac.
+const COLOURS := [Color(1.0, 1.0, 1.0), Color(1.0, 0.9, 0.74), Color(1.0, 0.84, 0.8), Color(0.84, 0.9, 1.0), Color(0.92, 0.86, 1.0)]
+
+
+static func colour_at(p: Vector3) -> Color:
+	var cell := Vector2i(floori(p.x / 3.5), floori(p.z / 3.5))
+	var h := absi(hash(cell)) % 1000
+	var c: Color = COLOURS[h % COLOURS.size()]
+	var v := 0.88 + 0.2 * float(absi(hash(Vector2i(roundi(p.x * 10.0), roundi(p.z * 10.0)))) % 100) / 100.0
+	return Color(c.r * v, c.g * v, c.b * v)
 
 
 ## Rock dug or fallen in: the tufts there go with it.

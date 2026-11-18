@@ -550,7 +550,7 @@ func test_boulder_breaks_and_comes_back() -> void:
 	await _setup(42)
 	var bo := Boulders.new()
 	auth.get_parent().add_child(bo)
-	bo.build(world.maker)
+	bo.build(world.maker, Callable(), true)
 	auth.boulders = bo
 	var r := bo.rock(0)
 	check(not r.is_empty(), "there's a boulder")
@@ -629,4 +629,44 @@ func test_root_tree_regrows_from_both_ends() -> void:
 	check(not auth.tree_regrow.has(0), "done growing")
 	auth.request_chop_pillar(1, 0)
 	check(auth.pillar_chops.get(0, 0) == 0 or rp.pillar(0).stage != "tree", "waits until nobody looks, then chops again")
+	_teardown()
+
+
+## Floor things sit on the REAL rock (owner, Nov 18: boulders, mushrooms, bones and moss floating): something planned
+## half a metre above the floor is put down onto it once the rock there is built; something over empty air is hidden.
+func test_floor_things_are_put_down_on_the_real_rock() -> void:
+	await _setup(42)
+	var snap := GroundSnap.new()
+	snap.world = world
+	auth.get_parent().add_child(snap)
+	var space := player.get_world_3d().direct_space_state
+	var p := player.global_position
+	var fl := Vector3.INF
+	for i in 600:
+		fl = GroundSnap.floor_at(space, p, 2.0, 6.0)
+		if fl != Vector3.INF and world.terrain.is_area_meshed(AABB(p - Vector3.ONE * 3, Vector3.ONE * 6)):
+			break
+		await tree.physics_frame
+	check(fl != Vector3.INF, "the rock under the player is built")
+	if fl == Vector3.INF:
+		_teardown()
+		return
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.mesh = BoxMesh.new()
+	mm.instance_count = 2
+	mm.set_instance_transform(0, Transform3D(Basis(), fl + Vector3.UP * 0.5))  # floating
+	mm.set_instance_transform(1, Transform3D(Basis(), fl + Vector3.DOWN * 5.0))  # deep in solid rock: no floor to stand on
+	var mmi := MultiMeshInstance3D.new()
+	mmi.multimesh = mm
+	auth.get_parent().add_child(mmi)
+	var list := [Transform3D(Basis(), fl + Vector3.UP * 0.5), Transform3D(Basis(), fl + Vector3.DOWN * 5.0)]
+	GroundSnap.add_batch(mmi, {xforms = list}, 0.0)
+	for i in 120:
+		await tree.physics_frame
+		if snap.moved + snap.hidden >= 2:
+			break
+	check(absf((list[0] as Transform3D).origin.y - fl.y) < 0.08, "the floating one now sits on the floor")
+	check((list[1] as Transform3D).basis.get_scale().x < 0.01, "one with no rock under it is hidden")
+	check(absf((list[0] as Transform3D).origin.y - fl.y) < 0.08, "its owner's list knows the new place")
 	_teardown()

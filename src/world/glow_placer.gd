@@ -94,9 +94,14 @@ static func _place(maker: CaveMaker) -> Array[Dictionary]:
 	_mix_crystal_colours(spots)
 	_thin_crystals_under_stars(maker, spots)
 	_add_wood_everywhere(maker, spots)
+	var trees := RootPillars.plan(maker) if maker.made_layout >= 13 else []
 	for s in spots:
 		if maker.is_reserved(s.pos, 0.5) or maker.on_bridge(s.pos):  # (built ground; bridge tops: owner Nov 18)
 			s.hidden = true  # on a built thing's ground (the placement rule); kept in the list so ids stay the same
+		for t in trees:  # nor inside a Root Tree (owner, Nov 18: water dripping inside a tree)
+			var p: Vector3 = s.pos
+			if p.y > (t.bottom as Vector3).y - 1.0 and p.y < (t.top as Vector3).y + 1.0 and Vector2(p.x - t.top.x, p.z - t.top.z).length() < float(t.width) * (0.75 if s.kind == DRIP else 0.5):
+				s.hidden = true
 	for i in spots.size():
 		spots[i].id = i
 	return spots

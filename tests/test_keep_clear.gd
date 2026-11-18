@@ -119,3 +119,36 @@ func test_mushroom_grass_keeps_clear() -> void:
 			bad += 1
 	check_eq(bad, 0, "none on kept-clear ground, bridges or columns")
 	CaveMaker.use_layout(was)
+
+
+## Nothing inside a Root Tree (owner, Nov 18: "dripstone spawns in the tree and drips water inside the tree").
+func test_nothing_grows_inside_root_trees() -> void:
+	var was := CaveMaker.layout
+	CaveMaker.use_layout(CaveMaker.LAYOUT_LATEST)
+	var m := CaveMaker.new(42)
+	var trees := RootPillars.plan(m)
+	check(not trees.is_empty(), "there are trees")
+	var inside := func(p: Vector3, spread: float) -> bool:
+		for t in trees:
+			if p.y > (t.bottom as Vector3).y - 1.0 and p.y < (t.top as Vector3).y + 1.0 and Vector2(p.x - t.top.x, p.z - t.top.z).length() < float(t.width) * spread:
+				return true
+		return false
+	var cl := Clutter.new()
+	var plan: Dictionary = cl._plan(m)
+	var bad := 0
+	for k in cl._drips:
+		for it in cl._drips[k]:
+			if inside.call((it[0] as Transform3D).origin, 0.74):
+				bad += 1
+	for k in plan.picks:
+		for xf: Transform3D in plan.picks[k]:
+			if inside.call(xf.origin, 0.49):
+				bad += 1
+	check_eq(bad, 0, "no dripstone or pebbles inside a tree")
+	var drips := 0
+	for s in GlowPlacer.place(m):
+		if s.kind == GlowPlacer.DRIP and not s.get("hidden", false) and inside.call(s.pos, 0.74):
+			drips += 1
+	check_eq(drips, 0, "no water dripping inside a tree")
+	cl.free()
+	CaveMaker.use_layout(was)

@@ -477,11 +477,11 @@ func request_break_hanging(peer_id: int, kind: String, id: String) -> void:
 		var top := curtains.top_of(int(id))
 		if top == Vector3.INF or Vector2(top.x - _chest(ps).x, top.z - _chest(ps).z).length() > REACH + 1.0:
 			return
-		var bunch := curtains.bunch_of(int(id))
+		var bunch := curtains.bunch_of(int(id), 0.12)  # just the strand you hit (owner, Nov 18: the whole bunch vanishing looked odd)
 		for s in bunch:
 			removed_strands.append(s)
 		_ev_break_hanging.rpc("strand", ",".join(Array(bunch).map(func(x): return str(x))))
-		spawn_drop(CaveLife.FIBER_DROP, clampi(bunch.size() / 3, 1, 3), _chest(ps) + Vector3.UP * 0.3)
+		spawn_drop(CaveLife.FIBER_DROP, 1, _chest(ps) + Vector3.UP * 0.3)
 	elif kind == "hroot" and clutter:
 		var top := clutter.hroot_top(id)
 		if top == Vector3.INF or Vector2(top.x - _chest(ps).x, top.z - _chest(ps).z).length() > REACH + 2.0:

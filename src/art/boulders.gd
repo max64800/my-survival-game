@@ -6,7 +6,8 @@ extends Node3D
 ## gives stone (2 with a pickaxe, 1 by hand); after HITS hits it bursts into rock chunks, and RESPAWN seconds later a
 ## new one stands there (it appears while nobody is looking). The host keeps the count (GameAuthority.boulder_hits).
 
-const SHAPES := ["boulder_round", "boulder_tall", "boulder_slabs", "boulder_cluster", "boulder_split"]
+## (boulder_split is out, owner Nov 18: "some of the boulders have a gap in between them")
+const SHAPES := ["boulder_round", "boulder_tall", "boulder_slabs", "boulder_cluster"]
 const LOOKS := ["", "_b", "_c"]  ## three stone pictures per shape (owner, Nov 18: "different styles in terms of textures")
 static var MODELS: Array[String] = _models()
 const HITS := 6
@@ -25,10 +26,36 @@ var _rocks: Array[Dictionary] = []  ## {pos, model, spin, scale, body, broken, w
 var _check := 0.0
 
 
-func build(maker: CaveMaker, avoid: Callable = Callable()) -> void:
-	_rocks = plan(maker, avoid)
+var _thread: Thread
+
+
+## Planned on a helper thread (~3.5 s), made when ready. `blocking` = all at once (tests).
+func build(maker: CaveMaker, avoid: Callable = Callable(), blocking := false) -> void:
+	if blocking:
+		_finish(plan(maker, avoid))
+		return
+	_thread = Thread.new()
+	_thread.start(func() -> void:
+		var list := plan(maker, avoid)
+		_finish.call_deferred(list))
+
+
+func _finish(list: Array[Dictionary]) -> void:
+	if _thread:
+		_thread.wait_to_finish()
+		_thread = null
+	_rocks = list
 	for i in _rocks.size():
 		_make(i)
+	var auth := GameAuthority.instance
+	if auth:  # boulders broken in a save loaded before they were made
+		for id in auth.boulder_back:
+			set_broken(int(id), true, false)
+
+
+func _exit_tree() -> void:
+	if _thread and _thread.is_started():
+		_thread.wait_to_finish()
 
 
 ## [{pos, model, spin, scale}] for this cave (same seed, same rocks). `avoid(p, r) -> bool` = more things to keep clear of.
@@ -74,7 +101,8 @@ static func plan(maker: CaveMaker, avoid: Callable = Callable()) -> Array[Dictio
 				low = minf(low, fl.y)
 			if not ok or hit.y - low > 0.5 * scale:
 				continue  # too steep under it
-			var sink := (hit.y - low) + 0.08 + (sink_part * 1.1 * scale if buried else 0.0)
+			var bury := sink_part * 1.1 * scale if buried else 0.0
+			var sink := (hit.y - low) + 0.08 + bury
 			var key := Vector3i((hit / 4.0).floor())
 			if near.has(key):
 				continue  # one every few metres
@@ -93,7 +121,7 @@ static func plan(maker: CaveMaker, avoid: Callable = Callable()) -> Array[Dictio
 				continue
 			near[key] = true
 			var lean := Vector3.UP.lerp(GlowPlacer.normal_at(maker, hit), 0.7).normalized()  # leans with the slope a little
-			out.append({pos = hit - Vector3.UP * sink, model = model, spin = spin, scale = scale, sink = sink, lean = lean})
+			out.append({pos = hit - Vector3.UP * sink, model = model, spin = spin, scale = scale, sink = sink, lean = lean, bury = bury})
 			want -= 1
 	return out
 
@@ -124,6 +152,42 @@ func _make(i: int) -> void:
 				shape.transform = m.transform * mi.transform
 				body.add_child(shape)
 	r.body = body
+	var box := AABB((r.pos as Vector3) - Vector3(2, 2, 2) * r.scale, Vector3(4, 4, 4) * r.scale)
+	GroundSnap.when_built(box, _settle.bind(i))
+
+
+## On the real rock (owner, Nov 18: "some of the boulders are still floating"): the real floor under its middle and
+## round its edge; it stands as low as the lowest of them, sunk as planned. No rock under it at all: it goes.
+func _settle(i: int) -> void:
+	var r: Dictionary = _rocks[i]
+	var body: StaticBody3D = r.body
+	if not is_instance_valid(body):
+		return
+	var space := body.get_world_3d().direct_space_state
+	var scale: float = r.scale
+	var top := (r.pos as Vector3) + Vector3.UP * float(r.sink)
+	var low := INF
+	var found := 0
+	for k in 9:
+		var at := top
+		if k > 0:
+			var a := k * TAU / 8.0
+			at += Vector3(cos(a), 0.0, sin(a)) * 0.75 * scale
+		var fl := GroundSnap.floor_at(space, at, 1.5 + scale, 2.5 + scale)
+		if fl != Vector3.INF:
+			low = minf(low, fl.y)
+			found += 1
+	if found < 3:
+		r.broken = true
+		body.visible = false
+		for c in body.get_children():
+			if c is CollisionShape3D:
+				(c as CollisionShape3D).disabled = true
+		return
+	var y := low - 0.08 - float(r.get("bury", 0.0))
+	r.sink = float(r.sink) + ((r.pos as Vector3).y - y)
+	r.pos = Vector3(r.pos.x, y, r.pos.z)
+	body.global_position = r.pos
 
 
 ## Which boulder a ray hit, or -1.

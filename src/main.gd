@@ -203,8 +203,8 @@ func _show_menu() -> void:
 	_menu = load("res://src/ui/start_menu.gd").new()
 	add_child(_menu)
 	# Making a world takes a few seconds: a loading screen with a bar shows first (owner, Nov 16).
-	_menu.connect("play_alone", func(s: int, wname: String): _close_menu(); _with_loading(func(): _new_world(s, wname)))
-	_menu.connect("continue_game", func(data: Dictionary): _close_menu(); _with_loading(func(): start_game(data.seed, {}, data)))
+	_menu.connect("play_alone", func(s: int, wname: String): _close_menu(); _with_loading(func(): _new_world(s, wname), s if s > 0 else seed, _new_layout))
+	_menu.connect("continue_game", func(data: Dictionary): _close_menu(); _with_loading(func(): start_game(data.seed, {}, data), int(data.seed), int(data.get("layout", 1))))
 	_menu.connect("host_world", func(data: Dictionary):
 		_close_menu()
 		_with_loading(func():
@@ -228,7 +228,9 @@ func _show_menu() -> void:
 
 ## Shows a loading screen first, waits two frames so it's really on screen, then does `job` (which
 ## freezes the game for a moment while the cave is made). The in-game bar takes over after that.
-func _with_loading(job: Callable) -> void:
+## `seed_hint`/`layout_hint`: the world about to be made. Its cave, crystals and plants are then worked out by a helper
+## while this screen shows and its bar moves (owner, Nov 18: the game froze for ~30 s at "making the cave").
+func _with_loading(job: Callable, seed_hint := 0, layout_hint := 0) -> void:
 	var layer := CanvasLayer.new()
 	layer.layer = 100
 	var bg := ColorRect.new()
@@ -253,8 +255,26 @@ func _with_loading(job: Callable) -> void:
 	add_child(layer)
 	await get_tree().process_frame
 	await get_tree().process_frame
+	if seed_hint != 0:
+		CaveMaker.use_layout(layout_hint)
+		var th := Thread.new()
+		th.start(_prefetch.bind(seed_hint, layout_hint))
+		while th.is_alive():
+			bar.value = minf(bar.value + 0.04, 60.0)
+			await get_tree().process_frame
+		th.wait_to_finish()
 	job.call()
 	layer.queue_free()
+
+
+## (helper thread) The slow planning for world `sd`, saved where start_game looks for it.
+func _prefetch(sd: int, layout: int) -> void:
+	var key := "%d:%d" % [sd, layout]
+	if not World._planned.has(key):
+		World._planned[key] = CaveMaker.new(sd)
+	var maker: CaveMaker = World._planned[key]
+	var spots := GlowPlacer.place(maker)
+	CaveLife.prefetched[key] = CaveLife.plan(maker, spots)
 
 
 ## A brand-new world: its own save file and name (F87).
@@ -325,6 +345,10 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	glow.build(spots)
 
 	FreezeWatch.doing = "placing pebbles and dripstone"
+	var ground_snap := GroundSnap.new()  # puts floor things onto the real rock once it's built (owner, Nov 18: things floating)
+	ground_snap.name = "GroundSnap"
+	ground_snap.world = world
+	add_child(ground_snap)
 	_clutter = Clutter.new()  # pebbles, rocks, bones, twigs on the floors (only looks)
 	_clutter.name = "Clutter"
 	add_child(_clutter)

@@ -3598,3 +3598,26 @@ the body."
 - Seen in the owner's new watch.txt: 20-27 FPS while the graphics card was nearly idle, while Claude's full test run
   was using the same PC. Lesson: heavy test runs slow the owner's game; avoid them while he plays.
 
+## November 18, 2026 (PC, cave Claude): nothing floating, fireflies that arc, the big speed-up run
+
+- Owner: the swarm turns all at once instead of in an arc; some boulders still float, some have a gap; a big
+  optimisation run; keep the mushroom grass, a few colours, many float; bones, rocks, moss floating; breaking one
+  vine makes the whole patch jump; dripstone inside the trees.
+- Floating: everything is planned from the cave's smooth shape, but the rock that's built is chunkier (blocks, slabs,
+  the tower carving its ground). New GroundSnap: once the rock round a batch is built, each floor thing is checked with
+  a ray onto the real rock and put down (or hidden if there's no rock). Boulders, mushroom grass, pebbles, bones and
+  cave plants use it. Owner's world: ~4,100 moved, ~150 hidden.
+- Hurdles with it: in windowless tests the drawn batches can't report positions (the drawing is switched off), so it
+  reads the owner's own list; a test shortcut ("solid rock counts as built") wrongly kicked in for picture runs and hid
+  5,288 things, so it's limited to windowless tests now.
+- Fireflies: each keeps its place along the trail the head really flew (a turn sweeps through like a snake's body).
+- The speed-up run (no frame cap, each part switched off in turn): the fireflies cost 5-6 ms of an 11 ms frame. Now
+  a shader on the graphics card moves them; the game only sends 17 path points: frame 4.6-5 ms.
+- Loading took ~80 s and froze ~30 s. Measured each planner: plants 22 s, curtains 13 s, crystals 11 s, cave 4.7 s,
+  boulders 3.6 s. Now: cave, crystals and plants planned by a helper while the loading screen moves (no freeze); the
+  plant planner's slow part runs on several helpers (checked: exactly the same 59,124 plants, 24 → 17.5 s); boulders in
+  the background. Not touched: the rock-shape lookup itself (41 µs) — speeding it up would move every crystal and plant
+  and break old saves.
+- Vines: a swing broke every strand within half a metre; now just the one hit. Dripstone/pebbles/drips keep out of
+  Root Trees (test). Split boulder (the gap) removed. Mushroom grass: soft colour patches.
+- Claude's slips: a variable named `at` twice and `snap` twice (parse errors); Python ate a GDScript line break again.
