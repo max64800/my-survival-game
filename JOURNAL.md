@@ -3640,3 +3640,14 @@ the body."
   to ask the owner which vines.
 - Paused by the owner; saved.
 
+
+## 2026-11-19 (Mac) — Research round 1: first hours, co-op and saves, assets, sound/AI/effects
+- Pulled the PC's work. Owner's notes for the PC saved as F344 (drop the monster wind-up) and F345 (chest lid opens
+  instead of the long loot show). Numbered from F344 because the PC already used F340–F343 for the Game Feel work
+  but hadn't pushed yet (a clash to watch when the PC pushes).
+- Owner's picks and decisions saved in docs/research/RESEARCH-PLAN.md (skills = perks + levels + learn-by-doing;
+  death = walk back + lose a bit of skill; time pressure = better gear; getting lost on purpose, hidden waypoint stones).
+- Four helpers wrote: players-first-hours-and-why-they-quit.md, coop-and-saves.md, assets-in-our-style.md,
+  sound-ai-effects-addons.md. Claude spot-checked the save-version claim (save_game.gd only accepts version 1) — true.
+- Hurdles: review-summary sites couldn't be opened directly (numbers from search summaries); no asset previews
+  were looked at, so style scores are from descriptions. Nothing installed or downloaded.
