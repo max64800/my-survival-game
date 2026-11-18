@@ -3581,3 +3581,20 @@ the body."
 - Hurdles: a variable named twice in the firefly code (caught by a parse error); another session's new Statue file
   needed an import before the game would start; the first grass plan found only 1,500 spots because its floor search
   started inside the rock near the walls.
+
+## November 18, 2026 (PC, cave Claude): wake-up room of rock, the missing first-cave bridge, regrowth pictures
+
+- Owner: "number one" meant the small room you wake in, not the whole first cave (Claude's mix-up). Now only the
+  wake-up room and its dig-through wall are rock (that wall was dirt, which doesn't burst into chunks).
+- Claude's slip caught by the full test run: the game builds rock in blocks with a second, faster copy of the
+  "what rock is here" rule; the change was only in the first copy. Both have it now.
+- Missing bridge: the owner's world (seed 835601) and seed 99 got no first-cave bridge (every line through the middle
+  was blocked). The search now also tries lines off to the side: 8 of 8 worlds have one.
+- An old test ("room centres are open air") had been failing online: rock bridges run through some caves' middles on
+  purpose; the test now allows a bridge there.
+- Regrowth pictures: the in-game camera shots were lost in the dark haze behind the tower, so Blender renders with the
+  real models in a studio (artifact "Root Tree Regrowth"). They showed the step sizes were wrong (the halves touched at
+  step 1); measured the models and fixed the sizes.
+- Seen in the owner's new watch.txt: 20-27 FPS while the graphics card was nearly idle, while Claude's full test run
+  was using the same PC. Lesson: heavy test runs slow the owner's game; avoid them while he plays.
+

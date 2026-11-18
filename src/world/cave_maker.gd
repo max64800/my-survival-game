@@ -590,6 +590,24 @@ func _first_cave_bridge(c: Vector3, r: Vector3, fl: float, tall: float, w: float
 			_add_bridge(a, b, w, t, 0.4)
 			return dk
 		hh += 1.5
+	if made_layout >= 13:  # (owner, Nov 18: no bridge in his first cave) also lines off to the side of the middle
+		hh = BRIDGE_AIR + t
+		while hh <= tall - 3.0:
+			for off in [0.3, -0.3, 0.5, -0.5]:
+				for k in 24:
+					var dk := Vector3(1, 0, 0).rotated(Vector3.UP, k * PI / 24.0)
+					var side := Vector3(-dk.z, 0, dk.x)
+					var mid: Vector3 = Vector3(c.x, fl + hh, c.z) + side * Vector2(side.x * r.x, side.z * r.z).length() * off
+					var reach := Vector2(dk.x * r.x, dk.z * r.z).length() * sqrt(1.0 - off * off) * 1.08
+					var a: Vector3 = mid - dk * reach
+					var b: Vector3 = mid + dk * reach
+					if _bridge_blocks(a, b, -1, c, r, w, t, 0.4, 0.4, true) or not _bridge_has_room(a, b, t):
+						continue
+					if _over_tower_ground(a, b, fl + hh - t, w):
+						continue
+					_add_bridge(a, b, w, t, 0.4)
+					return dk
+			hh += 1.5
 	return Vector3.ZERO
 
 
@@ -2215,13 +2233,13 @@ func material_at(p: Vector3i) -> int:
 	var wall := _wall_rock(pf)
 	if wall >= 0:
 		return wall
+	var pal: Dictionary = Mat.PALETTES[biome_at(pf)]
+	if made_layout >= 13 and (_near_start(pf) or in_start_plug(pf)):
+		return pal.rock  # the room you wake in and its wall: all rock, so you see how breaking rock works (owner, Nov 18)
 	if in_start_plug(pf):
 		return Mat.DIRT
-	var pal: Dictionary = Mat.PALETTES[biome_at(pf)]
 	if _is_ore(p):
 		return pal.ore
-	if made_layout >= 13 and _in_first_cave(pf):
-		return pal.rock  # all rock, so new players see how breaking rock works (owner, Nov 18)
 	var s := _smooth_at(pf)
 	if _smooth_at(pf + Vector3.UP) > 0.0:
 		return pal.floor
@@ -2232,16 +2250,6 @@ func material_at(p: Vector3i) -> int:
 	if s > -2.5 and _dirt_noise.get_noise_3dv(pf) > 0.35:
 		return pal.under
 	return pal.rock
-
-
-## Inside (or in the walls of) the first cave: its egg shape, 3 m into the rock.
-func _in_first_cave(p: Vector3) -> bool:
-	if rooms.is_empty():
-		return false
-	var c: Vector3 = rooms[0].center
-	var r: Vector3 = rooms[0].radii
-	var q := Vector3((p.x - c.x) / (r.x + 3.0), (p.y - c.y) / (r.y + 3.0), (p.z - c.z) / (r.z + 3.0))
-	return q.length_squared() < 1.0
 
 
 ## Edge or border rock at p, or -1 if p is inside a biome (or an open gate stub).
@@ -2552,6 +2560,8 @@ func generate_block(buf: VoxelBuffer, origin: Vector3i) -> void:
 				var wall := _wall_rock(Vector3(pi)) if touches_border else -1
 				if wall >= 0:
 					m = wall
+				elif near_start and made_layout >= 13 and (_near_start(Vector3(pi)) or in_start_plug(Vector3(pi))):
+					m = p_rock  # the room you wake in: all rock (owner, Nov 18; the same rule as material_at)
 				elif near_start and in_start_plug(Vector3(pi)):
 					m = Mat.DIRT
 				elif _is_ore(pi):

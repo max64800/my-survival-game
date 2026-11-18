@@ -19,7 +19,7 @@ const PLANTED_ID := 10000  ## planted trees' ids start here
 ## A broken tree grows back from both ends (owner, Nov 18): the stump grows up and the ceiling crown grows down, a step
 ## every 15 minutes, and after 45 they meet in the middle: a full tree again.
 const REGROW_TIME := 2700.0
-const REGROW_STRETCH := {"regrow1": 1.5, "regrow2": 2.1}  ## how far the stump and crown reach (x their broken size)
+const REGROW_STRETCH := {"regrow1": 1.35, "regrow2": 1.75}  ## how far the stump and crown reach (x their broken size): the gap between them is 50% of the height broken, 33% at step 1, 13% at step 2
 const WOOD := Color(0.42, 0.28, 0.17)
 
 var _trees := {}  ## id -> {top, bottom, width, model, spin, body, used, stage, want_stage}

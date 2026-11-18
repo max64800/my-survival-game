@@ -123,7 +123,7 @@ func test_bridge_in_the_starting_cave() -> void:
 	var was := CaveMaker.layout
 	CaveMaker.use_layout(CaveMaker.LAYOUT_LATEST)
 	var plan := RuinTower.load_plan()
-	for sd in [42, 7, 1234]:
+	for sd in [42, 7, 1234, 99, 835601]:  # (99 and 835601, the owner's world, had none until off-middle bridges, Nov 18)
 		var m := CaveMaker.new(sd)
 		var found := {}
 		var c0: Vector3 = m.rooms[0].center

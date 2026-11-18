@@ -44,7 +44,8 @@ func test_spawn_is_standing_on_rock() -> void:
 func test_room_centers_are_open_air() -> void:
 	var c := CaveMaker.new(55)
 	for room in c.rooms:
-		check(c.sdf_at(room.center) > 0.0, "room at %s should be air" % room.center)
+		# (layout 10+: a rock bridge may cross right through a cave's middle; that's planned, not a filled room)
+		check(c.sdf_at(room.center) > 0.0 or c.on_bridge(room.center, 1.0), "room at %s should be air" % room.center)
 
 
 func test_tunnels_join_every_room() -> void:

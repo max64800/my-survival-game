@@ -24,7 +24,9 @@ func test_room_is_sealed_by_a_soft_dirt_wall() -> void:
 	var mid: Vector3 = ((st.plug_a as Vector3) + (st.plug_b as Vector3)) * 0.5
 	var at := Vector3(mid.x, st.floor_y + 1.0, mid.z)
 	check(c.sdf_at(at) < 0.0, "the wall is solid")
-	check(c.material_at(Vector3i(at.round())) == Mat.DIRT, "the wall is dirt (1 hit)")
+	check(c.material_at(Vector3i(at.round())) == Mat.STONE, "the wall is rock (owner, Nov 18: the room you wake in is all rock)")
+	var fl := c.find_floor(st.room_c.x, st.room_c.z, st.room_c.y)
+	check_eq(c.material_at(Vector3i((fl + Vector3.DOWN * 0.6).round())), Mat.STONE, "the room's floor is rock too")
 	# Walk a straight line from the room to the cavern: only the wall should be rock.
 	var rock := 0.0
 	var a := Vector3(st.room_c.x, st.floor_y + 1.0, st.room_c.z)

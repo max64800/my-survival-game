@@ -37,6 +37,10 @@ func _run() -> void:
 		await _procbench()
 		get_tree().quit()
 		return
+	if "treestages" in OS.get_cmdline_user_args():
+		await _treestages()
+		get_tree().quit()
+		return
 	if "digbench" in OS.get_cmdline_user_args():
 		await _digbench()
 		get_tree().quit()
@@ -439,3 +443,60 @@ func _digbench() -> void:
 	print("DIG frames=%d avg=%.1fms worst=%.1fms dug=%d turns=%d" % [frames, sum / frames, worst, dug, turns])
 	print("DIG worst ms inside the hit itself: ", cost)
 	print("DIG results ", count, " worst frame in the 20 frames after: ", after_worst, " frames over 25 ms after: ", slow_after)
+
+
+## A Root Tree in every stage of growing back (owner, Nov 18): broken, step 1, step 2, whole; same camera each time.
+func _treestages() -> void:
+	var rp: RootPillars = _main.get_node_or_null("RootPillars")
+	if rp == null:
+		return
+	var dwarf: Dwarf = _main.dwarf
+	dwarf.set_physics_process(false)
+	_main.hud.visible = false
+	var best := -1
+	var bd := INF
+	for id in 10:
+		var t := rp.pillar(id)
+		if not t.is_empty() and (t.bottom as Vector3).distance_to(dwarf.global_position) < bd:
+			bd = (t.bottom as Vector3).distance_to(dwarf.global_position)
+			best = id
+	var t := rp.pillar(best)
+	var top: Vector3 = t.top
+	var bottom: Vector3 = t.bottom
+	var h := top.y - bottom.y
+	var cam := Camera3D.new()
+	_main.add_child(cam)
+	cam.current = true
+	cam.fov = 70.0
+	var space := dwarf.get_world_3d().direct_space_state
+	var mid := bottom.lerp(top, 0.5)
+	var spot := mid
+	var best_open := -1.0
+	for k in 32:  # stand in open air where the view to the tree is clear, the furthest such spot up to h * 0.8
+		var a := k * TAU / 32.0
+		for dist in [h * 0.8, h * 0.65, h * 0.5]:
+			var want: Vector3 = bottom + Vector3.UP * h * 0.3 + Vector3(cos(a), 0, sin(a)) * (float(t.width) * 0.35 + dist)
+			if _main.world.sdf_at(want) < 1.0:
+				continue
+			var q := PhysicsRayQueryParameters3D.create(want, mid, World.TERRAIN_LAYER)
+			var hit := space.intersect_ray(q)
+			if (hit.is_empty() or (hit.position as Vector3).distance_to(mid) < float(t.width) * 0.6) and dist > best_open:
+				best_open = dist
+				spot = want
+			break
+	cam.global_position = spot
+	cam.look_at(mid)
+	var lights := []
+	for f in [0.15, 0.5, 0.85]:
+		var l := OmniLight3D.new()
+		l.light_color = Color(1.0, 0.85, 0.65)
+		l.omni_range = h * 0.9
+		l.light_energy = 2.2
+		_main.add_child(l)
+		l.global_position = spot.lerp(bottom.lerp(top, f), 0.4)
+		lights.append(l)
+	for stage in ["broken", "regrow1", "regrow2", "tree"]:
+		rp._show(best, stage)
+		await _wait(1.0)
+		await RenderingServer.frame_post_draw
+		_main.take_screenshot(_shots.path_join("tree_%s.png" % stage))
