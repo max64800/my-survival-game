@@ -3453,3 +3453,14 @@ the body."
   twice a second to terrain.gdshader (checking all of them on every ceiling pixel would be slow).
 - Hanging roots: max 4.2 m and not within ~4-6 m of a dripstone (an 8 m grid so it stays fast).
 - Vines: 7 coloured tints, no white/grey.
+
+## November 18, 2026 (PC, rock-textures Claude): critters (F190 last part)
+- Models: builds/critters.py from the kit (faceted gem bodies, two-part legs, feelers): glow_beetle, moth_body +
+  moth_wing (separate so the game mirrors and flaps it), cave_cricket. Round 1 OK at their 10 cm size; beetle
+  spots glowed white in the game, softened (4.0 -> 1.6).
+- CaveCritters: 14 beetles, 10 moths, 10 crickets kept near the camera (moved near you when you walk away), only
+  on your screen. Beetles slide along the rock (normal from the loaded rock, re-snapped to the surface), moths
+  orbit a nearby crystal (or a spot near you) with flapping wings, crickets hop 1-1.6 m away from any dwarf within
+  2.5 m.
+- **Hurdles:** typed-array filter assignment, an untyped `u` and a missing class scan (all caught by a game run
+  before the commit).

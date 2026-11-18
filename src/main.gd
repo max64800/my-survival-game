@@ -340,6 +340,10 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	water.name = "CaveWater"
 	add_child(water)
 	water.build(world.maker, spots)
+	var critters := CaveCritters.new()  # glowing beetles, moths, crickets near you (only looks, F190)
+	critters.name = "CaveCritters"
+	add_child(critters)
+	critters.setup(world, glow)
 
 	cave_life = CaveLife.new()  # moss, grass, small roots, lichen, ferns in patches (only looks; F188)
 	cave_life.name = "CaveLife"
