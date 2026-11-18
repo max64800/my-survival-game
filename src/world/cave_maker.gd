@@ -20,7 +20,7 @@ extends RefCounted
 ##   1 = the first caves: 400 m areas (Mossy x -200…200, Jungle x 220…620), squashed balls and tubes.
 ##   2 = real-shaped caves: 800 m areas (Mossy x -400…400, Jungle x 420…1220), about 4x the rooms,
 ##       passages and halls shaped the way water shapes real caves (see "layout 2" below).
-const LAYOUT_LATEST := 11
+const LAYOUT_LATEST := 12
 ## What brand-new worlds get. Layout 2: the real-shaped caves (F211 step 1, OK'd by the owner Nov 17). Layout 3: the
 ## same plus tall/wide/joined caverns and cliff exits with ledge paths (F230, F231). Old saves keep the layout they were
 ## made with; robots can try older caves with "-- layout=1" or "-- layout=2". Layout 4: the same plus a huge first
@@ -34,7 +34,9 @@ const LAYOUT_LATEST := 11
 ## Layout 10: many more bridges (every tall cavern, the tallest get two; owner: "I didn't manage to find rock bridges").
 ## Layout 11: the first cavern always gets a bridge too, at least 4 m up (owner, Nov 17: "at least one bridge in the
 ## starting area").
-const LAYOUT_DEFAULT := 11
+## Layout 12: the first cave itself always gets a bridge (owner, Nov 18: "make sure the first cave always has some kind
+## of a bridge"): if the usual tries fail, a patient second search there.
+const LAYOUT_DEFAULT := 12
 static var layout := LAYOUT_DEFAULT
 
 
@@ -183,9 +185,13 @@ func _init(p_seed: int = 1, big_caverns: int = 3, small_rooms: int = 12) -> void
 	cavern_spawn = spawn_point
 	_plan_columns()
 	_plan_cavern_columns()
+	if made_layout >= 12:
+		_plan_start()  # (layout 12: the wake-up room first, so the watchtower's spot is final before the bridges)
+		_corner_cache.clear()
 	_plan_bridges()
 	_plan_colonnades()
-	_plan_start()
+	if made_layout < 12:
+		_plan_start()
 	_corner_cache.clear()  # the start room was just carved: forget block corners remembered before it
 	if not start.is_empty():
 		spawn_point = start.spawn
@@ -237,6 +243,7 @@ func _seg_inside_room(sg: Dictionary, c: Vector3, r: Vector3) -> bool:
 # Rule (owner, Nov 17): nothing the world grows stands inside something built or on its paths. Pebbles, plants, crystals
 # and the old columns are made fresh every time a world loads, so they ask is_reserved() and skip that ground.
 
+var outpost_spot := {}  ## where the Fallen Outpost goes ({room, pos, turn}; worked out once, in _reserve_tower)
 var reserved: Array[Dictionary] = []  ## {pos, r, h}: a circle of ground (r wide), from pos.y up to pos.y + h
 
 
@@ -265,6 +272,13 @@ func _reserve_tower() -> void:
 	var spot := RuinTower.find_spot(self, float(plan.get("radius", 4.2)), float(plan.get("height", 9.0)))
 	if not spot.is_empty():
 		reserve(spot.pos, maxf(float(plan.get("radius", 4.2)), float(plan.get("front", 6.8))) + 1.5, float(plan.get("height", 9.0)))
+	# The Fallen Outpost (owner, Nov 17): its square (36 m across, round towers at two corners) kept clear too, so no
+	# pebbles, plants or loose stones are left hanging after it digs out its space. The spot is remembered for it.
+	var op := RuinTower.load_plan(RuinOutpost.OUTPOST_PLAN)
+	if not op.is_empty():
+		outpost_spot = RuinOutpost.pick(self, float(op.get("radius", 18.5)), float(op.get("height", 7.5)))
+		if not outpost_spot.is_empty():
+			reserve(outpost_spot.pos, float(op.get("radius", 18.5)) + 4.0, float(op.get("height", 7.5)))
 
 
 ## Layout 8 (owner, Nov 17): 1 or 2 smaller stone columns (5 to 11 m wide) in the plain big caverns, the same kind as
@@ -542,7 +556,11 @@ func _plan_bridges_v11() -> void:
 				first_y = y
 				break
 			if first_dir == Vector3.ZERO:
-				break  # no first one: no second either
+				if n == 0 and ri == 0 and made_layout >= 12:
+					first_dir = _first_cave_bridge(c, r, fl, tall, w, t)
+				if first_dir == Vector3.ZERO:
+					break  # no first one: no second either
+				first_y = _bridges[-1].a.y
 
 
 ## The ruined watchtower, up to 9 m tall: a bridge (its lowest part at `bottom`) must cross well above it, or keep away
@@ -556,7 +574,27 @@ func _over_tower_ground(a: Vector3, b: Vector3, bottom: float, w: float) -> bool
 	var tp: Vector3 = _tower_pre.pos
 	var p2 := Vector2(tp.x, tp.z)
 	var d := Geometry2D.get_closest_point_to_segment(p2, Vector2(a.x, a.z), Vector2(b.x, b.z)).distance_to(p2)
-	return d < 8.5 + w and bottom < tp.y + 10.5  # (its body and the steps in front, plus room)
+	return d < 8.5 + w and bottom < tp.y + (12.5 if made_layout >= 12 else 10.5)  # (its body and steps; 3.5 m+ of air over its roof)
+
+
+## Layout 12: the first cave's patient search: every height from 4 m up, 24 directions, a slightly smaller gap over
+## tunnel tops; still clear of the tower, ramps, ledges and places. Returns the bridge's direction (ZERO = none).
+func _first_cave_bridge(c: Vector3, r: Vector3, fl: float, tall: float, w: float, t: float) -> Vector3:
+	var hh := 4.0
+	while hh <= tall - 3.0:
+		for k in 24:
+			var dk := Vector3(1, 0, 0).rotated(Vector3.UP, k * PI / 24.0)
+			var reach := Vector2(dk.x * r.x, dk.z * r.z).length() * 1.05
+			var a := Vector3(c.x, fl + hh, c.z) - dk * reach
+			var b := Vector3(c.x, fl + hh, c.z) + dk * reach
+			if _bridge_blocks(a, b, -1, c, r, w, t, 0.4, 0.4, true) or not _bridge_has_room(a, b, t):
+				continue
+			if _over_tower_ground(a, b, fl + hh - t, w):
+				continue
+			_add_bridge(a, b, w, t, 0.4)
+			return dk
+		hh += 1.5
+	return Vector3.ZERO
 
 
 ## Room to walk on top (2.2 m of air above it) and air under it, at a quarter, half and three quarters of the way.

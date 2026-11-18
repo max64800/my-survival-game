@@ -3464,3 +3464,14 @@ the body."
   2.5 m.
 - **Hurdles:** typed-array filter assignment, an untyped `u` and a missing class scan (all caught by a game run
   before the commit).
+
+## November 18, 2026 (PC, rock-textures Claude): swarms, calm beetles, first-cave bridge, wood, better chunks
+- Swarms (GlowSwarms): a head drifting in smooth loops through its cave, 100-150 motes each trailing its place in
+  a round-head droplet; replaced the purple spores. Beetles: steady heading, gentle turns, rests; gone when dug.
+- Layout 12: first cave always bridged (patient search: every height, 24 directions); the wake-up room is dug
+  before bridges so the tower spot is final; 3.5 m+ of air over the tower roof (a test caught 1.6 m).
+- Wood: _add_wood_everywhere (8/3 roots per Mossy cave, low far rays to reach round ruin ground). Fungal keeps
+  its giant mushrooms (by design, a test). A twig flatness check left 0 twigs: reverted (the 'stick' was rock).
+- Chunks: icosphere(2) stretched into lumps/slabs/shards/wedges and squashed by 5-9 cut planes.
+- **Hurdles:** another session's half-saved monster file broke compiling for a while; crickets used the cave plan
+  for floors (no digging, no built floors) and jumped in mid-air at the outpost: real physics rays now.

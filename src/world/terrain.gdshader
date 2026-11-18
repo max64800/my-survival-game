@@ -257,10 +257,13 @@ void fragment() {
 
 	// Glowing veins (owner, Nov 18, F190: "glowing veins in the rock walls that slowly pulse"): thin wandering lines of
 	// glowing mineral on some walls, cool teal or warm amber.
-	float vwall = 1.0 - smoothstep(0.5, 0.85, abs(wn.y));
+	// Walls and ceilings (owner, Nov 18: "under the bridges and on the ceilings"), not floors.
+	float vwall = 1.0 - smoothstep(0.5, 0.85, wn.y);
 	float ub = (bridge_count > 0 && wn.y < -0.3) ? under_bridge(v_world) : 0.0;  // the undersides of the rock bridges
 	vwall = max(vwall, ub);
-	float vregion = max(smoothstep(0.63, 0.75, vnoise(v_world * 0.03 + vec3(19.0, 3.0, 11.0))), ub);  // some walls, every bridge
+	// Some places (a bit more often than before, so tunnels get them too), every bridge, and all of the first cave.
+	float vfirst = star_radius > 0.0 ? 1.0 - smoothstep(star_radius * 0.9, star_radius * 1.15, length(v_world.xz - star_center.xz)) : 0.0;
+	float vregion = max(max(smoothstep(0.58, 0.7, vnoise(v_world * 0.03 + vec3(19.0, 3.0, 11.0))), ub), vfirst);
 	if (vwall * vregion > 0.0) {
 		float ridge = abs(vnoise(v_world * vec3(0.32, 0.8, 0.32) + vec3(5.0, 1.0, 9.0)) * 2.0 - 1.0);  // thin where it crosses 0.5
 		float vline = (1.0 - smoothstep(0.0, 0.032, ridge)) * max(smoothstep(0.42, 0.58, vnoise(v_world * 0.45 + vec3(3.0, 7.0, 2.0))), ub);  // thin, in broken pieces (whole under bridges)

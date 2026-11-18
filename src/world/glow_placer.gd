@@ -93,6 +93,7 @@ static func _place(maker: CaveMaker) -> Array[Dictionary]:
 	_add_twigs(maker, spots)
 	_mix_crystal_colours(spots)
 	_thin_crystals_under_stars(maker, spots)
+	_add_wood_everywhere(maker, spots)
 	for s in spots:
 		if maker.is_reserved(s.pos, 0.5):
 			s.hidden = true  # on a built thing's ground (the placement rule); kept in the list so ids stay the same
@@ -255,6 +256,43 @@ static func _add_twigs(maker: CaveMaker, spots: Array[Dictionary]) -> void:
 				continue
 			spots.append({id = -1, pos = hit, normal = n, kind = "twig", color = KINDS["twig"].color, scale = rng.randf_range(0.8, 1.3),
 				spin = spin, length = 0.0, chops = 1, extra = true})
+			want -= 1
+
+
+## Wood in every cave (owner, Nov 18: "I want to build there [the Fallen Outpost's cave] but there's no wood at all...
+## every cave should have roots, quite a bit of them"): 8 more roots in each big cave, 3 in each small one, all over
+## Mossy Hollows, round the edges of ground kept clear for ruins too. Added last (ids of everything before stay the same).
+const WOOD_BIG := 8
+const WOOD_ROOM := 3
+
+
+static func _add_wood_everywhere(maker: CaveMaker, spots: Array[Dictionary]) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = maker.seed + 782
+	var near := {}
+	for s in spots:
+		_grid_put(near, s.pos)
+	for room in maker.rooms:
+		# (the Fungal Jungle has no roots by design: its wood is the giant mushrooms)
+		if room.get("sealed", false) or room.get("biome", "mossy") == "fungal" or maker.sdf_at(room.center) <= 0.0:
+			continue
+		var want: int = WOOD_BIG if room.big else WOOD_ROOM
+		for i in want * 14:
+			if want <= 0:
+				break
+			# low, far-reaching lines: they reach the cave's edges too (round a ruin's kept-clear middle)
+			var dir := Vector3(rng.randf_range(-1, 1), -rng.randf_range(0.12, 0.7), rng.randf_range(-1, 1)).normalized()
+			var hit := _march(maker, room.center, dir, 60.0)
+			if hit == Vector3.INF or normal_at(maker, hit).y < 0.8 or maker.is_reserved(hit, 2.0):
+				continue
+			if maker.sdf_at(hit + Vector3.UP * 1.0) <= 0.4 or not _solid_ground(maker, hit) or not _spaced_grid(near, hit):
+				continue
+			if maker.sdf_at(hit - Vector3.UP * 0.8) >= 0.0:
+				continue
+			var length := 1.2 + 0.7 * fposmod(hit.x * 7.3 + hit.z * 3.1, 1.0)
+			spots.append({id = -1, pos = hit, normal = Vector3.UP, kind = ROOT, color = KINDS[ROOT].color, scale = 1.0,
+				spin = rng.randf_range(0, TAU), length = length, chops = KINDS[ROOT].get("chops", 1), extra = true})
+			_grid_put(near, hit)
 			want -= 1
 
 

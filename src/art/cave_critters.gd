@@ -9,7 +9,7 @@ const BEETLES := 14
 const MOTHS := 10
 const CRICKETS := 10
 const NEAR := 26.0  ## further than this from the camera: moved to a new spot near it
-const BEETLE_SPEED := 0.12
+const BEETLE_SPEED := 0.08
 const CRICKET_SCARE := 2.5
 
 var world: World
@@ -26,6 +26,7 @@ func setup(p_world: World, p_glow: GlowField) -> void:
 	maker = p_world.maker
 	glow = p_glow
 	_rng.randomize()
+	world.changed.connect(_on_rock_changed)
 	for i in BEETLES:
 		_beetles.append({node = _model("glow_beetle"), dir = Vector3.FORWARD})
 	for i in MOTHS:
@@ -74,24 +75,52 @@ func _process(delta: float) -> void:
 
 func _beetle(b: Dictionary, cam: Vector3, delta: float) -> void:
 	var n: Node3D = b.node
+	if b.get("gone", 0.0) > 0.0:  # its rock was dug away: gone for a while
+		b.gone -= delta
+		return
 	if not n.visible or n.global_position.distance_to(cam) > NEAR:
 		var hit := _ray_from(cam, Vector3(_rng.randf_range(-1, 1), _rng.randf_range(-0.6, 0.8), _rng.randf_range(-1, 1)), 20.0)
-		if hit == Vector3.INF or hit.distance_to(cam) < 5.0:
-			return
+		if hit == Vector3.INF or hit.distance_to(cam) < 5.0 or absf(world.sdf_smooth(hit)) > 0.6:
+			return  # (beetles crawl on the rock itself, not on built walls)
 		n.global_position = hit
-		b.dir = Vector3(_rng.randf_range(-1, 1), _rng.randf_range(-1, 1), _rng.randf_range(-1, 1)).normalized()
+		var nr := _normal(hit)
+		b.dir = nr.cross(Vector3(_rng.randf_range(-1, 1), _rng.randf_range(-1, 1), _rng.randf_range(-1, 1))).normalized()
+		b.turn = 0.0
+		b.rest = 0.0
 		n.visible = true
+	# Calm crawling (owner, Nov 18: "very sporadic... a little bit odd"): it keeps its heading and turns gently, and now
+	# and then stops for a few seconds.
+	if b.get("rest", 0.0) > 0.0:
+		b.rest -= delta
+		return
+	if _rng.randf() < delta * 0.08:
+		b.rest = _rng.randf_range(1.5, 4.0)
 	var p := n.global_position
 	var nrm := _normal(p)
+	b.turn = clampf(b.get("turn", 0.0) + _rng.randf_range(-1.0, 1.0) * delta * 1.5, -0.8, 0.8)  # a slowly changing turn
 	var dir: Vector3 = (b.dir as Vector3) - nrm * (b.dir as Vector3).dot(nrm)  # along the surface
-	if dir.length() < 0.05 or _rng.randf() < delta * 0.3:
-		dir = nrm.cross(Vector3(_rng.randf_range(-1, 1), _rng.randf_range(-1, 1), _rng.randf_range(-1, 1))).normalized()  # wander
-	dir = dir.normalized()
+	if dir.length() < 0.05:
+		dir = nrm.cross(Vector3.UP if absf(nrm.y) < 0.9 else Vector3.RIGHT)
+	dir = dir.normalized().rotated(nrm, b.turn * delta)
 	b.dir = dir
 	p += dir * BEETLE_SPEED * delta
 	p -= nrm * world.sdf_smooth(p)  # stay on the surface
 	n.global_position = p
-	n.global_basis = Basis.looking_at(dir, nrm)  # head along its way, back to the air
+	var look := Basis.looking_at(dir, nrm)
+	n.global_basis = n.global_basis.slerp(look, minf(1.0, delta * 5.0)).orthonormalized()  # (turns smoothly)
+
+
+## Rock dug away: beetles on it disappear (owner, Nov 18), and come back somewhere else a while later.
+func _on_rock_changed(center: Vector3, radius: float) -> void:
+	for b in _beetles:
+		var n: Node3D = b.node
+		if n.visible and n.global_position.distance_to(center) < radius + 0.6:
+			n.visible = false
+			b.gone = 12.0
+	for c in _crickets:
+		var n: Node3D = c.node
+		if n.visible and n.global_position.distance_to(center) < radius + 0.6:
+			n.visible = false
 
 
 # ---------------------------------------------------------------- moths: flutter round crystals or round you
@@ -124,7 +153,7 @@ func _moth_anchor(cam: Vector3) -> Vector3:
 			var s: Dictionary = near[_rng.randi() % near.size()]
 			return (s.pos as Vector3) + (s.normal as Vector3) * 0.5
 	var p := cam + Vector3(_rng.randf_range(-3, 3), _rng.randf_range(-0.5, 1.0), _rng.randf_range(-3, 3))
-	return p if maker.sdf_at(p) > 0.8 else cam
+	return p if world.sdf_smooth(p) > 0.8 else cam
 
 
 # ---------------------------------------------------------------- crickets: hop away from you
@@ -133,9 +162,9 @@ func _cricket(c: Dictionary, cam: Vector3, delta: float) -> void:
 	var n: Node3D = c.node
 	if not n.visible or n.global_position.distance_to(cam) > NEAR:
 		var start := cam + Vector3(_rng.randf_range(-14, 14), 0.0, _rng.randf_range(-14, 14))
-		if maker.sdf_at(start) <= 0.3:
+		if world.sdf_smooth(start) <= 0.3:
 			return
-		var fl := GlowPlacer._march(maker, start, Vector3.DOWN, 12.0)
+		var fl := _ray_from(start, Vector3.DOWN, 12.0)
 		if fl == Vector3.INF or fl.distance_to(cam) < 4.0:
 			return
 		n.global_position = fl
@@ -154,7 +183,7 @@ func _cricket(c: Dictionary, cam: Vector3, delta: float) -> void:
 		var away := Vector3(n.global_position.x - feet.x, 0.0, n.global_position.z - feet.z).normalized()
 		away = away.rotated(Vector3.UP, _rng.randf_range(-0.6, 0.6))
 		var land := n.global_position + away * _rng.randf_range(1.0, 1.6)
-		var fl := GlowPlacer._march(maker, land + Vector3.UP * 1.0, Vector3.DOWN, 4.0)
+		var fl := _ray_from(land + Vector3.UP * 1.0, Vector3.DOWN, 4.0)
 		if fl != Vector3.INF:
 			c.from = n.global_position
 			c.to = fl
@@ -178,8 +207,13 @@ func _nearest_feet(p: Vector3) -> Vector3:
 
 # ---------------------------------------------------------------- helpers
 
+## The first solid thing along a ray: the real rock (dug holes and all) or something built (owner, Nov 18: crickets were
+## jumping in the air in the Fallen Outpost: the cave's plan doesn't know about digging or built floors).
 func _ray_from(from: Vector3, dir: Vector3, reach: float) -> Vector3:
-	return GlowPlacer._march(maker, from, dir.normalized(), reach)
+	var q := PhysicsRayQueryParameters3D.create(from, from + dir.normalized() * reach)
+	q.collision_mask = World.TERRAIN_LAYER | PieceNode.PIECE_LAYER
+	var hit := get_world_3d().direct_space_state.intersect_ray(q)
+	return hit.position if not hit.is_empty() else Vector3.INF
 
 
 ## The rock's surface normal at p (pointing out into the air), from the loaded rock.

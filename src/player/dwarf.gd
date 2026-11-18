@@ -594,7 +594,8 @@ func _on_dig_feedback(pid: int, result: Dictionary) -> void:
 		"dug":
 			DigCracks.clear()
 			var n: Vector3 = result.get("normal", Vector3.UP)
-			RockShatter.burst(get_parent(), at - n * 0.55, n, col, int(result.get("material", -1)))  # the rock bursts into real chunks (F261)
+			if not soft:  # rock bursts into real chunks (F261); dirt, moss and clay just crumble (owner, Nov 18)
+				RockShatter.burst(get_parent(), at - n * 0.55, n, col, int(result.get("material", -1)))
 			Fx.burst(get_parent(), at, col, 16, 4.0)
 			ChunkSwarm.burst(get_parent(), at, col, self)  # 25-50 bits fly into you (F13)
 			_shake = 0.8

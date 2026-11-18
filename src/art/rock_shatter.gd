@@ -112,39 +112,60 @@ static func _make_shapes() -> void:
 	tex.seamless = true
 	tex.noise = noise
 	_detail = tex
+	# Round 5 (owner, Nov 18: "the big pieces are just weird looking triangles... more complex, more shapes, more
+	# corners"): a rounder ball of many corners, stretched into a lump, slab or shard, then split by 3-6 flat cuts the
+	# way rock really breaks: big flat faces, sharp edges, lots of corners. 24 different ones.
 	var rng := RandomNumberGenerator.new()
-	rng.seed = 2612
-	var t := (1.0 + sqrt(5.0)) / 2.0
-	var ico := [Vector3(-1, t, 0), Vector3(1, t, 0), Vector3(-1, -t, 0), Vector3(1, -t, 0), Vector3(0, -1, t), Vector3(0, 1, t),
-		Vector3(0, -1, -t), Vector3(0, 1, -t), Vector3(t, 0, -1), Vector3(t, 0, 1), Vector3(-t, 0, -1), Vector3(-t, 0, 1)]
-	for k in 16:
+	rng.seed = 2613
+	var ball := _icosphere(2)
+	for k in 24:
 		var kind := k % 4
+		var st := Vector3(rng.randf_range(0.8, 1.2), rng.randf_range(0.7, 1.0), rng.randf_range(0.8, 1.2))
+		if kind == 1:
+			st = Vector3(rng.randf_range(1.1, 1.4), rng.randf_range(0.3, 0.45), rng.randf_range(0.9, 1.2))  # a slab
+		elif kind == 2:
+			st = Vector3(rng.randf_range(0.4, 0.55), rng.randf_range(1.3, 1.7), rng.randf_range(0.45, 0.6))  # a shard
 		var pts := PackedVector3Array()
-		var faces: Array
-		match kind:
-			0:  # a lumpy stone
-				var st := Vector3(rng.randf_range(0.7, 1.2), rng.randf_range(0.6, 1.0), rng.randf_range(0.7, 1.2))
-				for v in ico:
-					pts.append((v as Vector3).normalized() * 0.5 * rng.randf_range(0.7, 1.15) * st)
-				faces = ICO_FACES
-			1, 2:  # a block, or a flat slab / a long shard
-				var st := Vector3(1, 0.85, 1)
-				if kind == 2:
-					st = Vector3(1.25, 0.32, 0.95) if rng.randf() < 0.5 else Vector3(0.42, 1.5, 0.5)
-				for i in 8:
-					var c := Vector3(i & 1, (i >> 1) & 1, (i >> 2) & 1) - Vector3.ONE * 0.5
-					pts.append((c + Vector3(rng.randf_range(-0.24, 0.24), rng.randf_range(-0.24, 0.24), rng.randf_range(-0.24, 0.24))) * st * 0.9)  # (no perfect cubes)
-				faces = BOX_FACES
-			3:  # a wedge
-				var lean := rng.randf_range(-0.25, 0.25)
-				var tri := [Vector2(-0.5, -0.45), Vector2(0.5, -0.35), Vector2(rng.randf_range(-0.2, 0.3), 0.5)]
-				for y in [-0.45, 0.45]:
-					for q in tri:
-						pts.append(Vector3((q as Vector2).x + lean * y, y * rng.randf_range(0.7, 1.0), (q as Vector2).y) * 0.95)
-				faces = WEDGE_FACES
+		for v: Vector3 in ball[0]:
+			pts.append(v * 0.5 * st * rng.randf_range(0.93, 1.07))
+		var cuts := rng.randi_range(5, 9) + (2 if kind == 3 else 0)  # wedges: more and deeper cuts (5-9: more corners)
+		for c in cuts:
+			var nrm := Vector3(rng.randf_range(-1, 1), rng.randf_range(-1, 1), rng.randf_range(-1, 1)).normalized()
+			var keep := rng.randf_range(0.18, 0.36) * (0.7 if kind == 3 else 1.0)  # how far from the middle the cut is
+			for i in pts.size():
+				var over := pts[i].dot(nrm) - keep
+				if over > 0.0:
+					pts[i] -= nrm * over  # squashed flat onto the cut
 		var shape := ConvexPolygonShape3D.new()
 		shape.points = pts
-		_shapes.append([_hull_mesh(pts, faces), shape])
+		_shapes.append([_hull_mesh(pts, ball[1]), shape])
+
+
+## A ball of many small faces (an icosahedron split `levels` times): [points, faces].
+static func _icosphere(levels: int) -> Array:
+	var t := (1.0 + sqrt(5.0)) / 2.0
+	var pts: Array[Vector3] = []
+	for v in [Vector3(-1, t, 0), Vector3(1, t, 0), Vector3(-1, -t, 0), Vector3(1, -t, 0), Vector3(0, -1, t), Vector3(0, 1, t),
+			Vector3(0, -1, -t), Vector3(0, 1, -t), Vector3(t, 0, -1), Vector3(t, 0, 1), Vector3(-t, 0, -1), Vector3(-t, 0, 1)]:
+		pts.append((v as Vector3).normalized())
+	var faces: Array = ICO_FACES.duplicate(true)
+	for l in levels:
+		var mid := {}
+		var out: Array = []
+		for f in faces:
+			var m := []
+			for e in [[f[0], f[1]], [f[1], f[2]], [f[2], f[0]]]:
+				var key := Vector2i(mini(e[0], e[1]), maxi(e[0], e[1]))
+				if not mid.has(key):
+					mid[key] = pts.size()
+					pts.append(((pts[e[0]] + pts[e[1]]) * 0.5).normalized())
+				m.append(mid[key])
+			out.append([f[0], m[0], m[2]])
+			out.append([f[1], m[1], m[0]])
+			out.append([f[2], m[2], m[1]])
+			out.append([m[0], m[1], m[2]])
+		faces = out
+	return [PackedVector3Array(pts), faces]
 
 
 ## A flat-shaded mesh from the points and its faces (each face turned to point outward).
@@ -155,7 +176,10 @@ static func _hull_mesh(pts: PackedVector3Array, faces: Array) -> ArrayMesh:
 		var a: Vector3 = pts[f[0]]
 		var b: Vector3 = pts[f[1]]
 		var c: Vector3 = pts[f[2]]
-		var n := (b - a).cross(c - a).normalized()
+		var cr := (b - a).cross(c - a)
+		if cr.length_squared() < 1e-12:
+			continue  # squashed flat by a cut: nothing to draw
+		var n := cr.normalized()
 		if n.dot(a + b + c) < 0.0:  # make every face point outward
 			var tmp := b
 			b = c

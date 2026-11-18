@@ -30,6 +30,8 @@ func test_old_caves_unchanged() -> void:
 	CaveMaker.use_layout(6)  # worlds made with the huge cavern and its columns keep theirs too
 	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5332 pois=162 r0=(-83.95856, -20.99115, -44.3989) sum=-9894.0944", "seed 42, layout 6")
 	check_eq(_fingerprint(CaveMaker.new(7)), "rooms=197 segs=5554 pois=163 r0=(-15.06847, -20.1193, 88.08862) sum=-8559.8592", "seed 7, layout 6")
+	CaveMaker.use_layout(11)  # worlds made before the first cave always got a bridge keep theirs
+	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5256 pois=161 r0=(-83.95856, -24.81935, -44.3989) sum=-10044.4143", "seed 42, layout 11")
 	CaveMaker.use_layout(10)  # worlds made before the starting cave's bridge keep theirs
 	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5256 pois=161 r0=(-83.95856, -24.81935, -44.3989) sum=-9967.2001", "seed 42, layout 10")
 	CaveMaker.use_layout(9)  # worlds made with the first few bridges keep theirs
@@ -119,16 +121,18 @@ func test_bridge_in_the_starting_cave() -> void:
 	for sd in [42, 7, 1234]:
 		var m := CaveMaker.new(sd)
 		var found := {}
-		for br in m._bridges:  # the starting area: within ~110 m of where you come in
+		var c0: Vector3 = m.rooms[0].center
+		var r0 := maxf(m.rooms[0].radii.x, m.rooms[0].radii.z)
+		for br in m._bridges:  # (layout 12, owner Nov 18: in the first cave itself)
 			var mid: Vector3 = (br.a as Vector3).lerp(br.b, 0.5)
-			if Vector2(mid.x - m.cavern_spawn.x, mid.z - m.cavern_spawn.z).length() < 140.0:
+			if Vector2(mid.x - c0.x, mid.z - c0.z).length() < r0:
 				found = br
-		check(not found.is_empty(), "seed %d: the starting area has a bridge" % sd)
+		check(not found.is_empty(), "seed %d: the first cave has a bridge" % sd)
 		var spot := RuinTower.find_spot(m, float(plan.get("radius", 4.2)), float(plan.get("height", 9.0)))
 		if not found.is_empty() and not spot.is_empty():
 			var clear := true
 			for h in [1.0, 4.0, 7.0, 9.0]:
-				if m._bridge_dist(spot.pos + Vector3.UP * h, found) < float(plan.get("radius", 4.2)):
+				if m._bridge_dist(spot.pos + Vector3.UP * h, found) < 3.0:  # (at least 3 m of air round the tower's body and roof)
 					clear = false
 			check(clear, "seed %d: the bridge isn't where the tower stands" % sd)
 	CaveMaker.use_layout(was)

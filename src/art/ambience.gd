@@ -12,12 +12,12 @@ const MOODS := {
 	"mossy": {
 		ambient = Color(0.33, 0.38, 0.42), ambient_energy = 0.4,  # (was 0.32: "somewhere with nothing... I don't see anything")
 		fog = Color(0.045, 0.05, 0.06), fog_emit = Color(0.012, 0.016, 0.022),
-		tint = Color(1.0, 0.98, 0.94), dust = Color(0.9, 0.8, 0.65, 0.55), spores = 0.7,  # (F190: drifting spores everywhere)
+		tint = Color(1.0, 0.98, 0.94), dust = Color(0.9, 0.8, 0.65, 0.55), spores = 0.0,  # (owner, Nov 18: no purple dots: the glowing swarms instead)
 	},
 	"fungal": {
 		ambient = Color(0.40, 0.33, 0.50), ambient_energy = 0.44,  # (was 0.36)
 		fog = Color(0.05, 0.04, 0.07), fog_emit = Color(0.02, 0.012, 0.03),
-		tint = Color(0.97, 0.95, 1.0), dust = Color(0.8, 0.7, 1.0, 0.5), spores = 1.0,
+		tint = Color(0.97, 0.95, 1.0), dust = Color(0.8, 0.7, 1.0, 0.5), spores = 0.0,  # (owner, Nov 18: no purple dots)
 	},
 }
 const BLEND_SPEED := 0.6  ## how fast the mood changes when you cross into another biome
