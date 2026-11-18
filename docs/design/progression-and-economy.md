@@ -565,6 +565,10 @@ Meat can't be farmed. You hunt for it (combat doc has the animals).
 
 ## 7. Levels and skills
 
+> **Replaced Nov 19 (owner):** skills are now 14 Valheim-style skills with perks at 25/50/75/100, see
+> `docs/design/skills.md`. The 4-skill parts below (7.1 skills, 7.2 "goes to skill", 7.4 curve, 7.5 bonuses) are old.
+> Character level, perk points and the trees in 7.6 are being re-planned next.
+
 ### 7.1 Two kinds of growing (simple)
 
 Your dwarf grows in **two ways at once**:
@@ -858,7 +862,7 @@ Rune bonuses and set perks apply to **every player** in the world (it's a shared
 | Your lantern **and the fuel inside it** | **Stackable** things on your hotbar (food, bombs, runes, materials) |
 | **Tools and weapons on your hotbar** (anything with stack size 1) | |
 
-Buff food ends. XP and skills are **not** lost.
+Buff food ends. XP is not lost. **Skills: you lose some (owner, Nov 19, like Valheim); how much is still to plan.**
 
 **Why keep hotbar tools?** Underground, the walk back can mean digging. With no pickaxe you'd be stuck at home, and with no weapon you'd be helpless against whatever killed you. Keeping tools makes the trip back a fun little mission instead of a dead end. What you lose (for a while) is your **haul**: ore, crystals, food. That's still a real reason to be careful. (Open question 3.)
 
