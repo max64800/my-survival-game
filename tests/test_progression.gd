@@ -20,7 +20,8 @@ func test_skill_curve_total() -> void:
 	var t := 0
 	for n in 100:
 		t += Progression.skill_xp_to_next(n)
-	check_near(t, 41384, 60, "total skill XP to 100")
+	check_eq(t, roundi(41.0 * Progression.XP_PER_HOUR), "total skill XP to 100 = about 41 hours of work")
+	check(Progression.skill_xp_to_next(95) > 10 * Progression.skill_xp_to_next(5), "high levels take much longer")
 
 
 func test_xp_goes_to_skill_and_level() -> void:
@@ -123,10 +124,54 @@ func test_quality_roll() -> void:
 
 func test_network_roundtrip() -> void:
 	var p := Progression.new()
-	p.add_xp(5000, "smithing")
+	p.add_xp(5000, "crafting")
 	p.buy_perk("steady_hammer")
 	var q := Progression.new()
 	q.load_data(p.to_data())
 	check_eq(q.level, p.level, "level copied")
 	check_eq(q.perk_rank("steady_hammer"), 1, "perk copied")
 	check_eq(q.points_free(), p.points_free(), "points copied")
+
+
+func test_skills_list_and_info_match() -> void:
+	check_eq(Progression.SKILLS.size(), 14, "14 skills (skills.md)")
+	for sk in Progression.SKILLS:
+		check(Progression.SKILL_INFO.has(sk) and Progression.SKILL_INFO[sk][2].size() == 4, "%s has 4 ★ perks" % sk)
+	for br in Progression.BRANCH_SKILLS:
+		for sk in Progression.BRANCH_SKILLS[br]:
+			check(sk in Progression.SKILLS, "branch %s uses a real skill (%s)" % [br, sk])
+
+
+func test_weapons_train_their_skill() -> void:
+	check_eq(Progression.weapon_skill("mace_2h"), "warhammer", "two-handed mace = Warhammer")
+	check_eq(Progression.weapon_skill("axe_2h"), "axe", "two-handed axe = Axe")
+	check_eq(Progression.weapon_skill("pickaxe"), "", "pickaxe trains no weapon skill")
+	var p := Progression.new()
+	p.skill_level.mace = 50
+	check_near(p.weapon_damage_bonus("mace"), 0.10, 0.0001, "Mace 50: +10% damage")
+	check_near(p.weapon_damage_bonus("sword"), 0.0, 0.0001, "other weapons don't get it")
+
+
+func test_stars_and_branches() -> void:
+	var p := Progression.new()
+	p.skill_level.mining = 49
+	check(p.has_star("mining", 25) and not p.has_star("mining", 50), "★25 yes, ★50 not yet")
+	p.skill_level.spear = 30
+	check_eq(p.branch_level("fighting"), 30, "Warrior branch counts the best weapon")
+	check_near(p.run_speed_mult(), 1.0, 0.0001, "Running 0: no bonus")
+	p.skill_level.running = 100
+	check_near(p.run_speed_mult(), 1.2, 0.0001, "Running 100: +20% speed")
+
+
+func test_old_four_skill_save_carries_over() -> void:
+	var q := Progression.new()
+	q.load_data({l = 5, x = 10, sl = {mining = 12, fighting = 20, smithing = 7, survival = 9},
+		sx = {mining = 30, fighting = 1, smithing = 2, survival = 3}, p = {}, ps = 0})
+	check_eq(q.skill_level.mining, 12, "Mining kept")
+	check_eq(q.skill_xp.mining, 30, "Mining XP kept")
+	check_eq(q.skill_level.sword, 20, "old Fighting became Sword")
+	check_eq(q.skill_level.crafting, 7, "old Smithing became Crafting")
+	check_eq(q.skill_level.cooking, 9, "old Survival became Cooking")
+	check_eq(q.skill_level.woodcutting, 9, "... and Woodcutting")
+	check_eq(q.skill_level.running, 0, "new skills start at 0")
+	check(not q.skill_level.has("fighting"), "old names are gone")

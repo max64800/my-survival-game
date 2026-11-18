@@ -985,9 +985,11 @@ func _process(delta: float) -> void:
 			buffs.append("Cozy (comfort %d) %d:%02d" % [v.cozy_points, int(v.cozy_time) / 60, int(v.cozy_time) % 60])
 		_buff_label.text = "\n".join(([mood] if mood != "" else []) + buffs + Array(v.ailments.describe()))
 		var p := ps.progress
-		_level_label.text = "Level %d  (%d/%d XP)%s\nMining %d · Fighting %d · Smithing %d · Survival %d" % [
+		var best := Progression.SKILLS.duplicate()
+		best.sort_custom(func(a, b): return p.skill_level[a] > p.skill_level[b])
+		_level_label.text = "Level %d  (%d/%d XP)%s\n%s" % [
 			p.level, p.xp, Progression.xp_to_next(p.level), "  · %d perk points" % p.points_free() if p.points_free() > 0 else "",
-			p.skill_level.mining, p.skill_level.fighting, p.skill_level.smithing, p.skill_level.survival]
+			" · ".join(best.slice(0, 3).map(func(s): return "%s %d" % [Progression.SKILL_INFO[s][0], p.skill_level[s]]))]
 		if craft.visible and craft.station:
 			craft._status.text = craft.station.busy_text()
 		_fuel_bar.value = ps.fuel

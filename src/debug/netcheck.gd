@@ -124,7 +124,7 @@ func _run_client() -> void:
 		drops = auth.drop_count(),
 		stations = auth.stations.size(),
 		xp = me.progress.xp,
-		smithing = me.progress.skill_xp.smithing,
+		smithing = me.progress.skill_xp.crafting,
 		monster_hp = hp_seen,
 		door_open = door_open,
 	}
@@ -198,8 +198,8 @@ func _run_host() -> void:
 		fails.append("campfire count: host %d, friend %d (both should be 1)" % [auth.stations.size(), r.stations])
 	# XP reaches the friend in batches every 0.5 s, so the host may be a point or two ahead of the report.
 	var xp_gap: int = ps.progress.xp - r.xp if ps else 0
-	if ps and (xp_gap < 0 or xp_gap > 2 or r.smithing > ps.progress.skill_xp.smithing):
-		fails.append("friend's XP differs: friend %d/%d, host %d/%d" % [r.xp, r.smithing, ps.progress.xp, ps.progress.skill_xp.smithing])
+	if ps and (xp_gap < 0 or xp_gap > 2 or r.smithing > ps.progress.skill_xp.crafting):
+		fails.append("friend's XP differs: friend %d/%d, host %d/%d" % [r.xp, r.smithing, ps.progress.xp, ps.progress.skill_xp.crafting])
 	if ps and r.smithing == 0:
 		fails.append("friend got no smithing XP for crafting")
 	var host_cair: Monster = auth.monsters.get_monster(900)

@@ -31,7 +31,7 @@ Hours of doing mostly that one thing (the XP curve is tuned to match):
 | Skill | Per 10 levels | ★ 25 | ★ 50 | ★ 75 | ★ 100 |
 |---|---|---|---|---|---|
 | Running | +2% run speed, −3% run stamina | Quick burst of speed when you start running | Rubble and slopes don't slow you | Running past enemies makes them miss more | **Second Wind:** at 0 stamina, get 25% back (every 2 min) |
-| Jumping | +3% jump height, −5% fall damage | Jumping uses less stamina | Climb up ledges a bit higher | **Jump attack:** hits while in the air do +20% damage | No fall damage up to 8 m |
+| Jumping | +3% jump height, −3% jump stamina (fall damage: when it exists) | Jumping uses less stamina | Climb up ledges a bit higher | **Jump attack:** hits while in the air do +20% damage | No fall damage up to 8 m |
 | Mining | +3% dig power, −2% swing stamina | Pickaxe swings 10% faster | +10% chance of double ore | Crystal spots give +1 crystal | **Lucky hit:** 1 in 10 hits digs twice as hard |
 | Woodcutting | +3% chop power, −2% stamina | Axe swings 10% faster when chopping | +1 wood per Root Tree | Chopped roots grow back faster | 15% chance of double wood |
 | Gathering | +3% chance of an extra item | Pick things up from a bit further away | Things on the ground glow from further away | Mushrooms and plants regrow faster near you | Rare finds turn up more often |
@@ -50,6 +50,20 @@ New things these need (not built yet): Axe bleeding (★25), Spear throw (★75)
 ## Fixed rules (owner, Nov 19)
 - **Every tree always drops seeds** (for everyone, not a perk).
 - **Food never spoils.**
+
+## Built (Nov 19, Mac Claude) — `src/progress/progression.gd`
+- All 14 skills, the ~40-hour curve (`XP_PER_HOUR` is a guess: measure with the robots, then retune), the skills
+  window (K: level, bar, next ★ perk, hover for all four) and the top-3 skills on the HUD.
+- XP: Mining (digging), Woodcutting (chopping roots, mushrooms, Root Trees), Gathering (picking up, farm harvest),
+  Crafting (crafting, upgrades, building), Cooking (campfire, pot), each weapon by the weapon you hold (hits, kills,
+  training dummy), Running (1 per 1.2 s), Jumping (3 per jump), Shield (4 per blocked hit). Running, jumping and
+  blocks are counted on the player's computer and checked by the host (can't send more than the time allows).
+- Tiny bonus every level: run speed and stamina, jump height and stamina, dig power, chop power, swing stamina,
+  weapon damage, Gathering extra item, Cooking food time, Crafting quality.
+- ★ perks working: Jumping 25, Mining 50 / 75 / 100, Woodcutting 50 / 100.
+- Old saves: Fighting → Sword, Smithing → Crafting, Survival → Cooking + Gathering + Woodcutting.
+- **Not built yet:** the other ★ perks and the per-level bonuses that need systems we don't have yet (armor piercing,
+  spear reach, reload time, block strength, craft/cook time, parry window), and a "★ perk unlocked!" pop-up.
 
 ## Still to plan
 - Character level and perk points: how they fit with these skill perks (next brainstorm).

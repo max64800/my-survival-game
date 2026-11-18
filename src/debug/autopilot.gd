@@ -239,7 +239,7 @@ func _run() -> void:
 	for m: Monster in mm.monsters.values():
 		hp_after += m.hp
 	_report.append("step 5: monsters lost %.0f HP to 6 sword swings; %d still alive; our health %.0f, fighting skill XP %d" % [
-		hp_before - hp_after, mm.monsters.size(), ps.vitals.health, ps.progress.skill_xp.fighting])
+		hp_before - hp_after, mm.monsters.size(), ps.vitals.health, ps.progress.skill_xp.sword])
 	for m: Monster in mm.monsters.values():
 		mm._ev_remove(m.uid)
 	ps.vitals.health = ps.vitals.max_health()

@@ -354,7 +354,7 @@ func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: 
 		var crush := heavy and m.stun.take_crush()
 		var sit := Combat.situation(sneak, m.stun.is_stunned(), crush, riposte)
 		var mult := 0.6 if (w == "axe" and n == 2) else 1.0
-		var dmg := roundi(Combat.damage(w, heavy, tier, m.stats(), combo_step, sit, 0.0, Upgrades.bonus(ps.inventory.get_slot(ps.hand_slot())), buff + auth.damage_boost(ps, m.kind), elem) * mult)
+		var dmg := roundi(Combat.damage(w, heavy, tier, m.stats(), combo_step, sit, 0.0, Upgrades.bonus(ps.inventory.get_slot(ps.hand_slot())), buff + auth.damage_boost(ps, m.kind) + ps.progress.weapon_damage_bonus(w), elem) * mult)
 		if not Controls.robot and randf() < Combat.crit_chance(w):  # now and then a critical hit (owner F137; never in tests: they need exact numbers)
 			dmg = roundi(dmg * Combat.CRIT_MULT)
 			_ev_note.rpc(m.uid, "Critical!")
@@ -399,7 +399,9 @@ func _hurt_monster(m: Monster, peer: int, dmg: int, stun_amount: float) -> void:
 	m.stun.add(stun_amount)
 	m.alert(peer)
 	alert_pack(m, peer)
-	auth.give_xp(peer, 1, "fighting")
+	var hitter_ps := auth.get_player(peer)
+	if hitter_ps:
+		auth.give_xp(peer, 1, Progression.weapon_skill(Combat.weapon_of(hitter_ps.selected_item())))
 	_ev_hit.rpc(m.uid, dmg)
 	if m.hp <= 0.0:
 		_kill(m, peer)
@@ -504,7 +506,7 @@ func request_shoot(peer: int, bolt: String, aimed: bool, uid: int, from: Vector3
 				elem[e] = gb[e]
 		var sneak: bool = m.state in [Monster.State.IDLE, Monster.State.WANDER, Monster.State.SLEEP]
 		var sit := Combat.situation(sneak, m.stun.is_stunned(), false, false)
-		dealt = Combat.shot_damage(aimed, tier, bolt, m.stats(), dist, sit, gb.get("keen", 0.0) + auth.damage_boost(ps, m.kind), elem)
+		dealt = Combat.shot_damage(aimed, tier, bolt, m.stats(), dist, sit, gb.get("keen", 0.0) + auth.damage_boost(ps, m.kind) + ps.progress.weapon_damage_bonus("crossbow"), elem)
 		var stun_amount: float = (Combat.stun_value("crossbow", aimed, tier) + b.get("stun", 0.0)) * (1.0 + gb.get("stun", 0.0))
 		for k in BOLT_BUILDUP.get(bolt, {}):
 			m.add_buildup(k, BOLT_BUILDUP[bolt][k])
@@ -682,7 +684,7 @@ func _kill(m: Monster, peer: int) -> void:
 			auth.spawn_drop(Gems.item_id("shiftstep"), 1, m.global_position + Vector3.UP)
 	for pid in auth.players:  # kills give XP to everyone nearby (progression doc 7.2)
 		if auth.players[pid].node.global_position.distance_to(m.global_position) < 30.0 or pid == peer:
-			auth.give_xp(pid, xp, m.data.get("skill", "fighting"))
+			auth.give_xp(pid, xp, Progression.weapon_skill(Combat.weapon_of(auth.players[pid].selected_item())))
 	for d in ([] if m.is_boss() else m.data.drops):
 		var times := 2 if m.leader else 1
 		for t in times:
@@ -865,6 +867,8 @@ func _judge_incoming() -> void:
 					dwarf.knock_down()
 				if result.result in ["hit", "block"] and hit.get("charge", false) and dwarf.has_method("shove"):
 					dwarf.shove(charge_shove(m, dwarf.global_position))
+				if result.result in ["block", "parry"] and def.shield and "shield_blocks" in dwarf:
+					dwarf.shield_blocks += 1  # Shield practice (sent to the host with running and jumping)
 				if result.result == "parry" and dwarf.has_method("got_parry"):
 					dwarf.got_parry()
 		result.name = hit.name

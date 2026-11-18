@@ -40,6 +40,10 @@ var bot_move := Vector2.ZERO
 var bot_jump := false
 
 var _since_floor := 0.0
+var _run_time := 0.0  ## Running and Jumping practice not yet told to the host
+var _jumps := 0
+var shield_blocks := 0  ## hits blocked or parried with a shield, not yet told to the host
+var _body_xp_wait := 0.0
 var _jump_wanted := 0.0
 var _cam_y := NAN
 var _zoom := CAMERA_DISTANCE  ## where the mouse wheel wants the camera
@@ -215,12 +219,15 @@ func _physics_process(delta: float) -> void:
 		iv = bot_move
 	dir = (Basis(Vector3.UP, _yaw) * Vector3(iv.x, 0, iv.y))
 	var body := _vitals()
-	if running and body and not body.drain_stamina(RUN_STAMINA, delta):
+	var prog := _progress()
+	if running and body and not body.drain_stamina(RUN_STAMINA * (prog.run_stamina_mult() if prog else 1.0), delta):
 		running = false  # out of breath
 	var fight_mult := fight.step(delta, playing, dir) if fight else 1.0
 	if fight and (fight.is_blocking() or fight.stagger > 0.0):
 		running = false
-	var speed := (RUN_SPEED if running else WALK_SPEED) * fight_mult * (body.ailments.speed_mult() if body else 1.0)
+	if running:
+		_run_time += delta
+	var speed := (RUN_SPEED * (prog.run_speed_mult() if prog else 1.0) if running else WALK_SPEED) * fight_mult * (body.ailments.speed_mult() if body else 1.0)
 	var target := dir * speed
 	var on_floor := is_on_floor()
 	var a := ACCEL if on_floor else AIR_ACCEL
@@ -239,8 +246,9 @@ func _physics_process(delta: float) -> void:
 	else:
 		_jump_wanted = maxf(0.0, _jump_wanted - delta)
 	if _jump_wanted > 0.0 and _since_floor <= COYOTE_TIME and velocity.y <= 0.5 \
-			and (body == null or body.use_stamina(JUMP_STAMINA)):
-		velocity.y = JUMP_SPEED
+			and (body == null or body.use_stamina(JUMP_STAMINA * (prog.jump_stamina_mult() if prog else 1.0))):
+		velocity.y = JUMP_SPEED * (prog.jump_speed_mult() if prog else 1.0)
+		_jumps += 1
 		_jump_wanted = 0.0
 		_since_floor = COYOTE_TIME + 1.0  # no double jump
 	elif not on_floor:
@@ -258,6 +266,7 @@ func _physics_process(delta: float) -> void:
 		_shove = _shove.move_toward(Vector3.ZERO, SHOVE_FADE * delta)
 	move_and_slide()
 	_guard_fall(delta)
+	_send_body_xp(delta)
 	model.set_climbing(ladder and not is_on_floor(), delta)  # hands on the rungs
 	if on_floor and not ladder and velocity.y <= 0.01 and dir.length() > 0.1 and is_on_wall():
 		_try_step_up(dir * speed * delta)
@@ -588,6 +597,25 @@ func _holding_hammer() -> bool:
 	return ps != null and ps.selected_item() == "build_hammer"
 
 
+## Every few seconds, tell the host how much we ran and jumped (it checks and gives the XP).
+func _send_body_xp(delta: float) -> void:
+	_body_xp_wait += delta
+	if _body_xp_wait < 5.0:
+		return
+	if is_local and (_run_time > 0.0 or _jumps > 0 or shield_blocks > 0) and GameAuthority.instance:
+		GameAuthority.instance.ask_body_xp(_run_time, _jumps, shield_blocks)
+	_body_xp_wait = 0.0
+	_run_time = 0.0
+	_jumps = 0
+	shield_blocks = 0
+
+
+func _progress() -> Progression:
+	var auth := GameAuthority.instance
+	var ps := auth.get_player(peer_id) if auth else null
+	return ps.progress if ps else null
+
+
 func _vitals() -> Vitals:
 	var auth := GameAuthority.instance
 	var ps := auth.get_player(peer_id) if auth else null
@@ -601,7 +629,8 @@ func _can_swing() -> bool:
 	if ps == null:
 		return true
 	var swift: float = Gems.bonus(ps.inventory.get_slot(ps.hand_slot())).get("mine_stamina", 0.0)
-	return ps.vitals.use_stamina(SWING_STAMINA * ps.progress.swing_stamina_mult() * (1.0 - swift))
+	var skill := "woodcutting" if Items.kind(ps.selected_item()) == "axe" else "mining"
+	return ps.vitals.use_stamina(SWING_STAMINA * ps.progress.swing_stamina_mult(skill) * (1.0 - swift))
 
 
 ## The host's answer to our pickaxe hit (arrives right away when playing alone).

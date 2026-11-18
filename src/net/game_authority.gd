@@ -107,6 +107,8 @@ class PlayerState:
 	var boosts := {}
 	var train_hits := 0
 	var train_at := 0.0
+	var body_xp_at := 0.0  ## when this player last sent Running/Jumping practice
+	var run_carry := 0.0  ## Running XP below 1 waiting to add up
 
 	func _init() -> void:
 		inventory.changed.connect(_note_seen)
@@ -369,7 +371,11 @@ func request_chop_pillar(peer_id: int, id: int) -> void:
 	n = mini(n, RootPillars.CHOPS - used)
 	pillar_chops[id] = used + n
 	var out := Vector3(chest.x - axis.x, 0.0, chest.z - axis.z).normalized()
-	spawn_drop("rootwood", n, axis + out * float(p.width) * 0.18 + Vector3.UP * 0.4)
+	var wood := n * (2 if ps.progress.has_star("woodcutting", 100) and randf() < 0.15 else 1)  # ★100: double wood
+	if used + n >= RootPillars.CHOPS and ps.progress.has_star("woodcutting", 50):
+		wood += 1  # Woodcutting ★50: +1 wood per Root Tree
+	spawn_drop("rootwood", wood, axis + out * float(p.width) * 0.18 + Vector3.UP * 0.4)
+	give_xp(peer_id, 3 * n, "woodcutting")
 	_ev_tree_used.rpc(id, used + n)
 	if used + n >= RootPillars.CHOPS:  # it cracks: 1-2 Root Seeds fall from it (owner, Nov 18)
 		tree_regrow[id] = RootPillars.REGROW_TIME
@@ -546,6 +552,14 @@ func ask_use(aim_point: Vector3, aim_normal: Vector3, yaw: float) -> void:
 		request_use(local_peer_id(), aim_point, aim_normal, yaw)
 	else:
 		_rpc_use.rpc_id(1, aim_point, aim_normal, yaw)
+
+
+## Running and jumping practice (sent every few seconds by our dwarf).
+func ask_body_xp(run_seconds: float, jumps: int, blocks: int = 0) -> void:
+	if is_host():
+		request_body_xp(local_peer_id(), run_seconds, jumps, blocks)
+	else:
+		_rpc_body_xp.rpc_id(1, run_seconds, jumps, blocks)
 
 
 func ask_buy_perk(perk_id: String) -> void:
@@ -785,7 +799,7 @@ func request_upgrade(peer_id: int, slot: int, station_id: int) -> String:
 		ps.inventory.remove(item, cost[item])
 	s["up"] = Upgrades.level(s) + 1
 	ps.inventory.changed.emit()
-	give_xp(peer_id, 5, "smithing")
+	give_xp(peer_id, 5, "crafting")
 	if peer_id == local_peer_id():
 		Sfx.ui("craft", 0.0)
 		hud_message.emit("%s!" % Upgrades.display_name(s))
@@ -823,6 +837,12 @@ func _rpc_use(aim_point: Vector3, aim_normal: Vector3, yaw: float) -> void:
 	# INF means "aiming at nothing"; NaN (x != x) is never allowed.
 	if is_host() and aim_point == aim_point and aim_normal.is_finite() and is_finite(yaw):
 		request_use(multiplayer.get_remote_sender_id(), aim_point, aim_normal, yaw)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_body_xp(run_seconds: float, jumps: int, blocks: int) -> void:
+	if is_host():
+		request_body_xp(multiplayer.get_remote_sender_id(), run_seconds, jumps, blocks)
 
 
 @rpc("any_peer", "reliable")
@@ -1016,6 +1036,8 @@ func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
 		return _judge_level(ps, point)
 	var power: float = Items.dig_power(ps.selected_item()) * ps.progress.dig_power_mult() \
 		* (1.0 + Gems.bonus(ps.inventory.get_slot(ps.hand_slot())).get("dig", 0.0)) 		* (1.0 + Upgrades.bonus(ps.inventory.get_slot(ps.hand_slot())))  # +15% per upgrade step
+	if ps.progress.has_star("mining", 100) and randf() < 0.1:
+		power *= 2.0  # Mining ★100: lucky hit
 	var bare := false
 	if power <= 0:
 		# No pickaxe at all: dig with bare hands, three times slower, so you can never get stuck
@@ -1178,7 +1200,7 @@ func request_harvest(peer_id: int, glow_id: int) -> Dictionary:
 		if Items.kind(tool) == "pickaxe":
 			power = Items.dig_power(tool) * ps.progress.dig_power_mult() * (PICK_ON_WOOD if k.tool == "axe" else 1.0) 				* (1.0 + Upgrades.bonus(ps.inventory.get_slot(ps.hand_slot())))
 		elif Items.kind(tool) == "axe" and k.tool == "axe":
-			power = Items.info(tool).power * AXE_ON_WOOD * (1.0 + ps.progress.skill_level.survival * 0.003) 				* (1.0 + Upgrades.bonus(ps.inventory.get_slot(ps.hand_slot())))
+			power = Items.info(tool).power * AXE_ON_WOOD * ps.progress.chop_power_mult() 				* (1.0 + Upgrades.bonus(ps.inventory.get_slot(ps.hand_slot())))
 		if power <= 0.0:
 			var r := {state = "no_tool", point = spot.pos}
 			_tell_feedback(peer_id, r)
@@ -1197,6 +1219,10 @@ func request_harvest(peer_id: int, glow_id: int) -> Dictionary:
 	var count := randi_range(k.count[0], k.count[1])
 	if GlowPlacer.is_plant(spot.kind) and ps.progress.perk_rank("forager") > 0:
 		count += 1
+	if k.tool == "hand" and randf() < ps.progress.gather_extra_chance():
+		count += 1  # Gathering skill
+	elif k.tool == "axe" and ps.progress.has_star("woodcutting", 100) and randf() < 0.15:
+		count *= 2  # Woodcutting ★100: double wood
 	spawn_drop(k.item, count, spot.pos + spot.normal * 0.6)
 	if k.has("extra"):
 		spawn_drop(k.extra, 1, spot.pos + spot.normal * 0.6 + Vector3.UP * 0.3)
@@ -1357,7 +1383,7 @@ func request_farm(peer_id: int, station_id: int, seed_item: String = "") -> Stri
 		var left := ps.inventory.add(st.crop, give)
 		if left > 0:
 			spawn_drop(st.crop, left, st.global_position + Vector3.UP * 0.8)
-		give_xp(peer_id, 3, "survival")
+		give_xp(peer_id, 3, "gathering")
 		_ev_farm.rpc(station_id, "", 0.0)
 		return "picked"
 	if st.crop != "":
@@ -1512,7 +1538,7 @@ func request_train(peer_id: int, station_id: int) -> bool:
 	ps.train_at = now()
 	ps.train_hits += 1
 	if ps.train_hits % 4 == 0:
-		give_xp(peer_id, 1, "fighting")
+		give_xp(peer_id, 1, Progression.weapon_skill(Combat.weapon_of(ps.selected_item())))
 	return true
 
 
@@ -1631,6 +1657,23 @@ func request_carve(peer_id: int, item_id: String) -> String:
 	return result
 
 
+## Host: Running XP (1 per 1.2 s of running), Jumping XP (3 per jump) and Shield XP (4 per blocked hit,
+## blocks are worked out on the player's computer). Never more than the
+## time since the last report allows, so a friend can't send made-up numbers.
+func request_body_xp(peer_id: int, run_seconds: float, jumps: int, blocks: int = 0) -> void:
+	var ps := get_player(peer_id)
+	if ps == null:
+		return
+	var since := minf(now() - ps.body_xp_at, 10.0)
+	ps.body_xp_at = now()
+	ps.run_carry += clampf(run_seconds, 0.0, since + 0.5) / 1.2
+	var run_xp := int(ps.run_carry)
+	ps.run_carry -= run_xp
+	give_xp(peer_id, run_xp, "running")
+	give_xp(peer_id, 3 * clampi(jumps, 0, ceili(since / 0.6)), "jumping")
+	give_xp(peer_id, 4 * clampi(blocks, 0, ceili(since / 0.5)), "shield")
+
+
 func request_buy_perk(peer_id: int, perk_id: String) -> bool:
 	var ps := get_player(peer_id)
 	if ps == null or not ps.progress.buy_perk(perk_id):
@@ -1676,10 +1719,10 @@ func request_craft(peer_id: int, recipe_id: String, station_id: int = 0) -> bool
 			return false
 		if fuel_item != "":
 			ps.inventory.remove(fuel_item, r.fuel)
-	var skill := "survival" if r.station in ["campfire", "cooking_pot"] else "smithing"
+	var skill := "cooking" if r.station in ["campfire", "cooking_pot"] else "crafting"
 	if peer_id == local_peer_id():
 		Sfx.ui("craft", 0.0)
-	var xp := 10 if Items.stack_size(r.output) == 1 else (5 if skill == "survival" else 1)
+	var xp := 10 if Items.stack_size(r.output) == 1 else (5 if skill == "cooking" else 1)
 	give_xp(peer_id, xp, skill)
 	return true
 
@@ -2173,9 +2216,13 @@ func _give_dig_drops(ps: PlayerState, counts: Dictionary, pos: Vector3) -> void:
 			n = maxi(n, 1)  # always feel rewarded for hitting ore (the hits already paid count too)
 			if randf() < Gems.bonus(ps.inventory.get_slot(ps.hand_slot())).get("extra_ore", 0.0):
 				n += 1  # Burrow gem
+			if ps.progress.has_star("mining", 50) and randf() < 0.1:
+				n *= 2  # Mining ★50: double ore
 			for i in n:
 				if randf() < 0.005:
 					spawn_drop(Gems.item_id("burrow"), 1, pos)  # ore veins hide Burrow gems (doc 4.2)
+		if n > 0 and item.begins_with("crystal_") and ps.progress.has_star("mining", 75):
+			n += 1  # Mining ★75: +1 crystal
 		if n > 0:
 			spawn_drop(item, n, pos)
 

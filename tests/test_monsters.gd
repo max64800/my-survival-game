@@ -92,7 +92,7 @@ func test_sword_damage_and_kill() -> void:
 	check_near(m.hp, 17.0, 0.01, "30 - 13 = 17 HP left")
 	auth.monsters.request_attack(1, PackedInt32Array([m.uid]), true, 0, false)
 	check(auth.monsters.monsters.is_empty(), "heavy finishes it")
-	check(ps.progress.skill_xp.fighting >= 5, "fighting XP for the kill")
+	check(ps.progress.skill_xp.sword >= 5, "Sword XP for the kill")
 	_teardown()
 
 

@@ -3655,3 +3655,17 @@ the body."
   PC to-dos F346–F349. Skills brainstorm → docs/design/skills.md (14 Valheim-style skills, tiny bonus every level,
   perks at 25/50/75/100; seeds always drop, food never spoils). Paused at: character level + perk points
   (A trim the 4 trees / B small talent board / C none; Claude suggests A), then death skill loss.
+
+## 2026-11-19 (Mac) — The 14 skills built
+- Owner: "implement what we talked about". Built the skills plan (docs/design/skills.md) in
+  src/progress/progression.gd: 14 skills, ~40 h to 100, a tiny bonus every level, ★ perks at 25/50/75/100.
+  XP now goes to the right skill (weapon you hold, woodcutting, gathering, crafting, cooking). Running, jumping and
+  shield blocks are counted on the player's computer and checked by the host (request → host approves).
+- Skills window (K) shows all 14 with a bar and the next ★ perk; HUD shows the top 3. Old saves carry over
+  (Fighting → Sword, Smithing → Crafting, Survival → Cooking/Gathering/Woodcutting), with a test.
+- Working ★ perks: Jumping 25, Mining 50/75/100, Woodcutting 50/100. The rest need systems that don't exist yet
+  (listed in skills.md). No fall damage in the game, so Jumping's per-level bonus is jump stamina for now.
+- Hurdle: RTK cut the test output so the failing names were hidden; re-ran with `rtk bypass` in a separate copy
+  of the project to get the before-numbers. Before: 404 checks, 4 failed. After: 409 checks, same 4 failed
+  (vine placement, shovel model and 2 more, all already failing before this work).
+- Not checked in a real game window (Mac, headless tests only). XP_PER_HOUR is a guess.

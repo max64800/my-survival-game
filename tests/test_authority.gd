@@ -274,7 +274,7 @@ func test_craft_campfire_and_place_it() -> void:
 	ps.inventory.add("stone", 5)
 	ps.inventory.add("rootwood", 3)
 	check(auth.request_craft(1, "campfire"), "campfire crafted by hand")
-	check(ps.progress.skill_xp.smithing > 0, "smithing XP for crafting")
+	check(ps.progress.skill_xp.crafting > 0, "smithing XP for crafting")
 	var slot := -1
 	for i in Inventory.HOTBAR_SIZE:
 		if ps.inventory.get_slot(i).get("id", "") == "campfire":
@@ -669,4 +669,18 @@ func test_floor_things_are_put_down_on_the_real_rock() -> void:
 	check(absf((list[0] as Transform3D).origin.y - fl.y) < 0.08, "the floating one now sits on the floor")
 	check((list[1] as Transform3D).basis.get_scale().x < 0.01, "one with no rock under it is hidden")
 	check(absf((list[0] as Transform3D).origin.y - fl.y) < 0.08, "its owner's list knows the new place")
+	_teardown()
+
+
+func test_running_jumping_and_shield_xp_are_checked_by_the_host() -> void:
+	await _setup(42)
+	ps.body_xp_at = GameAuthority.now() - 5.0  # last report 5 s ago
+	auth.request_body_xp(1, 4.8, 2, 1)
+	check_eq(ps.progress.skill_xp.running, 4, "4.8 s of running = 4 Running XP")
+	check_eq(ps.progress.skill_xp.jumping, 6, "2 jumps = 6 Jumping XP")
+	check_eq(ps.progress.skill_xp.shield, 4, "1 block = 4 Shield XP")
+	ps.body_xp_at = GameAuthority.now() - 5.0
+	auth.request_body_xp(1, 9999.0, 9999, 9999)  # made-up numbers from a cheater
+	check(ps.progress.skill_xp.running <= 4 + 5, "running capped by the time that passed")
+	check(ps.progress.skill_xp.jumping <= 6 + 3 * 9, "jumps capped too")
 	_teardown()

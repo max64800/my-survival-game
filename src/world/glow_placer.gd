@@ -18,27 +18,27 @@ const MIN_SPACING := 2.5
 const KINDS := {
 	"crystal": {item = "crystal_blue", count = [2, 4], tool = "pickaxe", hardness = 18, glow = true, color = Color(0.35, 0.75, 1.0), xp = 4, skill = "mining"},
 	"crystal_green": {item = "crystal_green", count = [2, 4], tool = "pickaxe", hardness = 18, glow = true, color = Color(0.35, 1.0, 0.5), xp = 4, skill = "mining"},
-	"glowcap": {item = "glowcap", count = [1, 1], tool = "hand", glow = true, color = Color(0.25, 0.95, 0.85), xp = 1, skill = "survival"},
-	"hollowcap": {item = "hollowcap", count = [1, 1], tool = "hand", color = Color(0.55, 0.38, 0.26), xp = 1, skill = "survival"},
-	"bellcap": {item = "bellcap", count = [1, 1], tool = "hand", color = Color(0.55, 0.7, 1.0), xp = 1, skill = "survival"},
-	"firecap": {item = "firecap", count = [1, 1], tool = "hand", glow = true, color = Color(1.0, 0.35, 0.2), xp = 1, skill = "survival"},
-	"fiber": {item = "fiber", count = [2, 3], tool = "hand", color = Color(0.5, 0.65, 0.3), xp = 1, skill = "survival"},
+	"glowcap": {item = "glowcap", count = [1, 1], tool = "hand", glow = true, color = Color(0.25, 0.95, 0.85), xp = 1, skill = "gathering"},
+	"hollowcap": {item = "hollowcap", count = [1, 1], tool = "hand", color = Color(0.55, 0.38, 0.26), xp = 1, skill = "gathering"},
+	"bellcap": {item = "bellcap", count = [1, 1], tool = "hand", color = Color(0.55, 0.7, 1.0), xp = 1, skill = "gathering"},
+	"firecap": {item = "firecap", count = [1, 1], tool = "hand", glow = true, color = Color(1.0, 0.35, 0.2), xp = 1, skill = "gathering"},
+	"fiber": {item = "fiber", count = [2, 3], tool = "hand", color = Color(0.5, 0.65, 0.3), xp = 1, skill = "gathering"},
 	# Twigs lying on the floor: pick them up (E or a hit) for a bit of wood (owner, Nov 17: "missing a ton of wood").
-	"twig": {item = "rootwood", count = [1, 1], tool = "hand", color = Color(0.36, 0.25, 0.15), xp = 1, skill = "survival"},
-	"root": {item = "rootwood", count = [3, 3], extra = "fiber", tool = "axe", hardness = 30, chops = 4, color = Color(0.42, 0.29, 0.18), xp = 3, skill = "survival"},
+	"twig": {item = "rootwood", count = [1, 1], tool = "hand", color = Color(0.36, 0.25, 0.15), xp = 1, skill = "gathering"},
+	"root": {item = "rootwood", count = [3, 3], extra = "fiber", tool = "axe", hardness = 30, chops = 4, color = Color(0.42, 0.29, 0.18), xp = 3, skill = "woodcutting"},
 	# Fungal Jungle. Giant mushrooms are the jungle's wood: tall stalks that need a copper axe
 	# (or copper pickaxe at half power), and each chop also drops some flesh.
-	"giant_mushroom": {item = "mushroom_wood", count = [3, 3], extra = "mushroom_flesh", tool = "axe", hardness = 40, min_tier = 1, chops = 4, color = Color(0.72, 0.5, 0.78), xp = 4, skill = "survival"},
+	"giant_mushroom": {item = "mushroom_wood", count = [3, 3], extra = "mushroom_flesh", tool = "axe", hardness = 40, min_tier = 1, chops = 4, color = Color(0.72, 0.5, 0.78), xp = 4, skill = "woodcutting"},
 	"drip": {item = "", tool = "none", color = Color(0.55, 0.75, 0.95)},
 	# Thin roots in the starting room: pull them by hand for your first pickaxe handle (feedback F11).
-	"root_dangle": {item = "rootwood", count = [1, 1], extra = "fiber", tool = "hand", color = Color(0.45, 0.31, 0.19), xp = 1, skill = "survival"},
+	"root_dangle": {item = "rootwood", count = [1, 1], extra = "fiber", tool = "hand", color = Color(0.45, 0.31, 0.19), xp = 1, skill = "gathering"},
 	"crystal_amber": {item = "crystal_amber", count = [2, 3], tool = "pickaxe", hardness = 22, glow = true, color = Color(1.0, 0.72, 0.28), xp = 5, skill = "mining"},
 	# More colours (owner, Nov 17: "so many crystals are just blue"; picked: real crystals, the strong ones rare).
 	"crystal_violet": {item = "crystal_violet", count = [2, 3], tool = "pickaxe", hardness = 20, glow = true, color = Color(0.68, 0.42, 1.0), xp = 5, skill = "mining"},
 	"crystal_white": {item = "crystal_white", count = [1, 2], tool = "pickaxe", hardness = 26, glow = true, color = Color(0.92, 0.95, 1.0), xp = 8, skill = "mining"},
 	"crystal_red": {item = "crystal_red", count = [1, 2], tool = "pickaxe", hardness = 24, glow = true, color = Color(1.0, 0.32, 0.28), xp = 7, skill = "mining"},
-	"spore_truffle": {item = "spore_truffle", count = [1, 2], tool = "hand", color = Color(0.45, 0.33, 0.52), xp = 1, skill = "survival"},
-	"ember_morel": {item = "ember_morel", count = [1, 1], tool = "hand", glow = true, color = Color(1.0, 0.45, 0.15), xp = 2, skill = "survival"},
+	"spore_truffle": {item = "spore_truffle", count = [1, 2], tool = "hand", color = Color(0.45, 0.33, 0.52), xp = 1, skill = "gathering"},
+	"ember_morel": {item = "ember_morel", count = [1, 1], tool = "hand", glow = true, color = Color(1.0, 0.45, 0.15), xp = 2, skill = "gathering"},
 }
 const GIANT := "giant_mushroom"
 ## Dripping stalactites: not harvestable, they mark where a Drip Bucket collects water (doc 6.4).

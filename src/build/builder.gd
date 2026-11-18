@@ -150,7 +150,7 @@ func request_place(peer_id: int, piece: String, family: String, pos: Vector3, ro
 	_next_uid += 1
 	_ev_add_piece.rpc(uid, piece, family, pos, rot, Pieces.touches_rock(piece, pos, rot, auth.world.sdf_at, family))
 	_placed_at[uid] = _clock
-	auth.give_xp(peer_id, 2, "smithing")
+	auth.give_xp(peer_id, 2, "crafting")
 	return ""
 
 
