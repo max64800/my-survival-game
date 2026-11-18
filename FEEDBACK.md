@@ -178,3 +178,5 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 ## Done
 
 Fixed items live in `FEEDBACK-done.md` (moved there unchanged on Nov 16 to keep this file short). Before adding a new item, Grep BOTH files for a keyword: if it matches a fixed item, bump its Said count there, or if it came back, mark it 🔁 and add it to "Things that keep coming back" above.
+
+- [ ] **F324. Breakable boulders for stone, like Conan Exiles, in several shapes around the caves.** *From: you. Said: 1×* — Nov 18: built (all worlds): 5 hand-built shapes, 3-5 per big cave, 1-2 per small one; every hit gives stone (2 with a pickaxe), 6 hits break it into chunks; a new one 20 minutes later. Check in the game.

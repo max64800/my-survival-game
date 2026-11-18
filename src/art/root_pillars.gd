@@ -57,7 +57,7 @@ static func plan(maker: CaveMaker) -> Array[Dictionary]:
 			if top == Vector3.INF or bottom == Vector3.INF:
 				continue
 			var h := top.y - bottom.y
-			if h < 5.0 or h > 14.0:
+			if h < 5.0 or h > 22.0:  # (up to 22 m: the first cave's ceiling is high; owner saw no trees there)
 				continue
 			width = maxf(width, h * 0.9)  # tall ones stay massive, not stretched thin (in-game look: still thin at 0.6)
 			if maker.on_bridge(top, 2.0) or maker.on_bridge(bottom, 2.0):

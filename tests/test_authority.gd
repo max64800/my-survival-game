@@ -543,3 +543,30 @@ func test_root_tree_cracks_and_replants() -> void:
 	check_eq(rp.pillar(id).want_stage, "tree", "after an hour: a full Root Tree")
 	check(auth.snapshot().planted.size() == 1, "saved with the world")
 	_teardown()
+
+
+## Boulders (owner, Nov 18, like Conan Exiles): stone every hit, it bursts after Boulders.HITS hits, comes back later.
+func test_boulder_breaks_and_comes_back() -> void:
+	await _setup(42)
+	var bo := Boulders.new()
+	auth.get_parent().add_child(bo)
+	bo.build(world.maker)
+	auth.boulders = bo
+	var r := bo.rock(0)
+	check(not r.is_empty(), "there's a boulder")
+	if r.is_empty():
+		_teardown()
+		return
+	player.global_position = (r.pos as Vector3) + Vector3(1.6, 0.1, 0.0)
+	var before := auth.drop_count()
+	for i in Boulders.HITS + 3:
+		auth.request_hit_boulder(1, 0)
+	check(auth.drop_count() > before, "hitting it gives stone")
+	check(bo.rock(0).broken, "it broke after %d hits" % Boulders.HITS)
+	check(auth.boulder_back.has(0), "a new one is on its way")
+	var snap := auth.snapshot()
+	check(snap.boulder_back.has(0), "saved")
+	auth._tick_boulders(Boulders.RESPAWN + 1.0)
+	check(not auth.boulder_back.has(0), "after 20 minutes it comes back")
+	check(bo.rock(0).want_back, "it appears when nobody is looking")
+	_teardown()

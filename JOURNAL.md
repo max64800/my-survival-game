@@ -3520,3 +3520,19 @@ the body."
   blobs grown half-sunk onto the trunk and feet (not the ceiling crown), fuzz carved, painted moss green.
   Round 1 tiny lime dots; round 2 bigger patches, darker natural green. The page now shows the models upright
   (Blender's preview shows them upside down: their +Z is down in the game).
+
+## November 18, 2026 (PC, cave Claude): breakable boulders, Root Trees in the first cave
+
+- Owner: "I don't see any [Root Trees] in the game" and "add some rocks, like in Conan Exiles, that you can break to get
+  some stone. Multiple shapes around the caves."
+- Why no trees: they only grew where the ceiling is 5-14 m up, and the first cave's ceiling is higher. Now up to 22 m;
+  in the in-game picture a Root Tree stands in the first cave.
+- Boulders: five shapes hand-built in Blender (`cave_boulders.py`: a round one with two stones at its foot, a leaning
+  standing stone with rubble, stacked slabs, a cluster of 4 rocks, one split in two by a crack), cut like chiselled
+  stone and painted with the stone pictures. 3-5 in every big cave, 1-2 in small ones, on open flat floor, never on
+  kept-clear ground, bridges, stone columns, places, ramps or next to a Root Tree (placement rule test). Solid.
+  Every hit gives stone (2 with a pickaxe, 1 by hand), after 6 hits it bursts into rock chunks, and 20 minutes later a
+  new one stands there (it appears while nobody is looking). Saved, co-op (ask, host, everyone).
+- Hurdle: the first in-game look showed them pebble-sized next to the dwarf; now 1.2-2x bigger.
+- Hurdle: the test filter picks test *files* by name, not single tests (`only=keep_clear`).
+- Saved through a clean copy of the online version again, so other sessions' unsaved work stays out.

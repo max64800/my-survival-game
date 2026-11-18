@@ -33,6 +33,11 @@ func _run() -> void:
 	while not (_main.world and _main.is_ready_to_play()):
 		await _wait(0.25)
 	await _wait(1.0)
+	if "boulders" in OS.get_cmdline_user_args():
+		await _boulders()
+		print("ARTPREVIEW done: ", _shots)
+		get_tree().quit()
+		return
 	if "creatures" in OS.get_cmdline_user_args():
 		await _creatures()
 		print("ARTPREVIEW done: ", _shots)
@@ -245,3 +250,38 @@ func _live(base: Vector3, fwd: Vector3, side: Vector3, cam: Camera3D, light: Omn
 	light.global_position = cam.global_position + Vector3.UP * 0.3
 	await RenderingServer.frame_post_draw
 	_main.take_screenshot(_shots.path_join("creature_live_charge_closeup.png"))
+
+
+## The breakable boulders (owner, Nov 18): the 3 nearest to the start, each from a few metres away with a lantern.
+func _boulders() -> void:
+	var bo: Boulders = _main.get_node_or_null("Boulders")
+	if bo == null:
+		return
+	var dwarf: Dwarf = _main.dwarf
+	dwarf.set_physics_process(false)
+	_main.hud.set_paused(false)
+	var cam := Camera3D.new()
+	_main.add_child(cam)
+	cam.current = true
+	var light := OmniLight3D.new()
+	light.light_color = Color(1.0, 0.78, 0.52)
+	light.omni_range = 12.0
+	light.light_energy = 1.8
+	_main.add_child(light)
+	var list := []
+	for i in 200:
+		var r := bo.rock(i)
+		if r.is_empty():
+			break
+		list.append([(r.pos as Vector3).distance_to(dwarf.global_position), i])
+	list.sort()
+	for k in mini(3, list.size()):
+		var r := bo.rock(list[k][1])
+		var p: Vector3 = r.pos
+		var away := Vector3(cos(k * 2.0), 0, sin(k * 2.0))
+		cam.global_position = p + away * 3.2 + Vector3.UP * 1.6
+		cam.look_at(p + Vector3.UP * 0.5)
+		light.global_position = cam.global_position + Vector3.UP * 0.5
+		await _wait(1.0)
+		await RenderingServer.frame_post_draw
+		_main.take_screenshot(_shots.path_join("boulder_%d.png" % k))

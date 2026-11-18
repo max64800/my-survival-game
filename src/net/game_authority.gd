@@ -42,6 +42,9 @@ var removed_strands: Array[int] = []  ## root-curtain strands broken so far (sav
 var removed_hroots: Array[String] = []  ## big hanging roots broken so far (saved)
 var pillars: RootPillars  ## giant root pillars (chop for wood)
 var pillar_chops := {}  ## pillar id -> how much wood it has given (saved)
+var boulders: Boulders  ## breakable boulders (stone)
+var boulder_hits := {}  ## boulder id -> hits taken (saved)
+var boulder_back := {}  ## broken boulder id -> seconds until a new one stands there (saved)
 var removed_plants: Array[int] = []  ## cave-life plants broken so far (saved, sent to late joiners)
 ## Host: chopped roots growing back (F106): glow id -> seconds left.
 var regrow := {}
@@ -265,6 +268,65 @@ func ask_hit(point: Vector3, normal: Vector3) -> void:
 		request_hit(local_peer_id(), point, normal)
 	else:
 		_rpc_hit.rpc_id(1, point, normal)
+
+
+## A swing at a boulder (owner, Nov 18, like Conan Exiles): stone every hit (2 with a pickaxe, 1 by hand), it bursts
+## after Boulders.HITS hits and a new one stands there 20 minutes later.
+func ask_hit_boulder(id: int) -> void:
+	if is_host():
+		request_hit_boulder(local_peer_id(), id)
+	else:
+		_rpc_hit_boulder.rpc_id(1, id)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_hit_boulder(id: int) -> void:
+	if is_host():
+		request_hit_boulder(multiplayer.get_remote_sender_id(), id)
+
+
+func request_hit_boulder(peer_id: int, id: int) -> void:
+	var ps := get_player(peer_id)
+	if ps == null or boulders == null:
+		return
+	var r := boulders.rock(id)
+	if r.is_empty() or r.broken or boulder_back.has(id):
+		return
+	var at: Vector3 = (r.pos as Vector3) + Vector3.UP * 0.5 * float(r.scale)
+	if _chest(ps).distance_to(at) > REACH + 1.5 * float(r.scale):
+		return
+	var pick := Items.kind(ps.selected_item()) == "pickaxe"
+	if not pick and ps.selected_item() != "":
+		_tell_feedback(peer_id, {state = "no_tool", point = at})
+		return
+	var n := 2 if pick else 1
+	var out := (_chest(ps) - at).normalized()
+	spawn_drop("stone", n, at + out * 0.6 * float(r.scale) + Vector3.UP * 0.3)
+	give_xp(peer_id, 1, "mining")
+	var hits: int = boulder_hits.get(id, 0) + 1
+	boulder_hits[id] = hits
+	if hits >= Boulders.HITS:
+		boulder_hits.erase(id)
+		boulder_back[id] = Boulders.RESPAWN
+		_ev_boulder.rpc(id, true)
+		_tell_feedback(peer_id, {state = "dug", hits = hits, needed = Boulders.HITS, material = Mat.STONE, point = at, normal = out, boulder = true})
+	else:
+		_tell_feedback(peer_id, {state = "hit", hits = hits, needed = Boulders.HITS, material = Mat.STONE, point = at, normal = out})
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_boulder(id: int, broken: bool) -> void:
+	if boulders:
+		boulders.set_broken(id, broken)
+
+
+## Host: broken boulders come back after a while.
+func _tick_boulders(delta: float) -> void:
+	for id in boulder_back.keys():
+		boulder_back[id] -= delta
+		if boulder_back[id] <= 0.0:
+			boulder_back.erase(id)
+			_ev_boulder.rpc(id, false)
 
 
 ## A swing at a giant root pillar (owner, Nov 17, F189): bits of wood, 2 with an axe, up to RootPillars.CHOPS.
@@ -1750,6 +1812,7 @@ func _start_regrow(spot: Dictionary) -> void:
 ## Host: count down; a root comes back only if the rock it hangs from is still there.
 func _tick_regrow(delta: float) -> void:
 	_tick_trees(delta)
+	_tick_boulders(delta)
 	for id in plant_regrow.keys():
 		plant_regrow[id] -= delta
 		if plant_regrow[id] > 0.0:
@@ -1977,7 +2040,8 @@ func snapshot() -> Dictionary:
 		for id in glow._spots:
 			if glow._spots[id].get("chops", 1) != GlowPlacer.KINDS[glow._spots[id].kind].get("chops", 1):
 				chops[id] = glow._spots[id].chops
-	return {strands = removed_strands.duplicate(), hroots = removed_hroots.duplicate(), pillar_chops = pillar_chops.duplicate(),
+	return {boulder_hits = boulder_hits.duplicate(), boulder_back = boulder_back.duplicate(),
+		strands = removed_strands.duplicate(), hroots = removed_hroots.duplicate(), pillar_chops = pillar_chops.duplicate(),
 		planted = planted.duplicate(true),
 		edits = edit_log.duplicate(), glow = removed_glow.duplicate(), plants = removed_plants.duplicate(), drops = drops, next_drop = _next_drop_id,
 		stations = sts, chops = chops, regrow = regrow.duplicate(), plant_regrow = plant_regrow.duplicate(), runes = rune_slab.to_data(), build = builder.snapshot(), boxes = storage.snapshot(), monsters = monsters.snapshot(), state = world_state}
@@ -1992,6 +2056,12 @@ func load_snapshot(snap: Dictionary) -> void:
 		removed_plants.append(id)
 		if cave_life:
 			cave_life.remove_plant(id)
+	for id in snap.get("boulder_hits", {}):
+		boulder_hits[int(id)] = int(snap.boulder_hits[id])
+	for id in snap.get("boulder_back", {}):
+		boulder_back[int(id)] = float(snap.boulder_back[id])
+		if boulders:
+			boulders.set_broken(int(id), true, false)
 	for e in snap.get("planted", []):
 		planted.append(e)
 		if pillars:

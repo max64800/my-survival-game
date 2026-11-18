@@ -433,6 +433,10 @@ func _on_swing_impact() -> void:
 			return
 	if hit.is_empty():
 		return
+	var boulder_id := Boulders.id_of(hit.collider)
+	if boulder_id >= 0:  # a boulder: stone every hit, it bursts after a few (owner, Nov 18)
+		auth.ask_hit_boulder(boulder_id)
+		return
 	var pillar_id := RootPillars.id_of(hit.collider)
 	if pillar_id >= 0:  # a giant root pillar: chop bits of wood off it (F189)
 		auth.ask_chop_pillar(pillar_id)

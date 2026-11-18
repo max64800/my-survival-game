@@ -84,3 +84,20 @@ func test_puddles() -> void:
 	for p in ps:
 		check(not m.is_reserved(p.pos, 0.5), "a puddle on clear ground")
 	CaveMaker.use_layout(was)
+
+
+## Boulders (owner, Nov 18): breakable rocks around the caves, never on kept-clear ground, bridges, columns or places.
+func test_boulders_keep_clear() -> void:
+	var was := CaveMaker.layout
+	CaveMaker.use_layout(CaveMaker.LAYOUT_LATEST)
+	var m := CaveMaker.new(42)
+	var bs := Boulders.plan(m)
+	check(bs.size() >= 40, "plenty of boulders around the caves (%d)" % bs.size())
+	var shapes := {}
+	for b in bs:
+		shapes[b.model] = true
+		check(not m.is_reserved(b.pos, 1.5) and not m.on_bridge(b.pos, 1.0) and not m._in_column(b.pos, 1.0), "a boulder on clear ground")
+		for q in m.pois:
+			check((q.pos as Vector3).distance_to(b.pos) >= 2.5, "a boulder not inside a place")
+	check(shapes.size() >= 4, "several shapes (%d)" % shapes.size())
+	CaveMaker.use_layout(was)

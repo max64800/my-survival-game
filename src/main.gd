@@ -17,6 +17,7 @@ var cave_life: CaveLife
 var _clutter: Clutter
 var _curtains: RootCurtains
 var _pillars: RootPillars
+var _boulders: Boulders
 var authority: GameAuthority
 var dwarf: Dwarf
 var hud: Hud
@@ -336,6 +337,10 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	_pillars.name = "RootPillars"
 	add_child(_pillars)
 	_pillars.build(world.maker)
+	_boulders = Boulders.new()  # breakable boulders for stone (owner, Nov 18)
+	_boulders.name = "Boulders"
+	add_child(_boulders)
+	_boulders.build(world.maker, _pillars.near)
 	var water := CaveWater.new()  # puddles (rings under the drips) and low mist (F190)
 	water.name = "CaveWater"
 	add_child(water)
@@ -376,6 +381,7 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	authority.cave_life = cave_life
 	authority.curtains = _curtains
 	authority.pillars = _pillars
+	authority.boulders = _boulders
 	authority.clutter = _clutter
 	authority.drops_root = drops
 	authority.poi_field = pf
