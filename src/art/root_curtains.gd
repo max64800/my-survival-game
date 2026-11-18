@@ -15,8 +15,9 @@ var _cells := {}  ## Vector2i -> {mmi, tops, bots: PackedVector3Array, ids: Pack
 var _where := {}  ## strand id -> [cell key, index in that cell]
 ## Every curtain glows (owner, Nov 17, round 2: "all of the vines should be glowing... from green to gray to white to
 ## bluish, very light colours, like the green"): pale green, grey, white, light blue, pale teal.
-const GLOW_TINTS := [Color(0.35, 1.0, 0.5), Color(0.62, 1.0, 0.68), Color(0.74, 0.78, 0.8), Color(0.95, 0.96, 0.92),
-	Color(0.62, 0.82, 1.0), Color(0.55, 0.95, 0.88)]
+## Round 3 (owner, Nov 18: "I only see white and sometimes green, make new colours"): no white or grey any more.
+const GLOW_TINTS := [Color(0.35, 1.0, 0.5), Color(0.55, 1.0, 0.8), Color(0.5, 0.75, 1.0), Color(0.75, 0.58, 1.0),
+	Color(1.0, 0.58, 0.85), Color(1.0, 0.82, 0.42), Color(0.38, 0.95, 0.95)]
 
 
 var _thread: Thread

@@ -263,6 +263,31 @@ func _make_set(kind: String, xforms: Array) -> void:
 
 
 ## Big roots hanging from room ceilings, very different sizes, a slight tint each; 2 m kept clear above the floor.
+var _drip_grid := {}  ## Vector3i (8 m box) -> PackedVector3Array of dripstone positions (filled on first use)
+
+
+## Is a dripstone (stalactite) within `r` of p? (Hanging roots keep away from their clusters.)
+func _near_drips(p: Vector3, r: float) -> bool:
+	if _drip_grid.is_empty():
+		for k in _drips:
+			for it in _drips[k]:
+				var o: Vector3 = (it[0] as Transform3D).origin
+				var key := Vector3i((o / 8.0).floor())
+				if not _drip_grid.has(key):
+					_drip_grid[key] = PackedVector3Array()
+				_drip_grid[key].append(o)
+		_drip_grid[Vector3i(999999, 0, 0)] = PackedVector3Array()  # (never empty again)
+	var lo := Vector3i(((p - Vector3.ONE * r) / 8.0).floor())
+	var hi := Vector3i(((p + Vector3.ONE * r) / 8.0).floor())
+	for x in range(lo.x, hi.x + 1):
+		for y in range(lo.y, hi.y + 1):
+			for z in range(lo.z, hi.z + 1):
+				for o in _drip_grid.get(Vector3i(x, y, z), PackedVector3Array()):
+					if o.distance_squared_to(p) < r * r:
+						return true
+	return false
+
+
 func _place_hanging_roots(maker: CaveMaker, rng: RandomNumberGenerator) -> void:
 	var items := {}
 	for k in HROOTS:
@@ -284,8 +309,11 @@ func _place_hanging_roots(maker: CaveMaker, rng: RandomNumberGenerator) -> void:
 			var floor_hit := GlowPlacer._march(maker, hit + Vector3.DOWN * 0.3, Vector3.DOWN, 40.0)
 			var gap := hit.distance_to(floor_hit) if floor_hit != Vector3.INF else 40.0
 			size = minf(size, (gap - 2.0) / float(d.length))  # nobody bumps their head
+			size = minf(size, 4.2)  # (owner, Nov 18: "a bit too much": no more giant 6 m root masses)
 			if size < 0.8:
 				continue
+			if _near_drips(hit, 4.0 + size * 0.5):
+				continue  # not in the middle of a stalactite cluster (too much in one spot)
 			var basis := Basis(Vector3.RIGHT, PI) * Basis(Vector3.UP, spin)  # grows along +Y: hang it upside down
 			items[kind].append([Transform3D(basis.scaled(Vector3.ONE * size), hit + Vector3.UP * 0.04 * size), tint])
 	for k in HROOTS:

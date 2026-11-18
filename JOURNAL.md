@@ -3443,3 +3443,13 @@ the body."
 - **Hurdles:** the first puddle lay on a slope and looked like a stain: puddles now only where the floor is flat
   or a shallow dip (145 -> 20 in the test world, 17 under drips). Loading pause 10 -> 13 s (pillars and puddles
   planned while loading): noted to move to a helper thread later.
+
+## November 18, 2026 (PC, rock-textures Claude): textured chunks, veins together, calmer ceilings, vine colours
+- Chunks: rock_chunk.gdshader paints them with the terrain texture arrays (slice = material * 4 + look), projected
+  in the chunk's own space (instance uniform chunk_size keeps the pattern's real size); 16 shapes in four kinds
+  (icosahedron stones, jittered boxes, slabs/shards, wedges). Picture: textured, varied; big block too cubic ->
+  rougher corners.
+- Veins: one shared pulse every 12.5 s; under every bridge too: world.gd sends the 16 bridges nearest the camera
+  twice a second to terrain.gdshader (checking all of them on every ceiling pixel would be slow).
+- Hanging roots: max 4.2 m and not within ~4-6 m of a dripstone (an 8 m grid so it stays fast).
+- Vines: 7 coloured tints, no white/grey.

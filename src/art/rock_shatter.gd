@@ -19,20 +19,29 @@ var _size := 1.0
 
 ## The rock at `center` (the middle of the scoop that was dug) broke: throw chunks out along `out` (the rock face's
 ## normal) in colour `col`.
-static func burst(parent: Node, center: Vector3, out: Vector3, col: Color) -> void:
+static func burst(parent: Node, center: Vector3, out: Vector3, col: Color, mat_id := -1) -> void:
 	if _shapes.is_empty():
 		_make_shapes()
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
 	var n := rng.randi_range(20, 28)  # (owner: "more of them")
 	out = out.normalized() if out.length_squared() > 0.01 else Vector3.UP
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = col
-	mat.albedo_texture = _detail
-	mat.uv1_triplanar = true
-	mat.uv1_scale = Vector3.ONE * 0.8  # (big cells: chunks of stone, not gravel)
-	mat.roughness = 0.95
-	mat.cull_mode = BaseMaterial3D.CULL_DISABLED  # (both sides drawn: no holes whichever way a face turned out)
+	var mat: Material
+	if mat_id >= 0:  # painted with the cave's own picture of that rock (owner, Nov 18: "add the texture to them")
+		var sm := ShaderMaterial.new()
+		sm.shader = preload("res://src/art/rock_chunk.gdshader")
+		sm.set_shader_parameter("albedo_tex", preload("res://assets/textures/terrain/terrain_albedo.png"))
+		sm.set_shader_parameter("slice", float(mat_id * 4 + rng.randi_range(0, 3)))
+		mat = sm
+	else:
+		var std := StandardMaterial3D.new()
+		std.albedo_color = col
+		std.albedo_texture = _detail
+		std.uv1_triplanar = true
+		std.uv1_scale = Vector3.ONE * 0.8
+		std.roughness = 0.95
+		std.cull_mode = BaseMaterial3D.CULL_DISABLED
+		mat = std
 	for i in n:
 		var c := RockShatter.new()
 		var pick: Array = _shapes[rng.randi() % _shapes.size()]
@@ -41,6 +50,7 @@ static func burst(parent: Node, center: Vector3, out: Vector3, col: Color) -> vo
 		mi.mesh = pick[0]
 		mi.material_override = mat
 		mi.scale = Vector3.ONE * c._size
+		mi.set_instance_shader_parameter("chunk_size", c._size)  # (the texture keeps its real size on every chunk)
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF if c._size < 0.3 else GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 		c.add_child(mi)
 		var cs := CollisionShape3D.new()
@@ -82,46 +92,66 @@ func _physics_process(delta: float) -> void:
 			queue_free()
 
 
-## Six chunk shapes: a 20-sided ball with every corner pushed in or out, flat faces (chisel-cut), 1 m across.
+## Chunk shapes, 1 m across, four kinds (owner, Nov 18: "different shapes, similar size"): lumpy many-sided stones,
+## chunky blocks, flat slabs, long shards and wedges; every corner pushed in or out a little, flat chiselled faces.
+const ICO_FACES := [[0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11], [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6],
+	[7, 1, 8], [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9], [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1]]
+const BOX_FACES := [[0, 2, 6], [0, 6, 4], [1, 5, 7], [1, 7, 3], [0, 4, 5], [0, 5, 1], [2, 3, 7], [2, 7, 6], [0, 1, 3], [0, 3, 2],
+	[4, 6, 7], [4, 7, 5]]
+const WEDGE_FACES := [[0, 1, 2], [3, 5, 4], [0, 3, 4], [0, 4, 1], [1, 4, 5], [1, 5, 2], [2, 5, 3], [2, 3, 0]]
+
+
 static func _make_shapes() -> void:
-	# A stony pattern made by the game (cracked cells, light and dark), multiplied by the rock's colour.
+	# A stony pattern made by the game, for chunks of things without a rock picture.
 	var noise := FastNoiseLite.new()
 	noise.noise_type = FastNoiseLite.TYPE_CELLULAR
 	noise.frequency = 0.035
-	noise.cellular_return_type = FastNoiseLite.RETURN_DISTANCE2_SUB
 	var tex := NoiseTexture2D.new()
 	tex.width = 128
 	tex.height = 128
 	tex.seamless = true
 	tex.noise = noise
-	var ramp := Gradient.new()
-	ramp.set_color(0, Color(0.78, 0.76, 0.72))
-	ramp.set_color(1, Color(1.1, 1.08, 1.04))
-	tex.color_ramp = ramp
 	_detail = tex
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 2612
 	var t := (1.0 + sqrt(5.0)) / 2.0
-	var base := [Vector3(-1, t, 0), Vector3(1, t, 0), Vector3(-1, -t, 0), Vector3(1, -t, 0), Vector3(0, -1, t), Vector3(0, 1, t),
+	var ico := [Vector3(-1, t, 0), Vector3(1, t, 0), Vector3(-1, -t, 0), Vector3(1, -t, 0), Vector3(0, -1, t), Vector3(0, 1, t),
 		Vector3(0, -1, -t), Vector3(0, 1, -t), Vector3(t, 0, -1), Vector3(t, 0, 1), Vector3(-t, 0, -1), Vector3(-t, 0, 1)]
-	for k in 6:
+	for k in 16:
+		var kind := k % 4
 		var pts := PackedVector3Array()
-		var stretch := Vector3(rng.randf_range(0.7, 1.3), rng.randf_range(0.55, 1.0), rng.randf_range(0.7, 1.3))  # flatter slabs
-		for v in base:
-			pts.append((v as Vector3).normalized() * 0.5 * rng.randf_range(0.65, 1.15) * stretch)
+		var faces: Array
+		match kind:
+			0:  # a lumpy stone
+				var st := Vector3(rng.randf_range(0.7, 1.2), rng.randf_range(0.6, 1.0), rng.randf_range(0.7, 1.2))
+				for v in ico:
+					pts.append((v as Vector3).normalized() * 0.5 * rng.randf_range(0.7, 1.15) * st)
+				faces = ICO_FACES
+			1, 2:  # a block, or a flat slab / a long shard
+				var st := Vector3(1, 0.85, 1)
+				if kind == 2:
+					st = Vector3(1.25, 0.32, 0.95) if rng.randf() < 0.5 else Vector3(0.42, 1.5, 0.5)
+				for i in 8:
+					var c := Vector3(i & 1, (i >> 1) & 1, (i >> 2) & 1) - Vector3.ONE * 0.5
+					pts.append((c + Vector3(rng.randf_range(-0.24, 0.24), rng.randf_range(-0.24, 0.24), rng.randf_range(-0.24, 0.24))) * st * 0.9)  # (no perfect cubes)
+				faces = BOX_FACES
+			3:  # a wedge
+				var lean := rng.randf_range(-0.25, 0.25)
+				var tri := [Vector2(-0.5, -0.45), Vector2(0.5, -0.35), Vector2(rng.randf_range(-0.2, 0.3), 0.5)]
+				for y in [-0.45, 0.45]:
+					for q in tri:
+						pts.append(Vector3((q as Vector2).x + lean * y, y * rng.randf_range(0.7, 1.0), (q as Vector2).y) * 0.95)
+				faces = WEDGE_FACES
 		var shape := ConvexPolygonShape3D.new()
 		shape.points = pts
-		var mesh := _hull_mesh(pts)
-		_shapes.append([mesh, shape])
+		_shapes.append([_hull_mesh(pts, faces), shape])
 
 
-## A flat-shaded mesh around the points (they all lie on the hull: a pushed-about icosahedron keeps its 20 faces).
-static func _hull_mesh(pts: PackedVector3Array) -> ArrayMesh:
-	const FACES := [[0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11], [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6],
-		[7, 1, 8], [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9], [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1]]
+## A flat-shaded mesh from the points and its faces (each face turned to point outward).
+static func _hull_mesh(pts: PackedVector3Array, faces: Array) -> ArrayMesh:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	for f in FACES:
+	for f in faces:
 		var a: Vector3 = pts[f[0]]
 		var b: Vector3 = pts[f[1]]
 		var c: Vector3 = pts[f[2]]

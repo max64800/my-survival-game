@@ -66,7 +66,30 @@ uniform float star_brightness = 3.2;
 // The huge first cavern (layout 4, owner F260): its ceiling is all stars, with extra snakes. star_radius 0 = none.
 uniform vec3 star_center = vec3(0.0);
 uniform float star_radius = 0.0;
-uniform float star_snakes = 1.0;  // extra snakes there (1 in the huge cavern, 2 in a normal first cavern)  // (owner: brighter; moving the camera smears tiny points a little)
+uniform float star_snakes = 1.0;
+// The rock bridges (owner, Nov 18: glowing veins "under the bridges as well"): a = one end's top + width, b = the other
+// end's top + thickness. world.gd sends the 16 nearest to the camera, twice a second.
+uniform int bridge_count = 0;
+uniform vec4 bridge_a[16];
+uniform vec4 bridge_b[16];
+
+// How much p is on the underside of a rock bridge (0..1).
+float under_bridge(vec3 p) {
+	for (int i = 0; i < 16; i++) {
+		if (i >= bridge_count) {
+			break;
+		}
+		vec2 a = bridge_a[i].xz;
+		vec2 ab = bridge_b[i].xz - a;
+		float t = clamp(dot(p.xz - a, ab) / max(dot(ab, ab), 0.0001), 0.0, 1.0);
+		float side = length(p.xz - (a + ab * t));
+		float top = mix(bridge_a[i].y, bridge_b[i].y, t);
+		if (side < bridge_a[i].w * 0.8 && p.y < top - 0.3 && p.y > top - bridge_b[i].w * 3.5) {
+			return 1.0;
+		}
+	}
+	return 0.0;
+}  // extra snakes there (1 in the huge cavern, 2 in a normal first cavern)  // (owner: brighter; moving the camera smears tiny points a little)
 
 vec3 star_layer(vec3 p, float cell, float radius, float keep) {
 	vec3 q = p / cell;
@@ -233,17 +256,22 @@ void fragment() {
 	}
 
 	// Glowing veins (owner, Nov 18, F190: "glowing veins in the rock walls that slowly pulse"): thin wandering lines of
-	// glowing mineral on some walls, cool teal or warm amber, each stretch slowly brightening and fading like the crystals.
+	// glowing mineral on some walls, cool teal or warm amber.
 	float vwall = 1.0 - smoothstep(0.5, 0.85, abs(wn.y));
-	float vregion = smoothstep(0.63, 0.75, vnoise(v_world * 0.03 + vec3(19.0, 3.0, 11.0)));  // only some walls have them
+	float ub = (bridge_count > 0 && wn.y < -0.3) ? under_bridge(v_world) : 0.0;  // the undersides of the rock bridges
+	vwall = max(vwall, ub);
+	float vregion = max(smoothstep(0.63, 0.75, vnoise(v_world * 0.03 + vec3(19.0, 3.0, 11.0))), ub);  // some walls, every bridge
 	if (vwall * vregion > 0.0) {
 		float ridge = abs(vnoise(v_world * vec3(0.32, 0.8, 0.32) + vec3(5.0, 1.0, 9.0)) * 2.0 - 1.0);  // thin where it crosses 0.5
-		float vline = (1.0 - smoothstep(0.0, 0.032, ridge)) * smoothstep(0.42, 0.58, vnoise(v_world * 0.45 + vec3(3.0, 7.0, 2.0)));  // thin, in broken pieces
+		float vline = (1.0 - smoothstep(0.0, 0.032, ridge)) * max(smoothstep(0.42, 0.58, vnoise(v_world * 0.45 + vec3(3.0, 7.0, 2.0))), ub);  // thin, in broken pieces (whole under bridges)
 		float vhue = vnoise(v_world * 0.02 + vec3(2.0, 8.0, 1.0));
 		vec3 vcol = vhue > 0.55 ? vec3(1.0, 0.62, 0.25) : vec3(0.3, 0.95, 0.8);
-		float vbreath = 0.5 + 0.5 * sin(TIME * 0.5 + vhue * 25.0 + v_world.y * 0.25);
+		// All veins light up together, once every 12.5 s (owner, Nov 18: "all of them light up at the same time, once every
+		// 10 or 15 seconds", like the crystals): up in about 1.5 s, fading over 3 s, nearly dark in between.
+		float vp = fract(TIME / 12.5);
+		float vbreath = smoothstep(0.0, 0.12, vp) * (1.0 - smoothstep(0.2, 0.45, vp));
 		col = mix(col, col * 0.6, vline * vwall * vregion * 0.5);  // the vein's groove a little darker in the light
-		emit += vcol * vline * vwall * vregion * (0.25 + 2.2 * vbreath * vbreath);
+		emit += vcol * vline * vwall * vregion * (0.06 + 3.2 * vbreath);
 	}
 
 	ALBEDO = col;

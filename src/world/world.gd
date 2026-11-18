@@ -43,6 +43,7 @@ func setup(seed: int) -> void:
 	mat.set_shader_parameter("albedo_tex", preload("res://assets/textures/terrain/terrain_albedo.png"))
 	mat.set_shader_parameter("normal_tex", preload("res://assets/textures/terrain/terrain_normal.png"))
 	mat.set_shader_parameter("flat_shading", 1.0 if CaveMaker.rock_style == "blocks" else 0.0)  # soft light, like before (owner)
+	_rock_mat = mat
 	var star := maker.star_room()  # thicker glow-worm stars and a group of snakes there (owner F260, Nov 17)
 	if not star.is_empty():
 		mat.set_shader_parameter("star_center", star.center)
@@ -225,3 +226,34 @@ func copy_area(origin: Vector3i, size: Vector3i) -> VoxelBuffer:
 	buf.set_channel_depth(VoxelBuffer.CHANNEL_INDICES, VoxelBuffer.DEPTH_8_BIT)
 	_tool.copy(origin, buf, (1 << VoxelBuffer.CHANNEL_SDF) | (1 << VoxelBuffer.CHANNEL_INDICES))
 	return buf
+
+
+# ---------------------------------------------------------------- veins under the bridges
+# The rock's look code gets the 16 rock bridges nearest the camera, twice a second (owner, Nov 18: the glowing veins
+# "under the bridges as well"; all of them would make every ceiling pixel check every bridge).
+var _rock_mat: ShaderMaterial
+var _bridge_t := 0.0
+
+
+func _process(delta: float) -> void:
+	_bridge_t -= delta
+	if _bridge_t > 0.0 or _rock_mat == null or maker == null or maker._bridges.is_empty():
+		return
+	_bridge_t = 0.5
+	var cam := get_viewport().get_camera_3d()
+	if cam == null:
+		return
+	var at := cam.global_position
+	var list := maker._bridges.duplicate()
+	list.sort_custom(func(x, y): return ((x.a as Vector3).lerp(x.b, 0.5)).distance_squared_to(at) < ((y.a as Vector3).lerp(y.b, 0.5)).distance_squared_to(at))
+	var ba := PackedVector4Array()
+	var bb := PackedVector4Array()
+	for br in list.slice(0, 16):
+		ba.append(Vector4(br.a.x, br.a.y, br.a.z, float(br.w)))
+		bb.append(Vector4(br.b.x, br.b.y, br.b.z, float(br.t)))
+	var n := ba.size()
+	ba.resize(16)
+	bb.resize(16)
+	_rock_mat.set_shader_parameter("bridge_count", n)
+	_rock_mat.set_shader_parameter("bridge_a", ba)
+	_rock_mat.set_shader_parameter("bridge_b", bb)
