@@ -95,3 +95,58 @@ All CC0 packs: commercial use OK, no credit needed, any engine incl. Godot.
 Sources not linked above: [Fab licence discussion](https://forums.unrealengine.com/t/can-i-use-assets-from-fab-for-godot-engine/2451166),
 [Synty FAQ](https://syntystore.com/community/faq), [Mixamo FAQ thread](https://community.adobe.com/t5/mixamo-discussions/mixamo-faq-licensing-royalties-ownership-eula-and-tos/td-p/13234775),
 [Fantastic Dungeon Pack news](https://www.cgchannel.com/2026/04/get-650-free-3d-assets-for-building-dungeons-in-blender-unity-and-unreal-engine/).
+
+## More free packs (round 2, Nov 19)
+
+The owner liked the Quaternius Fantasy Props MegaKit, KayKit Character Animations, Quaternius Stylized Nature MegaKit
+and KayKit Skeletons, so this round looked for more free packs with the same chunky low-poly look. Every licence
+was checked on the pack's own page on Nov 19. Nothing was downloaded.
+
+- **CC0** means free, commercial use is OK, no credit needed, and the files may go in our public repo.
+- **KayKit packs** come in three versions. "Free" costs $0. "Extra" ($4-10) adds more models. "Source" adds Blender
+  files. The table lists only what the free version has. Kay asks one thing: don't resell the models unchanged.
+- **Quaternius "MegaKits"** give 60-70% of the models for free. The rest is in the paid Source version.
+- **Already in our game:** Universal Base Characters, Modular Character Outfits (Fantasy), and Universal Animation
+  Library 1 and 2 (see `CREDITS.md`). They are not listed again.
+- Same next steps as above: read every file first, adapt to our model rules, log the pack in `CREDITS.md`.
+
+| Use | Pack | Free? | Licence | What's inside | Formats | Why it fits |
+|---|---|---|---|---|---|---|
+| Props | [KayKit Resource Bits](https://kaylousberg.itch.io/resource-bits) | Free (75+ models); Extra $4.99 adds 55+ (money, gems, boxes, food) | CC0 | Raw materials for crafting | glTF, FBX, OBJ | Same maker and look as the Skeletons. Material pickups and piles for the workbenches. |
+| Props | [KayKit RPG Tools Bits](https://kaylousberg.itch.io/rpg-tools-bits) | Free (45+); Extra adds fishing and lock-picking | CC0 | Hand tools and adventure gear | glTF, FBX, OBJ | Tool shapes for the dwarf's hands and the tool racks. |
+| Props | [KayKit Fantasy Weapons Bits](https://kaylousberg.itch.io/fantasy-weapons-bits) | Free (25+); Extra $4.99 adds 15 (magic weapons) | CC0 | Swords, axes, hammers and more | glTF, FBX, OBJ | Chunky weapons that fit KayKit hands and racks. |
+| Props | [KayKit Furniture Bits](https://kaylousberg.itch.io/furniture-bits) | Free (50+); Extra adds 20 + 3 colour sets | CC0 | Tables, chairs, shelves, beds | glTF, FBX, OBJ | Furniture for the base and workshop. |
+| Props | [KayKit Halloween Bits](https://kaylousberg.itch.io/halloween-bits) | Free (60+ graveyard models); Extra adds candy, scarecrow, maze | CC0 | Graves, fences, spooky props | glTF, FBX, OBJ | Old crypt and burial-cave dressing next to the Skeletons. |
+| Props | [loafbrr Mine Object Collection](https://loafbrr.itch.io/mine-object-collection) | Free (pay what you want) | CC0 | Mine tracks, mine carts, pickaxes, jars and more (~12.7k triangles in all) | glTF, FBX, blend, Godot-ready zip | Mining props are rare. Same author as the Mines and Cave Set. Check the pictures: it may look more realistic than our style. |
+| Props | [Quaternius Ultimate RPG Pack](https://quaternius.com/packs/ultimaterpg.html) | Free | CC0 | 106 RPG items, flat colours (no textures) | FBX, OBJ, blend | Same maker as the liked MegaKits. Lots of small loot and prop shapes. |
+| Props | [Quaternius Survival Pack](https://quaternius.com/packs/survival.html) | Free | CC0 | 53 survival items, flat colours | FBX, OBJ, blend | Campfire, tools and survival bits in the same Quaternius shapes. |
+| Props | [Quaternius Modular Weapons Pack](https://quaternius.com/packs/medievalweapons.html) | Free | CC0 | 24 swords, daggers, bows, shields, hammers | FBX, OBJ, blend | Extra weapon shapes. |
+| Props | [Quaternius Ultimate Modular Ruins](https://quaternius.com/packs/ultimatemodularruins.html) | Free | CC0 | 90 ruin and dungeon pieces + props + 1 animated character | FBX, OBJ, blend | Old broken halls for ancient dwarf ruins. Keep the Placement rule in mind. |
+| Props | [Quaternius Modular Dungeons Pack](https://quaternius.com/packs/modulardungeon.html) (also on [itch](https://quaternius.itch.io/lowpoly-modular-dungeon-pack)) | Free | CC0 | 48 dungeon pieces, flat colours | FBX, OBJ, blend | Simple wall, floor and door shapes to start from. Old (2019), very plain. |
+| Props | [Quaternius Medieval Village MegaKit](https://quaternius.itch.io/medieval-village-megakit) | Free part (60-70% of 304) | CC0 | Walls, roofs, stairs, floors, doors, windows | glTF, FBX, OBJ | Same family as the liked Props MegaKit. Shape ideas for Shack and Hearthbrick pieces (our roof and door rules still apply). |
+| Props | [Kenney Modular Cave Kit](https://kenney.nl/assets/modular-cave-kit) + [Modular Dungeon Kit](https://kenney.nl/assets/modular-dungeon-kit) | Free | CC0 | About 40 cave tiles and 40 dungeon tiles | glTF, FBX, OBJ (Kenney's usual) | New Kenney kits. Too smooth for our look, but good for size and layout tests. |
+| Props | [rubberduck Free mine assets pack](https://opengameart.org/content/free-mine-assets-pack) (OpenGameArt) | Free | CC0 | 35+ wooden supports, stones, stalagmites and stalactites, rails, lamps, chest, mine cart, coins | Blender zip | Has every mine piece we need, but it's from 2014 and looks realistic, so use it for shapes only. |
+| Props | [Broken Vector Ultimate Low Poly Dungeon](https://brokenvector.itch.io/ultimate-low-poly-dungeon) | Free | **CC-BY 4.0: credit needed (flag)** | 185 dungeon models with collision shapes | FBX, blend | Big dark dungeon/cave set. Add a credit line if we use it. |
+| Nature / rocks | [KayKit Forest Nature Pack](https://kaylousberg.itch.io/kaykit-forest) | Free (100+ trees, rocks, bushes, grass); Extra $9.99 adds 2x more + terrain + 8 colours | CC0 | Trees, rocks, bushes | glTF, FBX, OBJ | KayKit rocks match the Skeletons. Dead trees and boulders for cave floors. |
+| Nature / rocks | [flo-bit Low Poly Nature Pack](https://flo-bit.itch.io/low-poly-nature-pack) | Free | CC0 | 62 items: 6 mushrooms, 5 stones, 6 dead trees, 3 stumps, campfire, bushes | GLB, FBX, OBJ, blend | Chunky mushrooms and bare dead trees, like the liked Nature MegaKit. |
+| Nature / rocks | [Quaternius Ultimate Stylized Nature Pack](https://quaternius.com/packs/ultimatestylizednature.html) | Free | CC0 | 63 nature models, textured | glTF, FBX, OBJ, blend | Older brother of the liked Nature MegaKit. More plant and rock shapes. |
+| Nature / rocks | [loafbrr Rock Set Pack](https://loafbrr.itch.io/rock-set-pack) | Free (pay what you want) | CC0 | 8 rocks, 4 big rocks, 10 rock groups, 2K textures, collision | glTF, FBX, blend, Godot zip | Ready-made rock groups for cave rooms. Style not shown on the page, so check the pictures. |
+| Nature / rocks | [Kynnelo Modular Cave Tunnels and Rocks](https://kynnelovyskenon.itch.io/modular-low-poly-cave-tunnels-and-rocks-asset-pack) | Free (pay what you want) | **CC BY-SA 4.0 (flag): credit needed, and any model we change from it must be shared under the same licence** | Tunnel pieces that join end to end + rocks | zip (formats not listed) | Shape ideas for cave tunnels. Best as a picture reference only. |
+| Creatures | [Quaternius Easy Enemy Pack](https://quaternius.itch.io/animated-easy-enemies) | Free | CC0 | 5 animated enemies: spider, rat, wasp, frog, snake (move, attack, jump, death) | FBX, OBJ, blend | Cave pests with ready animations. The spider and rat fit underground. |
+| Creatures | [Quaternius Cute Animated Monsters](https://quaternius.com/packs/cutemonsters.html) | Free | CC0 | 21 animated monsters, textured | glTF, FBX, OBJ, blend | More creature skeletons and moves to put our own bodies on. |
+| Creatures | [Quaternius Ultimate Animated Animals](https://quaternius.com/packs/ultimateanimatedanimals.html) | Free | CC0 | 12 animals, 12+ animations each | glTF, FBX, OBJ, blend | Four-legged walk, run and attack moves for cave beasts. |
+| Characters | [KayKit Adventurers](https://kaylousberg.itch.io/kaykit-adventurers) (already in report, #19) | Free (5 rigged characters, a few weapons each); Extra $7.95 adds 3 more (incl. a bigger Barbarian) | CC0 | Rigged heroes. Uses the same skeleton as KayKit Character Animations | glTF, FBX | Uses the same skeleton as the liked animations and Skeletons, so their moves work on it. The Barbarian build is closest to a dwarf. |
+| Characters | [Quaternius RPG Character Pack](https://quaternius.com/packs/rpgcharacters.html) | Free | CC0 | 6 animated fantasy characters | glTF, FBX, OBJ, blend | Extra helpers or NPC body shapes. Old pack. |
+| Animations | [KayKit Character Animations](https://kaylousberg.itch.io/kaykit-character-animations) (already in report, #6, owner liked) | Free | CC0 | Moves for the KayKit skeleton | glTF, FBX | Works with Adventurers and Skeletons above, so all three share one set of moves. |
+
+**Skip, and why**
+
+| Pack | Why we skip it (for now) |
+|---|---|
+| [Quaternius Characters - Fantasy Races](https://quaternius.itch.io/characters-fantasy-races) (new, 12 races) and [Bestiary - Dungeon Monsters Kit](https://quaternius.itch.io/bestiary-dungeon-monsters-kit) (7 monsters, incl. goblin and skeleton) | Free and OK to sell in a game, but they use Quaternius's new **QAL licence**. It bans handing out the raw model files, so they can't go in our public repo. Neither has animations (but both work with the Universal Animation Library we already use). The race list doesn't say "dwarf". If the owner wants them, keep the raw files in a git-ignored folder (like the paid packs). |
+| [standout7 Fantasy Heroes](https://standout7.itch.io/fantasy-heroes) | The Dwarf Warrior is only in the paid version. The page says CC0 and also "do not redistribute", which don't fit together. |
+| [Arac the spider](https://shyr.itch.io/arac) | Marked CC0, but its own notes ban sharing the files on their own, and it's still unfinished. |
+| [Low Poly Spider Pack](https://returnerreign.itch.io/lowpoly-spider-pack) | Costs $4.99 and bans sharing the files, so it can't go in the public repo. |
+| [Cozy Dungeon Kit](https://www.renderhub.com/absurdox/cozy-dungeon-kit-144-low-poly-models), [Razorfer Crystal Pack](https://razorfer.itch.io/lowpolycrystalpackvol1/purchase), [Louken05 Cave Pack](https://louken05.itch.io/low-poly-cave-pack) | No licence shown on the page. The Cozy Dungeon Kit also says AI helped make it. |
+| KayKit Mixed Bag 1 and 2, City / Space / Restaurant / Platformer packs | Free CC0, but nothing for an underground dwarf game. |
+| Poly Pizza | Searching "dwarf" found only paid store picks. Its free low-poly models are mostly copies of Quaternius and Kenney packs listed above. |
