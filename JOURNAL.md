@@ -3435,3 +3435,11 @@ the body."
   lines), broken up by a second noise, teal or amber, slowly pulsing. Round 1 too many and loopy like worms;
   round 2 thinner, rarer, in pieces (owner checks).
 - Spores: Ambience mossy mood spores 0 -> 0.7, 140 -> 260 motes, hue varies per spore.
+
+## November 18, 2026 (PC, rock-textures Claude): water (F190 part 2)
+- CaveWater: puddles = a flat sheet of dark glossy water just above the floor (bumps poke through = natural edges),
+  water.gdshader ripples + drop rings under drips; mist = FogVolumes (ellipsoid, noise density, thick at the floor)
+  in about a third of the low big caverns. Streams left for later (they need carved beds).
+- **Hurdles:** the first puddle lay on a slope and looked like a stain: puddles now only where the floor is flat
+  or a shallow dip (145 -> 20 in the test world, 17 under drips). Loading pause 10 -> 13 s (pillars and puddles
+  planned while loading): noted to move to a helper thread later.

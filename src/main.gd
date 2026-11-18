@@ -336,6 +336,10 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	_pillars.name = "RootPillars"
 	add_child(_pillars)
 	_pillars.build(world.maker)
+	var water := CaveWater.new()  # puddles (rings under the drips) and low mist (F190)
+	water.name = "CaveWater"
+	add_child(water)
+	water.build(world.maker, spots)
 
 	cave_life = CaveLife.new()  # moss, grass, small roots, lichen, ferns in patches (only looks; F188)
 	cave_life.name = "CaveLife"

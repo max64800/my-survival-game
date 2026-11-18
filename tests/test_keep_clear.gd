@@ -73,3 +73,14 @@ func test_root_pillars() -> void:
 			check((p.top as Vector3).y - (p.bottom as Vector3).y >= 5.0, "seed %d: floor to ceiling" % sd)
 	check(total >= 4, "some big caverns have root pillars (%d in 2 worlds)" % total)
 	CaveMaker.use_layout(was)
+
+## F190 (owner, Nov 18): puddles under the water drips and in low spots, only on flat floor, never on kept-clear ground.
+func test_puddles() -> void:
+	var was := CaveMaker.layout
+	CaveMaker.use_layout(CaveMaker.LAYOUT_LATEST)
+	var m := CaveMaker.new(42)
+	var ps := CaveWater.plan_puddles(m, GlowPlacer.place(m))
+	check(ps.size() >= 5, "some puddles (%d)" % ps.size())
+	for p in ps:
+		check(not m.is_reserved(p.pos, 0.5), "a puddle on clear ground")
+	CaveMaker.use_layout(was)
