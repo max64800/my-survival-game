@@ -3505,3 +3505,12 @@ the body."
 - **Hurdles:** RockShatter kept typed refs to freed chunks (test crash): untyped pop. Two other sessions' half-saved
   files broke compiling for minutes (waited). First in-cave look: the tree grew into a bridge's underside and was
   thin: fixed both.
+
+## November 18, 2026 (PC, rock-textures Claude): Root Tree barks (F274 round 4)
+- Owner: still Play-Doh, wants more interesting and different textures. The ChatGPT tool connected this time: one
+  2x2 sheet of four hand-painted barks (furrowed brown, gnarled grey with knots, red twisted with lichen, mossy),
+  cut into 512 px tiles made seamless (each edge blended with the tile moved half a tile).
+- Paint round 1: the bark at 9 repeats per model unit blurred into speckles and the light edges washed it pink;
+  round 2: 3.2 repeats (big bold plates), less edge/top light. Each version its own bark; stump and crown mossy.
+- Page for the owner: 'Root Tree Versions' artifact (models + in-game shots). Hurdle: one publish went out before
+  my page update finished (a text check stopped the script); republished.

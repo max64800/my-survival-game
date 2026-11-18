@@ -81,7 +81,12 @@ def build_braided(seed=301):
 	return ch.finish(parts, fine, seed, moss=0.35)
 
 
-BARK_PIC = str(Path(__file__).resolve().parents[3] / "assets" / "textures" / "kit" / "bark_vert.png")
+KIT_TEX = Path(__file__).resolve().parents[3] / "assets" / "textures" / "kit"
+BARK_PIC = str(KIT_TEX / "bark_vert.png")
+# Round 4 (owner, Nov 18: "still Play-Doh... more interesting textures, different ones"): each tree its own ChatGPT bark
+# (assets/concepts/cave-decor/root_tree_bark_sheet.png -> bark_tree_a/b/c/moss.png, seamless tiles).
+BARKS = {"a": str(KIT_TEX / "bark_tree_a.png"), "b": str(KIT_TEX / "bark_tree_b.png"), "c": str(KIT_TEX / "bark_tree_c.png"),
+	"moss": str(KIT_TEX / "bark_tree_moss.png")}
 
 
 def tree_bark_fn(seed):
@@ -96,14 +101,14 @@ def tree_bark_fn(seed):
 	return fn
 
 
-def tree_finish(parts, seed):
+def tree_finish(parts, seed, pic=None):
 	bark = cs.melt(parts, voxel=0.004, smooth=3, name="bark")
 	cp.carve(bark, tree_bark_fn(seed), soften=1)
-	return [(bark, 9000, 2048, lambda nm: cs.paint_material(nm, *ch.B, moss=(0.36, 0.42, 0.2), moss_amount=0.25, strokes=0.12,
-		edge=0.6, grime=0.22, seed=1.0, picture=BARK_PIC, picture_scale=11.0, picture_amount=0.8))]
+	return [(bark, 9000, 2048, lambda nm: cs.paint_material(nm, *ch.B, moss=(0.36, 0.42, 0.2), moss_amount=0.18, strokes=0.08,
+		edge=0.25, grime=0.15, top_light=0.04, seed=1.0, picture=pic or BARK_PIC, picture_scale=3.2, picture_amount=0.97))]  # (big, bold bark)
 
 
-def build_trunk(seed=311, part="full"):
+def build_trunk(seed=311, part="full", bark="a"):
 	"""Look B, the Ancient Trunk (owner's pick, Nov 18): one huge gnarled trunk, buttress roots fanning into the floor, a
 	crown of roots spreading over the ceiling, a few root strands hanging from the crown. part = "full", or after it's
 	chopped through: "stump" (the feet and a short piece of trunk) / "crown" (the ceiling roots and a short piece)."""
@@ -135,7 +140,7 @@ def build_trunk(seed=311, part="full"):
 			if (part == "stump" and end == "crown") or (part == "crown" and end == "feet"):
 				continue
 			parts.append(cp.tube(f"{end}{k}", path, rr, sides=10, wobble=0.07, seed=seed + 10 * k + (0 if dz > 0 else 5)))
-	return tree_finish(parts, seed)  # (round 3: no little twig "trees"; bark carved and painted, not Play-Doh)
+	return tree_finish(parts, seed, BARKS[bark])  # (round 3: no little twig "trees"; round 4: its own ChatGPT bark)
 
 
 def build_cage(seed=321):
@@ -150,8 +155,8 @@ def build_cage(seed=321):
 
 BUILDS = {"rpillar_a": build_a, "rpillar_b": build_b, "rtree_braided": build_braided, "rtree_trunk": build_trunk, "rtree_cage": build_cage,
 	# the owner's pick (Nov 18): three Ancient Trunks, and the first one's stump and crown for after it's chopped through
-	"rtree_b1": lambda: build_trunk(311), "rtree_b2": lambda: build_trunk(337), "rtree_b3": lambda: build_trunk(359),
-	"rtree_stump": lambda: build_trunk(311, "stump"), "rtree_crown": lambda: build_trunk(311, "crown")}
+	"rtree_b1": lambda: build_trunk(311, "full", "a"), "rtree_b2": lambda: build_trunk(337, "full", "b"), "rtree_b3": lambda: build_trunk(359, "full", "c"),
+	"rtree_stump": lambda: build_trunk(311, "stump", "moss"), "rtree_crown": lambda: build_trunk(311, "crown", "moss")}
 
 if __name__ == "__main__":
 	for name, fn in BUILDS.items():
