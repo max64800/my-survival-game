@@ -3651,3 +3651,7 @@ the body."
   sound-ai-effects-addons.md. Claude spot-checked the save-version claim (save_game.gd only accepts version 1) — true.
 - Hurdles: review-summary sites couldn't be opened directly (numbers from search summaries); no asset previews
   were looked at, so style scores are from descriptions. Nothing installed or downloaded.
+- Later the same day: asset picks saved (RESEARCH-PLAN.md), model rule 1 bent (free CC0 packs rebuilt by script),
+  PC to-dos F346–F349. Skills brainstorm → docs/design/skills.md (14 Valheim-style skills, tiny bonus every level,
+  perks at 25/50/75/100; seeds always drop, food never spoils). Paused at: character level + perk points
+  (A trim the 4 trees / B small talent board / C none; Claude suggests A), then death skill loss.
