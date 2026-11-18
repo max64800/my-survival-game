@@ -75,7 +75,7 @@ static func burst(parent: Node, center: Vector3, out: Vector3, col: Color, mat_i
 		c.angular_velocity = Vector3(rng.randf_range(-6, 6), rng.randf_range(-6, 6), rng.randf_range(-6, 6))
 		_alive.append(c)
 	while _alive.size() > MAX_CHUNKS:
-		var old: RockShatter = _alive.pop_front()
+		var old = _alive.pop_front()  # (untyped: it may already be gone)
 		if is_instance_valid(old):
 			old.queue_free()
 

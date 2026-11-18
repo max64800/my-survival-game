@@ -251,6 +251,16 @@ def masons_shovel():
 			o.modifiers.remove(mod)
 
 
+def root_seed():
+	"""Owner, Nov 18: a Root Tree's seed: a knobbly brown nut with a pale root tip and a tiny green shoot, to plant with
+	the Mason's Shovel."""
+	kit.gem((0, 0, 0.03), (0.032, 0.028, 0.03), kit.mat("wood_dark", rough=0.7), seed=71)
+	kit.gem((0.008, 0.006, 0.05), (0.02, 0.018, 0.016), kit.mat("wood", rough=0.7), seed=72)
+	kit.cone(0.008, 0.002, 0.03, (0.0, 0.0, 0.005), kit.mat("bone"), rot=(180, 0, 0), verts=6, bevel=0)  # the root tip
+	kit.cone(0.006, 0.0015, 0.035, (0.004, 0.0, 0.072), kit.mat("sprout"), rot=(12, 0, 0), verts=6, bevel=0)  # the shoot
+	kit.gem((0.012, 0.0, 0.088), (0.012, 0.004, 0.006), kit.mat("sprout"), seed=73)  # its first leaf
+
+
 def crossbow(m):
 	stone = m == "stone"
 	wood, dark = kit.tex_mat("wood", "b"), kit.tex_mat("wood", "dark")
@@ -405,6 +415,7 @@ for m in ("stone", "copper", "silver"):
 	BUILD[f"shield_{m}"] = (lambda m=m: shield(m))
 BUILD["build_hammer"] = build_hammer
 BUILD["masons_shovel"] = masons_shovel
+BUILD["root_seed"] = root_seed
 BUILD["pickaxe_fang"] = pickaxe_fang
 BUILD["shield_shell"] = shield_shell
 for t in ("stone", "metal", "thumper", "ember", "rime", "blight", "glow", "fang"):

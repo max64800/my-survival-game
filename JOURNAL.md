@@ -3490,3 +3490,18 @@ the body."
   RuinOutpost, not online yet: the online copy couldn't load. Removed again at once (111edd4); the other session
   had closed, so its outpost lines (and ruin_outpost.gd, test_keep_clear size 2) wait in the working folder for
   whoever commits the outpost. Now I filter those hunks out explicitly.
+
+## November 18, 2026 (PC, rock-textures Claude): Root Trees (F274)
+- Plan doc first (root-trees-plan.md). The ChatGPT browser tool couldn't connect (the owner's own Chrome was open),
+  so the 3 looks were made as Blender models; the owner picked B (Ancient Trunk), cracks-and-crumbles, seeds from
+  the tree. Owner on the looks: B good but no little twig 'trees', A too perfect, C not root-like, all Play-Doh.
+- Models (cave_rootpillar.py): rtree_b1-b3 + stump + crown from one generator; round 2 removed caterpillar rings;
+  round 3 carved long bark furrows/plates/chips and painted with the existing hand-painted bark picture turned to
+  run down the trunk (bark_vert.png); no twigs.
+- Game: RootPillars now Root Trees (3 in the first cave, 1-2 per big cave, never under/on a bridge, width grows
+  with height), 30 wood, chunks at 10/20, crack -> stump + crown and 1-2 Root Seeds; planting via the shovel's
+  right click with a seed in the bag (ceiling 5-14 m, clear ground); host counts grow time (saved), screens swap the
+  look only while it's out of view. Test: test_root_tree_cracks_and_replants.
+- **Hurdles:** RockShatter kept typed refs to freed chunks (test crash): untyped pop. Two other sessions' half-saved
+  files broke compiling for minutes (waited). First in-cave look: the tree grew into a bridge's underside and was
+  thin: fixed both.

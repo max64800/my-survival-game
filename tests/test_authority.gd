@@ -488,5 +488,58 @@ func test_root_pillar_chops() -> void:
 	for i in RootPillars.CHOPS + 3:
 		auth.request_chop_pillar(1, 0)
 	check(auth.drop_count() > before, "chopping gives wood")
-	check_eq(auth.pillar_chops.get(0, 0), RootPillars.CHOPS, "up to the limit, then it's bare")
+	check_eq(auth.pillar_chops.get(0, 0), RootPillars.CHOPS, "up to the limit, then it cracks")
+	_teardown()
+
+## Root Trees (owner, Nov 18): 30 wood, then it cracks and drops Root Seeds; a seed planted with the Mason's Shovel
+## grows into a full tree (a sprout halfway).
+func test_root_tree_cracks_and_replants() -> void:
+	await _setup(42)
+	var rp := RootPillars.new()
+	auth.get_parent().add_child(rp)
+	rp.build(world.maker)
+	auth.pillars = rp
+	var p := rp.pillar(0)
+	if p.is_empty():
+		check(false, "there's a Root Tree")
+		_teardown()
+		return
+	player.global_position = (p.bottom as Vector3) + Vector3(p.width * 0.15 + 1.0, 0.4, 0.0)
+	for i in RootPillars.CHOPS + 3:
+		auth.request_chop_pillar(1, 0)
+	check_eq(auth.pillar_chops.get(0, 0), RootPillars.CHOPS, "30 wood, then nothing more")
+	check_eq(rp.pillar(0).stage, "broken", "it cracked: a stump and a crown are left")
+	# plant a seed with the shovel where the ceiling is 5-14 m up
+	ps.inventory.slots[0] = {id = "masons_shovel", count = 1}
+	auth.request_select_slot(1, 0)
+	ps.inventory.add("root_seed", 1)
+	var spot := Vector3.INF
+	var base: Vector3 = world.maker.cavern_spawn
+	for r in range(4, 40, 2):
+		for k in 12:
+			var q := base + Vector3(cos(k * TAU / 12.0) * r, 2.0, sin(k * TAU / 12.0) * r)
+			var fl := world.maker.find_floor(q.x, q.z, q.y + 2.0)
+			if fl == Vector3.INF or rp.near(fl, 7.0) or world.maker.is_reserved(fl, 3.5):
+				continue
+			var up := 0.0
+			while up < 15.0 and world.sdf_at(fl + Vector3.UP * (up + 0.5)) >= 0.0:
+				up += 0.25
+			if up > 5.5 and up < 13.5:
+				spot = fl
+				break
+		if spot != Vector3.INF:
+			break
+	if spot == Vector3.INF:
+		_teardown()
+		return
+	player.global_position = spot + Vector3(1.5, 0.2, 0.0)
+	check_eq(auth.request_use(1, spot, Vector3.UP, 0.0), "planted", "a Root Seed planted with the shovel")
+	check_eq(ps.inventory.count_of("root_seed"), 0, "the seed is used")
+	var id: int = auth.planted[0].id
+	check_eq(rp.pillar(id).want_stage, "seed", "a seed in the ground")
+	auth._tick_trees(RootPillars.GROW_TIME * 0.6)
+	check_eq(rp.pillar(id).want_stage, "sprout", "after 30 minutes: a sprout")
+	auth._tick_trees(RootPillars.GROW_TIME)
+	check_eq(rp.pillar(id).want_stage, "tree", "after an hour: a full Root Tree")
+	check(auth.snapshot().planted.size() == 1, "saved with the world")
 	_teardown()

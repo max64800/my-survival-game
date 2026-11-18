@@ -294,14 +294,80 @@ func request_chop_pillar(peer_id: int, id: int) -> void:
 		return
 	var used: int = pillar_chops.get(id, 0)
 	if used >= RootPillars.CHOPS:
-		_tell_feedback(peer_id, {state = "blocked", point = axis, why = "Chopped bare. Its wood is gone."})
+		_tell_feedback(peer_id, {state = "blocked", point = axis, why = "Only a stump is left."})
+		return
+	if p.stage != "tree":
+		_tell_feedback(peer_id, {state = "blocked", point = axis, why = "Still growing. Leave it be."})
 		return
 	var n := 2 if Items.kind(ps.selected_item()) == "axe" else 1
 	n = mini(n, RootPillars.CHOPS - used)
 	pillar_chops[id] = used + n
 	var out := Vector3(chest.x - axis.x, 0.0, chest.z - axis.z).normalized()
 	spawn_drop("rootwood", n, axis + out * float(p.width) * 0.18 + Vector3.UP * 0.4)
+	_ev_tree_used.rpc(id, used + n)
+	if used + n >= RootPillars.CHOPS:  # it cracks: 1-2 Root Seeds fall from it (owner, Nov 18)
+		spawn_drop("root_seed", randi_range(1, 2), (p.bottom as Vector3) + out * float(p.width) * 0.25 + Vector3.UP * 1.0)
 	_tell_feedback(peer_id, {state = "done", kind = "root", point = axis + out * float(p.width) * 0.15})
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_tree_used(id: int, used: int) -> void:
+	pillar_chops[id] = used
+	if pillars:
+		pillars.set_used(id, used)
+
+
+## Planting a Root Seed with the Mason's Shovel (owner, Nov 18): on open floor with a ceiling 5-14 m up, nothing built
+## there and no other tree close. It grows by itself (planted, _tick_trees).
+var planted: Array = []  ## [{id, pos, top, grow (seconds left), model, spin}] (saved)
+
+
+func _plant_seed(ps: PlayerState, aim_point: Vector3, aim_normal: Vector3) -> String:
+	if pillars == null or ps.inventory.count_of("root_seed") <= 0:
+		return ""
+	if not aim_point.is_finite() or aim_normal.normalized().y < 0.7 or _chest(ps).distance_to(aim_point) > REACH + 1.0:
+		return ""
+	var top := Vector3.INF
+	for k in range(1, 56):  # the ceiling above (the real rock, dug holes and all)
+		if world.sdf_at(aim_point + Vector3.UP * (k * 0.25 + 0.5)) < 0.0:
+			top = aim_point + Vector3.UP * (k * 0.25 + 0.5)
+			break
+	if top == Vector3.INF or top.y - aim_point.y < 5.0 or top.y - aim_point.y > 14.0:
+		_tell_feedback(_peer_of(ps), {state = "blocked", point = aim_point, why = "A Root Tree needs a ceiling 5 to 14 m above."})
+		return ""
+	if world.maker.is_reserved(aim_point, 3.0) or pillars.near(aim_point, 6.0):
+		_tell_feedback(_peer_of(ps), {state = "blocked", point = aim_point, why = "Too close to something else."})
+		return ""
+	ps.inventory.remove("root_seed", 1)
+	_send_inventory(_peer_of(ps))
+	var e := {id = RootPillars.PLANTED_ID + planted.size(), pos = aim_point, top = top, grow = RootPillars.GROW_TIME,
+		model = randi_range(0, RootPillars.MODELS.size() - 1), spin = randf() * TAU}
+	planted.append(e)
+	_ev_planted.rpc(e)
+	return "planted"
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_planted(e: Dictionary) -> void:
+	if pillars:
+		pillars.add_planted(e)
+
+
+## Host: planted trees grow (a sprout halfway, a tree at the end); everyone's screen swaps it while nobody looks.
+func _tick_trees(delta: float) -> void:
+	for e in planted:
+		if e.grow <= 0.0:
+			continue
+		var before := RootPillars.stage_of(e.grow)
+		e.grow = maxf(0.0, e.grow - delta)
+		if RootPillars.stage_of(e.grow) != before:
+			_ev_grow.rpc(int(e.id), float(e.grow))
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_grow(id: int, grow_left: float) -> void:
+	if pillars:
+		pillars.set_growth(id, grow_left)
 
 
 ## A swing through hanging roots (owner, Nov 17): "strand" = a root-curtain strand (its bunch breaks, gives fiber),
@@ -1143,6 +1209,8 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 				var counts := _host_dig(aim_point, 1, 2.0)  # copper-tier strength, 2 m hole
 				_give_dig_drops(ps, counts, aim_point + aim_normal * 1.0)
 			return "thrown"
+		"shovel":
+			return _plant_seed(ps, aim_point, aim_normal)  # with a Root Seed in the bag (owner, Nov 18)
 		"station":
 			var on_wall := id in Station.ON_WALL and aim_normal.is_finite() and absf(aim_normal.normalized().y) < 0.3
 			if not aim_point.is_finite() or (aim_normal.normalized().y < 0.6 and not on_wall) or _chest(ps).distance_to(aim_point) > REACH + 1.0:
@@ -1681,6 +1749,7 @@ func _start_regrow(spot: Dictionary) -> void:
 
 ## Host: count down; a root comes back only if the rock it hangs from is still there.
 func _tick_regrow(delta: float) -> void:
+	_tick_trees(delta)
 	for id in plant_regrow.keys():
 		plant_regrow[id] -= delta
 		if plant_regrow[id] > 0.0:
@@ -1909,6 +1978,7 @@ func snapshot() -> Dictionary:
 			if glow._spots[id].get("chops", 1) != GlowPlacer.KINDS[glow._spots[id].kind].get("chops", 1):
 				chops[id] = glow._spots[id].chops
 	return {strands = removed_strands.duplicate(), hroots = removed_hroots.duplicate(), pillar_chops = pillar_chops.duplicate(),
+		planted = planted.duplicate(true),
 		edits = edit_log.duplicate(), glow = removed_glow.duplicate(), plants = removed_plants.duplicate(), drops = drops, next_drop = _next_drop_id,
 		stations = sts, chops = chops, regrow = regrow.duplicate(), plant_regrow = plant_regrow.duplicate(), runes = rune_slab.to_data(), build = builder.snapshot(), boxes = storage.snapshot(), monsters = monsters.snapshot(), state = world_state}
 
@@ -1922,8 +1992,14 @@ func load_snapshot(snap: Dictionary) -> void:
 		removed_plants.append(id)
 		if cave_life:
 			cave_life.remove_plant(id)
+	for e in snap.get("planted", []):
+		planted.append(e)
+		if pillars:
+			pillars.add_planted(e)
 	for id in snap.get("pillar_chops", {}):
 		pillar_chops[int(id)] = int(snap.pillar_chops[id])
+		if pillars:
+			pillars.set_used(int(id), pillar_chops[int(id)], false)
 	for id in snap.get("strands", []):
 		removed_strands.append(int(id))
 	if curtains and not removed_strands.is_empty():
