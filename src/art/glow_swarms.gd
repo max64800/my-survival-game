@@ -6,18 +6,21 @@ extends Node3D
 ## late, so the pack is round at the front and draws out into a droplet's tail when it moves faster. They twinkle softly.
 ## Only looks; planned from the cave (same caves get them on every computer, though each screen moves its own).
 
-const SHARE := 0.75  ## of the caves get a swarm (owner, Nov 18: "a lot more of them"; the first cave gets three)
+const SHARE := 1.0  ## every cave gets fireflies (owner, Nov 18 again: "a lot more of them"); big caves 2-3, the first cave 5
 const ACTIVE := 80.0  ## swarms further than this from the camera hold still (nobody sees them move)
-const TINTS := [Color(0.4, 1.0, 0.85), Color(0.55, 1.0, 0.55), Color(1.0, 0.82, 0.4), Color(0.6, 0.85, 1.0)]
+## Warm firefly colours (owner, Nov 18: they blended with the pale green/white glow-worm ceiling): gold, amber, lime-gold.
+const TINTS := [Color(1.0, 0.8, 0.3), Color(1.0, 0.62, 0.22), Color(0.85, 1.0, 0.3), Color(1.0, 0.9, 0.45)]
 
 var _swarms: Array[Dictionary] = []
 var _time := 0.0
+var _trunks := []  ## Root Trees to fly round: [{p, r, top, bottom}]
 
 
-func build(maker: CaveMaker) -> void:
+func build(maker: CaveMaker, trunks: Array = []) -> void:
+	_trunks = trunks
 	var mesh := SphereMesh.new()
-	mesh.radius = 0.016  # (smaller: they were readable as little balls)
-	mesh.height = 0.032
+	mesh.radius = 0.009  # (smaller again, owner Nov 18: "a lot smaller")
+	mesh.height = 0.018
 	mesh.radial_segments = 6
 	mesh.rings = 3
 	var rng := RandomNumberGenerator.new()
@@ -25,7 +28,7 @@ func build(maker: CaveMaker) -> void:
 	for ri in maker.rooms.size():
 		var room: Dictionary = maker.rooms[ri]
 		var roll := rng.randf()
-		var count := 3 if ri == 0 else (1 if roll < SHARE else 0)
+		var count := 5 if ri == 0 else ((rng.randi_range(2, 3) if room.big else 1) if roll < SHARE else 0)
 		if room.get("sealed", false) or room.radii.y < 3.0:
 			count = 0
 		for k in count:
@@ -33,7 +36,7 @@ func build(maker: CaveMaker) -> void:
 
 
 func _make(maker: CaveMaker, room: Dictionary, rng: RandomNumberGenerator, mesh: Mesh) -> Dictionary:
-	var n := rng.randi_range(100, 150)
+	var n := rng.randi_range(150, 220)
 	var mat := StandardMaterial3D.new()
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat.vertex_color_use_as_albedo = true
@@ -41,7 +44,7 @@ func _make(maker: CaveMaker, room: Dictionary, rng: RandomNumberGenerator, mesh:
 	var tint: Color = TINTS[rng.randi_range(0, TINTS.size() - 1)]
 	mat.emission_enabled = true
 	mat.emission = tint
-	mat.emission_energy_multiplier = 2.2
+	mat.emission_energy_multiplier = 3.0
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.use_colors = true
@@ -84,9 +87,25 @@ func _head_at(sw: Dictionary, t: float) -> Vector3:
 	var x := sin(t * f.x + ph.x) * 0.55 + sin(t * f.x * 2.3 + ph.y) * 0.12
 	var z := cos(t * f.z + ph.z) * 0.55 + sin(t * f.z * 1.7 + ph.x) * 0.12
 	var y := 0.5 + 0.5 * sin(t * f.y + ph.y)
-	# high up, away from the floor (owner, Nov 18: "they usually fly a lot further from the ground")
-	var low: float = float(sw.fl) + minf(4.0, float(sw.tall) * 0.45)
-	return Vector3(c.x + x * r.x, low + y * maxf(0.5, sw.tall * 0.85 - (low - sw.fl)), c.z + z * r.z)
+	# off the floor but well under the star ceiling (owner, Nov 18: up high they blended with the glow-worm stars):
+	# from 2.5 m up to about the middle of the cave
+	var low: float = float(sw.fl) + minf(2.5, float(sw.tall) * 0.35)
+	var p := Vector3(c.x + x * r.x, low + y * maxf(0.5, sw.tall * 0.5 - (low - sw.fl)), c.z + z * r.z)
+	return _round_trunks(p, 1.2)
+
+
+## Pushed out of any Root Tree (owner, Nov 18: they flew through the trees): `pad` = how far to stay off the bark.
+func _round_trunks(p: Vector3, pad: float) -> Vector3:
+	for tr in _trunks:
+		if p.y > float(tr.top) or p.y < float(tr.bottom):
+			continue
+		var d := Vector2(p.x - tr.p.x, p.z - tr.p.z)
+		var need: float = float(tr.r) + pad
+		if d.length() < need:
+			var dir := d.normalized() if d.length() > 0.01 else Vector2.RIGHT
+			p.x = tr.p.x + dir.x * need
+			p.z = tr.p.z + dir.y * need
+	return p
 
 
 func _process(delta: float) -> void:
@@ -139,7 +158,11 @@ func _process(delta: float) -> void:
 			var target := head - fwd * s * length + (side * o.x + up * o.y) * spread \
 				+ Vector3(sin(_time * 1.3 + w), sin(_time * 1.7 + w * 1.3), cos(_time * 1.1 + w)) * 0.12
 			pos[i] = pos[i].lerp(target, minf(1.0, delta * float(sw.lag[i])))
-			var glow := 0.55 + 0.45 * sin(_time * 2.0 + w * 3.0)
+			if not _trunks.is_empty():
+				pos[i] = _round_trunks(pos[i], 0.3)
+			# a firefly's blink: mostly dim, then a short bright flash, each on its own beat (stars just twinkle)
+			var beat := fposmod(_time * (0.35 + 0.25 * fposmod(w, 1.0)) + w, 1.0)
+			var glow := 0.15 + 0.85 * clampf(1.0 - absf(beat - 0.5) * 6.0, 0.0, 1.0)
 			mm.set_instance_transform(i, Transform3D(Basis.from_scale(Vector3.ONE * (0.7 + 0.5 * glow)), pos[i]))
 			mm.set_instance_color(i, Color(sw.tint.r, sw.tint.g, sw.tint.b, (0.5 + 0.5 * glow) * fade))
 		sw.pos = pos

@@ -6,12 +6,20 @@ extends Node3D
 ## gives stone (2 with a pickaxe, 1 by hand); after HITS hits it bursts into rock chunks, and RESPAWN seconds later a
 ## new one stands there (it appears while nobody is looking). The host keeps the count (GameAuthority.boulder_hits).
 
-const MODELS := ["res://assets/models/cave/boulder_round.glb", "res://assets/models/cave/boulder_tall.glb",
-	"res://assets/models/cave/boulder_slabs.glb", "res://assets/models/cave/boulder_cluster.glb",
-	"res://assets/models/cave/boulder_split.glb"]
+const SHAPES := ["boulder_round", "boulder_tall", "boulder_slabs", "boulder_cluster", "boulder_split"]
+const LOOKS := ["", "_b", "_c"]  ## three stone pictures per shape (owner, Nov 18: "different styles in terms of textures")
+static var MODELS: Array[String] = _models()
 const HITS := 6
 const RESPAWN := 1200.0  ## 20 minutes
 const STONE := Color(0.5, 0.46, 0.41)
+
+static func _models() -> Array[String]:
+	var out: Array[String] = []
+	for sh in SHAPES:
+		for lk in LOOKS:
+			out.append("res://assets/models/cave/%s%s.glb" % [sh, lk])
+	return out
+
 
 var _rocks: Array[Dictionary] = []  ## {pos, model, spin, scale, body, broken, want_back}
 var _check := 0.0
@@ -30,7 +38,7 @@ static func plan(maker: CaveMaker, avoid: Callable = Callable()) -> Array[Dictio
 	rng.seed = maker.seed + 9800
 	var near := {}
 	for room in maker.rooms:
-		var want := rng.randi_range(3, 5) if room.big else rng.randi_range(1, 2)
+		var want := rng.randi_range(7, 11) if room.big else rng.randi_range(2, 4)  # (owner, Nov 18: "a lot more boulders")
 		if room.get("sealed", false) or maker.sdf_at(room.center) <= 0.0:
 			continue
 		for attempt in want * 10:
@@ -40,16 +48,34 @@ static func plan(maker: CaveMaker, avoid: Callable = Callable()) -> Array[Dictio
 			var model := rng.randi_range(0, MODELS.size() - 1)
 			var spin := rng.randf_range(0.0, TAU)
 			var scale := rng.randf_range(1.2, 2.0)  # (in-game look: 0.8-1.4 was pebble-sized)
+			if room.big and rng.randf() < 0.15:
+				scale = rng.randf_range(2.8, 4.2)  # now and then a really big one (owner, Nov 18)
+			var buried := rng.randf() < 0.5  # half of them sunk into the ground (owner, Nov 18)
+			var sink_part := rng.randf_range(0.2, 0.45)
 			var hit := GlowPlacer._march(maker, room.center, dir, 60.0)
 			if hit == Vector3.INF or GlowPlacer.normal_at(maker, hit).y < 0.85:
 				continue  # open, fairly flat floor only
-			if maker.sdf_at(hit + Vector3.UP * 2.0) <= 0.8:
+			if maker.sdf_at(hit + Vector3.UP * maxf(2.0, scale * 1.3)) <= 0.8:
 				continue  # room above it
 			if maker.is_reserved(hit, 3.0) or maker.on_bridge(hit, 2.0) or maker._in_column(hit, 2.5):
 				continue
 			if avoid.is_valid() and avoid.call(hit, 3.0):
 				continue
-			var key := Vector3i((hit / 6.0).floor())
+			# never floating (owner, Nov 18: "a few of them just float"): it stands as low as the lowest floor under its edge
+			var low := hit.y
+			var ok := true
+			for k in 8:
+				var a := k * TAU / 8.0
+				var edge := hit + Vector3(cos(a), 0.0, sin(a)) * 0.6 * scale
+				var fl := GlowPlacer._march(maker, edge + Vector3.UP * 1.0, Vector3.DOWN, 3.0 + scale)
+				if fl == Vector3.INF:
+					ok = false  # its edge hangs over a drop
+					break
+				low = minf(low, fl.y)
+			if not ok or hit.y - low > 0.5 * scale:
+				continue  # too steep under it
+			var sink := (hit.y - low) + 0.08 + (sink_part * 1.1 * scale if buried else 0.0)
+			var key := Vector3i((hit / 4.0).floor())
 			if near.has(key):
 				continue  # one every few metres
 			var clear := true
@@ -66,7 +92,8 @@ static func plan(maker: CaveMaker, avoid: Callable = Callable()) -> Array[Dictio
 			if not clear:
 				continue
 			near[key] = true
-			out.append({pos = hit - Vector3.UP * 0.08, model = model, spin = spin, scale = scale})
+			var lean := Vector3.UP.lerp(GlowPlacer.normal_at(maker, hit), 0.7).normalized()  # leans with the slope a little
+			out.append({pos = hit - Vector3.UP * sink, model = model, spin = spin, scale = scale, sink = sink, lean = lean})
 			want -= 1
 	return out
 
@@ -82,7 +109,9 @@ func _make(i: int) -> void:
 	body.set_meta("boulder", i)
 	add_child(body)
 	body.global_position = r.pos
-	body.rotation.y = r.spin
+	var lean: Vector3 = r.get("lean", Vector3.UP)
+	var tilt := Basis(Vector3.UP.cross(lean).normalized(), Vector3.UP.angle_to(lean)) if lean.angle_to(Vector3.UP) > 0.01 else Basis()
+	body.global_basis = tilt * Basis(Vector3.UP, r.spin)
 	if scene:
 		var m := scene.instantiate() as Node3D
 		m.scale = Vector3.ONE * r.scale
@@ -104,6 +133,11 @@ static func id_of(collider: Object) -> int:
 	return -1
 
 
+## The middle of the part that shows above the ground.
+static func middle(r: Dictionary) -> Vector3:
+	return (r.pos as Vector3) + Vector3.UP * (float(r.get("sink", 0.0)) + 1.1 * float(r.scale)) * 0.5
+
+
 func rock(i: int) -> Dictionary:
 	return _rocks[i] if i >= 0 and i < _rocks.size() else {}
 
@@ -117,8 +151,11 @@ func set_broken(i: int, broken: bool, burst := true) -> void:
 		r.broken = true
 		r.want_back = false
 		if burst:
-			RockShatter.burst(get_parent(), (r.pos as Vector3) + Vector3.UP * 0.6 * r.scale, Vector3.UP, STONE, Mat.STONE)
-			RockShatter.burst(get_parent(), (r.pos as Vector3) + Vector3.UP * 0.3 * r.scale, Vector3(1, 0.5, 0), STONE, Mat.STONE)
+			var mid := middle(r)
+			RockShatter.burst(get_parent(), mid + Vector3.UP * 0.2 * r.scale, Vector3.UP, STONE, Mat.STONE)
+			RockShatter.burst(get_parent(), mid, Vector3(1, 0.5, 0), STONE, Mat.STONE)
+			if r.scale > 2.5:  # a really big one breaks into even more
+				RockShatter.burst(get_parent(), mid - Vector3.UP * 0.2 * r.scale, Vector3(-1, 0.5, 0.3), STONE, Mat.STONE)
 		(r.body as Node3D).visible = false
 		for c in (r.body as Node).get_children():
 			if c is CollisionShape3D:

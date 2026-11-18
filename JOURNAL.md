@@ -3536,3 +3536,25 @@ the body."
 - Hurdle: the first in-game look showed them pebble-sized next to the dwarf; now 1.2-2x bigger.
 - Hurdle: the test filter picks test *files* by name, not single tests (`only=keep_clear`).
 - Saved through a clean copy of the online version again, so other sessions' unsaved work stays out.
+
+## November 18, 2026 (PC, cave Claude): boulders round 2, solid trees, fireflies, moths, the beetle that knocked you out of the world
+
+- Owner played: boulders good ("they break in a lot of pieces") but need many more, half buried, some really big, some
+  floated, more textures; moths all fly the same loop; you can walk inside the Root Trees; fireflies: many more,
+  smaller, they fly through trees and blend with the star ceiling; mining rock should break like a boulder; the floor
+  needs grass (to-do); are all 4 beetle/snail looks in?; sometimes 6 FPS; and a Rock Beetle you could walk through
+  whose hit knocked the dwarf through the floor out of the map ("save that video").
+- Boulders: 7-11 per big cave, 2-4 per small; half sunk 20-45%; 1 in 7 in big caves 3-4x; they stand as low as the
+  lowest floor under their edge and lean with the slope; 10 new Blender models (each shape in 3 stone looks).
+- Moths: each wanders to random spots with its own speed and wobble (before: one wave, only started at different times).
+- Root Trees: the bark shape itself is the collision (before: a thin cylinder in the middle). Test from 6 sides.
+- Fireflies: every cave, 150-220 each, half the size, warm gold/amber, blinking like fireflies, flying under the stars,
+  steering round trees.
+- Mining: dug rock bursts twice. Creatures are solid to the player; if the dwarf ends up inside rock he's put back
+  on the last floor he stood on. The recording is marked KEEP and the story is in VIDEO-IDEAS.md (that file is
+  another session's, not online yet).
+- FPS: the log showed 6 and 10 FPS in the first cave, 60 again 30 s later. Measured: rock chunks are cheap; switching
+  each part of the game off saved at most 3 ms. Claude's slip: the "game code" number was really the whole frame time,
+  so it said nothing; renamed. The log now writes a LOW FPS line with the reason (frame, physics, graphics card, draw
+  calls, triangles) whenever it drops under 20. Answered: the 3 other creature looks are the rare crystal creatures.
+- Claude's slip: last time F324 was added under "Done" instead of "Open"; moved.

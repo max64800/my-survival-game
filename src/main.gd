@@ -352,7 +352,7 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	var swarms := GlowSwarms.new()  # packs of glowing motes drifting through the caves (owner, Nov 18)
 	swarms.name = "GlowSwarms"
 	add_child(swarms)
-	swarms.build(world.maker)
+	swarms.build(world.maker, _pillars.trunks())
 
 	cave_life = CaveLife.new()  # moss, grass, small roots, lichen, ferns in patches (only looks; F188)
 	cave_life.name = "CaveLife"

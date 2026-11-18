@@ -124,18 +124,7 @@ func _show(id: int, stage: String) -> void:
 					var m := scene.instantiate() as Node3D
 					m.basis = flip * Basis.from_scale(Vector3(t.width, h, t.width))
 					body.add_child(m)
-			var shape := CollisionShape3D.new()
-			var cyl := CylinderShape3D.new()
-			if stage == "tree":
-				cyl.radius = t.width * 0.14  # the trunk
-				cyl.height = h
-				shape.position = Vector3.DOWN * h * 0.5
-			else:
-				cyl.radius = t.width * 0.12  # just the stump
-				cyl.height = h * 0.22
-				shape.position = Vector3.DOWN * (h - h * 0.11)
-			shape.shape = cyl
-			body.add_child(shape)
+					_add_skin(body, m)  # solid all the way round its bark (owner, Nov 18: "I can walk fully inside")
 		"seed", "sprout":
 			# planted: a seed in a little mound, then a waist-high young tree (the same tree, small, standing on the floor)
 			var bottom: Vector3 = t.bottom
@@ -154,6 +143,33 @@ func _show(id: int, stage: String) -> void:
 					m.basis = flip * Basis.from_scale(Vector3(1.1, sh, 1.1))
 					body.add_child(m)
 					m.global_position = bottom + Vector3.UP * (sh + 0.3)
+
+
+## The tree's own shape as its collision: every bark face is solid, so you walk round the trunk and over its feet.
+static func _add_skin(body: StaticBody3D, m: Node3D) -> void:
+	for mi: MeshInstance3D in m.find_children("*", "MeshInstance3D", true, false):
+		if mi.mesh == null:
+			continue
+		var xf := m.transform * mi.transform
+		var faces := mi.mesh.get_faces()
+		for i in faces.size():
+			faces[i] = xf * faces[i]
+		var skin := ConcavePolygonShape3D.new()
+		skin.set_faces(faces)
+		skin.backface_collision = true  # (solid from inside too, if you ever end up in a hollow)
+		var shape := CollisionShape3D.new()
+		shape.shape = skin
+		body.add_child(shape)
+
+
+## Trunks to keep clear of (for flying things): [{p (on the trunk's axis), r (metres), top, bottom}].
+func trunks() -> Array:
+	var out := []
+	for id in _trees:
+		var t: Dictionary = _trees[id]
+		if t.stage == "tree":
+			out.append({p = (t.top as Vector3).lerp(t.bottom, 0.5), r = float(t.width) * 0.4, top = (t.top as Vector3).y, bottom = (t.bottom as Vector3).y})
+	return out
 
 
 ## How much wood tree `id` has given (from the host): shows the chunks bursting off, and the crack at the end.

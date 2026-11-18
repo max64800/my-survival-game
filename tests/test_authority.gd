@@ -570,3 +570,29 @@ func test_boulder_breaks_and_comes_back() -> void:
 	check(not auth.boulder_back.has(0), "after 20 minutes it comes back")
 	check(bo.rock(0).want_back, "it appears when nobody is looking")
 	_teardown()
+
+
+## Root Trees are solid all round (owner, Nov 18: "I can walk fully inside them"): from every side, a ray at chest
+## height toward the trunk hits the bark before it gets near the middle.
+func test_root_tree_is_solid_outside() -> void:
+	await _setup(42)
+	var rp := RootPillars.new()
+	auth.get_parent().add_child(rp)
+	rp.build(world.maker)
+	var p := rp.pillar(0)
+	check(not p.is_empty(), "there's a tree")
+	if p.is_empty():
+		_teardown()
+		return
+	for k in 3:
+		await tree.physics_frame
+	var space := rp.get_world_3d().direct_space_state
+	var mid := Vector3(p.top.x, (p.bottom as Vector3).y + 1.5, p.top.z)
+	for k in 6:
+		var a := k * TAU / 6.0
+		var from := mid + Vector3(cos(a), 0, sin(a)) * (float(p.width) * 0.8 + 2.0)
+		var q := PhysicsRayQueryParameters3D.create(from, mid, World.TERRAIN_LAYER)
+		var hit := space.intersect_ray(q)
+		var ok := not hit.is_empty() and Vector2(hit.position.x - mid.x, hit.position.z - mid.z).length() > float(p.width) * 0.15
+		check(ok, "side %d: bumps into the bark, not into the middle" % k)
+	_teardown()

@@ -33,6 +33,14 @@ func _run() -> void:
 	while not (_main.world and _main.is_ready_to_play()):
 		await _wait(0.25)
 	await _wait(1.0)
+	if "procbench" in OS.get_cmdline_user_args():
+		await _procbench()
+		get_tree().quit()
+		return
+	if "chunkbench" in OS.get_cmdline_user_args():
+		await _chunkbench()
+		get_tree().quit()
+		return
 	if "boulders" in OS.get_cmdline_user_args():
 		await _boulders()
 		print("ARTPREVIEW done: ", _shots)
@@ -285,3 +293,56 @@ func _boulders() -> void:
 		await _wait(1.0)
 		await RenderingServer.frame_post_draw
 		_main.take_screenshot(_shots.path_join("boulder_%d.png" % k))
+
+
+## How much the rock chunks cost (owner, Nov 18: 6 FPS now and then): break 3 boulders' worth at the dwarf's feet and
+## print the frame rate and physics time for the next seconds.
+func _chunkbench() -> void:
+	var dwarf: Dwarf = _main.dwarf
+	var at := dwarf.global_position + -Basis(Vector3.UP, dwarf._yaw).z * 3.0 + Vector3.UP * 0.8
+	for k in 4:
+		await _wait(0.5)
+		print("BENCH before fps=%d phys=%.1fms" % [Engine.get_frames_per_second(), Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0])
+	for b in 3:
+		RockShatter.burst(_main, at, Vector3.UP, Color(0.5, 0.46, 0.41), Mat.STONE)
+		RockShatter.burst(_main, at, Vector3(1, 0.5, 0), Color(0.5, 0.46, 0.41), Mat.STONE)
+		RockShatter.burst(_main, at, Vector3(-1, 0.5, 0), Color(0.5, 0.46, 0.41), Mat.STONE)
+	for k in 12:
+		await _wait(0.5)
+		print("BENCH after %.1fs fps=%d phys=%.1fms chunks=%d" % [(k + 1) * 0.5, Engine.get_frames_per_second(), Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0, RockShatter._alive.size()])
+
+
+## Which part of the game's code costs the most each frame: switch each big part off for a moment and see how much
+## faster the frame gets.
+func _procbench() -> void:
+	await _wait(8.0)
+	var parts: Array[Node] = []
+	for c in _main.get_children():
+		parts.append(c)
+	if _main.world:
+		for c in _main.world.get_children():
+			parts.append(c)
+	await _wait(15.0)
+	for round in 2:
+		print("PROC all on: %.2f ms (%d nodes)" % [await _avg_process(), Performance.get_monitor(Performance.OBJECT_NODE_COUNT)])
+	for c in parts:
+		if c == self:
+			continue
+		var was := c.process_mode
+		var on1 := await _avg_process()
+		c.process_mode = Node.PROCESS_MODE_DISABLED
+		var off := await _avg_process()
+		c.process_mode = was
+		var on2 := await _avg_process()
+		var saves := (on1 + on2) * 0.5 - off
+		if saves > 0.4:
+			print("PROC %s (%s): saves %.2f ms (on %.1f/%.1f, off %.1f)" % [c.name, c.get_class(), saves, on1, on2, off])
+
+
+func _avg_process() -> float:
+	await _wait(0.4)
+	var sum := 0.0
+	for k in 30:
+		await get_tree().process_frame
+		sum += Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0
+	return sum / 30.0

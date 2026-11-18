@@ -92,12 +92,12 @@ func test_boulders_keep_clear() -> void:
 	CaveMaker.use_layout(CaveMaker.LAYOUT_LATEST)
 	var m := CaveMaker.new(42)
 	var bs := Boulders.plan(m)
-	check(bs.size() >= 40, "plenty of boulders around the caves (%d)" % bs.size())
+	check(bs.size() >= 120, "plenty of boulders around the caves (%d)" % bs.size())
 	var shapes := {}
 	for b in bs:
 		shapes[b.model] = true
 		check(not m.is_reserved(b.pos, 1.5) and not m.on_bridge(b.pos, 1.0) and not m._in_column(b.pos, 1.0), "a boulder on clear ground")
 		for q in m.pois:
 			check((q.pos as Vector3).distance_to(b.pos) >= 2.5, "a boulder not inside a place")
-	check(shapes.size() >= 4, "several shapes (%d)" % shapes.size())
+	check(shapes.size() >= 12, "several shapes and stone looks (%d)" % shapes.size())
 	CaveMaker.use_layout(was)

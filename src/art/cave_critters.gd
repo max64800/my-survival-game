@@ -40,7 +40,8 @@ func setup(p_world: World, p_glow: GlowField) -> void:
 			if side < 0:
 				w.scale = Vector3(-1, 1, 1)  # the left wing: the right one mirrored
 			wings.append(hinge)
-		_moths.append({node = body, wings = wings, anchor = Vector3.INF, phase = _rng.randf() * TAU})
+		_moths.append({node = body, wings = wings, anchor = Vector3.INF, phase = _rng.randf() * TAU, goal = Vector3.ZERO,
+			vel = Vector3.ZERO, wait = 0.0, speed = _rng.randf_range(0.8, 1.6), wob = _rng.randf_range(1.5, 3.5)})
 	for i in CRICKETS:
 		_crickets.append({node = _model("cave_cricket"), hop = 0.0, from = Vector3.ZERO, to = Vector3.ZERO})
 	for c in _beetles + _moths + _crickets:
@@ -137,13 +138,22 @@ func _moth(m: Dictionary, cam: Vector3, delta: float) -> void:
 	m.phase += delta
 	var t: float = m.phase
 	var a: Vector3 = m.anchor
-	var target := a + Vector3(sin(t * 0.9) * 1.1 + sin(t * 2.3) * 0.3, 0.4 + sin(t * 1.3) * 0.5, cos(t * 0.7) * 1.1 + cos(t * 1.9) * 0.3)
-	var vel := (target - n.global_position)
-	n.global_position = n.global_position.lerp(target, minf(1.0, delta * 3.0))
+	# Each moth wanders on its own (owner, Nov 18: "they fly in the same pattern"): a new random spot near the crystal
+	# every so often, its own speed and wobble, sometimes a quick dart, sometimes hovering for a moment.
+	m.wait -= delta
+	if m.wait <= 0.0 or n.global_position.distance_to(a + m.goal) < 0.15:
+		m.goal = Vector3(_rng.randf_range(-1.4, 1.4), _rng.randf_range(-0.2, 1.2), _rng.randf_range(-1.4, 1.4))
+		m.wait = _rng.randf_range(0.6, 2.5)
+		m.speed = _rng.randf_range(0.6, 1.8) * (2.2 if _rng.randf() < 0.15 else 1.0)
+	var want: Vector3 = (a + m.goal - n.global_position).limit_length(1.0) * m.speed
+	want += Vector3(sin(t * m.wob * 3.1), cos(t * m.wob * 2.3), sin(t * m.wob * 2.7 + 1.0)) * 0.35  # flutter
+	m.vel = (m.vel as Vector3).lerp(want, minf(1.0, delta * 4.0))
+	n.global_position += m.vel * delta
+	var vel: Vector3 = m.vel
 	var f := Vector3(vel.x, vel.y * 0.3, vel.z)
 	if f.length() > 0.01 and absf(f.normalized().y) < 0.95:
 		n.global_basis = Basis.looking_at(f.normalized(), Vector3.UP)
-	var flap := sin(t * 38.0) * 0.9  # wings beat fast, round the body's long axis
+	var flap := sin(t * (34.0 + m.wob * 3.0)) * 0.9  # wings beat fast, round the body's long axis
 	(m.wings[0] as Node3D).rotation.z = flap
 	(m.wings[1] as Node3D).rotation.z = -flap
 

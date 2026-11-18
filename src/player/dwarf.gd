@@ -62,7 +62,7 @@ var _look_timer := 0.0
 
 func _ready() -> void:
 	collision_layer = BODY_LAYER
-	collision_mask = World.TERRAIN_LAYER
+	collision_mask = World.TERRAIN_LAYER | Monster.MONSTER_LAYER  # (owner, Nov 18: you could walk right through a beetle)
 	floor_max_angle = deg_to_rad(52)
 	floor_snap_length = 0.45
 	var shape := CollisionShape3D.new()
@@ -183,7 +183,7 @@ const FLY_FAST := 45.0
 
 func set_dev_fly(on: bool) -> void:
 	dev_fly = on
-	collision_mask = 0 if on else World.TERRAIN_LAYER  # through rock (and back to solid)
+	collision_mask = 0 if on else World.TERRAIN_LAYER | Monster.MONSTER_LAYER  # through rock (and back to solid)
 	_spring.collision_mask = 0 if on else World.TERRAIN_LAYER  # the camera too
 	velocity = Vector3.ZERO
 
@@ -257,6 +257,7 @@ func _physics_process(delta: float) -> void:
 		velocity.z += _shove.z
 		_shove = _shove.move_toward(Vector3.ZERO, SHOVE_FADE * delta)
 	move_and_slide()
+	_guard_fall(delta)
 	model.set_climbing(ladder and not is_on_floor(), delta)  # hands on the rungs
 	if on_floor and not ladder and velocity.y <= 0.01 and dir.length() > 0.1 and is_on_wall():
 		_try_step_up(dir * speed * delta)
@@ -517,6 +518,28 @@ func guard_break() -> void:
 	fight.guard_break()
 
 
+## Never lost inside the rock (owner, Nov 18: a beetle's charge knocked him through the floor and out of the map):
+## remembers the last floor you stood on, and if your body ends up inside solid rock it puts you back there.
+var _safe_spot := Vector3.INF
+var _in_rock := 0.0
+
+
+func _guard_fall(delta: float) -> void:
+	var auth := GameAuthority.instance
+	if not is_local or auth == null or auth.world == null:
+		return
+	var w: World = auth.world
+	var inside := w.sdf_at(global_position + Vector3.UP * 0.9) < -0.5 and w.sdf_at(global_position + Vector3.UP * 0.3) < -0.5
+	if is_on_floor() and not inside:
+		_safe_spot = global_position
+	_in_rock = _in_rock + delta if inside else 0.0
+	if _in_rock > 0.3 and _safe_spot != Vector3.INF:
+		global_position = _safe_spot + Vector3.UP * 0.3
+		velocity = Vector3.ZERO
+		_shove = Vector3.ZERO
+		_in_rock = 0.0
+
+
 ## Knocked to one side (a beetle's charge hit you, F111): `push` is the sideways speed in m/s.
 var _shove := Vector3.ZERO
 const SHOVE_FADE := 18.0
@@ -600,6 +623,8 @@ func _on_dig_feedback(pid: int, result: Dictionary) -> void:
 			var n: Vector3 = result.get("normal", Vector3.UP)
 			if not soft:  # rock bursts into real chunks (F261); dirt, moss and clay just crumble (owner, Nov 18)
 				RockShatter.burst(get_parent(), at - n * 0.55, n, col, int(result.get("material", -1)))
+				if not result.get("boulder", false):  # a second burst, like a boulder (owner, Nov 18: "this is what I want from mining the rock")
+					RockShatter.burst(get_parent(), at - n * 0.3, (n + Vector3.UP * 0.6).normalized(), col, int(result.get("material", -1)))
 			Fx.burst(get_parent(), at, col, 16, 4.0)
 			ChunkSwarm.burst(get_parent(), at, col, self)  # 25-50 bits fly into you (F13)
 			_shake = 0.8

@@ -292,7 +292,7 @@ func request_hit_boulder(peer_id: int, id: int) -> void:
 	var r := boulders.rock(id)
 	if r.is_empty() or r.broken or boulder_back.has(id):
 		return
-	var at: Vector3 = (r.pos as Vector3) + Vector3.UP * 0.5 * float(r.scale)
+	var at: Vector3 = Boulders.middle(r)
 	if _chest(ps).distance_to(at) > REACH + 1.5 * float(r.scale):
 		return
 	var pick := Items.kind(ps.selected_item()) == "pickaxe"

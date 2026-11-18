@@ -58,41 +58,41 @@ def finish(parts, seed, pic):
 		top_light=0.3, key=0.45, strokes=0.1, seed=seed * 0.1, picture=str(TEX / pic), picture_scale=1.1, picture_amount=0.85))]
 
 
-def boulder_round(seed=401):
+def boulder_round(seed=401, pic="greystone_a.png"):
 	parts = [chunk("main", (0, 0, 0.5), (0.7, 0.62, 0.55), seed)]
 	parts.append(chunk("s1", (0.5, 0.15, 0.14), (0.24, 0.22, 0.18), seed + 1, n=14))  # (pressed into the big one)
 	parts.append(chunk("s2", (-0.34, -0.4, 0.12), (0.19, 0.17, 0.14), seed + 2, n=12))
-	return finish(parts, seed, "greystone_a.png")
+	return finish(parts, seed, pic)
 
 
-def boulder_tall(seed=411):
+def boulder_tall(seed=411, pic="brownrock_a.png"):
 	parts = [chunk("main", (0.08, 0, 0.8), (0.38, 0.34, 0.85), seed, turn=0.15)]
 	r = random.Random(seed)
 	for k in range(4):
 		a = k * math.tau / 4 + r.uniform(-0.4, 0.4)
 		parts.append(chunk(f"rub{k}", (math.cos(a) * 0.3, math.sin(a) * 0.3, 0.1), (0.17, 0.14, 0.12), seed + 10 + k, n=12))  # (touching its foot)
-	return finish(parts, seed, "brownrock_a.png")
+	return finish(parts, seed, pic)
 
 
-def boulder_slabs(seed=421):
+def boulder_slabs(seed=421, pic="warmstone_b.png"):
 	parts = []
 	z = 0.14
 	for k in range(3):
 		w = 0.75 - k * 0.15
 		parts.append(chunk(f"slab{k}", (0.06 * k, -0.05 * k, z), (w, w * 0.85, 0.16), seed + k, turn=0.08))
 		z += 0.27
-	return finish(parts, seed, "warmstone_b.png")  # (round 2: limestone was too pale)
+	return finish(parts, seed, pic)  # (round 2: limestone was too pale)
 
 
-def boulder_cluster(seed=431):
+def boulder_cluster(seed=431, pic="greystone_b.png"):
 	parts = [chunk("a", (0, 0, 0.42), (0.48, 0.44, 0.42), seed),
 		chunk("b", (0.55, 0.25, 0.3), (0.34, 0.3, 0.3), seed + 1),
 		chunk("c", (-0.35, 0.45, 0.24), (0.28, 0.26, 0.24), seed + 2),
 		chunk("d", (0.15, -0.38, 0.18), (0.22, 0.2, 0.18), seed + 3, n=14)]
-	return finish(parts, seed, "greystone_b.png")
+	return finish(parts, seed, pic)
 
 
-def boulder_split(seed=441):
+def boulder_split(seed=441, pic="brownrock_b.png"):
 	"""Two halves of one boulder with a crack between: built as one rock, then cut by a plane and pulled 2 cm apart."""
 	whole = chunk("whole", (0, 0, 0.55), (0.75, 0.6, 0.55), seed)
 	halves = []
@@ -113,13 +113,21 @@ def boulder_split(seed=441):
 	bpy.data.objects.remove(whole)
 	out = []
 	for k, h in enumerate(halves):
-		out += finish([h], seed + k, "brownrock_b.png")
+		out += finish([h], seed + k, pic)
 		out[-1][0].name = f"rock{k}"
 	return out
 
 
 BUILDS = {"boulder_round": boulder_round, "boulder_tall": boulder_tall, "boulder_slabs": boulder_slabs,
 	"boulder_cluster": boulder_cluster, "boulder_split": boulder_split}
+# Two more stone looks per shape (owner, Nov 18: "we need different styles in terms of textures"): _b and _c, each its
+# own stone picture and its own seed (so the rock is cut differently too).
+LOOKS = {"boulder_round": ["slate_a.png", "amberrock_a.png"], "boulder_tall": ["basalt_a.png", "greystone_c.png"],
+	"boulder_slabs": ["slate_b.png", "limestone_b.png"], "boulder_cluster": ["warmstone_a.png", "basalt_b.png"],
+	"boulder_split": ["amberrock_b.png", "greystone_a.png"]}
+for _name, _fn in list(BUILDS.items()):
+	for _k, _pic in enumerate(LOOKS[_name]):
+		BUILDS[f"{_name}_{'bc'[_k]}"] = (lambda f=_fn, p=_pic, k=_k: f(seed=f.__defaults__[0] + 3 + k * 2, pic=p))
 
 if __name__ == "__main__":
 	for name, fn in BUILDS.items():
