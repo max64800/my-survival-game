@@ -1,5 +1,7 @@
 # Steam "Coming Soon" page: the plan (written Nov 17, 2026, on the Mac)
 
+> **Status Nov 18, 2026: SUBMITTED for review** (App ID 5649350). Everything below is filled in. Still to do later: measure the real system requirements on the PC (the page has an estimate), and change the video endings to "Wishlist Dwarves Never Fall on Steam" once Steam approves.
+
 **Goal:** a public Steam page with a working **Wishlist** button **before the first video is posted**
 (videos 049-055 in the EQT Social Media repo end with "wishlist on Steam").
 The owner does the Steam steps himself on the gaming PC. Claude on the PC makes the pictures, screenshots and texts.
