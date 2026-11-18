@@ -101,11 +101,41 @@ def tree_bark_fn(seed):
 	return fn
 
 
-def tree_finish(parts, seed, pic=None):
+MOSS = ((0.27, 0.35, 0.13), (0.12, 0.18, 0.06), (0.44, 0.52, 0.24))  # soft cave moss: base, dark, light (round 2: less lime)
+
+
+def tree_finish(parts, seed, pic=None, moss_patches=20):
 	bark = cs.melt(parts, voxel=0.004, smooth=3, name="bark")
 	cp.carve(bark, tree_bark_fn(seed), soften=1)
-	return [(bark, 9000, 2048, lambda nm: cs.paint_material(nm, *ch.B, moss=(0.36, 0.42, 0.2), moss_amount=0.18, strokes=0.08,
+	out = [(bark, 9000, 2048, lambda nm: cs.paint_material(nm, *ch.B, moss=(0.36, 0.42, 0.2), moss_amount=0.18, strokes=0.08,
 		edge=0.25, grime=0.15, top_light=0.04, seed=1.0, picture=pic or BARK_PIC, picture_scale=3.2, picture_amount=0.97))]  # (big, bold bark)
+	moss = moss_cushions(bark, seed, moss_patches)
+	if moss:
+		out.append((moss, 2500, 1024, lambda nm: cs.paint_material(nm, *MOSS, strokes=0.3, edge=0.2, grime=0.1, top_light=0.12, seed=3.0)))
+	return out
+
+
+def moss_cushions(bark, seed, patches):
+	"""Moss here and there (owner, Nov 18): ~a dozen patches of soft green cushions grown onto the bark, mostly on the
+	root feet, in the furrows and on the trunk's sides (in the game the model hangs upside down: its +Z is down, so
+	`up` faces have normal.z < 0). Each cushion is half sunk into the bark: grown on, never floating."""
+	r = random.Random(seed + 500)
+	verts = [(bark.matrix_world @ v.co, v.normal) for v in bark.data.vertices]
+	good = [(co, n) for co, n in verts if n.z < 0.5 and co.z > 0.2]  # (the trunk and the feet; not the ceiling crown)
+	if not good:
+		return None
+	blobs = []
+	for k in range(patches):
+		co, n = good[r.randrange(len(good))]
+		for j in range(r.randint(8, 16)):  # (round 2: bigger patches)
+			off = Vector((r.uniform(-1, 1), r.uniform(-1, 1), r.uniform(-1, 1)))
+			off -= n * off.dot(n)  # along the surface
+			c = co + off.normalized() * r.uniform(0.0, 0.07) - n * 0.006
+			size = r.uniform(0.018, 0.04)
+			blobs.append(kit.gem(tuple(c), (size, size, size * 0.55), kit.mat("moss"), seed=seed + 700 + k * 10 + j))
+	moss = cs.melt(blobs, voxel=0.003, smooth=4, name="moss")
+	cp.carve(moss, lambda p, n: 0.0015 * noise.noise(p * 140.0), soften=0)  # fuzzy
+	return moss
 
 
 def build_trunk(seed=311, part="full", bark="a"):

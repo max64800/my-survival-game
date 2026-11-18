@@ -3514,3 +3514,9 @@ the body."
   round 2: 3.2 repeats (big bold plates), less edge/top light. Each version its own bark; stump and crown mossy.
 - Page for the owner: 'Root Tree Versions' artifact (models + in-game shots). Hurdle: one publish went out before
   my page update finished (a text check stopped the script); republished.
+
+## November 18, 2026 (PC, rock-textures Claude): moss on the Root Trees (F274 round 5)
+- Owner: "much better, maybe add some moss here and there". moss_cushions(): ~20 patches of 8-16 melted gem
+  blobs grown half-sunk onto the trunk and feet (not the ceiling crown), fuzz carved, painted moss green.
+  Round 1 tiny lime dots; round 2 bigger patches, darker natural green. The page now shows the models upright
+  (Blender's preview shows them upside down: their +Z is down in the game).
