@@ -470,3 +470,23 @@ func test_hanging_roots_break() -> void:
 	check_eq(rc.top_of(0), Vector3.INF, "and hidden")
 	check(auth.snapshot().strands.has(0), "a save remembers it")
 	_teardown()
+
+## F189: chopping a giant root pillar gives wood, 2 a hit with an axe, until it's chopped bare.
+func test_root_pillar_chops() -> void:
+	await _setup(42)
+	var rp := RootPillars.new()
+	auth.get_parent().add_child(rp)
+	rp.build(world.maker)
+	auth.pillars = rp
+	var p := rp.pillar(0)
+	check(not p.is_empty(), "there's a pillar")
+	if p.is_empty():
+		_teardown()
+		return
+	player.global_position = (p.bottom as Vector3) + Vector3(p.width * 0.15 + 1.0, 0.1, 0.0)
+	var before := auth.drop_count()
+	for i in RootPillars.CHOPS + 3:
+		auth.request_chop_pillar(1, 0)
+	check(auth.drop_count() > before, "chopping gives wood")
+	check_eq(auth.pillar_chops.get(0, 0), RootPillars.CHOPS, "up to the limit, then it's bare")
+	_teardown()

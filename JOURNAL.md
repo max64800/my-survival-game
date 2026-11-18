@@ -3420,3 +3420,12 @@ the body."
 
 - **Nov 18 (Mac): video studio for the dwarf Shorts moved into the game repo (`video/`).** The owner recorded all 14 dwarf Shorts (049-062) and wants the PC to edit them. Claude copied the shorts editor (Python tools + Remotion), the newest Short's pipeline as a template, 41 editing and script rules, the 14 scripts and 10 writing skills from the EQT Social Media folder, plus a new `towel_key.py`: the owner films in front of an orange towel and the towel is swapped for game footage. PC guide: `video/README.md`. Every script now ends "Wishlist Dwarves Never Fall on Steam."; 058 became the "first cave too big" story (the owner didn't remember the invisible-rocks story, which a Claude had found and fixed by itself).
   - Hurdles: (1) this repo is public, so business and client notes (EQT, Snow, HPGPS, Facebook ads, long-form episodes, analytics tokens) stayed behind, Mac paths were replaced, and the GPL person-matte model is downloaded on the PC instead of committed. (2) The editor's list of compositions imported client projects; Claude wrote a shorts-only list and checked that it compiles and lists Edit/Edit60/Overlay. (3) EQT Social Media can't reach its own GitHub copy (different account), so its newest work never got uploaded; told the owner. (4) The first towel test had holes in the hair and a shadowed arm (shadow skin looks orange); fixed by filling holes inside the AI outline.
+
+## November 18, 2026 (PC, rock-textures Claude): giant root pillars (F189, last part)
+- Model: cave_rootpillar.py, made from the hanging roots' pieces (cave_hanging.py: branch, hairs, finish = melted
+  tubes, carved bark, painted). Round 1 looked like thin sticks with spikes; round 2: a core plus 8 thick roots
+  twisting tightly, feet spreading into the rock (rpillar_b: 6 roots and an 'eye' root).
+- Game: RootPillars plans from the cave (same seed, same pillars), stretched to the room's height; first in-game
+  look was too thin when tall, so width grows with height. A StaticBody with a cylinder on the terrain layer (you
+  bump into it and aim at it); a swing calls ask_chop_pillar (host counts, saved as pillar_chops).
+- Tests: test_root_pillars (clear ground, floor to ceiling, enough of them), test_root_pillar_chops.

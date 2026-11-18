@@ -40,6 +40,8 @@ var curtains: RootCurtains  ## root curtains in tunnel mouths (break for fiber)
 var clutter: Clutter  ## pebbles, dripstone, the big hanging roots (those break for wood)
 var removed_strands: Array[int] = []  ## root-curtain strands broken so far (saved)
 var removed_hroots: Array[String] = []  ## big hanging roots broken so far (saved)
+var pillars: RootPillars  ## giant root pillars (chop for wood)
+var pillar_chops := {}  ## pillar id -> how much wood it has given (saved)
 var removed_plants: Array[int] = []  ## cave-life plants broken so far (saved, sent to late joiners)
 ## Host: chopped roots growing back (F106): glow id -> seconds left.
 var regrow := {}
@@ -263,6 +265,43 @@ func ask_hit(point: Vector3, normal: Vector3) -> void:
 		request_hit(local_peer_id(), point, normal)
 	else:
 		_rpc_hit.rpc_id(1, point, normal)
+
+
+## A swing at a giant root pillar (owner, Nov 17, F189): bits of wood, 2 with an axe, up to RootPillars.CHOPS.
+func ask_chop_pillar(id: int) -> void:
+	if is_host():
+		request_chop_pillar(local_peer_id(), id)
+	else:
+		_rpc_chop_pillar.rpc_id(1, id)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_chop_pillar(id: int) -> void:
+	if is_host():
+		request_chop_pillar(multiplayer.get_remote_sender_id(), id)
+
+
+func request_chop_pillar(peer_id: int, id: int) -> void:
+	var ps := get_player(peer_id)
+	if ps == null or pillars == null:
+		return
+	var p := pillars.pillar(id)
+	if p.is_empty():
+		return
+	var chest := _chest(ps)
+	var axis := Geometry3D.get_closest_point_to_segment(chest, p.top, p.bottom)
+	if axis.distance_to(chest) > REACH + 1.5 + float(p.width) * 0.15:
+		return
+	var used: int = pillar_chops.get(id, 0)
+	if used >= RootPillars.CHOPS:
+		_tell_feedback(peer_id, {state = "blocked", point = axis, why = "Chopped bare. Its wood is gone."})
+		return
+	var n := 2 if Items.kind(ps.selected_item()) == "axe" else 1
+	n = mini(n, RootPillars.CHOPS - used)
+	pillar_chops[id] = used + n
+	var out := Vector3(chest.x - axis.x, 0.0, chest.z - axis.z).normalized()
+	spawn_drop("rootwood", n, axis + out * float(p.width) * 0.18 + Vector3.UP * 0.4)
+	_tell_feedback(peer_id, {state = "done", kind = "root", point = axis + out * float(p.width) * 0.15})
 
 
 ## A swing through hanging roots (owner, Nov 17): "strand" = a root-curtain strand (its bunch breaks, gives fiber),
@@ -1869,7 +1908,7 @@ func snapshot() -> Dictionary:
 		for id in glow._spots:
 			if glow._spots[id].get("chops", 1) != GlowPlacer.KINDS[glow._spots[id].kind].get("chops", 1):
 				chops[id] = glow._spots[id].chops
-	return {strands = removed_strands.duplicate(), hroots = removed_hroots.duplicate(),
+	return {strands = removed_strands.duplicate(), hroots = removed_hroots.duplicate(), pillar_chops = pillar_chops.duplicate(),
 		edits = edit_log.duplicate(), glow = removed_glow.duplicate(), plants = removed_plants.duplicate(), drops = drops, next_drop = _next_drop_id,
 		stations = sts, chops = chops, regrow = regrow.duplicate(), plant_regrow = plant_regrow.duplicate(), runes = rune_slab.to_data(), build = builder.snapshot(), boxes = storage.snapshot(), monsters = monsters.snapshot(), state = world_state}
 
@@ -1883,6 +1922,8 @@ func load_snapshot(snap: Dictionary) -> void:
 		removed_plants.append(id)
 		if cave_life:
 			cave_life.remove_plant(id)
+	for id in snap.get("pillar_chops", {}):
+		pillar_chops[int(id)] = int(snap.pillar_chops[id])
 	for id in snap.get("strands", []):
 		removed_strands.append(int(id))
 	if curtains and not removed_strands.is_empty():

@@ -56,3 +56,20 @@ func test_root_curtains() -> void:
 			bad += 1  # a free end stuck in the floor
 	check_eq(bad, 0, "none on kept-clear ground, none stuck in the floor")
 	CaveMaker.use_layout(was)
+
+## F189 (owner, Nov 17): giant root pillars stand in some big caverns, floor to ceiling, never on kept-clear ground,
+## in a stone column or on a place.
+func test_root_pillars() -> void:
+	var was := CaveMaker.layout
+	CaveMaker.use_layout(CaveMaker.LAYOUT_LATEST)
+	var total := 0
+	for sd in [42, 7]:
+		var m := CaveMaker.new(sd)
+		var ps := RootPillars.plan(m)
+		total += ps.size()
+		for p in ps:
+			var mid: Vector3 = (p.top as Vector3).lerp(p.bottom, 0.5)
+			check(not m.is_reserved(mid, 1.0) and not m._in_column(mid, 0.5), "seed %d: a pillar on clear ground" % sd)
+			check((p.top as Vector3).y - (p.bottom as Vector3).y >= 5.0, "seed %d: floor to ceiling" % sd)
+	check(total >= 4, "some big caverns have root pillars (%d in 2 worlds)" % total)
+	CaveMaker.use_layout(was)

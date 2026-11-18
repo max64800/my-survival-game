@@ -16,6 +16,7 @@ var glow: GlowField
 var cave_life: CaveLife
 var _clutter: Clutter
 var _curtains: RootCurtains
+var _pillars: RootPillars
 var authority: GameAuthority
 var dwarf: Dwarf
 var hud: Hud
@@ -331,6 +332,10 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	_curtains.name = "RootCurtains"
 	add_child(_curtains)
 	_curtains.build(world.maker, world)
+	_pillars = RootPillars.new()  # giant root pillars in some big caverns, chop them for wood (F189)
+	_pillars.name = "RootPillars"
+	add_child(_pillars)
+	_pillars.build(world.maker)
 
 	cave_life = CaveLife.new()  # moss, grass, small roots, lichen, ferns in patches (only looks; F188)
 	cave_life.name = "CaveLife"
@@ -358,6 +363,7 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	authority.glow = glow
 	authority.cave_life = cave_life
 	authority.curtains = _curtains
+	authority.pillars = _pillars
 	authority.clutter = _clutter
 	authority.drops_root = drops
 	authority.poi_field = pf

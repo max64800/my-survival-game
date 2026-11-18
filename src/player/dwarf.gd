@@ -433,6 +433,12 @@ func _on_swing_impact() -> void:
 			return
 	if hit.is_empty():
 		return
+	var pillar_id := RootPillars.id_of(hit.collider)
+	if pillar_id >= 0:  # a giant root pillar: chop bits of wood off it (F189)
+		auth.ask_chop_pillar(pillar_id)
+		Fx.burst(get_parent(), hit.position, Color(0.45, 0.32, 0.2), 10, 2.5)
+		_shake = 0.3
+		return
 	var glow_id := auth.glow.id_of(hit.collider) if auth.glow else -1
 	if glow_id >= 0:
 		auth.ask_harvest(glow_id)
