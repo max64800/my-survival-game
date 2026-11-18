@@ -100,8 +100,7 @@ func _head_at(sw: Dictionary, t: float) -> Vector3:
 	var wall: float = lerpf(ring[i0], ring[(i0 + 1) % ring.size()], u - floorf(u))
 	var d := maxf(1.5, wall - float(sw.gap) - sin(t * f.z + ph.z) * 1.0)
 	var y: float = float(sw.band) + sin(t * f.y + ph.y) * minf(1.5, float(sw.tall) * 0.15)
-	var p := Vector3(c.x + cos(a) * d, y, c.z + sin(a) * d)
-	return _round_trunks(p, 1.2)
+	return Vector3(c.x + cos(a) * d, y, c.z + sin(a) * d)  # (trees: pushed away smoothly in _process)
 
 
 ## Pushed out of any Root Tree (owner, Nov 18: they flew through the trees): `pad` = how far to stay off the bark.
@@ -145,14 +144,36 @@ func _process(delta: float) -> void:
 					pos0[i] = head + Vector3(sw.off[i].x, 0.0, sw.off[i].y) * 0.8
 				sw.pos = pos0
 				sw.prev = head
+				sw.sm = head  # (it's faded out: jumping to its new place is fine)
+				sw.trail = PackedVector3Array([head])
 				sw.leaving = false
 		else:
 			fade = minf(1.0, fade + delta * 0.6)
 		sw.fade = fade
+		# Smooth flying (owner, Nov 18: "it jitters back and forth, and it teleports"): the head glides after its path
+		# point instead of being put on it, Root Trees push it away gently instead of throwing it to the trunk's edge,
+		# and the stretch follows its speed slowly (frame-to-frame speed shakes with every uneven frame).
+		var sm: Vector3 = sw.get("sm", head)
+		sm = sm.lerp(head, 1.0 - exp(-delta * 2.5))
+		for tr in _trunks:
+			if sm.y > float(tr.top) or sm.y < float(tr.bottom):
+				continue
+			var dd := Vector2(sm.x - tr.p.x, sm.z - tr.p.z)
+			var need: float = float(tr.r) + 1.2
+			if dd.length() < need:
+				var away := dd.normalized() if dd.length() > 0.05 else Vector2(1, 0)
+				var push := (need - dd.length()) * minf(1.0, delta * 3.0)
+				sm.x += away.x * push
+				sm.z += away.y * push
+		sw.sm = sm
+		head = sm
 		var vel := (head - (sw.prev as Vector3)) / maxf(delta, 0.001)
 		sw.prev = head
 		sw.head = head
-		var speed := vel.length()
+		var spd: float = sw.get("spd", vel.length())
+		spd = lerpf(spd, minf(vel.length(), 4.0), 1.0 - exp(-delta * 1.5))
+		sw.spd = spd
+		var speed := spd
 		var length := 0.8 + speed * 1.4  # stretches out when it moves faster: a droplet
 		var radius := 0.45  # (owner, Nov 18: "a lot tighter together")
 		# The pack follows the path its head really flew (owner, Nov 18: "when the swarm turns, it turns the entirety of
@@ -161,7 +182,9 @@ func _process(delta: float) -> void:
 		var trail: PackedVector3Array = sw.get("trail", PackedVector3Array())
 		if trail.is_empty() or trail[0].distance_to(head) > 3.0:
 			trail = PackedVector3Array([head])
-		elif trail[0].distance_to(head) > 0.06:
+		elif trail.size() >= 2 and trail[1].distance_to(head) < 0.06:
+			trail[0] = head  # the front point always IS the head (it used to jump forward in 6 cm steps)
+		else:
 			trail.insert(0, head)
 		var total := 0.0
 		var cut := trail.size()
@@ -197,11 +220,11 @@ func _process(delta: float) -> void:
 				pts.append(trail[k2 - 1] + seg * f)
 				fw.append(-seg.normalized())
 		var fwd: Vector3 = fw[0]
-		var sm: ShaderMaterial = sw.mat
-		sm.set_shader_parameter("pts", pts)
-		sm.set_shader_parameter("fws", fw)
-		sm.set_shader_parameter("fade", fade)
-		sm.set_shader_parameter("radius", radius)
+		var fly_mat: ShaderMaterial = sw.mat
+		fly_mat.set_shader_parameter("pts", pts)
+		fly_mat.set_shader_parameter("fws", fw)
+		fly_mat.set_shader_parameter("fade", fade)
+		fly_mat.set_shader_parameter("radius", radius)
 
 
 func _place(sw: Dictionary) -> void:

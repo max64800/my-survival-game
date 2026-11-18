@@ -37,6 +37,10 @@ func _run() -> void:
 		await _procbench()
 		get_tree().quit()
 		return
+	if "vinetest" in OS.get_cmdline_user_args():
+		await _vinetest()
+		get_tree().quit()
+		return
 	if "perfbench" in OS.get_cmdline_user_args():
 		await _perfbench()
 		get_tree().quit()
@@ -564,3 +568,41 @@ func _frame_cost() -> Vector3:
 		cpu += RenderingServer.viewport_get_measured_render_time_cpu(vp)
 		gpu += RenderingServer.viewport_get_measured_render_time_gpu(vp)
 	return Vector3(t / n, cpu / n, gpu / n)
+
+
+## Vines (owner, Nov 18: "if you break some, the others close by change their position"): a picture of the nearest
+## curtain, break one strand, the same picture again.
+func _vinetest() -> void:
+	var rc: RootCurtains = _main.get_node_or_null("RootCurtains")
+	var dwarf: Dwarf = _main.dwarf
+	dwarf.set_physics_process(false)
+	_main.hud.visible = false
+	while not rc._built:
+		await _wait(0.5)
+	var best := -1
+	var bd := INF
+	for id in rc._where:
+		var t := rc.top_of(id)
+		if t != Vector3.INF and t.distance_to(dwarf.global_position) < bd:
+			bd = t.distance_to(dwarf.global_position)
+			best = id
+	var top := rc.top_of(best)
+	var cam := Camera3D.new()
+	_main.add_child(cam)
+	cam.current = true
+	var light := OmniLight3D.new()
+	light.omni_range = 10.0
+	light.light_energy = 2.0
+	_main.add_child(light)
+	cam.global_position = top + Vector3(2.5, -1.2, 0.0)
+	cam.look_at(top + Vector3.DOWN * 1.2)
+	light.global_position = cam.global_position
+	dwarf.global_position = top + Vector3(30, 0, 30)  # (the dwarf away, so it doesn't push them)
+	await _wait(1.5)
+	await RenderingServer.frame_post_draw
+	_main.take_screenshot(_shots.path_join("vine_before.png"))
+	rc.hide_strands(PackedInt32Array([best]))
+	await _wait(0.6)
+	await RenderingServer.frame_post_draw
+	_main.take_screenshot(_shots.path_join("vine_after.png"))
+	print("VINE broke strand ", best, " at ", top)

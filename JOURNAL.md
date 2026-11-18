@@ -3621,3 +3621,22 @@ the body."
 - Vines: a swing broke every strand within half a metre; now just the one hit. Dripstone/pebbles/drips keep out of
   Root Trees (test). Split boulder (the gap) removed. Mushroom grass: soft colour patches.
 - Claude's slips: a variable named `at` twice and `snap` twice (parse errors); Python ate a GDScript line break again.
+
+## November 18, 2026 (PC, cave Claude): performance research, smoother fireflies (paused)
+
+- Owner: deep research on making the game fast, also on potato PCs ("only loads what you look at, like a cone of
+  vision in Horizon Zero Dawn"). Four research helpers (drawing and culling; voxel terrain and other destructible
+  games; game code, physics and loading; low-end PCs, settings menu, measuring and co-op) and one writer:
+  docs/research/Voxel game performance plan.md (+ notes). Main points: the frame is fine (~5 ms); the gaps are loading
+  (~80 s, nothing saved, every load re-plans) and no graphics menu; Horizon's "cone" is view culling, which Godot already
+  does; for caves the big future idea is Minecraft-style cave culling; potato target GTX 1650 / Iris Xe, 8 GB, 30 FPS.
+- Owner said yes to the graphics menu and cheaper lights (not started yet), and reported: the swarm jitters and
+  teleports; breaking glowing ceiling vines makes the others nearby change position.
+- Swarm: three causes found and smoothed (the front moved in 6 cm steps; the stretch followed the frame-to-frame speed,
+  which shakes with uneven frames; a Root Tree threw the head to the trunk's edge, flipping sides near the middle).
+  Compiles; NOT yet checked in the game (a numbers check was being written when the owner said pause).
+- Vines: a before/after picture test (artpreview vinetest) showed only the broken strand going away. A suspect: the
+  crystal lights are re-shared straight after anything glowing is removed, so the lighting nearby changes. Not fixed;
+  to ask the owner which vines.
+- Paused by the owner; saved.
+
