@@ -9,31 +9,36 @@ class_name Monsters
 
 const LIST := {
 	# ---- The first three, designed with the owner (docs/design/monsters-first-three.md).
-	# shell_hide: after `hits` hits it hides in its shell for `seconds`, taking `cut` less damage.
+	# shell_hide: when its health drops to each of `at` (fractions) it hides in its shell for `seconds`, taking `cut`
+	# less damage (owner, Nov 18: once at half health, once at 10%, 10 s each: you have to wait it out, no stun-lock).
 	# swoops: a flyer that cruises high, dives to bite, then climbs away (retreat m, recover s).
 	# roosts: starts asleep, hanging from a cave ceiling.
 	# soft_back: hits from behind do `back_mult` damage. straight_charge: a charge doesn't steer.
-	"rock_snail": {name = "Rock Snail", size = 1.0, hp = 110, armor = 20, stun = 90, slash = 0.75, blunt = 1.25, pierce = 1.0,
+	"rock_snail": {name = "Rock Snail", ragdoll = {stay = ["soft_foot"], hop = 0.3, roll = "side", spin = 3.2, narrow = 0.5}, size = 1.0, hp = 110, armor = 20, stun = 90, slash = 0.75, blunt = 1.25, pierce = 1.0,
 		fire = 0.0, frost = 0.0, poison = 0.0, walk = 0.6, run = 0.6, pack = [1, 2], xp = 14, leader = "Old Shellback", leader_chance = 0.15,  # (run = walk: it never runs, owner Nov 17)
-		color = Color(0.48, 0.44, 0.38), shape = "rock_snail", neutral = true, shell_hide = {hits = 3, seconds = 3.0, cut = 0.9},
+		color = Color(0.48, 0.44, 0.38), shape = "rock_snail", neutral = true, turns_in_place = true, shell_hide = {at = [0.5, 0.1], seconds = 10.0, cut = 0.9},
 		attacks = [{name = "Shell Slam", land_sound = "snail_slam", tell = 1.2, damage = 20, type = "blunt", reach = 1.9, parry = "any"},
 			{name = "Lunging Bite", tell = 0.9, damage = 14, type = "pierce", reach = 1.7, parry = "any"},
 			# Spit (owner, Nov 17): short range (2-3 m), a shield stops it completely; he rears up, snaps, a gob flies.
 			{name = "Spit", tell = 0.8, damage = 12, type = "blunt", reach = 3.0, min_reach = 1.6, parry = "any", spit = true, shield_stops = true}],
 		drops = [["snail_meat", 1, 1.0], ["snail_meat", 1, 0.5], ["shell_piece", 2, 0.8]]},
-	"cave_bat": {name = "Cave Bat", size = 1.0, hp = 45, armor = 0, stun = 35, slash = 1.25, blunt = 1.0, pierce = 1.5,
-		fire = 0.0, frost = 0.0, poison = 0.0, walk = 3.0, run = 6.5, pack = [1, 2], xp = 10, leader = "Bat Matriarch", leader_chance = 0.15,
+	# Cave bats (owner, Nov 18): packs of 5-10; hit one and the whole pack wakes and swoops at you, flies back, swoops
+	# again; easy (one heavy or two light sword hits each), they drop the wing leather that tans into leather armour.
+	"cave_bat": {name = "Cave Bat", ragdoll = {hop = 0.4, spin = 6.0}, statue_hits = 2, size = 1.0, hp = 16, armor = 0, stun = 35, slash = 1.25, blunt = 1.0, pierce = 1.5,
+		fire = 0.0, frost = 0.0, poison = 0.0, walk = 3.0, run = 6.5, pack = [5, 10], xp = 4, leader = "Bat Matriarch", leader_chance = 0.15,
 		color = Color(0.3, 0.26, 0.28), shape = "cave_bat", flap_sound = "bat_flap", flies = true, swoops = true, roosts = true, sleeps = true,
 		hit_and_run = true, retreat = 7.0, recover = 1.6,
-		attacks = [{name = "Swoop Bite", warn_sound = "bat_screech", tell = 0.6, damage = 11, type = "pierce", reach = 2.2, parry = "any"}],
-		drops = [["wing_leather", 1, 0.9], ["bat_fang", 2, 0.7]]},
-	"rock_beetle": {name = "Rock Beetle", size = 0.9, hp = 80, armor = 30, stun = 70, slash = 0.75, blunt = 1.25, pierce = 1.0,
+		attacks = [{name = "Swoop Bite", warn_sound = "bat_screech", tell = 0.6, damage = 6, type = "pierce", reach = 2.2, parry = "any"}],
+		drops = [["wing_leather", 1, 1.0], ["wing_leather", 1, 0.3], ["bat_fang", 1, 0.4]]},
+	# statue_hits: pickaxe hits to break its stone statue (default 4; owner, Nov 18: bat 2, beetle and snail 4, great 8).
+	# ragdoll: on death it goes limp and falls apart into physics pieces (Ragdoll; the beetle first, owner Nov 18).
+	"rock_beetle": {name = "Rock Beetle", ragdoll = true, size = 0.9, hp = 80, armor = 30, stun = 70, slash = 0.75, blunt = 1.25, pierce = 1.0,
 		fire = 0.0, frost = 0.0, poison = 0.0, walk = 1.8, run = 4.5, pack = [1, 2], xp = 15, leader = "Rock Beetle Brute", leader_chance = 0.2,
 		color = Color(0.42, 0.39, 0.35), shape = "rock_beetle", soft_back = 2.0, straight_charge = true, recover = 1.8,
 		attacks = [{name = "Mandible Snap", warn_sound = "beetle_hiss", tell = 0.7, damage = 10, type = "pierce", reach = 1.7, parry = "any"},
 			{name = "Charge", warn_sound = "beetle_rumble", tell = 1.1, damage = 18, type = "blunt", reach = 9.0, parry = "shield", lunge = true}],
 		drops = [["bug_meat", 2, 1.0], ["glow_gland", 1, 0.6]]},
-	"great_rock_beetle": {name = "Great Rock Beetle", size = 1.5, hp = 220, armor = 45, stun = 160, slash = 0.5, blunt = 1.5, pierce = 1.0,
+	"great_rock_beetle": {name = "Great Rock Beetle", ragdoll = true, statue_hits = 8, size = 1.5, hp = 220, armor = 45, stun = 160, slash = 0.5, blunt = 1.5, pierce = 1.0,
 		fire = 0.0, frost = 0.0, poison = 0.25, walk = 2.0, run = 5.0, pack = [1, 1], xp = 45, leader = "Great Rock Beetle Matron", leader_chance = 0.1,
 		color = Color(0.33, 0.31, 0.29), shape = "rock_beetle", soft_back = 2.0, straight_charge = true, recover = 2.0,
 		attacks = [{name = "Horn Gore", warn_sound = "beetle_hiss", tell = 0.9, damage = 22, type = "pierce", reach = 2.4, parry = "any"},

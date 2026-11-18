@@ -252,6 +252,65 @@ for o in [high_stone, high_moss, high_amber, high_face, high_body, high_eyes, hi
 	o.hide_set(True)
 shoot("after.png", (0, 0, 0.5), 1.7)
 shoot("leg_after.png", lc, 0.6, az=-80, el=12, res=(600, 600))
+
+
+def _leg_table():
+	"""The legs' hip, knee, ankle and toe points, read from the build (builds/monster_rock_beetle.py, LEGS: one place)."""
+	import ast
+	src = (Path(__file__).parent / "builds" / "monster_rock_beetle.py").read_text(encoding="utf-8")
+	for node in ast.parse(src).body:
+		if isinstance(node, ast.Assign) and getattr(node.targets[0], "id", "") == "LEGS":
+			return ast.literal_eval(node.value)
+	raise RuntimeError("no LEGS table in the beetle build")
+
+
+LEG_TABLE = _leg_table()
+
+
+def _seg_dist(p, a, b):
+	ab = b - a
+	t = max(0.0, min(1.0, (p - a).dot(ab) / max(ab.length_squared, 1e-9)))
+	return (a + ab * t - p).length
+
+
+def split_knee(part, shin_name):
+	"""A knee (owner, Nov 18: when it dies the lower leg lies flat on the ground, the upper leg holds it up): the lower
+	leg (shin, foot, claw) becomes its own piece, a child of the leg turning at the knee. Each face goes with the bone
+	it is nearest to: hip-to-knee (upper) or knee-to-ankle-to-toe (lower). The build's points are moved only (the grey
+	save lifts and centres the beetle), so they are found again from the hip."""
+	import bmesh
+	side = -1 if shin_name[5] == "l" else 1
+	hip, knee, ankle, toe = [Vector((side * q[0], q[1], q[2])) for q in LEG_TABLE[int(shin_name[6])]]
+	knee, ankle, toe = knee - hip, ankle - hip, toe - hip  # (the mesh's origin is the hip: its hinge)
+	hip = Vector()
+	bm = bmesh.new()
+	bm.from_mesh(part.data)
+	low_faces = set()
+	for f in bm.faces:
+		c = f.calc_center_median()
+		if min(_seg_dist(c, knee, ankle), _seg_dist(c, ankle, toe)) < _seg_dist(c, hip, knee):
+			low_faces.add(f.index)
+	bm.free()
+	shin = part.copy()
+	shin.data = part.data.copy()
+	scene.collection.objects.link(shin)
+	shin.name = shin_name
+	for ob, keep_low in ((part, False), (shin, True)):
+		b = bmesh.new()
+		b.from_mesh(ob.data)
+		b.faces.ensure_lookup_table()
+		bmesh.ops.delete(b, geom=[f for f in b.faces if (f.index in low_faces) != keep_low], context="FACES")
+		b.to_mesh(ob.data)
+		b.free()
+	cs._select_only(shin)
+	scene.cursor.location = part.matrix_world @ knee
+	bpy.ops.object.origin_set(type="ORIGIN_CURSOR")
+	shin.parent = part
+	shin.matrix_parent_inverse = part.matrix_world.inverted()
+	print("knee", shin_name, len(low_faces), "of", len(part.data.polygons) + len(low_faces), "faces")
+	return shin
+
+
 # ---- 5. the game model: each moving part joined into one piece turning at its hinge; everything else is the body
 moving = set()
 for n, lp in all_legs.items():
@@ -267,6 +326,9 @@ for n, lp in all_legs.items():
 	scene.cursor.location = HINGES[n]
 	bpy.ops.object.origin_set(type="ORIGIN_CURSOR")
 	moving.add(part)
+	if n.startswith("leg_"):
+		moving.add(split_knee(part, "shin_" + n[4:]))
+
 rest = [o for o in scene.objects if o.type == "MESH" and not o.hide_get() and o not in moving]
 bpy.ops.object.select_all(action="DESELECT")
 for o in rest:

@@ -35,8 +35,21 @@ t0 = time.time()
 # Colours picked by eye from the approved picture (sRGB): (base, dark, light)
 PALETTE = {
 	"mossy": dict(stone=((0.56, 0.5, 0.47), (0.32, 0.27, 0.26), (0.8, 0.74, 0.69)), moss=((0.5, 0.5, 0.12), (0.24, 0.26, 0.05), (0.72, 0.7, 0.24)),
-		skin=((0.52, 0.52, 0.22), (0.3, 0.31, 0.11), (0.7, 0.68, 0.38)), tache=((0.4, 0.45, 0.14), (0.2, 0.24, 0.06), (0.62, 0.66, 0.28)),
+		skin=((0.52, 0.52, 0.22), (0.3, 0.31, 0.11), (0.7, 0.68, 0.38)), tache=((0.4, 0.45, 0.14), (0.2, 0.24, 0.06), (0.62, 0.66, 0.28)),  # (round 4's moustache: the owner preferred it to the bushy round 5)
 		crystal=((1.0, 0.9, 0.82), (0.84, 0.58, 0.48)), iris=((0.28, 0.15, 0.07), (0.55, 0.33, 0.15), (0.1, 0.05, 0.02))),
+	# The other looks (approved rock_snail_variants.png; one body, only the paint and the add-ons change, recipe Part 3).
+	"frost": dict(stone=((0.3, 0.34, 0.43), (0.12, 0.14, 0.2), (0.5, 0.56, 0.67)), moss=((0.88, 0.92, 0.98), (0.62, 0.7, 0.82), (1.0, 1.0, 1.0)),
+		skin=((0.6, 0.65, 0.7), (0.36, 0.41, 0.48), (0.8, 0.84, 0.88)), tache=((0.86, 0.88, 0.9), (0.6, 0.63, 0.68), (0.98, 0.98, 1.0)),
+		crystal=((0.82, 0.96, 1.0), (0.3, 0.62, 0.92)), iris=((0.28, 0.15, 0.07), (0.55, 0.33, 0.15), (0.1, 0.05, 0.02)),
+		cap=((0.93, 0.96, 1.0), 0.6), crack_glow=0.0, crack_h=0.02),  # snow on the stones' tops and in the cracks, ice crystals
+	"ember": dict(stone=((0.36, 0.25, 0.22), (0.15, 0.1, 0.09), (0.55, 0.4, 0.34)), moss=((1.0, 0.5, 0.1), (0.72, 0.16, 0.0), (1.0, 0.84, 0.42)),
+		skin=((0.72, 0.62, 0.42), (0.46, 0.37, 0.23), (0.88, 0.8, 0.6)), tache=((0.74, 0.42, 0.14), (0.42, 0.2, 0.05), (0.94, 0.62, 0.3)),
+		crystal=((1.0, 0.58, 0.12), (0.82, 0.26, 0.0)), iris=((0.28, 0.15, 0.07), (0.55, 0.33, 0.15), (0.1, 0.05, 0.02)),
+		cap=None, crack_glow=0.9, crack_h=0.008),  # basalt with glowing lava in the cracks, orange crystals
+	"spore": dict(stone=((0.36, 0.26, 0.41), (0.15, 0.1, 0.2), (0.56, 0.43, 0.62)), moss=((0.72, 0.36, 0.92), (0.4, 0.12, 0.56), (0.92, 0.66, 1.0)),
+		skin=((0.6, 0.48, 0.56), (0.37, 0.27, 0.35), (0.78, 0.66, 0.73)), tache=((0.56, 0.31, 0.64), (0.3, 0.12, 0.37), (0.8, 0.54, 0.88)),
+		crystal=((0.86, 0.6, 1.0), (0.5, 0.18, 0.74)), iris=((0.28, 0.15, 0.07), (0.55, 0.33, 0.15), (0.1, 0.05, 0.02)),
+		cap=None, crack_glow=0.5, crack_h=0.02, mushrooms=True),  # glowing purple fungus in the cracks, glowing mushrooms
 }
 P = PALETTE[LOOK]
 
@@ -290,9 +303,23 @@ def shell_top(y):
 CRYS = [(Vector((-0.02, 0.21, 0)), 0.055, 0.2, Vector((0.05, 0.05, 1))), (Vector((-0.1, 0.13, 0)), 0.04, 0.12, Vector((-0.3, -0.25, 1))),
 	(Vector((0.07, 0.3, 0)), 0.037, 0.1, Vector((0.35, 0.2, 1)))]
 crystals = []
-for k, (p, r, h, tilt) in enumerate(CRYS):
-	p.z = shell_top(p.y) - 0.05
-	crystals.append(crystal(f"crystal{k}", p, r, h + 0.05, tilt, M["glow_crystal"]))
+mushstems = []
+if P.get("mushrooms"):  # spore: glowing mushrooms grow out of the stones on top instead of crystals (feet sunk into a stone)
+	for k, (x, y, hgt, rad, lean) in enumerate(((0.0, 0.2, 0.19, 0.095, 0.0), (-0.11, 0.1, 0.14, 0.07, -0.3), (0.1, 0.31, 0.12, 0.062, 0.35),
+			(-0.07, 0.35, 0.09, 0.05, -0.2), (0.13, 0.08, 0.09, 0.048, 0.4))):  # (big enough to see from a few metres, recipe)
+		base = Vector((x, y, shell_top(y) - 0.03))
+		up = Vector((lean, 0, 1)).normalized()
+		top = base + up * hgt
+		mushstems.append(tube(f"stem{k}", [(base, rad * 0.32, rad * 0.32), (base.lerp(top, 0.5), rad * 0.26, rad * 0.26), (top, rad * 0.24, rad * 0.24)], mat("mushstem", (0.86, 0.8, 0.84)), up=Vector((0, 1, 0)), sides=10))
+		cap_ = ell(f"cap{k}", tuple(top + up * rad * 0.15), (rad, rad, rad * 0.55), M["glow_crystal"], seg=20)
+		for v in cap_.data.vertices:  # a dome: the underside pulled up flat
+			if v.co.z < top.z + up.z * rad * 0.1:
+				v.co.z = top.z + up.z * rad * 0.1 + (v.co.z - top.z - up.z * rad * 0.1) * 0.25
+		crystals.append(cap_)
+else:
+	for k, (p, r, h, tilt) in enumerate(CRYS):
+		p.z = shell_top(p.y) - 0.05
+		crystals.append(crystal(f"crystal{k}", p, r, h + 0.05, tilt, M["glow_crystal"]))
 clump = ell("moss_clump", (0, 0.21, shell_top(0.21) - 0.05), (0.12, 0.15, 0.05), M["crack"])
 
 # ================================================================== the soft body: the foot, and the body above it
@@ -345,15 +372,17 @@ def catmull(pts, n):
 tache = []
 TP = [(0.01, -0.665, 0.5), (0.08, -0.675, 0.47), (0.16, -0.67, 0.45), (0.225, -0.66, 0.455), (0.27, -0.65, 0.485), (0.282, -0.645, 0.525),
 	(0.262, -0.64, 0.552), (0.236, -0.635, 0.54)]
-for s_ in (-1, 1):
-	path = catmull([(s_ * x, y, z) for x, y, z in TP], 4)
-	m_ = len(path) - 1
-	rings = []
-	for i, q in enumerate(path):
-		t = i / m_
-		w = 0.07 + 0.03 * math.sin(math.pi * min(1.0, t * 1.6)) - 0.085 * max(0.0, t - 0.45) / 0.55  # fat middle, thin curled tip
-		rings.append((q, max(0.008, w), max(0.007, w * 0.85)))
-	tache.append(tube(f"tache{s_}", rings, M["moustache"], sides=16))
+# ONE continuous piece from the left curled tip, under the nose, to the right one (owner, Nov 18: two lobes meeting
+# left a notch, and a knot filling it looked like a nose; "just connect them seamlessly").
+ctrl = [(-x, y, z) for x, y, z in reversed(TP[1:])] + [(0.0, -0.667, 0.495)] + [(x, y, z) for x, y, z in TP[1:]]
+path = catmull(ctrl, 4)
+mid = len(path) // 2
+rings = []
+for i, q in enumerate(path):
+	t = abs(i - mid) / mid                       # 0 in the middle, 1 at each tip
+	w = 0.088 + 0.012 * math.sin(math.pi * min(1.0, t * 1.6)) - 0.09 * max(0.0, t - 0.45) / 0.55  # full in the middle, thin curled tips
+	rings.append((q, max(0.008, w), max(0.007, w * 0.85)))
+tache.append(tube("tache", rings, M["moustache"], sides=16))
 tache = cs.melt(tache, voxel=0.004 if GREY else 0.0025, smooth=3, name="tache_high")
 
 # ================================================================== eye stalks (moving parts) and the peeking eyes
@@ -362,12 +391,14 @@ tache = cs.melt(tache, voxel=0.004 if GREY else 0.0025, smooth=3, name="tache_hi
 # cup, rim and lid are one melted skin; only the ball is separate (one moving piece with it).
 EYE_R = 0.068
 STALKS = {}
+STALK_LINE = {}  # side -> (base, top): the stalk's bone line (it bends halfway along it: split_stalk)
 for s, side in ((-1, "l"), (1, "r")):
 	ec = Vector((s * 0.165, -0.6, 0.8))                       # the eyeball's middle
 	look = Vector((s * 0.15, -1, -0.04)).normalized()         # where it looks: forward, a little outward
 	base = Vector((s * 0.07, -0.5, 0.6))
 	top = ec - look * 0.045 + Vector((0, 0, -0.035))           # the stalk ends in the back of the cup
 	mid = base.lerp(top, 0.5) + Vector((0, 0.015, 0))
+	STALK_LINE[side] = (base, top)
 	pieces = [tube(f"stalk_{side}", [(base, 0.046, 0.046), (mid, 0.038, 0.038), (top, 0.04, 0.04)], SK, up=Vector((1, 0, 0)), sides=14)]
 	cup = ell(f"cup_{side}", tuple(ec - look * 0.022), (0.08, 0.077, 0.08), SK)  # the ball sits in it; its front shows
 	pieces.append(cup)
@@ -397,6 +428,12 @@ for s, side in ((-1, "l"), (1, "r")):
 	apply_scale(lid)
 	pieces.append(lid)
 	stalk_skin = cs.melt(pieces, voxel=0.0025, smooth=1, name=f"stalkskin_{side}")
+	# Chiselled (round 5, owner): cut into flat hand-carved planes like the picture, not a smooth ball.
+	dec = stalk_skin.modifiers.new("chisel", "DECIMATE")
+	dec.ratio = min(1.0, 1400 / max(1, len(stalk_skin.data.polygons)))
+	cs._apply_all(stalk_skin)
+	for p_ in stalk_skin.data.polygons:
+		p_.use_smooth = False
 	bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=16, radius=EYE_R, location=ec)
 	eye = bpy.context.object
 	eye.name = f"eyeball_{side}"
@@ -405,6 +442,35 @@ for s, side in ((-1, "l"), (1, "r")):
 	for p in eye.data.polygons:
 		p.use_smooth = True
 	STALKS[side] = (stalk_skin, eye, base)
+# Blinking (owner, Nov 18): a thin skin lid per eye, built CLOSED over the front of the ball and turned up about
+# the eye's middle (its own X axis) into the cup and the heavy lid, out of sight. The game turns it down to blink
+# (MonsterModel._snail: every few seconds, and when he is hit). It is a child of the stalk, so it moves with it.
+BLINK_OPEN = -2.6  # radians about X: up and back, tucked away under the heavy lid (-1.75 left its edge showing)
+lidmat = mat("skin_lid", tuple(c * 0.85 for c in P["skin"][0]))  # (a little darker than the base: matches the painted bulb)
+BLINKS = {}
+for s, side in ((-1, "l"), (1, "r")):
+	ec = Vector((s * 0.165, -0.6, 0.8))
+	look = Vector((s * 0.15, -1, -0.04)).normalized()
+	bpy.ops.mesh.primitive_uv_sphere_add(segments=40, ring_count=20, radius=EYE_R * 1.035, location=ec)
+	bl = bpy.context.object
+	bl.name = f"blink_{side}"
+	bb = bmesh.new()
+	bb.from_mesh(bl.data)
+	bmesh.ops.bisect_plane(bb, geom=bb.verts[:] + bb.edges[:] + bb.faces[:], plane_co=-look * EYE_R * 0.15, plane_no=look, clear_inner=True)
+	bb.to_mesh(bl.data)
+	bb.free()
+	bl.data.materials.append(lidmat)
+	sol = bl.modifiers.new("thick", "SOLIDIFY")
+	sol.thickness = 0.005
+	sol.offset = 1
+	cs._apply_all(bl)
+	for p_ in bl.data.polygons:
+		p_.use_smooth = True
+	scene.cursor.location = ec  # (its turning point: the eye's middle)
+	cs._select_only(bl)
+	bpy.ops.object.origin_set(type="ORIGIN_CURSOR")
+	bl.rotation_euler.x = BLINK_OPEN
+	BLINKS[side] = bl
 PEEK = []
 for s in (-1, 1):  # hiding: two small eyes look out of the shell's mouth
 	pc = Vector((s * 0.07, -0.2, 0.25))
@@ -418,13 +484,13 @@ print("shape", round(time.time() - t0), "s")
 # ================================================================== paint + bake (the beetle way)
 moss = None
 if GREY:
-	parts_body = [shell, clump] + crystals
+	parts_body = [shell, clump] + crystals + mushstems
 	parts_soft = [skin, tache]
 	parts_foot = [footskin]
 else:
 	base_copy.name = "moss_high"
-	cs._displace(base_copy, lambda p, n: 0.002)
-	cs.carve_moss(base_copy, height=0.016, cover=-0.05, seed=4)  # only in the canyons, like the picture
+	cs._displace(base_copy, lambda p, n: 0.004)
+	cs.carve_moss(base_copy, height=P.get("crack_h", 0.024), cover=0.05, seed=4)  # in the canyons, a bit thicker (round 5, owner)
 	moss = cs.melt([base_copy, clump], voxel=0.006, smooth=1, name="moss_high")
 	cs.carve_stone(shell, seed=3, chips=0.006)
 	# each stone its own shade (a clearly visible mix, rule 8)
@@ -444,21 +510,22 @@ else:
 	cs.carve_chitin(tache, dents=0.002, grain=0.0015, seed=9)  # (strand grooves by height made stripes: the tile gives the strands)
 	stone_tile, moss_tile = str(TEX / "snail_stone_tile.png"), str(TEX / "snail_moss_tile.png")
 	skin_tile, tache_tile = str(TEX / "snail_skin_tile.png"), str(TEX / "snail_moustache_tile.png")
+	MOSSY = LOOK == "mossy"  # (the ChatGPT tiles are the mossy snail's colours: the other looks use only a little of them)
 	shell.data.materials.clear()
 	shell.data.materials.append(cs.paint_material("paint_stone", *P["stone"], moss=P["moss"][0], moss_amount=0.55, strokes=0.16,
 		edge=0.55, seed=1, tint_attr="tint", scratches=1.0, grime=0.35, scratch_width=2.2, picture=stone_tile, picture_scale=2.2,
-		picture_amount=0.35))
+		picture_amount=0.35 if MOSSY else 0.12, cap=P.get("cap")))
 	moss.data.materials.clear()
 	moss.data.materials.append(cs.paint_material("paint_moss", *P["moss"], strokes=0.16, top_light=0.25, edge=0.3, seed=4,
-		picture=moss_tile, picture_scale=5.0, picture_amount=0.6))
+		picture=moss_tile if MOSSY else None, picture_scale=5.0, picture_amount=0.6))
 	skin.data.materials.clear()
 	skin.data.materials.append(cs.paint_material("paint_skin", *P["skin"], strokes=0.14, top_light=0.25, edge=0.45, seed=5, key=0.35,
-		grime=0.2, picture=skin_tile, picture_scale=2.0, picture_amount=0.6))
+		grime=0.2, picture=skin_tile, picture_scale=2.0, picture_amount=0.6 if MOSSY else 0.15))
 	footskin.data.materials.clear()
 	footskin.data.materials.append(skin.data.materials[0])
 	tache.data.materials.clear()
 	tache.data.materials.append(cs.paint_material("paint_tache", *P["tache"], strokes=0.1, top_light=0.3, edge=0.4, seed=6,
-		picture=tache_tile, picture_scale=7.0, picture_amount=0.7))
+		picture=tache_tile, picture_scale=7.0, picture_amount=0.7 if MOSSY else 0.15))
 	cjobs = []
 	for c in crystals:
 		hi = cs.detail_copy(c, 2, c.name + "_high")
@@ -475,10 +542,11 @@ else:
 		hi.data.materials.append(cs.paint_eye("paint_eye", iris_out=P["iris"][0], iris_in=P["iris"][1], ring=P["iris"][2],
 			iris_deg=40.0, pupil_deg=21.0, shine_deg=8.0))  # (big iris and pupil, like the picture)
 		cs.uv_only(eye)
-		sk_hi = sk
 		sk.data.materials.clear()
 		sk.data.materials.append(skin.data.materials[0])
-		sk_lo = cs.game_copy(sk_hi, 4000, sk.name + "_low")  # (the melted lid is thick now: thinning is safe)
+		sk_hi = cs.detail_copy(sk, 1, sk.name + "_high")  # (keeps the flat planes; the light game copy is the chiselled skin itself)
+		cs.carve_chitin(sk_hi, dents=0.0012, grain=0.0006, seed=12)
+		sk_lo = cs.uv_only(sk)
 		ejobs.append((side, hi, eye, sk_hi, sk_lo))
 	print("sculpt", round(time.time() - t0), "s")
 	low_shell = cs.game_copy(shell, 12000, "shell_low")
@@ -487,12 +555,14 @@ else:
 	low_foot = cs.game_copy(footskin, 3000, "foot_low")
 	low_tache = cs.game_copy(tache, 2000, "tache_low")
 	cs.bake(shell, low_shell, 2048, "stone_baked")
-	cs.bake(moss, low_moss, 1024, "moss_baked")
+	glow = P.get("crack_glow", 0.0)  # (ember: lava, spore: fungus glow in the cracks; the game hums glow_* materials)
+	cs.bake(moss, low_moss, 1024, ("glow_lava_baked" if LOOK == "ember" else "glow_spore_baked") if glow else "moss_baked", emissive=glow)
 	cs.bake(skin, low_skin, 1024, "skin_baked")
 	cs.bake(footskin, low_foot, 1024, "foot_baked")
 	cs.bake(tache, low_tache, 512, "moustache_baked", ext=0.015)
 	for k, (hi, lo) in enumerate(cjobs):
-		cs.bake(hi, lo, 256, f"glow_crystal_baked{k}" if k else "glow_crystal_baked", normal=False, emissive=0.45)
+		nm = "glow_mushroom_baked" if P.get("mushrooms") else "glow_crystal_baked"
+		cs.bake(hi, lo, 256, f"{nm}{k}" if k else nm, normal=False, emissive=0.45)
 	for side, hi, eye, sk_hi, sk_lo in ejobs:
 		cs.bake(hi, eye, 256, f"eye_baked_{side}", normal=False)
 		eye.data.materials[0].node_tree.nodes["Principled BSDF"].inputs["Roughness"].default_value = 0.2  # wet shine
@@ -501,7 +571,7 @@ else:
 	for o in [shell, moss, skin, footskin, tache] + [j[0] for j in cjobs] + [j[1] for j in ejobs] + [j[3] for j in ejobs]:
 		o.hide_set(True)
 		o.hide_render = True
-	parts_body = [low_shell, low_moss] + crystals
+	parts_body = [low_shell, low_moss] + crystals + mushstems
 	parts_soft = [low_skin, low_tache]
 	parts_foot = [low_foot]
 	print("bake", round(time.time() - t0), "s")
@@ -526,8 +596,42 @@ def join(objs, name, hinge):
 
 final = [join(parts_body, "body", (0, 0, 0)), join(parts_soft, "soft_body", (0, 0.1, 0.45)),
 	join(parts_foot, "soft_foot", (0, 0, 0))]  # (the foot's hinge on the ground under the middle: it gathers and splats there)
+def split_stalk(st, side):
+	"""A joint halfway up the stalk (owner, Nov 18: "bones in the eye, so when he dies they also fall"): the upper half
+	with the cup, lid and eye becomes "stalktip", a child of the stalk turning at the joint. Each face goes by how far
+	along the stalk's line it sits."""
+	b0, b1 = STALK_LINE[side]
+	axis = b1 - b0
+	joint = b0 + axis * 0.5
+	tip = st.copy()
+	tip.data = st.data.copy()
+	scene.collection.objects.link(tip)
+	tip.name = tip.data.name = f"stalktip_{side}"
+	up_faces = {f.index for f in st.data.polygons if ((st.matrix_world @ f.center) - b0).dot(axis) / axis.length_squared > 0.5}
+	for ob, keep_up in ((st, False), (tip, True)):
+		b = bmesh.new()
+		b.from_mesh(ob.data)
+		b.faces.ensure_lookup_table()
+		bmesh.ops.delete(b, geom=[f for f in b.faces if (f.index in up_faces) != keep_up], context="FACES")
+		b.to_mesh(ob.data)
+		b.free()
+	scene.cursor.location = joint
+	bpy.ops.object.select_all(action="DESELECT")
+	tip.select_set(True)
+	bpy.context.view_layer.objects.active = tip
+	bpy.ops.object.origin_set(type="ORIGIN_CURSOR")
+	tip.parent = st
+	tip.matrix_parent_inverse = st.matrix_world.inverted()
+	return tip
+
+
 for side, (sk, eye, base) in STALKS.items():
-	final.append(join([sk, eye], f"soft_stalk_{side}", base))  # stalk, bulb, lid and eye: ONE moving piece
+	st = join([sk, eye], f"soft_stalk_{side}", base)  # stalk, bulb, lid and eye: ONE moving piece
+	tip = split_stalk(st, side)  # (with a joint halfway up: the upper half, cup, lid and eye hang on it)
+	bl = BLINKS[side]
+	bl.parent = tip
+	bl.matrix_parent_inverse = tip.matrix_world.inverted()
+	final += [st, tip, bl]
 final.append(join(PEEK, "peek", (0, -0.2, 0.25)))
 bpy.ops.object.select_all(action="DESELECT")
 for o in final:

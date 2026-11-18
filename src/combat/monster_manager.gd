@@ -72,6 +72,7 @@ func _physics_process(delta: float) -> void:
 
 func _host_step(delta: float) -> void:
 	_update_boosts()
+	_statues_step(delta)
 	_check_boss_resets(delta)
 	for m: Monster in monsters.values():
 		if m.is_alive():
@@ -458,18 +459,16 @@ func _hurt_monster(m: Monster, peer: int, dmg: int, stun_amount: float) -> void:
 		if from.length() > 0.01 and facing.dot(from.normalized()) < -0.25:
 			dmg = roundi(dmg * back)
 			_ev_note.rpc(m.uid, "Weak spot!")
-	# Rock Snail: hiding in its shell = 90% less damage; every 3rd hit makes it hide.
+	# Rock Snail: hiding in its shell = 90% less damage; it hides when its health drops to half, and again at 10%.
 	var shell: Dictionary = m.data.get("shell_hide", {})
-	if not shell.is_empty():
-		if m.shell_left > 0.0:
-			dmg = maxi(1, roundi(dmg * (1.0 - shell.cut)))
-		else:
-			m.shell_hits += 1
-			if m.shell_hits >= shell.hits:
-				m.shell_hits = 0
-				m.shell_left = shell.seconds
-				monster_shell(m, true)
+	if not shell.is_empty() and m.shell_left > 0.0:
+		dmg = maxi(1, roundi(dmg * (1.0 - shell.cut)))
 	m.hp -= dmg
+	if not shell.is_empty() and m.shell_left <= 0.0 and m.hp > 0.0 and m.shell_hits < shell.at.size() 			and m.hp <= m.max_hp() * float(shell.at[m.shell_hits]):
+		while m.shell_hits < shell.at.size() and m.hp <= m.max_hp() * float(shell.at[m.shell_hits]):
+			m.shell_hits += 1  # (a big hit past both marks uses both: it hides once)
+		m.shell_left = shell.seconds
+		monster_shell(m, true)
 	m.last_hitter = peer
 	m.hit_by[peer] = _clock
 	m.stun.add(stun_amount)
@@ -478,7 +477,13 @@ func _hurt_monster(m: Monster, peer: int, dmg: int, stun_amount: float) -> void:
 	var hitter_ps := auth.get_player(peer)
 	if hitter_ps:
 		auth.give_xp(peer, 1, Progression.weapon_skill(Combat.weapon_of(hitter_ps.selected_item())))
-	_ev_hit.rpc(m.uid, dmg)
+	# A push away from the hitter (owner, Nov 18, "juicy hits"): stronger for big hits, weaker for big creatures.
+	var from := hitter.global_position if hitter else m.global_position
+	if hitter and not m.is_boss() and not m.shell_shut and m.shell_left <= 0.0:  # (a snail in his shell is a heavy stone)
+		var away := (m.global_position - from) * Vector3(1, 0, 1)
+		if away.length() > 0.01:
+			m.knock(away.normalized() * clampf(1.8 + dmg * 0.06, 1.8, 5.0) / maxf(1.0, float(m.data.get("size", 1.0))))
+	_ev_hit.rpc(m.uid, dmg, from, peer)
 	if m.hp <= 0.0:
 		_kill(m, peer)
 	else:
@@ -751,13 +756,16 @@ func _kill(m: Monster, peer: int) -> void:
 	if m.is_boss():
 		_boss_drops(m)
 	var xp: int = m.data.xp * (Monsters.LEADER.xp if m.leader else 1) * (Monsters.VARIANT_STATS.xp if m.variant != "" else 1)
+	# Everything that dies turns to stone (owner, Nov 18): nothing drops now; its loot is locked inside the statue and
+	# comes out when you mine it (with its stone, and 1 in 20 a gem). Bosses still hand out their gifts at once.
+	var loot := []
 	if m.variant != "":
 		var v: Dictionary = Monsters.VARIANTS[m.variant]
-		auth.spawn_drop(v.crystal, v.count, m.global_position + Vector3.UP * 0.7)
+		loot.append([v.crystal, v.count])
 		if randf() < 0.15 * (1.0 + (auth.get_player(peer).progress.perk_rank("monster_scavenger") * 0.25 if auth.get_player(peer) else 0.0)):
-			auth.spawn_drop(Gems.item_id(Gems.VARIANT_GEM[m.variant]), 1, m.global_position + Vector3.UP * 0.9)
+			loot.append([Gems.item_id(Gems.VARIANT_GEM[m.variant]), 1])
 		if m.variant == "violet" and CaveMaker.biome_at(m.global_position) == "fungal" and randf() < 0.005:
-			auth.spawn_drop(Gems.item_id("shiftstep"), 1, m.global_position + Vector3.UP)
+			loot.append([Gems.item_id("shiftstep"), 1])
 	for pid in auth.players:  # kills give XP to everyone nearby (progression doc 7.2)
 		if auth.players[pid].node.global_position.distance_to(m.global_position) < 30.0 or pid == peer:
 			auth.give_xp(pid, xp, Progression.weapon_skill(Combat.weapon_of(auth.players[pid].selected_item())))
@@ -769,17 +777,20 @@ func _kill(m: Monster, peer: int) -> void:
 		var times := (2 if m.leader else 1) + (1 if randf() < more else 0)
 		for t in times:
 			if randf() < d[2]:
-				auth.spawn_drop(d[0], d[1], m.global_position + Vector3.UP * 0.5)
+				loot.append([d[0], d[1]])
 	if m.leader and randf() < 0.1:
 		var rune := auth.rune_slab.pick_drop(GameAuthority.rune_biome_at(m.global_position), [randf(), randf(), randf(), randf()])
 		if rune != "":
-			auth.spawn_drop("rune_" + rune, 1, m.global_position + Vector3.UP * 0.6)
+			loot.append(["rune_" + rune, 1])
 	var room: Dictionary = _rooms.get(m.pack_id, {})
 	if not room.is_empty():
 		room.alive.erase(m.uid)
 		if room.alive.is_empty():
 			room.cleared_at = _clock
-	_ev_remove.rpc(m.uid)
+	if m.is_boss():
+		_ev_remove.rpc(m.uid)
+		return
+	_ev_remove.rpc(m.uid, add_statue(m, loot))
 
 
 # ================================================================== monsters attacking us
@@ -1075,13 +1086,101 @@ func _ev_spawn(uid: int, kind: String, pos: Vector3, leader: bool, pack: int, va
 
 
 @rpc("authority", "call_local", "reliable")
-func _ev_remove(uid: int) -> void:
+func _ev_remove(uid: int, statue := -1) -> void:
 	var m: Monster = monsters.get(uid)
 	monsters.erase(uid)
 	if m:
 		Fx.burst(_root, m.global_position + Vector3.UP * 0.4, m.data.color, 18, 3.0)
 		Sfx.play("death", m.global_position)
-		m.die_visual()  # tips over and sinks away (only looks), then frees itself
+		m.die_visual(statue)  # goes limp, then turns to stone (statue >= 0) or sinks away (only looks)
+
+
+const HIT_STOP := 0.06        ## seconds both fighters freeze on a hit (owner, Nov 18: "juicy hits")
+const HIT_STOP_HEAVY := 0.11  ## ... on a big hit
+
+
+# ================================================================== stone statues (owner, Nov 18)
+# Everything that dies turns to stone where it lies. Mine it with a pickaxe (hits by size: data.statue_hits) for its
+# stone and its loot (1 in 20 also a gem). Left alone it crumbles to dust after STATUE_LIFE. The host keeps the list;
+# every computer shows its own stone body (Statue).
+const STATUE_LIFE := 300.0     ## seconds before an unmined statue crumbles away
+const STATUE_GEM_CHANCE := 0.05  ## 1 in 20 has a gem inside (any normal gem)
+const STATUE_REACH := 2.5      ## extra reach (m): the body may have rolled a little from where it died
+var statues := {}  ## (host) statue id -> {pos, kind, loot, hits, needed, left}
+var _next_statue := 1
+
+
+## Host: a new statue where this monster died, holding `loot`. Returns its id.
+func add_statue(m: Monster, loot: Array) -> int:
+	var needed: int = m.data.get("statue_hits", 4)
+	var items := loot.duplicate()
+	items.append(["stone", needed])  # (one stone for each hit it takes)
+	if randf() < STATUE_GEM_CHANCE:
+		items.append([Gems.item_id(Gems.NORMAL.keys().pick_random()), 1])
+	var id := _next_statue
+	_next_statue += 1
+	statues[id] = {pos = m.global_position, kind = m.kind, loot = items, hits = 0, needed = needed, left = STATUE_LIFE}
+	return id
+
+
+func ask_hit_statue(id: int) -> void:
+	if auth.is_host():
+		request_hit_statue(auth.local_peer_id(), id)
+	else:
+		_rpc_hit_statue.rpc_id(1, id)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_hit_statue(id: int) -> void:
+	if auth.is_host():
+		request_hit_statue(multiplayer.get_remote_sender_id(), id)
+
+
+## Host: a swing at a statue. Pickaxe only (owner); it breaks after its hits and drops its stone and loot.
+func request_hit_statue(peer_id: int, id: int) -> String:
+	var ps := auth.get_player(peer_id)
+	var st: Dictionary = statues.get(id, {})
+	if ps == null or st.is_empty():
+		return "gone"
+	var at: Vector3 = st.pos + Vector3.UP * 0.4
+	var chest: Vector3 = ps.node.global_position + Vector3.UP * 1.1
+	if chest.distance_to(at) > GameAuthority.REACH + STATUE_REACH:
+		return "too_far"
+	if Items.kind(ps.selected_item()) != "pickaxe":
+		auth._tell_feedback(peer_id, {state = "no_tool", point = at, why = "Stone! Use a pickaxe."})
+		return "no_tool"
+	st.hits += 1
+	auth.give_xp(peer_id, 1, "mining")
+	var out := (chest - at).normalized()
+	if st.hits < st.needed:
+		_ev_statue_hit.rpc(id, st.hits, st.needed)
+		auth._tell_feedback(peer_id, {state = "hit", hits = st.hits, needed = st.needed, material = Mat.STONE, point = at, normal = out})
+		return "hit"
+	statues.erase(id)
+	for d in st.loot:
+		auth.spawn_drop(d[0], d[1], at + out * 0.4 + Vector3.UP * 0.3)
+	_ev_statue_gone.rpc(id, true)
+	auth._tell_feedback(peer_id, {state = "dug", hits = st.hits, needed = st.needed, material = Mat.STONE, point = at, normal = out, boulder = true, statue = true})
+	return "dug"
+
+
+## Host: unmined statues crumble away after a while.
+func _statues_step(delta: float) -> void:
+	for id in statues.keys():
+		statues[id].left -= delta
+		if statues[id].left <= 0.0:
+			statues.erase(id)
+			_ev_statue_gone.rpc(id, false)
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_statue_hit(id: int, hits: int, needed: int) -> void:
+	Statue.hit(id, hits, needed)
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_statue_gone(id: int, mined: bool) -> void:
+	Statue.remove(id, mined)
 
 
 @rpc("authority", "call_local", "reliable")
@@ -1122,18 +1221,33 @@ func _ev_note(uid: int, text: String) -> void:
 
 
 @rpc("authority", "call_local", "reliable")
-func _ev_hit(uid: int, dmg: int) -> void:
+func _ev_hit(uid: int, dmg: int, from := Vector3.ZERO, peer := 0) -> void:
 	var m: Monster = monsters.get(uid)
 	if m:
+		# Juicy hits (owner, Nov 18): sparks spray AWAY from the hitter, both fighters freeze for a blink (a bigger hit, a
+		# longer freeze), the hitter's screen shakes, and a heavy hit bounces the dwarf back a little.
+		var heavy := dmg >= 20
+		var away := (m.global_position - from) * Vector3(1, 0, 1)
+		var dir := (away.normalized() + Vector3.UP * 0.35) if from != Vector3.ZERO and away.length() > 0.01 else Vector3.UP
+		var at := m.global_position + Vector3.UP * 0.5
 		if m.shell_shut:
 			# Hitting a hidden snail: a hard stony clank and sparks (it's barely hurt).
-			Fx.burst(_root, m.global_position + Vector3.UP * 0.6, Color(1.0, 0.75, 0.35), 10, 4.0)
+			Fx.burst(_root, m.global_position + Vector3.UP * 0.6, Color(1.0, 0.75, 0.35), 12, 4.5, dir, 40.0)
 			Sfx.play("shell_clank", m.global_position)
 		else:
-			Fx.burst(_root, m.global_position + Vector3.UP * 0.5, Color(1.0, 0.9, 0.7), 6, 2.0)
-			Sfx.play("hit_heavy" if dmg >= 20 else "hit", m.global_position)
+			Fx.burst(_root, at, Color(1.0, 0.9, 0.7), 14 if heavy else 9, 4.5 if heavy else 3.2, dir, 38.0)
+			Sfx.play("hit_heavy" if heavy else "hit", m.global_position)
+		var stop := HIT_STOP_HEAVY if heavy else HIT_STOP
 		m.hit_flash()
-		_float_number(m.global_position + Vector3.UP * 1.4, str(dmg))
+		m.hit_stop(stop)
+		if peer != 0 and peer == auth.local_peer_id():
+			var me := player_node(peer)
+			if me and me.has_method("hit_stop"):
+				me.hit_stop(stop)
+				me.add_shake(0.45 if heavy else 0.25)
+				if heavy and away.length() > 0.01:
+					me.shove(-away.normalized() * 2.2)  # (a heavy hit bounces you back off it)
+		_float_number(m.global_position + Vector3.UP * 1.4, str(dmg), heavy, dir)
 
 
 @rpc("authority", "unreliable_ordered")
@@ -1144,20 +1258,32 @@ func _ev_poses(ids: PackedInt32Array, pos: PackedVector3Array, yaw: PackedFloat3
 			m.set_net(pos[i], yaw[i])
 
 
-func _float_number(at: Vector3, text: String) -> void:
+## A number (or a word) that pops up over a creature. Round 2 (owner, Nov 18, the Disney rules: "nothing flies
+## straight, not the damage numbers"): it pops in (small, too big, then its size) and flies in an arc, away from the
+## hit, up and over; a big hit's number is bigger and warmer.
+func _float_number(at: Vector3, text: String, big := false, away := Vector3.ZERO) -> void:
 	var l := Label3D.new()
 	l.text = text
 	l.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	l.font_size = 48
+	l.font_size = 64 if big else 48
 	l.pixel_size = 0.005
-	l.outline_size = 10
+	l.outline_size = 12 if big else 10
 	l.no_depth_test = true
-	l.modulate = Color(1.0, 0.9, 0.5)
+	l.modulate = Color(1.0, 0.62, 0.25) if big else Color(1.0, 0.9, 0.5)
 	_root.add_child(l)
 	l.global_position = at
+	var side := Vector3(away.x, 0.0, away.z)
+	side = side.normalized() if side.length() > 0.01 else Vector3(randf_range(-1.0, 1.0), 0.0, randf_range(-1.0, 1.0)).normalized()
+	side *= randf_range(0.35, 0.6)
+	var rise := 1.0 if big else 0.8
+	l.scale = Vector3.ONE * 0.3
 	var t := l.create_tween()
-	t.tween_property(l, "global_position", at + Vector3.UP * 0.8, 0.8)
-	t.parallel().tween_property(l, "modulate:a", 0.0, 0.8)
+	t.tween_property(l, "scale", Vector3.ONE * (1.35 if big else 1.2), 0.07).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	t.tween_property(l, "scale", Vector3.ONE, 0.1)
+	t.parallel().tween_method(func(u: float) -> void:
+		if is_instance_valid(l):
+			l.global_position = at + side * u + Vector3.UP * (rise * 1.6 * u - rise * 0.75 * u * u), 0.0, 1.0, 0.85)  # (an arc: up, over, a little down)
+	t.parallel().tween_property(l, "modulate:a", 0.0, 0.85).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	t.tween_callback(l.queue_free)
 
 

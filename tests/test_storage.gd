@@ -105,3 +105,27 @@ func test_empty_grave_crumbles() -> void:
 	check(auth.storage.boxes.is_empty(), "grave gone after you emptied it")
 	check_eq(ps.inventory.count_of("stone"), 5, "stone back")
 	_teardown()
+
+
+## Owner (Nov 18): take everything out of a chest and its menu closes by itself; an empty chest you open to fill
+## stays open.
+func test_box_menu_closes_when_emptied() -> void:
+	await _setup()
+	var spot := world.maker.find_floor(player.global_position.x + 1.5, player.global_position.z, player.global_position.y + 1.0)
+	var id := auth.storage.create_box("chest_small", spot, 0.0)
+	var panel := BoxPanel.new()
+	tree.root.add_child(panel)
+	var closed := [0]
+	panel.emptied.connect(func() -> void: closed[0] += 1)
+	panel.open(id)  # empty: opened to fill it
+	panel.refresh()
+	await tree.process_frame
+	check_eq(closed[0], 0, "an empty chest you open stays open")
+	auth.storage.put(id, "stone", 5)
+	panel.open(id)
+	auth.storage.request_take_all(1, id)
+	panel.refresh()
+	await tree.process_frame
+	check_eq(closed[0], 1, "take all: the menu closes")
+	panel.queue_free()
+	_teardown()

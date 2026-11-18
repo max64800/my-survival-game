@@ -342,7 +342,7 @@ func aim_far(reach: float) -> Dictionary:
 	var from := camera.global_position
 	var forward := -camera.global_basis.z
 	var q := PhysicsRayQueryParameters3D.create(from, from + forward * (_spring.spring_length + reach + 2.0))
-	q.collision_mask = World.TERRAIN_LAYER | GlowField.GLOW_LAYER | Station.STATION_LAYER | Monster.MONSTER_LAYER | PoiField.POI_LAYER | PieceNode.PIECE_LAYER
+	q.collision_mask = World.TERRAIN_LAYER | GlowField.GLOW_LAYER | Station.STATION_LAYER | Monster.MONSTER_LAYER | PoiField.POI_LAYER | PieceNode.PIECE_LAYER 		| Ragdoll.LAYER  # (a fallen body: mine it the moment it dies)
 	q.exclude = [get_rid()]
 	var hit := get_world_3d().direct_space_state.intersect_ray(q)
 	if hit.is_empty() or (global_position + Vector3.UP).distance_to(hit.position) > reach:
@@ -453,6 +453,12 @@ func _on_swing_impact() -> void:
 		Fx.burst(get_parent(), hit.position, Color(0.45, 0.32, 0.2), 10, 2.5)
 		_shake = 0.3
 		return
+	var statue_id := Statue.id_of(hit.collider)
+	if statue_id >= 0:  # a dead creature turning to stone (owner, Nov 18): mine it for its stone and loot, even at once
+		auth.monsters.ask_hit_statue(statue_id)
+		return
+	if hit.collider is CollisionObject3D and (hit.collider as CollisionObject3D).collision_layer == Ragdoll.LAYER:
+		return  # (a boss's fallen body: nothing to mine, and don't dig the ground through it)
 	var glow_id := auth.glow.id_of(hit.collider) if auth.glow else -1
 	if glow_id >= 0:
 		auth.ask_harvest(glow_id)
@@ -570,6 +576,22 @@ func got_parry() -> void:
 
 func add_shake(amount: float) -> void:
 	_shake = maxf(_shake, amount)
+
+
+var _tree: AnimationTree = null
+
+
+## A hit lands: his animation holds still for a blink, then carries on (owner, Nov 18: "juicy hits").
+func hit_stop(seconds: float) -> void:
+	if _tree == null:
+		var found := find_children("*", "AnimationTree", true, false)
+		if found.is_empty():
+			return
+		_tree = found[0]
+	_tree.active = false
+	get_tree().create_timer(seconds, true, false, true).timeout.connect(func() -> void:
+		if is_instance_valid(_tree):
+			_tree.active = true)
 
 
 ## Are we touching a ladder (a rope ladder station, or a built Ladder piece)?

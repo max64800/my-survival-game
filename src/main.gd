@@ -760,8 +760,23 @@ func _unhandled_input(event: InputEvent) -> void:
 			authority.builder.ask_door(info.door_uid)
 			return
 		if info.has("box_id"):
-			hud.open_box(info.box_id)
-			Controls.set_captured(false)
+			# A loot chest the first time: the juicy opening, and the menu opens on the slam (ChestOpen; owner, Nov 18).
+			# Your own chests: a quick pop, and the menu opens at once.
+			var bid: int = info.box_id
+			var box: Dictionary = authority.storage.get_box(bid)
+			var delay := 0.0
+			if not box.is_empty() and is_instance_valid(box.node):
+				var full: bool = box.kind in ["chest_small", "chest_stone"] and not (box.node as Node).has_meta("opened_here") and BoxPanel.has_items(box.inv)
+				(box.node as Node).set_meta("opened_here", true)
+				delay = ChestOpen.play(box.node, full)
+			if delay > 0.0:
+				get_tree().create_timer(delay).timeout.connect(func() -> void:
+					dwarf.add_shake(0.35)
+					hud.open_box(bid)
+					Controls.set_captured(false))
+			else:
+				hud.open_box(bid)
+				Controls.set_captured(false)
 			return
 		if info.has("poi_id"):
 			authority.ask_poi(info.poi_id)

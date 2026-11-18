@@ -461,7 +461,9 @@ static func _vary_stone(forged: Node3D, seed: int) -> void:
 static func _tag_forged(holder: Node3D, forged: Node3D, shape: String) -> void:
 	var legs := []
 	var wings := []
+	var webs := []
 	var stalks := []
+	var blinks := []
 	var peek := []
 	var folds := []
 	var mats := {}  # material name prefix -> this monster's own copy (eyes flash, cracks glow on their own)
@@ -476,12 +478,18 @@ static func _tag_forged(holder: Node3D, forged: Node3D, shape: String) -> void:
 			legs.append([mi, mi.rotation, float(group) * PI, side, 0.03 * idx])
 		elif n.begins_with("wing"):
 			wings.append([mi, mi.rotation, signf(mi.position.x)])
+		elif n.begins_with("web"):
+			# The bat's wing webs (owner, Nov 18: "more bones"): the middle web hangs on the arm, the outer web on the
+			# middle one, both turning at the wrist; they follow the beat a little late, like a wave down the wing.
+			webs.append([mi, mi.rotation, -1.0 if n.ends_with("_l") else 1.0, 2.0 if n.begins_with("web_tip") else 1.0])
 		elif n.begins_with("soft"):
 			mi.set_meta("soft", true)
 			if n == "soft_foot":
 				holder.set_meta("foot", mi)  # the snail's creeping foot: it gathers and splats when he hops (_snail)
 			if n.begins_with("soft_stalk"):
 				stalks.append([mi, mi.rotation, stalks.size() * 1.7])
+		elif n.begins_with("blink"):
+			blinks.append([mi, mi.basis])  # the snail's blink lids: tucked up, turned down to blink (_snail)
 		elif n.begins_with("peek"):
 			mi.visible = false  # only shows while hiding in the shell
 			peek.append(mi)
@@ -497,7 +505,7 @@ static func _tag_forged(holder: Node3D, forged: Node3D, shape: String) -> void:
 				if mname.begins_with(prefix):
 					# One copy per material name (so a beetle's amber facets and its lava keep their own colours),
 					# shared by all its parts; this monster's copies flash and blaze on their own.
-					var key: String = prefix if prefix != "glow" else mname
+					var key: String = prefix if prefix == "vein" else mname  # (each eye its own copy: one shared copy of the first eye found gave the snail's painted eyes the plain white of its peeking eyes)
 					if not mats.has(key):
 						var own := (m as StandardMaterial3D).duplicate() as StandardMaterial3D
 						own.emission_enabled = true
@@ -510,8 +518,10 @@ static func _tag_forged(holder: Node3D, forged: Node3D, shape: String) -> void:
 							own.set_meta("base_energy", maxf(0.8, own.emission_energy_multiplier))
 						mats[key] = own
 					mi.set_surface_override_material(i, mats[key])
-	if mats.has("eye"):
-		holder.set_meta("eye_mat", mats["eye"])
+	var eyes: Array = mats.keys().filter(func(k: String) -> bool: return k.begins_with("eye")).map(func(k: String) -> StandardMaterial3D: return mats[k])
+	if not eyes.is_empty():
+		holder.set_meta("eye_mat", eyes[0])
+		holder.set_meta("eye_mats", eyes)  # (they all flash and turn angry together: set_glow, set_angry)
 	else:
 		# No eyes found on the model: the attack warning makes the whole body glow faintly instead.
 		var tell := StandardMaterial3D.new()
@@ -529,9 +539,19 @@ static func _tag_forged(holder: Node3D, forged: Node3D, shape: String) -> void:
 		holder.set_meta("glow_mats", glows)
 	holder.set_meta("legs", legs)
 	holder.set_meta("wings", wings)
+	holder.set_meta("webs", webs)
 	holder.set_meta("stalks", stalks)
 	holder.set_meta("peek", peek)
+	holder.set_meta("blinks", blinks)
 	holder.set_meta("folds", folds)
+	var marker := forged.find_child("upright", true, false) as Node3D
+	if marker:  # an upright-built creature (the Nov 18 bat): how high its feet are, so it hangs by them
+		var low := INF
+		for mi: MeshInstance3D in forged.find_children("body", "MeshInstance3D", true, false):
+			var par := mi.get_parent() as Node3D
+			var sc := par.scale.y if par and par != forged else 1.0
+			low = minf(low, (mi.get_aabb().position.y + mi.position.y) * sc)
+		holder.set_meta("upright", 0.0 if low == INF else low)
 	holder.set_meta("forged_root", forged)
 	holder.set_meta("flyer", shape in ["moth", "bat", "puffpod", "cave_bat"])
 	holder.set_meta("rest_y", 0.0)
@@ -588,8 +608,15 @@ static func animate(model: Node3D, speed: float, size: float, clock: float) -> v
 	# Glowing parts hum: a slow breath of light, in and out (owner, round 5). Charging keeps them blazing (set_angry).
 	var hum := 0.7 + 0.3 * sin(clock * 1.8)  # one breath every 3.5 s
 	var blaze := 2.6 if model.get_meta("angry", false) else 1.0
+	# Crystals breathe like the world's crystals (owner, Nov 18; crystal.gdshader crystal_pulse): a slow, deep breath, all
+	# the way down to no glow and up much brighter, each creature its own speed (3-10 s). Other glowing parts hum.
+	var seed := float(model.get_instance_id() % 9973)
+	var period := 3.0 + 7.0 * fposmod(seed * 0.137, 1.0)
+	var p := 0.5 - 0.5 * cos(TAU * (clock / period + fposmod(seed * 0.71, 1.0)))
+	var cbreath := p * p * (3.0 - 2.0 * p)
 	for g: StandardMaterial3D in model.get_meta("glow_mats", []):
-		g.emission_energy_multiplier = float(g.get_meta("base_energy", 1.0)) * blaze * hum
+		var crystal := String(g.resource_name).contains("crystal")
+		g.emission_energy_multiplier = float(g.get_meta("base_energy", 1.0)) * blaze * ((0.03 + 3.5 * cbreath * cbreath) if crystal else hum)
 	if model.has_meta("foot"):
 		_snail(model, speed, clock)
 		return
@@ -622,6 +649,7 @@ static func animate(model: Node3D, speed: float, size: float, clock: float) -> v
 			if String(c.name) == "soft_body":  # crawling: the body stretches and squeezes in waves
 				(c as Node3D).scale = Vector3(1.0 - 0.03 * sin(clock * 4.0) * go, 1.0, 1.0 + 0.06 * sin(clock * 4.0) * go)
 	var roosting: bool = model.get_meta("roosting", false)
+	_blinks(model, clock, float(model.get_meta("flinch_any", 0.0)), roosting)  # (the bat: shut when hit, shut asleep)
 	var folds: Array = model.get_meta("folds", [])
 	for f: MeshInstance3D in folds:
 		f.visible = roosting  # asleep: the folded wings, wrapped round the body like a cloak
@@ -633,12 +661,26 @@ static func animate(model: Node3D, speed: float, size: float, clock: float) -> v
 		else:
 			var beat := sin(clock * 9.0)
 			mi.rotation = wing[1] + Vector3(0, 0, beat * 0.6 * wing[2])
-			if model.has_meta("forged_root"):
+			if model.has_meta("forged_root") and model.get_meta("webs", []).is_empty():
 				mi.scale = Vector3(1.0 - 0.22 * maxf(0.0, cos(clock * 9.0)), 1.0, 1.0)  # half-folds on the upstroke
+	for web in model.get_meta("webs", []):
+		var wm: MeshInstance3D = web[0]
+		if roosting:
+			wm.rotation = web[1]
+			continue
+		var depth: float = web[3]
+		# a beat a little behind the arm's (a wave out along the wing), and the webs curl down on the upstroke
+		var lag := sin(clock * 9.0 - 0.8 * depth)
+		var curl := maxf(0.0, cos(clock * 9.0 - 0.4 * depth))
+		wm.rotation = web[1] + Vector3(0, 0, web[2] * (0.24 * lag - 0.22 * curl))
 	var rest_y: float = model.get_meta("rest_y")
 	if roosting:
 		model.position.y = rest_y
-		if model.has_meta("forged_root"):
+		if model.has_meta("upright"):
+			# The Nov 18 bat is built upright (like the picture): flip it head-down, its feet up at the anchor
+			model.rotation = Vector3(0, model.rotation.y, PI)
+			model.position.y = rest_y + float(model.get_meta("upright")) * model.scale.y
+		elif model.has_meta("forged_root"):
 			model.rotation = Vector3(-PI / 2.0, model.rotation.y, 0.0)  # hanging head-down by its feet
 		else:
 			model.rotation = Vector3(0, model.rotation.y, PI)  # hanging upside down from the ceiling
@@ -660,8 +702,11 @@ static func animate(model: Node3D, speed: float, size: float, clock: float) -> v
 ## The spit (show_tell sets "spit_t0"/"spit_len"): he rears up a little, snaps forward to spit, and splats down.
 ## Dazed ("sway"): only the body sways; the foot stays put on the ground.
 const HOP_TIME := 1.1    ## seconds per hop at walking speed
+const HOP_LEN := 0.66    ## metres per hop (walking speed 0.6 m/s x HOP_TIME)
 const HOP_LIFT := 0.07   ## how high the body rises (m)
 const FOOT_TALL := 0.115 ## the foot's height in the model (m): it stretches up this much plus the lift
+const BLINK_TIME := 0.18 ## seconds for one blink (shut and open again)
+const BLINK_SHUT := 2.6 ## how far the lid turns down about its own X from where it is tucked (the build's BLINK_OPEN, undone)
 
 
 static func _snail(model: Node3D, speed: float, clock: float) -> void:
@@ -672,9 +717,10 @@ static func _snail(model: Node3D, speed: float, clock: float) -> void:
 	if not model.has_meta("foot_rest"):  # where the foot sits in the model, before anything moved it
 		model.set_meta("foot_rest", model.global_transform.affine_inverse() * foot.global_transform)
 		model.set_meta("forged_rest", forged.position)
-	for st in model.get_meta("stalks", []):  # looking around with the eye stalks
-		var mi: MeshInstance3D = st[0]
-		mi.rotation = st[1] + Vector3(sin(clock * 0.9 + st[2]) * 0.12, 0, sin(clock * 1.3 + st[2] * 2.0) * 0.16)
+	# (The snail's eye stalks stay still for now: the owner asked to "stick them there and not move them at all" to
+	# see how it looks, Nov 18. The sway was: rotation = rest + (sin(clock*0.9+k)*0.12, 0, sin(clock*1.3+2k)*0.16).)
+	for st in model.get_meta("stalks", []):
+		(st[0] as MeshInstance3D).rotation = st[1]
 	if model.get_meta("hidden", false):
 		forged.position = model.get_meta("forged_rest")  # settled (no hop, no sway)
 		forged.rotation = Vector3(0, forged.rotation.y, 0)
@@ -684,9 +730,19 @@ static func _snail(model: Node3D, speed: float, clock: float) -> void:
 	var flat := 0.0      # > 0: the splat (wider, flatter)
 	var surge := 0.0     # forward (+) / behind (-) its true place, in model metres
 	var pitch := 0.0     # + dips the head, - lifts it
+	# Turning on the spot (Monster._turn_toward): he hops in place, the same hop as walking, without moving forward.
+	var turning: bool = model.get_meta("turning", false) and speed < 0.2
+	if turning:
+		speed = HOP_LEN / HOP_TIME
 	var go := clampf(speed / 0.4, 0.0, 1.0)
+	# The hop runs on the distance he really walks, not on the clock (owner, Nov 18: "he moves backwards sometimes":
+	# on the clock, starting, slowing or stopping half-way through a hop slid the body back).
+	var last: float = model.get_meta("hop_clock", clock)
+	var phase: float = model.get_meta("hop_phase", 0.0) + speed * clampf(clock - last, 0.0, 0.1) / HOP_LEN
+	model.set_meta("hop_clock", clock)
+	model.set_meta("hop_phase", phase)
 	if go > 0.05:
-		var cyc := fposmod(clock / HOP_TIME, 1.0)
+		var cyc := fposmod(phase, 1.0)
 		if cyc < 0.35:  # gather and rise
 			gather = smoothstep(0.0, 1.0, cyc / 0.35)
 			lift = HOP_LIFT * gather
@@ -699,7 +755,8 @@ static func _snail(model: Node3D, speed: float, clock: float) -> void:
 			lift = HOP_LIFT * gather
 			flat = sin(clampf(k / 0.8, 0.0, 1.0) * PI) * (1.0 - gather)
 		var step := smoothstep(0.35, 0.65, cyc)
-		surge = (step - cyc) * speed * HOP_TIME / maxf(model.scale.x, 0.01)
+		# (0.6 of a full step: even the steepest part never pulls the body back while he walks forward)
+		surge = 0.0 if turning else 0.6 * (step - cyc) * HOP_LEN / maxf(model.scale.x, 0.01)
 		lift *= go
 		gather *= go
 		flat *= go
@@ -725,6 +782,7 @@ static func _snail(model: Node3D, speed: float, clock: float) -> void:
 			surge = 0.08 * (1.0 - k)
 			flat = sin(clampf(k, 0.0, 1.0) * PI) * (1.0 - gather)
 	var flinch: float = model.get_meta("flinch", 0.0)  # hit: the body jolts up and back, the foot stays put
+	_blinks(model, clock, flinch, false)
 	model.set_meta("flinch", 0.0)
 	lift += 0.06 * flinch
 	pitch -= 0.3 * flinch
@@ -741,6 +799,22 @@ static func _snail(model: Node3D, speed: float, clock: float) -> void:
 	foot.global_transform = model.global_transform * Transform3D(fr.basis * Basis.from_scale(Vector3(w, tall, w)), fr.origin + Vector3(0, 0, -surge))
 	model.position.y = model.get_meta("rest_y")
 	model.rotation.x = 0.0
+
+
+## Blinking (owner, Nov 18): a quick blink every few seconds (each creature its own rhythm); the eyes squeeze shut
+## when it is hit (flinch) and stay shut while it sleeps. 0 = open, 1 = closed; the lid turns down about the eye's middle.
+static func _blinks(model: Node3D, clock: float, flinch: float, asleep: bool) -> void:
+	var lids: Array = model.get_meta("blinks", [])
+	if lids.is_empty():
+		return
+	var every := 3.2 + fposmod(float(model.get_instance_id() % 997) * 0.37, 2.5)
+	var ph := fposmod(clock, every)
+	var shut := sin(ph / BLINK_TIME * PI) if ph < BLINK_TIME else 0.0
+	shut = maxf(shut, clampf(flinch * 2.0, 0.0, 1.0))
+	if asleep:
+		shut = 1.0
+	for b in lids:
+		(b[0] as MeshInstance3D).basis = (b[1] as Basis) * Basis(Vector3.RIGHT, BLINK_SHUT * shut)  # (a basis: tucked this far back, its angles can read as flipped)
 
 
 ## Dazed (stunned): sway the snail's body only, its foot stays put (owner, Nov 17). Other creatures tip as a whole.
@@ -793,17 +867,17 @@ static func set_glow(model: Node3D, amount: float) -> void:
 				if mi.material_overlay == null or mi.material_overlay == t:
 					mi.material_overlay = t if a > 0.0 else null
 		t.albedo_color = (Color(1.0, 0.3, 0.1) if model.get_meta("angry", false) else Color(1.0, 0.75, 0.4)) * Color(1, 1, 1, 0) + Color(0, 0, 0, a)
-	var m: StandardMaterial3D = model.get_meta("eye_mat")
 	# Red eyes glow less: very bright light turns white on screen (AgX tone mapping), losing the red.
-	m.emission_energy_multiplier = 0.6 + amount * (0.9 if model.get_meta("angry", false) else 8.0)
+	for m: StandardMaterial3D in model.get_meta("eye_mats", [model.get_meta("eye_mat")]):
+		m.emission_energy_multiplier = 0.6 + amount * (0.9 if model.get_meta("angry", false) else 8.0)
 
 
 ## Angry eyes: they burn red-orange while a beetle winds up a charge (a warning you can read).
 static func set_angry(model: Node3D, angry: bool) -> void:
 	model.set_meta("angry", angry)
-	var m: StandardMaterial3D = model.get_meta("eye_mat")
-	m.emission = Color(1.0, 0.08, 0.0) if angry else Color(1.0, 0.85, 0.4)
-	m.albedo_color = Color(0.7, 0.05, 0.0) if angry else Color(1.0, 0.9, 0.5)
+	for m: StandardMaterial3D in model.get_meta("eye_mats", [model.get_meta("eye_mat")]):
+		m.emission = Color(1.0, 0.08, 0.0) if angry else Color(1.0, 0.85, 0.4)
+		m.albedo_color = Color(0.7, 0.05, 0.0) if angry else Color(1.0, 0.9, 0.5)
 	if model.has_meta("vein_mat"):  # the cracks in its stone shell glow like coals while it charges
 		(model.get_meta("vein_mat") as StandardMaterial3D).emission_energy_multiplier = 2.2 if angry else 0.0
 	for g: StandardMaterial3D in model.get_meta("glow_mats", [model.get_meta("glow_mat")] if model.has_meta("glow_mat") else []):

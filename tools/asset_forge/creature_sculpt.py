@@ -179,13 +179,15 @@ def lin(c):
 
 def paint_material(name, base, dark, light, moss=None, moss_amount=0.0, strokes=0.12, top_light=0.18, edge=0.35, seed=0.0,
 		key=0.35, key_dir=(0.35, -0.45, 0.82), tint_attr=None, scratches=0.0, grime=0.0, root=None, root_attr="grad", ao_samples=16, ao_local=False,
-		scratch_width=1.0, cap=None):
+		scratch_width=1.0, cap=None, picture=None, picture_scale=6.0, picture_amount=0.85):
 	"""A 'hand-painted' look as a shader: base colour with brush-stroke variation, darker in cavities (ambient
 	occlusion), lighter on worn edges (pointiness) and on tops (facing up), moss in the up-facing cavities.
 	Colours are (r, g, b) 0..1 as picked by eye (sRGB). Meant to be BAKED (Cycles) into a colour picture.
 	Wear and tear (round 5): tint_attr = a colour attribute giving each stone its own shade (tint_islands);
 	scratches = thin pale scratch lines (also cut into the baked normal map); grime = darker stains;
-	root = a colour the part darkens to at its root (a 0..1 attribute, 0 = root; gradient_attr)."""
+	root = a colour the part darkens to at its root (a 0..1 attribute, 0 = root; gradient_attr).
+	picture = a hand-painted tile (file path) laid over the surface from all sides (box projection, repeating
+	`picture_scale` times per metre), `picture_amount` of the base colour; edges, wear and shading still go on top."""
 	base, dark, light = lin(base), lin(dark), lin(light)
 	moss = lin(moss) if moss else None
 	top_light *= 0.5  # (linear values are smaller)
@@ -216,6 +218,21 @@ def paint_material(name, base, dark, light, moss=None, moss_amount=0.0, strokes=
 	nt.links.new(stroke.outputs[0], col.inputs[0])
 	basemix.inputs[0].default_value = 0.5
 	nt.links.new(col.outputs[2], basemix.inputs[7])
+	if picture:  # a painted tile (e.g. leather from a ChatGPT sheet) instead of plain brush strokes
+		tx = _node(nt, "ShaderNodeTexImage")
+		tx.image = bpy.data.images.load(picture, check_existing=True)
+		tx.projection = "BOX"
+		tx.projection_blend = 0.3
+		pmap = _node(nt, "ShaderNodeMapping")
+		pmap.inputs["Scale"].default_value = (picture_scale,) * 3
+		pmap.inputs["Location"].default_value = (seed * 0.37, seed * 0.11, 0)
+		nt.links.new(coord.outputs["Object"], pmap.inputs["Vector"])
+		nt.links.new(pmap.outputs[0], tx.inputs["Vector"])
+		pm = _node(nt, "ShaderNodeMix", data_type="RGBA", blend_type="MIX")
+		pm.inputs[0].default_value = picture_amount
+		nt.links.new(basemix.outputs[2], pm.inputs[6])
+		nt.links.new(tx.outputs["Color"], pm.inputs[7])
+		basemix = pm
 	if tint_attr:  # each stone its own shade (warmer, cooler, darker, lighter)
 		ta = _node(nt, "ShaderNodeAttribute", attribute_name=tint_attr)
 		tm = _node(nt, "ShaderNodeMix", data_type="RGBA", blend_type="MULTIPLY")

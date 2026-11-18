@@ -8,7 +8,8 @@ static var _dust_tex: Texture2D
 static var _chunk_mats := {}
 
 
-static func burst(parent: Node, pos: Vector3, color: Color, amount: int = 10, speed: float = 3.0) -> void:
+## `dir` / `spread`: which way they fly (a hit sprays its sparks away from the hitter: owner, Nov 18, "juicy hits").
+static func burst(parent: Node, pos: Vector3, color: Color, amount: int = 10, speed: float = 3.0, dir := Vector3.UP, spread := 70.0) -> void:
 	var glowing := color.v > 0.85 and color.s < 0.6 or color.v > 0.95
 	var p := CPUParticles3D.new()
 	p.one_shot = true
@@ -17,8 +18,8 @@ static func burst(parent: Node, pos: Vector3, color: Color, amount: int = 10, sp
 	p.lifetime = 0.9 if not glowing else 0.45
 	p.explosiveness = 0.95
 	p.randomness = 0.5
-	p.direction = Vector3.UP
-	p.spread = 70.0
+	p.direction = dir.normalized() if dir.length() > 0.01 else Vector3.UP
+	p.spread = spread
 	p.initial_velocity_min = speed * 0.45
 	p.initial_velocity_max = speed
 	p.gravity = Vector3(0, -14, 0)

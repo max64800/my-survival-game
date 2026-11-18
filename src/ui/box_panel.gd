@@ -5,7 +5,10 @@ extends PanelContainer
 
 const SLOT := 52
 
+signal emptied  ## you took the last thing out (owner, Nov 18: then the menu closes by itself)
+
 var box_id := -1
+var _had := false  ## it had something in it (an empty chest you opened to fill stays open)
 var _title: Label
 var _grid: GridContainer
 var _status: Label
@@ -32,7 +35,18 @@ func _ready() -> void:
 func open(id: int) -> void:
 	box_id = id
 	visible = true
+	_had = false
 	refresh()
+	var box := GameAuthority.instance.storage.get_box(box_id)
+	_had = not box.is_empty() and has_items(box.inv)
+
+
+## Is there anything in it?
+static func has_items(inv: Inventory) -> bool:
+	for s in inv.slots:
+		if not (s as Dictionary).is_empty() and String((s as Dictionary).get("id", "")) != "":
+			return true
+	return false
 
 
 func refresh() -> void:
@@ -44,6 +58,9 @@ func refresh() -> void:
 	_title.text = {"chest_small": "Chest", "chest_stone": "Stone Chest", "grave": "Your grave", "builder": "Builder's Chest"}.get(box.kind, "Box")
 	_status.text = GameAuthority.instance.builder.site_status(box_id) if box.kind == "builder" else ""
 	var inv: Inventory = box.inv
+	if visible and _had and not has_items(inv):
+		_had = false
+		emptied.emit.call_deferred()  # (all taken: the menu closes)
 	if _grid.get_child_count() != inv.slots.size():
 		for c in _grid.get_children():
 			c.queue_free()

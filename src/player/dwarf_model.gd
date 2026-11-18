@@ -111,6 +111,8 @@ func swing(duration: float) -> void:
 		# An axe chops (roots); everything else digs with a big overhead mining swing.
 		dwarf_rig.play_upper("chop" if Items.kind(_held) == "axe" else "dig", duration)
 		get_tree().create_timer(duration * 0.55).timeout.connect(func(): swing_impact.emit())
+		get_tree().create_timer(duration * 0.3).timeout.connect(func() -> void:  # a dusty swoosh as it comes down
+			WeaponTrail.follow(_hand, duration * 0.27, Color(0.95, 0.88, 0.75, 0.35)))
 		get_tree().create_timer(duration).timeout.connect(func(): swinging = false)
 		return
 	if rig:
@@ -135,9 +137,11 @@ func attack(duration: float, heavy: bool) -> void:
 			dwarf_rig.stab(duration)  # a thrust, not a swing (owner, Nov 17)
 		else:
 			dwarf_rig.attack(duration, heavy)
-		# A pale swoosh behind the blade (brighter for a heavy blow). Not for a spear's straight thrust.
+		# A pale swoosh behind the blade (brighter for a heavy blow), during the strike itself, not the wind-up
+		# (owner, Nov 18, "juicy swipes"). Not for a spear's straight thrust.
 		if Combat.weapon_of(_held) != "spear":
-			WeaponTrail.follow(_hand, duration * 0.7, Color(1.0, 0.95, 0.85, 0.55 if heavy else 0.35), 0.3, 0.9)
+			get_tree().create_timer(duration * 0.12).timeout.connect(func() -> void:
+				WeaponTrail.follow(_hand, duration * 0.4, Color(1.0, 0.95, 0.85, 0.7 if heavy else 0.5)))
 		get_tree().create_timer(duration).timeout.connect(func(): swinging = false)
 		return
 	if rig:

@@ -3743,3 +3743,315 @@ the body."
   the dwarf (the push-aside reached 75 cm and was strong). Now 40 cm and gentle.
 - New to-do from the owner: rebuild ruins to learn them as blueprints (with experience).
 
+## November 18, 2026 (PC, snail Claude, round 5): snail polish, spit sound, pause buttons (F292, F300)
+
+**What we did**
+- Owner said yes to Claude's polish list (all but the other three snail looks): a bushier, lighter moss moustache;
+  thicker moss between the stones; chiselled eye bulbs and lids; a spit sound; Pause on the other creature pages.
+- Moustache: short hair tufts all along each lobe, combed toward the tip, melted in; lighter olive.
+- Eyes: the melted stalk, cup, rim and lid are thinned into ~1,400 flat planes (hand-carved look), flat shaded.
+- Spit sound: a real CC0 recording ("80 CC0 creature SFX" by rubberduck, OpenGameArt): `snail_spit_0..2.ogg`,
+  played when the gob flies. Logged in CREDITS.
+- 3D pages: "Rock Snail" round 5 with the snail's own sounds (the page never had its sound files: Play sound was
+  silent); Pause added to "Rock Beetle Shape" and "Dwarf Cave Creatures" (that one has no animations, so Pause stops
+  the turning, and Spin now starts off, the owner's no-auto-spin rule).
+
+**Mistakes and hurdles (including Claude's)**
+- The first bushy moustache used long tufts sticking out: it looked like a spiky bush and lost its curl. Shorter
+  tufts lying along the lobe look feathery.
+- Feedback numbers moved on fast (other chats): checked both files and GitHub; this round is F300.
+
+## November 18, 2026 (PC, snail Claude, round 6): the floating eyes found, the old moustache back (F289, F300)
+
+- Owner: the eyeballs still float outside the lids ("stick them there and don't move them"); the old moustache was better.
+- **The real cause (Claude's bug, there since round 2):** the 3D page loads a part made of several pieces as a group,
+  and gave each piece whose name starts with "soft_stalk" its own sway timing, so the eyeball and its lid swayed out
+  of step. In the game the stalk is one piece, so it never happened there. Three rounds of reshaping the eye were
+  aimed at the wrong problem; a look at how the page moves the parts would have found it on day one.
+- Fixed on the snail and beetle pages (only the whole part moves). The snail's eye stalks stay still for now, in the
+  game and on the page, as the owner asked. The round 4 moustache is back (no tufts, the old colour).
+- Checked on the page in Chrome: the eyeballs sit in their cups under the lids.
+
+## November 18, 2026 (PC, snail Claude, round 7): the Rock Snail blinks
+
+- Owner: "the eyes are good"; let him blink, and blink when he gets hit.
+- Each eye got a thin skin lid (a shell over the front of the ball, a child of the eye stalk), tucked up inside the
+  bulb and the heavy lid. The game turns it down about the eye's middle: a quick blink every few seconds (each snail
+  its own rhythm) and shut while he flinches from a hit. The 3D page does the same; checked there mid-hit.
+- Hurdles: Claude's first check picture didn't move the lid at all (an imported model stores its turns as
+  quaternions, so changing the angle did nothing); tucked only 100° back, the lid's edge showed under the heavy lid
+  (now 150°); turned that far, angles can read as "flipped", so the game and page turn it with a rotation, not by
+  adding to an angle. A thin sliver still shows at one corner of the right eye when open (small; left for now).
+
+## November 18, 2026 (PC, snail Claude): the Cave Bat rebuilt the Rock Beetle way
+
+**What we did**
+- Owner: "start working on the bat; continue until it is finished and at least 8 out of 10".
+- In the owner's ChatGPT ("Creature Image Prompt"): a turnaround (front, side, back, top) and a texture sheet (back fur,
+  belly fur, wing skin, wing bones). Saved, tiles cut, logged in CREDITS.
+- New `tools/asset_forge/builds/monster_cave_bat.py`, upright like the picture: a fur ball whose leaf-shaped tufts are
+  carved into its own skin like roof shingles (tan belly, cheek fluff, a crown tuft), chiselled cupped ears pink
+  inside, grumpy brows, lidded eyes, a pig snout with real nostril holes, fangs, clawed feet, wings with chunky
+  faceted bones, knuckles and cream claws, red wing skin swept back; folded wings (a cloak) for sleeping.
+- Game: installed (brown look only, 85% size, 1.48 m wing tip to wing tip); an upright-built bat hangs upside down by
+  its feet when it roosts (an "upright" marker in the model). Test: `test_bat_wings_and_roost`.
+- 3D page "Cave Bat" with hovering, flying, swoop bite, gets hit, dazed and asleep, plus Pause. Claude's score 8/10.
+
+**Mistakes and hurdles (including Claude's)**
+- ChatGPT's file upload couldn't be driven this time, and Enter didn't send: the prompt pointed back to the bat earlier
+  in the chat instead, and the Send button was clicked.
+- Fur, 4 tries: thin spikes (a hedgehog); scattered tufts (lumpy on top); rows (a beehive); stuck-on leaves (flakes on a
+  bare ball, the "glued" look). What worked: leaves carved into the ball's own skin, each rising toward its tip and
+  lapping over the one below.
+- Black body sides: the wings beside the body darkened the fur's shading, and the bake didn't reach the leaf tips.
+- Colours went crimson, then mustard: the orange fur picture was multiplied by the belly tint; less of the picture fixed it.
+- Claude's slips: a comment typed into a line hid the rest of it (again); "key" used twice; cheek tufts added to a
+  height twice (they floated above the head); the folded wings sat inside the fur.
+- The game itself didn't start for the cave check (another chat's unfinished blueprint code); the lantern-light check
+  was done in Blender instead.
+
+## November 18, 2026 (PC, snail Claude): Cave Bat round 2 (owner: "the first try is really good")
+
+- Owner's notes: wings level with the ground in flight; eyelids shut when hit and asleep; the eyeballs' sides showed;
+  the legs were 4 bubbles; packs of 5-10 that all attack when one is hit, easy (1-2 hits), dropping leather.
+- Wings: the picture's height became front-to-back (arm and wrist lead, claws trail), so they lie level and the game's
+  flap swings them up and down. Eyes: a cup of fur round each. Blink lids like the snail's, now a shared game routine
+  (`MonsterModel._blinks`: every few seconds, shut while flinching from a hit and while asleep). Legs: faceted thigh,
+  knee, shin, foot pad and three jointed toes with claws.
+- Game data: packs [5, 10] (a hit already woke the whole pack within 20 m), hp 45 -> 16, bite 11 -> 6, xp 10 -> 4,
+  always one wing leather (+30% a second); wing leather tans into leather for the leather armour.
+- Hurdle: the picture checks showed the sleeping-wing cloaks over the face (the check scripts didn't hide them, the game
+  does); fixed in the scripts. Tests: the bat test now also checks two eyelids, shut while asleep.
+
+## November 18, 2026 (PC, snail Claude): the first Rock Snail in the real game (bat paused)
+
+- Owner met the snail in the game: white eyes, a triangular hole in the middle of the moustache, sometimes moving
+  backwards, and you can stun-lock him (he hid every 3rd hit).
+- **White eyes (a game bug):** the game made ONE shared copy of the first "eye" material it found, for flashing. For the
+  snail that was the plain white peeking-eye material, and it replaced the painted eyes. Now each eye keeps its own
+  material; flashing and angry eyes update all of them. Found with a small Godot script that prints a creature's eye
+  materials as the game sets them up (`tools/model_check/eye_dump.gd`).
+- **Moustache:** a knot of moss in the middle (the first filler sat too low and back: a notch still showed).
+- **Backwards:** the hop ran on the clock; now on the distance walked, and only 0.6 of a full step, so the body never
+  slides back.
+- **Shell:** hides at 50% health and again at 10%, 10 s each (90% less damage while hidden). Tests updated.
+- Not ours: `test_tool_models_cover_every_tool` fails on another chat's unfinished Mason's Shovel.
+
+## November 18, 2026 (PC, snail Claude): the snail's crystals breathe like the cave's crystals
+
+- Owner asked to confirm the crystals on the snail's back breathe like the crystals in the world. Checked in numbers
+  (`tools/model_check/glow_dump.gd`, the glow strength over 12 s): they did breathe, but only a shallow hum (0.4-1.0
+  every 3.5 s, the beetle's amber rule), not like the world's crystals (`crystal.gdshader` crystal_pulse: 3-10 s,
+  all the way down to no glow and up much brighter).
+- Now every creature crystal (material name with "crystal") uses the world's breath: each creature its own speed
+  (3-10 s), from 0.03 to 3.5 brightness. Other glowing parts (the beetle's amber) keep the hum. Same on the 3D page.
+- Claude's slip: a new variable named "breath" clashed with one already in that function (the game didn't load);
+  renamed.
+- (Later, Nov 18) The moustache knot "looks like a nose": the moustache is now ONE continuous tube from the left
+  curled tip, under the nose, to the right one (two lobes meeting always left a notch). Snail page round 9.
+
+## November 18, 2026 (PC, snail Claude): the snail's other three looks, and it only moves forward
+
+- Snail looks frost, ember and spore built on the one body (`monster_rock_snail.py look=`), from the approved
+  variants picture: their own stone, crack, skin and moustache colours; snow on the frost stones' tops; glowing lava
+  (ember) and fungus (spore) baked in the cracks; ice and orange crystals; glowing mushrooms for spore. The green
+  ChatGPT tiles are used only a little on the other looks. `build_creatures.py` builds all four.
+- Owner saw the snail move backwards: monsters faced their target but not where they walked (wandering, going home),
+  so the snail could slide backwards or sideways. Now `turns_in_place`: it turns slowly toward where it wants to go
+  (0.9 rad/s), hops in place while turning (the walking hop without moving), and only sets off once it faces within
+  ~25 degrees; it moves only along its own forward. Test `test_snail_turns_before_it_moves`.
+- Fixes on the way: ember crystals came out pale peach (now orange); the mushrooms were too small to see (1.5x).
+
+## November 18, 2026 (PC, snail Claude): ragdolls on death, the beetle first
+
+- Owner: when creatures are defeated, ragdoll; try the beetle first. Checked the GodotPrompter physics guidance first.
+  The guidance's ragdoll needs a skeleton (PhysicalBone3D); our creatures are separate hand-built parts. Picked: each
+  part a RigidBody3D joined to the body at its hinge with a ConeTwistJoint3D (flops within 40 degrees); rejected a
+  tween "fall" (not physics). `src/combat/ragdoll.gd`; creatures opt in with `ragdoll = true` (Rock Beetle and Great
+  Rock Beetle). Corpses get their own collision layer (128): they land on the cave and on built pieces, never block
+  players or monsters. Only looks, like dust and chips. After 7 s the pieces settle, shrink away and go.
+- Hurdles: (1) my test killed the beetle directly while the game still listed it (errors every frame): tests now die
+  the real way (`_ev_remove`). (2) The first pictures showed nothing: my camera aimed before it was in the scene. (3)
+  The beetle shot off at 40 m/s: measured it with and without joints; an impulse given in the frame the body is made
+  ignored its 20 kg mass. Now it gets a starting speed instead. (4) Pieces of one creature start overlapping, so they
+  ignore each other; the corpse starts 8 cm up so no foot begins inside the floor. (5) A stronger spin about a level
+  axis makes it roll onto its side or back (it mostly landed on its feet).
+- Tools: `tools/model_check/ragdoll_shot.gd` (pictures of a ragdoll falling).
+- **Short 050 (Deep Rise lesson):** owner asked for the logo to zoom in three steps on "Dwarves", "Never", "Fall"
+  (as wide as the screen allows). Built into the compositor (`logo_beats`). Hurdles: whisper merged retakes, so three
+  lines kept false starts ("My first… My first game came out of…", "So for my second… so for my second…"); found the
+  clean attempts by measuring the sound itself; "over a thousand **and**" trimmed; a 0.7 s pause inside a line split
+  out. The line matcher put "My second game" inside "So for my second game": now it matches 3 words and skips past each
+  line. Deep Rise's Steam pictures taken from its public store page; "250 / 1,000+ copies" cards made. This clip also
+  only says "never die", so its Wishlist ending is borrowed too. 41 s, no pause over 0.35 s.
+
+## November 18, 2026 (PC, snail Claude): ragdoll round 2, no more jiggling
+
+- Owner tried the ragdoll: "every leg, horn and mandible jiggles like a million times a second". Wanted: relax, fall,
+  spread the legs, lie there; killed in a charge, it flies on.
+- Round 1's joints (a RigidBody3D per part held by cone joints) fought each other and the floor and shivered. Round 2:
+  ONE RigidBody3D with a box per part (the whole creature's shape) falls and tumbles; the parts relax into a dead pose
+  by themselves over 0.6 s (legs spread out and up, mandibles open, feelers droop), eased, not jointed. It keeps the
+  speed it had when it died (`Ragdoll.make(..., velocity)`): killed mid-charge it flies on and tumbles. Damping and
+  friction make it settle; the test now checks it ends lying still. Same on the beetle page (two buttons).
+- Hurdles: the new file didn't save the first time (it had changed since it was read) while the death code already
+  passed the new speed argument, so the monster script didn't load and many tests failed until the file was written;
+  blending the legs' turn needed the size taken out first (Godot only blends pure rotations).
+
+## November 18, 2026 (PC, snail Claude): ragdoll round 3, on its back like a dead cockroach
+
+- Owner: the eyes must close too; the legs collided with the shell; turn him on his back and curl the legs like a
+  cockroach.
+- Now: a hop and ONE clean half roll in the air (moved by hand, a frozen kinematic body), then physics lands it on its
+  back and slides it to a stop (killed mid-charge it flies on while rolling). The legs curl toward the middle of the
+  belly (so they never swing into the shell), the jaws close a little, the feelers fall slack. Eyes: eyelids shut
+  (snail, bat); the beetle has none, so its eyeballs turn the colour of its lids. Test: lies still and belly-up.
+- Claude's slip caught before running: it decided which parts curl by comparing rotations before and after moving them
+  onto the corpse (they never match, so the body and eyelids would have "curled" too); now a plain yes/no.
+
+## November 18, 2026 (PC, snail Claude): ragdoll round 4, back to the fall, legs kept out of the shell
+
+- Owner: no to the cockroach flip; bring back the round-2 fall, but the legs must not go into the shell; and note the
+  jitter/ragdoll story for a video.
+- Round 4 = round 2's fall and tumble (killed mid-charge it flies on), with the legs spread OUTWARD and a little down
+  (round 2 turned them toward "up": into the shell) and the eyes closed (from round 3). Test: no leg tip ends above the
+  shell's middle, and it lies still. Same on the beetle page.
+- Claude's slip: the first leg test measured from the corpse's origin, which is at the beetle's feet, so all six legs
+  looked "above" it; it now measures from the shell's middle.
+- New `VIDEO-IDEAS.md` with the ragdoll story (joints that jiggled, the 40 m/s rocket beetle, the cockroach, the fix).
+- **Short 050 round 2 (owner):** the Deep Rise picture was zoomed far too much; seconds 5-10 showed this game, not
+  Deep Rise; the beetle should be the first hand-built one ("round blocks"). Now: Deep Rise's own Steam screenshots
+  (from Steam's public store data), shown whole and raised above the presenter (`dy`), and the Nov 15 beetle taken
+  from the git history (eea1b9c) and spun in Blender.
+- **Short 049 (Why I'm making it):** the opening wasn't missing, just quiet and spread over retakes; the clean attempts
+  found by listening to small windows. This clip has its own "Never Fall" ending. A "survival games I love" card with
+  the four names as text only (no other games' footage). Two lines started on silence (whisper times were early):
+  fixed by measuring the sound. 33 s, no pause over 0.35 s.
+- (Round 5, Nov 18) Owner: the legs should lie flat on the ground. Each leg now goes straight out and tips down just
+  enough that its end reaches the floor the belly lies on (by its own length and hip height); only the body has a
+  collision box (boxes from the standing legs held the corpse up off its belly); a gentle death barely tumbles, so it
+  settles belly-down; a charge still flies and tumbles. Legs are one solid piece each, so they can't bend at the knee.
+- (Round 6, Nov 18) Owner, with a drawing: the corpse sank into the ground, and the leg should bend at the knee (upper
+  leg holds him up, lower leg flat on the ground). Sinking: the body's collision box was 85% of the body's height, so
+  the shell's bottom went into the floor; now full height. Knees: `sculpt_test_beetle.py` now cuts each leg into the
+  upper leg and a "shin" child piece turning at the knee, then all 4 looks were rebuilt (~25 min). Hurdle (Claude):
+  the first cut sorted the leg by its loose pieces, but the baked leg is made of hundreds of separate tiny faces, so
+  the "lower" half reached up to the hip. Fixed by sending each face to the nearest bone (hip-knee or knee-ankle-toe),
+  using the build's own leg table. Dead pose: the upper leg turns out and down until the knee touches the floor, the
+  shin turns flat pointing straight out. Test checks all six shins lie flat. Same on the 3D page (Version 22).
+- (Round 7, Nov 18) Owner liked the beetle ("looks perfect now"); asked for the snail (relax, maybe fall over, the
+  foot stays on the ground) and the bat. Each creature's `ragdoll` line can now say: parts that stay behind (the snail's
+  foot), hop, a sideways tip, spin, and a narrower body box. Wings and folds lie flat like the beetle's legs. Hurdles:
+  (1) the bat test fell 40 m: a lone bat flies off to roost outside the little test cave floor, and then I put it at a
+  spot that was inside rock; fixed by placing it over the real floor. (2) The picture tool gave the ragdoll no
+  creature settings, so its first pictures were wrong; it now passes them. (3) The snail would not tip: he was rolled
+  about the player's direction instead of his own nose-to-tail line, and his box was too wide; both fixed. (4) The bat
+  ended standing upright like a box on its end; a stronger flop fixed it (measured: up-direction 1.00 -> 0.00). Snail
+  and bat 3D pages got Defeated / Get back up buttons. Full suite earlier: 4 failures, all in other chats' areas
+  (cave layout, dwarf braid/aim, tool models).
+- (Nov 18, F332 + ragdoll round 8) Owner: the bat wing looks like one stiff piece, add 2-3 bones; dead, the wing stuck
+  up in the air. And the snail's eyes came off his body when he fell. Bat: the wing is now built as three tagged
+  sections (arm with a new 4th finger, middle web, outer web), painted and baked whole as before, then cut into three
+  jointed parts at the end (a face tag carried through the bake). The webs flap a little late, like a wave. Dead: once
+  the body lies still, each wing piece is laid level and tipped down at its joint until its far edge touches the floor.
+  Hurdles: (1) the test bat was asleep with its wings folded away (nothing to drape): woke it in the test. (2) Draped
+  at a fixed 1.4 s, the body was still rolling and lifted the wings again: now it waits until the body lies still.
+  (3) The test's floor guess (find_floor) sat 31 cm below the real physics floor, so good wings looked "high": the test
+  now uses the ragdoll's own floor ray. (4) First drape only pointed each piece's middle down: the wide skin dug into
+  the floor; now it lays the skin level first. Snail: the body slumped forward at death but the stalks turned on their
+  own spot, so a gap opened; the stalks now hang on the soft body, have a joint halfway up (all 4 looks rebuilt), and
+  flop to the ground once he lies still. New picture tool: tools/model_check/flap_shot.gd (4 moments of a wing beat).
+- (Nov 18, F332 + ragdoll round 9) Owner: bat wing ends vanished, pieces twisted and fell inside its body; the
+  snail's eyes still fell through his body. Cause: each piece was turned straight toward the floor with no idea what
+  was in the way. Now each wing piece / eye stalk tries many poses (a wing only on its own flap hinge plus a little
+  swing; a stalk any direction) and keeps the lowest one where none of ~80 of its own surface points go under the
+  floor or inside the body (an egg shape inside the body's box). Hurdles (Claude): (1) a box round a round body has
+  empty corners: counted as solid they ruled out every good pose (switched to an egg shape); (2) the arm grows out
+  of the body, so some of its points are always "inside": points inside before anything moves now don't count, but
+  the first try decided that AFTER the arm moved, so a web carried into the body was excused: now decided once at the
+  start; (3) the wing's old early twist at death removed. Same on both 3D pages.
+
+### Nov 18: Short 054 redone (eight tries)
+- (Nov 18, F337) Dead creatures turn to stone. Owner's idea, settled with multiple-choice questions: no drops at death,
+  mine the statue (pickaxe only, hits by size) for stone + loot, 1 in 20 a gem, crumbles after 5 min. Built like the
+  boulders (host counts hits; every computer shows its own stone body): src/combat/statue.gd + petrify.gdshader
+  (cracks run out from the middle, stone fills in behind), MonsterManager statues + request_hit_statue, Ragdoll keeps
+  a statue body instead of shrinking it, older models tip over and turn to stone in place. Hurdles (Claude): (1) the
+  new class wasn't known until an --import pass; (2) the headless test computer has no real drawing, and both the
+  shader layer and the rock-chunk burst made the engine print "material is null" errors there: tests mark the parts
+  as stone instead of drawing it, real play draws it (found by placing markers in the test step by step); (3) a beetle
+  has no wings or eye stalks, so the settle step started an empty animation (an engine error): skipped when empty;
+  (4) the old crystal-drop test expected drops at death: it now looks inside the statue. Also: another chat's
+  half-edited cave_maker.gd stopped every game run for a while; waited instead of touching it.
+- (Nov 18, F337 round 2) Owner: turning to stone too fast; the break should be the same rock burst as mining, sized
+  to the creature. Stone now takes 7 s; RockShatter.burst got a `scale` (piece size, count and spread); a statue bursts
+  twice like dug rock, sized by its middle measure (not its diagonal: a bat's long wings made it look huge; Claude's
+  first try sized by the diagonal and the beetle's slabs were as big as the beetle, caught on the 3D page and fixed).
+  The pickaxe feedback no longer adds a second full-size burst on statues. Same burst on the 3 creature 3D pages.
+
+### Nov 18: faint music under the Shorts
+- (Nov 18, F337 round 3) Owner: "everything looks great"; the rock chunks sometimes lie inside each other, and the
+  same for boulders and other rocks. Cause: every chunk only collided with the cave floor. All bursts share one
+  maker (RockShatter: dug rock, boulders, statues, root pillars), so one change fixed them all: chunks get their own
+  layer and bump into each other (never into dwarfs). Measured, not guessed: new tools/model_check/shatter_overlap.gd
+  (two bursts, count chunks deep inside each other): 129 before, 0 after. The 3D pages' chunks became real physics
+  boxes, and the dead body's invisible box is removed when the statue breaks (the pieces would have landed on air).
+  Hurdle: checking the page in a background tab is very slow (Chrome draws it about once a second there).
+- (Nov 18, F337 round 4, 3D pages only) Owner: page rocks hung in mid-air and balanced impossibly; should shrink away.
+  The page's physics boxes were bigger than the lumpy rocks (the game uses exact shapes already). Tested offline with
+  node + the same physics library (scratchpad physcheck/test.mjs: 48 chunks dropped, measures dips, floating,
+  speed). Tries: exact convex shapes = right but 120-150 ms per step (far too slow) and some came out inside-out;
+  balls inside the shape = fast but corners sank up to 8 cm into the floor; a first ball version weighed nothing
+  (pinned in the air) and a thin slab made a negative ball (crash). Final: exact shape against the floor only, balls
+  against other rocks: 0.2 cm deepest dip, none floating, ~2 ms per step. Rocks shrink away after 4.5 s.
+
+### Nov 18: Short 056 (the name)
+- (Nov 18, F337 done) Owner: the wait before the stone too long; page rocks super huge and shrinking too fast. The
+  huge rocks were Claude's bug: the page's shrink formula was not capped at 1, so before their shrink time the rocks
+  were drawn up to 8x too big, then "shrank" to normal size all at once. Fixed (capped); each chunk now waits its own
+  4-6 s and shrinks over 1.5 s (game too: RockShatter._life, SHRINK). Stone starts sooner (wait at most 1.8 s). The
+  shorter wait made the bat test fail 1 in 3 (wings draped while it still rolled): they now settle again once it
+  lies still, and a statue only freezes once still. 3 test runs in a row pass. Owner: "now I think it is good".
+- (Nov 18) Owner: stone after 1 s; then "for the rest of the creatures". Every creature but the bosses now ragdolls:
+  the 16 older ones (simple shapes, no "body" part) fall as one solid piece with a box round all their shapes and flop
+  onto their side, then turn to stone. Hurdles (Claude): (1) with every creature ragdolling, my "wait, then check"
+  timers called back into bodies freed when a test cleared the world ("lambda capture freed" in 3 old tests): timers
+  are now tied to the body (a tween on it). (2) The picture tool built older creatures from the wrong shape (only
+  their eyes showed). (3) They first landed standing on their legs (looked alive): a sideways flop with a narrower
+  box. (4) The stone layer only covered some parts: their paint pushes corners out ("wobble") and the stone hid
+  underneath; the stone shader now pushes the same way, per part.
+- (Nov 18) Owner: on the 3D pages none of the creatures turned to stone. Claude's bug: when changing the wait to 1 s,
+  a note was put in the MIDDLE of a code line ("// (owner: 1 s)" before "rag.stone = petrifyStart();"), which switched
+  the start of the stone off (the same kind of slip as before: never put a comment mid-line). Found by running the
+  page on this computer, where its errors can be read, and a test-only copy with a fast-forward button (a hidden
+  browser tab only draws about once a second). Fixed and checked: stone at 1.0 s, mining bursts into resting chunks.
+
+### Nov 18: text cut off on the cards (056), and Short 057 (digging)
+- (Nov 18) Owner: the stone still took too long to start; a dwarf who knows the game should be able to mine at once. The
+  stone now starts 0.3 s after death, while the body still falls (it used to wait until it lay still), and spreads
+  steadily over 7 s (a gentle start hid the first cracks; a quick start covered it in ~3 s, too fast). The pickaxe
+  can hit the body at once: the aim now sees fallen bodies (their own physics layer), a body that will become a statue
+  answers to its number from the moment it dies, and it only becomes solid to bump into once it lies still. A boss's
+  fallen body (no statue) is skipped so the swing doesn't dig the ground through it. Checked on the beetle page's test
+  copy: stone at 0.3 s, a hit counted at 0.9 s.
+- (Nov 18, F314) Owner: the bat's other three looks. Built like the snail's: colours from the approved
+  cave_bat_variants.png, the brown tiles used only a little on the other looks; ember and spore get glow_* pieces
+  (branching lava veins, round spots) placed on both faces of each wing section with the same maths the skin is built
+  with (its bulge), tagged so they split with the jointed wing. Hurdles (Claude): Python's built-in hash() changes every
+  run, so the veins would move between builds (fixed seed from the name); the first ember fur was still brown (made
+  darker). New: tools/model_check/flap_shot.gd takes a look and an "above" view.
+
+### Nov 18: Short 058 (too big)
+- (Nov 18, F340-F345) Owner shared 9 game-feel TikToks. Claude can't watch video: read each page's own automatic
+  subtitles instead (the TikTok page with a browser-like request carries a subtitle file). Owner picked: juicy hits,
+  swing trails, Disney rules, chest opening (+ the chest menu closes when emptied); the rest went on the to-do list
+  (F344 attack warnings, F345 magic). Built: aimed sparks, a freeze of only the two fighters (a whole-game freeze on
+  the host would freeze everyone's monsters), host-side knockback, a bounce on big hits; WeaponTrail rebuilt (real tool
+  tip, smooth curve, fading tail, flowing streaks; dusty for mining); creatures crouch and spring on attacks, springier
+  hit squash, damage numbers fly in arcs; ChestOpen (wobble, spring, slam, rays, ring, sparks, dust). Hurdles (Claude):
+  (1) the knockback moved a monster for a whole test's 10-second time jump (23 m): each push step is now capped;
+  (2) a snail in his shell slid out of reach: a hiding snail can't be pushed; (3) the first trail had zebra stripes
+  and the chest's rays looked like planks: softened; (4) the bat-wing test still failed 1 run in 4: the second wing
+  settle now waits up to 8 s. New picture tools: swing_shot.gd, chest_shot.gd.
+
+### Nov 18: Short 060 (Rock Snail)

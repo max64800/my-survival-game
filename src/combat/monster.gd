@@ -41,7 +41,9 @@ var _bar_fill: MeshInstance3D
 var _stun_fill: MeshInstance3D
 var _bars: Node3D
 var _flash := 0.0
-## Rock Snail (data.shell_hide): seconds left hidden in the shell, and hits taken since it last hid.
+var _flash_len := 1.0  ## how long this wind-up is (the crouch grows over it)
+var _wound := 0.0       ## (looks) how far it has crouched for the coming attack, 0..1
+## Rock Snail (data.shell_hide): seconds left hidden in the shell, and how many of its hiding marks (health) it has used.
 var shell_left := 0.0
 var shell_hits := 0
 var shell_shut := false  ## everyone: the snail is hiding right now (hits on it clank)
@@ -164,9 +166,12 @@ func hit_flash() -> void:
 	_flinch = 1.0  # jolts back (see _process)
 	var base: Vector3 = model.get_meta("base_scale", model.scale)
 	model.set_meta("base_scale", base)
+	# Squash and stretch (owner, Nov 18, the Disney rules): squashed flat by the blow, it springs up a little too tall,
+	# then settles.
 	var t := create_tween()
-	t.tween_property(model, "scale", base * Vector3(1.12, 0.9, 1.12), 0.05)
-	t.tween_property(model, "scale", base, 0.12)
+	t.tween_property(model, "scale", base * Vector3(1.16, 0.84, 1.16), 0.05).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	t.tween_property(model, "scale", base * Vector3(0.94, 1.08, 0.94), 0.08).set_trans(Tween.TRANS_SINE)
+	t.tween_property(model, "scale", base, 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	t.parallel().tween_property(glow, "albedo_color:a", 0.0, 0.16)
 	t.tween_callback(func():
 		for mi: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
@@ -176,7 +181,8 @@ func hit_flash() -> void:
 
 ## Only looks: the monster is already gone from the game. Its body tips over and sinks into
 ## the ground in a puff of dust, instead of popping out of existence.
-func die_visual() -> void:
+## `statue` >= 0: it turns into that stone statue (owner, Nov 18: everything that dies turns to stone; mine it).
+func die_visual(statue := -1) -> void:
 	set_physics_process(false)
 	set_process(false)
 	collision_layer = 0
@@ -185,6 +191,17 @@ func die_visual() -> void:
 		l.visible = false
 	if _bars:
 		_bars.visible = false
+	if data.get("ragdoll", not data.has("boss")):  # (every creature but the bosses, owner Nov 18)
+		# It goes limp and falls apart into physics pieces, pushed away from the player (Ragdoll, owner Nov 18).
+		var cam := get_viewport().get_camera_3d() if is_inside_tree() else null
+		var from := cam.global_position if cam else global_position + Vector3.BACK
+		if Ragdoll.make(self, model, from, velocity, statue):  # (killed in a charge, it flies on)
+			queue_free.call_deferred()
+			return
+	if statue >= 0 and is_inside_tree():  # (no ragdoll: it tips over where it stands and turns to stone there)
+		Statue.from_model(self, model, statue)
+		queue_free.call_deferred()
+		return
 	var t := create_tween()
 	t.tween_property(model, "rotation:z", deg_to_rad(80.0) * (1.0 if uid % 2 == 0 else -1.0), 0.35) 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	t.tween_interval(0.3)
@@ -249,7 +266,24 @@ func damage_mult() -> float:
 
 # ================================================================== host brain
 
+var _knock := Vector3.ZERO  ## (host) a push from a hit, fading out fast
+var _stop := 0.0            ## (looks) a frozen blink when hit
+
+
+## Host: pushed by a hit (speed in m/s, away from the hitter). It slides back and stops quickly.
+func knock(push: Vector3) -> void:
+	_knock = Vector3(push.x, 0.0, push.z)
+
+
+## Looks: freeze for a blink (the hit "lands").
+func hit_stop(seconds: float) -> void:
+	_stop = maxf(_stop, seconds)
+
+
 func think(delta: float, mgr: Node) -> void:
+	if _knock.length() > 0.05:
+		move_and_collide(_knock * minf(delta, 0.05))  # (walls stop it; a long step can't fling it far)
+		_knock = _knock.move_toward(Vector3.ZERO, 14.0 * delta)
 	stun.decay_mult = Monsters.PACK_BOOST.decay if boosted else 1.0
 	stun.tick(delta)
 	_timer -= delta
@@ -537,6 +571,10 @@ func add_buildup(kind: String, amount: float) -> void:
 
 func _move(delta: float, dir: Vector3, speed: float) -> void:
 	speed *= ailments.speed_mult()
+	if data.get("turns_in_place", false):
+		var turned := _turn_toward(dir, delta)
+		dir = turned[0]
+		speed *= turned[1]
 	if dir.length() > 0.1 and not data.get("flies", false) and is_on_floor() and _drop_ahead(dir):
 		dir = Vector3.ZERO  # a pit it couldn't climb out of: stop at the edge and find another way (F125)
 	if data.get("flies", false):
@@ -560,7 +598,32 @@ func _face(target: Node3D) -> void:
 		return
 	var to := target.global_position - global_position
 	if Vector2(to.x, to.z).length() > 0.1:
-		model.rotation.y = lerp_angle(model.rotation.y, atan2(-to.x, -to.z), 0.25)
+		if data.get("turns_in_place", false):
+			_turn_toward(to, get_physics_process_delta_time())
+		else:
+			model.rotation.y = lerp_angle(model.rotation.y, atan2(-to.x, -to.z), 0.25)
+
+
+## The Rock Snail moves only forward (owner, Nov 18: "he can move backwards"): it turns slowly toward where it wants
+## to go, hopping in place while it turns (model meta "turning", MonsterModel._snail), and only sets off once it faces
+## that way. Returns [the direction it really moves (its own forward, or none), a speed factor].
+const TURN_SPEED := 0.9  ## radians a second (about 7 s for a full turn)
+const TURN_GO := 0.45    ## radians: it sets off once it faces within this of the way it wants to go
+
+
+func _turn_toward(dir: Vector3, delta: float) -> Array:
+	var flat := Vector2(dir.x, dir.z)
+	if flat.length() < 0.1:
+		model.set_meta("turning", false)
+		return [Vector3.ZERO, 0.0]
+	var want := atan2(-dir.x, -dir.z)
+	var diff := angle_difference(model.rotation.y, want)
+	model.rotation.y = rotate_toward(model.rotation.y, want, TURN_SPEED * delta)
+	model.set_meta("turning", absf(diff) > 0.08)
+	if absf(diff) > TURN_GO:
+		return [Vector3.ZERO, 0.0]  # still turning: hops in place
+	var fwd := -Basis(Vector3.UP, model.rotation.y).z
+	return [fwd, maxf(0.0, cos(diff))]
 
 
 # ================================================================== everyone: looks
@@ -581,6 +644,7 @@ func puppet_step(delta: float) -> void:
 ## A beetle's charge also turns its eyes red and kicks up dust.
 func show_tell(seconds: float, attack_name: String = "", aim: Node3D = null) -> void:
 	_flash = seconds
+	_flash_len = maxf(seconds, 0.05)
 	var atk: Dictionary = {}
 	for a: Dictionary in data.get("attacks", []):
 		if a.name == attack_name:
@@ -611,6 +675,7 @@ func show_tell(seconds: float, attack_name: String = "", aim: Node3D = null) -> 
 func _spit_fx(aim: Node3D) -> void:
 	if not is_alive() or not is_inside_tree():
 		return
+	Sfx.play("snail_spit", global_position, 0.0, _voice())  # a real recording (CC0, "80 CC0 creature SFX")
 	var fwd := -model.global_transform.basis.z.normalized()
 	var mouth := global_position + fwd * 0.6 * _size + Vector3.UP * 0.45 * _size
 	var to := mouth + fwd * 3.0 + Vector3.DOWN * 0.3
@@ -653,12 +718,19 @@ func _process(delta: float) -> void:
 	_speed = lerpf(_speed, moved / maxf(delta, 0.001), minf(1.0, delta * 8.0))
 	_clock += delta
 	model.set_meta("roosting", data.get("roosts", false) and state == State.SLEEP)
-	MonsterModel.animate(model, _speed, _size, _clock + uid * 0.37)
+	if _stop > 0.0:
+		_stop -= delta
+		_clock -= delta  # (frozen: its moves wait)
+	else:
+		MonsterModel.animate(model, _speed, _size, _clock + uid * 0.37)
 	if _flash > 0.0:
 		_flash -= delta
 		MonsterModel.set_glow(model, 1.0 if _flash < 0.25 else 0.35)  # bright gleam in the last 250 ms
+		if _flash <= 0.0:
+			_spring_out()
 	else:
 		MonsterModel.set_glow(model, 0.0)
+	_anticipate()
 	_creature_fx(delta)
 	if model.get_meta("roosting", false):
 		pass  # hanging upside down (MonsterModel.animate)
@@ -668,6 +740,33 @@ func _process(delta: float) -> void:
 		MonsterModel.dazed_sway(model, 0.0)  # a snail hops, it doesn't waddle
 	else:
 		model.rotation.z = sin(_clock * (5.0 + _speed * 2.5)) * 0.07 * clampf(_speed / 3.0, 0.0, 1.0)  # waddle
+
+
+## Anticipation (owner, Nov 18, the Disney rules): while it winds up an attack it crouches low and wide and leans back,
+## more and more; then it springs out on the strike (_spring_out). Not the snail (his own rear-up) nor a roosting bat.
+func _anticipate() -> void:
+	var want := 0.0
+	if _flash > 0.0 and is_alive() and not model.has_meta("foot") and not model.get_meta("roosting", false):
+		var k := 1.0 - _flash / _flash_len
+		want = k * k * (3.0 - 2.0 * k)
+	if want <= 0.0 and _wound <= 0.0:
+		return
+	_wound = want
+	var base: Vector3 = model.get_meta("base_scale", model.scale)
+	model.set_meta("base_scale", base)
+	model.scale = base * Vector3(1.0 + 0.07 * _wound, 1.0 - 0.13 * _wound, 1.0 + 0.07 * _wound)
+	model.rotation.x += 0.2 * _wound  # (leans back)
+
+
+## The strike: out of the crouch it stretches tall for a blink, then settles.
+func _spring_out() -> void:
+	_wound = 0.0
+	if model == null or model.has_meta("foot"):
+		return
+	var base: Vector3 = model.get_meta("base_scale", model.scale)
+	var t := create_tween()
+	t.tween_property(model, "scale", base * Vector3(0.92, 1.12, 0.92), 0.06).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	t.tween_property(model, "scale", base, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
 ## Only looks and sounds: charge dust, wing beats, the jolt when hit.
@@ -699,6 +798,7 @@ func _creature_fx(delta: float) -> void:
 		else:
 			model.rotation.x += 0.3 * _flinch  # head tips back
 			model.position.y += 0.06 * _flinch * _size
+	model.set_meta("flinch_any", _flinch)  # (blink lids squeeze shut while it flinches: MonsterModel._blinks)
 
 
 func set_hp(value: float, stun_frac: float, stunned: bool) -> void:

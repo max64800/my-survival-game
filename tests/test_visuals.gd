@@ -139,7 +139,7 @@ func test_first_three_creatures() -> void:
 		check(Monsters.LIST.has(id), "%s exists" % id)
 		for d in Monsters.LIST[id].drops:
 			check(Items.exists(d[0]), "%s drops a real item: %s" % [id, d[0]])
-	check(Monsters.LIST.rock_snail.shell_hide.hits == 3 and Monsters.LIST.rock_snail.shell_hide.seconds == 3.0, "snail hides after 3 hits for 3 s (owner)")
+	check(Monsters.LIST.rock_snail.shell_hide.at == [0.5, 0.1] and Monsters.LIST.rock_snail.shell_hide.seconds == 10.0, "snail hides at half and at 10% health, 10 s each (owner, Nov 18)")
 	check(is_equal_approx(Monsters.LIST.rock_snail.shell_hide.cut, 0.9), "hiding = 90% less damage (owner)")
 	check(Monsters.LIST.cave_bat.flies and Monsters.LIST.cave_bat.swoops and Monsters.LIST.cave_bat.roosts, "bats fly, swoop and roost")
 	check(Monsters.LIST.rock_beetle.soft_back > 1.0 and Monsters.LIST.rock_beetle.straight_charge, "beetle charges straight, soft back")
@@ -191,6 +191,7 @@ func test_forged_creatures() -> void:
 	check((bat.get_meta("wings") as Array).size() == 2, "bat has two flapping wings")
 	bat.set_meta("roosting", true)
 	MonsterModel.animate(bat, 0.0, 1.0, 0.3)
-	check(absf(bat.rotation.x + PI / 2.0) < 0.01, "asleep: hanging head-down")
+	# (the Nov 18 bats are built upright and flip head-down; older forged bats tip forward)
+	check(absf(absf(bat.rotation.z) - PI) < 0.01 or absf(bat.rotation.x + PI / 2.0) < 0.01, "asleep: hanging head-down")
 	for n in [beetle, great, bat]:
 		n.free()

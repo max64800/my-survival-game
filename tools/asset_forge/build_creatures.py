@@ -25,8 +25,8 @@ LOOKS = ["mossy", "frost", "ember", "spore"]
 # kind: (build script, "looks" or number of versions, extra words)
 CREATURES = {
 	"rock_beetle": ("monster_rock_beetle", "looks", []),
-	"rock_snail": ("monster_rock_snail", ["mossy"], []),  # Nov 17 rebuild: one look first (frost, ember and spore keep the Nov 15 forged snails until then)
-	"cave_bat": ("monster_cave_bat", 4, []),
+	"rock_snail": ("monster_rock_snail", "looks", []),  # Nov 17 rebuild; frost, ember and spore looks Nov 18
+	"cave_bat": ("monster_cave_bat", "looks", []),  # Nov 18 rebuild; frost, ember and spore looks Nov 18
 }
 
 
@@ -34,7 +34,7 @@ CREATURES = {
 # Creatures that go through the sculpt-and-bake pass (docs/art/CREATURE-RECIPE.md) after the grey build, every look.
 SCULPTED = {"rock_beetle": "sculpt_test_beetle.py"}
 # The game's size for the finished model (the baked beetle is 1.54 m long; the game's beetle and its collision ~1.36 m).
-GAME_SCALE = {"rock_beetle": 0.88, "rock_snail": 0.88}
+GAME_SCALE = {"rock_beetle": 0.88, "rock_snail": 0.88, "cave_bat": 0.85}  # (bat: 1.74 m wing tip to wing tip -> 1.48 m)
 
 
 def blender():

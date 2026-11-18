@@ -248,6 +248,9 @@ func _build() -> void:
 	skills.resized.connect(func(): skills.position = (root.size - skills.size) * 0.5)
 	box_panel = BoxPanel.new()
 	box_panel.visible = false
+	box_panel.emptied.connect(func() -> void:  # (you took everything: back to the game, owner Nov 18)
+		set_bag_open(false)
+		Controls.set_captured(true))
 	root.add_child(box_panel)
 	box_panel.resized.connect(_layout_panels)
 	box_panel.visibility_changed.connect(_layout_panels)

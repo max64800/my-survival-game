@@ -116,11 +116,12 @@ func test_crystal_monster_hits_harder_and_drops_crystals() -> void:
 			break
 		auth.monsters.request_attack(1, PackedInt32Array([uid]), true, 0, false)
 	check(auth.monsters.monsters.is_empty(), "killed it")
-	var red := 0
-	for d in auth._drops.values():
-		if d.item_id == "crystal_red":
-			red += d.count
-	check_eq(red, 4, "4 red crystals dropped")
+	var red := 0  # (owner, Nov 18: it turns to stone; its crystals are inside, they come out when you mine it)
+	for st: Dictionary in auth.monsters.statues.values():
+		for d: Array in st.loot:
+			if d[0] == "crystal_red":
+				red += d[1]
+	check_eq(red, 4, "4 red crystals inside its stone statue")
 	_teardown()
 
 
@@ -338,7 +339,8 @@ func test_attack_animation_keeps_monster_size() -> void:
 	_teardown()
 
 
-## Owner's Rock Snail: after 3 hits it hides in its shell (3 s), taking 90% less damage.
+## Owner's Rock Snail (Nov 18): it hides in its shell at half health and again at 10%, 10 s each, taking 90% less
+## damage (no more hiding every 3rd hit: that let you stun-lock it).
 func test_rock_snail_hides_in_its_shell() -> void:
 	await _setup()
 	ps.inventory.add("sword_stone", 1)
@@ -346,15 +348,21 @@ func test_rock_snail_hides_in_its_shell() -> void:
 	var m := _spawn("rock_snail", Vector3(1.2, 0, 0))
 	m.state = Monster.State.CHASE
 	var first := auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, 0, false)
+	check(m.shell_left <= 0.0, "one hit: still out")
+	m.hp = m.max_hp() * 0.55
 	auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, 0, false)
-	check(m.shell_left <= 0.0, "two hits: still out")
-	auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, 0, false)
-	check_near(m.shell_left, 3.0, 0.01, "third hit: hides for 3 s")
+	check_near(m.shell_left, 10.0, 0.01, "below half health: hides for 10 s")
 	var before := m.hp
 	auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, 0, false)
 	check(before - m.hp <= maxf(1.0, first * 0.15), "hidden: about 90%% less damage (%.0f instead of %d)" % [before - m.hp, first])
-	m.think(3.1, auth.monsters)
-	check(m.shell_left <= 0.0, "comes back out after 3 s")
+	m.think(10.1, auth.monsters)
+	check(m.shell_left <= 0.0, "comes back out after 10 s")
+	auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, 0, false)
+	check(m.shell_left <= 0.0, "out again: no hiding until 10% health")
+	m.hp = m.max_hp() * 0.12
+	auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, 0, false)
+	if m.hp > 0.0:
+		check_near(m.shell_left, 10.0, 0.01, "below 10%: hides again for 10 s")
 	_teardown()
 
 
@@ -459,6 +467,282 @@ func test_snail_foot_stays_put() -> void:
 	MonsterModel.animate(model, 0.0, 1.0, 5.0)
 	check_near(foot.global_position.distance_to(foot0), 0.0, 0.001, "dazed: the foot stays put")
 	check(absf(forged.rotation.z) > 0.1, "dazed: the body sways")
+	# Blinking (owner, Nov 18): two blink lids; getting hit squeezes the eyes shut.
+	MonsterModel.dazed_sway(model, 0.0)
+	var blinks: Array = model.get_meta("blinks", [])
+	check_eq(blinks.size(), 2, "a blink lid for each eye")
+	if blinks.size() == 2:
+		var lid: MeshInstance3D = blinks[0][0]
+		MonsterModel.animate(model, 0.0, 1.0, 1.0)  # (between blinks: open)
+		var open_basis := lid.basis
+		model.set_meta("flinch", 1.0)
+		MonsterModel.animate(model, 0.0, 1.0, 1.0)
+		check(not lid.basis.is_equal_approx(open_basis), "hit: the eyes squeeze shut")
+	_teardown()
+
+
+## Cave Bat (Nov 18 rebuild): flapping wings, folded wings for roosting, and it hangs upside down by its feet.
+func test_bat_wings_and_roost() -> void:
+	await _setup()
+	var m := _spawn("cave_bat", Vector3(3.0, 0, 0))
+	var model := m.model
+	check_eq((model.get_meta("wings", []) as Array).size(), 2, "two flapping wings")
+	check_eq((model.get_meta("folds", []) as Array).size(), 2, "two folded wings for roosting")
+	check(model.has_meta("upright"), "built upright: it hangs by its feet")
+	m.set_process(false)
+	model.set_meta("roosting", true)
+	MonsterModel.animate(model, 0.0, 1.0, 1.0)
+	check_near(absf(model.rotation.z), PI, 0.01, "roosting: upside down")
+	var f: MeshInstance3D = (model.get_meta("folds") as Array)[0]
+	check(f.visible, "roosting: the wings are folded round it")
+	var lids: Array = model.get_meta("blinks", [])
+	check_eq(lids.size(), 2, "a blink lid for each eye")
+	if lids.size() == 2:
+		check(not (lids[0][0] as MeshInstance3D).basis.is_equal_approx(lids[0][1]), "asleep: the eyes are shut")
+	model.set_meta("roosting", false)
+	MonsterModel.animate(model, 0.0, 1.0, 1.0)
+	check(not f.visible, "flying: the folded wings are hidden")
+	_teardown()
+
+
+
+## Rock Snail (owner, Nov 18): it only ever moves forward; to go another way it turns slowly on the spot first.
+func test_snail_turns_before_it_moves() -> void:
+	await _setup()
+	var m := _spawn("rock_snail", Vector3(3.0, 0, 0))
+	m.set_physics_process(false)
+	m.model.rotation.y = 0.0  # facing -Z
+	var start := m.global_position
+	var r: Array = m._turn_toward(Vector3(1, 0, 0), 0.1)  # it wants to go +X: a quarter turn away
+	check(r[1] == 0.0, "facing away: it doesn't move yet")
+	check(m.model.get_meta("turning", false), "it hops in place, turning")
+	for i in 40:
+		r = m._turn_toward(Vector3(1, 0, 0), 0.1)
+	check(r[1] > 0.5, "facing the way now: it sets off")
+	var fwd: Vector3 = r[0]
+	check(fwd.dot(Vector3(1, 0, 0)) > 0.9, "and it moves the way it faces (forward)")
+	check(m.global_position.distance_to(start) < 0.01, "(turning alone never moved it)")
+	_teardown()
+
+
+## Ragdolls (owner, Nov 18; the beetle first): on death the model falls apart into physics pieces joined at their
+## hinges, falls and tumbles, then shrinks away.
+func test_beetle_ragdoll_on_death() -> void:
+	await _setup()
+	var m := _spawn("rock_beetle", Vector3(4.0, 0, 0))
+	for i in 5:
+		await tree.physics_frame
+	var start_y := m.global_position.y
+	auth.monsters._ev_remove(m.uid)  # (dies the real way: the manager forgets it, then it goes limp)
+	check(m.has_meta("corpse"), "it became a ragdoll")
+	if not m.has_meta("corpse"):
+		_teardown()
+		return
+	var body: RigidBody3D = m.get_meta("corpse")
+	check(body.get_children().filter(func(c: Node) -> bool: return c is CollisionShape3D).size() >= 1, "one solid body (no joints to shiver)")
+	check(int(body.get_meta("relax")) >= 8, "legs spread, mandibles open, feelers droop")
+	var y0 := body.global_position.y
+	var moved := 0.0
+	for i in 90:
+		await tree.physics_frame
+		moved = maxf(moved, absf(body.global_position.y - y0))
+	check(moved > 0.05, "it falls and tumbles (moved %.2f m)" % moved)
+	check(body.global_position.y > start_y - 3.0, "it lands on the cave floor, doesn't fall through")
+	for i in 120:
+		await tree.physics_frame
+	check(body.linear_velocity.length() < 0.3 and body.angular_velocity.length() < 0.5, "then it lies still (no shivering)")
+	# the legs lie spread out below the shell's middle, never up inside it (owner: "the legs collide with the shell")
+	var up_now: Vector3 = (body.global_basis * (body.get_meta("up_local") as Vector3)).normalized()
+	var centre: Vector3 = (body.get_children().filter(func(c: Node) -> bool: return c is CollisionShape3D)[0] as Node3D).global_position  # (the shell's middle)
+	var into_shell := 0
+	for c in body.get_children():
+		if c is MeshInstance3D and String(c.name).begins_with("leg"):
+			var tip: Vector3 = (c as MeshInstance3D).global_transform * (c as MeshInstance3D).get_aabb().get_center()
+			if (tip - centre).dot(up_now) > 0.0:
+				into_shell += 1
+	check(into_shell == 0, "no leg turns up into the shell (%d did)" % into_shell)
+	# the knee bends (owner's drawing): each lower leg lies flat, pointing out along the ground
+	var flat := 0
+	var shins := 0
+	for c in body.find_children("shin*", "MeshInstance3D", true, false):
+		var s := c as MeshInstance3D
+		shins += 1
+		var along := (s.global_transform * s.get_aabb().get_center()) - s.global_position
+		if absf(along.normalized().dot(up_now)) < 0.35:
+			flat += 1
+	check(shins == 6 and flat == 6, "all six lower legs lie flat (%d of %d)" % [flat, shins])
+	_teardown()
+
+
+## Owner (Nov 18): the snail relaxes and falls over, but his foot stays on the ground (the shell comes off it).
+func test_snail_ragdoll_leaves_its_foot() -> void:
+	await _setup()
+	var m := _spawn("rock_snail", Vector3(4.0, 0, 0))
+	for i in 5:
+		await tree.physics_frame
+	auth.monsters._ev_remove(m.uid)
+	check(m.has_meta("corpse"), "the snail became a ragdoll")
+	if not m.has_meta("corpse"):
+		_teardown()
+		return
+	var body: RigidBody3D = m.get_meta("corpse")
+	var left: Array = body.get_meta("left", [])
+	check(left.size() == 1 and String((left[0] as Node).name) == "soft_foot", "his foot is left behind")
+	var foot_at: Vector3 = (left[0] as Node3D).global_position if left.size() == 1 else Vector3.ZERO
+	var start := body.global_position
+	for i in 330:  # (it settles, then its eye stalks flop down)
+		await tree.physics_frame
+	if left.size() == 1:
+		check(is_instance_valid(left[0]) and (left[0] as Node3D).global_position.distance_to(foot_at) < 0.01, "the foot stays where it was, on the ground")
+	check(body.global_position.distance_to(start) > 0.03, "the shell falls off it")
+	check(body.global_position.y > start.y - 1.5, "and lands on the floor, not through it")
+	check(body.linear_velocity.length() < 0.3, "then lies still")
+	# his eyes stay on him (owner: they came off his body when he fell) and flop down to the ground
+	var stalks := body.find_children("soft_stalk*", "MeshInstance3D", true, false)
+	check(stalks.size() == 2 and stalks.all(func(st: Node) -> bool: return String(st.get_parent().name) == "soft_body"), "both eye stalks hang on his soft body")
+	check(int(body.get_meta("flopped", 0)) == 4, "the stalks and their upper halves flop down (%d)" % int(body.get_meta("flopped", 0)))
+	var floor_y := float(body.get_meta("drape_floor", body.global_position.y))
+	check(_settled_clear(body), "his eyes are not under the floor or inside his shell or body: %s" % str(body.get_meta("settle_bad", {})))
+	_teardown()
+
+
+## After the wings or eye stalks settled, no piece pokes into the floor or the body (owner, Nov 18: wing ends vanished
+## into the bat; the snail's eyes sank into him). (At most 2 stray points of ~80 per piece: an edge grazing.)
+func _settled_clear(body: RigidBody3D) -> bool:
+	var bad: Dictionary = body.get_meta("settle_bad", {})
+	return not bad.is_empty() and bad.values().all(func(v: int) -> bool: return v <= 2)
+
+
+## Owner (Nov 18): a dead bat ragdolls too: it drops out of the air, wings limp and spread, eyes shut.
+func test_bat_ragdoll_falls_out_of_the_air() -> void:
+	await _setup()
+	var m := _spawn("cave_bat", Vector3(4.0, 0, 0))
+	for i in 5:
+		await tree.physics_frame
+	m.global_position = world.maker.find_floor(player.global_position.x + 4.0, player.global_position.z, player.global_position.y + 2.0) + Vector3.UP * 1.5
+	# (in flight over the floor: a bat on its own goes off to find a roost)
+	m.state = Monster.State.CHASE  # (awake, wings open: asleep it hangs with them folded)
+	for i in 3:
+		await tree.process_frame
+	auth.monsters._ev_remove(m.uid)
+	check(m.has_meta("corpse"), "the bat became a ragdoll")
+	if not m.has_meta("corpse"):
+		_teardown()
+		return
+	var body: RigidBody3D = m.get_meta("corpse")
+	var start_y := body.global_position.y
+	var lowest := body.global_position.y
+	for i in 330:  # (it settles, then its wings fall: about 4 s)
+		await tree.physics_frame
+		lowest = minf(lowest, body.global_position.y)
+	check(body.global_position.y > lowest - 0.01 and body.global_position.y > start_y - 3.0, "it lands on the floor, not through it (y %.2f, lowest %.2f, started %.2f)" % [body.global_position.y, lowest, start_y])
+	check(body.global_position.y < start_y - 0.3, "it drops out of the air")
+	check(body.linear_velocity.length() < 0.3, "then lies still (speed %.2f)" % body.linear_velocity.length())
+	# its wings fall onto the floor, every section (owner: "when he dies it sticks out")
+	check(int(body.get_meta("draped", 0)) == 6, "both wings drape: arm, middle and outer web (%d)" % int(body.get_meta("draped", 0)))
+	var floor_y := float(body.get_meta("drape_floor", body.global_position.y))  # (the physics floor under it: find_floor's guess sat 30 cm lower)
+	var up_high := 0
+	for c in body.find_children("w*", "MeshInstance3D", true, false):
+		var wm := c as MeshInstance3D
+		if (String(wm.name).begins_with("wing") or String(wm.name).begins_with("web")) and (wm.global_transform * wm.get_aabb().get_center()).y > floor_y + 0.45:  # (the upper wing may lie over its body)
+			up_high += 1
+	check(up_high == 0, "no wing section sticks up in the air (%d did)" % up_high)
+	check(_settled_clear(body), "no wing piece is under the floor or inside the body: %s" % str(body.get_meta("settle_bad", {})))
+	_teardown()
+
+
+## Owner (Nov 18): everything that dies turns to stone; nothing drops; mine the statue with a pickaxe (hits by size)
+## for its stone and loot; left alone it crumbles after a few minutes.
+func test_dead_creature_turns_to_stone_and_is_mined() -> void:
+	await _setup()
+	var m := _spawn("rock_beetle", Vector3(3.0, 0, 0))
+	for i in 5:
+		await tree.physics_frame
+	var drops_before: int = auth._drops.size()
+	auth.monsters._kill(m, 1)
+	check(auth.monsters.statues.size() == 1, "it became a statue (the host keeps it)")
+	check(auth._drops.size() == drops_before, "nothing drops when it dies: the loot is inside the stone")
+	var id: int = auth.monsters.statues.keys()[0]
+	var st: Dictionary = auth.monsters.statues[id]
+	check(st.needed == 4 and st.loot.any(func(d: Array) -> bool: return d[0] == "stone"), "a beetle takes 4 hits and holds stone")
+	for i in 420:  # (it falls, lies still, then turns to stone)
+		await tree.physics_frame
+	var body: Node3D = Statue.nodes.get(id)
+	check(is_instance_valid(body) and body.has_meta("statue"), "its body turned to stone")
+	if is_instance_valid(body):
+		check((body as CollisionObject3D).collision_layer & World.TERRAIN_LAYER != 0, "the stone is solid: a pickaxe can hit it")
+		check(body.find_children("*", "MeshInstance3D", true, false).all(func(mi: MeshInstance3D) -> bool: return mi.has_meta("stone")), "stone covers every part")
+	# no pickaxe: it bounces off
+	var ps: GameAuthority.PlayerState = auth.get_player(1)
+	player.global_position = st.pos + Vector3(1.2, 0, 0)
+	var saved: Array = ps.inventory.slots.duplicate(true)
+	for i in ps.inventory.slots.size():
+		if Items.kind(ps.inventory.slots[i].get("id", "")) == "pickaxe":
+			ps.inventory.slots[i] = {}
+	check(auth.monsters.request_hit_statue(1, id) == "no_tool", "a sword or fist bounces off: pickaxe only")
+	ps.inventory.slots = saved
+	var r := ""
+	for i in 4:
+		r = auth.monsters.request_hit_statue(1, id)
+	check(r == "dug", "4 pickaxe hits break it")
+	check(auth._drops.size() > drops_before, "then its stone and loot drop")
+	await tree.process_frame
+	check(not Statue.nodes.has(id), "and the stone body is gone")
+	# another one, left alone, crumbles
+	var m2 := _spawn("cave_bat", Vector3(-3.0, 0, 0))
+	for i in 3:
+		await tree.physics_frame
+	auth.monsters._kill(m2, 1)
+	var id2: int = auth.monsters.statues.keys()[0]
+	check(auth.monsters.statues[id2].needed == 2, "a bat takes 2 hits")
+	auth.monsters.statues[id2].left = 0.01
+	for i in 3:
+		await tree.physics_frame
+	check(not auth.monsters.statues.has(id2) and not Statue.nodes.has(id2), "left alone, it crumbles away")
+	_teardown()
+
+
+## Owner (Nov 18): "for the rest of the creatures": an older creature made of simple shapes falls limp too (one solid
+## piece), lands on the floor and turns to stone.
+func test_simple_creature_falls_and_turns_to_stone() -> void:
+	await _setup()
+	var m := _spawn("mossnipper", Vector3(3.0, 0, 0))
+	for i in 5:
+		await tree.physics_frame
+	var start_y := m.global_position.y
+	auth.monsters._kill(m, 1)
+	var id: int = auth.monsters.statues.keys()[0]
+	var body: Node3D = Statue.nodes.get(id)
+	check(body is RigidBody3D, "it falls as a ragdoll (one physics body), not stiffly")
+	for i in 240:
+		await tree.physics_frame
+	check(is_instance_valid(body) and body.has_meta("statue"), "then it turns to stone")
+	if is_instance_valid(body):
+		check(body.global_position.y > start_y - 1.5, "on the floor, not through it")
+		check((body as RigidBody3D).freeze, "and the statue stays still")
+	_teardown()
+
+
+## Owner (Nov 18, "juicy hits"): a hit pushes the creature away from you and freezes it for a blink.
+func test_a_hit_pushes_and_freezes() -> void:
+	await _setup()
+	ps.inventory.add("sword_stone", 1)
+	auth.request_select_slot(1, 1)
+	var m := _spawn("rock_beetle", Vector3(1.4, 0, 0))
+	m.state = Monster.State.CHASE
+	for i in 3:
+		await tree.physics_frame
+	var away := (m.global_position - player.global_position) * Vector3(1, 0, 1)
+	var before := m.global_position
+	auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, 0, false)
+	check(m._stop > 0.0, "it freezes for a blink")
+	check(m._knock.dot(away) > 0.0, "and is pushed away from you, not toward you")
+	m.set_physics_process(false)  # (only the push: no walking back at you)
+	for i in 3:
+		m.think(0.05, auth.monsters)
+	var moved := (m.global_position - before) * Vector3(1, 0, 1)
+	check(moved.dot(away.normalized()) > 0.03, "it slides back a little (%.2f m)" % moved.dot(away.normalized()))
+	check(moved.length() < 0.6, "but only a little")
 	_teardown()
 
 
