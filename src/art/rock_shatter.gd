@@ -26,12 +26,63 @@ static func burst(parent: Node, center: Vector3, out: Vector3, col: Color, mat_i
 	rng.randomize()
 	var n := rng.randi_range(20, 28)  # (owner: "more of them")
 	out = out.normalized() if out.length_squared() > 0.01 else Vector3.UP
+	# Made once and shared (owner, Nov 18: mining dropped the frame rate; each burst used to build new materials and
+	# shapes for every chunk, about 9 ms; now about 2)
+	var mat := _material(mat_id, rng.randi_range(0, 3), col)
+	for i in n:
+		var c := RockShatter.new()
+		var k := rng.randi() % _shapes.size()
+		var pick: Array = _shapes[k]
+		c._size = rng.randf_range(0.7, 1.05) if i < 3 else rng.randf_range(0.12, 0.45)  # 3 big slabs (owner: "some a lot bigger"), the rest smaller
+		var step := roundi(c._size / 0.05)  # sizes in 5 cm steps, so the collision shapes can be shared
+		c._size = step * 0.05
+		var mi := MeshInstance3D.new()
+		mi.mesh = pick[0]
+		mi.material_override = mat
+		mi.scale = Vector3.ONE * c._size
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF if c._size < 0.3 else GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+		c.add_child(mi)
+		var cs := CollisionShape3D.new()
+		cs.shape = _sized_shape(k, step)
+		c.add_child(cs)
+		c.collision_layer = 0
+		c.collision_mask = World.TERRAIN_LAYER  # bounces on the rock, never on dwarfs
+		# Heavy stone (owner, Nov 18: "they seem very soft... they bounce up and then bounce back"): heavier, falls
+		# faster, no bounce, stops rolling soon.
+		c.mass = 2.0 + c._size * 30.0
+		c.gravity_scale = 1.7
+		c.physics_material_override = _heavy()
+		c.angular_damp = 1.5
+		c.linear_damp = 0.3
+		parent.add_child(c)
+		c.global_position = center + Vector3(rng.randf_range(-0.6, 0.6), rng.randf_range(-0.4, 0.6), rng.randf_range(-0.6, 0.6))
+		c.global_basis = Basis.from_euler(Vector3(rng.randf() * TAU, rng.randf() * TAU, rng.randf() * TAU))
+		# thrown out of the rock face and dropping, not popped up into the air
+		var push := 0.6 if c._size > 0.6 else 1.0
+		c.linear_velocity = (out * rng.randf_range(1.0, 2.4) + Vector3(rng.randf_range(-0.8, 0.8), rng.randf_range(0.0, 0.8), rng.randf_range(-0.8, 0.8))) * push
+		c.angular_velocity = Vector3(rng.randf_range(-3, 3), rng.randf_range(-3, 3), rng.randf_range(-3, 3)) * push
+		_alive.append(c)
+	while _alive.size() > MAX_CHUNKS:
+		var old = _alive.pop_front()  # (untyped: it may already be gone)
+		if is_instance_valid(old):
+			old.queue_free()
+
+
+static var _mats := {}  ## (rock, look) or colour -> its chunk material
+static var _sized := {}  ## Vector2i(shape, size step) -> collision shape
+static var _pm: PhysicsMaterial
+
+
+static func _material(mat_id: int, look: int, col: Color) -> Material:
+	var key: Variant = Vector2i(mat_id, look) if mat_id >= 0 else col
+	if _mats.has(key):
+		return _mats[key]
 	var mat: Material
 	if mat_id >= 0:  # painted with the cave's own picture of that rock (owner, Nov 18: "add the texture to them")
 		var sm := ShaderMaterial.new()
 		sm.shader = preload("res://src/art/rock_chunk.gdshader")
 		sm.set_shader_parameter("albedo_tex", preload("res://assets/textures/terrain/terrain_albedo.png"))
-		sm.set_shader_parameter("slice", float(mat_id * 4 + rng.randi_range(0, 3)))
+		sm.set_shader_parameter("slice", float(mat_id * 4 + look))
 		mat = sm
 	else:
 		var std := StandardMaterial3D.new()
@@ -42,42 +93,37 @@ static func burst(parent: Node, center: Vector3, out: Vector3, col: Color, mat_i
 		std.roughness = 0.95
 		std.cull_mode = BaseMaterial3D.CULL_DISABLED
 		mat = std
-	for i in n:
-		var c := RockShatter.new()
-		var pick: Array = _shapes[rng.randi() % _shapes.size()]
-		c._size = rng.randf_range(0.7, 1.05) if i < 3 else rng.randf_range(0.12, 0.45)  # 3 big slabs (owner: "some a lot bigger"), the rest smaller
-		var mi := MeshInstance3D.new()
-		mi.mesh = pick[0]
-		mi.material_override = mat
-		mi.scale = Vector3.ONE * c._size
-		mi.set_instance_shader_parameter("chunk_size", c._size)  # (the texture keeps its real size on every chunk)
-		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF if c._size < 0.3 else GeometryInstance3D.SHADOW_CASTING_SETTING_ON
-		c.add_child(mi)
-		var cs := CollisionShape3D.new()
-		var shape := (pick[1] as ConvexPolygonShape3D).duplicate() as ConvexPolygonShape3D
+	_mats[key] = mat
+	return mat
+
+
+static func _sized_shape(k: int, step: int) -> ConvexPolygonShape3D:
+	var key := Vector2i(k, step)
+	if not _sized.has(key):
+		var shape := (_shapes[k][1] as ConvexPolygonShape3D).duplicate() as ConvexPolygonShape3D
 		var pts := PackedVector3Array()
 		for p in shape.points:
-			pts.append(p * c._size)
+			pts.append(p * step * 0.05)
 		shape.points = pts
-		cs.shape = shape
-		c.add_child(cs)
-		c.collision_layer = 0
-		c.collision_mask = World.TERRAIN_LAYER  # bounces on the rock, never on dwarfs
-		c.mass = c._size * 3.0
-		var pm := PhysicsMaterial.new()
-		pm.bounce = 0.25
-		pm.friction = 0.8
-		c.physics_material_override = pm
-		parent.add_child(c)
-		c.global_position = center + Vector3(rng.randf_range(-0.6, 0.6), rng.randf_range(-0.4, 0.6), rng.randf_range(-0.6, 0.6))
-		c.global_basis = Basis.from_euler(Vector3(rng.randf() * TAU, rng.randf() * TAU, rng.randf() * TAU))
-		c.linear_velocity = (out * rng.randf_range(1.5, 3.5) + Vector3(rng.randf_range(-1.2, 1.2), rng.randf_range(0.5, 2.0), rng.randf_range(-1.2, 1.2)))
-		c.angular_velocity = Vector3(rng.randf_range(-6, 6), rng.randf_range(-6, 6), rng.randf_range(-6, 6))
-		_alive.append(c)
-	while _alive.size() > MAX_CHUNKS:
-		var old = _alive.pop_front()  # (untyped: it may already be gone)
-		if is_instance_valid(old):
-			old.queue_free()
+		_sized[key] = shape
+	return _sized[key]
+
+
+static func _heavy() -> PhysicsMaterial:
+	if _pm == null:
+		_pm = PhysicsMaterial.new()
+		_pm.bounce = 0.0
+		_pm.friction = 1.0
+		_pm.rough = true
+	return _pm
+
+
+## Get everything ready while the game loads (the first burst used to cost 30 ms, a hitch on your first dig).
+static func warm_up(parent: Node) -> void:
+	burst(parent, Vector3(0, -5000, 0), Vector3.UP, Color.GRAY, Mat.STONE)
+	for c in _alive:
+		c.queue_free()
+	_alive.clear()
 
 
 func _physics_process(delta: float) -> void:

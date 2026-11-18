@@ -434,6 +434,11 @@ function New-PlaySession($started, $ended, $videoPath, $title) {
     if ($playerLog) {
         Copy-Item -LiteralPath $playerLog.FullName -Destination (Join-Path $dir 'game-log.txt') -Force
     }
+    # The game's own slow-moment file (owner, Nov 18): written line by line, so robots can't push it aside.
+    $watch = Join-Path $logDir '..\watch.txt'
+    if ((Test-Path -LiteralPath $watch) -and (Get-Item -LiteralPath $watch).LastWriteTime -ge $started.AddSeconds(-5)) {
+        Copy-Item -LiteralPath $watch -Destination (Join-Path $dir 'watch.txt') -Force
+    }
 
     $branch = (& git -C $ProjectDir rev-parse --abbrev-ref HEAD 2>$null)
     $commit = (& git -C $ProjectDir rev-parse --short HEAD 2>$null)

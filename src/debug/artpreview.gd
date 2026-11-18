@@ -37,6 +37,10 @@ func _run() -> void:
 		await _procbench()
 		get_tree().quit()
 		return
+	if "digbench" in OS.get_cmdline_user_args():
+		await _digbench()
+		get_tree().quit()
+		return
 	if "chunkbench" in OS.get_cmdline_user_args():
 		await _chunkbench()
 		get_tree().quit()
@@ -346,3 +350,92 @@ func _avg_process() -> float:
 		await get_tree().process_frame
 		sum += Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0
 	return sum / 30.0
+
+
+## Mining's cost (owner, Nov 18: "43-47 FPS when I mine"): swing at the rock in front of the dwarf about twice a
+## second for 20 s, like a player, and print the frame time; the worst frames tell what a hit costs.
+func _digbench() -> void:
+	var dwarf: Dwarf = _main.dwarf
+	var auth := GameAuthority.instance
+	await _wait(6.0)
+	var space := dwarf.get_world_3d().direct_space_state
+	var p := dwarf.global_position + Vector3.UP * 0.5
+	var parts := {}
+	for k in 5:
+		var u := Time.get_ticks_usec()
+		auth.spawn_drop("stone", 1, p)
+		parts["drop"] = parts.get("drop", "") + " %.1f" % ((Time.get_ticks_usec() - u) / 1000.0)
+		u = Time.get_ticks_usec()
+		if auth.cave_life:
+			auth.cave_life.breakable_at(p)
+		parts["plants"] = parts.get("plants", "") + " %.1f" % ((Time.get_ticks_usec() - u) / 1000.0)
+		u = Time.get_ticks_usec()
+		auth.world.rock_material_near(p, 1.1)
+		parts["material"] = parts.get("material", "") + " %.1f" % ((Time.get_ticks_usec() - u) / 1000.0)
+		u = Time.get_ticks_usec()
+		auth._host_dig(p + Vector3(k * 2.0, -1.0, 0.0), 0)
+		parts["dig rock"] = parts.get("dig rock", "") + " %.1f" % ((Time.get_ticks_usec() - u) / 1000.0)
+		u = Time.get_ticks_usec()
+		RockShatter.burst(_main, p, Vector3.UP, Color.GRAY, Mat.STONE)
+		parts["chunks"] = parts.get("chunks", "") + " %.1f" % ((Time.get_ticks_usec() - u) / 1000.0)
+		u = Time.get_ticks_usec()
+		ChunkSwarm.burst(_main, p, Color.GRAY, dwarf)
+		parts["bits"] = parts.get("bits", "") + " %.1f" % ((Time.get_ticks_usec() - u) / 1000.0)
+		u = Time.get_ticks_usec()
+		Fx.burst(_main, p, Color.GRAY, 16, 4.0)
+		parts["dust"] = parts.get("dust", "") + " %.1f" % ((Time.get_ticks_usec() - u) / 1000.0)
+		await get_tree().process_frame
+	print("DIG parts (ms, 5 tries each): ", parts)
+	var worst := 0.0
+	var frames := 0
+	var sum := 0.0
+	var t0 := Time.get_ticks_msec()
+	var swing := 0.0
+	var turns := 0
+	var dug := 0
+	var after := 0
+	var after_kind := ""
+	var after_worst := {}
+	var slow_after := {}
+	var count := {}
+	var cost := {}
+	while Time.get_ticks_msec() - t0 < 20000:
+		var t := Time.get_ticks_usec()
+		await get_tree().process_frame
+		var ms := (Time.get_ticks_usec() - t) / 1000.0
+		frames += 1
+		sum += ms
+		if frames > 5:
+			worst = maxf(worst, ms)
+		if after > 0:
+			after -= 1
+			after_worst[after_kind] = maxf(after_worst.get(after_kind, 0.0), ms)
+			if ms > 25.0:
+				slow_after[after_kind] = slow_after.get(after_kind, 0) + 1
+		swing += ms / 1000.0
+		if swing > 0.5:
+			swing = 0.0
+			var fwd := -Basis(Vector3.UP, dwarf._yaw).z
+			var from := dwarf.global_position + Vector3.UP * 1.2
+			var q := PhysicsRayQueryParameters3D.create(from, from + (fwd + Vector3.DOWN * 0.9).normalized() * 3.0, World.TERRAIN_LAYER)
+			var hit := space.intersect_ray(q)
+			if hit.is_empty():
+				dwarf._yaw += 0.7
+				turns += 1
+				continue
+			var u0 := Time.get_ticks_usec()
+			var r: Dictionary = auth.request_hit(1, hit.position, hit.normal)
+			var u1 := Time.get_ticks_usec()
+			dwarf._on_dig_feedback(1, r)
+			var u2 := Time.get_ticks_usec()
+			var k := String(r.get("state", "?"))
+			cost[k + " host"] = maxf(cost.get(k + " host", 0.0), (u1 - u0) / 1000.0)
+			cost[k + " effects"] = maxf(cost.get(k + " effects", 0.0), (u2 - u1) / 1000.0)
+			after_kind = String(r.get("state", "?"))
+			count[after_kind] = count.get(after_kind, 0) + 1
+			after = 20
+			if r.get("state", "") == "dug":
+				dug += 1
+	print("DIG frames=%d avg=%.1fms worst=%.1fms dug=%d turns=%d" % [frames, sum / frames, worst, dug, turns])
+	print("DIG worst ms inside the hit itself: ", cost)
+	print("DIG results ", count, " worst frame in the 20 frames after: ", after_worst, " frames over 25 ms after: ", slow_after)

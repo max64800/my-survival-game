@@ -42,6 +42,7 @@ var removed_strands: Array[int] = []  ## root-curtain strands broken so far (sav
 var removed_hroots: Array[String] = []  ## big hanging roots broken so far (saved)
 var pillars: RootPillars  ## giant root pillars (chop for wood)
 var pillar_chops := {}  ## pillar id -> how much wood it has given (saved)
+var tree_regrow := {}  ## broken Root Tree id -> seconds until it's whole again (saved)
 var boulders: Boulders  ## breakable boulders (stone)
 var boulder_hits := {}  ## boulder id -> hits taken (saved)
 var boulder_back := {}  ## broken boulder id -> seconds until a new one stands there (saved)
@@ -356,7 +357,10 @@ func request_chop_pillar(peer_id: int, id: int) -> void:
 		return
 	var used: int = pillar_chops.get(id, 0)
 	if used >= RootPillars.CHOPS:
-		_tell_feedback(peer_id, {state = "blocked", point = axis, why = "Only a stump is left."})
+		var left: float = tree_regrow.get(id, 0.0)
+		var step: int = {"broken": 0, "regrow1": 1, "regrow2": 2}.get(RootPillars.regrow_stage(left), 0)
+		_tell_feedback(peer_id, {state = "blocked", point = axis,
+			why = "Growing back from both ends (step %d of 3, whole in %d min). Leave it be." % [step, ceili(left / 60.0)]})
 		return
 	if p.stage != "tree":
 		_tell_feedback(peer_id, {state = "blocked", point = axis, why = "Still growing. Leave it be."})
@@ -368,6 +372,7 @@ func request_chop_pillar(peer_id: int, id: int) -> void:
 	spawn_drop("rootwood", n, axis + out * float(p.width) * 0.18 + Vector3.UP * 0.4)
 	_ev_tree_used.rpc(id, used + n)
 	if used + n >= RootPillars.CHOPS:  # it cracks: 1-2 Root Seeds fall from it (owner, Nov 18)
+		tree_regrow[id] = RootPillars.REGROW_TIME
 		spawn_drop("root_seed", randi_range(1, 2), (p.bottom as Vector3) + out * float(p.width) * 0.25 + Vector3.UP * 1.0)
 	_tell_feedback(peer_id, {state = "done", kind = "root", point = axis + out * float(p.width) * 0.15})
 
@@ -417,6 +422,15 @@ func _ev_planted(e: Dictionary) -> void:
 
 ## Host: planted trees grow (a sprout halfway, a tree at the end); everyone's screen swaps it while nobody looks.
 func _tick_trees(delta: float) -> void:
+	for id in tree_regrow.keys():
+		var before := RootPillars.regrow_stage(tree_regrow[id])
+		tree_regrow[id] = maxf(0.0, tree_regrow[id] - delta)
+		var left: float = tree_regrow[id]
+		if RootPillars.regrow_stage(left) != before:
+			if left <= 0.0:
+				tree_regrow.erase(id)
+				pillar_chops.erase(id)
+			_ev_regrow.rpc(int(id), left)
 	for e in planted:
 		if e.grow <= 0.0:
 			continue
@@ -424,6 +438,14 @@ func _tick_trees(delta: float) -> void:
 		e.grow = maxf(0.0, e.grow - delta)
 		if RootPillars.stage_of(e.grow) != before:
 			_ev_grow.rpc(int(e.id), float(e.grow))
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_regrow(id: int, left: float) -> void:
+	if left <= 0.0:
+		pillar_chops.erase(id)
+	if pillars:
+		pillars.set_regrow(id, left)
 
 
 @rpc("authority", "call_local", "reliable")
@@ -2041,6 +2063,7 @@ func snapshot() -> Dictionary:
 			if glow._spots[id].get("chops", 1) != GlowPlacer.KINDS[glow._spots[id].kind].get("chops", 1):
 				chops[id] = glow._spots[id].chops
 	return {boulder_hits = boulder_hits.duplicate(), boulder_back = boulder_back.duplicate(),
+		tree_regrow = tree_regrow.duplicate(),
 		strands = removed_strands.duplicate(), hroots = removed_hroots.duplicate(), pillar_chops = pillar_chops.duplicate(),
 		planted = planted.duplicate(true),
 		edits = edit_log.duplicate(), glow = removed_glow.duplicate(), plants = removed_plants.duplicate(), drops = drops, next_drop = _next_drop_id,
@@ -2078,6 +2101,13 @@ func load_snapshot(snap: Dictionary) -> void:
 		removed_hroots.append(String(id))
 		if clutter:
 			clutter.hide_hroot(String(id))
+	for id in snap.get("tree_regrow", {}):  # broken Root Trees growing back from both ends
+		tree_regrow[int(id)] = float(snap.tree_regrow[id])
+		if pillars:
+			pillars.set_regrow(int(id), tree_regrow[int(id)])
+	for id in pillar_chops:  # (trees broken in older saves start growing back now)
+		if pillar_chops[id] >= RootPillars.CHOPS and not tree_regrow.has(id):
+			tree_regrow[id] = RootPillars.REGROW_TIME
 	for id in snap.get("plant_regrow", {}):  # small roots growing back
 		plant_regrow[int(id)] = float(snap.plant_regrow[id])
 	for c in snap.edits:

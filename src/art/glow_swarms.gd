@@ -28,7 +28,8 @@ func build(maker: CaveMaker, trunks: Array = []) -> void:
 	for ri in maker.rooms.size():
 		var room: Dictionary = maker.rooms[ri]
 		var roll := rng.randf()
-		var count := 5 if ri == 0 else ((rng.randi_range(2, 3) if room.big else 1) if roll < SHARE else 0)
+		# one big tight swarm per cave (owner, Nov 18: "just put 1 [in the first cave], but a lot more in the pack")
+		var count := 1 if ri == 0 or roll < (SHARE if room.big else 0.5) else 0
 		if room.get("sealed", false) or room.radii.y < 3.0:
 			count = 0
 		for k in count:
@@ -36,7 +37,7 @@ func build(maker: CaveMaker, trunks: Array = []) -> void:
 
 
 func _make(maker: CaveMaker, room: Dictionary, rng: RandomNumberGenerator, mesh: Mesh) -> Dictionary:
-	var n := rng.randi_range(150, 220)
+	var n := 650 if room == maker.rooms[0] else rng.randi_range(300, 450)
 	var mat := StandardMaterial3D.new()
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat.vertex_color_use_as_albedo = true
@@ -62,7 +63,17 @@ func _make(maker: CaveMaker, room: Dictionary, rng: RandomNumberGenerator, mesh:
 		f = Vector3(rng.randf_range(0.05, 0.09), rng.randf_range(0.07, 0.12), rng.randf_range(0.05, 0.09)),  # loop speeds
 		ph = Vector3(rng.randf() * TAU, rng.randf() * TAU, rng.randf() * TAU), head = Vector3.ZERO, prev = Vector3.ZERO,
 		along = PackedFloat32Array(), off = PackedVector2Array(), lag = PackedFloat32Array(), tw = PackedFloat32Array(),
-		pos = PackedVector3Array()}
+		pos = PackedVector3Array(), ring = PackedFloat32Array(), band = 0.0,
+		w = rng.randf_range(0.035, 0.06) * (1.0 if rng.randf() < 0.5 else -1.0), gap = rng.randf_range(2.5, 4.0)}
+	# Along the walls (owner, Nov 18: "in front of the ceiling I don't see them, in front of the wall it looks cool"):
+	# how far the wall is from the cave's middle in 48 directions, at the height they fly.
+	sw.band = fl + minf(2.5, r.y * 1.55 * 0.35) + 1.0
+	for k in 48:
+		var a := k * TAU / 48.0
+		var dir := Vector3(cos(a), 0.0, sin(a))
+		var start := Vector3(c.x, sw.band, c.z)
+		var hit := GlowPlacer._march(maker, start, dir, maxf(r.x, r.z) * 1.6) if maker.sdf_at(start) > 0.0 else Vector3.INF
+		sw.ring.append(Vector2(hit.x - c.x, hit.z - c.z).length() if hit != Vector3.INF else minf(r.x, r.z) * 0.8)
 	for i in n:
 		var a := rng.randf() * TAU
 		var d := sqrt(rng.randf())
@@ -84,13 +95,15 @@ func _head_at(sw: Dictionary, t: float) -> Vector3:
 	var ph: Vector3 = sw.ph
 	var c: Vector3 = sw.c
 	var r: Vector3 = sw.r
-	var x := sin(t * f.x + ph.x) * 0.55 + sin(t * f.x * 2.3 + ph.y) * 0.12
-	var z := cos(t * f.z + ph.z) * 0.55 + sin(t * f.z * 1.7 + ph.x) * 0.12
-	var y := 0.5 + 0.5 * sin(t * f.y + ph.y)
-	# off the floor but well under the star ceiling (owner, Nov 18: up high they blended with the glow-worm stars):
-	# from 2.5 m up to about the middle of the cave
-	var low: float = float(sw.fl) + minf(2.5, float(sw.tall) * 0.35)
-	var p := Vector3(c.x + x * r.x, low + y * maxf(0.5, sw.tall * 0.5 - (low - sw.fl)), c.z + z * r.z)
+	# round the cave a few metres in front of its walls, drifting nearer and further, rising and dipping a little
+	var a: float = ph.x + t * float(sw.w) + sin(t * f.x * 1.7 + ph.y) * 0.25
+	var ring: PackedFloat32Array = sw.ring
+	var u := fposmod(a / TAU * ring.size(), float(ring.size()))
+	var i0 := int(u) % ring.size()
+	var wall: float = lerpf(ring[i0], ring[(i0 + 1) % ring.size()], u - floorf(u))
+	var d := maxf(1.5, wall - float(sw.gap) - sin(t * f.z + ph.z) * 1.0)
+	var y: float = float(sw.band) + sin(t * f.y + ph.y) * minf(1.5, float(sw.tall) * 0.15)
+	var p := Vector3(c.x + cos(a) * d, y, c.z + sin(a) * d)
 	return _round_trunks(p, 1.2)
 
 
@@ -146,10 +159,16 @@ func _process(delta: float) -> void:
 		var fwd := vel.normalized() if speed > 0.01 else Vector3.FORWARD
 		var side := fwd.cross(Vector3.UP).normalized() if absf(fwd.y) < 0.95 else Vector3.RIGHT
 		var up := side.cross(fwd)
-		var length := 1.4 + speed * 2.2  # stretches out when it moves faster: a droplet
-		var radius := 0.9
+		var length := 0.8 + speed * 1.4  # stretches out when it moves faster: a droplet
+		var radius := 0.45  # (owner, Nov 18: "a lot tighter together")
 		var pos: PackedVector3Array = sw.pos
 		var mm: MultiMesh = (sw.mmi as MultiMeshInstance3D).multimesh
+		var buf: PackedFloat32Array = sw.get("buf", PackedFloat32Array())
+		if buf.size() != pos.size() * 16:
+			buf.resize(pos.size() * 16)
+		var tr: float = sw.tint.r
+		var tg: float = sw.tint.g
+		var tb: float = sw.tint.b
 		for i in pos.size():
 			var s: float = sw.along[i]
 			var o: Vector2 = sw.off[i]
@@ -163,8 +182,15 @@ func _process(delta: float) -> void:
 			# a firefly's blink: mostly dim, then a short bright flash, each on its own beat (stars just twinkle)
 			var beat := fposmod(_time * (0.35 + 0.25 * fposmod(w, 1.0)) + w, 1.0)
 			var glow := 0.15 + 0.85 * clampf(1.0 - absf(beat - 0.5) * 6.0, 0.0, 1.0)
-			mm.set_instance_transform(i, Transform3D(Basis.from_scale(Vector3.ONE * (0.7 + 0.5 * glow)), pos[i]))
-			mm.set_instance_color(i, Color(sw.tint.r, sw.tint.g, sw.tint.b, (0.5 + 0.5 * glow) * fade))
+			var sc := 0.7 + 0.5 * glow
+			var q := pos[i]
+			var bo := i * 16  # one firefly: its 3x4 transform, then its colour, all sent in one go (650 in a pack)
+			buf[bo] = sc; buf[bo + 1] = 0.0; buf[bo + 2] = 0.0; buf[bo + 3] = q.x
+			buf[bo + 4] = 0.0; buf[bo + 5] = sc; buf[bo + 6] = 0.0; buf[bo + 7] = q.y
+			buf[bo + 8] = 0.0; buf[bo + 9] = 0.0; buf[bo + 10] = sc; buf[bo + 11] = q.z
+			buf[bo + 12] = tr; buf[bo + 13] = tg; buf[bo + 14] = tb; buf[bo + 15] = (0.5 + 0.5 * glow) * fade
+		mm.buffer = buf
+		sw.buf = buf
 		sw.pos = pos
 
 

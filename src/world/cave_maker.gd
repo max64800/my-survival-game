@@ -2220,6 +2220,8 @@ func material_at(p: Vector3i) -> int:
 	var pal: Dictionary = Mat.PALETTES[biome_at(pf)]
 	if _is_ore(p):
 		return pal.ore
+	if made_layout >= 13 and _in_first_cave(pf):
+		return pal.rock  # all rock, so new players see how breaking rock works (owner, Nov 18)
 	var s := _smooth_at(pf)
 	if _smooth_at(pf + Vector3.UP) > 0.0:
 		return pal.floor
@@ -2230,6 +2232,16 @@ func material_at(p: Vector3i) -> int:
 	if s > -2.5 and _dirt_noise.get_noise_3dv(pf) > 0.35:
 		return pal.under
 	return pal.rock
+
+
+## Inside (or in the walls of) the first cave: its egg shape, 3 m into the rock.
+func _in_first_cave(p: Vector3) -> bool:
+	if rooms.is_empty():
+		return false
+	var c: Vector3 = rooms[0].center
+	var r: Vector3 = rooms[0].radii
+	var q := Vector3((p.x - c.x) / (r.x + 3.0), (p.y - c.y) / (r.y + 3.0), (p.z - c.z) / (r.z + 3.0))
+	return q.length_squared() < 1.0
 
 
 ## Edge or border rock at p, or -1 if p is inside a biome (or an open gate stub).

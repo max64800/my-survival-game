@@ -611,6 +611,8 @@ func _on_dig_feedback(pid: int, result: Dictionary) -> void:
 	var at: Vector3 = result.point
 	var col := Fx.material_color(result.get("material", Mat.STONE))
 	var soft: bool = result.get("material", Mat.STONE) in [Mat.MOSS, Mat.DIRT, Mat.CLAY]
+	if result.get("state", "") in ["hit", "dug"]:
+		FreezeWatch.hits += 1
 	match result.get("state", ""):
 		"hit":
 			if not soft:  # cracks spread on rock with each hit (F261); dirt and moss just crumble

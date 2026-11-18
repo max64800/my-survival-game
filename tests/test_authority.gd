@@ -596,3 +596,37 @@ func test_root_tree_is_solid_outside() -> void:
 		var ok := not hit.is_empty() and Vector2(hit.position.x - mid.x, hit.position.z - mid.z).length() > float(p.width) * 0.15
 		check(ok, "side %d: bumps into the bark, not into the middle" % k)
 	_teardown()
+
+
+## A broken Root Tree grows back from both ends (owner, Nov 18): steps at 15 and 30 minutes, whole at 45, and it can't
+## be chopped until then; then it gives wood again.
+func test_root_tree_regrows_from_both_ends() -> void:
+	await _setup(42)
+	var rp := RootPillars.new()
+	auth.get_parent().add_child(rp)
+	rp.build(world.maker)
+	auth.pillars = rp
+	var p := rp.pillar(0)
+	if p.is_empty():
+		check(false, "there's a tree")
+		_teardown()
+		return
+	player.global_position = (p.bottom as Vector3) + Vector3(p.width * 0.15 + 1.0, 0.1, 0.0)
+	for i in RootPillars.CHOPS:
+		auth.request_chop_pillar(1, 0)
+	check(auth.tree_regrow.has(0), "it starts growing back")
+	check_eq(rp.pillar(0).want_stage, "broken", "a stump and a crown")
+	auth._tick_trees(16 * 60.0)
+	check_eq(rp.pillar(0).want_stage, "regrow1", "after 15 minutes: step 1")
+	var before: int = auth.pillar_chops.get(0, 0)
+	auth.request_chop_pillar(1, 0)
+	check_eq(auth.pillar_chops.get(0, 0), before, "can't chop it while it grows")
+	auth._tick_trees(15 * 60.0)
+	check_eq(rp.pillar(0).want_stage, "regrow2", "after 30 minutes: step 2")
+	check(auth.snapshot().tree_regrow.has(0), "saved")
+	auth._tick_trees(15 * 60.0)
+	check_eq(rp.pillar(0).want_stage, "tree", "after 45 minutes: whole again")
+	check(not auth.tree_regrow.has(0), "done growing")
+	auth.request_chop_pillar(1, 0)
+	check(auth.pillar_chops.get(0, 0) == 0 or rp.pillar(0).stage != "tree", "waits until nobody looks, then chops again")
+	_teardown()

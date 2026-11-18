@@ -16,6 +16,10 @@ const CHOPS := 30  ## wood a Root Tree gives before it cracks
 const STAGE_CHOPS := [10, 20]  ## chunks of wood burst off here
 const GROW_TIME := 3600.0  ## seconds from planting to a full tree (a sprout halfway)
 const PLANTED_ID := 10000  ## planted trees' ids start here
+## A broken tree grows back from both ends (owner, Nov 18): the stump grows up and the ceiling crown grows down, a step
+## every 15 minutes, and after 45 they meet in the middle: a full tree again.
+const REGROW_TIME := 2700.0
+const REGROW_STRETCH := {"regrow1": 1.5, "regrow2": 2.1}  ## how far the stump and crown reach (x their broken size)
 const WOOD := Color(0.42, 0.28, 0.17)
 
 var _trees := {}  ## id -> {top, bottom, width, model, spin, body, used, stage, want_stage}
@@ -116,13 +120,16 @@ func _show(id: int, stage: String) -> void:
 	var h: float = top.y - (t.bottom as Vector3).y
 	var flip := Basis(Vector3.RIGHT, PI) * Basis(Vector3.UP, t.spin)
 	match stage:
-		"tree", "broken":
+		"tree", "broken", "regrow1", "regrow2":
 			var paths: Array = [MODELS[t.model]] if stage == "tree" else [STUMP, CROWN]
+			var k: float = REGROW_STRETCH.get(stage, 1.0)
 			for path in paths:
 				var scene := load(path) as PackedScene
 				if scene:
 					var m := scene.instantiate() as Node3D
-					m.basis = flip * Basis.from_scale(Vector3(t.width, h, t.width))
+					m.basis = flip * Basis.from_scale(Vector3(t.width, h * k, t.width))
+					if path == STUMP:
+						m.position = Vector3.UP * h * (k - 1.0)  # the stump grows up from the floor (the crown down from the ceiling)
 					body.add_child(m)
 					_add_skin(body, m)  # solid all the way round its bark (owner, Nov 18: "I can walk fully inside")
 		"seed", "sprout":
@@ -189,6 +196,7 @@ func set_used(id: int, used: int, burst := true) -> void:
 			for k in 3:
 				RockShatter.burst(get_parent(), (t.top as Vector3).lerp(t.bottom, 0.55 + 0.15 * k), Vector3(cos(k * 2.1), 0.4, sin(k * 2.1)), WOOD)
 		_show(id, "broken")
+		t.want_stage = "broken"
 
 
 ## A tree planted by a player (from the host): {id, pos (floor), top (ceiling), grow (seconds left), model, spin}.
@@ -199,6 +207,26 @@ func add_planted(e: Dictionary) -> void:
 	var p := {top = (e.top as Vector3) + Vector3.UP * 0.3, bottom = (e.pos as Vector3) - Vector3.UP * 0.3,
 		width = maxf(5.0, h * 0.6), model = int(e.model), spin = float(e.spin)}
 	_add_tree(int(e.id), p, stage_of(float(e.grow)))
+
+
+## Regrowing a broken tree: which step it's at with `left` seconds to go.
+static func regrow_stage(left: float) -> String:
+	if left > REGROW_TIME * 2.0 / 3.0:
+		return "broken"
+	if left > REGROW_TIME / 3.0:
+		return "regrow1"
+	if left > 0.0:
+		return "regrow2"
+	return "tree"
+
+
+## From the host: broken tree `id` has `left` seconds until it's whole (0 = whole again, ready to chop).
+func set_regrow(id: int, left: float) -> void:
+	if not _trees.has(id):
+		return
+	_trees[id].want_stage = regrow_stage(left)
+	if left <= 0.0:
+		_trees[id].used = 0
 
 
 static func stage_of(grow_left: float) -> String:
@@ -223,7 +251,7 @@ func _process(delta: float) -> void:
 	var cam := get_viewport().get_camera_3d()
 	for id in _trees:
 		var t: Dictionary = _trees[id]
-		if t.want_stage == t.stage or t.stage == "broken":
+		if t.want_stage == t.stage:
 			continue
 		var mid: Vector3 = (t.top as Vector3).lerp(t.bottom, 0.5)
 		var seen := cam != null and cam.global_position.distance_to(mid) < 60.0 and cam.is_position_in_frustum(mid)

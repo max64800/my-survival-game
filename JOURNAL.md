@@ -3558,3 +3558,26 @@ the body."
   so it said nothing; renamed. The log now writes a LOW FPS line with the reason (frame, physics, graphics card, draw
   calls, triangles) whenever it drops under 20. Answered: the 3 other creature looks are the rare crystal creatures.
 - Claude's slip: last time F324 was added under "Done" instead of "Open"; moved.
+
+## November 18, 2026 (PC, cave Claude): rock first cave, heavy chunks, mining speed, one wall-hugging swarm, Root Trees regrow, mushroom grass
+
+- Owner: first cave all rock; chunks too soft and bouncy; fireflies: 1 swarm in the first cave, many more and tighter,
+  flying in front of the walls (not the ceiling); find the FPS drop (43-47, probably mining); to-do: tree moss;
+  Root Trees regrow in 3 steps from both ends; then "small mushroom grass just in the first cave on most surfaces".
+- Grass pictures first: ChatGPT made the 6 ideas and a mixed cave floor (docs/design/pictures/cave-grass-*.png).
+- FPS: the owner's log stopped at "ready to play": other sessions' test robots start Godot on the same PC and push the
+  log aside. Now the game also writes user://watch.txt line by line (the recorder copies it as watch.txt) and logs
+  every drop under 50 FPS with rock hits and flying chunks. Measured with a digging robot: the host's dig check (voxel
+  edit) 3-11 ms, each chunk burst 8-10 ms (new shapes, materials and physics settings for every chunk), and 10-30 ms the
+  very first time for chunks, drops, dust and flying bits. Fixes: shared, ready-made shapes and materials; a warm-up while
+  loading. Worst frame after a dig 47 → 28 ms. Rock chunks were not the 6 FPS cause (3 boulders' worth: 2 ms).
+- Chunks: no bounce, heavier, faster fall, thrown out sideways. Fireflies: one swarm per cave (650 in the first), twice
+  as tight, circling 2.5-4 m in front of the walls (wall distance measured in 48 directions), drawn in one go.
+- Root Trees grow back: stump and crown stretch toward each other at 15 and 30 min, whole at 45; saved; can't chop early.
+- First cave all rock (new worlds): checked 30 floor spots, all Stone.
+- Mushroom grass: 3 hand-built tufts (round 2: a soil plate under them read as a white disc, removed; feet go into the
+  floor); ~4,000+ tufts over most of the first cave, clear of the tower, bridges, columns, paths, trees; drawn only within
+  26 m in 12 m patches; dug rock removes them.
+- Hurdles: a variable named twice in the firefly code (caught by a parse error); another session's new Statue file
+  needed an import before the game would start; the first grass plan found only 1,500 spots because its floor search
+  started inside the rock near the walls.

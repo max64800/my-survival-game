@@ -14,6 +14,27 @@ const FROZEN_AFTER := 3.0
 ## What the game is busy with right now, for the log ("loading the cave", "building the outpost"...). Set it before
 ## anything big.
 static var doing := "starting"
+## Rock hits in the last few seconds (the dwarf counts them), so a slow moment says if you were mining.
+static var hits := 0
+
+## The player's own watch file (owner, Nov 18: the game log lost every line after "ready to play", because test
+## robots on the same PC push the log aside). Every line also goes here, written at once: user://watch.txt.
+static var _file: FileAccess
+static var _lock := Mutex.new()
+
+
+static func open_player_file() -> void:
+	_file = FileAccess.open("user://watch.txt", FileAccess.WRITE)
+	_say("PLAYER GAME watch started " + Time.get_datetime_string_from_system())
+
+
+static func _say(line: String) -> void:
+	print(line)
+	_lock.lock()
+	if _file:
+		_file.store_line(line)
+		_file.flush()
+	_lock.unlock()
 
 var _beat_ms := 0  ## the last time the game finished a frame (written by the game, read by the helper)
 var _quit := false
@@ -38,14 +59,14 @@ func _exit_tree() -> void:
 func _process(delta: float) -> void:
 	_beat_ms = Time.get_ticks_msec()
 	if delta > SLOW_FRAME:
-		print("[%s] SLOW FRAME: %.1f s (doing: %s)" % [_clock(), delta, doing])
+		_say("[%s] SLOW FRAME: %.1f s (doing: %s)" % [_clock(), delta, doing])
 	_low_check(delta)
 	_report_t += delta
 	if _report_t >= REPORT_EVERY:
 		_report_t = 0.0
 		var cam := get_viewport().get_camera_3d()
 		var at := cam.global_position if cam else Vector3.ZERO
-		print("[%s] FPS %d · at (%.0f, %.0f, %.0f) · doing: %s" % [_clock(), Engine.get_frames_per_second(), at.x, at.y, at.z, doing])
+		_say("[%s] FPS %d · at (%.0f, %.0f, %.0f) · doing: %s" % [_clock(), Engine.get_frames_per_second(), at.x, at.y, at.z, doing])
 
 
 ## Low frame rate (owner, Nov 18: "sometimes it's 6 FPS, then very smooth again"): once a second, if it's under 20 FPS,
@@ -63,18 +84,20 @@ func _low_check(delta: float) -> void:
 	var vp := get_viewport().get_viewport_rid()
 	RenderingServer.viewport_set_measure_render_time(vp, true)
 	var fps := Engine.get_frames_per_second()
-	if fps >= 20 or _low_quiet > 0.0:
+	if fps >= 50 or _low_quiet > 0.0:  # (owner, Nov 18: drops to 43-47 FPS matter too)
 		return
 	_low_quiet = 10.0
+	var recent_hits := hits
+	hits = 0
 	var cam := get_viewport().get_camera_3d()
 	var at := cam.global_position if cam else Vector3.ZERO
-	print("[%s] LOW FPS %d at (%.0f, %.0f, %.0f) · whole frame %.1f ms · physics %.1f ms · drawing: cpu %.1f ms, graphics card %.1f ms · %d draw calls, %dk triangles · %d nodes, %d moving physics bodies, %d collision pairs · doing: %s" % [
+	_say("[%s] LOW FPS %d at (%.0f, %.0f, %.0f) · whole frame %.1f ms · physics %.1f ms · drawing: cpu %.1f ms, graphics card %.1f ms · %d draw calls, %dk triangles · %d nodes, %d moving physics bodies, %d collision pairs · rock hits lately: %d, flying rock chunks: %d · doing: %s" % [
 		_clock(), fps, at.x, at.y, at.z,
 		Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0, Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0,
 		RenderingServer.viewport_get_measured_render_time_cpu(vp), RenderingServer.viewport_get_measured_render_time_gpu(vp),
 		Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME), Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME) / 1000,
 		Performance.get_monitor(Performance.OBJECT_NODE_COUNT), Performance.get_monitor(Performance.PHYSICS_3D_ACTIVE_OBJECTS),
-		Performance.get_monitor(Performance.PHYSICS_3D_COLLISION_PAIRS), doing])
+		Performance.get_monitor(Performance.PHYSICS_3D_COLLISION_PAIRS), recent_hits, RockShatter._alive.size(), doing])
 
 
 ## The helper thread: checks twice a second whether the game is still finishing frames.
@@ -84,9 +107,9 @@ func _watch() -> void:
 		var stuck := (Time.get_ticks_msec() - _beat_ms) / 1000.0
 		if stuck > FROZEN_AFTER and _frozen_since == 0:
 			_frozen_since = _beat_ms
-			print("[%s] FROZEN: no frame for %.0f s (doing: %s)" % [_clock(), stuck, doing])
+			_say("[%s] FROZEN: no frame for %.0f s (doing: %s)" % [_clock(), stuck, doing])
 		elif _frozen_since != 0 and _beat_ms > _frozen_since:
-			print("[%s] UNFROZEN after %.1f s (doing: %s)" % [_clock(), (_beat_ms - _frozen_since) / 1000.0, doing])
+			_say("[%s] UNFROZEN after %.1f s (doing: %s)" % [_clock(), (_beat_ms - _frozen_since) / 1000.0, doing])
 			_frozen_since = 0
 
 

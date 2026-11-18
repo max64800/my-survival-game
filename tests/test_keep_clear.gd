@@ -101,3 +101,21 @@ func test_boulders_keep_clear() -> void:
 			check((q.pos as Vector3).distance_to(b.pos) >= 2.5, "a boulder not inside a place")
 	check(shapes.size() >= 12, "several shapes and stone looks (%d)" % shapes.size())
 	CaveMaker.use_layout(was)
+
+
+## Mushroom grass (owner, Nov 18): over most of the first cave's floor, never on kept-clear ground, bridges, columns
+## or paths.
+func test_mushroom_grass_keeps_clear() -> void:
+	var was := CaveMaker.layout
+	CaveMaker.use_layout(CaveMaker.LAYOUT_LATEST)
+	var m := CaveMaker.new(42)
+	var t0 := Time.get_ticks_msec()
+	var ts := MushroomGrass.plan(m)
+	check(ts.size() >= 3000, "lots of tufts in the first cave (%d)" % ts.size())
+	check(Time.get_ticks_msec() - t0 < 30000, "planned in under 30 s (%d ms)" % (Time.get_ticks_msec() - t0))
+	var bad := 0
+	for t in ts:
+		if m.is_reserved(t.pos, 0.8) or m.on_bridge(t.pos, 0.4) or m._in_column(t.pos, 0.4):
+			bad += 1
+	check_eq(bad, 0, "none on kept-clear ground, bridges or columns")
+	CaveMaker.use_layout(was)

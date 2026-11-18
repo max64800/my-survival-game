@@ -155,6 +155,7 @@ func _ready() -> void:
 	add_child(FreezeWatch.new())
 	if not Controls.robot:
 		print("PLAYER GAME (not a robot) started ", Time.get_datetime_string_from_system())
+		FreezeWatch.open_player_file()
 	if Controls.robot:
 		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_NO_FOCUS, true)
 	if debug_script != "":
@@ -341,6 +342,10 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	_boulders.name = "Boulders"
 	add_child(_boulders)
 	_boulders.build(world.maker, _pillars.near)
+	var mush := MushroomGrass.new()  # tiny mushroom grass over most of the first cave's floor (owner, Nov 18)
+	mush.name = "MushroomGrass"
+	add_child(mush)
+	mush.build(world.maker, world, _pillars.trunks)
 	var water := CaveWater.new()  # puddles (rings under the drips) and low mist (F190)
 	water.name = "CaveWater"
 	add_child(water)
@@ -616,6 +621,8 @@ func _process(delta: float) -> void:
 		_ready_to_play = true
 		FreezeWatch.doing = "playing"
 		print("[%s] ready to play" % Time.get_time_string_from_system())
+		RockShatter.warm_up(self)  # the first dig no longer hitches (owner, Nov 18)
+		Fx.burst(self, Vector3(0, -5000, 0), Color.GRAY, 16, 4.0)
 		dwarf.set_physics_process(true)
 		hud.set_loading(false)
 
