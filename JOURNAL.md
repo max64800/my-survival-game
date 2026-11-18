@@ -3429,3 +3429,9 @@ the body."
   look was too thin when tall, so width grows with height. A StaticBody with a cylinder on the terrain layer (you
   bump into it and aim at it); a swing calls ask_chop_pillar (host counts, saved as pillar_chops).
 - Tests: test_root_pillars (clear ground, floor to ceiling, enough of them), test_root_pillar_chops.
+
+## November 18, 2026 (PC, rock-textures Claude): glowing veins and spores (F190 part 1)
+- Veins: terrain.gdshader, on walls only, in some regions: the 0.5 line of a stretched 3D noise (thin wandering
+  lines), broken up by a second noise, teal or amber, slowly pulsing. Round 1 too many and loopy like worms;
+  round 2 thinner, rarer, in pieces (owner checks).
+- Spores: Ambience mossy mood spores 0 -> 0.7, 140 -> 260 motes, hue varies per spore.

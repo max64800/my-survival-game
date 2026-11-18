@@ -232,6 +232,20 @@ void fragment() {
 		}
 	}
 
+	// Glowing veins (owner, Nov 18, F190: "glowing veins in the rock walls that slowly pulse"): thin wandering lines of
+	// glowing mineral on some walls, cool teal or warm amber, each stretch slowly brightening and fading like the crystals.
+	float vwall = 1.0 - smoothstep(0.5, 0.85, abs(wn.y));
+	float vregion = smoothstep(0.63, 0.75, vnoise(v_world * 0.03 + vec3(19.0, 3.0, 11.0)));  // only some walls have them
+	if (vwall * vregion > 0.0) {
+		float ridge = abs(vnoise(v_world * vec3(0.32, 0.8, 0.32) + vec3(5.0, 1.0, 9.0)) * 2.0 - 1.0);  // thin where it crosses 0.5
+		float vline = (1.0 - smoothstep(0.0, 0.032, ridge)) * smoothstep(0.42, 0.58, vnoise(v_world * 0.45 + vec3(3.0, 7.0, 2.0)));  // thin, in broken pieces
+		float vhue = vnoise(v_world * 0.02 + vec3(2.0, 8.0, 1.0));
+		vec3 vcol = vhue > 0.55 ? vec3(1.0, 0.62, 0.25) : vec3(0.3, 0.95, 0.8);
+		float vbreath = 0.5 + 0.5 * sin(TIME * 0.5 + vhue * 25.0 + v_world.y * 0.25);
+		col = mix(col, col * 0.6, vline * vwall * vregion * 0.5);  // the vein's groove a little darker in the light
+		emit += vcol * vline * vwall * vregion * (0.25 + 2.2 * vbreath * vbreath);
+	}
+
 	ALBEDO = col;
 	EMISSION = emit;
 	ROUGHNESS = rough;

@@ -12,7 +12,7 @@ const MOODS := {
 	"mossy": {
 		ambient = Color(0.33, 0.38, 0.42), ambient_energy = 0.4,  # (was 0.32: "somewhere with nothing... I don't see anything")
 		fog = Color(0.045, 0.05, 0.06), fog_emit = Color(0.012, 0.016, 0.022),
-		tint = Color(1.0, 0.98, 0.94), dust = Color(0.9, 0.8, 0.65, 0.55), spores = 0.0,
+		tint = Color(1.0, 0.98, 0.94), dust = Color(0.9, 0.8, 0.65, 0.55), spores = 0.7,  # (F190: drifting spores everywhere)
 	},
 	"fungal": {
 		ambient = Color(0.40, 0.33, 0.50), ambient_energy = 0.44,  # (was 0.36)
@@ -82,7 +82,7 @@ func _ready() -> void:
 	_cur = MOODS.mossy.duplicate()
 	_apply()
 	_dust = _make_motes(320, 0.022, false)
-	_spores = _make_motes(140, 0.035, true)
+	_spores = _make_motes(260, 0.035, true)  # (F190, owner Nov 18: more drifting glowing spores)
 
 
 func _process(delta: float) -> void:
@@ -194,6 +194,9 @@ func _make_motes(count: int, size: float, glowing: bool) -> GPUParticles3D:
 	pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
 	pm.emission_box_extents = Vector3(11, 5, 11)
 	pm.gravity = Vector3(0, 0.02 if glowing else -0.015, 0)
+	if glowing:  # each spore its own shade, violet to blue to pink (F190)
+		pm.hue_variation_min = -0.22
+		pm.hue_variation_max = 0.12
 	pm.initial_velocity_min = 0.0
 	pm.initial_velocity_max = 0.08
 	pm.direction = Vector3(0, 1, 0)
