@@ -4259,3 +4259,15 @@ the body."
   that allowed only the first three creatures to spawn); both now know about the spider. Not mine, still failing:
   `test_cave_layout2`, `test_dwarf` braid, `test_keep_clear` mushroom grass, `test_model_rules` build scripts,
   `test_visuals` shovel model.
+
+
+## November 19, 2026 (PC, snail Claude): to-do review with the owner (no game changes)
+- The owner answered multiple-choice questions on every part of the game. Caves, glow, digging and menus: 8/10, "good
+  for now, improve later". Plants: only things growing in wrong spots. Building: the crafting progress bar jumping
+  the menu (new F376) and structures turning blue in the build hammer menu (F101). Creatures: only bats. Dwarf:
+  animations and outfits need work, and that's next. Juice, progress and co-op: not tested yet, kept open.
+  New for later: a dwarf working at every crafting station (F377).
+- FEEDBACK.md went from 157 open items to 50; the 109 crossed-off items moved to FEEDBACK-done.md, marked "already
+  fixed" or "good for now (8/10)".
+- Hurdle: the list was well behind (many items were already fixed but never crossed off), and 3 numbers were used
+  twice (F261, F373, F374); they were told apart by their titles.
