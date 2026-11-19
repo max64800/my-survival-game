@@ -5460,3 +5460,12 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - Found: Deep Stout has no recipe, so nobody can make it (in the plan's questions).
 - **Hurdles:** the effect lists showed "+ +20%" (a bullet sign plus the number's own +); bullet changed to a dot.
   Also fixed an old guide line in the book (Copper Pickaxe said 8 bars; it's 15).
+
+## 2026-11-19 (Mac) — Food plan round 2 (F426)
+- Owner: only zone 1 recipes, no other-zone effects (like spore sickness); every food speeds healing (normal 1 health
+  every 5 s, best meals together 1 every 2 s); 2 foods + 1 drink at once; mark what is farmable.
+- `tools/craft_wiki/food_plan.json`: 12 zone 1 dishes + 4 drinks, each with a healing bonus (step 1 +0.02/s ... step 5
+  +0.15/s; best 2 dishes + best drink = exactly the 0.5/s cap). Jungle foods listed as "later". New ingredients table
+  (Farm Plot grows glowcap, hollowcap, bellcap; firecap, meats, root tuber are not farmable). Crafting Book rebuilt.
+- Found: the game heals 2 health a second today (Vitals.HEALTH_REGEN), not 1 every 3 s, so 1 every 5 s is a big slow-down.
+  Root Tuber has no source in the game (no chest holds it), so the 4 tuber recipes can't be made yet: asked the owner.

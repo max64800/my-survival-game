@@ -248,6 +248,8 @@ function draw() {
 /* food & drink: what each one does now, and the draft plan */
 const FP = D.food_plan, FOODS = D.foods || {};
 function fxText(key, v) {
+  if (key === "regen" && FP && FP.base_regen)  // healing speed: shown as "1 health every N s"
+    return `heal 1 health every ${(1 / (FP.base_regen + v)).toFixed(1)} s`;
   const t = (FP && FP.effects[key]) || key.replace(/_/g, " ") + " {p}%";
   return t.replace("{p}", Math.abs(v)).replace("{n}", Math.abs(v));
 }
@@ -286,10 +288,15 @@ if (FP) {
   el.innerHTML = `<div class="sec">
     <p class="draft"><b>Draft plan.</b> ${esc(FP.status)} The "Gives today" column is what the game does right now.</p>
     <ul class="rules">${FP.rules.map(t => `<li>${esc(t)}</li>`).join("")}</ul>
+    ${FP.ingredients ? `<h3>Zone 1 ingredients: can you farm it?</h3><div class="tablebox"><table><thead><tr><th>Ingredient</th><th>Farmable?</th><th>Where you get it</th></tr></thead><tbody>
+      ${Object.entries(FP.ingredients).filter(([i]) => I[i]).map(([i, g]) => `<tr><td><div class="made">${link(i)}</div></td>
+        <td><span class="lvl" style="${g.farm ? "" : "background:var(--slot);color:var(--muted)"}">${g.farm ? "Yes: Farm Plot" : "No"}</span></td>
+        <td class="small">${esc(g.where)}</td></tr>`).join("")}</tbody></table></div>` : ""}
     <h3>The 5 kitchen steps</h3>
     <div class="steps">${FP.kitchen.map(k => `<div class="step"><span class="num">Step ${k.step}</span><b>${esc(k.name)}</b><span class="small">needs ${esc(k.needs)}</span><span class="small">effects last ${k.minutes} min</span></div>`).join("")}</div>
     ${foodTable("Food", Object.keys(FP.dishes).filter(i => I[i]), "hunger", "Fills food")}
     ${foodTable("Drinks", Object.keys(FP.drinks).filter(i => I[i]), "thirst", "Fills water")}
+    ${FP.later ? `<p class="small">${esc(FP.later)}</p>` : ""}
     <h3>Questions for you</h3>
     <ol class="rules">${FP.questions.map(t => `<li>${esc(t)}</li>`).join("")}</ol></div>`;
 }

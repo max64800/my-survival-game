@@ -1,70 +1,255 @@
 {
-  "status": "DRAFT, Nov 19: not in the game yet. The owner checks it in the Crafting Book first.",
-  "rules": [
-    "Raw food and plain water only fill you up. Cooking is what gives an effect.",
-    "Harder to cook = stronger, more effects, lasts longer. 5 kitchen steps, from a bare campfire to a cooking pot with two helpers.",
-    "Each creature's meat protects you from that creature (eat bat, fear bats less). Beetle, spider, snail and bat each have a guard.",
-    "Dishes fill food, drinks fill water. Drinks lean towards 'lose water slower'; dishes towards health, stamina, guards and food.",
-    "You still have 3 effect slots. The same kind of effect from two dishes adds up, but each kind stops at 50%."
-  ],
-  "kitchen": [
-    {"step": 1, "at": "campfire", "level": 1, "name": "Campfire", "needs": "just the fire", "minutes": 15},
-    {"step": 2, "at": "campfire", "level": 2, "name": "Campfire level 2", "needs": "a Roasting Spit within 4 m (new helper, needs a model)", "minutes": 20},
-    {"step": 3, "at": "cooking_pot", "level": 1, "name": "Cooking Pot", "needs": "just the pot", "minutes": 25},
-    {"step": 4, "at": "cooking_pot", "level": 2, "name": "Cooking Pot level 2", "needs": "a Spice Shelf within 4 m (new helper, needs a model)", "minutes": 35},
-    {"step": 5, "at": "cooking_pot", "level": 3, "name": "Cooking Pot level 3", "needs": "a Spice Shelf and a Stone Oven within 4 m (new helper, needs a model)", "minutes": 45}
-  ],
-  "effects": {
-    "max_health": "+{p}% max health",
-    "max_stamina": "+{p}% max stamina",
-    "stamina_regen": "stamina refills {p}% faster",
-    "health_regen": "heals {n} health a minute",
-    "damage": "+{p}% damage",
-    "damage_taken": "take {p}% less damage from everything",
-    "dig_power": "+{p}% digging",
-    "spore_resist": "{p}% less spore sickness",
-    "hunger_slow": "lose food {p}% slower",
-    "thirst_slow": "lose water {p}% slower",
-    "guard_bat": "take {p}% less from bats",
-    "guard_beetle": "take {p}% less from beetles",
-    "guard_spider": "take {p}% less from spiders",
-    "guard_snail": "take {p}% less from snails",
-    "extra_drops": "{p}% chance of an extra drop from creatures"
+ "status": "DRAFT, Nov 19 (round 2): zone 1 foods only. Not in the game yet. The owner checks it in the Crafting Book first.",
+ "rules": [
+  "Only foods you can make in Zone 1 (Mossy Hollows). Fungal Jungle foods come later with that zone.",
+  "Raw food and plain water only fill you up. Cooking is what gives an effect.",
+  "Healing: you heal 1 health every 5 seconds on your own. Every food and drink speeds that up a little. The best meals together reach the top speed: 1 health every 2 seconds.",
+  "You can have 2 foods and 1 drink working at the same time.",
+  "Harder to cook = stronger, more effects, lasts longer. 5 kitchen steps, from a bare campfire to a cooking pot with two helpers.",
+  "Each creature's meat protects you from that creature (eat bat, fear bats less).",
+  "The same kind of effect from two foods adds up, but each kind stops at 50%."
+ ],
+ "kitchen": [
+  {
+   "step": 1,
+   "at": "campfire",
+   "level": 1,
+   "name": "Campfire",
+   "needs": "just the fire",
+   "minutes": 15
   },
-  "dishes": {
-    "dish_glowcap_skewer": {"step": 1, "effects": {"max_stamina": 10}},
-    "dish_seared_critter": {"step": 1, "effects": {"guard_bat": 15}},
-    "dish_cooked_snail": {"step": 1, "effects": {"guard_snail": 15}},
-    "dish_roasted_bug": {"step": 1, "effects": {"guard_spider": 15}},
-    "dish_beetle_roast": {"step": 1, "effects": {"guard_beetle": 15}},
-    "dish_stalk_steak": {"step": 1, "effects": {"hunger_slow": 15}},
-    "dish_firecap_skewer": {"step": 2, "effects": {"damage": 8, "guard_bat": 15}},
-    "dish_ember_skewer": {"step": 2, "effects": {"damage": 10, "guard_beetle": 15}},
-    "dish_tuber_mash": {"step": 3, "effects": {"hunger_slow": 25, "max_stamina": 10}},
-    "dish_hollowcap_stew": {"step": 3, "effects": {"max_health": 15, "guard_snail": 20}},
-    "dish_snail_stew": {"step": 3, "effects": {"max_health": 20, "guard_snail": 25}},
-    "dish_bug_stew": {"step": 3, "effects": {"max_stamina": 20, "guard_spider": 25}},
-    "dish_glow_broth": {"step": 3, "effects": {"stamina_regen": 20, "thirst_slow": 15}},
-    "dish_miners_pie": {"step": 4, "effects": {"dig_power": 8, "hunger_slow": 25, "max_health": 10}},
-    "dish_truffle_risotto": {"step": 4, "effects": {"max_stamina": 20, "extra_drops": 10}},
-    "dish_chitin_crunch": {"step": 4, "effects": {"damage_taken": 10, "guard_beetle": 20}},
-    "dish_spore_ward_stew": {"step": 4, "effects": {"spore_resist": 50, "health_regen": 6}},
-    "dish_bug_hotpot": {"step": 4, "effects": {"damage": 12, "guard_spider": 20}},
-    "dish_hearth_stew": {"step": 5, "effects": {"max_health": 20, "health_regen": 10, "hunger_slow": 30, "guard_bat": 20}},
-    "dish_jungle_pie": {"step": 5, "effects": {"max_health": 25, "extra_drops": 20, "guard_beetle": 20}}
+  {
+   "step": 2,
+   "at": "campfire",
+   "level": 2,
+   "name": "Campfire level 2",
+   "needs": "a Roasting Spit within 4 m (new helper, needs a model)",
+   "minutes": 20
   },
-  "drinks": {
-    "drink_bellcap_juice": {"step": 0, "at_note": "by hand", "minutes": 10, "effects": {"thirst_slow": 10}},
-    "drink_glowcap_tea": {"step": 3, "effects": {"stamina_regen": 10, "thirst_slow": 20}},
-    "drink_firecap_cordial": {"step": 4, "effects": {"damage": 6, "max_stamina": 5, "thirst_slow": 15}},
-    "drink_moss_ale": {"step": 4, "effects": {"max_stamina": 10, "max_health": 5, "thirst_slow": 25}},
-    "drink_spore_mead": {"step": 5, "effects": {"max_health": 15, "spore_resist": 25, "thirst_slow": 25}},
-    "drink_deep_stout": {"step": 5, "effects": {"damage_taken": 8, "thirst_slow": 30},
-      "note": "Has no recipe in the game yet, so nobody can make it. Idea: 2 root tuber, 1 spore truffle, 1 hollowcap, 2 water at Cooking Pot level 3, makes 3."}
+  {
+   "step": 3,
+   "at": "cooking_pot",
+   "level": 1,
+   "name": "Cooking Pot",
+   "needs": "just the pot",
+   "minutes": 25
   },
-  "questions": [
-    "The three new kitchen helpers (Roasting Spit, Spice Shelf, Stone Oven): OK? Each needs a model in our workbench style.",
-    "Deep Stout has no recipe yet: use the idea above?",
-    "Raw food and plain water give no effect: OK?"
-  ]
+  {
+   "step": 4,
+   "at": "cooking_pot",
+   "level": 2,
+   "name": "Cooking Pot level 2",
+   "needs": "a Spice Shelf within 4 m (new helper, needs a model)",
+   "minutes": 35
+  },
+  {
+   "step": 5,
+   "at": "cooking_pot",
+   "level": 3,
+   "name": "Cooking Pot level 3",
+   "needs": "a Spice Shelf and a Stone Oven within 4 m (new helper, needs a model)",
+   "minutes": 45
+  }
+ ],
+ "effects": {
+  "max_health": "+{p}% max health",
+  "max_stamina": "+{p}% max stamina",
+  "stamina_regen": "stamina refills {p}% faster",
+  "damage": "+{p}% damage",
+  "damage_taken": "take {p}% less damage from everything",
+  "dig_power": "+{p}% digging",
+  "hunger_slow": "lose food {p}% slower",
+  "thirst_slow": "lose water {p}% slower",
+  "guard_bat": "take {p}% less from bats",
+  "guard_beetle": "take {p}% less from beetles",
+  "guard_spider": "take {p}% less from spiders",
+  "guard_snail": "take {p}% less from snails",
+  "extra_drops": "{p}% chance of an extra drop from creatures",
+  "regen": "heal faster: +{n} health a second"
+ },
+ "dishes": {
+  "dish_glowcap_skewer": {
+   "step": 1,
+   "effects": {
+    "regen": 0.02,
+    "max_stamina": 10
+   }
+  },
+  "dish_seared_critter": {
+   "step": 1,
+   "effects": {
+    "regen": 0.02,
+    "guard_bat": 15
+   }
+  },
+  "dish_cooked_snail": {
+   "step": 1,
+   "effects": {
+    "regen": 0.02,
+    "guard_snail": 15
+   }
+  },
+  "dish_roasted_bug": {
+   "step": 1,
+   "effects": {
+    "regen": 0.02,
+    "guard_spider": 10,
+    "guard_beetle": 10
+   }
+  },
+  "dish_firecap_skewer": {
+   "step": 2,
+   "effects": {
+    "regen": 0.04,
+    "damage": 8,
+    "guard_bat": 15
+   }
+  },
+  "dish_tuber_mash": {
+   "step": 3,
+   "effects": {
+    "regen": 0.06,
+    "hunger_slow": 25,
+    "max_stamina": 10
+   }
+  },
+  "dish_hollowcap_stew": {
+   "step": 3,
+   "effects": {
+    "regen": 0.06,
+    "max_health": 15,
+    "guard_snail": 20
+   }
+  },
+  "dish_snail_stew": {
+   "step": 3,
+   "effects": {
+    "regen": 0.06,
+    "max_health": 20,
+    "guard_snail": 25
+   }
+  },
+  "dish_bug_stew": {
+   "step": 3,
+   "effects": {
+    "regen": 0.06,
+    "max_stamina": 20,
+    "guard_spider": 20,
+    "guard_beetle": 15
+   }
+  },
+  "dish_glow_broth": {
+   "step": 3,
+   "effects": {
+    "regen": 0.06,
+    "stamina_regen": 20,
+    "thirst_slow": 15
+   }
+  },
+  "dish_miners_pie": {
+   "step": 4,
+   "effects": {
+    "regen": 0.1,
+    "dig_power": 8,
+    "hunger_slow": 25,
+    "max_health": 10
+   }
+  },
+  "dish_hearth_stew": {
+   "step": 5,
+   "effects": {
+    "regen": 0.15,
+    "max_health": 20,
+    "hunger_slow": 30,
+    "guard_bat": 20
+   }
+  }
+ },
+ "drinks": {
+  "drink_bellcap_juice": {
+   "step": 0,
+   "at_note": "by hand",
+   "minutes": 10,
+   "effects": {
+    "regen": 0.01,
+    "thirst_slow": 10
+   }
+  },
+  "drink_glowcap_tea": {
+   "step": 3,
+   "effects": {
+    "regen": 0.03,
+    "stamina_regen": 10,
+    "thirst_slow": 20
+   }
+  },
+  "drink_firecap_cordial": {
+   "step": 4,
+   "effects": {
+    "regen": 0.05,
+    "damage": 6,
+    "max_stamina": 5,
+    "thirst_slow": 15
+   }
+  },
+  "drink_moss_ale": {
+   "step": 4,
+   "effects": {
+    "regen": 0.05,
+    "max_stamina": 10,
+    "max_health": 5,
+    "thirst_slow": 25
+   }
+  }
+ },
+ "questions": [
+  "The three new kitchen helpers (Roasting Spit, Spice Shelf, Stone Oven): OK? Each needs a model in our workbench style.",
+  "Raw food and plain water give no effect: OK?",
+  "Root Tuber: the game's chests don't hold any right now, so the 4 tuber recipes can't be made yet. Put tubers in zone 1 chests?"
+ ],
+ "base_regen": 0.2,
+ "max_regen": 0.5,
+ "later": "Fungal Jungle foods, kept for zone 2: Beetle Roast, Ember Skewer, Stalk Steak, Truffle Risotto, Shell Crunch, Spore Ward Stew, Bug Hotpot, Jungle Pie, Spore Mead, Deep Stout.",
+ "ingredients": {
+  "glowcap": {
+   "farm": true,
+   "where": "wild on cave floors, or grow it in a Farm Plot"
+  },
+  "hollowcap": {
+   "farm": true,
+   "where": "wild on cave floors, or grow it in a Farm Plot"
+  },
+  "bellcap": {
+   "farm": true,
+   "where": "wild on cave floors, or grow it in a Farm Plot"
+  },
+  "firecap": {
+   "farm": false,
+   "where": "wild only (rare, glows red on cave floors)"
+  },
+  "root_tuber": {
+   "farm": false,
+   "where": "only in chests"
+  },
+  "bat_meat": {
+   "farm": false,
+   "where": "hunt cave bats"
+  },
+  "snail_meat": {
+   "farm": false,
+   "where": "hunt rock snails"
+  },
+  "bug_meat": {
+   "farm": false,
+   "where": "hunt rock beetles or cave spiders"
+  },
+  "water_bucket": {
+   "farm": false,
+   "where": "a Drip Bucket under dripping water fills it over time"
+  },
+  "moss": {
+   "farm": false,
+   "where": "dig the green mossy ground"
+  }
+ }
 }
