@@ -269,6 +269,7 @@ func _build() -> void:
 			add_child(cs)
 	if Pieces.FAMILIES[family].get("glow", false) and not ghost:
 		var l := OmniLight3D.new()
+		GraphicsSettings.cheap_light(l, 30.0)  # off smoothly when far away (owner, Nov 19)
 		l.light_color = Pieces.FAMILIES[family].color
 		l.omni_range = 5.0
 		l.light_energy = 0.6
@@ -293,6 +294,7 @@ func _decor_extras(s: Vector3, has_model: bool) -> void:
 			_cloth(Vector3(0.1, 0.16, 0.1), Vector3(0, s.y * 0.45 + 0.12, 0.04), info.light, true)
 		if not ghost:
 			var l := OmniLight3D.new()
+			GraphicsSettings.cheap_light(l, 30.0)  # off smoothly when far away (owner, Nov 19)
 			l.light_color = info.light
 			l.omni_range = 7.0
 			l.light_energy = 1.2

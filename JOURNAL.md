@@ -3718,3 +3718,19 @@ the body."
   Level circle in the carved ring, details right): claude.ai/artifact/MBTFW9LdXc4mA3jNNpvYWR. Hurdle: another session
   had unsaved changes in JOURNAL.md and game files, so only this session's files were committed (journal line added
   to the saved copy without taking their edits).
+
+## November 19, 2026 (PC, cave Claude): graphics presets, cheaper lights, smoother fireflies
+
+- Owner: "pull the latest from GitHub and continue". The pull couldn't run: 25 files here hold other sessions' unsaved
+  work, 12 of them clash with GitHub line by line (dwarf, HUD, main rules), and this folder has 4 older commits that
+  went online in another form. Left the folder untouched; kept working here and saving through a clean copy.
+- Fireflies (smoothing from last night): checked with numbers, 20 s of uneven frames: no jump bigger than its normal
+  speed (8 cm a frame at 2.3 m/s).
+- Graphics settings (src/ui/graphics_settings.gd, Settings panel): Potato / Low / Medium / High / Ultra, picture
+  sharpness, glowing air, frame rate limit; first start picks Low on built-in laptop graphics. Measured on this PC: the
+  graphics card's work per frame 3.6 ms (High) → 1.45 ms (Potato).
+- Cheaper lights: crystal lights follow the preset (8-36), dark ones switched right off; torches, campfires, lamps,
+  shrines, glowing creatures fade out when far away.
+- Hurdle: a measuring script couldn't find its camera (the scene wasn't running yet when it started); fixed by waiting
+  two frames.
+

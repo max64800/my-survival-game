@@ -78,6 +78,7 @@ func _make(p: Dictionary) -> Node3D:
 			rune.name = "Rune"
 			rune.rotation.y = 0.6
 			var l := OmniLight3D.new()
+			GraphicsSettings.cheap_light(l, 30.0)  # off smoothly when far away (owner, Nov 19)
 			l.light_color = Color(1.0, 0.75, 0.4)
 			l.omni_range = 4.0
 			l.light_energy = 0.8

@@ -46,9 +46,9 @@ func build(spots: Array[Dictionary]) -> void:
 		_spots[s.id] = s
 		_grid_add(s)
 		_add_node(s)
-	for i in LIGHT_COUNT:
+	for i in GraphicsSettings.MAX_LIGHTS:  # (how many are used: GraphicsSettings.light_count(), set by the preset)
 		var l := OmniLight3D.new()
-		l.shadow_enabled = false
+		GraphicsSettings.cheap_light(l, 45.0)
 		l.omni_range = 6.0
 		l.light_energy = 0.0
 		l.light_cull_mask = ~PLANT_LAYER  # lights the cave round a glowing spot, not the plants themselves (see PLANT_LAYER)
@@ -470,6 +470,7 @@ func _process(delta: float) -> void:
 			var b := crystal_pulse((_nodes[s.id] as Node3D).global_position if _nodes.has(s.id) else s.pos, t)
 			breath = 2.6 * b * b  # no light at all when dim, a lot when bright (owner, round 2)
 		_lights[i].light_energy = _light_base[i] * breath
+		_lights[i].visible = _light_base[i] > 0.004  # a dark light is switched right off: the graphics card skips it
 	_push_mushrooms()
 	_light_timer -= delta
 	if _light_timer > 0.0:
@@ -482,14 +483,15 @@ func _process(delta: float) -> void:
 	# Only spots within 40 m can get a light, so only look in the squares around us.
 	var near := spots_near(from, LIGHT_REACH).filter(func(s): return GlowPlacer.KINDS[s.kind].get("glow", false))
 	near.sort_custom(func(a, b): return a.pos.distance_squared_to(from) < b.pos.distance_squared_to(from))
-	near = near.slice(0, LIGHT_COUNT)
+	var count := GraphicsSettings.light_count()
+	near = near.slice(0, count)
 	var want := {}  # spot id -> how bright its light should be
 	for rank in near.size():
 		var s: Dictionary = near[rank]
 		var d := s.pos.distance_to(from) as float
 		# Dimmer the farther away, and the last few of the nearest set are dimmer too, so a spot
 		# that drops out of the set (or a new one coming in) is already nearly dark.
-		var fade := clampf((LIGHT_REACH - d) / 15.0, 0.0, 1.0) * clampf((LIGHT_COUNT - rank) / 4.0, 0.0, 1.0)
+		var fade := clampf((LIGHT_REACH - d) / 15.0, 0.0, 1.0) * clampf((count - rank) / 4.0, 0.0, 1.0)
 		want[s.id] = (1.1 if s.kind.begins_with("crystal") else 0.7) * fade
 	# Lights already on a wanted spot keep it; the others fade out, and once dark take a new spot.
 	var taken := {}

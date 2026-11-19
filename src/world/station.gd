@@ -267,6 +267,7 @@ func _add_fire() -> void:
 	fire.position = Vector3.UP * 0.12
 	add_child(fire)
 	_fire = OmniLight3D.new()
+	GraphicsSettings.cheap_light(_fire, 40.0)  # off smoothly when far away (owner, Nov 19)
 	_fire.light_color = Color(1.0, 0.6, 0.3)
 	_fire.omni_range = 9.0
 	_fire.light_energy = 1.8
@@ -345,6 +346,7 @@ func _build_look() -> void:
 			_part(_cyl(0.05, 0.06, 1.1), Color(0.4, 0.3, 0.2), Vector3.UP * 0.55)
 			_part(_box(Vector3(0.25, 0.25, 0.25)) if not marker else _box(Vector3(0.45, 0.3, 0.03)), c, Vector3(0.0 if not marker else 0.24, 1.15, 0), true)
 			var l := OmniLight3D.new()
+			GraphicsSettings.cheap_light(l, 30.0)  # off smoothly when far away (owner, Nov 19)
 			l.light_color = c
 			l.omni_range = 8.0 if not marker else 5.0
 			l.light_energy = 1.4 if not marker else 0.8
@@ -357,6 +359,7 @@ func _build_look() -> void:
 			var gem := _part(_cyl(0.0, 0.08, 0.24), c, Vector3.UP * 1.0, true)
 			gem.rotation.y = 0.5
 			var tl := OmniLight3D.new()
+			GraphicsSettings.cheap_light(tl, 30.0)  # off smoothly when far away (owner, Nov 19)
 			tl.light_color = c
 			tl.omni_range = 7.0
 			tl.light_energy = 1.1

@@ -517,7 +517,20 @@ func _perfbench() -> void:
 	Engine.max_fps = 0
 	var vp := get_viewport().get_viewport_rid()
 	RenderingServer.viewport_set_measure_render_time(vp, true)
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("preset="):  # measure a graphics preset (saved to a bench file, not the player's settings)
+			GraphicsSettings.choose(arg.trim_prefix("preset="), "user://bench_graphics.cfg")
+			DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+			Engine.max_fps = 0
 	await _wait(20.0)
+	if "quick" in OS.get_cmdline_user_args():
+		for view in 2:
+			if view == 1:
+				_main.dwarf._yaw += PI * 0.6
+				await _wait(3.0)
+			var c := await _frame_cost()
+			print("PERF view %d: frame %.2f ms (cpu %.2f, gpu %.2f)" % [view, c.x, c.y, c.z])
+		return
 	var parts: Array[Node] = []
 	for c in _main.get_children():
 		if c != self:

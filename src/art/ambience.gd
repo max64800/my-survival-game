@@ -66,6 +66,8 @@ func _ready() -> void:
 	env.adjustment_enabled = true
 	env.adjustment_contrast = 1.08
 	env.adjustment_saturation = 1.08
+	GraphicsSettings.env = env  # the graphics preset turns the costly parts on or off (owner, Nov 19)
+	GraphicsSettings.apply_env()
 	var we := WorldEnvironment.new()
 	we.environment = env
 	add_child(we)

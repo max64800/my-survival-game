@@ -44,6 +44,7 @@ var _loaded := {}  ## the save we started from (friends' dwarfs are restored fro
 func _ready() -> void:
 	Controls.setup()
 	SoundSettings.load_and_apply()
+	GraphicsSettings.load_and_apply()  # Potato..Ultra, remembered on this computer (owner, Nov 19)
 	seed = randi() % 1000000
 	session = Session.new()
 	session.name = "Session"

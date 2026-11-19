@@ -97,6 +97,7 @@ func _ready() -> void:
 	if is_boss():
 		# Bosses glow softly (moss and runes), so you can read their attacks in a dark hall.
 		var glow := OmniLight3D.new()
+		GraphicsSettings.cheap_light(glow, 30.0)  # off smoothly when far away (owner, Nov 19)
 		glow.light_color = data.color.lightened(0.5)
 		glow.omni_range = 9.0 + s * 2.0
 		glow.light_energy = 1.4
@@ -110,6 +111,7 @@ func _ready() -> void:
 		if not model.get_meta("variant_look", false):
 			MonsterModel.add_crystals(model, vc)
 		var light := OmniLight3D.new()
+		GraphicsSettings.cheap_light(light, 30.0)  # off smoothly when far away (owner, Nov 19)
 		light.light_color = vc
 		light.omni_range = 5.0 + s * 2.0
 		light.light_energy = 1.0
