@@ -188,7 +188,7 @@ func refresh() -> void:
 		if nxt != "" and _status.text == "":
 			_status.text = "Place a %s within 4 m to reach level %d." % [Items.display_name(nxt), station.level() + 1]
 	if station and station.kind in AutoSmelt.KINDS and _status.text == "":
-		_status.text = "Works by itself: put %s in a chest within 5 m." % 			("wood" if station.kind == "kiln" else "ore and coal (or wood)")
+		_status.text = "Works by itself: put %s in a chest within 5 m." % 			("wood" if station.kind == "kiln" else "ore and coal")
 	var keep_scroll := _scroll.scroll_vertical  # the list stays where it was after you make something (F129)
 	UiKit.clear(_list)
 	UiKit.clear(_tabs)
@@ -407,9 +407,9 @@ func _ready_to_make(recipe_id: String, inv: Inventory) -> bool:
 	return can_make_count(recipe_id, inv) > 0 and _fuel_have(inv) >= int(r.get("fuel", 0))
 
 
-## Fuel is paid with whichever you have enough of: coal, rootwood or mushroom wood (game_authority).
+## Fuel is coal only, made from wood in the Bloomery (owner, Nov 19, F404; game_authority).
 static func _fuel_have(inv: Inventory) -> int:
-	return maxi(inv.count_of("coal"), maxi(inv.count_of("rootwood"), inv.count_of("mushroom_wood")))
+	return inv.count_of("coal")
 
 
 ## One recipe card: the picture and the name. Dim when you can't make it yet; gold frame when picked.
@@ -466,7 +466,7 @@ func _show_detail(inv: Inventory) -> void:
 		pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		_detail_needs.add_child(pic)
-		var n := UiKit.label(_detail_needs, "Fuel (coal or wood)" if item == "fuel" else Items.display_name(item), 14, col)
+		var n := UiKit.label(_detail_needs, "Fuel (coal)" if item == "fuel" else Items.display_name(item), 14, col)
 		n.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		UiKit.label(_detail_needs, "%d / %d" % [have, need], 14, col)
 	# No yellow "where to get it" lines (owner F179: too much text). Only a short red note

@@ -1965,7 +1965,7 @@ func request_craft(peer_id: int, recipe_id: String, station_id: int = 0) -> bool
 		return false  # needs a better-equipped station (F115)
 	var fuel_item := ""
 	if r.get("fuel", 0) > 0:
-		for f in ["coal", "rootwood", "mushroom_wood"]:
+		for f in ["coal"]:  # only coal from the Bloomery, never raw wood (owner, Nov 19, F404)
 			if ps.inventory.count_of(f) >= r.fuel:
 				fuel_item = f
 				break

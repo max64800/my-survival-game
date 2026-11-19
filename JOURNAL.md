@@ -5196,3 +5196,13 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   gear), a searchable table filtered by kind and station, and a page per item that follows it back to raw materials.
 - Icons for the 5 new items: the browser link to ChatGPT timed out twice, so I wrote the prompt for the owner.
 - **Hurdles:** the game's item kinds didn't match my first category list (hammer, shovel, pack, chest, seed); fixed.
+
+## Nov 19: Coal only, and copper takes a while (F409, F410)
+- **Owner: "you can't feed wood into the smelter: a bloomery makes coal from wood, the smelter burns coal. The anvil
+  takes 30 copper, and every armour piece and weapon another 30."** The wood-to-coal furnace already existed (the
+  Kiln), so it's renamed Bloomery (its id stays "kiln" so old saves keep it). Smelter fuel is coal only, in all three
+  places that decide fuel (crafting by hand, the chest-fed furnaces, the crafting window). Anvil and the 11 copper
+  armour/weapon recipes cost 30 bars. The Crafting Book now shows the coal in every smelting recipe.
+- **Hurdles:** (1) two tests still expected wood as fuel; they now check that wood is refused and coal works. (2) A
+  shared test file also had another Claude's unsaved change, and my "only my lines" patch failed on it, so I applied
+  my exact change to the saved version instead.

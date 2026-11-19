@@ -169,7 +169,8 @@ function station(r) {
   if (r.seconds) s += ` <span class="small">${r.seconds} s</span>`;
   return s;
 }
-const needs = r => Object.entries(r.inputs).map(([i, n]) => `<span class="need">${link(i, "sm")}<span class="count">×${n}</span></span>`).join("");
+const needs = r => Object.entries(r.inputs).concat(r.fuel ? [["coal", r.fuel]] : [])
+  .map(([i, n]) => `<span class="need">${link(i, "sm")}<span class="count">×${n}</span></span>`).join("");
 
 /* guides: plain steps that point at the items they use */
 const GUIDES = [
@@ -187,13 +188,15 @@ const GUIDES = [
   {t: "Copper bars", s: [
     ["Workbench level 2: a Fang Pickaxe (stone pickaxe, 4 bat fangs, 1 leather). It can mine copper.", ["pickaxe_fang"]],
     ["Mine Copper Ore deep down in the Copper Deeps (far, low caverns).", ["copper_ore"]],
-    ["Workbench: a Smelter (20 stone, 15 clay). Clay comes from the reddish patches.", ["smelter", "clay"]],
-    ["Smelter: 2 copper ore become 1 Copper Bar in 20 s. Feed it wood or crystals as fuel.", ["copper_ingot"]],
+    ["Workbench: a Bloomery (15 stone, 8 clay). Clay comes from the reddish patches.", ["kiln", "clay"]],
+    ["Bloomery: 2 rootwood become 1 Coal in 20 s. The smelter burns only coal, never raw wood.", ["coal"]],
+    ["Workbench: a Smelter (20 stone, 15 clay).", ["smelter"]],
+    ["Smelter: 2 copper ore + 1 coal become 1 Copper Bar in 20 s.", ["copper_ingot"]],
     ["Also: 3 Rusty Scrap from ruin chests make 1 bar.", ["rusty_scrap"]]]},
-  {t: "Copper gear", s: [
-    ["Workbench: an Anvil (10 stone, 6 copper bars).", ["anvil"]],
+  {t: "Copper gear (it takes a while)", s: [
+    ["Workbench: an Anvil (10 stone, 30 copper bars).", ["anvil"]],
     ["Explore ruins and camps. Their chests hold recipe pages. Read one to learn a recipe nobody knew yet.", ["armour_page", "weapon_page"]],
-    ["Anvil: Copper Helm, Mail, Greaves, Boots and Shield, plus copper weapons.", ["helm_copper", "mail_copper", "greaves_copper", "boots_copper", "shield_copper"]],
+    ["Anvil: each copper armour piece and each copper weapon takes 30 copper bars (60 copper ore, 30 coal).", ["helm_copper", "mail_copper", "greaves_copper", "boots_copper", "shield_copper", "sword_copper"]],
     ["Copper Pickaxe: chop a Root Tree until it cracks for Heartwood, then the Anvil (8 copper bars, 4 planks, 2 leather, 1 heartwood).", ["heartwood", "pickaxe_copper"]]]},
 ];
 document.getElementById("guides").innerHTML = GUIDES.map(g => `<article class="guide"><h3>${esc(g.t)}</h3><ol>${
@@ -243,7 +246,7 @@ function how(id, depth, seen) {
       if (n) parts.push(`<div class="or">or</div>`);
       const st = r.station === HAND ? "By hand" : `At a ${link(r.station, "sm")}`;
       parts.push(`<div class="recipe"><div class="small">${st}${r.level > 1 ? ` <span class="lvl">level ${r.level}</span> <span class="small">(needs ${esc((LEVEL_NOTE[r.station] || {})[r.level] || "a higher level")})</span>` : ""}${r.seconds ? `, takes ${r.seconds} s` : ""}${r.count > 1 ? `, makes ${r.count}` : ""}${r.unlock ? `. <i>Shows up ${esc(r.unlock.replace(/^shows up /, ""))}</i>` : ""}</div>
-        <ul class="tree">${Object.entries(r.inputs).map(([i, c]) => `<li>${link(i, "sm", `${c} × ${name(i)}`)}${how(i, depth + 1, s2)}</li>`).join("")}</ul></div>`);
+        <ul class="tree">${Object.entries(r.inputs).concat(r.fuel ? [["coal", r.fuel]] : []).map(([i, c]) => `<li>${link(i, "sm", `${c} × ${name(i)}`)}${how(i, depth + 1, s2)}</li>`).join("")}</ul></div>`);
     });
   } else if (!w.length && !rs.length) {
     parts.push(`<div class="where">Found in chests or by exploring.</div>`);

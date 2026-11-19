@@ -77,13 +77,10 @@ static func _take(chests: Array, storage: Storage, item: String, count: int) -> 
 			count -= n
 
 
-## Which fuel to burn: coal first (it burns twice as long), then wood. "" = none.
+## Which fuel to burn: smelters burn only Coal from the Bloomery, never raw wood (owner, Nov 19, F404). "" = none.
 static func _fuel(chests: Array, storage: Storage, need: int) -> String:
 	if _count(chests, storage, "coal") >= maxi(1, need / 2):
 		return "coal"
-	for w in WOOD:
-		if _count(chests, storage, w) >= need:
-			return w
 	return ""
 
 

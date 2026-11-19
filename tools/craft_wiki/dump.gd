@@ -27,7 +27,8 @@ func _init() -> void:
 	for id in Recipes.LIST:
 		var r: Dictionary = Recipes.LIST[id]
 		recipes.append({id = id, station = r.station, level = int(r.get("level", 1)), inputs = r.inputs,
-			output = r.output, count = r.count, seconds = r.get("seconds", 0), unlock = Recipes.unlock_hint(id)})
+			output = r.output, count = r.count, seconds = r.get("seconds", 0), fuel = int(r.get("fuel", 0)),
+			unlock = Recipes.unlock_hint(id)})
 	var drops := {}  # item -> ["Cave Bat (always)", ...]
 	for c in Monsters.LIST:
 		for d in Monsters.info(c).get("drops", []):

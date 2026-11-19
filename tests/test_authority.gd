@@ -307,11 +307,14 @@ func test_smelter_takes_time_and_fuel() -> void:
 	await _setup(42)
 	auth._ev_place_station(7, "smelter", player.global_position + Vector3(1.5, 0, 0), 0.0)
 	ps.inventory.add("copper_ore", 4)
-	check(not auth.request_craft(1, "copper_ingot", 7), "no wood fuel, no smelting")
+	check(not auth.request_craft(1, "copper_ingot", 7), "no fuel, no smelting")
 	ps.inventory.add("rootwood", 2)
+	check(not auth.request_craft(1, "copper_ingot", 7), "raw wood isn't fuel: only Bloomery coal (F404)")
+	ps.inventory.add("coal", 2)
 	check(auth.request_craft(1, "copper_ingot", 7), "smelting started")
 	check_eq(ps.inventory.count_of("copper_ore"), 2, "ore went in")
-	check_eq(ps.inventory.count_of("rootwood"), 1, "one wood burned")
+	check_eq(ps.inventory.count_of("coal"), 1, "one coal burned")
+	check_eq(ps.inventory.count_of("rootwood"), 2, "the wood is untouched")
 	check_eq(auth.drop_count(), 0, "not done yet")
 	var st: Station = auth.stations[7]
 	st.jobs[0].left = 0.05
