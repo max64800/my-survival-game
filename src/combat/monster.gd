@@ -12,7 +12,7 @@ const MONSTER_LAYER := 64
 const RECOVER_TIME := 0.7
 
 var uid := 0
-var kind := "mossnipper"
+var kind := "rock_snail"
 var leader := false
 var variant := ""  ## crystal colour ("" = normal), combat doc 7
 var pack_id := 0
@@ -24,9 +24,6 @@ var stun := StunMeter.new()
 var boosted := false  ## a living pack leader is near
 var data: Dictionary
 var model: Node3D
-var phase := 0  ## bosses: which phase (0 = first)
-var _cooldowns := {}  ## bosses: attack name -> seconds until it can be used again
-var _stun_at_tell := 0.0
 var _timer := 0.0
 const CHARGE_DAZE := 3.0  ## seconds a monster stands dazed after a charge (F111)
 var _think := 0.0
@@ -58,7 +55,6 @@ var _speed := 0.0
 var _clock := 0.0
 var _size := 1.0
 var _blink := 8.0
-var _ball := 0.0  ## Moss Shuffler: seconds left rolled up in its shell
 var ailments := Ailments.new()  ## host: burn / chill / poison on this monster (doc 2.6)
 var last_hitter := 0
 var hit_by := {}  ## host: peer -> clock time of their last hit (Pack Hunters perk)
@@ -73,10 +69,9 @@ func setup(p_uid: int, p_kind: String, p_leader: bool, p_home: Vector3, p_varian
 	leader = p_leader
 	home = p_home
 	data = Monsters.info(kind)
-	variant = p_variant if Monsters.VARIANTS.has(p_variant) and not data.has("boss") else ""
+	variant = p_variant if Monsters.VARIANTS.has(p_variant) else ""
 	hp = Monsters.max_hp(kind, leader, variant)
-	var boss_kind: String = data.get("boss", "")
-	stun = StunMeter.new(data.stun * (Monsters.LEADER.stun if leader else 1.0) * (Monsters.VARIANT_STATS.stun if variant != "" else 1.0), 5.0 if boss_kind == "main" else (4.0 if boss_kind == "side" else 3.0), boss_kind != "")
+	stun = StunMeter.new(data.stun * (Monsters.LEADER.stun if leader else 1.0) * (Monsters.VARIANT_STATS.stun if variant != "" else 1.0), 3.0)
 	state = State.SLEEP if data.get("sleeps", false) else State.IDLE
 	_timer = randf_range(3.0, 8.0)
 
@@ -101,16 +96,6 @@ func _ready() -> void:
 	model = MonsterModel.build(data.shape, data.color, s, leader, kind, uid, variant, look_seed)  # uid: same individual for everyone
 	_size = s
 	add_child(model)
-	if is_boss():
-		# Bosses glow softly (moss and runes), so you can read their attacks in a dark hall.
-		var glow := OmniLight3D.new()
-		GraphicsSettings.cheap_light(glow, 30.0)  # off smoothly when far away (owner, Nov 19)
-		glow.light_color = data.color.lightened(0.5)
-		glow.omni_range = 9.0 + s * 2.0
-		glow.light_energy = 1.4
-		glow.position = Vector3.UP * cap.height * 0.8
-		add_child(glow)
-		MonsterModel.make_glowy(model, data.color.lightened(0.3))
 	if variant != "":
 		# Crystal variants: glowing crystals on the back that light up the cave around them
 		# (creatures made from the approved pictures already wear their variant's look).
@@ -127,7 +112,7 @@ func _ready() -> void:
 	_hp_label = Label3D.new()
 	_hp_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	_hp_label.position = Vector3.UP * (cap.height + 0.4)
-	_hp_label.pixel_size = 0.004 * (2.0 if is_boss() else 1.0)
+	_hp_label.pixel_size = 0.004
 	_hp_label.font_size = 32
 	_hp_label.outline_size = 8
 	_hp_label.no_depth_test = true
@@ -196,7 +181,7 @@ func die_visual(statue := -1) -> void:
 		l.visible = false
 	if _bars:
 		_bars.visible = false
-	if data.get("ragdoll", not data.has("boss")):  # (every creature but the bosses, owner Nov 18)
+	if data.get("ragdoll", true):  # (every creature, owner Nov 18)
 		# It goes limp and falls apart into physics pieces, pushed away from the player (Ragdoll, owner Nov 18).
 		var cam := get_viewport().get_camera_3d() if is_inside_tree() else null
 		var from := cam.global_position if cam else global_position + Vector3.BACK
@@ -219,44 +204,14 @@ func max_hp() -> float:
 	return Monsters.max_hp(kind, leader, variant)
 
 
-func is_boss() -> bool:
-	return data.has("boss")
-
-
-## Numbers for damage math (a boss's phase can change its armor).
+## Numbers for damage math.
 func stats() -> Dictionary:
-	var s := Monsters.target_stats(kind, leader, variant)
-	if _ball > 0.0:
-		s.armor += 40  # rolled into a ball: hit it with something blunt
-	if is_boss() and data.phases[phase].has("armor"):
-		s.armor = data.phases[phase].armor
-	return s
+	return Monsters.target_stats(kind, leader, variant)
 
 
-## The attacks it can use right now.
+## The attacks it can use.
 func attack_options() -> Array:
-	if not is_boss():
-		return data.attacks
-	var out := []
-	var mult: float = data.phases[phase].get("tell_mult", 1.0)
-	for id in data.phases[phase].attacks:
-		var a: Dictionary = data.attack_list[id].duplicate(true)
-		a.tell = maxf(a.tell * mult, 0.5)
-		a.id = id
-		out.append(a)
-	return out
-
-
-## Bosses: move to the next phase when health drops low enough. Returns the phase's on_enter (or {}).
-func check_phase() -> Dictionary:
-	if not is_boss():
-		return {}
-	var frac := hp / max_hp()
-	var entered := {}
-	while phase < data.phases.size() - 1 and frac <= data.phases[phase].until:
-		phase += 1
-		entered = data.phases[phase].get("on_enter", {})
-	return entered
+	return data.attacks
 
 
 func is_alive() -> bool:
@@ -330,10 +285,6 @@ func think(delta: float, mgr: Node) -> void:
 	if state == State.STUNNED:
 		state = State.FLEE if data.get("passive", false) or (data.get("neutral", false) and hp < max_hp() * 0.5) else State.CHASE
 		_timer = 6.0
-	for k in _cooldowns.keys():
-		_cooldowns[k] -= delta
-		if _cooldowns[k] <= 0.0:
-			_cooldowns.erase(k)
 	_think -= delta
 	if _think <= 0.0:
 		_think = 0.3
@@ -376,10 +327,6 @@ func think(delta: float, mgr: Node) -> void:
 				_best_dist = INF
 				_no_progress = 0.0
 		State.FLEE:
-			if _ball > 0.0:
-				_ball -= delta
-				_move(delta, Vector3.ZERO, 0.0)
-				return
 			if target == null or _timer <= 0.0:
 				state = State.IDLE
 				home = global_position  # its new safe spot
@@ -409,7 +356,7 @@ func think(delta: float, mgr: Node) -> void:
 				_no_progress = 0.0
 			else:
 				_no_progress += delta
-			if not is_boss() and (global_position.distance_to(home) > Monsters.LEASH or _no_progress > Monsters.GIVE_UP):
+			if (global_position.distance_to(home) > Monsters.LEASH or _no_progress > Monsters.GIVE_UP):
 				state = State.RETURN
 				target_peer = 0
 				return
@@ -450,11 +397,6 @@ func think(delta: float, mgr: Node) -> void:
 			else:
 				_move(delta, Vector3.ZERO, 0.0)
 			if _timer <= 0.0:
-				if _attack.has("summon"):
-					# Interrupted if it took 30 stun during the call (doc 8.3).
-					if stun.value - _stun_at_tell < 30.0 and not stun.is_stunned():
-						mgr.boss_summon(self, _attack.summon[0], _attack.summon[1])
-					_cooldowns[_attack.get("id", _attack.name)] = _attack.get("cooldown", 30.0)
 				if _attack.has("follow"):
 					var f: Dictionary = _attack.follow
 					var next := _attack.duplicate()
@@ -519,8 +461,6 @@ func alert(peer: int) -> void:
 			target_peer = peer
 			state = State.FLEE
 			_timer = 6.0
-			if data.get("rolls", false):
-				_ball = 4.0
 		return
 	if state in [State.CHASE, State.ATTACK, State.RECOVER, State.STUNNED]:
 		return
@@ -547,9 +487,7 @@ func _try_blink(target: Node3D, to: Vector3, mgr: Node) -> bool:
 func _pick_attack(dist: float) -> Dictionary:
 	var options := []
 	for a in attack_options():
-		if _cooldowns.has(a.get("id", a.name)):
-			continue
-		if dist <= a.reach and dist >= a.get("min_reach", 0.0) and (not a.get("lunge", false) or dist > 2.0) and (not a.get("ranged", false) or dist > 3.0 or not is_boss()):
+		if dist <= a.reach and dist >= a.get("min_reach", 0.0) and (not a.get("lunge", false) or dist > 2.0):
 			options.append(a)
 	return options.pick_random() if not options.is_empty() else {}
 
@@ -557,7 +495,6 @@ func _pick_attack(dist: float) -> Dictionary:
 func _start_attack(atk: Dictionary, mgr: Node) -> void:
 	_attack = atk
 	_charge_dir = Vector3.ZERO  # a new charge picks its own straight line
-	_stun_at_tell = stun.value
 	state = State.ATTACK
 	_timer = atk.tell
 	mgr.send_tell(self, atk)
@@ -583,13 +520,10 @@ func _drop_ahead(dir: Vector3) -> bool:
 	return space.intersect_ray(q).is_empty()
 
 
-## Elemental buildup from a bolt (resistance shrinks it; bosses can't be frozen solid).
+## Elemental buildup from a bolt (resistance shrinks it).
 func add_buildup(kind: String, amount: float) -> void:
 	var resist: float = stats().get({"burn": "fire", "chill": "frost", "poison": "poison"}.get(kind, ""), 0.0)
-	var started := ailments.add(kind, amount * maxf(0.0, 1.0 - resist))
-	if started == "frozen" and is_boss():
-		ailments.active.erase("frozen")
-		ailments.active["chill"] = Ailments.EFFECTS.chill.time
+	ailments.add(kind, amount * maxf(0.0, 1.0 - resist))
 
 
 func _move(delta: float, dir: Vector3, speed: float) -> void:
@@ -615,7 +549,7 @@ func _move(delta: float, dir: Vector3, speed: float) -> void:
 			velocity.y = maxf(velocity.y, -0.5)
 		# Stuck against a wall with the dwarf above (a hole he dug, a ledge): climb up it, like a real beetle or snail
 		# (owner, F236 said twice: "they charge into a hole and you beat them easily; they should climb out").
-		if dir.length() > 0.1 and is_on_wall() and _climb_to > global_position.y + 0.4 and not is_boss() and not data.get("no_climb", false):
+		if dir.length() > 0.1 and is_on_wall() and _climb_to > global_position.y + 0.4 and not data.get("no_climb", false):
 			velocity.y = maxf(velocity.y, CLIMB_SPEED)
 			_climbing = 0.4
 		elif _climbing > 0.0 and dir.length() > 0.1:  # over the lip: a last push up and forward, or it slips back
@@ -715,7 +649,7 @@ func show_tell(seconds: float, attack_name: String = "", aim: Node3D = null) -> 
 	if atk.get("lunge", false) and data.get("straight_charge", false):
 		_charging = seconds + 0.6
 		MonsterModel.set_angry(model, true)
-	# Squash relative to the monster's own size (bosses and leaders are bigger than 1).
+	# Squash relative to the monster's own size (leaders are bigger than 1).
 	var base: Vector3 = model.get_meta("base_scale", model.scale)
 	model.set_meta("base_scale", base)
 	var t := create_tween()

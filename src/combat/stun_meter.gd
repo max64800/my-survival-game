@@ -5,8 +5,7 @@ extends RefCounted
 
 var max_value := 100.0
 var value := 0.0
-var stun_time := 3.0  ## how long a stun lasts (3 s monsters, 4 side bosses, 5 main bosses)
-var is_boss := false
+var stun_time := 3.0  ## how long a stun lasts
 var stunned_left := 0.0
 var immune_left := 0.0
 var decay_mult := 1.0  ## pack leaders' members drain ×2 faster
@@ -14,10 +13,9 @@ var _since_fill := 999.0
 var _crush_used := false
 
 
-func _init(p_max: float = 100.0, p_time: float = 3.0, boss: bool = false) -> void:
+func _init(p_max: float = 100.0, p_time: float = 3.0) -> void:
 	max_value = p_max
 	stun_time = p_time
-	is_boss = boss
 
 
 func is_stunned() -> bool:
@@ -34,8 +32,6 @@ func add(amount: float) -> bool:
 		value = 0.0
 		stunned_left = stun_time
 		_crush_used = false
-		if is_boss:
-			max_value *= 1.3  # bosses get harder to stun each time
 		return true
 	return false
 

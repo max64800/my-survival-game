@@ -47,8 +47,7 @@ func _run() -> void:
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	Engine.max_fps = 0
 	var dwarf: Dwarf = _main.dwarf
-	# `at=nest_cavern` (or any place type) stands there instead of the great hall (owner, Nov 19: 12 fps in the
-	# Nipper Queen's nest cavern).
+	# `at=ruin` (or any place type) stands there instead of the great hall.
 	var place := "great_hall"
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("at="):
@@ -65,7 +64,7 @@ func _run() -> void:
 			place = a
 	dwarf._yaw = 0.0
 	dwarf._pitch = -0.1
-	await _wait(8.0 if place != "great_hall" else 4.0)  # let the cave around us finish building (and a boss wake)
+	await _wait(8.0 if place != "great_hall" else 4.0)  # let the cave around us finish building
 	print("\n===== SPEED CHECK at %s (no frame cap) =====" % place)
 	var base := await _measure(4.0)
 	_line("everything on", base)
@@ -134,8 +133,7 @@ func _run() -> void:
 	get_tree().quit()
 
 
-## A monster (a boss too) appears 6 m in front of the dwarf; 30 s of measuring while it fights (owner, Nov 19:
-## 12 fps fighting the Nipper Queen).
+## A monster appears 6 m in front of the dwarf; 30 s of measuring while it fights.
 func _fight(dwarf: Dwarf, kind: String) -> void:
 	var mgr: MonsterManager = _main.get_node("Authority/Monsters")
 	var count := 1

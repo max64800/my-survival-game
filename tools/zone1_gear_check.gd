@@ -1,30 +1,28 @@
 extends SceneTree
 ## What can a player make in Zone 1 (Mossy Hollows, incl. the Copper Deeps), and what's out of reach?
 ##   godot --headless --path . --script res://tools/zone1_gear_check.gd
-## Starts from everything Zone 1 gives (rock, plants, crystals, creatures, bosses, ruin chests),
+## Starts from everything Zone 1 gives (rock, plants, crystals, Root Trees, creatures, ruin chests),
 ## then keeps crafting until nothing new can be made. Prints the best gear per slot and every
 ## recipe that stays out of reach, with the item that blocks it.
 
-## Raw things the Zone 1 world gives (mat.gd DROP_ITEM, glow_placer.gd _pick_kind, GATHER).
+## Raw things the Zone 1 world gives (mat.gd DROP_ITEM, glow_placer.gd _pick_kind, GATHER), and the Root Trees
+## (game_authority.gd request_chop_pillar: wood, Tree Moss, Heartwood, Root Seeds).
 const WORLD := ["stone", "rootwood", "fiber", "dirt", "clay", "moss", "copper_ore",
-	"crystal_blue", "crystal_green", "glowcap", "hollowcap", "bellcap", "firecap"]
-## Who lives in Zone 1 (Monsters.SPAWNS mossy + every cave's bat roost), its bosses,
-## and the helpers the side bosses bring along (raids.gd).
+	"crystal_blue", "crystal_green", "glowcap", "hollowcap", "bellcap", "firecap", "tree_moss", "heartwood", "root_seed"]
+## Who lives in Zone 1 (Monsters.SPAWNS mossy + every cave's bat roost).
 const CREATURES := ["rock_snail", "rock_beetle", "cave_spider", "cave_bat"]
-const BOSSES := ["orrumhal", "skerra", "brask"]
-const RAID_ONLY := ["mossnipper", "skitterling", "rustwight", "cairnling"]
 ## Zone 1 ruin and camp chests (game_authority.gd seed_poi_loot).
-const CHESTS := ["blueprint_page", "gold_coin", "dish_hollowcap_stew", "dish_tuber_mash", "drink_glowcap_tea"]
+const CHESTS := ["blueprint_page", "gold_coin", "rusty_scrap", "dish_hollowcap_stew", "dish_tuber_mash", "drink_glowcap_tea"]
 
 
 func _init() -> void:
 	var have := {}  # item -> where it came from
 	for i in WORLD:
 		have[i] = "world"
-	for c in CREATURES + BOSSES + RAID_ONLY:
+	for c in CREATURES:
 		for d in Monsters.info(c).get("drops", []):
 			if not have.has(d[0]):
-				have[d[0]] = ("boss raid helper " if c in RAID_ONLY else "") + c
+				have[d[0]] = c
 	for i in CHESTS:
 		have[i] = "chest"
 	var rune_recipes := {}

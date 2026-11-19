@@ -113,8 +113,7 @@ func _monster_breakdown() -> void:
 		parts["boosts"] = parts.get("boosts", 0) + Time.get_ticks_usec() - t
 		t = Time.get_ticks_usec()
 		mm._statues_step(d)
-		mm._check_boss_resets(d)
-		parts["statues+bosses"] = parts.get("statues+bosses", 0) + Time.get_ticks_usec() - t
+		parts["statues"] = parts.get("statues", 0) + Time.get_ticks_usec() - t
 		for m in mm.monsters.values():
 			if m.is_alive():
 				t = Time.get_ticks_usec()

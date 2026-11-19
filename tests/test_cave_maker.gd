@@ -95,10 +95,6 @@ func test_two_biomes_joined_by_gates() -> void:
 		var floor_y: float = p.y - 1.0
 		check(c.sdf_at(Vector3(p.x - 4.0, floor_y + 0.5, p.z)) > 0.0, "open tunnel on the Mossy side of the plug")
 		check(c.sdf_at(Vector3(p.x + 4.0, floor_y + 0.5, p.z)) > 0.0, "open tunnel on the Jungle side of the plug")
-	check(not c.lair_poi("fungal").is_empty(), "the Jungle has a hidden lair")
-	check_eq(c.clue_circles("fungal").size(), 3, "and its own clue circles")
-	check_eq(c.pois_of("marking", "fungal").size(), 3, "3 jungle markings")
-	check(c.pois_of("silver_vault").size() == 1, "side-boss caverns are planned")
 	check_eq(c.material_at(Vector3i(c.rooms[0].center.round()) + Vector3i(0, -40, 0)) in [Mat.STONE, Mat.COPPER, Mat.DIRT, Mat.CLAY, Mat.MOSS], true, "Mossy rock under the start")
 
 
@@ -210,27 +206,16 @@ func test_there_is_clay_for_a_smelter() -> void:
 func test_special_places_are_planned() -> void:
 	for s in [1, 42, 99]:
 		var c := CaveMaker.new(s)
-		var lair := c.lair_poi()
-		check(not lair.is_empty(), "seed %d: a boss lair" % s)
-		if lair.is_empty():
-			continue
-		check(lair.pos.distance_to(c.spawn_point) >= 145.0, "seed %d: lair far from the start" % s)
-		var room: Dictionary = c.rooms[lair.room]
-		check(room.sealed, "seed %d: lair is sealed" % s)
-		check(c._solid_around(room.center, room.radii + Vector3.ONE * 5.0) == false, "seed %d: (lair is air inside now)" % s)
-		check(c.sdf_at(room.center) > 0.0, "seed %d: lair is open inside" % s)
-		var shell := 0
-		for dir in [Vector3.LEFT, Vector3.RIGHT, Vector3.FORWARD, Vector3.BACK]:
-			if c.sdf_at(room.center + dir * (room.radii.x + 4.0)) < 0.0:
-				shell += 1
-		check_eq(shell, 4, "seed %d: rock all around the lair" % s)
-		check_eq(c.pois_of("marking", "mossy").size(), 3, "seed %d: 3 wall markings" % s)
-		for m in c.pois_of("marking", "mossy"):
-			check(m.pos.distance_to(lair.pos) >= 79.0, "seed %d: marking far from the lair" % s)
 		check(c.pois_of("ruin").size() >= 2, "seed %d: ruins" % s)
 		check(c.pois_of("shrine").size() >= 3, "seed %d: rune shrines (%d)" % [s, c.pois_of("shrine").size()])
 		check(c.pois_of("geode").size() >= 2, "seed %d: crystal geodes (%d)" % [s, c.pois_of("geode").size()])
-		check(not c.pois_of("nest_cavern").is_empty() and not c.pois_of("great_hall").is_empty(), "seed %d: side-boss caverns" % s)
+		check_eq(c.pois_of("great_hall").size(), 1, "seed %d: the Great Hall" % s)
+		# The bosses were taken out (owner, Nov 19): no lair, no boss caverns, no wall markings.
+		for t in ["lair", "marking", "nest_cavern", "silver_vault", "brood_hollow", "lantern_grove"]:
+			check(c.pois_of(t).is_empty(), "seed %d: no %s any more" % [s, t])
+		for room in c.rooms:
+			if room.kind == "hollow":  # where the lair was: sealed and empty (old saves' caves stay the same)
+				check(room.sealed, "seed %d: the old lair hollow is sealed" % s)
 
 
 ## F141: tunnels leave a room at floor height, not high up in its walls.

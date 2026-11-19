@@ -12,9 +12,6 @@ func test_every_cave_gets_a_start_room() -> void:
 		check(c.sdf_at(c.spawn_point) > 0.0, "seed %d: you wake up in open air" % s)
 		check(c.spawn_point.distance_to(c.start.room_c) < 4.0, "seed %d: ...inside the small room" % s)
 		check(c.find_floor(c.spawn_point.x, c.spawn_point.z, c.spawn_point.y).y > c.spawn_point.y - 2.0, "seed %d: with a floor under you" % s)
-		var lair := c.lair_poi()
-		if not lair.is_empty():
-			check(lair.pos.distance_to(c.spawn_point) >= 145.0, "seed %d: boss lair far from the start" % s)
 
 
 func test_room_is_sealed_by_a_soft_dirt_wall() -> void:

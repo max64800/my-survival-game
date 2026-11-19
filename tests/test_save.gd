@@ -55,13 +55,13 @@ func test_save_and_load_a_world() -> void:
 	var auth: GameAuthority = a[0]
 	var ps: GameAuthority.PlayerState = a[1]
 	var world: World = a[2]
-	# Change things: dig, place a workbench and a floor, read a clue, carve a rune, fill the bag.
+	# Change things: dig, place a workbench and a floor, empty a shrine, carve a rune, fill the bag.
 	var hole: Vector3 = ps.node.global_position + Vector3.DOWN * 3.0
 	auth._host_dig(hole, 0)
 	auth._ev_place_station(1, "workbench", ps.node.global_position + Vector3(-3, 0, 0), 0.0)
 	auth._ev_place_station(2, "rune_slab", ps.node.global_position + Vector3(3, 0, 0), 0.0)
 	auth.builder._ev_add_piece(1, "floor", "cut_stone", Vector3(10, -20, 10), 0, true)
-	auth.world_state.clues.append(world.maker.pois_of("marking")[0].id)
+	auth.world_state.shrines.append(world.maker.pois_of("shrine")[0].id)
 	ps.inventory.add("rune_ochre_m2", 1)
 	auth.request_carve(1, "rune_ochre_m2")
 	ps.inventory.add("copper_ingot", 17)
@@ -91,7 +91,7 @@ func test_save_and_load_a_world() -> void:
 	check(world2.sdf_at(hole) > 0.0, "the hole is still dug")
 	check_eq(auth2.stations.size(), 2, "stations are back")
 	check_eq(auth2.builder.structure.pieces.size(), 1, "the floor piece is back")
-	check_eq(auth2.world_state.clues.size(), 1, "clue remembered")
+	check_eq(auth2.world_state.shrines.size(), 1, "emptied shrine remembered")
 	check(auth2.rune_slab.carved_runes.has("ochre_m2"), "carved rune remembered")
 	check_eq(ps2.inventory.count_of("copper_ingot"), 17, "bag is back")
 	check_eq(ps2.progress.level, level, "level is back")

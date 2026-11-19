@@ -4,48 +4,49 @@ extends TestCase
 
 
 ## Old saves keep their caves: the same rooms, tunnels, places and rock, to 4 decimals (fingerprints from Nov 16).
+## (Nov 19: the boss places came out, so each cave has fewer special places ("pois"); its rock is the same.)
 func test_old_caves_unchanged() -> void:
 	var was := CaveMaker.layout
 	CaveMaker.use_layout(1)
 	check_eq(_fingerprint(CaveMaker.new(42)),
-		"rooms=53 segs=1426 pois=65 r0=(-106.8563, -24.81935, -56.50769) sum=-11055.2929", "seed 42, layout 1")
+		"rooms=53 segs=1426 pois=55 r0=(-106.8563, -24.81935, -56.50769) sum=-11055.2929", "seed 42, layout 1")
 	check_eq(_fingerprint(CaveMaker.new(7)),
-		"rooms=54 segs=1342 pois=68 r0=(-19.17805, -23.8586, 112.1128) sum=-10639.7901", "seed 7, layout 1")
+		"rooms=54 segs=1342 pois=56 r0=(-19.17805, -23.8586, 112.1128) sum=-10639.7901", "seed 7, layout 1")
 	CaveMaker.use_layout(2)  # worlds made on Nov 17 before layout 3 keep theirs too
 	check_eq(_fingerprint(CaveMaker.new(42)),
-		"rooms=192 segs=5292 pois=162 r0=(-83.95856, -24.81935, -44.3989) sum=-9322.0347", "seed 42, layout 2")
+		"rooms=192 segs=5292 pois=150 r0=(-83.95856, -24.81935, -44.3989) sum=-9322.0347", "seed 42, layout 2")
 	check_eq(_fingerprint(CaveMaker.new(7)),
-		"rooms=192 segs=5191 pois=167 r0=(-15.06847, -23.8586, 88.08862) sum=-8536.2000", "seed 7, layout 2")
+		"rooms=192 segs=5191 pois=155 r0=(-15.06847, -23.8586, 88.08862) sum=-8536.2000", "seed 7, layout 2")
 	CaveMaker.use_layout(3)  # worlds made before the huge first cavern (layout 4) keep theirs too
 	check_eq(_fingerprint(CaveMaker.new(42)),
-		"rooms=198 segs=5256 pois=162 r0=(-83.95856, -24.81935, -44.3989) sum=-9967.2001", "seed 42, layout 3")
+		"rooms=198 segs=5256 pois=150 r0=(-83.95856, -24.81935, -44.3989) sum=-9967.2001", "seed 42, layout 3")
 	check_eq(_fingerprint(CaveMaker.new(7)),
-		"rooms=197 segs=5492 pois=163 r0=(-15.06847, -23.8586, 88.08862) sum=-8989.8260", "seed 7, layout 3")
+		"rooms=197 segs=5492 pois=151 r0=(-15.06847, -23.8586, 88.08862) sum=-8989.8260", "seed 7, layout 3")
 	CaveMaker.use_layout(4)  # worlds made before the stone columns (layout 5) keep theirs too
-	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5332 pois=162 r0=(-83.95856, -20.99115, -44.3989) sum=-9894.0944", "seed 42, layout 4")
-	check_eq(_fingerprint(CaveMaker.new(7)), "rooms=197 segs=5554 pois=163 r0=(-15.06847, -20.1193, 88.08862) sum=-8555.4642", "seed 7, layout 4")
+	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5332 pois=150 r0=(-83.95856, -20.99115, -44.3989) sum=-9894.0944", "seed 42, layout 4")
+	check_eq(_fingerprint(CaveMaker.new(7)), "rooms=197 segs=5554 pois=151 r0=(-15.06847, -20.1193, 88.08862) sum=-8555.4642", "seed 7, layout 4")
 	CaveMaker.use_layout(5)  # worlds made before the columns kept out of the tower (layout 6) keep theirs too
-	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5332 pois=162 r0=(-83.95856, -20.99115, -44.3989) sum=-9894.0944", "seed 42, layout 5")
-	check_eq(_fingerprint(CaveMaker.new(7)), "rooms=197 segs=5554 pois=163 r0=(-15.06847, -20.1193, 88.08862) sum=-8655.5548", "seed 7, layout 5")
+	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5332 pois=150 r0=(-83.95856, -20.99115, -44.3989) sum=-9894.0944", "seed 42, layout 5")
+	check_eq(_fingerprint(CaveMaker.new(7)), "rooms=197 segs=5554 pois=151 r0=(-15.06847, -20.1193, 88.08862) sum=-8655.5548", "seed 7, layout 5")
 	CaveMaker.use_layout(6)  # worlds made with the huge cavern and its columns keep theirs too
-	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5332 pois=162 r0=(-83.95856, -20.99115, -44.3989) sum=-9894.0944", "seed 42, layout 6")
-	check_eq(_fingerprint(CaveMaker.new(7)), "rooms=197 segs=5554 pois=163 r0=(-15.06847, -20.1193, 88.08862) sum=-8559.8592", "seed 7, layout 6")
+	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5332 pois=150 r0=(-83.95856, -20.99115, -44.3989) sum=-9894.0944", "seed 42, layout 6")
+	check_eq(_fingerprint(CaveMaker.new(7)), "rooms=197 segs=5554 pois=151 r0=(-15.06847, -20.1193, 88.08862) sum=-8559.8592", "seed 7, layout 6")
 	CaveMaker.use_layout(12)  # worlds made before bridges kept 4.5 m off the floor keep theirs
-	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5256 pois=161 r0=(-83.95856, -24.81935, -44.3989) sum=-10044.4143", "seed 42, layout 12")
+	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5256 pois=149 r0=(-83.95856, -24.81935, -44.3989) sum=-10044.4143", "seed 42, layout 12")
 	CaveMaker.use_layout(11)  # worlds made before the first cave always got a bridge keep theirs
-	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5256 pois=161 r0=(-83.95856, -24.81935, -44.3989) sum=-10044.4143", "seed 42, layout 11")
+	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5256 pois=149 r0=(-83.95856, -24.81935, -44.3989) sum=-10044.4143", "seed 42, layout 11")
 	CaveMaker.use_layout(10)  # worlds made before the starting cave's bridge keep theirs
-	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5256 pois=161 r0=(-83.95856, -24.81935, -44.3989) sum=-9967.2001", "seed 42, layout 10")
+	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5256 pois=149 r0=(-83.95856, -24.81935, -44.3989) sum=-9967.2001", "seed 42, layout 10")
 	CaveMaker.use_layout(9)  # worlds made with the first few bridges keep theirs
-	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5256 pois=161 r0=(-83.95856, -24.81935, -44.3989) sum=-9967.2001", "seed 42, layout 9")
+	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5256 pois=149 r0=(-83.95856, -24.81935, -44.3989) sum=-9967.2001", "seed 42, layout 9")
 	CaveMaker.use_layout(8)  # worlds made before the rock bridges (layout 9) keep their caves
-	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5256 pois=161 r0=(-83.95856, -24.81935, -44.3989) sum=-9967.2001", "seed 42, layout 8")
+	check_eq(_fingerprint(CaveMaker.new(42)), "rooms=198 segs=5256 pois=149 r0=(-83.95856, -24.81935, -44.3989) sum=-9967.2001", "seed 42, layout 8")
 	CaveMaker.use_layout(8)  # (layout 8 only adds columns: the rooms, paths and places stay layout 3's)
 	var l8 := _fingerprint(CaveMaker.new(42))
 	check(l8.begins_with("rooms=198 segs=5256 pois="), "layout 8 keeps layout 3's rooms and paths (%s)" % l8)
 	CaveMaker.use_layout(7)  # layout 7 is layout 3's caves again (owner: the huge first cavern was too big)
 	check_eq(_fingerprint(CaveMaker.new(42)),
-		"rooms=198 segs=5256 pois=162 r0=(-83.95856, -24.81935, -44.3989) sum=-9967.2001", "seed 42, layout 7 = layout 3")
+		"rooms=198 segs=5256 pois=150 r0=(-83.95856, -24.81935, -44.3989) sum=-9967.2001", "seed 42, layout 7 = layout 3")
 	check(CaveMaker.new(7).first_cavern().is_empty(), "layout 7 has no huge first cavern")
 	CaveMaker.use_layout(was)
 
@@ -179,7 +180,7 @@ func test_huge_first_cavern() -> void:
 			if r.biome != "mossy" or r.get("lobe_of", -1) == 0:
 				continue
 			var d := Vector2(r.center.x - f.center.x, r.center.z - f.center.z).length()
-			check(d > CaveMaker.FIRST_CAVERN_R * 0.8 or r.kind in ["shrine", "geode", "lair"], "seed %d: room %d isn't swallowed by it (%.0f m)" % [sd, i, d])
+			check(d > CaveMaker.FIRST_CAVERN_R * 0.8 or r.kind in ["shrine", "geode", "hollow"], "seed %d: room %d isn't swallowed by it (%.0f m)" % [sd, i, d])
 	CaveMaker.use_layout(was)
 
 

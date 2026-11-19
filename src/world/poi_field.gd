@@ -1,8 +1,8 @@
 class_name PoiField
 extends Node3D
 ## Shows the special places the Cave Maker planned (world doc 3.1): ruins, camps, rune
-## shrines, wall markings (boss clues), nests, the boss altar. Same on every computer.
-## What you can DO at them goes through the GameAuthority (read a marking, take a rune).
+## shrines, nests, the Great Hall. Same on every computer.
+## What you can DO at them goes through the GameAuthority (take a rune).
 
 const POI_LAYER := 16  ## aim + E, like stations
 
@@ -67,30 +67,11 @@ func set_taken(poi_id: int) -> void:
 		n.get_node("Rune").visible = false
 
 
-## A marking was read: make it glow brighter.
-func set_read(poi_id: int) -> void:
-	var n: Node3D = _nodes.get(poi_id)
-	if n and n.has_node("Glyph"):
-		var mi: MeshInstance3D = n.get_node("Glyph")
-		mi.material_override = _mat(Color(1.0, 0.85, 0.4), 3.0)
-
-
 func _make(p: Dictionary) -> Node3D:
 	var root := StaticBody3D.new()
 	root.collision_layer = 0
 	root.collision_mask = 0
 	match p.type:
-		"marking":
-			# A carved slab on the wall with a glowing glyph (the boss clue).
-			root.collision_layer = POI_LAYER
-			root.set_meta("poi_id", p.id)
-			_shape(root, Vector3(2.4, 1.8, 0.5), Vector3(0, 1.2, 0))
-			var slab := _part(root, _box(Vector3(2.4, 1.8, 0.25)), _mat(Color(0.5, 0.48, 0.45)), Vector3(0, 1.2, 0))
-			slab.name = "Slab"
-			var glyph := _part(root, _box(Vector3(1.6, 1.1, 0.05)), _mat(Color(0.4, 0.75, 1.0), 1.2), Vector3(0, 1.25, 0.14))
-			glyph.name = "Glyph"
-			root.look_at_from_position(Vector3.ZERO, -p.normal, Vector3.UP)
-			_label(root, "Old carving · E to read", 2.6)
 		"gate":
 			# The plug of border rock between two biomes: a carved arch with a glowing seal.
 			var arch_mat := _mat(Color(0.4, 0.36, 0.45))
@@ -149,18 +130,6 @@ func _make(p: Dictionary) -> Node3D:
 				var a := i * TAU / 7.0
 				_part(root, _sphere(0.3), _mat(Color(0.75, 0.72, 0.55)), Vector3(cos(a), 0.2, sin(a)) * 1.2)  # eggs
 			_part(root, _cyl(1.8, 2.2, 0.4), _mat(Color(0.35, 0.28, 0.18)), Vector3(0, 0.1, 0))
-		"lair":
-			# The summoning altar in the middle of the sealed hall. E with an offering re-summons a beaten boss.
-			root.collision_layer = POI_LAYER
-			root.set_meta("poi_id", p.id)
-			_shape(root, Vector3(3.6, 1.6, 3.6), Vector3(0, 0.8, 0))
-			_label(root, "Summoning altar · E", 2.4)
-			_part(root, _cyl(1.6, 2.0, 1.0), _mat(Color(0.4, 0.42, 0.4)), Vector3(0, 0.5, 0))
-			_part(root, _sphere(0.5), _mat(Color(0.3, 1.0, 0.7), 2.0), Vector3(0, 1.4, 0))
-			var lrng := _rng_for(p)
-			for i in 4:
-				var a := i * TAU / 4.0 + PI / 4.0
-				_col(root, p, i, _on_floor(p, Vector3(cos(a), 0, sin(a)) * 9.0), 9.0, 1.3, 0.0, lrng, Color(0.5, 0.5, 0.48))
 		"great_hall":
 			var grng := _rng_for(p)
 			for i in 8:

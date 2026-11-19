@@ -164,7 +164,7 @@ static func points_for_level(l: int) -> int:
 
 # ---------------------------------------------------------------- earning
 
-## Adds XP. `skill` = "" gives character XP only (discoveries, bosses, runes).
+## Adds XP. `skill` = "" gives character XP only (discoveries, runes).
 func add_xp(amount: int, skill: String = "") -> void:
 	if amount <= 0:
 		return

@@ -31,7 +31,6 @@ const DATA := {
 	"crystal_white": {name = "White Glow Crystal", color = Color(0.95, 0.95, 1.0), short = "Cw", kind = "fuel", fuel = 600.0},
 	"crystal_red": {name = "Red Glow Crystal", color = Color(1.0, 0.35, 0.3), short = "Cr", kind = "fuel", fuel = 240.0},
 	"rusty_scrap": {name = "Rusty Scrap", color = Color(0.55, 0.35, 0.25), short = "Rs"},
-	"glow_slime": {name = "Glow Slime", color = Color(0.6, 1.0, 0.6), short = "Sl", kind = "fuel", fuel = 60.0},
 	# --- wood, plants, mushrooms
 	"rootwood": {name = "Rootwood", color = Color(0.5, 0.35, 0.2), short = "Rw", kind = "fuel", fuel = 60.0},
 	"coal": {name = "Coal", color = Color(0.16, 0.15, 0.15), short = "Co", kind = "fuel", fuel = 120.0},  # from the Kiln (F32)
@@ -46,8 +45,6 @@ const DATA := {
 	"spore_truffle": {name = "Spore Truffle", color = Color(0.45, 0.35, 0.5), short = "Tr"},
 	"ember_morel": {name = "Ember Morel", color = Color(0.95, 0.5, 0.2), short = "Em"},
 	# --- animal parts
-	"critter_meat": {name = "Critter Meat", color = Color(0.8, 0.35, 0.35), short = "Me", kind = "food", hunger = 10, upset = 0.3},
-	"critter_hide": {name = "Critter Hide", color = Color(0.6, 0.45, 0.3), short = "Hi"},
 	"beetle_meat": {name = "Beetle Meat", color = Color(0.7, 0.45, 0.4), short = "Bm", kind = "food", hunger = 10, upset = 0.3},
 	"chitin_plate": {name = "Chitin Plate", color = Color(0.3, 0.4, 0.3), short = "Ch"},
 	# ---- From the first three creatures (docs/design/monsters-first-three.md)
@@ -55,6 +52,8 @@ const DATA := {
 	"shell_piece": {name = "Shell Piece", color = Color(0.55, 0.5, 0.44), short = "Sp"},
 	"wing_leather": {name = "Wing Leather", color = Color(0.35, 0.28, 0.3), short = "Wl"},
 	"bat_fang": {name = "Bat Fang", color = Color(0.92, 0.9, 0.84), short = "Bf"},
+	"bat_meat": {name = "Bat Meat", color = Color(0.62, 0.32, 0.34), short = "Bt", kind = "food", hunger = 8, upset = 0.3},  ## cave bats (owner, Nov 19)
+	"spider_silk": {name = "Spider Silk", color = Color(0.9, 0.9, 0.86), short = "Sk"},  ## cave spiders: 2 make a rope
 	"bug_meat": {name = "Bug Meat", color = Color(0.75, 0.55, 0.45), short = "Bg", kind = "food", hunger = 10, upset = 0.3},
 	"glow_gland": {name = "Glow Gland", color = Color(0.5, 0.9, 0.6), short = "Gg", kind = "fuel", fuel = 480.0},  # twice a crystal
 	"bolt_fang": {name = "Fang Bolt", color = Color(0.9, 0.88, 0.82), short = "Bf", kind = "ammo"},
@@ -66,15 +65,8 @@ const DATA := {
 	"plate_shell": {name = "Shell Plate", stack = 1, color = Color(0.56, 0.51, 0.45), short = "SP", kind = "wear", slot = "chest", armor = 7, look = "shell"},
 	"greaves_shell": {name = "Shell Greaves", stack = 1, color = Color(0.54, 0.49, 0.43), short = "SG", kind = "wear", slot = "legs", armor = 5, look = "shell"},
 	"boots_shell": {name = "Shell Boots", stack = 1, color = Color(0.52, 0.47, 0.41), short = "SB", kind = "wear", slot = "feet", armor = 3, look = "shell"},
-	# Fungal Jungle monster parts (combat doc 5.3, 8.5; doc 5.5 maps horns, stalker meat and glow spores to old items)
-	"spore_powder": {name = "Spore Powder", color = Color(0.7, 0.65, 0.5), short = "Sp"},
-	"needle": {name = "Mite Needle", color = Color(0.75, 0.85, 0.9), short = "Nd"},
-	"venom_sac": {name = "Venom Sac", color = Color(0.45, 0.8, 0.35), short = "Vs"},
-	"scythe_blade": {name = "Scythe Blade", color = Color(0.6, 0.6, 0.7), short = "Sb"},
-	"spitter_gill": {name = "Spitter Gill", color = Color(0.9, 0.5, 0.35), short = "Sg"},
-	"ironshell_plate": {name = "Ironshell Plate", color = Color(0.35, 0.3, 0.25), short = "Ip"},
-	"sivix_silk": {name = "Sivix Silk", color = Color(0.92, 0.95, 1.0), short = "Sk"},
-	"gloam_scythe": {name = "Gloam Scythe", color = Color(0.55, 0.55, 0.75), short = "Gl"},
+	"spore_powder": {name = "Spore Powder", color = Color(0.7, 0.65, 0.5), short = "Sp"},  ## ground from spore truffles
+	"venom_sac": {name = "Venom Sac", color = Color(0.45, 0.8, 0.35), short = "Vs"},  ## cave spiders
 	# --- water
 	"waterskin_empty": {name = "Waterskin (empty)", stack = 1, color = Color(0.5, 0.4, 0.3), short = "Ws", kind = "waterskin"},
 	"waterskin_dirty": {name = "Waterskin (pool water)", stack = 1, color = Color(0.45, 0.5, 0.35), short = "Ws", kind = "drink", thirst = 25, upset = 0.3, empties_to = "waterskin_empty"},
@@ -95,9 +87,11 @@ const DATA := {
 	"sporestone_block": {name = "Sporestone Block", color = Color(0.35, 0.3, 0.4), short = "SB"},
 	"amber_block": {name = "Amber Block", color = Color(0.9, 0.7, 0.3), short = "AmB"},
 	"mushroom_brick": {name = "Mushroom Brick", color = Color(0.8, 0.7, 0.6), short = "MB"},
-	# --- boss parts
-	"keeper_heartstone": {name = "Keeper's Heartstone", color = Color(0.4, 1.0, 0.7), short = "KH"},
-	"bloomheart_core": {name = "Bloomheart Core", color = Color(1.0, 0.5, 0.8), short = "BC"},
+	# --- rare finds (owner, Nov 19: they came from bosses before)
+	"heartwood": {name = "Root Tree Heartwood", color = Color(0.62, 0.3, 0.16), short = "Hw"},  ## chopping a Root Tree; the Copper Pickaxe needs one
+	"tree_moss": {name = "Tree Moss", color = Color(0.36, 0.55, 0.26), short = "TM"},  ## peels off a Root Tree's bark when you chop it
+	"bloomheart_core": {name = "Bloomheart Core", color = Color(1.0, 0.5, 0.8), short = "BC"},  ## now and then inside a giant mushroom
+	"bandage": {name = "Moss Bandage", stack = 20, color = Color(0.7, 0.75, 0.55), short = "Bn", kind = "food", hunger = 0, heal = 25},  ## heals a little (right-click)
 	# --- tools
 	"pickaxe_stone": {name = "Stone Pickaxe", stack = 1, color = Color(0.7, 0.68, 0.62), short = "Pk", kind = "pickaxe", power = 10, tier = 0},
 	"pickaxe_copper": {name = "Copper Pickaxe", stack = 1, color = Color(0.9, 0.55, 0.3), short = "Pk", kind = "pickaxe", power = 13, tier = 1},

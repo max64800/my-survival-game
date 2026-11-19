@@ -444,10 +444,10 @@ func _props_test() -> void:
 ## Tuning aid: every monster shape in a row, frozen mid-stride (walking at 3 m/s).
 func _monster_lineup() -> void:
 	_model.visible = false
-	var shapes := ["crab", "lizard", "moth", "toad", "armor", "golem", "mushroom", "mite", "beetle", "mantis", "shuffler", "bat", "hog", "snail", "puffpod"]
+	var shapes := ["rock_snail", "cave_bat", "rock_beetle"]  # (the simple-shape bodies left, Nov 19)
 	var models := []
 	for i in shapes.size():
-		var m := MonsterModel.build(shapes[i], Color.from_hsv(i / 15.0, 0.45, 0.6), 1.0, i == 4)
+		var m := MonsterModel.build(shapes[i], Color.from_hsv(i / 3.0, 0.45, 0.6), 1.0, i == 1)
 		m.position = Vector3((i % 5 - 2) * 1.6, 0, -int(i / 5) * 1.8)
 		root.add_child(m)
 		models.append(m)

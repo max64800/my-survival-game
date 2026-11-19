@@ -27,7 +27,7 @@ const STATION_SCRIPT := preload("res://src/world/station.gd")
 const STATION_REACH := 4.0
 const PROGRESS_SYNC_TIME := 0.5
 ## Fuel the R key uses, best first.
-const FUEL_ORDER := ["crystal_white", "crystal_amber", "crystal_violet", "crystal_blue", "crystal_green", "crystal_red", "rootwood", "mushroom_wood", "glow_slime"]
+const FUEL_ORDER := ["crystal_white", "crystal_amber", "crystal_violet", "crystal_blue", "crystal_green", "crystal_red", "rootwood", "mushroom_wood"]
 
 static var instance: GameAuthority
 
@@ -72,10 +72,9 @@ var builder: Builder
 var storage: Storage
 var monsters: MonsterManager
 var poi_field: PoiField
-var raids: Raids
-## What the whole world remembers (shared by every player): clues found, shrines emptied,
-## bosses beaten, side-boss caverns discovered.
-var world_state := {clues = [], shrines = [], bosses_dead = [], lairs_found = []}
+## What the whole world remembers (shared by every player): shrines emptied (and more keys added later:
+## columns, learned, blueprints...). Old saves may still carry clues/bosses_dead/lairs_found: unused now.
+var world_state := {shrines = []}
 var _next_station_id := 1
 var _progress_dirty := {}  ## peer ids whose XP changed and need a sync
 var _progress_sync := 0.0
@@ -175,9 +174,6 @@ func _ready() -> void:
 	monsters = MonsterManager.new()
 	monsters.name = "Monsters"
 	add_child(monsters)
-	raids = Raids.new()
-	raids.name = "Raids"
-	add_child(raids)
 
 
 func _exit_tree() -> void:
@@ -403,6 +399,10 @@ func _tick_boulders(delta: float) -> void:
 			_ev_boulder.rpc(id, false)
 
 
+const TREE_MOSS_CHANCE := 0.4  ## per swing at a Root Tree: 1 Tree Moss
+const HEARTWOOD_CHANCE := 0.05  ## per swing at a Root Tree: 1 Heartwood (and always 1 when it cracks)
+
+
 ## A swing at a giant root pillar (owner, Nov 17, F189): bits of wood, 2 with an axe, up to RootPillars.CHOPS.
 func ask_chop_pillar(id: int) -> void:
 	if is_host():
@@ -445,7 +445,15 @@ func request_chop_pillar(peer_id: int, id: int) -> void:
 	var wood := n * (2 if ps.progress.has_star("woodcutting", 100) and randf() < 0.15 else 1)  # ★100: double wood
 	if used + n >= RootPillars.CHOPS and ps.progress.has_star("woodcutting", 50):
 		wood += 1  # Woodcutting ★50: +1 wood per Root Tree
-	spawn_drop("rootwood", wood, axis + out * float(p.width) * 0.18 + Vector3.UP * 0.4)
+	var drop_at := axis + out * float(p.width) * 0.18 + Vector3.UP * 0.4
+	spawn_drop("rootwood", wood, drop_at)
+	# Its moss and its heart (owner, Nov 19, after the bosses went): Tree Moss peels off the bark, and now and then a
+	# piece of Heartwood (the Copper Pickaxe needs one). A tree always gives one Heartwood when it cracks.
+	if randf() < TREE_MOSS_CHANCE:
+		spawn_drop("tree_moss", 1, drop_at + Vector3.UP * 0.3)
+	var heart := used + n >= RootPillars.CHOPS or randf() < HEARTWOOD_CHANCE
+	if heart:
+		spawn_drop("heartwood", 1, drop_at + Vector3.UP * 0.5)
 	give_xp(peer_id, 3 * n, "woodcutting")
 	_ev_tree_used.rpc(id, used + n)
 	if used + n >= RootPillars.CHOPS:  # it cracks: 1-2 Root Seeds fall from it (owner, Nov 18)
@@ -716,7 +724,7 @@ func ask_buy_perk(perk_id: String) -> void:
 		_rpc_buy_perk.rpc_id(1, perk_id)
 
 
-## E at a special place (wall marking, rune shrine).
+## E at a special place (a rune shrine).
 func ask_poi(poi_id: int) -> void:
 	if is_host():
 		request_poi(local_peer_id(), poi_id)
@@ -1247,8 +1255,6 @@ func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
 		return {state = "air"}
 	normal = normal.normalized()  # a stretched normal would dig far past the reach check
 	var center := point - normal * 0.55
-	if monsters and monsters.lair_locked(center):
-		return {state = "blocked", point = point, why = "The lair walls glow. No digging until the fight ends!"}
 	if monsters and monsters.standing_over(center):
 		return {state = "blocked", point = point, why = "Something is standing on that rock."}  # no pit traps (F125)
 	var mat := world.rock_material_near(point - normal * 0.3, 1.1)
@@ -1294,7 +1300,7 @@ func _judge_level(ps: PlayerState, point: Vector3) -> Dictionary:
 	var c := Vector3(point.x, feet.y, point.z)
 	if Vector2(c.x - feet.x, c.z - feet.z).length() > 3.2:
 		return {state = "too_far"}
-	if monsters and (monsters.lair_locked(c) or monsters.standing_over(c)):
+	if monsters and monsters.standing_over(c):
 		return {state = "blocked", point = point, why = "Something is in the way."}
 	var counts := {}
 	var spots: Array[Vector3] = []
@@ -1366,7 +1372,7 @@ func _dig_ramp(ps: PlayerState, center: Vector3, tool_tier: int, counts: Diction
 	var n := ceili(a.distance_to(bottom) / 0.5)
 	for i in range(1, n):
 		var f := a.lerp(bottom, float(i) / n) + Vector3.UP * (RAMP_R + 0.02)
-		if monsters and (monsters.lair_locked(f) or monsters.standing_over(f)):
+		if monsters and monsters.standing_over(f):
 			continue
 		var more := _host_dig(f, tool_tier, RAMP_R)
 		for m in more:
@@ -1374,7 +1380,7 @@ func _dig_ramp(ps: PlayerState, center: Vector3, tool_tier: int, counts: Diction
 	# And a little past the hole, the same slope on (owner: "nearly at the end I still need to jump"): the lip where the
 	# ramp met the floor above was the last step.
 	var past := bottom + dir * 0.8 + Vector3.UP * (rise / run * 0.8 + RAMP_R + 0.02)
-	if not (monsters and (monsters.lair_locked(past) or monsters.standing_over(past))):
+	if not (monsters and monsters.standing_over(past)):
 		var extra := _host_dig(past, tool_tier, RAMP_R)
 		for m in extra:
 			counts[m] = counts.get(m, 0) + extra[m]
@@ -1435,6 +1441,8 @@ func request_harvest(peer_id: int, glow_id: int) -> Dictionary:
 	spawn_drop(k.item, count, spot.pos + spot.normal * 0.6)
 	if k.has("extra"):
 		spawn_drop(k.extra, 1, spot.pos + spot.normal * 0.6 + Vector3.UP * 0.3)
+	if k.has("rare") and randf() < k.rare[1]:  # (a Bloomheart Core in a giant mushroom, owner Nov 19)
+		spawn_drop(k.rare[0], 1, spot.pos + spot.normal * 0.6 + Vector3.UP * 0.5)
 	give_xp(peer_id, k.xp, k.skill)
 	var left: int = spot.get("chops", 1) - 1
 	if left > 0:
@@ -1725,7 +1733,7 @@ func damage_boost(ps: PlayerState, target_kind: String = "") -> float:
 	return total
 
 
-const BUG_SHAPES := ["mite", "beetle", "mantis", "crab", "moth"]
+const BUG_SHAPES := ["rock_beetle", "cave_spider"]  ## Bugbane Oil works on beetles and spiders
 
 
 @rpc("authority", "call_local", "reliable")
@@ -1795,7 +1803,7 @@ func _take_sip(ps: PlayerState, slot_i: int) -> void:
 	ps.inventory.changed.emit()
 
 
-## Reading a wall marking (a boss clue) or taking a shrine's rune. Returns what happened.
+## Taking a shrine's rune. Returns what happened.
 func request_poi(peer_id: int, poi_id: int) -> String:
 	var ps := get_player(peer_id)
 	var pois: Array = world.maker.pois
@@ -1805,16 +1813,6 @@ func request_poi(peer_id: int, poi_id: int) -> String:
 	if _chest(ps).distance_to(poi.pos) > 5.0:
 		return "too_far"
 	match poi.type:
-		"marking":
-			if world_state.clues.has(poi_id):
-				return "already"
-			world_state.clues.append(poi_id)
-			for pid in players:
-				give_xp(pid, 100)  # clues are shared: everyone learns from them
-			_ev_state.rpc(world_state)
-			return "clue"
-		"lair":
-			return _altar(ps, poi)
 		"shrine":
 			if world_state.shrines.has(poi_id):
 				return "empty"
@@ -1827,55 +1825,6 @@ func request_poi(peer_id: int, poi_id: int) -> String:
 			_ev_state.rpc(world_state)
 			return "rune"
 	return ""
-
-
-## How many of this biome's wall markings (boss clues) the group has read.
-func markings_found(biome: String) -> int:
-	var n := 0
-	for id in world_state.get("clues", []):
-		var poi: Dictionary = world.maker.pois[id]
-		if poi.type == "marking" and poi.get("biome", "mossy") == biome:
-			n += 1
-	return n
-
-
-## How many you need before the boss can be called: 3 (or all of them, if a cave has fewer).
-func markings_needed(biome: String) -> int:
-	return mini(3, world.maker.pois_of("marking", biome).size())
-
-
-## The summoning altar in a main boss lair: an offering brings a beaten boss back (doc 8.1).
-func _altar(ps: PlayerState, poi: Dictionary) -> String:
-	var boss := ""
-	for id in Monsters.OFFERINGS:
-		if Monsters.BOSSES[id].biome == poi.biome:
-			boss = id
-	if boss == "":
-		return "sleeping"
-	if monsters._boss_alive(boss):
-		return "awake"
-	if markings_found(poi.biome) < markings_needed(poi.biome):
-		return "need_markings"  # find the wall markings that point here first (F115)
-	var need: Dictionary = Monsters.OFFERINGS[boss]
-	var shard := ""
-	for item in need:
-		if item == "shard":
-			for c in rune_slab.shards:
-				if rune_slab.shards[c] > 0:
-					shard = c
-			if shard == "":
-				return "need_offering"
-		elif ps.inventory.count_of(item) < need[item]:
-			return "need_offering"
-	if not monsters.summon_boss(boss):
-		return "awake"  # (checked before taking the offering, so nothing is lost)
-	for item in need:
-		if item != "shard":
-			ps.inventory.remove(item, need[item])
-	if shard != "":
-		rune_slab.shards[shard] -= 1
-		_ev_slab.rpc(rune_slab.to_data())
-	return "summoned"
 
 
 ## Carving a rune you carry into the Rune Slab (you must stand at one).
@@ -2328,11 +2277,11 @@ func _rpc_inventory(data: Array, selected: int) -> void:
 @rpc("authority", "call_local", "reliable")
 func _ev_state(state: Dictionary) -> void:
 	world_state = state.duplicate(true)
+	for gone in ["clues", "bosses_dead", "lairs_found"]:  # old saves: boss clues and boss kills (bosses removed, Nov 19)
+		world_state.erase(gone)
 	if poi_field:
 		for id in world_state.shrines:
 			poi_field.set_taken(id)
-		for id in world_state.clues:
-			poi_field.set_read(id)
 		for cid in world_state.get("columns", []):  # broken ruin columns (a save, or a friend joining)
 			poi_field.set_column_broken(int(cid), false)
 
@@ -2391,6 +2340,7 @@ func seed_poi_loot() -> void:
 			if rng.randf() < 0.3:
 				storage.put(id, "rune_" + rune_slab.pick_drop("m", [rng.randf(), rng.randf(), rng.randf()]), 1)
 			storage.put(id, "gold_coin", rng.randi_range(5, 15))  # gold pays for a perk reset (owner, Nov 19)
+			storage.put(id, "rusty_scrap", rng.randi_range(2, 5))  # smelts into copper (its creatures are gone, Nov 19)
 		else:
 			# A camp someone left: a page, and maybe one bite of food.
 			storage.put(id, Recipes.random_page(rng.randf()) if rng.randf() < 0.6 else "blueprint_page", 1)

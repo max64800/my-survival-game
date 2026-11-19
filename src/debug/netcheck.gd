@@ -80,7 +80,7 @@ func _run_client() -> void:
 	auth.builder.ask_door(990)
 	await _wait(1.0)
 	var door_open: bool = auth.builder.structure.pieces.get(990, {}).get("open", false)
-	# Step 5: ask the host for a Cairnling next to us, then hit it with the sword.
+	# Step 5: ask the host for a Rock Snail next to us, then hit it with the sword.
 	_ready_to_fight.rpc_id(1)
 	var mm: MonsterManager = auth.monsters
 	for t in 40:
@@ -165,7 +165,7 @@ func _run_host() -> void:
 			_fight_requested = false
 			var fp: Vector3 = _main.authority.get_player(multiplayer.get_peers()[0]).node.global_position
 			var mm: MonsterManager = _main.authority.monsters
-			mm._ev_spawn.rpc(900, "cairnling", _main.world.maker.find_floor(fp.x + 1.3, fp.z, fp.y + 2.0) + Vector3.UP * 0.3, false, 900)
+			mm._ev_spawn.rpc(900, "rock_snail", _main.world.maker.find_floor(fp.x + 1.3, fp.z, fp.y + 2.0) + Vector3.UP * 0.3, false, 900)
 		await _wait(0.25)
 	var auth: GameAuthority = _main.authority
 	var cid: int = multiplayer.get_peers()[0] if not multiplayer.get_peers().is_empty() else -1
@@ -205,12 +205,12 @@ func _run_host() -> void:
 	var host_cair: Monster = auth.monsters.get_monster(900)
 	var host_hp: float = host_cair.hp if host_cair else 0.0
 	if r.monster_hp < 0.0:
-		fails.append("friend never saw the Cairnling")
-	elif host_hp >= Monsters.max_hp("cairnling", false):
-		fails.append("friend's sword hits never reached the host (Cairnling HP %.0f)" % host_hp)
+		fails.append("friend never saw the Rock Snail")
+	elif host_hp >= Monsters.max_hp("rock_snail", false):
+		fails.append("friend's sword hits never reached the host (Rock Snail HP %.0f)" % host_hp)
 	elif absf(host_hp - r.monster_hp) > 0.5:
-		fails.append("Cairnling HP differs: host %.0f, friend %.0f" % [host_hp, r.monster_hp])
-	print("HOST: Cairnling HP %.0f / %.0f (friend sees %.0f)" % [host_hp, Monsters.max_hp("cairnling", false), r.monster_hp])
+		fails.append("Rock Snail HP differs: host %.0f, friend %.0f" % [host_hp, r.monster_hp])
+	print("HOST: Rock Snail HP %.0f / %.0f (friend sees %.0f)" % [host_hp, Monsters.max_hp("rock_snail", false), r.monster_hp])
 	if not r.get("door_open", false) or not auth.builder.structure.pieces.get(990, {}).get("open", false):
 		fails.append("the friend's door didn't open on both computers (friend %s, host %s)" % [r.get("door_open"), auth.builder.structure.pieces.get(990, {}).get("open")])
 	if not _main.players_root.has_node("Dwarf_%d" % cid):

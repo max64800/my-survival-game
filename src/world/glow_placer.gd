@@ -28,7 +28,8 @@ const KINDS := {
 	"root": {item = "rootwood", count = [3, 3], extra = "fiber", tool = "axe", hardness = 30, chops = 4, color = Color(0.42, 0.29, 0.18), xp = 3, skill = "woodcutting"},
 	# Fungal Jungle. Giant mushrooms are the jungle's wood: tall stalks that need a copper axe
 	# (or copper pickaxe at half power), and each chop also drops some flesh.
-	"giant_mushroom": {item = "mushroom_wood", count = [3, 3], extra = "mushroom_flesh", tool = "axe", hardness = 40, min_tier = 1, chops = 4, color = Color(0.72, 0.5, 0.78), xp = 4, skill = "woodcutting"},
+	# rare: [item, chance per chop] (a Bloomheart Core for the Silver Pickaxe, owner Nov 19).
+	"giant_mushroom": {item = "mushroom_wood", count = [3, 3], extra = "mushroom_flesh", rare = ["bloomheart_core", 0.1], tool = "axe", hardness = 40, min_tier = 1, chops = 4, color = Color(0.72, 0.5, 0.78), xp = 4, skill = "woodcutting"},
 	"drip": {item = "", tool = "none", color = Color(0.55, 0.75, 0.95)},
 	# Thin roots in the starting room: pull them by hand for your first pickaxe handle (feedback F11).
 	"root_dangle": {item = "rootwood", count = [1, 1], extra = "fiber", tool = "hand", color = Color(0.45, 0.31, 0.19), xp = 1, skill = "gathering"},

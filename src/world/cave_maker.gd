@@ -93,9 +93,15 @@ var deeps: Array[Dictionary] = []
 const DEEPS_COUNT := 2
 const DEEPS_THRESHOLD := 0.80  ## rich veins there (it's the only copper in the zone)
 var rooms: Array[Dictionary] = []  ## {center: Vector3, radii: Vector3, big: bool, kind: String, sealed: bool}
-## Special places (world doc 3.1): {id, type, pos, normal, room}. type: lair, nest_cavern,
-## great_hall, ruin, nest, camp, shrine, geode, marking.
+## Special places (world doc 3.1): {id, type, pos, normal, room}. type: great_hall, ruin, nest, camp, shrine, geode
+## (and outpost, ...). The boss places (lair altar, side-boss caverns, wall markings) were taken out (owner, Nov 19).
+## Room kinds can still be nest_cavern, silver_vault, brood_hollow, lantern_grove (plain caverns with their old labels)
+## and hollow (the old lair: sealed and empty).
 var pois: Array[Dictionary] = []
+## Where the first cave's start faces away from (the spot the old boss lair was rolled at, so old saves keep their start).
+var _start_away := Vector3.INF
+## Where the old boss places stood (Nov 19): new shrines and geodes still keep away from them, like before.
+var _old_spots: Array[Vector3] = []
 var segments: Array[Dictionary] = []  ## {a: Vector3, b: Vector3, r: float}
 var spawn_point := Vector3.ZERO
 ## Gate tunnels through the border slab: {pos (the middle of the plug), min, max (the open stubs' box)}
@@ -156,6 +162,8 @@ const ROCKY_AMP := 2.8  ## how far sharp rock juts out or cuts in (meters)
 func _init(p_seed: int = 1, big_caverns: int = 3, small_rooms: int = 12) -> void:
 	seed = p_seed
 	made_layout = layout
+	_start_away = Vector3.INF
+	_old_spots.clear()
 	_setup_noise()
 	if made_layout >= 2:
 		var drng := RandomNumberGenerator.new()
@@ -509,7 +517,7 @@ func _plan_bridges_v11() -> void:
 		var roll := rng.randf()
 		var ang := rng.randf_range(0.0, TAU)
 		var start_room := ri == 0 or (ri == near_start and not start_has)
-		if room.get("sealed", false) or ri == outpost or room.get("kind", "") in ["lair", "geode", "shrine"]:
+		if room.get("sealed", false) or ri == outpost or room.get("kind", "") in ["hollow", "geode", "shrine"]:
 			continue
 		if not start_room and not room.big and roll > 0.6:
 			continue
@@ -851,11 +859,10 @@ func _plan_start() -> void:
 	var cav: Dictionary = rooms[0]
 	var c: Vector3 = cav.center
 	var r: Vector3 = cav.radii
-	# Try the side of the cavern facing away from the boss lair first, then fan out both ways.
+	# Try the side of the cavern facing away from the old lair spot first, then fan out both ways.
 	var first := rng.randf_range(0.0, TAU)
-	var lair := lair_poi()
-	if not lair.is_empty():
-		var away: Vector3 = c - (lair.pos as Vector3)
+	if _start_away.is_finite():
+		var away: Vector3 = c - _start_away
 		first = atan2(away.z, away.x)
 	for attempt in 32:
 		var k := (attempt + 1) / 2
@@ -1890,12 +1897,18 @@ func _plan_pois(rng: RandomNumberGenerator, r0: int, r1: int, s0: int, s1: int, 
 	for i in range(r0 + (1 if biome == "mossy" else 0), r1):
 		if rooms[i].big:
 			bigs.append(i)
-	# Side-boss caverns (Mossy: Skerra's nest and Brask's hall; Fungal: the doc's three).
+	# The old side-boss caverns (the bosses were taken out, owner Nov 19). They're plain caverns now, but keep their old
+	# room labels, so old saves' caves keep the same shapes, columns and creatures. Only the Great Hall (an old ruined
+	# hall with columns and treasure) is still a special place.
 	var cavern_kinds: Array = ["nest_cavern", "great_hall"] if biome == "mossy" else ["silver_vault", "brood_hollow", "lantern_grove"]
 	for k in mini(bigs.size(), cavern_kinds.size()):
 		var bi: int = bigs[k]
 		rooms[bi].kind = cavern_kinds[k]
-		_add_poi(cavern_kinds[k], find_floor(rooms[bi].center.x, rooms[bi].center.z, rooms[bi].center.y), Vector3.UP, bi)
+		var at := find_floor(rooms[bi].center.x, rooms[bi].center.z, rooms[bi].center.y)
+		if cavern_kinds[k] == "great_hall":
+			_add_poi("great_hall", at, Vector3.UP, bi)
+		else:
+			_old_spots.append(at)
 	# Small rooms: ruins, nests and camps (no nests within 60 m of the start).
 	var smalls := []
 	for i in range(r0, r1):
@@ -1924,7 +1937,8 @@ func _plan_pois(rng: RandomNumberGenerator, r0: int, r1: int, s0: int, s1: int, 
 	if made_layout >= 2:
 		_assign_shapes(r0, r1)  # plain caverns and rooms get their real-cave shapes
 		_bake_shapes()
-	# The main boss lair: a sealed dome, 6+ m of rock all around, 150+ m from the start.
+	# Where the main boss lair was (the boss is gone, owner Nov 19): still a sealed hollow deep in the rock, with nothing
+	# in it, so old saves' caves, places and the first cave's start stay exactly where they were.
 	var lair_reach := HALF_SIZE - 35.0  # (165 m in layout 1)
 	for attempt in 600:
 		var c := Vector3(cx + rng.randf_range(-lair_reach, lair_reach), rng.randf_range(-40, -16), rng.randf_range(-lair_reach, lair_reach))
@@ -1932,8 +1946,10 @@ func _plan_pois(rng: RandomNumberGenerator, r0: int, r1: int, s0: int, s1: int, 
 			continue
 		var r := Vector3(18, 9, 18)
 		if _solid_around(c, r + Vector3.ONE * 6.0):
-			rooms.append({center = c, radii = r, big = true, kind = "lair", sealed = true, biome = biome})
-			_add_poi("lair", c - Vector3.UP * r.y * 0.55, Vector3.UP, rooms.size() - 1)
+			rooms.append({center = c, radii = r, big = true, kind = "hollow", sealed = true, biome = biome})
+			_old_spots.append(c - Vector3.UP * r.y * 0.55)
+			if biome == "mossy":
+				_start_away = c - Vector3.UP * r.y * 0.55
 			break
 	# Crystal geodes (sealed pockets near tunnels) and rune shrines (3 open alcoves, 2 sealed).
 	var geodes := 0
@@ -1977,7 +1993,6 @@ func _plan_pois(rng: RandomNumberGenerator, r0: int, r1: int, s0: int, s1: int, 
 	if made_layout >= 2:
 		_ramp_high_holes(r0, r1, cx)
 	_bake_shapes()
-	_place_markings(rng, biome)
 
 
 ## F141 (owner, Nov 17: "yes, fix it"): a tunnel that passes through a room can open high up in its wall, out of
@@ -2041,42 +2056,6 @@ func _dig_ramp(e: Vector3, c: Vector3, rad: Vector3, floor_y: float, cx: float) 
 	segments.append({a = mid, b = end, r = RAMP_R, k = TUBE, h = 0.0, ramp = true})
 
 
-## The 3 wall markings (boss clues): one in the Great Hall, one in a ruin, one on a
-## cavern wall near the start. Each ≥ 80 m from the lair and ≥ 60 m from the others (world doc 3.2).
-func _place_markings(rng: RandomNumberGenerator, biome: String) -> void:
-	var lair := lair_poi(biome)
-	var candidates := []
-	for kind in ["great_hall", "lantern_grove", "ruin", "spawn", "cavern", "nest_cavern", "silver_vault", "brood_hollow", "camp", "room"]:
-		for i in rooms.size():
-			if rooms[i].kind == kind and rooms[i].get("biome", "mossy") == biome:
-				candidates.append(i)
-	var placed := []
-	for i in candidates:
-		if placed.size() >= 3:
-			break
-		var room: Dictionary = rooms[i]
-		for attempt in 16:
-			var a := rng.randf_range(0, TAU)
-			var start: Vector3 = room.center + Vector3.DOWN * room.radii.y * 0.25
-			var hit := _march_wall(start, Vector3(cos(a), 0, sin(a)), 60.0)
-			if hit == Vector3.INF:
-				continue
-			var n := _normal(hit)
-			if absf(n.y) > 0.3:
-				continue
-			if not lair.is_empty() and hit.distance_to(lair.pos) < 80.0:
-				break
-			var ok := true
-			for p in placed:
-				if p.distance_to(hit) < 60.0:
-					ok = false
-			if not ok:
-				break
-			placed.append(hit)
-			_add_poi("marking", hit + n * 0.05, n, i)
-			break
-
-
 func _add_poi(type: String, pos: Vector3, normal: Vector3, room: int) -> void:
 	pois.append({id = pois.size(), type = type, pos = pos, normal = normal, room = room, biome = _poi_biome})
 
@@ -2084,6 +2063,9 @@ func _add_poi(type: String, pos: Vector3, normal: Vector3, room: int) -> void:
 func _far_from_pois(p: Vector3, d: float) -> bool:
 	for q in pois:
 		if q.pos.distance_to(p) < d:
+			return false
+	for q in _old_spots:
+		if q.distance_to(p) < d:
 			return false
 	return true
 
@@ -2098,55 +2080,6 @@ func _solid_around(c: Vector3, half: Vector3) -> bool:
 				if _smooth_at(c + Vector3(x, y, z) * half) >= -0.5:  # planning: the plain shape, before blocks
 					return false
 	return true
-
-
-func _march_wall(start: Vector3, dir: Vector3, max_dist: float) -> Vector3:
-	var t := 0.0
-	while t < max_dist:
-		var p := start + dir * t
-		var d := sdf_at(p)
-		if d < 0.05:
-			return p
-		t += maxf((d - march_slack()) * 0.8, 0.2)
-	return Vector3.INF
-
-
-func _normal(p: Vector3) -> Vector3:
-	const E := 0.4
-	var g := Vector3(sdf_at(p + Vector3(E, 0, 0)) - sdf_at(p - Vector3(E, 0, 0)),
-		sdf_at(p + Vector3(0, E, 0)) - sdf_at(p - Vector3(0, E, 0)),
-		sdf_at(p + Vector3(0, 0, E)) - sdf_at(p - Vector3(0, 0, E)))
-	return g.normalized() if g.length() > 0.0001 else Vector3.UP
-
-
-## The three map circles the wall markings reveal (world doc 3.2): [center_xz, radius] ×3.
-## 1st: 120 m circle with the lair inside (not in the middle), 2nd: 45 m inside the 1st, 3rd: exact.
-func clue_circles(biome: String = "mossy") -> Array:
-	var lair := lair_poi(biome)
-	if lair.is_empty():
-		return []
-	var rng := RandomNumberGenerator.new()
-	rng.seed = seed + 555 + (0 if biome == "mossy" else 1000)
-	var L := Vector2(lair.pos.x, lair.pos.z)
-	var c1 := L + _in_disc(rng, 60.0)
-	var c2 := L
-	for i in 50:
-		c2 = L + _in_disc(rng, 22.5)
-		if c2.distance_to(c1) + 45.0 <= 120.0:
-			break
-	return [[c1, 120.0], [c2, 45.0], [L, 6.0]]
-
-
-static func _in_disc(rng: RandomNumberGenerator, r: float) -> Vector2:
-	var a := rng.randf() * TAU
-	return Vector2(cos(a), sin(a)) * r * sqrt(rng.randf())
-
-
-func lair_poi(biome: String = "mossy") -> Dictionary:
-	for p in pois:
-		if p.type == "lair" and p.biome == biome:
-			return p
-	return {}
 
 
 ## Special places of one type ("" biome = all biomes).

@@ -66,13 +66,13 @@ func test_inputs_free_room_for_output() -> void:
 	check(Crafting.craft(inv, "plank_root"), "the rootwood's slot frees up for the planks")
 
 
-func test_boss_part_needed_for_copper_pickaxe() -> void:
+func test_heartwood_needed_for_copper_pickaxe() -> void:
 	var inv := Inventory.new()
 	inv.add("copper_ingot", 8)
 	inv.add("plank_root", 4)
 	inv.add("leather", 2)
-	check(not Crafting.can_craft(inv, "pickaxe_copper"), "no heartstone, no copper pickaxe")
-	inv.add("keeper_heartstone", 1)
+	check(not Crafting.can_craft(inv, "pickaxe_copper"), "no Root Tree Heartwood, no copper pickaxe")
+	inv.add("heartwood", 1)
 	check(Crafting.craft(inv, "pickaxe_copper"), "with it, yes")
 	check_eq(Items.tier("pickaxe_copper"), 1, "copper tier")
 

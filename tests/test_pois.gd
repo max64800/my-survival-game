@@ -1,5 +1,5 @@
 extends TestCase
-## Special places: boss clues, rune shrines, ruin loot, carving runes.
+## Special places: rune shrines, ruin loot, carving runes.
 
 var world: World
 var auth: GameAuthority
@@ -30,30 +30,6 @@ func _setup() -> void:
 
 func _teardown() -> void:
 	auth.get_parent().queue_free()
-
-
-func test_clue_circles_point_at_the_lair() -> void:
-	for s in [1, 42, 99]:
-		var c := CaveMaker.new(s)
-		var circles := c.clue_circles()
-		check_eq(circles.size(), 3, "3 circles")
-		var lair := Vector2(c.lair_poi().pos.x, c.lair_poi().pos.z)
-		check(lair.distance_to(circles[0][0]) <= 120.0, "seed %d: lair inside the big circle" % s)
-		check(lair.distance_to(circles[1][0]) <= 45.0, "seed %d: lair inside the small circle" % s)
-		check(circles[1][0].distance_to(circles[0][0]) + 45.0 <= 120.01, "seed %d: small circle inside the big one" % s)
-		check(lair.distance_to(circles[0][0]) > 1.0, "seed %d: lair is not at the middle of the big circle" % s)
-
-
-func test_reading_markings() -> void:
-	await _setup()
-	var marks := world.maker.pois_of("marking")
-	player.global_position = marks[0].pos + marks[0].normal * 1.5
-	check_eq(auth.request_poi(1, marks[0].id), "clue", "first marking read")
-	check_eq(auth.request_poi(1, marks[0].id), "already", "can't count it twice")
-	check_eq(auth.world_state.clues.size(), 1, "1 clue")
-	check(ps.progress.xp >= 100, "100 XP for a discovery")
-	check_eq(auth.request_poi(1, marks[1].id), "too_far", "must walk to the next one")
-	_teardown()
 
 
 func test_shrine_gives_one_rune() -> void:

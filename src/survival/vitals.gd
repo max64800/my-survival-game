@@ -194,6 +194,7 @@ func consume(item_id: String, roll: float = 1.0) -> bool:
 		return false
 	hunger = minf(100.0, hunger + info.get("hunger", 0))
 	thirst = minf(100.0, thirst + info.get("thirst", 0))
+	health = minf(max_health(), health + info.get("heal", 0))  # a Moss Bandage
 	if roll < info.get("upset", 0.0):
 		upset_time = UPSET_TIME
 	if Foods.is_buff_food(item_id):

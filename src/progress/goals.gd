@@ -22,9 +22,8 @@ const STEPS := [
 	["pickaxe_fang", "Hunt bats for 4 fangs, tan a hide, then make a Fang Pickaxe"],
 	["copper_ore", "Find the Copper Deeps (far, low caverns) and mine copper with the Fang Pickaxe"],
 	["copper_ingot", "Make a Smelter and smelt the copper ore"],
-	["markings", "Read 3 wall markings: they tell of the Keeper's lair"],
-	["boss", "Call the Keeper at its altar: 5 copper ingots, 3 bat fangs, 2 glow glands"],
-	["pickaxe_copper", "Beat it, then make a Copper Pickaxe at the Anvil (it opens the way on)"],
+	["heartwood", "Chop the big Root Tree's roots with an axe until Heartwood falls out"],
+	["pickaxe_copper", "Make a Copper Pickaxe at the Anvil with the Heartwood (it opens the way on)"],
 ]
 
 
@@ -43,10 +42,6 @@ static func done(id: String, ps: GameAuthority.PlayerState, auth: GameAuthority)
 				if st.kind == "chopping_block":
 					return true
 			return ps.seen.has("pickaxe_fang")
-		"markings":
-			return auth.markings_found("mossy") >= auth.markings_needed("mossy")
-		"boss":
-			return auth.world_state.get("bosses_dead", []).has("orrumhal")
 		"brick":
 			for st in auth.stations.values():
 				if st.kind == "masonry_table" and st.level() >= 2:

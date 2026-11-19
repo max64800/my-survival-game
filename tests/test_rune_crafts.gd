@@ -80,8 +80,8 @@ func test_whetstone_and_bug_oil_boost_damage() -> void:
 	check_near(auth.damage_boost(ps), 0.05, 0.0001, "+5% damage")
 	ps.inventory.slots[2] = {id = "bugbane_oil", count = 1}
 	auth.request_use(1, Vector3.INF, Vector3.ZERO, 0.0)
-	check_near(auth.damage_boost(ps, "needlemite"), 0.20, 0.0001, "+15% more against bugs")
-	check_near(auth.damage_boost(ps, "cairnling"), 0.05, 0.0001, "but not against stone golems")
+	check_near(auth.damage_boost(ps, "cave_spider"), 0.20, 0.0001, "+15% more against bugs")
+	check_near(auth.damage_boost(ps, "rock_snail"), 0.05, 0.0001, "but not against snails")
 	_teardown()
 
 

@@ -32,7 +32,7 @@ func _ready() -> void:
 	row.add_child(frame)
 	var holder := Control.new()
 	holder.custom_minimum_size = Vector2(540, 540)  # fits a 900 px tall window with the frame and title
-	holder.clip_contents = true  # big boss-clue circles stop at the map's edge
+	holder.clip_contents = true  # marks stop at the map's edge
 	frame.add_child(holder)
 	_tex.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_tex.stretch_mode = TextureRect.STRETCH_SCALE
@@ -76,7 +76,7 @@ func _ready() -> void:
 	lt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	UiKit.divider(lv)
 	for entry in [["▲", Color(0.75, 0.1, 0.1), "You are here"], ["●", Color(0.9, 0.4, 0.15), "Your stations"],
-			["▲▼", Color(0.85, 0.7, 0.5), "Way up / down"], ["◯", Color(0.8, 0.2, 0.2), "Boss clue"],
+			["▲▼", Color(0.85, 0.7, 0.5), "Way up / down"],
 			["▒", Color(0.62, 0.53, 0.38), "Not explored yet"]]:
 		var r := HBoxContainer.new()
 		lv.add_child(r)
@@ -122,26 +122,6 @@ func _draw_marks() -> void:
 			continue
 		var at := Vector2(data.to_pixel(m.pos, _biome)) * scale
 		_overlay.draw_string(font, at - Vector2(7, -7), "▲" if m.up else "▼", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(0.25, 0.15, 0.08))
-	# Boss clues (world doc 3.2): circles shrink with every wall marking read.
-	var auth := GameAuthority.instance
-	if auth and auth.world:
-		var maker: CaveMaker = auth.world.maker
-		var found: int = auth.world_state.clues.filter(func(id): return maker.pois[id].biome == _biome).size()
-		var circles: Array = maker.clue_circles(_biome)
-		var lair: Dictionary = maker.lair_poi(_biome)
-		for i in mini(found, circles.size()):
-			var c: Vector2 = circles[i][0]
-			var px := Vector2(data.to_pixel(Vector3(c.x, 0, c.y), _biome)) * scale
-			var col := Color(0.6, 0.1, 0.1, 0.9)
-			if i < 2:
-				_overlay.draw_arc(px, circles[i][1] * scale.x, 0, TAU, 64, col, 2.0 if i == found - 1 else 1.0)
-			elif MapData.floor_of(lair.pos.y) == floor:
-				_overlay.draw_line(px - Vector2(8, 8), px + Vector2(8, 8), col, 3.0)
-				_overlay.draw_line(px - Vector2(8, -8), px + Vector2(8, -8), col, 3.0)
-		if found > 0 and not lair.is_empty():
-			var f := MapData.floor_of(lair.pos.y)
-			var hint := "floors %d–%d" % [maxi(f, 1), mini(f + 2, MapData.floor_count())] if found == 1 else "floor %d" % (f + 1)
-			_overlay.draw_string(font, Vector2(8, 20), "Boss clues: %d of 3 · the lair is on %s" % [found, hint], HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(0.4, 0.05, 0.05))
 	for st in _stations:
 		if MapData.floor_of(st.global_position.y) == floor and CaveMaker.biome_at(st.global_position) == _biome:
 			_overlay.draw_circle(Vector2(data.to_pixel(st.global_position, _biome)) * scale, 5, Color(0.9, 0.4, 0.15))

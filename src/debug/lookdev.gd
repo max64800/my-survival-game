@@ -499,8 +499,12 @@ func _run() -> void:
 	var hall: Dictionary = maker.pois_of("great_hall")[0]
 	await _teleport(dwarf, hall.pos + Vector3(0, 1.0, 12.0), hall.pos + Vector3.UP * 2.0)
 	await _shot("f_great_hall")
-	var grove: Dictionary = maker.pois_of("lantern_grove")[0]
-	await _teleport(dwarf, grove.pos + Vector3(0, 1.5, 14.0), grove.pos + Vector3.UP * 2.5)
+	var grove := Vector3.ZERO  # the first big jungle cavern
+	for room in maker.rooms:
+		if room.big and room.get("biome", "") == "fungal" and not room.get("sealed", false):
+			grove = maker.find_floor(room.center.x, room.center.z, room.center.y)
+			break
+	await _teleport(dwarf, grove + Vector3(0, 1.5, 14.0), grove + Vector3.UP * 2.5)
 	await _shot("g_jungle_grove")
 	await _portrait(dwarf, "h_jungle_portrait")
 	var avg := 0.0

@@ -131,11 +131,11 @@ func test_buffs_run_out_and_clear_on_death() -> void:
 
 func test_raw_meat_can_upset_belly() -> void:
 	var v := Vitals.new()
-	v.consume("critter_meat", 0.1)
+	v.consume("bat_meat", 0.1)
 	check(v.upset_time > 0.0, "bad luck: upset belly")
 	check_near(v.stamina_regen_mult(), 0.75, 0.001, "slower stamina regen")
 	var w := Vitals.new()
-	w.consume("critter_meat", 0.9)
+	w.consume("bat_meat", 0.9)
 	check_eq(w.upset_time, 0.0, "good luck: fine")
 
 

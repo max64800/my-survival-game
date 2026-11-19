@@ -1,17 +1,18 @@
 extends TestCase
 ## Fighting rules, checked against the worked examples in the combat doc.
 
-const CAIRNLING := {armor = 40, slash = 0.5, blunt = 1.5, pierce = 0.75, fire = 0.5, frost = 0.5, poison = 1.0}
+## The combat doc's worked example: a stone creature with 40 armor (doc 2.2).
+const STONE_40 := {armor = 40, slash = 0.5, blunt = 1.5, pierce = 0.75, fire = 0.5, frost = 0.5, poison = 1.0}
 
 
-func test_doc_example_copper_mace_on_cairnling() -> void:
-	# Doc 2.2: Copper mace heavy on a Cairnling = 38.
-	check_eq(Combat.damage("mace", true, 1, CAIRNLING), 38, "copper mace heavy vs cairnling")
+func test_doc_example_copper_mace_on_stone() -> void:
+	# Doc 2.2: Copper mace heavy on a 40-armor stone creature = 38.
+	check_eq(Combat.damage("mace", true, 1, STONE_40), 38, "copper mace heavy vs stone")
 
 
-func test_doc_example_copper_sword_on_cairnling() -> void:
+func test_doc_example_copper_sword_on_stone() -> void:
 	# Doc 2.2: the same hit with a sword = 10 (slash is bad against stone).
-	check_eq(Combat.damage("sword", true, 1, CAIRNLING), 10, "copper sword heavy vs cairnling")
+	check_eq(Combat.damage("sword", true, 1, STONE_40), 10, "copper sword heavy vs stone")
 
 
 func test_silver_sword_light_on_nothing() -> void:
@@ -84,12 +85,6 @@ func test_stun_meter() -> void:
 	check_near(m.value, 30.0, 0.01, "no drain in the first 2.5 s")
 	m.tick(1.5)
 	check(m.value < 30.0, "then it drains")
-
-
-func test_boss_gets_harder_to_stun() -> void:
-	var b := StunMeter.new(100, 5.0, true)
-	b.add(100)
-	check_near(b.max_value, 130.0, 0.01, "+30% after each stun")
 
 
 func test_crossbow_numbers() -> void:

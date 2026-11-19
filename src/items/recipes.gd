@@ -17,7 +17,12 @@ const LIST := {
 	"rope":{station = HAND, inputs = {fiber = 3}, output = "rope", count = 1, unlock = []},
 	"campfire": {station = HAND, inputs = {stone = 5, rootwood = 3}, output = "campfire", count = 1, unlock = []},
 	"workbench": {station = HAND, inputs = {rootwood = 10, stone = 6}, output = "workbench", count = 1, unlock = []},
-	"waterskin": {station = HAND, inputs = {critter_hide = 2, rope = 1}, output = "waterskin_empty", count = 1, unlock = ["critter_hide"]},
+	# Rope from cave spiders' silk (owner, Nov 19): the other way to rope.
+	"rope_silk": {station = HAND, inputs = {spider_silk = 2}, output = "rope", count = 1, unlock = ["spider_silk"]},
+	# A Moss Bandage: right-click it to heal a little.
+	"bandage": {station = HAND, inputs = {tree_moss = 2, fiber = 1}, output = "bandage", count = 1, unlock = ["tree_moss"]},
+	# Spore Powder, ground from spore truffles by hand (for spore bombs, bugbane oil and the spore mask).
+	"spore_powder": {station = HAND, inputs = {spore_truffle = 1}, output = "spore_powder", count = 2, unlock = ["spore_truffle"]},
 	"drink_bellcap_juice": {station = HAND, inputs = {bellcap = 2}, output = "drink_bellcap_juice", count = 1, unlock = ["bellcap"]},
 	# --- workbench
 	"plank_root": {station = "workbench", inputs = {rootwood = 1}, output = "plank_root", count = 2, unlock = []},
@@ -25,8 +30,8 @@ const LIST := {
 	"masons_shovel": {station = "workbench", inputs = {stone = 4, rootwood = 3}, output = "masons_shovel", count = 1, unlock = []},
 	"axe_stone": {station = "workbench", inputs = {stone = 3, rootwood = 2, rope = 2}, output = "axe_stone", count = 1, unlock = []},
 	"build_hammer": {station = "workbench", inputs = {stone = 3, rootwood = 2}, output = "build_hammer", count = 1, unlock = []},
-	"bed": {station = "workbench", inputs = {plank_root = 6, moss = 4, leather = 2}, output = "bed", count = 1, unlock = []},
-	"tanning_rack": {station = "workbench", inputs = {plank_root = 6, rope = 4}, output = "tanning_rack", count = 1, unlock = ["critter_hide", "wing_leather"]},  # bats' wing leather too (F398)
+	"bed": {station = "workbench", inputs = {plank_root = 6, tree_moss = 4, leather = 2}, output = "bed", count = 1, unlock = []},
+	"tanning_rack": {station = "workbench", inputs = {plank_root = 6, rope = 4}, output = "tanning_rack", count = 1, unlock = ["wing_leather"]},  # bats' wing leather (F398)
 	"smelter": {station = "workbench", inputs = {stone = 20, clay = 15}, output = "smelter", count = 1, unlock = ["copper_ore"]},
 	"kiln": {station = "workbench", inputs = {stone = 15, clay = 8}, output = "kiln", count = 1, unlock = ["clay"]},
 	"farm_plot": {station = "workbench", inputs = {dirt = 10, moss = 5, plank_root = 4}, output = "farm_plot", count = 1, unlock = ["glowcap", "hollowcap", "bellcap", "root_tuber"]},
@@ -55,8 +60,6 @@ const LIST := {
 	"trousers_leather": {station = "workbench", inputs = {leather = 3, rope = 1}, output = "trousers_leather", count = 1, unlock = ["leather"]},
 	"boots_leather": {station = "workbench", inputs = {leather = 2, fiber = 2}, output = "boots_leather", count = 1, unlock = ["leather"]},
 	"satchel": {station = "workbench", inputs = {leather = 4, rope = 2}, output = "satchel", count = 1, unlock = ["leather"]},
-	# --- tanning rack (60 s each)
-	"leather": {station = "tanning_rack", inputs = {critter_hide = 1}, output = "leather", count = 1, seconds = 60, unlock = ["critter_hide"]},
 	# --- kiln (F32): wood → coal. Also runs by itself from a chest within 5 m (AutoSmelt).
 	"coal": {station = "kiln", inputs = {rootwood = 2}, output = "coal", count = 1, seconds = 20, unlock = []},
 	# --- smelter (needs wood fuel; times from doc 4.2)
@@ -67,13 +70,13 @@ const LIST := {
 	"lantern_lens": {station = "smelter", inputs = {crystal_blue = 3, clay = 1}, output = "lantern_lens", count = 1, seconds = 30, fuel = 1, unlock = ["crystal_blue"]},
 	# --- anvil
 	# Copper gear is found, not known (owner, Nov 19): each piece needs its own Old Recipe Page. The Copper
-	# Pickaxe stays known from your first copper ingot, so the copper-sealed boss lair is never down to luck.
+	# Pickaxe needs Root Tree Heartwood (owner, Nov 19: it came from the Keeper boss before).
 	"helm_copper": {station = "anvil", inputs = {copper_ingot = 4, leather = 1}, output = "helm_copper", count = 1, unlock = "ruin"},
 	"mail_copper": {station = "anvil", inputs = {copper_ingot = 8, leather = 2}, output = "mail_copper", count = 1, unlock = "ruin"},
 	"greaves_copper": {station = "anvil", inputs = {copper_ingot = 6, leather = 1}, output = "greaves_copper", count = 1, unlock = "ruin"},
 	"boots_copper": {station = "anvil", inputs = {copper_ingot = 3, leather = 1}, output = "boots_copper", count = 1, unlock = "ruin"},
 	"axe_copper": {station = "anvil", inputs = {copper_ingot = 6, plank_root = 3, leather = 1}, output = "axe_copper", count = 1, unlock = "ruin"},
-	"pickaxe_copper": {station = "anvil", inputs = {copper_ingot = 8, plank_root = 4, leather = 2, keeper_heartstone = 1}, output = "pickaxe_copper", count = 1, unlock = ["keeper_heartstone"]},
+	"pickaxe_copper": {station = "anvil", inputs = {copper_ingot = 8, plank_root = 4, leather = 2, heartwood = 1}, output = "pickaxe_copper", count = 1, unlock = ["heartwood"]},
 	"axe_silver": {station = "anvil", inputs = {silver_ingot = 6, plank_mushroom = 3, chitin_plate = 2}, output = "axe_silver", count = 1, unlock = ["silver_ingot"]},
 	"pickaxe_silver": {station = "anvil", inputs = {silver_ingot = 8, plank_mushroom = 4, chitin_plate = 2, bloomheart_core = 1}, output = "pickaxe_silver", count = 1, unlock = ["bloomheart_core"]},
 	# --- weapons. STARTING VALUES (the design docs had no weapon recipes yet): tune in play-testing.
@@ -98,10 +101,9 @@ const LIST := {
 	# Crossbows and bolts (combat doc 3.6; "starting idea" recipes, tune in play-testing).
 	"crossbow_stone": {station = "workbench", inputs = {plank_root = 4, rope = 3, stone = 4}, output = "crossbow_stone", count = 1, unlock = ["rope"]},
 	"crossbow_copper": {station = "anvil", inputs = {copper_ingot = 4, plank_root = 3, rope = 2}, output = "crossbow_copper", count = 1, unlock = "ruin"},
-	"crossbow_silver": {station = "anvil", inputs = {silver_ingot = 4, plank_mushroom = 3, sivix_silk = 1}, output = "crossbow_silver", count = 1, unlock = ["silver_ingot"]},
+	"crossbow_silver": {station = "anvil", inputs = {silver_ingot = 4, plank_mushroom = 3, spider_silk = 1}, output = "crossbow_silver", count = 1, unlock = ["silver_ingot"]},
 	"bolt_stone": {station = "workbench", inputs = {plank_root = 1, stone = 2}, output = "bolt_stone", count = 10, unlock = ["rope"]},
 	"bolt_metal": {station = "anvil", inputs = {plank_root = 1, copper_ingot = 1}, output = "bolt_metal", count = 10, unlock = ["copper_ingot"]},
-	"bolt_metal_needle": {station = "workbench", inputs = {plank_mushroom = 1, needle = 3}, output = "bolt_metal", count = 10, unlock = ["needle"]},
 	"bolt_thumper": {station = "workbench", inputs = {plank_root = 1, stone = 2, rope = 1}, output = "bolt_thumper", count = 10, unlock = ["rope"]},
 	"bolt_ember": {station = "workbench", inputs = {bolt_metal = 10, crystal_red = 1}, output = "bolt_ember", count = 10, unlock = ["crystal_red"]},
 	"bolt_rime": {station = "workbench", inputs = {bolt_metal = 10, crystal_blue = 2}, output = "bolt_rime", count = 10, unlock = ["bolt_metal"]},
@@ -110,14 +112,14 @@ const LIST := {
 	# Taught by runes (progression doc 8). unlock = "rune": you learn it by carving the rune.
 	"crystal_sconce": {station = "workbench", inputs = {stone = 4, crystal_blue = 2}, output = "crystal_sconce", count = 1, unlock = "rune"},
 	"rope_ladder": {station = "workbench", inputs = {rope = 3, plank_root = 2}, output = "rope_ladder", count = 4, unlock = "rune"},
-	"blasting_pod": {station = "workbench", inputs = {spitter_gill = 1, crystal_red = 1, clay = 2}, output = "blasting_pod", count = 2, unlock = "rune"},
+	"blasting_pod": {station = "workbench", inputs = {glow_gland = 1, crystal_red = 1, clay = 2}, output = "blasting_pod", count = 2, unlock = "rune"},
 	"glow_marker": {station = "workbench", inputs = {plank_mushroom = 2, crystal_amber = 1}, output = "glow_marker", count = 3, unlock = "rune"},
-	"prospectors_lens": {station = "anvil", inputs = {silver_ingot = 1, crystal_white = 1, scythe_blade = 1}, output = "prospectors_lens", count = 1, unlock = "rune"},
-	"training_dummy": {station = "workbench", inputs = {plank_root = 4, fiber = 6, critter_hide = 1}, output = "training_dummy", count = 1, unlock = "rune"},
+	"prospectors_lens": {station = "anvil", inputs = {silver_ingot = 1, crystal_white = 1, bat_fang = 1}, output = "prospectors_lens", count = 1, unlock = "rune"},
+	"training_dummy": {station = "workbench", inputs = {plank_root = 4, fiber = 6, wing_leather = 1}, output = "training_dummy", count = 1, unlock = "rune"},
 	"whetstone": {station = "workbench", inputs = {stone = 4, copper_ingot = 1}, output = "whetstone", count = 2, unlock = "rune"},
-	"spore_bomb": {station = "workbench", inputs = {spore_powder = 2, spitter_gill = 1, rope = 1}, output = "spore_bomb", count = 3, unlock = "rune"},
+	"spore_bomb": {station = "workbench", inputs = {spore_powder = 2, glow_gland = 1, rope = 1}, output = "spore_bomb", count = 3, unlock = "rune"},
 	"bugbane_oil": {station = "cooking_pot", inputs = {venom_sac = 1, spore_powder = 2, mushroom_flesh = 1}, output = "bugbane_oil", count = 2, seconds = 20, unlock = "rune"},
-	"war_horn": {station = "anvil", inputs = {ironshell_plate = 1, silver_ingot = 2, critter_hide = 2}, output = "war_horn", count = 1, unlock = "rune"},
+	"war_horn": {station = "anvil", inputs = {chitin_plate = 1, silver_ingot = 2, wing_leather = 2}, output = "war_horn", count = 1, unlock = "rune"},
 	"ruin_style": {station = "masonry_table", inputs = {stone = 3, clay = 1}, output = "ancient_brick", count = 2, unlock = "rune"},
 	"chest_copper": {station = "anvil", inputs = {plank_root = 10, copper_ingot = 6}, output = "chest_copper", count = 1, unlock = "rune"},
 	"crate_ore": {station = "anvil", inputs = {plank_root = 12, copper_ingot = 4}, output = "crate_ore", count = 1, unlock = "rune"},
@@ -136,8 +138,8 @@ const LIST := {
 	"mushroom_brick": {station = "masonry_table", inputs = {mushroom_flesh = 2, clay = 1}, output = "mushroom_brick", count = 2, unlock = ["mushroom_flesh"]},
 	# --- campfire (10 s)
 	"dish_glowcap_skewer": {station = "campfire", inputs = {glowcap = 2}, output = "dish_glowcap_skewer", count = 1, seconds = 10, unlock = []},
-	"dish_seared_critter": {station = "campfire", inputs = {critter_meat = 1}, output = "dish_seared_critter", count = 1, seconds = 10, unlock = []},
-	"dish_firecap_skewer": {station = "campfire", inputs = {critter_meat = 1, firecap = 1}, output = "dish_firecap_skewer", count = 1, seconds = 10, unlock = "ruin"},
+	"dish_seared_critter": {station = "campfire", inputs = {bat_meat = 1}, output = "dish_seared_critter", count = 1, seconds = 10, unlock = ["bat_meat"]},  # Seared Bat
+	"dish_firecap_skewer": {station = "campfire", inputs = {bat_meat = 1, firecap = 1}, output = "dish_firecap_skewer", count = 1, seconds = 10, unlock = "ruin"},
 	"dish_beetle_roast": {station = "campfire", inputs = {beetle_meat = 1}, output = "dish_beetle_roast", count = 1, seconds = 10, unlock = ["beetle_meat"]},
 	# ---- The first three creatures (docs/design/monsters-first-three.md)
 	"dish_cooked_snail": {station = "campfire", inputs = {snail_meat = 1}, output = "dish_cooked_snail", count = 1, seconds = 10, unlock = ["snail_meat"]},
@@ -160,10 +162,10 @@ const LIST := {
 	"boil_water": {station = "campfire", inputs = {waterskin_dirty = 1}, output = "waterskin_clean", count = 1, seconds = 10, unlock = ["waterskin_dirty"]},
 	# --- cooking pot (20 s)
 	"dish_tuber_mash": {station = "cooking_pot", inputs = {root_tuber = 3, water_bucket = 1}, output = "dish_tuber_mash", count = 1, seconds = 20, unlock = []},
-	"dish_hollowcap_stew": {station = "cooking_pot", inputs = {hollowcap = 2, critter_meat = 1, water_bucket = 1}, output = "dish_hollowcap_stew", count = 1, seconds = 20, unlock = []},
+	"dish_hollowcap_stew": {station = "cooking_pot", inputs = {hollowcap = 2, snail_meat = 1, water_bucket = 1}, output = "dish_hollowcap_stew", count = 1, seconds = 20, unlock = []},
 	"dish_glow_broth": {station = "cooking_pot", inputs = {glowcap = 3, water_bucket = 1}, output = "dish_glow_broth", count = 1, seconds = 20, unlock = "rune"},
-	"dish_miners_pie": {station = "cooking_pot", inputs = {critter_meat = 2, root_tuber = 2, hollowcap = 1}, output = "dish_miners_pie", count = 1, seconds = 20, unlock = "ruin"},
-	"dish_hearth_stew": {station = "cooking_pot", inputs = {critter_meat = 2, hollowcap = 1, firecap = 1, root_tuber = 1, water_bucket = 1}, output = "dish_hearth_stew", count = 1, seconds = 20, unlock = "ruin"},
+	"dish_miners_pie": {station = "cooking_pot", inputs = {bug_meat = 2, root_tuber = 2, hollowcap = 1}, output = "dish_miners_pie", count = 1, seconds = 20, unlock = "ruin"},
+	"dish_hearth_stew": {station = "cooking_pot", inputs = {bat_meat = 2, hollowcap = 1, firecap = 1, root_tuber = 1, water_bucket = 1}, output = "dish_hearth_stew", count = 1, seconds = 20, unlock = "ruin"},
 	"dish_truffle_risotto": {station = "cooking_pot", inputs = {spore_truffle = 2, root_tuber = 1, water_bucket = 1}, output = "dish_truffle_risotto", count = 1, seconds = 20, unlock = "ruin"},
 	"dish_chitin_crunch": {station = "cooking_pot", inputs = {beetle_meat = 2, spore_truffle = 1, moss = 1}, output = "dish_chitin_crunch", count = 1, seconds = 20, unlock = "ruin"},
 	"dish_spore_ward_stew": {station = "cooking_pot", inputs = {bellcap = 2, ember_morel = 1, moss = 1, water_bucket = 1}, output = "dish_spore_ward_stew", count = 1, seconds = 20, unlock = "rune"},
@@ -204,9 +206,23 @@ const GATHER := {
 	"bat_fang": "hunt cave bats",
 	"glow_gland": "hunt rock beetles",
 	"crystal_blue": "mine the glowing blue crystals with a pickaxe",
-	"critter_hide": "hunt small cave critters",
-	"leather": "tan critter hides on a Tanning Rack",
+	"leather": "hunt cave bats for wing leather, then tan it on a Tanning Rack",
+	"wing_leather": "hunt cave bats",
+	"bat_meat": "hunt cave bats",
+	"snail_meat": "hunt rock snails",
+	"shell_piece": "hunt rock snails",
+	"bug_meat": "hunt rock beetles or cave spiders",
+	"spider_silk": "hunt cave spiders",
+	"venom_sac": "hunt cave spiders (not every one has one)",
+	"heartwood": "chop a big Root Tree (axe or pickaxe): sometimes a piece falls out, and always one when it cracks",
+	"tree_moss": "chop a big Root Tree: its moss peels off with the wood",
+	"rusty_scrap": "look in old ruin chests",
 	"mushroom_wood": "chop giant mushrooms with a copper axe",
+	"mushroom_flesh": "chop giant mushrooms with a copper axe",
+	"bloomheart_core": "chop giant mushrooms with a copper axe: now and then one is inside",
+	"beetle_meat": "hunt great rock beetles in the Fungal Jungle",
+	"chitin_plate": "hunt great rock beetles in the Fungal Jungle",
+	"spore_truffle": "pick spore truffles in the Fungal Jungle by hand",
 }
 
 

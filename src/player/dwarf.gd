@@ -419,9 +419,7 @@ func _aim_info() -> Dictionary:
 		return {kind = "station", name = "%s · E to use" % Items.display_name(st.kind), station = st}
 	var poi_id := PoiField.poi_id_of(hit.collider)
 	if poi_id >= 0 and auth:
-		var t: String = auth.world.maker.pois[poi_id].type
-		var label: String = {"marking": "Old carving · E to read", "lair": "Summoning altar · E to make an offering"}.get(t, "Rune shrine · E to take")
-		return {kind = "poi", poi_id = poi_id, name = label}
+		return {kind = "poi", poi_id = poi_id, name = "Rune shrine · E to take"}
 	var box_id := Storage.box_id_of(hit.collider)
 	if box_id >= 0 and auth:
 		var box := auth.storage.get_box(box_id)
@@ -472,7 +470,7 @@ func _on_swing_impact() -> void:
 		auth.monsters.ask_hit_statue(statue_id)
 		return
 	if hit.collider is CollisionObject3D and (hit.collider as CollisionObject3D).collision_layer == Ragdoll.LAYER:
-		return  # (a boss's fallen body: nothing to mine, and don't dig the ground through it)
+		return  # (a fallen creature's limp pieces: nothing to mine, and don't dig the ground through it)
 	var boulder_id := Boulders.id_of(hit.collider)
 	if boulder_id >= 0:  # a boulder: stone every hit, it bursts after a few (owner, Nov 18)
 		auth.ask_hit_boulder(boulder_id)

@@ -144,22 +144,22 @@ func test_armor_and_wear_show_on_the_dwarf() -> void:
 
 
 func test_monsters_have_moving_parts() -> void:
-	var crab := MonsterModel.build("crab", Color(0.5, 0.4, 0.3), 1.0, false)
-	check((crab.get_meta("legs") as Array).size() >= 4, "a crab has legs that walk")
-	MonsterModel.animate(crab, 3.0, 1.0, 0.4)
-	check(crab.rotation.x < 0.0, "it leans into a run")
-	crab.free()
-	var bat := MonsterModel.build("bat", Color(0.4, 0.3, 0.5), 1.0, false)
+	var beetle := MonsterModel.build("rock_beetle", Color(0.5, 0.4, 0.3), 1.0, false)
+	check((beetle.get_meta("legs") as Array).size() >= 4, "a beetle has legs that walk")
+	MonsterModel.animate(beetle, 3.0, 1.0, 0.4)
+	check(beetle.rotation.x < 0.0, "it leans into a run")
+	beetle.free()
+	var bat := MonsterModel.build("cave_bat", Color(0.4, 0.3, 0.5), 1.0, false)
 	check((bat.get_meta("wings") as Array).size() == 2, "a bat has two flapping wings")
 	bat.free()
-	var golem := MonsterModel.build("golem", Color(0.5, 0.5, 0.5), 1.0, false)
+	var golem := MonsterModel.build("rock_beetle", Color(0.5, 0.5, 0.5), 1.0, false)
 	var chunky := func(mi: MeshInstance3D) -> bool:
 		if not mi.mesh is BoxMesh:
 			return false
 		var b := (mi.mesh as BoxMesh).size
 		return minf(b.x, minf(b.y, b.z)) >= 0.09  # thin bars (handles, blades) stay sharp on purpose
 	var boxes := golem.find_children("*", "MeshInstance3D", true, false).filter(chunky)
-	check(boxes.is_empty(), "no chunky toy-block boxes left on a golem (%d)" % boxes.size())
+	check(boxes.is_empty(), "no chunky toy-block boxes left on a beetle (%d)" % boxes.size())
 	golem.free()
 
 

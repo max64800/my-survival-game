@@ -254,4 +254,6 @@ func to_data() -> Array:
 func load_data(data: Array) -> void:
 	for i in slots.size():
 		slots[i] = data[i].duplicate(true) if i < data.size() and data[i] is Dictionary else {}  # deep: gems lists too
+		if slots[i].has("id") and not Items.exists(str(slots[i].id)):
+			slots[i] = {}  # an old save's item the game no longer has (critter meat, boss parts..., Nov 19)
 	changed.emit()

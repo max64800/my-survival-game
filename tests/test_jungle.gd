@@ -1,5 +1,5 @@
 extends TestCase
-## The Fungal Jungle (biome 2): its monsters, bosses, plants and rocks fit together.
+## The Fungal Jungle (biome 2): its monsters, plants and rocks fit together.
 
 
 func test_every_monster_is_complete() -> void:
@@ -19,34 +19,11 @@ func test_every_monster_is_complete() -> void:
 			check(a.tell >= 0.4 and a.damage > 0 and a.reach > 0.0, "%s: %s has sane numbers" % [id, a.name])
 
 
-func test_every_boss_is_complete() -> void:
-	var lairs := {}
-	for id in Monsters.BOSSES:
-		var b: Dictionary = Monsters.BOSSES[id]
-		check(b.biome in ["mossy", "fungal"], "%s belongs to a biome" % id)
-		for d in b.drops:
-			check(Items.exists(d[0]), "%s drops a real item: %s" % [id, d[0]])
-		for ph in b.phases:
-			for a in ph.attacks:
-				check(b.attack_list.has(a), "%s phase attack %s exists" % [id, a])
-			if ph.has("on_enter"):
-				check(Monsters.LIST.has(ph.on_enter.summon[0]), "%s summons a real monster" % id)
-		lairs[b.biome + ":" + b.room] = true
-	var maker := CaveMaker.new(42)
-	for key in lairs:
-		var parts: PackedStringArray = key.split(":")
-		check_eq(maker.pois_of(parts[1], parts[0]).size(), 1, "the cave has a place for %s" % key)
-
-
-func test_jungle_spawns_and_raids_use_jungle_monsters() -> void:
+func test_jungle_spawns_use_jungle_monsters() -> void:
 	for kind in Monsters.SPAWNS.fungal.big + Monsters.SPAWNS.fungal.small:
 		# Owner's first three (Nov 14): big beetles and bats live in the jungle; no snails there.
 		check(Monsters.LIST[kind].shape in ["rock_beetle", "cave_bat"], "%s is a jungle monster" % kind)
 		check(kind != "rock_snail", "no snails in the jungle")
-	for src in Raids.SOURCES:
-		check(Monsters.BOSSES.has(src), "raid source %s is a boss" % src)
-		for r in Raids.SOURCES[src]:
-			check(Monsters.LIST.has(r[0]), "raiders exist: %s" % r[0])
 
 
 func test_jungle_rocks() -> void:
@@ -96,11 +73,11 @@ func test_crystal_variants() -> void:
 	check_eq(Monsters.roll_variant("fungal", 0.05, 0.1), "green", "jungle: green is the most common crystal")
 	check_eq(Monsters.roll_variant("mossy", 0.03, 0.1), "red", "mossy: red first")
 	check_eq(Monsters.roll_variant("mossy", 0.05, 0.1), "", "mossy chance is 4%")
-	check_near(Monsters.max_hp("wheezecap", false, "green"), 80.0 * 1.4, 0.01, "variants have 40% more health")
-	check_eq(Monsters.target_stats("wheezecap", false, "amber").armor, 30, "amber skin: +30 armor")
+	check_near(Monsters.max_hp("great_rock_beetle", false, "green"), 220.0 * 1.4, 0.01, "variants have 40% more health")
+	check_eq(Monsters.target_stats("great_rock_beetle", false, "amber").armor, 45 + 30, "amber skin: +30 armor")
 	for v in Monsters.VARIANTS:
 		check(Items.exists(Monsters.VARIANTS[v].crystal), "%s drops a real crystal" % v)
-	var model := MonsterModel.build("crab", Color.GRAY, 1.0, false)
+	var model := MonsterModel.build("rock_beetle", Color.GRAY, 1.0, false)
 	var before := model.get_child_count()
 	MonsterModel.add_crystals(model, Color.RED)
 	check(model.get_child_count() > before, "crystals grow on its back")

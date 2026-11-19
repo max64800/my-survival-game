@@ -13,7 +13,6 @@ const DESPAWN_FAR := 100.0
 const RESPAWN := 600.0  ## a cleared room fills up again after 10 minutes
 const POSE_SEND := 0.1
 const SPAWN_CHECK := 2.0
-const ANIMAL_KEY := 100000  ## animal herds are kept apart from monster packs (room index + this)
 const BAT_KEY := 200000  ## each cave's sleeping bat roost (room index + this)
 const BATS := [4, 6]  ## bats per roost (owner, Nov 19: "5 frost ones, or 5 ember ones")
 
@@ -29,7 +28,6 @@ var _clock := 0.0
 var _pose_timer := 0.0
 var _spawn_timer := 0.0
 var _incoming: Array[Dictionary] = []  ## hits on OUR dwarf waiting to land: {uid, at, ...}
-var _boss_alone := {}  ## boss uid -> seconds with no player within 60 m (resets at 30)
 var _block_ok := {}  ## host: like _parry_ok, for Blight-gem blocks
 var _ff_ready := {}  ## host: peer -> seconds (clock) when their next friendly-fire hit may count
 var _parry_ok := {}  ## host: monster uid -> the player its last swing was aimed at
@@ -78,7 +76,6 @@ var _far_turn := 0
 func _host_step(delta: float) -> void:
 	_update_boosts()
 	_statues_step(delta)
-	_check_boss_resets(delta)
 	_far_turn = (_far_turn + 1) % FAR_EVERY
 	for m: Monster in monsters.values():
 		if m.is_alive():
@@ -111,7 +108,7 @@ func _host_step(delta: float) -> void:
 func _update_boosts() -> void:
 	var leaders := {}
 	for m: Monster in monsters.values():
-		if (m.leader or m.is_boss()) and m.is_alive():  # side bosses lead their kind (doc 8.3)
+		if m.leader and m.is_alive():
 			leaders[m.pack_id] = m
 	for m: Monster in monsters.values():
 		var l: Monster = leaders.get(m.pack_id)
@@ -120,10 +117,9 @@ func _update_boosts() -> void:
 
 func _spawn_and_despawn() -> void:
 	var maker: CaveMaker = auth.world.maker
-	_wake_bosses()
 	for i in maker.rooms.size():
 		var room: Dictionary = maker.rooms[i]
-		if room.get("sealed", false) or room.get("kind", "") in ["shrine", "lair"]:
+		if room.get("sealed", false) or room.get("kind", "") in ["shrine", "hollow"]:
 			continue
 		var near := _nearest_player_dist(room.center)
 		# Every cave has a roost of sleeping bats, the first one too: they only wake if you come close or shoot them.
@@ -141,12 +137,9 @@ func _spawn_and_despawn() -> void:
 				_ev_remove.rpc(u)
 			st.alive = []
 			st.cleared_at = -RESPAWN  # nobody fought them: free to come back
-		if room.big or i % 2 == 0:
-			# Cave animals: their own little herd per cavern (and every other room), back 20 min after a hunt.
-			_group_step(ANIMAL_KEY + i, room, near, Monsters.ANIMAL_RESPAWN, _spawn_herd.bind(ANIMAL_KEY + i))
 
 
-## A group that lives in a room apart from its monster pack (bat roost, animal herd): spawns when a player comes
+## A group that lives in a room apart from its monster pack (the bat roost): spawns when a player comes
 ## near, leaves when everyone is far away, and comes back `respawn` seconds after it was wiped out.
 ## `spawn` gets the room and returns the new uids.
 func _group_step(key: int, room: Dictionary, near: float, respawn: float, spawn: Callable) -> void:
@@ -190,27 +183,6 @@ func _spawn_roost(room: Dictionary, i: int) -> Array:
 		var uid := _next_uid
 		_next_uid += 1
 		_ev_spawn.rpc(uid, "cave_bat", ceiling + Vector3.DOWN * 0.3, false, BAT_KEY + i, variant)
-		uids.append(uid)
-	return uids
-
-
-func _spawn_herd(room: Dictionary, key: int) -> Array:
-	var maker: CaveMaker = auth.world.maker
-	var herd: Array = Monsters.ANIMALS[room.get("biome", "mossy")]
-	if herd.is_empty():
-		return []  # cave animals are hidden for now (Monsters.ANIMALS)
-	var kind: String = herd.pick_random()
-	var info: Dictionary = Monsters.LIST[kind]
-	var uids := []
-	for k in randi_range(info.pack[0], info.pack[1]):
-		var a := randf() * TAU
-		var r := randf_range(2.0, minf(room.radii.x, room.radii.z) * 0.6)
-		var spot := maker.find_floor(room.center.x + cos(a) * r, room.center.z + sin(a) * r, room.center.y)
-		if maker.sdf_at(spot + Vector3.UP) <= 0.0:
-			continue
-		var uid := _next_uid
-		_next_uid += 1
-		_ev_spawn.rpc(uid, kind, spot + Vector3.UP * 0.3, false, key)
 		uids.append(uid)
 	return uids
 
@@ -320,20 +292,6 @@ func alert_pack(m: Monster, peer: int) -> void:
 
 
 ## The host starts an attack: everyone sees the tell, the target's computer judges the hit.
-## A boss calls for help: monsters crawl out around it and join its pack.
-func boss_summon(m: Monster, kind: String, count: int) -> void:
-	for i in count:
-		var a := randf() * TAU
-		var p := m.global_position + Vector3(cos(a), 0, sin(a)) * randf_range(2.5, 5.0)
-		var spot: Vector3 = auth.world.maker.find_floor(p.x, p.z, m.global_position.y + 2.0)
-		var uid := _next_uid
-		_next_uid += 1
-		_ev_spawn.rpc(uid, kind, spot + Vector3.UP * 0.3, false, m.pack_id)
-		var s: Monster = monsters.get(uid)
-		if s:
-			s.alert(m.target_peer)
-
-
 func send_tell(m: Monster, atk: Dictionary) -> void:
 	var dmg: float = atk.damage * m.damage_mult()
 	var buildup: Dictionary = atk.get("buildup", {}).duplicate()
@@ -498,7 +456,7 @@ func _hurt_monster(m: Monster, peer: int, dmg: int, stun_amount: float) -> void:
 		auth.give_xp(peer, 1, Progression.weapon_skill(Combat.weapon_of(hitter_ps.selected_item())))
 	# A push away from the hitter (owner, Nov 18, "juicy hits"): stronger for big hits, weaker for big creatures.
 	var from := hitter.global_position if hitter else m.global_position
-	if hitter and not m.is_boss() and not m.shell_shut and m.shell_left <= 0.0:  # (a snail in his shell is a heavy stone)
+	if hitter and not m.shell_shut and m.shell_left <= 0.0:  # (a snail in his shell is a heavy stone)
 		var away := (m.global_position - from) * Vector3(1, 0, 1)
 		if away.length() > 0.01:
 			m.knock(away.normalized() * clampf(1.8 + dmg * 0.06, 1.8, 5.0) / maxf(1.0, float(m.data.get("size", 1.0))))
@@ -506,9 +464,6 @@ func _hurt_monster(m: Monster, peer: int, dmg: int, stun_amount: float) -> void:
 	if m.hp <= 0.0:
 		_kill(m, peer)
 	else:
-		var entered := m.check_phase()
-		if entered.has("summon"):
-			boss_summon(m, entered.summon[0], entered.summon[1])
 		monster_changed(m)
 
 
@@ -665,118 +620,13 @@ static func max_targets_for(w: String) -> int:
 	return 2 if w in ["axe", "spear"] else 1
 
 
-## Bosses wake when a player comes near their cavern (and the main boss when someone digs into its lair).
-func _wake_bosses() -> void:
-	var maker: CaveMaker = auth.world.maker
-	for id in Monsters.BOSSES:
-		var b: Dictionary = Monsters.BOSSES[id]
-		var poi: Array = maker.pois_of(b.room, b.biome)
-		if poi.is_empty():
-			continue
-		var at: Vector3 = poi[0].pos
-		var near := _nearest_player_dist(at)
-		if b.boss == "side" and near < 30.0 and not auth.world_state.lairs_found.has(id):
-			auth.world_state.lairs_found.append(id)  # a raid source from now on (doc 8.6)
-			auth._ev_state.rpc(auth.world_state)
-		if auth.world_state.bosses_dead.has(id) or _boss_alive(id):
-			continue
-		if b.boss == "main":
-			continue  # main bosses sleep until called at their altar (3 markings + an offering, F115)
-		var wake := 25.0 if b.boss == "main" else 35.0
-		if near < wake and auth.world.is_ready_at(at, 4.0):
-			var uid := _next_uid
-			_next_uid += 1
-			_ev_spawn.rpc(uid, id, at + Vector3.UP * 0.5, false, 1000 + poi[0].id)
-
-
-## Host: brings a main boss back at its altar (after an offering).
-func summon_boss(id: String) -> bool:
-	var b: Dictionary = Monsters.BOSSES.get(id, {})
-	if b.is_empty() or _boss_alive(id):
-		return false
-	var poi: Array = auth.world.maker.pois_of(b.room, b.biome)
-	if poi.is_empty():
-		return false
-	var uid := _next_uid
-	_next_uid += 1
-	_ev_spawn.rpc(uid, id, poi[0].pos + Vector3.UP * 0.5, false, 1000 + poi[0].id)
-	return true
-
-
-## During a main boss fight its lair walls can't be dug (combat doc 8.1): no tunnelling around it.
-func lair_locked(p: Vector3) -> bool:
-	var maker: CaveMaker = auth.world.maker
-	for m: Monster in monsters.values():
-		if not m.is_boss() or m.data.boss != "main" or (m.target_peer == 0 and m.hp >= m.max_hp()):
-			continue  # no fight going on
-		var lair := maker.lair_poi(m.data.biome)
-		if lair.is_empty():
-			continue
-		var room: Dictionary = maker.rooms[lair.room]
-		var q: Vector3 = (p - room.center) / (room.radii + Vector3.ONE * 5.0)
-		if q.length() < 1.0:
-			return true
-	return false
-
-
-func _boss_alive(id: String) -> bool:
-	for m: Monster in monsters.values():
-		if m.kind == id:
-			return true
-	return false
-
-
-## Bosses don't give up the chase, but if every player is 60+ m away for 30 s they heal up and go home.
-func _check_boss_resets(delta: float) -> void:
-	for m: Monster in monsters.values():
-		if not m.is_boss():
-			continue
-		if _nearest_player_dist(m.global_position) > Monsters.BOSS_RESET_DISTANCE:
-			_boss_alone[m.uid] = _boss_alone.get(m.uid, 0.0) + delta
-			if _boss_alone[m.uid] >= Monsters.BOSS_RESET_TIME and m.hp < m.max_hp():
-				m.hp = m.max_hp()
-				m.phase = 0
-				m.state = Monster.State.RETURN
-				m.target_peer = 0
-				monster_changed(m)
-		else:
-			_boss_alone[m.uid] = 0.0
-
-
-## Boss drops (doc 8.1): every player within 60 m gets their own copy.
-func _boss_drops(m: Monster) -> void:
-	for pid in auth.players:
-		var ps: GameAuthority.PlayerState = auth.players[pid]
-		if ps.node.global_position.distance_to(m.global_position) > Monsters.BOSS_DROP_RANGE:
-			continue
-		var gifts := []
-		for d in m.data.drops:
-			if randf() < d[2]:
-				gifts.append([d[0], d[1]])
-		if m.data.has("epic_choice") and (not auth.world_state.bosses_dead.has(m.kind) or randf() < 0.2):
-			gifts.append([Gems.item_id(m.data.epic_choice.pick_random()), 1])  # first kill: one epic gem; re-summons: 20%
-		for r in m.data.get("runes", 0):
-			var rune := auth.rune_slab.pick_drop(GameAuthority.rune_biome_at(m.global_position), [randf(), randf(), randf(), randf()])
-			if rune != "":
-				gifts.append(["rune_" + rune, 1])
-		for g in gifts:
-			var left: int = ps.inventory.add(g[0], g[1])
-			if left > 0:
-				auth.spawn_drop(g[0], left, ps.node.global_position + Vector3.UP)
-	if not auth.world_state.bosses_dead.has(m.kind):
-		auth.world_state.bosses_dead.append(m.kind)
-	auth._ev_state.rpc(auth.world_state)
-
-
 func _kill(m: Monster, peer: int) -> void:
 	var dc: Dictionary = m.data.get("death_cloud", {})
 	if not dc.is_empty() and not m.ailments.has("burn"):  # a fire kill burns the spores away
 		spawn_cloud(m.global_position + Vector3.UP * 0.5, dc.radius, dc.time, dc.rate, 0.0)
-	if m.is_boss():
-		_boss_drops(m)
 	var xp: int = m.data.xp * (Monsters.LEADER.xp if m.leader else 1) * (Monsters.VARIANT_STATS.xp if m.variant != "" else 1)
 	# Everything that dies turns to stone (owner, Nov 18): nothing drops now; its loot is locked inside the statue and
-	# comes out when you mine it (with its stone, and 1 in 20 a gem). Bosses still hand out their gifts at once.
+	# comes out when you mine it (with its stone, and 1 in 20 a gem).
 	var loot := []
 	if m.variant != "":
 		var v: Dictionary = Monsters.VARIANTS[m.variant]
@@ -792,7 +642,7 @@ func _kill(m: Monster, peer: int) -> void:
 	if killer:
 		auth.heal(peer, killer.progress.perk_rank("last_swing") * 3.0)  # Last Swing
 	var more := killer.progress.extra_drop_chance() if killer else 0.0  # Monster Scavenger
-	for d in ([] if m.is_boss() else m.data.drops):
+	for d in m.data.drops:
 		var times := (2 if m.leader else 1) + (1 if randf() < more else 0)
 		for t in times:
 			if randf() < d[2]:
@@ -806,9 +656,6 @@ func _kill(m: Monster, peer: int) -> void:
 		room.alive.erase(m.uid)
 		if room.alive.is_empty():
 			room.cleared_at = _clock
-	if m.is_boss():
-		_ev_remove.rpc(m.uid)
-		return
 	_ev_remove.rpc(m.uid, add_statue(m, loot))
 
 
@@ -1101,6 +948,8 @@ func request_parried(uid: int, stun_amount: float, peer: int = 0) -> void:
 
 @rpc("authority", "call_local", "reliable")
 func _ev_spawn(uid: int, kind: String, pos: Vector3, leader: bool, pack: int, variant: String = "") -> void:
+	if not Monsters.LIST.has(kind):
+		return  # a creature the game no longer has (an old save's boss or early creature, Nov 19)
 	var m: Monster = MONSTER_SCRIPT.new()
 	m.setup(uid, kind, leader, pos, variant)
 	m.pack_id = pack
@@ -1324,4 +1173,5 @@ func snapshot() -> Array:
 func load_snapshot(list: Array) -> void:
 	for e in list:
 		_ev_spawn(e[0], e[1], e[2], e[3], e[4], e[6] if e.size() > 6 else "")
-		monsters[e[0]].hp = e[5]
+		if monsters.has(e[0]):  # (skipped if it's a creature the game no longer has)
+			monsters[e[0]].hp = e[5]

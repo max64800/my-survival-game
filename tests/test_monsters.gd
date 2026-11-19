@@ -73,7 +73,7 @@ func test_monster_data_is_sane() -> void:
 
 func test_notices_and_chases_you() -> void:
 	await _setup()
-	var m := _spawn("mossnipper", Vector3(6, 0, 0))
+	var m := _spawn("cave_spider", Vector3(6, 0, 0))
 	check_eq(m.state, Monster.State.IDLE, "starts idle")
 	for i in 120:
 		await tree.physics_frame
@@ -85,11 +85,11 @@ func test_sword_damage_and_kill() -> void:
 	await _setup()
 	ps.inventory.add("sword_stone", 1)
 	auth.request_select_slot(1, first_item_slot(ps))  # the start pickaxe is in the hotbar (F243)
-	var m := _spawn("mossnipper", Vector3(1.2, 0, 0))
+	var m := _spawn("cave_spider", Vector3(1.2, 0, 0))
 	m.state = Monster.State.CHASE  # it saw us: no sneak bonus
 	var dealt := auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, 0, false)
-	check_eq(dealt, 13, "stone sword light on a mossnipper (slash ×1.25): 10 × 1.25 = 12.5 → 13")
-	check_near(m.hp, 17.0, 0.01, "30 - 13 = 17 HP left")
+	check_eq(dealt, 13, "stone sword light on a cave spider (slash ×1.25): 10 × 1.25 = 12.5 → 13")
+	check_near(m.hp, 11.0, 0.01, "24 - 13 = 11 HP left")
 	auth.monsters.request_attack(1, PackedInt32Array([m.uid]), true, 0, false)
 	check(auth.monsters.monsters.is_empty(), "heavy finishes it")
 	check(ps.progress.skill_xp.sword >= 5, "Sword XP for the kill")
@@ -100,11 +100,11 @@ func test_crystal_monster_hits_harder_and_drops_crystals() -> void:
 	await _setup()
 	var uid: int = auth.monsters._next_uid
 	var p := world.maker.find_floor(player.global_position.x + 1.2, player.global_position.z, player.global_position.y + 2.0)
-	auth.monsters._ev_spawn(uid, "mossnipper", p + Vector3.UP * 0.3, false, 0, "red")
+	auth.monsters._ev_spawn(uid, "cave_spider", p + Vector3.UP * 0.3, false, 0, "red")
 	var m := auth.monsters.get_monster(uid)
-	check_near(m.hp, 42.0, 0.01, "30 HP × 1.4")
+	check_near(m.hp, 24.0 * 1.4, 0.01, "24 HP × 1.4")
 	m.target_peer = 1
-	auth.monsters.send_tell(m, {name = "Claw Pinch", tell = 0.0, damage = 6, type = "slash", reach = 1.3, parry = "any"})
+	auth.monsters.send_tell(m, {name = "Bite", tell = 0.0, damage = 6, type = "pierce", reach = 1.3, parry = "any"})
 	auth.monsters._judge_incoming()
 	check_near(ps.vitals.health, 100.0 - (6.0 * 1.1 + 5.0), 0.01, "×1.1 damage + 5 fire")
 	check_near(ps.vitals.ailments.buildup.burn, 30.0, 0.01, "and 30 burn buildup")
@@ -125,31 +125,25 @@ func test_crystal_monster_hits_harder_and_drops_crystals() -> void:
 	_teardown()
 
 
-func test_animals_run_and_the_hog_fights_back() -> void:
+## The Rock Snail is neutral: it fights back when hit, and goes away when it's badly hurt.
+func test_a_healthy_snail_fights_back_a_hurt_one_runs() -> void:
 	await _setup()
 	ps.inventory.add("sword_stone", 1)
 	auth.request_select_slot(1, first_item_slot(ps))  # the start pickaxe is in the hotbar (F243)
-	var shuffler := _spawn("moss_shuffler", Vector3(1.2, 0, 0))
-	for i in 60:
-		await tree.physics_frame
-	check(shuffler.state in [Monster.State.IDLE, Monster.State.WANDER], "a shuffler ignores you")
-	auth.monsters.request_attack(1, PackedInt32Array([shuffler.uid]), false, 0, false)
-	check_eq(shuffler.state, Monster.State.FLEE, "hit: it rolls up and runs")
-	check_eq(shuffler.stats().armor, 40, "rolled up: hard shell")
-	var hog := _spawn("truffle_hog", Vector3(-1.2, 0, 0))
-	hog.state = Monster.State.CHASE
-	auth.monsters.request_attack(1, PackedInt32Array([hog.uid]), false, 0, false)
-	check(hog.state != Monster.State.FLEE, "a healthy hog fights back")
-	hog.hp = 30.0
-	hog.state = Monster.State.IDLE
-	hog.alert(1)
-	check_eq(hog.state, Monster.State.FLEE, "a hurt hog runs")
+	var snail := _spawn("rock_snail", Vector3(-1.2, 0, 0))
+	snail.state = Monster.State.CHASE
+	auth.monsters.request_attack(1, PackedInt32Array([snail.uid]), false, 0, false)
+	check(snail.state != Monster.State.FLEE, "a healthy snail fights back")
+	snail.hp = 30.0
+	snail.state = Monster.State.IDLE
+	snail.alert(1)
+	check_eq(snail.state, Monster.State.FLEE, "a hurt snail goes away")
 	_teardown()
 
 
 func test_crossbow_shot() -> void:
 	await _setup()
-	var m := _spawn("cairnling", Vector3(8.0, 0, 0))
+	var m := _spawn("rock_snail", Vector3(8.0, 0, 0))
 	m.state = Monster.State.CHASE  # it saw us
 	var from := player.global_position + Vector3.UP * 1.5
 	check_eq(auth.monsters.request_shoot(1, "bolt_stone", true, m.uid, from, m.global_position + Vector3.UP), 0, "no crossbow in hand: no shot")
@@ -159,12 +153,12 @@ func test_crossbow_shot() -> void:
 	for i in Inventory.HOTBAR_SIZE:
 		if ps.inventory.get_slot(i).get("id", "") == "crossbow_stone":
 			auth.request_select_slot(1, i)
-	# Aimed stone bolt on a Cairnling: 34 × pierce 0.75 × 100/140 (armor 40) = 18.2 → 18
-	check_eq(auth.monsters.request_shoot(1, "bolt_stone", true, m.uid, from, m.global_position + Vector3.UP), 18, "aimed shot damage")
+	# Aimed stone bolt on a Rock Snail: 34 × pierce 1.0 × 100/120 (armor 20) = 28.3 → 28
+	check_eq(auth.monsters.request_shoot(1, "bolt_stone", true, m.uid, from, m.global_position + Vector3.UP), 28, "aimed shot damage")
 	check_eq(ps.inventory.count_of("bolt_stone"), 2, "the bolt was used")
-	check_near(m.hp, 102.0, 0.01, "120 - 18")
+	check_near(m.hp, 82.0, 0.01, "110 - 28")
 	auth.monsters.request_shoot(1, "bolt_ember", false, m.uid, from, m.global_position + Vector3.UP)
-	check_near(m.ailments.buildup.burn, 20.0, 0.01, "ember bolt: 40 burn buildup, halved by its 50% fire resist")
+	check_near(m.ailments.buildup.burn, 40.0, 0.01, "ember bolt: 40 burn buildup (no fire resist)")
 	check_eq(auth.monsters.request_shoot(1, "bolt_ember", true, m.uid, from, m.global_position), 0, "out of ember bolts")
 	_teardown()
 
@@ -209,10 +203,6 @@ func test_spore_clouds() -> void:
 	for i in 20:
 		mm._clouds_step(0.1)
 	check_eq(mm.clouds.size(), 0, "after 5 s it's gone")
-	# A Wheezecap bursts into a cloud when it dies (unless it burned).
-	var w := _spawn("wheezecap", Vector3(1.2, 0, 0))
-	mm._kill(w, 1)
-	check_eq(mm.clouds.size(), 1, "death burst")
 	_teardown()
 
 
@@ -220,16 +210,16 @@ func test_sneak_attack_doubles() -> void:
 	await _setup()
 	ps.inventory.add("sword_stone", 1)
 	auth.request_select_slot(1, first_item_slot(ps))  # the start pickaxe is in the hotbar (F243)
-	var m := _spawn("rustwight", Vector3(1.2, 0, 0))
-	check_eq(m.state, Monster.State.SLEEP, "rustwights start asleep")
+	var m := _spawn("rock_snail", Vector3(1.2, 0, 0), true)  # a leader: armor 30, 275 HP (lives through the hit)
+	m.state = Monster.State.SLEEP
 	var dealt := auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, 0, false)
-	check_eq(dealt, 12, "sneak ×2 on armor 25, slash ×0.75: 10 × 0.75 × 0.8 × 2 = 12")
+	check_eq(dealt, 12, "sneak ×2 on armor 30, slash ×0.75: 10 × 0.75 × 100/130 × 2 = 11.5 → 12")
 	_teardown()
 
 
 func test_parry_stuns_the_monster() -> void:
 	await _setup()
-	var m := _spawn("skitterling", Vector3(1.0, 0, 0))
+	var m := _spawn("cave_spider", Vector3(1.0, 0, 0))
 	var fake := player as FakeDwarf
 	fake.defense = {holding = true, pressed_ago = 0.05, weapon = "sword", shield = false, tier = 0}
 	auth.monsters._ev_tell(m.uid, 1, 0.0, 8.0, 1.3, false, false, "Bite")
@@ -242,7 +232,7 @@ func test_parry_stuns_the_monster() -> void:
 
 func test_unblocked_hit_hurts() -> void:
 	await _setup()
-	var m := _spawn("skitterling", Vector3(1.0, 0, 0))
+	var m := _spawn("cave_spider", Vector3(1.0, 0, 0))
 	auth.monsters._ev_tell(m.uid, 1, 0.0, 8.0, 1.3, false, false, "Bite")
 	auth.monsters._judge_incoming()
 	check_eq(ps.vitals.health, 92.0, "8 damage")
@@ -251,7 +241,7 @@ func test_unblocked_hit_hurts() -> void:
 
 func test_poison_jabs_build_up() -> void:
 	await _setup()
-	var m := _spawn("needlemite", Vector3(1.0, 0, 0))
+	var m := _spawn("cave_spider", Vector3(1.0, 0, 0))
 	for i in 4:
 		auth.monsters._ev_tell(m.uid, 1, 0.0, 1.0, 1.4, false, false, "Needle Jab", {poison = 20})
 		auth.monsters._judge_incoming()
@@ -269,7 +259,7 @@ func test_poison_jabs_build_up() -> void:
 
 func test_too_far_misses() -> void:
 	await _setup()
-	var m := _spawn("skitterling", Vector3(6.0, 0, 0))
+	var m := _spawn("cave_spider", Vector3(6.0, 0, 0))
 	auth.monsters._ev_tell(m.uid, 1, 0.0, 8.0, 1.3, false, false, "Bite")
 	auth.monsters._judge_incoming()
 	check_eq(ps.vitals.health, 100.0, "you stepped away: it misses")
@@ -280,13 +270,13 @@ func test_pack_leader_boost_ends_when_it_dies() -> void:
 	await _setup()
 	ps.inventory.add("mace_2h_copper", 1)
 	auth.request_select_slot(1, first_item_slot(ps))  # the start pickaxe is in the hotbar (F243)
-	var leader := _spawn("mossnipper", Vector3(5, 0, 0), true, 7)
-	var member := _spawn("mossnipper", Vector3(6, 0, 1), false, 7)
+	var leader := _spawn("cave_spider", Vector3(5, 0, 0), true, 7)
+	var member := _spawn("cave_spider", Vector3(6, 0, 1), false, 7)
 	auth.monsters._update_boosts()
 	check(member.boosted, "member near its leader is boosted")
 	check_near(member.damage_mult(), 1.2, 0.001, "+20% damage")
 	check_near(leader.damage_mult(), 1.3, 0.001, "leader itself hits ×1.3")
-	check_near(leader.max_hp(), 75.0, 0.01, "leader has ×2.5 HP")
+	check_near(leader.max_hp(), 60.0, 0.01, "leader has ×2.5 HP")
 	auth.monsters._ev_remove(leader.uid)
 	auth.monsters._update_boosts()
 	check(not member.boosted, "boost gone when the leader is gone")
@@ -331,7 +321,7 @@ func test_spawner_fills_nearby_caves() -> void:
 
 func test_attack_animation_keeps_monster_size() -> void:
 	await _setup()
-	var m := _spawn("mossnipper", Vector3(4, 0, 0), true)  # leaders are 1.3× bigger
+	var m := _spawn("cave_spider", Vector3(4, 0, 0), true)  # leaders are 1.3× bigger
 	var before: Vector3 = m.model.scale
 	m.show_tell(0.05)
 	await tree.create_timer(0.5).timeout
@@ -801,27 +791,6 @@ func test_cave_spider_walks_pounces_and_turns_to_stone() -> void:
 	_teardown()
 
 
-## Owner (Nov 18): "for the rest of the creatures": an older creature made of simple shapes falls limp too (one solid
-## piece), lands on the floor and turns to stone.
-func test_simple_creature_falls_and_turns_to_stone() -> void:
-	await _setup()
-	var m := _spawn("mossnipper", Vector3(3.0, 0, 0))
-	for i in 5:
-		await tree.physics_frame
-	var start_y := m.global_position.y
-	auth.monsters._kill(m, 1)
-	var id: int = auth.monsters.statues.keys()[0]
-	var body: Node3D = Statue.nodes.get(id)
-	check(body is RigidBody3D, "it falls as a ragdoll (one physics body), not stiffly")
-	for i in 240:
-		await tree.physics_frame
-	check(is_instance_valid(body) and body.has_meta("statue"), "then it turns to stone")
-	if is_instance_valid(body):
-		check(body.global_position.y > start_y - 1.5, "on the floor, not through it")
-		check((body as RigidBody3D).freeze, "and the statue stays still")
-	_teardown()
-
-
 ## Owner (Nov 19): ~1,300 "broken number" (NaN) warnings in a game. Every kind, dying in odd poses (upside down,
 ## nose down, on its side, hit from straight above), must never give any part a broken (not finite) place or turn.
 func test_no_broken_numbers_when_creatures_die() -> void:
@@ -829,7 +798,7 @@ func test_no_broken_numbers_when_creatures_die() -> void:
 	var poses := [Vector3.ZERO, Vector3(0, 0, PI), Vector3(PI / 2, 0, 0), Vector3(-PI / 2, 0, 0), Vector3(0, 0, PI / 2)]
 	var bad := []
 	var x := 2.0
-	for kind in ["rock_beetle", "rock_snail", "cave_bat", "mossnipper", "great_rock_beetle"]:
+	for kind in ["rock_beetle", "rock_snail", "cave_bat", "cave_spider", "great_rock_beetle"]:
 		for pose in poses:
 			var m := _spawn(kind, Vector3(x, 0, 2.0))
 			x += 1.5

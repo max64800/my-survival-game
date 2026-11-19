@@ -247,10 +247,6 @@ func _run() -> void:
 	auth.request_select_slot(auth.local_peer_id(), 0)
 	# Step 6: visit the special places.
 	var maker: CaveMaker = _main.world.maker
-	var mark: Dictionary = maker.pois_of("marking")[0]
-	await _teleport(dwarf, mark.pos + mark.normal * 3.0, mark.pos + Vector3.UP * 1.2)
-	await _shot("18_wall_marking")
-	_report.append("step 6: read marking -> %s" % auth.request_poi(auth.local_peer_id(), mark.id))
 	var shrine: Dictionary = maker.pois_of("shrine")[0]
 	await _teleport(dwarf, shrine.pos + shrine.normal * 2.5, shrine.pos)
 	await _shot("19_rune_shrine")
@@ -259,24 +255,13 @@ func _run() -> void:
 	await _shot("20_ruin")
 	_main.hud.set_map_open(true)
 	await _wait(0.5)
-	await _shot("21_map_with_clue")
+	await _shot("21_map")
 	_main.hud.set_map_open(false)
 	auth.monsters.enabled = true
 	var hall: Dictionary = maker.pois_of("great_hall")[0]
 	await _teleport(dwarf, hall.pos + Vector3(0, 1.0, 12.0), hall.pos + Vector3.UP * 2.0)
-	auth.monsters._wake_bosses()
 	await _wait(2.0)
-	await _shot("22_brask")
-	var lair: Dictionary = maker.lair_poi()
-	await _teleport(dwarf, lair.pos + Vector3(0, 1.0, 12.0), lair.pos + Vector3.UP * 3.0)
-	auth.monsters._wake_bosses()
-	await _wait(2.5)
-	await _shot("23_orrumhal")
-	var bosses := []
-	for m: Monster in auth.monsters.monsters.values():
-		if m.is_boss():
-			bosses.append(m.data.name.get_slice(",", 0))
-	_report.append("step 6: bosses awake: %s; raid sources found: %s" % [bosses, auth.world_state.lairs_found])
+	await _shot("22_great_hall")
 	for m: Monster in auth.monsters.monsters.values():
 		auth.monsters._ev_remove(m.uid)
 	await _visit_jungle(dwarf, ps)
@@ -328,15 +313,18 @@ func _visit_jungle(dwarf: Dwarf, ps: GameAuthority.PlayerState) -> void:
 	_report.append("step 7: stone pickaxe on the plug -> %s; copper pickaxe dug %d times; plug open: %s" % [stone_try.get("state"), digs, open])
 	await _teleport(dwarf, gate.pos + Vector3(-4.0, 0.6, 0), gate.pos + Vector3(6.0, 0.6, 0))
 	await _shot("25_through_the_plug")
-	var grove: Dictionary = maker.pois_of("lantern_grove")[0]
-	await _teleport(dwarf, grove.pos + Vector3(0, 1.5, 14.0), grove.pos + Vector3.UP * 2.5)
+	var grove := Vector3.ZERO  # the first big jungle cavern
+	for room in maker.rooms:
+		if room.big and room.get("biome", "") == "fungal" and not room.get("sealed", false):
+			grove = maker.find_floor(room.center.x, room.center.z, room.center.y)
+			break
+	await _teleport(dwarf, grove + Vector3(0, 1.5, 14.0), grove + Vector3.UP * 2.5)
 	await _shot("26_giant_mushrooms")
 	var mm := auth.monsters
 	mm.set_physics_process(false)  # a still life: they'd knock the robot out before the picture
-	var kinds := ["wheezecap", "needlemite", "husk_charger", "gill_stalker", "cap_spitter"]
+	var kinds := ["rock_snail", "cave_spider", "great_rock_beetle", "rock_beetle", "cave_bat"]
 	var fwd := Vector3(-sin(dwarf._yaw), 0, -cos(dwarf._yaw))
 	var side := fwd.cross(Vector3.UP)
-	kinds += ["truffle_hog", "lampshell_snail", "puffpod_grazer"]
 	for i in kinds.size():
 		var row := 0 if i < 5 else 1
 		var col: float = (i - 2) if row == 0 else (i - 6)
@@ -348,14 +336,14 @@ func _visit_jungle(dwarf: Dwarf, ps: GameAuthority.PlayerState) -> void:
 	await _wait(0.8)
 	var look := dwarf.global_position + fwd * 6.0
 	await _teleport(dwarf, dwarf.global_position, look)
-	await _shot("27_jungle_monsters")
-	# Crossbow: aim at the Husk Charger and fire through the real controls code.
+	await _shot("27_monsters")
+	# Crossbow: aim at the Great Rock Beetle and fire through the real controls code.
 	ps.inventory.add("crossbow_copper", 1)
 	ps.inventory.add("bolt_stone", 10)
 	_to_hotbar(ps, "crossbow_copper")
 	var husk: Monster = null
 	for m: Monster in mm.monsters.values():
-		if m.kind == "husk_charger":
+		if m.kind == "great_rock_beetle":
 			husk = m
 	if husk:
 		# Step to about 4 m from it first: the new column rows (F21) can stand in the way of a long shot.
@@ -413,20 +401,6 @@ func _visit_jungle(dwarf: Dwarf, ps: GameAuthority.PlayerState) -> void:
 	await _wait(0.5)
 	await _shot("28_jungle_map")
 	_main.hud.set_map_open(false)
-	mm.enabled = true
-	var lair: Dictionary = maker.lair_poi("fungal")
-	await _teleport(dwarf, lair.pos + Vector3(0, 1.0, 13.0), lair.pos + Vector3.UP * 3.0)
-	mm._wake_bosses()
-	await _wait(2.5)
-	await _shot("29_thallus")
-	var bosses := []
-	for m: Monster in mm.monsters.values():
-		if m.is_boss():
-			bosses.append(m.data.name.get_slice(",", 0))
-	_report.append("step 7: jungle bosses awake: %s" % [bosses])
-	for m: Monster in mm.monsters.values():
-		mm._ev_remove(m.uid)
-	mm.enabled = false
 
 
 ## Like a player dragging an item onto hotbar slot 8 and selecting it.

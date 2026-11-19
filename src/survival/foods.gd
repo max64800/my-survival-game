@@ -6,7 +6,7 @@ class_name Foods
 const DISHES := {
 	# --- Mossy Hollows dishes
 	"dish_glowcap_skewer": {name = "Glowcap Skewer", hunger = 20, minutes = 25, buff = {max_stamina = 0.10}},
-	"dish_seared_critter": {name = "Seared Critter", hunger = 30, minutes = 25, buff = {max_health = 0.10}},
+	"dish_seared_critter": {name = "Seared Bat", hunger = 30, minutes = 25, buff = {max_health = 0.10}},  # (bat meat now; the id stays for old saves and its picture)
 	"dish_firecap_skewer": {name = "Firecap Skewer", hunger = 25, minutes = 25, buff = {damage = 0.08}},
 	"dish_tuber_mash": {name = "Tuber Mash", hunger = 45, minutes = 30, buff = {max_stamina = 0.15}},
 	"dish_hollowcap_stew": {name = "Hollowcap Stew", hunger = 50, minutes = 30, buff = {max_health = 0.20}},

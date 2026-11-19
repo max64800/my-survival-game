@@ -78,12 +78,12 @@ func test_ember_sword_burns() -> void:
 	auth.request_select_slot(1, 1)  # the sword was put straight into slot index 1 above
 	var uid: int = auth.monsters._next_uid
 	var p := world.maker.find_floor(player.global_position.x + 1.2, player.global_position.z, player.global_position.y + 2.0)
-	auth.monsters._ev_spawn(uid, "cairnling", p + Vector3.UP * 0.3, false, 0)
+	auth.monsters._ev_spawn(uid, "rock_snail", p + Vector3.UP * 0.3, false, 0)
 	var m := auth.monsters.get_monster(uid)
 	m.state = Monster.State.CHASE
-	# Copper sword light on a Cairnling: 10 × 1.3 × slash 0.5 × 100/140 = 4.6, + 5 fire × (1 − 0.5 resist) = 2.5 → 7
-	check_eq(auth.monsters.request_attack(1, PackedInt32Array([uid]), false, 0, false), 7, "fire adds damage")
-	check_near(m.ailments.buildup.burn, 12.5, 0.01, "and burn buildup (halved by its fire resist)")
+	# Copper sword light on a Rock Snail: 10 × 1.3 × slash 0.75 × 100/120 = 8.1, + 5 fire (no resist) → 13
+	check_eq(auth.monsters.request_attack(1, PackedInt32Array([uid]), false, 0, false), 13, "fire adds damage")
+	check_near(m.ailments.buildup.burn, 25.0, 0.01, "and burn buildup")
 	_teardown()
 
 
