@@ -35,11 +35,60 @@ const BEARD_COLOR := Color(0.62, 0.32, 0.14)
 const ANIMS := {
 	idle = "Idle", walk = "Walk", jog = "Jog_Fwd", sprint = "Sprint",
 	air = "Jump", roll = "Roll", hit = "Hit_Chest", knock = "b/Hit_Knockback",
-	dig = "x/Pickaxe_Mine", climb = "x/Ladder_Climb", sit = "Sitting_Idle", chop = "b/TreeChopping", wake = "b/LayToIdle", attack_a = "b/Sword_Regular_A", attack_b = "b/Sword_Regular_B",
-	heavy = "b/Sword_Regular_C", stab = "Punch_Cross", eat = "b/Consume", use = "Interact", throw = "b/OverhandThrow",
-	# Held poses (as long as the button is down):
-	block = "b/Sword_Block", shield = "b/Idle_Shield", aim = "Pistol_Aim_Neutral",
+	dig = "x/Pickaxe_Mine", climb = "x/Ladder_Climb", sit = "Sitting_Idle", chop = "x/Axe_Chop", wake = "b/LayToIdle",
+	# Sword: a 2-hit combo (owner, Nov 17: "looks like chopping, maybe a two-hit combo"): a level sweep right to left,
+	# then one left to right (MADE Sword_Forehand / Sword_Backhand); the big overhead chop for a heavy blow. (The pack's Sword_Regular_A/B
+	# swing the blade back through his own body with our grip: owner, Nov 17 "he is stabbing himself".)
+	attack_a = "x/Sword_Forehand", attack_b = "x/Sword_Backhand", heavy = "Sword_Attack",
+	smash = "Sword_Attack",  # mace, maul, great axe: an overhead smash
+	swipe = "b/Sword_Regular_C",  # the mace's 2nd hit: a side swing
+	stab = "Punch_Cross",    # spear: a straight thrust
+	bash = "b/Shield_OneShot",  # shield selected: push the shield (left arm) forward
+	eat = "b/Consume", use = "Interact", throw = "b/OverhandThrow",
+	# Held poses (as long as the button is down). The shield is always on the left arm (owner, Nov 17), the weapon in
+	# the right hand: the shield block raises the left arm (the right keeps the weapon ready).
+	block = "x/Sword_Guard", shield = "b/Idle_Shield", aim = "Pistol_Aim_Neutral",
 }
+## Which attack each weapon makes: [light attacks (taking turns), heavy attack] (names in ANIMS). Anything else: "sword".
+const ATTACKS := {
+	"sword": [["attack_a", "attack_b"], "heavy"],
+	"mace": [["smash", "swipe"], "smash"], "mace_2h": [["smash", "swipe"], "smash"],  # overhead smash, then a side swing
+	"axe_2h": [["smash"], "smash"], "hammer": [["smash"], "smash"],
+	"spear": [["stab"], "stab"],
+	"shield": [["bash"], "bash"],
+}
+## How each tool sits in the fist: tool look -> {animation ("" = any other) -> [turn (degrees, x/y/z, in the tool's own
+## space after the base grip), slide along the handle (m, + = the fist sits nearer the handle's end)]}.
+## The base grip (DwarfModel.hand_tool_rot) puts the handle through the fist; the turn about the handle (y) puts the pick's
+## points, the axe's blade and the sword's edge in the swing (the base had them 90 degrees off: owner, Nov 17). Measured:
+## the tip's motion at the strike lies +90 degrees around the handle from the tool's +X in every swing, +125 in the
+## pick's mining swing (the wrist turns there). The axe's blade is on its +X side (checked in a picture).
+## The fist closes round the wrapped grip, ~9 cm up from the handle's end (owner, Nov 17: "he's not holding the axe by
+## the handle": the fist sat at the very end). Measured: the fist's middle is 4 cm below the holder along the handle, and
+## ToolModels puts every handle's end 10 cm below the holder, so the tool slides down 3 cm.
+const GRIP_SLIDE := -0.03
+const GRIPS := {
+	# Standing and walking (owner, Nov 17: "when I'm walking the pickaxe is backwards"): handle up, head on top with one
+	# point forward and a little down, the other back, like a miner carries it (measured standing and walking).
+	"pickaxe": {"": [Vector3(8, 96, 16), GRIP_SLIDE], "x/Pickaxe_Mine": [Vector3(0, 125, 0), GRIP_SLIDE]},
+	"axe": {"": [Vector3(0, 90, 0), GRIP_SLIDE], "x/Axe_Chop": [Vector3(0, 125, 0), GRIP_SLIDE]},  # (the wrist turns in the chop too)
+	"axe_2h": {"": [Vector3(0, 90, 0), GRIP_SLIDE]},
+	"sword": {"": [Vector3(0, 90, 0), GRIP_SLIDE]},
+	"mace": {"": [Vector3(0, 90, 0), GRIP_SLIDE]},
+	"mace_2h": {"": [Vector3(0, 90, 0), GRIP_SLIDE]},
+	"hammer": {"": [Vector3(0, 90, 0), GRIP_SLIDE]},
+	"shovel": {"": [Vector3(0, 90, 0), GRIP_SLIDE]},
+}
+## The shield on the left arm (shield_grip), per animation: [turn (degrees, in the shield model's own space), slide].
+## Hanging: its face (+X of the model) out to his left; in the block and the bash: to the front.
+const SHIELD_GRIPS := {
+	"": [Vector3(-39, -30, -171), 0.0], "b/Idle_Shield": [Vector3(-82, 111, 69), 0.0],
+	"b/Shield_OneShot": [Vector3(-75, -100, -83), 0.0],
+}
+## How long the dodge roll animation plays (s). Longer than the dodge itself (Combat.DODGE_TIME 0.45 s of movement and
+## its safe window stay as they are, so fights stay fair): he finishes the tumble in place (owner, Nov 17: "roll is way
+## too fast").
+const ROLL_TIME := 0.75
 ## Speeds (m/s) where each move animation fits best.
 const MOVE_POINTS := {idle = 0.0, walk = 1.6, jog = 4.0, sprint = 6.5}
 ## How fast the standing/walk/run loops play (1 = as made; owner Nov 18: "way too fast").
@@ -73,6 +122,28 @@ const MADE := {
 	"Pickaxe_Mine": [
 		[0.0, "b/TreeChopping", 0.9], [0.38, "b/TreeChopping", 0.7], [0.55, "Sword_Attack", 0.36],
 		[0.7, "Sword_Attack", 0.5], [1.0, "b/TreeChopping", 0.9]],
+	# A wood chop (owner, Nov 17: the pack's tree chop held the axe up by his face with the arm bent): raise the axe
+	# over the shoulder, bring it down with the arm out in front, recover. The strike lands at 0.55 (DwarfModel.swing).
+	"Axe_Chop": [
+		[0.0, "Sword_Attack", 0.0], [0.2, "Sword_Attack", 0.1], [0.42, "Sword_Attack", 0.2], [0.55, "Sword_Attack", 0.33],
+		[0.7, "Sword_Attack", 0.45], [1.0, "Sword_Attack", 0.95]],
+	# The guard, held: the pack's Sword_Block raises the sword and lowers it again by itself, so a held block dropped
+	# after ~0.7 s. This one raises it and stays (a held pose keeps the last frame).
+	"Sword_Guard": [[0.0, "b/Sword_Block", 0.0], [0.3, "b/Sword_Block", 0.3], [1.0, "b/Sword_Block", 0.45]],
+	# The right arm of the running shoulder carry (only that arm is used): the fist up in front of the shoulder.
+	"Carry_Shoulder": [[0.0, "b/Idle_Rail_Call", 0.4], [1.0, "b/Idle_Rail_Call", 0.4]],
+	# The sword's combo (owner, Nov 17: "keep it very simple": two wide, level sweeps at chest height), both made from
+	# the sweep of the pack's Sword_Regular_B without its wind-up (that one pointed the blade back through his body).
+	# Hit 1: the fist out wide to his right, blade pointing right, then all the way across to his left.
+	# Hit 2: the other way: across to his left first, then all the way out to his right.
+	# The blade points straight ahead at 0.4, when the hit lands (DwarfFight._attack).
+	"Sword_Forehand": [
+		[0.0, "b/Sword_Regular_B", 0.0], [0.28, "b/Sword_Regular_B", 0.56], [0.4, "b/Sword_Regular_B", 0.5],
+		[0.5, "b/Sword_Regular_B", 0.46], [0.62, "b/Sword_Regular_B", 0.45], [1.0, "b/Sword_Regular_B", 0.0]],
+	"Sword_Backhand": [
+		[0.0, "b/Sword_Regular_B", 0.0], [0.14, "b/Sword_Regular_C", 0.45], [0.28, "b/Sword_Regular_B", 0.44],
+		[0.4, "b/Sword_Regular_B", 0.5], [0.48, "b/Sword_Regular_B", 0.56], [0.62, "b/Sword_Regular_B", 0.58],
+		[1.0, "b/Sword_Regular_B", 0.97]],
 }
 
 ## Animations stitched from two sources: the upper body (spine and up) from one, the legs from
@@ -101,11 +172,31 @@ var _rolling := false
 var _attack_flip := false
 var _hold := ""        ## which held pose is on ("" = none)
 var _hold_amount := 0.0
+## Something in the right hand (tool, weapon). Running, the arm pumps and the hand turns: a tool fixed in the fist
+## then swung forward through his head (owner: "the pickaxe is the wrong way when I'm running"). So from a jog up
+## the tool turns in the fist to trail back and a little down and out, away from the head. Set by DwarfModel.set_held.
+var carrying := false
+var _carry := 0.0
+## The tool holder in the right fist (DwarfModel puts the tool model in it): its +Y is the handle, out of the thumb side
+## of the fist, the way the pack's sword animations hold a sword. How the tool turns in the fist depends on the tool
+## (tool_look = Combat.weapon_of / Items.kind, set by DwarfModel.set_held) and on the animation playing: see GRIPS.
+var _even := {}  ## neck/head bone name -> its unskewed twin (EvenHead), for the hand-built body
+var grip: Node3D
+## Where the tool holder would sit in the fist by GRIPS alone (turned smoothly between animations). DwarfFist turns the
+## wrist so the handle runs through the closed fist and places `grip` from this every frame.
+var grip_local := Transform3D()
+var fist: DwarfFist  ## closes the fingers round the handle (after the dwarf shaping)
+var shield_grip: Node3D  ## the shield's holder on the left forearm (DwarfModel.set_shield): see SHIELD_GRIPS
+var tool_look := ""
+var _upper_clip := ""  ## the upper-body one-shot playing now (for GRIPS)
+var _spear_aim := 0.0
+var _carry_arm := 0.0  ## how far the right arm is lifted into the shoulder carry  ## how much the spear is turned to point straight ahead (the thrust)
 
 
 func build(tint: Color) -> void:
 	var body: Node3D = (load(OUTFIT) as PackedScene).instantiate()
 	add_child(body)
+	_body_root = body
 	body.rotation.y = PI  # the model faces +Z; our dwarf faces -Z
 	skeleton = body.find_children("*", "Skeleton3D", true, false)[0]
 	# Head, eyes, eyebrows and beard come from other files with the same skeleton:
@@ -133,6 +224,7 @@ func build(tint: Color) -> void:
 	prop.setup(skeleton)
 	if use_body and ResourceLoader.exists(BODY):
 		prop.head_follow = BODY_HEAD_FOLLOW
+		pass  # prop.no_skew(skeleton): off, it broke the arms (owner, Nov 17); see DwarfProportions.no_skew  # (the sword swing stretched his head flat: see there)
 	proportions = prop
 	# Weight (Nov 19, "heavy + chunky"): follow-through, waddle, breathing, landing squash. After the shaping,
 	# before the hair and clothes springs (added later in _wear_body), so they swing along. OFF (owner, Nov 19, after
@@ -141,6 +233,10 @@ func build(tint: Color) -> void:
 		weight = DwarfWeight.new()
 		skeleton.add_child(weight)
 		weight.setup(skeleton, prop)
+	# Fists (Nov 19): fingers closed round the handle, the handle through the fist (DwarfFist). After the shaping.
+	fist = DwarfFist.new()
+	fist.name = "Fist"
+	skeleton.add_child(fist)
 	# Size: put the head bone at HEIGHT, and make the dwarf a bit wider.
 	var head := skeleton.find_bone("Head")
 	var head_y := prop._rest_global(skeleton, head, true).origin.y - prop.drop_height
@@ -149,12 +245,22 @@ func build(tint: Color) -> void:
 	# Hands: things held keep their own size (cancel the dwarf scale and the big-hand scale).
 	right_hand = _hand_socket("hand_r")
 	left_hand = _hand_socket("hand_l")
+	grip = Node3D.new()
+	grip.name = "Grip"
+	grip.transform = grip_transform("", "")
+	grip_local = grip.transform
+	right_hand.add_child(grip)
+	shield_grip = Node3D.new()
+	shield_grip.name = "ShieldGrip"
+	shield_grip.transform = shield_transform("")
+	left_hand.add_child(shield_grip)
 	if use_body and ResourceLoader.exists(BODY):
 		_wear_body(BODY)  # (bareheaded like the picture: no starting cap; armour helmets still work)
 	else:
 		_build_helmet()
 		_build_beard()
 	_build_tree(body)
+	fist.setup(skeleton, self)  # (reads the finger bend directions from the standing animation)
 
 
 ## Put the hand-built body on our skeleton. It was modelled around the bones standing at rest, shaped by
@@ -181,26 +287,21 @@ func _wear_body(path: String) -> void:
 	var src: Node = (load(path) as PackedScene).instantiate()
 	var built := {}
 	var chains := _add_swing_bones(src, poses, model_to_skel, built)
+	# (F280) the neck and head get unskewed twins; everything bound to them is bound to the twins (see EvenHead)
+	var even := EvenHead.new()
+	even.name = "EvenHead"
+	skeleton.add_child(even)  # (after DwarfProportions, before HairSwing)
+	_even = even.setup(skeleton, poses)
 	var colliders := _fit_colliders(src, poses, model_to_skel)
 	var under := _hair_on_shirt(src, built, model_to_skel)
+	_bind_poses = poses  # (the swing bones included: armor made over the body binds the same way)
+	_model_to_skel = model_to_skel
 	for mi: MeshInstance3D in src.find_children("*", "MeshInstance3D", true, false):
-		var skin := Skin.new()
-		if mi.skin:
-			for b in mi.skin.get_bind_count():
-				var bname := String(mi.skin.get_bind_name(b))
-				var bone := skeleton.find_bone(bname)
-				var pose: Transform3D = poses[bone] if bone >= 0 else Transform3D()
-				skin.add_named_bind(bname, pose.affine_inverse() * model_to_skel)
-		mi.owner = null
-		mi.get_parent().remove_child(mi)
-		skeleton.add_child(mi)
-		mi.transform = Transform3D()
-		mi.skin = skin
-		mi.skeleton = NodePath("..")
-		mi.layers = DwarfModel.VISUAL_LAYER
-		_add_rim(mi)
+		_bind_to_skeleton(mi)
+		if mi.name.begins_with("body_head"):
+			_body_head = mi
 	src.free()
-	var head := skeleton.find_bone("Head")
+	var head := skeleton.find_bone(_even.get("Head", "Head"))  # (the hair follows the unskewed head)
 	var heights := {}
 	for chain: String in built:
 		heights[chain] = (built[chain] as Array).map(func(at: Vector3) -> float: return at.y)
@@ -210,6 +311,27 @@ func _wear_body(path: String) -> void:
 			for b: int in spot.weights:
 				rests[b] = poses[b]
 	_add_springs(chains, colliders, poses[head] if head >= 0 else Transform3D(), head, heights, under, rests)
+
+
+## Moves a mesh made around the dwarf's rest pose (the hand-built body, or armor made over it) onto our skeleton,
+## each bone bound where it stands in that pose: standing still it looks as built, and every animation bends it along.
+func _bind_to_skeleton(mi: MeshInstance3D) -> void:
+	var skin := Skin.new()
+	if mi.skin:
+		for b in mi.skin.get_bind_count():
+			var bname := String(mi.skin.get_bind_name(b))
+			bname = _even.get(bname, bname)  # (neck and head: their unskewed twins, EvenHead)
+			var bone := skeleton.find_bone(bname)
+			var pose: Transform3D = _bind_poses[bone] if bone >= 0 and bone < _bind_poses.size() else Transform3D()
+			skin.add_named_bind(bname, pose.affine_inverse() * _model_to_skel)
+	mi.owner = null
+	mi.get_parent().remove_child(mi)
+	skeleton.add_child(mi)
+	mi.transform = Transform3D()
+	mi.skin = skin
+	mi.skeleton = NodePath("..")
+	mi.layers = DwarfModel.VISUAL_LAYER
+	_add_rim(mi)
 
 
 ## Collision balls inside the torso for the swinging hair (HairSwing): a grid of points inside the shirt, each the
@@ -398,8 +520,98 @@ func _process(delta: float) -> void:
 	for h in [right_hand, left_hand]:
 		var p := h.get_parent() as Node3D
 		h.scale = Vector3.ONE / p.global_transform.basis.get_scale()
+	_update_grip(delta)
+	_lift_roll(delta)
 	_hold_amount = move_toward(_hold_amount, 1.0 if _hold != "" else 0.0, delta * 8.0)
 	tree.set("parameters/hold/blend_amount", _hold_amount)
+
+
+## The turn (world space) from "as the fist holds it" (GRIPS) to where the held tool points now: the running carry
+## (by _carry, so it fades in and out with the speed) and the spear's level thrust. `tool` = the tool's frame as GRIPS
+## puts it. DwarfFist turns the wrist by it (Nov 19: it used to turn only the tool holder, so running the handle floated
+## beside the open hand).
+## Running (owner, Nov 17: "running through the pickaxe is not the best": low at the hip it went through his legs): a
+## miner's carry over the shoulder. The right arm lifts the fist in front of the shoulder (CARRY_ANIM, right arm only)
+## and the handle lies back over the shoulder, the head behind it with its points up and down, clear of his head.
+## Rolling, the arms fly about: then the tool just trails behind, out to his right (CARRY_DIR).
+const CARRY_DIR := Vector3(0.3, -0.3, 1.0)  ## out to his right, a little down, back (he faces -Z)
+const SHOULDER_DIR := Vector3(0.2, 0.5, 1.0)  ## the handle over the shoulder: back, up, a little out (clear of his head)
+const CARRY_ANIM := "x/Carry_Shoulder"
+func hold_turn(tool: Basis) -> Quaternion:
+	var q := Quaternion.IDENTITY
+	# The spear's thrust (owner, Nov 17: "looks a little odd", it sloped down to the floor): the spear points straight
+	# ahead, level, whatever the punching hand does. (Both hands on the shaft can't be done: the dwarf's short arms
+	# don't reach across his body.)
+	if _spear_aim > 0.0:
+		var point := -tool.z.normalized()  # (ToolModels turns the spear to point along its holder's -Z)
+		var ahead := (global_basis * Vector3(0, -0.05, -1)).normalized()
+		q = Quaternion(point, ahead).slerp(Quaternion.IDENTITY, 1.0 - _spear_aim)
+		tool = Basis(q) * tool
+	if _carry <= 0.0:
+		return q
+	var turn: Quaternion
+	if _roll_on():
+		var up := tool.y.normalized()
+		var want := (global_basis * CARRY_DIR).normalized()
+		turn = Quaternion(up, want).slerp(Quaternion.IDENTITY, 1.0 - _carry)
+	else:
+		var y := (global_basis * SHOULDER_DIR).normalized()
+		var x := (global_basis.y - global_basis.y.dot(y) * y).normalized()  # the head's points up and down
+		var want := Basis(x, y, x.cross(y))
+		var now := tool.orthonormalized()
+		turn = (want * now.inverse()).get_rotation_quaternion().slerp(Quaternion.IDENTITY, 1.0 - _carry)
+	return turn * q
+
+
+## The pack's dodge roll is made for a slim human: rolling, the round dwarf's body went half into the floor (seen in
+## the studio, Nov 17). While the roll plays, lift him in a smooth arc, highest mid-roll where he is curled up lowest.
+const ROLL_LIFT := 0.3  ## metres, at the middle of the roll
+func _lift_roll(_delta: float) -> void:
+	if not is_instance_valid(_body_root) or scale.y <= 0.0:
+		return
+	_roll_lift = 0.0
+	if _full_clip == ANIMS.roll and tree.get("parameters/full/active") and _full_length > 0.0:
+		var k := clampf((Time.get_ticks_msec() / 1000.0 - _full_start) / _full_length, 0.0, 1.0)
+		_roll_lift = ROLL_LIFT * sin(PI * k) / scale.y
+	_body_root.position.y = _sole_y + _roll_lift
+
+
+## Turns the tool in the fist to the grip for the animation playing now (GRIPS): a quick turn, not a jump.
+func _update_grip(delta: float) -> void:
+	var clip := ""
+	if tree.get("parameters/upper/active"):
+		clip = _upper_clip
+	elif _hold != "":
+		clip = ANIMS.get(_hold, _hold)
+	var k := minf(1.0, delta * 25.0)
+	var want := grip_transform(tool_look, clip)
+	grip_local = Transform3D(Basis(grip_local.basis.get_rotation_quaternion().slerp(want.basis.get_rotation_quaternion(), k)),
+		grip_local.origin.lerp(want.origin, k))
+	var sw := shield_transform(clip)
+	var sq := shield_grip.quaternion.slerp(sw.basis.get_rotation_quaternion(), k)
+	shield_grip.transform = Transform3D(Basis(sq), shield_grip.position.lerp(sw.origin, k))
+	# the spear's level thrust (hold_turn)
+	_spear_aim = move_toward(_spear_aim, 1.0 if tool_look == "spear" and clip == ANIMS.stab else 0.0, delta * 12.0)
+
+
+## Where the tool holder sits in the fist for a tool look and an animation (see GRIPS).
+static func grip_transform(look: String, clip: String) -> Transform3D:
+	var base := Transform3D(Basis.from_euler(DwarfModel.hand_tool_rot), DwarfModel.hand_tool_pos)
+	var tool_grips: Dictionary = GRIPS.get(look, {})
+	var g: Array = tool_grips.get(clip, tool_grips.get("", [Vector3.ZERO, 0.0]))
+	var turn := Basis.from_euler((g[0] as Vector3) * (PI / 180.0))
+	return base * Transform3D(turn, Vector3(0, g[1], 0))
+
+
+## Where the shield sits on the left forearm for an animation (see SHIELD_GRIPS).
+static func shield_transform(clip: String) -> Transform3D:
+	var g: Array = SHIELD_GRIPS.get(clip, SHIELD_GRIPS[""])
+	return Transform3D(Basis.from_euler((g[0] as Vector3) * (PI / 180.0)), Vector3(0, g[1], 0))
+
+
+## Puts the grip straight on (no slow turn): after changing the tool, and for the recorder.
+func snap_grip() -> void:
+	_update_grip(1.0)
 
 
 ## On a ladder: the whole body plays the climbing loop (it fades in and out).
@@ -436,6 +648,19 @@ func set_motion(speed: float, on_floor: bool, rolling: bool) -> void:
 	if grip_feet:
 		tree.set("parameters/move_speed/scale", loop_rate(speed))
 	var dt := get_process_delta_time()
+	# Walking keeps the tool as the fist holds it; from a jog up it trails behind (hold_turn). Never during a
+	# swing or a held pose: those animations aim the tool themselves.
+	var want := clampf((speed - 1.6) / 1.6, 0.0, 1.0) if carrying else 0.0
+	if carrying and (rolling or _roll_on()):
+		want = 1.0  # rolling the arms fly about: the tool trails safely behind (owner: pick through his head)
+	# (jumping keeps whatever the speed gives: standing still the tool stays as held, owner Nov 17: "his pickaxe goes
+	# all the way back" when the air turned the carry fully on)
+	_carry = move_toward(_carry, want, dt * (12.0 if rolling or _roll_on() else 5.0))
+	if tree.get("parameters/upper/active") or _hold != "":
+		_carry = 0.0
+	# the right arm lifts into the shoulder carry while running (not in a roll)
+	_carry_arm = move_toward(_carry_arm, 0.0 if _roll_on() else _carry, dt * 8.0)
+	tree.set("parameters/carry/blend_amount", _carry_arm)
 	_air = move_toward(_air, 0.0 if on_floor else 1.0, dt * 6.0)
 	if weight:
 		weight.speed = speed
@@ -453,7 +678,7 @@ func set_motion(speed: float, on_floor: bool, rolling: bool) -> void:
 		_air_time += dt
 	tree.set("parameters/air/blend_amount", _air)
 	if rolling and not _rolling:
-		play_full("roll", 0.5)
+		play_full("roll", ROLL_TIME)
 	_rolling = rolling
 
 
@@ -467,9 +692,14 @@ func play_full(what: String, duration: float = 0.0) -> void:
 	_play("full", what, duration)
 
 
-func attack(duration: float, heavy: bool) -> void:
+## A weapon attack that fits the weapon (ATTACKS): weapon = Combat.weapon_of(the held item). step = the hit in the
+## combo (DwarfFight._combo_step: hit 1, hit 2 take turns); -1 = just take turns.
+func attack(duration: float, heavy: bool, weapon: String = "sword", step: int = -1) -> void:
+	var moves: Array = ATTACKS.get(weapon, ATTACKS.sword)
+	var light: Array = moves[0]
 	_attack_flip = not _attack_flip
-	play_upper("heavy" if heavy else ("attack_a" if _attack_flip else "attack_b"), duration)
+	var i := step if step >= 0 else (0 if _attack_flip else 1)
+	play_upper(moves[1] if heavy else light[i % light.size()], duration)
 
 
 ## A spear thrust (owner, Nov 17: "spears should have a different attack animation, that he's actually spearing
@@ -484,6 +714,12 @@ func _play(layer: String, what: String, duration: float) -> void:
 		return
 	var node := (tree.tree_root as AnimationNodeBlendTree).get_node(layer + "_anim") as AnimationNodeAnimation
 	node.animation = anim_name
+	if layer == "upper":
+		_upper_clip = anim_name
+	else:
+		_full_clip = anim_name
+		_full_start = Time.get_ticks_msec() / 1000.0
+		_full_length = duration if duration > 0.0 else tree.get_animation(anim_name).length
 	var anim := tree.get_animation(anim_name)
 	# A one-shot must end. Some animations from the pack are made as loops (the axe's TreeChopping), and a
 	# looping one never finishes, so the dwarf kept chopping forever (owner F128).
@@ -544,7 +780,16 @@ func _build_tree(body: Node3D) -> void:
 	var hold := AnimationNodeBlend2.new()
 	_upper_filter(hold)
 	bt.add_node("hold", hold)
-	bt.connect_node("hold", 0, "full")
+	# Running with a tool: the right arm lifts it onto the shoulder (hold_turn, DwarfFist), the rest of him keeps running.
+	var carry_anim := AnimationNodeAnimation.new()
+	carry_anim.animation = CARRY_ANIM
+	bt.add_node("carry_anim", carry_anim)
+	var carry := AnimationNodeBlend2.new()
+	_arm_filter(carry, "_r")
+	bt.add_node("carry", carry)
+	bt.connect_node("carry", 0, "full")
+	bt.connect_node("carry", 1, "carry_anim")
+	bt.connect_node("hold", 0, "carry")
 	bt.connect_node("hold", 1, "hold_seek")
 	# Upper-body one-shots (dig, attack): only the spine and up, so the legs keep walking.
 	_add_oneshot(bt, "upper", "hold", true)
@@ -569,6 +814,23 @@ func _add_oneshot(bt: AnimationNodeBlendTree, layer: String, below: String, uppe
 	bt.add_node(layer, shot)
 	bt.connect_node(layer, 0, below)
 	bt.connect_node(layer, 1, layer + "_speed")
+
+
+## Let a blend node only touch one arm (side "_r" or "_l"): the clavicle and everything on it.
+func _arm_filter(node: AnimationNode, side: String) -> void:
+	node.filter_enabled = true
+	var top := skeleton.find_bone("clavicle" + side)
+	for i in skeleton.get_bone_count():
+		var b := i
+		while b >= 0 and b != top:
+			b = skeleton.get_bone_parent(b)
+		if b == top:
+			node.set_filter_path(NodePath("Armature/Skeleton3D:" + skeleton.get_bone_name(i)), true)
+
+
+## True while the dodge roll plays.
+func _roll_on() -> bool:
+	return _full_clip == ANIMS.roll and tree != null and bool(tree.get("parameters/full/active"))
 
 
 ## Let a blend node only touch the spine and everything above it (arms, head).
@@ -623,12 +885,24 @@ func set_wear(ids: Array) -> void:
 				_worn[id] = made
 		elif has_method("_wear_" + id):
 			_worn[id] = call("_wear_" + id)
-	# An armor helmet replaces the starting iron cap.
+	# An armor helmet replaces the starting iron cap; a hand-built one brings his hat hair (the head is swapped).
 	var armored_head := false
+	var hat_hair := false
 	for id in _worn:
 		armored_head = armored_head or String(id).begins_with("armor_head_")
+		hat_hair = hat_hair or (is_instance_valid(_worn[id]) and _worn[id].has_meta("hat_hair"))
 	if _cap:
 		_cap.visible = not armored_head
+	if is_instance_valid(_body_head):
+		_body_head.visible = not hat_hair
+	# Hand-built boots have soles under his feet: stand him on them (owner, Nov 18: "feet go deep into the ground").
+	var sole := 0.0
+	for id in _worn:
+		if is_instance_valid(_worn[id]) and _worn[id].has_meta("sole"):
+			sole = maxf(sole, float(_worn[id].get_meta("sole")))
+	if is_instance_valid(_body_root) and scale.y > 0.0:
+		_sole_y = sole / scale.y
+		_body_root.position.y = _sole_y + _roll_lift
 
 
 ## Armor sets (docs/design/armor.md): colour + surface of each material.
@@ -643,11 +917,38 @@ const ARMOR := {
 }
 
 
-## Builds one armor piece from its id: armor_<head|chest|feet>_<material>. Sizes are in each
-## bone's own units, measured from the clothes (chest about ±0.18 wide, front toward +Z).
+## Hand-built armor sets, made over the hand-built body (tools/asset_forge/builds/dwarf_armor.py): look -> file.
+## Each file holds armor_<head|chest|feet>_<part> meshes on the body's skeleton; the head also brings armor_head_hair,
+## the head with its hair pressed in under the cap (worn instead of the normal head, painted with its pictures).
+## The game's leather items use the look "leather": that is the Hide set (docs/design/armor.md).
+const ARMOR_FILES := {
+	"hide": "res://assets/characters/dwarf/armor_hide.glb", "leather": "res://assets/characters/dwarf/armor_hide.glb",
+}
+var _bind_poses := []  ## every bone as the body was built (set by _wear_body)
+var _model_to_skel := Transform3D()
+var _body_head: MeshInstance3D
+var _body_root: Node3D  ## the whole visible dwarf (lifted onto boot soles)
+var _sole_y := 0.0      ## how far the boot soles lift him (in our own units)
+var _roll_lift := 0.0   ## how far he is lifted mid-roll (in our own units): see _lift_roll
+var _full_clip := ""    ## the whole-body one-shot playing now
+var _full_start := 0.0  ## when it started (s)
+var _full_length := 0.0 ## and how long it plays (s)
+## How far hand-built boot soles reach below his bare feet standing (metres; measured on the recorded clips, Nov 18: the
+## sole is built 1.1 cm down, but the standing pose tips the foot, so the boot's lowest point is ~1.7 cm lower still).
+const ARMOR_SOLE := 0.029
+
+
+## Builds one armor piece from its id: armor_<head|chest|feet>_<material>. A hand-built set (ARMOR_FILES) when the
+## hand-built body is worn; otherwise simple shapes on bones (sizes in each bone's own units, front toward +Z).
 func _wear_armor(id: String) -> Node3D:
 	var parts := id.split("_")
-	if parts.size() < 3 or not ARMOR.has(parts[2]):
+	if parts.size() < 3:
+		return null
+	if not _bind_poses.is_empty() and ARMOR_FILES.has(parts[2]) and ResourceLoader.exists(ARMOR_FILES[parts[2]]):
+		var made := _wear_built_armor(parts[1], ARMOR_FILES[parts[2]])
+		if made:
+			return made
+	if not ARMOR.has(parts[2]):
 		return null
 	var tier: String = parts[2]
 	var col: Color = ARMOR[tier][0]
@@ -683,6 +984,31 @@ func _wear_armor(id: String) -> Node3D:
 	return holder
 
 
+## One piece of a hand-built set (slot: head, chest, feet): its meshes go onto the skeleton like the body's and are freed
+## with the returned holder. Null when the file has no such piece (e.g. the legs slot: sets have 3 pieces).
+func _wear_built_armor(slot: String, path: String) -> Node3D:
+	var src: Node = (load(path) as PackedScene).instantiate()
+	var found := src.find_children("armor_%s_*" % slot, "MeshInstance3D", true, false)
+	if found.is_empty():
+		src.free()
+		return null
+	var holder := Node3D.new()
+	holder.name = "armor_" + slot
+	add_child(holder)
+	if slot == "feet":
+		holder.set_meta("sole", ARMOR_SOLE)
+	for mi: MeshInstance3D in found:
+		var hair := String(mi.name).begins_with("armor_head_hair")
+		_bind_to_skeleton(mi)
+		if hair:
+			holder.set_meta("hat_hair", true)
+			if is_instance_valid(_body_head):  # (painted with the normal head's pictures: same picture map)
+				mi.material_override = _body_head.get_active_material(0)
+		holder.tree_exiting.connect(mi.queue_free)
+	src.free()
+	return holder
+
+
 func _helmet_shape(att: Node3D, tier: String, col: Color, surf: String) -> void:
 	var dome := _piece(att, _ball(0.5, true), col, surf, Vector3(0, 0.115, -0.02), Vector3(0.27, 0.32, 0.29))
 	var band := col.darkened(0.3) if tier != "hide" else Color(0.3, 0.2, 0.12)
@@ -713,7 +1039,22 @@ func _on_bone(bone: String, holder: Node3D) -> Node3D:
 	skeleton.add_child(att)
 	# Freed together with the piece: the holder remembers its bone attachments.
 	holder.tree_exiting.connect(att.queue_free)
-	return att
+	return _head_space(att)
+
+
+## For a piece riding on the neck or head: ride on its unskewed twin instead (EvenHead), in a node that stands exactly
+## where the real bone stands at rest, so pieces made in the head bone's own units still fit. Other bones: att itself.
+func _head_space(att: BoneAttachment3D) -> Node3D:
+	if not _even.has(att.bone_name):
+		return att
+	var real := skeleton.find_bone(att.bone_name)
+	att.bone_name = _even[att.bone_name]
+	var twin := skeleton.find_bone(att.bone_name)
+	var space := Node3D.new()
+	space.name = "HeadSpace"
+	space.transform = (_bind_poses[twin] as Transform3D).affine_inverse() * (_bind_poses[real] as Transform3D)
+	att.add_child(space)
+	return space
 
 
 func _piece(parent: Node3D, mesh: Mesh, col: Color, surf: String, pos: Vector3, size: Vector3) -> MeshInstance3D:
@@ -762,6 +1103,7 @@ func _wear_spore_mask() -> Node3D:
 	var att := BoneAttachment3D.new()
 	att.bone_name = "Head"
 	skeleton.add_child(att)
+	var on := _head_space(att)  # (F280: the unskewed head)
 	var cloth := Color(0.5, 0.58, 0.42)
 	var sm := SphereMesh.new()
 	sm.radius = 0.1
@@ -773,7 +1115,7 @@ func _wear_spore_mask() -> Node3D:
 	mask.position = Vector3(0, 0.03, 0.115)
 	mask.scale = Vector3(1.35, 0.75, 0.7)
 	mask.material_override = Look.mat(cloth, "cloth")
-	att.add_child(mask)
+	on.add_child(mask)
 	for x in [-0.075, 0.075]:
 		var f := MeshInstance3D.new()
 		var cm := CylinderMesh.new()
@@ -785,7 +1127,7 @@ func _wear_spore_mask() -> Node3D:
 		f.position = Vector3(x, 0.0, 0.17)
 		f.rotation = Vector3(PI / 2.0, 0, x * 3.0)
 		f.material_override = Look.mat(Color(0.35, 0.33, 0.3), "metal")
-		att.add_child(f)
+		on.add_child(f)
 	for mi: MeshInstance3D in att.find_children("*", "MeshInstance3D", true, false):
 		mi.layers = DwarfModel.VISUAL_LAYER
 	return att

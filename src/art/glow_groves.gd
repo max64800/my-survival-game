@@ -14,9 +14,11 @@ const GLOW := ["gtree_common_1", "gtree_common_2", "gtree_common_3", "gtree_comm
 const DARK := ["dtree_dead_1", "dtree_dead_2", "dtree_dead_3", "dtree_dead_4", "dtree_dead_5",
 	"dtree_twisted_1", "dtree_twisted_2", "dtree_twisted_3", "dtree_twisted_4", "dtree_twisted_5",
 	"dtree_bare_1", "dtree_bare_2", "dtree_bare_3", "dtree_bare_4", "dtree_bare_5", "dtree_bare_6"]
-## One colour per grove, by biome (the first grove of a biome takes the first colour).
-const COLOURS := {"mossy": [Color(0.25, 0.95, 0.85), Color(0.30, 0.55, 1.0)],
-	"fungal": [Color(0.70, 0.40, 1.0), Color(1.0, 0.45, 0.70)]}
+## Glow colours by biome (owner, Nov 19: "different colors, not just blue", F383). Each grove picks a main colour
+## (two groves of a biome never share it) and a second one: about a third of its glowing trees take the second.
+const COLOURS := {"mossy": [Color(0.25, 0.95, 0.85), Color(0.30, 0.55, 1.0), Color(0.55, 1.0, 0.35), Color(1.0, 0.75, 0.30)],
+	"fungal": [Color(0.70, 0.40, 1.0), Color(1.0, 0.45, 0.70), Color(1.0, 0.55, 0.25), Color(0.50, 0.45, 1.0)]}
+const SECOND_SHARE := 0.35
 const ROCKS := ["grock_a", "grock_b", "grock_c", "grock_d", "grock_e", "grock_f", "grock_g", "grock_h", "grock_i",
 	"grock_j", "grock_k", "grock_l", "grock_m", "grock_n", "grock_o", "grock_p", "grock_q", "grock_r",
 	"grock_medium_1", "grock_medium_2", "grock_medium_3"]
@@ -46,7 +48,7 @@ func build(maker: CaveMaker, avoid: Callable = Callable()) -> void:
 	for gi in groves.size():
 		var g: Dictionary = groves[gi]
 		for t: Dictionary in g.trees:
-			_add_tree(gi, g.colour, t)
+			_add_tree(gi, t.get("colour", g.colour), t)
 			_trees.append(t)
 			_by_id[int(t.id)] = t
 		for d: Dictionary in g.dressing:
@@ -56,7 +58,7 @@ func build(maker: CaveMaker, avoid: Callable = Callable()) -> void:
 		_add_lights(g)
 
 
-## [{room, biome, colour, trees: [{id, pos, model, scale, spin, glow, wood}]}] for this cave. Same dice for every player.
+## [{room, biome, colour, trees: [{id, pos, model, scale, spin, glow, wood, colour}]}] for this cave. Same dice for every player.
 static func plan(maker: CaveMaker, avoid: Callable = Callable()) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	var rng := RandomNumberGenerator.new()
@@ -86,7 +88,14 @@ static func plan(maker: CaveMaker, avoid: Callable = Callable()) -> Array[Dictio
 			if trees.size() < 6:
 				continue  # too cramped for a forest: try the next cavern
 			var cols: Array = COLOURS.get(biome, COLOURS.mossy)
-			out.append({room = ri, biome = biome, colour = cols[made % cols.size()], trees = trees,
+			var first := rng.randi_range(0, cols.size() - 1)
+			if made > 0:  # the second grove of a biome: a main colour the first one didn't use
+				var used := cols.find(out[out.size() - 1].colour)
+				first = (used + 1 + rng.randi_range(0, cols.size() - 2)) % cols.size()
+			var second := (first + 1 + rng.randi_range(0, cols.size() - 2)) % cols.size()
+			for t: Dictionary in trees:
+				t.colour = cols[second] if t.glow and rng.randf() < SECOND_SHARE else cols[first]
+			out.append({room = ri, biome = biome, colour = cols[first], trees = trees,
 				dressing = _dress(maker, maker.rooms[ri], rng, trees, avoid)})
 			placed_all.append_array(trees)
 			made += 1
@@ -178,9 +187,12 @@ static func _dress(maker: CaveMaker, room: Dictionary, rng: RandomNumberGenerato
 			if hit_tree:
 				continue
 			var s := rng.randf_range(0.8, 1.2) if w[3] else rng.randf_range(0.7, 1.3)
+			placed += 1
+			if list == ROCKS:  # big rocks are out (owner, Nov 19: "we don't need that boulder, it doesn't look good"); still
+				rng.randi(); rng.randf()  # planned and skipped, with the same dice, so the plants and pebbles stay where they were
+				continue
 			out.append({pos = floor_at - Vector3.UP * (0.08 if w[3] else 0.02), model = list[rng.randi_range(0, list.size() - 1)],
 				scale = s, spin = rng.randf_range(0.0, TAU), solid = w[3]})
-			placed += 1
 	for t in trees:  # shelf fungus on some dark trunks, facing out
 		if t.glow or float(t.scale) < 0.5 or rng.randf() > 0.55:
 			continue
@@ -320,7 +332,7 @@ func _add_dressing(d: Dictionary) -> Node3D:
 
 
 func _tinted(gi: int, mat: StandardMaterial3D, colour: Color) -> StandardMaterial3D:
-	var key := [gi, mat]
+	var key := [gi, mat, colour]
 	if not _mats.has(key):
 		var m := mat.duplicate() as StandardMaterial3D
 		m.albedo_color = colour
@@ -335,10 +347,11 @@ func _add_lights(g: Dictionary) -> void:
 	for i in range(0, glowing.size(), 3):  # one light for about every three glowing trees
 		var t: Dictionary = glowing[i]
 		var l := OmniLight3D.new()
-		l.light_color = g.colour
+		l.light_color = t.get("colour", g.colour)
 		l.light_energy = 1.4
 		l.omni_range = 14.0
 		l.omni_attenuation = 1.3
+		Darkness.mark(l)
 		l.shadow_enabled = false
 		l.distance_fade_enabled = true
 		l.distance_fade_begin = 70.0

@@ -52,6 +52,7 @@ func _ready() -> void:
 	ring.ring_segments = 5
 	_piece(ring, iron, Vector3(0, 0.04, 0)).rotation.x = PI / 2.0
 	light = OmniLight3D.new()
+	Darkness.mark(light, EMPTY_ENERGY + 0.15)  # an empty lantern's last glow is "dark" (F293)
 	light.shadow_enabled = true
 	light.shadow_caster_mask = 0xFFFFF & ~DwarfModel.VISUAL_LAYER
 	# Soft shadow edges (owner, Nov 17: "the light is very sharp"): a pebble or a tool right by the lantern threw huge

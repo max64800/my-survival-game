@@ -167,6 +167,9 @@ func refresh() -> void:
 	var special := station != null and station.kind in ["rune_slab", "gem_bench"]
 	_detail.visible = not special
 	_tabs.visible = not special
+	if special:
+		_scroll.custom_minimum_size.y = 250  # gem bench / rune slab lists keep the tall scroll
+		UiKit.fit(self)
 	if station and station.kind == "rune_slab":
 		_rune_slab(ps, auth)
 		return
@@ -187,10 +190,8 @@ func refresh() -> void:
 	if station and station.kind in AutoSmelt.KINDS and _status.text == "":
 		_status.text = "Works by itself: put %s in a chest within 5 m." % 			("wood" if station.kind == "kiln" else "ore and coal (or wood)")
 	var keep_scroll := _scroll.scroll_vertical  # the list stays where it was after you make something (F129)
-	for c in _list.get_children():
-		c.queue_free()
-	for c in _tabs.get_children():
-		c.queue_free()
+	UiKit.clear(_list)
+	UiKit.clear(_tabs)
 	# Only recipes you've unlocked, in tabs (owner F127). Missing materials still show in red, with where to get them.
 	var by_tab := {}
 	var ids := Recipes.for_station(where)
@@ -232,6 +233,9 @@ func refresh() -> void:
 		shown += 1
 		cards.add_child(_card(id, ps.inventory))
 	_show_detail(ps.inventory)
+	# The card area is only as tall as its cards, up to 3 rows (F247: no empty space under the icons).
+	var rows := ceili(maxi(shown, 1) / float(CARD_COLUMNS))
+	_scroll.custom_minimum_size.y = mini(rows, 3) * (CARD + 6) - 6
 	_scroll.set_deferred("scroll_vertical", keep_scroll)
 	if shown == 0:
 		var l := Label.new()
@@ -243,6 +247,7 @@ func refresh() -> void:
 		upgrade_panel.visible = upgrades
 		if upgrades:
 			_upgrade_rows(ps.inventory)
+	UiKit.fit(self)  # F247: the panel shrinks to what it shows, no dead space at the bottom
 
 
 ## How long making it takes: 1 s for small things up to 3 s for big ones (by how much goes in).
@@ -341,8 +346,7 @@ func _process(delta: float) -> void:
 
 ## Gear upgrades (building polish spec §4): everything you carry or wear that this station can improve.
 func _upgrade_rows(inv: Inventory) -> void:
-	for c in _up_list.get_children():
-		c.queue_free()
+	UiKit.clear(_up_list)
 	var heading := Label.new()
 	heading.text = "Upgrade gear"
 	heading.add_theme_font_size_override("font_size", 20)
@@ -440,8 +444,7 @@ func _card(recipe_id: String, inv: Inventory) -> Control:
 
 ## The picked recipe at the bottom: big picture, every ingredient as have / need (missing in red).
 func _show_detail(inv: Inventory) -> void:
-	for c in _detail_needs.get_children():
-		c.queue_free()
+	UiKit.clear(_detail_needs)
 	if _picked == "":
 		_detail.visible = false
 		return
@@ -479,8 +482,7 @@ func _show_detail(inv: Inventory) -> void:
 func _gem_bench(ps: GameAuthority.PlayerState) -> void:
 	_title.text = "Gem Bench"
 	_status.text = "Socketing is free. Taking a gem out costs 5 blue glow crystals."
-	for c in _list.get_children():
-		c.queue_free()
+	UiKit.clear(_list)
 	var carried := []
 	for s in ps.inventory.slots:
 		if not s.is_empty() and Gems.gem_of(s.id) != "" and not carried.has(Gems.gem_of(s.id)):
@@ -531,8 +533,7 @@ func _gem_bench(ps: GameAuthority.PlayerState) -> void:
 func _rune_slab(ps: GameAuthority.PlayerState, auth: GameAuthority) -> void:
 	_title.text = "Rune Slab"
 	_status.text = ""
-	for c in _list.get_children():
-		c.queue_free()
+	UiKit.clear(_list)
 	var slab := auth.rune_slab
 	for colour in RuneSlab.COLOURS:
 		var l := Label.new()

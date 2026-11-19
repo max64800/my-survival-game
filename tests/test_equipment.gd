@@ -93,3 +93,28 @@ func test_lantern_lights_only_from_its_slot() -> void:
 	check(Lantern.has_lantern(ps), "crafted: it goes in the lantern slot and lights")
 	ps.inventory.swap(Inventory.equip_index("lantern"), 5)
 	check(not Lantern.has_lantern(ps), "taken off into the bag: no light")
+
+
+## Owner, Nov 17: "I cannot use the shield. Right-click a shield or anything equipable: it should go in its slot."
+func test_right_click_equips_and_shield_is_usable() -> void:
+	var ps := GameAuthority.PlayerState.new()
+	ps.needs_lantern = true
+	ps.inventory.add("shield_stone", 1)  # shields go to the hotbar
+	ps.inventory.add("stone", 6)
+	var sh := -1
+	var st := -1
+	for i in Inventory.HOTBAR_SIZE:
+		match ps.inventory.get_slot(i).get("id", ""):
+			"shield_stone": sh = i
+			"stone": st = i
+	check(Hud.wants_equip_click(sh, ps.inventory), "right-click on a shield equips it")
+	check(not Hud.wants_equip_click(st, ps.inventory), "right-click on stones still splits them")
+	check(ps.inventory.swap(sh, Inventory.equip_index("shield")), "the shield fits its slot")
+	check(Hud.wants_equip_click(Inventory.equip_index("shield"), ps.inventory), "right-click in the slot takes it off")
+	check(ps.can_draw(), "F works with only a shield equipped")
+	ps.weapon_drawn = true
+	check_eq(ps.selected_item(), "shield_stone", "F with only a shield: you raise the shield")
+	ps.inventory.add("lantern", 1)  # the hand lantern goes in its slot
+	check(not DwarfFight.off_hand_free(ps), "the hand lantern fills the off hand")
+	ps.lantern_stowed = true
+	check(DwarfFight.off_hand_free(ps), "L puts the lantern away: the shield can be used")

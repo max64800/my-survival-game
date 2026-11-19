@@ -9,13 +9,43 @@ extends RefCounted
 
 var pieces := {}  ## uid -> {piece, family, pos, rot, hp, anchored, stability}
 var version := 0  ## goes up whenever a piece is added or removed (the hammer's colors refresh)
+## Pieces by 4 m cell, so a piece only checks the pieces near it (checking every piece against every other piece
+## took many seconds once a ruin of 700 pieces stood in the world). Neighbour lists are kept until something changes.
+const CELL := 4.0
+var _cells := {}   ## Vector3i -> Array of uids
+var _nb := {}      ## uid -> its neighbours (cleared on every add/remove)
 
 
 func add(uid: int, piece: String, family: String, pos: Vector3, rot: int, anchored: bool) -> void:
 	anchored = anchored or is_foundation(piece)  # foundations are always steady (spec §5)
+	if pieces.has(uid):
+		_unindex(uid)
 	pieces[uid] = {piece = piece, family = family, pos = pos, rot = rot, hp = Pieces.hp(piece, family),
 		anchored = anchored, stability = 1.0 if anchored else 0.0}
+	for c in _cells_of(Pieces.box(piece, pos, rot)):
+		if not _cells.has(c):
+			_cells[c] = []
+		_cells[c].append(uid)
+	_nb.clear()
 	version += 1
+
+
+func _cells_of(b: AABB) -> Array:
+	var lo := Vector3i(((b.position - Vector3.ONE * 0.25) / CELL).floor())
+	var hi := Vector3i(((b.end + Vector3.ONE * 0.25) / CELL).floor())
+	var out := []
+	for x in range(lo.x, hi.x + 1):
+		for y in range(lo.y, hi.y + 1):
+			for z in range(lo.z, hi.z + 1):
+				out.append(Vector3i(x, y, z))
+	return out
+
+
+func _unindex(uid: int) -> void:
+	var p: Dictionary = pieces[uid]
+	for c in _cells_of(Pieces.box(p.piece, p.pos, p.rot)):
+		if _cells.has(c):
+			_cells[c].erase(uid)
 
 
 static func is_foundation(piece: String) -> bool:
@@ -34,7 +64,10 @@ static func strength_color(s: float) -> Color:
 
 
 func remove(uid: int) -> void:
+	if pieces.has(uid):
+		_unindex(uid)
 	pieces.erase(uid)
+	_nb.clear()
 	version += 1
 
 
@@ -61,23 +94,6 @@ func overlaps(piece: String, pos: Vector3, rot: int) -> bool:
 	return false
 
 
-## The pieces in the way of placing `piece` there (the same test as overlaps()).
-func overlapping(piece: String, pos: Vector3, rot: int) -> Array:
-	var out := []
-	var mine_y := _y_range(piece, pos, -0.16)
-	var mine := Pieces.footprint(piece, pos, rot, -0.16)
-	for uid in pieces:
-		var o: Dictionary = pieces[uid]
-		if fits_inside(piece, o.piece) or fits_inside(o.piece, piece):
-			continue
-		var oy := _y_range(o.piece, o.pos, -0.16)
-		if mine_y.y <= oy.x or oy.y <= mine_y.x:
-			continue
-		if Pieces.outlines_overlap(mine, Pieces.footprint(o.piece, o.pos, o.rot, -0.16)):
-			out.append(uid)
-	return out
-
-
 ## Bottom and top of a piece, grown (or shrunk, never past its middle).
 static func _y_range(piece: String, pos: Vector3, grow: float) -> Vector2:
 	var h: float = Pieces.LIST[piece].size.y
@@ -96,7 +112,7 @@ func _touching(piece: String, pos: Vector3, rot: int, other: Dictionary) -> bool
 
 ## Pieces made to sit inside another one's opening.
 static func fits_inside(inner: String, outer: String) -> bool:
-	return inner == "door" and outer in ["doorway", "arch_doorway"]
+	return (inner == "door" and outer in ["doorway", "arch_doorway"]) or (inner == "gate_leaf" and outer == "gateway")
 
 
 ## Shrinks a box on every side, but never past its middle (thin walls stay valid boxes).
@@ -106,11 +122,18 @@ static func _shrunk(b: AABB, amount: float) -> AABB:
 
 
 func neighbors(uid: int) -> Array:
+	if _nb.has(uid):
+		return _nb[uid]
 	var me: Dictionary = pieces[uid]
 	var out := []
-	for other in pieces:
-		if other != uid and _touching(me.piece, me.pos, me.rot, pieces[other]):
-			out.append(other)
+	var seen := {}
+	for c in _cells_of(box_of(uid)):
+		for other in _cells.get(c, []):
+			if other != uid and not seen.has(other):
+				seen[other] = true
+				if _touching(me.piece, me.pos, me.rot, pieces[other]):
+					out.append(other)
+	_nb[uid] = out
 	return out
 
 

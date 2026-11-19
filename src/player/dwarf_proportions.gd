@@ -134,6 +134,35 @@ func _shoulders_forward(sk: Skeleton3D) -> void:
 		_pos[b] = (_pos[b] if _pos.has(b) else sk.get_bone_rest(b).origin) + to_local * shift
 
 
+## For the hand-built body: drop the uneven (Vector3) thickness of the hips, belly and chest, keeping every joint exactly
+## where it stands. An uneven scale on a bone skews every bone under it once that bone turns: in the sword swing the
+## chest bends far forward and the neck and head were stretched out flat like a beak (owner, Nov 17: "sword attack has
+## an issue"). The hand-built body is bound to the shaped rest pose, so it only needs the joints in the right places;
+## the uneven belly scale was for the old pack clothes. Even (number) thicknesses stay: they can't skew anything.
+func no_skew(sk: Skeleton3D) -> void:
+	var old := []
+	for i in sk.get_bone_count():
+		old.append(_rest_global(sk, i, true).origin)
+	for i in _scale.keys():
+		var v: Vector3 = _scale[i]
+		if not (is_equal_approx(v.x, v.y) and is_equal_approx(v.y, v.z)):
+			_scale.erase(i)
+	# parents first, so each joint is placed under its parent's new transform
+	var order := range(sk.get_bone_count())
+	var depth := func(i: int) -> int:
+		var d := 0
+		while sk.get_bone_parent(i) >= 0:
+			i = sk.get_bone_parent(i)
+			d += 1
+		return d
+	order.sort_custom(func(x: int, y: int) -> bool: return depth.call(x) < depth.call(y))
+	for i: int in order:
+		var p := sk.get_bone_parent(i)
+		if p < 0 or i == _pelvis:
+			continue
+		_pos[i] = _rest_global(sk, p, true).affine_inverse() * old[i]
+
+
 ## A bone's own thickness times the thickness of every bone above it (per direction; close
 ## enough, since the bones of one body part point roughly the same way).
 static func _total_thickness(sk: Skeleton3D, i: int) -> Vector3:
@@ -182,6 +211,7 @@ func _process_modification_with_delta(_delta: float) -> void:
 			var rest := sk.get_bone_rest(i).basis.get_rotation_quaternion()
 			_turn_written[i] = rest.slerp(_turn_anim[i], head_follow)
 			sk.set_bone_pose_rotation(i, _turn_written[i])
+
 	if _pelvis >= 0:
 		# Only lower the hips from what the animation wrote, never twice (if the animation
 		# skipped a frame, the pose still holds our own lowered value).

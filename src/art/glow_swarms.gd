@@ -14,10 +14,13 @@ const TINTS := [Color(1.0, 0.8, 0.3), Color(1.0, 0.62, 0.22), Color(0.85, 1.0, 0
 var _swarms: Array[Dictionary] = []
 var _time := 0.0
 var _trunks := []  ## Root Trees to fly round: [{p, r, top, bottom}]
+var _maker: CaveMaker
+var _todo := 0  ## swarms still to finish: one per frame after loading (owner, Nov 19: loading froze ~2 s on them)
 
 
 func build(maker: CaveMaker, trunks: Array = []) -> void:
 	_trunks = trunks
+	_maker = maker
 	var mesh := SphereMesh.new()
 	mesh.radius = 0.009  # (smaller again, owner Nov 18: "a lot smaller")
 	mesh.height = 0.018
@@ -34,6 +37,9 @@ func build(maker: CaveMaker, trunks: Array = []) -> void:
 			count = 0
 		for k in count:
 			_swarms.append(_make(maker, room, rng, mesh))
+	if not _swarms.is_empty():
+		_finish(_swarms[0])  # the first cave's swarm is ready at once; the rest follow one per frame
+	_todo = 1
 
 
 func _make(maker: CaveMaker, room: Dictionary, rng: RandomNumberGenerator, mesh: Mesh) -> Dictionary:
@@ -65,12 +71,6 @@ func _make(maker: CaveMaker, room: Dictionary, rng: RandomNumberGenerator, mesh:
 	# Along the walls (owner, Nov 18: "in front of the ceiling I don't see them, in front of the wall it looks cool"):
 	# how far the wall is from the cave's middle in 48 directions, at the height they fly.
 	sw.band = fl + minf(2.5, r.y * 1.55 * 0.35) + 1.0
-	for k in 48:
-		var a := k * TAU / 48.0
-		var dir := Vector3(cos(a), 0.0, sin(a))
-		var start := Vector3(c.x, sw.band, c.z)
-		var hit := GlowPlacer._march(maker, start, dir, maxf(r.x, r.z) * 1.6) if maker.sdf_at(start) > 0.0 else Vector3.INF
-		sw.ring.append(Vector2(hit.x - c.x, hit.z - c.z).length() if hit != Vector3.INF else minf(r.x, r.z) * 0.8)
 	for i in n:
 		var a := rng.randf() * TAU
 		var d := sqrt(rng.randf())
@@ -78,12 +78,27 @@ func _make(maker: CaveMaker, room: Dictionary, rng: RandomNumberGenerator, mesh:
 		sw.off.append(Vector2(cos(a), sin(a)) * d)
 		sw.lag.append(rng.randf_range(1.6, 4.5))
 		sw.tw.append(rng.randf() * TAU)
+	mmi.visible = false  # shown once _finish has found its walls
+	return sw
+
+
+## The slow part of a swarm (48 looks for its cave's walls), done one swarm per frame instead of all while loading.
+func _finish(sw: Dictionary) -> void:
+	var c: Vector3 = sw.c
+	var r: Vector3 = sw.r
+	for k in 48:
+		var a := k * TAU / 48.0
+		var dir := Vector3(cos(a), 0.0, sin(a))
+		var start := Vector3(c.x, sw.band, c.z)
+		var hit := GlowPlacer._march(_maker, start, dir, maxf(r.x, r.z) * 1.6) if _maker.sdf_at(start) > 0.0 else Vector3.INF
+		sw.ring.append(Vector2(hit.x - c.x, hit.z - c.z).length() if hit != Vector3.INF else minf(r.x, r.z) * 0.8)
 	sw.head = _head_at(sw, 0.0)
 	sw.prev = sw.head
-	for i in n:
+	for i in (sw.off as PackedVector2Array).size():
 		sw.pos.append(sw.head + Vector3(sw.off[i].x, sw.off[i].y, 0.0) * 0.6)
 	_place(sw)
-	return sw
+	sw.done = true
+	(sw.mmi as MultiMeshInstance3D).visible = true
 
 
 ## Where a swarm's head is at time t: smooth slow loops inside its cave, between 1.5 m above the floor and 2/3 up.
@@ -123,8 +138,11 @@ func _process(delta: float) -> void:
 	if cam == null:
 		return
 	var at := cam.global_position
+	if _todo < _swarms.size():
+		_finish(_swarms[_todo])
+		_todo += 1
 	for sw in _swarms:
-		if (sw.head as Vector3).distance_to(at) > ACTIVE:
+		if not sw.get("done", false) or (sw.head as Vector3).distance_to(at) > ACTIVE:
 			continue
 		# Shy (owner, Nov 18): when you come within 5 m they fade away, and gather again 10-15 m from you.
 		var fade: float = sw.get("fade", 1.0)

@@ -13,7 +13,16 @@ const FROZEN_AFTER := 3.0
 
 ## What the game is busy with right now, for the log ("loading the cave", "building the outpost"...). Set it before
 ## anything big.
-static var doing := "starting"
+## Each step that took 0.3 s or more is written to the log when the next one starts ("STEP making the cave: 4.2 s"),
+## so a long load says which step was slow (owner, Nov 19: 31 s frozen while the cave was made).
+static var doing := "starting":
+	set(v):
+		var now := Time.get_ticks_msec()
+		if now - _step_since >= 300:
+			_say("[%s] STEP %s: %.1f s" % [_clock(), doing, (now - _step_since) / 1000.0])
+		_step_since = now
+		doing = v
+static var _step_since := 0
 ## Rock hits in the last few seconds (the dwarf counts them), so a slow moment says if you were mining.
 static var hits := 0
 

@@ -25,6 +25,13 @@ func _exit_tree() -> void:
 		instance = null
 
 
+## Something now stands at `center` (a storage box, a ruin's treasure): pebbles, plants and mushroom grass within
+## `radius` (plus their own margin) are taken away (World.ground_taken). Does nothing outside a running game.
+static func take(center: Vector3, radius: float) -> void:
+	if instance and instance.world:
+		instance.world.ground_taken.emit(center, radius)
+
+
 ## A batch of floor things: `set` (optional) holds "where" (PackedVector3Array) and/or "xforms" (Array) to keep in step.
 ## `lift`: how high the thing's origin sits above the floor (negative = its foot goes into the floor).
 ## `after` runs once it's done (to copy the new places into the owner's own lists).
@@ -109,8 +116,9 @@ func _settle(job: Dictionary) -> void:
 	var changed := false
 	for i in mm.instance_count:
 		var xf: Transform3D = xforms[i] if i < xforms.size() else mm.get_instance_transform(i)
-		if xf.basis.get_scale().x < 0.001:
-			continue  # already hidden
+		if xf.basis.get_scale().x < 0.001 or mm.get_instance_transform(i).basis.get_scale().x < 0.001:
+			continue  # already hidden (also when only the drawn copy is: dug away, broken, or under a chest; the owner's
+			# list keeps where it grew so it can grow back, and that mustn't bring it back here)
 		var up := xf.basis.y.normalized()
 		if up.y < 0.5:
 			continue  # walls and ceilings stay as they are

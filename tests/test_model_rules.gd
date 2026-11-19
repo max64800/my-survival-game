@@ -45,8 +45,8 @@ func test_one_round_doorway_and_one_door_per_style() -> void:
 		var doorways := []
 		for id in _menu(fam):
 			var p: Dictionary = Pieces.LIST[id]
-			if p.has("opening") and float(p.opening.y) >= 1.4:  # tall enough to walk through
-				doorways.append(id)
+			if p.has("opening") and float(p.opening.y) >= 1.4 and id != "gateway":  # tall enough to walk through
+				doorways.append(id)  # (the gateway is the fort's big round-arched gate for a double gate, owner Nov 17)
 		check_eq(doorways, ["doorway"], "%s: one doorway, the round one" % fam)
 		check(Pieces.LIST.doorway.get("round", false), "the doorway is round")
 		check(Pieces.allowed("door", fam), "%s has its own door" % fam)

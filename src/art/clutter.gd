@@ -73,6 +73,7 @@ var _built := false
 
 func build(maker: CaveMaker, world: World, blocking := false) -> void:
 	world.changed.connect(_on_rock_changed)  # from the start: digs while it's still planning are done when it's built
+	world.ground_taken.connect(_on_rock_changed)  # a chest or a ruin's treasure put down: make room (owner, Nov 19)
 	if blocking:
 		_finish(_cached_plan(maker), maker, world)
 		return

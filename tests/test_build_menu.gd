@@ -51,3 +51,58 @@ func test_steadiness_words() -> void:
 	check(Hud.steadiness_text({anchored = true, stability = 1.0}).begins_with("rock-steady"), "on rock")
 	check_eq(Hud.steadiness_text({anchored = false, stability = 0.8}), "80% steady", "held up by others")
 	check(Hud.steadiness_text({anchored = false, stability = 0.2}).begins_with("shaky"), "about to fall")
+
+
+## Owner (Nov 17): "every time I click a button the build menu grows until I can't see it".
+## Refilling a menu must drop the old buttons right away, and the panel must shrink back.
+func test_menu_refill_does_not_grow() -> void:
+	var p := PanelContainer.new()
+	tree.root.add_child(p)
+	var box := VBoxContainer.new()
+	p.add_child(box)
+	for _r in 3:
+		UiKit.clear(box)
+		for i in 4:
+			var b := Button.new()
+			b.custom_minimum_size = Vector2(100, 50)
+			box.add_child(b)
+	check_eq(box.get_child_count(), 4, "only the newest buttons are in the menu")
+	p.reset_size()
+	check(p.size.y < 4 * 50 + 4 * 8 + 1, "the panel is only as tall as one set of buttons")
+	p.queue_free()
+
+
+## Owner (Nov 19): "it turns when you walk; it should be Q and E". The turn is only changed by Q (+1) / E (-1), and the
+## piece is snapped with no walking direction in it.
+func test_q_and_e_turn_the_piece_walking_does_not() -> void:
+	var bm := BuildMode.new()
+	tree.root.add_child(bm)
+	bm.rot = 0
+	bm.turn(1)
+	check_eq(bm.rot, 1, "Q turns a quarter left")
+	bm.turn(-1)
+	bm.turn(-1)
+	check_eq(bm.rot, 3, "E turns right (and wraps round)")
+	bm.choose("floor_triangle", "plank_root")
+	check_eq(bm.rot, 9, "a triangle keeps facing the same way (30° steps)")
+	bm.turn(-1)
+	check_eq(bm.rot, 8, "triangles turn 30° per press")
+	var a := Pieces.snap("floor", Vector3(3.2, 0, 1.4), Vector3.UP, 0.0, 1)
+	check_eq(a.rot, 1, "the piece faces exactly its turn")
+	bm.queue_free()
+	PlaceGhost.yaw = 0.0
+	var g := PlaceGhost.new()
+	g.turn(1)
+	check_near(PlaceGhost.yaw, PI / 4.0, 0.001, "stations turn 45° per press")
+	g.turn(-1)
+	g.turn(-1)
+	check_near(PlaceGhost.yaw, -PI / 4.0, 0.001, "and back the other way")
+	g.free()
+
+
+## F100 (owner, Nov 19): the screen says how to take the aimed piece down.
+func test_take_down_text_says_how() -> void:
+	check(Hud.take_down_text(7.2).contains("8 s left"), "seconds left to pick up")
+	check(Hud.take_down_text(0.0).begins_with("X: break"), "too late: only breaking")
+	check(Hud.take_down_text(-1.0).contains("80% back"), "a friend's computer still shows both ways")
+	check(not Hud.take_down_text(0.0).contains("%%") and not Hud.take_down_text(3.0).contains("%%"), "no doubled % signs")

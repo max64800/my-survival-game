@@ -119,8 +119,7 @@ func _show_part(part: Control) -> void:
 
 ## One card per saved world: its name and when it was saved, then Play / Host / Delete.
 func _fill_worlds() -> void:
-	for c in _worlds_box.get_children():
-		c.queue_free()
+	UiKit.clear(_worlds_box)
 	var worlds := SaveGame.list_worlds()
 	_join_box.visible = false
 	_new_box.visible = worlds.is_empty()  # no worlds yet: show "make one" straight away

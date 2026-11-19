@@ -232,7 +232,7 @@ func _spawn_pack(room_i: int, room: Dictionary) -> Array:
 		match room.get("kind", ""):
 			"spawn":
 				kind = "rock_snail"  # slow: near the start you can always walk away
-			"ruin", "great_hall", "nest", "nest_cavern":
+			"ruin", "great_hall", "nest", "nest_cavern", "outpost":   # (the Fallen Outpost's cavern: beetles guard it)
 				kind = "rock_beetle"
 	# The Copper Deeps are guarded (F115): always rock beetles, a bigger pack, always with a leader.
 	var deeps := false
@@ -275,12 +275,19 @@ func _nearest_player_dist(p: Vector3) -> float:
 	return best
 
 
+## A dwarf flying with the dev fly key is left alone by every monster (owner, Nov 17).
+static func ignores(node: Node) -> bool:
+	return node is Dwarf and (node as Dwarf).dev_fly
+
+
 ## Who does this monster notice? (sight inside your lantern light, hearing) — doc 5.1.
 func nearest_noticer(m: Monster) -> int:
 	var best := 0
 	var best_d := INF
 	for pid in auth.players:
 		var ps: GameAuthority.PlayerState = auth.players[pid]
+		if ignores(ps.node):
+			continue
 		var p: Vector3 = ps.node.global_position
 		var d := p.distance_to(m.global_position)
 		var lit := ps.fuel > 0.0
@@ -966,7 +973,7 @@ func _judge_incoming() -> void:
 					me.vitals.stamina = maxf(0.0, me.vitals.stamina - result.stamina)
 					if me.vitals.stamina <= 0.0 and dwarf.has_method("guard_break"):
 						dwarf.guard_break()
-				if result.result == "hit" and hit.kd and dwarf.has_method("knock_down"):
+				if result.result == "hit" and (hit.kd or hit.get("charge", false)) and dwarf.has_method("knock_down"):  # a charge knocks you down (F234)
 					dwarf.knock_down()
 				if result.result in ["hit", "block"] and hit.get("charge", false) and dwarf.has_method("shove"):
 					dwarf.shove(charge_shove(m, dwarf.global_position))
@@ -1160,7 +1167,7 @@ func request_hit_statue(peer_id: int, id: int) -> String:
 	var st: Dictionary = statues.get(id, {})
 	if ps == null or st.is_empty():
 		return "gone"
-	var at: Vector3 = st.pos + Vector3.UP * 0.4
+	var at: Vector3 = Statue.where(id, st.pos + Vector3.UP * 0.4)  # where the stone body lies now (it fell after dying)
 	var chest: Vector3 = ps.node.global_position + Vector3.UP * 1.1
 	if chest.distance_to(at) > GameAuthority.REACH + STATUE_REACH:
 		return "too_far"

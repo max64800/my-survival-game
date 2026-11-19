@@ -13,7 +13,8 @@ const GROUP := "ruin_stone"  ## the pickaxe doesn't dig "through" these
 
 ## A column standing at `pos` (local to `parent`). `height` = full height when whole.
 ## broken_at: 0 = whole, otherwise the fraction of the shaft that's left (0.2-0.8).
-static func column(parent: Node3D, pos: Vector3, height: float, width: float, broken_at: float, rng: RandomNumberGenerator, color: Color = STONE) -> void:
+## Returns the column (its solid body is in meta "solid"): PoiField settles it on the rock and lets the pickaxe break it.
+static func column(parent: Node3D, pos: Vector3, height: float, width: float, broken_at: float, rng: RandomNumberGenerator, color: Color = STONE) -> Node3D:
 	var drums: Array = []  # [transform, radius, length] of the fallen drums lying around
 	var col := Node3D.new()
 	col.position = pos
@@ -88,6 +89,8 @@ static func column(parent: Node3D, pos: Vector3, height: float, width: float, br
 		dcs.transform = d[0]
 		body.add_child(dcs)
 	col.add_child(body)
+	col.set_meta("solid", body)
+	return col
 
 
 ## A stretch of old wall, built from cut blocks with some missing (a ruin, not a wall).

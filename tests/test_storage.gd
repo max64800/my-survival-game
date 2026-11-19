@@ -193,5 +193,27 @@ func test_dev_item_menu_gives_items() -> void:
 	tree.root.add_child(menu)
 	await tree.process_frame
 	check(menu._grid.get_child_count() > 50, "the menu shows a button for every item")
+	# Scrolling over a picture gives nothing; only a click does (owner, Nov 19: items came just from hovering).
+	menu._search.text = "bolt_stone"
+	menu.refresh()
+	await tree.process_frame
+	var btn: Button = null
+	for c in menu._grid.get_children():
+		if not c.is_queued_for_deletion() and (c as Button).tooltip_text == Items.display_name("bolt_stone"):
+			btn = c
+	check(btn != null, "the stone bolt's button")
+	if btn:
+		var n0: int = ps.inventory.count_of("bolt_stone")
+		for wheel in [MOUSE_BUTTON_WHEEL_DOWN, MOUSE_BUTTON_WHEEL_UP]:
+			var ev := InputEventMouseButton.new()
+			ev.button_index = wheel
+			ev.pressed = true
+			btn.gui_input.emit(ev)
+		check_eq(ps.inventory.count_of("bolt_stone"), n0, "scrolling over it gives nothing")
+		var click := InputEventMouseButton.new()
+		click.button_index = MOUSE_BUTTON_LEFT
+		click.pressed = true
+		btn.gui_input.emit(click)
+		check_eq(ps.inventory.count_of("bolt_stone"), n0 + 1, "a click gives one")
 	menu.queue_free()
 	_teardown()

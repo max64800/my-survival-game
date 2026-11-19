@@ -9,7 +9,8 @@ from pathlib import Path
 import bpy
 from mathutils import Vector
 
-args = [a for a in sys.argv[sys.argv.index("--") + 1:] if a != "--tex"]
+args = [a for a in sys.argv[sys.argv.index("--") + 1:] if a != "--tex" and not a.startswith("scale=")]
+SCALE = next((float(a[6:]) for a in sys.argv if a.startswith("scale=")), 2.6)   # metres across each picture
 out, files = args[0], [Path(a) for a in args[1:]]
 TILE = 360
 VIEWS = [("front", (0, -1, 0)), ("side", (1, 0, 0)), ("back", (0, 1, 0)), ("top", (0, 0, 1)), ("3/4", (0.75, -1, 0.55))]
@@ -50,7 +51,7 @@ for f in files:
 			lo = Vector(map(min, lo, w))
 			hi = Vector(map(max, hi, w))
 	ctr = (lo + hi) / 2
-	cam_d.ortho_scale = 2.6
+	cam_d.ortho_scale = SCALE
 	row = []
 	for name, d in VIEWS:
 		dv = Vector(d).normalized()

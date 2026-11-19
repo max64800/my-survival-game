@@ -11,6 +11,7 @@ extends Node
 const PLAN := "res://blueprints/ruins/watchtower_ruin.json"
 const CARVE_RADIUS := 1.1
 const CARVES_PER_FRAME := 30
+const RUBBLE := ["ruin_rubble", "door_broken"]  ## placed as hit-to-clear rubble, not as building pieces
 
 var auth: GameAuthority
 var plan: Dictionary
@@ -18,12 +19,13 @@ var origin := Vector3.INF   ## the tower's bottom centre (ground level of its fo
 var turn := 0               ## quarter turns: its door faces where you come from
 var _carve: Array = []
 var _state := "wait"        ## wait (for the rock to load) -> carve -> build -> done
+var drop_rubble := true     ## rubble on the ground falls onto the cave floor (the outpost's ground is carved flat)
 static var last_origin := Vector3.INF  ## where the last one was built (the towercheck robot looks there)
 static var last_turn := 0
 
 
-static func load_plan() -> Dictionary:
-	var f := FileAccess.open(PLAN, FileAccess.READ)
+static func load_plan(path: String = PLAN) -> Dictionary:
+	var f := FileAccess.open(path, FileAccess.READ)
 	if f == null:
 		return {}
 	var d = JSON.parse_string(f.get_as_text())
@@ -55,7 +57,7 @@ static func find_spot(maker: CaveMaker, radius: float, height: float) -> Diction
 			if not ok:
 				continue
 			ys.sort()
-			var base: float = ys[ys.size() / 2]
+			var base: float = ys[0] - 0.05  # the lowest ground under it: the tower always stands on the floor (owner)
 			var rock := 0
 			for h in [1.5, 3.5, 5.5, 7.5, height]:
 				for i in 7:
@@ -94,7 +96,7 @@ func _ready() -> void:
 	var r: float = plan.get("radius", 4.2) + 0.4
 	var front: float = plan.get("front", 6.8)
 	var top: float = plan.get("height", 9.0) + 0.6
-	var y := 0.4
+	var y := 1.7  # carve only ABOVE the ground line (digging lower left holes under the tower: it floated)
 	while y <= top:
 		var x := -r
 		while x <= r:
@@ -118,7 +120,7 @@ func _process(_delta: float) -> void:
 			while not _carve.is_empty() and n < CARVES_PER_FRAME:
 				var c: Vector3 = _carve.pop_back()
 				if auth.world.sdf_at(c) < CARVE_RADIUS:
-					auth._host_dig(c, 9, CARVE_RADIUS)  # tier 9: any rock gives way (it's the world making room)
+					auth._host_dig(c, 9, CARVE_RADIUS, true)  # tier 9: any rock gives way (it's the world making room)
 					n += 1
 			if _carve.is_empty():
 				_state = "build"
@@ -128,14 +130,30 @@ func _process(_delta: float) -> void:
 			queue_free()
 
 
+## The floor under `p`: the cave's own rock (the tower only carves ABOVE its ground line, so the ground the
+## rubble lies on is still the cave's), found from a little above so higher ground doesn't bury it.
+func _floor_at(p: Vector3) -> float:
+	return auth.world.maker.find_floor(p.x, p.z, p.y + 2.5).y
+
+
 func _build() -> void:
 	var basis := Basis(Vector3.UP, turn * PI / 2.0)
 	var b: Builder = auth.builder
+	b.batch = true
 	for p in plan.get("pieces", []):
 		var pos: Vector3 = origin + basis * Vector3(p.pos[0], p.pos[1], p.pos[2])
 		var rot: int = Pieces.add_rot(int(p.rot), turn)
+		if String(p.id) in RUBBLE:
+			# Rubble and the broken door: real rubble you hit to clear (owner: "they have to be destroyable"),
+			# dropped onto whatever is under it so nothing floats.
+			if float(p.pos[1]) < 0.3 and drop_rubble:
+				pos.y = _floor_at(pos)
+			var t := Transform3D(Basis(Vector3.UP, Pieces.yaw_of(rot)), pos)
+			b._ev_add_rubble.rpc(b._next_rubble, String(p.id), String(p.mat), t)
+			continue
 		var uid: int = b._next_uid
 		b._ev_add_piece.rpc(uid, String(p.id), String(p.mat), pos, rot, float(p.pos[1]) < 0.3)
+	b.end_batch()
 	for c in plan.get("chests", []):
 		var pos: Vector3 = origin + basis * Vector3(c.pos[0], c.pos[1], c.pos[2])
 		var yaw := deg_to_rad(float(c.yaw)) + turn * PI / 2.0
@@ -145,17 +163,16 @@ func _build() -> void:
 			yaw = atan2(flat.x, flat.y) + turn * PI / 2.0
 		var id: int = auth.storage.create_box(String(c.kind), pos, yaw)
 		for item in c.get("loot", {}):
-			if Items.exists(item):
+			if item == "recipe_page":  # the plan says "a recipe page": which kind is rolled per world (owner, Nov 19)
+				for _p in int(c.loot[item]):
+					auth.storage.put(id, Recipes.random_page(randf()), 1)
+			elif Items.exists(item):
 				auth.storage.put(id, item, int(c.loot[item]))
-	# The Rebuilding Chest (owner, Nov 19; docs/design/ruin-rebuild-plan.md): beside the path in front of the door.
-	# Root planks or cut stone put in it rebuild the tower as a build site; finishing it teaches its blueprint.
-	var side := float(plan.get("radius", 4.2)) + 2.6
-	var cp: Vector3 = origin + basis * Vector3(1.8, 0.0, side)
-	cp.y = auth.world.maker.find_floor(cp.x, cp.z, cp.y + 2.5).y
-	var rebuild_box: int = auth.storage.create_box("rebuild", cp, turn * PI / 2.0 + PI)
-	var ruins: Dictionary = auth.world_state.get("ruins", {}).duplicate()
-	ruins[str(rebuild_box)] = {origin = origin, turn = turn, stone = "stone_watchtower", wood = "wooden_watchtower", done = false}
-	auth.world_state["ruins"] = ruins
 	last_origin = origin
 	last_turn = turn
+	for t in plan.get("torches", []):  # standing crystal torches (owner, F264)
+		var tp: Vector3 = origin + basis * Vector3(t[0], t[1], t[2])
+		var sid: int = auth._next_station_id
+		auth._next_station_id += 1
+		auth._ev_place_station.rpc(sid, "crystal_torch", tp, turn * PI / 2.0)
 	print("RUIN_TOWER built at %s (turn %d): %d pieces, %d chests" % [origin, turn, plan.get("pieces", []).size(), plan.get("chests", []).size()])

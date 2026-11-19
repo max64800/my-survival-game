@@ -8,14 +8,25 @@ const POI_LAYER := 16  ## aim + E, like stations
 
 var maker: CaveMaker
 var _nodes := {}  ## poi id -> Node3D
+## The ruins' stone columns (owner, Nov 19: "sometimes they're still floating, and you cannot destroy them; you should
+## be able to destroy them for some stone"). id (poi id * COLS_PER_POI + its number) -> {node, body, width, height, hits}.
+## Each sits on the real rock once it's built and again after digging nearby; the pickaxe breaks it (GameAuthority).
+var _columns := {}
+var _col_rids: Array[RID] = []  ## the columns' own bodies: the floor rays look through them
+var _new_cols: Array[int] = []
+const COLS_PER_POI := 16
 static var _mats := {}
 
 
 func build(p_maker: CaveMaker) -> void:
 	maker = p_maker
+	var fort := RuinOutpost.pick_room(maker)  # the Fallen Outpost's cavern: its row of old columns would stand in the yard
 	for p in maker.pois:
+		if p.type == "colonnade" and int(p.get("room", -1)) == fort:
+			continue
 		if p.type == "colonnade" and maker.is_reserved(p.pos, 4.0):
 			continue  # (its old columns would stand inside the ruined watchtower: the placement rule)
+		_new_cols.clear()
 		var n := _make(p)
 		if n:
 			add_child(n)
@@ -23,6 +34,9 @@ func build(p_maker: CaveMaker) -> void:
 			_nodes[p.id] = n
 			if p.type == "shrine":
 				_ground_shrine(n)
+			for cid in _new_cols:
+				var at: Vector3 = (_columns[cid].node as Node3D).global_position
+				GroundSnap.when_built(AABB(at - Vector3(2, 3, 2), Vector3(4, 6, 4)), _settle_column.bind(cid))
 
 
 ## A rune shrine stands on its alcove's floor (owner, Nov 19: "all the time they're spawning in mid-air": its spot is
@@ -38,8 +52,6 @@ func _ground_shrine(n: Node3D) -> void:
 		var real := GroundSnap.floor_at(n.get_world_3d().direct_space_state, n.global_position, 1.0, 2.5)
 		if real != Vector3.INF:
 			n.global_position = real)
-
-
 
 
 static func poi_id_of(collider: Object) -> int:
@@ -101,6 +113,7 @@ func _make(p: Dictionary) -> Node3D:
 			l.light_color = Color(1.0, 0.75, 0.4)
 			l.omni_range = 4.0
 			l.light_energy = 0.8
+			Darkness.mark(l)
 			l.position = Vector3(0, 1.2, 0)
 			rune.add_child(l)
 			_label(root, "Rune shrine · E", 1.8)
@@ -111,10 +124,10 @@ func _make(p: Dictionary) -> Node3D:
 			for i in 6:
 				var a := i * TAU / 6.0 + 0.4
 				var at := _on_floor(p, Vector3(cos(a), 0, sin(a)) * 4.6)
-				RuinKit.column(root, at, rng.randf_range(3.6, 4.6), 0.7, 0.0 if rng.randf() < 0.3 else rng.randf_range(0.2, 0.75), rng)
+				_col(root, p, i, at, rng.randf_range(3.6, 4.6), 0.7, 0.0 if rng.randf() < 0.3 else rng.randf_range(0.2, 0.75), rng)
 			RuinKit.broken_wall(root, _on_floor(p, Vector3(-2.5, 0, -3.6)), _on_floor(p, Vector3(2.5, 0, -3.6)), 3, rng)
 			RuinKit.broken_wall(root, _on_floor(p, Vector3(-3.8, 0, 1.0)), _on_floor(p, Vector3(-3.8, 0, -2.2)), 2, rng)
-			RuinTreasure.dress(root, p, _on_floor, rng)  # coins, candles and books by the loot chest (owner, Nov 19)
+			RuinTreasure.dress(root, p, _on_floor)  # coins, candles and books by the loot chest (owner, Nov 19)
 		"colonnade":
 			# A row of great columns standing in a cavern, some broken (F9/F21).
 			var rng := _rng_for(p)
@@ -123,14 +136,14 @@ func _make(p: Dictionary) -> Node3D:
 			for i in count:
 				var off: Vector3 = along * (float(i) - (count - 1) * 0.5) * 3.8
 				var whole := rng.randf() < 0.4
-				RuinKit.column(root, _on_floor(p, off), rng.randf_range(5.0, 7.0), 0.95, 0.0 if whole else rng.randf_range(0.15, 0.7), rng)
+				_col(root, p, i, _on_floor(p, off), rng.randf_range(5.0, 7.0), 0.95, 0.0 if whole else rng.randf_range(0.15, 0.7), rng)
 		"camp":
 			_part(root, _box(Vector3(0.9, 0.12, 1.9)), _mat(Color(0.45, 0.3, 0.25)), Vector3(1.2, 0.06, 0))  # bedroll
 			for i in 6:
 				var a := i * TAU / 6.0
 				_part(root, _sphere(0.15), _mat(Color(0.35, 0.33, 0.3)), Vector3(cos(a), 0.08, sin(a)) * 0.4 + Vector3(-0.8, 0, 0))
 			_part(root, _box(Vector3(0.5, 0.05, 0.3)), _mat(Color(0.12, 0.1, 0.08)), Vector3(-0.8, 0.03, 0))  # ashes
-			RuinTreasure.dress(root, p, _on_floor, _rng_for(p))  # a traveller's mug, plate, map and pouch
+			RuinTreasure.dress(root, p, _on_floor)  # a traveller's mug, plate, map and pouch
 		"nest":
 			for i in 7:
 				var a := i * TAU / 7.0
@@ -147,16 +160,107 @@ func _make(p: Dictionary) -> Node3D:
 			var lrng := _rng_for(p)
 			for i in 4:
 				var a := i * TAU / 4.0 + PI / 4.0
-				RuinKit.column(root, _on_floor(p, Vector3(cos(a), 0, sin(a)) * 9.0), 9.0, 1.3, 0.0, lrng, Color(0.5, 0.5, 0.48))
+				_col(root, p, i, _on_floor(p, Vector3(cos(a), 0, sin(a)) * 9.0), 9.0, 1.3, 0.0, lrng, Color(0.5, 0.5, 0.48))
 		"great_hall":
 			var grng := _rng_for(p)
 			for i in 8:
 				var a := i * TAU / 8.0
-				RuinKit.column(root, _on_floor(p, Vector3(cos(a), 0, sin(a)) * 10.0), 6.5, 1.1, 0.0 if i % 3 != 2 else grng.randf_range(0.3, 0.7), grng, Color(0.8, 0.78, 0.74))
-			RuinTreasure.dress(root, p, _on_floor, grng)
+				_col(root, p, i, _on_floor(p, Vector3(cos(a), 0, sin(a)) * 10.0), 6.5, 1.1, 0.0 if i % 3 != 2 else grng.randf_range(0.3, 0.7), grng, Color(0.8, 0.78, 0.74))
+			RuinTreasure.dress(root, p, _on_floor)
 		_:
 			return null
 	return root
+
+
+## A ruin column, numbered so every computer means the same one (the host breaks it by number).
+func _col(root: Node3D, p: Dictionary, i: int, at: Vector3, height: float, width: float, broken_at: float, rng: RandomNumberGenerator, color: Color = RuinKit.STONE) -> void:
+	var col := RuinKit.column(root, at, height, width, broken_at, rng, color)
+	var cid := int(p.id) * COLS_PER_POI + i
+	var body: StaticBody3D = col.get_meta("solid")
+	body.set_meta("ruin_col", cid)
+	_col_rids.append(body.get_rid())
+	var tall := (height - 1.3) * (broken_at if broken_at > 0.0 else 1.0) + 1.3
+	_columns[cid] = {node = col, body = body, width = width, height = tall, hits = clampi(roundi(width * tall * 1.5), 3, 10)}
+	_new_cols.append(cid)
+
+
+## Which ruin column a ray hit (its column or a fallen drum of it), or -1.
+static func column_id_of(collider: Object) -> int:
+	if collider is Node and (collider as Node).has_meta("ruin_col"):
+		return int((collider as Node).get_meta("ruin_col"))
+	return -1
+
+
+func column(cid: int) -> Dictionary:
+	var c: Dictionary = _columns.get(cid, {})
+	return {} if c.is_empty() or c.get("gone", false) or not is_instance_valid(c.node) else c
+
+
+## Where to aim at it: its middle, at most chest high.
+func column_middle(cid: int) -> Vector3:
+	var c := column(cid)
+	if c.is_empty():
+		return Vector3.INF
+	return (c.node as Node3D).global_position + Vector3.UP * minf(1.2, float(c.height) * 0.5)
+
+
+## From the host: the column crumbled (burst = chunks fly; false when loading a save).
+func set_column_broken(cid: int, burst := true) -> void:
+	var c := column(cid)
+	if c.is_empty():
+		return
+	c.gone = true
+	var col: Node3D = c.node
+	if burst and col.is_inside_tree():
+		var mid := col.global_position + Vector3.UP * float(c.height) * 0.5
+		RockShatter.burst(self, mid, Vector3.UP, RuinKit.STONE, Mat.STONE, float(c.width) * 1.5)
+		RockShatter.burst(self, col.global_position + Vector3.UP * 0.4, Vector3(1, 0.4, 0), RuinKit.STONE, Mat.STONE, float(c.width) * 1.5)
+	_col_rids.erase((c.body as StaticBody3D).get_rid())
+	col.queue_free()
+
+
+## On the real rock: as low as the floor under its middle and round its base (never hanging over a dip or a dug hole).
+## `deeper` = look further down (after a dig it may drop into the hole).
+func _settle_column(cid: int, deeper := 0.0) -> void:
+	var c := column(cid)
+	if c.is_empty() or not (c.node as Node3D).is_inside_tree():
+		return
+	var col: Node3D = c.node
+	if GroundSnap.instance and GroundSnap.instance.world and not GroundSnap.instance.world.changed.is_connected(_on_rock_changed):
+		GroundSnap.instance.world.changed.connect(_on_rock_changed)
+	var space := col.get_world_3d().direct_space_state
+	var base := col.global_position
+	var low := INF
+	var found := 0
+	for k in 5:
+		var at := base
+		if k > 0:
+			var a := k * TAU / 4.0 + 0.4
+			at += Vector3(cos(a), 0.0, sin(a)) * float(c.width) * 0.55
+		var q := PhysicsRayQueryParameters3D.create(at + Vector3.UP * 1.5, at - Vector3.UP * (2.5 + deeper), World.TERRAIN_LAYER)
+		q.exclude = _col_rids
+		q.hit_back_faces = false
+		q.hit_from_inside = false
+		var h := space.intersect_ray(q)
+		if not h.is_empty():
+			low = minf(low, (h.position as Vector3).y)
+			found += 1
+	if found >= 2:
+		col.global_position = Vector3(base.x, low - 0.05, base.z)
+
+
+## Rock dug (or filled) near a column: once the new rock is solid it settles again, like the boulders.
+func _on_rock_changed(center: Vector3, radius: float) -> void:
+	for cid in _columns:
+		var c := column(cid)
+		if c.is_empty():
+			continue
+		var p: Vector3 = (c.node as Node3D).global_position
+		var reach := radius + float(c.width) * 1.5 + 1.0
+		if Vector2(p.x - center.x, p.z - center.z).length() > reach or center.y > p.y + reach:
+			continue
+		for wait in [0.3, 1.0, 2.5]:  # (the new rock's shape is ready a moment after the dig)
+			get_tree().create_timer(wait).timeout.connect(_settle_column.bind(cid, 10.0))
 
 
 ## Same dice for the same place on every computer (co-op friends see the same broken columns).

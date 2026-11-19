@@ -13,6 +13,12 @@ The Delver's Hut (`BlueprintLibrary._delvers_hut`) is the example to copy.
 - **A starter blueprint costs no copper.** Copper comes later in Zone 1. Check the cost (see below) before
   showing it.
 - **One building style per blueprint.** All of the Delver's Hut is Shack wood.
+- **Everything lines up, so it can be rebuilt on the grid** (owner, Nov 17, the Fallen Outpost). Stairs end level
+  with the floor they lead to (Stonehold: stand stairs on a floor slab, floors are 2.25 m apart and stairs 2 m),
+  walkways and roofs that meet are the same height, and every join is flush. A 12-sided round tower's flat sides
+  are 3.73 m from its middle, so it can only meet the 2 m grid flush on **one** side: plan round towers so only one
+  side joins anything (stairs, walkway or wall), or use square towers where two sides must join.
+- **Stairs never start against a wall or in a corner** (owner, Nov 17): their foot is on open floor.
 
 ## Steps
 1. **Sketch the plan on the 2 m grid.** Rooms are 2 x 2 m cells. Walls go on cell edges, roofs on cells, a

@@ -758,6 +758,10 @@ func test_bat_shot_down_from_high_turns_to_stone() -> void:
 		check(body.global_position.y < high.y - 1.5, "it fell a long way (from %.1f to %.1f)" % [high.y, body.global_position.y])
 		var seed: Vector3 = body.get_meta("stone_seed", Vector3.INF)
 		check(seed.distance_to(body.global_position) < 0.8, "the stone starts on its body, where it lies (%.2f m away)" % seed.distance_to(body.global_position))
+		# Mining it: the sparks go where it lies, not up where it died (owner, Nov 19).
+		var where := Statue.where(id, Vector3.INF)
+		check(where.distance_to(body.global_position) < 0.8, "mining sparks on the fallen body (%.2f m away)" % where.distance_to(body.global_position))
+		check(where.y < high.y - 1.5, "not up in the air where it died")
 	_teardown()
 
 
@@ -888,3 +892,66 @@ func test_every_cave_has_its_own_bat_roost() -> void:
 	check(not Monsters.SPAWNS.mossy.big.has("cave_bat"), "bats come from roosts, not packs")
 	check(Recipes.LIST.mace_copper.unlock == "ruin" and Recipes.LIST.spear_copper.unlock == "ruin", "copper gear is found on pages")
 	check(Recipes.LIST.pickaxe_copper.unlock is Array, "the copper pickaxe is never down to luck")
+
+
+func _solid_ground() -> void:  # (the real rock surface: the test viewer only loads the cave's data)
+	var solid := VoxelViewer.new()
+	solid.view_distance = 24
+	player.add_child(solid)
+	for i in 900:
+		if world.terrain.is_area_meshed(AABB(player.global_position - Vector3.ONE * 8.0, Vector3.ONE * 16.0)):
+			break
+		await tree.physics_frame
+
+
+## Owner (F236, said twice: first in F111): "dig a hole, they charge into it and you beat them easily; they should climb
+## walls and climb out of holes". A 3 m pit: a beetle and a snail at the bottom, the dwarf at the edge.
+func test_beetles_and_snails_climb_out_of_holes() -> void:
+	await _setup()
+	await _solid_ground()
+	var base := player.global_position
+	var c := world.maker.find_floor(base.x + 4.0, base.z, base.y + 2.0)
+	for k in 7:
+		world.apply_dig(c + Vector3.DOWN * (0.5 * k), 1.5, 4)
+	for i in 90:
+		await tree.physics_frame
+	var bottom := c + Vector3.DOWN * 2.8
+	player.global_position = world.maker.find_floor(base.x + 7.5, base.z, base.y + 2.0)
+	for kind in ["rock_beetle", "rock_snail"]:
+		var uid: int = auth.monsters._next_uid
+		auth.monsters._ev_spawn(uid, kind, bottom + Vector3.UP * 0.3, false, 0)
+		var m := auth.monsters.get_monster(uid)
+		for i in 30:
+			await tree.physics_frame
+		var y0 := m.global_position.y
+		check(y0 < c.y - 1.5, "%s: down in the pit (%.1f m below its edge)" % [kind, c.y - y0])
+		m.alert(1)
+		var top := y0
+		for i in 600:  # 10 s
+			await tree.physics_frame
+			if not is_instance_valid(m):
+				break
+			top = maxf(top, m.global_position.y)
+		check(top > c.y - 1.0, "%s climbed out of the hole (from %.1f to %.1f, edge %.1f)" % [kind, y0, top, c.y])
+		if is_instance_valid(m):
+			auth.monsters._ev_remove(uid, -1)
+	_teardown()
+
+
+## Owner (F233): "beetles go into each other; they should bump into each other, never overlap".
+func test_beetles_bump_never_overlap() -> void:
+	await _setup()
+	await _solid_ground()
+	var a := _spawn("rock_beetle", Vector3(3.0, 0, 0))
+	var b := _spawn("rock_beetle", Vector3(3.0, 0, 0.2))
+	for m in [a, b]:
+		m.alert(1)
+	var closest := 99.0
+	for i in 240:
+		await tree.physics_frame
+		if i > 30:
+			var d := a.global_position - b.global_position
+			closest = minf(closest, Vector2(d.x, d.z).length())
+	var r: float = (a._body_shape.shape as CapsuleShape3D).radius
+	check(closest > r * 1.6, "two beetles chasing never overlap (closest %.2f m, bodies %.2f m wide)" % [closest, r * 2.0])
+	_teardown()

@@ -101,3 +101,66 @@ func test_carving_runes_at_the_slab() -> void:
 	check_eq(auth.request_carve(1, "rune_verdant_m1"), "shard", "the second one becomes a shard")
 	check_eq(auth.rune_slab.shards.verdant, 1, "1 verdant shard")
 	_teardown()
+
+
+## Owner (Nov 19): the ruins' columns "are still floating sometimes, and you cannot destroy them; you should be able to
+## destroy them just for some stone".
+func test_ruin_columns_break_for_stone() -> void:
+	await _setup()
+	var pf := PoiField.new()
+	auth.get_parent().add_child(pf)
+	pf.build(world.maker)
+	auth.poi_field = pf
+	check(pf._columns.size() > 0, "the ruins have columns")
+	var cid: int = pf._columns.keys()[0]
+	var c := pf.column(cid)
+	player.global_position = pf.column_middle(cid) + Vector3(float(c.width) + 0.8, -1.0, 0)
+	ps.inventory.slots[0] = {id = "pickaxe_stone", count = 1}
+	ps.selected_slot = 0
+	var stone_before := _stone_on_floor()
+	var last := ""
+	for i in int(c.hits):
+		last = auth.request_hit_column(1, cid)
+	check_eq(last, "broke", "it crumbles after %d hits" % c.hits)
+	check_eq(_stone_on_floor() - stone_before, int(c.hits) * 2 + 3, "2 stone a hit with a pickaxe, 3 more at the end")
+	check(auth.world_state.columns.has(cid), "remembered (saved, sent to friends)")
+	check_eq(auth.request_hit_column(1, cid), "", "a broken column can't be hit again")
+	await frames(2)
+	check(pf.column(cid).is_empty(), "gone from the world")
+	_teardown()
+
+
+func _stone_on_floor() -> int:
+	var n := 0
+	for d in auth._drops.values():
+		if d.item_id == "stone":
+			n += d.count
+	return n
+
+
+func test_ruin_column_sits_on_the_real_floor() -> void:
+	var root := Node3D.new()
+	tree.root.add_child(root)
+	var pf := PoiField.new()
+	root.add_child(pf)
+	var place := Node3D.new()
+	pf.add_child(place)
+	place.global_position = Vector3(300, 50, 300)
+	var rng := RandomNumberGenerator.new()
+	pf._col(place, {id = 7}, 0, Vector3.ZERO, 4.0, 0.7, 0.5, rng)
+	var floor := StaticBody3D.new()
+	floor.collision_layer = World.TERRAIN_LAYER
+	var cs := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(10, 1, 10)
+	cs.shape = box
+	floor.add_child(cs)
+	root.add_child(floor)
+	floor.global_position = Vector3(300, 48.6, 300)  # its top is 0.9 m below the column: it was floating
+	await tree.physics_frame
+	await tree.physics_frame
+	var cid := 7 * PoiField.COLS_PER_POI
+	pf._settle_column(cid)
+	var y: float = (pf.column(cid).node as Node3D).global_position.y
+	check_near(y, 49.05, 0.03, "it drops onto the floor (and sinks in 5 cm)")
+	root.free()

@@ -42,9 +42,41 @@ static func plan(p: Dictionary, rng: RandomNumberGenerator) -> Array[Dictionary]
 	return out
 
 
+## Its own dice per place (not shared with the columns and walls), so the ground it takes is known before it's built.
+static func rng_for(p: Dictionary) -> RandomNumberGenerator:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash([Vector3i((p.pos as Vector3).round()), int(p.get("id", 0)), "treasure"])
+	return rng
+
+
+## Where GameAuthority.seed_poi_loot puts place `p`'s loot chest.
+static func chest_spot(maker: CaveMaker, p: Dictionary) -> Vector3:
+	var c: Vector3 = p.pos
+	return maker.find_floor(c.x + CHEST_SPOT.x, c.z + CHEST_SPOT.z, c.y + 3.0)
+
+
+const CHEST_ROOM := 0.75  ## ground a loot chest takes (it's 1.0 x 0.7 m)
+const THING_ROOM := 0.3  ## ground one treasure thing takes
+
+
+## Ground the old places' loot chests and treasure take in this cave: [{pos, r}] (owner, Nov 19: mushrooms and grass
+## grew through a ruin chest). Boulders and glowing mushrooms keep off it; pebbles, plants and mushroom grass get out
+## of the way when the chest or thing is put down (World.ground_taken). Test: test_clutter_keeps_clear_of_boxes.
+static func keep_clear(maker: CaveMaker) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for p in maker.pois:
+		if p.type == "ruin" or p.type == "camp":
+			out.append({pos = chest_spot(maker, p), r = CHEST_ROOM})
+		if p.type == "ruin" or p.type == "camp" or p.type == "great_hall":
+			var c: Vector3 = p.pos
+			for t in plan(p, rng_for(p)):
+				out.append({pos = maker.find_floor(c.x + t.at.x, c.z + t.at.z, c.y + 1.5), r = THING_ROOM})
+	return out
+
+
 ## Puts the planned things into `root` (the place's node). on_floor(p, offset) -> where the floor is (PoiField).
-static func dress(root: Node3D, p: Dictionary, on_floor: Callable, rng: RandomNumberGenerator) -> void:
-	for t in plan(p, rng):
+static func dress(root: Node3D, p: Dictionary, on_floor: Callable) -> void:
+	for t in plan(p, rng_for(p)):
 		var scene: PackedScene = load("res://assets/models/treasure/%s.glb" % t.model) if ResourceLoader.exists("res://assets/models/treasure/%s.glb" % t.model) else null
 		if scene == null:
 			continue
@@ -52,6 +84,7 @@ static func dress(root: Node3D, p: Dictionary, on_floor: Callable, rng: RandomNu
 		root.add_child(m)
 		m.position = _settle(on_floor.get_object().maker, p, on_floor.call(p, t.at))  # (offsets from the place's middle)
 		m.rotation.y = t.spin
+		GroundSnap.take((p.pos as Vector3) + m.position, THING_ROOM)  # pebbles, plants and mushroom grass make room
 		for mi: MeshInstance3D in m.find_children("*", "MeshInstance3D", true, false):
 			mi.visibility_range_end = SEEN_TO
 			mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF

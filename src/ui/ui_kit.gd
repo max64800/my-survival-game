@@ -155,3 +155,17 @@ static func divider(parent: Node) -> Control:
 	d.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(d)
 	return d
+
+
+## Empties a box right away. Plain queue_free() leaves the old children in place until the next
+## frame, so a panel refilled in the same frame briefly holds old + new, grows, and never shrinks
+## back (owner: "the build menu keeps expanding every time I click").
+static func clear(parent: Node) -> void:
+	for c in parent.get_children():
+		parent.remove_child(c)
+		c.queue_free()
+
+
+## Shrinks a floating panel back to just what it holds (after its content got smaller).
+static func fit(panel: Control) -> void:
+	panel.reset_size.call_deferred()

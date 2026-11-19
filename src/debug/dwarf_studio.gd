@@ -101,6 +101,35 @@ func _run() -> void:
 		await _fire_test()
 		quit()
 		return
+	if "speartest" in OS.get_cmdline_user_args():
+		_model.set_held("spear_stone")
+		await _wait(0.5)
+		await _both("spear_idle")
+		for t in [0.15, 0.3]:
+			_model.swinging = false
+			_model.attack(0.6, false)
+			await _wait(t)
+			_view(Vector3(1, 0, -0.1))
+			await _shot("spear_stab_%.2f" % t)
+			await _wait(0.8)
+		quit()
+		return
+	if "gripcheck" in OS.get_cmdline_user_args():
+		await _grip_check()
+		quit()
+		return
+	if "toolstrikes" in OS.get_cmdline_user_args():
+		await _tool_strikes()
+		quit()
+		return
+	if "swordtest" in OS.get_cmdline_user_args():
+		await _sword_test()
+		quit()
+		return
+	if "running" in OS.get_cmdline_user_args():
+		await _running_test()
+		quit()
+		return
 	if "rots" in OS.get_cmdline_user_args():
 		await _rot_lineup()
 		quit()
@@ -135,10 +164,11 @@ func _run() -> void:
 	_model.set_pose(true, false, false)
 	await _wait(0.5)
 	await _both("5_block")
-	_model.set_held("shield_stone")
+	_model.set_shield("shield_stone")  # (on the left arm)
 	_model.set_pose(true, false, true)
 	await _wait(0.5)
 	await _both("6_shield")
+	_model.set_shield("")
 	_model.set_held("crossbow_stone")
 	_model.set_pose(false, true, false)
 	await _wait(0.5)
@@ -172,6 +202,141 @@ func _run() -> void:
 	await _wait(0.25)
 	await _both("12b_climb")
 	quit()
+
+
+## Tuning aid: the dwarf sprinting with a pickaxe, photographed from the side 5 times (the tool must not go through his head).
+func _running_test() -> void:
+	_model.set_held("pickaxe_stone")
+	_view(Vector3(1, 0.1, -0.15), 3.4, 0.7)
+	for k in 5:
+		for i in 9:
+			_model.set_motion(6.5, true, false)
+			await process_frame
+		var rig := _model.dwarf_rig
+		var sk := rig.skeleton
+		var head := sk.global_transform * sk.get_bone_global_pose(sk.find_bone("Head")).origin
+		var tip := (rig.right_hand.get_child(0) as Node3D).global_transform * Vector3(0, 0.55, 0)
+		print("tool tip ", tip, " head ", head, " apart %.2f m" % tip.distance_to(head))
+		await _shot("run_%d" % k)
+
+
+## Tuning aid: every tool's move photographed from his right side at its strike moment, through the game's own calls
+## (DwarfModel.swing / attack / set_pose), all on one sheet (tool_strikes.png, 4 x 2; he faces right). Prints where the
+## tool's far end is: how far in front of his chest, how far from his head (it must be well in front, away from the head).
+## [label, item, call, seconds (played slow for a sharp picture), moment of the strike (0..1)]
+const STRIKES := [
+	["pick", "pickaxe_copper", "swing", 1.6, 0.55, -1], ["axe", "axe_copper", "swing", 1.8, 0.55, -1],
+	["sword hit 1", "sword_copper", "attack", 1.6, 0.38, 0], ["sword hit 2", "sword_copper", "attack", 1.6, 0.4, 1],
+	["mace hit 1", "mace_copper", "attack", 1.6, 0.33, 0], ["mace hit 2", "mace_copper", "attack", 1.6, 0.38, 1],
+	["spear", "spear_copper", "attack", 1.2, 0.42, 0], ["shield block", "sword_copper", "block", 0.8, 1.0, -1],
+	["walk", "pickaxe_copper", "walk", 1.0, 1.0, -1], ["run", "pickaxe_copper", "run", 1.2, 1.0, -1],
+	["roll", "pickaxe_copper", "roll", 0.75, 0.45, -1], ["standing front", "pickaxe_copper", "front", 0.6, 1.0, -1],
+]  # [label, item, call, seconds, moment (0..1), combo hit]. The shield: always on the left arm (DwarfModel.set_shield).
+
+
+func _tool_strikes() -> void:
+	var sheet := Image.create(4 * 360, 3 * 360, false, Image.FORMAT_RGBA8)
+	var rig := _model.dwarf_rig
+	var sk := rig.skeleton
+	for i in STRIKES.size():
+		var s: Array = STRIKES[i]
+		_cam.global_position = Vector3(4.4, 0.95, -0.55)  # his right side, centred a little in front of him (the tools reach)
+		_cam.look_at(Vector3(0, 0.8, -0.55))
+		_model.set_pose(false, false, false)
+		_model.set_held(s[1])
+		_model.set_shield("shield_copper" if s[0].begins_with("shield") else "")
+		for f in 30:
+			_model.set_motion(0.0, true, false)
+			await process_frame
+		_model.swinging = false
+		var start := Time.get_ticks_msec()
+		match s[2]:
+			"swing":
+				_model.swing(s[3])
+			"attack":
+				_model.attack(s[3], false, s[5])
+			"block":
+				_model.set_pose(true, false, true)
+			"front":
+				_view(Vector3(0.15, 0, -1))
+		while Time.get_ticks_msec() - start < s[3] * s[4] * 1000.0:  # (the game calls set_motion every frame)
+			_model.set_motion({"walk": 1.6, "run": 6.5, "roll": 3.0}.get(s[2], 0.0), true, s[2] == "roll")
+			await process_frame
+		var tool := (_model.dwarf_rig.shield_grip if s[0].begins_with("shield") else _model._hand).get_child(0) as Node3D
+		var tip := _far_end(tool)
+		var head := sk.global_transform * sk.get_bone_global_pose(sk.find_bone("Head")).origin
+		var handle_mid := tool.global_transform * Vector3(0, 0.3, 0)
+		print("%-14s tip %s  in front of the dwarf %.2f m  tip-head %.2f m  handle middle-head %.2f m" % [s[0], tip,
+			-tip.z, tip.distance_to(head), handle_mid.distance_to(head)])
+		await RenderingServer.frame_post_draw
+		var img := root.get_viewport().get_texture().get_image()
+		var side := mini(img.get_width(), img.get_height())
+		var sq := img.get_region(Rect2i((img.get_width() - side) / 2, (img.get_height() - side) / 2, side, side))
+		sq.resize(360, 360)
+		sq.convert(Image.FORMAT_RGBA8)
+		sheet.blit_rect(sq, Rect2i(0, 0, 360, 360), Vector2i((i % 4) * 360, (i / 4) * 360))
+		for f in 40:
+			_model.set_motion(0.0, true, false)
+			await process_frame
+		await _wait(s[3] * (1.0 - s[4]) + 0.3)
+	sheet.save_png(_shots.path_join("tool_strikes.png"))
+	print("  studio: tool_strikes")
+
+
+## Tuning aid: close-ups of the right fist holding the axe, pick and sword (standing still): the fist must close round
+## the wrapped grip, the handle's end showing a little below it (owner, Nov 17). One sheet, grip_check.png.
+func _grip_check() -> void:
+	var sheet := Image.create(3 * 360, 360, false, Image.FORMAT_RGBA8)
+	var items := ["axe_copper", "pickaxe_copper", "sword_copper"]
+	for i in items.size():
+		_model.set_held(items[i])
+		for f in 40:
+			_model.set_motion(0.0, true, false)
+			await process_frame
+		var fist := _model.dwarf_rig.right_hand.global_position
+		_cam.global_position = fist + Vector3(0.9, 0.15, -0.35)
+		_cam.look_at(fist)
+		await RenderingServer.frame_post_draw
+		var img := root.get_viewport().get_texture().get_image()
+		var side := mini(img.get_width(), img.get_height())
+		var sq := img.get_region(Rect2i((img.get_width() - side) / 2, (img.get_height() - side) / 2, side, side))
+		sq.resize(360, 360)
+		sq.convert(Image.FORMAT_RGBA8)
+		sheet.blit_rect(sq, Rect2i(0, 0, 360, 360), Vector2i(i * 360, 0))
+	sheet.save_png(_shots.path_join("grip_check.png"))
+	print("  studio: grip_check")
+
+
+## The point of a held tool farthest from the fist (the pick's point, the blade's tip, the spear's head).
+func _far_end(tool: Node3D) -> Vector3:
+	var best := Vector3.ZERO
+	for mi: MeshInstance3D in tool.find_children("*", "MeshInstance3D", true, false):
+		var xf := tool.global_transform.affine_inverse() * mi.global_transform
+		for k in mi.mesh.get_surface_count():
+			for v: Vector3 in mi.mesh.surface_get_arrays(k)[Mesh.ARRAY_VERTEX]:
+				var p := xf * v
+				if p.length() > best.length():
+					best = p
+	return tool.global_transform * best
+
+
+## Tuning aid: a sword attack seen from the side at 5 moments (the head and neck must keep their shape).
+func _sword_test() -> void:
+	_model.set_held("sword_stone")
+	await _wait(0.4)
+	_view(Vector3(1, 0.1, -0.15), 3.4, 0.7)
+	var sk := _model.dwarf_rig.skeleton
+	for k in 5:
+		_model.swinging = false
+		_model.attack(1.0, false)
+		await _wait(0.1 + k * 0.18)
+		var line := "t=%.2f" % (0.1 + k * 0.18)
+		for bn in ["spine_03", "neck_01", "Head"]:
+			var g := sk.get_bone_global_pose(sk.find_bone(bn))
+			line += "  %s scale %s" % [bn, g.basis.get_scale()]
+		print(line)
+		await _shot("sword_%d" % k)
+		await _wait(1.2)
 
 
 ## Tuning aid: 4 dwarfs, each holding the pickaxe turned a different way.

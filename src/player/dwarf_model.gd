@@ -37,7 +37,8 @@ var _held := "?"
 ## Dwarf bodies live on their own visual layer (layer 2). Lanterns don't let this
 ## layer cast shadows, so a dwarf never blocks their own lantern light.
 const VISUAL_LAYER := 2
-## How a tool sits in the rigged dwarf's right hand (handle through the fist).
+## How a tool sits in the rigged dwarf's right hand (handle through the fist): the base grip. DwarfRig.GRIPS turns
+## each tool from here per animation (the pick's points and the axe's blade into the swing).
 static var hand_tool_rot := Vector3(PI / 2.0, 0, 0)  ## tool "up" = the hand bone's Z (the thumb side)
 static var hand_tool_pos := Vector3(0, 0.08, 0)
 
@@ -130,16 +131,14 @@ func swing(duration: float) -> void:
 
 
 ## Weapon attack: wind up, strike at 40% of the time, recover.
-func attack(duration: float, heavy: bool) -> void:
+func attack(duration: float, heavy: bool, combo_step: int = -1) -> void:
 	swinging = true
 	if dwarf_rig:
-		if Combat.weapon_of(_held) == "spear":
-			dwarf_rig.stab(duration)  # a thrust, not a swing (owner, Nov 17)
-		else:
-			dwarf_rig.attack(duration, heavy)
-		# A pale swoosh behind the blade (brighter for a heavy blow), during the strike itself, not the wind-up
-		# (owner, Nov 18, "juicy swipes"). Not for a spear's straight thrust.
-		if Combat.weapon_of(_held) != "spear":
+		# Each weapon its own move (DwarfRig.ATTACKS): spear thrust, mace smash, shield bash, sword slash/chop.
+		var weapon := Combat.weapon_of(_held)
+		dwarf_rig.attack(duration, heavy, weapon, combo_step)  # (hit 1, hit 2 of the combo take turns)
+		# A pale swoosh behind the blade (brighter for a heavy blow). Not for a spear's thrust or a shield's push.
+		if weapon not in ["spear", "shield"]:  # (during the strike itself, not the wind-up: owner, Nov 18, "juicy swipes")
 			get_tree().create_timer(duration * 0.12).timeout.connect(func() -> void:
 				WeaponTrail.follow(_hand, duration * 0.4, Color(1.0, 0.95, 0.85, 0.7 if heavy else 0.5)))
 		get_tree().create_timer(duration).timeout.connect(func(): swinging = false)
@@ -160,14 +159,23 @@ func set_held(item: String) -> void:
 	if item == _held:
 		return
 	_held = item
+	if dwarf_rig:
+		dwarf_rig.carrying = item != ""
+		dwarf_rig.tool_look = ""
 	for c in _hand.get_children():
 		c.queue_free()
 	if item == "":
 		return
 	var col := Items.color(item)
 	var kind := Items.kind(item)
+	if kind == "shield" and dwarf_rig:
+		dwarf_rig.carrying = false
+		return  # the shield goes on the left arm (set_shield), never in the right fist (owner, Nov 17)
 	var look := Combat.weapon_of(item) if kind in ["weapon", "shield", "axe"] else kind
 	_hand.add_child(ToolModels.build(look, col, VISUAL_LAYER, item))
+	if dwarf_rig:
+		dwarf_rig.tool_look = look
+		dwarf_rig.snap_grip()
 
 
 ## The rigged look: a CC0 character squashed into dwarf proportions, tools in its right hand,
@@ -256,7 +264,19 @@ func set_wear(ids: Array) -> void:
 		dwarf_rig.set_wear(ids)
 
 
-## Held poses for the rigged dwarf: block (sword up), shield up, crossbow aim.
+## The shield on the left arm ("" = none): DwarfFight.shield_item. The rigged dwarf only (the weapon stays in the right hand).
+var _shield := "?"
+func set_shield(item: String) -> void:
+	if item == _shield or dwarf_rig == null:
+		return
+	_shield = item
+	for c in dwarf_rig.shield_grip.get_children():
+		c.queue_free()
+	if item != "":
+		dwarf_rig.shield_grip.add_child(ToolModels.build("shield", Items.color(item), VISUAL_LAYER, item))
+
+
+## Held poses for the rigged dwarf: block (sword up), shield up (left arm), crossbow aim.
 func set_pose(blocking: bool, aiming: bool, shield: bool) -> void:
 	if dwarf_rig:
 		dwarf_rig.set_hold("aim" if aiming else (("shield" if shield else "block") if blocking else ""))
@@ -278,6 +298,8 @@ func react(what: String) -> void:
 			dwarf_rig.play_upper("throw", 0.6)
 		"wake":
 			dwarf_rig.play_full("wake", 1.6)
+		"get_up":  # after a knock-down (F234): the waking-up move, a bit quicker
+			dwarf_rig.play_full("wake", 1.1)
 		"shoot":
 			dwarf_rig.play_upper("Pistol_Shoot", 0.4)
 		"reload":
@@ -292,11 +314,7 @@ func _build_dwarf_rig() -> void:
 	dwarf_rig.name = "Rig"
 	add_child(dwarf_rig)
 	dwarf_rig.build(tunic)
-	_hand = Node3D.new()
-	_hand.rotation = hand_tool_rot
-	_hand.position = hand_tool_pos
-	_hand.scale = Vector3.ONE  # tools at their real size (the stocky dwarf carries them well)
-	dwarf_rig.right_hand.add_child(_hand)
+	_hand = dwarf_rig.grip  # (the rig turns it in the fist per tool and animation: DwarfRig.GRIPS)
 	left_hand = dwarf_rig.left_hand
 	right_arm = Node3D.new()  # (only used by the shapes look; kept so other code works)
 	add_child(right_arm)

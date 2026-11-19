@@ -38,6 +38,8 @@ var _loading: Control
 var _loading_bar: ProgressBar
 var _swap_from := -1
 var _hover_slot := -1  ## the bag slot under the mouse (for "press 1-9 to put it on the hotbar", F155)
+const VITAL_BAR_H := [38.0, 30.0]  ## health and stamina bar heights, frame included (F247)
+var learned_cards: LearnedCards
 var _bars := {}  ## "health"/"stamina" -> framed ProgressBar, "hunger"/"thirst" -> VitalDial (F229)
 var _vitals: VBoxContainer  ## health + stamina bars above the hotbar
 var _dials: HBoxContainer  ## hunger + thirst dials left of the hotbar
@@ -197,21 +199,37 @@ func _build() -> void:
 		_dials.add_child(d)
 		_bars[k] = d
 	var stack := _vitals
-	for b in [["health", Color(1.0, 0.36, 0.3), 32], ["stamina", Color(1, 1, 1), 24]]:
+	# F247 (owner, Nov 19): the old slider look stretched into a thin strip with the number on its top edge.
+	# Now each bar sits in the hotbar slots' wood-and-brass frame, a thick fill inside, the number in the middle.
+	for b in [["health", Color(0.86, 0.2, 0.16), VITAL_BAR_H[0]], ["stamina", Color(0.93, 0.74, 0.26), VITAL_BAR_H[1]]]:
+		var frame := PanelContainer.new()
+		frame.name = b[0].capitalize() + "Frame"
+		frame.custom_minimum_size = Vector2(0, b[2])
+		frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		frame.add_theme_stylebox_override("panel", UiKit.style("slot", 6.0, 8.0))
+		stack.add_child(frame)
 		var pb := ProgressBar.new()
 		pb.name = b[0].capitalize()
-		pb.custom_minimum_size = Vector2(0, b[2])
+		pb.custom_minimum_size = Vector2(0, b[2] - 12.0)  # fills the frame's inside (it shrank to 5 px)
+		pb.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		pb.show_percentage = false
 		pb.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		pb.add_theme_stylebox_override("background", UiKit.style("slider_track"))
-		var bar_fill: StyleBoxTexture = UiKit.style("slider_fill").duplicate()
-		bar_fill.modulate_color = b[1]
+		var back := StyleBoxFlat.new()
+		back.bg_color = Color(0.07, 0.045, 0.03, 0.9)
+		back.set_corner_radius_all(3)
+		pb.add_theme_stylebox_override("background", back)
+		var bar_fill := StyleBoxFlat.new()
+		bar_fill.bg_color = b[1]
+		bar_fill.set_corner_radius_all(3)
+		bar_fill.border_width_top = 3  # a lighter top edge: a bit of shine, so it reads as a filled tube
+		bar_fill.border_color = b[1].lightened(0.3)
+		bar_fill.border_width_bottom = 2
+		bar_fill.border_blend = true
 		pb.add_theme_stylebox_override("fill", bar_fill)
-		stack.add_child(pb)
+		frame.add_child(pb)
 		_bars[b[0]] = pb
 	_place_vitals()
-	_health_text = _label(_bars.health, 16)
-	_health_text.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_health_text = _label(_bars.health.get_parent(), 17)  # over the bar, centred both ways inside the frame
 	_health_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_health_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	# Moods, food buffs and ailments: small text in the bottom-left, above the lantern.
@@ -317,6 +335,8 @@ func _build() -> void:
 	_goals_label.autowrap_mode = TextServer.AUTOWRAP_WORD
 	_goals_label.add_theme_color_override("font_color", Color(1.0, 0.88, 0.62))
 
+	learned_cards = LearnedCards.new()  # "Recipe learned" cards on the left (owner, Nov 19)
+	root.add_child(learned_cards)
 	_toast = _label(root, 20)
 	_toast.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
 	_toast.position += Vector2(-250, 80)
@@ -515,6 +535,8 @@ func _refresh_slots() -> void:
 		if not s.is_empty():
 			icon.add_theme_stylebox_override("panel", _slot_style(Items.color(s.id).darkened(0.15), Items.color(s.id).lightened(0.3)))
 			panel.tooltip_text = Upgrades.display_name(s)  # "Copper Sword +2"
+			if Items.kind(s.id) == "page":
+				panel.tooltip_text += "\nRight-click to read it."
 		(panel.get_node("Short") as Label).text = "" if s.is_empty() or tex != null else Items.short_label(s.id)
 		(panel.get_node("Count") as Label).text = "" if s.is_empty() or s.count <= 1 else str(s.count)
 
@@ -525,10 +547,19 @@ func _on_slot_input(event: InputEvent, index: int) -> void:
 	if not _bag_panel.visible:
 		return
 	var auth := GameAuthority.instance
-	# Fewer clicks (owner F187): right-click splits a stack, Shift+Click moves it straight across,
-	# double-click equips / takes off.
+	# Fewer clicks (owner F187): right-click equips / takes off anything you can wear or hold
+	# (owner F23, Nov 17: "right-click a shield, it should go directly in its slot") and splits
+	# other stacks; Shift+Click moves it straight across; double-click equips / takes off too.
 	if event.button_index == MOUSE_BUTTON_RIGHT:
-		auth.ask_split(index)
+		_swap_from = -1
+		if Items.kind(auth.get_player(peer_id).inventory.get_slot(index).get("id", "")) == "page":
+			auth.ask_read(index)  # right-click an old page to read it (owner: "I cannot read the recipe")
+			_refresh_slots()
+		elif wants_equip_click(index, auth.get_player(peer_id).inventory):
+			_quick_equip(index)
+			_refresh_slots()
+		else:
+			auth.ask_split(index)
 		return
 	if event.button_index != MOUSE_BUTTON_LEFT:
 		return
@@ -573,7 +604,16 @@ static func _slot_outline(slot_name: String) -> Texture2D:
 	return _outlines[slot_name]
 
 
-## Double-click: equip an item into its slot (swapping out what was there), or take an
+## Right-click equips (or takes off) instead of splitting: anything in an equipment slot, or
+## any single item that has an equipment slot (shield, weapon, pickaxe, lantern, clothes, backpack).
+static func wants_equip_click(index: int, inv: Inventory) -> bool:
+	var s := inv.get_slot(index)
+	if s.is_empty():
+		return false
+	return Inventory.is_equip_index(index) or Inventory.equip_slot_for(s.id) != ""
+
+
+## Double-click / right-click: equip an item into its slot (swapping out what was there), or take an
 ## equipped item off into the first free bag slot.
 func _quick_equip(index: int) -> void:
 	var auth := GameAuthority.instance
@@ -748,7 +788,7 @@ func _place_vitals() -> void:
 	_vitals.offset_left = -w * 0.5
 	_vitals.offset_right = w * 0.5
 	_vitals.offset_bottom = -HOTBAR_SLOT - 18.0 - 14.0
-	_vitals.offset_top = _vitals.offset_bottom - 60.0
+	_vitals.offset_top = _vitals.offset_bottom - VITAL_BAR_H[0] - VITAL_BAR_H[1] - 4.0
 	var dw := DIAL_SIZE * 2.0 + 10.0
 	_dials.offset_right = -w * 0.5 - 16.0
 	_dials.offset_left = _dials.offset_right - dw
@@ -984,6 +1024,8 @@ func _process(delta: float) -> void:
 		for b in v.buffs:
 			buffs.append("%s %d:%02d" % [Items.display_name(b.id), int(b.time_left) / 60, int(b.time_left) % 60])
 		var mood: String = {"well_fed": "Well fed", "peckish": "Peckish", "starving": "Starving (tired)"}.get(v.status(), "")
+		if v.in_dark:
+			buffs.append("In the dark: no healing, tiring")  # F293
 		if v.cozy_time > 0.0:
 			buffs.append("Cozy (comfort %d) %d:%02d" % [v.cozy_points, int(v.cozy_time) / 60, int(v.cozy_time) % 60])
 		var slots: Array = ps.progress.ability_slots()
@@ -1040,13 +1082,16 @@ func _process(delta: float) -> void:
 		_build_label.text = "Blueprint: %s (%s)\nQ turn · left click place (a blue build site) · right click or B: back to single pieces" % [build_mode.blueprint.name, BuildMenu._cost_text(build_mode.blueprint.cost())]
 	elif build_mode and build_mode.active():
 		var c := BuildMenu._cost_text(Pieces.cost(build_mode.piece, build_mode.family))
-		_build_label.text = "Building: %s (%s)\nCost: %s%s%s\n\nB  choose another piece or material\nLeft click  place it\nQ  turn it\nShift + mouse wheel  raise / lower\nRight click  pick up (first 10 s)\nX  break it (80%% back)\nV  blueprints  ·  C  save your own" % [
+		_build_label.text = "Building: %s (%s)\nCost: %s%s%s\n\nB  choose another piece or material\nLeft click  place it\nQ / E  turn it left / right\nShift + mouse wheel  raise / lower\nRight click  pick up (first 10 s)\nX  break it (80%% back)\nV  blueprints  ·  C  save your own" % [
 			Pieces.LIST[build_mode.piece].name, Pieces.FAMILIES[build_mode.family].name, c,
 			" (now %+.1f m)" % build_mode.lift if build_mode.lift != 0.0 else "",
 			"" if build_mode.problem == "" else "\nCan't place: " + build_mode.problem]
+		if build_mode.level_text() != "":  # F159: what placing it does to the ground
+			_build_label.text += "\n" + build_mode.level_text()
 		var aimed: Dictionary = auth.builder.structure.pieces.get(build_mode.aimed_uid, {}) if auth and auth.builder else {}
 		if not aimed.is_empty():
-			_build_label.text = "Aimed piece: %s\n\n" % steadiness_text(aimed) + _build_label.text
+			_build_label.text = "Aimed piece: %s\n%s\n\n" % [steadiness_text(aimed),
+				take_down_text(auth.builder.pickup_seconds_left(build_mode.aimed_uid))] + _build_label.text
 	else:
 		_build_label.text = ""
 	_map_timer -= delta
@@ -1134,6 +1179,15 @@ static func hotbar_key(code: int) -> int:
 
 
 ## "rock-steady", "85% steady", "shaky (31%)": how well a built piece is held up.
+## How you can take the aimed piece down (F100, owner Nov 19: make it clear). `left` = pick-up seconds left, -1 = unknown.
+static func take_down_text(left: float) -> String:
+	if left > 0.0:
+		return "Right click: pick up, all back (%d s left)  ·  X: break, 80%% back" % ceili(left)
+	if left < 0.0:
+		return "Right click: pick up (right after placing)  ·  X: break, 80% back"
+	return "X: break it, 80% back (too late to pick up)"
+
+
 static func steadiness_text(p: Dictionary) -> String:
 	if p.get("anchored", false):
 		return "rock-steady (on rock or a foundation)"

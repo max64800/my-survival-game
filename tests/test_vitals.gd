@@ -49,6 +49,36 @@ func test_health_regen_waits_after_damage() -> void:
 	check(v.health > 70.0, "heals after 6 s")
 
 
+func test_heals_one_health_every_three_seconds() -> void:
+	var v := Vitals.new()
+	v.hunger = 50.0  # normal (well fed heals 20% faster)
+	v.thirst = 50.0
+	v.take_damage(50)
+	v.tick(5.99)  # the wait after a hit
+	v.tick(30.0)
+	check_near(v.health, 60.0, 0.5, "30 s of healing = 10 health (owner, Nov 19)")
+
+
+func test_no_healing_in_the_dark() -> void:
+	var v := Vitals.new()
+	v.take_damage(50)
+	v.in_dark = true
+	v.tick(60.0)
+	check_eq(v.health, 50.0, "no healing at all in the dark (F293)")
+	v.in_dark = false
+	v.tick(3.0)
+	check(v.health > 50.0, "heals again in the light")
+
+
+func test_stamina_costs_more_in_the_dark() -> void:
+	var v := Vitals.new()
+	v.in_dark = true
+	check(v.use_stamina(20), "can still swing")
+	check_near(v.stamina, 70.0, 0.01, "a 20 swing costs 30 in the dark (F293)")
+	v.drain_stamina(10.0, 1.0)
+	check_near(v.stamina, 55.0, 0.01, "running drains 50% faster too")
+
+
 func test_stamina_spend_and_regen() -> void:
 	var v := Vitals.new()
 	check(v.use_stamina(60), "can spend 60")

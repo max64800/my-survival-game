@@ -156,6 +156,9 @@ func _material_of(v: Vector3i) -> int:
 ## Returns how many voxels of each material turned into air: {Mat.STONE: 7, ...}
 ## Rock changed near `center` (dig or cave-in). Only looks listen (e.g. Clutter lifts away).
 signal changed(center: Vector3, radius: float)
+## Something was put down here (a chest, a barrel, a ruin's treasure): floor looks (pebbles, plants, mushroom grass)
+## get out of the way. Not a dig: waterfalls, critters and root curtains don't listen (owner, Nov 19).
+signal ground_taken(center: Vector3, radius: float)
 
 
 func apply_dig(center: Vector3, radius: float, tool_tier: int = 0) -> Dictionary:

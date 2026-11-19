@@ -41,6 +41,35 @@ func test_rigged_dwarf_builds_and_animates() -> void:
 	m.free()
 
 
+## Owner, Nov 17: pick points / axe blade in the swing, each weapon its own move, the shield always on the left arm.
+func test_tools_sit_right_in_the_hands() -> void:
+	var m := DwarfModel.new()
+	tree.root.add_child(m)
+	var rig := m.dwarf_rig
+	for k in ["chop", "smash", "stab", "bash", "shield", "block"]:
+		check(rig.tree.has_animation(DwarfRig.ANIMS[k]), "has the %s animation" % k)
+	for w in DwarfRig.ATTACKS:
+		var moves: Array = DwarfRig.ATTACKS[w]
+		check(rig.tree.has_animation(DwarfRig.ANIMS[moves[1]]), "%s has a heavy attack" % w)
+	m.set_held("pickaxe_copper")
+	check(rig.tool_look == "pickaxe" and m._hand == rig.grip, "the tool sits in the rig's grip")
+	var turn := (DwarfRig.grip_transform("pickaxe", "").basis * Vector3.RIGHT).dot(DwarfRig.grip_transform("", "").basis * Vector3.RIGHT)
+	check(absf(turn) < 0.2, "the pick head is turned a quarter round from the old grip (into the swing)")
+	m.set_held("shield_copper")
+	m.set_shield("shield_copper")
+	check(m._hand.get_child_count() == 0 or m._hand.get_child(0).is_queued_for_deletion(), "no shield in the right fist")
+	check(rig.shield_grip.get_child_count() == 1 and rig.shield_grip.get_parent() == rig.left_hand, "the shield is on the left arm")
+	m.set_shield("")
+	await frames(1)
+	check(rig.shield_grip.get_child_count() == 0, "and comes off again")
+	m.set_pose(true, false, true)
+	await frames(30)
+	var lb := rig.skeleton.find_bone("hand_l")
+	var hand := rig.skeleton.global_transform * rig.skeleton.get_bone_global_pose(lb).origin
+	check(hand.z < -0.1, "the shield block raises the left arm in front (%.2f)" % hand.z)
+	m.free()
+
+
 func test_dwarf_is_short_and_wide() -> void:
 	var m := DwarfModel.new()
 	tree.root.add_child(m)

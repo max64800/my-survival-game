@@ -14,6 +14,7 @@ var seed := 0
 var world: World
 var glow: GlowField
 var cave_life: CaveLife
+var place_ghost: PlaceGhost
 var _clutter: Clutter
 var _curtains: RootCurtains
 var _pillars: RootPillars
@@ -119,6 +120,12 @@ func _ready() -> void:
 				mode = "solo"
 		elif arg == "kitcheck":
 			debug_script = "res://src/debug/kitcheck.gd"
+			_saving = false
+			_monsters = false
+			if mode == "menu":
+				mode = "solo"
+		elif arg == "outpostcheck":  # photos of the Fallen Outpost (moves the dwarf there so it gets built)
+			debug_script = "res://src/debug/outpostcheck.gd"
 			_saving = false
 			_monsters = false
 			if mode == "menu":
@@ -358,40 +365,49 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	add_child(_clutter)
 	_clutter.build(world.maker, world)  # worked out on a helper thread while the rock loads
 
+	FreezeWatch.doing = "hanging root curtains"
 	_curtains = RootCurtains.new()  # thin roots hanging across some tunnel mouths, parting as you walk through (F189)
 	_curtains.name = "RootCurtains"
 	add_child(_curtains)
 	_curtains.build(world.maker, world)
+	FreezeWatch.doing = "growing root pillars"
 	_pillars = RootPillars.new()  # giant root pillars in some big caverns, chop them for wood (F189)
 	_pillars.name = "RootPillars"
 	add_child(_pillars)
 	_pillars.build(world.maker)
+	FreezeWatch.doing = "growing glow groves"
 	var groves := GlowGroves.new()
 	_groves = groves  # glowing forests in 1-2 big caverns per biome, their main light (owner, Nov 19)
 	groves.name = "GlowGroves"
 	add_child(groves)
 	groves.build(world.maker, _pillars.near)
+	FreezeWatch.doing = "placing boulders"
 	_boulders = Boulders.new()  # breakable boulders for stone (owner, Nov 18)
 	_boulders.name = "Boulders"
 	add_child(_boulders)
 	_boulders.build(world.maker, func(p: Vector3, r: float) -> bool: return _pillars.near(p, r) or groves.near(p, r))
+	FreezeWatch.doing = "growing mushroom grass"
 	var mush := MushroomGrass.new()  # tiny mushroom grass over most of the first cave's floor (owner, Nov 18)
 	mush.name = "MushroomGrass"
 	add_child(mush)
 	mush.build(world.maker, world, _pillars.trunks)
+	FreezeWatch.doing = "puddles and mist"
 	var water := CaveWater.new()  # puddles (rings under the drips) and low mist (F190)
 	water.name = "CaveWater"
 	add_child(water)
 	water.build(world.maker, spots)
+	FreezeWatch.doing = "cave critters"
 	var critters := CaveCritters.new()  # glowing beetles, moths, crickets near you (only looks, F190)
 	critters.name = "CaveCritters"
 	add_child(critters)
 	critters.setup(world, glow)
+	FreezeWatch.doing = "glow swarms"
 	var swarms := GlowSwarms.new()  # packs of glowing motes drifting through the caves (owner, Nov 18)
 	swarms.name = "GlowSwarms"
 	add_child(swarms)
 	swarms.build(world.maker, _pillars.trunks())
 
+	FreezeWatch.doing = "planting moss and ferns"
 	cave_life = CaveLife.new()  # moss, grass, small roots, lichen, ferns in patches (only looks; F188)
 	cave_life.name = "CaveLife"
 	add_child(cave_life)
@@ -402,7 +418,7 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	pf.name = "Pois"
 	add_child(pf)
 	pf.build(world.maker)
-	FreezeWatch.doing = "loading the rock around you"
+	FreezeWatch.doing = "setting up the game"
 	var peephole := Peephole.make(world)
 	if peephole:
 		peephole.name = "Peephole"
@@ -458,8 +474,13 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 		# The ruined Stone Watchtower in the first cave (owner F254). Robot runs only with "ruin" (keeps their tests steady).
 		if not _robot_run or OS.get_cmdline_user_args().has("ruin=1") or OS.get_cmdline_user_args().has("towercheck"):
 			authority.add_child(RuinTower.new(authority))
+		# The Fallen Outpost, built when someone first comes near (owner, Nov 17). Robots: only with outpostcheck.
+		if not _robot_run or OS.get_cmdline_user_args().has("outpostcheck"):
+			authority.world_state["outpost"] = "pending"
 		if authority.start_with_nothing:
 			authority.spawn_start_items()
+	if authority.is_host() and authority.world_state.has("outpost"):
+		authority.add_child(RuinOutpost.new(authority))  # builds it when someone comes near (or marks its cavern)
 	if _jungle_kit:
 		# Test kit: what you'd have after beating Orrumhal and Brask.
 		var kit := authority.get_player(me).inventory
@@ -471,7 +492,7 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	bm.name = "BuildMode"
 	bm.dwarf = dwarf
 	dwarf.build_mode = bm
-	var place_ghost := PlaceGhost.new()  # see where a workbench/chest will go before placing it (F96)
+	place_ghost = PlaceGhost.new()  # see where a workbench/chest will go before placing it (F96)
 	place_ghost.dwarf = dwarf
 	add_child(place_ghost)
 	add_child(bm)
@@ -487,9 +508,12 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	authority.monsters.defended.connect(_on_defended)
 	authority.raids.warning.connect(func(t: String): hud.show_toast(t, 8.0))
 	authority.hud_message.connect(func(t: String): hud.show_toast(t, 3.0))
+	authority.learned_recipe.connect(func(r: String): hud.learned_cards.show_recipe(r))
+	authority.learned_blueprint.connect(func(w: String, page: String): hud.learned_cards.show_blueprint(w, page))
 	hud.peer_id = me
 	hud.seed_text = str(seed)
 	add_child(hud)
+	FreezeWatch.doing = "loading the rock around you"
 
 
 func _spawn_dwarf(peer_id: int, pos: Vector3, local: bool) -> Dwarf:
@@ -693,6 +717,24 @@ func _notification(what: int) -> void:
 			Controls.set_captured(true)
 
 
+## E turns what you're placing to the right (Q to the left), but only when you aren't aiming at something to open,
+## sit on or pick up: then E still does that (owner, Nov 19).
+func _turn_with_e(info: Dictionary) -> bool:
+	for k in ["seat", "pick_glow", "box_id", "poi_id", "station", "door_uid"]:
+		if info.has(k):
+			return false
+	var aimed := dwarf.aim()
+	if not aimed.is_empty() and cave_life and cave_life.breakable_at(aimed.position) >= 0:
+		return false
+	if dwarf.build_mode and dwarf.build_mode.active():
+		dwarf.build_mode.turn(-1)
+		return true
+	if place_ghost and place_ghost.visible:
+		place_ghost.turn(-1)
+		return true
+	return false
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("screenshot"):
 		take_screenshot()
@@ -776,6 +818,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		_set_bag(not hud.is_bag_open())
 	elif event.is_action_pressed("interact") and not hud.is_bag_open():
 		var info := dwarf._aim_info()
+		if _turn_with_e(info):
+			return
 		if info.has("seat"):  # a chair, stool or bench: sit down (move or jump to stand up)
 			dwarf.sit_on(info.seat)
 			return

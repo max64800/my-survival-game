@@ -186,6 +186,38 @@ func test_hand_built_body_fits_the_skeleton() -> void:
 	holder.free()
 
 
+## The hand-built Hide armor (F55) goes on the body's skeleton: every bone it uses exists, all three pieces show, and
+## the helmet swaps in the hat-hair head (and gives the normal one back when taken off).
+func test_hand_built_armor_fits_the_body() -> void:
+	if not ResourceLoader.exists(DwarfRig.BODY) or not ResourceLoader.exists(DwarfRig.ARMOR_FILES["hide"]):
+		return
+	var holder := Node3D.new()
+	tree.root.add_child(holder)
+	var rig := DwarfRig.new()
+	rig.use_body = true
+	holder.add_child(rig)
+	rig.build(Color(0.6, 0.45, 0.3))
+	rig.set_wear(["armor_head_leather", "armor_chest_leather", "armor_feet_leather"])
+	var pieces := {}
+	var bad := []
+	for mi: MeshInstance3D in rig.skeleton.find_children("armor_*", "MeshInstance3D", true, false):
+		pieces[String(mi.name).split("_")[1]] = true
+		check(mi.skin != null, "%s has its bones" % mi.name)
+		for b in mi.skin.get_bind_count():
+			if rig.skeleton.find_bone(String(mi.skin.get_bind_name(b))) < 0:
+				bad.append(String(mi.skin.get_bind_name(b)))
+	check(pieces.has("head") and pieces.has("chest") and pieces.has("feet"), "helmet, jerkin and boots are worn (%s)" % [pieces.keys()])
+	check(bad.is_empty(), "every bone the armor uses exists in the game skeleton (missing: %s)" % [bad])
+	var head := rig._body_head
+	check(head != null and not head.visible, "with the helmet on, the normal head is swapped for the hat-hair one")
+	check(rig._body_root.position.y * rig.scale.y > 0.01, "with boots on he stands on their soles (owner, Nov 18: feet sank into the ground)")
+	rig.set_wear(["armor_chest_leather"])
+	check(head != null and head.visible, "helmet off: the normal head (and his wild hair) is back")
+	check(is_zero_approx(rig._body_root.position.y), "boots off: his bare feet are back on the floor")
+	await frames(1)
+	holder.free()
+
+
 ## The braid tufts swing when the dwarf moves (F192): the swing bones arrive with the body and the spring moves them.
 func test_braid_tufts_swing_when_moving() -> void:
 	if not ResourceLoader.exists(DwarfRig.BODY):
@@ -242,4 +274,100 @@ func test_dev_fly_floats_and_lands_again() -> void:
 	for i in 90:
 		await tree.physics_frame
 	check(dwarf.is_on_floor(), "back on the floor after F6 again")
+	root.queue_free()
+
+
+## Owner, Nov 17: "the axe isn't axing the right stuff". Something between the camera and the dwarf (a root behind
+## you) must not be hit: the swing lands on what's in front of the dwarf.
+func test_aim_skips_things_behind_the_dwarf() -> void:
+	Controls.setup()
+	var root := _room([[Vector3(0, 1.0, -2.0), Vector3(4, 2.0, 0.4)]])  # a wall 1.8 m ahead
+	var dwarf := _dwarf_in(root)
+	for i in 20:
+		await tree.physics_frame
+	var cam := dwarf.camera.global_position
+	var behind := StaticBody3D.new()  # a fat root aim shape right behind the dwarf, in the camera's view
+	behind.collision_layer = GlowField.GLOW_LAYER
+	var shape := CollisionShape3D.new()
+	var ball := SphereShape3D.new()
+	ball.radius = 0.3
+	shape.shape = ball
+	behind.add_child(shape)
+	root.add_child(behind)
+	var chest := dwarf.global_position + Vector3.UP
+	behind.global_position = chest.lerp(cam, 0.45)  # on the line from the camera through the dwarf's chest
+	dwarf.camera.look_at(chest + (chest - cam).normalized() * 3.0)
+	await tree.physics_frame
+	await tree.physics_frame
+	var hit := dwarf.aim()
+	check(not hit.is_empty() and hit.collider != behind, "aim skips the root behind the dwarf (cam %s)" % cam)
+	check(not hit.is_empty() and hit.position.z < -1.5, "aim lands on the wall in front (%s)" % hit.get("position", "-"))
+	root.queue_free()
+
+
+## Owner, Nov 19: "with the crossbow my dwarf stops or only moves one way; and there's no reloading". Reloading asked
+## the dwarf "running?", which it didn't know: the walking code broke every frame and the reload never finished.
+func test_crossbow_reload_while_walking() -> void:
+	Controls.setup()
+	var root := _room([])
+	var auth := GameAuthority.new()
+	auth.drops_root = root
+	root.add_child(auth)
+	var dwarf := _dwarf_in(root)
+	var ps := auth.add_player(1, dwarf)
+	ps.inventory.add("crossbow_copper", 1)
+	ps.inventory.add("bolt_stone", 5)
+	for i in Inventory.HOTBAR_SIZE:
+		if ps.inventory.get_slot(i).get("id", "") == "crossbow_copper":
+			auth.request_select_slot(1, i)
+	for i in 20:
+		await tree.physics_frame
+	check(dwarf.fight.is_crossbow(), "the crossbow is in hand")
+	var was_robot := Controls.robot
+	Controls.robot = true
+	Controls.set_captured(true)  # playing (the reload only runs while you play, not in a menu)
+	dwarf.fight.loaded = false
+	dwarf.fight.start_reload()
+	check(dwarf.fight.reload_left > 0.0, "reloading started")
+	var z0 := dwarf.global_position.z
+	dwarf.bot_move = Vector2(0, -1)
+	for i in 60:
+		await tree.physics_frame
+	var x0 := dwarf.global_position.x
+	dwarf.bot_move = Vector2(1, 0)  # and now sideways: it must turn, not keep going forward
+	for i in 60:
+		await tree.physics_frame
+	dwarf.bot_move = Vector2.ZERO
+	check(z0 - dwarf.global_position.z > 1.0, "walked forward while reloading")
+	check(dwarf.global_position.x - x0 > 1.0, "turned and walked sideways while reloading")
+	for i in int(Combat.RELOAD.max() * 60) + 30:
+		await tree.physics_frame
+	check(dwarf.fight.loaded, "the reload finished: a bolt is in")
+	Controls.set_captured(false)
+	Controls.robot = was_robot
+	root.queue_free()
+
+
+## Owner (F234, said again from F111): "a beetle hit sends you flying much too far; a couple of metres at most, then the
+## dwarf gets back up". The push was added to his speed every frame and kept (103 m on a flat floor, 177 m knocked down).
+func test_beetle_charge_throws_a_couple_of_metres() -> void:
+	Controls.setup()
+	var root := _room([])
+	var auth := GameAuthority.new()
+	auth.drops_root = root
+	root.add_child(auth)
+	var dwarf := _dwarf_in(root)
+	auth.add_player(1, dwarf)
+	for i in 30:
+		await tree.physics_frame
+	var p0 := dwarf.global_position
+	dwarf.knock_down()
+	dwarf.shove(Vector3(7.0, 0, 3.0))  # (MonsterManager.charge_shove's size)
+	check(dwarf.fight.stagger > 1.0, "knocked down")
+	for i in 150:
+		await tree.physics_frame
+	var d := dwarf.global_position - p0
+	var far := Vector2(d.x, d.z).length()
+	check(far > 0.8 and far < 2.5, "thrown a couple of metres (%.2f m)" % far)
+	check(dwarf.fight.stagger <= 0.0, "back up after %.1f s" % DwarfFight.KNOCK_DOWN_TIME)
 	root.queue_free()

@@ -72,7 +72,7 @@ func _ready() -> void:
 	_place.custom_minimum_size = Vector2(0, 50)
 	_place.pressed.connect(_place_picked)
 	rv.add_child(_place)
-	var foot := UiKit.label(v, "Q turn  ·  Left click place  ·  fill its Builder's Chest and it builds itself  ·  V close", 13, UiKit.DIM)
+	var foot := UiKit.label(v, "Q / E turn  ·  Left click place  ·  fill its Builder's Chest and it builds itself  ·  V close", 13, UiKit.DIM)
 	foot.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 
@@ -129,8 +129,7 @@ static func still_hidden() -> int:
 
 
 func refresh() -> void:
-	for c in _list.get_children():
-		c.queue_free()
+	UiKit.clear(_list)
 	_entries = []
 	for e in entries():
 		var r := Blueprint.from_json(e.json)
@@ -168,8 +167,7 @@ func refresh() -> void:
 
 ## The right page: the picked blueprint, its size, and every material as have / need.
 func _show_page() -> void:
-	for c in _needs.get_children():
-		c.queue_free()
+	UiKit.clear(_needs)
 	var e: Dictionary = _entries[_picked] if _picked < _entries.size() else {}
 	var bp: Blueprint = e.get("bp") if e.get("ok", false) else null
 	_page_name.text = bp.name if bp else ("" if e.is_empty() else "%s (broken: %s)" % [e.name, e.error])

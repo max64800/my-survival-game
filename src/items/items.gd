@@ -156,9 +156,15 @@ const DATA := {
 	# --- backpacks (pack slot): open 10 more bag slots
 	"satchel": {name = "Leather Satchel", stack = 1, color = Color(0.6, 0.42, 0.25), short = "Sa", kind = "pack"},
 	"prospectors_lens": {name = "Prospector's Lens", stack = 1, color = Color(0.85, 0.9, 1.0), short = "Ln", kind = "lens"},
-	"recipe_page": {name = "Old Recipe Page", color = Color(0.85, 0.78, 0.6), short = "Pg", kind = "page"},
+	"recipe_page": {name = "Old Recipe Page", color = Color(0.85, 0.78, 0.6), short = "Pg", kind = "page"},  ## any kind (old saves)
+	# One page kind per thing it teaches, each with its own look (owner, Nov 19; icons: tools/art/make_page_icons.py).
+	"cook_page": {name = "Cook's Page", color = Color(0.9, 0.7, 0.4), short = "Ck", kind = "page", page_of = "food"},
+	"armour_page": {name = "Armourer's Page", color = Color(0.65, 0.7, 0.8), short = "Ar", kind = "page", page_of = "armour"},
+	"weapon_page": {name = "Weaponsmith's Page", color = Color(0.85, 0.5, 0.42), short = "Wp", kind = "page", page_of = "weapon"},
+	"tool_page": {name = "Toolmaker's Page", color = Color(0.6, 0.7, 0.45), short = "Tl", kind = "page", page_of = "tool"},
 	"blueprint_page": {name = "Old Blueprint", color = Color(0.55, 0.68, 0.85), short = "Bp", kind = "page"},  ## teaches a ready-made building (F98)
 	"watchtower_plans": {name = "Watchtower Plans", color = Color(0.62, 0.7, 0.82), short = "Wp", kind = "page", teaches = "stone_watchtower"},  ## always teaches the Stone Watchtower (its ruin's roof chest, F254)
+	"outpost_plans": {name = "Outpost Plans", color = Color(0.62, 0.7, 0.82), short = "Op", kind = "page", teaches = "stone_outpost"},  ## always teaches the Stone Outpost (its ruin's tower roof chest)
 	"rope_ladder": {name = "Rope Ladder", stack = 10, color = Color(0.75, 0.65, 0.45), short = "RL", kind = "station"},
 	"gem_bench": {name = "Gem Bench", stack = 1, color = Color(0.45, 0.6, 0.75), short = "GB", kind = "station"},
 	"rune_slab": {name = "Rune Slab", stack = 1, color = Color(0.5, 0.5, 0.6), short = "RS", kind = "station"},
@@ -195,6 +201,7 @@ const DATA := {
 	"mace_2h_silver": {name = "Silver Great Maul", stack = 1, color = Color(0.85, 0.87, 0.92), short = "GM", kind = "weapon", weapon = "mace_2h", tier = 2},
 	# --- storage (placed in the world)
 	"chest_small": {name = "Chest", stack = 1, color = Color(0.55, 0.38, 0.22), short = "Ch", kind = "chest"},
+	"barrel": {name = "Storage Barrel", stack = 1, color = Color(0.5, 0.34, 0.2), short = "Ba", kind = "chest"},  # one row (owner, Nov 17)
 	"chest_stone": {name = "Stone Chest", stack = 1, color = Color(0.55, 0.55, 0.55), short = "SC", kind = "chest"},
 }
 

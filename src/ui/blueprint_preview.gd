@@ -41,8 +41,7 @@ func _init() -> void:
 
 ## Shows this blueprint (null = empty).
 func show_blueprint(bp: Blueprint) -> void:
-	for c in _turn.get_children():
-		c.queue_free()
+	UiKit.clear(_turn)
 	if bp == null:
 		return
 	for p in bp.world_pieces(Vector3(0, -bp.size.y * 0.5, 0), 0):

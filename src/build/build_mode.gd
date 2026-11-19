@@ -3,7 +3,7 @@ extends Node3D
 ## Build mode: active while the Build Hammer is in your hand.
 ##   Left click  = place the piece (the ghost shows where; green = OK, red = not allowed)
 ##   Right click = take down the piece you aim at (you get everything back)
-##   Q = turn · Shift + mouse wheel (or PageUp / PageDown) = lift up / down · B = choose piece and material
+##   Q / E = turn left / right (walking never turns it: owner, Nov 19) · Shift + mouse wheel (or PageUp / PageDown) = lift up / down · B = choose piece and material
 
 signal changed  ## piece/material/rotation changed (the HUD shows it)
 signal message(text: String)  ## something to tell the player (blueprint saved, etc.)
@@ -49,6 +49,8 @@ func choose(p_piece: String, p_family: String) -> void:
 	if blueprint:  # picking a piece in the B menu always goes back to single pieces (F101)
 		stop_blueprint()
 		message.emit("Back to building single pieces.")
+	if Pieces.is_tri(p_piece) != Pieces.is_tri(piece):  # keep facing the same way: 30° steps vs quarter turns
+		rot = posmod(rot * 3, 12) if Pieces.is_tri(p_piece) else posmod(roundi(rot / 3.0), 4)
 	piece = p_piece
 	family = p_family if Pieces.allowed(p_piece, p_family) else Pieces.LIST[p_piece].get("families", [p_family])[0]
 	_ghost.rebuild(piece, family)
@@ -88,7 +90,7 @@ func start_blueprint(json: String, dev: bool = false) -> void:
 	_bp_chest_ghost.material_override = m
 	_bp_chest_ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_bp_ghosts.add_child(_bp_chest_ghost)
-	message.emit("Placing blueprint \"%s\" (blue = a build site that fills in as you add materials): aim, Q to turn, left click to place, right click or B to go back to single pieces" % blueprint.name)
+	message.emit("Placing blueprint \"%s\" (blue = a build site that fills in as you add materials): aim, Q / E to turn, left click to place, right click or B to go back to single pieces" % blueprint.name)
 
 
 func stop_blueprint() -> void:
@@ -150,9 +152,65 @@ func _update_work(delta: float) -> void:
 		dwarf.model.work(0.9)
 
 
+## Q (dir +1, left) or E (dir -1, right). Pieces turn a quarter, triangles 30°.
+func turn(dir: int) -> void:
+	rot = posmod(rot + dir, 12 if Pieces.is_tri(piece) and not blueprint else 4)
+	changed.emit()
+
+
+var _was_active := false
+var level := {cut = [], fill = [], fill_ground = [], steep = false}  ## how the aimed piece would level the ground (F159)
+var _fill_boxes: Array[MeshInstance3D] = []
+var _fill_mat: StandardMaterial3D
+
+
+## F159: see-through packed-dirt blocks under the ghost where it would fill a dip.
+func _show_fill(plan: Dictionary) -> void:
+	if _fill_mat == null:
+		_fill_mat = StandardMaterial3D.new()
+		_fill_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		_fill_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		_fill_mat.albedo_color = Color(0.62, 0.45, 0.27, 0.45)
+	var fills: Array = plan.get("fill", [])
+	while _fill_boxes.size() < fills.size():
+		var mi := MeshInstance3D.new()
+		var bm := BoxMesh.new()
+		bm.size = Vector3(0.96, 1.0, 0.96)
+		mi.mesh = bm
+		mi.material_override = _fill_mat
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(mi)
+		_fill_boxes.append(mi)
+	for i in _fill_boxes.size():
+		var mi := _fill_boxes[i]
+		mi.visible = i < fills.size()
+		if mi.visible:
+			var top: Vector3 = fills[i]
+			var depth := maxf(0.1, top.y - float(plan.fill_ground[i]))
+			mi.global_position = top - Vector3.UP * depth * 0.5
+			mi.scale = Vector3(1.0, depth, 1.0)
+
+
+## The HUD line: what placing it would do to the ground ("" = nothing).
+func level_text() -> String:
+	var parts := []
+	if not level.get("cut", []).is_empty():
+		parts.append("cuts the bump away (you get it back)")
+	if not level.get("fill", []).is_empty():
+		parts.append("fills %d dips (%d dirt or stone)" % [level.fill.size(), level.fill.size()])
+	return "" if parts.is_empty() else "Levels the ground: " + ", ".join(parts)
+
+
 func _process(delta: float) -> void:
 	_update_work(delta)
 	_update_tints(delta, active())
+	if active() and not _was_active and dwarf:
+		# Taking the hammer out: the piece starts facing the way you look, then stays put while you walk (owner,
+		# Nov 19: "it turns when you walk"); only Q / E turn it from here.
+		rot = posmod(roundi((dwarf.model.rotation.y + PI) / (PI / 2.0)), 4) * (3 if Pieces.is_tri(piece) else 1)
+	_was_active = active()
+	if not active() or blueprint:
+		_show_fill({})
 	if not active():
 		_ghost.visible = false
 		if _bp_ghosts:
@@ -183,6 +241,7 @@ func _process(delta: float) -> void:
 	if hit.is_empty():
 		_ghost.visible = false
 		target = {}
+		_show_fill({})
 		return
 	var auth := GameAuthority.instance
 	# Aiming at something already built? Snap to it (its top edge, corner, or side).
@@ -193,13 +252,15 @@ func _process(delta: float) -> void:
 		anchor = auth.builder.structure.box_of((hit_node as PieceNode).uid)
 		anchor_piece = auth.builder.structure.pieces[(hit_node as PieceNode).uid]
 		aimed_uid = (hit_node as PieceNode).uid
-	target = Pieces.snap(piece, hit.position, hit.normal, dwarf.model.rotation.y + PI, rot, lift, anchor, anchor_piece)
+	target = Pieces.snap(piece, hit.position, hit.normal, 0.0, rot, lift, anchor, anchor_piece)
 	_ghost.visible = true
 	_ghost.global_position = target.pos
 	_ghost.rotation = Vector3(0, Pieces.yaw_of(target.rot), 0)
 	_ghost.set_legs(Pieces.leg_drops(piece, family, target.pos, target.rot, auth.world.sdf_at))
 	problem = auth.builder.problem(auth.get_player(dwarf.peer_id), piece, family, target.pos, target.rot)
 	_ghost.set_ghost_ok(problem == "")
+	level = auth.builder.last_level.duplicate()
+	_show_fill(level)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -209,7 +270,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if blueprint:
 		if event.is_action_pressed("dig") and _bp_origin != Vector3.INF:
 			if not _bp_chest.is_finite():
-				message.emit("No room for the Builder's Chest next to it. Turn it (Q) or pick a spot with open floor beside it.")
+				message.emit("No room for the Builder's Chest next to it. Turn it (Q / E) or pick a spot with open floor beside it.")
 				get_viewport().set_input_as_handled()
 				return
 			auth.builder.ask_place_blueprint(_bp_json, _bp_origin, rot, _bp_chest)
@@ -220,7 +281,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			stop_blueprint()
 			get_viewport().set_input_as_handled()
 		elif event.is_action_pressed("rotate_piece"):
-			rot = (rot + 1) % 4
+			turn(1)
 		return
 	if event.is_action_pressed("capture"):
 		var chit := dwarf.aim_far(Pieces.BUILD_REACH * 2.0)
@@ -249,6 +310,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			auth.builder.ask_remove(hit.collider.uid)  # careful pick-up: all back, right after placing (F100)
 		elif hit.get("collider") is Station:
 			auth.ask_pickup_station((hit.collider as Station).station_id)  # stations always come back whole
+		elif Storage.box_id_of(hit.get("collider")) >= 0:
+			auth.storage.ask_pick_up(Storage.box_id_of(hit.collider))  # chests and barrels move too (owner), when empty
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("break_piece"):
 		var hit := dwarf.aim_far(Pieces.BUILD_REACH)
@@ -256,8 +319,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			auth.builder.ask_remove(hit.collider.uid, true)  # break it: 80% back
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("rotate_piece"):
-		rot = (rot + 1) % (12 if Pieces.is_tri(piece) else 4)  # triangles turn in 30° steps
-		changed.emit()
+		turn(1)  # (E turns the other way: main.gd, because E is also "use / open")
 	elif event.is_action_pressed("lift_up"):
 		lift += 0.5
 		changed.emit()

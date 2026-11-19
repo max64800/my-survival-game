@@ -37,15 +37,14 @@ func _ready() -> void:
 	title.add_theme_font_size_override("font_size", 20)
 	v.add_child(title)
 	var note := Label.new()
-	note.text = "Pick a blueprint to preview and place it (no hammer needed): aim, Q to turn, left click to place.\nThen open its Builder's Chest (E) and press P: it fills with everything the building still needs."
+	note.text = "Pick a blueprint to preview and place it (no hammer needed): aim, Q / E to turn, left click to place.\nThen open its Builder's Chest (E) and press P: it fills with everything the building still needs."
 	v.add_child(note)
 	_list = VBoxContainer.new()
 	v.add_child(_list)
 
 
 func refresh() -> void:
-	for c in _list.get_children():
-		c.queue_free()
+	UiKit.clear(_list)
 	for e in all_blueprints():
 		var r := Blueprint.from_json(e.json)
 		var b := Button.new()

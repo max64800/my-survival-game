@@ -40,6 +40,7 @@ const CHEST_RANGE := 16.0
 const WORK_RANGE := 4.0  ## a blueprint only builds while someone with the Build Hammer stands this close to its chest
 const CARVE_RADIUS := 0.8  ## gentle scoops, so the floor under the building stays
 const CARVES_PER_TICK := 3
+const SITE_DIP := 0.45  ## a blueprint fills dips deeper than this under it and its walkway (F159)
 
 
 func _ready() -> void:
@@ -114,7 +115,12 @@ func problem(ps: GameAuthority.PlayerState, piece: String, family: String, pos: 
 	var station_why := station_problem(piece, family, pos)
 	if station_why != "":
 		return station_why
-	var rock := Pieces.rock_problem(piece, pos, rot, auth.world.sdf_at)
+	# F159: floors and foundations level their ground; the rules below look at the rock as it will be.
+	last_level = Pieces.level_plan(piece, family, pos, rot, auth.world.sdf_smooth)
+	if last_level.steep:
+		return "Too steep here: dig the high side down first (more than 1 m of rock)"
+	var sdf := Pieces.levelled_sdf(auth.world.sdf_at, last_level, piece, pos, rot)
+	var rock := Pieces.rock_problem(piece, pos, rot, sdf)
 	if rock != "":
 		return rock
 	if structure.overlaps(piece, pos, rot):
@@ -124,14 +130,42 @@ func problem(ps: GameAuthority.PlayerState, piece: String, family: String, pos: 
 		var body: Vector3 = auth.players[pid].node.global_position
 		if b.grow(0.1).has_point(body + Vector3.UP * 0.3) or b.grow(0.1).has_point(body + Vector3.UP * 1.1):
 			return "Someone is in the way"
-	var anchored := Pieces.touches_rock(piece, pos, rot, auth.world.sdf_at, family)
+	var anchored := Pieces.touches_rock(piece, pos, rot, sdf, family)
 	if structure.preview_stability(piece, family, pos, rot, anchored) < Pieces.MIN_STABILITY:
 		return "Not steady enough here"
 	var cost := Pieces.cost(piece, family)
 	for item in cost:
 		if ps.inventory.count_of(item) < cost[item]:
 			return "Needs %d %s" % [cost[item], Items.display_name(item)]
+	var fill_n: int = last_level.fill.size()
+	if fill_n > ps.inventory.count_of("dirt") + ps.inventory.count_of("stone") - int(cost.get("dirt", 0)) - int(cost.get("stone", 0)):
+		return "Needs %d dirt or stone to fill the dip under it" % fill_n
 	return ""
+
+
+## The level plan of the last piece checked (the ghost shows it; Pieces.level_plan).
+var last_level := {cut = [], fill = [], fill_ground = [], steep = false}
+
+
+## Host: level the ground under a piece that was just approved (F159). Cut rock drops like digging (into your bag);
+## each filled patch takes 1 dirt (or stone) from the bag. Every computer gets the same rock edits.
+func _level_ground(ps: GameAuthority.PlayerState, peer_id: int, plan: Dictionary) -> void:
+	var counts := {}
+	var mid := Vector3.ZERO
+	for c in plan.cut:
+		var more: Dictionary = auth._host_dig(c + Vector3.UP * (Pieces.LEVEL_CUT_R + 0.02), Items.tier("pickaxe_stone"), Pieces.LEVEL_CUT_R)
+		for m in more:
+			counts[m] = counts.get(m, 0) + more[m]
+		mid = c
+	if not counts.is_empty():
+		auth._give_dig_drops(ps, counts, mid + Vector3.UP * 0.8)
+	for f in plan.fill:
+		var item := "dirt" if ps.inventory.count_of("dirt") > 0 else "stone"
+		if not ps.inventory.remove(item, 1):
+			break
+		auth.host_fill(f - Vector3.UP * (Pieces.LEVEL_FILL_R + 0.02), Pieces.LEVEL_FILL_R, Mat.DIRT if item == "dirt" else Mat.STONE)
+	if not plan.fill.is_empty():
+		auth._send_inventory(peer_id)
 
 
 func request_place(peer_id: int, piece: String, family: String, pos: Vector3, rot: int) -> String:
@@ -143,9 +177,11 @@ func request_place(peer_id: int, piece: String, family: String, pos: Vector3, ro
 	var why := problem(ps, piece, family, pos, rot)
 	if why != "":
 		return why
+	var level := last_level.duplicate(true)
 	var cost := Pieces.cost(piece, family)
 	for item in cost:
 		ps.inventory.remove(item, cost[item])
+	_level_ground(ps, peer_id, level)
 	var uid := _next_uid
 	_next_uid += 1
 	_ev_add_piece.rpc(uid, piece, family, pos, rot, Pieces.touches_rock(piece, pos, rot, auth.world.sdf_at, family))
@@ -157,6 +193,13 @@ func request_place(peer_id: int, piece: String, family: String, pos: Vector3, ro
 		"store":
 			auth.storage.create_box(piece, pos, Pieces.yaw_of(rot), peer_id)
 	return ""
+
+
+## Seconds left to pick piece `uid` up with everything back (0 = too late; -1 = we don't know: only the host times it).
+func pickup_seconds_left(uid: int) -> float:
+	if not auth.is_host():
+		return -1.0
+	return maxf(0.0, PICKUP_TIME - (_clock - float(_placed_at.get(uid, -INF))))
 
 
 ## Host: take piece `uid` down. Returns "" when done, or why not (shown to the player).
@@ -192,7 +235,7 @@ const STATION_KIND := {"workbench": "workbench", "mason": "masonry_table", "anvi
 func request_door(peer_id: int, uid: int) -> bool:
 	var ps := auth.get_player(peer_id)
 	var p: Dictionary = structure.pieces.get(uid, {})
-	if ps == null or p.is_empty() or p.piece != "door":
+	if ps == null or p.is_empty() or not p.piece in Pieces.DOORS:
 		return false
 	if ps.node and ps.node.global_position.distance_to(p.pos) > Pieces.BUILD_REACH:
 		return false
@@ -267,7 +310,8 @@ func station_problem(piece: String, family: String, pos: Vector3) -> String:
 
 @rpc("authority", "call_local", "reliable")
 func _ev_add_piece(uid: int, piece: String, family: String, pos: Vector3, rot: int, anchored: bool) -> void:
-	Sfx.play("build", pos, -2.0, 1.2 if family in ["cut_stone", "cut_marble", "clay_brick"] else 1.0)
+	if not batch:
+		Sfx.play("build", pos, -2.0, 1.2 if family in ["cut_stone", "cut_marble", "clay_brick"] else 1.0)
 	structure.add(uid, piece, family, pos, rot, anchored)
 	var n: PieceNode = PIECE_SCRIPT.new()
 	n.uid = uid
@@ -282,6 +326,17 @@ func _ev_add_piece(uid: int, piece: String, family: String, pos: Vector3, rot: i
 	if piece == "ladder":
 		ladders[uid] = true
 	_next_uid = maxi(_next_uid, uid + 1)
+	if auth.is_host() and not batch:
+		_queue_shaky()
+
+
+## Many pieces at once (the world placing a ruin): no sound per piece, and the strength check (it looks at every
+## piece, so doing it per piece took minutes for the 700-piece outpost) runs once at the end.
+var batch := false
+
+
+func end_batch() -> void:
+	batch = false
 	if auth.is_host():
 		_queue_shaky()
 
@@ -482,6 +537,12 @@ func _add_rubble(rid: int, piece: String, family: String, start: Transform3D, en
 	rb.setup(rid, piece, family, start, end, animate)
 	rubble[rid] = rb
 	_next_rubble = maxi(_next_rubble, rid + 1)
+
+
+## Host: rubble that's simply there from the start (old ruins, F254): hit it to clear it, like fallen rubble.
+@rpc("authority", "call_local", "reliable")
+func _ev_add_rubble(rid: int, piece: String, family: String, t: Transform3D) -> void:
+	_add_rubble(rid, piece, family, t, t, false)
 
 
 ## Host: where a falling piece lands (the first solid thing under it, not itself).
@@ -740,8 +801,16 @@ func _ev_site(box_id: int, json: String, origin: Vector3, rot: int, built: Array
 		g.visible = not plan[i].built
 		plan[i].ghost = g
 	var carve := bp.carve_cells(origin, rot)
+	var ground := bp.ground_cells(origin, rot, 1)  # F159: its footprint and a 1 m walkway round it
+	for c in ground.ring:  # the walkway: cleared 2 m high (border rock stays)
+		for h in [0.5, 1.5]:
+			var w: Vector3 = c + Vector3.UP * h
+			if not auth.world.material_at(w) in [Mat.BORDER, Mat.EDGE]:
+				carve.append(w)
 	carve.sort_custom(func(a, b): return a.distance_to(chest_pos) < b.distance_to(chest_pos))
-	sites[box_id] = {json = json, origin = origin, rot = rot, plan = plan, carve = carve, ghosts = ghost_root,
+	var fill: Array = ground.foot + ground.ring
+	fill.sort_custom(func(a, b): return a.distance_to(chest_pos) < b.distance_to(chest_pos))
+	sites[box_id] = {json = json, origin = origin, rot = rot, plan = plan, carve = carve, fill = fill, ghosts = ghost_root,
 		status = "Starting…", leftovers = {}, name = bp.name}
 
 
@@ -817,6 +886,8 @@ func _tick_sites() -> void:
 			continue
 		if _carve_step(box_id, site, chest):
 			continue
+		if _fill_step(box_id, site, chest):
+			continue
 		if _site_ticks % 2 == 0:
 			_build_step(box_id, site, chest)
 
@@ -853,6 +924,33 @@ func _carve_step(box_id: int, site: Dictionary, chest: Dictionary) -> bool:
 		return true
 	site.carved_this_tick = 0
 	return false
+
+
+## F159: after carving, the site fills the dips under its footprint and walkway with packed dirt or stone from its
+## chest (carving puts the rock it cut in there), a few patches per tick. Small dips (under SITE_DIP) and drops deeper
+## than LEVEL_FILL_MAX are left. With no dirt or stone in the chest it never holds the building up: it fills as soon as
+## some is put in. Returns true while it filled something this tick.
+func _fill_step(box_id: int, site: Dictionary, chest: Dictionary) -> bool:
+	var inv: Inventory = chest.inv
+	var done := 0
+	while not site.get("fill", []).is_empty():
+		var c: Vector3 = site.fill[0]
+		var g := Pieces.ground_height(auth.world.sdf_smooth, c.x, c.z, c.y)
+		if g >= c.y - SITE_DIP or g == -INF:
+			site.fill.pop_front()  # already level (or a deep drop: left alone)
+			continue
+		var item := "dirt" if inv.count_of("dirt") > 0 else ("stone" if inv.count_of("stone") > 0 else "")
+		if item == "":
+			return done > 0  # (the building goes on; put dirt or stone in to level the rest)
+		inv.remove(item, 1)
+		auth.storage._changed(box_id)
+		auth.host_fill(c - Vector3.UP * (Pieces.LEVEL_FILL_R + 0.02), Pieces.LEVEL_FILL_R, Mat.DIRT if item == "dirt" else Mat.STONE)
+		site.fill.pop_front()
+		_set_status(box_id, "Levelling the ground… %d patches left" % site.fill.size())
+		done += 1
+		if done >= CARVES_PER_TICK:
+			return true
+	return done > 0
 
 
 ## A blueprint is built in steps, one floor (2 m band) at a time, bottom first (F112).
@@ -902,8 +1000,6 @@ static func _list_text(items: Dictionary) -> String:
 
 
 func _build_step(box_id: int, site: Dictionary, chest: Dictionary) -> void:
-	if site.has("ruin") and _ruin_step(box_id, site):
-		return
 	var inv: Inventory = chest.inv
 	var first_missing := {}
 	var done := 0
@@ -955,8 +1051,6 @@ func _build_step(box_id: int, site: Dictionary, chest: Dictionary) -> void:
 		return
 	if done == site.plan.size():
 		_set_status(box_id, "Done!")
-		if site.has("ruin"):
-			_finish_ruin(box_id, site, chest)
 		_ev_site_done.rpc(box_id)
 		# The Builder's Chest goes away once the building stands (owner, Nov 16); what's left in it drops beside it.
 		for slot in inv.slots:
@@ -989,113 +1083,6 @@ func _identical_exists(p: Dictionary) -> bool:
 	return false
 
 
-# ================================================================== rebuilding ruins (owner, Nov 19)
-## docs/design/ruin-rebuild-plan.md: the ruin's Rebuilding Chest; the first root planks or cut stone put in start a build
-## site of the whole building in that material, right over the ruin. Pieces still standing whole count as built;
-## worn and collapsed walls are taken away when their replacement's turn comes; rubble goes floor by floor.
-
-const RUIN_EQUIVALENT := {"railing": ["battlement", "battlement_corner"]}  ## a wooden railing stands where a battlement did
-
-
-## Host: something went into a Rebuilding Chest.
-func ruin_chest_changed(box_id: int) -> void:
-	if not auth.is_host() or sites.has(box_id):
-		return
-	var ruins: Dictionary = auth.world_state.get("ruins", {})
-	var r: Dictionary = ruins.get(str(box_id), {})
-	if r.is_empty() or r.get("done", false):
-		return
-	var chest: Dictionary = auth.storage.get_box(box_id)
-	if chest.is_empty():
-		return
-	var key := ""
-	if chest.inv.count_of(BlueprintLibrary.WOOD) > 0:
-		key = String(r.wood)
-	elif chest.inv.count_of(BlueprintLibrary.STONE) > 0:
-		key = String(r.stone)
-	if key == "":
-		return  # not a building material yet
-	var bp := BlueprintLibrary.make(key)
-	if bp == null:
-		return
-	_ev_site.rpc(box_id, bp.to_json(), r.origin, int(r.turn), [])
-	var site: Dictionary = sites.get(box_id, {})
-	if site.is_empty():
-		return
-	site.ruin = key
-	for i in site.plan.size():  # what still stands whole is done already
-		if _ruin_slot_whole(site.plan[i]):
-			_ev_site_piece.rpc(box_id, i)
-	_set_status(box_id, "Rebuilding in %s" % ("wood" if key == String(r.wood) else "stone"))
-
-
-## A whole piece of the ruin already stands where this plan piece goes (any material).
-func _ruin_slot_whole(p: Dictionary) -> bool:
-	var same: Array = [p.piece] + RUIN_EQUIVALENT.get(p.piece, [])
-	for uid in structure.pieces:
-		var q: Dictionary = structure.pieces[uid]
-		if q.piece in same and q.rot == p.rot and q.pos.distance_to(p.pos) < 0.05:
-			return true
-	return false
-
-
-## One clearing job per step: rubble on the floor being rebuilt, or a broken wall where the next piece goes.
-func _ruin_step(box_id: int, site: Dictionary) -> bool:
-	var steps := site_steps(site.plan)
-	var base := INF
-	for p in site.plan:
-		base = minf(base, p.pos.y)
-	var origin: Vector3 = site.origin
-	for rid in rubble:
-		var rb: Rubble = rubble[rid]
-		var at := rb.global_position
-		if Vector2(at.x - origin.x, at.z - origin.z).length() > 9.0:
-			continue
-		if floori((at.y - base + 0.25) / STEP_HEIGHT) <= steps.current:
-			_ev_remove_rubble.rpc(rid)
-			_set_status(box_id, "Clearing the rubble…")
-			return true
-	for i in site.plan.size():
-		var p: Dictionary = site.plan[i]
-		if p.built or steps.band_of[i] != steps.current:
-			continue
-		for uid in structure.pieces:  # (a worn wall is lower than a whole one: look by place, not only by overlap)
-			var q: Dictionary = structure.pieces[uid]
-			if String(q.piece).begins_with("ruin_") and (q.pos.distance_to(p.pos) < 0.6 or uid in structure.overlapping(p.piece, p.pos, p.rot)):
-				_ev_remove_piece.rpc(uid)  # the broken wall comes down; the whole one goes up next
-				_set_status(box_id, "Taking down a broken wall…")
-				return true
-	return false
-
-
-## The last piece is in: everyone learns the blueprint, everyone near gets crafting experience.
-func _finish_ruin(box_id: int, site: Dictionary, chest: Dictionary) -> void:
-	var key: String = site.ruin
-	var origin: Vector3 = site.origin
-	for uid in structure.pieces.keys():  # anything broken still standing in the rebuilt tower goes
-		var q: Dictionary = structure.pieces[uid]
-		if String(q.piece).begins_with("ruin_") and Vector2(q.pos.x - origin.x, q.pos.z - origin.z).length() < 9.0:
-			_ev_remove_piece.rpc(uid)
-	var ruins: Dictionary = auth.world_state.get("ruins", {}).duplicate()
-	if ruins.has(str(box_id)):
-		var r: Dictionary = (ruins[str(box_id)] as Dictionary).duplicate()
-		r.done = true
-		ruins[str(box_id)] = r
-		auth.world_state["ruins"] = ruins
-	var known: Array = auth.world_state.get("blueprints", []).duplicate()
-	if not known.has(key):
-		known.append(key)
-		auth.world_state.blueprints = known
-	auth._ev_learned_blueprint.rpc(BlueprintLibrary.NAMES.get(key, key))
-	for pid in auth.players:
-		var ps: GameAuthority.PlayerState = auth.players[pid]
-		if ps.node and ps.node.global_position.distance_to(chest.node.global_position) < 40.0:
-			auth.give_xp(pid, RUIN_XP, "crafting")
-
-
-const RUIN_XP := 300  ## experience for each dwarf near a rebuilt ruin (owner, Nov 19)
-
-
 func _set_status(box_id: int, text: String) -> void:
 	if sites.has(box_id) and sites[box_id].status != text:
 		_ev_site_status.rpc(box_id, text)
@@ -1111,7 +1098,7 @@ func snapshot() -> Dictionary:
 		for i in st.plan.size():
 			if st.plan[i].built:
 				built.append(i)
-		site_list.append([box_id, st.json, st.origin, st.rot, built, st.get("ruin", "")])
+		site_list.append([box_id, st.json, st.origin, st.rot, built])
 	var rubble_list := []
 	for rid in rubble:
 		var rb: Rubble = rubble[rid]
@@ -1130,8 +1117,6 @@ func load_snapshot(s: Dictionary) -> void:
 	_next_uid = s.get("next", _next_uid)
 	for st in s.get("sites", []):
 		_ev_site(st[0], st[1], st[2], st[3], st[4])
-		if st.size() > 5 and String(st[5]) != "" and sites.has(st[0]):
-			sites[st[0]].ruin = String(st[5])  # (a ruin being rebuilt)
 	for r in s.get("rubble", []):
 		_add_rubble(r[0], r[1], r[2], r[3], r[3], false)
 		rubble[r[0]].hits = r[4]

@@ -273,6 +273,7 @@ func _build() -> void:
 		l.light_color = Pieces.FAMILIES[family].color
 		l.omni_range = 5.0
 		l.light_energy = 0.6
+		Darkness.mark(l)
 		l.position = Vector3(0, s.y * 0.5, 0)
 		add_child(l)
 	_decor_extras(s, made != null)
@@ -298,6 +299,7 @@ func _decor_extras(s: Vector3, has_model: bool) -> void:
 			l.light_color = info.light
 			l.omni_range = 7.0
 			l.light_energy = 1.2
+			Darkness.mark(l)
 			l.position = Vector3(0, s.y * 0.6, 0.25)
 			add_child(l)
 

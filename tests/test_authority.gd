@@ -588,6 +588,54 @@ func test_boulder_breaks_and_comes_back() -> void:
 	_teardown()
 
 
+## Owner, Nov 19 ("yes"): dig the rock out from under a boulder and it drops into the hole, never floating in the air.
+func test_boulder_drops_when_dug_under() -> void:
+	await _setup(42)
+	var plan := Boulders.cached_plan(world.maker)
+	var best := -1
+	for i in plan.size():
+		if not plan[i].get("gone", false) and (best < 0 or (plan[i].pos as Vector3).distance_to(player.global_position) < (plan[best].pos as Vector3).distance_to(player.global_position)):
+			best = i
+	check(best >= 0, "a boulder near the start")
+	if best < 0:
+		_teardown()
+		return
+	var at: Vector3 = plan[best].pos
+	player.global_position = at + Vector3(3.0, 1.0, 0.0)
+	var solid := VoxelViewer.new()  # (the real rock surface, so rays find the floor: the test viewer only loads data)
+	solid.view_distance = 24
+	player.add_child(solid)
+	for i in 900:
+		if world.terrain.is_area_meshed(AABB(at - Vector3.ONE * 8.0, Vector3.ONE * 16.0)):
+			break
+		await tree.physics_frame
+	var had: GroundSnap = GroundSnap.instance
+	var snap := GroundSnap.new()
+	snap.world = world
+	auth.get_parent().add_child(snap)
+	GroundSnap.instance = snap
+	var bo := Boulders.new()
+	auth.get_parent().add_child(bo)
+	bo.build(world.maker, Callable(), true)
+	for i in 120:
+		await tree.physics_frame
+	bo._settle(best)  # (the snapper works round all the cave's boulders; settle this one now)
+	var r := bo.rock(best)
+	check(not r.broken, "it stands on the floor")
+	var y0: float = r.pos.y
+	var scale: float = r.scale
+	var dug := world.apply_dig((r.pos as Vector3) + Vector3.DOWN * 0.6, 1.0 + 1.0 * scale, 4)
+	check(not dug.is_empty(), "rock dug out under it")
+	for i in 240:
+		await tree.physics_frame
+	r = bo.rock(best)
+	check(not r.broken, "still there")
+	check((r.pos as Vector3).y < y0 - 0.5, "it dropped into the hole (%.2f -> %.2f)" % [y0, (r.pos as Vector3).y])
+	check_near((r.body as Node3D).global_position.y, (r.pos as Vector3).y, 0.01, "its body moved with it")
+	GroundSnap.instance = had
+	_teardown()
+
+
 ## Root Trees are solid all round (owner, Nov 18: "I can walk fully inside them"): from every side, a ray at chest
 ## height toward the trunk hits the bark before it gets near the middle.
 func test_root_tree_is_solid_outside() -> void:

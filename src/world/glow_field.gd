@@ -51,6 +51,7 @@ func build(spots: Array[Dictionary]) -> void:
 		GraphicsSettings.cheap_light(l, 45.0)
 		l.omni_range = 6.0
 		l.light_energy = 0.0
+		Darkness.mark(l, 0.25)  # a glowing crystal near you counts as light (F293)
 		l.light_cull_mask = ~PLANT_LAYER  # lights the cave round a glowing spot, not the plants themselves (see PLANT_LAYER)
 		add_child(l)
 		_lights.append(l)

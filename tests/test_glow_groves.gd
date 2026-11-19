@@ -109,3 +109,38 @@ func test_chop_a_grove_tree_down_and_it_grows_back() -> void:
 	auth._tick_trees(GlowGroves.REGROW_TIME + 1.0)
 	check((groves._nodes[id][0] as Node3D).visible and not auth.grove_chops.has(id), "after a while it stands again")
 	root.queue_free()
+
+
+## Owner, Nov 19 (pictures of the round scaly grove rocks): "we don't need that boulder, it doesn't look good".
+func test_no_big_rocks_in_groves() -> void:
+	var was := CaveMaker.layout
+	CaveMaker.use_layout(CaveMaker.LAYOUT_LATEST)
+	var bits := 0
+	for sd in [42, 7]:
+		for g in GlowGroves.plan(CaveMaker.new(sd)):
+			for d in g.dressing:
+				check(not (d.model in GlowGroves.ROCKS), "seed %d: no big grove rock (%s)" % [sd, d.model])
+				bits += 1
+	check(bits > 20, "the groves still have their pebbles and plants (%d)" % bits)
+	CaveMaker.use_layout(was)
+
+
+## Owner, Nov 19 (F383): "the new trees should have different colors, not just blue". Across a few worlds the groves
+## use several colours, and a grove with enough glowing trees shows two.
+func test_groves_glow_in_several_colours() -> void:
+	var was := CaveMaker.layout
+	CaveMaker.use_layout(CaveMaker.LAYOUT_LATEST)
+	var mains := {}
+	var mixed := 0
+	for sd in [42, 7, 215187, 1234]:
+		for g in GlowGroves.plan(CaveMaker.new(sd)):
+			mains[g.colour] = true
+			var cols := {}
+			for t in g.trees:
+				if t.glow:
+					cols[t.colour] = true
+			if cols.size() >= 2:
+				mixed += 1
+	check(mains.size() >= 3, "groves pick different main colours (%d seen)" % mains.size())
+	check(mixed >= 2, "groves mix two colours (%d did)" % mixed)
+	CaveMaker.use_layout(was)

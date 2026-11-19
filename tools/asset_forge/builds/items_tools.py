@@ -94,16 +94,18 @@ def pickaxe(m):
 
 
 def axe(m):
+	# Owner, Nov 17: the head sits right at the end of the handle (no handle poking past it), and the blade is bearded:
+	# its edge reaches down toward the fist (a triangle under the handle), not out past the end.
 	z = 0.62
 	stone = m == "stone"
-	handle(0.72, langet=None if stone else (z - 0.07, hm(m, "dark")))
+	handle(0.68, langet=None if stone else (z - 0.07, hm(m, "dark")))
 	if stone:
-		stoneify(fr("x", 0.0, 0.2, (0, z), (0, z - 0.01), (0.06, 0.12), (0.016, 0.21), hm(m)), 7)
+		stoneify(fr("x", 0.0, 0.2, (0, z), (0, z - 0.06), (0.06, 0.12), (0.016, 0.23), hm(m)), 7)
 		stoneify(fr("x", 0.0, -0.06, (0, z), (0, z), (0.06, 0.1), (0.05, 0.07), hm(m)), 8)
 		cross_lash(z, 0.04)
 	else:
 		kit.tbox(m, (0.07, 0.05, 0.13), (0, 0, z), bevel=0.012)
-		fr("x", 0.03, 0.19, (0, z), (0, z - 0.01), (0.045, 0.1), (0.008, 0.22), hm(m))
+		fr("x", 0.03, 0.19, (0, z), (0, z - 0.07), (0.045, 0.1), (0.008, 0.24), hm(m))
 		fr("x", -0.03, -0.08, (0, z), (0, z), (0.045, 0.07), (0.04, 0.05), hm(m))
 
 

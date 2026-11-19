@@ -6,7 +6,7 @@ extends RefCounted
 ## checks every field and refuses anything odd. Nothing in a file is ever run as code.
 
 const FORMAT := 1
-const MAX_SIZE := Vector3(32, 24, 32)
+const MAX_SIZE := Vector3(40, 24, 40)  ## the Stone Outpost with its round corner towers is 36 m across
 const MAX_PIECES := 2000
 
 var name := "Blueprint"
@@ -84,6 +84,20 @@ func carve_cells(origin: Vector3, rot: int) -> Array:
 					out.append(origin + basis * local)
 				i += 1
 	return out
+
+
+## F159: the 1 m cells of its footprint ("foot") and of a walkway `ring` cells wide round it ("ring"), at the
+## bottom line (origin height), in world space.
+func ground_cells(origin: Vector3, rot: int, ring: int = 1) -> Dictionary:
+	var basis := Basis(Vector3.UP, rot * PI / 2.0)
+	var foot := []
+	var around := []
+	for z in range(-ring, int(size.z) + ring):
+		for x in range(-ring, int(size.x) + ring):
+			var local := Vector3(x + 0.5 - size.x * 0.5, 0.0, z + 0.5 - size.z * 0.5)
+			var inside := x >= 0 and z >= 0 and x < int(size.x) and z < int(size.z)
+			(foot if inside else around).append(origin + basis * local)
+	return {foot = foot, ring = around}
 
 
 # ---------------------------------------------------------------- saving / loading

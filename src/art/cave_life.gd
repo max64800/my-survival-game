@@ -67,6 +67,7 @@ static var _mats := {}  ## kind/surface -> Material
 func build(maker: CaveMaker, spots: Array[Dictionary], world: World = null, background := false) -> void:
 	if world:
 		world.changed.connect(_on_rock_changed)
+		world.ground_taken.connect(_on_rock_changed)  # a chest or a ruin's treasure put down: make room (owner, Nov 19)
 	if not background:
 		_make_all(cached_plan(maker, spots))
 		return

@@ -77,8 +77,7 @@ func refresh() -> void:
 	_points.text = "Perk points: %d" % p.points_free()
 	_reset.text = "Reset perks (%d gold, you have %d)" % [p.respec_cost(), ps.inventory.count_of("gold_coin")]
 	_reset.disabled = p.points_free() == p.points_total()
-	for c in _body.get_children():
-		c.queue_free()
+	UiKit.clear(_body)
 	_body.add_child(_skill_grid(p))
 	var columns := HBoxContainer.new()
 	columns.add_theme_constant_override("separation", 12)

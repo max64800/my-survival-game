@@ -73,7 +73,7 @@ func refresh() -> void:
 	if box.is_empty():
 		visible = false
 		return
-	_title.text = {"chest_small": "Chest", "chest_stone": "Stone Chest", "grave": "Your grave", "chest_loot": "Old Chest", "builder": "Builder's Chest", "rebuild": "Rebuilding Chest"}.get(box.kind,
+	_title.text = {"barrel": "Barrel", "chest_small": "Chest", "chest_stone": "Stone Chest", "grave": "Your grave", "chest_loot": "Old Chest", "builder": "Builder's Chest", "rebuild": "Rebuilding Chest"}.get(box.kind,
 		Pieces.LIST[box.kind].name if Pieces.LIST.has(box.kind) else "Box")
 	_status.text = GameAuthority.instance.builder.site_status(box_id) if box.kind in ["builder", "rebuild"] else ""
 	var inv: Inventory = box.inv
@@ -81,8 +81,7 @@ func refresh() -> void:
 		_had = false
 		emptied.emit.call_deferred()  # (all taken: the menu closes)
 	if _grid.get_child_count() != inv.slots.size():
-		for c in _grid.get_children():
-			c.queue_free()
+		UiKit.clear(_grid)
 		for i in inv.slots.size():
 			var b := Button.new()
 			b.custom_minimum_size = Vector2(SLOT, SLOT)

@@ -111,6 +111,13 @@ static func hit(id: int, hits: int, needed: int) -> void:
 			m.set_shader_parameter("damage", clampf(float(hits) / maxf(1.0, needed), 0.0, 1.0))
 
 
+## Where statue `id`'s stone body is now (its middle), or `fallback` if it isn't drawn here. A bat that died in the
+## air falls metres after dying: the mining sparks and the loot belong where it lies (owner, Nov 19).
+static func where(id: int, fallback: Vector3) -> Vector3:
+	var c: Node3D = nodes.get(id)
+	return _bounds(c).get_center() if is_instance_valid(c) and not _meshes(c).is_empty() else fallback
+
+
 ## Gone: mined (it bursts into chunks) or left too long (it crumbles to dust and sinks).
 static func remove(id: int, mined: bool) -> void:
 	var c: Node3D = nodes.get(id)

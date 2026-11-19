@@ -37,6 +37,7 @@ var color_index := 0  ## which shirt color (0 = host)
 var fight: DwarfFight
 ## For tests and robots: move/jump without a keyboard. (x = right, y = back, like the keys.)
 var bot_move := Vector2.ZERO
+var running := false  ## running this frame (DwarfFight stops a crossbow reload when you run)
 var bot_jump := false
 
 var _since_floor := 0.0
@@ -157,8 +158,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		auth.ask_stow_lantern(not ps.lantern_stowed)
 		fight.message.emit("Lantern put away (L to take it out)." if ps.lantern_stowed else "Lantern out.", Color.WHITE)
 	if ps and event.is_action_pressed("draw_weapon"):
-		if ps.inventory.equipped("weapon") == "":
-			fight.message.emit("No weapon equipped. Put one in the Weapon slot (Tab).", Color.WHITE)
+		if not ps.can_draw():
+			fight.message.emit("No weapon or shield equipped. Right-click one in your bag (Tab).", Color.WHITE)
 		else:
 			auth.ask_draw_weapon(not ps.weapon_drawn)
 	# Mouse wheel: camera closer / farther (feedback F18). Shift + wheel lifts a building piece instead (F97).
@@ -179,7 +180,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			model.react("eat")
 		elif using == "throw":
 			model.react("throw")
-		auth.ask_use(hit.get("position", Vector3.INF), hit.get("normal", Vector3.ZERO), model.rotation.y + PI)
+		var yaw := PlaceGhost.yaw if using in ["station", "chest"] else model.rotation.y + PI  # Q / E turn (owner, Nov 19)
+		auth.ask_use(hit.get("position", Vector3.INF), hit.get("normal", Vector3.ZERO), yaw)
 
 
 ## Dev only (F6, owner Nov 17): fly anywhere, straight through rock, to look at the whole cave.
@@ -217,7 +219,7 @@ func _physics_process(delta: float) -> void:
 		return
 	model.set_sitting(false, delta)
 	var dir := Vector3.ZERO
-	var running := false
+	running = false
 	var playing := input_enabled and Controls.captured()
 	var iv := Vector2.ZERO
 	if playing:
@@ -239,8 +241,8 @@ func _physics_process(delta: float) -> void:
 	var target := dir * speed
 	var on_floor := is_on_floor()
 	var a := ACCEL if on_floor else AIR_ACCEL
-	velocity.x = move_toward(velocity.x, target.x, a * speed * delta)
-	velocity.z = move_toward(velocity.z, target.z, a * speed * delta)
+	velocity.x = move_toward(velocity.x, target.x, a * maxf(speed, WALK_SPEED) * delta)  # (knocked down = speed 0: still
+	velocity.z = move_toward(velocity.z, target.z, a * maxf(speed, WALK_SPEED) * delta)  # slow to a stop, F234)
 	if fight and fight.dodging():
 		var dv := fight.dodge_velocity()
 		velocity.x = dv.x
@@ -268,11 +270,15 @@ func _physics_process(delta: float) -> void:
 		velocity.y = LADDER_SPEED
 	elif ladder and not is_on_floor():
 		velocity.y = maxf(velocity.y, -1.5)  # hold on: slide down slowly
-	if _shove.length() > 0.05:  # knocked aside by a charge (F111): fades out quickly
+	var shoved := _shove.length() > 0.05  # knocked aside by a charge (F111): fades out quickly
+	if shoved:
 		velocity.x += _shove.x
 		velocity.z += _shove.z
-		_shove = _shove.move_toward(Vector3.ZERO, SHOVE_FADE * delta)
 	move_and_slide()
+	if shoved:  # (only for this step: added every frame and kept, it piled up and threw you 100 m, F234)
+		velocity.x -= _shove.x
+		velocity.z -= _shove.z
+		_shove = _shove.move_toward(Vector3.ZERO, SHOVE_FADE * delta)
 	_guard_fall(delta)
 	_send_body_xp(delta)
 	model.set_climbing(ladder and not is_on_floor(), delta)  # hands on the rungs
@@ -303,11 +309,13 @@ func _physics_process(delta: float) -> void:
 func _process(delta: float) -> void:
 	if is_local and fight:
 		model.set_held(fight.item())
-		model.set_pose(fight.is_blocking(), fight.aiming(), fight.has_shield())
+		var shield := fight.shield_item()
+		model.set_shield(shield)  # (on the left arm, the weapon in the right hand)
+		model.set_pose(fight.is_blocking(), fight.aiming(), shield != "")
 		# Friends see what we hold and how we stand (sent only when it changes).
 		var worn := _worn_items()
 		model.set_wear(worn)
-		var look := [fight.item(), fight.is_blocking(), fight.aiming(), fight.has_shield(), worn]
+		var look := [fight.item(), fight.is_blocking(), fight.aiming(), shield, worn]
 		_look_timer -= delta
 		if (look != _sent_look or _look_timer <= 0.0) and _online():
 			_sent_look = look
@@ -351,7 +359,7 @@ func aim_far(reach: float) -> Dictionary:
 	var from := camera.global_position
 	var forward := -camera.global_basis.z
 	var q := PhysicsRayQueryParameters3D.create(from, from + forward * (_spring.spring_length + reach + 2.0))
-	q.collision_mask = World.TERRAIN_LAYER | GlowField.GLOW_LAYER | Station.STATION_LAYER | Monster.MONSTER_LAYER | PoiField.POI_LAYER | PieceNode.PIECE_LAYER 		| Ragdoll.LAYER  # (a fallen body: mine it the moment it dies)
+	q.collision_mask = World.TERRAIN_LAYER | GlowField.GLOW_LAYER | Station.STATION_LAYER | Monster.MONSTER_LAYER | PoiField.POI_LAYER | PieceNode.PIECE_LAYER | Storage.BOX_LAYER 		| Ragdoll.LAYER  # (chests: the hammer picks them up; a fallen body: mine it the moment it dies)
 	q.exclude = [get_rid()]
 	var hit := get_world_3d().direct_space_state.intersect_ray(q)
 	if hit.is_empty() or (global_position + Vector3.UP).distance_to(hit.position) > reach:
@@ -364,13 +372,17 @@ func aim() -> Dictionary:
 	var from := camera.global_position
 	var forward := -camera.global_basis.z
 	var space := get_world_3d().direct_space_state
-	var q := PhysicsRayQueryParameters3D.create(from, from + forward * (_spring.spring_length + GameAuthority.REACH + 2.0))
+	var chest := global_position + Vector3.UP
+	var end := from + forward * (_spring.spring_length + GameAuthority.REACH + 2.0)
+	# Start the ray level with the dwarf, not at the camera: a root, crystal or monster between the camera and
+	# the dwarf was hit instead of what you aim at (owner, Nov 17: "the axe isn't axing the right stuff").
+	from += forward * maxf(0.0, (chest - from).dot(forward) - 0.4)
+	var q := PhysicsRayQueryParameters3D.create(from, end)
 	q.collision_mask = World.TERRAIN_LAYER | GlowField.GLOW_LAYER | Station.STATION_LAYER | Monster.MONSTER_LAYER | PoiField.POI_LAYER
 	q.exclude = [get_rid()]
 	var hit := space.intersect_ray(q)
 	if hit.is_empty():
 		return {}
-	var chest := global_position + Vector3.UP
 	if chest.distance_to(hit.position) > GameAuthority.REACH:
 		return {}
 	return hit
@@ -399,7 +411,7 @@ func _aim_info() -> Dictionary:
 	if hit.collider is PieceNode and Pieces.LIST[(hit.collider as PieceNode).piece].get("use", "") == "sit":
 		var chair: PieceNode = hit.collider
 		return {kind = "seat", name = "%s · E to sit" % Pieces.LIST[chair.piece].name, seat = chair}
-	if hit.collider is PieceNode and (hit.collider as PieceNode).piece == "door":
+	if hit.collider is PieceNode and (hit.collider as PieceNode).piece in Pieces.DOORS:
 		var door: PieceNode = hit.collider
 		return {kind = "door", name = "Door · E to %s" % ("close" if door.is_open else "open"), door_uid = door.uid}
 	if hit.collider is Station:
@@ -413,7 +425,7 @@ func _aim_info() -> Dictionary:
 	var box_id := Storage.box_id_of(hit.collider)
 	if box_id >= 0 and auth:
 		var box := auth.storage.get_box(box_id)
-		var nm: String = {"grave": "Your grave", "builder": "Builder's Chest", "rebuild": "Rebuilding Chest"}.get(box.get("kind", ""), "Chest")
+		var nm: String = {"grave": "Your grave", "builder": "Builder's Chest"}.get(box.get("kind", ""), "Chest")
 		return {kind = "box", name = "%s · E to open" % nm, box_id = box_id}
 	if auth and auth.world:
 		var mat := auth.world.rock_material_near(hit.position - hit.normal * 0.3, 1.1)
@@ -455,9 +467,19 @@ func _on_swing_impact() -> void:
 			return
 	if hit.is_empty():
 		return
+	var statue_id := Statue.id_of(hit.collider)
+	if statue_id >= 0:  # a dead creature turning to stone (owner, Nov 18): mine it for its stone and loot, even at once
+		auth.monsters.ask_hit_statue(statue_id)
+		return
+	if hit.collider is CollisionObject3D and (hit.collider as CollisionObject3D).collision_layer == Ragdoll.LAYER:
+		return  # (a boss's fallen body: nothing to mine, and don't dig the ground through it)
 	var boulder_id := Boulders.id_of(hit.collider)
 	if boulder_id >= 0:  # a boulder: stone every hit, it bursts after a few (owner, Nov 18)
 		auth.ask_hit_boulder(boulder_id)
+		return
+	var column_id := PoiField.column_id_of(hit.collider)
+	if column_id >= 0:  # an old ruin column: stone every hit, it crumbles after a few (owner, Nov 19)
+		auth.ask_hit_column(column_id)
 		return
 	var pillar_id := RootPillars.id_of(hit.collider)
 	if pillar_id >= 0:  # a giant root pillar: chop bits of wood off it (F189)
@@ -471,12 +493,6 @@ func _on_swing_impact() -> void:
 		Fx.burst(get_parent(), hit.position, Color(0.45, 0.32, 0.2), 10, 2.5)
 		_shake = 0.3
 		return
-	var statue_id := Statue.id_of(hit.collider)
-	if statue_id >= 0:  # a dead creature turning to stone (owner, Nov 18): mine it for its stone and loot, even at once
-		auth.monsters.ask_hit_statue(statue_id)
-		return
-	if hit.collider is CollisionObject3D and (hit.collider as CollisionObject3D).collision_layer == Ragdoll.LAYER:
-		return  # (a boss's fallen body: nothing to mine, and don't dig the ground through it)
 	var glow_id := auth.glow.id_of(hit.collider) if auth.glow else -1
 	if glow_id >= 0:
 		auth.ask_harvest(glow_id)
@@ -692,7 +708,7 @@ func _on_dig_feedback(pid: int, result: Dictionary) -> void:
 		"dug":
 			DigCracks.clear()
 			var n: Vector3 = result.get("normal", Vector3.UP)
-			if not soft:  # rock bursts into real chunks (F261); dirt, moss and clay just crumble (owner, Nov 18)
+			if not soft and not result.get("statue", false):  # rock bursts into real chunks (F261); dirt, moss and clay just crumble (owner, Nov 18); a statue bursts itself, sized to it (Statue.remove)
 				RockShatter.burst(get_parent(), at - n * 0.55, n, col, int(result.get("material", -1)))
 				if not result.get("boulder", false):  # a second burst, like a boulder (owner, Nov 18: "this is what I want from mining the rock")
 					RockShatter.burst(get_parent(), at - n * 0.3, (n + Vector3.UP * 0.6).normalized(), col, int(result.get("material", -1)))
@@ -777,9 +793,10 @@ func _net_swing() -> void:
 
 ## A friend's dwarf: what they hold, and whether they block / aim (only looks).
 @rpc("authority", "reliable")
-func _net_look(item: String, blocking: bool, aiming: bool, shield: bool, worn: Array = []) -> void:
+func _net_look(item: String, blocking: bool, aiming: bool, shield: String, worn: Array = []) -> void:
 	model.set_held(item)
-	model.set_pose(blocking, aiming, shield)
+	model.set_shield(shield)
+	model.set_pose(blocking, aiming, shield != "")
 	model.set_wear(worn)
 
 

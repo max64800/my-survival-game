@@ -80,28 +80,39 @@ def add(pid, x, y, z, yaw_deg, mat="cut_stone"):
 	pieces.append({"id": pid, "mat": mat, "pos": [round(x, 4), y, round(z, 4)], "rot": 4 + round(yaw_deg / 30) % 12})
 
 
-for (st, r, y, yaw) in ((0.6, 2.6, 1.0, 10), (1.0, 2.7, 3.25, 80), (11.3, 2.5, 3.25, 200), (5.5, 2.4, 5.5, 20),
-		(5.0, 2.6, 3.25, 70), (1.2, 2.5, 1.0, 140), (6, 5.0, 0.0, 0), (5.3, 5.4, 0.0, 120), (0.9, 5.3, 0.0, 40),
-		(11.2, 5.2, 0.0, 300), (1.6, 5.6, 0.0, 200), (0.0, 6.6, 0.0, 90)):
+# (owner: rubble blocked the entrance: nothing in the doorway, on the steps or in front of them; F264: inside, rubble
+# and crates go against the walls, never on the way from the door to the stairs, between the stairs, or to the roof.
+# The way: floor 1 door (dir 0) -> stairs 1 (dir 2-4); floor 2 (dir 4.5-7.5) -> stairs 2 (dir 7-9); floor 3 (dir 9-11)
+# -> stairs 3 (dir 11-1). Directions are 12ths of a turn, r in metres from the middle; walls are at 3.6.)
+for (st, r, y, yaw) in ((10.6, 3.0, 1.0, 10), (2.6, 3.0, 3.25, 80), (11.4, 3.0, 3.25, 200), (6.5, 3.0, 5.5, 20),
+		(9.8, 3.0, 1.0, 140), (6, 5.0, 0.0, 0), (5.3, 5.4, 0.0, 120), (2.2, 5.6, 0.0, 40),
+		(10.0, 5.5, 0.0, 300), (2.8, 5.4, 0.0, 200), (9.0, 6.0, 0.0, 90)):
 	add("ruin_rubble", *at(st, r)[:1], y, at(st, r)[1], yaw)
-add("door_broken", 2.3, 0.0, 6.0, 30)
-add("barrel", *at(9.6, 2.9)[:1], 1.0, at(9.6, 2.9)[1], 0, "plank_root")
-add("barrel", *at(11, 2.8)[:1], 3.25, at(11, 2.8)[1], 0, "plank_root")
+add("door_broken", 3.2, 0.0, 6.4, 30)
+# (two rubble piles used to lie over the holes in floors 2 and 3 and hung in the air: owner saw "pebbles where the
+# triangle floor should be". Moved onto whole floor.)
 
 # Chests: kind, spot, which way they face, and what's inside (rare finds only, like other ruins: F102).
 chests = [
-	{"kind": "chest_stone", "pos": [*at(6, 2.55)[:1], 1.0, at(6, 2.55)[1]], "yaw": 0, "loot": {"recipe_page": 1, "dish_hollowcap_stew": 1}},
-	{"kind": "chest_small", "pos": [*at(8, 2.6)[:1], 3.25, at(8, 2.6)[1]], "yaw": 60, "loot": {"rope": 2}},
-	{"kind": "chest_small", "pos": [*at(10, 2.6)[:1], 5.5, at(10, 2.6)[1]], "yaw": 120, "loot": {"recipe_page": 1}},
-	{"kind": "chest_copper", "pos": [*at(2, 1.0)[:1], 7.75, at(2, 1.0)[1]], "yaw": 210, "loot": {"watchtower_plans": 1, "recipe_page": 1}},
+	{"kind": "chest_stone", "pos": [*at(6, 3.0)[:1], 1.0, at(6, 3.0)[1]], "yaw": 0, "loot": {"recipe_page": 1, "dish_hollowcap_stew": 1}},
+	{"kind": "chest_small", "pos": [*at(10.4, 3.0)[:1], 3.25, at(10.4, 3.0)[1]], "yaw": 60, "loot": {"rope": 2}},
+	{"kind": "chest_small", "pos": [*at(3, 3.0)[:1], 5.5, at(3, 3.0)[1]], "yaw": 120, "loot": {"recipe_page": 1}},
+	{"kind": "chest_small", "pos": [*at(2, 1.0)[:1], 7.75, at(2, 1.0)[1]], "yaw": 210, "loot": {"watchtower_plans": 1, "recipe_page": 1}},
+	# Barrels you can keep things in (owner, Nov 17: "I want to live in the first tower"), one row each.
+	{"kind": "barrel", "pos": [*at(9.2, 3.05)[:1], 1.0, at(9.2, 3.05)[1]], "yaw": 0, "loot": {}},
+	{"kind": "barrel", "pos": [*at(0.2, 3.05)[:1], 3.25, at(0.2, 3.05)[1]], "yaw": 0, "loot": {}},
 ]
+# (Owner, Nov 17: a stone chest downstairs, two-row chests above and on the roof.)
 beetles = [[*at(st, r)[:1], y, at(st, r)[1]] for (st, r, y) in ((7.5, 1.5, 1.0), (8.5, 1.7, 5.5), (9.5, 2.0, 7.75))]
-props = [{"model": "crate_stack", "pos": [*at(3.4, 2.7)[:1], 1.0, at(3.4, 2.7)[1]], "yaw": 200},
-	{"model": "grain_sacks", "pos": [*at(8.6, 2.6)[:1], 1.0, at(8.6, 2.6)[1]], "yaw": 60}]
+props = [{"model": "crate_stack", "pos": [*at(7.0, 3.0)[:1], 1.0, at(7.0, 3.0)[1]], "yaw": 200},
+	{"model": "grain_sacks", "pos": [*at(8.3, 3.0)[:1], 1.0, at(8.3, 3.0)[1]], "yaw": 60}]
+# Standing crystal torches against the walls (owner, F264): two downstairs, one on each floor above.
+torches = [[*at(5.0, 3.05)[:1], 1.0, at(5.0, 3.05)[1]], [*at(11.2, 3.05)[:1], 1.0, at(11.2, 3.05)[1]],
+	[*at(1.8, 3.05)[:1], 3.25, at(1.8, 3.05)[1]], [*at(1.8, 3.05)[:1], 5.5, at(1.8, 3.05)[1]]]
 
 out = GAME / "blueprints" / "ruins" / "watchtower_ruin.json"
 json.dump({"name": "Watchtower Ruin", "radius": 4.2, "height": 9.0, "front": 6.8, "pieces": pieces, "chests": chests,
-	"beetles": beetles, "props": props}, open(out, "w", encoding="utf-8"), indent=0, separators=(",", ":"))
+	"beetles": beetles, "props": props, "torches": torches}, open(out, "w", encoding="utf-8"), indent=0, separators=(",", ":"))
 counts = {}
 for p in pieces:
 	counts[p["id"]] = counts.get(p["id"], 0) + 1

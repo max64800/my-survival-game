@@ -5,6 +5,10 @@ extends Node3D
 ## Only a look on your own screen: the host still decides (GameAuthority.request_use).
 
 var dwarf: Dwarf
+## Which way it faces. Set once from where you look when you take it out, then only Q / E turn it
+## (45° each), walking doesn't (owner, Nov 19). The dwarf places it with this turn (Dwarf, ask_use).
+static var yaw := 0.0
+const TURN_STEP := PI / 4.0
 var _shown_id := ""
 var _look: Node3D
 var _ok_mat: StandardMaterial3D
@@ -32,12 +36,15 @@ func _process(_delta: float) -> void:
 	var kind := Items.kind(id)
 	if ps == null or not kind in ["station", "chest"] or not Controls.captured() or dwarf._holding_hammer():
 		visible = false
+		_shown_id = ""
 		return
+	if _shown_id == "":
+		yaw = snappedf(dwarf.model.rotation.y + PI, TURN_STEP)
 	var hit := dwarf.aim()
 	if hit.is_empty():
 		visible = false
 		return
-	var spot: Dictionary = where(id, hit.position, hit.normal, dwarf.model.rotation.y + PI, ps.node.global_position, auth)
+	var spot: Dictionary = where(id, hit.position, hit.normal, yaw, ps.node.global_position, auth)
 	_show(id)
 	global_position = spot.pos
 	rotation = Vector3(0, spot.yaw, 0)
@@ -62,6 +69,17 @@ static func where(id: String, point: Vector3, normal: Vector3, yaw: float, from:
 		if ok and Station.in_rock(id, pos, yaw, auth.world):
 			ok = false  # it would stand in the wall (owner, Nov 17)
 	return {pos = pos, yaw = yaw, ok = ok}
+
+
+## Q (+1, left) / E (-1, right).
+func turn(dir: int) -> void:
+	yaw = wrapf(yaw + dir * TURN_STEP, -PI, PI)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if visible and event.is_action_pressed("rotate_piece"):
+		turn(1)
+		get_viewport().set_input_as_handled()
 
 
 func _show(id: String) -> void:

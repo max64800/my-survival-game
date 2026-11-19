@@ -30,6 +30,7 @@ const LIST := {
 	"smelter": {station = "workbench", inputs = {stone = 20, clay = 15}, output = "smelter", count = 1, unlock = ["copper_ore"]},
 	"kiln": {station = "workbench", inputs = {stone = 15, clay = 8}, output = "kiln", count = 1, unlock = ["clay"]},
 	"farm_plot": {station = "workbench", inputs = {dirt = 10, moss = 5, plank_root = 4}, output = "farm_plot", count = 1, unlock = ["glowcap", "hollowcap", "bellcap", "root_tuber"]},
+	"barrel": {station = "workbench", inputs = {plank_root = 6, rope = 1}, output = "barrel", count = 1, unlock = []},
 	"chest_small": {station = "workbench", inputs = {plank_root = 8, rope = 2}, output = "chest_small", count = 1, unlock = []},
 	"chest_stone": {station = "workbench", inputs = {cut_stone = 10, copper_ingot = 2}, output = "chest_stone", count = 1, unlock = ["cut_stone"]},
 	"drip_bucket": {station = "workbench", inputs = {plank_root = 4, rope = 1}, output = "drip_bucket", count = 1, unlock = []},
@@ -220,10 +221,48 @@ static func how_to_get(item: String) -> String:
 
 
 ## What has to happen before a locked recipe shows ("" = it isn't locked).
+## Which page kind teaches a ruin recipe (owner, Nov 19): "food", "armour", "weapon" or "tool".
+static func page_kind(id: String) -> String:
+	var out: String = LIST[id].output
+	match Items.kind(out):
+		"food", "drink":
+			return "food"
+		"wear", "shield":
+			return "armour"
+		"weapon":
+			return "weapon"
+	return "tool"
+
+
+## The recipe-page item that teaches this kind ("food" -> "cook_page").
+const PAGE_OF_KIND := {food = "cook_page", armour = "armour_page", weapon = "weapon_page", tool = "tool_page"}
+
+
+## The ruin recipes a page can teach (the Old Recipe Page from old saves: any of them).
+static func page_recipes(page_id: String) -> Array:
+	var kind: String = Items.info(page_id).get("page_of", "")
+	return LIST.keys().filter(func(r): return LIST[r].unlock is String and LIST[r].unlock == "ruin" and (kind == "" or page_kind(r) == kind))
+
+
+## A page for a ruin chest: each kind as likely as how many recipes it can teach. `roll` 0..1.
+static func random_page(roll: float) -> String:
+	var kinds := ["food", "armour", "weapon", "tool"]
+	var counts := kinds.map(func(k): return page_recipes(PAGE_OF_KIND[k]).size())
+	var total := 0
+	for c in counts:
+		total += c
+	var x := roll * total
+	for i in kinds.size():
+		x -= counts[i]
+		if x < 0.0:
+			return PAGE_OF_KIND[kinds[i]]
+	return "cook_page"
+
+
 static func unlock_hint(id: String) -> String:
 	var u = LIST[id].unlock
 	if u is String:
-		return "learned from Old Recipe Pages in ruins"
+		return "learned from a %s found in ruins" % Items.display_name(PAGE_OF_KIND[page_kind(id)]) if u == "ruin" else "learned from a rune"
 	if u.is_empty():
 		return ""
 	return "shows up once you've found: " + " or ".join(u.map(func(x): return Items.display_name(x)))

@@ -113,9 +113,13 @@ static func _place(maker: CaveMaker) -> Array[Dictionary]:
 						for c in crystals.get(c0 + Vector3i(dx, dy, dz), []):
 							if (c.pos as Vector3).distance_to(s.pos) < 0.6 + 0.6 * float(c.get("scale", 1.0)):
 								s.hidden = true
+	var taken := RuinTreasure.keep_clear(maker)  # old places' loot chests and treasure (owner, Nov 19: mushrooms in a chest)
 	for s in spots:
 		if maker.is_reserved(s.pos, 0.5) or maker.on_bridge(s.pos):  # (built ground; bridge tops: owner Nov 18)
 			s.hidden = true  # on a built thing's ground (the placement rule); kept in the list so ids stay the same
+		for z in taken:
+			if (s.pos as Vector3).distance_to(z.pos) < float(z.r) + 0.5:
+				s.hidden = true
 		for t in trees:  # nor inside a Root Tree (owner, Nov 18: water dripping inside a tree)
 			var p: Vector3 = s.pos
 			if p.y > (t.bottom as Vector3).y - 1.0 and p.y < (t.top as Vector3).y + 1.0 and Vector2(p.x - t.top.x, p.z - t.top.z).length() < float(t.width) * (0.75 if s.kind == DRIP else 0.5):

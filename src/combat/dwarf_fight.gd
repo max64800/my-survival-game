@@ -17,10 +17,12 @@ var _combo_until := 0.0
 var _block_pressed_at := -100.0
 var _last_press := -100.0
 var _riposte_until := 0.0
+var _lantern_hint_at := -100.0
 var _dodge_t := -1.0
 var _dodge_dir := Vector3.ZERO
 var stagger := 0.0  ## guard break / knockdown: can't act
 var loaded := true  ## crossbow: a bolt is in it
+const KNOCK_DOWN_TIME := 2.0  ## down 0.85 s, then 1.1 s getting up
 var reload_left := -1.0  ## crossbow: seconds of reloading left (-1 = not reloading)
 
 
@@ -43,10 +45,46 @@ func tier() -> int:
 
 
 ## A shield helps if one is on your hotbar, your weapon is one-handed, and the hand lantern
-## isn't in your off hand (doc 3.4: the back lantern frees both hands).
+## isn't in your off hand (doc 3.4: the back lantern frees both hands; so does putting the
+## hand lantern away with L, or having no lantern yet).
 func has_shield() -> bool:
 	var ps := _ps()
-	if ps == null or Combat.WEAPONS[weapon()].hands == 2 or not Lantern.is_on_back(ps):
+	if ps == null or Combat.WEAPONS[weapon()].hands == 2 or not off_hand_free(ps):
+		return false
+	if Items.kind(item()) == "shield" or ps.inventory.equipped("shield") != "":
+		return true
+	for i in Inventory.HOTBAR_SIZE:
+		if Items.kind(ps.inventory.get_slot(i).get("id", "")) == "shield":
+			return true
+	return false
+
+
+## The shield shown on the left arm ("" = none): while one can be used (has_shield) and a weapon or shield is selected.
+## The selected shield, else the equipped one, else the best on the hotbar.
+func shield_item() -> String:
+	if not weapon_mode() or not has_shield():
+		return ""
+	if Items.kind(item()) == "shield":
+		return item()
+	var ps := _ps()
+	var best: String = ps.inventory.equipped("shield")
+	if best != "":
+		return best
+	for i in Inventory.HOTBAR_SIZE:
+		var id: String = ps.inventory.get_slot(i).get("id", "")
+		if Items.kind(id) == "shield" and (best == "" or Items.tier(id) > Items.tier(best)):
+			best = id
+	return best
+
+
+static func off_hand_free(ps: GameAuthority.PlayerState) -> bool:
+	return Lantern.is_on_back(ps) or ps.lantern_stowed or not Lantern.has_lantern(ps)
+
+
+## A shield you carry, but the hand lantern is in your other hand (so it can't be used).
+func shield_blocked_by_lantern() -> bool:
+	var ps := _ps()
+	if ps == null or off_hand_free(ps):
 		return false
 	if Items.kind(item()) == "shield" or ps.inventory.equipped("shield") != "":
 		return true
@@ -100,9 +138,16 @@ func guard_break() -> void:
 	message.emit("Guard broken!", Color(1.0, 0.4, 0.3))
 
 
+## Knocked down (owner, Nov 19, F234: "fly a couple of metres at most, go limp, then get back up"): he falls back,
+## lies a moment, then gets up; no fighting or walking meanwhile.
 func knock_down() -> void:
+	if stagger > 0.5:
+		return  # (already down)
 	dwarf.model.react("knock")
-	stagger = 1.0
+	stagger = KNOCK_DOWN_TIME
+	dwarf.get_tree().create_timer(0.85).timeout.connect(func() -> void:
+		if is_instance_valid(dwarf) and stagger > 0.0:
+			dwarf.model.react("get_up"))
 	message.emit("Knocked down!", Color(1.0, 0.4, 0.3))
 
 
@@ -137,6 +182,9 @@ func step(delta: float, playing: bool, move_dir: Vector3) -> float:
 		return 1.0
 	if is_crossbow():
 		return _crossbow_step(delta)
+	if Input.is_action_just_pressed("use") and clock - _lantern_hint_at > 4.0 and shield_blocked_by_lantern():
+		_lantern_hint_at = clock  # say why the shield isn't raised (owner, Nov 17: "I cannot use the shield")
+		message.emit("Your lantern is in your other hand: press L to put it away and raise the shield.", Color.WHITE)
 	if Input.is_action_just_pressed("use") and clock - _last_press >= Combat.PARRY_COOLDOWN:
 		_block_pressed_at = clock  # anti-spam: a new parry window only every 0.5 s
 		_last_press = clock
@@ -175,7 +223,7 @@ func _attack(heavy: bool) -> void:
 	_combo_until = clock + speed + Combat.COMBO_WINDOW
 	var step := _combo_step
 	var riposte := clock < _riposte_until
-	dwarf.model.attack(speed, heavy)
+	dwarf.model.attack(speed, heavy, step)  # (the combo's hits look different: DwarfRig.ATTACKS)
 	Sfx.play("swing", dwarf.global_position + Vector3.UP, -8.0, 0.8 if heavy else 1.1)
 	dwarf.get_tree().create_timer(speed * 0.4).timeout.connect(func(): _impact(heavy, step, riposte))
 	dwarf.face_camera()

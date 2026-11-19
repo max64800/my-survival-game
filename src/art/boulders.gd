@@ -47,6 +47,10 @@ func _finish(list: Array[Dictionary]) -> void:
 	_rocks = list
 	for i in _rocks.size():
 		_make(i)
+		if _rocks[i].get("gone", false):
+			set_broken(i, true, false)  # on a ruin chest's or treasure's ground: never there
+	if GroundSnap.instance and GroundSnap.instance.world and not GroundSnap.instance.world.changed.is_connected(_on_rock_changed):
+		GroundSnap.instance.world.changed.connect(_on_rock_changed)  # dug out from under: it drops (owner, Nov 19)
 	var auth := GameAuthority.instance
 	if auth:  # boulders broken in a save loaded before they were made
 		for id in auth.boulder_back:
@@ -71,6 +75,7 @@ static func plan(maker: CaveMaker, avoid: Callable = Callable()) -> Array[Dictio
 	var rng := RandomNumberGenerator.new()
 	rng.seed = maker.seed + 9800
 	var near := {}
+	var taken := RuinTreasure.keep_clear(maker)  # old places' loot chests and treasure (owner, Nov 19)
 	for room in maker.rooms:
 		var want := rng.randi_range(7, 11) if room.big else rng.randi_range(2, 4)  # (owner, Nov 18: "a lot more boulders")
 		if room.get("sealed", false) or maker.sdf_at(room.center) <= 0.0:
@@ -128,7 +133,13 @@ static func plan(maker: CaveMaker, avoid: Callable = Callable()) -> Array[Dictio
 				continue
 			near[key] = true
 			var lean := Vector3.UP.lerp(GlowPlacer.normal_at(maker, hit), 0.7).normalized()  # leans with the slope a little
-			out.append({pos = hit - Vector3.UP * sink, model = model, spin = spin, scale = scale, sink = sink, lean = lean, bury = bury})
+			# On a chest's or a treasure's ground: kept in the list but never there (ids stay the same for saves).
+			var gone := false
+			for z in taken:
+				if Vector2(hit.x - z.pos.x, hit.z - z.pos.z).length() < float(z.r) + 0.6 * scale and absf(hit.y - z.pos.y) < 3.0:
+					gone = true
+					break
+			out.append({pos = hit - Vector3.UP * sink, model = model, spin = spin, scale = scale, sink = sink, lean = lean, bury = bury, gone = gone})
 			want -= 1
 	return out
 
@@ -163,9 +174,24 @@ func _make(i: int) -> void:
 	GroundSnap.when_built(box, _settle.bind(i))
 
 
+## Rock dug (or filled) near a boulder: once the new rock is solid, it settles again, so digging under one never leaves
+## it floating (owner, Nov 19: "yes"). Every computer sees the same dig, so every computer drops it the same way.
+func _on_rock_changed(center: Vector3, radius: float) -> void:
+	for i in _rocks.size():
+		var r: Dictionary = _rocks[i]
+		if r.get("broken", false) or not is_instance_valid(r.get("body")):
+			continue
+		var reach := radius + 1.6 * float(r.scale)
+		if Vector2(r.pos.x - center.x, r.pos.z - center.z).length() > reach or center.y > (r.pos as Vector3).y + float(r.sink) + reach:
+			continue
+		for wait in [0.3, 1.0, 2.5]:  # (the new rock's shape is ready a moment after the dig)
+			get_tree().create_timer(wait).timeout.connect(_settle.bind(i, 10.0))
+
+
 ## On the real rock (owner, Nov 18: "some of the boulders are still floating"): the real floor under its middle and
 ## round its edge; it stands as low as the lowest of them, sunk as planned. No rock under it at all: it goes.
-func _settle(i: int) -> void:
+## `deeper` = look further down (after a dig: it may drop into a hole).
+func _settle(i: int, deeper := 0.0) -> void:
 	var r: Dictionary = _rocks[i]
 	var body: StaticBody3D = r.body
 	if not is_instance_valid(body):
@@ -180,7 +206,7 @@ func _settle(i: int) -> void:
 		if k > 0:
 			var a := k * TAU / 8.0
 			at += Vector3(cos(a), 0.0, sin(a)) * 0.75 * scale
-		var fl := GroundSnap.floor_at(space, at, 1.5 + scale, 2.5 + scale)
+		var fl := GroundSnap.floor_at(space, at, 1.5 + scale, 2.5 + scale + deeper)
 		if fl != Vector3.INF:
 			low = minf(low, fl.y)
 			found += 1
@@ -231,7 +257,7 @@ func set_broken(i: int, broken: bool, burst := true) -> void:
 		for c in (r.body as Node).get_children():
 			if c is CollisionShape3D:
 				(c as CollisionShape3D).disabled = true
-	elif not broken and r.broken:
+	elif not broken and r.broken and not r.get("gone", false):
 		r.want_back = true  # it comes back while nobody is looking
 
 

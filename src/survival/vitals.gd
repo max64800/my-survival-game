@@ -10,7 +10,7 @@ extends RefCounted
 
 const BASE_HEALTH := 100.0
 const BASE_STAMINA := 100.0
-const HEALTH_REGEN := 2.0  ## per second
+const HEALTH_REGEN := 1.0 / 3.0  ## per second: 1 health every 3 s, so a hit really hurts (owner, Nov 19)
 const HEALTH_REGEN_DELAY := 6.0  ## seconds after being hurt
 const STAMINA_REGEN := 25.0  ## per second
 const STAMINA_REGEN_DELAY := 0.8  ## seconds after using stamina
@@ -30,6 +30,7 @@ var cozy_points := 0  ## how cozy the place was
 var ailments := Ailments.new()  ## poison, burn, chill (only on the dwarf's own computer)
 var progress: Progression = null  ## this dwarf's perks (set by PlayerState)
 var effects := {}  ## timed effects from active perks: name -> {left (seconds), and numbers like damage_taken}
+var in_dark := false  ## no light reaches you (Darkness): no healing, stamina costs 50% more (F293)
 var friends_near := false  ## a friend within 10 m (Shoulder to Shoulder), set every frame on our computer
 var unbreakable_cd := 0.0  ## Unbreakable perk: seconds until it can save you again
 var _since_damage := 999.0
@@ -129,7 +130,7 @@ func tick(delta: float, resting: bool = false) -> void:
 	var dot := ailments.tick(delta)
 	if dot > 0.0:
 		health = maxf(0.0, health - dot)
-	if _since_damage >= HEALTH_REGEN_DELAY and not ailments.blocks_regen():
+	if _since_damage >= HEALTH_REGEN_DELAY and not ailments.blocks_regen() and not in_dark:
 		health += HEALTH_REGEN * health_regen_mult() * delta
 	if _since_stamina >= STAMINA_REGEN_DELAY:
 		stamina += STAMINA_REGEN * stamina_regen_mult() * delta
@@ -140,10 +141,11 @@ func tick(delta: float, resting: bool = false) -> void:
 # ---------------------------------------------------------------- actions
 
 ## Spends stamina for one action (a swing, a jump). False = too tired, don't do it.
+## In the dark it costs 50% more (it still happens if you have the normal cost).
 func use_stamina(amount: float) -> bool:
 	if stamina < amount:
 		return false
-	stamina -= amount
+	stamina = maxf(0.0, stamina - amount * (Darkness.STAMINA_MULT if in_dark else 1.0))
 	_since_stamina = 0.0
 	return true
 
@@ -152,7 +154,7 @@ func use_stamina(amount: float) -> bool:
 func drain_stamina(per_second: float, delta: float) -> bool:
 	if stamina <= 0.0:
 		return false
-	stamina = maxf(0.0, stamina - per_second * delta)
+	stamina = maxf(0.0, stamina - per_second * delta * (Darkness.STAMINA_MULT if in_dark else 1.0))
 	_since_stamina = 0.0
 	return true
 

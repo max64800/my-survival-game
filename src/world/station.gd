@@ -270,6 +270,7 @@ func _add_fire() -> void:
 	GraphicsSettings.cheap_light(_fire, 40.0)  # off smoothly when far away (owner, Nov 19)
 	_fire.light_color = Color(1.0, 0.6, 0.3)
 	_fire.omni_range = 9.0
+	Darkness.mark(_fire)
 	_fire.light_energy = 1.8
 	_fire.position = Vector3.UP * 0.6
 	add_child(_fire)
@@ -350,6 +351,7 @@ func _build_look() -> void:
 			l.light_color = c
 			l.omni_range = 8.0 if not marker else 5.0
 			l.light_energy = 1.4 if not marker else 0.8
+			Darkness.mark(l)
 			l.position = Vector3.UP * 1.2
 			add_child(l)
 		"crystal_torch":
@@ -363,6 +365,7 @@ func _build_look() -> void:
 			tl.light_color = c
 			tl.omni_range = 7.0
 			tl.light_energy = 1.1
+			Darkness.mark(tl)
 			tl.position = Vector3.UP * 1.05
 			add_child(tl)
 			return  # no name tag floating over every torch

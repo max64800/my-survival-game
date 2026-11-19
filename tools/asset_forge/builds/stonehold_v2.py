@@ -24,7 +24,9 @@ J, blk = K.J, K.blk
 E = 0.006          # every outer face stays this far inside the piece box (Rule 2)
 DOOR_R, DOOR_CY = 0.78, 0.70   # the round door (Rule 5)
 OUT_DEFAULT = K.GAME / "journey" / "stonehold_v2" / "glb"
-K.SIZE.update({"door_broken": (2.0, 0.3, 1.8), "ruin_wall_worn": (2, 2, 0.3), "ruin_wall_collapsed": (2, 2, 0.3), "ruin_rubble": (1.6, 0.7, 1.6),
+K.SIZE.update({"gateway": (4, 4, 0.3), "gate_leaf": (1.6, 3.6, 0.15), "gate_broken": (1.7, 0.3, 3.7),
+	"straw_dummy": (1.0, 1.9, 1.0), "archery_target": (1.2, 1.7, 1.6), "spear_rack": (1.6, 2.0, 0.4),
+	"door_broken": (2.0, 0.3, 1.8), "ruin_wall_worn": (2, 2, 0.3), "ruin_wall_collapsed": (2, 2, 0.3), "ruin_rubble": (1.6, 0.7, 1.6),
 	"wall_narrow": (1, 2, 0.3), "window_wide": (2, 2, 0.3), "floor_half": (2, 0.25, 1), "small_floor": (1, 0.25, 1),
 	"ramp": (2, 1, 2)})   # outline checks for pieces kit_zone1 doesn't list
 
@@ -317,11 +319,11 @@ def wall(w=2.0, h=2.0, d=0.3):
 	courses(w, h, d)
 
 
-def ring_stones(cy, r_in, r_out, d, n=13, key_h=0.2):
+def ring_stones(cy, r_in, r_out, d, n=13, key_h=0.2, a0=None):
 	"""Wedge stones round a circle cut flat at the floor, alternating light and dark, with a bigger carved
 	keystone at the top (its rune is painted on later)."""
 	fr = K.Frame()
-	a0 = math.asin(max(-1.0, -cy / r_out))
+	a0 = math.asin(max(-1.0, -cy / r_out)) if a0 is None else a0
 	a1 = math.pi - a0
 	span = (a1 - a0)
 	g = 0.003
@@ -963,13 +965,162 @@ def ruin_rubble(w=1.6, h=0.7, dd=1.6, n=16):
 		placed.append((x, z, y + sz.y / 2, sz))
 
 
+# ---------------- the outpost's gate and training yard (owner, Nov 17) ----------------
+GATE_W, GATE_SPRING, GATE_R = 3.2, 2.0, 1.6   # the gateway's opening: 3.2 m wide, straight sides to 2 m, a round top
+
+
+def gateway(w=4.0, h=4.0, d=0.3):
+	"""A big stone gateway (4 x 4 m, the curtain wall's thickness): straight jambs to 2 m, then a round arch of wedge
+	stones with a keystone; the stone rows are cut tight round the opening, a dark layer inside like every wall."""
+	r_in = GATE_R + 0.01
+	r_out = r_in + 0.2
+	half = GATE_W / 2
+	courses(w, h, d, y0=E + 0.006, y1=GATE_SPRING, hole=lambda ya, yb: (-half - 0.004, half + 0.004),
+		back_hole=(-half - 0.015, half + 0.015, 0.02, GATE_SPRING + 0.01), dark_base=True)
+	_, key_top = courses(w, h, d, y0=GATE_SPRING, y1=h - E, circle=(GATE_SPRING, r_out + 0.002, 0.2, GATE_SPRING + r_out + 0.25),
+		back_hole=(GATE_SPRING, r_in + 0.04), dark_base=False)
+	ring_stones(GATE_SPRING, r_in, r_out, d, n=11, key_h=max(0.05, key_top - GATE_SPRING - r_out - 0.0015), a0=0.0)
+
+
+def gate_leaf(w=1.6, d=0.15):
+	"""One leaf of the big double gate (hinged on its left edge; the right leaf is the same turned round): thick dark
+	upright planks whose tops follow the gateway's round arch, three riveted copper bands, a ring handle by the
+	middle, back battens."""
+	ww = w - 0.02
+	x0, x1 = -ww / 2, ww / 2
+	cx = w / 2              # the arch's centre is at the gate's middle = this leaf's right edge
+	R = GATE_R - 0.015
+
+	def top(x):
+		dx = x - cx
+		return GATE_SPRING + math.sqrt(max(0.0, R * R - dx * dx)) - 0.01
+	fr = K.Frame()
+	n = 5
+	edges = [x0 + (x1 - x0) * i / n + (K.rng.uniform(-0.03, 0.03) if 0 < i < n else 0.0) for i in range(n + 1)]
+	for i in range(n):
+		a, b = edges[i] + 0.004, edges[i + 1] - 0.004
+		before = set(bpy.data.objects)
+		K.plank_shape(fr, a, b, lambda xx: E, top, -0.01 + J(0.004), 0.085 * K.rng.uniform(0.92, 1.0), timber_m(), k=8)
+		_tag(_new_since(before), "board")
+	for y in (0.45, 1.35, 2.25):
+		hw_r = min(x1, cx + math.sqrt(max(0.0, R * R - (y - GATE_SPRING) ** 2)) - 0.05) if y > GATE_SPRING else x1
+		copper_band(x0 + 0.02, hw_r - 0.02, y, 0.11, 0.045, 1, rivets=[x0 + 0.1 + (hw_r - x0 - 0.2) * k / 4 for k in range(5)])
+	before = set(bpy.data.objects)
+	kit.ring(0.09, 0.016, K.G((x1 - 0.18, 1.15, 0.052)), copper_m(), rot=(90, 0, 0), seg=16)
+	kit.cylinder(0.035, 0.03, K.G((x1 - 0.18, 1.24, 0.045)), copper_m(), rot=(90, 0, 0), verts=10, bevel=0.003)
+	_tag(_new_since(before), "copper")
+	for y in (0.6, 1.8):
+		before = set(bpy.data.objects)
+		blk((0, y, -0.052), (ww - 0.1, 0.14, 0.024), timber_m(), bevel=0.006)
+		_tag(_new_since(before), "board")
+
+
+def gate_broken():
+	"""For the outpost ruin: one leaf of the double gate, torn off and lying flat on its back on the ground (owner:
+	the two leaves lie apart, one on each side of the gateway). Centred on its spot."""
+	gate_leaf()
+	objs = [o for o in bpy.data.objects if o.type == "MESH"]
+	for o in objs:
+		o.data.transform(o.matrix_world)
+		o.matrix_world = o.matrix_world.Identity(4)
+		o.data.transform(Matrix.Rotation(math.radians(-90), 4, "X"))            # flat on its back
+	zmin = min(v.co.z for o in objs for v in o.data.vertices)
+	xs = [v.co.x for o in objs for v in o.data.vertices]
+	ys = [v.co.y for o in objs for v in o.data.vertices]
+	cx, cy = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2
+	for o in objs:
+		o.data.transform(Matrix.Translation((-cx, -cy, E + 0.002 - zmin)))
+
+
+def _straw_m():
+	return kit.tex_mat("straw", K.rng.choice("abc"))
+
+
+def straw_dummy():
+	"""A straw practice dummy: a hewn post on a cross of feet, a crossbar for arms with straw bundles, a straw-stuffed
+	sack body tied with rope, a sack head."""
+	wm = timber_m()
+	before = set(bpy.data.objects)
+	blk((0, 0.95, 0), (0.12, 1.85, 0.12), wm, bevel=0.012)                       # the post
+	blk((0, 0.07, 0), (0.9, 0.12, 0.14), wm, bevel=0.01)                         # its feet, a cross
+	blk((0, 0.07, 0), (0.14, 0.11, 0.9), wm, bevel=0.01)
+	blk((0, 1.42, 0.0), (0.95, 0.1, 0.1), wm, bevel=0.01)                        # the arms' crossbar
+	_tag(_new_since(before), "timber")
+	before = set(bpy.data.objects)
+	boulder((0, 1.15, 0), 0.24, 0.42, 0.2, kit.tex_mat("sack", "a"), floor=0.7)    # the body
+	boulder((0, 1.72, 0), 0.15, 0.15, 0.14, kit.tex_mat("sack", "b"), floor=1.58)  # the head
+	for sx in (-1, 1):
+		boulder((sx * 0.38, 1.42, 0), 0.12, 0.08, 0.08, _straw_m(), floor=1.3)    # straw arms
+	for y in (0.95, 1.32):
+		kit.ring(0.21, 0.014, K.G((0, y, 0)), kit.tex_mat("rope"), seg=14)
+	_tag(_new_since(before), "straw")
+
+
+def archery_target():
+	"""An archery target: a round straw boss (1 m), painted rings, on a leaning wooden A-frame."""
+	before = set(bpy.data.objects)
+	kit.cylinder(0.5, 0.18, K.G((0, 1.05, 0.05)), _straw_m(), rot=(90, 0, 0), verts=20, bevel=0.03)
+	for (r, c) in ((0.38, "b"), (0.24, "dark"), (0.1, "b")):
+		kit.cylinder(r, 0.012, K.G((0, 1.05, 0.145)), kit.tex_mat("cloth", c), rot=(90, 0, 0), verts=20, bevel=0.002)
+	_tag(_new_since(before), "straw")
+	before = set(bpy.data.objects)
+	for sx in (-1, 1):
+		blk((sx * 0.32, 0.77, -0.08), (0.09, 1.5, 0.09), timber_m(), bevel=0.01, rx=-12)
+	blk((0, 0.12, -0.3), (0.8, 0.08, 0.08), timber_m(), bevel=0.008)
+	blk((0, 0.8, -0.42), (0.08, 1.36, 0.08), timber_m(), bevel=0.01, rx=28)      # the back leg
+	_tag(_new_since(before), "timber")
+	# Centred on its spot (the back leg pushed it 31 cm off: the game refused the model and showed a plain box).
+	objs = [o for o in bpy.data.objects if o.type == "MESH"]
+	for o in objs:
+		o.data.transform(o.matrix_world)
+		o.matrix_world = o.matrix_world.Identity(4)
+	xs = [v.co.x for o in objs for v in o.data.vertices]
+	ys = [v.co.y for o in objs for v in o.data.vertices]
+	for o in objs:
+		o.data.transform(Matrix.Translation((-(min(xs) + max(xs)) / 2, -(min(ys) + max(ys)) / 2, 0)))
+
+
+def spear_rack():
+	"""A weapon rack: two posts, a low rail with holes and a top rail, three spears and a sword standing in it."""
+	wm = timber_m()
+	before = set(bpy.data.objects)
+	for sx in (-1, 1):
+		blk((sx * 0.7, 0.758, 0), (0.1, 1.5, 0.12), wm, bevel=0.01)
+	blk((0, 0.35, 0), (1.5, 0.08, 0.22), wm, bevel=0.008)
+	blk((0, 1.35, -0.02), (1.5, 0.08, 0.08), wm, bevel=0.008)
+	_tag(_new_since(before), "timber")
+	before = set(bpy.data.objects)
+	for i, x in enumerate((-0.42, -0.14, 0.14)):
+		kit.cylinder(0.022, 1.7, K.G((x, 0.88, 0.02)), kit.tex_mat("wood", "c"), verts=8, bevel=0.003)
+		kit.cone(0.04, 0.0, 0.18, K.G((x, 1.82, 0.02)), kit.tex_mat("iron", "b"), verts=6)
+	blk((0.42, 0.95, 0.02), (0.07, 1.0, 0.012), kit.tex_mat("iron", "b"), bevel=0.004)     # a sword blade
+	blk((0.42, 1.48, 0.02), (0.22, 0.04, 0.04), kit.tex_mat("copper", "b"), bevel=0.004)   # its guard
+	_tag(_new_since(before), "metal")
+
+
+def boulder(c, sx, sy, sz, m, floor=0.0):
+	"""A lumpy rounded lump (straw bundles, sack stuffing): a low-poly ball, never below `floor`."""
+	bm = bmesh.new()
+	bmesh.ops.create_icosphere(bm, subdivisions=2, radius=1.0)
+	verts = [(c[0] + v.co.x * sx * (1 + J(0.08)), max(floor, c[1] + v.co.z * sy * (1 + J(0.08))), c[2] + v.co.y * sz * (1 + J(0.08)))
+		for v in bm.verts]
+	faces = [tuple(vv.index for vv in f.verts) for f in bm.faces]
+	bm.free()
+	return K.mesh(verts, faces, m, smooth=True)
+
+
+FAMILY = {"straw_dummy": "plank_root", "archery_target": "plank_root", "spear_rack": "plank_root"}
+
+
 PIECES = {"foundation": foundation, "wall": wall, "doorway": doorway, "door": door, "flat_roof": flat_roof,
 	"battlement": battlement, "door_broken": door_broken, "half_wall": half_wall, "wall_narrow": wall_narrow,
 	"window_wall": window_wall, "window_wide": window_wide, "pillar": pillar, "beam": beam, "beam_half": beam_half,
 	"stairs": stairs, "foundation_steps": foundation_steps, "ramp": ramp, "railing": railing, "floor": floor,
 	"floor_half": floor_half, "small_floor": small_floor, "ceiling_panel": ceiling_panel, "floor_triangle": floor_triangle,
 	"foundation_half": foundation_half, "foundation_triangle": foundation_triangle, "sloped_wall": sloped_wall,
-	"ruin_wall_worn": ruin_wall_worn, "ruin_wall_collapsed": ruin_wall_collapsed, "ruin_rubble": ruin_rubble}
+	"ruin_wall_worn": ruin_wall_worn, "ruin_wall_collapsed": ruin_wall_collapsed, "ruin_rubble": ruin_rubble,
+	"gateway": gateway, "gate_leaf": gate_leaf, "gate_broken": gate_broken, "straw_dummy": straw_dummy,
+	"archery_target": archery_target, "spear_rack": spear_rack}
 
 
 def paint():
@@ -1027,6 +1178,7 @@ if __name__ == "__main__":
 			paint()
 		# install=1: into the game (assets/models/build) plus the preview picture make_piece_icons.py turns into
 		# the build-menu icon (owner OK'd the shapes, Nov 17). The broken door is a ruin prop, not a game piece yet.
-		png = str(K.JOUR / f"{name}__cut_stone.png") if install else None
-		kit.save(str(out_dir / f"{name}__cut_stone.glb"), png, recenter=False, tex_size=512)
+		fam = FAMILY.get(name, "cut_stone")
+		png = str(K.JOUR / f"{name}__{fam}.png") if install else None
+		kit.save(str(out_dir / f"{name}__{fam}.glb"), png, recenter=False, tex_size=512)
 		print("PIECE_OK", name)

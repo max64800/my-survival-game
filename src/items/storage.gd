@@ -6,7 +6,8 @@ extends Node
 
 const BOX_LAYER := 16  ## same layer as stations, so you can aim at them and press E
 const REACH := 4.5
-const SIZES := {"chest_small": 12, "chest_stone": 24, "chest_copper": 36, "crate_ore": 60, "grave": Inventory.EQUIP_START, "builder": 24,
+## Rows of 8 (owner, Nov 17): a barrel one row, a chest two, a stone chest three.
+const SIZES := {"barrel": 8, "chest_small": 16, "chest_stone": 24, "chest_copper": 36, "crate_ore": 60, "grave": Inventory.EQUIP_START, "builder": 24,
 	"rebuild": 24, "chest_loot": 16}  ## (rebuild: the Rebuilding Chest at a ruin, owner Nov 19; docs/design/ruin-rebuild-plan.md)
 ## The Ore Crate only takes ores, stone types, clay and crystals (doc 8 storage table).
 const ORE_CRATE := ["stone", "dirt", "moss", "clay", "copper_ore", "silver_ore", "sporestone", "amberrock", "marble", "basalt", "brown_rock"]
@@ -42,6 +43,41 @@ func ask_transfer(box_id: int, from_box: bool, slot: int) -> void:
 		request_transfer(auth.local_peer_id(), box_id, from_box, slot)
 	else:
 		_rpc_transfer.rpc_id(1, box_id, from_box, slot)
+
+
+## The build hammer's E on a chest or barrel: pick it up to put it somewhere else (owner, Nov 17). Only when it's
+## empty (its things would have nowhere to go), never a Builder's Chest or a grave.
+func ask_pick_up(box_id: int) -> void:
+	if auth.is_host():
+		var why := request_pick_up(auth.local_peer_id(), box_id)
+		if why != "":
+			auth.hud_message.emit(why)
+	else:
+		_rpc_pick_up.rpc_id(1, box_id)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_pick_up(box_id: int) -> void:
+	if auth.is_host():
+		request_pick_up(multiplayer.get_remote_sender_id(), box_id)
+
+
+## "" = picked up, otherwise why not.
+func request_pick_up(peer_id: int, box_id: int) -> String:
+	var ps := auth.get_player(peer_id)
+	var box := get_box(box_id)
+	if ps == null or box.is_empty() or not Items.exists(box.kind):
+		return "That can't be moved."
+	if _far(ps, box):
+		return "Too far away."
+	for sl in box.inv.slots:
+		if not sl.is_empty():
+			return "Empty it first, then pick it up."
+	var left: int = ps.inventory.add(box.kind, 1)
+	if left > 0:
+		auth.spawn_drop(box.kind, left, box.node.global_position + Vector3.UP)
+	_ev_remove_box.rpc(box_id)
+	return ""
 
 
 func ask_take_all(box_id: int) -> void:
@@ -123,7 +159,7 @@ func request_take_all(peer_id: int, box_id: int) -> int:
 static func accepts(kind: String, item: String) -> bool:
 	if kind == "crate_ore":
 		return item in ORE_CRATE or item.begins_with("crystal_")
-	if kind != "builder" and kind != "rebuild":
+	if kind != "builder":
 		return true
 	if _piece_extras().has(item):
 		return true  # fiber for rugs and banners, crystals for sconces...
@@ -173,8 +209,6 @@ func _changed(box_id: int) -> void:
 		_ev_remove_box.rpc(box_id)  # an emptied grave crumbles away
 	else:
 		_ev_box.rpc(box_id, box.inv.to_data())
-	if box.kind == "rebuild" and auth and auth.builder:
-		auth.builder.ruin_chest_changed(box_id)  # the first planks or cut stone start the rebuilding
 
 
 func _far(ps: GameAuthority.PlayerState, box: Dictionary) -> bool:
@@ -194,6 +228,12 @@ func _ev_add_box(id: int, kind: String, pos: Vector3, yaw: float, owner: int) ->
 	body.rotation.y = yaw
 	_build_look(body, kind)
 	boxes[id] = {kind = kind, inv = Inventory.new(SIZES.get(kind, 12)), node = body, owner = owner}
+	# No pebbles, grass or mushrooms poking through a box (owner, Nov 19): they make room, on every computer.
+	var room := 0.75
+	if _is_furniture(kind):
+		var fs: Vector3 = Pieces.LIST[kind].size
+		room = maxf(fs.x, fs.z) * 0.5 + 0.1
+	GroundSnap.take(pos, room)
 	_next_id = maxi(_next_id, id + 1)
 
 
@@ -236,8 +276,14 @@ func _ev_remove_box(id: int) -> void:
 		box.node.queue_free()
 
 
+## A storing piece of furniture (Furnish tab, `use = "store"`). Not the loot barrel: "barrel" is also a building
+## piece (a solid decor barrel), but the loot barrel has its own model with a lid (two sessions' work met here, Nov 19).
+static func _is_furniture(kind: String) -> bool:
+	return Pieces.LIST.has(kind) and String(Pieces.LIST[kind].get("use", "")) == "store"
+
+
 func _build_look(body: StaticBody3D, kind: String) -> void:
-	if Pieces.LIST.has(kind):
+	if _is_furniture(kind):
 		# Furniture that stores things (Furnish tab: cabinet, bookcase...): the built piece shows itself; the box
 		# is only its inside, a touchable shape just around the piece.
 		var fs: Vector3 = Pieces.LIST[kind].size + Vector3(0.04, 0.04, 0.04)
@@ -249,6 +295,8 @@ func _build_look(body: StaticBody3D, kind: String) -> void:
 		body.add_child(fcs)
 		return
 	var size := Vector3(1.0, 0.7, 0.7) if kind != "grave" else Vector3(0.9, 0.6, 0.9)
+	if kind == "barrel":
+		size = Vector3(0.7, 0.9, 0.7)
 	var cs := CollisionShape3D.new()
 	var sh := BoxShape3D.new()
 	sh.size = size
@@ -256,11 +304,13 @@ func _build_look(body: StaticBody3D, kind: String) -> void:
 	cs.position = Vector3.UP * size.y * 0.5
 	body.add_child(cs)
 	var color: Color = {"chest_small": Color(0.55, 0.38, 0.22), "chest_stone": Color(0.55, 0.55, 0.55),
-		"builder": Color(0.3, 0.45, 0.7), "rebuild": Color(0.45, 0.35, 0.25), "grave": Color(0.45, 0.43, 0.4)}.get(kind, Color.GRAY)
-	# A loot barrel: its own model whose lid lifts and slides aside (owner, Nov 19; ChestOpen). The Rebuilding Chest looks like a Builder's.
-	var model := Look.forged("stations", "barrel_box" if kind == "barrel" else ("builder" if kind == "rebuild" else kind))  # a real model from the asset forge, if made
+		"builder": Color(0.3, 0.45, 0.7), "grave": Color(0.45, 0.43, 0.4)}.get(kind, Color.GRAY)
+	# A loot barrel: its own model with a lid that swings open (owner, Nov 19); the building kit's barrel is solid.
+	var model := Look.forged("stations", "barrel_box") if kind == "barrel" else Look.forged("stations", kind)  # a real model, if made
+	if model == null and kind == "barrel":
+		model = Look.forged("build", "barrel__plank_root")
 	if kind == "barrel":
-		body.set_meta("slide_lid", true)
+		body.set_meta("slide_lid", true)  # (its lid lifts and slides aside, it doesn't swing: ChestOpen)
 	if model:
 		model.rotation.y = PI  # forged models face +Z; boxes face -Z
 		body.add_child(model)
@@ -322,6 +372,7 @@ func _build_look(body: StaticBody3D, kind: String) -> void:
 	label.font_size = 36
 	label.outline_size = 10
 	body.add_child(label)
+	label.visible = kind in ["builder", "grave"]  # no names over ordinary chests (owner, Nov 17); the Builder's Chest and graves keep theirs
 	label.visibility_range_begin = 2.0
 	label.visibility_range_end = 30.0
 

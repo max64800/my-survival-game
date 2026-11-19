@@ -171,9 +171,37 @@ func _make_fall(f: Dictionary, shader: Shader) -> void:
 	var pool := _make_pool()
 	var fall := {pts = _smoothed(f.pts), side = f.side, mi = mi, mat = mat, pool = pool, splash = _make_splash(f.pool)}
 	_falls.append(fall)
+	_add_trickle(fall.splash)
 	_shape_fall(fall, f.pool)
 	var bottom: Vector3 = (f.pts as PackedVector3Array)[(f.pts as PackedVector3Array).size() - 1]
 	GroundSnap.when_built(AABB(bottom - Vector3(2, 6, 2), Vector3(4, 8, 4)), _fit_fall.bind(fall))
+
+
+const TRICKLE := "res://assets/sfx/waterfall_trickle.ogg"  ## a real CC0 recording of running water (CREDITS.md)
+
+
+## The water's sound (owner, Nov 19): a quiet loop at the splash, heard from a few metres away. It sits on the splash,
+## so it moves with the fall's end. Each fall starts at its own place in the loop and a little higher or lower, so
+## two near each other don't sound like one.
+func _add_trickle(at: Node3D) -> void:
+	if Sfx.muted or not ResourceLoader.exists(TRICKLE):
+		return
+	var stream := load(TRICKLE) as AudioStreamOggVorbis
+	if stream == null:
+		return
+	stream.loop = true
+	var p := AudioStreamPlayer3D.new()
+	p.name = "Trickle"
+	p.stream = stream
+	p.volume_db = -9.0
+	p.unit_size = 2.5
+	p.max_distance = 22.0
+	p.pitch_scale = randf_range(0.85, 1.12)
+	at.add_child(p)
+	if p.is_inside_tree():
+		p.play(randf() * stream.get_length())
+	else:
+		p.autoplay = true
 
 
 ## The path, smoothed sideways (owner, Nov 19: it kinked out where the rock bulged); points that would end up in

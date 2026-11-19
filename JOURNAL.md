@@ -2570,13 +2570,7 @@ The owner: the sheet behind the hair still happens, make the hook at the very en
   Two more tests had the old 400 m map in them (rune area, map page). The full suite passes; the walking robot played
   a fresh new-cave world without trouble.
 
-- Night: a 3D map page of zone 1 for the owner (`tools/cave_map/`: export_zone.gd writes the rooms, tunnels and places
-  as JSON, make_map.py puts them in a three.js page that opens from disk). Chrome remote control timed out, so it was
-  opened in the owner's Chrome directly.
-- Owner: grass "looks like spikes" and stopped bending; big mushrooms "turn very flat". Both came from Claude's
-  "sometimes bigger" change: Claude had also boosted grass (not asked for), and 3x ferns look like spikes; the bend only
-  reached 0.9 m from a plant's middle, so giant tufts never bent; and the bend pushes tips down, which squashed big
-  mushrooms. Fixed: no boost for grass, ferns at most 1.6x, the bend reach grows with the plant, mushrooms only lean.
+
 ## November 17, 2026 (PC, dwarf Claude, evening): the back hair "visor" (F215)
 
 The owner (with pictures, 5th time): the hair down his back lifts off like a stiff visor, his bare neck shows under it,
@@ -2635,6 +2629,17 @@ swung better before, there's still a hole behind his nose (picture), and the eye
 - The first "side of the face" picture came out looking from the front (wrong camera maths); fixed.
 - New, not fixed: after filling the cheek pocket, a small dark spot shows at the inner corner of the eye beside the top
   of the nose. 2 picture rounds used, so it waits for the owner.
+- **F229 (owner picked "framed bars + icons"):** health and stamina now use the kit's framed bar pieces (the same
+  frame as the settings sliders), above the hotbar; hunger and thirst are two little round dials drawn by code, with
+  a mushroom and a water drop, whose colour sinks like water in a jar. Hurdle: Godot didn't know the new dial's
+  name yet (new names are only learned when the editor scans the files), so the HUD loads the dial file directly.
+  The build-progress bar moved up so it doesn't sit on the new bars.
+- **F239** (first logged as F230, but the cave chat had already used F230 for "more cavern kinds", so it was renumbered): Escape showed the pause screen but the world kept going. Alone in your world, pause now freezes the game;
+  the HUD stays awake so the pause buttons, Escape and "click outside" still work. Hurdle: in the full test run,
+  9 tests suddenly failed (dwarf couldn't walk, monsters didn't notice). The menu test opened the pause screen and
+  never closed it, so every later test ran in a frozen world. The test now closes it (and checks the freeze), and the
+  HUD unfreezes the world if it is ever removed while paused. Full suite: 369 checks, only the dwarf-hair test fails
+  (the dwarf chat is changing the hair right now).
 
 ## November 17, 2026 (PC, rock-textures Claude): cavern kinds, cliff exits, soft lantern shadows (F230-F232, F238)
 
@@ -2669,17 +2674,15 @@ swung better before, there's still a hole behind his nose (picture), and the eye
 - F229 (nicer health/stamina/hunger/thirst bars) logged; the systems themselves already exist, only the bars are plain.
 - Claude's own hurdles: a text-replace script didn't match the old box's code (quote marks inside the text), so the
   change was done with the editor tool instead; `godot` isn't on the command line on the PC, the full path is needed.
-- **F229 (owner picked "framed bars + icons"):** health and stamina now use the kit's framed bar pieces (the same
-  frame as the settings sliders), above the hotbar; hunger and thirst are two little round dials drawn by code, with
-  a mushroom and a water drop, whose colour sinks like water in a jar. Hurdle: Godot didn't know the new dial's
-  name yet (new names are only learned when the editor scans the files), so the HUD loads the dial file directly.
-  The build-progress bar moved up so it doesn't sit on the new bars.
-- **F239** (first logged as F230, but the cave chat had already used F230 for "more cavern kinds", so it was renumbered): Escape showed the pause screen but the world kept going. Alone in your world, pause now freezes the game;
-  the HUD stays awake so the pause buttons, Escape and "click outside" still work. Hurdle: in the full test run,
-  9 tests suddenly failed (dwarf couldn't walk, monsters didn't notice). The menu test opened the pause screen and
-  never closed it, so every later test ran in a frozen world. The test now closes it (and checks the freeze), and the
-  HUD unfreezes the world if it is ever removed while paused. Full suite: 369 checks, only the dwarf-hair test fails
-  (the dwarf chat is changing the hair right now).
+
+- Night: a 3D map page of zone 1 for the owner (`tools/cave_map/`: export_zone.gd writes the rooms, tunnels and places
+  as JSON, make_map.py puts them in a three.js page that opens from disk). Chrome remote control timed out, so it was
+  opened in the owner's Chrome directly.
+- Owner: grass "looks like spikes" and stopped bending; big mushrooms "turn very flat". Both came from Claude's
+  "sometimes bigger" change: Claude had also boosted grass (not asked for), and 3x ferns look like spikes; the bend only
+  reached 0.9 m from a plant's middle, so giant tufts never bent; and the bend pushes tips down, which squashed big
+  mushrooms. Fixed: no boost for grass, ferns at most 1.6x, the bend reach grows with the plant, mushrooms only lean.
+
 ## November 17, 2026 (PC, dwarf Claude, night): round cheeks, braids that fill the rings
 
 The owner (pictures): the cheeks look like sausages (should be round, touching the nose, down to the moustache), and
@@ -2774,10 +2777,6 @@ the body."
 - Speed check said ~245 fps (before: 450-510), twice; but other game/Blender programs were running and turning the
   decorations off made it *slower*, so the numbers aren't trustworthy right now. Recheck when the PC is quiet.
 
-- The owner saw the shelves in the game: "really bad... doesn't blend with walls at all, I thought they'd be very large;
-  not sure they should be in the game at this quality". Turned off at once (`_place_shelves` not called; models kept).
-  Lesson: a separate model stuck on a wall painted by the terrain shader never matches it; wall features should be
-  part of the rock shape itself (like the pillars and holes the owner liked). Offered: ledges built into the rock.
 ## November 18, 2026 (PC, dwarf Claude): the last spot on the face, and the whole body (round 3) (F193, F183)
 
 **What we did**
@@ -2921,12 +2920,48 @@ the body."
   roots in the Fungal Jungle too (a test caught it; jungle wood is the giant mushrooms).
 - Small roots: breaking one drops rootwood (grass and ferns still fiber) and it grows back after 10 minutes
   (`plant_regrow`, saved; `CaveLife.restore_plant`). New test: a small root breaks and grows back in the same place.
+- **Owner's round 3 notes:** still see-through holes in walls and doorways; stones beside the doorway ring look like
+  flat bricks (should be chisel-cut like the rest); battlement gaps; "fill them with a flat piece inside the wall";
+  then "paint them right away". Cause of the holes: the dark filler behind the stones was one strip per row, with
+  gaps between strips, and the chisel cuts meet in V-shapes at stone corners, so you could look through. Fix: ONE
+  solid dark sheet inside each wall (doorways: two halves cut round the opening; a core in every merlon and foundation
+  post). New check `tools/asset_forge/holecheck.py` photographs a piece from front and back on an empty background
+  and counts background pixels inside its outline: wall 0, doorway 0 (battlement: only the outer ends' notches where
+  the next piece joins). First paint uses the game's existing grey/warm stone, dark wood and copper paintings.
+  Hurdles (mine): chisel-cutting the curved stones made spikes (splitting a curved outline went wrong), now only
+  their corners are cut; the battlement's only row counted as the "dark base row" and came out nearly black.
+- **Owner's round 4 notes:** take the dark "side things" off the battlement (the filler cores showed beside the
+  merlons and clipped through) and both copper bands off the round doorway; skip the battlement corner (a half wall
+  or battlement works in a corner); go on with windows, stairs, pillar, half wall, beam. Done: cores now sit deep
+  inside the merlons, no doorway bands. **Set 2:** half wall, narrow wall, small and wide window (iron grille, dark
+  timber lintel with copper plates, long sill stone), pillar (wide base and cap, copper band), beam and short beam
+  (copper end caps). All walls and windows pass the hole check (0). Hurdles (mine): the window bars came out lying
+  sideways through the wall (the cylinder was turned 90 degrees when it already stood upright); the windows came out
+  filled with a dark panel because each band of stone rows added its own filler sheet across the opening; beam
+  rivets poked 4 mm out. Also logged F247 (bag/crafting dead space, fatter bars, centred numbers).
 
 - F248 (owner: "can twigs, mushrooms, fiber be picked up with E?"): E on anything picked by hand (mushrooms, fiber,
   thin roots, twigs) asks the host to harvest it, like a hit; E on grass, ferns and small roots breaks them through a
   new host request that never digs rock (`ask_pick_plant`; the plant-breaking part of a hit became `_break_plant_at`).
   The floor twigs were only looks: replaced by real twig spots (`GlowPlacer._add_twigs`, added last so older spots keep
   their ids; 1 rootwood each). Tests pass; the walking robot played a fresh world without errors.
+- **Set 3 (owner: "go ahead with stairs, railing, floors, foundations half and triangle, and sloped wall"):** solid
+  stone stairs and foundation steps (one slice of stone rows per step), a stone ramp (each stone cut to the slope),
+  a balustrade railing (end posts, two rails, three turned balusters), the stepped sloped wall (rows stop under the
+  slope; its dark filler follows the steps), floors / ceiling panel (flagstones on timber joists), the triangle floor
+  and triangle foundation (flagstones cut to the three edges), and the half foundation. The owner asked whether the
+  diagonal walls are needed: no, the game's triangles are already equilateral with 2 m sides, so normal walls fit
+  every triangle edge; the old diagonal pieces are from the earlier half-square triangles. Hurdles (mine): the long
+  patch broke the shell's quoting again, so it went into a file; the triangle floor's joists ran 62 cm past the
+  triangle's back edge (my length rule didn't know where the triangle ends).
+- **Owner's notes on set 3:** stairs show gaps from the side and have too many small bricks (wants fewer, bigger
+  steps and stones); foundation steps have side gaps too; the railing's balusters look like bars, not little columns
+  like the ChatGPT picture; the rest is fine; the triangle foundation "isn't loading". Fixes: stairs now 5 steps
+  (foundation steps 3), each row exactly one step tall so rows line up, bigger stones, and the slices press flat
+  against each other (the gaps came from the dents cut into faces that touch the next step); the railing has turned
+  vase-shaped balusters with a square foot and cap, fatter, between thicker rails (the game's railing is only 15 cm
+  deep, which limits how fat they can be). The triangle foundation loaded fine when checked in the browser (the page
+  is ~15 MB of models; it was probably still downloading).
 
 ## November 17, 2026 (PC, rock-textures Claude): big dripstone, star ceilings, crystal colours (F217, F249)
 
@@ -2962,6 +2997,20 @@ the body."
 - Breathing crystals: `crystal_pulse()` in crystal.gdshader and GlowField (same sum, from the crystal's position: 3-10 s
   per breath), so the glow and its light on the rock rise and fall together. A test expected every cave model to have a
   glowing part; the water dripstone is plain stone, so the test now allows it.
+- **Owner, round 2-4 on the ruin:** "even more ruined, more from the front (floors 1 and 2)" -> breaches at the
+  front; then "the stairs float above the doorway, floor 3 should be covered" -> floor 3 keeps its front and the roof
+  over it; beetles only on floors 1, 3 and the roof.
+- **In the game (owner: "put this tower in the first cave, but with no monsters"):** the ruin's plan is now a data
+  file (`blueprints/ruins/watchtower_ruin.json`, made from the real blueprint by `tools/ruins/make_watchtower_ruin.py`).
+  `src/world/ruin_tower.gd`, on a fresh world (host): picks the flattest, emptiest spot 9-24 m from where you arrive
+  in the first cavern, waits until that rock has loaded, carves the space with ordinary digs (saved and sent to
+  friends like any dig), then adds the pieces through the Builder and 4 chests through Storage (also saved). The
+  worn/collapsed walls, rubble and broken door became real pieces, hidden from the build menu. New item "Watchtower
+  Plans" (roof chest) always teaches the Stone Watchtower. New test `test_ruin_tower` (seed 42: room found, 155
+  pieces and 4 chests built, plans in the roof chest) and a camera robot `towercheck` that photographs it in the
+  game. Robot test runs skip the tower unless asked (`ruin=1`), so their tests stay steady.
+- Hurdles: carving can only touch loaded rock, so the job waits for the cave to load first (the test skips that
+  wait); two type hints missing in the first try; the plans item needed a picture (icon test caught it).
 
 ## November 17, 2026 (PC, rock-textures Claude): stronger crystal breathing, star colours, the star snake (F256)
 
@@ -2994,42 +3043,11 @@ the body."
   the path had spaces and wasn't quoted.
 - F159 (flatten the ground) asked again: said 3x.
 
-- **Owner's round 3 notes:** still see-through holes in walls and doorways; stones beside the doorway ring look like
-  flat bricks (should be chisel-cut like the rest); battlement gaps; "fill them with a flat piece inside the wall";
-  then "paint them right away". Cause of the holes: the dark filler behind the stones was one strip per row, with
-  gaps between strips, and the chisel cuts meet in V-shapes at stone corners, so you could look through. Fix: ONE
-  solid dark sheet inside each wall (doorways: two halves cut round the opening; a core in every merlon and foundation
-  post). New check `tools/asset_forge/holecheck.py` photographs a piece from front and back on an empty background
-  and counts background pixels inside its outline: wall 0, doorway 0 (battlement: only the outer ends' notches where
-  the next piece joins). First paint uses the game's existing grey/warm stone, dark wood and copper paintings.
-  Hurdles (mine): chisel-cutting the curved stones made spikes (splitting a curved outline went wrong), now only
-  their corners are cut; the battlement's only row counted as the "dark base row" and came out nearly black.
-- **Owner's round 4 notes:** take the dark "side things" off the battlement (the filler cores showed beside the
-  merlons and clipped through) and both copper bands off the round doorway; skip the battlement corner (a half wall
-  or battlement works in a corner); go on with windows, stairs, pillar, half wall, beam. Done: cores now sit deep
-  inside the merlons, no doorway bands. **Set 2:** half wall, narrow wall, small and wide window (iron grille, dark
-  timber lintel with copper plates, long sill stone), pillar (wide base and cap, copper band), beam and short beam
-  (copper end caps). All walls and windows pass the hole check (0). Hurdles (mine): the window bars came out lying
-  sideways through the wall (the cylinder was turned 90 degrees when it already stood upright); the windows came out
-  filled with a dark panel because each band of stone rows added its own filler sheet across the opening; beam
-  rivets poked 4 mm out. Also logged F247 (bag/crafting dead space, fatter bars, centred numbers).
-- **Set 3 (owner: "go ahead with stairs, railing, floors, foundations half and triangle, and sloped wall"):** solid
-  stone stairs and foundation steps (one slice of stone rows per step), a stone ramp (each stone cut to the slope),
-  a balustrade railing (end posts, two rails, three turned balusters), the stepped sloped wall (rows stop under the
-  slope; its dark filler follows the steps), floors / ceiling panel (flagstones on timber joists), the triangle floor
-  and triangle foundation (flagstones cut to the three edges), and the half foundation. The owner asked whether the
-  diagonal walls are needed: no, the game's triangles are already equilateral with 2 m sides, so normal walls fit
-  every triangle edge; the old diagonal pieces are from the earlier half-square triangles. Hurdles (mine): the long
-  patch broke the shell's quoting again, so it went into a file; the triangle floor's joists ran 62 cm past the
-  triangle's back edge (my length rule didn't know where the triangle ends).
-- **Owner's notes on set 3:** stairs show gaps from the side and have too many small bricks (wants fewer, bigger
-  steps and stones); foundation steps have side gaps too; the railing's balusters look like bars, not little columns
-  like the ChatGPT picture; the rest is fine; the triangle foundation "isn't loading". Fixes: stairs now 5 steps
-  (foundation steps 3), each row exactly one step tall so rows line up, bigger stones, and the slices press flat
-  against each other (the gaps came from the dents cut into faces that touch the next step); the railing has turned
-  vase-shaped balusters with a square foot and cap, fatter, between thicker rails (the game's railing is only 15 cm
-  deep, which limits how fat they can be). The triangle foundation loaded fine when checked in the browser (the page
-  is ~15 MB of models; it was probably still downloading).
+- The owner saw the shelves in the game: "really bad... doesn't blend with walls at all, I thought they'd be very large;
+  not sure they should be in the game at this quality". Turned off at once (`_place_shelves` not called; models kept).
+  Lesson: a separate model stuck on a wall painted by the terrain shader never matches it; wall features should be
+  part of the rock shape itself (like the pillars and holes the owner liked). Offered: ledges built into the rock.
+
 ## Nov 17 (PC, cave Claude): Stonehold in the game, the Stone Watchtower and its ruin (F237, F253, F254)
 - **POI brainstorm:** three sizes (small stops, broken buildings to rebuild, dungeons); each place gives a reason to
   go (blueprint pages, station parts, runes, map pieces, wall markings). Owner: pages must really teach recipes
@@ -3055,21 +3073,6 @@ the body."
   balusters would have been repainted as stone by the painter (they were tagged "stone").
 - Full test run: only the other chats' tests fail (cave dripstone glow, dwarf hair, start-room crystal glow).
 
-- **Owner, round 2-4 on the ruin:** "even more ruined, more from the front (floors 1 and 2)" -> breaches at the
-  front; then "the stairs float above the doorway, floor 3 should be covered" -> floor 3 keeps its front and the roof
-  over it; beetles only on floors 1, 3 and the roof.
-- **In the game (owner: "put this tower in the first cave, but with no monsters"):** the ruin's plan is now a data
-  file (`blueprints/ruins/watchtower_ruin.json`, made from the real blueprint by `tools/ruins/make_watchtower_ruin.py`).
-  `src/world/ruin_tower.gd`, on a fresh world (host): picks the flattest, emptiest spot 9-24 m from where you arrive
-  in the first cavern, waits until that rock has loaded, carves the space with ordinary digs (saved and sent to
-  friends like any dig), then adds the pieces through the Builder and 4 chests through Storage (also saved). The
-  worn/collapsed walls, rubble and broken door became real pieces, hidden from the build menu. New item "Watchtower
-  Plans" (roof chest) always teaches the Stone Watchtower. New test `test_ruin_tower` (seed 42: room found, 155
-  pieces and 4 chests built, plans in the roof chest) and a camera robot `towercheck` that photographs it in the
-  game. Robot test runs skip the tower unless asked (`ruin=1`), so their tests stay steady.
-- Hurdles: carving can only touch loaded rock, so the job waits for the cave to load first (the test skips that
-  wait); two type hints missing in the first try; the plans item needed a picture (icon test caught it).
-
 ## November 17, 2026 (PC, rock-textures Claude): lantern key, dots-only snake (F257, F258)
 
 - L puts the lantern away (`lantern_stowed`: hidden, no light, no fuel burnt) and takes it out; test added.
@@ -3078,8 +3081,6 @@ the body."
   aimed at the head this time found a ceiling without a star patch, so nothing showed (expected).
 
 - F259: owner: "the snake is working", wants it a lot brighter, and greens that show plus some purple dots. Snake flare x15 -> x36; dot colours 55% teal, 27% green (more saturated, x1.5), 13% purple (x1.9), 5% pale.
-
-- F260 noted (owner, amazed by the star ceiling and snake): the very first cave really big, most of its ceiling stars, several snakes at once. Written into FEEDBACK, cave-walls-plan and epic-caves-plan; not built yet.
 
 ## November 17, 2026 (PC, rock-textures Claude): the huge star cavern (F260 built)
 
@@ -3093,6 +3094,18 @@ the body."
   allows that. (2) No water drip in one test cave: the dome is higher than the 20 m the drip search looked, and buckets
   only fill from 15 m below; the huge cavern now tries further out toward its walls (older layouts unchanged).
 - Picture from its floor: the whole ceiling stars, several snake trails glowing at once.
+- **Owner: "start building the Fallen Outpost"** (barracks with an entrance to the tower; the armoury and forge open
+  on the well's side, "like outside"; no names over enemies or chests). Done: creatures show only "Dazed!" when
+  stunned (their health bar stays; bosses keep their big named bar), chests have no floating label (the Builder's
+  Chest and graves keep theirs). The outpost is a blueprint (`stone_outpost`, 490 pieces, 1,995 cut stone + 26
+  copper ingots): curtain wall with battlements, gatehouse with a double gate and a room over it, two SQUARE 6 x 6 m
+  towers (the sketch's round towers don't line up with the 2 m grid: their 30-degree sides would leave gaps where they
+  meet the walls), an L-shaped barracks wrapped round the back tower with a doorway from each wing into it on both
+  floors, an armoury/forge shed with its well side open on pillars, a railed well. All blueprint checks pass on the
+  first try. Its ruin (`tools/ruins/make_outpost_ruin.py` -> `blueprints/ruins/outpost_ruin.json`): breaches with
+  rubble, worn and collapsed walls, roofs fallen in, a shed pillar down, smashed gate doors beside the gate (not in
+  front of it), 5 chests (the back tower's roof chest holds the new Outpost Plans). 3D page "Fallen Outpost"; its
+  first version was too dark (lights and fog sized for the small tower), fixed.
 
 ## November 17, 2026 (Mac): Steam "Coming Soon" page plan
 - Owner: make a Steam page with a wishlist button before posting the 7 game videos. Plan: `docs/steam/STEAM-PAGE-PLAN.md` (Steam rules checked: $100 fee, 3-5 business days review, 2 weeks Coming Soon, AI disclosure; capsule sizes; store text draft; tags; screenshots list; prompt for the PC).
@@ -3404,6 +3417,13 @@ the body."
   - Roll animation plays over 0.75 s (the dodge itself unchanged, so fights stay fair). Jump: no trailing turn.
   - Sword combo from the pack's level sweep (no wind-up), both ways; it passes at face height, not chest (needs
     hand-made poses: asked the owner).
+- **Commit (owner: "commit pls"):** this folder was 23 commits behind the online copy, other chats commit straight
+  online, and the snail chat had just committed here. Done the way the cave chat does it: a clean copy of the online
+  version in a separate folder, a 3-way merge of only our files, the snail commit merged in, my commit on top, then
+  the newest online work merged again. Feedback numbers F265-F271 clashed with the Mac's, so mine became F300-F306 (the Mac had taken F293).
+  The armor chat had closed; its armor code shares the dwarf files with the tool work, so it went in the same commit.
+  Hurdle: after merging, the spear-stab function was in dwarf_rig.gd twice and nothing loaded; removed one copy.
+  Tests in the clean copy pass apart from the known shovel-model, back-hair and aim-warning ones.
 
 - **Later (Mac): the game has a name: "Dwarves Never Fall".** Rounds of name ideas (Dwarfwake, Dwarves Reborn, Eternal Dwarves, Dwarves Never Die...), each checked on Steam, itch.io and .com. "___ Never Die" turned out crowded on Steam (Goblins/Pirates/Heroes Never Die), so the owner picked Dwarves Never Fall. Still to do: trademark search, buy the .com, rename the game in project.godot on the PC.
 
@@ -3421,6 +3441,21 @@ the body."
 - **Nov 18 (Mac): video studio for the dwarf Shorts moved into the game repo (`video/`).** The owner recorded all 14 dwarf Shorts (049-062) and wants the PC to edit them. Claude copied the shorts editor (Python tools + Remotion), the newest Short's pipeline as a template, 41 editing and script rules, the 14 scripts and 10 writing skills from the EQT Social Media folder, plus a new `towel_key.py`: the owner films in front of an orange towel and the towel is swapped for game footage. PC guide: `video/README.md`. Every script now ends "Wishlist Dwarves Never Fall on Steam."; 058 became the "first cave too big" story (the owner didn't remember the invisible-rocks story, which a Claude had found and fixed by itself).
   - Hurdles: (1) this repo is public, so business and client notes (EQT, Snow, HPGPS, Facebook ads, long-form episodes, analytics tokens) stayed behind, Mac paths were replaced, and the GPL person-matte model is downloaded on the PC instead of committed. (2) The editor's list of compositions imported client projects; Claude wrote a shorts-only list and checked that it compiles and lists Edit/Edit60/Overlay. (3) EQT Social Media can't reach its own GitHub copy (different account), so its newest work never got uploaded; told the owner. (4) The first towel test had holes in the hair and a shadowed arm (shadow skin looks orange); fixed by filling holes inside the AI outline.
 
+- **Later (Mac): the game has a name: "Dwarves Never Fall".** Rounds of name ideas (Dwarfwake, Dwarves Reborn, Eternal Dwarves, Dwarves Never Die...), each checked on Steam, itch.io and .com. "___ Never Die" turned out crowded on Steam (Goblins/Pirates/Heroes Never Die), so the owner picked Dwarves Never Fall. Still to do: trademark search, buy the .com, rename the game in project.godot on the PC.
+
+- **Nov 18 (Mac): Steam app created.** The owner paid the Steam Direct fee (369.99 AED) in Chrome; Claude created the paid game **Dwarves Never Fall, App ID 5649350**. Steam's Coming Soon checklist is in the Steam plan; library assets and the app and shortcut icons are needed too.
+  - Hurdles: the first Chrome had no Steam login, and paying needs a separate Steam store sign-in. Both sign-ins and the card details were done by the owner; Claude never types passwords or card numbers.
+
+- **Nov 18 (Mac): first Steam screenshots.** New photo robot `-- steamshots ruin=1` (dwarf facing the camera with the tower and stars behind, the tower, Rock Beetle charging, Rock Snail; no HUD, no name tags). Drafts in `docs/steam/page/shots-draft-2026-11-18/`. The Fallen Outpost is not on GitHub yet, so no outpost shot.
+  - Hurdles: Godot on the Mac needed a re-import after the PC's new code (it didn't know the new classes). The robots took pictures of the loading screen: building the rock around the dwarf takes ~110-150 s on the Mac, so the robot now waits for "ready" and then lifts the loading cover. Round 1 the dwarf was burned white by an extra lamp, the snail faced away and name tags showed; fixed in round 2.
+
+- **Nov 18 (Mac): Steam page filled in.** Basic info, descriptions (v2 big-picture text), tags (20), release date "Q1 2027" (planned 15 Mar 2027), keyboard only, content survey published (Brazil 10, Germany 12; AI disclosure), 5 gameplay screenshots, 4 store capsules, 4 library images, app + shortcut icons. Art made in the owner's ChatGPT (chat "Generate Steam Key Art", with real screenshots as reference), cut to sizes with Pillow: `docs/steam/page/art/`, logged in CREDITS.md.
+  - Hurdles: Steam's image box is a drag-and-drop area, so a plain file upload did nothing; fixed by handing the files to the page and "dropping" them in code. One screenshot got "not suitable for all ages" by mistake (both radio buttons clicked); fixed to Yes. The library logo placement tool opens a pop-up window Claude can't see: left for the owner.
+
+- **Nov 18 (Mac): Steam store page SUBMITTED for review.** System requirements are an estimate (min: Win 10 64-bit, i5-8400 / Ryzen 5 2600, 8 GB, GTX 1060 6 GB / RX 580, DX12, 4 GB; rec: i7-9700 / Ryzen 5 3600, 16 GB, RTX 2060 / RX 5700), marked "early estimate" on the page; measure on the PC before launch. The owner set the library logo position. Steam: "in the review queue, typically 3-5 business days", with an email when done. Then the page goes Coming Soon and wishlists open.
+
+- **Nov 18 (Mac): video studio for the dwarf Shorts moved into the game repo (`video/`).** The owner recorded all 14 dwarf Shorts (049-062) and wants the PC to edit them. Claude copied the shorts editor (Python tools + Remotion), the newest Short's pipeline as a template, 41 editing and script rules, the 14 scripts and 10 writing skills from the EQT Social Media folder, plus a new `towel_key.py`: the owner films in front of an orange towel and the towel is swapped for game footage. PC guide: `video/README.md`. Every script now ends "Wishlist Dwarves Never Fall on Steam."; 058 became the "first cave too big" story (the owner didn't remember the invisible-rocks story, which a Claude had found and fixed by itself).
+  - Hurdles: (1) this repo is public, so business and client notes (EQT, Snow, HPGPS, Facebook ads, long-form episodes, analytics tokens) stayed behind, Mac paths were replaced, and the GPL person-matte model is downloaded on the PC instead of committed. (2) The editor's list of compositions imported client projects; Claude wrote a shorts-only list and checked that it compiles and lists Edit/Edit60/Overlay. (3) EQT Social Media can't reach its own GitHub copy (different account), so its newest work never got uploaded; told the owner. (4) The first towel test had holes in the hair and a shadowed arm (shadow skin looks orange); fixed by filling holes inside the AI outline.
 ## November 18, 2026 (PC, rock-textures Claude): giant root pillars (F189, last part)
 - Model: cave_rootpillar.py, made from the hanging roots' pieces (cave_hanging.py: branch, hairs, finish = melted
   tubes, carved bark, painted). Round 1 looked like thin sticks with spikes; round 2: a core plus 8 thick roots
@@ -3939,6 +3974,13 @@ the body."
   the "lower" half reached up to the hip. Fixed by sending each face to the nearest bone (hip-knee or knee-ankle-toe),
   using the build's own leg table. Dead pose: the upper leg turns out and down until the knee touches the floor, the
   shin turns flat pointing straight out. Test checks all six shins lie flat. Same on the 3D page (Version 22).
+- **Short 049 round 2:** a 0.6 s silence at the very start (cut began before the voice): fixed; the four games now show
+  their official Steam header pictures (their logos) on the "survival games I love" card, at the owner's request.
+- **Short 052 (The dwarf):** whisper's medium model skipped 0:13-0:32 ("small child", "shorter legs and arms… very
+  bulky"): the small model on short windows found them. Two in-line pauses split out ("Now he has a real face," … "beard
+  that actually moves"; "I… said shorter legs"). Pictures from the dwarf's own history: the first ready-made character,
+  the candidate lineup, "balls and spikes", the round 2 sculpt, the approved turnaround, picture vs model, face close-up,
+  today's dwarf. Re-cutting this clip moved the Wishlist line that 050 and 051 borrow: their timelines now follow it.
 - (Round 7, Nov 18) Owner liked the beetle ("looks perfect now"); asked for the snail (relax, maybe fall over, the
   foot stays on the ground) and the bat. Each creature's `ragdoll` line can now say: parts that stay behind (the snail's
   foot), hop, a sideways tip, spin, and a narrower body box. Wings and folds lie flat like the beetle's legs. Hurdles:
@@ -3949,6 +3991,14 @@ the body."
   ended standing upright like a box on its end; a stronger flop fixed it (measured: up-direction 1.00 -> 0.00). Snail
   and bat 3D pages got Defeated / Get back up buttons. Full suite earlier: 4 failures, all in other chats' areas
   (cave layout, dwarf braid/aim, tool models).
+- **Owner on 052:** the cutout ("orange screen") still needs a lot of work; lines about motion must show motion (the
+  beard moving: capture the running animation from the 3D page). Saved as a memory rule for all Shorts.
+- **Cutout fix:** tested three methods on one frame (`tools/key_test.py`): A the towel colour key (blue-grey rim at the
+  jaw), B the person-matte model alone at a finer size (RVM 0.6) with the orange toned to skin only in the soft edge,
+  C both (holes in the cheeks). B was clearly best and is now the method for every Short.
+- **Short 053 (Spaceship sounds):** the old sci-fi sounds came out of git history (7cefabb, Nov 14) and play on their
+  words; spectrogram cards (ffmpeg showspectrumpic) show the beep as one thin line vs a real recording's cloud; the bag
+  shot found at the exact second it opens; two half-second pauses tightened. 32 s.
 - (Nov 18, F332 + ragdoll round 8) Owner: the bat wing looks like one stiff piece, add 2-3 bones; dead, the wing stuck
   up in the air. And the snail's eyes came off his body when he fell. Bat: the wing is now built as three tagged
   sections (arm with a new 4th finger, middle web, outer web), painted and baked whole as before, then cut into three
@@ -3961,6 +4011,14 @@ the body."
   the floor; now it lays the skin level first. Snail: the body slumped forward at death but the stalks turned on their
   own spot, so a gap opened; the stalks now hang on the soft body, have a joint halfway up (all 4 looks rebuilt), and
   flop to the ground once he lies still. New picture tool: tools/model_check/flap_shot.gd (4 moments of a wing beat).
+- **Short 053 round 2 (owner):** a big pause before "A beep"; still too big in the hook. The pause came from trusting
+  whisper's word times on hand-set lines: `refine_edl.py` now trims silence from both ends of every hand-set line too.
+  Hook size 86% → 70% for all Shorts.
+- **Short 054 (Eight tries):** following the owner's new rule, the motion line uses moving clips recorded from the Rock
+  Beetle 3D page (Walk and Charge attack, Chrome screencast, cropped). The real round pictures from
+  `docs/art/rock-beetle-v2/` (including `step7_in_cave_white_problem.jpg` for "turned white in the game"), a try 1 vs
+  try 8 split video. Hurdle: today's beetle spun in Blender came out pale (its paint didn't load), so the painted beetle
+  from the page recording is used instead. A retake piece ("Now it walks" said twice) dropped. 28 s, no pauses.
 - (Nov 18, F332 + ragdoll round 9) Owner: bat wing ends vanished, pieces twisted and fell inside its body; the
   snail's eyes still fell through his body. Cause: each piece was turned straight toward the floor with no idea what
   was in the way. Now each wing piece / eye stalk tries many poses (a wing only on its own flap hinge plus a little
@@ -3972,6 +4030,16 @@ the body."
   start; (3) the wing's old early twist at death removed. Same on both 3D pages.
 
 ### Nov 18: Short 054 redone (eight tries)
+- **Owner:** "you were showing a beetle that was dead, not moving… show the charge with red eyes… you zoom so much you can barely see it (try 1 vs try 8)."
+- **What went wrong (Claude):** the 3D page was still in its "Defeated (ragdoll)" state when I recorded, so the beetle lay dead. I never looked at the frames before using them. Then I zoomed the clips 1.3-1.75x and cropped the try 1 / try 8 split so tight that the beetle and the "TRY 1" label were cut off.
+- **Fix:** clicked "Get back up", turned off the dwarf, hid the page's buttons and re-recorded Walk and Charge attack. Checked a contact sheet (a picture of frames every half second): walking with green eyes, charging with glowing eyes, then dazed. Cropped with room around the beetle, zoom about 1.0, and rebuilt the split with both beetles whole and the labels moved inside the frame. No pauses over 0.3 s.
+- **Lesson:** always check a contact sheet of every recorded clip before it goes into a Short.
+
+### Nov 18: Short 055 (four days)
+- **Words:** the cutter couldn't find "Blobby models, a spaceship lantern, a beetle that turned white", but the owner had said it another way ("Monsters made out of Play-Doh. Spaceship sounds in a medieval game. Monsters that just turned white for no reason."), so those three takes went in by hand. The muffled half-word at 1:23 was dropped. The first cut clipped the "F" of "Four" (the cut started 0.01 s after the voice); it now starts 0.08 s earlier.
+- **Pictures:** Nov 14's blocky dwarf fighting Wickwings (hook); a new film of the star ceiling with crawling light snakes, made by a small camera script outside the game (`Videos/Dwarf Game Shorts/tools/starfilm.gd`, muted, "autopilot" in the command so the recorder skips it); the tower under the stars for "you're tiny"; a fast scroll of all 292 feedback notes; the Play-Doh beetle spinning; the old beep vs real recording sound pictures (with the old beep playing); the white beetle; digging today; the bat for "monsters still being built"; the logo zooming on Dwarves / Never / Fall.
+- **Hurdles:** the first star film stood next to a rock column, and a second try from the cavern middle got a low, almost starless ceiling; the first film's wide frame was used instead. The Godot movie writer kept 1600x900 even when asked for a tall window. The beep card was pushed off the screen (it was moved up for the presenter); swapped for the old-vs-new card, full screen. A caption said "wishless": fixed to "wishlist".
+- (Nov 18, F337) Dead creatures turn to stone. Owner's idea, settled with multiple-choice questions: no drops at death,
 - (Nov 18, F370) Dead creatures turn to stone. Owner's idea, settled with multiple-choice questions: no drops at death,
   mine the statue (pickaxe only, hits by size) for stone + loot, 1 in 20 a gem, crumbles after 5 min. Built like the
   boulders (host counts hits; every computer shows its own stone body): src/combat/statue.gd + petrify.gdshader
@@ -3983,6 +4051,8 @@ the body."
   has no wings or eye stalks, so the settle step started an empty animation (an engine error): skipped when empty;
   (4) the old crystal-drop test expected drops at death: it now looks inside the statue. Also: another chat's
   half-edited cave_maker.gd stopped every game run for a while; waited instead of touching it.
+- **Redo (owner: "I didn't finish 'crawling', the cut is too early"):** the owner ran straight from "crawling" into "through those stars" with no gap, so the cut sliced the word. Now the whole sentence stays ("…just crawling through those stars."), which ends on a real stop. Checked by ear with whisper on the final video; no pauses over 0.3 s; the "wishlist" caption fix re-applied after the new word times.
+- (Nov 18, F337 round 2) Owner: turning to stone too fast; the break should be the same rock burst as mining, sized
 - (Nov 18, F370 round 2) Owner: turning to stone too fast; the break should be the same rock burst as mining, sized
   to the creature. Stone now takes 7 s; RockShatter.burst got a `scale` (piece size, count and spread); a statue bursts
   twice like dug rock, sized by its middle measure (not its diagonal: a bat's long wings made it look huge; Claude's
@@ -3990,6 +4060,10 @@ the body."
   The pickaxe feedback no longer adds a second full-size burst on statues. Same burst on the 3 creature 3D pages.
 
 ### Nov 18: faint music under the Shorts
+- **Owner:** add faint background music to all the videos, without re-rendering them.
+- Two CC0 medieval tracks by RandomMind (OpenGameArt): "Exploration" (calm) and "The Old Tower Inn" (tavern tune), taking turns, each Short starting at a different spot in the track. Only the sound was re-mixed (the picture copied as it was): music 17 dB under the voice (voice -14 LUFS, music alone -31 LUFS), fading in over 0.8 s and out over the last 1.5 s. The versions without music are kept in `final/no_music/`. Logged in CREDITS.md.
+- Note: our own video rules said "no music under talking"; the owner asked for it, so it's faint.
+- (Nov 18, F337 round 3) Owner: "everything looks great"; the rock chunks sometimes lie inside each other, and the
 - (Nov 18, F370 round 3) Owner: "everything looks great"; the rock chunks sometimes lie inside each other, and the
   same for boulders and other rocks. Cause: every chunk only collided with the cave floor. All bursts share one
   maker (RockShatter: dug rock, boulders, statues, root pillars), so one change fixed them all: chunks get their own
@@ -4006,6 +4080,10 @@ the body."
   against other rocks: 0.2 cm deepest dip, none floating, ~2 ms per step. Rocks shrink away after 4.5 s.
 
 ### Nov 18: Short 056 (the name)
+- The automatic cutter missed most lines (the clip has many restarts), so every take was picked by hand from the word times. The first "My game…" was a false start ("my-" then a long pause): only the clean take after it was kept, checked by having whisper listen to each half. "Dwarves don't quit" came out 10 dB muffled (mic covered?); the cutter's EQ lifted it.
+- Pictures: name cards drawn for the video (Dwarfstone TAKEN, Dwarfhold ON STEAM, dwarfrune.com TAKEN 1998, "Dwarves Never Die?", a "never die" search with rows of games, Goblins Never Die TAKEN, a dozen made-up names crossed out), the logo zooming on "Dwarves / Never / Fall" both times, quick cuts on "they dig, they build, they fight, they never fall" (digging, the bench, the beetle charging, the key art), the Deep Rise capsule. Faint music (The Old Tower Inn) mixed in like the others.
+- Hurdle: whisper heard the ending as "THE WISHLESS DWARFS", which threw off the line finder; fixed the words by hand and set that line's time.
+- (Nov 18, F337 done) Owner: the wait before the stone too long; page rocks super huge and shrinking too fast. The
 - (Nov 18, F370 done) Owner: the wait before the stone too long; page rocks super huge and shrinking too fast. The
   huge rocks were Claude's bug: the page's shrink formula was not capped at 1, so before their shrink time the rocks
   were drawn up to 8x too big, then "shrank" to normal size all at once. Fixed (capped); each chunk now waits its own
@@ -4027,6 +4105,10 @@ the body."
   browser tab only draws about once a second). Fixed and checked: stone at 1.0 s, mining bursts into resting chunks.
 
 ### Nov 18: text cut off on the cards (056), and Short 057 (digging)
+- **Owner:** "GOBLINS NEVER DIE" was cut off at both sides; make sure nothing gets cut off like this.
+- **Why (two causes, found one at a time):** (1) the card's text was almost as wide as the screen; (2) the renderer zooms in a little on each caption ("punch-ins") and then keeps pushing in slowly (up to ~4%) until the next one, so the zoom from the line before carried over onto the cards. Removing the punch-ins on cards was not enough, because of (2). An automatic edge check missed it at first: a card's edges are plain dark, so a zoom looks the same there.
+- **Fix:** the card maker shrinks every name to fit inside a 90 px margin and checks the edges; cards don't zoom; and the renderer has a new "still" beat (Edit.tsx): at the start of every card, picture or logo it snaps back to 100% and holds still. `dwarf_edit.py` adds these by itself, so every Short from now on gets it.
+- **057 (digging):** hand-picked takes (the cutter only found 7 of 12 lines); "pillow" and "ever make" ended in silence, so they were tightened. Misheard words fixed in the captions ("It didn't rock there" = "Hitting a rock there", "Conan Exile", "and Pickaxe"). Pictures: Nov 14's blocky dwarf digging flat walls for "hitting a pillow", the Conan Exiles Steam picture, today's digging from the owner's Nov 18 recording (every hit pays, cracks, the wall bursting into chunks), and the Dwarf Body tools page recorded swinging the stone axe and the pickaxe. A robot film of digging (`tools/digfilm.gd`) came out too dark (the camera faced a glowing ball, the boulder and root shots missed), so the owner's recording was used instead. Faint music (Exploration).
 - (Nov 18) Owner: the stone still took too long to start; a dwarf who knows the game should be able to mine at once. The
   stone now starts 0.3 s after death, while the body still falls (it used to wait until it lay still), and spreads
   steadily over 7 s (a gentle start hid the first cracks; a quick start covered it in ~3 s, too fast). The pickaxe
@@ -4034,6 +4116,7 @@ the body."
   answers to its number from the moment it dies, and it only becomes solid to bump into once it lies still. A boss's
   fallen body (no statue) is skipped so the swing doesn't dig the ground through it. Checked on the beetle page's test
   copy: stone at 0.3 s, a hit counted at 0.9 s.
+- **057 update (owner: "make a better recording of the rocks shattering", his 13:55 session at minute 14):** the three digging lines now use that mining (13:58-14:20), a little closer. Checked frame by frame (5 a second): one big burst lands at the end of "cracks spread… every hit that you make", the second exactly on the word "shatters".
 - (Nov 18, F314) Owner: the bat's other three looks. Built like the snail's: colours from the approved
   cave_bat_variants.png, the brown tiles used only a little on the other looks; ember and spore get glow_* pieces
   (branching lava veins, round spots) placed on both faces of each wing section with the same maths the skin is built
@@ -4042,6 +4125,14 @@ the body."
   darker). New: tools/model_check/flap_shot.gd takes a look and an "above" view.
 
 ### Nov 18: Short 058 (too big)
+- Takes picked by hand (the cutter's own picks had wrong word times at the start). Whisper heard "It isn't better": the cut started 0.09 s after the voice and chopped "Bi-" of "Bigger"; moved 0.07 s earlier and checked by ear. The two 0.3-0.4 s pauses left are the owner's own beats inside sentences ("a giant cave, … then", "Too big, … too tall").
+- Pictures: the Nov 17 evening recording of the huge dark first cavern (star ceiling, empty floor), brightened so it reads on a phone; the star ceiling clip; the first-cavern design picture (brightened); tonight's smaller first cave with roots, crystals and ruins for "went back to a smaller size"; the logo zooming on the three words. Faint music (The Old Tower Inn). "So we built it" (and the ending) came out a little muffled; the cutter's EQ lifted them.
+- **058 fix (owner: the playing footage at 0:13 and 0:16 looks very grey):** my brightening (a plain gamma lift) raised the blacks too, so the dark cave turned flat grey. Re-graded with a curve that keeps black at black, lifts only the middle tones and adds colour; now it matches the untouched shot at 0:19. Lesson: brighten dark game footage with a curve, never a plain gamma lift.
+
+### Nov 18: Short 059 (34 seconds)
+- Takes picked by hand (many restarts of "pebbles and dripstones…" and "thousands of them…"); the 0.43 s gap between "tiny," and "pebbles." shortened by cutting the line in two. Numbers checked against the Nov 17 journal (freeze ~34 s, pebbles/dripstone ~26 s of it, ~10 s after the helper thread), and the card shows only those plus the real FROZEN line from the owner's game log (no made-up steps).
+- Pictures: the real "Making your world…" screen with a red timer counting to 34; the stopwatch card; pebbles on the floor (Nov 18 recording); hanging dripstones; a floor covered in stones for "a helper plants them in the ground"; a 34 s → 10 s card; the logo on the three words. The first dripstone pick had the bag menu open: moved to a clean moment. Dark footage brightened with the curve (blacks stay black). Faint music (Exploration). "Pebbles and dripstones…" and the ending came out a little muffled; the cutter's EQ lifted them.
+- (Nov 18, F340-F345) Owner shared 9 game-feel TikToks. Claude can't watch video: read each page's own automatic
 - (Nov 18, F340-F343, F351, F352) Owner shared 9 game-feel TikToks. Claude can't watch video: read each page's own automatic
   subtitles instead (the TikTok page with a browser-like request carries a subtitle file). Owner picked: juicy hits,
   swing trails, Disney rules, chest opening (+ the chest menu closes when emptied); the rest went on the to-do list
@@ -4055,7 +4146,21 @@ the body."
   settle now waits up to 8 s. New picture tools: swing_shot.gd, chest_shot.gd.
 
 ### Nov 18: Short 060 (Rock Snail)
+- Takes by hand: the first "my first monsters came out of…" stopped after "of it" with a 0.8 s pause, but the next part was a clean full take on its own (checked by ear), so only that went in. The cleanest "now it crawls, it spits…" and the second "wishlist…" take. Captions fixed where whisper misheard ("clawed hand" = Claude's hand, "deep back" = the bat, said quietly; "wars" = Dwarves).
+- Pictures: the Rock Snail 3D page recorded moving (spit with the green spit ball, hopping forward, dazed with yellow eyes; the plain "dwarf for scale" pill turned off), cut right on "crawls / spits / dazed"; the old blobby snails in the cave; the Play-Doh beetle spinning and the 12 early models; try 1 vs try 8; the beetle walking for "copied what worked"; the grey hand-built snail next to its drawing, then painted (full screen, the tall picture had lost its top when pushed up); the old bat for "one to go". Faint music (The Old Tower Inn).
 
+### Nov 18: committed my part (paused the Shorts at 061)
+- Owner: "pause and commit your part". Committed in my own worktree, not pushed: 73b844a on claude/outpost-and-tools (journal, F307-F312, music credits, the Shorts plan) and 64d23e4 on a new branch claude/shorts-video-tools (the two editor fixes; the video folder only exists on the newer online copy).
+- Hurdles: my last commit still called the outpost items F293-F299, but online F293 is someone else's; renamed to F300-F306 there too. Some of my Shorts notes had been appended under the other chat's snail headings, so only my own bullets were copied into one section.
+
+### Nov 19: Short 061 (small things)
+- Takes by hand (the cleanest of many "every survival game player" tries); no pauses.
+- Pictures: the Dwarf Body tools page recorded (the sword sweep for "my spear swung like a sword", the new spear thrust); the four survival games' Steam pictures; the owner's Nov 17 21:14 session placing the old workbench just before the fix (green ghost, then the bench up to the dwarf's head); today's 13:55 session with the new lower bench next to the dwarf and him using it; a new robot film (`tools/ghostfilm.gd`, muted, outside the game code) of the workbench ghost glowing red against a cave wall; the logo on the three words. Faint music (Exploration). "All of those small things…" and the ending came out a little muffled; the cutter's EQ lifted them.
+
+### Nov 19: Short 062 (the dark), the last of the 14
+- Takes by hand (one restart, "Right now, if your lan-", skipped); no pauses.
+- Pictures: the owner's Nov 17 17:59 session where he walks with the lantern put away (lifted only a little so it still feels dark); a to-do card matching the real F293 "Darkness should hurt" item; three "What should the dark do?" cards that light up option 1, 2, 3 as he says each idea; the logo on the three words. Faint music (The Old Tower Inn). "So I'm working on it" and the ending came out a little muffled; the cutter's EQ lifted them.
+- All 14 Shorts (049-062) are now in `Videos/Dwarf Game Shorts/final/` (and without music in `final/no_music/`).
 ## November 19, 2026 (PC, snail Claude): pulled the online work in; your Mac notes on Game Feel (F344, F345)
 - Owner: "pull the latest from github and continue". The PC was 67 commits behind and 4 ahead, and the shared folder
   held about 350 unsaved changes from other sessions. A plain pull would have refused or overwritten their work, so
@@ -4076,6 +4181,285 @@ the body."
   when the meta is missing (a null default counts as "no default"): uses has_meta first. (3) The copper chest's body is
   a solid block, so open it shows a flat top, not a hollow inside (asked the owner).
 
+## Nov 17 (PC, cave Claude): the watchtower ruin fixed (F254), and a sketch of the next place
+- **Owner:** the rubble has to be destroyable, some floats, some blocks the entrance ("I literally cannot enter the
+  tower"); the tower floats a little. Causes (mine): rubble was placed as building pieces at fixed heights, so on
+  uneven ground some floated; two piles sat in the doorway and in front of the steps; and the carving dug a little
+  BELOW the tower's base, leaving gaps under it, while the base used the middle ground height. Fixes: rubble and the
+  broken door are now the game's hit-to-clear rubble (3 hits, drops some stone; saved with the world), dropped onto
+  the cave floor; nothing in the doorway or on/in front of the steps; the tower stands on the lowest ground of its
+  spot and the carving only digs above the ground line. Test `test_ruin_tower` checks all of it; the test world
+  doesn't load rock near the tower (no camera), so it checks against the cave's own rock plan.
+- **Next place, option A (Fallen Outpost):** a rough 3D block sketch page so the owner can see the size and layout:
+  ~30 x 30 m curtain wall with battlements and wall-walk, gatehouse, two round corner towers, an L-shaped barracks,
+  armoury and forge shed, courtyard with a well; ruined or whole.
+
+- F260 noted (owner, amazed by the star ceiling and snake): the very first cave really big, most of its ceiling stars, several snakes at once. Written into FEEDBACK, cave-walls-plan and epic-caves-plan; not built yet.
+
+## Nov 17 — Watchtower ruin: torches and a clear way up (F264)
+- **Owner:** standing crystal torches inside the ruined tower; move the crates and rubble to the walls, off the stairs'
+  path, so you can walk in and reach the roof without breaking anything.
+- **What changed:** inside the tower the walking path runs round the middle (from the door to stairs 1, then to
+  stairs 2, then to stairs 3 and the roof). Every rubble pile, barrel, crate and chest moved out to 3 m from the middle
+  (the wall is at 3.6 m), each one in a spot the path never crosses. Four crystal torches stand against the walls
+  (the tower plan now has a "torches" list; the game places them like a player-built torch).
+- **Test:** a new check fails if anything inside stands closer than 2.75 m to the middle (that is, on the walking
+  path), and another counts the torches. Passing.
+- **Note:** only new worlds get the new tower.
+- **Mistake (Claude):** the owner said "I don't see the patches". None had ever shown (round 3c's four either): the patch
+  shape test gave "0" on the patch's own side instead of "inside", so nothing was ever inside a patch, neither raised
+  nor painted. I had only looked at a grey picture. Found by counting the points inside each patch (0) and looking
+  at the shirt's painted picture (no brown). Fixed; the painted picture now shows the brown squares with stitches.
+
+## Nov 17 — Fallen Outpost fixes (F300)
+- **Owner, looking at the 3D page:** a floating stone; the gate's two leaves should lie apart, flat, one each side;
+  the square towers' stairs sit in a corner where you can't get on them (both floors); steps right next to stairs.
+- **Floating stone:** when the ruin maker swapped a wall for a "collapsed" (shorter) wall, the battlement on top
+  stayed up in the air. 7 of them. Now the maker removes whatever stands on a collapsed wall.
+- **Gate:** the broken-gate model was both leaves in one heap. Now it is one leaf lying flat, used twice.
+- **Stairs (my mistake):** the first flight's foot was against the front wall, so you could only climb on from the
+  side. New rule written in the code: stairs never start against a wall or in a corner. First flight in the middle
+  square, climbing to the back; the second starts right where you arrive and climbs along the left wall.
+- **Steps by the stairs:** the barracks had a side door whose steps stood a step away from the walkway stairs. Door
+  and steps removed (the barracks still have their front doors and the tower doors).
+
+## Nov 17 — The Fallen Outpost goes into the game (F301)
+- **Owner:** close the gap under the square tower (the foundations stand on corner posts, you could see under);
+  "other than that, I like it, put it in the game".
+- **Gaps:** half walls (1 m) under every outer wall of the square towers and the barracks, except under doorways.
+- **Into the game:** new worlds pick the plain big Mossy cavern nearest 160 m from the start (only the seed decides,
+  so it's found again after loading), then the flattest spot in it. The outpost is too far away for its rock to
+  be loaded when the world is made, so the world remembers "outpost: pending" (saved) and builds it when someone
+  comes near: it digs out its space a little each frame (about 17 s), then places the pieces and chests. Rock
+  beetles guard the cavern.
+- **Big hurdle (found by the other Claude chat):** my first test robot ran for 7 minutes without finishing,
+  and the owner's game froze at the same time. The reason: every time a piece was added, the game re-checked how
+  steady every piece is, and that check compared every piece with every other piece. With 700 outpost pieces
+  that is millions of comparisons, done 700 times. I switched the outpost off in normal games right away, then
+  fixed it in two ways: pieces now only look at pieces near them (a 4 m grid), and a ruin adds all its pieces
+  first and checks once. The whole check now takes 0.13 s instead of minutes. This also stops player building
+  near big ruins from getting slow later.
+- **Hurdle:** the cavern's own decoration, a row of old columns, stood in the middle of the yard. The first fix
+  (pick a cavern without decorations) sent the outpost 438 m away, too far, so instead the columns are left out
+  in that one cavern.
+- **New test:** test_ruin_outpost (plan is whole, spot is found fast and not too far, strength check is fast).
+- Still open: the cavern is dark, so the fort is hard to see (crystal torches in the yard would help: asking).
+
+## Nov 17 — Monsters ignore you while you fly (F302)
+- **Owner:** while flying (the dev fly key, F6), mobs should leave me alone.
+- **What changed:** when monsters look for someone to chase, they skip a flying dwarf; a monster already chasing
+  you gives up and walks home as soon as you take off. An attack already swinging still finishes.
+- **Limit:** in co-op this works for the host; a friend's flying isn't sent to the host yet (it's a test tool).
+- Monster and combat tests pass.
+
+
+## November 18, 2026 (PC, armor Claude): armor round 1, the Hide set over the new body (F55, F273)
+- **Owner:** remake the armor to fit the new dwarf (F55), start with Hide (cap, jerkin, boots), show it on the 3D page.
+- **How it's made** (`tools/asset_forge/builds/dwarf_armor.py`): Blender loads the finished body with its skeleton and
+  sculpts each piece as a shell a set distance off his real surface (a mould taken from him). Every armor point copies
+  the bones of the body point under it, so the jerkin moves exactly like the shirt (swinging hem too) and the boots like
+  the feet. The game puts it on the same skeleton (`DwarfRig._wear_armor`; the game's "leather" items are the Hide set).
+- **Hat hair:** his wild ring of hair is 45 cm across, so a cap holding all of it was a 45 cm box. The armor file now
+  has a copy of his head with the hair under the cap pressed close to the skull; the game shows it while a helmet is on
+  and gives his normal head back when it comes off. The cap is shaped over that.
+- **Owner, round 1:** the white shirt sticks out; textures should be better, like the rock ones; a black spot on the cap
+  (liked its wear and tear). **Round 2:** leather sleeves and a longer hem cover the shirt; a hand-painted ChatGPT sheet
+  (leather, red leather, fleece, brass; same chat as the rock sheets) cut into seamless tiles
+  (`tools/art/cut_armor_tiles.py`) and painted onto the armor; the cap's shading now only counts the cap itself.
+- **Owner, round 2:** boots, shorts and cap good; the tunic is blurry and doesn't read as leather armor. Picked "stitched
+  jerkin". **Round 3:** thicker leather in panels with deep seams and stitched welts, a yoke seam, a belt with rivets and a
+  buckle, a pouch; the jerkin's picture twice as sharp on the page (it was squeezed to 448 px there).
+- **Owner, new (F274):** the patch on the back of the shirt stretches when mining. Logged; next after the armor.
+- **Owner, round 3:** "still blurry, no texture, look at the shoulders" (the shorts, boots and cap have it). **Round 4** found
+  three causes (my mistakes): the jerkin's hidden inside surface took half its painted picture; its fine copy was never
+  carved (I'd skipped smoothing after the memory crash instead of making the shape smaller); a pale edge colour washed
+  the shoulders out. Now: inside surface removed (180k faces), the fine copy carved again, a 4096 picture in the game,
+  strong scratches, darker edges, a stitched rim round each shoulder plate.
+- **Owner, round 4:** "still blurry... use ChatGPT leather textures... we're going around in circles", with pictures of
+  quilted and woven leather armor. **The real mistake:** for three rounds I tuned paint settings when the jerkin had no
+  bold pattern at all; fine detail melts on a big piece. **Round 5:** a new, bold ChatGPT sheet (`armor_hide2_sheet.png`:
+  quilted, woven, worn, belt leather) and the jerkin quilted like the owner's picture: 7.5 cm puffy diamonds carved into
+  the shape with dark stitched grooves (5 cm looked busy), over the sheet's worn leather; the page gets a 1536 px picture.
+- **Owner, round 5:** "much better"; only the shoulders: the diamonds stretched into lines there (they're laid out round
+  the body, and the shoulder top faces up). **Round 6:** the shoulder pads are their own kind of leather: overlapping
+  strips down the arm with stitches and rivets, no quilting.
+- **Owner asked:** did we make leather armor the game doesn't have? No: the game already has Leather Cap, Tunic, Trousers
+  and Boots (workbench, from leather). The armor plan calls the same set "Hide" (still a proposal, never answered).
+  Real mismatch: the game has Leather, Shell and Copper sets with 4 pieces each (legs too); the plan has Hide, Copper,
+  Husk, Silver and Ironshell with 3 pieces each. Asked the owner which list the next sets follow.
+- **Owner, round 6:** drew the shoulder lines: bands across the arm (mine were rings round the shoulder top). **Round 7:**
+  fixed. Two Blender crashes while painting the 3072/4096 jerkin picture (out of memory: 4 Godot windows were open);
+  2048 is plenty now that the pattern is bold.
+- **Owner: feet go deep into the ground (F275).** Measured in Blender on the recorded clips: standing, the boots sat
+  1.4-1.8 cm in the floor (the sole reaches lower than built because the standing pose tips the foot); the game now
+  lifts him onto the soles while boots are on (`DwarfRig.ARMOR_SOLE`, 2.9 cm, measured to 1 mm). But in the walk and
+  run his bare feet dip in too (yesterday 4 / 15 cm; walk 8 cm today after another session's skeleton fix): an
+  animation problem, logged as F275.
+- Also: `tools/asset_forge/dwarf_page_copy.py` (the 3D page copy: smaller pictures, fewer frames, compact numbers;
+  last time it was done by hand and not saved), and the page recorder can dress him (`wear=`). New test: the armor
+  fits the skeleton and the hat-hair head swaps in and out (passes; the old braid-swing test still fails, not touched).
+
+**Mistakes and hurdles (including Claude's)**
+- Helmet, 4 tries: it followed every lump of the hair (a flat-topped box); a plain egg let the hair poke through; the
+  hair locks fooled the inside/outside test into spikes; the beard leaked into the dome's size. Fixed with hat hair.
+- My photo tool showed the armor white (no picture map), then far too dark (I darkened the colours twice), then showed
+  the bump map instead of the paint. Only the photos were wrong each time.
+- The shoulder guards first covered the whole sleeve. The cap's opening was a stiff rectangle (now an arch).
+- Blender ran out of memory smoothing the bigger jerkin (twice); it now skips that step.
+- Using his bare-skin body to measure the jerkin cut round holes in it (that mesh confuses the inside test); now the skin
+  only counts out on the arms.
+- The 3D page copy: my compact surface directions made everything speckled (the owner saw it in my test tab); taken out.
+  Getting it under the page's 14.6 MB took dropping the parts hidden under the armor and every 4th animation frame.
+- The repo is 13 commits behind online and other sessions have unsaved edits here, so I didn't pull; I checked the
+  online feedback numbers instead (F273 is free there too: corrected later, F268-F272 were taken online, so mine are F273-F275).
+
+## Nov 17 — Fallen Outpost round 3 (F303)
+- **Owner, after walking it in the game:** parts were buried; the dwarf hops going down stairs; things floating where
+  it was built; spear rack should stand against a wall; stairs don't meet floors (left wall stairs, round towers'
+  last step); walkway not level with the round tower; stones clipping in a doorway; an unknown wooden box.
+- **Buried:** the digging started 1.3 m up, and round digs leave bumps between them (up to 60 cm of rock). Now it
+  starts at 0.9 m, so the bumps end at about ground level.
+- **Stairs (my mistake, since the first Stonehold building):** stairs pieces are 2 m tall, but Stonehold floors are
+  2.25 m apart. Every flight ended 25 cm below the next floor: going down you dropped off that lip (the hop), going up
+  you had to climb it. Now each stairs stands on a stone slab (25 cm), so its top meets the floor. Fixed in all
+  Stonehold plans (outpost, watchtower).
+- **Heights not matching:** round tower roof was at 4.75 m, the walkway 4.25 m. I first sank the round towers half a
+  metre, but a blueprint can't have parts below ground (a test caught it). Instead: round towers stand right on the
+  ground (no bottom floor, like the walls), and the walkway and gatehouse roof are two slabs thick: all tops 4.5 m.
+- **Floating things:** when the world dug out the fort's space, every crystal, stone and twig it touched was "mined":
+  it dropped as loot (hanging in the air) and roots grew back later. World digging now just removes them.
+- **Doorway clipping:** the stone posts on a round tower's corners cut into the door arch's stones beside them.
+  Those two posts are gone (also in the watchtower).
+- **Asked the owner:** which wooden box (the well's railing, or the small chest in the gate tower)?
+- Tests pass (outpost, watchtower, blueprints). Not yet walked: I can't play the stairs myself, so the owner checks.
+
+## Nov 17 — Round towers line up with the stairs; the archery target (F304)
+- **Owner:** the stairs still don't line up with the round towers (top-down pictures from the 3D page); the wooden
+  box was probably the archery target.
+- **Why the stairs couldn't line up:** the round towers are 12-sided. Their flat sides are 3.73 m from the middle,
+  which never lands on the 2 m building grid on two sides at once. I asked the owner: square towers, line up the
+  stairs side, or smooth both. Owner picked **line up the stairs side**: each round tower moved 73 cm so the side
+  the stairs arrive at matches the stairs/walkway exactly. On the other side, the wall and the walkway end in a 1 m
+  wall, a stone post and a half floor against the tower's flat face (a 27 cm seam stays).
+- **The wooden box:** the archery target's model stood 31 cm off-centre (its back leg), and the game refuses
+  off-centre models and draws a plain box instead. Re-centred in Blender; it loads now.
+- **Also fixed:** a model-rules test said "only one doorway per style" and failed on the outpost's big gateway; the
+  gateway (round-arched, for the double gate) is now allowed.
+- Tests pass: outpost, blueprints, model rules, build geometry.
+
+## Nov 17 — The ruin slides to meet its round towers; a rule for lining up (F305)
+- **Owner:** "you cannot align them. Okay, just for this one": move the front (gate, gatehouse, wall, front-right
+  tower) to line up with the left round tower, and the right wall past its break to line up with the other one;
+  it's half broken, so only the ruin needs it; make a rule for future buildings.
+- **Done in the ruin maker:** the front part moved 0.73 m out and 0.27 m left, the right wall from the breach back
+  (walkway, armoury and forge with it) 0.73 m out and 0.27 m back. Both walkways now meet the towers' flat sides
+  exactly, edge to edge, so the posts that closed the old seams are gone. Rubble, chests and beetles move with the
+  part they lie in. The breach hides where the moved and unmoved parts of the right wall meet.
+- **Rule** added to docs/design/BLUEPRINT-RECIPE.md: everything lines up on the grid; a 12-sided round tower can
+  only meet the grid flush on one side; stairs end level with their floor and never start against a wall.
+- **Keep clear:** the other Claude chat added a way to keep a ruin's ground free of pebbles, plants and loose stones
+  from the start. The outpost's spot is now worked out once when the cave is made and its ground kept clear too.
+  Their test counted one kept-clear patch; it now expects two (tower and outpost).
+- Tests pass (outpost, keep clear).
+
+## Nov 17 — Living in the watchtower: barrels, chest sizes, moving chests (F306)
+- **Owner:** wants to live in the first tower: barrels as storage (one row), chests two rows, a stone chest at the
+  bottom, two-row chests up top; move containers with the build hammer; pebbles where triangle floors should be.
+- **Barrels:** a new "Storage Barrel" item (workbench: 6 rootwood planks, 1 rope), placed like a chest, one row
+  (8 slots), using the barrel model. The old decoration barrel in the build menu stays (blueprints use it).
+- **Sizes:** chests 12 → 16 (two rows of 8), stone chests 24 (three rows), copper-bound 36.
+- **The tower ruin:** stone chest on floor 1, two-row chests on floors 2, 3 and the roof (the roof one was a big
+  copper chest), two storage barrels. The outpost's barrels are storage barrels too.
+- **Moving chests:** the build hammer's E already picked up stations; now it also picks up an empty chest or barrel
+  (into your bag, to place again). The hammer's aim didn't "see" chests at all before; it does now.
+- **Pebbles (my mistake):** two rubble piles stood exactly over the holes I made in floors 2 and 3, so they hung in
+  the air. Moved; a new test checks every rubble pile lies on a floor or foundation.
+- **Hurdles:** the new item had no inventory picture (a test caught it): made one from the barrel's build icon.
+- Tests pass: ruin tower, outpost, storage, barrels, icons, build menu, building.
+
+## Nov 17 — Big debugging round (F276-F281)
+- **Owner:** build menu grows until it's gone; crafting dead space; can't use the shield, right-click should equip;
+  can't read recipes; pickaxe through the head while running; axe chops the wrong thing; sword attack looks broken;
+  "find other bugs, big debugging report".
+- **How:** four helpers at once (menus; equipment + axe; dwarf pose; a bug hunt that ran every test and a test robot).
+- **Fixed:** menus emptying "next frame" (grew forever); right-click split stacks instead of equipping (lost in the
+  menu overhaul); the shield needed the back lantern (now: put the hand lantern away with L); pages only readable
+  from the hotbar; tools fixed at one angle in the fist (now trail back while running); uneven belly/hip widening
+  skewed the head in the sword swing; the aim line started at the camera behind the dwarf (chopped roots behind you).
+- **Bug hunt found:** a 10 s freeze while loading (crystals and roots placed in one go), the robot's workbench not
+  placing, no shovel model, leftover objects at quit. Asked the owner before fixing those.
+- **Hurdles:** the helpers and two other chats edited the same files at once; some test failures were only
+  half-finished work and passed on a re-run. A dwarf-session note: feet now dip ~7.7 cm in Walk (was 4.0), maybe
+  from the posture fix (logged by them as F275).
+- **Numbers:** the online copy (Mac) already used F267-F272 and F275, so my F265-F271 from today became F300-F306 (the Mac had taken F293);
+  this round is F276-F283.
+- **Same day, the owner: "I think we broke the dwarf"** (armored dwarf, arms bent out like hooks, hands floating).
+  My posture fix for the sword swing (removing the uneven belly/hip stretch) also took away the stretch the arm and
+  armor shapes were made for. Turned it off at once (one line in dwarf_rig.gd); the bare dwarf looks right again.
+  The sword-swing "beak" head (F280) is back until it's fixed another way; told the armor chat to re-check its page.
+- **Owner: "send me the new artifact with all the tool animations inside the hands".** The page recorder
+  (tools/asset_forge/dwarf_anim_export.gd) only recorded the body; new option `tools=1` puts the game's own hand holder
+  on the rig and records each tool's place frame by frame (pickaxe in most clips, carried at the hip when running;
+  sword in the sword swing; axe in chopping). Added as "Tools in his hands" at the top of the Dwarf Body page, in the
+  hide armor. Hurdle: the copy was 20 MB (the page takes 16); left out the bare feet and underpants (hidden in the
+  armor), the plain point colours, and kept every 4th frame: 15.7 MB. Checked on the page: pickaxe in his fist,
+  arms attached.
+
+## Nov 18 — The Mac handoff, the to-do list, and the plan for the 14 Shorts (F307-F312)
+- **Owner:** check the latest report (the Mac's Steam page work, the video rules from the EQT social media repo); add
+  it all to the to-do list; plan the 14 videos from the phone recordings in Downloads.
+- **Checked online (not pulled here: the other chats' unsaved work blocks a normal pull):** Steam page submitted
+  (Dwarves Never Fall, App ID 5649350), the store art and texts, the `video/` studio (editor, rules, 14 scripts),
+  10 writing skills in `.claude/skills/`, and the handoff note `docs/HANDOFF-MAC-2026-11-18.md`.
+- **To-do list:** F307 App ID + game name in project.godot, F308 measure system requirements, F309 slow loading on
+  the Mac, F310 push the outpost + an outpost Steam shot, F311 Next Fest (sign up by Jan 10, 2027; needs a demo),
+  F312 the 14 Shorts. Hurdle: the Mac had already used F293, so my renumbered F293-F299 moved again to F300-F306.
+- **The 14 clips:** unzipped to `Videos/Dwarf Game Shorts/raw/` (next to the game recordings, not inside, because
+  every folder there counts as a play session). Transcribed with faster-whisper (the graphics-card version was missing
+  a library, so on the processor) to `Videos/Dwarf Game Shorts/transcripts/`: IMG_4406-4420 = Shorts 049-062 in
+  order. 049's opening may be missing (no speech found 0:09-1:01): asked the owner to check.
+- **Plan:** `docs/marketing/shorts-049-062-edit-plan.md`: per video, which clip, what goes behind him or full screen
+  (old recordings, blobby first models, monster rounds, spinning 3D pages, Steam art), and 7 new captures to record.
+
+## Nov 18 — Editing the dwarf Shorts: Short 051 first (F312)
+- **Set-up:** a separate video studio copy of the online project in `Videos/Dwarf Game Shorts/studio/` (the `video/`
+  editor wasn't pulled here), its Python and Node tools installed, the person-cutout model downloaded.
+- **Pipeline (new tools in `Videos/Dwarf Game Shorts/tools/`):** `cut.py` picks the best take per line → `refine_edl.py`
+  snaps each line to where the voice really starts and stops → `cut_words.py` word times → `matte_rvm.py` person cutout →
+  `line_starts.py` → `dwarf_comp.py` (owner keyed off the orange towel in front of game footage, full-screen inserts,
+  the Steam logo) → `dwarf_edit.py` captions → Remotion render. `turntable.py` renders spinning models in Blender.
+- **Hurdles:** Windows text encoding stopped cut.py twice (UTF-8 mode fixed it); the editor's whisper didn't read video
+  files (system Python used); the recorder moved today's recording into its session folder; Blender 5 has no video
+  output and new animation storage (frames + ffmpeg, a driver for the spin); unquoted paths with spaces.
+- **Owner's notes on 051, round 1 and 2:** smaller after the hook; orange around the head; dead space; blurred game
+  footage (I had blurred it on purpose: removed); the face showing through (cheeks are towel-orange: inside the person is
+  now always solid); "of work" cut off; the real logo on "Dwarves Never Fall"; the gem-bench picture zoomed to mush; odd
+  sound before "179"; pauses; the workbench spin too big. All fixed; the orange rim is toned to skin (grey made a blue rim).
+- The clip has no "Dwarves Never Fall" take (only "never die"), so the Wishlist line is borrowed from Short 052's clip.
+- (Nov 19, later) Owner said yes to both: the copper chest is hollow now (four board walls and a floor) and the stone
+  chest got a stone lid (slab, iron bands, hinge straps, ring pull), both cut with the new lid option (F364, F365).
+  The Game Feel page now shows the three chests with swinging lids, and the wind-up crouch is gone from it. Owner
+  asked to confirm skills: 14 skills, 44 perks in 4 branches, the K window, 18 tests pass; 36 perks work, 6 say
+  "not in the game yet", and Lantern Bearer does nothing (asked, N3). Hurdle: the page's lid swing first let an
+  old swing keep moving the lid after a new one started; each swing now has its own token.
+
+### Nov 19: the 12 free asset packs downloaded and photographed for the owner's keep/skip
+- **Owner:** download all the free packs picked on the MacBook (docs/research/RESEARCH-PLAN.md: rounds 1 and 2) and make a page with every model's picture so he can choose what goes in the game.
+- Downloaded all 12 (KayKit RPG Tools, Fantasy Weapons, Forest Nature, Adventurers, Character Animations, Skeletons; Quaternius Fantasy Props MegaKit, Stylized Nature MegaKit, Ultimate RPG, Modular Weapons, Easy Enemies; flo-bit Low Poly Nature) into `Downloads/dwarf-asset-packs/<pack>/`, outside the game folder (nothing in the public repo yet). Every licence read: all CC0 (flo-bit's in its Readme, Easy Enemies on its itch page).
+- Every model photographed in Blender by script (611 models), plus the 159 animation names; page: https://claude.ai/artifact/UnJFF5E9ZUAUDCr19oBUi3 (Keep / Skip per model, keep-all per pack, picks saved in the page's store so Claude can read them).
+- **Hurdles:** itch.io's "pay what you want" download can't be scripted with plain web requests ("invalid key"), so Chrome clicked "No thanks" and Download like a person would; two Quaternius packs live in Google Drive folders (leaving the page cancels Drive's zipping, so one at a time); flo-bit's zip had Mac junk files (`__MACOSX`) Blender can't read; Blender's starting cube sat in front of every first picture; the old Quaternius FBX files came in empty, so those three packs were photographed from their OBJ copies.
+- Next: read the owner's picks, then bring the kept models in by build script (reshape + repaint in our style, model rules), log each pack in CREDITS.md.
+- (Nov 19, later) Owner: the game only showed a gray screen. Cause (mine): after the pull, 9 code files still had
+  clash markers (other chats' unsaved edits against the online work), so the game's scripts wouldn't load. With the
+  owner's OK: backed them up, kept both sides (online skills code + the other chats' weapon combos, Fallen Outpost,
+  statue mining). Hurdle: two "clean" merges had put the same code in twice (the boulder/root-pillar lines in
+  dwarf.gd, `stab()` in dwarf_rig.gd); removed the copies. Now 0 script errors and the start tests pass.
+- (Nov 19) Owner: the chest opening sounded like a dirt block breaking (it used the pickup/clink sounds). Now real
+  recordings from Kenney's RPG Audio (CC0): a wooden door creak to open, a door thump to close (F355).
+- (Nov 19) Owner: the chest opening sound was too long ("like a door"): cut to its first part (0.4 s, the latch and
+  first creak, short fade), was 1.4 s. Owner said yes to N3: the Lantern Bearer perk now really makes your lantern
+  reach 25% further per rank (Progression.lantern_range_mult, read by the lantern; test added).
+
 ## November 19, 2026 (PC, cave Claude): faster second load
 
 - Owner's list for today: all the speed work, more and varied mushroom grass (first cave only), textured moss on the
@@ -4088,42 +4472,36 @@ the body."
 - A curtain test failed on GitHub's own version: one strand's tip 3 cm into the floor after a cave-shape change; strands
   whose tip touches rock are now shortened (not removed, so saved strand numbers stay right).
 
-- (Nov 19, later) Owner said yes to both: the copper chest is hollow now (four board walls and a floor) and the stone
-  chest got a stone lid (slab, iron bands, hinge straps, ring pull), both cut with the new lid option (F364, F365).
-  The Game Feel page now shows the three chests with swinging lids, and the wind-up crouch is gone from it. Owner
-  asked to confirm skills: 14 skills, 44 perks in 4 branches, the K window, 18 tests pass; 36 perks work, 6 say
-  "not in the game yet", and Lantern Bearer does nothing (asked, N3). Hurdle: the page's lid swing first let an
-  old swing keep moving the lid after a new one started; each swing now has its own token.
-- (Nov 19, later) Owner: the game only showed a gray screen. Cause (mine): after the pull, 9 code files still had
-  clash markers (other chats' unsaved edits against the online work), so the game's scripts wouldn't load. With the
-  owner's OK: backed them up, kept both sides (online skills code + the other chats' weapon combos, Fallen Outpost,
-  statue mining). Hurdle: two "clean" merges had put the same code in twice (the boulder/root-pillar lines in
-  dwarf.gd, `stab()` in dwarf_rig.gd); removed the copies. Now 0 script errors and the start tests pass.
-- (Nov 19) Owner: the chest opening sounded like a dirt block breaking (it used the pickup/clink sounds). Now real
-  recordings from Kenney's RPG Audio (CC0): a wooden door creak to open, a door thump to close (F355).
-- (Nov 19) Owner: the chest opening sound was too long ("like a door"): cut to its first part (0.4 s, the latch and
-  first creak, short fade), was 1.4 s. Owner said yes to N3: the Lantern Bearer perk now really makes your lantern
-  reach 25% further per rank (Progression.lantern_range_mult, read by the lantern; test added).
+### Nov 19: the owner's 223 asset picks; where they go; the Asset Cup
+- Owner kept 223 models (no animations: "you pick them, save the rest"). Kept models and their texture files copied into `Downloads/dwarf-asset-kept/` (with `kept.json`, licences, and all 12 original zips); the unpacked rest deleted. Claude picked 74 animations for the medium (dwarf-sized) body (`picked_animations.json`); the whole animation pack is saved too.
+- Where everything goes: `docs/research/asset-picks-placement.md` (weapons replace our weapon shapes, furniture becomes a new Furnish tab, lights, storage props, books/potions as shelf filler, the spider as a cave pest, rocks/grass/mushrooms as cave dressing, dead trees in big caverns; living trees and pines need the owner's answer).
+- Clashes (several models for one game thing) go to a head-to-head championship page, https://claude.ai/artifact/Gcg7DnXxpMoNxVszEDSB7L: 14 groups, 56 models (swords 6, shields 4, arrows 6, bags 4, great axes 3, hammers 3, spears, crossbows, chests, beds, benches, mugs, chalices 2 each, dead trees 16). Books, potions, rocks, grass and furniture are not clashes (variety).
+- Hurdle: a deletion with a path in a variable was stopped by the safety check (it could have hit a wrong folder); rewritten with the literal folder path.
+- **Later Nov 19:** cup results recorded; the owner answered two rounds of multiple-choice questions (iron tier, glow groves with glowing leaves, dark trees between them, the spider as a Zone 1 pest after watching its moves on https://claude.ai/artifact/PawPsHLmuBfb13x2MPAvZd, furniture that partly does something, lights that burn forever, rocks/grass alongside ours, potions/books as decor first). Six-batch plan written into `docs/research/asset-picks-placement.md`, glow groves first. Hurdle: the spider's moves filmed from its own .blend (the old FBX files import empty in Blender 5); a relative output path put the first frames nowhere, fixed with a full path.
+
+### Nov 19: batch 1 started, the first four glow trees (round 1)
+- `tools/asset_forge/builds/glow_trees.py`: free CC0 pack trees (sources in `tools/asset_forge/packs/`, Godot-ignored, pack barks dropped to keep it small: 8.9 MB) rebuilt by script: our painted `bark_tree` on the trunk (a different variant per tree) with a little wobble, a touch chunkier, the pack's leaf cards kept but painted in grey shades with the grove colour as a tint on top (so the game can recolour each grove) and glowing; exported with PNG so the leaf cut-outs survive. First four: round trees 1 and 3, pines 1 and 3. Page: https://claude.ai/artifact/TFv5gZrtpUJXgdAdv6LZfY (grove colour buttons, glow slider, lantern).
+- **Hurdles (Claude's slips, all in one sitting):** "leaf" didn't match the pack's "Leaves" material (leaves got bark); too strong a glow turned the leaves white; glTF can't carry a colour gradient made of nodes (leaves exported plain white), so the shading is painted into a picture; Blender hadn't loaded the leaf picture; the leaves were handed the bark material from the first slot; and the leaf picture's name "Leaves_NormalTree" tripped the "skip normal maps" rule. Page: .glb isn't served on artifact pages, so models ship wrapped in .json; bloom too strong at first (trees white), softened.
+- **Round 1 fix (owner: the round trees glow too much, the pines not enough, "only one spot is glowing", "the second tree just glows at the very top"):** the pack's leaf pictures differ a lot in brightness (round-tree leaves mostly bright, pine needles mostly dark with a few bright streaks). Each leaf picture is now stretched between its own darkest and brightest leaf pixels and kept in a narrow band, so every tree glows evenly over its whole crown. The page's per-tree lamp sat inside the crown and made a hot spot: moved down by the trunk, where it lights the bark and ground.
+- **Round 2 (owner OK'd round 1: "this is good"):** all 26 grove trees built by `glow_trees.py`: the other 6 glowing trees (round trees 2, 4, 5; pines 2, 4, 5) and the 16 dark trees (Quaternius dead 1-5 and twisted 1-5, scaled down from 13-19 m to 6-9 m; flo-bit bare 1-6). Dark trees: our bark plus a glow picture made from the bark painting's own darkest grooves, so only the cracks glow faintly in the grove colour; the twisted trees' few leaves glow dimly. Bark/crack pictures 512 px, leaf pictures 1024 px (~1 MB a tree). Shown as a small grove on the same page.
+- **Hurdles:** an edit to colour the crack glow didn't apply the first time (cracks would have glowed white); the wobble used Python's `hash()`, which changes every run, so builds weren't repeatable (now `zlib.crc32`); the page waited for all 26 trees before drawing anything, and its slider made the twisted trees' dim leaves as bright as the glow trees (fixed on the page).
 - (Nov 19, speed part 2) Solid rock only to 100 m (a second, collision-only viewer); ground snapping only within 85 m
   (beyond, the rock isn't solid, so a ray would say "no floor" and hide things); rock chunks reused from a pool; fewer
   chunks on Potato/Low. Ready to play ~13 s after start with saved plans (was ~80 s).
 - Hurdle: the dig test's numbers swing wildly between runs of the same code (10 to 43 slow frames), so it couldn't
   tell old from new; with other sessions using the PC, single runs prove nothing. Kept the changes the research backs.
-
 - (Nov 19, mushroom grass) 3 new tuft shapes (bells, needles, carpet) + a far twin of each (110 triangles), twice the
   tufts, thinned and nearer on lower presets (tufts mixed so thinning is even). First measurement: 11.5 ms of graphics
   work looking over the grass. Cause: "fade self" on visibility ranges draws things see-through. Switched every
   decoration to a plain cut-off: 3.75 ms (High), 1.5 ms (Potato).
 - Hurdle: the "speed part 2" upload was refused (someone uploaded first) after Claude had already deleted the clean
   copy; the save was found again in git and put on top. Lesson: upload first, then clean up.
-
 - (Nov 19, moss) Root Tree moss rebuilt: round 1 (many small clumps) looked sprinkled and some bits stood off the
   bark (pushed sideways along a curved surface); round 2 builds each patch from hundreds of tiny bumps sitting on the
   bark's own surface points. ChatGPT (for a real moss picture) wasn't reachable: the browser connection timed out.
 - (Nov 19, waterfalls) Water seeping from wall cracks down to a pool (CaveWater.plan_falls + waterfall.gdshader).
   Round 1 read as a thin white line with a hot shine and a black pool; round 2 wider, bluer, softer, with droplets.
   The test caught 2 falls whose crack point sat just inside rough rock: nudged out or skipped. No sound yet.
-
 ## November 19, 2026 (PC, snail Claude): 5 FPS found, and the owner's play notes (F266, F268, F356-F361)
 - Owner: 5 FPS; no stars in the first cave; too many bugs and crickets; rocks still floating; mushroom grass on a
   crystal; the tower's chests backwards; a snail hit him through the tower wall; chest sounds way too loud.
@@ -4154,41 +4532,6 @@ the body."
   (charcoal is lit; now near-black and fully rough); the barrel test failed because frames run too fast in tests
   (waits real time now). NaN hunt (F363): not reproduced (deaths in odd poses, trail, spit, walking his path in his
   world); added NanWatch, a lookout that names the first broken thing in the log.
-## November 19, 2026 (PC, cave Claude): rebuilding ruins
-
-- Owner's picks (asked first): pieces come back one by one; wood takes planks; reward = blueprint + experience;
-  rebuilding clears rubble. Plan: docs/design/ruin-rebuild-plan.md.
-- Built on the existing build sites (a blueprint's Builder's Chest already builds piece by piece): the watchtower ruin
-  gets a Rebuilding Chest; the first planks or cut stone make a site of the whole Stone/Wooden Watchtower over the ruin.
-  New: the Wooden Watchtower blueprint (every piece in planks, battlements -> wooden railings), whole ruin pieces count
-  as built, broken walls taken down by place, rubble cleared floor by floor, then blueprint + 300 crafting XP.
-- Built and tested in a clean copy of GitHub: this folder's copies of the ruin, chest and building files hold other
-  sessions' unsaved work (e.g. the Stone Outpost blueprint isn't on GitHub yet).
-- Hurdles: worn walls are lower than whole ones, so the "in the way" check missed them (12 left standing); now taken
-  down by place too, and anything broken left is cleared at the end. Test slips: skill XP is kept by name, and the
-  site clock had to be advanced by hand.
-
-- (Nov 19, owner played) Mushroom grass looked "the same, still white": the tints were too faint; now clear colour
-  drifts. No waterfalls seen: his world had 7, none near the start; a count of why spots failed showed the water
-  stopping at bulges and leaning walls being refused; fixed: 34 in his world (3 in the first cave).
-- Passed to other sessions: tree sizes from bush to big with wood by size (the glow-groves Claude took it); creature
-  bugs (only one look per creature, beetles sliding sideways, bats stuck in walls, a bat not turning to stone): not
-  the glow-groves Claude's; waiting for the creature Claude.
-
-## November 19, 2026 (PC, snail Claude): crossbow bolts on sleeping bats, F8 item menu (F371, F372, F368)
-- Owner: built a crossbow, shot a bat, nothing happened; wants F8 to give any item without crafting.
-- A test in a real world (tools/bolt_check.gd: crossbow + bolts, a bat in front, aim, shoot): bolts kill flying
-  bats in one shot (16 health). The bug: a roosting bat's body (a 1.2 m capsule standing up from its anchor 30 cm
-  under the ceiling) was ~0.9 m inside the rock while its picture hangs below, so the aim line hit the rock. Now a
-  sleeping bat's body hangs down with its picture; waking, it drops its body's height out of the ceiling (also why
-  aggroed bats got stuck in the rock, F368). Checked: with the fix switched off the bolt hits the rock, on it kills.
-- F8: DevItems (src/ui/dev_items.gd): every item with its picture, search, click = 1, right-click = a stack, dev
-  builds only, straight into the host's bag.
-- **Hurdles:** (1) the first test bats were placed inside the tiny wake-up room's wall, then the roost spot had a
-  1.3 m ceiling; moved to the big cavern and searched for a real ceiling. (2) The monster tests use a stand-in dwarf
-  with no camera, so the real-shot check became a tool instead of a test. (3) Waking now drops a bat 1.2 m, which
-  broke the bat-ragdoll test (it woke the bat after placing it 1.5 m up): the test now wakes it first. (4) Feedback
-  numbers clashed again (F350 is the ruin rebuild): the statues are F370.
 
 ## Nov 19: Telling Claude's test games and chats apart (owner idea)
 - **Owner: "if Claude needs a new chat, write it in big bold letters; mark the games Claude opens for testing; name
@@ -4228,6 +4571,42 @@ the body."
   safety check refused rewriting files that hold other sessions' unsaved work; waiting for the owner.
 
 
+## November 19, 2026 (PC, cave Claude): rebuilding ruins
+
+- Owner's picks (asked first): pieces come back one by one; wood takes planks; reward = blueprint + experience;
+  rebuilding clears rubble. Plan: docs/design/ruin-rebuild-plan.md.
+- Built on the existing build sites (a blueprint's Builder's Chest already builds piece by piece): the watchtower ruin
+  gets a Rebuilding Chest; the first planks or cut stone make a site of the whole Stone/Wooden Watchtower over the ruin.
+  New: the Wooden Watchtower blueprint (every piece in planks, battlements -> wooden railings), whole ruin pieces count
+  as built, broken walls taken down by place, rubble cleared floor by floor, then blueprint + 300 crafting XP.
+- Built and tested in a clean copy of GitHub: this folder's copies of the ruin, chest and building files hold other
+  sessions' unsaved work (e.g. the Stone Outpost blueprint isn't on GitHub yet).
+- Hurdles: worn walls are lower than whole ones, so the "in the way" check missed them (12 left standing); now taken
+  down by place too, and anything broken left is cleared at the end. Test slips: skill XP is kept by name, and the
+  site clock had to be advanced by hand.
+
+- (Nov 19, owner played) Mushroom grass looked "the same, still white": the tints were too faint; now clear colour
+  drifts. No waterfalls seen: his world had 7, none near the start; a count of why spots failed showed the water
+  stopping at bulges and leaning walls being refused; fixed: 34 in his world (3 in the first cave).
+- Passed to other sessions: tree sizes from bush to big with wood by size (the glow-groves Claude took it); creature
+  bugs (only one look per creature, beetles sliding sideways, bats stuck in walls, a bat not turning to stone): not
+  the glow-groves Claude's; waiting for the creature Claude.
+
+## November 19, 2026 (PC, snail Claude): crossbow bolts on sleeping bats, F8 item menu (F371, F372, F368)
+- Owner: built a crossbow, shot a bat, nothing happened; wants F8 to give any item without crafting.
+- A test in a real world (tools/bolt_check.gd: crossbow + bolts, a bat in front, aim, shoot): bolts kill flying
+  bats in one shot (16 health). The bug: a roosting bat's body (a 1.2 m capsule standing up from its anchor 30 cm
+  under the ceiling) was ~0.9 m inside the rock while its picture hangs below, so the aim line hit the rock. Now a
+  sleeping bat's body hangs down with its picture; waking, it drops its body's height out of the ceiling (also why
+  aggroed bats got stuck in the rock, F368). Checked: with the fix switched off the bolt hits the rock, on it kills.
+- F8: DevItems (src/ui/dev_items.gd): every item with its picture, search, click = 1, right-click = a stack, dev
+  builds only, straight into the host's bag.
+- **Hurdles:** (1) the first test bats were placed inside the tiny wake-up room's wall, then the roost spot had a
+  1.3 m ceiling; moved to the big cavern and searched for a real ceiling. (2) The monster tests use a stand-in dwarf
+  with no camera, so the real-shot check became a tool instead of a test. (3) Waking now drops a bat 1.2 m, which
+  broke the bat-ragdoll test (it woke the bat after placing it 1.5 m up): the test now wakes it first. (4) Feedback
+  numbers clashed again (F350 is the ruin rebuild): the statues are F370.
+
 ## November 19, 2026 (PC, snail Claude): the creature list: all 4 looks, beetles and bats turn first (F373, F374)
 - Owner (via the cave Claude): only one look of each creature seen; beetles slide sideways; bats only fly forward and
   back (turn first, arcs, randomness); the first cave's two snails should differ; a bat didn't turn to stone.
@@ -4260,6 +4639,264 @@ the body."
   `test_cave_layout2`, `test_dwarf` braid, `test_keep_clear` mushroom grass, `test_model_rules` build scripts,
   `test_visuals` shovel model.
 
+- (Nov 19, evening) Owner: gray screen again. Different cause from this afternoon: the code files were fine (no clash
+  markers), but after another chat pulled the new work, Godot's list of named code pieces (its "class list", a
+  phone book of script names) was old. It didn't know the new Glow Groves file, so main.gd failed to load and the
+  start screen never appeared. Fix: ran Godot's import once (muted, headless) to rebuild the list; the game now
+  starts with 0 errors. Lesson: after any pull that adds new code files, run the import before the owner plays.
+
+
+## November 19, 2026 (PC, cave Claude, later): GitHub pulled in, nothing growing through chests (F376), waterfall sound
+- **Pull (owner's OK to combine).** The other sessions still hadn't saved, so: every unsaved file copied to
+  `merge-backup-2026-11-19` (next to the game folder), the unsaved work set aside (git stash, kept as a second backup),
+  GitHub's 9 new saves pulled, the work put back on top. 17 files combined by themselves; 7 had spots both sides
+  changed (storage and chest names: barrel + Old Chest + Rebuilding Chest all kept; dwarf: sitting + the new door list
+  + chopping grove trees; the sword swings + the new sit pose; FEEDBACK/JOURNAL entries). Two extra files GitHub also
+  had were older copies, so GitHub's stayed.
+- **Hurdle (Claude's own):** two journal entries ("crossbow bolts" and "rebuilding ruins") vanished quietly: one side
+  had moved them, so git removed the old copy without a warning, and my "take one side" step dropped the moved one.
+  Caught by a check that every new line from either side is still somewhere in the file; both put back in place.
+  The statue lines in dwarf.gd would have run twice (one side had moved them); kept once.
+- **Nothing poking through boxes (F376).** New `World.ground_taken` signal: whenever a storage box appears (ruin and
+  camp chests, chests and barrels players place, boxes loaded from a save) or a ruin's treasure is set down, pebbles,
+  plants and mushroom grass around it are hidden (on every computer). Boulders and glowing mushrooms keep off those
+  spots from the start (marked "not there" rather than removed, so their numbers in saves stay the same). The ruins'
+  treasure now rolls its own dice, so its spots are known before anything is built (`RuinTreasure.keep_clear`).
+- **Hurdle:** found that the "put things on the real rock" step (GroundSnap) could bring back a plant that had been
+  dug away or broken (it used the plant's remembered home); it now skips anything hidden.
+- Test `test_clutter_keeps_clear_of_boxes` (seed 42 + a player chest in the first cave): before, things grow there;
+  after, none. My first try assumed 3 grass models (there are more): fixed.
+- **Waterfall sound.** "Waterflow sound" by TyberiusGames (OpenGameArt, CC0, a real recording), cut into a 4.7 s
+  mono loop that blends end into start (no click), quiet, heard up to ~20 m, each fall a bit higher or lower and
+  starting at its own place. Hurdle: BigSoundBank (also CC0) blocks downloads that aren't a browser; OpenGameArt worked.
+- Test game (autopilot, seed 42, muted, marked): no errors from these changes (only NanWatch's own "freed instance"
+  line). Full test run: 458 checks, 5 failed. One was the merge itself: "barrel" is both a loot
+  barrel (one session) and a building piece (another), and the new "furniture that stores things" step caught every
+  building piece, so loot barrels lost their lid; now only pieces marked `use = "store"` count (storage tests pass).
+  Not from today: braid swing, mushroom-grass far models without a build script, the shovel tool test (since Nov 17),
+  and test_aim_skips_things_behind_the_dwarf (an engine "material is null" error in the test renderer; the dwarf
+  files hold another session's unsaved sword/shield work; not traced yet).
+
+## November 19, 2026 (PC, cave Claude, evening): crossbow freeze, F8 menu, bat sparks and flaps (F377-F380)
+
+The owner's notes after playing: bat flaps too loud, fallen bats don't turn to stone, mining sparks float above a
+fallen bat, the (copper) crossbow freezes the dwarf or makes him slide one way and never reloads, the F8 menu gives
+items on hover, and "where are the free trees and grass we downloaded?"
+
+- **Pulled GitHub again first** (2 new saves: Cave Spider, high-roost bats turning to stone). Same careful way as
+  before: copies of every unsaved file in `merge-backup-2026-11-19b` next to the game folder, put aside, pulled,
+  put back. Only JOURNAL.md clashed (both sides added an entry at the end): kept both.
+- **Crossbow (F379), one bug behind both problems.** Reading the code found nothing, so Claude wrote a robot
+  (`tools/crossbow_walk_check.gd`) that walks every way while holding, aiming, shooting and reloading. It showed the
+  answer at once: reloading asked the dwarf `running`, which was only a word inside the walking code, not something
+  the dwarf could be asked. Godot stopped the walking code with an error every frame, so the dwarf froze or kept his
+  last speed, and the reload never counted down. Switching weapons stopped the reload, which is why that "fixed" it.
+  Fix: the dwarf keeps `running` where others can ask. Test `test_crossbow_reload_while_walking` fails without the
+  fix (same error) and passes with it.
+  - Claude's own hurdles: the robot first used "crossbow_iron", which doesn't exist (the tiers are stone, copper,
+    silver), so it held bolts instead; and the first test run "passed" without testing anything because the test
+    runner's `only=` picks files, not single tests. Then the reload didn't finish in the test because the robot hadn't
+    pretended to grab the mouse (the game pauses fighting in menus). All fixed.
+- **F8 menu (F372 again).** The scroll wheel is a "mouse button" in Godot, so scrolling the list over the pictures
+  gave items. Only left and right clicks count now; the menu's test scrolls over a button (nothing) and clicks (one).
+- **Sparks above a fallen bat (F378).** The host remembered the spot where the creature died; a bat dies in the air
+  and falls. Sparks, loot and the reach check now use where the stone body lies (`Statue.where`). Checked in the
+  high-bat test.
+- **Fallen bats not turning to stone (F369 said again):** the fix was already on GitHub (15:37) but not in the owner's
+  folder when he played; it is now. Its test passes.
+- **Bat flaps (F377):** each flap half as loud to the ear (-10 to -20 dB).
+- **Free trees (F380):** they went in today as Glow Groves, never in the first cave, so the owner hasn't met one.
+- Tests: test_monsters 34/34, test_storage 9/9, test_dwarf all but the 2 old failures (braid, aim renderer error).
+
+- **Later (F381): the floating "block".** The owner's screenshots (OneDrive Pictures, Screenshots, Nov 19 17:14) showed a
+  round, scaly rock in a Glow Grove; he said "we don't need that boulder". Claude first showed him the 4 breakable boulder
+  shapes and he picked "Round", but the screenshots showed it was really the groves' big pack rocks (21 KayKit shapes,
+  `GlowGroves.ROCKS`), a different thing. Hurdle: the session snapshot was only a grey frame; the screenshots folder had
+  the real pictures. Fix: groves skip their big rocks but roll the same dice, so nothing else in the grove moves. Test
+  `test_no_big_rocks_in_groves`. (This is the glow-groves Claude's file; noted here for them.) Claude also noticed the
+  breakable boulders sit down once and never again, so digging under one leaves it floating; asked the owner first.
+- **F382, boulders drop when dug under (owner: "yes").** Boulders sat down once at the start; now every dig or fill
+  near one settles it again (0.3, 1 and 2.5 s after, while the new rock's shape gets built), looking up to 10 m
+  further down. Test `test_boulder_drops_when_dug_under` digs a hole under the nearest real boulder in seed 42. Hurdle:
+  the test first said the boulder was gone before any digging; the test robot only loads the cave's data, not its
+  solid surface, so rays found no floor. The test now adds a viewer that builds the real surface first. All 40 checks
+  in test_authority pass.
+- A peer session (dwarf animations) asked if the staged claude/outpost-and-tools merge was ours: not ours, told them.
+- (Nov 19, evening, Claude 1) Owner: 12 FPS in the Nipper Queen's room, and are the new trees or rocks the cause?
+  How we found it: the speed robot (`perfcheck`) learned `at=<place>`, `pos=x,y,z` and `fight=<monster>[*count]`.
+  Standing still, the room ran at 200+ FPS, so it wasn't the trees or rocks. The owner's own log (cave seed 215187)
+  showed the physics step at 25-30 ms; the game allows 3 catch-up steps a frame, so 3 x 30 ms = about 12 FPS.
+  Timing each monster showed her summoned Mossnippers cost 1.5-2 ms each per step, almost all inside the old
+  physics engine's "move me" call. Hurdles: the root pillars' heavy shapes looked guilty but switching them off
+  changed nothing; the rock's triangles were normal too. Fix (F384): switched to Jolt, Godot's faster built-in
+  physics engine: the same fight went from 7-18 ms to 1-2 ms. The 2 dwarf tests that fail also fail with the old
+  engine (the dwarf-animation chat's work in progress). Tree colours (F383): 4 colours per biome, each grove a main
+  one plus a second on a third of its trees. The scaly rocks (F381) the cave Claude had already removed.
+
+## November 19, 2026 (PC, cave Claude, late): beetle and snail fight bugs F236, F234, F233
+
+The owner asked what Claude 2 could take from the to-do list (Claude 1: speed, Claude 3: dwarf animation) and picked
+the three fight bugs.
+
+- **F234, thrown much too far.** A test robot (`tools/shove_check.gd`) measured one beetle charge on a flat floor:
+  **103 m**, and **177 m** when knocked down. Two mistakes in the walking code: the push was added to the dwarf's
+  speed every frame and kept, so it piled up; and the slowing-down rate was "walking speed times grip", which is 0 while
+  knocked down, so he never slowed. Fix: the push only counts for the step it's used in, and slowing down uses at least
+  walking speed. Now 1.7 m. A charge hit also knocks you down: the knock-back move, then the waking-up move (2 s);
+  only animations he already has (the dwarf animations Claude owns dwarf_rig.gd). Test
+  `test_beetle_charge_throws_a_couple_of_metres`.
+- **F236, can't get out of holes (🔁, said twice since F111; tried before: nothing).** A real 3 m pit dug in a test
+  cave showed why: (1) `_drop_ahead`, the cliff check, cast its floor ray from a spot inside the pit's wall, found no
+  floor and said "cliff", so the creature stood still; (2) the beetle "attacked" from the bottom because attacks only
+  measure sideways distance; (3) the snail stopped mid-wall to spit and fell. Fixes: a wall ahead isn't a cliff;
+  pushed against a wall with its target above, a creature climbs (2.2 m/s) and gets a short push over the lip; no
+  attacks while the target is 1.3 m+ above or while clinging to a wall. Bosses don't climb. Test
+  `test_beetles_and_snails_climb_out_of_holes`. Hurdles: the robot first saw no movement at all (the test viewer only
+  loads cave data; it needs a second viewer to build the real rock surface); then the snail "failed" while actually
+  standing on the rim fighting: the dug edge slopes, so the check now allows 1 m.
+- **F233, beetles inside each other.** Monsters only collided with rock and buildings. Ground creatures now also
+  collide with each other (bats don't, so flocks don't jam). Test `test_beetles_bump_never_overlap`; checked it fails
+  without the fix (8 cm apart).
+- Tests: test_monsters 36/36, test_combat 14/14, test_dwarf all but the 2 old failures. Claude 1 switched the project
+  to Jolt physics meanwhile (not committed); all of the above ran with Jolt.
+- For Claude 1 (speed, also working in monster.gd; the message to their session didn't arrive, it had restarted):
+  monster-vs-monster collision adds physics pairs; `_drop_ahead` casts one more ray. Worth watching in the fight
+  measurements.
+
+## Nov 19 (evening), Claude 1: hitches with Jolt, and timing every loading step
+- **The 300-500 ms physics hitches (17:08-17:13 in the owner's log).** The owner's log was gone: test runs had pushed
+  it out of Godot's 40 kept logs, and the recorder's copy of that session had a different game in it. So the speed
+  robot stood on all 3 spots in the owner's world (seed 215187) with Jolt: physics 1.6-2.3 ms, no physics hitch at
+  all. Worst frame while walking and digging: 27-106 ms (digging), never 300 ms. Jolt seems to have fixed them too.
+- **Hurdle: the speed robot didn't start.** It used two timing counters in monster.gd that the monster Claude's
+  newer version doesn't have (our edits crossed). The robot now only uses them when they exist. While it was broken,
+  the test games never closed by themselves; Claude closed only its own (`claude=speed`), not the monster Claude's
+  test runs.
+- **The cave-building freeze (owner said "sure, look at it").** The freeze watcher now writes how long each loading
+  step took ("STEP glow swarms: 2.0 s"), and main.gd names each step (root curtains, pillars, groves, boulders,
+  mushroom grass, puddles, critters, swarms, moss...). Robot, owner's world: frozen 17.3 s = cave 2.6, crystals 1.8,
+  root pillars 1.0, glow groves 1.5, puddles 1.6, glow swarms 2.0, places 0.6, setting up 1.7, first rock ~4.
+- **Fix: glow swarms.** Each swarm looked for its cave's walls in 48 directions while loading, for every cave. Now
+  only the first cave's swarm does it at once; the others finish one per frame after loading (hidden until then).
+  Frozen 17.3 s -> 14.6 s; FPS and swarms unchanged. (The menu's loading screen already plans the cave and crystals
+  on a helper thread, so those two steps are shorter there.)
+- Still open: the owner's 31 s at "making the cave". The new STEP lines will show in their next game which step it was.
+
+## November 19, 2026 (PC, dwarf-animations Claude, chat 2): batch 1 kept off, batch 2 (mining and chopping swings)
+- **Batch 1 verdict (owner):** "all before for standing, walking, running, jumping is good already, keep what we have".
+  The weight layer is switched OFF (`DwarfRig.use_weight = false`); its code, test and page tools are saved to GitHub
+  (from the `claude/dwarf-anim` worktree, so no other chat's unsaved work went with it) and can come back any time.
+- **Hurdle: the Dwarf Moves page said "the dwarfs could not be loaded".** It loaded on a reload. Likely cause: the model
+  file was 15.1 MB and the page host serves ~14.6 MB reliably. The new page stays at 13.7 MB and retries a failed download.
+- **Batch 2, the owner's picks:** a big, slow wind-up; on a hit a jolt + a tiny freeze (no camera shake); digging stays
+  as fast as now; a miss gets no freeze but a small stumble.
+- **Found by measuring (a probe of the right hand vs the head):** the old swing *started* with the tool already up behind
+  his head, so the only "wind-up" was a 0.08 s fade. New `DwarfRig.MADE` swings: ready pose in front of the chest, a long
+  lift up and back, a short creep further back at the top, a fast smash (now at 70% of the swing, `SWING_STRIKE`), back
+  to the ready pose. Start = end pose, so a held dig button chains swings with no stop (`DwarfRig.chain_swings`).
+- **"Same speed" changed plan:** Claude first said "each hit digs more", but hits are whole counts in 7 places (rocks,
+  boulders, roots, trees, statues...) that other chats are editing. Instead the swing keeps 0.55 s and the wasted
+  return-to-rest became the wind-up. Digging speed is exactly as before.
+- **New `src/player/swing_kick.gd`:** after a hit the tool bounces up and the chest rocks back (after the 0.06 s freeze,
+  `Dwarf.STRIKE_FREEZE` with the existing `hit_stop`); after a miss it carries on down and the chest dips. `Dwarf._strike()`
+  now says "hit", "creature" (creatures freeze on their own) or "" (air).
+- **Hurdles (Claude's own):** the kick first moved the hand 2 mm: the turning axis ran almost along the arm (now each
+  arm turns about the axis that moves the hand straight up/down); "forward" pointed backward for this skeleton (now
+  taken from the toes); the test read the kick after a few milliseconds of headless frames (now real time).
+- Test: `tests/test_swing_feel.gd` (big wind-up, chaining pose, hit up / miss down). New page tool:
+  `tools/asset_forge/dwarf_swing_export.gd` (Before = the old swing rebuilt from its old keys). Page "Dwarf Swings".
+  Not mine, failing before: `test_dwarf` braid; `test_dwarf` aim ("material is null", another chat's work).
+
+## November 19, 2026 (PC, dungeons Claude, chat 1): small dungeon sketch (map 1, "Mossgate Hold")
+- **Owner's brief:** dungeons dug into solid rock behind a round door in a cave wall: rooms, creatures, traps, random
+  chests, a hidden boulder, a loot room at the end. Small size first, sketch only, no game code until the owner's OK.
+- **Questions first (8, two rounds):** the owner chose 8-10 small dungeons in Zone 1 (more than Claude suggested),
+  walls the pickaxe can't break, hand-made maps (5+), a big pack instead of a boss, traps that hurt a lot or kill
+  outright, a big chest + rare find, creatures that come back. Written down in `docs/decisions/2026-11-19-dungeons.md`.
+- **Found:** the design plan had no dungeon section yet. The Watchtower and Fallen Outpost already show the safe way to
+  make one (wait for the rock to load, carve with ordinary digs, add pieces and chests through Builder and Storage), so
+  dungeons will be co-op ready the same way.
+- **Sketch:** map 1 has 15 spaces (11 rooms, 4 corridors), 84 x 56 m: main path Gate Hall -> Pillar Hall (spike pit)
+  -> Chasm Bridge -> hidden boulder -> Crusher Hall -> Pack Hall -> Loot Room -> one-way Way Out. Side wings hold most
+  random chests, a hidden vault behind a cracked wall, a buried chest and a healing shrine. Page "Mossgate Hold Map",
+  with a ChatGPT prompt for a mood picture. Waiting for the owner's OK.
+- **Watch out later:** 84 m is big for solid rock between caves; placing 8-10 of them needs a "keep caves away from
+  this block" step in the cave maker.
+- **Owner liked map 1. New rules (round 2, in the decisions file):** root wood walls and floors everywhere, room 9 a
+  tall stalactite cave, falling stalactites (50 HP, a crossbow can shoot them down), the chasm = spikes and instant
+  death with beetles around it, the grave goes where you stood ~3 s before dying (every death), recipes + gold as
+  the prize, the way out drops back into the entrance room, everything on the 2 m grid (ruins too), traps hurt
+  creatures. Claude listed the missing assets for the owner to pick from.
+- **Batch 1 of 6 (dungeon models):** `tools/asset_forge/builds/dungeon_traps.py` makes `trap_drip_thin`, `trap_drip_fat`,
+  `trap_drip_cluster` (falling stalactites: a "rock" part that stays, a "stone" part that falls, a crack as the clue)
+  and `trap_spikes` (root wood stakes in a 2 m square of rock). Into `assets/models/dungeon/`. 3D page "Dungeon Models"
+  with a "Make it fall" button and a 3 x 3 spike floor.
+- **Hurdles (Claude's own):** round 1 the crack was too faint, the spike tips looked like white cones, and the spike bed
+  was oval (it wouldn't tile). Round 2 fixed the tips and the bed; the crack is still faint (the paint doesn't darken
+  thin grooves), so it went to the owner as a question instead of a third picture round. The model check found
+  shimmer where the tips met the shafts: fixed by starting each tip thinner and deeper inside its shaft. Then all 4 ok.
+- **Batch 1 OK'd by the owner,** with one change: the cluster's five stalactites fall one by one (0.2 s apart,
+  biggest first). Each is now its own part (`stone0`..`stone4`); the page's "Make it fall" drops them in turn.
+- **Batch 2 (root wood traps):** `tools/asset_forge/builds/dungeon_rootwood.py`, built from the Shack's own parts
+  (`shack_v2.py`: hewn logs, split boards, pegs, its paint) so they match the walls: `trap_dart_plate`,
+  `trap_dart_wall` (holes bored into a hewn beam with iron nozzles), `trap_floor_break`, `trap_crusher` (parts
+  "frame" and "weight"; the page's "Make it slam" drops the weight).
+- **Hurdles (Claude's own):** the chain links came out lying flat (kit.ring takes degrees, not radians); round 1's dart
+  holes looked like pegs and the floor cracks didn't read (bigger holes, wider gaps, a broken-out chunk); the model
+  check found the chains hanging 1.6-5 cm short of both beams (the hewn beams' flat faces sit inside their radius:
+  the end links now reach into them) and loose stones in the cage (packed tighter). Then all 8 models ok.
+- **Owner's verdict on batch 2 (same day): "like everything, I like before better".** All the swing work is undone
+  (only Claude's own lines: another chat's Q/E station-turn line in `dwarf.gd` stays); swing_kick.gd, its test and the
+  swing page tool are deleted. Lesson: the owner likes the moves as they are; what's really wrong is **how he holds
+  things**: the handle runs past his hand and his fingers stay open (pickaxe, axe, weapons). Measured: the hand-built
+  hand IS weighted to finger bones (thumb, index, middle, ring, pinky), so a closed fist can be done in code.
+  Owner's picks for that next task: one hand on the tool; in hand at his side when walking, on the shoulder when
+  running (that carry is in the shared folder, from the unmerged `claude/outpost-and-tools` branch); checked on a
+  close-up hand page, before and after.
+
+## November 19, 2026 (PC, cave Claude, night): levelled building ground, Q/E turning, recipe pages, the dark hurts
+
+The owner picked from the to-do list: F159 (flatten the ground), F100, F90, F253, F293, F247, plus two new wishes:
+turn what you place with Q and E (walking turned it), and much slower healing (1 health every 3 s).
+
+- **Not pulled from GitHub this time.** GitHub had 3 new saves (dwarf weight, the new-chat rule, the owner's big
+  to-do review), but this folder holds unsaved work from several Claudes and those saves touch the dwarf files and both
+  feedback lists. Left for a careful merge. Found on the way: the to-do review on GitHub used F376 and F377 for new
+  items, but this folder already has its own F376 (nothing growing through chests) and F377 (bat flaps). Today's new
+  items are F385 and F386, above both. The merge must renumber one side.
+- **The dark hurts (F293) and healing is slow.** A new `Darkness` helper: torches, lamps, campfires, crystal lights,
+  glowing trees, shrines and lanterns mark themselves as light; twice a second the game checks whether one reaches you
+  (an empty or put-away lantern doesn't count, creatures' glow doesn't). In the dark: no healing, stamina costs x1.5, and
+  the screen says so. Healing: 2 a second became 1 every 3 s. Hurdle: my first healing test forgot that a well-fed
+  dwarf heals 20% faster.
+- **Body bars (F247).** A picture of the real screen showed the cause: the bars used the menus' thin slider picture
+  stretched taller, so the colour was a strip and the number sat on its edge. Rebuilt in the hotbar slots' frame with
+  a thick fill. Hurdle: in the next picture the fill was still thin; measuring it showed the bar had shrunk to 5 px
+  inside its frame (it wasn't told to fill it). Fixed and measured at 26 px.
+- **Q/E turning.** The piece's turn was "the way you face + Q presses", so walking turned it. Now it is set once when
+  you take the hammer (or a station/chest) out, then only Q (left) and E (right) change it. E still opens, sits and
+  picks up when you aim at something; only otherwise does it turn.
+- **Recipe pages (F253).** Learning already worked, but every page looked the same and said one line at the top.
+  Now: Cook's, Armourer's, Weaponsmith's and Toolmaker's Pages, each teaching only its kind, with its own picture
+  (made from the old page: the pot drawing painted out, the paper tinted, the item drawn on as ink, a wax seal;
+  `tools/art/make_page_icons.py`). Learning shows a card on the left with the item's picture and where to make it.
+- **F100** was already in the game and tested; it just never said so. Aiming at a piece now shows how to take it down.
+- **F90, ruin columns.** These were the ruins' carved columns (not the cave's stone columns, which are part of the
+  rock). They were placed on the planned floor once and could never be broken. Now they settle on the real rock (and
+  again after digging near them), and the pickaxe breaks them for stone, the same way as boulders; broken ones are saved.
+- **F159, levelling.** Floors and foundations measure the ground in 1 m patches: bumps are cut (rock back to you),
+  dips are filled with dirt/stone from your bag, over 1 m of rock = red "too steep". The placing rules look at the
+  rock as it will be, so a small bump is no longer "inside rock". Brown see-through blocks under the ghost show the
+  fill. Blueprints also clear a 1 m walkway and fill dips under them from their chest. Hurdles: (1) the blueprint
+  tests stalled, waiting for 51-74 dirt: a natural floor has many small dips under a rounded height; blueprints now
+  only fill dips over 45 cm and never wait for dirt. (2) my "too steep" test spot was 9 m away, past building reach.
+- **Claude's own tool hurdles:** a backslash at the end of a line vanished inside the shell, so 3 code edits didn't
+  match (I put the backslash in by its character code); a long edit script broke the shell, so it went in a file;
+  a helper treated one stray Windows line ending as "the whole file uses them"; my first feedback-list script left
+  blank lines where items were moved and squeezed two blank lines elsewhere. Caught by comparing with a backup, then
+  redone cleanly.
+- Tests added: healing, dark, light reach, Q/E turning, take-down text, 4 page kinds + the card, column breaking and
+  settling, levelling. A marked test game (seed 42) ran with no script errors.
 
 ## November 19, 2026 (PC, snail Claude): to-do review with the owner (no game changes)
 - The owner answered multiple-choice questions on every part of the game. Caves, glow, digging and menus: 8/10, "good
@@ -4312,3 +4949,49 @@ the body."
   already, keep what we have". So the weight layer is switched OFF in the game (`DwarfRig.use_weight = false`); the code,
   its test and the page tools stay so it can come back. The page once said "the dwarfs could not be loaded": the model
   file is 15.1 MB and the page host only serves ~14.6 MB reliably; it loaded on a reload. Next page stays under 14 MB.
+
+## November 19, 2026 (PC, cave Claude, chat 2): GitHub's 3 saves merged in; the 3 test failures are Jolt's
+
+- **Merge.** GitHub had 3 new saves: dwarf weight, the new-chat rule, and the owner's to-do review. This folder had
+  unsaved work from several Claudes. Backups went to a temporary folder first. The folder now stands on GitHub's
+  newest save, and every unsaved change is still there. Most files didn't clash. The dwarf weight files were already
+  here and matched GitHub's byte for byte. The journal kept both sides' new entries.
+- **Feedback lists.** GitHub's F376/F377 (crafting bar jumping, dwarf working at stations) are now **F387/F388**.
+  The to-do review crossed off 109 items. Some of them had newer notes here: F353 (the waterfall sound) and F372 (the
+  F8 menu, round 2). Those notes were carried into the done list. F90, F100, F159, F247 and F369 were crossed off on
+  both sides, so the local copy with the real fix was kept and GitHub's older copy dropped. Items only this folder
+  had (F233-F236, F273-F275, F280, F283, F307-F312) stay open.
+- **Hurdles (Claude's own):** (1) my first item-matching script went by number only. But some numbers are used
+  twice for different things (F261, F273, F274, F300, F373, F374), so it mixed items up. Matching by number and
+  title fixed it. (2) Another Claude was using the same temporary folder name (`/tmp/mrg`), so I moved my work into
+  my own folder. (3) Python on Windows couldn't print the 🔁 sign, so I switched it to UTF-8 output.
+- **Still to tidy (not touched):** those numbers used twice. Also F337, which is in both lists.
+- **Test failures.** Ran test_authority: 40 checks, 3 failed, all with Jolt's own error messages.
+  (a) "Too many bodies (10240)": each test builds a whole new cave before the last one is gone.
+  (b, c) "Scale not supported": chopping a root squashes its solid body thinner (`glow_field.gd:101`), and Jolt
+  can't squash round shapes unevenly (Godot's old physics allowed it). Sent the cause and fix ideas to Claude 1.
+
+
+## November 19, 2026 (PC, dwarf-animations Claude, chat 3): the fists (how he holds tools)
+- **Owner's picks (2 small question batches):** tight fist; a small stub of handle below the fist; the empty left hand
+  stays as it is; with a shield the left hand makes a fist round the strap; a page with every tool still + moving.
+- **Found by looking close up:** standing, the handle crossed the side of his hand; running (the shoulder carry), the
+  handle floated next to his OPEN hand, because the carry turned only the tool holder about the wrist, not the hand.
+- **New `src/player/dwarf_fist.gd` (runs after every animation frame, animations untouched):** closes the fingers
+  (bend directions read from the pack's own standing animation), measures the hole through the fist (a circle through
+  the finger joints), turns the WRIST so that hole lies along the handle, and puts the tool in it with a 5 cm stub.
+  The tool still points exactly where the old grip put it (GRIPS, the shoulder carry, the spear's aim), so the swings
+  the owner likes look the same. `DwarfRig._carry_turn` became `hold_turn` (it now turns the wrist, via the fist).
+- **Hurdles (Claude's own):** (1) the test first said the fingertips were 24-45 cm from the handle: Godot puts the
+  plain animation pose back after each frame, so the test must read the bones inside `skeleton_updated`. (2) The wrist
+  turn ended 11 degrees off: the dwarf's stretched arm bones lose a bit of every turn, so the fist lines up again a few
+  times (to under half a degree). (3) The spear needed a 110-130 degree wrist bend (a shaft along the forearm can't
+  go through a fist): now the wrist turns at most 45 degrees and the tool tilts the rest, except in the stab, where the
+  wrist bends all the way so the spear still points straight ahead. (4) Tried to close every Godot window to stop one
+  stuck run: blocked, rightly (it could close the owner's game or another chat's); stopped only my own run.
+  (5) The page model was 67 MB: now one body file (13.4 MB) + one small moves file per tool (3-4.5 MB), new
+  `tools/asset_forge/hand_page_split.py`; the recorder got `hands=1 hand_tool=<item>` (dwarf_anim_export.gd).
+- Test: `tests/test_dwarf_fist.gd` (fingers round the handle, handle through the middle of the fist and along its hole,
+  the stub, every weapon, running, chopping; shield fist; open hand without a tool). Page "Dwarf Hands" (Before/After).
+- Not mine, failing: `test_dwarf` braid + aim (before), `test_visuals` shovel model, 3 `test_authority` (Jolt switch).
+- Did NOT merge `claude/outpost-and-tools`: the shoulder carry was already in the shared folder.

@@ -111,4 +111,42 @@ func test_recipe_pages_from_ruins() -> void:
 	check_eq(auth.request_use(1, Vector3.INF, Vector3.ZERO, 0.0), "learned", "the page teaches a recipe")
 	check_eq(auth.world_state.learned.size(), 1, "remembered by the world")
 	check(auth.taught_recipes().has(auth.world_state.learned[0]), "and it shows up in the crafting list")
+	# Reading straight from the bag (right-click), not only from the hand (owner: "I cannot read the recipe").
+	ps.inventory.slots[Inventory.HOTBAR_SIZE + 1] = {id = "recipe_page", count = 1}
+	check_eq(auth.request_read(1, Inventory.HOTBAR_SIZE + 1), "learned", "a page in the bag can be read too")
+	check_eq(auth.request_read(1, 0), "", "only pages can be read")
+	_teardown()
+
+
+## Owner (Nov 19): pages teach food, armour, weapons and tools, each kind looks different, and learning shows a card
+## on the left with the picture of what you learned.
+func test_each_page_kind_teaches_its_own_kind() -> void:
+	await _setup()
+	var got := []
+	auth.learned_recipe.connect(func(r): got.append(r))
+	for page in ["cook_page", "armour_page", "weapon_page", "tool_page"]:
+		check(Items.icon(page) != null, "%s has its own picture" % page)
+		check(Recipes.page_recipes(page).size() > 0, "%s has something to teach" % page)
+		ps.inventory.slots[2] = {id = page, count = 1}
+		ps.selected_slot = 2
+		check_eq(auth.request_use(1, Vector3.INF, Vector3.ZERO, 0.0), "learned", "%s teaches a recipe" % page)
+		var r: String = auth.world_state.learned[-1]
+		check_eq(Recipes.page_kind(r), Items.info(page).page_of, "%s taught %s, its own kind" % [page, r])
+	check_eq(got.size(), 4, "every learning sent the card signal with the recipe")
+	check_eq(Recipes.page_kind("dish_miners_pie"), "food", "pies are food")
+	check_eq(Recipes.page_kind("helm_copper"), "armour", "helms are armour")
+	check_eq(Recipes.page_kind("shield_copper"), "armour", "shields are armour")
+	check_eq(Recipes.page_kind("sword_copper"), "weapon", "swords are weapons")
+	check_eq(Recipes.page_kind("axe_copper"), "tool", "axes are tools")
+	var seen := {}
+	for i in 200:
+		seen[Recipes.random_page(i / 200.0)] = true
+	check_eq(seen.size(), 4, "ruin chests roll all four kinds")
+	# The card itself: picture, name, where to make it.
+	var cards := LearnedCards.new()
+	tree.root.add_child(cards)
+	var card: Control = cards.show_recipe("sword_copper")
+	check((card.find_child("What", true, false) as Label).text == "Copper Sword", "the card names it")
+	check((card.find_child("Hint", true, false) as Label).text.contains("Anvil"), "and says where to make it")
+	cards.queue_free()
 	_teardown()

@@ -30,8 +30,7 @@ static func pieces_in(group: String) -> Array:
 
 
 func refresh() -> void:
-	for c in _grid.get_children():
-		c.queue_free()
+	UiKit.clear(_grid)
 	var auth := GameAuthority.instance
 	var ps: GameAuthority.PlayerState = auth.get_player(peer_id) if auth else null
 	if ps == null or mode == null:
@@ -91,8 +90,9 @@ func refresh() -> void:
 			b.modulate = Color(1, 1, 1, 0.45)
 		b.pressed.connect(func(): mode.choose(mode.piece, f); refresh())
 		fam_row.add_child(b)
-	var help := UiKit.label(_grid, "Q turn  ·  Shift+Wheel height  ·  Left click place  ·  Right click pick up  ·  X break  ·  B close", 13, UiKit.DIM)
+	var help := UiKit.label(_grid, "Q / E turn  ·  Shift+Wheel height  ·  Left click place  ·  Right click pick up  ·  X break  ·  B close", 13, UiKit.DIM)
 	help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	UiKit.fit(self)  # shrink back to the new content (it used to keep growing with every click)
 
 
 ## The material a piece is shown in: the chosen one if it allows it, else its first.

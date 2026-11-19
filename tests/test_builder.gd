@@ -423,3 +423,37 @@ func test_furniture_beds_and_cupboards_do_something() -> void:
 	auth.builder.request_remove(1, uid, true)
 	check(not auth.storage.boxes.has(bid), "breaking the cabinet empties it out")
 	_teardown()
+
+
+## F159 (owner, 3x): a floor levels the ground under it. A dip is filled (1 dirt per patch), a bump is cut away
+## (not "inside rock"), and a big bump says "too steep".
+func test_floor_levels_the_ground_under_it() -> void:
+	await _setup()
+	auth._ev_place_station(1, "workbench", player.global_position + Vector3(-3, 0, 0), 0.0)
+	ps.inventory.add("plank_root", 30)
+	ps.inventory.add("dirt", 10)
+	var hard := Items.tier("pickaxe_silver")
+	# A dip: scoop the floor out under where the floor will go.
+	var a := _floor_spot("floor", 3.0)
+	auth._host_dig(a.pos + Vector3(0, -0.4, 0), hard, 0.9)
+	var plan := Pieces.level_plan("floor", "plank_root", a.pos, a.rot, world.sdf_smooth)
+	check(plan.fill.size() > 0, "it sees the dip (%d patches)" % plan.fill.size())
+	check_eq(auth.builder.request_place(1, "floor", "plank_root", a.pos, a.rot), "", "placed over the dip")
+	check_eq(ps.inventory.count_of("dirt"), 10 - plan.fill.size(), "1 dirt per filled patch")
+	var after := Pieces.level_plan("floor", "plank_root", a.pos + Vector3.UP * 0.001, a.rot, world.sdf_smooth)
+	check(after.fill.size() < plan.fill.size(), "the dip is filled (%d patches still low)" % after.fill.size())
+	# A bump: a lump of rock where the floor goes.
+	var b := _floor_spot("floor", 6.0)
+	auth.host_fill(b.pos, 0.8, Mat.STONE)
+	var bump := Pieces.level_plan("floor", "plank_root", b.pos, b.rot, world.sdf_smooth)
+	check(bump.cut.size() > 0 and not bump.steep, "it sees a small bump")
+	check_eq(auth.builder.problem(ps, "floor", "plank_root", b.pos, b.rot), "", "a small bump isn't 'inside rock'")
+	check_eq(auth.builder.request_place(1, "floor", "plank_root", b.pos, b.rot), "", "placed on the bump")
+	var g := Pieces.ground_height(world.sdf_smooth, b.pos.x, b.pos.z, b.pos.y)
+	check(g < b.pos.y + 0.45, "the bump was cut down (ground %.2f m above the bottom)" % (g - b.pos.y))
+	# A big bump: too steep.
+	var c := _floor_spot("floor", 7.5)  # (within building reach)
+	auth.host_fill(c.pos + Vector3.UP * 0.4, 1.6, Mat.STONE)
+	var why := auth.builder.problem(ps, "floor", "plank_root", c.pos, c.rot)
+	check(why.begins_with("Too steep"), "more than about 1 m: dig it first (%s)" % why)
+	_teardown()

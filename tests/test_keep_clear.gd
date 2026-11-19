@@ -8,7 +8,7 @@ func test_tower_ground_is_kept_clear() -> void:
 	CaveMaker.use_layout(CaveMaker.LAYOUT_LATEST)
 	for sd in [42, 7]:
 		var m := CaveMaker.new(sd)
-		check_eq(m.reserved.size(), 1, "seed %d: the tower's ground is kept clear" % sd)
+		check_eq(m.reserved.size(), 2, "seed %d: the tower's and the Fallen Outpost's ground are kept clear" % sd)
 		var plan := RuinTower.load_plan()
 		var spot := RuinTower.find_spot(m, float(plan.get("radius", 4.2)), float(plan.get("height", 9.0)))
 		check(not spot.is_empty() and m.is_reserved(spot.pos + Vector3.UP), "seed %d: it's where the tower goes" % sd)
@@ -38,6 +38,7 @@ func test_tower_ground_is_kept_clear() -> void:
 		cl.free()
 	CaveMaker.use_layout(was)
 
+
 ## F189 (owner, Nov 17): root curtains hang across some tunnel mouths, from the ceiling to a little above the floor,
 ## and never on a built thing's ground.
 func test_root_curtains() -> void:
@@ -57,6 +58,7 @@ func test_root_curtains() -> void:
 	check_eq(bad, 0, "none on kept-clear ground, none stuck in the floor")
 	CaveMaker.use_layout(was)
 
+
 ## F189 (owner, Nov 17): giant root pillars stand in some big caverns, floor to ceiling, never on kept-clear ground,
 ## in a stone column or on a place.
 func test_root_pillars() -> void:
@@ -73,6 +75,7 @@ func test_root_pillars() -> void:
 			check((p.top as Vector3).y - (p.bottom as Vector3).y >= 5.0, "seed %d: floor to ceiling" % sd)
 	check(total >= 4, "some big caverns have root pillars (%d in 2 worlds)" % total)
 	CaveMaker.use_layout(was)
+
 
 ## F190 (owner, Nov 18): puddles under the water drips and in low spots, only on flat floor, never on kept-clear ground.
 func test_puddles() -> void:
@@ -225,4 +228,81 @@ func test_rune_shrines_stand_on_the_floor() -> void:
 	check(shrines >= 3, "there are rune shrines (%d)" % shrines)
 	check_eq(floating, 0, "none floating")
 	field.queue_free()
+	CaveMaker.use_layout(was)
+
+
+## Owner, Nov 19 (seen by the glow-groves Claude in seed 42): mushrooms and grass grew through a ruin's loot chest.
+## Nothing the cave grows shows on a storage box's ground: ruin and camp loot chests, the ruins' treasure, and boxes
+## players put down (they all send World.ground_taken, like here).
+func test_clutter_keeps_clear_of_boxes() -> void:
+	var was := CaveMaker.layout
+	CaveMaker.use_layout(CaveMaker.LAYOUT_LATEST)
+	var m := CaveMaker.new(42)
+	var taken := RuinTreasure.keep_clear(m)
+	check(taken.size() >= 10, "the ruins and camps have chests and treasure (%d)" % taken.size())
+	# A box a player puts down, in the middle of the first cave's mushroom grass.
+	var first: Vector3 = m.rooms[0].center
+	taken.append({pos = m.find_floor(first.x + 2.0, first.z + 1.0, first.y + 2.0), r = 0.75})
+	var on := func(p: Vector3, z: Dictionary) -> bool:
+		return Vector2(p.x - z.pos.x, p.z - z.pos.z).length() < float(z.r) and absf(p.y - (z.pos as Vector3).y) < 0.6
+	# Planned before anything is built: boulders and glowing mushrooms keep off.
+	var bad := 0
+	for b in Boulders.plan(m):
+		for z in taken:
+			if not b.get("gone", false) and Vector2(b.pos.x - z.pos.x, b.pos.z - z.pos.z).length() < float(z.r) + 0.6 * float(b.scale) and absf(b.pos.y - z.pos.y) < 3.0:
+				bad += 1
+	check_eq(bad, 0, "no boulder on a chest or treasure")
+	bad = 0
+	var spots := GlowPlacer.place(m)
+	for s in spots:
+		for z in taken:
+			if not s.get("hidden", false) and (s.pos as Vector3).distance_to(z.pos) < float(z.r) + 0.3:
+				bad += 1
+	check_eq(bad, 0, "no glowing mushroom or crystal on a chest or treasure")
+	# Put down in a game: plants, pebbles and mushroom grass make room.
+	var w := World.new()
+	var snap := GroundSnap.new()
+	snap.world = w
+	var had: GroundSnap = GroundSnap.instance
+	GroundSnap.instance = snap
+	var life := CaveLife.new()
+	life.build(m, spots, w)
+	var cl := Clutter.new()
+	cl.build(m, w, true)
+	var grass := MushroomGrass.new()
+	for i in MushroomGrass.MODELS.size():  # (looks only: the test needs where the tufts are, not their models)
+		grass._meshes.append(null)
+		grass._mats.append(null)
+	w.ground_taken.connect(grass.clear_ground)
+	grass._finish(MushroomGrass.plan(m))
+	var count_on := func() -> Array:
+		var n := [0, 0, 0]
+		for z in taken:
+			for c in life._cells.values():
+				for kind in c:
+					for p in (c[kind].where as PackedVector3Array):
+						if on.call(p, z):
+							n[0] += 1
+			for kind in cl._where:
+				for p in (cl._where[kind] as PackedVector3Array):
+					if on.call(p, z):
+						n[1] += 1
+			for pt in grass._patches.values():
+				for list in pt.xforms:
+					for xf: Transform3D in list:
+						if on.call(xf.origin, z):
+							n[2] += 1
+		return n
+	var before: Array = count_on.call()
+	check(before[0] + before[1] + before[2] > 0, "before: things grow there (plants %d, pebbles %d, mushroom grass %d)" % before)
+	for z in taken:
+		GroundSnap.take(z.pos, z.r)
+	var after: Array = count_on.call()
+	check_eq(after, [0, 0, 0], "after: no plants, pebbles or mushroom grass on a chest or treasure [plants, pebbles, grass]")
+	GroundSnap.instance = had
+	life.free()
+	cl.free()
+	grass.free()
+	snap.free()
+	w.free()
 	CaveMaker.use_layout(was)

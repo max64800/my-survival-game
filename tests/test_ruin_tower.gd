@@ -36,7 +36,22 @@ func test_plan_has_the_ruin() -> void:
 		"it's broken: the door lies outside, walls worn and collapsed, rubble")
 	var roof: Array = plan.chests.filter(func(c): return float(c.pos[1]) > 7.0)
 	check(roof.size() == 1 and roof[0].loot.has("watchtower_plans"), "the roof chest holds the Watchtower Plans")
-	check_eq(plan.chests.size(), 4, "a chest on every floor and the roof")
+	var kinds: Array = plan.chests.filter(func(c): return c.kind != "barrel").map(func(c): return [float(c.pos[1]), c.kind])
+	kinds.sort()
+	check_eq(kinds.map(func(k): return k[1]), ["chest_stone", "chest_small", "chest_small", "chest_small"],
+		"a stone chest downstairs, two-row chests on the floors above and the roof (owner)")
+	check_eq(plan.chests.filter(func(c): return c.kind == "barrel").size(), 2, "two storage barrels to live with (owner)")
+	# Rubble up on a floor lies on whole floor, not over a hole (owner: "pebbles where the triangle floor should be").
+	for p in plan.pieces:
+		if p.id != "ruin_rubble" or float(p.pos[1]) < 0.5:
+			continue
+		var under := false
+		for f in plan.pieces:
+			var top := float(f.pos[1]) + (1.0 if String(f.id).begins_with("foundation") else 0.25)  # floor 1 = foundations
+			if (f.id in ["floor", "floor_triangle"] or String(f.id).begins_with("foundation")) and absf(top - float(p.pos[1])) < 0.05 \
+					and Vector2(float(f.pos[0]) - float(p.pos[0]), float(f.pos[2]) - float(p.pos[2])).length() < 1.0:
+				under = true
+		check(under, "rubble at %s lies on a floor" % [p.pos])
 
 
 func test_built_in_the_first_cave_without_monsters() -> void:
@@ -56,8 +71,41 @@ func test_built_in_the_first_cave_without_monsters() -> void:
 			break
 		await tree.process_frame
 	var plan := RuinTower.load_plan()
-	check_eq(auth.builder.structure.pieces.size(), plan.pieces.size(), "every piece of the ruin was built")
-	check_eq(auth.storage.boxes.size(), 5, "its four chests and the Rebuilding Chest are there")
+	var rubble: Array = plan.pieces.filter(func(p): return RuinTower.RUBBLE.has(p.id))
+	check_eq(auth.builder.structure.pieces.size(), plan.pieces.size() - rubble.size(), "every piece of the ruin was built")
+	check_eq(auth.builder.rubble.size(), rubble.size(), "the rubble and the broken door are rubble you can hit to clear (owner)")
+	var o: Vector3 = RuinTower.last_origin  # (static: the job frees itself when done)
+	var basis := Basis(Vector3.UP, RuinTower.last_turn * PI / 2.0)
+	var floating := 0
+	for rid in auth.builder.rubble:
+		var at: Vector3 = auth.builder.rubble[rid].global_position
+		if at.y - o.y < 0.5 and world.maker.sdf_at(at + Vector3.DOWN * 0.3) > 0.0:
+			floating += 1
+	check_eq(floating, 0, "no rubble on the ground floats (it rests on the rock)")
+	var under := 0
+	for k in 12:  # under every outer foundation corner there is rock (the tower stands on the floor, owner)
+		var a := (k + 0.5) * TAU / 12.0
+		var c: Vector3 = o + basis * Vector3(sin(a) * 3.6, 0, cos(a) * 3.6)
+		if world.maker.sdf_at(c + Vector3.DOWN * 0.15) <= 0.0:
+			under += 1
+	check(under >= 1, "the tower touches the ground (%d of 12 corners on rock, the rest over lower dips)" % under)
+	var blocked := 0
+	for p in plan.pieces:
+		if RuinTower.RUBBLE.has(p.id) and absf(float(p.pos[0])) < 1.6 and float(p.pos[2]) > 0.0 and float(p.pos[1]) < 1.5:
+			blocked += 1
+	check_eq(blocked, 0, "no rubble in the doorway, on the steps or in front of them (owner: I couldn't get in)")
+	# F264: inside, nothing stands where you walk (between the middle and 2.6 m out), so you reach the roof without breaking anything
+	var in_way := 0
+	for p in plan.pieces:
+		if RuinTower.RUBBLE.has(p.id) or p.id == "barrel":
+			if float(p.pos[1]) > 0.5 and Vector2(float(p.pos[0]), float(p.pos[2])).length() < 2.75:
+				in_way += 1
+	for c in plan.chests + plan.get("props", []):
+		if Vector2(float(c.pos[0]), float(c.pos[2])).length() < 2.75 and float(c.pos[1]) < 7.0:
+			in_way += 1
+	check_eq(in_way, 0, "inside, rubble, crates and chests stand against the walls, off the way up (F264)")
+	check_eq(auth.storage.boxes.size(), 6, "its four chests and two barrels are there")
+	check_eq(auth.stations.values().filter(func(st): return st.kind == "crystal_torch").size(), plan.get("torches", []).size(), "its crystal torches stand inside (F264)")
 	var found := false
 	for id in auth.storage.boxes:
 		if auth.storage.boxes[id].inv.count_of("watchtower_plans") > 0:
@@ -70,64 +118,3 @@ func test_built_in_the_first_cave_without_monsters() -> void:
 func test_plans_teach_the_watchtower() -> void:
 	check_eq(Items.info("watchtower_plans").get("teaches", ""), "stone_watchtower", "the plans teach the Stone Watchtower")
 	check(BlueprintMenu.ready_made_keys().has("stone_watchtower"), "the watchtower can be learned (not a starter)")
-
-
-## Rebuilding a ruin (owner, Nov 19; docs/design/ruin-rebuild-plan.md): root planks in the Rebuilding Chest rebuild
-## the tower in wood, piece by piece; broken walls and rubble go; at the end everyone knows the Wooden Watchtower and
-## gets crafting experience.
-func test_rebuild_the_ruin_in_wood() -> void:
-	await _setup()
-	var job := RuinTower.new(auth)
-	auth.add_child(job)
-	job._state = "carve"
-	for i in 600:
-		if not is_instance_valid(job):
-			break
-		await tree.process_frame
-	var box := -1
-	for id in auth.storage.boxes:
-		if auth.storage.boxes[id].kind == "rebuild":
-			box = id
-	check(box >= 0, "the ruin has a Rebuilding Chest")
-	if box < 0:
-		auth.get_parent().queue_free()
-		return
-	auth.storage.put(box, "plank_root", 5)
-	var b: Builder = auth.builder
-	check(b.sites.has(box), "planks in the chest start rebuilding")
-	check_eq(b.sites.get(box, {}).get("ruin", ""), "wooden_watchtower", "in wood")
-	var site: Dictionary = b.sites[box]
-	var already := 0
-	for p in site.plan:
-		if p.built:
-			already += 1
-	check(already > site.plan.size() / 3, "what still stands whole counts as done (%d of %d)" % [already, site.plan.size()])
-	var todo := []
-	for i in site.plan.size():
-		if not site.plan[i].built:
-			todo.append(i)
-	var need := Builder.missing_for(site.plan, todo, auth.storage.get_box(box).inv)
-	for item in need:
-		auth.storage.put(box, item, int(need[item]) + 10)
-	var ps: GameAuthority.PlayerState = auth.players[1]
-	ps.inventory.add("build_hammer", 1)
-	ps.selected_slot = ps.inventory.best_of_kind("hammer")
-	var chest: Dictionary = auth.storage.get_box(box)
-	ps.node.global_position = chest.node.global_position + Vector3(1.2, 0.2, 0.0)
-	var xp_before: int = int(ps.progress.skill_xp.get("crafting", 0)) + int(ps.progress.skill_level.get("crafting", 0)) * 100000
-	for k in 3000:
-		if not b.sites.has(box):
-			break
-		b._site_ticks += 1  # (as the game's clock does: it builds every second step)
-		b._tick_sites()
-	check(not b.sites.has(box), "the rebuilding finished (%s)" % b.site_status(box))
-	var ruin_left := 0
-	for uid in b.structure.pieces:
-		if String(b.structure.pieces[uid].piece).begins_with("ruin_"):
-			ruin_left += 1
-	check_eq(ruin_left, 0, "no broken walls left")
-	check((auth.world_state.get("blueprints", []) as Array).has("wooden_watchtower"), "everyone knows the Wooden Watchtower")
-	check(auth.world_state.ruins[str(box)].done, "the world remembers it's rebuilt")
-	var xp_after: int = int(ps.progress.skill_xp.get("crafting", 0)) + int(ps.progress.skill_level.get("crafting", 0)) * 100000
-	check(xp_after > xp_before, "crafting experience for it")
-	auth.get_parent().queue_free()

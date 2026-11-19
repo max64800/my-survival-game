@@ -115,6 +115,21 @@ const LIST := {
 		station = {"workbench": 3, "mason": 2}},
 	"railing_diagonal": {name = "Diagonal Railing", group = "legacy", size = Vector3(2, 1, 2), units = 2, place = "cell", shape = "diagonal",
 		families = ["plank_root", "plank_mushroom", "copper_ingot", "silver_ingot"], station = {"workbench": 2, "anvil": 1}},
+	# The outpost's big gate (owner, Nov 17): a 4 m stone gateway and two gate leaves that swing like doors (hinged on
+	# their left edge; the right leaf is placed turned round). Models: tools/asset_forge/builds/stonehold_v2.py.
+	"gateway": {name = "Gateway", group = "wall", size = Vector3(4, 4, 0.3), units = 8, place = "edge", opening = Vector3(3.2, 3.4, 0),
+		families = ["cut_stone"], station = {"mason": 2}},
+	"gate_leaf": {name = "Gate Leaf", group = "wall", size = Vector3(1.6, 3.6, 0.15), units = 3, place = "edge", shape = "door",
+		extra = {copper_ingot = 2}, families = ["cut_stone"], station = {"mason": 2}},
+	"gate_broken": {name = "Broken Gate", group = "legacy", size = Vector3(1.7, 0.3, 3.7), units = 2, place = "free",
+		families = ["cut_stone"], station = {"mason": 99}},
+	# The outpost's training yard (owner, Nov 17): decor anyone can build at a Workbench.
+	"straw_dummy": {name = "Straw Dummy", group = "decor", size = Vector3(1.1, 1.9, 1.0), units = 2, place = "free",
+		families = ["plank_root"], station = {"workbench": 1}},
+	"archery_target": {name = "Archery Target", group = "decor", size = Vector3(1.2, 1.7, 1.6), units = 2, place = "free",
+		families = ["plank_root"], station = {"workbench": 1}},
+	"spear_rack": {name = "Spear Rack", group = "decor", size = Vector3(1.6, 2.0, 0.4), units = 2, place = "free",
+		families = ["plank_root"], station = {"workbench": 1}},
 	# Ruin pieces (Nov 17): the world places them in old ruins (src/world/ruin_tower.gd); nobody can build them
 	# (the build menu hides "legacy"). Models: tools/asset_forge/builds/stonehold_v2.py.
 	"ruin_wall_worn": {name = "Worn Wall", group = "legacy", size = Vector3(2, 2, 0.3), units = 4, place = "edge",
@@ -370,6 +385,10 @@ static func valid_rot(rot: int) -> bool:
 
 static func add_rot(a: int, b: int) -> int:
 	return rot_from_steps(steps_of(a) + steps_of(b))
+
+
+## Pieces that open and close like doors (E): the round door and the big gate's leaves.
+const DOORS := ["door", "gate_leaf"]
 
 
 static func is_tri(piece: String) -> bool:
@@ -681,6 +700,79 @@ static func _where_rock(off: Vector3) -> String:
 	if -off.y >= maxf(absf(off.x), absf(off.z)) * 0.8:
 		return " at the bottom: dig the floor a bit lower"
 	return " at the side: dig back the wall there"
+
+
+## F159 (owner, 3x: "flatten the ground for building pieces and blueprints, even in caves"): a floor or foundation
+## levels the ground under it when you place it. Each 1 m patch of its footprint: rock sticking up above its bottom is
+## cut away (you get it back, like digging), a dip below it is filled with packed dirt or stone (1 from your bag per
+## patch). More than LEVEL_MAX of rock to cut = "too steep": dig it down first. Dips deeper than LEVEL_FILL_MAX are left
+## (Shack legs reach down instead, or it isn't steady enough). Upper floors in the air find no ground: nothing changes.
+const LEVEL_MAX := 1.25
+const LEVEL_FILL_MAX := 1.25
+const LEVEL_CUT_R := 0.8  ## the scoops that cut (rest on the bottom line, clear about 1.6 m above it)
+const LEVEL_FILL_R := 1.0  ## the balls that fill (hang just under the bottom line)
+
+
+static func levels_ground(piece: String) -> bool:
+	return LIST.has(piece) and LIST[piece].get("group", "") in ["floor", "foundation"] and LIST[piece].place == "cell"
+
+
+## {cut: [patch centres at the bottom line], fill: [...], fill_ground: [the ground height under each fill patch],
+##  steep: bool}. `sdf` = World.sdf_smooth (the few centimetres matter here).
+static func level_plan(piece: String, family: String, pos: Vector3, rot: int, sdf: Callable) -> Dictionary:
+	var out := {cut = [], fill = [], fill_ground = [], steep = false}
+	if not levels_ground(piece):
+		return out
+	var b := box(piece, pos, rot)
+	var y0 := b.position.y
+	var nx := maxi(1, roundi(b.size.x))
+	var nz := maxi(1, roundi(b.size.z))
+	var legs := not leg_spots(piece, family).is_empty()
+	for ix in nx:
+		for iz in nz:
+			var x := b.position.x + (ix + 0.5) * b.size.x / nx
+			var z := b.position.z + (iz + 0.5) * b.size.z / nz
+			var g := ground_height(sdf, x, z, y0)
+			if g > y0 + 0.2:
+				if g - y0 > LEVEL_MAX:
+					out.steep = true
+				out.cut.append(Vector3(x, y0, z))
+			elif g < y0 - 0.2 and g > -INF and not legs:
+				out.fill.append(Vector3(x, y0, z))
+				out.fill_ground.append(g)
+	return out
+
+
+## The top of the ground at (x, z) near height y0: scanning down from 1.5 m above it to just past LEVEL_FILL_MAX below.
+## y0 + 1.5 = rock right up there (a wall), -INF = no ground that close (a deep drop, or an upper floor).
+static func ground_height(sdf: Callable, x: float, z: float, y0: float) -> float:
+	var y := y0 + 1.5
+	while y >= y0 - LEVEL_FILL_MAX - 0.25:
+		if float(sdf.call(Vector3(x, y, z))) < 0.0:
+			return y + 0.125
+		y -= 0.25
+	return -INF
+
+
+## The rock as it will be once levelled: air where it cuts, solid under the patches it fills. The placing rules
+## (inside rock? standing on rock? steady?) look at this, so a piece that levels its ground isn't red for the bump.
+static func levelled_sdf(sdf: Callable, plan: Dictionary, piece: String, pos: Vector3, rot: int) -> Callable:
+	if plan.cut.is_empty() and plan.fill.is_empty():
+		return sdf
+	var b := box(piece, pos, rot)
+	var y0 := b.position.y
+	var foot := Rect2(b.position.x - 0.1, b.position.z - 0.1, b.size.x + 0.2, b.size.z + 0.2)
+	var fills: Array = plan.fill
+	var cuts: bool = not plan.cut.is_empty()
+	return func(p: Vector3) -> float:
+		if foot.has_point(Vector2(p.x, p.z)):
+			if cuts and p.y >= y0 - 0.05 and p.y <= y0 + LEVEL_MAX + 0.4:
+				return 1.0
+			if p.y < y0 - 0.05 and p.y > y0 - LEVEL_FILL_MAX - 0.3:
+				for f in fills:
+					if absf(p.x - f.x) <= 0.6 and absf(p.z - f.z) <= 0.6:
+						return -1.0
+		return float(sdf.call(p))
 
 
 ## F162: Shack foundations stand on log legs. On a slope each leg reaches down to the rock by itself

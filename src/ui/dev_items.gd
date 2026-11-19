@@ -63,7 +63,9 @@ func refresh() -> void:
 			b.text = Items.display_name(id).left(6)
 		b.button_mask = MOUSE_BUTTON_MASK_LEFT | MOUSE_BUTTON_MASK_RIGHT
 		b.gui_input.connect(func(e: InputEvent) -> void:
-			if e is InputEventMouseButton and e.pressed:
+			# Only real clicks: the scroll wheel is a "mouse button" too, and scrolling the list over the pictures
+			# gave the items (owner, Nov 19: "I got so many items when I only hover over them").
+			if e is InputEventMouseButton and e.pressed and e.button_index in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]:
 				var n := Items.stack_size(id) if e.button_index == MOUSE_BUTTON_RIGHT else 1
 				_info.text = give(id, n))
 		_grid.add_child(b)

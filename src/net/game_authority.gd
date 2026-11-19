@@ -2,6 +2,8 @@ class_name GameAuthority
 extends Node
 
 signal hud_message(text: String)  ## a line for our own screen
+signal learned_recipe(recipe_id: String)  ## a recipe page taught the group something (a card on the left)
+signal learned_blueprint(what: String, page_id: String)
 ## The referee. Every action that changes the shared world goes through here:
 ##
 ##   1. A player ASKS for something       (ask_*: called by the player's own computer)
@@ -129,10 +131,16 @@ class PlayerState:
 	func selected_item() -> String:
 		return inventory.get_slot(hand_slot()).get("id", "")
 
+	## F can draw something: an equipped weapon, or at least an equipped shield.
+	func can_draw() -> bool:
+		return inventory.equipped("weapon") != "" or inventory.equipped("shield") != ""
+
 	## The slot index of what's in hand (a hotbar slot or an equipment slot).
 	func hand_slot() -> int:
 		if weapon_drawn and inventory.equipped("weapon") != "":
 			return Inventory.equip_index("weapon")
+		if weapon_drawn and inventory.equipped("shield") != "":
+			return Inventory.equip_index("shield")  # only a shield equipped: F raises it alone (owner, Nov 17)
 		if hands_empty:
 			return -1  # nothing in hand (an empty slot: get_slot(-1) is {})
 		var picked: String = inventory.get_slot(selected_slot).get("id", "")
@@ -320,6 +328,64 @@ func request_hit_boulder(peer_id: int, id: int) -> void:
 		_tell_feedback(peer_id, {state = "dug", hits = hits, needed = Boulders.HITS, material = Mat.STONE, point = at, normal = out, boulder = true})
 	else:
 		_tell_feedback(peer_id, {state = "hit", hits = hits, needed = Boulders.HITS, material = Mat.STONE, point = at, normal = out})
+
+
+## A swing at an old ruin column (owner, Nov 19: "you should be able to destroy them just for some stone"): stone
+## every hit, it crumbles after its hits (3 for a small broken one, up to 10 for a great hall's), plus a last pile.
+## Gone for good (world_state.columns, saved and sent to friends who join).
+var column_hits := {}  ## host: column id -> hits so far
+
+
+func ask_hit_column(cid: int) -> void:
+	if is_host():
+		request_hit_column(local_peer_id(), cid)
+	else:
+		_rpc_hit_column.rpc_id(1, cid)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_hit_column(cid: int) -> void:
+	if is_host():
+		request_hit_column(multiplayer.get_remote_sender_id(), cid)
+
+
+func request_hit_column(peer_id: int, cid: int) -> String:
+	var ps := get_player(peer_id)
+	if ps == null or poi_field == null or world_state.get("columns", []).has(cid):
+		return ""
+	var c := poi_field.column(cid)
+	if c.is_empty():
+		return ""
+	var at := poi_field.column_middle(cid)
+	if _chest(ps).distance_to(at) > REACH + float(c.width) + 1.0:
+		return "far"
+	var pick := Items.kind(ps.selected_item()) == "pickaxe"
+	if not pick and ps.selected_item() != "":
+		_tell_feedback(peer_id, {state = "no_tool", point = at})
+		return "no_tool"
+	var out := (_chest(ps) - at).normalized()
+	spawn_drop("stone", 2 if pick else 1, at + out * (float(c.width) * 0.6 + 0.3) + Vector3.UP * 0.3)
+	give_xp(peer_id, 1, "mining")
+	var hits: int = column_hits.get(cid, 0) + 1
+	column_hits[cid] = hits
+	if hits < int(c.hits):
+		_tell_feedback(peer_id, {state = "hit", hits = hits, needed = c.hits, material = Mat.STONE, point = at, normal = out})
+		return "hit"
+	column_hits.erase(cid)
+	spawn_drop("stone", 3, at + out * 0.8)
+	var gone: Array = world_state.get("columns", []).duplicate()
+	gone.append(cid)
+	world_state.columns = gone
+	_ev_state.rpc(world_state)
+	_ev_column.rpc(cid)
+	_tell_feedback(peer_id, {state = "dug", hits = hits, needed = c.hits, material = Mat.STONE, point = at, normal = out, boulder = true})
+	return "broke"
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_column(cid: int) -> void:
+	if poi_field:
+		poi_field.set_column_broken(cid)
 
 
 @rpc("authority", "call_local", "reliable")
@@ -747,13 +813,13 @@ func taught_recipes() -> Dictionary:
 
 
 @rpc("authority", "call_local", "reliable")
-func _ev_learned_blueprint(what: String) -> void:
-	hud_message.emit("The old blueprint shows everyone how to build: %s (V to open your blueprints)" % what)
+func _ev_learned_blueprint(what: String, page_id: String) -> void:
+	learned_blueprint.emit(what, page_id)  # a card on the left (LearnedCards)
 
 
 @rpc("authority", "call_local", "reliable")
-func _ev_learned(what: String) -> void:
-	hud_message.emit("The old page teaches everyone: %s" % what)
+func _ev_learned(recipe_id: String) -> void:
+	learned_recipe.emit(recipe_id)  # a card on the left with its picture (owner, Nov 19)
 
 
 ## Healing (Leech gems): the player's own computer owns their health.
@@ -1054,7 +1120,7 @@ func request_stow_lantern(peer_id: int, stowed: bool) -> void:
 func ask_draw_weapon(on: bool) -> void:
 	var me := get_player(local_peer_id())
 	if me:
-		me.weapon_drawn = on and me.inventory.equipped("weapon") != ""  # show it right away
+		me.weapon_drawn = on and me.can_draw()  # show it right away
 	if is_host():
 		request_draw_weapon(local_peer_id(), on)
 	else:
@@ -1070,7 +1136,7 @@ func _rpc_draw_weapon(on: bool) -> void:
 func request_draw_weapon(peer_id: int, on: bool) -> void:
 	var ps := get_player(peer_id)
 	if ps:
-		ps.weapon_drawn = on and ps.inventory.equipped("weapon") != ""
+		ps.weapon_drawn = on and ps.can_draw()
 
 
 ## Moving items around in your own bag.
@@ -1265,6 +1331,18 @@ func _judge_level(ps: PlayerState, point: Vector3) -> Dictionary:
 	return {state = "dug", hits = 1, needed = 1, material = Mat.STONE, point = point, levelled = true}
 
 
+## Host: fill a ball of rock with `mat` on every computer (levelling: F159). Returns the voxels filled here.
+func host_fill(center: Vector3, radius: float, mat: int) -> int:
+	var n := world.apply_fill(center, radius, mat)
+	if n > 0:
+		var edit := Vector4(center.x, center.y, center.z, pack_fill(mat, radius))
+		edit_log.append(edit)
+		_ev_dig.rpc(edit)
+		if builder:
+			builder.reanchor_near(center, radius)
+	return n
+
+
 const RAMP_R := 1.05  ## the size of the scoops that clear a natural ramp (a dwarf fits under them)
 const RAMP_STEEPEST := 0.9  ## steeper than this (rise per metre, ~42 degrees) = digging up at the ceiling: no ramp
 
@@ -1370,6 +1448,69 @@ func request_harvest(peer_id: int, glow_id: int) -> Dictionary:
 	return done
 
 
+## Reading an old page (recipe page, blueprint, plans). Works from the hand (click) or from the bag
+## (right-click it, owner Nov 17: "I cannot read the recipe"). Says why when it teaches nothing.
+func _read_page(ps: PlayerState, peer_id: int, id: String) -> String:
+	var r0 := _learn_from_page(ps, id)
+	if r0 == "nothing_new" and peer_id == local_peer_id():
+		hud_message.emit("You already know everything this %s shows." % Items.display_name(id))
+	return r0
+
+
+func _learn_from_page(ps: PlayerState, id: String) -> String:
+	if id == "blueprint_page" or Items.info(id).has("teaches"):
+		# An old blueprint from a ruin: the whole group can now place that ready-made building (F98).
+		# A named plan (Watchtower Plans, F254) teaches its own building; an Old Blueprint a random one.
+		var unknown := BlueprintMenu.ready_made_keys().filter(func(k): return not world_state.get("blueprints", []).has(k))
+		if Items.info(id).has("teaches"):
+			unknown = unknown.filter(func(k): return k == Items.info(id).teaches)
+		if unknown.is_empty() or not ps.inventory.remove(id, 1):
+			return "nothing_new"
+		var key: String = unknown[randi() % unknown.size()]
+		var known: Array = world_state.get("blueprints", []).duplicate()
+		known.append(key)
+		world_state.blueprints = known
+		_ev_state.rpc(world_state)
+		_ev_learned_blueprint.rpc(BlueprintMenu.ready_made_name(key), id)
+		return "learned"
+	# A recipe page from a ruin: the whole group learns a recipe nobody knew yet, of the page's kind (a Cook's Page
+	# teaches food, an Armourer's Page armour... owner, Nov 19).
+	var left := Recipes.page_recipes(id).filter(func(r): return not world_state.get("learned", []).has(r))
+	if left.is_empty() or not ps.inventory.remove(id, 1):
+		return "nothing_new"
+	var r: String = left[randi() % left.size()]
+	var learned: Array = world_state.get("learned", []).duplicate()
+	learned.append(r)
+	world_state.learned = learned
+	_ev_state.rpc(world_state)
+	_ev_learned.rpc(r)
+	return "learned"
+
+
+## Read a page straight from a bag slot (right-click in the bag). Request -> host decides -> everyone learns.
+func ask_read(index: int) -> void:
+	if is_host():
+		request_read(local_peer_id(), index)
+	else:
+		_rpc_read.rpc_id(1, index)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_read(index: int) -> void:
+	if is_host():
+		request_read(multiplayer.get_remote_sender_id(), index)
+
+
+func request_read(peer_id: int, index: int) -> String:
+	var ps := get_player(peer_id)
+	if ps == null:
+		return ""
+	var slot := ps.inventory.get_slot(index)
+	if slot.is_empty() or Items.kind(slot.id) != "page":
+		return ""
+	return _read_page(ps, peer_id, slot.id)
+
+
 ## Right click: eat/drink the selected item, or place it if it's a station.
 func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: float) -> String:
 	var ps := get_player(peer_id)
@@ -1397,33 +1538,7 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 				add_boost(ps, id, {damage = fb.damage}, Foods.minutes_of(id) * 60.0)
 			return "ate"
 		"page":
-			if id == "blueprint_page" or Items.info(id).has("teaches"):
-				# An old blueprint from a ruin: the whole group can now place that ready-made building (F98).
-				# A named plan (Watchtower Plans, F254) teaches its own building; an Old Blueprint a random one.
-				var unknown := BlueprintMenu.ready_made_keys().filter(func(k): return not world_state.get("blueprints", []).has(k) and not BlueprintLibrary.REBUILD_ONLY.has(k))
-				if Items.info(id).has("teaches"):
-					unknown = unknown.filter(func(k): return k == Items.info(id).teaches)
-				if unknown.is_empty() or not ps.inventory.remove(id, 1):
-					return "nothing_new"
-				var key: String = unknown[randi() % unknown.size()]
-				var known: Array = world_state.get("blueprints", []).duplicate()
-				known.append(key)
-				world_state.blueprints = known
-				_ev_state.rpc(world_state)
-				_ev_learned_blueprint.rpc(BlueprintMenu.ready_made_name(key))
-				return "learned"
-			# An old recipe page from a ruin: the whole group learns a recipe nobody knew yet.
-			var left := Recipes.LIST.keys().filter(func(r): return Recipes.LIST[r].unlock is String and Recipes.LIST[r].unlock == "ruin" \
-				and not world_state.get("learned", []).has(r))
-			if left.is_empty() or not ps.inventory.remove(id, 1):
-				return "nothing_new"
-			var r: String = left[randi() % left.size()]
-			var learned: Array = world_state.get("learned", []).duplicate()
-			learned.append(r)
-			world_state.learned = learned
-			_ev_state.rpc(world_state)
-			_ev_learned.rpc(Items.display_name(Recipes.LIST[r].output))
-			return "learned"
+			return _read_page(ps, peer_id, id)
 		"tonic":
 			if not ps.inventory.remove(id, 1):
 				return ""
@@ -1996,10 +2111,10 @@ func spawn_start_items() -> void:
 
 # Host-side helpers that decide things, then tell everyone.
 
-func _host_dig(center: Vector3, tool_tier: int = 0, radius: float = DIG_RADIUS) -> Dictionary:
+func _host_dig(center: Vector3, tool_tier: int = 0, radius: float = DIG_RADIUS, world_made := false) -> Dictionary:
 	if glow:
-		for spot in glow.spots_near(center, DIG_RADIUS + 0.9):
-			_host_remove_glow(spot)
+		for spot in glow.spots_near(center, maxf(DIG_RADIUS, radius) + 0.9):
+			_host_remove_glow(spot, not world_made)
 	var counts := world.apply_dig(center, radius, tool_tier)
 	Sfx.play("dig_break", center, -6.0)
 	if builder:
@@ -2011,9 +2126,13 @@ func _host_dig(center: Vector3, tool_tier: int = 0, radius: float = DIG_RADIUS) 
 	return counts
 
 
-func _host_remove_glow(spot: Dictionary) -> void:
+## `mined` = false: the world itself cleared the spot (a ruin making room): nothing drops and nothing grows back
+## (owner: crystals, stones and twigs were left hanging in the air round the Fallen Outpost).
+func _host_remove_glow(spot: Dictionary, mined := true) -> void:
 	removed_glow.append(spot.id)
 	_ev_remove_glow.rpc(spot.id)
+	if not mined:
+		return
 	_start_regrow(spot)
 	var k: Dictionary = GlowPlacer.KINDS[spot.kind]
 	spawn_drop(k.item, k.count[0], spot.pos + spot.normal * 0.5)
@@ -2214,6 +2333,8 @@ func _ev_state(state: Dictionary) -> void:
 			poi_field.set_taken(id)
 		for id in world_state.clues:
 			poi_field.set_read(id)
+		for cid in world_state.get("columns", []):  # broken ruin columns (a save, or a friend joining)
+			poi_field.set_column_broken(int(cid), false)
 
 
 @rpc("authority", "call_local", "reliable")
@@ -2228,7 +2349,8 @@ static func rune_biome_at(p: Vector3) -> String:
 
 func _seed_fungal_loot(rng: RandomNumberGenerator, id: int, ruin: bool) -> void:
 	if ruin:
-		storage.put(id, "recipe_page", 2)
+		for _p in 2:
+			storage.put(id, Recipes.random_page(rng.randf()), 1)
 		for g in [["keen", 0.03], ["leech", 0.04]]:
 			if rng.randf() < g[1]:
 				storage.put(id, Gems.item_id(g[0]), 1)
@@ -2252,7 +2374,7 @@ func seed_poi_loot() -> void:
 	for poi in world.maker.pois:
 		if poi.type != "ruin" and poi.type != "camp":
 			continue
-		var at: Vector3 = world.maker.find_floor(poi.pos.x + 1.5, poi.pos.z + 1.0, poi.pos.y + 3.0)
+		var at := RuinTreasure.chest_spot(world.maker, poi)
 		# Ruins keep their loot in the old banded chest (owner's cup winner, Nov 19); camps in a traveller's small chest.
 		var id := storage.create_box("chest_loot" if poi.type == "ruin" else "chest_small", at, rng.randf() * TAU)
 		if poi.get("biome", "mossy") == "fungal":
@@ -2260,7 +2382,8 @@ func seed_poi_loot() -> void:
 			continue
 		# Rare finds only, no free building materials (owner, Nov 15, F102).
 		if poi.type == "ruin":
-			storage.put(id, "recipe_page", 2)  # every old ruin keeps forgotten recipes
+			for _p in 2:  # every old ruin keeps forgotten recipes
+				storage.put(id, Recipes.random_page(rng.randf()), 1)
 			storage.put(id, "blueprint_page", 1)  # and an old building plan (F98)
 			for g in [["keen", 0.03], ["ember", 0.03]]:  # doc 4.2: rare gems in old chests
 				if rng.randf() < g[1]:
@@ -2270,7 +2393,7 @@ func seed_poi_loot() -> void:
 			storage.put(id, "gold_coin", rng.randi_range(5, 15))  # gold pays for a perk reset (owner, Nov 19)
 		else:
 			# A camp someone left: a page, and maybe one bite of food.
-			storage.put(id, "recipe_page" if rng.randf() < 0.6 else "blueprint_page", 1)
+			storage.put(id, Recipes.random_page(rng.randf()) if rng.randf() < 0.6 else "blueprint_page", 1)
 			if rng.randf() < 0.5:
 				storage.put(id, ["dish_hollowcap_stew", "dish_tuber_mash", "drink_glowcap_tea"][rng.randi_range(0, 2)], 1)
 
@@ -2580,6 +2703,9 @@ func _peer_of(ps: PlayerState) -> int:
 	return -1
 
 
+var _dark_timer := 0.0
+
+
 ## Hunger, thirst, stamina and healing for OUR dwarf (each computer runs its own player's body).
 func _tick_vitals(ps: PlayerState, delta: float) -> void:
 	var resting := false
@@ -2593,6 +2719,10 @@ func _tick_vitals(ps: PlayerState, delta: float) -> void:
 			ps.dying = true
 			ask_died()
 		return
+	_dark_timer -= delta
+	if _dark_timer <= 0.0:  # F293: is any light reaching us? (twice a second is plenty)
+		_dark_timer = 0.5
+		v.in_dark = not Darkness.is_lit(get_tree(), ps.node.global_position + Vector3.UP)
 	v.friends_near = false  # Shoulder to Shoulder
 	for pid in players:
 		if players[pid] != ps and is_instance_valid(players[pid].node) and players[pid].node.global_position.distance_to(ps.node.global_position) <= 10.0:

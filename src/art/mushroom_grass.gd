@@ -23,6 +23,7 @@ var _mats: Array[Material] = []
 var _patches := {}  ## Vector2i -> {xforms: [Array per model], nodes: [MultiMeshInstance3D per model]}
 var _thread: Thread
 var _built := false
+var _taken: Array = []  ## [center, radius] of chests and treasure put down before the grass was ready
 
 
 func build(maker: CaveMaker, world: World, avoid: Callable = Callable()) -> void:
@@ -51,6 +52,7 @@ func build(maker: CaveMaker, world: World, avoid: Callable = Callable()) -> void
 	if _meshes.size() != MODELS.size():
 		return
 	world.changed.connect(_on_rock_changed)
+	world.ground_taken.connect(clear_ground)  # a chest or a ruin's treasure put down (owner, Nov 19)
 	var trees := []  # (looked up here: the helper thread can't call the tree node)
 	if avoid.is_valid():
 		trees = avoid.call()
@@ -162,6 +164,9 @@ func _finish(spots: Array[Dictionary]) -> void:
 			(_patches[key].xforms[m] as Array).sort_custom(func(a: Transform3D, b: Transform3D) -> bool: return hash(a.origin) < hash(b.origin))
 		_draw(key)
 	_built = true
+	for t in _taken:
+		_on_rock_changed(t[0], t[1])
+	_taken.clear()
 
 
 func _draw(key: Vector2i) -> void:
@@ -247,6 +252,14 @@ func _on_rock_changed(center: Vector3, radius: float) -> void:
 					changed = true
 			if changed:
 				_draw(key)
+
+
+## Something stands here now (World.ground_taken): no tufts poking through it.
+func clear_ground(center: Vector3, radius: float) -> void:
+	if not _built:
+		_taken.append([center, radius])
+		return
+	_on_rock_changed(center, radius)
 
 
 ## How many tufts there are (for tests and the log).

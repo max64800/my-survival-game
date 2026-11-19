@@ -84,6 +84,8 @@ func setup(p_uid: int, p_kind: String, p_leader: bool, p_home: Vector3, p_varian
 func _ready() -> void:
 	collision_layer = MONSTER_LAYER
 	collision_mask = World.TERRAIN_LAYER | PieceNode.PIECE_LAYER
+	if not data.get("flies", false):
+		collision_mask |= MONSTER_LAYER  # walkers bump into each other, never overlap (owner, F233); a bat flock doesn't
 	set_meta("monster_uid", uid)
 	var s: float = data.size * (Monsters.LEADER.size if leader else 1.0)
 	var shape := CollisionShape3D.new()
@@ -270,6 +272,9 @@ func damage_mult() -> float:
 # ================================================================== host brain
 
 var _knock := Vector3.ZERO  ## (host) a push from a hit, fading out fast
+var _climb_to := -INF       ## (host) the height of the dwarf it chases: against a wall below him, it climbs (F236)
+const CLIMB_SPEED := 2.2    ## m/s up a wall
+var _climbing := 0.0        ## (host) just left the wall while climbing: seconds of push over the lip left
 var _stop := 0.0            ## (looks) a frozen blink when hit
 var _rest := 0.0            ## (host) standing still: seconds until it checks the floor again (speed, owner Nov 19)
 var far_dt := 0.0           ## (host) time saved up while it thinks less often, far from every dwarf
@@ -334,6 +339,7 @@ func think(delta: float, mgr: Node) -> void:
 		_think = 0.3
 		_perceive(mgr)
 	var target: Node3D = mgr.player_node(target_peer)
+	_climb_to = target.global_position.y if target and state in [State.CHASE, State.ATTACK, State.RECOVER] else -INF
 	if data.get("swoops", false):
 		# Cruise high above you, dive down to bite, climb away again (owner's bat design).
 		var ground := target.global_position.y if target else home.y - 2.5
@@ -386,6 +392,10 @@ func think(delta: float, mgr: Node) -> void:
 			if target == null:
 				state = State.RETURN
 				return
+			if MonsterManager.ignores(target):  # its target took off flying (dev fly): forget them
+				state = State.RETURN
+				target_peer = 0
+				return
 			var to := target.global_position - global_position
 			var dist := Vector2(to.x, to.z).length()
 			if variant == "violet":
@@ -403,7 +413,8 @@ func think(delta: float, mgr: Node) -> void:
 				state = State.RETURN
 				target_peer = 0
 				return
-			var atk := _pick_attack(dist)
+			# Far above it (a hole's edge), or it's still clinging to the wall: climb up first, then fight (F236).
+			var atk := _pick_attack(dist) if to.y < 1.3 and (is_on_floor() or to.y < 0.4) else {}
 			if not atk.is_empty():
 				_start_attack(atk, mgr)
 				return
@@ -560,9 +571,16 @@ func _drop_ahead(dir: Vector3) -> bool:
 	if not is_inside_tree():
 		return false
 	var ahead := global_position + Vector3(dir.x, 0.0, dir.z).normalized() * (float(data.get("size", 1.0)) * 0.5 + 0.6)
+	var space := get_world_3d().direct_space_state
+	# A wall ahead isn't a drop (F236: in a hole the spot ahead is inside the wall, the floor ray found nothing there,
+	# so it stood still and never climbed out).
+	var wall := PhysicsRayQueryParameters3D.create(global_position + Vector3.UP * 0.4, ahead + Vector3.UP * 0.4)
+	wall.collision_mask = World.TERRAIN_LAYER
+	if not space.intersect_ray(wall).is_empty():
+		return false
 	var q := PhysicsRayQueryParameters3D.create(ahead + Vector3.UP * 0.6, ahead + Vector3.DOWN * (MAX_DROP + 0.1))
 	q.collision_mask = World.TERRAIN_LAYER
-	return get_world_3d().direct_space_state.intersect_ray(q).is_empty()
+	return space.intersect_ray(q).is_empty()
 
 
 ## Elemental buildup from a bolt (resistance shrinks it; bosses can't be frozen solid).
@@ -595,6 +613,17 @@ func _move(delta: float, dir: Vector3, speed: float) -> void:
 		velocity.y -= _gravity * delta
 		if is_on_floor():
 			velocity.y = maxf(velocity.y, -0.5)
+		# Stuck against a wall with the dwarf above (a hole he dug, a ledge): climb up it, like a real beetle or snail
+		# (owner, F236 said twice: "they charge into a hole and you beat them easily; they should climb out").
+		if dir.length() > 0.1 and is_on_wall() and _climb_to > global_position.y + 0.4 and not is_boss() and not data.get("no_climb", false):
+			velocity.y = maxf(velocity.y, CLIMB_SPEED)
+			_climbing = 0.4
+		elif _climbing > 0.0 and dir.length() > 0.1:  # over the lip: a last push up and forward, or it slips back
+			_climbing -= delta
+			velocity.y = maxf(velocity.y, CLIMB_SPEED * 0.7)
+			var flat := Vector2(dir.x, dir.z).normalized() * maxf(Vector2(velocity.x, velocity.z).length(), 1.6)
+			velocity.x = flat.x
+			velocity.z = flat.y
 	# Standing still (owner, Nov 19: 5 FPS, the physics step was too slow): a creature at rest on the floor (or a
 	# roosting bat) doesn't ask the physics engine to move it every step; twice a second it checks the floor is still
 	# there (a dwarf may have dug it away).
@@ -803,7 +832,7 @@ func _creature_fx(delta: float) -> void:
 	if data.has("flap_sound") and not model.get_meta("roosting", false) and is_alive():
 		var wing := sin((_clock + uid * 0.37) * 9.0)  # same beat as MonsterModel.animate's wings
 		if _flap_was > 0.0 and wing <= 0.0:
-			Sfx.play(data.flap_sound, global_position, -10.0, _voice())  # one beat per downstroke
+			Sfx.play(data.flap_sound, global_position, -20.0, _voice())  # one beat per downstroke (-20: a pack of 10 was too loud, owner Nov 19)
 		_flap_was = wing
 	if _charging > 0.0 and data.get("straight_charge", false):
 		model.rotation.x -= 0.22  # charging: head down, back end up
@@ -831,10 +860,8 @@ func set_hp(value: float, stun_frac: float, stunned: bool) -> void:
 func _update_label() -> void:
 	if _hp_label == null:
 		return
-	var nm: String = data.get("leader", "Leader") if leader else data.name
-	if variant != "":
-		nm = Monsters.VARIANTS[variant].name + " " + nm
-	_hp_label.text = nm + (" (dazed!)" if stun.is_stunned() else "")
+	# No names over creatures (owner, Nov 17): only "Dazed!" while stunned. The health bar still shows when hurt.
+	_hp_label.text = "Dazed!" if stun.is_stunned() else ""
 	_hp_label.modulate = Color(1.0, 0.85, 0.3) if leader or stun.is_stunned() else Color(1, 1, 1, 0.75)
 	var hurt := hp < max_hp() or stun.value > 0.0
 	_bars.visible = hurt
