@@ -5150,3 +5150,25 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   right; checked the recording itself and the fresh page: the page may have shown cached old files, so it now always
   checks for new ones (`no-cache`). A sed edit put a `//` comment inside a one-line `try {...}` in the page script
   and broke it (local copy only, fixed before publishing). Tests: `test_dwarf_fist` 5 checks pass. Page version 3.
+
+
+## November 19, 2026 (PC, dwarf-animations Claude, chat 4): two-handed weapons need real two-handed moves
+- **Owner's round 3 notes (F389):** axe, shield and other tools fine now; the great axe and great maul still go through
+  his body (pictures: the handle through his face; the axe floating by his shoulder with his hand empty).
+  Owner: "I'm sure there are presets for two-handed weapons... you've been going at it a few times already."
+- **Found:** the dwarf's animation pack (Quaternius UAL 1 + 2) has NO two-handed weapon moves. The great weapons used
+  the one-handed sword chop and Claude's code pulled the left hand on afterwards: that's why every round went wrong.
+  Pictures (new `tools/asset_forge/twohand_preview.gd`): the pack's two-handed tree chop hides the axe behind his
+  head; today's swing holds the handle sideways across his chest. A back carry (head over the right shoulder, handle
+  to the left hip) looked right from behind.
+- **Owner's picks:** find a free pack with real two-handed moves; when not fighting, do whatever that pack does.
+  Found: **KayKit Character Animations** (CC0, free, 150+ moves incl. two-handed melee, short-armed chunky characters
+  like ours; FBX + glTF, its own rig, so the moves must be retargeted onto our skeleton). Kevin Iglesias' free melee
+  pack has a 2H attack but no stated license: ruled out (public repo).
+- **Hurdles (Claude's own):** the download needs button clicks on itch.io; Claude's script got the download page but
+  the file request said "invalid key", so the owner downloads it. Godot isn't a command in this shell: the tests need
+  `GODOT` set to the winget copy (`...WinGet\Packages\GodotEngine...\Godot_v4.7.2-stable_win64_console.exe`).
+  The owner didn't follow "top row" of a picture sheet: name each picture plainly next time.
+- **Also done:** the shell shield's old shimmer fixed (every other outer scale 1.2 cm further out, the middle stack
+  moved out; model check ok). Saved to GitHub: the fist work, test, 4 shields, journal (FEEDBACK.md left out: other
+  chats' unsaved notes in it). Test `test_dwarf_fist` 5 checks pass.
