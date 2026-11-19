@@ -18,8 +18,8 @@ func build(maker: CaveMaker, spots: Array[Dictionary]) -> void:
 	var fall_shader: Shader = load("res://src/art/waterfall.gdshader")
 	for f in falls:
 		_make_fall(f, fall_shader)
-		puddles.append({pos = (f.pool as Vector3) + Vector3.UP * 0.05, r = 0.5, drip = true})  # where it lands: rings
-		_make_splash(f.pool)
+	if GroundSnap.instance and GroundSnap.instance.world:
+		GroundSnap.instance.world.changed.connect(_on_rock_changed)
 	for p in puddles:
 		var mi := MeshInstance3D.new()
 		var plane := PlaneMesh.new()
@@ -126,6 +126,13 @@ static func plan_falls(maker: CaveMaker) -> Array[Dictionary]:
 				continue
 			if not _fall_clear(maker, pts, pool, trees):
 				continue
+			var near := false
+			for other in out:  # (round 3: not two side by side)
+				var o: Vector3 = (other.pts as PackedVector3Array)[0]
+				if Vector2(o.x - pts[0].x, o.z - pts[0].z).length() < 8.0:
+					near = true
+			if near:
+				continue
 			out.append({pts = pts, side = Vector3.UP.cross(n).normalized(), pool = pool})
 			want -= 1
 	return out
@@ -148,9 +155,93 @@ static func _fall_clear(maker: CaveMaker, pts: PackedVector3Array, pool: Vector3
 	return true
 
 
+var _falls: Array[Dictionary] = []  ## {pts (planned), side, mi, mat, pool (MeshInstance3D), splash}
+
+
+## A waterfall: its ribbon of water, the pool and the splash where it lands. Once the real rock under it is built it's
+## made to reach the real floor (owner, Nov 19: "it doesn't touch the floor"), and again whenever rock is dug below it.
 func _make_fall(f: Dictionary, shader: Shader) -> void:
-	var pts: PackedVector3Array = f.pts
-	var side: Vector3 = f.side
+	var mi := MeshInstance3D.new()
+	var mat := ShaderMaterial.new()
+	mat.shader = shader
+	mi.material_override = mat
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.visibility_range_end = 90.0  # (seen from across a big cave)
+	add_child(mi)
+	var pool := _make_pool()
+	var fall := {pts = _smoothed(f.pts), side = f.side, mi = mi, mat = mat, pool = pool, splash = _make_splash(f.pool)}
+	_falls.append(fall)
+	_shape_fall(fall, f.pool)
+	var bottom: Vector3 = (f.pts as PackedVector3Array)[(f.pts as PackedVector3Array).size() - 1]
+	GroundSnap.when_built(AABB(bottom - Vector3(2, 6, 2), Vector3(4, 8, 4)), _fit_fall.bind(fall))
+
+
+## The path, smoothed sideways (owner, Nov 19: it kinked out where the rock bulged); points that would end up in
+## the rock keep their place.
+static func _smoothed(pts: PackedVector3Array) -> PackedVector3Array:
+	var out := pts.duplicate()
+	for round in 3:
+		var prev := out.duplicate()
+		for i in range(1, out.size() - 1):
+			var m := (prev[i - 1] + prev[i] * 2.0 + prev[i + 1]) * 0.25
+			out[i] = Vector3(m.x, prev[i].y, m.z)
+	return out
+
+
+## Down to the real floor under its lowest point (the rock as built, or dug since).
+func _fit_fall(fall: Dictionary) -> void:
+	if not is_inside_tree():
+		return
+	var pts: PackedVector3Array = fall.pts
+	var last := pts[pts.size() - 1]
+	var fl := GroundSnap.floor_at(get_world_3d().direct_space_state, last, 0.4, 12.0)
+	if fl == Vector3.INF:
+		return
+	var path := PackedVector3Array()
+	for q in pts:
+		if q.y > fl.y + 0.05:
+			path.append(q)
+	if path.is_empty():
+		return
+	var end := path[path.size() - 1]
+	while end.y - 0.25 > fl.y + 0.03:  # straight down the rest of the way
+		end = end + Vector3.DOWN * 0.25
+		path.append(end)
+	path.append(Vector3(end.x, fl.y + 0.03, end.z))
+	fall.shown = path
+	_shape_fall(fall, Vector3(end.x, fl.y, end.z))
+
+
+func _on_rock_changed(center: Vector3, radius: float) -> void:
+	for fall in _falls:
+		var pts: PackedVector3Array = fall.get("shown", fall.pts)
+		var bottom := pts[pts.size() - 1]
+		if Vector2(center.x - bottom.x, center.z - bottom.z).length() < radius + 1.0 and center.y < bottom.y + 1.5:
+			# rock dug under it: it runs on down into the hole once the rock there is rebuilt (a moment later)
+			get_tree().create_timer(0.6).timeout.connect(_fit_fall.bind(fall))
+
+
+func _make_pool() -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	var plane := PlaneMesh.new()
+	plane.size = Vector2.ONE
+	mi.mesh = plane
+	var mat := ShaderMaterial.new()
+	mat.shader = load("res://src/art/water.gdshader")
+	mat.set_shader_parameter("drip", 1.0)
+	mat.set_shader_parameter("radius", 0.5)
+	mi.material_override = mat
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.visibility_range_end = 45.0
+	add_child(mi)
+	return mi
+
+
+func _shape_fall(fall: Dictionary, landing: Vector3) -> void:
+	var pts: PackedVector3Array = fall.get("shown", fall.pts)
+	var side: Vector3 = fall.side
+	(fall.pool as Node3D).global_position = landing + Vector3.UP * 0.05
+	(fall.splash as Node3D).global_position = landing + Vector3.UP * 0.05
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var down := 0.0
@@ -170,19 +261,12 @@ func _make_fall(f: Dictionary, shader: Shader) -> void:
 			st.set_uv(uvs[j])
 			st.add_vertex(verts[j])
 	st.generate_normals()
-	var mi := MeshInstance3D.new()
-	mi.mesh = st.commit()
-	var mat := ShaderMaterial.new()
-	mat.shader = shader
-	mat.set_shader_parameter("length", down)
-	mi.material_override = mat
-	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	mi.visibility_range_end = 90.0  # (seen from across a big cave)
-	add_child(mi)
+	(fall.mi as MeshInstance3D).mesh = st.commit()
+	(fall.mat as ShaderMaterial).set_shader_parameter("length", down)
 
 
 ## Droplets bouncing up where the water lands (a few tiny glints, cheap: the graphics card moves them).
-func _make_splash(at: Vector3) -> void:
+func _make_splash(at: Vector3) -> GPUParticles3D:
 	var p := GPUParticles3D.new()
 	p.amount = 24
 	p.lifetime = 0.7
@@ -212,6 +296,7 @@ func _make_splash(at: Vector3) -> void:
 	p.visibility_range_end = 30.0
 	add_child(p)
 	p.global_position = at + Vector3.UP * 0.05
+	return p
 
 
 ## Puddles: [{pos, r, drip}]. Under each water drip (on the floor below it), and a few in low floor spots.

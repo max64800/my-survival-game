@@ -223,8 +223,9 @@ static func plan(maker: CaveMaker, spots: Array[Dictionary]) -> Array[Dictionary
 	var out: Array[Dictionary] = []
 	var taken := {}  ## Vector3i (1 m squares) -> Array of [pos, gap]
 	var rock := Rock.new(maker)
-	for s in spots:  # nothing grows right on top of a harvestable thing
-		_take(taken, s.pos, 0.35 * float(s.get("scale", 1.0)) + 0.25)
+	for s in spots:  # nothing grows right on top of a harvestable thing (crystals: a wider ring, owner Nov 19)
+		var crystal := String(s.kind).begins_with("crystal")
+		_take(taken, s.pos, (0.6 if crystal else 0.35) * float(s.get("scale", 1.0)) + (0.4 if crystal else 0.25))
 	# The slow part, feeling for the rock, doesn't depend on what was placed before (owner, Nov 18: the speed-up run):
 	# 1) where each spot's patch starts (helpers, side by side), 2) every try's dice, in the same order as always,
 	# 3) every try's hit on the rock (helpers again, each with its own rock cache), 4) the spacing checks in the old

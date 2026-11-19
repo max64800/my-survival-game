@@ -185,3 +185,44 @@ func test_waterfalls_keep_clear() -> void:
 			first += 1
 	check(first >= 1, "the first cave has a waterfall (%d)" % first)
 	CaveMaker.use_layout(was)
+
+
+## No little root, twig or fiber grows over a crystal (owner, Nov 19).
+func test_no_roots_on_crystals() -> void:
+	var was := CaveMaker.layout
+	CaveMaker.use_layout(CaveMaker.LAYOUT_LATEST)
+	var m := CaveMaker.new(42)
+	var spots := GlowPlacer.place(m)
+	var crystals := spots.filter(func(s): return String(s.kind).begins_with("crystal") and not s.get("hidden", false))
+	var bad := 0
+	for s in spots:
+		if s.get("hidden", false) or not s.kind in ["root", "root_dangle", "twig", "fiber"]:
+			continue
+		for c in crystals:
+			if (c.pos as Vector3).distance_to(s.pos) < 0.6 + 0.6 * float(c.get("scale", 1.0)):
+				bad += 1
+	check_eq(bad, 0, "no root, twig or fiber on a crystal")
+	CaveMaker.use_layout(was)
+
+
+## Rune shrines stand on their alcove's floor (owner, Nov 19: "all the time they're spawning in mid-air").
+func test_rune_shrines_stand_on_the_floor() -> void:
+	var was := CaveMaker.layout
+	CaveMaker.use_layout(CaveMaker.LAYOUT_LATEST)
+	var m := CaveMaker.new(42)
+	var field := PoiField.new()
+	tree.root.add_child(field)
+	field.build(m)
+	var shrines := 0
+	var floating := 0
+	for p in m.pois:
+		if p.type != "shrine" or not field._nodes.has(p.id):
+			continue
+		shrines += 1
+		var at: Vector3 = (field._nodes[p.id] as Node3D).global_position
+		if at.y - m.find_floor(at.x, at.z, at.y + 0.5).y > 0.3:
+			floating += 1
+	check(shrines >= 3, "there are rune shrines (%d)" % shrines)
+	check_eq(floating, 0, "none floating")
+	field.queue_free()
+	CaveMaker.use_layout(was)

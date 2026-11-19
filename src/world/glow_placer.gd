@@ -95,6 +95,24 @@ static func _place(maker: CaveMaker) -> Array[Dictionary]:
 	_thin_crystals_under_stars(maker, spots)
 	_add_wood_everywhere(maker, spots)
 	var trees := RootPillars.plan(maker) if maker.made_layout >= 13 else []
+	# No little root, twig or fiber growing over a crystal (owner, Nov 19): the later passes add them without looking
+	# at the crystals, so one that lands right by a crystal is left out (kept in the list: ids stay the same).
+	var crystals := {}
+	for s in spots:
+		if String(s.kind).begins_with("crystal"):
+			var key := Vector3i((s.pos / 2.0).floor())
+			if not crystals.has(key):
+				crystals[key] = []
+			crystals[key].append(s)
+	for s in spots:
+		if s.kind in [ROOT, ROOT_DANGLE, "twig", "fiber"] and maker.made_layout >= 13:
+			var c0 := Vector3i(((s.pos as Vector3) / 2.0).floor())
+			for dx in range(-1, 2):
+				for dy in range(-1, 2):
+					for dz in range(-1, 2):
+						for c in crystals.get(c0 + Vector3i(dx, dy, dz), []):
+							if (c.pos as Vector3).distance_to(s.pos) < 0.6 + 0.6 * float(c.get("scale", 1.0)):
+								s.hidden = true
 	for s in spots:
 		if maker.is_reserved(s.pos, 0.5) or maker.on_bridge(s.pos):  # (built ground; bridge tops: owner Nov 18)
 			s.hidden = true  # on a built thing's ground (the placement rule); kept in the list so ids stay the same

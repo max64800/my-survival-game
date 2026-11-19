@@ -21,6 +21,25 @@ func build(p_maker: CaveMaker) -> void:
 			add_child(n)
 			n.global_position = p.pos
 			_nodes[p.id] = n
+			if p.type == "shrine":
+				_ground_shrine(n)
+
+
+## A rune shrine stands on its alcove's floor (owner, Nov 19: "all the time they're spawning in mid-air": its spot is
+## the middle of the round alcove, ~1.5 m up), then on the real rock once that's built.
+func _ground_shrine(n: Node3D) -> void:
+	var p := n.global_position
+	var fl := maker.find_floor(p.x, p.z, p.y + 0.5)
+	if fl.y < p.y and p.y - fl.y < 7.0:
+		n.global_position = fl
+	GroundSnap.when_built(AABB(n.global_position - Vector3(1, 2, 1), Vector3(2, 4, 2)), func() -> void:
+		if not is_instance_valid(n) or not n.is_inside_tree():
+			return
+		var real := GroundSnap.floor_at(n.get_world_3d().direct_space_state, n.global_position, 1.0, 2.5)
+		if real != Vector3.INF:
+			n.global_position = real)
+
+
 
 
 static func poi_id_of(collider: Object) -> int:

@@ -23,10 +23,14 @@ void fragment() {
 	float down = UV.y;
 	float across = UV.x;
 	float flow = down - TIME * speed;
-	// thin streams side by side, each wavering a little, sliding down at their own pace
-	float streaks = vnoise(vec2(across * 9.0 + sin(down * 1.7) * 0.4, flow * 1.3));
-	streaks += 0.6 * vnoise(vec2(across * 21.0, flow * 3.1 + 7.0));
-	streaks = smoothstep(0.55, 1.45, streaks);
+	// (round 3, owner Nov 19: "the texture is a little odd": it looked blocky) thin smooth threads of water running
+	// down, each wavering a little, with brighter beads sliding down them
+	float wav = vnoise(vec2(across * 5.0, down * 0.7)) * 2.0;
+	float threads = 0.5 + 0.5 * sin(across * 37.0 + wav * 3.0 + sin(across * 11.0 + 1.3) * 2.2);  // uneven spacing
+	threads = pow(threads, 3.0);
+	float beads = vnoise(vec2(across * 14.0 + wav, flow * 1.6));
+	beads = smoothstep(0.35, 0.95, beads);
+	float streaks = clamp(threads * (0.35 + 0.9 * beads) + 0.25 * beads, 0.0, 1.0);
 	float sides = smoothstep(0.0, 0.3, across) * smoothstep(1.0, 0.7, across);
 	float ends = smoothstep(0.0, 0.6, down) * smoothstep(length, length - 0.2, down);  // seeping out of the crack
 	vec3 water = vec3(0.45, 0.66, 0.82);  // (round 2: bluer, more see-through, a softer shine)
