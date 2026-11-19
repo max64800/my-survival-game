@@ -983,6 +983,13 @@ func _process(delta: float) -> void:
 		var mood: String = {"well_fed": "Well fed", "peckish": "Peckish", "starving": "Starving (tired)"}.get(v.status(), "")
 		if v.cozy_time > 0.0:
 			buffs.append("Cozy (comfort %d) %d:%02d" % [v.cozy_points, int(v.cozy_time) / 60, int(v.cozy_time) % 60])
+		var slots: Array = ps.progress.ability_slots()
+		for i in slots.size():  # active perks: which key, ready or recharging
+			var cd: Dictionary = v.effects.get("cd_" + slots[i], {})
+			buffs.append("%s %s %s" % [["Z", "G", "T"][i], Progression.PERKS[slots[i]][4], "%d s" % ceili(cd.left) if cd.has("left") else "ready"])
+		for e in v.effects:
+			if not e.begins_with("cd_") and Progression.PERKS.has(e) or e == "bond":
+				buffs.append("%s %d s" % [Progression.PERKS[e][4] if Progression.PERKS.has(e) else "Bond of the Clan", ceili(v.effects[e].left)])
 		_buff_label.text = "\n".join(([mood] if mood != "" else []) + buffs + Array(v.ailments.describe()))
 		var p := ps.progress
 		var best := Progression.SKILLS.duplicate()

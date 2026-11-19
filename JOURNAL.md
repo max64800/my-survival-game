@@ -3669,3 +3669,18 @@ the body."
   of the project to get the before-numbers. Before: 404 checks, 4 failed. After: 409 checks, same 4 failed
   (vine placement, shovel model and 2 more, all already failing before this work).
 - Not checked in a real game window (Mac, headless tests only). XP_PER_HOUR is a guess.
+
+## 2026-11-19 (Mac) — Perk tree planned on a page, then built
+- Brainstormed the character level + perk points on an interactive page (claude.ai/artifact/UTLcKhgPsVEZiubPB2dfWP):
+  4 branches (Toughness top, Fighting right, Utility bottom, Together left with support), 1 point per level,
+  reset for gold, passive circles and active diamonds. Owner adjusted perks over 3 rounds (Fire and Frost, Big Lungs,
+  Quick Reload, smelting, chest/monster loot, rare gems, Clan Banner resists, swaps). Added zoom/drag on request.
+- Built it: the new tree replaces the old 4 trees in src/progress/progression.gd (old perks' points come back).
+  Active perks on Z / G / T, checked by the host with a recharge (request → host approves → effect sent to the
+  player's own computer). Gold coins added (old ruin chests) and the skills window has a "Reset perks" button.
+- Hooked up: health, stamina, regen, poison/burn/chill resist, armor, Unbreakable, Berserker, damage perks, armor
+  pierce, stagger, dodge, reload, Rapid Volley, last-hit heal, Pack Hunters, more monster drops, ore/smelting/craft
+  perks, rare gems, Shared Lessons, Shoulder to Shoulder, Bond of the Clan, War Horn, Healing Brew, Clan Banner, Whirlwind.
+- Not built (needs new systems): see skills.md "Waiting on systems". Abilities have sounds but no animations/models.
+- Hurdle: the Mac's Python with `-I` couldn't find the picture library for the coin icon; ran it normally (own script).
+  The coin icon is a quick placeholder. Not tried in a real game window.

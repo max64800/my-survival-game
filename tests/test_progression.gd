@@ -10,10 +10,10 @@ func test_level_curve_matches_doc_table() -> void:
 	check_near(Progression.total_xp_for_level(30), 64360, 40, "total XP to reach level 30")
 
 
-func test_points_with_bonus_levels() -> void:
+func test_one_point_per_level() -> void:
 	check_eq(Progression.points_for_level(1), 0, "level 1: no points")
-	check_eq(Progression.points_for_level(5), 5, "level 5: 4 + 1 bonus")
-	check_eq(Progression.points_for_level(30), 35, "level 30: 35 points")
+	check_eq(Progression.points_for_level(5), 4, "level 5: 4 points")
+	check_eq(Progression.points_for_level(30), 29, "level 30: 29 points")
 
 
 func test_skill_curve_total() -> void:
@@ -47,33 +47,22 @@ func test_level_cap() -> void:
 	var p := Progression.new()
 	p.add_xp(10_000_000)
 	check_eq(p.level, Progression.MAX_LEVEL, "stops at 30")
-	check_eq(p.points_free(), 35, "35 points")
+	check_eq(p.points_free(), 29, "1 point per level: 29")
 
 
-func test_perk_needs_skill_and_points() -> void:
+func test_perk_needs_points_and_the_perk_before() -> void:
 	var p := Progression.new()
-	check_eq(p.why_not("strong_swing"), "Not enough points.", "no points at level 1")
-	p.add_xp(Progression.total_xp_for_level(6))  # level 6 = 6 points
-	check(p.buy_perk("strong_swing"), "buy strong swing")
-	check(not p.buy_perk("light_arms"), "light arms needs Mining 5")
-	check(p.why_not("light_arms").begins_with("Needs Mining"), "says why")
-	for i in 600:
-		p.add_xp(2, "mining")
-	check(p.skill_level.mining >= 5, "mined up to skill 5+ (got %d)" % p.skill_level.mining)
-	check(p.buy_perk("light_arms"), "now light arms works")
-
-
-func test_perk_prerequisite_and_ranks() -> void:
-	var p := Progression.new()
-	p.add_xp(10_000_000)
-	p.skill_level.mining = 100
-	check(not p.buy_perk("lucky_strike"), "needs strong swing first")
-	p.buy_perk("strong_swing")
-	check(p.buy_perk("lucky_strike"), "now ok")
-	p.buy_perk("strong_swing")
-	p.buy_perk("strong_swing")
-	check_eq(p.why_not("strong_swing"), "Already maxed.", "3 ranks max")
-	check_near(p.dig_power_mult(), 1.3 * 1.15, 0.0001, "skill 100 + 3 ranks")
+	check_eq(p.why_not("thick_skin"), "Not enough points.", "no points at level 1")
+	p.add_xp(Progression.total_xp_for_level(6))  # level 6 = 5 points
+	check(not p.buy_perk("iron_belly"), "Iron Belly needs Thick Skin first")
+	check(p.why_not("iron_belly").begins_with("Needs Thick Skin"), "says why")
+	check(p.buy_perk("thick_skin"), "buy Thick Skin")
+	check(p.buy_perk("iron_belly"), "now Iron Belly opens")
+	p.buy_perk("thick_skin")
+	p.buy_perk("thick_skin")
+	check_eq(p.why_not("thick_skin"), "Already maxed.", "3 ranks max")
+	check_near(p.max_health_bonus(), 15.0, 0.0001, "+5 health per rank")
+	check_eq(p.points_free(), 1, "4 of 5 points spent")
 
 
 func test_respec_refunds_points() -> void:
@@ -81,17 +70,16 @@ func test_respec_refunds_points() -> void:
 	p.add_xp(10_000_000)
 	p.buy_perk("thick_skin")
 	p.buy_perk("iron_belly")
-	check_eq(p.points_free(), 33, "spent 2")
+	check_eq(p.points_free(), 27, "spent 2")
+	check_eq(p.respec_cost(), 30 * Progression.RESPEC_GOLD_PER_LEVEL, "reset costs gold by level")
 	p.respec()
-	check_eq(p.points_free(), 35, "all back")
+	check_eq(p.points_free(), 29, "all back")
 	check_eq(p.perk_rank("thick_skin"), 0, "perk gone")
 
 
 func test_every_perk_is_reachable() -> void:
 	var p := Progression.new()
 	p.add_xp(10_000_000)
-	for s in Progression.SKILLS:
-		p.skill_level[s] = 100
 	var bought := true
 	var guard := 0
 	while bought and guard < 200:
@@ -104,6 +92,26 @@ func test_every_perk_is_reachable() -> void:
 		p._points_spent = 0  # pretend infinite points to test the requirement chain
 	for id in Progression.PERKS:
 		check_eq(p.perk_rank(id), Progression.PERKS[id][1], "%s reachable to max" % id)
+		check(Progression.PERKS[id][0] in Progression.BRANCHES, "%s is in a real branch" % id)
+		check(Progression.PERKS[id][3] == Progression.ACTIVE.has(id), "%s: active perks have a recharge" % id)
+
+
+func test_ability_keys_take_the_first_active_perks() -> void:
+	var p := Progression.new()
+	p.perks = {stone_stance = 1, war_horn = 1, whirlwind = 1, clan_banner = 1, thick_skin = 3}
+	check_eq(p.ability_slots(), ["stone_stance", "whirlwind", "war_horn"], "3 keys, tree order, passives skipped")
+
+
+func test_old_tree_perks_give_their_points_back() -> void:
+	var p := Progression.new()
+	p.add_xp(10_000_000)
+	var d := p.to_data()
+	d.p = {strong_swing = 3, thick_skin = 2}
+	d.ps = 5
+	p.load_data(d)
+	check_eq(p.perk_rank("strong_swing"), 0, "old perk dropped")
+	check_eq(p.perk_rank("thick_skin"), 2, "same-name perk kept")
+	check_eq(p.points_free(), 27, "only the kept ranks still cost points")
 
 
 func test_quality_table_rows_add_to_100() -> void:
@@ -125,11 +133,11 @@ func test_quality_roll() -> void:
 func test_network_roundtrip() -> void:
 	var p := Progression.new()
 	p.add_xp(5000, "crafting")
-	p.buy_perk("steady_hammer")
+	p.buy_perk("deep_pockets")
 	var q := Progression.new()
 	q.load_data(p.to_data())
 	check_eq(q.level, p.level, "level copied")
-	check_eq(q.perk_rank("steady_hammer"), 1, "perk copied")
+	check_eq(q.perk_rank("deep_pockets"), 1, "perk copied")
 	check_eq(q.points_free(), p.points_free(), "points copied")
 
 
@@ -137,9 +145,6 @@ func test_skills_list_and_info_match() -> void:
 	check_eq(Progression.SKILLS.size(), 14, "14 skills (skills.md)")
 	for sk in Progression.SKILLS:
 		check(Progression.SKILL_INFO.has(sk) and Progression.SKILL_INFO[sk][2].size() == 4, "%s has 4 ★ perks" % sk)
-	for br in Progression.BRANCH_SKILLS:
-		for sk in Progression.BRANCH_SKILLS[br]:
-			check(sk in Progression.SKILLS, "branch %s uses a real skill (%s)" % [br, sk])
 
 
 func test_weapons_train_their_skill() -> void:
@@ -156,8 +161,6 @@ func test_stars_and_branches() -> void:
 	var p := Progression.new()
 	p.skill_level.mining = 49
 	check(p.has_star("mining", 25) and not p.has_star("mining", 50), "★25 yes, ★50 not yet")
-	p.skill_level.spear = 30
-	check_eq(p.branch_level("fighting"), 30, "Warrior branch counts the best weapon")
 	check_near(p.run_speed_mult(), 1.0, 0.0001, "Running 0: no bonus")
 	p.skill_level.running = 100
 	check_near(p.run_speed_mult(), 1.2, 0.0001, "Running 100: +20% speed")

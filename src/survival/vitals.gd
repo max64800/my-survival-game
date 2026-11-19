@@ -28,6 +28,10 @@ var upset_time := 0.0
 var cozy_time := 0.0  ## the "Cozy" rest buff (see Comfort): seconds left
 var cozy_points := 0  ## how cozy the place was
 var ailments := Ailments.new()  ## poison, burn, chill (only on the dwarf's own computer)
+var progress: Progression = null  ## this dwarf's perks (set by PlayerState)
+var effects := {}  ## timed effects from active perks: name -> {left (seconds), and numbers like damage_taken}
+var friends_near := false  ## a friend within 10 m (Shoulder to Shoulder), set every frame on our computer
+var unbreakable_cd := 0.0  ## Unbreakable perk: seconds until it can save you again
 var _since_damage := 999.0
 var _since_stamina := 999.0
 
@@ -38,7 +42,13 @@ func buff_total(key: String) -> float:
 	var t := 0.0
 	for b in buffs:
 		t += Foods.buff_of(b.id).get(key, 0.0)
+	for e in effects.values():
+		t += e.get(key, 0.0)
 	return t
+
+
+func _rank(id: String) -> int:
+	return progress.perk_rank(id) if progress else 0
 
 
 ## "well_fed", "normal", "peckish" or "starving" (the worse of hunger and thirst counts).
@@ -58,15 +68,15 @@ func is_tired() -> bool:
 
 
 func max_health() -> float:
-	return BASE_HEALTH * (1.0 + buff_total("max_health"))
+	return BASE_HEALTH * (1.0 + buff_total("max_health")) + (progress.max_health_bonus() if progress else 0.0)
 
 
 func max_stamina() -> float:
-	return BASE_STAMINA * (1.0 + buff_total("max_stamina")) * (0.8 if is_tired() else 1.0)
+	return (BASE_STAMINA * (1.0 + buff_total("max_stamina")) + (progress.max_stamina_bonus() if progress else 0.0)) * (0.8 if is_tired() else 1.0)
 
 
 func health_regen_mult() -> float:
-	var cozy := Comfort.HEALTH_MULT if cozy_time > 0.0 else 1.0
+	var cozy := (Comfort.HEALTH_MULT if cozy_time > 0.0 else 1.0) * (1.0 + (progress.health_regen_bonus() if progress else 0.0))
 	match status():
 		"well_fed": return 1.2 * cozy
 		"peckish": return 0.75 * cozy
@@ -84,6 +94,10 @@ func set_cozy(points: int) -> void:
 
 func stamina_regen_mult() -> float:
 	var m := 1.0 + buff_total("stamina_regen")
+	if _since_damage < 10.0:
+		m += _rank("battle_breath") * 0.10  # Battle Breath: a fight is on
+	if friends_near:
+		m += _rank("shoulder_to_shoulder") * 0.05
 	if cozy_time > 0.0:
 		m += Comfort.STAMINA_PER_POINT * cozy_points
 	if is_tired():
@@ -103,6 +117,11 @@ func tick(delta: float, resting: bool = false) -> void:
 	_since_stamina += delta
 	upset_time = maxf(0.0, upset_time - delta)
 	cozy_time = maxf(0.0, cozy_time - delta)
+	unbreakable_cd = maxf(0.0, unbreakable_cd - delta)
+	for k in effects.keys():
+		effects[k].left -= delta
+		if effects[k].left <= 0.0:
+			effects.erase(k)
 	for i in range(buffs.size() - 1, -1, -1):
 		buffs[i].time_left -= delta
 		if buffs[i].time_left <= 0.0:
@@ -141,9 +160,27 @@ func drain_stamina(per_second: float, delta: float) -> bool:
 ## Returns true if this killed the dwarf.
 func take_damage(amount: float) -> bool:
 	var real := amount * maxf(0.0, 1.0 + buff_total("damage_taken"))
+	if _rank("berserker") > 0 and health < max_health() * 0.3:
+		real *= 0.9
 	health = maxf(0.0, health - real)
+	if health <= 0.0 and real > 0.0 and _rank("unbreakable") > 0 and unbreakable_cd <= 0.0:
+		health = 1.0  # Unbreakable: a killing hit leaves you standing, once every 10 minutes
+		unbreakable_cd = 600.0
 	_since_damage = 0.0
 	return health <= 0.0
+
+
+## Poison / burn / chill building up on you, after perks and Clan Banner resist. Returns what started ("" = nothing).
+func add_ailment(kind: String, amount: float) -> String:
+	var resist := (progress.ailment_resist(kind) if progress else 0.0) + buff_total("resist_" + kind)
+	return ailments.add(kind, amount * maxf(0.1, 1.0 - resist))
+
+
+## A timed effect from an active perk (the host sends it). The same name again refreshes it.
+func add_effect(name: String, data: Dictionary, seconds: float) -> void:
+	var e := data.duplicate()
+	e.left = seconds
+	effects[name] = e
 
 
 ## Eats or drinks an item. Returns false if it isn't food or drink.
@@ -182,6 +219,9 @@ func respawn() -> void:
 	buffs.clear()
 	cozy_time = 0.0
 	ailments.clear()
+	for k in effects.keys():
+		if not k.begins_with("cd_"):  # perk buffs end, ability recharges keep counting
+			effects.erase(k)
 	upset_time = 0.0
 	health = max_health()
 	stamina = max_stamina()

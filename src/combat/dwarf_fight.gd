@@ -127,7 +127,7 @@ func step(delta: float, playing: bool, move_dir: Vector3) -> float:
 	if not playing:
 		_hold = -1.0
 		return 1.0
-	if Input.is_action_just_pressed("dodge") and _busy <= 0.0 and _ps() and _ps().vitals.use_stamina(Combat.DODGE_STAMINA):
+	if Input.is_action_just_pressed("dodge") and _busy <= 0.0 and _ps() and _ps().vitals.use_stamina(Combat.DODGE_STAMINA * _ps().progress.dodge_stamina_mult()):
 		_dodge_t = 0.0
 		# No direction pressed = roll backward.
 		_dodge_dir = move_dir.normalized() if move_dir.length() > 0.1 else Basis(Vector3.UP, dwarf.model.rotation.y) * Vector3.BACK
@@ -259,7 +259,12 @@ func start_reload() -> void:
 	if bolt() == "":
 		message.emit("No bolts! Craft some at a Workbench.", Color(1.0, 0.6, 0.4))
 		return
-	reload_left = Combat.RELOAD[clampi(tier(), 0, 4)]
+	var fx: Dictionary = _ps().vitals.effects.get("rapid_volley", {}) if _ps() else {}
+	if fx.get("free_reloads", 0.0) >= 1.0:  # Rapid Volley perk: no wait for the next few bolts
+		fx.free_reloads -= 1.0
+		reload_left = 0.05
+		return
+	reload_left = Combat.RELOAD[clampi(tier(), 0, 4)] * (_ps().progress.reload_mult() if _ps() else 1.0)
 	dwarf.model.react("reload")
 	message.emit("Reloading…", Color(0.9, 0.9, 0.9))
 

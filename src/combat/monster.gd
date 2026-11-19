@@ -59,6 +59,7 @@ var _blink := 8.0
 var _ball := 0.0  ## Moss Shuffler: seconds left rolled up in its shell
 var ailments := Ailments.new()  ## host: burn / chill / poison on this monster (doc 2.6)
 var last_hitter := 0
+var hit_by := {}  ## host: peer -> clock time of their last hit (Pack Hunters perk)
 var _dot_sync := 0.0
 var _trail := 10.0
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)

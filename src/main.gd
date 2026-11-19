@@ -718,6 +718,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		hud.set_map_open(open_map)
 		Controls.set_captured(false) if open_map else Input.MOUSE_MODE_CAPTURED
 		return
+	for i in Progression.ABILITY_KEYS:  # active perks on Z / G / T (owner's tree, Nov 19)
+		if event.is_action_pressed("ability_%d" % (i + 1)):
+			var me := authority.get_player(authority.local_peer_id())
+			var slots: Array = me.progress.ability_slots() if me else []
+			if i < slots.size():
+				authority.ask_ability(slots[i])
+			else:
+				hud.show_toast("No ability on this key yet. Active perks (diamonds) in the skills window (K) go here.", 3.0)
+			return
 	if event.is_action_pressed("toggle_skills") or (event.is_action_pressed("pause") and hud.is_skills_open()):
 		var open := not hud.is_skills_open()
 		hud.set_skills_open(open)

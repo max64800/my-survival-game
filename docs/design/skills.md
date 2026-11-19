@@ -65,7 +65,24 @@ New things these need (not built yet): Axe bleeding (★25), Spear throw (★75)
 - **Not built yet:** the other ★ perks and the per-level bonuses that need systems we don't have yet (armor piercing,
   spear reach, reload time, block strength, craft/cook time, parry window), and a "★ perk unlocked!" pop-up.
 
+## Perk tree (owner, Nov 19) — built, `Progression.PERKS`
+- Draft page to explore and edit: https://claude.ai/artifact/UTLcKhgPsVEZiubPB2dfWP
+- **1 perk point per level.** 4 branches around the dwarf: Toughness (top, grey), Fighting (right),
+  Utility (bottom), Together (left, includes support). A perk opens once the one before it has a point.
+- Mostly passive perks. **Active perks** (diamonds on the page) go on keys **Z / G / T** (the first 3 you own,
+  in tree order) and recharge: Stone Stance, Whirlwind, Rapid Volley, Quick Fix, War Horn, Healing Brew, Clan Banner.
+- **Resetting perk points costs gold coins** (5 per level). Gold is found in old ruin chests; later monsters drop it too.
+- Old saves: perks from the old 4 trees are dropped and their points come back.
+- Rules: torches never go out. Total points to fill the tree: 90; max level still 30 (29 points), not decided.
+
+### Waiting on systems we don't have yet
+Deep Pockets (bag can't grow), Thrifty and Quick Fix (no tool wear / repairs), Chest Looter (chests are filled when
+the world is made, not when opened), Grave Walker (no skill loss on death), Monster Lore (no kill counts),
+Quick Helper and Stand Over (no "fallen friend" state), Lantern Bearer (only your own screen would see it).
+Placeholders: Whirlwind/Healing Brew/Clan Banner have sounds only (no spin, throw or banner model); Healing Brew heals
+around you instead of being thrown; Shoulder to Shoulder only helps the player who has it; the gold coin icon.
+
 ## Still to plan
-- Character level and perk points: how they fit with these skill perks (next brainstorm).
+- Max level / total perk points, which keys abilities go on (choosing), gold from monsters.
 - How much skill you lose when you die (owner wants some, like Valheim).
 - Exact XP per action for each skill.

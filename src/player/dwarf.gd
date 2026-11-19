@@ -227,7 +227,7 @@ func _physics_process(delta: float) -> void:
 		running = false
 	if running:
 		_run_time += delta
-	var speed := (RUN_SPEED * (prog.run_speed_mult() if prog else 1.0) if running else WALK_SPEED) * fight_mult * (body.ailments.speed_mult() if body else 1.0)
+	var speed := (RUN_SPEED * (prog.run_speed_mult() if prog else 1.0) if running else WALK_SPEED) * fight_mult * (body.ailments.speed_mult() * maxf(0.2, 1.0 + body.buff_total("move_speed")) if body else 1.0)
 	var target := dir * speed
 	var on_floor := is_on_floor()
 	var a := ACCEL if on_floor else AIR_ACCEL

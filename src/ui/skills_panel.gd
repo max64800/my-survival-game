@@ -1,33 +1,18 @@
 class_name SkillsPanel
 extends PanelContainer
 ## The skills window (K key): your 14 skills (they grow by doing, with a ★ perk at 25/50/75/100),
-## then the perk trees: spend perk points from levelling up. Each tree perk also needs
-## a minimum level in its branch, which only grows by doing that kind of work.
+## then the perk tree: 1 point per level, 4 branches. A perk opens once the one before it has a point.
+## ◆ = active perk: it goes on an ability key (Z / G / T). Resetting your points costs gold coins.
 
-const BRANCHES := [["mining", "Miner"], ["fighting", "Warrior"], ["smithing", "Smith & Builder"], ["survival", "Survivor & Cook"]]
-const PERK_TEXT := {
-	"strong_swing": "+5% dig power", "light_arms": "−15% swing stamina", "magnet_pockets": "Pickup radius +50%",
-	"lucky_strike": "+5% double ore", "crystal_ear": "+1 crystal per spot", "wide_bite": "Bigger dug spots",
-	"prospectors_eye": "See ore through rock", "mole_stride": "+10% run speed with a pickaxe", "rock_sense": "Cave-in warning",
-	"hard_rock_hands": "Border rock −1 hit", "vein_breaker": "Every 8th ore hit breaks the whole vein",
-	"thick_skin": "+5% max health", "second_wind": "+10% stamina regen", "heavy_hand": "+6% heavy attacks",
-	"steady_guard": "Parry window +15%", "shield_wall": "−15% block stamina", "roll_master": "−15% dodge stamina",
-	"combo_keeper": "Longer combo timing", "stunner": "Parries stun +10%", "pack_breaker": "+25% vs pack leaders",
-	"last_stand": "Below 20% health: −20% damage taken", "executioner": "Dazed enemies take +30%",
-	"steady_hammer": "+5 Smithing for quality", "hot_hearth": "Smelt 15% faster", "fuel_saver": "Half smelter fuel",
-	"thrifty_smith": "10% chance to save an ingot", "quick_mason": "Bonus masonry output", "long_reach": "Build range +3 m",
-	"blueprint_foreman": "Blueprints build 25% faster", "strong_beams": "Beams hold 25% more", "upgrade_expert": "Upgrades −25% ingots",
-	"reforge": "Re-roll an item's quality", "iron_belly": "Hunger −10%", "camel_throat": "Thirst −10%",
-	"good_cook": "Your food lasts +10%", "forager": "+1 from wild plants", "green_thumb": "Farms grow 15% faster",
-	"big_harvest": "Chance of +1 harvest", "hunter": "Chance of +1 from animals", "deep_pockets": "+3 bag slots",
-	"hearty": "Buff food 10% stronger", "way_home": "Run faster back to your grave", "fourth_plate": "A 4th food slot",
-}
+const BRANCHES := [["toughness", "Toughness"], ["fighting", "Fighting"], ["utility", "Utility"], ["together", "Together"]]
 
 var peer_id := 1
 var _body: VBoxContainer
 var _points: Label
 var _level: Label
-const ICONS := {mining = "pickaxe_stone", fighting = "sword_stone", smithing = "anvil", survival = "campfire"}
+var _reset: Button
+const ICONS := {toughness = "helm_shell", fighting = "sword_stone", utility = "pickaxe_stone", together = "campfire"}
+const KEY_NAMES := ["Z", "G", "T"]
 
 
 ## "Dwarf workshop" look (owner F187): a column per skill, each perk a card with what it does.
@@ -59,8 +44,17 @@ func _ready() -> void:
 	_body = VBoxContainer.new()
 	_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_body)
-	var foot := UiKit.label(box, "Skills grow by doing (★ perks at 25, 50, 75, 100). Perk points come from levelling up.  ·  K close", 13, UiKit.DIM)
-	foot.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var bottom := HBoxContainer.new()
+	bottom.alignment = BoxContainer.ALIGNMENT_CENTER
+	bottom.add_theme_constant_override("separation", 16)
+	box.add_child(bottom)
+	UiKit.label(bottom, "Skills grow by doing (★ at 25, 50, 75, 100). 1 perk point per level. ◆ = active (Z / G / T).  ·  K close", 13, UiKit.DIM)
+	_reset = UiKit.dark_button(Button.new(), 13)
+	_reset.name = "Reset"
+	_reset.pressed.connect(func():
+		GameAuthority.instance.ask_respec()
+		get_tree().create_timer(0.15).timeout.connect(refresh))
+	bottom.add_child(_reset)
 
 
 func refresh() -> void:
@@ -71,6 +65,8 @@ func refresh() -> void:
 	var p := ps.progress
 	_level.text = "Level %d" % p.level
 	_points.text = "Perk points: %d" % p.points_free()
+	_reset.text = "Reset perks (%d gold, you have %d)" % [p.respec_cost(), ps.inventory.count_of("gold_coin")]
+	_reset.disabled = p.points_free() == p.points_total()
 	for c in _body.get_children():
 		c.queue_free()
 	_body.add_child(_skill_grid(p))
@@ -98,8 +94,6 @@ func refresh() -> void:
 		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		hrow.add_child(ic)
 		UiKit.label(hrow, br[1], 16, UiKit.AMBER).add_theme_font_override("font", UiKit.heading_font())
-		var lvl := UiKit.label(col, "skill %d" % p.branch_level(br[0]), 13, UiKit.DIM)
-		lvl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		for id in Progression.PERKS:
 			if Progression.PERKS[id][0] != br[0]:
 				continue
@@ -162,8 +156,10 @@ func _perk_card(id: String, p: Progression) -> Control:
 	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	text.add_theme_constant_override("separation", 0)
 	row.add_child(text)
-	UiKit.label(text, "%s  %d/%d" % [id.capitalize(), rank, info[1]], 15, UiKit.AMBER if rank > 0 else UiKit.TEXT)
-	var eff := UiKit.label(text, PERK_TEXT.get(id, ""), 13, UiKit.DIM)
+	var slot := p.ability_slots().find(id)
+	var tag: String = ("  ◆ " + (KEY_NAMES[slot] if slot >= 0 else "active")) if info[3] else ""
+	UiKit.label(text, "%s  %d/%d%s" % [info[4], rank, info[1], tag], 15, UiKit.AMBER if rank > 0 else UiKit.TEXT)
+	var eff := UiKit.label(text, info[5] + (" (recharge %d s)" % Progression.ACTIVE[id] if info[3] else ""), 13, UiKit.DIM)
 	eff.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	eff.custom_minimum_size = Vector2(170, 0)
 	var b := UiKit.gold_button(Button.new(), 13)
@@ -172,7 +168,7 @@ func _perk_card(id: String, p: Progression) -> Control:
 	b.custom_minimum_size = Vector2(70, 36)
 	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	b.disabled = why != ""
-	b.tooltip_text = why if why != "" else "Costs %d point%s" % [info[2], "" if info[2] == 1 else "s"]
+	b.tooltip_text = why if why != "" else "Costs 1 point"
 	card.tooltip_text = b.tooltip_text
 	b.visible = rank < int(info[1])
 	b.pressed.connect(func():

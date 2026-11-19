@@ -684,3 +684,47 @@ func test_running_jumping_and_shield_xp_are_checked_by_the_host() -> void:
 	check(ps.progress.skill_xp.running <= 4 + 5, "running capped by the time that passed")
 	check(ps.progress.skill_xp.jumping <= 6 + 3 * 9, "jumps capped too")
 	_teardown()
+
+
+func test_active_perks_need_the_perk_and_recharge() -> void:
+	await _setup(42)
+	check_eq(auth.request_ability(1, "stone_stance"), "", "can't use a perk you don't have")
+	ps.progress.perks.stone_stance = 1
+	check_eq(auth.request_ability(1, "stone_stance"), "used", "Stone Stance works")
+	check_near(ps.vitals.buff_total("damage_taken"), -0.4, 0.0001, "40% less damage taken")
+	check(ps.vitals.effects.has("cd_stone_stance"), "our screen knows it's recharging")
+	check_eq(auth.request_ability(1, "stone_stance"), "cooldown", "then it has to recharge")
+	ps.progress.perks.war_horn = 2
+	auth.request_ability(1, "war_horn")
+	check_near(auth.damage_boost(ps), 0.20, 0.0001, "War Horn rank 2: +20% damage")
+	ps.progress.perks.clan_banner = 1
+	auth.request_ability(1, "clan_banner")
+	ps.vitals.add_ailment("poison", 40.0)
+	check_near(ps.vitals.ailments.buildup.poison, 20.0, 0.5, "Clan Banner: half the poison")
+	_teardown()
+
+
+func test_perk_reset_costs_gold() -> void:
+	await _setup(42)
+	ps.progress.add_xp(Progression.total_xp_for_level(10))
+	ps.progress.buy_perk("thick_skin")
+	check(not auth.request_respec(1), "no gold: no reset")
+	ps.inventory.add("gold_coin", ps.progress.respec_cost())
+	check(auth.request_respec(1), "pay gold: reset")
+	check_eq(ps.progress.perk_rank("thick_skin"), 0, "perk refunded")
+	check_eq(ps.inventory.count_of("gold_coin"), 0, "the gold is spent")
+	_teardown()
+
+
+func test_toughness_perks_on_the_body() -> void:
+	await _setup(42)
+	ps.progress.perks = {thick_skin = 3, big_lungs = 2, unbreakable = 1, fire_and_frost = 2}
+	check_near(ps.vitals.max_health(), Vitals.BASE_HEALTH + 15.0, 0.001, "Thick Skin 3: +15 health")
+	check_near(ps.vitals.max_stamina(), Vitals.BASE_STAMINA + 20.0, 0.001, "Big Lungs 2: +20 stamina")
+	ps.vitals.health = 10.0
+	ps.vitals.take_damage(50.0)
+	check_near(ps.vitals.health, 1.0, 0.001, "Unbreakable: a killing hit leaves 1 health")
+	check(ps.vitals.take_damage(50.0), "but only once every 10 minutes")
+	ps.vitals.add_ailment("burn", 50.0)
+	check_near(ps.vitals.ailments.buildup.burn, 35.0, 0.5, "Fire and Frost 2: 30% less burn")
+	_teardown()

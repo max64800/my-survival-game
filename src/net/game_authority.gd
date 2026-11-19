@@ -109,9 +109,11 @@ class PlayerState:
 	var train_at := 0.0
 	var body_xp_at := 0.0  ## when this player last sent Running/Jumping practice
 	var run_carry := 0.0  ## Running XP below 1 waiting to add up
+	var low_health := false  ## below 30% health (Berserker); sent by the player's own computer
 
 	func _init() -> void:
 		inventory.changed.connect(_note_seen)
+		vitals.progress = progress
 
 	func _note_seen() -> void:
 		for slot in inventory.slots:
@@ -145,7 +147,7 @@ class PlayerState:
 		for part in ["head", "chest", "legs", "feet"]:
 			var worn := inventory.get_slot(Inventory.equip_index(part))
 			armor += int(Items.info(inventory.equipped(part)).get("armor", 0)) * (1.0 + Upgrades.bonus(worn))
-		return minf(0.6, armor * 0.02)
+		return minf(0.6, armor * 0.02) + progress.armor_bonus()  # Stone Skin goes past the cap
 
 
 func _enter_tree() -> void:
@@ -562,6 +564,22 @@ func ask_body_xp(run_seconds: float, jumps: int, blocks: int = 0) -> void:
 		_rpc_body_xp.rpc_id(1, run_seconds, jumps, blocks)
 
 
+## Pressing an ability key (an active perk).
+func ask_ability(perk_id: String) -> void:
+	if is_host():
+		request_ability(local_peer_id(), perk_id)
+	else:
+		_rpc_ability.rpc_id(1, perk_id)
+
+
+## Reset perk points for gold coins (skills window button).
+func ask_respec() -> void:
+	if is_host():
+		request_respec(local_peer_id())
+	else:
+		_rpc_respec.rpc_id(1)
+
+
 func ask_buy_perk(perk_id: String) -> void:
 	if is_host():
 		request_buy_perk(local_peer_id(), perk_id)
@@ -846,6 +864,54 @@ func _rpc_body_xp(run_seconds: float, jumps: int, blocks: int) -> void:
 
 
 @rpc("any_peer", "reliable")
+func _rpc_ability(perk_id: String) -> void:
+	if is_host():
+		request_ability(multiplayer.get_remote_sender_id(), perk_id)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_respec() -> void:
+	if is_host():
+		request_respec(multiplayer.get_remote_sender_id())
+
+
+@rpc("any_peer", "reliable")
+func _rpc_low_health(low: bool) -> void:
+	var ps := get_player(multiplayer.get_remote_sender_id()) if is_host() else null
+	if ps:
+		ps.low_health = low
+
+
+## A line on one player's screen.
+func tell(peer_id: int, text: String) -> void:
+	if peer_id == local_peer_id():
+		hud_message.emit(text)
+	elif get_player(peer_id):
+		_rpc_tell.rpc_id(peer_id, text)
+
+
+@rpc("authority", "reliable")
+func _rpc_tell(text: String) -> void:
+	hud_message.emit(text)
+
+
+## A timed perk effect on one player's body (their own computer owns it).
+func send_effect(peer_id: int, effect: String, data: Dictionary, seconds: float) -> void:
+	var ps := get_player(peer_id)
+	if ps == null:
+		return
+	if peer_id == local_peer_id():
+		ps.vitals.add_effect(effect, data, seconds)
+	else:
+		_rpc_effect.rpc_id(peer_id, effect, data, seconds)
+
+
+@rpc("authority", "reliable")
+func _rpc_effect(effect: String, data: Dictionary, seconds: float) -> void:
+	send_effect(local_peer_id(), effect, data, seconds)
+
+
+@rpc("any_peer", "reliable")
 func _rpc_buy_perk(perk_id: String) -> void:
 	if is_host():
 		request_buy_perk(multiplayer.get_remote_sender_id(), perk_id)
@@ -1063,6 +1129,8 @@ func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
 	var too_hard := ore_too_hard(mat, "" if bare else ps.selected_item())
 	if too_hard != "":
 		return {state = "blocked", material = mat, point = point, why = too_hard}
+	if mat == Mat.COPPER or mat == Mat.SILVER:
+		power *= ps.progress.ore_power_mult()  # Ore Smasher
 	var needed := Mat.hits_needed(mat, power, tool_tier)
 	if needed == 0:
 		return {state = "blocked", material = mat, point = point}
@@ -1304,10 +1372,7 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 			if ps.boosts.has("horn_cooldown") and ps.boosts.horn_cooldown.until > now():
 				return "cooldown"
 			add_boost(ps, "horn_cooldown", {}, 300.0)
-			for pid in players:
-				if players[pid].node.global_position.distance_to(ps.node.global_position) <= 15.0:
-					add_boost(players[pid], "war_horn", {damage = 0.10}, 60.0)
-			_ev_horn.rpc(ps.node.global_position)
+			_war_horn(ps, 0.10, 60.0)
 			return "used"
 		"throw":
 			if not aim_point.is_finite() or _chest(ps).distance_to(aim_point) > 22.0 or not ps.inventory.remove(id, 1):
@@ -1674,6 +1739,79 @@ func request_body_xp(peer_id: int, run_seconds: float, jumps: int, blocks: int =
 	give_xp(peer_id, 4 * clampi(blocks, 0, ceili(since / 0.5)), "shield")
 
 
+## An active perk (owner's tree, Nov 19). Returns "used", "cooldown" or "" (can't).
+func request_ability(peer_id: int, perk_id: String) -> String:
+	var ps := get_player(peer_id)
+	if ps == null or ps.dying or not Progression.ACTIVE.has(perk_id) or ps.progress.perk_rank(perk_id) < 1:
+		return ""
+	var name: String = Progression.PERKS[perk_id][4]
+	var cd_key := "cd_" + perk_id
+	if ps.boosts.has(cd_key) and ps.boosts[cd_key].until > now():
+		tell(peer_id, "%s is recharging: %d s" % [name, ceili(ps.boosts[cd_key].until - now())])
+		return "cooldown"
+	var rank := ps.progress.perk_rank(perk_id)
+	var here: Vector3 = ps.node.global_position
+	match perk_id:
+		"stone_stance":
+			send_effect(peer_id, "stone_stance", {damage_taken = -0.4, move_speed = -0.5}, 60.0)
+		"whirlwind":
+			if monsters:
+				monsters.whirlwind(peer_id)
+		"rapid_volley":
+			send_effect(peer_id, "rapid_volley", {free_reloads = 3.0}, 60.0)
+		"quick_fix":
+			tell(peer_id, "Your tools don't wear out yet, so there's nothing to fix.")
+			return ""  # shortcut: tools have no durability yet; this works once they do
+		"war_horn":
+			_war_horn(ps, 0.10 * rank, 20.0)
+		"healing_brew":
+			for pid in players:
+				if players[pid].node.global_position.distance_to(here) <= 5.0:
+					heal(pid, 15.0 * rank)
+		"clan_banner":
+			for pid in players:
+				if players[pid].node.global_position.distance_to(here) <= 10.0:
+					send_effect(pid, "clan_banner", {resist_poison = 0.5, resist_burn = 0.5, resist_chill = 0.5}, 60.0)
+	add_boost(ps, cd_key, {}, Progression.ACTIVE[perk_id])
+	send_effect(peer_id, cd_key, {}, Progression.ACTIVE[perk_id])  # so their screen can show the recharge
+	_ev_ability.rpc(here, perk_id)
+	tell(peer_id, name + "!")
+	return "used"
+
+
+## War Horn (the item and the perk): you and friends within 15 m hit harder.
+func _war_horn(ps: PlayerState, damage: float, seconds: float) -> void:
+	for pid in players:
+		if players[pid].node.global_position.distance_to(ps.node.global_position) <= 15.0:
+			add_boost(players[pid], "war_horn", {damage = damage}, seconds)
+	_ev_horn.rpc(ps.node.global_position)
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_ability(at: Vector3, perk_id: String) -> void:
+	# shortcut: sounds only; the spin, brew splash and banner have no animation or model yet
+	match perk_id:
+		"whirlwind": Sfx.play("swing", at + Vector3.UP, 0.0, 0.7)
+		"healing_brew": Sfx.play("eat", at + Vector3.UP, 0.0, 1.2)
+		"stone_stance", "clan_banner": Sfx.play("dig_break", at, -4.0, 0.6)
+
+
+## Resetting perk points costs gold coins (owner, Nov 19). Skills stay.
+func request_respec(peer_id: int) -> bool:
+	var ps := get_player(peer_id)
+	if ps == null or ps.progress.points_free() == ps.progress.points_total():
+		return false
+	var cost := ps.progress.respec_cost()
+	if ps.inventory.count_of("gold_coin") < cost:
+		tell(peer_id, "Resetting your perks costs %d gold coins. Old chests hold some." % cost)
+		return false
+	ps.inventory.remove("gold_coin", cost)
+	ps.progress.respec()
+	_progress_dirty[peer_id] = true
+	tell(peer_id, "Perk points reset for %d gold." % cost)
+	return true
+
+
 func request_buy_perk(peer_id: int, perk_id: String) -> bool:
 	var ps := get_player(peer_id)
 	if ps == null or not ps.progress.buy_perk(perk_id):
@@ -1713,12 +1851,17 @@ func request_craft(peer_id: int, recipe_id: String, station_id: int = 0) -> bool
 			ps.inventory.remove(item, r.inputs[item])
 		if fuel_item != "":
 			ps.inventory.remove(fuel_item, r.fuel)
-		st.queue_job(r.output, r.count, r.seconds)
+		st.queue_job(r.output, r.count, r.seconds * (ps.progress.smelt_time_mult() if r.station == "smelter" else 1.0))
 	else:
 		if not Crafting.craft(ps.inventory, recipe_id):
 			return false
 		if fuel_item != "":
 			ps.inventory.remove(fuel_item, r.fuel)
+	if randf() < ps.progress.save_material_chance():  # Steady Hands: one material comes back
+		var back: String = r.inputs.keys().pick_random()
+		var left := ps.inventory.add(back, 1)
+		if left > 0:
+			spawn_drop(back, left, _chest(ps))
 	var skill := "cooking" if r.station in ["campfire", "cooking_pot"] else "crafting"
 	if peer_id == local_peer_id():
 		Sfx.ui("craft", 0.0)
@@ -2032,6 +2175,7 @@ func _seed_fungal_loot(rng: RandomNumberGenerator, id: int, ruin: bool) -> void:
 		if rng.randf() < 0.3:
 			storage.put(id, "rune_" + rune_slab.pick_drop("f", [rng.randf(), rng.randf(), rng.randf(), rng.randf()]), 1)
 		storage.put(id, "rusty_scrap", rng.randi_range(2, 5))
+		storage.put(id, "gold_coin", rng.randi_range(8, 20))
 	else:
 		storage.put(id, "crystal_amber", rng.randi_range(1, 2))
 		storage.put(id, "rope", rng.randi_range(1, 3))
@@ -2059,6 +2203,7 @@ func seed_poi_loot() -> void:
 					storage.put(id, Gems.item_id(g[0]), 1)
 			if rng.randf() < 0.3:
 				storage.put(id, "rune_" + rune_slab.pick_drop("m", [rng.randf(), rng.randf(), rng.randf()]), 1)
+			storage.put(id, "gold_coin", rng.randi_range(5, 15))  # gold pays for a perk reset (owner, Nov 19)
 		else:
 			# A camp someone left: a page, and maybe one bite of food.
 			storage.put(id, "recipe_page" if rng.randf() < 0.6 else "blueprint_page", 1)
@@ -2216,11 +2361,15 @@ func _give_dig_drops(ps: PlayerState, counts: Dictionary, pos: Vector3) -> void:
 			n = maxi(n, 1)  # always feel rewarded for hitting ore (the hits already paid count too)
 			if randf() < Gems.bonus(ps.inventory.get_slot(ps.hand_slot())).get("extra_ore", 0.0):
 				n += 1  # Burrow gem
+			if randf() < ps.progress.extra_ore_chance():
+				n += 1  # Prospector
 			if ps.progress.has_star("mining", 50) and randf() < 0.1:
 				n *= 2  # Mining ★50: double ore
 			for i in n:
 				if randf() < 0.005:
 					spawn_drop(Gems.item_id("burrow"), 1, pos)  # ore veins hide Burrow gems (doc 4.2)
+		if n > 0 and not ore and ps.progress.perk_rank("master_of_stone") > 0 and randf() < 0.02:
+			spawn_drop(Gems.item_id(Gems.NORMAL.keys().pick_random()), 1, pos)  # Master of Stone: a rare gem
 		if n > 0 and item.begins_with("crystal_") and ps.progress.has_star("mining", 75):
 			n += 1  # Mining ★75: +1 crystal
 		if n > 0:
@@ -2248,6 +2397,7 @@ func request_died(peer_id: int) -> void:
 	if ps == null:
 		return
 	var where: Vector3 = ps.node.global_position
+	_bond_of_the_clan(peer_id, where)
 	var grave := -1
 	for i in ps.inventory.slots.size():
 		var s: Dictionary = ps.inventory.slots[i]
@@ -2265,6 +2415,20 @@ func request_died(peer_id: int) -> void:
 		_respawn_here(wake)
 	else:
 		_rpc_respawn.rpc_id(peer_id, wake)
+
+
+## Bond of the Clan: a friend with it near where someone fell rallies everyone close by.
+func _bond_of_the_clan(fallen: int, where: Vector3) -> void:
+	for pid in players:
+		var o: PlayerState = players[pid]
+		if pid == fallen or o.progress.perk_rank("bond_of_the_clan") < 1 or o.node.global_position.distance_to(where) > 20.0:
+			continue
+		for q in players:
+			if q != fallen and players[q].node.global_position.distance_to(o.node.global_position) <= 15.0:
+				add_boost(players[q], "bond", {damage = 0.25}, 60.0)
+				send_effect(q, "bond", {stamina_regen = 0.25, max_stamina = 0.25}, 60.0)
+				tell(q, "Bond of the Clan! +25% damage and stamina for 60 s.")
+		return
 
 
 @rpc("authority", "reliable")
@@ -2308,7 +2472,7 @@ func _take_hurt(ps: PlayerState, amount: float, buildup: Dictionary) -> void:
 	ps.vitals.take_damage(amount * (1.0 - ps.armor_cut()))  # clothes/armor soak some up (F23)
 	Sfx.ui("hit_heavy", 0.0)
 	for k in buildup:
-		ps.vitals.ailments.add(k, buildup[k])
+		ps.vitals.add_ailment(k, buildup[k])
 
 
 ## Host only: friendly fire on/off (combat doc 2.7: on by default).
@@ -2329,6 +2493,13 @@ func give_xp(peer_id: int, amount: int, skill: String = "") -> void:
 		return
 	ps.progress.add_xp(amount, skill)
 	_progress_dirty[peer_id] = true
+	var share := amount * 0.10 * ps.progress.perk_rank("shared_lessons")
+	if skill != "" and share > 0.0:  # Shared Lessons: friends nearby learn a bit too
+		for pid in players:
+			var n := int(share) + (1 if randf() < share - int(share) else 0)
+			if pid != peer_id and n > 0 and players[pid].node.global_position.distance_to(ps.node.global_position) <= 20.0:
+				players[pid].progress.add_xp(n, skill)
+				_progress_dirty[pid] = true
 
 
 func _peer_of(ps: PlayerState) -> int:
@@ -2351,6 +2522,16 @@ func _tick_vitals(ps: PlayerState, delta: float) -> void:
 			ps.dying = true
 			ask_died()
 		return
+	v.friends_near = false  # Shoulder to Shoulder
+	for pid in players:
+		if players[pid] != ps and is_instance_valid(players[pid].node) and players[pid].node.global_position.distance_to(ps.node.global_position) <= 10.0:
+			v.friends_near = true
+			break
+	var low := ps.progress.perk_rank("berserker") > 0 and v.health < v.max_health() * 0.3
+	if low != ps.low_health:  # Berserker: the host judges damage, so it needs to know
+		ps.low_health = low
+		if not is_host():
+			_rpc_low_health.rpc_id(1, low)
 	# The Cozy buff: rest by a fire or bed for a few seconds (Comfort).
 	_rest_seconds = _rest_seconds + delta if resting else 0.0
 	_comfort_timer -= delta

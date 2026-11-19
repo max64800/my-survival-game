@@ -86,6 +86,7 @@ const DATA := {
 	"rope": {name = "Rope", color = Color(0.75, 0.65, 0.45), short = "Ro"},
 	"leather": {name = "Leather", color = Color(0.55, 0.35, 0.2), short = "Le"},
 	"copper_ingot": {name = "Copper Ingot", color = Color(0.9, 0.55, 0.3), short = "CI"},
+	"gold_coin": {name = "Gold Coin", stack = 100, color = Color(0.95, 0.75, 0.25), short = "Au"},  ## found in old chests; pays for a perk reset
 	"silver_ingot": {name = "Silver Ingot", color = Color(0.85, 0.87, 0.92), short = "SI"},
 	"clay_brick": {name = "Clay Brick", color = Color(0.8, 0.4, 0.25), short = "CB"},
 	"lantern_lens": {name = "Crystal Lens", color = Color(0.7, 0.9, 1.0), short = "Ln"},
