@@ -4094,3 +4094,10 @@ the body."
   asked to confirm skills: 14 skills, 44 perks in 4 branches, the K window, 18 tests pass; 36 perks work, 6 say
   "not in the game yet", and Lantern Bearer does nothing (asked, N3). Hurdle: the page's lid swing first let an
   old swing keep moving the lid after a new one started; each swing now has its own token.
+- (Nov 19, later) Owner: the game only showed a gray screen. Cause (mine): after the pull, 9 code files still had
+  clash markers (other chats' unsaved edits against the online work), so the game's scripts wouldn't load. With the
+  owner's OK: backed them up, kept both sides (online skills code + the other chats' weapon combos, Fallen Outpost,
+  statue mining). Hurdle: two "clean" merges had put the same code in twice (the boulder/root-pillar lines in
+  dwarf.gd, `stab()` in dwarf_rig.gd); removed the copies. Now 0 script errors and the start tests pass.
+- (Nov 19) Owner: the chest opening sounded like a dirt block breaking (it used the pickup/clink sounds). Now real
+  recordings from Kenney's RPG Audio (CC0): a wooden door creak to open, a door thump to close (F355).

@@ -15,7 +15,7 @@ static func open(body: Node3D) -> void:
 	if lid == null:
 		_pop(body)
 		return
-	Sfx.play("clink", body.global_position + Vector3.UP * 0.5, -8.0, 0.75)  # (the latch)
+	Sfx.play("chest_open", body.global_position + Vector3.UP * 0.5, -4.0, 1.15)  # a wooden lid creaking open (Kenney RPG Audio, CC0)
 	var t := _fresh_tween(lid)
 	t.tween_property(lid, "rotation:x", OPEN_ANGLE * 1.06, OPEN_TIME).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	t.tween_property(lid, "rotation:x", OPEN_ANGLE, 0.1).set_trans(Tween.TRANS_SINE)  # (a small bounce at the top)
@@ -30,7 +30,7 @@ static func close(body: Node3D) -> void:
 	t.tween_property(lid, "rotation:x", 0.0, CLOSE_TIME).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	t.tween_callback(func() -> void:
 		if is_instance_valid(body):
-			Sfx.play("close", body.global_position + Vector3.UP * 0.4, -8.0, 0.8))
+			Sfx.play("chest_close", body.global_position + Vector3.UP * 0.4, -4.0, 1.1))  # the lid thumps shut
 
 
 ## The chest's lid part, if its model has one.
