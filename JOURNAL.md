@@ -5474,3 +5474,10 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   planting one grows Root Tubers (`Station.SEEDS`). Test: test_tuber_seeds_and_firecaps_grow. Crafting Book rebuilt.
 - Same day: farm times (owner): every mushroom 15 min and gives 5; Root Tubers can't be planted, only Tuber Seeds
   (20 min, gives 5). `Station.can_plant()` keeps tubers out of the plot; tests updated.
+- Same day: cooked meat in the best meals (Miner's Pie: 2 Roasted Bug; Old Hearth Stew: 2 Seared Bat). Auto-crafting
+  (owner's picks: same station only, times add up, silent): `Crafting.plan()` finds the in-between recipes, the host
+  makes them first and adds their cooking time to the job; the craft window lets you press Make when a plan exists.
+  Start-of-game cooking = one-ingredient meals + Bellcap Juice; Tuber Mash, Hollowcap/Snail/Bug Stew and Glowcap Tea now
+  come from Cook's Pages. Tests: planner + host plank chain. Hurdle: 4 digging tests fail with Jolt physics errors
+  ("too many bodies", unsupported scale) that come from the cave world, not crafting; a clean-copy baseline couldn't
+  load the game, so it proved nothing.

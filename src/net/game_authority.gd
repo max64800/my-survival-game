@@ -1972,6 +1972,19 @@ func request_craft(peer_id: int, recipe_id: String, station_id: int = 0) -> bool
 				break
 		if fuel_item == "":
 			return false
+	# Auto-crafting (owner, Nov 19): missing in-between items made at this same station get made first, silently;
+	# their cooking time is added to the final job.
+	var extra_seconds := 0.0
+	if not Crafting.missing(ps.inventory, recipe_id).is_empty():
+		var lvl := st.level() if st else 1
+		var steps := Crafting.plan(ps.inventory, recipe_id, r.station, func(id): \
+			return Recipes.is_unlocked(id, ps.seen, taught_recipes()) and lvl >= int(Recipes.get_recipe(id).get("level", 1)))
+		if steps.is_empty():
+			return false
+		for sub in steps.slice(0, -1):
+			if not Crafting.craft(ps.inventory, sub):
+				return false
+			extra_seconds += float(Recipes.get_recipe(sub).get("seconds", 0))
 	if r.get("seconds", 0) > 0 and st:
 		if not Crafting.missing(ps.inventory, recipe_id).is_empty() or not st.can_queue():
 			return false
@@ -1979,7 +1992,7 @@ func request_craft(peer_id: int, recipe_id: String, station_id: int = 0) -> bool
 			ps.inventory.remove(item, r.inputs[item])
 		if fuel_item != "":
 			ps.inventory.remove(fuel_item, r.fuel)
-		st.queue_job(r.output, r.count, r.seconds * (ps.progress.smelt_time_mult() if r.station == "smelter" else 1.0))
+		st.queue_job(r.output, r.count, (r.seconds + extra_seconds) * (ps.progress.smelt_time_mult() if r.station == "smelter" else 1.0))
 	else:
 		if not Crafting.craft(ps.inventory, recipe_id):
 			return false

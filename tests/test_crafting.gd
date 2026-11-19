@@ -117,3 +117,19 @@ func test_copper_pickaxe_digs_border_rock() -> void:
 	check_eq(Mat.hits_needed(Mat.BORDER, Items.dig_power("pickaxe_copper"), Items.tier("pickaxe_copper")), 7, "copper pickaxe: 7 hits (doc 2.3)")
 	check_eq(Mat.hits_needed(Mat.COPPER, 13, 1), 4, "copper pickaxe on copper ore: 4 hits")
 	check_eq(Mat.hits_needed(Mat.STONE, 10, 0), 3, "stone pickaxe on stone: 3 hits")
+
+
+func test_dwarf_makes_the_in_between_items_first() -> void:
+	var inv := Inventory.new(20)
+	inv.add("rootwood", 3)
+	inv.add("rope", 4)
+	var any := func(_id): return true
+	var steps := Crafting.plan(inv, "tanning_rack", "workbench", any)
+	check_eq(steps, ["plank_root", "plank_root", "plank_root", "tanning_rack"], "3 rootwood become 6 planks, then the rack")
+	inv.remove("rootwood", 1)
+	check_eq(Crafting.plan(inv, "tanning_rack", "workbench", any), [], "not enough wood: can't be done")
+	var bag := Inventory.new(20)
+	bag.add("bug_meat", 2)
+	bag.add("root_tuber", 2)
+	bag.add("hollowcap", 1)
+	check_eq(Crafting.plan(bag, "dish_miners_pie", "cooking_pot", any), [], "raw bug meat: roast it at a campfire first (same station only)")

@@ -404,7 +404,18 @@ func _ready_to_make(recipe_id: String, inv: Inventory) -> bool:
 	var r := Recipes.get_recipe(recipe_id)
 	if station and r.station != Recipes.HAND and station.level() < int(r.get("level", 1)):
 		return false
-	return can_make_count(recipe_id, inv) > 0 and _fuel_have(inv) >= int(r.get("fuel", 0))
+	return (can_make_count(recipe_id, inv) > 0 or _can_chain(recipe_id, inv)) and _fuel_have(inv) >= int(r.get("fuel", 0))
+
+
+## Auto-crafting: the dwarf can make the missing in-between items here first (same station only, owner Nov 19).
+func _can_chain(recipe_id: String, inv: Inventory) -> bool:
+	var auth := GameAuthority.instance
+	var ps: GameAuthority.PlayerState = auth.get_player(peer_id) if auth else null
+	if ps == null:
+		return false
+	var lvl := station.level() if station else 1
+	return not Crafting.plan(inv, recipe_id, Recipes.get_recipe(recipe_id).station, func(id): \
+		return Recipes.is_unlocked(id, ps.seen, auth.taught_recipes()) and lvl >= int(Recipes.get_recipe(id).get("level", 1))).is_empty()
 
 
 ## Fuel is coal only, made from wood in the Bloomery (owner, Nov 19, F404; game_authority).

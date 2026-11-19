@@ -2,6 +2,9 @@
  "status": "DRAFT, Nov 19 (round 2): zone 1 foods only. Not in the game yet. The owner checks it in the Crafting Book first.",
  "rules": [
   "Only foods you can make in Zone 1 (Mossy Hollows). Fungal Jungle foods come later with that zone.",
+  "At the start you can only cook one-ingredient meals: Cooked Snail, Glowcap Skewer, Roasted Bug, Seared Bat, and Bellcap Juice. Every other recipe is learned from Cook's Pages and runes found at special places (ruins, camps, shrines).",
+  "The best meals use cooked meat: Miner's Pie needs Roasted Bug, Old Hearth Stew needs Seared Bat.",
+  "If you have the raw ingredients, the dwarf makes the missing in-between items by himself first (only ones made at the same station), and the cooking times add up.",
   "Raw food and plain water only fill you up. Cooking is what gives an effect.",
   "Healing: you heal 1 health every 5 seconds on your own. Every food and drink speeds that up a little. The best meals together reach the top speed: 1 health every 2 seconds.",
   "You can have 2 foods and 1 drink working at the same time.",

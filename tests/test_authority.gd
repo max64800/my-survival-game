@@ -810,3 +810,16 @@ func test_skills_window_shows_perk_pictures() -> void:
 	check(pics.size() > 0 and pics[0].texture != null, "and a picture")
 	sp.queue_free()
 	_teardown()
+
+
+func test_crafting_makes_missing_planks_first() -> void:
+	await _setup(42)
+	auth._ev_place_station(7, "workbench", player.global_position + Vector3(1.5, 0, 0), 0.0)
+	ps.inventory.add("rootwood", 3)
+	ps.inventory.add("rope", 4)
+	ps.seen["wing_leather"] = true  # the Tanning Rack shows up once you've had wing leather
+	var planks_before := ps.inventory.count_of("plank_root")
+	check(auth.request_craft(1, "tanning_rack", 7), "no planks, but rootwood: the dwarf makes the planks first")
+	check_eq(ps.inventory.count_of("tanning_rack"), 1, "the rack is made")
+	check_eq(ps.inventory.count_of("plank_root"), planks_before, "all 6 new planks went into it")
+	_teardown()

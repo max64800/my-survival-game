@@ -144,8 +144,8 @@ const LIST := {
 	# ---- The first three creatures (docs/design/monsters-first-three.md)
 	"dish_cooked_snail": {station = "campfire", inputs = {snail_meat = 1}, output = "dish_cooked_snail", count = 1, seconds = 10, unlock = ["snail_meat"]},
 	"dish_roasted_bug": {station = "campfire", inputs = {bug_meat = 1}, output = "dish_roasted_bug", count = 1, seconds = 10, unlock = ["bug_meat"]},
-	"dish_snail_stew": {station = "cooking_pot", inputs = {snail_meat = 2, hollowcap = 2}, output = "dish_snail_stew", count = 1, seconds = 20, unlock = ["snail_meat"]},
-	"dish_bug_stew": {station = "cooking_pot", inputs = {bug_meat = 2, glowcap = 2}, output = "dish_bug_stew", count = 1, seconds = 20, unlock = ["bug_meat"]},
+	"dish_snail_stew": {station = "cooking_pot", inputs = {snail_meat = 2, hollowcap = 2}, output = "dish_snail_stew", count = 1, seconds = 20, unlock = "ruin"},
+	"dish_bug_stew": {station = "cooking_pot", inputs = {bug_meat = 2, glowcap = 2}, output = "dish_bug_stew", count = 1, seconds = 20, unlock = "ruin"},
 	"leather_from_wing": {station = "tanning_rack", inputs = {wing_leather = 2}, output = "leather", count = 1, seconds = 40, unlock = ["wing_leather"]},
 	"waterskin_wing": {station = HAND, inputs = {wing_leather = 2, rope = 1}, output = "waterskin_empty", count = 1, unlock = ["wing_leather"]},
 	"shield_shell": {station = "workbench", inputs = {shell_piece = 6, leather = 1}, output = "shield_shell", count = 1, unlock = ["shell_piece"]},
@@ -161,17 +161,17 @@ const LIST := {
 	"dish_ember_skewer": {station = "campfire", inputs = {beetle_meat = 1, ember_morel = 2}, output = "dish_ember_skewer", count = 1, seconds = 10, unlock = ["ember_morel"]},
 	"boil_water": {station = "campfire", inputs = {waterskin_dirty = 1}, output = "waterskin_clean", count = 1, seconds = 10, unlock = ["waterskin_dirty"]},
 	# --- cooking pot (20 s)
-	"dish_tuber_mash": {station = "cooking_pot", inputs = {root_tuber = 3, water_bucket = 1}, output = "dish_tuber_mash", count = 1, seconds = 20, unlock = []},
-	"dish_hollowcap_stew": {station = "cooking_pot", inputs = {hollowcap = 2, snail_meat = 1, water_bucket = 1}, output = "dish_hollowcap_stew", count = 1, seconds = 20, unlock = []},
+	"dish_tuber_mash": {station = "cooking_pot", inputs = {root_tuber = 3, water_bucket = 1}, output = "dish_tuber_mash", count = 1, seconds = 20, unlock = "ruin"},
+	"dish_hollowcap_stew": {station = "cooking_pot", inputs = {hollowcap = 2, snail_meat = 1, water_bucket = 1}, output = "dish_hollowcap_stew", count = 1, seconds = 20, unlock = "ruin"},
 	"dish_glow_broth": {station = "cooking_pot", inputs = {glowcap = 3, water_bucket = 1}, output = "dish_glow_broth", count = 1, seconds = 20, unlock = "rune"},
-	"dish_miners_pie": {station = "cooking_pot", inputs = {bug_meat = 2, root_tuber = 2, hollowcap = 1}, output = "dish_miners_pie", count = 1, seconds = 20, unlock = "ruin"},
-	"dish_hearth_stew": {station = "cooking_pot", inputs = {bat_meat = 2, hollowcap = 1, firecap = 1, root_tuber = 1, water_bucket = 1}, output = "dish_hearth_stew", count = 1, seconds = 20, unlock = "ruin"},
+	"dish_miners_pie": {station = "cooking_pot", inputs = {dish_roasted_bug = 2, root_tuber = 2, hollowcap = 1}, output = "dish_miners_pie", count = 1, seconds = 20, unlock = "ruin"},
+	"dish_hearth_stew": {station = "cooking_pot", inputs = {dish_seared_critter = 2, hollowcap = 1, firecap = 1, root_tuber = 1, water_bucket = 1}, output = "dish_hearth_stew", count = 1, seconds = 20, unlock = "ruin"},
 	"dish_truffle_risotto": {station = "cooking_pot", inputs = {spore_truffle = 2, root_tuber = 1, water_bucket = 1}, output = "dish_truffle_risotto", count = 1, seconds = 20, unlock = "ruin"},
 	"dish_chitin_crunch": {station = "cooking_pot", inputs = {beetle_meat = 2, spore_truffle = 1, moss = 1}, output = "dish_chitin_crunch", count = 1, seconds = 20, unlock = "ruin"},
 	"dish_spore_ward_stew": {station = "cooking_pot", inputs = {bellcap = 2, ember_morel = 1, moss = 1, water_bucket = 1}, output = "dish_spore_ward_stew", count = 1, seconds = 20, unlock = "rune"},
 	"dish_bug_hotpot": {station = "cooking_pot", inputs = {beetle_meat = 2, ember_morel = 1, mushroom_flesh = 1, water_bucket = 1}, output = "dish_bug_hotpot", count = 1, seconds = 20, unlock = "ruin"},
 	"dish_jungle_pie": {station = "cooking_pot", inputs = {beetle_meat = 2, root_tuber = 2, spore_truffle = 1}, output = "dish_jungle_pie", count = 1, seconds = 20, unlock = "rune"},
-	"drink_glowcap_tea": {station = "cooking_pot", inputs = {glowcap = 2, water_bucket = 1}, output = "drink_glowcap_tea", count = 1, seconds = 20, unlock = []},
+	"drink_glowcap_tea": {station = "cooking_pot", inputs = {glowcap = 2, water_bucket = 1}, output = "drink_glowcap_tea", count = 1, seconds = 20, unlock = "ruin"},
 	"drink_firecap_cordial": {station = "cooking_pot", inputs = {firecap = 1, water_bucket = 2}, output = "drink_firecap_cordial", count = 1, seconds = 20, unlock = "ruin"},
 }
 
