@@ -5,8 +5,8 @@
   "At the start you can only cook one-ingredient meals: Cooked Snail, Glowcap Skewer, Roasted Bug, Seared Bat, and Bellcap Juice. Every other recipe is learned from Cook's Pages and runes found at special places (ruins, camps, shrines).",
   "The best meals use cooked meat: Miner's Pie needs Roasted Bug, Old Hearth Stew needs Seared Bat.",
   "If you have the raw ingredients, the dwarf makes the missing in-between items by himself first (only ones made at the same station), and the cooking times add up.",
+  "Healing: you heal 1 health every 5 s on your own; every food and drink speeds it up. Cards show it as half hearts (½♥ to 5♥ across all 7 zones; zone 1 reaches ♥). Hover the hearts for the exact speed. In zone 1 the fastest you can heal is 1 health every 2 s; later zones raise that cap.",
   "Raw food and plain water only fill you up. Cooking is what gives an effect.",
-  "Healing: you heal 1 health every 5 seconds on your own. Every food and drink speeds that up a little. The best meals together reach the top speed: 1 health every 2 seconds.",
   "You can have 2 foods and 1 drink working at the same time.",
   "Harder to cook = stronger, more effects, lasts longer. 5 kitchen steps, from a bare campfire to a cooking pot with two helpers.",
   "Each creature's meat protects you from that creature (eat bat, fear bats less).",
@@ -253,5 +253,15 @@
    "farm": false,
    "where": "dig the green mossy ground"
   }
- }
+ },
+ "heart_scale": [
+  [
+   0.04,
+   2
+  ],
+  [
+   0.0,
+   1
+  ]
+ ]
 }

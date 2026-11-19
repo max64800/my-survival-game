@@ -5481,3 +5481,7 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   come from Cook's Pages. Tests: planner + host plank chain. Hurdle: 4 digging tests fail with Jolt physics errors
   ("too many bodies", unsupported scale) that come from the cave world, not crafting; a clean-copy baseline couldn't
   load the game, so it proved nothing.
+- Same day: healing shown as half hearts (owner): 5 hearts max for all 7 zones, zone 1 tops out at ♥, hover = exact
+  speed. New `docs/design/food-and-healing.md` (heart scale per zone, healing rules, what's still to build).
+  Crafting Book food tables now show "Healing ½♥ / ♥" first in each bullet list. Not in the game yet: the food plan
+  itself isn't built (today's foods keep their old effects, game cards don't list food effects).
