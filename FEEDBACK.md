@@ -143,7 +143,6 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F399. The Rune Slab can never be made.** Its recipe waits for an item called "rune", which doesn't exist (real runes are "Ochre Rune" etc.), so every rune you find is useless. Make it show up once you've found any rune? *(Zone 1 check, Nov 19)*
 - [ ] **F400. Root Tubers can't be found anywhere.** Moss Ale, Tuber Mash, Miner's Pie and Hearth Stew need them, and the Farm Plot can grow them, but there's no first tuber. Let them grow in Zone 1 (dig them up from the ground)? *(Zone 1 check, Nov 19)*
 - [ ] **F401. Can't fill a waterskin at the new pools.** "Waterskin (pool water)" and "Boil Water" exist, but nothing fills a waterskin at a pool or waterfall. Add filling at pools? *(Zone 1 check, Nov 19)*
-- [ ] **F402. Critter hide only comes from the Nipper Queen's helpers** (the small critters are switched off), but the game's "where do I get this" still says "hunt small cave critters", and "leather" only mentions critter hide. Fix the hints (mention bat wing leather)? *(Zone 1 check, Nov 19)*
 - [ ] **Loading freezes for about 10 s** while crystals and roots are placed (the freeze watcher caught it in the test robot). Spread it over several frames?
 - [ ] **The test robot couldn't place its workbench** ("Needs a Workbench within 20 m" right after crafting one): placing may fail silently. Look into it?
 - [ ] **The Mason's Shovel has no 3D model yet** (a test says so). Make one?

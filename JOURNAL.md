@@ -5172,3 +5172,18 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - **Also done:** the shell shield's old shimmer fixed (every other outer scale 1.2 cm further out, the middle stack
   moved out; model check ok). Saved to GitHub: the fist work, test, 4 shields, journal (FEEDBACK.md left out: other
   chats' unsaved notes in it). Test `test_dwarf_fist` 5 checks pass.
+## Nov 19: Only five creatures left, no bosses (F403)
+- **Owner: "remove every creature except snail, rock beetle, bat and spider; remove the bosses completely; rework the
+  recipes that need their stuff."** Owner picked the replacements: Root Tree Heartwood (Copper Pickaxe), snail/bug/bat
+  meat in dishes, spider silk + venom, tree moss (bed, bandage) and bat meat. The big Zone 2 beetle stays.
+- A helper Claude did the removal in its own copy of the project (7 bosses, raids, 16 creatures, boss rooms/altars,
+  boss bar, boss goals; 49 files, ~1,700 lines removed), then I checked it, moved it on top of the latest version,
+  and merged it in. 5 of its files also had other Claudes' unsaved edits, so those were merged line by line (no
+  clashes) with safety copies kept. Checked: the affected tests pass, a muted robot play-test runs without errors.
+- New check `test_item_sources`: every ingredient has a source. It also found marble has no source (waiting, like
+  root tubers F400 and the Rune Slab F399).
+- **Hurdles:** (1) the automatic separate copy for the helper refused to start (the folder path confused it); made one
+  by hand. (2) Removing the boss rooms changed old caves' rock; the helper kept them as empty rooms so old caves stay
+  the same. (3) Moving the work on top of the latest version failed at first (leftover generated files in the copy);
+  cleaned them and retried. (4) The 5 new items (Heartwood, Tree Moss, Bat Meat, Spider Silk, Moss Bandage) have no
+  icons yet (they show a coloured square with letters), so the icon test fails until they get pictures.
