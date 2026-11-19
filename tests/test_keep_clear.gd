@@ -174,7 +174,7 @@ func test_waterfalls_keep_clear() -> void:
 	var first := 0
 	for f in falls:
 		var pts: PackedVector3Array = f.pts
-		check(pts[0].y - (f.pool as Vector3).y >= 2.0, "at least 2 m of falling water")
+		check(pts[0].y - (f.pool as Vector3).y >= 1.4, "at least 1.5 m of falling water")
 		check(not m.is_reserved(f.pool, 1.0) and not m.on_bridge(f.pool, 1.0), "its pool on clear ground")
 		var stuck := 0
 		for q in pts:

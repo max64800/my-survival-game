@@ -4168,3 +4168,10 @@ the body."
   down by place too, and anything broken left is cleared at the end. Test slips: skill XP is kept by name, and the
   site clock had to be advanced by hand.
 
+- (Nov 19, owner played) Mushroom grass looked "the same, still white": the tints were too faint; now clear colour
+  drifts. No waterfalls seen: his world had 7, none near the start; a count of why spots failed showed the water
+  stopping at bulges and leaning walls being refused; fixed: 34 in his world (3 in the first cave).
+- Passed to other sessions: tree sizes from bush to big with wood by size (the glow-groves Claude took it); creature
+  bugs (only one look per creature, beetles sliding sideways, bats stuck in walls, a bat not turning to stone): not
+  the glow-groves Claude's; waiting for the creature Claude.
+

@@ -67,19 +67,24 @@ static func plan_falls(maker: CaveMaker) -> Array[Dictionary]:
 	var trees := RootPillars.plan(maker)
 	for ri in maker.rooms.size():
 		var room: Dictionary = maker.rooms[ri]
-		var want := (rng.randi_range(1, 2) if room.big else (1 if rng.randf() < 0.3 else 0))
+		# (owner, Nov 19: "I don't see any waterfalls": his world had none near the start) more of them, and the first
+		# cave searched much harder, from spots all round it, not just its middle
+		var want := (rng.randi_range(2, 3) if room.big else (1 if rng.randf() < 0.4 else 0))
+		var tries := 14
 		if ri == 0:
-			want = 2
+			want = 3
+			tries = 60
 		if room.get("sealed", false) or maker.sdf_at(room.center) <= 0.0:
 			continue
 		var c: Vector3 = room.center
 		var r: Vector3 = room.radii
 		var fl := c.y - r.y * 0.55
-		for attempt in want * 14:
+		for attempt in want * tries:
 			if want <= 0:
 				break
 			var a := rng.randf_range(0.0, TAU)
-			var start := Vector3(c.x, fl + rng.randf_range(2.5, 7.0), c.z)
+			var off := Vector2(rng.randf_range(-0.5, 0.5) * r.x, rng.randf_range(-0.5, 0.5) * r.z)
+			var start := Vector3(c.x + off.x, fl + rng.randf_range(2.5, 7.0), c.z + off.y)
 			if maker.sdf_at(start) <= 0.5:
 				continue
 			var dir := Vector3(cos(a), 0.0, sin(a))
@@ -87,8 +92,8 @@ static func plan_falls(maker: CaveMaker) -> Array[Dictionary]:
 			if hit == Vector3.INF:
 				continue
 			var n := GlowPlacer.normal_at(maker, hit)
-			if absf(n.y) > 0.35:
-				continue  # a wall, not a floor or ceiling
+			if absf(n.y) > 0.55:
+				continue  # a wall (it may lean a little), not a floor or ceiling
 			n = Vector3(n.x, 0.0, n.z).normalized()
 			var top := hit + n * 0.12
 			if maker.sdf_at(top) <= 0.03:
@@ -105,13 +110,17 @@ static func plan_falls(maker: CaveMaker) -> Array[Dictionary]:
 				var wall := GlowPlacer._march(maker, q + n * 0.6, -n, 1.5)
 				if wall != Vector3.INF:
 					q = wall + n * 0.12
+				for push in 8:  # the rock bulges out below: the water runs over the bulge (round 3)
+					if maker.sdf_at(q) > 0.05:
+						break
+					q += n * 0.12
 				if maker.sdf_at(q) <= 0.02:
 					ok = false
 					break
 				pts.append(q)
 				p = q
-			if not ok or pts.size() < 9:
-				continue  # at least 2 m of falling water
+			if not ok or pts.size() < 7:
+				continue  # at least 1.5 m of falling water
 			var pool := GlowPlacer._march(maker, p + n * 0.25, Vector3.DOWN, 2.0)
 			if pool == Vector3.INF or GlowPlacer.normal_at(maker, pool).y < 0.75:
 				continue
@@ -168,7 +177,7 @@ func _make_fall(f: Dictionary, shader: Shader) -> void:
 	mat.set_shader_parameter("length", down)
 	mi.material_override = mat
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	mi.visibility_range_end = 50.0
+	mi.visibility_range_end = 90.0  # (seen from across a big cave)
 	add_child(mi)
 
 

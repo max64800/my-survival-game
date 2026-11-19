@@ -31,8 +31,8 @@ void fragment() {
 	float ends = smoothstep(0.0, 0.6, down) * smoothstep(length, length - 0.2, down);  // seeping out of the crack
 	vec3 water = vec3(0.45, 0.66, 0.82);  // (round 2: bluer, more see-through, a softer shine)
 	ALBEDO = water * (0.3 + 0.7 * streaks);
-	EMISSION = water * (0.04 + 0.16 * streaks);
+	EMISSION = water * (0.12 + 0.35 * streaks);  // (round 3: glows enough to spot from across the cave)
 	ROUGHNESS = 0.18;
 	SPECULAR = 0.5;
-	ALPHA = clamp((0.08 + 0.55 * streaks) * sides * ends, 0.0, 1.0);
+	ALPHA = clamp((0.15 + 0.6 * streaks) * sides * ends, 0.0, 1.0);
 }

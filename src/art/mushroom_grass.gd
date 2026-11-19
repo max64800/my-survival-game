@@ -211,16 +211,18 @@ func _draw(key: Vector2i) -> void:
 					mm2.set_instance_transform(i, list[i]))
 
 
-## Soft colours in patches (owner, Nov 18: "make them a little bit different colors"): neighbours share a colour, a
-## little lighter or darker each, so the floor shows drifts of cream, tan, pale peach, cool grey and light lilac.
-const COLOURS := [Color(1.0, 1.0, 1.0), Color(1.0, 0.9, 0.74), Color(1.0, 0.84, 0.8), Color(0.84, 0.9, 1.0), Color(0.92, 0.86, 1.0)]
+## Colours in drifts (owner, Nov 19, round 2: "they're exactly the same... still white; I want them different
+## colours"): neighbours share a colour, a little lighter or darker each. About a third stay ivory; the rest are
+## golden amber, rust orange, dusty violet, pale teal, rose and olive.
+const COLOURS := [Color(1.0, 1.0, 1.0), Color(1.0, 1.0, 1.0), Color(1.0, 0.95, 0.85), Color(1.0, 0.7, 0.32),
+	Color(0.95, 0.48, 0.28), Color(0.68, 0.52, 0.92), Color(0.5, 0.82, 0.92), Color(1.0, 0.6, 0.72), Color(0.78, 0.88, 0.42)]
 
 
 static func colour_at(p: Vector3) -> Color:
-	var cell := Vector2i(floori(p.x / 3.5), floori(p.z / 3.5))
+	var cell := Vector2i(floori(p.x / 5.0), floori(p.z / 5.0))
 	var h := absi(hash(cell)) % 1000
 	var c: Color = COLOURS[h % COLOURS.size()]
-	var v := 0.88 + 0.2 * float(absi(hash(Vector2i(roundi(p.x * 10.0), roundi(p.z * 10.0)))) % 100) / 100.0
+	var v := 0.85 + 0.25 * float(absi(hash(Vector2i(roundi(p.x * 10.0), roundi(p.z * 10.0)))) % 100) / 100.0
 	return Color(c.r * v, c.g * v, c.b * v)
 
 
