@@ -5206,3 +5206,6 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - **Hurdles:** (1) two tests still expected wood as fuel; they now check that wood is refused and coal works. (2) A
   shared test file also had another Claude's unsaved change, and my "only my lines" patch failed on it, so I applied
   my exact change to the saved version instead.
+- (later) Icons: the browser link came back, so I made the 6 pictures in the owner's ChatGPT myself (Heartwood, Tree
+  Moss, Bat Meat, Spider Silk, Moss Bandage, and a new Seared Bat), cut with rembg/ISNet, logged in CREDITS.
+  Hurdle: the ChatGPT tab never showed "Image created" text, so I read the finished picture straight from the page.
