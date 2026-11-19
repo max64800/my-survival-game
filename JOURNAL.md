@@ -5530,3 +5530,14 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - Tests: vitals (healing, slots, guards), crafting, menu, monsters, farming all pass. Screenshot of the Cooking Pot card
   checked. Kitchen levels (pot on the fire, Stone Oven) still to build. Another session had unsaved edits in
   game_authority.gd, items.gd, FEEDBACK.md and JOURNAL.md: only this session's lines were committed.
+
+## 2026-11-20 (Mac) — The skills window becomes a tree
+- Owner picked the mock-up layout. New `src/ui/perk_tree_view.gd`: the 4 branches drawn around your level, which sits in
+  the carved ring of the painted hall; perk pictures masked to circles (passive) or diamonds (active) by a small shader,
+  dark when locked, gold lines and borders when learned, "1/3" badges, ★ on final perks, branch names.
+  `skills_panel.gd` rewritten: skills on the left (one opens at a time, never scrolls), details + Learn on the right,
+  reset button top right. Screenshots checked with tools/shot_skills.gd.
+- Hurdles: a new class needs Godot's import step before other scripts see it; untyped values from Arrays need written
+  types; a wrapping Label clipped under the gold card border (fixed with more padding and self-sizing text).
+  test_eat_from_hotbar expected the old +20% stew; the food plan made it +15% (test updated). The 4 Jolt physics
+  failures in test_authority are unchanged (cave world, not this work). No zoom/drag in the game tree yet.

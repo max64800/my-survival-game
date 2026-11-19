@@ -34,7 +34,7 @@ func _run() -> void:
 	sp.peer_id = 1
 	root.add_child(sp)
 	sp.refresh()
-	for i in 8:
+	for i in 30:
 		await process_frame
 	sp.position = (Vector2(root.size) - sp.size) / 2.0
 	for i in 4:

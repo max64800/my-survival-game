@@ -269,7 +269,7 @@ func test_eat_from_hotbar() -> void:
 	check_eq(auth.request_use(1, Vector3.INF, Vector3.ZERO, 0.0), "ate", "ate the stew")
 	check_eq(ps.inventory.count_of("dish_hollowcap_stew"), 0, "stew used up")
 	check_near(ps.vitals.hunger, 70.0, 0.01, "+50 hunger")
-	check_near(ps.vitals.max_health(), 120.0, 0.01, "+20% max health buff")
+	check_near(ps.vitals.max_health(), 115.0, 0.01, "+15% max health buff (food plan)")
 	_teardown()
 
 
@@ -803,7 +803,8 @@ func test_skills_window_shows_perk_pictures() -> void:
 	auth.add_child(sp)
 	sp.peer_id = 1
 	sp.refresh()
-	check(sp.has_node("Background"), "the painted hall is behind the window")
+	check(sp.find_child("Tree", true, false) is PerkTreeView, "the perk tree is in the middle")
+	check(ResourceLoader.exists(SkillsPanel.BACKGROUND), "the painted hall behind it")
 	var card := sp.find_child("Perk_whirlwind", true, false)
 	check(card != null, "Whirlwind has a card")
 	var pics := card.find_children("*", "TextureRect", true, false) if card else []
