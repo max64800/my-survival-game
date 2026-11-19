@@ -36,6 +36,8 @@ Code layout, recorder details, how to run robots: `docs/CLAUDE-REFERENCE.md` (re
 - **New chat banner (owner, Nov 19):** when the owner should start a new chat (chat is getting long, or the task changed),
   make the **very first line** of the message `# 🛑 START A NEW CHAT 🛑` followed by one short line saying why.
   Never bury it at the end. The status line also shows how full the chat is (green, yellow, red = NEW CHAT).
+  **Always add a ready-to-paste prompt for the new chat** (owner, Nov 19) in one copyable code block: who the new
+  Claude is, the task, which feedback numbers and files to start from, what is already done, and what the owner chose.
 
 ## Videos (Shorts about the game)
 - Editing the dwarf Shorts: `video/README.md` (pipeline, owner's video rules in `video/rules/`, scripts in `video/scripts/`).
