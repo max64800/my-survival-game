@@ -39,7 +39,7 @@ const LIST := {
 	"chest_small": {station = "workbench", inputs = {plank_root = 8, rope = 2}, output = "chest_small", count = 1, unlock = []},
 	"chest_stone": {station = "workbench", inputs = {cut_stone = 10, copper_ingot = 2}, output = "chest_stone", count = 1, unlock = ["cut_stone"]},
 	"drip_bucket": {station = "workbench", inputs = {plank_root = 4, rope = 1}, output = "drip_bucket", count = 1, unlock = []},
-	"rune_slab": {station = "workbench", inputs = {stone = 15, cut_stone = 5}, output = "rune_slab", count = 1, unlock = ["rune"]},
+	"rune_slab": {station = "workbench", inputs = {stone = 15, cut_stone = 5}, output = "rune_slab", count = 1, unlock = ["rune_*"]},  # any rune you find (F399)
 	"gem_bench": {station = "workbench", inputs = {plank_root = 8, copper_ingot = 4, crystal_blue = 2}, output = "gem_bench", count = 1,
 		unlock = ["gem_ember", "gem_rime", "gem_blight", "gem_leech", "gem_jolt", "gem_swift", "gem_bulwark", "gem_keen", "gem_burrow"]},
 	"anvil": {station = "workbench", inputs = {stone = 10, copper_ingot = 30}, output = "anvil", count = 1, unlock = ["copper_ingot"]},
@@ -75,8 +75,8 @@ const LIST := {
 	"mail_copper": {station = "anvil", inputs = {copper_ingot = 30, leather = 2}, output = "mail_copper", count = 1, unlock = "ruin"},
 	"greaves_copper": {station = "anvil", inputs = {copper_ingot = 30, leather = 1}, output = "greaves_copper", count = 1, unlock = "ruin"},
 	"boots_copper": {station = "anvil", inputs = {copper_ingot = 30, leather = 1}, output = "boots_copper", count = 1, unlock = "ruin"},
-	"axe_copper": {station = "anvil", inputs = {copper_ingot = 6, plank_root = 3, leather = 1}, output = "axe_copper", count = 1, unlock = "ruin"},
-	"pickaxe_copper": {station = "anvil", inputs = {copper_ingot = 8, plank_root = 4, leather = 2, heartwood = 1}, output = "pickaxe_copper", count = 1, unlock = ["heartwood"]},
+	"axe_copper": {station = "anvil", inputs = {copper_ingot = 15, plank_root = 3, leather = 1}, output = "axe_copper", count = 1, unlock = "ruin"},
+	"pickaxe_copper": {station = "anvil", inputs = {copper_ingot = 15, plank_root = 4, leather = 2, heartwood = 1}, output = "pickaxe_copper", count = 1, unlock = ["heartwood"]},
 	"axe_silver": {station = "anvil", inputs = {silver_ingot = 6, plank_mushroom = 3, chitin_plate = 2}, output = "axe_silver", count = 1, unlock = ["silver_ingot"]},
 	"pickaxe_silver": {station = "anvil", inputs = {silver_ingot = 8, plank_mushroom = 4, chitin_plate = 2, bloomheart_core = 1}, output = "pickaxe_silver", count = 1, unlock = ["bloomheart_core"]},
 	# --- weapons. STARTING VALUES (the design docs had no weapon recipes yet): tune in play-testing.
@@ -281,7 +281,7 @@ static func unlock_hint(id: String) -> String:
 		return "learned from a %s found in ruins" % Items.display_name(PAGE_OF_KIND[page_kind(id)]) if u == "ruin" else "learned from a rune"
 	if u.is_empty():
 		return ""
-	return "shows up once you've found: " + " or ".join(u.map(func(x): return Items.display_name(x)))
+	return "shows up once you've found: " + " or ".join(u.map(func(x): return "any rune" if x == "rune_*" else Items.display_name(x)))
 
 
 ## True if picking up/having these items makes the recipe show up.
@@ -293,6 +293,10 @@ static func is_unlocked(id: String, seen: Dictionary, taught: Dictionary) -> boo
 	if u.is_empty():
 		return true
 	for item in u:
-		if seen.has(item):
+		if item.ends_with("*"):  # "rune_*" = any item whose id starts with "rune_" (F399)
+			for s in seen:
+				if str(s).begins_with(item.trim_suffix("*")):
+					return true
+		elif seen.has(item):
 			return true
 	return false

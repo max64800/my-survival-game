@@ -49,8 +49,6 @@ func test_every_recipe_item_has_a_source() -> void:
 		if r.unlock is Array:
 			needs += r.unlock
 		for item in needs:
-			if item == "rune" and id == "rune_slab":
-				continue  # F399 waiting for owner (the Rune Slab unlocks on "rune", an item that doesn't exist)
 			if item.begins_with("rune_") or item.begins_with("gem_"):
 				continue  # runes come from shrines and chests, gems from crystal creatures (unlocks only)
 			if not src.has(item) and not item in WAITING_FOR_OWNER:
@@ -66,8 +64,9 @@ func test_no_recipe_or_drop_names_a_missing_item() -> void:
 			check(Items.exists(item), "%s needs unknown item %s" % [id, item])
 		if r.unlock is Array:
 			for item in r.unlock:
-				if item == "rune" and id == "rune_slab":
-					continue  # F399 waiting for owner
+				if item.ends_with("*"):  # "rune_*": some real item must start with it (F399)
+					check(Items.ids().any(func(x): return x.begins_with(item.trim_suffix("*"))), "%s unlocks from %s, but no such item" % [id, item])
+					continue
 				check(Items.exists(item), "%s unlocks from unknown item %s" % [id, item])
 	for kind in Monsters.LIST:
 		for d in Monsters.LIST[kind].drops:

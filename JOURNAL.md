@@ -5209,3 +5209,10 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - (later) Icons: the browser link came back, so I made the 6 pictures in the owner's ChatGPT myself (Heartwood, Tree
   Moss, Bat Meat, Spider Silk, Moss Bandage, and a new Seared Bat), cut with rembg/ISNet, logged in CREDITS.
   Hurdle: the ChatGPT tab never showed "Image created" text, so I read the finished picture straight from the page.
+
+## Nov 19: Copper tools 15, Charcoal Kiln, Rune Slab buildable (F399, F423)
+- Owner: copper tools 15 bars; call the coal furnace "Charcoal Kiln" (a real bloomery makes iron); rusty scrap only
+  in ruin chests (already true); better Rune Slab and rune-stone models (logged F422 for a model chat).
+- F399: the Rune Slab now shows up once you've found any rune ("rune_*" in its unlock list). Test added.
+- Leather economy worked out for the owner: 1 bat = about 1.3 leather; full leather armour = 11 leather (about 9 bats).
+- **Hurdles:** two crafting checks still used the old copper cost and the old fake "rune" item; updated.

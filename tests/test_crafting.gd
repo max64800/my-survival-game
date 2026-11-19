@@ -9,7 +9,7 @@ func test_every_recipe_uses_real_items() -> void:
 			check(Items.exists(item), "%s needs unknown item %s" % [id, item])
 		if r.unlock is Array:
 			for item in r.unlock:
-				check(Items.exists(item) or item == "rune", "%s unlocks from unknown item %s" % [id, item])
+				check(Items.exists(item) or item == "rune_*", "%s unlocks from unknown item %s" % [id, item])  # rune_* = any rune (F399)
 
 
 func test_every_station_can_be_made() -> void:
@@ -68,7 +68,7 @@ func test_inputs_free_room_for_output() -> void:
 
 func test_heartwood_needed_for_copper_pickaxe() -> void:
 	var inv := Inventory.new()
-	inv.add("copper_ingot", 8)
+	inv.add("copper_ingot", 15)  # copper tools cost 15 bars (owner, Nov 19)
 	inv.add("plank_root", 4)
 	inv.add("leather", 2)
 	check(not Crafting.can_craft(inv, "pickaxe_copper"), "no Root Tree Heartwood, no copper pickaxe")
@@ -95,6 +95,13 @@ func test_holding_the_ingredients_shows_the_station_too() -> void:
 			if Recipes.is_unlocked(id, seen, {}) and not Recipes.is_unlocked(maker[r.station], seen, {}):
 				stuck.append("%s (found %s, but no %s)" % [id, x, r.station])
 	check(stuck.is_empty(), "every shown recipe's station can be made: %s" % ", ".join(stuck))
+
+
+## F399: the Rune Slab shows up once you've found any rune (it waited for an item "rune" that doesn't exist).
+func test_rune_slab_shows_after_any_rune() -> void:
+	check(not Recipes.is_unlocked("rune_slab", {}, {}), "hidden at the start")
+	check(Recipes.is_unlocked("rune_slab", {"rune_ochre_m1": true}, {}), "shows after finding a rune")
+	check(not Recipes.is_unlocked("rune_slab", {"rope": true}, {}), "rope isn't a rune")
 
 
 func test_unlocks() -> void:
