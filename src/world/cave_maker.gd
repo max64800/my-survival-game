@@ -1326,6 +1326,14 @@ func star_room() -> Dictionary:
 	return {}
 
 
+## Where you wake up has no glow-worm stars (owner, Nov 19: "the spawn location shouldn't have stars", the first
+## cavern keeps them): the wake-up room and a little round it. {} = none. Keys: center, radius.
+func quiet_room() -> Dictionary:
+	if start.is_empty() or not start.has("room_c"):
+		return {}
+	return {center = start.room_c, radius = START_ROOM_R.x + 3.0}  # (the room itself and its doorway, not the cavern)
+
+
 ## Layouts 4-6: the huge first cavern (where the ceiling is all stars), or {} in other layouts.
 func first_cavern() -> Dictionary:
 	if not huge_first() or rooms.is_empty():

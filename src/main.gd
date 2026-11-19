@@ -154,6 +154,7 @@ func _ready() -> void:
 	# Slowdowns and freezes go into the log (owner, Nov 17). A person's game says so on its first line, so the
 	# recorder copies this log and not a test robot's (they all write to the same log folder).
 	add_child(FreezeWatch.new())
+	add_child(NanWatch.new())  # writes the first "broken number" things to the log (Claude, Nov 19)
 	if not Controls.robot:
 		print("PLAYER GAME (not a robot) started ", Time.get_datetime_string_from_system())
 		FreezeWatch.open_player_file()

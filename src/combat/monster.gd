@@ -266,6 +266,8 @@ func damage_mult() -> float:
 
 var _knock := Vector3.ZERO  ## (host) a push from a hit, fading out fast
 var _stop := 0.0            ## (looks) a frozen blink when hit
+var _rest := 0.0            ## (host) standing still: seconds until it checks the floor again (speed, owner Nov 19)
+var far_dt := 0.0           ## (host) time saved up while it thinks less often, far from every dwarf
 
 
 ## Host: pushed by a hit (speed in m/s, away from the hitter). It slides back and stops quickly.
@@ -586,6 +588,17 @@ func _move(delta: float, dir: Vector3, speed: float) -> void:
 		velocity.y -= _gravity * delta
 		if is_on_floor():
 			velocity.y = maxf(velocity.y, -0.5)
+	# Standing still (owner, Nov 19: 5 FPS, the physics step was too slow): a creature at rest on the floor (or a
+	# roosting bat) doesn't ask the physics engine to move it every step; twice a second it checks the floor is still
+	# there (a dwarf may have dug it away).
+	var resting: bool = dir.length() < 0.1 and _knock.length() <= 0.05 and Vector2(velocity.x, velocity.z).length() < 0.05 		and (is_on_floor() or (data.get("flies", false) and absf(velocity.y) < 0.05))
+	if resting:
+		_rest -= delta
+		if _rest > 0.0:
+			return
+		_rest = 0.5
+	else:
+		_rest = 0.0
 	move_and_slide()
 	if global_position.y < CaveMaker.Y_MIN - 20.0:
 		global_position = home + Vector3.UP

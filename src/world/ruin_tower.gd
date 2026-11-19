@@ -138,7 +138,12 @@ func _build() -> void:
 		b._ev_add_piece.rpc(uid, String(p.id), String(p.mat), pos, rot, float(p.pos[1]) < 0.3)
 	for c in plan.get("chests", []):
 		var pos: Vector3 = origin + basis * Vector3(c.pos[0], c.pos[1], c.pos[2])
-		var id: int = auth.storage.create_box(String(c.kind), pos, deg_to_rad(float(c.yaw)) + turn * PI / 2.0)
+		var yaw := deg_to_rad(float(c.yaw)) + turn * PI / 2.0
+		var flat := Vector2(float(c.pos[0]), float(c.pos[2]))
+		if String(c.kind).begins_with("chest") and flat.length() > 0.5:
+			# A chest's front (its lid's lock, box -Z) faces the middle of the tower (owner, Nov 19: some faced the wall).
+			yaw = atan2(flat.x, flat.y) + turn * PI / 2.0
+		var id: int = auth.storage.create_box(String(c.kind), pos, yaw)
 		for item in c.get("loot", {}):
 			if Items.exists(item):
 				auth.storage.put(id, item, int(c.loot[item]))

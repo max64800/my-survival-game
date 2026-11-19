@@ -84,6 +84,11 @@ static func plan(maker: CaveMaker, trees: Array = []) -> Array[Dictionary]:
 	for sg: Dictionary in maker.segments:
 		if sg.get("ramp", false) or sg.get("ledge", false):
 			paths.append(sg)
+	# Crystals (owner, Nov 19: mushroom grass grew on a crystal): none within a crystal's own size of it.
+	var crystals: Array[Vector4] = []
+	for g in GlowPlacer.place(maker):
+		if String(g.kind).begins_with("crystal") and Vector2(g.pos.x - c.x, g.pos.z - c.z).length() < maxf(r.x, r.z) * 1.4:
+			crystals.append(Vector4(g.pos.x, g.pos.y, g.pos.z, 0.6 + 0.9 * maxf(float(g.get("scale", 1.0)), float(g.get("length", 0.0)) * 0.5)))
 	var nx := int(r.x * 2.4 / STEP)  # (a little past the egg shape: the walls flare out)
 	var nz := int(r.z * 2.4 / STEP)
 	for ix in nx:
@@ -125,6 +130,13 @@ static func plan(maker: CaveMaker, trees: Array = []) -> Array[Dictionary]:
 				var dx := rng.randf_range(-0.5, 0.5) * STEP
 				var dz := rng.randf_range(-0.5, 0.5) * STEP
 				var y := hit.y - (n.x * dx + n.z * dz) / n.y  # on the slope's plane
+				var on_crystal := false
+				for cr in crystals:
+					if Vector3(hit.x + dx - cr.x, y - cr.y, hit.z + dz - cr.z).length() < cr.w:
+						on_crystal = true
+						break
+				if on_crystal:
+					continue
 				out.append({pos = Vector3(hit.x + dx, y - 0.015, hit.z + dz), spin = rng.randf() * TAU,
 					scale = rng.randf_range(1.1, 2.2), model = rng.randi() % MODELS.size(), up = Vector3.UP.lerp(n, 0.5).normalized()})
 	return out

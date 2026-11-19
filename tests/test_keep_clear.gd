@@ -118,6 +118,14 @@ func test_mushroom_grass_keeps_clear() -> void:
 		if m.is_reserved(t.pos, 0.8) or m.on_bridge(t.pos, 0.4) or m._in_column(t.pos, 0.4):
 			bad += 1
 	check_eq(bad, 0, "none on kept-clear ground, bridges or columns")
+	# Not on crystals (owner, Nov 19: mushroom grass grew on a crystal)
+	var on_crystal := 0
+	for g in GlowPlacer.place(m):
+		if String(g.kind).begins_with("crystal"):
+			for t in ts:
+				if (t.pos as Vector3).distance_to(g.pos) < 0.6:
+					on_crystal += 1
+	check_eq(on_crystal, 0, "no mushroom grass on a crystal")
 	CaveMaker.use_layout(was)
 
 

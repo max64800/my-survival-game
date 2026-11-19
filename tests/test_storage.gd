@@ -157,6 +157,19 @@ func test_chest_lid_swings_open_and_shut() -> void:
 			await tree.process_frame
 		check(absf(lid.rotation.x) < 0.01, "%s: menu closed, the lid shut (%.2f rad)" % [kind, lid.rotation.x])
 		panel.queue_free()
+	# A barrel's lid lifts and slides aside, then comes back (owner, Nov 19)
+	var bid := auth.storage.create_box("barrel", spot + Vector3(-2, 0, 0), 0.0)
+	var bnode: Node3D = auth.storage.get_box(bid).node
+	var blid := ChestOpen.lid_of(bnode)
+	check(blid != null, "the barrel has its own lid part")
+	if blid:
+		var home := blid.position
+		ChestOpen.open(bnode)
+		await tree.create_timer(0.6).timeout
+		check(absf(blid.position.x - home.x) > 0.2 and is_zero_approx(blid.rotation.x), "the barrel lid slid aside (not swung)")
+		ChestOpen.close(bnode)
+		await tree.create_timer(0.6).timeout
+		check(blid.position.distance_to(home) < 0.01, "the barrel lid is back on")
 	var sid := auth.storage.create_box("crate_ore", spot + Vector3(2, 0, 0), 0.0)
 	ChestOpen.open(auth.storage.get_box(sid).node)  # (an ore crate has no lid: just a pop, no error)
 	_teardown()

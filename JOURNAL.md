@@ -4124,3 +4124,33 @@ the body."
   Round 1 read as a thin white line with a hot shine and a black pool; round 2 wider, bluer, softer, with droplets.
   The test caught 2 falls whose crack point sat just inside rough rock: nudged out or skipped. No sound yet.
 
+## November 19, 2026 (PC, snail Claude): 5 FPS found, and the owner's play notes (F266, F268, F356-F361)
+- Owner: 5 FPS; no stars in the first cave; too many bugs and crickets; rocks still floating; mushroom grass on a
+  crystal; the tower's chests backwards; a snail hit him through the tower wall; chest sounds way too loud.
+- FPS: the game's own log showed drawing was fine (5-16 ms) but the physics step took ~25 ms, longer than a frame,
+  so Godot ran up to 8 catch-up steps a frame and fell further behind (the "spiral"). New tool tools/perf_probe.gd
+  starts the owner's cave (saving off, so his save is safe) and times every system's physics step: the creatures
+  were most of it, Rock Snails up to 1.5-2 ms each (their move against the rock). Fixes: a creature standing still
+  doesn't move through physics every step (checks its floor twice a second); calm creatures 50 m+ from every dwarf
+  think every 4th step; max 3 catch-up steps a frame. Creatures 5 -> 1.6 ms, a typical step 5.6 -> 2.8 ms, 24 -> 2
+  moving physics bodies.
+- The rest: the first cave's stars switched off (a "quiet" star room in the rock shader; its crystals not thinned);
+  glowing beetles 14 -> 5, crickets 10 -> 3; mushroom grass keeps clear of crystals (test added, placement rule);
+  tower chests turn their front to the tower's middle; creature hits need a clear line (no rock or built wall in
+  between); chest sounds 10 dB quieter; GroundSnap scans 300 batches a step (it looked at 12 of ~12,000, so things
+  next to you could float ~16 s).
+- **Hurdles:** (1) the first timings jumped around (creatures spawn in random places, and one-off spikes); switched
+  to timing each system's step directly, frame by frame. (2) A typed-variable error (`resting` needed `: bool`)
+  stopped the scripts loading in the probe; fixed. (3) Also found ~1,300 "can't normalize a broken (NaN) vector"
+  warnings in the owner's log, from 13:04; not the FPS cause, cause not found yet (asked the owner, N4).
+- **Owner: "the trees with no leaves shouldn't glow, they should just stand there."** The 5 dead and 6 bare trees now have plain dark bark, no crack glow; only the twisted trees (which have leaves) keep their faint glow.
+
+- (Nov 19, later) Owner: "the first cave should have stars, the spawn location shouldn't" (I had misread it): stars
+  back in the first cavern; a new quiet zone (CaveMaker.quiet_room, the wake-up room + 3 m) has none. Barrels
+  (F362): own model (tools/asset_forge/builds/barrel_box.py) with a lid part; the owner changed his mind twice while
+  I built it (first a hinged lid, then "lift and slide aside", then "inside just a black circle, not hollow"), so the
+  barrel's lid lifts, slides 30 cm aside and sets down; inside is a black disc under the rim. Hurdles: the first
+  barrel still looked closed (the inside tube's top showed: materials draw both sides), then the black came out grey
+  (charcoal is lit; now near-black and fully rough); the barrel test failed because frames run too fast in tests
+  (waits real time now). NaN hunt (F363): not reproduced (deaths in odd poses, trail, spit, walking his path in his
+  world); added NanWatch, a lookout that names the first broken thing in the log.

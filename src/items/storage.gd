@@ -243,7 +243,10 @@ func _build_look(body: StaticBody3D, kind: String) -> void:
 	body.add_child(cs)
 	var color: Color = {"chest_small": Color(0.55, 0.38, 0.22), "chest_stone": Color(0.55, 0.55, 0.55),
 		"builder": Color(0.3, 0.45, 0.7), "grave": Color(0.45, 0.43, 0.4)}.get(kind, Color.GRAY)
-	var model := Look.forged("stations", kind)  # a real model from the asset forge, if made
+	# A loot barrel: its own model whose lid lifts and slides aside (owner, Nov 19; ChestOpen).
+	var model := Look.forged("stations", "barrel_box" if kind == "barrel" else kind)  # a real model from the asset forge, if made
+	if kind == "barrel":
+		body.set_meta("slide_lid", true)
 	if model:
 		model.rotation.y = PI  # forged models face +Z; boxes face -Z
 		body.add_child(model)
