@@ -215,7 +215,7 @@ func remove_voxels(points: PackedVector3Array) -> Dictionary:
 	for p in points:
 		var v := Vector3i(p) - lo
 		var m := buf.get_voxel(v.x, v.y, v.z, VoxelBuffer.CHANNEL_INDICES)
-		if m == Mat.BORDER or m == Mat.EDGE or buf.get_voxel_f(v.x, v.y, v.z, VoxelBuffer.CHANNEL_SDF) >= 0.0:
+		if m == Mat.BORDER or m == Mat.EDGE or m == Mat.DWARF or buf.get_voxel_f(v.x, v.y, v.z, VoxelBuffer.CHANNEL_SDF) >= 0.0:
 			continue
 		buf.set_voxel_f(0.6, v.x, v.y, v.z, VoxelBuffer.CHANNEL_SDF)
 		counts[m] = counts.get(m, 0) + 1

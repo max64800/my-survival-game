@@ -157,6 +157,7 @@ const DATA := {
 	"weapon_page": {name = "Weaponsmith's Page", color = Color(0.85, 0.5, 0.42), short = "Wp", kind = "page", page_of = "weapon"},
 	"tool_page": {name = "Toolmaker's Page", color = Color(0.6, 0.7, 0.45), short = "Tl", kind = "page", page_of = "tool"},
 	"blueprint_page": {name = "Old Blueprint", color = Color(0.55, 0.68, 0.85), short = "Bp", kind = "page"},  ## teaches a ready-made building (F98)
+	"scroll_mossgate": {name = "Mossgate Recipe Scroll", color = Color(0.8, 0.62, 0.36), short = "Ms", kind = "page", teaches_recipe = "shield_copper"},  ## Mossgate Hold's recipe stand: always the Copper Shield (dungeon decisions round 4)
 	"watchtower_plans": {name = "Watchtower Plans", color = Color(0.62, 0.7, 0.82), short = "Wp", kind = "page", teaches = "stone_watchtower"},  ## always teaches the Stone Watchtower (its ruin's roof chest, F254)
 	"outpost_plans": {name = "Outpost Plans", color = Color(0.62, 0.7, 0.82), short = "Op", kind = "page", teaches = "stone_outpost"},  ## always teaches the Stone Outpost (its ruin's tower roof chest)
 	"rope_ladder": {name = "Rope Ladder", stack = 10, color = Color(0.75, 0.65, 0.45), short = "RL", kind = "station"},

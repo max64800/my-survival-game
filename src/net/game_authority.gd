@@ -50,6 +50,13 @@ var grove_regrow := {}  ## felled grove tree id -> seconds until it stands again
 var tree_regrow := {}  ## broken Root Tree id -> seconds until it's whole again (saved)
 var boulders: Boulders  ## breakable boulders (stone)
 var boulder_hits := {}  ## boulder id -> hits taken (saved)
+## Host: where each player last stood on solid ground, a few times a second: [[time, position], ...] (the newest last).
+## A grave goes where you stood about GRAVE_BACK seconds before you died (dungeon decisions, round 2: every death,
+## everywhere, so a grave never lands at the bottom of a chasm or inside a trap).
+var _safe_spots := {}
+var _safe_clock := 0.0
+var _safe_tick := 0.0
+const GRAVE_BACK := 3.0
 var boulder_back := {}  ## broken boulder id -> seconds until a new one stands there (saved)
 var removed_plants: Array[int] = []  ## cave-life plants broken so far (saved, sent to late joiners)
 ## Host: chopped roots growing back (F106): glow id -> seconds left.
@@ -230,6 +237,7 @@ func _process(delta: float) -> void:
 	_apply_pending_digs()
 	if is_host():
 		_tick_regrow(delta)
+		_track_safe_spots(delta)
 		_auto_timer -= delta
 		var feed_now := _auto_timer <= 0.0
 		if feed_now:
@@ -1482,9 +1490,11 @@ func _learn_from_page(ps: PlayerState, id: String) -> String:
 		_ev_learned_blueprint.rpc(BlueprintMenu.ready_made_name(key), id)
 		return "learned"
 	# A recipe page from a ruin: the whole group learns a recipe nobody knew yet, of the page's kind (a Cook's Page
-	# teaches food, an Armourer's Page armour... owner, Nov 19).
+	# teaches food, an Armourer's Page armour... owner, Nov 19). A dungeon's scroll always teaches its own recipe.
 	var left := Recipes.page_recipes(id).filter(func(r): return not world_state.get("learned", []).has(r))
 	if left.is_empty() or not ps.inventory.remove(id, 1):
+	if Items.info(id).has("teaches_recipe"):
+		left = [Items.info(id).teaches_recipe] if not world_state.get("learned", []).has(Items.info(id).teaches_recipe) else []
 		return "nothing_new"
 	var r: String = left[randi() % left.size()]
 	var learned: Array = world_state.get("learned", []).duplicate()
@@ -2546,6 +2556,7 @@ func request_died(peer_id: int) -> void:
 	for i in ps.inventory.slots.size():
 		var s: Dictionary = ps.inventory.slots[i]
 		if s.is_empty() or (i < Inventory.HOTBAR_SIZE and Items.stack_size(s.id) == 1) or Inventory.is_equip_index(i):
+	where = grave_spot(peer_id, where)
 			continue  # hotbar tools and everything equipped (F23) stay with you
 		if grave < 0:
 			grave = storage.create_box("grave", where, 0.0, peer_id)
@@ -2565,6 +2576,44 @@ func request_died(peer_id: int) -> void:
 func _bond_of_the_clan(fallen: int, where: Vector3) -> void:
 	for pid in players:
 		var o: PlayerState = players[pid]
+## Host: a few times a second, note where each player stands on solid ground (rock or something built under their feet).
+func _track_safe_spots(delta: float) -> void:
+	_safe_clock += delta
+	_safe_tick -= delta
+	if _safe_tick > 0.0:
+		return
+	_safe_tick = 0.25
+	for pid in players:
+		var node: Node3D = players[pid].node
+		if node == null or not node.is_inside_tree():
+			continue
+		var p := node.global_position
+		var q := PhysicsRayQueryParameters3D.create(p + Vector3.UP * 0.3, p + Vector3.DOWN * 0.4, World.TERRAIN_LAYER | PieceNode.PIECE_LAYER)
+		var grounded := not node.get_world_3d().direct_space_state.intersect_ray(q).is_empty()
+		if not grounded and world and world.maker:
+			grounded = world.maker.sdf_at(p + Vector3.DOWN * 0.25) <= 0.0
+		if not grounded:
+			continue
+		var list: Array = _safe_spots.get(pid, [])
+		list.append([_safe_clock, p])
+		if list.size() > 40:
+			list.pop_front()
+		_safe_spots[pid] = list
+
+
+## Where a player's grave goes: where they stood safely about GRAVE_BACK seconds ago (else the oldest safe spot we
+## know from the last few seconds, else where they died).
+func grave_spot(peer_id: int, died_at: Vector3) -> Vector3:
+	var list: Array = _safe_spots.get(peer_id, [])
+	var best := died_at
+	for i in range(list.size() - 1, -1, -1):
+		best = list[i][1]
+		if _safe_clock - float(list[i][0]) >= GRAVE_BACK:
+			break
+	_safe_spots.erase(peer_id)  # (a new life starts a new list)
+	return best
+
+
 		if pid == fallen or o.progress.perk_rank("bond_of_the_clan") < 1 or o.node.global_position.distance_to(where) > 20.0:
 			continue
 		for q in players:

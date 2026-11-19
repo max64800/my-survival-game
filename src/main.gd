@@ -21,6 +21,9 @@ var _pillars: RootPillars
 var _groves: GlowGroves
 var _boulders: Boulders
 var authority: GameAuthority
+## The dev "Test the dungeon" start (owner, Nov 19): only what the dungeon needs. No crystals, plants, pebbles, trees,
+## ruins or cave creatures are planned (much faster), and you start (and wake after dying) at the dungeon's door.
+var dungeon_test := false
 var dwarf: Dwarf
 var hud: Hud
 var _dev_items: DevItems  ## F8 in dev builds: any item into your bag (owner, Nov 19)
@@ -120,6 +123,18 @@ func _ready() -> void:
 				mode = "solo"
 		elif arg == "kitcheck":
 			debug_script = "res://src/debug/kitcheck.gd"
+			_saving = false
+			_monsters = false
+			if mode == "menu":
+				mode = "solo"
+		elif arg == "dungeontest":  # the start menu's dev "Test the dungeon" button, without the menu (robots)
+			debug_script = "res://src/debug/dungeon_test_start.gd"
+			dungeon_test = true
+			_saving = false
+			if mode == "menu":
+				mode = "solo"
+		elif arg == "dungeoncheck":  # photos of the first dungeon (Mossgate Hold)
+			debug_script = "res://src/debug/dungeoncheck.gd"
 			_saving = false
 			_monsters = false
 			if mode == "menu":
@@ -233,6 +248,12 @@ func _show_menu() -> void:
 			_new_world(s, wname)
 			session.host_direct()))
 	_menu.connect("quit_game", func(): get_tree().quit())
+	_menu.connect("test_dungeon", func():
+		_close_menu()
+		_with_loading(func():
+			dungeon_test = true
+			_new_world(seed, "Dungeon Test")
+			add_child(load("res://src/debug/dungeon_test_start.gd").new()), seed, _new_layout))
 	_menu.connect("join_direct", func(addr: String):
 		_menu.call("set_status", "Connecting to %s…" % addr)
 		session.join_direct(addr))
@@ -358,50 +379,62 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	add_child(glow)
 	glow.rock = CaveLife.Rock.new(world.maker)  # crystals sit on the rock as it's drawn (F195)
 	FreezeWatch.doing = "placing crystals and roots"
-	var spots := GlowPlacer.place(world.maker)  # (~6 s: worked out once, the plants below get a copy)
+	var spots: Array[Dictionary] = []
+	if not dungeon_test:
+		spots = GlowPlacer.place(world.maker)  # (~6 s: worked out once, the plants below get a copy)
 	glow.build(spots)
 
 	FreezeWatch.doing = "placing pebbles and dripstone"
 	var ground_snap := GroundSnap.new()  # puts floor things onto the real rock once it's built (owner, Nov 18: things floating)
 	ground_snap.name = "GroundSnap"
+	if not world.maker.dungeons.is_empty():
+		var dbuild := DungeonBuild.new()  # the dungeons' root wood rooms, traps and furniture (owner, Nov 19)
+		dbuild.maker = world.maker
+		add_child(dbuild)
+		if dungeon_test:
+			var d0: Dictionary = world.maker.dungeons[0]
+			var stand := DungeonMap.to_world(d0, Vector3(d0.map.mouth.x, 0.0, d0.map.mouth.y + float(d0.entry_out) + 5.0))
+			var fl := world.maker.find_floor(stand.x, stand.z, stand.y + 3.0)
+			world.maker.spawn_point = (fl if fl != Vector3.INF else stand) + Vector3.UP * 0.3
+			world.maker.cavern_spawn = world.maker.spawn_point
 	ground_snap.world = world
 	add_child(ground_snap)
 	_clutter = Clutter.new()  # pebbles, rocks, bones, twigs on the floors (only looks)
 	_clutter.name = "Clutter"
 	add_child(_clutter)
-	_clutter.build(world.maker, world)  # worked out on a helper thread while the rock loads
+	if not dungeon_test: _clutter.build(world.maker, world)  # worked out on a helper thread while the rock loads
 
 	FreezeWatch.doing = "hanging root curtains"
 	_curtains = RootCurtains.new()  # thin roots hanging across some tunnel mouths, parting as you walk through (F189)
 	_curtains.name = "RootCurtains"
 	add_child(_curtains)
-	_curtains.build(world.maker, world)
+	if not dungeon_test: _curtains.build(world.maker, world)
 	FreezeWatch.doing = "growing root pillars"
 	_pillars = RootPillars.new()  # giant root pillars in some big caverns, chop them for wood (F189)
 	_pillars.name = "RootPillars"
 	add_child(_pillars)
-	_pillars.build(world.maker)
+	if not dungeon_test: _pillars.build(world.maker)
 	FreezeWatch.doing = "growing glow groves"
 	var groves := GlowGroves.new()
 	_groves = groves  # glowing forests in 1-2 big caverns per biome, their main light (owner, Nov 19)
 	groves.name = "GlowGroves"
 	add_child(groves)
-	groves.build(world.maker, _pillars.near)
+	if not dungeon_test: groves.build(world.maker, _pillars.near)
 	FreezeWatch.doing = "placing boulders"
 	_boulders = Boulders.new()  # breakable boulders for stone (owner, Nov 18)
 	_boulders.name = "Boulders"
 	add_child(_boulders)
-	_boulders.build(world.maker, func(p: Vector3, r: float) -> bool: return _pillars.near(p, r) or groves.near(p, r))
+	if not dungeon_test: _boulders.build(world.maker, func(p: Vector3, r: float) -> bool: return _pillars.near(p, r) or groves.near(p, r))
 	FreezeWatch.doing = "growing mushroom grass"
 	var mush := MushroomGrass.new()  # tiny mushroom grass over most of the first cave's floor (owner, Nov 18)
 	mush.name = "MushroomGrass"
 	add_child(mush)
-	mush.build(world.maker, world, _pillars.trunks)
+	if not dungeon_test: mush.build(world.maker, world, _pillars.trunks)
 	FreezeWatch.doing = "puddles and mist"
 	var water := CaveWater.new()  # puddles (rings under the drips) and low mist (F190)
 	water.name = "CaveWater"
 	add_child(water)
-	water.build(world.maker, spots)
+	if not dungeon_test: water.build(world.maker, spots)
 	FreezeWatch.doing = "cave critters"
 	var critters := CaveCritters.new()  # glowing beetles, moths, crickets near you (only looks, F190)
 	critters.name = "CaveCritters"
@@ -411,19 +444,19 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	var swarms := GlowSwarms.new()  # packs of glowing motes drifting through the caves (owner, Nov 18)
 	swarms.name = "GlowSwarms"
 	add_child(swarms)
-	swarms.build(world.maker, _pillars.trunks())
+	if not dungeon_test: swarms.build(world.maker, _pillars.trunks())
 
 	FreezeWatch.doing = "planting moss and ferns"
 	cave_life = CaveLife.new()  # moss, grass, small roots, lichen, ferns in patches (only looks; F188)
 	cave_life.name = "CaveLife"
 	add_child(cave_life)
-	cave_life.build(world.maker, spots.duplicate(true), world, true)  # placed in the background while the cave loads
+	if not dungeon_test: cave_life.build(world.maker, spots.duplicate(true), world, true)  # placed in the background while the cave loads
 
 	FreezeWatch.doing = "placing the cave's places"
 	var pf := PoiField.new()
 	pf.name = "Pois"
 	add_child(pf)
-	pf.build(world.maker)
+	if not dungeon_test: pf.build(world.maker)
 	FreezeWatch.doing = "setting up the game"
 	var peephole := Peephole.make(world)
 	if peephole:
@@ -463,9 +496,10 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	dwarf = _spawn_dwarf(me, _spawn_spot(me), true)
 	dwarf.set_physics_process(false)  # wait until the floor exists
 	var fresh := snap.is_empty() and save.is_empty() and authority.is_host()
-	authority.start_with_nothing = fresh and not _robot_run and not world.maker.start.is_empty()
+	authority.start_with_nothing = fresh and not _robot_run and not dungeon_test and not world.maker.start.is_empty()
 	authority.add_player(me, dwarf, authority.is_host())
-	authority.monsters.enabled = _monsters
+	authority.monsters.enabled = _monsters or dungeon_test
+	authority.monsters.dungeon_only = dungeon_test  # (the dungeon test: only the dungeon's own creatures)
 	if not snap.is_empty():
 		authority.load_snapshot(snap)
 	elif not save.is_empty():
@@ -475,15 +509,15 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 		authority.load_snapshot(save.snap)
 		if save.players.has(0):
 			SaveGame.apply_player(authority.get_player(me), save.players[0])
-		if authority.is_host():
+		if authority.is_host() and not dungeon_test:
 			RuinTower.add_missing_chest(authority)  # older worlds: their tower gets its Rebuilding Chest (F350)
 	elif authority.is_host():
 		authority.seed_poi_loot()
 		# The ruined Stone Watchtower in the first cave (owner F254). Robot runs only with "ruin" (keeps their tests steady).
-		if not _robot_run or OS.get_cmdline_user_args().has("ruin=1") or OS.get_cmdline_user_args().has("towercheck"):
+		if not dungeon_test and (not _robot_run or OS.get_cmdline_user_args().has("ruin=1") or OS.get_cmdline_user_args().has("towercheck")):
 			authority.add_child(RuinTower.new(authority))
 		# The Fallen Outpost, built when someone first comes near (owner, Nov 17). Robots: only with outpostcheck.
-		if not _robot_run or OS.get_cmdline_user_args().has("outpostcheck"):
+		if not dungeon_test and (not _robot_run or OS.get_cmdline_user_args().has("outpostcheck")):
 			authority.world_state["outpost"] = "pending"
 		if authority.start_with_nothing:
 			authority.spawn_start_items()
@@ -491,6 +525,7 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 		authority.add_child(RuinOutpost.new(authority))  # builds it when someone comes near (or marks its cavern)
 	if _jungle_kit:
 		# Test kit: what you'd have after beating Orrumhal and Brask.
+		DungeonBuild.add_chests(authority, world.maker)  # the dungeons' chests with their loot and recipe stands
 		var kit := authority.get_player(me).inventory
 		for item in [["pickaxe_copper", 1], ["axe_copper", 1], ["sword_copper", 1], ["shield_copper", 1], ["crystal_blue", 20],
 				["dish_hollowcap_stew", 3], ["waterskin_clean", 1]]:
@@ -691,7 +726,7 @@ func _process(delta: float) -> void:
 		if world.terrain.is_area_meshed(AABB(p - Vector3.ONE * r, Vector3.ONE * r * 2.0)):
 			rings_ready += 1
 	hud.set_loading_progress(0.15 + 0.85 * rings_ready / 5.0)
-	if world.terrain.is_area_meshed(area) and (cave_life == null or cave_life.is_built()) and (_clutter == null or _clutter.is_built()):
+	if world.terrain.is_area_meshed(area) and (dungeon_test or ((cave_life == null or cave_life.is_built()) and (_clutter == null or _clutter.is_built()))):
 		_ready_to_play = true
 		FreezeWatch.doing = "playing"
 		print("[%s] ready to play" % Time.get_time_string_from_system())

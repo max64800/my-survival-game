@@ -14,12 +14,18 @@ const RESPAWN := 600.0  ## a cleared room fills up again after 10 minutes
 const POSE_SEND := 0.1
 const SPAWN_CHECK := 2.0
 const BAT_KEY := 200000  ## each cave's sleeping bat roost (room index + this)
+const DUNGEON_KEY := 300000  ## a dungeon room's creatures (DUNGEON_KEY + dungeon index * 100 + room group)
+const DUNGEON_NEAR := 30.0  ## a dungeon room's creatures come when a player is this close (its rooms are close together)
+const DUNGEON_RESPAWN := 3600.0  ## creatures move back into a cleared dungeon room after an hour (decisions: "3 in-game
+                                 ## days", assumed; there is no day clock yet)
 const BATS := [4, 6]  ## bats per roost (owner, Nov 19: "5 frost ones, or 5 ember ones")
 
 signal defended(result: Dictionary)  ## our own dwarf parried/blocked/took a hit (for the HUD)
 
 var auth: GameAuthority
 var monsters := {}  ## uid -> Monster
+var dungeon_only := false  ## the dungeon test: only the dungeon's own creatures (no cave packs or roosts)
+var _dgroups = null  ## the dungeons' creatures by room: [{key, center, list: [[kind, local pos, leader]], d}] (made once)
 var enabled := false  ## the game turns spawning on (tests leave it off unless they want monsters)
 var _root: Node3D
 var _next_uid := 1
@@ -117,7 +123,11 @@ func _update_boosts() -> void:
 
 func _spawn_and_despawn() -> void:
 	var maker: CaveMaker = auth.world.maker
+	for g in _dungeon_groups():
+		_group_step(g.key, g, _nearest_player_dist(g.center), DUNGEON_RESPAWN, _spawn_dungeon_group.bind(g), DUNGEON_NEAR)
 	for i in maker.rooms.size():
+		if dungeon_only:
+			break
 		var room: Dictionary = maker.rooms[i]
 		if room.get("sealed", false) or room.get("kind", "") in ["shrine", "hollow"]:
 			continue
@@ -142,11 +152,11 @@ func _spawn_and_despawn() -> void:
 ## A group that lives in a room apart from its monster pack (the bat roost): spawns when a player comes
 ## near, leaves when everyone is far away, and comes back `respawn` seconds after it was wiped out.
 ## `spawn` gets the room and returns the new uids.
-func _group_step(key: int, room: Dictionary, near: float, respawn: float, spawn: Callable) -> void:
+func _group_step(key: int, room: Dictionary, near: float, respawn: float, spawn: Callable, reach := SPAWN_NEAR) -> void:
 	var st: Dictionary = _rooms.get(key, {alive = [], cleared_at = -respawn})
 	_rooms[key] = st
 	st.alive = st.alive.filter(func(u): return monsters.has(u))
-	if st.alive.is_empty() and near < SPAWN_NEAR and _clock - st.cleared_at >= respawn:
+	if st.alive.is_empty() and near < reach and _clock - st.cleared_at >= respawn:
 		if auth.world.is_ready_at(room.center, 4.0):
 			st.alive = spawn.call(room)
 			st.cleared_at = _clock
@@ -155,6 +165,60 @@ func _group_step(key: int, room: Dictionary, near: float, respawn: float, spawn:
 			_ev_remove.rpc(u)
 		st.alive = []
 		st.cleared_at = -respawn
+
+
+## The dungeons' creatures (owner's first play, Nov 19: "no monsters"): the plan's creatures, grouped by the room they
+## stand in. Each room's group comes like a cave pack (when someone is near, host-made, sent to everyone) and moves
+## back in DUNGEON_RESPAWN after it was wiped out. The plan's big beetle is the Pack Hall's leader (a rock beetle
+## leader: bigger and tougher, and it makes its pack hit harder while it lives).
+func _dungeon_groups() -> Array:
+	if _dgroups != null:
+		return _dgroups
+	_dgroups = []
+	var maker: CaveMaker = auth.world.maker
+	for di in maker.dungeons.size():
+		var d: Dictionary = maker.dungeons[di]
+		var by := {}
+		for c in DungeonBuild.load_plan(String(d.id)).get("creatures", []):
+			var local := Vector3(c.pos[0], c.pos[1], c.pos[2])
+			var room := DungeonMap.space_at(d, DungeonMap.to_world(d, Vector3(local.x, 1.0, local.z)))
+			if not by.has(room):
+				by[room] = []
+			by[room].append([String(c.kind), local])
+		var gi := 0
+		for room in by:
+			var mid := Vector3.ZERO
+			for c in by[room]:
+				mid += c[1]
+			mid /= float(by[room].size())
+			_dgroups.append({key = DUNGEON_KEY + di * 100 + gi, center = DungeonMap.to_world(d, Vector3(mid.x, 1.0, mid.z)),
+				list = by[room], d = d, room = room})
+			gi += 1
+	return _dgroups
+
+
+func _spawn_dungeon_group(_room: Dictionary, g: Dictionary) -> Array:
+	var uids := []
+	for c in g.list:
+		var kind: String = c[0]
+		var leader := kind == "great_rock_beetle"
+		if leader:
+			kind = "rock_beetle"
+		if not Monsters.LIST.has(kind):
+			continue
+		var local: Vector3 = c[1]
+		var at := DungeonMap.to_world(g.d, Vector3(local.x, 0.55, local.z))  # on the floor boards
+		if Monsters.LIST[kind].get("roosts", false):
+			# Bats hang asleep from the ceiling right above their spot (root wood or the natural rock).
+			var q := PhysicsRayQueryParameters3D.create(at + Vector3.UP, at + Vector3.UP * 12.0, World.TERRAIN_LAYER)
+			var hit := _root.get_world_3d().direct_space_state.intersect_ray(q)
+			at = (hit.position as Vector3) + Vector3.DOWN * 0.3 if not hit.is_empty() else DungeonMap.to_world(g.d, local)
+		var uid := _next_uid
+		_next_uid += 1
+		_ev_spawn.rpc(uid, kind, at, leader, g.key, "")
+		uids.append(uid)
+	print("DUNGEON_MONSTERS %s: %d in the %s" % [g.d.id, uids.size(), g.room])
+	return uids
 
 
 ## Which bats roost in room `i` (owner, Nov 19): one kind per cave, the same every visit and on every computer.
@@ -271,6 +335,10 @@ func nearest_noticer(m: Monster) -> int:
 		if m.state == Monster.State.SLEEP:
 			sight = 4.0
 			hear = 4.0
+		if lit and d <= m.data.get("wake_light", 0.0) and d < best_d and in_cave(m, p):
+			best = pid  # (F419: a light wakes bats anywhere in their cave, seen or not)
+			best_d = d
+			continue
 		if d > maxf(sight, hear) or d >= best_d:
 			continue
 		if d > hear and not _can_see(m.global_position + Vector3.UP * 0.6, p + Vector3.UP):
@@ -278,6 +346,25 @@ func nearest_noticer(m: Monster) -> int:
 		best = pid
 		best_d = d
 	return best
+
+
+## Is `p` still inside the cave monster `m` lives in (a roost's room, a little roomier than its shape for the tunnel
+## mouths)? Monsters without a cave of their own: always true.
+const CAVE_MARGIN := 1.3
+func in_cave(m: Monster, p: Vector3) -> bool:
+	if m.pack_id < BAT_KEY or auth.world == null or auth.world.maker == null:
+		return true
+	var rooms: Array = auth.world.maker.rooms
+	var i := m.pack_id - BAT_KEY
+	if i >= rooms.size():
+		return true
+	return inside_room(rooms[i], p, CAVE_MARGIN)
+
+
+static func inside_room(room: Dictionary, p: Vector3, scale := 1.0) -> bool:
+	var r: Vector3 = room.radii * scale
+	var d: Vector3 = p - room.center
+	return Vector3(d.x / r.x, d.y / r.y, d.z / r.z).length() <= 1.0
 
 
 func _can_see(from: Vector3, to: Vector3) -> bool:
@@ -306,7 +393,13 @@ func send_tell(m: Monster, atk: Dictionary) -> void:
 	# (F111: it was hitting from 9 m away): at the end it counts as touching range.
 	var reach: float = atk.reach if not atk.get("lunge", false) else float(m.data.get("size", 1.0)) * 0.6 + 0.8
 	_ev_tell.rpc(m.uid, m.target_peer, atk.tell, dmg, reach, crushing, atk.get("knockdown", false), atk.name, buildup,
-		atk.get("lunge", false), atk.get("shield_stops", false))
+		is_charge(atk), atk.get("shield_stops", false))
+
+
+## A charge (a beetle running into you) knocks you down and shoves you (F234). A spider's pounce is a lunge too, but
+## a small one: it only bites (owner, Nov 19, F416: "spiders shouldn't knock you down").
+static func is_charge(atk: Dictionary) -> bool:
+	return atk.get("lunge", false) and not atk.get("pounce", false)
 
 
 func _heaviest(m: Monster) -> float:

@@ -5460,3 +5460,37 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - Found: Deep Stout has no recipe, so nobody can make it (in the plan's questions).
 - **Hurdles:** the effect lists showed "+ +20%" (a bullet sign plus the number's own +); bullet changed to a dot.
   Also fixed an old guide line in the book (Copper Pickaxe said 8 bars; it's 15).
+
+## November 19, 2026 (PC, dungeons Claude, chat 4): the owner's 7 notes from his first dungeon play (paused for a commit)
+- **Shown first on the 3D page** (same link, version 4): corridors 3 m high (2.76 m to walk under) with a half wall
+  on top of the wall row; rooms 4 m; every doorway 1.5x the kit's (round hole about 2 m wide, 2.6 m high) with narrow
+  walls two high beside it and a half wall over it; about 70% of floors and walls old and rotten (owner's extra note);
+  the rock round the front door hugs its frame; stalactites flipped to hang from the rock; the bridge level with the floor.
+- **1, gaps by the round door:** the corridor now ends at the door 1-3 m inside solid rock, and from there a hole a bit
+  smaller than the stone frame (2.8 x 2.55 m) runs out to the cave, so the frame covers the edges. If the cave wall runs
+  at a slant and breaks in beside the corridor, the dungeon is set 2 or 4 m deeper and tried again.
+- **2, monsters:** the plan's creatures come room by room (when you're 30 m away) through the normal monster system
+  (host makes them, everyone sees them). The big beetle is the Pack Hall's leader. A cleared room fills again after an
+  hour (the decisions said "3 in-game days", but the game has no day clock yet).
+- **3, chests:** real chests with loot when the world is made (gold, copper, bolts, bandages...; "random" chests are
+  there in about 2 of 3 worlds). The recipe stand is a box holding the "Mossgate Recipe Scroll", which always teaches the
+  Copper Shield (Claude's pick; it borrows the Armourer's Page picture for now).
+- **4, deadly drops:** among the spikes of the chasm or the spike pit = dead. Every grave now goes where you last stood
+  on solid ground about 3 s before you died (decisions round 2). The cracked floor tiles over the spike pit give way
+  after 0.4 s.
+- **5, smashing:** furniture and crates (3 hits: 1-2 rootwood, sometimes a small find), the rubble wall (4 hits, stone),
+  the hidden boulder exactly like cave boulders (Boulders.HITS, stone every hit, RockShatter bursts). The test kit has a
+  pickaxe on the hotbar. What's broken is saved and sent to friends.
+- **6, stalactites:** flipped; they fall when you walk under them or a bolt hits them (dust first), 50 damage; a
+  cluster's stones fall one by one 0.2 s apart; the rock base stays on the ceiling.
+- **Owner's extra note, the bridge:** the post frames had one big invisible box round them that blocked the way on.
+  Now only the two posts are solid, and the deck sits level with the floor boards.
+- **Tests:** 7 new checks in test_dungeon (door hole, tall corridors and doorways, 70% old, bridge level, stalactites,
+  chests/breakables, deadly drops): 13 of 13 pass. A muted, marked robot game (seed 42) builds it all, places the chests,
+  and brings 16 creatures in the first rooms with no errors.
+- **Hurdles (Claude's own):** moving the dungeon 0.5 m deeper made 2 of 3 test worlds lose it (the spot search is touchy);
+  put it back where it was and added the "set it deeper" retry instead. World 99 has no spot (it had none before
+  either). The monster helper was written for one value but gets two (crashed the spawn 19 times in the first robot
+  run); fixed. A file edit didn't match because of how the robot's lines were laid out; redone by hand.
+- **Not yet checked in a game picture:** the door close-up, corridor, doorway and bridge (the pictures are taken, not yet
+  looked at). Traps (darts, crushers), doors/gate/lever and the shrine come in later steps.

@@ -20,7 +20,7 @@ extends RefCounted
 ##   1 = the first caves: 400 m areas (Mossy x -200…200, Jungle x 220…620), squashed balls and tubes.
 ##   2 = real-shaped caves: 800 m areas (Mossy x -400…400, Jungle x 420…1220), about 4x the rooms,
 ##       passages and halls shaped the way water shapes real caves (see "layout 2" below).
-const LAYOUT_LATEST := 13
+const LAYOUT_LATEST := 14
 ## What brand-new worlds get. Layout 2: the real-shaped caves (F211 step 1, OK'd by the owner Nov 17). Layout 3: the
 ## same plus tall/wide/joined caverns and cliff exits with ledge paths (F230, F231). Old saves keep the layout they were
 ## made with; robots can try older caves with "-- layout=1" or "-- layout=2". Layout 4: the same plus a huge first
@@ -38,7 +38,8 @@ const LAYOUT_LATEST := 13
 ## of a bridge"): if the usual tries fail, a patient second search there.
 ## Layout 13: every bridge has at least BRIDGE_AIR of air under it (owner, Nov 18: "the bridge should not be so close
 ## to the ground").
-const LAYOUT_DEFAULT := 13
+## Layout 14: the first dungeon, Mossgate Hold, dug into solid rock behind a cave wall (owner, Nov 19: DungeonMap).
+const LAYOUT_DEFAULT := 14
 static var layout := LAYOUT_DEFAULT
 
 
@@ -206,6 +207,8 @@ func _init(p_seed: int = 1, big_caverns: int = 3, small_rooms: int = 12) -> void
 	if not start.is_empty():
 		spawn_point = start.spawn
 	_reserve_tower()
+	if made_layout >= 14:
+		_plan_dungeons()  # last, so nothing above moves
 
 
 ## One biome's rooms and the tunnels that join them, in this cave's layout.
@@ -255,6 +258,44 @@ func _seg_inside_room(sg: Dictionary, c: Vector3, r: Vector3) -> bool:
 
 var outpost_spot := {}  ## where the Fallen Outpost goes ({room, pos, turn}; worked out once, in _reserve_tower)
 var reserved: Array[Dictionary] = []  ## {pos, r, h}: a circle of ground (r wide), from pos.y up to pos.y + h
+var dungeons: Array[Dictionary] = []  ## layout 14: the dungeons dug into the rock (DungeonMap.place)
+
+
+## Layout 14 (owner, Nov 19): the dungeons. Each picks its spot from the cave alone (same world number = same spot on
+## every computer), then its rooms are cut into the rock and lined with old dwarf stone (sdf, material_at).
+func _plan_dungeons() -> void:
+	for map in DungeonMap.MAPS:
+		var d := DungeonMap.find_spot(self, map)
+		if d.is_empty():
+			continue
+		dungeons.append(d)
+		# The cave floor in front of its door is kept clear too (no rocks, plants or crystals in the doorway).
+		var door := DungeonMap.to_world(d, Vector3(map.mouth.x, 0.0, map.mouth.y + float(d.entry_out) + 1.0))
+		reserve(door, 4.5, 5.0)
+	_corner_cache.clear()
+
+
+## The most-open dungeon number at p (positive = in a dungeon room), or a big negative number.
+func _dungeon_sdf(p: Vector3) -> float:
+	var best := -1e9
+	for d in dungeons:
+		best = maxf(best, DungeonMap.sdf(d, p))
+	return best
+
+
+## Is p old dwarf stone (a dungeon's walls, floor and ceiling, which no pickaxe breaks)?
+func in_dungeon_stone(p: Vector3) -> bool:
+	for d in dungeons:
+		if DungeonMap.covers(d, p):
+			return true
+	return false
+
+
+func _overlaps_dungeon(lo: Vector3, hi: Vector3) -> bool:
+	for d in dungeons:
+		if _overlaps(lo, hi, d.wlo, d.whi):
+			return true
+	return false
 
 
 func reserve(pos: Vector3, r: float, h: float) -> void:
@@ -266,6 +307,9 @@ func is_reserved(p: Vector3, margin := 0.0) -> bool:
 	for z in reserved:
 		var c: Vector3 = z.pos
 		if p.y > c.y - 1.5 and p.y < c.y + float(z.h) + 6.0 				and Vector2(p.x - c.x, p.z - c.z).length() < float(z.r) + margin:
+			return true
+	for d in dungeons:
+		if DungeonMap.covers(d, p, margin):
 			return true
 	return false
 
@@ -2172,6 +2216,8 @@ func _smooth_at(p: Vector3) -> float:
 		var s := minf(SOLID_FILL, _region_dist(p))  # no cave within 6 m: solid rock (like generate_block)
 		if _near_start(p):
 			s = minf(maxf(s, -_start_dist(p)), _region_dist(p))
+		if not dungeons.is_empty():
+			s = minf(maxf(s, _dungeon_sdf(p)), _region_dist(p))
 		return s
 	return _sdf_with(p, cell[0], cell[1])
 
@@ -2182,6 +2228,8 @@ func material_at(p: Vector3i) -> int:
 	var wall := _wall_rock(pf)
 	if wall >= 0:
 		return wall
+	if not dungeons.is_empty() and in_dungeon_stone(pf):
+		return Mat.DWARF
 	var pal: Dictionary = Mat.PALETTES[biome_at(pf)]
 	if made_layout >= 13 and (_near_start(pf) or in_start_plug(pf)):
 		return pal.rock  # the room you wake in and its wall: all rock, so you see how breaking rock works (owner, Nov 18)
@@ -2212,7 +2260,10 @@ func _wall_rock(p: Vector3) -> int:
 
 func _sdf_with(p: Vector3, room_ids: PackedInt32Array, seg_ids: PackedInt32Array) -> float:
 	if made_layout >= 2:
-		return _sdf_with_v2(p, room_ids, seg_ids)
+		var s2 := _sdf_with_v2(p, room_ids, seg_ids)
+		if not dungeons.is_empty():
+			s2 = minf(maxf(s2, _dungeon_sdf(p)), _region_dist(p))
+		return s2
 	var d := 1e9
 	for i in room_ids:
 		d = _smin(d, _room_dist(p, i), BLEND)
@@ -2451,8 +2502,9 @@ func generate_block(buf: VoxelBuffer, origin: Vector3i) -> void:
 
 	var near_start := _start_overlaps(lo, hi)
 	var blocky := _style == BLOCKS
-	var all_rock := room_ids.is_empty() and seg_ids.is_empty()
-	if not all_rock and made_layout >= 2 and one_biome and not near_start and not blocky:
+	var in_dg := not dungeons.is_empty() and _overlaps_dungeon(lo, hi)
+	var all_rock := room_ids.is_empty() and seg_ids.is_empty() and not in_dg
+	if not all_rock and made_layout >= 2 and one_biome and not near_start and not blocky and not in_dg:
 		# Shapes are listed nearby, but if the middle of the block is far inside rock, so is all of it:
 		# half the block's diagonal (13.9 m) + the most the wall noise and rock detail move a wall (~5 m)
 		# + the soft blend (3 m).
@@ -2509,6 +2561,8 @@ func generate_block(buf: VoxelBuffer, origin: Vector3i) -> void:
 				var wall := _wall_rock(Vector3(pi)) if touches_border else -1
 				if wall >= 0:
 					m = wall
+				elif in_dg and in_dungeon_stone(Vector3(pi)):
+					m = Mat.DWARF  # old dwarf stone: a dungeon's walls (no pickaxe breaks it)
 				elif near_start and made_layout >= 13 and (_near_start(Vector3(pi)) or in_start_plug(Vector3(pi))):
 					m = p_rock  # the room you wake in: all rock (owner, Nov 18; the same rule as material_at)
 				elif near_start and in_start_plug(Vector3(pi)):

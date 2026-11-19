@@ -28,6 +28,9 @@ const LIST := {
 		fire = 0.0, frost = 0.0, poison = 0.0, walk = 3.0, run = 6.5, pack = [5, 10], xp = 4, leader = "Bat Matriarch", leader_chance = 0.15,
 		color = Color(0.3, 0.26, 0.28), shape = "cave_bat", flap_sound = "bat_flap", flies = true, swoops = true, roosts = true, sleeps = true,
 		hit_and_run = true, retreat = 7.0, recover = 1.6,
+		# F419 (owner, Nov 19): carry a light within 25 m of the roost and they wake; they keep attacking until you
+		# leave their cave (they don't give up after 10 s like the others).
+		wake_light = 25.0, stays_in_cave = true,
 		attacks = [{name = "Swoop Bite", warn_sound = "bat_screech", tell = 0.6, damage = 6, type = "pierce", reach = 2.2, parry = "any"}],
 		drops = [["wing_leather", 1, 1.0], ["wing_leather", 1, 0.3], ["bat_fang", 1, 0.4], ["bat_meat", 1, 0.8]]},
 	# statue_hits: pickaxe hits to break its stone statue (default 4; owner, Nov 18: bat 2, beetle and snail 4, great 8).
@@ -62,8 +65,9 @@ static func info(id: String) -> Dictionary:
 	return LIST.get(id, {})
 
 
-## Pack leader (doc 6.2) and the boost it gives its pack (doc 6.3).
-const LEADER := {size = 1.3, hp = 2.5, damage = 1.3, stun = 1.5, armor = 10, xp = 3}
+## Pack leader (doc 6.2) and the boost it gives its pack (doc 6.3). No crown: you spot it by its size (owner, Nov 19,
+## F421: "take the crown off and make them a lot bigger").
+const LEADER := {size = 1.8, hp = 2.5, damage = 1.3, stun = 1.5, armor = 10, xp = 3}
 const PACK_BOOST := {damage = 0.20, speed = 0.15, stun = 0.25, decay = 2.0, radius = 15.0}
 
 ## Which monsters live where in each biome: big caverns / small rooms.

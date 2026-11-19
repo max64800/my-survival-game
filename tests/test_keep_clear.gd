@@ -8,7 +8,7 @@ func test_tower_ground_is_kept_clear() -> void:
 	CaveMaker.use_layout(CaveMaker.LAYOUT_LATEST)
 	for sd in [42, 7]:
 		var m := CaveMaker.new(sd)
-		check_eq(m.reserved.size(), 2, "seed %d: the tower's and the Fallen Outpost's ground are kept clear" % sd)
+		check_eq(m.reserved.size(), 2 + m.dungeons.size(), "seed %d: the tower's and the Fallen Outpost's ground (and each dungeon's doorway) are kept clear" % sd)
 		var plan := RuinTower.load_plan()
 		var spot := RuinTower.find_spot(m, float(plan.get("radius", 4.2)), float(plan.get("height", 9.0)))
 		check(not spot.is_empty() and m.is_reserved(spot.pos + Vector3.UP), "seed %d: it's where the tower goes" % sd)

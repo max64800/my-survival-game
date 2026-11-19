@@ -9,7 +9,7 @@ const DIR := "user://plan_cache"
 const VERSION := 1
 ## The code every plan depends on (the cave's shape and the shared helpers); each planner adds its own file.
 const SHARED := ["res://src/world/cave_maker.gd", "res://src/world/glow_placer.gd", "res://src/art/root_pillars.gd",
-	"res://src/world/ruin_tower.gd", "res://src/art/ruin_treasure.gd"]
+	"res://src/world/ruin_tower.gd", "res://src/art/ruin_treasure.gd", "res://src/world/dungeon_map.gd"]
 
 static var enabled := true  ## (tests switch it off)
 static var _fingerprints := {}

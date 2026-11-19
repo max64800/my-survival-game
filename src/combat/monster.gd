@@ -48,6 +48,8 @@ var _flap_was := 0.0
 var _flinch := 0.0       ## only looks: a quick jolt back when hit
 var _charge_dir := Vector3.ZERO  ## straight_charge: the direction locked when the charge starts
 var _alt := INF                  ## swoops: the height this flyer is heading for
+var _ceiling := INF              ## swoops: the rock above it (checked 4 times a second; F420)
+var _ceiling_check := 0.0
 var _last_pos := Vector3.ZERO
 var _body_shape: CollisionShape3D  ## its body (a capsule standing up from its feet)
 var _roosted := false  ## the body hangs down from the ceiling (a sleeping bat)
@@ -302,6 +304,14 @@ func think(delta: float, mgr: Node) -> void:
 			_alt = global_position.y
 		else:
 			_alt = home.y - 1.5
+		# Never aim above the ceiling (owner, Nov 19, F420: "attacking bats bounce off the ceiling"): where the rock
+		# is lower than 3 m above you, it cruises just under it.
+		if state != State.SLEEP:
+			_ceiling_check -= delta
+			if _ceiling_check <= 0.0:
+				_ceiling_check = 0.25
+				_ceiling = _rock_above()
+			_alt = minf(_alt, _ceiling - _body_height() - CEILING_ROOM)
 	match state:
 		State.SLEEP:
 			_move(delta, Vector3.ZERO, 0.0)
@@ -356,7 +366,10 @@ func think(delta: float, mgr: Node) -> void:
 				_no_progress = 0.0
 			else:
 				_no_progress += delta
-			if (global_position.distance_to(home) > Monsters.LEASH or _no_progress > Monsters.GIVE_UP):
+			var gives_up := global_position.distance_to(home) > Monsters.LEASH or _no_progress > Monsters.GIVE_UP
+			if data.get("stays_in_cave", false):  # (bats, F419: only when you leave their cave)
+				gives_up = not mgr.in_cave(self, target.global_position)
+			if gives_up:
 				state = State.RETURN
 				target_peer = 0
 				return
@@ -572,6 +585,19 @@ func _move(delta: float, dir: Vector3, speed: float) -> void:
 	move_and_slide()
 	if global_position.y < CaveMaker.Y_MIN - 20.0:
 		global_position = home + Vector3.UP
+
+
+## How high the rock is above this flyer (INF: more than 12 m of room).
+const CEILING_ROOM := 0.3  ## m a flyer keeps between its back and the ceiling
+func _rock_above() -> float:
+	var from := global_position + Vector3.UP * 0.2
+	var q := PhysicsRayQueryParameters3D.create(from, from + Vector3.UP * 12.0, World.TERRAIN_LAYER)
+	var hit := get_world_3d().direct_space_state.intersect_ray(q)
+	return INF if hit.is_empty() else float(hit.position.y)
+
+
+func _body_height() -> float:
+	return (_body_shape.shape as CapsuleShape3D).height if _body_shape else 1.0
 
 
 func _face(target: Node3D) -> void:

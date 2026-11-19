@@ -471,6 +471,11 @@ func _on_swing_impact() -> void:
 		return
 	if hit.collider is CollisionObject3D and (hit.collider as CollisionObject3D).collision_layer == Ragdoll.LAYER:
 		return  # (a fallen creature's limp pieces: nothing to mine, and don't dig the ground through it)
+	var thing_id := DungeonBuild.id_of(hit.collider)
+	if thing_id >= 0 and DungeonBuild.instance:  # a dungeon's furniture, rubble or hidden boulder (owner, Nov 19)
+		DungeonBuild.instance.ask_hit(thing_id)
+		_shake = 0.3
+		return
 	var boulder_id := Boulders.id_of(hit.collider)
 	if boulder_id >= 0:  # a boulder: stone every hit, it bursts after a few (owner, Nov 18)
 		auth.ask_hit_boulder(boulder_id)

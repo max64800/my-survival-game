@@ -924,3 +924,73 @@ func test_beetles_bump_never_overlap() -> void:
 	var r: float = (a._body_shape.shape as CapsuleShape3D).radius
 	check(closest > r * 1.6, "two beetles chasing never overlap (closest %.2f m, bodies %.2f m wide)" % [closest, r * 2.0])
 	_teardown()
+
+
+## F416 (owner, Nov 19): a spider's pounce bites but never knocks the dwarf down; the beetles' charges still do.
+func test_spider_pounce_doesnt_knock_down() -> void:
+	for atk: Dictionary in Monsters.info("cave_spider").attacks:
+		check(not MonsterManager.is_charge(atk), "spider %s doesn't knock you down" % atk.name)
+	for id in ["rock_beetle", "great_rock_beetle"]:
+		var charges: Array = Monsters.info(id).get("attacks", []).filter(func(a: Dictionary) -> bool: return MonsterManager.is_charge(a))
+		check(charges.size() > 0, "%s still has a charge that knocks you down" % id)
+
+
+## F419 (owner, Nov 19): bats wake when you carry a light within 25 m of them in their cave, and keep after you until
+## you leave that cave. In the dark they sleep on.
+func test_bats_wake_to_light_and_stay_until_you_leave() -> void:
+	await _setup()
+	var room_i := -1
+	for i in world.maker.rooms.size():
+		if MonsterManager.inside_room(world.maker.rooms[i], player.global_position):
+			room_i = i
+	check(room_i >= 0, "the start spot is inside a cave")
+	var m := _spawn("cave_bat", Vector3(18, 0, 0), false, MonsterManager.BAT_KEY + room_i)
+	ps.fuel = 0.0
+	for i in 60:
+		await tree.physics_frame
+	check_eq(m.state, Monster.State.SLEEP, "no light: the bat sleeps on at 18 m")
+	ps.fuel = 100.0
+	for i in 60:
+		await tree.physics_frame
+	check(m.state != Monster.State.SLEEP and m.target_peer == 1, "a light 18 m away wakes it (state %d)" % m.state)
+	for i in 900:  # 15 s: longer than the others give up after
+		await tree.physics_frame
+	check(m.state != Monster.State.RETURN, "still after you while you're in its cave (state %d)" % m.state)
+	var room: Dictionary = world.maker.rooms[room_i]
+	player.global_position = room.center + Vector3(room.radii.x * 2.0, 0, 0)
+	for i in 30:
+		await tree.physics_frame
+	check(m.state == Monster.State.RETURN or m.target_peer == 0, "you left the cave: it gives up (state %d)" % m.state)
+	_teardown()
+
+
+## F420 (owner, Nov 19): attacking bats bounced off the ceiling: they cruise 3 m above you, and where the rock is lower
+## than that they kept flying up into it. Now they stay under the ceiling.
+func test_bats_stay_under_the_ceiling() -> void:
+	await _setup()
+	ps.fuel = 100.0
+	var top := GlowPlacer._march(world.maker, player.global_position + Vector3.UP, Vector3.UP, 30.0)
+	check(top != Vector3.INF, "the start cave has a ceiling")
+	player.global_position = top + Vector3.DOWN * 2.5  # (floating up near the rock: less than 3 m of room above him)
+	var m := _spawn("cave_bat", Vector3(5, 0, 0))
+	m.alert(1)
+	var bumps := 0
+	for i in 600:
+		await tree.physics_frame
+		if m.is_on_ceiling():
+			bumps += 1
+	check(bumps < 5, "the bat doesn't keep hitting the ceiling (%d frames touching it)" % bumps)
+	_teardown()
+
+
+## F421 (owner, Nov 19): pack leaders wear no crown; they're a lot bigger instead.
+func test_leaders_are_big_without_a_crown() -> void:
+	check(Monsters.LEADER.size >= 1.7, "a leader is a lot bigger (×%.1f)" % Monsters.LEADER.size)
+	for id in Monsters.LIST:
+		var info: Dictionary = Monsters.LIST[id]
+		var plain := MonsterModel.build(info.shape, info.color, info.size, false, id, 1)
+		var lead := MonsterModel.build(info.shape, info.color, info.size * Monsters.LEADER.size, true, id, 1)
+		check_eq(lead.find_children("*", "MeshInstance3D", true, false).size(), plain.find_children("*", "MeshInstance3D", true, false).size(),
+			"%s leader has no extra parts (no crown)" % id)
+		plain.free()
+		lead.free()

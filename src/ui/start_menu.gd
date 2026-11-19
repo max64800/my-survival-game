@@ -9,6 +9,7 @@ signal host_steam(seed: int, world_name: String)
 signal continue_game(data: Dictionary)
 signal host_world(data: Dictionary)
 signal quit_game
+signal test_dungeon  ## dev builds only: a new world, standing at the first dungeon's door with the best gear
 
 var _status: Label
 var _seed_edit: LineEdit
@@ -100,6 +101,12 @@ func _ready() -> void:
 	box.add_child(small)
 	_button(small, "Settings", func(): _settings.visible = not _settings.visible).custom_minimum_size.x = 190
 	_button(small, "Quit", func(): quit_game.emit()).custom_minimum_size.x = 190
+	if DevMenu.enabled():  # (owner, Nov 19) never in the game players get
+		var dev := _button(box, "Dev: Test the dungeon (new world, best gear, at the door)", func(): test_dungeon.emit())
+		var purple := StyleBoxFlat.new()
+		purple.bg_color = Color(0.22, 0.08, 0.26)
+		purple.set_corner_radius_all(8)
+		dev.add_theme_stylebox_override("normal", purple)
 	_status = UiKit.label(box, "", 15, UiKit.AMBER)
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD
 	_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

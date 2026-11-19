@@ -46,9 +46,7 @@ static func build(shape: String, color: Color, size: float, leader: bool, kind: 
 			holder.set_meta("look", look_of(variant, seed if look_seed < 0 else look_seed))
 		_tag_forged(holder, forged, shape)
 		_vary_stone(forged, seed)
-		if leader:
-			_forged_crown(holder, forged, shape)
-		return holder
+		return holder  # (a leader is just much bigger: Monsters.LEADER.size; the crown came off, owner Nov 19, F421)
 	var root := Node3D.new()
 	var body := _mat(color)
 	var dark := _mat(color.darkened(0.35))
@@ -139,22 +137,6 @@ static func build(shape: String, color: Color, size: float, leader: bool, kind: 
 			eye_z = -0.98
 	for x in [-0.07, 0.07]:
 		_add(root, _sphere(0.035, 0.035), eye, Vector3(x, eye_y, eye_z))
-	if leader:
-		# A glowing gold moss crown, so you can spot the pack leader.
-		var crown_mat := StandardMaterial3D.new()
-		var gold := Color(1.0, 0.75, 0.2)
-		crown_mat.albedo_color = gold.lightened(0.1)
-		crown_mat.emission_enabled = true
-		crown_mat.emission = gold
-		crown_mat.emission_energy_multiplier = 2.0
-		var crown := MeshInstance3D.new()
-		var tm := TorusMesh.new()
-		tm.inner_radius = 0.1
-		tm.outer_radius = 0.16
-		crown.mesh = tm
-		crown.material_override = crown_mat
-		crown.position = Vector3(0, eye_y + 0.18, eye_z + 0.1)
-		root.add_child(crown)
 	root.scale = Vector3.ONE * size
 	_tag_parts(root, shape)
 	return root
@@ -226,38 +208,6 @@ static func _forged_shell(model: Node3D, hidden: bool) -> void:
 	for p: MeshInstance3D in model.get_meta("peek", []):
 		p.visible = hidden
 
-
-## A glowing gold crown above a hand-built leader, so you can spot it in the pack.
-static func _forged_crown(holder: Node3D, forged: Node3D, shape: String) -> void:
-	var top := 0.0
-	for mi: MeshInstance3D in forged.find_children("*", "MeshInstance3D", true, false):
-		var box := mi.get_aabb()
-		top = maxf(top, mi.position.y + box.position.y + box.size.y)
-	var gold := Color(1.0, 0.45, 0.15) if shape in ["rock_beetle"] else Color(1.0, 0.75, 0.2)
-	var m := StandardMaterial3D.new()
-	m.albedo_color = gold.lightened(0.1)
-	m.emission_enabled = true
-	m.emission = gold
-	m.emission_energy_multiplier = 1.5
-	var crown := MeshInstance3D.new()
-	var tm := TorusMesh.new()
-	tm.inner_radius = 0.1
-	tm.outer_radius = 0.15
-	crown.mesh = tm
-	crown.material_override = m
-	crown.position = Vector3(0, top + 0.12, 0)
-	holder.add_child(crown)
-	for k in 5:  # little points on the crown
-		var a := k * TAU / 5.0
-		var pt := MeshInstance3D.new()
-		var cm := CylinderMesh.new()
-		cm.top_radius = 0.0
-		cm.bottom_radius = 0.025
-		cm.height = 0.08
-		pt.mesh = cm
-		pt.material_override = m
-		pt.position = crown.position + Vector3(cos(a) * 0.125, 0.05, sin(a) * 0.125)
-		holder.add_child(pt)
 
 static var _variants := {}
 

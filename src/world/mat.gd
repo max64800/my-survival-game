@@ -14,17 +14,18 @@ const MYCELIUM := 8  ## the jungle's "moss": soft white fungus mat on floors
 const SILVER := 9
 const AMBERROCK := 11
 const SPORESTONE := 13  ## the jungle's default rock
+const DWARF := 14  ## old dwarf stone: a dungeon's walls (owner, Nov 19): no pickaxe breaks it
 const EDGE := 15  ## the end of the world: no pickaxe ever digs it
 
 const NAMES := {MOSS: "Moss", STONE: "Stone", DIRT: "Dirt", COPPER: "Copper ore", BORDER: "Border rock", CLAY: "Orange clay",
-	MYCELIUM: "Mycelium", SILVER: "Silver ore", AMBERROCK: "Amberrock", SPORESTONE: "Sporestone", EDGE: "World's edge"}
+	MYCELIUM: "Mycelium", SILVER: "Silver ore", AMBERROCK: "Amberrock", SPORESTONE: "Sporestone", DWARF: "Old dwarf stone", EDGE: "World's edge"}
 
 ## How much digging a spot of this rock needs. Moss 20: the mossy top layer takes 2 hits with a stone pickaxe (owner, F196).
 const HARDNESS := {MOSS: 20, DIRT: 10, STONE: 26, COPPER: 45, BORDER: 80, CLAY: 15,
-	MYCELIUM: 10, SILVER: 55, AMBERROCK: 25, SPORESTONE: 30, EDGE: 999}
+	MYCELIUM: 10, SILVER: 55, AMBERROCK: 25, SPORESTONE: 30, DWARF: 999, EDGE: 999}
 ## The weakest pickaxe tier that can dig it (0 stone, 1 copper, 2 silver).
 const MIN_TIER := {MOSS: 0, DIRT: 0, STONE: 0, COPPER: 0, BORDER: 1, CLAY: 0,
-	MYCELIUM: 0, SILVER: 1, AMBERROCK: 0, SPORESTONE: 0, EDGE: 99}
+	MYCELIUM: 0, SILVER: 1, AMBERROCK: 0, SPORESTONE: 0, DWARF: 99, EDGE: 99}
 const TIER_NAMES := ["Stone", "Copper", "Silver", "Iron", "Steel"]
 
 ## What item you get from dug voxels of this material, and how many voxels make one item.

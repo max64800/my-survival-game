@@ -8,7 +8,7 @@ const BOX_LAYER := 16  ## same layer as stations, so you can aim at them and pre
 const REACH := 4.5
 ## Rows of 8 (owner, Nov 17): a barrel one row, a chest two, a stone chest three.
 const SIZES := {"barrel": 8, "chest_small": 16, "chest_stone": 24, "chest_copper": 36, "crate_ore": 60, "grave": Inventory.EQUIP_START, "builder": 24,
-	"rebuild": 24, "chest_loot": 16}  ## (rebuild: the Rebuilding Chest at a ruin, owner Nov 19; docs/design/ruin-rebuild-plan.md)
+	"rebuild": 24, "chest_loot": 16, "recipe_stand": 4}  ## (rebuild: the Rebuilding Chest at a ruin, owner Nov 19; docs/design/ruin-rebuild-plan.md)
 ## The Ore Crate only takes ores, stone types, clay and crystals (doc 8 storage table).
 const ORE_CRATE := ["stone", "dirt", "moss", "clay", "copper_ore", "silver_ore", "sporestone", "amberrock", "marble", "basalt", "brown_rock"]
 
@@ -306,7 +306,15 @@ func _build_look(body: StaticBody3D, kind: String) -> void:
 	var color: Color = {"chest_small": Color(0.55, 0.38, 0.22), "chest_stone": Color(0.55, 0.55, 0.55),
 		"builder": Color(0.3, 0.45, 0.7), "grave": Color(0.45, 0.43, 0.4)}.get(kind, Color.GRAY)
 	# A loot barrel: its own model with a lid that swings open (owner, Nov 19); the building kit's barrel is solid.
-	var model := Look.forged("stations", "barrel_box") if kind == "barrel" else Look.forged("stations", kind)  # a real model, if made
+	# (the Rebuilding Chest looks like a Builder's Chest)
+	var model := Look.forged("stations", "barrel_box") if kind == "barrel" else Look.forged("stations", "builder" if kind == "rebuild" else kind)  # a real model, if made
+	if kind == "recipe_stand":  # a dungeon's recipe stand with its glowing scroll (owner, Nov 19)
+		model = Look.forged("dungeon", "recipe_stand")
+		var scroll := Look.forged("dungeon", "recipe_scroll")
+		if model and scroll:
+			scroll.position = Vector3(0.0, 0.90, 0.007)
+			scroll.rotation.x = deg_to_rad(20.0)
+			model.add_child(scroll)
 	if model == null and kind == "barrel":
 		model = Look.forged("build", "barrel__plank_root")
 	if kind == "barrel":

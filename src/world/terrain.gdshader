@@ -1,7 +1,7 @@
 shader_type spatial;
 // Paints the dig-anywhere rock. Each voxel has a material number (see mat.gd):
 // 0 moss, 1 stone, 2 dirt, 3 copper ore, 4 border rock, 5 clay,
-// 8 mycelium, 9 silver ore, 11 amberrock, 13 sporestone, 15 the world's edge.
+// 8 mycelium, 9 silver ore, 11 amberrock, 13 sporestone, 14 old dwarf stone (a dungeon's walls), 15 the world's edge.
 //
 // The look: hand-painted textures (tools/art/bake_terrain_looks.py), 4 slices (looks)
 // per material number in two texture arrays. Smooth terrain has no UV "wrapping paper",
@@ -218,7 +218,7 @@ void fragment() {
 		int id = clamp(int(ids[k] + 0.5), 0, 15);
 		vec4 a;
 		vec3 n;
-		float slice = float(id * LOOKS) + look;
+		float slice = float((id == 14 ? 1 : id) * LOOKS) + look;  // old dwarf stone: the stone look, darker (below)
 		triplanar(slice, p, bw, wn, a, n);
 		if (look_mix > 0.01) {  // only where two looks meet: read the next look too
 			vec4 a2;
@@ -226,6 +226,9 @@ void fragment() {
 			triplanar(slice + 1.0, p, bw, wn, a2, n2);
 			a = mix(a, a2, look_mix);
 			n = mix(n, n2, look_mix);
+		}
+		if (id == 14) {
+			a.rgb *= vec3(0.62, 0.6, 0.6);
 		}
 		col += a.rgb * ws[k];
 		emit += GLOW[id] * a.a * ws[k];

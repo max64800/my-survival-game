@@ -354,6 +354,9 @@ func _shoot(aimed: bool) -> void:
 	dwarf.model.attack(0.3, false)
 	Sfx.play("swing", dwarf.global_position + Vector3.UP, -4.0, 1.6)
 	var auth := GameAuthority.instance
+	var thing_id := DungeonBuild.id_of(hit.get("collider"))
+	if thing_id >= 0 and DungeonBuild.instance:  # a bolt brings a dungeon stalactite down (decisions round 2)
+		DungeonBuild.instance.ask_hit(thing_id, true)
 	if auth and auth.monsters:
 		auth.monsters.ask_shoot(b, aimed, uid, from, point)
 		var friend = hit.get("collider")
