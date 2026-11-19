@@ -1,0 +1,281 @@
+<title>Dwarf Crafting Book</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@500;700&family=Alegreya+Sans:wght@400;500;700&display=swap">
+<style>
+/* Layout: a miner's ledger. Search + filters on top, guide cards, then one long recipe table; tap anything to open its page. */
+:root {
+  --bg: #e9ebe8;        /* pale cave stone */
+  --panel: #f6f7f4;
+  --line: #c9cdc6;
+  --fg: #23271f;
+  --muted: #5f6659;
+  --copper: #a4532a;    /* the game's copper */
+  --copper-soft: #f0dccf;
+  --moss: #4d6b34;
+  --slot: #d9dcd4;
+  --shadow: 0 10px 30px rgba(30, 35, 25, .18);
+  --display: "Alegreya SC", Georgia, serif;
+  --body: "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #16181a; --panel: #202326; --line: #34383c; --fg: #e6e2d8; --muted: #a39f94;
+  --copper: #e08b55; --copper-soft: #3a2619; --moss: #9cc27a; --slot: #2b2f33; --shadow: 0 10px 30px rgba(0,0,0,.5);
+  color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #16181a; --panel: #202326; --line: #34383c; --fg: #e6e2d8; --muted: #a39f94;
+  --copper: #e08b55; --copper-soft: #3a2619; --moss: #9cc27a; --slot: #2b2f33; --shadow: 0 10px 30px rgba(0,0,0,.5);
+  color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 48px }
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 28px }
+h1, h2, h3 { font-family: var(--display); font-weight: 700; text-wrap: balance; margin: 0; letter-spacing: .01em }
+h1 { font-size: clamp(30px, 5vw, 46px); color: var(--copper) }
+h2 { font-size: 24px }
+header { padding-top: 28px; display: grid; gap: 10px }
+header p { margin: 0; color: var(--muted); max-width: 62ch }
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 12px; display: grid; gap: 10px; border-bottom: 1px solid var(--line) }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg) }
+#q { width: 100%; font: inherit; font-size: 17px; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--fg) }
+#q:focus-visible, button:focus-visible, .ilink:focus-visible { outline: 2px solid var(--copper); outline-offset: 2px }
+.chips { display: flex; flex-wrap: wrap; gap: 6px }
+.chip { font: inherit; font-size: 14px; padding: 5px 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--fg); cursor: pointer }
+.chip[aria-pressed="true"] { background: var(--copper); border-color: var(--copper); color: #fff }
+.chips .lbl { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); align-self: center; margin-right: 4px }
+
+.guides { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px }
+.guide { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 10px; align-content: start; min-width: 0 }
+.guide h3 { font-size: 19px; color: var(--copper) }
+.guide ol { margin: 0; padding-left: 20px; display: grid; gap: 8px }
+.guide li { padding-left: 2px }
+.guide li .icons { display: inline-flex; gap: 3px; vertical-align: middle; margin-left: 4px }
+
+.tablebox { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 12px }
+table { border-collapse: collapse; width: 100%; min-width: 720px }
+th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 700; padding: 10px 12px; border-bottom: 1px solid var(--line); background: var(--panel); position: sticky; top: 0 }
+td { padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: middle }
+tr:last-child td { border-bottom: 0 }
+tbody tr:hover { background: var(--copper-soft) }
+.count { color: var(--muted); font-variant-numeric: tabular-nums }
+.made { display: flex; align-items: center; gap: 10px; min-width: 210px }
+.made b { font-weight: 700 }
+.needs { display: flex; flex-wrap: wrap; gap: 6px 10px }
+.need { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap }
+.station { white-space: nowrap }
+.small { font-size: 14px; color: var(--muted) }
+.lvl { display: inline-block; font-size: 12px; padding: 1px 7px; border-radius: 999px; background: var(--copper-soft); color: var(--copper); margin-left: 4px; font-weight: 700 }
+
+.ico { width: 34px; height: 34px; border-radius: 7px; background: var(--slot); display: inline-grid; place-items: center; flex: none; overflow: hidden }
+.ico img { width: 100%; height: 100%; display: block }
+.ico.big { width: 84px; height: 84px; border-radius: 12px }
+.ico.sm { width: 24px; height: 24px; border-radius: 5px }
+.ico .lt { font: 700 12px var(--body); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.5) }
+.ilink { background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; text-align: left; border-radius: 6px }
+.ilink:hover .nm { text-decoration: underline; text-decoration-color: var(--copper) }
+.empty { padding: 28px; text-align: center; color: var(--muted) }
+
+/* item page */
+#shade { position: fixed; inset: 0; background: rgba(10, 12, 10, .45); z-index: 20 }
+#page { position: fixed; z-index: 21; top: 0; right: 0; bottom: 0; width: min(560px, 100%); background: var(--panel); box-shadow: var(--shadow); overflow-y: auto;
+  padding: calc(18px + env(safe-area-inset-top, 0px)) max(20px, env(safe-area-inset-right, 0px)) calc(28px + env(safe-area-inset-bottom, 0px)) 20px; display: grid; gap: 18px; align-content: start }
+#page .top { display: flex; gap: 14px; align-items: center }
+#page .top h2 { font-size: 26px }
+#close { margin-left: auto; font: inherit; font-size: 22px; line-height: 1; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); cursor: pointer; align-self: flex-start }
+.sec { display: grid; gap: 8px }
+.sec h3 { font-size: 17px; color: var(--moss) }
+.stats { display: flex; flex-wrap: wrap; gap: 6px }
+.stat { font-size: 14px; padding: 3px 9px; border-radius: 6px; background: var(--bg); border: 1px solid var(--line) }
+.tree, .tree ul { list-style: none; margin: 0; padding: 0 }
+.tree ul { margin-left: 13px; padding-left: 14px; border-left: 2px solid var(--line) }
+.tree li { padding: 5px 0 }
+.how { display: grid; gap: 4px }
+.where { font-size: 15px; color: var(--muted); padding-left: 2px }
+.where b { color: var(--fg); font-weight: 500 }
+.recipe { background: var(--bg); border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; display: grid; gap: 6px }
+.or { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 2px 0 }
+@media (prefers-reduced-motion: no-preference) { #page { animation: slide .18s ease-out } @keyframes slide { from { transform: translateX(24px); opacity: .6 } } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Dwarf Crafting Book</h1>
+    <p>Everything you can make, what it needs, and where to make it. Tap any item to see how to get it, step by step, all the way back to the rock, roots and creatures it comes from.</p>
+  </header>
+
+  <section class="sec" aria-labelledby="g-h">
+    <h2 id="g-h">Where to start</h2>
+    <div class="guides" id="guides"></div>
+  </section>
+
+  <section class="sec" aria-labelledby="t-h">
+    <h2 id="t-h">Every recipe</h2>
+    <div class="bar">
+      <input id="q" type="search" placeholder="Search: copper, leather, stew, pickaxe…" autocomplete="off" aria-label="Search recipes">
+      <div class="chips" id="cats"></div>
+      <div class="chips" id="stations"></div>
+    </div>
+    <div class="tablebox">
+      <table>
+        <thead><tr><th>You make</th><th>You need</th><th>Made at</th><th>When it shows up</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div class="empty" id="none" hidden>Nothing matches. Try another word.</div>
+    </div>
+    <p class="small" id="total"></p>
+  </section>
+</div>
+
+<div id="shade" hidden></div>
+<aside id="page" hidden aria-modal="true" role="dialog" aria-labelledby="p-name"></aside>
+
+<script>
+const D = /*__DATA__*/null;
+const I = D.items, R = D.recipes, HAND = D.hand;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const name = id => (I[id] && I[id].name) || id.replace(/_/g, " ");
+const byOut = {};
+R.forEach(r => (byOut[r.output] = byOut[r.output] || []).push(r));
+const usedIn = {};
+R.forEach(r => Object.keys(r.inputs).forEach(i => (usedIn[i] = usedIn[i] || []).push(r)));
+const LEVEL_NOTE = {workbench: {2: "a Chopping Block within 4 m", 3: "a Tool Rack within 4 m", 4: "a Carpenter's Vise within 4 m"}};
+
+const CATS = [
+  ["all", "Everything"], ["tools", "Tools"], ["weapons", "Weapons"], ["armour", "Armour"], ["food", "Food & drink"],
+  ["stations", "Stations & storage"], ["materials", "Materials"], ["other", "Other"]];
+function cat(id) {
+  const k = (I[id] && I[id].kind) || "";
+  if (["pickaxe", "axe", "hammer", "shovel", "lantern", "horn", "lens", "throw", "pack"].includes(k)) return "tools";
+  if (["weapon", "ammo", "shield"].includes(k)) return "weapons";
+  if (k === "wear") return "armour";
+  if (["food", "drink", "tonic", "waterskin"].includes(k)) return "food";
+  if (["station", "chest"].includes(k)) return "stations";
+  if (["material", "fuel", "seed"].includes(k)) return "materials";
+  return "other";
+}
+const stationName = s => s === HAND ? "By hand" : name(s);
+
+function ico(id, size) {
+  const it = I[id] || {};
+  const pic = D.icons[id];
+  const cls = "ico" + (size ? " " + size : "");
+  if (pic) return `<span class="${cls}"><img src="${pic}" alt="" loading="lazy"></span>`;
+  return `<span class="${cls}" style="background:#${it.color || "888"}"><span class="lt">${esc(it.short || "?")}</span></span>`;
+}
+const link = (id, size, label) => `<button class="ilink" data-item="${esc(id)}">${ico(id, size)}<span class="nm">${esc(label || name(id))}</span></button>`;
+function station(r) {
+  let s = r.station === HAND ? "By hand" : link(r.station, "sm");
+  if (r.level > 1) s += `<span class="lvl" title="needs ${esc((LEVEL_NOTE[r.station] || {})[r.level] || "a higher level")}">level ${r.level}</span>`;
+  if (r.seconds) s += ` <span class="small">${r.seconds} s</span>`;
+  return s;
+}
+const needs = r => Object.entries(r.inputs).map(([i, n]) => `<span class="need">${link(i, "sm")}<span class="count">×${n}</span></span>`).join("");
+
+/* guides: plain steps that point at the items they use */
+const GUIDES = [
+  {t: "Your first base", s: [
+    ["Pull thin hanging roots for Rootwood and pick up loose stones.", ["rootwood", "stone"]],
+    ["By hand: a Stone Pickaxe (3 stone, 2 rootwood).", ["pickaxe_stone"]],
+    ["By hand: a Workbench (10 rootwood, 6 stone) and a Campfire.", ["workbench", "campfire"]],
+    ["Workbench: Root Planks and a Chopping Block. Put the block within 4 m of the workbench to make it level 2.", ["plank_root", "chopping_block"]]]},
+  {t: "Leather and leather armour", s: [
+    ["Hunt Cave Bats. They drop Wing Leather (and sometimes Bat Fangs).", ["wing_leather", "bat_fang"]],
+    ["Rope: 3 fiber by hand, or 2 spider silk.", ["rope", "spider_silk"]],
+    ["Workbench: a Tanning Rack (6 root planks, 4 rope).", ["tanning_rack"]],
+    ["Put wing leather on the rack. After 40 s each piece is 1 Leather.", ["leather"]],
+    ["Workbench: Leather Cap, Tunic, Trousers, Boots and a Satchel.", ["cap_leather", "tunic_leather", "trousers_leather", "boots_leather"]]]},
+  {t: "Copper bars", s: [
+    ["Workbench level 2: a Fang Pickaxe (stone pickaxe, 4 bat fangs, 1 leather). It can mine copper.", ["pickaxe_fang"]],
+    ["Mine Copper Ore deep down in the Copper Deeps (far, low caverns).", ["copper_ore"]],
+    ["Workbench: a Smelter (20 stone, 15 clay). Clay comes from the reddish patches.", ["smelter", "clay"]],
+    ["Smelter: 2 copper ore become 1 Copper Bar in 20 s. Feed it wood or crystals as fuel.", ["copper_ingot"]],
+    ["Also: 3 Rusty Scrap from ruin chests make 1 bar.", ["rusty_scrap"]]]},
+  {t: "Copper gear", s: [
+    ["Workbench: an Anvil (10 stone, 6 copper bars).", ["anvil"]],
+    ["Explore ruins and camps. Their chests hold recipe pages. Read one to learn a recipe nobody knew yet.", ["armour_page", "weapon_page"]],
+    ["Anvil: Copper Helm, Mail, Greaves, Boots and Shield, plus copper weapons.", ["helm_copper", "mail_copper", "greaves_copper", "boots_copper", "shield_copper"]],
+    ["Copper Pickaxe: chop a Root Tree until it cracks for Heartwood, then the Anvil (8 copper bars, 4 planks, 2 leather, 1 heartwood).", ["heartwood", "pickaxe_copper"]]]},
+];
+document.getElementById("guides").innerHTML = GUIDES.map(g => `<article class="guide"><h3>${esc(g.t)}</h3><ol>${
+  g.s.map(([txt, ids]) => `<li>${esc(txt)} <span class="icons">${ids.filter(i => I[i]).map(i => `<button class="ilink" data-item="${i}" title="${esc(name(i))}">${ico(i, "sm")}</button>`).join("")}</span></li>`).join("")
+}</ol></article>`).join("");
+
+/* filters */
+let fCat = "all", fSt = "all";
+const stations = ["all", HAND, ...[...new Set(R.map(r => r.station))].filter(s => s !== HAND).sort((a, b) => name(a).localeCompare(name(b)))];
+function chips(el, list, cur, label, onpick) {
+  el.innerHTML = `<span class="lbl">${label}</span>` + list.map(([k, v]) => `<button class="chip" data-k="${esc(k)}" aria-pressed="${k === cur}">${esc(v)}</button>`).join("");
+  el.onclick = e => { const b = e.target.closest(".chip"); if (b) onpick(b.dataset.k); };
+}
+function drawChips() {
+  chips(document.getElementById("cats"), CATS, fCat, "Kind", k => { fCat = k; drawChips(); draw(); });
+  chips(document.getElementById("stations"), stations.map(s => [s, s === "all" ? "Anywhere" : stationName(s)]), fSt, "Made at", k => { fSt = k; drawChips(); draw(); });
+}
+function draw() {
+  const q = document.getElementById("q").value.trim().toLowerCase();
+  const list = R.filter(r => (fCat === "all" || cat(r.output) === fCat) && (fSt === "all" || r.station === fSt) &&
+    (!q || [r.output, ...Object.keys(r.inputs)].some(i => name(i).toLowerCase().includes(q)) || stationName(r.station).toLowerCase().includes(q)))
+    .sort((a, b) => name(a.output).localeCompare(name(b.output)));
+  document.getElementById("rows").innerHTML = list.map(r => `<tr>
+    <td><div class="made">${link(r.output)}${r.count > 1 ? `<span class="count">×${r.count}</span>` : ""}</div></td>
+    <td><div class="needs">${needs(r)}</div></td>
+    <td class="station">${station(r)}</td>
+    <td class="small">${esc(r.unlock || "known from the start")}</td></tr>`).join("");
+  document.getElementById("none").hidden = list.length > 0;
+  document.getElementById("total").textContent = `${list.length} of ${R.length} recipes shown.`;
+}
+
+/* "how to get it": follow each item back to where it comes from */
+function where(id) {
+  const out = [];
+  if (D.gather[id]) out.push(esc(D.gather[id]));
+  if (D.drops[id]) out.push("dropped by " + D.drops[id].map(esc).join(", "));
+  return out;
+}
+function how(id, depth, seen) {
+  const parts = [];
+  const w = where(id);
+  if (w.length) parts.push(`<div class="where"><b>Find it:</b> ${w.join("; ")}</div>`);
+  const rs = (byOut[id] || []);
+  if (rs.length && depth < 6 && !seen.has(id)) {
+    const s2 = new Set(seen); s2.add(id);
+    rs.forEach((r, n) => {
+      if (n) parts.push(`<div class="or">or</div>`);
+      const st = r.station === HAND ? "By hand" : `At a ${link(r.station, "sm")}`;
+      parts.push(`<div class="recipe"><div class="small">${st}${r.level > 1 ? ` <span class="lvl">level ${r.level}</span> <span class="small">(needs ${esc((LEVEL_NOTE[r.station] || {})[r.level] || "a higher level")})</span>` : ""}${r.seconds ? `, takes ${r.seconds} s` : ""}${r.count > 1 ? `, makes ${r.count}` : ""}${r.unlock ? `. <i>Shows up ${esc(r.unlock.replace(/^shows up /, ""))}</i>` : ""}</div>
+        <ul class="tree">${Object.entries(r.inputs).map(([i, c]) => `<li>${link(i, "sm", `${c} × ${name(i)}`)}${how(i, depth + 1, s2)}</li>`).join("")}</ul></div>`);
+    });
+  } else if (!w.length && !rs.length) {
+    parts.push(`<div class="where">Found in chests or by exploring.</div>`);
+  }
+  return parts.length ? `<div class="how">${parts.join("")}</div>` : "";
+}
+const STAT = {armor: "Armour", power: "Power", damage: "Damage", hunger: "Food", thirst: "Drink", heal: "Heals", tier: "Tier", stack: "Stacks to"};
+function openItem(id, push) {
+  if (!I[id]) return;
+  const it = I[id];
+  const stats = Object.entries(STAT).filter(([k]) => it[k] !== undefined && it[k] !== 0 && it[k] !== false).map(([k, v]) => `<span class="stat">${v}: ${esc(it[k])}</span>`).join("");
+  const uses = (usedIn[id] || []).sort((a, b) => name(a.output).localeCompare(name(b.output)));
+  const p = document.getElementById("page");
+  p.innerHTML = `<div class="top">${ico(id, "big")}<div><h2 id="p-name">${esc(it.name)}</h2><div class="small">${esc(CATS.find(c => c[0] === cat(id))[1])}</div></div><button id="close" aria-label="Close">×</button></div>
+    ${stats ? `<div class="stats">${stats}</div>` : ""}
+    <section class="sec"><h3>How to get it</h3>${how(id, 0, new Set()) || `<div class="where">Found in chests or by exploring.</div>`}</section>
+    ${uses.length ? `<section class="sec"><h3>Used to make</h3><div class="needs">${uses.map(r => link(r.output, "sm")).join("")}</div></section>` : ""}`;
+  p.hidden = false; document.getElementById("shade").hidden = false;
+  p.scrollTop = 0;
+  document.getElementById("close").onclick = closeItem;
+  document.getElementById("close").focus({preventScroll: true});
+  if (push !== false) history.replaceState(null, "", "#i-" + id.replace(/_/g, "-"));
+}
+function closeItem() {
+  document.getElementById("page").hidden = true; document.getElementById("shade").hidden = true;
+  history.replaceState(null, "", location.pathname + location.search);
+}
+document.addEventListener("click", e => { const b = e.target.closest("[data-item]"); if (b) openItem(b.dataset.item); });
+document.getElementById("shade").onclick = closeItem;
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeItem(); });
+document.getElementById("q").addEventListener("input", draw);
+function fromHash() { const h = location.hash; if (h.startsWith("#i-")) openItem(h.slice(3).replace(/-/g, "_"), false); }
+window.addEventListener("hashchange", fromHash);
+drawChips(); draw(); fromHash();
+</script>

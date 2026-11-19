@@ -5187,3 +5187,12 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   the same. (3) Moving the work on top of the latest version failed at first (leftover generated files in the copy);
   cleaned them and retried. (4) The 5 new items (Heartwood, Tree Moss, Bat Meat, Spider Silk, Moss Bandage) have no
   icons yet (they show a coloured square with letters), so the icon test fails until they get pictures.
+
+## Nov 19: Crafting Book page (every recipe with pictures)
+- **Owner: "make me a small Wikipedia of everything craftable, with pictures, what's needed, and the steps (smelt
+  copper bars first, how to get leather for leather armour)."** New `tools/craft_wiki/`: `dump.gd` exports every
+  item, recipe, creature drop and "where to find it" from the game itself; `build.py` turns it into one page with the
+  item pictures inside (`page.html` is the look). Four step-by-step guides (first base, leather, copper bars, copper
+  gear), a searchable table filtered by kind and station, and a page per item that follows it back to raw materials.
+- Icons for the 5 new items: the browser link to ChatGPT timed out twice, so I wrote the prompt for the owner.
+- **Hurdles:** the game's item kinds didn't match my first category list (hammer, shovel, pack, chest, seed); fixed.
