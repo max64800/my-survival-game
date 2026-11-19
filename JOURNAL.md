@@ -4117,3 +4117,10 @@ the body."
 - Hurdle: the "speed part 2" upload was refused (someone uploaded first) after Claude had already deleted the clean
   copy; the save was found again in git and put on top. Lesson: upload first, then clean up.
 
+- (Nov 19, moss) Root Tree moss rebuilt: round 1 (many small clumps) looked sprinkled and some bits stood off the
+  bark (pushed sideways along a curved surface); round 2 builds each patch from hundreds of tiny bumps sitting on the
+  bark's own surface points. ChatGPT (for a real moss picture) wasn't reachable: the browser connection timed out.
+- (Nov 19, waterfalls) Water seeping from wall cracks down to a pool (CaveWater.plan_falls + waterfall.gdshader).
+  Round 1 read as a thin white line with a hot shine and a black pool; round 2 wider, bluer, softer, with droplets.
+  The test caught 2 falls whose crack point sat just inside rough rock: nudged out or skipped. No sound yet.
+

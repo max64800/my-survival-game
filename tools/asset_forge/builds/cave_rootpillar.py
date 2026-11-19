@@ -111,7 +111,9 @@ def tree_finish(parts, seed, pic=None, moss_patches=20):
 		edge=0.25, grime=0.15, top_light=0.04, seed=1.0, picture=pic or BARK_PIC, picture_scale=3.2, picture_amount=0.97))]  # (big, bold bark)
 	moss = moss_cushions(bark, seed, moss_patches)
 	if moss:
-		out.append((moss, 2500, 1024, lambda nm: cs.paint_material(nm, *MOSS, strokes=0.3, edge=0.2, grime=0.1, top_light=0.12, seed=3.0)))
+		# (round 3) strong light tips and dark gaps between the clumps, so it reads as moss, not green clay
+		out.append((moss, 4500, 1024, lambda nm: cs.paint_material(nm, *MOSS, strokes=0.55, edge=0.65, grime=0.4, top_light=0.18,
+			key=0.35, seed=3.0)))
 	return out
 
 
@@ -127,14 +129,20 @@ def moss_cushions(bark, seed, patches):
 	blobs = []
 	for k in range(patches):
 		co, n = good[r.randrange(len(good))]
-		for j in range(r.randint(8, 16)):  # (round 2: bigger patches)
-			off = Vector((r.uniform(-1, 1), r.uniform(-1, 1), r.uniform(-1, 1)))
-			off -= n * off.dot(n)  # along the surface
-			c = co + off.normalized() * r.uniform(0.0, 0.07) - n * 0.006
-			size = r.uniform(0.018, 0.04)
-			blobs.append(kit.gem(tuple(c), (size, size, size * 0.55), kit.mat("moss"), seed=seed + 700 + k * 10 + j))
-	moss = cs.melt(blobs, voxel=0.003, smooth=4, name="moss")
-	cp.carve(moss, lambda p, n: 0.0015 * noise.noise(p * 140.0), soften=0)  # fuzzy
+		# (round 3, owner Nov 19: "it looks like blobs, no texture"): a carpet hugging the bark: hundreds of tiny bumps
+		# sitting right ON the bark's own surface points round the patch's middle (so nothing floats off it), thicker in
+		# the middle, thinning to single bumps at its ragged edge
+		near = [(c2, n2) for c2, n2 in good if (c2 - co).length < 0.075]
+		r.shuffle(near)
+		for j, (c2, n2) in enumerate(near[:160]):
+			d = (c2 - co).length / 0.075
+			if r.random() < d * d * 0.8:
+				continue  # the ragged edge
+			size = r.uniform(0.006, 0.011) * (1.25 - 0.5 * d)
+			blobs.append(kit.gem(tuple(c2 - n2 * size * 0.35), (size, size, size * 0.8), kit.mat("moss"), seed=seed + 700 + k * 200 + j))
+	moss = cs.melt(blobs, voxel=0.0018, smooth=1, name="moss")
+	# fibrous: lots of tiny bumps and pits (the little leaves), and clumps split by dark gaps
+	cp.carve(moss, lambda p, n: 0.0011 * noise.fractal(p * 420.0, 0.6, 2.1, 3) - 0.0016 * max(0.0, noise.noise(p * 90.0) - 0.25), soften=0)
 	return moss
 
 
