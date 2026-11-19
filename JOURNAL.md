@@ -3734,3 +3734,12 @@ the body."
 - Hurdle: a measuring script couldn't find its camera (the scene wasn't running yet when it started); fixed by waiting
   two frames.
 
+## November 19, 2026 (PC, cave Claude): curtain push, rebuild-a-ruin idea
+
+- Owner asked whether the skills work was pulled: no. It's on GitHub (Claude's saves were built on it), but this folder
+  can't be pulled yet: ~300 lines of dwarf body code, ~36 of dwarf tests, ~320 of journal and bits of HUD/rules here are
+  unsaved work of other sessions (checked line by line against GitHub). Owner: wait until they save.
+- Vines: the owner's two pictures showed it: breaking a strand while standing in a thick curtain bent every strand near
+  the dwarf (the push-aside reached 75 cm and was strong). Now 40 cm and gentle.
+- New to-do from the owner: rebuild ruins to learn them as blueprints (with experience).
+

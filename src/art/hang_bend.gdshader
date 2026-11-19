@@ -6,8 +6,10 @@ shader_type spatial;
 render_mode cull_disabled, world_vertex_coords;
 
 uniform vec4 pushers[4];
-uniform float push_reach = 0.75;  // metres round a dwarf's body
-uniform float push_strength = 0.9;
+// Only the strands a dwarf really touches move, gently (owner, Nov 19: standing at a curtain to break a strand bent the
+// whole patch together: the push reached 75 cm and was strong).
+uniform float push_reach = 0.4;  // metres round a dwarf's body
+uniform float push_strength = 0.35;
 
 void vertex() {
 	vec3 top = MODEL_MATRIX[3].xyz;
@@ -27,7 +29,7 @@ void vertex() {
 		float tall = abs(d.y);
 		d.y = 0.0;
 		float dist = length(d);
-		float k = (1.0 - smoothstep(push_reach * 0.3, push_reach, dist)) * (1.0 - smoothstep(0.9, 1.6, tall));
+		float k = (1.0 - smoothstep(push_reach * 0.4, push_reach, dist)) * (1.0 - smoothstep(0.6, 1.3, tall));
 		vec3 away = dist > 0.01 ? d / dist : vec3(1.0, 0.0, 0.0);
 		off += away * k * push_strength * (0.4 + 0.6 * h);
 	}
