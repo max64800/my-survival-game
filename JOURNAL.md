@@ -5449,3 +5449,14 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - **Found, not mine (other chats' work):** test_authority (physics body limit + squashed-body warnings), test_dwarf
   (hair swing, a missing material), test_item_sources (an item called "rune" nobody can get), test_visuals (the
   shovel has no model yet).
+
+## Nov 19: Rope Ladder, copper armour leather, food plan draft (F425, F426)
+- Rope Ladder: 10 rope + 2 planks makes 1 (was 3 rope for 4). Copper Helm, Mail, Greaves, Boots: 10 leather each.
+- Food (F426, plan only): the owner wants every food and drink to do something, split into food and drinks, with
+  harder cooking giving stronger effects. Drafted `tools/craft_wiki/food_plan.json`: 5 kitchen steps (campfire,
+  campfire + Roasting Spit, pot, pot + Spice Shelf, pot + Spice Shelf + Stone Oven), each meat guards against its
+  own creature, drinks mostly slow down thirst. The Crafting Book now has a "Food & drink" section showing today's
+  effects next to the plan, and separate Food / Drinks filters. Nothing changed in the game's food yet.
+- Found: Deep Stout has no recipe, so nobody can make it (in the plan's questions).
+- **Hurdles:** the effect lists showed "+ +20%" (a bullet sign plus the number's own +); bullet changed to a dot.
+  Also fixed an old guide line in the book (Copper Pickaxe said 8 bars; it's 15).

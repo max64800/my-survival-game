@@ -94,6 +94,17 @@ tbody tr:hover { background: var(--copper-soft) }
 .where b { color: var(--fg); font-weight: 500 }
 .recipe { background: var(--bg); border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; display: grid; gap: 6px }
 .or { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 2px 0 }
+.draft { background: var(--copper-soft); border: 1px dashed var(--copper); border-radius: 10px; padding: 10px 14px; color: var(--fg) }
+.draft b { color: var(--copper) }
+.rules { margin: 0; padding-left: 20px; display: grid; gap: 4px }
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px }
+.step { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: grid; gap: 2px }
+.step .num { font-family: var(--display); font-size: 20px; color: var(--copper) }
+.fx { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; font-size: 15px }
+.fx li::before { content: "• "; color: var(--moss); font-weight: 700 }
+.fx.old { color: var(--muted); font-size: 14px }
+.fx.old li::before { content: "· "; color: var(--muted) }
+.note { font-size: 14px; color: var(--copper) }
 @media (prefers-reduced-motion: no-preference) { #page { animation: slide .18s ease-out } @keyframes slide { from { transform: translateX(24px); opacity: .6 } } }
 </style>
 
@@ -106,6 +117,11 @@ tbody tr:hover { background: var(--copper-soft) }
   <section class="sec" aria-labelledby="g-h">
     <h2 id="g-h">Where to start</h2>
     <div class="guides" id="guides"></div>
+  </section>
+
+  <section class="sec" aria-labelledby="f-h" id="food-sec" hidden>
+    <h2 id="f-h">Food &amp; drink</h2>
+    <div id="food"></div>
   </section>
 
   <section class="sec" aria-labelledby="t-h">
@@ -141,14 +157,15 @@ R.forEach(r => Object.keys(r.inputs).forEach(i => (usedIn[i] = usedIn[i] || []).
 const LEVEL_NOTE = {workbench: {2: "a Chopping Block within 4 m", 3: "a Tool Rack within 4 m", 4: "a Carpenter's Vise within 4 m"}};
 
 const CATS = [
-  ["all", "Everything"], ["tools", "Tools"], ["weapons", "Weapons"], ["armour", "Armour"], ["food", "Food & drink"],
+  ["all", "Everything"], ["tools", "Tools"], ["weapons", "Weapons"], ["armour", "Armour"], ["food", "Food"], ["drinks", "Drinks"],
   ["stations", "Stations & storage"], ["materials", "Materials"], ["other", "Other"]];
 function cat(id) {
   const k = (I[id] && I[id].kind) || "";
   if (["pickaxe", "axe", "hammer", "shovel", "lantern", "horn", "lens", "throw", "pack"].includes(k)) return "tools";
   if (["weapon", "ammo", "shield"].includes(k)) return "weapons";
   if (k === "wear") return "armour";
-  if (["food", "drink", "tonic", "waterskin"].includes(k)) return "food";
+  if (["drink", "waterskin"].includes(k)) return "drinks";
+  if (k === "food") return "food";
   if (["station", "chest"].includes(k)) return "stations";
   if (["material", "fuel", "seed"].includes(k)) return "materials";
   return "other";
@@ -196,8 +213,8 @@ const GUIDES = [
   {t: "Copper gear (it takes a while)", s: [
     ["Workbench: an Anvil (10 stone, 30 copper bars).", ["anvil"]],
     ["Explore ruins and camps. Their chests hold recipe pages. Read one to learn a recipe nobody knew yet.", ["armour_page", "weapon_page"]],
-    ["Anvil: each copper armour piece and each copper weapon takes 30 copper bars (60 copper ore, 30 coal).", ["helm_copper", "mail_copper", "greaves_copper", "boots_copper", "shield_copper", "sword_copper"]],
-    ["Copper Pickaxe: chop a Root Tree until it cracks for Heartwood, then the Anvil (8 copper bars, 4 planks, 2 leather, 1 heartwood).", ["heartwood", "pickaxe_copper"]]]},
+    ["Anvil: each copper armour piece and each copper weapon takes 30 copper bars (60 copper ore, 30 coal). Each armour piece also needs 10 leather.", ["helm_copper", "mail_copper", "greaves_copper", "boots_copper", "shield_copper", "sword_copper"]],
+    ["Copper Pickaxe: chop a Root Tree until it cracks for Heartwood, then the Anvil (15 copper bars, 4 planks, 2 leather, 1 heartwood).", ["heartwood", "pickaxe_copper"]]]},
 ];
 document.getElementById("guides").innerHTML = GUIDES.map(g => `<article class="guide"><h3>${esc(g.t)}</h3><ol>${
   g.s.map(([txt, ids]) => `<li>${esc(txt)} <span class="icons">${ids.filter(i => I[i]).map(i => `<button class="ilink" data-item="${i}" title="${esc(name(i))}">${ico(i, "sm")}</button>`).join("")}</span></li>`).join("")
@@ -226,6 +243,55 @@ function draw() {
     <td class="small">${esc(r.unlock || "known from the start")}</td></tr>`).join("");
   document.getElementById("none").hidden = list.length > 0;
   document.getElementById("total").textContent = `${list.length} of ${R.length} recipes shown.`;
+}
+
+/* food & drink: what each one does now, and the draft plan */
+const FP = D.food_plan, FOODS = D.foods || {};
+function fxText(key, v) {
+  const t = (FP && FP.effects[key]) || key.replace(/_/g, " ") + " {p}%";
+  return t.replace("{p}", Math.abs(v)).replace("{n}", Math.abs(v));
+}
+const nowFx = id => Object.entries((FOODS[id] || {}).buff || {}).map(([k, v]) => fxText(k, Math.round(v * 100)));
+const planOf = id => FP && ((FP.dishes || {})[id] || (FP.drinks || {})[id]);
+const stepOf = n => FP && FP.kitchen.find(k => k.step === n);
+function planCook(id) {
+  const p = planOf(id); if (!p) return "";
+  if (!p.step) return esc(p.at_note || "by hand");
+  const k = stepOf(p.step);
+  return `${link(k.at, "sm")}${k.level > 1 ? `<span class="lvl">level ${k.level}</span>` : ""} <span class="small">step ${p.step}</span>`;
+}
+const planMinutes = id => { const p = planOf(id); return p ? (p.minutes || (stepOf(p.step) || {}).minutes || 0) : 0; };
+const ul = (list, cls) => list.length ? `<ul class="fx ${cls || ""}">${list.map(t => `<li>${esc(t)}</li>`).join("")}</ul>` : `<span class="small">nothing</span>`;
+function foodRows(ids, fill) {
+  return ids.map(id => {
+    const p = planOf(id), it = I[id] || {};
+    const r = (byOut[id] || [])[0];
+    return `<tr><td><div class="made">${link(id)}</div></td>
+      <td><div class="needs">${r ? needs(r) : `<span class="small">no recipe yet</span>`}</div></td>
+      <td class="station">${planCook(id)}</td>
+      <td class="count">${it[fill] || 0}</td>
+      <td>${ul(Object.entries(p.effects).map(([k, v]) => fxText(k, v)))}${p.note ? `<div class="note">${esc(p.note)}</div>` : ""}</td>
+      <td class="count">${planMinutes(id)} min</td>
+      <td>${ul(nowFx(id), "old")}${FOODS[id] && FOODS[id].minutes ? `<div class="small">${FOODS[id].minutes} min</div>` : ""}</td></tr>`;
+  }).join("");
+}
+function foodTable(title, ids, fill, fillName) {
+  ids.sort((a, b) => (planOf(a).step - planOf(b).step) || name(a).localeCompare(name(b)));
+  return `<h3>${esc(title)}</h3><div class="tablebox"><table><thead><tr><th>${esc(title)}</th><th>You need</th><th>Cook at (plan)</th><th>${fillName}</th><th>Gives (plan)</th><th>Lasts</th><th>Gives today</th></tr></thead>
+    <tbody>${foodRows(ids, fill)}</tbody></table></div>`;
+}
+if (FP) {
+  const el = document.getElementById("food");
+  document.getElementById("food-sec").hidden = false;
+  el.innerHTML = `<div class="sec">
+    <p class="draft"><b>Draft plan.</b> ${esc(FP.status)} The "Gives today" column is what the game does right now.</p>
+    <ul class="rules">${FP.rules.map(t => `<li>${esc(t)}</li>`).join("")}</ul>
+    <h3>The 5 kitchen steps</h3>
+    <div class="steps">${FP.kitchen.map(k => `<div class="step"><span class="num">Step ${k.step}</span><b>${esc(k.name)}</b><span class="small">needs ${esc(k.needs)}</span><span class="small">effects last ${k.minutes} min</span></div>`).join("")}</div>
+    ${foodTable("Food", Object.keys(FP.dishes).filter(i => I[i]), "hunger", "Fills food")}
+    ${foodTable("Drinks", Object.keys(FP.drinks).filter(i => I[i]), "thirst", "Fills water")}
+    <h3>Questions for you</h3>
+    <ol class="rules">${FP.questions.map(t => `<li>${esc(t)}</li>`).join("")}</ol></div>`;
 }
 
 /* "how to get it": follow each item back to where it comes from */
@@ -262,6 +328,8 @@ function openItem(id, push) {
   const p = document.getElementById("page");
   p.innerHTML = `<div class="top">${ico(id, "big")}<div><h2 id="p-name">${esc(it.name)}</h2><div class="small">${esc(CATS.find(c => c[0] === cat(id))[1])}</div></div><button id="close" aria-label="Close">×</button></div>
     ${stats ? `<div class="stats">${stats}</div>` : ""}
+    ${planOf(id) ? `<section class="sec"><h3>What it gives</h3><div class="small">Today${FOODS[id] && FOODS[id].minutes ? ` (${FOODS[id].minutes} min)` : ""}:</div>${ul(nowFx(id), "old")}
+      <div class="small">Draft plan (${planMinutes(id)} min, cooked at step ${planOf(id).step || "0: by hand"}):</div>${ul(Object.entries(planOf(id).effects).map(([k, v]) => fxText(k, v)))}</section>` : ""}
     <section class="sec"><h3>How to get it</h3>${how(id, 0, new Set()) || `<div class="where">Found in chests or by exploring.</div>`}</section>
     ${uses.length ? `<section class="sec"><h3>Used to make</h3><div class="needs">${uses.map(r => link(r.output, "sm")).join("")}</div></section>` : ""}`;
   p.hidden = false; document.getElementById("shade").hidden = false;

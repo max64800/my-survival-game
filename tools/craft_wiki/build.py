@@ -32,6 +32,8 @@ def main():
         if d:
             icons[item_id] = d
     data["icons"] = icons
+    plan = HERE / "food_plan.json"  # the draft food plan (shown until it's built into the game)
+    data["food_plan"] = json.loads(plan.read_text(encoding="utf-8")) if plan.exists() else None
     template = (HERE / "page.html").read_text(encoding="utf-8")
     blob = json.dumps(data, separators=(",", ":"), ensure_ascii=False).replace("</", "<\\/")
     Path(sys.argv[2]).write_text(template.replace("/*__DATA__*/null", blob), encoding="utf-8")

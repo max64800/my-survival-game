@@ -71,10 +71,10 @@ const LIST := {
 	# --- anvil
 	# Copper gear is found, not known (owner, Nov 19): each piece needs its own Old Recipe Page. The Copper
 	# Pickaxe needs Root Tree Heartwood (owner, Nov 19: it came from the Keeper boss before).
-	"helm_copper": {station = "anvil", inputs = {copper_ingot = 30, leather = 1}, output = "helm_copper", count = 1, unlock = "ruin"},
-	"mail_copper": {station = "anvil", inputs = {copper_ingot = 30, leather = 2}, output = "mail_copper", count = 1, unlock = "ruin"},
-	"greaves_copper": {station = "anvil", inputs = {copper_ingot = 30, leather = 1}, output = "greaves_copper", count = 1, unlock = "ruin"},
-	"boots_copper": {station = "anvil", inputs = {copper_ingot = 30, leather = 1}, output = "boots_copper", count = 1, unlock = "ruin"},
+	"helm_copper": {station = "anvil", inputs = {copper_ingot = 30, leather = 10}, output = "helm_copper", count = 1, unlock = "ruin"},
+	"mail_copper": {station = "anvil", inputs = {copper_ingot = 30, leather = 10}, output = "mail_copper", count = 1, unlock = "ruin"},
+	"greaves_copper": {station = "anvil", inputs = {copper_ingot = 30, leather = 10}, output = "greaves_copper", count = 1, unlock = "ruin"},
+	"boots_copper": {station = "anvil", inputs = {copper_ingot = 30, leather = 10}, output = "boots_copper", count = 1, unlock = "ruin"},
 	"axe_copper": {station = "anvil", inputs = {copper_ingot = 15, plank_root = 3, leather = 1}, output = "axe_copper", count = 1, unlock = "ruin"},
 	"pickaxe_copper": {station = "anvil", inputs = {copper_ingot = 15, plank_root = 4, leather = 2, heartwood = 1}, output = "pickaxe_copper", count = 1, unlock = ["heartwood"]},
 	"axe_silver": {station = "anvil", inputs = {silver_ingot = 6, plank_mushroom = 3, chitin_plate = 2}, output = "axe_silver", count = 1, unlock = ["silver_ingot"]},
@@ -111,7 +111,7 @@ const LIST := {
 	"bolt_glow": {station = "workbench", inputs = {plank_root = 1, crystal_blue = 1}, output = "bolt_glow", count = 10, unlock = ["rope"]},
 	# Taught by runes (progression doc 8). unlock = "rune": you learn it by carving the rune.
 	"crystal_sconce": {station = "workbench", inputs = {stone = 4, crystal_blue = 2}, output = "crystal_sconce", count = 1, unlock = "rune"},
-	"rope_ladder": {station = "workbench", inputs = {rope = 3, plank_root = 2}, output = "rope_ladder", count = 4, unlock = "rune"},
+	"rope_ladder": {station = "workbench", inputs = {rope = 10, plank_root = 2}, output = "rope_ladder", count = 1, unlock = "rune"},
 	"blasting_pod": {station = "workbench", inputs = {glow_gland = 1, crystal_red = 1, clay = 2}, output = "blasting_pod", count = 2, unlock = "rune"},
 	"glow_marker": {station = "workbench", inputs = {plank_mushroom = 2, crystal_amber = 1}, output = "glow_marker", count = 3, unlock = "rune"},
 	"prospectors_lens": {station = "anvil", inputs = {silver_ingot = 1, crystal_white = 1, bat_fang = 1}, output = "prospectors_lens", count = 1, unlock = "rune"},

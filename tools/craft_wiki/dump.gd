@@ -41,8 +41,12 @@ func _init() -> void:
 	var gather := {}
 	for i in Recipes.GATHER:
 		gather[i] = Recipes.GATHER[i]
+	var foods := {}  # today's food effects (for the Food & drink section)
+	for id in Foods.DISHES:
+		var d: Dictionary = Foods.DISHES[id]
+		foods[id] = {minutes = d.get("minutes", 0), buff = d.get("buff", {}), drink = d.get("drink", false)}
 	var f := FileAccess.open(out, FileAccess.WRITE)
-	f.store_string(JSON.stringify({items = items, recipes = recipes, drops = drops, gather = gather, hand = Recipes.HAND}))
+	f.store_string(JSON.stringify({items = items, recipes = recipes, drops = drops, gather = gather, hand = Recipes.HAND, foods = foods}))
 	f.close()
 	print("wrote ", out, ": ", items.size(), " items, ", recipes.size(), " recipes")
 	quit()
