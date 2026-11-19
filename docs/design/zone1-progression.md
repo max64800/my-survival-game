@@ -14,11 +14,17 @@ you trip over in the first cave. This page replaces anything older that disagree
    give the Cozy rest buff). The tower's chests hold a **rune memory** that points to the **first of the 3 wall
    markings**: the tower starts the trail to the boss.
 3. **Workbench level 2** (Chopping Block next to it) → **Fang Pickaxe** (Stone Pickaxe + 4 bat fangs + 1 leather).
-   You have to hunt bats and tan a hide. Stone buildings need a Mason's Table.
+   You have to hunt bats and tan a hide. **Every cave has a roost of 4-6 sleeping bats, the first cave too**
+   (owner, Nov 19). They wake when you come close or shoot one, and the whole roost wakes together. One kind per cave
+   (plain, Ember, Rime, ...), the same every visit; the first cave's are plain. The crossbow's right-click zooms in
+   so you can pick them off the ceiling. The first cave also has 3-4 gentle rock snails (tamable later). Stone buildings need a Mason's Table.
 4. **The Copper Deeps**: one or two far, low, dark caverns in Mossy Hollows, guarded by tougher beetles.
    The only copper veins in Zone 1, and **only the Fang Pickaxe (or better) can mine them**. The stone pickaxe
    bounces off: "Copper is too hard for stone. Make a Fang Pickaxe (Workbench level 2)."
-5. **Copper**: Smelter → copper ingots → Anvil, copper tools (**Copper Pickaxe from copper only, no boss item**), Cooking Pot, Gem Bench. Workbench level 3 (copper-free
+5. **Copper**: Smelter → copper ingots → Anvil, copper tools (**Copper Pickaxe from copper only, no boss item**). **Every other copper weapon, tool and armor
+   piece needs its own Old Recipe Page** from ruins and camps (owner, Nov 19): find the spear page but want the
+   mace, keep searching. The Copper Pickaxe is known from your first ingot, so the boss is never down to luck.
+   The Kiln turns wood into coal for the Smelter. A comfier base and cooked food give stronger buffs. Cooking Pot, Gem Bench. Workbench level 3 (copper-free
    Tool Rack: planks + rope), level 4 (Carpenter's Vise: needs copper). Brick needs a level-2 Mason's Table.
 6. **The boss, Orrumhal**: find the 3 wall markings that point to its lair. The lair is **sealed with hard stone
    that only copper tools can break** (owner, Nov 19): the Fang Pickaxe bounces off. Inside, summon it with an offering of

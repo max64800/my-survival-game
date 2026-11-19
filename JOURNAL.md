@@ -3700,6 +3700,19 @@ the body."
   background. `tools/art/cut_perk_icons.py` cuts the sheets into 44 pictures (assets/icons/perks/). The skills window
   shows a picture on every perk card and the hall behind it (darkened). Tests: every perk has a picture; the window builds.
   Hurdle: one browser wait timed out while ChatGPT drew; waiting in shorter steps fixed it. Not looked at in a real game window.
+
+## November 19, 2026 (Mac, later): bats in every cave, copper gear from recipe pages
+- Owner's loop: fix the tower → hunt bats → Fang Pickaxe → copper → kiln coal + smelter → better gear, comfier base,
+  cooked food, and hunt recipe pages for copper gear.
+- Built: every cave (the first one too) has a roost of 4-6 sleeping bats hanging from the ceiling, one kind per cave
+  (plain, Ember, Rime, Amber, Shift), the same every visit. The first cave has plain bats and 3-4 rock snails.
+  Bats no longer come in normal monster packs. The crossbow's right-click zoom is stronger (72 → 32).
+- Copper gear (12 recipes) is now learned only from Old Recipe Pages, one recipe per page. The Copper Pickaxe still
+  unlocks with your first copper ingot, so the boss is never blocked by bad luck.
+- Already in the game, nothing new needed: kiln wood → coal, Comfort rest buff, cooked food buffs, bats waking
+  together when one is hit.
+- Hurdle: an old test said "no monsters in the first cave" (F154). The owner's new rule replaces it; test updated.
+- Hurdle: Godot on this Mac lives in ~/Applications, not /Applications.
 - Same day: branch names picked: Bones (toughness), Fists (fighting), Hands (utility), Heart (together); only the
   shown names changed, ids stay. Skills-window mock-up page (skills left, tree middle on the carved hall with the
   Level circle in the carved ring, details right): claude.ai/artifact/MBTFW9LdXc4mA3jNNpvYWR. Hurdle: another session

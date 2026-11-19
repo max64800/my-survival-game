@@ -296,12 +296,16 @@ func test_spawner_fills_nearby_caves() -> void:
 	await _setup()
 	auth.monsters.enabled = true
 	auth.monsters._spawn_and_despawn()
-	var in_first := 0
+	var bats := 0
 	for m: Monster in auth.monsters.monsters.values():
 		var r: Dictionary = world.maker.rooms[0]
 		if m.global_position.distance_to(r.center) < maxf(r.radii.x, r.radii.z):
-			in_first += 1
-	check_eq(in_first, 0, "no enemies in the first cavern (F154)")
+			# Owner, Nov 19 (replaces F154): the first cave has gentle snails and a roost of sleeping plain bats.
+			check(m.kind in ["rock_snail", "cave_bat"], "only snails and bats in the first cave: %s" % m.kind)
+			if m.kind == "cave_bat":
+				bats += 1
+				check(m.state == Monster.State.SLEEP and m.variant == "", "first-cave bats are plain and asleep")
+	check(bats >= 1, "the first cave has bats to hunt")
 	# Walk to another cavern: monsters appear there.
 	for i in world.maker.rooms.size():
 		var room: Dictionary = world.maker.rooms[i]
@@ -456,3 +460,20 @@ func test_snail_foot_stays_put() -> void:
 	check_near(foot.global_position.distance_to(foot0), 0.0, 0.001, "dazed: the foot stays put")
 	check(absf(forged.rotation.z) > 0.1, "dazed: the body sways")
 	_teardown()
+
+
+func test_every_cave_has_its_own_bat_roost() -> void:
+	# Owner, Nov 19: one kind of bat per cave, the same every time; the first cave has plain bats.
+	var spawn_room := {kind = "spawn", biome = "mossy"}
+	check_eq(MonsterManager.roost_variant(42, 0, spawn_room), "", "the first cave has plain bats")
+	var kinds := {}
+	for i in 40:
+		var room := {kind = "cavern", biome = "mossy"}
+		var v := MonsterManager.roost_variant(42, i, room)
+		check_eq(MonsterManager.roost_variant(42, i, room), v, "a cave keeps its bat kind")
+		check(v == "" or Monsters.VARIANTS.has(v), "a real bat kind: %s" % v)
+		kinds[v] = true
+	check(kinds.size() >= 3, "different caves have different bats")
+	check(not Monsters.SPAWNS.mossy.big.has("cave_bat"), "bats come from roosts, not packs")
+	check(Recipes.LIST.mace_copper.unlock == "ruin" and Recipes.LIST.spear_copper.unlock == "ruin", "copper gear is found on pages")
+	check(Recipes.LIST.pickaxe_copper.unlock is Array, "the copper pickaxe is never down to luck")

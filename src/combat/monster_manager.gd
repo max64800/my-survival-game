@@ -14,6 +14,8 @@ const RESPAWN := 600.0  ## a cleared room fills up again after 10 minutes
 const POSE_SEND := 0.1
 const SPAWN_CHECK := 2.0
 const ANIMAL_KEY := 100000  ## animal herds are kept apart from monster packs (room index + this)
+const BAT_KEY := 200000  ## each cave's sleeping bat roost (room index + this)
+const BATS := [4, 6]  ## bats per roost (owner, Nov 19: "5 frost ones, or 5 ember ones")
 
 signal defended(result: Dictionary)  ## our own dwarf parried/blocked/took a hit (for the HUD)
 
@@ -108,12 +110,14 @@ func _spawn_and_despawn() -> void:
 	_wake_bosses()
 	for i in maker.rooms.size():
 		var room: Dictionary = maker.rooms[i]
-		if room.get("sealed", false) or room.get("kind", "") in ["shrine", "lair", "spawn"]:
-			continue  # no enemies in the first cavern (owner F154)
+		if room.get("sealed", false) or room.get("kind", "") in ["shrine", "lair"]:
+			continue
+		var near := _nearest_player_dist(room.center)
+		# Every cave has a roost of sleeping bats, the first one too: they only wake if you come close or shoot them.
+		_group_step(BAT_KEY + i, room, near, RESPAWN, _spawn_roost.bind(i))
 		var st: Dictionary = _rooms.get(i, {alive = [], cleared_at = -RESPAWN})
 		_rooms[i] = st
 		st.alive = st.alive.filter(func(u): return monsters.has(u))
-		var near := _nearest_player_dist(room.center)
 		if st.alive.is_empty() and near < SPAWN_NEAR and _clock - st.cleared_at >= RESPAWN:
 			if not auth.world.is_ready_at(room.center, 4.0):
 				continue
@@ -125,27 +129,59 @@ func _spawn_and_despawn() -> void:
 			st.alive = []
 			st.cleared_at = -RESPAWN  # nobody fought them: free to come back
 		if room.big or i % 2 == 0:
-			_animals_step(i, room, near)
+			# Cave animals: their own little herd per cavern (and every other room), back 20 min after a hunt.
+			_group_step(ANIMAL_KEY + i, room, near, Monsters.ANIMAL_RESPAWN, _spawn_herd.bind(ANIMAL_KEY + i))
 
 
-## Cave animals: their own little herd per cavern (and every other room), back 20 min after a hunt.
-func _animals_step(i: int, room: Dictionary, near: float) -> void:
-	var key := ANIMAL_KEY + i
-	var st: Dictionary = _rooms.get(key, {alive = [], cleared_at = -Monsters.ANIMAL_RESPAWN})
+## A group that lives in a room apart from its monster pack (bat roost, animal herd): spawns when a player comes
+## near, leaves when everyone is far away, and comes back `respawn` seconds after it was wiped out.
+## `spawn` gets the room and returns the new uids.
+func _group_step(key: int, room: Dictionary, near: float, respawn: float, spawn: Callable) -> void:
+	var st: Dictionary = _rooms.get(key, {alive = [], cleared_at = -respawn})
 	_rooms[key] = st
 	st.alive = st.alive.filter(func(u): return monsters.has(u))
-	if st.alive.is_empty() and near < SPAWN_NEAR and _clock - st.cleared_at >= Monsters.ANIMAL_RESPAWN:
+	if st.alive.is_empty() and near < SPAWN_NEAR and _clock - st.cleared_at >= respawn:
 		if auth.world.is_ready_at(room.center, 4.0):
-			st.alive = _spawn_herd(key, room)
+			st.alive = spawn.call(room)
 			st.cleared_at = _clock
 	elif not st.alive.is_empty() and near > DESPAWN_FAR:
 		for u in st.alive:
 			_ev_remove.rpc(u)
 		st.alive = []
-		st.cleared_at = -Monsters.ANIMAL_RESPAWN
+		st.cleared_at = -respawn
 
 
-func _spawn_herd(key: int, room: Dictionary) -> Array:
+## Which bats roost in room `i` (owner, Nov 19): one kind per cave, the same every visit and on every computer.
+## The first cave has plain bats; the others pick plain or one of the biome's crystal kinds (Ember, Rime, ...).
+static func roost_variant(maker_seed: int, i: int, room: Dictionary) -> String:
+	if room.get("kind", "") == "spawn":
+		return ""
+	var kinds: Array = [""] + Monsters.VARIANT_CHANCE.get(room.get("biome", "mossy"), [0.0, {}])[1].keys()
+	return kinds[posmod(hash([maker_seed, i]), kinds.size())]
+
+
+## A roost of 4-6 sleeping bats hanging from the ceiling of room `i`, all the same kind.
+func _spawn_roost(room: Dictionary, i: int) -> Array:
+	var maker: CaveMaker = auth.world.maker
+	var variant := roost_variant(maker.seed, i, room)
+	var uids := []
+	for k in randi_range(BATS[0], BATS[1]):
+		var a := randf() * TAU
+		var r := randf_range(1.0, minf(room.radii.x, room.radii.z) * 0.35)  # close together, like a real roost
+		var spot := maker.find_floor(room.center.x + cos(a) * r, room.center.z + sin(a) * r, room.center.y)
+		if maker.sdf_at(spot + Vector3.UP) <= 0.0:
+			continue
+		var ceiling := GlowPlacer._march(maker, spot + Vector3.UP * 1.0, Vector3.UP, 30.0)
+		if ceiling == Vector3.INF:
+			continue
+		var uid := _next_uid
+		_next_uid += 1
+		_ev_spawn.rpc(uid, "cave_bat", ceiling + Vector3.DOWN * 0.3, false, BAT_KEY + i, variant)
+		uids.append(uid)
+	return uids
+
+
+func _spawn_herd(room: Dictionary, key: int) -> Array:
 	var maker: CaveMaker = auth.world.maker
 	var herd: Array = Monsters.ANIMALS[room.get("biome", "mossy")]
 	if herd.is_empty():
@@ -195,6 +231,9 @@ func _spawn_pack(room_i: int, room: Dictionary) -> Array:
 	var info: Dictionary = Monsters.LIST[kind]
 	var has_leader: bool = randf() < info.get("leader_chance", 0.0) or room.get("kind", "") == "nest" or deeps  # nests always have a leader
 	var count := randi_range(info.pack[0], info.pack[1]) + (1 if has_leader else 0) + (1 if deeps else 0)
+	if room.get("kind", "") == "spawn":
+		count = randi_range(3, 4)  # a few gentle snails in the first cave (owner, Nov 19); no leader
+		has_leader = false
 	var uids := []
 	for k in count:
 		var a := randf() * TAU

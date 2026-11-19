@@ -332,7 +332,7 @@ func _process(delta: float) -> void:
 	_spring.position = Vector3(lerpf(0.08, SHOULDER.x, near), 0, 0)
 	_spring.spring_length = lerpf(_spring.spring_length, _zoom, minf(1.0, delta * 10.0))  # smooth zoom
 	_shake = maxf(0.0, _shake - delta * 4.0)
-	camera.fov = lerpf(camera.fov, 48.0 if fight and fight.aiming() else 72.0, minf(1.0, delta * 10.0))  # crossbow zoom
+	camera.fov = lerpf(camera.fov, 32.0 if fight and fight.aiming() else 72.0, minf(1.0, delta * 10.0))  # crossbow zoom
 	camera.h_offset = randf_range(-1, 1) * _shake * 0.06
 	camera.v_offset = randf_range(-1, 1) * _shake * 0.06
 

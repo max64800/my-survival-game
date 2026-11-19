@@ -253,8 +253,9 @@ const PACK_BOOST := {damage = 0.20, speed = 0.15, stun = 0.25, decay = 2.0, radi
 const SPAWNS := {
 	# Owner's choice (Nov 14): only the first three for now. Snails + small beetles in Mossy Hollows,
 	# bats roost in caverns everywhere, big beetles in the Fungal Jungle. (Old lists in git history.)
-	"mossy": {big = ["rock_snail", "rock_snail", "rock_beetle", "cave_bat"], small = ["rock_snail", "rock_beetle", "cave_bat"]},
-	"fungal": {big = ["great_rock_beetle", "great_rock_beetle", "cave_bat"], small = ["great_rock_beetle", "cave_bat"]},
+	# Bats aren't here: every cave has its own roost of them (MonsterManager._spawn_roost, owner Nov 19).
+	"mossy": {big = ["rock_snail", "rock_snail", "rock_beetle"], small = ["rock_snail", "rock_beetle"]},
+	"fungal": {big = ["great_rock_beetle"], small = ["great_rock_beetle"]},
 }
 
 const SIGHT := 15.0
