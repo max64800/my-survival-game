@@ -229,9 +229,9 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 
 - [ ] **F353. Little waterfalls: water running out of cracks down the cave walls, not only dripstone.** *From: you (PC, Nov 19). Said: 2×* — Nov 19: built (cave layout 13 worlds): 1-2 in each big cave, 2 in the first cave, sometimes one in a smaller room: water seeps from a crack 2.5-7 m up and runs down the rock face (following its bumps), widening, into a small pool with drop rings and a little splash of droplets; kept clear of paths, places, bridges, trees and the tower (test). No sound yet (needs a real CC0 water recording). Check in the game. — Nov 19, round 3 (owner: "flying around the map I don't see any waterfalls"): his world had 7, none near the start (the first cave's walls lean and bulge, and the search gave up). Now the water runs over bulges, leaning walls are allowed, the first cave is searched from spots all round it: his world 34 (3 in the first cave), test worlds 35-56; brighter and seen from 90 m.
 
-- [ ] **F364. Rock beetles sometimes slide side to side.** Rule: to move anywhere they first turn in place to face that way, then move. *From: you (PC, Nov 19). Said: 1×* — passed to the creature Claude.
-- [ ] **F365. Aggroed bats got stuck inside the rock walls.** *From: you (PC, Nov 19). Said: 1×* — passed to the creature Claude.
-- [ ] **F366. The first bat killed didn't turn to stone** (it could still be broken with the pickaxe, but never became stone). *From: you (PC, Nov 19). Said: 1×* — passed to the creature Claude.
+- [ ] **F367. Rock beetles sometimes slide side to side.** Rule: to move anywhere they first turn in place to face that way, then move. *From: you (PC, Nov 19). Said: 1×* — passed to the creature Claude.
+- [ ] **F368. Aggroed bats got stuck inside the rock walls.** *From: you (PC, Nov 19). Said: 1×* — passed to the creature Claude.
+- [ ] **F369. The first bat killed didn't turn to stone** (it could still be broken with the pickaxe, but never became stone). *From: you (PC, Nov 19). Said: 1×* — passed to the creature Claude.
 
 ## Done
 
