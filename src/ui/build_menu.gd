@@ -16,7 +16,7 @@ func _ready() -> void:
 
 ## The menu's tabs (building polish spec §7), in order, with their names.
 const TABS := {"foundation": "Foundations", "floor": "Floors", "wall": "Walls", "roof": "Roofs",
-	"support": "Supports", "around": "Getting around", "mining": "Mining", "decor": "Decor"}
+	"support": "Supports", "around": "Getting around", "mining": "Mining", "decor": "Decor", "furnish": "Furnish"}
 static var tab := "foundation"  ## remembered while the game runs
 
 

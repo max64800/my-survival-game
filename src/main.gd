@@ -17,6 +17,7 @@ var cave_life: CaveLife
 var _clutter: Clutter
 var _curtains: RootCurtains
 var _pillars: RootPillars
+var _groves: GlowGroves
 var _boulders: Boulders
 var authority: GameAuthority
 var dwarf: Dwarf
@@ -363,10 +364,15 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	_pillars.name = "RootPillars"
 	add_child(_pillars)
 	_pillars.build(world.maker)
+	var groves := GlowGroves.new()
+	_groves = groves  # glowing forests in 1-2 big caverns per biome, their main light (owner, Nov 19)
+	groves.name = "GlowGroves"
+	add_child(groves)
+	groves.build(world.maker, _pillars.near)
 	_boulders = Boulders.new()  # breakable boulders for stone (owner, Nov 18)
 	_boulders.name = "Boulders"
 	add_child(_boulders)
-	_boulders.build(world.maker, _pillars.near)
+	_boulders.build(world.maker, func(p: Vector3, r: float) -> bool: return _pillars.near(p, r) or groves.near(p, r))
 	var mush := MushroomGrass.new()  # tiny mushroom grass over most of the first cave's floor (owner, Nov 18)
 	mush.name = "MushroomGrass"
 	add_child(mush)
@@ -411,6 +417,7 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	authority.cave_life = cave_life
 	authority.curtains = _curtains
 	authority.pillars = _pillars
+	authority.groves = _groves
 	authority.boulders = _boulders
 	authority.clutter = _clutter
 	authority.drops_root = drops

@@ -403,3 +403,23 @@ func test_fang_pickaxe_needs_workbench_level_2() -> void:
 	check(auth.request_craft(1, "pickaxe_fang", 40), "now it can")
 	check_eq(ps.inventory.count_of("pickaxe_fang"), 1, "a Fang Pickaxe")
 	_teardown()
+
+
+func test_furniture_beds_and_cupboards_do_something() -> void:
+	await _setup()
+	auth._ev_place_station(1, "workbench", player.global_position + Vector3(-3, 0, 0), 0.0)
+	ps.inventory.add("plank_root", 40)
+	ps.inventory.add("fiber", 20)
+	var bed := _floor_spot("furn_bed_1", 3.0)
+	check_eq(auth.builder.request_place(1, "furn_bed_1", "plank_root", bed.pos, bed.rot), "", "a bed placed")
+	check(ps.bed_pos.distance_to(bed.pos) < 1.5, "you wake up in your new bed")
+	var cab := _floor_spot("furn_cabinet", 6.0)
+	var boxes_before: int = auth.storage.boxes.size()
+	check_eq(auth.builder.request_place(1, "furn_cabinet", "plank_root", cab.pos, cab.rot), "", "a cabinet placed")
+	check_eq(auth.storage.boxes.size(), boxes_before + 1, "the cabinet opens like a chest")
+	var bid: int = auth.storage.boxes.keys().filter(func(k): return auth.storage.boxes[k].kind == "furn_cabinet")[0]
+	auth.storage.put(bid, "stone", 5)
+	var uid: int = auth.builder.structure.pieces.keys().filter(func(k): return auth.builder.structure.pieces[k].piece == "furn_cabinet")[0]
+	auth.builder.request_remove(1, uid, true)
+	check(not auth.storage.boxes.has(bid), "breaking the cabinet empties it out")
+	_teardown()

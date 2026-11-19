@@ -83,6 +83,7 @@ static func _make(piece: String, style: String, detail: bool) -> ArrayMesh:
 		"banner": _banner(s)
 		"wall_shield": _wall_shield(s)
 		"plaque": _plaque(s)
+		"block": _box(Vector3(0, s.y * 0.5, 0), s)  # furniture with its own model: a plain box to bump into
 		"wall_sconce": _wall_sconce(s)
 		"weapon_rack": _weapon_rack(s)
 		_: _plain_piece(piece, s, info)

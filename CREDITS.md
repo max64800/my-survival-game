@@ -5,6 +5,8 @@ Rule: only things allowed in a game you sell (best: CC0).
 
 | What | Where it came from | License | Date added |
 |---|---|---|---|
+| Glow grove trees, rocks, pebbles and plants in `assets/models/cave/` (`gtree_*`, `dtree_*`, `grock_*`, `gpebble_*`, `gplant_*`, `gfungus_*`): free pack models rebuilt by our scripts `tools/asset_forge/builds/glow_trees.py` and `grove_dressing.py` (our bark and stone paintings, leaf cards kept). Sources in `tools/asset_forge/packs/`: "Stylized Nature MegaKit" (Standard) by Quaternius, "Forest Nature Pack" (Free) by Kay Lousberg (KayKit), "Low Poly Nature Pack" by flo-bit | https://quaternius.itch.io/stylized-nature-megakit · https://kaylousberg.itch.io/kaykit-forest · https://flo-bit.itch.io/low-poly-nature-pack | CC0 | 2026-11-19 |
+| Furniture in `assets/models/decor/` (`furn_*`, 32 pieces of the Furnish tab): free pack models rebuilt by our script `tools/asset_forge/builds/furniture.py` (wood and metal repainted with our own hand-painted pictures; pots, jars and the dummy's sack too). Source in `tools/asset_forge/packs/quaternius_fantasy_props_megakit/`: "Fantasy Props MegaKit" (Standard) by Quaternius | https://quaternius.itch.io/fantasy-props-megakit | CC0 | 2026-11-19 |
 | Voxel Tools 1.7 (GDExtension) — the dig-anywhere smooth terrain add-on, in `addons/zylann.voxel/` | https://github.com/Zylann/godot_voxel (release v1.7x) | MIT (see `addons/zylann.voxel/LICENSE.md`) | 2026-11-14 |
 | Godot Engine 4.7.2 (the game engine; not stored in this repo) | https://godotengine.org | MIT | 2026-11-14 |
 | GodotSteam 4.24 GDExtension (Steam co-op), in `addons/godotsteam/` (branches step-2 and later) | https://codeberg.org/godotsteam/godotsteam (release v4.24-gde) | MIT (see `addons/godotsteam/license.md`) | 2026-11-14 |

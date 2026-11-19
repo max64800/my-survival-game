@@ -42,6 +42,9 @@ var removed_strands: Array[int] = []  ## root-curtain strands broken so far (sav
 var removed_hroots: Array[String] = []  ## big hanging roots broken so far (saved)
 var pillars: RootPillars  ## giant root pillars (chop for wood)
 var pillar_chops := {}  ## pillar id -> how much wood it has given (saved)
+var groves: GlowGroves  ## glow-grove trees (chop for wood; owner Nov 19)
+var grove_chops := {}  ## grove tree id -> how much wood it has given (saved)
+var grove_regrow := {}  ## felled grove tree id -> seconds until it stands again (saved)
 var tree_regrow := {}  ## broken Root Tree id -> seconds until it's whole again (saved)
 var boulders: Boulders  ## breakable boulders (stone)
 var boulder_hits := {}  ## boulder id -> hits taken (saved)
@@ -385,6 +388,61 @@ func request_chop_pillar(peer_id: int, id: int) -> void:
 	_tell_feedback(peer_id, {state = "done", kind = "root", point = axis + out * float(p.width) * 0.15})
 
 
+## A swing at a glow-grove tree (owner, Nov 19): like a Root Tree, 2 wood with an axe, 1 without, until the tree's
+## own amount (bushes a few, big trees more than a Root Tree) is used up; then it comes down and grows back later.
+func ask_chop_grove(id: int) -> void:
+	if is_host():
+		request_chop_grove(local_peer_id(), id)
+	else:
+		_rpc_chop_grove.rpc_id(1, id)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_chop_grove(id: int) -> void:
+	if is_host():
+		request_chop_grove(multiplayer.get_remote_sender_id(), id)
+
+
+func request_chop_grove(peer_id: int, id: int) -> void:
+	var ps := get_player(peer_id)
+	if ps == null or groves == null:
+		return
+	var t := groves.tree(id)
+	if t.is_empty():
+		return
+	var chest := _chest(ps)
+	var foot: Vector3 = t.pos
+	var axis := Geometry3D.get_closest_point_to_segment(chest, foot, foot + Vector3.UP * 4.0 * float(t.scale))
+	if axis.distance_to(chest) > REACH + 1.5:
+		return
+	var used: int = grove_chops.get(id, 0)
+	if used >= int(t.wood):
+		return  # already felled (growing back)
+	var n := mini(2 if Items.kind(ps.selected_item()) == "axe" else 1, int(t.wood) - used)
+	var out := Vector3(chest.x - axis.x, 0.0, chest.z - axis.z).normalized()
+	var wood := n * (2 if ps.progress.has_star("woodcutting", 100) and randf() < 0.15 else 1)  # ★100: double wood
+	spawn_drop("rootwood", wood, axis + out * 0.4 + Vector3.UP * 0.4)
+	give_xp(peer_id, 3 * n, "woodcutting")
+	_ev_grove_used.rpc(id, used + n)
+	if used + n >= int(t.wood):
+		grove_regrow[id] = GlowGroves.REGROW_TIME
+	_tell_feedback(peer_id, {state = "done", kind = "root", point = axis + out * 0.3})
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_grove_used(id: int, used: int, burst: bool = true) -> void:
+	grove_chops[id] = used
+	if groves:
+		groves.set_used(id, used, burst)
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_grove_back(id: int) -> void:
+	grove_chops.erase(id)
+	if groves:
+		groves.set_regrow(id, 0.0)
+
+
 @rpc("authority", "call_local", "reliable")
 func _ev_tree_used(id: int, used: int) -> void:
 	pillar_chops[id] = used
@@ -430,6 +488,11 @@ func _ev_planted(e: Dictionary) -> void:
 
 ## Host: planted trees grow (a sprout halfway, a tree at the end); everyone's screen swaps it while nobody looks.
 func _tick_trees(delta: float) -> void:
+	for id in grove_regrow.keys():  # felled grove trees stand again after a while
+		grove_regrow[id] -= delta
+		if grove_regrow[id] <= 0.0:
+			grove_regrow.erase(id)
+			_ev_grove_back.rpc(int(id))
 	for id in tree_regrow.keys():
 		var before := RootPillars.regrow_stage(tree_regrow[id])
 		tree_regrow[id] = maxf(0.0, tree_regrow[id] - delta)
@@ -2253,6 +2316,7 @@ func snapshot() -> Dictionary:
 	return {boulder_hits = boulder_hits.duplicate(), boulder_back = boulder_back.duplicate(),
 		tree_regrow = tree_regrow.duplicate(),
 		strands = removed_strands.duplicate(), hroots = removed_hroots.duplicate(), pillar_chops = pillar_chops.duplicate(),
+		grove_chops = grove_chops.duplicate(), grove_regrow = grove_regrow.duplicate(),
 		planted = planted.duplicate(true),
 		edits = edit_log.duplicate(), glow = removed_glow.duplicate(), plants = removed_plants.duplicate(), drops = drops, next_drop = _next_drop_id,
 		stations = sts, chops = chops, regrow = regrow.duplicate(), plant_regrow = plant_regrow.duplicate(), runes = rune_slab.to_data(), build = builder.snapshot(), boxes = storage.snapshot(), monsters = monsters.snapshot(), state = world_state}
@@ -2281,6 +2345,12 @@ func load_snapshot(snap: Dictionary) -> void:
 		pillar_chops[int(id)] = int(snap.pillar_chops[id])
 		if pillars:
 			pillars.set_used(int(id), pillar_chops[int(id)], false)
+	for id in snap.get("grove_chops", {}):  # chopped (and felled) grove trees
+		grove_chops[int(id)] = int(snap.grove_chops[id])
+		if groves:
+			groves.set_used(int(id), grove_chops[int(id)], false)
+	for id in snap.get("grove_regrow", {}):
+		grove_regrow[int(id)] = float(snap.grove_regrow[id])
 	for id in snap.get("strands", []):
 		removed_strands.append(int(id))
 	if curtains and not removed_strands.is_empty():

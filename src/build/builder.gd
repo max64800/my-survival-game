@@ -151,6 +151,11 @@ func request_place(peer_id: int, piece: String, family: String, pos: Vector3, ro
 	_ev_add_piece.rpc(uid, piece, family, pos, rot, Pieces.touches_rock(piece, pos, rot, auth.world.sdf_at, family))
 	_placed_at[uid] = _clock
 	auth.give_xp(peer_id, 2, "crafting")
+	match Pieces.LIST[piece].get("use", ""):  # furniture that does something (Furnish tab, owner Nov 19)
+		"bed":
+			ps.bed_pos = pos + Vector3.UP * 0.9  # you wake up in your newest bed
+		"store":
+			auth.storage.create_box(piece, pos, Pieces.yaw_of(rot), peer_id)
 	return ""
 
 
@@ -292,6 +297,8 @@ func _ev_remove_piece(uid: int) -> void:
 		n.queue_free()
 	if auth.is_host() and not p.is_empty():
 		_queue_shaky()
+		if Pieces.LIST[p.piece].get("use", "") == "store":
+			_spill_furniture(p)
 		if Pieces.LIST[p.piece].get("supports_rock", false):
 			queue_check(Pieces.box(p.piece, p.pos, p.rot).end, 1.5)  # was holding rock up!
 
@@ -1015,3 +1022,15 @@ func load_snapshot(s: Dictionary) -> void:
 	for r in s.get("rubble", []):
 		_add_rubble(r[0], r[1], r[2], r[3], r[3], false)
 		rubble[r[0]].hits = r[4]
+
+
+## Host: storage furniture was taken down or broke: what was inside drops on the floor, the inside goes with it.
+func _spill_furniture(p: Dictionary) -> void:
+	for id in auth.storage.boxes.keys():
+		var box: Dictionary = auth.storage.boxes[id]
+		if box.kind == p.piece and is_instance_valid(box.node) and box.node.global_position.distance_to(p.pos) < 0.3:
+			for s in box.inv.slots:
+				if not s.is_empty():
+					auth.spawn_drop(s.id, s.count, p.pos + Vector3.UP * 0.6)
+			auth.storage._ev_remove_box.rpc(id)
+			return

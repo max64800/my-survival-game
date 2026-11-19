@@ -453,6 +453,12 @@ func _on_swing_impact() -> void:
 		Fx.burst(get_parent(), hit.position, Color(0.45, 0.32, 0.2), 10, 2.5)
 		_shake = 0.3
 		return
+	var grove_id := GlowGroves.id_of(hit.collider)
+	if grove_id >= 0:  # a glow-grove tree: chop wood off it (owner, Nov 19)
+		auth.ask_chop_grove(grove_id)
+		Fx.burst(get_parent(), hit.position, Color(0.45, 0.32, 0.2), 10, 2.5)
+		_shake = 0.3
+		return
 	var statue_id := Statue.id_of(hit.collider)
 	if statue_id >= 0:  # a dead creature turning to stone (owner, Nov 18): mine it for its stone and loot, even at once
 		auth.monsters.ask_hit_statue(statue_id)

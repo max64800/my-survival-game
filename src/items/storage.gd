@@ -234,6 +234,17 @@ func _ev_remove_box(id: int) -> void:
 
 
 func _build_look(body: StaticBody3D, kind: String) -> void:
+	if Pieces.LIST.has(kind):
+		# Furniture that stores things (Furnish tab: cabinet, bookcase...): the built piece shows itself; the box
+		# is only its inside, a touchable shape just around the piece.
+		var fs: Vector3 = Pieces.LIST[kind].size + Vector3(0.04, 0.04, 0.04)
+		var fcs := CollisionShape3D.new()
+		var fsh := BoxShape3D.new()
+		fsh.size = fs
+		fcs.shape = fsh
+		fcs.position = Vector3.UP * fs.y * 0.5
+		body.add_child(fcs)
+		return
 	var size := Vector3(1.0, 0.7, 0.7) if kind != "grave" else Vector3(0.9, 0.6, 0.9)
 	var cs := CollisionShape3D.new()
 	var sh := BoxShape3D.new()
