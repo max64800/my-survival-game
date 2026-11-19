@@ -4189,3 +4189,22 @@ the body."
   with no camera, so the real-shot check became a tool instead of a test. (3) Waking now drops a bat 1.2 m, which
   broke the bat-ragdoll test (it woke the bat after placing it 1.5 m up): the test now wakes it first. (4) Feedback
   numbers clashed again (F350 is the ruin rebuild): the statues are F370.
+
+## Nov 19: Telling Claude's test games and chats apart (owner idea)
+- **Owner: "if Claude needs a new chat, write it in big bold letters; mark the games Claude opens for testing; name
+  the test worlds and delete them after."** We brainstormed first, then built all of it:
+  - **New chat banner:** a CLAUDE.md rule: the first line of the message is a big "🛑 START A NEW CHAT 🛑" heading,
+    never hidden at the end.
+  - **Fuel gauge:** a status line at the bottom of Claude Code (in the owner's own Claude settings, not the game):
+    green "fine", yellow "getting long" from 150k tokens, red "START A NEW CHAT" from 300k.
+  - **Test games:** new `src/debug/claude_test.gd` (always loaded): if Claude started the game (`-- claude=<what>`
+    or the muted sound setting), a thick orange frame, a "🤖 CLAUDE TEST: don't play this one | Testing: …" label,
+    and the taskbar name changes. The owner's own games never show it.
+  - **Test worlds:** saved to their own folder (`claude_test_saves`), named "🤖 TEST – <what> – safe to delete", so
+    they never show in the owner's world list. Claude deletes them after testing; the game deletes any older than a
+    day. The clean-up only looks in that folder, so the owner's worlds can't be hit (test added).
+- **Hurdles:** (1) the old save test assumed "not a robot = the owner's folder", which would fail when a Claude runs
+  tests muted; it now sets the Claude flag on purpose. (2) The gauge read 0 at first when tested from PowerShell
+  (PowerShell added an invisible marker in front of the text); the script now skips it. (3) PowerShell rewrote the
+  Claude settings file with different spacing; checked it holds exactly the same settings plus the gauge (a backup
+  is kept next to it).

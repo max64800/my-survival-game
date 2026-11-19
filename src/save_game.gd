@@ -14,7 +14,9 @@ const ROBOT_FOLDER := "user://robot_saves"  ## test robots save here, so they ne
 
 
 static func folder() -> String:
-	return ROBOT_FOLDER if Controls.robot else FOLDER
+	if Controls.robot:
+		return ROBOT_FOLDER
+	return ClaudeTest.SAVE_FOLDER if ClaudeTest.active() else FOLDER  # Claude's test worlds stay out of the owner's list
 const VERSION := 1
 const BACKUPS := 3
 
@@ -92,8 +94,11 @@ static func save(main: Node) -> String:
 			if not players.has(slot):
 				players[slot] = offline.players[slot]
 	var map: MapData = main.hud.map_data if main.hud else null
+	var wname := str(main.get("world_name") if main.get("world_name") != null else "")
+	if ClaudeTest.active():
+		wname = ClaudeTest.world_name(wname)  # "🤖 TEST – waterfalls – safe to delete"
 	var data := {
-		version = VERSION, seed = main.seed, layout = CaveMaker.layout, name = str(main.get("world_name") if main.get("world_name") != null else ""), saved_at = Time.get_datetime_string_from_system(),
+		version = VERSION, seed = main.seed, layout = CaveMaker.layout, name = wname, saved_at = Time.get_datetime_string_from_system(),
 		snap = snap, players = players,
 		map = map.to_data() if map else {},
 	}
