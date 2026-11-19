@@ -1639,16 +1639,17 @@ func request_farm(peer_id: int, station_id: int, seed_item: String = "") -> Stri
 		return "picked"
 	if st.crop != "":
 		return "growing"
-	if not Station.CROPS.has(seed_item) or ps.inventory.count_of(seed_item) <= 0:
+	if not (Station.CROPS.has(seed_item) or Station.SEEDS.has(seed_item)) or ps.inventory.count_of(seed_item) <= 0:
 		seed_item = ""
-		for c in Station.CROPS:
+		for c in Station.CROPS.keys() + Station.SEEDS.keys():
 			if ps.inventory.count_of(c) > 0:
 				seed_item = c
 				break
 	if seed_item == "":
 		return "no_seed"
 	ps.inventory.remove(seed_item, 1)
-	_ev_farm.rpc(station_id, seed_item, Station.CROPS[seed_item].grow)
+	var crop: String = Station.SEEDS.get(seed_item, seed_item)
+	_ev_farm.rpc(station_id, crop, Station.CROPS[crop].grow)
 	return "planted"
 
 
@@ -2340,12 +2341,14 @@ func seed_poi_loot() -> void:
 			if rng.randf() < 0.3:
 				storage.put(id, "rune_" + rune_slab.pick_drop("m", [rng.randf(), rng.randf(), rng.randf()]), 1)
 			storage.put(id, "gold_coin", rng.randi_range(5, 15))  # gold pays for a perk reset (owner, Nov 19)
+			storage.put(id, "tuber_seed", rng.randi_range(2, 4))  # the only way to start growing Root Tubers
 			storage.put(id, "rusty_scrap", rng.randi_range(2, 5))  # smelts into copper (its creatures are gone, Nov 19)
 		else:
 			# A camp someone left: a page, and maybe one bite of food.
 			storage.put(id, Recipes.random_page(rng.randf()) if rng.randf() < 0.6 else "blueprint_page", 1)
 			if rng.randf() < 0.5:
 				storage.put(id, ["dish_hollowcap_stew", "dish_tuber_mash", "drink_glowcap_tea"][rng.randi_range(0, 2)], 1)
+			storage.put(id, "tuber_seed", rng.randi_range(1, 2))
 
 
 @rpc("authority", "reliable")

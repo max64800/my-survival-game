@@ -48,6 +48,21 @@ func test_plant_grow_and_pick() -> void:
 	_teardown()
 
 
+func test_tuber_seeds_and_firecaps_grow() -> void:
+	await _setup()
+	auth._ev_place_station(1, "farm_plot", Vector3(1, 0, 0), 0.0)
+	var plot: Station = auth.stations[1]
+	ps.inventory.add("tuber_seed", 1)
+	check_eq(auth.request_farm(1, 1, "tuber_seed"), "planted", "a Tuber Seed gets planted")
+	check_eq(plot.crop, "root_tuber", "and grows into Root Tubers")
+	plot._process(Station.CROPS.root_tuber.grow + 1.0)
+	check_eq(auth.request_farm(1, 1), "picked", "pick it")
+	check_eq(ps.inventory.count_of("root_tuber"), Station.CROPS.root_tuber.give, "tubers in the bag")
+	ps.inventory.add("firecap", 1)
+	check_eq(auth.request_farm(1, 1, "firecap"), "planted", "firecaps grow too")
+	_teardown()
+
+
 func test_crystal_torch_is_cheap_and_by_hand() -> void:
 	var r := Recipes.get_recipe("crystal_torch")
 	check_eq(r.station, Recipes.HAND, "made by hand")

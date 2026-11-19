@@ -20,7 +20,9 @@ var water_timer := 0.0
 var under_drip := false  ## host decides when it's placed
 ## Farm Plots (owner F176): plant a mushroom or tuber, it grows by itself, then you pick more than you planted.
 const CROPS := {"glowcap": {grow = 240.0, give = 3}, "hollowcap": {grow = 240.0, give = 3},
-	"bellcap": {grow = 300.0, give = 3}, "root_tuber": {grow = 180.0, give = 3}}
+	"bellcap": {grow = 300.0, give = 3}, "root_tuber": {grow = 180.0, give = 3}, "firecap": {grow = 360.0, give = 3}}
+## Seeds you plant that grow into a crop (owner, Nov 19: Tuber Seeds from old chests grow Root Tubers).
+const SEEDS := {"tuber_seed": "root_tuber"}
 var crop := ""  ## what's planted ("" = empty)
 var crop_left := 0.0  ## seconds until it's ready (everyone counts down; the host decides)
 var _crop_node: Node3D

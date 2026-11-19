@@ -5469,3 +5469,6 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   (Farm Plot grows glowcap, hollowcap, bellcap; firecap, meats, root tuber are not farmable). Crafting Book rebuilt.
 - Found: the game heals 2 health a second today (Vitals.HEALTH_REGEN), not 1 every 3 s, so 1 every 5 s is a big slow-down.
   Root Tuber has no source in the game (no chest holds it), so the 4 tuber recipes can't be made yet: asked the owner.
+- Same day, in the game: Firecap added to the Farm Plot crops (6 min, gives 3). New item Tuber Seed (ChatGPT icon,
+  white background cut by script since rembg isn't on the Mac): 2-4 in Mossy ruin chests, 1-2 in camp chests;
+  planting one grows Root Tubers (`Station.SEEDS`). Test: test_tuber_seeds_and_firecaps_grow. Crafting Book rebuilt.

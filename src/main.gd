@@ -871,9 +871,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				hud.show_toast("Still growing. Come back in %d:%02d." % [int(st.crop_left) / 60, int(st.crop_left) % 60], 2.5)
 			else:
 				var has_seed := false
-				for c in Station.CROPS:
+				for c in Station.CROPS.keys() + Station.SEEDS.keys():
 					has_seed = has_seed or me.inventory.count_of(c) > 0
-				hud.show_toast("Planted!" if has_seed else "Plant a Glowcap, Hollowcap, Bellcap or Root Tuber here.", 3.0)
+				hud.show_toast("Planted!" if has_seed else "Plant a Glowcap, Hollowcap, Bellcap, Firecap or Tuber Seed here.", 3.0)
 			authority.ask_farm(st.station_id, held)
 			return
 		if st and Station.WATER.has(st.kind):

@@ -204,8 +204,7 @@
  },
  "questions": [
   "The three new kitchen helpers (Roasting Spit, Spice Shelf, Stone Oven): OK? Each needs a model in our workbench style.",
-  "Raw food and plain water give no effect: OK?",
-  "Root Tuber: the game's chests don't hold any right now, so the 4 tuber recipes can't be made yet. Put tubers in zone 1 chests?"
+  "Raw food and plain water give no effect: OK?"
  ],
  "base_regen": 0.2,
  "max_regen": 0.5,
@@ -224,12 +223,12 @@
    "where": "wild on cave floors, or grow it in a Farm Plot"
   },
   "firecap": {
-   "farm": false,
-   "where": "wild only (rare, glows red on cave floors)"
+   "farm": true,
+   "where": "wild on cave floors (rare, glows red), or grow it in a Farm Plot"
   },
   "root_tuber": {
-   "farm": false,
-   "where": "only in chests"
+   "farm": true,
+   "where": "find Tuber Seeds in old chests, plant them in a Farm Plot; then replant your own tubers"
   },
   "bat_meat": {
    "farm": false,
