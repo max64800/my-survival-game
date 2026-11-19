@@ -5011,3 +5011,17 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   gave it copper. (2) A GDScript slip (mixed two ways of writing a dictionary) stopped the test file loading; fixed.
   (3) I briefly used `git stash` on a shared file to test without the fix; risky with other Claudes in the folder,
   so the second time I swapped the file by copying instead.
+
+## Nov 19: Zone 1 gear check (how far can you get, what's missing?)
+- **Owner: "run through these kinds of tests and see how we get to the best equipment in Zone 1, and if anything is
+  missing."** New tool `tools/zone1_gear_check.gd`: starts from everything Zone 1 gives (rock, plants, crystals,
+  creatures, bosses and their helpers, ruin chests) and crafts until nothing new can be made.
+- Result: the best Zone 1 gear is the full copper set (helm, mail, greaves, boots, shield), copper weapons, Copper
+  Axe and Copper Pickaxe (the last needs Orrumhal's Heartstone). Copper armour and weapons come only from ruin recipe
+  pages (19 page recipes; a big world has about 27 pages, and a page never teaches one you already know).
+- Found (asked the owner first, F399-F402): the Rune Slab can never be made (its recipe waits for an item "rune"
+  that doesn't exist); Root Tubers can't be found anywhere; nothing fills a waterskin at pools; critter hide only
+  from the Nipper Queen's helpers, and the "where do I get this" hints are out of date.
+- **Hurdles:** (1) my first list said clean water was missing; it isn't (a Drip Bucket under a ceiling drip fills
+  buckets), so I checked each "missing" item by hand before reporting it. (2) Two small script slips (wrong item-data
+  call, shields scored by armour they don't have); fixed.
