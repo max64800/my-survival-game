@@ -872,7 +872,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			else:
 				var has_seed := false
 				for c in Station.CROPS.keys() + Station.SEEDS.keys():
-					has_seed = has_seed or me.inventory.count_of(c) > 0
+					has_seed = has_seed or (Station.can_plant(c) and me.inventory.count_of(c) > 0)
 				hud.show_toast("Planted!" if has_seed else "Plant a Glowcap, Hollowcap, Bellcap, Firecap or Tuber Seed here.", 3.0)
 			authority.ask_farm(st.station_id, held)
 			return

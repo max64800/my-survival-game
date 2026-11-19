@@ -19,10 +19,16 @@ var water := 0
 var water_timer := 0.0
 var under_drip := false  ## host decides when it's placed
 ## Farm Plots (owner F176): plant a mushroom or tuber, it grows by itself, then you pick more than you planted.
-const CROPS := {"glowcap": {grow = 240.0, give = 3}, "hollowcap": {grow = 240.0, give = 3},
-	"bellcap": {grow = 300.0, give = 3}, "root_tuber": {grow = 180.0, give = 3}, "firecap": {grow = 360.0, give = 3}}
-## Seeds you plant that grow into a crop (owner, Nov 19: Tuber Seeds from old chests grow Root Tubers).
+## Owner, Nov 19: mushrooms take 15 min and give 5; Root Tubers only grow from Tuber Seeds (20 min, give 5).
+const CROPS := {"glowcap": {grow = 900.0, give = 5}, "hollowcap": {grow = 900.0, give = 5},
+	"bellcap": {grow = 900.0, give = 5}, "firecap": {grow = 900.0, give = 5}, "root_tuber": {grow = 1200.0, give = 5}}
+## Seeds you plant that grow into a crop. A crop listed here can't be planted itself (a Root Tuber can't).
 const SEEDS := {"tuber_seed": "root_tuber"}
+
+
+## True for what you can put in a Farm Plot: a mushroom or a seed (not a crop that only grows from seeds).
+static func can_plant(item: String) -> bool:
+	return SEEDS.has(item) or (CROPS.has(item) and not SEEDS.values().has(item))
 var crop := ""  ## what's planted ("" = empty)
 var crop_left := 0.0  ## seconds until it's ready (everyone counts down; the host decides)
 var _crop_node: Node3D

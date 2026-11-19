@@ -212,23 +212,23 @@
  "ingredients": {
   "glowcap": {
    "farm": true,
-   "where": "wild on cave floors, or grow it in a Farm Plot"
+   "where": "wild on cave floors, or grow it in a Farm Plot (15 min, gives 5)"
   },
   "hollowcap": {
    "farm": true,
-   "where": "wild on cave floors, or grow it in a Farm Plot"
+   "where": "wild on cave floors, or grow it in a Farm Plot (15 min, gives 5)"
   },
   "bellcap": {
    "farm": true,
-   "where": "wild on cave floors, or grow it in a Farm Plot"
+   "where": "wild on cave floors, or grow it in a Farm Plot (15 min, gives 5)"
   },
   "firecap": {
    "farm": true,
-   "where": "wild on cave floors (rare, glows red), or grow it in a Farm Plot"
+   "where": "wild on cave floors (rare, glows red), or grow it in a Farm Plot (15 min, gives 5)"
   },
   "root_tuber": {
    "farm": true,
-   "where": "find Tuber Seeds in old chests, plant them in a Farm Plot; then replant your own tubers"
+   "where": "only from Tuber Seeds (found in old chests): plant one in a Farm Plot, 20 min, gives 5. Tubers themselves can't be planted."
   },
   "bat_meat": {
    "farm": false,

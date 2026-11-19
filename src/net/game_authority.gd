@@ -1639,10 +1639,10 @@ func request_farm(peer_id: int, station_id: int, seed_item: String = "") -> Stri
 		return "picked"
 	if st.crop != "":
 		return "growing"
-	if not (Station.CROPS.has(seed_item) or Station.SEEDS.has(seed_item)) or ps.inventory.count_of(seed_item) <= 0:
+	if not Station.can_plant(seed_item) or ps.inventory.count_of(seed_item) <= 0:
 		seed_item = ""
 		for c in Station.CROPS.keys() + Station.SEEDS.keys():
-			if ps.inventory.count_of(c) > 0:
+			if Station.can_plant(c) and ps.inventory.count_of(c) > 0:
 				seed_item = c
 				break
 	if seed_item == "":
