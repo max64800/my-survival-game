@@ -55,10 +55,10 @@ const LIST := {
 	"bellows": {station = "anvil", inputs = {leather = 3, plank_root = 4}, output = "bellows", count = 1, unlock = []},
 	"grindstone": {station = "anvil", inputs = {cut_stone = 6, plank_root = 4, copper_ingot = 2}, output = "grindstone", count = 1, unlock = []},
 	# Clothes and a backpack (feedback F23): leather from the tanning rack.
-	"cap_leather": {station = "workbench", inputs = {leather = 2, fiber = 2}, output = "cap_leather", count = 1, unlock = ["leather"]},
-	"tunic_leather": {station = "workbench", inputs = {leather = 4, rope = 1}, output = "tunic_leather", count = 1, unlock = ["leather"]},
-	"trousers_leather": {station = "workbench", inputs = {leather = 3, rope = 1}, output = "trousers_leather", count = 1, unlock = ["leather"]},
-	"boots_leather": {station = "workbench", inputs = {leather = 2, fiber = 2}, output = "boots_leather", count = 1, unlock = ["leather"]},
+	"cap_leather": {station = "workbench", inputs = {leather = 20, fiber = 2}, output = "cap_leather", count = 1, unlock = ["leather"]},
+	"tunic_leather": {station = "workbench", inputs = {leather = 20, rope = 1}, output = "tunic_leather", count = 1, unlock = ["leather"]},
+	"trousers_leather": {station = "workbench", inputs = {leather = 20, rope = 1}, output = "trousers_leather", count = 1, unlock = ["leather"]},
+	"boots_leather": {station = "workbench", inputs = {leather = 20, fiber = 2}, output = "boots_leather", count = 1, unlock = ["leather"]},
 	"satchel": {station = "workbench", inputs = {leather = 4, rope = 2}, output = "satchel", count = 1, unlock = ["leather"]},
 	# --- kiln (F32): wood → coal. Also runs by itself from a chest within 5 m (AutoSmelt).
 	"coal": {station = "kiln", inputs = {rootwood = 2}, output = "coal", count = 1, seconds = 20, unlock = []},
@@ -146,7 +146,7 @@ const LIST := {
 	"dish_roasted_bug": {station = "campfire", inputs = {bug_meat = 1}, output = "dish_roasted_bug", count = 1, seconds = 10, unlock = ["bug_meat"]},
 	"dish_snail_stew": {station = "cooking_pot", inputs = {snail_meat = 2, hollowcap = 2}, output = "dish_snail_stew", count = 1, seconds = 20, unlock = ["snail_meat"]},
 	"dish_bug_stew": {station = "cooking_pot", inputs = {bug_meat = 2, glowcap = 2}, output = "dish_bug_stew", count = 1, seconds = 20, unlock = ["bug_meat"]},
-	"leather_from_wing": {station = "tanning_rack", inputs = {wing_leather = 1}, output = "leather", count = 1, seconds = 40, unlock = ["wing_leather"]},
+	"leather_from_wing": {station = "tanning_rack", inputs = {wing_leather = 2}, output = "leather", count = 1, seconds = 40, unlock = ["wing_leather"]},
 	"waterskin_wing": {station = HAND, inputs = {wing_leather = 2, rope = 1}, output = "waterskin_empty", count = 1, unlock = ["wing_leather"]},
 	"shield_shell": {station = "workbench", inputs = {shell_piece = 6, leather = 1}, output = "shield_shell", count = 1, unlock = ["shell_piece"]},
 	"bolt_fang": {station = "workbench", inputs = {plank_root = 1, bat_fang = 1}, output = "bolt_fang", count = 6, unlock = ["bat_fang"]},

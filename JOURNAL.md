@@ -5221,3 +5221,15 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   that nothing over the file. Fixed within minutes: GitHub copy rebuilt from the last saved version (commit 2b9011a),
   the folder copy from Claude Code's automatic backup (22:31), and all Claudes were told to check for notes added in
   the 5 minutes between. Lesson saved: never copy a script's output over a shared file without checking its size.
+
+## Nov 19: Leather is worth more (F424)
+- Owner: tanning now takes 2 Wing Leather for 1 Leather (was 1 for 1). Leather Cap, Tunic, Trousers and Boots cost
+  20 leather each (was 2, 4, 3, 2); their fiber and rope stay the same.
+- A full leather set: 80 leather = 160 wing leather = about 123 bats (was 11 leather, about 9 bats).
+- Crafting Book page rebuilt and republished (same link); its leather guide now says "2 wing leather = 1 leather"
+  and "20 leather each".
+- **Hurdles:** no test checked the old leather amounts, so none needed fixing. Two unrelated failures showed up
+  (another chat's new shovel has no model yet; a digging test hit the physics body limit). I checked they also fail
+  without my change, by briefly stashing everyone's work and putting it straight back. That worked, but stashing
+  while other Claudes are editing is risky; next time compare with a clean copy instead.
+- `godot` isn't on the Bash path on the PC; used the WinGet Godot 4.7.2 console exe directly.
