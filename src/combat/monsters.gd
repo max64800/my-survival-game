@@ -128,3 +128,16 @@ static func target_stats(id: String, leader: bool, variant: String = "") -> Dict
 
 static func max_hp(id: String, leader: bool, variant: String = "") -> float:
 	return info(id).hp * (LEADER.hp if leader else 1.0) * (VARIANT_STATS.hp if variant != "" else 1.0)
+
+
+## Which food guard protects you from this creature (food plan: eat its meat, fear it less). "" = none.
+static func food_guard(kind: String) -> String:
+	if kind.contains("bat"):
+		return "bat"
+	if kind.contains("beetle"):
+		return "beetle"
+	if kind.contains("spider"):
+		return "spider"
+	if kind.contains("snail"):
+		return "snail"
+	return ""

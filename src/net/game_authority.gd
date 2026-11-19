@@ -1237,7 +1237,7 @@ func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
 		return plant_hit
 	if Items.kind(ps.selected_item()) == "shovel":
 		return _judge_level(ps, point)
-	var power: float = Items.dig_power(ps.selected_item()) * ps.progress.dig_power_mult() \
+	var power: float = Items.dig_power(ps.selected_item()) * ps.progress.dig_power_mult() * (1.0 + boost_total(ps, "dig_power")) \
 		* (1.0 + Gems.bonus(ps.inventory.get_slot(ps.hand_slot())).get("dig", 0.0)) 		* (1.0 + Upgrades.bonus(ps.inventory.get_slot(ps.hand_slot())))  # +15% per upgrade step
 	if ps.progress.has_star("mining", 100) and randf() < 0.1:
 		power *= 2.0  # Mining ★100: lucky hit
@@ -1540,10 +1540,14 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 				Sfx.ui("eat", -4.0)
 			else:
 				_rpc_consumed.rpc_id(peer_id, id, roll)
-			# The host does the fighting math, so it remembers food damage buffs itself.
+			# The host does the fighting, digging and drops math, so it remembers those food buffs itself.
 			var fb: Dictionary = Foods.buff_of(id) if Foods.is_buff_food(id) else {}
-			if fb.has("damage"):
-				add_boost(ps, id, {damage = fb.damage}, Foods.minutes_of(id) * 60.0)
+			var host_part := {}
+			for k in ["damage", "dig_power", "extra_drops"]:
+				if fb.has(k):
+					host_part[k] = fb[k]
+			if not host_part.is_empty():
+				add_boost(ps, id, host_part, Foods.minutes_of(id) * 60.0)
 			return "ate"
 		"page":
 			return _read_page(ps, peer_id, id)
@@ -1717,6 +1721,15 @@ func add_boost(ps: PlayerState, name: String, data: Dictionary, seconds: float) 
 	var b := data.duplicate()
 	b.until = now() + seconds
 	ps.boosts[name] = b  # the same boost again refreshes it
+
+
+## One number summed over active boosts ("dig_power", "extra_drops"...).
+func boost_total(ps: PlayerState, key: String) -> float:
+	var total := 0.0
+	for b in ps.boosts.values():
+		if b.until > now():
+			total += b.get(key, 0.0)
+	return total
 
 
 ## Extra damage share from active boosts. Bug oil counts only against bugs.
@@ -2713,8 +2726,8 @@ func _tick_vitals(ps: PlayerState, delta: float) -> void:
 	var thirst_before := v.thirst
 	v.tick(delta, resting)
 	# Survival skill and perks slow the drain.
-	v.hunger = hunger_before - (hunger_before - v.hunger) * ps.progress.hunger_drain_mult() * (1.0 + rune_slab.bonus("hunger_drain"))
-	v.thirst = thirst_before - (thirst_before - v.thirst) * ps.progress.thirst_drain_mult() * (1.0 + rune_slab.bonus("thirst_drain"))
+	v.hunger = hunger_before - (hunger_before - v.hunger) * ps.progress.hunger_drain_mult() * (1.0 + rune_slab.bonus("hunger_drain")) * (1.0 - v.buff_total("hunger_slow"))
+	v.thirst = thirst_before - (thirst_before - v.thirst) * ps.progress.thirst_drain_mult() * (1.0 + rune_slab.bonus("thirst_drain")) * (1.0 - v.buff_total("thirst_slow"))
 
 
 func station_near(p: Vector3, radius: float = STATION_REACH) -> Station:

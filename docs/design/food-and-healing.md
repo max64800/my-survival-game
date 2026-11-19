@@ -36,6 +36,12 @@ Players never see "1 health every 3.9 s" on a card. They see hearts; hovering sh
 Station helpers count from **10 m** (was 4 m). Holding a station, a helper or the build hammer shows glowing lines
 from each helper to the station it counts for (gold = counts now, green = where the one in your hand would connect).
 
+## Built (Nov 20, Mac)
+- Zone 1 foods have their plan effects (`Foods.DISHES`), healing 1 health / 5 s sped up by food up to 1 / 2 s
+  (`Vitals.regen_per_second`), 2 food slots + 1 drink slot, each food effect stops at 50%, creature guards on
+  monster hits, lose food/water slower, digging and extra drops (host boosts).
+- Crafting window: healing hearts (hover = exact speed) and bullet effects under the ingredients; bag tooltips too.
+
 ## Still to build
-The food plan isn't in the game yet (today's foods keep their old effects and don't speed up healing). Building it:
-new healing numbers in Vitals, 2 foods + 1 drink slots, the guards and other new effects, the pot-on-the-fire kitchen and the Stone Oven model, and the hearts + bullet list on the in-game food cards and bag tooltips.
+The 3 kitchen levels: the Cooking Pot placed on the campfire and the Stone Oven (needs a model). Until then the stews
+cook at the Cooking Pot and the effect times follow the plan (15 / 25 / 35 min). Zone 2+ foods keep their old effects.

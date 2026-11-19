@@ -641,7 +641,7 @@ func _kill(m: Monster, peer: int) -> void:
 	var killer := auth.get_player(peer)
 	if killer:
 		auth.heal(peer, killer.progress.perk_rank("last_swing") * 3.0)  # Last Swing
-	var more := killer.progress.extra_drop_chance() if killer else 0.0  # Monster Scavenger
+	var more := (killer.progress.extra_drop_chance() + auth.boost_total(killer, "extra_drops")) if killer else 0.0  # Monster Scavenger, food
 	for d in m.data.drops:
 		var times := (2 if m.leader else 1) + (1 if randf() < more else 0)
 		for t in times:
@@ -809,6 +809,7 @@ func _judge_incoming() -> void:
 					result.damage = 0.0  # spit: a shield stops it completely (owner, Nov 17)
 				if result.result == "block" and sb.has("block_poison"):
 					ask_blocked(hit.uid)
+				result.damage *= 1.0 - me.vitals.buff_total("guard_" + Monsters.food_guard(m.kind))  # meat of its kind (food plan)
 				me.vitals.take_damage(result.damage)
 				# Poison/fire/frost buildup: all of it on a hit, half through a block, none on a parry.
 				var share: float = {"hit": 1.0, "block": 0.5}.get(result.result, 0.0)

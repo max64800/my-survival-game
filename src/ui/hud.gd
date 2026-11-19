@@ -520,6 +520,12 @@ func _refresh_slots() -> void:
 			panel.tooltip_text = Upgrades.display_name(s)  # "Copper Sword +2"
 			if Items.kind(s.id) == "page":
 				panel.tooltip_text += "\nRight-click to read it."
+			elif Foods.is_buff_food(s.id):  # healing hearts first, then the other effects (owner, Nov 19)
+				var halves := Foods.heart_halves(Foods.buff_of(s.id).get("regen", 0.0))
+				if halves > 0:
+					panel.tooltip_text += "\n• Healing " + ("½♥" if halves == 1 else "♥".repeat(halves / 2) + ("½" if halves % 2 else ""))
+				for line in Foods.effect_lines(s.id):
+					panel.tooltip_text += "\n• " + line
 		(panel.get_node("Short") as Label).text = "" if s.is_empty() or tex != null else Items.short_label(s.id)
 		(panel.get_node("Count") as Label).text = "" if s.is_empty() or s.count <= 1 else str(s.count)
 
