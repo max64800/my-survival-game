@@ -75,6 +75,7 @@ var poi_field: PoiField
 ## What the whole world remembers (shared by every player): shrines emptied (and more keys added later:
 ## columns, learned, blueprints...). Old saves may still carry clues/bosses_dead/lairs_found: unused now.
 var world_state := {shrines = []}
+var _refill_timer := 0.0  ## counts down to the next dungeon-chest refill check
 var _next_station_id := 1
 var _progress_dirty := {}  ## peer ids whose XP changed and need a sync
 var _progress_sync := 0.0
@@ -230,6 +231,11 @@ func _process(delta: float) -> void:
 	_apply_pending_digs()
 	if is_host():
 		_tick_regrow(delta)
+		world_state.played = float(world_state.get("played", 0.0)) + delta  # this world's play time (dungeon refills)
+		_refill_timer -= delta
+		if _refill_timer <= 0.0:
+			_refill_timer = DungeonLoot.CHECK_EVERY
+			DungeonLoot.tick(self)
 		_auto_timer -= delta
 		var feed_now := _auto_timer <= 0.0
 		if feed_now:
@@ -1482,8 +1488,8 @@ func _learn_from_page(ps: PlayerState, id: String) -> String:
 		_ev_learned_blueprint.rpc(BlueprintMenu.ready_made_name(key), id)
 		return "learned"
 	# A recipe page from a ruin: the whole group learns a recipe nobody knew yet, of the page's kind (a Cook's Page
-	# teaches food, an Armourer's Page armour... owner, Nov 19).
-	var left := Recipes.page_recipes(id).filter(func(r): return not world_state.get("learned", []).has(r))
+	# teaches food, an Armourer's Page armour... owner, Nov 19). A dungeon's page always teaches its one recipe (F237).
+	var left := ([Items.info(id).recipe] if Items.info(id).has("recipe") else Recipes.page_recipes(id)).filter(func(r): return not world_state.get("learned", []).has(r))
 	if left.is_empty() or not ps.inventory.remove(id, 1):
 		return "nothing_new"
 	var r: String = left[randi() % left.size()]

@@ -216,6 +216,10 @@ static func _data() -> Dictionary:
 			_all["gem_" + g] = {name = Gems.NORMAL[g].name, color = Gems.NORMAL[g].color, short = "G" + g.left(1).to_upper(), kind = "gem", stack = 20}
 		for g in Gems.EPIC:
 			_all["gem_" + g] = {name = Gems.EPIC[g].name, color = Gems.EPIC[g].color, short = "E" + g.left(1).to_upper(), kind = "gem", stack = 5}
+		for r in Recipes.LIST:  # a dungeon's page always teaches the same copper recipe, and its name says which (owner, Nov 19, F237)
+			if Recipes.LIST[r].unlock is String and Recipes.LIST[r].unlock == "ruin" and Recipes.LIST[r].station == "anvil":
+				var pg: String = Recipes.PAGE_OF_KIND[Recipes.page_kind(r)]
+				_all["page_" + r] = DATA[pg].merged({name = "%s: %s" % [DATA[pg].name, display_name(Recipes.LIST[r].output)], recipe = r, icon_of = pg}, true)
 		for id in Foods.DISHES:
 			var f: Dictionary = Foods.DISHES[id]
 			_all[id] = {name = f.name, stack = 20, color = f.get("color", Color(0.9, 0.7, 0.4)), short = f.get("short", "Fd"),
@@ -255,7 +259,7 @@ static var _icons := {}
 ## The item's picture, or null if it has none yet (then show color + short label instead).
 static func icon(id: String) -> Texture2D:
 	if not _icons.has(id):
-		var path := ICON_DIR + id + ".png"
+		var path := ICON_DIR + str(info(id).get("icon_of", id)) + ".png"  # (a dungeon page uses its kind's picture)
 		if not ResourceLoader.exists(path) and id.begins_with("rune_"):
 			path = ICON_DIR + "rune_" + id.split("_")[1] + ".png"  # all runes of one colour share a picture
 		_icons[id] = load(path) if ResourceLoader.exists(path) else null

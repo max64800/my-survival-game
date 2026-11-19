@@ -5486,6 +5486,15 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   Crafting Book food tables now show "Healing ½♥ / ♥" first in each bullet list. Not in the game yet: the food plan
   itself isn't built (today's foods keep their old effects, game cards don't list food effects).
 
+## 2026-11-19 (Mac) — Zone 1 dungeons plan (F237)
+- Talked progression: owner wants zone 1 filled before any new zone. Checked the game: only 2 real places (start
+  tower, Fallen Outpost) plus ~3 one-chest ruins and ~4 camps; 12 copper recipes come from pages in single chests.
+- Owner's picks: mix of sizes, 4 kinds (outposts, mines, forges, tombs), themed pages, monsters + loot come back but
+  each dungeon always teaches the same copper recipe. Plan: `docs/design/zone1-dungeons-plan.md` (12 dungeons =
+  12 copper recipes). F237 bumped to 3×. Nothing built yet.
+- Noticed: silver gear unlocks all at once from one silver bar (unlike copper). Told the owner, not changed.
+- Hurdle: another chat had uncommitted food-plan files open at the same time; left them alone.
+
 ## 2026-11-20 (Mac) — Station helper lines, 10 m range, kitchen = 3 levels
 - Owner: helpers should show a clear line to the station they boost while you hold a station, a helper or the build
   hammer; range 10 m instead of 4. New `src/player/station_links.gd` (camera-facing glowing bands: gold = counts now,
@@ -5494,6 +5503,21 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   docs/design/food-and-healing.md updated; the pot-on-fire and the oven are not built yet (oven needs a model).
 - Not looked at in a real game window: the lines are untested by eye. Hurdle: another session had unsaved edits in
   JOURNAL.md and FEEDBACK.md, so this entry was added to the saved copy only and FEEDBACK.md was left alone.
+
+## 2026-11-20 (Mac) — Zone 1 dungeons, step 1: fixed recipe pages + refill clock (F237)
+- Built: one page per copper recipe (12), named after what it teaches ("Weaponsmith's Page: Copper Mace") and using its
+  kind's picture. Reading it teaches only that recipe; a second copy says you know it and stays in your bag.
+- Built: `DungeonLoot` (src/world/dungeon_loot.gd). Dungeon chests remember their loot; an hour of play after someone
+  takes from one, it fills back up (the same page again), only while nobody stands within 30 m. The world now counts
+  its play time (`world_state.played`, saved). Plus a per-world shuffle for which dungeon teaches which recipe.
+  Nothing in the world uses it yet: the first dungeon comes next. Test: tests/test_dungeons.gd (4 tests).
+- Owner changed the plan: the Fallen Outpost and the start tower are ruins (plans, pages, tools), not dungeons. The 12
+  dungeons are new: 4 small wooden, 5 medium Stonehold, 3 big Hearthbrick; 5/8/12 min runs; rings by size; own names;
+  guards wait for new monsters; refill after 1 hour of play. Kinds still open (owner has a different idea). So step 2
+  ("three medium outposts") was not built: outposts are ruins now.
+- Mistakes/hurdles: (1) Claude's first question mixed up "how long to come back" and "how long to clear"; the owner
+  answered the second, so Claude asked again. (2) The page names came out as plain "Armourer's Page": Godot's
+  `merged()` keeps the old value unless you pass `true` to overwrite; the new test caught it.
 
 ## 2026-11-20 (Mac) — Zone 1 food plan built + crafting window fixes
 - Food plan in the game: zone 1 dishes and drinks get their plan effects, healing is 1 health every 5 s on your own and
