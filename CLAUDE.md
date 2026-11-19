@@ -29,6 +29,13 @@ Code layout, recorder details, how to run robots: `docs/CLAUDE-REFERENCE.md` (re
 - Use Voxel Tools and GodotSteam **GDExtension** editions with the official Godot build (never the module builds).
 - Use the `godot` MCP to run the game and read errors; use GodotPrompter skills for Godot patterns.
 - **Every game run Claude starts is muted:** `--audio-driver Dummy` before `--path` (the owner is often using the PC).
+- **Test games are marked (owner, Nov 19):** add `claude=<what_you_test>` after `--` (e.g. `-- claude=waterfalls seed=42`).
+  The game then shows an orange frame + "CLAUDE TEST" label and taskbar name, so the owner knows not to play it.
+  Close every test game when you're done. Test worlds save to `user://claude_test_saves` (named "🤖 TEST…");
+  delete that folder after testing (the game also deletes ones older than a day). Never touch `user://saves`.
+- **New chat banner (owner, Nov 19):** when the owner should start a new chat (chat is getting long, or the task changed),
+  make the **very first line** of the message `# 🛑 START A NEW CHAT 🛑` followed by one short line saying why.
+  Never bury it at the end. The status line also shows how full the chat is (green, yellow, red = NEW CHAT).
 
 ## Videos (Shorts about the game)
 - Editing the dwarf Shorts: `video/README.md` (pipeline, owner's video rules in `video/rules/`, scripts in `video/scripts/`).

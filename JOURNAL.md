@@ -4190,6 +4190,24 @@ the body."
   broke the bat-ragdoll test (it woke the bat after placing it 1.5 m up): the test now wakes it first. (4) Feedback
   numbers clashed again (F350 is the ruin rebuild): the statues are F370.
 
+## Nov 19: Telling Claude's test games and chats apart (owner idea)
+- **Owner: "if Claude needs a new chat, write it in big bold letters; mark the games Claude opens for testing; name
+  the test worlds and delete them after."** We brainstormed first, then built all of it:
+  - **New chat banner:** a CLAUDE.md rule: the first line of the message is a big "🛑 START A NEW CHAT 🛑" heading,
+    never hidden at the end.
+  - **Fuel gauge:** a status line at the bottom of Claude Code (in the owner's own Claude settings, not the game):
+    green "fine", yellow "getting long" from 150k tokens, red "START A NEW CHAT" from 300k.
+  - **Test games:** new `src/debug/claude_test.gd` (always loaded): if Claude started the game (`-- claude=<what>`
+    or the muted sound setting), a thick orange frame, a "🤖 CLAUDE TEST: don't play this one | Testing: …" label,
+    and the taskbar name changes. The owner's own games never show it.
+  - **Test worlds:** saved to their own folder (`claude_test_saves`), named "🤖 TEST – <what> – safe to delete", so
+    they never show in the owner's world list. Claude deletes them after testing; the game deletes any older than a
+    day. The clean-up only looks in that folder, so the owner's worlds can't be hit (test added).
+- **Hurdles:** (1) the old save test assumed "not a robot = the owner's folder", which would fail when a Claude runs
+  tests muted; it now sets the Claude flag on purpose. (2) The gauge read 0 at first when tested from PowerShell
+  (PowerShell added an invisible marker in front of the text); the script now skips it. (3) PowerShell rewrote the
+  Claude settings file with different spacing; checked it holds exactly the same settings plus the gauge (a backup
+  is kept next to it).
 ## Nov 19, 2026 (PC, Claude 1): glow groves in the game, a Furnish tab, trees of every size
 - **Glow groves are in the game.** 1-2 big caverns per biome (never the first cave) hold a small forest: glowing trees in one colour per grove (teal or blue in Mossy, violet or pink in Fungal) with dark trees between them, rocks, pebbles, grass, ferns, clover, flowers and mushrooms on the floor, shelf fungus on dark trunks, and a few soft lights so the trees light the cave. Test: `test_glow_groves` (the owner's placement rule: nothing on paths, bridges, columns, places or Root Trees).
 - **Trees of every size (owner: "some big, some very tiny, like a bush the size of the dwarf, they give different amounts of wood").** A quarter are bushes about dwarf height, some small, about half big. Every grove tree can be chopped like a Root Tree (2 wood with an axe, 1 without): a bush gives 3-5 wood, the biggest 36 (a Root Tree gives 30). Used up, it comes down (with its fungus and its light) and stands again after 45 minutes. Saved in the world. Tests: `test_trees_come_in_very_different_sizes`, `test_chop_a_grove_tree_down_and_it_grows_back`.

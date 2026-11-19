@@ -129,6 +129,35 @@ func test_backups_and_broken_saves() -> void:
 func test_robots_never_touch_real_saves() -> void:
 	check(Controls.robot, "tests run as a robot")
 	check(SaveGame.path_for(5).begins_with(SaveGame.ROBOT_FOLDER), "robot saves go to their own folder")
+	var was_checked := ClaudeTest._checked
+	var was_active := ClaudeTest._active
+	ClaudeTest._checked = true
 	Controls.robot = false
+	ClaudeTest._active = false
 	check(SaveGame.path_for(5).begins_with(SaveGame.FOLDER + "/"), "a person's saves go to the normal folder")
+	ClaudeTest._active = true
+	check(SaveGame.path_for(5).begins_with(ClaudeTest.SAVE_FOLDER + "/"), "Claude's test worlds go to their own folder")
 	Controls.robot = true
+	ClaudeTest._checked = was_checked
+	ClaudeTest._active = was_active
+
+
+## Owner, Nov 19: Claude's test worlds are marked, and only they are ever cleaned up.
+func test_claude_test_worlds_are_marked_and_only_they_get_deleted() -> void:
+	ClaudeTest._what = "waterfalls"
+	check(ClaudeTest.world_name("Cave 12") == "🤖 TEST – waterfalls – safe to delete", "test world gets the mark")
+	check(ClaudeTest.world_name(ClaudeTest.world_name("x")).count("🤖") == 1, "never marked twice")
+	ClaudeTest._what = ""
+	# One test world, plus an owner-style world in the normal folder. Clean "older than 0 seconds".
+	DirAccess.make_dir_recursive_absolute(ClaudeTest.SAVE_FOLDER)
+	DirAccess.make_dir_recursive_absolute(SaveGame.FOLDER)
+	var test_world := ClaudeTest.SAVE_FOLDER.path_join("world_1_1.save")
+	var owner_world := SaveGame.FOLDER.path_join("world_robotcheck_1.save")
+	for p in [test_world, owner_world]:
+		var f := FileAccess.open(p, FileAccess.WRITE)
+		f.store_string("x")
+		f.close()
+	ClaudeTest.clean_old_worlds(0)
+	check(not FileAccess.file_exists(test_world), "old test world deleted")
+	check(FileAccess.file_exists(owner_world), "the owner's world is never touched")
+	DirAccess.remove_absolute(owner_world)
