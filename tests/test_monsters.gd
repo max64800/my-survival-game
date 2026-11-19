@@ -525,6 +525,32 @@ func test_snail_turns_before_it_moves() -> void:
 	_teardown()
 
 
+## Rock Beetles and Cave Bats too (owner, Nov 19: beetles "move side to side", bats "only forward and backward"):
+## they turn to face a new way first (faster than the snail), then go forward. Bats sway into curves as they fly.
+func test_beetles_and_bats_turn_before_moving() -> void:
+	await _setup()
+	for kind in ["rock_beetle", "great_rock_beetle", "cave_bat"]:
+		var m := _spawn(kind, Vector3(3.0, 0, 0))
+		m.set_physics_process(false)
+		m.model.rotation.y = 0.0  # facing -Z
+		var r: Array = m._turn_toward(Vector3(1, 0, 0), 0.05)  # wants to go +X: a quarter turn away
+		check(r[1] == 0.0, "%s: facing away, it doesn't move yet" % kind)
+		var steps := 0
+		while r[1] < 0.5 and steps < 200:
+			r = m._turn_toward(Vector3(1, 0, 0), 0.05)
+			steps += 1
+		check((r[0] as Vector3).dot(Vector3(1, 0, 0)) > 0.9, "%s: then it goes the way it faces" % kind)
+		check(steps * 0.05 < (2.5 if kind == "great_rock_beetle" else 1.5), "%s: a quick turn, not snail-slow (%.1f s)" % [kind, steps * 0.05])
+	var bat := _spawn("cave_bat", Vector3(-3.0, 0, 0))
+	var ways := {}
+	for k in 8:
+		bat._clock = k * 0.7
+		var w := bat.weave(Vector3(1, 0, 0))
+		ways[snappedf(atan2(w.z, w.x), 0.05)] = true
+	check(ways.size() >= 3, "a flying bat's path sways (curves), not a dead straight line (%s)" % [ways.keys()])
+	_teardown()
+
+
 ## Ragdolls (owner, Nov 18; the beetle first): on death the model falls apart into physics pieces joined at their
 ## hinges, falls and tumbles, then shrinks away.
 func test_beetle_ragdoll_on_death() -> void:

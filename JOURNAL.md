@@ -4227,3 +4227,13 @@ the body."
 - Snail colours and bat flight passed to the creature (snail) Claude. The pull into this folder is still blocked: the
   safety check refused rewriting files that hold other sessions' unsaved work; waiting for the owner.
 
+
+## November 19, 2026 (PC, snail Claude): the creature list: all 4 looks, beetles and bats turn first (F373, F374)
+- Owner (via the cave Claude): only one look of each creature seen; beetles slide sideways; bats only fly forward and
+  back (turn first, arcs, randomness); the first cave's two snails should differ; a bat didn't turn to stone.
+- Looks: they were tied to the rare crystal variants (4-7%). Owner's pick (multiple choice): mixed in every cave.
+  MonsterModel.look_of: a normal creature's look comes from its number (the next one always differs); roost bats
+  share one per cave (look from the roost's pack id); variants keep their look and always get crystals now.
+- Turning: beetles and bats got the snail's turn-in-place with their own turn_speed; bats sway (Monster.weave).
+- **Hurdles:** the first sway test fed the sway through turning-first, which hides it in one step; tested the sway
+  on its own. Not done yet: the bat that didn't turn to stone (F369), and wiring in Claude 1's cave spider.

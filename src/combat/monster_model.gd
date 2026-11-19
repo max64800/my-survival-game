@@ -8,19 +8,30 @@ class_name MonsterModel
 ## Creatures made from the owner's approved ChatGPT pictures (docs/art/CREATURE-STYLE.md):
 ## res://assets/models/creatures/<art>_<look>.glb. The Great Rock Beetle is a bigger Rock Beetle.
 const CREATURE_ART := {"rock_snail": "rock_snail", "cave_bat": "cave_bat", "rock_beetle": "rock_beetle", "great_rock_beetle": "rock_beetle"}
-## Crystal variants (Monsters.VARIANTS) wear their own look: ember, frost, spore. Normal ones are mossy.
+## Crystal variants (Monsters.VARIANTS) wear their own look: ember, frost, spore.
 const VARIANT_ART := {"": "mossy", "red": "ember", "blue": "frost", "green": "spore"}
+## Normal creatures wear any of the 4 looks (owner, Nov 19: "I still see only green snails, only green beetles": all 4
+## looks mixed in every cave). Picked from the creature's number, so the next one is a different look (the first
+## cave's two snails differ) and every computer sees the same. Crystal variants keep crystals on top to stand out.
+const LOOKS := ["mossy", "ember", "frost", "spore"]
 
 
-static func build(shape: String, color: Color, size: float, leader: bool, kind: String = "", seed: int = 0, variant: String = "") -> Node3D:
+static func look_of(variant: String, seed: int) -> String:
+	return VARIANT_ART[variant] if variant != "" and VARIANT_ART.has(variant) else LOOKS[posmod(seed, LOOKS.size())]
+
+
+static func build(shape: String, color: Color, size: float, leader: bool, kind: String = "", seed: int = 0, variant: String = "", look_seed: int = -1) -> Node3D:
 	# 1. A creature forged from the approved pictures, in this variant's look.
 	# 2. Else a hand-built model: res://assets/models/monsters/<kind>_v<N>.glb or <kind>.glb.
 	# (front +Z, feet at the bottom, ~1 m = size 1). 3. Else simple shapes made here.
 	var forged: Node3D = null
 	var art_look := false
 	if CREATURE_ART.has(kind):
-		forged = Look.forged("creatures", "%s_%s" % [CREATURE_ART[kind], VARIANT_ART.get(variant, "mossy")])
-		art_look = forged != null and VARIANT_ART.has(variant)
+		var look := look_of(variant, seed if look_seed < 0 else look_seed)
+		forged = Look.forged("creatures", "%s_%s" % [CREATURE_ART[kind], look])
+		if forged == null:
+			forged = Look.forged("creatures", "%s_mossy" % CREATURE_ART[kind])
+		art_look = false  # (a look alone no longer means a crystal variant: variants get their crystals too)
 	if forged == null and kind != "":
 		var count := variant_count(kind)
 		forged = Look.forged("monsters", "%s_v%d" % [kind, posmod(seed, count)]) if count > 0 else Look.forged("monsters", kind)
@@ -31,6 +42,8 @@ static func build(shape: String, color: Color, size: float, leader: bool, kind: 
 		var jitter := 1.0 + (float(posmod(seed * 7919, 1000)) / 1000.0 - 0.5) * 0.12  # each one a little bigger or smaller
 		holder.scale = Vector3.ONE * size * jitter
 		holder.set_meta("variant_look", art_look)  # it already shows its variant (no extra crystals needed)
+		if CREATURE_ART.has(kind):
+			holder.set_meta("look", look_of(variant, seed if look_seed < 0 else look_seed))
 		_tag_forged(holder, forged, shape)
 		_vary_stone(forged, seed)
 		if leader:

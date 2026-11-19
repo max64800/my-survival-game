@@ -94,7 +94,9 @@ func _ready() -> void:
 	shape.position = Vector3.UP * cap.height * 0.5
 	add_child(shape)
 	_body_shape = shape
-	model = MonsterModel.build(data.shape, data.color, s, leader, kind, uid, variant)  # uid: same individual for everyone
+	# A bat roost is one look per cave (owner, Nov 19: "5 frost ones, or 5 ember ones"); everyone else its own.
+	var look_seed := pack_id if pack_id >= MonsterManager.BAT_KEY else -1
+	model = MonsterModel.build(data.shape, data.color, s, leader, kind, uid, variant, look_seed)  # uid: same individual for everyone
 	_size = s
 	add_child(model)
 	if is_boss():
@@ -574,6 +576,8 @@ func add_buildup(kind: String, amount: float) -> void:
 
 func _move(delta: float, dir: Vector3, speed: float) -> void:
 	speed *= ailments.speed_mult()
+	if data.get("weaves", false) and dir.length() > 0.1 and state != State.ATTACK:
+		dir = weave(dir)
 	if data.get("turns_in_place", false):
 		var turned := _turn_toward(dir, delta)
 		dir = turned[0]
@@ -618,11 +622,19 @@ func _face(target: Node3D) -> void:
 			model.rotation.y = lerp_angle(model.rotation.y, atan2(-to.x, -to.z), 0.25)
 
 
+## Rock Snails, Rock Beetles and Cave Bats move only forward (owner, Nov 18-19: no sliding sideways or backwards; each
+## kind its own turn_speed, the snail slowest).
 ## The Rock Snail moves only forward (owner, Nov 18: "he can move backwards"): it turns slowly toward where it wants
 ## to go, hopping in place while it turns (model meta "turning", MonsterModel._snail), and only sets off once it faces
 ## that way. Returns [the direction it really moves (its own forward, or none), a speed factor].
 const TURN_SPEED := 0.9  ## radians a second (about 7 s for a full turn)
 const TURN_GO := 0.45    ## radians: it sets off once it faces within this of the way it wants to go
+
+
+## Bats fly in curves with a bit of randomness (owner, Nov 19: "only forward and backward"): the way it wants to go
+## sways slowly from side to side, each bat in its own rhythm.
+func weave(dir: Vector3) -> Vector3:
+	return dir.rotated(Vector3.UP, sin(_clock * 1.1 + uid * 1.7) * 0.55 + sin(_clock * 2.9 + uid * 0.6) * 0.2)
 
 
 func _turn_toward(dir: Vector3, delta: float) -> Array:
@@ -632,7 +644,7 @@ func _turn_toward(dir: Vector3, delta: float) -> Array:
 		return [Vector3.ZERO, 0.0]
 	var want := atan2(-dir.x, -dir.z)
 	var diff := angle_difference(model.rotation.y, want)
-	model.rotation.y = rotate_toward(model.rotation.y, want, TURN_SPEED * delta)
+	model.rotation.y = rotate_toward(model.rotation.y, want, float(data.get("turn_speed", TURN_SPEED)) * delta)
 	model.set_meta("turning", absf(diff) > 0.08)
 	if absf(diff) > TURN_GO:
 		return [Vector3.ZERO, 0.0]  # still turning: hops in place

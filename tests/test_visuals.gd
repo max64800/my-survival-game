@@ -163,7 +163,13 @@ func test_forged_creatures() -> void:
 		for look in ["mossy", "frost", "ember", "spore"]:
 			check(ResourceLoader.exists("res://assets/models/creatures/%s_%s.glb" % [art, look]), "%s %s model exists" % [art, look])
 	var beetle := MonsterModel.build("rock_beetle", Color.WHITE, 0.9, false, "rock_beetle", 0, "red")
-	check(beetle.has_meta("forged_root") and beetle.get_meta("variant_look", false), "an Ember-crested beetle wears the ember look")
+	check(beetle.has_meta("forged_root") and beetle.get_meta("look", "") == "ember", "an Ember-crested beetle wears the ember look")
+	# Normal creatures wear all 4 looks (owner, Nov 19): two in a row never look the same
+	var seen := {}
+	for sd in 8:
+		seen[MonsterModel.look_of("", sd)] = true
+		check(MonsterModel.look_of("", sd) != MonsterModel.look_of("", sd + 1), "the next creature is a different look")
+	check_eq(seen.size(), 4, "all 4 looks show up")
 	check((beetle.get_meta("legs") as Array).size() >= 4, "beetle has walking legs (%d)" % (beetle.get_meta("legs") as Array).size())
 	var eye: StandardMaterial3D = beetle.get_meta("eye_mat")
 	check(eye != null and eye.emission_enabled, "beetle eyes can flash before an attack")
