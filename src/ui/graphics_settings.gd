@@ -114,6 +114,11 @@ static func light_count() -> int:
 	return clampi(int(v.get("lights", 28)), 4, MAX_LIGHTS) if not v.is_empty() else 28
 
 
+## Mushroom grass: [how many of the tufts to draw, how far away] (fewer and nearer on weak computers).
+static func grass() -> Array:
+	return {"potato": [0.35, 14.0], "low": [0.55, 18.0], "medium": [0.8, 22.0], "ultra": [1.0, 32.0]}.get(preset, [1.0, 26.0])
+
+
 ## How many rock chunks fly when rock breaks (fewer on weak computers; the big ones always fly).
 static func chunk_share() -> float:
 	return {"potato": 0.4, "low": 0.65}.get(preset, 1.0)

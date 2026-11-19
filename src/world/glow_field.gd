@@ -195,7 +195,7 @@ func _add_node(s: Dictionary) -> void:
 		mi.layers = PLANT_LAYER
 	mi.visibility_range_end = 70.0
 	mi.visibility_range_end_margin = 8.0
-	mi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
+	mi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED  # (a fade draws them see-through: slow; owner, Nov 19, speed)
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	body.add_child(mi)
 	_add_solid(body, mi, model, s)

@@ -641,7 +641,7 @@ func _make_set(kind: String, picks: Array) -> Dictionary:
 	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	mmi.visibility_range_end = k.view
 	mmi.visibility_range_end_margin = 6.0
-	mmi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
+	mmi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED  # (a fade draws them see-through: slow; owner, Nov 19, speed)
 	if k.look == "bend":
 		for i in mm.mesh.get_surface_count():
 			var m := mm.mesh.surface_get_material(i)

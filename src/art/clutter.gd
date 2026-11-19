@@ -282,7 +282,7 @@ func _make_set(kind: String, xforms: Array) -> void:
 		mmi.material_override = mat
 		mmi.visibility_range_end = 45.0  # far-away pebbles aren't worth drawing
 		mmi.visibility_range_end_margin = 5.0
-		mmi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
+		mmi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED  # (a fade draws them see-through: slow; owner, Nov 19, speed)
 		if kind == "pebble":
 			mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		add_child(mmi)
@@ -441,7 +441,7 @@ func _make_model_cells(key: String, mesh: Mesh, items: Array, custom := false) -
 		mmi.multimesh = mm
 		mmi.visibility_range_end = 55.0
 		mmi.visibility_range_end_margin = 6.0
-		mmi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
+		mmi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED  # (a fade draws them see-through: slow; owner, Nov 19, speed)
 		add_child(mmi)
 		holders.append(mmi)
 	_drip_cells[key] = holders
@@ -530,7 +530,7 @@ func _make_drip_set(kind: String, items: Array) -> void:
 		mmi.multimesh = mm
 		mmi.visibility_range_end = 60.0
 		mmi.visibility_range_end_margin = 6.0
-		mmi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
+		mmi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED  # (a fade draws them see-through: slow; owner, Nov 19, speed)
 		add_child(mmi)
 		holders.append(mmi)
 	_drip_cells[kind] = holders

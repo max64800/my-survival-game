@@ -4110,3 +4110,10 @@ the body."
 - Hurdle: the dig test's numbers swing wildly between runs of the same code (10 to 43 slow frames), so it couldn't
   tell old from new; with other sessions using the PC, single runs prove nothing. Kept the changes the research backs.
 
+- (Nov 19, mushroom grass) 3 new tuft shapes (bells, needles, carpet) + a far twin of each (110 triangles), twice the
+  tufts, thinned and nearer on lower presets (tufts mixed so thinning is even). First measurement: 11.5 ms of graphics
+  work looking over the grass. Cause: "fade self" on visibility ranges draws things see-through. Switched every
+  decoration to a plain cut-off: 3.75 ms (High), 1.5 ms (Potato).
+- Hurdle: the "speed part 2" upload was refused (someone uploaded first) after Claude had already deleted the clean
+  copy; the save was found again in git and put on top. Lesson: upload first, then clean up.
+
