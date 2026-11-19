@@ -63,7 +63,7 @@ func _physics_process(delta: float) -> void:
 			_jobs.remove_at(_check)
 			continue
 		var box: AABB = (job.aabb as AABB).grow(1.0)
-		if not _built(box):
+		if not _near_player(box) or not _built(box):
 			_check += 1
 			continue
 		_jobs.remove_at(_check)
@@ -74,6 +74,14 @@ func _physics_process(delta: float) -> void:
 			if (job.after as Callable).is_valid():
 				(job.after as Callable).call()
 		done += 1
+
+
+## Only near a player is the rock solid (World.COLLISION_DISTANCE): further out a ray would find no floor.
+func _near_player(box: AABB) -> bool:
+	var cam := get_viewport().get_camera_3d() if is_inside_tree() else null
+	if cam == null or DisplayServer.get_name() == "headless":
+		return true
+	return cam.global_position.distance_to(box.get_center()) < World.COLLISION_DISTANCE - 15.0
 
 
 ## Is the rock in `box` built (drawn, or at least solid)? Windowless tests build it without drawing it.

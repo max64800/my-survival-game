@@ -114,6 +114,11 @@ static func light_count() -> int:
 	return clampi(int(v.get("lights", 28)), 4, MAX_LIGHTS) if not v.is_empty() else 28
 
 
+## How many rock chunks fly when rock breaks (fewer on weak computers; the big ones always fly).
+static func chunk_share() -> float:
+	return {"potato": 0.4, "low": 0.65}.get(preset, 1.0)
+
+
 ## A small decorative light (a torch, a glowing creature, a place's lamp): it switches off smoothly when far away, so
 ## the graphics card never works on lights you can't see (owner, Nov 19: cheaper lights).
 static func cheap_light(l: Light3D, far := 30.0) -> void:

@@ -369,7 +369,7 @@ func _avg_process() -> float:
 func _digbench() -> void:
 	var dwarf: Dwarf = _main.dwarf
 	var auth := GameAuthority.instance
-	await _wait(6.0)
+	await _wait(25.0)  # (after the world has settled: loading work in the background spoils the numbers)
 	var space := dwarf.get_world_3d().direct_space_state
 	var p := dwarf.global_position + Vector3.UP * 0.5
 	var parts := {}

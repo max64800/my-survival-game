@@ -28,28 +28,26 @@ static func burst(parent: Node, center: Vector3, out: Vector3, col: Color, mat_i
 		_make_shapes()
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
-	var n := roundi(rng.randi_range(20, 28) * clampf(scale, 0.6, 1.3))  # (owner: "more of them")
+	var n := roundi(rng.randi_range(20, 28) * clampf(scale, 0.6, 1.3) * GraphicsSettings.chunk_share())  # (owner: "more of them"; fewer on Potato/Low)
 	out = out.normalized() if out.length_squared() > 0.01 else Vector3.UP
 	# Made once and shared (owner, Nov 18: mining dropped the frame rate; each burst used to build new materials and
 	# shapes for every chunk, about 9 ms; now about 2)
 	var mat := _material(mat_id, rng.randi_range(0, 3), col)
 	for i in n:
-		var c := RockShatter.new()
+		var c := _take()  # a faded one used again, or a new one (owner, Nov 19, speed: no building nodes every burst)
 		var k := rng.randi() % _shapes.size()
 		var pick: Array = _shapes[k]
 		c._life = rng.randf_range(LIFE - 0.5, LIFE + 1.5)
 		c._size = (rng.randf_range(0.7, 1.05) if i < 3 else rng.randf_range(0.12, 0.45)) * scale  # 3 big slabs (owner: "some a lot bigger"), the rest smaller
 		var step := maxi(1, roundi(c._size / 0.05))  # sizes in 5 cm steps, so the collision shapes can be shared
 		c._size = step * 0.05
-		var mi := MeshInstance3D.new()
+		var mi: MeshInstance3D = c.get_child(0)
 		mi.mesh = pick[0]
 		mi.material_override = mat
 		mi.scale = Vector3.ONE * c._size
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF if c._size < 0.3 else GeometryInstance3D.SHADOW_CASTING_SETTING_ON
-		c.add_child(mi)
-		var cs := CollisionShape3D.new()
+		var cs: CollisionShape3D = c.get_child(1)
 		cs.shape = _sized_shape(k, step)
-		c.add_child(cs)
 		c.collision_layer = CHUNK_LAYER
 		c.collision_mask = World.TERRAIN_LAYER | CHUNK_LAYER  # bounces on the rock and on each other, never on dwarfs
 		# Heavy stone (owner, Nov 18: "they seem very soft... they bounce up and then bounce back"): heavier, falls
@@ -60,6 +58,8 @@ static func burst(parent: Node, center: Vector3, out: Vector3, col: Color, mat_i
 		c.angular_damp = 1.5
 		c.linear_damp = 0.3
 		parent.add_child(c)
+		c.freeze = false
+		c.sleeping = false
 		c.global_position = center + Vector3(rng.randf_range(-0.6, 0.6), rng.randf_range(-0.4, 0.6), rng.randf_range(-0.6, 0.6)) * scale
 		c.global_basis = Basis.from_euler(Vector3(rng.randf() * TAU, rng.randf() * TAU, rng.randf() * TAU))
 		# thrown out of the rock face and dropping, not popped up into the air
@@ -70,7 +70,7 @@ static func burst(parent: Node, center: Vector3, out: Vector3, col: Color, mat_i
 	while _alive.size() > MAX_CHUNKS:
 		var old = _alive.pop_front()  # (untyped: it may already be gone)
 		if is_instance_valid(old):
-			old.queue_free()
+			old._release()
 
 
 static var _mats := {}  ## (rock, look) or colour -> its chunk material
@@ -127,7 +127,7 @@ static func _heavy() -> PhysicsMaterial:
 static func warm_up(parent: Node) -> void:
 	burst(parent, Vector3(0, -5000, 0), Vector3.UP, Color.GRAY, Mat.STONE)
 	for c in _alive:
-		c.queue_free()
+		c._release()  # (kept ready for the first real dig)
 	_alive.clear()
 
 
@@ -140,7 +140,35 @@ func _physics_process(delta: float) -> void:
 				(ch as MeshInstance3D).scale = Vector3.ONE * _size * k
 		if k <= 0.0:
 			_alive.erase(self)
-			queue_free()
+			_release()
+
+
+## Put away for the next burst (hidden, out of the world) instead of thrown away.
+static var _pool: Array[RockShatter] = []
+const POOL_MAX := 140
+
+
+func _release() -> void:
+	if is_inside_tree():
+		get_parent().remove_child(self)
+	if _pool.size() < POOL_MAX:
+		_pool.append(self)
+	else:
+		queue_free()
+
+
+static func _take() -> RockShatter:
+	while not _pool.is_empty():
+		var c: RockShatter = _pool.pop_back()
+		if is_instance_valid(c):
+			c._age = 0.0
+			c.linear_velocity = Vector3.ZERO
+			c.angular_velocity = Vector3.ZERO
+			return c
+	var n := RockShatter.new()
+	n.add_child(MeshInstance3D.new())
+	n.add_child(CollisionShape3D.new())
+	return n
 
 
 ## Chunk shapes, 1 m across, four kinds (owner, Nov 18: "different shapes, similar size"): lumpy many-sided stones,

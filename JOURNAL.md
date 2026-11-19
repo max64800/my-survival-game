@@ -4104,3 +4104,9 @@ the body."
 - (Nov 19) Owner: the chest opening sound was too long ("like a door"): cut to its first part (0.4 s, the latch and
   first creak, short fade), was 1.4 s. Owner said yes to N3: the Lantern Bearer perk now really makes your lantern
   reach 25% further per rank (Progression.lantern_range_mult, read by the lantern; test added).
+- (Nov 19, speed part 2) Solid rock only to 100 m (a second, collision-only viewer); ground snapping only within 85 m
+  (beyond, the rock isn't solid, so a ray would say "no floor" and hide things); rock chunks reused from a pool; fewer
+  chunks on Potato/Low. Ready to play ~13 s after start with saved plans (was ~80 s).
+- Hurdle: the dig test's numbers swing wildly between runs of the same code (10 to 43 slow frames), so it couldn't
+  tell old from new; with other sessions using the PC, single runs prove nothing. Kept the changes the research backs.
+

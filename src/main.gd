@@ -498,6 +498,15 @@ func _spawn_dwarf(peer_id: int, pos: Vector3, local: bool) -> Dwarf:
 		var viewer := VoxelViewer.new()
 		viewer.view_distance = World.VIEW_DISTANCE if local else 48
 		viewer.requires_visuals = local
+		if local:
+			# Solid rock only as far as it's needed (owner, Nov 19, speed): building it costs 3-5x drawing it and runs
+			# on the main thread. This viewer only draws; a second one makes solid rock out to where creatures roam.
+			viewer.requires_collisions = false
+			var solid := VoxelViewer.new()
+			solid.view_distance = World.COLLISION_DISTANCE
+			solid.requires_visuals = false
+			solid.requires_collisions = true
+			d.add_child(solid)
 		d.add_child(viewer)
 	if not local:
 		var tag := Label3D.new()

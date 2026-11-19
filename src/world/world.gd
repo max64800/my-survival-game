@@ -4,6 +4,7 @@ extends Node3D
 ## Only the GameAuthority should call apply_dig(), so every player's world stays the same.
 
 const VIEW_DISTANCE := 128
+const COLLISION_DISTANCE := 100  ## solid rock round your dwarf (creatures live up to 100 m away: MonsterManager.DESPAWN_FAR)
 const TERRAIN_LAYER := 1
 
 var maker: CaveMaker
