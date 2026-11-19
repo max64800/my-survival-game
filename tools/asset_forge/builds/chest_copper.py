@@ -14,7 +14,13 @@ kit.reset()
 W, D, Hb = 0.95, 0.62, 0.5
 cu, cud = kit.tex_mat("copper"), kit.tex_mat("copper", "dark")
 kit.tbox("wood", (W + 0.03, D + 0.03, 0.06), (0, 0, 0.03), variant="dark", bevel=0.015)
-kit.tbox("wood", (W, D, Hb - 0.06), (0, 0, 0.06 + (Hb - 0.06) / 2), variant="dark", bevel=0.02)
+# Hollow body (owner, Nov 19: you see inside when the lid opens): four thick board walls and a lighter floor.
+Hw = Hb - 0.06
+for y in (-D / 2 + 0.03, D / 2 - 0.03):
+	kit.tbox("wood", (W, 0.06, Hw), (0, y, 0.06 + Hw / 2), variant="dark", bevel=0.015)
+for x in (-W / 2 + 0.03, W / 2 - 0.03):
+	kit.tbox("wood", (0.06, D - 0.12, Hw), (x, 0, 0.06 + Hw / 2), variant="dark", bevel=0.015)
+kit.tbox("wood", (W - 0.12, D - 0.12, 0.03), (0, 0, 0.075), bevel=0.008)
 kit.tbox("copper", (W + 0.06, D + 0.06, 0.04), (0, 0, Hb + 0.02), bevel=0.012)
 # Hipped lid: a sloped wooden top with a copper ridge strip and a central boss.
 kit.taper(W + 0.02, D + 0.02, W - 0.3, D - 0.34, 0.14, (0, 0, Hb + 0.04), kit.tex_mat("wood", "c"), bevel=0.015)

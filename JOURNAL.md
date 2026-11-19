@@ -4088,3 +4088,9 @@ the body."
 - A curtain test failed on GitHub's own version: one strand's tip 3 cm into the floor after a cave-shape change; strands
   whose tip touches rock are now shortened (not removed, so saved strand numbers stay right).
 
+- (Nov 19, later) Owner said yes to both: the copper chest is hollow now (four board walls and a floor) and the stone
+  chest got a stone lid (slab, iron bands, hinge straps, ring pull), both cut with the new lid option (F353, F354).
+  The Game Feel page now shows the three chests with swinging lids, and the wind-up crouch is gone from it. Owner
+  asked to confirm skills: 14 skills, 44 perks in 4 branches, the K window, 18 tests pass; 36 perks work, 6 say
+  "not in the game yet", and Lantern Bearer does nothing (asked, N3). Hurdle: the page's lid swing first let an
+  old swing keep moving the lid after a new one started; each swing now has its own token.

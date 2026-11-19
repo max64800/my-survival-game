@@ -191,6 +191,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F55. All outfits too blocky and simple; remake (ChatGPT pictures).** *From: you. Said: 1×*
 
 **Claude noticed, waiting for your OK** (not fixed until you say so):
+- [ ] **N3. The Lantern Bearer perk does nothing yet.** It says "your lantern reaches 25% further per rank", but no game code reads it (36 of the 44 perks work; the other 6 that don't already say "not in the game yet"). Fix it? *From: Claude (PC, Nov 19). Said: 1×*
 
 - [ ] **N1. Spore Rock Beetle: one leg floats loose under the body** (seen in `docs/art/creatures-2026-11-15/all_12_models.jpg`, bottom right). Found by Claude on the Mac, Nov 15. Fix when you say yes.
 - [ ] **N2. The front braids have the same "headwind" the back hair had.** Their swing slows them against the world, so when he runs they trail behind as if in a strong wind, and the fat collision balls round the upper arms push them about. That is likely part of why fast moves push the braids into his shirt. The back hair's cure (slow down against where they rest, not against the world) would also work for the braids. Found by Claude on the PC, Nov 17. Fix when you say yes.

@@ -1,4 +1,4 @@
-# Stone Chest (folder: stations): an open stone crate of thick slabs with iron corner bands (no lid).
+# Stone Chest (folder: stations): a crate of thick stone slabs with iron corner bands and a hinged stone lid.
 import math
 import sys
 from pathlib import Path
@@ -24,4 +24,17 @@ for x in (-W / 2, W / 2):
 		kit.box((0.07, 0.07, Hb - 0.05), (x * 0.99, y * 0.98, Hb / 2), iron, bevel=0.006, wobble=0.001)
 		kit.rivet((x * 0.99, y + (-0.04 if y < 0 else 0.04), Hb - 0.12), iron, r=0.02)
 
-kit.save(out, preview)
+# A stone lid (owner, Nov 19): a thick slab with a raised, chisel-edged top, iron bands over it that bend down the
+# front, two iron hinge straps on the back and a ring pull. Its own part: it swings open (kit.save lid=).
+LZ = Hb - 0.02  # where the lid starts (the walls end just below)
+kit.tbox("stone", (W + 0.04, D + 0.04, 0.1), (0, 0, LZ + 0.05), variant="dark", bevel=0.03, wobble=0.008)
+kit.tbox("stone", (W - 0.14, D - 0.14, 0.05), (0, 0, LZ + 0.125), bevel=0.02, wobble=0.008)
+for x in (-W / 2 + 0.22, W / 2 - 0.22):
+	kit.box((0.07, D + 0.07, 0.025), (x, 0, LZ + 0.11), iron, bevel=0.005, wobble=0.002)
+	kit.box((0.07, 0.025, 0.12), (x, -D / 2 - 0.035, LZ + 0.05), iron, bevel=0.005, wobble=0.002)
+	kit.rivet((x, -D / 2 - 0.05, LZ + 0.02), iron, r=0.016)
+	kit.box((0.06, 0.025, 0.1), (x, D / 2 + 0.035, LZ - 0.01), iron, bevel=0.005, wobble=0.002)  # hinge strap
+kit.box((0.12, 0.03, 0.06), (0, -D / 2 - 0.03, LZ + 0.05), iron, bevel=0.006, wobble=0.002)
+kit.ring(0.05, 0.012, (0, -D / 2 - 0.055, LZ + 0.0), iron, rot=(90, 0, 0), seg=14)
+
+kit.save(out, preview, lid=LZ - 0.003)  # the lid swings open (owner F345)

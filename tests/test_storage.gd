@@ -136,7 +136,7 @@ func test_box_menu_closes_when_emptied() -> void:
 func test_chest_lid_swings_open_and_shut() -> void:
 	await _setup()
 	var spot := world.maker.find_floor(player.global_position.x + 1.5, player.global_position.z, player.global_position.y + 1.0)
-	for kind in ["chest_small", "chest_copper"]:
+	for kind in ["chest_small", "chest_copper", "chest_stone"]:
 		var id := auth.storage.create_box(kind, spot, 0.0)
 		var node: Node3D = auth.storage.get_box(id).node
 		var lid := ChestOpen.lid_of(node)
@@ -157,6 +157,6 @@ func test_chest_lid_swings_open_and_shut() -> void:
 			await tree.process_frame
 		check(absf(lid.rotation.x) < 0.01, "%s: menu closed, the lid shut (%.2f rad)" % [kind, lid.rotation.x])
 		panel.queue_free()
-	var sid := auth.storage.create_box("chest_stone", spot + Vector3(2, 0, 0), 0.0)
-	ChestOpen.open(auth.storage.get_box(sid).node)  # (no lid: just a pop, no error)
+	var sid := auth.storage.create_box("crate_ore", spot + Vector3(2, 0, 0), 0.0)
+	ChestOpen.open(auth.storage.get_box(sid).node)  # (an ore crate has no lid: just a pop, no error)
 	_teardown()
