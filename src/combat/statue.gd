@@ -72,12 +72,18 @@ static func petrify(corpse: Node3D, id: int) -> void:
 			mat.set_shader_parameter("wobble", wob)
 			mats[wob] = mat
 		mi.material_overlay = mats[wob]
-	if not mats.is_empty():
-		corpse.set_meta("stone_mats", mats.values())
-		var t := corpse.create_tween()
-		t.tween_method(func(k: float) -> void:
-			for m: ShaderMaterial in mats.values():
-				m.set_shader_parameter("progress", k), 0.0, 1.0, PETRIFY_TIME).set_trans(Tween.TRANS_LINEAR)  # (steady: the first cracks show at once, the stone creeps on evenly)
+	corpse.set_meta("stone_mats", mats.values())
+	# Where the stone starts rides along with the body (F369, Nov 19): it starts while the body still falls, and a bat
+	# shot off a high roost fell metres below a start point fixed in the air, so the stone never reached it.
+	# (Kept on the body as "stone_seed" too, so a test without drawing can check it.)
+	var seed_local := corpse.global_transform.affine_inverse() * box.get_center()
+	var t := corpse.create_tween()
+	t.tween_method(func(k: float) -> void:
+		var at := corpse.global_transform * seed_local
+		corpse.set_meta("stone_seed", at)
+		for m: ShaderMaterial in mats.values():
+			m.set_shader_parameter("seed_pos", at)
+			m.set_shader_parameter("progress", k), 0.0, 1.0, PETRIFY_TIME).set_trans(Tween.TRANS_LINEAR)  # (steady: the first cracks show at once, the stone creeps on evenly)
 	corpse.set_meta("statue", id)
 	corpse.remove_meta("statue_pending")
 	if corpse is RigidBody3D:

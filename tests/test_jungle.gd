@@ -5,9 +5,14 @@ extends TestCase
 func test_every_monster_is_complete() -> void:
 	for id in Monsters.LIST:
 		var m: Dictionary = Monsters.LIST[id]
-		var model := MonsterModel.build(m.shape, m.color, m.size, true)
-		check(model.get_child_count() >= 6, "%s has a body (%s)" % [id, m.shape])
-		model.free()
+		if MonsterModel.variant_count(id) > 0:  # (a hand-built model only, like the Cave Spider: no simple-shapes body)
+			var forged := MonsterModel.build(m.shape, m.color, m.size, true, id)
+			check(forged.has_meta("forged_root"), "%s wears its hand-built model" % id)
+			forged.free()
+		else:
+			var model := MonsterModel.build(m.shape, m.color, m.size, true)
+			check(model.get_child_count() >= 6, "%s has a body (%s)" % [id, m.shape])
+			model.free()
 		for d in m.drops:
 			check(Items.exists(d[0]), "%s drops a real item: %s" % [id, d[0]])
 		for a in m.attacks:

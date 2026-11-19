@@ -4237,3 +4237,25 @@ the body."
 - Turning: beetles and bats got the snail's turn-in-place with their own turn_speed; bats sway (Monster.weave).
 - **Hurdles:** the first sway test fed the sway through turning-first, which hides it in one step; tested the sway
   on its own. Not done yet: the bat that didn't turn to stone (F369), and wiring in Claude 1's cave spider.
+
+
+## November 19, 2026 (PC, snail Claude): the Cave Spider joins Zone 1; the bat that never turned to stone (F369)
+- **Cave Spider in the game.** Claude 1's model, as it is (owner wants to test it first). It spawns in Mossy Hollows
+  (big caverns and small rooms) in groups of 3-5, sometimes with a Spider Broodmother. It bites, and pounces from up
+  to 5 m (it leaps up in an arc while it rushes in), then skitters back. Weak: one heavy or two light hits. It dies
+  into a ragdoll, turns to stone, and the statue takes 2 pickaxe hits. The robot fight now has two spiders too.
+  No new code was needed for its legs: the beetle's walk already groups legs into the two tripods the model asked for.
+  Webs: later. Claude 1's chat wasn't running, so they couldn't be told directly; this note is for them.
+- **F369, the bat that never turned to stone.** The stone spreads out from a start point. That point was saved in the
+  world 0.3 s after death, while the body still falls. A bat shot off its high roost fell metres below it, so the
+  stone never reached it (but the pickaxe still counted it as a statue). Now the start point falls with the body.
+- **The NaN lookout tripped over itself** (F363): in the 14:08 game it crashed on a thing deleted while waiting in
+  its list, so it said nothing when broken numbers came at 14:15. Fixed; it skips deleted things now.
+- **Hurdles (Claude's own):** my first F369 test passed, because it dropped bats only 1 m; reading the stone's
+  picture code (the shader) showed the start point. Normal tests draw nothing, so the stone coat is never made
+  there; the body now also remembers the start point, so a test can check it. Claude 1's chat wasn't running, so
+  the spider news couldn't be sent.
+- Full test run: 450 checks. Two failures were mine (a test that builds every creature from simple shapes, and one
+  that allowed only the first three creatures to spawn); both now know about the spider. Not mine, still failing:
+  `test_cave_layout2`, `test_dwarf` braid, `test_keep_clear` mushroom grass, `test_model_rules` build scripts,
+  `test_visuals` shovel model.

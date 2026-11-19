@@ -145,7 +145,7 @@ func test_first_three_creatures() -> void:
 	check(Monsters.LIST.rock_beetle.soft_back > 1.0 and Monsters.LIST.rock_beetle.straight_charge, "beetle charges straight, soft back")
 	for biome in ["mossy", "fungal"]:
 		for kind in Monsters.SPAWNS[biome].big + Monsters.SPAWNS[biome].small:
-			check(kind in ["rock_snail", "cave_bat", "rock_beetle", "great_rock_beetle"], "only the first three spawn for now: %s" % kind)
+			check(kind in ["rock_snail", "cave_bat", "rock_beetle", "great_rock_beetle", "cave_spider"], "only the first three (and the Cave Spider, owner Nov 19) spawn for now: %s" % kind)
 	for r in ["dish_cooked_snail", "dish_roasted_bug", "dish_snail_stew", "dish_bug_stew", "shield_shell", "bolt_fang", "pickaxe_fang", "glow_lamp", "leather_from_wing"]:
 		check(Recipes.LIST.has(r), "recipe %s exists" % r)
 	check(Items.info("glow_gland").fuel > Items.info("crystal_blue").fuel, "a glow gland lasts longer than a crystal")

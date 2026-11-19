@@ -730,6 +730,37 @@ func test_dead_creature_turns_to_stone_and_is_mined() -> void:
 	_teardown()
 
 
+## F369 (owner, Nov 19): the first bat killed never turned to stone, but could still be mined. Shot off its high
+## roost, it fell metres AFTER the stone began; the stone spreads from a start point, and that point stayed up in the
+## air, so it never reached the body. Now the start point falls with it.
+func test_bat_shot_down_from_high_turns_to_stone() -> void:
+	await _setup()
+	var m := _spawn("cave_bat", Vector3(3.0, 0, 0))
+	for i in 5:
+		await tree.physics_frame
+	m.state = Monster.State.CHASE
+	for i in 3:
+		await tree.process_frame
+	var floor_at := world.maker.find_floor(player.global_position.x + 3.0, player.global_position.z, player.global_position.y + 2.0)
+	var high := floor_at + Vector3.UP * 6.0
+	if world.maker.sdf_at(high) <= 0.0:
+		high = floor_at + Vector3.UP * 3.0  # (a low ceiling here: still well above the floor)
+	m.global_position = high
+	for i in 3:
+		await tree.process_frame
+	auth.monsters._kill(m, 1)
+	var id: int = auth.monsters.statues.keys()[0]
+	for i in 420:
+		await tree.physics_frame
+	var body: Node3D = Statue.nodes.get(id)
+	check(is_instance_valid(body) and body.has_meta("statue"), "it became a statue")
+	if is_instance_valid(body):
+		check(body.global_position.y < high.y - 1.5, "it fell a long way (from %.1f to %.1f)" % [high.y, body.global_position.y])
+		var seed: Vector3 = body.get_meta("stone_seed", Vector3.INF)
+		check(seed.distance_to(body.global_position) < 0.8, "the stone starts on its body, where it lies (%.2f m away)" % seed.distance_to(body.global_position))
+	_teardown()
+
+
 ## Owner (Nov 19): Claude 1's Cave Spider is a Zone 1 pest: its own model with 8 hinged legs that walk in two tripods,
 ## eyes that flash; it pounces; it dies into a ragdoll and turns to stone (2 pickaxe hits).
 func test_cave_spider_walks_pounces_and_turns_to_stone() -> void:

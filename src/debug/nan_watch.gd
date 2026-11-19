@@ -8,7 +8,8 @@ extends Node
 const PER_FRAME := 400
 const MAX_REPORTS := 12
 
-var _queue: Array[Node] = []
+var _queue: Array = []  ## (untyped: a node freed while it waits here is just skipped; in a typed list taking it out
+## was an error, F363 Nov 19)
 var _reported := {}
 
 
@@ -20,9 +21,10 @@ func _process(_delta: float) -> void:
 	for i in PER_FRAME:
 		if _queue.is_empty():
 			return
-		var n: Node = _queue.pop_back()
-		if not is_instance_valid(n) or not n.is_inside_tree():
+		var v: Variant = _queue.pop_back()
+		if not is_instance_valid(v) or not (v as Node).is_inside_tree():
 			continue
+		var n: Node = v
 		_queue.append_array(n.get_children())
 		if not n is Node3D or _reported.has(n.get_instance_id()):
 			continue
