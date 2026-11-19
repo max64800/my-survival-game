@@ -619,9 +619,11 @@ func test_bat_ragdoll_falls_out_of_the_air() -> void:
 	var m := _spawn("cave_bat", Vector3(4.0, 0, 0))
 	for i in 5:
 		await tree.physics_frame
+	m.state = Monster.State.CHASE  # (awake, wings open: asleep it hangs with them folded)
+	for i in 3:
+		await tree.process_frame  # (waking, it drops out of its roost first: then put it in the air)
 	m.global_position = world.maker.find_floor(player.global_position.x + 4.0, player.global_position.z, player.global_position.y + 2.0) + Vector3.UP * 1.5
 	# (in flight over the floor: a bat on its own goes off to find a roost)
-	m.state = Monster.State.CHASE  # (awake, wings open: asleep it hangs with them folded)
 	for i in 3:
 		await tree.process_frame
 	auth.monsters._ev_remove(m.uid)
@@ -721,6 +723,38 @@ func test_simple_creature_falls_and_turns_to_stone() -> void:
 		check(body.global_position.y > start_y - 1.5, "on the floor, not through it")
 		check((body as RigidBody3D).freeze, "and the statue stays still")
 	_teardown()
+
+
+## Owner (Nov 19): ~1,300 "broken number" (NaN) warnings in a game. Every kind, dying in odd poses (upside down,
+## nose down, on its side, hit from straight above), must never give any part a broken (not finite) place or turn.
+func test_no_broken_numbers_when_creatures_die() -> void:
+	await _setup()
+	var poses := [Vector3.ZERO, Vector3(0, 0, PI), Vector3(PI / 2, 0, 0), Vector3(-PI / 2, 0, 0), Vector3(0, 0, PI / 2)]
+	var bad := []
+	var x := 2.0
+	for kind in ["rock_beetle", "rock_snail", "cave_bat", "mossnipper", "great_rock_beetle"]:
+		for pose in poses:
+			var m := _spawn(kind, Vector3(x, 0, 2.0))
+			x += 1.5
+			await tree.physics_frame
+			m.model.rotation = pose
+			auth.monsters._kill(m, 1)
+	for i in 180:
+		await tree.physics_frame
+	for n in _all_nodes(tree.root):
+		if n is Node3D and n.is_inside_tree():
+			var g := (n as Node3D).global_transform
+			if not (g.origin.is_finite() and g.basis.x.is_finite() and g.basis.y.is_finite() and g.basis.z.is_finite()):
+				bad.append(str(n.get_path()))
+	check(bad.is_empty(), "no broken numbers (%d bad: %s)" % [bad.size(), str(bad.slice(0, 4))])
+	_teardown()
+
+
+func _all_nodes(n: Node) -> Array:
+	var out := [n]
+	for c in n.get_children():
+		out.append_array(_all_nodes(c))
+	return out
 
 
 ## Owner (Nov 18, "juicy hits"): a hit pushes the creature away from you and freezes it for a blink.

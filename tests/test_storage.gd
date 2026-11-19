@@ -157,6 +157,38 @@ func test_chest_lid_swings_open_and_shut() -> void:
 			await tree.process_frame
 		check(absf(lid.rotation.x) < 0.01, "%s: menu closed, the lid shut (%.2f rad)" % [kind, lid.rotation.x])
 		panel.queue_free()
+	# A barrel's lid lifts and slides aside, then comes back (owner, Nov 19)
+	var bid := auth.storage.create_box("barrel", spot + Vector3(-2, 0, 0), 0.0)
+	var bnode: Node3D = auth.storage.get_box(bid).node
+	var blid := ChestOpen.lid_of(bnode)
+	check(blid != null, "the barrel has its own lid part")
+	if blid:
+		var home := blid.position
+		ChestOpen.open(bnode)
+		await tree.create_timer(0.6).timeout
+		check(absf(blid.position.x - home.x) > 0.2 and is_zero_approx(blid.rotation.x), "the barrel lid slid aside (not swung)")
+		ChestOpen.close(bnode)
+		await tree.create_timer(0.6).timeout
+		check(blid.position.distance_to(home) < 0.01, "the barrel lid is back on")
 	var sid := auth.storage.create_box("crate_ore", spot + Vector3(2, 0, 0), 0.0)
 	ChestOpen.open(auth.storage.get_box(sid).node)  # (an ore crate has no lid: just a pop, no error)
+	_teardown()
+
+
+## F8 item menu (owner, Nov 19): every item is listed, search works, a click puts it straight into your bag.
+func test_dev_item_menu_gives_items() -> void:
+	await _setup()
+	check(DevItems.all_ids().size() > 50, "lots of items listed (%d)" % DevItems.all_ids().size())
+	check(DevItems.all_ids("bolt").has("bolt_stone"), "search finds the stone bolt")
+	check(not DevItems.all_ids("bolt").has("pickaxe_stone"), "and leaves other things out")
+	var before: int = ps.inventory.count_of("bolt_stone")
+	DevItems.give("bolt_stone", 5)
+	check_eq(ps.inventory.count_of("bolt_stone"), before + 5, "5 bolts straight into the bag")
+	DevItems.give("crossbow_stone", 1)
+	check_eq(ps.inventory.count_of("crossbow_stone"), 1, "and a crossbow")
+	var menu := DevItems.new()
+	tree.root.add_child(menu)
+	await tree.process_frame
+	check(menu._grid.get_child_count() > 50, "the menu shows a button for every item")
+	menu.queue_free()
 	_teardown()

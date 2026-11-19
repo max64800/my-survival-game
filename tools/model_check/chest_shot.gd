@@ -32,8 +32,10 @@ func _init() -> void:
 	body.add_child(model)
 	var cam := Camera3D.new()
 	w.add_child(cam)
-	cam.look_at_from_position(Vector3(1.8, 1.5, -2.2), Vector3(0, 0.5, 0))
+	cam.look_at_from_position(Vector3(1.8, 1.9 if kind.begins_with("barrel") else 1.5, -2.2), Vector3(0, 0.5, 0))
 	await process_frame
+	if kind.begins_with("barrel"):
+		body.set_meta("slide_lid", true)
 	ChestOpen.open(body)
 
 

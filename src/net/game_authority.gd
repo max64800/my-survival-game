@@ -1400,7 +1400,7 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 			if id == "blueprint_page" or Items.info(id).has("teaches"):
 				# An old blueprint from a ruin: the whole group can now place that ready-made building (F98).
 				# A named plan (Watchtower Plans, F254) teaches its own building; an Old Blueprint a random one.
-				var unknown := BlueprintMenu.ready_made_keys().filter(func(k): return not world_state.get("blueprints", []).has(k))
+				var unknown := BlueprintMenu.ready_made_keys().filter(func(k): return not world_state.get("blueprints", []).has(k) and not BlueprintLibrary.REBUILD_ONLY.has(k))
 				if Items.info(id).has("teaches"):
 					unknown = unknown.filter(func(k): return k == Items.info(id).teaches)
 				if unknown.is_empty() or not ps.inventory.remove(id, 1):

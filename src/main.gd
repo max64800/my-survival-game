@@ -22,6 +22,7 @@ var _boulders: Boulders
 var authority: GameAuthority
 var dwarf: Dwarf
 var hud: Hud
+var _dev_items: DevItems  ## F8 in dev builds: any item into your bag (owner, Nov 19)
 var session: Session
 var players_root: Node3D
 var _ready_to_play := false
@@ -155,6 +156,7 @@ func _ready() -> void:
 	# Slowdowns and freezes go into the log (owner, Nov 17). A person's game says so on its first line, so the
 	# recorder copies this log and not a test robot's (they all write to the same log folder).
 	add_child(FreezeWatch.new())
+	add_child(NanWatch.new())  # writes the first "broken number" things to the log (Claude, Nov 19)
 	if not Controls.robot:
 		print("PLAYER GAME (not a robot) started ", Time.get_datetime_string_from_system())
 		FreezeWatch.open_player_file()
@@ -701,6 +703,19 @@ func _unhandled_input(event: InputEvent) -> void:
 	if DevMenu.enabled() and event.is_action_pressed("dev_fly") and dwarf:
 		dwarf.set_dev_fly(not dwarf.dev_fly)  # owner, Nov 17: fly around to see the whole cave
 		hud.show_toast("Dev: flying (Space up, Ctrl down, Shift fast) · F6 to land" if dwarf.dev_fly else "Dev: walking again", 3.0)
+		return
+	if DevMenu.enabled() and (event.is_action_pressed("dev_items") or (event.is_action_pressed("pause") and _dev_items and _dev_items.visible)):
+		# Item menu (owner, Nov 19): any item straight into your bag, no crafting needed.
+		if _dev_items == null:
+			_dev_items = DevItems.new()
+			_dev_items.visible = false
+			hud.add_child(_dev_items)
+			_dev_items.resized.connect(func() -> void: _dev_items.position = (get_viewport().get_visible_rect().size - _dev_items.size) * 0.5)
+		_dev_items.visible = not _dev_items.visible
+		if _dev_items.visible:
+			_dev_items.position = (get_viewport().get_visible_rect().size - _dev_items.size) * 0.5
+		Controls.set_captured(not _dev_items.visible)
+		get_viewport().set_input_as_handled()
 		return
 	if DevMenu.enabled() and event.is_action_pressed("dev_bright"):
 		var amb: Ambience = get_node_or_null("Ambience")

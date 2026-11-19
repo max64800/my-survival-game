@@ -5,9 +5,9 @@ extends Node3D
 ## only on your own screen, and only near the camera: they're moved to new spots near you when you walk away.
 ## Models: tools/asset_forge/builds/critters.py.
 
-const BEETLES := 14
+const BEETLES := 5   ## (owner, Nov 19: "too many bugs crawling around", was 14)
 const MOTHS := 10
-const CRICKETS := 10
+const CRICKETS := 3  ## (owner, Nov 19: "that many crickets", was 10)
 const NEAR := 26.0  ## further than this from the camera: moved to a new spot near it
 const BEETLE_SPEED := 0.08
 const CRICKET_SCARE := 2.5

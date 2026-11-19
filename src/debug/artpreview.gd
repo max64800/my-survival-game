@@ -37,6 +37,10 @@ func _run() -> void:
 		await _procbench()
 		get_tree().quit()
 		return
+	if "falls" in OS.get_cmdline_user_args():
+		await _falls()
+		get_tree().quit()
+		return
 	if "vinetest" in OS.get_cmdline_user_args():
 		await _vinetest()
 		get_tree().quit()
@@ -619,3 +623,34 @@ func _vinetest() -> void:
 	await RenderingServer.frame_post_draw
 	_main.take_screenshot(_shots.path_join("vine_after.png"))
 	print("VINE broke strand ", best, " at ", top)
+
+
+## The little waterfalls (owner, Nov 19): the two nearest, each from a few metres away.
+func _falls() -> void:
+	var dwarf: Dwarf = _main.dwarf
+	dwarf.set_physics_process(false)
+	_main.hud.visible = false
+	var list := CaveWater.plan_falls(_main.world.maker)
+	list.sort_custom(func(a, b): return (a.pool as Vector3).distance_to(dwarf.global_position) < (b.pool as Vector3).distance_to(dwarf.global_position))
+	var cam := Camera3D.new()
+	_main.add_child(cam)
+	cam.current = true
+	var light := OmniLight3D.new()
+	light.omni_range = 9.0
+	light.light_energy = 1.4
+	light.light_color = Color(1.0, 0.8, 0.55)
+	_main.add_child(light)
+	for k in mini(2, list.size()):
+		var f: Dictionary = list[k]
+		var pts: PackedVector3Array = f.pts
+		var mid := pts[pts.size() / 2]
+		var out := (f.side as Vector3).cross(Vector3.UP).normalized()
+		if _main.world.maker.sdf_at(mid + out * 2.0) < _main.world.maker.sdf_at(mid - out * 2.0):
+			out = -out
+		cam.global_position = mid + out * 4.5 + Vector3.UP * 0.5
+		cam.look_at(mid)
+		light.global_position = cam.global_position
+		dwarf.global_position = cam.global_position + Vector3(0, -30, 0)
+		await _wait(1.5)
+		await RenderingServer.frame_post_draw
+		_main.take_screenshot(_shots.path_join("fall_%d.png" % k))

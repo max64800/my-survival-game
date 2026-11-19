@@ -3972,7 +3972,7 @@ the body."
   start; (3) the wing's old early twist at death removed. Same on both 3D pages.
 
 ### Nov 18: Short 054 redone (eight tries)
-- (Nov 18, F350) Dead creatures turn to stone. Owner's idea, settled with multiple-choice questions: no drops at death,
+- (Nov 18, F370) Dead creatures turn to stone. Owner's idea, settled with multiple-choice questions: no drops at death,
   mine the statue (pickaxe only, hits by size) for stone + loot, 1 in 20 a gem, crumbles after 5 min. Built like the
   boulders (host counts hits; every computer shows its own stone body): src/combat/statue.gd + petrify.gdshader
   (cracks run out from the middle, stone fills in behind), MonsterManager statues + request_hit_statue, Ragdoll keeps
@@ -3983,21 +3983,21 @@ the body."
   has no wings or eye stalks, so the settle step started an empty animation (an engine error): skipped when empty;
   (4) the old crystal-drop test expected drops at death: it now looks inside the statue. Also: another chat's
   half-edited cave_maker.gd stopped every game run for a while; waited instead of touching it.
-- (Nov 18, F350 round 2) Owner: turning to stone too fast; the break should be the same rock burst as mining, sized
+- (Nov 18, F370 round 2) Owner: turning to stone too fast; the break should be the same rock burst as mining, sized
   to the creature. Stone now takes 7 s; RockShatter.burst got a `scale` (piece size, count and spread); a statue bursts
   twice like dug rock, sized by its middle measure (not its diagonal: a bat's long wings made it look huge; Claude's
   first try sized by the diagonal and the beetle's slabs were as big as the beetle, caught on the 3D page and fixed).
   The pickaxe feedback no longer adds a second full-size burst on statues. Same burst on the 3 creature 3D pages.
 
 ### Nov 18: faint music under the Shorts
-- (Nov 18, F350 round 3) Owner: "everything looks great"; the rock chunks sometimes lie inside each other, and the
+- (Nov 18, F370 round 3) Owner: "everything looks great"; the rock chunks sometimes lie inside each other, and the
   same for boulders and other rocks. Cause: every chunk only collided with the cave floor. All bursts share one
   maker (RockShatter: dug rock, boulders, statues, root pillars), so one change fixed them all: chunks get their own
   layer and bump into each other (never into dwarfs). Measured, not guessed: new tools/model_check/shatter_overlap.gd
   (two bursts, count chunks deep inside each other): 129 before, 0 after. The 3D pages' chunks became real physics
   boxes, and the dead body's invisible box is removed when the statue breaks (the pieces would have landed on air).
   Hurdle: checking the page in a background tab is very slow (Chrome draws it about once a second there).
-- (Nov 18, F350 round 4, 3D pages only) Owner: page rocks hung in mid-air and balanced impossibly; should shrink away.
+- (Nov 18, F370 round 4, 3D pages only) Owner: page rocks hung in mid-air and balanced impossibly; should shrink away.
   The page's physics boxes were bigger than the lumpy rocks (the game uses exact shapes already). Tested offline with
   node + the same physics library (scratchpad physcheck/test.mjs: 48 chunks dropped, measures dips, floating,
   speed). Tries: exact convex shapes = right but 120-150 ms per step (far too slow) and some came out inside-out;
@@ -4006,7 +4006,7 @@ the body."
   against other rocks: 0.2 cm deepest dip, none floating, ~2 ms per step. Rocks shrink away after 4.5 s.
 
 ### Nov 18: Short 056 (the name)
-- (Nov 18, F350 done) Owner: the wait before the stone too long; page rocks super huge and shrinking too fast. The
+- (Nov 18, F370 done) Owner: the wait before the stone too long; page rocks super huge and shrinking too fast. The
   huge rocks were Claude's bug: the page's shrink formula was not capped at 1, so before their shrink time the rocks
   were drawn up to 8x too big, then "shrank" to normal size all at once. Fixed (capped); each chunk now waits its own
   4-6 s and shrinks over 1.5 s (game too: RockShatter._life, SHRINK). Stone starts sooner (wait at most 1.8 s). The
@@ -4089,7 +4089,7 @@ the body."
   whose tip touches rock are now shortened (not removed, so saved strand numbers stay right).
 
 - (Nov 19, later) Owner said yes to both: the copper chest is hollow now (four board walls and a floor) and the stone
-  chest got a stone lid (slab, iron bands, hinge straps, ring pull), both cut with the new lid option (F353, F354).
+  chest got a stone lid (slab, iron bands, hinge straps, ring pull), both cut with the new lid option (F364, F365).
   The Game Feel page now shows the three chests with swinging lids, and the wind-up crouch is gone from it. Owner
   asked to confirm skills: 14 skills, 44 perks in 4 branches, the K window, 18 tests pass; 36 perks work, 6 say
   "not in the game yet", and Lantern Bearer does nothing (asked, N3). Hurdle: the page's lid swing first let an
@@ -4117,6 +4117,78 @@ the body."
 - Hurdle: the "speed part 2" upload was refused (someone uploaded first) after Claude had already deleted the clean
   copy; the save was found again in git and put on top. Lesson: upload first, then clean up.
 
+- (Nov 19, moss) Root Tree moss rebuilt: round 1 (many small clumps) looked sprinkled and some bits stood off the
+  bark (pushed sideways along a curved surface); round 2 builds each patch from hundreds of tiny bumps sitting on the
+  bark's own surface points. ChatGPT (for a real moss picture) wasn't reachable: the browser connection timed out.
+- (Nov 19, waterfalls) Water seeping from wall cracks down to a pool (CaveWater.plan_falls + waterfall.gdshader).
+  Round 1 read as a thin white line with a hot shine and a black pool; round 2 wider, bluer, softer, with droplets.
+  The test caught 2 falls whose crack point sat just inside rough rock: nudged out or skipped. No sound yet.
+
+## November 19, 2026 (PC, snail Claude): 5 FPS found, and the owner's play notes (F266, F268, F356-F361)
+- Owner: 5 FPS; no stars in the first cave; too many bugs and crickets; rocks still floating; mushroom grass on a
+  crystal; the tower's chests backwards; a snail hit him through the tower wall; chest sounds way too loud.
+- FPS: the game's own log showed drawing was fine (5-16 ms) but the physics step took ~25 ms, longer than a frame,
+  so Godot ran up to 8 catch-up steps a frame and fell further behind (the "spiral"). New tool tools/perf_probe.gd
+  starts the owner's cave (saving off, so his save is safe) and times every system's physics step: the creatures
+  were most of it, Rock Snails up to 1.5-2 ms each (their move against the rock). Fixes: a creature standing still
+  doesn't move through physics every step (checks its floor twice a second); calm creatures 50 m+ from every dwarf
+  think every 4th step; max 3 catch-up steps a frame. Creatures 5 -> 1.6 ms, a typical step 5.6 -> 2.8 ms, 24 -> 2
+  moving physics bodies.
+- The rest: the first cave's stars switched off (a "quiet" star room in the rock shader; its crystals not thinned);
+  glowing beetles 14 -> 5, crickets 10 -> 3; mushroom grass keeps clear of crystals (test added, placement rule);
+  tower chests turn their front to the tower's middle; creature hits need a clear line (no rock or built wall in
+  between); chest sounds 10 dB quieter; GroundSnap scans 300 batches a step (it looked at 12 of ~12,000, so things
+  next to you could float ~16 s).
+- **Hurdles:** (1) the first timings jumped around (creatures spawn in random places, and one-off spikes); switched
+  to timing each system's step directly, frame by frame. (2) A typed-variable error (`resting` needed `: bool`)
+  stopped the scripts loading in the probe; fixed. (3) Also found ~1,300 "can't normalize a broken (NaN) vector"
+  warnings in the owner's log, from 13:04; not the FPS cause, cause not found yet (asked the owner, N4).
+- **Owner: "the trees with no leaves shouldn't glow, they should just stand there."** The 5 dead and 6 bare trees now have plain dark bark, no crack glow; only the twisted trees (which have leaves) keep their faint glow.
+
+- (Nov 19, later) Owner: "the first cave should have stars, the spawn location shouldn't" (I had misread it): stars
+  back in the first cavern; a new quiet zone (CaveMaker.quiet_room, the wake-up room + 3 m) has none. Barrels
+  (F362): own model (tools/asset_forge/builds/barrel_box.py) with a lid part; the owner changed his mind twice while
+  I built it (first a hinged lid, then "lift and slide aside", then "inside just a black circle, not hollow"), so the
+  barrel's lid lifts, slides 30 cm aside and sets down; inside is a black disc under the rim. Hurdles: the first
+  barrel still looked closed (the inside tube's top showed: materials draw both sides), then the black came out grey
+  (charcoal is lit; now near-black and fully rough); the barrel test failed because frames run too fast in tests
+  (waits real time now). NaN hunt (F363): not reproduced (deaths in odd poses, trail, spit, walking his path in his
+  world); added NanWatch, a lookout that names the first broken thing in the log.
+## November 19, 2026 (PC, cave Claude): rebuilding ruins
+
+- Owner's picks (asked first): pieces come back one by one; wood takes planks; reward = blueprint + experience;
+  rebuilding clears rubble. Plan: docs/design/ruin-rebuild-plan.md.
+- Built on the existing build sites (a blueprint's Builder's Chest already builds piece by piece): the watchtower ruin
+  gets a Rebuilding Chest; the first planks or cut stone make a site of the whole Stone/Wooden Watchtower over the ruin.
+  New: the Wooden Watchtower blueprint (every piece in planks, battlements -> wooden railings), whole ruin pieces count
+  as built, broken walls taken down by place, rubble cleared floor by floor, then blueprint + 300 crafting XP.
+- Built and tested in a clean copy of GitHub: this folder's copies of the ruin, chest and building files hold other
+  sessions' unsaved work (e.g. the Stone Outpost blueprint isn't on GitHub yet).
+- Hurdles: worn walls are lower than whole ones, so the "in the way" check missed them (12 left standing); now taken
+  down by place too, and anything broken left is cleared at the end. Test slips: skill XP is kept by name, and the
+  site clock had to be advanced by hand.
+
+- (Nov 19, owner played) Mushroom grass looked "the same, still white": the tints were too faint; now clear colour
+  drifts. No waterfalls seen: his world had 7, none near the start; a count of why spots failed showed the water
+  stopping at bulges and leaning walls being refused; fixed: 34 in his world (3 in the first cave).
+- Passed to other sessions: tree sizes from bush to big with wood by size (the glow-groves Claude took it); creature
+  bugs (only one look per creature, beetles sliding sideways, bats stuck in walls, a bat not turning to stone): not
+  the glow-groves Claude's; waiting for the creature Claude.
+
+## November 19, 2026 (PC, snail Claude): crossbow bolts on sleeping bats, F8 item menu (F371, F372, F368)
+- Owner: built a crossbow, shot a bat, nothing happened; wants F8 to give any item without crafting.
+- A test in a real world (tools/bolt_check.gd: crossbow + bolts, a bat in front, aim, shoot): bolts kill flying
+  bats in one shot (16 health). The bug: a roosting bat's body (a 1.2 m capsule standing up from its anchor 30 cm
+  under the ceiling) was ~0.9 m inside the rock while its picture hangs below, so the aim line hit the rock. Now a
+  sleeping bat's body hangs down with its picture; waking, it drops its body's height out of the ceiling (also why
+  aggroed bats got stuck in the rock, F368). Checked: with the fix switched off the bolt hits the rock, on it kills.
+- F8: DevItems (src/ui/dev_items.gd): every item with its picture, search, click = 1, right-click = a stack, dev
+  builds only, straight into the host's bag.
+- **Hurdles:** (1) the first test bats were placed inside the tiny wake-up room's wall, then the roost spot had a
+  1.3 m ceiling; moved to the big cavern and searched for a real ceiling. (2) The monster tests use a stand-in dwarf
+  with no camera, so the real-shot check became a tool instead of a test. (3) Waking now drops a bat 1.2 m, which
+  broke the bat-ragdoll test (it woke the bat after placing it 1.5 m up): the test now wakes it first. (4) Feedback
+  numbers clashed again (F350 is the ruin rebuild): the statues are F370.
 
 ## Nov 19, 2026 (PC, Claude 1): glow groves in the game, a Furnish tab, trees of every size
 - **Glow groves are in the game.** 1-2 big caverns per biome (never the first cave) hold a small forest: glowing trees in one colour per grove (teal or blue in Mossy, violet or pink in Fungal) with dark trees between them, rocks, pebbles, grass, ferns, clover, flowers and mushrooms on the floor, shelf fungus on dark trunks, and a few soft lights so the trees light the cave. Test: `test_glow_groves` (the owner's placement rule: nothing on paths, bridges, columns, places or Root Trees).

@@ -138,10 +138,24 @@ func _build() -> void:
 		b._ev_add_piece.rpc(uid, String(p.id), String(p.mat), pos, rot, float(p.pos[1]) < 0.3)
 	for c in plan.get("chests", []):
 		var pos: Vector3 = origin + basis * Vector3(c.pos[0], c.pos[1], c.pos[2])
-		var id: int = auth.storage.create_box(String(c.kind), pos, deg_to_rad(float(c.yaw)) + turn * PI / 2.0)
+		var yaw := deg_to_rad(float(c.yaw)) + turn * PI / 2.0
+		var flat := Vector2(float(c.pos[0]), float(c.pos[2]))
+		if String(c.kind).begins_with("chest") and flat.length() > 0.5:
+			# A chest's front (its lid's lock, box -Z) faces the middle of the tower (owner, Nov 19: some faced the wall).
+			yaw = atan2(flat.x, flat.y) + turn * PI / 2.0
+		var id: int = auth.storage.create_box(String(c.kind), pos, yaw)
 		for item in c.get("loot", {}):
 			if Items.exists(item):
 				auth.storage.put(id, item, int(c.loot[item]))
+	# The Rebuilding Chest (owner, Nov 19; docs/design/ruin-rebuild-plan.md): beside the path in front of the door.
+	# Root planks or cut stone put in it rebuild the tower as a build site; finishing it teaches its blueprint.
+	var side := float(plan.get("radius", 4.2)) + 2.6
+	var cp: Vector3 = origin + basis * Vector3(1.8, 0.0, side)
+	cp.y = auth.world.maker.find_floor(cp.x, cp.z, cp.y + 2.5).y
+	var rebuild_box: int = auth.storage.create_box("rebuild", cp, turn * PI / 2.0 + PI)
+	var ruins: Dictionary = auth.world_state.get("ruins", {}).duplicate()
+	ruins[str(rebuild_box)] = {origin = origin, turn = turn, stone = "stone_watchtower", wood = "wooden_watchtower", done = false}
+	auth.world_state["ruins"] = ruins
 	last_origin = origin
 	last_turn = turn
 	print("RUIN_TOWER built at %s (turn %d): %d pieces, %d chests" % [origin, turn, plan.get("pieces", []).size(), plan.get("chests", []).size()])

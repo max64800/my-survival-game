@@ -96,6 +96,8 @@ func test_columns_in_big_caverns() -> void:
 		for q in c.pois:
 			check(not c._in_column(q.pos, 0.0), "seed %d: %s isn't inside a column" % [sd, q.type])
 		check(not c.star_room().is_empty() and c.star_room().snakes == 2, "seed %d: the first cavern has the snake group" % sd)
+		var q := c.quiet_room()
+		check(q.is_empty() or (q.center as Vector3).distance_to(c.spawn_point) < float(q.radius), "seed %d: no stars where you wake up" % sd)
 	CaveMaker.use_layout(was)
 
 

@@ -24,6 +24,10 @@ theme/custom_font="res://assets/fonts/AlegreyaSans-Medium.ttf"
 
 common/physics_ticks_per_second=60
 
+[physics]
+
+common/max_physics_steps_per_frame=3
+
 [voxel]
 
 threads/count/minimum=3

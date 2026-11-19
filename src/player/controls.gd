@@ -33,6 +33,7 @@ const KEYS := {
 	"dev_menu": [KEY_P],  ## dev builds only: blueprint preview + fill a Builder's Chest (DevMenu)
 	"dev_fly": [KEY_F6],  ## dev builds only: fly through rock (Space up, Ctrl down, Shift fast)
 	"dev_bright": [KEY_F7],  ## dev builds only: light up the whole cave, no fog
+	"dev_items": [KEY_F8],  ## dev builds only: get any item straight into your bag (DevItems)
 }
 const MOUSE := {
 	"dig": [MOUSE_BUTTON_LEFT],

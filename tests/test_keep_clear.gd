@@ -118,6 +118,14 @@ func test_mushroom_grass_keeps_clear() -> void:
 		if m.is_reserved(t.pos, 0.8) or m.on_bridge(t.pos, 0.4) or m._in_column(t.pos, 0.4):
 			bad += 1
 	check_eq(bad, 0, "none on kept-clear ground, bridges or columns")
+	# Not on crystals (owner, Nov 19: mushroom grass grew on a crystal)
+	var on_crystal := 0
+	for g in GlowPlacer.place(m):
+		if String(g.kind).begins_with("crystal"):
+			for t in ts:
+				if (t.pos as Vector3).distance_to(g.pos) < 0.6:
+					on_crystal += 1
+	check_eq(on_crystal, 0, "no mushroom grass on a crystal")
 	CaveMaker.use_layout(was)
 
 
@@ -151,4 +159,29 @@ func test_nothing_grows_inside_root_trees() -> void:
 			drips += 1
 	check_eq(drips, 0, "no water dripping inside a tree")
 	cl.free()
+	CaveMaker.use_layout(was)
+
+
+## Little waterfalls (owner, Nov 19): water down a cave wall into a pool, never over paths, places, bridges, trees or
+## ground kept clear for built things; the first cave gets two.
+func test_waterfalls_keep_clear() -> void:
+	var was := CaveMaker.layout
+	CaveMaker.use_layout(CaveMaker.LAYOUT_LATEST)
+	var m := CaveMaker.new(42)
+	var falls := CaveWater.plan_falls(m)
+	check(falls.size() >= 8, "waterfalls around the caves (%d)" % falls.size())
+	var c0: Vector3 = m.rooms[0].center
+	var first := 0
+	for f in falls:
+		var pts: PackedVector3Array = f.pts
+		check(pts[0].y - (f.pool as Vector3).y >= 1.4, "at least 1.5 m of falling water")
+		check(not m.is_reserved(f.pool, 1.0) and not m.on_bridge(f.pool, 1.0), "its pool on clear ground")
+		var stuck := 0
+		for q in pts:
+			if m.sdf_at(q) <= 0.0:
+				stuck += 1
+		check_eq(stuck, 0, "the water runs in the air, along the rock, never inside it")
+		if Vector2(pts[0].x - c0.x, pts[0].z - c0.z).length() < maxf(m.rooms[0].radii.x, m.rooms[0].radii.z) * 1.3:
+			first += 1
+	check(first >= 1, "the first cave has a waterfall (%d)" % first)
 	CaveMaker.use_layout(was)

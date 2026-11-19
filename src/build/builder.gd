@@ -902,6 +902,8 @@ static func _list_text(items: Dictionary) -> String:
 
 
 func _build_step(box_id: int, site: Dictionary, chest: Dictionary) -> void:
+	if site.has("ruin") and _ruin_step(box_id, site):
+		return
 	var inv: Inventory = chest.inv
 	var first_missing := {}
 	var done := 0
@@ -953,6 +955,8 @@ func _build_step(box_id: int, site: Dictionary, chest: Dictionary) -> void:
 		return
 	if done == site.plan.size():
 		_set_status(box_id, "Done!")
+		if site.has("ruin"):
+			_finish_ruin(box_id, site, chest)
 		_ev_site_done.rpc(box_id)
 		# The Builder's Chest goes away once the building stands (owner, Nov 16); what's left in it drops beside it.
 		for slot in inv.slots:
@@ -985,6 +989,113 @@ func _identical_exists(p: Dictionary) -> bool:
 	return false
 
 
+# ================================================================== rebuilding ruins (owner, Nov 19)
+## docs/design/ruin-rebuild-plan.md: the ruin's Rebuilding Chest; the first root planks or cut stone put in start a build
+## site of the whole building in that material, right over the ruin. Pieces still standing whole count as built;
+## worn and collapsed walls are taken away when their replacement's turn comes; rubble goes floor by floor.
+
+const RUIN_EQUIVALENT := {"railing": ["battlement", "battlement_corner"]}  ## a wooden railing stands where a battlement did
+
+
+## Host: something went into a Rebuilding Chest.
+func ruin_chest_changed(box_id: int) -> void:
+	if not auth.is_host() or sites.has(box_id):
+		return
+	var ruins: Dictionary = auth.world_state.get("ruins", {})
+	var r: Dictionary = ruins.get(str(box_id), {})
+	if r.is_empty() or r.get("done", false):
+		return
+	var chest: Dictionary = auth.storage.get_box(box_id)
+	if chest.is_empty():
+		return
+	var key := ""
+	if chest.inv.count_of(BlueprintLibrary.WOOD) > 0:
+		key = String(r.wood)
+	elif chest.inv.count_of(BlueprintLibrary.STONE) > 0:
+		key = String(r.stone)
+	if key == "":
+		return  # not a building material yet
+	var bp := BlueprintLibrary.make(key)
+	if bp == null:
+		return
+	_ev_site.rpc(box_id, bp.to_json(), r.origin, int(r.turn), [])
+	var site: Dictionary = sites.get(box_id, {})
+	if site.is_empty():
+		return
+	site.ruin = key
+	for i in site.plan.size():  # what still stands whole is done already
+		if _ruin_slot_whole(site.plan[i]):
+			_ev_site_piece.rpc(box_id, i)
+	_set_status(box_id, "Rebuilding in %s" % ("wood" if key == String(r.wood) else "stone"))
+
+
+## A whole piece of the ruin already stands where this plan piece goes (any material).
+func _ruin_slot_whole(p: Dictionary) -> bool:
+	var same: Array = [p.piece] + RUIN_EQUIVALENT.get(p.piece, [])
+	for uid in structure.pieces:
+		var q: Dictionary = structure.pieces[uid]
+		if q.piece in same and q.rot == p.rot and q.pos.distance_to(p.pos) < 0.05:
+			return true
+	return false
+
+
+## One clearing job per step: rubble on the floor being rebuilt, or a broken wall where the next piece goes.
+func _ruin_step(box_id: int, site: Dictionary) -> bool:
+	var steps := site_steps(site.plan)
+	var base := INF
+	for p in site.plan:
+		base = minf(base, p.pos.y)
+	var origin: Vector3 = site.origin
+	for rid in rubble:
+		var rb: Rubble = rubble[rid]
+		var at := rb.global_position
+		if Vector2(at.x - origin.x, at.z - origin.z).length() > 9.0:
+			continue
+		if floori((at.y - base + 0.25) / STEP_HEIGHT) <= steps.current:
+			_ev_remove_rubble.rpc(rid)
+			_set_status(box_id, "Clearing the rubble…")
+			return true
+	for i in site.plan.size():
+		var p: Dictionary = site.plan[i]
+		if p.built or steps.band_of[i] != steps.current:
+			continue
+		for uid in structure.pieces:  # (a worn wall is lower than a whole one: look by place, not only by overlap)
+			var q: Dictionary = structure.pieces[uid]
+			if String(q.piece).begins_with("ruin_") and (q.pos.distance_to(p.pos) < 0.6 or uid in structure.overlapping(p.piece, p.pos, p.rot)):
+				_ev_remove_piece.rpc(uid)  # the broken wall comes down; the whole one goes up next
+				_set_status(box_id, "Taking down a broken wall…")
+				return true
+	return false
+
+
+## The last piece is in: everyone learns the blueprint, everyone near gets crafting experience.
+func _finish_ruin(box_id: int, site: Dictionary, chest: Dictionary) -> void:
+	var key: String = site.ruin
+	var origin: Vector3 = site.origin
+	for uid in structure.pieces.keys():  # anything broken still standing in the rebuilt tower goes
+		var q: Dictionary = structure.pieces[uid]
+		if String(q.piece).begins_with("ruin_") and Vector2(q.pos.x - origin.x, q.pos.z - origin.z).length() < 9.0:
+			_ev_remove_piece.rpc(uid)
+	var ruins: Dictionary = auth.world_state.get("ruins", {}).duplicate()
+	if ruins.has(str(box_id)):
+		var r: Dictionary = (ruins[str(box_id)] as Dictionary).duplicate()
+		r.done = true
+		ruins[str(box_id)] = r
+		auth.world_state["ruins"] = ruins
+	var known: Array = auth.world_state.get("blueprints", []).duplicate()
+	if not known.has(key):
+		known.append(key)
+		auth.world_state.blueprints = known
+	auth._ev_learned_blueprint.rpc(BlueprintLibrary.NAMES.get(key, key))
+	for pid in auth.players:
+		var ps: GameAuthority.PlayerState = auth.players[pid]
+		if ps.node and ps.node.global_position.distance_to(chest.node.global_position) < 40.0:
+			auth.give_xp(pid, RUIN_XP, "crafting")
+
+
+const RUIN_XP := 300  ## experience for each dwarf near a rebuilt ruin (owner, Nov 19)
+
+
 func _set_status(box_id: int, text: String) -> void:
 	if sites.has(box_id) and sites[box_id].status != text:
 		_ev_site_status.rpc(box_id, text)
@@ -1000,7 +1111,7 @@ func snapshot() -> Dictionary:
 		for i in st.plan.size():
 			if st.plan[i].built:
 				built.append(i)
-		site_list.append([box_id, st.json, st.origin, st.rot, built])
+		site_list.append([box_id, st.json, st.origin, st.rot, built, st.get("ruin", "")])
 	var rubble_list := []
 	for rid in rubble:
 		var rb: Rubble = rubble[rid]
@@ -1019,6 +1130,8 @@ func load_snapshot(s: Dictionary) -> void:
 	_next_uid = s.get("next", _next_uid)
 	for st in s.get("sites", []):
 		_ev_site(st[0], st[1], st[2], st[3], st[4])
+		if st.size() > 5 and String(st[5]) != "" and sites.has(st[0]):
+			sites[st[0]].ruin = String(st[5])  # (a ruin being rebuilt)
 	for r in s.get("rubble", []):
 		_add_rubble(r[0], r[1], r[2], r[3], r[3], false)
 		rubble[r[0]].hits = r[4]

@@ -15,7 +15,10 @@ static func open(body: Node3D) -> void:
 	if lid == null:
 		_pop(body)
 		return
-	Sfx.play("chest_open", body.global_position + Vector3.UP * 0.5, -4.0, 1.15)  # a wooden lid creaking open (Kenney RPG Audio, CC0)
+	Sfx.play("chest_open", body.global_position + Vector3.UP * 0.5, -14.0, 1.15)  # a wooden lid creaking open (Kenney RPG Audio, CC0)
+	if body.get_meta("slide_lid", false):
+		_slide(lid, true)
+		return
 	var t := _fresh_tween(lid)
 	t.tween_property(lid, "rotation:x", OPEN_ANGLE * 1.06, OPEN_TIME).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	t.tween_property(lid, "rotation:x", OPEN_ANGLE, 0.1).set_trans(Tween.TRANS_SINE)  # (a small bounce at the top)
@@ -24,13 +27,41 @@ static func open(body: Node3D) -> void:
 ## The menu closed (or you walked off): the lid drops shut with a little thump.
 static func close(body: Node3D) -> void:
 	var lid := lid_of(body)
-	if lid == null or is_zero_approx(lid.rotation.x):
+	if lid == null or (is_zero_approx(lid.rotation.x) and not lid.has_meta("slid")):
+		return
+	if body.get_meta("slide_lid", false):
+		_slide(lid, false)
 		return
 	var t := _fresh_tween(lid)
 	t.tween_property(lid, "rotation:x", 0.0, CLOSE_TIME).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	t.tween_callback(func() -> void:
 		if is_instance_valid(body):
-			Sfx.play("chest_close", body.global_position + Vector3.UP * 0.4, -4.0, 1.1))  # the lid thumps shut
+			Sfx.play("chest_close", body.global_position + Vector3.UP * 0.4, -14.0, 1.1))  # the lid thumps shut (quiet: owner, Nov 19 "way too loud")
+
+
+## A barrel's lid (owner, Nov 19: "lift up and then slide to the side"): up a little, slid aside, and set down on
+## the rim again (its middle is still over the barrel, so it lies flat); shutting does it backwards.
+const SLIDE_UP := 0.05
+const SLIDE_SIDE := 0.3
+
+
+static func _slide(lid: Node3D, open: bool) -> void:
+	var home: Vector3 = lid.get_meta("lid_home", lid.position)
+	lid.set_meta("lid_home", home)
+	var up := home + Vector3.UP * SLIDE_UP
+	var aside := up + Vector3(SLIDE_SIDE, 0.0, 0.0)
+	var rest := home + Vector3(SLIDE_SIDE, 0.0, 0.0)
+	var t := _fresh_tween(lid)
+	if open:
+		lid.set_meta("slid", true)
+		t.tween_property(lid, "position", up, 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		t.tween_property(lid, "position", aside, 0.16).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		t.tween_property(lid, "position", rest, 0.06).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	else:
+		lid.remove_meta("slid")
+		t.tween_property(lid, "position", aside, 0.05)
+		t.tween_property(lid, "position", up, 0.14).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		t.tween_property(lid, "position", home, 0.06).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 
 
 ## The chest's lid part, if its model has one.

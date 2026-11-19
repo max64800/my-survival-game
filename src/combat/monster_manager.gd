@@ -70,13 +70,25 @@ func _physics_process(delta: float) -> void:
 	_clouds_step(delta)
 
 
+const FAR_AWAY := 50.0  ## metres: further than this from every dwarf, a calm creature thinks less often
+const FAR_EVERY := 4    ## ...every 4th physics step
+var _far_turn := 0
+
+
 func _host_step(delta: float) -> void:
 	_update_boosts()
 	_statues_step(delta)
 	_check_boss_resets(delta)
+	_far_turn = (_far_turn + 1) % FAR_EVERY
 	for m: Monster in monsters.values():
 		if m.is_alive():
-			m.think(delta, self)
+			# Far from every dwarf and not fighting: it thinks every 4th step with the time saved up (owner, Nov 19:
+			# 5 FPS, the creatures' step was too slow). Nobody sees it that far away in the caves.
+			if m.state in [Monster.State.IDLE, Monster.State.WANDER, Monster.State.SLEEP, Monster.State.RETURN] 					and (m.uid + _far_turn) % FAR_EVERY != 0 and _nearest_player_dist(m.global_position) > FAR_AWAY:
+				m.far_dt += delta
+				continue
+			m.think(delta + m.far_dt, self)
+			m.far_dt = 0.0
 	_spawn_timer -= delta
 	if _spawn_timer <= 0.0:
 		_spawn_timer = SPAWN_CHECK
@@ -1032,7 +1044,13 @@ static func charge_shove(m: Monster, dwarf_pos: Vector3) -> Vector3:
 
 func _in_reach(m: Monster, dwarf: Node3D, reach: float) -> bool:
 	var d := m.global_position - dwarf.global_position
-	return Vector2(d.x, d.z).length() <= reach + 0.8 and absf(d.y) < 2.5
+	if Vector2(d.x, d.z).length() > reach + 0.8 or absf(d.y) >= 2.5:
+		return false
+	# Not through a wall (owner, Nov 19: a snail hit him through the tower's wall): rock or a built piece in between
+	# stops the hit.
+	var q := PhysicsRayQueryParameters3D.create(m.global_position + Vector3.UP * 0.6, dwarf.global_position + Vector3.UP * 0.9,
+		World.TERRAIN_LAYER | PieceNode.PIECE_LAYER)
+	return _root.get_world_3d().direct_space_state.intersect_ray(q).is_empty()
 
 
 ## We parried: the host fills the monster's stun meter and staggers it.

@@ -3,7 +3,9 @@ extends Node3D
 ## Water in the caves (owner, Nov 18, F190: "water: puddles, small streams, a low mist in the deepest spots").
 ## - Puddles: one under every water drip (rings where the drops land), and a few in the low spots of cavern floors.
 ## - Mist: a thin, slowly drifting mist hugging the floor in some of the deepest caverns.
-## (Streams need the cave itself to carve beds for them: a later step.) Only looks; planned from the cave.
+## - Little waterfalls (owner, Nov 19): water seeping out of a crack 2.5-7 m up a cave wall, running down the rock face to
+##   a small pool on the floor (src/art/waterfall.gdshader). 1-2 in each big cave, sometimes one in a smaller room.
+## (Streams along the floor need the cave itself to carve beds for them: a later step.) Only looks; planned from the cave.
 
 const PUDDLES_PER_CAVERN := 2
 const MIST_SHARE := 0.35  ## of the low caverns
@@ -11,7 +13,14 @@ const MIST_SHARE := 0.35  ## of the low caverns
 
 func build(maker: CaveMaker, spots: Array[Dictionary]) -> void:
 	var shader: Shader = load("res://src/art/water.gdshader")
-	for p in plan_puddles(maker, spots):
+	var falls := plan_falls(maker)
+	var puddles := plan_puddles(maker, spots)
+	var fall_shader: Shader = load("res://src/art/waterfall.gdshader")
+	for f in falls:
+		_make_fall(f, fall_shader)
+		puddles.append({pos = (f.pool as Vector3) + Vector3.UP * 0.05, r = 0.5, drip = true})  # where it lands: rings
+		_make_splash(f.pool)
+	for p in puddles:
 		var mi := MeshInstance3D.new()
 		var plane := PlaneMesh.new()
 		plane.size = Vector2.ONE * p.r * 2.0
@@ -46,6 +55,163 @@ func build(maker: CaveMaker, spots: Array[Dictionary]) -> void:
 		fog.material = fm
 		add_child(fog)
 		fog.global_position = m.pos
+
+
+## Little waterfalls: [{pts: PackedVector3Array (the crack down to the floor, a hand's width off the rock), side
+## (Vector3, across the water), pool (floor point)}]. The placement rule: not over paths, places, bridges, Root Trees or
+## ground kept clear for built things (test: test_waterfalls_keep_clear).
+static func plan_falls(maker: CaveMaker) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var rng := RandomNumberGenerator.new()
+	rng.seed = maker.seed + 9950
+	var trees := RootPillars.plan(maker)
+	for ri in maker.rooms.size():
+		var room: Dictionary = maker.rooms[ri]
+		# (owner, Nov 19: "I don't see any waterfalls": his world had none near the start) more of them, and the first
+		# cave searched much harder, from spots all round it, not just its middle
+		var want := (rng.randi_range(2, 3) if room.big else (1 if rng.randf() < 0.4 else 0))
+		var tries := 14
+		if ri == 0:
+			want = 3
+			tries = 60
+		if room.get("sealed", false) or maker.sdf_at(room.center) <= 0.0:
+			continue
+		var c: Vector3 = room.center
+		var r: Vector3 = room.radii
+		var fl := c.y - r.y * 0.55
+		for attempt in want * tries:
+			if want <= 0:
+				break
+			var a := rng.randf_range(0.0, TAU)
+			var off := Vector2(rng.randf_range(-0.5, 0.5) * r.x, rng.randf_range(-0.5, 0.5) * r.z)
+			var start := Vector3(c.x + off.x, fl + rng.randf_range(2.5, 7.0), c.z + off.y)
+			if maker.sdf_at(start) <= 0.5:
+				continue
+			var dir := Vector3(cos(a), 0.0, sin(a))
+			var hit := GlowPlacer._march(maker, start, dir, maxf(r.x, r.z) * 1.6)
+			if hit == Vector3.INF:
+				continue
+			var n := GlowPlacer.normal_at(maker, hit)
+			if absf(n.y) > 0.55:
+				continue  # a wall (it may lean a little), not a floor or ceiling
+			n = Vector3(n.x, 0.0, n.z).normalized()
+			var top := hit + n * 0.12
+			if maker.sdf_at(top) <= 0.03:
+				top = hit + n * 0.3  # (a rough wall: the crack's water starts a little further out)
+				if maker.sdf_at(top) <= 0.03:
+					continue
+			var pts := PackedVector3Array([top])
+			var p: Vector3 = pts[0]
+			var ok := true
+			for step in 60:  # down the rock face, a hand's width off it, following its bumps
+				var q := p + Vector3.DOWN * 0.25
+				if maker.sdf_at(q) <= 0.06:
+					break  # reached the floor (or a ledge)
+				var wall := GlowPlacer._march(maker, q + n * 0.6, -n, 1.5)
+				if wall != Vector3.INF:
+					q = wall + n * 0.12
+				for push in 8:  # the rock bulges out below: the water runs over the bulge (round 3)
+					if maker.sdf_at(q) > 0.05:
+						break
+					q += n * 0.12
+				if maker.sdf_at(q) <= 0.02:
+					ok = false
+					break
+				pts.append(q)
+				p = q
+			if not ok or pts.size() < 7:
+				continue  # at least 1.5 m of falling water
+			var pool := GlowPlacer._march(maker, p + n * 0.25, Vector3.DOWN, 2.0)
+			if pool == Vector3.INF or GlowPlacer.normal_at(maker, pool).y < 0.75:
+				continue
+			if not _fall_clear(maker, pts, pool, trees):
+				continue
+			out.append({pts = pts, side = Vector3.UP.cross(n).normalized(), pool = pool})
+			want -= 1
+	return out
+
+
+static func _fall_clear(maker: CaveMaker, pts: PackedVector3Array, pool: Vector3, trees: Array) -> bool:
+	for q in [pts[0], pts[pts.size() / 2], pts[pts.size() - 1], pool]:
+		if maker.is_reserved(q, 1.5) or maker.on_bridge(q, 1.5):
+			return false
+		for t in trees:
+			if Vector2(q.x - t.top.x, q.z - t.top.z).length() < float(t.width) * 0.6 + 1.0:
+				return false
+	for poi in maker.pois:
+		if (poi.pos as Vector3).distance_to(pool) < 3.0:
+			return false
+	for sg: Dictionary in maker.segments:
+		if sg.get("ramp", false) or sg.get("ledge", false):
+			if Geometry3D.get_closest_point_to_segment(pool, sg.a, sg.b).distance_to(pool) < float(sg.r) + 1.5:
+				return false
+	return true
+
+
+func _make_fall(f: Dictionary, shader: Shader) -> void:
+	var pts: PackedVector3Array = f.pts
+	var side: Vector3 = f.side
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var down := 0.0
+	var verts := PackedVector3Array()
+	var uvs := PackedVector2Array()
+	for i in pts.size():
+		if i > 0:
+			down += pts[i].distance_to(pts[i - 1])
+		var w := lerpf(0.3, 0.85, float(i) / float(pts.size() - 1))  # thin at the crack, spreading as it falls (round 2: wider)
+		verts.append(pts[i] - side * w * 0.5)
+		verts.append(pts[i] + side * w * 0.5)
+		uvs.append(Vector2(0.0, down))
+		uvs.append(Vector2(1.0, down))
+	for i in pts.size() - 1:
+		var k := i * 2
+		for j in [k, k + 1, k + 2, k + 1, k + 3, k + 2]:
+			st.set_uv(uvs[j])
+			st.add_vertex(verts[j])
+	st.generate_normals()
+	var mi := MeshInstance3D.new()
+	mi.mesh = st.commit()
+	var mat := ShaderMaterial.new()
+	mat.shader = shader
+	mat.set_shader_parameter("length", down)
+	mi.material_override = mat
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.visibility_range_end = 90.0  # (seen from across a big cave)
+	add_child(mi)
+
+
+## Droplets bouncing up where the water lands (a few tiny glints, cheap: the graphics card moves them).
+func _make_splash(at: Vector3) -> void:
+	var p := GPUParticles3D.new()
+	p.amount = 24
+	p.lifetime = 0.7
+	p.visibility_aabb = AABB(Vector3(-1, -0.2, -1), Vector3(2, 1.4, 2))
+	var pm := ParticleProcessMaterial.new()
+	pm.direction = Vector3.UP
+	pm.spread = 35.0
+	pm.initial_velocity_min = 0.8
+	pm.initial_velocity_max = 1.8
+	pm.gravity = Vector3(0, -9.0, 0)
+	pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
+	pm.emission_sphere_radius = 0.18
+	pm.scale_min = 0.5
+	pm.scale_max = 1.0
+	p.process_material = pm
+	var drop := SphereMesh.new()
+	drop.radius = 0.012
+	drop.height = 0.024
+	drop.radial_segments = 6
+	drop.rings = 3
+	var dm := StandardMaterial3D.new()
+	dm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	dm.albedo_color = Color(0.7, 0.85, 0.95)
+	drop.material = dm
+	p.draw_pass_1 = drop
+	p.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	p.visibility_range_end = 30.0
+	add_child(p)
+	p.global_position = at + Vector3.UP * 0.05
 
 
 ## Puddles: [{pos, r, drip}]. Under each water drip (on the floor below it), and a few in low floor spots.

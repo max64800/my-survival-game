@@ -84,6 +84,11 @@ static func plan(maker: CaveMaker, trees: Array = []) -> Array[Dictionary]:
 	for sg: Dictionary in maker.segments:
 		if sg.get("ramp", false) or sg.get("ledge", false):
 			paths.append(sg)
+	# Crystals (owner, Nov 19: mushroom grass grew on a crystal): none within a crystal's own size of it.
+	var crystals: Array[Vector4] = []
+	for g in GlowPlacer.place(maker):
+		if String(g.kind).begins_with("crystal") and Vector2(g.pos.x - c.x, g.pos.z - c.z).length() < maxf(r.x, r.z) * 1.4:
+			crystals.append(Vector4(g.pos.x, g.pos.y, g.pos.z, 0.6 + 0.9 * maxf(float(g.get("scale", 1.0)), float(g.get("length", 0.0)) * 0.5)))
 	var nx := int(r.x * 2.4 / STEP)  # (a little past the egg shape: the walls flare out)
 	var nz := int(r.z * 2.4 / STEP)
 	for ix in nx:
@@ -125,6 +130,13 @@ static func plan(maker: CaveMaker, trees: Array = []) -> Array[Dictionary]:
 				var dx := rng.randf_range(-0.5, 0.5) * STEP
 				var dz := rng.randf_range(-0.5, 0.5) * STEP
 				var y := hit.y - (n.x * dx + n.z * dz) / n.y  # on the slope's plane
+				var on_crystal := false
+				for cr in crystals:
+					if Vector3(hit.x + dx - cr.x, y - cr.y, hit.z + dz - cr.z).length() < cr.w:
+						on_crystal = true
+						break
+				if on_crystal:
+					continue
 				out.append({pos = Vector3(hit.x + dx, y - 0.015, hit.z + dz), spin = rng.randf() * TAU,
 					scale = rng.randf_range(1.1, 2.2), model = rng.randi() % MODELS.size(), up = Vector3.UP.lerp(n, 0.5).normalized()})
 	return out
@@ -199,16 +211,18 @@ func _draw(key: Vector2i) -> void:
 					mm2.set_instance_transform(i, list[i]))
 
 
-## Soft colours in patches (owner, Nov 18: "make them a little bit different colors"): neighbours share a colour, a
-## little lighter or darker each, so the floor shows drifts of cream, tan, pale peach, cool grey and light lilac.
-const COLOURS := [Color(1.0, 1.0, 1.0), Color(1.0, 0.9, 0.74), Color(1.0, 0.84, 0.8), Color(0.84, 0.9, 1.0), Color(0.92, 0.86, 1.0)]
+## Colours in drifts (owner, Nov 19, round 2: "they're exactly the same... still white; I want them different
+## colours"): neighbours share a colour, a little lighter or darker each. About a third stay ivory; the rest are
+## golden amber, rust orange, dusty violet, pale teal, rose and olive.
+const COLOURS := [Color(1.0, 1.0, 1.0), Color(1.0, 1.0, 1.0), Color(1.0, 0.95, 0.85), Color(1.0, 0.7, 0.32),
+	Color(0.95, 0.48, 0.28), Color(0.68, 0.52, 0.92), Color(0.5, 0.82, 0.92), Color(1.0, 0.6, 0.72), Color(0.78, 0.88, 0.42)]
 
 
 static func colour_at(p: Vector3) -> Color:
-	var cell := Vector2i(floori(p.x / 3.5), floori(p.z / 3.5))
+	var cell := Vector2i(floori(p.x / 5.0), floori(p.z / 5.0))
 	var h := absi(hash(cell)) % 1000
 	var c: Color = COLOURS[h % COLOURS.size()]
-	var v := 0.88 + 0.2 * float(absi(hash(Vector2i(roundi(p.x * 10.0), roundi(p.z * 10.0)))) % 100) / 100.0
+	var v := 0.85 + 0.25 * float(absi(hash(Vector2i(roundi(p.x * 10.0), roundi(p.z * 10.0)))) % 100) / 100.0
 	return Color(c.r * v, c.g * v, c.b * v)
 
 

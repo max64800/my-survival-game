@@ -55,7 +55,10 @@ func _physics_process(delta: float) -> void:
 		return
 	var done := 0
 	var looked := 0
-	while looked < 12 and done < 2 and not _jobs.is_empty():
+	var built_checks := 0
+	# Up to 300 quick distance checks a step, but only 12 "is the rock built here?" checks (owner, Nov 19: rocks still
+	# floating; with ~12,000 batches waiting, 12 looks a step took ~16 s to get round to the ones next to you).
+	while looked < 300 and built_checks < 12 and done < 2 and not _jobs.is_empty():
 		looked += 1
 		_check = _check % _jobs.size()
 		var job: Dictionary = _jobs[_check]
@@ -63,7 +66,11 @@ func _physics_process(delta: float) -> void:
 			_jobs.remove_at(_check)
 			continue
 		var box: AABB = (job.aabb as AABB).grow(1.0)
-		if not _near_player(box) or not _built(box):
+		if not _near_player(box):
+			_check += 1
+			continue
+		built_checks += 1
+		if not _built(box):
 			_check += 1
 			continue
 		_jobs.remove_at(_check)

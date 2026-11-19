@@ -50,6 +50,10 @@ func setup(seed: int) -> void:
 		mat.set_shader_parameter("star_center", star.center)
 		mat.set_shader_parameter("star_radius", star.radius)
 		mat.set_shader_parameter("star_snakes", float(star.snakes))
+	var quiet := maker.quiet_room()  # no stars where you wake up (owner, Nov 19)
+	if not quiet.is_empty():
+		mat.set_shader_parameter("quiet_center", quiet.center)
+		mat.set_shader_parameter("quiet_radius", quiet.radius)
 	terrain.material_override = mat
 	add_child(terrain)
 	_tool = terrain.get_voxel_tool()

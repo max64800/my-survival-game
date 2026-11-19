@@ -49,7 +49,7 @@ static func chests_near(pos: Vector3, storage: Storage) -> Array:
 	var out := []
 	for id in storage.boxes:
 		var b: Dictionary = storage.boxes[id]
-		if b.kind in ["grave", "builder"] or b.node == null:
+		if b.kind in ["grave", "builder", "rebuild"] or b.node == null:
 			continue
 		if (b.node as Node3D).global_position.distance_to(pos) <= RANGE:
 			out.append(id)
