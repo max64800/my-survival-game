@@ -1,0 +1,267 @@
+<title>Big Clay Dungeons</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans+SC:wght@500;800&family=Inter:wght@400;600&display=swap">
+<style>
+/* Layout: one column of dungeon sheets, each a side-view cut through the rock with a room list under it. */
+:root {
+  --bg: #efeae1; --paper: #f8f5ef; --fg: #2b241d; --muted: #6f6356; --line: #cfc4b3;
+  --rock: #ddd3c4; --wood: #9a4a2c; --moss: #4f7a3a;
+  --trap: #c76a2c; --deadly: #a3161c; --mob: #b8860b; --loot: #8f7a12; --page: #3e6fa8; --hid: #7a4fa0; --heal: #2f8a7a; --key: #1f7f9e; --boss: #6b2e86;
+  --display: "Alegreya Sans SC", "Trebuchet MS", sans-serif;
+  --body: "Inter", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #1d1915; --paper: #26211b; --fg: #ece4d8; --muted: #a8998a; --line: #463d33;
+  --rock: #322b24; --wood: #d2845e; --moss: #86b36a;
+  --trap: #e88d4f; --deadly: #ff5a5a; --mob: #e3b23c; --loot: #cdb64a; --page: #79a6dd; --hid: #b48ce0; --heal: #5cc4b0; --key: #5bc0e0; --boss: #d18cf0; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #1d1915; --paper: #26211b; --fg: #ece4d8; --muted: #a8998a; --line: #463d33;
+  --rock: #322b24; --wood: #d2845e; --moss: #86b36a;
+  --trap: #e88d4f; --deadly: #ff5a5a; --mob: #e3b23c; --loot: #cdb64a; --page: #79a6dd; --hid: #b48ce0; --heal: #5cc4b0; --key: #5bc0e0; --boss: #d18cf0; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 48px; }
+main { max-width: 980px; margin: 0 auto; display: grid; gap: 32px; }
+h1, h2 { font-family: var(--display); font-weight: 800; text-wrap: balance; margin: 0; letter-spacing: .01em; }
+h1 { font-size: 2.2rem; line-height: 1.1; }
+h2 { font-size: 1.6rem; }
+p { margin: 0; max-width: 68ch; }
+.intro { display: grid; gap: 10px; }
+.muted { color: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: .9rem; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 24px; font-size: .92rem; }
+.rules div { border-top: 2px solid var(--wood); padding-top: 6px; }
+.rules b { font-family: var(--display); font-size: 1.05rem; display: block; }
+section.sheet { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 20px; display: grid; gap: 14px; min-width: 0; }
+.head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 20px; align-items: baseline; }
+.facts { display: flex; flex-wrap: wrap; gap: 6px; font-size: .82rem; }
+.facts span { border: 1px solid var(--line); border-radius: 99px; padding: 2px 10px; white-space: nowrap; }
+.big { font-size: 1rem; }
+.diagram { overflow-x: auto; }
+.diagram svg { display: block; min-width: 640px; width: 100%; height: auto; }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+.tablewrap { overflow-x: auto; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--display); font-weight: 500; font-size: .95rem; color: var(--muted); }
+td.n { font-variant-numeric: tabular-nums; color: var(--muted); width: 1.5em; }
+.tag { font-size: .78rem; border-radius: 4px; padding: 1px 6px; margin: 0 4px 2px 0; display: inline-block; border: 1px solid currentColor; }
+.t-trap { color: var(--trap); } .t-deadly { color: var(--deadly); font-weight: 600; } .t-hid { color: var(--hid); } .t-key, .t-lock { color: var(--key); } .t-boss { color: var(--boss); font-weight: 600; } .t-heal { color: var(--heal); } .t-mob { color: var(--mob); } .t-loot { color: var(--loot); } .t-page { color: var(--page); } .t-out { color: var(--moss); }
+.foot { font-size: .9rem; }
+</style>
+
+<main>
+  <div class="intro">
+    <h1>Big clay dungeons</h1>
+    <p>Draft for dungeons #10 to #12 of zone 1: three old forge halls built from Hearthbrick clay brick. Each has about 30 spaces over 3 levels (20-25 minutes), keys and locked doors, mini bosses, 3 deadly traps and the forge's own machines as traps: fire jets, swinging hammers, push pistons, rolling weights, and molten metal kept in stone channels so it can never spill. Each teaches one of Copper Mace, Two-handed Axe and Two-handed Mace (shuffled per world).</p>
+    <p class="muted">Every trap has a clue you can see or hear, and a safe way through: time it, bait it and step back, or shoot its chain or switch with a crossbow. The table says how for each one.</p>
+  </div>
+
+  <div class="rules">
+    <div><b>Bone Thrall</b>KayKit minion. Weak, comes in groups, the filler in every room.</div>
+    <div><b>Bone Warden</b>KayKit warrior. Armour and a shield, slow and tough. Hit it from the side.</div>
+    <div><b>Rune Caller</b>KayKit mage. Stays back and shoots glowing runes from balconies and ledges.</div>
+    <div><b>Grave Creeper</b>KayKit rogue. Fast, sneaks round to hit you from behind.</div>
+  </div>
+  <p class="muted">All four are dwarf-sized skeletons of the dwarves who once lived here, repainted in our style. The mini bosses and the leaders at the recipe stand are bigger, named versions.</p>
+
+  <div class="legend">
+    <span><i class="dot" style="background:var(--trap)"></i>Trap (hurts)</span>
+    <span><i class="dot" style="background:var(--deadly);box-shadow:0 0 0 2px var(--paper),0 0 0 4px var(--deadly)"></i>Deadly trap</span>
+    <span><i class="dot" style="background:var(--hid)"></i>Hidden thing</span>
+    <span><i class="dot" style="background:var(--mob)"></i>Creatures</span>
+    <span><i class="dot" style="background:var(--loot)"></i>Chest</span>
+    <span><i class="dot" style="background:var(--heal)"></i>Healing shrine</span>
+    <span><i class="dot" style="background:var(--key)"></i>Key / locked door</span>
+    <span><i class="dot" style="background:var(--boss)"></i>Mini boss</span>
+    <span><i class="dot" style="background:var(--page)"></i>Recipe stand (the page)</span>
+    <span><i class="dot" style="background:var(--moss)"></i>Way out (dashed line)</span>
+    <span>Rounded dashed box = corridor</span>
+  </div>
+
+  <div id="sheets"></div>
+
+  <p class="foot muted">Traps use the Mossgate Hold kit, made in stone where needed (stone crusher, falling ceiling stones). The forge machines (fire jets, pistons, swinging hammers and hooks, rolling weights, the great press, molten channels) are new models and new trap code. The creatures come from the KayKit Skeletons pack, being made on the PC. Your call on everything here: names, rooms, traps, which creatures.</p>
+</main>
+
+<script>
+const D = [
+  {
+    name: "Emberdeep Forge", idea: "The great forge goes down and down: workshops at the top, the cooling and quench halls below, and the deep furnace at the bottom where it all still glows.",
+    facts: ["forge hall", "3 levels down", "30 spaces", "~20-25 min", "deadly: Quench Hall, Rolling Ingot Ramp, Crucible Bridge"],
+    layers: ["Level 1 (workshops)", "Level 2 (cooling halls, 8 m down)", "Level 3 (deep furnace, 16 m down)"],
+    rooms: [
+      {n:1, c:0, name:"Ember Gate", what:"Entrance: a round brick door, warm to the touch.", tags:[]},
+      {n:2, c:1, name:"Ash Hall", what:"Grey ash on everything. Bone Thralls.", tags:["mob:thralls","loot:chest"]},
+      {n:3, c:2, k:1, name:"Soot Corridor", what:"Fire jets from the walls. Clue: black soot marks and a hiss. Safe: they fire in a rhythm, or shoot the gas valve to shut them off.", tags:["trap:fire jets"]},
+      {n:4, c:3, name:"Tool Hall", what:"Racks of old tools. Bone Wardens.", tags:["mob:wardens","loot:chest"]},
+      {n:5, c:4, k:1, name:"Bellows Walk", what:"A ledge where bellows blast air and push you off (a hurting fall, not deadly). Clue: dust puffs. Safe: run between blasts.", tags:["trap:push bellows"]},
+      {n:6, c:5, name:"Great Door", what:"A huge round brick door, locked: it needs the Forge Key.", tags:["lock:locked door"]},
+      {n:7, c:3, s:-1, name:"Apprentices' Dorm", what:"Grave Creepers in the bunks. A loose floor stone hides a buried chest.", tags:["mob:creepers","hid:buried chest"]},
+      {n:8, c:4, s:-1, name:"Hidden Smithy", what:"Behind a cracked wall: a secret little forge and its chest.", tags:["hid:cracked wall","loot:vault chest"]},
+      {n:9, c:1, s:1, name:"Coal Store", what:"Heaps of old coal. A boulder hides a niche with a chest.", tags:["hid:hidden boulder","loot:chest"]},
+      {n:10, c:2, s:1, k:1, name:"Coal Chute", what:"Slide down the old chute to the cooling halls.", tags:[]},
+      {n:11, c:2, l:1, name:"Coal Cellar", what:"Bone Thralls in the dark.", tags:["mob:thralls"]},
+      {n:12, c:3, l:1, name:"Cooling Room", what:"Racks of cooled blades. Rune Callers on a gallery.", tags:["mob:rune callers"]},
+      {n:13, c:4, l:1, k:1, name:"Hammer Row", what:"Swinging trip hammers. Clue: grooves in the floor and a creak. Safe: time it, or shoot the release pin and the hammer stops.", tags:["trap:swing hammers"]},
+      {n:14, c:5, l:1, name:"Quench Hall", what:"A channel of molten metal across the floor, sunk in stone. Clue: the orange glow and heat haze. Safe: walk the narrow beams, or shoot the chain to drop a plank bridge.", tags:["deadly:molten channel"]},
+      {n:15, c:6, l:1, name:"Foreman's Office", what:"The Forge Foreman, a huge Bone Warden with a hammer, carries the Forge Key.", tags:["boss:Forge Foreman","key:Forge Key"]},
+      {n:16, c:5, l:1, s:-1, name:"Smelters' Rest", what:"A healing shrine.", tags:["heal:healing shrine"]},
+      {n:17, c:5, s:1, k:1, name:"Back Stair", what:"A workers' stair back up to the Great Door.", tags:[]},
+      {n:18, c:3, l:1, s:1, name:"Ore Sorting", what:"Sorting tables and a chest.", tags:["loot:chest","mob:creepers"]},
+      {n:19, c:4, l:1, s:1, k:1, name:"Collapsed Tunnel", what:"Darts from holes in the wall. Clue: rows of small holes. Safe: the darts fire in bursts; run in the gap, or hold up a shield.", tags:["trap:dart wall"]},
+      {n:20, c:6, name:"Hall of Anvils", what:"Rows of anvils. The big fight: Wardens and Thralls together.", tags:["mob:wardens","mob:thralls"]},
+      {n:21, c:7, k:1, name:"Rolling Ingot Ramp", what:"A giant stone weight rolls down the ramp. Clue: a worn groove and a rumble. Safe: duck into the side alcoves.", tags:["deadly:rolling weight"]},
+      {n:22, c:7, s:-1, name:"Alcove", what:"One of the side alcoves goes deeper: a chest hidden at the back.", tags:["hid:deep alcove","loot:chest"]},
+      {n:23, c:8, name:"Crucible Bridge", what:"A bridge over a molten pit, with a swinging crucible. Clue: the scorched arc on the floor. Safe: shoot its chain to stop it.", tags:["deadly:molten pit","trap:swinging crucible"]},
+      {n:24, c:9, k:1, name:"Deep Stair", what:"Down to the deep furnace.", tags:[]},
+      {n:25, c:9, l:2, name:"Furnace Gallery", what:"Fire jets and Rune Callers. Clue: soot and a hiss. Safe: the jets' rhythm, or shoot the gas valve.", tags:["trap:fire jets","mob:rune callers"]},
+      {n:26, c:10, l:2, name:"Slag Pits", what:"Pistons shove you toward a railing (they hurt, the railing holds). Clue: scuffed floor. Safe: step on the plate, step back, run while they reset. Grave Creepers.", tags:["trap:push pistons","mob:creepers"]},
+      {n:27, c:10, l:2, s:-1, name:"Master's Study", what:"Old forge drawings. A lever behind the shelf opens a hidden chest.", tags:["hid:secret lever","loot:chest"]},
+      {n:28, c:10, l:2, s:1, name:"Shrine of the Anvil", what:"A healing shrine before the last fight.", tags:["heal:healing shrine"]},
+      {n:29, c:11, l:2, name:"Heart of Emberdeep", what:"The great furnace. The Forge Guard and their leader. The recipe stand.", tags:["mob:pack + leader","page:recipe stand","loot:big chest"]},
+      {n:30, c:11, l:2, s:1, k:1, name:"Ember Lift", what:"An old ore lift that rises all the way to the Ember Gate.", tags:["out:lift to room 1"]},
+    ],
+    links: [[1,2],[2,3],[3,4],[4,5],[5,6],[4,7],[7,8],[2,9],[9,10],[10,11],[11,12],[12,13],[13,14],[14,15],[15,16],[16,17],[17,6],[12,18],[18,19],[6,20],[20,21],[21,22],[21,23],[23,24],[24,25],[25,26],[26,27],[26,28],[26,29],[29,30],[30,1,"out"]],
+    outNote: "An old ore lift in the Heart of Emberdeep carries you all the way up to the Ember Gate.",
+  },
+  {
+    name: "The Hammerfall Works", idea: "A great hall round a broken giant anvil, with a wing going up and a wing going down. Each wing's mini boss holds half of the key to the twin-locked gate.",
+    facts: ["forge hall", "3 levels (hub)", "30 spaces", "~20-25 min", "2 mini bosses", "deadly: Molten Channel, Great Press, Rolling Anvil"],
+    layers: ["Level 3 (gear galleries, 8 m up)", "Level 2 (the works)", "Level 1 (undercroft, 8 m down)"],
+    rooms: [
+      {n:1, c:0, l:1, name:"Works Gate", what:"Entrance: a round brick gate with a hammer carved over it.", tags:[]},
+      {n:2, c:1, l:1, name:"Yard", what:"Old carts and crates. Bone Thralls.", tags:["mob:thralls"]},
+      {n:3, c:1, l:1, s:-1, name:"Clerk's Office", what:"Ledgers and a chest. A loose floor stone hides a buried chest.", tags:["loot:chest","hid:buried chest"]},
+      {n:4, c:1, l:1, s:1, name:"Toolroom", what:"Bone Wardens among the tool racks.", tags:["mob:wardens","loot:chest"]},
+      {n:5, c:2, l:1, k:1, name:"Gatehouse Tunnel", what:"A swinging hammer. Clue: floor grooves and a creak. Safe: time it, or shoot the release pin.", tags:["trap:swing hammer"]},
+      {n:6, c:3, l:1, name:"Great Anvil Hall", what:"The broken giant anvil. The way on is a gate with two locks: one needs the Gear Key, one the Hammer Key.", tags:["mob:wardens","mob:creepers"]},
+      {n:7, c:3, l:0, s:1, k:1, name:"Gear Stair", what:"Up to the gear galleries.", tags:[]},
+      {n:8, c:4, l:0, name:"Gearworks", what:"Giant gears. Pistons punch out of the walls. Clue: scuffed floor. Safe: step on the plate, step back, run while it resets.", tags:["trap:push pistons","mob:thralls"]},
+      {n:9, c:5, l:0, k:1, name:"Belt Walk", what:"Hooks on chains swing across the walk. Clue: the clank. Safe: time it, or shoot the chain.", tags:["trap:swing hooks"]},
+      {n:10, c:6, l:0, name:"Gearmaster's Loft", what:"The Gearmaster, a big Rune Caller, holds the Gear Key.", tags:["boss:Gearmaster","key:Gear Key"]},
+      {n:11, c:5, l:0, s:-1, name:"Oil Store", what:"Old oil jars. One wall is cracked.", tags:["hid:cracked wall"]},
+      {n:12, c:6, l:0, s:-1, name:"Oil Vault", what:"Behind the cracked wall: a hidden chest.", tags:["loot:vault chest"]},
+      {n:13, c:3, l:2, s:-1, k:1, name:"Undercroft Stair", what:"Down under the works.", tags:[]},
+      {n:14, c:4, l:2, name:"Furnace Undercroft", what:"Fire jets from the old furnaces. Clue: soot and a hiss. Safe: their rhythm, or shoot the gas valve.", tags:["trap:fire jets","mob:creepers"]},
+      {n:15, c:5, l:2, name:"Molten Channel", what:"Molten metal in a stone channel, with stepping blocks that sink if you stand too long. Clue: glow and heat haze. Safe: keep moving, or shoot the chain that lowers a bridge.", tags:["deadly:molten channel"]},
+      {n:16, c:6, l:2, name:"Smelter's Hall", what:"The Smeltwarden, a huge Bone Warden, holds the Hammer Key.", tags:["boss:Smeltwarden","key:Hammer Key"]},
+      {n:17, c:5, l:2, s:1, name:"Slag Cellar", what:"A boulder hides a niche with a chest.", tags:["hid:hidden boulder","loot:chest"]},
+      {n:18, c:4, l:2, s:1, name:"Rest Shrine", what:"A healing shrine.", tags:["heal:healing shrine"]},
+      {n:19, c:4, l:1, name:"Twin-Lock Gate", what:"Both keys open it.", tags:["lock:two locks"]},
+      {n:20, c:5, l:1, name:"Press Hall", what:"A great press that crushes outright. Clue: dented floor and a slow hiss. Safe: bait it (step on the plate, jump back) and run under while it rises.", tags:["deadly:great press"]},
+      {n:21, c:6, l:1, name:"Proving Ground", what:"Where blades were tested. The big fight: Wardens and Creepers.", tags:["mob:wardens","mob:creepers"]},
+      {n:22, c:7, l:1, k:1, name:"Rolling Anvil Ramp", what:"An anvil on a cart rolls down the ramp. Clue: rattling rails. Safe: duck into the alcoves.", tags:["deadly:rolling anvil"]},
+      {n:23, c:7, l:1, s:-1, name:"Alcove", what:"A deep alcove with a chest at the back.", tags:["hid:deep alcove","loot:chest"]},
+      {n:24, c:8, l:1, name:"Bridge of Chains", what:"Swinging hammers over a gap. A hit knocks you onto a ledge below (it hurts, you climb back). Clue: the creak. Safe: time them, or shoot each release pin.", tags:["trap:swing hammers"]},
+      {n:25, c:8, l:1, s:1, name:"Pattern Room", what:"Rune Callers among the casting patterns. A chest.", tags:["mob:rune callers","loot:chest"]},
+      {n:26, c:9, l:1, name:"Antechamber", what:"Bone Thralls in rows.", tags:["mob:thralls"]},
+      {n:27, c:9, l:1, s:-1, name:"Quiet Forge", what:"A healing shrine before the last fight.", tags:["heal:healing shrine"]},
+      {n:28, c:10, l:1, name:"Masterwork Hall", what:"The Masterwork Guard and their leader. The recipe stand.", tags:["mob:pack + leader","page:recipe stand","loot:big chest"]},
+      {n:29, c:10, l:1, s:1, k:1, name:"Exit Lift", what:"A lift that runs back to the Works Gate.", tags:["out:lift to room 1"]},
+      {n:30, c:2, l:1, s:1, name:"Smithy Nook", what:"A tiny forge behind the Toolroom, with a chest.", tags:["loot:chest"]},
+    ],
+    links: [[1,2],[2,3],[2,4],[4,30],[2,5],[5,6],[6,7],[7,8],[8,9],[9,10],[9,11],[11,12],[6,13],[13,14],[14,15],[15,16],[15,17],[14,18],[6,19],[19,20],[20,21],[21,22],[22,23],[22,24],[24,25],[24,26],[26,27],[26,28],[28,29],[29,1,"out"]],
+    outNote: "A lift in the Masterwork Hall runs you back to the Works Gate.",
+  },
+  {
+    name: "Cinderhold Foundry", idea: "A foundry on both sides of one huge chasm. You climb up through it, crossing the chasm again and again on brick bridges.",
+    facts: ["foundry", "3 levels up", "28 spaces", "~20-25 min", "deadly: First Bridge, Casting Floor, Chain Bridge"],
+    layers: ["Level 3 (top gantries, 12 m up)", "Level 2 (crucible halls, 6 m up)", "Level 1 (ore docks)"],
+    rooms: [
+      {n:1, c:0, l:2, name:"Cinder Gate", what:"Entrance: a round brick door, black with old smoke.", tags:[]},
+      {n:2, c:1, l:2, name:"Ore Dock", what:"Ore carts on rails. Bone Thralls.", tags:["mob:thralls","loot:chest"]},
+      {n:3, c:1, l:2, s:-1, name:"Ore Sorters", what:"Sorting tables. Grave Creepers.", tags:["mob:creepers"]},
+      {n:4, c:1, l:2, s:1, name:"Tool Crib", what:"A small store with a chest.", tags:["loot:chest"]},
+      {n:5, c:2, l:2, k:1, name:"Cart Tunnel", what:"A runaway ore cart. Clue: rattling rails. Safe: duck into the side niches (it hurts if it hits).", tags:["trap:runaway cart"]},
+      {n:6, c:2, l:2, s:-1, name:"Weighmaster's Room", what:"A chest. A loose floor stone hides a buried chest.", tags:["loot:chest","hid:buried chest"]},
+      {n:7, c:3, l:2, name:"Smelter Row", what:"Fire jets from the smelters and Rune Callers. Clue: soot and a hiss. Safe: their rhythm, or shoot the gas valve.", tags:["trap:fire jets","mob:rune callers"]},
+      {n:8, c:3, l:2, s:1, name:"Slag Heap", what:"Grave Creepers. A boulder hides a niche with a chest.", tags:["mob:creepers","hid:hidden boulder"]},
+      {n:9, c:4, l:2, k:1, name:"Ash Stair", what:"Up to the crucible halls.", tags:[]},
+      {n:10, c:4, l:1, name:"Chasm Ledge", what:"The first view of the chasm. Bone Wardens.", tags:["mob:wardens"]},
+      {n:11, c:5, l:1, name:"First Bridge", what:"A brick bridge with a swinging crucible that knocks you into the chasm. Clue: creaking chain, scorched arc. Safe: time it, or shoot the chain.", tags:["deadly:chasm","trap:swinging crucible"]},
+      {n:12, c:6, l:1, name:"Far Landing", what:"Bone Thralls wait on the other side.", tags:["mob:thralls"]},
+      {n:13, c:6, l:1, s:-1, name:"Rest Shrine", what:"A healing shrine.", tags:["heal:healing shrine"]},
+      {n:14, c:6, l:1, s:1, name:"Pattern Store", what:"Casting patterns and a chest. One wall is cracked.", tags:["loot:chest","hid:cracked wall"]},
+      {n:15, c:5, l:1, s:1, name:"Pattern Vault", what:"Behind the cracked wall: a hidden chest.", tags:["loot:vault chest"]},
+      {n:16, c:7, l:1, name:"Crucible Hall", what:"The Cinder Warden, a huge Bone Warden, carries the Foundry Key.", tags:["boss:Cinder Warden","key:Foundry Key"]},
+      {n:17, c:7, l:1, s:1, name:"Casting Floor", what:"Moulds full of molten metal under iron lids; some lids are cracked. Clue: glow through the cracks. Safe: stay on the iron walkway.", tags:["deadly:molten moulds"]},
+      {n:18, c:8, l:1, name:"Lift Gate", what:"Locked: it needs the Foundry Key.", tags:["lock:locked gate"]},
+      {n:19, c:8, l:0, s:1, k:1, name:"Lift Shaft", what:"Up to the top gantries.", tags:[]},
+      {n:20, c:8, l:0, s:-1, name:"Gantry Alcove", what:"A loose panel hides a chest.", tags:["hid:loose panel","loot:chest"]},
+      {n:21, c:8, l:0, name:"Upper Gantry", what:"Pistons shove you toward the edge; the railing holds (it hurts). Clue: scuffed floor. Safe: bait them and run.", tags:["trap:push pistons"]},
+      {n:22, c:7, l:0, name:"Bellows Hall", what:"Bellows blasts push you back. Clue: dust puffs before each blast. Safe: run between blasts. Rune Callers shoot from the far side.", tags:["trap:push bellows","mob:rune callers"]},
+      {n:23, c:7, l:0, s:1, name:"Coal Bunker", what:"A chest under the coal.", tags:["loot:chest"]},
+      {n:24, c:6, l:0, name:"Chain Bridge", what:"A section drops when you step on its loose plate. Clue: a cracked plate. Safe: bait it, step back, wait for it to rise, run.", tags:["deadly:chasm drop"]},
+      {n:25, c:5, l:0, name:"Tapping Hall", what:"Where molten metal was tapped. Fire jets (clue: soot and a hiss; safe: their rhythm, or shoot the gas valve), Thralls and Creepers.", tags:["trap:fire jets","mob:thralls","mob:creepers"]},
+      {n:26, c:5, l:0, s:-1, name:"Ash Shrine", what:"A healing shrine before the last fight.", tags:["heal:healing shrine"]},
+      {n:27, c:4, l:0, name:"Foundry Master's Hall", what:"The Foundry Guard and their leader. The recipe stand.", tags:["mob:pack + leader","page:recipe stand","loot:big chest"]},
+      {n:28, c:4, l:0, s:-1, k:1, name:"Ash Slide", what:"A brick slide that spirals down to the Cinder Gate.", tags:["out:slide to room 1"]},
+    ],
+    links: [[1,2],[2,3],[2,4],[2,5],[5,6],[5,7],[7,8],[7,9],[9,10],[10,11],[11,12],[12,13],[12,14],[14,15],[12,16],[16,17],[16,18],[18,19],[19,21],[21,20],[21,22],[22,23],[22,24],[24,25],[25,26],[25,27],[27,28],[28,1,"outtop"]],
+    outNote: "A brick slide from the Foundry Master's Hall spirals down to the Cinder Gate.",
+  },
+];
+
+const COLW = 146, SUBH = 72, BW = 124, BH = 54, PADL = 10, PADT = 30;
+const css = k => `var(--${k === "out" ? "moss" : k})`;
+function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+
+function svgFor(d) {
+  const cols = Math.max(...d.rooms.map(r => r.c)) + 1;
+  const rows = d.layers.length;
+  const W = PADL + cols * COLW + 6, H = PADT + rows * 3 * SUBH + 18;
+  const pos = {};
+  d.rooms.forEach(r => { pos[r.n] = { x: PADL + r.c * COLW, y: PADT + ((r.l || 0) * 3 + 1 + (r.s || 0)) * SUBH }; });
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Side view of ${esc(d.name)}">`;
+  s += `<rect x="0" y="0" width="${W}" height="${H}" rx="4" fill="var(--rock)"/>`;
+  d.layers.forEach((name, i) => {
+    const y = PADT + i * 3 * SUBH - 12;
+    if (i > 0) s += `<line x1="6" x2="${W - 6}" y1="${y - 6}" y2="${y - 6}" stroke="var(--muted)" stroke-dasharray="3 6"/>`;
+    s += `<text x="10" y="${y}" font-size="11.5" fill="var(--muted)" font-family="Inter, sans-serif">${esc(name)}</text>`;
+  });
+  d.links.forEach(([a, b, k]) => {
+    const p = pos[a], q = pos[b];
+    const x1 = p.x + BW / 2, y1 = p.y + BH / 2, x2 = q.x + BW / 2, y2 = q.y + BH / 2;
+    if (k === "outtop") {  // a way out from the top level runs along the top edge instead
+      s += `<path d="M${x1} ${p.y} V8 H${x2} V${q.y}" fill="none" stroke="var(--moss)" stroke-width="2.5" stroke-dasharray="7 5"/>`;
+    } else if (k === "out") {  // the shortcut home runs along the bottom edge so it never crosses the main path
+      s += `<path d="M${x1} ${p.y + BH} V${H - 8} H${x2} V${q.y + BH}" fill="none" stroke="var(--moss)" stroke-width="2.5" stroke-dasharray="7 5"/>`;
+    } else {
+      s += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--wood)" stroke-width="5" stroke-linecap="round"/>`;
+    }
+  });
+  d.rooms.forEach(r => {
+    const p = pos[r.n];
+    const corr = r.k ? ` stroke-dasharray="5 3"` : "";
+    s += `<rect x="${p.x}" y="${p.y}" width="${BW}" height="${BH}" rx="${r.k ? 14 : 5}" fill="var(--paper)" stroke="var(--wood)" stroke-width="2"${corr}/>`;
+    s += `<text x="${p.x + 8}" y="${p.y + 19}" font-size="12" font-weight="600" fill="var(--fg)" font-family="Inter, sans-serif">${r.n}. ${esc(r.name)}</text>`;
+    r.tags.forEach((t, i) => {
+      const k = t.split(":")[0], cx = p.x + 14 + i * 18, cy = p.y + 38;
+      s += `<circle cx="${cx}" cy="${cy}" r="6.5" fill="${css(k)}"/>`;
+      if (k === "deadly") s += `<circle cx="${cx}" cy="${cy}" r="9.5" fill="none" stroke="var(--deadly)" stroke-width="2"/>`;
+    });
+  });
+  return s + `</svg>`;
+}
+
+function tagHtml(t) {
+  const [k, v] = t.split(":");
+  return `<span class="tag t-${k}">${k === "deadly" ? "deadly: " : ""}${esc(v)}</span>`;
+}
+
+document.getElementById("sheets").innerHTML = D.map((d, i) => `
+  <section class="sheet" aria-labelledby="d${i}">
+    <div class="head">
+      <h2 id="d${i}">#${i + 10} ${esc(d.name)}</h2>
+      <div class="facts">${d.facts.map(f => `<span>${esc(f)}</span>`).join("")}</div>
+    </div>
+    <p class="big">${esc(d.idea)}</p>
+    <div class="diagram">${svgFor(d)}</div>
+    <p class="muted">Way out: ${esc(d.outNote)}</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th></th><th>Space</th><th>What's there</th><th>Has</th></tr></thead>
+      <tbody>${d.rooms.map(r => `<tr><td class="n">${r.n}</td><td>${esc(r.name)}${r.k ? ' <span class="muted">(corridor)</span>' : ""}</td><td>${esc(r.what)}</td><td>${r.tags.map(tagHtml).join("")}</td></tr>`).join("")}</tbody>
+    </table></div>
+  </section>`).join("");
+</script>

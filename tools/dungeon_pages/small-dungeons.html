@@ -1,0 +1,214 @@
+<title>Small Wooden Dungeons</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans+SC:wght@500;800&family=Inter:wght@400;600&display=swap">
+<style>
+/* Layout: one column of dungeon sheets, each a side-view cut through the rock with a room list under it. */
+:root {
+  --bg: #efeae1; --paper: #f8f5ef; --fg: #2b241d; --muted: #6f6356; --line: #cfc4b3;
+  --rock: #ddd3c4; --wood: #8a5a32; --moss: #4f7a3a;
+  --trap: #c76a2c; --deadly: #a3161c; --mob: #b8860b; --loot: #8f7a12; --page: #3e6fa8; --hid: #7a4fa0; --heal: #2f8a7a;
+  --display: "Alegreya Sans SC", "Trebuchet MS", sans-serif;
+  --body: "Inter", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #1d1915; --paper: #26211b; --fg: #ece4d8; --muted: #a8998a; --line: #463d33;
+  --rock: #322b24; --wood: #c48a55; --moss: #86b36a;
+  --trap: #e88d4f; --deadly: #ff5a5a; --mob: #e3b23c; --loot: #cdb64a; --page: #79a6dd; --hid: #b48ce0; --heal: #5cc4b0; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #1d1915; --paper: #26211b; --fg: #ece4d8; --muted: #a8998a; --line: #463d33;
+  --rock: #322b24; --wood: #c48a55; --moss: #86b36a;
+  --trap: #e88d4f; --deadly: #ff5a5a; --mob: #e3b23c; --loot: #cdb64a; --page: #79a6dd; --hid: #b48ce0; --heal: #5cc4b0; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 48px; }
+main { max-width: 980px; margin: 0 auto; display: grid; gap: 32px; }
+h1, h2 { font-family: var(--display); font-weight: 800; text-wrap: balance; margin: 0; letter-spacing: .01em; }
+h1 { font-size: 2.2rem; line-height: 1.1; }
+h2 { font-size: 1.6rem; }
+p { margin: 0; max-width: 68ch; }
+.intro { display: grid; gap: 10px; }
+.muted { color: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: .9rem; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 24px; font-size: .92rem; }
+.rules div { border-top: 2px solid var(--wood); padding-top: 6px; }
+.rules b { font-family: var(--display); font-size: 1.05rem; display: block; }
+section.sheet { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 20px; display: grid; gap: 14px; min-width: 0; }
+.head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 20px; align-items: baseline; }
+.facts { display: flex; flex-wrap: wrap; gap: 6px; font-size: .82rem; }
+.facts span { border: 1px solid var(--line); border-radius: 99px; padding: 2px 10px; white-space: nowrap; }
+.big { font-size: 1rem; }
+.diagram { overflow-x: auto; }
+.diagram svg { display: block; min-width: 640px; width: 100%; height: auto; }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+.tablewrap { overflow-x: auto; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--display); font-weight: 500; font-size: .95rem; color: var(--muted); }
+td.n { font-variant-numeric: tabular-nums; color: var(--muted); width: 1.5em; }
+.tag { font-size: .78rem; border-radius: 4px; padding: 1px 6px; margin: 0 4px 2px 0; display: inline-block; border: 1px solid currentColor; }
+.t-trap { color: var(--trap); } .t-deadly { color: var(--deadly); font-weight: 600; } .t-hid { color: var(--hid); } .t-heal { color: var(--heal); } .t-mob { color: var(--mob); } .t-loot { color: var(--loot); } .t-page { color: var(--page); } .t-out { color: var(--moss); }
+.foot { font-size: .9rem; }
+</style>
+
+<main>
+  <div class="intro">
+    <h1>Small wooden dungeons</h1>
+    <p>Draft for dungeons #2, #3 and #4 of zone 1. They join Mossgate Hold (#1, being built on the PC). Each is now about Mossgate's size (13-14 spaces, 8-10 minutes), with at least one deadly trap, 4-5 traps in all and 3 hidden things, and built from root wood inside rock you can't dig. Each one teaches one of Copper Axe, Crossbow, Spear and Copper-shod Boots (shuffled per world). No water anywhere.</p>
+    <p class="muted">Each picture is a side view (each level has its main path on top and side rooms below it) cut through the rock. Higher up the picture means higher in the cave.</p>
+  </div>
+
+  <div class="rules">
+    <div><b>Same for all four</b>A round stone door in a cave wall. Walls you can't dig, so traps can't be dug around.</div>
+    <div><b>One way through</b>The path winds to the page room, then a shortcut drops you back into the entrance room.</div>
+    <div><b>Every trap has a clue</b>Deadly ones too. Cracked boards, holes in the wall, a creak. Traps hurt creatures too, so you can lure them in.</div>
+    <div><b>Comes back</b>After 1 hour of play, creatures and chests return. The page stand gives the same recipe again.</div>
+  </div>
+
+  <div class="legend">
+    <span><i class="dot" style="background:var(--trap)"></i>Trap (hurts)</span>
+    <span><i class="dot" style="background:var(--deadly);box-shadow:0 0 0 2px var(--paper),0 0 0 4px var(--deadly)"></i>Deadly trap</span>
+    <span><i class="dot" style="background:var(--hid)"></i>Hidden thing</span>
+    <span><i class="dot" style="background:var(--mob)"></i>Creatures</span>
+    <span><i class="dot" style="background:var(--loot)"></i>Chest</span>
+    <span><i class="dot" style="background:var(--heal)"></i>Healing shrine</span>
+    <span><i class="dot" style="background:var(--page)"></i>Recipe stand (the page)</span>
+    <span><i class="dot" style="background:var(--moss)"></i>Way out (dashed line)</span>
+    <span>Rounded dashed box = corridor</span>
+  </div>
+
+  <div id="sheets"></div>
+
+  <p class="foot muted">Traps use the models Mossgate Hold already has. Inside live the dungeon miners from the KayKit Skeletons pack (being made on the PC): Lost Miners (slow, tough), Tunnel Rats (small, fast, in groups) and the Foreman (the leader at the recipe stand). Spiders inside or not: your call. Your call on everything here: names, rooms, traps, which creatures.</p>
+</main>
+
+<script>
+const D = [
+  {
+    name: "Lampwick Drift", idea: "A long, dark mine tunnel. Old lamps hang along it, and you light them as you go, so the way you came glows behind you.",
+    facts: ["1 level", "13 spaces", "~8-10 min", "long and twisty", "deadly: the Old Shaft"],
+    layers: ["Level 1"],
+    rooms: [
+      {n:1, c:0, name:"Lamp Room", what:"Entrance. A rail cart on old tracks, the first lamp to light.", tags:["loot:chest"]},
+      {n:2, c:1, k:1, name:"Rail Tunnel", what:"Long and narrow. Holes in the wall shoot darts as you pass. Clue: rows of small holes. Safe: the darts fire in bursts; run in the gap, or hold up a shield.", tags:["trap:dart wall"]},
+      {n:3, c:2, name:"Cart Junction", what:"The rails split. A runaway cart comes rattling down the main track. Clue: the rails rattle first. Safe: step onto the side track to the tool store.", tags:["mob:tunnel rats","trap:runaway cart"]},
+      {n:4, c:2, s:1, name:"Tool Store", what:"Side room. One floor stone is loose: a buried chest under it.", tags:["loot:chest","hid:buried chest"]},
+      {n:5, c:3, k:1, name:"Drip Tunnel", what:"Stalactites hang low and fall when you walk under them. Clue: cracks and trickling dust. Safe: shoot them down with a crossbow first, or run through fast.", tags:["trap:falling stalactites","mob:tunnel rats"]},
+      {n:6, c:4, name:"Bat Gallery", what:"Tall and dark, Tunnel Rats in the dark. One wall is cracked.", tags:["mob:tunnel rats"]},
+      {n:7, c:4, s:1, name:"Hidden Vault", what:"Behind the cracked wall: break it to get in. Gold and a chance of a gem.", tags:["hid:cracked wall","loot:vault chest"]},
+      {n:8, c:5, name:"The Old Shaft", what:"Rotten boards over a deep shaft full of spikes. Cracked boards and a creak warn you. Walk the edge beam. Safe: keep to the solid edge along the wall.", tags:["deadly:shaft + spikes"]},
+      {n:9, c:6, name:"Old Copper Face", what:"Where they last dug. Lost Miners. One boulder in the wall hides a niche with a chest.", tags:["mob:lost miners","hid:hidden boulder"]},
+      {n:10, c:7, k:1, name:"Prop Corridor", what:"Old props hold up a crusher. Watch its rhythm, then run. Clue: a heavy thud and grooves in the floor. Safe: watch its rhythm and run while it rises.", tags:["trap:crusher"]},
+      {n:11, c:7, s:1, name:"Miners' Rest", what:"Side room with a healing shrine and a chest.", tags:["heal:healing shrine","loot:chest"]},
+      {n:12, c:8, name:"Foreman's Office", what:"The Foreman and his Lost Miners. The recipe stand.", tags:["mob:Foreman + miners","page:recipe stand"]},
+      {n:13, c:8, s:1, k:1, name:"Back Rails", what:"A lever opens a gate onto rails that run back to the Lamp Room.", tags:["out:gate to room 1"]},
+    ],
+    links: [[1,2],[2,3],[3,4],[3,5],[5,6],[6,7],[6,8],[8,9],[9,10],[10,11],[10,12],[12,13],[13,1,"out"]],
+    outNote: "The lever in Back Rails opens a gate, and the rails run you back into the Lamp Room.",
+  },
+  {
+    name: "Old Pell's Diggings", idea: "A miner's hut at the top, then a shaft straight down into what he dug out below. This one is about going down.",
+    facts: ["2 levels", "13 spaces", "~8-10 min", "goes down a ladder shaft", "deadly: the Rotten Gallery"],
+    layers: ["Level 1 (hut)", "Level 2 (6 m down)"],
+    rooms: [
+      {n:1, c:0, l:0, name:"Pell's Hut", what:"Entrance. Bed, table, a chest, a trapdoor in the floor.", tags:["loot:chest"]},
+      {n:2, c:1, l:0, name:"Winch Shed", what:"Over the shaft. Loose rock above falls when you walk under it. Clue: cracks and trickling dust. Safe: shoot them down with a crossbow first, or run through fast.", tags:["trap:falling stalactites"]},
+      {n:3, c:1, l:0, s:1, name:"Pantry", what:"Shelves of old jars. The back wall is cracked: Pell's stash is behind it.", tags:["hid:cracked wall","loot:stash"]},
+      {n:4, c:2, l:1, k:1, name:"The Shaft", what:"A long ladder down, with Tunnel Rats in the side holes.", tags:["mob:tunnel rats"]},
+      {n:5, c:3, l:1, name:"Ladder Landing", what:"The bottom of the shaft, thick with webs; Tunnel Rats.", tags:["mob:tunnel rats"]},
+      {n:6, c:4, l:1, k:1, name:"Cave-in Tunnel", what:"Half fallen in. Holes in the wall shoot darts. Clue: rows of small holes. Safe: the darts fire in bursts; run in the gap, or hold up a shield.", tags:["trap:dart wall"]},
+      {n:7, c:5, l:1, name:"Sorting Room", what:"Old ore tables and a chest. Lost Miners still sorting ore. A cracked floor plate fires darts. Clue: a cracked floor plate. Safe: step round it, or shoot or throw something onto it to use it up.", tags:["trap:dart plate","loot:chest","mob:lost miners"]},
+      {n:8, c:5, l:1, s:1, k:1, name:"Spoil Tunnel", what:"A side tunnel where they dumped the rubble.", tags:[]},
+      {n:9, c:6, l:1, s:1, name:"Spider Den", what:"Webs and a Tunnel Rat pack (or spiders, your call). A loose floor stone hides a buried chest.", tags:["mob:tunnel rat pack","hid:buried chest"]},
+      {n:10, c:6, l:1, name:"Rotten Gallery", what:"The boards give way into a deep spike pit. The cracked boards are the clue. Safe: keep to the solid edge along the wall.", tags:["deadly:pit + spikes"]},
+      {n:11, c:7, l:1, k:1, name:"Deep Seam", what:"A narrow seam with a crusher. Clue: a heavy thud and grooves in the floor. Safe: watch its rhythm and run while it rises.", tags:["trap:crusher"]},
+      {n:12, c:7, l:1, s:1, name:"Miner's Shrine", what:"A healing shrine. A boulder in the wall hides a niche with a chest.", tags:["heal:healing shrine","hid:hidden boulder"]},
+      {n:13, c:8, l:1, name:"Pell's Last Dig", what:"The Foreman and his Lost Miners. The recipe stand.", tags:["mob:Foreman + miners","page:recipe stand","out:rope lift to room 1"]},
+    ],
+    links: [[1,2],[2,3],[2,4],[4,5],[5,6],[6,7],[7,8],[8,9],[7,10],[10,11],[11,12],[11,13],[13,1,"out"]],
+    outNote: "A rope lift in Pell's Last Dig pulls you back up into Pell's Hut.",
+  },
+  {
+    name: "Mossprop Workings", idea: "Wooden walkways and ladders bolted up the wall of one tall cave. This one is about climbing, with a long drop always beside you.",
+    facts: ["3 levels", "14 spaces", "~8-10 min", "climbs up a cliff", "deadly: the Plank Bridge"],
+    layers: ["Level 3 (10 m up)", "Level 2 (5 m up)", "Level 1 (cave floor)"],
+    rooms: [
+      {n:1, c:0, l:2, name:"Base Camp", what:"Entrance. An old tent and a chest at the foot of the cliff.", tags:["loot:chest"]},
+      {n:2, c:1, l:2, k:1, name:"Lower Walkway", what:"A broken railing. Lost Miners shove you off: a short fall, not deadly.", tags:["mob:lost miners"]},
+      {n:3, c:2, l:2, name:"Rockfall Ledge", what:"Stalactites fall when you step onto the ledge. A ladder goes up. Clue: cracks and trickling dust. Safe: shoot them down with a crossbow first, or run through fast.", tags:["trap:falling stalactites"]},
+      {n:4, c:2, l:2, s:1, name:"Tool Niche", what:"Behind a boulder at the foot of the ladder: a chest of old tools.", tags:["hid:hidden boulder","loot:chest"]},
+      {n:5, c:3, l:1, name:"Prop Room", what:"Inside the cliff, behind the props. Darts from holes in the wall. Clue: rows of small holes. Safe: the darts fire in bursts; run in the gap, or hold up a shield.", tags:["trap:dart wall"]},
+      {n:6, c:3, l:1, s:1, name:"Store Shed", what:"Supplies and a chest. One wall is cracked.", tags:["loot:chest"]},
+      {n:7, c:4, l:1, s:1, name:"Hidden Vault", what:"Behind the Store Shed's cracked wall. Gold and a chance of a gem.", tags:["hid:cracked wall","loot:vault chest"]},
+      {n:8, c:4, l:1, name:"Plank Bridge", what:"Across the chasm. Cracked planks break, and the spikes far below mean instant death. Lost Miners wait on the far side. Safe: step only on the whole slabs, along the railing side.", tags:["deadly:chasm + spikes","mob:lost miners"]},
+      {n:9, c:5, l:1, k:1, name:"Far Ledge", what:"A thin ledge. A cracked plate fires darts at you. Clue: a cracked floor plate. Safe: step round it, or shoot or throw something onto it to use it up.", tags:["trap:dart plate"]},
+      {n:10, c:5, l:1, s:1, name:"Climbers' Rest", what:"A healing shrine before the top.", tags:["heal:healing shrine"]},
+      {n:11, c:5, l:0, k:1, name:"Upper Ladder", what:"The last long climb.", tags:[]},
+      {n:12, c:6, l:0, k:1, name:"Crusher Gallery", what:"A narrow passage with a crusher. Clue: a heavy thud and grooves in the floor. Safe: watch its rhythm and run while it rises.", tags:["trap:crusher"]},
+      {n:13, c:6, l:0, s:1, name:"Bat Roost", what:"Side cave full of Tunnel Rats. A loose floor stone hides a buried chest.", tags:["mob:tunnel rats","hid:buried chest"]},
+      {n:14, c:7, l:0, name:"Top Hall", what:"Tunnel Rats, then the Foreman and his Lost Miners. The recipe stand.", tags:["mob:Foreman + miners","page:recipe stand","out:rope slide to room 1"]},
+    ],
+    links: [[1,2],[2,3],[3,4],[3,5],[5,6],[6,7],[5,8],[8,9],[9,10],[9,11],[11,12],[12,13],[12,14],[14,1,"out"]],
+    outNote: "From the Top Hall, a rope slide takes you straight down onto Base Camp.",
+  },
+];
+
+const COLW = 148, SUBH = 74, BW = 124, BH = 54, PADL = 10, PADT = 30;
+const css = k => `var(--${k === "out" ? "moss" : k})`;
+function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+
+function svgFor(d) {
+  const cols = Math.max(...d.rooms.map(r => r.c)) + 1;
+  const rows = d.layers.length;
+  const W = PADL + cols * COLW + 6, H = PADT + rows * 2 * SUBH + 18;
+  const pos = {};
+  d.rooms.forEach(r => { pos[r.n] = { x: PADL + r.c * COLW, y: PADT + ((r.l || 0) * 2 + (r.s || 0)) * SUBH }; });
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Side view of ${esc(d.name)}">`;
+  s += `<rect x="0" y="0" width="${W}" height="${H}" rx="4" fill="var(--rock)"/>`;
+  d.layers.forEach((name, i) => {
+    const y = PADT + i * 2 * SUBH - 12;
+    if (i > 0) s += `<line x1="6" x2="${W - 6}" y1="${y - 6}" y2="${y - 6}" stroke="var(--muted)" stroke-dasharray="3 6"/>`;
+    s += `<text x="10" y="${y}" font-size="11.5" fill="var(--muted)" font-family="Inter, sans-serif">${esc(name)}</text>`;
+  });
+  d.links.forEach(([a, b, k]) => {
+    const p = pos[a], q = pos[b];
+    const x1 = p.x + BW / 2, y1 = p.y + BH / 2, x2 = q.x + BW / 2, y2 = q.y + BH / 2;
+    if (k === "out") {  // the shortcut home runs along the bottom edge so it never crosses the main path
+      s += `<path d="M${x1} ${p.y + BH} V${H - 8} H${x2} V${q.y + BH}" fill="none" stroke="var(--moss)" stroke-width="2.5" stroke-dasharray="7 5"/>`;
+    } else {
+      s += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--wood)" stroke-width="5" stroke-linecap="round"/>`;
+    }
+  });
+  d.rooms.forEach(r => {
+    const p = pos[r.n];
+    const corr = r.k ? ` stroke-dasharray="5 3"` : "";
+    s += `<rect x="${p.x}" y="${p.y}" width="${BW}" height="${BH}" rx="${r.k ? 14 : 5}" fill="var(--paper)" stroke="var(--wood)" stroke-width="2"${corr}/>`;
+    s += `<text x="${p.x + 8}" y="${p.y + 19}" font-size="12" font-weight="600" fill="var(--fg)" font-family="Inter, sans-serif">${r.n}. ${esc(r.name)}</text>`;
+    r.tags.forEach((t, i) => {
+      const k = t.split(":")[0], cx = p.x + 14 + i * 18, cy = p.y + 38;
+      s += `<circle cx="${cx}" cy="${cy}" r="6.5" fill="${css(k)}"/>`;
+      if (k === "deadly") s += `<circle cx="${cx}" cy="${cy}" r="9.5" fill="none" stroke="var(--deadly)" stroke-width="2"/>`;
+    });
+  });
+  return s + `</svg>`;
+}
+
+function tagHtml(t) {
+  const [k, v] = t.split(":");
+  return `<span class="tag t-${k}">${k === "deadly" ? "deadly: " : ""}${esc(v)}</span>`;
+}
+
+document.getElementById("sheets").innerHTML = D.map((d, i) => `
+  <section class="sheet" aria-labelledby="d${i}">
+    <div class="head">
+      <h2 id="d${i}">#${i + 2} ${esc(d.name)}</h2>
+      <div class="facts">${d.facts.map(f => `<span>${esc(f)}</span>`).join("")}</div>
+    </div>
+    <p class="big">${esc(d.idea)}</p>
+    <div class="diagram">${svgFor(d)}</div>
+    <p class="muted">Way out: ${esc(d.outNote)}</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th></th><th>Space</th><th>What's there</th><th>Has</th></tr></thead>
+      <tbody>${d.rooms.map(r => `<tr><td class="n">${r.n}</td><td>${esc(r.name)}${r.k ? ' <span class="muted">(corridor)</span>' : ""}</td><td>${esc(r.what)}</td><td>${r.tags.map(tagHtml).join("")}</td></tr>`).join("")}</tbody>
+    </table></div>
+  </section>`).join("");
+</script>

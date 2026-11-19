@@ -1,55 +1,54 @@
 # Zone 1 dungeons (owner, Nov 19, 2026; F237)
 
 Goal: fill Mossy Hollows before any new zone. Today it has 2 real places (the start tower, the Fallen Outpost)
-and ~3 one-chest ruins + ~4 camps. This plan adds **10 new dungeons** → **12 in total** with the 2 we have.
+and ~3 one-chest ruins + ~4 camps. This plan adds **12 new dungeons** (the start tower and the Fallen Outpost are ruins).
 Status: step 1 built (Nov 20). **Changed by the owner on Nov 20, read this first:**
 - The Fallen Outpost and the start tower are **ruins**, not dungeons: they give building plans (blueprints), recipe
   pages and tools, and stay as they are. Outposts and towers are a ruin kind only.
 - The **12 dungeons are all new places** dug into the caves, in 3 sizes, each size its own building material so
   players see all three: **4 small (wood), 5 medium (Stonehold stone), 3 big (Hearthbrick clay)**.
-  A run through one takes about **5 / 8 / 12 minutes** (small / medium / big).
+  A run through one takes about **8-10 / 12-15 / 20-25 minutes** (small / medium / big; owner grew them on Nov 20).
 - They sit in **rings by size**: small 40-100 m from the start, medium 100-170 m, big 170 m+; at least 40 m apart,
   never in the Fallen Outpost's or the start tower's cavern.
 - **Monsters and loot come back 1 hour of play** after someone takes from a chest (the clock only runs while the
   world is played). The page always teaches the same recipe and its name says which ("Weaponsmith's Page: Copper Mace").
 - **Each dungeon gets its own name** (our own lore, from a list, picked by the world seed).
-- **Guards: wait for new monsters.** The places get built first; guards are chosen when new creatures exist.
-- **Still open:** which kinds of dungeon (the owner has a different idea from mines / tombs / forges, to hear next) and
-  which kind teaches which copper recipes. The table and build order below are from Nov 19 and will be redone then.
+- **Guards:** dungeon creatures from the KayKit Skeletons pack (CC0), made into dwarf skeletons on the PC.
+- **Kinds (Nov 20):** small = old wooden mines, medium = stone tombs, vault, barracks and a rune temple, big = clay
+  brick forge halls. The build order is in `docs/design/zone1-dungeons/00-missing-and-build-order.md`.
 
 Built in step 1: `page_<recipe>` items (one per copper recipe, src/items/items.gd), reading one teaches exactly that
 recipe (game_authority.gd _learn_from_page), `DungeonLoot` (src/world/dungeon_loot.gd: dungeon chests, the 1-hour
 refill on `world_state.played`, and `recipes_for(seed, ...)` which shuffles a kind's recipes per world).
 Test: tests/test_dungeons.gd.
 
-## The owner's picks (Nov 19)
-- **Mix of sizes:** 3 big, 9 medium, and the small one-chest ruins/camps stay as they are.
-- **4 kinds of dwarf places:** old outposts, abandoned mines, old forges, old tombs.
-- **Pages are themed:** each kind of place holds one kind of copper recipe.
-- **Both come back:** monsters and common loot refill after a while. **Each dungeon always teaches the same copper
-  recipe** (if it gave you the mace, it gives the mace again, e.g. for a friend). For other recipes, explore other dungeons.
+## The 12 dungeons (owner liked the small and medium drafts, Nov 20; big ones drafted overnight)
+Full maps, room sizes, creatures, loot and model lists: **`docs/design/zone1-dungeons/`** (one file each, plus
+`00-missing-and-build-order.md`). The maps live in `tools/dungeon_pages/` (also the owner's pages "Small Wooden
+Dungeons", "Medium Stone Dungeons", "Big Clay Dungeons"); `gen_docs.js` writes the files, `check.js` checks the rules.
+The list in code: `src/world/dungeon_list.gd` (`DungeonList.recipe_of(seed, id)`).
 
-## The 12 dungeons (Claude's draft, Nov 20, waiting for the owner's OK)
-Dungeons teach recipes. Each size has its own building material: small = root wood (Shack pieces), medium = Stonehold
-stone, big = Hearthbrick clay. Inside a size group, which dungeon teaches which of that group's recipes is shuffled
-per world (DungeonLoot.recipes_for). #1 is the PC chat's Mossgate Hold (Nov 19, code still only on the PC).
+| # | Name | Size, material | Spaces | Deadly traps | Teaches one of (shuffled per world) |
+|---|---|---|---|---|---|
+| 1 | Mossgate Hold (PC) | small, wood | 15 | chasm, spike pit | Copper Axe, Crossbow, Spear, Copper-shod Boots |
+| 2 | Lampwick Drift | small, wood | 13 | the Old Shaft | (same 4) |
+| 3 | Old Pell's Diggings | small, wood | 13 | Rotten Gallery | (same 4) |
+| 4 | Mossprop Workings | small, wood | 14 | Plank Bridge | (same 4) |
+| 5 | Tomb of Hald Ironbrow | medium, stone | 20 | Broken Stair, Bridge of Oaths | Copper Helm, Mail, Greaves, Shield, Sword |
+| 6 | The Quiet Barrows | medium, stone | 20 | Sunken Barrow, Ash Bridge | (same 5) |
+| 7 | Brassgate Vault | medium, stone | 20 | Coin Chute, Great Crusher | (same 5) |
+| 8 | Hall of the Shieldbearers | medium, stone | 20 | Practice Pit, Shield Bridge | (same 5) |
+| 9 | Vigil of Orrin Stonejaw | medium, stone | 20 | Hall of Echoes, Broken Bridge | (same 5) |
+| 10 | Emberdeep Forge | big, clay brick | 30 | Quench Hall, Rolling Ingot Ramp, Crucible Bridge | Copper Mace, Two-handed Axe, Two-handed Mace |
+| 11 | The Hammerfall Works | big, clay brick | 30 | Molten Channel, Great Press, Rolling Anvil | (same 3) |
+| 12 | Cinderhold Foundry | big, clay brick | 28 | First Bridge, Casting Floor, Chain Bridge | (same 3) |
 
-| # | Name | Material, size, run | What it is | Teaches one of |
-|---|---|---|---|---|
-| 1 | Mossgate Hold (started) | wood, small, 5 min | root-wood rooms behind a round stone door: traps, chasm, pack leader | Copper Axe, Crossbow, Spear, Copper-shod Boots |
-| 2 | Lampwick Drift | wood, small, 5 min | an old mine tunnel, timber props, its far end flooded | (same 4) |
-| 3 | Old Pell's Diggings | wood, small, 5 min | a miner's hut on top, a short shaft with ladders below | (same 4) |
-| 4 | Mossprop Workings | wood, small, 5 min | wooden walkways and ladders up a cliff face | (same 4) |
-| 5 | Tomb of Hald Ironbrow | stone, medium, 8 min | a long hall to one warrior's stone coffin | Copper Helm, Mail, Greaves, Shield, Sword |
-| 6 | The Quiet Barrows | stone, medium, 8 min | rows of small burial rooms off one corridor | (same 5) |
-| 7 | Greywater Crypt | stone, medium, 8 min | a crypt half under a pool | (same 5) |
-| 8 | Hall of the Shieldbearers | stone, medium, 8 min | a guard hall with shield racks and a gatehouse | (same 5) |
-| 9 | Vigil of Orrin Stonejaw | stone, medium, 8 min | a lookout shrine up winding stairs | (same 5) |
-| 10 | Emberdeep Forge | clay brick, big, 12 min | a great forge with bellows, 2 floors | Copper Mace, Two-handed Axe, Two-handed Mace |
-| 11 | The Hammerfall Works | clay brick, big, 12 min | workshops round a broken anvil | (same 3) |
-| 12 | Cinderhold Foundry | clay brick, big, 12 min | smelters and a brick bridge over a chasm | (same 3) |
-
-Small 40-100 m from the start, medium 100-170 m, big 170 m+.
+Owner's rules for all of them (Nov 20): small 8-10 min, medium 12-15 min (a key, a locked door, a mini boss), big
+20-25 min. Every trap has a clue and a safe way through (time it, bait it and step back, or shoot its switch with a
+crossbow). Molten metal only in stone channels that can't spill (it kills like spikes). No water. Inside live the
+KayKit skeleton dwarves (Lost Miner, Tunnel Rat, Foreman; Bone Thrall, Bone Warden, Rune Caller, Grave Creeper);
+bats, snails and beetles stay outside. Rings: small 40-100 m from the start, medium 100-170 m, big 170 m+.
+Still open: a real boss in the big ones, lever puzzles, spiders inside or not.
 
 ## Ruins (Claude's draft, Nov 20, waiting for the owner's OK)
 Ruins teach buildings: put materials in the Rebuilding Chest, rebuild it, learn its blueprint (ruin-rebuild-plan.md).
@@ -66,42 +65,6 @@ Their chests hold tools and building plans. No dungeon-style traps; a few creatu
 | 7 | Hearthstead | clay brick | a brick family home with a chimney (sloped roof) | Hearthbrick House | a Cook's page, pots, food |
 | 8 | Kiln Yard | clay brick | brick kilns and a drying shed | Brick Kiln Yard | clay, bricks, a furnace |
 | 9 | Old Brewhouse | clay brick | a brick brewhouse with cracked vats | Hearthbrick Brewhouse | a drink recipe, barrels |
-
-## One dungeon = one copper recipe (Nov 19 version, replaced by the table above)
-There are 12 copper recipes and 12 dungeons. Which dungeon gets which recipe (within its kind) is picked from the
-world seed, so every world is a bit different, but you need to visit all 12 to learn everything.
-
-| Kind | Size | How many | Recipes they teach | Also |
-|---|---|---|---|---|
-| Old outposts (Fallen Outpost + 3 new) | 1 big, 3 medium | 4 | Copper Helm, Mail, Greaves, Boots | rebuild into a second base (blueprints) |
-| Old forges | 1 big Forge Hall, 2 medium smithies | 3 | Copper Sword, Mace, Spear | a broken anvil/forge you can repair |
-| Abandoned mines | 2 medium | 2 | Copper Axe, Copper Crossbow | rails and carts, old copper veins, cave-in danger |
-| Old tombs | 1 big, 2 medium | 3 | Copper Shield, Two-handed Axe, Two-handed Mace | traps, a stone guardian, rare gems and runes |
-
-The start tower keeps its job (first home + rune memory that starts the trail to the boss). Cook's Pages stay in
-the small ruins and camps.
-
-## What a medium dungeon is
-A few rooms (3-6), guards that fit the place, one "page room" at the end with a locked or hidden chest, and
-1-2 side chests with common loot (scrap, coins, seeds, rope). A big one has more rooms or floors and a tougher guard.
-
-## Coming back
-- Monsters return a few in-game days after the place is cleared. Common loot refills on the same clock.
-- The page chest refills too, always with the **same** recipe.
-- A place you have **rebuilt** (outposts) stops spawning monsters inside (it's your base now).
-
-## Build order (each step playable)
-1. Recipe pages that teach one fixed recipe (today a page teaches a random one of its kind) + the respawn clock.
-2. Medium outpost (reuses the Fallen Outpost kit and the rebuild system) ×3.
-3. Medium smithy, then the big Forge Hall.
-4. Abandoned mine ×2 (rails, carts).
-5. Tombs: 2 medium, then the big one (traps, guardian).
-6. Placement test for every new place (the Nov 17 placement rule) and a robot that checks all 12 exist in a world.
-
-## Still to decide
-- Names for each place (original, our own lore).
-- Guards per kind (beetles, bats, spiders, a new tomb guardian?).
-- How far apart they sit, and whether the map hints at them (rune memories, wall markings).
 
 ## 📌 For the PC (owner, Nov 20): do these next
 1. **Push Mossgate Hold.** Its code (`src/world/dungeon_map.gd`, `blueprints/dungeons/mossgate_hold.json`,

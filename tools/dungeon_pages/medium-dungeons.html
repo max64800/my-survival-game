@@ -1,0 +1,295 @@
+<title>Medium Stone Dungeons</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans+SC:wght@500;800&family=Inter:wght@400;600&display=swap">
+<style>
+/* Layout: one column of dungeon sheets, each a side-view cut through the rock with a room list under it. */
+:root {
+  --bg: #efeae1; --paper: #f8f5ef; --fg: #2b241d; --muted: #6f6356; --line: #cfc4b3;
+  --rock: #ddd3c4; --wood: #6f6a62; --moss: #4f7a3a;
+  --trap: #c76a2c; --deadly: #a3161c; --mob: #b8860b; --loot: #8f7a12; --page: #3e6fa8; --hid: #7a4fa0; --heal: #2f8a7a; --key: #1f7f9e; --boss: #6b2e86;
+  --display: "Alegreya Sans SC", "Trebuchet MS", sans-serif;
+  --body: "Inter", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #1d1915; --paper: #26211b; --fg: #ece4d8; --muted: #a8998a; --line: #463d33;
+  --rock: #322b24; --wood: #a49a8c; --moss: #86b36a;
+  --trap: #e88d4f; --deadly: #ff5a5a; --mob: #e3b23c; --loot: #cdb64a; --page: #79a6dd; --hid: #b48ce0; --heal: #5cc4b0; --key: #5bc0e0; --boss: #d18cf0; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #1d1915; --paper: #26211b; --fg: #ece4d8; --muted: #a8998a; --line: #463d33;
+  --rock: #322b24; --wood: #a49a8c; --moss: #86b36a;
+  --trap: #e88d4f; --deadly: #ff5a5a; --mob: #e3b23c; --loot: #cdb64a; --page: #79a6dd; --hid: #b48ce0; --heal: #5cc4b0; --key: #5bc0e0; --boss: #d18cf0; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 48px; }
+main { max-width: 980px; margin: 0 auto; display: grid; gap: 32px; }
+h1, h2 { font-family: var(--display); font-weight: 800; text-wrap: balance; margin: 0; letter-spacing: .01em; }
+h1 { font-size: 2.2rem; line-height: 1.1; }
+h2 { font-size: 1.6rem; }
+p { margin: 0; max-width: 68ch; }
+.intro { display: grid; gap: 10px; }
+.muted { color: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: .9rem; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 24px; font-size: .92rem; }
+.rules div { border-top: 2px solid var(--wood); padding-top: 6px; }
+.rules b { font-family: var(--display); font-size: 1.05rem; display: block; }
+section.sheet { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 20px; display: grid; gap: 14px; min-width: 0; }
+.head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 20px; align-items: baseline; }
+.facts { display: flex; flex-wrap: wrap; gap: 6px; font-size: .82rem; }
+.facts span { border: 1px solid var(--line); border-radius: 99px; padding: 2px 10px; white-space: nowrap; }
+.big { font-size: 1rem; }
+.diagram { overflow-x: auto; }
+.diagram svg { display: block; min-width: 640px; width: 100%; height: auto; }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+.tablewrap { overflow-x: auto; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--display); font-weight: 500; font-size: .95rem; color: var(--muted); }
+td.n { font-variant-numeric: tabular-nums; color: var(--muted); width: 1.5em; }
+.tag { font-size: .78rem; border-radius: 4px; padding: 1px 6px; margin: 0 4px 2px 0; display: inline-block; border: 1px solid currentColor; }
+.t-trap { color: var(--trap); } .t-deadly { color: var(--deadly); font-weight: 600; } .t-hid { color: var(--hid); } .t-key, .t-lock { color: var(--key); } .t-boss { color: var(--boss); font-weight: 600; } .t-heal { color: var(--heal); } .t-mob { color: var(--mob); } .t-loot { color: var(--loot); } .t-page { color: var(--page); } .t-out { color: var(--moss); }
+.foot { font-size: .9rem; }
+</style>
+
+<main>
+  <div class="intro">
+    <h1>Medium stone dungeons</h1>
+    <p>Draft for dungeons #5 to #9 of zone 1, built from Stonehold stone inside rock you can't dig. Each has about 20 spaces over 2-3 levels (12-15 minutes), a key that opens a locked door, a mini boss halfway, two deadly traps, 4-5 other traps and 3-4 hidden things. Each teaches one of Copper Helm, Mail, Greaves, Shield and Sword (shuffled per world). No water anywhere.</p>
+    <p class="muted">Side views, as on the small dungeons page: each level has its main path in the middle, side rooms above and below it. Higher up the picture means higher in the cave.</p>
+  </div>
+
+  <div class="rules">
+    <div><b>Bone Thrall</b>KayKit minion. Weak, comes in groups, the filler in every room.</div>
+    <div><b>Bone Warden</b>KayKit warrior. Armour and a shield, slow and tough. Hit it from the side.</div>
+    <div><b>Rune Caller</b>KayKit mage. Stays back and shoots glowing runes from balconies and ledges.</div>
+    <div><b>Grave Creeper</b>KayKit rogue. Fast, sneaks round to hit you from behind.</div>
+  </div>
+  <p class="muted">All four are dwarf-sized skeletons of the dwarves who once lived here, repainted in our style. The mini bosses and the leaders at the recipe stand are bigger, named versions.</p>
+
+  <div class="legend">
+    <span><i class="dot" style="background:var(--trap)"></i>Trap (hurts)</span>
+    <span><i class="dot" style="background:var(--deadly);box-shadow:0 0 0 2px var(--paper),0 0 0 4px var(--deadly)"></i>Deadly trap</span>
+    <span><i class="dot" style="background:var(--hid)"></i>Hidden thing</span>
+    <span><i class="dot" style="background:var(--mob)"></i>Creatures</span>
+    <span><i class="dot" style="background:var(--loot)"></i>Chest</span>
+    <span><i class="dot" style="background:var(--heal)"></i>Healing shrine</span>
+    <span><i class="dot" style="background:var(--key)"></i>Key / locked door</span>
+    <span><i class="dot" style="background:var(--boss)"></i>Mini boss</span>
+    <span><i class="dot" style="background:var(--page)"></i>Recipe stand (the page)</span>
+    <span><i class="dot" style="background:var(--moss)"></i>Way out (dashed line)</span>
+    <span>Rounded dashed box = corridor</span>
+  </div>
+
+  <div id="sheets"></div>
+
+  <p class="foot muted">Traps use the Mossgate Hold kit, made in stone where needed (stone crusher, falling ceiling stones). The creatures come from the KayKit Skeletons pack, being made on the PC. Your call on everything here: names, rooms, traps, which creatures.</p>
+</main>
+
+<script>
+const D = [
+  {
+    name: "Tomb of Hald Ironbrow", idea: "A famous warrior's tomb, still guarded by the soldiers who swore to protect him. Upper halls for the mourners, deep burial halls below.",
+    facts: ["tomb", "2 levels", "20 spaces", "~12-15 min", "deadly: Broken Stair, Bridge of Oaths"],
+    layers: ["Level 1 (mourners' halls)", "Level 2 (deep burial)"],
+    rooms: [
+      {n:1, c:0, name:"Mourners' Gate", what:"Entrance: a round stone door carved with Hald's face.", tags:["loot:chest"]},
+      {n:2, c:1, k:1, name:"Hall of Candles", what:"Holes between the candle niches shoot darts. Clue: rows of small holes. Safe: the darts fire in bursts; run in the gap, or hold up a shield.", tags:["trap:dart wall"]},
+      {n:3, c:2, name:"Offering Room", what:"Old gifts on stone tables. Bone Thralls.", tags:["mob:thralls","loot:chest"]},
+      {n:4, c:2, s:-1, name:"Scribe's Niche", what:"A tiny room. A loose floor stone hides a buried chest.", tags:["hid:buried chest"]},
+      {n:5, c:3, k:1, name:"Statue Corridor", what:"Loose ceiling stones fall when you walk under them. Clue: cracks and trickling dust. Safe: shoot them down with a crossbow first, or run through fast.", tags:["trap:falling stones"]},
+      {n:6, c:4, name:"Wardens' Hall", what:"Bone Wardens. A great door to the east is locked: it needs the Bronze Key.", tags:["mob:wardens"]},
+      {n:7, c:4, s:1, name:"Ossuary", what:"Walls of bones. Grave Creepers hide among them. One wall is cracked.", tags:["mob:creepers","hid:cracked wall"]},
+      {n:8, c:3, s:1, k:1, name:"Broken Stair", what:"The steps give way into a spike pit. The cracked steps are the clue. Safe: keep to the solid edge along the wall.", tags:["deadly:pit + spikes"]},
+      {n:9, c:2, s:1, name:"Key Chapel", what:"Hald's Shield-Brother, a huge Bone Warden, guards the Bronze Key.", tags:["boss:Shield-Brother","key:Bronze Key"]},
+      {n:10, c:5, k:1, name:"Grand Stair", what:"Behind the locked door. A wide stair down to the burial halls.", tags:["lock:locked door"]},
+      {n:11, c:5, l:1, name:"Hall of Names", what:"Every warrior's name carved in the walls. Rune Callers shoot from balconies; floor plates fire darts. Clue: a cracked floor plate. Safe: step round it, or shoot or throw something onto it to use it up.", tags:["mob:rune callers","trap:dart plate"]},
+      {n:12, c:6, l:1, s:-1, name:"Embalmers' Room", what:"Old jars and tools. A boulder in the wall hides a niche with a chest.", tags:["hid:hidden boulder","loot:chest"]},
+      {n:13, c:7, l:1, s:-1, name:"Quiet Chapel", what:"A healing shrine.", tags:["heal:healing shrine"]},
+      {n:14, c:6, l:1, name:"Bridge of Oaths", what:"A stone bridge over a chasm. Cracked slabs fall away; spikes far below. Grave Creepers. Safe: step only on the whole slabs, along the railing side.", tags:["deadly:chasm + spikes","mob:creepers"]},
+      {n:15, c:7, l:1, k:1, name:"Crusher Hall", what:"A stone crusher. Watch its rhythm, then run. Clue: a heavy thud and grooves in the floor. Safe: watch its rhythm and run while it rises.", tags:["trap:crusher"]},
+      {n:16, c:8, l:1, name:"Antechamber", what:"Bone Wardens and Thralls stand in rows.", tags:["mob:wardens","mob:thralls"]},
+      {n:17, c:9, l:1, name:"Hald's Tomb", what:"Hald's Honour Guard (a big Warden) and his pack. The recipe stand and his coffin chest.", tags:["mob:pack + leader","page:recipe stand","loot:coffin chest"]},
+      {n:18, c:9, l:1, s:1, k:1, name:"Secret Stair", what:"A lever behind the coffin opens a hidden stair up to the Mourners' Gate.", tags:["hid:secret lever","out:stair to room 1"]},
+      {n:19, c:7, l:1, s:1, name:"Grave Goods", what:"Side store of burial gifts.", tags:["loot:chest"]},
+      {n:20, c:8, l:1, s:1, k:1, name:"Collapsed Tunnel", what:"Half fallen in, with darts from the wall. Clue: rows of small holes. Safe: the darts fire in bursts; run in the gap, or hold up a shield.", tags:["trap:dart wall"]},
+    ],
+    links: [[1,2],[2,3],[3,4],[3,5],[5,6],[6,7],[7,8],[8,9],[6,10],[10,11],[11,12],[12,13],[11,14],[14,15],[15,16],[16,17],[15,19],[19,20],[17,18],[18,1,"out"]],
+    outNote: "A lever behind Hald's coffin opens a secret stair back up to the Mourners' Gate.",
+  },
+  {
+    name: "The Quiet Barrows", idea: "Rings of small burial rooms around a deep spiral stair. Each level down is older and darker.",
+    facts: ["tomb", "3 levels down", "20 spaces", "~12-15 min", "deadly: Sunken Barrow, Ash Bridge"],
+    layers: ["Level 1", "Level 2 (8 m down)", "Level 3 (16 m down)"],
+    rooms: [
+      {n:1, c:0, name:"Barrow Door", what:"Entrance: a low round door under a mossy mound of stone.", tags:[]},
+      {n:2, c:1, k:1, name:"Long Barrow", what:"A long low tunnel with darts from the wall. Clue: rows of small holes. Safe: the darts fire in bursts; run in the gap, or hold up a shield.", tags:["trap:dart wall"]},
+      {n:3, c:2, name:"First Ring", what:"Burial rooms round the stair. Bone Thralls.", tags:["mob:thralls","loot:chest"]},
+      {n:4, c:2, s:-1, name:"Barrow of the Smith", what:"A loose floor stone hides a buried chest.", tags:["hid:buried chest"]},
+      {n:5, c:3, s:-1, name:"Barrow of the Hunter", what:"Grave Creepers wait in the dark.", tags:["mob:creepers"]},
+      {n:6, c:3, k:1, name:"Spiral Stair", what:"Down round the shaft. Loose ceiling stones fall. Clue: cracks and trickling dust. Safe: shoot them down with a crossbow first, or run through fast.", tags:["trap:falling stones"]},
+      {n:7, c:3, l:1, name:"Second Ring", what:"Bone Wardens. The gate down is locked: it needs the Barrow Key.", tags:["mob:wardens"]},
+      {n:8, c:4, l:1, s:-1, name:"Barrow of the Twins", what:"Two coffins and a chest. The back wall is cracked.", tags:["loot:chest","hid:cracked wall"]},
+      {n:9, c:5, l:1, s:-1, name:"Twins' Vault", what:"Behind the cracked wall. Gold and a chance of a gem.", tags:["loot:vault chest"]},
+      {n:10, c:4, l:1, k:1, name:"Keeper's Corridor", what:"Floor plates fire darts. Clue: a cracked floor plate. Safe: step round it, or shoot or throw something onto it to use it up.", tags:["trap:dart plate"]},
+      {n:11, c:5, l:1, name:"Keeper's Barrow", what:"The Barrow Keeper, a big Rune Caller, holds the Barrow Key.", tags:["boss:Barrow Keeper","key:Barrow Key"]},
+      {n:12, c:5, l:1, s:1, name:"Sunken Barrow", what:"The floor gives way into a spike pit. A chest sits on the far side. Clue: cracked floor tiles. Safe: keep to the solid edge along the wall.", tags:["deadly:pit + spikes","loot:chest"]},
+      {n:13, c:4, l:1, s:1, name:"Shrine of Rest", what:"A healing shrine.", tags:["heal:healing shrine"]},
+      {n:14, c:3, l:1, s:1, k:1, name:"Deep Stair", what:"Behind the locked gate, down to the oldest barrows.", tags:["lock:locked gate"]},
+      {n:15, c:3, l:2, name:"Hall of Bones", what:"Grave Creepers and Thralls together.", tags:["mob:creepers","mob:thralls"]},
+      {n:16, c:4, l:2, name:"Ash Bridge", what:"A narrow bridge over a chasm, spikes below. Clue: cracked slabs. Rune Callers shoot from the far side. Safe: step only on the whole slabs, along the railing side.", tags:["deadly:chasm + spikes","mob:rune callers"]},
+      {n:17, c:5, l:2, k:1, name:"Crusher Gate", what:"A stone crusher in the doorway. Clue: a heavy thud and grooves in the floor. Safe: watch its rhythm and run while it rises.", tags:["trap:crusher"]},
+      {n:18, c:4, l:2, s:1, name:"Mourning Niche", what:"A boulder hides a niche with a chest.", tags:["hid:hidden boulder","loot:chest"]},
+      {n:19, c:6, l:2, name:"First King's Barrow", what:"The oldest grave. A pack with a big Warden leader. The recipe stand.", tags:["mob:pack + leader","page:recipe stand"]},
+      {n:20, c:6, l:2, s:1, k:1, name:"Air Shaft", what:"An old air shaft with a rope: climb straight up to the Barrow Door.", tags:["out:climb to room 1"]},
+    ],
+    links: [[1,2],[2,3],[3,4],[4,5],[3,6],[6,7],[7,8],[8,9],[7,10],[10,11],[11,12],[10,13],[7,14],[14,15],[15,16],[16,17],[15,18],[17,19],[19,20],[20,1,"out"]],
+    outNote: "A rope up the old Air Shaft takes you straight back to the Barrow Door.",
+  },
+  {
+    name: "Brassgate Vault", idea: "The old dwarf treasury: a toll hall and counting rooms on top, a mint below, and the strongroom behind a door only the Vault Captain's key opens.",
+    facts: ["vault", "2 levels", "20 spaces", "~12-15 min", "deadly: Coin Chute, Great Crusher"],
+    layers: ["Level 1 (toll halls)", "Level 2 (the mint)"],
+    rooms: [
+      {n:1, c:0, name:"Brass Gate", what:"Entrance: a round door with a big brass lock face.", tags:[]},
+      {n:2, c:1, name:"Toll Hall", what:"Where traders paid. Bone Wardens still stand guard.", tags:["mob:wardens","loot:chest"]},
+      {n:3, c:1, s:1, name:"Counting Room", what:"Old desks. A loose floor stone hides a buried chest.", tags:["loot:chest","hid:buried chest"]},
+      {n:4, c:2, k:1, name:"Guard Corridor", what:"Darts from holes in the wall. Clue: rows of small holes. Safe: the darts fire in bursts; run in the gap, or hold up a shield.", tags:["trap:dart wall"]},
+      {n:5, c:3, name:"Weighing Hall", what:"Big scales. Floor plates fire darts. Grave Creepers. Clue: a cracked floor plate. Safe: step round it, or shoot or throw something onto it to use it up.", tags:["trap:dart plate","mob:creepers"]},
+      {n:6, c:3, s:-1, name:"Clerks' Rooms", what:"Bone Thralls. One wall is cracked.", tags:["mob:thralls","hid:cracked wall"]},
+      {n:7, c:4, s:-1, name:"Clerk's Hoard", what:"Behind the cracked wall: a clerk's stolen coins.", tags:["loot:vault chest"]},
+      {n:8, c:4, name:"Strongroom Door", what:"A huge round door, locked: it needs the Vault Key.", tags:["lock:locked door"]},
+      {n:9, c:2, s:1, k:1, name:"Mint Stair", what:"Down to the mint.", tags:[]},
+      {n:10, c:2, l:1, name:"Old Mint", what:"Cold furnaces and coin moulds. Rune Callers.", tags:["mob:rune callers"]},
+      {n:11, c:3, l:1, name:"Workers' Hall", what:"Bone Thralls at their benches. A coin press stamps down in a rhythm. Clue: the thud and grooves in the floor. Safe: run while it rises.", tags:["mob:thralls","loot:chest","trap:crusher"]},
+      {n:12, c:3, l:1, s:1, k:1, name:"Coin Chute", what:"The floor tips you into the old coin chute: spikes at the bottom. Clue: a tilted, cracked floor slab. Safe: keep to the solid edge along the wall.", tags:["deadly:chute + spikes"]},
+      {n:13, c:4, l:1, s:1, name:"Captain's Quarters", what:"The Vault Captain, a huge Bone Warden, carries the Vault Key.", tags:["boss:Vault Captain","key:Vault Key"]},
+      {n:14, c:4, l:1, name:"Guard Shrine", what:"A healing shrine.", tags:["heal:healing shrine"]},
+      {n:15, c:4, s:1, k:1, name:"Back Stair", what:"A guards' stair back up to the Strongroom Door.", tags:[]},
+      {n:16, c:5, name:"Great Crusher Hall", what:"A giant stone crusher that kills outright. Its slow grinding sound is the clue. Clue: a heavy thud and grooves in the floor. Safe: watch its rhythm and run while it rises.", tags:["deadly:great crusher"]},
+      {n:17, c:6, k:1, name:"Treasury Corridor", what:"Loose ceiling stones fall. Clue: cracks and trickling dust. Safe: shoot them down with a crossbow first, or run through fast.", tags:["trap:falling stones"]},
+      {n:18, c:6, s:-1, name:"Forgotten Alcove", what:"A boulder hides a niche with a chest.", tags:["hid:hidden boulder","loot:chest"]},
+      {n:19, c:7, name:"The Strongroom", what:"The vault's last guards and their leader. The recipe stand and the big chest.", tags:["mob:pack + leader","page:recipe stand","loot:big chest"]},
+      {n:20, c:8, k:1, name:"Bolt-hole", what:"A hidden lever opens the guards' escape tunnel back to the Brass Gate.", tags:["hid:secret lever","out:tunnel to room 1"]},
+    ],
+    links: [[1,2],[2,3],[2,4],[4,5],[5,6],[6,7],[5,8],[4,9],[9,10],[10,11],[11,12],[12,13],[13,14],[14,15],[15,8],[8,16],[16,17],[17,18],[17,19],[19,20],[20,1,"out"]],
+    outNote: "A hidden lever in the Strongroom opens the guards' bolt-hole back to the Brass Gate.",
+  },
+  {
+    name: "Hall of the Shieldbearers", idea: "An old barracks where the shield wall soldiers lived and trained. Lots of fighting, and the training traps are still armed.",
+    facts: ["barracks", "2 levels", "20 spaces", "~12-15 min", "deadly: Practice Pit, Shield Bridge"],
+    layers: ["Level 1 (barracks)", "Level 2 (drill cellars)"],
+    rooms: [
+      {n:1, c:0, name:"Muster Gate", what:"Entrance: a round door with two stone shield-bearers on guard.", tags:[]},
+      {n:2, c:1, name:"Parade Ground", what:"A big open hall. Bone Wardens still drill here.", tags:["mob:wardens"]},
+      {n:3, c:1, s:-1, k:1, name:"Sentry Walk", what:"A balcony above the parade ground. Rune Callers shoot down from it.", tags:["mob:rune callers"]},
+      {n:4, c:2, name:"Mess Hall", what:"Long tables. Bone Thralls.", tags:["mob:thralls","loot:chest"]},
+      {n:5, c:2, s:1, name:"Kitchens", what:"Old pots. A loose floor stone hides a buried chest.", tags:["loot:chest","hid:buried chest"]},
+      {n:6, c:3, k:1, name:"Barracks Row", what:"Darts from holes in the wall. Clue: rows of small holes. Safe: the darts fire in bursts; run in the gap, or hold up a shield.", tags:["trap:dart wall"]},
+      {n:7, c:3, s:-1, name:"Bunk Rooms", what:"Grave Creepers in the bunks. One wall is cracked.", tags:["mob:creepers","hid:cracked wall"]},
+      {n:8, c:4, s:-1, name:"Deserter's Stash", what:"Behind the cracked wall: what a deserter hid.", tags:["loot:vault chest"]},
+      {n:9, c:4, name:"Training Yard", what:"The training plates still fire darts. Clue: a cracked floor plate. Safe: step round it, or shoot or throw something onto it to use it up.", tags:["trap:dart plate","mob:thralls"]},
+      {n:10, c:5, name:"Armoury Door", what:"Locked: it needs the Armoury Key.", tags:["lock:locked door"]},
+      {n:11, c:4, s:1, k:1, name:"Cellar Stair", what:"Down to the drill cellars.", tags:[]},
+      {n:12, c:4, l:1, name:"Drill Cellar", what:"Wardens and Thralls together. Loose ceiling stones fall. Clue: cracks and trickling dust. Safe: shoot them down with a crossbow first, or run through fast.", tags:["mob:wardens","mob:thralls","trap:falling stones"]},
+      {n:13, c:5, l:1, name:"Practice Pit", what:"A training pit whose floor gives way onto spikes. Clue: cracked boards over the pit. Safe: keep to the solid edge along the wall.", tags:["deadly:pit + spikes"]},
+      {n:14, c:6, l:1, name:"Sergeant's Quarters", what:"Sergeant Halfhelm, a huge Bone Warden, carries the Armoury Key.", tags:["boss:Sergeant Halfhelm","key:Armoury Key"]},
+      {n:15, c:6, l:1, s:-1, name:"Infirmary", what:"A healing shrine.", tags:["heal:healing shrine"]},
+      {n:16, c:5, s:1, k:1, name:"Back Stair", what:"Up to the Armoury Door.", tags:[]},
+      {n:17, c:6, name:"Armoury", what:"Racks of old shields. A boulder hides a niche with a chest.", tags:["loot:chest","hid:hidden boulder"]},
+      {n:18, c:7, name:"Shield Bridge", what:"A bridge over a chasm, spikes below. Cracked slabs fall away. Grave Creepers. Safe: step only on the whole slabs, along the railing side.", tags:["deadly:chasm + spikes","mob:creepers"]},
+      {n:19, c:8, k:1, name:"Banner Hall", what:"Old banners hide a stone crusher. Clue: a heavy thud and grooves in the floor. Safe: watch its rhythm and run while it rises.", tags:["trap:crusher"]},
+      {n:20, c:9, name:"Captain's Hall", what:"The Shield Captain and his guard. The recipe stand. A hidden door leads home.", tags:["mob:pack + leader","page:recipe stand","out:hidden door"]},
+    ],
+    links: [[1,2],[2,3],[2,4],[4,5],[4,6],[6,7],[7,8],[6,9],[9,10],[9,11],[11,12],[12,13],[13,14],[14,15],[15,16],[16,10],[10,17],[17,18],[18,19],[19,20],[20,1,"out"]],
+    outNote: "A hidden door in the Captain's Hall opens onto the soldiers' old way back to the Muster Gate.",
+  },
+  {
+    name: "Vigil of Orrin Stonejaw", idea: "A temple of runes climbing up through the rock to a bell tower. The rune carvings glow, and Rune Callers fill it.",
+    facts: ["rune temple", "3 levels up", "20 spaces", "~12-15 min", "deadly: Hall of Echoes, Broken Bridge"],
+    layers: ["Level 3 (bell tower)", "Level 2 (rune halls)", "Level 1 (entrance)"],
+    rooms: [
+      {n:1, c:0, l:2, name:"Pilgrims' Door", what:"Entrance: a round door carved with glowing runes.", tags:[]},
+      {n:2, c:1, l:2, name:"Hall of Pillars", what:"Bone Thralls. Darts from holes between the pillars. Clue: rows of small holes. Safe: the darts fire in bursts; run in the gap, or hold up a shield.", tags:["mob:thralls","trap:dart wall"]},
+      {n:3, c:1, l:2, s:-1, name:"Robing Room", what:"Old robes. A loose floor stone hides a buried chest.", tags:["loot:chest","hid:buried chest"]},
+      {n:4, c:2, l:2, k:1, name:"First Stair", what:"Up. Loose ceiling stones fall. Clue: cracks and trickling dust. Safe: shoot them down with a crossbow first, or run through fast.", tags:["trap:falling stones"]},
+      {n:5, c:2, l:1, name:"Rune Gallery", what:"Glowing carvings. Rune Callers; floor plates fire darts. Clue: a cracked floor plate. Safe: step round it, or shoot or throw something onto it to use it up.", tags:["mob:rune callers","trap:dart plate"]},
+      {n:6, c:3, l:1, s:1, name:"Carvers' Workshop", what:"Half-carved runes and a chest. One wall is cracked.", tags:["loot:chest","hid:cracked wall"]},
+      {n:7, c:4, l:1, s:1, name:"Carvers' Vault", what:"Behind the cracked wall. Gold, maybe a rune.", tags:["loot:vault chest"]},
+      {n:8, c:3, l:1, k:1, name:"Acolytes' Cells", what:"Grave Creepers in the small cells.", tags:["mob:creepers"]},
+      {n:9, c:4, l:1, name:"Hall of Echoes", what:"The floor gives way into a deep spike pit. Listen: the cracked tiles ring hollow. Safe: keep to the solid edge along the wall.", tags:["deadly:pit + spikes"]},
+      {n:10, c:5, l:1, name:"Acolyte's Sanctum", what:"Orrin's Last Acolyte, a big Rune Caller, holds the Rune Key.", tags:["boss:Last Acolyte","key:Rune Key"]},
+      {n:11, c:5, l:1, s:-1, name:"Quiet Shrine", what:"A healing shrine.", tags:["heal:healing shrine"]},
+      {n:12, c:6, l:1, name:"Rune Door", what:"A stone door that opens only to the Rune Key.", tags:["lock:rune door"]},
+      {n:13, c:6, l:0, s:1, k:1, name:"Tower Stair", what:"Up into the bell tower.", tags:[]},
+      {n:14, c:7, l:0, name:"Bell Walk", what:"Bone Wardens on the walkway.", tags:["mob:wardens"]},
+      {n:15, c:8, l:0, name:"Broken Bridge", what:"Across the open shaft: cracked slabs fall, spikes far below. Safe: step only on the whole slabs, along the railing side.", tags:["deadly:chasm + spikes"]},
+      {n:16, c:9, l:0, k:1, name:"Crusher Steps", what:"A stone crusher on the steps. Clue: a heavy thud and grooves in the floor. Safe: watch its rhythm and run while it rises.", tags:["trap:crusher"]},
+      {n:17, c:8, l:0, s:-1, name:"Bellringer's Loft", what:"A boulder hides a niche with a chest.", tags:["hid:hidden boulder","loot:chest"]},
+      {n:18, c:10, l:0, name:"Antechamber", what:"Bone Thralls and Rune Callers.", tags:["mob:thralls","mob:rune callers"]},
+      {n:19, c:11, l:0, name:"Orrin's Vigil", what:"Under the great bell: Orrin's guard and their leader. The recipe stand.", tags:["mob:pack + leader","page:recipe stand"]},
+      {n:20, c:11, l:0, s:1, k:1, name:"Pilgrims' Slide", what:"A worn stone slide spirals down to the Pilgrims' Door.", tags:["out:slide to room 1"]},
+    ],
+    links: [[1,2],[2,3],[2,4],[4,5],[5,8],[8,6],[6,7],[8,9],[9,10],[10,11],[10,12],[12,13],[13,14],[14,15],[15,17],[15,16],[16,18],[18,19],[19,20],[20,1,"out"]],
+    outNote: "A worn stone slide spirals down from Orrin's Vigil to the Pilgrims' Door.",
+  },
+];
+
+const COLW = 146, SUBH = 72, BW = 124, BH = 54, PADL = 10, PADT = 30;
+const css = k => `var(--${k === "out" ? "moss" : k})`;
+function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+
+function svgFor(d) {
+  const cols = Math.max(...d.rooms.map(r => r.c)) + 1;
+  const rows = d.layers.length;
+  const W = PADL + cols * COLW + 6, H = PADT + rows * 3 * SUBH + 18;
+  const pos = {};
+  d.rooms.forEach(r => { pos[r.n] = { x: PADL + r.c * COLW, y: PADT + ((r.l || 0) * 3 + 1 + (r.s || 0)) * SUBH }; });
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Side view of ${esc(d.name)}">`;
+  s += `<rect x="0" y="0" width="${W}" height="${H}" rx="4" fill="var(--rock)"/>`;
+  d.layers.forEach((name, i) => {
+    const y = PADT + i * 3 * SUBH - 12;
+    if (i > 0) s += `<line x1="6" x2="${W - 6}" y1="${y - 6}" y2="${y - 6}" stroke="var(--muted)" stroke-dasharray="3 6"/>`;
+    s += `<text x="10" y="${y}" font-size="11.5" fill="var(--muted)" font-family="Inter, sans-serif">${esc(name)}</text>`;
+  });
+  d.links.forEach(([a, b, k]) => {
+    const p = pos[a], q = pos[b];
+    const x1 = p.x + BW / 2, y1 = p.y + BH / 2, x2 = q.x + BW / 2, y2 = q.y + BH / 2;
+    if (k === "out") {  // the shortcut home runs along the bottom edge so it never crosses the main path
+      s += `<path d="M${x1} ${p.y + BH} V${H - 8} H${x2} V${q.y + BH}" fill="none" stroke="var(--moss)" stroke-width="2.5" stroke-dasharray="7 5"/>`;
+    } else {
+      s += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--wood)" stroke-width="5" stroke-linecap="round"/>`;
+    }
+  });
+  d.rooms.forEach(r => {
+    const p = pos[r.n];
+    const corr = r.k ? ` stroke-dasharray="5 3"` : "";
+    s += `<rect x="${p.x}" y="${p.y}" width="${BW}" height="${BH}" rx="${r.k ? 14 : 5}" fill="var(--paper)" stroke="var(--wood)" stroke-width="2"${corr}/>`;
+    s += `<text x="${p.x + 8}" y="${p.y + 19}" font-size="12" font-weight="600" fill="var(--fg)" font-family="Inter, sans-serif">${r.n}. ${esc(r.name)}</text>`;
+    r.tags.forEach((t, i) => {
+      const k = t.split(":")[0], cx = p.x + 14 + i * 18, cy = p.y + 38;
+      s += `<circle cx="${cx}" cy="${cy}" r="6.5" fill="${css(k)}"/>`;
+      if (k === "deadly") s += `<circle cx="${cx}" cy="${cy}" r="9.5" fill="none" stroke="var(--deadly)" stroke-width="2"/>`;
+    });
+  });
+  return s + `</svg>`;
+}
+
+function tagHtml(t) {
+  const [k, v] = t.split(":");
+  return `<span class="tag t-${k}">${k === "deadly" ? "deadly: " : ""}${esc(v)}</span>`;
+}
+
+document.getElementById("sheets").innerHTML = D.map((d, i) => `
+  <section class="sheet" aria-labelledby="d${i}">
+    <div class="head">
+      <h2 id="d${i}">#${i + 5} ${esc(d.name)}</h2>
+      <div class="facts">${d.facts.map(f => `<span>${esc(f)}</span>`).join("")}</div>
+    </div>
+    <p class="big">${esc(d.idea)}</p>
+    <div class="diagram">${svgFor(d)}</div>
+    <p class="muted">Way out: ${esc(d.outNote)}</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th></th><th>Space</th><th>What's there</th><th>Has</th></tr></thead>
+      <tbody>${d.rooms.map(r => `<tr><td class="n">${r.n}</td><td>${esc(r.name)}${r.k ? ' <span class="muted">(corridor)</span>' : ""}</td><td>${esc(r.what)}</td><td>${r.tags.map(tagHtml).join("")}</td></tr>`).join("")}</tbody>
+    </table></div>
+  </section>`).join("");
+</script>

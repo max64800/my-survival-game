@@ -5550,3 +5550,22 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - Bonus: one station means auto-crafting now roasts the bug meat for a Miner's Pie by itself (the owner's example).
 - Shortcut: the Stone Oven borrows the Charcoal Kiln's model and icon until its real model is built on the PC.
   Old saves: a pot away from a fire no longer cooks. Tests: kitchen levels, pot placement, cooking at the fire.
+
+## 2026-11-20 (Mac, overnight loop) — all 12 Zone 1 dungeons planned (F237)
+- Owner's choices this evening: outposts/towers are ruins; 12 new dungeons = 4 small wood (8-10 min), 5 medium
+  Stonehold (12-15 min, key + locked door + mini boss, 2 deadly traps), 3 big Hearthbrick forge halls (20-25 min,
+  ~30 spaces). Forge traps OK (fire jets, swing traps, pistons, rolling weights, molten metal only in stone channels
+  that can't spill), every trap with a clue and a safe way. No water. Inside: KayKit Skeletons made into dwarf
+  skeletons (picked by the owner from a pack search; made on the PC, noted in the plan's PC to-do list).
+- Built while the owner slept: pages "Small Wooden Dungeons", "Medium Stone Dungeons", "Big Clay Dungeons" (side views
+  + room lists); `docs/design/zone1-dungeons/` with one plan file per dungeon (rooms with 2 m grid sizes, creatures,
+  loot, models that exist vs new) and `00-missing-and-build-order.md` (about 20 new models, new trap/key/mini-boss
+  code, build order); `tools/dungeon_pages/` (the maps, `gen_docs.js` writes the files, `check.js` checks the rules);
+  `src/world/dungeon_list.gd` + `tests/test_dungeon_list.gd` (every world teaches all 12 copper recipes once each).
+- Checks: two passes of `check.js` over all 11 drawn dungeons (Mossgate Hold's real map is on the PC). Pass 1 found 3
+  dungeons one trap short (added a runaway cart, a coin press, falling ceiling stones) and deadly traps without a
+  written clue; pass 2 found a molten pit listed as a spike pit (wrong model) and odd creature names. All fixed.
+- Mistakes/hurdles (Claude's own): missed the PC's Mossgate Hold at first (its code isn't on GitHub; only grepped
+  `src` for "dungeon"), the owner caught it. The full test run showed 13 fails; ran them on a copy from before
+  Claude's commit: the same fail there, so they come from other work (food/build-menu chats). Copied the scripts into
+  the docs folder where they couldn't find the pages: moved pages + scripts together into tools/dungeon_pages.
