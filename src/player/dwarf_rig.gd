@@ -177,6 +177,7 @@ var _hold_amount := 0.0
 ## the tool turns in the fist to trail back and a little down and out, away from the head. Set by DwarfModel.set_held.
 var carrying := false
 var _carry := 0.0
+var move_speed := 0.0  ## m/s, as last given to set_motion (DwarfFist: the second hand lets go when running)
 ## The tool holder in the right fist (DwarfModel puts the tool model in it): its +Y is the handle, out of the thumb side
 ## of the fist, the way the pack's sword animations hold a sword. How the tool turns in the fist depends on the tool
 ## (tool_look = Combat.weapon_of / Items.kind, set by DwarfModel.set_held) and on the animation playing: see GRIPS.
@@ -651,6 +652,11 @@ func set_motion(speed: float, on_floor: bool, rolling: bool) -> void:
 	# Walking keeps the tool as the fist holds it; from a jog up it trails behind (hold_turn). Never during a
 	# swing or a held pose: those animations aim the tool themselves.
 	var want := clampf((speed - 1.6) / 1.6, 0.0, 1.0) if carrying else 0.0
+	# Great axe and great maul (owner, Nov 19, round 3): always on the right shoulder in one hand, standing, walking
+	# and running. Swinging, the animation aims it as before and DwarfFist adds the second hand.
+	if carrying and tool_look in DwarfFist.TWO_HANDED:
+		want = 1.0
+	move_speed = speed
 	if carrying and (rolling or _roll_on()):
 		want = 1.0  # rolling the arms fly about: the tool trails safely behind (owner: pick through his head)
 	# (jumping keeps whatever the speed gives: standing still the tool stays as held, owner Nov 17: "his pickaxe goes

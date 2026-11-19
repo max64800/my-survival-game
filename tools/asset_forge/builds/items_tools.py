@@ -313,19 +313,24 @@ def shield(m):
 def shield_back(r, z, metal):
 	"""F51 (like a Spartan shield): two cross battens, a big leather forearm strap with a buckle in the middle,
 	and an upright hand grip near the rim."""
+	# Worn on the dwarf's left arm (Nov 19, owner: "his hand should hold the grip, the forearm goes through a couple of
+	# straps"; src/player/dwarf_fist.gd SHIELD_*): his fist on the grip near the rim, his short forearm (13-18 cm,
+	# ~4.3 cm thick) through two leather loops toward the middle. The grip stands 12 cm off the board so the forearm
+	# (which runs ~4 cm nearer the board than the middle of the fist) clears it.
 	for dz in (0.11, -0.11):
 		kit.box((0.56, 0.025, 0.06), (0, 0.036, z + dz), kit.tex_mat("wood", "dark"), bevel=0.006, wobble=0)
-	kit.box((0.16, 0.035, 0.24), (-0.04, 0.05, z), kit.tex_mat("leather", "dark"), bevel=0.01, wobble=0)
-	kit.box((0.2, 0.04, 0.06), (-0.04, 0.062, z), kit.tex_mat("leather", "a"), bevel=0.006, wobble=0)
-	kit.ring(0.03, 0.007, (-0.04, 0.085, z), metal, rot=(90, 0, 0), seg=4)
-	for dz in (-0.1, 0.1):
-		kit.rivet((-0.11, 0.07, z + dz), metal, r=0.009)
-		kit.rivet((0.03, 0.07, z + dz), metal, r=0.009)
 	gx = r * 0.62
-	for dz in (-0.1, 0.1):
-		kit.box((0.04, 0.05, 0.04), (gx, 0.05, z + dz), metal, bevel=0.005, wobble=0)
-	kit.cylinder(0.022, 0.24, (gx, 0.08, z), kit.tex_mat("wood", "b"), verts=8, bevel=0.003)
-	kit.rope_wrap((gx, 0.08), 0.024, z - 0.08, z + 0.08, 9, thick=0.007, material=kit.tex_mat("leather", "dark"))
+	for dz in (-0.095, 0.095):  # (not flush with the battens' or the grip's ends: no shimmer)
+		kit.box((0.04, 0.095, 0.035), (gx, 0.072, z + dz), metal, bevel=0.005, wobble=0)
+	kit.cylinder(0.022, 0.24, (gx, 0.12, z), kit.tex_mat("wood", "b"), verts=8, bevel=0.003)
+	kit.rope_wrap((gx, 0.12), 0.024, z - 0.08, z + 0.08, 9, thick=0.007, material=kit.tex_mat("leather", "dark"))
+	# the forearm loops: round the forearm's line (8 cm off the board, 5.5 cm above the shield's middle), their feet
+	# sunk a little into the board, each on a small leather pad with two rivets
+	for lx in (gx - 0.1, gx - 0.155):
+		kit.ring(0.05, 0.008, (lx, 0.08, z + 0.055), kit.tex_mat("leather", "dark"), rot=(0, 90, 0), seg=16)
+		kit.box((0.045, 0.012, 0.07), (lx, 0.031, z + 0.055), kit.tex_mat("leather", "a"), bevel=0.003, wobble=0)
+		for dz in (-0.025, 0.025):
+			kit.rivet((lx, 0.039, z + 0.055 + dz), metal, r=0.007)
 
 
 def bolt(tip):
@@ -397,10 +402,12 @@ def shield_shell():
 	shell = kit.tex_mat("stone", "c")
 	for k in range(6):
 		a = 2 * math.pi * k / 6
-		kit.ring(0.09, 0.03, (math.cos(a) * 0.18, -0.035, z + math.sin(a) * 0.18), shell, rot=(90, 0, 0), seg=14)
-		kit.ring(0.05, 0.022, (math.cos(a) * 0.18, -0.05, z + math.sin(a) * 0.18), kit.tex_mat("stone", "b"), rot=(90, 0, 0), seg=12)
+		# neighbouring scales overlap: every other one sits 1.2 cm further out, so no two fronts share a depth (no shimmer)
+		dy = -0.012 * (k % 2)
+		kit.ring(0.09, 0.03, (math.cos(a) * 0.18, -0.035 + dy, z + math.sin(a) * 0.18), shell, rot=(90, 0, 0), seg=14)
+		kit.ring(0.05, 0.022, (math.cos(a) * 0.18, -0.05 + dy, z + math.sin(a) * 0.18), kit.tex_mat("stone", "b"), rot=(90, 0, 0), seg=12)
 	for k in range(4):
-		kit.ring(0.1 - k * 0.022, 0.028 - k * 0.004, (0, -0.04 - k * 0.018, z), shell, rot=(90, 0, 0), seg=16)
+		kit.ring(0.1 - k * 0.022, 0.028 - k * 0.004, (0, -0.058 - k * 0.018, z), shell, rot=(90, 0, 0), seg=16)
 	shield_back(r, z, kit.tex_mat("iron"))
 
 

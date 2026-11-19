@@ -5137,3 +5137,16 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - **Owner's recipe rules (written into the decisions file, no code yet):** a dungeon always gives the same recipe(s);
   small dungeons one, bigger ones several (one good copper recipe plus food and other small ones); all of a zone's
   dungeons together give all its recipes, so the full copper weapons + armor set means doing every dungeon.
+- **Round 3 (owner: "def not right for 2h weapons"; shield "tilt more"):** two more picks. (1) Great weapons: first
+  tried the owner's pick "on the shoulder, 2 hands" (handle from over the right shoulder down to the belly): measured,
+  it can't work on this body: his left arm reaches ~33 cm, his chest + beard stick out ~25 cm, so every such line ran
+  through his chest with both fists hidden in the beard (pictures). Told the owner; new pick: on the shoulder in ONE
+  hand standing, walking and running (DwarfRig keeps the shoulder carry on for great weapons), the left hand joins
+  only in the swings. That shoulder-with-two-hands code was taken out again. (2) Shield: it lies along the forearm, and
+  the animation's forearm slants in over his round belly; now (not blocking) the forearm hangs straight down from the
+  elbow, 10 degrees out, and the shield hangs upright. Then the loops sat 4 cm off the arm (they were placed for the
+  slanted arm): the fist now slides along the grip (up to 5 cm) until the loops sit on the forearm.
+- **Hurdles (Claude's own):** the owner's 2H picture showed his right hand empty, but in my own test the hands were
+  right; checked the recording itself and the fresh page: the page may have shown cached old files, so it now always
+  checks for new ones (`no-cache`). A sed edit put a `//` comment inside a one-line `try {...}` in the page script
+  and broke it (local copy only, fixed before publishing). Tests: `test_dwarf_fist` 5 checks pass. Page version 3.
