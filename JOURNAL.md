@@ -5494,3 +5494,15 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   docs/design/food-and-healing.md updated; the pot-on-fire and the oven are not built yet (oven needs a model).
 - Not looked at in a real game window: the lines are untested by eye. Hurdle: another session had unsaved edits in
   JOURNAL.md and FEEDBACK.md, so this entry was added to the saved copy only and FEEDBACK.md was left alone.
+
+## 2026-11-20 (Mac) — Zone 1 food plan built + crafting window fixes
+- Food plan in the game: zone 1 dishes and drinks get their plan effects, healing is 1 health every 5 s on your own and
+  food speeds it up to 1 every 2 s, 2 foods + 1 drink at once, each effect stops at 50%, meat guards against its creature
+  (bat, beetle, spider, snail), lose food/water slower, digging and extra drops through the host. Food cards in the
+  crafting window show "Healing" with half-heart pictures (hover = exact speed) and the effects as bullets; bag tooltips too.
+- Crafting window (owner): the progress bar keeps its space, so the menu no longer jumps; the ×1 / ×5 / All buttons are
+  now a slider (1 to what you can make) with an All button; the amount resets to 1 when the bench opens or closes.
+- Found: the other session had already set healing to 1 health every 3 s (so my earlier "2 a second" was out of date).
+- Tests: vitals (healing, slots, guards), crafting, menu, monsters, farming all pass. Screenshot of the Cooking Pot card
+  checked. Kitchen levels (pot on the fire, Stone Oven) still to build. Another session had unsaved edits in
+  game_authority.gd, items.gd, FEEDBACK.md and JOURNAL.md: only this session's lines were committed.
