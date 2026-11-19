@@ -4999,3 +4999,15 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   point to) kept its number; the others became F390 (dwarf loops too fast, was F261), F391 (hide armor, F273),
   F392 (shirt patch, F274), F393 (Fallen Outpost fixes, F300), F394 (creatures turn to stone, F337), F395 (roots on
   crystals, F373) and F396 (rune shrines, F374). Each says which number it had. Then committed everyone's work and pushed.
+
+## Nov 19: Bat leather couldn't become leather (F398)
+- **Owner: "I killed the bats and got their leather, but the pickaxe needs leather and I can't make a leather station."**
+  Bats drop *wing leather*, which a Tanning Rack turns into leather. But the Tanning Rack recipe only showed up after
+  you'd held *critter hide* (from other critters), so with only bat leather it never appeared. Now wing leather also
+  shows it. The Fang Pickaxe also needs a level 2 workbench: a Chopping Block within 4 m of it.
+- New check (test_crafting): holding a recipe's ingredients (plus copper, which everyone finds early) always shows the
+  station it needs. Proven: without the fix it fails on exactly this.
+- **Hurdles:** (1) the first version of the check was too strict (it flagged 15 recipes that just wait for copper);
+  gave it copper. (2) A GDScript slip (mixed two ways of writing a dictionary) stopped the test file loading; fixed.
+  (3) I briefly used `git stash` on a shared file to test without the fix; risky with other Claudes in the folder,
+  so the second time I swapped the file by copying instead.

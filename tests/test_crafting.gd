@@ -77,6 +77,26 @@ func test_boss_part_needed_for_copper_pickaxe() -> void:
 	check_eq(Items.tier("pickaxe_copper"), 1, "copper tier")
 
 
+## F398: bats' wing leather showed "tan it on a Tanning Rack", but the rack only showed up after critter hide.
+## Holding a recipe's ingredients must always make the station it needs show up too.
+func test_holding_the_ingredients_shows_the_station_too() -> void:
+	var maker := {}  # station id -> the recipe that makes it
+	for id in Recipes.LIST:
+		maker[Recipes.LIST[id].output] = id
+	var stuck := []
+	for id in Recipes.LIST:
+		var r: Dictionary = Recipes.LIST[id]
+		if r.station == Recipes.HAND or not r.unlock is Array or r.unlock.is_empty() or not maker.has(r.station):
+			continue
+		for x in r.unlock:
+			var seen := {x: true, "copper_ore": true, "copper_ingot": true}  # copper comes early for everyone
+			for i in r.inputs:
+				seen[i] = true
+			if Recipes.is_unlocked(id, seen, {}) and not Recipes.is_unlocked(maker[r.station], seen, {}):
+				stuck.append("%s (found %s, but no %s)" % [id, x, r.station])
+	check(stuck.is_empty(), "every shown recipe's station can be made: %s" % ", ".join(stuck))
+
+
 func test_unlocks() -> void:
 	check(Recipes.is_unlocked("campfire", {}, {}), "campfire known from start")
 	check(not Recipes.is_unlocked("smelter", {}, {}), "smelter hidden at start")
