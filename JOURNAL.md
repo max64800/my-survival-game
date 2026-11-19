@@ -3972,7 +3972,7 @@ the body."
   start; (3) the wing's old early twist at death removed. Same on both 3D pages.
 
 ### Nov 18: Short 054 redone (eight tries)
-- (Nov 18, F350) Dead creatures turn to stone. Owner's idea, settled with multiple-choice questions: no drops at death,
+- (Nov 18, F370) Dead creatures turn to stone. Owner's idea, settled with multiple-choice questions: no drops at death,
   mine the statue (pickaxe only, hits by size) for stone + loot, 1 in 20 a gem, crumbles after 5 min. Built like the
   boulders (host counts hits; every computer shows its own stone body): src/combat/statue.gd + petrify.gdshader
   (cracks run out from the middle, stone fills in behind), MonsterManager statues + request_hit_statue, Ragdoll keeps
@@ -3983,21 +3983,21 @@ the body."
   has no wings or eye stalks, so the settle step started an empty animation (an engine error): skipped when empty;
   (4) the old crystal-drop test expected drops at death: it now looks inside the statue. Also: another chat's
   half-edited cave_maker.gd stopped every game run for a while; waited instead of touching it.
-- (Nov 18, F350 round 2) Owner: turning to stone too fast; the break should be the same rock burst as mining, sized
+- (Nov 18, F370 round 2) Owner: turning to stone too fast; the break should be the same rock burst as mining, sized
   to the creature. Stone now takes 7 s; RockShatter.burst got a `scale` (piece size, count and spread); a statue bursts
   twice like dug rock, sized by its middle measure (not its diagonal: a bat's long wings made it look huge; Claude's
   first try sized by the diagonal and the beetle's slabs were as big as the beetle, caught on the 3D page and fixed).
   The pickaxe feedback no longer adds a second full-size burst on statues. Same burst on the 3 creature 3D pages.
 
 ### Nov 18: faint music under the Shorts
-- (Nov 18, F350 round 3) Owner: "everything looks great"; the rock chunks sometimes lie inside each other, and the
+- (Nov 18, F370 round 3) Owner: "everything looks great"; the rock chunks sometimes lie inside each other, and the
   same for boulders and other rocks. Cause: every chunk only collided with the cave floor. All bursts share one
   maker (RockShatter: dug rock, boulders, statues, root pillars), so one change fixed them all: chunks get their own
   layer and bump into each other (never into dwarfs). Measured, not guessed: new tools/model_check/shatter_overlap.gd
   (two bursts, count chunks deep inside each other): 129 before, 0 after. The 3D pages' chunks became real physics
   boxes, and the dead body's invisible box is removed when the statue breaks (the pieces would have landed on air).
   Hurdle: checking the page in a background tab is very slow (Chrome draws it about once a second there).
-- (Nov 18, F350 round 4, 3D pages only) Owner: page rocks hung in mid-air and balanced impossibly; should shrink away.
+- (Nov 18, F370 round 4, 3D pages only) Owner: page rocks hung in mid-air and balanced impossibly; should shrink away.
   The page's physics boxes were bigger than the lumpy rocks (the game uses exact shapes already). Tested offline with
   node + the same physics library (scratchpad physcheck/test.mjs: 48 chunks dropped, measures dips, floating,
   speed). Tries: exact convex shapes = right but 120-150 ms per step (far too slow) and some came out inside-out;
@@ -4006,7 +4006,7 @@ the body."
   against other rocks: 0.2 cm deepest dip, none floating, ~2 ms per step. Rocks shrink away after 4.5 s.
 
 ### Nov 18: Short 056 (the name)
-- (Nov 18, F350 done) Owner: the wait before the stone too long; page rocks super huge and shrinking too fast. The
+- (Nov 18, F370 done) Owner: the wait before the stone too long; page rocks super huge and shrinking too fast. The
   huge rocks were Claude's bug: the page's shrink formula was not capped at 1, so before their shrink time the rocks
   were drawn up to 8x too big, then "shrank" to normal size all at once. Fixed (capped); each chunk now waits its own
   4-6 s and shrinks over 1.5 s (game too: RockShatter._life, SHRINK). Stone starts sooner (wait at most 1.8 s). The
@@ -4175,3 +4175,17 @@ the body."
   bugs (only one look per creature, beetles sliding sideways, bats stuck in walls, a bat not turning to stone): not
   the glow-groves Claude's; waiting for the creature Claude.
 
+## November 19, 2026 (PC, snail Claude): crossbow bolts on sleeping bats, F8 item menu (F371, F372, F368)
+- Owner: built a crossbow, shot a bat, nothing happened; wants F8 to give any item without crafting.
+- A test in a real world (tools/bolt_check.gd: crossbow + bolts, a bat in front, aim, shoot): bolts kill flying
+  bats in one shot (16 health). The bug: a roosting bat's body (a 1.2 m capsule standing up from its anchor 30 cm
+  under the ceiling) was ~0.9 m inside the rock while its picture hangs below, so the aim line hit the rock. Now a
+  sleeping bat's body hangs down with its picture; waking, it drops its body's height out of the ceiling (also why
+  aggroed bats got stuck in the rock, F368). Checked: with the fix switched off the bolt hits the rock, on it kills.
+- F8: DevItems (src/ui/dev_items.gd): every item with its picture, search, click = 1, right-click = a stack, dev
+  builds only, straight into the host's bag.
+- **Hurdles:** (1) the first test bats were placed inside the tiny wake-up room's wall, then the roost spot had a
+  1.3 m ceiling; moved to the big cavern and searched for a real ceiling. (2) The monster tests use a stand-in dwarf
+  with no camera, so the real-shot check became a tool instead of a test. (3) Waking now drops a bat 1.2 m, which
+  broke the bat-ragdoll test (it woke the bat after placing it 1.5 m up): the test now wakes it first. (4) Feedback
+  numbers clashed again (F350 is the ruin rebuild): the statues are F370.

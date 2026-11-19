@@ -52,6 +52,8 @@ var _flinch := 0.0       ## only looks: a quick jolt back when hit
 var _charge_dir := Vector3.ZERO  ## straight_charge: the direction locked when the charge starts
 var _alt := INF                  ## swoops: the height this flyer is heading for
 var _last_pos := Vector3.ZERO
+var _body_shape: CollisionShape3D  ## its body (a capsule standing up from its feet)
+var _roosted := false  ## the body hangs down from the ceiling (a sleeping bat)
 var _speed := 0.0
 var _clock := 0.0
 var _size := 1.0
@@ -91,6 +93,7 @@ func _ready() -> void:
 	shape.shape = cap
 	shape.position = Vector3.UP * cap.height * 0.5
 	add_child(shape)
+	_body_shape = shape
 	model = MonsterModel.build(data.shape, data.color, s, leader, kind, uid, variant)  # uid: same individual for everyone
 	_size = s
 	add_child(model)
@@ -719,6 +722,19 @@ func _land_sound(sound: String) -> void:
 		Sfx.play(sound, global_position, 0.0, _voice())
 
 
+## A sleeping bat hangs from the ceiling by its feet, so its body hangs DOWN from there with its picture (owner, Nov 19:
+## bolts at a hanging bat did nothing: its body stood up into the rock above, where no bolt could reach it). Waking up,
+## it drops its body's height out of the ceiling, so it doesn't start stuck in the rock (owner: "bats stuck in the walls").
+func _hang_body(hang: bool) -> void:
+	if hang == _roosted or _body_shape == null:
+		return
+	_roosted = hang
+	var h: float = (_body_shape.shape as CapsuleShape3D).height
+	_body_shape.position = Vector3.UP * h * (-0.5 if hang else 0.5)
+	if not hang and is_inside_tree() and multiplayer.is_server():
+		global_position += Vector3.DOWN * h  # (the host moves it; everyone else gets its new place)
+
+
 func _process(delta: float) -> void:
 	# Coming alive (only looks): walk, waddle, flap, breathe, at the speed we really move.
 	if _clock == 0.0:
@@ -728,6 +744,7 @@ func _process(delta: float) -> void:
 	_speed = lerpf(_speed, moved / maxf(delta, 0.001), minf(1.0, delta * 8.0))
 	_clock += delta
 	model.set_meta("roosting", data.get("roosts", false) and state == State.SLEEP)
+	_hang_body(model.get_meta("roosting"))
 	if _stop > 0.0:
 		_stop -= delta
 		_clock -= delta  # (frozen: its moves wait)

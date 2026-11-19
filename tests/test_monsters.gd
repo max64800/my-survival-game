@@ -619,9 +619,11 @@ func test_bat_ragdoll_falls_out_of_the_air() -> void:
 	var m := _spawn("cave_bat", Vector3(4.0, 0, 0))
 	for i in 5:
 		await tree.physics_frame
+	m.state = Monster.State.CHASE  # (awake, wings open: asleep it hangs with them folded)
+	for i in 3:
+		await tree.process_frame  # (waking, it drops out of its roost first: then put it in the air)
 	m.global_position = world.maker.find_floor(player.global_position.x + 4.0, player.global_position.z, player.global_position.y + 2.0) + Vector3.UP * 1.5
 	# (in flight over the floor: a bat on its own goes off to find a roost)
-	m.state = Monster.State.CHASE  # (awake, wings open: asleep it hangs with them folded)
 	for i in 3:
 		await tree.process_frame
 	auth.monsters._ev_remove(m.uid)
