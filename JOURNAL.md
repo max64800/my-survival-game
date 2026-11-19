@@ -4845,6 +4845,25 @@ the three fight bugs.
   holes looked like pegs and the floor cracks didn't read (bigger holes, wider gaps, a broken-out chunk); the model
   check found the chains hanging 1.6-5 cm short of both beams (the hewn beams' flat faces sit inside their radius:
   the end links now reach into them) and loose stones in the cage (packed tighter). Then all 8 models ok.
+- **Owner's batch 2 notes, fixed:** fallen stalactites stayed on the page (they were taken off the model to fall and
+  never cleaned up: now gone 1.5 s after landing, and when you switch models). Crusher: the chains stayed up while the
+  weight fell, so they now belong to the weight and run up through two holes bored in the beam into the ceiling (they
+  pay out as it drops); little iron spikes under it. Breaking floor: each board is its own part (board0..9) so it can
+  drop into the pit. Dart wall: the darts are our metal-tip bolts. The chain was saved as `chain_hanging` (owner loved it).
+- **Batch 3:** `bridge_plank`, `bridge_plank_broken`, `dungeon_entrance` (the Shack round doorway inside big posts, a
+  lintel and a rune board), `door_loot` (the Shack door with iron bands, a lock and a big ring). Hurdles: the broken
+  bridge's loose plank first pointed up (sign of the turn); planks floated 2.5 cm over the faceted ropes and one snapped
+  rope end was tied to nothing (model check, fixed). All 13 dungeon models ok. The page got Open-door, a 6 m bridge,
+  Shoot darts, Step on it, Break it (with a spike pit under it) and Make it slam.
+- **Owner's batch 3 round:** the dart beam's holes now read as real black holes (bored 20 cm deep, a black plug at the
+  bottom). The breaking floor gives way at once on the page (0.1-0.3 s instead of 0.7-1.3 s), so you can't walk across.
+- **Darts came out of the back (owner):** the holes were on the front all along; the page started each dart behind the
+  wall with its tail sticking out the back. Now a dart only shows once its tail is inside the wall.
+- **Batch 4:** `gate_round` (round like our doors, round doors only: bars you see through), `lever` (parts "base" and
+  "handle", turning about (0, 1.05, 0.13)), `railing_broken` (the ledge), `secret_boulder` (dungeon_traps.py: cave rock
+  paint, a moss line at its back edge). Hurdles: the gate's cross bars ran past the rim, then (shortened) left the rim's
+  side pieces touching nothing: now each bar lies 4 cm on the rim with a rivet. The boulder came out smooth and blobby
+  twice (the "Play-Doh" look): after 2 picture rounds it went to the owner with a question. All 17 models ok.
 - **Owner's verdict on batch 2 (same day): "like everything, I like before better".** All the swing work is undone
   (only Claude's own lines: another chat's Q/E station-turn line in `dwarf.gd` stays); swing_kick.gd, its test and the
   swing page tool are deleted. Lesson: the owner likes the moves as they are; what's really wrong is **how he holds
@@ -5000,6 +5019,29 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   F392 (shirt patch, F274), F393 (Fallen Outpost fixes, F300), F394 (creatures turn to stone, F337), F395 (roots on
   crystals, F373) and F396 (rune shrines, F374). Each says which number it had. Then committed everyone's work and pushed.
 
+
+## November 19, 2026 (PC, Claude 2 / the cave Claude): fine turning + the skills window as a real tree
+- **Turning (F397, owner):** Q / E turned stations and chests 45 degrees a press, so a workbench couldn't be lined up.
+  Now a tap turns 5 degrees; holding the key turns smoothly at one calm speed (60 degrees a second after a quarter
+  second, never faster); the first facing is exactly where you look (no snapping). E still only turns when you aren't
+  aiming at something to open (main.gd decides, PlaceGhost keeps turning while E stays down). The host still checks
+  the final turn. Asked the owner whether building pieces (90-degree grid steps) should turn the same way.
+  New robot `-- turncheck` prints the angles: -163 at the start (not snapped), +15 after 3 taps, +60 every second held.
+- **Skills window (K) rebuilt like the approved mock-up:** skills on the left (click one for its stars, one open at a
+  time), the perk tree in the middle on the carved hall with the Level circle in the carved ring, Bones up, Fists
+  right, Hands down, Heart left; round knobs, diamonds for active perks, a star on each branch's last perk, lines
+  turn gold when learned; the chosen perk's details and Learn on the right. New `src/ui/perk_tree.gd` (draws the
+  tree and works out each perk's spot from the "needs" chain, so no positions are stored) and
+  `src/ui/perk_knob.gdshader` (cuts each picture into a circle or diamond with a ring, grey when locked).
+  Progression.PERKS and all rules unchanged. New robot `-- skillscheck` takes the photos.
+- **Hurdles (Claude's own):** (1) a Godot typing error (a number read from an untyped list) stopped the whole test file
+  from loading; fixed with float(). (2) `for s in {...}.items()` isn't GDScript, so the photo robot didn't load.
+  (3) The first photo had the carved hall almost black (too much darkening); made it brighter.
+- Tests: `test_q_and_e_turn_the_piece_walking_does_not` (5 degrees a tap, steady hold speed),
+  `test_skills_window_shows_perk_pictures` (tree shape: branch directions, no two perks on one spot, star, Learn).
+- Not mine, failing: 3 `test_authority` physics tests (Jolt switch, already noted above).
+
+
 ## Nov 19: Bat leather couldn't become leather (F398)
 - **Owner: "I killed the bats and got their leather, but the pickaxe needs leather and I can't make a leather station."**
   Bats drop *wing leather*, which a Tanning Rack turns into leather. But the Tanning Rack recipe only showed up after
@@ -5025,3 +5067,73 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - **Hurdles:** (1) my first list said clean water was missing; it isn't (a Drip Bucket under a ceiling drip fills
   buckets), so I checked each "missing" item by hand before reporting it. (2) Two small script slips (wrong item-data
   call, shields scored by armour they don't have); fixed.
+
+## November 19, 2026 (PC, dungeons Claude, chat 2): batch 5 + the boulder rebuilt
+- **Owner's picks:** batch 4 (gate, lever, railing) all fine; the hidden boulder rebuilt chisel-cut like the Shack stones.
+- **Boulder:** moved into `dungeon_rootwood.py` (`boulder_chiselled`): a lumpy ball cut by ~40 flat planes (big cuts
+  first, then chips), flat on the floor and at the back, flat-shaded, the Shack stone paint, a strip of moss tufts
+  along its back edge. The old melted version in `dungeon_traps.py` is gone.
+- **Batch 5** (all in `dungeon_rootwood.py`): `wall_cracked` (split boards, a jagged hole, splinters on the floor;
+  parts frame + board0..), `wall_old` and `floor_old` (wide gaps, a rotten board, broken ends, a patch board, missing
+  pegs, and a new `age_paint` that makes a darker, greyer copy of every painting inside the model), and
+  `floor_loose_stone` (a chisel-cut flagstone in a Shack floor, one corner up, a dark gap; parts frame + stone).
+- **Hurdles (Claude's own):** round 1 the boulder was still an egg (cuts too shallow), the old wood looked new, and
+  the loose stone didn't look loose; round 2 fixed all three. Then the boulder stood on a tip, so it got a wide
+  base. The model check found shimmer where two moss tufts overlapped; spacing them out wasn't enough (another pair
+  overlapped), so the tufts are now fused into one piece. Then all 21 dungeon models ok.
+- **Page fix:** the 3D page turned every single model 180 degrees, so walls showed their back to the camera
+  (probably why the dart holes once seemed to be "at the back"). Now only the 3 x 3 spike floor turns its squares.
+  Page updated at the same link: batch 5 with "Break it" (wall), "Lift the stone", and old pieces next to new ones.
+- **Owner's verdict on batch 5:** the old wall, old floor and how the cracked wall breaks into pieces: "really cool".
+  The boulder: breaking it looked bad and the green moss was confusing. **New rule:** the hidden boulder is simply one
+  of our cave boulders, made bigger, and it breaks exactly like them (6 hits, then the chunk burst). So the special
+  `secret_boulder` model and its build code are deleted. The page now shows our 4 boulder shapes and copies the
+  game's burst (20-28 chisel-cut chunks, 3 big, heavy, no bounce, shrinking away after 4-6 s). Lesson: reuse what
+  the game already has before building a new look for the same thing.
+- **Round 2, owner's notes on the Dwarf Hands page (F389, comes back from F282):** the axe still wrong; the great axe and
+  great maul are two-handed; the shield upside down, the hand should hold its grip, a couple of straps round the arm.
+  Owner's picks: both hands always except running; the left hand higher up (sledgehammer); forearm in the straps,
+  fist on the grip.
+- **Axe, found by measuring the models:** the axe's handle sits 5.5 cm off the holder's axis (the stone axe 7 cm), and
+  every handle ends AT the holder, not 10 cm below it (an old note in DwarfRig was wrong, so on most tools the handle
+  end stopped inside the fist). Now `DwarfFist` measures each tool's handle from its model. The first test was fooled
+  the same way (it measured from the holder's axis); it now uses the measured handle too.
+- **Two hands (two-bone IK in `DwarfFist`):** his short arms can't reach across his round belly (measured: the left
+  fist up to 78 cm short). Tries, in order: (1) right fist to the middle of his belly: still short; (2) toward his
+  left shoulder: both fists sank into his chest behind the beard (seen in a picture); (3) final: the weapon leans
+  across him toward the left shoulder, the right fist comes in only as far as needed, and both fists stay 22 cm in
+  front of his chest. Hurdles: setting a bone's whole pose made the left hand's size grow every frame (to millions):
+  now only bone turns are set; the right wrist's 45 degree limit tilted the weapon back away from the left hand (80
+  degrees with two hands); my reach guess forgot the fist sits 8 cm past the wrist; my first measuring script started
+  each move while the last swing was still playing. Known: in the great axe's fastest swing moment, up to 4 of 70
+  frames the left fist slips up to ~13 cm (the test allows 4); the handle may sit a little crooked in the right fist then.
+- **Shield:** the old back was made for a human arm: the strap was 26 cm from the grip, the dwarf's forearm is 13-18 cm
+  (the strap landed on his upper arm) and his forearm would have sunk 2 cm into the board. New back
+  (`builds/items_tools.py` shield_back, all 4 shields rebuilt): the grip stands 12 cm off the board, two leather loops
+  round the forearm, the old wide strap gone. The fist holds the grip, the forearm runs through both loops (under 1 cm
+  off), the face points away from him. Model check: copper, stone, silver ok (Claude also moved the grip's metal posts:
+  they shared a face with the battens, shimmer that was there before); the shell shield's front decoration still has a
+  shimmer spot from before (asked the owner).
+- Tests: `test_dwarf_fist` now 5 checks (+ two hands through the whole swing, shield on the forearm). Page "Dwarf Hands"
+  version 2.
+- **Cracked wall on the page didn't fall all the way (owner's screenshot):** the boards turned about the wall's foot
+  and stopped the moment their bottom touched the floor, so they froze half standing. Now each board tips forward on
+  its own bottom edge, drops if it was high up, and lands flat (its pegs go with it).
+- **Batch 6 (the last):** `wall_broken` (a fallen Shack wall: snapped post, top beam on the floor, board stubs, loose
+  boards), `recipe_stand` (a root wood lectern with a slanted top and a lip), `recipe_scroll` (its own model so it
+  can be taken: parchment painted by the script, two rolls on rods with knobs, a wax seal, golden glowing ink in a
+  `glow_ink` material) and `bridge_posts` (posts on stone footings with the hand ropes lashed on, stakes for the
+  stringers, the first planks; the ropes line up with `bridge_plank`). All 24 dungeon models pass the model check.
+- **Hurdles (Claude's own):** the tilted stand top left two pegs floating 1 cm off it (pegs are placed by position,
+  and my tilt helper only moved points); then the top tilted the wrong way (a flipped sign when turning game axes
+  into Blender's); then the head block poked up through the tilted boards (it now tilts with them). The scroll first
+  looked like white plastic with cyan ink that read as white: now old parchment and golden ink.
+- Page: batch 6 added. "Take the scroll" lifts it off the stand, turning, with a soft gold light that pulses;
+  "Show the whole crossing" shows posts, two bridge sections, and posts again on the far side.
+- **Owner on batch 6: "really good"**, one fix: the stand's two foot logs stood one on top of the other. The whole
+  stand is now pushed down into the bottom log (the crossing log sits sunk in it, level), the scroll spot moved to
+  0.90 m. Hurdle (Claude's own): my first edit script was written from memory and didn't match the file, so it
+  changed nothing; redone from the real lines.
+- **Owner's recipe rules (written into the decisions file, no code yet):** a dungeon always gives the same recipe(s);
+  small dungeons one, bigger ones several (one good copper recipe plus food and other small ones); all of a zone's
+  dungeons together give all its recipes, so the full copper weapons + armor set means doing every dungeon.

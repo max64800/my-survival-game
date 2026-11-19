@@ -14,6 +14,7 @@
 # Floor spikes (the bottom of the chasm and the spike pit): sharpened root wood stakes in a slab of rubbly rock, on a
 # 2 x 2 m grid square, origin bottom-centre. Parts: "rock", "stake" (bark shafts), "tip" (pale axe-cut points).
 #   trap_spikes
+# (no secret_boulder model: the hidden boulder is one of the cave's own boulders, owner Nov 19)
 import math
 import random
 import sys
