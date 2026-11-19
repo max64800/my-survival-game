@@ -401,7 +401,7 @@ func _aim_info() -> Dictionary:
 	var box_id := Storage.box_id_of(hit.collider)
 	if box_id >= 0 and auth:
 		var box := auth.storage.get_box(box_id)
-		var nm: String = {"grave": "Your grave", "builder": "Builder's Chest"}.get(box.get("kind", ""), "Chest")
+		var nm: String = {"grave": "Your grave", "builder": "Builder's Chest", "rebuild": "Rebuilding Chest"}.get(box.get("kind", ""), "Chest")
 		return {kind = "box", name = "%s · E to open" % nm, box_id = box_id}
 	if auth and auth.world:
 		var mat := auth.world.rock_material_near(hit.position - hit.normal * 0.3, 1.1)

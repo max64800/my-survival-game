@@ -57,7 +57,7 @@ func test_built_in_the_first_cave_without_monsters() -> void:
 		await tree.process_frame
 	var plan := RuinTower.load_plan()
 	check_eq(auth.builder.structure.pieces.size(), plan.pieces.size(), "every piece of the ruin was built")
-	check_eq(auth.storage.boxes.size(), 4, "its four chests are there")
+	check_eq(auth.storage.boxes.size(), 5, "its four chests and the Rebuilding Chest are there")
 	var found := false
 	for id in auth.storage.boxes:
 		if auth.storage.boxes[id].inv.count_of("watchtower_plans") > 0:
@@ -70,3 +70,64 @@ func test_built_in_the_first_cave_without_monsters() -> void:
 func test_plans_teach_the_watchtower() -> void:
 	check_eq(Items.info("watchtower_plans").get("teaches", ""), "stone_watchtower", "the plans teach the Stone Watchtower")
 	check(BlueprintMenu.ready_made_keys().has("stone_watchtower"), "the watchtower can be learned (not a starter)")
+
+
+## Rebuilding a ruin (owner, Nov 19; docs/design/ruin-rebuild-plan.md): root planks in the Rebuilding Chest rebuild
+## the tower in wood, piece by piece; broken walls and rubble go; at the end everyone knows the Wooden Watchtower and
+## gets crafting experience.
+func test_rebuild_the_ruin_in_wood() -> void:
+	await _setup()
+	var job := RuinTower.new(auth)
+	auth.add_child(job)
+	job._state = "carve"
+	for i in 600:
+		if not is_instance_valid(job):
+			break
+		await tree.process_frame
+	var box := -1
+	for id in auth.storage.boxes:
+		if auth.storage.boxes[id].kind == "rebuild":
+			box = id
+	check(box >= 0, "the ruin has a Rebuilding Chest")
+	if box < 0:
+		auth.get_parent().queue_free()
+		return
+	auth.storage.put(box, "plank_root", 5)
+	var b: Builder = auth.builder
+	check(b.sites.has(box), "planks in the chest start rebuilding")
+	check_eq(b.sites.get(box, {}).get("ruin", ""), "wooden_watchtower", "in wood")
+	var site: Dictionary = b.sites[box]
+	var already := 0
+	for p in site.plan:
+		if p.built:
+			already += 1
+	check(already > site.plan.size() / 3, "what still stands whole counts as done (%d of %d)" % [already, site.plan.size()])
+	var todo := []
+	for i in site.plan.size():
+		if not site.plan[i].built:
+			todo.append(i)
+	var need := Builder.missing_for(site.plan, todo, auth.storage.get_box(box).inv)
+	for item in need:
+		auth.storage.put(box, item, int(need[item]) + 10)
+	var ps: GameAuthority.PlayerState = auth.players[1]
+	ps.inventory.add("build_hammer", 1)
+	ps.selected_slot = ps.inventory.best_of_kind("hammer")
+	var chest: Dictionary = auth.storage.get_box(box)
+	ps.node.global_position = chest.node.global_position + Vector3(1.2, 0.2, 0.0)
+	var xp_before: int = int(ps.progress.skill_xp.get("crafting", 0)) + int(ps.progress.skill_level.get("crafting", 0)) * 100000
+	for k in 3000:
+		if not b.sites.has(box):
+			break
+		b._site_ticks += 1  # (as the game's clock does: it builds every second step)
+		b._tick_sites()
+	check(not b.sites.has(box), "the rebuilding finished (%s)" % b.site_status(box))
+	var ruin_left := 0
+	for uid in b.structure.pieces:
+		if String(b.structure.pieces[uid].piece).begins_with("ruin_"):
+			ruin_left += 1
+	check_eq(ruin_left, 0, "no broken walls left")
+	check((auth.world_state.get("blueprints", []) as Array).has("wooden_watchtower"), "everyone knows the Wooden Watchtower")
+	check(auth.world_state.ruins[str(box)].done, "the world remembers it's rebuilt")
+	var xp_after: int = int(ps.progress.skill_xp.get("crafting", 0)) + int(ps.progress.skill_level.get("crafting", 0)) * 100000
+	check(xp_after > xp_before, "crafting experience for it")
+	auth.get_parent().queue_free()

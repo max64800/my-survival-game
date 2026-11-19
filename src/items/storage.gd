@@ -6,7 +6,8 @@ extends Node
 
 const BOX_LAYER := 16  ## same layer as stations, so you can aim at them and press E
 const REACH := 4.5
-const SIZES := {"chest_small": 12, "chest_stone": 24, "chest_copper": 36, "crate_ore": 60, "grave": Inventory.EQUIP_START, "builder": 24}
+const SIZES := {"chest_small": 12, "chest_stone": 24, "chest_copper": 36, "crate_ore": 60, "grave": Inventory.EQUIP_START, "builder": 24,
+	"rebuild": 24}  ## (rebuild: the Rebuilding Chest at a ruin, owner Nov 19; docs/design/ruin-rebuild-plan.md)
 ## The Ore Crate only takes ores, stone types, clay and crystals (doc 8 storage table).
 const ORE_CRATE := ["stone", "dirt", "moss", "clay", "copper_ore", "silver_ore", "sporestone", "amberrock", "marble", "basalt", "brown_rock"]
 
@@ -122,7 +123,7 @@ func request_take_all(peer_id: int, box_id: int) -> int:
 static func accepts(kind: String, item: String) -> bool:
 	if kind == "crate_ore":
 		return item in ORE_CRATE or item.begins_with("crystal_")
-	if kind != "builder":
+	if kind != "builder" and kind != "rebuild":
 		return true
 	if _piece_extras().has(item):
 		return true  # fiber for rugs and banners, crystals for sconces...
@@ -172,6 +173,8 @@ func _changed(box_id: int) -> void:
 		_ev_remove_box.rpc(box_id)  # an emptied grave crumbles away
 	else:
 		_ev_box.rpc(box_id, box.inv.to_data())
+	if box.kind == "rebuild" and auth and auth.builder:
+		auth.builder.ruin_chest_changed(box_id)  # the first planks or cut stone start the rebuilding
 
 
 func _far(ps: GameAuthority.PlayerState, box: Dictionary) -> bool:
@@ -242,9 +245,9 @@ func _build_look(body: StaticBody3D, kind: String) -> void:
 	cs.position = Vector3.UP * size.y * 0.5
 	body.add_child(cs)
 	var color: Color = {"chest_small": Color(0.55, 0.38, 0.22), "chest_stone": Color(0.55, 0.55, 0.55),
-		"builder": Color(0.3, 0.45, 0.7), "grave": Color(0.45, 0.43, 0.4)}.get(kind, Color.GRAY)
-	# A loot barrel: its own model whose lid lifts and slides aside (owner, Nov 19; ChestOpen).
-	var model := Look.forged("stations", "barrel_box" if kind == "barrel" else kind)  # a real model from the asset forge, if made
+		"builder": Color(0.3, 0.45, 0.7), "rebuild": Color(0.45, 0.35, 0.25), "grave": Color(0.45, 0.43, 0.4)}.get(kind, Color.GRAY)
+	# A loot barrel: its own model whose lid lifts and slides aside (owner, Nov 19; ChestOpen). The Rebuilding Chest looks like a Builder's.
+	var model := Look.forged("stations", "barrel_box" if kind == "barrel" else ("builder" if kind == "rebuild" else kind))  # a real model from the asset forge, if made
 	if kind == "barrel":
 		body.set_meta("slide_lid", true)
 	if model:
@@ -301,7 +304,7 @@ func _build_look(body: StaticBody3D, kind: String) -> void:
 		lid.material_override = _mat(color.darkened(0.3))
 		body.add_child(lid)
 	var label := Label3D.new()
-	label.text = {"builder": "Builder's Chest", "grave": "Grave"}.get(kind, Items.display_name(kind))
+	label.text = {"builder": "Builder's Chest", "rebuild": "Rebuilding Chest", "grave": "Grave"}.get(kind, Items.display_name(kind))
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	label.position = Vector3.UP * 1.3
 	label.pixel_size = 0.004

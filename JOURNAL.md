@@ -4154,3 +4154,17 @@ the body."
   (charcoal is lit; now near-black and fully rough); the barrel test failed because frames run too fast in tests
   (waits real time now). NaN hunt (F363): not reproduced (deaths in odd poses, trail, spit, walking his path in his
   world); added NanWatch, a lookout that names the first broken thing in the log.
+## November 19, 2026 (PC, cave Claude): rebuilding ruins
+
+- Owner's picks (asked first): pieces come back one by one; wood takes planks; reward = blueprint + experience;
+  rebuilding clears rubble. Plan: docs/design/ruin-rebuild-plan.md.
+- Built on the existing build sites (a blueprint's Builder's Chest already builds piece by piece): the watchtower ruin
+  gets a Rebuilding Chest; the first planks or cut stone make a site of the whole Stone/Wooden Watchtower over the ruin.
+  New: the Wooden Watchtower blueprint (every piece in planks, battlements -> wooden railings), whole ruin pieces count
+  as built, broken walls taken down by place, rubble cleared floor by floor, then blueprint + 300 crafting XP.
+- Built and tested in a clean copy of GitHub: this folder's copies of the ruin, chest and building files hold other
+  sessions' unsaved work (e.g. the Stone Outpost blueprint isn't on GitHub yet).
+- Hurdles: worn walls are lower than whole ones, so the "in the way" check missed them (12 left standing); now taken
+  down by place too, and anything broken left is cleared at the end. Test slips: skill XP is kept by name, and the
+  site clock had to be advanced by hand.
+
