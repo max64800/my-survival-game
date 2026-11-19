@@ -32,11 +32,11 @@ func build(maker: CaveMaker, world: World, blocking := false) -> void:
 	if world:
 		world.changed.connect(_on_rock_changed)
 	if blocking:
-		_finish(plan(maker))
+		_finish(cached_plan(maker))
 		return
 	_thread = Thread.new()
 	_thread.start(func() -> void:
-		var items := plan(maker)
+		var items := cached_plan(maker)
 		_finish.call_deferred(items))
 
 
@@ -95,6 +95,11 @@ func _finish(items: Array) -> void:
 
 
 ## Every strand: [Transform3D (origin = its top, -Y down, Y scale = its length), colour]. Same cave, same curtains.
+## plan(), read from the saved file when this cave was planned before (PlanCache: faster second load).
+static func cached_plan(maker: CaveMaker) -> Array:
+	return PlanCache.get_or_make("curtains", maker, "res://src/art/root_curtains.gd", func() -> Array: return plan(maker))
+
+
 static func plan(maker: CaveMaker) -> Array:
 	var out := []
 	var rng := RandomNumberGenerator.new()
@@ -140,6 +145,13 @@ static func plan(maker: CaveMaker) -> Array:
 				out.append([Transform3D(basis, top + Vector3.UP * 0.05), tint])  # (its top tucked into the rock)
 	_plan_tunnels(maker, rng, out)
 	_plan_under_bridges(maker, rng, out)
+	for it in out:  # a free end that would touch the rock is shortened until it hangs free (kept, so ids stay the same)
+		var xf: Transform3D = it[0]
+		for k in 8:
+			if maker.sdf_at(xf.origin - xf.basis.y) > 0.08 or xf.basis.y.length() < 0.35:
+				break
+			xf.basis.y *= 0.85
+		it[0] = xf
 	return out
 
 

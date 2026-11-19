@@ -32,11 +32,11 @@ var _thread: Thread
 ## Planned on a helper thread (~3.5 s), made when ready. `blocking` = all at once (tests).
 func build(maker: CaveMaker, avoid: Callable = Callable(), blocking := false) -> void:
 	if blocking:
-		_finish(plan(maker, avoid))
+		_finish(cached_plan(maker, avoid))
 		return
 	_thread = Thread.new()
 	_thread.start(func() -> void:
-		var list := plan(maker, avoid)
+		var list := cached_plan(maker, avoid)
 		_finish.call_deferred(list))
 
 
@@ -59,6 +59,13 @@ func _exit_tree() -> void:
 
 
 ## [{pos, model, spin, scale}] for this cave (same seed, same rocks). `avoid(p, r) -> bool` = more things to keep clear of.
+## plan(), read from the saved file when this cave was planned before (PlanCache: faster second load).
+static func cached_plan(maker: CaveMaker, avoid: Callable = Callable()) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	out.assign(PlanCache.get_or_make("boulders", maker, "res://src/art/boulders.gd", func() -> Array: return plan(maker, avoid)))
+	return out
+
+
 static func plan(maker: CaveMaker, avoid: Callable = Callable()) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	var rng := RandomNumberGenerator.new()

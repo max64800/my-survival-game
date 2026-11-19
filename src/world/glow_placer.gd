@@ -55,7 +55,7 @@ static var _placed := {}  ## "seed:layout" -> spots (copied out, because a GlowF
 static func place(maker: CaveMaker) -> Array[Dictionary]:
 	var key := "%d:%d" % [maker.seed, maker.made_layout]
 	if not _placed.has(key):
-		_placed[key] = _place(maker)
+		_placed[key] = PlanCache.get_or_make("glow", maker, "res://src/world/glow_placer.gd", func() -> Array: return _place(maker))
 	var out: Array[Dictionary] = []
 	for s in _placed[key]:
 		out.append(s.duplicate())

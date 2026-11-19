@@ -68,7 +68,7 @@ func build(maker: CaveMaker, spots: Array[Dictionary], world: World = null, back
 	if world:
 		world.changed.connect(_on_rock_changed)
 	if not background:
-		_make_all(plan(maker, spots))
+		_make_all(cached_plan(maker, spots))
 		return
 	var key := "%d:%d" % [maker.seed, maker.made_layout]
 	if prefetched.has(key):  # already planned while the loading screen showed
@@ -76,7 +76,7 @@ func build(maker: CaveMaker, spots: Array[Dictionary], world: World = null, back
 		prefetched.erase(key)
 		_task = WorkerThreadPool.add_task(func() -> void: _planned = ready, false, "cave life")
 		return
-	_task = WorkerThreadPool.add_task(func() -> void: _planned = plan(maker, spots), false, "cave life")
+	_task = WorkerThreadPool.add_task(func() -> void: _planned = cached_plan(maker, spots), false, "cave life")
 
 
 func is_built() -> bool:
@@ -210,6 +210,13 @@ func count() -> int:
 
 
 ## Where everything grows: an Array of {kind, xform, color, custom}. The same seed and spots give the same list.
+## plan(), read from the saved file when this cave was planned before (PlanCache: faster second load).
+static func cached_plan(maker: CaveMaker, spots: Array[Dictionary]) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	out.assign(PlanCache.get_or_make("cavelife", maker, "res://src/art/cave_life.gd", func() -> Array: return plan(maker, spots)))
+	return out
+
+
 static func plan(maker: CaveMaker, spots: Array[Dictionary]) -> Array[Dictionary]:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = maker.seed + 5151

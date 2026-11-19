@@ -74,11 +74,11 @@ var _built := false
 func build(maker: CaveMaker, world: World, blocking := false) -> void:
 	world.changed.connect(_on_rock_changed)  # from the start: digs while it's still planning are done when it's built
 	if blocking:
-		_finish(_plan(maker), maker, world)
+		_finish(_cached_plan(maker), maker, world)
 		return
 	_plan_thread = Thread.new()
 	_plan_thread.start(func() -> void:
-		var plan := _plan(maker)
+		var plan := _cached_plan(maker)
 		_finish.call_deferred(plan, maker, world))
 
 
@@ -89,6 +89,20 @@ func is_built() -> bool:
 func _exit_tree() -> void:
 	if _plan_thread and _plan_thread.is_started():
 		_plan_thread.wait_to_finish()
+
+
+## _plan(), read from the saved file when this cave was planned before (PlanCache: faster second load). The dice's
+## state after planning is saved too (the hanging roots roll on from it).
+func _cached_plan(maker: CaveMaker) -> Dictionary:
+	var saved: Dictionary = PlanCache.get_or_make("clutter", maker, "res://src/art/clutter.gd", func() -> Dictionary:
+		var p := _plan(maker)
+		var rng: RandomNumberGenerator = p.rng
+		return {picks = p.picks, drips = _drips, rng_seed = rng.seed, rng_state = rng.state})
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(saved.rng_seed)
+	rng.state = int(saved.rng_state)
+	_drips = saved.drips
+	return {picks = saved.picks, rng = rng}
 
 
 ## (helper thread) Where every pebble, rock and dripstone goes. Touches no nodes.

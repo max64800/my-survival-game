@@ -4075,3 +4075,16 @@ the body."
   yet, so the merged copy didn't load until they were added. (2) `get_meta(name, null)` still errors in Godot 4.7
   when the meta is missing (a null default counts as "no default"): uses has_meta first. (3) The copper chest's body is
   a solid block, so open it shows a flat top, not a hollow inside (asked the owner).
+
+## November 19, 2026 (PC, cave Claude): faster second load
+
+- Owner's list for today: all the speed work, more and varied mushroom grass (first cave only), textured moss on the
+  trees, little waterfalls from cracks, and rebuilding ruins (in wood or their own stone) to learn them as blueprints.
+- PlanCache (src/world/plan_cache.gd): each cave plan is saved once and read back; the file name has the seed, cave
+  version and a hash of the planning code, so new code plans fresh and old files are deleted. Measured on the owner's
+  world: 49 s → 0.1 s for crystals, plants, curtains, boulders, pebbles.
+- While testing, another session pulled GitHub into the shared folder; putting its unsaved work back left both versions
+  side by side in 9 files (cave shape, rules, dwarf...). Left for that session; worked and tested in a clean copy.
+- A curtain test failed on GitHub's own version: one strand's tip 3 cm into the floor after a cave-shape change; strands
+  whose tip touches rock are now shortened (not removed, so saved strand numbers stay right).
+

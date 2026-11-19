@@ -45,7 +45,8 @@ func build(maker: CaveMaker, world: World, avoid: Callable = Callable()) -> void
 		trees = avoid.call()
 	_thread = Thread.new()
 	_thread.start(func() -> void:
-		var spots := plan(maker, trees)
+		var spots: Array[Dictionary] = []
+		spots.assign(PlanCache.get_or_make("mushgrass", maker, "res://src/art/mushroom_grass.gd", func() -> Array: return plan(maker, trees)))
 		_finish.call_deferred(spots))
 
 

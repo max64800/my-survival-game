@@ -275,7 +275,7 @@ func _prefetch(sd: int, layout: int) -> void:
 		World._planned[key] = CaveMaker.new(sd)
 	var maker: CaveMaker = World._planned[key]
 	var spots := GlowPlacer.place(maker)
-	CaveLife.prefetched[key] = CaveLife.plan(maker, spots)
+	CaveLife.prefetched[key] = CaveLife.cached_plan(maker, spots)
 
 
 ## A brand-new world: its own save file and name (F87).
