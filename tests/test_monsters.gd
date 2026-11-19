@@ -730,6 +730,42 @@ func test_dead_creature_turns_to_stone_and_is_mined() -> void:
 	_teardown()
 
 
+## Owner (Nov 19): Claude 1's Cave Spider is a Zone 1 pest: its own model with 8 hinged legs that walk in two tripods,
+## eyes that flash; it pounces; it dies into a ragdoll and turns to stone (2 pickaxe hits).
+func test_cave_spider_walks_pounces_and_turns_to_stone() -> void:
+	await _setup()
+	check("cave_spider" in Monsters.SPAWNS.mossy.big and "cave_spider" in Monsters.SPAWNS.mossy.small, "spiders spawn in Zone 1 (Mossy Hollows)")
+	check(Monsters.LIST.cave_spider.attacks.any(func(a: Dictionary) -> bool: return a.get("pounce", false) and a.get("lunge", false)), "it has a pounce")
+	var m := _spawn("cave_spider", Vector3(3.0, 0, 0))
+	for i in 5:
+		await tree.physics_frame
+	check(m.model.has_meta("forged_root"), "it wears the hand-built spider model")
+	var legs: Array = m.model.get_meta("legs", [])
+	check_eq(legs.size(), 8, "8 legs")
+	var group := {}
+	for l in legs:
+		group[String((l[0] as Node).name)] = l[2]
+	check(group.get("leg_l0") == group.get("leg_r1") and group.get("leg_l0") == group.get("leg_l2") and group.get("leg_l0") == group.get("leg_r3")
+		and group.get("leg_r0") == group.get("leg_l1") and group.get("leg_r0") == group.get("leg_r2") and group.get("leg_r0") == group.get("leg_l3")
+		and group.get("leg_l0") != group.get("leg_r0"), "tripod walk: l0 r1 l2 r3 step together, then r0 l1 r2 l3")
+	check(not m.model.has_meta("tell_mat"), "its eyes flash before a bite (an \"eye\" material was found)")
+	var before: Vector3 = (legs[0][0] as Node3D).rotation
+	MonsterModel.animate(m.model, 4.0, 1.0, 0.37)
+	check((legs[0][0] as Node3D).rotation.distance_to(before) > 0.01, "running moves its legs")
+	# kill it: ragdoll, then stone, 2 hits
+	auth.monsters._kill(m, 1)
+	check(m.has_meta("corpse"), "it falls into a ragdoll")
+	var id: int = auth.monsters.statues.keys()[0]
+	check_eq(auth.monsters.statues[id].needed, 2, "its statue takes 2 pickaxe hits")
+	for i in 420:
+		await tree.physics_frame
+	var body: Node3D = Statue.nodes.get(id)
+	check(is_instance_valid(body) and body.has_meta("statue"), "its body turned to stone")
+	if is_instance_valid(body):
+		check(body.find_children("*", "MeshInstance3D", true, false).all(func(mi: MeshInstance3D) -> bool: return mi.has_meta("stone")), "stone covers every part, legs too")
+	_teardown()
+
+
 ## Owner (Nov 18): "for the rest of the creatures": an older creature made of simple shapes falls limp too (one solid
 ## piece), lands on the floor and turns to stone.
 func test_simple_creature_falls_and_turns_to_stone() -> void:

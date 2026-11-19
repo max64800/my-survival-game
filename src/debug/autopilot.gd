@@ -220,7 +220,8 @@ func _run() -> void:
 	var mm: MonsterManager = auth.monsters
 	var ahead := dwarf.global_position - Basis(Vector3.UP, dwarf._yaw).z * 3.5
 	# The owner's first three (hand-built models): a snail pack leader, a rock beetle, a great rock beetle, a snail.
-	for k in [["rock_snail", Vector3(0, 0, 0), true], ["rock_beetle", Vector3(1.6, 0, 0.6), false], ["great_rock_beetle", Vector3(-1.9, 0, 0.8), false], ["rock_snail", Vector3(0.5, 0, -2.4), false]]:
+	for k in [["rock_snail", Vector3(0, 0, 0), true], ["rock_beetle", Vector3(1.6, 0, 0.6), false], ["great_rock_beetle", Vector3(-1.9, 0, 0.8), false], ["rock_snail", Vector3(0.5, 0, -2.4), false],
+			["cave_spider", Vector3(-0.6, 0, -0.9), false], ["cave_spider", Vector3(1.0, 0, -1.4), false]]:  # (+ two Cave Spiders, Nov 19)
 		var at: Vector3 = _main.world.maker.find_floor(ahead.x + k[1].x, ahead.z + k[1].z, dwarf.global_position.y + 2.0)
 		mm._ev_spawn(mm._next_uid, k[0], at + Vector3.UP * 0.3, k[2], 99)
 	dwarf._pitch = -0.2

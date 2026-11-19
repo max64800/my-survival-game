@@ -693,6 +693,14 @@ func show_tell(seconds: float, attack_name: String = "", aim: Node3D = null) -> 
 	t.tween_property(model, "scale", base * Vector3(1.0, 0.85, 1.15), seconds * 0.8).set_trans(Tween.TRANS_SINE)
 	t.tween_property(model, "scale", base * Vector3(1.0, 1.1, 0.9), 0.08)
 	t.tween_property(model, "scale", base, 0.2)
+	if atk.get("pounce", false) and model.has_meta("forged_root"):
+		# A pounce (the Cave Spider): it crouches, then leaps up in an arc while it rushes in, landing as the bite lands.
+		var body: Node3D = model.get_meta("forged_root")
+		var y0 := 0.0
+		var leap := create_tween()
+		leap.tween_interval(seconds * 0.4)
+		leap.tween_property(body, "position:y", y0 + 0.45, seconds * 0.3).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		leap.tween_property(body, "position:y", y0, seconds * 0.3).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 
 
 ## Only looks: a gob of spit flies from the snail's mouth to the target in a low arc and splats.

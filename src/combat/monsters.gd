@@ -44,6 +44,15 @@ const LIST := {
 		attacks = [{name = "Horn Gore", warn_sound = "beetle_hiss", tell = 0.9, damage = 22, type = "pierce", reach = 2.4, parry = "any"},
 			{name = "Charge", warn_sound = "beetle_rumble", tell = 1.3, damage = 30, type = "blunt", reach = 12.0, parry = "shield", knockdown = true, lunge = true}],
 		drops = [["bug_meat", 4, 1.0], ["glow_gland", 2, 0.9]]},
+	# Cave Spider (owner, Nov 19): a Zone 1 pest, Claude 1's model (cave_spider_v0..3.glb), in as it is for the owner to
+	# test. Small groups; it scuttles in, bites, and pounces from a few metres (pounce = a leap during the lunge),
+	# then skitters back (hit_and_run). Planned later: webs. One heavy hit or two light ones kill it.
+	"cave_spider": {name = "Cave Spider", turns_in_place = true, turn_speed = 4.0, ragdoll = {hop = 0.5, spin = 2.0}, statue_hits = 2, size = 1.0, hp = 24, armor = 0, stun = 30, slash = 1.25, blunt = 1.0, pierce = 1.0,
+		fire = 0.0, frost = 0.0, poison = 0.0, walk = 2.2, run = 5.5, pack = [3, 5], xp = 6, leader = "Spider Broodmother", leader_chance = 0.15,
+		color = Color(0.25, 0.22, 0.2), shape = "cave_spider", hit_and_run = true, retreat = 4.0, recover = 1.2,
+		attacks = [{name = "Bite", warn_sound = "beetle_hiss", tell = 0.5, damage = 7, type = "pierce", reach = 1.5, parry = "any"},
+			{name = "Pounce", warn_sound = "beetle_hiss", tell = 0.8, damage = 11, type = "pierce", reach = 5.0, parry = "any", lunge = true, pounce = true}],
+		drops = [["bug_meat", 1, 1.0], ["bug_meat", 1, 0.4]]},
 	# ---- Hidden for now (owner's choice, Nov 14): still here for bosses and for later, but
 	# they don't spawn on their own (see SPAWNS and ANIMALS below).
 	"mossnipper": {name = "Mossnipper", size = 0.5, hp = 30, armor = 0, stun = 30, slash = 1.25, blunt = 1.0, pierce = 1.0,
@@ -259,7 +268,8 @@ const SPAWNS := {
 	# Owner's choice (Nov 14): only the first three for now. Snails + small beetles in Mossy Hollows,
 	# bats roost in caverns everywhere, big beetles in the Fungal Jungle. (Old lists in git history.)
 	# Bats aren't here: every cave has its own roost of them (MonsterManager._spawn_roost, owner Nov 19).
-	"mossy": {big = ["rock_snail", "rock_snail", "rock_beetle"], small = ["rock_snail", "rock_beetle"]},
+	# Cave spiders (owner, Nov 19): a Zone 1 pest, in big caverns and small rooms.
+	"mossy": {big = ["rock_snail", "rock_snail", "rock_beetle", "cave_spider"], small = ["rock_snail", "rock_beetle", "cave_spider"]},
 	"fungal": {big = ["great_rock_beetle"], small = ["great_rock_beetle"]},
 }
 
