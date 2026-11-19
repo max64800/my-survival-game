@@ -258,6 +258,11 @@ func swing_stamina_mult(skill: String = "mining") -> float:
 	return 1.0 - skill_level.get(skill, 0) * 0.002
 
 
+## Lantern Bearer (owner said yes, Nov 19): your lantern reaches 25% further per rank.
+func lantern_range_mult() -> float:
+	return 1.0 + perk_rank("lantern_bearer") * 0.25
+
+
 func run_speed_mult() -> float:
 	return 1.0 + skill_level.running * 0.002
 

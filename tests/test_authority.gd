@@ -152,6 +152,22 @@ func test_pickup_puts_items_in_bag() -> void:
 	_teardown()
 
 
+## Lantern Bearer perk (N3, owner said yes): each rank makes the lantern reach 25% further.
+func test_lantern_bearer_reaches_further() -> void:
+	await _setup(42)
+	check_near(ps.progress.lantern_range_mult(), 1.0, 0.001, "no perk: normal reach")
+	ps.progress.perks["lantern_bearer"] = 2
+	check_near(ps.progress.lantern_range_mult(), 1.5, 0.001, "rank 2: 50% further")
+	var lamp := Lantern.new()
+	lamp.peer_id = 1
+	tree.root.add_child(lamp)
+	for i in 120:
+		await tree.process_frame
+	check(lamp.light.omni_range > Lantern.FULL_RANGE * 1.3, "the light really reaches further (%.1f m)" % lamp.light.omni_range)
+	lamp.queue_free()
+	_teardown()
+
+
 func test_lantern_refill_uses_a_crystal() -> void:
 	await _setup(42)
 	check(not auth.request_refill(1), "full lantern can't be refilled")

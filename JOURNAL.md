@@ -4101,3 +4101,6 @@ the body."
   dwarf.gd, `stab()` in dwarf_rig.gd); removed the copies. Now 0 script errors and the start tests pass.
 - (Nov 19) Owner: the chest opening sounded like a dirt block breaking (it used the pickup/clink sounds). Now real
   recordings from Kenney's RPG Audio (CC0): a wooden door creak to open, a door thump to close (F355).
+- (Nov 19) Owner: the chest opening sound was too long ("like a door"): cut to its first part (0.4 s, the latch and
+  first creak, short fade), was 1.4 s. Owner said yes to N3: the Lantern Bearer perk now really makes your lantern
+  reach 25% further per rank (Progression.lantern_range_mult, read by the lantern; test added).

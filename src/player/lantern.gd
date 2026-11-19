@@ -115,7 +115,7 @@ func _process(delta: float) -> void:
 		# Hang straight down from the hand, whatever the hand is doing (it swings, it doesn't tilt).
 		var yaw := global_basis.z
 		global_basis = Basis(Vector3.UP, atan2(yaw.x, yaw.z))
-	var full_range := 16.0 if back else FULL_RANGE
+	var full_range := (16.0 if back else FULL_RANGE) * (ps.progress.lantern_range_mult() if ps else 1.0)  # (Lantern Bearer perk)
 	var t := 1.0 if fuel > 0.0 else 0.0
 	if fuel > 0.0 and fuel < LOW_FUEL:
 		_flicker += delta * 14.0
