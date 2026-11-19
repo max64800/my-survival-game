@@ -1,5 +1,5 @@
 {
- "status": "Nov 20: zone 1 foods are IN THE GAME (effects, healing, 2 foods + 1 drink, hearts on cards). Still to build: the 3 kitchen levels (pot on the fire, Stone Oven); until then stews cook at the Cooking Pot as before.",
+ "status": "Nov 20: zone 1 foods and the 3 kitchen levels are IN THE GAME. The Stone Oven uses the Charcoal Kiln's model and icon until its own model is made (PC).",
  "rules": [
   "Only foods you can make in Zone 1 (Mossy Hollows). Fungal Jungle foods come later with that zone.",
   "At the start you can only cook one-ingredient meals: Cooked Snail, Glowcap Skewer, Roasted Bug, Seared Bat, and Bellcap Juice. Every other recipe is learned from Cook's Pages and runes found at special places (ruins, camps, shrines).",
@@ -34,7 +34,7 @@
    "at": "campfire",
    "level": 3,
    "name": "Campfire level 3",
-   "needs": "the pot on the fire and a Stone Oven within 10 m (new, needs a model)",
+   "needs": "the pot on the fire and a Stone Oven within 10 m (stone 20, clay 10, 2 planks at the Workbench)",
    "minutes": 35
   }
  ],

@@ -132,7 +132,8 @@ func test_dwarf_makes_the_in_between_items_first() -> void:
 	bag.add("bug_meat", 2)
 	bag.add("root_tuber", 2)
 	bag.add("hollowcap", 1)
-	check_eq(Crafting.plan(bag, "dish_miners_pie", "cooking_pot", any), [], "raw bug meat: roast it at a campfire first (same station only)")
+	check_eq(Crafting.plan(bag, "dish_miners_pie", "campfire", any), ["dish_roasted_bug", "dish_roasted_bug", "dish_miners_pie"],
+		"the kitchen is one station now: raw bug meat gets roasted first, then the pie")
 
 
 func test_helpers_link_to_stations_within_10_m() -> void:
@@ -154,3 +155,15 @@ func _fake(k: String, at: Vector3) -> _FakeStation:
 	f.kind = k
 	f.global_position = at
 	return f
+
+
+
+func test_kitchen_levels() -> void:
+	check_eq(Recipes.get_recipe("dish_snail_stew").station, "campfire", "stews cook at the campfire")
+	check_eq(int(Recipes.get_recipe("dish_snail_stew").get("level", 1)), 2, "with a pot on it (level 2)")
+	check_eq(int(Recipes.get_recipe("dish_miners_pie").get("level", 1)), 3, "the best meals need the Stone Oven (level 3)")
+	check_eq(Station.helps_kind("cooking_pot"), "campfire", "the pot helps the campfire")
+	var fire := _fake("campfire", Vector3(2, 0, 0))
+	check_eq(Station.on_fire_spot("cooking_pot", Vector3(2.5, 0, 0), [fire]), Vector3(2, Station.POT_HEIGHT, 0), "a pot aimed near a fire sits on top of it")
+	check_eq(Station.on_fire_spot("cooking_pot", Vector3(6, 0, 0), [fire]), Vector3.INF, "far from a fire: placed normally")
+	check_eq(Station.on_fire_spot("cooking_pot", Vector3(2.5, 0, 0), [fire, _fake("cooking_pot", Vector3(2, 0.35, 0))]), Vector3.INF, "one pot per fire")

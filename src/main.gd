@@ -887,6 +887,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			else:
 				hud.show_toast("Still empty. It fills one bucket every few minutes." if st.under_drip else "No drips here! Place it under a dripping stalactite (look for falling drops).", 4.0)
 			return
+		if st and st.kind == "cooking_pot":  # the pot is part of the kitchen: cook at the fire under it
+			var fire := Station.fire_under(st, authority.stations.values())
+			if fire == null:
+				hud.show_toast("Put the Cooking Pot on a campfire to cook stews.", 3.0)
+				return
+			st = fire
 		if st:
 			hud.open_station(st)
 			Controls.set_captured(false)

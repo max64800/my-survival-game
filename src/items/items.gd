@@ -111,6 +111,7 @@ const DATA := {
 	"smelter": {name = "Smelter", stack = 1, color = Color(0.7, 0.4, 0.3), short = "Sm", kind = "station"},
 	"kiln": {name = "Charcoal Kiln", stack = 1, color = Color(0.62, 0.42, 0.32), short = "Ki", kind = "station"},
 	"anvil": {name = "Anvil", stack = 1, color = Color(0.35, 0.35, 0.38), short = "An", kind = "station"},
+	"stone_oven": {name = "Stone Oven", stack = 1, color = Color(0.6, 0.45, 0.38), short = "SO", kind = "station"},  ## kitchen level 3 (owner, Nov 20)
 	"cooking_pot": {name = "Cooking Pot", stack = 1, color = Color(0.85, 0.5, 0.3), short = "CP", kind = "station"},
 	"tanning_rack": {name = "Tanning Rack", stack = 1, color = Color(0.6, 0.45, 0.3), short = "TR", kind = "station"},
 	"masonry_table": {name = "Mason's Table", stack = 1, color = Color(0.6, 0.6, 0.6), short = "MT", kind = "station"},

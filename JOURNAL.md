@@ -5541,3 +5541,12 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   types; a wrapping Label clipped under the gold card border (fixed with more padding and self-sizing text).
   test_eat_from_hotbar expected the old +20% stew; the food plan made it +15% (test updated). The 4 Jolt physics
   failures in test_authority are unchanged (cave world, not this work). No zoom/drag in the game tree yet.
+
+## 2026-11-20 (Mac) — The kitchen: pot on the fire, Stone Oven
+- Owner: place the Cooking Pot on top of the fire; level 3 = Stone Oven (agreed). Built: the campfire is the cooking
+  station (all 17 pot recipes moved to it: stews/drinks level 2, Miner's Pie + Old Hearth Stew level 3). A pot aimed
+  at a campfire snaps on top (one per fire; `Station.on_fire_spot`), counts only when on the fire (`EXTRA_REACH`), and
+  E on the pot opens the fire. New Stone Oven (stone 20, clay 10, 2 planks, Workbench) within 10 m = level 3.
+- Bonus: one station means auto-crafting now roasts the bug meat for a Miner's Pie by itself (the owner's example).
+- Shortcut: the Stone Oven borrows the Charcoal Kiln's model and icon until its real model is built on the PC.
+  Old saves: a pot away from a fire no longer cooks. Tests: kitchen levels, pot placement, cooking at the fire.

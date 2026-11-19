@@ -824,3 +824,19 @@ func test_crafting_makes_missing_planks_first() -> void:
 	check_eq(ps.inventory.count_of("tanning_rack"), 1, "the rack is made")
 	check_eq(ps.inventory.count_of("plank_root"), planks_before, "all 6 new planks went into it")
 	_teardown()
+
+
+func test_pot_on_the_fire_makes_a_kitchen() -> void:
+	await _setup(42)
+	var at := player.global_position + Vector3(1.5, 0, 0)
+	auth._ev_place_station(8, "campfire", at, 0.0)
+	var fire: Station = auth.stations[8]
+	check_eq(fire.level(), 1, "a bare campfire: level 1")
+	auth._ev_place_station(9, "cooking_pot", at + Vector3.UP * Station.POT_HEIGHT, 0.0)
+	check_eq(fire.level(), 2, "a Cooking Pot on it: level 2")
+	auth.world_state["learned"] = ["dish_snail_stew"]
+	ps.inventory.add("snail_meat", 2)
+	ps.inventory.add("hollowcap", 2)
+	check(auth.request_craft(1, "dish_snail_stew", 8), "a stew cooks at the fire with the pot")
+	check(not auth.request_craft(1, "dish_miners_pie", 8), "Miner's Pie still needs the Stone Oven (level 3)")
+	_teardown()

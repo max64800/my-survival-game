@@ -1591,10 +1591,14 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 				var out := Vector3(aim_normal.x, 0.0, aim_normal.z).normalized()
 				spot = wall_spot(id, aim_point, out)
 				yaw = atan2(out.x, out.z)
-			for st in stations.values():
-				if st.global_position.distance_to(aim_point) < 1.5:
-					return ""  # too close to another station
-			if Station.in_rock(id, spot, yaw, world):
+			var on_fire := Station.on_fire_spot(id, aim_point, stations.values())  # a pot goes on top of a campfire
+			if on_fire.is_finite():
+				spot = on_fire
+			else:
+				for st in stations.values():
+					if st.global_position.distance_to(aim_point) < 1.5:
+						return ""  # too close to another station
+			if not on_fire.is_finite() and Station.in_rock(id, spot, yaw, world):
 				return ""  # it would stand in the wall (owner, Nov 17: the ghost shows red)
 			if not ps.inventory.remove(id, 1):
 				return ""
@@ -2022,7 +2026,7 @@ func request_craft(peer_id: int, recipe_id: String, station_id: int = 0) -> bool
 		var left := ps.inventory.add(back, 1)
 		if left > 0:
 			spawn_drop(back, left, _chest(ps))
-	var skill := "cooking" if r.station in ["campfire", "cooking_pot"] else "crafting"
+	var skill := "cooking" if r.station == "campfire" else "crafting"
 	if peer_id == local_peer_id():
 		Sfx.ui("craft", 0.0)
 	var xp := 10 if Items.stack_size(r.output) == 1 else (5 if skill == "cooking" else 1)

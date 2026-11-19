@@ -42,9 +42,34 @@ const EXTRAS := {
 	"workbench": ["chopping_block", "tool_rack", "carpenters_vise"],  # level 2, 3 (both copper-free), 4 (copper)
 	"masonry_table": ["chisel_rack", "stone_saw"],
 	"anvil": ["bellows", "grindstone"],
+	"campfire": ["cooking_pot", "stone_oven"],  # the kitchen (owner, Nov 20): pot on the fire = 2, Stone Oven near = 3
 }
+## Helpers that must stand right on the station instead of anywhere within EXTRA_RANGE: the pot sits on the fire.
+const EXTRA_REACH := {"cooking_pot": 1.2}
+const POT_HEIGHT := 0.35  ## how far above the campfire a pot on it sits
 const EXTRA_RANGE := 10.0
 var _label_timer := 0.0
+
+
+## A Cooking Pot aimed at (or next to) a campfire goes on top of it. Returns where, or INF (not a pot / no free fire).
+static func on_fire_spot(item: String, point: Vector3, stations: Array) -> Vector3:
+	if item != "cooking_pot":
+		return Vector3.INF
+	for st in stations:
+		if st.kind == "campfire" and Vector2(st.global_position.x - point.x, st.global_position.z - point.z).length() < 1.6:
+			for other in stations:
+				if other.kind == "cooking_pot" and other.global_position.distance_to(st.global_position) < 1.2:
+					return Vector3.INF  # this fire already has a pot
+			return st.global_position + Vector3.UP * POT_HEIGHT
+	return Vector3.INF
+
+
+## The campfire a Cooking Pot sits on (null if it isn't on one).
+static func fire_under(pot: Node3D, stations: Array) -> Station:
+	for st in stations:
+		if st.kind == "campfire" and st.global_position.distance_to(pot.global_position) < 1.2:
+			return st
+	return null
 
 
 ## Which station a helper counts for ("" = it isn't a helper). "bellows" -> "anvil".
@@ -83,7 +108,7 @@ func _extras_near() -> Dictionary:
 	if auth == null or not EXTRAS.has(kind):
 		return found
 	for st in auth.stations.values():
-		if st.kind in EXTRAS[kind] and (st as Station).global_position.distance_to(global_position) <= EXTRA_RANGE:
+		if st.kind in EXTRAS[kind] and (st as Station).global_position.distance_to(global_position) <= EXTRA_REACH.get(st.kind, EXTRA_RANGE):
 			found[st.kind] = true
 	return found
 
@@ -265,6 +290,7 @@ static func _base_size(p_kind: String) -> Vector3:
 		"kiln": return Vector3(1.3, 1.3, 1.3)
 		"anvil": return Vector3(0.9, 0.8, 0.5)
 		"cooking_pot": return Vector3(0.9, 0.7, 0.9)
+		"stone_oven": return Vector3(1.4, 1.5, 1.2)
 		"bed": return Vector3(1.0, 0.5, 2.0)
 		"rune_slab": return Vector3(1.6, 1.8, 0.4)
 		"twin_smelter": return Vector3(2.0, 1.6, 1.2)
@@ -303,7 +329,8 @@ func _build_look() -> void:
 	var c := Items.color(kind)
 	var sz := _size()
 	# A real 3D model from the asset forge, when one exists (else the simple shapes below).
-	var model := Look.forged("stations", kind)
+	# shortcut: the Stone Oven borrows the Charcoal Kiln's model until its own is built (PC, Blender).
+	var model := Look.forged("stations", "kiln" if kind == "stone_oven" else kind)
 	if model:
 		model.rotation.y = PI  # forged models face +Z; stations face -Z
 		model.scale = Vector3.ONE * scale_of(kind)

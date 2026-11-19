@@ -42,6 +42,13 @@ from each helper to the station it counts for (gold = counts now, green = where 
   monster hits, lose food/water slower, digging and extra drops (host boosts).
 - Crafting window: healing hearts (hover = exact speed) and bullet effects under the ingredients; bag tooltips too.
 
+## Kitchen built (Nov 20, Mac)
+All cooking happens at the **campfire** now. A Cooking Pot placed on (or right next to) a campfire snaps on top of
+it and makes the fire level 2; a Stone Oven (stone 20, clay 10, 2 planks, Workbench) within 10 m makes level 3.
+Pressing E on the pot opens the fire's cooking. Because it's all one station, the dwarf's auto-crafting now roasts
+the bug meat by himself when you make a Miner's Pie.
+
 ## Still to build
-The 3 kitchen levels: the Cooking Pot placed on the campfire and the Stone Oven (needs a model). Until then the stews
-cook at the Cooking Pot and the effect times follow the plan (15 / 25 / 35 min). Zone 2+ foods keep their old effects.
+- The Stone Oven's own model (PC, Blender). Until then it borrows the Charcoal Kiln's model and icon.
+- Old saves: a Cooking Pot standing away from a fire no longer cooks; put a new pot on a campfire.
+- Zone 2+ foods keep their old effects.
