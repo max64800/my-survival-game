@@ -1,17 +1,25 @@
 extends SceneTree
-## Preview pictures for F389 round 4 (owner's pick, Nov 19: great weapons on his back, both hands only in the swing).
-## Shows (1) the great weapon hung across his back, hand empty; (2) the pack's two-handed tree chop at a few moments.
-##   godot --audio-driver Dummy --path . --script res://tools/asset_forge/twohand_preview.gd -- claude=twohand_preview
-##     item=axe_2h_copper out=<folder> [cam=front|side|back|three]
+## Preview pictures for F389 round 5 (great axe / great maul, hand-made key poses: DwarfGreatSwing): the ready stance,
+## then each swing at its key moments (wind-up, hit, follow-through), named plainly: stance_front.png, Chop_hit_front.png…
+##   godot --audio-driver Dummy --fixed-fps 60 --path . --script res://tools/asset_forge/twohand_preview.gd -- claude=twohand_preview
+##     item=axe_2h_copper out=<folder> [cam=front|side|back|three|left|top] [moves=Chop,Sweep,Slam] [len=1.1] [walk=0]
+## Also prints, every few frames, the gap between the fists and how close the handle comes to his chest.
 var out := "user://twohand"
 var cam_name := "three"
 var item := "axe_2h_copper"
-var clip := "b/TreeChopping"
+var moves: PackedStringArray = ["Chop", "Sweep", "Slam"]
+var clip_len := 1.1
+var walk := 0.0
 var model: DwarfModel
 var cam: Camera3D
 var frames := 0
-var tool_node: Node3D
-var back: Node3D
+var _move := -1  ## which of `moves` plays now
+var markers := false
+var balls: Array[MeshInstance3D] = []
+var _move_frame := 0  ## the frame it started
+var _worst := INF  ## the handle's least room during the swing playing now (m), and when (share of the swing)
+var _worst_t := 0.0
+const NAMES := {0.28: "windup", 0.25: "windup", 0.30: "windup", 0.40: "hit", 0.42: "hit", 0.58: "follow", 0.70: "follow", 1.0: "end"}
 
 
 func _init() -> void:
@@ -19,7 +27,11 @@ func _init() -> void:
 		if a.begins_with("out="): out = a.substr(4)
 		if a.begins_with("cam="): cam_name = a.substr(4)
 		if a.begins_with("item="): item = a.substr(5)
-		if a.begins_with("clip="): clip = a.substr(5)
+		if a.begins_with("moves="): moves = a.substr(6).split(",")
+		if a.begins_with("walk="): walk = float(a.substr(5))
+		if a.begins_with("len="): clip_len = float(a.substr(4))
+		if a == "markers=1": markers = true
+	DirAccess.make_dir_recursive_absolute(out)
 	var w := Node3D.new()
 	root.add_child(w)
 	var env := WorldEnvironment.new()
@@ -34,58 +46,74 @@ func _init() -> void:
 	w.add_child(sun)
 	model = DwarfModel.new()
 	w.add_child(model)
+	for c: Color in [Color(0.2, 0.5, 1.0), Color(1.0, 0.85, 0.1)]:  # markers=1: blue = the left fist's spot, yellow = the right's
+		var ball := MeshInstance3D.new()
+		ball.mesh = SphereMesh.new()
+		(ball.mesh as SphereMesh).radius = 0.025
+		(ball.mesh as SphereMesh).height = 0.05
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = c
+		mat.no_depth_test = true
+		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		ball.material_override = mat
+		ball.visible = markers
+		w.add_child(ball)
+		balls.append(ball)
 	cam = Camera3D.new()
 	cam.fov = 40
 	w.add_child(cam)
-	_place_cam()
+	var at := Vector3(0, 0.75, 0)
+	# the dwarf faces -Z: the front camera is at -Z, his right side is +X
+	var spots := {"front": Vector3(0.0, 1.0, -3.0), "side": Vector3(3.0, 1.0, 0.0), "back": Vector3(0.4, 1.1, 3.0),
+		"three": Vector3(1.9, 1.2, -2.2), "left": Vector3(-3.0, 1.0, 0.0), "top": Vector3(0.0, 3.6, -0.01)}
+	cam.look_at_from_position(spots.get(cam_name, spots.three), at)
 	await process_frame
 	await process_frame
 	model.set_held(item)
 
 
-func _place_cam() -> void:
-	# the dwarf faces -Z: front camera at -Z, his right side is +X
-	var at := Vector3(0, 0.7, 0)
-	var spots := {"front": Vector3(0.0, 0.95, -2.6), "side": Vector3(2.6, 0.95, 0.0), "back": Vector3(0.4, 1.0, 2.6),
-		"three": Vector3(1.7, 1.1, -1.9)}
-	cam.look_at_from_position(spots.get(cam_name, spots.three), at)
-
-
-## Hangs the weapon across his back: head up behind his right shoulder, handle down to his left hip.
-func _to_back() -> void:
-	var rig := model.dwarf_rig
-	tool_node = rig.grip.get_child(rig.grip.get_child_count() - 1)
-	var sk := rig.skeleton
-	back = BoneAttachment3D.new()
-	(back as BoneAttachment3D).bone_name = "spine_03"
-	sk.add_child(back)
-	var holder := Node3D.new()
-	back.add_child(holder)
-	tool_node.reparent(holder, false)
-	await process_frame
-	# world placement: measured from the chest bone
-	var chest := (back as Node3D).global_transform
-	var up := Vector3.UP
-	var behind := Vector3(0, 0, 1)  # his back
-	var right := Vector3(1, 0, 0)
-	var d := (up * 0.9 + right * 0.42).normalized()  # handle: left hip -> right shoulder
-	var z := (behind - d * behind.dot(d)).normalized()  # the blade's flat side lies on his back
-	var basis := Basis(d.cross(z), d, z)
-	var origin := chest.origin + behind * 0.2 - right * 0.17 - up * 0.5
-	holder.global_transform = Transform3D(basis, origin)
-	holder.scale = Vector3.ONE / holder.global_transform.basis.get_scale() * 1.0
+func _shot(name: String) -> void:
+	root.get_viewport().get_texture().get_image().save_png("%s/%s_%s.png" % [out, name, cam_name])
 
 
 func _process(_d: float) -> bool:
 	frames += 1
-	if frames == 20:
-		_to_back()
-	if frames == 30:
-		root.get_viewport().get_texture().get_image().save_png("%s/back_%s.png" % [out, cam_name])
-		# into both hands and swing: the pack's two-handed tree chop
-		tool_node.reparent(model.dwarf_rig.grip, false)
-		model.dwarf_rig.play_upper(clip, 1.6)
-	for f in [36, 44, 52, 60, 68]:
-		if frames == f:
-			root.get_viewport().get_texture().get_image().save_png("%s/chop_%s_%s_%d.png" % [out, clip.replace("/", ""), cam_name, f])
-	return frames > 72
+	if model == null or model.dwarf_rig == null:
+		return frames > 200
+	var rig := model.dwarf_rig
+	rig.set_motion(walk, true, false)
+	rig.fist.measure_clearance = true
+	if balls.size() == 2:
+		balls[0].global_position = rig.fist.target_l
+		balls[1].global_position = rig.fist.target_r
+	if frames == 40:
+		_shot("stance")
+		_report("stance")
+	var per := int(clip_len * 60.0) + 2
+	if frames >= 45 and (frames - 45) % per == 0 and (frames - 45) / per < moves.size():
+		if _move >= 0:
+			print("%-14s least handle room %d cm at %d%%" % [moves[_move], roundi(_worst * 100), roundi(_worst_t * 100)])
+		_move = (frames - 45) / per
+		_move_frame = frames
+		_worst = INF
+		rig.play_upper("g/" + moves[_move], clip_len)
+	if _move >= 0 and _move < moves.size():
+		if frames > _move_frame + 1 and rig.fist.clearance < _worst:
+			_worst = rig.fist.clearance
+			_worst_t = float(frames - _move_frame) / (clip_len * 60.0)
+		if frames == 45 + per * moves.size() + 4:
+			print("%-14s least handle room %d cm at %d%%" % [moves[_move], roundi(_worst * 100), roundi(_worst_t * 100)])
+		for key: Array in DwarfGreatSwing.MOVES[moves[_move]]:
+			if frames == _move_frame + int(float(key[0]) * clip_len * 60.0) - (1 if float(key[0]) >= 1.0 else 0):
+				var nm: String = NAMES.get(snappedf(key[0], 0.01), "at%d" % roundi(float(key[0]) * 100))
+				_shot("%s_%s" % [moves[_move], nm])
+				_report("%s %s" % [moves[_move], nm])
+	return frames > 45 + per * moves.size() + 5
+
+
+## The gap between the fists, how far each fist missed its spot, and the handle's room in front of his body.
+func _report(what: String) -> void:
+	var f := model.dwarf_rig.fist
+	print("%-14s gap %2d cm  misses: left %2d cm, right %2d cm  handle room %2d cm (%s), braids %2d cm" % [what,
+		roundi(f.left_gap * 100), roundi(f.left_miss * 100), roundi(f.right_miss * 100), roundi(f.clearance * 100),
+		f.clear_part, roundi(f.clearance_hair * 100)])

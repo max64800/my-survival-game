@@ -36,9 +36,10 @@ func _check_grip(rig: DwarfRig, what: String) -> void:
 		var d := _off_line(tip, line)
 		check(d < TIP_MAX, "%s: the %s finger wraps round the handle (tip %.1f cm from its middle)" % [what, finger, d * 100.0])
 	if rig.tool_look != "spear":
-		# the handle's end pokes out a small stub past the little finger
+		# the handle's end pokes out a small stub past the little finger (great weapons: past the LEFT fist, at the end)
 		var end: Vector3 = line[2]
-		var stub := (f.fist_center - end).dot(line[1]) - f.fist_half
+		var low := f.left_center if rig.tool_look in DwarfFist.TWO_HANDED else f.fist_center
+		var stub := (low - end).dot(line[1]) - f.fist_half
 		check(stub > 0.03 and stub < 0.07, "%s: a small stub of handle below the fist (%.1f cm)" % [what, stub * 100.0])
 
 
@@ -106,45 +107,43 @@ func test_open_hand_without_a_tool() -> void:
 	m.queue_free()
 
 
-## Owner, Nov 19: the great axe and great maul are two-handed in the swings (the left hand higher up the handle);
-## standing, walking and running they rest on his shoulder in one hand.
+## Owner, Nov 19 (F389 round 5, his photo of a warrior with a long axe): the great axe and great maul always take both
+## hands: the LEFT fist at the very end of the handle, the RIGHT fist higher up, wide apart in the stance; the handle runs
+## through both fists and stays clear of his body; swings A, B, C (DwarfGreatSwing) take turns.
 func test_two_handed_weapons_take_both_hands() -> void:
 	var m := DwarfModel.new()
 	tree.root.add_child(m)
 	var rig := m.dwarf_rig
 	for item in ["axe_2h_copper", "mace_2h_copper"]:
 		m.set_held(item)
-		for what in ["standing", "walking", "swinging", "running"]:
+		for what in ["standing", "walking", "running"]:
 			var speed: float = {"walking": 1.6, "running": 4.0}.get(what, 0.0)
-			var t0 := Time.get_ticks_msec()
-			while Time.get_ticks_msec() - t0 < 1200:  # (real time: let the last move finish)
+			for i in 40:
 				rig.set_motion(speed, true, false)
 				await frames(1)
-			if what == "swinging":
-				m.attack(1.2, false)
-			var worst := 0.0
-			var on := 0
-			var off := 0  # frames with the left fist more than 2 cm off the handle
-			var frames_n := 70  # (the whole 1.2 s swing; the fastest moments were the hard ones)
-			for f in frames_n:
-				rig.set_motion(speed, true, false)
-				await rig.skeleton.skeleton_updated
-				var fs := rig.fist
-				if fs.two_hand >= 1.0:
-					on += 1
-					var line := _handle_line(rig)
-					var miss := _off_line(fs.left_center, line)
-					var up: float = (fs.left_center - fs.fist_center).dot(line[1])
-					if miss > 0.02 or up < 0.08:
-						off += 1  # (known: a few frames at the very fastest part of the great axe's swing, Nov 19)
-					else:
-						worst = maxf(worst, miss)
-			if what != "swinging":
-				check(on == 0, "%s %s: one hand, the weapon on his shoulder (%d frames with two)" % [item, what, on])
-			else:
-				check(on >= frames_n - 3, "%s %s: both hands on the handle (%d of %d frames; the first come off the shoulder)" % [item, what, on, frames_n])
-				check(worst < 0.01, "%s %s: the left fist round the handle (up to %.1f cm off)" % [item, what, worst * 100.0])
-				check(off <= (4 if what == "swinging" else 0), "%s %s: the left fist slips off the handle in %d frames" % [item, what, off])
+			rig.fist.measure_clearance = what == "standing"
+			await rig.skeleton.skeleton_updated
+			var fs := rig.fist
+			check(fs.two_hand >= 1.0, "%s %s: both hands on the handle" % [item, what])
+			var line := _handle_line(rig)
+			var miss := _off_line(fs.left_center, line)
+			check(miss < 0.01, "%s %s: the handle runs through the left fist (%.1f cm off)" % [item, what, miss * 100.0])
+			var up: float = (fs.fist_center - fs.left_center).dot(line[1])
+			check(up > 0.3, "%s %s: the right fist sits higher up the handle, wide apart (%.0f cm)" % [item, what, up * 100.0])
+			if what == "standing":
+				check(fs.clearance > 0.05, "%s: the handle clear of his body (%.0f cm, nearest: %s)" % [item, fs.clearance * 100.0, fs.clear_part])
+			rig.fist.measure_clearance = false
+		await _check_grip(rig, item + " stance")
+	# the swings take turns: chop, sweep, slam (owner's pick)
+	m.set_held("axe_2h_copper")
+	var seen := []
+	for step in 3:
+		m.attack(0.6, false, step)
+		await frames(2)
+		seen.append(rig._upper_clip)
+		for i in 45:
+			await frames(1)
+	check(seen == ["g/Chop", "g/Sweep", "g/Slam"], "the great axe swings chop, sweep, slam in turn (%s)" % [seen])
 	m.queue_free()
 
 

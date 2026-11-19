@@ -48,12 +48,19 @@ const ANIMS := {
 	# Held poses (as long as the button is down). The shield is always on the left arm (owner, Nov 17), the weapon in
 	# the right hand: the shield block raises the left arm (the right keeps the weapon ready).
 	block = "x/Sword_Guard", shield = "b/Idle_Shield", aim = "Pistol_Aim_Neutral",
+	# Great axe and great maul (F389 round 5, Nov 19): hand-made key poses (DwarfGreatSwing), placed by DwarfFist.
+	# The "g/" clips only time the swing (the upper body's idle; the arms and chest come from the key poses).
+	great_chop = "g/Chop", great_sweep = "g/Sweep", great_slam = "g/Slam",
 }
 ## Which attack each weapon makes: [light attacks (taking turns), heavy attack] (names in ANIMS). Anything else: "sword".
 const ATTACKS := {
 	"sword": [["attack_a", "attack_b"], "heavy"],
-	"mace": [["smash", "swipe"], "smash"], "mace_2h": [["smash", "swipe"], "smash"],  # overhead smash, then a side swing
-	"axe_2h": [["smash"], "smash"], "hammer": [["smash"], "smash"],
+	"mace": [["smash", "swipe"], "smash"],  # overhead smash, then a side swing
+	# great axe (owner's pick, F389 round 5): A slanting chop, B rising sweep back, C overhead slam, in turns; heavy =
+	# the slam. (The great maul gets its own set next; until then it swings like the great axe.)
+	"axe_2h": [["great_chop", "great_sweep", "great_slam"], "great_slam"],
+	"mace_2h": [["great_chop", "great_sweep", "great_slam"], "great_slam"],
+	"hammer": [["smash"], "smash"],
 	"spear": [["stab"], "stab"],
 	"shield": [["bash"], "bash"],
 }
@@ -191,6 +198,14 @@ var shield_grip: Node3D  ## the shield's holder on the left forearm (DwarfModel.
 var tool_look := ""
 var _upper_clip := ""  ## the upper-body one-shot playing now (for GRIPS)
 var _spear_aim := 0.0
+var _upper_start := 0.0  ## when the upper one-shot started (s) and how fast it plays (for the great swings)
+var _upper_scale := 1.0
+## The great weapons' pose now (DwarfGreatSwing): eased back to the stance between swings.
+var great: Dictionary = DwarfGreatSwing.STANCE
+var _great_from: Dictionary = DwarfGreatSwing.STANCE  ## the pose the swing playing now started from
+var great_fixed: Dictionary = {}  ## tools only: hold this great-weapon pose still (great_pose_tuner.gd)
+var _great_started := -1.0  ## _upper_start of that swing
+var _great_clock := 0.0  ## s into that swing
 var _carry_arm := 0.0  ## how far the right arm is lifted into the shoulder carry  ## how much the spear is turned to point straight ahead (the thrust)
 
 
@@ -595,6 +610,27 @@ func _update_grip(delta: float) -> void:
 	_spear_aim = move_toward(_spear_aim, 1.0 if tool_look == "spear" and clip == ANIMS.stab else 0.0, delta * 12.0)
 
 
+## The great axe's / great maul's pose this frame (DwarfFist places both fists and the chest by it): the swing playing
+## now ("g/" clip, from the pose it started at), else easing back to the ready stance.
+func great_pose(delta: float) -> Dictionary:
+	if not great_fixed.is_empty():  # (a tool holding one pose still: great_pose_tuner.gd)
+		great = great_fixed
+		return great
+	var clip := _upper_clip if tree.get("parameters/upper/active") else ""
+	if clip.begins_with("g/") and tree.has_animation(clip):
+		if _great_started != _upper_start:
+			_great_started = _upper_start
+			_great_from = great
+			_great_clock = 0.0
+		else:
+			_great_clock += delta  # (game time, frame by frame: a slow frame doesn't skip the swing's key poses)
+		var t := _great_clock * _upper_scale / tree.get_animation(clip).length
+		great = DwarfGreatSwing.pose(clip.trim_prefix("g/"), clampf(t, 0.0, 1.0), _great_from)
+	else:
+		great = DwarfGreatSwing.blend(great, DwarfGreatSwing.STANCE, 1.0 - exp(-DwarfGreatSwing.RETURN * delta))
+	return great
+
+
 ## Where the tool holder sits in the fist for a tool look and an animation (see GRIPS).
 static func grip_transform(look: String, clip: String) -> Transform3D:
 	var base := Transform3D(Basis.from_euler(DwarfModel.hand_tool_rot), DwarfModel.hand_tool_pos)
@@ -654,10 +690,12 @@ func set_motion(speed: float, on_floor: bool, rolling: bool) -> void:
 	var want := clampf((speed - 1.6) / 1.6, 0.0, 1.0) if carrying else 0.0
 	# Great axe and great maul (owner, Nov 19, round 3): always on the right shoulder in one hand, standing, walking
 	# and running. Swinging, the animation aims it as before and DwarfFist adds the second hand.
-	if carrying and tool_look in DwarfFist.TWO_HANDED:
-		want = 1.0
+	# (F389 round 5: both hands on the handle always, the stance of the owner's photo: DwarfGreatSwing)
+	var two_h := carrying and tool_look in DwarfFist.TWO_HANDED
+	if two_h:
+		want = 0.0
 	move_speed = speed
-	if carrying and (rolling or _roll_on()):
+	if carrying and (rolling or _roll_on()) and not two_h:
 		want = 1.0  # rolling the arms fly about: the tool trails safely behind (owner: pick through his head)
 	# (jumping keeps whatever the speed gives: standing still the tool stays as held, owner Nov 17: "his pickaxe goes
 	# all the way back" when the air turned the carry fully on)
@@ -722,6 +760,8 @@ func _play(layer: String, what: String, duration: float) -> void:
 	node.animation = anim_name
 	if layer == "upper":
 		_upper_clip = anim_name
+		_upper_start = Time.get_ticks_msec() / 1000.0
+		_upper_scale = tree.get_animation(anim_name).length / duration if duration > 0.0 else 1.0
 	else:
 		_full_clip = anim_name
 		_full_start = Time.get_ticks_msec() / 1000.0
@@ -741,6 +781,11 @@ func _build_tree(body: Node3D) -> void:
 	for lib_name in LIBS:
 		tree.add_animation_library(lib_name, _library(LIBS[lib_name]))
 	tree.add_animation_library("x", _made_library())
+	# the great swings' timers: the upper body's idle, one per swing (DwarfGreatSwing places the arms and chest)
+	var great_lib := AnimationLibrary.new()
+	for move: String in DwarfGreatSwing.MOVES:
+		great_lib.add_animation(move, tree.get_animation(ANIMS.idle).duplicate())
+	tree.add_animation_library("g", great_lib)
 	var bt := AnimationNodeBlendTree.new()
 	# Legs: blend between idle, walk, jog and sprint by speed.
 	var move := AnimationNodeBlendSpace1D.new()

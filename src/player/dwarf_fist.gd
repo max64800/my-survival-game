@@ -24,7 +24,6 @@ const FINGER_HALF := 0.012  ## half a finger's thickness (m): the fist's edge is
 ## The most the wrist turns to line the fist up with the handle (degrees). Most tools need 20-45; past this a wrist
 ## looks broken (the spear, held pointing along the forearm, needed 110-130), so the tool tilts the rest of the way.
 const WRIST_MAX := 45.0
-const WRIST_MAX_TWO := 80.0  ## with both hands on a great weapon (the tilt toward the left hand must not be undone)
 
 ## Off = the old way, for the page's "Before" (tools/asset_forge/dwarf_anim_export.gd hands=1): fingers as the
 ## animation has them, the tool turned in the open hand about the wrist.
@@ -57,14 +56,19 @@ const SHIELD_STRAP := Vector3(0.056, 0.355, -0.12)  ## toward the loops, flat al
 const SHIELD_FACE := Vector3.BACK  ## the painted front (+Z of the model)
 const SHIELD_LOOPS := [Vector3(0.111, 0.41, -0.08), Vector3(0.056, 0.41, -0.08)]  ## the forearm loops' middles
 const GRIP_SLIDE_MAX := 0.05  ## m the fist may sit off the grip's middle
-## Two-handed weapons (owner, Nov 19: "the great axe and great maul are two-handed"; picks: both hands always except
-## running, the left hand higher up the handle, like a sledgehammer): the left arm reaches the handle (two-bone IK).
+## Two-handed weapons (owner, Nov 19: "the great axe and great maul are two-handed"; F389 round 5, from a photo of a
+## warrior with a long axe): the LEFT fist at the very end of the handle, the RIGHT fist high up it, wide apart. Where
+## the fists go comes from hand-made key poses (DwarfGreatSwing); both arms reach there (two-bone reach) and the
+## handle runs through both fists.
 const TWO_HANDED := ["axe_2h", "mace_2h"]
-const TWO_HAND_GAPS := [0.2, 0.17, 0.14, 0.11]  ## m between the fists' middles, the widest the arm reaches
-var two_hand := 0.0  ## how much the left hand is on the handle this frame (0 = off, while running or rolling)
-var left_gap := 0.0  ## the gap used this frame
-var left_miss := 0.0  ## how far the left fist ended from its spot on the handle this frame (m)
-var _push := 0.0  ## extra m the right fist comes in, learnt from the last frames (fast swings: the reach guess falls short)
+const ELBOW_OUT := Vector3(0.8, 0.5, 0.2)  ## where the great weapons' elbows point: out, down, back (shares)
+const MIN_GAP := 0.07  ## m: the closest the fists come (the slam: the right hand slides down to the left)
+var two_hand := 0.0  ## 1 = both hands on a great weapon this frame
+var left_gap := 0.0  ## m between the fists' middles this frame
+var left_miss := 0.0  ## how far the left fist ended from its key-pose spot this frame (m)
+var right_miss := 0.0  ## the same for the right fist
+var target_l := Vector3.ZERO  ## the fists' key-pose spots this frame (world; for the preview tool)
+var target_r := Vector3.ZERO
 var left_center := Vector3.ZERO  ## the middle of the hole through the left fist (world), measured like the right
 var left_axis := Vector3.UP
 var _handles := {}  ## tool node id -> handle
@@ -123,16 +127,12 @@ func _process_modification_with_delta(_delta: float) -> void:
 		_wear_shield(sk)
 	two_hand = 0.0
 	if holding and rig.tool_look in TWO_HANDED and rig.shield_grip.get_child_count() == 0:
-		# both hands in the swings; standing, walking and running it rests on his shoulder in one hand (owner, Nov 19,
-		# after a try with both hands on the shoulder: his short arms and big chest put the fists inside his beard)
-		two_hand = 1.0 - rig._carry
-	if two_hand > 0.0:
+		two_hand = 1.0
 		_close("_l", sk)
-		_to_the_middle(sk)  # (the weapon leans so the left hand reaches)
+		_great_hold(sk, _delta)
+		return
 	if has_tool:
 		_hold(sk)
-	if two_hand > 0.0:
-		_second_hand(sk)
 
 
 ## Closes one hand's fingers into a fist.
@@ -152,8 +152,6 @@ func _hold(sk: Skeleton3D) -> void:
 	var want := hand_world * socket.transform * rig.grip_local
 	want.basis = want.basis.orthonormalized()
 	var extra := rig.hold_turn(want.basis)
-	if two_hand > 0.0:
-		extra = _tilt * extra  # (two-handed: the weapon leans over so the left hand reaches it: _to_the_middle)
 	want.basis = Basis(extra) * want.basis
 	var before := sk.get_bone_global_pose(hand).basis.get_rotation_quaternion()
 	var inv := sk_world.basis.inverse()  # (directions in skeleton space: the dwarf is a bit wider than tall)
@@ -184,7 +182,6 @@ func _hold(sk: Skeleton3D) -> void:
 		made = -made  # (the short way round)
 	wrist_turn = rad_to_deg(made.get_angle())
 	var most := lerpf(WRIST_MAX, 180.0, rig._spear_aim)  # (the thrust: the spear points straight ahead, whatever it takes)
-	most = lerpf(most, WRIST_MAX_TWO, two_hand)  # (two hands: the weapon's lean must stay, or the left hand can't reach)
 	if wrist_turn > most:
 		g.basis = Basis(Quaternion.IDENTITY.slerp(made, most / wrist_turn) * made.inverse()) * g.basis
 		_set_turn(sk, hand, g)
@@ -205,105 +202,254 @@ func _hold(sk: Skeleton3D) -> void:
 	rig.grip.transform = (hand_world * socket.transform).affine_inverse() * Transform3D(want.basis, at)
 
 
-## Two-handed: the animations hold the weapon out at his right side, where the short left arm can't reach across his
-## round belly (measured: up to 78 cm short). First the weapon tilts about the right fist toward his left shoulder,
-## only as far as the left hand needs (standing, the head leans over to his left, both hands low in front of him);
-## only when that's not enough does the right fist come in too. (Pulling the right fist to the middle first buried
-## both fists in his beard, the owner's page, Nov 19.)
-const REACH := 0.92  ## the left fist's spot at most this share of the arm's reach from the shoulder
-const FIST_PAST_WRIST := 0.08  ## m from the wrist to the middle of the fist (the reach counts to there)
-const FRONT := 0.22  ## both fists stay at least this far in front of his chest bone (pulled straight in, they sank
-                     ## into his round chest behind the beard: owner's page, Nov 19)
-var _tilt := Quaternion.IDENTITY  ## the weapon's tilt this frame (world), used by _hold
-func _to_the_middle(sk: Skeleton3D) -> void:
-	var to_sk := sk.global_transform.affine_inverse()
+## Two-handed (DwarfGreatSwing): the chest twists and leans, both fists go to the key pose's spots (the right one
+## slides down the handle where his short arm can't reach), then the handle is laid through both fists, its end a
+## small stub past the left fist and the blade facing the way the swing goes.
+const SPINE := {"spine_01": 0.5, "spine_02": 0.3, "spine_03": 0.2}  ## share of the twist and lean (from the waist up:
+	## his round belly is bound mostly to the low spine bones, so an even share hardly showed)
+const HEAD_KEEP := 0.6  ## share of the chest's twist the neck turns back (he keeps looking ahead)
+func _great_hold(sk: Skeleton3D, delta: float) -> void:
+	var p: Dictionary = rig.great_pose(delta)
 	var sk_world := sk.global_transform
-	var hand: int = _hands["_r"]
-	var hand_world := sk_world * sk.get_bone_global_pose(hand)
-	var want := hand_world * rig.right_hand.transform * rig.grip_local
-	var handle_dir := (Basis(rig.hold_turn(want.basis.orthonormalized())) * want.basis.orthonormalized() * Vector3.UP).normalized()
-	_measure(sk)
-	var at := fist_center
-	var shoulder := sk_world * sk.get_bone_global_pose(sk.find_bone("upperarm_l")).origin
-	var elbow := sk_world * sk.get_bone_global_pose(sk.find_bone("lowerarm_l")).origin
-	var wrist_l := sk_world * sk.get_bone_global_pose(_hands["_l"]).origin
-	var reach := (shoulder.distance_to(elbow) + elbow.distance_to(wrist_l) + FIST_PAST_WRIST) * REACH
-	var ahead := -rig.global_basis.z.normalized()
+	var to_sk := sk_world.affine_inverse()
+	var rb := rig.global_basis.orthonormalized()
+	var q := Quaternion(rb.y, deg_to_rad(-float(p.twist))) * Quaternion(rb.x, deg_to_rad(-float(p.lean)))
+	var q_sk := _to_sk_turn(to_sk.basis, q)
+	for bone_name: String in SPINE:  # (shared out over the spine bones, so he bends round, not at one joint)
+		var b := sk.find_bone(bone_name)
+		var g := sk.get_bone_global_pose(b)
+		g.basis = Basis(Quaternion.IDENTITY.slerp(q_sk, float(SPINE[bone_name]))) * g.basis
+		_set_turn(sk, b, g)
+	var neck := sk.find_bone("neck_01")
+	if neck >= 0:
+		var g := sk.get_bone_global_pose(neck)
+		g.basis = Basis(_to_sk_turn(to_sk.basis, Quaternion(rb.y, deg_to_rad(float(p.twist) * HEAD_KEEP)))) * g.basis
+		_set_turn(sk, neck, g)
+	var F := Basis(q) * rb  # the chest's frame (x his right, y up, z his back)
 	var chest := sk_world * sk.get_bone_global_pose(sk.find_bone("spine_03")).origin
-	var gap: float = TWO_HAND_GAPS[0]
-	# the right fist comes in only if even the best tilt can't bring the left spot within reach
-	var need := at.distance_to(shoulder) - (reach + gap * 0.3) + _push  # (the lean alone is rarely enough: the wrist only turns so far)
-	var move := (shoulder - at).normalized() * maxf(need, 0.0)
-	var front := (at + move - chest).dot(ahead)
-	if front < FRONT:
-		move += ahead * (FRONT - front)
-	move *= two_hand
-	if move.length() > 0.001:
-		var keep := sk.get_bone_global_pose(hand)
-		_reach(sk, sk.find_bone("upperarm_r"), sk.find_bone("lowerarm_r"), hand, to_sk * (hand_world.origin + move))
-		_set_turn(sk, hand, keep)  # (the hand keeps its turn; only the arm moves)
-		_measure(sk)
-		at = fist_center
-	# the tilt: the smallest turn of the handle (about the right fist) that brings the left spot within reach
-	var toward := (shoulder - at).normalized()
-	var dir := handle_dir
-	for k in 21:
-		dir = handle_dir.lerp(toward, k / 20.0).normalized()
-		var spot := at + dir * gap
-		if spot.distance_to(shoulder) <= reach and (spot - chest).dot(ahead) >= FRONT - 0.04:
-			break
-	_tilt = Quaternion.IDENTITY.slerp(Quaternion(handle_dir, dir), two_hand)
-
-
-## The left hand on the handle, higher up than the right (TWO_HAND_GAPS): the left fist's hole turned along the
-## handle (thumbs toward the head, like the right), then the arm reaches it. Skeleton space throughout.
-func _second_hand(sk: Skeleton3D) -> void:
-	var to_sk := sk.global_transform.affine_inverse()
-	var up_b := sk.find_bone("upperarm_l")
-	var low_b := sk.find_bone("lowerarm_l")
-	var hand_b: int = _hands["_l"]
-	var anim := [sk.get_bone_pose_rotation(up_b), sk.get_bone_pose_rotation(low_b), sk.get_bone_pose_rotation(hand_b)]
-	var axis := (to_sk.basis * fist_axis).normalized()  # the handle, toward the head
-	for gap: float in TWO_HAND_GAPS:
-		left_gap = gap
-		var target := to_sk * (fist_center + fist_axis * gap)  # the middle of the left fist goes here
-		for i in 3:
-			# 1. the left fist's hole along the handle (the smallest turn of the hand)
-			_measure(sk, "_l")
-			var g := sk.get_bone_global_pose(hand_b)
-			g.basis = Basis(Quaternion((to_sk.basis * left_axis).normalized(), axis)) * g.basis
-			_set_turn(sk, hand_b, g)
-			var hand_basis := sk.get_bone_global_pose(hand_b).basis
-			_measure(sk, "_l")
-			var wrist_at := target - ((to_sk * left_center) - sk.get_bone_global_pose(hand_b).origin)
-			# 2. the arm reaches: shoulder and elbow (the elbow stays on the side the animation bent it)
-			_reach(sk, up_b, low_b, hand_b, wrist_at)
-			g = sk.get_bone_global_pose(hand_b)
-			g.basis = hand_basis
-			_set_turn(sk, hand_b, g)
-		_measure(sk, "_l")
-		if (to_sk * left_center).distance_to(target) < 0.01 or gap == TWO_HAND_GAPS[-1]:
-			break
-		for k in 3:  # (too far: start again from the animation's arm, a little nearer the right hand)
-			sk.set_bone_pose_rotation([up_b, low_b, hand_b][k], anim[k])
-	left_miss = (to_sk * left_center).distance_to(to_sk * (fist_center + fist_axis * left_gap))
-	_push = clampf(_push + (0.03 if left_miss > 0.012 else -0.004), 0.0, 0.35)
-	if left_miss > 0.003 and two_hand >= 1.0:
-		# the last bit (the fastest moments of a swing): the handle tilts about the right fist through the left one
-		var through := (left_center - fist_center).normalized()
-		if through.dot(fist_axis) > 0.5:  # (at most 60 degrees: more and the handle slips out of the right fist)
-			var hand_r := sk.global_transform * sk.get_bone_global_pose(_hands["_r"]) * rig.right_hand.transform
-			var tool := hand_r * rig.grip.transform
-			var q := Basis(Quaternion(fist_axis, through))
-			tool = Transform3D(q * tool.basis, fist_center + q * (tool.origin - fist_center))
-			rig.grip.transform = hand_r.affine_inverse() * tool
-			fist_axis = through
-			left_miss = 0.0
-	if two_hand < 1.0:  # fading in or out (starting or stopping a run)
-		for k in 3:
-			var bone: int = [up_b, low_b, hand_b][k]
-			sk.set_bone_pose_rotation(bone, (anim[k] as Quaternion).slerp(sk.get_bone_pose_rotation(bone), two_hand))
+	var L: Vector3 = chest + _body(F, p.l)
+	var D: Vector3 = _body(F, p.d).normalized()
+	# the shoulders reach toward the fists (the collarbones turn, up to CLAVICLE_MAX): his arms are short
+	for side in ["_l", "_r"]:
+		var cb := sk.find_bone("clavicle" + side)
+		if cb < 0:
+			continue
+		var c := sk_world * sk.get_bone_global_pose(cb).origin
+		var sh := sk_world * sk.get_bone_global_pose(sk.find_bone("upperarm" + side)).origin
+		var t: Vector3 = L if side == "_l" else L + D * float(p.gap)
+		var turn := Quaternion((sh - c).normalized(), (t - c).normalized())
+		var most := deg_to_rad(CLAVICLE_MAX)
+		if turn.get_angle() > most:
+			turn = Quaternion.IDENTITY.slerp(turn, most / turn.get_angle())
+		var g := sk.get_bone_global_pose(cb)
+		g.basis = Basis(_to_sk_turn(to_sk.basis, turn)) * g.basis
+		_set_turn(sk, cb, g)
+	# the hands turn first (the handle through each fist): then it's known where each wrist must go for its fist
+	var arms := {}
+	for side in ["_l", "_r"]:
+		var up_b := sk.find_bone("upperarm" + side)
+		var low_b := sk.find_bone("lowerarm" + side)
+		var hand_b: int = _hands[side]
+		_turn_fist(sk, side, (to_sk.basis * D).normalized())
+		_measure(sk, side)
+		var sh := sk_world * sk.get_bone_global_pose(up_b).origin
+		var el := sk_world * sk.get_bone_global_pose(low_b).origin
+		var wr := sk_world * sk.get_bone_global_pose(hand_b).origin
+		var c := left_center if side == "_l" else fist_center
+		arms[side] = [up_b, low_b, hand_b, sh, (sh.distance_to(el) + el.distance_to(wr)) * 0.985, c - wr]
+	var al: Array = arms["_l"]
+	var wl: Vector3 = L - al[5]  # (the left wrist's spot)
+	if wl.distance_to(al[3]) > float(al[4]):
+		L = (al[3] as Vector3) + (wl - al[3]).normalized() * float(al[4]) + (al[5] as Vector3)
+	# the right fist: as high up the handle as the pose wants and his arm reaches
+	var ar: Array = arms["_r"]
+	var w: Vector3 = L - ar[5] - ar[3]
+	var wd := w.dot(D)
+	var disc := wd * wd - w.length_squared() + float(ar[4]) * float(ar[4])
+	var s: float = (-wd + sqrt(disc)) if disc >= 0.0 else -wd
+	s = clampf(minf(float(p.gap), s), MIN_GAP, maxf(float(p.gap), MIN_GAP))
+	var R := L + D * s
+	for side in ["_r", "_l"]:
+		var arm: Array = arms[side]
+		_fist_to(sk, side, arm[0], arm[1], arm[2], R if side == "_r" else L, D)
+	_measure(sk)
 	_measure(sk, "_l")
+	var dir := D
+	if fist_center.distance_to(left_center) > 0.04:
+		dir = (fist_center - left_center).normalized()
+		for side in ["_r", "_l"]:  # (the fists' holes along the handle as it really lies)
+			_turn_fist(sk, side, (to_sk.basis * dir).normalized())
+		_measure(sk)
+		_measure(sk, "_l")
+		dir = (fist_center - left_center).normalized()
+	left_gap = fist_center.distance_to(left_center)
+	left_miss = left_center.distance_to(L)
+	right_miss = fist_center.distance_to(R)
+	target_l = L
+	target_r = R
+	wrist_turn = 0.0
+	# the weapon: handle along `dir` through both fists, the blade facing the swing's way
+	var hand_world := sk_world * sk.get_bone_global_pose(_hands["_r"])
+	var socket: Node3D = rig.right_hand
+	socket.scale = Vector3.ONE / hand_world.basis.get_scale()
+	var tool: Node3D = rig.grip.get_child(rig.grip.get_child_count() - 1)
+	handle = _handle_of(tool, Vector3.UP)
+	var blade := _blade_of(tool)
+	var E: Vector3 = _body(F, p.edge)
+	E = E - E.dot(dir) * dir
+	if E.length() < 1e-3:
+		E = -F.z - (-F.z).dot(dir) * dir
+	E = E.normalized()
+	var lb := Basis(blade, Vector3.UP, blade.cross(Vector3.UP))
+	var wb := Basis(E, dir, E.cross(dir))
+	var B := wb * lb.inverse()
+	var off: Vector3 = handle[0]
+	var at := left_center - dir * (fist_half + STUB) - B * (off + Vector3.UP * float(handle[1]))
+	rig.grip.transform = (hand_world * socket.transform).affine_inverse() * Transform3D(B, at)
+	if measure_clearance:
+		_clearance(sk, left_center - dir * (fist_half + STUB), dir)
+
+
+## The handle's room in front of his body (owner, F389: "never through his chest or beard"): how close the handle,
+## from its end to where the head starts, comes to his skin, shirt and beard (his arms and hands don't count: they
+## hold it). For the test and the preview tool (slow: it skins every point of the body by hand).
+const CLAVICLE_MAX := 25.0  ## degrees the collarbones turn toward the fists
+const HANDLE_ROOM := 0.75  ## m of handle checked from its end (past that the head sits beside his shoulder)
+var measure_clearance := false
+var clearance := 0.0  ## m, this frame (measure_clearance on)
+var clear_part := ""  ## the body bone nearest the handle
+var clearance_hair := 0.0  ## the same for his hair and beard braids (they hang down his front)
+func _clearance(sk: Skeleton3D, end: Vector3, dir: Vector3) -> void:
+	clearance = INF
+	clearance_hair = INF
+	var skip := ["arm", "hand", "index", "middle", "ring", "pinky", "thumb", "clavicle"]
+	var sk_world := sk.global_transform
+	for mi: MeshInstance3D in sk.find_children("*", "MeshInstance3D", false, false):
+		if not mi.visible or mi.skin == null or mi.mesh == null:
+			continue
+		var skin := mi.skin
+		var bind_bone := []
+		var bind_x := []
+		for i in skin.get_bind_count():
+			var bi := sk.find_bone(skin.get_bind_name(i))
+			bind_bone.append(bi)
+			bind_x.append(sk.get_bone_global_pose(maxi(bi, 0)) * skin.get_bind_pose(i))
+		for sf in mi.mesh.get_surface_count():
+			var arr := mi.mesh.surface_get_arrays(sf)
+			var verts: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+			var bones = arr[Mesh.ARRAY_BONES]
+			var weights = arr[Mesh.ARRAY_WEIGHTS]
+			if bones == null or weights == null or verts.is_empty():
+				continue
+			var per: int = (bones as PackedInt32Array).size() / verts.size()
+			for vi in range(0, verts.size(), 2):
+				var top := 0
+				var p := Vector3.ZERO
+				for k in per:
+					var wgt: float = weights[vi * per + k]
+					if wgt <= 0.0:
+						continue
+					var bi: int = bones[vi * per + k]
+					p += ((bind_x[bi] as Transform3D) * verts[vi]) * wgt
+					if wgt > float(weights[vi * per + top]):
+						top = k
+				var main: int = bind_bone[bones[vi * per + top]]
+				var bname := sk.get_bone_name(main) if main >= 0 else ""
+				var skipped := false
+				for word: String in skip:
+					if word in bname:
+						skipped = true
+						break
+				if skipped:
+					continue
+				var wp := sk_world * p
+				var along := clampf((wp - end).dot(dir), 0.0, HANDLE_ROOM)
+				var dist := wp.distance_to(end + dir * along)
+				if bname.begins_with("hair"):
+					clearance_hair = minf(clearance_hair, dist)
+				elif dist < clearance:
+					clearance = dist
+					clear_part = bname
+
+
+## A body point or direction (x his right, y up, z his front) in world space, by the chest's frame F.
+static func _body(F: Basis, v: Vector3) -> Vector3:
+	return F * Vector3(v.x, v.y, -v.z)
+
+
+## A world turn as the same turn in skeleton space (the skeleton is a little wider than tall).
+static func _to_sk_turn(to_sk: Basis, q: Quaternion) -> Quaternion:
+	var ax := q.get_axis() if q.get_angle() > 1e-5 else Vector3.UP
+	return Quaternion((to_sk * ax).normalized(), q.get_angle())
+
+
+## One fist to `target` (world), its hole along `dir`: the hand turns, then the arm reaches (three rounds: each
+## changes the other a little). The elbow stays on the side the animation bent it.
+func _fist_to(sk: Skeleton3D, side: String, up_b: int, low_b: int, hand_b: int, target: Vector3, dir: Vector3) -> void:
+	var to_sk := sk.global_transform.affine_inverse()
+	# the elbow out to his side and down, a little back (owner, Nov 19: the arms were folded into his belly)
+	var rb := rig.global_basis.orthonormalized()
+	var out := rb.x if side == "_r" else -rb.x
+	var pole := (to_sk.basis * (out * ELBOW_OUT.x - rb.y * ELBOW_OUT.y + rb.z * ELBOW_OUT.z)).normalized()
+	var dir_sk := (to_sk.basis * dir).normalized()
+	var t_sk := to_sk * target
+	for i in 8:
+		_turn_fist(sk, side, dir_sk)
+		var hand_basis := sk.get_bone_global_pose(hand_b).basis
+		_measure(sk, side)
+		var c := left_center if side == "_l" else fist_center
+		var wrist_at := t_sk - ((to_sk * c) - sk.get_bone_global_pose(hand_b).origin)
+		_reach(sk, up_b, low_b, hand_b, wrist_at, pole)
+		var g := sk.get_bone_global_pose(hand_b)
+		g.basis = hand_basis
+		_set_turn(sk, hand_b, g)
+
+
+## Turns one hand so the hole through its fist points along `dir_sk` (skeleton space).
+func _turn_fist(sk: Skeleton3D, side: String, dir_sk: Vector3) -> void:
+	var to_sk := sk.global_transform.affine_inverse()
+	_measure(sk, side)
+	var a := left_axis if side == "_l" else fist_axis
+	var hand_b: int = _hands[side]
+	var g := sk.get_bone_global_pose(hand_b)
+	g.basis = Basis(Quaternion((to_sk.basis * a).normalized(), dir_sk)) * g.basis
+	_set_turn(sk, hand_b, g)
+
+
+## Which way the blade sticks out from the handle (tool holder space, square to the handle; cached per tool): the
+## model's points in the top quarter of the handle's length, away from the handle's middle line. A maul's head
+## sticks out both ways evenly: then any side does.
+var _blades := {}
+func _blade_of(tool: Node3D) -> Vector3:
+	var id := tool.get_instance_id()
+	if _blades.has(id):
+		return _blades[id]
+	var off: Vector3 = _handle_of(tool, Vector3.UP)[0]
+	var pts: Array[Vector3] = []
+	var lo := INF
+	var hi := -INF
+	for mi: MeshInstance3D in tool.find_children("*", "MeshInstance3D", true, false):
+		var x := Transform3D()
+		var n: Node = mi
+		while n != tool and n is Node3D:
+			x = (n as Node3D).transform * x
+			n = n.get_parent()
+		x = tool.transform * x
+		if mi.mesh:
+			for sf in mi.mesh.get_surface_count():
+				for v: Vector3 in mi.mesh.surface_get_arrays(sf)[Mesh.ARRAY_VERTEX]:
+					var pt := x * v
+					pts.append(pt)
+					lo = minf(lo, pt.y)
+					hi = maxf(hi, pt.y)
+	var sum := Vector3.ZERO
+	for pt in pts:
+		if pt.y > hi - (hi - lo) * 0.25:
+			var out := Vector3(pt.x - off.x, 0, pt.z - off.z)
+			sum += out * out.length()  # (the far points count most: the blade's edge)
+	var found := sum.normalized() if sum.length() > 1e-4 else Vector3.RIGHT
+	_blades[id] = found
+	return found
 
 
 ## Gives a bone the turn of `pose` (skeleton space), keeping its own size (DwarfProportions). Setting the whole pose
@@ -316,7 +462,7 @@ static func _set_turn(sk: Skeleton3D, bone: int, pose: Transform3D) -> void:
 
 
 ## Two-bone reach: turns the upper arm and the forearm so the wrist (hand bone) lands on `at` (skeleton space).
-static func _reach(sk: Skeleton3D, up_b: int, low_b: int, hand_b: int, at: Vector3) -> void:
+static func _reach(sk: Skeleton3D, up_b: int, low_b: int, hand_b: int, at: Vector3, pole := Vector3.ZERO) -> void:
 	for i in 2:  # (the squashed dwarf bones lose a little of each turn: twice)
 		var A := sk.get_bone_global_pose(up_b).origin
 		var B := sk.get_bone_global_pose(low_b).origin
@@ -327,6 +473,8 @@ static func _reach(sk: Skeleton3D, up_b: int, low_b: int, hand_b: int, at: Vecto
 		var d := clampf(to.length(), absf(a - b) + 0.001, a + b - 0.001)
 		var dir := to.normalized()
 		var bend := (B - A) - (B - A).dot(dir) * dir  # (where the elbow points now)
+		if pole != Vector3.ZERO:  # (or where it's told to point: the great weapons' elbows out to the sides)
+			bend = pole - pole.dot(dir) * dir
 		if bend.length() < 1e-4:
 			bend = (C - A).cross(Vector3.UP).cross(dir)
 		bend = bend.normalized()
