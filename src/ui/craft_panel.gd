@@ -295,7 +295,7 @@ func start_making(recipe_id: String, count: int = -2) -> void:
 		var can := can_make_count(recipe_id, me_ps.inventory) if me_ps else 1
 		count = mini(amount, maxi(can, 1))
 	count = maxi(count, 1)
-	var t := craft_time(recipe_id)
+	var t := craft_time(recipe_id) * (_prog().craft_time_mult(false) if _prog() else 1.0)  # Crafting: −3% per 10 levels
 	if t <= 0.0:
 		for i in count:
 			_finish(recipe_id)
@@ -353,11 +353,19 @@ func _process(delta: float) -> void:
 		_bar.modulate.a = 0.0
 		_status.text = ""
 		_finish(id)
-		if more > 0:  # making several: start the next one (stops by itself when materials run out)
+		if more > 0 and _prog() and _prog().has_star("crafting", 75):
+			for i in more:  # Crafting ★75: the rest are made at once, no extra wait
+				_finish(id)
+		elif more > 0:  # making several: start the next one (stops by itself when materials run out)
 			get_tree().create_timer(0.2).timeout.connect(func():
 				var ps := GameAuthority.instance.get_player(peer_id) if GameAuthority.instance else null
 				if ps and visible and can_make_count(id, ps.inventory) > 0:
 					start_making(id, more))
+
+
+func _prog() -> Progression:
+	var ps := GameAuthority.instance.get_player(peer_id) if GameAuthority.instance else null
+	return ps.progress if ps else null
 
 
 ## Gear upgrades (building polish spec §4): everything you carry or wear that this station can improve.
@@ -384,7 +392,7 @@ func _upgrade_rows(inv: Inventory) -> void:
 		text.fit_content = true
 		text.scroll_active = false
 		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var cost := Upgrades.next_cost(s)
+		var cost := Upgrades.next_cost(s, 0.10 if _prog() and _prog().has_star("crafting", 25) else 0.0)
 		var ok := not cost.is_empty() and station.level() >= Upgrades.needed_level(s)
 		var parts := []
 		for item in cost:

@@ -45,6 +45,9 @@ void fragment() {
 
 var progress: Progression
 var selected := ""
+var zoom := 1.0  ## mouse wheel zooms (1 = the whole tree fits); drag empty space to move it; double-click = fit
+var pan := Vector2.ZERO  ## how far the tree is moved, in screen pixels
+var _dragging := false
 var _bg: Texture2D
 var _nodes := {}  ## perk id -> its clickable Control (with the picture inside)
 var _over: Control  ## draws borders, badges, the Level circle and branch names on top of the pictures
@@ -86,7 +89,37 @@ func _ready() -> void:
 
 
 func _scale() -> float:
-	return minf(size.x, size.y) / UNITS
+	return minf(size.x, size.y) / UNITS * zoom
+
+
+func _center() -> Vector2:
+	return size * 0.5 + pan
+
+
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
+		var old := zoom
+		zoom = clampf(zoom * (1.15 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1.0 / 1.15), 1.0, 3.0)
+		pan = (pan + size * 0.5 - event.position) * (zoom / old) + event.position - size * 0.5  # zoom where the mouse is
+		_clamp_pan()
+		refresh()
+		accept_event()
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.double_click:
+			zoom = 1.0
+			pan = Vector2.ZERO
+			refresh()
+		_dragging = event.pressed
+	elif event is InputEventMouseMotion and _dragging:
+		pan += event.relative
+		_clamp_pan()
+		refresh()
+
+
+## Keep part of the tree on screen while dragging.
+func _clamp_pan() -> void:
+	var room := minf(size.x, size.y) * zoom * 0.5
+	pan = pan.clamp(-Vector2(room, room), Vector2(room, room))
 
 
 ## Screen spot of a perk (inside this control).
@@ -96,7 +129,7 @@ func spot(id: String) -> Vector2:
 	var at: Array = LAYOUT.get(id, [1, 0])
 	var r: float = 105.0 + (at[0] - 1) * 90.0
 	var lane: float = at[1] * 92.0
-	return size * 0.5 + Vector2(d.x * r - d.y * lane, d.y * r + d.x * lane) * _scale()
+	return _center() + Vector2(d.x * r - d.y * lane, d.y * r + d.x * lane) * _scale()
 
 
 func radius(id: String) -> float:
@@ -123,12 +156,12 @@ func _draw() -> void:
 	if _bg:  # the painted hall, its carved face under the Level circle
 		var w := BG_WIDTH * s
 		var h := w * _bg.get_height() / _bg.get_width()
-		draw_texture_rect(_bg, Rect2(size * 0.5 - Vector2(w * FACE.x, h * FACE.y), Vector2(w, h)), false, Color(0.62, 0.62, 0.62))
+		draw_texture_rect(_bg, Rect2(_center() - Vector2(w * FACE.x, h * FACE.y), Vector2(w, h)), false, Color(0.62, 0.62, 0.62))
 	if progress == null:
 		return
 	for id in Progression.PERKS:
 		var p: Array = Progression.PERKS[id]
-		var from: Vector2 = spot(p[2]) if p[2] != "" else size * 0.5 + DIRS[p[0]] * 58.0 * s
+		var from: Vector2 = spot(p[2]) if p[2] != "" else _center() + DIRS[p[0]] * 58.0 * s
 		var lit := progress.perk_rank(id) > 0
 		draw_line(from, spot(id), GOLD if lit else Color(0.23, 0.17, 0.11), (6.0 if lit else 4.0) * s * 1.4, true)
 
@@ -138,7 +171,7 @@ func _draw_over() -> void:
 		return
 	var s := _scale()
 	var font := UiKit.heading_font()
-	var c := size * 0.5
+	var c := _center()
 	for id in Progression.PERKS:
 		var p: Array = Progression.PERKS[id]
 		var at := spot(id)

@@ -64,11 +64,12 @@ static func material_for(id: String) -> String:
 
 
 ## What the next step costs ({} = can't go higher).
-static func next_cost(slot: Dictionary) -> Dictionary:
+## `discount` 0.1 = 10% less material (Crafting ★25), never below 1.
+static func next_cost(slot: Dictionary, discount: float = 0.0) -> Dictionary:
 	var id: String = slot.get("id", "")
 	if not can_upgrade(id) or level(slot) >= MAX_UP:
 		return {}
 	var step := level(slot) + 1
-	var c := {material_for(id): step * 2}
+	var c := {material_for(id): maxi(1, roundi(step * 2 * (1.0 - discount)))}
 	c["crystal_green" if step == 3 else "crystal_blue"] = 1
 	return c

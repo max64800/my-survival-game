@@ -68,7 +68,7 @@ func _ready() -> void:
 	_tree.picked.connect(func(id): _sel = id; _tree.selected = id; _tree.refresh(); _show_detail())
 	cols.add_child(_tree)
 	_detail = _side(cols, 290)
-	UiKit.label(box, "Circles = always on  ·  ◆ diamonds = press Z / G / T  ·  ★ = final perk  ·  K close", 13, UiKit.DIM).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	UiKit.label(box, "Circles = always on  ·  ◆ diamonds = press Z / G / T  ·  ★ = final perk  ·  wheel = zoom, drag = move, double-click = fit  ·  K close", 13, UiKit.DIM).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 
 func _side(parent: Node, width: float) -> VBoxContainer:

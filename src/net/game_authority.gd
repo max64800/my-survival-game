@@ -463,7 +463,7 @@ func request_chop_pillar(peer_id: int, id: int) -> void:
 	give_xp(peer_id, 3 * n, "woodcutting")
 	_ev_tree_used.rpc(id, used + n)
 	if used + n >= RootPillars.CHOPS:  # it cracks: 1-2 Root Seeds fall from it (owner, Nov 18)
-		tree_regrow[id] = RootPillars.REGROW_TIME
+		tree_regrow[id] = RootPillars.REGROW_TIME * _root_regrow_mult(get_player(peer_id))
 		spawn_drop("root_seed", randi_range(1, 2), (p.bottom as Vector3) + out * float(p.width) * 0.25 + Vector3.UP * 1.0)
 	_tell_feedback(peer_id, {state = "done", kind = "root", point = axis + out * float(p.width) * 0.15})
 
@@ -836,6 +836,23 @@ func _ev_learned(recipe_id: String) -> void:
 	learned_recipe.emit(recipe_id)  # a card on the left with its picture (owner, Nov 19)
 
 
+## Stamina back (Axe ★100): the player's own computer owns their body.
+func give_stamina(peer_id: int, amount: float) -> void:
+	if amount <= 0.0:
+		return
+	if peer_id == local_peer_id():
+		var ps := get_player(peer_id)
+		if ps:
+			ps.vitals.stamina = minf(ps.vitals.max_stamina(), ps.vitals.stamina + amount)
+	elif get_player(peer_id):
+		_rpc_stamina.rpc_id(peer_id, amount)
+
+
+@rpc("authority", "reliable")
+func _rpc_stamina(amount: float) -> void:
+	give_stamina(local_peer_id(), amount)
+
+
 ## Healing (Leech gems): the player's own computer owns their health.
 func heal(peer_id: int, amount: float) -> void:
 	if amount <= 0.0:
@@ -948,7 +965,7 @@ func request_upgrade(peer_id: int, slot: int, station_id: int) -> String:
 		return "Upgrade this at a %s." % Items.display_name(Upgrades.station_for(s.id))
 	if ps.node.global_position.distance_to(st.global_position) > 6.0:
 		return "Too far from the %s." % Items.display_name(st.kind)
-	var cost := Upgrades.next_cost(s)
+	var cost := Upgrades.next_cost(s, 0.10 if ps.progress.has_star("crafting", 25) else 0.0)  # Crafting ★25
 	if cost.is_empty():
 		return "Already +3."
 	if st.level() < Upgrades.needed_level(s):
@@ -1230,7 +1247,7 @@ func _break_plant_at(ps: PlayerState, point: Vector3) -> Dictionary:
 			# small roots give wood and grow back (owner, Nov 17: "I'm missing a ton of wood"); grass and ferns: fiber
 			spawn_drop("rootwood" if is_root else CaveLife.FIBER_DROP, 1, at + Vector3.UP * 0.3)
 			if is_root:
-				plant_regrow[plant] = REGROW_TIME
+				plant_regrow[plant] = REGROW_TIME * _root_regrow_mult(ps)
 			return {state = "done", hits = 1, needed = 1, point = at, kind = "rootwood" if is_root else "fiber"}
 	return {}
 
@@ -1456,7 +1473,7 @@ func request_harvest(peer_id: int, glow_id: int) -> Dictionary:
 	else:
 		removed_glow.append(glow_id)
 		_ev_remove_glow.rpc(glow_id)
-		_start_regrow(spot)
+		_start_regrow(spot, ps)
 	var done := {state = "done", hits = needed, needed = needed, point = spot.pos, kind = spot.kind}
 	_tell_feedback(peer_id, done)
 	return done
@@ -1541,6 +1558,8 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 			elif not ps.inventory.remove(id, 1):
 				return ""
 			var roll := randf()
+			if Foods.is_buff_food(id) and ps.progress.has_star("cooking", 100):
+				heal(peer_id, 10.0)  # Cooking ★100: your cooked food heals a little
 			if peer_id == local_peer_id():
 				ps.vitals.consume(id, roll)
 				Sfx.ui("eat", -4.0)
@@ -2015,7 +2034,14 @@ func request_craft(peer_id: int, recipe_id: String, station_id: int = 0) -> bool
 			ps.inventory.remove(item, r.inputs[item])
 		if fuel_item != "":
 			ps.inventory.remove(fuel_item, r.fuel)
-		st.queue_job(r.output, r.count, (r.seconds + extra_seconds) * (ps.progress.smelt_time_mult() if r.station == "smelter" else 1.0))
+		var cooking: bool = r.station == "campfire"
+		var made: int = r.count
+		if cooking and int(r.get("level", 1)) >= 2 and ps.progress.has_star("cooking", 25):
+			made += 1  # Cooking ★25: the pot makes one more dish
+		if cooking and ps.progress.has_star("cooking", 50) and randf() < 0.10:
+			made *= 2  # Cooking ★50: now and then a double dish
+		st.queue_job(r.output, made, (r.seconds + extra_seconds) * (ps.progress.smelt_time_mult() if r.station == "smelter" else 1.0) \
+			* ps.progress.craft_time_mult(cooking))
 	else:
 		if not Crafting.craft(ps.inventory, recipe_id):
 			return false
@@ -2041,7 +2067,8 @@ func request_pickup(peer_id: int, drop_id: int) -> bool:
 		return false
 	# Each computer bounces drops on its own, and far from the host the host's copy may have
 	# no floor loaded and fall away. So where it first appeared counts too.
-	if _chest(ps).distance_to(d.global_position) > PICKUP_RANGE and _chest(ps).distance_to(d.home) > PICKUP_RANGE + 4.0:
+	var reach := PICKUP_RANGE * (1.3 if ps.progress.has_star("gathering", 25) else 1.0)  # Gathering ★25
+	if _chest(ps).distance_to(d.global_position) > reach and _chest(ps).distance_to(d.home) > reach + 4.0:
 		return false
 	var left := ps.inventory.add(d.item_id, d.count)
 	if left == d.count:
@@ -2180,9 +2207,14 @@ func _apply_pending_digs() -> void:
 
 
 ## Roots (thin and big) grow back after REGROW_TIME (owner, Nov 15, F106).
-func _start_regrow(spot: Dictionary) -> void:
+## `by` = who chopped it (Woodcutting ★75: their roots grow back 25% faster).
+func _start_regrow(spot: Dictionary, by: PlayerState = null) -> void:
 	if spot.get("kind", "") in [GlowPlacer.ROOT, GlowPlacer.ROOT_DANGLE]:
-		regrow[spot.id] = REGROW_TIME
+		regrow[spot.id] = REGROW_TIME * _root_regrow_mult(by)
+
+
+func _root_regrow_mult(by: PlayerState) -> float:
+	return 0.75 if by and by.progress.has_star("woodcutting", 75) else 1.0
 
 
 ## Host: count down; a root comes back only if the rock it hangs from is still there.

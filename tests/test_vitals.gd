@@ -187,3 +187,15 @@ func test_meat_guards_and_bullet_lines() -> void:
 	check_near(v.buff_total("guard_bat"), 0.35, 0.0001, "two bat dishes add up")
 	var lines := Foods.effect_lines("dish_hearth_stew")
 	check(lines.has("take 20% less from bats") and lines[-1] == "lasts 35 min", "bullets, and how long it lasts at the end")
+
+
+func test_second_wind() -> void:
+	var v := Vitals.new()
+	v.progress = Progression.new()
+	v.progress.skill_level.running = 100
+	v.stamina = 0.0
+	v.tick(0.1)
+	check(v.stamina >= v.max_stamina() * 0.25, "Running ★100: a quarter of your stamina comes back")
+	v.stamina = 0.0
+	v.tick(0.1)
+	check(v.stamina < v.max_stamina() * 0.25, "only once every 2 minutes")

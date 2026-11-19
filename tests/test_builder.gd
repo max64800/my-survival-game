@@ -130,8 +130,8 @@ func test_station_levels_unlock_pieces() -> void:
 	check_eq(auth.builder.station_problem("roof_45", "plank_root", s.pos), "Needs Workbench level 2 (build a Chopping Block next to it)",
 		"a steep wooden roof needs Workbench level 2")
 	check_eq(auth.builder.station_problem("roof_26", "plank_root", s.pos), "", "a gentle roof is fine with any Workbench (F133)")
-	auth._ev_place_station(2, "chopping_block", at + Vector3(6, 0, 0), 0.0)
-	check_eq((auth.stations[1] as Station).level(), 1, "an extra 6 m away doesn't count")
+	auth._ev_place_station(2, "chopping_block", at + Vector3(12, 0, 0), 0.0)
+	check_eq((auth.stations[1] as Station).level(), 1, "an extra 12 m away doesn't count (helpers reach 10 m, owner Nov 20)")
 	auth._ev_place_station(3, "chopping_block", at + Vector3(2, 0, 0), 0.0)
 	auth._ev_place_station(4, "chopping_block", at + Vector3(0, 0, 2), 0.0)
 	check_eq((auth.stations[1] as Station).level(), 2, "two Chopping Blocks nearby: still only level 2 (each extra counts once)")

@@ -85,7 +85,24 @@ Quick Helper and Stand Over (no "fallen friend" state), Lantern Bearer (only you
 Placeholders: Whirlwind/Healing Brew/Clan Banner have sounds only (no spin, throw or banner model); Healing Brew heals
 around you instead of being thrown; Shoulder to Shoulder only helps the player who has it; the gold coin icon.
 
+## ★ perks and skill bonuses built (Nov 20, Mac, overnight)
+- **Per-level bonuses now working:** Sword/Axe attack stamina, Mace armor piercing, Warhammer stun, Spear reach,
+  Shield block strength + block stamina, Crossbow reload, Crafting craft time, Cooking cook time.
+- **★ perks now working:** Running 25 (burst), 75 (enemies miss 20% on the run), 100 (Second Wind) · Jumping 25, 75 (jump
+  attack) · Mining 25, 50, 75, 100 · Woodcutting 25, 50, 75 (roots regrow 25% faster), 100 · Gathering 25 (pick up from
+  further) · Crafting 25 (upgrades 10% cheaper), 50 (save a material), 75 (several at once, no extra wait) ·
+  Cooking 25 (pot makes 1 more), 50 (double dish 10%), 100 (cooked food heals 10) · Sword 25 (quick step), 50, 75, 100 ·
+  Axe 50 (3 targets), 100 (stamina back) · Mace 25, 50, 75, 100 · Warhammer 25 (heavy swings can't be knocked out of),
+  50 (wider slam), 100 (slam stuns) · Spear 25 (poke pushes back), 50, 100 · Shield 25, 50, 75, 100 · Crossbow 25, 50,
+  75 (30% the bolt comes back to your bag), 100.
+- **Not built (needs a new system or the owner's call):** Running 50 (nothing slows you on rubble or slopes yet),
+  Jumping 50 (no ledge climbing) and 100 (no fall damage), Gathering 50 (drops don't glow), 75 (mushrooms don't regrow)
+  and 100 (no "rare finds" in gathering), Crafting 100 (no item quality yet), Cooking 75 (a 4th food clashes with the
+  2 foods + 1 drink rule), Axe 25 (no bleeding) and 75 (enemies have no shields), Warhammer 75 (slam digging), Spear 75
+  (no spear throw). Crafting 25 only shows on bigger upgrade costs (2 → 2 after rounding).
+
 ## Still to plan
 - Max level / total perk points, which keys abilities go on (choosing), gold from monsters.
+- The unbuilt ★ perks above (each needs its system first).
 - How much skill you lose when you die (owner wants some, like Valheim).
 - Exact XP per action for each skill.

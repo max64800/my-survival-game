@@ -924,3 +924,21 @@ func test_beetles_bump_never_overlap() -> void:
 	var r: float = (a._body_shape.shape as CapsuleShape3D).radius
 	check(closest > r * 1.6, "two beetles chasing never overlap (closest %.2f m, bodies %.2f m wide)" % [closest, r * 2.0])
 	_teardown()
+
+
+func test_sword_star_perks_in_a_real_fight() -> void:
+	await _setup()
+	ps.inventory.add("sword_stone", 1)
+	auth.request_select_slot(1, first_item_slot(ps))
+	var m := _spawn("rock_snail", Vector3(1.2, 0, 0), true)  # armor 30, lots of HP
+	m.state = Monster.State.CHASE
+	var plain := auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, 2, false)
+	m.shell_hits = 0
+	m.shell_left = 0.0
+	ps.progress.skill_level.sword = 75
+	var third := auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, 2, false)
+	check(third > plain, "Sword ★75: the 3rd combo hit does more (%d > %d)" % [third, plain])
+	m.shell_hits = 0
+	m.shell_left = 0.0
+	check(auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, 0, false, false, true) > plain - 1, "a jump attack counts too (no ★ jumping yet: same)")
+	_teardown()

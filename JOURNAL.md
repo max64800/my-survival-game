@@ -5569,3 +5569,17 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   `src` for "dungeon"), the owner caught it. The full test run showed 13 fails; ran them on a copy from before
   Claude's commit: the same fail there, so they come from other work (food/build-menu chats). Copied the scripts into
   the docs folder where they couldn't find the pages: moved pages + scripts together into tools/dungeon_pages.
+
+## 2026-11-20 (Mac, overnight) — Skill ★ perks and per-level bonuses
+- Owner said "go" on building every skill perk from skills.md that needs no new system. Built in `Progression`
+  (one small helper per perk) and hooked into fighting (host damage, stun, targets, pierce, crits; the dwarf's swing
+  stamina, reach, parry windows, walking while blocking/aiming, reloads, quick step, jump attacks), running, digging,
+  gathering, crafting and cooking. Full list and the skipped ones: docs/design/skills.md "★ perks and skill bonuses built".
+- Also: zoom (wheel, at the mouse), drag and double-click-to-fit for the skills tree; screenshot checked.
+- Tests: new checks for the bonuses, ★ perks, Second Wind and a real sword fight. Full run: 494 checks, 12 failed;
+  only one was mine (a builder test still expected the old 4 m helper range, fixed). The rest are not from this work:
+  4 cave physics (Jolt), test_build_menu (another session's PlaceGhost.held_turn not written yet), crystals growing
+  back (a test without its code yet), 2 ruin tower tests, 2 dwarf tests (fail the same with my changes taken out),
+  tool models (old).
+- Skipped (needs a system or the owner): Running 50, Jumping 50/100, Gathering 50/75/100, Crafting 100, Cooking 75,
+  Axe 25/75, Warhammer 75, Spear 75. Crafting 25 rounds away on today's small upgrade costs.

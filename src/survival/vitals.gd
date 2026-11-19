@@ -36,6 +36,7 @@ var effects := {}  ## timed effects from active perks: name -> {left (seconds), 
 var in_dark := false  ## no light reaches you (Darkness): no healing, stamina costs 50% more (F293)
 var friends_near := false  ## a friend within 10 m (Shoulder to Shoulder), set every frame on our computer
 var unbreakable_cd := 0.0  ## Unbreakable perk: seconds until it can save you again
+var second_wind_cd := 0.0  ## Running ★100: seconds until Second Wind works again
 var _since_damage := 999.0
 var _since_stamina := 999.0
 
@@ -129,6 +130,10 @@ func tick(delta: float, resting: bool = false) -> void:
 	upset_time = maxf(0.0, upset_time - delta)
 	cozy_time = maxf(0.0, cozy_time - delta)
 	unbreakable_cd = maxf(0.0, unbreakable_cd - delta)
+	second_wind_cd = maxf(0.0, second_wind_cd - delta)
+	if stamina <= 0.5 and second_wind_cd <= 0.0 and progress and progress.has_star("running", 100):
+		stamina = max_stamina() * 0.25  # Running ★100 Second Wind: out of stamina, a quarter comes back (every 2 min)
+		second_wind_cd = 120.0
 	for k in effects.keys():
 		effects[k].left -= delta
 		if effects[k].left <= 0.0:

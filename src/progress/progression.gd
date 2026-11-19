@@ -279,6 +279,115 @@ func jump_stamina_mult() -> float:
 	return (1.0 - skill_level.jumping * 0.003) * (0.75 if has_star("jumping", 25) else 1.0)
 
 
+# ---------------------------------------------------------------- skill bonuses and ★ perks (skills.md)
+
+func _lv(skill: String) -> int:
+	return skill_level.get(skill, 0)
+
+
+## Attack stamina: Sword and Axe use 2% less per 10 levels.
+func attack_stamina_mult(weapon: String) -> float:
+	var s := weapon_skill(weapon)
+	return 1.0 - _lv(s) * 0.002 if s in ["sword", "axe"] else 1.0
+
+
+## Share of armor a weapon's skill ignores: Mace +3% per 10 levels; Crossbow ★100 ignores 30%.
+func skill_armor_pierce(weapon: String) -> float:
+	var s := weapon_skill(weapon)
+	if s == "mace":
+		return _lv(s) * 0.003
+	if s == "crossbow" and has_star("crossbow", 100):
+		return 0.30
+	return 0.0
+
+
+## Stun from a hit, from skills: Warhammer +3% per 10 levels; Mace ★50 +15%; Shield ★50 (bash) +30%.
+func skill_stun_mult(weapon: String) -> float:
+	var s := weapon_skill(weapon)
+	var m := 1.0
+	if s == "warhammer":
+		m += _lv(s) * 0.003
+	if s == "mace" and has_star("mace", 50):
+		m += 0.15
+	if s == "shield" and has_star("shield", 50):
+		m += 0.30
+	return m
+
+
+## Spear reach: +1.5% per 10 levels.
+func reach_mult(weapon: String) -> float:
+	return 1.0 + _lv("spear") * 0.0015 if weapon_skill(weapon) == "spear" else 1.0
+
+
+## Shield block: +2% stronger and 2% cheaper per 10 levels (added to Combat.defend's gem bonus).
+func block_bonus() -> Dictionary:
+	return {block = _lv("shield") * 0.002, block_stamina = _lv("shield") * 0.002}
+
+
+## Parry window: Sword ★50 +20% (sword parries), Shield ★100 +30% (shield parries).
+func parry_mult(weapon: String, shield: bool) -> float:
+	if shield:
+		return 1.3 if has_star("shield", 100) else 1.0
+	return 1.2 if weapon_skill(weapon) == "sword" and has_star("sword", 50) else 1.0
+
+
+## Crossbow reload: Quick Reload perk, Crossbow −3% per 10 levels, ★50 −15%.
+func crossbow_reload_mult() -> float:
+	return reload_mult() * (1.0 - _lv("crossbow") * 0.003) * (0.85 if has_star("crossbow", 50) else 1.0)
+
+
+## How long a craft takes: Crafting −3% per 10 levels; cooking: Cooking −3% per 10 levels.
+func craft_time_mult(cooking: bool) -> float:
+	return 1.0 - _lv("cooking" if cooking else "crafting") * 0.003
+
+
+## Extra damage share from ★ perks for one hit (host). ctx: combo_step, riposte, stunned, armor, shelled, heavy,
+## airborne, tip (the target is at the very end of the reach).
+func star_damage_bonus(weapon: String, ctx: Dictionary) -> float:
+	var s := weapon_skill(weapon)
+	var b := 0.0
+	if ctx.get("airborne", false) and has_star("jumping", 75):
+		b += 0.20  # jump attack
+	match s:
+		"sword":
+			if has_star("sword", 75) and ctx.get("combo_step", 0) == 2:
+				b += 0.30  # 3rd hit of a combo
+		"mace":
+			if has_star("mace", 25) and ctx.get("shelled", false):
+				b += 0.25  # cracks rock-shelled enemies
+			if has_star("mace", 100) and ctx.get("stunned", false):
+				b += 0.25
+		"spear":
+			if has_star("spear", 100) and ctx.get("tip", false):
+				b += 0.30  # sweet spot
+		"shield":
+			pass
+	if ctx.get("riposte", false) and has_star("shield", 75):
+		b += 0.25  # the hit after a perfect parry
+	return b
+
+
+## Sword ★100: a perfect parry's counter-hit is a critical.
+func riposte_crits(weapon: String) -> bool:
+	return weapon_skill(weapon) == "sword" and has_star("sword", 100)
+
+
+## Most enemies one swing can hit: Axe ★50 hits 3, Spear ★50 goes through 1 more.
+func extra_targets(weapon: String) -> int:
+	var s := weapon_skill(weapon)
+	return 1 if (s == "axe" and has_star("axe", 50)) or (s == "spear" and has_star("spear", 50)) else 0
+
+
+## Digging / chopping swing time: Mining ★25 and Woodcutting ★25 swing 10% faster.
+func dig_swing_mult(with_axe: bool) -> float:
+	return 0.9 if has_star("woodcutting" if with_axe else "mining", 25) else 1.0
+
+
+## Walking while blocking (Shield ★25) or aiming (Crossbow ★25): faster than the normal 60%.
+func guard_walk_mult(aiming: bool) -> float:
+	return 0.8 if has_star("crossbow" if aiming else "shield", 25) else 0.6
+
+
 ## Extra damage from the weapon's skill, as a bonus to add (0.2 = +20%).
 func weapon_damage_bonus(weapon: String) -> float:
 	var s := weapon_skill(weapon)
@@ -363,7 +472,7 @@ func extra_ore_chance() -> float:
 
 
 func save_material_chance() -> float:
-	return perk_rank("steady_hands") * 0.05
+	return perk_rank("steady_hands") * 0.05 + (0.10 if has_star("crafting", 50) else 0.0)
 
 
 func extra_drop_chance() -> float:
