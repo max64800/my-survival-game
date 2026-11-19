@@ -45,9 +45,6 @@ func test_vitals_take_poison_damage_and_respawn_clears() -> void:
 
 
 func test_jungle_attacks_poison() -> void:
-	var poisonous := 0
-	for id in Monsters.LIST:
-		for a in Monsters.LIST[id].attacks:
-			if a.get("buildup", {}).has("poison") or a.has("cloud"):
-				poisonous += 1
-	check(poisonous >= 3, "jungle monsters carry poison")
+	# (Nov 19: the poisonous jungle creatures were taken out; the Blight-crested crystal kind brings the poison now.)
+	check(Monsters.VARIANTS.green.buildup.has("poison"), "Blight-crested creatures carry poison")
+	check(Monsters.VARIANT_CHANCE.fungal[1].get("green", 0.0) > 0.0, "and they live in the jungle")
