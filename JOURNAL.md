@@ -4995,3 +4995,7 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   the stub, every weapon, running, chopping; shield fist; open hand without a tool). Page "Dwarf Hands" (Before/After).
 - Not mine, failing: `test_dwarf` braid + aim (before), `test_visuals` shovel model, 3 `test_authority` (Jolt switch).
 - Did NOT merge `claude/outpost-and-tools`: the shoulder carry was already in the shared folder.
+- **Number tidy (owner said yes):** 7 numbers were used for two items each. The older item (or the one code comments
+  point to) kept its number; the others became F390 (dwarf loops too fast, was F261), F391 (hide armor, F273),
+  F392 (shirt patch, F274), F393 (Fallen Outpost fixes, F300), F394 (creatures turn to stone, F337), F395 (roots on
+  crystals, F373) and F396 (rune shrines, F374). Each says which number it had. Then committed everyone's work and pushed.
