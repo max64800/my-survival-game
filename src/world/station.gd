@@ -36,14 +36,28 @@ var _label: Label3D
 var _fire: OmniLight3D
 
 ## Station levels (building polish spec §3): a station is level 1, plus 1 for each DIFFERENT extra
-## of its own standing within 4 m. Levels unlock building pieces and gear upgrades.
+## of its own standing within 10 m (owner, Nov 20; was 4 m). Levels unlock building pieces and gear upgrades.
+## StationLinks draws a line from each helper to the station it counts for.
 const EXTRAS := {
 	"workbench": ["chopping_block", "tool_rack", "carpenters_vise"],  # level 2, 3 (both copper-free), 4 (copper)
 	"masonry_table": ["chisel_rack", "stone_saw"],
 	"anvil": ["bellows", "grindstone"],
 }
-const EXTRA_RANGE := 4.0
+const EXTRA_RANGE := 10.0
 var _label_timer := 0.0
+
+
+## Which station a helper counts for ("" = it isn't a helper). "bellows" -> "anvil".
+static func helps_kind(item: String) -> String:
+	for k in EXTRAS:
+		if item in EXTRAS[k]:
+			return k
+	return ""
+
+
+## The Twin Smelter counts as a Smelter (same as Recipes.station_type).
+static func station_type(k: String) -> String:
+	return Recipes.station_type(k)
 
 
 func level() -> int:

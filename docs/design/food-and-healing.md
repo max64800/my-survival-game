@@ -26,7 +26,16 @@ Players never see "1 health every 3.9 s" on a card. They see hearts; hovering sh
 - Every food card lists its effects as bullets, always in this order: healing hearts first, then the other buffs,
   then how long it lasts.
 
+## The kitchen (owner, Nov 20): 3 levels
+| Level | Build | Cook | Effects last |
+|---|---|---|---|
+| 1 | Campfire | one-ingredient meals | 15 min |
+| 2 | Cooking Pot placed **on** the campfire | stews, broth, tea, cordial, ale, tuber mash, firecap skewer | 25 min |
+| 3 | + **Stone Oven** within 10 m | Miner's Pie, Old Hearth Stew | 35 min |
+
+Station helpers count from **10 m** (was 4 m). Holding a station, a helper or the build hammer shows glowing lines
+from each helper to the station it counts for (gold = counts now, green = where the one in your hand would connect).
+
 ## Still to build
 The food plan isn't in the game yet (today's foods keep their old effects and don't speed up healing). Building it:
-new healing numbers in Vitals, 2 foods + 1 drink slots, the guards and other new effects, the kitchen steps and their
-3 helper models, and the hearts + bullet list on the in-game food cards and bag tooltips.
+new healing numbers in Vitals, 2 foods + 1 drink slots, the guards and other new effects, the pot-on-the-fire kitchen and the Stone Oven model, and the hearts + bullet list on the in-game food cards and bag tooltips.

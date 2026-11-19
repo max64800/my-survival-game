@@ -186,7 +186,7 @@ func refresh() -> void:
 		var nxt := station.next_extra()
 		_title.text += "  ·  level %d of %d" % [station.level(), Station.max_level(station.kind)]
 		if nxt != "" and _status.text == "":
-			_status.text = "Place a %s within 4 m to reach level %d." % [Items.display_name(nxt), station.level() + 1]
+			_status.text = "Place a %s within %d m to reach level %d." % [Items.display_name(nxt), int(Station.EXTRA_RANGE), station.level() + 1]
 	if station and station.kind in AutoSmelt.KINDS and _status.text == "":
 		_status.text = "Works by itself: put %s in a chest within 5 m." % 			("wood" if station.kind == "kiln" else "ore and coal")
 	var keep_scroll := _scroll.scroll_vertical  # the list stays where it was after you make something (F129)

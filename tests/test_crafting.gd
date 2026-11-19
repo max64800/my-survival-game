@@ -133,3 +133,24 @@ func test_dwarf_makes_the_in_between_items_first() -> void:
 	bag.add("root_tuber", 2)
 	bag.add("hollowcap", 1)
 	check_eq(Crafting.plan(bag, "dish_miners_pie", "cooking_pot", any), [], "raw bug meat: roast it at a campfire first (same station only)")
+
+
+func test_helpers_link_to_stations_within_10_m() -> void:
+	check_eq(Station.EXTRA_RANGE, 10.0, "helpers count from 10 m away")
+	check_eq(Station.helps_kind("bellows"), "anvil", "bellows help the anvil")
+	check_eq(Station.helps_kind("anvil"), "", "an anvil isn't a helper")
+	var near := StationLinks.ghost_links("bellows", Vector3(8, 0, 0), [_fake("anvil", Vector3.ZERO), _fake("workbench", Vector3(1, 0, 0))])
+	check_eq(near.size(), 1, "bellows 8 m away: one line, to the anvil only")
+	check_eq(StationLinks.ghost_links("bellows", Vector3(12, 0, 0), [_fake("anvil", Vector3.ZERO)]).size(), 0, "12 m: too far, no line")
+
+
+class _FakeStation:
+	var kind := ""
+	var global_position := Vector3.ZERO
+
+
+func _fake(k: String, at: Vector3) -> _FakeStation:
+	var f := _FakeStation.new()
+	f.kind = k
+	f.global_position = at
+	return f

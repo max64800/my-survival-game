@@ -5485,3 +5485,12 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   speed. New `docs/design/food-and-healing.md` (heart scale per zone, healing rules, what's still to build).
   Crafting Book food tables now show "Healing ½♥ / ♥" first in each bullet list. Not in the game yet: the food plan
   itself isn't built (today's foods keep their old effects, game cards don't list food effects).
+
+## 2026-11-20 (Mac) — Station helper lines, 10 m range, kitchen = 3 levels
+- Owner: helpers should show a clear line to the station they boost while you hold a station, a helper or the build
+  hammer; range 10 m instead of 4. New `src/player/station_links.gd` (camera-facing glowing bands: gold = counts now,
+  green = where the one in your hand would connect); `Station.EXTRA_RANGE` 10; craft window hint says 10 m. Test added.
+- Kitchen agreed: Campfire (1), Cooking Pot placed on the fire (2), Stone Oven within 10 m (3). Food plan and
+  docs/design/food-and-healing.md updated; the pot-on-fire and the oven are not built yet (oven needs a model).
+- Not looked at in a real game window: the lines are untested by eye. Hurdle: another session had unsaved edits in
+  JOURNAL.md and FEEDBACK.md, so this entry was added to the saved copy only and FEEDBACK.md was left alone.

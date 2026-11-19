@@ -8,7 +8,7 @@
   "Healing: you heal 1 health every 5 s on your own; every food and drink speeds it up. Cards show it as half hearts (½♥ to 5♥ across all 7 zones; zone 1 reaches ♥). Hover the hearts for the exact speed. In zone 1 the fastest you can heal is 1 health every 2 s; later zones raise that cap.",
   "Raw food and plain water only fill you up. Cooking is what gives an effect.",
   "You can have 2 foods and 1 drink working at the same time.",
-  "Harder to cook = stronger, more effects, lasts longer. 5 kitchen steps, from a bare campfire to a cooking pot with two helpers.",
+  "Harder to cook = stronger, more effects, lasts longer. 3 kitchen levels: campfire, then a cooking pot on the fire, then a Stone Oven nearby.",
   "Each creature's meat protects you from that creature (eat bat, fear bats less).",
   "The same kind of effect from two foods adds up, but each kind stops at 50%."
  ],
@@ -26,32 +26,16 @@
    "at": "campfire",
    "level": 2,
    "name": "Campfire level 2",
-   "needs": "a Roasting Spit within 4 m (new helper, needs a model)",
-   "minutes": 20
-  },
-  {
-   "step": 3,
-   "at": "cooking_pot",
-   "level": 1,
-   "name": "Cooking Pot",
-   "needs": "just the pot",
+   "needs": "a Cooking Pot placed on the fire",
    "minutes": 25
   },
   {
-   "step": 4,
-   "at": "cooking_pot",
-   "level": 2,
-   "name": "Cooking Pot level 2",
-   "needs": "a Spice Shelf within 4 m (new helper, needs a model)",
-   "minutes": 35
-  },
-  {
-   "step": 5,
-   "at": "cooking_pot",
+   "step": 3,
+   "at": "campfire",
    "level": 3,
-   "name": "Cooking Pot level 3",
-   "needs": "a Spice Shelf and a Stone Oven within 4 m (new helper, needs a model)",
-   "minutes": 45
+   "name": "Campfire level 3",
+   "needs": "the pot on the fire and a Stone Oven within 10 m (new, needs a model)",
+   "minutes": 35
   }
  ],
  "effects": {
@@ -109,7 +93,7 @@
    }
   },
   "dish_tuber_mash": {
-   "step": 3,
+   "step": 2,
    "effects": {
     "regen": 0.06,
     "hunger_slow": 25,
@@ -117,7 +101,7 @@
    }
   },
   "dish_hollowcap_stew": {
-   "step": 3,
+   "step": 2,
    "effects": {
     "regen": 0.06,
     "max_health": 15,
@@ -125,7 +109,7 @@
    }
   },
   "dish_snail_stew": {
-   "step": 3,
+   "step": 2,
    "effects": {
     "regen": 0.06,
     "max_health": 20,
@@ -133,7 +117,7 @@
    }
   },
   "dish_bug_stew": {
-   "step": 3,
+   "step": 2,
    "effects": {
     "regen": 0.06,
     "max_stamina": 20,
@@ -142,7 +126,7 @@
    }
   },
   "dish_glow_broth": {
-   "step": 3,
+   "step": 2,
    "effects": {
     "regen": 0.06,
     "stamina_regen": 20,
@@ -150,7 +134,7 @@
    }
   },
   "dish_miners_pie": {
-   "step": 4,
+   "step": 3,
    "effects": {
     "regen": 0.1,
     "dig_power": 8,
@@ -159,7 +143,7 @@
    }
   },
   "dish_hearth_stew": {
-   "step": 5,
+   "step": 3,
    "effects": {
     "regen": 0.15,
     "max_health": 20,
@@ -179,7 +163,7 @@
    }
   },
   "drink_glowcap_tea": {
-   "step": 3,
+   "step": 2,
    "effects": {
     "regen": 0.03,
     "stamina_regen": 10,
@@ -187,7 +171,7 @@
    }
   },
   "drink_firecap_cordial": {
-   "step": 4,
+   "step": 3,
    "effects": {
     "regen": 0.05,
     "damage": 6,
@@ -196,7 +180,7 @@
    }
   },
   "drink_moss_ale": {
-   "step": 4,
+   "step": 3,
    "effects": {
     "regen": 0.05,
     "max_stamina": 10,
@@ -206,7 +190,6 @@
   }
  },
  "questions": [
-  "The three new kitchen helpers (Roasting Spit, Spice Shelf, Stone Oven): OK? Each needs a model in our workbench style.",
   "Raw food and plain water give no effect: OK?"
  ],
  "base_regen": 0.2,

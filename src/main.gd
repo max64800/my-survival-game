@@ -503,6 +503,10 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	place_ghost = PlaceGhost.new()  # see where a workbench/chest will go before placing it (F96)
 	place_ghost.dwarf = dwarf
 	add_child(place_ghost)
+	var links := StationLinks.new()  # lines from station helpers to their station (owner, Nov 20)
+	links.dwarf = dwarf
+	links.ghost = place_ghost
+	add_child(links)
 	add_child(bm)
 
 	hud = Hud.new()
