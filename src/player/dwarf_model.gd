@@ -244,6 +244,12 @@ func set_climbing(on: bool, delta: float) -> void:
 		dwarf_rig.set_climbing(on, delta)
 
 
+## Seated on a chair, stool or bench (DwarfRig plays the sitting loop).
+func set_sitting(on: bool, delta: float) -> void:
+	if dwarf_rig:
+		dwarf_rig.set_sitting(on, delta)
+
+
 ## What the dwarf wears (armor, Spore Mask…): item ids. See DwarfRig.set_wear.
 func set_wear(ids: Array) -> void:
 	if dwarf_rig:

@@ -35,7 +35,7 @@ const BEARD_COLOR := Color(0.62, 0.32, 0.14)
 const ANIMS := {
 	idle = "Idle", walk = "Walk", jog = "Jog_Fwd", sprint = "Sprint",
 	air = "Jump", roll = "Roll", hit = "Hit_Chest", knock = "b/Hit_Knockback",
-	dig = "x/Pickaxe_Mine", climb = "x/Ladder_Climb", chop = "b/TreeChopping", wake = "b/LayToIdle", attack_a = "b/Sword_Regular_A", attack_b = "b/Sword_Regular_B",
+	dig = "x/Pickaxe_Mine", climb = "x/Ladder_Climb", sit = "Sitting_Idle", chop = "b/TreeChopping", wake = "b/LayToIdle", attack_a = "b/Sword_Regular_A", attack_b = "b/Sword_Regular_B",
 	heavy = "b/Sword_Regular_C", stab = "Punch_Cross", eat = "b/Consume", use = "Interact", throw = "b/OverhandThrow",
 	# Held poses (as long as the button is down):
 	block = "b/Sword_Block", shield = "b/Idle_Shield", aim = "Pistol_Aim_Neutral",
@@ -376,11 +376,18 @@ func _process(delta: float) -> void:
 
 ## On a ladder: the whole body plays the climbing loop (it fades in and out).
 var _climb := 0.0
+var _sit := 0.0  ## 0 = standing, 1 = seated
 
 
 func set_climbing(on: bool, delta: float) -> void:
 	_climb = move_toward(_climb, 1.0 if on else 0.0, delta * 6.0)
 	tree.set("parameters/climb/blend_amount", _climb)
+
+
+## Sitting on a seat (eases in and out over about a quarter second).
+func set_sitting(on: bool, delta: float) -> void:
+	_sit = move_toward(_sit, 1.0 if on else 0.0, delta * 4.0)
+	tree.set("parameters/sit/blend_amount", _sit)
 
 
 ## A pose held with the upper body while a button is down: "block", "shield", "aim" or "" (none).
@@ -482,7 +489,14 @@ func _build_tree(body: Node3D) -> void:
 	bt.connect_node("climb", 0, "air")
 	bt.connect_node("climb", 1, "climb_anim")
 	# Whole-body one-shots (roll, hit).
-	_add_oneshot(bt, "full", "climb", false)
+	# Sitting on a chair, stool or bench (Furnish tab, owner Nov 19): the seated loop over everything below it.
+	var sit := AnimationNodeAnimation.new()
+	sit.animation = ANIMS.sit
+	bt.add_node("sit_anim", sit)
+	bt.add_node("sit", AnimationNodeBlend2.new())
+	bt.connect_node("sit", 0, "climb")
+	bt.connect_node("sit", 1, "sit_anim")
+	_add_oneshot(bt, "full", "sit", false)
 	# Held upper-body poses (block, shield up, crossbow aim). Non-looping ones hold their last frame.
 	var hold_anim := AnimationNodeAnimation.new()
 	hold_anim.animation = ANIMS.block

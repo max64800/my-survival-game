@@ -59,6 +59,10 @@ var _respawn_point := Vector3.ZERO
 var _pose_timer := 0.0
 var _net_pos := Vector3.ZERO
 var _net_yaw := 0.0
+## Sitting on a chair, stool or bench (Furnish tab, owner Nov 19). Any move or jump stands you up.
+const SIT_HIPS := 0.24  ## how high the seated dwarf's bottom is above his feet' spot (m)
+var _seat: PieceNode = null
+var _net_sitting := false
 var _net_speed := 0.0  ## a friend's dwarf: how fast it moves on our screen (drives its legs)
 var _sent_look := []  ## what we last told friends we hold / how we stand
 var _look_timer := 0.0
@@ -208,6 +212,10 @@ func _physics_process(delta: float) -> void:
 	if dev_fly and is_local:
 		_fly(delta)
 		return
+	if _seat != null:
+		_sit_step(delta)
+		return
+	model.set_sitting(false, delta)
 	var dir := Vector3.ZERO
 	var running := false
 	var playing := input_enabled and Controls.captured()
@@ -313,6 +321,7 @@ func _process(delta: float) -> void:
 		var moved := Vector2(global_position.x - before.x, global_position.z - before.z).length()
 		_net_speed = lerpf(_net_speed, moved / maxf(delta, 0.001), minf(1.0, delta * 8.0))
 		model.set_motion(_net_speed, absf(global_position.y - before.y) < delta * 3.0, false)
+		model.set_sitting(_net_sitting, delta)
 		return
 	_pose_timer -= delta
 	if _pose_timer <= 0.0 and _online():
@@ -387,6 +396,9 @@ func _aim_info() -> Dictionary:
 				nm = "Thin Root"
 			return {kind = "glow", name = nm + " · E to pick", pick_glow = auth.glow.id_of(hit.collider)}
 		return {kind = "glow", name = nm}
+	if hit.collider is PieceNode and Pieces.LIST[(hit.collider as PieceNode).piece].get("use", "") == "sit":
+		var chair: PieceNode = hit.collider
+		return {kind = "seat", name = "%s · E to sit" % Pieces.LIST[chair.piece].name, seat = chair}
 	if hit.collider is PieceNode and (hit.collider as PieceNode).piece == "door":
 		var door: PieceNode = hit.collider
 		return {kind = "door", name = "Door · E to %s" % ("close" if door.is_open else "open"), door_uid = door.uid}
@@ -697,6 +709,53 @@ func _on_dig_feedback(pid: int, result: Dictionary) -> void:
 			if k == "fiber":  # a grass tuft, fern or small root broke (F197): a puff of green bits
 				Fx.burst(get_parent(), at + Vector3.UP * 0.15, Color(0.6, 0.66, 0.38), 12, 2.5)
 			Sfx.play("crystal" if k.begins_with("crystal") else ("chop" if k in GlowPlacer.TALL else "pickup"), at)
+
+
+# ---------------------------------------------------------------- sitting
+
+## Sit down on `chair` (a built seat): turned to face the way the seat faces.
+func sit_on(chair: PieceNode) -> void:
+	if not is_instance_valid(chair) or not is_on_floor():
+		return
+	_seat = chair
+	velocity = Vector3.ZERO
+	if _online():
+		_net_sit.rpc(true)
+
+
+func stand_up() -> void:
+	if _seat == null:
+		return
+	if is_instance_valid(_seat):  # step off the front of the seat
+		var front := _seat.global_basis.z.normalized()
+		global_position = _seat.global_position + front * (float(Pieces.LIST[_seat.piece].size.z) * 0.5 + 0.45) + Vector3.UP * 0.05
+	_seat = null
+	if _online():
+		_net_sit.rpc(false)
+
+
+func _sit_step(delta: float) -> void:
+	var playing := input_enabled and Controls.captured()
+	var wants_up := playing and (Input.get_vector("move_left", "move_right", "move_forward", "move_back").length() > 0.1 		or Input.is_action_just_pressed("jump") or Input.is_action_pressed("dig"))
+	if not is_instance_valid(_seat) or _seat.is_queued_for_deletion() or wants_up or bot_move != Vector2.ZERO:
+		stand_up()
+		return
+	var front := _seat.global_basis.z.normalized()
+	global_position = _seat.global_position + Vector3.UP * (float(Pieces.LIST[_seat.piece].get("seat", 0.5)) - SIT_HIPS) - front * 0.06
+	velocity = Vector3.ZERO
+	model.rotation.y = atan2(-front.x, -front.z)  # the dwarf faces -Z: turn him to the seat's front
+	model.set_motion(0.0, true, false)
+	model.set_sitting(true, delta)
+
+
+## Is this dwarf sitting (for the HUD and tests)?
+func sitting() -> bool:
+	return _seat != null
+
+
+@rpc("authority", "reliable")
+func _net_sit(on: bool) -> void:
+	_net_sitting = on
 
 
 # ---------------------------------------------------------------- network pose

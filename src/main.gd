@@ -761,6 +761,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		_set_bag(not hud.is_bag_open())
 	elif event.is_action_pressed("interact") and not hud.is_bag_open():
 		var info := dwarf._aim_info()
+		if info.has("seat"):  # a chair, stool or bench: sit down (move or jump to stand up)
+			dwarf.sit_on(info.seat)
+			return
 		if info.has("pick_glow"):  # mushrooms, fiber, twigs, thin roots (owner, Nov 17: "picked up with E")
 			dwarf.model.react("use")
 			authority.ask_harvest(info.pick_glow)
