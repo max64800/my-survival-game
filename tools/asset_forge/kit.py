@@ -470,9 +470,12 @@ def hide(w, h, loc, material, thick=0.02, seed=3):
 	return _mesh_obj("hide", verts, faces, material, smooth=True)
 
 
-def save(out, preview=None, recenter=True, tex_size=None):
+def save(out, preview=None, recenter=True, tex_size=None, lid=None):
 	"""Join everything into one model, put the origin at the bottom centre (unless recenter=False:
-	building pieces keep their exact authored origin), export .glb (+ preview)."""
+	building pieces keep their exact authored origin), export .glb (+ preview).
+	lid=<height>: a chest. Everything above that height is cut off into its own part named "lid", with its
+	origin on the back top edge (the hinge), so the game can swing it open (owner F345). A 1 cm seam is left
+	between lid and body (no shimmer, rule 2)."""
 	for o in bpy.context.scene.objects:
 		o.select_set(o.type == "MESH")
 	bpy.context.view_layer.objects.active = [o for o in bpy.context.scene.objects if o.type == "MESH"][0]
@@ -490,6 +493,8 @@ def save(out, preview=None, recenter=True, tex_size=None):
 	shift = Vector(((lo.x + hi.x) / 2, (lo.y + hi.y) / 2, lo.z)) if recenter else Vector((0, 0, 0))
 	for v in obj.data.vertices:
 		v.co -= shift
+	if lid is not None:
+		_cut_lid(obj, lid - shift.z)
 	# Fire-spot markers move with the model and are exported as empty nodes next to it.
 	spots = [o for o in bpy.context.scene.objects if o.type == "EMPTY" and o.name.startswith("fire_spot")]
 	for s in spots:
@@ -510,6 +515,41 @@ def save(out, preview=None, recenter=True, tex_size=None):
 	print(f"KIT_DONE {out} size {d.x:.2f} x {d.y:.2f} x {d.z:.2f} m, {tris} triangles")
 	if preview:
 		_preview(obj, preview)
+
+
+def _cut_lid(obj, z):
+	"""Split `obj` at height z: the top becomes the "lid" object (hinge at its back top edge), the cut ends are
+	closed with flat faces that take the material and a flat wood-grain mapping of the part they close."""
+	lid_obj = obj.copy()
+	lid_obj.data = obj.data.copy()
+	lid_obj.name = "lid"
+	bpy.context.scene.collection.objects.link(lid_obj)
+	for o, keep_top in ((obj, False), (lid_obj, True)):
+		bm = bmesh.new()
+		bm.from_mesh(o.data)
+		cut_z = z + (0.005 if keep_top else -0.005)
+		geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
+		res = bmesh.ops.bisect_plane(bm, geom=geom, plane_co=(0, 0, cut_z), plane_no=(0, 0, 1),
+			clear_inner=keep_top, clear_outer=not keep_top)
+		edges = [e for e in res["geom_cut"] if isinstance(e, bmesh.types.BMEdge)]
+		new = bmesh.ops.holes_fill(bm, edges=edges, sides=0)["faces"]
+		uv = bm.loops.layers.uv.active
+		for f in new:
+			near = [g for e in f.edges for g in e.link_faces if g is not f and g not in new]
+			if near:
+				f.material_index = near[0].material_index
+			if uv:
+				for lp in f.loops:
+					lp[uv].uv = (lp.vert.co.x * 1.5, lp.vert.co.y * 1.5)
+		bmesh.ops.recalc_face_normals(bm, faces=new)
+		bm.to_mesh(o.data)
+		bm.free()
+	vs = [v.co for v in lid_obj.data.vertices]
+	hinge = Vector((0.0, max(v.y for v in vs), z))  # back top edge (front is -Y)
+	for v in lid_obj.data.vertices:
+		v.co -= hinge
+	lid_obj.location = hinge
+	lid_obj.select_set(True)
 
 
 def _preview(obj, path):

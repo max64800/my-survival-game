@@ -6,25 +6,29 @@ extends RigidBody3D
 ## pushed in or out, flat faces) in the rock's colour, thrown out of the hole, bouncing and rolling, then shrinking away.
 ## Only a look on your own screen (the stone you get still comes from the normal drop).
 
-const LIFE := 4.5  ## seconds before a chunk shrinks away
+const LIFE := 4.5  ## seconds before a chunk shrinks away (each one 4-6 s)
+const SHRINK := 1.5  ## seconds it takes to shrink away (owner, Nov 18: 0.6 s looked too fast)
 const MAX_CHUNKS := 110  ## never more than this many at once (fast digging)
+const CHUNK_LAYER := 1 << 8  ## chunks bump into each other (owner, Nov 18: they lay inside each other), never into dwarfs
 
 static var _alive: Array[RockShatter] = []
 static var _shapes: Array = []  ## [ArrayMesh, ConvexPolygonShape3D] x 6 ready-made chunk shapes
 static var _detail: Texture2D
 
 var _age := 0.0
+var _life := LIFE  ## (each chunk its own: they don't all vanish at once, owner Nov 18)
 var _size := 1.0
 
 
 ## The rock at `center` (the middle of the scoop that was dug) broke: throw chunks out along `out` (the rock face's
-## normal) in colour `col`.
-static func burst(parent: Node, center: Vector3, out: Vector3, col: Color, mat_id := -1) -> void:
+## normal) in colour `col`. `scale`: how big the pieces are (a stone statue breaks into pieces sized to it: a bat into
+## small ones, a Great Rock Beetle into big slabs; 1 = a dug rock).
+static func burst(parent: Node, center: Vector3, out: Vector3, col: Color, mat_id := -1, scale := 1.0) -> void:
 	if _shapes.is_empty():
 		_make_shapes()
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
-	var n := rng.randi_range(20, 28)  # (owner: "more of them")
+	var n := roundi(rng.randi_range(20, 28) * clampf(scale, 0.6, 1.3))  # (owner: "more of them")
 	out = out.normalized() if out.length_squared() > 0.01 else Vector3.UP
 	# Made once and shared (owner, Nov 18: mining dropped the frame rate; each burst used to build new materials and
 	# shapes for every chunk, about 9 ms; now about 2)
@@ -33,8 +37,9 @@ static func burst(parent: Node, center: Vector3, out: Vector3, col: Color, mat_i
 		var c := RockShatter.new()
 		var k := rng.randi() % _shapes.size()
 		var pick: Array = _shapes[k]
-		c._size = rng.randf_range(0.7, 1.05) if i < 3 else rng.randf_range(0.12, 0.45)  # 3 big slabs (owner: "some a lot bigger"), the rest smaller
-		var step := roundi(c._size / 0.05)  # sizes in 5 cm steps, so the collision shapes can be shared
+		c._life = rng.randf_range(LIFE - 0.5, LIFE + 1.5)
+		c._size = (rng.randf_range(0.7, 1.05) if i < 3 else rng.randf_range(0.12, 0.45)) * scale  # 3 big slabs (owner: "some a lot bigger"), the rest smaller
+		var step := maxi(1, roundi(c._size / 0.05))  # sizes in 5 cm steps, so the collision shapes can be shared
 		c._size = step * 0.05
 		var mi := MeshInstance3D.new()
 		mi.mesh = pick[0]
@@ -45,8 +50,8 @@ static func burst(parent: Node, center: Vector3, out: Vector3, col: Color, mat_i
 		var cs := CollisionShape3D.new()
 		cs.shape = _sized_shape(k, step)
 		c.add_child(cs)
-		c.collision_layer = 0
-		c.collision_mask = World.TERRAIN_LAYER  # bounces on the rock, never on dwarfs
+		c.collision_layer = CHUNK_LAYER
+		c.collision_mask = World.TERRAIN_LAYER | CHUNK_LAYER  # bounces on the rock and on each other, never on dwarfs
 		# Heavy stone (owner, Nov 18: "they seem very soft... they bounce up and then bounce back"): heavier, falls
 		# faster, no bounce, stops rolling soon.
 		c.mass = 2.0 + c._size * 30.0
@@ -55,7 +60,7 @@ static func burst(parent: Node, center: Vector3, out: Vector3, col: Color, mat_i
 		c.angular_damp = 1.5
 		c.linear_damp = 0.3
 		parent.add_child(c)
-		c.global_position = center + Vector3(rng.randf_range(-0.6, 0.6), rng.randf_range(-0.4, 0.6), rng.randf_range(-0.6, 0.6))
+		c.global_position = center + Vector3(rng.randf_range(-0.6, 0.6), rng.randf_range(-0.4, 0.6), rng.randf_range(-0.6, 0.6)) * scale
 		c.global_basis = Basis.from_euler(Vector3(rng.randf() * TAU, rng.randf() * TAU, rng.randf() * TAU))
 		# thrown out of the rock face and dropping, not popped up into the air
 		var push := 0.6 if c._size > 0.6 else 1.0
@@ -128,8 +133,8 @@ static func warm_up(parent: Node) -> void:
 
 func _physics_process(delta: float) -> void:
 	_age += delta
-	if _age > LIFE:
-		var k := clampf(1.0 - (_age - LIFE) / 0.6, 0.0, 1.0)
+	if _age > _life:
+		var k := clampf(1.0 - (_age - _life) / SHRINK, 0.0, 1.0)
 		for ch in get_children():
 			if ch is MeshInstance3D:
 				(ch as MeshInstance3D).scale = Vector3.ONE * _size * k

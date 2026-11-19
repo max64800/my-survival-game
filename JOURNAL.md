@@ -3972,7 +3972,7 @@ the body."
   start; (3) the wing's old early twist at death removed. Same on both 3D pages.
 
 ### Nov 18: Short 054 redone (eight tries)
-- (Nov 18, F337) Dead creatures turn to stone. Owner's idea, settled with multiple-choice questions: no drops at death,
+- (Nov 18, F350) Dead creatures turn to stone. Owner's idea, settled with multiple-choice questions: no drops at death,
   mine the statue (pickaxe only, hits by size) for stone + loot, 1 in 20 a gem, crumbles after 5 min. Built like the
   boulders (host counts hits; every computer shows its own stone body): src/combat/statue.gd + petrify.gdshader
   (cracks run out from the middle, stone fills in behind), MonsterManager statues + request_hit_statue, Ragdoll keeps
@@ -3983,21 +3983,21 @@ the body."
   has no wings or eye stalks, so the settle step started an empty animation (an engine error): skipped when empty;
   (4) the old crystal-drop test expected drops at death: it now looks inside the statue. Also: another chat's
   half-edited cave_maker.gd stopped every game run for a while; waited instead of touching it.
-- (Nov 18, F337 round 2) Owner: turning to stone too fast; the break should be the same rock burst as mining, sized
+- (Nov 18, F350 round 2) Owner: turning to stone too fast; the break should be the same rock burst as mining, sized
   to the creature. Stone now takes 7 s; RockShatter.burst got a `scale` (piece size, count and spread); a statue bursts
   twice like dug rock, sized by its middle measure (not its diagonal: a bat's long wings made it look huge; Claude's
   first try sized by the diagonal and the beetle's slabs were as big as the beetle, caught on the 3D page and fixed).
   The pickaxe feedback no longer adds a second full-size burst on statues. Same burst on the 3 creature 3D pages.
 
 ### Nov 18: faint music under the Shorts
-- (Nov 18, F337 round 3) Owner: "everything looks great"; the rock chunks sometimes lie inside each other, and the
+- (Nov 18, F350 round 3) Owner: "everything looks great"; the rock chunks sometimes lie inside each other, and the
   same for boulders and other rocks. Cause: every chunk only collided with the cave floor. All bursts share one
   maker (RockShatter: dug rock, boulders, statues, root pillars), so one change fixed them all: chunks get their own
   layer and bump into each other (never into dwarfs). Measured, not guessed: new tools/model_check/shatter_overlap.gd
   (two bursts, count chunks deep inside each other): 129 before, 0 after. The 3D pages' chunks became real physics
   boxes, and the dead body's invisible box is removed when the statue breaks (the pieces would have landed on air).
   Hurdle: checking the page in a background tab is very slow (Chrome draws it about once a second there).
-- (Nov 18, F337 round 4, 3D pages only) Owner: page rocks hung in mid-air and balanced impossibly; should shrink away.
+- (Nov 18, F350 round 4, 3D pages only) Owner: page rocks hung in mid-air and balanced impossibly; should shrink away.
   The page's physics boxes were bigger than the lumpy rocks (the game uses exact shapes already). Tested offline with
   node + the same physics library (scratchpad physcheck/test.mjs: 48 chunks dropped, measures dips, floating,
   speed). Tries: exact convex shapes = right but 120-150 ms per step (far too slow) and some came out inside-out;
@@ -4006,7 +4006,7 @@ the body."
   against other rocks: 0.2 cm deepest dip, none floating, ~2 ms per step. Rocks shrink away after 4.5 s.
 
 ### Nov 18: Short 056 (the name)
-- (Nov 18, F337 done) Owner: the wait before the stone too long; page rocks super huge and shrinking too fast. The
+- (Nov 18, F350 done) Owner: the wait before the stone too long; page rocks super huge and shrinking too fast. The
   huge rocks were Claude's bug: the page's shrink formula was not capped at 1, so before their shrink time the rocks
   were drawn up to 8x too big, then "shrank" to normal size all at once. Fixed (capped); each chunk now waits its own
   4-6 s and shrinks over 1.5 s (game too: RockShatter._life, SHRINK). Stone starts sooner (wait at most 1.8 s). The
@@ -4042,10 +4042,10 @@ the body."
   darker). New: tools/model_check/flap_shot.gd takes a look and an "above" view.
 
 ### Nov 18: Short 058 (too big)
-- (Nov 18, F340-F345) Owner shared 9 game-feel TikToks. Claude can't watch video: read each page's own automatic
+- (Nov 18, F340-F343, F351, F352) Owner shared 9 game-feel TikToks. Claude can't watch video: read each page's own automatic
   subtitles instead (the TikTok page with a browser-like request carries a subtitle file). Owner picked: juicy hits,
   swing trails, Disney rules, chest opening (+ the chest menu closes when emptied); the rest went on the to-do list
-  (F344 attack warnings, F345 magic). Built: aimed sparks, a freeze of only the two fighters (a whole-game freeze on
+  (F351 attack warnings, F352 magic). Built: aimed sparks, a freeze of only the two fighters (a whole-game freeze on
   the host would freeze everyone's monsters), host-side knockback, a bounce on big hits; WeaponTrail rebuilt (real tool
   tip, smooth curve, fading tail, flowing streaks; dusty for mining); creatures crouch and spring on attacks, springier
   hit squash, damage numbers fly in arcs; ChestOpen (wobble, spring, slam, rays, ring, sparks, dust). Hurdles (Claude):
@@ -4055,3 +4055,23 @@ the body."
   settle now waits up to 8 s. New picture tools: swing_shot.gd, chest_shot.gd.
 
 ### Nov 18: Short 060 (Rock Snail)
+
+## November 19, 2026 (PC, snail Claude): pulled the online work in; your Mac notes on Game Feel (F344, F345)
+- Owner: "pull the latest from github and continue". The PC was 67 commits behind and 4 ahead, and the shared folder
+  held about 350 unsaved changes from other sessions. A plain pull would have refused or overwritten their work, so
+  the merge was done in a separate copy (a git worktree).
+- The online copy already had my Rock Snail commit under another ID (same work, pushed by another session), so my
+  commits were replayed on top of the online work and the copy was skipped. Conflicts fixed by hand: journal and
+  credits (kept both sides), hits (the new skills XP + my knockback), kill loot (the new Monster Scavenger perk + my
+  statue loot), the swing trail (the spear's thrust + my later trail).
+- Feedback numbers clashed: the Mac had used F337, F344 and F345 too. Mine moved to F350 (stone statues), F351
+  (attack warnings, to do) and F352 (juicy magic, to do).
+- F344 (owner, Mac): the creatures' wind-up crouch is gone; the squash when hit stays.
+- F345 (owner, Mac): no more long chest show. The Blender save step can now cut a model at a height into a body and
+  a "lid" part with its hinge on the back edge and a 1 cm seam (no shimmer). The plank chest and the copper chest
+  were rebuilt that way. In the game the lid swings open in 0.2 s with a latch clink while the menu opens, and drops
+  shut when the menu closes. The stone chest has no lid, so it just pops.
+- **Hurdles:** (1) the online rock-burst file (another session's) didn't have my size and bump-into-each-other changes
+  yet, so the merged copy didn't load until they were added. (2) `get_meta(name, null)` still errors in Godot 4.7
+  when the meta is missing (a null default counts as "no default"): uses has_meta first. (3) The copper chest's body is
+  a solid block, so open it shows a flat top, not a hollow inside (asked the owner).

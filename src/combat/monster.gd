@@ -41,8 +41,6 @@ var _bar_fill: MeshInstance3D
 var _stun_fill: MeshInstance3D
 var _bars: Node3D
 var _flash := 0.0
-var _flash_len := 1.0  ## how long this wind-up is (the crouch grows over it)
-var _wound := 0.0       ## (looks) how far it has crouched for the coming attack, 0..1
 ## Rock Snail (data.shell_hide): seconds left hidden in the shell, and how many of its hiding marks (health) it has used.
 var shell_left := 0.0
 var shell_hits := 0
@@ -644,7 +642,6 @@ func puppet_step(delta: float) -> void:
 ## A beetle's charge also turns its eyes red and kicks up dust.
 func show_tell(seconds: float, attack_name: String = "", aim: Node3D = null) -> void:
 	_flash = seconds
-	_flash_len = maxf(seconds, 0.05)
 	var atk: Dictionary = {}
 	for a: Dictionary in data.get("attacks", []):
 		if a.name == attack_name:
@@ -726,11 +723,8 @@ func _process(delta: float) -> void:
 	if _flash > 0.0:
 		_flash -= delta
 		MonsterModel.set_glow(model, 1.0 if _flash < 0.25 else 0.35)  # bright gleam in the last 250 ms
-		if _flash <= 0.0:
-			_spring_out()
 	else:
 		MonsterModel.set_glow(model, 0.0)
-	_anticipate()
 	_creature_fx(delta)
 	if model.get_meta("roosting", false):
 		pass  # hanging upside down (MonsterModel.animate)
@@ -740,33 +734,6 @@ func _process(delta: float) -> void:
 		MonsterModel.dazed_sway(model, 0.0)  # a snail hops, it doesn't waddle
 	else:
 		model.rotation.z = sin(_clock * (5.0 + _speed * 2.5)) * 0.07 * clampf(_speed / 3.0, 0.0, 1.0)  # waddle
-
-
-## Anticipation (owner, Nov 18, the Disney rules): while it winds up an attack it crouches low and wide and leans back,
-## more and more; then it springs out on the strike (_spring_out). Not the snail (his own rear-up) nor a roosting bat.
-func _anticipate() -> void:
-	var want := 0.0
-	if _flash > 0.0 and is_alive() and not model.has_meta("foot") and not model.get_meta("roosting", false):
-		var k := 1.0 - _flash / _flash_len
-		want = k * k * (3.0 - 2.0 * k)
-	if want <= 0.0 and _wound <= 0.0:
-		return
-	_wound = want
-	var base: Vector3 = model.get_meta("base_scale", model.scale)
-	model.set_meta("base_scale", base)
-	model.scale = base * Vector3(1.0 + 0.07 * _wound, 1.0 - 0.13 * _wound, 1.0 + 0.07 * _wound)
-	model.rotation.x += 0.2 * _wound  # (leans back)
-
-
-## The strike: out of the crouch it stretches tall for a blink, then settles.
-func _spring_out() -> void:
-	_wound = 0.0
-	if model == null or model.has_meta("foot"):
-		return
-	var base: Vector3 = model.get_meta("base_scale", model.scale)
-	var t := create_tween()
-	t.tween_property(model, "scale", base * Vector3(0.92, 1.12, 0.92), 0.06).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	t.tween_property(model, "scale", base, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
 ## Only looks and sounds: charge dust, wing beats, the jolt when hit.

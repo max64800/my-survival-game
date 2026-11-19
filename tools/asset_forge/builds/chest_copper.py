@@ -36,4 +36,4 @@ for x in (-W / 2 - 0.03, W / 2 + 0.03):
 	kit.ring(0.07, 0.015, (x, 0, Hb - 0.14), cud, rot=(90, 0, 90), seg=16)
 	kit.box((0.02, 0.12, 0.06), (x * 0.99, 0, Hb - 0.08), cu, bevel=0.005, wobble=0)
 
-kit.save(out, preview)
+kit.save(out, preview, lid=Hb)  # the lid swings open (owner F345)

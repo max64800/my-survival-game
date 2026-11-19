@@ -33,12 +33,30 @@ func _ready() -> void:
 
 
 func open(id: int) -> void:
+	if visible and id != box_id:
+		_shut_lid()
+	if not visibility_changed.is_connected(_on_visibility):
+		visibility_changed.connect(_on_visibility)
 	box_id = id
 	visible = true
 	_had = false
 	refresh()
 	var box := GameAuthority.instance.storage.get_box(box_id)
 	_had = not box.is_empty() and has_items(box.inv)
+
+
+## The menu closed: the chest's lid drops shut (owner F345).
+func _on_visibility() -> void:
+	if not visible:
+		_shut_lid()
+
+
+func _shut_lid() -> void:
+	if GameAuthority.instance == null or box_id < 0:
+		return
+	var box := GameAuthority.instance.storage.get_box(box_id)
+	if not box.is_empty() and is_instance_valid(box.node):
+		ChestOpen.close(box.node)
 
 
 ## Is there anything in it?

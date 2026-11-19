@@ -129,3 +129,34 @@ func test_box_menu_closes_when_emptied() -> void:
 	check_eq(closed[0], 1, "take all: the menu closes")
 	panel.queue_free()
 	_teardown()
+
+
+## F345 (owner): the chest's lid swings open on its hinge when you open it, and shuts when the menu closes.
+## A box without a lid (the stone chest) still opens fine.
+func test_chest_lid_swings_open_and_shut() -> void:
+	await _setup()
+	var spot := world.maker.find_floor(player.global_position.x + 1.5, player.global_position.z, player.global_position.y + 1.0)
+	for kind in ["chest_small", "chest_copper"]:
+		var id := auth.storage.create_box(kind, spot, 0.0)
+		var node: Node3D = auth.storage.get_box(id).node
+		var lid := ChestOpen.lid_of(node)
+		check(lid != null, "%s has its own lid part" % kind)
+		if lid == null:
+			continue
+		var hinge_z := lid.global_position.z - node.global_position.z
+		var panel := BoxPanel.new()
+		tree.root.add_child(panel)
+		ChestOpen.open(node)
+		panel.open(id)
+		for i in 30:
+			await tree.process_frame
+		check(lid.rotation.x < -1.5, "%s: the lid swung up (%.2f rad)" % [kind, lid.rotation.x])
+		check(absf(hinge_z) > 0.2, "%s: the hinge is on an edge, not the middle (%.2f m)" % [kind, hinge_z])
+		panel.visible = false
+		for i in 30:
+			await tree.process_frame
+		check(absf(lid.rotation.x) < 0.01, "%s: menu closed, the lid shut (%.2f rad)" % [kind, lid.rotation.x])
+		panel.queue_free()
+	var sid := auth.storage.create_box("chest_stone", spot + Vector3(2, 0, 0), 0.0)
+	ChestOpen.open(auth.storage.get_box(sid).node)  # (no lid: just a pop, no error)
+	_teardown()

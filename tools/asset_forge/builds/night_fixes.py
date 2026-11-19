@@ -383,6 +383,8 @@ def training_dummy():
 		B((0.008, 0.02, 0.06), (0.1, -0.105, 1.39 + k * 0.035), dark, bevel=0)
 
 
+LIDS = {"chest_small": 0.42}  # lid height: the lid is its own part that swings open (owner F345)
+
 MODELS = {
 	"bellows": bellows, "campfire": campfire, "carpenters_vise": carpenters_vise, "tanning_rack": tanning_rack,
 	"chest_small": chest_small, "chopping_block": chopping_block, "cooking_pot": cooking_pot, "grindstone": grindstone,
@@ -397,7 +399,8 @@ if __name__ == "__main__":
 		try:
 			MODELS[name]()
 			out = GAME / "assets" / "models" / "stations" / f"{name}.glb"
-			kit.save(str(out), str(GAME / "journey" / "3d" / "v2_hand_built" / "stations" / f"{name}.png"))
+			kit.save(str(out), str(GAME / "journey" / "3d" / "v2_hand_built" / "stations" / f"{name}.png"),
+				lid=LIDS.get(name))
 			print(f"MODEL_OK {name}")
 		except Exception as e:
 			import traceback
