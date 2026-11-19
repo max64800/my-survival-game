@@ -5216,3 +5216,8 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - F399: the Rune Slab now shows up once you've found any rune ("rune_*" in its unlock list). Test added.
 - Leather economy worked out for the owner: 1 bat = about 1.3 leather; full leather armour = 11 leather (about 9 bats).
 - **Hurdles:** two crafting checks still used the old copper cost and the old fake "rune" item; updated.
+- **Mistake (Claude 3):** my script that moved F399 to "done" emptied FEEDBACK.md and pushed the empty file. The
+  line I was removing starts with "- [ ]", and grep read it as a setting, printed nothing, and the next step copied
+  that nothing over the file. Fixed within minutes: GitHub copy rebuilt from the last saved version (commit 2b9011a),
+  the folder copy from Claude Code's automatic backup (22:31), and all Claudes were told to check for notes added in
+  the 5 minutes between. Lesson saved: never copy a script's output over a shared file without checking its size.
