@@ -58,12 +58,15 @@ FURNITURE = {
 # The pack's painted strips ("trim sheets") we swap for our own pictures; the rest keep the pack's look.
 REPAINT = {"MI_Trim_Furniture": ("wood", "b"), "MI_Trim_Metal": ("iron", "a"), "MI_Trim_Metal_Vertex": ("iron", "b"),
 	"MI_Trim_Props_Vertex": ("clay", "b")}  # pots and bottles: their pack paint is in corner colours glTF loses
+CUSTOM_SAVE = {}  # name -> function(out, preview) saving it instead of kit.save (a chest with a hinged lid)
+CUSTOM_IMPORT = {}  # name -> function(path) returning the joined object (models that need special care)
 REPAINT_ONE = {"furn_dummy": {"MI_Trim_Cloth": ("sack", "b")}}  # a straw-sack training dummy
 
 
 def build(name, out_dir):
 	src, scale = FURNITURE[name]
-	obj = gt.import_tree(P / f"{src}.gltf")
+	path = gt.PACKS / f"{src}.gltf" if "/" in src else P / f"{src}.gltf"  # "pack/file" = another pack
+	obj = CUSTOM_IMPORT[name](path) if name in CUSTOM_IMPORT else gt.import_tree(path)
 	obj.scale = (scale, scale, scale)
 	bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
 	bpy.ops.object.mode_set(mode="EDIT")
@@ -80,7 +83,10 @@ def build(name, out_dir):
 			o.data.materials.append(mat)
 			kit._uv_box(o, mat["tile"])
 	JOURNEY.mkdir(parents=True, exist_ok=True)
-	kit.save(str(Path(out_dir) / f"{name}.glb"), preview=str(JOURNEY / f"{name}.png"), tex_size=1024)
+	if name in CUSTOM_SAVE:
+		CUSTOM_SAVE[name](str(Path(out_dir) / f"{name}.glb"), str(JOURNEY / f"{name}.png"))
+	else:
+		kit.save(str(Path(out_dir) / f"{name}.glb"), preview=str(JOURNEY / f"{name}.png"), tex_size=1024)
 
 
 if __name__ == "__main__":

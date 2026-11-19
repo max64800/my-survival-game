@@ -6,7 +6,7 @@ extends Node
 
 const BOX_LAYER := 16  ## same layer as stations, so you can aim at them and press E
 const REACH := 4.5
-const SIZES := {"chest_small": 12, "chest_stone": 24, "chest_copper": 36, "crate_ore": 60, "grave": Inventory.EQUIP_START, "builder": 24}
+const SIZES := {"chest_small": 12, "chest_stone": 24, "chest_copper": 36, "crate_ore": 60, "grave": Inventory.EQUIP_START, "builder": 24, "chest_loot": 16}
 ## The Ore Crate only takes ores, stone types, clay and crystals (doc 8 storage table).
 const ORE_CRATE := ["stone", "dirt", "moss", "clay", "copper_ore", "silver_ore", "sporestone", "amberrock", "marble", "basalt", "brown_rock"]
 
@@ -309,7 +309,7 @@ func _build_look(body: StaticBody3D, kind: String) -> void:
 		lid.material_override = _mat(color.darkened(0.3))
 		body.add_child(lid)
 	var label := Label3D.new()
-	label.text = {"builder": "Builder's Chest", "grave": "Grave"}.get(kind, Items.display_name(kind))
+	label.text = {"builder": "Builder's Chest", "grave": "Grave", "chest_loot": "Old Chest"}.get(kind, Items.display_name(kind))
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	label.position = Vector3.UP * 1.3
 	label.pixel_size = 0.004

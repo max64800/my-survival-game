@@ -2253,7 +2253,8 @@ func seed_poi_loot() -> void:
 		if poi.type != "ruin" and poi.type != "camp":
 			continue
 		var at: Vector3 = world.maker.find_floor(poi.pos.x + 1.5, poi.pos.z + 1.0, poi.pos.y + 3.0)
-		var id := storage.create_box("chest_small", at, rng.randf() * TAU)
+		# Ruins keep their loot in the old banded chest (owner's cup winner, Nov 19); camps in a traveller's small chest.
+		var id := storage.create_box("chest_loot" if poi.type == "ruin" else "chest_small", at, rng.randf() * TAU)
 		if poi.get("biome", "mossy") == "fungal":
 			_seed_fungal_loot(rng, id, poi.type == "ruin")
 			continue

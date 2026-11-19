@@ -73,7 +73,7 @@ func refresh() -> void:
 	if box.is_empty():
 		visible = false
 		return
-	_title.text = {"chest_small": "Chest", "chest_stone": "Stone Chest", "grave": "Your grave", "builder": "Builder's Chest"}.get(box.kind,
+	_title.text = {"chest_small": "Chest", "chest_stone": "Stone Chest", "grave": "Your grave", "chest_loot": "Old Chest", "builder": "Builder's Chest"}.get(box.kind,
 		Pieces.LIST[box.kind].name if Pieces.LIST.has(box.kind) else "Box")
 	_status.text = GameAuthority.instance.builder.site_status(box_id) if box.kind == "builder" else ""
 	var inv: Inventory = box.inv

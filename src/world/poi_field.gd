@@ -95,6 +95,7 @@ func _make(p: Dictionary) -> Node3D:
 				RuinKit.column(root, at, rng.randf_range(3.6, 4.6), 0.7, 0.0 if rng.randf() < 0.3 else rng.randf_range(0.2, 0.75), rng)
 			RuinKit.broken_wall(root, _on_floor(p, Vector3(-2.5, 0, -3.6)), _on_floor(p, Vector3(2.5, 0, -3.6)), 3, rng)
 			RuinKit.broken_wall(root, _on_floor(p, Vector3(-3.8, 0, 1.0)), _on_floor(p, Vector3(-3.8, 0, -2.2)), 2, rng)
+			RuinTreasure.dress(root, p, _on_floor, rng)  # coins, candles and books by the loot chest (owner, Nov 19)
 		"colonnade":
 			# A row of great columns standing in a cavern, some broken (F9/F21).
 			var rng := _rng_for(p)
@@ -110,6 +111,7 @@ func _make(p: Dictionary) -> Node3D:
 				var a := i * TAU / 6.0
 				_part(root, _sphere(0.15), _mat(Color(0.35, 0.33, 0.3)), Vector3(cos(a), 0.08, sin(a)) * 0.4 + Vector3(-0.8, 0, 0))
 			_part(root, _box(Vector3(0.5, 0.05, 0.3)), _mat(Color(0.12, 0.1, 0.08)), Vector3(-0.8, 0.03, 0))  # ashes
+			RuinTreasure.dress(root, p, _on_floor, _rng_for(p))  # a traveller's mug, plate, map and pouch
 		"nest":
 			for i in 7:
 				var a := i * TAU / 7.0
@@ -132,6 +134,7 @@ func _make(p: Dictionary) -> Node3D:
 			for i in 8:
 				var a := i * TAU / 8.0
 				RuinKit.column(root, _on_floor(p, Vector3(cos(a), 0, sin(a)) * 10.0), 6.5, 1.1, 0.0 if i % 3 != 2 else grng.randf_range(0.3, 0.7), grng, Color(0.8, 0.78, 0.74))
+			RuinTreasure.dress(root, p, _on_floor, grng)
 		_:
 			return null
 	return root
