@@ -1,7 +1,7 @@
 class_name CaveLife
 extends Node3D
-## Life on the cave floors and walls, only for looks (owner's cave-life plan, batch 1, F188): fluffy moss (also
-## spilling over ledges), pale cave grass, small roots poking out, lichen crusts and small curly ferns.
+## Life on the cave floors and walls, only for looks (owner's cave-life plan, batch 1, F188): small roots poking out
+## (tunnels only), lichen crusts and small curly ferns. (Floor moss and cave grass were taken out: F404, see GONE.)
 ## In patches (owner): lush round glowing things, drips (damp) and roots, bare rock in between, so the lush spots
 ## feel special and the game stays fast.
 ## - Same seed = same patches on every computer (no network needed): placed round the glow spots with the cave's dice.
@@ -30,6 +30,9 @@ const KINDS := {
 	"gravel_b": {model = "res://assets/models/cave/gravel_b.glb", view = 35.0, size = [0.9, 1.6], look = "plain", gap = 0.4},
 	"tinycaps": {model = "res://assets/models/cave/tinycaps.glb", view = 30.0, size = [0.8, 1.5], look = "plain", gap = 0.3},
 }
+## Taken off the floors (owner F404, Nov 19: "too messy"): moss blobs (and their ledge curtains) and the spiky grass.
+## Kept: little ferns, mushrooms, the mushroom grass (MushroomGrass), lichen on walls, gravel.
+const GONE := ["moss", "moss_drape", "grass"]
 const EVERY_BIG_ROOM := 220  ## tries for the everywhere cover per big room
 const EVERY_ROOM := 50
 const EVERY_TUNNEL := 5
@@ -313,6 +316,12 @@ static func plan(maker: CaveMaker, spots: Array[Dictionary]) -> Array[Dictionary
 				kind = "moss" if surf != "wall" else "lichen"
 			if kind == "rootlet" and tint_roll % 2 == 1:
 				kind = "rootlet_b"
+			# F404 (owner, Nov 19: "we overdid it with the ground"): no moss blobs and no spiky grass any more; small
+			# roots only in the tunnels between caves, never inside a cave. (The dice still roll, so the rest keeps its place.)
+			if kind in GONE:
+				continue
+			if kind.begins_with("rootlet") and in_cave(maker, hit):
+				continue
 			var at := hit
 			var hang := Vector3.ZERO
 			if kind == "moss" and surf != "wall" and tint_roll % 3 == 0:  # (a ledge's rounded edge often reads as a slope)
@@ -345,6 +354,21 @@ static func plan(maker: CaveMaker, spots: Array[Dictionary]) -> Array[Dictionary
 				kept.append(it)
 		out = kept
 	return out
+
+
+## Is p inside a cave (a room or big cavern, any kind), not in a tunnel between them? (Owner F404: roots that stick out
+## of the ground only in the tunnels.) Looks at each room's oval from above, and its height.
+static func in_cave(maker: CaveMaker, p: Vector3) -> bool:
+	for room: Dictionary in maker.rooms:
+		var c: Vector3 = room.center
+		var r: Vector3 = room.radii
+		if absf(p.y - c.y) > r.y * 1.3 + 1.0:
+			continue
+		var dx := (p.x - c.x) / maxf(r.x, 0.1)
+		var dz := (p.z - c.z) / maxf(r.z, 0.1)
+		if dx * dx + dz * dz < 1.0:
+			return true
+	return false
 
 
 ## Runs fn(lo, hi, rock) over 0..count-1 in a few helpers side by side, each with its own rock cache; the calling
@@ -453,8 +477,8 @@ static func _fuzz(kind: String, type: String, life: float) -> float:
 
 ## What kind of life a glow spot brings: type, how far it reaches (m), how many tries round it ({} = none).
 static func _source(s: Dictionary) -> Dictionary:
-	if s.get("extra", false):
-		return {}  # (the extra wood roots: no new patches, so every plant keeps its id)
+	if s.get("extra", false) or s.get("hidden", false):
+		return {}  # (the extra wood roots: no new patches; a left-out spot grows nothing round it either)
 	var kind: String = s.kind
 	if kind == GlowPlacer.DRIP:
 		return {type = "damp", reach = 4.0, tries = 18}

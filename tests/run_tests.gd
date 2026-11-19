@@ -19,6 +19,7 @@ var errors := ErrorCounter.new()
 ## Runs every auto-check in tests/test_*.gd and prints PASS / FAIL.
 ## Run: godot --headless --path . --script res://tests/run_tests.gd
 ## Optional: -- only=cave   (only files whose name contains "cave")
+##           -- fn=root_tree   (only tests whose name contains "root_tree"; with only= it's quick)
 
 
 func _initialize() -> void:
@@ -29,9 +30,12 @@ func _run() -> void:
 	OS.add_logger(errors)
 	Controls.robot = true  # tests never hold the real mouse, and save into user://robot_saves
 	var only := ""
+	var fn := ""
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("only="):
 			only = arg.trim_prefix("only=")
+		if arg.begins_with("fn="):
+			fn = arg.trim_prefix("fn=")
 	var files := DirAccess.get_files_at("res://tests")
 	var total := 0
 	var failed := 0
@@ -49,7 +53,7 @@ func _run() -> void:
 			print("  FAIL  %s does not compile: %s" % [f, errors.last])
 			continue
 		for m in script.get_script_method_list():
-			if not m.name.begins_with("test_"):
+			if not m.name.begins_with("test_") or (fn != "" and not m.name.contains(fn)):
 				continue
 			var t: TestCase = script.new()
 			t.tree = self

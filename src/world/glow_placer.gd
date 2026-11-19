@@ -95,6 +95,7 @@ static func _place(maker: CaveMaker) -> Array[Dictionary]:
 	_mix_crystal_colours(spots)
 	_thin_crystals_under_stars(maker, spots)
 	_add_wood_everywhere(maker, spots)
+	_move_roots_to_tunnels(maker, spots)
 	var trees := RootPillars.plan(maker) if maker.made_layout >= 13 else []
 	# No little root, twig or fiber growing over a crystal (owner, Nov 19): the later passes add them without looking
 	# at the crystals, so one that lands right by a crystal is left out (kept in the list: ids stay the same).
@@ -125,9 +126,50 @@ static func _place(maker: CaveMaker) -> Array[Dictionary]:
 			var p: Vector3 = s.pos
 			if p.y > (t.bottom as Vector3).y - 1.0 and p.y < (t.top as Vector3).y + 1.0 and Vector2(p.x - t.top.x, p.z - t.top.z).length() < float(t.width) * (0.75 if s.kind == DRIP else 0.5):
 				s.hidden = true
+	_add_bridge_roots(maker, spots, taken)
 	for i in spots.size():
 		spots[i].id = i
 	return spots
+
+
+## F413 (owner, Nov 19: "roots on the rock bridges for players to find"): a wood root on each bridge, two on a long
+## one, near an end where the bridge is wider and off to one side, so there's room to walk past. Added last, with
+## their own dice, so every older spot keeps its id. (Not in the Fungal Jungle: its wood is the giant mushrooms.)
+static func _add_bridge_roots(maker: CaveMaker, spots: Array[Dictionary], taken: Array) -> void:
+	if maker.made_layout < 13:
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = maker.seed + 913
+	for br: Dictionary in maker._bridges:
+		var a: Vector3 = br.a
+		var b: Vector3 = br.b
+		var flat := Vector3(b.x - a.x, 0.0, b.z - a.z)
+		if flat.length() < 6.0:
+			continue
+		var across := flat.normalized().cross(Vector3.UP)
+		var ends := [rng.randf_range(0.15, 0.25), rng.randf_range(0.75, 0.85)]
+		var want := 2 if flat.length() > 22.0 else 1
+		if want == 1:
+			ends = [ends[rng.randi_range(0, 1)]]
+		for t: float in ends:
+			var side := 1.0 if rng.randf() < 0.5 else -1.0
+			var top := a.lerp(b, t) + across * side * 0.9
+			if CaveMaker.biome_at(top) == "fungal":
+				continue
+			var hit := _march(maker, top + Vector3.UP * 2.0, Vector3.DOWN, 4.0)
+			if hit == Vector3.INF or absf(hit.y - a.lerp(b, t).y) > 0.8 or normal_at(maker, hit).y < 0.8:
+				continue
+			if maker.sdf_at(hit + Vector3.UP * 1.0) <= 0.4 or not _solid_ground(maker, hit) or maker.is_reserved(hit, 2.0):
+				continue
+			var blocked := false
+			for z in taken:
+				if hit.distance_to(z.pos) < float(z.r) + 1.0:
+					blocked = true
+			if blocked:
+				continue
+			var length := 1.2 + 0.7 * fposmod(hit.x * 7.3 + hit.z * 3.1, 1.0)
+			spots.append({id = -1, pos = hit, normal = Vector3.UP, kind = ROOT, color = KINDS[ROOT].color, scale = 1.0,
+				spin = rng.randf_range(0, TAU), length = length, chops = KINDS[ROOT].get("chops", 1), extra = true, bridge = true})
 
 
 ## Lantern fuel you can actually reach (feedback F12): most crystals grow high on walls and
@@ -322,6 +364,62 @@ static func _add_wood_everywhere(maker: CaveMaker, spots: Array[Dictionary]) -> 
 				spin = rng.randf_range(0, TAU), length = length, chops = KINDS[ROOT].get("chops", 1), extra = true})
 			_grid_put(near, hit)
 			want -= 1
+
+
+## Roots that stick out of the ground only in the tunnels between caves, not inside the caves (owner F404, Nov 19).
+## Every wood root inside a cave is hidden (kept in the list: ids stay the same) and the same number grow in the
+## tunnels instead, so there is as much wood as before. (The starting room's little pull-roots stay: your first wood.)
+## In a tunnel a root stands to one side, in tunnels wide enough to walk past it, never on ramps or ledge paths.
+static func _move_roots_to_tunnels(maker: CaveMaker, spots: Array[Dictionary]) -> void:
+	if maker.made_layout < 13:
+		return  # (older layouts stay as they were)
+	var moved := 0
+	for s in spots:
+		if s.kind == ROOT and not s.get("hidden", false) and CaveLife.in_cave(maker, s.pos):
+			s.hidden = true
+			moved += 1
+	var rng := RandomNumberGenerator.new()
+	rng.seed = maker.seed + 791
+	var near := {}
+	for s in spots:
+		if not s.get("hidden", false):
+			_grid_put(near, s.pos)
+	var segs: Array = maker.segments.filter(func(sg: Dictionary) -> bool:
+		return not sg.get("ramp", false) and not sg.get("ledge", false) and float(sg.r) >= 2.0)
+	if segs.is_empty():
+		return
+	for i in moved * 8:
+		if moved <= 0:
+			break
+		var sg: Dictionary = segs[rng.randi_range(0, segs.size() - 1)]
+		var t := rng.randf_range(0.15, 0.85)
+		var side_pick := rng.randf()
+		var mid: Vector3 = (sg.a as Vector3).lerp(sg.b, t)
+		var along := ((sg.b as Vector3) - (sg.a as Vector3))
+		along.y = 0.0
+		if along.length() < 1.0:
+			continue
+		var side := along.normalized().cross(Vector3.UP) * (1.0 if side_pick < 0.5 else -1.0)
+		# F415 (owner, Nov 19: in a wide tunnel the roots lay along one path): anywhere from near the middle to near the
+		# wall, not always 55% of the way out (that made two neat lines in a wide one)
+		var start := mid + side * float(sg.r) * lerpf(0.2, 0.8, fposmod(side_pick * 7.31, 1.0))
+		if maker.sdf_at(start) <= 0.3 or CaveLife.in_cave(maker, start) or CaveMaker.biome_at(start) == "fungal":
+			continue  # (the Fungal Jungle has no roots by design: its wood is the giant mushrooms)
+		var hit := _march(maker, start, Vector3.DOWN, float(sg.r) + 3.0)
+		if hit == Vector3.INF or normal_at(maker, hit).y < 0.8:
+			continue
+		if maker.sdf_at(hit + Vector3.UP * 1.0) <= 0.4 or not _solid_ground(maker, hit) or not _spaced_grid(near, hit):
+			continue
+		if maker.sdf_at(hit - Vector3.UP * 0.8) >= 0.0 or maker.is_reserved(hit, 2.0) or maker.on_bridge(hit, 2.0):
+			continue
+		# room to walk past: open air on the other side of the tunnel, 1.6 m over, at chest height
+		if maker.sdf_at(hit - side * 1.6 + Vector3.UP * 1.0) <= 0.4:
+			continue
+		var length := 1.2 + 0.7 * fposmod(hit.x * 7.3 + hit.z * 3.1, 1.0)
+		spots.append({id = -1, pos = hit, normal = Vector3.UP, kind = ROOT, color = KINDS[ROOT].color, scale = 1.0,
+			spin = rng.randf_range(0, TAU), length = length, chops = KINDS[ROOT].get("chops", 1), extra = true})
+		_grid_put(near, hit)
+		moved -= 1
 
 
 ## The first cavern always has a dripping stalactite, so you learn early how to get water (owner F140).

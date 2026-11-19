@@ -89,14 +89,28 @@ func test_q_and_e_turn_the_piece_walking_does_not() -> void:
 	check_eq(bm.rot, 8, "triangles turn 30° per press")
 	var a := Pieces.snap("floor", Vector3(3.2, 0, 1.4), Vector3.UP, 0.0, 1)
 	check_eq(a.rot, 1, "the piece faces exactly its turn")
+	# Holding Q / E on a building piece: one step at a time on the grid, at one calm pace (owner, Nov 19).
+	check_eq(BuildMode.held_steps(0.0, 0.3), 0, "a quick tap is just the one step")
+	check_eq(BuildMode.held_steps(0.0, 0.4), 1, "held a moment: one more step")
+	var steps := 0
+	var t := 0.0
+	while t < 4.0:  # held 4 s at 60 frames a second: steps at 0.35, 0.75 ... 3.95 s
+		steps += BuildMode.held_steps(t, t + 1.0 / 60.0)
+		t += 1.0 / 60.0
+	check_eq(steps, 10, "then one step every 0.4 s, not faster the longer you hold (%d)" % steps)
 	bm.queue_free()
 	PlaceGhost.yaw = 0.0
 	var g := PlaceGhost.new()
 	g.turn(1)
-	check_near(PlaceGhost.yaw, PI / 4.0, 0.001, "stations turn 45° per press")
+	check_near(PlaceGhost.yaw, deg_to_rad(5.0), 0.001, "stations turn 5° per tap (F397)")
 	g.turn(-1)
 	g.turn(-1)
-	check_near(PlaceGhost.yaw, -PI / 4.0, 0.001, "and back the other way")
+	check_near(PlaceGhost.yaw, deg_to_rad(-5.0), 0.001, "and back the other way")
+	check_eq(PlaceGhost.held_turn(1, 0.1, 0.1), 0.0, "a quick tap doesn't keep turning")
+	var early := PlaceGhost.held_turn(1, 0.5, 0.1)
+	check(early > 0.0, "holding Q keeps turning")
+	check_near(PlaceGhost.held_turn(1, 8.0, 0.1), early, 0.0001, "at the same calm speed, not faster the longer you hold")
+	check(PlaceGhost.held_turn(-1, 1.0, 0.1) < 0.0, "holding E turns the other way")
 	g.free()
 
 

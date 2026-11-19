@@ -1,8 +1,8 @@
 class_name Boulders
 extends Node3D
 ## Breakable boulders (owner, Nov 18: "rocks like in Conan Exiles that you can break to get some stone, multiple shapes
-## around the caves"). Five hand-built shapes (tools/asset_forge/builds/cave_boulders.py) on open cave floors: 3-5 in
-## each big cave, 1-2 in small ones, clear of paths, places, bridges, trees and ground kept for ruins. Solid. Every hit
+## around the caves"). Hand-built shapes (tools/asset_forge/builds/cave_boulders.py) on cave floors by the walls: 1-2 in
+## each big cave, 1 in small ones (owner F404, Nov 19), clear of paths, places, bridges, trees and ground kept for ruins. Solid. Every hit
 ## gives stone (2 with a pickaxe, 1 by hand); after HITS hits it bursts into rock chunks, and RESPAWN seconds later a
 ## new one stands there (it appears while nobody is looking). The host keeps the count (GameAuthority.boulder_hits).
 
@@ -11,6 +11,8 @@ const SHAPES := ["boulder_round", "boulder_tall", "boulder_slabs", "boulder_clus
 const LOOKS := ["", "_b", "_c"]  ## three stone pictures per shape (owner, Nov 18: "different styles in terms of textures")
 static var MODELS: Array[String] = _models()
 const HITS := 6
+const START_EXTRA := 3  ## more boulders by the starting cave's walls (owner F418)
+const START_EDGE := 0.6  ## ...out in the outer part of its oval
 const RESPAWN := 1200.0  ## 20 minutes
 const STONE := Color(0.5, 0.46, 0.41)
 
@@ -77,71 +79,111 @@ static func plan(maker: CaveMaker, avoid: Callable = Callable()) -> Array[Dictio
 	var near := {}
 	var taken := RuinTreasure.keep_clear(maker)  # old places' loot chests and treasure (owner, Nov 19)
 	for room in maker.rooms:
-		var want := rng.randi_range(7, 11) if room.big else rng.randi_range(2, 4)  # (owner, Nov 18: "a lot more boulders")
+		var want := rng.randi_range(1, 2) if room.big else 1  # (owner F404, Nov 19: "maybe 1-2 per cave")
 		if room.get("sealed", false) or maker.sdf_at(room.center) <= 0.0:
 			continue
-		for attempt in want * 10:
+		for attempt in maxi(want, 1) * 30:
 			if want <= 0:
 				break
-			var dir := Vector3(rng.randf_range(-1, 1), -rng.randf_range(0.2, 0.9), rng.randf_range(-1, 1)).normalized()
-			var model := rng.randi_range(0, MODELS.size() - 1)
-			var spin := rng.randf_range(0.0, TAU)
-			var scale := rng.randf_range(1.2, 2.0)  # (in-game look: 0.8-1.4 was pebble-sized)
-			if room.big and rng.randf() < 0.15:
-				scale = rng.randf_range(2.8, 4.2)  # now and then a really big one (owner, Nov 18)
-			var buried := rng.randf() < 0.5  # half of them sunk into the ground (owner, Nov 18)
-			var sink_part := rng.randf_range(0.2, 0.45)
-			var hit := GlowPlacer._march(maker, room.center, dir, 60.0)
-			if hit == Vector3.INF or GlowPlacer.normal_at(maker, hit).y < 0.85:
-				continue  # open, fairly flat floor only
-			if maker.sdf_at(hit + Vector3.UP * maxf(2.0, scale * 1.3)) <= 0.8:
-				continue  # room above it
-			if maker.is_reserved(hit, 3.0) or maker.on_bridge(hit, 2.0) or maker._in_column(hit, 2.5):
-				continue
-			if avoid.is_valid() and avoid.call(hit, 3.0):
-				continue
-			# never floating (owner, Nov 18: "a few of them just float"): it stands as low as the lowest floor under its edge
-			var low := hit.y
-			var ok := true
-			for k in 8:
-				var a := k * TAU / 8.0
-				var edge := hit + Vector3(cos(a), 0.0, sin(a)) * 0.6 * scale
-				var fl := GlowPlacer._march(maker, edge + Vector3.UP * 1.0, Vector3.DOWN, 3.0 + scale)
-				if fl == Vector3.INF:
-					ok = false  # its edge hangs over a drop
-					break
-				low = minf(low, fl.y)
-			if not ok or hit.y - low > 0.5 * scale:
-				continue  # too steep under it
-			var bury := sink_part * 1.1 * scale if buried else 0.0
-			var sink := (hit.y - low) + 0.08 + bury
-			var key := Vector3i((hit / 4.0).floor())
-			if near.has(key):
-				continue  # one every few metres
-			var clear := true
-			for q in maker.pois:
-				if (q.pos as Vector3).distance_to(hit) < 3.0:
-					clear = false
-					break
-			for sg: Dictionary in maker.segments:
-				if not clear:
-					break
-				if sg.get("ramp", false) or sg.get("ledge", false):
-					if Geometry3D.get_closest_point_to_segment(hit, sg.a, sg.b).distance_to(hit) < float(sg.r) + 1.5:
-						clear = false
-			if not clear:
-				continue
-			near[key] = true
-			var lean := Vector3.UP.lerp(GlowPlacer.normal_at(maker, hit), 0.7).normalized()  # leans with the slope a little
-			# On a chest's or a treasure's ground: kept in the list but never there (ids stay the same for saves).
-			var gone := false
-			for z in taken:
-				if Vector2(hit.x - z.pos.x, hit.z - z.pos.z).length() < float(z.r) + 0.6 * scale and absf(hit.y - z.pos.y) < 3.0:
-					gone = true
-					break
-			out.append({pos = hit - Vector3.UP * sink, model = model, spin = spin, scale = scale, sink = sink, lean = lean, bury = bury, gone = gone})
-			want -= 1
+			if _try(maker, room, rng, near, taken, avoid, out):
+				want -= 1
+	# F418 (owner, Nov 19: "boulders in the starting cave too, close to the edges"): a few more by its walls. Added
+	# last with their own dice, so every other boulder keeps its place and its number (broken ones in saves).
+	if maker.made_layout >= 13 and not maker.rooms.is_empty():
+		var first: Dictionary = maker.rooms[0]
+		var rng2 := RandomNumberGenerator.new()
+		rng2.seed = maker.seed + 9801
+		var more := START_EXTRA
+		for attempt in START_EXTRA * 40:
+			if more <= 0 or maker.sdf_at(first.center) <= 0.0:
+				break
+			if _try(maker, first, rng2, near, taken, avoid, out, START_EDGE):
+				more -= 1
 	return out
+
+
+## One try at a boulder in `room`: a low line from its middle to the floor by a wall. Appended to `out` if it fits.
+## `outer`: how far out it must stand (0 = anywhere by a wall; 0.6 = the outer part of the cave's oval).
+static func _try(maker: CaveMaker, room: Dictionary, rng: RandomNumberGenerator, near: Dictionary, taken: Array,
+		avoid: Callable, out: Array[Dictionary], outer := 0.0) -> bool:
+	# low lines from the middle: they land far out, by the walls (owner F404: "near the walls")
+	var dir := Vector3(rng.randf_range(-1, 1), -rng.randf_range(0.1, 0.45), rng.randf_range(-1, 1)).normalized()
+	var model := rng.randi_range(0, MODELS.size() - 1)
+	var spin := rng.randf_range(0.0, TAU)
+	var scale := rng.randf_range(1.2, 2.0)  # (in-game look: 0.8-1.4 was pebble-sized)
+	if room.big and rng.randf() < 0.15:
+		scale = rng.randf_range(2.8, 4.2)  # now and then a really big one (owner, Nov 18)
+	var buried := rng.randf() < 0.5  # half of them sunk into the ground (owner, Nov 18)
+	var sink_part := rng.randf_range(0.2, 0.45)
+	var hit := GlowPlacer._march(maker, room.center, dir, 60.0)
+	if hit == Vector3.INF or GlowPlacer.normal_at(maker, hit).y < 0.85:
+		return false  # open, fairly flat floor only
+	if maker.sdf_at(hit + Vector3.UP * maxf(2.0, scale * 1.3)) <= 0.8:
+		return false  # room above it
+	if maker.is_reserved(hit, 3.0) or maker.on_bridge(hit, 2.0) or maker._in_column(hit, 2.5):
+		return false
+	var rc: Vector3 = room.center
+	var rr: Vector3 = room.radii
+	if pow((hit.x - rc.x) / rr.x, 2) + pow((hit.z - rc.z) / rr.z, 2) > 1.1:
+		return false  # (the line reached out of this cave into the next one: each cave counts its own)
+	if outer > 0.0 and pow((hit.x - rc.x) / rr.x, 2) + pow((hit.z - rc.z) / rr.z, 2) < outer * outer:
+		return false  # (the starting cave's extra ones: out by its edges, owner F418)
+	if not near_wall(maker, hit, 1.0 * scale + 2.0):
+		return false  # out in the open: boulders only stand by the walls (owner F404)
+	if avoid.is_valid() and avoid.call(hit, 3.0):
+		return false
+	# never floating (owner, Nov 18: "a few of them just float"): it stands as low as the lowest floor under its edge
+	var low := hit.y
+	var ok := true
+	for k in 8:
+		var a := k * TAU / 8.0
+		var edge := hit + Vector3(cos(a), 0.0, sin(a)) * 0.6 * scale
+		var fl := GlowPlacer._march(maker, edge + Vector3.UP * 1.0, Vector3.DOWN, 3.0 + scale)
+		if fl == Vector3.INF:
+			ok = false  # its edge hangs over a drop
+			break
+		low = minf(low, fl.y)
+	if not ok or hit.y - low > 0.5 * scale:
+		return false  # too steep under it
+	var bury := sink_part * 1.1 * scale if buried else 0.0
+	var sink := (hit.y - low) + 0.08 + bury
+	var key := Vector3i((hit / 4.0).floor())
+	if near.has(key):
+		return false  # one every few metres
+	var clear := true
+	for q in maker.pois:
+		if (q.pos as Vector3).distance_to(hit) < 3.0:
+			clear = false
+			break
+	for sg: Dictionary in maker.segments:
+		if not clear:
+			break
+		if sg.get("ramp", false) or sg.get("ledge", false):
+			if Geometry3D.get_closest_point_to_segment(hit, sg.a, sg.b).distance_to(hit) < float(sg.r) + 1.5:
+				clear = false
+	if not clear:
+		return false
+	near[key] = true
+	var lean := Vector3.UP.lerp(GlowPlacer.normal_at(maker, hit), 0.7).normalized()  # leans with the slope a little
+	# On a chest's or a treasure's ground: kept in the list but never there (ids stay the same for saves).
+	var gone := false
+	for z in taken:
+		if Vector2(hit.x - z.pos.x, hit.z - z.pos.z).length() < float(z.r) + 0.6 * scale and absf(hit.y - z.pos.y) < 3.0:
+			gone = true
+			break
+	out.append({pos = hit - Vector3.UP * sink, model = model, spin = spin, scale = scale, sink = sink, lean = lean, bury = bury, gone = gone})
+	return true
+
+
+## Is there a cave wall within `reach` m of this floor spot (looking sideways at about knee-to-chest height)?
+static func near_wall(maker: CaveMaker, at: Vector3, reach: float) -> bool:
+	for k in 12:
+		var a := k * TAU / 12.0
+		var side := Vector3(cos(a), 0.0, sin(a))
+		for h in [0.8, 1.6]:
+			if GlowPlacer._march(maker, at + Vector3.UP * h, side, reach) != Vector3.INF:
+				return true
+	return false
 
 
 func _make(i: int) -> void:

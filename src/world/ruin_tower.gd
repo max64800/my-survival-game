@@ -20,8 +20,21 @@ var turn := 0               ## quarter turns: its door faces where you come from
 var _carve: Array = []
 var _state := "wait"        ## wait (for the rock to load) -> carve -> build -> done
 var drop_rubble := true     ## rubble on the ground falls onto the cave floor (the outpost's ground is carved flat)
+var chest_only := false     ## an old world's tower already stands: only add its Rebuilding Chest (see add_missing_chest)
 static var last_origin := Vector3.INF  ## where the last one was built (the towercheck robot looks there)
 static var last_turn := 0
+
+
+## Worlds saved before Nov 19 (or while a merge had taken it out) have the tower but no Rebuilding Chest (owner, Nov 19).
+## Host, after loading a save: if the world has no ruin chest yet, add one. The tower's spot comes from the same dice
+## as when it was built; the chest is only added when the tower's whole pieces really stand there (see _tower_here).
+static func add_missing_chest(p_auth: GameAuthority) -> RuinTower:
+	if p_auth.world == null or not p_auth.world_state.get("ruins", {}).is_empty():
+		return null
+	var t := RuinTower.new(p_auth)
+	t.chest_only = true
+	p_auth.add_child(t)
+	return t
 
 
 static func load_plan(path: String = PLAN) -> Dictionary:
@@ -93,6 +106,11 @@ func _ready() -> void:
 	origin = spot.pos
 	turn = spot.turn
 	var basis := Basis(Vector3.UP, turn * PI / 2.0)
+	if chest_only:
+		if not _tower_here(basis):
+			print("RUIN_TOWER old world: no tower standing at %s, so no Rebuilding Chest" % origin)
+			queue_free()
+		return  # (waits for the rock to load, then adds the chest)
 	var r: float = plan.get("radius", 4.2) + 0.4
 	var front: float = plan.get("front", 6.8)
 	var top: float = plan.get("height", 9.0) + 0.6
@@ -114,7 +132,13 @@ func _process(_delta: float) -> void:
 		"wait":
 			var box := AABB(origin - Vector3(6, 1, 6), Vector3(12, 11, 14))
 			if auth.world.terrain.is_area_meshed(box):
-				_state = "carve"
+				_state = "chest" if chest_only else "carve"
+		"chest":
+			_add_rebuild_chest(Basis(Vector3.UP, turn * PI / 2.0))
+			last_origin = origin
+			last_turn = turn
+			_state = "done"
+			queue_free()
 		"carve":
 			var n := 0
 			while not _carve.is_empty() and n < CARVES_PER_FRAME:
@@ -168,6 +192,7 @@ func _build() -> void:
 					auth.storage.put(id, Recipes.random_page(randf()), 1)
 			elif Items.exists(item):
 				auth.storage.put(id, item, int(c.loot[item]))
+	_add_rebuild_chest(basis)
 	last_origin = origin
 	last_turn = turn
 	for t in plan.get("torches", []):  # standing crystal torches (owner, F264)
@@ -176,3 +201,54 @@ func _build() -> void:
 		auth._next_station_id += 1
 		auth._ev_place_station.rpc(sid, "crystal_torch", tp, turn * PI / 2.0)
 	print("RUIN_TOWER built at %s (turn %d): %d pieces, %d chests" % [origin, turn, plan.get("pieces", []).size(), plan.get("chests", []).size()])
+
+
+## The tower stands here: at least half of its plan's building pieces (not rubble) are in the world at their exact
+## place and turn (players may have broken some). Otherwise the save's tower is somewhere else (an older world made
+## before a change to find_spot), and a chest here would rebuild the wrong spot.
+func _tower_here(basis: Basis) -> bool:
+	var want := 0
+	var found := 0
+	for p in plan.get("pieces", []):
+		if String(p.id) in RUBBLE:
+			continue
+		want += 1
+		var pos: Vector3 = origin + basis * Vector3(p.pos[0], p.pos[1], p.pos[2])
+		var rot: int = Pieces.add_rot(int(p.rot), turn)
+		for uid in auth.builder.structure.pieces:
+			var q: Dictionary = auth.builder.structure.pieces[uid]
+			if q.piece == String(p.id) and q.rot == rot and (q.pos as Vector3).distance_to(pos) < 0.1:
+				found += 1
+				break
+	return want > 0 and found * 2 >= want
+
+
+static var last_rebuild_box := -1  ## the Rebuilding Chest's box id (tests and the towercheck robot look at it)
+
+
+## The Rebuilding Chest (owner, Nov 19; docs/design/ruin-rebuild-plan.md, F350): beside the path in front of the door,
+## facing the path. Root planks or cut stone put in it rebuild the tower as a build site; finishing it teaches its
+## blueprint. Tries a few spots beside the steps' corridor (|x| > 2.6) and takes the first with open air above the
+## floor, so it is never buried in rock or standing on the steps (F350 🔁: "make sure it can't be blocked or buried").
+func _add_rebuild_chest(basis: Basis) -> void:
+	var rad := float(plan.get("radius", 4.2))
+	var pick := Vector3.INF
+	for o: Vector2 in [Vector2(3.4, rad + 1.6), Vector2(-3.4, rad + 1.6), Vector2(3.4, rad + 3.0), Vector2(-3.4, rad + 3.0),
+			Vector2(3.0, rad + 0.6), Vector2(-3.0, rad + 0.6)]:
+		var p: Vector3 = origin + basis * Vector3(o.x, 0.0, o.y)
+		p.y = auth.world.maker.find_floor(p.x, p.z, p.y + 2.5).y
+		if absf(p.y - origin.y) > 1.5:
+			continue  # a drop or a ledge: not by the door
+		if auth.world.sdf_at(p + Vector3.UP * 0.6) > 0.45 and auth.world.sdf_at(p + Vector3.UP * 1.4) > 0.45:
+			pick = p
+			break
+	if pick == Vector3.INF:  # (never seen: fall back to the middle of the path, which is always carved)
+		pick = origin + basis * Vector3(0.0, 0.0, rad + 3.2)
+		pick.y = auth.world.maker.find_floor(pick.x, pick.z, pick.y + 2.5).y
+	var to_path := (origin + basis * Vector3(0.0, 0.0, rad + 2.0)) - pick
+	var box_id: int = auth.storage.create_box("rebuild", pick, atan2(-to_path.x, -to_path.z))  # (its front, box -Z, toward the path)
+	last_rebuild_box = box_id
+	var ruins: Dictionary = auth.world_state.get("ruins", {}).duplicate()
+	ruins[str(box_id)] = {origin = origin, turn = turn, stone = "stone_watchtower", wood = "wooden_watchtower", done = false}
+	auth.world_state["ruins"] = ruins
+	print("RUIN_TOWER rebuilding chest %d at %s" % [box_id, pick])

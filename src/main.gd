@@ -153,6 +153,12 @@ func _ready() -> void:
 			_monsters = false
 			if mode == "menu":
 				mode = "solo"
+		elif arg == "cavecheck":  # F404-F407 + F350: photos of the cave floor, Root Trees, Rebuilding Chest, swarm
+			debug_script = "res://src/debug/cavecheck.gd"
+			_saving = false
+			_monsters = false
+			if mode == "menu":
+				mode = "solo"
 		elif arg.begins_with("savecheck"):
 			debug_script = "res://src/debug/savecheck.gd"
 	# (startcheck is a robot too, but it plays the real new-game start on purpose.)
@@ -469,6 +475,8 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 		authority.load_snapshot(save.snap)
 		if save.players.has(0):
 			SaveGame.apply_player(authority.get_player(me), save.players[0])
+		if authority.is_host():
+			RuinTower.add_missing_chest(authority)  # older worlds: their tower gets its Rebuilding Chest (F350)
 	elif authority.is_host():
 		authority.seed_poi_loot()
 		# The ruined Stone Watchtower in the first cave (owner F254). Robot runs only with "ruin" (keeps their tests steady).

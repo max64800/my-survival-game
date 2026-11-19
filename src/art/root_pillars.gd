@@ -45,11 +45,13 @@ static func plan(maker: CaveMaker) -> Array[Dictionary]:
 		var c: Vector3 = room.center
 		var r: Vector3 = room.radii
 		var placed := 0
-		for attempt in 40:
+		# The first cave tries much harder and further out (owner F405, Nov 19: "the starting cave has no big tree, it
+		# needs at least 2"): 40 tries often found only 1 spot clear of the tower, the stone columns and the paths.
+		for attempt in (800 if ri == 0 else 40):
 			if placed >= want:
 				break
 			var a := rng.randf_range(0.0, TAU)
-			var d := rng.randf_range(0.15, 0.7)
+			var d := rng.randf_range(0.15, 0.95 if ri == 0 else 0.7)
 			var at := Vector3(c.x + cos(a) * r.x * d, c.y, c.z + sin(a) * r.z * d)
 			var width := rng.randf_range(4.5, 7.0)
 			var spin := rng.randf_range(0.0, TAU)

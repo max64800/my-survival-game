@@ -114,7 +114,7 @@ func _made_by_script(stem: String, text: String, _dir: String) -> bool:
 
 
 func _said(w: String, text: String) -> bool:
-	for q in ["\"%s\"", "'%s'", "{%s}", "\"%s_{", "\"%s{", "'%s_{"]:
+	for q in ["\"%s\"", "'%s'", "{%s}", "\"%s_{", "\"%s{", "'%s_{", "\"_%s\""]:  # ("_far": name + "_far" in a loop)
 		if text.contains(q % w):
 			return true
 	return false

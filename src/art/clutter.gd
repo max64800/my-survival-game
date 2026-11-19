@@ -1,6 +1,6 @@
 class_name Clutter
 extends Node3D
-## Small loose things on cave floors, only for looks: pebbles, chunky rocks, old bones,
+## Small loose things on cave floors, only for looks: pebbles, chunky rocks,
 ## twigs (Mossy Hollows) and fungus nubs (Fungal Jungle). You can't pick them up.
 ## And dripstone on the ceilings (F232, owner Nov 17): hand-built models (tools/asset_forge/builds/cave_dripstone.py:
 ## a stalactite cluster, a big ringed one with a drop, a stubby cluster), each on a chunk of rock tucked into the
@@ -17,7 +17,7 @@ const PER_TUNNEL := 6
 const KINDS := {
 	"pebble": {color = Color(0.45, 0.42, 0.38), surface = "stone", size = [0.05, 0.12], biome = "", weight = 6},
 	"rock": {color = Color(0.4, 0.37, 0.34), surface = "stone", size = [0.18, 0.4], biome = "", weight = 2},
-	"bone": {color = Color(0.82, 0.78, 0.66), surface = "smooth", size = [0.25, 0.4], biome = "mossy", weight = 1},
+	"bone": {color = Color(0.82, 0.78, 0.66), surface = "smooth", size = [0.25, 0.4], biome = "mossy", weight = 0},  # (no more bones: owner F404, "too messy")
 	"twig": {color = Color(0.35, 0.24, 0.15), surface = "bark", size = [0.3, 0.55], biome = "mossy", weight = 0},  # (real, pickable twigs: GlowPlacer)
 	"nub": {color = Color(0.62, 0.48, 0.66), surface = "fungus", size = [0.08, 0.2], biome = "fungal", weight = 3},
 	# Ceilings (weight 0 = never picked for floors; placed by _ceiling instead).
@@ -119,9 +119,19 @@ func _plan(maker: CaveMaker) -> Dictionary:
 			var dir := Vector3(rng.randf_range(-1, 1), -rng.randf_range(0.4, 1.0), rng.randf_range(-1, 1)).normalized()
 			_try(maker, rng, picks, room.center, dir, 60.0)
 	for s: Dictionary in maker.segments:
-		for i in PER_TUNNEL:
-			var at: Vector3 = (s.a as Vector3).lerp(s.b, rng.randf())
-			_try(maker, rng, picks, at, Vector3(rng.randf_range(-0.3, 0.3), -1, rng.randf_range(-0.3, 0.3)).normalized(), 10.0)
+		# F415 (owner, Nov 19: in a very wide tunnel the pebbles lay along one path): they used to drop from the tunnel's
+		# middle line only. Now spread across its whole width, and more of them in long, wide tunnels.
+		var r := float(s.get("r", 2.0))
+		var flat: Vector3 = (s.b as Vector3) - (s.a as Vector3)
+		flat.y = 0.0
+		var across := flat.normalized().cross(Vector3.UP) if flat.length() > 0.5 else Vector3.RIGHT
+		var n := mini(PER_TUNNEL + int(flat.length() * r / 30.0), 40)
+		for i in n:
+			var at: Vector3 = (s.a as Vector3).lerp(s.b, rng.randf()) + across * r * rng.randf_range(-0.85, 0.85)
+			_try(maker, rng, picks, at, Vector3(rng.randf_range(-0.3, 0.3), -1, rng.randf_range(-0.3, 0.3)).normalized(), r + 8.0)
+	# F414 (owner, Nov 19: "they're not doing very good" in the caves): pebbles and small rocks only in the tunnels
+	for k in ["pebble", "rock"]:
+		picks[k] = (picks[k] as Array).filter(func(xf: Transform3D) -> bool: return not CaveLife.in_cave(maker, xf.origin))
 	for k in DRIPS:
 		_drips[k] = []
 	for room in maker.rooms:

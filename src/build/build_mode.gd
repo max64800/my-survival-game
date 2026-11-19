@@ -152,10 +152,42 @@ func _update_work(delta: float) -> void:
 		dwarf.model.work(0.9)
 
 
-## Q (dir +1, left) or E (dir -1, right). Pieces turn a quarter, triangles 30°.
+## Q (dir +1, left) or E (dir -1, right). Pieces turn a quarter, triangles 30°: they stay on the grid so walls always
+## line up (owner, Nov 19). Holding the key keeps turning, one step at a time at one calm pace (like the stations, F397).
+const HOLD_DELAY := 0.35  ## seconds held before it starts repeating (so a tap stays one step)
+const REPEAT := 0.4  ## then one step every this many seconds, never faster
+var _hold_dir := 0
+var _hold_time := 0.0
+
+
 func turn(dir: int) -> void:
+	_step(dir)
+	_hold_dir = dir
+	_hold_time = 0.0
+
+
+func _step(dir: int) -> void:
 	rot = posmod(rot + dir, 12 if Pieces.is_tri(piece) and not blueprint else 4)
 	changed.emit()
+
+
+## How many extra steps holding the key adds between `before` and `after` seconds held.
+static func held_steps(before: float, after: float) -> int:
+	var n := func(t: float) -> int: return 0 if t < HOLD_DELAY else floori((t - HOLD_DELAY) / REPEAT) + 1
+	return n.call(after) - n.call(before)
+
+
+func _keep_turning(delta: float) -> void:
+	if _hold_dir == 0:
+		return
+	# E is also "open / use": main.gd only starts an E turn when nothing is aimed at to open.
+	if not active() or not Input.is_action_pressed("rotate_piece" if _hold_dir > 0 else "interact"):
+		_hold_dir = 0
+		return
+	var before := _hold_time
+	_hold_time += delta
+	for i in held_steps(before, _hold_time):
+		_step(_hold_dir)
 
 
 var _was_active := false
@@ -204,6 +236,7 @@ func level_text() -> String:
 func _process(delta: float) -> void:
 	_update_work(delta)
 	_update_tints(delta, active())
+	_keep_turning(delta)
 	if active() and not _was_active and dwarf:
 		# Taking the hammer out: the piece starts facing the way you look, then stays put while you walk (owner,
 		# Nov 19: "it turns when you walk"); only Q / E turn it from here.

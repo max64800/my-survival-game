@@ -171,6 +171,7 @@ func _process(delta: float) -> void:
 		# Smooth flying (owner, Nov 18: "it jitters back and forth, and it teleports"): the head glides after its path
 		# point instead of being put on it, Root Trees push it away gently instead of throwing it to the trunk's edge,
 		# and the stretch follows its speed slowly (frame-to-frame speed shakes with every uneven frame).
+		head = _above_floor(sw, head, delta)
 		var sm: Vector3 = sw.get("sm", head)
 		sm = sm.lerp(head, 1.0 - exp(-delta * 2.5))
 		for tr in _trunks:
@@ -183,6 +184,7 @@ func _process(delta: float) -> void:
 				var push := (need - dd.length()) * minf(1.0, delta * 3.0)
 				sm.x += away.x * push
 				sm.z += away.y * push
+		sm = _keep_out(sw, sm, delta)
 		sw.sm = sm
 		head = sm
 		var vel := (head - (sw.prev as Vector3)) / maxf(delta, 0.001)
@@ -243,6 +245,77 @@ func _process(delta: float) -> void:
 		fly_mat.set_shader_parameter("fws", fw)
 		fly_mat.set_shader_parameter("fade", fade)
 		fly_mat.set_shader_parameter("radius", radius)
+
+
+const FLOOR_GAP := 1.6  ## the pack's middle stays at least this high over the real floor under it (owner F407)
+const FLOOR_LOOK := 0.15  ## seconds between looks at the floor under a swarm
+
+
+## Never into the ground (owner F407, Nov 19: "bees sometimes fly into the ground"): the swarm's flying height is worked
+## out from the cave's middle, but cave floors rise and fall, so a raised floor or a slope could come up through it. A few
+## times a second, look at the floor under (and just ahead of) the head; the head is lifted to FLOOR_GAP over it, and
+## the lift eases in and out so the pack glides up over a rise instead of hopping.
+func _above_floor(sw: Dictionary, head: Vector3, delta: float) -> Vector3:
+	if _maker == null:
+		return head
+	var look: float = float(sw.get("floor_look", 0.0)) - delta
+	if look <= 0.0:
+		look = FLOOR_LOOK
+		var top := -INF
+		var step := ((head - (sw.prev as Vector3)) / maxf(delta, 0.001)) if sw.has("prev") else Vector3.ZERO
+		var ahead: Vector3 = head + step.limit_length(4.0)  # (about a second ahead)
+		for p: Vector3 in [head, ahead]:
+			top = maxf(top, _floor_under(p))
+		sw.floor_y = top
+	sw.floor_look = look
+	var want := 0.0
+	if float(sw.get("floor_y", -INF)) > -INF:
+		want = maxf(0.0, float(sw.floor_y) + FLOOR_GAP - head.y)
+	var lift: float = sw.get("lift", 0.0)
+	lift = lerpf(lift, want, 1.0 - exp(-delta * 3.0))
+	if lift < want - 1.0:
+		lift = want - 1.0  # (catch up fast when far below: never more than 1 m too low)
+	sw.lift = lift
+	return head + Vector3.UP * lift
+
+
+## The gliding head itself (it follows its target a little late, and jumps when it flees from you): rises over the
+## floor under it, quickly, and never sinks below 0.6 m over it; inside a wall (no floor found above) it drifts back
+## toward the cave's middle. (F407: the target alone being lifted still left it inside rock 1 moment in 8.)
+func _keep_out(sw: Dictionary, sm: Vector3, delta: float) -> Vector3:
+	if _maker == null:
+		return sm
+	var look: float = float(sw.get("sm_look", 0.0)) - delta
+	if look <= 0.0:
+		look = FLOOR_LOOK
+		sw.sm_floor = _floor_under(sm)
+		sw.sm_rock = _maker.sdf_at(sm) < 0.3
+	sw.sm_look = look
+	var fy: float = sw.get("sm_floor", -INF)
+	if fy > -INF:
+		var want := fy + FLOOR_GAP
+		if sm.y < want:
+			sm.y = move_toward(sm.y, want, maxf(3.0 * delta, (want - sm.y) * minf(1.0, delta * 4.0)))
+		sm.y = maxf(sm.y, fy + 0.6)
+	elif sw.get("sm_rock", false):
+		var c: Vector3 = sw.c
+		var to_mid := Vector3(c.x - sm.x, 0.0, c.z - sm.z)
+		sm += to_mid.normalized() * minf(to_mid.length(), 4.0 * delta)
+	return sm
+
+
+## The ground's height under p (-INF = none found). In the air: straight down to the rock. Inside the rock (a rise
+## came up through the path): up to where the rock ends, at most 5 m (the march would stop at once in rock, so
+## "down from a point in rock" would have said the floor is right there).
+func _floor_under(p: Vector3) -> float:
+	if _maker.sdf_at(p) >= 0.05:
+		var fl := GlowPlacer._march(_maker, p, Vector3.DOWN, 14.0)
+		return fl.y if fl != Vector3.INF else -INF
+	for k in range(1, 21):
+		var q := p + Vector3.UP * 0.25 * k
+		if _maker.sdf_at(q) >= 0.05:
+			return q.y
+	return -INF
 
 
 func _place(sw: Dictionary) -> void:

@@ -24,7 +24,8 @@ const ROCKS := ["grock_a", "grock_b", "grock_c", "grock_d", "grock_e", "grock_f"
 	"grock_medium_1", "grock_medium_2", "grock_medium_3"]
 const PEBBLES := ["gpebble_round_1", "gpebble_round_2", "gpebble_round_3", "gpebble_round_4", "gpebble_round_5",
 	"gpebble_square_1", "gpebble_square_2", "gpebble_square_3", "gpebble_square_4", "gpebble_square_5", "gpebble_square_6"]
-const PLANTS := ["gplant_grass_short", "gplant_grass_tall", "gplant_grass_c", "gplant_grass_d", "gplant_clover_1",
+## (F404 🔁, owner Nov 19: the tall sharp green grass grew here among the orange mushrooms: the 4 grass kinds are out)
+const PLANTS := ["gplant_clover_1",
 	"gplant_clover_2", "gplant_fern", "gplant_leafy_1", "gplant_leafy_1_big", "gplant_flat_7", "gplant_flat_7_big",
 	"gplant_flower_bush"]
 const CAPS := ["gfungus_cap"]
@@ -188,7 +189,7 @@ static func _dress(maker: CaveMaker, room: Dictionary, rng: RandomNumberGenerato
 				continue
 			var s := rng.randf_range(0.8, 1.2) if w[3] else rng.randf_range(0.7, 1.3)
 			placed += 1
-			if list == ROCKS:  # big rocks are out (owner, Nov 19: "we don't need that boulder, it doesn't look good"); still
+			if list == ROCKS or list == PEBBLES:  # (F414, owner Nov 19: no pebbles in the caves, only in the tunnels) big rocks are out (owner, Nov 19: "we don't need that boulder, it doesn't look good"); still
 				rng.randi(); rng.randf()  # planned and skipped, with the same dice, so the plants and pebbles stay where they were
 				continue
 			out.append({pos = floor_at - Vector3.UP * (0.08 if w[3] else 0.02), model = list[rng.randi_range(0, list.size() - 1)],
@@ -328,7 +329,22 @@ func _add_dressing(d: Dictionary) -> Node3D:
 		shape.position = box.get_center()
 		body.add_child(shape)
 		m.add_child(body)
+	if not d.has("on"):  # F412 (owner, Nov 19: grass patches floating): onto the real rock once it's built
+		var at: Vector3 = d.pos
+		GroundSnap.when_built(AABB(at - Vector3(1, 2, 1), Vector3(2, 4, 2)), _settle_dressing.bind(m, 0.08 if d.solid else 0.02))
 	return m
+
+
+## The plan put this on the cave's smooth shape; the built rock is chunkier. Down onto it, or hidden if none is there.
+func _settle_dressing(m: Node3D, sink: float) -> void:
+	if not is_instance_valid(m) or not m.is_inside_tree():
+		return
+	var planned := m.global_position + Vector3.UP * sink
+	var fl := GroundSnap.floor_at(m.get_world_3d().direct_space_state, planned, 0.9, 1.4)
+	if fl == Vector3.INF:
+		m.visible = false
+		return
+	m.global_position = fl - Vector3.UP * sink
 
 
 func _tinted(gi: int, mat: StandardMaterial3D, colour: Color) -> StandardMaterial3D:

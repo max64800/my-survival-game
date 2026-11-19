@@ -5172,6 +5172,92 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - **Also done:** the shell shield's old shimmer fixed (every other outer scale 1.2 cm further out, the middle stack
   moved out; model check ok). Saved to GitHub: the fist work, test, 4 shields, journal (FEEDBACK.md left out: other
   chats' unsaved notes in it). Test `test_dwarf_fist` 5 checks pass.
+
+## November 19, 2026 (PC, dungeons Claude, chat 3): Mossgate Hold in the game, step 1 (the empty hold)
+- **Plan for the owner (6 playable steps):** 1 the empty hold, 2 root wood inside, 3 creatures + chests + recipe stand,
+  4 traps, 5 secrets and doors, 6 shrine, creatures coming back, saving. Skill check: `procedural-generation`
+  (seeded dice, check every room can be reached).
+- **How (picked):** the dungeon is part of making the world. The Cave Maker (new layout 14, new worlds only) picks a
+  cave wall with solid rock behind it and cuts the map's boxes into the rock. Every computer makes the same dungeon
+  from the world number, so co-op needs nothing sent. **Not picked:** digging it out after loading like the Fallen
+  Outpost (about 10,000 digs to save and send, and the walls would be normal rock you could dig round).
+- **New:** `src/world/dungeon_map.gd` (map 1 as 24 boxes on the 2 m grid from the sketch, placing, "is this inside"),
+  `Mat.DWARF` = 14 "Old dwarf stone" (no pickaxe, cave-in or blueprint site breaks it; the terrain shader paints it
+  as darker stone), hooks in `cave_maker.gd` (sdf, material, block building, `is_reserved` covers the whole dungeon,
+  the cave floor in front of the door is kept clear). Robot: `-- dungeoncheck claude=dungeon seed=42` takes pictures.
+- **Checked:** 6 of 6 worlds tried get the hold, 119-206 m from the start; finding the spot adds 0.2-2 s to making a
+  world. Test `test_dungeon` (5 checks): one dungeon per new world, none in layout 13 worlds, rooms open, walls old
+  dwarf stone, every room reachable on foot, nothing grown inside.
+- **Hurdles (Claude's own):** the test found a geode (a tiny sealed crystal room) inside the walls on seed 42: my
+  3 m rock check stepped past it. Now every cave room and place is checked against the dungeon directly. A fibre
+  tuft by the doorway looked like a fail, but it was already hidden (kept-clear ground keeps hidden spots so their
+  numbers stay the same): the test now skips hidden ones. The first chasm picture faced a wall and showed no pit;
+  a picture looking down from the edge showed it. `test_keep_clear` expected exactly 2 kept-clear spots: it now
+  counts the dungeon's doorway too. The plan cache now also watches `dungeon_map.gd`.
+- **Found, not mine:** the full test run also fails in `test_cave_life` (moss/grass), `test_glow_placer` (roots in
+  the Jungle), `test_dwarf`, `test_dwarf_fist` and `test_authority` (Jolt body limits, root tree side). They fail the
+  same with the dungeon switched off, so they come from other unsaved work in the folder.
+- **Known for later:** the walls still show the cave's glow-worm sparkle on the ceilings (root wood ceilings come in
+  step 2); the way in is a plain square hole until the round door is placed (step 2). 8-10 dungeons will need the
+  Cave Maker to hold space for them before it lays out caves (most big solid blocks are near the zone's edges).
+
+## November 19, 2026 (PC, dwarf-animations Claude, chat 5): KayKit two-handed moves tried, owner says not yet
+- **Did:** the KayKit Character Animations pack (CC0) was already unzipped by another chat, but without its move files,
+  so Claude unzipped the original zip into its own new folder. Its two-handed set: 2H Idle, Chop, Slice, Spin,
+  Spinning, Stab (no two-handed walk or run). New `src/player/dwarf_retarget.gd` copies them onto the dwarf's bones
+  in code (each KayKit bone's turn away from its T pose goes to the matching dwarf bone), into a "k" library, so his
+  other moves stay as they were. Godot's own import retarget was not used: it renames every bone, which would have
+  changed all his existing moves. The great axe and great maul got a two-handed stance layer (top half only, legs keep
+  walking) and the KayKit chop and slice. KayKit's weapons are also turned by a moving "hand slot" bone, so that turn
+  is copied too and the grip follows it. Credits row added. Test `test_dwarf_fist` updated (both hands always) and passes.
+- **Hurdles (Claude's own):** named a function `convert` (Godot already uses that name) and left two numbers untyped:
+  the file didn't compile and blocked every other chat's game runs for a few minutes (the cave Claude asked; fixed).
+  A measuring tool said "the arms never move": the skeleton wasn't in the scene, so it kept reporting the T pose;
+  redone with plain maths. The KayKit dummy put next to the dwarf for comparison was giant and facing away at first.
+  Tried to stop all Godot programs at once (that could have closed other chats' games): blocked, so only my own run
+  was stopped. The old "lean the axe so the short left arm reaches" fix bent KayKit's swing up to 60 degrees: turned
+  off for KayKit moves; the right fist comes in instead.
+- **Owner's verdict (with a photo of a warrior holding a long axe):** stance, attacks and hands all wrong. In the
+  photo the left hand is at the very end of the handle by the left hip, the right hand high up near the head, the
+  handle on a slant across the body. Ours had both fists bunched at the end. Owner: research how real fighters and
+  other games do two-handed combat (also sword + shield); keep it simple: one stance, 2-3 swings on repeat.
+  A research helper was started on it.
+- **Owner: "before you actually create, you should have created an artifact."** New rule (saved in Claude's memory):
+  every dungeon, pre-built building or blueprint is shown on a 3D page first, then built. Claude's mistake: step 1
+  went into the game straight from the 2D sketch. Page "Mossgate Hold 3D" made from the game's own room list
+  (`dungeon_map.gd`), with switches for full walls, ceilings and "what comes next" (traps, chests, creatures from the
+  sketch). First version: the cave outside was so big the hold looked tiny in a corner; shrunk to a strip by the door.
+
+## Nov 19 (PC, Claude 2, the cave Claude): calmer cave floors, Root Trees at the start, crystals grow back, swarms over the floor, the lost Rebuilding Chest (F404-F407, F350 🔁)
+- **F350 🔁, no Rebuilding Chest:** the chest was made earlier today (a372a06), but the big merge of everyone's unsaved
+  work a few hours later (3fa9e42) put back older copies of 7 files (builder, blueprint library, storage, structure,
+  ruin tower, dwarf, auto smelt) and the chest code was simply gone. Put it all back, and better: the chest now picks
+  a spot beside the tower's steps with open air above it (never buried, never on the steps), its window says what it
+  is, how many Rootwood Planks or Cut Stone it still needs (pieces still standing don't count: 149 planks, not 516),
+  and what you get; it goes away when the tower stands. Checked in 2 real new games (seed 42 and a random one, 15718).
+- **F404, calmer floors:** no more bones, floor moss blobs or cave grass. Small roots and the big wood roots only in
+  the tunnels between caves (the same number of wood roots moved to the tunnels, standing to the side so you can walk
+  past; none in the Fungal Jungle). Boulders: 1-2 per big cave, 1 per small one, always by a wall (was 7-11).
+- **F405, Root Trees:** the first cave only tried 40 spots; the tower, bridges and ramp paths take most of its floor,
+  so it often found just one. Now 800 tries, out to the walls: 3 trees on 12 of 12 test worlds.
+- **F406, crystals grow back:** a mined crystal comes back where it was after 90 minutes (the host counts, saved with
+  the world, the same way roots grow back), unless its rock was dug away.
+- **F407, "bees" in the ground:** the bees are the glowing swarms (asked the creature Claude first: they're not part
+  of its creature clean-up). They flew at one height worked out from the cave's middle, but floors rise and fall. Now
+  they look at the real floor a few times a second and stay 1.6 m over it, and drift out of walls.
+- **New:** robot -- cavecheck ruin=1 claude=cave_floor seed=42 shots=<folder> takes pictures of all of it; tests
+  	est_cave_floor (6 checks) and 2 new checks in 	est_ruin_tower.
+- **Hurdles (Claude's own):** forgot one helper (`structure.overlapping`) when putting the chest back: the test caught
+  it. My robot had 2 typing mistakes and wouldn't load; at the same moment another Claude's half-made file stopped
+  every game from starting (asked it; it was fixed a few minutes later). The first chest window line ran off the
+  edge and counted the whole tower; the bag window stayed open over the next photos. The first swarm fix only lifted
+  where the swarm was heading, not the swarm itself (it follows a little late and jumps when it flees from you): it
+  was still in rock 1 moment in 8; lifting the swarm itself too brought it to 1 in 400 (just grazing a wall). My
+  tunnel roots first landed in the Fungal Jungle too (a test caught it). Old tests still expected moss and grass:
+  changed to ferns.
+
+- **My mistake with another Claude's game:** while restarting my stuck first test game I stopped the wrong process (12836, started a few minutes after mine): it was probably another Claude's run. My own stuck game kept running until the end of the session, when I found and closed it. Next time: check a game's command line (`shots=` / `claude=`) before stopping it.
+
 ## Nov 19: Only five creatures left, no bosses (F403)
 - **Owner: "remove every creature except snail, rock beetle, bat and spider; remove the bosses completely; rework the
   recipes that need their stuff."** Owner picked the replacements: Root Tree Heartwood (Copper Pickaxe), snail/bug/bat
@@ -5187,6 +5273,21 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   the same. (3) Moving the work on top of the latest version failed at first (leftover generated files in the copy);
   cleaned them and retried. (4) The 5 new items (Heartwood, Tree Moss, Bat Meat, Spider Silk, Moss Bandage) have no
   icons yet (they show a coloured square with letters), so the icon test fails until they get pictures.
+- **Owner: rebuild the page with our real models, like the Watchtower and Outpost pages.** New script
+  `tools/dungeons/make_mossgate.py` lays out the whole hold from the rooms in `dungeon_map.gd`:
+  `blueprints/dungeons/mossgate_hold.json` (1,348 root wood pieces, 328 traps/doors/furniture/torches, 24 creatures:
+  beetles, spiders, bats, snails, a 1.5x beetle as pack leader; 11 chests), the same file the game will build from.
+  Page "Mossgate Hold 3D" version 3 loads the real .glb models (packed as .json like the Outpost page, 62 MB). Rock
+  changes it needed: a 4 m deep spike pit under the Pillar Hall's breaking floor, and the boulder spot split from the
+  crusher hall (the boulder fills a 3 m tunnel at 3x size; the crusher frames are 5.4 m tall, so that hall is 5.5 m).
+  Hurdles (Claude's own): a list used before it was made (page didn't load); torches far too bright (all orange).
+- **Owner: a button to spawn at the dungeon with the best gear.** Start menu (dev builds only, purple): "Dev: Test
+  the dungeon" = a new world "Dungeon Test", standing 14 m out from the door facing it, silver pickaxe/sword/shield,
+  copper armour, silver crossbow + 60 bolts, mace, spear, axe, 20 bandages, 10 crystal torches, a full lantern
+  (`src/debug/dungeon_test_start.gd`; robots: `-- dungeontest`). Hurdles: first he landed in the first cave: the
+  dungeon's rock hadn't loaded, he fell through and the game put him back at the start (now held still until it
+  loads). On the way Claude thought a column stood in the doorway and added a rule + test (no column, bridge or
+  place within 10 m of the door path): good to have, though it wasn't the cause.
 
 ## Nov 19: Crafting Book page (every recipe with pictures)
 - **Owner: "make me a small Wikipedia of everything craftable, with pictures, what's needed, and the steps (smelt
@@ -5196,6 +5297,63 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   gear), a searchable table filtered by kind and station, and a page per item that follows it back to raw materials.
 - Icons for the 5 new items: the browser link to ChatGPT timed out twice, so I wrote the prompt for the owner.
 - **Hurdles:** the game's item kinds didn't match my first category list (hammer, shovel, pack, chest, seed); fixed.
+
+## November 19, 2026 (PC, dwarf-animations Claude, chat 6): great axe, hand-made poses (F389 round 5)
+- **Did:** looked again for free animation packs (KinemIQ, Modular RPG Characters, others): none has a good great axe
+  set we may publish. Made the page "Dwarf Fighting Poses" (https://claude.ai/artifact/SRp3ReAk23HmUrJ8C1CvNE): a real
+  picture of an axe fighter from the Bayeux Tapestry (1066, hands far apart), video links (real fighters, films, TV) and
+  drawings of every pose. Owner: start with the great axe only; chop right to left, sweep back, slam; hands always wide
+  apart except in the slam.
+- **Built:** `src/player/dwarf_great_swing.gd` (key poses: where the left fist is, which way the handle points, how far
+  up the right fist sits, how far the chest twists and leans). `DwarfFist._great_hold` bends both arms to the spots, the
+  collarbones reach forward, the elbows point out to the sides, and the handle runs through both fists (its end a stub
+  past the left fist). The swings take turns A, B, C (the great axe's combo got a 3rd step). KayKit moves removed
+  (files, `dwarf_retarget.gd`, credits row). Preview tool `twohand_preview.gd` redone (markers=1 shows each fist's spot,
+  prints the gap and the handle's room in front of his body). Test `test_dwarf_fist` updated; passes.
+- **Hurdles (Claude's own):** the spine twist didn't show (his belly is bound to the low spine bones: more twist goes
+  there now). My first reach numbers came from the KayKit pose: his real arm is only 27 cm shoulder to wrist, and his
+  beard sticks out 48 cm, belly 38 cm: so I wrongly told the owner the axe could never be held in front of him. The
+  owner saw the real cause: the arms started folded into his belly (the elbows kept the idle pose's bend). Elbows out
+  + fists in front of the shoulders fixed the stance (8 cm room). The swing clock used real time, so a slow frame
+  skipped key poses in the preview: it counts game time now. A long Python edit broke the shell's quoting: saved it as
+  a file instead.
+- **Next:** retune the swings A, B, C with the new elbows (the chop and slam fists still miss their spots by up to
+  20 cm), pictures to the owner, then the maul's own set (slam + low sweep), then sword + shield.
+
+## November 19, 2026 (PC, cave Claude 2, late): lost-code check, F408, chest for old worlds, holding Q/E on pieces
+- **Did the big merge (3fa9e42) lose more work? No.** It wasn't a real git merge (one parent): everyone's unsaved
+  files were laid on top of GitHub's newest save, so a file someone had kept open from earlier could write over newer
+  saved work. That's how the Rebuilding Chest vanished. Check: for every save from Nov 18-19, take the lines it added
+  and look for them in today's files. Nearly all missing lines had been rewritten on purpose later (waterfalls,
+  creatures taken out, ruin treasure, swarms, glow grove colours). Five looked suspicious and were each checked by
+  hand: chest sounds (only made quieter, as the owner asked), the painted skills background (moved into the new perk
+  tree), glowing wall veins and Root Tree moss (both redone a better way), the Rebuilding Chest (already put back).
+  The merge deleted no files.
+  - Claude's own hurdle: the first check (deleted lines missing today) flagged 252 lines, almost all honest rewrites.
+    Checking per save, with its own lines, gave a clear answer.
+- **F408 was a false alarm.** The bump-into shape is built from the same triangles as the picture, so it can't have a
+  hidden hole. Measured all three tree models: the trunks are lopsided, and the thin side's bark sits 8-12% of the
+  width from the middle. The test wanted 15%. It now says "inside" means nearer than 7%.
+- **Old saved worlds get their Rebuilding Chest.** When a saved world loads and has no ruin chest, the tower's spot is
+  worked out with the same dice as when it was built, and the chest is added only if at least half of the tower's
+  pieces stand exactly there (so a tower that moved never gets a wrong chest). Test
+  `test_old_world_gets_its_rebuilding_chest` (takes a new tower's chest away, loads, checks it comes back in the same
+  place, and that loading again adds no second one).
+- **Building pieces stay on the grid (owner's pick)** so walls always line up. A tap is still one step (90°, triangles
+  30°); holding Q or E now keeps turning, one step every 0.4 s after a short wait.
+- **Tests:** new `fn=` option for the test runner runs single tests (`-- only=authority fn=root_tree`); `only=` alone
+  runs whole files. Running all the root-tree tests one after another still hits Jolt's body limit (known, with
+  Claude 1); each one passes alone.
+- **Owner: the test shouldn't build the whole world; when I die I should come back at the dungeon; I saw no wooden
+  walls.** (1) Test mode (`main.dungeon_test`, the dev button and `-- dungeontest`): no crystals, plants, pebbles,
+  trees, boulders, ruins, places or cave creatures are planned, and the start spot (where you wake after dying) is
+  the dungeon's door. Ready in ~14 s instead of 3+ minutes. (2) The hold is now really built in the game:
+  `src/world/dungeon_build.gd` places the plan's 1,687 models (root wood floors, walls, ceilings, doorways, columns,
+  traps, doors, furniture, chests) in batches with solid walls and floors, plus 30+ torch lights that count as light.
+  Every computer builds the same from the world number (nothing to send or save). Test `test_the_plan_builds`.
+- **Hurdles (Claude's own):** the owner saw no walls because only the page had them (the game had bare rock): I
+  should have said that more clearly. Skipping the planners left the loading screen waiting for the moss and pebbles
+  to say "done" (it stayed on "Digging out the cave…" for 3 minutes): test mode no longer waits for them.
 
 ## Nov 19: Coal only, and copper takes a while (F409, F410)
 - **Owner: "you can't feed wood into the smelter: a bloomery makes coal from wood, the smelter burns coal. The anvil
@@ -5209,6 +5367,39 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - (later) Icons: the browser link came back, so I made the 6 pictures in the owner's ChatGPT myself (Heartwood, Tree
   Moss, Bat Meat, Spider Silk, Moss Bandage, and a new Seared Bat), cut with rembg/ISNet, logged in CREDITS.
   Hurdle: the ChatGPT tab never showed "Image created" text, so I read the finished picture straight from the page.
+
+## November 19, 2026 (PC, dwarf-animations Claude, chat 7): great axe swings tuned by a tool (F389 round 5, paused)
+- **Did:** made `tools/asset_forge/great_pose_tuner.gd`: it holds one key pose still (new `DwarfRig.great_fixed`),
+  measures the handle's room in front of his body, the fists' misses, the gap and where the axe head ends up, and keeps
+  small random changes that score better. All chop/sweep/slam key poses in `dwarf_great_swing.gd` now come from it:
+  handle 3-11 cm clear of his body at every key, both fists on their spots, hands 31-43 cm apart (12-17 in the slam).
+  The preview now prints each swing's worst moment.
+- **Hurdles (Claude's own):** my hand-made numbers sent the handle through his belly in almost every pose (the slam's
+  head even stuck out to his right). Letting each pose start from the one before made the search worse (it got stuck:
+  between two good poses the handle has to pass his body), so each pose is polished from its own best start instead.
+- **Still open:** the chop and the slam touch his body for a moment between the wind-up and the hit (add a middle key
+  each); the chop turns his chest 75 degrees (maybe too much); pictures to the owner. Paused: the owner switched this
+  chat to the creature tasks (F416, F419-F421).
+- **Owner's first play of the dungeon test (Nov 19), to fix next chat:** (1) gaps beside the round entrance frame
+  (the frame is 3 m wide, the tunnel 4 m + the rock gap: you see the corridor walls and rock beside it); (2) no
+  monsters; (3) chests can't be opened (they're only models); (4) falling into the chasm doesn't kill you, so no way
+  to reset; (5) furniture/crates can't be smashed, boulders can't be broken (and the test kit's pickaxe sat only in
+  the pickaxe slot, none on the hotbar); (6) stalactites hang upside down and never fall; (7) "the tunnels that are
+  one by one are too small, they should be 2 m high" (corridors: 1 row of walls + ceiling at 2 m = 1.76 m clear;
+  doorways ~1.3 x 1.75 m). Also: the shield needs the off hand free (test kit now gives the Back Lantern).
+
+## November 19, 2026 (PC, creature Claude, same chat as the great axe above): spiders, bats, leaders (F416, F419-F421)
+- **F416:** the spider's pounce is a "lunge" (a leap), and every lunge counted as a charge, which knocks the dwarf
+  down (a rule made for the beetles, F234). New `MonsterManager.is_charge()`: a pounce is not a charge.
+- **F419:** bats got `wake_light = 25` and `stays_in_cave`: a light within 25 m wakes the roost (no need to see you),
+  and they chase until you leave their cave (the roost's room, 1.3x its size for the tunnel mouths), instead of giving
+  up after 10 s.
+- **F420 (why they bounced):** a chasing bat aims 3 m above your head and climbs back there after each bite. Where the
+  ceiling is lower, it flew up into the rock again and again. Now it checks the rock above it 4 times a second and
+  stays 0.3 m under it. The new test failed first (23 ceiling hits in 10 s), then passed.
+- **F421:** both crowns removed (hand-built and simple models); leaders 1.8x size (was 1.3x).
+- **Hurdles:** my first test line didn't compile (GDScript couldn't guess a list's type: added `: Array`). The test
+  runner counts whole tests, not single checks ("1 checks" looked like checks were missing; they weren't).
 
 ## Nov 19: Copper tools 15, Charcoal Kiln, Rune Slab buildable (F399, F423)
 - Owner: copper tools 15 bars; call the coal furnace "Charcoal Kiln" (a real bloomery makes iron); rusty scrap only
@@ -5233,3 +5424,28 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   without my change, by briefly stashing everyone's work and putting it straight back. That worked, but stashing
   while other Claudes are editing is risky; next time compare with a clean copy instead.
 - `godot` isn't on the Bash path on the PC; used the WinGet Godot 4.7.2 console exe directly.
+
+## Nov 19 (late): Cave floor round 3 (F404 🔁, F411-F415, F417, F418), Claude 2
+- F404 🔁: the sharp green grass came from a second planter: the glow groves' floor had 4 grass kinds of its own.
+  Removed; the cave-floor test now checks the groves too. Every other planter checked: no grass left.
+- F412: the glow groves' floor plants were the only floor things never set down onto the real rock (the rock that's
+  built is chunkier than the plan's smooth cave). Now they are, like pebbles, mushroom grass and boulders.
+- F414 + F415: pebbles and small rocks only in the tunnels now. Why they lay in one line: tunnel pebbles were dropped
+  only from the tunnel's middle line, and tunnel roots always stood exactly 55% of the way out. Both are now spread
+  across the tunnel's whole width; long, wide tunnels get more pebbles.
+- F413: a wood root on every rock bridge (two on long ones), near an end and to one side, so you can walk past.
+- F418: 3 extra boulders by the starting cave's walls, with their own dice so no other boulder moved (saved worlds
+  remember broken boulders by number).
+- F411: the Rebuilding Chest now says one short line and shows the wooden and stone towers as two turning pictures,
+  each with what it needs.
+- F417 (9 FPS): 64 play sessions are unreviewed. In 4 of them, right after loading, one physics step took ~1.4 s.
+  My test run didn't show it, so the cause isn't proven; GroundSnap now logs a "slow step" line if it's the culprit.
+- **Hurdles:** `godot` isn't on the PC's path (used the WinGet exe again). The full test run took ~50 minutes and
+  I edited test files while it ran, so one file showed as "does not compile"; alone it passed. My new bridge roots
+  broke the old "no roots inside caves" test (bridges cross caves); the test now skips bridge roots on purpose.
+  Moving the boulder code into its own function first gave two things the same name (`edge`); renamed before running.
+  test_model_rules said the far mushroom-grass tufts had no build script: they do (made in a loop as name + "_far");
+  the test now understands that pattern.
+- **Found, not mine (other chats' work):** test_authority (physics body limit + squashed-body warnings), test_dwarf
+  (hair swing, a missing material), test_item_sources (an item called "rune" nobody can get), test_visuals (the
+  shovel has no model yet).

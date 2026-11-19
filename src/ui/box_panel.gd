@@ -12,6 +12,8 @@ var _had := false  ## it had something in it (an empty chest you opened to fill 
 var _title: Label
 var _grid: GridContainer
 var _status: Label
+var _ways: HBoxContainer  ## an untouched Rebuilding Chest: a picture of each tower it can rebuild (owner F411)
+var _ways_for := -1  ## which chest the pictures are of (they're built once, not every frame)
 
 
 func _ready() -> void:
@@ -21,6 +23,11 @@ func _ready() -> void:
 	add_child(v)
 	_title = UiKit.title(v, "Chest")
 	_status = UiKit.label(v, "", 14, UiKit.AMBER)
+	_ways = HBoxContainer.new()
+	_ways.add_theme_constant_override("separation", 12)
+	_ways.alignment = BoxContainer.ALIGNMENT_CENTER
+	_ways.visible = false
+	v.add_child(_ways)
 	_grid = GridContainer.new()
 	_grid.columns = 8
 	v.add_child(_grid)
@@ -76,6 +83,12 @@ func refresh() -> void:
 	_title.text = {"barrel": "Barrel", "chest_small": "Chest", "chest_stone": "Stone Chest", "grave": "Your grave", "chest_loot": "Old Chest", "builder": "Builder's Chest", "rebuild": "Rebuilding Chest"}.get(box.kind,
 		Pieces.LIST[box.kind].name if Pieces.LIST.has(box.kind) else "Box")
 	_status.text = GameAuthority.instance.builder.site_status(box_id) if box.kind in ["builder", "rebuild"] else ""
+	var intro: bool = box.kind == "rebuild" and _status.text == ""
+	if intro:  # not started yet: one short line and a picture of each tower (F350, F411)
+		_status.text = GameAuthority.instance.builder.ruin_intro(box_id)
+		if _ways_for != box_id:
+			_show_ways()
+	_ways.visible = intro and _ways.get_child_count() > 0
 	var inv: Inventory = box.inv
 	if visible and _had and not has_items(inv):
 		_had = false
@@ -109,6 +122,26 @@ func refresh() -> void:
 		else:
 			b.text = "" if int(s.count) <= 1 else str(s.count)
 		b.tooltip_text = "" if s.is_empty() else Items.display_name(s.id)
+
+
+## The Rebuilding Chest's two pictures (owner F411, Nov 19): put in planks -> the wooden tower, cut stone -> the
+## stone tower; under each, what it still needs.
+func _show_ways() -> void:
+	_ways_for = box_id
+	UiKit.clear(_ways)
+	for w: Dictionary in GameAuthority.instance.builder.ruin_choices(box_id):
+		var col := VBoxContainer.new()
+		col.add_theme_constant_override("separation", 2)
+		_ways.add_child(col)
+		UiKit.label(col, "%s  →  %s" % [w.put, w.name], 15, UiKit.AMBER).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		var pic := BlueprintPreview.new()
+		pic.custom_minimum_size = Vector2(230, 200)
+		col.add_child(pic)
+		pic.show_blueprint(BlueprintLibrary.make(String(w.key)))
+		var needs := UiKit.label(col, "Needs: " + String(w.needs), 12, UiKit.AMBER)
+		needs.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		needs.custom_minimum_size = Vector2(230, 0)
+		needs.modulate.a = 0.8
 
 
 func _process(_d: float) -> void:

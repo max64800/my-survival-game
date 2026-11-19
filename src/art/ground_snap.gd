@@ -63,6 +63,8 @@ func _physics_process(delta: float) -> void:
 	var done := 0
 	var looked := 0
 	var built_checks := 0
+	var t0 := Time.get_ticks_usec()
+	var rays := 0
 	# Up to 300 quick distance checks a step, but only 12 "is the rock built here?" checks (owner, Nov 19: rocks still
 	# floating; with ~12,000 batches waiting, 12 looks a step took ~16 s to get round to the ones next to you).
 	while looked < 300 and built_checks < 12 and done < 2 and not _jobs.is_empty():
@@ -84,10 +86,14 @@ func _physics_process(delta: float) -> void:
 		if job.has("call"):
 			(job.call as Callable).call()
 		else:
+			rays += (job.mmi as MultiMeshInstance3D).multimesh.instance_count
 			_settle(job)
 			if (job.after as Callable).is_valid():
 				(job.after as Callable).call()
 		done += 1
+	var took := (Time.get_ticks_usec() - t0) / 1000.0
+	if took > 50.0:  # (F417, owner Nov 19: 9 FPS once; the play log now says when this was the slow part)
+		print("GROUND_SNAP slow step: %.0f ms (%d things checked, %d batches left)" % [took, rays, _jobs.size()])
 
 
 ## Only near a player is the rock solid (World.COLLISION_DISTANCE): further out a ray would find no floor.
