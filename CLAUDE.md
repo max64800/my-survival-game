@@ -28,6 +28,10 @@ Code layout, recorder details, how to run robots: `docs/CLAUDE-REFERENCE.md` (re
 - The GitHub repo is public: never commit personal paths, usernames, keys, or Steam credentials.
 - Use Voxel Tools and GodotSteam **GDExtension** editions with the official Godot build (never the module builds).
 - Use the `godot` MCP to run the game and read errors; use GodotPrompter skills for Godot patterns.
+
+## GodotPrompter
+- Before building a **new** Godot system, check for a matching `godot-prompter:*` skill and follow it (also helpers/subagents).
+  Not needed for changes inside a system the project already has.
 - **Every game run Claude starts is muted:** `--audio-driver Dummy` before `--path` (the owner is often using the PC).
 - **Test games are marked (owner, Nov 19):** add `claude=<what_you_test>` after `--` (e.g. `-- claude=waterfalls seed=42`).
   The game then shows an orange frame + "CLAUDE TEST" label and taskbar name, so the owner knows not to play it.

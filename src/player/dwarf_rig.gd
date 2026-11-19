@@ -44,6 +44,26 @@ const ANIMS := {
 const MOVE_POINTS := {idle = 0.0, walk = 1.6, jog = 4.0, sprint = 6.5}
 ## How fast the standing/walk/run loops play (1 = as made; owner Nov 18: "way too fast").
 const LOOP_SPEED := 0.7
+## Feet that grip the floor (Nov 19, waiting for the owner's pick): at 70% the feet skate (they move back only 64% as
+## fast as the dwarf walks, 39% when running; tools/asset_forge/dwarf_gait_check.gd), so with this on the loops play at
+## the speed where the feet stay put instead: speed (m/s) -> how fast the loop plays.
+static var grip_feet := false
+## The heavy-steps layer (DwarfWeight): off, the owner kept the old moves (Nov 19). The Dwarf Moves page tool turns it on.
+static var use_weight := false
+const GRIP_RATES := {0.0: 0.7, 1.6: 1.3, 4.0: 1.0, 6.5: 1.65}
+
+
+## How fast the standing/walk/run loops play at `speed` m/s.
+static func loop_rate(speed: float) -> float:
+	if not grip_feet:
+		return LOOP_SPEED
+	var keys := GRIP_RATES.keys()
+	for i in range(1, keys.size()):
+		if speed <= keys[i] or i == keys.size() - 1:
+			var a: float = keys[i - 1]
+			var b: float = keys[i]
+			return lerpf(GRIP_RATES[a], GRIP_RATES[b], clampf((speed - a) / (b - a), 0.0, 1.0))
+	return LOOP_SPEED
 
 ## Our own animations, stitched together from poses of the pack's animations (see _made_library).
 ## Each entry: [time 0..1, source animation, moment in it (0..1 of its length)].
@@ -71,6 +91,7 @@ static var _head_mesh: Mesh
 
 var skeleton: Skeleton3D
 var proportions: DwarfProportions
+var weight: DwarfWeight  ## heavy steps, waddle, breathing, landing squash
 var tree: AnimationTree
 var right_hand: Node3D  ## tools go here
 var left_hand: Node3D   ## the lantern hangs here
@@ -113,6 +134,13 @@ func build(tint: Color) -> void:
 	if use_body and ResourceLoader.exists(BODY):
 		prop.head_follow = BODY_HEAD_FOLLOW
 	proportions = prop
+	# Weight (Nov 19, "heavy + chunky"): follow-through, waddle, breathing, landing squash. After the shaping,
+	# before the hair and clothes springs (added later in _wear_body), so they swing along. OFF (owner, Nov 19, after
+	# the Dwarf Moves page: "all before is good already, keep what we have"); `use_weight = true` brings it back.
+	if use_weight:
+		weight = DwarfWeight.new()
+		skeleton.add_child(weight)
+		weight.setup(skeleton, prop)
 	# Size: put the head bone at HEIGHT, and make the dwarf a bit wider.
 	var head := skeleton.find_bone("Head")
 	var head_y := prop._rest_global(skeleton, head, true).origin.y - prop.drop_height
@@ -405,13 +433,23 @@ func set_hold(what: String) -> void:
 ## Legs follow `speed` (m/s); in the air we blend to the jump pose; a dodge rolls the whole body.
 func set_motion(speed: float, on_floor: bool, rolling: bool) -> void:
 	tree.set("parameters/move/blend_position", speed)
+	if grip_feet:
+		tree.set("parameters/move_speed/scale", loop_rate(speed))
 	var dt := get_process_delta_time()
 	_air = move_toward(_air, 0.0 if on_floor else 1.0, dt * 6.0)
+	if weight:
+		weight.speed = speed
+		weight.on_floor = on_floor
+		weight.rolling = rolling
 	if on_floor:
 		if _air_time > 0.45 and not rolling:
 			play_full("Jump_Land", 0.35)  # a real fall, not a bump: bend the knees on landing
+		if weight and _air_time > 0.2:
+			weight.land(_air_time)  # the heavy squash (a step down a stair edge doesn't count)
 		_air_time = 0.0
 	else:
+		if weight and _air_time == 0.0:
+			weight.takeoff()
 		_air_time += dt
 	tree.set("parameters/air/blend_amount", _air)
 	if rolling and not _rolling:

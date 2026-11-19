@@ -4271,3 +4271,44 @@ the body."
   fixed" or "good for now (8/10)".
 - Hurdle: the list was well behind (many items were already fixed but never crossed off), and 3 numbers were used
   twice (F261, F373, F374); they were told apart by their titles.
+
+## November 19, 2026 (PC, dwarf-animations Claude): batch 1 of the dwarf's moves, "heavy and chunky"
+- The owner answered questions first: the worst moves are walking and running (also with tools) and swinging; the
+  dwarf should feel heavy and chunky; the 70% speed (F261) is good; moving around comes first. They also asked what
+  the free animation pack has: "Universal Animation Library" 1 + 2 by Quaternius (CC0), 86 moves. The dwarf uses 17
+  and two stitched ones (mining, ladder). Unused but handy: Walk_Carry, torch/lantern idles, Jump_Start, sword combos
+  with recoveries, shield bash, crouch walk, climb a ledge, kneel to fix, push. The catch: they're made for a tall human.
+- **Measured before changing anything** (new robot `tools/asset_forge/dwarf_gait_check.gd`): in the game's walk
+  (4 m/s, which plays the jog) the feet went up to 16 cm into the floor and the body bobbed 24 cm; in the run, 14 cm
+  into the floor. The feet also skated: they moved back only 64% (walk) and 39% (run) as fast as the dwarf moves.
+- **New: `src/player/dwarf_weight.gd`**, a layer after the dwarf shaping, before the hair and clothes springs:
+  the hips lift so no foot goes into the floor; the chest hangs behind the hips on a spring (it dips and the shoulders
+  sag on each step, then bounce back); a waddle over the standing foot; slow breathing and a lazy sway when standing;
+  a stretch on take-off and a squash on landing (the Disney rules, F342). Test: `tests/test_dwarf_weight.gd`.
+- **The skating is caused by the 70% speed.** Feet only grip at about 100% for the walk and 165% for the run. That
+  fights the owner's "too fast", so it's the owner's pick: `DwarfRig.grip_feet` (off for now) plays the loops at the
+  gripping speed. The new "Dwarf Moves" page (recorded by `tools/asset_forge/dwarf_moves_export.gd`) shows three
+  dwarfs side by side: before, after (70%), after + gripping feet, with slow motion and a moving floor.
+- **Hurdles (Claude's own):** the first measuring run read the feet at the wrong moment and watched the ankle instead
+  of the ball of the foot (it said "0 grip"); fixed. The first recordings showed the shoulders *lifting* on landing
+  instead of sagging: two turn directions were guessed. Now each direction is worked out from the skeleton itself,
+  and the test checks the shoulders drop. Then the landing was far too strong (the head folded down to the knees, the
+  shirt puffed at the shoulders); toned down twice. Three separate page files were 43 MB; now one body with all three
+  versions' moves (14 MB: half-size pictures, one byte per skin weight, no moves for bones that never move).
+- **Not done here on purpose:** the "tool over the shoulder while running" work (branch `claude/outpost-and-tools`)
+  was never merged into main; it's only in the shared folder, unsaved. Batch 1 leaves tool carrying alone to avoid a
+  clash. GodotPrompter: a short rule in CLAUDE.md (owner said yes).
+- **Big hurdle (Claude's own): the first page showed a tall, thin human** (owner: "incredibly long neck, skinny
+  arms, knee-deep in the ground, the beard stuck to his body, jumping doesn't jump"). Two causes: (1) to make the page
+  file smaller, Claude threw away moves for bones that "never change", but the dwarf shaping (short legs, thick arms,
+  short neck) IS steady values, so the page fell back to the human skeleton; now steady values are kept as one key.
+  (2) It was recorded from the GitHub copy, which lacks two days of unsaved dwarf work in the shared folder; now it's
+  recorded from the shared folder (the dwarf the owner plays), checked against a game picture (`dwarf_studio`).
+  The jump also stayed on the floor (only the bones were recorded); the page dwarf now really goes 1.5 m up.
+  The owner liked the page's 3-finger hands, shorts and shirt fit.
+- Tests: the new weight tests pass. Not mine (fail without my changes too): `test_dwarf` braid, `test_cave_layout2`,
+  `test_keep_clear` mushroom grass, `test_model_rules` build scripts.
+- **Owner's verdict on the page (next chat, same day):** "all before for standing, walking, running, jumping is good
+  already, keep what we have". So the weight layer is switched OFF in the game (`DwarfRig.use_weight = false`); the code,
+  its test and the page tools stay so it can come back. The page once said "the dwarfs could not be loaded": the model
+  file is 15.1 MB and the page host only serves ~14.6 MB reliably; it loaded on a reload. Next page stays under 14 MB.
