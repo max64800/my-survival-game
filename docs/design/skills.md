@@ -67,8 +67,11 @@ New things these need (not built yet): Axe bleeding (★25), Spear throw (★75)
 
 ## Perk tree (owner, Nov 19) — built, `Progression.PERKS`
 - Draft page to explore and edit: https://claude.ai/artifact/UTLcKhgPsVEZiubPB2dfWP
-- **1 perk point per level.** 4 branches around the dwarf: Toughness (top, grey), Fighting (right),
-  Utility (bottom), Together (left, includes support). A perk opens once the one before it has a point.
+- **1 perk point per level.** 4 branches around the dwarf (names picked Nov 19): **Bones** (top, grey: toughness),
+  **Fists** (right: fighting), **Hands** (bottom: mining, crafting, cooking), **Heart** (left: friends and support).
+- Planned window layout (mock-up: https://claude.ai/artifact/MBTFW9LdXc4mA3jNNpvYWR): skills list on the left
+  (click one to see its ★ perks, only one open at a time, never scrolls), the tree in the middle on the carved hall
+  (the Level circle sits in the carved ring), perk details on the right. A perk opens once the one before it has a point.
 - Mostly passive perks. **Active perks** (diamonds on the page) go on keys **Z / G / T** (the first 3 you own,
   in tree order) and recharge: Stone Stance, Whirlwind, Rapid Volley, Quick Fix, War Horn, Healing Brew, Clan Banner.
 - **Resetting perk points costs gold coins** (5 per level). Gold is found in old ruin chests; later monsters drop it too.

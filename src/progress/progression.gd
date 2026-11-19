@@ -39,7 +39,8 @@ const MAX_LEVEL := 30
 const MAX_SKILL := 100
 
 ## The perk tree (owner, Nov 19; draft page: claude.ai/artifact/UTLcKhgPsVEZiubPB2dfWP). 1 point per level.
-## Four branches around the dwarf: Toughness (top), Fighting (right), Utility (bottom), Together (left).
+## Four branches around the dwarf: Bones (top, toughness), Fists (right, fighting), Hands (bottom, utility),
+## Heart (left, playing together). The ids below keep the old words; only the shown names changed (owner, Nov 19).
 ## id: [branch, max ranks, needs perk id ("" = first in branch), active?, name, what it does]
 ## active = you press a key to use it (ACTIVE has the recharge). A perk opens once the one before it has a point.
 const BRANCHES := ["toughness", "fighting", "utility", "together"]

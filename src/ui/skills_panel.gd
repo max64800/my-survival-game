@@ -4,7 +4,7 @@ extends PanelContainer
 ## then the perk tree: 1 point per level, 4 branches. A perk opens once the one before it has a point.
 ## ◆ = active perk: it goes on an ability key (Z / G / T). Resetting your points costs gold coins.
 
-const BRANCHES := [["toughness", "Toughness"], ["fighting", "Fighting"], ["utility", "Utility"], ["together", "Together"]]
+const BRANCHES := [["toughness", "Bones"], ["fighting", "Fists"], ["utility", "Hands"], ["together", "Heart"]]  ## names (owner, Nov 19); ids stay
 
 var peer_id := 1
 var _body: VBoxContainer

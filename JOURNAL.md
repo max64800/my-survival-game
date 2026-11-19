@@ -3700,3 +3700,8 @@ the body."
   background. `tools/art/cut_perk_icons.py` cuts the sheets into 44 pictures (assets/icons/perks/). The skills window
   shows a picture on every perk card and the hall behind it (darkened). Tests: every perk has a picture; the window builds.
   Hurdle: one browser wait timed out while ChatGPT drew; waiting in shorter steps fixed it. Not looked at in a real game window.
+- Same day: branch names picked: Bones (toughness), Fists (fighting), Hands (utility), Heart (together); only the
+  shown names changed, ids stay. Skills-window mock-up page (skills left, tree middle on the carved hall with the
+  Level circle in the carved ring, details right): claude.ai/artifact/MBTFW9LdXc4mA3jNNpvYWR. Hurdle: another session
+  had unsaved changes in JOURNAL.md and game files, so only this session's files were committed (journal line added
+  to the saved copy without taking their edits).
