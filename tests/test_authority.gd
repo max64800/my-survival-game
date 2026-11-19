@@ -728,3 +728,18 @@ func test_toughness_perks_on_the_body() -> void:
 	ps.vitals.add_ailment("burn", 50.0)
 	check_near(ps.vitals.ailments.buildup.burn, 35.0, 0.5, "Fire and Frost 2: 30% less burn")
 	_teardown()
+
+
+func test_skills_window_shows_perk_pictures() -> void:
+	await _setup(42)
+	var sp := SkillsPanel.new()
+	auth.add_child(sp)
+	sp.peer_id = 1
+	sp.refresh()
+	check(sp.has_node("Background"), "the painted hall is behind the window")
+	var card := sp.find_child("Perk_whirlwind", true, false)
+	check(card != null, "Whirlwind has a card")
+	var pics := card.find_children("*", "TextureRect", true, false) if card else []
+	check(pics.size() > 0 and pics[0].texture != null, "and a picture")
+	sp.queue_free()
+	_teardown()

@@ -3684,3 +3684,19 @@ the body."
 - Not built (needs new systems): see skills.md "Waiting on systems". Abilities have sounds but no animations/models.
 - Hurdle: the Mac's Python with `-I` couldn't find the picture library for the coin icon; ran it normally (own script).
   The coin icon is a quick placeholder. Not tried in a real game window.
+
+## November 19, 2026 (Mac): price idea + first-hour plan for Zone 1
+- Price: suggested $14.99 for early access (Q1 2027), about $19.99 after a big update, $19.99-24.99 at full release.
+  Based on prices of similar games Claude already knew; not checked on Steam yet. Nothing written in the Steam plan.
+- First hour (owner): the ruined tower gets a Builder's Chest. Put planks in it and it patches the holes, so the
+  tower becomes the first base. Its chests hold a rune memory that points to the first wall marking.
+- Copper before the boss (owner): the boss lair is sealed with stone only copper tools can break.
+- Hurdle Claude found: the Copper Pickaxe recipe needed the boss's Heartstone, so copper tools before the boss
+  were impossible. Owner's fix: Copper Pickaxe = copper only; Copper Pickaxe + Heartstone = Keeper's Pickaxe,
+  which breaks the border rock. Written in docs/design/zone1-progression.md; no code changed yet (the skills
+  work was still open in another chat).
+- Same day: perk pictures + skills background. ChatGPT (owner's Chrome, chat "Create skill icon sprite sheet") made
+  4 sheets (one per branch, coloured tile borders: grey / rust-red / amber / moss-green) and a carved dwarf-tree hall
+  background. `tools/art/cut_perk_icons.py` cuts the sheets into 44 pictures (assets/icons/perks/). The skills window
+  shows a picture on every perk card and the hall behind it (darkened). Tests: every perk has a picture; the window builds.
+  Hurdle: one browser wait timed out while ChatGPT drew; waiting in shorter steps fixed it. Not looked at in a real game window.

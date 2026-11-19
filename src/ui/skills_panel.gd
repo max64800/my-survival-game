@@ -13,12 +13,22 @@ var _level: Label
 var _reset: Button
 const ICONS := {toughness = "helm_shell", fighting = "sword_stone", utility = "pickaxe_stone", together = "campfire"}
 const KEY_NAMES := ["Z", "G", "T"]
+const BACKGROUND := "res://assets/ui/skills_background.jpg"
 
 
 ## "Dwarf workshop" look (owner F187): a column per skill, each perk a card with what it does.
 ## Learned ranks glow gold; ones you can't take yet are faded (hover says why).
 func _ready() -> void:
 	UiKit.panel(self)
+	if ResourceLoader.exists(BACKGROUND):  # a painted dwarf hall behind the window (ChatGPT, Nov 19)
+		var bg := TextureRect.new()
+		bg.name = "Background"
+		bg.texture = load(BACKGROUND)
+		bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		bg.modulate = Color(0.55, 0.55, 0.55)  # darker, so the cards and text stay easy to read
+		bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(bg)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 8)
 	add_child(box)
@@ -142,6 +152,12 @@ func _skill_grid(p: Progression) -> Control:
 	return frame
 
 
+## A perk's picture (assets/icons/perks/, cut from the ChatGPT sheets in assets/concepts/perks/), or null.
+static func perk_icon(id: String) -> Texture2D:
+	var path := "res://assets/icons/perks/%s.png" % id
+	return load(path) if ResourceLoader.exists(path) else null
+
+
 func _perk_card(id: String, p: Progression) -> Control:
 	var info: Array = Progression.PERKS[id]
 	var rank := p.perk_rank(id)
@@ -152,6 +168,13 @@ func _perk_card(id: String, p: Progression) -> Control:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
 	card.add_child(row)
+	var pic := TextureRect.new()
+	pic.texture = perk_icon(id)
+	pic.custom_minimum_size = Vector2(52, 52)
+	pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	pic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(pic)
 	var text := VBoxContainer.new()
 	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	text.add_theme_constant_override("separation", 0)

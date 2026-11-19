@@ -27,3 +27,11 @@ func test_runes_share_their_colour_picture() -> void:
 
 func test_unknown_item_has_no_icon() -> void:
 	check(Items.icon("not_a_real_item") == null, "no picture -> null (HUD falls back to colour + short label)")
+
+
+func test_every_perk_has_a_picture() -> void:
+	var missing := []
+	for id in Progression.PERKS:
+		if SkillsPanel.perk_icon(id) == null:
+			missing.append(id)
+	check(missing.is_empty(), "perks without a picture: %s" % [missing])
