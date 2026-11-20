@@ -103,6 +103,7 @@ class PlayerState:
 	var harvest_hits := 0
 	var leftovers := {}  ## material -> voxels dug that didn't add up to a whole item yet
 	var vitals := Vitals.new()  ## simulated on the player's own computer
+	var fall := FallDamage.new()  ## watches for long falls (own computer too)
 	var progress := Progression.new()  ## owned by the host, copied to the player
 	var seen := {}  ## every item id this player has held (unlocks recipes)
 	var bed_pos := Vector3.INF  ## where you wake up after dying (INF = the world start)
@@ -2735,6 +2736,13 @@ func _tick_vitals(ps: PlayerState, delta: float) -> void:
 			resting = true
 			break
 	var v := ps.vitals
+	if ps.node is CharacterBody3D and not v.is_dead():  # long falls hurt (Jumping ★100: never)
+		var body := ps.node as CharacterBody3D
+		var drop := ps.fall.step(body.global_position.y, body.is_on_floor(), body.velocity.y, delta)
+		if FallDamage.damage_for(drop) > 0.0 and not ps.progress.has_star("jumping", 100):
+			v.take_damage(FallDamage.damage_for(drop))
+			Sfx.ui("hit_heavy", 0.0)
+			hud_message.emit("Ouch! You fell %d m." % roundi(drop))
 	if v.is_dead():
 		if not ps.dying:
 			ps.dying = true

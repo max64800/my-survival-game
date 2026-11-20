@@ -96,7 +96,7 @@ around you instead of being thrown; Shoulder to Shoulder only helps the player w
   50 (wider slam), 100 (slam stuns) · Spear 25 (poke pushes back), 50, 100 · Shield 25, 50, 75, 100 · Crossbow 25, 50,
   75 (30% the bolt comes back to your bag), 100.
 - **Not built (needs a new system or the owner's call):** Running 50 (nothing slows you on rubble or slopes yet),
-  Jumping 50 (no ledge climbing) and 100 (no fall damage), Gathering 50 (drops don't glow), 75 (mushrooms don't regrow)
+  Jumping 50 (no ledge climbing; ★100 no fall damage was built Nov 20), Gathering 50 (drops don't glow), 75 (mushrooms don't regrow)
   and 100 (no "rare finds" in gathering), Crafting 100 (no item quality yet), Cooking 75 (a 4th food clashes with the
   2 foods + 1 drink rule), Axe 25 (no bleeding) and 75 (enemies have no shields), Warhammer 75 (slam digging), Spear 75
   (no spear throw). Crafting 25 only shows on bigger upgrade costs (2 → 2 after rounding).
