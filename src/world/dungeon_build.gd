@@ -304,7 +304,7 @@ func _build(d: Dictionary, plan: Dictionary) -> void:
 			first = false
 		inst.free()
 		built += xforms.size()
-		if String(model) in NO_BODY:
+		if String(model) in NO_BODY or _is_flat_junk(String(model)):
 			continue
 		for t in xforms:
 			_add_boxes(body, String(model), t as Transform3D, whole)
@@ -395,6 +395,12 @@ func _add_boxes(body: StaticBody3D, model: String, t: Transform3D, whole: AABB) 
 		cs.shape = sh
 		cs.transform = Transform3D(t.basis.orthonormalized(), t * (bx[0] as Vector3))
 		body.add_child(cs)
+
+
+## Dungeon junk (owner, Nov 20: "just for looks", low and flat) and small treasure bits: you walk over them, so they
+## get no body (a 5 cm box would trip you). Reused crates, sacks and barrels keep theirs (they smash).
+static func _is_flat_junk(model: String) -> bool:
+	return model.begins_with("dungeon/junk_") or model.begins_with("treasure/tr_")
 
 
 static func _rel_xform(root: Node3D, n: Node3D) -> Transform3D:

@@ -36,6 +36,7 @@ def bounds(path):
 		walk(r, np.eye(4))
 	return lo, hi
 
-for f in sys.argv[1:]:
-	lo, hi = bounds(f)
-	print("%-28s min %s max %s size %s" % (f.split("/")[-1], np.round(lo, 2), np.round(hi, 2), np.round(hi - lo, 2)))
+if __name__ == "__main__":  # (also imported by junk.py)
+	for f in sys.argv[1:]:
+		lo, hi = bounds(f)
+		print("%-28s min %s max %s size %s" % (f.split("/")[-1], np.round(lo, 2), np.round(hi, 2), np.round(hi - lo, 2)))

@@ -6893,3 +6893,23 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   copy. The first local test server started in the game folder instead of the page folder (404 page); stopped and
   restarted in the right folder.
 - **Next:** placing the junk in the dungeons (none placed yet), with the placement rule and its automatic test.
+
+
+## November 20, 2026 (PC, junk Claude): the dungeon junk laid out in Mossgate Hold, 3D page first
+- **What we did:** read how Mossgate's things are placed (one script, `tools/dungeons/make_mossgate.py`, writes the
+  plan the game builds from), suggested a plan, and the owner chose: 3-5 pieces in a big room, 1-2 in a small one,
+  now and then one in a tunnel, and broken urns + coffin chunks in the Old Tombs (although those belong to medium
+  dungeons). New shared helper `tools/dungeons/junk.py`: finds every wall and corner spot, crosses out the walk lines
+  between doorways, 2 m round doorways, 1.5 m round doors/lever/chests/recipe stand, traps, furniture, creatures and
+  keep-off boxes (chasm, spike pit; for Lampwick: rails and the plank walk), pushes each piece against its wall, long
+  pieces lie along it. Each room its own list (broken weapons + a dropped meal in the Guard Room, bones in the Pack
+  Hall, mining junk + a dumped mine cart in the Pillar Hall...). 49 pieces; nothing placed before moved (own dice).
+  Flat junk and small treasure bits get no body in the game (you walk over them); reused crates/sacks/barrels keep
+  theirs and still smash. New test `tests/test_dungeon_junk.gd` (5 checks) tests the rule in every plan with junk.
+  Page "Mossgate Hold 3D" version 9: yellow rings + names on every piece ("Mark the junk"), `?room=` opens a room.
+- **Hurdles / Claude's slips:** (1) junk names without their `junk_` front: the script stopped (fixed). (2) The loose
+  stone (buried chest) first counted as plain floor, so junk could have covered it: now kept clear like a trap.
+  (3) `glb_bounds.py` ran itself when borrowed: it now runs only from the command line. (4) The browser tool
+  wouldn't connect: screenshots taken with Chrome from the command line instead. (5) A dropped meal is 3 pieces and
+  got 3 overlapping rings: one ring per group now. (6) Planted 2 bad pieces on purpose: the test caught both.
+- **Next:** owner's OK on the page; then Lampwick (its chat adds the junk call to make_lampwick.py).

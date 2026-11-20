@@ -376,6 +376,46 @@ lights.append([78.0, 1.8, 30.0])
 for x, z in [(34.0, 50.0), (34.0, 33.0), (66.0, 40.0), (12.0, 40.0), (28.0, 6.0), (64.0, 9.0)]:  # (no light over the crushers)
 	lights.append([x, 3.0, z])
 
+# --- 5. Junk (owner, Nov 20): along the walls and in the corners, never on a walk line or by a door, chest, lever or
+# the recipe stand (tools/dungeons/junk.py; tests/test_dungeon_junk.gd). Mossgate is small: the "all 12" junk + the
+# small dungeons' (wood shield, wood rubble, broken tools, snapped beam, helmet, lantern) + the old props; the Old Tombs
+# also get broken urns and coffin chunks (owner, Nov 20). Its own dice, so nothing placed above moves.
+import junk  # noqa: E402
+
+JUNK_THEMES = {
+	"gate_hall": ["beam_snapped", "rubble_wood", "rags", "crate_stack", "keg", "meal", "bones"],
+	"guard_room": ["sword_snapped", "spear_broken", "shield_wood", "helmet", "axe_head", "meal", "bones"],
+	"store_room": ["crate_stack", "grain_sacks", "ore_basket", "timber_stack", "rags", "rubble_wood"],
+	"vault": ["bones", "rags", "lantern"],
+	"tombs": ["bones", "urn_broken", "urn_broken", "coffin_piece", "coffin_piece", "rags", "candles"],
+	"shrine": ["bones", "rags", "candles"],
+	"pillar_hall": ["beam_snapped", "rubble_wood", "bones", "tools", "mine_cart", "timber_stack"],
+	"chasm_room": ["bones", "lantern", "helmet", "rags", "spear_broken"],
+	"crusher_hall": ["bones", "rags"],
+	"pack_hall": ["bones", "bones", "helmet", "shield_wood", "rags", "sword_snapped", "meal"],
+	"loot_room": ["helmet", "axe_head", "rags", "bones"],
+}
+_doorways = [(p["pos"][0], p["pos"][2]) for p in pieces if p["id"] == "doorway"]
+_ways = [(p["pos"][0], p["pos"][2]) for p in props if p["model"] in ("dungeon/dungeon_entrance.glb", "dungeon/wall_cracked.glb")]
+_low = lambda p: p["pos"][1] < 1.0  # on the floor (not torches, chains, stalactites' bases up high... see traps)
+_flat = {"dungeon/floor_old.glb", "dungeon/wall_old.glb", "dungeon/wall_cracked.glb"}  # (the loose stone counts as a trap: keep off it)
+props += junk.place_junk(
+	SPACES, group, cells, lambda g: 0.0, ROOMS, JUNK_THEMES,
+	doors=_doorways + _ways + [(p["pos"][0], p["pos"][2]) for p in props if p["role"] == "door" and "lever" not in p["model"]],
+	path_doors=_doorways + _ways,
+	things=[tuple(c["pos"][0::2]) for c in chests] + [(79.0, 5.2)] + [(p["pos"][0], p["pos"][2]) for p in props if "lever" in p["model"]],
+	traps=[(p["pos"][0], p["pos"][2]) for p in props if p["role"] in ("trap", "secret") and p["model"] not in _flat],
+	furniture=[(p["pos"][0], p["pos"][2], max(junk.size(p["model"])[:2]) / 2) for p in props
+		if _low(p) and p["role"] in ("decor", "light", "heal") and p["model"] not in _flat]
+		+ [(p["pos"][0], p["pos"][2], 0.6) for p in pieces if p["id"] == "column" and p["pos"][1] < 1]
+		+ [(p["pos"][0], p["pos"][2], 1.0) for p in pieces if p["id"] == "spear_rack"]
+		+ [(c["pos"][0], c["pos"][2], 0.8) for c in creatures if c["pos"][1] < 1],
+	seed=2011,
+	keep_off=[[35.2, -1.0, 44.8, 13.0], [35.2, 19.2, 42.8, 26.8]],  # the chasm and the spike pit (and their edges)
+	extra_paths=[("chasm_room", [(34.0, 12.0), (34.0, 6.0), (46.0, 6.0)])],  # over the bridge
+	skip={"boulder_way", "loot_door"},
+)
+
 # --- Write it out. ---
 missing = sorted({p["model"] for p in props if not (ROOT / "assets/models" / p["model"]).exists()} |
 	{c["model"] for c in creatures if not (ROOT / "assets/models" / c["model"]).exists()})
