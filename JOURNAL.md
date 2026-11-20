@@ -5828,3 +5828,10 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   chat (its new-chat box still holds the old trap message, so I left that alone). The browser window got narrower
   mid-way, so one click opened a menu instead of the text box; fixed by clicking again. A long wait script froze the
   first tab (45 s limit); shorter waits worked. I listed a whole model folder by mistake (too much output).
+
+## November 20, 2026 (Mac, Claude): rare finds brainstorm (idea saved, nothing built)
+- **Owner: "rare finds are good, but what are we using them for?"** Claude suggested four, each feeding a system that
+  exists: geodes (a miner's gem source), pure copper nuggets (3 bars), Ancestor relics on a shrine (clan-wide bonuses,
+  duplicates into gold), golden plants (meals last twice as long). Also a table of all 9 gems, what they do and where
+  they drop today: most gems come from statues (1 in 20 kills); Jolt, Leech and Blight barely exist in zone 1; armor
+  has no sockets. Saved in `docs/design/rare-finds.md` with the open questions (armor sockets, geode gems, which to build).
