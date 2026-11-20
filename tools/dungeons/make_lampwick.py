@@ -396,6 +396,46 @@ for i in range(2):
 for x, z, y, m in [(42.4, 43.4, 7.0, "trap_drip_fat"), (34.0, 48.6, 3.5, "trap_drip_thin"), (30.8, 47.3, 3.5, "trap_drip_thin")]:
 	prop("dungeon/%s.glb" % m, x, y + 0.6, z, rng.choice([0, 120, 240]), role="trap", tilt=180.0, floor=0.0, warn=0.35, fall=0.45)
 
+# --- 5. Junk (owner, Nov 20): along the walls and in the corners, never on a walk line, a rail, the plank walk, or by
+# a door, chest, lever or the recipe stand (tools/dungeons/junk.py; tests/test_dungeon_junk.gd). Lampwick is a small
+# mine: the "all 12" junk + the small dungeons' (broken tools, snapped beams, helmets, lanterns, wood rubble) + old
+# crates, ore baskets, timber and a mine cart. No junk where rails run (the Cart Junction, the Rail Tunnel, the Back
+# Rails), over the Old Shaft, in the spike-floored vault or the boulder's niche. Its own dice: nothing above moves.
+import junk  # noqa: E402
+
+JUNK_THEMES = {
+	"lamp_room": ["crate_stack", "rags", "lantern", "helmet", "bones", "keg"],
+	"tool_store": ["tools", "tools", "rubble_wood", "ore_basket", "timber_stack", "beam_snapped"],
+	"drip_tunnel": ["helmet", "rags", "bones", "lantern"],
+	"bat_gallery": ["bones", "rubble_wood", "beam_snapped", "rags", "timber_stack", "lantern", "tools"],
+	"copper_face": ["tools", "ore_basket", "rubble_wood", "helmet", "lantern", "mine_cart"],
+	"prop_corridor": ["beam_snapped", "rubble_wood", "tools"],
+	"miners_rest": ["meal", "rags", "candles", "bones", "helmet"],
+	"office": ["meal", "rags", "candles", "axe_head", "sword_snapped", "crate_stack", "bones"],
+}
+JUNK_ROOMS = ROOMS | {"bat_gallery"}   # (the Bat Gallery is a 10 x 8 m room with a rock ceiling)
+_jfloor = lambda g: SP[g][5] if g in SP else 0.0
+_jxz = lambda p: (p["pos"][0], p["pos"][2])
+_jlow = lambda p: p["pos"][1] - (UP if p["pos"][1] >= UP - 0.05 else 0.0) < 1.0  # on the floor (the lamps hang 1.5 m up)
+_rails = [p for p in props if re.search(r"rail_(lane|buffer|wedge)|trap_cart", p["model"])]
+_flatj = {"dungeon/floor_old.glb", "dungeon/wall_old.glb", "dungeon/wall_cracked.glb"}
+_ways = [_jxz(p) for p in props if p["model"] in ("dungeon/dungeon_entrance.glb", "dungeon/wall_cracked.glb")]
+_doorways = [_jxz(p) for p in pieces if p["id"] == "doorway"]
+props += junk.place_junk(
+	SPACES, group, {k: v[0] for k, v in cells.items()}, _jfloor, JUNK_ROOMS, JUNK_THEMES,
+	doors=_doorways + _ways + [_jxz(p) for p in props if p["role"] == "door" and "lever" not in p["model"]],
+	path_doors=_doorways + _ways,
+	things=[_jxz(c) for c in chests] + [(RECIPE_STAND["pos"][0], RECIPE_STAND["pos"][2])]
+		+ [_jxz(p) for p in props if "lever" in p["model"]],
+	traps=[_jxz(p) for p in props if p["role"] in ("trap", "secret") and p["model"] not in _flatj],
+	furniture=[(p["pos"][0], p["pos"][2], max(junk.size(p["model"])[:2]) / 2) for p in props
+		if p["role"] in ("decor", "light", "heal") and p["model"] not in _flatj and p not in _rails and _jlow(p)]
+		+ [(p["pos"][0], p["pos"][2], 0.9) for p in pieces if p["id"] in ("mine_prop", "railing")],  # (creatures walk off)
+	seed=2012,
+	keep_off=[[p["pos"][0] - 1.3, p["pos"][2] - 1.3, p["pos"][0] + 1.3, p["pos"][2] + 1.3] for p in _rails],
+	skip={"cart_junction", "rail_tunnel", "back_rails", "old_shaft", "shaft_door", "vault", "niche"},
+)
+
 # --- Write it out. ---
 missing = sorted({p["model"] for p in props if not (ROOT / "assets/models" / p["model"]).exists()} |
 	{c["model"] for c in creatures if not (ROOT / "assets/models" / c["model"]).exists()} |
