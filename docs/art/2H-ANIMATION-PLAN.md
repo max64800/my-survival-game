@@ -13,7 +13,7 @@ dwarf's body, checks catch the handle going through him, and the owner picks fro
 | 0 | Save + push chats 5-7's unsaved code (`dwarf_great_swing.gd`, `great_pose_tuner.gd`, `twohand_preview.gd` changes, `DwarfFist._great_hold`) | PC Claude | **first thing** |
 | 1 | Animation rules file | Mac Claude | done (Nov 20) |
 | 2 | Video → key poses tool `tools/mocap/` (+ self-check) | Mac Claude | done (Nov 20) |
-| 3 | Reference pictures: a chunky dwarf in each key pose (ChatGPT, prompt below), save in `docs/art/2h-reference/` | any Claude | to do (Nov 20: ChatGPT was busy with another chat) |
+| 3 | Reference pictures: `docs/art/2h-reference/great_axe_poses_side.jpg` (rows chop / sweep back / slam, columns ready / wind-up top / hit / recovery; made from a render of our dwarf). Good for stance, slant and bent knees; some poses have the hands closer than the rules: the owner's video wins. Behind view (prompt 2) not made yet | Mac Claude | done (Nov 20) |
 | 4 | Film chop, sweep back, slam (side + front, slow + fast); guide in `tools/mocap/README.md` | owner | to do |
 | 5 | Run the tool, check the sheets, turn the numbers into his key poses (scale by arm length, keep angles/twist/timing) | PC Claude | after 4 |
 | 6 | Tuner fits each pose to his body; add middle keys where the handle passes through him; checks in `test_dwarf_fist` | PC Claude | after 5 |

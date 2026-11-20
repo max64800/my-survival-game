@@ -5757,3 +5757,17 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - Pages, room files 02-12, Mossgate's plan (01) and the build list (00) updated; the generator lists a "soft landing heap"
   model for ledges. The rules check passes. The ledge needs no code; the lever-gate code stays for the 7 gate dungeons.
 - Hurdle (Claude): one text swap missed because a code comment wrapped differently than expected; fixed by hand.
+
+## November 20, 2026 (Mac, Claude): mortar 2 + 2, fiber check, ChatGPT pictures
+- **Owner: is there enough fiber for the rope?** Counted seed 42 with new `tools/fiber_count.gd`: zone 1 has 340 fiber
+  tufts (2-3 fiber each) and 694 small roots (1 fiber each when chopped), about 500 rope in all; within 80 m of the
+  start only ~85 fiber (~28 rope). A first wooden house needs 20 rope, so it uses most of the nearby fiber: walk
+  further or wait the 10 min regrowth. Kept as is.
+- **Mortar now 2 stone + 2 clay = 1** (owner; was 1 + 1 = 2). A stone house's 40 mortar = 80 stone + 80 clay.
+- **ChatGPT pictures:** real icons for Mortar, Gold Coin and Stone Oven (were placeholders), in the chat "Create
+  Inventory Sprite Sheet", cut with a flood fill (no rembg on the Mac). A two-handed key-pose sheet of our dwarf
+  (`docs/art/2h-reference/great_axe_poses_side.jpg`, plan step 3), from a fresh render of our dwarf.
+- **Hurdles (Claude's own):** another chat's unsent dungeon-trap message showed up again in ChatGPT's new-chat box
+  and my upload landed beside it: removed only my picture and used an older art chat instead. Chrome blocked the
+  second download from the same page (it asks in the address bar), so the pose sheet was saved from a full-size
+  screenshot (1014 x 762). Removed the concept sheet's .import file by mistake, then re-imported it.
