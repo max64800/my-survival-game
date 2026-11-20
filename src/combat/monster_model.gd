@@ -612,6 +612,121 @@ static func dazed_sway(model: Node3D, angle: float) -> void:
 		model.rotation.z = angle
 
 
+## Dazed (owner F449, every creature): a ring of 4 little chunky gold stars circling over its head. Each star is
+## puffed (thick in the middle, thin at the rim) with uneven points, pale in the middle and deep gold at the tips,
+## and lit by itself so you see it in a dark cave. Returns the ring (hidden until the creature is dazed).
+static func add_daze_stars(model: Node3D) -> Node3D:
+	var ring := Node3D.new()
+	ring.name = "daze_stars"
+	ring.visible = false
+	var head := _head_spot(model)
+	ring.position = head[0]
+	ring.set_meta("base_y", (head[0] as Vector3).y)
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.vertex_color_use_as_albedo = true
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	var r: float = head[1]
+	for i in 4:
+		var star := MeshInstance3D.new()
+		star.mesh = _star_mesh(0.075 * clampf(r / 0.3, 0.8, 1.6), i)
+		star.material_override = mat
+		star.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		star.set_meta("angle", TAU * i / 4.0)
+		star.set_meta("radius", r)
+		ring.add_child(star)
+	model.add_child(ring)
+	spin_daze_stars(ring, 0.0)
+	return ring
+
+
+## Turns the ring of stars: they go round the head, bob up and down, and each one spins.
+static func spin_daze_stars(ring: Node3D, clock: float) -> void:
+	ring.position.y = float(ring.get_meta("base_y", ring.position.y)) + sin(clock * 3.0) * 0.015
+	for star: Node3D in ring.get_children():
+		var a: float = float(star.get_meta("angle")) + clock * 3.2
+		var r: float = star.get_meta("radius")
+		star.position = Vector3(cos(a) * r, sin(clock * 5.0 + a * 2.0) * 0.03, sin(a) * r)
+		star.rotation = Vector3(0.25, -a + clock * 4.0, 0.0)
+
+
+## Where its head is, in the model's own space, and how wide a ring fits round it: above its eyes if it has any,
+## otherwise over the front of its body.
+static func _head_spot(model: Node3D) -> Array:
+	var eye_mats: Array = model.get_meta("eye_mats", [])
+	var box := AABB()
+	var eyes := AABB()
+	var have_box := false
+	var have_eyes := false
+	for mi: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
+		if mi.mesh == null or not mi.visible:
+			continue
+		var b := _in_model(model, mi) * mi.get_aabb()
+		box = b if not have_box else box.merge(b)
+		have_box = true
+		for i in mi.mesh.get_surface_count():
+			if eye_mats.has(mi.get_active_material(i)):
+				eyes = b if not have_eyes else eyes.merge(b)
+				have_eyes = true
+	if not have_box:
+		return [Vector3(0, 0.8, 0), 0.25]
+	var top := box.end.y
+	var width := minf(box.size.x, box.size.z)
+	if have_eyes:
+		var c := eyes.get_center()
+		return [Vector3(c.x, maxf(eyes.end.y + 0.18, c.y + 0.25), c.z), clampf(width * 0.3, 0.14, 0.4)]
+	var front := box.position.z + box.size.z * 0.25  # (creatures face -Z)
+	return [Vector3(box.get_center().x, top + 0.12, front), clampf(width * 0.3, 0.14, 0.4)]
+
+
+## A node's place inside the model (its parents' transforms, up to the model).
+static func _in_model(model: Node3D, n: Node3D) -> Transform3D:
+	var t := Transform3D.IDENTITY
+	var at: Node = n
+	while at != null and at != model:
+		if at is Node3D:
+			t = (at as Node3D).transform * t
+		at = at.get_parent()
+	return t
+
+
+## One chunky star: 5 uneven points, puffed thick in the middle, pale yellow middle, deep gold tips.
+static func _star_mesh(radius: float, seed: int) -> ArrayMesh:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7919 + seed * 31
+	var rim: Array[Vector3] = []
+	for k in 10:
+		var a := TAU * k / 10.0 + PI / 2.0 + rng.randf_range(-0.08, 0.08)
+		var d := radius * (rng.randf_range(0.9, 1.1) if k % 2 == 0 else rng.randf_range(0.42, 0.5))
+		rim.append(Vector3(cos(a) * d, sin(a) * d, 0.0))
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var mid := Color(1.0, 0.95, 0.62)
+	var tip := Color(0.93, 0.6, 0.12)
+	var notch := Color(0.98, 0.78, 0.3)
+	for side in [1.0, -1.0]:
+		var c := Vector3(0, 0, radius * 0.38 * side)
+		for k in 10:
+			var a := rim[k]
+			var b := rim[(k + 1) % 10]
+			var ca := tip if k % 2 == 0 else notch
+			var cb := tip if (k + 1) % 2 == 0 else notch
+			st.set_color(mid)
+			st.add_vertex(c)
+			if side > 0.0:
+				st.set_color(ca)
+				st.add_vertex(a)
+				st.set_color(cb)
+				st.add_vertex(b)
+			else:
+				st.set_color(cb)
+				st.add_vertex(b)
+				st.set_color(ca)
+				st.add_vertex(a)
+	st.generate_normals()
+	return st.commit()
+
+
 ## Crystal variants: a cluster of glowing crystals on the monster's back.
 static func add_crystals(model: Node3D, color: Color) -> void:
 	var m := StandardMaterial3D.new()

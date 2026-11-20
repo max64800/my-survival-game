@@ -1087,6 +1087,58 @@ func note(m: Monster, text: String) -> void:
 	_ev_note.rpc(m.uid, text)
 
 
+## Host: a charging beetle smashes what it runs into (owner F447): boulders, ruin columns and stone bodies of dead
+## creatures burst (their stone and loot drop, like mining them to the end). It thunders on through them.
+## Returns how many things it broke this step.
+func charge_smash(m: Monster, dir: Vector3) -> int:
+	if _root == null or not _root.is_inside_tree() or dir.length() < 0.1:
+		return 0
+	var size := float(m.data.get("size", 1.0))
+	var ball := SphereShape3D.new()
+	ball.radius = 0.45 * size + 0.2
+	var q := PhysicsShapeQueryParameters3D.new()
+	q.shape = ball
+	q.transform = Transform3D(Basis.IDENTITY, m.global_position + Vector3.UP * (0.5 * size) + dir.normalized() * (0.5 * size + 0.35))
+	q.collision_mask = World.TERRAIN_LAYER | Ragdoll.LAYER
+	var broke := 0
+	var done := {}
+	for hit in _root.get_world_3d().direct_space_state.intersect_shape(q, 16):
+		var c: Object = hit.collider
+		var key := ""
+		var ok := false
+		var b := Boulders.id_of(c)
+		var col := PoiField.column_id_of(c)
+		var st := Statue.id_of(c)
+		if b >= 0:
+			key = "b%d" % b
+			ok = not done.has(key) and auth.smash_boulder(b, m.global_position)
+		elif col >= 0:
+			key = "c%d" % col
+			ok = not done.has(key) and auth.smash_column(col, m.global_position)
+		elif st >= 0:
+			key = "s%d" % st
+			ok = not done.has(key) and smash_statue(st, m.global_position)
+		if ok:
+			done[key] = true
+			broke += 1
+	return broke
+
+
+## Host: a stone body breaks in one go (a beetle charged through it): its loot drops, as if mined.
+func smash_statue(id: int, from: Vector3) -> bool:
+	var st: Dictionary = statues.get(id, {})
+	if st.is_empty():
+		return false
+	var at: Vector3 = Statue.where(id, st.pos + Vector3.UP * 0.4)
+	var out := (from - at) * Vector3(1, 0, 1)
+	out = out.normalized() if out.length() > 0.01 else Vector3.FORWARD
+	statues.erase(id)
+	for d in st.loot:
+		auth.spawn_drop(d[0], d[1], at + out * 0.4 + Vector3.UP * 0.3)
+	_ev_statue_gone.rpc(id, true)
+	return true
+
+
 ## Which way a charge knocks you (F111): off to the side it hit you on, plus a little forward.
 static func charge_shove(m: Monster, dwarf_pos: Vector3) -> Vector3:
 	var fwd := -m.global_basis.z

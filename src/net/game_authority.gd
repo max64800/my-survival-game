@@ -401,6 +401,43 @@ func request_hit_column(peer_id: int, cid: int) -> String:
 	return "broke"
 
 
+## Host: a charging Rock Beetle runs into a boulder (owner F447): it bursts at once, its stone drops beside it, and
+## a new one stands there later (like the last pickaxe hit). `from`: where the beetle came from.
+func smash_boulder(id: int, from: Vector3) -> bool:
+	if boulders == null:
+		return false
+	var r := boulders.rock(id)
+	if r.is_empty() or r.broken or boulder_back.has(id):
+		return false
+	var at: Vector3 = Boulders.middle(r)
+	var out := ((from - at) * Vector3(1, 0, 1)).normalized()
+	boulder_hits.erase(id)
+	boulder_back[id] = Boulders.RESPAWN
+	spawn_drop("stone", 3, at + out * 0.6 * float(r.scale) + Vector3.UP * 0.3)
+	_ev_boulder.rpc(id, true)
+	return true
+
+
+## Host: a charging Rock Beetle runs into an old ruin column (owner F447): it crumbles, gone for good, like the last
+## pickaxe hit (its last pile of stone drops).
+func smash_column(cid: int, from: Vector3) -> bool:
+	if poi_field == null or world_state.get("columns", []).has(cid):
+		return false
+	var c := poi_field.column(cid)
+	if c.is_empty():
+		return false
+	var at := poi_field.column_middle(cid)
+	var out := ((from - at) * Vector3(1, 0, 1)).normalized()
+	column_hits.erase(cid)
+	spawn_drop("stone", 3, at + out * (float(c.width) * 0.6 + 0.3))
+	var gone: Array = world_state.get("columns", []).duplicate()
+	gone.append(cid)
+	world_state.columns = gone
+	_ev_state.rpc(world_state)
+	_ev_column.rpc(cid)
+	return true
+
+
 @rpc("authority", "call_local", "reliable")
 func _ev_column(cid: int) -> void:
 	if poi_field:

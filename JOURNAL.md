@@ -6277,3 +6277,30 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   the spikes went down through it), so the joists now run between the hole rows. A corner flicker spot came from the
   shared rim-beam helper (one beam's end ran into the other's side): the 4 rim beams are placed by hand now. All 5
   models in `assets/models/dungeon/`, model test passes, page version 3.
+
+## November 20, 2026 (PC, enemies Claude, chat 1): Rock Beetle charge, and "dazed" fixed for every creature
+- **Start:** the merge clashes from the last chat were gone (no "UU" files, no clash marks in src/ or tests/).
+  The owner's 5 notes became F446-F450 (F445 was already taken; no repeats found in either feedback file).
+- **Why "dazed" was broken (F448), 3 separate bugs:**
+  1. After every charge the beetle showed the word "Dazed!" while it only stood catching its breath. It was never
+     really dazed (no stun), so "dazed" appeared when the owner hadn't hit it. The pause stays (your chance to hit
+     it); the word is gone.
+  2. When a real daze ended, nobody was told, so "Dazed!" (and the sway) stayed up until the creature's next hit.
+     Now the host tells everyone the moment it wears off.
+  3. The host also received its own "dazed" news, and that news said "meter full", so the host's stun meter stayed
+     full after the daze. Its next small hit dazed it again at once (dazed "for no reason"). A daze now leaves the
+     meter empty.
+- **Stars (F449):** a ring of 4 chunky gold stars (puffed, uneven points, pale middle, deep gold tips) circles over
+  every creature's head while dazed; found from where its eyes are. The gold stun bar and the word are gone (the red
+  health bar stays). A bat hanging asleep shows none (a hit wakes it anyway).
+- **Sway (F450):** a slower, gentler side-to-side sway (about 5 degrees) instead of the old fast wobble.
+- **Charge (F446):** it rears up for the first 40% of the wind-up, then drops level and runs normally with red eyes.
+- **Charge smashes (F447):** while running, a beetle breaks boulders, ruin columns and stone bodies of dead creatures
+  it runs into (their stone and loot drop, like the last pickaxe hit) and keeps going. The host decides; everyone sees
+  it through the same "it broke" messages mining uses. Not cave walls or player buildings.
+- **Tests:** 4 new checks in `test_monsters.gd` (rear-then-run, smashing a stone body, daze ends cleanly, stars + sway
+  on all 4 creatures). Checked by eye in a throwaway muted room (orange CLAUDE TEST frame): stars on all 5, rear-up
+  then level run.
+- **Hurdles (Claude's own):** my first edit script failed because `monster.gd` has Windows line endings (fixed by
+  converting before and after); a missing type made Godot refuse to load the scripts (`var dazed: bool`); the stars
+  test first failed on the bat, which was asleep upside down, so its stars were "under" it.

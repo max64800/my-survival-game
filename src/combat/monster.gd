@@ -29,7 +29,8 @@ var boosted := false  ## a living pack leader is near
 var data: Dictionary
 var model: Node3D
 var _timer := 0.0
-const CHARGE_DAZE := 3.0  ## seconds a monster stands dazed after a charge (F111)
+const CHARGE_DAZE := 3.0  ## seconds a monster stands catching its breath after a charge (F111; not a real daze)
+const CHARGE_RUN_PART := 0.6  ## a charge: it rears up for the first 40% of its wind-up, then runs for the last 60%
 var _think := 0.0
 var _attack: Dictionary = {}
 var _wander_to := Vector3.INF
@@ -39,7 +40,7 @@ var _net_pos := Vector3.ZERO
 var _net_yaw := 0.0
 var _hp_label: Label3D
 var _bar_fill: MeshInstance3D
-var _stun_fill: MeshInstance3D
+var _stars: Node3D            ## only looks: the stars that circle a dazed creature's head (owner F449)
 var _bars: Node3D
 var _flash := 0.0
 ## Rock Snail (data.shell_hide): seconds left hidden in the shell, and how many of its hiding marks (health) it has used.
@@ -47,6 +48,7 @@ var shell_left := 0.0
 var shell_hits := 0
 var shell_shut := false  ## everyone: the snail is hiding right now (hits on it clank)
 var _charging := 0.0     ## only looks: seconds of a beetle charge left (red eyes, dust trail)
+var _charge_len := 1.0   ## only looks: that charge's wind-up (tell) in seconds
 var _dust_t := 0.0
 var _flap_was := 0.0
 var _flinch := 0.0       ## only looks: a quick jolt back when hit
@@ -124,13 +126,12 @@ func _ready() -> void:
 	_hp_label.no_depth_test = true
 	_hp_label.visibility_range_end = 25.0
 	add_child(_hp_label)
-	# Health bar (red) and stun bar (gold): little flat bars that always face the camera.
+	# Health bar (red): a little flat bar that always faces the camera. (No stun bar: dazed shows as stars, F449.)
 	_bars = Node3D.new()
 	_bars.position = _hp_label.position + Vector3.DOWN * 0.18
 	add_child(_bars)
 	_bar(Color(0.1, 0.08, 0.08, 0.8), 0.0, 1.0)
 	_bar_fill = _bar(Color(0.85, 0.2, 0.2), 0.001, 1.0)
-	_stun_fill = _bar(Color(1.0, 0.8, 0.3), 0.002, 0.0, -0.07)
 	_net_pos = global_position
 	_update_label()
 
@@ -256,7 +257,10 @@ func think(delta: float, mgr: Node) -> void:
 		move_and_collide(_knock * minf(delta, 0.05))  # (walls stop it; a long step can't fling it far)
 		_knock = _knock.move_toward(Vector3.ZERO, 14.0 * delta)
 	stun.decay_mult = Monsters.PACK_BOOST.decay if boosted else 1.0
+	var was_dazed := stun.is_stunned()
 	stun.tick(delta)
+	if was_dazed and not stun.is_stunned():
+		mgr.monster_changed(self)  # the daze wore off: everyone's stars go away (F448: they stayed up until its next hit)
 	_timer -= delta
 	if variant == "green":
 		# Blight-crested: leaves a small poison cloud every 10 s (doc 7.1).
@@ -399,7 +403,7 @@ func think(delta: float, mgr: Node) -> void:
 				elif target and c.at == "between":
 					at = global_position.lerp(target.global_position, 0.6)
 				mgr.spawn_cloud(at, c.radius, c.time, c.rate, c.get("dps", 0.0))
-			if _attack.get("lunge", false) and target and _timer < _attack.tell * 0.6:
+			if _attack.get("lunge", false) and target and _timer < _attack.tell * CHARGE_RUN_PART:
 				# Charges and pounces: rush at the target during the last part of the wind-up.
 				var rush := target.global_position - global_position
 				rush.y = 0
@@ -409,6 +413,7 @@ func think(delta: float, mgr: Node) -> void:
 					if _charge_dir == Vector3.ZERO:
 						_charge_dir = rush.normalized()
 					_move(delta, _charge_dir, charge_speed)
+					mgr.charge_smash(self, _charge_dir)  # it breaks what it runs into (owner F447)
 				elif rush.length() > 1.2:
 					_move(delta, rush.normalized(), charge_speed)
 				else:
@@ -430,9 +435,9 @@ func think(delta: float, mgr: Node) -> void:
 					state = State.RECOVER
 					_timer = data.get("recover", RECOVER_TIME)
 					if _attack.get("lunge", false):
-						# After a charge it stands dazed for a moment: your chance to hit it (F111).
+						# After a charge it stands catching its breath: your chance to hit it (F111). It isn't dazed (no
+						# stars, no "Dazed!"): the old word here made it say dazed when it wasn't (owner F448).
 						_timer = maxf(_timer, CHARGE_DAZE)
-						mgr.note(self, "Dazed!")
 					_charge_dir = Vector3.ZERO
 					if data.get("hit_and_run", false):
 						var away: float = data.get("retreat", 3.0)
@@ -689,6 +694,7 @@ func show_tell(seconds: float, attack_name: String = "", aim: Node3D = null) -> 
 		get_tree().create_timer(seconds).timeout.connect(_land_sound.bind(atk.land_sound))
 	if atk.get("lunge", false) and data.get("straight_charge", false):
 		_charging = seconds + 0.6
+		_charge_len = seconds
 		MonsterModel.set_angry(model, true)
 	# Squash relative to the monster's own size (leaders are bigger than 1).
 	var base: Vector3 = model.get_meta("base_scale", model.scale)
@@ -780,10 +786,11 @@ func _process(delta: float) -> void:
 	else:
 		MonsterModel.set_glow(model, 0.0)
 	_creature_fx(delta)
+	_daze_stars()
 	if model.get_meta("roosting", false):
 		pass  # hanging upside down (MonsterModel.animate)
 	elif stun.is_stunned():
-		MonsterModel.dazed_sway(model, sin(Time.get_ticks_msec() * 0.01) * 0.15)  # (a snail sways, its foot stays put)
+		MonsterModel.dazed_sway(model, daze_sway(_clock, model.has_meta("foot")))  # (a snail sways, its foot stays put)
 	elif model.has_meta("foot"):
 		MonsterModel.dazed_sway(model, 0.0)  # a snail hops, it doesn't waddle
 	else:
@@ -810,8 +817,10 @@ func _creature_fx(delta: float) -> void:
 			Sfx.play(data.flap_sound, global_position, -20.0, _voice())  # one beat per downstroke (-20: a pack of 10 was too loud, owner Nov 19)
 		_flap_was = wing
 	if _charging > 0.0 and data.get("straight_charge", false):
-		model.rotation.x -= 0.22  # charging: head down, back end up
-		model.position.y += 0.05 * _size
+		# Charging (owner F446): it rears up (head down, back end up) while it winds up, then runs normally (red eyes).
+		var rear := charge_rear(_charge_len + 0.6 - _charging, _charge_len)
+		model.rotation.x -= 0.22 * rear
+		model.position.y += 0.05 * _size * rear
 	if _flinch > 0.0:
 		_flinch = maxf(0.0, _flinch - delta * 6.0)
 		if model.has_meta("foot"):
@@ -828,20 +837,45 @@ func set_hp(value: float, stun_frac: float, stunned: bool) -> void:
 		stun.stunned_left = 3.0
 	elif not stunned:
 		stun.stunned_left = 0.0
-	stun.value = stun_frac * stun.max_value
+	# (While dazed the meter is empty: a daze empties it. The host's own copy came here too and was filled to the top,
+	# so its next small hit after the daze dazed it again at once: owner F448, "dazed when I'm not hitting them".)
+	stun.value = 0.0 if stunned else stun_frac * stun.max_value
 	_update_label()
 
 
 func _update_label() -> void:
 	if _hp_label == null:
 		return
-	# No names over creatures (owner, Nov 17): only "Dazed!" while stunned. The health bar still shows when hurt.
-	_hp_label.text = "Dazed!" if stun.is_stunned() else ""
-	_hp_label.modulate = Color(1.0, 0.85, 0.3) if leader or stun.is_stunned() else Color(1, 1, 1, 0.75)
-	var hurt := hp < max_hp() or stun.value > 0.0
-	_bars.visible = hurt
+	# No names over creatures (owner, Nov 17), no "Dazed!" word and no stun meter (owner F449: stars show a daze).
+	_hp_label.text = ""
+	_hp_label.modulate = Color(1.0, 0.85, 0.3) if leader else Color(1, 1, 1, 0.75)
+	_bars.visible = hp < max_hp()
 	_set_bar(_bar_fill, clampf(hp / max_hp(), 0.0, 1.0))
-	_set_bar(_stun_fill, stun.fraction())
+
+
+## How far a charging beetle rears up (0..1), `elapsed` seconds into a charge whose wind-up is `tell` (owner F446):
+## up quickly at the start, held while it paws the ground, then down flat the moment it starts to run.
+static func charge_rear(elapsed: float, tell: float) -> float:
+	var run_at := tell * (1.0 - CHARGE_RUN_PART)
+	if elapsed < run_at:
+		return clampf(elapsed / 0.15, 0.0, 1.0)
+	return clampf(1.0 - (elapsed - run_at) / 0.1, 0.0, 1.0)
+
+
+## Dazed: a slow, gentle sway from side to side, like a dizzy dwarf (owner F450). A snail's body sways a bit more.
+static func daze_sway(clock: float, snail: bool) -> float:
+	return sin(clock * 4.0) * (0.15 if snail else 0.09) + sin(clock * 1.7) * 0.03
+
+
+## Dazed: little stars circle its head (owner F449, every creature). Built the first time it is dazed.
+func _daze_stars() -> void:
+	var dazed: bool = stun.is_stunned() and is_alive() and not model.get_meta("roosting", false)  # (a hanging bat wakes when hit)
+	if dazed and _stars == null:
+		_stars = MonsterModel.add_daze_stars(model)
+	if _stars:
+		_stars.visible = dazed
+		if dazed:
+			MonsterModel.spin_daze_stars(_stars, _clock)
 
 
 const BAR_W := 0.8

@@ -1039,3 +1039,98 @@ func test_no_bat_roost_by_the_start() -> void:
 					"on the far side of the cave")
 	check(checked > 0, "the starting cave still has its bats (%d)" % checked)
 	_teardown()
+
+
+## Owner F446: the beetle rears up while it winds up its charge, then runs flat out (not raised) with red eyes.
+func test_beetle_rears_up_then_charges_flat() -> void:
+	var tell: float = 1.1
+	var run_at := tell * (1.0 - Monster.CHARGE_RUN_PART)
+	check(Monster.charge_rear(0.0, tell) < 0.05, "starts level")
+	check_near(Monster.charge_rear(run_at * 0.8, tell), 1.0, 0.01, "reared up while winding up")
+	check_near(Monster.charge_rear(run_at + 0.15, tell), 0.0, 0.01, "level again once it runs")
+	check_near(Monster.charge_rear(tell + 0.5, tell), 0.0, 0.01, "still level at the end of the run")
+	await _setup()
+	var m := _spawn("rock_beetle", Vector3(4.0, 0, 0))
+	m.set_physics_process(false)
+	m.show_tell(tell, "Charge")
+	for i in 30:  # 0.3 s: reared, angry
+		m._process(0.01)
+	check(m.model.get_meta("angry", false), "red eyes while winding up")
+	for i in 40:  # 0.7 s: running now
+		m._process(0.01)
+	check(m.model.get_meta("angry", false), "still red eyes while it runs")
+	check_near(Monster.charge_rear(m._charge_len + 0.6 - m._charging, m._charge_len), 0.0, 0.01, "not raised while running")
+	_teardown()
+
+
+## Owner F447: a charging beetle breaks the stone body of a dead creature it runs into (its loot drops).
+func test_charging_beetle_smashes_a_stone_body() -> void:
+	await _setup()
+	var m := _spawn("rock_beetle", Vector3(4.0, 0, 0))
+	m.set_physics_process(false)
+	var at := m.global_position + Vector3(0, 0, -1.0)
+	var body := StaticBody3D.new()
+	body.collision_layer = World.TERRAIN_LAYER
+	var cs := CollisionShape3D.new()
+	cs.shape = SphereShape3D.new()
+	(cs.shape as SphereShape3D).radius = 0.5
+	body.add_child(cs)
+	var id := 9001
+	body.set_meta("statue", id)
+	auth.get_parent().add_child(body)
+	body.global_position = at + Vector3.UP * 0.4
+	auth.monsters.statues[id] = {pos = at, kind = "cave_spider", loot = [["stone", 2]], hits = 0, needed = 4, left = 300.0}
+	await tree.physics_frame
+	await tree.physics_frame
+	var drops_before := auth.drops_root.get_child_count()
+	check_eq(auth.monsters.charge_smash(m, Vector3(1, 0, 0)), 0, "nothing ahead to the side: nothing breaks")
+	check_eq(auth.monsters.charge_smash(m, Vector3(0, 0, -1)), 1, "ran into the stone body: it breaks")
+	check(not auth.monsters.statues.has(id), "the stone body is gone")
+	check(auth.drops_root.get_child_count() > drops_before, "its loot dropped")
+	_teardown()
+
+
+## Owner F448: after a daze the meter starts empty (the host's copy was refilled to the top, so its next small hit
+## dazed it again), and when the daze wears off everyone hears about it.
+func test_daze_ends_cleanly() -> void:
+	await _setup()
+	var m := _spawn("rock_beetle", Vector3(4.0, 0, 0))
+	m.set_physics_process(false)
+	check(m.stun.add(m.stun.max_value), "a full meter dazes it")
+	auth.monsters.monster_changed(m)  # (the host gets its own news too)
+	check(m.stun.is_stunned(), "dazed")
+	check_eq(m.stun.value, 0.0, "the meter is empty while dazed")
+	m.think(m.stun.stun_time + 0.1, auth.monsters)
+	check(not m.stun.is_stunned(), "the daze wore off")
+	m.think(Combat.STUN_IMMUNE_AFTER + 0.1, auth.monsters)
+	check(not m.stun.add(5.0), "a small hit after the daze doesn't daze it again")
+	check(not m.stun.is_stunned(), "still not dazed")
+	check_eq(m._hp_label.text, "", "no 'Dazed!' word")
+	_teardown()
+
+
+## Owner F449/F450: dazed creatures get stars circling their head (no stun meter), and a dazed beetle sways.
+func test_dazed_shows_stars_and_sways() -> void:
+	await _setup()
+	for kind in ["rock_beetle", "rock_snail", "cave_spider", "cave_bat"]:
+		var m := _spawn(kind, Vector3(4.0, 0, 0))
+		m.set_physics_process(false)
+		m.set_process(false)
+		m.state = Monster.State.CHASE  # awake (a bat asleep hangs upside down)
+		m._process(0.05)
+		check(m._stars == null or not m._stars.visible, "%s: no stars when not dazed" % kind)
+		m.set_hp(m.hp, 1.0, true)  # the host says: dazed
+		var tilt := 0.0
+		for i in 40:
+			m._process(0.02)
+			tilt = maxf(tilt, absf(m.model.rotation.z))
+		check(m._stars != null and m._stars.visible, "%s: stars while dazed" % kind)
+		check_eq(m._stars.get_child_count(), 4, "%s: 4 stars" % kind)
+		check(m._stars.global_position.y > m.global_position.y, "%s: the stars are up by its head" % kind)
+		if kind == "rock_beetle":
+			check(tilt > 0.03 and tilt < 0.2, "the beetle sways a little (%.2f rad)" % tilt)
+		m.set_hp(m.hp, 0.0, false)  # the daze is over
+		m._process(0.02)
+		check(not m._stars.visible, "%s: stars gone when the daze is over" % kind)
+		m.queue_free()
+	_teardown()
