@@ -95,7 +95,51 @@ const LAMPWICK := {
 	],
 }
 
-const MAPS := [MOSSGATE, LAMPWICK]
+## Map 3, "Old Pell's Diggings" (small; docs/design/zone1-dungeons/03-old-pells-diggings.md, owner Nov 20: "start
+## working on dung 3", no 3D page, the Foreman again as the boss). A miner's hut at the cave's level, then a ladder
+## shaft 6 m DOWN to what Pell dug out below; the way out is a lift shaft from Pell's Last Dig up behind the hut's
+## barred gate. "shaft" and "lift" are the two 2 x 2 m holes joining the levels (a ladder in each). Only the spaces in
+## `deadly` kill you when you fall in (the lower level is under 0 too). In new worlds from layout 16 on.
+const DOWN := -6.0
+const PELL := {
+	id = "pell",
+	name = "Old Pell's Diggings",
+	mouth = Vector2(36, 60),
+	since = 16,
+	best = 100.0,
+	chase_out = true,
+	deadly = ["spike_pit"],
+	crushers_always = true,  ## the Deep Seam's crushers never sleep (you watch their rhythm and run)
+	spaces = [
+		["entry", 34, 52, 38, 60, 0, 3.5],            # the way in
+		["pells_hut", 32, 44, 40, 52, 0, 4.5],        # 1 bed, table, chest; the barred gate on its east wall
+		["shed_door", 30, 46, 32, 50, 0, 3.5],
+		["winch_shed", 24, 44, 30, 50, 0, 4.5],       # 2 the tripwire; the shaft in its north-west corner
+		["pantry", 20, 48, 24, 52, 0, 3],             # 3 behind the cracked wall (Pell's stash)
+		["lift_top", 40, 46, 46, 50, 0, 4.5],         #   behind the gate: the lever, the lift shaft's top
+		["shaft", 24, 44, 26, 46, DOWN, 6.5],         # 4 the ladder down
+		["lift", 44, 46, 46, 48, DOWN, 6.5],          #   the way out: up from the Last Dig
+		["landing", 24, 40, 30, 46, DOWN, 4.5],       # 5 the shaft's foot (rats)
+		["cave_in", 24, 36, 28, 40, DOWN, 3.5],       # 6 half fallen in: 4 m wide at its ends,
+		["cave_squeeze", 24, 32, 26, 36, DOWN, 3.5],  #   2 m in the middle, a spear wall on each side there
+		["cave_in_s", 24, 30, 28, 32, DOWN, 3.5],
+		["sorting", 22, 22, 30, 30, DOWN, 4.5],       # 7 dart plate, bear jaws, Lost Miners
+		["spoil", 14, 24, 22, 28, DOWN, 3.5],         # 8
+		["den", 8, 22, 14, 28, DOWN, 4.5],            # 9 the rat pack, the loose stone
+		["gallery_door", 30, 24, 32, 28, DOWN, 3.5],
+		["gallery", 32, 20, 42, 28, DOWN, 5],         # 10 rotten boards over the spike pit
+		["spike_pit", 34, 22, 38, 28, DOWN - 4.0, 5], #    (4 m down onto spikes: falling in kills)
+		["seam", 38, 28, 42, 38, DOWN, 6],            # 11 the crushers (rock overhead)
+		["shrine_door", 36, 32, 38, 36, DOWN, 3.5],
+		["shrine", 30, 32, 36, 38, DOWN, 4.5],        # 12 the healing basin; the hidden boulder on its south side
+		["niche", 32, 38, 34, 42, DOWN, 3],           #    behind the boulder (a chest)
+		["dig_door", 38, 38, 42, 40, DOWN, 3.5],
+		["dig", 36, 40, 50, 56, DOWN, 5],             # 13 Pell's Last Dig: the Foreman, the recipe stand, the lift (owner,
+		                                              #    Nov 20: "a lot bigger", 14 x 16 m: 3 miners and the boss)
+	],
+}
+
+const MAPS := [MOSSGATE, LAMPWICK, PELL]
 
 
 ## One placed dungeon: where its mouth is in the world, which way it faces, and its boxes in world terms.

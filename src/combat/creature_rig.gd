@@ -15,7 +15,9 @@ const HIT := "Hit_A"                          ## the flinch (owner F464: with ou
 const LOOPS := ["Idle", "Idle_Combat", "2H_Melee_Idle", "Walking_A", "Walking_D_Skeletons", "Running_A", "Running_B"]
 ## When the blow of each swing lands, in seconds into the move (measured: the tool moves fastest then). The move is
 ## sped up or slowed down so that moment comes exactly when the host's attack lands (the end of its tell).
-const IMPACT := {"1H_Melee_Attack_Chop": 0.57, "1H_Melee_Attack_Stab": 0.40, "2H_Melee_Attack_Chop": 0.72, "2H_Melee_Attack_Spin": 1.16}
+## (the Spin: its whirl turns him round from 0.62 to 1.25 s; the blow lands as the whirl gets going, 0.8 s: owner, Nov 20,
+## "the knock-down from the big spin is delayed": it was 1.16, the end of the whirl)
+const IMPACT := {"1H_Melee_Attack_Chop": 0.57, "1H_Melee_Attack_Stab": 0.40, "2H_Melee_Attack_Chop": 0.72, "2H_Melee_Attack_Spin": 0.8}
 ## How fast each walk or run moves over the ground at normal speed (in the skeleton's own size; measured from the
 ## foot swing). The move plays faster or slower to match how fast the creature really goes.
 const GROUND_SPEED := {"Walking_D_Skeletons": 0.49, "Walking_A": 0.75, "Running_A": 1.52}
@@ -29,6 +31,10 @@ var _busy := 0.0         ## seconds a one-off move (rise, swing, flinch) still p
 var _busy_kind := ""     ## "rise", "attack" or "hit"
 var _walk := ""          ## the walk or run move playing now
 var _moving := 0.0       ## seconds a lying pile has been moving (a slide when it appears doesn't count)
+var hand: BoneAttachment3D  ## follows the weapon hand (the pick's swing trail: owner, Nov 20)
+const TRAIL_LEN := 0.95  ## m from the hand to the pick's head (the trail's far edge)
+const TRAIL := Color(0.95, 0.88, 0.75, 0.45)
+const TRAIL_BOSS := Color(1.0, 0.5, 0.38, 0.6)  ## the shield-only swings (the same red as their outline)
 
 
 ## The rig of a model made from a skeleton pack, or null (an older creature).
@@ -52,6 +58,11 @@ static func find(model: Node3D) -> CreatureRig:
 			s *= (n as Node3D).scale.y
 		n = n.get_parent()
 	rig.unit = s
+	var sk := skels[0] as Skeleton3D
+	if sk.find_bone("handslot.r") >= 0:
+		rig.hand = BoneAttachment3D.new()
+		rig.hand.bone_name = "handslot.r"
+		sk.add_child(rig.hand)
 	return rig
 
 
@@ -77,7 +88,7 @@ func rise_time() -> float:
 
 
 ## A swing whose blow lands `tell` seconds from now.
-func attack(clip: String, tell: float) -> void:
+func attack(clip: String, tell: float, red := false) -> void:
 	if dead or not ap.has_animation(clip):
 		return
 	lying = false
@@ -86,6 +97,28 @@ func attack(clip: String, tell: float) -> void:
 	_busy = ap.get_animation(clip).length / speed
 	_busy_kind = "attack"
 	_walk = ""
+	_swing_trail(clip, speed, red)
+
+
+## The pick's swoosh (owner, Nov 20: "trails from the enemies and bosses"): from a moment before the blow lands to
+## just after it; the Spin's along its whole whirl (0.62-1.25 s of the move).
+func _swing_trail(clip: String, speed: float, red: bool) -> void:
+	if hand == null or not hand.is_inside_tree():
+		return
+	var impact := float(IMPACT.get(clip, 0.5))
+	var from := (0.62 if clip.contains("Spin") else impact - 0.28) / speed
+	var to := (1.28 if clip.contains("Spin") else impact + 0.08) / speed
+	var s := maxf(hand.global_basis.get_scale().y, 0.001)
+	var h := hand
+	var col := TRAIL_BOSS if red else TRAIL
+	var timer := Timer.new()  # (on the hand: if the creature goes away first, its timer goes with it)
+	timer.one_shot = true
+	timer.wait_time = maxf(from, 0.01)
+	hand.add_child(timer)
+	timer.timeout.connect(func() -> void:
+		WeaponTrail.follow(h, to - from, col, 0.25 / s, TRAIL_LEN / s)
+		timer.queue_free())
+	timer.start()
 
 
 ## Hit: the flinch (not in the middle of a swing or of getting up: the swing still lands).

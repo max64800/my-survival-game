@@ -17,7 +17,16 @@ extends Node
 ##                 harmlessly (owner, Nov 20).
 ##   tripwire      a thin wire at ankle height: walk into it and the dart wall beside it fires a poison bolt across
 ##                 the tunnel. Jump over it, or cut it (hit it).
-##   dart_wall     the wall with the hole (fired by its tripwire).
+##   dart_wall     the wall with the hole (fired by its tripwire, or its floor plate).
+##   spears        Old Pell's spear wall: its stakes stab out SPEAR_REACH m and pull back, over and over (every computer
+##                 off the same clock; a wall's "phase" sets when). Out, they hurt whoever stands in front of it.
+##   push          Old Pell's push wall: step in front of it and, a moment later, its block slams out PUSH_OUT m and
+##                 shoves you away from the wall (onto the rotten boards over the spike pit), then slides back in.
+##                 Step in and jump back to set it off safely, then pass while it slides back.
+##   lift          Old Pell's rope lift: E on it (riding it) sends it to the other end of its shaft; "lift_call" (the
+##                 winch at the top, a lever at the bottom) calls it. Where it is: world_state.dungeon_lift (saved).
+##   plate         Old Pell's cracked floor plate ("fires": true): step on it and the dart wall beside it fires. A bolt
+##                 or a hit sets it off from afar (use it up: whoever stands in the dart's line is still hit).
 ##   chest_spikes  the vault's spike floor: stand on it a moment (to open the chest) and the spikes slam up. Shoot the
 ##                 chest (or the floor) first: they slam up harmlessly and stay down.
 
@@ -46,6 +55,27 @@ const DART_DAMAGE := 18.0
 const DART_POISON := 100.0    ## a full dose: one dart poisons you (owner, Nov 20; Ailments.FULL)
 const DART_LINE := 0.6        ## m from the bolt's line that it hits you
 const DART_HOLE := Vector3(0.12, 0.95, 0.15)  ## the hole, in the dart wall model
+const PLATE_REACH := 0.55     ## m from the plate's middle that your feet press it
+const SPEAR_CYCLE := 2.6      ## seconds from one stab to the next
+const SPEAR_OUT := 0.15       ## seconds to stab out
+const SPEAR_HOLD := 0.35      ## seconds they stay out
+const SPEAR_BACK := 0.5       ## seconds to pull back (then they wait in the wall: the time to go)
+const SPEAR_REACH := 0.8      ## m the stakes stick out of the wall
+const SPEAR_DAMAGE := 22.0
+## Owner, Nov 20 (first play of Old Pell's): "pistons should ragdoll you ... move further and be quicker", no marks.
+const PUSH_WAIT := 0.15       ## seconds from stepping in front of it to the slam (a click: jump back!)
+const PUSH_SLAM := 0.12
+const PUSH_HOLD := 1.0
+const PUSH_BACK := 2.0
+const PUSH_REST := 1.0        ## seconds after it is back before it can fire again
+const PUSH_OUT := 1.8         ## m the block slams out
+const PUSH_THROW := 9.0       ## m/s: the rag doll tumble that throws you away from the wall (Dwarf.big_hit)
+const PUSH_DAMAGE := 8.0
+const PUSH_ZONE := Vector2(0.8, 1.6)  ## its trigger: this far either side of its middle, this far out in front
+const LIFT_TIME := 6.0        ## seconds for the lift to go the whole way
+const LIFT_RING := 2.14       ## the platform's iron ring, above its origin (the hoist rope's foot)
+const LIFT_DRUM := 2.32       ## the winch drum's underside, above the winch's origin (the hoist rope's top)
+const LIFT_DRUM_AXIS := Vector3(0.0, 2.45, 0.0)
 const SPIKE_STAND := 0.35     ## seconds on the spike floor before it fires
 const SPIKE_DEPTH := 0.62     ## the spikes wait this far down
 const SPIKE_DAMAGE := 30.0
@@ -56,6 +86,8 @@ var _swing_hit := {}  ## host: peer -> _clock when a boulder last hit them
 var _swing_mon := {}  ## host: creature uid -> _clock when a boulder last threw it
 var _held := {}       ## host: jaws id -> {peer, until}
 var _on_spikes := {}  ## host: spike floor id -> seconds someone has stood on it
+var _spear_hit := {}  ## host: "wall id:peer" -> the stab that last hurt them (one hit per stab)
+var _push_hit := {}   ## "wall id:peer" -> the push that last hit them (one shove per push)
 var _clock := 0.0
 
 
@@ -77,6 +109,16 @@ static func kind_of(p: Dictionary) -> String:
 			return "dart_wall"
 		"dungeon/trap_chest_spikes.glb":
 			return "chest_spikes"
+		"dungeon/trap_spear_wall.glb":
+			return "spears"
+		"dungeon/trap_push_wall.glb":
+			return "push"
+		"dungeon/lift_platform.glb":
+			return "lift" if p.has("travel") else ""
+		"dungeon/lift_winch.glb", "dungeon/lever.glb":
+			return "lift_call" if p.has("calls") else ""  # (the other levers open gates: DungeonBuild)
+		"dungeon/trap_dart_plate.glb":
+			return "plate" if p.get("fires", false) else ""  # (Mossgate's plates are only for show)
 	return ""
 
 
@@ -125,6 +167,40 @@ func setup(id: int) -> void:
 			th.plate = inst.find_child("plate", true, false)
 		"dart_wall":
 			th.bolt = inst.find_child("bolt", true, false)
+		"spears":
+			th.spears = inst.find_child("spears", true, false)
+			if th.spears:
+				th.spear_rest = (th.spears as Node3D).transform
+		"push":
+			th.block = inst.find_child("block", true, false)
+			th.push_t = -100.0
+			th.pushes = 0
+			if th.block:
+				th.block_rest = (th.block as Node3D).transform
+				_moving_box(th.block as MeshInstance3D, id)
+		"lift":
+			th.rest = inst.transform
+			th.rope = inst.find_child("rope", true, false) as MeshInstance3D
+			if th.rope:
+				th.rope_rest = th.rope.transform
+			var body := AnimatableBody3D.new()  # (the deck and its railings, moving with the platform: you ride it)
+			body.sync_to_physics = false
+			body.collision_layer = World.TERRAIN_LAYER
+			body.collision_mask = 0
+			body.set_meta("dungeon_thing", id)
+			for bx in [[Vector3(0, 0.1, 0), Vector3(1.5, 0.2, 1.5)], [Vector3(0, 0.7, -0.69), Vector3(1.5, 1.0, 0.08)],
+					[Vector3(-0.69, 0.7, 0), Vector3(0.08, 1.0, 1.5)], [Vector3(0.69, 0.7, 0), Vector3(0.08, 1.0, 1.5)]]:
+				var cs := CollisionShape3D.new()
+				var sh := BoxShape3D.new()
+				sh.size = bx[1]
+				cs.shape = sh
+				cs.position = bx[0]
+				body.add_child(cs)
+			inst.add_child(body)
+		"lift_call":
+			th.drum = inst.find_child("drum", true, false)
+			if th.drum:
+				th.drum_rest = (th.drum as Node3D).transform
 		"chest_spikes":
 			th.spikes = inst.find_child("spikes", true, false)
 			if th.spikes:
@@ -153,6 +229,9 @@ func show_spent(id: int) -> bool:
 				(th.bolt as Node3D).visible = false
 		"chest_spikes":
 			th.gone = true
+		"plate":
+			th.gone = true
+			(th.inst as Node3D).position.y -= 0.03
 		"lamp":
 			return true
 		_:
@@ -178,6 +257,12 @@ func step(delta: float) -> void:
 			"lamp":
 				if not th.get("lit", false) and lit(id):
 					_light(th, false)
+			"spears":
+				_move_spears(id, th, now, auth)
+			"push":
+				_move_push(id, th, auth)
+			"lift":
+				_move_lift(id, th, now)
 
 
 # ------------------------------------------------------------------ lamps
@@ -322,6 +407,10 @@ func on_broke(id: int) -> bool:
 		"dart_wall":
 			th.gone = true
 			_fire_bolt(th)
+		"plate":
+			th.gone = true
+			Sfx.play("clink", th.centre, 2.0, 0.6)  # (the click of the plate going down)
+			(th.inst as Node3D).position.y -= 0.03
 		"chest_spikes":
 			th.gone = true
 			_slam_spikes(th)
@@ -436,7 +525,7 @@ func _ev_hold(peer: int, secs: float) -> void:
 func _dart_of(wire_id: int) -> int:
 	var th: Dictionary = db.things[wire_id]
 	var best := -1
-	var near := 4.5
+	var near := 4.5 if th.kind == "tripwire" else 6.0
 	for id in db.things:
 		var w: Dictionary = db.things[id]
 		var dd := (w.xform as Transform3D).origin.distance_to((th.xform as Transform3D).origin)
@@ -472,7 +561,11 @@ func _fire_bolt(th: Dictionary) -> void:
 ## Host: the wire was walked into: it snaps and the dart fires (whoever is in its line is hit).
 func _trip(wire_id: int, auth: GameAuthority) -> void:
 	db._break(wire_id)
-	var dart := _dart_of(wire_id)
+	_fire_dart(_dart_of(wire_id), auth)
+
+
+## Host: dart wall `dart` fires (its tripwire or plate went off): whoever is in its line is hit.
+func _fire_dart(dart: int, auth: GameAuthority) -> void:
 	if dart < 0 or db.is_broken(dart):
 		return
 	db._break(dart)
@@ -553,9 +646,16 @@ func on_hit(peer_id: int, id: int, by_bolt: bool) -> bool:
 				_fire_spikes(id, auth)
 			"tripwire":
 				db._break(id)  # (a bolt cuts it too)
+			"plate":
+				print("MINE: the dart plate set off by a bolt")
+				_trip(id, auth)
 			"jaws":
 				print("MINE: bear jaws sprung by a bolt")
 				db._break(id)  # (they snap shut on nothing)
+		return true
+	if kind == "plate":  # (a hit with a long tool sets it off too)
+		print("MINE: the dart plate set off by a hit")
+		_trip(id, auth)
 		return true
 	if kind == "jaws":  # any hit springs them too
 		print("MINE: bear jaws sprung by a hit")
@@ -577,6 +677,10 @@ func use_info(id: int) -> Dictionary:
 			return {} if lit(id) else {name = "Old mine lamp · E to light", use = id}
 		"jaws":
 			return {name = "Bear jaws · E to pry them open", use = id} if db.is_broken(id) else {}
+		"lift":
+			return {name = "Rope lift · E to ride it %s" % ("down" if lift_up(id) else "up"), use = id}
+		"lift_call":
+			return {name = "%s · E to call the lift" % ("Winch" if String(th.model).ends_with("winch.glb") else "Lever"), use = id}
 	return {}
 
 
@@ -585,8 +689,17 @@ func request_use(peer_id: int, id: int) -> bool:
 	var auth := GameAuthority.instance
 	var ps := auth.get_player(peer_id) if auth else null
 	var th: Dictionary = db.things.get(id, {})
-	if th.is_empty() or not String(th.kind) in ["lamp", "jaws"]:
+	if th.is_empty() or not String(th.kind) in ["lamp", "jaws", "lift", "lift_call"]:
 		return false
+	if th.kind in ["lift", "lift_call"]:
+		var lift := id if th.kind == "lift" else lift_of(id)
+		var at: Vector3 = lift_pos(lift) if th.kind == "lift" else th.centre
+		if ps != null and lift >= 0 and ps.node.global_position.distance_to(at) < DungeonBuild.USE_REACH + 2.0:
+			if th.kind == "lift":
+				send_lift(lift, not lift_up(lift), peer_id)
+			else:
+				send_lift(lift, lift_end_near(lift, th.centre), peer_id)
+		return true
 	if ps == null or ps.node.global_position.distance_to(th.centre) > DungeonBuild.USE_REACH + 1.5:
 		return true
 	if th.kind == "lamp":
@@ -625,14 +738,264 @@ func host_check(auth: GameAuthority, pid: int, p: Vector3, step: float) -> void:
 					auth.hurt(pid, JAWS_DAMAGE)
 					auth.tell(pid, "Bear jaws snap shut on your leg!")
 					_ev_hold.rpc(pid, JAWS_HOLD)
+			"plate":
+				var c: Vector3 = (th.xform as Transform3D).origin
+				if Vector2(p.x - c.x, p.z - c.z).length() < PLATE_REACH and absf(p.y - c.y) < 0.5:
+					print("MINE: player %d stepped on the dart plate" % pid)
+					_trip(id, auth)
 			"tripwire":
 				var q := (th.xform as Transform3D).affine_inverse() * p
 				if absf(q.x) < 0.5 and absf(q.z) < WIRE_REACH and q.y < WIRE_HIGH and q.y > -0.6:
 					print("MINE: player %d walked into the tripwire" % pid)
 					_trip(id, auth)
+			"push":
+				if _clock - float(th.push_t) > PUSH_WAIT + PUSH_SLAM + PUSH_HOLD + PUSH_BACK + PUSH_REST:
+					var q := (th.xform as Transform3D).affine_inverse() * p
+					if absf(q.x) < PUSH_ZONE.x and q.z > 0.0 and q.z < PUSH_ZONE.y and absf(q.y) < 1.0:
+						print("MINE: player %d stepped in front of a push wall" % pid)
+						_ev_push.rpc(id)
 			"chest_spikes":
 				if on_spike_floor(th, p):
 					_on_spikes[id] = float(_on_spikes.get(id, 0.0)) + step
 					if _on_spikes[id] >= SPIKE_STAND:
 						_on_spikes.erase(id)
 						_fire_spikes(id, auth)
+
+
+# ================================================================== Old Pell's: spear walls, push walls, the rope lift
+
+## A moving part's own box (it moves with the part): the push wall's block.
+func _moving_box(part: MeshInstance3D, id: int) -> void:
+	if part == null:
+		return
+	var body := AnimatableBody3D.new()
+	body.sync_to_physics = false
+	body.collision_layer = World.TERRAIN_LAYER
+	body.collision_mask = 0
+	body.set_meta("dungeon_thing", id)
+	var cs := CollisionShape3D.new()
+	var sh := BoxShape3D.new()
+	var box := part.get_aabb()
+	sh.size = box.size
+	cs.shape = sh
+	cs.position = box.get_center()
+	body.add_child(cs)
+	part.add_child(body)
+
+
+## How far out a spear wall's stakes are (0 in, 1 out) at `t` seconds into its stab.
+static func spear_out(t: float) -> float:
+	t = fposmod(t, SPEAR_CYCLE)
+	if t < SPEAR_OUT:
+		return t / SPEAR_OUT
+	t -= SPEAR_OUT
+	if t < SPEAR_HOLD:
+		return 1.0
+	t -= SPEAR_HOLD
+	if t < SPEAR_BACK:
+		return 1.0 - t / SPEAR_BACK
+	return 0.0
+
+
+## Is `p` (feet) in front of a spear wall, where its stakes reach when `out` of the way out?
+static func in_spears(th: Dictionary, p: Vector3, out: float) -> bool:
+	var q := (th.xform as Transform3D).affine_inverse() * p
+	return absf(q.x) < 0.95 and q.z > 0.0 and q.z < SPEAR_REACH * out + 0.35 and q.y > -0.3 and q.y < 1.0
+
+
+## Everyone: the stakes stab out and back (the same clock everywhere); the host hurts whoever they reach.
+func _move_spears(id: int, th: Dictionary, now: float, auth: GameAuthority) -> void:
+	var t := now - float(th.prop.get("phase", 0.0))
+	var out := spear_out(t)
+	var sp := th.get("spears") as Node3D
+	if sp:
+		var rest: Transform3D = th.spear_rest
+		sp.transform = Transform3D(rest.basis, rest.origin + Vector3(0, 0, SPEAR_REACH * out))
+	var was := float(th.get("out", 0.0))
+	th.out = out
+	if was <= 0.0 and out > 0.0 and auth:  # the thunk of the stakes (only near you)
+		var me := auth.get_player(auth.local_peer_id())
+		if me and me.node and me.node.global_position.distance_to(th.centre) < 14.0:
+			Sfx.play("swing", th.centre, -2.0, 0.8)
+	if auth == null or not auth.is_host() or out < 0.5:
+		return
+	var stab := int(floor(t / SPEAR_CYCLE))
+	for pid in auth.players:
+		var node: Node3D = auth.players[pid].node
+		var key := "%d:%d" % [id, pid]
+		if node == null or int(_spear_hit.get(key, -1)) == stab or not in_spears(th, node.global_position, out):
+			continue
+		_spear_hit[key] = stab
+		print("MINE: player %d stabbed by a spear wall" % pid)
+		auth.hurt(pid, SPEAR_DAMAGE)
+		auth.tell(pid, "Sharp stakes stab out of the wall!")
+
+
+## Everyone: a push wall fires (the host saw someone step in front of it).
+@rpc("authority", "call_local", "reliable")
+func _ev_push(id: int) -> void:
+	var th: Dictionary = db.things.get(id, {})
+	if th.is_empty():
+		return
+	th.push_t = _clock
+	th.pushes = int(th.get("pushes", 0)) + 1
+	Sfx.play("clink", th.centre, 2.0, 0.5)  # the click (jump back!)
+
+
+## How far out a push wall's block is (0 in, 1 out), `e` seconds after it fired.
+static func push_out(e: float) -> float:
+	if e < PUSH_WAIT:
+		return 0.0
+	e -= PUSH_WAIT
+	if e < PUSH_SLAM:
+		return e / PUSH_SLAM
+	e -= PUSH_SLAM
+	if e < PUSH_HOLD:
+		return 1.0
+	e -= PUSH_HOLD
+	if e < PUSH_BACK:
+		return 1.0 - e / PUSH_BACK
+	return 0.0
+
+
+## Is `p` (feet) where the block reaches when `out` of the way out?
+static func in_push(th: Dictionary, p: Vector3, out: float) -> bool:
+	var q := (th.xform as Transform3D).affine_inverse() * p
+	return absf(q.x) < 1.0 and q.z > -0.2 and q.z < PUSH_OUT * out + 0.45 and q.y > -0.3 and q.y < 1.2
+
+
+## Everyone: the block slams out and slides back. The host throws whoever it hits (a rag doll tumble, everyone sees
+## it) and hurts them.
+func _move_push(id: int, th: Dictionary, auth: GameAuthority) -> void:
+	var e := _clock - float(th.push_t)
+	var out := push_out(e)
+	var bl := th.get("block") as Node3D
+	if bl:
+		var rest: Transform3D = th.block_rest
+		bl.transform = Transform3D(rest.basis, rest.origin + Vector3(0, 0, PUSH_OUT * out))
+	var slamming := e >= PUSH_WAIT and e < PUSH_WAIT + PUSH_SLAM + 0.05
+	if not slamming or auth == null:
+		return
+	var away := (th.xform as Transform3D).basis.z.normalized()
+	if int(th.get("thud", 0)) != int(th.pushes):
+		th.thud = int(th.pushes)
+		Sfx.play("thud", th.centre, 2.0, 0.8, 18.0)
+	if not auth.is_host():
+		return
+	for pid in auth.players:
+		var node: Node3D = auth.players[pid].node
+		var hk := "%d:%d" % [id, pid]
+		if node == null or int(_push_hit.get(hk, 0)) == int(th.pushes) or not in_push(th, node.global_position, out):
+			continue
+		_push_hit[hk] = int(th.pushes)
+		print("MINE: player %d shoved by a push wall" % pid)
+		if node.has_method("big_hit"):  # (you tumble where it throws you: onto the rotten boards, which give way)
+			node.big_hit(Vector3(away.x, 0.0, away.z) * PUSH_THROW)
+		auth.hurt(pid, PUSH_DAMAGE)
+		auth.tell(pid, "A block slams out of the wall!")
+
+
+## The rope lift: is it up (or on its way up)?
+func lift_up(id: int) -> bool:
+	return bool(_lift_state(id)[0])
+
+
+func _lift_state(id: int) -> Array:
+	var auth := GameAuthority.instance
+	if auth == null:
+		return [false, 0.0]
+	var st = auth.world_state.get("dungeon_lift", {}).get(str(id), [false, 0.0])
+	return st if st is Array and st.size() >= 2 else [false, 0.0]
+
+
+## 0 = at the bottom, 1 = at the top (eased), at time `now`.
+func lift_frac(id: int, now: float) -> float:
+	var st := _lift_state(id)
+	var f := clampf((now - float(st[1])) / LIFT_TIME, 0.0, 1.0)
+	return smoothstep(0.0, 1.0, f if bool(st[0]) else 1.0 - f)
+
+
+func lift_moving(id: int, now: float) -> bool:
+	return now - float(_lift_state(id)[1]) < LIFT_TIME
+
+
+## Where the platform's origin is in the world now.
+func lift_pos(id: int) -> Vector3:
+	var th: Dictionary = db.things[id]
+	var tr: Array = th.prop.travel
+	var y := lerpf(float(tr[0]), float(tr[1]), lift_frac(id, Time.get_unix_time_from_system()))
+	return (th.xform as Transform3D).origin + Vector3.UP * (y - float(tr[0]))
+
+
+## The lift a winch or lever calls (the nearest one).
+func lift_of(call_id: int) -> int:
+	var c: Vector3 = db.things[call_id].centre
+	var best := -1
+	var near := 16.0
+	for id in db.things:
+		var th: Dictionary = db.things[id]
+		if th.kind == "lift":
+			var o: Vector3 = (th.xform as Transform3D).origin
+			var dd := Vector2(c.x - o.x, c.z - o.z).length()
+			if dd < near:
+				best = id
+				near = dd
+	return best
+
+
+## Calling from `at`: should the lift come up (true) or down (false)? (the end nearer `at`)
+func lift_end_near(lift: int, at: Vector3) -> bool:
+	var th: Dictionary = db.things[lift]
+	var tr: Array = th.prop.travel
+	var low := (th.xform as Transform3D).origin.y
+	var high := low + float(tr[1]) - float(tr[0])
+	return absf(at.y - high) < absf(at.y - low)
+
+
+## Host: send the lift up or down (not while it is moving), for everyone (world_state: saved, sent to friends).
+func send_lift(lift: int, up: bool, peer_id: int) -> void:
+	var auth := GameAuthority.instance
+	var now := Time.get_unix_time_from_system()
+	if lift_moving(lift, now):
+		auth.tell(peer_id, "The lift is moving.")
+		return
+	if lift_up(lift) == up:
+		return
+	var all: Dictionary = auth.world_state.get("dungeon_lift", {}).duplicate()
+	all[str(lift)] = [up, now]
+	auth.world_state["dungeon_lift"] = all
+	print("MINE: the rope lift goes %s" % ("up" if up else "down"))
+	auth._ev_state.rpc(auth.world_state)
+
+
+## Everyone: the platform rides along its shaft; the hoist rope reaches up to the winch's drum, which turns.
+func _move_lift(id: int, th: Dictionary, now: float) -> void:
+	var tr: Array = th.prop.travel
+	var f := lift_frac(id, now)
+	var rise := (float(tr[1]) - float(tr[0])) * f
+	var rest: Transform3D = th.rest
+	(th.inst as Node3D).transform = Transform3D(rest.basis, rest.origin + Vector3.UP * rise)
+	th.rise = rise  # (silent: owner, Nov 20, "definitely remove the sound from the lift")
+	var winch := int(th.get("winch", -2))
+	if winch == -2:  # (found once: the winch over this shaft)
+		winch = -1
+		for wid in db.things:
+			var w: Dictionary = db.things[wid]
+			if w.kind == "lift_call" and w.get("drum") != null and lift_of(wid) == id:
+				winch = wid
+		th.winch = winch
+	var rope := th.get("rope") as MeshInstance3D
+	if winch >= 0 and rope:
+		var drum_y: float = (db.things[winch].xform as Transform3D).origin.y + LIFT_DRUM
+		var foot_y: float = (th.xform as Transform3D).origin.y + rise + LIFT_RING
+		var box := rope.get_aabb()
+		var k := clampf((drum_y - foot_y) / maxf(box.size.y, 0.01), 0.02, 20.0)
+		var rr: Transform3D = th.rope_rest
+		var bottom := box.position.y
+		rope.transform = Transform3D(rr.basis.scaled_local(Vector3(1.0, k, 1.0)), rr.origin + Vector3.UP * (bottom - bottom * k))
+		var drum := db.things[winch].get("drum") as Node3D
+		if drum:  # (it turns as the rope winds on: a 0.13 m drum)
+			var dr: Transform3D = db.things[winch].drum_rest
+			var turn := Transform3D(Basis(Vector3(0, 0, 1), rise / 0.13), Vector3.ZERO)
+			var piv := Transform3D(Basis(), LIFT_DRUM_AXIS)
+			drum.transform = piv * turn * piv.affine_inverse() * dr

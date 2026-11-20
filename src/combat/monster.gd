@@ -1095,6 +1095,8 @@ func _face_along(t: Vector3) -> void:
 static func high_spot(maker: CaveMaker, floor_spot: Vector3, how: String, rng: RandomNumberGenerator) -> Dictionary:
 	if how == "":
 		return {}
+	if maker.is_reserved(floor_spot, HIGH_CLEAR):
+		return {}  # (standing on kept-clear ground, e.g. a dungeon's doorway: it stays down; Old Pell's door, seed 7)
 	if how == "all" and rng.randf() < 0.6:
 		var c := GlowPlacer._march(maker, floor_spot + Vector3.UP * 1.0, Vector3.UP, 9.0)
 		if c != Vector3.INF and c.y - floor_spot.y > 2.4:
@@ -1229,7 +1231,7 @@ func show_tell(seconds: float, attack_name: String = "", aim: Node3D = null) -> 
 		_charge_len = seconds
 		MonsterModel.set_angry(model, true)
 	if rig:
-		rig.attack(String(atk.get("anim", "1H_Melee_Attack_Chop")), seconds)  # its own swing; the blow lands with the hit
+		rig.attack(String(atk.get("anim", "1H_Melee_Attack_Chop")), seconds, String(atk.get("parry", "")) == "shield")  # its own swing; the blow lands with the hit
 		return
 	# Squash relative to the monster's own size (leaders are bigger than 1).
 	var base: Vector3 = model.get_meta("base_scale", model.scale)

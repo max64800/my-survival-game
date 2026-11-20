@@ -96,7 +96,7 @@ const LIST := {
 		fire = 0.0, frost = 0.5, poison = 1.0, walk = 1.4, run = 3.6, pack = [1, 1], xp = 80,
 		color = Color(0.55, 0.5, 0.44), shape = "foreman", recover = 1.6,
 		attacks = [{name = "Great Chop", anim = "2H_Melee_Attack_Chop", warn_sound = "beetle_rumble", tell = 1.0, damage = 26, type = "slash", reach = 2.3, parry = "any"},
-			{name = "Pick Whirl", anim = "2H_Melee_Attack_Spin", warn_sound = "beetle_rumble", tell = 1.4, damage = 32, type = "blunt", reach = 1.8, rest = 7.0, parry = "shield", knockdown = true}],
+			{name = "Pick Whirl", anim = "2H_Melee_Attack_Spin", warn_sound = "beetle_rumble", tell = 0.97, damage = 32, type = "blunt", reach = 1.8, rest = 7.0, parry = "shield", knockdown = true}],
 		drops = []},
 }
 

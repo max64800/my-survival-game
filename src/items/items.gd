@@ -161,6 +161,7 @@ const DATA := {
 	"tool_page": {name = "Toolmaker's Page", color = Color(0.6, 0.7, 0.45), short = "Tl", kind = "page", page_of = "tool"},
 	"blueprint_page": {name = "Old Blueprint", color = Color(0.55, 0.68, 0.85), short = "Bp", kind = "page"},  ## teaches a ready-made building (F98)
 	"scroll_mossgate": {name = "Mossgate Recipe Scroll", color = Color(0.8, 0.62, 0.36), short = "Ms", kind = "page", teaches_recipe = "shield_copper"},  ## Mossgate Hold's recipe stand: always the Copper Shield (dungeon decisions round 4)
+	"scroll_pell": {name = "Old Pell's Recipe Scroll", color = Color(0.66, 0.55, 0.36), short = "Pl", kind = "page", teaches_recipe = "spear_copper", icon_of = "scroll_lampwick"},  ## Old Pell's Diggings' recipe stand (Pell's Last Dig): always the Copper Spear
 	"scroll_lampwick": {name = "Lampwick Recipe Scroll", color = Color(0.72, 0.58, 0.34), short = "Lw", kind = "page", teaches_recipe = "crossbow_copper"},  ## Lampwick Drift's recipe stand (the Foreman's Office): always the Copper Crossbow
 	"watchtower_plans": {name = "Watchtower Plans", color = Color(0.62, 0.7, 0.82), short = "Wp", kind = "page", teaches = "stone_watchtower"},  ## always teaches the Stone Watchtower (its ruin's roof chest, F254)
 	"outpost_plans": {name = "Outpost Plans", color = Color(0.62, 0.7, 0.82), short = "Op", kind = "page", teaches = "stone_outpost"},  ## always teaches the Stone Outpost (its ruin's tower roof chest)

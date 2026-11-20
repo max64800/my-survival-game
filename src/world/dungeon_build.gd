@@ -13,7 +13,8 @@ extends Node3D
 ## keeps what's broken in world_state.dungeon_broken (saved, and sent to friends who join).
 ## Falling into the chasm or the spike pit kills you (decisions: instant death; the grave goes where you last stood).
 
-const PLANS := {"mossgate": "res://blueprints/dungeons/mossgate_hold.json", "lampwick": "res://blueprints/dungeons/lampwick_drift.json"}
+const PLANS := {"mossgate": "res://blueprints/dungeons/mossgate_hold.json", "lampwick": "res://blueprints/dungeons/lampwick_drift.json",
+	"pell": "res://blueprints/dungeons/old_pells_diggings.json"}
 ## What you bump into, in each model's own metres: [centre, size] boxes. Models not listed and not in NO_BODY get
 ## the box round the whole model.
 const BOXES := {
@@ -66,13 +67,21 @@ const BOXES := {
 		[Vector3(0, 2.95, 0.13), Vector3(0.22, 1.0, 0.22)]],
 	"dungeon/trap_chest_spikes.glb": [[Vector3(0, 0.125, 0), Vector3(2, 0.25, 4)]],
 	"dungeon/mine_lamp.glb": [[Vector3(0, 0.2, 0.25), Vector3(0.3, 0.45, 0.45)]],  # (E aims at it)
+	# Old Pell's working dart plate (thin: you walk onto it; a bolt can hit it). Mossgate's plates have no body.
+	"dungeon/trap_dart_plate.glb": [[Vector3(0, 0.035, 0), Vector3(0.68, 0.07, 0.66)]],
+	# Old Pell's spear walls and push walls are walls (the push wall's block has its own moving box); the lift's winch:
+	# just its two posts (the shaft under its arms stays open). The lift platform has its own moving body.
+	"dungeon/trap_spear_wall.glb": [[Vector3(0, 1, 0), Vector3(2, 2, 0.29)]],
+	"dungeon/recipe_stand.glb": [[Vector3(0, 0.48, 0), Vector3(0.7, 0.97, 0.62)]],
+	"dungeon/trap_push_wall.glb": [[Vector3(0, 1, 0), Vector3(2, 2, 0.29)]],
+	"dungeon/lift_winch.glb": [[Vector3(-1.15, 1.3, -0.6), Vector3(0.16, 2.6, 0.16)], [Vector3(-1.15, 1.3, 0.6), Vector3(0.16, 2.6, 0.16)]],
 }
 ## Things you walk through (small, up high, or traps whose moves come later).
 const NO_BODY := ["decor/furn_wall_torch_iron.glb", "dungeon/trap_dart_plate.glb", "dungeon/chain_hanging.glb",
 	"dungeon/recipe_scroll.glb", "treasure/tr_coins_wide.glb", "treasure/tr_chalice.glb",
 	"decor/fossil_plaque.glb", "decor/rune_shield.glb",
 	"build/ruin_rubble__cut_stone.glb", "dungeon/recipe_stand.glb", "dungeon/rail_wedge.glb",
-	"dungeon/rubble_ore.glb"]  # (Lampwick's low rubble: you walk over it to the healing basin, owner Nov 20)
+	"dungeon/rubble_ore.glb", "dungeon/lift_platform.glb"]  # (Lampwick's low rubble: you walk over it to the healing basin, owner Nov 20)
 
 ## Furniture you can smash (owner, decisions round 2: "a little root wood + small finds").
 const SMASH := ["decor/crate_stack.glb", "decor/keg.glb", "props/barrel.glb", "decor/furn_barrel_rack.glb",
@@ -127,7 +136,7 @@ const HEAL_RATE := 8.0        ## health a second
 const HEAL_POOL := 30.0       ## owner, Nov 20: it heals 30 health in all, then it is dry until the dungeon refills
 ## The loot door opens when the Pack Hall's pack is dead (owner, Nov 20). It is a lock of DungeonKeys (the same saved,
 ## sent-to-everyone door state as the bigger dungeons' key doors); it shuts again when the pack moves back in.
-const LIST_ID := {"mossgate": "mossgate_hold", "lampwick": "lampwick_drift"}  ## the dungeon's id in DungeonList / DungeonKeys
+const LIST_ID := {"mossgate": "mossgate_hold", "lampwick": "lampwick_drift", "pell": "old_pells_diggings"}  ## the dungeon's id in DungeonList / DungeonKeys
 const PACK_LOCK := "pack"
 const PACK_ROOM := "pack_hall"
 const KILL := 1000000.0       ## instant death (more than any health and armour)
@@ -152,6 +161,16 @@ var heals: Array[Vector3] = []  ## the healing basins, in the world
 var heal_ds: Array = []          ## the dungeon each basin is in (each keeps its own water)
 var mine: MineTraps  ## Lampwick Drift's traps and lamps
 var crushers: Array = []        ## thing ids of the crushers (each moves its weight every frame)
+var ladders: Array[Vector3] = []  ## the plans' ladder pieces, in the world (Old Pell's shafts)
+
+
+## Is there a dungeon ladder at `pos` (a dwarf's feet)? The same reach as built ladders (Builder.ladder_at).
+func ladder_at(pos: Vector3) -> bool:
+	for l in ladders:
+		var dd := pos - l
+		if Vector2(dd.x, dd.z).length() < 0.8 and dd.y > -0.5 and dd.y < Pieces.LIST.ladder.size.y + 0.3:
+			return true
+	return false
 
 
 static func load_plan(map_id: String) -> Dictionary:
@@ -308,6 +327,12 @@ func _build(d: Dictionary, plan: Dictionary) -> void:
 			continue
 		for t in xforms:
 			_add_boxes(body, String(model), t as Transform3D, whole)
+	for p in plan.get("props", []):  # (owner, Nov 20: the recipe stand is solid; its Storage box only draws it)
+		if String(p.model) == "dungeon/recipe_stand.glb":
+			_add_boxes(body, "dungeon/recipe_stand.glb", _xform(d, p.pos, float(p.yaw), 1.0, 0.0), AABB())
+	for p in plan.get("pieces", []):  # (Old Pell's shafts: root wood ladders you climb like built ones)
+		if p.id == "ladder":
+			ladders.append(DungeonMap.to_world(d, Vector3(p.pos[0], p.pos[1], p.pos[2])))
 	# Torch light (it counts as light, so you heal by the torches: Darkness).
 	for l in plan.get("lights", []):
 		var o := OmniLight3D.new()
@@ -350,7 +375,7 @@ func _build_things(di: int, d: Dictionary, plan: Dictionary) -> void:
 			var box := _rel_xform(inst, mi as Node3D) * (mi as MeshInstance3D).get_aabb()
 			whole = box if first else whole.merge(box)
 			first = false
-		if not String(p.model) in NO_BODY:
+		if not String(p.model) in NO_BODY or p.get("fires", false):
 			_add_boxes(body, String(p.model), t, whole)
 		# (where a stalactite lands: the floor or bridge; Lampwick's upper level is 3 m up, its props say "floor")
 		var landing := DungeonMap.to_world(d, Vector3(p.pos[0], float(p.get("floor", 0.0)) + 0.24, p.pos[2])).y
@@ -799,7 +824,8 @@ func _physics_process(delta: float) -> void:
 			elif th.kind == "floor":
 				var q := DungeonMap.to_local(th.d, p)
 				var tile: Array = th.prop.pos
-				if absf(q.x - float(tile[0])) < 1.0 and absf(q.z - float(tile[2])) < 1.0 and q.y > -0.3 and q.y < 0.9:
+				var up := q.y - float(tile[1])  # (above the tile itself: Old Pell's boards are 6 m down, owner Nov 20)
+				if absf(q.x - float(tile[0])) < 1.0 and absf(q.z - float(tile[2])) < 1.0 and up > -0.3 and up < 0.9:
 					_standing[id] = float(_standing.get(id, 0.0)) + step
 					if _standing[id] >= FLOOR_GIVE:
 						_standing.erase(id)
@@ -978,6 +1004,8 @@ static func crushing(t: float) -> bool:
 ## Have this dungeon's crushers woken up (someone crossed the Pack Hall)? Kept in world_state.dungeon_awake (saved,
 ## sent to everyone).
 func crushers_awake(d: Dictionary) -> bool:
+	if d.map.get("crushers_always", false):
+		return true  # (Old Pell's Deep Seam: they never sleep)
 	var auth := GameAuthority.instance
 	return auth != null and String(d.id) in auth.world_state.get("dungeon_awake", [])
 
@@ -1023,8 +1051,8 @@ func _move_crusher(id: int, now: float, auth: GameAuthority) -> void:
 	if down >= 1.0 and float(th.down) < 1.0:  # it hits the floor
 		var at: Vector3 = (th.xform as Transform3D).origin
 		var me := auth.get_player(auth.local_peer_id()) if auth else null
-		if me and me.node and me.node.global_position.distance_to(at) < 30.0:
-			Sfx.play("thud", at + Vector3.UP * 0.3, 4.0, 0.7)
+		if me and me.node and me.node.global_position.distance_to(at) < 14.0:  # (owner, Nov 20: only close by, in its room)
+			Sfx.play("thud", at + Vector3.UP * 0.3, -3.0, 0.7, 14.0)
 			Fx.burst(get_parent(), at + Vector3.UP * 0.1, STONE, 10, 2.0)
 	th.down = down
 	if auth == null or not auth.is_host() or not crushing(t) or not crushers_awake(th.d):
@@ -1263,8 +1291,9 @@ static func deadly_space(d: Dictionary, p: Vector3) -> String:
 	if not DungeonMap.near_box(d, p, 2.0):
 		return ""
 	var q := DungeonMap.to_local(d, p)
+	var only: Array = d.map.get("deadly", [])  # (Pell's: its whole lower level is under 0, only the spike pit kills)
 	for s in d.map.spaces:
-		if float(s[5]) < 0.0 and q.x > float(s[1]) - 0.5 and q.x < float(s[3]) + 0.5 and q.z > float(s[2]) - 0.5 				and q.z < float(s[4]) + 0.5 and q.y < float(s[5]) + 1.2:
+		if float(s[5]) < 0.0 and (only.is_empty() or String(s[0]) in only) and q.x > float(s[1]) - 0.5 and q.x < float(s[3]) + 0.5 and q.z > float(s[2]) - 0.5 				and q.z < float(s[4]) + 0.5 and q.y < float(s[5]) + 1.2:
 			return String(s[0])
 	return ""
 

@@ -11,6 +11,7 @@ signal host_world(data: Dictionary)
 signal quit_game
 signal test_dungeon  ## dev builds only: a new world, standing at the first dungeon's door with the best gear
 signal test_dungeon2  ## dev builds only: the same at the second dungeon, Lampwick Drift
+signal test_dungeon3  ## dev builds only: the same at the third dungeon, Old Pell's Diggings
 
 var _status: Label
 var _seed_edit: LineEdit
@@ -111,6 +112,8 @@ func _ready() -> void:
 		dev.add_theme_stylebox_override("normal", purple)
 		var dev2 := _button(box, "Dev: Dungeon 2, Lampwick Drift (new world, copper gear, at the door)", func(): test_dungeon2.emit())
 		dev2.add_theme_stylebox_override("normal", purple)
+		var dev3 := _button(box, "Dev: Dungeon 3, Old Pell's Diggings (new world, copper gear, at the door)", func(): test_dungeon3.emit())
+		dev3.add_theme_stylebox_override("normal", purple)
 	_status = UiKit.label(box, "", 15, UiKit.AMBER)
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD
 	_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

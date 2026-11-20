@@ -43,6 +43,16 @@ var fight: DwarfFight
 var bot_move := Vector2.ZERO
 var _run_streak := 0.0  ## seconds since you started this run (Running ★25: a quick burst at the start)
 var running := false  ## running this frame (DwarfFight stops a crossbow reload when you run)
+var _was_playing := false  ## (F494: Shift is let go when you come back to the game)
+
+
+## Owner, Nov 20 (F494, 3rd time: "sometimes I can still run without pressing Shift"): when the game window loses
+## the keyboard (another window, Alt-Tab, a pop-up) while Shift is down, it never hears Shift come back up, so it
+## thought you still held it. Losing the window now lets go of every key.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_WM_WINDOW_FOCUS_OUT:
+		for act in InputMap.get_actions():
+			Input.action_release(act)
 var bot_jump := false
 
 var _since_floor := 0.0
@@ -230,6 +240,9 @@ func _physics_process(delta: float) -> void:
 	var dir := Vector3.ZERO
 	running = false
 	var playing := input_enabled and Controls.captured()
+	if playing and not _was_playing:
+		Input.action_release("run")  # (back from a menu or the bag: Shift must be pressed again, F494 3rd time)
+	_was_playing = playing
 	var iv := Vector2.ZERO
 	if playing:
 		iv = Input.get_vector("move_left", "move_right", "move_forward", "move_back")
@@ -401,7 +414,8 @@ func aim() -> Dictionary:
 	# the dwarf was hit instead of what you aim at (owner, Nov 17: "the axe isn't axing the right stuff").
 	from += forward * maxf(0.0, (chest - from).dot(forward) - 0.4)
 	var q := PhysicsRayQueryParameters3D.create(from, end)
-	q.collision_mask = World.TERRAIN_LAYER | GlowField.GLOW_LAYER | Station.STATION_LAYER | Monster.MONSTER_LAYER | PoiField.POI_LAYER
+	q.collision_mask = World.TERRAIN_LAYER | GlowField.GLOW_LAYER | Station.STATION_LAYER | Monster.MONSTER_LAYER | PoiField.POI_LAYER \
+		| Ragdoll.LAYER  # (stone corpses: walk-through since F495, so the swing must look for them on their own layer, owner Nov 20)
 	q.exclude = [get_rid()]
 	var hit := space.intersect_ray(q)
 	if hit.is_empty():
@@ -716,6 +730,8 @@ func _ladder_here() -> bool:
 		var d: Vector3 = global_position - st.global_position
 		if Vector2(d.x, d.z).length() < 0.9 and d.y > -0.5 and d.y < Station.LADDER_HEIGHT + 0.5:
 			return true
+	if DungeonBuild.instance and DungeonBuild.instance.ladder_at(global_position):
+		return true  # (Old Pell's shafts)
 	return auth.builder != null and auth.builder.ladder_at(global_position)
 
 

@@ -24,7 +24,8 @@
 #                  ceiling), an iron eye, a chain and a 1 m boulder in an iron strap. It swings ALONG the path (z),
 #                  +-60 degrees round SWING_PIVOT: across it (the sheet) a 60 degree swing would hit the posts.
 #                  Parts: "frame" (with the eye plate and eye) and "swing" (the whole chain and the boulder: owner, Nov 20)
-#   trap_bear_jaws open: 0.7 m across, a bar with hinge blocks, a trigger plate, a chain to a stake.
+#   trap_bear_jaws open: 0.7 m across, a bar with hinge blocks, a trigger plate (owner, Nov 20: no chain or stake;
+#                  it lies about in many rooms, only a player sets it off, 25 damage).
 #                  Parts: "base", "plate" (sinks 1 cm), "jaw_l"/"jaw_r" (turn 90 degrees up round the hinge line
 #                  JAW_HINGE along x: jaw_l -90 back up (it lies at -z), jaw_r +90; shut, their teeth sit 1.8 cm apart)
 #   trap_tripwire_wall  (owner, Nov 20: no crossbow) a 2 x 2 m root wood wall with a hip-high cross beam, a small dark
@@ -315,15 +316,7 @@ def trap_bear_jaws():
 		for k in range(3):  # the spring: a bent leaf at each end
 			K.blk((sx * (0.36 + k * 0.025), 0.03 + k * 0.012, 0.0), (0.03, 0.012, 0.05), T("iron", "dark"), bevel=0.003, rz=-sx * 25)
 	kit.cylinder(0.1, 0.016, K.G((0.0, 0.031, 0.0)), T("iron", "dark"), verts=18, bevel=0.003)  # round plate the trigger sits on
-	x, k = 0.445, 0  # the chain to a stake (links lying along the floor), and the stake
-	while x < 0.86:
-		if k % 2 == 0:
-			kit.ring(0.03, 0.008, K.G((x, 0.03, 0.0)), T("iron", "dark"), rot=(90, 0, 0), seg=10)
-		else:
-			kit.ring(0.03, 0.008, K.G((x, 0.009, 0.0)), T("iron", "dark"), rot=(0, 0, 0), seg=10)
-		x += 2 * (0.03 - 0.008) - 0.004
-		k += 1
-	K.blk((x + 0.02, 0.06, 0.0), (0.05, 0.16, 0.05), T("wood", "dark"), bevel=0.01, rx=8)  # the stake, driven into the floor
+	# (owner, Nov 20: no chain and no stake, just the trap lying on the floor)
 	base = meshes() - base0
 	before = meshes()
 	kit.cylinder(0.085, 0.012, K.G((0.0, 0.045, 0.0)), T("iron", "a"), verts=16, bevel=0.003)
@@ -456,9 +449,247 @@ def trap_chest_spikes():
 	spikes = meshes() - before
 	return {"floor": floor, "spikes": spikes}
 
+
+# ================================================================ batch 3, the mine's look
+LAMP_PIVOT = (0.0, 0.343, 0.3)  # the hook the lantern hangs from (it can sway round x and z here)
+
+
+def tri_prism(p, u, v, pts, d=0.004, m=None):
+	"""A thin flat piece (a glass shard) with outline `pts` (a, b) in the plane p + a*u + b*v."""
+	from mathutils import Vector
+	p, u, v = Vector(p), Vector(u), Vector(v)
+	nrm = u.cross(v).normalized() * (d / 2)
+	ring = [p + u * a + v * b for a, b in pts]
+	verts = [tuple(q - nrm) for q in ring] + [tuple(q + nrm) for q in ring]
+	n = len(pts)
+	faces = [tuple(range(n)), tuple(range(n, 2 * n))] + [(i, (i + 1) % n, (i + 1) % n + n, i + n) for i in range(n)]
+	return S._flat(K.mesh(verts, faces, m or kit.mat("water_light", -0.45, rough=0.15, metal=0.1)))
+
+
+def mine_lamp():
+	"""An old miner's lamp on a wall bracket (like the broken lantern on junk_small_mine.jpg): a split-board back
+	plate, an iron arm and brace, a hook, and a square lantern (iron cap and base, copper corner posts, a 4-sided
+	roof, broken glass: only shards left in the corners) with a wick in a copper cup. Unlit = no "flame" part."""
+	cz = LAMP_PIVOT[2]
+	bracket0 = meshes()
+	board((0.0, 0.21, 0.025), (0.16, 0.42, 0.05))  # back plate, its back on the wall (z = 0)
+	for y in (0.06, 0.3):
+		kit.rivet(K.G((0.0, y, 0.052)), T("iron", "dark"), r=0.014)  # nail heads
+	iron((0.0, 0.38, 0.185), (0.035, 0.035, 0.28))  # the arm
+	K.log((0.0, 0.14, 0.048), (0.0, 0.368, 0.24), 0.011, T("iron", "dark"), seg=6, rings=1, ends=False, bend=0)  # brace
+	kit.ring(0.026, 0.007, K.G((0.0, LAMP_PIVOT[1], cz)), T("iron", "dark"), rot=(0, 90, 0), seg=10)  # the hook
+	bracket = meshes() - bracket0
+	lantern0 = meshes()
+	kit.ring(0.026, 0.007, K.G((0.0, 0.309, cz)), T("iron", "dark"), rot=(90, 0, 0), seg=10)  # the lantern's loop
+	kit.cone(0.1, 0.018, 0.07, K.G((0.0, 0.247, cz)), T("iron", "dark"), rot=(0, 0, 45), verts=4, bevel=0.004)  # roof
+	K.blk((0.0, 0.2, cz), (0.17, 0.03, 0.17), T("iron", "dark"), bevel=0.006)  # cap
+	K.blk((0.0, 0.06, cz), (0.17, 0.035, 0.17), T("iron", "dark"), bevel=0.006)  # base
+	kit.cone(0.05, 0.016, 0.04, K.G((0.0, 0.025, cz)), T("iron", "dark"), rot=(180, 0, 0), verts=8, bevel=0.003)  # knob
+	for sx in (-1, 1):
+		for sz in (-1, 1):
+			K.blk((sx * 0.07, 0.13, cz + sz * 0.07), (0.024, 0.124, 0.024), T("copper"), bevel=0.004)  # corner posts
+			kit.rivet(K.G((sx * 0.062, 0.218, cz + sz * 0.062)), T("iron", "dark"), r=0.011)
+	kit.cylinder(0.028, 0.03, K.G((0.0, 0.0925, cz)), T("copper"), verts=10, bevel=0.003)  # wick cup
+	kit.cylinder(0.006, 0.03, K.G((0.0, 0.115, cz)), kit.mat("charcoal"), verts=6, bevel=0.0)  # burnt wick
+	# broken glass: a shard or two left in each side, wedged against the posts and the base
+	lo, hi = 0.0775, 0.185
+	for k, (p, u) in enumerate((((0, 0, 0.07), (1, 0, 0)), ((0.07, 0, 0), (0, 0, -1)), ((0, 0, -0.07), (-1, 0, 0)), ((-0.07, 0, 0), (0, 0, 1)))):
+		base = (p[0], lo - 0.002, cz + p[2])
+		tri_prism(base, u, (0, 1, 0), [(-0.062, 0), (-0.062, 0.05 + 0.025 * (k % 2) + J(0.01)), (-0.02 + J(0.01), 0.015), (0.01 + J(0.01), 0)])
+		if k % 2 == 0:  # and one hanging from the cap on the other side
+			top = (p[0], hi + 0.002, cz + p[2])
+			tri_prism(top, u, (0, 1, 0), [(0.062, 0), (0.062, -0.06 + J(0.01)), (0.03 + J(0.008), -0.02), (0.0, 0)])
+	lantern = meshes() - lantern0
+	flame0 = meshes()
+	kit.cone(0.008, 0.02, 0.015, K.G((0.0, 0.1325, cz)), kit.glow("fire", 1.6), verts=7, bevel=0.0)
+	kit.cone(0.02, 0.003, 0.035, K.G((0.0, 0.1575, cz)), kit.glow("fire", 1.6), verts=7, bevel=0.0)
+	kit.cone(0.01, 0.002, 0.03, K.G((0.0, 0.15, cz)), kit.glow("fire_core", 2.5), verts=6, bevel=0.0)
+	flame = meshes() - flame0
+	return {"bracket": bracket, "lantern": lantern, "flame": flame}
+
+
+SHRINE_SPOT = (0.56, 0.56)  # rubble_ore: the clear round middle (x, z half sizes), for a healing basin 0.94 m across
+
+
+def rubble_ore(w=2.0, dd=2.0):
+	"""A ring of dug rock and copper ore on a 2 x 2 m floor square round a dusty middle (SHRINE_SPOT). Owner, Nov 20:
+	it goes round the healing shrines (the basin stands in the middle), not round bear jaws. The dust is 5 cm at most."""
+	E = S.E
+	ax, az = SHRINE_SPOT
+
+	def lane(x, z, s):
+		return False
+
+	def outside_oval(x, z, s):
+		return (x / (ax + s)) ** 2 + (z / (az + s)) ** 2 >= 1.0
+
+	# the dust mound: an oval ring, low inside, a soft ridge, low at the outside
+	n = 32
+	rings = []
+	for k in range(n):
+		a = 2 * math.pi * k / n
+		ca, sa = math.cos(a), math.sin(a)
+		r_in = 1.0 + J(0.04)
+		r_out = 0.94 + J(0.03)
+		inner = (ca * ax * r_in, sa * az * r_in)
+		outer = (ca * r_out, sa * r_out)
+		mid = ((inner[0] + outer[0]) / 2 + J(0.03), (inner[1] + outer[1]) / 2 + J(0.03))
+		rings.append((inner, mid, outer))
+	verts = [(0.0, 0.012, 0.0), (0.0, 0.002, 0.0)]
+	for (inner, mid, outer) in rings:
+		verts += [(inner[0], 0.014 + J(0.003), inner[1]), (mid[0], 0.055 + J(0.01), mid[1]), (outer[0], 0.012, outer[1]),
+			(outer[0], 0.002, outer[1]), (inner[0], 0.002, inner[1])]
+	faces = []
+	for k in range(n):
+		a, b = 2 + 5 * k, 2 + 5 * ((k + 1) % n)
+		for s in range(4):
+			faces.append((a + s, b + s, b + s + 1, a + s + 1))
+		faces += [(0, a, b), (1, b + 4, a + 4)]
+	S._flat(K.mesh(verts, faces, T("greystone")))  # rock dust
+	# big chunks of dug rock round the ring, a heap at the back (-z) with a second layer on it
+	chunks = []
+	for _ in range(400):
+		if len(chunks) >= 13:
+			break
+		s = K.rng.uniform(0.1, 0.19)
+		a = K.rng.uniform(0, 2 * math.pi)
+		r = K.rng.uniform(ax + s * 1.2, 1.3)
+		x, z = math.cos(a) * r, math.sin(a) * r
+		if z > 0.2 and K.rng.random() < 0.5:  # most of the heap at the back
+			continue
+		if lane(x, z, s) or not outside_oval(x, z, s * 1.2) or abs(x) + s * 1.2 > 0.98 or abs(z) + s * 1.2 > 0.98:
+			continue
+		if any(math.hypot(x - cx, z - cz) < (s + cs) * 0.8 for cx, cz, cs, _ in chunks):
+			continue
+		sy = s * K.rng.uniform(0.6, 0.85)
+		chunks.append((x, z, s, sy))
+		S.boulder((x, sy * 0.55, z), s, sy, s * K.rng.uniform(0.8, 1.0), floor=E)
+	for cx, cz, cs, csy in [c for c in chunks if c[1] < -0.3][:3]:  # the second layer
+		s = cs * 0.7
+		S.boulder((cx + J(0.04), csy * 0.55 + csy * 0.85 + s * 0.3, cz + J(0.04)), s, s * 0.7, s * 0.9, floor=E)
+	# copper ore stuck in some of the chunks
+	for cx, cz, cs, csy in chunks[:5]:
+		for _ in range(K.rng.randint(2, 3)):
+			r = K.rng.uniform(0.028, 0.045)
+			o = S.boulder((cx + J(cs * 0.45), csy * 0.55 + csy * 0.8, cz + J(cs * 0.45)), r * 1.2, r * 0.8, r, m=T("copper"), floor=E)
+			o["role"] = "ore"
+	# gravel scattered in the dust
+	pebbles = []
+	for _ in range(300):
+		if len(meshes()) > 60:
+			break
+		s = K.rng.uniform(0.03, 0.07)
+		a = K.rng.uniform(0, 2 * math.pi)
+		r = K.rng.uniform(0.62, 0.92)
+		x, z = math.cos(a) * r, math.sin(a) * r
+		if lane(x, z, s) or not outside_oval(x, z, s):
+			continue
+		if any(math.hypot(x - cx, z - cz) < (cs + s) * 1.25 for cx, cz, cs, _ in chunks + pebbles):
+			continue  # pebbles keep clear of the stones and of each other (an overlap flickered)
+		pebbles.append((x, z, s, 0))
+		S.boulder((x, 0.022 + s * 0.3, z), s, s * 0.6, s * K.rng.uniform(0.7, 1.0), floor=E)
+	return None
+
+
+GROOVES = []  # floor_grooved: (x, board top) of each groove, for groove_paint
+
+
+def groove_paint():
+	"""After painting: the inside of each groove is dark, scraped grime (dark gaps, Rule 6), so the clue reads."""
+	grime = kit.mat("wood_dark", -0.45, rough=0.6)
+	for o in [o for o in bpy.data.objects if o.type == "MESH" and o.get("role") == "board"]:
+		me = o.data
+		slot = None
+		for poly in me.polygons:
+			c, nrm = poly.center, poly.normal
+			if abs(nrm.y) < 0.5 and any(abs(c.x - gx) < 0.036 and c.z < top - 0.003 for gx, top in GROOVES):
+				if slot is None:
+					me.materials.append(grime)
+					slot = len(me.materials) - 1
+				poly.material_index = slot
+
+
+def floor_grooved(w=2.0, dd=2.0, t=0.25):
+	"""The Old Shaft's plank walk: boards ACROSS the walk (along x) on three joists along z, and the clue for the
+	swinging boulder: two worn grooves running along the walk (z), right across every board, where the boulder's
+	iron strap scrapes. Same heights and outline as the Shack floor; old paint."""
+	from mathutils import Matrix
+	for x in (-0.7, 0.0, 0.7):
+		S.hewn((x + J(0.01), 0.088, -dd / 2 + 0.165), (x + J(0.01), 0.088 + J(0.004), dd / 2 - 0.165), 0.07)
+	S.rim_beams([(-w / 2, -dd / 2), (w / 2, -dd / 2), (w / 2, dd / 2), (-w / 2, dd / 2)])
+	y0, y1 = 0.148, t - 0.015
+	L = w / 2 - 0.006
+	grooves = (-0.11 + J(0.01), 0.1 + J(0.01))
+	GROOVES[:] = [(g, y1) for g in grooves]
+	z, z1 = -dd / 2 + 0.006, dd / 2 - 0.006
+	i = 0
+	while z < z1 - 0.05:
+		bw = min(K.rng.uniform(0.26, 0.36), z1 - z)
+		if z1 - (z + bw) < 0.16:
+			bw = z1 - z
+		a = z + (K.rng.uniform(0.008, 0.02) if i else 0.0)
+		b = z + bw - (K.rng.uniform(0.008, 0.02) if z + bw < z1 - 0.01 else 0.0)
+		zc, hw = (a + b) / 2, (b - a) / 2
+		o = S.rough_board(-hw, hw, -L, L, y0, y1 - abs(J(0.006)), warp=J(0.01), broken="back" if i == 2 else None)  # built in the middle
+		o.data.transform(Matrix.Translation((0, -zc, 0)) @ Matrix.Rotation(math.pi / 2, 4, "Z"))  # turned across, slid to its place
+		for gx in grooves:
+			R.bore(o, K.G((gx, y1 + 0.012, zc)), 0.034, (b - a) + 0.1, axis_rot=(math.pi / 2, 0, 0))  # 7 cm wide, 2 cm deep
+		for jx in (-0.7, 0.0, 0.7):
+			if K.rng.random() < 0.8:
+				S.peg(jx + J(0.02), y1 - 0.026, zc + J(0.03), "y")
+		z += bw
+		i += 1
+
+
+def heal_fountain():
+	"""Owner, Nov 20: the old mushroom fountain "doesn't look good" (plain colours, box stones, a perfect circle).
+	A healing basin the dwarves carved: a ring of chunky chisel-cut stones round glowing water, and in the middle a
+	stone mushroom (pale stem, brown cap) with healing glow spots; water runs off three points of its cap.
+	1.0 m across (fits rubble_ore's middle), about 0.8 m tall. Origin bottom-centre."""
+	ring_r, n = 0.4, 12  # (round 2: more, flatter stones that touch, no gaps)
+	for k in range(n):
+		a = 2 * math.pi * k / n + J(0.06)
+		x, z = math.cos(a) * ring_r, math.sin(a) * ring_r
+		sx, sz = K.rng.uniform(0.12, 0.135), K.rng.uniform(0.1, 0.115)
+		ca, sa = math.cos(a), math.sin(a)
+		o = S.boulder((0, K.rng.uniform(0.08, 0.1), 0), sx, K.rng.uniform(0.085, 0.1), sz, floor=-1.0)
+		from mathutils import Matrix
+		o.data.transform(Matrix.Translation(K.G((x, 0, z))) @ Matrix.Rotation(-a + math.pi / 2, 4, "Z"))
+		for v in o.data.vertices:  # flat on the floor
+			v.co.z = max(v.co.z, S.E)
+	# the basin's floor and the water (their edges hide inside the stones)
+	def blob(r, y0, y1, m, k=12, wob=0.04):
+		pts = [(math.cos(2 * math.pi * i / k) * r * (1 + J(wob)), math.sin(2 * math.pi * i / k) * r * (1 + J(wob))) for i in range(k)]
+		verts = [(x, y0, z) for x, z in pts] + [(x, y1, z) for x, z in pts]
+		faces = [tuple(range(k)), tuple(range(k, 2 * k))] + [(i, (i + 1) % k, (i + 1) % k + k, i + k) for i in range(k)]
+		return S._flat(K.mesh(verts, faces, m))
+	blob(0.34, S.E, 0.05, T("greystone", "dark"))
+	blob(0.33, 0.05, 0.13, kit.mat("water", -0.15, rough=0.05, metal=0.3, glow=0.12), wob=0.03)  # (inside the stones)
+	# the carved stone mushroom
+	stem = S.facet_log((0.0, 0.1, 0.0), (0.012, 0.66, 0.0), 0.075, m=T("limestone"), sides=7, rings=3, jit=0.1)
+	stem["role"] = "carved"
+	cap = S.boulder((0.0, 0.66, 0.0), 0.29, 0.13, 0.29, m=T("brownrock"), floor=0.63)
+	cap["role"] = "carved"
+	from mathutils.bvhtree import BVHTree
+	tree = BVHTree.FromPolygons([v.co.copy() for v in cap.data.vertices], [tuple(f.vertices) for f in cap.data.polygons])
+	for k in range(7):  # healing glow spots, sitting on the cap's lumpy top
+		a = k * 0.9 + J(0.2)
+		r = 0.08 + 0.1 * (k % 2)
+		x, z = math.cos(a) * r, math.sin(a) * r
+		hit = tree.ray_cast((x, -z, 2.0), (0, 0, -1))[0]
+		kit.gem((x, -z, hit.z + 0.004), (0.032, 0.032, 0.016), kit.mat("glow_cyan", -0.2, glow=1.4), seed=k)
+	for k in range(3):  # water running off the cap's edge into the basin
+		a = 2 * math.pi * k / 3 + 0.5
+		x, z = math.cos(a) * 0.255, math.sin(a) * 0.255
+		kit.cone(0.006, 0.012, 0.52, K.G((x, 0.385, z)), kit.mat("water_light", -0.1, rough=0.05, glow=0.15), verts=6, bevel=0.0)  # thins as it falls
+		kit.cylinder(0.028, 0.006, K.G((x, 0.132, z)), kit.mat("water_light", -0.1, rough=0.05, glow=0.15), verts=8, bevel=0.0)  # splash ring
+
+
 BUILDS = {"rail_lane": rail_lane, "rail_wedge": rail_wedge, "rail_buffer": rail_buffer, "trap_cart": trap_cart,
 	"trap_swing_boulder": trap_swing_boulder, "trap_bear_jaws": trap_bear_jaws,
-	"trap_tripwire_wall": trap_tripwire_wall, "tripwire": tripwire, "trap_chest_spikes": trap_chest_spikes}
+	"trap_tripwire_wall": trap_tripwire_wall, "tripwire": tripwire, "trap_chest_spikes": trap_chest_spikes,
+	"mine_lamp": mine_lamp, "rubble_ore": rubble_ore, "floor_grooved": floor_grooved,
+	"heal_fountain": heal_fountain}
 
 if __name__ == "__main__":
 	for name, fn in BUILDS.items():
@@ -471,7 +702,9 @@ if __name__ == "__main__":
 			S.make_grey()
 		else:
 			S.paint3()
-			if name == "rail_wedge":
+			if name in ("rail_wedge", "floor_grooved", "mine_lamp"):
 				R.age_paint()  # old and rotten
+			if name == "floor_grooved":
+				groove_paint()
 		parts = R.save_parts(name, groups)
 		R.pictures(name, parts)

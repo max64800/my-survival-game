@@ -24,7 +24,8 @@ static func _variants(name: String) -> Array:
 
 
 ## A sound at a spot in the world (fades with distance).
-static func play(name: String, at: Vector3, volume_db: float = 0.0, pitch: float = 1.0) -> void:
+## `reach`: metres away it can still be heard (owner, Nov 20: the crushers were heard all over the dungeon).
+static func play(name: String, at: Vector3, volume_db: float = 0.0, pitch: float = 1.0, reach: float = 45.0) -> void:
 	var tree := Engine.get_main_loop() as SceneTree
 	var list := _variants(name)
 	if muted or list.is_empty() or tree == null or tree.root == null:
@@ -33,8 +34,8 @@ static func play(name: String, at: Vector3, volume_db: float = 0.0, pitch: float
 	p.stream = list.pick_random()
 	p.volume_db = volume_db
 	p.pitch_scale = pitch * randf_range(0.92, 1.08)
-	p.unit_size = 6.0
-	p.max_distance = 45.0
+	p.unit_size = minf(6.0, reach * 0.4)
+	p.max_distance = reach
 	tree.root.add_child(p)
 	p.global_position = at
 	p.play()

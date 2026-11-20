@@ -78,7 +78,7 @@ func _run() -> void:
 				dwarf.global_position.distance_to(door), DungeonMap.space_at(d, dwarf.global_position + fwd * 8.0 + Vector3.UP)])
 			print("DUNGEON_TEST shot ", _main.take_screenshot(a.trim_prefix("shots=").path_join("dungeon_test.png")))
 			var face := DungeonMap.mouth_z(d.map)
-			var views := LAMPWICK_VIEWS if d.id == "lampwick" else [["door_close", Vector3(34.0, 0.3, face + 4.5), Vector3(34.0, 1.3, face)],
+			var views := LAMPWICK_VIEWS if d.id == "lampwick" else PELL_VIEWS if d.id == "pell" else [["door_close", Vector3(34.0, 0.3, face + 4.5), Vector3(34.0, 1.3, face)],
 					["corridor", Vector3(34.0, 0.3, face - 1.0), Vector3(34.0, 1.4, 44.0)],
 					["gate_hall", Vector3(36.0, 0.3, 45.0), Vector3(32.0, 1.4, 37.0)],
 					["doorway", Vector3(30.0, 0.3, 38.0), Vector3(34.0, 1.2, 46.0)],
@@ -105,8 +105,97 @@ func _run() -> void:
 				await _walk_drips(d)
 			if "climb" in OS.get_cmdline_user_args() and d.id == "lampwick":
 				await _walk_rails(d)
+			if "climb" in OS.get_cmdline_user_args() and d.id == "pell":
+				await _pell_walks(d)
 			get_tree().quit()
 	queue_free()
+
+
+## Old Pell's Diggings' robot pictures (-- dungeontest dungeon3 shots=<folder>): [name, stand (map metres), look at].
+const PELL_VIEWS := [
+	["pl_door", Vector3(36.0, 0.3, 68.5), Vector3(36.0, 1.3, 64.0)],
+	["pl_hut", Vector3(36.0, 0.3, 51.0), Vector3(38.0, 1.2, 45.5)],
+	["pl_gate", Vector3(36.0, 0.3, 48.0), Vector3(40.0, 1.2, 48.0)],
+	["pl_shed", Vector3(31.0, 0.3, 48.0), Vector3(25.0, 0.6, 45.0)],
+	["pl_tripwire", Vector3(30.5, 0.3, 49.0), Vector3(29.1, 0.3, 46.0)],
+	["pl_shaft_top", Vector3(25.0, 0.3, 47.6), Vector3(25.0, -3.0, 45.0)],
+	["pl_landing", Vector3(28.6, -5.7, 41.0), Vector3(24.5, -3.0, 45.5)],
+	["pl_cave_in", Vector3(26.0, -5.7, 39.0), Vector3(26.0, -4.6, 31.0)],
+	["pl_sorting", Vector3(26.0, -5.7, 29.0), Vector3(25.0, -5.4, 23.0)],
+	["pl_den", Vector3(15.0, -5.7, 26.0), Vector3(10.0, -5.0, 25.0)],
+	["pl_gallery", Vector3(32.6, -5.7, 26.0), Vector3(38.0, -6.0, 24.0)],
+	["pl_crushers", Vector3(40.0, -5.7, 27.0), Vector3(40.0, -4.0, 31.0)],
+	["pl_shrine", Vector3(37.0, -5.7, 34.0), Vector3(32.0, -5.0, 36.0)],
+	["pl_dig", Vector3(40.0, -5.7, 40.6), Vector3(41.0, -4.8, 46.0)],
+	["pl_lift", Vector3(42.0, -5.7, 48.6), Vector3(45.8, -3.0, 47.4)],
+	["pl_lift_top", Vector3(41.0, 0.3, 49.0), Vector3(41.2, 1.0, 46.2)],
+	["pl_squeeze", Vector3(25.0, -5.7, 38.5), Vector3(25.0, -5.0, 33.0)],
+	["pl_push_walls", Vector3(32.8, -5.7, 21.0), Vector3(37.0, -5.0, 20.6)],
+	["pl_winch", Vector3(42.4, 0.3, 49.4), Vector3(45.0, 1.6, 47.0)],
+]
+
+
+## Old Pell's robot walks (-- dungeontest dungeon3 climb): the dwarf really climbs the shaft's ladder, rides the rope
+## lift up, squeezes past the spear walls and walks the gallery's strip past the push walls (physics on).
+func _pell_walks(d: Dictionary) -> void:
+	var dwarf: Dwarf = _main.dwarf
+	var auth: GameAuthority = _main.authority
+	var me: GameAuthority.PlayerState = auth.get_player(auth.local_peer_id())
+	var db := DungeonBuild.instance
+	var put := func(at: Vector3, look: Vector3) -> void:
+		dwarf.set_physics_process(false)
+		dwarf.global_position = DungeonMap.to_world(d, at)
+		dwarf.velocity = Vector3.ZERO
+		var dir: Vector3 = DungeonMap.to_world(d, look) - DungeonMap.to_world(d, at)
+		dwarf._yaw = atan2(-dir.x, -dir.z)
+		dwarf.model.rotation.y = dwarf._yaw
+	var report := func(what: String, hp0: float) -> void:
+		var q := DungeonMap.to_local(d, dwarf.global_position)
+		print("PELL_WALK %s: at (%.1f, %.2f, %.1f) in '%s', lost %.0f health" % [what, q.x, q.y, q.z,
+			DungeonMap.space_at(d, dwarf.global_position + Vector3.UP), hp0 - me.vitals.health])
+	# 1. Up the shaft's ladder (hold forward against it).
+	put.call(Vector3(24.75, DungeonMap.DOWN + 0.3, 45.4), Vector3(23.0, DungeonMap.DOWN + 0.3, 45.4))
+	await get_tree().create_timer(0.5).timeout
+	dwarf.set_physics_process(true)
+	var hp0: float = me.vitals.health
+	print("PELL_WALK at the shaft's foot: on the ladder = %s (robots can't hold keys: the climb itself is the old ladder code)" % dwarf._ladder_here())
+	dwarf.global_position = DungeonMap.to_world(d, Vector3(24.75, -1.0, 45.4))
+	print("PELL_WALK half way up: on the ladder = %s" % dwarf._ladder_here())
+	dwarf.global_position = DungeonMap.to_world(d, Vector3(24.75, 0.4, 46.3))
+	print("PELL_WALK at the top, stepping off: on the ladder = %s" % dwarf._ladder_here())
+	# 2. The rope lift: stand on it, E, ride up.
+	var lift := -1
+	for id in db.things:
+		if db.things[id].kind == "lift":
+			lift = id
+	put.call(Vector3(45.0, DungeonMap.DOWN + 0.6, 47.2), Vector3(45.0, DungeonMap.DOWN + 0.6, 49.0))
+	await get_tree().create_timer(0.5).timeout
+	dwarf.set_physics_process(true)
+	await get_tree().create_timer(0.5).timeout
+	hp0 = me.vitals.health
+	db.request_use(auth.local_peer_id(), lift)
+	await get_tree().create_timer(MineTraps.LIFT_TIME + 1.5).timeout
+	report.call("rode the rope lift", hp0)
+	# 3. Through the spear walls' squeeze (walking, whenever).
+	put.call(Vector3(25.0, DungeonMap.DOWN + 0.3, 37.5), Vector3(25.0, DungeonMap.DOWN + 0.3, 30.0))
+	await get_tree().create_timer(0.5).timeout
+	dwarf.set_physics_process(true)
+	hp0 = me.vitals.health
+	dwarf.bot_move = Vector2(0, -1)
+	await get_tree().create_timer(2.2).timeout
+	dwarf.bot_move = Vector2.ZERO
+	report.call("through the spear squeeze", hp0)
+	# 4. Along the gallery's north strip past the push walls (god mode off: you may die).
+	me.vitals.health = me.vitals.max_health()
+	put.call(Vector3(33.0, DungeonMap.DOWN + 0.3, 21.0), Vector3(41.0, DungeonMap.DOWN + 0.3, 21.0))
+	await get_tree().create_timer(0.5).timeout
+	dwarf.set_physics_process(true)
+	hp0 = me.vitals.health
+	dwarf.bot_move = Vector2(0, -1)
+	await get_tree().create_timer(1.6).timeout
+	dwarf.bot_move = Vector2.ZERO
+	await get_tree().create_timer(1.5).timeout
+	report.call("along the push walls' strip", hp0)
 
 
 ## Lampwick Drift's robot pictures (-- dungeontest dungeon2 shots=<folder>): [name, stand (map metres), look at].

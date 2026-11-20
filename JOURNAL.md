@@ -7015,3 +7015,74 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   bedroll, dropped torch), then new junk for the other dungeons (ideas list given to the owner).
   Found: the ruin plans' "props" (a crate, sacks) are never built by the game (RuinTower._build only builds pieces,
   chests and torches): ruin junk needs a small new game part. Left for a new chat.
+
+## Nov 20 — Dungeon 3, Old Pell's Diggings, step 1 (dungeons chat, F507)
+- **Owner:** "start working on dung 3 please while I continue to test dung 2". Asked two things first: just build it
+  (no 3D page, like Lampwick) and the Foreman again as the boss (a new boss per mine stays F468, later).
+- **The map** (`DungeonMap.PELL`, in new worlds from cave layout 16; "Dev: Dungeon 3" = test world 1016): Pell's Hut,
+  the Winch Shed and the Pantry at the cave's level; a 2 x 2 m shaft with a root wood ladder 6 m down to the diggings
+  (Landing, Cave-in Tunnel, Sorting Room, Spoil Tunnel, Rat Den, Rotten Gallery, Deep Seam, Miner's Shrine, Pell's Last
+  Dig); a second shaft ("lift") from the Last Dig up behind the hut's barred gate (the lever opens it).
+- **The plan** (`tools/dungeons/make_pell.py` -> `blueprints/dungeons/old_pells_diggings.json`): Lampwick's builder,
+  grown to two levels on top of each other (cells keyed by level, walls lining the shafts between the levels).
+- **New code:** dungeon ladders you climb like built ones (`DungeonBuild.ladder_at`, asked by `Dwarf._ladder_here`);
+  a dart plate that really fires (`MineTraps` "plate": step on it and the dart wall fires; a bolt or a hit uses it up;
+  Mossgate's plates stay decoration); crushers that never sleep (map `crushers_always`); only the spaces in a map's
+  `deadly` list kill (Pell's whole lower level is under 0, and before this every space under 0 counted as a deadly pit).
+- **Traps reused:** tripwire dart (Winch Shed), bear jaws (Sorting Room), rotten boards over a 4 m spike pit (Rotten
+  Gallery), two crushers side by side half a turn apart (Deep Seam), cracked wall to Pell's stash, loose stone with a
+  buried chest (Rat Den), hidden boulder with a niche chest (Shrine), healing basin, round door into the boss room.
+  Recipe stand: "Old Pell's Recipe Scroll", always the Copper Spear.
+- **Hurdles:** (1) Laying two levels on top of each other: Lampwick's builder keyed every 2 m cell by x and z only, so
+  the hut and the diggings below it would have shared cells; now each cell knows its level. (2) The ladder has to be
+  reachable from the edge of the hole (the reach is 0.8 m), so each ladder stands on the shaft's wall next to the side
+  you step in from, not in the middle. (3) The old "deadly" rule (any floor under 0) would have killed you anywhere in
+  the diggings: found by reading the code before the first run, fixed with the `deadly` list. (4) Another chat changed
+  `dwarf.gd` while I worked: my one ladder line is still there; only my lines are committed.
+- **Tests:** new `tests/test_pell.gd` (12): three dungeons that never share rock, older worlds keep two, every space
+  can be walked to (both levels, through the shafts), nothing grows inside, the plan, creatures in their rooms, every
+  trap built, the ladders, only the spike pit kills, the dart plate, the crushers. Robot: `-- dungeontest dungeon3
+  shots=<folder> claude=<what>` (16 room pictures).
+- **Next (step 2 and 3):** the spear wall (Cave-in Tunnel), the shoving wall (Rotten Gallery), the rope lift (the way
+  out; a ladder for now).
+
+## Nov 20 — Old Pell's Diggings, step 2 and the owner's first play (dungeons chat, F507-F516, F494 🔁)
+- **Owner:** "build whatever you need for Dungeon 3 so I can test it." New script `tools/asset_forge/builds/dungeon_pell.py`
+  (the Delver's Shack parts, like the mine set): `trap_spear_wall` (two hewn beams with five bored holes each, a
+  fire-blackened stake in every hole, one tip showing), `trap_push_wall` (a square hole with a plank block on a dark
+  backing), `lift_platform` (deck, railing on three sides, corner ropes to an iron ring, a hoist rope the game stretches),
+  `lift_winch` (two posts beside the shaft, arms over it, a rope drum with a crank). All pass `check_models.py`.
+- **In the game:** the Cave-in Tunnel got a 2 m squeeze with a spear wall on each side (they stab every 2.6 s, the
+  second pair a moment later); two push walls on the Rotten Gallery's north strip (the "safe" way round the boards);
+  the rope lift replaces the lift shaft's ladder (E on it rides it; the winch at the top and a lever in the Last Dig
+  call it; where it is lives in world_state.dungeon_lift, saved and sent to friends). New MineTraps kinds: spears,
+  push, lift, lift_call. Tests: test_pell 15. Robot `-- dungeontest dungeon3 climb`: ladder found at the foot and half
+  way, the lift rides up, the squeeze stabs you if you walk in blind, the piston throws you into the spike pit.
+- **Model hurdles:** (1) the checker called the stakes "floating": they slide in their holes, so nothing touched them;
+  first they lay on the hole's bottom (still 2 cm off, a 7-sided log isn't round), then a hidden guide beam behind
+  the wall that they slide along. (2) The drum floated under the winch's arms: iron bearings now hold its axle.
+  (3) Two flicker spots on the push wall (a lintel end inside a post, a peg on a beam face): moved apart. (4) Names
+  ending in "__plank_root" made the checker treat them as building pieces: renamed. (5) My first `rm` of the test
+  folder was stopped by a safety check (a shell variable in the path): used a fresh folder instead.
+- **Owner's first play of Old Pell's (while I built):** crushers heard all over (F508), can't mine dead creatures
+  (F509), running without Shift again (F494 🔁), pistons should rag doll you, go further and quicker, no marks (F510),
+  the boards don't break (F511), boss room too small (F512), recipe stand not solid (F513), no swing trails on enemies
+  (F514), the spin's knock-down comes late (F515), lift sound off (F516). "Other than that, pretty good dungeon."
+- **Causes and fixes:** F508 `Sfx.play` got a `reach` (how far a sound carries); crushers 14 m and quieter. F509: the
+  last chat's walk-through stone corpses (F495) moved them to the corpse layer, but the swing's aim ray only looked at
+  rock: it now sees that layer. F511: the boards measured your height from the dungeon's door level; Pell's gallery is
+  6 m lower, so you never "stood" on them (my bug: I didn't test the boards on the lower level). F510: `Dwarf.big_hit`
+  rag doll throw (it carries the dwarf with it, so you land on the boards and they give way), 1.8 m in 0.12 s, the
+  block 2 m deep, no scrape marks. F512: the Last Dig is 14 x 16 m. F513: recipe stands get a box in every dungeon.
+  F514: `CreatureRig` hangs a bone attachment on the skeleton's right hand slot and starts the player's `WeaponTrail`
+  just before the blow (the boss's shield-only spin: red, its whole whirl). Hurdle: the trail's timer outlived a
+  creature freed in a test ("lambda capture freed"); the timer now lives on the hand and goes with it. F515: the
+  spin's whirl (measured from the move: his root turns from 0.62 to 1.25 s) was hit at 1.16 s, near its end; now 0.8 s
+  with the move at the same speed (warning 1 s instead of 1.4). F516: silent lift. F494: the run key itself: losing the
+  game window while Shift is down means it never hears Shift come up; now losing the window lets go of every key and
+  coming back from a menu lets go of Shift (can't reproduce it, so the owner is asked to say what they did just before, if it comes back).
+- **Also found:** a climbing creature near Pell's door picked a wall spot over the kept-clear doorway in world 7
+  (test_climbing): creatures standing on kept-clear ground never go up high now. The full test run stopped early once
+  (a time limit): ran the rest file by file. test_dwarf's hair and "material is null" checks fail with another chat's
+  unsaved dwarf animation changes (not mine; left alone). Batch 3 of the mine set (mine lamp, rubble, grooved floor,
+  the new bear jaws) had never been committed by the last dungeons chat: committed now with this.
