@@ -5771,3 +5771,20 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   and my upload landed beside it: removed only my picture and used an older art chat instead. Chrome blocked the
   second download from the same page (it asks in the address bar), so the pose sheet was saved from a full-size
   screenshot (1014 x 762). Removed the concept sheet's .import file by mistake, then re-imported it.
+
+## Nov 20 (Mac): where the 12 dungeons sit in each world (F237, task 1)
+- **New `src/world/dungeon_places.gd`:** from the world's seed alone it picks a spot for each of the 12 dungeons:
+  a round patch of solid rock beside a Mossy Hollows tunnel, with its door on that tunnel's floor. Small ones 40-100 m
+  from the start, medium 100-170 m, big 170 m+, at least 40 m apart (and never overlapping). Big ones are placed
+  first (they need the most room).
+- **Placement rule (owner, Nov 17):** every patch keeps off the watchtower's and the Fallen Outpost's ground, every
+  place (shrines, camps, ruins...), the stone columns, and it may not cut through any cave or tunnel. `reserve_all`
+  keeps pebbles, plants and crystals off the dungeons too.
+- **Mossgate Hold stays the PC's:** pass its spot into `DungeonPlaces.pick(maker, {pos = ...})` and the other 11 keep
+  clear of it. Mossgate's own code (cave_maker.gd, dungeon_map.gd) was only read, not changed.
+- **Tests:** `tests/test_dungeon_places.gd` (only=dungeon_places), 4 tests on 3 worlds: all 12 found in their rings,
+  40 m apart, inside rock, door on open air; out of ruins/places/columns; same world = same spots; Mossgate passed in.
+- **Hurdles (Claude's own):** Godot refused 4 lines with unclear number types (fixed with types). First run: some
+  doors were tested inside the wall instead of on the tunnel floor, and the small ones near the start ran out of
+  tries because most tunnels were too far away; fixed by stepping the door into the tunnel and only trying tunnels
+  near the right ring. The full test suite was not run (nothing outside the new files changed).
