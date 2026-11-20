@@ -483,7 +483,7 @@ func _ev_hit(id: int) -> void:
 	# (owner, Nov 20, 3rd play: the cracked wall showed stone dust; it is boards: wood splinters)
 	var stone: bool = th.kind != "smash" and th.model != "dungeon/wall_cracked.glb"
 	Fx.burst(get_parent(), th.centre, STONE if stone else WOOD, 8 if stone else 14, 2.5)
-	Sfx.play("dig" if stone else "chop", th.centre, -3.0)
+	Sfx.play("dig_rock" if stone else "chop", th.centre, -3.0)
 
 
 ## Everyone: thing `id` breaks now (with its burst / fall).
@@ -690,7 +690,7 @@ func _drop_drip(id: int) -> void:
 			(c as CollisionShape3D).disabled = true
 	var top: Vector3 = th.centre
 	Fx.burst(get_parent(), top, STONE, 10, 1.5, Vector3.DOWN)
-	Sfx.play("dig", top, 0.0, 0.6)
+	Sfx.play("dig_break", top, -2.0, 0.6)  # the crack as it lets go
 	var parts := _parts(body)
 	for k in parts.size():
 		var part: Node3D = parts[k]
@@ -701,7 +701,7 @@ func _drop_drip(id: int) -> void:
 		tw.tween_property(part, "global_position:y", y0 - drop, DRIP_FALL).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 		tw.tween_callback(func() -> void:
 			RockShatter.burst(get_parent(), part.global_position, Vector3.UP, STONE, Mat.STONE, 0.6)
-			Sfx.play("dig", part.global_position, 2.0, 0.8)
+			Sfx.play("thud", part.global_position, 2.0, 0.9)  # (owner, Nov 20: a real recorded rock thud)
 			part.visible = false)
 
 
@@ -962,7 +962,7 @@ func _move_crusher(id: int, now: float, auth: GameAuthority) -> void:
 		var at: Vector3 = (th.xform as Transform3D).origin
 		var me := auth.get_player(auth.local_peer_id()) if auth else null
 		if me and me.node and me.node.global_position.distance_to(at) < 30.0:
-			Sfx.play("dig", at + Vector3.UP * 0.3, 4.0, 0.45)
+			Sfx.play("thud", at + Vector3.UP * 0.3, 4.0, 0.7)
 			Fx.burst(get_parent(), at + Vector3.UP * 0.1, STONE, 10, 2.0)
 	th.down = down
 	if auth == null or not auth.is_host() or not crushing(t) or not crushers_awake(th.d):
