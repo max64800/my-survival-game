@@ -1,7 +1,8 @@
 # Animation rules (read before changing any dwarf move)
 
 Like `MODEL-RULES.md`, but for moves. Written Nov 20, 2026 from the 7 dwarf-animation chats (F282, F389).
-When a rule changes, delete the old text that disagrees. Current job: `docs/art/2H-ANIMATION-PLAN.md`.
+When a rule changes, delete the old text that disagrees. Chat 11 (Nov 20): the great axe uses the Lampwick Foreman's
+KayKit moves (owner OK'd); next job: sword and mace from the same pack.
 
 ## 1. Know his body (measured, not guessed)
 - Arm: **27 cm** shoulder to wrist. Left arm reaches ~33 cm. Beard sticks out **48 cm**, belly **38 cm**.
@@ -13,19 +14,32 @@ When a rule changes, delete the old text that disagrees. Current job: `docs/art/
 
 ## 2. Don't search again (already checked)
 - Quaternius UAL 1 + 2 (his own pack): no two-handed weapon moves.
-- KayKit Character Animations (CC0): tried in chat 5, owner said stance, swings and hands all wrong. Removed.
+- KayKit Character Animations (CC0): tried in chat 5 with a weaker copy (hands bunched, head and mirror wrong):
+  owner said no. The **KayKit Skeletons pack** (`tools/asset_forge/packs/kaykit_skeletons/`, the Foreman's) has the
+  same kind of moves: 1H chop, slash diagonal/horizontal, jump chop, stab, block/blocking/block attack, dual-wield,
+  dodges, hits, deaths. Copied the chat 11 way, the owner liked them.
 - Kevin Iglesias melee (no stated licence), KinemIQ, Modular RPG Characters: not usable in a public repo.
 - Mixamo: fine in a sold game but its files can't go in the public repo. Cascadeur free: no commercial use.
-- **Godot's import retarget renames every bone** and breaks his other moves: retarget in code if ever needed.
+- **Godot's import retarget renames every bone** and breaks his other moves: retarget in code.
+
+## 2b. How to copy a pack move onto him (chat 11, works: `tools/asset_forge/great_kaykit_bake.gd`)
+- Both rigs stand in a T pose facing the same way: give each dwarf bone the KayKit bone's turn away from its rest in
+  **whole-skeleton space**, set parents first (the squashed dwarf bones skew local turns). Bake to JSON in `assets/anim/`.
+- **Mirror** left/right when the pack holds the weapon in the other hand than the owner wants.
+- **Neck and head follow the HIPS' turn**, none of the pack's own head nods: his belly and shirt bend with the hips;
+  a head following the chest stays behind the shirt's neck hole (owner said "head not moving" 3 times).
+- The game's hit is at 0.40 of a swing: time-warp each clip so its strike (the fastest frames) lands there.
+- Our code then puts the fists on the handle (left at the end, right GAP up), keeps it out of his body, and lays the
+  blade by the pack's hand-slot frame (the edge = the way it moves). A double-bit head: find the blade by its main
+  spread, not a plain sum (it cancels out and shows the flat side).
+- The 3D page recorder must save **every bone's place every frame** (head and hair hang on root helper bones), and
+  check the page itself in a browser before telling the owner it's fixed.
 
 ## 3. What the owner wants (two-handed)
-- Great axe first, then great maul, then sword + shield. One stance + 2-3 swings on repeat. No more.
-- Swings: **chop** (right to left), **sweep back**, **slam**. Hands **wide apart** (left at the end of the handle by
-  the left hip, right high up the handle), except the slam (hands closer). Handle on a slant across the body.
-- Standing, walking, running: the great weapon rests on his right shoulder in **one** hand (approved, round 3).
-- **Key poses come from the owner's own hands in Blender** (`tools/blender_poses/`, owner's decision Nov 20), never from
-  Claude's imagination. The game plays them as he made them; Claude's code only keeps the handle in both fists and
-  out of his body.
+- Great axe and great maul (done, chat 11): the Foreman's **2H stance**, **light = Chop**, **heavy = Spin**. Left fist
+  at the end of the handle, right fist slid high up it (46 cm). Never invent poses: copy pack moves (2b).
+- Walking and running (not swinging): the great weapon rests on his right shoulder in **one** hand (approved, round 3).
+- Next: sword and mace from the same pack, a 3D page with 2-3 moves per weapon first, the owner picks.
 
 ## 4. How a heavy swing moves (so it reads as heavy)
 - **Wind-up:** slow and clear, 0.3–0.5 s. The player must see it coming.

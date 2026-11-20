@@ -6611,3 +6611,33 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   (4) There's no "throw a rock" yet, only bombs and pods: those knock snails down for now.
   (5) Another chat had staged its own changes in the same files: only my lines committed.
 - **Dungeon 2 button (owner asked, same chat):** the dev start menu now has "Dungeon 1, Mossgate Hold" (the old button, renamed) and "Dungeon 2, Lampwick's miners". Lampwick's own map isn't built yet, so Dungeon 2 is Mossgate with every creature swapped for the miners (beetles, spiders, bats -> Tunnel Rats, snails -> Lost Miners, the big beetle -> the Foreman), same copper gear. The swap is cleared whenever the menu opens, so it never reaches a real world. Robot: `-- dungeontest dungeon2`: 22 miners in 8 rooms, bone piles on the gate hall floor. Owner's answer on drops / Foreman boost: wait, test first.
+
+## November 20, 2026 (PC, dwarf-animations Claude, chat 11): the Lampwick Foreman's moves on the great axe (F389, owner: "really good")
+- **Did:** new `tools/asset_forge/great_kaykit_bake.gd` copies the Foreman's moves (the CC0 KayKit Skeletons warrior:
+  2H idle, 2H chop, 2H spin) onto the dwarf's bones in code (each KayKit bone's turn away from its T pose, in
+  whole-skeleton space, given to the matching dwarf bone parents first; Godot's import retarget not used) into
+  `assets/anim/great_kaykit.json`. Mirrored left/right: the Foreman holds the END in his right hand, the owner wants
+  the left fist at the end and the right fist high up. `DwarfGreatSwing` rewritten to play them (our own hand-made
+  and Blender-posed swings removed from the game; `tools/blender_poses/` kept, unused; the old pose tuner and
+  Blender pose exporter deleted, they only worked with the removed code). Each clip is sped up so its strike lands
+  on the game's hit (0.40 of a swing). `DwarfFist` puts the left fist at the end, the right fist 46 cm up (further
+  when his arms swing wide), keeps the handle out of his body, and both fists stay on in the spin (the Foreman lets
+  go). Standing = the Foreman's stance; walking/running = the axe on his right shoulder in one hand (as approved in
+  round 3). Owner's pick: light attack = Chop, heavy = Spin. Page "Great Axe Swings" updated 6 times.
+- **Owner's notes and fixes:** (1) "head is not moving correctly": I first kept 35% of the Foreman's head turn, then
+  made it follow the chest; neither showed. Two real causes: the Foreman bends at the hips with his chest up, but the
+  dwarf's belly and shirt bend with the hips (now the neck and head follow the hips); and the page recorder only
+  saved most bones' places on the first frame, and his head and hair hang on helper bones that move every frame, so
+  on the page the head stayed behind. (2) The Spin showed the axe's flat side: the double-bit head's two blades
+  cancelled out in my "which way is the blade" sum; it now uses the head's main spread. (3) The shirt looked torn at
+  the shoulders: the bare-skin layer under the shirt pushed through when an arm lifted; the skin hidden under the
+  shirt is now left out when he loads (`DwarfRig._hide_skin_under_shirt`).
+- **Hurdles (Claude's own):** told the owner 3 times the head was fixed after checking only game pictures, never the
+  page itself (owner: "are you not able to take the screenshots yourself?"); now I open the page's files in a
+  browser tab and screenshot it (saved as a memory). Read the wrong slot bone after mirroring (names swap too). Lined
+  the chop's hit up with the middle of its 2-frame strike (axe pointing sideways at the hit). The keep-out guard gave
+  a different answer every frame in the lift past his big head (10 cm, then 50 cm): it now starts from last frame's
+  push, with more tries. Another chat's half-made `statue.gd` blocked one run (waited).
+- **Still open:** the automatic check still finds a few single frames in the Spin where the handle comes 1-2 cm from
+  his body or a fist slips up to 5 cm (rule: 3 cm / 2 cm); three fixes moved it around. Next chat: sword and mace from
+  the same pack (1H chop, slashes, stab, block), a 3D page first.

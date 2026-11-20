@@ -48,18 +48,18 @@ const ANIMS := {
 	# Held poses (as long as the button is down). The shield is always on the left arm (owner, Nov 17), the weapon in
 	# the right hand: the shield block raises the left arm (the right keeps the weapon ready).
 	block = "x/Sword_Guard", shield = "b/Idle_Shield", aim = "Pistol_Aim_Neutral",
-	# Great axe and great maul (F389 round 5, Nov 19): hand-made key poses (DwarfGreatSwing), placed by DwarfFist.
-	# The "g/" clips only time the swing (the upper body's idle; the arms and chest come from the key poses).
-	great_chop = "g/Chop", great_sweep = "g/Sweep", great_slam = "g/Slam",
+	# Great axe and great maul (F389, owner Nov 20): the Lampwick Foreman's moves (DwarfGreatSwing), played by DwarfFist.
+	# The "g/" clips only time the swing (the upper body's idle; the bones come from the baked moves).
+	great_chop = "g/Chop", great_spin = "g/Spin",
 }
 ## Which attack each weapon makes: [light attacks (taking turns), heavy attack] (names in ANIMS). Anything else: "sword".
 const ATTACKS := {
 	"sword": [["attack_a", "attack_b"], "heavy"],
 	"mace": [["smash", "swipe"], "smash"],  # overhead smash, then a side swing
-	# great axe (owner's pick, F389 round 5): A slanting chop, B rising sweep back, C overhead slam, in turns; heavy =
-	# the slam. (The great maul gets its own set next; until then it swings like the great axe.)
-	"axe_2h": [["great_chop", "great_sweep", "great_slam"], "great_slam"],
-	"mace_2h": [["great_chop", "great_sweep", "great_slam"], "great_slam"],
+	# great axe and great maul (owner, Nov 20, F389): the Foreman's moves, light = the chop, heavy = the spin (owner's
+	# pick; the heavy swing's 1.9 s plays the spin near the Foreman's own speed).
+	"axe_2h": [["great_chop"], "great_spin"],
+	"mace_2h": [["great_chop"], "great_spin"],
 	"hammer": [["smash"], "smash"],
 	"spear": [["stab"], "stab"],
 	"shield": [["bash"], "bash"],
@@ -201,11 +201,12 @@ var _spear_aim := 0.0
 var _upper_start := 0.0  ## when the upper one-shot started (s) and how fast it plays (for the great swings)
 var _upper_scale := 1.0
 ## The great weapons' pose now (DwarfGreatSwing): eased back to the stance between swings.
-var great: Dictionary = DwarfGreatSwing.STANCE
-var _great_from: Dictionary = DwarfGreatSwing.STANCE  ## the pose the swing playing now started from
-var great_fixed: Dictionary = {}  ## tools only: hold this great-weapon pose still (great_pose_tuner.gd)
+var great: Dictionary = {}
+var _great_from: Dictionary = {}  ## the pose the swing playing now started from
+var great_fixed: Dictionary = {}  ## tools only: hold this great-weapon pose still
 var _great_started := -1.0  ## _upper_start of that swing
-var great_move := ""  ## the great swing playing now ("" = none; DwarfFist plays the owner's Blender poses by it, F389)
+var _stance_clock := 0.0  ## s into the stance's slow loop
+var great_move := ""  ## the great swing playing now ("" = none)
 var great_t := 0.0  ## how far into it (0..1)
 var _great_clock := 0.0  ## s into that swing
 var _carry_arm := 0.0  ## how far the right arm is lifted into the shoulder carry  ## how much the spear is turned to point straight ahead (the thrust)
@@ -314,6 +315,7 @@ func _wear_body(path: String) -> void:
 	var under := _hair_on_shirt(src, built, model_to_skel)
 	_bind_poses = poses  # (the swing bones included: armor made over the body binds the same way)
 	_model_to_skel = model_to_skel
+	_hide_skin_under_shirt(src)
 	for mi: MeshInstance3D in src.find_children("*", "MeshInstance3D", true, false):
 		_bind_to_skeleton(mi)
 		if mi.name.begins_with("body_head"):
@@ -329,6 +331,95 @@ func _wear_body(path: String) -> void:
 			for b: int in spot.weights:
 				rests[b] = poses[b]
 	_add_springs(chains, colliders, poses[head] if head >= 0 else Transform3D(), head, heights, under, rests)
+
+
+## The shirt looked torn at the shoulders when an arm lifted or reached across (owner, F389 chat 9-11): the bare skin
+## under it (body_torso, its own layer) bends with the arm bones and pushed out through the shirt. The skin the shirt
+## covers is never seen, so it is left out: every skin triangle whose three corners each have the shirt within
+## SKIN_COVER just outside them (along the skin's own outward direction). The arms past the sleeves, the neck and
+## everything else stay. Done once (the cut skin is shared by every dwarf).
+const SKIN_COVER := 0.045  ## m
+static var _cut_skin: Mesh
+func _hide_skin_under_shirt(src: Node) -> void:
+	var skin := src.find_child("body_torso*", true, false) as MeshInstance3D
+	var shirt := src.find_child("body_shirt", true, false) as MeshInstance3D
+	if skin == null or shirt == null or skin.mesh == null or shirt.mesh == null:
+		return
+	if DisplayServer.get_name() == "headless":  # (only a look; the no-screen test renderer keeps no paint on made meshes
+		return  # and errors when a dwarf is freed)
+	if _cut_skin:
+		skin.mesh = _cut_skin
+		return
+	var to_src := func(n: Node3D) -> Transform3D:
+		var x := Transform3D()
+		var at: Node = n
+		while at != src and at is Node3D:
+			x = (at as Node3D).transform * x
+			at = at.get_parent()
+		return x
+	var shirt_x: Transform3D = to_src.call(shirt)
+	var skin_x: Transform3D = to_src.call(skin)
+	var cells := {}  # Vector3i -> PackedVector3Array of shirt points
+	for sf in shirt.mesh.get_surface_count():
+		for v: Vector3 in shirt.mesh.surface_get_arrays(sf)[Mesh.ARRAY_VERTEX]:
+			var p := shirt_x * v
+			var k := Vector3i((p / SKIN_COVER).floor())
+			if not cells.has(k):
+				cells[k] = PackedVector3Array()
+			(cells[k] as PackedVector3Array).append(p)
+	var out := ArrayMesh.new()
+	var cut := 0
+	for sf in skin.mesh.get_surface_count():
+		var arr := skin.mesh.surface_get_arrays(sf)
+		var verts: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+		var normals: PackedVector3Array = arr[Mesh.ARRAY_NORMAL]
+		var covered := PackedByteArray()
+		covered.resize(verts.size())
+		for i in verts.size():
+			var p := skin_x * verts[i]
+			var nrm := (skin_x.basis * normals[i]).normalized() if i < normals.size() else Vector3.ZERO
+			var k := Vector3i((p / SKIN_COVER).floor())
+			var hit := false
+			for dx in [-1, 0, 1]:
+				for dy in [-1, 0, 1]:
+					for dz in [-1, 0, 1]:
+						var c: Variant = cells.get(k + Vector3i(dx, dy, dz))
+						if c == null:
+							continue
+						for q: Vector3 in c:
+							var d := q - p
+							if d.length() < SKIN_COVER and d.dot(nrm) > 0.5 * d.length():
+								hit = true
+								break
+						if hit:
+							break
+					if hit:
+						break
+				if hit:
+					break
+			covered[i] = 1 if hit else 0
+		var idx: PackedInt32Array = arr[Mesh.ARRAY_INDEX] if arr[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
+		if idx.is_empty():
+			for i in verts.size():
+				idx.append(i)
+		var keep := PackedInt32Array()
+		for t in range(0, idx.size(), 3):
+			if covered[idx[t]] == 1 and covered[idx[t + 1]] == 1 and covered[idx[t + 2]] == 1:
+				cut += 1
+				continue
+			keep.append(idx[t])
+			keep.append(idx[t + 1])
+			keep.append(idx[t + 2])
+		if keep.is_empty():  # (a part wholly under the shirt: one empty corner keeps every part's paint in its place)
+			keep = PackedInt32Array([idx[0], idx[0], idx[0]])
+		arr[Mesh.ARRAY_INDEX] = keep
+		var flags := Mesh.ARRAY_FLAG_USE_8_BONE_WEIGHTS if (arr[Mesh.ARRAY_BONES] as PackedInt32Array).size() == verts.size() * 8 else 0
+		out.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr, [], {}, flags)
+		out.surface_set_material(out.get_surface_count() - 1, skin.mesh.surface_get_material(sf))
+	out.resource_name = skin.mesh.resource_name
+	_cut_skin = out
+	skin.mesh = out
+	print_verbose("dwarf: %d skin triangles under the shirt left out" % cut)
 
 
 ## Moves a mesh made around the dwarf's rest pose (the hand-built body, or armor made over it) onto our skeleton,
@@ -612,12 +703,19 @@ func _update_grip(delta: float) -> void:
 	_spear_aim = move_toward(_spear_aim, 1.0 if tool_look == "spear" and clip == ANIMS.stab else 0.0, delta * 12.0)
 
 
+const GREAT_WALK := 0.3  ## m/s: faster than this (and not swinging), the great weapon goes onto his shoulder
+## Both hands on the great weapon now (standing or swinging); else it rests on his shoulder (set_motion).
+func great_two_hands() -> bool:
+	return _carry < 0.5
+
+
 ## The great axe's / great maul's pose this frame (DwarfFist places both fists and the chest by it): the swing playing
 ## now ("g/" clip, from the pose it started at), else easing back to the ready stance.
 func great_pose(delta: float) -> Dictionary:
-	if not great_fixed.is_empty():  # (a tool holding one pose still: great_pose_tuner.gd)
+	if not great_fixed.is_empty():  # (a tool holding one pose still)
 		great = great_fixed
 		return great
+	_stance_clock += delta
 	var clip := _upper_clip if tree.get("parameters/upper/active") else ""
 	if clip.begins_with("g/") and tree.has_animation(clip):
 		if _great_started != _upper_start:
@@ -629,10 +727,12 @@ func great_pose(delta: float) -> Dictionary:
 		var t := _great_clock * _upper_scale / tree.get_animation(clip).length
 		great_move = clip.trim_prefix("g/")
 		great_t = clampf(t, 0.0, 1.0)
-		great = DwarfGreatSwing.pose(great_move, great_t, _great_from)
+		var k := smoothstep(0.0, DwarfGreatSwing.BLEND_IN, great_t)  # (eases in from wherever he was)
+		great = DwarfGreatSwing.blend(_great_from, DwarfGreatSwing.swing(great_move, great_t), k)
 	else:
 		great_move = ""
-		great = DwarfGreatSwing.blend(great, DwarfGreatSwing.STANCE, 1.0 - exp(-DwarfGreatSwing.RETURN * delta))
+		var st := DwarfGreatSwing.stance(_stance_clock)
+		great = st if great.is_empty() else DwarfGreatSwing.blend(great, st, 1.0 - exp(-DwarfGreatSwing.RETURN * delta))
 	return great
 
 
@@ -693,12 +793,11 @@ func set_motion(speed: float, on_floor: bool, rolling: bool) -> void:
 	# Walking keeps the tool as the fist holds it; from a jog up it trails behind (hold_turn). Never during a
 	# swing or a held pose: those animations aim the tool themselves.
 	var want := clampf((speed - 1.6) / 1.6, 0.0, 1.0) if carrying else 0.0
-	# Great axe and great maul (owner, Nov 19, round 3): always on the right shoulder in one hand, standing, walking
-	# and running. Swinging, the animation aims it as before and DwarfFist adds the second hand.
-	# (F389 round 5: both hands on the handle always, the stance of the owner's photo: DwarfGreatSwing)
+	# Great axe and great maul (F389): standing still, both hands in the Foreman's stance (DwarfGreatSwing); walking
+	# and running, it rests on his right shoulder in one hand (owner, round 3; Nov 20: "stays as it is").
 	var two_h := carrying and tool_look in DwarfFist.TWO_HANDED
 	if two_h:
-		want = 0.0
+		want = 1.0 if speed > GREAT_WALK else 0.0
 	move_speed = speed
 	if carrying and (rolling or _roll_on()) and not two_h:
 		want = 1.0  # rolling the arms fly about: the tool trails safely behind (owner: pick through his head)
@@ -795,7 +894,9 @@ func _build_tree(body: Node3D) -> void:
 	# the great swings' timers: the upper body's idle, one per swing (DwarfGreatSwing places the arms and chest)
 	var great_lib := AnimationLibrary.new()
 	for move: String in DwarfGreatSwing.MOVES:
-		great_lib.add_animation(move, tree.get_animation(ANIMS.idle).duplicate())
+		var timer := tree.get_animation(ANIMS.idle).duplicate() as Animation
+		timer.length = DwarfGreatSwing.clip_length(move)  # (the moves' own length: played at their own speed unless the game says)
+		great_lib.add_animation(move, timer)
 	tree.add_animation_library("g", great_lib)
 	var bt := AnimationNodeBlendTree.new()
 	# Legs: blend between idle, walk, jog and sprint by speed.

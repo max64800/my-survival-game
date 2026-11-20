@@ -1,13 +1,13 @@
 extends SceneTree
-## Preview pictures for F389 round 5 (great axe / great maul, hand-made key poses: DwarfGreatSwing): the ready stance,
+## Preview pictures for F389 (great axe / great maul, the Lampwick Foreman's moves: DwarfGreatSwing, chat 11): the stance,
 ## then each swing at its key moments (wind-up, hit, follow-through), named plainly: stance_front.png, Chop_hit_front.png…
 ##   godot --audio-driver Dummy --fixed-fps 60 --path . --script res://tools/asset_forge/twohand_preview.gd -- claude=twohand_preview
-##     item=axe_2h_copper out=<folder> [cam=front|side|back|three|left|top] [moves=Chop,Sweep,Slam] [len=1.1] [walk=0]
+##     item=axe_2h_copper out=<folder> [cam=front|side|back|three|left|top] [moves=Chop,Spin] [len=1.1] [walk=0]
 ## Also prints, every few frames, the gap between the fists and how close the handle comes to his chest.
 var out := "user://twohand"
 var cam_name := "three"
 var item := "axe_2h_copper"
-var moves: PackedStringArray = ["Chop", "Sweep", "Slam"]
+var moves: PackedStringArray = ["Chop", "Spin"]
 var clip_len := 1.1
 var walk := 0.0
 var model: DwarfModel
@@ -22,7 +22,8 @@ var _shots: Array = []  ## [move, time] still to take (fixed=1)
 var _move_frame := 0  ## the frame it started
 var _worst := INF  ## the handle's least room during the swing playing now (m), and when (share of the swing)
 var _worst_t := 0.0
-const NAMES := {0.13: "0lift", 0.27: "1windup", 0.36: "2middle", 0.40: "3hit", 0.75: "4recovery", 1.0: "5end"}
+const KEYS := [0.15, 0.30, 0.40, 0.55, 0.80]  ## the moments pictured (share of the swing; the hit at 0.40)
+const NAMES := {0.15: "0lift", 0.30: "1windup", 0.40: "2hit", 0.55: "3after", 0.80: "4recovery", 1.0: "5end"}
 
 
 func _init() -> void:
@@ -115,9 +116,8 @@ func _process(_d: float) -> bool:
 	if fixed:  # fixed=1: each key pose held still for its picture (a live frame can land just before a fast hit)
 		if frames == 41:
 			for mv: String in moves:
-				for key: Array in DwarfGreatSwing.MOVES[mv]:
-					if float(key[0]) < 1.0:
-						_shots.append([mv, float(key[0])])
+				for key: float in KEYS:
+					_shots.append([mv, key])
 		var i := (frames - 44) / 4
 		if frames >= 44 and (frames - 44) % 4 == 0 and i <= _shots.size():
 			if i > 0:  # (the pose set 4 frames ago has settled: its picture)
@@ -126,7 +126,7 @@ func _process(_d: float) -> bool:
 				_shot("%s_%s" % [s[0], nm])
 				_report("%s %s" % [s[0], nm])
 			if i < _shots.size():
-				rig.great_fixed = DwarfGreatSwing.pose(_shots[i][0], _shots[i][1], DwarfGreatSwing.STANCE)
+				rig.great_fixed = DwarfGreatSwing.swing(_shots[i][0], _shots[i][1])
 		return frames > 50 + 4 * _shots.size()
 	var per := int(clip_len * 60.0) + 2
 	if frames >= 45 and (frames - 45) % per == 0 and (frames - 45) / per < moves.size():
@@ -142,9 +142,9 @@ func _process(_d: float) -> bool:
 			_worst_t = float(frames - _move_frame) / (clip_len * 60.0)
 		if frames == 45 + per * moves.size() + 4:
 			print("%-14s least handle room %d cm at %d%%" % [moves[_move], roundi(_worst * 100), roundi(_worst_t * 100)])
-		for key: Array in DwarfGreatSwing.MOVES[moves[_move]]:
-			if frames == _move_frame + int(float(key[0]) * clip_len * 60.0) - (1 if float(key[0]) >= 1.0 else 0):
-				var nm: String = NAMES.get(snappedf(key[0], 0.01), "at%d" % roundi(float(key[0]) * 100))
+		for key: float in KEYS:
+			if frames == _move_frame + int(key * clip_len * 60.0):
+				var nm: String = NAMES.get(snappedf(key, 0.01), "at%d" % roundi(key * 100))
 				_shot("%s_%s" % [moves[_move], nm])
 				_report("%s %s" % [moves[_move], nm])
 	return frames > 45 + per * moves.size() + 5

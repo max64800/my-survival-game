@@ -1,10 +1,11 @@
 extends SceneTree
 ## Records the game dwarf swinging the great axe (F389: DwarfGreatSwing + DwarfFist, exactly as the game plays it,
 ## frame by frame) into one .glb for the "Great Axe Swings" 3D page: the dwarf's shaped bones and the axe.
-## Clips: Stance, Chop, Sweep, Slam (each swing: the light swing's 1.1 s, then back to the stance).
+## Clips: Stance, Chop, Spin (the Lampwick Foreman's moves, chat 11; each swing: the light swing's 1.1 s, then back
+## to the stance).
 ##   godot --headless --audio-driver Dummy --fixed-fps 60 --path . --script res://tools/asset_forge/great_swing_export.gd
 ##     -- <out.glb> claude=great_swing_export
-## By the dwarf-animations Claude, chat 8, Nov 20, 2026.
+## By the dwarf-animations Claude, chat 8, Nov 20, 2026 (chat 11: the Foreman's moves).
 const SWING := 1.1  ## s (Combat.WEAPONS.axe_2h.light_speed)
 const AFTER := 0.5  ## s recorded after the swing (easing back to the stance)
 const EVERY := 3  ## record every 3rd frame (60 fps game -> 20 fps clip; the page blends between)
@@ -24,8 +25,8 @@ func _init() -> void:
 		await process_frame
 	var tool: Node3D = rig.grip.get_child(rig.grip.get_child_count() - 1)
 	var lib := AnimationLibrary.new()
-	lib.add_animation("Stance", await _record(rig, "", 1.0))
-	for mv in ["Chop", "Sweep", "Slam"]:
+	lib.add_animation("Stance", await _record(rig, "", DwarfGreatSwing.clip_length("Stance") * 2.0))
+	for mv: String in DwarfGreatSwing.MOVES:
 		lib.add_animation(mv, await _record(rig, mv, SWING + AFTER))
 		print("RECORDED ", mv)
 	# the scene: the dwarf's skeleton + skin, and the axe (its own node, moved every frame)
@@ -110,7 +111,6 @@ func _record(rig: DwarfRig, move: String, seconds: float) -> Animation:
 	if move != "":
 		rig.play_upper("g/" + move, SWING)
 	var frames := int(seconds * 60.0)
-	var pelvis := sk.find_bone("pelvis")
 	for f in frames:
 		rig.set_motion(0.0, true, false)
 		await sk.skeleton_updated
@@ -125,8 +125,9 @@ func _record(rig: DwarfRig, move: String, seconds: float) -> Animation:
 			anim.scale_track_insert_key(k[2], t, tf.basis.get_scale())
 		for i in sk.get_bone_count():
 			var tt: Array = tracks[i]
-			if f == 0 or i == pelvis:  # (sizes and offsets stay put: only the hips move; keeps the file small)
-				anim.position_track_insert_key(tt[0], t, sk.get_bone_pose_position(i))
+			# (every bone's place, every frame: the head and hair hang on helper bones off the root that move with the
+			# body; recording only the hips' place left his head behind on the page, owner chat 11 "still exactly the same")
+			anim.position_track_insert_key(tt[0], t, sk.get_bone_pose_position(i))
 			anim.rotation_track_insert_key(tt[1], t, sk.get_bone_pose_rotation(i))
 			if f == 0:
 				anim.scale_track_insert_key(tt[2], t, sk.get_bone_pose_scale(i))
