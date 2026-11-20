@@ -56,6 +56,19 @@ var _charge_dir := Vector3.ZERO  ## straight_charge: the direction locked when t
 var _alt := INF                  ## swoops: the height this flyer is heading for
 var _ceiling := INF              ## swoops: the rock above it (checked 4 times a second; F420)
 var _ceiling_check := 0.0
+## Bats (F460): circling you before a dive, and the dive itself (host), and its trail (everyone, only looks).
+var _orbit_a := 0.0          ## where on its circle round you it is (radians)
+var _orbit_r := 5.0          ## how wide it circles
+var _orbit_dir := 1.0        ## which way round
+var _dive_wait := 99.0       ## seconds of circling before it may dive (99: no circle picked yet)
+var _dive_dir := Vector3.ZERO  ## the straight line of this dive (locked when it starts: sidestep it)
+var _dive_speed := 13.0
+var _dive_out := false       ## flying on and climbing away after a dive
+var _trail_left := 0.0       ## only looks: seconds it still leaves a trail
+var _trail_pts: Array = []   ## only looks: [position, age, right side] of the trail behind it
+var _streak: MeshInstance3D
+var _vy := 0.0               ## only looks: how fast it rises or sinks (to tip its nose)
+var _rise := 0.0
 var _last_pos := Vector3.ZERO
 var _body_shape: CollisionShape3D  ## its body (a capsule standing up from its feet)
 var _roosted := false  ## the body hangs down from the ceiling (a sleeping bat)
@@ -316,6 +329,8 @@ func think(delta: float, mgr: Node) -> void:
 		# is lower than 3 m above you, it cruises just under it.
 		if state != State.SLEEP:
 			_ceiling_check -= delta
+			if is_on_ceiling():
+				_ceiling_check = 0.0  # it touched the rock: look again at once (circling, F460, it flies under lower rock)
 			if _ceiling_check <= 0.0:
 				_ceiling_check = 0.25
 				_ceiling = _rock_above()
@@ -383,6 +398,9 @@ func think(delta: float, mgr: Node) -> void:
 				state = State.RETURN
 				target_peer = 0
 				return
+			if data.get("swoops", false):
+				_circle_and_dive(delta, target, dist, mgr)
+				return
 			# Far above it (a hole's edge), or it's still clinging to the wall: climb up first, then fight (F236).
 			var atk := _pick_attack(dist) if to.y < 1.3 and (is_on_floor() or to.y < 0.4) else {}
 			if not atk.is_empty():
@@ -393,7 +411,9 @@ func think(delta: float, mgr: Node) -> void:
 			_move(delta, to.normalized(), speed)
 			_face(target)
 		State.ATTACK:
-			if _charge_dir == Vector3.ZERO:
+			if _attack.get("dive", false):
+				_dive_step(delta)
+			elif _charge_dir == Vector3.ZERO:
 				_face(target)
 			if _timer <= 0.0 and _attack.has("cloud"):
 				var c: Dictionary = _attack.cloud
@@ -418,7 +438,7 @@ func think(delta: float, mgr: Node) -> void:
 					_move(delta, rush.normalized(), charge_speed)
 				else:
 					_move(delta, Vector3.ZERO, 0.0)
-			else:
+			elif not _attack.get("dive", false):
 				_move(delta, Vector3.ZERO, 0.0)
 			if _timer <= 0.0:
 				if _attack.has("follow"):
@@ -439,11 +459,22 @@ func think(delta: float, mgr: Node) -> void:
 						# stars, no "Dazed!"): the old word here made it say dazed when it wasn't (owner F448).
 						_timer = maxf(_timer, CHARGE_DAZE)
 					_charge_dir = Vector3.ZERO
-					if data.get("hit_and_run", false):
+					if _attack.get("dive", false):
+						_timer = DIVE_OUT  # it doesn't stop: on through you and up again
+						_dive_out = true
+						_wander_to = Vector3.INF
+					elif data.get("hit_and_run", false):
 						var away: float = data.get("retreat", 3.0)
 						_wander_to = global_position - (target.global_position - global_position).normalized() * away if target else home
 		State.RECOVER:
-			if data.get("hit_and_run", false) and _wander_to != Vector3.INF:
+			if _dive_out:
+				# On through you, slowing from dive speed to its cruise and climbing back up (the height: _alt).
+				# (Straight on, no wobble and no stopping to turn: it already faces this way.)
+				var k := clampf(1.0 - _timer / DIVE_OUT, 0.0, 1.0)
+				var flat := Vector3(_dive_dir.x, 0.0, _dive_dir.z).normalized() * lerpf(_dive_speed, data.run, k)
+				velocity = Vector3(flat.x, clampf((_alt - global_position.y) * 3.0, -7.0, 6.0) if _alt != INF else 0.0, flat.z)
+				move_and_slide()
+			elif data.get("hit_and_run", false) and _wander_to != Vector3.INF:
 				var back := _wander_to - global_position
 				back.y = 0
 				_move(delta, back.normalized(), data.run * 0.6)
@@ -451,6 +482,9 @@ func think(delta: float, mgr: Node) -> void:
 				_move(delta, Vector3.ZERO, 0.0)
 			if _timer <= 0.0:
 				state = State.CHASE
+				if _dive_out:
+					_dive_out = false
+					_new_circle(target)
 		State.RETURN:
 			hp = minf(max_hp(), hp + max_hp() * 0.1 * delta)
 			var to := home - global_position
@@ -506,6 +540,59 @@ func _try_blink(target: Node3D, to: Vector3, mgr: Node) -> bool:
 	global_position = spot + Vector3.UP * 0.2
 	velocity = Vector3.ZERO
 	return true
+
+
+## Bats (owner F460): loop round you in a loose, wobbly circle (each bat its own size and way round), then dive
+## through you. Only one bat of a pack starts a dive every DIVE_GAP seconds, so they take turns.
+func _circle_and_dive(delta: float, target: Node3D, dist: float, mgr: Node) -> void:
+	if _dive_wait > 50.0:
+		_new_circle(target)
+	var r := _orbit_r * (1.0 + 0.15 * sin(_clock * 0.7 + uid))  # the circle breathes in and out
+	_orbit_a += _orbit_dir * data.run / maxf(r, 1.0) * delta * 0.8
+	var want := target.global_position + Vector3(cos(_orbit_a), 0.0, sin(_orbit_a)) * r
+	var go := want - global_position
+	go.y = 0.0
+	_move(delta, go.normalized() if go.length() > 0.3 else Vector3.ZERO, data.run * (1.0 + (Monsters.PACK_BOOST.speed if boosted else 0.0)))
+	_dive_wait -= delta
+	if _dive_wait <= 0.0 and dist >= DIVE_MIN and dist <= DIVE_MAX and mgr.may_dive(self) and _clear_line(target):
+		_start_dive(target, mgr)
+
+
+## A fresh circle round the target, starting where it is now; a few seconds before its next dive.
+func _new_circle(target: Node3D) -> void:
+	var off := global_position - (target.global_position if target else home)
+	_orbit_a = atan2(off.z, off.x)
+	_orbit_r = randf_range(4.0, 6.5)
+	_orbit_dir = 1.0 if randf() < 0.5 else -1.0
+	_dive_wait = randf_range(1.5, 3.5)
+
+
+## Nothing (rock, a wall you built) between it and your chest?
+func _clear_line(target: Node3D) -> bool:
+	var q := PhysicsRayQueryParameters3D.create(global_position, target.global_position + Vector3.UP * 0.9,
+		World.TERRAIN_LAYER | PieceNode.PIECE_LAYER)
+	return get_world_3d().direct_space_state.intersect_ray(q).is_empty()
+
+
+## The dive: a straight line at where your chest is right now. Its warning lasts exactly until it gets there, so the
+## bite is judged as it passes through you (sidestep and it misses).
+func _start_dive(target: Node3D, mgr: Node) -> void:
+	var aim := target.global_position + Vector3.UP * 0.9
+	var line := aim - global_position
+	_dive_dir = line.normalized()
+	_dive_speed = float(data.run) * DIVE_SPEED
+	var glide: float = minf(DIVE_WIND * float(data.walk), line.length() * 0.5)
+	var atk: Dictionary = data.attacks[0].duplicate()
+	atk.tell = DIVE_WIND + (line.length() - glide) / _dive_speed
+	_start_attack(atk, mgr)
+
+
+## One step of the dive: a slow glide along its line for a moment, then it shoots down it (through you).
+func _dive_step(delta: float) -> void:
+	var since: float = _attack.tell - _timer
+	velocity = _dive_dir * (float(data.walk) if since < DIVE_WIND else _dive_speed)
+	model.rotation.y = atan2(-_dive_dir.x, -_dive_dir.z)
+	move_and_slide()
 
 
 func _pick_attack(dist: float) -> Dictionary:
@@ -609,6 +696,12 @@ func _move(delta: float, dir: Vector3, speed: float) -> void:
 
 ## How high the rock is above this flyer (INF: more than 12 m of room).
 const CEILING_ROOM := 0.3  ## m a flyer keeps between its back and the ceiling
+const DIVE_SPEED := 2.0    ## a dive is this many times its normal flying speed (owner F460: "twice as fast")
+const DIVE_WIND := 0.25    ## s it glides slowly along its line before shooting down it (its screech warns you)
+const DIVE_OUT := 1.1      ## s it flies on and climbs away after passing through you
+const DIVE_MIN := 3.0      ## m: it dives from this far away...
+const DIVE_MAX := 11.0     ## ...up to this far
+const TRAIL_LIFE := 0.4    ## s a bit of the trail lasts
 func _rock_above() -> float:
 	var from := global_position + Vector3.UP * 0.2
 	var q := PhysicsRayQueryParameters3D.create(from, from + Vector3.UP * 12.0, World.TERRAIN_LAYER)
@@ -692,6 +785,8 @@ func show_tell(seconds: float, attack_name: String = "", aim: Node3D = null) -> 
 		Sfx.play(atk.warn_sound, global_position, 0.0, _voice())
 	if atk.has("land_sound"):
 		get_tree().create_timer(seconds).timeout.connect(_land_sound.bind(atk.land_sound))
+	if atk.get("dive", false):
+		_trail_left = seconds + 0.5  # a streak of air behind it while it dives through you and climbs away (F460)
 	if atk.get("lunge", false) and data.get("straight_charge", false):
 		_charging = seconds + 0.6
 		_charge_len = seconds
@@ -770,6 +865,9 @@ func _process(delta: float) -> void:
 	if _clock == 0.0:
 		_last_pos = global_position  # first frame: we didn't really "move" from the origin
 	var moved := Vector2(global_position.x - _last_pos.x, global_position.z - _last_pos.z).length()
+	_rise = global_position.y - _last_pos.y
+	if absf(_rise) > 1.0:
+		_rise = 0.0  # (put somewhere new, not flown there: no nose tip)
 	_last_pos = global_position
 	_speed = lerpf(_speed, moved / maxf(delta, 0.001), minf(1.0, delta * 8.0))
 	_clock += delta
@@ -787,6 +885,12 @@ func _process(delta: float) -> void:
 		MonsterModel.set_glow(model, 0.0)
 	_creature_fx(delta)
 	_daze_stars()
+	if data.get("flies", false) and not model.get_meta("roosting", false):
+		# A flyer tips its nose down as it dives and up as it climbs (F460).
+		_vy = lerpf(_vy, _rise / maxf(delta, 0.001), minf(1.0, delta * 10.0))
+		model.rotation.x += clampf(atan2(_vy, maxf(_speed, 1.0)), -0.8, 0.6) * 0.8
+	if _trail_left > 0.0 or not _trail_pts.is_empty():
+		_draw_trail(delta)
 	if model.get_meta("roosting", false):
 		pass  # hanging upside down (MonsterModel.animate)
 	elif stun.is_stunned():
@@ -869,6 +973,48 @@ static func charge_rear(elapsed: float, tell: float) -> float:
 ## Dazed: a slow, gentle sway from side to side, like a dizzy dwarf (owner F450). A snail's body sways a bit more.
 static func daze_sway(clock: float, snail: bool) -> float:
 	return sin(clock * 4.0) * (0.15 if snail else 0.09) + sin(clock * 1.7) * 0.03
+
+
+## Only looks: two thin streaks of air from its wingtips while it dives (F460), fading out behind it.
+func _draw_trail(delta: float) -> void:
+	if _streak == null:
+		_streak = MeshInstance3D.new()
+		_streak.mesh = ImmediateMesh.new()
+		_streak.top_level = true
+		_streak.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		var m := StandardMaterial3D.new()
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.vertex_color_use_as_albedo = true
+		m.cull_mode = BaseMaterial3D.CULL_DISABLED
+		m.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
+		_streak.material_override = m
+		add_child(_streak)
+		_streak.global_transform = Transform3D.IDENTITY
+	_trail_left = maxf(0.0, _trail_left - delta)
+	for p in _trail_pts:
+		p[1] += delta
+	_trail_pts = _trail_pts.filter(func(p: Array) -> bool: return p[1] < TRAIL_LIFE)
+	if _trail_left > 0.0 and is_alive():
+		var side := Basis(Vector3.UP, model.rotation.y).x * 0.5 * _size
+		_trail_pts.push_front([global_position + Vector3.UP * (model.position.y + 0.35 * _size), 0.0, side])
+	var im := _streak.mesh as ImmediateMesh
+	im.clear_surfaces()
+	if _trail_pts.size() < 2:
+		return
+	var tint: Color = Monsters.VARIANTS.get(variant, {}).get("color", Color(0.85, 0.87, 0.95))
+	tint = tint.lerp(Color(0.92, 0.92, 0.96), 0.5)
+	for wing in [-1.0, 1.0]:
+		im.surface_begin(Mesh.PRIMITIVE_TRIANGLE_STRIP)
+		for p in _trail_pts:
+			var fade := 1.0 - float(p[1]) / TRAIL_LIFE
+			var at: Vector3 = p[0] + (p[2] as Vector3) * wing
+			var thick := Vector3.UP * 0.03 * _size * (0.4 + fade)
+			im.surface_set_color(Color(tint, 0.55 * fade))
+			im.surface_add_vertex(at - thick)
+			im.surface_set_color(Color(tint, 0.55 * fade))
+			im.surface_add_vertex(at + thick)
+		im.surface_end()
 
 
 ## Dazed: little stars circle its head (owner F449, every creature). Built the first time it is dazed.

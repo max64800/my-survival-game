@@ -6406,3 +6406,21 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - **Reload, round 2 (F459):** 1 s shorter (copper 3 s). The reload move was always 1 s long, so for the rest of
   the reload he just stood there; now the move is stretched to the real reload time (co-op friends get the same
   time), and walking away stops it. Checked with 3 photos during one reload: he works the crossbow the whole time.
+
+## November 20, 2026 (PC, enemies Claude, chat 1, the bat): bats circle, then dive through you (F460)
+- **Owner's wish:** better flying around; the attack should go *through* you at twice their speed with a trail,
+  not "come in, stop, bite, go up". Before: a bat flew straight at you 3 m up, stopped close by, dropped down,
+  bit after a short warning, then backed away slowly.
+- **Now:** it loops round you in a loose, wobbly circle (each bat its own size and direction), and after a few
+  seconds dives on a straight line at where your chest was, at twice its flying speed. Its warning screech lasts
+  exactly as long as the flight to you, so the bite is judged as it passes through (sidestep and it misses). It flies
+  on and climbs back up on the far side without stopping. Two thin streaks of air trail from its wingtips; its nose
+  tips down in the dive and up in the climb. A pack takes turns (one dive start every 0.7 s per dwarf). The host
+  decides all of it; everyone sees the warning, the trail and the flight.
+- **Hurdles (mine):** my trail variable had the same name as an old one (the poison-cloud timer), so the game
+  wouldn't load (renamed). Two old bat tests broke: a circling bat brushed the ceiling a few times (it now looks at
+  the rock above again the moment it touches it), and a bat moved by the test "jumped" up, so it tipped its nose
+  hard as it died (big jumps are now ignored). Then one dive stalled after passing through: the bat's random
+  wobble plus its "turn before you move" rule made it stop to turn; the fly-out now goes straight.
+- **Tests:** 3 new (circle then dive through, sidestep, take turns); all 11 bat checks passed twice in a row.
+  Looked at the trail in a muted test room.

@@ -32,7 +32,9 @@ const LIST := {
 		# leave their cave (they don't give up after 10 s like the others).
 		# F428 (owner, Nov 20: "make the bats' aggro range smaller"): 25 m → 12 m.
 		wake_light = 12.0, stays_in_cave = true,
-		attacks = [{name = "Swoop Bite", warn_sound = "bat_screech", tell = 0.6, damage = 6, type = "pierce", reach = 2.2, parry = "any"}],
+		# F460 (owner, Nov 20): it circles you, then dives straight THROUGH you at twice its speed (leaving a trail) and
+		# climbs away on the other side; no stopping. The tell is worked out from how far it has to fly (Monster._start_dive).
+		attacks = [{name = "Dive Through", warn_sound = "bat_screech", tell = 0.6, damage = 6, type = "pierce", reach = 1.2, parry = "any", dive = true}],
 		drops = [["wing_leather", 1, 1.0], ["wing_leather", 1, 0.3], ["bat_fang", 1, 0.4], ["bat_meat", 1, 0.8]]},
 	# statue_hits: pickaxe hits to break its stone statue (default 4; owner, Nov 18: bat 2, beetle and snail 4, great 8).
 	# ragdoll: on death it goes limp and falls apart into physics pieces (Ragdoll; the beetle first, owner Nov 18).

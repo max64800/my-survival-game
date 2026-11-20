@@ -1082,6 +1082,18 @@ func standing_over(p: Vector3) -> bool:
 	return false
 
 
+const DIVE_GAP := 0.7  ## s between two bats of a pack starting a dive at the same dwarf (they take turns, F460)
+var _dives := {}  ## (host) target peer -> when a bat last started a dive at them
+
+
+## Host: may this bat start a dive at its target now? (Only one every DIVE_GAP seconds per dwarf.)
+func may_dive(m: Monster) -> bool:
+	if _clock - float(_dives.get(m.target_peer, -INF)) < DIVE_GAP:
+		return false
+	_dives[m.target_peer] = _clock
+	return true
+
+
 ## Host: a short word over a monster's head for everyone ("Dazed!").
 func note(m: Monster, text: String) -> void:
 	_ev_note.rpc(m.uid, text)

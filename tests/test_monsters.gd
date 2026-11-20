@@ -1148,3 +1148,83 @@ func test_dazed_shows_stars_and_sways() -> void:
 			check(body.transform.is_equal_approx(body_rest), "the shell is back in its place")
 		m.queue_free()
 	_teardown()
+
+
+## F460 (owner, Nov 20): bats circle you, then dive straight THROUGH you at twice their speed, leaving a trail, and
+## climb away on the far side without stopping.
+func test_bat_circles_then_dives_through_you() -> void:
+	await _setup()
+	var m := _spawn("cave_bat", Vector3(5, 0, 0))
+	m.alert(1)
+	var chest := player.global_position + Vector3.UP * 0.9
+	var circling_closest := INF
+	var dived := false
+	var dive_speed := 0.0
+	var closest := INF
+	var low := INF
+	var dir := Vector3.ZERO
+	var after: Array = []
+	for i in 1200:
+		await tree.physics_frame
+		var flat := Vector2(m.global_position.x - chest.x, m.global_position.z - chest.z).length()
+		if m.state == Monster.State.CHASE and not dived and i > 120:
+			circling_closest = minf(circling_closest, flat)
+		elif m.state == Monster.State.ATTACK and m._attack.get("dive", false):
+			dived = true
+			dir = m._dive_dir
+			dive_speed = maxf(dive_speed, m.velocity.length())
+			closest = minf(closest, m.global_position.distance_to(chest))
+			low = minf(low, m.global_position.y)
+		elif dived and m.state == Monster.State.RECOVER:
+			after.append([m.global_position, Vector2(m.velocity.x, m.velocity.z).length()])
+		elif dived:
+			break
+	check(dived, "it dived at you")
+	if not dived or after.is_empty():
+		_teardown()
+		return
+	check(circling_closest > 2.5, "while circling it keeps its distance (%.1f m)" % circling_closest)
+	check_near(dive_speed, float(Monsters.LIST.cave_bat.run) * Monster.DIVE_SPEED, 0.5, "it dives at twice its speed")
+	check(closest < 1.0, "it passes through you (%.2f m)" % closest)
+	var last: Vector3 = after[-1][0]
+	var out := Vector3(dir.x, 0, dir.z).normalized()
+	check((last - chest).dot(out) > 2.0, "it comes out on the far side (%.1f m past you)" % (last - chest).dot(out))
+	check(last.y > low + 1.0, "and climbs back up (%.1f m)" % (last.y - low))
+	var slowest := INF
+	for a in after:
+		slowest = minf(slowest, a[1])
+	check(slowest > float(Monsters.LIST.cave_bat.run) * 0.8, "it never stops (slowest %.1f m/s)" % slowest)
+	check(m._streak != null, "it left a trail")
+	check(ps.vitals.health < 100.0, "standing still, you got bitten")
+	_teardown()
+
+
+## F460: the dive is a straight line at where you stood; step aside and it shoots past.
+func test_sidestep_a_bat_dive() -> void:
+	await _setup()
+	var m := _spawn("cave_bat", Vector3(5, 0, 0))
+	m.alert(1)
+	var stepped := false
+	for i in 1200:
+		await tree.physics_frame
+		if not stepped and m.state == Monster.State.ATTACK:
+			stepped = true
+			var side := m._dive_dir.cross(Vector3.UP).normalized()
+			player.global_position += side * 3.0
+		if stepped and m.state == Monster.State.CHASE:
+			break
+	check(stepped, "it dived")
+	check_eq(ps.vitals.health, 100.0, "stepped aside: it missed")
+	_teardown()
+
+
+## F460: a pack takes turns: two bats never start a dive at the same dwarf at the same moment.
+func test_bats_take_turns_diving() -> void:
+	await _setup()
+	var a := _spawn("cave_bat", Vector3(5, 0, 0))
+	var b := _spawn("cave_bat", Vector3(-5, 0, 0))
+	a.target_peer = 1
+	b.target_peer = 1
+	check(auth.monsters.may_dive(a), "the first may dive")
+	check(not auth.monsters.may_dive(b), "the second waits its turn")
+	_teardown()
