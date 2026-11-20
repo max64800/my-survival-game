@@ -6569,3 +6569,4 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - **Still open:** the first ~3 s after loading run at ~10 FPS (first-time drawing on the graphics card); one session
   (2:01 pm) had 1.5 slow minutes on the graphics card that the robot can't make happen (likely another program
   using it). F266/F417 wait for the owner's next play.
+- **Full test run (600 checks):** 9 failed. 3 were mine (old tests said "only 5 creatures"; one built a model without its creature name): fixed, the miners are marked dungeon_only. The other 6 are in other chats' unfinished work (dwarf great swings, wall climbing). Also: another chat's F473 commit uses `blocked` without the line that makes it (nothing loaded for a while); their working file has the line. A scratch copy for testing didn't work (the big model files are stored separately by GitHub, the copy got placeholders).
