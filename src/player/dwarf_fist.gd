@@ -712,19 +712,40 @@ func _tip_dir(sk: Skeleton3D, tip: Vector3, handle: Vector3) -> Vector3:
 
 ## A raised sword/mace tips back until it clears his head (F389 chat 13: the owner's stick passes just behind his head
 ## in the wind-up; the dwarf's head is much bigger next to his short arm, and the same direction cut through it).
+## Also his face and beard (chat 14: sword hit 3's twirl cut through the beard): the keep-out balls on the head and neck
+## bones, the blade turned away from the ball it touches (and a little back, as before) until it clears them all.
 const HEAD_ROOM := 0.17  ## m round the middle of his head (and hair)
+const HEAD_FROM := 0.10  ## m of handle past the fist left out (his fist really sits beside his ear in the twirl)
+const HEAD_KEEP := 0.03  ## m the blade stays off his face and beard
 func _clear_head(sk: Skeleton3D, dir: Vector3) -> Vector3:
+	if _shapes.is_empty():
+		_fit_shapes(sk)
 	var sw := sk.global_transform
-	var head := sw * sk.get_bone_global_pose(sk.find_bone("Head")).origin + rig.global_basis.y.normalized() * 0.10
+	var head_b := sk.find_bone("Head")
+	var balls: Array = [[sw * sk.get_bone_global_pose(head_b).origin + rig.global_basis.y.normalized() * 0.10, HEAD_ROOM]]
+	for shape: Array in _shapes:
+		if shape[0] == head_b or sk.get_bone_name(shape[0]) == "neck_01":
+			balls.append([sw * sk.get_bone_global_pose(shape[0]) * (shape[1] as Vector3), float(shape[2]) + HEAD_KEEP])
 	var hand := sw * sk.get_bone_global_pose(_hands["_r"]).origin
 	var back := rig.global_basis.z.normalized()  # (he faces -Z)
 	var length := 0.8
 	var d := dir
-	for i in 12:
-		var t := clampf((head - hand).dot(d), 0.0, length)
-		if (hand + d * t).distance_to(head) >= HEAD_ROOM:
+	for i in 16:
+		var worst := 0.0
+		var away := Vector3.ZERO
+		for ball: Array in balls:
+			var c: Vector3 = ball[0]
+			var t := clampf((c - hand).dot(d), HEAD_FROM, length)
+			var q := hand + d * t
+			var need: float = float(ball[1]) - q.distance_to(c)
+			if need > worst:
+				worst = need
+				away = (q - c).normalized() if q.distance_to(c) > 1e-3 else back
+		if worst <= 0.0:
 			return d
-		var axis := d.cross(back)
+		var axis := d.cross((away + back * 0.5).normalized())
+		if axis.length() < 1e-3:
+			axis = d.cross(back)
 		if axis.length() < 1e-3:
 			return d
 		d = d.rotated(axis.normalized(), deg_to_rad(8.0))

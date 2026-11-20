@@ -16,8 +16,9 @@ extends RefCounted
 ## BAKED_VIDEO: SwordHit1-3, MaceHit1-3 (one light combo: click, click, click). The same frame layout.
 const BAKED := "res://assets/anim/one_kaykit.json"
 const BAKED_VIDEO := "res://assets/anim/one_video.json"
+const BAKED_UAL := "res://assets/anim/one_ual.json"  ## Quaternius UAL 2 sword moves (chat 14, tools/asset_forge/one_ual_bake.gd)
 const MOVES := ["Chop", "SliceDiag", "SliceFlat", "Stab", "JumpChop", "BlockAttack",
-	"SwordHit1", "SwordHit2", "SwordHit3", "MaceHit1", "MaceHit2", "MaceHit3"]
+	"SwordHit1", "SwordHit2", "SwordHit3", "MaceHit1", "MaceHit2", "MaceHit3", "UalCombo", "UalA", "UalB", "UalC", "UalHeavy"]
 const HIT_AT := 0.40
 const BLEND_IN := 0.12  ## share of a swing spent easing in from wherever his arms were
 const BLEND_OUT := 0.18  ## s easing back to his own arms after a swing
@@ -28,7 +29,7 @@ static var _clips := {}  ## name -> [length (s), frames per second, strike (s), 
 static func _load() -> void:
 	if not _clips.is_empty():
 		return
-	for file: String in [BAKED, BAKED_VIDEO]:
+	for file: String in [BAKED, BAKED_VIDEO, BAKED_UAL]:
 		_load_file(file)
 
 

@@ -21,6 +21,27 @@ const LIMBS := {
 }
 ## how much of the chest's turn (against the hips') each spine bone takes
 const SPINE := {"spine_01": 0.55, "spine_02": 0.85, "spine_03": 1.0}
+## The owner's own pick of the blade's turn round the handle (degrees, + = the way edgeturn= turns it in
+## one_video_preview.gd), at seconds into the clip; in between it rolls smoothly. "strike" = the clip's hit (as filmed).
+## Owner, Nov 20 (chat 14, close-up sheet): SwordHit1 top (1.20 s) 45, end 135 (the sword is sharp on both sides, so
+## 135 looks the same as -45: the blade rolls +45 -> 0 at the hit -> -45, never a big spin).
+const EDGE_TURN := {"SwordHit1": [[0.0, 45.0], [1.20, 45.0], ["strike", 0.0], [2.63, -45.0]]}
+
+
+## The blade's extra turn (degrees) `t` seconds into `clip` (EDGE_TURN, 0 for clips without one).
+func _edge_turn(clip: String, t: float, strike: float) -> float:
+	if not EDGE_TURN.has(clip):
+		return 0.0
+	var keys: Array = EDGE_TURN[clip]
+	var pts: Array = keys.map(func(k: Array) -> Vector2: return Vector2(strike if k[0] is String else float(k[0]), float(k[1])))
+	if t <= (pts[0] as Vector2).x:
+		return (pts[0] as Vector2).y
+	for i in range(1, pts.size()):
+		var a: Vector2 = pts[i - 1]
+		var b: Vector2 = pts[i]
+		if t <= b.x:
+			return lerpf(a.y, b.y, smoothstep(0.0, 1.0, (t - a.x) / maxf(b.x - a.x, 1e-3)))
+	return (pts[pts.size() - 1] as Vector2).y
 
 
 func _v(a: Array) -> Vector3:
@@ -78,6 +99,7 @@ func _init() -> void:
 			continue
 		var frames: Array = []
 		for f: Dictionary in src[clip].frames:
+			var t_now := frames.size() / fps
 			var g := {}
 			for b: String in LIMBS:
 				var d := _v(f[LIMBS[b][1]]).normalized()
@@ -109,7 +131,7 @@ func _init() -> void:
 			var hm: Array = f.hip_move
 			var hp := pel_parent.affine_inverse() * ((rest["pelvis"] as Transform3D).origin + Vector3(hm[0], hm[1], 0.0) * d_leg)
 			var h := _v(f.handle).normalized()
-			var e := _square(_v(f.edge), h)
+			var e := _square(_v(f.edge), h).rotated(h, deg_to_rad(_edge_turn(clip, t_now, float(src[clip].strike))))
 			frames.append({bones = bones, pelvis = [snappedf(hp.x, 1e-4), snappedf(hp.y, 1e-4), snappedf(hp.z, 1e-4)],
 				handle = [snappedf(h.x, 1e-4), snappedf(h.y, 1e-4), snappedf(h.z, 1e-4)],
 				edge = [snappedf(e.x, 1e-4), snappedf(e.y, 1e-4), snappedf(e.z, 1e-4)],

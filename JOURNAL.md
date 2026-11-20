@@ -6930,3 +6930,28 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - **Checks:** test_lampwick 29/29, test_skeleton_miners 9/9, test_dungeon 63/63, test_monsters 49/49 (its stone test
   now checks walk-through). One test_dungeon run crashed in the cave maker once (another chat saving a file mid-run);
   the rerun passed. test_dwarf's 3 known failures are other chats'.
+
+## November 20, 2026 (PC, dwarf-animations Claude, chat 14): sword turn picked, video copy dropped, UAL 2 sword moves (F389)
+- **Did:** rebuilt chat 13's scratch data (frames, tracking, scan, targets; the bake came out identical). Close-up sheet
+  of the sword's turn at "top" and "end" (the copper sword is sharp on both sides, so 180 degrees looks like 0: showed
+  0/45/90/135). **Owner picked top 45, end 135** (= -45): `one_video_bake.gd` EDGE_TURN rolls +45 -> 0 at the hit -> -45.
+  Picture sheets of sword hits 2 and 3, then a 3D page "Your Sword and Mace Videos" (https://claude.ai/artifact/595uD8oj1ttoSSkwNnAvuq,
+  recorder `one_swing_export.gd video=1`). **Owner: "still really bad", try free pack moves instead.**
+- **Licence check:** MoCap Online's free T.C. Sword pack (owner's first pick) forbids AI use ("AI usage is strictly
+  prohibited", AI retargeting named) and sharing the files: not usable (added to ANIMATION-RULES 2). Owner then said do
+  both others: **Quaternius UAL 2** (CC0, the dwarf's own pack) and **Mixamo Sword and Shield** (owner downloads it).
+- **UAL 2:** new `tools/asset_forge/one_ual_bake.gd` (chat 12's KayKit bake with each bone mapped to itself, the
+  sword's direction from the dwarf's own grip) -> `assets/anim/one_ual.json` (UalCombo, UalA/B/C, UalHeavy; loaded by
+  `DwarfOneSwing`). Page "UAL Sword Moves" (https://claude.ai/artifact/9DKaixigUvFYqYcpPPXmTj, `one_swing_export.gd ual=1`).
+  Waiting for the owner's verdict; nothing wired to the attacks yet.
+- **Hurdles (many Claude's own):** (1) the first chat's tracking job was cut off when the session ended: ran it again
+  step by step. (2) Close-ups too close, then his body hid the low sword from behind: pulled back, low weapons filmed from
+  behind his left. (3) Sword hit 2 hung down while his stick pointed up: the "no sudden flips" guard in
+  `one_hand_targets.py` kept the old direction for 27 frames in the fast backhand; now it only fixes the depth guess.
+  (4) My stick-debug drawing had the angle upside down (90 = up in the finder), which made a correct reading look wrong
+  for a while. (5) Hit 3's chop went back through his legs: a lowered short stick now points in front. (6) Weak stick
+  readings (the white door frame, his arm against the white shirt) jumped to "straight up": weak readings that jump or lie
+  along the forearm keep the last good one; strong ones stay (hit 1's wind-up sword really lies along his forearm).
+  (7) `_clear_head` only guarded the top of his head: it now also checks his face and beard balls. (8) Test renders
+  differ by a few pixels run to run: compared by eye instead.
+- **Tests:** `test_dwarf_fist` 6/7: the one-handed check passes; the great-axe Spin check still fails (a fist 3.8 cm off, the old open item from chat 11).

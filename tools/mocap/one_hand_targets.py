@@ -138,6 +138,23 @@ def build(scratch, name):
     hip_rel = smooth((hip_px - feet_px) / leg_px, 2.0)
     # the stick: picture angle -> 3D (depth from how short it looks; its sign: the one nearer square to the forearm)
     rows = sc["rows"]
+    # (a weak reading that jumps far from the last good one is the door frame, not the stick: keep the last good one;
+    # sword hit 3's end read "straight up" while his stick pointed down; chat 14)
+    # (and a weak reading pointing back up his forearm is the arm against his white shirt: sword hit 3's end, mace hit 2)
+    rows = [dict(r) for r in rows]; good_r = None
+    for k, r in enumerate(rows):
+        s = r["stick"]
+        el = px[k, 14, :2] - px[k, 16, :2]  # wrist -> elbow in the picture (y down)
+        arm_ang = np.degrees(np.arctan2(-el[1], el[0]))
+        along_arm = abs((s["angle"] - arm_ang + 180) % 360 - 180) < 35
+        if good_r is not None and s["score"] < 1500:  # (strong readings stay: in hit 1 the wind-up sword really hangs
+            # down behind his shoulder, in line with his forearm)
+            jump = abs((s["angle"] - good_r["angle"] + 180) % 360 - 180)
+            if along_arm or jump > 60:
+                r["stick"] = dict(good_r)
+                continue
+        if s["score"] >= 1500:
+            good_r = s
     ang = np.radians([r["stick"]["angle"] for r in rows])
     s2 = np.stack([np.cos(ang), np.sin(ang)], 1)  # (picture: x right = his left, y up)
     lens = np.array([r["stick"]["length"] for r in rows]); Lref = np.percentile(lens, 95)
@@ -156,12 +173,20 @@ def build(scratch, name):
             if s2[i, 1] > 0.3 and fist_up[i] > 0.0 and sg > 0:  # (a raised stick that looks short, the fist above his
                 # shoulder: it leans BACK, behind his head; owner, Nov 20)
                 score += 10.0
+            if s2[i, 1] < -0.3 and sg < 0:  # (a lowered stick that looks short points down IN FRONT: behind, it went
+                # through his legs at sword hit 3's chop; chat 14)
+                score += 10.0
             if best is None or score < best[0]:
                 best = (score, h)
         handle[i] = best[1]
-    for i in range(1, N):  # no sudden flips
+    for i in range(1, N):  # no sudden flips of the depth guess (toward / away from the camera)
         if np.dot(handle[i], handle[i - 1]) < -0.2:
-            handle[i] = handle[i - 1]
+            alt = handle[i] * np.array([1.0, 1.0, -1.0])
+            if np.dot(alt, handle[i - 1]) >= -0.2:
+                handle[i] = alt
+            # (else the picture really shows the stick swung across: believe it. Keeping the last frame's direction
+            # got stuck for 27 frames in sword hit 2's fast backhand: the sword hung down while his stick pointed up;
+            # chat 14)
     handle = unit(smooth(handle, 1.5))
     # where the stick's tip is against his body, from the middle of his shoulders, in shoulder widths (x his left,
     # z front) and shoulder heights (y up): the dwarf's short arm can't carry his fist as far out, so the game turns the sword until its tip points

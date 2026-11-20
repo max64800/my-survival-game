@@ -5,12 +5,20 @@ extends SceneTree
 ## the page shows the one the clip is for).
 ## Clips: "<Weapon>_<Move>_<light|heavy>" (the game's light and heavy swing times, Combat.WEAPONS), and "<Weapon>_Stand".
 ##   godot --headless --audio-driver Dummy --fixed-fps 60 --path . --script res://tools/asset_forge/one_swing_export.gd
-##     -- <out.glb> [shield=1] claude=one_swing_export
+##     -- <out.glb> [shield=1] [video=1] claude=one_swing_export
+## video=1 (chat 14): the owner's own filmed hits instead (assets/anim/one_video.json): "<Weapon>_Combo" = hits 1-2-3
+## back to back at the filmed speed, "<Weapon>_Hit1".."_Hit3" alone, and "<Weapon>_Stand".
+## ual=1 (chat 14): Quaternius UAL 2's sword moves (assets/anim/one_ual.json), each "Sword_<move>" at its own length.
 ## By the dwarf-animations Claude, chat 12, Nov 20, 2026 (from great_swing_export.gd).
 const WEAPONS := {
 	"Sword": ["sword_copper", "sword", ["SliceDiag", "SliceFlat", "Stab", "Chop"]],
 	"Mace": ["mace_copper", "mace", ["Chop", "SliceDiag", "JumpChop", "SliceFlat"]],
 }
+const VIDEO := {
+	"Sword": ["sword_copper", ["SwordHit1", "SwordHit2", "SwordHit3"]],
+	"Mace": ["mace_copper", ["MaceHit1", "MaceHit2", "MaceHit3"]],
+}
+const UAL := {"Sword": ["sword_copper", ["UalCombo", "UalA", "UalB", "UalC", "UalHeavy"]]}
 const AFTER := 0.45  ## s recorded after the swing (easing back)
 const EVERY := 3  ## record every 3rd frame (60 fps game -> 20 fps clip; the page blends between)
 const NODES := ["turn", "Sword", "Mace", "shield"]
@@ -20,6 +28,9 @@ func _init() -> void:
 	var args := OS.get_cmdline_user_args()
 	var out: String = args[0]
 	var with_shield := "shield=1" in args
+	var video := "video=1" in args
+	var ual := "ual=1" in args
+	var weapons: Dictionary = UAL if ual else (VIDEO if video else WEAPONS)
 	var model := DwarfModel.new()
 	root.add_child(model)
 	for i in 5:
@@ -31,8 +42,8 @@ func _init() -> void:
 	var shield_copy: Node3D = null
 	if with_shield:
 		model.set_shield("shield_copper")
-	for wname: String in WEAPONS:
-		var wdef: Array = WEAPONS[wname]
+	for wname: String in weapons:
+		var wdef: Array = weapons[wname]
 		model.set_held(wdef[0])
 		for i in 30:
 			rig.set_motion(0.0, true, false)
@@ -41,6 +52,21 @@ func _init() -> void:
 		if with_shield and shield_copy == null:
 			shield_copy = (rig.shield_grip.get_child(rig.shield_grip.get_child_count() - 1) as Node3D).duplicate()
 		lib.add_animation(wname + "_Stand", await _record(rig, wname, "", 0.0, 1.0))
+		if ual:
+			for mv: String in wdef[1]:
+				var d := DwarfOneSwing.clip_length(mv)
+				lib.add_animation("%s_%s" % [wname, mv], await _record(rig, wname, mv, d, d + AFTER))
+			continue
+		if video:
+			var hits: Array = wdef[1]
+			var total := 0.0
+			for h: String in hits:
+				total += DwarfOneSwing.clip_length(h)
+			lib.add_animation(wname + "_Combo", await _record(rig, wname, "+".join(hits), total, total + AFTER))
+			for n in hits.size():
+				var d := DwarfOneSwing.clip_length(hits[n])
+				lib.add_animation("%s_Hit%d" % [wname, n + 1], await _record(rig, wname, hits[n], d, d + AFTER))
+			continue
 		var spd: Dictionary = Combat.WEAPONS[wdef[1]]
 		for mv: String in wdef[2]:
 			for kind: String in ["light", "heavy"]:
@@ -126,11 +152,18 @@ func _record(rig: DwarfRig, wname: String, move: String, dur: float, seconds: fl
 			anim.track_set_path(k, NodePath(node))
 			list.append(k)
 		node_tracks[node] = list
-	if move != "":
-		rig.play_upper("o/" + move, dur)
+	# ("A+B+C": each starts the moment the one before ends, at its own filmed length; one move: `dur`)
+	var chain: PackedStringArray = move.split("+") if move != "" else PackedStringArray()
+	var next_at := 0.0
+	var ci := 0
 	var most_wrist := 0.0
 	var frames := int(seconds * 60.0)
 	for f in frames:
+		if ci < chain.size() and float(f) / 60.0 >= next_at - 1e-6:
+			var d := dur if chain.size() == 1 else DwarfOneSwing.clip_length(chain[ci])
+			rig.play_upper("o/" + chain[ci], d)
+			next_at += d
+			ci += 1
 		rig.set_motion(0.0, true, false)
 		await sk.skeleton_updated
 		most_wrist = maxf(most_wrist, rig.fist.wrist_turn)

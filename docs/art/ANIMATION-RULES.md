@@ -20,6 +20,8 @@ KayKit moves (owner OK'd); next job: sword and mace from the same pack.
   dodges, hits, deaths. Copied the chat 11 way, the owner liked them.
 - Kevin Iglesias melee (no stated licence), KinemIQ, Modular RPG Characters: not usable in a public repo.
 - Mixamo: fine in a sold game but its files can't go in the public repo. Cascadeur free: no commercial use.
+- MoCap Online free T.C. Sword pack: its licence forbids any AI use (AI retargeting named) and sharing the files: not usable (chat 14).
+- The owner's own filmed videos (chat 13-14, `one_hand_*.py`): too hard to read from one front camera; owner: "still really bad".
 - **Godot's import retarget renames every bone** and breaks his other moves: retarget in code.
 
 ## 2b. How to copy a pack move onto him (chat 11, works: `tools/asset_forge/great_kaykit_bake.gd`)

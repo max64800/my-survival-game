@@ -10,6 +10,9 @@ var item := "sword_copper"
 var shots: Array = []  ## [clip, seconds]
 var edge_turn := 0.0  ## edgeturn=<deg>: the blade turned round the handle (to show the owner choices)
 var pole := Vector2(0.7, -0.7)  ## pole=x:y: where the shield arm's elbow points
+var close := 0.0  ## close=<m>: close-ups, the camera this far from the weapon's middle (aimed at it), same two views
+var tag := ""  ## tag=<text>: added to the picture names (to keep several edgeturn runs apart)
+var mid := Vector3.ZERO
 var model: DwarfModel
 var cam: Camera3D
 var frames := 0
@@ -21,6 +24,8 @@ func _init() -> void:
 		if a.begins_with("out="): out = a.substr(4)
 		if a.begins_with("item="): item = a.substr(5)
 		if a.begins_with("edgeturn="): edge_turn = float(a.substr(9))
+		if a.begins_with("close="): close = float(a.substr(6))
+		if a.begins_with("tag="): tag = a.substr(4)
 		if a.begins_with("pole="): pole = Vector2(float(a.substr(5).split(":")[0]), float(a.substr(5).split(":")[1]))
 		if a.begins_with("shots="):
 			for s: String in a.substr(6).split(","):
@@ -91,11 +96,18 @@ func _process(_d: float) -> bool:
 		print("guard miss %.2f arm" % rig.fist.guard_miss)
 		print("%s @%.2f  handle wanted %s got %s (%d deg apart)  fist %s" % [s[0], s[1], want, got, roundi(rad_to_deg(want.angle_to(got))),
 			rig.fist.fist_center - model.global_position])
+		if close > 0.0:  # (aim at the weapon's middle, from the same side as the full pictures)
+			mid = tool.global_position + got * 0.3
+			cam.look_at_from_position(mid + (SPOTS.front - Vector3(0, 0.9, 0)).normalized() * close, mid)
 	elif k == 4 or k == 7:
 		var view := "front" if k == 4 else "back"
-		root.get_viewport().get_texture().get_image().save_png("%s/%s_%.2f_%s.png" % [out, s[0], s[1], view])
+		root.get_viewport().get_texture().get_image().save_png("%s/%s_%.2f_%s%s.png" % [out, s[0], s[1], view, tag])
 		if k == 4:
-			cam.look_at_from_position(SPOTS.back, Vector3(0, 0.75, 0))
+			if close > 0.0:
+				var from := Vector3(0.25, 1.1, 1.0) if mid.y > 0.9 else Vector3(-0.9, 0.35, 0.7)  # (over his shoulder; a low weapon from behind his left: his body hid it)
+				cam.look_at_from_position(mid + from.normalized() * close, mid)
+			else:
+				cam.look_at_from_position(SPOTS.back, Vector3(0, 0.75, 0))
 			_show_shield(rig, true)
 	return false
 
