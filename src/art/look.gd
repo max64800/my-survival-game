@@ -74,10 +74,39 @@ static var _forged := {}
 
 static func forged(folder: String, id: String) -> Node3D:
 	var path := "res://assets/models/%s/%s.glb" % [folder, id]
+	if _loading.has(path):
+		_collect(path)
 	if not _forged.has(path):
 		_forged[path] = load(path) if ResourceLoader.exists(path) else null
 	var scene: PackedScene = _forged[path]
 	return scene.instantiate() as Node3D if scene else null
+
+
+## F266/F417 (Nov 20): every creature look is a 4-5 MB file. Read from the drive the first time it showed up, it froze
+## the game 0.35-0.85 s per creature (a pack of new looks: 1.4-2 s). Now helper threads read every file in these folders
+## while the loading screen is up; `finish_preloading` hands them over before play starts.
+static var _loading := {}
+
+
+static func start_preloading(folders: Array) -> void:
+	for folder: String in folders:
+		var dir := "res://assets/models/%s" % folder
+		for f in ResourceLoader.list_directory(dir):
+			if f.ends_with(".glb"):
+				var path := "%s/%s" % [dir, f]
+				if not _forged.has(path) and not _loading.has(path):
+					if ResourceLoader.load_threaded_request(path, "PackedScene", true) == OK:
+						_loading[path] = true
+
+
+static func finish_preloading() -> void:
+	for path: String in _loading.keys():
+		_collect(path)
+
+
+static func _collect(path: String) -> void:
+	_loading.erase(path)
+	_forged[path] = ResourceLoader.load_threaded_get(path)  # (waits only if that file isn't read yet)
 
 
 static func _load() -> void:

@@ -6517,3 +6517,25 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   holes (F236, now said 3×), snails on walls and ceilings (F474, F475). Four answers, written in
   `docs/decisions/2026-11-20-creature-climbing.md`; handed to a new chat. Mistake: my FEEDBACK.md save also took one
   line another chat had just changed (F389, the great axe chat's note). Their text, unchanged, but it went in under my name.
+
+
+## Nov 20 (eve, PC, FPS Claude): the FPS drops found and fixed (F266, F417)
+- **Read the play logs:** in the last 20 sessions, every one had 1-4 freezes of 0.3-1.4 s, mostly in the first
+  minute or two, in caves and in dungeons. They showed up as huge "physics" numbers in the LOW FPS lines.
+- **What those numbers mean:** Godot's physics number is the worst physics step of the last second, and it includes
+  game code run inside the step (not only the physics engine). So the robot got a new mode, `perfcheck hitch`,
+  that splits every slow frame into game code and engine, and counts the new solid things each frame.
+- **Cause:** with creatures switched on, the robot caught a 2.1 s freeze in game code just as 13 new bodies appeared:
+  creatures. `perfcheck spawncost` timed each kind: a Rock Snail, Cave Bat or Rock Beetle took 0.35-0.85 s to
+  appear, every time it wore a look not seen yet (4 looks each, 12 files of 4-5 MB with dozens of pictures, read
+  from the drive while the game waited). Spiders and the Lampwick miners: 0.01-0.03 s.
+- **Fix:** helper threads read every creature look while the loading screen is up (Look.start_preloading /
+  finish_preloading, hooked into main.gd). Loading wasn't slower. Creatures now appear in 0.007-0.025 s. Robot walk
+  with creatures on: worst freeze during play 2.9 s -> 0.18 s (only in the first 3 s after loading).
+- **Mistakes and hurdles:** (1) Earlier chats "ruled out creatures" because the perfcheck robot always switches
+  creatures off, so they never spawned. The new modes take `monsters` to keep them on. (2) The first try at the proof
+  run couldn't start: another chat was mid-edit on the dwarf and creature files (parse errors). Waited and ran it
+  later instead of touching their files. (3) main.gd had another chat's unsaved changes: only my 4 lines committed.
+- **Still open:** the first ~3 s after loading run at ~10 FPS (first-time drawing on the graphics card); one session
+  (2:01 pm) had 1.5 slow minutes on the graphics card that the robot can't make happen (likely another program
+  using it). F266/F417 wait for the owner's next play.

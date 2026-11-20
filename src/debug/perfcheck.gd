@@ -9,6 +9,10 @@ var _main: Node
 
 func _ready() -> void:
 	_main = get_parent()
+	if OS.get_cmdline_user_args().has("hitch"):
+		if OS.get_cmdline_user_args().has("monsters"):
+			_main._monsters = true
+		_hitch_start()
 	_run.call_deferred()
 
 
@@ -51,6 +55,14 @@ func _run() -> void:
 		await _wait(0.25)
 	if args.has("warm"):
 		await _warmup(nofog)
+		get_tree().quit()
+		return
+	if args.has("spawncost"):
+		await _spawn_cost()
+		get_tree().quit()
+		return
+	if args.has("hitch"):
+		await _hitch_walk()
 		get_tree().quit()
 		return
 	print("ready to play %.1f s after the program started (cave layout %d)" % [Time.get_ticks_msec() / 1000.0, CaveMaker.layout])
@@ -171,6 +183,145 @@ func _warmup(nofog: bool) -> void:
 		var secs := (Time.get_ticks_usec() - s0) / 1000000.0
 		print("  %5.0f s  %3.0f fps  graphics card %5.1f ms (worst %5.1f)  draws %4.0f" % [(Time.get_ticks_msec() - t0) / 1000.0,
 			frames / secs, gpu / frames, worst, Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)])
+	print("======================================")
+
+
+## F417/F266 (Nov 20): play logs show single physics steps of 0.3-1.4 s (Godot's physics number is the worst step of
+## the last second). `perfcheck hitch`: walk the dwarf around for 90 s and split every step into game code
+## (_physics_process scripts, timed between a first and a last script) and the engine (everything else in the step).
+var _ph_start := 0
+var _ph_end := 0
+var _ph_scripts := 0.0
+var _ph_last_proc := 0
+var _ph_t0 := 0
+var _new_bodies := 0
+var _new_shapes := 0
+var _new_faces := 0
+var _new_nodes := 0
+
+
+class _Stamp extends Node:
+	var cb: Callable
+	func _physics_process(_d: float) -> void:
+		cb.call()
+
+
+func _hitch_start() -> void:
+	var first := _Stamp.new()
+	first.process_physics_priority = -1000000
+	first.cb = func() -> void: _ph_start = Time.get_ticks_usec()
+	var last := _Stamp.new()
+	last.process_physics_priority = 1000000
+	last.cb = func() -> void:
+		_ph_end = Time.get_ticks_usec()
+		_ph_scripts = (_ph_end - _ph_start) / 1000.0
+	add_child(first)
+	add_child(last)
+	get_tree().node_added.connect(func(n: Node) -> void:
+		_new_nodes += 1
+		if n is CollisionObject3D:
+			_new_bodies += 1
+		elif n is CollisionShape3D:
+			_new_shapes += 1
+			var sh := (n as CollisionShape3D).shape
+			if sh is ConcavePolygonShape3D:
+				_new_faces += (sh as ConcavePolygonShape3D).get_faces().size() / 3)
+	_ph_t0 = Time.get_ticks_msec()
+	_ph_last_proc = Time.get_ticks_usec()
+	_hitch_loop()
+
+
+func _hitch_loop() -> void:
+	while true:
+		await get_tree().process_frame
+		var now := Time.get_ticks_usec()
+		var frame := (now - _ph_last_proc) / 1000.0
+		_ph_last_proc = now
+		var engine_after := (now - _ph_end) / 1000.0 if _ph_end > 0 else 0.0  # physics engine step after the scripts
+		if frame > 100.0:
+			print("  HITCH %6.1f s  frame %6.0f ms · physics scripts %6.1f ms · engine after scripts %6.1f ms · new: %d nodes, %d bodies, %d shapes, %d mesh faces · doing %s" % [
+				(Time.get_ticks_msec() - _ph_t0) / 1000.0, frame, _ph_scripts, engine_after,
+				_new_nodes, _new_bodies, _new_shapes, _new_faces, FreezeWatch.doing])
+		_new_nodes = 0
+		_new_bodies = 0
+		_new_shapes = 0
+		_new_faces = 0
+
+
+## Walk a slow circle for 90 s, then jump 60 m away twice (new cave to load), like exploring.
+func _hitch_walk() -> void:
+	var dwarf: Dwarf = _main.dwarf
+	var home := dwarf.global_position
+	print("
+===== HITCH WALK from %s =====" % home.round())
+	var t0 := Time.get_ticks_msec()
+	var jumps := [30.0, 60.0]
+	while Time.get_ticks_msec() - t0 < 90000:
+		await get_tree().physics_frame
+		var s := (Time.get_ticks_msec() - t0) / 1000.0
+		dwarf._yaw = s * 0.2
+		if not jumps.is_empty() and s >= jumps[0]:
+			jumps.pop_front()
+			dwarf.global_position = home + Vector3(60 if jumps.size() == 1 else -60, 0, 0)
+			print("  jump at %.0f s to %s" % [s, dwarf.global_position.round()])
+	print("======================================")
+
+
+## F417/F266: how long each creature takes to appear (its first time and its second), and the next frame after it
+## (first-time drawing of its looks). `perfcheck spawncost`.
+func _spawn_cost() -> void:
+	var mgr: MonsterManager = _main.get_node("Authority/Monsters")
+	var dwarf: Dwarf = _main.dwarf
+	await _wait(3.0)
+	print("
+===== SPAWN COST =====")
+	if OS.get_cmdline_user_args().has("preload"):
+		var t := Time.get_ticks_usec()
+		for f in DirAccess.get_files_at("res://assets/models/creatures"):
+			if f.ends_with(".glb"):
+				Look.forged("creatures", f.get_basename()).free()
+		print("  preloaded every creature look in %.0f ms" % ((Time.get_ticks_usec() - t) / 1000.0))
+	for kind: String in ["rock_snail", "rock_beetle", "cave_bat"]:
+		var d: Dictionary = Monsters.LIST[kind]
+		for round in 2:
+			var t := Time.get_ticks_usec()
+			var mdl := MonsterModel.build(d.shape, d.color, d.size, false, kind, 5, "", -1)
+			var t_build := (Time.get_ticks_usec() - t) / 1000.0
+			var count := MonsterModel.variant_count(kind)
+			t = Time.get_ticks_usec()
+			var f := Look.forged("monsters", "%s_v0" % kind) if count > 0 else null
+			var t_inst := (Time.get_ticks_usec() - t) / 1000.0
+			var meshes: Array = f.find_children("*", "MeshInstance3D", true, false) if f else []
+			var tris := 0
+			for mi: MeshInstance3D in meshes:
+				for i in mi.mesh.get_surface_count():
+					tris += mi.mesh.surface_get_array_index_len(i) / 3
+			print("  %-12s build %6.1f ms · instantiate only %6.1f ms · %d variants · %d parts · %d triangles" % [kind, t_build, t_inst, count, meshes.size(), tris])
+			t = Time.get_ticks_usec()
+			add_child(mdl)
+			print("      add to tree %6.1f ms" % ((Time.get_ticks_usec() - t) / 1000.0))
+			mdl.queue_free()
+			if f:
+				f.free()
+	for kind: String in Monsters.LIST.keys():
+		for round in 2:
+			var uid := mgr._next_uid
+			mgr._next_uid += 1
+			var t := Time.get_ticks_usec()
+			mgr._ev_spawn(uid, kind, dwarf.global_position + Vector3(0, 0.5, -5.0), false, 99999, "")
+			var make := (Time.get_ticks_usec() - t) / 1000.0
+			await get_tree().process_frame
+			t = Time.get_ticks_usec()
+			await get_tree().process_frame
+			await get_tree().process_frame
+			var draw := (Time.get_ticks_usec() - t) / 1000.0
+			print("  %-18s %s  made in %7.1f ms · next 2 frames %7.1f ms" % [kind, "1st" if round == 0 else "2nd", make, draw])
+			await _wait(0.5)
+			var m: Node = mgr.monsters.get(uid)
+			if m:
+				mgr.monsters.erase(uid)
+				m.queue_free()
+			await _wait(0.3)
 	print("======================================")
 
 

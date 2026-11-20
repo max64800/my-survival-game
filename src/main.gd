@@ -392,6 +392,7 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 		CaveMaker.use_layout(CaveMaker.DUNGEON_ONLY if dungeon_test else _new_layout)  # (the dungeon test: no caves, owner Nov 20)
 	print("Cave seed: ", seed, " (cave layout ", CaveMaker.layout, ")")
 	FreezeWatch.doing = "making the cave"
+	Look.start_preloading(["creatures"])  # F266/F417: creature looks read on helper threads, no freeze when one appears
 	_make_environment()
 	world = World.new()
 	world.name = "World"
@@ -760,6 +761,9 @@ func _process(delta: float) -> void:
 		# F417: a 1.4 s hitch lands right here in many sessions. Each piece is timed, and the first 3 s of play get
 		# their own name in the watch log, so the next session says which part is slow.
 		var t := Time.get_ticks_usec()
+		Look.finish_preloading()
+		FreezeWatch.time_part("creature looks", t)
+		t = Time.get_ticks_usec()
 		FreezeWatch.doing = "warming up rock chunks"
 		RockShatter.warm_up(self)  # the first dig no longer hitches (owner, Nov 18)
 		FreezeWatch.time_part("rock chunk warm-up", t)
