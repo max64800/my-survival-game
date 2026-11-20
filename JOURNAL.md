@@ -7155,3 +7155,6 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   (4) Test games crashed at start twice: 5 other games were open and the PC's memory was full; waited for it to free up.
   (5) The full test suite takes over 10 minutes: the first run was cut off; ran it again in the background.
   (6) The first junk draw came 1 second late (it used the list from before the junk was added); fixed.
+  (7) My first commit rebuilt JOURNAL/FEEDBACK from a copy taken before other chats committed theirs, so it dropped
+  their newest entries (the Spire, Pell's step 3, F518): put back in the next commit. Lesson: build "saved copy + my
+  lines" right before committing, and check the change is only my lines.
