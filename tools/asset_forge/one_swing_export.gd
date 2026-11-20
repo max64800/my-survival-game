@@ -1,0 +1,186 @@
+extends SceneTree
+## Records the game dwarf swinging the sword and the mace with the KayKit warrior's one-handed moves (F389 chat 12:
+## DwarfOneSwing + DwarfFist, exactly as the game plays them, frame by frame) into one .glb for the "Sword and Mace
+## Swings" 3D page: the dwarf's shaped bones, the sword, the mace and the shield (each its own node, moved every frame;
+## the page shows the one the clip is for).
+## Clips: "<Weapon>_<Move>_<light|heavy>" (the game's light and heavy swing times, Combat.WEAPONS), and "<Weapon>_Stand".
+##   godot --headless --audio-driver Dummy --fixed-fps 60 --path . --script res://tools/asset_forge/one_swing_export.gd
+##     -- <out.glb> [shield=1] claude=one_swing_export
+## By the dwarf-animations Claude, chat 12, Nov 20, 2026 (from great_swing_export.gd).
+const WEAPONS := {
+	"Sword": ["sword_copper", "sword", ["SliceDiag", "SliceFlat", "Stab", "Chop"]],
+	"Mace": ["mace_copper", "mace", ["Chop", "SliceDiag", "JumpChop", "SliceFlat"]],
+}
+const AFTER := 0.45  ## s recorded after the swing (easing back)
+const EVERY := 3  ## record every 3rd frame (60 fps game -> 20 fps clip; the page blends between)
+const NODES := ["turn", "Sword", "Mace", "shield"]
+
+
+func _init() -> void:
+	var args := OS.get_cmdline_user_args()
+	var out: String = args[0]
+	var with_shield := "shield=1" in args
+	var model := DwarfModel.new()
+	root.add_child(model)
+	for i in 5:
+		await process_frame
+	var rig := model.dwarf_rig
+	var sk := rig.skeleton
+	var lib := AnimationLibrary.new()
+	var tools := {}
+	var shield_copy: Node3D = null
+	if with_shield:
+		model.set_shield("shield_copper")
+	for wname: String in WEAPONS:
+		var wdef: Array = WEAPONS[wname]
+		model.set_held(wdef[0])
+		for i in 30:
+			rig.set_motion(0.0, true, false)
+			await process_frame
+		tools[wname] = (rig.grip.get_child(rig.grip.get_child_count() - 1) as Node3D).duplicate()
+		if with_shield and shield_copy == null:
+			shield_copy = (rig.shield_grip.get_child(rig.shield_grip.get_child_count() - 1) as Node3D).duplicate()
+		lib.add_animation(wname + "_Stand", await _record(rig, wname, "", 0.0, 1.0))
+		var spd: Dictionary = Combat.WEAPONS[wdef[1]]
+		for mv: String in wdef[2]:
+			for kind: String in ["light", "heavy"]:
+				var dur: float = spd[kind + "_speed"]
+				lib.add_animation("%s_%s_%s" % [wname, mv, kind], await _record(rig, wname, mv, dur, dur + AFTER))
+	# the scene: the dwarf's skeleton + skin, and the weapons (their own nodes, moved every frame)
+	var scene := Node3D.new()
+	scene.name = "dwarf"
+	var turn := Node3D.new()
+	turn.name = "turn"
+	scene.add_child(turn)
+	var sk2 := Skeleton3D.new()
+	sk2.name = "Skeleton3D"
+	turn.add_child(sk2)
+	for i in sk.get_bone_count():
+		sk2.add_bone(sk.get_bone_name(i))
+	for i in sk.get_bone_count():
+		sk2.set_bone_parent(i, sk.get_bone_parent(i))
+		sk2.set_bone_rest(i, sk.get_bone_rest(i))
+	sk2.reset_bone_poses()
+	for mi: MeshInstance3D in sk.find_children("*", "MeshInstance3D", false, false):
+		if not mi.visible or mi.skin == null:
+			continue
+		var m2 := MeshInstance3D.new()
+		m2.name = mi.name
+		m2.mesh = mi.mesh
+		m2.skin = mi.skin
+		if mi.material_override:
+			m2.material_override = mi.material_override
+		sk2.add_child(m2)
+		m2.skeleton = NodePath("..")
+	for mi: MeshInstance3D in sk2.get_children():
+		_slim(mi.mesh)
+	for wname: String in tools:
+		var holder := Node3D.new()
+		holder.name = wname
+		scene.add_child(holder)
+		holder.add_child(tools[wname])
+	if shield_copy:
+		var holder := Node3D.new()
+		holder.name = "shield"
+		scene.add_child(holder)
+		holder.add_child(shield_copy)
+	var player := AnimationPlayer.new()
+	player.name = "AnimationPlayer"
+	scene.add_child(player)
+	player.add_animation_library("", lib)
+	_own(scene, scene)
+	root.add_child(scene)
+	await process_frame
+	var doc := GLTFDocument.new()
+	doc.image_format = "JPEG"
+	doc.lossy_quality = 0.8
+	var st := GLTFState.new()
+	var err := doc.append_from_scene(scene, st)
+	err = err if err != OK else doc.write_to_filesystem(st, out)
+	print("EXPORT ", out, " err=", err)
+	quit()
+
+
+## Plays `move` ("" = stand) for `dur` s and records `seconds` of it, game time (frame by frame, like the game).
+func _record(rig: DwarfRig, wname: String, move: String, dur: float, seconds: float) -> Animation:
+	var sk := rig.skeleton
+	var R := Transform3D(Basis(Vector3.UP, PI), Vector3.ZERO)  # (the page looks at his front from +Z)
+	var anim := Animation.new()
+	anim.length = seconds
+	anim.loop_mode = Animation.LOOP_LINEAR
+	var tracks := {}
+	for i in sk.get_bone_count():
+		var path := NodePath("turn/Skeleton3D:" + sk.get_bone_name(i))
+		var tp := anim.add_track(Animation.TYPE_POSITION_3D)
+		anim.track_set_path(tp, path)
+		var tr := anim.add_track(Animation.TYPE_ROTATION_3D)
+		anim.track_set_path(tr, path)
+		var ts := anim.add_track(Animation.TYPE_SCALE_3D)
+		anim.track_set_path(ts, path)
+		tracks[i] = [tp, tr, ts]
+	var node_tracks := {}
+	for node: String in ["turn", wname, "shield"]:
+		var list := []
+		for type in [Animation.TYPE_POSITION_3D, Animation.TYPE_ROTATION_3D, Animation.TYPE_SCALE_3D]:
+			var k := anim.add_track(type)
+			anim.track_set_path(k, NodePath(node))
+			list.append(k)
+		node_tracks[node] = list
+	if move != "":
+		rig.play_upper("o/" + move, dur)
+	var most_wrist := 0.0
+	var frames := int(seconds * 60.0)
+	for f in frames:
+		rig.set_motion(0.0, true, false)
+		await sk.skeleton_updated
+		most_wrist = maxf(most_wrist, rig.fist.wrist_turn)
+		if f % EVERY != 0:
+			continue
+		var t := float(f) / 60.0
+		var at := {"turn": R * sk.global_transform, wname: R * rig.grip.global_transform}
+		if rig.shield_grip.get_child_count() > 0:
+			at["shield"] = R * rig.shield_grip.global_transform
+		for node: String in at:
+			var tf: Transform3D = at[node]
+			var k: Array = node_tracks[node]
+			anim.position_track_insert_key(k[0], t, tf.origin)
+			anim.rotation_track_insert_key(k[1], t, tf.basis.get_rotation_quaternion())
+			anim.scale_track_insert_key(k[2], t, tf.basis.get_scale())
+		for i in sk.get_bone_count():
+			var tt: Array = tracks[i]
+			# (every bone's place, every frame: the head and hair hang on helper bones off the root, chat 11)
+			anim.position_track_insert_key(tt[0], t, sk.get_bone_pose_position(i))
+			anim.rotation_track_insert_key(tt[1], t, sk.get_bone_pose_rotation(i))
+			if f == 0:
+				anim.scale_track_insert_key(tt[2], t, sk.get_bone_pose_scale(i))
+	for k in range(anim.get_track_count() - 1, -1, -1):  # (tracks left empty, the shield's without one: dropped)
+		if anim.track_get_key_count(k) == 0:
+			anim.remove_track(k)
+	print("RECORDED %s %s %.2f s  most wrist turn %.0f deg" % [wname, move, dur, most_wrist])
+	return anim
+
+
+## Smaller file for the page: no bump pictures, colour pictures half size (this tool's own copy: the game is untouched).
+func _slim(mesh: Mesh) -> void:
+	if mesh == null:
+		return
+	for i in mesh.get_surface_count():
+		var mat := mesh.surface_get_material(i) as StandardMaterial3D
+		if mat == null:
+			continue
+		mat = mat.duplicate() as StandardMaterial3D
+		mat.normal_enabled = false
+		mat.normal_texture = null
+		if mat.albedo_texture:
+			var img := mat.albedo_texture.get_image()
+			if img.is_compressed():
+				img.decompress()
+			img.resize(maxi(img.get_width() / 2, 8), maxi(img.get_height() / 2, 8))
+			mat.albedo_texture = ImageTexture.create_from_image(img)
+		mesh.surface_set_material(i, mat)
+
+
+func _own(n: Node, owner_node: Node) -> void:
+	for c in n.get_children():
+		c.owner = owner_node
+		_own(c, owner_node)

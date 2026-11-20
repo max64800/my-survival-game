@@ -232,3 +232,41 @@ func test_shield_worn_on_the_forearm() -> void:
 		var chest := sk.global_transform * sk.get_bone_global_pose(sk.find_bone("spine_03")).origin
 		check(face.dot(rig.fist.left_center - chest) > 0.0, "%s: the shield's face points away from him" % what)
 	m.queue_free()
+
+
+## The sword's and the mace's swings (DwarfOneSwing, F389 chat 12): the KayKit warrior's moves take over his body, the
+## weapon stays in the fist, and at the game's hit (0.40 of the swing) it points out in front of him, not to his side.
+func test_one_handed_swings_hold_and_hit_in_front() -> void:
+	var m := DwarfModel.new()
+	tree.root.add_child(m)
+	var rig := m.dwarf_rig
+	for item: String in ["sword_copper", "mace_copper"]:
+		m.set_held(item)
+		for f in 15:
+			rig.set_motion(0.0, true, false)
+			await frames(1)
+		for move: String in ["SliceDiag", "Chop", "Stab"]:
+			check(DwarfOneSwing.has_move(move), "the baked move %s is there" % move)
+			rig.play_upper("o/" + move, 0.6)
+			var hit_seen := false
+			for f in 40:
+				rig.set_motion(0.0, true, false)
+				await rig.skeleton.skeleton_updated
+				if not hit_seen and rig.one_t >= DwarfOneSwing.HIT_AT:
+					hit_seen = true
+					check(rig.one_weight > 0.99, "%s %s: the move has fully taken over at the hit" % [item, move])
+					var line := _handle_line(rig)
+					var off := _off_line(rig.fist.fist_center, line)
+					check(off < 0.01, "%s %s: the handle runs through the fist at the hit (%.1f cm off)" % [item, move, off * 100.0])
+					var fwd := -rig.global_basis.z.normalized()
+					var d: Vector3 = line[1]
+					d.y = 0.0
+					check(d.length() < 0.2 or d.normalized().dot(fwd) > 0.3,
+						"%s %s: the weapon points out in front at the hit (%.2f)" % [item, move, d.normalized().dot(fwd)])
+			check(hit_seen, "%s %s: the swing reached its hit" % [item, move])
+			var until := Time.get_ticks_msec() + 2000  # (the swing's end, then its 0.18 s fade; tests run faster than real time)
+			while rig.one_weight >= 0.01 and Time.get_ticks_msec() < until:
+				rig.set_motion(0.0, true, false)
+				await frames(1)
+			check(rig.one_weight < 0.01, "%s %s: back to his own arms after the swing" % [item, move])
+	m.queue_free()

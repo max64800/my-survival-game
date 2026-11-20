@@ -61,6 +61,10 @@ const GRIP_SLIDE_MAX := 0.05  ## m the fist may sit off the grip's middle
 ## are the Lampwick Foreman's (DwarfGreatSwing); both arms reach the handle (two-bone reach) and it runs through both
 ## fists. Walking or running (not swinging), the weapon rests on his right shoulder in one hand instead.
 const TWO_HANDED := ["axe_2h", "mace_2h"]
+## One-handed weapons that swing the pack's moves (DwarfOneSwing, F389 chat 12; the owner didn't like their old moves).
+const ONE_HANDED := ["sword", "mace"]
+var _one_w := 0.0  ## how much of the one-handed swing's pose he takes this frame (0..1)
+var _one: Dictionary = {}  ## that pose
 const ELBOW_OUT := Vector3(0.8, 0.5, 0.2)  ## where the great weapons' elbows point: out, down, back (shares)
 const ELBOW_OWN := 0.6  ## share of the move's own elbow bend kept (the rest: ELBOW_OUT)
 const GAP_MOST := 0.75  ## m: the furthest up the handle the right fist goes (below the head)
@@ -124,6 +128,16 @@ func _process_modification_with_delta(_delta: float) -> void:
 	holding = has_tool and rig.tool_look in HANDLE_LOOKS
 	if holding:
 		_close("_r", sk)
+	# the sword's and the mace's swings (DwarfOneSwing, F389 chat 12): the pack's move over his own arms, eased in and out
+	_one_w = 0.0
+	if not rig.tool_look in TWO_HANDED:  # (standing, the legs and hips take the swing's moves; walking, they keep the walk)
+		_plant = move_toward(_plant, 1.0 if rig.move_speed < 0.3 else 0.0, _delta * 4.0)
+	if holding and rig.tool_look in ONE_HANDED:
+		var op := rig.one_pose(_delta)
+		if rig.one_weight > 0.0 and not op.is_empty():
+			_one_w = rig.one_weight
+			_one = op
+			_apply_pose(sk, op, _plant, _one_w)
 	if rig.shield_grip.get_child_count() > 0:
 		_close("_l", sk)
 		_wear_shield(sk)
@@ -155,6 +169,9 @@ func _hold(sk: Skeleton3D) -> void:
 	want.basis = want.basis.orthonormalized()
 	var extra := rig.hold_turn(want.basis)
 	want.basis = Basis(extra) * want.basis
+	if _one_w > 0.0:  # (a sword or mace swing: the weapon points the way the pack's does, its edge leading)
+		var aim := _one_aim(sk, _one).get_rotation_quaternion()
+		want.basis = Basis(want.basis.get_rotation_quaternion().slerp(aim, _one_w))
 	var before := sk.get_bone_global_pose(hand).basis.get_rotation_quaternion()
 	var inv := sk_world.basis.inverse()  # (directions in skeleton space: the dwarf is a bit wider than tall)
 	var ax := Vector3.FORWARD if rig.tool_look == "spear" else Vector3.UP  # (the spear points along its holder's -Z)
@@ -183,7 +200,7 @@ func _hold(sk: Skeleton3D) -> void:
 	if made.w < 0.0:
 		made = -made  # (the short way round)
 	wrist_turn = rad_to_deg(made.get_angle())
-	var most := lerpf(WRIST_MAX, 180.0, rig._spear_aim)  # (the thrust: the spear points straight ahead, whatever it takes)
+	var most := lerpf(WRIST_MAX, 180.0, maxf(rig._spear_aim, _one_w))  # (the thrust: the spear points straight ahead, whatever it takes)
 	if wrist_turn > most:
 		g.basis = Basis(Quaternion.IDENTITY.slerp(made, most / wrist_turn) * made.inverse()) * g.basis
 		_set_turn(sk, hand, g)
@@ -285,7 +302,7 @@ var _bone_ids := {}
 var _leg_rest := 0.0
 var _keep_carry := Vector3.ZERO  ## the guard's push last frame (the dwarf's own space), its start this frame
 const KEEP_EASE := 0.85  ## share of last frame's push kept as this frame's start
-func _apply_pose(sk: Skeleton3D, p: Dictionary, legs: float) -> void:
+func _apply_pose(sk: Skeleton3D, p: Dictionary, legs: float, w := 1.0) -> void:
 	for n: String in DwarfGreatSwing.ORDER:
 		if not p.bones.has(n):
 			continue
@@ -299,8 +316,9 @@ func _apply_pose(sk: Skeleton3D, p: Dictionary, legs: float) -> void:
 			continue
 		var before := sk.get_bone_pose_rotation(b)
 		_set_turn(sk, b, Transform3D(Basis(p.bones[n] as Quaternion), Vector3.ZERO))
-		if leg and legs < 1.0:
-			sk.set_bone_pose_rotation(b, before.slerp(sk.get_bone_pose_rotation(b), legs))
+		var k := w * (legs if leg else 1.0)
+		if k < 1.0:
+			sk.set_bone_pose_rotation(b, before.slerp(sk.get_bone_pose_rotation(b), k))
 	var pel: int = _bone_ids.get("pelvis", -1)
 	if pel >= 0 and legs > 0.0:
 		var th := sk.find_bone("thigh_l")
@@ -312,7 +330,7 @@ func _apply_pose(sk: Skeleton3D, p: Dictionary, legs: float) -> void:
 		var leg_now := sk.get_bone_global_pose(th).origin.distance_to(sk.get_bone_global_pose(cl).origin) \
 			+ sk.get_bone_global_pose(cl).origin.distance_to(sk.get_bone_global_pose(ft).origin)
 		var move: Vector3 = ((p.pelvis as Vector3) - sk.get_bone_rest(pel).origin) * (leg_now / maxf(_leg_rest, 0.01))
-		sk.set_bone_pose_position(pel, sk.get_bone_pose_position(pel) + move * legs)
+		sk.set_bone_pose_position(pel, sk.get_bone_pose_position(pel) + move * legs * w)
 
 
 ## One collarbone turned (up to CLAVICLE_MAX) so the shoulder reaches toward `target` (world).
@@ -623,6 +641,21 @@ func _turn_fist(sk: Skeleton3D, side: String, dir_sk: Vector3) -> void:
 	var g := sk.get_bone_global_pose(hand_b)
 	g.basis = Basis(Quaternion((to_sk.basis * a).normalized(), dir_sk)) * g.basis
 	_set_turn(sk, hand_b, g)
+
+
+## The tool holder's turn (world) for a one-handed pack swing: the handle along the pack weapon's, the blade's edge
+## facing the way the pack's weapon leads the swing.
+func _one_aim(sk: Skeleton3D, p: Dictionary) -> Basis:
+	var skb := sk.global_transform.basis
+	var dir := (skb * (p.handle as Vector3)).normalized()
+	var E := skb * (p.edge as Vector3)
+	E = E - E.dot(dir) * dir
+	if E.length() < 1e-3:
+		E = -rig.global_basis.z - (-rig.global_basis.z).dot(dir) * dir
+	E = E.normalized()
+	var blade := _blade_of(rig.grip.get_child(rig.grip.get_child_count() - 1))
+	var lb := Basis(blade, Vector3.UP, blade.cross(Vector3.UP))
+	return Basis(E, dir, E.cross(dir)) * lb.inverse()
 
 
 ## Which way the blade sticks out from the handle (tool holder space, square to the handle; cached per tool): the

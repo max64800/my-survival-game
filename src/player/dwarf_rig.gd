@@ -209,6 +209,16 @@ var _stance_clock := 0.0  ## s into the stance's slow loop
 var great_move := ""  ## the great swing playing now ("" = none)
 var great_t := 0.0  ## how far into it (0..1)
 var _great_clock := 0.0  ## s into that swing
+## The sword's and the mace's swings now (DwarfOneSwing, F389 chat 12): the pose and how much of it he takes (0..1;
+## eases in at the start of a swing, out after it).
+var one: Dictionary = {}
+var one_weight := 0.0
+var one_move := ""  ## the one-handed swing playing now ("" = none)
+var one_t := 0.0  ## how far into it (0..1)
+var _one_from: Dictionary = {}
+var _one_from_w := 0.0
+var _one_started := -1.0
+var _one_clock := 0.0
 var _carry_arm := 0.0  ## how far the right arm is lifted into the shoulder carry  ## how much the spear is turned to point straight ahead (the thrust)
 
 
@@ -736,6 +746,30 @@ func great_pose(delta: float) -> Dictionary:
 	return great
 
 
+## The sword's / mace's swing pose this frame (DwarfFist lays the weapon by it): the "o/" swing playing now, eased
+## in from wherever he was; after it, the last pose fades out (one_weight -> 0) back to his own arms.
+func one_pose(delta: float) -> Dictionary:
+	var clip := _upper_clip if tree.get("parameters/upper/active") else ""
+	if clip.begins_with("o/") and tree.has_animation(clip):
+		if _one_started != _upper_start:
+			_one_started = _upper_start
+			_one_from = one
+			_one_from_w = one_weight
+			_one_clock = 0.0
+		else:
+			_one_clock += delta  # (game time, frame by frame)
+		one_move = clip.trim_prefix("o/")
+		one_t = clampf(_one_clock * _upper_scale / tree.get_animation(clip).length, 0.0, 1.0)
+		var k := smoothstep(0.0, DwarfOneSwing.BLEND_IN, one_t)
+		var now := DwarfOneSwing.swing(one_move, one_t)
+		one = DwarfGreatSwing.blend(_one_from, now, k) if _one_from_w > 0.0 else now
+		one_weight = lerpf(_one_from_w, 1.0, k)
+	else:
+		one_move = ""
+		one_weight = move_toward(one_weight, 0.0, delta / DwarfOneSwing.BLEND_OUT)
+	return one
+
+
 ## Where the tool holder sits in the fist for a tool look and an animation (see GRIPS).
 static func grip_transform(look: String, clip: String) -> Transform3D:
 	var base := Transform3D(Basis.from_euler(DwarfModel.hand_tool_rot), DwarfModel.hand_tool_pos)
@@ -898,6 +932,13 @@ func _build_tree(body: Node3D) -> void:
 		timer.length = DwarfGreatSwing.clip_length(move)  # (the moves' own length: played at their own speed unless the game says)
 		great_lib.add_animation(move, timer)
 	tree.add_animation_library("g", great_lib)
+	# the sword's and the mace's swing timers (DwarfOneSwing places the arms and the weapon), F389 chat 12
+	var one_lib := AnimationLibrary.new()
+	for move: String in DwarfOneSwing.MOVES:
+		var timer := tree.get_animation(ANIMS.idle).duplicate() as Animation
+		timer.length = DwarfOneSwing.clip_length(move)
+		one_lib.add_animation(move, timer)
+	tree.add_animation_library("o", one_lib)
 	var bt := AnimationNodeBlendTree.new()
 	# Legs: blend between idle, walk, jog and sprint by speed.
 	var move := AnimationNodeBlendSpace1D.new()
