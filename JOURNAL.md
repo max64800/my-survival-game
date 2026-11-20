@@ -6055,3 +6055,32 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   starting cave's wood for the owner: about 300-330 rootwood (600-650 planks): 14-17 thick roots x 12, 3 Root Trees
   x 30, up to 12 hanging roots x 2, 10 twigs. My slip: an untyped `var x :=` the game refused; and the great axe
   chat's punching file didn't compile for a while, so I waited before testing.
+
+
+## November 20, 2026 (PC, dwarf-animations Claude, chat 8): great axe hips, knees, a keep-out guard (F389, not finished)
+- **Did:** pushed chats 5-7's work (owner OK). Hips now take 40% of the twist and 30% of the lean, a moment ahead of
+  the chest; knees bend (`knee`) and he lunges (`fwd`) while both legs bend so the feet stay planted
+  (`DwarfFist._hips`). Swings got the rules' timing: wind-up 0.30 s, a short hold, a strike that speeds up into the
+  hit, a recovery that slows down (`DwarfGreatSwing`: `hold`, `through` middle keys, `ease`). New target heads from
+  the reference sheet; middle keys on the way up and down. The tuner checks the moments around every key, writes its
+  numbers into the file (`write=1`), measures single moments (`at=Chop:0.15`) and checks 120 moments per swing
+  (`check=1`). New: a keep-out guard (`DwarfFist._keep_out`): ~640 small balls on his skin; every frame the handle is
+  slid/tipped out of them (also covers combos). Test `test_great_swings_keep_fists_and_handle_room` (60 moments per
+  swing). Video tool set up (Python 3.12, MediaPipe, model; self-check OK). Great-weapon swoosh starts after the
+  wind-up. 3D page for the owner: "Great Axe Swings" (`tools/asset_forge/great_swing_export.gd` records it).
+- **Hurdles (Claude's own):** `pass` is a GDScript keyword (renamed `through`). Tuning alone failed 5 rounds: the
+  strike crosses most of its arc in 2% of the swing, so 3-6 check moments jumped over dips; then the handle cut his
+  belly between stance and wind-up whatever the keys were. First guard (one egg per bone) found nothing: a
+  PackedVector3Array copied out of a Dictionary, so every point went into a throwaway copy; then the eggs were far
+  too fat (the "head" egg is mostly beard) and shoved the axe round to his front: replaced by small balls.
+  `Basis.get_column` doesn't exist in Godot 4 (use `basis[i]`): it broke the build for every chat for a few minutes
+  (the dungeons Claude told me; fixed). Returning a constant key pose let the code write into it (read-only crash in
+  the test): now a copy. Artifacts don't serve .glb: sent as two base64 text parts.
+- **Still open:** latest 120-moment check: Sweep passes; Chop 1 cm at 31%; Slam right fist slips 3 cm at 73%. The
+  test hasn't passed yet. The guard pushed the chop's recovery (head a bit high). Then picture sheet, video.
+- **F417 test (owner asked):** new robot mode `-- claude=fps_warmup seed=42 perfcheck warm [nofog]`: stand at the
+  wake-up spot, turn slowly, print the graphics card's time every 2 s for 2 minutes. Seed 42: slow only the first 4-6 s,
+  then 60 FPS at ~6 ms (fog on). Again with the game's saved shader recipes cleared (backed up and put back after):
+  same, only 6 s slow. So neither the fog nor first-time shader making explains the owner's 1.5 slow minutes (55-72 ms).
+  Left: his world/spot (40,000 nodes; that session had no video and its save was overwritten), or another program
+  using the graphics card at the same time (other chats' Blender renders or test games). Not fixed yet.

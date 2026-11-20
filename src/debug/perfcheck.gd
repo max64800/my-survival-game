@@ -41,8 +41,18 @@ func _line(name: String, r: Dictionary, base: Dictionary = {}) -> void:
 
 
 func _run() -> void:
+	var args := OS.get_cmdline_user_args()
+	var nofog := args.has("nofog")
 	while not _main.is_ready_to_play():
+		if nofog:  # from the very start, so the fog's drawing never warms up
+			var amb := _main.get_node_or_null("Ambience") as Ambience
+			if amb and amb.env:
+				amb.env.volumetric_fog_enabled = false
 		await _wait(0.25)
+	if args.has("warm"):
+		await _warmup(nofog)
+		get_tree().quit()
+		return
 	print("ready to play %.1f s after the program started (cave layout %d)" % [Time.get_ticks_msec() / 1000.0, CaveMaker.layout])
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	Engine.max_fps = 0
@@ -131,6 +141,37 @@ func _run() -> void:
 	print("  objects drawn: %d, lights: %d, window %s" % [Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME), lights.size(), get_viewport().get_visible_rect().size])
 	print("======================================")
 	get_tree().quit()
+
+
+## F417 (Nov 20): the owner's play log showed 10-19 FPS for the first ~1.5 min after loading, the graphics card taking
+## 55-72 ms a frame, then a steady 60 in the same place. `perfcheck warm [nofog]`: stand where you wake up, look slowly
+## all the way round (like the owner did), and print the graphics card's time every 2 s for 2 minutes (frame cap on, like
+## a real game). `nofog` keeps the volumetric fog off from the start.
+func _warmup(nofog: bool) -> void:
+	var vp := get_viewport().get_viewport_rid()
+	RenderingServer.viewport_set_measure_render_time(vp, true)
+	var dwarf: Dwarf = _main.dwarf
+	var env: Environment = (_main.get_node("Ambience") as Ambience).env
+	if nofog:
+		env.volumetric_fog_enabled = false
+	print("\n===== WARM-UP CHECK (fog %s) at %s =====" % ["off" if nofog else "on", dwarf.global_position.round()])
+	var t0 := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - t0 < 120000:
+		var frames := 0
+		var gpu := 0.0
+		var worst := 0.0
+		var s0 := Time.get_ticks_usec()
+		while Time.get_ticks_usec() - s0 < 2000000:
+			await get_tree().process_frame
+			dwarf._yaw += 0.0035  # one slow turn about every 30 s
+			var g := RenderingServer.viewport_get_measured_render_time_gpu(vp)
+			gpu += g
+			worst = maxf(worst, g)
+			frames += 1
+		var secs := (Time.get_ticks_usec() - s0) / 1000000.0
+		print("  %5.0f s  %3.0f fps  graphics card %5.1f ms (worst %5.1f)  draws %4.0f" % [(Time.get_ticks_msec() - t0) / 1000.0,
+			frames / secs, gpu / frames, worst, Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)])
+	print("======================================")
 
 
 ## A monster appears 6 m in front of the dwarf; 30 s of measuring while it fights.
