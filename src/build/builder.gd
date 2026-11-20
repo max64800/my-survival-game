@@ -765,8 +765,8 @@ func request_place_blueprint(peer_id: int, json: String, origin: Vector3, rot: i
 		return "The chest can't go inside rock"
 	var bp: Blueprint = r.blueprint
 	for c in bp.carve_cells(origin, rot):
-		if auth.world.sdf_at(c) < 0.0 and auth.world.material_at(c) in [Mat.BORDER, Mat.EDGE]:
-			return "It would carve border rock"
+		if auth.world.sdf_at(c) < 0.0 and auth.world.material_at(c) in [Mat.BORDER, Mat.EDGE, Mat.DWARF]:
+			return "It would carve border rock or old dwarf stone"
 	var box_id: int = auth.storage.create_box("builder", chest_pos, rot * PI / 2.0, peer_id)
 	_ev_site.rpc(box_id, json, origin, rot, [])
 	return ""
@@ -805,7 +805,7 @@ func _ev_site(box_id: int, json: String, origin: Vector3, rot: int, built: Array
 	for c in ground.ring:  # the walkway: cleared 2 m high (border rock stays)
 		for h in [0.5, 1.5]:
 			var w: Vector3 = c + Vector3.UP * h
-			if not auth.world.material_at(w) in [Mat.BORDER, Mat.EDGE]:
+			if not auth.world.material_at(w) in [Mat.BORDER, Mat.EDGE, Mat.DWARF]:
 				carve.append(w)
 	carve.sort_custom(func(a, b): return a.distance_to(chest_pos) < b.distance_to(chest_pos))
 	var fill: Array = ground.foot + ground.ring
