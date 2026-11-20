@@ -155,7 +155,7 @@ func reset_amount() -> void:
 ## Which tab a recipe goes in, by the kind of thing it makes.
 static func tab_of(recipe_id: String) -> String:
 	match Items.kind(Recipes.get_recipe(recipe_id).output):
-		"pickaxe", "axe", "hammer", "lantern", "lens", "waterskin", "tonic", "throw", "horn":
+		"pickaxe", "axe", "hammer", "shovel", "lantern", "lens", "waterskin", "tonic", "throw", "horn":  # (shovel: owner, Nov 20)
 			return "Tools"
 		"weapon", "shield", "ammo":
 			return "Weapons"

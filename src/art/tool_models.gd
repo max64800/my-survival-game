@@ -98,6 +98,10 @@ static func build(look: String, col: Color, layers: int, item_id: String = "") -
 			var band := _add(root, _torus(0.3, 0.335), trim, "metal", Vector3(0.07, 0.1, 0), Vector3(0, 0, PI / 2.0))
 			band.scale = Vector3(1, 1.2, 1)
 			_add(root, _sphere(0.07), trim, "metal", Vector3(0.1, 0.1, 0))
+		"shovel":
+			# (Only if its hand-built model is missing: assets/models/items/masons_shovel.glb.) A broad stone blade.
+			_handle(root, 0.66)
+			_add(root, _box(Vector3(0.24, 0.3, 0.025)), col, head_surface, Vector3(0, 0.86, 0))
 		"crossbow":
 			_add(root, _box(Vector3(0.06, 0.06, 0.55)), WOOD, "wood", Vector3(0, 0.05, -0.15))
 			var bow := _add(root, _cyl(0.018, 0.018, 0.6, 6), col, head_surface, Vector3(0, 0.07, -0.38), Vector3(0, 0, PI / 2.0))
