@@ -15,6 +15,7 @@ const POSE_SEND := 0.1
 const SPAWN_CHECK := 2.0
 const BAT_KEY := 200000  ## each cave's sleeping bat roost (room index + this)
 const DUNGEON_KEY := 300000  ## a dungeon room's creatures (DUNGEON_KEY + dungeon index * 100 + room group)
+const DUNGEON_FIRE_ICE := 0.125  ## 1 in 8 dungeon creatures is a fiery red or icy blue one (owner, Nov 20: gems.md)
 const DUNGEON_NEAR := 30.0  ## a dungeon room's creatures come when a player is this close (its rooms are close together)
 const DUNGEON_RESPAWN := 3600.0  ## creatures move back into a cleared dungeon room after an hour (decisions: "3 in-game
                                  ## days", assumed; there is no day clock yet)
@@ -227,7 +228,8 @@ func _spawn_dungeon_group(_room: Dictionary, g: Dictionary) -> Array:
 			at = (hit.position as Vector3) + Vector3.DOWN * 0.3 if not hit.is_empty() else DungeonMap.to_world(g.d, local)
 		var uid := _next_uid
 		_next_uid += 1
-		_ev_spawn.rpc(uid, kind, at, leader, g.key, "")
+		var variant: String = ["red", "blue"].pick_random() if randf() < DUNGEON_FIRE_ICE else ""
+		_ev_spawn.rpc(uid, kind, at, leader, g.key, variant)
 		var mon: Monster = monsters.get(uid)
 		if mon:  # (it stays in its room and only notices you there: Monster.may_step, nearest_noticer)
 			mon.dungeon = g.d
@@ -560,10 +562,11 @@ func whirlwind(peer: int) -> int:
 
 
 ## Ember/Rime/Blight gems in a weapon add buildup on every hit.
+## Bog Jade / Forge Garnet / Frost Sapphire in a weapon: a chance on every hit to add a whole stack.
 func _gem_buildup(m: Monster, gb: Dictionary) -> void:
-	for k in {"burn": "burn", "chill": "chill", "poisoned": "poison"}:
-		if gb.has(k):
-			m.add_buildup({"burn": "burn", "chill": "chill", "poisoned": "poison"}[k], gb[k])
+	for k in ["poison", "burn", "chill"]:
+		if randf() < gb.get(k + "_chance", 0.0):
+			m.add_buildup(k, Ailments.FULL)
 
 
 ## Host: one hit lands on a monster (sword, bolt...).
@@ -771,7 +774,7 @@ func _kill(m: Monster, peer: int) -> void:
 		spawn_cloud(m.global_position + Vector3.UP * 0.5, dc.radius, dc.time, dc.rate, 0.0)
 	var xp: int = m.data.xp * (Monsters.LEADER.xp if m.leader else 1) * (Monsters.VARIANT_STATS.xp if m.variant != "" else 1)
 	# Everything that dies turns to stone (owner, Nov 18): nothing drops now; its loot is locked inside the statue and
-	# comes out when you mine it (with its stone, and 1 in 20 a gem).
+	# comes out when you mine it (with its stone, and 1 in 50 a gem).
 	var loot := []
 	if m.variant != "":
 		var v: Dictionary = Monsters.VARIANTS[m.variant]
@@ -958,7 +961,7 @@ func _judge_incoming() -> void:
 						sb[k] = sb.get(k, 0.0) + me.progress.block_bonus()[k]
 				else:
 					sb = sb.duplicate()
-				sb["parry_mult"] = me.progress.parry_mult(def.weapon, def.shield)  # Sword ★50, Shield ★100
+				sb["parry_mult"] = me.progress.parry_mult(def.weapon, def.shield) * (1.0 + sb.get("parry_window", 0.0))  # Sword ★50, Shield ★100, Edge Quartz
 				result = Combat.defend(hit.damage, def.pressed_ago, def.holding, def.weapon, def.shield, def.tier, hit.crushing, sb)
 				if result.result == "hit" and dwarf.get("running") and me.progress.has_star("running", 75) and randf() < 0.2:
 					result = {result = "dodge", damage = 0.0, stun = 0.0, stamina = 0.0}  # Running ★75: they miss you on the run
@@ -970,10 +973,14 @@ func _judge_incoming() -> void:
 				if result.result == "block":
 					ask_blocked(hit.uid)  # the host wears the shield (and a Blight gem poisons the attacker)
 				result.damage *= 1.0 - me.vitals.buff_total("guard_" + Monsters.food_guard(m.kind))  # meat of its kind (food plan)
+				result.damage *= 1.0 - me.vitals.gear.get("guard_all", 0.0)  # Stone Amber armor
 				me.vitals.take_damage(result.damage)
-				# Poison/fire/frost buildup: all of it on a hit, half through a block, none on a parry.
-				var share: float = {"hit": 1.0, "block": 0.5}.get(result.result, 0.0)
+				if result.result == "hit" and result.damage > 0.0:
+					ask_hit_back(hit.uid, result.damage)  # Edge Quartz / Storm Topaz armor (the host checks)
+				# Poison/fire/frost buildup: all of it on a hit, none on a parry. Through a block: fire all of it,
+				# frost half, poison none (owner, Nov 20).
 				for kind in hit.get("buildup", {}):
+					var share: float = {"hit": 1.0, "block": BLOCK_SHARE.get(kind, 0.5)}.get(result.result, 0.0)
 					var started := me.vitals.add_ailment(kind, hit.buildup[kind] * share)
 					if started != "":
 						result.ailment = started
@@ -1000,7 +1007,39 @@ func _judge_incoming() -> void:
 	_incoming = still
 
 
-## We blocked a hit with a Blight-gem shield: poison the attacker (host).
+const BLOCK_SHARE := {"burn": 1.0, "chill": 0.5, "poison": 0.0}  ## how much of each effect gets through a block
+
+
+## A creature hit us: Edge Quartz armor hurts it back, Storm Topaz armor may stun it (host).
+func ask_hit_back(uid: int, damage: float) -> void:
+	if auth.is_host():
+		request_hit_back(uid, damage, auth.local_peer_id())
+	else:
+		_rpc_hit_back.rpc_id(1, uid, damage)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_hit_back(uid: int, damage: float) -> void:
+	if auth.is_host():
+		request_hit_back(uid, damage, multiplayer.get_remote_sender_id())
+
+
+func request_hit_back(uid: int, damage: float, peer: int) -> void:
+	if _block_ok.get(uid, -1) != peer or not is_finite(damage):
+		return  # only a swing that was aimed at you, once
+	_block_ok.erase(uid)
+	var m: Monster = monsters.get(uid)
+	var ps := auth.get_player(peer)
+	if m == null or not m.is_alive() or ps == null:
+		return
+	var ab := Gems.armor_bonus(ps.inventory)
+	var back := roundi(clampf(damage, 0.0, 100.0) * ab.get("thorns", 0.0))
+	var stun := float(m.data.get("stun", 50)) if randf() < ab.get("stun_back", 0.0) else 0.0  # a full stun meter
+	if back > 0 or stun > 0.0:
+		_hurt_monster(m, peer, back, stun)
+
+
+## We blocked a hit with a Bog Jade shield: maybe poison the attacker (host).
 func ask_blocked(uid: int) -> void:
 	if auth.is_host():
 		request_blocked(uid, auth.local_peer_id())
@@ -1026,8 +1065,8 @@ func request_blocked(uid: int, peer: int) -> void:
 	var shield_at := Inventory.equip_index("shield")
 	auth.wear_slot(ps, shield_at if not ps.inventory.get_slot(shield_at).is_empty() else ps.hand_slot())
 	var sb := Gems.bonus(Gems.shield_slot(ps.inventory))
-	if sb.has("block_poison"):
-		m.add_buildup("poison", sb.block_poison)
+	if randf() < sb.get("block_poison", 0.0):  # Bog Jade shield
+		m.add_buildup("poison", Ailments.FULL)
 
 
 ## True if a live monster stands on (or just above) the rock at `p`: you can't dig the ground out from
@@ -1096,10 +1135,9 @@ func request_parried(uid: int, stun_amount: float, peer: int = 0) -> void:
 	if ps:
 		var sb := Gems.bonus(Gems.shield_slot(ps.inventory))
 		stun_amount = clampf(stun_amount, 0.0, Combat.STUN_SHIELD_PARRY) * (1.0 + sb.get("parry_stun", 0.0))
-		if sb.has("parry_burn"):
-			m.add_buildup("burn", sb.parry_burn)
-		if sb.has("parry_chill"):
-			m.add_buildup("chill", sb.parry_chill)
+		for k in ["burn", "chill"]:  # Forge Garnet / Frost Sapphire shield: a chance to give the attacker a stack
+			if randf() < sb.get("parry_" + k, 0.0):
+				m.add_buildup(k, Ailments.FULL)
 		auth.heal(peer, sb.get("parry_heal", 0.0))
 	m.stun.add(stun_amount)
 	if not m.stun.is_stunned():
@@ -1139,10 +1177,9 @@ const HIT_STOP_HEAVY := 0.11  ## ... on a big hit
 
 # ================================================================== stone statues (owner, Nov 18)
 # Everything that dies turns to stone where it lies. Mine it with a pickaxe (hits by size: data.statue_hits) for its
-# stone and its loot (1 in 20 also a gem). Left alone it crumbles to dust after STATUE_LIFE. The host keeps the list;
+# stone and its loot (1 in 50 also a gem). Left alone it crumbles to dust after STATUE_LIFE. The host keeps the list;
 # every computer shows its own stone body (Statue).
 const STATUE_LIFE := 300.0     ## seconds before an unmined statue crumbles away
-const STATUE_GEM_CHANCE := 0.05  ## 1 in 20 has a gem inside (any normal gem)
 const STATUE_REACH := 2.5      ## extra reach (m): the body may have rolled a little from where it died
 var statues := {}  ## (host) statue id -> {pos, kind, loot, hits, needed, left}
 var _next_statue := 1
@@ -1153,8 +1190,8 @@ func add_statue(m: Monster, loot: Array) -> int:
 	var needed: int = m.data.get("statue_hits", 4)
 	var items := loot.duplicate()
 	items.append(["stone", needed])  # (one stone for each hit it takes)
-	if randf() < STATUE_GEM_CHANCE:
-		items.append([Gems.item_id(Gems.NORMAL.keys().pick_random()), 1])
+	if randf() < Gems.STATUE_CHANCE:  # half the time the creature's own gem (spider: Bog Jade, red: Forge Garnet...)
+		items.append([Gems.item_id(Gems.roll(Gems.VARIANT_GEM.get(m.variant, Gems.CREATURE_GEM.get(m.kind, "")))), 1])
 	var id := _next_statue
 	_next_statue += 1
 	statues[id] = {pos = m.global_position, kind = m.kind, loot = items, hits = 0, needed = needed, left = STATUE_LIFE}

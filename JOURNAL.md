@@ -6199,3 +6199,25 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   used F436 and F437, so I renumbered mine F445. Then that fix commit swept in the animation chat's files, which they
   had staged (git add) but not saved, including two 20 MB .blend files. I told them instead of undoing it. Lesson:
   commit with `git commit <my files>` so only my own files go in, never a plain commit after git add.
+## November 20, 2026 (Mac, Claude): gems rebuilt (owner's plan), new poison / fire / frost
+- **Owner's plan** (several rounds of tables): gems are the long grind. 9 gems with real names (Edge Quartz, Stone
+  Amber, Wind Amethyst, Deep Onyx, Blood Ruby, Storm Topaz, Bog Jade, Forge Garnet, Frost Sapphire), small numbers
+  (2% at the weakest), 3 levels: Rough → Cut (3 Rough + 10 gold) → Polished (3 Cut + 30 gold). Copper gear has 1 slot,
+  now armor too (head, chest, legs, feet). The wood axe is a tool, the great axe a weapon. Taking a gem out: 5 gold.
+  Drops: every dungeon's last chest 1 Rough (its own 2 gems), bosses 50% Rough, big dungeons' last chest 50% Cut
+  (the only Cut source), statues 2% (half the time the creature's own gem). Full plan: `docs/design/gems.md`.
+- **Owner's effects:** poison 1 damage/s per stack, 10 s, up to 3 stacks (30 at most), a block stops it; fire
+  3 damage/s for 5 s and it goes through a block; frost 10% slower per stack, 5 stacks = frozen. Rock Snail spit = 1
+  poison stack, spiders 3 bites = 1 stack, red/blue creatures are 1 in 8 inside dungeons.
+- **Built:** `gems.gd` rewritten (levels, slots, armor bonus, dungeon gems), `ailments.gd` (stacks), Gem Bench window
+  (combine buttons, gem tooltips), host `request_combine`, armor gems (stamina refill, healing, resist, less damage,
+  hit back, stun back), tool gems on the wood axe, statue / dungeon / boss drops. Tests: gems (3 new), ailments, key test.
+- **Pictures:** 27 gem icons (3 ChatGPT sheets of 3 gems x 3 levels in the "Create Inventory Sprite Sheet" chat, our
+  old icons as the style guide), cut by a flood-fill script. Logged in CREDITS.
+- **Not built yet:** shield bash, geodes, extra wood from Deep Onyx. Bosses aren't in the game yet (their gem drop sits
+  in `DungeonKeys.drop_key`, which the PC will call when a boss dies).
+- **Hurdles:** the pull was blocked by an auto-made `.uid` file the PC had also pushed (moved mine aside). The PC's
+  last push uses `BlueprintLibrary.REBUILD_ONLY`, which it never pushed, so the game doesn't start from GitHub;
+  I added a Mac-only stand-in (not committed) and told the owner. Chrome blocked the 3rd download again; saved
+  the sheet through a zoomed screenshot and painted out the mouse pointer that was in it. GDScript wouldn't guess
+  the type of `gear.get(...)` values (fixed with `float(...)`). The boss-key test counted all drops (now only keys).

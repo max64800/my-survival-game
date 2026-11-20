@@ -194,14 +194,15 @@ The game checks when you pressed block compared to the moment the hit lands ("im
 
 | Effect | Buildup source | When buildup reaches 100 | Duration | Bosses |
 |---|---|---|---|---|
-| **Burn** (fire) | Per hit, listed on gem/bolt/monster | **5 damage/s**; stops health regen | **4 s** | Same |
-| **Chill** (frost) | Per hit | Move and attack speed **−25%** | **4 s** | Same |
-| **Frozen** (frost) | Getting chilled again while already chilled | Can't move or attack | **1.5 s** | Immune; they get Chill again (refresh) |
-| **Poisoned** | Per hit / per second in a cloud | **3 damage/s**; stops health regen | **10 s** | Same |
+| **Burn** (fire) | Per hit, listed on gem/bolt/monster | **3 damage/s**; stops health regen. **Goes through a block** (not a parry) | **5 s** | Same |
+| **Chill** (frost) | Per hit | **−10% move speed per stack**, up to 5 stacks; half gets through a block | **4 s** (refreshes) | Same |
+| **Frozen** (frost) | The 5th chill stack | Can't move or attack | **1.5 s** | Immune; they get Chill again (refresh) |
+| **Poisoned** | Per hit / per second in a cloud | **1 damage/s per stack**, up to 3 stacks (30 damage at most); stops health regen. A block stops it | **10 s** (refreshes) | Same |
 
+- Each time buildup reaches 100 it adds **one stack** (owner, Nov 20: `docs/design/gems.md`).
 - Buildup decays **−10 /s** after **3 s** with no new buildup.
-- Effects refresh, they don't stack (poison stack: no).
 - Fire removes Chill, and Chill removes Burn (they cancel).
+- Zone 1 sources: Rock Snail spit = 1 poison stack, cave spiders 3 bites = 1 stack, red / blue creatures (1 in 8 inside dungeons).
 
 ### 2.7 Friendly fire
 
@@ -331,7 +332,7 @@ Base numbers in 3.2 are Stone. Multiply for other tiers. Speed, reach, and stami
 
 ## 4. Gems
 
-**Words:** gems go into **weapons and tools** (spec 5.9). Runes are for the skill slab; crystals are lantern fuel and crafting.
+**Words:** gems go into **weapons, shields, tools and copper armor** (spec 5.9; armor added Nov 20). Runes are for the skill slab; crystals are lantern fuel and crafting.
 
 ### 4.1 Socket counts (fixed by spec)
 
@@ -345,19 +346,8 @@ Base numbers in 3.2 are Stone. Multiply for other tiers. Speed, reach, and stami
 
 ### 4.2 Normal gems
 
-Values are per gem. Elemental damage is flat (it does not grow with tier, so it matters most early and stays useful later).
-
-| Gem | Color | Effect in a weapon | Effect in a shield | Effect in a pickaxe | Where it drops |
-|---|---|---|---|---|---|
-| **Ember Gem** | Red | +5 fire damage per hit, +25 burn buildup | Perfect parries set the attacker's burn buildup +50 | Mined ore drops warm (smelts 20% faster) | Red crystal monsters (15%), ruin chests in Mossy (3%) |
-| **Rime Gem** | Blue | +5 frost damage per hit, +25 chill buildup | Perfect parries add +50 chill buildup | — (no effect) | Blue crystal monsters (15%), stream caves |
-| **Blight Gem** | Green | +3 poison damage per hit, +30 poison buildup | Blocking adds +20 poison buildup to the attacker | — | Green crystal monsters (15%), Wheezecaps (2%), Sivix, Mother of Needles (100%) |
-| **Leech Gem** | Dark red | Heal **5%** of physical damage you deal | Heal **4 HP** per perfect parry | — | Rustwights (3%), Thane chest, Fungal Jungle ruin chests (4%) |
-| **Jolt Gem** | Yellow | Your hits fill stun **+30%** | Your parries fill stun **+30%** | — | Cairnlings (4%), Rusted Thane (50%) |
-| **Swift Gem** | Violet | Attack stamina cost **−15%** | Block stamina cost **−20%** | Mining stamina cost −25% | Violet crystal monsters (15%) |
-| **Bulwark Gem** | Amber | Take **10%** less damage while attacking (during swing) | Block reduction **+8 points** (cap 90%) | — | Amber crystal monsters (15%), Old Ironshell (50%) |
-| **Keen Gem** | White | Physical damage **+8%** | Bash damage +25% | — | Ruin chests (both biomes, 3%), Gill Stalkers (3%) |
-| **Burrow Gem** | Brown | — | — | Dig speed **+20%**, 10% chance of 1 extra ore | Copper and silver ore veins (0.5% per ore block mined) |
+Replaced on Nov 20, 2026 by the owner's new gem plan: **see `docs/design/gems.md`** (9 gems with new names,
+Rough / Cut / Polished levels you combine for gold, armor sockets, where each gem drops).
 
 ### 4.3 Epic gems
 
@@ -380,7 +370,7 @@ Epic gems from the first two biomes drop **long before** you have Steel. That's 
 |---|---|
 | Where | At a **Gem Bench** (crafted near the Anvil; recipe in progression doc 4.1) |
 | Socketing cost | **Free** |
-| Removing a gem | Gem comes back **intact**. Costs **5 blue glow crystals** (`crystal_blue`). |
+| Removing a gem | Gem comes back **intact**. Costs **5 gold** (owner, Nov 20). |
 | Same gem twice in one item | The 2nd copy works at **50%** strength |
 | Two different elements in one item | Both work |
 | Epic gem in a normal socket | Not allowed (and normal gem in an epic socket: not allowed) |

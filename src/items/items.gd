@@ -216,8 +216,10 @@ static func _data() -> Dictionary:
 			_all["rune_" + r] = {name = "%s Rune (%s)" % [colour.capitalize(), RuneSlab.COLOURS[colour].capitalize()],
 				color = {"ochre": Color(0.8, 0.6, 0.25), "crimson": Color(0.85, 0.2, 0.25), "cobalt": Color(0.2, 0.35, 0.85), "verdant": Color(0.3, 0.8, 0.35)}[colour],
 				short = "R" + r.right(2), kind = "rune"}
-		for g in Gems.NORMAL:  # gems for weapons, shields and pickaxes (combat doc 4)
-			_all["gem_" + g] = {name = Gems.NORMAL[g].name, color = Gems.NORMAL[g].color, short = "G" + g.left(1).to_upper(), kind = "gem", stack = 20}
+		for g in Gems.NORMAL:  # 9 gems x Rough / Cut / Polished (docs/design/gems.md)
+			for lv in range(1, Gems.MAX_LEVEL + 1):
+				var key := Gems.with_level(g, lv)
+				_all["gem_" + key] = {name = Gems.full_name(key), color = Gems.NORMAL[g].color, short = "G" + g.left(1).to_upper() + str(lv), kind = "gem", stack = 20, gem_level = lv}
 		for g in Gems.EPIC:
 			_all["gem_" + g] = {name = Gems.EPIC[g].name, color = Gems.EPIC[g].color, short = "E" + g.left(1).to_upper(), kind = "gem", stack = 5}
 		for r in Recipes.LIST:  # a dungeon's page always teaches the same copper recipe, and its name says which (owner, Nov 19, F237)

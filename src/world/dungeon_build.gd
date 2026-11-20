@@ -1274,6 +1274,8 @@ static func add_chests(auth: GameAuthority, p_maker: CaveMaker) -> void:
 			for row in LOOT.get(String(c.get("loot", "random")), LOOT.random):
 				if rng.randf() < float(row[3]) and Items.exists(String(row[0])):
 					auth.storage.put(id, String(row[0]), rng.randi_range(int(row[1]), int(row[2])))
+			if String(c.get("loot", "")) == "big":  # the last chest always holds 1 of the dungeon's gems (gems.md)
+				auth.storage.put(id, Gems.item_id(Gems.end_chest_gem(String(d.id), rng.randf(), rng.randf())), 1)
 		var stand: Dictionary = plan.get("recipe_stand", {})
 		if not stand.is_empty() and Items.exists(String(stand.page)):
 			var t := _xform(d, stand.pos, float(stand.yaw) + 180.0, 1.0, 0.0)

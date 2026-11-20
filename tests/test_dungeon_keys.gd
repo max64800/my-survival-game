@@ -74,7 +74,8 @@ func test_the_key_goes_back_to_its_boss_after_an_hour() -> void:
 	auth.world_state.played = 50.0
 	keys.drop_key("key_forge", Vector3(200, 1, 0))
 	keys.drop_key("key_forge", Vector3(200, 1, 0))
-	check_eq(auth._drops.size(), 1, "the key drops once")
+	check_eq(auth._drops.values().filter(func(d): return d.item_id == "key_forge").size(), 1, "the key drops once")
+	check(auth._drops.size() <= 2, "plus, half the time, one of the dungeon's gems")
 	check(not keys.boss_has_key("key_forge"), "the boss no longer has it")
 	auth._ev_remove_drop(auth._drops.keys()[0])  # picked up
 	ps.inventory.add("key_forge", 1)

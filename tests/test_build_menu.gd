@@ -118,5 +118,5 @@ func test_q_and_e_turn_the_piece_walking_does_not() -> void:
 func test_take_down_text_says_how() -> void:
 	check(Hud.take_down_text(7.2).contains("8 s left"), "seconds left to pick up")
 	check(Hud.take_down_text(0.0).begins_with("X: break"), "too late: only breaking")
-	check(Hud.take_down_text(-1.0).contains("80% back"), "a friend's computer still shows both ways")
+	check(Hud.take_down_text(-1.0).contains("pick up") and Hud.take_down_text(-1.0).contains("half back"), "a friend's computer still shows both ways")
 	check(not Hud.take_down_text(0.0).contains("%%") and not Hud.take_down_text(3.0).contains("%%"), "no doubled % signs")
