@@ -382,18 +382,24 @@ for x, z in [(34.0, 50.0), (34.0, 33.0), (66.0, 40.0), (12.0, 40.0), (28.0, 6.0)
 # also get broken urns and coffin chunks (owner, Nov 20). Its own dice, so nothing placed above moves.
 import junk  # noqa: E402
 
-JUNK_THEMES = {
-	"gate_hall": ["beam_snapped", "rubble_wood", "rags", "crate_stack", "keg", "meal", "bones"],
-	"guard_room": ["sword_snapped", "spear_broken", "shield_wood", "helmet", "axe_head", "meal", "bones"],
-	"store_room": ["crate_stack", "grain_sacks", "ore_basket", "timber_stack", "rags", "rubble_wood"],
-	"vault": ["bones", "rags", "lantern"],
-	"tombs": ["bones", "urn_broken", "urn_broken", "coffin_piece", "coffin_piece", "rags", "candles"],
-	"shrine": ["bones", "rags", "candles"],
-	"pillar_hall": ["beam_snapped", "rubble_wood", "bones", "tools", "mine_cart", "timber_stack"],
-	"chasm_room": ["bones", "lantern", "helmet", "rags", "spear_broken"],
-	"crusher_hall": ["bones", "rags"],
-	"pack_hall": ["bones", "bones", "helmet", "shield_wood", "rags", "sword_snapped", "meal"],
-	"loot_room": ["helmet", "axe_head", "rags", "bones"],
+JUNK_THEMES = {   # (owner, Nov 20, 2nd look in the game: "it needs a lot more, it still feels empty": more kinds, ~2x as many)
+	"gate_hall": ["beam_snapped", "rubble_wood", "rags", "crate_stack", "keg", "meal", "bones", "scrap", "lantern",
+		"rubble_brick", "grain_sacks", "shield_wood"],
+	"guard_room": ["sword_snapped", "spear_broken", "shield_wood", "shield_iron", "helmet", "axe_head", "armour_pile",
+		"meal", "bones", "candles", "rags", "keg"],
+	"store_room": ["crate_stack", "grain_sacks", "ore_basket", "timber_stack", "rags", "rubble_wood", "keg", "scrap",
+		"urns", "beam_snapped"],
+	"vault": ["bones", "rags", "lantern", "scrap", "urn_broken", "candles"],
+	"tombs": ["bones", "urn_broken", "urn_broken", "coffin_piece", "coffin_piece", "coffin_lid", "rags", "candles",
+		"statue_head", "urns"],
+	"shrine": ["bones", "rags", "candles", "statue_head", "urn_broken", "lantern"],
+	"pillar_hall": ["beam_snapped", "rubble_wood", "rubble_brick", "bones", "tools", "mine_cart", "timber_stack",
+		"statue_head", "scrap", "rags"],
+	"chasm_room": ["bones", "lantern", "helmet", "rags", "spear_broken", "rubble_brick", "scrap", "beam_snapped"],
+	"crusher_hall": ["bones", "rags", "helmet", "armour_pile", "scrap", "rubble_brick"],
+	"pack_hall": ["bones", "bones", "helmet", "shield_wood", "rags", "sword_snapped", "meal", "armour_pile", "spear_broken",
+		"scrap"],
+	"loot_room": ["helmet", "axe_head", "rags", "bones", "scrap", "candles", "armour_pile"],
 }
 _doorways = [(p["pos"][0], p["pos"][2]) for p in pieces if p["id"] == "doorway"]
 _ways = [(p["pos"][0], p["pos"][2]) for p in props if p["model"] in ("dungeon/dungeon_entrance.glb", "dungeon/wall_cracked.glb")]
@@ -414,7 +420,14 @@ props += junk.place_junk(
 	keep_off=[[35.2, -1.0, 44.8, 13.0], [35.2, 19.2, 42.8, 26.8]],  # the chasm and the spike pit (and their edges)
 	extra_paths=[("chasm_room", [(34.0, 12.0), (34.0, 6.0), (46.0, 6.0)])],  # over the bridge
 	skip={"boulder_way", "loot_door"},
+	big=(12, 16), small=(5, 7), repeat=3, tunnel_every=8.0,  # (owner, Nov 20: "a lot more")
 )
+
+# --- 6. Dark (owner, Nov 20, F517: "dungeon 2 is dark, dungeon 1 should be dark as well"; picked "almost no light"):
+# only the torch nearest the way in still burns, and the faint glow down in the spike pit stays (owner, Nov 20: see the
+# spikes). The other torches hang cold on the walls (the torch model is just its iron holder: the light was its flame).
+_way_in = min(lights, key=lambda l: math.hypot(l[0] - 34.0, l[2] - CAVE_Z))
+lights = [l for l in lights if l is _way_in or l == [39.0, -2.6, 23.0]]
 
 # --- Write it out. ---
 missing = sorted({p["model"] for p in props if not (ROOT / "assets/models" / p["model"]).exists()} |

@@ -858,3 +858,11 @@ func test_bandage_cooldown_shows_on_its_slot() -> void:
 	check_eq(auth.cooldown_left("bandage"), 0.0, "ready again: no shade")
 	check(auth.my_cooldowns.is_empty(), "and it is forgotten")
 	auth.free()
+
+
+## F517 (owner, Nov 20: "dungeon 2 is dark, dungeon 1 should be dark as well", picked "almost no light"): Mossgate's
+## torches hang cold; only the one by the way in burns (and the faint glow down in the spike pit).
+func test_mossgate_is_dark() -> void:
+	var plan := DungeonBuild.load_plan("mossgate")
+	check(plan.lights.size() <= 2, "Mossgate has almost no light (%d lights)" % plan.lights.size())
+	check(plan.lights.any(func(l): return float(l[2]) > 55.0), "the torch by the way in still burns")

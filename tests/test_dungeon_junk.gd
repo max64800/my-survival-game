@@ -57,7 +57,7 @@ static func _doors_of(s: Array, doors: Array) -> Array:
 func test_mossgate_has_junk() -> void:
 	var plan := DungeonBuild.load_plan("mossgate")
 	var j := _junk(plan)
-	check(j.size() >= 60 and j.size() <= 130, "Mossgate has a few junk pieces per room (%d)" % j.size())
+	check(j.size() >= 120 and j.size() <= 220, "Mossgate is full of junk (%d; owner, Nov 20: \"a lot more\")" % j.size())
 	var kinds := {}
 	for p in j:
 		kinds[p.model] = true

@@ -133,7 +133,7 @@ def walk_lines(spaces, group_of, cells, doors, extra=()):
 
 def place_junk(spaces, group_of, cells, floor_y, rooms, themes, doors, path_doors, things, traps, furniture,
 		seed, keep_off=(), extra_paths=(), skip=(), corridor=("bones", "rags", "axe_head", "sword_snapped", "tools"),
-		long_corridor=16.0):
+		long_corridor=16.0, big=(5, 8), small=(2, 3), repeat=2, tunnel_every=0.0):
 	"""Junk props for one dungeon.
 	spaces: the map's [name, x0, z0, x1, z1, floor_y, height] boxes; group_of(name) -> its room.
 	cells: {(x, z) 2 m cell corner: room}; floor_y(room) -> its floor height.
@@ -143,7 +143,9 @@ def place_junk(spaces, group_of, cells, floor_y, rooms, themes, doors, path_door
 	things: (x, z) of chests, levers and recipe stands (THING_CLEAR); traps: (x, z) (TRAP_CLEAR);
 	furniture: (x, z, radius) of other things on the floor; keep_off: [x0, z0, x1, z1] boxes with no junk at all
 	(pits, chasms, rails, plank walks); extra_paths: [(room, [(x, z), ...])] walk lines the doors don't give (a bridge).
-	skip: rooms with no junk."""
+	skip: rooms with no junk.
+	big / small: how many in a big (80 m2 or more) / small room; repeat: each kind of junk at most this often per room;
+	tunnel_every: one more tunnel piece per this many metres of tunnel (0: none)."""
 	rng = random.Random(seed)
 	lines = walk_lines(spaces, group_of, cells, path_doors, extra_paths)
 	placed = []      # (x, z, radius) of junk so far
@@ -223,6 +225,10 @@ def place_junk(spaces, group_of, cells, floor_y, rooms, themes, doors, path_door
 			if len(walls) == 1:   # slide along the wall a little (not all on the cell middles)
 				slide = rng.uniform(-0.4, 0.4)
 				x, z = (x, z + slide) if walls[0][0] else (x + slide, z)
+			cs = corners(lead, x, z, yaw + parts[0][3], parts[0][1], parts[0][2])
+			mx, mz = sum(c[0] for c in cs) / 4, sum(c[1] for c in cs) / 4
+			if min(abs(cx + ox - mx) if ox else abs(cz + oz - mz) for (ox, oz) in walls) > 0.95:
+				continue  # a wide piece whose middle ends up too far out (owner: none near the middle)
 			got = []
 			for model, ddx, ddz, dyaw in parts:
 				f = free(model, x, z, yaw + dyaw, g, ddx, ddz)
@@ -247,14 +253,19 @@ def place_junk(spaces, group_of, cells, floor_y, rooms, themes, doors, path_door
 		area = sum((s[3] - s[1]) * (s[4] - s[2]) for s in boxes)
 		length = max([max(s[3] - s[1], s[4] - s[2]) for s in boxes] or [0])
 		if g in rooms:
-			want = rng.randint(5, 8) if area >= 80 else rng.randint(2, 3)
+			want = rng.randint(*big) if area >= 80 else rng.randint(*small)
 		else:
 			want = (1 if rng.random() < 0.7 else 0) + (1 if length >= long_corridor else 0)
+			if tunnel_every > 0:
+				want += int(length / tunnel_every)
 		pool = list(themes.get(g, corridor))
 		rng.shuffle(pool)
-		more = pool[:]
-		rng.shuffle(more)
-		pool = more + pool   # each kind at most twice (the families pick another model the 2nd time)
+		full = pool[:]
+		for _ in range(repeat - 1):
+			more = pool[:]
+			rng.shuffle(more)
+			full = more + full   # each kind at most `repeat` times (the families pick another model each time)
+		pool = full
 		n = 0
 		while pool and n < want:
 			if try_entry(pool.pop(), g):
