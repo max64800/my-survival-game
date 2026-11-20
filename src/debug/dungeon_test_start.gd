@@ -6,8 +6,12 @@ extends Node
 
 const WEAR := {pickaxe = "pickaxe_copper", weapon = "sword_copper", shield = "shield_copper", lantern = "lantern_back",  # (the back lantern leaves the shield hand free)
 	head = "helm_copper", chest = "mail_copper", legs = "greaves_copper", feet = "boots_copper"}
-const CARRY := [["pickaxe_copper", 1], ["crossbow_copper", 1], ["bolt_metal", 60], ["mace_copper", 1], ["spear_copper", 1], ["axe_copper", 1],
-	["bandage", 20], ["crystal_torch", 10]]
+## Keys 1-9 (owner, Nov 21: "I only have the spear and the mace": the worn sword only came out with F, so every
+## weapon now has its own key too, the two-handed great axe and great maul as well; bolts, the wood axe and the
+## bombs go in the bag: the crossbow takes its bolts from there).
+const HOTBAR := [["pickaxe_copper", 1], ["sword_copper", 1], ["mace_copper", 1], ["spear_copper", 1], ["crossbow_copper", 1],
+	["axe_2h_copper", 1], ["mace_2h_copper", 1], ["bandage", 20], ["crystal_torch", 10]]
+const BAG := [["bolt_metal", 60], ["axe_copper", 1], ["spore_bomb", 10], ["blasting_pod", 10]]
 
 var _main: Node
 
@@ -35,9 +39,9 @@ func _run() -> void:
 		var inv: Inventory = ps.inventory
 		for slot in WEAR:
 			inv.slots[Inventory.equip_index(slot)] = {id = WEAR[slot], count = 1}
-		for i in Inventory.HOTBAR_SIZE:
-			inv.slots[i] = {}  # the starting tools are replaced by the copper ones (owner, Nov 20: silver made the dungeon far too easy)
-		for it in CARRY:
+		for i in Inventory.HOTBAR_SIZE:  # the starting tools are replaced by the copper ones (owner, Nov 20: silver made the dungeon far too easy)
+			inv.slots[i] = {id = HOTBAR[i][0], count = HOTBAR[i][1]} if i < HOTBAR.size() else {}
+		for it in BAG:
 			inv.add(it[0], it[1])
 		inv.changed.emit()
 		ps.fuel = GameAuthority.MAX_FUEL

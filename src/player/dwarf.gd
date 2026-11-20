@@ -44,6 +44,7 @@ var bot_move := Vector2.ZERO
 var _run_streak := 0.0  ## seconds since you started this run (Running ★25: a quick burst at the start)
 var running := false  ## running this frame (DwarfFight stops a crossbow reload when you run)
 var _was_playing := false  ## (F494: Shift is let go when you come back to the game)
+var _layout := -2  ## the keyboard language last frame (-2 = not looked yet; F494: Ctrl+Shift switches it)
 
 
 ## Owner, Nov 20 (F494, 3rd time: "sometimes I can still run without pressing Shift"): when the game window loses
@@ -243,6 +244,15 @@ func _physics_process(delta: float) -> void:
 	if playing and not _was_playing:
 		Input.action_release("run")  # (back from a menu or the bag: Shift must be pressed again, F494 3rd time)
 	_was_playing = playing
+	# F494, 4th time (owner, Nov 21: "really fast, like Shift; one tap of Shift fixes it"): Ctrl+Shift (dodge while
+	# running) is Windows' "switch keyboard language" shortcut when a PC has more than one, and Windows then swallows
+	# Shift coming back up. When the language changes, let go of run and dodge (press Shift again to run).
+	var layout := DisplayServer.keyboard_get_current_layout()
+	if layout != _layout:
+		if _layout != -2:
+			Input.action_release("run")
+			Input.action_release("dodge")
+		_layout = layout
 	var iv := Vector2.ZERO
 	if playing:
 		iv = Input.get_vector("move_left", "move_right", "move_forward", "move_back")

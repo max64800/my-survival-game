@@ -7182,3 +7182,20 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   layout with the new kinds gave a few Watchtower floors one piece fewer than before (16 → 14 in all). (4) An
   in-game photo (towercheck, muted, `claude=ruin_camp`) crashed: the graphics card's memory was full with four
   other Godot games open (other chats or the owner). Left them alone; not seen in the game yet.
+
+## Nov 21 — Old Pell's Diggings: all the weapons in the dungeon test, F494 a 4th time (dungeons chat)
+- **Owner:** "the spark is good for now". "In the dungeon test I only have the spear and the mace." And the running
+  without Shift is still there (4th time).
+- **Test gear:** a robot picture of "Dev: Dungeon 3" showed the cause: the sword and shield were only *worn* (the sword
+  comes out with F), so keys 1-9 showed pickaxe, crossbow, bolts, mace, spear, axe, bandages, torches. Now keys 1-9:
+  pickaxe, sword, mace, spear, crossbow, great axe, great maul, bandages, torches; the bag gets bolts, the wood axe,
+  spore bombs, blasting pods (sword and shield are still worn too). New test `test_dungeon_test_gear` checks every
+  kind of weapon the game has gets a key. Hurdle (Claude's own): my first search for weapons missed the two-handed
+  ones (`axe_2h`, `mace_2h`); the new test caught it.
+- **F494, 4th time:** asked two multiple-choice questions: "really fast, like Shift" and "one tap of Shift fixes it",
+  so the game really missed Shift coming back up. Sticky Keys is off on the PC. But the PC has 3 keyboard languages
+  (English, Ukrainian, Russian), and Windows' shortcut to switch them is Ctrl+Shift: dodge (Ctrl) while running
+  (Shift). Windows then swallows the Shift let-go. Fix: `Dwarf` watches the keyboard language every frame
+  (`DisplayServer.keyboard_get_current_layout`); when it changes, run and dodge are let go. Not tested by switching
+  the owner's keyboard (that would change the owner's PC); the owner checks it in a real play. scripts_load passes.
+- **Paused here by the owner ("pause, commit and push").** Not yet seen in a real game run with the new hotbar.
