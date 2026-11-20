@@ -29,6 +29,7 @@ from mathutils import Euler, Matrix, Vector
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import kit  # noqa: E402
+import glb_jpeg_clean  # noqa: E402  (Godot can't read Blender's JPEGs with their extra info blocks)
 
 ROOT = Path(__file__).resolve().parents[3]
 PACK = Path(__file__).resolve().parents[1] / "packs" / "kaykit_skeletons"
@@ -496,6 +497,7 @@ def build(name, look):
 	out = OUT / (f"{name}_{look}.glb" if look else f"{name}.glb")
 	bpy.ops.export_scene.gltf(filepath=str(out), export_format="GLB", use_selection=True, export_yup=True,
 		export_animation_mode="ACTIONS", export_image_format="JPEG", export_image_quality=85, export_apply=False)
+	glb_jpeg_clean.clean(str(out))  # (else the game shows them plain white: Nov 20)
 	print("SAVED", out, "scale", round(s, 3), "actions", len(bpy.data.actions))
 
 

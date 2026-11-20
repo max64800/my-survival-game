@@ -5,7 +5,13 @@ extends TestCase
 func test_every_monster_is_complete() -> void:
 	for id in Monsters.LIST:
 		var m: Dictionary = Monsters.LIST[id]
-		if MonsterModel.variant_count(id) > 0:  # (a hand-built model only, like the Cave Spider: no simple-shapes body)
+		if MonsterModel.RIG_LOOKS.has(id):  # (a skeleton creature: its own model and moves, test_skeleton_miners)
+			var rigged := MonsterModel.build(m.shape, m.color, m.size, true, id)
+			var holder := Node3D.new()
+			holder.add_child(rigged)
+			check(CreatureRig.find(rigged) != null, "%s moves by its skeleton" % id)
+			holder.free()
+		elif MonsterModel.variant_count(id) > 0:  # (a hand-built model only, like the Cave Spider: no simple-shapes body)
 			var forged := MonsterModel.build(m.shape, m.color, m.size, true, id)
 			check(forged.has_meta("forged_root"), "%s wears its hand-built model" % id)
 			forged.free()

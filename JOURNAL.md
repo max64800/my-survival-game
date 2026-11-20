@@ -6518,6 +6518,36 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   `docs/decisions/2026-11-20-creature-climbing.md`; handed to a new chat. Mistake: my FEEDBACK.md save also took one
   line another chat had just changed (F389, the great axe chat's note). Their text, unchanged, but it went in under my name.
 
+## November 20, 2026 (PC, creatures Claude for dungeon 2, chat 2): the skeleton miners come alive in the game
+- **Start:** 80 play sessions in the recordings folder are still unreviewed (told the owner; not read).
+- **The new thing:** our older creatures move by named parts (code swings each leg). These three move by a skeleton,
+  like a puppet with strings inside, and play moves stored in the model. Pattern picked (GodotPrompter animation
+  skill): the model's own move player, played from code with short blends between moves. Not the bigger "animation
+  tree" (a flow chart of moves): our moves come from one-off events (rise, swing, hit), so it would only add work.
+- **New `src/combat/creature_rig.gd`:** picks the move from what the creature does: lying in a pile, getting up, idle,
+  walk, run (sped up or slowed to match its real speed), swing (timed so the blow lands exactly when the game's hit
+  lands: measured when the tool moves fastest), flinch, fall apart. Only looks: every co-op screen picks the same move
+  from what it sees; the host sends one new message, "this pile gets up".
+- **Creature list:** Tunnel Rat (26 health, fast, soft hits, groups), Lost Miner (95, slow, frost pick), the Foreman
+  (420, two-handed chop + big spin). No fiery/icy crystal versions (crystals can't follow bones). No drops yet (asked).
+- **F462** piles rise when you come within 8 m (Foreman 10 m) in their room, or hit them; the whole room together.
+  **F463** they fall apart, the bones turn to stone, the low pile is solid and minable. **F464** no taunt, flinch +
+  white flash, always running when chasing. **F466** 3 looks mixed, Lost Miner hits give frost. **F467** numbers.
+  **F465** (pick point) is in the model, but the robot's pictures were too far away to judge: check in a fight.
+- **Tests:** new `tests/test_skeleton_miners.gd` (6 tests). New robot `minercheck` (dwarf walks up, they rise, run,
+  swing, get hit, die, turn to stone; a picture each step).
+- **Hurdles:** (1) My first robot runs: the dwarf fell away, then the creatures fell through rock that wasn't solid
+  yet 12 m out. Pinned the dwarf, put the miners closer. (2) Big one: in the game they were plain white, no paint. The
+  pictures inside the model files carry extra info blocks from Blender's picture saving, and Godot's JPEG reader
+  refused every one ("Couldn't load image"), so they came in blank. New `tools/asset_forge/glb_jpeg_clean.py` drops
+  those blocks (the picture itself is untouched), the build script now runs it after every save, the 7 models are
+  cleaned and re-imported: red-bearded Foreman, pale Lost Miners, brown rats. (3) One Lost Miner stood up before
+  anyone came: it slid a little when it appeared, and my "it moves, so it must be up" safety counted that. Now it
+  must keep moving for 0.6 s. (4) My death test killed a rat while it was still getting up (head already on the
+  floor); it now waits until it stands. (5) Another chat was changing `monster.gd` at the same time (doorway fix):
+  small separate edits, and only my lines committed.
+- **Lampwick's blueprint isn't in the game yet** (dungeons chat): the miners aren't placed in any dungeon yet.
+
 
 ## Nov 20 (eve, PC, FPS Claude): the FPS drops found and fixed (F266, F417)
 - **Read the play logs:** in the last 20 sessions, every one had 1-4 freezes of 0.3-1.4 s, mostly in the first

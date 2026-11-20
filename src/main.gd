@@ -133,6 +133,12 @@ func _ready() -> void:
 			_saving = false
 			if mode == "menu":
 				mode = "solo"
+		elif arg == "minercheck":  # photos of the skeleton miners lying, rising, running, swinging, turning to stone
+			debug_script = "res://src/debug/minercheck.gd"
+			dungeon_test = true
+			_saving = false
+			if mode == "menu":
+				mode = "solo"
 		elif arg == "dungeoncheck":  # photos of the first dungeon (Mossgate Hold)
 			debug_script = "res://src/debug/dungeoncheck.gd"
 			_saving = false

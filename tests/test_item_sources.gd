@@ -86,14 +86,17 @@ func test_every_creature_lives_somewhere() -> void:
 			for kind in list:
 				spawns[kind] = true
 	for kind in Monsters.LIST:
+		if Monsters.LIST[kind].get("dungeon_only", false):
+			continue  # (the skeleton miners: placed by a dungeon's plan, never in the caves)
 		check(spawns.has(kind), "%s never spawns" % kind)
 	for kind in spawns:
 		check(Monsters.LIST.has(kind), "%s spawns but isn't a creature" % kind)
 
 
 func test_only_the_five_creatures_are_left() -> void:
-	check_eq(Monsters.LIST.keys().size(), 5, "five creatures")
-	for kind in ["rock_snail", "rock_beetle", "great_rock_beetle", "cave_bat", "cave_spider"]:
+	# (Nov 20: plus the owner's three skeleton miners for Lampwick Drift and Old Pell's Diggings.)
+	check_eq(Monsters.LIST.keys().size(), 8, "five cave creatures and three dungeon miners")
+	for kind in ["rock_snail", "rock_beetle", "great_rock_beetle", "cave_bat", "cave_spider", "tunnel_rat", "lost_miner", "foreman"]:
 		check(Monsters.LIST.has(kind), "%s is in" % kind)
 	check(Monsters.info("orrumhal").is_empty(), "no bosses")
 	check(Monsters.info("mossnipper").is_empty(), "no old creatures")

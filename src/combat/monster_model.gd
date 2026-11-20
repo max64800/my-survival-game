@@ -14,6 +14,10 @@ const VARIANT_ART := {"": "mossy", "red": "ember", "blue": "frost", "green": "sp
 ## looks mixed in every cave). Picked from the creature's number, so the next one is a different look (the first
 ## cave's two snails differ) and every computer sees the same. Crystal variants keep crystals on top to stand out.
 const LOOKS := ["mossy", "ember", "frost", "spore"]
+## The skeleton miners (CreatureRig, Nov 20): their own looks, mixed by the creature's number (owner F466); the
+## Foreman has one. tools/asset_forge/builds/kaykit_miners.py makes them.
+const RIG_LOOKS := {"tunnel_rat": ["tunnel_rat_grime", "tunnel_rat_soot", "tunnel_rat_rust"],
+	"lost_miner": ["lost_miner_frost", "lost_miner_rime", "lost_miner_ghost"], "foreman": ["foreman"]}
 
 
 static func look_of(variant: String, seed: int) -> String:
@@ -26,7 +30,10 @@ static func build(shape: String, color: Color, size: float, leader: bool, kind: 
 	# (front +Z, feet at the bottom, ~1 m = size 1). 3. Else simple shapes made here.
 	var forged: Node3D = null
 	var art_look := false
-	if CREATURE_ART.has(kind):
+	if RIG_LOOKS.has(kind):
+		var looks: Array = RIG_LOOKS[kind]
+		forged = Look.forged("creatures", looks[posmod(seed, looks.size())])
+	elif CREATURE_ART.has(kind):
 		var look := look_of(variant, seed if look_seed < 0 else look_seed)
 		forged = Look.forged("creatures", "%s_%s" % [CREATURE_ART[kind], look])
 		if forged == null:

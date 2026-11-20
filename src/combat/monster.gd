@@ -28,6 +28,8 @@ var stun := StunMeter.new()
 var boosted := false  ## a living pack leader is near
 var data: Dictionary
 var model: Node3D
+var rig: CreatureRig  ## only looks: a creature that moves by a skeleton (null: one that moves by named parts)
+var _rise_pending := false  ## host: it started getting up; tell everyone (think)
 var _timer := 0.0
 const CHARGE_DAZE := 3.0  ## seconds a monster stands catching its breath after a pounce (F111; not a real daze)
 const CHARGE_STARS := 2.5  ## s a beetle is really dazed (stars) after every charge, hit or miss (owner F471)
@@ -93,7 +95,7 @@ func setup(p_uid: int, p_kind: String, p_leader: bool, p_home: Vector3, p_varian
 	leader = p_leader
 	home = p_home
 	data = Monsters.info(kind)
-	variant = p_variant if Monsters.VARIANTS.has(p_variant) else ""
+	variant = p_variant if Monsters.VARIANTS.has(p_variant) and not data.get("no_variant", false) else ""
 	hp = Monsters.max_hp(kind, leader, variant)
 	stun = StunMeter.new(data.stun * (Monsters.LEADER.stun if leader else 1.0) * (Monsters.VARIANT_STATS.stun if variant != "" else 1.0), 3.0)
 	state = State.SLEEP if data.get("sleeps", false) else State.IDLE
@@ -110,7 +112,7 @@ func _ready() -> void:
 	var shape := CollisionShape3D.new()
 	var cap := CapsuleShape3D.new()
 	cap.radius = 0.35 * s + 0.1
-	cap.height = maxf(cap.radius * 2.0, 0.9 * s + 0.3)
+	cap.height = maxf(cap.radius * 2.0, float(data.height) * s if data.has("height") else 0.9 * s + 0.3)
 	shape.shape = cap
 	shape.position = Vector3.UP * cap.height * 0.5
 	add_child(shape)
@@ -120,6 +122,9 @@ func _ready() -> void:
 	model = MonsterModel.build(data.shape, data.color, s, leader, kind, uid, variant, look_seed)  # uid: same individual for everyone
 	_size = s
 	add_child(model)
+	rig = CreatureRig.find(model)  # (a skeleton creature: it plays its model's own moves)
+	if rig and state == State.SLEEP and data.get("rises", false):
+		rig.lie()  # scattered on the floor until someone comes near (F462)
 	if variant != "":
 		# Crystal variants: glowing crystals on the back that light up the cave around them
 		# (creatures made from the approved pictures already wear their variant's look).
@@ -160,6 +165,21 @@ func show_shell(hidden: bool) -> void:
 	shell_shut = hidden
 
 
+## Only looks: the pile of bones gets up (the host decided; everyone plays it).
+func show_rise() -> void:
+	_risen = true
+	if rig:
+		rig.rise()
+		Sfx.play("dig_soft", global_position, -6.0, 0.6 * _voice())  # (a dry rattle of bones on the floor)
+
+
+var _risen := false  ## only looks: it got up (a fighting stance from now on)
+
+
+func _awake_looks() -> bool:
+	return _risen or state in [State.ALERT, State.CHASE, State.ATTACK, State.RECOVER, State.STUNNED]
+
+
 ## Bigger creatures sound deeper.
 func _voice() -> float:
 	return clampf(1.0 / sqrt(maxf(_size, 0.3)), 0.6, 1.4)
@@ -176,6 +196,16 @@ func hit_flash() -> void:
 	glow.albedo_color = Color(1.0, 0.95, 0.85, 0.75)
 	for mi: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
 		mi.material_overlay = glow
+	if rig:
+		# A skeleton creature flinches with its own move (owner F464: the pack's flinch plus our white flash).
+		rig.hit()
+		var fade := create_tween()
+		fade.tween_property(glow, "albedo_color:a", 0.0, 0.16)
+		fade.tween_callback(func():
+			for mi: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
+				if mi.material_overlay == glow:
+					mi.material_overlay = null)
+		return
 	_flinch = 1.0  # jolts back (see _process)
 	var base: Vector3 = model.get_meta("base_scale", model.scale)
 	model.set_meta("base_scale", base)
@@ -204,6 +234,11 @@ func die_visual(statue := -1) -> void:
 		l.visible = false
 	if _bars:
 		_bars.visible = false
+	if rig and is_inside_tree():
+		# A skeleton falls apart into a pile of bones, then the bones turn to stone (owner F463).
+		Statue.from_rig(self, model, statue, rig)
+		queue_free.call_deferred()
+		return
 	if data.get("ragdoll", true):  # (every creature, owner Nov 18)
 		# It goes limp and falls apart into physics pieces, pushed away from the player (Ragdoll, owner Nov 18).
 		var cam := get_viewport().get_camera_3d() if is_inside_tree() else null
@@ -269,6 +304,9 @@ func hit_stop(seconds: float) -> void:
 
 
 func think(delta: float, mgr: Node) -> void:
+	if _rise_pending:
+		_rise_pending = false
+		mgr.monster_rise(self)  # everyone sees it get up
 	if _knock.length() > 0.05:
 		move_and_collide(_knock * minf(delta, 0.05))  # (walls stop it; a long step can't fling it far)
 		_knock = _knock.move_toward(Vector3.ZERO, 14.0 * delta)
@@ -512,10 +550,23 @@ func _perceive(mgr: Node) -> void:
 	if found == 0:
 		return
 	target_peer = found
-	if state == State.SLEEP or state == State.IDLE or state == State.WANDER or state == State.RETURN:
+	if state == State.SLEEP and data.get("rises", false):
+		_start_rise()
+		mgr.alert_pack(self, found)  # (the whole room gets up together)
+	elif state == State.SLEEP or state == State.IDLE or state == State.WANDER or state == State.RETURN:
 		state = State.ALERT
 		_timer = 0.8
 		mgr.alert_pack(self, found)
+
+
+## A pile of bones gets up (F462): it stands still while it rises (ALERT), then runs at you.
+func _start_rise() -> void:
+	state = State.ALERT
+	_timer = RISE_TIME
+	_rise_pending = true
+
+
+const RISE_TIME := 2.3  ## s: the getting-up move (Skeletons_Awaken_Floor is 2.29 s)
 
 
 ## Woken up by being hit or by a pack-mate.
@@ -528,6 +579,11 @@ func alert(peer: int) -> void:
 			_timer = 6.0
 		return
 	if state in [State.CHASE, State.ATTACK, State.RECOVER, State.STUNNED]:
+		return
+	if data.get("rises", false) and (state == State.SLEEP or (state == State.ALERT and _timer > 0.0)):
+		target_peer = peer
+		if state == State.SLEEP:
+			_start_rise()  # hit or called while lying: it gets up first (it can't fight from the floor)
 		return
 	target_peer = peer
 	state = State.CHASE
@@ -809,6 +865,9 @@ func show_tell(seconds: float, attack_name: String = "", aim: Node3D = null) -> 
 		_charging = seconds + 0.6
 		_charge_len = seconds
 		MonsterModel.set_angry(model, true)
+	if rig:
+		rig.attack(String(atk.get("anim", "1H_Melee_Attack_Chop")), seconds)  # its own swing; the blow lands with the hit
+		return
 	# Squash relative to the monster's own size (leaders are bigger than 1).
 	var base: Vector3 = model.get_meta("base_scale", model.scale)
 	model.set_meta("base_scale", base)
@@ -891,7 +950,10 @@ func _process(delta: float) -> void:
 	_clock += delta
 	model.set_meta("roosting", data.get("roosts", false) and state == State.SLEEP)
 	_hang_body(model.get_meta("roosting"))
-	if _stop > 0.0:
+	if rig:
+		rig.step(delta, _speed, float(data.run), _awake_looks(), _stop > 0.0)
+		_stop = maxf(0.0, _stop - delta)
+	elif _stop > 0.0:
 		_stop -= delta
 		_clock -= delta  # (frozen: its moves wait)
 	else:
@@ -909,7 +971,9 @@ func _process(delta: float) -> void:
 		model.rotation.x += clampf(atan2(_vy, maxf(_speed, 1.0)), -0.8, 0.6) * 0.8
 	if _trail_left > 0.0 or not _trail_pts.is_empty():
 		_draw_trail(delta)
-	if model.get_meta("roosting", false):
+	if rig:
+		pass  # (its moves do the walking and the daze sways nothing: no waddle on top)
+	elif model.get_meta("roosting", false):
 		pass  # hanging upside down (MonsterModel.animate)
 	elif stun.is_stunned():
 		MonsterModel.dazed_sway(model, daze_sway(_clock, model.has_meta("foot")))  # (a snail sways, its foot stays put)
@@ -947,7 +1011,7 @@ func _creature_fx(delta: float) -> void:
 		var rear := charge_rear(_charge_len + 0.6 - _charging, _charge_len)
 		model.rotation.x -= 0.22 * rear
 		model.position.y += 0.05 * _size * rear
-	if _flinch > 0.0:
+	if _flinch > 0.0 and rig == null:
 		_flinch = maxf(0.0, _flinch - delta * 6.0)
 		if model.has_meta("foot"):
 			model.set_meta("flinch", _flinch)  # a snail: only the body jolts, its foot stays put (MonsterModel._snail)

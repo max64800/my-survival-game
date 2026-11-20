@@ -38,6 +38,10 @@ static func _meshes(corpse: Node3D) -> Array:
 
 ## Its middle and size (world), from all its meshes.
 static func _bounds(corpse: Node3D) -> AABB:
+	if corpse.has_meta("bone_box"):
+		return corpse.get_meta("bone_box")  # (a pile of bones: where they really lie)
+	if not corpse.find_children("*", "Skeleton3D", true, false).is_empty():
+		return bone_box(corpse)
 	var box := AABB()
 	var first := true
 	for mi: MeshInstance3D in _meshes(corpse):
@@ -139,6 +143,10 @@ static func remove(id: int, mined: bool) -> void:
 	Fx.burst(parent, box.get_center(), STONE.lightened(0.2), 24, 1.5)  # a puff of stone dust
 	Sfx.play("dig_soft", box.get_center(), -4.0, 0.7)
 	var t := c.create_tween().set_parallel(true)
+	if c.has_meta("bone_box"):  # (a skinned pile follows its bones, not its parts: flatten the whole pile)
+		for cs: CollisionShape3D in c.find_children("*", "CollisionShape3D", true, false):
+			cs.set_deferred("disabled", true)  # (a squashed box only makes the physics engine complain)
+		t.tween_property(c, "scale", c.scale * Vector3(1.1, 0.05, 1.1), 1.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	for mi: MeshInstance3D in _meshes(c):
 		t.tween_property(mi, "scale", mi.scale * Vector3(1.1, 0.05, 1.1), 1.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	t.chain().tween_callback(func() -> void: _free(c))
@@ -149,6 +157,51 @@ static func _free(c: Node3D) -> void:
 		if is_instance_valid(f):
 			(f as Node).queue_free()
 	c.queue_free()
+
+
+## A skeleton creature (CreatureRig, owner F463): it falls apart into a pile of bones (its own move), then the pile
+## turns to stone. Its solid box is measured from where the bones lie (a skinned body's own box is its standing shape).
+static func from_rig(m: Node3D, model: Node3D, id: int, rig: CreatureRig) -> void:
+	var sb := StaticBody3D.new()
+	sb.name = "Corpse"
+	sb.collision_layer = Ragdoll.LAYER  # (your pickaxe can hit it at once)
+	m.get_parent().add_child(sb)
+	sb.global_transform = m.global_transform
+	model.reparent(sb, true)
+	if id >= 0:
+		claim(sb, id)
+	var fall := rig.die()
+	var t := sb.create_tween()
+	t.tween_interval(fall * 0.5)
+	if id >= 0:
+		t.tween_callback(func() -> void: petrify(sb, id))  # (the stone starts while the last bones still fall)
+	else:
+		t.tween_interval(fall * 0.5 + 0.5)  # (no statue: the pile sinks away)
+		t.tween_property(model, "position:y", model.position.y - 0.6, 0.8)
+		t.tween_callback(sb.queue_free)
+		return
+	t.tween_interval(fall * 0.5)
+	t.tween_callback(func() -> void:
+		var box := bone_box(sb)
+		sb.set_meta("bone_box", box)
+		var shape := CollisionShape3D.new()
+		var bs := BoxShape3D.new()
+		bs.size = box.size.max(Vector3.ONE * 0.1)
+		shape.shape = bs
+		sb.add_child(shape)
+		shape.global_position = box.get_center())
+
+
+## Where a skeleton's bones lie now (world), a little padded.
+static func bone_box(corpse: Node3D) -> AABB:
+	var box := AABB()
+	var first := true
+	for sk: Skeleton3D in corpse.find_children("*", "Skeleton3D", true, false):
+		for b in sk.get_bone_count():
+			var p := sk.global_transform * sk.get_bone_global_pose(b).origin
+			box = AABB(p, Vector3.ZERO) if first else box.expand(p)
+			first = false
+	return box.grow(0.12)
 
 
 ## A creature without a ragdoll (an older model): it tips over where it stands, then turns to stone there.

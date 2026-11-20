@@ -1,6 +1,7 @@
 class_name Monsters
 ## Monster data for Mossy Hollows and the Fungal Jungle (combat doc 5.2, 5.3, 6, 7).
-## Owner, Nov 19: only these five creatures are in the game (no bosses, no raids, no other creatures).
+## Owner, Nov 19: only these five creatures are in the caves (no bosses, no raids, no other creatures).
+## Nov 20: plus the three skeleton miners of the dungeons (Tunnel Rat, Lost Miner, the Foreman: dungeon_only).
 ## Each attack: tell = seconds of warning before it lands, reach in meters,
 ## parry: "any" (weapon or shield), "shield" (crushing: only a shield parry works).
 ## buildup = {poison/burn/chill: amount} fills the target's Ailments meter (combat doc 2.6).
@@ -59,6 +60,38 @@ const LIST := {
 		attacks = [{name = "Bite", warn_sound = "beetle_hiss", tell = 0.5, damage = 7, type = "pierce", reach = 1.5, parry = "any", buildup = {poison = 34}},
 			{name = "Pounce", warn_sound = "beetle_hiss", tell = 0.8, damage = 11, type = "pierce", reach = 5.0, parry = "any", lunge = true, pounce = true, buildup = {poison = 34}}],
 		drops = [["bug_meat", 1, 1.0], ["bug_meat", 1, 0.4], ["spider_silk", 1, 0.7], ["spider_silk", 1, 0.35], ["venom_sac", 1, 0.3]]},
+	# ---- The skeleton miners of Lampwick Drift and Old Pell's Diggings (dungeons 2 and 3; owner OK'd the models Nov 20).
+	# They move by a skeleton (CreatureRig), not by named parts. rises: they lie scattered on the floor and get up when
+	# someone comes within rise_near m in their room, is seen, or hits them (F462). anim: the move each attack plays (its
+	# blow lands when the attack does). height: their body's height (the models are already their real size: size 1).
+	# dungeon_only: they only live in dungeons (placed by the plan's "creatures" list, never in cave packs).
+	# no_variant: no fiery/icy crystal ones (crystals can't follow the bones; the Lost Miner is icy already).
+	# No drops yet (only the statue's stone): asked the owner what the dead miners' bones should give.
+	# F467: the Tunnel Rat is a small fast pest in groups, easy to kill, soft hits.
+	"tunnel_rat": {name = "Tunnel Rat", dungeon_only = true, rises = true, rise_near = 8.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 2,
+		size = 1.0, height = 1.0, hp = 26, armor = 0, stun = 30, slash = 1.0, blunt = 1.25, pierce = 0.75,
+		fire = 0.0, frost = 0.0, poison = 1.0, walk = 2.0, run = 5.0, pack = [3, 5], xp = 5,
+		color = Color(0.62, 0.56, 0.45), shape = "tunnel_rat", recover = 0.8,
+		attacks = [{name = "Shovel Chop", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_hiss", tell = 0.55, damage = 6, type = "slash", reach = 1.5, parry = "any"},
+			{name = "Shovel Jab", anim = "1H_Melee_Attack_Stab", tell = 0.45, damage = 5, type = "pierce", reach = 1.7, parry = "any"}],
+		drops = []},
+	# F466/F467: the Lost Miner is slow and tough, and its pick is ice cold (chill buildup: 3 hits freeze you).
+	"lost_miner": {name = "Lost Miner", dungeon_only = true, rises = true, rise_near = 8.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 4,
+		size = 1.0, height = 1.45, hp = 95, armor = 15, stun = 80, slash = 0.9, blunt = 1.25, pierce = 0.75,
+		fire = -0.25, frost = 0.75, poison = 1.0, walk = 1.0, run = 2.6, pack = [1, 3], xp = 14,
+		color = Color(0.7, 0.82, 0.78), shape = "lost_miner", recover = 1.2,
+		attacks = [{name = "Frost Pick", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_hiss", tell = 0.9, damage = 14, type = "pierce", reach = 1.8, parry = "any", buildup = {chill = 34}},
+			{name = "Pick Jab", anim = "1H_Melee_Attack_Stab", tell = 0.7, damage = 10, type = "pierce", reach = 1.9, parry = "any", buildup = {chill = 34}}],
+		drops = []},
+	# The end boss with his Lost Miners (F467): a big two-handed chop, and the spin (only a shield parries it, it
+	# knocks you down: step back out of it).
+	"foreman": {name = "The Foreman", dungeon_only = true, rises = true, rise_near = 10.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 10, boss = true,
+		size = 1.0, height = 1.9, hp = 420, armor = 30, stun = 220, slash = 0.9, blunt = 1.25, pierce = 0.75,
+		fire = 0.0, frost = 0.5, poison = 1.0, walk = 1.4, run = 3.6, pack = [1, 1], xp = 80,
+		color = Color(0.55, 0.5, 0.44), shape = "foreman", recover = 1.6,
+		attacks = [{name = "Great Chop", anim = "2H_Melee_Attack_Chop", warn_sound = "beetle_rumble", tell = 1.0, damage = 26, type = "slash", reach = 2.3, parry = "any"},
+			{name = "Pick Whirl", anim = "2H_Melee_Attack_Spin", warn_sound = "beetle_rumble", tell = 1.4, damage = 32, type = "blunt", reach = 2.7, parry = "shield", knockdown = true}],
+		drops = []},
 }
 
 

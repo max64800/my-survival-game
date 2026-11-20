@@ -361,8 +361,8 @@ func nearest_noticer(m: Monster) -> int:
 		var running: bool = ps.node is CharacterBody3D and Vector2(ps.node.velocity.x, ps.node.velocity.z).length() > 5.0
 		var hear := Monsters.HEAR_RUN if running else Monsters.HEAR_WALK
 		if m.state == Monster.State.SLEEP:
-			sight = 4.0
-			hear = 4.0
+			sight = m.data.get("rise_near", 4.0)  # (a pile of bones gets up when you come this close, F462)
+			hear = sight
 		if lit and d <= m.data.get("wake_light", 0.0) and d < best_d and in_cave(m, p):
 			best = pid  # (F419: a light wakes bats anywhere in their cave, seen or not)
 			best_d = d
@@ -1349,6 +1349,18 @@ func _ev_shell(uid: int, hidden: bool) -> void:
 		_incoming = _incoming.filter(func(h): return h.uid != uid)
 		if hidden:
 			_float_number(m.global_position + Vector3.UP * 1.3, "Hides in its shell!")
+
+
+## Host: a pile of bones gets up (F462). Everyone sees it rise.
+func monster_rise(m: Monster) -> void:
+	_ev_rise.rpc(m.uid)
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_rise(uid: int) -> void:
+	var m: Monster = monsters.get(uid)
+	if m:
+		m.show_rise()
 
 
 ## A short word floating up over a monster ("Weak spot!").
