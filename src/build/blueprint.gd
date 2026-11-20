@@ -153,7 +153,7 @@ static func from_json(text: String) -> Dictionary:
 		if not (pos is Array and pos.size() == 3 and pos.all(func(v): return (v is float or v is int) and is_finite(v))):
 			return _fail("Bad piece position.")
 		var v := Vector3(pos[0], pos[1], pos[2])
-		if absf(v.x) > half.x or v.y < -1.0 or v.y > half.y or absf(v.z) > half.z:
+		if absf(v.x) > half.x or v.y < -2.0 or v.y > half.y or absf(v.z) > half.z:  # (down to -2: the Brewhall's cellar, F479)
 			return _fail("A piece is outside the blueprint's box.")
 		if not ((rot is float or rot is int) and int(rot) == rot and Pieces.valid_rot(int(rot))):  # quarter or 30° turns
 			return _fail("Bad piece rotation.")

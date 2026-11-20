@@ -52,7 +52,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 | Making the game / tools | F4, F5, F6, F7, F16 | |
 | Sound | F8, F15, F67, F353, F377 | Sounds must feel old-world: wood, stone, leather, metal. No beeps or whooshes |
 | The start of the game (first 5 minutes) | F10, F11 | |
-| A world that feels alive (enemies, ruins, cave life) | F9, F21, F188-F190, F237, F404 🔁, F412-F415, F418 | Columns asked for 3× (F9, F21, F189); caves feel hollow/empty (F9, F188); not enough places to discover (F237). Then too much: "we overdid it with the ground" (F404): calm floors, a few special things |
+| A world that feels alive (enemies, ruins, cave life) | F9, F21, F188-F190, F237, F404 🔁, F412-F415, F418, F479 | Columns asked for 3× (F9, F21, F189); caves feel hollow/empty (F9, F188); not enough places to discover (F237); more ruins (F479). Then too much: "we overdid it with the ground" (F404): calm floors, a few special things |
 | Fixes lost in merges | F350 | A big "save everyone's work" merge put older copies of files back and quietly deleted a finished fix. Every fix needs a test, so a lost fix shows up as a failing test |
 | Cave shapes (round vs sharp, tunnels) | F19, F20 | |
 | Digging feel + resources | F13, F14, F261 | |
@@ -170,6 +170,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **Skeleton miners: what do they drop?** (Claude, Nov 20) Right now only the stone of their statue (no item for bones or mining gear exists yet). Add drops (old coal, copper bits, a lamp)? And should the Foreman make his Lost Miners hit harder while he lives, like a pack leader?
 - [ ] **F468. Later: a different boss in each mine** (Lampwick's Foreman is perfect as is). *From: you (PC, Nov 20, Lampwick Drift Miners page). Said: 1×* — ideas told to you: Lantern Foreman, Old Pell with a rock sack (throws), moss Prop Warden with a plank shield (blocks, raises miners).
 - [ ] **F504. Show durability better: the morning star and every other piece of equipment (the way it shows now isn't good).** *From: you (PC, Nov 20, second play of Lampwick Drift). Said: 1×* — a note for later (owner).
+- [ ] **F479. We need a lot more ruins: we only have two (the watchtower and the Fallen Outpost).** The bigger goal after F478; each new ruin rebuildable the same way. *From: you (PC, Nov 20). Said: 1×* (Related: F237 places to discover.) — Nov 20 (brewhall chat): ruin 3 = the Brewhall (your pick). 3D page made (ruin / rebuilt in wood / rebuilt in brick, "Mark new pieces", roof and loft on/off): https://claude.ai/artifact/Gd8BawKGkgFCb3twQSSUJH. New brick ruin models (worn wall, half-fallen wall, rubble, fallen chimney, smashed barrel) not in the game yet. Waiting for your OK on the looks + 2 questions (wooden version's chimney: brick or stone? the cellar digs 1.25 m into the cave floor: OK?) before game code. — Nov 20 (later): you OK'd it (brick chimney in wood too, cellar dug in). ✅ The Brewhall is in the game (new worlds), rebuildable with planks or clay bricks; fixes: fewer windows, none beside a door, no steps in corners, the well moved. Next ruins, one at a time: ruin 4 = the Lantern Spire (3D page first), then Old Kiln, Twin Gate, Bridge Keep, Hearth Manor, Brickworks, Guild Hall, Cliff Watch, Ancestors' Crypt, Miners' Rest.
 
 
 

@@ -3,7 +3,7 @@ extends TestCase
 
 
 func test_four_blueprints_exist() -> void:
-	check_eq(BlueprintLibrary.IDS.size(), 9, "nine blueprints (the starter hut, six found in ruins, the Wooden Watchtower and Wooden Outpost learned by rebuilding ruins)")
+	check_eq(BlueprintLibrary.IDS.size(), 11, "eleven blueprints (the starter hut, six found in ruins, the Wooden Watchtower, the Wooden Outpost and the two Brewhalls learned by rebuilding ruins)")
 	for id in BlueprintLibrary.IDS:
 		check(BlueprintLibrary.make(id) != null, "%s can be made" % id)
 
@@ -16,7 +16,8 @@ func test_every_piece_is_real_and_inside_the_box() -> void:
 		for p in bp.pieces:
 			check(Pieces.allowed(p.id, p.mat), "%s: %s can be made of %s" % [id, p.id, p.mat])
 			var v: Vector3 = p.pos
-			check(absf(v.x) <= half.x and v.y >= 0.0 and v.y <= half.y and absf(v.z) <= half.z, "%s: %s at %s is inside the box" % [id, p.id, v])
+			var low := -1.5 if id.ends_with("brewhall") else 0.0  # (the Brewhall's cellar, F479: dug by its ruin)
+			check(absf(v.x) <= half.x and v.y >= low and v.y <= half.y and absf(v.z) <= half.z, "%s: %s at %s is inside the box" % [id, p.id, v])
 
 
 func test_no_two_pieces_overlap() -> void:

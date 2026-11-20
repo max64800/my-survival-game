@@ -11,7 +11,7 @@ extends Node
 const PLAN := "res://blueprints/ruins/watchtower_ruin.json"
 const CARVE_RADIUS := 1.1
 const CARVES_PER_FRAME := 30
-const RUBBLE := ["ruin_rubble", "door_broken"]  ## placed as hit-to-clear rubble, not as building pieces
+const RUBBLE := ["ruin_rubble", "door_broken", "barrel_smashed"]  ## placed as hit-to-clear rubble, not as building pieces
 
 var auth: GameAuthority
 var plan: Dictionary
@@ -27,6 +27,7 @@ var stone_key := "stone_watchtower"
 var wood_key := "wooden_watchtower"
 var ruin_name := "tower"
 var reach := 9.0
+var hard_mat := "cut_stone"   ## the material its "stone" blueprint is built in (the Brewhall: clay brick)
 static var last_origin := Vector3.INF  ## where the last one was built (the towercheck robot looks there)
 static var last_turn := 0
 
@@ -179,7 +180,7 @@ func _build() -> void:
 		if String(p.id) in RUBBLE:
 			# Rubble and the broken door: real rubble you hit to clear (owner: "they have to be destroyable"),
 			# dropped onto whatever is under it so nothing floats.
-			if float(p.pos[1]) < 0.3 and drop_rubble:
+			if float(p.pos[1]) < 0.3 and float(p.pos[1]) > -0.3 and drop_rubble:  # (not in a cellar)
 				pos.y = _floor_at(pos)
 			var t := Transform3D(Basis(Vector3.UP, Pieces.yaw_of(rot)), pos)
 			b._ev_add_rubble.rpc(b._next_rubble, String(p.id), String(p.mat), t)
@@ -257,7 +258,7 @@ func _add_rebuild_chest(basis: Basis) -> void:
 	var box_id: int = auth.storage.create_box("rebuild", pick, atan2(-to_path.x, -to_path.z))  # (its front, box -Z, toward the path)
 	last_rebuild_box = box_id
 	var ruins: Dictionary = auth.world_state.get("ruins", {}).duplicate()
-	ruins[str(box_id)] = {origin = origin, turn = turn, stone = stone_key, wood = wood_key, name = ruin_name, reach = reach, done = false}
+	ruins[str(box_id)] = {origin = origin, turn = turn, stone = stone_key, wood = wood_key, name = ruin_name, reach = reach, mat = hard_mat, done = false}
 	auth.world_state["ruins"] = ruins
 	print("RUIN_TOWER rebuilding chest %d for the %s at %s" % [box_id, ruin_name, pick])
 

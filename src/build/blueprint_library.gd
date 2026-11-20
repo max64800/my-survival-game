@@ -8,12 +8,13 @@ class_name BlueprintLibrary
 ## Every cell of the box is marked "air", so placed inside rock the chest carves the room out first.
 
 const IDS := ["delvers_hut", "miners_homestead", "stone_hall", "forge_workshop", "watchtower_cabin", "stone_watchtower",
-	"stone_outpost", "wooden_watchtower", "wooden_outpost"]
+	"stone_outpost", "wooden_watchtower", "wooden_outpost", "hearthbrick_brewhall", "wooden_brewhall"]
 ## Known from the very start (F161): you place them and bring the materials. The rest are learned from
 ## Old Blueprints found in ruins (F98).
 const STARTER := ["delvers_hut"]
 ## Learned only by rebuilding a ruin (owner, Nov 19), never from an Old Blueprint page.
-const REBUILD_ONLY := ["wooden_watchtower", "wooden_outpost"]
+## The Brewhall's two (F479): its cellar goes below the ground line, which only the ruin digs out.
+const REBUILD_ONLY := ["wooden_watchtower", "wooden_outpost", "hearthbrick_brewhall", "wooden_brewhall"]
 const NAMES := {
 	"delvers_hut": "Delver's Hut",
 	"miners_homestead": "Miner's Homestead",
@@ -24,6 +25,8 @@ const NAMES := {
 	"stone_outpost": "Stone Outpost",
 	"wooden_watchtower": "Wooden Watchtower",
 	"wooden_outpost": "Wooden Outpost",
+	"hearthbrick_brewhall": "Hearthbrick Brewhall",
+	"wooden_brewhall": "Wooden Brewhall",
 }
 
 const WOOD := "plank_root"
@@ -59,6 +62,11 @@ static func make(id: String) -> Blueprint:
 			lib._to_wood()
 		"stone_outpost_grid":  # (not a blueprint you learn: the old grid layout, which tools/ruins/make_outpost_ruin.py breaks)
 			lib._stone_outpost(false)
+		"hearthbrick_brewhall": lib._brewhall()
+		"wooden_brewhall":  # (owner, Nov 20, F479: rebuilding the Brewhall in wood teaches this one)
+			lib._brewhall()
+			lib._to_wood()
+			lib._brewhall_chimney_stays_brick()
 		_: return null
 	lib._bp.name = NAMES.get(id, id)
 	lib._bp.author = "Dwarf Game"
@@ -750,6 +758,145 @@ func _hall(x0: int, z0: int, x1: int, z1: int, sides: Dictionary) -> void:
 						"s": _wall_x("battlement", c, z1, 5.5, STONE)
 						"w": _wall_z("battlement", x0, c, 5.5, STONE)
 						"e": _wall_z("battlement", x1, c, 5.5, STONE)
+
+
+## F479 (owner, Nov 20): the third ruin's whole version, the Brewhall: a Hearthbrick (clay brick) dwarf tavern and
+## brewery, an L round a yard (about 15 x 12 m). Plan on the 2 m grid (x right, z front):
+##   - The main hall (x -8..0, z -6..4): two floors on foundations, a peaked roof (ridge along z, gables front and
+##     back), the round front door in the front gable wall; stairs up to the sleeping loft (railing round their hole);
+##     a side door to the yard and a doorway into the brewery.
+##   - The brewery wing (x 0..6, z -6..-2): one tall floor, its roof (ridge along x) running into the hall's side wall;
+##     a cellar under its right part (floor 1.25 m below the ground), stairs down along the wing; a door to the yard.
+##   - The chimney: a 2 x 1.3 m brick stack (two walls and two narrow walls per 2 m) outside the wing's end, 8 m tall.
+##   - The yard (x 0..6, z -2..4): railings round it with a gap in the front, a railed brick well in its corner.
+## Heights: foundations 0..1, ground walls 1..3, the loft floor at 3, loft walls 3.25..5.25, the hall roof from 5.25
+## (ridge 7.25); the wing roof from 3 (ridge 4); cellar floor -1.5, cellar walls -1.25..0.75, the wing floor over it 0.75.
+const _BREW_CHIMNEY := Vector3(7.17, 0, -4)   # the chimney's middle (2 cm off the wing's end wall)
+
+
+func _brewhall() -> void:
+	_start(Vector3(18, 9, 12))
+	var B := BRICK
+	var hx := [-7, -5, -3, -1]
+	var hz := [-5, -3, -1, 1, 3]
+	# --- foundations: the hall and the wing's left cells (the cellar is under the rest of the wing)
+	for x in hx:
+		for z in hz:
+			_add("foundation", B, Vector3(x, 0, z), 0)
+	for z in [-5, -3]:
+		_add("foundation", B, Vector3(1, 0, z), 0)
+	_add("foundation_steps", B, Vector3(-5, 0, 5), 0)    # up to the round front door
+	_add("foundation_steps", B, Vector3(1, 0, 1), 1)     # from the yard up to the hall's side door
+	_add("foundation_steps", B, Vector3(3, 0, -1), 0)    # from the yard up to the brewery door
+	# (owner, Nov 20: no steps in a corner, every one lands on open yard; no window right beside a door; fewer windows)
+	# --- the hall, ground floor (walls 1..3)
+	var y := 1.0
+	for e in [["wall", -7], ["doorway", -5], ["wall", -3], ["window_wall", -1]]:
+		_wall_x(e[0], e[1], 4, y, B)
+	for e in [["wall", -7], ["window_wall", -5], ["wall", -3], ["wall", -1]]:
+		_wall_x(e[0], e[1], -6, y, B)
+	for e in [["wall", -5], ["window_wall", -3], ["wall", -1], ["wall", 1], ["window_wall", 3]]:
+		_wall_z(e[0], -8, e[1], y, B)
+	for e in [["wall", -5], ["doorway", -3], ["wall", -1], ["doorway", 1], ["wall", 3]]:
+		_wall_z(e[0], 0, e[1], y, B)
+	_add("door", B, Vector3(-5, y, 4), 0)
+	_add("door", B, Vector3(0, y, -3), 1)
+	_add("door", B, Vector3(0, y, 1), 1)
+	# stairs in the middle of the hall's left half, climbing to the back; their foot on open floor (a slab under them
+	# lifts their top step level with the loft floor)
+	_add("floor", B, Vector3(-5, y, -1), 0)
+	_add("stairs", B, Vector3(-5, y + 0.25, -1), 0)
+	# --- the sleeping loft (floor at 3, walls 3.25..5.25), a railing round the stairs hole (not its top end)
+	var y2 := 3.0
+	for x in hx:
+		for z in hz:
+			if not (x == -5 and z == -1):
+				_add("floor", B, Vector3(x, y2, z), 0)
+	var y3 := y2 + 0.25
+	_wall_z("railing", -6, -1, y3, B)
+	_wall_z("railing", -4, -1, y3, B)
+	_wall_x("railing", -5, 0, y3, B)
+	for e in [["wall", -7], ["window_wide", -5], ["wall", -3], ["window_wall", -1]]:
+		_wall_x(e[0], e[1], 4, y3, B)
+	for e in [["wall", -7], ["window_wall", -5], ["wall", -3], ["wall", -1]]:
+		_wall_x(e[0], e[1], -6, y3, B)
+	for e in [["wall", -5], ["window_wall", -3], ["wall", -1], ["window_wall", 1], ["wall", 3]]:
+		_wall_z(e[0], -8, e[1], y3, B)
+	for e in [["wall", -5], ["wall", -3], ["wall", -1], ["window_wall", 1], ["wall", 3]]:
+		_wall_z(e[0], 0, e[1], y3, B)   # (behind the wing's roof at the back)
+	# --- the hall roof: ridge along z at x = -4, two rows each side; gables front and back, a half wall under the
+	# upper gables
+	var top := y3 + 2.0
+	for z in hz:
+		_add("roof_26", B, Vector3(-7, top, z), 3)
+		_add("roof_26", B, Vector3(-5, top + 1.0, z), 3)
+		_add("roof_26", B, Vector3(-3, top + 1.0, z), 1)
+		_add("roof_26", B, Vector3(-1, top, z), 1)
+	for gz in [4, -6]:
+		_add("gable_26", B, Vector3(-7, top, gz), 0)
+		_add("gable_26", B, Vector3(-1, top, gz), 2)
+		_wall_x("half_wall", -5, gz, top, B)
+		_wall_x("half_wall", -3, gz, top, B)
+		_add("gable_26", B, Vector3(-5, top + 1.0, gz), 0)
+		_add("gable_26", B, Vector3(-3, top + 1.0, gz), 2)
+	# --- the brewery wing (walls 1..3); its floor over the cellar at 0.75
+	for e in [["wall", 1], ["window_wall", 3], ["wall", 5]]:
+		_wall_x(e[0], e[1], -6, y, B)
+	for e in [["wall", 1], ["doorway", 3], ["wall", 5]]:
+		_wall_x(e[0], e[1], -2, y, B)
+	_add("door", B, Vector3(3, y, -2), 0)
+	_wall_z("wall", 6, -5, y, B)
+	_wall_z("wall", 6, -3, y, B)
+	for c in [Vector2(3, -3), Vector2(5, -5), Vector2(5, -3)]:
+		_add("floor", B, Vector3(c.x, 0.75, c.y), 0)
+	_wall_x("railing", 3, -4, y, B)   # round the cellar stairs' hole at the back (their top end, at x 2, stays open)
+	_wall_z("railing", 4, -5, y, B)
+	for z in [-3, -5]:
+		_add("roof_26", B, Vector3(1, 3.0, z), 0 if z == -3 else 2)
+		_add("roof_26", B, Vector3(3, 3.0, z), 0 if z == -3 else 2)
+		_add("roof_26", B, Vector3(5, 3.0, z), 0 if z == -3 else 2)
+	_add("gable_26", B, Vector3(6, 3.0, -3), 1)
+	_add("gable_26", B, Vector3(6, 3.0, -5), 3)
+	# --- the cellar (x 2..6, z -6..-2): floor at -1.5, walls -1.25..0.75, stairs up along the wing toward the hall
+	_floors(2, -6, 6, -2, -1.5, B)
+	for x in [3, 5]:
+		_wall_x("wall", x, -6, -1.25, B)
+		_wall_x("wall", x, -2, -1.25, B)
+	for z in [-5, -3]:
+		_wall_z("wall", 2, z, -1.25, B)
+		_wall_z("wall", 6, z, -1.25, B)
+	_add("floor", B, Vector3(3, -1.25, -5), 0)
+	_add("stairs", B, Vector3(3, -1.0, -5), 1)          # climbs toward -x, its foot on the open cellar floor
+	# --- the chimney (outside the wing's end wall)
+	for lvl in 4:
+		_brew_chimney_level(lvl * 2.0, B)
+	# --- the yard: railings round it (a gap in the middle of the front), a railed brick well in the front-right corner
+	# (its own railings close the fence there), clear of every step
+	for z in [-1, 1]:
+		_wall_z("railing", 6, z, 0.0, B)
+	_wall_x("railing", 1, 4, 0.0, B)
+	_floors(4, 2, 6, 4, 0.0, B)
+	_wall_x("railing", 5, 2, 0.25, B)
+	_wall_x("railing", 5, 4, 0.25, B)
+	_wall_z("railing", 4, 3, 0.25, B)
+	_wall_z("railing", 6, 3, 0.25, B)
+	# No furniture: you furnish it yourself (owner, Nov 16).
+
+
+## One 2 m level of the Brewhall's chimney: walls on its long sides, narrow walls across its ends.
+func _brew_chimney_level(y: float, mat: String) -> void:
+	var c := _BREW_CHIMNEY
+	_wall_x("wall", c.x, c.z - 0.5, y, mat)
+	_wall_x("wall", c.x, c.z + 0.5, y, mat)
+	_wall_z("wall_narrow", c.x - 0.83, c.z, y, mat)
+	_wall_z("wall_narrow", c.x + 0.83, c.z, y, mat)
+
+
+## The Wooden Brewhall keeps a brick chimney (a wooden one would burn; asked the owner, Nov 20).
+func _brewhall_chimney_stays_brick() -> void:
+	for p in _bp.pieces:
+		if p.pos.x > 6.1:
+			p.mat = BRICK
 
 
 # ---------------------------------------------------------------- helpers

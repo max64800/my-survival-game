@@ -1100,7 +1100,8 @@ const RUIN_XP := 300  ## experience for each dwarf near a rebuilt ruin (owner, N
 const RUIN_KEEP := ["ruin_wall_worn"]
 const RUIN_KEEP_SLOTS := ["wall", "window_wall"]
 const RUIN_KEEP_FAMILIES := ["plank_root"]
-const RUIN_DEBRIS := ["gate_broken"]  ## broken pieces lying about (the outpost's torn-off gate): cleared when it's rebuilt
+const RUIN_DEBRIS := ["gate_broken", "chimney_fallen"]  ## broken pieces lying about (the outpost's torn-off gate, the Brewhall's
+## fallen chimney): cleared when it's rebuilt
 ## Whole pieces that make way when a new piece needs their spot (the outpost's battlements where its walkway now runs
 ## on over the forge, owner Nov 20: they stood a walkway's height lower).
 const RUIN_MAKE_WAY := ["battlement", "battlement_corner"]
@@ -1122,7 +1123,14 @@ func ruin_intro(box_id: int) -> String:
 	var r: Dictionary = auth.world_state.get("ruins", {}).get(str(box_id), {})
 	if r.is_empty():
 		return ""
-	return "Fix the old %s! Put in planks or cut stone: only its broken parts get rebuilt.\nReward: its blueprints + %d XP." % [String(r.get("name", "tower")), RUIN_XP]
+	return "Fix the old %s! Put in planks or %s: only its broken parts get rebuilt.\nReward: its blueprints + %d XP." % [
+		String(r.get("name", "tower")), Items.display_name(ruin_hard(r)).to_lower(), RUIN_XP]
+
+
+## The ruin's own hard material (the one its "stone" blueprint is built in): cut stone, or clay brick for the Brewhall
+## (F479). Older records have no "mat": they are stone.
+static func ruin_hard(r: Dictionary) -> String:
+	return String(r.get("mat", BlueprintLibrary.STONE))
 
 
 ## The two ways to rebuild this ruin, for the chest's pictures: [{key, name, put, needs}] (wood first, then stone).
@@ -1131,7 +1139,7 @@ func ruin_choices(box_id: int) -> Array[Dictionary]:
 	var r: Dictionary = auth.world_state.get("ruins", {}).get(str(box_id), {})
 	if r.is_empty():
 		return out
-	for pair in [[String(r.wood), Items.display_name("plank_root")], [String(r.stone), Items.display_name("cut_stone")]]:
+	for pair in [[String(r.wood), Items.display_name("plank_root")], [String(r.stone), Items.display_name(ruin_hard(r))]]:
 		out.append({key = pair[0], name = BlueprintLibrary.NAMES.get(pair[0], pair[0]), put = pair[1],
 			needs = _list_text(ruin_needs(pair[0], r))})
 	return out
@@ -1200,7 +1208,7 @@ func ruin_chest_changed(box_id: int) -> void:
 	var key := ""
 	if chest.inv.count_of(BlueprintLibrary.WOOD) > 0:
 		key = String(r.wood)
-	elif chest.inv.count_of(BlueprintLibrary.STONE) > 0:
+	elif chest.inv.count_of(ruin_hard(r)) > 0:
 		key = String(r.stone)
 	if key == "":
 		return  # not a building material yet
@@ -1216,7 +1224,7 @@ func ruin_chest_changed(box_id: int) -> void:
 	for i in site.plan.size():  # what still stands whole is done already
 		if _ruin_slot_whole(site.plan[i], site.worn_go):
 			_ev_site_piece.rpc(box_id, i)
-	_set_status(box_id, "Rebuilding in %s" % ("wood" if key == String(r.wood) else "stone"))
+	_set_status(box_id, "Rebuilding in %s" % ("wood" if key == String(r.wood) else ("brick" if ruin_hard(r) == BlueprintLibrary.BRICK else "stone")))
 
 
 ## A whole piece of the ruin already stands where this plan piece goes (any material), or a worn wall that stays
@@ -1292,6 +1300,10 @@ func _ruin_step(box_id: int, site: Dictionary) -> bool:
 			if String(q.piece).begins_with("ruin_") and not keep and (q.pos.distance_to(p.pos) < 0.6 or uid in structure.overlapping(p.piece, p.pos, p.rot)):
 				_ev_remove_piece.rpc(uid)  # the broken wall comes down; the whole one goes up next
 				_set_status(box_id, "Taking down a broken wall…")
+				return true
+			if q.piece in RUIN_DEBRIS and uid in structure.overlapping(p.piece, p.pos, p.rot):
+				_ev_remove_piece.rpc(uid)  # the Brewhall's fallen chimney lies where the yard railing goes back up (F479)
+				_set_status(box_id, "Clearing the wreckage…")
 				return true
 			if q.piece in RUIN_MAKE_WAY and uid in structure.overlapping(p.piece, p.pos, p.rot):
 				_ev_remove_piece.rpc(uid)  # an old battlement where the new walkway goes (it goes back up higher)

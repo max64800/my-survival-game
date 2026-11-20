@@ -20,7 +20,7 @@ extends RefCounted
 ##   1 = the first caves: 400 m areas (Mossy x -200…200, Jungle x 220…620), squashed balls and tubes.
 ##   2 = real-shaped caves: 800 m areas (Mossy x -400…400, Jungle x 420…1220), about 4x the rooms,
 ##       passages and halls shaped the way water shapes real caves (see "layout 2" below).
-const LAYOUT_LATEST := 15
+const LAYOUT_LATEST := 16
 ## What brand-new worlds get. Layout 2: the real-shaped caves (F211 step 1, OK'd by the owner Nov 17). Layout 3: the
 ## same plus tall/wide/joined caverns and cliff exits with ledge paths (F230, F231). Old saves keep the layout they were
 ## made with; robots can try older caves with "-- layout=1" or "-- layout=2". Layout 4: the same plus a huge first
@@ -40,7 +40,8 @@ const LAYOUT_LATEST := 15
 ## to the ground").
 ## Layout 14: the first dungeon, Mossgate Hold, dug into solid rock behind a cave wall (owner, Nov 19: DungeonMap).
 ## Layout 15: the second dungeon too, Lampwick Drift (owner, Nov 20: F477), kept well clear of the first.
-const LAYOUT_DEFAULT := 15
+## Layout 16: the third, Old Pell's Diggings (owner, Nov 20: "start working on dung 3"), clear of both.
+const LAYOUT_DEFAULT := 16
 ## The dungeon test world (owner, Nov 20: "do not build any caves at all, the way in should be a small cave like where
 ## you spawn"): one small cave with Mossgate Hold behind its wall, nothing else. A layout number of its own (higher
 ## than every real one, so every "layout 14 or later" rule holds), so saves, friends and the planning caches keep it
@@ -48,8 +49,10 @@ const LAYOUT_DEFAULT := 15
 const DUNGEON_ONLY := 1014
 ## The Dungeon 2 test world: the same small cave with Lampwick Drift behind it (its own number, like DUNGEON_ONLY).
 const DUNGEON_ONLY_2 := 1015
+## The Dungeon 3 test world: the same small cave with Old Pell's Diggings behind it.
+const DUNGEON_ONLY_3 := 1016
 ## Test world layout -> which DungeonMap.MAPS it holds.
-const DUNGEON_TESTS := {DUNGEON_ONLY: 0, DUNGEON_ONLY_2: 1}
+const DUNGEON_TESTS := {DUNGEON_ONLY: 0, DUNGEON_ONLY_2: 1, DUNGEON_ONLY_3: 2}
 static var layout := LAYOUT_DEFAULT
 
 

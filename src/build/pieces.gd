@@ -131,15 +131,23 @@ const LIST := {
 	"spear_rack": {name = "Spear Rack", group = "decor", size = Vector3(1.6, 2.0, 0.4), units = 2, place = "free",
 		families = ["plank_root"], station = {"workbench": 1}},
 	# Ruin pieces (Nov 17): the world places them in old ruins (src/world/ruin_tower.gd); nobody can build them
-	# (the build menu hides "legacy"). Models: tools/asset_forge/builds/stonehold_v2.py.
+	# (the build menu hides "legacy"). Models: tools/asset_forge/builds/stonehold_v2.py (stone) and
+	# hearthbrick_v2_ruin.py (clay brick).
 	"ruin_wall_worn": {name = "Worn Wall", group = "legacy", size = Vector3(2, 2, 0.3), units = 4, place = "edge",
-		families = ["cut_stone"], station = {"mason": 99}},
+		families = ["cut_stone", "clay_brick"], station = {"mason": 99}},
 	"ruin_wall_collapsed": {name = "Collapsed Wall", group = "legacy", size = Vector3(2, 2, 0.3), units = 3, place = "edge",
-		families = ["cut_stone"], station = {"mason": 99}},
+		families = ["cut_stone", "clay_brick"], station = {"mason": 99}},
 	"ruin_rubble": {name = "Rubble", group = "legacy", size = Vector3(1.6, 0.7, 1.6), units = 2, place = "free",
-		families = ["cut_stone"], station = {"mason": 99}},
+		families = ["cut_stone", "clay_brick"], station = {"mason": 99}},
 	"door_broken": {name = "Broken Door", group = "legacy", size = Vector3(2.0, 0.3, 1.8), units = 1, place = "free",
 		families = ["cut_stone"], station = {"mason": 99}},
+	# The Brewhall's wreckage (owner, Nov 20, F479; models: tools/asset_forge/builds/hearthbrick_v2_ruin.py, which also
+	# makes the brick ruin walls and rubble): its toppled chimney (cleared when the Brewhall is rebuilt) and a smashed
+	# barrel (rubble you hit to clear).
+	"chimney_fallen": {name = "Fallen Chimney", group = "legacy", size = Vector3(2.2, 1.3, 4.6), units = 8, place = "free",
+		families = ["clay_brick"], station = {"mason": 99}},
+	"barrel_smashed": {name = "Smashed Barrel", group = "legacy", size = Vector3(1.0, 0.8, 1.0), units = 1, place = "free",
+		families = ["plank_root"], station = {"workbench": 99}},
 	# --- mining
 	"ceiling_panel": {name = "Ceiling Panel", group = "mining", size = Vector3(2, 0.25, 2), units = 4, place = "ceiling", supports_rock = true, station = ALL},
 	"mine_prop": {name = "Mine Prop", group = "mining", size = Vector3(2, 3, 0.4), units = 4, place = "free", extra = {copper_ingot = 1}, supports_rock = true,

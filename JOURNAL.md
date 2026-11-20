@@ -6895,6 +6895,41 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - **Next:** placing the junk in the dungeons (none placed yet), with the placement rule and its automatic test.
 
 
+## November 20, 2026 (PC, brewhall Claude): the third ruin, the Brewhall, as a 3D page first (F479)
+- **What we did:** the owner picked the Brewhall (an old dwarf tavern and brewery in clay brick). Made its whole
+  blueprint in the game's blueprint list (`hearthbrick_brewhall` and `wooden_brewhall`, not learnable yet): an L, a
+  two-floor hall (8 x 10 m) with a sleeping loft (railing round the stair hole), a brewery wing with a cellar under
+  it, an 8 m brick chimney, a fenced yard with a well. Then `tools/ruins/make_brewhall_ruin.py` breaks it piece for
+  piece (so the ruin and the blueprint line up): the back of the roof caved in, the chimney fallen across the yard
+  railing, doors gone, worn and fallen walls, smashed barrels, the cellar half full of rubble. The same script works
+  out both rebuilds with the game's rules: wood = 40 new pieces (213 planks, 27 rope, plus 80 bricks for the
+  chimney); brick = 50 new pieces (296 bricks, 50 mortar). Page: https://claude.ai/artifact/Gd8BawKGkgFCb3twQSSUJH.
+- **New models** (`tools/asset_forge/builds/hearthbrick_v2_ruin.py`, made from the real Hearthbrick wall code, then
+  broken; saved in `journey/hearthbrick_v2/glb`, not in the game yet): brick worn wall, half-fallen wall, rubble,
+  fallen chimney, smashed barrel.
+- **Hurdles / Claude's slips:** (1) The ruin pieces existed only in stone, so the brick ones had to be made first.
+  (2) In the first worn wall the missing bricks didn't show (dark holes beside dark burnt bricks) and the broken top
+  was tiny: holes got a darker back and the break got bigger. (3) A chimney made of 4 walls round a square has empty
+  notches at its corners, so the chimney is 2 x 1.3 m (long walls plus narrow walls across the ends, flush). (4) The
+  first fallen-chimney spot cut through the brewery's front wall: moved it out along the yard railing. (5) The game
+  only checks for a new piece 2 m above a worn wall, but brick floors are 2.25 m apart: the page uses up to 2.35 m,
+  and the game code needs the same fix. (6) My local test page kept its loading text (the published page hides it).
+- **Open:** owner's OK on the looks; wooden chimney in brick or stone; the cellar digs 1.25 m into the cave floor.
+  Then the game code (ruin class, Rebuilding Chest taking clay bricks, tests).
+- **Follow-up (later the same day, brewhall Claude + the next chat):** the owner OK'd it (brick chimney in the wooden
+  version too, the cellar dug into the floor). Fixes from the owner's notes: far fewer windows, no window right beside
+  a door, no steps in a corner (every door's steps land on open yard), the well moved to the yard's front corner. The
+  brick ruin models went into the game (`assets/models/build`), and the Brewhall is now a real ruin in new worlds
+  (`src/world/ruin_brewhall.gd`, test `tests/test_ruin_brewhall.gd`); its Rebuilding Chest takes clay bricks
+  (`Builder.ruin_hard()`). The blueprint loader now allows pieces down to 1.5-2 m below the floor line (the cellar).
+  **Hurdles:** (1) the fallen chimney lay right where the yard railings go back up, so the rebuild got stuck forever:
+  now a piece of wreckage in a new piece's way is cleared first. (2) A change that let worn walls count as "under"
+  something 2.25 m up (Stonehold/brick floor spacing) also tore down the watchtower's worn walls in a wood rebuild,
+  so it was undone. (3) Claude once closed ALL running Godot programs by mistake (other chats' tests too). The next
+  chat re-ran the Fallen Outpost tests (wood 4 min, saves 1.5 min, stone 18.5 min: the stone one is just slow) — all
+  passed — and committed only the Brewhall files.
+
+
 ## November 20, 2026 (PC, junk Claude): the dungeon junk laid out in Mossgate Hold, 3D page first
 - **What we did:** read how Mossgate's things are placed (one script, `tools/dungeons/make_mossgate.py`, writes the
   plan the game builds from), suggested a plan, and the owner chose: 3-5 pieces in a big room, 1-2 in a small one,
