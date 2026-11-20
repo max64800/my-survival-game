@@ -1095,6 +1095,10 @@ func _identical_exists(p: Dictionary) -> bool:
 
 const RUIN_EQUIVALENT := {"railing": ["battlement", "battlement_corner"]}  ## a wooden railing stands where a battlement did
 const RUIN_XP := 300  ## experience for each dwarf near a rebuilt ruin (owner, Nov 19)
+## Worn walls (only a stone or two missing) stay as they are: not rebuilt, not paid for (owner, Nov 20). Only collapsed
+## walls and missing pieces get rebuilt.
+const RUIN_KEEP := ["ruin_wall_worn"]
+const RUIN_KEEP_SLOTS := ["wall", "window_wall"]
 
 
 ## What an untouched Rebuilding Chest says when you open it (owner, F350). Short (owner F411, Nov 19: "far too long"):
@@ -1148,7 +1152,7 @@ func ruin_picture(box_id: int) -> Array[Dictionary]:
 		var q: Dictionary = structure.pieces[uid]
 		if Vector2(q.pos.x - origin.x, q.pos.z - origin.z).length() < 9.0:
 			out.append({piece = q.piece, family = q.family, pos = q.pos - origin, rot = q.rot,
-				fix = "broken" if String(q.piece).begins_with("ruin_") else ""})
+				fix = "broken" if String(q.piece).begins_with("ruin_") and not q.piece in RUIN_KEEP else ""})
 	for p in bp.world_pieces(origin, int(r.turn)):
 		if not _ruin_slot_whole(p) and not _ruin_broken_at(p):
 			out.append({piece = p.piece, family = p.family, pos = p.pos - origin, rot = p.rot, fix = "missing"})
@@ -1196,12 +1200,15 @@ func ruin_chest_changed(box_id: int) -> void:
 	_set_status(box_id, "Rebuilding in %s" % ("wood" if key == String(r.wood) else "stone"))
 
 
-## A whole piece of the ruin already stands where this plan piece goes (any material).
+## A whole piece of the ruin already stands where this plan piece goes (any material), or a worn wall that stays.
 func _ruin_slot_whole(p: Dictionary) -> bool:
 	var same: Array = [p.piece] + RUIN_EQUIVALENT.get(p.piece, [])
+	var wall_slot: bool = p.piece in RUIN_KEEP_SLOTS
 	for uid in structure.pieces:
 		var q: Dictionary = structure.pieces[uid]
 		if q.piece in same and q.rot == p.rot and q.pos.distance_to(p.pos) < 0.05:
+			return true
+		if wall_slot and q.piece in RUIN_KEEP and q.pos.distance_to(p.pos) < 0.6:
 			return true
 	return false
 
@@ -1228,7 +1235,7 @@ func _ruin_step(box_id: int, site: Dictionary) -> bool:
 			continue
 		for uid in structure.pieces:  # (a worn wall is lower than a whole one: look by place, not only by overlap)
 			var q: Dictionary = structure.pieces[uid]
-			if String(q.piece).begins_with("ruin_") and (q.pos.distance_to(p.pos) < 0.6 or uid in structure.overlapping(p.piece, p.pos, p.rot)):
+			if String(q.piece).begins_with("ruin_") and not q.piece in RUIN_KEEP and (q.pos.distance_to(p.pos) < 0.6 or uid in structure.overlapping(p.piece, p.pos, p.rot)):
 				_ev_remove_piece.rpc(uid)  # the broken wall comes down; the whole one goes up next
 				_set_status(box_id, "Taking down a broken wall…")
 				return true
@@ -1241,7 +1248,7 @@ func _finish_ruin(box_id: int, site: Dictionary, chest: Dictionary) -> void:
 	var origin: Vector3 = site.origin
 	for uid in structure.pieces.keys():  # anything broken still standing in the rebuilt tower goes
 		var q: Dictionary = structure.pieces[uid]
-		if String(q.piece).begins_with("ruin_") and Vector2(q.pos.x - origin.x, q.pos.z - origin.z).length() < 9.0:
+		if String(q.piece).begins_with("ruin_") and not q.piece in RUIN_KEEP and Vector2(q.pos.x - origin.x, q.pos.z - origin.z).length() < 9.0:
 			_ev_remove_piece.rpc(uid)
 	var ruins: Dictionary = auth.world_state.get("ruins", {}).duplicate()
 	if ruins.has(str(box_id)):

@@ -166,6 +166,10 @@ func test_rebuilding_chest_is_there_and_explains_itself() -> void:
 		whole += int(Pieces.cost(p.id, p.mat).get("plank_root", 0))
 	check(wood.get("plank_root", 0) > 0, "the wooden tower needs root planks (%s)" % [wood])
 	check(int(wood.get("plank_root", 0)) < whole, "what still stands isn't counted (%d of %d planks)" % [wood.get("plank_root", 0), whole])
+	# Owner, Nov 20: walls with only a stone or two missing (worn walls) stay as they are: not rebuilt, not paid for.
+	var worn_marked := pic.filter(func(e): return e.piece == "ruin_wall_worn" and e.fix != "")
+	check_eq(worn_marked.size(), 0, "worn walls are shown as staying, not as broken")
+	check(int(wood.get("plank_root", 0)) <= 260, "worn walls aren't paid for: %d planks (was 447)" % wood.get("plank_root", 0))
 	auth.get_parent().queue_free()
 
 
@@ -255,10 +259,15 @@ func test_rebuild_the_ruin_in_wood() -> void:
 		b._tick_sites()
 	check(not b.sites.has(box), "the rebuilding finished (%s)" % b.site_status(box))
 	var ruin_left := 0
+	var worn_left := 0
 	for uid in b.structure.pieces:
-		if String(b.structure.pieces[uid].piece).begins_with("ruin_"):
+		var id := String(b.structure.pieces[uid].piece)
+		if id in Builder.RUIN_KEEP:
+			worn_left += 1  # owner, Nov 20: worn walls (a stone or two missing) stay
+		elif id.begins_with("ruin_"):
 			ruin_left += 1
-	check_eq(ruin_left, 0, "no broken walls left")
+	check_eq(ruin_left, 0, "no collapsed walls left")
+	check(worn_left > 0, "the worn walls still stand (%d)" % worn_left)
 	check((auth.world_state.get("blueprints", []) as Array).has("wooden_watchtower"), "everyone knows the Wooden Watchtower")
 	check(auth.world_state.ruins[str(box)].done, "the world remembers it's rebuilt")
 	check(not auth.storage.boxes.has(box), "the Rebuilding Chest is gone once the tower stands (owner)")

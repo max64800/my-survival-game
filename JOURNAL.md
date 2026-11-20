@@ -5949,3 +5949,37 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   rebuild feature, their tests pass, so they're saved with it.
 - **Mistake:** a python replace didn't match a line with "\n" in it (escaping), so I redid it with sed. Not checked in a
   real game yet: middle-click heavy attacks and holding to swing (no robot presses mouse buttons).
+
+## Nov 20 (PC, Hearthbrick Claude): Hearthbrick version 2, batch 1 as white shapes (F427)
+- **What we did:** showed the owner today's brick wall next to Stonehold on a 3D page ("Hearthbrick Wall Today").
+  Owner: see-through gaps, too flat, "too 21st century, not Dwarven-like". ChatGPT (owner's chat "Generate Building
+  Kit Sheet") made 4 dwarven wall ideas; owner picked **B** (bumpy hand-pressed bricks, rough limestone corners and
+  base row, upright bricks under a carved rune band, a dark diamond). Then a turnaround of the first pieces
+  (`assets/concepts/building-kit/hearthbrick_*.png`, in CREDITS). Owner: floor, ceiling and foundation get the same pale
+  border. New build script `tools/asset_forge/builds/hearthbrick_v2.py` (test models in `journey/hearthbrick_v2/`, the
+  game's files not replaced yet): wall, round doorway, foundation, floor. Owner on round 1: thicker bricks, one arch
+  per foundation side, gaps by the corner column, add the window. Round 1b: all done, plus the arched leaded window.
+- **Mistakes and hurdles (mine):** the first 3D page didn't load (forgot the page's "rebuild the model in memory" trick
+  the Stonehold page uses). The download of the ChatGPT picture was blocked; saved it by showing it full size in my own
+  tab and taking a screenshot. The page's name cards made the owner unsure which idea was which (letters now on the
+  picture). The dent tool measures from the world's centre, so bricks away from it were pushed outward and poked out
+  (now each brick is dented at the centre, then moved). The doorway ring was wider than the space between the corner
+  stones (corner stones are now cut round it). Long black lines across stones cut to a curve: the file format split
+  their bent front faces wrongly; now split by ear clipping (Stonehold's curved stones may have the same problem:
+  asked the owner). First models were 4-10x heavier than Stonehold (each cut stone kept ~96 corner points along straight
+  sides; dents too fine); slimmed to about 1-3x. Bricks cut afterwards left gaps beside openings; now laid to end
+  exactly at the opening. Sinking bricks too far hid them behind the mortar layer (blank patches); capped at 1.5 cm.
+  A long patch broke the shell's quoting; used patch files instead.
+
+## Nov 20 (PC, cave Claude): tower repair bill (F432) and the 9 FPS lead (F417)
+- **F417 lead:** the new timers caught it in the 2:01 pm session (cave world): for ~1.5 min after loading, FPS 10-19
+  with the graphics card taking 55-72 ms a frame (code and physics only 2-4 ms), then a steady 60 in the same place.
+  So it's time-based and on the graphics card: suspects are first-time drawing (the slow stand-in shaders while the
+  fast ones are prepared) or the fog/mist. Next: a muted robot that logs graphics-card time each second, fog on vs off.
+- **F432:** owner asked why fixing the tower costs 447 planks. Counted it: 115 whole parts (free), 27 broken, 23
+  missing; broken walls were charged like new ones. Made a 3D page (broken / fixed with wood / with stone / new, plus
+  the bill). Owner's rule: walls missing only a brick (the 17 worn walls) stay. Now 258 planks + 33 rope.
+- **Mistakes and hurdles:** the first page showed the owner an almost empty tower: it downloaded all 27 piece files at
+  once on the website and most failed (on my PC it worked, so I hadn't checked the live page). Now one at a time with
+  retries; I opened the live page myself to check. Another chat was mid-edit on dungeon_build.gd so the game didn't
+  compile for a few minutes; waited instead of touching their file. My temporary data dump in the test was removed.
