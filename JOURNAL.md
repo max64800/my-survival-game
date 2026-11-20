@@ -5874,3 +5874,21 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   duplicates into gold), golden plants (meals last twice as long). Also a table of all 9 gems, what they do and where
   they drop today: most gems come from statues (1 in 20 kills); Jolt, Leech and Blight barely exist in zone 1; armor
   has no sockets. Saved in `docs/design/rare-finds.md` with the open questions (armor sockets, geode gems, which to build).
+
+## November 20, 2026 (PC, Claude 2, caves): F417 freeze timers, three-chat sort-out
+- **git pull** was blocked again by other chats' unsaved files. Claude stopped and asked instead of stashing. Another
+  chat saved the leftovers and did the merge. The owner then asked which chat does what: Claude asked the other 3
+  sessions by message (crafting balance, great axe + creatures, dungeons) and relayed their answers.
+- **F417 (9 FPS):** the newest session had no GROUND_SNAP line, so ground-snapping is not the cause. The 1.4 s hitch
+  now shows up in the cavecheck robot too. Experiments (removed afterwards): turning rock collisions off didn't
+  change the 2.4 s physics step while loading; timing the creature step showed nothing. New in the play log: a
+  "first 3 seconds of play" step, PART timers for the warm-ups at the end of loading (all under 0.1 s), and SLOW FRAME
+  now measured with the real clock plus the game-code / physics split.
+- **Mossgate chasm** (handover question): 24 m deep, and the dungeon code already kills on landing, so fall damage
+  isn't needed there.
+- **Mistakes:** "whole frame" in LOW FPS lines is really only the game-code part (Godot's TIME_PROCESS); the old SLOW
+  FRAME used `delta`, which missed a 1.4 s frame. Claude put a temporary timer into monster_manager.gd (a file the
+  dungeons chat is editing) and restored it from a copy; their new lines were kept, and Claude told that chat to
+  re-check. Lesson: put temporary probes only in my own files.
+- **Not mine, unsaved:** 6 files (Wooden Watchtower / Rebuilding Chest: blueprint_library, cave_ins, structure,
+  storage, auto_smelt, test_blueprint_library). No chat claims them. Waiting for the owner.

@@ -65,10 +65,25 @@ func _exit_tree() -> void:
 		_thread.wait_to_finish()
 
 
+## One timed piece of work (F417): written only when it took 0.1 s or more.
+static func time_part(what: String, since_usec: int) -> void:
+	var ms := (Time.get_ticks_usec() - since_usec) / 1000.0
+	if ms >= 100.0:
+		_say("[%s] PART %s: %.0f ms" % [_clock(), what, ms])
+
+
+var _last_usec := 0
+
+
 func _process(delta: float) -> void:
 	_beat_ms = Time.get_ticks_msec()
-	if delta > SLOW_FRAME:
-		_say("[%s] SLOW FRAME: %.1f s (doing: %s)" % [_clock(), delta, doing])
+	# Measured with the real clock, not `delta` (F417: a 1.4 s frame never showed up as SLOW FRAME).
+	var now := Time.get_ticks_usec()
+	var real := (now - _last_usec) / 1000000.0 if _last_usec > 0 else delta
+	_last_usec = now
+	if real > SLOW_FRAME:
+		_say("[%s] SLOW FRAME: %.1f s (doing: %s) · game code %.0f ms, physics %.0f ms" % [_clock(), real, doing,
+			Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0, Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0])
 	_low_check(delta)
 	_report_t += delta
 	if _report_t >= REPORT_EVERY:

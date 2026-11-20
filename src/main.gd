@@ -744,12 +744,22 @@ func _process(delta: float) -> void:
 	hud.set_loading_progress(0.15 + 0.85 * rings_ready / 5.0)
 	if world.terrain.is_area_meshed(area) and (dungeon_test or ((cave_life == null or cave_life.is_built()) and (_clutter == null or _clutter.is_built()))):
 		_ready_to_play = true
-		FreezeWatch.doing = "playing"
 		print("[%s] ready to play" % Time.get_time_string_from_system())
+		# F417: a 1.4 s hitch lands right here in many sessions. Each piece is timed, and the first 3 s of play get
+		# their own name in the watch log, so the next session says which part is slow.
+		var t := Time.get_ticks_usec()
+		FreezeWatch.doing = "warming up rock chunks"
 		RockShatter.warm_up(self)  # the first dig no longer hitches (owner, Nov 18)
+		FreezeWatch.time_part("rock chunk warm-up", t)
+		t = Time.get_ticks_usec()
 		Fx.burst(self, Vector3(0, -5000, 0), Color.GRAY, 16, 4.0)
+		FreezeWatch.time_part("dust warm-up", t)
+		t = Time.get_ticks_usec()
 		dwarf.set_physics_process(true)
 		hud.set_loading(false)
+		FreezeWatch.time_part("hiding the loading screen", t)
+		FreezeWatch.doing = "first 3 seconds of play"
+		get_tree().create_timer(3.0).timeout.connect(func(): FreezeWatch.doing = "playing")
 
 
 ## Saves now (host only). Shows a small note.
