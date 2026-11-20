@@ -6483,3 +6483,11 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   the crossbow aim camera's height is better. The camera's turning point went from 1.5 m to 1.0 m above his feet
   (aim camera: 0.9 m). One picture from the aim-check robot: the view now looks past his head instead of down on him.
   No hurdles.
+- **Owner's OK (Nov 20):** "I think this is good"; they're for dungeons 2 and 3 (Old Pell's Diggings has the same
+  three). The 7 models are now in `assets/models/creatures/` (checker: all ok, build script found) and imported by
+  Godot; a load test found 24 moves, 41 bones and the parts beard/helmet/tool/lamp_glow in each. No game code yet:
+  the game's monsters move by parts, these by a skeleton, so that's a new piece of work (handed to a new chat).
+- **What Lampwick Drift still needs (checked):** only Mossgate Hold is in the game (`dungeon_build.gd` PLANS); no
+  Lampwick blueprint yet (`tools/dungeons/make_lampwick.py`), no game code for its new traps (cart lanes, swing
+  boulder, bear jaws, tripwire wall, chest spikes), the heal fountain waits for the owner's OK, and the creatures'
+  game code (F462-F467).
