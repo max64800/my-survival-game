@@ -59,6 +59,8 @@ var dev_menu: DevMenu  ## P in dev builds
 var _work_box: VBoxContainer  ## by a Builder's Chest: what's being built, how far along (owner, Nov 16)
 var _work_label: Label
 var _work_bar: ProgressBar
+var _reload_box: VBoxContainer  ## crossbow reload bar under the crosshair (owner, Nov 20)
+var _reload_bar: ProgressBar
 var box_panel: BoxPanel
 var build_mode: BuildMode
 var _build_label: Label
@@ -108,6 +110,21 @@ func _build() -> void:
 	_dig_bar.position += Vector2(-45, 52)
 	_dig_bar.visible = false
 	root.add_child(_dig_bar)
+
+	# Crossbow reloading: a bar in the middle of the screen, under the crosshair (owner, Nov 20).
+	_reload_box = VBoxContainer.new()
+	_reload_box.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	_reload_box.custom_minimum_size = Vector2(240, 0)
+	_reload_box.position += Vector2(-120, 70)
+	_reload_box.visible = false
+	root.add_child(_reload_box)
+	var reload_label := _label(_reload_box, 16)
+	reload_label.text = "Reloading (stand still)"
+	reload_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_reload_bar = ProgressBar.new()
+	_reload_bar.custom_minimum_size = Vector2(240, 14)
+	_reload_bar.show_percentage = false
+	_reload_box.add_child(_reload_bar)
 
 	_hotbar = HBoxContainer.new()
 	_hotbar.add_theme_constant_override("separation", 6)
@@ -1033,10 +1050,19 @@ func _update_work_bar(auth: GameAuthority) -> void:
 Take out your Build Hammer here to build it (walk away to stop)." % [nm, roundi(f * 100.0)]
 
 
+func _update_reload_bar() -> void:
+	var me := _local_dwarf()
+	var reloading := me != null and me.fight != null and me.fight.is_crossbow() and me.fight.reload_left >= 0.0
+	_reload_box.visible = reloading
+	if reloading:
+		_reload_bar.value = (1.0 - me.fight.reload_left / maxf(me.fight.reload_total, 0.01)) * 100.0
+
+
 func _process(delta: float) -> void:
 	var auth := GameAuthority.instance
 	var ps: GameAuthority.PlayerState = auth.get_player(peer_id) if auth else null
 	_update_work_bar(auth)
+	_update_reload_bar()
 	_goals_wait -= delta
 	if ps and _goals_wait <= 0.0:
 		_goals_wait = 1.0

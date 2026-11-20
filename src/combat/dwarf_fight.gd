@@ -24,6 +24,7 @@ var _heavy_until := 0.0  ## a heavy swing is still going until this clock time
 var loaded := true  ## crossbow: a bolt is in it
 const KNOCK_DOWN_TIME := 2.0  ## down 0.85 s, then 1.1 s getting up
 var reload_left := -1.0  ## crossbow: seconds of reloading left (-1 = not reloading)
+var reload_total := 1.0  ## crossbow: how long this reload takes in all (for the bar in the middle of the screen)
 
 
 func item() -> String:
@@ -187,7 +188,7 @@ func step(delta: float, playing: bool, move_dir: Vector3) -> float:
 	if not weapon_mode():
 		return 1.0
 	if is_crossbow():
-		return _crossbow_step(delta)
+		return _crossbow_step(delta, move_dir)
 	if Input.is_action_just_pressed("use") and clock - _lantern_hint_at > 4.0 and shield_blocked_by_lantern():
 		_lantern_hint_at = clock  # say why the shield isn't raised (owner, Nov 17: "I cannot use the shield")
 		message.emit("Your lantern is in your other hand: press L to put it away and raise the shield.", Color.WHITE)
@@ -304,11 +305,13 @@ func _impact(heavy: bool, combo_step: int, riposte: bool, airborne: bool = false
 
 # ---------------------------------------------------------------- crossbow (doc 3.6)
 
-func _crossbow_step(delta: float) -> float:
+## Reloading needs you to stand still (owner, Nov 20): walking or running away stops it, and the next reload starts
+## from the beginning.
+func _crossbow_step(delta: float, move_dir := Vector3.ZERO) -> float:
 	if reload_left >= 0.0:
-		if dwarf.running:
+		if dwarf.running or move_dir.length() > 0.1:
 			reload_left = -1.0
-			message.emit("Reload stopped (running)", Color(0.9, 0.9, 0.9))
+			message.emit("Reload stopped: stand still to reload", Color(0.9, 0.9, 0.9))
 		else:
 			reload_left -= delta
 			if reload_left < 0.0:
@@ -319,7 +322,9 @@ func _crossbow_step(delta: float) -> float:
 			_shoot(aiming())
 		else:
 			start_reload()
-	return (_ps().progress.guard_walk_mult(true) if _ps() and aiming() else 0.6) if aiming() or reload_left >= 0.0 else 1.0  # Crossbow ★25
+	if reload_left >= 0.0:
+		return 0.0  # standing still while reloading (moving stopped it above)
+	return (_ps().progress.guard_walk_mult(true) if _ps() else 0.6) if aiming() else 1.0  # Crossbow ★25
 
 
 ## R while holding the crossbow (or clicking when it's empty).
@@ -333,8 +338,10 @@ func start_reload() -> void:
 	if fx.get("free_reloads", 0.0) >= 1.0:  # Rapid Volley perk: no wait for the next few bolts
 		fx.free_reloads -= 1.0
 		reload_left = 0.05
+		reload_total = 0.05
 		return
 	reload_left = Combat.RELOAD[clampi(tier(), 0, 4)] * (_ps().progress.crossbow_reload_mult() if _ps() else 1.0)
+	reload_total = reload_left
 	dwarf.model.react("reload")
 	message.emit("Reloading…", Color(0.9, 0.9, 0.9))
 

@@ -305,9 +305,10 @@ func test_aim_skips_things_behind_the_dwarf() -> void:
 	root.queue_free()
 
 
-## Owner, Nov 19: "with the crossbow my dwarf stops or only moves one way; and there's no reloading". Reloading asked
-## the dwarf "running?", which it didn't know: the walking code broke every frame and the reload never finished.
-func test_crossbow_reload_while_walking() -> void:
+## Owner, Nov 19: "with the crossbow my dwarf stops or only moves one way; and there's no reloading" (the walking
+## code broke every frame and the reload never finished). Owner, Nov 20: reloading needs you to stand still; walking
+## away stops it and it starts over; it takes twice as long as before.
+func test_crossbow_reload_needs_standing_still() -> void:
 	Controls.setup()
 	var root := _room([])
 	var auth := GameAuthority.new()
@@ -326,23 +327,29 @@ func test_crossbow_reload_while_walking() -> void:
 	var was_robot := Controls.robot
 	Controls.robot = true
 	Controls.set_captured(true)  # playing (the reload only runs while you play, not in a menu)
+	check_eq(Combat.RELOAD[1], 4.0, "a copper crossbow takes 4 s to reload (twice the old 2 s)")
 	dwarf.fight.loaded = false
 	dwarf.fight.start_reload()
 	check(dwarf.fight.reload_left > 0.0, "reloading started")
+	for i in 60:
+		await tree.physics_frame
+	check(dwarf.fight.reload_left > 0.0, "still reloading after 1 s")
 	var z0 := dwarf.global_position.z
-	dwarf.bot_move = Vector2(0, -1)
-	for i in 60:
+	dwarf.bot_move = Vector2(0, -1)  # walk away
+	for i in 30:
 		await tree.physics_frame
-	var x0 := dwarf.global_position.x
-	dwarf.bot_move = Vector2(1, 0)  # and now sideways: it must turn, not keep going forward
-	for i in 60:
-		await tree.physics_frame
+	check(dwarf.fight.reload_left < 0.0 and not dwarf.fight.loaded, "walking stops the reload, no bolt goes in")
+	check(z0 - dwarf.global_position.z > 0.3, "and he really walks away (not stuck)")
 	dwarf.bot_move = Vector2.ZERO
-	check(z0 - dwarf.global_position.z > 1.0, "walked forward while reloading")
-	check(dwarf.global_position.x - x0 > 1.0, "turned and walked sideways while reloading")
-	for i in int(Combat.RELOAD.max() * 60) + 30:
+	for i in 20:
 		await tree.physics_frame
-	check(dwarf.fight.loaded, "the reload finished: a bolt is in")
+	dwarf.fight.start_reload()
+	check(absf(dwarf.fight.reload_left - dwarf.fight.reload_total) < 0.05, "the next reload starts from the beginning")
+	var x0 := dwarf.global_position.x
+	for i in int(dwarf.fight.reload_total * 60) + 30:
+		await tree.physics_frame
+	check(dwarf.fight.loaded, "standing still, the reload finishes: a bolt is in")
+	check(absf(dwarf.global_position.x - x0) < 0.05, "he stood still while reloading")
 	Controls.set_captured(false)
 	Controls.robot = was_robot
 	root.queue_free()

@@ -1,6 +1,6 @@
 extends Node
 ## Aim camera check (F452): photos while aiming the crossbow, zoomed right in and at the normal zoom, plus one not
-## aiming for comparison. The crosshair should sit just past his right shoulder.
+## aiming for comparison, and one halfway through a reload (the bar under the crosshair). The crosshair should sit just past his right shoulder.
 ## Run:  godot --audio-driver Dummy --path . -- aimcheck claude=aim_camera seed=42 shots=/some/folder
 
 var _main: Node
@@ -48,4 +48,11 @@ func _run() -> void:
 		await _wait(1.0)
 		await _shot("zoom_%.1f_aiming" % zoom)
 		Input.action_release("use")
+	# The reload bar under the crosshair (owner, Nov 20): halfway through a reload.
+	ps.inventory.add("bolt_stone", 5)
+	dwarf.fight.loaded = false
+	dwarf.fight.start_reload()
+	await _wait(dwarf.fight.reload_total * 0.5)
+	print("aimcheck: reloading %.1f of %.1f s" % [dwarf.fight.reload_total - dwarf.fight.reload_left, dwarf.fight.reload_total])
+	await _shot("reload_halfway")
 	get_tree().quit()

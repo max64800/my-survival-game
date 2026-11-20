@@ -34,7 +34,7 @@ const WEAPONS := {
 const TIER_DAMAGE := [1.00, 1.30, 1.65, 2.05, 2.50]
 const TIER_STUN := [1.00, 1.10, 1.20, 1.30, 1.40]
 const SHIELD_BLOCK := [0.50, 0.60, 0.70, 0.80, 0.85]
-const RELOAD := [2.2, 2.0, 1.8, 1.6, 1.4]  ## crossbow reload seconds by tier
+const RELOAD := [4.4, 4.0, 3.6, 3.2, 2.8]  ## crossbow reload seconds by tier (doubled, owner Nov 20)
 
 # --- Crossbow bolts (doc 3.6)
 const BOLT_RANGE := 40.0  ## full damage this far...
