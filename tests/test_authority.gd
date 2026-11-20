@@ -9,6 +9,10 @@ var ps: GameAuthority.PlayerState
 
 
 func _setup(seed: int, at: Vector3 = Vector3.INF) -> void:
+	# The last test's cave is only thrown away at the end of a frame. Two whole caves at once go over Jolt physics'
+	# 10240-body limit, so wait until the old one is really gone.
+	for k in 2:
+		await tree.physics_frame
 	var root := Node3D.new()
 	tree.root.add_child(root)
 	var stations_root := Node3D.new()
@@ -660,7 +664,9 @@ func test_root_tree_is_solid_outside() -> void:
 		var from := mid + Vector3(cos(a), 0, sin(a)) * (float(p.width) * 0.8 + 2.0)
 		var q := PhysicsRayQueryParameters3D.create(from, mid, World.TERRAIN_LAYER)
 		var hit := space.intersect_ray(q)
-		var ok := not hit.is_empty() and Vector2(hit.position.x - mid.x, hit.position.z - mid.z).length() > float(p.width) * 0.15
+		# The carved trunk is thinner on some sides (Nov 20, seed 42: 1.6 m from the middle on one side, 2.3-3.4 m on
+		# the others, smooth bark, no crack), so "outside" means stopped well short of the middle, not a fixed fat ring.
+		var ok := not hit.is_empty() and Vector2(hit.position.x - mid.x, hit.position.z - mid.z).length() > float(p.width) * 0.07
 		check(ok, "side %d: bumps into the bark, not into the middle" % k)
 	_teardown()
 

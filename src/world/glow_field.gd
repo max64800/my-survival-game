@@ -98,7 +98,11 @@ func set_chops(id: int, left: int) -> void:
 		_spots[id].chops = left
 		var n: Node3D = _nodes.get(id)
 		if n:
-			n.scale = n.scale * Vector3(0.85, 1.0, 0.85)  # a bit thinner after each chop
+			# A bit thinner after each chop. Only the picture: Jolt physics can't squash the round aim shape
+			# unevenly (it printed "scale not supported" and used a wrong size), so the bodies keep their shape.
+			for c in n.get_children():
+				if c is MeshInstance3D:
+					c.scale = c.scale * Vector3(0.85, 1.0, 0.85)
 
 
 ## Roots grow back (F106): a removed spot is remembered so it can return.
