@@ -6084,3 +6084,24 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   same, only 6 s slow. So neither the fog nor first-time shader making explains the owner's 1.5 slow minutes (55-72 ms).
   Left: his world/spot (40,000 nodes; that session had no video and its save was overwritten), or another program
   using the graphics card at the same time (other chats' Blender renders or test games). Not fixed yet.
+- **Owner's play of this round (same chat, later):** first he couldn't play at all: the old dwarf and no ground.
+  The two-handed-swings chat had an unsaved broken line (`Basis.get_column`) in dwarf_fist.gd that stopped main.gd
+  from loading. Claude messaged that chat and it fixed the line (Claude's own try was blocked as someone else's work).
+- **Then his notes, all fixed:**
+  - **Loot door and lever still did nothing.** The real cause: the game builds the dungeon BEFORE the GameAuthority,
+    so at that moment there was nobody to tell about the pack, the doors and the lever (Claude's tests built them
+    the other way round, so they passed). Now the dungeon hooks in on its first frame once the authority exists;
+    a new test builds them in the game's own order. The robot game now prints "hooked into the game".
+  - **The pack came out and crushed him in the hallway:** dungeon creatures now stay in their own room (they stop
+    at its doorways, give up when you leave it) and never step under or beside a crusher.
+  - **Too hard:** the Pack Hall now has the leader, one beetle and three spiders (was 3 beetles).
+  - **Crusher chains too short:** they are 4.3 m longer than the drop needs now, so they still reach up into the rock
+    when the weight is down (model rebuilt by the same Blender script).
+  - **Cracked wall still gave stone:** that was the stone it dropped on every hit; now it drops root wood.
+  - **Rubble tunnel (left of the way in):** the broken wall standing in its middle ("a weird door") is gone, and the
+    two stone rubble heaps break now, like the tower's.
+  - **Later:** too much gold and bandages from the chests (owner: "we can work on that later").
+- **Hurdles (Claude's own):** one more tab-count slip, two missing type hints in tests, and one test counted creatures
+  from other rooms. Blender's preview pictures landed in the game folder: moved out. One robot picture showed a
+  cave instead of the dungeon (the camera jumped before the rock loaded).
+- **Tests:** 3 more checks; 52 of 52 dungeon checks pass.

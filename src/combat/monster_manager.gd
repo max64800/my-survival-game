@@ -228,6 +228,10 @@ func _spawn_dungeon_group(_room: Dictionary, g: Dictionary) -> Array:
 		var uid := _next_uid
 		_next_uid += 1
 		_ev_spawn.rpc(uid, kind, at, leader, g.key, "")
+		var mon: Monster = monsters.get(uid)
+		if mon and not Monsters.LIST[kind].get("flies", false):  # (it stays in its room: Monster.may_step)
+			mon.dungeon = g.d
+			mon.dungeon_room = String(g.room)
 		uids.append(uid)
 	print("DUNGEON_MONSTERS %s: %d in the %s" % [g.d.id, uids.size(), g.room])
 	return uids

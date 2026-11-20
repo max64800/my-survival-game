@@ -19,6 +19,10 @@ var pack_id := 0
 var hp := 30.0
 var state := State.IDLE
 var home := Vector3.ZERO
+## A dungeon creature's dungeon and room (owner, Nov 20: "the pack came out and crushed me in the hallway"): it never
+## steps out of its room, gives up when you leave it, and never walks under a crusher.
+var dungeon := {}
+var dungeon_room := ""
 var target_peer := 0
 var stun := StunMeter.new()
 var boosted := false  ## a living pack leader is near
@@ -369,6 +373,8 @@ func think(delta: float, mgr: Node) -> void:
 			var gives_up := global_position.distance_to(home) > Monsters.LEASH or _no_progress > Monsters.GIVE_UP
 			if data.get("stays_in_cave", false):  # (bats, F419: only when you leave their cave)
 				gives_up = not mgr.in_cave(self, target.global_position)
+			if not dungeon.is_empty() and DungeonMap.space_at(dungeon, target.global_position + Vector3.UP) != dungeon_room:
+				gives_up = true  # (you left its room)
 			if gives_up:
 				state = State.RETURN
 				target_peer = 0
@@ -539,6 +545,13 @@ func add_buildup(kind: String, amount: float) -> void:
 	ailments.add(kind, amount * maxf(0.0, 1.0 - resist))
 
 
+## A dungeon creature may step to `p`: still in its own room, not under a crusher.
+func may_step(p: Vector3) -> bool:
+	if DungeonMap.space_at(dungeon, p + Vector3.UP * 0.5) != dungeon_room:
+		return false
+	return DungeonBuild.instance == null or not DungeonBuild.instance.near_crusher(p)
+
+
 func _move(delta: float, dir: Vector3, speed: float) -> void:
 	speed *= ailments.speed_mult()
 	if data.get("weaves", false) and dir.length() > 0.1 and state != State.ATTACK:
@@ -549,6 +562,8 @@ func _move(delta: float, dir: Vector3, speed: float) -> void:
 		speed *= turned[1]
 	if dir.length() > 0.1 and not data.get("flies", false) and is_on_floor() and _drop_ahead(dir):
 		dir = Vector3.ZERO  # a pit it couldn't climb out of: stop at the edge and find another way (F125)
+	if dir.length() > 0.1 and not dungeon.is_empty() and not may_step(global_position + Vector3(dir.x, 0, dir.z).normalized() * 0.7):
+		dir = Vector3.ZERO  # (a dungeon creature stops at its room's doorway and in front of a crusher)
 	if data.get("flies", false):
 		velocity = dir * speed
 		velocity.y = 0.0

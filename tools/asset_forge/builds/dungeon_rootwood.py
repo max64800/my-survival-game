@@ -198,11 +198,11 @@ def crusher():
 	frame = meshes() - frame0
 	lift_y = yt + 0.06
 	# The chains belong to the weight (owner, Nov 19: "chains need to extend up and down"): they run up through
-	# two holes in the beam into the ceiling rock, 1.65 m longer than needed, so when the weight slams down the
+	# two holes in the beam into the ceiling rock, 4.3 m longer than needed (the 2.5 m drop + 1.8 m into the rock), so when the weight slams down the
 	# chain pays out of the beam with it. The hole is 6 mm wider than the links (they touch, nothing passes through).
 	for x in (-0.45, 0.45):
 		bore(beam, K.G((x, beam_y, 0.0)), 0.068, 0.6, axis_rot=(0, 0, 0))
-		chain(x, 0.0, beam_y + beam_r + 1.65, lift_y + 0.035)
+		chain(x, 0.0, beam_y + beam_r + 4.3, lift_y + 0.035)  # (owner, Nov 20: 2.5 m drop, still up in the rock when down)
 	# the weight: a thick board bottom (the crushing face), four corner posts, rails, stones packed inside, lifting beams
 	for i, (a, b) in enumerate([(-0.88, -0.53), (-0.52, -0.17), (-0.16, 0.19), (0.2, 0.54), (0.55, 0.88)]):
 		S.rough_board(a, b, -hz + 0.02, hz - 0.02, yb, yb + 0.09, chips=2, broken="front" if i == 3 else None)

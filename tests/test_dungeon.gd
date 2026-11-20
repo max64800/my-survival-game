@@ -578,7 +578,7 @@ func test_killing_the_pack_opens_the_loot_door() -> void:
 	var uids: Array = mm._spawn_dungeon_group({}, pack)
 	mm._rooms[pack.key] = {alive = uids.duplicate(), cleared_at = mm._clock}
 	pack.was = uids.size()
-	check(uids.size() >= 6, "the pack came (%d)" % uids.size())
+	check_eq(uids.size(), 5, "the pack came: the leader, a beetle and three spiders")
 	# One of them chases you onto the bridge and falls into the chasm: the spikes kill it.
 	var faller: Monster = mm.monsters[uids[0]]
 	faller.global_position = DungeonMap.to_world(d, Vector3(39.0, -3.6, 6.0))
@@ -659,3 +659,86 @@ func test_the_scroll_rolls_up_when_taken() -> void:
 	await tree.create_timer(1.0).timeout
 	check(not scroll.visible, "then it's gone")
 	body.free()
+
+
+# ---- The owner's play of the third round (Nov 20, later) ----
+
+## The loot door and the lever did nothing: the game builds the dungeon BEFORE its GameAuthority. Built in that
+## order, the dungeon still hooks in (on its next frame): it hears the pack die and knows the gate's lever.
+func test_the_dungeon_hooks_in_when_built_first() -> void:
+	var m := _maker(42)
+	if m.dungeons.is_empty():
+		return
+	var root := Node3D.new()
+	tree.root.add_child(root)
+	var was: GameAuthority = GameAuthority.instance
+	GameAuthority.instance = null
+	var db := DungeonBuild.new()
+	db.maker = m
+	root.add_child(db)  # (no authority yet, like the game)
+	check(not db.hooked, "nothing to hook into yet")
+	var auth := GameAuthority.new()
+	root.add_child(auth)
+	auth.drops_root = Node3D.new()
+	root.add_child(auth.drops_root)
+	var player := Node3D.new()
+	root.add_child(player)
+	auth.add_player(1, player)
+	db._physics_process(0.016)
+	check(db.hooked, "the next frame it hooks in")
+	check(auth.keys.gates.has("mossgate_hold"), "the gate's lever is known (E opens the gate)")
+	check(auth.monsters.dungeon_room.is_connected(db._on_dungeon_room), "it hears when the pack dies")
+	auth.monsters.dungeon_room.emit("mossgate", "pack_hall", true)
+	check(auth.keys.is_open("mossgate_hold"), "the pack dead: the loot door opens")
+	var lever := _kind(db, "lever")
+	player.global_position = (db.things[lever].xform as Transform3D).origin + Vector3(0, 0, 0.8)
+	auth.keys.request_pull_lever(1, "mossgate_hold")
+	check(db.things[_kind(db, "gate")].get("open", false), "the lever opens the gate")
+	root.free()
+	GameAuthority.instance = was
+
+
+## The pack came out and crushed the owner in the hallway: dungeon creatures stay in their room and keep out from
+## under the crushers; the Pack Hall is easier (the leader, one beetle, three spiders).
+func test_dungeon_creatures_stay_in_their_room() -> void:
+	var r := _rig()
+	if r.is_empty():
+		return
+	var db: DungeonBuild = r.db
+	var d: Dictionary = r.d
+	var mon := Monster.new()
+	mon.dungeon = d
+	mon.dungeon_room = "pack_hall"
+	check(mon.may_step(DungeonMap.to_world(d, Vector3(64.0, 0.3, 10.0))), "it walks about its hall")
+	check(not mon.may_step(DungeonMap.to_world(d, Vector3(54.0, 0.3, 6.0))), "it doesn't walk out into the small hall")
+	check(not mon.may_step(DungeonMap.to_world(d, Vector3(73.0, 0.3, 10.0))), "nor through the loot door")
+	var c: Transform3D = db.things[db.crushers[0]].xform
+	check(not mon.may_step(c.origin), "nor under a crusher")
+	mon.free()
+	var pack: Array = DungeonBuild.load_plan("mossgate").creatures.filter(func(c): return float(c.pos[0]) > 56.0 and float(c.pos[0]) < 72.0 and float(c.pos[2]) < 18.0)
+	check_eq(pack.size(), 5, "five in the Pack Hall")
+	check_eq(pack.filter(func(c): return c.kind == "cave_spider").size(), 3, "three of them spiders")
+	r.root.free()
+
+
+## The stone rubble in the tunnel left of the way in breaks (like the tower's); the broken wall standing in the middle
+## of that tunnel is gone; the cracked wall gives wood, not stone.
+func test_the_rubble_tunnel_clears() -> void:
+	var plan := DungeonBuild.load_plan("mossgate")
+	var rubble: Array = plan.props.filter(func(p): return String(p.model) == "build/ruin_rubble__cut_stone.glb")
+	check_eq(rubble.size(), 2, "two heaps of stone rubble")
+	check(rubble.all(func(p): return DungeonBuild.thing_kind(p) == "rubble"), "they break")
+	check(not plan.props.any(func(p): return String(p.model) == "dungeon/wall_broken.glb"), "no wall standing in the tunnel")
+	var r := _rig()
+	if r.is_empty():
+		return
+	var db: DungeonBuild = r.db
+	var auth: GameAuthority = r.auth
+	var id := _thing(db, "dungeon/wall_cracked.glb")
+	(r.player as Node3D).global_position = (db.things[id].centre as Vector3) - Vector3.UP * 1.1
+	db.request_hit(1, id)
+	var kinds := []
+	for k in auth._drops:
+		kinds.append(String(auth._drops[k].item_id))
+	check(kinds.has("rootwood") and not kinds.has("stone"), "the cracked wall gives wood (%s)" % [kinds])
+	r.root.free()

@@ -268,9 +268,10 @@ chest("chest_stone", 65.0, 28.0, 0.0, "Vault chest (always)", True, "vault")
 prop("decor/fossil_plaque.glb", 65.0, 1.5, 26.2, 0.0, label="Old wall marking")
 
 # 6 Rubble Tunnel: a fallen wall and rubble to clear.
-prop("dungeon/wall_broken.glb", 22.0, 0.25, 39.2, 0.0, role="secret", label="Rubble: hit it to clear")
-pieces.append({"id": "ruin_rubble", "mat": "cut_stone", "pos": [20.4, 0.25, 40.6], "rot": 5})
-pieces.append({"id": "ruin_rubble", "mat": "cut_stone", "pos": [23.8, 0.25, 41.0], "rot": 9})
+# (owner, Nov 20: the broken wall standing in the middle of the tunnel looked like a weird door: gone. The stone
+# rubble breaks now, like the tower's: DungeonBuild "rubble")
+prop("build/ruin_rubble__cut_stone.glb", 20.4, 0.25, 40.6, 30.0, role="secret", label="Rubble: hit it to clear")
+prop("build/ruin_rubble__cut_stone.glb", 23.8, 0.25, 41.0, 150.0, role="secret")
 creature("rock_snail", 19.2, 0.25, 39.0, 90.0)
 
 # 7 Old Tombs: candles and vases (no coffin model yet); bats roosting high; the loose stone in the corner.
@@ -345,8 +346,8 @@ for x, z in [(60.0, 4.0), (68.0, 4.0), (60.0, 14.0), (68.0, 14.0)]:
 prop("decor/furn_cauldron.glb", 70.0, 0.25, 16.6, 0.0)
 prop("decor/firewood_rack.glb", 57.4, 0.25, 16.4, 90.0)
 creature("great_rock_beetle", 64.5, 0.25, 9.0, 270.0)
-for i, (x, z) in enumerate([(60.0, 6.0), (61.0, 13.0), (68.0, 6.5)]):
-	creature("rock_beetle", x, 0.25, z, 250.0 + i * 20.0)
+# (owner, Nov 20: "a bit too difficult": the leader, one beetle and three spiders)
+creature("rock_beetle", 61.0, 0.25, 13.0, 270.0)
 for i, (x, z) in enumerate([(67.0, 13.5), (70.0, 9.0), (58.0, 9.5)]):
 	creature("cave_spider", x, 0.25, z, 270.0 + i * 30.0)
 

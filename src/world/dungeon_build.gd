@@ -153,6 +153,8 @@ static func thing_kind(p: Dictionary) -> String:
 		return "floor"
 	if model == "dungeon/wall_broken.glb" or model == "dungeon/wall_cracked.glb":
 		return "rubble"  # (the cracked wall in front of the hidden vault breaks like the rubble: owner, Nov 20)
+	if model == "build/ruin_rubble__cut_stone.glb":
+		return "rubble"  # (owner, Nov 20: the stone rubble in the Rubble Tunnel breaks, like the tower's)
 	if model == "dungeon/trap_crusher.glb":
 		return "crusher"
 	if model == "dungeon/door_loot.glb":
@@ -207,12 +209,29 @@ func _ready() -> void:
 		for p in plan.get("props", []):
 			if p.get("role", "") == "heal":
 				heals.append(DungeonMap.to_world(d, Vector3(p.pos[0], p.pos[1], p.pos[2])))
+	_hook()
+
+
+## Owner's play, Nov 20: the loot door and the lever did nothing. The game builds the dungeon BEFORE it makes the
+## GameAuthority, so at _ready there was nobody to tell about the doors, the lever and the pack. Now this hooks in as
+## soon as the authority (with its DungeonKeys and monsters) is there, at _ready or on a later frame.
+var hooked := false
+func _hook() -> void:
 	var auth := GameAuthority.instance
-	if auth and auth.keys:
-		auth.keys.door_changed.connect(_on_door_changed)
-		auth.keys.gate_changed.connect(_on_gate_changed)
-	if auth and auth.monsters:
-		auth.monsters.dungeon_room.connect(_on_dungeon_room)
+	if hooked or auth == null or auth.keys == null or auth.monsters == null:
+		return
+	hooked = true
+	auth.keys.door_changed.connect(_on_door_changed)
+	auth.keys.gate_changed.connect(_on_gate_changed)
+	auth.monsters.dungeon_room.connect(_on_dungeon_room)
+	for id in things:
+		var th: Dictionary = things[id]
+		var t: Transform3D = th.xform
+		if th.kind == "door":
+			auth.keys.add_door(list_id(th.d), t.origin)
+		elif th.kind == "lever":
+			auth.keys.add_gate(list_id(th.d), t * Vector3(0, 1.05, 0.1))
+	print("DUNGEON_BUILD hooked into the game (doors, gate lever, pack)")
 
 
 func _exit_tree() -> void:
@@ -307,16 +326,8 @@ func _build_things(di: int, d: Dictionary, plan: Dictionary) -> void:
 			centre = t * whole.get_center(), radius = whole.size.length() * 0.5 * float(p.get("scale", 1.0)), landing = landing}
 		if kind == "crusher":
 			_make_crusher(id)
-		elif kind == "door":
-			var auth := GameAuthority.instance
-			if auth and auth.keys:
-				auth.keys.add_door(list_id(d), t.origin)
-			if is_door_open(d):
-				_open_door(id, false)
-		elif kind == "lever":
-			var auth := GameAuthority.instance
-			if auth and auth.keys:
-				auth.keys.add_gate(list_id(d), t * Vector3(0, 1.05, 0.1))
+		elif kind == "door" and is_door_open(d):
+			_open_door(id, false)
 	_apply_broken()
 
 
@@ -422,7 +433,8 @@ func request_hit(peer_id: int, id: int, by_bolt := false) -> void:
 			else:
 				auth._tell_feedback(peer_id, {state = "hit", hits = hits, needed = Boulders.HITS, material = Mat.STONE, point = at, normal = out})
 		"rubble":
-			auth.spawn_drop("stone", 1, at + out * 0.8 + Vector3.UP * 0.3)
+			var wood: bool = th.model == "dungeon/wall_cracked.glb"  # (boards: wood, owner Nov 20)
+			auth.spawn_drop("rootwood" if wood else "stone", 1, at + out * 0.8 + Vector3.UP * 0.3)
 			if hits >= RUBBLE_HITS:
 				_break(id)
 			else:
@@ -688,6 +700,8 @@ static func _parts(body: Node) -> Array:
 
 func _physics_process(delta: float) -> void:
 	_clock += delta
+	if not hooked:
+		_hook()
 	_apply_broken()
 	var auth := GameAuthority.instance
 	var now := Time.get_unix_time_from_system()
@@ -761,6 +775,15 @@ func _traps_hit_creatures(auth: GameAuthority) -> void:
 				print("DUNGEON %s: a %s died in the %s" % [d.id, mon.kind, why])
 				mm._kill(mon, 0)
 				break
+
+
+## Is `p` under (or right beside) a crusher's weight, awake or not? Creatures never step there (owner, Nov 20).
+func near_crusher(p: Vector3) -> bool:
+	for id in crushers:
+		var q := (things[id].xform as Transform3D).affine_inverse() * p
+		if absf(q.x) < CRUSH_HALF.x + 0.5 and absf(q.z) < CRUSH_HALF.y + 0.5:
+			return true
+	return false
 
 
 ## Is `p` under a crusher's weight while it slams (the moment that kills)?
