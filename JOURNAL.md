@@ -6710,3 +6710,92 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   (5) Longer torn ends reached below the floor and lifted the whole pile, so the floor chips hovered: beam raised.
   (6) The shell tool choked twice on apostrophes inside long scripts: those patches now go through files.
   All 23 junk models are in `assets/models/dungeon/` and pass the checker.
+
+## November 20, 2026 (PC, dungeons Claude for dungeon 2, game code): Lampwick Drift is a real dungeon; the Foreman's spin
+- **Start:** checked that nobody else was building Lampwick's game code: the models chat (chat 8) only makes models
+  (lamps, rubble, grooved floor, a new healing basin). The owner said: no 3D page this time, "just do the dungeon".
+- **The Foreman (F476, owner: "his spin has enormous range and he only spins"):** a creature attacks as soon as any
+  attack reaches you. The spin reached 2.7 m (and hit up to 3.5 m) but the chop only 2.3 m, so walking in he always got
+  into spin range first, where the spin was his only choice. Now the spin is short (hits up to 2.6 m), the chop reaches
+  further (so he opens with it), and a new "rest" on attacks makes him wait 7 s before spinning again.
+- **The map** (`DungeonMap.LAMPWICK`): the plan's 13 spaces plus short 4 m doorway spaces between rooms (the round doorway
+  needs a 4 m opening). Two levels: the Lamp Room and the Rail Tunnel on the ground, then the Cart Junction's three rails
+  climb 3 m to everything else; the Back Rails run down again to the Lamp Room's barred gate (lever on the far side).
+  The barred gate is on the Lamp Room's right, not its left as the plan said (the way back comes in from that side).
+- **The builder** `tools/dungeons/make_lampwick.py` writes `blueprints/dungeons/lampwick_drift.json` (376 wood pieces,
+  546 props, 45 lamps, 18 creatures, 7 chests). The rails are tilted lane pieces that meet end to end (12 m of rail
+  covers 11.6 m of floor). Mossgate's script now reads only Mossgate's part of the map file (its plan came out the same).
+- **The traps** (new `src/world/mine_traps.gd`, request -> host decides -> everyone sees, saved): lamps you light with E
+  (dark until you do); step into a cart lane and its rotten wedge snaps, the cart rattles, rolls down faster and faster,
+  throws you like a rag doll (30) and stays at its stopper; the boulder swings along the plank walk over the deep shaft
+  off a shared clock (28 + rag doll; a bolt in its chain drops it); bear jaws bite (25) and hold your leg 3.5 s (a friend
+  can pry them open with E); the tripwire fires a poison dart across the tunnel (jump over it or cut it); the vault's
+  chest stands on a spike floor (stand there to open it and the spikes slam up: shoot the chest first); stalactites in
+  the Drip Tunnel; the cracked wall, the hidden boulder with a chest behind it, the loose stone, the healing basin in
+  rubble (each dungeon's basin now keeps its own water). The recipe stand teaches the Copper Crossbow (new item
+  `scroll_lampwick`), the Foreman's chest has Lampwick's gem.
+- **In the world:** cave layout 15 (new worlds) places Lampwick too, kept well clear of Mossgate; older saved worlds keep
+  only Mossgate. The dev menu's "Dungeon 2" button makes a test world with only Lampwick (its own layout number, 1015).
+  The stopgap (Mossgate with its creatures swapped for miners) is gone. Creatures spawn on their own room's floor (the
+  upper level is 3 m up).
+- **Checks:** new `tests/test_lampwick.gd` (17 tests: both dungeons in new worlds and never touching, every space
+  reachable, nothing grows inside, the plan, every trap). Mossgate's 58 tests now build a layout 14 world and all pass.
+  Robots: `-- dungeontest dungeon2 shots=<folder> claude=lampwick` (16 room pictures) and `... climb` (the dwarf really
+  walks up the cart lanes to the top, 3.1 m up, and down the Back Rails; on the first try a cart came down and knocked
+  him over, which is the trap working).
+- **Hurdles:** (1) another chat's half-saved `blueprint_library.gd` stopped every test from loading for a while; waited
+  until they fixed it. My cave maker changes also broke another chat's cave tests while I was mid-edit (sorry; it
+  settled). (2) A long shell edit broke on quote marks; the edits went into a file instead. (3) My own slips: a wrong
+  icon folder (the copy failed and skipped the edits after it); a Mossgate test built its creature list without the new
+  "floor" number (the spawn code now treats a missing floor as ground level); my spike test stepped on the spikes 0.1 s
+  after shooting the chest, while they were still coming up (the test now waits, like a real player would); a leftover
+  timer touched a removed object in tests (now a method, which simply doesn't run if its dungeon is gone); an untyped
+  variable stopped the climb robot once; the first climb walked on into the Drip Tunnel and the stalactites killed him.
+- **Still to check by playing:** how the carts' timing feels, whether 45 lamps is too many or too few, the miners' drops,
+  the Foreman boosting his miners, F465 (picks hit with the point).
+
+## November 20, 2026 (PC, dwarf-animations Claude, chat 12): sword and mace from the KayKit pack, owner said no; his own videos next (F389)
+- **What we did:** copied the KayKit Skeletons warrior's one-handed moves (chop, diagonal slash, side slash, stab,
+  jump chop, shield bash) onto the dwarf the chat 11 way (`tools/asset_forge/one_kaykit_bake.gd` ->
+  `assets/anim/one_kaykit.json`, no mirror: the pack holds 1H weapons in the right hand too). New `DwarfOneSwing`
+  plays them as "o/" clips (`DwarfRig.one_pose`), eased in and out over his own arms; `DwarfFist` points the weapon the
+  pack's way, its edge leading. Not wired to the attacks yet. Page "Sword and Mace Swings"
+  (https://claude.ai/artifact/Ews5QNEzqpwwpUZS5LnKs5, recorder `tools/asset_forge/one_swing_export.gd`). New check
+  `test_one_handed_swings_hold_and_hit_in_front`.
+- **Owner's verdict:** "not a big fan": the swings look stationary, the free left arm sticks out like a T-pose (it
+  should hold a shield), and they aren't big swings ("goes to the chest and then swings"). He filmed two new videos
+  (Downloads: IMG_4428 = sword, IMG_4429 = mace; 3 hits each, repeated 3 times, front view, blue glove right, orange
+  left, a white stick). His choice: all 3 hits are one light combo (click, click, click). Next chat copies those.
+- **Hurdles (Claude's own):** the game's hit first landed on the swing's fastest frame, which was already past his
+  side: now on the fast frame where the blade is most in front. His hips only joined a swing after a slow fade (the
+  standing/walking blend was only updated during great-axe swings). My new test counted frames, but tests run faster
+  than real time, so the fade "never ended": it now waits by the clock. Two other chats' page servers sat on ports
+  8765 and 8791 (opened their pages by mistake, closed them): use an unusual port. My first page picture was taken
+  before the page settled (looked like his head faced backwards): checked again, it was fine.
+- **Still open:** the great axe check still fails on a few single frames now and then (Spin/Chop handle 0-2 cm from
+  his body, a fist 5 cm off), as in chat 11.
+- **Owner's look at batch 2 (later):** "the bag is okay": took the rope ring off the sack and the dark torn patch on
+  its side (both looked like blobs). Loved the rag paint and the plank pile, so 5 more of each: `junk_rags_b`..`_f`
+  (a big and a small rag, each pile its own shapes and layout) and `junk_rubble_wood_b`..`_f` (6-9 boards dropped one
+  by one: a board that lands on others rests on the highest one under it, so two boards never lie in the same place
+  at the same height; piles more spread out, chips further out). Batch 2 OK'd: all 18 junk models are now in
+  `assets/models/dungeon/`, all pass the checker. Hurdles: (1) the model checker looks for each model's name written
+  in a script, and my loop built the names from letters, so one wasn't found: wrote the names out. (2) One plank in a
+  new pile hovered 4.7 cm: it only touched the board under it in the safety margin round its jagged end; boards now
+  rest only on boards that are really under them (or get dropped somewhere else).
+- **Batch 3 (mine junk, small dungeons), owner OK'd after fixes:** `junk_pickaxe_broken`, `junk_shovel_bent`,
+  `junk_beam_snapped`, `junk_helmet`, `junk_lantern` (helmet and lantern are 2 models, as the plan says). Owner's notes:
+  the pickaxe bent the wrong way (the picks now curve toward the handle); the beam was "two beams with spikes, so low
+  poly": rebuilt as one hand-hewn shape (a rounded, uneven square that changes along its length, 32 points round,
+  a ring every 3.5 cm), cracks cut in as grooves, iron bands that hug the uneven wood, and a torn break where each strip
+  of wood ends at its own length (the top fibres longest, peeling) instead of a flat cut with sticks. Then "remove the
+  black spots": the dark crack paint and the moss (it came out almost black) are gone; the grooves stay.
+- **Hurdles and Claude's own slips:** (1) the pickaxe socket's back face sat exactly on the head's edge and the two beam
+  halves' splinters crossed in the gap: both flicker spots (checker SHIMMER), fixed. (2) Helmet crack lines and the
+  lantern's candle and bolts floated (FLOAT): crack lines removed, the others moved onto what holds them. (3) The helmet
+  shone like a mirror and the lantern glass looked like a bright screen: duller metal, dark smoky glass. (4) The new
+  beam showed no wood painting: its picture map had a different name from the other parts', so after joining it sat on
+  a second map the game never reads; then the many small faces looked like blocks until the shading was smoothed.
+  (5) Longer torn ends reached below the floor and lifted the whole pile, so the floor chips hovered: beam raised.
+  (6) The shell tool choked twice on apostrophes inside long scripts: those patches now go through files.
+  All 23 junk models are in `assets/models/dungeon/` and pass the checker.

@@ -9,7 +9,7 @@ import base64, json, math, random, re, struct, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-SRC = (ROOT / "src/world/dungeon_map.gd").read_text(encoding="utf-8")
+SRC = (ROOT / "src/world/dungeon_map.gd").read_text(encoding="utf-8").split("const MOSSGATE")[1].split("\n}\n")[0]  # (only map 1)
 SPACES = [[m[0]] + [float(v) for v in m[1:]] for m in
 	re.findall(r'\["(\w+)",\s*([-\d.]+),\s*([-\d.]+),\s*([-\d.]+),\s*([-\d.]+),\s*([-\d.]+),\s*([-\d.]+)\]', SRC)]
 SP = {s[0]: s for s in SPACES}

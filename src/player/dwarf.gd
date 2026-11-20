@@ -248,12 +248,16 @@ func _physics_process(delta: float) -> void:
 	_run_streak = _run_streak + delta if running else 0.0
 	var burst := 1.3 if running and _run_streak < 1.0 and prog and prog.has_star("running", 25) else 1.0  # Running ★25
 	var speed := (RUN_SPEED * (prog.run_speed_mult() if prog else 1.0) * burst if running else WALK_SPEED) * fight_mult * (body.ailments.speed_mult() * maxf(0.2, 1.0 + body.buff_total("move_speed")) if body else 1.0)
+	if held_left > 0.0:  # (Lampwick's bear jaws hold your leg: MineTraps)
+		held_left -= delta
+		speed = 0.0
+		_jump_wanted = 0.0
 	var target := dir * speed
 	var on_floor := is_on_floor()
 	var a := ACCEL if on_floor else AIR_ACCEL
 	velocity.x = move_toward(velocity.x, target.x, a * maxf(speed, WALK_SPEED) * delta)  # (knocked down = speed 0: still
 	velocity.z = move_toward(velocity.z, target.z, a * maxf(speed, WALK_SPEED) * delta)  # slow to a stop, F234)
-	if fight and fight.dodging():
+	if fight and fight.dodging() and held_left <= 0.0:
 		var dv := fight.dodge_velocity()
 		velocity.x = dv.x
 		velocity.z = dv.z
@@ -613,6 +617,18 @@ func _guard_fall(delta: float) -> void:
 		velocity = Vector3.ZERO
 		_shove = Vector3.ZERO
 		_in_rock = 0.0
+
+
+## Bear jaws hold your leg for `secs` (0 = let go): you can't walk or jump, you can still swing and look round.
+var held_left := 0.0
+
+
+func hold_legs(secs: float) -> void:
+	held_left = secs
+	if secs > 0.0:
+		velocity.x = 0.0
+		velocity.z = 0.0
+		_shake = maxf(_shake, 0.5)
 
 
 ## Knocked to one side (a beetle's charge hit you, F111): `push` is the sideways speed in m/s.

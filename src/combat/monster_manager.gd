@@ -194,40 +194,35 @@ func _dungeon_groups() -> Array:
 		var by := {}
 		for c in DungeonBuild.load_plan(String(d.id)).get("creatures", []):
 			var local := Vector3(c.pos[0], c.pos[1], c.pos[2])
-			var room := DungeonMap.space_at(d, DungeonMap.to_world(d, Vector3(local.x, 1.0, local.z)))
+			var fl := float(c.get("floor", 0.0))  # (Lampwick's upper level is 3 m up: its creatures say so)
+			var room := DungeonMap.space_at(d, DungeonMap.to_world(d, Vector3(local.x, fl + 1.0, local.z)))
 			if not by.has(room):
 				by[room] = []
-			by[room].append([String(c.kind), local])
+			by[room].append([String(c.kind), local, fl])
 		var gi := 0
 		for room in by:
 			var mid := Vector3.ZERO
 			for c in by[room]:
 				mid += c[1]
 			mid /= float(by[room].size())
-			_dgroups.append({key = DUNGEON_KEY + di * 100 + gi, center = DungeonMap.to_world(d, Vector3(mid.x, 1.0, mid.z)),
+			var fl := float(by[room][0][2])
+			_dgroups.append({key = DUNGEON_KEY + di * 100 + gi, center = DungeonMap.to_world(d, Vector3(mid.x, fl + 1.0, mid.z)),
 				list = by[room], d = d, room = room})
 			gi += 1
 	return _dgroups
 
 
-## Dev "Dungeon 2" test (owner, Nov 20): Lampwick's map isn't built yet, so Mossgate's creatures are swapped for
-## Lampwick's skeleton miners (the big beetle becomes the Foreman; bats become rats on the floor). {} = no swap.
-static var swap_kinds := {}
-const MINER_SWAP := {"rock_beetle": "tunnel_rat", "cave_spider": "tunnel_rat", "cave_bat": "tunnel_rat",
-	"rock_snail": "lost_miner", "great_rock_beetle": "foreman"}
-
-
 func _spawn_dungeon_group(_room: Dictionary, g: Dictionary) -> Array:
 	var uids := []
 	for c in g.list:
-		var kind: String = swap_kinds.get(String(c[0]), String(c[0]))
+		var kind := String(c[0])
 		var leader := kind == "great_rock_beetle"
 		if leader:
 			kind = "rock_beetle"
 		if not Monsters.LIST.has(kind):
 			continue
 		var local: Vector3 = c[1]
-		var at := DungeonMap.to_world(g.d, Vector3(local.x, 0.55, local.z))  # on the floor boards
+		var at := DungeonMap.to_world(g.d, Vector3(local.x, (float(c[2]) if c.size() > 2 else 0.0) + 0.55, local.z))  # on the floor boards
 		if Monsters.LIST[kind].get("roosts", false):
 			# Bats hang asleep from the ceiling right above their spot (root wood or the natural rock).
 			var q := PhysicsRayQueryParameters3D.create(at + Vector3.UP, at + Vector3.UP * 12.0, World.TERRAIN_LAYER)

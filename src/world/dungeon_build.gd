@@ -13,7 +13,7 @@ extends Node3D
 ## keeps what's broken in world_state.dungeon_broken (saved, and sent to friends who join).
 ## Falling into the chasm or the spike pit kills you (decisions: instant death; the grave goes where you last stood).
 
-const PLANS := {"mossgate": "res://blueprints/dungeons/mossgate_hold.json"}
+const PLANS := {"mossgate": "res://blueprints/dungeons/mossgate_hold.json", "lampwick": "res://blueprints/dungeons/lampwick_drift.json"}
 ## What you bump into, in each model's own metres: [centre, size] boxes. Models not listed and not in NO_BODY get
 ## the box round the whole model.
 const BOXES := {
@@ -55,12 +55,23 @@ const BOXES := {
 	# The round stone door's frame: its two stone sides and the top (you walk through its middle).
 	"dungeon/dungeon_entrance.glb": [[Vector3(-1.2, 1.3, 0), Vector3(0.66, 2.6, 0.5)], [Vector3(1.2, 1.3, 0), Vector3(0.66, 2.6, 0.5)],
 		[Vector3(0, 2.4, 0), Vector3(3.0, 0.6, 0.5)]],
+	# Lampwick Drift (MineTraps): the rails' stone bed is the floor you walk on (and the carts roll on).
+	"dungeon/rail_lane.glb": [[Vector3(0, 0.11, 0), Vector3(2, 0.22, 2)]],
+	"dungeon/floor_grooved.glb": [[Vector3(0, 0.12, 0), Vector3(2, 0.24, 2)]],
+	"dungeon/trap_tripwire_wall.glb": [[Vector3(0, 1, 0), Vector3(2, 2, 0.29)]],
+	"dungeon/tripwire.glb": [[Vector3(0, 0.12, 0), Vector3(1, 0.08, 0.1)]],  # (stretched to the tunnel's width; hit it to cut it)
+	"dungeon/trap_bear_jaws.glb": [[Vector3(0, 0.02, 0), Vector3(0.8, 0.04, 0.5)]],  # (low: you walk onto it)
+	# The swinging boulder's two posts, and its chain's top (shoot it there; the boulder itself is judged by distance).
+	"dungeon/trap_swing_boulder.glb": [[Vector3(-1.74, 2, -0.08), Vector3(0.4, 4, 0.4)], [Vector3(1.74, 2, -0.08), Vector3(0.4, 4, 0.4)],
+		[Vector3(0, 2.95, 0.13), Vector3(0.22, 1.0, 0.22)]],
+	"dungeon/trap_chest_spikes.glb": [[Vector3(0, 0.125, 0), Vector3(2, 0.25, 4)]],
+	"dungeon/mine_lamp.glb": [[Vector3(0, 0.2, 0.25), Vector3(0.3, 0.45, 0.45)]],  # (E aims at it)
 }
 ## Things you walk through (small, up high, or traps whose moves come later).
 const NO_BODY := ["decor/furn_wall_torch_iron.glb", "dungeon/trap_dart_plate.glb", "dungeon/chain_hanging.glb",
 	"dungeon/recipe_scroll.glb", "treasure/tr_coins_wide.glb", "treasure/tr_chalice.glb",
 	"decor/fossil_plaque.glb", "decor/rune_shield.glb",
-	"build/ruin_rubble__cut_stone.glb", "dungeon/recipe_stand.glb"]
+	"build/ruin_rubble__cut_stone.glb", "dungeon/recipe_stand.glb", "dungeon/rail_wedge.glb"]
 
 ## Furniture you can smash (owner, decisions round 2: "a little root wood + small finds").
 const SMASH := ["decor/crate_stack.glb", "decor/keg.glb", "props/barrel.glb", "decor/furn_barrel_rack.glb",
@@ -115,7 +126,7 @@ const HEAL_RATE := 8.0        ## health a second
 const HEAL_POOL := 30.0       ## owner, Nov 20: it heals 30 health in all, then it is dry until the dungeon refills
 ## The loot door opens when the Pack Hall's pack is dead (owner, Nov 20). It is a lock of DungeonKeys (the same saved,
 ## sent-to-everyone door state as the bigger dungeons' key doors); it shuts again when the pack moves back in.
-const LIST_ID := {"mossgate": "mossgate_hold"}  ## the dungeon's id in DungeonList / DungeonKeys
+const LIST_ID := {"mossgate": "mossgate_hold", "lampwick": "lampwick_drift"}  ## the dungeon's id in DungeonList / DungeonKeys
 const PACK_LOCK := "pack"
 const PACK_ROOM := "pack_hall"
 const KILL := 1000000.0       ## instant death (more than any health and armour)
@@ -137,6 +148,8 @@ var _host_tick := 0.0
 var _last_pos := {}  ## host: peer -> where they were at the last trap check (for their walking speed)
 var _healed := {}    ## host: peer -> true while they stand by a healing basin (one message per visit)
 var heals: Array[Vector3] = []  ## the healing basins, in the world
+var heal_ds: Array = []          ## the dungeon each basin is in (each keeps its own water)
+var mine: MineTraps  ## Lampwick Drift's traps and lamps
 var crushers: Array = []        ## thing ids of the crushers (each moves its weight every frame)
 
 
@@ -152,6 +165,9 @@ static func load_plan(map_id: String) -> Dictionary:
 ## "lever" (they move: built one by one) or "" (batched).
 static func thing_kind(p: Dictionary) -> String:
 	var model := String(p.model)
+	var mk := MineTraps.kind_of(p)
+	if mk != "":
+		return mk
 	if model in SMASH:
 		return "smash"
 	if model in DRIPS:
@@ -205,6 +221,9 @@ static func placements(d: Dictionary, plan: Dictionary, game := false) -> Dictio
 func _ready() -> void:
 	name = "DungeonBuild"
 	instance = self
+	mine = MineTraps.new()
+	mine.db = self
+	add_child(mine)
 	for di in maker.dungeons.size():
 		var d: Dictionary = maker.dungeons[di]
 		var plan := load_plan(String(d.id))
@@ -216,6 +235,7 @@ func _ready() -> void:
 		for p in plan.get("props", []):
 			if p.get("role", "") == "heal":
 				heals.append(DungeonMap.to_world(d, Vector3(p.pos[0], p.pos[1], p.pos[2])))
+				heal_ds.append(d)
 	_hook()
 
 
@@ -311,6 +331,8 @@ func _build_things(di: int, d: Dictionary, plan: Dictionary) -> void:
 		if scene == null:
 			continue
 		var t := _xform(d, p.pos, float(p.yaw), float(p.get("scale", 1.0)), float(p.get("tilt", 0.0)))
+		if p.has("stretch"):  # (Lampwick's tripwire: 1 m long, stretched to the tunnel's width)
+			t.basis = t.basis.scaled_local(Vector3(float(p.stretch), 1.0, 1.0))
 		var id := di * THING_ID + i
 		var body := StaticBody3D.new()
 		body.name = "Thing%d" % id
@@ -327,10 +349,14 @@ func _build_things(di: int, d: Dictionary, plan: Dictionary) -> void:
 			var box := _rel_xform(inst, mi as Node3D) * (mi as MeshInstance3D).get_aabb()
 			whole = box if first else whole.merge(box)
 			first = false
-		_add_boxes(body, String(p.model), t, whole)
-		var landing := DungeonMap.to_world(d, Vector3(p.pos[0], 0.24, p.pos[2])).y  # (where a stalactite lands: floor or bridge)
+		if not String(p.model) in NO_BODY:
+			_add_boxes(body, String(p.model), t, whole)
+		# (where a stalactite lands: the floor or bridge; Lampwick's upper level is 3 m up, its props say "floor")
+		var landing := DungeonMap.to_world(d, Vector3(p.pos[0], float(p.get("floor", 0.0)) + 0.24, p.pos[2])).y
 		things[id] = {kind = kind, model = String(p.model), node = body, prop = p, d = d, inst = inst, xform = t,
 			centre = t * whole.get_center(), radius = whole.size.length() * 0.5 * float(p.get("scale", 1.0)), landing = landing}
+		if MineTraps.kind_of(p) != "":
+			mine.setup(id)
 		if kind == "crusher":
 			_make_crusher(id)
 		elif kind == "door" and is_door_open(d):
@@ -417,6 +443,8 @@ func request_hit(peer_id: int, id: int, by_bolt := false) -> void:
 	if ps == null or th.is_empty() or is_broken(id):
 		return
 	var at: Vector3 = th.centre
+	if mine.on_hit(peer_id, id, by_bolt):
+		return
 	if th.kind == "drip":
 		if by_bolt:
 			_fall(id)
@@ -492,6 +520,8 @@ func _ev_broke(id: int) -> void:
 	var th: Dictionary = things.get(id, {})
 	if th.is_empty() or th.get("gone", false):
 		return
+	if mine.on_broke(id):
+		return
 	match String(th.kind):
 		"boulder":  # exactly like a cave boulder breaking (Boulders.set_broken)
 			var mid: Vector3 = th.centre
@@ -525,6 +555,8 @@ func _hide(id: int) -> void:
 	var th: Dictionary = things.get(id, {})
 	if th.is_empty() or th.get("gone", false):
 		return
+	if mine.show_spent(id):
+		return  # (a sprung mine trap stays where it is: the cart at its stopper, the jaws shut...)
 	th.gone = true
 	if th.kind == "drip":  # (its rock stays on the ceiling; its stones are gone)
 		for part in _parts(th.node):
@@ -566,9 +598,13 @@ func _tumble(id: int, depth: float, secs: float) -> void:
 		tw.tween_callback(func() -> void:
 			if is_instance_valid(part):
 				part.hide())
-	get_tree().create_timer(secs + 0.4).timeout.connect(func() -> void:
-		if is_instance_valid(body):
-			body.queue_free())
+	get_tree().create_timer(secs + 0.4).timeout.connect(_free_later.bind(body))
+
+
+## (a method, not a lambda: if the dungeon itself is gone first, e.g. in tests, the timer just does nothing)
+func _free_later(n: Object) -> void:
+	if is_instance_valid(n):
+		(n as Node).queue_free()
 
 
 const TOPPLE_LIE := 4.0  ## seconds the cracked wall's fallen boards lie on the floor before they sink away
@@ -620,9 +656,7 @@ func _topple(id: int) -> void:
 		tw.tween_callback(func() -> void:
 			if is_instance_valid(part):
 				part.hide())
-	get_tree().create_timer(longest + TOPPLE_LIE + 2.5).timeout.connect(func() -> void:
-		if is_instance_valid(body):
-			body.queue_free())
+	get_tree().create_timer(longest + TOPPLE_LIE + 2.5).timeout.connect(_free_later.bind(body))
 
 
 ## Show what the host says is broken (on loading, joining, or after a change).
@@ -725,6 +759,7 @@ func _physics_process(delta: float) -> void:
 	var now := Time.get_unix_time_from_system()
 	for id in crushers:
 		_move_crusher(id, now, auth)
+	mine.step(delta)
 	for id in things:  # (a friend who joins gets the doors with the world state: show them as the host has them)
 		_sync_doors(id)
 	if auth == null or not auth.is_host():
@@ -742,6 +777,7 @@ func _physics_process(delta: float) -> void:
 		_check_deadly_drop(auth, pid, p)
 		_check_heal(auth, pid, p, step)
 		_check_crushers_wake(auth, p)
+		mine.host_check(auth, pid, p, step)
 		for id in things:
 			var th: Dictionary = things[id]
 			if th.get("gone", false) or is_broken(id):
@@ -835,15 +871,18 @@ func drip_time(_th: Dictionary) -> float:
 ## Host: standing by the Rune Shrine's healing basin heals you (owner, Nov 20).
 func _check_heal(auth: GameAuthority, pid: int, p: Vector3, step: float) -> void:
 	var near := false
-	for h in heals:
+	var key := "dungeon_basin"
+	for i in heals.size():
+		var h := heals[i]
 		if Vector2(p.x - h.x, p.z - h.z).length() < HEAL_REACH and absf(p.y - h.y) < 2.0:
 			near = true
+			key = basin_key(heal_ds[i])
 	var ps := auth.get_player(pid)
 	if not near or ps == null:
 		_healed.erase(pid)
 		return
 	# Its water heals HEAL_POOL in all (everyone together), then it is dry until the dungeon refills (saved).
-	var st: Dictionary = auth.world_state.get("dungeon_basin", {used = 0.0, at = 0.0}).duplicate()
+	var st: Dictionary = auth.world_state.get(key, {used = 0.0, at = 0.0}).duplicate()
 	var played := float(auth.world_state.get("played", 0.0))
 	if float(st.used) >= HEAL_POOL and played - float(st.at) >= DungeonLoot.REFILL:
 		st.used = 0.0
@@ -862,10 +901,15 @@ func _check_heal(auth: GameAuthority, pid: int, p: Vector3, step: float) -> void
 	if float(st.used) >= HEAL_POOL:
 		st.at = played
 		auth.tell(pid, "The basin's last water is gone.")
-	auth.world_state["dungeon_basin"] = st
+	auth.world_state[key] = st
 	if not _healed.has(pid):
 		auth.tell(pid, "The basin's cool water mends your wounds.")
 	_healed[pid] = true
+
+
+## Each dungeon's basin keeps its own water (Mossgate's key from before Lampwick stays the same).
+static func basin_key(d: Dictionary) -> String:
+	return "dungeon_basin" if String(d.id) == "mossgate" else "dungeon_basin_" + String(d.id)
 
 
 # ================================================================== the crushers
@@ -1051,6 +1095,8 @@ func use_info(id: int) -> Dictionary:
 	var th: Dictionary = things.get(id, {})
 	if th.is_empty():
 		return {}
+	if MineTraps.kind_of(th.prop) != "":
+		return mine.use_info(id)
 	match String(th.kind):
 		"hand_door":
 			return {} if opened_by_hand(id) != 0 else {name = "Round door · E to open", use = id}
@@ -1087,6 +1133,8 @@ func request_use(peer_id: int, id: int) -> void:
 	var auth := GameAuthority.instance
 	var ps := auth.get_player(peer_id) if auth else null
 	var th: Dictionary = things.get(id, {})
+	if mine.request_use(peer_id, id):
+		return
 	if ps == null or th.is_empty() or th.kind != "hand_door" or opened_by_hand(id) != 0:
 		return
 	var t: Transform3D = th.xform

@@ -20,7 +20,7 @@ extends RefCounted
 ##   1 = the first caves: 400 m areas (Mossy x -200…200, Jungle x 220…620), squashed balls and tubes.
 ##   2 = real-shaped caves: 800 m areas (Mossy x -400…400, Jungle x 420…1220), about 4x the rooms,
 ##       passages and halls shaped the way water shapes real caves (see "layout 2" below).
-const LAYOUT_LATEST := 14
+const LAYOUT_LATEST := 15
 ## What brand-new worlds get. Layout 2: the real-shaped caves (F211 step 1, OK'd by the owner Nov 17). Layout 3: the
 ## same plus tall/wide/joined caverns and cliff exits with ledge paths (F230, F231). Old saves keep the layout they were
 ## made with; robots can try older caves with "-- layout=1" or "-- layout=2". Layout 4: the same plus a huge first
@@ -39,12 +39,17 @@ const LAYOUT_LATEST := 14
 ## Layout 13: every bridge has at least BRIDGE_AIR of air under it (owner, Nov 18: "the bridge should not be so close
 ## to the ground").
 ## Layout 14: the first dungeon, Mossgate Hold, dug into solid rock behind a cave wall (owner, Nov 19: DungeonMap).
-const LAYOUT_DEFAULT := 14
+## Layout 15: the second dungeon too, Lampwick Drift (owner, Nov 20: F477), kept well clear of the first.
+const LAYOUT_DEFAULT := 15
 ## The dungeon test world (owner, Nov 20: "do not build any caves at all, the way in should be a small cave like where
 ## you spawn"): one small cave with Mossgate Hold behind its wall, nothing else. A layout number of its own (higher
 ## than every real one, so every "layout 14 or later" rule holds), so saves, friends and the planning caches keep it
 ## apart from real worlds by themselves.
 const DUNGEON_ONLY := 1014
+## The Dungeon 2 test world: the same small cave with Lampwick Drift behind it (its own number, like DUNGEON_ONLY).
+const DUNGEON_ONLY_2 := 1015
+## Test world layout -> which DungeonMap.MAPS it holds.
+const DUNGEON_TESTS := {DUNGEON_ONLY: 0, DUNGEON_ONLY_2: 1}
 static var layout := LAYOUT_DEFAULT
 
 
@@ -67,7 +72,7 @@ static var X_MAX := 620.0
 
 ## Picks the cave layout for the next CaveMaker (and the World, map and borders that go with it).
 static func use_layout(v: int) -> void:
-	layout = v if v == DUNGEON_ONLY else clampi(v, 1, LAYOUT_LATEST)
+	layout = v if DUNGEON_TESTS.has(v) else clampi(v, 1, LAYOUT_LATEST)
 	var half := 200.0 if layout == 1 else 400.0
 	HALF_SIZE = half
 	SLAB_X = half
@@ -175,8 +180,8 @@ func _init(p_seed: int = 1, big_caverns: int = 3, small_rooms: int = 12) -> void
 		var drng := RandomNumberGenerator.new()
 		drng.seed = p_seed + 6060
 		_dip = Vector2(drng.randf_range(-0.05, 0.05), drng.randf_range(-0.05, 0.05))
-	if made_layout == DUNGEON_ONLY:
-		_make_dungeon_only()
+	if DUNGEON_TESTS.has(made_layout):
+		_make_dungeon_only(int(DUNGEON_TESTS[made_layout]))
 		return
 	# Mossy Hollows first, with the same dice as before biomes existed (old caves stay the same).
 	var rng := RandomNumberGenerator.new()
@@ -273,6 +278,8 @@ var dungeons: Array[Dictionary] = []  ## layout 14: the dungeons dug into the ro
 ## every computer), then its rooms are cut into the rock and lined with old dwarf stone (sdf, material_at).
 func _plan_dungeons() -> void:
 	for map in DungeonMap.MAPS:
+		if int(map.get("since", 14)) > made_layout:
+			continue  # (layout 14 worlds keep only Mossgate Hold)
 		var d := DungeonMap.find_spot(self, map)
 		if d.is_empty():
 			continue
@@ -283,15 +290,16 @@ func _plan_dungeons() -> void:
 	_corner_cache.clear()
 
 
-## The dungeon test world: a small cave (like the one you wake up in) and Mossgate Hold dug in behind its north wall.
-func _make_dungeon_only() -> void:
+## The dungeon test world: a small cave (like the one you wake up in) and one dungeon (Mossgate Hold, or Lampwick
+## Drift for the Dungeon 2 test) dug in behind its north wall.
+func _make_dungeon_only(map_i := 0) -> void:
 	var c := Vector3(0.0, -20.0, 0.0)
 	rooms.append({center = c, radii = Vector3(10.0, 5.5, 10.0), big = false, kind = "room", sealed = false, biome = "mossy"})
 	_bake_shapes()
 	spawn_point = _find_spawn()
 	cavern_spawn = spawn_point
 	var fl := find_floor(c.x, c.z, c.y)
-	var map: Dictionary = DungeonMap.MAPS[0]
+	var map: Dictionary = DungeonMap.MAPS[map_i]
 	# Its round door 4 m into the rock behind the cave's wall (about 10 m out, its bumps up to 2 m), the hole from it running
 	# 4 m into the cave.
 	var mouth := Vector3(0.0, roundf(fl.y), -18.0)
@@ -358,7 +366,8 @@ func _reserve_tower() -> void:
 	if not op.is_empty():
 		outpost_spot = RuinOutpost.pick(self, float(op.get("radius", 18.5)), float(op.get("height", 7.5)))
 		if not outpost_spot.is_empty():
-			reserve(outpost_spot.pos, float(op.get("radius", 18.5)) + 4.0, float(op.get("height", 7.5)))
+			# (a circle round a square fort: out past its corner towers, 25.5 m from the middle; F478, Nov 20)
+			reserve(outpost_spot.pos, float(op.get("radius", 18.5)) * 1.42 + 1.5, float(op.get("height", 7.5)))
 
 
 ## Layout 8 (owner, Nov 17): 1 or 2 smaller stone columns (5 to 11 m wide) in the plain big caverns, the same kind as

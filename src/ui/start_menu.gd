@@ -10,7 +10,7 @@ signal continue_game(data: Dictionary)
 signal host_world(data: Dictionary)
 signal quit_game
 signal test_dungeon  ## dev builds only: a new world, standing at the first dungeon's door with the best gear
-signal test_dungeon2  ## dev builds only: the same, with the dungeon's creatures swapped for Lampwick's skeleton miners
+signal test_dungeon2  ## dev builds only: the same at the second dungeon, Lampwick Drift
 
 var _status: Label
 var _seed_edit: LineEdit
@@ -106,10 +106,10 @@ func _ready() -> void:
 		var purple := StyleBoxFlat.new()
 		purple.bg_color = Color(0.22, 0.08, 0.26)
 		purple.set_corner_radius_all(8)
-		# Owner, Nov 20: "Dungeon 1" and "Dungeon 2" (Lampwick's map isn't built yet: Mossgate with the miners in it).
+		# Owner, Nov 20: "Dungeon 1" and "Dungeon 2" (F477: Dungeon 2 is Lampwick Drift, the planned second dungeon).
 		var dev := _button(box, "Dev: Dungeon 1, Mossgate Hold (new world, copper gear, at the door)", func(): test_dungeon.emit())
 		dev.add_theme_stylebox_override("normal", purple)
-		var dev2 := _button(box, "Dev: Dungeon 2, Lampwick's miners (in Mossgate for now, copper gear)", func(): test_dungeon2.emit())
+		var dev2 := _button(box, "Dev: Dungeon 2, Lampwick Drift (new world, copper gear, at the door)", func(): test_dungeon2.emit())
 		dev2.add_theme_stylebox_override("normal", purple)
 	_status = UiKit.label(box, "", 15, UiKit.AMBER)
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD

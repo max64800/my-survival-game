@@ -7,9 +7,13 @@ const SEEDS := [42, 7, 1234]
 var _makers := {}
 
 
+## Layout 14 worlds: Mossgate Hold alone (from layout 15 Lampwick Drift comes too: tests/test_lampwick.gd).
 func _maker(sd: int) -> CaveMaker:
 	if not _makers.has(sd):
+		var was := CaveMaker.layout
+		CaveMaker.use_layout(14)
 		_makers[sd] = CaveMaker.new(sd)
+		CaveMaker.use_layout(was)
 	return _makers[sd]
 
 

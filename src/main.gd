@@ -24,6 +24,7 @@ var authority: GameAuthority
 ## The dev "Test the dungeon" start (owner, Nov 19): only what the dungeon needs. No crystals, plants, pebbles, trees,
 ## ruins or cave creatures are planned (much faster), and you start (and wake after dying) at the dungeon's door.
 var dungeon_test := false
+var dungeon_test_layout := CaveMaker.DUNGEON_ONLY  ## which dungeon test world (DUNGEON_ONLY_2 = Lampwick Drift)
 var dwarf: Dwarf
 var hud: Hud
 var _dev_items: DevItems  ## F8 in dev builds: any item into your bag (owner, Nov 19)
@@ -133,8 +134,8 @@ func _ready() -> void:
 			_saving = false
 			if mode == "menu":
 				mode = "solo"
-		elif arg == "dungeon2":  # with dungeontest: the menu's "Dungeon 2" (Mossgate's creatures swapped for the miners)
-			MonsterManager.swap_kinds = MonsterManager.MINER_SWAP
+		elif arg == "dungeon2":  # with dungeontest: the menu's "Dungeon 2" (Lampwick Drift's test world)
+			dungeon_test_layout = CaveMaker.DUNGEON_ONLY_2
 		elif arg == "minercheck":  # photos of the skeleton miners lying, rising, running, swinging, turning to stone
 			debug_script = "res://src/debug/minercheck.gd"
 			dungeon_test = true
@@ -269,26 +270,24 @@ func _on_defended(r: Dictionary) -> void:
 
 
 func _show_menu() -> void:
-	MonsterManager.swap_kinds = {}  # (a Dungeon 2 test's miner swap never carries over into a real world)
 	_menu = load("res://src/ui/start_menu.gd").new()
 	add_child(_menu)
 	# Making a world takes a few seconds: a loading screen with a bar shows first (owner, Nov 16).
 	_menu.connect("play_alone", func(s: int, wname: String): _close_menu(); _with_loading(func(): _new_world(s, wname), s if s > 0 else seed, _new_layout))
 	_menu.connect("test_dungeon", func():
 		_close_menu()
+		dungeon_test_layout = CaveMaker.DUNGEON_ONLY
 		_with_loading(func():
 			dungeon_test = true
 			_new_world(seed, "Dungeon Test")
 			add_child(load("res://src/debug/dungeon_test_start.gd").new()), seed, CaveMaker.DUNGEON_ONLY))  # (no caves: owner, Nov 20)
-	_menu.connect("test_dungeon2", func():  # (owner, Nov 20: Dungeon 2 = Lampwick's skeleton miners, in Mossgate until its map is in)
+	_menu.connect("test_dungeon2", func():  # (owner, Nov 20, F477: Dungeon 2 = Lampwick Drift, the real second dungeon)
 		_close_menu()
+		dungeon_test_layout = CaveMaker.DUNGEON_ONLY_2
 		_with_loading(func():
 			dungeon_test = true
-			MonsterManager.swap_kinds = MonsterManager.MINER_SWAP
 			_new_world(seed, "Dungeon 2 Test")
-			var start: Node = load("res://src/debug/dungeon_test_start.gd").new()
-			start.set("dungeon_name", "Dungeon 2: Lampwick's miners (in Mossgate's rooms)")
-			add_child(start), seed, CaveMaker.DUNGEON_ONLY))
+			add_child(load("res://src/debug/dungeon_test_start.gd").new()), seed, CaveMaker.DUNGEON_ONLY_2))
 	_menu.connect("continue_game", func(data: Dictionary): _close_menu(); _with_loading(func(): start_game(data.seed, {}, data), int(data.seed), int(data.get("layout", 1))))
 	_menu.connect("host_world", func(data: Dictionary):
 		_close_menu()
@@ -412,7 +411,7 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	elif snap.has("layout"):
 		CaveMaker.use_layout(int(snap.layout))
 	else:
-		CaveMaker.use_layout(CaveMaker.DUNGEON_ONLY if dungeon_test else _new_layout)  # (the dungeon test: no caves, owner Nov 20)
+		CaveMaker.use_layout(dungeon_test_layout if dungeon_test else _new_layout)  # (the dungeon test: no caves, owner Nov 20)
 	print("Cave seed: ", seed, " (cave layout ", CaveMaker.layout, ")")
 	FreezeWatch.doing = "making the cave"
 	Look.start_preloading(["creatures"])  # F266/F417: creature looks read on helper threads, no freeze when one appears

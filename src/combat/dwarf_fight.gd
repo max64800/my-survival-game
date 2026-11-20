@@ -387,6 +387,10 @@ func _shoot(aimed: bool) -> void:
 	var thing_id := DungeonBuild.id_of(hit.get("collider"))
 	if thing_id >= 0 and DungeonBuild.instance:  # a bolt brings a dungeon stalactite down (decisions round 2)
 		DungeonBuild.instance.ask_hit(thing_id, true)
+	elif Storage.box_id_of(hit.get("collider")) >= 0 and DungeonBuild.instance:  # Lampwick's vault chest: its spikes go off
+		var spikes := DungeonBuild.instance.mine.spikes_near(point)
+		if spikes >= 0:
+			DungeonBuild.instance.ask_hit(spikes, true)
 	if auth and auth.monsters:
 		auth.monsters.ask_shoot(b, aimed, uid, from, point)
 		var friend = hit.get("collider")

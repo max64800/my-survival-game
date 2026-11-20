@@ -52,7 +52,47 @@ const MOSSGATE := {
 	],
 }
 
-const MAPS := [MOSSGATE]
+## Map 2, "Lampwick Drift" (small; docs/design/zone1-dungeons/02-lampwick-drift.md, owner Nov 20: "Dungeon 2 should be a
+## new dungeon. We planned it."). A dark old mine: you light its lamps as you go. Two levels: the Lamp Room and the Rail
+## Tunnel at 0, then the Cart Junction's rails climb 3 m (UP) to everything else; the Back Rails run down again to the
+## Lamp Room's barred gate (the way out). Corridors are 4 m wide like Mossgate's (the round doorway needs 3 m).
+## The short "_door" spaces join two rooms with a 4 m opening (a round doorway). In new worlds from layout 15 on.
+const UP := 3.0
+const LAMPWICK := {
+	id = "lampwick",
+	name = "Lampwick Drift",
+	mouth = Vector2(26, 60),
+	since = 15,     ## the first cave layout that has it (older worlds keep only Mossgate)
+	best = 120.0,   ## metres from the start it likes best (Mossgate: 150)
+	spaces = [
+		["entry", 24, 52, 28, 60, 0, 3.5],            # the way in
+		["lamp_room", 22, 46, 28, 52, 0, 4.5],        # 1 (the barred gate on its east wall)
+		["rail_tunnel", 24, 36, 28, 46, 0, 3.5],      # 2 (the tripwire)
+		["rail_bend", 22, 34, 28, 38, 0, 3.5],        #   (the tunnel turns west into the junction's foot)
+		["cart_junction", 16, 22, 22, 38, 0, 8],      # 3 three rails climbing 3 m north (z 33.6 -> 22), the carts
+		["junction_top", 16, 18, 22, 22, UP, 4.5],    #   the landing at the top of the rails
+		["tool_store", 10, 16, 16, 22, UP, 4.5],      # 4 (the loose stone)
+		["drip_tunnel", 18, 8, 22, 18, UP, 4.5],      # 5 (stalactites)
+		["bat_gallery", 14, 0, 24, 8, UP, 7],         # 6 (tall and dark; the cracked wall on its west side)
+		["vault", 10, 2, 14, 4, UP, 3],               # 7 (hidden: the trapped chest on its spike floor)
+		["shaft_door", 24, 2, 26, 6, UP, 3.5],
+		["old_shaft", 26, 0, 36, 8, UP, 6],           # 8 the plank walk (z 2-6) and the swinging boulder
+		["shaft_n", 28, 0, 36, 2, UP - 6.0, 7],       #   the deep shaft each side of the walk (falling in kills)
+		["shaft_s", 28, 6, 36, 8, UP - 6.0, 7],
+		["copper_door", 36, 2, 38, 6, UP, 3.5],
+		["copper_face", 38, 0, 44, 6, UP, 4.5],       # 9 (bear jaws in the rubble)
+		["niche", 44, 2, 50, 6, UP, 3],               #   behind the hidden boulder (a chest)
+		["prop_corridor", 40, 6, 44, 16, UP, 3.5],    # 10
+		["rest_door", 38, 12, 40, 16, UP, 3.5],
+		["miners_rest", 32, 10, 38, 16, UP, 4.5],     # 11 (the healing basin)
+		["office_door", 40, 16, 44, 18, UP, 3.5],
+		["office", 38, 18, 48, 28, UP, 5],            # 12 the Foreman's Office
+		["back_rails", 40, 28, 44, 46, 0, 7],         # 13 two rails down 3 m south (z 28 -> 39.6), then level
+		["back_rails_w", 28, 46, 44, 50, 0, 3.5],     #   west to the gate
+	],
+}
+
+const MAPS := [MOSSGATE, LAMPWICK]
 
 
 ## One placed dungeon: where its mouth is in the world, which way it faces, and its boxes in world terms.
@@ -177,17 +217,31 @@ static func find_spot(maker: CaveMaker, map: Dictionary) -> Dictionary:
 			continue
 		for turn in 4:
 			for side in [0.0, -10.0, 10.0]:
-				tries.append([absf(d - 150.0) + absf(side) * 0.3 + turn * 0.01, i, turn, side])
+				tries.append([absf(d - float(map.get("best", 150.0))) + absf(side) * 0.3 + turn * 0.01, i, turn, side])
 	tries.sort_custom(func(a, b): return a[0] < b[0])
 	for t in tries:
 		for back in [0.0, 2.0, 4.0]:  # (a slanted cave wall: set it deeper into the rock, see _try)
 			_side_open = false
 			var spot := _try(maker, map, maker.rooms[t[1]], int(t[2]), float(t[3]), back)
-			if not spot.is_empty():
+			if not spot.is_empty() and _clear_of_dungeons(maker, spot):
 				return spot
 			if not _side_open:
 				break
 	return {}
+
+
+## Is a new dungeon's ground (rooms and their stone) well clear of every dungeon placed before it (Lampwick and
+## Mossgate never share rock)?
+static func _clear_of_dungeons(maker: CaveMaker, d: Dictionary) -> bool:
+	var gap := Vector3.ONE * (SHELL + 4.0)
+	for o in maker.dungeons:
+		var lo: Vector3 = o.wlo - gap
+		var hi: Vector3 = o.whi + gap
+		var dlo: Vector3 = d.wlo
+		var dhi: Vector3 = d.whi
+		if dlo.x < hi.x and dhi.x > lo.x and dlo.y < hi.y and dhi.y > lo.y and dlo.z < hi.z and dhi.z > lo.z:
+			return false
+	return true
 
 
 static var _side_open := false  ## the last _try failed only because the cave is open beside the door

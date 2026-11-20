@@ -10,7 +10,6 @@ const CARRY := [["pickaxe_copper", 1], ["crossbow_copper", 1], ["bolt_metal", 60
 	["bandage", 20], ["crystal_torch", 10]]
 
 var _main: Node
-var dungeon_name := ""  ## what the toasts call it ("" = Mossgate Hold; the menu's Dungeon 2 sets its own)
 
 
 func _ready() -> void:
@@ -53,9 +52,8 @@ func _run() -> void:
 	dwarf.set_physics_process(false)
 	dwarf.global_position = stand + Vector3.UP * 0.3
 	dwarf.velocity = Vector3.ZERO
-	if dungeon_name == "" and not MonsterManager.swap_kinds.is_empty():
-		dungeon_name = "Dungeon 2: Lampwick's miners (in Mossgate's rooms)"  # (robots: -- dungeontest dungeon2)
-	_main.hud.show_toast("Dungeon test: going to %s…" % (dungeon_name if dungeon_name != "" else "Mossgate Hold"), 3.0)
+	var dungeon_name := String(d.map.name)  # (Mossgate Hold, or Lampwick Drift for the menu's Dungeon 2)
+	_main.hud.show_toast("Dungeon test: going to %s…" % dungeon_name, 3.0)
 	for i in 1200:
 		if _main.world.terrain.is_area_meshed(AABB(stand - Vector3.ONE * 8.0, Vector3.ONE * 16.0)) and _main.world.is_ready_at(stand, 8.0):
 			break
@@ -69,7 +67,7 @@ func _run() -> void:
 	dwarf._yaw = atan2(-dir.x, -dir.z)
 	dwarf._pitch = 0.0
 	dwarf.model.rotation.y = dwarf._yaw
-	_main.hud.show_toast("Dungeon test: %s is straight ahead. Copper gear on." % (dungeon_name if dungeon_name != "" else "Mossgate Hold"), 5.0)
+	_main.hud.show_toast("Dungeon test: %s is straight ahead. Copper gear on." % dungeon_name, 5.0)
 	print("DUNGEON_TEST at the door ", dwarf.global_position)
 	for a in OS.get_cmdline_user_args():  # robots: one picture, then quit
 		if a.begins_with("shots="):
@@ -80,7 +78,7 @@ func _run() -> void:
 				dwarf.global_position.distance_to(door), DungeonMap.space_at(d, dwarf.global_position + fwd * 8.0 + Vector3.UP)])
 			print("DUNGEON_TEST shot ", _main.take_screenshot(a.trim_prefix("shots=").path_join("dungeon_test.png")))
 			var face := DungeonMap.mouth_z(d.map)
-			for v in [["door_close", Vector3(34.0, 0.3, face + 4.5), Vector3(34.0, 1.3, face)],
+			var views := LAMPWICK_VIEWS if d.id == "lampwick" else [["door_close", Vector3(34.0, 0.3, face + 4.5), Vector3(34.0, 1.3, face)],
 					["corridor", Vector3(34.0, 0.3, face - 1.0), Vector3(34.0, 1.4, 44.0)],
 					["gate_hall", Vector3(36.0, 0.3, 45.0), Vector3(32.0, 1.4, 37.0)],
 					["doorway", Vector3(30.0, 0.3, 38.0), Vector3(34.0, 1.2, 46.0)],
@@ -91,7 +89,8 @@ func _run() -> void:
 					["crushers", Vector3(61.5, 0.3, 7.5), Vector3(57.2, 2.4, 6.0)],
 					["lever", Vector3(73.2, 0.3, 40.6), Vector3(71.0, 1.0, 38.2)],
 					["old_ceiling", Vector3(34.0, 0.3, 45.0), Vector3(34.0, 4.0, 38.0)],
-					["cracked_wall", Vector3(65.0, 0.3, 39.5), Vector3(65.0, 1.2, 36.0)]]:
+					["cracked_wall", Vector3(65.0, 0.3, 39.5), Vector3(65.0, 1.2, 36.0)]]
+			for v in views:
 				dwarf.set_physics_process(false)
 				dwarf.global_position = DungeonMap.to_world(d, v[1])
 				var look: Vector3 = DungeonMap.to_world(d, v[2]) - (dwarf.global_position + Vector3.UP * 1.5)
@@ -104,8 +103,58 @@ func _run() -> void:
 			print("DUNGEON_TEST monsters alive: %d" % _main.authority.monsters.monsters.size())
 			if "drips" in OS.get_cmdline_user_args():
 				await _walk_drips(d)
+			if "climb" in OS.get_cmdline_user_args() and d.id == "lampwick":
+				await _walk_rails(d)
 			get_tree().quit()
 	queue_free()
+
+
+## Lampwick Drift's robot pictures (-- dungeontest dungeon2 shots=<folder>): [name, stand (map metres), look at].
+const LAMPWICK_VIEWS := [
+	["lw_door", Vector3(26.0, 0.3, 68.5), Vector3(26.0, 1.3, 64.0)],
+	["lw_lamp_room", Vector3(25.0, 0.3, 51.0), Vector3(27.6, 1.2, 47.0)],
+	["lw_tripwire", Vector3(26.0, 0.3, 45.0), Vector3(25.0, 0.4, 41.0)],
+	["lw_carts_foot", Vector3(23.6, 0.3, 36.0), Vector3(19.0, 2.0, 24.0)],
+	["lw_carts_top", Vector3(19.0, 3.3, 20.0), Vector3(19.0, 1.0, 34.0)],
+	["lw_tool_store", Vector3(15.0, 3.3, 20.5), Vector3(12.0, 3.4, 17.5)],
+	["lw_drips", Vector3(20.0, 3.3, 17.5), Vector3(20.0, 6.0, 10.0)],
+	["lw_gallery", Vector3(22.5, 3.3, 7.0), Vector3(15.0, 4.0, 3.0)],
+	["lw_vault", Vector3(16.0, 3.3, 3.0), Vector3(11.0, 3.4, 3.0)],
+	["lw_shaft", Vector3(26.6, 3.3, 4.0), Vector3(33.0, 4.4, 4.0)],
+	["lw_copper", Vector3(37.0, 3.3, 4.0), Vector3(42.0, 3.4, 2.5)],
+	["lw_props", Vector3(42.0, 3.3, 7.0), Vector3(42.0, 4.0, 15.0)],
+	["lw_rest", Vector3(39.0, 3.3, 14.0), Vector3(35.0, 3.5, 13.0)],
+	["lw_office", Vector3(42.0, 3.3, 18.6), Vector3(44.0, 4.0, 25.0)],
+	["lw_back_rails", Vector3(42.0, 3.3, 27.0), Vector3(42.0, 1.0, 40.0)],
+	["lw_gate", Vector3(31.0, 0.3, 48.0), Vector3(28.0, 1.2, 48.0)],
+]
+
+
+## Robots (Lampwick, Nov 20): the dwarf really walks (his own legs) up the Cart Junction's middle lane and down the
+## Back Rails, and the game says where he got to (map metres).
+func _walk_rails(d: Dictionary) -> void:
+	var dwarf: Dwarf = _main.dwarf
+	for id in DungeonBuild.instance.things:  # (the carts come down first, so the climb isn't cut short by one)
+		if DungeonBuild.instance.things[id].kind in ["cart", "wedge"]:
+			DungeonBuild.instance._break(id)
+	await get_tree().create_timer(4.0).timeout
+	for w in [["up the cart lanes", Vector3(19.0, 0.4, 34.6), Vector3(19.0, 0.4, 10.0), 3.2],
+			["down the back rails", Vector3(42.0, 3.5, 25.0), Vector3(42.0, 0.4, 60.0), 5.0]]:
+		dwarf.set_physics_process(false)
+		dwarf.global_position = DungeonMap.to_world(d, w[1])
+		dwarf.velocity = Vector3.ZERO
+		var look: Vector3 = DungeonMap.to_world(d, w[2]) - DungeonMap.to_world(d, w[1])
+		dwarf._yaw = atan2(-look.x, -look.z)
+		dwarf.model.rotation.y = dwarf._yaw
+		await get_tree().create_timer(0.5).timeout
+		dwarf.set_physics_process(true)
+		dwarf.bot_move = Vector2(0, -1)
+		await get_tree().create_timer(float(w[3])).timeout
+		dwarf.bot_move = Vector2.ZERO
+		var q := DungeonMap.to_local(d, dwarf.global_position)
+		var ps: GameAuthority.PlayerState = _main.authority.get_player(_main.authority.local_peer_id())
+		print("RAIL_WALK %s: from %s to (%.1f, %.2f, %.1f), in '%s', health %.0f" % [w[0], w[1], q.x, q.y, q.z,
+			DungeonMap.space_at(d, dwarf.global_position + Vector3.UP), ps.vitals.health])
 
 
 ## Robots (owner's 3rd play, Nov 20: "stalactites don't drop even when I'm close"): the dwarf really walks (his own
