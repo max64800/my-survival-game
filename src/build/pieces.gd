@@ -81,7 +81,7 @@ const LIST := {
 	"beam": {name = "Beam", group = "support", size = Vector3(2, 0.3, 0.3), units = 2, place = "edge", station = ALL},
 	"beam_half": {name = "Short Beam", group = "support", size = Vector3(1, 0.3, 0.3), units = 1, place = "edge", station = ALL},
 	"brace": {name = "Diagonal Brace", group = "support", size = Vector3(2, 2, 0.25), units = 2, place = "edge", shape = "brace",
-		families = ["plank_root", "plank_mushroom", "silver_ingot"], station = {"workbench": 2, "anvil": 1}},
+		families = ["plank_root", "plank_mushroom", "silver_ingot", "cut_stone", "clay_brick"], station = {"workbench": 2, "anvil": 1, "mason": 2}},  # Stonehold + Hearthbrick braces (owner, Nov 20)
 	"pillar": {name = "Pillar", group = "support", size = Vector3(0.4, 2, 0.4), units = 3, place = "corner", station = ALL},
 	"column": {name = "Carved Column", group = "support", size = Vector3(0.8, 2, 0.8), units = 4, place = "corner", shape = "column",
 		families = ["plank_root"] + STONE_KINDS, station = {"workbench": 2, "mason": 2}},  # Shack columns are wood (owner, Nov 15)
@@ -92,9 +92,9 @@ const LIST := {
 	"ramp": {name = "Ramp", group = "around", size = Vector3(2, 1, 2), units = 4, place = "cell", shape = "ramp", walkable_slope = true,
 		station = ALL},  # a smooth slope, rising toward the back (−z) like stairs
 	"ladder": {name = "Ladder", group = "around", size = Vector3(1, 2, 0.2), units = 2, place = "edge", shape = "ladder",
-		families = ["plank_root", "plank_mushroom"], station = {"workbench": 1, "anvil": 1}},
+		families = ["plank_root", "plank_mushroom", "cut_stone", "clay_brick"], station = {"workbench": 1, "anvil": 1, "mason": 1}},  # Stonehold + Hearthbrick ladders (owner, Nov 20)
 	"railing": {name = "Railing", group = "around", size = Vector3(2, 1, 0.15), units = 1, place = "edge", shape = "railing",
-		families = ["plank_root", "plank_mushroom", "silver_ingot", "cut_stone"], station = {"workbench": 1, "anvil": 1, "mason": 1}},  # stone balustrade (Stonehold v2)
+		families = ["plank_root", "plank_mushroom", "silver_ingot", "cut_stone", "clay_brick"], station = {"workbench": 1, "anvil": 1, "mason": 1}},  # stone balustrade (Stonehold v2), brick little arches (Hearthbrick v2)
 	# --- triangles (building kit, Nov 15): EQUILATERAL, every side 2 m (one wall length), so any wall
 	# fits any edge and six make a hexagon. The origin is the triangle's middle (centroid); rot 0 has
 	# one edge facing +z (at z = +0.577) and the point at z = −1.155. They turn in 30° steps and
@@ -143,7 +143,7 @@ const LIST := {
 	# --- mining
 	"ceiling_panel": {name = "Ceiling Panel", group = "mining", size = Vector3(2, 0.25, 2), units = 4, place = "ceiling", supports_rock = true, station = ALL},
 	"mine_prop": {name = "Mine Prop", group = "mining", size = Vector3(2, 3, 0.4), units = 4, place = "free", extra = {copper_ingot = 1}, supports_rock = true,
-		families = ["plank_root", "cut_stone"], station = ALL},
+		families = ["plank_root", "cut_stone", "clay_brick"], station = ALL},
 	# --- decor (Claude 2 hand-makes models for these; code shapes until then). on_wall = snaps flat onto
 	# the face of a built wall you aim at. cloth = the colour of its cloth part. light = a glow it gives.
 	"column_base": {name = "Column Base", group = "decor", size = Vector3(0.8, 0.5, 0.8), units = 1, place = "corner", shape = "column_base",
@@ -608,7 +608,12 @@ static func _snap_to_edges(piece: String, p: Vector3, n: Vector3, a: Dictionary)
 	# Standing on top of a triangle (or a turned piece).
 	if n.y > 0.5 and a_odd:
 		if info.place == "edge":  # walls, doorways, windows, railings, gables: on the nearest side
-			return {pos = Vector3(mid.x, a_top, mid.z), rot = rot_from_steps(_steps_for(_yaw_toward(nrm)))}
+			var at := mid
+			if is_tri(a.piece):
+				# Owner, Nov 20: on a triangle the wall sits fully on top (its outside face on the triangle's side);
+				# hanging half over like on squares looked pushed to the side at the pointed corners.
+				at = mid - nrm * float(info.size.z) * 0.5
+			return {pos = Vector3(at.x, a_top, at.z), rot = rot_from_steps(_steps_for(_yaw_toward(nrm)))}
 		if info.place == "corner":  # pillars and columns: on the nearest corner
 			var fp := footprint(a.piece, a.pos, a.rot)
 			var c := fp[0]

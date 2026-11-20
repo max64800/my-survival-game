@@ -276,7 +276,9 @@ def stairs(w=2.0, h=2.0, dd=2.0, n=5):
 	ch = rise / per
 	nh = ch
 	W = w - 2 * E - 2 * sw
-	xa, xb = -W / 2 + 0.002, W / 2 - 0.002
+	# the steps reach 0.6 cm from the side walls' (sunk) bricks: at 1.1 cm the game counted the side walls as
+	# floating parts (its join limit is 1 cm) and showed a plain code shape instead (Nov 20)
+	xa, xb = -W / 2 - 0.006, W / 2 + 0.006
 	zback = -dd / 2 + E
 	for i in range(n):
 		zf = dd / 2 - E - i * dz

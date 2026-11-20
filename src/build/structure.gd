@@ -81,7 +81,7 @@ func box_of(uid: int) -> AABB:
 ## side by side) are fine. Uses the real outline seen from above (triangles, 30°/60° turns).
 func overlaps(piece: String, pos: Vector3, rot: int) -> bool:
 	var mine_y := _y_range(piece, pos, -0.16)
-	var mine := Pieces.footprint(piece, pos, rot, -0.16)
+	var mine := _overlap_outline(piece, pos, rot)
 	for uid in pieces:
 		var o: Dictionary = pieces[uid]
 		if fits_inside(piece, o.piece) or fits_inside(o.piece, piece):
@@ -89,16 +89,34 @@ func overlaps(piece: String, pos: Vector3, rot: int) -> bool:
 		var oy := _y_range(o.piece, o.pos, -0.16)
 		if mine_y.y <= oy.x or oy.y <= mine_y.x:
 			continue
-		if Pieces.outlines_overlap(mine, Pieces.footprint(o.piece, o.pos, o.rot, -0.16)):
+		if Pieces.outlines_overlap(mine, _overlap_outline(o.piece, o.pos, o.rot)):
 			return true
 	return false
+
+
+## The outline used to test for overlaps: shrunk 16 cm all round, and walls (edge pieces) 30 cm at each end.
+## Owner, Nov 20: walls sit fully on top of a triangle (15 cm in from its sides), so at its 60° corners the
+## walls' middle lines cross 26 cm from the corner; they only touch there, so that mustn't count.
+static func _overlap_outline(piece: String, pos: Vector3, rot: int) -> PackedVector2Array:
+	var info: Dictionary = Pieces.LIST[piece]
+	if info.place != "edge":
+		return Pieces.footprint(piece, pos, rot, -0.16)
+	var s: Vector3 = info.size
+	var hx := maxf(s.x * 0.5 - 0.3, 0.005)
+	var hz := maxf(s.z * 0.5 - 0.16, 0.005)
+	var b := Basis(Vector3.UP, Pieces.yaw_of(rot))
+	var out := PackedVector2Array()
+	for q in [Vector2(-hx, -hz), Vector2(hx, -hz), Vector2(hx, hz), Vector2(-hx, hz)]:
+		var w := b * Vector3(q.x, 0, q.y)
+		out.append(Vector2(pos.x + w.x, pos.z + w.z))
+	return out
 
 
 ## The pieces in the way of placing `piece` there (the same test as overlaps()). (Rebuilding ruins, F350.)
 func overlapping(piece: String, pos: Vector3, rot: int) -> Array:
 	var out := []
 	var mine_y := _y_range(piece, pos, -0.16)
-	var mine := Pieces.footprint(piece, pos, rot, -0.16)
+	var mine := _overlap_outline(piece, pos, rot)
 	for uid in pieces:
 		var o: Dictionary = pieces[uid]
 		if fits_inside(piece, o.piece) or fits_inside(o.piece, piece):
@@ -106,7 +124,7 @@ func overlapping(piece: String, pos: Vector3, rot: int) -> Array:
 		var oy := _y_range(o.piece, o.pos, -0.16)
 		if mine_y.y <= oy.x or oy.y <= mine_y.x:
 			continue
-		if Pieces.outlines_overlap(mine, Pieces.footprint(o.piece, o.pos, o.rot, -0.16)):
+		if Pieces.outlines_overlap(mine, _overlap_outline(o.piece, o.pos, o.rot)):
 			out.append(uid)
 	return out
 

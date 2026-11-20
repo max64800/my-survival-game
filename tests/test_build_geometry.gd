@@ -93,7 +93,9 @@ func test_walls_stand_on_triangle_edges() -> void:
 		var aim: Vector3 = e.mid - e.normal * 0.3 + Vector3.UP * 1.0
 		var w := Pieces.snap("wall", aim, Vector3.UP, 0.0, 0, 0.0, Pieces.box(tri.piece, tri.pos, tri.rot), tri)
 		check_near(w.pos.y, 1.0, EPS, "the wall stands on top of the foundation")
-		check_near(Vector2(w.pos.x, w.pos.z).distance_to(Vector2(e.mid.x, e.mid.z)), 0.0, EPS, "centred on the side")
+		# owner, Nov 20: fully on top, its outside face on the triangle's side (half the 0.3 m wall in from the side)
+		var inside: Vector3 = e.mid - e.normal * 0.15
+		check_near(Vector2(w.pos.x, w.pos.z).distance_to(Vector2(inside.x, inside.z)), 0.0, EPS, "outside face on the side")
 		var wf := Pieces.footprint("wall", w.pos, w.rot)
 		var along := (wf[1] - wf[0]).normalized()
 		check_near(absf(along.dot(Vector2(e.normal.x, e.normal.z))), 0.0, 0.001, "running along the side")

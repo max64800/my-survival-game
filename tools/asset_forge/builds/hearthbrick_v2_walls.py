@@ -210,12 +210,12 @@ def window_wide():
 	body(window=(wb, wsp, 0.62, 0.1, 0.66, 0.08))
 
 
-def trim_tri_ends(w=2.0):
+def trim_tri_ends(w=2.0, d=0.3):
 	"""Owner, Nov 20: on a triangle foundation the sloped wall's square ends stuck out past the triangle's slanted
-	sides. The game puts a wall on a triangle's side with its middle line on the side and its back (-z) inside, so the
-	back half of each end is cut at 30 degrees, along the neighbouring side of a 60-degree corner (the back face ends
-	8.7 cm sooner). The front half keeps its square end, so on square corners nothing changes there and the cut wedge
-	is covered by the wall round the corner."""
+	sides. On a triangle the game puts the wall fully on top (its front face on the side, owner's choice), so each end
+	is cut at 30 degrees from the front face's corner, along the neighbouring side of the 60-degree corner (the back
+	face ends 17 cm sooner). The front face keeps its full length; on square corners the cut wedge is mostly covered by
+	the wall round the corner."""
 	import bmesh
 	t = math.tan(math.radians(30))
 	dg = bpy.context.evaluated_depsgraph_get()
@@ -228,11 +228,12 @@ def trim_tri_ends(w=2.0):
 		bm = bmesh.new()
 		bm.from_mesh(me)
 		bm.transform(o.matrix_world)
-		# Blender y = -Godot z: remove x > w/2 + t*z_godot  ->  x + t*y - w/2 > 0 (and the mirror at -x)
+		# Blender y = -Godot z: remove x > w/2 + t*(z_godot - d/2), a plane through the front face's corner
+		# (Blender y = -d/2), and its mirror at -x
 		back = 0.012 if o.get("role") == "mortar" else 0.0   # the mortar sheet's cut face sits 1.2 cm behind the stones' (no shimmer)
 		for sx in (1, -1):
 			geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
-			res = bmesh.ops.bisect_plane(bm, geom=geom, dist=1e-5, plane_co=(sx * (w / 2 - back), 0, 0), plane_no=(sx, t, 0), clear_outer=True)
+			res = bmesh.ops.bisect_plane(bm, geom=geom, dist=1e-5, plane_co=(sx * (w / 2 - back), -d / 2, 0), plane_no=(sx, t, 0), clear_outer=True)
 			cut = [e for e in res["geom_cut"] if isinstance(e, bmesh.types.BMEdge)]
 			if cut:
 				bmesh.ops.holes_fill(bm, edges=cut, sides=0)
@@ -258,8 +259,106 @@ def gable_45():
 	body(h=2.0, slope=2.0, roundel=(0.3, 0.6, 0.17, 0.27))
 
 
+def battlement(w=2.0, h=0.9, d=0.4):
+	"""Owner, Nov 20: brick battlements. Like Stonehold's (same box, merlons at both ends and in the middle, low sills
+	in the gaps) but in the Hearthbrick look: rough limestone base row, two courses of bumpy bricks with limestone
+	quoins at the ends, a limestone string course, brick merlons under chunky limestone caps, and a carved rune stone
+	as the middle merlon. A pale mortar sheet inside, one outline (no two sheets on top of each other)."""
+	p = HB.Panel()
+	x0, x1 = -w / 2 + E, w / 2 - E
+	mw = 0.44
+	y_base, y_str, y_mer, y_cap, y_sill = 0.17, 0.41, 0.48, 0.72, 0.54
+	mer = [(x0, x0 + mw), (-mw / 2, mw / 2), (x1 - mw, x1)]
+	# the mortar sheet: the lower wall plus the three merlons, in one outline
+	xa, xb, yb0, yt, ycr = x0 + 0.01, x1 - 0.01, E + 0.004, y_cap + 0.03, y_sill - 0.01
+	(l0, l1), (m0, m1), (r0, r1) = [(a + 0.01, b - 0.01) for (a, b) in mer]
+	sheet = [(xa, yb0), (xb, yb0), (xb, yt), (r0, yt), (r0, ycr), (m1, ycr), (m1, yt), (m0, yt), (m0, ycr), (l1, ycr), (l1, yt), (xa, yt)]
+	before = set(bpy.data.objects)
+	K.slab_poly(p.fr, sheet, 0.0, d * 0.62, HB.m_mortar())
+	HB.tag(HB.since(before), "mortar")
+	# base row of rough limestone
+	x = x0
+	while x < x1 - 0.01:
+		nx = min(x1, x + K.rng.uniform(0.38, 0.55))
+		if x1 - nx < 0.22:
+			nx = x1
+		HB.stone(p, x, nx, E, y_base, d)
+		x = nx
+	# two brick courses with limestone quoins at both ends
+	ch = (y_str - y_base) / 2
+	for c in range(2):
+		ya, yb = y_base + ch * c, y_base + ch * (c + 1)
+		qw = (0.26, 0.16)[c]
+		HB.stone(p, x0, x0 + qw, ya, yb, d)
+		HB.stone(p, x1 - qw, x1, ya, yb, d)
+		for (a, b) in HB.lay_row(x0 + qw, x1 - qw, K.rng.uniform(0.1, 0.17) if c else 0.0):
+			HB.brick(p, a, b, ya, yb, d, dark=K.rng.random() < 0.06)
+	# the limestone string course along the top of the wall
+	cuts = [x0, x0 + (x1 - x0) * K.rng.uniform(0.3, 0.37), x0 + (x1 - x0) * K.rng.uniform(0.63, 0.7), x1]
+	for k in range(3):
+		HB.stone(p, cuts[k], cuts[k + 1], y_str, y_mer, d)
+	# merlons: two brick courses (quoins on the battlement's outer ends) under a chunky limestone cap
+	mh = (y_cap - y_mer) / 2
+	for i, (a0, a1) in enumerate(mer):
+		if i == 1:   # the middle one: one carved rune stone
+			o = HB.stone(p, a0, a1, y_mer, y_cap, d, role="band")
+			o["band0"], o["bandh"] = y_mer, y_cap - y_mer
+		else:
+			for c in range(2):
+				ya, yb = y_mer + mh * c, y_mer + mh * (c + 1)
+				qw = (0.2, 0.13)[c]
+				if i == 0:
+					HB.stone(p, a0, a0 + qw, ya, yb, d)
+					HB.brick(p, a0 + qw, a1, ya, yb, d, dark=K.rng.random() < 0.1)
+				else:
+					HB.brick(p, a0, a1 - qw, ya, yb, d, dark=K.rng.random() < 0.1)
+					HB.stone(p, a1 - qw, a1, ya, yb, d)
+		HB.stone(p, a0, a1, y_cap, h - E, d)
+	# low limestone sills in the two gaps
+	for (a, b) in ((mer[0][1], mer[1][0]), (mer[1][1], mer[2][0])):
+		HB.stone(p, a, b, y_mer, y_sill, d - 0.02)
+
+
+def battlement_corner(w=0.6, h=1.3):
+	"""The corner post: a square brick pier laid in a pinwheel (four bricks round a mortar core, turning the other
+	way every course), on a limestone plinth, with a limestone string course and a chunky limestone cap."""
+	hw = w / 2 - E
+	g = MORT / 2
+	before = set(bpy.data.objects)
+	# the core sits 3.5 cm behind the brick faces (their dents reach 1.6 cm in: 1.5 cm behind made shimmer)
+	K.blk((0, (0.225 + h - 0.17) / 2, 0), (2 * hw - 0.07, h - 0.17 - 0.225, 2 * hw - 0.07), HB.m_mortar(), bevel=0)
+	HB.tag(HB.since(before), "mortar")
+
+	def course(ya, yb, k, lime=False):
+		tb = 0.2
+		quads = [(-hw, hw - tb, hw - tb, hw), (hw - tb, hw, -hw + tb, hw), (-hw + tb, hw, -hw, -hw + tb), (-hw, -hw + tb, -hw, hw - tb)]
+		if k % 2:   # mirrored pinwheel: joints never sit above each other
+			quads = [(-hw + tb, hw, hw - tb, hw), (hw - tb, hw, -hw, hw - tb), (-hw, hw - tb, -hw, -hw + tb), (-hw, -hw + tb, -hw + tb, hw)]
+		for (xa, xb, za, zb) in quads:
+			sink = K.rng.uniform(0.0, 0.008)   # some bricks sit a little back (never past the outline)
+			xa2, xb2, za2, zb2 = xa + g, xb - g, za + g, zb - g
+			if xb >= hw - 1e-6 and xa > -hw + 1e-6 and xb - xa < 0.25:
+				xb2 -= sink
+			if za >= hw - 1e-6 and zb - za < 0.25:
+				zb2 -= sink
+			m = HB.m_lime() if lime else (kit.tex_mat("brick", "dark") if K.rng.random() < 0.08 else HB.m_brick())
+			o = HB.cbox(((xa2 + xb2) / 2, (ya + yb) / 2, (za2 + zb2) / 2), (xb2 - xa2, yb - ya - 2 * g, zb2 - za2), m,
+				cut=0.022 if lime else 0.016, dent=0.02 if lime else 0.016, free="xz", seeds=1 if lime else 0)
+			HB.tag([o], "lime" if lime else "brick")
+			o["dark"] = (not lime) and m.name.startswith("brick_dark")
+
+	before = set(bpy.data.objects)   # the limestone plinth
+	HB.tag([HB.cbox((0, (E + 0.22) / 2, 0), (2 * hw, 0.22 - E - 0.002, 2 * hw), HB.m_lime(), cut=0.035, dent=0.022, free="xz", seeds=1)], "lime")
+	ys = [0.22 + 0.12 * i for i in range(7)]   # six brick courses to 0.94
+	for i in range(6):
+		course(ys[i], ys[i + 1], i)
+	course(0.94, 1.02, 6, lime=True)            # limestone string course
+	course(1.02, 1.14, 7)
+	HB.tag([HB.cbox((0, (1.14 + h - E) / 2 + 0.001, 0), (2 * hw, h - E - 1.14 - 0.002, 2 * hw), HB.m_lime(), cut=0.04, dent=0.022, free="xz", seeds=1)], "lime")
+
+
 PIECES = {"half_wall": half_wall, "wall_narrow": wall_narrow, "window_wide": window_wide, "sloped_wall": sloped_wall,
-	"gable_26": gable_26, "gable_45": gable_45}
+	"gable_26": gable_26, "gable_45": gable_45, "battlement": battlement, "battlement_corner": battlement_corner}
 
 
 def band_uv(o, y0, row_h):

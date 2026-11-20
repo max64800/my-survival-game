@@ -6105,3 +6105,17 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   from other rooms. Blender's preview pictures landed in the game folder: moved out. One robot picture showed a
   cave instead of the dungeon (the camera jumped before the rock loaded).
 - **Tests:** 3 more checks; 52 of 52 dungeon checks pass.
+- **Owner: the triangle wall looked "a little to the side":** it was where the game puts every wall (middle line on the
+  edge, so 15 cm hangs over, like on squares), which looks wrong at a triangle's pointed corners. Owner chose: on
+  triangles walls sit fully on top. `pieces.gd` moves walls on a triangle's side 15 cm in; the overlap check
+  (`structure.gd`) now trims walls 30 cm at each end, because 3 walls sitting 15 cm in cross 26 cm from the corners
+  (the triangle-room test failed until then). The sloped wall's slanted end cuts now start at its outside corner.
+- **The three styles compared:** same pieces except where the roof rule says so. Owner chose: Hearthbrick gets the
+  brace, ladder, railing and mine prop (models were ready; turned on); brick battlements made (battlement + corner);
+  Stonehold gets a brace and ladder (new `stonehold_v2_frame.py`, dark timber, iron, grey stone pads).
+- **All 36 Hearthbrick pieces + brick battlements + stone brace and ladder installed** (owner: "the brick is good to
+  go"). Icons remade, all pass the checks. Hurdle: the test house still showed the old models: Godot hadn't imported
+  the new files yet (ran the import). Then the stairs and foundation steps showed plain code shapes: the game joins
+  parts less than 1 cm apart and the brick side walls sat 1.1 cm from the steps, so it called them floating. The
+  steps now reach 0.6 cm from them. Full test run: 11 fails, all in other chats' areas (digging, dwarf, sounds, tool
+  models, a HUD text), none in building.
