@@ -591,9 +591,9 @@ The family id is the item it uses (ids from the progression doc, section 1).
 
 "Units" = the piece's size in building units. **Zone 1 cost per unit (owner, Nov 20):** Rootwood 3 planks + 1 rope
 per 8 units; Cut Stone 3 cut stone + 1 mortar per 4 units; Clay Brick 2 bricks + 1 mortar per 4 units (rounded up;
-`Pieces.UNIT_COST`). Mortar: 1 stone + 1 clay = 2 at the Mason's Table. Furniture, decor and mine props keep 1 per unit.
+`Pieces.UNIT_COST`). Mortar: 2 stone + 2 clay = 1 at the Mason's Table. Furniture, decor and mine props keep 1 per unit.
 Aim: a first 6 x 6 m Shack (~160 units) is about 15 min of gathering (~240 rootwood, 20 rope); Stonehold about 2x
-(~960 stone, 40 mortar); Hearthbrick about 3x (~320 clay + 160 coal for the bricks, 40 mortar).
+(~960 stone, 40 mortar = 80 stone + 80 clay); Hearthbrick about 3x (~320 clay + 160 coal for the bricks, 40 mortar).
 
 | Piece | Size (m) | Units | Extra cost | Snap / notes |
 |---|---|---|---|---|
