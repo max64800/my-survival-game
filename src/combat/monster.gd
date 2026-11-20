@@ -662,15 +662,21 @@ func _dive_step(delta: float) -> void:
 	move_and_slide()
 
 
+## Attack name -> _clock time it may be used again (attacks with `rest`, e.g. the Foreman's spin).
+var _rest_until := {}
+
+
 func _pick_attack(dist: float) -> Dictionary:
 	var options := []
 	for a in attack_options():
-		if dist <= a.reach and dist >= a.get("min_reach", 0.0) and (not a.get("lunge", false) or dist > 2.0):
+		if dist <= a.reach and dist >= a.get("min_reach", 0.0) and (not a.get("lunge", false) or dist > 2.0) 				and _clock >= float(_rest_until.get(a.name, 0.0)):
 			options.append(a)
 	return options.pick_random() if not options.is_empty() else {}
 
 
 func _start_attack(atk: Dictionary, mgr: Node) -> void:
+	if atk.has("rest"):
+		_rest_until[atk.name] = _clock + float(atk.rest)
 	_attack = atk
 	_charge_dir = Vector3.ZERO  # a new charge picks its own straight line
 	state = State.ATTACK

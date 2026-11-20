@@ -87,13 +87,15 @@ const LIST := {
 			{name = "Pick Jab", anim = "1H_Melee_Attack_Stab", tell = 0.7, damage = 10, type = "pierce", reach = 1.9, parry = "any", buildup = {chill = 34}}],
 		drops = []},
 	# The end boss with his Lost Miners (F467): a big two-handed chop, and the spin (only a shield parries it, it
-	# knocks you down: step back out of it).
+	# knocks you down: step back out of it). Owner, Nov 20: the spin reached far too far and he only ever spun
+	# (he got into its 2.7 m range before the chop's 2.3 m). Now the spin is short (hits up to 2.6 m, the chop's
+	# range is longer so he opens with the chop) and rests 7 s after each use (rest = seconds before it comes again).
 	"foreman": {name = "The Foreman", dungeon_only = true, rises = true, rise_near = 10.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 10, boss = true,
 		size = 1.0, height = 1.9, hp = 420, armor = 30, stun = 220, slash = 0.9, blunt = 1.25, pierce = 0.75,
 		fire = 0.0, frost = 0.5, poison = 1.0, walk = 1.4, run = 3.6, pack = [1, 1], xp = 80,
 		color = Color(0.55, 0.5, 0.44), shape = "foreman", recover = 1.6,
 		attacks = [{name = "Great Chop", anim = "2H_Melee_Attack_Chop", warn_sound = "beetle_rumble", tell = 1.0, damage = 26, type = "slash", reach = 2.3, parry = "any"},
-			{name = "Pick Whirl", anim = "2H_Melee_Attack_Spin", warn_sound = "beetle_rumble", tell = 1.4, damage = 32, type = "blunt", reach = 2.7, parry = "shield", knockdown = true}],
+			{name = "Pick Whirl", anim = "2H_Melee_Attack_Spin", warn_sound = "beetle_rumble", tell = 1.4, damage = 32, type = "blunt", reach = 1.8, rest = 7.0, parry = "shield", knockdown = true}],
 		drops = []},
 }
 

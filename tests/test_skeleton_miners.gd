@@ -114,6 +114,12 @@ func test_miner_numbers() -> void:
 	check(miner.attacks.all(func(a): return a.get("buildup", {}).get("chill", 0) > 0), "the Lost Miner's hits give frost")
 	check(boss.hp > miner.hp * 3, "the Foreman is the boss")
 	check(boss.attacks.any(func(a): return a.anim == "2H_Melee_Attack_Spin"), "the Foreman has the big spin")
+	# Owner, Nov 20: the spin reached too far and he only ever spun.
+	var chop: Dictionary = boss.attacks.filter(func(a): return a.anim == "2H_Melee_Attack_Chop")[0]
+	var whirl: Dictionary = boss.attacks.filter(func(a): return a.anim == "2H_Melee_Attack_Spin")[0]
+	check(chop.reach > whirl.reach, "the chop reaches further than the spin, so he opens with the chop")
+	check(whirl.reach + 0.8 <= 2.7, "the spin only hits close (its hit range is reach + 0.8 m)")
+	check(whirl.get("rest", 0.0) >= 5.0, "the spin rests a few seconds after each use")
 	for kind in ["tunnel_rat", "lost_miner", "foreman"]:
 		check(not Monsters.LIST[kind].attacks.any(func(a): return String(a.get("anim", "")).contains("Taunt")), "%s: no taunt (F464)" % kind)
 
@@ -153,4 +159,22 @@ func test_falls_apart_then_stone() -> void:
 	if shapes.size() == 1:
 		var box: AABB = corpse.get_meta("bone_box")
 		check(box.size.y < 1.0, "its solid box is the low pile, not a standing skeleton (%.2f m tall)" % box.size.y)
+	_teardown()
+
+
+## Owner, Nov 20: after a spin the Foreman can't spin again for a while, so he chops in between.
+func test_foreman_spin_rests() -> void:
+	await _setup()
+	var m := _spawn("foreman", Vector3(12, 0, 0))
+	var picked := m._pick_attack(1.0)
+	var whirl_name: String = Monsters.LIST.foreman.attacks[1].name
+	for i in 30:
+		if picked.name == whirl_name:
+			break
+		picked = m._pick_attack(1.0)
+	check_eq(picked.name, whirl_name, "close by he can spin")
+	m._start_attack(picked, auth.monsters)
+	for i in 20:
+		check(m._pick_attack(1.0).name != whirl_name, "right after a spin he only chops")
+	check_eq(m._pick_attack(2.2).name, Monsters.LIST.foreman.attacks[0].name, "at 2.2 m only the chop reaches")
 	_teardown()
