@@ -1373,7 +1373,7 @@ func request_hit_statue(peer_id: int, id: int) -> String:
 	var out := (chest - at).normalized()
 	if st.hits < st.needed:
 		_ev_statue_hit.rpc(id, st.hits, st.needed)
-		auth._tell_feedback(peer_id, {state = "hit", hits = st.hits, needed = st.needed, material = Mat.STONE, point = at, normal = out})
+		auth._tell_feedback(peer_id, {state = "hit", hits = st.hits, needed = st.needed, material = Mat.STONE, point = at, normal = out, statue = true})
 		return "hit"
 	statues.erase(id)
 	for d in st.loot:

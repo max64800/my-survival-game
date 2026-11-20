@@ -689,7 +689,9 @@ func test_dead_creature_turns_to_stone_and_is_mined() -> void:
 	var body: Node3D = Statue.nodes.get(id)
 	check(is_instance_valid(body) and body.has_meta("statue"), "its body turned to stone")
 	if is_instance_valid(body):
-		check((body as CollisionObject3D).collision_layer & World.TERRAIN_LAYER != 0, "the stone is solid: a pickaxe can hit it")
+		# (owner, Nov 20: you and the creatures walk through it, so it isn't solid rock; the pickaxe's aim sees its layer)
+		check((body as CollisionObject3D).collision_layer & Ragdoll.LAYER != 0, "a pickaxe can hit the stone")
+		check((body as CollisionObject3D).collision_layer & World.TERRAIN_LAYER == 0, "you walk through it")
 		check(body.find_children("*", "MeshInstance3D", true, false).all(func(mi: MeshInstance3D) -> bool: return mi.has_meta("stone")), "stone covers every part")
 	# no pickaxe: it bounces off
 	var ps: GameAuthority.PlayerState = auth.get_player(1)

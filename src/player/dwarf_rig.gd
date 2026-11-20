@@ -96,8 +96,10 @@ const SHIELD_GRIPS := {
 ## its safe window stay as they are, so fights stay fair): he finishes the tumble in place (owner, Nov 17: "roll is way
 ## too fast").
 const ROLL_TIME := 0.75
-## Speeds (m/s) where each move animation fits best.
-const MOVE_POINTS := {idle = 0.0, walk = 1.6, jog = 4.0, sprint = 6.5}
+## Speeds (m/s) where each move animation fits best. Owner, Nov 20 (F494, "sometimes I can run without pressing
+## shift"): plain walking (Dwarf.WALK_SPEED, 4 m/s) played the jog, so it looked like running except while blocking or
+## aiming (slower: the walk). Now walking speed is the walk; the jog and sprint are only for running (Shift, 6.5 m/s).
+const MOVE_POINTS := {idle = 0.0, walk = 4.0, jog = 5.3, sprint = 6.5}
 ## How fast the standing/walk/run loops play (1 = as made; owner Nov 18: "way too fast").
 const LOOP_SPEED := 0.7
 ## Feet that grip the floor (Nov 19, waiting for the owner's pick): at 70% the feet skate (they move back only 64% as
@@ -831,7 +833,7 @@ func set_motion(speed: float, on_floor: bool, rolling: bool) -> void:
 	var dt := get_process_delta_time()
 	# Walking keeps the tool as the fist holds it; from a jog up it trails behind (hold_turn). Never during a
 	# swing or a held pose: those animations aim the tool themselves.
-	var want := clampf((speed - 1.6) / 1.6, 0.0, 1.0) if carrying else 0.0
+	var want := clampf((speed - 4.4) / 1.2, 0.0, 1.0) if carrying else 0.0  # (only when really running: F494)
 	# Great axe and great maul (F389): standing still, both hands in the Foreman's stance (DwarfGreatSwing); walking
 	# and running, it rests on his right shoulder in one hand (owner, round 3; Nov 20: "stays as it is").
 	var two_h := carrying and tool_look in DwarfFist.TWO_HANDED

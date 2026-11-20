@@ -194,3 +194,18 @@ func test_piles_lie_every_way_and_the_foreman_smashes_stone() -> void:
 	check_eq(n, 1, "his chop breaks the stone in front of him")
 	check(not auth.monsters.statues.has(999), "it is gone")
 	_teardown()
+
+
+## Owner, Nov 20: you (and the creatures) walk through a stone corpse; the daze stars go when it dies.
+func test_stone_corpses_dont_block_and_lose_their_stars() -> void:
+	var src := FileAccess.get_file_as_string("res://src/combat/statue.gd")
+	check(not src.contains("collision_layer = World.TERRAIN_LAYER"), "a stone corpse never becomes solid rock")
+	await _setup()
+	var m := _spawn("lost_miner", Vector3(12, 0, 0))
+	m.stun.stunned_left = 3.0
+	m._daze_stars()
+	check(m._stars != null and m._stars.visible, "dazed: stars")
+	check(m._stars.global_position.y > m.global_position.y + 1.3, "the stars circle over its head, not inside it")
+	m.die_visual()
+	check(m._stars == null, "dead: the stars are gone")
+	_teardown()

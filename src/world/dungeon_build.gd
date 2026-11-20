@@ -731,7 +731,7 @@ func _drop_drip(id: int) -> void:
 			(c as CollisionShape3D).disabled = true
 	var top: Vector3 = th.centre
 	Fx.burst(get_parent(), top, STONE, 10, 1.5, Vector3.DOWN)
-	Sfx.play("dig_break", top, -12.0, 0.6)  # the crack as it lets go (owner, Nov 20: "too much sound": quieter)
+	Sfx.play("dig_break", top, -22.0, 0.6)  # the crack as it lets go (owner, Nov 20: "too much sound": quieter)
 	var parts := _parts(body)
 	for k in parts.size():
 		var part: Node3D = parts[k]
@@ -744,7 +744,7 @@ func _drop_drip(id: int) -> void:
 		tw.tween_callback(func() -> void:
 			RockShatter.burst(get_parent(), part.global_position, Vector3.UP, STONE, Mat.STONE, 0.6)
 			if loud:
-				Sfx.play("thud", part.global_position, -6.0, 0.9)  # (owner, Nov 20: a real recorded rock thud)
+				Sfx.play("thud", part.global_position, -18.0, 0.9)  # (owner, Nov 20: a real recorded rock thud)
 			part.visible = false)
 
 

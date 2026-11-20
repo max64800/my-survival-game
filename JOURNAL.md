@@ -6913,3 +6913,20 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   wouldn't connect: screenshots taken with Chrome from the command line instead. (5) A dropped meal is 3 pieces and
   got 3 overlapping rings: one ring per group now. (6) Planted 2 bad pieces on purpose: the test caught both.
 - **Next:** owner's OK on the page; then Lampwick (its chat adds the junk call to make_lampwick.py).
+
+## November 20, 2026 (PC, dungeons Claude for dungeon 2, game code): the owner's second play of Lampwick (F494-F504)
+- **Running without Shift (F494, said twice, "ASAP"):** Shift is the only run key and only Shift makes him faster. But
+  plain walking (4 m/s) played the jog legs and swung the tool back like running; only while blocking or aiming (slower)
+  did the walk legs show. So it looked like running "sometimes". Now walking speed is the walk animation (`MOVE_POINTS`
+  walk 4.0, jog 5.3, sprint 6.5) and the tool trails only when really running.
+- **Fixed:** stone corpses are walk-through (they blocked doorways); daze stars go when a creature dies and float over
+  skeletons' heads; stalactites much quieter; the boulder throws and dazes creatures (no damage) and spares you 6 s
+  after a hit (it had knocked the owner down again and again as he got up); no floor cracks when mining a corpse;
+  three stalactites at the end of the Back Rails; a red outline on the Foreman while he winds up his spin.
+- **The basin, again:** a robot walk found it: an old mine prop stood right in front of the Miners' Rest doorway.
+  Moved; a new test checks no prop stands in any doorway. Note for next time: my first robot walk aimed 1 m beside the
+  doorway's middle and hit its post, and the next died to the rats on the way (now the robot is kept alive while it walks).
+- **Note for later (F504):** show durability better (the morning star and all gear).
+- **Checks:** test_lampwick 29/29, test_skeleton_miners 9/9, test_dungeon 63/63, test_monsters 49/49 (its stone test
+  now checks walk-through). One test_dungeon run crashed in the cave maker once (another chat saving a file mid-run);
+  the rerun passed. test_dwarf's 3 known failures are other chats'.

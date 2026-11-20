@@ -139,7 +139,8 @@ func _walk_rails(d: Dictionary) -> void:
 			DungeonBuild.instance._break(id)
 	await get_tree().create_timer(4.0).timeout
 	for w in [["up the cart lanes", Vector3(19.0, 0.4, 34.6), Vector3(19.0, 0.4, 10.0), 3.2],
-			["down the back rails", Vector3(42.0, 3.5, 25.0), Vector3(42.0, 0.4, 60.0), 5.0]]:
+			["down the back rails", Vector3(42.0, 3.5, 25.0), Vector3(42.0, 0.4, 60.0), 5.0],
+			["to the healing basin", Vector3(41.5, 3.5, 14.0), Vector3(35.0, 3.5, 13.0), 3.0]]:
 		dwarf.set_physics_process(false)
 		dwarf.global_position = DungeonMap.to_world(d, w[1])
 		dwarf.velocity = Vector3.ZERO
@@ -149,7 +150,12 @@ func _walk_rails(d: Dictionary) -> void:
 		await get_tree().create_timer(0.5).timeout
 		dwarf.set_physics_process(true)
 		dwarf.bot_move = Vector2(0, -1)
-		await get_tree().create_timer(float(w[3])).timeout
+		var me: GameAuthority.PlayerState = _main.authority.get_player(_main.authority.local_peer_id())
+		var t := 0.0
+		while t < float(w[3]):  # (kept alive: the rats chewing on the robot mustn't end the walk)
+			await get_tree().create_timer(0.1).timeout
+			t += 0.1
+			me.vitals.health = me.vitals.max_health()
 		dwarf.bot_move = Vector2.ZERO
 		var q := DungeonMap.to_local(d, dwarf.global_position)
 		var ps: GameAuthority.PlayerState = _main.authority.get_player(_main.authority.local_peer_id())

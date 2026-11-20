@@ -93,7 +93,8 @@ static func petrify(corpse: Node3D, id: int) -> void:
 	if corpse is RigidBody3D:
 		_freeze_when_still(corpse as RigidBody3D, 0.0)  # (a stone statue doesn't roll; never frozen mid-roll; then solid)
 	else:
-		(corpse as CollisionObject3D).collision_layer = World.TERRAIN_LAYER  # solid: you bump into it
+		pass  # (it stays on Ragdoll.LAYER: your pickaxe hits it, but you and the creatures walk through it: owner,
+		# Nov 20, "if I kill them in the spot, I can block the entrance")
 	Sfx.play("dig_rock", box.get_center(), -10.0, 0.55)  # a low stony grind as it sets
 
 
@@ -102,7 +103,7 @@ static func _freeze_when_still(rb: RigidBody3D, waited: float) -> void:
 		return
 	if Ragdoll.lies_still(rb) or waited > 4.0:
 		rb.freeze = true
-		rb.collision_layer = World.TERRAIN_LAYER  # solid now: you bump into it (still rolling it was only a corpse)
+		rb.collision_layer = Ragdoll.LAYER  # (walk-through, owner Nov 20; the pickaxe still hits it)
 		return
 	Ragdoll._later(rb, 0.15, func() -> void: _freeze_when_still(rb, waited + 0.15))
 

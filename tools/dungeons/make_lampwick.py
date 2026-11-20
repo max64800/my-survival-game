@@ -355,8 +355,9 @@ for x, z in [(40.2, 2.6), (42.6, 3.8)]:
 	creature("lost_miner", x, z, 0.0)
 
 # 10 Prop Corridor: old props hold up the roof along both walls; rats in the dark; bear jaws.
-for z in (8.0, 11.0, 14.0):
+for z in (8.0, 10.6):  # (west wall: none in front of the Miners' Rest doorway, z 12.5-15.5: owner, Nov 20, it blocked the way)
 	piece("mine_prop", 40.33, UP, z, 1)
+for z in (8.0, 11.0, 14.0):
 	piece("mine_prop", 43.67, UP, z, 1)
 prop("dungeon/trap_bear_jaws.glb", 42.6, UP + 0.24, 10.2, 100.0, role="trap")
 for i, (x, z) in enumerate([(41.0, 9.0), (43.0, 12.6), (41.4, 14.6)]):
@@ -390,6 +391,10 @@ for i in range(2):
 	for k in range(6):
 		px, py, pz = slope_point(xc, BACK_TOP, 11.0 - 2.0 * k)
 		prop("dungeon/rail_lane.glb", px, py, pz, 0.0, tilt=TILT)
+
+# Owner, Nov 20: stalactites at the end of the Back Rails too (the level stretch and the way to the gate).
+for x, z, y, m in [(42.4, 43.4, 7.0, "trap_drip_fat"), (34.0, 48.6, 3.5, "trap_drip_thin"), (30.8, 47.3, 3.5, "trap_drip_thin")]:
+	prop("dungeon/%s.glb" % m, x, y + 0.6, z, rng.choice([0, 120, 240]), role="trap", tilt=180.0, floor=0.0, warn=0.35, fall=0.45)
 
 # --- Write it out. ---
 missing = sorted({p["model"] for p in props if not (ROOT / "assets/models" / p["model"]).exists()} |

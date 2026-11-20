@@ -776,7 +776,8 @@ func _on_dig_feedback(pid: int, result: Dictionary) -> void:
 		FreezeWatch.hits += 1
 	match result.get("state", ""):
 		"hit":
-			if not soft:  # cracks spread on rock with each hit (F261); dirt and moss just crumble
+			if not soft and not result.get("statue", false):  # cracks spread on rock with each hit (F261); dirt and moss just
+				# crumble; a stone corpse cracks itself (Statue.hit): owner, Nov 20, the cracks showed on the floor
 				DigCracks.hit(get_parent(), at, result.get("normal", Vector3.UP), int(result.get("hits", 1)), int(result.get("needed", 3)))
 			Fx.burst(get_parent(), at, col, 6, 2.5)
 			_shake = 0.35

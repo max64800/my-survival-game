@@ -31,6 +31,10 @@ const SWING_PIVOT := Vector3(0.0, 3.5, 0.13)  ## the chain's top, in the model (
 const SWING_BALL := Vector3(0.0, 0.95, 0.13)  ## the boulder's middle at rest
 const SWING_HIT := 0.95       ## m from the boulder's middle to your middle
 const SWING_DAMAGE := 28.0
+## Owner, Nov 20: it knocked him down, and as he got up beside it, it hit him again and again until he died. After a
+## hit it leaves you alone this long (time to get up and step away).
+const SWING_SPARE := 6.0
+const SWING_DAZE := 2.0       ## a creature it hits is thrown back and dazed this long (no damage: owner, Nov 20)
 const SWING_DROP := 0.2       ## how far the shot boulder falls (onto the planks)
 const JAWS_REACH := 0.33
 const JAWS_DAMAGE := 25.0     ## owner, Nov 20 (trap_bear_jaws.md)
@@ -49,6 +53,7 @@ const SPIKE_DAMAGE := 30.0
 var db: DungeonBuild
 var _cart_hit := {}   ## host: "cart id:peer" -> true (a cart hits you once)
 var _swing_hit := {}  ## host: peer -> _clock when a boulder last hit them
+var _swing_mon := {}  ## host: creature uid -> _clock when a boulder last threw it
 var _held := {}       ## host: jaws id -> {peer, until}
 var _on_spikes := {}  ## host: spike floor id -> seconds someone has stood on it
 var _clock := 0.0
@@ -354,7 +359,7 @@ func _move_swing(th: Dictionary, now: float, auth: GameAuthority) -> void:
 	var push := ball_at(th, swing_angle(now + 0.05)) - ball
 	for pid in auth.players:
 		var node: Node3D = auth.players[pid].node
-		if node == null or _clock - float(_swing_hit.get(pid, -100.0)) < 1.5:
+		if node == null or _clock - float(_swing_hit.get(pid, -100.0)) < SWING_SPARE:
 			continue
 		if (node.global_position + Vector3.UP * 0.9).distance_to(ball) < SWING_HIT:
 			_swing_hit[pid] = _clock
@@ -362,6 +367,18 @@ func _move_swing(th: Dictionary, now: float, auth: GameAuthority) -> void:
 			auth.hurt(pid, SWING_DAMAGE)
 			if node.has_method("big_hit"):
 				node.big_hit(Vector3(push.x, 0.0, push.z).normalized() * 8.0 + Vector3.UP * 3.0)
+	if auth.monsters == null:
+		return
+	for m in auth.monsters.monsters.values():  # creatures in its way are thrown aside and dazed, unhurt
+		var mon := m as Monster
+		if mon == null or not mon.is_alive() or _clock - float(_swing_mon.get(mon.uid, -100.0)) < 2.0:
+			continue
+		if (mon.global_position + Vector3.UP * 0.8).distance_to(ball) < SWING_HIT + 0.2:
+			_swing_mon[mon.uid] = _clock
+			mon.knock(Vector3(push.x, 0.0, push.z).normalized() * 9.0)
+			mon.stun.stunned_left = maxf(mon.stun.stunned_left, SWING_DAZE)
+			mon.state = Monster.State.STUNNED
+			auth.monsters.monster_changed(mon)
 
 
 ## The shot chain lets go: the boulder swings to the middle and drops onto the planks (`now` 1 = at once).

@@ -201,7 +201,8 @@ func test_every_trap_is_built() -> void:
 	for id in _all(db, "drip"):
 		var c: Vector3 = db.things[id].centre
 		var land := DungeonMap.to_local(r.d, Vector3(c.x, float(db.things[id].landing), c.z)).y
-		check(absf(land - (DungeonMap.UP + 0.24)) < 0.01, "the Drip Tunnel's stalactites land on the upper floor (%.2f)" % land)
+		var fl := float(db.things[id].prop.get("floor", 0.0))
+		check(absf(land - (fl + 0.24)) < 0.01, "a stalactite lands on its own floor (%.2f, floor %.0f)" % [land, fl])
 	check_eq(db.heals.size(), 1, "one healing basin")
 	r.root.free()
 
@@ -449,3 +450,51 @@ func test_the_foreman_is_weaker_and_smashes_stone() -> void:
 	var boss: Dictionary = Monsters.LIST.foreman
 	check(boss.hp <= 300, "30%% less health (%d)" % boss.hp)
 	check(boss.get("smashes_statues", false), "his swings break fallen miners' stone")
+
+
+# ---------------------------------------------------------------- the owner's second play of Lampwick (Nov 20)
+
+## Nothing built stands in front of a doorway (a mine prop blocked the way to the healing basin).
+func test_no_prop_in_front_of_a_doorway() -> void:
+	var plan := DungeonBuild.load_plan("lampwick")
+	var doors: Array = plan.pieces.filter(func(p): return p.id == "doorway")
+	var bad := 0
+	for p in plan.pieces:
+		if p.id in ["mine_prop", "column", "pillar", "beam"]:
+			for dw in doors:
+				var dd := Vector2(float(p.pos[0]) - float(dw.pos[0]), float(p.pos[2]) - float(dw.pos[2])).length()
+				if dd < 1.8 and absf(float(p.pos[1]) - float(dw.pos[1])) < 1.0:
+					bad += 1
+					print("  a %s at %s in front of the doorway at %s" % [p.id, p.pos, dw.pos])
+	check_eq(bad, 0, "every doorway is free to walk through")
+
+
+func test_the_back_rails_have_stalactites() -> void:
+	var d := _lampwick(_test_world())
+	var n := 0
+	for p in DungeonBuild.load_plan("lampwick").props:
+		if DungeonBuild.thing_kind(p) == "drip":
+			var room := DungeonMap.space_at(d, DungeonMap.to_world(d, Vector3(p.pos[0], float(p.get("floor", 0.0)) + 1.0, p.pos[2])))
+			if room.begins_with("back_rails"):
+				n += 1
+	check(n >= 2, "stalactites at the end of the Back Rails (%d)" % n)
+
+
+## It knocked him down, then hit him again and again as he got up: after a hit it leaves you alone a while.
+func test_the_boulder_spares_you_while_you_get_up() -> void:
+	var r := _rig()
+	var db: DungeonBuild = r.db
+	var ps: GameAuthority.PlayerState = r.ps
+	var th: Dictionary = db.things[_all(db, "swing")[0]]
+	var hp0: float = ps.vitals.health
+	for i in 20:  # 2 s of standing right where it swings
+		var ball := db.mine.ball_at(th, MineTraps.swing_angle(Time.get_unix_time_from_system()))
+		(r.player as Node3D).global_position = ball + Vector3.DOWN * 0.9
+		db.mine.step(0.1)
+	check_near(hp0 - ps.vitals.health, MineTraps.SWING_DAMAGE * (1.0 - ps.armor_cut()), 0.5, "hit once, not again while getting up")
+	r.root.free()
+
+
+func test_the_foremans_spin_shows_a_red_outline() -> void:
+	var whirl: Dictionary = Monsters.LIST.foreman.attacks.filter(func(a): return a.anim == "2H_Melee_Attack_Spin")[0]
+	check_eq(String(whirl.parry), "shield", "only a shield parries his spin (so it gets the red outline)")

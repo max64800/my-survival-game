@@ -233,6 +233,9 @@ func hit_flash() -> void:
 func die_visual(statue := -1) -> void:
 	set_physics_process(false)
 	set_process(false)
+	if _stars:  # (owner, Nov 20: the daze stars stayed on the stone corpse)
+		_stars.queue_free()
+		_stars = null
 	collision_layer = 0
 	collision_mask = 0
 	for l in find_children("*", "Label3D", true, false):
@@ -299,6 +302,32 @@ var far_dt := 0.0           ## (host) time saved up while it thinks less often, 
 ## Host: pushed by a hit (speed in m/s, away from the hitter). It slides back and stops quickly.
 func knock(push: Vector3) -> void:
 	_knock = Vector3(push.x, 0.0, push.z)
+
+
+## Looks: a red outline round the whole creature while it winds up an attack no weapon parries (only a shield).
+static var _outline_mat: StandardMaterial3D
+
+
+func _red_outline(seconds: float) -> void:
+	if _outline_mat == null:
+		_outline_mat = StandardMaterial3D.new()
+		_outline_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		_outline_mat.albedo_color = Color(1.0, 0.08, 0.04)
+		_outline_mat.cull_mode = BaseMaterial3D.CULL_FRONT  # (only the grown back faces show: a rim round it)
+		_outline_mat.grow = true
+		_outline_mat.grow_amount = 0.025
+	var meshes: Array = []
+	for mi: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
+		if mi.material_overlay == null and mi.visible:
+			mi.material_overlay = _outline_mat
+			meshes.append(mi)
+	get_tree().create_timer(seconds + 0.1).timeout.connect(_clear_outline.bind(meshes))  # (a method: nothing if it died)
+
+
+func _clear_outline(meshes: Array) -> void:
+	for mi in meshes:
+		if is_instance_valid(mi) and (mi as MeshInstance3D).material_overlay == _outline_mat:
+			(mi as MeshInstance3D).material_overlay = null
 
 
 ## Looks: freeze for a blink (the hit "lands").
@@ -1182,6 +1211,8 @@ func show_tell(seconds: float, attack_name: String = "", aim: Node3D = null) -> 
 	for a: Dictionary in data.get("attacks", []):
 		if a.name == attack_name:
 			atk = a
+	if String(atk.get("parry", "any")) == "shield":
+		_red_outline(seconds)  # (owner, Nov 20: the Foreman's spin can't be parried with a weapon: a red outline says so)
 	if atk.get("spit", false):
 		# The Rock Snail's spit (owner, Nov 17): he rears up, snaps forward and a gob flies 2-3 m (MonsterModel._snail).
 		model.set_meta("spit_t0", _clock + uid * 0.37)  # (the clock MonsterModel.animate gets)
@@ -1499,6 +1530,9 @@ func _daze_stars() -> void:
 		_stars.visible = dazed
 		if dazed:
 			MonsterModel.spin_daze_stars(_stars, _clock)
+			if rig:  # (a skeleton's mesh box is its rest pose: the stars sat inside its body, owner Nov 20; over its head)
+				_stars.top_level = true
+				_stars.global_position = global_position + Vector3.UP * (float(data.get("height", 1.0)) + 0.25)
 
 
 const BAR_W := 0.8
