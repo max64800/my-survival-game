@@ -210,8 +210,44 @@ def window_wide():
 	body(window=(wb, wsp, 0.62, 0.1, 0.66, 0.08))
 
 
+def trim_tri_ends(w=2.0):
+	"""Owner, Nov 20: on a triangle foundation the sloped wall's square ends stuck out past the triangle's slanted
+	sides. The game puts a wall on a triangle's side with its middle line on the side and its back (-z) inside, so the
+	back half of each end is cut at 30 degrees, along the neighbouring side of a 60-degree corner (the back face ends
+	8.7 cm sooner). The front half keeps its square end, so on square corners nothing changes there and the cut wedge
+	is covered by the wall round the corner."""
+	import bmesh
+	t = math.tan(math.radians(30))
+	dg = bpy.context.evaluated_depsgraph_get()
+	for o in list(bpy.data.objects):
+		if o.type != "MESH":
+			continue
+		me = bpy.data.meshes.new_from_object(o.evaluated_get(dg))   # modifiers (chisel bevels) applied
+		o.modifiers.clear()
+		o.data = me
+		bm = bmesh.new()
+		bm.from_mesh(me)
+		bm.transform(o.matrix_world)
+		# Blender y = -Godot z: remove x > w/2 + t*z_godot  ->  x + t*y - w/2 > 0 (and the mirror at -x)
+		back = 0.012 if o.get("role") == "mortar" else 0.0   # the mortar sheet's cut face sits 1.2 cm behind the stones' (no shimmer)
+		for sx in (1, -1):
+			geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
+			res = bmesh.ops.bisect_plane(bm, geom=geom, dist=1e-5, plane_co=(sx * (w / 2 - back), 0, 0), plane_no=(sx, t, 0), clear_outer=True)
+			cut = [e for e in res["geom_cut"] if isinstance(e, bmesh.types.BMEdge)]
+			if cut:
+				bmesh.ops.holes_fill(bm, edges=cut, sides=0)
+		bm.transform(o.matrix_world.inverted())
+		if not bm.faces:
+			bm.free()
+			bpy.data.objects.remove(o)
+			continue
+		bm.to_mesh(me)
+		bm.free()
+
+
 def sloped_wall():
 	body(h=2.0, slope=2.0)
+	trim_tri_ends()
 
 
 def gable_26():

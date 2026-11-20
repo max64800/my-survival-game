@@ -315,8 +315,10 @@ def roof_corner(w=2.0, rise=1.0, dd=2.0, inner=False):
 	# the hip / valley rafter along the diagonal (its top edges meet the underside)
 	rw = 0.08
 	drop = k * (rw / 2) / r2
-	top_off = -drop if not inner else 0.0
-	f_lo = 0.0
+	# inner (valley): its top reaches up into the underlay boards (owner, Nov 20: it floated 4.5 cm under them,
+	# level with the rafters' bottoms); the boards rise to both sides, so it sits 1.2 cm into them at the middle
+	top_off = -drop if not inner else UL0 / cs + 0.012
+	f_lo = 0.03 if inner else 0.0   # the raised valley rafter's low end would poke out of the box's corner
 	while H(u0 + (u1 - u0) * f_lo) + top_off - 0.07 < 0.004:
 		f_lo += 0.01
 	pa = at(f_lo, 0.0, H(u0 + (u1 - u0) * f_lo) + top_off - 0.07)

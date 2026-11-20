@@ -6044,4 +6044,10 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   found flicker spots (mortar sheets too close to dented brick faces) and fixed them. Blender saved stray pictures into
   `C:\journey` when given short paths (some deleted; the empty folder needs removing by hand).
 - **Open questions for the owner:** roof tiles use the brick paintings (maybe a ChatGPT tile sheet); stairs are heavy
-  (21.5k triangles); brace, ladder, railing and mine prop aren't allowed in Hearthbrick in the game yet; door gap 2 cm.
+  (21.5k triangles); brace, ladder, railing and mine prop aren't allowed in Hearthbrick in the game yet; door gap 2 cm.- **Owner's look at "Hearthbrick Full Set":** "looks really good". Two notes, both fixed: (1) the inner roof corner's
+  valley beam floated 4.5 cm under the roof boards (it hung at the rafters' bottom line); it now reaches up into the
+  boards, and starts 7 cm from the corner so it doesn't poke out of the box. (2) The sloped wall on a triangle
+  foundation stuck out past the triangle's slanted sides: walls have square ends, triangle corners are 60 degrees.
+  The back half of each end is now cut at 30 degrees along the neighbouring side; the mortar sheet inside is cut 1.2 cm
+  further in (cutting it at the same spot as the stones made a flicker spot). The 3D page now puts the wall where the
+  game does (on the edge line; the old robot layout put it 15 cm in). All pass the checks.
