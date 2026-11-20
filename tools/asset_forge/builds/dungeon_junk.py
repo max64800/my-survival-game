@@ -39,6 +39,11 @@
 #   junk_crucible_mould a cracked clay melting pot in two pieces, a small stone mould with a cross channel in two halves
 #   junk_scrap          an L bar, a flat bar leaning on it, a thick ring, a broken ring, a riveted offcut, a bent rod
 #   junk_rubble_brick   a low pile of broken Hearthbrick bricks (whole, halves, chunks) in a patch of red brick dust
+# Batch 6 (ruin camp, owner's first pick for ruin junk step 3, Nov 20; laid out by tools/ruins/ruin_junk.py):
+#   junk_campfire_cold  a ring of stones (one knocked out), a bed of grey ash, sticks burnt down to charred points
+#   junk_bedroll_rotten a torn hide sheet, a holey wool blanket, the head end rolled up and tied, straw poking out
+#   junk_torch_dropped  a torch gone out: handle, iron collar, burnt head; its iron wall bracket fallen beside it
+#   junk_cookpot_tipped an iron cook pot on its side (feet, lugs, old crust inside), its bail handle, a wooden ladle
 import math
 import random
 import sys
@@ -1651,6 +1656,257 @@ def junk_rubble_brick():
 			seg=6, ring=4, jit=0.22)
 
 
+# ================================================================ batch 6: ruin camp (owner, Nov 20: ruin junk step 3)
+# Someone camped in the ruins long ago. Nothing glows: the fire went out long ago.
+def CHAR(v="dark"):
+	"""Charred wood: the wood painting burnt down to a dark grey-brown (not black: owner, no black spots)."""
+	return tinted("wood", v, (0.62, 0.55, 0.5), "char")
+
+
+def ASH(v="a"):
+	return tinted("limestone", v, (0.74, 0.72, 0.7), "ash")
+
+
+def flat_lump(c, r, m, seed, **kw):
+	"""A lump (a stone) cut flat where it meets the floor: nothing of it under y = 0, the cut closed with a face."""
+	import bmesh
+	o = lump(c, r, m, seed, **kw)
+	bm = bmesh.new()
+	bm.from_mesh(o.data)
+	cut = bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], plane_co=(0, 0, -o.location.z),
+		plane_no=(0, 0, 1), clear_inner=True)
+	bmesh.ops.holes_fill(bm, edges=[e for e in cut["geom_cut"] if isinstance(e, bmesh.types.BMEdge)], sides=0)
+	bm.to_mesh(o.data)
+	bm.free()
+	return o
+
+
+def stick(p0, p1, r, burnt, seed, bark):
+	"""A campfire stick from p0 (its outer end, chopped: pale end grain) to p1: bark up to `burnt` of the way along,
+	then charred and burnt thin to a ragged point. One part, painted per face (no second skin: no shimmer)."""
+	rr = random.Random(seed)
+	a, b = Vector(p0), Vector(p1)
+	ax = (b - a).normalized()
+	up = Vector((0, 1, 0)) if abs(ax.y) < 0.9 else Vector((1, 0, 0))
+	u = ax.cross(up).normalized()
+	w = ax.cross(u)
+	n, rings = 8, 7
+	prof = [rr.uniform(0.92, 1.08) for _ in range(n)]
+	verts, faces = [], []
+	for i in range(rings):
+		t = i / (rings - 1)
+		k = 1.0 if t <= burnt else 1.0 - 0.55 * ((t - burnt) / (1.0 - burnt)) ** 0.8
+		c = a + (b - a) * t
+		for j in range(n):
+			ang = 2 * math.pi * j / n
+			rk = r * k * prof[j] * (rr.uniform(0.8, 1.05) if t > burnt else rr.uniform(0.97, 1.03))
+			verts.append(tuple(c + (u * math.cos(ang) + w * math.sin(ang)) * rk))
+	for i in range(rings - 1):
+		for j in range(n):
+			j2 = (j + 1) % n
+			faces.append((i * n + j, i * n + j2, (i + 1) * n + j2, (i + 1) * n + j))
+	faces.append(tuple(range(n - 1, -1, -1)))
+	faces.append(tuple((rings - 1) * n + j for j in range(n)))
+	o = K.mesh(verts, faces, bark)
+	o.data.materials.append(CHAR())
+	o.data.materials.append(T("wood", "c"))
+	for f, poly in enumerate(o.data.polygons):
+		if f < (rings - 1) * n:
+			poly.material_index = 1 if ((f // n) + 0.5) / (rings - 1) > burnt else 0
+		else:
+			poly.material_index = 2 if f == (rings - 1) * n else 1   # the chopped outer end; the burnt tip
+	return o
+
+
+def junk_campfire_cold():
+	"""A cold campfire left long ago: a ring of stones (one knocked out, lying apart), a flat bed of grey ash with low
+	heaps, the sticks burnt down to charred points still aiming at the middle, charcoal bits."""
+	rr = random.Random(701)
+	slab(wavy(0.0, 0.0, 0.3, 0.28, 26, 702, amp=0.1), 0.0, 0.01, 0.026, ASH("a"), k=0.45)   # the ash bed
+	for i in range(6):   # low ash heaps on it
+		a, d = rr.uniform(0, 6.28), rr.uniform(0.0, 0.17)
+		br = rr.uniform(0.04, 0.07)
+		lump((math.cos(a) * d, 0.026, math.sin(a) * d), (br, br * 0.3, br * 0.85), ASH("abc"[i % 3]), 710 + i, seg=8, ring=4,
+			jit=0.12)
+	N, R0, GAP = 11, 0.38, 4
+	for i in range(N):   # the ring of stones, each its own shape and painting
+		a = 2 * math.pi * i / N + rr.uniform(-0.06, 0.06)
+		s = rr.uniform(0.85, 1.15)
+		r = (0.085 * s, 0.056 * s, 0.066 * s)   # (round 2: flatter, less like round blobs)
+		m = T(rr.choice(("stone", "warmstone")), "abc"[i % 3])
+		if i == GAP:   # knocked out of the ring: lying further out, on its side, turned
+			flat_lump((math.cos(a) * 0.58, r[2] * 0.75, math.sin(a) * 0.66), (r[0], r[2], r[1]), m, 720 + i, seg=8, ring=5,
+				jit=0.14, yaw=-math.degrees(a) + 125)
+			continue
+		flat_lump((math.cos(a) * R0, r[1] * 0.6, math.sin(a) * R0), r, m, 720 + i, seg=8, ring=5, jit=0.14,
+			yaw=-math.degrees(a) + 90 + rr.uniform(-10, 10))
+	for i, (deg, r0, r1, r) in enumerate(((15, 0.29, 0.07, 0.042), (88, 0.28, 0.09, 0.036), (158, 0.29, 0.06, 0.045),
+			(232, 0.27, 0.1, 0.035), (298, 0.29, 0.08, 0.04))):   # (round 2: thicker, so they read)   # the sticks, burnt down from the middle
+		a = math.radians(deg + rr.uniform(-8, 8))
+		d = Vector((math.cos(a), 0.0, math.sin(a)))
+		stick(tuple(d * r0 + Vector((0, 0.026 + r * 0.85, 0))), tuple(d * r1 + Vector((0, 0.022 + r * 0.35, 0))), r,
+			rr.uniform(0.35, 0.5), 740 + i, T("bark", "abc"[i % 3]))
+	for i in range(9):   # charcoal bits
+		a, d = rr.uniform(0, 6.28), rr.uniform(0.0, 0.24)
+		br = rr.uniform(0.014, 0.028)
+		lump((math.cos(a) * d, 0.026 + br * 0.4, math.sin(a) * d), (br, br * 0.7, br * 0.8), CHAR(), 760 + i, seg=6, ring=4,
+			jit=0.2, yaw=rr.uniform(0, 90))
+
+
+def bed_height(x, z, ph):
+	"""The floor-lumps a bedroll lies on (shared by its layers, so they stay the same distance apart)."""
+	return 0.006 * (1 + math.sin(x * 9 + ph[0]) * math.cos(z * 11 + ph[1])) + 0.003 * (1 + math.sin(x * 23 + z * 17 + ph[2]))
+
+
+def cloth_rect(cx, hx, hz, seed, m, lift, thick, ph, holes=(), fray=0.05, fold=0.0):
+	"""A ragged rectangle of cloth or hide lying on the floor, centred at x = cx, half sizes hx, hz: torn, frayed edges
+	and holes; its height follows bed_height() plus lift (and a soft fold across it), solidified up by thick."""
+	import bmesh
+	rr = random.Random(seed)
+	bm = bmesh.new()
+	bmesh.ops.create_grid(bm, x_segments=40, y_segments=22, size=1.0)
+	mx = max(abs(v.co.x) for v in bm.verts)
+	my = max(abs(v.co.y) for v in bm.verts)
+	for v in bm.verts:
+		v.co.x /= mx
+		v.co.y /= my
+	q = [rr.uniform(0, 6.28) for _ in range(2)]
+	kill = []
+	for f in bm.faces:
+		c = f.calc_center_median()
+		d = (abs(c.x) ** 6 + abs(c.y) ** 6) ** (1 / 6)
+		ang = math.atan2(c.y, c.x)
+		edge = 0.97 - fray * (1 + 0.6 * math.sin(5 * ang + q[0]) + 0.4 * math.sin(11 * ang + q[1])) - rr.uniform(0, 0.025)
+		if d > edge or any(math.hypot((c.x - hu) * hx, (c.y - hw) * hz) < hr for (hu, hw, hr) in holes):
+			kill.append(f)
+	bmesh.ops.delete(bm, geom=kill, context="FACES")
+	bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
+	for v in bm.verts:   # a frayed edge instead of the grid's steps
+		if v.is_boundary:
+			v.co.x += rr.uniform(-0.4, 0.4) / 40
+			v.co.y += rr.uniform(-0.4, 0.4) / 22
+	for v in bm.verts:
+		x, z = cx + v.co.x * hx, v.co.y * hz
+		v.co.z = lift + bed_height(x, z, ph) + fold * math.exp(-((v.co.x - 0.35) / 0.12) ** 2)
+		v.co.x, v.co.y = x, -z
+	me = bpy.data.meshes.new("cloth")
+	bm.to_mesh(me)
+	bm.free()
+	o = bpy.data.objects.new("cloth", me)
+	bpy.context.scene.collection.objects.link(o)
+	sol = o.modifiers.new("thick", "SOLIDIFY")
+	sol.thickness = thick
+	sol.offset = 1.0
+	return kit._finish(o, m, 0, 0)
+
+
+def junk_bedroll_rotten():
+	"""A rotten bedroll left by the camp: a torn hide ground sheet, a holey wool blanket on it (a soft fold), the head
+	end rolled up into a pillow (spiral ends, a rope tie; the other tie snapped and lying loose), straw poking out."""
+	ph = (0.7, 2.1, 4.0)
+	cloth_rect(0.0, 0.62, 0.3, 731, T("leather", "a"), 0.003, 0.007, ph, holes=((0.62, -0.55, 0.06),), fray=0.035)
+	wool = tinted("sack", "a", (1.12, 1.12, 0.9), "rot")   # (round 2: the rag cloth; the wool painting went near black)
+	cloth_rect(0.07, 0.46, 0.27, 733, wool, 0.003 + 0.007 + 0.01, 0.012, ph, holes=((-0.25, 0.35, 0.06), (0.45, -0.45, 0.045),
+		(0.05, 0.62, 0.035)), fray=0.07, fold=0.03)
+	roll_m = tinted("sack", "b", (1.1, 1.1, 0.9), "rot")
+	X, Y, R_, HZ = -0.56, 0.098, 0.082, 0.26
+	rod((X, Y, -HZ), (X, Y, HZ), R_, R_ * 0.96, roll_m, sides=14, seed=735, jit=0.04, rings=4)
+	for sz in (-1, 1):   # the rolled layers showing on both ends: a raised spiral
+		pts = []
+		for k in range(46):
+			t = k / 45
+			ang = t * 2.3 * 2 * math.pi
+			rad = 0.014 + (R_ * 0.8 - 0.014) * t
+			pts.append((X + math.cos(ang) * rad, Y + math.sin(ang) * rad, sz * (HZ * (0.96 if sz > 0 else 1.0) + 0.002)))
+		tube(pts, 0.006, tinted("sack", "b", (0.9, 0.88, 0.74), "rotdark"), sides=5)
+	kit.ring(R_ + 0.002, 0.009, K.G((X, Y, -0.12)), T("rope"), rot=(90, 0, 0), seg=16)   # the tie still on
+	# the other tie snapped: it lies loose on the floor from under the roll, frayed at its end
+	pts = [(X + 0.02, 0.02, 0.12), (X + 0.09, 0.009, 0.2), (X + 0.13, 0.009, 0.3), (X + 0.1, 0.009, 0.4), (X + 0.16, 0.009, 0.47)]
+	tube(pts, 0.008, T("rope"), sides=6)
+	rr = random.Random(737)
+	for i in range(7):   # straw from the pillow, poking out under the roll and lying about
+		a = rr.uniform(-0.6, 0.6)
+		x0, z0 = X + 0.06, rr.uniform(-0.2, 0.2)
+		ln = rr.uniform(0.06, 0.12)
+		rod((x0, 0.03, z0), (x0 + math.cos(a) * ln, 0.026, z0 + math.sin(a) * ln), 0.0035, 0.0025, T("straw", "abc"[i % 3]),
+			sides=5, seed=738 + i, jit=0.1, rings=2)
+
+
+def junk_torch_dropped():
+	"""A torch that was dropped and went out: the handle, an iron collar, the rag-wrapped head burnt down to a charred
+	stump (two leather bands still round it), a few charred crumbs, and its iron wall bracket that fell beside it."""
+	def y_at(x):   # the torch lies on its handle end and its fat head: its middle line rises toward the head
+		return 0.021 + (x + 0.28) * 0.05
+	rod((-0.28, y_at(-0.28), 0.0), (0.1, y_at(0.1), 0.0), 0.02, 0.023, T("wood", "b"), sides=8, seed=771, jit=0.05, rings=4)
+	rod((0.09, y_at(0.09), 0.0), (0.135, y_at(0.135), 0.0), 0.03, 0.03, T("iron", "dark"), sides=10, seed=772, jit=0.02,
+		rings=2)
+	wrap = tinted("sack", "b", (0.8, 0.7, 0.6), "burnt")
+	rod((0.13, y_at(0.13), 0.0), (0.205, y_at(0.205), 0.0), 0.036, 0.041, wrap, sides=10, seed=773, jit=0.08, rings=3)
+	for x in (0.15, 0.185):
+		rod((x - 0.007, y_at(x), 0.0), (x + 0.007, y_at(x), 0.0), 0.043, 0.044, T("leather", "dark"), sides=10, seed=774,
+			jit=0.03, rings=2)
+	lump((0.236, y_at(0.236), 0.0), (0.05, 0.038, 0.04), CHAR(), 775, seg=9, ring=6, jit=0.18)   # the burnt head
+	rr = random.Random(776)
+	for i in range(5):   # charred crumbs fallen off it
+		br = rr.uniform(0.008, 0.016)
+		lump((rr.uniform(0.27, 0.36), br * 0.55, rr.uniform(-0.07, 0.07)), (br, br * 0.6, br * 0.8), CHAR(), 777 + i, seg=6,
+			ring=4, jit=0.2)
+	# the wall bracket: a loop lying flat and a bent strap with two bolts (its holes in the wall long gone)
+	iron = RUST("a")
+	kit.ring(0.034, 0.008, K.G((0.02, 0.008, 0.17)), iron, seg=14)
+	strap = [(-0.2, 0.158), (-0.08, 0.15), (-0.016, 0.159), (-0.016, 0.181), (-0.08, 0.174), (-0.2, 0.184)]
+	slab(strap, 0.0, 0.007, 0.01, iron, k=0.3)
+	for x in (-0.17, -0.11):
+		bolt((x, 0.012, 0.17 + (x + 0.17) * 0.07), r=0.008)
+
+
+def junk_cookpot_tipped():
+	"""A dwarf cook pot knocked over on its side (three stubby feet, two lugs, a rolled rim, an old crust inside), its
+	bail handle fallen off beside it, and a wooden ladle."""
+	prof = [(0.152, 0.25), (0.143, 0.233), (0.158, 0.19), (0.168, 0.12), (0.152, 0.05), (0.1, 0.014), (0.06, 0.006)]
+	pm = dull(RUST("b"))   # (round 2: the dark iron went near black)
+
+	def fn(s, t):
+		f = t * (len(prof) - 1)
+		i = min(int(f), len(prof) - 2)
+		k = f - i
+		r = prof[i][0] + (prof[i + 1][0] - prof[i][0]) * k
+		y = prof[i][1] + (prof[i + 1][1] - prof[i][1]) * k
+		a = 2 * math.pi * s
+		r *= 1 + 0.025 * math.sin(3 * a + 1.3) - 0.05 * math.exp(-((a - 2.0) / 0.35) ** 2) * math.sin(math.pi * t)  # a dent
+		return (math.cos(a) * r, y, math.sin(a) * r)
+	before = meshes()
+	sheet(fn, 22, 12, pm, 0.014, wrap=True, cap=True)
+	tube([(math.cos(a) * 0.156, 0.252, math.sin(a) * 0.156) for a in [2 * math.pi * k / 24 for k in range(25)]], 0.011,
+		RUST("a"), sides=6)   # the rolled rim
+	for k in range(3):   # stubby feet
+		a = 2 * math.pi * k / 3 + 0.4
+		lump((math.cos(a) * 0.075, 0.0, math.sin(a) * 0.075), (0.026, 0.03, 0.026), pm, 790 + k, seg=7, ring=5, jit=0.1)
+	for a in (0.0, math.pi):   # two lugs under the rim (the handle hung from them)
+		K.blk((math.cos(a) * 0.162, 0.215, math.sin(a) * 0.162), (0.03, 0.04, 0.03), RUST("b"), bevel=0.006,
+			ry=-math.degrees(a))
+	slab(wavy(0.0, 0.0, 0.085, 0.08, 16, 793, amp=0.12), 0.024, 0.008, 0.016, tinted("soil", "a", (0.9, 0.72, 0.55), "stew"),
+		k=0.4)   # the old crust inside (1 cm over the inner bottom)
+	spin(meshes() - before, "z", -80)
+	drop(meshes() - before, 0.004)
+	# the bail handle, fallen off: a bent iron half-loop with hooked ends
+	pts = [(math.cos(a) * 0.15, 0.007, math.sin(a) * 0.15) for a in [math.pi * (0.04 + 0.92 * k / 14) for k in range(15)]]
+	pts = [(pts[0][0] + 0.012, 0.007, pts[0][2] - 0.02)] + pts + [(pts[-1][0] - 0.012, 0.007, pts[-1][2] - 0.02)]
+	before = meshes()
+	tube(pts, 0.006, RUST("c"), sides=6)
+	turn(meshes() - before, 25, (0.0, 0.0, 0.0), off=(-0.05, 0.0, 0.24))
+	# the ladle: a round wooden bowl lying on its back, its handle running down to the floor
+	before = meshes()
+
+	def bowl(s, t):
+		a = 2 * math.pi * s
+		e = math.radians(8 + 72 * t)
+		return (math.cos(a) * 0.045 * math.cos(e), 0.05 - 0.045 * math.sin(e), math.sin(a) * 0.045 * math.cos(e))
+	sheet(bowl, 14, 5, T("wood", "b"), 0.008, wrap=True, cap=True)
+	rod((0.04, 0.046, 0.0), (0.32, 0.013, 0.0), 0.011, 0.012, T("wood", "b"), sides=7, seed=795, jit=0.06, rings=3)
+	turn(meshes() - before, 30, (0.0, 0.0, 0.0), off=(0.05, 0.0, -0.3))   # (round 2: beside the pot, not in it)
+
+
 def settle():
 	"""Set the finished pile down: its lowest point on the floor (y = 0), its middle at the origin (x, z)."""
 	objs = [o for o in bpy.data.objects if o.type == "MESH"]
@@ -1675,7 +1931,9 @@ BUILDS = {"junk_bones": junk_bones, "junk_sword_snapped": junk_sword_snapped, "j
 	"junk_urns": junk_urns, "junk_statue_head": junk_statue_head, "junk_armour_pile": junk_armour_pile,
 	"junk_coffin_lid": junk_coffin_lid,
 	"junk_slag": junk_slag, "junk_tongs_hammer": junk_tongs_hammer, "junk_crucible_mould": junk_crucible_mould,
-	"junk_scrap": junk_scrap, "junk_rubble_brick": junk_rubble_brick}
+	"junk_scrap": junk_scrap, "junk_rubble_brick": junk_rubble_brick,
+	"junk_campfire_cold": junk_campfire_cold, "junk_bedroll_rotten": junk_bedroll_rotten,
+	"junk_torch_dropped": junk_torch_dropped, "junk_cookpot_tipped": junk_cookpot_tipped}
 # five more rag piles, two rags each, all different (names written out: the model checker looks for them)
 for _i, _name in enumerate(("junk_rags_b", "junk_rags_c", "junk_rags_d", "junk_rags_e", "junk_rags_f")):
 	BUILDS[_name] = (lambda sd: (lambda: rags_pair(sd)))(200 + 37 * _i)

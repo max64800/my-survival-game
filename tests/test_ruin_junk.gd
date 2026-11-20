@@ -3,6 +3,7 @@ extends TestCase
 ## test_columns_keep_out_of_the_tower: junk hugs the ruin's walls (outside: its walls and foundations); never inside a
 ## building piece, on a doorway, the gateway, stairs or foundation steps, within 1.5 m of a chest or where the
 ## Rebuilding Chest may stand, or on the path in front of the door. Checked against the plan's pieces.
+## The ruin camp (step 3) stands free outside instead: its campfire, bedroll and pot keep FREE_CLEAR from every piece.
 
 const HUG := ["wall", "wall_narrow", "half_wall", "window_wall", "window_wide", "ruin_wall_worn", "ruin_wall_collapsed"]
 const NEAR_WALL := 1.3    # its middle is at most this far from a wall (or, outside, a foundation's side)
@@ -11,6 +12,7 @@ const GATE_CLEAR := 3.0
 const THING_CLEAR := 1.5
 const STAIR_CLEAR := 0.9  # (the tool keeps 1.0)
 const PATH_CLEAR := 0.9   # from the path out of the door / gateway (the tool keeps 1.0)
+const FREE_CLEAR := 0.9   # the free-standing camp's middle from every building piece (the tool keeps 1.0 for every corner)
 ## The way in, in each ruin's frame: from just inside the door (gateway) straight out.
 const PATHS := {"tower": [Vector2(0.0, 3.0), Vector2(0.0, 12.0)], "outpost": [Vector2(-0.27, 13.0), Vector2(-0.27, 25.0)]}
 
@@ -51,6 +53,8 @@ func test_both_ruins_have_junk() -> void:
 		check(junk.any(func(j): return j.inside and not j.ground), "%s: junk inside, on its floors" % r[0])
 		for j in junk:
 			check(ResourceLoader.exists("res://assets/models/" + String(j.model)), "%s: model %s exists" % [r[0], j.model])
+		check(junk.any(func(j): return j.get("free", false) and String(j.model).ends_with("junk_campfire_cold.glb")),
+			"%s: a free-standing camp with its cold campfire" % r[0])
 	var yard: Array = _ruins()[1][2].filter(func(j): return j.inside and j.ground)
 	check(yard.size() >= 5, "outpost: junk in its yard (got %d)" % yard.size())
 
@@ -65,6 +69,7 @@ func test_ruin_junk_keeps_off_the_ruin() -> void:
 			var tag := "%s: %s at %s" % [r[0], j.model, at]
 			var on_floor := false
 			var near_wall := INF
+			var near_piece := INF
 			for p in pieces:
 				var id := String(p.id)
 				var lo := float(p.pos[1])
@@ -79,6 +84,8 @@ func test_ruin_junk_keeps_off_the_ruin() -> void:
 					continue
 				if hi > y + 0.05 and lo < y + 0.3:
 					check(not Geometry2D.is_point_in_polygon(at, _fp(p, 0.05)), tag + ": not inside a %s" % id)
+				if hi > y + 0.05:
+					near_piece = minf(near_piece, _poly_dist(at, fp))
 				if id == "doorway" and absf(lo - y) < 1.0:
 					check(at.distance_to(Vector2(p.pos[0], p.pos[2])) >= DOOR_CLEAR, tag + ": off the doorway")
 				if id == "gateway" and absf(lo - y) < 1.0:
@@ -88,7 +95,11 @@ func test_ruin_junk_keeps_off_the_ruin() -> void:
 				if j.ground and group == "foundation" and lo < 0.1:
 					near_wall = minf(near_wall, _poly_dist(at, fp))
 			check(on_floor != bool(j.ground), tag + (": on the ground (no floor piece under it)" if j.ground else ": on a floor piece"))
-			check(near_wall <= NEAR_WALL, tag + ": hugs a wall (%.2f m)" % near_wall)
+			if j.get("free", false):
+				check(j.ground and not j.inside, tag + ": the camp stands outside, on the ground")
+				check(near_piece >= FREE_CLEAR, tag + ": the camp keeps clear of the ruin (%.2f m)" % near_piece)
+			else:
+				check(near_wall <= NEAR_WALL, tag + ": hugs a wall (%.2f m)" % near_wall)
 			for c in plan.get("chests", []):
 				if absf(float(c.pos[1]) - y) < 1.0:
 					check(at.distance_to(Vector2(c.pos[0], c.pos[2])) >= THING_CLEAR, tag + ": 1.5 m from the %s" % c.kind)

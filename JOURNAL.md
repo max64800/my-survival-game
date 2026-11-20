@@ -7158,3 +7158,27 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   (7) My first commit rebuilt JOURNAL/FEEDBACK from a copy taken before other chats committed theirs, so it dropped
   their newest entries (the Spire, Pell's step 3, F518): put back in the next commit. Lesson: build "saved copy + my
   lines" right before committing, and check the change is only my lines.
+
+## Nov 21 — Ruin junk, step 3: the ruin camp (ruin junk chat)
+- **Owner's first pick:** "ruin camp" junk: someone camped in the ruins long ago. Four new models, built by script in
+  `tools/asset_forge/builds/dungeon_junk.py` (batch 6), our own painted textures only (nothing new in CREDITS):
+  **cold campfire** (a ring of stones with one knocked out, grey ash, sticks burnt down to charred points, charcoal
+  bits; nothing glows), **rotten bedroll** (torn hide sheet, holey green-grey blanket, the head end rolled up with a
+  spiral on each end, one rope tie still on, the other snapped and lying loose, straw poking out), **dropped torch**
+  (handle, iron collar, burnt head, its wall bracket fallen beside it) and, my extra pick, a **tipped cook pot** (iron
+  pot on its side with feet, lugs and an old crust inside, its handle fallen off, a wooden ladle).
+- **In the ruins** (`tools/ruins/ruin_junk.py`): the bedroll, torch and pot joined the inside pools, the torch the
+  outside ones. New: **one camp per ruin standing free outside**: the campfire on bare ground, the bedroll with its
+  feet to the fire, the pot beside it, every corner at least 1 m from every building piece, off the way in, the
+  chests and the Rebuilding Chest spots. Marked `"free"` in the list. Watchtower 14 junk, Outpost 39.
+- **Test:** `test_ruin_junk` 4/4 (new: each ruin has its free campfire; the camp is outside, on the ground and at
+  least 0.9 m from the ruin, instead of hugging a wall). `test_model_rules` 9/9 (no shimmer, build script found).
+- **Hurdles:** (1) Render round 1: the wool blanket painting came out almost black with light spots (the owner said
+  no black spots), the pot's dark iron was near black too, and the ladle looked stuck in the pot's mouth. Round 2:
+  the blanket uses the rag cloth the owner liked, the pot is rusty iron, the ladle lies beside it. Stopped there
+  (2 rounds). (2) The camp found no spot at first. Counting why: the quick "is it too close to other junk" circle
+  thought the bedroll hit its own fire, and the Watchtower's 9 m reach left no room past its 7 m walls. Fixed: camp
+  pieces check each other by their real outlines, and the camp has its own reach (13 m, 26 m). (3) Re-rolling the
+  layout with the new kinds gave a few Watchtower floors one piece fewer than before (16 → 14 in all). (4) An
+  in-game photo (towercheck, muted, `claude=ruin_camp`) crashed: the graphics card's memory was full with four
+  other Godot games open (other chats or the owner). Left them alone; not seen in the game yet.

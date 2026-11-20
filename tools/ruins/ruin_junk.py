@@ -6,6 +6,8 @@
 #   along walls only (outside: along the walls and foundations); never on a doorway, the gateway, stairs or foundation
 #   steps; never within 1.5 m of a chest; never on the walk lines between doorways, or the path in front of the door
 #   (where the Rebuilding Chest stands); never inside a building piece.
+#   The ruin camp (owner's pick, step 3): one cold campfire standing free on the bare ground outside, a bedroll (feet
+#   to the fire) and a cook pot beside it, all at least FREE_CLEAR from every building piece ("free" in the list).
 # Run: python tools/ruins/ruin_junk.py   (both ruins)
 import json, math, random, re, sys
 from pathlib import Path
@@ -25,6 +27,8 @@ STAIR_CLEAR = 1.0    # stairs and foundation steps: their outline grown this muc
 PATH_CLEAR = 1.0     # a walk line: the junk's middle stays this far away...
 PATH_EDGE = 0.6      # ...and no corner closer than this
 JUNK_GAP = 0.25      # junk to junk, edge to edge
+FREE_CLEAR = 1.0     # the free-standing camp: every corner this far from every building piece
+CAMP = [("campfire_cold", 0.0, 0.0), ("bedroll_rotten", 1.35, 0.0), ("cookpot_tipped", 1.0, 105.0)]  # (dist, angle)
 HUG = {"wall", "wall_narrow", "half_wall", "window_wall", "window_wide", "ruin_wall_worn", "ruin_wall_collapsed"}
 OPENINGS = {"doorway": DOOR_CLEAR, "gateway": GATE_CLEAR}
 STAIRS = {"stairs", "foundation_steps"}
@@ -34,28 +38,31 @@ RUINS = {
 		"seed": 254,
 		"yard": False,                           # its ground floor is all foundations
 		"out_reach": 9.0,                        # outside junk: this close to the middle
+		"camp_reach": 13.0,                      # the camp: this close (it needs room past the walls)
 		"out_want": (5, 7),
 		# The path out of the door and the Rebuilding Chest's spots (RuinTower._chest_spots, rad 4.2)
 		"paths": [[(0.0, 3.0), (0.0, 12.0)]],
 		"keep": [(3.4, 5.8), (-3.4, 5.8), (3.4, 7.2), (-3.4, 7.2), (4.6, 4.6), (-4.6, 4.6)],
 		"pool": ["helmet", "shield_wood", "spear_broken", "sword_snapped", "axe_head", "rags", "lantern", "meal",
-			"candles", "grain_sacks", "bones", "scrap", "armour_pile"],
+			"candles", "grain_sacks", "bones", "scrap", "armour_pile", "bedroll_rotten", "torch_dropped", "cookpot_tipped"],
 		"out_pool": ["rubble_wood", "beam_snapped", "rags", "shield_wood", "spear_broken", "bones", "crate_stack",
-			"timber_stack", "keg", "helmet"],
+			"timber_stack", "keg", "helmet", "torch_dropped"],
 	},
 	"outpost_ruin": {
 		"seed": 478,
 		"yard": True,                            # bare ground with ruin walls all round is its yard
 		"out_reach": 22.0,
+		"camp_reach": 26.0,
 		"out_want": (7, 10),
 		"yard_want": (9, 12),
 		# The way in through the gateway, and the Rebuilding Chest's spots (RuinOutpost._chest_spots)
 		"paths": [[(-0.27, 13.0), (-0.27, 25.0)]],
 		"keep": [(7.0, 17.2), (-7.0, 17.2), (7.0, 18.6), (-7.0, 18.6), (2.2, 19.2), (-2.2, 19.2)],
 		"pool": ["helmet", "shield_iron", "shield_wood", "spear_broken", "sword_snapped", "axe_head", "armour_pile",
-			"rags", "lantern", "meal", "candles", "grain_sacks", "bones", "scrap", "rubble_wood", "crate_stack", "keg"],
+			"rags", "lantern", "meal", "candles", "grain_sacks", "bones", "scrap", "rubble_wood", "crate_stack", "keg",
+			"bedroll_rotten", "torch_dropped", "cookpot_tipped"],
 		"out_pool": ["rubble_wood", "beam_snapped", "rags", "shield_wood", "spear_broken", "bones", "crate_stack",
-			"timber_stack", "keg", "helmet", "armour_pile"],
+			"timber_stack", "keg", "helmet", "armour_pile", "torch_dropped"],
 	},
 }
 
@@ -322,6 +329,41 @@ def make(name):
 			return True
 		return False
 
+	def try_camp():
+		"""The ruin camp: a campfire on bare ground outside, its bedroll and cook pot round it, all clear of the ruin."""
+		for _ in range(3000):
+			ang, dist = rng.uniform(0, 2 * math.pi), rng.uniform(2.0, opt["camp_reach"])
+			fx, fz = math.cos(ang) * dist, math.sin(ang) * dist
+			if in_yard(fx, fz):
+				continue
+			turn0 = rng.uniform(0, 360)
+			got, outs = [], []
+			for (entry, d, a) in CAMP:
+				phi = math.radians(turn0 + a)
+				x, z = fx + math.cos(phi) * d, fz + math.sin(phi) * d
+				yaw = math.degrees(math.pi - phi) if d > 0 else rng.uniform(0, 360)   # (the bedroll's feet to the fire)
+				model = model_of(entry, rng)
+				cs = corners(model, x, z, yaw)
+				if any(overlap(cs, footprint(p, FREE_CLEAR)) for p in pieces):
+					break
+				if any(math.hypot(*c) > opt["camp_reach"] for c in cs):
+					break
+				f = free([(model, cs)], 0.0, "ground")   # (camp mates: checked by their real outlines below)
+				if f is None or any(overlap(cs, o) for o in outs):
+					break
+				outs.append(cs)
+				got.append((f[0], {"model": model, "pos": [round(x, 3), 0.0, round(z, 3)], "yaw": round(yaw % 360.0, 1),
+					"ground": True, "inside": False, "free": True}))
+			if len(got) == len(CAMP):
+				for f, j in got:
+					placed.append((f[0], f[1], 0.0, f[2]))
+					junk.append(j)
+				print("  camp  at (%.1f, %.1f)" % (fx, fz))
+				return True
+		print("  camp  NO SPOT")
+		return False
+
+	try_camp()   # (first: it needs the most room)
 	area = {}
 	for p in supports:
 		k = round(p["top"], 2)
