@@ -1,5 +1,7 @@
 # #11 The Hammerfall Works
 
+> **Traps changed Nov 20:** see [traps-and-variety.md](traps-and-variety.md). It wins over the trap notes below.
+
 *Draft, Nov 20 (Mac, overnight). Generated from the dungeon pages; edit the page data and run gen_docs again.*
 
 A great hall round a broken giant anvil, with a wing going up and a wing going down. Each wing's mini boss holds half of the key to the twin-locked gate.

@@ -15,6 +15,8 @@ Dungeons", "Medium Stone Dungeons" and "Big Clay Dungeons" draw the same maps.*
 
 ## New 3D models (made in Blender on the PC, our style, MODEL-RULES.md checks)
 
+> **Nov 20: the full, up-to-date asset list is in [traps-and-variety.md](traps-and-variety.md).** Fire jets, gas valve, pistons, bellows trap, swing hooks and the coin press are out.
+
 | Model | Used in | Note |
 |---|---|---|
 | dungeon_entrance, stone and brick versions | #5-#12 | the round door in the cave wall |

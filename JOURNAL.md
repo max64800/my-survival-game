@@ -5583,3 +5583,26 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   tool models (old).
 - Skipped (needs a system or the owner): Running 50, Jumping 50/100, Gathering 50/75/100, Crafting 100, Cooking 75,
   Axe 25/75, Warhammer 75, Spear 75. Crafting 25 rounds away on today's small upgrade costs.
+
+## Nov 20 (Mac): dungeon traps redone, asset list, variety rules (F237)
+- The owner didn't like fire jets ("futuristic"). We listed every trap we have, plus 15 medieval ideas. The owner picked them.
+- New file `docs/design/zone1-dungeons/traps-and-variety.md`: the final trap list (clue + safe way for each), which traps
+  go in which of the 12 dungeons (each one has its own signature trap, and none repeats everywhere), the full list of
+  models to make, and the variety rules.
+- Owner ideas:
+  - A 3-lane mine cart tunnel with a dodge pattern.
+  - Ragdoll when a cart, swinging boulder or flail hits you.
+  - Push walls into chasms or spikes.
+  - Stairs where one faintly off-colour half collapses.
+  - Trapped chests you shoot first so the floor spikes fire and pull back.
+- Variety: chosen by the world seed, so co-op friends see the same thing.
+  - The whole dungeon can be mirrored.
+  - Side wings can swap places.
+  - Hidden things, chests and small traps move between 2-3 possible spots.
+  - The main path, the deadly traps, the key and the boss never change.
+- Out: fire jets, gas valve, pistons, the bellows trap, swing hooks, the coin press (the owner didn't get it; it was
+  just a crusher with a coin theme).
+- Hurdle (Claude): adding a note line with macOS `sed` failed (its "append" command needs a different format than on
+  Linux). Did it with a short Python script instead.
+- The 02-12 files and the three pages still show the old traps. Each file has a note at the top saying the new trap
+  file wins, until the pages are redrawn.

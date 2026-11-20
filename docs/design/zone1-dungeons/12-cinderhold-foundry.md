@@ -1,5 +1,7 @@
 # #12 Cinderhold Foundry
 
+> **Traps changed Nov 20:** see [traps-and-variety.md](traps-and-variety.md). It wins over the trap notes below.
+
 *Draft, Nov 20 (Mac, overnight). Generated from the dungeon pages; edit the page data and run gen_docs again.*
 
 A foundry on both sides of one huge chasm. You climb up through it, crossing the chasm again and again on brick bridges.

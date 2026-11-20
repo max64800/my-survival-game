@@ -1,5 +1,7 @@
 # #5 Tomb of Hald Ironbrow
 
+> **Traps changed Nov 20:** see [traps-and-variety.md](traps-and-variety.md). It wins over the trap notes below.
+
 *Draft, Nov 20 (Mac, overnight). Generated from the dungeon pages; edit the page data and run gen_docs again.*
 
 A famous warrior's tomb, still guarded by the soldiers who swore to protect him. Upper halls for the mourners, deep burial halls below.

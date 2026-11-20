@@ -1,5 +1,7 @@
 # #3 Old Pell's Diggings
 
+> **Traps changed Nov 20:** see [traps-and-variety.md](traps-and-variety.md). It wins over the trap notes below.
+
 *Draft, Nov 20 (Mac, overnight). Generated from the dungeon pages; edit the page data and run gen_docs again.*
 
 A miner's hut at the top, then a shaft straight down into what he dug out below. This one is about going down.

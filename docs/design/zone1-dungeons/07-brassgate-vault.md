@@ -1,5 +1,7 @@
 # #7 Brassgate Vault
 
+> **Traps changed Nov 20:** see [traps-and-variety.md](traps-and-variety.md). It wins over the trap notes below.
+
 *Draft, Nov 20 (Mac, overnight). Generated from the dungeon pages; edit the page data and run gen_docs again.*
 
 The old dwarf treasury: a toll hall and counting rooms on top, a mint below, and the strongroom behind a door only the Vault Captain's key opens.

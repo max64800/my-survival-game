@@ -1,5 +1,7 @@
 # #9 Vigil of Orrin Stonejaw
 
+> **Traps changed Nov 20:** see [traps-and-variety.md](traps-and-variety.md). It wins over the trap notes below.
+
 *Draft, Nov 20 (Mac, overnight). Generated from the dungeon pages; edit the page data and run gen_docs again.*
 
 A temple of runes climbing up through the rock to a bell tower. The rune carvings glow, and Rune Callers fill it.

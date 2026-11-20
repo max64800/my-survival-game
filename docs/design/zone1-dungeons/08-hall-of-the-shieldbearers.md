@@ -1,5 +1,7 @@
 # #8 Hall of the Shieldbearers
 
+> **Traps changed Nov 20:** see [traps-and-variety.md](traps-and-variety.md). It wins over the trap notes below.
+
 *Draft, Nov 20 (Mac, overnight). Generated from the dungeon pages; edit the page data and run gen_docs again.*
 
 An old barracks where the shield wall soldiers lived and trained. Lots of fighting, and the training traps are still armed.
