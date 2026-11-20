@@ -261,7 +261,14 @@ func _build() -> void:
 	skills.peer_id = peer_id
 	skills.visible = false
 	root.add_child(skills)
-	skills.resized.connect(func(): skills.position = (root.size - skills.size) * 0.5)
+	# F435 (owner, Nov 20: "we need this menu a lot bigger"): on a big screen the window grows with it (up to 92% wide,
+	# 90% tall), so it never looks like a small box in the middle. Clicks still land right (Godot scales them too).
+	var fit_skills := func() -> void:
+		var k := minf(root.size.x * 0.92 / maxf(skills.size.x, 1.0), root.size.y * 0.9 / maxf(skills.size.y, 1.0))
+		skills.scale = Vector2.ONE * maxf(1.0, k)
+		skills.position = (root.size - skills.size * skills.scale) * 0.5
+	skills.resized.connect(fit_skills)
+	root.resized.connect(fit_skills)
 	box_panel = BoxPanel.new()
 	box_panel.visible = false
 	box_panel.emptied.connect(func() -> void:  # (you took everything: back to the game, owner Nov 18)

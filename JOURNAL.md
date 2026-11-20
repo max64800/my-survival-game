@@ -6125,3 +6125,6 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   on the frame and the bars hid under it; a two-line card made the window 925 px tall (screen 900), so back to one
   line with a wide name slot (738 px). test_authority has 4 physics failures (Jolt body limit, root tree bark) that
   aren't from my changes. git pull can't fast-forward (main is 14 ahead, 1 behind): not merged by me.
+- **F435:** owner's screen is 2552x1380 but the window was built for 1600x900, so it looked small; it now scales to
+  the screen. Plank text got more room (it still touched the rim on his screen). Dungeon test start gives 15 perk
+  points (Progression.bonus_points). Told the dungeon chat about the one line in their dungeon_test_start.gd.

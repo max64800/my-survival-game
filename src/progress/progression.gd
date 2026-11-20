@@ -189,8 +189,11 @@ func add_xp(amount: int, skill: String = "") -> void:
 
 # ---------------------------------------------------------------- perks
 
+var bonus_points := 0  ## extra perk points for testing (the dev-only dungeon test gives 15, owner Nov 20); not saved
+
+
 func points_total() -> int:
-	return points_for_level(level)
+	return points_for_level(level) + bonus_points
 
 
 func points_free() -> int:

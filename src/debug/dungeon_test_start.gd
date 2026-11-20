@@ -31,6 +31,7 @@ func _run() -> void:
 	var auth: GameAuthority = _main.authority
 	var ps := auth.get_player(auth.local_peer_id())
 	if ps:
+		ps.progress.bonus_points = 15  # perk points to try perks in the dungeon (owner, Nov 20)
 		var inv: Inventory = ps.inventory
 		for slot in WEAR:
 			inv.slots[Inventory.equip_index(slot)] = {id = WEAR[slot], count = 1}

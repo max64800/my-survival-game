@@ -59,7 +59,7 @@ func _ready() -> void:
 	var cols := HBoxContainer.new()
 	cols.add_theme_constant_override("separation", 8)
 	box.add_child(cols)
-	var left := _side(cols, 310)
+	var left := _side(cols, 330)
 	UiKit.label(left, "Skills  ·  grow by doing", 16, UiKit.AMBER).add_theme_font_override("font", UiKit.heading_font())
 	_skills = VBoxContainer.new()
 	_skills.add_theme_constant_override("separation", 2)
@@ -128,9 +128,9 @@ func _show_skills() -> void:
 		var open: bool = s == _open_skill
 		var card := PanelContainer.new()
 		card.name = "Skill_" + s
-		var frame_style := UiKit.style("slot_selected" if open else "slot", 9, 13)  # (frame art is 14 px: keep text inside it)
-		frame_style.content_margin_top = 5
-		frame_style.content_margin_bottom = 9 if not open else 12  # (the plank's thick rim is at the bottom)
+		var frame_style := UiKit.style("slot_selected" if open else "slot", 9, 18)  # (frame art is 14 px: keep text inside it)
+		frame_style.content_margin_top = 8  # (owner, Nov 20: "Mining" and "Lv 0" still touched the rim)
+		frame_style.content_margin_bottom = 10 if not open else 13  # (the plank's thick rim is at the bottom)
 		card.add_theme_stylebox_override("panel", frame_style)
 		_skills.add_child(card)
 		var v := VBoxContainer.new()
@@ -212,7 +212,7 @@ func _show_detail() -> void:
 			branch = br[1]
 	var pic := TextureRect.new()
 	pic.texture = perk_icon(_sel)
-	pic.custom_minimum_size = Vector2(120, 120)
+	pic.custom_minimum_size = Vector2(170, 170)
 	pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	pic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -221,7 +221,7 @@ func _show_detail() -> void:
 	mat.set_shader_parameter("diamond", info[3])
 	pic.material = mat
 	_detail.add_child(pic)
-	var title := UiKit.label(_detail, ("★ " if _sel in PerkTreeView.FINALS else "") + info[4], 21, UiKit.AMBER)
+	var title := UiKit.label(_detail, ("★ " if _sel in PerkTreeView.FINALS else "") + info[4], 25, UiKit.AMBER)
 	title.add_theme_font_override("font", UiKit.heading_font())
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	# F434 (owner, Nov 20: "very tiny text"): bigger letters and plain words, one fact per line.
@@ -230,7 +230,7 @@ func _show_detail() -> void:
 	var pips := UiKit.label(_detail, "◆".repeat(have) + "◇".repeat(info[1] - have), 24, UiKit.AMBER)
 	pips.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var planned: bool = info[5].contains("not in the game yet") or info[5].contains("(no ") or info[5].contains("don't wear out")
-	var text := UiKit.label(_detail, info[5].get_slice(" (", 0).replace("per rank", "per point") + ".", 19, UiKit.TEXT)
+	var text := UiKit.label(_detail, info[5].get_slice(" (", 0).replace("per rank", "per point") + ".", 21, UiKit.TEXT)
 	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	text.custom_minimum_size.x = 260
 	var slot := p.ability_slots().find(_sel)
@@ -241,7 +241,7 @@ func _show_detail() -> void:
 		lines.append("Use again after: %s" % ("%d min" % roundi(cd / 60.0) if cd >= 60.0 and fmod(cd, 60.0) == 0.0 else "%d s" % roundi(cd)))
 	lines.append("First learn: " + (Progression.PERKS[info[2]][4] if info[2] != "" else "nothing, it's the first one"))
 	for l in lines:
-		var line := UiKit.label(_detail, l, 16, UiKit.DIM)
+		var line := UiKit.label(_detail, l, 17, UiKit.DIM)
 		line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	if planned:
 		var warn := UiKit.label(_detail, "Not working yet: comes in a later update.", 16, UiKit.MISSING)
@@ -256,6 +256,13 @@ func _show_detail() -> void:
 		get_tree().create_timer(0.15).timeout.connect(refresh))
 	_detail.add_child(learn)
 	if why != "" and have < info[1]:
-		var w := UiKit.label(_detail, why, 16, UiKit.DIM)
+		var w := UiKit.label(_detail, why, 17, UiKit.DIM)
 		w.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		w.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	# (owner, Nov 20: "a lot of empty space" here) how points work, at the bottom of the card
+	var gap := Control.new()
+	gap.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_detail.add_child(gap)
+	var how := UiKit.label(_detail, "You get 1 perk point each time your level goes up. Level up by doing anything: digging, fighting, crafting, exploring.", 16, UiKit.DIM)
+	how.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	how.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
