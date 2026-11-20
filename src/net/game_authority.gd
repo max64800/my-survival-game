@@ -236,8 +236,8 @@ func _process(delta: float) -> void:
 		_tick_vitals(me, delta)
 	_apply_pending_digs()
 	if is_host():
-		_tick_regrow(delta)
 		_track_safe_spots(delta)
+		_tick_regrow(delta)
 		_auto_timer -= delta
 		var feed_now := _auto_timer <= 0.0
 		if feed_now:
@@ -1492,9 +1492,9 @@ func _learn_from_page(ps: PlayerState, id: String) -> String:
 	# A recipe page from a ruin: the whole group learns a recipe nobody knew yet, of the page's kind (a Cook's Page
 	# teaches food, an Armourer's Page armour... owner, Nov 19). A dungeon's scroll always teaches its own recipe.
 	var left := Recipes.page_recipes(id).filter(func(r): return not world_state.get("learned", []).has(r))
-	if left.is_empty() or not ps.inventory.remove(id, 1):
 	if Items.info(id).has("teaches_recipe"):
 		left = [Items.info(id).teaches_recipe] if not world_state.get("learned", []).has(Items.info(id).teaches_recipe) else []
+	if left.is_empty() or not ps.inventory.remove(id, 1):
 		return "nothing_new"
 	var r: String = left[randi() % left.size()]
 	var learned: Array = world_state.get("learned", []).duplicate()
@@ -2552,11 +2552,11 @@ func request_died(peer_id: int) -> void:
 		return
 	var where: Vector3 = ps.node.global_position
 	_bond_of_the_clan(peer_id, where)
+	where = grave_spot(peer_id, where)
 	var grave := -1
 	for i in ps.inventory.slots.size():
 		var s: Dictionary = ps.inventory.slots[i]
 		if s.is_empty() or (i < Inventory.HOTBAR_SIZE and Items.stack_size(s.id) == 1) or Inventory.is_equip_index(i):
-	where = grave_spot(peer_id, where)
 			continue  # hotbar tools and everything equipped (F23) stay with you
 		if grave < 0:
 			grave = storage.create_box("grave", where, 0.0, peer_id)
@@ -2572,10 +2572,6 @@ func request_died(peer_id: int) -> void:
 		_rpc_respawn.rpc_id(peer_id, wake)
 
 
-## Bond of the Clan: a friend with it near where someone fell rallies everyone close by.
-func _bond_of_the_clan(fallen: int, where: Vector3) -> void:
-	for pid in players:
-		var o: PlayerState = players[pid]
 ## Host: a few times a second, note where each player stands on solid ground (rock or something built under their feet).
 func _track_safe_spots(delta: float) -> void:
 	_safe_clock += delta
@@ -2614,6 +2610,10 @@ func grave_spot(peer_id: int, died_at: Vector3) -> Vector3:
 	return best
 
 
+## Bond of the Clan: a friend with it near where someone fell rallies everyone close by.
+func _bond_of_the_clan(fallen: int, where: Vector3) -> void:
+	for pid in players:
+		var o: PlayerState = players[pid]
 		if pid == fallen or o.progress.perk_rank("bond_of_the_clan") < 1 or o.node.global_position.distance_to(where) > 20.0:
 			continue
 		for q in players:

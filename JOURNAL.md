@@ -5494,3 +5494,8 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   run); fixed. A file edit didn't match because of how the robot's lines were laid out; redone by hand.
 - **Not yet checked in a game picture:** the door close-up, corridor, doorway and bridge (the pictures are taken, not yet
   looked at). Traps (darts, crushers), doors/gate/lever and the shrine come in later steps.
+- **Hurdle at the commit (Claude's own):** to save only my lines of shared files I cut them out of the changes with no
+  surrounding lines, and some landed in the wrong place in the saved copy: main.gd's "make the dungeon chests" line sat
+  inside the jungle test kit, and game_authority.gd didn't even load (lines inside other functions). The folder itself
+  was fine, nothing had gone to GitHub. Fixed in the next commit by saving the working file minus the other Claudes'
+  lines. The commit also swept up the creature Claude's files it had already marked for saving (it said that's fine).

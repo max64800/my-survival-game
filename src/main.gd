@@ -236,6 +236,12 @@ func _show_menu() -> void:
 	add_child(_menu)
 	# Making a world takes a few seconds: a loading screen with a bar shows first (owner, Nov 16).
 	_menu.connect("play_alone", func(s: int, wname: String): _close_menu(); _with_loading(func(): _new_world(s, wname), s if s > 0 else seed, _new_layout))
+	_menu.connect("test_dungeon", func():
+		_close_menu()
+		_with_loading(func():
+			dungeon_test = true
+			_new_world(seed, "Dungeon Test")
+			add_child(load("res://src/debug/dungeon_test_start.gd").new()), seed, _new_layout))
 	_menu.connect("continue_game", func(data: Dictionary): _close_menu(); _with_loading(func(): start_game(data.seed, {}, data), int(data.seed), int(data.get("layout", 1))))
 	_menu.connect("host_world", func(data: Dictionary):
 		_close_menu()
@@ -248,12 +254,6 @@ func _show_menu() -> void:
 			_new_world(s, wname)
 			session.host_direct()))
 	_menu.connect("quit_game", func(): get_tree().quit())
-	_menu.connect("test_dungeon", func():
-		_close_menu()
-		_with_loading(func():
-			dungeon_test = true
-			_new_world(seed, "Dungeon Test")
-			add_child(load("res://src/debug/dungeon_test_start.gd").new()), seed, _new_layout))
 	_menu.connect("join_direct", func(addr: String):
 		_menu.call("set_status", "Connecting to %s…" % addr)
 		session.join_direct(addr))
@@ -373,6 +373,16 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	world.name = "World"
 	add_child(world)
 	world.setup(seed)
+	if not world.maker.dungeons.is_empty():
+		var dbuild := DungeonBuild.new()  # the dungeons' root wood rooms, traps and furniture (owner, Nov 19)
+		dbuild.maker = world.maker
+		add_child(dbuild)
+		if dungeon_test:
+			var d0: Dictionary = world.maker.dungeons[0]
+			var stand := DungeonMap.to_world(d0, Vector3(d0.map.mouth.x, 0.0, d0.map.mouth.y + float(d0.entry_out) + 5.0))
+			var fl := world.maker.find_floor(stand.x, stand.z, stand.y + 3.0)
+			world.maker.spawn_point = (fl if fl != Vector3.INF else stand) + Vector3.UP * 0.3
+			world.maker.cavern_spawn = world.maker.spawn_point
 
 	glow = GlowField.new()
 	glow.name = "Glow"
@@ -387,16 +397,6 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	FreezeWatch.doing = "placing pebbles and dripstone"
 	var ground_snap := GroundSnap.new()  # puts floor things onto the real rock once it's built (owner, Nov 18: things floating)
 	ground_snap.name = "GroundSnap"
-	if not world.maker.dungeons.is_empty():
-		var dbuild := DungeonBuild.new()  # the dungeons' root wood rooms, traps and furniture (owner, Nov 19)
-		dbuild.maker = world.maker
-		add_child(dbuild)
-		if dungeon_test:
-			var d0: Dictionary = world.maker.dungeons[0]
-			var stand := DungeonMap.to_world(d0, Vector3(d0.map.mouth.x, 0.0, d0.map.mouth.y + float(d0.entry_out) + 5.0))
-			var fl := world.maker.find_floor(stand.x, stand.z, stand.y + 3.0)
-			world.maker.spawn_point = (fl if fl != Vector3.INF else stand) + Vector3.UP * 0.3
-			world.maker.cavern_spawn = world.maker.spawn_point
 	ground_snap.world = world
 	add_child(ground_snap)
 	_clutter = Clutter.new()  # pebbles, rocks, bones, twigs on the floors (only looks)
@@ -513,6 +513,7 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 			RuinTower.add_missing_chest(authority)  # older worlds: their tower gets its Rebuilding Chest (F350)
 	elif authority.is_host():
 		authority.seed_poi_loot()
+		DungeonBuild.add_chests(authority, world.maker)  # the dungeons' chests with their loot and recipe stands
 		# The ruined Stone Watchtower in the first cave (owner F254). Robot runs only with "ruin" (keeps their tests steady).
 		if not dungeon_test and (not _robot_run or OS.get_cmdline_user_args().has("ruin=1") or OS.get_cmdline_user_args().has("towercheck")):
 			authority.add_child(RuinTower.new(authority))
@@ -525,7 +526,6 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 		authority.add_child(RuinOutpost.new(authority))  # builds it when someone comes near (or marks its cavern)
 	if _jungle_kit:
 		# Test kit: what you'd have after beating Orrumhal and Brask.
-		DungeonBuild.add_chests(authority, world.maker)  # the dungeons' chests with their loot and recipe stands
 		var kit := authority.get_player(me).inventory
 		for item in [["pickaxe_copper", 1], ["axe_copper", 1], ["sword_copper", 1], ["shield_copper", 1], ["crystal_blue", 20],
 				["dish_hollowcap_stew", 3], ["waterskin_clean", 1]]:
