@@ -133,6 +133,8 @@ func _ready() -> void:
 			_saving = false
 			if mode == "menu":
 				mode = "solo"
+		elif arg == "dungeon2":  # with dungeontest: the menu's "Dungeon 2" (Mossgate's creatures swapped for the miners)
+			MonsterManager.swap_kinds = MonsterManager.MINER_SWAP
 		elif arg == "minercheck":  # photos of the skeleton miners lying, rising, running, swinging, turning to stone
 			debug_script = "res://src/debug/minercheck.gd"
 			dungeon_test = true
@@ -267,6 +269,7 @@ func _on_defended(r: Dictionary) -> void:
 
 
 func _show_menu() -> void:
+	MonsterManager.swap_kinds = {}  # (a Dungeon 2 test's miner swap never carries over into a real world)
 	_menu = load("res://src/ui/start_menu.gd").new()
 	add_child(_menu)
 	# Making a world takes a few seconds: a loading screen with a bar shows first (owner, Nov 16).
@@ -277,6 +280,15 @@ func _show_menu() -> void:
 			dungeon_test = true
 			_new_world(seed, "Dungeon Test")
 			add_child(load("res://src/debug/dungeon_test_start.gd").new()), seed, CaveMaker.DUNGEON_ONLY))  # (no caves: owner, Nov 20)
+	_menu.connect("test_dungeon2", func():  # (owner, Nov 20: Dungeon 2 = Lampwick's skeleton miners, in Mossgate until its map is in)
+		_close_menu()
+		_with_loading(func():
+			dungeon_test = true
+			MonsterManager.swap_kinds = MonsterManager.MINER_SWAP
+			_new_world(seed, "Dungeon 2 Test")
+			var start: Node = load("res://src/debug/dungeon_test_start.gd").new()
+			start.set("dungeon_name", "Dungeon 2: Lampwick's miners (in Mossgate's rooms)")
+			add_child(start), seed, CaveMaker.DUNGEON_ONLY))
 	_menu.connect("continue_game", func(data: Dictionary): _close_menu(); _with_loading(func(): start_game(data.seed, {}, data), int(data.seed), int(data.get("layout", 1))))
 	_menu.connect("host_world", func(data: Dictionary):
 		_close_menu()

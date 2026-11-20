@@ -10,6 +10,7 @@ const CARRY := [["pickaxe_copper", 1], ["crossbow_copper", 1], ["bolt_metal", 60
 	["bandage", 20], ["crystal_torch", 10]]
 
 var _main: Node
+var dungeon_name := ""  ## what the toasts call it ("" = Mossgate Hold; the menu's Dungeon 2 sets its own)
 
 
 func _ready() -> void:
@@ -52,7 +53,9 @@ func _run() -> void:
 	dwarf.set_physics_process(false)
 	dwarf.global_position = stand + Vector3.UP * 0.3
 	dwarf.velocity = Vector3.ZERO
-	_main.hud.show_toast("Dungeon test: going to Mossgate Hold…", 3.0)
+	if dungeon_name == "" and not MonsterManager.swap_kinds.is_empty():
+		dungeon_name = "Dungeon 2: Lampwick's miners (in Mossgate's rooms)"  # (robots: -- dungeontest dungeon2)
+	_main.hud.show_toast("Dungeon test: going to %s…" % (dungeon_name if dungeon_name != "" else "Mossgate Hold"), 3.0)
 	for i in 1200:
 		if _main.world.terrain.is_area_meshed(AABB(stand - Vector3.ONE * 8.0, Vector3.ONE * 16.0)) and _main.world.is_ready_at(stand, 8.0):
 			break
@@ -66,7 +69,7 @@ func _run() -> void:
 	dwarf._yaw = atan2(-dir.x, -dir.z)
 	dwarf._pitch = 0.0
 	dwarf.model.rotation.y = dwarf._yaw
-	_main.hud.show_toast("Dungeon test: Mossgate Hold is straight ahead. Best gear on.", 5.0)
+	_main.hud.show_toast("Dungeon test: %s is straight ahead. Copper gear on." % (dungeon_name if dungeon_name != "" else "Mossgate Hold"), 5.0)
 	print("DUNGEON_TEST at the door ", dwarf.global_position)
 	for a in OS.get_cmdline_user_args():  # robots: one picture, then quit
 		if a.begins_with("shots="):

@@ -6599,3 +6599,4 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   the second picture showed the snail on its shell and the spider had already dropped and bitten.
   (4) There's no "throw a rock" yet, only bombs and pods: those knock snails down for now.
   (5) Another chat had staged its own changes in the same files: only my lines committed.
+- **Dungeon 2 button (owner asked, same chat):** the dev start menu now has "Dungeon 1, Mossgate Hold" (the old button, renamed) and "Dungeon 2, Lampwick's miners". Lampwick's own map isn't built yet, so Dungeon 2 is Mossgate with every creature swapped for the miners (beetles, spiders, bats -> Tunnel Rats, snails -> Lost Miners, the big beetle -> the Foreman), same copper gear. The swap is cleared whenever the menu opens, so it never reaches a real world. Robot: `-- dungeontest dungeon2`: 22 miners in 8 rooms, bone piles on the gate hall floor. Owner's answer on drops / Foreman boost: wait, test first.

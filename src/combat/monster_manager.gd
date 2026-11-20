@@ -210,10 +210,17 @@ func _dungeon_groups() -> Array:
 	return _dgroups
 
 
+## Dev "Dungeon 2" test (owner, Nov 20): Lampwick's map isn't built yet, so Mossgate's creatures are swapped for
+## Lampwick's skeleton miners (the big beetle becomes the Foreman; bats become rats on the floor). {} = no swap.
+static var swap_kinds := {}
+const MINER_SWAP := {"rock_beetle": "tunnel_rat", "cave_spider": "tunnel_rat", "cave_bat": "tunnel_rat",
+	"rock_snail": "lost_miner", "great_rock_beetle": "foreman"}
+
+
 func _spawn_dungeon_group(_room: Dictionary, g: Dictionary) -> Array:
 	var uids := []
 	for c in g.list:
-		var kind: String = c[0]
+		var kind: String = swap_kinds.get(String(c[0]), String(c[0]))
 		var leader := kind == "great_rock_beetle"
 		if leader:
 			kind = "rock_beetle"
