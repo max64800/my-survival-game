@@ -168,8 +168,8 @@ func test_most_floors_and_walls_are_old() -> void:
 	var old := 0
 	var normal := 0
 	for p in plan.props:
-		if String(p.model) in ["dungeon/floor_old.glb", "dungeon/wall_old.glb"]:
-			old += 1
+		if String(p.model) in ["dungeon/floor_old.glb", "dungeon/wall_old.glb"] and not (String(p.model) == "dungeon/floor_old.glb" and float(p.pos[1]) > 1.0):
+			old += 1  # (not the old ceilings: test_most_ceilings_are_old)
 	for p in plan.pieces:
 		if p.id == "wall" or (p.id == "floor" and float(p.pos[1]) < 1.0):
 			normal += 1
@@ -279,7 +279,7 @@ func test_stalactites_fall_fast_and_hurt() -> void:
 	for id in db.things:
 		if db.things[id].kind == "drip":
 			check(db.drip_time(db.things[id]) < 1.0, "stalactite %d lands in under 1 s (%.2f s)" % [id, db.drip_time(db.things[id])])
-	check(DungeonBuild.DRIP_HIT >= 1.4, "it hurts you even a step off its line")
+	check(DungeonBuild.DRIP_REACH <= 1.0, "it only lets go when you're right under it (owner, Nov 20)")
 	var ps: GameAuthority.PlayerState = r.ps
 	ps.vitals.health = 100.0
 	(r.auth as GameAuthority).hurt(1, DungeonBuild.DRIP_DAMAGE, {pierce = true})
@@ -475,17 +475,19 @@ func test_the_bridge_is_two_big_jumps() -> void:
 			decks.append(float(p.pos[0]))
 	check_eq(decks.size(), 1, "one section with planks")
 	if decks.size() == 1:
-		check_near(decks[0], 39.0, 0.01, "in the middle of the chasm (36 to 42)")
-	var gap := (39.0 - 1.0) - 36.0
+		check_near(decks[0], 40.0, 0.01, "in the middle of the chasm (36 to 44)")
+	var gap := (40.0 - 1.0) - 36.0
 	var g: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
 	var reach := Dwarf.WALK_SPEED * 2.0 * Dwarf.JUMP_SPEED / g
 	check(gap >= 1.9, "a big jump (%.1f m)" % gap)
 	check(reach > gap + 1.0, "the dwarf makes it walking (%.1f m jump)" % reach)
-	check(plan.props.any(func(p): return String(p.model) == "dungeon/bridge_ropes.glb"), "the ropes run on where the planks are gone")
-	for model in ["dungeon/bridge_ropes.glb", "dungeon/bridge_posts.glb"]:
+	var run_reach := Dwarf.RUN_SPEED * 2.0 * Dwarf.JUMP_SPEED / g
+	check(run_reach < 8.0 - 0.5, "even a running jump (%.1f m) can't clear the whole 8 m chasm" % run_reach)
+	check(plan.props.any(func(p): return String(p.model) == "dungeon/bridge_ropes_3m.glb"), "the ropes run on where the planks are gone")
+	for model in ["dungeon/bridge_ropes_3m.glb", "dungeon/bridge_posts.glb"]:
 		var ropes := (DungeonBuild.BOXES[model] as Array).filter(func(b): return (b[0] as Vector3).y > 0.4 and (b[1] as Vector3).x < 0.1)
 		check_eq(ropes.size(), 2, "%s: both hand ropes are solid" % model)
-	check(not (DungeonBuild.BOXES["dungeon/bridge_ropes.glb"] as Array).any(func(b): return (b[0] as Vector3).y < 0.2),
+	check(not (DungeonBuild.BOXES["dungeon/bridge_ropes_3m.glb"] as Array).any(func(b): return (b[0] as Vector3).y < 0.2),
 		"no deck where the planks are gone")
 
 
@@ -742,3 +744,64 @@ func test_the_rubble_tunnel_clears() -> void:
 		kinds.append(String(auth._drops[k].item_id))
 	check(kinds.has("rootwood") and not kinds.has("stone"), "the cracked wall gives wood (%s)" % [kinds])
 	r.root.free()
+
+
+# ---- The owner's notes after that play (Nov 20, later still) ----
+
+## Stalactites: only when you're right under one; 50 right under it, 25 in the 3 x 3 m round it, nothing further;
+## sprinting away you're at the splash's edge when it lands.
+func test_stalactites_hit_under_and_splash_round() -> void:
+	var r := _rig()
+	if r.is_empty():
+		return
+	var db: DungeonBuild = r.db
+	var id := _kind(db, "drip")
+	var th: Dictionary = db.things[id]
+	var c: Vector3 = th.centre
+	var floor_at := Vector3(c.x, float(th.landing) + 0.05, c.z)
+	check_eq(db.drip_damage(th, floor_at), 50.0, "right under it: 50")
+	check_eq(db.drip_damage(th, DungeonMap.to_world(th.d, DungeonMap.to_local(th.d, floor_at) + Vector3(1.2, 0, 1.2))), 25.0, "in the 3x3 round it: 25")
+	check_eq(db.drip_damage(th, DungeonMap.to_world(th.d, DungeonMap.to_local(th.d, floor_at) + Vector3(2.0, 0, 0))), 0.0, "2 m away: nothing")
+	var sprint := Dwarf.RUN_SPEED * db.drip_time(th) - DungeonBuild.DRIP_REACH  # (it lets go as you step under its edge)
+	check(sprint > DungeonBuild.DRIP_HIT and sprint < DungeonBuild.DRIP_SPLASH + 0.6,
+		"sprinting from under it you're out of the big hit, at the splash's edge (%.1f m)" % sprint)
+	# 5 m away nothing falls (it used to aim ahead of you)
+	(r.player as Node3D).global_position = floor_at + Vector3(5.0, 0, 0)
+	db._host_tick = 0.0
+	db._physics_process(0.1)
+	check(not db.is_broken(id), "5 m away it stays up")
+	r.root.free()
+
+
+## The healing basin heals 30 health in all, then it's dry.
+func test_the_basin_heals_only_30() -> void:
+	var r := _rig()
+	if r.is_empty():
+		return
+	var db: DungeonBuild = r.db
+	var ps: GameAuthority.PlayerState = r.ps
+	ps.vitals.health = 10.0
+	for i in 20:
+		db._check_heal(r.auth, 1, db.heals[0] + Vector3(1.0, 0, 0), 1.0)
+	check_near(ps.vitals.health, 10.0 + DungeonBuild.HEAL_POOL, 0.01, "30 health in all, then dry")
+	r.root.free()
+
+
+## Bandages: one every 30 s (the owner could spam them).
+func test_bandages_have_a_cooldown() -> void:
+	var r := _rig()
+	if r.is_empty():
+		return
+	var auth: GameAuthority = r.auth
+	var ps: GameAuthority.PlayerState = r.ps
+	check(GameAuthority.BANDAGE_COOLDOWN >= 20.0, "a long wait between bandages")
+	var src := FileAccess.get_file_as_string("res://src/net/game_authority.gd")
+	check(src.contains('add_boost(ps, "bandage_cooldown", {}, BANDAGE_COOLDOWN)'), "using one starts the wait")
+	r.root.free()
+
+
+## Dungeon creatures only notice you in their own room (the bats woke before the owner came in).
+func test_dungeon_creatures_notice_you_only_in_their_room() -> void:
+	var src := FileAccess.get_file_as_string("res://src/combat/monster_manager.gd")
+	check(src.contains("DungeonMap.space_at(m.dungeon, p + Vector3.UP) != m.dungeon_room"), "they don't notice you through the walls")
+	check(src.contains("		if mon:  # (it stays in its room and only notices you there"), "bats get their room too")

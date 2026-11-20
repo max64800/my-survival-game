@@ -48,6 +48,7 @@ const BOXES := {
 		[Vector3(0.64, 0.55, 0.5), Vector3(0.08, 0.9, 1.0)]],
 	# Just the ropes, no planks (owner, Nov 20, 3rd play: "too easy"): the hand ropes are solid, the rest is a 2 m jump.
 	"dungeon/bridge_ropes.glb": [[Vector3(-0.64, 0.55, 0), Vector3(0.08, 0.9, 2.0)], [Vector3(0.64, 0.55, 0), Vector3(0.08, 0.9, 2.0)]],
+	"dungeon/bridge_ropes_3m.glb": [[Vector3(-0.64, 0.55, 0), Vector3(0.08, 0.9, 3.0)], [Vector3(0.64, 0.55, 0), Vector3(0.08, 0.9, 3.0)]],
 	"dungeon/lever.glb": [[Vector3(0, 1.05, 0.1), Vector3(0.4, 0.75, 0.22)]],  # (the board and the handle: E aims at it)
 	"dungeon/door_loot.glb": [[Vector3(0, 0.75, 0), Vector3(1.5, 1.5, 0.16)]],
 	"dungeon/gate_round.glb": [[Vector3(0, 0.75, 0.03), Vector3(1.5, 1.5, 0.15)]],
@@ -76,12 +77,17 @@ const DRIP_DAMAGE := 50.0     ## a falling stalactite always hurts this much, ar
 ## Owner, Nov 20 ("must fall a lot faster, they never hurt me"): it used to take 1.6 s to come down from the Pillar
 ## Hall's 8 m rock, so you had walked 6 m on. Now a short crack, then it falls three times as hard (0.8 s in all), it
 ## aims at where you'll be (your walking speed), and it hurts anyone within DRIP_HIT of where it lands.
-const DRIP_WARN := 0.12       ## seconds of dust and cracking before it lets go
-const DRIP_G := 30.0          ## how hard it falls (m/s²; real falling is 9.8)
-const DRIP_PART_GAP := 0.08   ## a cluster's stalactites fall one by one, this far apart
-const DRIP_REACH := 1.8       ## walk within this (sideways) under one, now or by the time it lands, and it falls
-                              ## (owner, Nov 20, 3rd play: "they don't drop even when I'm close": 1.3 m was too tight)
-const DRIP_HIT := 1.5         ## it hurts whoever is this close (sideways) to it when it lands
+## Owner, Nov 20 (later): "they fall way too early, 5-8 m away. Only when I'm under them, and quick: stopped under
+## one you take 50, sprinting away you barely make it and still take a little splash; 25 in the 3x3 m round it."
+## So: no more aiming ahead; it lets go when you are right under it, and lands DRIP_WARN + DRIP_FALL later
+## (sprinting at 6.5 m/s you are about 1.5 m on by then: the edge of the splash).
+const DRIP_WARN := 0.1        ## seconds of dust and cracking before it lets go
+const DRIP_FALL := 0.25       ## seconds it takes to come down (from any height)
+const DRIP_PART_GAP := 0.08   ## a cluster's stalactites fall one by one, this far apart (each hurts on its own)
+const DRIP_REACH := 0.9       ## step this close (sideways) under one and it falls
+const DRIP_HIT := 0.75        ## right under it when it lands: DRIP_DAMAGE
+const DRIP_SPLASH := 1.5      ## within the 3 x 3 m round it: DRIP_SPLASH_DAMAGE
+const DRIP_SPLASH_DAMAGE := 25.0
 const DRIP_LENGTH := 1.4      ## how far a stalactite's tip hangs below its base
 const FLOOR_GIVE := 0.15      ## seconds a cracked floor tile holds you before it breaks (owner, Nov 20: quicker)
 const FLOOR_FALL := 0.7       ## seconds its boards take to tumble down into the pit
@@ -106,6 +112,7 @@ const USE_REACH := 3.0
 ## The Rune Shrine's healing basin (owner, Nov 20: "the fountain must heal"): stand by it and you heal this fast.
 const HEAL_REACH := 2.5
 const HEAL_RATE := 8.0        ## health a second
+const HEAL_POOL := 30.0       ## owner, Nov 20: it heals 30 health in all, then it is dry until the dungeon refills
 ## The loot door opens when the Pack Hall's pack is dead (owner, Nov 20). It is a lock of DungeonKeys (the same saved,
 ## sent-to-everyone door state as the bigger dungeons' key doors); it shuts again when the pack moves back in.
 const LIST_ID := {"mossgate": "mossgate_hold"}  ## the dungeon's id in DungeonList / DungeonKeys
@@ -640,8 +647,7 @@ func _fall(id: int) -> void:
 	_break(id)
 	var th: Dictionary = things[id]
 	var parts := _parts(th.node)
-	var drop := maxf(0.5, (th.node as Node3D).get_child(0).global_position.y - DRIP_LENGTH - float(th.landing))
-	var land_t := DRIP_WARN + sqrt(2.0 * drop / DRIP_G)
+	var land_t := drip_time(th)
 	var hurt_once := {}
 	for k in parts.size():
 		get_tree().create_timer(land_t + k * DRIP_PART_GAP).timeout.connect(_drip_lands.bind(id, hurt_once))
@@ -656,10 +662,22 @@ func _drip_lands(id: int, hurt_once: Dictionary) -> void:
 	var c: Vector3 = th.centre
 	for pid in auth.players:
 		var p: Vector3 = auth.players[pid].node.global_position
-		if hurt_once.has(pid) or Vector2(p.x - c.x, p.z - c.z).length() > DRIP_HIT or p.y < float(th.landing) - 1.0 or p.y > c.y:
+		var dmg := drip_damage(th, p)
+		if hurt_once.has(pid) or dmg <= 0.0:
 			continue
 		hurt_once[pid] = true
-		auth.hurt(pid, DRIP_DAMAGE, {pierce = true})  # (armour doesn't help: always 50)
+		auth.hurt(pid, dmg, {pierce = true})  # (armour doesn't help)
+
+
+## How much a stalactite landing now hurts someone at `p`: 50 right under it, 25 in the 3 x 3 m round it, else 0.
+func drip_damage(th: Dictionary, p: Vector3) -> float:
+	var c: Vector3 = th.centre
+	if p.y < float(th.landing) - 1.0 or p.y > c.y:
+		return 0.0
+	if Vector2(p.x - c.x, p.z - c.z).length() <= DRIP_HIT:
+		return DRIP_DAMAGE
+	var q := DungeonMap.to_local(th.d, p) - DungeonMap.to_local(th.d, c)  # (the square lines up with the rooms)
+	return DRIP_SPLASH_DAMAGE if absf(q.x) <= DRIP_SPLASH and absf(q.z) <= DRIP_SPLASH else 0.0
 
 
 ## Everyone: dust and a crack, then the stalactite (a cluster: each of its parts, one after another) drops.
@@ -680,7 +698,7 @@ func _drop_drip(id: int) -> void:
 		var drop := maxf(0.5, y0 - DRIP_LENGTH - float(th.landing))
 		var tw := create_tween()
 		tw.tween_interval(DRIP_WARN + k * DRIP_PART_GAP)
-		tw.tween_property(part, "global_position:y", y0 - drop, sqrt(2.0 * drop / DRIP_G)).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		tw.tween_property(part, "global_position:y", y0 - drop, DRIP_FALL).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 		tw.tween_callback(func() -> void:
 			RockShatter.burst(get_parent(), part.global_position, Vector3.UP, STONE, Mat.STONE, 0.6)
 			Sfx.play("dig", part.global_position, 2.0, 0.8)
@@ -721,12 +739,6 @@ func _physics_process(delta: float) -> void:
 		if node == null:
 			continue
 		var p := node.global_position
-		var was: Vector3 = _last_pos.get(pid, p)
-		_last_pos[pid] = p
-		var vel := (p - was) / step
-		vel.y = 0.0
-		if vel.length() > 12.0:
-			vel = Vector3.ZERO  # (a teleport or respawn, not walking)
 		_check_deadly_drop(auth, pid, p)
 		_check_heal(auth, pid, p, step)
 		_check_crushers_wake(auth, p)
@@ -737,8 +749,7 @@ func _physics_process(delta: float) -> void:
 			var c: Vector3 = th.centre
 			var flat := Vector2(p.x - c.x, p.z - c.z).length()
 			if th.kind == "drip" and p.y < c.y and p.y > float(th.landing) - 1.0:
-				var ahead := p + vel * drip_time(th)  # (where you'll be when it lands: it falls on you)
-				if flat < DRIP_REACH or Vector2(ahead.x - c.x, ahead.z - c.z).length() < DRIP_REACH:
+				if flat < DRIP_REACH:  # (right under it: owner, Nov 20)
 					_fall(id)
 			elif th.kind == "floor":
 				var q := DungeonMap.to_local(th.d, p)
@@ -817,10 +828,8 @@ func _check_deadly_drop(auth: GameAuthority, pid: int, p: Vector3) -> void:
 
 
 ## Seconds from letting go to landing, for a stalactite thing.
-func drip_time(th: Dictionary) -> float:
-	var top := (th.node as Node3D).get_child(0) as Node3D
-	var drop := maxf(0.5, top.global_position.y - DRIP_LENGTH - float(th.landing))
-	return DRIP_WARN + sqrt(2.0 * drop / DRIP_G)
+func drip_time(_th: Dictionary) -> float:
+	return DRIP_WARN + DRIP_FALL
 
 
 ## Host: standing by the Rune Shrine's healing basin heals you (owner, Nov 20).
@@ -833,7 +842,27 @@ func _check_heal(auth: GameAuthority, pid: int, p: Vector3, step: float) -> void
 	if not near or ps == null:
 		_healed.erase(pid)
 		return
-	auth.heal(pid, HEAL_RATE * step)  # (their own computer owns their health: it stops at full)
+	# Its water heals HEAL_POOL in all (everyone together), then it is dry until the dungeon refills (saved).
+	var st: Dictionary = auth.world_state.get("dungeon_basin", {used = 0.0, at = 0.0}).duplicate()
+	var played := float(auth.world_state.get("played", 0.0))
+	if float(st.used) >= HEAL_POOL and played - float(st.at) >= DungeonLoot.REFILL:
+		st.used = 0.0
+	var left := HEAL_POOL - float(st.used)
+	var missing := ps.vitals.max_health() - ps.vitals.health
+	if left <= 0.0:
+		if not _healed.has(pid):
+			auth.tell(pid, "The basin is dry.")
+		_healed[pid] = true
+		return
+	if missing <= 0.0:
+		return
+	var amount := minf(HEAL_RATE * step, minf(left, missing))
+	auth.heal(pid, amount)  # (their own computer owns their health: it stops at full)
+	st.used = float(st.used) + amount
+	if float(st.used) >= HEAL_POOL:
+		st.at = played
+		auth.tell(pid, "The basin's last water is gone.")
+	auth.world_state["dungeon_basin"] = st
 	if not _healed.has(pid):
 		auth.tell(pid, "The basin's cool water mends your wounds.")
 	_healed[pid] = true

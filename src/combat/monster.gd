@@ -562,7 +562,7 @@ func _move(delta: float, dir: Vector3, speed: float) -> void:
 		speed *= turned[1]
 	if dir.length() > 0.1 and not data.get("flies", false) and is_on_floor() and _drop_ahead(dir):
 		dir = Vector3.ZERO  # a pit it couldn't climb out of: stop at the edge and find another way (F125)
-	if dir.length() > 0.1 and not dungeon.is_empty() and not may_step(global_position + Vector3(dir.x, 0, dir.z).normalized() * 0.7):
+	if dir.length() > 0.1 and not dungeon.is_empty() and not data.get("flies", false) and not may_step(global_position + Vector3(dir.x, 0, dir.z).normalized() * 0.7):
 		dir = Vector3.ZERO  # (a dungeon creature stops at its room's doorway and in front of a crusher)
 	if data.get("flies", false):
 		velocity = dir * speed

@@ -309,21 +309,21 @@ chest("chest_small", 44.0, 28.6, 180.0, "Random chest")
 # 10 Chasm Bridge: posts and planks across the 4 m drop onto spikes, a broken plank in the middle, broken railings along the edge,
 # stalactites that fall over the bridge (dust first), bats, and spikes at the bottom.
 BRIDGE_Y = 0.13  # the deck's top (0.11 in the models) level with the floor boards' top (0.24): you walk straight on
-# Owner, Nov 20 (3rd play: "too easy"): every plank gone but the middle section's: two big jumps, 2 m each, from the
-# edge onto the middle boards and on to the far edge (the dwarf jumps about 4.5 m walking). The ropes still run
-# from post to post. The posts stand on the floor right at the chasm's edges (x 36 and 42).
+# Owner, Nov 20 (3rd play: "too easy"): every plank gone but the middle section's. Then ("I can still jump the whole
+# bridge") the chasm is 8 m wide (x 36-44): a running jump (about 7 m) can't clear it, so you jump 3 m onto the middle
+# boards (x 39-41) and 3 m on (about 4.5 m walking). The ropes run from post to post; the posts stand on the edges.
 prop("dungeon/bridge_posts.glb", 35.0, BRIDGE_Y, 6.0, 90.0, role="door", label="")
-prop("dungeon/bridge_posts.glb", 43.0, BRIDGE_Y, 6.0, 270.0, role="door", label="")
-BRIDGE = {0: "bridge_ropes", 1: "bridge_plank", 2: "bridge_ropes"}
-for i, x in enumerate([37.0, 39.0, 41.0]):
+prop("dungeon/bridge_posts.glb", 45.0, BRIDGE_Y, 6.0, 270.0, role="door", label="")
+BRIDGE = {0: "bridge_ropes_3m", 1: "bridge_plank", 2: "bridge_ropes_3m"}  # (3 m of rope, 2 m of boards, 3 m of rope)
+for i, x in enumerate([37.5, 40.0, 42.5]):
 	prop("dungeon/%s.glb" % BRIDGE[i], x, BRIDGE_Y, 6.0, 90.0, role="trap" if i != 1 else "door",
-		label="Only ropes: jump 2 m!" if i == 0 else ("The middle boards (fall: spikes)" if i == 1 else ""))
+		label="Only ropes: jump 3 m!" if i == 0 else ("The middle boards (fall: spikes)" if i == 1 else ""))
 for z in (1.0, 3.0, 9.0, 11.0):
 	prop("dungeon/railing_broken.glb", 35.6, 0.25, z, 90.0)
-	prop("dungeon/railing_broken.glb", 42.4, 0.25, z, 270.0)
-for x, m in [(37.4, "trap_drip_thin"), (39.0, "trap_drip_cluster"), (40.8, "trap_drip_fat")]:
+	prop("dungeon/railing_broken.glb", 44.4, 0.25, z, 270.0)
+for x, m in [(38.2, "trap_drip_thin"), (40.0, "trap_drip_cluster"), (41.8, "trap_drip_fat")]:
 	prop("dungeon/%s.glb" % m, x, 7.5 + 0.1, 6.0, rng.choice([0, 90]), role="trap", label="Falling stalactites" if x == 39.0 else "", tilt=180.0)
-for x in range(36, 42, 2):
+for x in range(36, 44, 2):
 	for z in range(0, 12, 2):
 		prop("dungeon/trap_spikes.glb", x + 1.0, -4.0, z + 1.0, rng.choice([0, 90, 180, 270]), role="trap")  # (owner, Nov 20: 4 m like the pit)
 creature("cave_bat", 30.0, 4.5, 8.0, 0.0)

@@ -229,7 +229,7 @@ func _spawn_dungeon_group(_room: Dictionary, g: Dictionary) -> Array:
 		_next_uid += 1
 		_ev_spawn.rpc(uid, kind, at, leader, g.key, "")
 		var mon: Monster = monsters.get(uid)
-		if mon and not Monsters.LIST[kind].get("flies", false):  # (it stays in its room: Monster.may_step)
+		if mon:  # (it stays in its room and only notices you there: Monster.may_step, nearest_noticer)
 			mon.dungeon = g.d
 			mon.dungeon_room = String(g.room)
 		uids.append(uid)
@@ -349,6 +349,8 @@ func nearest_noticer(m: Monster) -> int:
 		if ignores(ps.node):
 			continue
 		var p: Vector3 = ps.node.global_position
+		if not m.dungeon.is_empty() and DungeonMap.space_at(m.dungeon, p + Vector3.UP) != m.dungeon_room:
+			continue  # (a dungeon creature only notices you in its own room: owner, Nov 20, the bats woke early)
 		var d := p.distance_to(m.global_position)
 		var lit := ps.fuel > 0.0
 		var sight := Monsters.SIGHT if lit else Monsters.SIGHT_DARK

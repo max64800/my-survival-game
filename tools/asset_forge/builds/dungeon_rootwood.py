@@ -241,7 +241,7 @@ def rope(p0, p1, r, ends=True):
 	return o
 
 
-def bridge(broken=False, gap=False, bare=False):
+def bridge(broken=False, gap=False, bare=False, half=0.994):
 	"""A 2 m section of plank bridge (along z, 1.3 m wide): two thick rope stringers under split planks laid
 	across, hand ropes at 0.95 m tied down to the planks. Sections side by side make a bridge of any length.
 	broken: two planks gone, one hanging off a stringer, the left hand rope snapped with both ends dangling.
@@ -249,7 +249,7 @@ def bridge(broken=False, gap=False, bare=False):
 	(about 1 m of bare rope), both hand ropes whole.
 	bare (owner, Nov 20, 3rd play: "too easy, remove all the planks but the middle ones"): every plank gone, only the
 	stringers and hand ropes, the ties running from the hand ropes down onto the stringers (you jump across)."""
-	L = 0.994
+	L = half  # (half its length: 2 m sections; the 3 m rope-only one for the wider chasm, owner Nov 20)
 	for x in (-0.5, 0.5):
 		rope((x, 0.04, -L), (x, 0.04, L), 0.035)
 	zs, z = [], -L + 0.01
@@ -946,7 +946,7 @@ def pictures(name, parts):
 BUILDS = {"wall_broken": wall_broken, "recipe_stand": recipe_stand, "recipe_scroll": recipe_scroll, "bridge_posts": bridge_posts,
 	"wall_cracked": wall_cracked, "wall_old": wall_old, "floor_old": floor_old,
 	"floor_loose_stone": floor_loose_stone, "gate_round": gate_round, "lever": lever, "railing_broken": railing_broken,
-	"bridge_plank": bridge, "bridge_plank_broken": lambda: bridge(True), "bridge_plank_gap": lambda: bridge(gap=True), "bridge_ropes": lambda: bridge(bare=True), "dungeon_entrance": entrance,
+	"bridge_plank": bridge, "bridge_plank_broken": lambda: bridge(True), "bridge_plank_gap": lambda: bridge(gap=True), "bridge_ropes": lambda: bridge(bare=True), "bridge_ropes_3m": lambda: bridge(bare=True, half=1.494), "dungeon_entrance": entrance,
 	"door_loot": loot_door, "chain_hanging": chain_hanging, "trap_dart_plate": dart_plate, "trap_dart_wall": dart_wall, "trap_floor_break": floor_break, "trap_crusher": crusher}
 
 if __name__ == "__main__":

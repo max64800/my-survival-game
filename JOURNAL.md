@@ -6128,3 +6128,15 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - **F435:** owner's screen is 2552x1380 but the window was built for 1600x900, so it looked small; it now scales to
   the screen. Plank text got more room (it still touched the rim on his screen). Dungeon test start gives 15 perk
   points (Progression.bonus_points). Told the dungeon chat about the one line in their dungeon_test_start.gd.
+- **Owner's notes after that play (same chat, later still), all fixed, saved in FEEDBACK (F436-F443):**
+  - **Healing basin:** 30 health in all, then dry until the dungeon refills (F436).
+  - **Bandages:** one every 30 s, the host checks it (F437).
+  - **Stalactites (🔁 3rd time, F438):** they fell 5-8 m early because Claude's "aim at where you'll be" made them let
+    go while you were still walking up. Now they let go only when you're right under one (0.9 m) and land 0.35 s
+    later: 50 right under it, 25 in the 3x3 m around it. A robot walking past took 25.
+  - **Bridge (🔁 3rd time, F439):** a running jump is about 7 m and the chasm was 6 m. Now 8 m: 3 m of rope, 2 m of
+    boards, 3 m of rope (new `bridge_ropes_3m` model; overlapping 2 m rope pieces would have shimmered, Rule 2).
+  - **Bats woke early (F440):** every dungeon creature now only notices you in its own room.
+- **Hurdles (Claude's own):** a test counted the new old ceilings as old floors (fixed: only floors and walls); a
+  sprint test forgot the stalactite lets go 0.9 m before you're under it. The robot can't jump, so it walked into
+  the chasm and the bridge stalactites weren't tested there.

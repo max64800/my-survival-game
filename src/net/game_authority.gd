@@ -93,6 +93,7 @@ var _progress_sync := 0.0
 ## Item kinds you hold in your hand to use. Anything else picked on the hotbar (rocks, ore,
 ## crystals...) leaves your hand free, so the equipped pickaxe is used.
 const HAND_DIG := 1.0 / 3.0  ## bare hands dig at a third of a stone pickaxe's power (F89)
+const BANDAGE_COOLDOWN := 30.0  ## seconds between two bandages (owner, Nov 20)
 const HAND_KINDS := ["pickaxe", "axe", "hammer", "weapon", "shield", "food", "drink", "station", "chest",
 	"throw", "tonic", "waterskin", "horn", "lens", "page", "rune"]
 
@@ -1647,6 +1648,11 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 			tell(peer_id, "Filled with pool water. Boil it at a campfire to make it clean.")
 			return "filled"
 		"food", "drink":
+			if id == "bandage":  # (owner, Nov 20: "you can just spam bandages": one every BANDAGE_COOLDOWN s)
+				if ps.boosts.has("bandage_cooldown") and ps.boosts.bandage_cooldown.until > now():
+					tell(peer_id, "Your last bandage is still fresh. Wait %d s." % ceili(ps.boosts.bandage_cooldown.until - now()))
+					return "cooldown"
+				add_boost(ps, "bandage_cooldown", {}, BANDAGE_COOLDOWN)
 			if id == "waterskin_clean" or id == "waterskin_dirty":
 				_take_sip(ps, ps.selected_slot)
 			elif not ps.inventory.remove(id, 1):
