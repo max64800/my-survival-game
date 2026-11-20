@@ -6324,3 +6324,82 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   it, the same mistake as an hour before. I looked at the size of the change but didn't stop when it was bigger than
   my one line. Fix for next time: if a shared file already has someone else's changes, don't save it; leave my line
   unsaved for that chat to save, and say so.
+
+
+## November 20, 2026 (PC, gems-check Claude): checking the Mac's gem rebuild, physics tests green again
+- **Pull:** blocked again at first (the building-pieces chat's unsaved CREDITS.md + an untracked `fiber_count.gd.uid`
+  that was the same as GitHub's). I didn't touch them. While I tested, the dungeon chat merged the gems and pushed,
+  so the folder caught up by itself. To test "clean GitHub main" without touching anyone's files I made a second copy
+  of the project in my own scratch folder (a git worktree). From it the game starts with no errors (REBUILD_ONLY ok).
+- **Tests, one at a time:** `test_sfx` passes (the dungeon chat had already swapped "dig" for a real rock-thud sound).
+  `test_visuals` still fails only on the Mason's Shovel model (waiting for the owner's OK, model work).
+  `test_dwarf`: 4 failures. The great axe chat says the 2 swing ones are theirs and known (waiting on the owner's
+  Blender poses); the braid-hair and aim ("material is null") ones aren't theirs, so they're still unowned.
+- **test_authority (4 failures) fixed.** Cause: the game switched to Jolt physics on Nov 19 (it came in with a big
+  merge of everyone's unsaved work), and three things didn't fit Jolt. (a) Each test built a new cave before the old
+  one was gone: two caves = over Jolt's 10,240-body limit. The test now waits two physics steps first. (b) Chopping
+  a root squashed its invisible bump-shape thinner sideways; Jolt can't squash round shapes, so now only the root's
+  picture gets thinner (`glow_field.gd`). (c) The root-tree check wanted the bark 2.2 m from the middle on every side;
+  I measured all round (seed 42) and the bark is smooth with no crack, just thinner on one side (1.6 m), so the rule
+  is now "well short of the middle". 42/42 pass.
+- **Real game check:** a new robot `-- gemcheck claude=gems` (`src/debug/gemcheck.gd`): places a Gem Bench, combines
+  3 Rough Edge Quartz + 10 gold into 1 Cut (works), reads the gem tooltips (right numbers for all 3 levels), makes a
+  Rock Snail spit (Poisoned 10 s, about 1 damage a second, green round badge above the health bar), and lets a red
+  snail slam a raised copper shield (30% fire each time gets through, 4th slam sets you burning, flame badge) while a
+  poison slam into the shield does nothing. All the creature attacks go through the game's real attack code.
+- **Hurdles (Claude's own):** (1) my first robot run said "the spit does nothing": I had put the Gem Bench right
+  between the dwarf and the snail, and hits can't go through things. Moved the snails to the side. (2) The shield
+  didn't count: the dwarf was holding his hand lantern in the shield hand (a real game rule), so the robot puts it
+  away. (3) My first badge crop was too narrow: the badges sit at the left end of the health bar, not the middle.
+  (4) A missing type (`var poisoned: Dictionary`) stopped the robot from loading once.
+- **Owner OK'd batch 1** (models now in `assets/models/dungeon/`). **Batch 2** in `dungeon_mine.py`:
+  `trap_swing_boulder`, `trap_bear_jaws`, `trap_tripwire_crossbow` + `tripwire`, `trap_chest_spikes`. Real-number fix:
+  the sheet's boulder swung side to side +-60 degrees between posts 4 m apart, but with a 2.6 m chain it reaches 2.3 m
+  out and would hit the posts (only 24 degrees fit), so it swings along the path; the beam is lowered to fit a 4 m
+  ceiling. The crossbow is borrowed from the player's crossbow script (only its shape code, run on its own, because
+  that script builds everything the moment it loads). Checker: one flicker spot (the chain's last link and the
+  strap's eye turned the same way) and the niche box 1-2 cm off the wall; fixed, all 5 pass. 3D page
+  "Lampwick Trap Set". Hurdle: a long shell script broke on quote marks again, so the code went into a file.
+- **Owner's look at batch 2:** (1) the boulder's top chain links didn't move: now the whole chain swings, only the
+  eye stays on the beam. (2) Bear jaws' teeth pointed the wrong way: now they stand up when open and slot one between
+  each other when shut (1 cm clear, 1.7 cm between neighbours). (3) Tripwire white; no crossbow: a small dark hole in
+  the wall's hip beam with a poison bolt (the player's blight bolt shape) and a green stain under it; the wire's eye
+  sits on the sill under the hole (`trap_tripwire_wall` replaces `trap_tripwire_crossbow`). (4) Spike trap: you could
+  open the chest without standing on spikes, so it is a 2-square dead-end tunnel floor (2 x 4 m): chest square and
+  the square in front, both full of holes. Hurdles: `rough_board` built away from the middle came out short (boards
+  now built in the middle and slid into place); pegs and doubled rim beams floated (one rim round the whole piece).
+  All 5 pass the checks; page version 2.
+- **Owner OK'd batch 2**, with two notes, both done: the tripwire is now 3 mm thin and runs wall to wall with no pegs
+  (a 1 m wire the game stretches); the "orange thing under the spikes" was a floor joist seen through the holes (and
+  the spikes went down through it), so the joists now run between the hole rows. A corner flicker spot came from the
+  shared rim-beam helper (one beam's end ran into the other's side): the 4 rim beams are placed by hand now. All 5
+  models in `assets/models/dungeon/`, model test passes, page version 3.
+- **Later the same chat: Mason's Shovel (F451) and the aim camera (F452).**
+  - Shovel: it already had a hand-built 3D model since Nov 17 (`items_tools.py`) that shows in his hand. The test
+    failed only because the shovel had no backup "simple shapes" version (added). The crafting menu put it under
+    Materials because the menu didn't know the word "shovel"; now it's under Tools (checked in `test_menu`).
+  - Aim camera: zoomed in, the camera sits almost straight behind his head (that's F171, which the owner wanted for
+    normal play), so aiming the crossbow put the crosshair on his head. Now, while aiming, the camera slides to a fixed
+    spot over his right shoulder at any zoom (`AIM_CAMERA` in `dwarf.gd`), and back when you let go. New test
+    `test_aim_camera`, new photo robot `-- aimcheck claude=aim_camera`.
+  - **Hurdles (Claude's own):** (1) my first aim spot (1.45 m up) was far above him: the dwarf is only about 1.2 m
+    tall. I had measured his shoulder from the skeleton (1.21 m), but that number was wrong; the photos showed the
+    truth, so I set it from the photos (0.9 m up, 45 cm right). (2) The robot's camera started tilted down at the
+    floor, which made the first photos useless; it now looks straight ahead like you would when aiming. (3) I saved
+    FEEDBACK-done.md with the beetle chat's 5 unsaved finished items (F446-F450) in it by accident (I only checked
+    the file was changed, not by whom). Harmless text, but I told that chat. Next time: look at the diff before saving
+    a shared file.
+  - **Not fixed:** the aim test's "material is null" error. It only happens when the whole dwarf test file runs in a
+    row, and only in the screenless test renderer, so it can't happen in the game. I narrowed it to "needs the full
+    chain of earlier tests" and stopped there.
+- **Dungeon test gear (F457):** the owner felt far too strong in the dungeon: "Test the dungeon" gave silver
+  everything. Now it's copper (pickaxe, sword, shield, crossbow, mace, spear, axe; the armor was copper already).
+  **Hurdle (Claude's own, a repeat):** I saved FEEDBACK-done.md with the beetle chat's 4 unsaved lines (F453-F456) in
+  it, the same mistake as an hour before. I looked at the size of the change but didn't stop when it was bigger than
+  my one line. Fix for next time: if a shared file already has someone else's changes, don't save it; leave my line
+  unsaved for that chat to save, and say so.
+- **Crossbow reload (F458):** reloading now needs you to stand still: walking or running away stops it and the next
+  reload starts over. A "Reloading (stand still)" bar sits under the crosshair, and every reload takes twice as long
+  (copper 4 s). The old "reload while walking" test was changed to check the new rule. **Hurdle (Claude's own):** an
+  earlier script of mine had saved `aimcheck.gd` with Windows line endings, so my next text swap silently found
+  nothing; now my scripts turn the line endings to plain ones first and stop if the text isn't found.
