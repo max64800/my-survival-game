@@ -10,13 +10,13 @@ A long, dark mine tunnel. Old lamps hang along it, and you light them as you go,
 | Built from | root wood (Delver's Shack pieces, `plank_root`), inside old dwarf stone (can't be dug) |
 | Floor to ceiling | 4 m in rooms, more in tall halls |
 | Teaches one of | Copper Axe, Crossbow, Spear, Copper-shod Boots (shuffled per world) |
-| Way out | The lever in Back Rails opens a gate, and the rails run you back into the Lamp Room. |
+| Way out | Rails in Back Rails run back to the barred gate in the Lamp Room. A lever opens it from inside. |
 
 ## Rooms (sizes in metres on the 2 m grid, width x length)
 
 | # | Space | Level | Size | What's there | Has |
 |---|---|---|---|---|---|
-| 1 | Lamp Room | Level 1 | 6 x 6 | Entrance. A rail cart on old tracks, the first lamp to light. | loot: chest |
+| 1 | Lamp Room | Level 1 | 6 x 6 | Entrance. A rail cart on old tracks, the first lamp to light. On the right, a barred gate with no handle on this side: the way out, opened later from the far side. | loot: chest; gate: exit gate (lever on the far side) |
 | 2 | Rail Tunnel (corridor) | Level 1 | 2 x 10 | Long and narrow. A thin wire across the floor fires a hidden crossbow. Clue: a shiny wire at ankle height. Safe: step over it, or cut it. | trap: tripwire crossbow |
 | 3 | Cart Junction | Level 1 | 6 x 6 | Three rails side by side, sloping down. Carts come rattling down each rail at different times in a pattern: dodge the middle one, step into the middle to dodge the left one, stay there for the right one. A hit throws you like a rag doll. Clue: each rail rattles just before its cart. Safe: learn the pattern and stand in the empty lane. | mob: tunnel rats; **deadly: triple carts** |
 | 4 | Tool Store | Level 1 | 6 x 6 | Side room. One floor stone is loose: a buried chest under it. | loot: chest; hid: buried chest |
@@ -28,7 +28,7 @@ A long, dark mine tunnel. Old lamps hang along it, and you light them as you go,
 | 10 | Prop Corridor (corridor) | Level 1 | 2 x 10 | Old props hold up the roof. Tunnel Rats in the dark. | mob: tunnel rats |
 | 11 | Miners' Rest | Level 1 | 6 x 6 | Side room with a healing shrine and a chest. | heal: healing shrine; loot: chest |
 | 12 | Foreman's Office | Level 1 | 10 x 10 | The Foreman and his Lost Miners. The recipe stand. | mob: Foreman + miners; page: recipe stand |
-| 13 | Back Rails (corridor) | Level 1 | 2 x 10 | A lever opens a gate onto rails that run back to the Lamp Room. | out: gate to room 1 |
+| 13 | Back Rails (corridor) | Level 1 | 2 x 10 | Rails run from here back to the barred gate in the Lamp Room. Pull the lever to open it, and you're at the exit. | out: gate to room 1 |
 
 Paths: 1-2, 2-3, 3-4, 3-5, 5-6, 6-7, 6-8, 8-9, 9-10, 10-11, 10-12, 12-13, 13 → 1 (way out).
 
@@ -51,6 +51,7 @@ Paths: 1-2, 2-3, 3-4, 3-5, 5-6, 6-7, 6-8, 8-9, 9-10, 10-11, 10-12, 12-13, 13 →
 |---|---|---|
 | root wood building pieces (walls, floors, round doorways, stairs, pillars, beams, railings, ladders) | exists | |
 | dungeon_entrance | exists | the round door in the cave wall |
+| gate_round + lever (exit gate: lever only on the inside) | exists |  |
 | trap_tripwire_crossbow (crossbow + wire + peg) | new |  |
 | mine_cart | exists |  |
 | rail_lanes_3 + cart_stop + cart_release | new | 3 rails side by side, carts in a pattern; ragdoll on hit |

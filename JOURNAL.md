@@ -5711,3 +5711,20 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   tests, and the build menu test (another chat's unfinished `PlaceGhost.held_turn`).
 - Not done: the rates (rootwood, stone per minute) are estimates from the code, not timed in a real game; the
   Crafting Book page doesn't show Mortar yet; later zones' materials still cost 1 per unit.
+
+## Nov 20 (Mac): dungeons end with boss → treasure room → lever gate home (F237)
+- **Owner's idea:** like a classic dungeon crawl. On the way in you see a barred gate on the right in the first room
+  that you can't open. You explore, beat the mini boss, take its key, open the treasure room, and a tunnel leads back to
+  that gate. A lever on the inside opens it and you're at the exit.
+- **Owner's picks:** the gate closes again when the dungeon refills. Small dungeons get the gate + lever but no key.
+  The treasure room holds the recipe stand and the big chest. Hammerfall keeps one door with two locks.
+- **Plans changed** (the 3 dungeon pages, then the room files 02-12 made again): in the 8 keyed dungeons the boss
+  moved to the big last hall (it swapped places with the pack leader who stood there), the old locked door in the
+  middle now stands broken open, and a new treasure room sits behind the boss's locked door. Every first room has the
+  barred gate, and every way out ends behind it. Mossgate Hold's plan (01) got the same gate in words; its map is on the PC.
+- **Generator fix:** room sizes come from room names, so the new boss hall "Vault Hall" came out as a 4 x 4 nook.
+  Now a boss hall with the treasure door is always the big end size, and a treasure room is a normal room.
+- **Code:** `dungeon_keys.gd` got the exit gate: add_gate, ask_pull_lever (ask → host checks you're at the lever →
+  everyone's gate opens), closes after the hour while nobody is near. New test passes (6 in the file).
+- Hurdle (Claude): the change script first stopped because one room line writes `l:0` out in full; fixed it to keep
+  each line's own format. The rules check passes for all 11 drawn dungeons.

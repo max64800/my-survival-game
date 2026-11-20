@@ -8,11 +8,17 @@ extends Node
 ## An hour of play after a key dropped (DungeonLoot.REFILL), it goes back to its boss: it vanishes from every bag,
 ## chest and floor, and its lock closes again.
 ##
+## Owner, Nov 20: the locked door is in the boss room and opens the treasure room. Every dungeon (all 12) also has an
+## exit gate in its first room with no handle outside: the way out ends behind it, and a lever there opens it. It
+## closes again when the dungeon refills (an hour after it was opened, while nobody is near).
+##
 ## Hook-in (PC, not done yet): in GameAuthority._ready, like Storage: `keys = DungeonKeys.new(); keys.name = "DungeonKeys";
 ## add_child(keys)`. Door built → add_door(dungeon_id, pos). E on the door → ask_unlock(dungeon_id). Boss spawns
 ## holding its key only if boss_has_key(key). Boss dies → drop_key(key, pos). Door looks follow door_changed / is_open().
+## Exit gate built → add_gate(dungeon_id, lever_pos). E on the lever → ask_pull_lever(dungeon_id). Looks: gate_changed / gate_open().
 
 signal door_changed(dungeon_id: String, open: bool)
+signal gate_changed(dungeon_id: String, open: bool)
 
 ## Medium dungeons get the iron key picture, big ones the copper one (both our own models, recoloured later).
 const KEYS := {
@@ -33,6 +39,7 @@ const KEEP_AWAY := 60.0
 
 var auth: GameAuthority
 var doors := {}  ## dungeon id -> door position (registered each time a dungeon is built; not saved)
+var gates := {}  ## dungeon id -> the exit gate's lever position (inside, behind the gate)
 var _timer := 0.0
 
 
@@ -134,11 +141,64 @@ func _ev_door(dungeon_id: String, opened: Array) -> void:
 	door_changed.emit(dungeon_id, is_open(dungeon_id))
 
 
-# ================================================================== the key goes back to its boss
+# ================================================================== the exit gate (lever only on the inside)
+
+func add_gate(dungeon_id: String, lever_pos: Vector3) -> void:
+	gates[dungeon_id] = lever_pos
+
+
+func gate_open(dungeon_id: String) -> bool:
+	return auth.world_state.get("dungeon_gates", {}).has(dungeon_id)
+
+
+func ask_pull_lever(dungeon_id: String) -> void:
+	if auth.is_host():
+		auth.tell(auth.local_peer_id(), request_pull_lever(auth.local_peer_id(), dungeon_id))
+	else:
+		_rpc_pull_lever.rpc_id(1, dungeon_id)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_pull_lever(dungeon_id: String) -> void:
+	if auth.is_host():
+		var peer := multiplayer.get_remote_sender_id()
+		auth.tell(peer, request_pull_lever(peer, dungeon_id))
+
+
+## Host: the lever opens the exit gate. Returns the line for their screen.
+func request_pull_lever(peer_id: int, dungeon_id: String) -> String:
+	var ps := auth.get_player(peer_id)
+	if ps == null or not gates.has(dungeon_id):
+		return ""
+	if ps.node.global_position.distance_to(gates[dungeon_id]) > REACH + 1.0:
+		return "Too far away."
+	if gate_open(dungeon_id):
+		return "The gate is already open."
+	_ev_gate.rpc(dungeon_id, float(auth.world_state.get("played", 0.0)))
+	return "The gate grinds open. The way out!"
+
+
+## opened_at < 0: the gate closes.
+@rpc("authority", "call_local", "reliable")
+func _ev_gate(dungeon_id: String, opened_at: float) -> void:
+	var all: Dictionary = auth.world_state.get("dungeon_gates", {}).duplicate()
+	if opened_at < 0.0:
+		all.erase(dungeon_id)
+	else:
+		all[dungeon_id] = opened_at
+	auth.world_state.dungeon_gates = all
+	gate_changed.emit(dungeon_id, opened_at >= 0.0)
+
+
+# ================================================================== the key goes back to its boss, the gate closes
 
 ## Host, every DungeonLoot.CHECK_EVERY seconds.
 func tick() -> void:
 	var played: float = auth.world_state.get("played", 0.0)
+	var open_gates: Dictionary = auth.world_state.get("dungeon_gates", {})
+	for d in open_gates.keys():
+		if played - float(open_gates[d]) >= DungeonLoot.REFILL and not (gates.has(d) and _someone_near(gates[d])):
+			_ev_gate.rpc(d, -1.0)
 	var out: Dictionary = auth.world_state.get("dungeon_keys", {})
 	for key in out.keys():
 		var d: String = KEYS[key].dungeon

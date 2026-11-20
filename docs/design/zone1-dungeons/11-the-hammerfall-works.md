@@ -6,17 +6,17 @@ A great hall round a broken giant anvil, with a wing going up and a wing going d
 
 | | |
 |---|---|
-| Size | big, 30 spaces, 3 level(s), 20-25 min |
+| Size | big, 31 spaces, 3 level(s), 20-25 min |
 | Built from | Hearthbrick clay brick (`clay_brick`), inside old dwarf stone (can't be dug) |
 | Floor to ceiling | 6 m in rooms, more in tall halls |
 | Teaches one of | Copper Mace, Two-handed Copper Axe, Two-handed Copper Mace (shuffled per world) |
-| Way out | A lift in the Masterwork Hall runs you back to the Works Gate. |
+| Way out | A lift behind the Masterwork Treasury runs to the barred gate in the Works Gate room. A lever opens it from inside. |
 
 ## Rooms (sizes in metres on the 2 m grid, width x length)
 
 | # | Space | Level | Size | What's there | Has |
 |---|---|---|---|---|---|
-| 1 | Works Gate | Level 2 (the works) | 16 x 12 | Entrance: a round brick gate with a hammer carved over it. |  |
+| 1 | Works Gate | Level 2 (the works) | 16 x 12 | Entrance: a round brick gate with a hammer carved over it. On the right, a barred gate with no handle on this side: the way out, opened later from the far side. | gate: exit gate (lever on the far side) |
 | 2 | Yard | Level 2 (the works) | 16 x 12 | Old carts and crates. Bone Thralls. | mob: thralls |
 | 3 | Clerk's Office | Level 2 (the works) | 8 x 8 | Ledgers and a chest. A loose floor stone hides a buried chest. | loot: chest; hid: buried chest |
 | 4 | Toolroom | Level 2 (the works) | 8 x 8 | Bone Wardens among the tool racks. | mob: wardens; loot: chest |
@@ -34,7 +34,7 @@ A great hall round a broken giant anvil, with a wing going up and a wing going d
 | 16 | Smelter's Hall | Level 1 (undercroft, 8 m down) | 16 x 12 | The Smeltwarden holds the Hammer Key. A portcullis slams down behind you. Clue: gate grooves in the doorway. Safe: wedge it, or win the fight. | boss: Smeltwarden; key: Hammer Key; trap: portcullis |
 | 17 | Slag Cellar | Level 1 (undercroft, 8 m down) | 8 x 8 | A wire fires a crossbow; behind a boulder, a chest on spike holes. Clue: a shiny wire, holes in the floor. Safe: step over the wire; shoot the chest first. | hid: hidden boulder; loot: chest; trap: tripwire crossbow; trap: trapped chest |
 | 18 | Rest Shrine | Level 1 (undercroft, 8 m down) | 8 x 8 | A healing shrine. | heal: healing shrine |
-| 19 | Twin-Lock Gate | Level 2 (the works) | 8 x 8 | Both keys open it. | lock: two locks |
+| 19 | Broken Gate | Level 2 (the works) | 8 x 8 | An old gate, both its locks smashed. It stands open. |  |
 | 20 | Press Hall | Level 2 (the works) | 16 x 12 | A great press that crushes outright. Clue: dented floor and a slow hiss. Safe: bait it (step on the plate, jump back) and run under while it rises. | **deadly: great press** |
 | 21 | Proving Ground | Level 2 (the works) | 16 x 12 | Where blades were tested. The big fight: Wardens and Creepers. | mob: wardens; mob: creepers |
 | 22 | Ore Cart Ramp (corridor) | Level 2 (the works) | 4 x 14 | Three rails down a steep ramp. Ore carts come down each one in a pattern, faster than in Lampwick Drift. A hit throws you like a rag doll. Clue: each rail rattles before its cart. Safe: learn the pattern and stand in the empty lane. | **deadly: triple ore carts** |
@@ -43,11 +43,12 @@ A great hall round a broken giant anvil, with a wing going up and a wing going d
 | 25 | Pattern Room | Level 2 (the works) | 8 x 8 | Rune Callers among the casting patterns. A chest. | mob: rune callers; loot: chest |
 | 26 | Antechamber | Level 2 (the works) | 8 x 8 | Bone Thralls in rows. | mob: thralls |
 | 27 | Quiet Forge | Level 2 (the works) | 8 x 8 | A healing shrine before the last fight. | heal: healing shrine |
-| 28 | Masterwork Hall | Level 2 (the works) | 16 x 16 | The Masterwork Guard and their leader. The recipe stand. | mob: pack + leader; page: recipe stand; loot: big chest |
-| 29 | Exit Lift (corridor) | Level 2 (the works) | 4 x 14 | A lift that runs back to the Works Gate. | out: lift to room 1 |
+| 28 | Masterwork Hall | Level 2 (the works) | 16 x 16 | The Masterwork Guard and their leader. At the back, a round door with two locks: one needs the Gear Key, one the Hammer Key. | mob: pack + leader; lock: two locks |
+| 29 | Exit Lift (corridor) | Level 2 (the works) | 4 x 14 | A lift that runs up. It ends behind the barred gate in the Works Gate room: pull the lever to open it, and you're at the exit. | out: lift to room 1 |
 | 30 | Smithy Nook | Level 2 (the works) | 4 x 4 | A tiny forge behind the Toolroom, with a chest. | loot: chest |
+| 31 | Masterwork Treasury | Level 2 (the works) | 8 x 8 | The works' finest pieces. The recipe stand and the big chest. | page: recipe stand; loot: big chest |
 
-Paths: 1-2, 2-3, 2-4, 4-30, 2-5, 5-6, 6-7, 7-8, 8-9, 9-10, 9-11, 11-12, 6-13, 13-14, 14-15, 15-16, 15-17, 14-18, 6-19, 19-20, 20-21, 21-22, 22-23, 22-24, 24-25, 24-26, 26-27, 26-28, 28-29, 29 → 1 (way out).
+Paths: 1-2, 2-3, 2-4, 4-30, 2-5, 5-6, 6-7, 7-8, 8-9, 9-10, 9-11, 11-12, 6-13, 13-14, 14-15, 15-16, 15-17, 14-18, 6-19, 19-20, 20-21, 21-22, 22-23, 22-24, 24-25, 24-26, 26-27, 26-28, 31-29, 29 → 1 (way out), 28-31.
 
 ## Creatures
 
@@ -73,6 +74,7 @@ Paths: 1-2, 2-3, 2-4, 4-30, 2-5, 5-6, 6-7, 7-8, 8-9, 9-10, 9-11, 11-12, 6-13, 13
 |---|---|---|
 | Hearthbrick clay brick building pieces (walls, floors, round doorways, stairs, pillars, beams, railings, ladders) | exists | |
 | dungeon_entrance (stone/brick version) | new | the round door in the cave wall |
+| gate_round + lever (exit gate: lever only on the inside) | exists |  |
 | floor_loose_stone + chest | exists |  |
 | trap_swing_anvil | new | ragdoll on hit |
 | trap_push_wall (stone/brick) + floor scrape | new |  |
@@ -87,12 +89,12 @@ Paths: 1-2, 2-3, 2-4, 4-30, 2-5, 5-6, 6-7, 7-8, 8-9, 9-10, 9-11, 11-12, 6-13, 13
 | floor_spike_holes | new | shoot the chest first: the spikes fire and pull back |
 | trap_spikes | exists |  |
 | healing shrine | check | Mossgate Hold has one: check the PC's kit |
-| door_locked_round (stone/brick, with a keyhole) | new |  |
 | trap_press | new |  |
 | ore_cart (forge mine cart) | new |  |
 | rail_lanes_3 + cart_stop + cart_release | new | 3 rails side by side, carts in a pattern; ragdoll on hit |
 | (building pieces only) | exists |  |
 | trap_pendulum_blade + ceiling slot | new |  |
-| recipe_stand + recipe_scroll | exists |  |
+| door_locked_round (stone/brick, with a keyhole) | new |  |
 | lift platform + winch | new |  |
+| recipe_stand + recipe_scroll | exists |  |
 | chests (chest_loot, chest_small), furniture, crystal torches, hanging_lantern | exists | |

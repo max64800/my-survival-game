@@ -49,7 +49,9 @@ About 20 new models in all. The small wooden dungeons need almost nothing new (o
 2. **Building from a plan file** like `mossgate_hold.json` for each dungeon, plus a script per dungeon (like
    `tools/dungeons/make_mossgate.py`).
 3. **Keys and locked doors:** a key item per dungeon, a door that opens only for it, shared in co-op (anyone in the
-   group with the key opens it), the key goes back into the mini boss when the dungeon refills.
+   group with the key opens it), the key goes back into the mini boss when the dungeon refills. Built on the Mac (Nov 20): `src/world/dungeon_keys.gd`.
+   **Owner, Nov 20:** the mini boss waits near the end, its key opens the treasure room (recipe stand + big chest), and
+   the way out ends at a barred gate in the first room, opened by a lever from inside (closes again on refill).
 4. **Mini boss fights:** health bar with the name, one special move each.
 5. **Trap code** (request → host decides → everyone sees, like every action):
    every trap in traps-and-variety.md (triple carts, push wall, swinging boulder/anvil/crucible, rolling boulder/anvil,

@@ -10,7 +10,7 @@ This file is only a summary from the journal so the 12 can be compared; the PC's
 | Size | small, 15 spaces (11 rooms, 4 corridors), about 84 x 56 m |
 | Built from | root wood (Delver's Shack pieces) inside old dwarf stone (`Mat.DWARF`, can't be dug) |
 | Teaches one of | Copper Axe, Crossbow, Spear, Copper-shod Boots (shuffled per world) |
-| Way out | after the Loot Room, a one-way way out drops you back into the entrance room |
+| Way out | after the Loot Room, a one-way way out leads to a barred gate in the Gate Hall (seen on the way in, on the right). It has no handle on the outside: a lever on the inside opens it (owner, Nov 20). It closes again when the dungeon refills. |
 
 ## Main path
 Gate Hall → Pillar Hall (breaking floor over a 4 m spike pit) → Chasm Bridge (spikes, instant death, beetles around it)

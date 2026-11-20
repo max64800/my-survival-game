@@ -30,8 +30,10 @@ function size(r, z, d) {
     return z.tunnel;
   }
   if (/Bridge/.test(n)) return "4 x 14 (bridge), gap 10 deep";
+  const has = k => r.tags.some(t => t.startsWith(k + ":"));
+  if (has("lock") && (has("boss") || has("mob"))) return z.end;  // the boss hall with the treasure door (owner, Nov 20)
   if (/Niche|Alcove|Vault|Stash|Hoard|Nook|Crib|Pantry|Loft$/.test(n)) return "4 x 4";
-  if (r.tags.some(t => t.startsWith("page:"))) return z.end;
+  if (has("page")) return has("mob") ? z.end : z.room;  // a treasure room behind the key door is a normal room
   if (/Hall|Gallery|Ground|Floor|Yard|Heart|Mint|Works|Dock|Row|Pits|Barrows?$|Ring/.test(n)) return z.hall;
   return z.room;
 }
@@ -78,6 +80,7 @@ function models(tag, sizeKey) {
   if (/molten/.test(v)) add(/moulds/.test(v) ? "mould_lid (+ cracked) over molten metal" : "molten_channel (stone channel + glowing metal surface)", "new", "never spills: works like spikes");
   if (/great press/.test(v)) add("trap_press", "new");
   if (/chasm drop/.test(v)) add("bridge_chain_section (drops and rises)", "new");
+  if (k === "gate") add("gate_round + lever (exit gate: lever only on the inside)", "exists");
   if (k === "out") {
     if (/lift/.test(v)) add("lift platform + winch", "new");
     else if (/slide/.test(v)) add(stone ? "stone slide (building pieces)" : "rope slide", stone ? "exists" : "new");

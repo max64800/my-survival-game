@@ -53,7 +53,7 @@ td.n { font-variant-numeric: tabular-nums; color: var(--muted); width: 1.5em; }
 <main>
   <div class="intro">
     <h1>Small wooden dungeons</h1>
-    <p>Draft for dungeons #2, #3 and #4 of zone 1. They join Mossgate Hold (#1, being built on the PC). Each is now about Mossgate's size (13-14 spaces, 8-10 minutes), with at least one deadly trap, 4-5 traps in all and 3 hidden things, and built from root wood inside rock you can't dig. Each one teaches one of Copper Axe, Crossbow, Spear and Copper-shod Boots (shuffled per world). No water anywhere.</p>
+    <p>Draft for dungeons #2, #3 and #4 of zone 1. They join Mossgate Hold (#1, being built on the PC). Each is now about Mossgate's size (13-14 spaces, 8-10 minutes), with at least one deadly trap, 4-5 traps in all and 3 hidden things, and built from root wood inside rock you can't dig. Each one teaches one of Copper Axe, Crossbow, Spear and Copper-shod Boots (shuffled per world). The way out ends at a barred gate in the first room that only opens from inside, with a lever (owner, Nov 20). No water anywhere.</p>
     <p class="muted">Each picture is a side view (each level has its main path on top and side rooms below it) cut through the rock. Higher up the picture means higher in the cave.</p>
   </div>
 
@@ -89,7 +89,7 @@ const D = [
     facts: ["1 level", "13 spaces", "~8-10 min", "long and twisty", "deadly: the triple cart tunnel"],
     layers: ["Level 1"],
     rooms: [
-      {n:1, c:0, name:"Lamp Room", what:"Entrance. A rail cart on old tracks, the first lamp to light.", tags:["loot:chest"]},
+      {n:1, c:0, name:"Lamp Room", what:"Entrance. A rail cart on old tracks, the first lamp to light. On the right, a barred gate with no handle on this side: the way out, opened later from the far side.", tags:["loot:chest","gate:exit gate (lever on the far side)"]},
       {n:2, c:1, k:1, name:"Rail Tunnel", what:"Long and narrow. A thin wire across the floor fires a hidden crossbow. Clue: a shiny wire at ankle height. Safe: step over it, or cut it.", tags:["trap:tripwire crossbow"]},
       {n:3, c:2, name:"Cart Junction", what:"Three rails side by side, sloping down. Carts come rattling down each rail at different times in a pattern: dodge the middle one, step into the middle to dodge the left one, stay there for the right one. A hit throws you like a rag doll. Clue: each rail rattles just before its cart. Safe: learn the pattern and stand in the empty lane.", tags:["mob:tunnel rats","deadly:triple carts"]},
       {n:4, c:2, s:1, name:"Tool Store", what:"Side room. One floor stone is loose: a buried chest under it.", tags:["loot:chest","hid:buried chest"]},
@@ -101,17 +101,17 @@ const D = [
       {n:10, c:7, k:1, name:"Prop Corridor", what:"Old props hold up the roof. Tunnel Rats in the dark.", tags:["mob:tunnel rats"]},
       {n:11, c:7, s:1, name:"Miners' Rest", what:"Side room with a healing shrine and a chest.", tags:["heal:healing shrine","loot:chest"]},
       {n:12, c:8, name:"Foreman's Office", what:"The Foreman and his Lost Miners. The recipe stand.", tags:["mob:Foreman + miners","page:recipe stand"]},
-      {n:13, c:8, s:1, k:1, name:"Back Rails", what:"A lever opens a gate onto rails that run back to the Lamp Room.", tags:["out:gate to room 1"]},
+      {n:13, c:8, s:1, k:1, name:"Back Rails", what:"Rails run from here back to the barred gate in the Lamp Room. Pull the lever to open it, and you're at the exit.", tags:["out:gate to room 1"]},
     ],
     links: [[1,2],[2,3],[3,4],[3,5],[5,6],[6,7],[6,8],[8,9],[9,10],[10,11],[10,12],[12,13],[13,1,"out"]],
-    outNote: "The lever in Back Rails opens a gate, and the rails run you back into the Lamp Room.",
+    outNote: "Rails in Back Rails run back to the barred gate in the Lamp Room. A lever opens it from inside.",
   },
   {
     name: "Old Pell's Diggings", idea: "A miner's hut at the top, then a shaft straight down into what he dug out below. This one is about going down.",
     facts: ["2 levels", "13 spaces", "~8-10 min", "goes down a ladder shaft", "deadly: the push wall"],
     layers: ["Level 1 (hut)", "Level 2 (6 m down)"],
     rooms: [
-      {n:1, c:0, l:0, name:"Pell's Hut", what:"Entrance. Bed, table, a chest, a trapdoor in the floor.", tags:["loot:chest"]},
+      {n:1, c:0, l:0, name:"Pell's Hut", what:"Entrance. Bed, table, a chest, a trapdoor in the floor. On the right, a barred gate with no handle on this side: the way out, opened later from the far side.", tags:["loot:chest","gate:exit gate (lever on the far side)"]},
       {n:2, c:1, l:0, name:"Winch Shed", what:"Over the shaft. A thin wire fires a hidden crossbow. Clue: a shiny wire at ankle height. Safe: step over it, or cut it.", tags:["trap:tripwire crossbow"]},
       {n:3, c:1, l:0, s:1, name:"Pantry", what:"Shelves of old jars. The back wall is cracked: Pell's stash is behind it.", tags:["hid:cracked wall","loot:stash"]},
       {n:4, c:2, l:1, k:1, name:"The Shaft", what:"A long ladder down, with Tunnel Rats in the side holes.", tags:["mob:tunnel rats"]},
@@ -123,17 +123,17 @@ const D = [
       {n:10, c:6, l:1, name:"Rotten Gallery", what:"A wall block slams out and shoves you onto rotten boards over a spike pit. Clue: scrape marks on the floor and a gap round the block. Safe: walk along the block's own wall, or step on its plate and jump back to set it off.", tags:["deadly:push wall + pit + spikes"]},
       {n:11, c:7, l:1, k:1, name:"Deep Seam", what:"A narrow seam with a crusher. Clue: a heavy thud and grooves in the floor. Safe: watch its rhythm and run while it rises.", tags:["trap:crusher"]},
       {n:12, c:7, l:1, s:1, name:"Miner's Shrine", what:"A healing shrine. A boulder in the wall hides a niche with a chest.", tags:["heal:healing shrine","hid:hidden boulder"]},
-      {n:13, c:8, l:1, name:"Pell's Last Dig", what:"The Foreman and his Lost Miners. The recipe stand.", tags:["mob:Foreman + miners","page:recipe stand","out:rope lift to room 1"]},
+      {n:13, c:8, l:1, name:"Pell's Last Dig", what:"The Foreman and his Lost Miners. The recipe stand. A rope lift pulls you up to the barred gate in Pell's Hut: pull the lever to open it.", tags:["mob:Foreman + miners","page:recipe stand","out:rope lift to room 1"]},
     ],
     links: [[1,2],[2,3],[2,4],[4,5],[5,6],[6,7],[7,8],[8,9],[7,10],[10,11],[11,12],[11,13],[13,1,"out"]],
-    outNote: "A rope lift in Pell's Last Dig pulls you back up into Pell's Hut.",
+    outNote: "A rope lift in Pell's Last Dig pulls you up to the barred gate in Pell's Hut. A lever opens it from inside.",
   },
   {
     name: "Mossprop Workings", idea: "Wooden walkways and ladders bolted up the wall of one tall cave. This one is about climbing, with a long drop always beside you.",
     facts: ["3 levels", "14 spaces", "~8-10 min", "climbs up a cliff", "deadly: the swinging boulder bridge"],
     layers: ["Level 3 (10 m up)", "Level 2 (5 m up)", "Level 1 (cave floor)"],
     rooms: [
-      {n:1, c:0, l:2, name:"Base Camp", what:"Entrance. An old tent and a chest at the foot of the cliff.", tags:["loot:chest"]},
+      {n:1, c:0, l:2, name:"Base Camp", what:"Entrance. An old tent and a chest at the foot of the cliff. On the right, a barred gate with no handle on this side: the way out, opened later from the far side.", tags:["loot:chest","gate:exit gate (lever on the far side)"]},
       {n:2, c:1, l:2, k:1, name:"Lower Walkway", what:"A broken railing. Lost Miners shove you off: a short fall, not deadly.", tags:["mob:lost miners"]},
       {n:3, c:2, l:2, name:"Rockfall Ledge", what:"Stalactites fall when you step onto the ledge. A ladder goes up. Clue: cracks and trickling dust. Safe: shoot them down with a crossbow first, or run through fast.", tags:["trap:falling stalactites"]},
       {n:4, c:2, l:2, s:1, name:"Tool Niche", what:"Behind a boulder at the foot of the ladder: a chest of old tools, on spike holes. Clue: holes in the floor round it. Safe: shoot the chest first: the spikes fire and pull back.", tags:["hid:hidden boulder","loot:chest","trap:trapped chest"]},
@@ -146,10 +146,10 @@ const D = [
       {n:11, c:5, l:0, k:1, name:"Upper Ladder", what:"The last long climb.", tags:[]},
       {n:12, c:6, l:0, k:1, name:"Crusher Gallery", what:"A narrow passage with a crusher. Clue: a heavy thud and grooves in the floor. Safe: watch its rhythm and run while it rises.", tags:["trap:crusher"]},
       {n:13, c:6, l:0, s:1, name:"Bat Roost", what:"Side cave full of Tunnel Rats. A loose floor stone hides a buried chest.", tags:["mob:tunnel rats","hid:buried chest"]},
-      {n:14, c:7, l:0, name:"Top Hall", what:"Tunnel Rats, then the Foreman and his Lost Miners. The recipe stand.", tags:["mob:Foreman + miners","page:recipe stand","out:rope slide to room 1"]},
+      {n:14, c:7, l:0, name:"Top Hall", what:"Tunnel Rats, then the Foreman and his Lost Miners. The recipe stand. A rope slide drops you to the barred gate at Base Camp: pull the lever to open it.", tags:["mob:Foreman + miners","page:recipe stand","out:rope slide to room 1"]},
     ],
     links: [[1,2],[2,3],[3,4],[3,5],[5,6],[6,7],[5,8],[8,9],[9,10],[9,11],[11,12],[12,13],[12,14],[14,1,"out"]],
-    outNote: "From the Top Hall, a rope slide takes you straight down onto Base Camp.",
+    outNote: "From the Top Hall, a rope slide drops you to the barred gate at Base Camp. A lever opens it from inside.",
   },
 ];
 

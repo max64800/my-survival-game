@@ -10,13 +10,13 @@ A miner's hut at the top, then a shaft straight down into what he dug out below.
 | Built from | root wood (Delver's Shack pieces, `plank_root`), inside old dwarf stone (can't be dug) |
 | Floor to ceiling | 4 m in rooms, more in tall halls |
 | Teaches one of | Copper Axe, Crossbow, Spear, Copper-shod Boots (shuffled per world) |
-| Way out | A rope lift in Pell's Last Dig pulls you back up into Pell's Hut. |
+| Way out | A rope lift in Pell's Last Dig pulls you up to the barred gate in Pell's Hut. A lever opens it from inside. |
 
 ## Rooms (sizes in metres on the 2 m grid, width x length)
 
 | # | Space | Level | Size | What's there | Has |
 |---|---|---|---|---|---|
-| 1 | Pell's Hut | Level 1 (hut) | 6 x 6 | Entrance. Bed, table, a chest, a trapdoor in the floor. | loot: chest |
+| 1 | Pell's Hut | Level 1 (hut) | 6 x 6 | Entrance. Bed, table, a chest, a trapdoor in the floor. On the right, a barred gate with no handle on this side: the way out, opened later from the far side. | loot: chest; gate: exit gate (lever on the far side) |
 | 2 | Winch Shed | Level 1 (hut) | 6 x 6 | Over the shaft. A thin wire fires a hidden crossbow. Clue: a shiny wire at ankle height. Safe: step over it, or cut it. | trap: tripwire crossbow |
 | 3 | Pantry | Level 1 (hut) | 4 x 4 | Shelves of old jars. The back wall is cracked: Pell's stash is behind it. | hid: cracked wall; loot: stash |
 | 4 | The Shaft (corridor) | Level 2 (6 m down) | 2 x 2 shaft, 7 m between levels | A long ladder down, with Tunnel Rats in the side holes. | mob: tunnel rats |
@@ -28,7 +28,7 @@ A miner's hut at the top, then a shaft straight down into what he dug out below.
 | 10 | Rotten Gallery | Level 2 (6 m down) | 10 x 8 | A wall block slams out and shoves you onto rotten boards over a spike pit. Clue: scrape marks on the floor and a gap round the block. Safe: walk along the block's own wall, or step on its plate and jump back to set it off. | **deadly: push wall + pit + spikes** |
 | 11 | Deep Seam (corridor) | Level 2 (6 m down) | 2 x 10 | A narrow seam with a crusher. Clue: a heavy thud and grooves in the floor. Safe: watch its rhythm and run while it rises. | trap: crusher |
 | 12 | Miner's Shrine | Level 2 (6 m down) | 6 x 6 | A healing shrine. A boulder in the wall hides a niche with a chest. | heal: healing shrine; hid: hidden boulder |
-| 13 | Pell's Last Dig | Level 2 (6 m down) | 10 x 10 | The Foreman and his Lost Miners. The recipe stand. | mob: Foreman + miners; page: recipe stand; out: rope lift to room 1 |
+| 13 | Pell's Last Dig | Level 2 (6 m down) | 10 x 10 | The Foreman and his Lost Miners. The recipe stand. A rope lift pulls you up to the barred gate in Pell's Hut: pull the lever to open it. | mob: Foreman + miners; page: recipe stand; out: rope lift to room 1 |
 
 Paths: 1-2, 2-3, 2-4, 4-5, 5-6, 6-7, 7-8, 8-9, 7-10, 10-11, 11-12, 11-13, 13 → 1 (way out).
 
@@ -52,6 +52,7 @@ Paths: 1-2, 2-3, 2-4, 4-5, 5-6, 6-7, 7-8, 8-9, 7-10, 10-11, 11-12, 11-13, 13 →
 |---|---|---|
 | root wood building pieces (walls, floors, round doorways, stairs, pillars, beams, railings, ladders) | exists | |
 | dungeon_entrance | exists | the round door in the cave wall |
+| gate_round + lever (exit gate: lever only on the inside) | exists |  |
 | trap_tripwire_crossbow (crossbow + wire + peg) | new |  |
 | wall_cracked / wall_broken | exists |  |
 | trap_spear_wall (wooden stakes) | new |  |

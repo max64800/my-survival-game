@@ -53,7 +53,7 @@ td.n { font-variant-numeric: tabular-nums; color: var(--muted); width: 1.5em; }
 <main>
   <div class="intro">
     <h1>Big clay dungeons</h1>
-    <p>Draft for dungeons #10 to #12 of zone 1: three old forge halls built from Hearthbrick clay brick. Each has about 30 spaces over 3 levels (20-25 minutes), keys and locked doors, mini bosses, 3 deadly traps and medieval forge traps: tipping braziers, swinging anvils, push walls, pendulum blades, a rolling anvil, the great press, 3-lane ore carts, and molten metal kept in stone channels so it can never spill. Each teaches one of Copper Mace, Two-handed Axe and Two-handed Mace (shuffled per world).</p>
+    <p>Draft for dungeons #10 to #12 of zone 1: three old forge halls built from Hearthbrick clay brick. Each has about 30 spaces over 3 levels (20-25 minutes), mini bosses near the end whose keys open the treasure room, 3 deadly traps and medieval forge traps: tipping braziers, swinging anvils, push walls, pendulum blades, a rolling anvil, the great press, 3-lane ore carts, and molten metal kept in stone channels so it can never spill. Each teaches one of Copper Mace, Two-handed Axe and Two-handed Mace (shuffled per world). Every one ends the same way (owner, Nov 20): beat the mini boss (Hammerfall: both), its key opens the treasure room (recipe stand + big chest), and a way out runs back to the barred gate you saw in the first room. A lever opens it from inside.</p>
     <p class="muted">Every trap has a clue you can see or hear, and a safe way through: time it, bait it and step back, or shoot its chain or switch with a crossbow. The table says how for each one.</p>
   </div>
 
@@ -63,7 +63,7 @@ td.n { font-variant-numeric: tabular-nums; color: var(--muted); width: 1.5em; }
     <div><b>Rune Caller</b>KayKit mage. Stays back and shoots glowing runes from balconies and ledges.</div>
     <div><b>Grave Creeper</b>KayKit rogue. Fast, sneaks round to hit you from behind.</div>
   </div>
-  <p class="muted">All four are dwarf-sized skeletons of the dwarves who once lived here, repainted in our style. The mini bosses and the leaders at the recipe stand are bigger, named versions.</p>
+  <p class="muted">All four are dwarf-sized skeletons of the dwarves who once lived here, repainted in our style. The mini bosses and the pack leaders are bigger, named versions.</p>
 
   <div class="legend">
     <span><i class="dot" style="background:var(--trap)"></i>Trap (hurts)</span>
@@ -92,12 +92,12 @@ const D = [
     facts: ["forge hall", "3 levels down", "30 spaces", "~20-25 min", "deadly: Quench Hall, Rolling Ingot Ramp, Crucible Bridge"],
     layers: ["Level 1 (workshops)", "Level 2 (cooling halls, 8 m down)", "Level 3 (deep furnace, 16 m down)"],
     rooms: [
-      {n:1, c:0, name:"Ember Gate", what:"Entrance: a round brick door, warm to the touch.", tags:[]},
+      {n:1, c:0, name:"Ember Gate", what:"Entrance: a round brick door, warm to the touch. On the right, a barred gate with no handle on this side: the way out, opened later from the far side.", tags:["gate:exit gate (lever on the far side)"]},
       {n:2, c:1, name:"Ash Hall", what:"Grey ash on everything. Bone Thralls.", tags:["mob:thralls","loot:chest"]},
       {n:3, c:2, k:1, name:"Soot Corridor", what:"Big bowls of hot coals hang on chains and tip over, spilling embers. Clue: glowing coals, creaking chains. Safe: shoot the chain so it tips early, then wait until the embers go dark.", tags:["trap:tipping brazier"]},
       {n:4, c:3, name:"Tool Hall", what:"Racks of old tools. Bone Wardens.", tags:["mob:wardens","loot:chest"]},
       {n:5, c:4, k:1, name:"Bellows Walk", what:"A wall block slams out and shoves you into the slag pit (it hurts, it doesn't kill). Clue: scrape marks, a gap round the block. Safe: walk along the block's own wall, or bait it.", tags:["trap:push wall"]},
-      {n:6, c:5, name:"Great Door", what:"A huge round brick door, locked: it needs the Forge Key.", tags:["lock:locked door"]},
+      {n:6, c:5, name:"Great Door", what:"A huge round brick door, broken off its hinges long ago.", tags:[]},
       {n:7, c:3, s:-1, name:"Apprentices' Dorm", what:"Grave Creepers in the bunks. A loose floor stone hides a buried chest.", tags:["mob:creepers","hid:buried chest"]},
       {n:8, c:4, s:-1, name:"Hidden Smithy", what:"Behind a cracked wall: a secret little forge and its chest.", tags:["hid:cracked wall","loot:vault chest"]},
       {n:9, c:1, s:1, name:"Coal Store", what:"Coal heaps. Bear jaws hide in the coal dust. Clue: a rusty glint. Safe: step round; a friend can pry one open. A boulder hides a chest.", tags:["hid:hidden boulder","loot:chest","trap:bear jaws"]},
@@ -106,7 +106,7 @@ const D = [
       {n:12, c:3, l:1, name:"Cooling Room", what:"Racks of cooled blades. Rune Callers on a gallery.", tags:["mob:rune callers"]},
       {n:13, c:4, l:1, k:1, name:"Hammer Row", what:"Anvils on chains swing across the path. Clue: grooves in the floor, chain creak. Safe: time them, or shoot a chain. A hit throws you like a rag doll.", tags:["trap:swinging anvil"]},
       {n:14, c:5, l:1, name:"Quench Hall", what:"A channel of molten metal across the floor, sunk in stone. Clue: the orange glow and heat haze. Safe: walk the narrow beams, or shoot the chain to drop a plank bridge.", tags:["deadly:molten channel"]},
-      {n:15, c:6, l:1, name:"Foreman's Office", what:"The Forge Foreman, a huge Bone Warden with a hammer, carries the Forge Key.", tags:["boss:Forge Foreman","key:Forge Key"]},
+      {n:15, c:6, l:1, name:"Foreman's Office", what:"The Forge Guard's leader, a big Bone Warden, and its pack.", tags:["mob:pack + leader"]},
       {n:16, c:5, l:1, s:-1, name:"Smelters' Rest", what:"A healing shrine.", tags:["heal:healing shrine"]},
       {n:17, c:5, s:1, k:1, name:"Back Stair", what:"A workers' stair back up to the Great Door.", tags:[]},
       {n:18, c:3, l:1, s:1, name:"Ore Sorting", what:"Sorting tables and a chest.", tags:["loot:chest","mob:creepers"]},
@@ -120,18 +120,19 @@ const D = [
       {n:26, c:10, l:2, name:"Slag Pits", what:"Pits of cold slag. Grave Creepers.", tags:["mob:creepers"]},
       {n:27, c:10, l:2, s:-1, name:"Master's Study", what:"A secret lever opens it. The master's chest sits on spike holes. Clue: holes in the floor. Safe: shoot the chest first.", tags:["hid:secret lever","loot:chest","trap:trapped chest"]},
       {n:28, c:10, l:2, s:1, name:"Shrine of the Anvil", what:"A healing shrine before the last fight.", tags:["heal:healing shrine"]},
-      {n:29, c:11, l:2, name:"Heart of Emberdeep", what:"The great furnace. The Forge Guard and their leader. The recipe stand.", tags:["mob:pack + leader","page:recipe stand","loot:big chest"]},
-      {n:30, c:11, l:2, s:1, k:1, name:"Ember Lift", what:"An old ore lift that rises all the way to the Ember Gate.", tags:["out:lift to room 1"]},
+      {n:29, c:11, l:2, name:"Heart of Emberdeep", what:"The great furnace. The Forge Foreman, a huge Bone Warden with a hammer, with the Forge Guard. It carries the Forge Key. Behind the furnace, a round brick door is locked: it needs the Forge Key.", tags:["boss:Forge Foreman","mob:pack","key:Forge Key","lock:locked door"]},
+      {n:30, c:11, l:2, s:1, k:1, name:"Ember Lift", what:"An old ore lift that rises all the way up. It ends behind the barred gate in the Ember Gate room: pull the lever to open it, and you're at the exit.", tags:["out:lift to room 1"]},
+      {n:31, c:11, l:2, s:-1, name:"Forge Treasury", what:"The forge's treasure room. The recipe stand and the big chest.", tags:["page:recipe stand","loot:big chest"]},
     ],
-    links: [[1,2],[2,3],[3,4],[4,5],[5,6],[4,7],[7,8],[2,9],[9,10],[10,11],[11,12],[12,13],[13,14],[14,15],[15,16],[16,17],[17,6],[12,18],[18,19],[6,20],[20,21],[21,22],[21,23],[23,24],[24,25],[25,26],[26,27],[26,28],[26,29],[29,30],[30,1,"out"]],
-    outNote: "An old ore lift in the Heart of Emberdeep carries you all the way up to the Ember Gate.",
+    links: [[1,2],[2,3],[3,4],[4,5],[5,6],[4,7],[7,8],[2,9],[9,10],[10,11],[11,12],[12,13],[13,14],[14,15],[15,16],[16,17],[17,6],[12,18],[18,19],[6,20],[20,21],[21,22],[21,23],[23,24],[24,25],[25,26],[26,27],[26,28],[26,29],[31,30],[30,1,"out"],[29,31]],
+    outNote: "An old ore lift behind the Forge Treasury rises to the barred gate in the Ember Gate room. A lever opens it from inside.",
   },
   {
     name: "The Hammerfall Works", idea: "A great hall round a broken giant anvil, with a wing going up and a wing going down. Each wing's mini boss holds half of the key to the twin-locked gate.",
     facts: ["forge hall", "3 levels (hub)", "30 spaces", "~20-25 min", "2 mini bosses", "deadly: Molten Channel, Press Hall, Ore Cart Ramp"],
     layers: ["Level 3 (gear galleries, 8 m up)", "Level 2 (the works)", "Level 1 (undercroft, 8 m down)"],
     rooms: [
-      {n:1, c:0, l:1, name:"Works Gate", what:"Entrance: a round brick gate with a hammer carved over it.", tags:[]},
+      {n:1, c:0, l:1, name:"Works Gate", what:"Entrance: a round brick gate with a hammer carved over it. On the right, a barred gate with no handle on this side: the way out, opened later from the far side.", tags:["gate:exit gate (lever on the far side)"]},
       {n:2, c:1, l:1, name:"Yard", what:"Old carts and crates. Bone Thralls.", tags:["mob:thralls"]},
       {n:3, c:1, l:1, s:-1, name:"Clerk's Office", what:"Ledgers and a chest. A loose floor stone hides a buried chest.", tags:["loot:chest","hid:buried chest"]},
       {n:4, c:1, l:1, s:1, name:"Toolroom", what:"Bone Wardens among the tool racks.", tags:["mob:wardens","loot:chest"]},
@@ -149,7 +150,7 @@ const D = [
       {n:16, c:6, l:2, name:"Smelter's Hall", what:"The Smeltwarden holds the Hammer Key. A portcullis slams down behind you. Clue: gate grooves in the doorway. Safe: wedge it, or win the fight.", tags:["boss:Smeltwarden","key:Hammer Key","trap:portcullis"]},
       {n:17, c:5, l:2, s:1, name:"Slag Cellar", what:"A wire fires a crossbow; behind a boulder, a chest on spike holes. Clue: a shiny wire, holes in the floor. Safe: step over the wire; shoot the chest first.", tags:["hid:hidden boulder","loot:chest","trap:tripwire crossbow","trap:trapped chest"]},
       {n:18, c:4, l:2, s:1, name:"Rest Shrine", what:"A healing shrine.", tags:["heal:healing shrine"]},
-      {n:19, c:4, l:1, name:"Twin-Lock Gate", what:"Both keys open it.", tags:["lock:two locks"]},
+      {n:19, c:4, l:1, name:"Broken Gate", what:"An old gate, both its locks smashed. It stands open.", tags:[]},
       {n:20, c:5, l:1, name:"Press Hall", what:"A great press that crushes outright. Clue: dented floor and a slow hiss. Safe: bait it (step on the plate, jump back) and run under while it rises.", tags:["deadly:great press"]},
       {n:21, c:6, l:1, name:"Proving Ground", what:"Where blades were tested. The big fight: Wardens and Creepers.", tags:["mob:wardens","mob:creepers"]},
       {n:22, c:7, l:1, k:1, name:"Ore Cart Ramp", what:"Three rails down a steep ramp. Ore carts come down each one in a pattern, faster than in Lampwick Drift. A hit throws you like a rag doll. Clue: each rail rattles before its cart. Safe: learn the pattern and stand in the empty lane.", tags:["deadly:triple ore carts"]},
@@ -158,19 +159,20 @@ const D = [
       {n:25, c:8, l:1, s:1, name:"Pattern Room", what:"Rune Callers among the casting patterns. A chest.", tags:["mob:rune callers","loot:chest"]},
       {n:26, c:9, l:1, name:"Antechamber", what:"Bone Thralls in rows.", tags:["mob:thralls"]},
       {n:27, c:9, l:1, s:-1, name:"Quiet Forge", what:"A healing shrine before the last fight.", tags:["heal:healing shrine"]},
-      {n:28, c:10, l:1, name:"Masterwork Hall", what:"The Masterwork Guard and their leader. The recipe stand.", tags:["mob:pack + leader","page:recipe stand","loot:big chest"]},
-      {n:29, c:10, l:1, s:1, k:1, name:"Exit Lift", what:"A lift that runs back to the Works Gate.", tags:["out:lift to room 1"]},
+      {n:28, c:10, l:1, name:"Masterwork Hall", what:"The Masterwork Guard and their leader. At the back, a round door with two locks: one needs the Gear Key, one the Hammer Key.", tags:["mob:pack + leader","lock:two locks"]},
+      {n:29, c:10, l:1, s:1, k:1, name:"Exit Lift", what:"A lift that runs up. It ends behind the barred gate in the Works Gate room: pull the lever to open it, and you're at the exit.", tags:["out:lift to room 1"]},
       {n:30, c:2, l:1, s:1, name:"Smithy Nook", what:"A tiny forge behind the Toolroom, with a chest.", tags:["loot:chest"]},
+      {n:31, c:10, l:1, s:-1, name:"Masterwork Treasury", what:"The works' finest pieces. The recipe stand and the big chest.", tags:["page:recipe stand","loot:big chest"]},
     ],
-    links: [[1,2],[2,3],[2,4],[4,30],[2,5],[5,6],[6,7],[7,8],[8,9],[9,10],[9,11],[11,12],[6,13],[13,14],[14,15],[15,16],[15,17],[14,18],[6,19],[19,20],[20,21],[21,22],[22,23],[22,24],[24,25],[24,26],[26,27],[26,28],[28,29],[29,1,"out"]],
-    outNote: "A lift in the Masterwork Hall runs you back to the Works Gate.",
+    links: [[1,2],[2,3],[2,4],[4,30],[2,5],[5,6],[6,7],[7,8],[8,9],[9,10],[9,11],[11,12],[6,13],[13,14],[14,15],[15,16],[15,17],[14,18],[6,19],[19,20],[20,21],[21,22],[22,23],[22,24],[24,25],[24,26],[26,27],[26,28],[31,29],[29,1,"out"],[28,31]],
+    outNote: "A lift behind the Masterwork Treasury runs to the barred gate in the Works Gate room. A lever opens it from inside.",
   },
   {
     name: "Cinderhold Foundry", idea: "A foundry on both sides of one huge chasm. You climb up through it, crossing the chasm again and again on brick bridges.",
     facts: ["foundry", "3 levels up", "28 spaces", "~20-25 min", "deadly: First Bridge, Casting Floor, Chain Bridge"],
     layers: ["Level 3 (top gantries, 12 m up)", "Level 2 (crucible halls, 6 m up)", "Level 1 (ore docks)"],
     rooms: [
-      {n:1, c:0, l:2, name:"Cinder Gate", what:"Entrance: a round brick door, black with old smoke.", tags:[]},
+      {n:1, c:0, l:2, name:"Cinder Gate", what:"Entrance: a round brick door, black with old smoke. On the right, a barred gate with no handle on this side: the way out, opened later from the far side.", tags:["gate:exit gate (lever on the far side)"]},
       {n:2, c:1, l:2, name:"Ore Dock", what:"Ore carts on rails. Bone Thralls.", tags:["mob:thralls","loot:chest"]},
       {n:3, c:1, l:2, s:-1, name:"Ore Sorters", what:"Sorting tables. Grave Creepers.", tags:["mob:creepers"]},
       {n:4, c:1, l:2, s:1, name:"Tool Crib", what:"A small store with a chest.", tags:["loot:chest"]},
@@ -185,9 +187,9 @@ const D = [
       {n:13, c:6, l:1, s:-1, name:"Rest Shrine", what:"A healing shrine.", tags:["heal:healing shrine"]},
       {n:14, c:6, l:1, s:1, name:"Pattern Store", what:"Casting patterns and a chest. One wall is cracked.", tags:["loot:chest","hid:cracked wall"]},
       {n:15, c:5, l:1, s:1, name:"Pattern Vault", what:"Behind the cracked wall: a hidden chest.", tags:["loot:vault chest"]},
-      {n:16, c:7, l:1, name:"Crucible Hall", what:"The Cinder Warden holds the key. A portcullis slams down behind you. Clue: gate grooves in the doorway. Safe: wedge it, or win the fight.", tags:["boss:Cinder Warden","key:Foundry Key","trap:portcullis"]},
+      {n:16, c:7, l:1, name:"Crucible Hall", what:"The Foundry Guard's leader and its pack. A portcullis slams down behind you. Clue: gate grooves in the doorway. Safe: wedge it, or win the fight.", tags:["mob:pack + leader","trap:portcullis"]},
       {n:17, c:7, l:1, s:1, name:"Casting Floor", what:"Moulds full of molten metal under iron lids; some lids are cracked. Clue: glow through the cracks. Safe: stay on the iron walkway.", tags:["deadly:molten moulds"]},
-      {n:18, c:8, l:1, name:"Lift Gate", what:"Locked: it needs the Foundry Key.", tags:["lock:locked gate"]},
+      {n:18, c:8, l:1, name:"Lift Gate", what:"An old lift gate, jammed open long ago.", tags:[]},
       {n:19, c:8, l:0, s:1, k:1, name:"Lift Shaft", what:"Up to the top gantries.", tags:[]},
       {n:20, c:8, l:0, s:-1, name:"Gantry Alcove", what:"A loose panel hides a chest.", tags:["hid:loose panel","loot:chest"]},
       {n:21, c:8, l:0, name:"Upper Gantry", what:"A wall block slams out and shoves you off the gantry to the level below (hurts). Clue: scrape marks. Safe: walk along its own wall, or bait it.", tags:["trap:push wall"]},
@@ -196,11 +198,12 @@ const D = [
       {n:24, c:6, l:0, name:"Chain Bridge", what:"A section drops when you step on its loose plate. Clue: a cracked plate. Safe: bait it, step back, wait for it to rise, run.", tags:["deadly:chasm drop"]},
       {n:25, c:5, l:0, name:"Tapping Hall", what:"Thralls and Creepers. Coal braziers tip over on chains. Clue: glowing coals. Safe: shoot the chain to tip it early.", tags:["trap:tipping brazier","mob:thralls","mob:creepers"]},
       {n:26, c:5, l:0, s:-1, name:"Ash Shrine", what:"A healing shrine before the last fight.", tags:["heal:healing shrine"]},
-      {n:27, c:4, l:0, name:"Foundry Master's Hall", what:"The Foundry Guard and their leader. The recipe stand.", tags:["mob:pack + leader","page:recipe stand","loot:big chest"]},
-      {n:28, c:4, l:0, s:-1, k:1, name:"Ash Slide", what:"A brick slide that spirals down to the Cinder Gate.", tags:["out:slide to room 1"]},
+      {n:27, c:4, l:0, name:"Foundry Master's Hall", what:"The Cinder Warden with the Foundry Guard. It holds the Foundry Key. At the back, a gate is locked: it needs the Foundry Key.", tags:["boss:Cinder Warden","mob:pack","key:Foundry Key","lock:locked gate"]},
+      {n:28, c:4, l:0, s:-1, k:1, name:"Ash Slide", what:"A brick slide that spirals down. It ends behind the barred gate in the Cinder Gate room: pull the lever to open it, and you're at the exit.", tags:["out:slide to room 1"]},
+      {n:29, c:4, l:0, s:1, name:"Foundry Treasury", what:"The foundry's treasure room. The recipe stand and the big chest.", tags:["page:recipe stand","loot:big chest"]},
     ],
-    links: [[1,2],[2,3],[2,4],[2,5],[5,6],[5,7],[7,8],[7,9],[9,10],[10,11],[11,12],[12,13],[12,14],[14,15],[12,16],[16,17],[16,18],[18,19],[19,21],[21,20],[21,22],[22,23],[22,24],[24,25],[25,26],[25,27],[27,28],[28,1,"outtop"]],
-    outNote: "A brick slide from the Foundry Master's Hall spirals down to the Cinder Gate.",
+    links: [[1,2],[2,3],[2,4],[2,5],[5,6],[5,7],[7,8],[7,9],[9,10],[10,11],[11,12],[12,13],[12,14],[14,15],[12,16],[16,17],[16,18],[18,19],[19,21],[21,20],[21,22],[22,23],[22,24],[24,25],[25,26],[25,27],[29,28],[28,1,"outtop"],[27,29]],
+    outNote: "A brick slide behind the Foundry Treasury spirals down to the barred gate in the Cinder Gate room. A lever opens it from inside.",
   },
 ];
 

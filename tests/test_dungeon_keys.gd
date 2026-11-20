@@ -107,3 +107,24 @@ func test_the_boss_bar_follows_its_boss() -> void:
 	check(not bar.visible, "hides when the boss dies")
 	bar.free()
 	m.free()
+
+
+## Owner, Nov 20: the way out ends at a barred gate in the first room; a lever on the inside opens it, and it closes
+## again when the dungeon refills (never while someone is near).
+func test_the_exit_gate_opens_with_its_lever_and_closes_on_refill() -> void:
+	await _setup()
+	keys.add_gate("mossgate_hold", Vector3(1, 0, 0))
+	check(not keys.gate_open("mossgate_hold"), "shut at the start")
+	player.global_position = Vector3(30, 0, 0)
+	check_eq(keys.request_pull_lever(1, "mossgate_hold"), "Too far away.", "only at the lever")
+	player.global_position = Vector3.ZERO
+	auth.world_state.played = 10.0
+	check_eq(keys.request_pull_lever(1, "mossgate_hold"), "The gate grinds open. The way out!", "the lever opens it")
+	check(keys.gate_open("mossgate_hold"), "open for everyone")
+	auth.world_state.played = 10.0 + DungeonLoot.REFILL
+	keys.tick()
+	check(keys.gate_open("mossgate_hold"), "not while someone is near")
+	player.global_position = Vector3(500, 0, 0)
+	keys.tick()
+	check(not keys.gate_open("mossgate_hold"), "shut again after the refill")
+	_teardown()
