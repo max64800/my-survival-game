@@ -1,0 +1,49 @@
+{
+ "_note": "Claude's reading of the owner's video (IMG_4426, front view, combo 1) for pose_from_video.py. dir_cam = the handle's direction from the left fist toward the axe head: [angle in the picture (0 = to the picture's right = his left, 90 = up), tilt toward the camera = his front (+) or away (-)], degrees. Other keys: corrections after looking at the picture sheets. right_move/left_move = move that fist's filmed spot (m: x his left, y his back, z up). Hit and recovery (owner, round 2): less chest twist (his right shoulder came up to his nose), hands in front (not behind at his hip), more forward lean so his short arms reach low, axe head closer (handle steeper).",
+ "Chop": {
+  "ready": {
+   "dir_cam": [
+    163,
+    20
+   ]
+  },
+  "windup": {
+   "dir_cam": [
+    128,
+    -30
+   ]
+  },
+  "middle": {
+   "dir_cam": [
+    165,
+    15
+   ]
+  },
+  "hit": {
+   "dir_cam": [
+    -62,
+    25
+   ],
+   "chest_yaw": -15,
+   "lean": -4,
+   "right_move": [
+    0.08,
+    0,
+    0.03
+   ]
+  },
+  "recovery": {
+   "dir_cam": [
+    -58,
+    22
+   ],
+   "chest_yaw": -20,
+   "lean": -2,
+   "right_move": [
+    0.08,
+    0,
+    0.03
+   ]
+  }
+ }
+}
