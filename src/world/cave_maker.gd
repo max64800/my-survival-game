@@ -273,6 +273,8 @@ func _seg_inside_room(sg: Dictionary, c: Vector3, r: Vector3) -> bool:
 # and the old columns are made fresh every time a world loads, so they ask is_reserved() and skip that ground.
 
 var outpost_spot := {}  ## where the Fallen Outpost goes ({room, pos, turn}; worked out once, in _reserve_tower)
+var brewhall_spot := {}  ## where the Brewhall goes (F479; the same)
+var spire_spot := {}  ## where the Lantern Spire goes (F479; the same)
 var reserved: Array[Dictionary] = []  ## {pos, r, h}: a circle of ground (r wide), from pos.y up to pos.y + h
 var dungeons: Array[Dictionary] = []  ## layout 14: the dungeons dug into the rock (DungeonMap.place)
 
@@ -371,6 +373,19 @@ func _reserve_tower() -> void:
 		if not outpost_spot.is_empty():
 			# (a circle round a square fort: out past its corner towers, 25.5 m from the middle; F478, Nov 20)
 			reserve(outpost_spot.pos, float(op.get("radius", 18.5)) * 1.42 + 1.5, float(op.get("height", 7.5)))
+	# The Brewhall (owner, Nov 20, F479): the same, a circle out past its corners (its chimney, its front steps).
+	var bh := RuinTower.load_plan(RuinBrewhall.PLAN_PATH)
+	if not bh.is_empty():
+		brewhall_spot = RuinBrewhall.pick(self, float(bh.get("radius", 8.6)), float(bh.get("height", 8.0)))
+		if not brewhall_spot.is_empty():
+			reserve(brewhall_spot.pos, float(bh.get("radius", 8.6)) * 1.42 + 1.5, float(bh.get("height", 8.0)))
+	# The Lantern Spire (owner, Nov 20, F479): no flat base round it, but nothing the world grows may stand in the tower
+	# or on its wreckage, which lies up to 19 m out: a circle out past all of it.
+	var sp := RuinTower.load_plan(RuinSpire.PLAN_PATH)
+	if not sp.is_empty():
+		spire_spot = RuinSpire.pick(self, sp)
+		if not spire_spot.is_empty():
+			reserve(spire_spot.pos, RuinSpire.REACH + 1.5, float(sp.get("height", 12.0)))
 
 
 ## Layout 8 (owner, Nov 17): 1 or 2 smaller stone columns (5 to 11 m wide) in the plain big caverns, the same kind as

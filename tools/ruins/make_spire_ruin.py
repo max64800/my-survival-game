@@ -28,7 +28,6 @@ wood_bp = next((json.load(open(a[5:], encoding="utf-8")) for a in args if a.star
 rng = random.Random(4)
 
 FALL = 2            # the top fell toward yaw step 2 (60 degrees: front right)
-BOWL_Y = 10.0       # the fire bowl stands on the roof (added here: the game's piece list gets it with the game code)
 
 
 def step_of(x, z):
@@ -54,10 +53,6 @@ def rot_from(steps):
 
 def turned(rot):
 	return rot_from(steps_of(rot) + 6)
-
-
-def add_bowl(plan, mat="cut_stone"):
-	plan.append({"id": "beacon_bowl", "mat": mat, "pos": [0.0, BOWL_Y, 0.0], "rot": 0})
 
 
 WALLISH = ("wall", "window_wall", "window_wide", "doorway", "half_wall", "ruin_wall_worn", "ruin_wall_collapsed")
@@ -205,9 +200,7 @@ def rebuild(plan, wood):
 
 
 def plan_of(b):
-	out = [{"id": p["id"], "mat": p["mat"], "pos": [round(v, 4) for v in p["pos"]], "rot": p["rot"]} for p in b["pieces"]]
-	add_bowl(out)   # (the wooden one keeps a stone fire bowl: a wooden one would burn)
-	return out
+	return [{"id": p["id"], "mat": p["mat"], "pos": [round(v, 4) for v in p["pos"]], "rot": p["rot"]} for p in b["pieces"]]   # (the fire bowl is in the blueprint, stone in both)
 
 
 if page:

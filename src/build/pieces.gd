@@ -148,6 +148,14 @@ const LIST := {
 		families = ["clay_brick"], station = {"mason": 99}},
 	"barrel_smashed": {name = "Smashed Barrel", group = "legacy", size = Vector3(1.0, 0.8, 1.0), units = 1, place = "free",
 		families = ["plank_root"], station = {"workbench": 99}},
+	# The Lantern Spire's wreckage (owner, Nov 20, F479; models: tools/asset_forge/builds/stonehold_v2_spire.py): its
+	# toppled top half, a curved piece of its wall, its fire bowl knocked off. Cleared when the Spire is rebuilt.
+	"spire_top_fallen": {name = "Fallen Tower Top", group = "legacy", size = Vector3(8.3, 4.2, 6.4), units = 20, place = "free", lies_in_parts = true,
+		families = ["cut_stone"], station = {"mason": 99}},
+	"spire_wall_chunk": {name = "Fallen Wall Piece", group = "legacy", size = Vector3(5.6, 1.3, 2.0), units = 8, place = "free",
+		families = ["cut_stone"], station = {"mason": 99}},
+	"beacon_bowl_fallen": {name = "Fallen Fire Bowl", group = "legacy", size = Vector3(3.35, 1.85, 3.4), units = 4, place = "free",
+		families = ["cut_stone"], station = {"mason": 99}},
 	# --- mining
 	"ceiling_panel": {name = "Ceiling Panel", group = "mining", size = Vector3(2, 0.25, 2), units = 4, place = "ceiling", supports_rock = true, station = ALL},
 	"mine_prop": {name = "Mine Prop", group = "mining", size = Vector3(2, 3, 0.4), units = 4, place = "free", extra = {copper_ingot = 1}, supports_rock = true,
@@ -204,6 +212,10 @@ const LIST := {
 		model = "decor/wall_torch", families = WOODS, light = Color(1.0, 0.65, 0.3), station = {"workbench": 1}},
 	"weapon_rack": {name = "Weapon Rack", group = "decor", size = Vector3(1.4, 1.6, 0.5), units = 3, place = "free", shape = "weapon_rack",
 		families = WOODS, station = {"workbench": 2}},
+	# The Lantern Spire's fire bowl (owner, Nov 20, F479: a real piece you can build, cut stone and a few copper ingots):
+	# a stone pedestal with an iron bowl of coals; its fire burns on the model's fire_spot marker (piece_node.gd).
+	"beacon_bowl": {name = "Fire Bowl", group = "decor", size = Vector3(1.9, 1.65, 1.9), units = 6, place = "free",
+		families = ["cut_stone"], extra = {copper_ingot = 3}, fire = true, station = {"mason": 1}},
 	# --- furnish (owner, Nov 19, 2026): free CC0 furniture rebuilt in our paint (tools/asset_forge/builds/furniture.py).
 	# use = what it does: "bed" (wake up here), "sit", "store" (opens like a chest). light = burns forever.
 	"furn_bed_1": {name = "Rootwood Bed", group = "furnish", size = Vector3(1.9, 0.8, 2.4), units = 6, place = "free", shape = "block", extra = {fiber = 8}, use = "bed",

@@ -28,6 +28,7 @@ var wood_key := "wooden_watchtower"
 var ruin_name := "tower"
 var reach := 9.0
 var hard_mat := "cut_stone"   ## the material its "stone" blueprint is built in (the Brewhall: clay brick)
+var worn_over := 2.1          ## a new piece this far above a worn wall stands on it (Builder._worn_to_go; the Spire 2.35)
 static var last_origin := Vector3.INF  ## where the last one was built (the towercheck robot looks there)
 static var last_turn := 0
 
@@ -258,7 +259,7 @@ func _add_rebuild_chest(basis: Basis) -> void:
 	var box_id: int = auth.storage.create_box("rebuild", pick, atan2(-to_path.x, -to_path.z))  # (its front, box -Z, toward the path)
 	last_rebuild_box = box_id
 	var ruins: Dictionary = auth.world_state.get("ruins", {}).duplicate()
-	ruins[str(box_id)] = {origin = origin, turn = turn, stone = stone_key, wood = wood_key, name = ruin_name, reach = reach, mat = hard_mat, done = false}
+	ruins[str(box_id)] = {origin = origin, turn = turn, stone = stone_key, wood = wood_key, name = ruin_name, reach = reach, mat = hard_mat, over = worn_over, done = false}
 	auth.world_state["ruins"] = ruins
 	print("RUIN_TOWER rebuilding chest %d for the %s at %s" % [box_id, ruin_name, pick])
 

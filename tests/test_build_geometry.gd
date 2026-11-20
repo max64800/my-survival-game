@@ -208,7 +208,7 @@ func test_hand_made_models_fit_and_hold_together() -> void:
 			if why != "":
 				misfits.append("%s (%s)" % [f, why])
 			var g := floating_islands(m)
-			if g.size() > 1:
+			if PieceNode.floating_parts(parts[0], m) > 0:  # (wreckage may lie in parts, each on the ground)
 				floating.append("%s: %d parts" % [f, g.size()])
 		scene.free()
 	print("        (%d hand-made building models checked; misfits %d, floating %d)" % [n, misfits.size(), floating.size()])

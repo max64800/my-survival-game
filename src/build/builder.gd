@@ -1100,8 +1100,9 @@ const RUIN_XP := 300  ## experience for each dwarf near a rebuilt ruin (owner, N
 const RUIN_KEEP := ["ruin_wall_worn"]
 const RUIN_KEEP_SLOTS := ["wall", "window_wall"]
 const RUIN_KEEP_FAMILIES := ["plank_root"]
-const RUIN_DEBRIS := ["gate_broken", "chimney_fallen"]  ## broken pieces lying about (the outpost's torn-off gate, the Brewhall's
-## fallen chimney): cleared when it's rebuilt
+const RUIN_DEBRIS := ["gate_broken", "chimney_fallen", "spire_top_fallen", "spire_wall_chunk", "beacon_bowl_fallen"]  ## broken
+## pieces lying about (the outpost's torn-off gate, the Brewhall's fallen chimney, the Lantern Spire's fallen top, wall
+## piece and fire bowl): cleared when it's rebuilt
 ## Whole pieces that make way when a new piece needs their spot (the outpost's battlements where its walkway now runs
 ## on over the forge, owner Nov 20: they stood a walkway's height lower).
 const RUIN_MAKE_WAY := ["battlement", "battlement_corner"]
@@ -1153,7 +1154,7 @@ func ruin_needs(key: String, r: Dictionary) -> Dictionary:
 	if bp == null:
 		return need
 	var plan := bp.world_pieces(r.origin, int(r.turn))
-	var go := _worn_to_go(plan)
+	var go := _worn_to_go(plan, float(r.get("over", 2.1)))
 	for p in plan:
 		if _ruin_slot_whole(p, go):
 			continue
@@ -1220,7 +1221,7 @@ func ruin_chest_changed(box_id: int) -> void:
 	if site.is_empty():
 		return
 	site.ruin = key
-	site.worn_go = _worn_to_go(site.plan)
+	site.worn_go = _worn_to_go(site.plan, float(r.get("over", 2.1)))
 	for i in site.plan.size():  # what still stands whole is done already
 		if _ruin_slot_whole(site.plan[i], site.worn_go):
 			_ev_site_piece.rpc(box_id, i)
@@ -1254,7 +1255,9 @@ func _ruin_same_here(p: Dictionary) -> bool:
 ## Fixing in wood leaves worn walls standing, but not one that something new will stand right on top of (owner,
 ## Nov 20: a new railing over a worn wall's missing top stones left a hole under it): those are rebuilt whole.
 ## Returns {uid: true} of those worn walls (none when fixing in stone: every worn wall is rebuilt then anyway).
-func _worn_to_go(plan: Array) -> Dictionary:
+## `over`: how far above a worn wall a new piece counts as standing on it (2.1 m; the Lantern Spire 2.35 m, F479: its
+## Stonehold floors are 2.25 m apart. Not for every ruin: it tore down the watchtower's worn walls in a wood rebuild).
+func _worn_to_go(plan: Array, over := 2.1) -> Dictionary:
 	var go := {}
 	if plan.is_empty() or not ruin_keeps_worn(String(plan[0].family)):
 		return go
@@ -1265,7 +1268,7 @@ func _worn_to_go(plan: Array) -> Dictionary:
 			continue
 		for a in news:
 			var dy: float = a.pos.y - q.pos.y
-			if dy > 1.9 and dy < 2.1 and Vector2(a.pos.x - q.pos.x, a.pos.z - q.pos.z).length() < 0.1:
+			if dy > 1.9 and dy < over and Vector2(a.pos.x - q.pos.x, a.pos.z - q.pos.z).length() < 0.1:
 				go[uid] = true
 				break
 	return go
@@ -1293,7 +1296,7 @@ func _ruin_step(box_id: int, site: Dictionary) -> bool:
 		if p.built or steps.band_of[i] != steps.current:
 			continue
 		if not site.has("worn_go"):
-			site.worn_go = _worn_to_go(site.plan)  # (a loaded save: worked out again)
+			site.worn_go = _worn_to_go(site.plan, float(auth.world_state.get("ruins", {}).get(str(box_id), {}).get("over", 2.1)))  # (a loaded save)
 		for uid in structure.pieces:  # (a worn wall is lower than a whole one: look by place, not only by overlap)
 			var q: Dictionary = structure.pieces[uid]
 			var keep: bool = q.piece in RUIN_KEEP and ruin_keeps_worn(String(p.family)) and not site.worn_go.has(uid)

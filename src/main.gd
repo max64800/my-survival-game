@@ -155,6 +155,12 @@ func _ready() -> void:
 			_monsters = false
 			if mode == "menu":
 				mode = "solo"
+		elif arg == "spirecheck":  # photos of the Lantern Spire (F479; moves the dwarf there so it gets built)
+			debug_script = "res://src/debug/spirecheck.gd"
+			_saving = false
+			_monsters = false
+			if mode == "menu":
+				mode = "solo"
 		elif arg == "outpostcheck":  # photos of the Fallen Outpost (moves the dwarf there so it gets built)
 			debug_script = "res://src/debug/outpostcheck.gd"
 			_saving = false
@@ -577,10 +583,20 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 		# The Fallen Outpost, built when someone first comes near (owner, Nov 17). Robots: only with outpostcheck.
 		if not dungeon_test and (not _robot_run or OS.get_cmdline_user_args().has("outpostcheck")):
 			authority.world_state["outpost"] = "pending"
+		# The Brewhall (owner, Nov 20, F479), the same way. Robots: only with brewhallcheck.
+		if not dungeon_test and (not _robot_run or OS.get_cmdline_user_args().has("brewhallcheck")):
+			authority.world_state["brewhall"] = "pending"
+		# The Lantern Spire (owner, Nov 20, F479), the same way. Robots: only with spirecheck.
+		if not dungeon_test and (not _robot_run or OS.get_cmdline_user_args().has("spirecheck")):
+			authority.world_state["spire"] = "pending"
 		if authority.start_with_nothing:
 			authority.spawn_start_items()
 	if authority.is_host() and authority.world_state.has("outpost"):
 		authority.add_child(RuinOutpost.new(authority))  # builds it when someone comes near (or marks its cavern)
+	if authority.is_host() and authority.world_state.has("brewhall"):
+		authority.add_child(RuinBrewhall.new(authority))
+	if authority.is_host() and authority.world_state.has("spire"):
+		authority.add_child(RuinSpire.new(authority))
 	if _jungle_kit:
 		# Test kit: what you'd have after beating Orrumhal and Brask.
 		var kit := authority.get_player(me).inventory

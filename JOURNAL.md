@@ -7199,3 +7199,27 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   (`DisplayServer.keyboard_get_current_layout`); when it changes, run and dodge are let go. Not tested by switching
   the owner's keyboard (that would change the owner's PC); the owner checks it in a real play. scripts_load passes.
 - **Paused here by the owner ("pause, commit and push").** Not yet seen in a real game run with the new hotbar.
+
+
+## November 21, 2026 (PC, spire game Claude): the Lantern Spire, ruin 4, in the game (F479)
+- **What we did:** put the Spire into new worlds, copying the Brewhall's way. Its 4 models are installed (fire bowl,
+  fallen fire bowl, fallen tower top, fallen wall piece) with build-menu icons. The **Fire Bowl** is a real decor piece
+  (6 cut stone + 3 copper ingots, at the mason); its fire burns on the model's fire marker, with a warm light. It stands
+  on the Spire's roof in both blueprints (stone in the wooden one too). The 3 fallen pieces are wreckage, cleared when
+  the Spire is rebuilt. Names "Lantern Spire" / "Wooden Spire", learned only by rebuilding it. New: `src/world/ruin_spire.gd`,
+  test `tests/test_ruin_spire.gd` (all pass), photo robot `-- spirecheck`.
+- **Where it stands:** a tall Mossy cavern (not the outpost's or the Brewhall's), no flat base dug round it; only the
+  tower's own space and the air over its wreckage are carved. The world keeps a 22.5 m circle clear (pebbles, plants,
+  old columns), and the spot is only chosen where no stone column stands in the tower or on any wreck piece.
+- **Hurdles / Claude's slips:** (1) The Brewhall's lines in `main.gd` and `cave_maker.gd` had never been committed
+  (its commit took another chat's Dungeon 3 lines by mistake), so the saved game code couldn't find the Brewhall's spot:
+  committed them now. (2) The worn-wall rule only looked 2 m up; Stonehold floors are 2.25 m apart. Changing it for every
+  ruin broke the watchtower before, so now each ruin says its own height (the Spire 2.35 m, the rest 2.1 m). (3) The
+  fallen tower top is in 2 parts on purpose, but the game threw away models with separate parts ("something floats"):
+  wreckage may now lie in parts if every part rests on the ground. (4) My first spot rule kept columns out of a whole
+  22 m circle, which rejected almost every cavern, and the fallen top ended up half buried in a slope (2.8 m): now the
+  picker measures the ground under each wreck piece exactly as it is laid (at most 1.5 m of slope; it lies on the
+  lowest part, so nothing floats). (5) The first photo run ran out of memory (other chats' games open); the next photos
+  were too dark (its fire bowl lies fallen) and the dwarf was in the way: added work lights and hid him.
+- **Open:** look at the Spire's photos in a real game (the robot run after the light change printed nothing yet);
+  then task 2, the Old Kiln's 3D page.

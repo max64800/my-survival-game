@@ -8,13 +8,14 @@ class_name BlueprintLibrary
 ## Every cell of the box is marked "air", so placed inside rock the chest carves the room out first.
 
 const IDS := ["delvers_hut", "miners_homestead", "stone_hall", "forge_workshop", "watchtower_cabin", "stone_watchtower",
-	"stone_outpost", "wooden_watchtower", "wooden_outpost", "hearthbrick_brewhall", "wooden_brewhall"]
+	"stone_outpost", "wooden_watchtower", "wooden_outpost", "hearthbrick_brewhall", "wooden_brewhall", "lantern_spire", "wooden_spire"]
 ## Known from the very start (F161): you place them and bring the materials. The rest are learned from
 ## Old Blueprints found in ruins (F98).
 const STARTER := ["delvers_hut"]
 ## Learned only by rebuilding a ruin (owner, Nov 19), never from an Old Blueprint page.
 ## The Brewhall's two (F479): its cellar goes below the ground line, which only the ruin digs out.
-const REBUILD_ONLY := ["wooden_watchtower", "wooden_outpost", "hearthbrick_brewhall", "wooden_brewhall"]
+## The Lantern Spire's two (F479): a landmark you rebuild where it stands.
+const REBUILD_ONLY := ["wooden_watchtower", "wooden_outpost", "hearthbrick_brewhall", "wooden_brewhall", "lantern_spire", "wooden_spire"]
 const NAMES := {
 	"delvers_hut": "Delver's Hut",
 	"miners_homestead": "Miner's Homestead",
@@ -27,6 +28,8 @@ const NAMES := {
 	"wooden_outpost": "Wooden Outpost",
 	"hearthbrick_brewhall": "Hearthbrick Brewhall",
 	"wooden_brewhall": "Wooden Brewhall",
+	"lantern_spire": "Lantern Spire",
+	"wooden_spire": "Wooden Spire",
 }
 
 const WOOD := "plank_root"
@@ -51,8 +54,8 @@ static func make(id: String) -> Blueprint:
 		"miners_homestead": lib._homestead()
 		"stone_hall": lib._stone_hall()
 		"forge_workshop": lib._forge()
-		"lantern_spire": lib._lantern_spire()  # (owner, Nov 20: ruin 4; not learnable yet, its 3D page first)
-		"wooden_spire":
+		"lantern_spire": lib._lantern_spire()  # (owner, Nov 20: ruin 4, F479; learned by rebuilding its ruin)
+		"wooden_spire":  # (its fire bowl stays stone: a wooden one would burn)
 			lib._lantern_spire()
 			lib._to_wood()
 		"watchtower_cabin": lib._watchtower()
@@ -447,7 +450,7 @@ func _stone_watchtower() -> void:
 ## Owner, Nov 20 (ruin 4 of Zone 1): the Lantern Spire, a tall thin round Stonehold beacon tower, a landmark to find.
 ## The watchtower's 12-sided ring (every flat side 3.73 m from the middle), three walled floors, then an open lantern
 ## gallery (pillars on every corner, railings between) under a flat battlement roof; the fire bowl stands in the
-## roof's middle (tools/ruins/make_spire_ruin.py adds it until it is a game piece). Heights: foundations 0-1, walls
+## roof's middle (the Fire Bowl, a decor piece: its fire burns forever). Heights: foundations 0-1, walls
 ## from 1, 3.25 and 5.5, floors at 3, 5.25 and 7.5, the gallery from 7.75, the roof at 9.75 (battlements from 10).
 ## Few windows (owner, Nov 20): two narrow ones a floor, none beside the door. The stairs climb a different side on
 ## every floor, their foot on open floor; each stairs hole has a railing round it.
@@ -484,6 +487,7 @@ func _lantern_spire() -> void:
 	_ring_layer("floor", "floor_triangle", roof, 3)
 	_ring_rails(3, roof + 0.25)
 	_ring_edges(roof + 0.25, func(_j): return "battlement")
+	_add("beacon_bowl", STONE, Vector3(0, roof + 0.25, 0), 0)
 
 
 ## Owner, Nov 17: the second stone place, "a lot bigger": a small fortress (the Fallen Outpost; this is the whole

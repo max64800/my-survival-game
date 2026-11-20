@@ -195,6 +195,7 @@ func rebuild(p_piece: String, p_family: String) -> void:
 
 
 static var _forged_meshes := {}
+static var _fire_spots := {}  ## piece__family -> [[position, size]] from the model's fire_spot markers
 
 
 ## Claude 2's hand-made model for this piece + material (assets/models/build/<piece>__<family>.glb),
@@ -216,16 +217,31 @@ static func forged_mesh(p_piece: String, p_family: String) -> Mesh:
 			if parts.size() == 1:
 				m = (parts[0] as MeshInstance3D).mesh  # one baked mesh, as agreed with Claude 2
 				var why := model_misfit(p_piece, m.get_aabb())
-				if why == "" and PieceMesh.islands(m).size() > 1:
+				if why == "" and floating_parts(p_piece, m) > 0:
 					why = "%d separate parts: something floats" % PieceMesh.islands(m).size()
 				if why != "":
 					print("Model skipped: %s.glb doesn't fit its piece (%s); using the code shape" % [key, why])
 					m = null
 			elif parts.size() > 1:
 				push_warning("%s.glb has %d meshes; expected 1 (using the code shape)" % [key, parts.size()])
+			var spots: Array = []  # fire markers (fire_spot_<size>, kit.fire_spot): where its fire burns (the Fire Bowl)
+			for n: Node in scene.find_children("fire_spot_*", "", true, false):
+				if n is Node3D:
+					var size := String(n.name).trim_prefix("fire_spot_").replace("_", ".").to_float()  # (Godot turns "1.40" into "1_40")
+					spots.append([(n as Node3D).position, maxf(size, 0.3)])
+			_fire_spots[key] = spots
 			scene.free()
 		_forged_meshes[key] = m
 	return _forged_meshes[key]
+
+
+## How many parts of a model float: every part but one, or for wreckage lying in pieces (Pieces "lies_in_parts",
+## the Spire's fallen top broke in two, F479) every part that doesn't rest on the ground.
+static func floating_parts(p_piece: String, m: Mesh) -> int:
+	var parts := PieceMesh.islands(m)
+	if Pieces.LIST.get(p_piece, {}).get("lies_in_parts", false):
+		return parts.filter(func(b: AABB): return b.position.y > 0.1).size()
+	return parts.size() - 1
 
 
 ## Why a model's box doesn't match the piece it's for ("" = it fits). Catches models made for an
@@ -290,6 +306,23 @@ func _decor_extras(s: Vector3, has_model: bool) -> void:
 		else:
 			_cloth(Vector3(s.x, s.y - 0.15, 0.03), Vector3(0, (s.y - 0.1) * 0.5, 0.0), c)
 			_cloth(Vector3(0.3, 0.3, 0.035), Vector3(0, s.y * 0.6, 0.0), Color(0.85, 0.65, 0.25))  # a gold emblem
+	if info.get("fire", false) and not ghost:
+		# A fire that burns forever (the Fire Bowl, F479): on the model's fire_spot markers, or on top without a model.
+		var spots: Array = _fire_spots.get(piece + "__" + family, []) if has_model else []
+		if spots.is_empty():
+			spots = [[Vector3(0, s.y, 0), 1.0]]
+		for sp in spots:
+			var fire := Fire.new(float(sp[1]))
+			fire.position = sp[0]
+			add_child(fire)
+		var l := OmniLight3D.new()
+		GraphicsSettings.cheap_light(l, 60.0)  # a beacon: seen from further than a sconce
+		l.light_color = Color(1.0, 0.6, 0.3)
+		l.omni_range = 14.0
+		l.light_energy = 2.0
+		Darkness.mark(l)
+		l.position = (spots[0][0] as Vector3) + Vector3.UP * 0.6
+		add_child(l)
 	if info.has("light"):
 		if not has_model:
 			_cloth(Vector3(0.1, 0.16, 0.1), Vector3(0, s.y * 0.45 + 0.12, 0.04), info.light, true)
