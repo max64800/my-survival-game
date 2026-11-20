@@ -81,6 +81,7 @@ const DATA := {
 	"gold_coin": {name = "Gold Coin", stack = 100, color = Color(0.95, 0.75, 0.25), short = "Au"},  ## found in old chests; pays for a perk reset
 	"silver_ingot": {name = "Silver Ingot", color = Color(0.85, 0.87, 0.92), short = "SI"},
 	"clay_brick": {name = "Clay Brick", color = Color(0.8, 0.4, 0.25), short = "CB"},
+	"mortar": {name = "Mortar", color = Color(0.72, 0.68, 0.6), short = "Mo"},  # stone + clay paste for Stonehold and Hearthbrick
 	"lantern_lens": {name = "Crystal Lens", color = Color(0.7, 0.9, 1.0), short = "Ln"},
 	"cut_stone": {name = "Cut Stone", color = Color(0.62, 0.6, 0.58), short = "CS"},
 	"cut_marble": {name = "Cut Marble", color = Color(0.95, 0.95, 0.93), short = "CM"},

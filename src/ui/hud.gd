@@ -1070,7 +1070,7 @@ func _process(delta: float) -> void:
 		_build_label.text = "Blueprint: %s (%s)\nQ turn · left click place (a blue build site) · right click or B: back to single pieces" % [build_mode.blueprint.name, BuildMenu._cost_text(build_mode.blueprint.cost())]
 	elif build_mode and build_mode.active():
 		var c := BuildMenu._cost_text(Pieces.cost(build_mode.piece, build_mode.family))
-		_build_label.text = "Building: %s (%s)\nCost: %s%s%s\n\nB  choose another piece or material\nLeft click  place it\nQ / E  turn it left / right\nShift + mouse wheel  raise / lower\nRight click  pick up (first 10 s)\nX  break it (80%% back)\nV  blueprints  ·  C  save your own" % [
+		_build_label.text = "Building: %s (%s)\nCost: %s%s%s\n\nB  choose another piece or material\nLeft click  place it\nQ / E  turn it left / right\nShift + mouse wheel  raise / lower\nRight click  pick up (first 10 s)\nX  break it (half back)\nV  blueprints  ·  C  save your own" % [
 			Pieces.LIST[build_mode.piece].name, Pieces.FAMILIES[build_mode.family].name, c,
 			" (now %+.1f m)" % build_mode.lift if build_mode.lift != 0.0 else "",
 			"" if build_mode.problem == "" else "\nCan't place: " + build_mode.problem]
@@ -1154,10 +1154,10 @@ static func hotbar_key(code: int) -> int:
 ## How you can take the aimed piece down (F100, owner Nov 19: make it clear). `left` = pick-up seconds left, -1 = unknown.
 static func take_down_text(left: float) -> String:
 	if left > 0.0:
-		return "Right click: pick up, all back (%d s left)  ·  X: break, 80%% back" % ceili(left)
+		return "Right click: pick up, all back (%d s left)  ·  X: break, half back" % ceili(left)
 	if left < 0.0:
-		return "Right click: pick up (right after placing)  ·  X: break, 80% back"
-	return "X: break it, 80% back (too late to pick up)"
+		return "Right click: pick up (right after placing)  ·  X: break, half back"
+	return "X: break it, half back (too late to pick up)"
 
 
 static func steadiness_text(p: Dictionary) -> String:

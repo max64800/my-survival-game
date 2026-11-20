@@ -5694,3 +5694,20 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - The skills window's top line shows "Level 3 · 12 kills"; hover it for each creature ("Cave Bat: 7").
 - Not done (no reward exists yet): rewards for counts, separate counts for leaders and crystal variants.
 - Tests: `test_kill_counts` (counting, saving, old saves) and the sword-kill test now checks the count. Both pass.
+
+## November 20, 2026 (Mac, Claude): building economy
+- **Measured first:** building was almost free. A first 6 x 6 m house (~35 pieces, ~160 units) cost ~160 planks
+  (3 Root Trees, a few minutes) in wood, ~380 stone (5-6 min) in stone; brick wasn't much harder.
+- **Owner's picks:** a first wooden house ~15 min of gathering; Stonehold ~2x, Hearthbrick ~3x the work; a second
+  ingredient for each style; breaking your own piece gives half back.
+- **Built (`Pieces.UNIT_COST`):** per unit, Rootwood 3 planks + 1 rope per 8 units (lashings); Cut Stone 3 cut stone
+  + 1 mortar per 4; Clay Brick 2 bricks + 1 mortar per 4 (rounded up). New item **Mortar** (1 stone + 1 clay = 2 at the
+  Mason's Table, unlocked by finding clay; placeholder icon drawn by script). Same 6 x 6 house now: ~240 rootwood +
+  20 rope; ~960 stone + 40 mortar; ~320 clay + 160 coal + 40 mortar. Furniture, decor and mine props keep the old price.
+  Blueprints and the ruin's Rebuilding Chest ask for the new costs automatically.
+- **Breaking your own piece: half back** (was 80%). The 10-second misclick pick-up still gives everything back.
+- Tests updated (wall, doorway, brick foundation, furniture, the lodge and hut blueprints, half back). Builder,
+  blueprint, building and 9 other files pass. Still failing, not from this: the 4 cave physics tests, 2 ruin tower
+  tests, and the build menu test (another chat's unfinished `PlaceGhost.held_turn`).
+- Not done: the rates (rootwood, stone per minute) are estimates from the code, not timed in a real game; the
+  Crafting Book page doesn't show Mortar yet; later zones' materials still cost 1 per unit.

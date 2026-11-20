@@ -59,10 +59,12 @@ func test_needs_a_workbench_and_materials() -> void:
 	var s := _floor_spot("floor", 3.0)
 	check_eq(auth.builder.problem(ps, "floor", "plank_root", s.pos, s.rot), "Needs a Workbench within 20 m", "no workbench yet")
 	auth._ev_place_station(1, "workbench", player.global_position + Vector3(-3, 0, 0), 0.0)
-	check(auth.builder.problem(ps, "floor", "plank_root", s.pos, s.rot).begins_with("Needs 4"), "no planks yet")
-	ps.inventory.add("plank_root", 10)
+	check(auth.builder.problem(ps, "floor", "plank_root", s.pos, s.rot).begins_with("Needs 12"), "no planks yet")
+	ps.inventory.add("plank_root", 20)
+	ps.inventory.add("rope", 1)
 	check_eq(auth.builder.request_place(1, "floor", "plank_root", s.pos, s.rot), "", "placed")
-	check_eq(ps.inventory.count_of("plank_root"), 6, "4 planks used")
+	check_eq(ps.inventory.count_of("plank_root"), 8, "12 planks used (4 units x 3)")
+	check_eq(ps.inventory.count_of("rope"), 0, "and 1 rope")
 	check_eq(auth.builder.structure.pieces.size(), 1, "one piece")
 	check(auth.builder.structure.pieces.values()[0].anchored, "a floor on the cave floor touches rock")
 	check_eq(auth.builder.request_place(1, "floor", "plank_root", s.pos, s.rot), "Something is already there", "can't double-place")
@@ -145,25 +147,26 @@ func test_station_levels_unlock_pieces() -> void:
 	_teardown()
 
 
-func test_pick_up_right_after_placing_or_break_for_80_percent() -> void:
+func test_pick_up_right_after_placing_or_break_for_half() -> void:
 	await _setup()
 	auth._ev_place_station(1, "workbench", player.global_position + Vector3(-3, 0, 0), 0.0)
 	auth._ev_place_station(2, "masonry_table", player.global_position + Vector3(-3, 0, 3), 0.0)
-	ps.inventory.add("cut_stone", 4)
+	ps.inventory.add("cut_stone", 12)
+	ps.inventory.add("mortar", 1)
 	var s := _floor_spot("floor", 3.0)
 	auth.builder.request_place(1, "floor", "cut_stone", s.pos, s.rot)
 	var uid: int = auth.builder.structure.pieces.keys()[0]
 	check_eq(auth.builder.request_remove(1, uid), "", "picked up right after placing")
-	check_eq(ps.inventory.count_of("cut_stone"), 4, "100% back")
+	check_eq(ps.inventory.count_of("cut_stone"), 12, "100% back")
 	check(auth.builder.structure.pieces.is_empty(), "gone")
-	# Later than 10 s: no free pick-up; breaking it gives 80% (4 stone -> 3).
+	# Later than 10 s: no free pick-up; breaking it gives half (owner, Nov 20: 12 stone -> 6, mortar at least 1).
 	auth.builder.request_place(1, "floor", "cut_stone", s.pos, s.rot)
 	uid = auth.builder.structure.pieces.keys()[0]
 	auth.builder._clock += Builder.PICKUP_TIME + 1.0
 	check(auth.builder.request_remove(1, uid) != "", "too late for a careful pick-up")
 	check(auth.builder.structure.pieces.has(uid), "so it stays")
 	check_eq(auth.builder.request_remove(1, uid, true), "", "breaking it works any time")
-	check_eq(ps.inventory.count_of("cut_stone"), 3, "and gives back 80%")
+	check_eq(ps.inventory.count_of("cut_stone"), 6, "and gives back half")
 	# Crafting stations always come back whole.
 	auth._ev_place_station(9, "campfire", player.global_position + Vector3(2, 0, 0), 0.0)
 	check_eq(auth.request_pickup_station(1, 9), "", "a station can be picked up any time")
@@ -258,8 +261,8 @@ func test_blueprint_builds_itself() -> void:
 	var need := Builder.missing_for(site.plan, step1, auth.storage.get_box(box_id).inv)
 	for item in need:
 		check(status.contains("%d %s" % [need[item], Items.display_name(item)]), "step 1 asks for all %d %s" % [need[item], Items.display_name(item)])
-	for item in {plank_root = 39, cut_stone = 36, copper_ingot = 2}:
-		auth.storage.put(box_id, item, {plank_root = 39, cut_stone = 36, copper_ingot = 2}[item])
+	for item in need:  # everything step 1 asks for (costs follow Pieces.UNIT_COST, owner Nov 20)
+		auth.storage.put(box_id, item, need[item])
 	for i in 120:
 		auth.builder._site_ticks += 1
 		auth.builder._tick_sites()
@@ -308,7 +311,8 @@ func test_dev_fill_builders_chest() -> void:
 	for d in auth.drops_root.get_children():
 		if d.get("item_id") == "plank_root":
 			dropped += int(d.get("count"))
-	check_eq(in_chest + dropped, 296, "exactly what the hut needs: 296 planks (in the chest, the rest beside it)")
+	var planks: int = Builder.missing_for(site.plan, all, Inventory.new()).get("plank_root", 0)
+	check_eq(in_chest + dropped, planks, "exactly what the hut needs: %d planks (in the chest, the rest beside it)" % planks)
 	check(Builder.missing_for(site.plan, all, auth.storage.get_box(box_id).inv).is_empty() or dropped > 0, "nothing missing")
 	check(auth.builder.request_dev_fill(1, 9999).begins_with("Dev: that's not"), "only Builder's Chests")
 	# Build it all: when it stands, the Builder's Chest goes away (owner, Nov 16).
@@ -431,6 +435,7 @@ func test_floor_levels_the_ground_under_it() -> void:
 	await _setup()
 	auth._ev_place_station(1, "workbench", player.global_position + Vector3(-3, 0, 0), 0.0)
 	ps.inventory.add("plank_root", 30)
+	ps.inventory.add("rope", 2)
 	ps.inventory.add("dirt", 10)
 	var hard := Items.tier("pickaxe_silver")
 	# A dip: scoop the floor out under where the floor will go.

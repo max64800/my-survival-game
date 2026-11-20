@@ -349,7 +349,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("break_piece"):
 		var hit := dwarf.aim_far(Pieces.BUILD_REACH)
 		if hit.get("collider") is PieceNode:
-			auth.builder.ask_remove(hit.collider.uid, true)  # break it: 80% back
+			auth.builder.ask_remove(hit.collider.uid, true)  # break it: half back
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("rotate_piece"):
 		turn(1)  # (E turns the other way: main.gd, because E is also "use / open")

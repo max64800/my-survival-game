@@ -589,8 +589,11 @@ The family id is the item it uses (ids from the progression doc, section 1).
 
 ### 5.4 Piece catalog
 
-"Units" = how many items of the piece's material it costs. Every structural piece exists in every
-material family (except thatch); costs are the same across families.
+"Units" = the piece's size in building units. **Zone 1 cost per unit (owner, Nov 20):** Rootwood 3 planks + 1 rope
+per 8 units; Cut Stone 3 cut stone + 1 mortar per 4 units; Clay Brick 2 bricks + 1 mortar per 4 units (rounded up;
+`Pieces.UNIT_COST`). Mortar: 1 stone + 1 clay = 2 at the Mason's Table. Furniture, decor and mine props keep 1 per unit.
+Aim: a first 6 x 6 m Shack (~160 units) is about 15 min of gathering (~240 rootwood, 20 rope); Stonehold about 2x
+(~960 stone, 40 mortar); Hearthbrick about 3x (~320 clay + 160 coal for the bricks, 40 mortar).
 
 | Piece | Size (m) | Units | Extra cost | Snap / notes |
 |---|---|---|---|---|
@@ -640,8 +643,8 @@ for stations, 10.2 for chests). This table only adds the size each one takes on 
 | Table, bench, chair, shelf, banner | various | Comfort/decoration (2–6 `plank_root`) |
 
 Piece HP scales with size: **HP = family HP × units / 4** (a 2 × 2 wall = family HP; a beam = half).
-Destroyed pieces drop **50%** of their cost. Removing your own piece (hammer, hold to deconstruct) returns
-**100%**.
+Destroyed pieces drop **50%** of their cost. Breaking your own piece (hammer, X) also returns **50%** (owner, Nov 20);
+picking it up within 10 s of placing it (a misclick) returns 100%.
 
 ### 5.5 Damage
 Monster damage to pieces is multiplied by material: rootwood 1.0, capwood 0.9, mushroom brick 0.8, stone/rock

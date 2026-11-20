@@ -133,6 +133,7 @@ const LIST := {
 	"lantern_back": {station = "anvil", inputs = {copper_ingot = 4, leather = 2, lantern_lens = 1, rope = 2}, output = "lantern_back", count = 1, unlock = ["copper_ingot"]},
 	# --- masonry table
 	"cut_stone": {station = "masonry_table", inputs = {stone = 2}, output = "cut_stone", count = 1, unlock = []},
+	"mortar": {station = "masonry_table", inputs = {stone = 1, clay = 1}, output = "mortar", count = 2, unlock = ["clay"]},  # holds Stonehold and Hearthbrick together (Nov 20)
 	"cut_marble": {station = "masonry_table", inputs = {marble = 2}, output = "cut_marble", count = 1, unlock = ["marble"]},
 	"sporestone_block": {station = "masonry_table", inputs = {sporestone = 2}, output = "sporestone_block", count = 1, unlock = ["sporestone"]},
 	"amber_block": {station = "masonry_table", inputs = {amberrock = 2}, output = "amber_block", count = 1, unlock = ["amberrock"]},

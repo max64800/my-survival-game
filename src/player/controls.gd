@@ -22,7 +22,7 @@ const KEYS := {
 	"build_menu": [KEY_B],
 	"capture": [KEY_C],
 	"blueprints": [KEY_V],
-	"break_piece": [KEY_X],  ## build hammer: break the aimed piece for 80% of its materials (F100)
+	"break_piece": [KEY_X],  ## build hammer: break the aimed piece for half its materials (F100)
 	"dodge": [KEY_CTRL],
 	"ability_1": [KEY_Z],  ## active perks: the first 3 you own (owner's tree, Nov 19)
 	"ability_2": [KEY_G],
