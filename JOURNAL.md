@@ -6973,3 +6973,10 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   (https://claude.ai/artifact/FCycKJhFN2Nef6QuM26b3G) first hid the whole upper level (it treated 3 m up as ceiling):
   heights now count from each space's floor; all lamps lit on the page. Waiting for the owner's OK, then the lines
   go to the Lampwick chat.
+- **Owner: "no 3D pages for junk, I'll check in the game"** (saved as a memory). The Lampwick chat was closed, so with
+  the owner's OK Claude added the tested junk lines to make_lampwick.py itself: Lampwick's plan came out byte for
+  byte the same as the tested one; junk and Lampwick tests pass. Owner picked next: junk round the Watchtower and the
+  Fallen Outpost (inside and outside the walls), and new "ruin camp" junk models first (cold campfire ring, rotten
+  bedroll, dropped torch), then new junk for the other dungeons (ideas list given to the owner).
+  Found: the ruin plans' "props" (a crate, sacks) are never built by the game (RuinTower._build only builds pieces,
+  chests and torches): ruin junk needs a small new game part. Left for a new chat.
