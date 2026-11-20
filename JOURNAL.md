@@ -6664,3 +6664,24 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   grid, frayed edge, burlap paint. (7) My first local test page hit another chat's server on the same port: used my
   own port. All 8 pass `check_models.py` (FLOAT, SHIMMER, SCRIPT).
 - **Next:** batch 3 after the owner's OK; the placement + automatic test when the junk goes into the dungeon plans.
+
+## November 20, 2026 (PC, dwarf-animations Claude, chat 12): sword and mace from the KayKit pack, owner said no; his own videos next (F389)
+- **What we did:** copied the KayKit Skeletons warrior's one-handed moves (chop, diagonal slash, side slash, stab,
+  jump chop, shield bash) onto the dwarf the chat 11 way (`tools/asset_forge/one_kaykit_bake.gd` ->
+  `assets/anim/one_kaykit.json`, no mirror: the pack holds 1H weapons in the right hand too). New `DwarfOneSwing`
+  plays them as "o/" clips (`DwarfRig.one_pose`), eased in and out over his own arms; `DwarfFist` points the weapon the
+  pack's way, its edge leading. Not wired to the attacks yet. Page "Sword and Mace Swings"
+  (https://claude.ai/artifact/Ews5QNEzqpwwpUZS5LnKs5, recorder `tools/asset_forge/one_swing_export.gd`). New check
+  `test_one_handed_swings_hold_and_hit_in_front`.
+- **Owner's verdict:** "not a big fan": the swings look stationary, the free left arm sticks out like a T-pose (it
+  should hold a shield), and they aren't big swings ("goes to the chest and then swings"). He filmed two new videos
+  (Downloads: IMG_4428 = sword, IMG_4429 = mace; 3 hits each, repeated 3 times, front view, blue glove right, orange
+  left, a white stick). His choice: all 3 hits are one light combo (click, click, click). Next chat copies those.
+- **Hurdles (Claude's own):** the game's hit first landed on the swing's fastest frame, which was already past his
+  side: now on the fast frame where the blade is most in front. His hips only joined a swing after a slow fade (the
+  standing/walking blend was only updated during great-axe swings). My new test counted frames, but tests run faster
+  than real time, so the fade "never ended": it now waits by the clock. Two other chats' page servers sat on ports
+  8765 and 8791 (opened their pages by mistake, closed them): use an unusual port. My first page picture was taken
+  before the page settled (looked like his head faced backwards): checked again, it was fine.
+- **Still open:** the great axe check still fails on a few single frames now and then (Spin/Chop handle 0-2 cm from
+  his body, a fist 5 cm off), as in chat 11.
