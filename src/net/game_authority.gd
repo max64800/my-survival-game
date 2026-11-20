@@ -129,6 +129,7 @@ class PlayerState:
 
 	func _init() -> void:
 		inventory.changed.connect(_note_seen)
+		inventory.changed.connect(func(): vitals.gear = Gems.armor_bonus(inventory))  # armor gems work on your body
 		vitals.progress = progress
 
 	func _note_seen() -> void:
@@ -783,6 +784,43 @@ func _rpc_unsocket(slot: int, index: int) -> void:
 		request_unsocket(multiplayer.get_remote_sender_id(), slot, index)
 
 
+## Gem Bench: 3 of the same gem at the same level -> 1 of the next level, for gold (docs/design/gems.md).
+func ask_combine(gem: String) -> void:
+	if is_host():
+		request_combine(local_peer_id(), gem)
+	else:
+		_rpc_combine.rpc_id(1, gem)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_combine(gem: String) -> void:
+	if is_host():
+		request_combine(multiplayer.get_remote_sender_id(), gem)
+
+
+func request_combine(peer_id: int, gem: String) -> String:
+	var ps := get_player(peer_id)
+	if ps == null or not Gems.NORMAL.has(Gems.base_of(gem)):
+		return "?"
+	if not _near_kind(ps, "gem_bench"):
+		return "Stand at a Gem Bench"
+	var level := Gems.level_of(gem) + 1
+	if level > Gems.MAX_LEVEL:
+		return "That gem can't get any better yet"
+	var gold: int = Gems.COMBINE_GOLD[level]
+	if ps.inventory.count_of(Gems.item_id(gem)) < 3:
+		return "Needs 3 %s" % Gems.full_name(gem)
+	if ps.inventory.count_of("gold_coin") < gold:
+		return "Needs %d gold" % gold
+	ps.inventory.remove(Gems.item_id(gem), 3)
+	ps.inventory.remove("gold_coin", gold)
+	var made := Gems.item_id(Gems.with_level(Gems.base_of(gem), level))
+	if ps.inventory.add(made, 1) > 0:
+		spawn_drop(made, 1, ps.node.global_position + Vector3.UP)
+	tell(peer_id, "You made a %s!" % Gems.full_name(Gems.gem_of(made)))
+	return ""
+
+
 func _near_kind(ps: PlayerState, kind: String) -> bool:
 	for st in stations.values():
 		if st.kind == kind and st.global_position.distance_to(ps.node.global_position) < STATION_REACH + 1.0:
@@ -810,7 +848,7 @@ func request_socket(peer_id: int, slot: int, gem: String) -> String:
 	return ""
 
 
-## Taking a gem out gives it back intact, for 5 blue glow crystals.
+## Taking a gem out gives it back intact, for 5 gold.
 func request_unsocket(peer_id: int, slot: int, index: int) -> String:
 	var ps := get_player(peer_id)
 	if ps == null:
@@ -823,7 +861,7 @@ func request_unsocket(peer_id: int, slot: int, index: int) -> String:
 		return "?"
 	for item in Gems.REMOVE_COST:
 		if ps.inventory.count_of(item) < Gems.REMOVE_COST[item]:
-			return "Needs 5 blue glow crystals"
+			return "Needs %d gold" % Gems.REMOVE_COST.gold_coin
 	for item in Gems.REMOVE_COST:
 		ps.inventory.remove(item, Gems.REMOVE_COST[item])
 	var gem: String = list[index]
@@ -1520,7 +1558,7 @@ func request_harvest(peer_id: int, glow_id: int) -> Dictionary:
 		if Items.kind(tool) == "pickaxe":
 			power = Items.dig_power(tool) * ps.progress.dig_power_mult() * (PICK_ON_WOOD if k.tool == "axe" else 1.0) 				* (1.0 + Upgrades.bonus(ps.inventory.get_slot(ps.hand_slot())))
 		elif Items.kind(tool) == "axe" and k.tool == "axe":
-			power = Items.info(tool).power * AXE_ON_WOOD * ps.progress.chop_power_mult() 				* (1.0 + Upgrades.bonus(ps.inventory.get_slot(ps.hand_slot())))
+			power = Items.info(tool).power * AXE_ON_WOOD * ps.progress.chop_power_mult() 				* (1.0 + Upgrades.bonus(ps.inventory.get_slot(ps.hand_slot()))) 				* (1.0 + Gems.bonus(ps.inventory.get_slot(ps.hand_slot())).get("dig", 0.0))  # Deep Onyx in a wood axe
 		if power <= 0.0:
 			var r := {state = "no_tool", point = spot.pos}
 			_tell_feedback(peer_id, r)
@@ -2695,6 +2733,8 @@ func _give_dig_drops(ps: PlayerState, counts: Dictionary, pos: Vector3) -> void:
 			spawn_drop(Gems.item_id(Gems.NORMAL.keys().pick_random()), 1, pos)  # Master of Stone: a rare gem
 		if n > 0 and item.begins_with("crystal_") and ps.progress.has_star("mining", 75):
 			n += 1  # Mining ★75: +1 crystal
+		if n > 0 and not item.begins_with("crystal_") and randf() < Gems.armor_bonus(ps.inventory).get("double_ore", 0.0):
+			n *= 2  # Deep Onyx armor: double ore and stone
 		if n > 0:
 			spawn_drop(item, n, pos)
 

@@ -536,12 +536,27 @@ func _show_detail(inv: Inventory) -> void:
 ## The Gem Bench (combat doc 4.4): every item with sockets, its gems, and the gems you carry.
 func _gem_bench(ps: GameAuthority.PlayerState) -> void:
 	_title.text = "Gem Bench"
-	_status.text = "Socketing is free. Taking a gem out costs 5 blue glow crystals."
+	_status.text = "Socketing is free. Taking a gem out costs %d gold. 3 of the same gem make 1 better one." % Gems.REMOVE_COST.gold_coin
 	UiKit.clear(_list)
 	var carried := []
 	for s in ps.inventory.slots:
 		if not s.is_empty() and Gems.gem_of(s.id) != "" and not carried.has(Gems.gem_of(s.id)):
 			carried.append(Gems.gem_of(s.id))
+	# Combining: every gem you hold 3 of.
+	for g in carried:
+		if not Gems.NORMAL.has(Gems.base_of(g)) or Gems.level_of(g) >= Gems.MAX_LEVEL:
+			continue
+		var have := ps.inventory.count_of(Gems.item_id(g))
+		var next := Gems.with_level(Gems.base_of(g), Gems.level_of(g) + 1)
+		var b := Button.new()
+		b.text = "Combine 3 %s into 1 %s  (%d gold, you have %d gems)" % [Gems.full_name(g), Gems.full_name(next), Gems.COMBINE_GOLD[Gems.level_of(next)], have]
+		b.tooltip_text = Gems.describe(next)
+		b.disabled = have < 3
+		var gem: String = g
+		b.pressed.connect(func():
+			GameAuthority.instance.ask_combine(gem)
+			get_tree().create_timer(0.15).timeout.connect(refresh))
+		_list.add_child(b)
 	var any := false
 	for i in ps.inventory.slots.size():
 		var s := ps.inventory.get_slot(i)
@@ -557,7 +572,8 @@ func _gem_bench(ps: GameAuthority.PlayerState) -> void:
 		_list.add_child(row)
 		for gi in gems.size():
 			var b := Button.new()
-			b.text = "Take out %s" % Gems.NORMAL.get(gems[gi], {}).get("name", gems[gi])
+			b.text = "Take out %s" % Gems.full_name(gems[gi]) if Gems.NORMAL.has(Gems.base_of(gems[gi])) else gems[gi]
+			b.tooltip_text = Gems.describe(gems[gi])
 			var slot_i := i
 			var idx := gi
 			b.pressed.connect(func():
@@ -566,11 +582,11 @@ func _gem_bench(ps: GameAuthority.PlayerState) -> void:
 			row.add_child(b)
 		if gems.size() < Gems.socket_count(s.id):
 			for g in carried:
-				if not Gems.NORMAL.has(g):
+				if not Gems.can_socket(s, g):
 					continue
 				var b := Button.new()
-				b.text = "+ %s" % Gems.NORMAL[g].name
-				b.tooltip_text = str(Gems.NORMAL[g][Gems.slot_kind(s.id)])
+				b.text = "+ %s" % Gems.full_name(g)
+				b.tooltip_text = Gems.describe(g)
 				var slot_i := i
 				var gem: String = g
 				b.pressed.connect(func():
@@ -579,7 +595,7 @@ func _gem_bench(ps: GameAuthority.PlayerState) -> void:
 				row.add_child(b)
 	if not any:
 		var l := Label.new()
-		l.text = "Copper and better weapons, shields and pickaxes have gem sockets. Stone ones don't."
+		l.text = "Copper and better weapons, shields, tools and armor have a gem socket. Stone and leather ones don't."
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD
 		_list.add_child(l)
 

@@ -31,6 +31,7 @@ var upset_time := 0.0
 var cozy_time := 0.0  ## the "Cozy" rest buff (see Comfort): seconds left
 var cozy_points := 0  ## how cozy the place was
 var ailments := Ailments.new()  ## poison, burn, chill (only on the dwarf's own computer)
+var gear := {}  ## gems in the worn armor (Gems.armor_bonus), kept fresh by the PlayerState
 var progress: Progression = null  ## this dwarf's perks (set by PlayerState)
 var effects := {}  ## timed effects from active perks: name -> {left (seconds), and numbers like damage_taken}
 var in_dark := false  ## no light reaches you (Darkness): no healing, stamina costs 50% more (F293)
@@ -88,7 +89,7 @@ func regen_per_second() -> float:
 
 
 func health_regen_mult() -> float:
-	var cozy := (Comfort.HEALTH_MULT if cozy_time > 0.0 else 1.0) * (1.0 + (progress.health_regen_bonus() if progress else 0.0))
+	var cozy := (Comfort.HEALTH_MULT if cozy_time > 0.0 else 1.0) * (1.0 + (progress.health_regen_bonus() if progress else 0.0) + float(gear.get("heal", 0.0)))  # Blood Ruby armor
 	match status():
 		"well_fed": return 1.2 * cozy
 		"peckish": return 0.75 * cozy
@@ -105,7 +106,7 @@ func set_cozy(points: int) -> void:
 
 
 func stamina_regen_mult() -> float:
-	var m := 1.0 + buff_total("stamina_regen")
+	var m := 1.0 + buff_total("stamina_regen") + float(gear.get("stamina_regen", 0.0))  # Wind Amethyst armor
 	if _since_damage < 10.0:
 		m += _rank("battle_breath") * 0.10  # Battle Breath: a fight is on
 	if friends_near:
@@ -189,7 +190,7 @@ func take_damage(amount: float) -> bool:
 
 ## Poison / burn / chill building up on you, after perks and Clan Banner resist. Returns what started ("" = nothing).
 func add_ailment(kind: String, amount: float) -> String:
-	var resist := (progress.ailment_resist(kind) if progress else 0.0) + buff_total("resist_" + kind)
+	var resist := (progress.ailment_resist(kind) if progress else 0.0) + buff_total("resist_" + kind) + float(gear.get("resist_" + kind, 0.0))
 	return ailments.add(kind, amount * maxf(0.1, 1.0 - resist))
 
 
@@ -209,7 +210,7 @@ func consume(item_id: String, roll: float = 1.0) -> bool:
 		return false
 	hunger = minf(100.0, hunger + info.get("hunger", 0))
 	thirst = minf(100.0, thirst + info.get("thirst", 0))
-	health = minf(max_health(), health + info.get("heal", 0))  # a Moss Bandage
+	health = minf(max_health(), health + info.get("heal", 0) * (1.0 + gear.get("heal", 0.0)))  # a Moss Bandage (Blood Ruby armor)
 	if roll < info.get("upset", 0.0):
 		upset_time = UPSET_TIME
 	if Foods.is_buff_food(item_id):

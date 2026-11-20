@@ -49,6 +49,7 @@ const VitalDialScript := preload("res://src/ui/vital_dial.gd")
 var _health_text: Label
 var _level_label: Label
 var _buff_label: Label
+var _ailment_badges: AilmentBadges  ## burning / chilled / poisoned / frozen, above the health bar
 var craft: CraftPanel
 var skills: SkillsPanel
 var map_panel: MapPanel
@@ -198,6 +199,9 @@ func _build() -> void:
 		_dials.add_child(d)
 		_bars[k] = d
 	var stack := _vitals
+	_ailment_badges = AilmentBadges.new()
+	_ailment_badges.name = "AilmentBadges"
+	root.add_child(_ailment_badges)
 	# F247 (owner, Nov 19): the old slider look stretched into a thin strip with the number on its top edge.
 	# Now each bar sits in the hotbar slots' wood-and-brass frame, a thick fill inside, the number in the middle.
 	for b in [["health", Color(0.86, 0.2, 0.16), VITAL_BAR_H[0]], ["stamina", Color(0.93, 0.74, 0.26), VITAL_BAR_H[1]]]:
@@ -811,6 +815,15 @@ func _place_vitals() -> void:
 	_vitals.offset_right = w * 0.5
 	_vitals.offset_bottom = -HOTBAR_SLOT - 18.0 - 14.0
 	_vitals.offset_top = _vitals.offset_bottom - VITAL_BAR_H[0] - VITAL_BAR_H[1] - 4.0
+	if _ailment_badges:
+		_ailment_badges.anchor_left = 0.5
+		_ailment_badges.anchor_right = 0.5
+		_ailment_badges.anchor_top = 1.0
+		_ailment_badges.anchor_bottom = 1.0
+		_ailment_badges.offset_left = -w * 0.5
+		_ailment_badges.offset_right = w * 0.5
+		_ailment_badges.offset_bottom = _vitals.offset_top - 6.0
+		_ailment_badges.offset_top = _ailment_badges.offset_bottom - AilmentBadges.SIZE
 	var dw := DIAL_SIZE * 2.0 + 10.0
 	_dials.offset_right = -w * 0.5 - 16.0
 	_dials.offset_left = _dials.offset_right - dw
@@ -1057,7 +1070,8 @@ func _process(delta: float) -> void:
 		for e in v.effects:
 			if not e.begins_with("cd_") and Progression.PERKS.has(e) or e == "bond":
 				buffs.append("%s %d s" % [Progression.PERKS[e][4] if Progression.PERKS.has(e) else "Bond of the Clan", ceili(v.effects[e].left)])
-		_buff_label.text = "\n".join(([mood] if mood != "" else []) + buffs + Array(v.ailments.describe()))
+		_buff_label.text = "\n".join(([mood] if mood != "" else []) + buffs + Array(v.ailments.describe(false)))
+		_ailment_badges.show_ailments(v.ailments)
 		var p := ps.progress
 		var best := Progression.SKILLS.duplicate()
 		best.sort_custom(func(a, b): return p.skill_level[a] > p.skill_level[b])
