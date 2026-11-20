@@ -41,10 +41,10 @@ const MOSSGATE := {
 		["spike_pit", 36, 20, 42, 26, -4, 5],         # under the breaking floor (reaches 1 m up into the hall: no rock skin at 0)
 		["pillar_chasm", 32, 12, 36, 16, 0, 3.5],
 		["chasm_room", 24, 0, 46, 12, 0, 7],          # 10
-		["chasm", 36, 0, 42, 12, -24, 31],            # the long drop (spikes at the bottom)
+		["chasm", 36, 0, 42, 12, -4, 11],             # the drop: 4 m onto spikes, like the spike pit (owner, Nov 20, 3rd play)
 		["boulder_way", 46, 4, 50, 8, 0, 3],          # 11 the hidden boulder fills it (low, so it fills it)
-		["crusher_hall", 50, 4, 56, 8, 0, 4.5],       # 12 two crushers (under a 4 m root wood ceiling, their chains run up into it)
-		["pack_hall", 56, 0, 72, 18, 0, 6],           # 13
+		["crusher_hall", 50, 4, 56, 8, 0, 4.5],       # 12 the small hall before the Pack Hall's shut round door
+		["pack_hall", 56, 0, 72, 18, 0, 6],           # 13 (the crushers hang just inside its door, owner Nov 20)
 		["loot_door", 72, 8, 74, 12, 0, 3.5],
 		["loot_room", 74, 4, 84, 16, 0, 4.5],         # 14
 		["way_out_n", 76, 16, 80, 42, 0, 3.5],        # 15 the way out

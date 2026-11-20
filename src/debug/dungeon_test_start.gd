@@ -83,7 +83,10 @@ func _run() -> void:
 					["pillar_hall", Vector3(34.0, 0.3, 29.0), Vector3(36.0, 1.0, 19.0)],
 					["bridge", Vector3(31.0, 0.3, 6.0), Vector3(40.0, 0.6, 6.0)],
 					["bridge_gap", Vector3(35.0, 0.3, 3.2), Vector3(38.4, 0.0, 6.0)],  # (owner's 2nd play, Nov 20)
-					["crushers", Vector3(55.6, 0.3, 7.4), Vector3(53.0, 1.2, 5.6)],
+					["pack_door", Vector3(52.5, 0.3, 6.6), Vector3(56.0, 1.2, 6.0)],  # (owner's 3rd play, Nov 20)
+					["crushers", Vector3(61.5, 0.3, 7.5), Vector3(57.2, 2.4, 6.0)],
+					["lever", Vector3(73.2, 0.3, 40.6), Vector3(71.0, 1.0, 38.2)],
+					["old_ceiling", Vector3(34.0, 0.3, 45.0), Vector3(34.0, 4.0, 38.0)],
 					["cracked_wall", Vector3(65.0, 0.3, 39.5), Vector3(65.0, 1.2, 36.0)]]:
 				dwarf.set_physics_process(false)
 				dwarf.global_position = DungeonMap.to_world(d, v[1])
@@ -95,5 +98,53 @@ func _run() -> void:
 				await RenderingServer.frame_post_draw
 				print("DUNGEON_TEST shot ", _main.take_screenshot(a.trim_prefix("shots=").path_join("dungeon_%s.png" % v[0])))
 			print("DUNGEON_TEST monsters alive: %d" % _main.authority.monsters.monsters.size())
+			if "drips" in OS.get_cmdline_user_args():
+				await _walk_drips(d)
 			get_tree().quit()
 	queue_free()
+
+
+## Robots (owner's 3rd play, Nov 20: "stalactites don't drop even when I'm close"): the dwarf really walks (his own
+## legs, physics on) past every stalactite, 0.5 m to its side, and the game says whether it fell and hurt him.
+func _walk_drips(d: Dictionary) -> void:
+	var db := DungeonBuild.instance
+	var dwarf: Dwarf = _main.dwarf
+	var auth: GameAuthority = _main.authority
+	var ps := auth.get_player(auth.local_peer_id())
+	for id in db.things:
+		var th: Dictionary = db.things[id]
+		if th.kind != "drip":
+			continue
+		var c: Vector3 = th.centre
+		var q := DungeonMap.to_local(d, c)
+		var start := DungeonMap.to_world(d, Vector3(q.x - 4.0, 0.4, q.z + 0.5))
+		if DungeonMap.space_at(d, start + Vector3.UP) == "":
+			start = DungeonMap.to_world(d, Vector3(q.x + 4.0, 0.4, q.z + 0.5))
+		var target := DungeonMap.to_world(d, Vector3(q.x, 0.4, q.z + 0.5))
+		dwarf.set_physics_process(false)
+		dwarf.global_position = start
+		dwarf.velocity = Vector3.ZERO
+		var look := target - start
+		dwarf._yaw = atan2(-look.x, -look.z)
+		dwarf.model.rotation.y = dwarf._yaw
+		await get_tree().create_timer(0.5).timeout
+		ps.vitals.health = ps.vitals.max_health()
+		var hp0: float = ps.vitals.health
+		dwarf.set_physics_process(true)
+		dwarf.bot_move = Vector2(0, -1)
+		var t := 0.0
+		var fell_at := -1.0
+		var closest := 99.0
+		while t < 2.5:
+			await get_tree().physics_frame
+			t += get_physics_process_delta_time()
+			var p := dwarf.global_position
+			closest = minf(closest, Vector2(p.x - c.x, p.z - c.z).length())
+			if fell_at < 0.0 and db.is_broken(id):
+				fell_at = t
+		dwarf.bot_move = Vector2.ZERO
+		await get_tree().create_timer(1.2).timeout
+		print("DRIP_WALK %d (%s, %s): %s, closest %.2f m, dwarf y %.2f vs landing %.2f / centre %.2f, hurt %.0f" % [id,
+			th.model.get_file(), DungeonMap.space_at(d, c), ("fell at %.2f s" % fell_at) if fell_at >= 0.0 else "DID NOT FALL",
+			closest, dwarf.global_position.y, float(th.landing), c.y, hp0 - ps.vitals.health])
+		ps.vitals.health = hp0

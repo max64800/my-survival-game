@@ -15,6 +15,7 @@
 #   bridge_plank      batch 3: a 2 m section of plank bridge (rope stringers, planks across, hand ropes), tiles along z
 #   bridge_plank_broken  the same with planks gone, one hanging, a hand rope snapped
 #   bridge_plank_gap  the same with the four middle planks gone (you jump the gap), hand ropes whole
+#   bridge_ropes      the same with every plank gone: just the ropes (owner, Nov 20: only the middle section has planks)
 #   dungeon_entrance  the front door frame in the cave wall (3 m wide): the round doorway, big posts, lintel, rune board
 #   door_loot         the loot room's heavy round door: iron bands, lock plate, a big ring (fits the normal doorway)
 #   chain_hanging     1.5 m of the crusher's iron chain under a ceiling plate (origin = the ceiling, chain hangs down)
@@ -240,12 +241,14 @@ def rope(p0, p1, r, ends=True):
 	return o
 
 
-def bridge(broken=False, gap=False):
+def bridge(broken=False, gap=False, bare=False):
 	"""A 2 m section of plank bridge (along z, 1.3 m wide): two thick rope stringers under split planks laid
 	across, hand ropes at 0.95 m tied down to the planks. Sections side by side make a bridge of any length.
 	broken: two planks gone, one hanging off a stringer, the left hand rope snapped with both ends dangling.
 	gap (owner, Nov 20: "leave a couple of middle boards missing so you must jump"): the four middle planks gone
-	(about 1 m of bare rope), both hand ropes whole."""
+	(about 1 m of bare rope), both hand ropes whole.
+	bare (owner, Nov 20, 3rd play: "too easy, remove all the planks but the middle ones"): every plank gone, only the
+	stringers and hand ropes, the ties running from the hand ropes down onto the stringers (you jump across)."""
 	L = 0.994
 	for x in (-0.5, 0.5):
 		rope((x, 0.04, -L), (x, 0.04, L), 0.035)
@@ -255,6 +258,8 @@ def bridge(broken=False, gap=False):
 		zs.append((z, min(z + w, L - 0.01)))
 		z += w + K.rng.uniform(0.025, 0.035)
 	gone = {3, 4} if broken else ({2, 3, 4, 5} if gap else set())
+	if bare:
+		gone = set(range(len(zs)))
 	for i, (z0, z1) in enumerate(zs):
 		if i in gone:
 			continue
@@ -276,10 +281,13 @@ def bridge(broken=False, gap=False):
 			rope((x, 0.95, -L), (x, 0.95, L), 0.028)
 		for i, (z0, z1) in enumerate(zs):
 			zc = (z0 + z1) / 2
-			if (i % 2 and not (snapped and zc > 0.5)) or i in gone or (broken and i == 6):  # (the snapped end keeps a tie)
+			if (i % 2 and not (snapped and zc > 0.5)) or (i in gone and not bare) or (broken and i == 6):  # (the snapped end keeps a tie)
 				continue
 			zc = (z0 + z1) / 2
 			if snapped and -0.12 < zc < 0.5:
+				continue
+			if bare:  # (down onto the stringer rope: 2 cm into it, so they touch)
+				rope((x, 0.95, zc), (x * 0.81, 0.055, zc), 0.013)
 				continue
 			rope((x, 0.95, zc), (x * 0.97, 0.1, zc), 0.013)  # the tie from the hand rope down to the plank
 
@@ -938,7 +946,7 @@ def pictures(name, parts):
 BUILDS = {"wall_broken": wall_broken, "recipe_stand": recipe_stand, "recipe_scroll": recipe_scroll, "bridge_posts": bridge_posts,
 	"wall_cracked": wall_cracked, "wall_old": wall_old, "floor_old": floor_old,
 	"floor_loose_stone": floor_loose_stone, "gate_round": gate_round, "lever": lever, "railing_broken": railing_broken,
-	"bridge_plank": bridge, "bridge_plank_broken": lambda: bridge(True), "bridge_plank_gap": lambda: bridge(gap=True), "dungeon_entrance": entrance,
+	"bridge_plank": bridge, "bridge_plank_broken": lambda: bridge(True), "bridge_plank_gap": lambda: bridge(gap=True), "bridge_ropes": lambda: bridge(bare=True), "dungeon_entrance": entrance,
 	"door_loot": loot_door, "chain_hanging": chain_hanging, "trap_dart_plate": dart_plate, "trap_dart_wall": dart_wall, "trap_floor_break": floor_break, "trap_crusher": crusher}
 
 if __name__ == "__main__":

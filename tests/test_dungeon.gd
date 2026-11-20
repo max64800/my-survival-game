@@ -227,11 +227,11 @@ func test_the_chasm_and_spike_pit_kill() -> void:
 	if m.dungeons.is_empty():
 		return
 	var d: Dictionary = m.dungeons[0]
-	check_eq(DungeonBuild.deadly_space(d, DungeonMap.to_world(d, Vector3(39, -23.5, 6))), "chasm", "the chasm's bottom kills")
+	check_eq(DungeonBuild.deadly_space(d, DungeonMap.to_world(d, Vector3(39, -3.5, 6))), "chasm", "the chasm's bottom kills (4 m down, owner Nov 20)")
 	check_eq(DungeonBuild.deadly_space(d, DungeonMap.to_world(d, Vector3(39, -3.5, 23))), "spike_pit", "the spike pit kills")
 	check_eq(DungeonBuild.deadly_space(d, DungeonMap.to_world(d, Vector3(39, 0.3, 6))), "", "the bridge is safe")
 	check_eq(DungeonBuild.deadly_space(d, DungeonMap.to_world(d, Vector3(30, 0.3, 6))), "", "the chasm room's floor is safe")
-	check_eq(DungeonBuild.deadly_space(d, DungeonMap.to_world(d, Vector3(39, -10.0, 6))), "", "still falling (not yet on the spikes)")
+	check_eq(DungeonBuild.deadly_space(d, DungeonMap.to_world(d, Vector3(39, -1.5, 6))), "", "still falling (not yet on the spikes)")
 
 
 # ---- The owner's second play of the dungeon test (Nov 20) ----
@@ -254,6 +254,13 @@ func _rig() -> Dictionary:
 	db.maker = m
 	root.add_child(db)
 	return {root = root, auth = auth, player = player, ps = ps, db = db, d = m.dungeons[0]}
+
+
+func _kind(db: DungeonBuild, kind: String) -> int:
+	for id in db.things:
+		if db.things[id].kind == kind:
+			return id
+	return -1
 
 
 func _thing(db: DungeonBuild, model: String) -> int:
@@ -291,7 +298,7 @@ func test_the_spike_pit_shows_under_the_breaking_floor() -> void:
 		check(m.sdf_at(DungeonMap.to_world(d, Vector3(39, y, 23))) > 0.3, "the pit is open at y %.1f" % y)
 	var plan := DungeonBuild.load_plan("mossgate")
 	check(plan.lights.any(func(l): return float(l[1]) < -1.0), "a light down in the pit shows the spikes")
-	check_eq(plan.props.filter(func(p): return String(p.model) == "dungeon/trap_spikes.glb" and float(p.pos[1]) == -4.0).size(), 9,
+	check_eq(plan.props.filter(func(p): return String(p.model) == "dungeon/trap_spikes.glb" and float(p.pos[1]) == -4.0 and float(p.pos[2]) > 19.0).size(), 9,
 		"nine spike beds on the pit's floor")
 	check(DungeonBuild.FLOOR_GIVE <= 0.2, "the cracked floor gives way fast")
 	var boards := 0
@@ -338,7 +345,6 @@ func test_the_shrine_basin_heals() -> void:
 ## Note 5: the bridge's hand ropes and the edge railings are solid, and one section has a 1 m hole you jump.
 func test_the_bridge_has_ropes_and_a_gap() -> void:
 	var plan := DungeonBuild.load_plan("mossgate")
-	check(plan.props.any(func(p): return String(p.model) == "dungeon/bridge_plank_gap.glb"), "a bridge section with a gap")
 	check(not DungeonBuild.NO_BODY.has("dungeon/railing_broken.glb"), "the edge railings are solid")
 	for model in ["dungeon/bridge_plank.glb", "dungeon/bridge_plank_gap.glb"]:
 		var ropes := (DungeonBuild.BOXES[model] as Array).filter(func(b): return (b[0] as Vector3).y > 0.4)
@@ -371,6 +377,7 @@ func test_the_crushers_kill() -> void:
 	ps.vitals.health = 100.0
 	(r.player as Node3D).global_position = (th.xform as Transform3D).origin + Vector3.UP * 0.25
 	db._clock = 100.0
+	db.set_crushers_awake(th.d, true)
 	db._move_crusher(id, 1000.0 * DungeonBuild.CRUSH_CYCLE + 0.05, r.auth)  # (0.05 s into its slam)
 	check(ps.vitals.health <= 0.0, "a dwarf under it while it slams is dead")
 	r.root.free()
@@ -384,7 +391,7 @@ func test_the_loot_door_opens_when_the_pack_dies() -> void:
 		return
 	var db: DungeonBuild = r.db
 	var auth: GameAuthority = r.auth
-	var id := _thing(db, "dungeon/door_loot.glb")
+	var id := _kind(db, "door")
 	check(id >= 0, "the loot door is built as its own body")
 	check(not auth.keys.is_open("mossgate_hold"), "shut at first")
 	db._on_dungeon_room("mossgate", "guard_room", true)
@@ -421,3 +428,234 @@ func test_the_dungeon_test_world_has_no_caves() -> void:
 	check(m.sdf_at(m.spawn_point + Vector3.UP) > 0.3, "you start in the small cave")
 	for far in [Vector3(80, -20, 0), Vector3(-60, -20, 40), Vector3(0, -20, 60), Vector3(0, -40, -120)]:
 		check(m.sdf_at(far) < 0.0, "solid rock at %s (no caves)" % far)
+
+
+# ---- The owner's third play of the dungeon test (Nov 20) ----
+
+## Note 1: a dwarf walking under a stalactite (at walking speed, through the real trap check) brings it down on him.
+func test_walking_under_a_stalactite_brings_it_down() -> void:
+	var r := _rig()
+	if r.is_empty():
+		return
+	var db: DungeonBuild = r.db
+	var auth: GameAuthority = r.auth
+	var fell := 0
+	var drips := 0
+	for id in db.things:
+		var th: Dictionary = db.things[id]
+		if th.kind != "drip":
+			continue
+		drips += 1
+		var c: Vector3 = th.centre
+		var under := Vector3(c.x, float(th.landing) + 0.05, c.z)
+		var player := r.player as Node3D
+		# Walk 4 m/s past it, 0.8 m to one side, through the host's check (every 0.1 s).
+		for k in 30:
+			player.global_position = under + Vector3(-3.0 + 0.4 * k, 0, 0.8)
+			db._host_tick = 0.0
+			db._physics_process(0.1)
+			if db.is_broken(id):
+				break
+		if db.is_broken(id):
+			fell += 1
+		else:
+			print("  stalactite %d at %s did not fall (landing %.2f, centre y %.2f)" % [id, c, float(th.landing), c.y])
+	check(drips >= 6, "the stalactites are built (%d)" % drips)
+	check_eq(fell, drips, "every stalactite comes down on a dwarf walking under it")
+	r.root.free()
+
+
+## Note 2: only the middle of the bridge has planks: two 2 m jumps the dwarf can make walking; every hand rope is solid,
+## the posts' too.
+func test_the_bridge_is_two_big_jumps() -> void:
+	var plan := DungeonBuild.load_plan("mossgate")
+	var decks := []
+	for p in plan.props:
+		if String(p.model) in ["dungeon/bridge_plank.glb", "dungeon/bridge_plank_gap.glb", "dungeon/bridge_plank_broken.glb"]:
+			decks.append(float(p.pos[0]))
+	check_eq(decks.size(), 1, "one section with planks")
+	if decks.size() == 1:
+		check_near(decks[0], 39.0, 0.01, "in the middle of the chasm (36 to 42)")
+	var gap := (39.0 - 1.0) - 36.0
+	var g: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
+	var reach := Dwarf.WALK_SPEED * 2.0 * Dwarf.JUMP_SPEED / g
+	check(gap >= 1.9, "a big jump (%.1f m)" % gap)
+	check(reach > gap + 1.0, "the dwarf makes it walking (%.1f m jump)" % reach)
+	check(plan.props.any(func(p): return String(p.model) == "dungeon/bridge_ropes.glb"), "the ropes run on where the planks are gone")
+	for model in ["dungeon/bridge_ropes.glb", "dungeon/bridge_posts.glb"]:
+		var ropes := (DungeonBuild.BOXES[model] as Array).filter(func(b): return (b[0] as Vector3).y > 0.4 and (b[1] as Vector3).x < 0.1)
+		check_eq(ropes.size(), 2, "%s: both hand ropes are solid" % model)
+	check(not (DungeonBuild.BOXES["dungeon/bridge_ropes.glb"] as Array).any(func(b): return (b[0] as Vector3).y < 0.2),
+		"no deck where the planks are gone")
+
+
+## Note 3: the chasm is 4 m deep, like the spike pit.
+func test_the_chasm_is_as_deep_as_the_pit() -> void:
+	for s in DungeonMap.MOSSGATE.spaces:
+		if String(s[0]) in ["chasm", "spike_pit"]:
+			check_eq(float(s[5]), -4.0, "%s: 4 m deep" % s[0])
+	var plan := DungeonBuild.load_plan("mossgate")
+	check(plan.props.filter(func(p): return String(p.model) == "dungeon/trap_spikes.glb").all(func(p): return float(p.pos[1]) == -4.0),
+		"every spike bed lies 4 m down")
+
+
+## Note 5: a shut round door before the Pack Hall (E opens it, it swings toward you); the crushers hang just inside the
+## Pack Hall, 1 m higher (2.5 m drop), asleep until someone has crossed the hall.
+func test_the_pack_hall_door_and_its_crushers() -> void:
+	check_eq(DungeonBuild.CRUSH_DROP, 2.5, "they drop 2.5 m")
+	check_near(DungeonBuild.CRUSH_DROP / DungeonBuild.CRUSH_RISE, 1.2, 0.01, "they rise as fast as before (1.2 m/s)")
+	check(DungeonBuild.CRUSH_SLAM <= 0.2, "they slam fast")
+	var r := _rig()
+	if r.is_empty():
+		return
+	var db: DungeonBuild = r.db
+	var auth: GameAuthority = r.auth
+	var player := r.player as Node3D
+	var door := _kind(db, "hand_door")
+	check(door >= 0, "the round door is built")
+	if door < 0:
+		r.root.free()
+		return
+	var th: Dictionary = db.things[door]
+	var d: Dictionary = th.d
+	check_near(DungeonMap.to_local(d, (th.xform as Transform3D).origin).x, 56.0, 0.01, "it stands in the doorway between the halls")
+	check(not th.get("open", false), "shut at first")
+	check(not db.use_info(door).is_empty(), "E opens it")
+	var t: Transform3D = th.xform
+	player.global_position = DungeonMap.to_world(d, Vector3(54.0, 0.3, 6.0))  # (in the small hall, coming to it)
+	db.request_use(1, door)
+	check(th.get("open", false), "E: it opens")
+	check(auth.world_state.dungeon_opened.has(str(door)), "kept in the world state (saved, sent to friends)")
+	var way: int = db.opened_by_hand(door)
+	var side := (t.affine_inverse() * player.global_position).z
+	check(way * side < 0.0 or (way > 0) == (side < 0.0), "it swings toward the one who opened it")
+	for id in db.crushers:
+		check_eq(DungeonMap.space_at(d, (db.things[id].xform as Transform3D).origin + Vector3.UP * 0.5), "pack_hall", "crusher %d is in the Pack Hall" % id)
+	# Asleep: a dwarf under one isn't hurt; across the hall wakes them; then it kills.
+	var cid: int = db.crushers[0]
+	var cth: Dictionary = db.things[cid]
+	var ps: GameAuthority.PlayerState = r.ps
+	ps.vitals.health = 100.0
+	player.global_position = (cth.xform as Transform3D).origin + Vector3.DOWN * 0.95
+	db._clock = 100.0
+	db._move_crusher(cid, 1000.0 * DungeonBuild.CRUSH_CYCLE + 0.05, auth)
+	check_near(ps.vitals.health, 100.0, 0.01, "asleep: it doesn't come down")
+	db._check_crushers_wake(auth, DungeonMap.to_world(d, Vector3(62.0, 0.3, 9.0)))
+	check(not db.crushers_awake(d), "still asleep in the middle of the hall")
+	db._check_crushers_wake(auth, DungeonMap.to_world(d, Vector3(70.5, 0.3, 10.0)))
+	check(db.crushers_awake(d), "awake once someone has crossed to the loot door")
+	player.global_position = (cth.xform as Transform3D).origin + Vector3.DOWN * 0.95
+	db._clock = 200.0
+	db._move_crusher(cid, 1001.0 * DungeonBuild.CRUSH_CYCLE + 0.05, auth)
+	check(ps.vitals.health <= 0.0, "awake: it kills on the way back")
+	db._on_dungeon_room("mossgate", "pack_hall", false)
+	check(not db.crushers_awake(d), "the pack back: they sleep again")
+	# No ceiling boards over them (they hide up in the dark).
+	var plan := DungeonBuild.load_plan("mossgate")
+	for p in plan.pieces + plan.props:
+		var pos: Array = p.pos
+		if float(pos[1]) > 3.5 and absf(float(pos[0]) - 57.0) < 0.5 and float(pos[2]) > 4.0 and float(pos[2]) < 8.0:
+			check(false, "a ceiling over the crushers at %s" % [pos])
+	r.root.free()
+
+
+## Note 6: the loot door opens when the pack really dies (the monster code's own kills, not a made-up signal), and
+## a creature that falls into the chasm dies on its spikes (it can't keep the door shut from down there).
+func test_killing_the_pack_opens_the_loot_door() -> void:
+	var r := _rig()
+	if r.is_empty():
+		return
+	var db: DungeonBuild = r.db
+	var auth: GameAuthority = r.auth
+	var mm: MonsterManager = auth.monsters
+	var d: Dictionary = r.d
+	var list := []  # (the Pack Hall's group, made like MonsterManager._dungeon_groups does: the rig has no world)
+	for c in DungeonBuild.load_plan("mossgate").creatures:
+		var local := Vector3(c.pos[0], c.pos[1], c.pos[2])
+		if DungeonMap.space_at(d, DungeonMap.to_world(d, Vector3(local.x, 1.0, local.z))) == "pack_hall":
+			list.append([String(c.kind), local])
+	var pack := {key = MonsterManager.DUNGEON_KEY, list = list, d = d, room = "pack_hall"}
+	var uids: Array = mm._spawn_dungeon_group({}, pack)
+	mm._rooms[pack.key] = {alive = uids.duplicate(), cleared_at = mm._clock}
+	pack.was = uids.size()
+	check(uids.size() >= 6, "the pack came (%d)" % uids.size())
+	# One of them chases you onto the bridge and falls into the chasm: the spikes kill it.
+	var faller: Monster = mm.monsters[uids[0]]
+	faller.global_position = DungeonMap.to_world(d, Vector3(39.0, -3.6, 6.0))
+	db._traps_hit_creatures(auth)
+	check(not mm.monsters.has(uids[0]), "a creature in the chasm dies on the spikes")
+	for u in uids.slice(1):
+		if mm.monsters.has(u):
+			mm._kill(mm.monsters[u], 1)
+	var st: Dictionary = mm._rooms[pack.key]
+	st.alive = st.alive.filter(func(u): return mm.monsters.has(u) and (mm.monsters[u] as Monster).is_alive())
+	var now: int = st.alive.size()
+	if pack.was > 0 and now == 0:
+		mm.dungeon_room.emit(String(d.id), "pack_hall", true)
+	check(auth.keys.is_open("mossgate_hold"), "the whole pack dead: the loot door opens")
+	r.root.free()
+
+
+## Note 8: the way out's lever is on the wall (its back on the boards), E pulls it, the gate opens for everyone.
+func test_the_lever_opens_the_way_out_gate() -> void:
+	var r := _rig()
+	if r.is_empty():
+		return
+	var db: DungeonBuild = r.db
+	var auth: GameAuthority = r.auth
+	var lever := _kind(db, "lever")
+	var gate := _kind(db, "gate")
+	check(lever >= 0 and gate >= 0, "the lever and the gate are built")
+	if lever < 0 or gate < 0:
+		r.root.free()
+		return
+	var d: Dictionary = db.things[lever].d
+	var lt: Transform3D = db.things[lever].xform
+	var back := lt.origin  # (the lever's back, on the wall)
+	var q := DungeonMap.to_local(d, back)
+	check(absf(q.z - (38.0 + 0.145)) < 0.03, "its back sits on the wall's boards (z %.3f)" % q.z)
+	check_eq(DungeonMap.space_at(d, back + lt.basis.z * 0.5 + Vector3.UP), "way_out_w", "it faces into the way out")
+	check(auth.keys.gates.has("mossgate_hold"), "DungeonKeys knows the gate")
+	check(not db.things[gate].get("open", false), "the gate is shut")
+	(r.player as Node3D).global_position = back + lt.basis.z * 1.0
+	check_eq(auth.keys.request_pull_lever(1, "mossgate_hold"), "The gate grinds open. The way out!", "E pulls it")
+	check(db.things[gate].get("open", false), "the gate swings open")
+	check(db.is_gate_open(d), "kept in the world state")
+	r.root.free()
+
+
+## Note 9: the cracked wall's hits throw wood splinters (it is boards), and its boards fall and lie on the floor a
+## while (they don't just vanish).
+func test_the_cracked_wall_is_wood() -> void:
+	check(DungeonBuild.TOPPLE_LIE >= 3.0, "its fallen boards stay a few seconds")
+	var src := FileAccess.get_file_as_string("res://src/world/dungeon_build.gd")
+	check(src.contains('th.kind != "smash" and th.model != "dungeon/wall_cracked.glb"'), "its hits show wood, not stone dust")
+
+
+## Note 10: about 70% of the root wood ceilings are old (the old floor turned upside down, its worn face down).
+func test_most_ceilings_are_old() -> void:
+	var plan := DungeonBuild.load_plan("mossgate")
+	var old: Array = plan.props.filter(func(p): return String(p.model) == "dungeon/floor_old.glb" and float(p.pos[1]) > 2.0)
+	var new: Array = plan.pieces.filter(func(p): return String(p.id) == "floor" and float(p.pos[1]) > 2.0)
+	var share := float(old.size()) / maxf(1.0, float(old.size() + new.size()))
+	check(share > 0.6 and share < 0.85, "about 70%% of the ceilings are old (%.0f%%)" % (share * 100.0))
+	check(old.all(func(p): return float(p.get("tilt", 0.0)) == 180.0), "turned upside down (its worn face down)")
+
+
+## Note 7: taking the scroll off the recipe stand rolls it up and it's gone.
+func test_the_scroll_rolls_up_when_taken() -> void:
+	var body := Node3D.new()
+	tree.root.add_child(body)
+	var scroll := Node3D.new()
+	scroll.name = "Scroll"
+	body.add_child(scroll)
+	var inv := Inventory.new(4)
+	inv.add("scroll_mossgate", 1)
+	DungeonBuild.show_scroll(body, inv)
+	check(scroll.visible, "on the stand while the page is there")
+	inv.remove("scroll_mossgate", 1)
+	DungeonBuild.show_scroll(body, inv)
+	check(scroll.visible, "it rolls up first (still there while it rolls)")
+	await tree.create_timer(1.0).timeout
+	check(not scroll.visible, "then it's gone")
+	body.free()

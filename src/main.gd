@@ -905,6 +905,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		if info.has("door_uid"):
 			authority.builder.ask_door(info.door_uid)
 			return
+		if info.has("dungeon_use") and DungeonBuild.instance:  # a dungeon's round door or the way out's lever
+			dwarf.model.react("use")
+			DungeonBuild.instance.ask_use(info.dungeon_use)
+			return
 		if info.has("box_id"):
 			# The lid swings open on its hinge and the menu opens with it (ChestOpen; owner F345). It shuts again when
 			# the menu closes (BoxPanel).

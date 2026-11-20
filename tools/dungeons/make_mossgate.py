@@ -25,6 +25,9 @@ NATURAL_CEILING = {"pillar_hall", "chasm_room"}  # rock overhead (stalactites)
 # (owner, Nov 20: the crushers "a bit hidden": the Crusher Hall got a root wood ceiling at 4 m, the crushers' beams sit
 # right under it and their chains run up through it, no torch: you see them late)
 NO_PIECES = {(48, 4), (48, 6)}  # the hidden boulder's spot: bare rock round the boulder
+# Owner, Nov 20 (3rd play): the crushers moved into the Pack Hall, just inside its door. They hang in a dark hole in
+# the root wood ceiling (no ceiling boards over them), so they can lift 1 m higher and hide up there.
+NO_CEILING = {(56, 4), (56, 6)}
 
 
 def group(name):
@@ -66,9 +69,9 @@ def piece(pid, x, y, z, rot, scale=1.0):
 	pieces.append({"id": pid, "mat": MAT, "pos": [x, y, z], "rot": rot, **({"scale": scale} if scale != 1.0 else {})})
 
 
-def prop(model, x, y, z, yaw=0.0, scale=1.0, role="decor", label="", tilt=0.0):
+def prop(model, x, y, z, yaw=0.0, scale=1.0, role="decor", label="", tilt=0.0, opens=""):
 	props.append({"model": model, "pos": [round(x, 3), round(y, 3), round(z, 3)], "yaw": round(yaw, 1), "scale": scale,
-		"role": role, "label": label, **({"tilt": tilt} if tilt else {})})
+		"role": role, "label": label, **({"tilt": tilt} if tilt else {}), **({"opens": opens} if opens else {})})
 
 
 def creature(kind, x, y, z, yaw=0.0):
@@ -107,8 +110,14 @@ for (x, z), g in cells.items():
 		prop("dungeon/floor_old.glb", cx, 0.0, cz, rng.choice([0, 90, 180, 270]))
 	else:
 		piece("floor", cx, 0.0, cz, 0)
-	if g not in NATURAL_CEILING:
-		piece("floor", cx, float(height(g)), cz, 0)  # a root wood ceiling on the walls
+	if g in NATURAL_CEILING or (x, z) in NO_CEILING:
+		continue
+	# A root wood ceiling on the walls. Owner, Nov 20 (3rd play: "the ceilings look too new"): about 70% are old,
+	# like the floors and walls: the old floor turned upside down, so its worn, gappy boards face down at you.
+	if rng.random() < (0.85 if g in ("tombs", "rubble_tunnel", "way_out") else OLD):
+		prop("dungeon/floor_old.glb", cx, float(height(g)) + 0.24, cz, rng.choice([0, 90, 180, 270]), tilt=180.0)
+	else:
+		piece("floor", cx, float(height(g)), cz, 0)
 
 # --- 2. Walls round every room (rock behind them) and doorways where two spaces meet. ---
 DIRS = [((-2, 0), "w"), ((2, 0), "e"), ((0, -2), "n"), ((0, 2), "s")]
@@ -172,6 +181,7 @@ SPECIAL_J = {
 	("store_room", "vault_way"): "cracked",
 	("loot_door", "loot_room"): "loot_door",
 	("store_room", "way_out"): "gate",
+	("crusher_hall", "pack_hall"): "hand_door",
 }
 for (a, b, along_z, line), spots in junctions.items():
 	spots = sorted(spots)
@@ -194,10 +204,13 @@ for (a, b, along_z, line), spots in junctions.items():
 	piece("doorway", x, 0.0, z, rot, DOOR_SCALE)
 	if kind == "loot_door":
 		prop("dungeon/door_loot.glb", x, 0.0, z, 90.0 if along_z else 0.0, DOOR_SCALE, role="door", label="Loot door: opens when the pack is dead")
+	elif kind == "hand_door":  # (owner, Nov 20, 3rd play: shut, so the pack doesn't hear the boulder; E opens it)
+		prop("dungeon/door_loot.glb", x, 0.0, z, 90.0 if along_z else 0.0, DOOR_SCALE, role="door", label="Round door: E to open", opens="hand")
 	elif kind == "gate":
 		prop("dungeon/gate_round.glb", x, 0.0, z, 90.0 if along_z else 0.0, DOOR_SCALE, role="door", label="One-way gate: opens from the way out")
-		lx, lz = (x + 1.9, z + 1.6) if along_z else (x + 1.6, z + 1.9)
-		prop("dungeon/lever.glb", lx, 0.0, lz, 270.0, role="door", label="Lever")
+		# The lever (owner, Nov 20, 3rd play: it floated beside a wall post): on the way out's north wall, 1 m past
+		# the gate, its back on the boards' face (the wall's middle line + half its 0.29 m).
+		prop("dungeon/lever.glb", x + 1.0, 0.0, 38.0 + 0.15, 0.0, role="door", label="Lever: E to open the gate")
 	for edge in (lo + 0.5, hi - 0.5) if hi - lo >= 4.0 else ():
 		x, z = p(edge)
 		piece("wall_narrow", x, 0.0, z, rot)
@@ -292,17 +305,18 @@ for x, z, m in [(30.0, 22.0, "trap_drip_thin"), (41.0, 18.5, "trap_drip_fat"), (
 	prop("dungeon/%s.glb" % m, x, 8.5 + 0.1, z, rng.choice([0, 120, 240]), role="trap", tilt=180.0)
 chest("chest_small", 44.0, 28.6, 180.0, "Random chest")
 
-# 10 Chasm Bridge: posts and planks across the 24 m drop, a broken plank in the middle, broken railings along the edge,
+# 10 Chasm Bridge: posts and planks across the 4 m drop onto spikes, a broken plank in the middle, broken railings along the edge,
 # stalactites that fall over the bridge (dust first), bats, and spikes at the bottom.
 BRIDGE_Y = 0.13  # the deck's top (0.11 in the models) level with the floor boards' top (0.24): you walk straight on
-prop("dungeon/bridge_posts.glb", 34.6, BRIDGE_Y, 6.0, 90.0, role="door", label="")
-prop("dungeon/bridge_posts.glb", 43.4, BRIDGE_Y, 6.0, 270.0, role="door", label="")
-# Owner, Nov 20: "leave a couple of middle boards missing so you must jump", then "more empty spaces in the middle":
-# both middle sections have a 1 m gap (two jumps, a metre of boards between them), the last one is the broken one.
-BRIDGE = {1: "bridge_plank_gap", 2: "bridge_plank_gap", 3: "bridge_plank_broken"}
-for i, x in enumerate([36.4, 38.4, 40.4, 42.4]):
-	prop("dungeon/%s.glb" % BRIDGE.get(i, "bridge_plank"), x, BRIDGE_Y, 6.0, 90.0, role="trap" if i in (1, 2) else "door",
-		label="Gaps in the bridge: jump!" if i == 1 else ("Bridge (fall off: you die)" if i == 0 else ""))
+# Owner, Nov 20 (3rd play: "too easy"): every plank gone but the middle section's: two big jumps, 2 m each, from the
+# edge onto the middle boards and on to the far edge (the dwarf jumps about 4.5 m walking). The ropes still run
+# from post to post. The posts stand on the floor right at the chasm's edges (x 36 and 42).
+prop("dungeon/bridge_posts.glb", 35.0, BRIDGE_Y, 6.0, 90.0, role="door", label="")
+prop("dungeon/bridge_posts.glb", 43.0, BRIDGE_Y, 6.0, 270.0, role="door", label="")
+BRIDGE = {0: "bridge_ropes", 1: "bridge_plank", 2: "bridge_ropes"}
+for i, x in enumerate([37.0, 39.0, 41.0]):
+	prop("dungeon/%s.glb" % BRIDGE[i], x, BRIDGE_Y, 6.0, 90.0, role="trap" if i != 1 else "door",
+		label="Only ropes: jump 2 m!" if i == 0 else ("The middle boards (fall: spikes)" if i == 1 else ""))
 for z in (1.0, 3.0, 9.0, 11.0):
 	prop("dungeon/railing_broken.glb", 35.6, 0.25, z, 90.0)
 	prop("dungeon/railing_broken.glb", 42.4, 0.25, z, 270.0)
@@ -310,7 +324,7 @@ for x, m in [(37.4, "trap_drip_thin"), (39.0, "trap_drip_cluster"), (40.8, "trap
 	prop("dungeon/%s.glb" % m, x, 7.5 + 0.1, 6.0, rng.choice([0, 90]), role="trap", label="Falling stalactites" if x == 39.0 else "", tilt=180.0)
 for x in range(36, 42, 2):
 	for z in range(0, 12, 2):
-		prop("dungeon/trap_spikes.glb", x + 1.0, -24.0, z + 1.0, rng.choice([0, 90, 180, 270]), role="trap")
+		prop("dungeon/trap_spikes.glb", x + 1.0, -4.0, z + 1.0, rng.choice([0, 90, 180, 270]), role="trap")  # (owner, Nov 20: 4 m like the pit)
 creature("cave_bat", 30.0, 4.5, 8.0, 0.0)
 creature("cave_bat", 44.0, 4.0, 3.0, 220.0)
 chest("chest_small", 26.5, 2.6, 0.0, "Random chest")
@@ -318,12 +332,14 @@ chest("chest_small", 26.5, 2.6, 0.0, "Random chest")
 # 11 The hidden boulder: one of our cave boulders, made big enough to fill the low tunnel (breaks like cave boulders).
 prop("cave/boulder_round.glb", 49.0, 0.0, 6.0, 30.0, scale=3.0, role="secret", label="Hidden boulder (6 hits)")
 
-# 12 Crusher Hall: two crushers side by side, slamming down in turn (the game: DungeonBuild, kills a dwarf under one).
-# Owner, Nov 20: right inside the doorway (as close as the hidden boulder allows: it pokes 1.1 m through the doorway).
-prop("dungeon/trap_crusher.glb", 52.2, 0.25, 5.0, 90.0, role="trap", label="Crushers (kill)")
-prop("dungeon/trap_crusher.glb", 52.2, 0.25, 7.0, 90.0, role="trap")
+# 12 The small hall before the Pack Hall: its round door is shut (E opens it, it swings toward you).
+# 13 Pack Hall: the two crushers hang just inside its door (owner, Nov 20, 3rd play), up in a dark hole in the
+# ceiling, 1 m higher than before. They wake only once someone has crossed the hall (to the loot door), then slam
+# in turn to block the way back (the game: DungeonBuild; a dwarf under one dies).
+prop("dungeon/trap_crusher.glb", 57.2, 1.25, 5.0, 90.0, role="trap", label="Crushers (wake once you've crossed)")
+prop("dungeon/trap_crusher.glb", 57.2, 1.25, 7.0, 90.0, role="trap")
 
-# 13 Pack Hall: hanging chains, an old cauldron and firewood; the pack leader (a bigger beetle) with beetles and spiders.
+# Pack Hall: hanging chains, an old cauldron and firewood; the pack leader (a bigger beetle) with beetles and spiders.
 for x, z in [(60.0, 4.0), (68.0, 4.0), (60.0, 14.0), (68.0, 14.0)]:
 	prop("dungeon/chain_hanging.glb", x, 4.0, z, 0.0)
 prop("decor/furn_cauldron.glb", 70.0, 0.25, 16.6, 0.0)

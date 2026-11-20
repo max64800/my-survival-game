@@ -26,6 +26,9 @@
 | Trapped chest | Spikes shoot up from floor holes round the chest when you open it | Spike holes in the floor around it | Shoot the chest with a crossbow: the spikes come up and go back, then open it | Hurts |
 | *Kept from before* | Dart wall, dart plate, falling stalactites / ceiling stones, breaking floor, spike pit, crusher, great crusher, great press, plank / stone / chain bridges, molten channel and moulds (contained, kill like spikes), swinging crucible | | | |
 
+> **Breaking floor, owner Nov 20:** Mossgate Hold keeps its 3x3 patch. Every other dungeon uses **single 1x1 (2 m) cracked tiles at random spots** instead of one big patch.
+
+
 ## Where every trap goes
 **Bold** = the deadly trap(s). ⭐ = this dungeon's signature trap (the one people remember it by).
 

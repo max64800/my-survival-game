@@ -246,6 +246,8 @@ func _ev_box(id: int, data: Array) -> void:
 		box.inv.load_data(data)
 		if box.kind == "crate_ore":
 			show_fill(box.node, box.inv)
+		elif box.kind == "recipe_stand":
+			DungeonBuild.show_scroll(box.node, box.inv)
 
 
 const CRATE_FULL := 400  ## the ore pile looks heaped-up at this many items (feedback F33)
@@ -314,6 +316,7 @@ func _build_look(body: StaticBody3D, kind: String) -> void:
 		model = Look.forged("dungeon", "recipe_stand")
 		var scroll := Look.forged("dungeon", "recipe_scroll")
 		if model and scroll:
+			scroll.name = "Scroll"  # (it rolls up and vanishes when its page is taken: DungeonBuild.show_scroll)
 			scroll.position = Vector3(0.0, 0.90, 0.007)
 			scroll.rotation.x = deg_to_rad(20.0)
 			model.add_child(scroll)

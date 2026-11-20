@@ -5983,3 +5983,37 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   once on the website and most failed (on my PC it worked, so I hadn't checked the live page). Now one at a time with
   retries; I opened the live page myself to check. Another chat was mid-edit on dungeon_build.gd so the game didn't
   compile for a few minutes; waited instead of touching their file. My temporary data dump in the test was removed.
+
+## November 20, 2026 (PC, dungeons Claude, chat 6): the owner's 10 notes from his third Mossgate Hold play
+- **Asked first (note 3):** "make the spike pit the same as in the other room" was unclear, so Claude asked. The owner
+  meant the other way round: the **chasm** should be 4 m deep too. Now both drops are 4 m onto the same spikes.
+- **Shown first on the 3D page** (same link, version 7), with two new buttons: "Break the cracked wall" and "Take the scroll".
+- **1, stalactites:** tested in a real (muted, marked) robot game: the dwarf really walked past each one. They DID fall
+  (in 0.2 s, 50 damage). So the code worked; the likely problem was the trigger: you had to pass within 1.3 m of the
+  stalactite's middle. Now 1.8 m. (Monsters don't set them off.)
+- **2, bridge:** only the middle 2 m section keeps its boards; the rest is just ropes (new Blender model
+  `bridge_ropes`, same script). Two 2 m jumps; the dwarf jumps about 4.5 m walking, and you can steer in the air.
+  The hand ropes at the start posts were never solid: now they are.
+- **4, breaking floor:** Mossgate keeps its 3x3 patch; the plan docs now say every next dungeon uses single 1x1 tiles.
+- **5, Pack Hall:** a shut round door before it. E opens it and it swings toward you (the host decides, saved, everyone
+  sees it). The crushers moved just inside the Pack Hall, hanging in a dark hole in the ceiling, 1 m higher (drop
+  2.5 m, slam in 0.18 s, rise at the old speed). They hang still until someone reaches the loot-door end of the hall,
+  then they slam to block the way back. They go back to sleep when the pack moves back in.
+- **6, loot door:** the real cause: creatures that chased you onto the bridge fell into the chasm and lived on at the
+  bottom, so the pack was never "all dead". Now spikes and crushers kill creatures too. The monster code also counts
+  only living creatures now. Also fixed: the round doors turned around a point inside the door (0.46 m instead of its
+  edge at 0.74 m).
+- **7, scroll:** taking it from the recipe stand rolls it up (the two rolls meet), it shrinks with a glow and is gone.
+  Before this, the scroll never went away at all.
+- **8, lever:** it was never hooked up (the gate was just a solid picture). Now the lever sits on the way out's wall,
+  E pulls it down (Mac's DungeonKeys.ask_pull_lever: request -> host -> everyone), and the gate swings open.
+- **9, cracked wall:** hits throw wood splinters (it showed stone dust). Breaking it: each board bursts out, tips over
+  onto the floor, lies there 4-5 s, then shrinks away (it used to drop 1.6 m in half a second and vanish).
+- **10, old ceilings:** about 70% of ceilings are now the old floor turned face down (its worn boards face you).
+- **Tests:** 9 new checks (one per note) in test_dungeon; all 49 dungeon checks pass.
+- **Hurdles (Claude's own):** Blender misread a folder path and saved two preview pictures into `C:\assets` (moved
+  away, folder deleted). Long edit scripts typed into the shell broke on quotes again, so they went into files. Three
+  edits failed because Claude counted the tabs wrong (nothing was changed until they matched). Two new checks were
+  written wrong at first (the pit check counted the chasm's spikes too; the door check used a box shared by both
+  halls). The robot pictures were cluttered by beetles attacking the dwarf, so the 3D page is the place to look.
+  The browser helper wouldn't connect, so the page's code was checked with Node instead.

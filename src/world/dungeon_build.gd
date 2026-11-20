@@ -42,8 +42,13 @@ const BOXES := {
 	"dungeon/bridge_plank_gap.glb": [[Vector3(0, 0.055, -0.75), Vector3(1.3, 0.11, 0.5)], [Vector3(0, 0.055, 0.75), Vector3(1.3, 0.11, 0.5)],
 		[Vector3(-0.64, 0.55, 0), Vector3(0.08, 0.9, 2.0)], [Vector3(0.64, 0.55, 0), Vector3(0.08, 0.9, 2.0)]],
 	"dungeon/trap_crusher.glb": [[Vector3(0, 3.6, 0), Vector3(2.0, 0.28, 0.28)]],  # (its beam; the weight has its own moving box)
+	# Owner, Nov 20 (3rd play): the posts' hand ropes (from the post to where the first section joins on) are solid too.
 	"dungeon/bridge_posts.glb": [[Vector3(-0.64, 0.68, -0.05), Vector3(0.2, 1.2, 0.2)], [Vector3(0.64, 0.68, -0.05), Vector3(0.2, 1.2, 0.2)],
-		[Vector3(0, 0.055, 0.6), Vector3(1.3, 0.11, 0.8)]],
+		[Vector3(0, 0.055, 0.6), Vector3(1.3, 0.11, 0.8)], [Vector3(-0.64, 0.55, 0.5), Vector3(0.08, 0.9, 1.0)],
+		[Vector3(0.64, 0.55, 0.5), Vector3(0.08, 0.9, 1.0)]],
+	# Just the ropes, no planks (owner, Nov 20, 3rd play: "too easy"): the hand ropes are solid, the rest is a 2 m jump.
+	"dungeon/bridge_ropes.glb": [[Vector3(-0.64, 0.55, 0), Vector3(0.08, 0.9, 2.0)], [Vector3(0.64, 0.55, 0), Vector3(0.08, 0.9, 2.0)]],
+	"dungeon/lever.glb": [[Vector3(0, 1.05, 0.1), Vector3(0.4, 0.75, 0.22)]],  # (the board and the handle: E aims at it)
 	"dungeon/door_loot.glb": [[Vector3(0, 0.75, 0), Vector3(1.5, 1.5, 0.16)]],
 	"dungeon/gate_round.glb": [[Vector3(0, 0.75, 0.03), Vector3(1.5, 1.5, 0.15)]],
 	# The round stone door's frame: its two stone sides and the top (you walk through its middle).
@@ -54,7 +59,7 @@ const BOXES := {
 const NO_BODY := ["decor/furn_wall_torch_iron.glb", "dungeon/trap_dart_plate.glb", "dungeon/chain_hanging.glb",
 	"dungeon/recipe_scroll.glb", "treasure/tr_coins_wide.glb", "treasure/tr_chalice.glb",
 	"decor/fossil_plaque.glb", "decor/rune_shield.glb",
-	"build/ruin_rubble__cut_stone.glb", "dungeon/lever.glb", "dungeon/recipe_stand.glb"]
+	"build/ruin_rubble__cut_stone.glb", "dungeon/recipe_stand.glb"]
 
 ## Furniture you can smash (owner, decisions round 2: "a little root wood + small finds").
 const SMASH := ["decor/crate_stack.glb", "decor/keg.glb", "props/barrel.glb", "decor/furn_barrel_rack.glb",
@@ -74,7 +79,8 @@ const DRIP_DAMAGE := 50.0     ## a falling stalactite always hurts this much, ar
 const DRIP_WARN := 0.12       ## seconds of dust and cracking before it lets go
 const DRIP_G := 30.0          ## how hard it falls (m/s²; real falling is 9.8)
 const DRIP_PART_GAP := 0.08   ## a cluster's stalactites fall one by one, this far apart
-const DRIP_REACH := 1.3       ## walk within this (sideways) under one, now or by the time it lands, and it falls
+const DRIP_REACH := 1.8       ## walk within this (sideways) under one, now or by the time it lands, and it falls
+                              ## (owner, Nov 20, 3rd play: "they don't drop even when I'm close": 1.3 m was too tight)
 const DRIP_HIT := 1.5         ## it hurts whoever is this close (sideways) to it when it lands
 const DRIP_LENGTH := 1.4      ## how far a stalactite's tip hangs below its base
 const FLOOR_GIVE := 0.15      ## seconds a cracked floor tile holds you before it breaks (owner, Nov 20: quicker)
@@ -83,13 +89,20 @@ const FLOOR_FALL := 0.7       ## seconds its boards take to tumble down into the
 ## in CRUSH_SLAM s, stays down, rises, waits up; the second one runs half a turn behind the first, so one is always up.
 ## Every computer runs them off the same clock (the computers' own time of day, which the internet keeps in step), so
 ## everyone sees the same; the host decides who is crushed.
-const CRUSH_DROP := 1.5
-const CRUSH_SLAM := 0.15
+## Owner, Nov 20 (3rd play): they hang in the Pack Hall now, 1 m higher (in a dark hole in its ceiling): they drop 2.5 m,
+## slam fast and rise as fast as before (1.2 m a second). They wake only once someone has crossed the Pack Hall
+## (CRUSH_WAKE_X), to block the way back; asleep, they hang still at the top.
+const CRUSH_DROP := 2.5
+const CRUSH_SLAM := 0.18
 const CRUSH_DOWN := 0.6
-const CRUSH_RISE := 1.25
+const CRUSH_RISE := 2.5 / 1.2
 const CRUSH_WAIT := 1.0
 const CRUSH_CYCLE := CRUSH_SLAM + CRUSH_DOWN + CRUSH_RISE + CRUSH_WAIT
 const CRUSH_HALF := Vector2(0.95, 0.55)  ## the weight's footprint (half sizes across and deep, in its own metres)
+const CRUSH_WAKE_X := 68.0    ## someone this far across the Pack Hall (the dungeon's x, toward the loot door) wakes them
+const CRUSH_ROOM := "pack_hall"
+## The round door before the Pack Hall (owner, Nov 20, 3rd play): shut; E opens it and it swings toward you.
+const USE_REACH := 3.0
 ## The Rune Shrine's healing basin (owner, Nov 20: "the fountain must heal"): stand by it and you heal this fast.
 const HEAL_REACH := 2.5
 const HEAL_RATE := 8.0        ## health a second
@@ -128,7 +141,8 @@ static func load_plan(map_id: String) -> Dictionary:
 	return d if d is Dictionary else {}
 
 
-## What a plan prop is: "smash", "rubble", "boulder", "drip", "floor" (breakable, built one by one) or "" (batched).
+## What a plan prop is: "smash", "rubble", "boulder", "drip", "floor" (breakable), "crusher", "door", "hand_door", "gate",
+## "lever" (they move: built one by one) or "" (batched).
 static func thing_kind(p: Dictionary) -> String:
 	var model := String(p.model)
 	if model in SMASH:
@@ -142,7 +156,11 @@ static func thing_kind(p: Dictionary) -> String:
 	if model == "dungeon/trap_crusher.glb":
 		return "crusher"
 	if model == "dungeon/door_loot.glb":
-		return "door"
+		return "hand_door" if String(p.get("opens", "")) == "hand" else "door"
+	if model == "dungeon/gate_round.glb":
+		return "gate"  # (the way out's one-way gate: the lever behind it opens it, DungeonKeys)
+	if model == "dungeon/lever.glb":
+		return "lever"
 	if model.begins_with("cave/boulder_"):
 		return "boulder"
 	return ""
@@ -192,6 +210,7 @@ func _ready() -> void:
 	var auth := GameAuthority.instance
 	if auth and auth.keys:
 		auth.keys.door_changed.connect(_on_door_changed)
+		auth.keys.gate_changed.connect(_on_gate_changed)
 	if auth and auth.monsters:
 		auth.monsters.dungeon_room.connect(_on_dungeon_room)
 
@@ -294,6 +313,10 @@ func _build_things(di: int, d: Dictionary, plan: Dictionary) -> void:
 				auth.keys.add_door(list_id(d), t.origin)
 			if is_door_open(d):
 				_open_door(id, false)
+		elif kind == "lever":
+			var auth := GameAuthority.instance
+			if auth and auth.keys:
+				auth.keys.add_gate(list_id(d), t * Vector3(0, 1.05, 0.1))
 	_apply_broken()
 
 
@@ -380,7 +403,7 @@ func request_hit(peer_id: int, id: int, by_bolt := false) -> void:
 		if by_bolt:
 			_fall(id)
 		return
-	if by_bolt or th.kind in ["floor", "crusher", "door"]:
+	if by_bolt or th.kind in ["floor", "crusher", "door", "hand_door", "gate", "lever"]:
 		return
 	var chest := ps.node.global_position + Vector3.UP * 1.1
 	if chest.distance_to(at) > GameAuthority.REACH + float(th.radius) + 0.5:
@@ -438,8 +461,9 @@ func _ev_hit(id: int) -> void:
 	var th: Dictionary = things.get(id, {})
 	if th.is_empty():
 		return
-	var stone: bool = th.kind != "smash"
-	Fx.burst(get_parent(), th.centre, STONE if stone else WOOD, 8, 2.5)
+	# (owner, Nov 20, 3rd play: the cracked wall showed stone dust; it is boards: wood splinters)
+	var stone: bool = th.kind != "smash" and th.model != "dungeon/wall_cracked.glb"
+	Fx.burst(get_parent(), th.centre, STONE if stone else WOOD, 8 if stone else 14, 2.5)
 	Sfx.play("dig" if stone else "chop", th.centre, -3.0)
 
 
@@ -458,10 +482,10 @@ func _ev_broke(id: int) -> void:
 			if sc > 2.5:
 				RockShatter.burst(get_parent(), mid - Vector3.UP * 0.2 * sc, Vector3(-1, 0.5, 0.3), Boulders.STONE, Mat.STONE)
 		"rubble":
-			if th.model == "dungeon/wall_cracked.glb":  # its split boards burst into the room and fall
-				Fx.burst(get_parent(), th.centre, WOOD, 20, 3.0)
+			if th.model == "dungeon/wall_cracked.glb":  # its split boards burst out, fall over and lie on the floor
+				Fx.burst(get_parent(), th.centre, WOOD, 28, 3.5)
 				Sfx.play("chop", th.centre, 2.0, 0.7)
-				_tumble(id, 1.6, 0.5)
+				_topple(id)
 				return
 			RockShatter.burst(get_parent(), th.centre, Vector3.UP, STONE, Mat.STONE)
 		"floor":  # (owner, Nov 20: "no break animation"): the boards snap and tumble down into the spike pit
@@ -524,6 +548,60 @@ func _tumble(id: int, depth: float, secs: float) -> void:
 			if is_instance_valid(part):
 				part.hide())
 	get_tree().create_timer(secs + 0.4).timeout.connect(func() -> void:
+		if is_instance_valid(body):
+			body.queue_free())
+
+
+const TOPPLE_LIE := 4.0  ## seconds the cracked wall's fallen boards lie on the floor before they sink away
+
+
+## Everyone: the cracked wall's boards come loose (owner, Nov 20, 3rd play: "it just vanishes; I want splinters and
+## boards falling down like the floor tiles"). Each board bursts out of the wall, tips over and falls onto the floor
+## (really falling: the higher ones take longer), lies there a few seconds, then sinks away. Its body goes at once.
+func _topple(id: int) -> void:
+	var th: Dictionary = things[id]
+	th.gone = true
+	var body: StaticBody3D = th.node
+	for c in body.get_children():
+		if c is CollisionShape3D:
+			(c as CollisionShape3D).disabled = true
+	var rng := RandomNumberGenerator.new()
+	rng.seed = id
+	var t: Transform3D = th.xform
+	var out := t.basis.z.normalized()
+	var side := t.basis.x.normalized()
+	var floor_y := float(th.landing)
+	var longest := 0.0
+	for mi in (th.inst as Node).find_children("*", "MeshInstance3D", true, false):
+		var part := mi as MeshInstance3D
+		var g := part.global_transform
+		var lc := part.get_aabb().get_center()
+		var c := g * lc  # (it turns about its own middle, which falls until the board lies on the floor)
+		var drop := maxf(0.05, c.y - floor_y - 0.05)
+		var secs := clampf(sqrt(2.0 * drop / 9.8), 0.25, 0.7) + 0.15
+		var wait := rng.randf_range(0.0, 0.15)
+		longest = maxf(longest, wait + secs)
+		var push := out * rng.randf_range(0.5, 1.3) + side * rng.randf_range(-0.3, 0.3)
+		var lie := deg_to_rad(rng.randf_range(78.0, 92.0))  # it tips over outward (about the wall's line) and lies flat
+		var spin := rng.randf_range(-0.6, 0.6)
+		var tw := create_tween()
+		tw.tween_interval(wait)
+		tw.tween_method(func(f: float) -> void:
+			if is_instance_valid(part):
+				var b := g.basis.rotated(side, lie * minf(1.0, f * 1.15)).rotated(Vector3.UP, spin * f)
+				part.global_transform = Transform3D(b, c + push * f - Vector3.UP * drop * f * f - b * lc), 0.0, 1.0, secs)
+		tw.tween_callback(func() -> void:
+			if is_instance_valid(part):
+				Fx.burst(get_parent(), part.global_position, WOOD, 5, 1.2)
+				Sfx.play("chop", part.global_position, -6.0, 1.3))
+		tw.tween_interval(TOPPLE_LIE + rng.randf_range(0.0, 1.0))
+		tw.tween_method(func(f: float) -> void:
+			if is_instance_valid(part):
+				part.scale = Vector3.ONE * (1.0 - f * 0.9), 0.0, 1.0, 1.0)
+		tw.tween_callback(func() -> void:
+			if is_instance_valid(part):
+				part.hide())
+	get_tree().create_timer(longest + TOPPLE_LIE + 2.5).timeout.connect(func() -> void:
 		if is_instance_valid(body):
 			body.queue_free())
 
@@ -616,9 +694,7 @@ func _physics_process(delta: float) -> void:
 	for id in crushers:
 		_move_crusher(id, now, auth)
 	for id in things:  # (a friend who joins gets the doors with the world state: show them as the host has them)
-		var th: Dictionary = things[id]
-		if th.kind == "door" and bool(th.get("open", false)) != is_door_open(th.d):
-			_on_door_changed(list_id(th.d), is_door_open(th.d))
+		_sync_doors(id)
 	if auth == null or not auth.is_host():
 		return
 	_host_tick -= delta
@@ -639,6 +715,7 @@ func _physics_process(delta: float) -> void:
 			vel = Vector3.ZERO  # (a teleport or respawn, not walking)
 		_check_deadly_drop(auth, pid, p)
 		_check_heal(auth, pid, p, step)
+		_check_crushers_wake(auth, p)
 		for id in things:
 			var th: Dictionary = things[id]
 			if th.get("gone", false) or is_broken(id):
@@ -657,6 +734,50 @@ func _physics_process(delta: float) -> void:
 					if _standing[id] >= FLOOR_GIVE:
 						_standing.erase(id)
 						_break(id)
+
+
+	_traps_hit_creatures(auth)
+
+
+## Host: traps hurt creatures too (decisions round 2: "you can lure creatures into traps"). Owner, Nov 20 (3rd play):
+## the loot door never opened: creatures that chased you onto the bridge fell into the chasm and lived on down there,
+## so the Pack Hall's pack was never all dead. Now the spikes and the crushers kill them like they kill you.
+func _traps_hit_creatures(auth: GameAuthority) -> void:
+	var mm := auth.monsters
+	if mm == null:
+		return
+	for m in mm.monsters.values():
+		var mon := m as Monster
+		if mon == null or not mon.is_alive():
+			continue
+		var at := mon.global_position
+		for d in maker.dungeons:
+			if not DungeonMap.near_box(d, at, 2.0):
+				continue
+			var why := deadly_space(d, at)
+			if why == "" and _under_crusher(at):
+				why = "crusher"
+			if why != "":
+				print("DUNGEON %s: a %s died in the %s" % [d.id, mon.kind, why])
+				mm._kill(mon, 0)
+				break
+
+
+## Is `p` under a crusher's weight while it slams (the moment that kills)?
+func _under_crusher(p: Vector3) -> bool:
+	var now := Time.get_unix_time_from_system()
+	for id in crushers:
+		var th: Dictionary = things[id]
+		if not crushers_awake(th.d):
+			continue
+		var t := now - int(th.turn) * CRUSH_CYCLE * 0.5
+		if not crushing(t):
+			continue
+		var q := (th.xform as Transform3D).affine_inverse() * p
+		var bottom := float(th.landing) + (CRUSH_DROP + 0.1) * (1.0 - crush_down(t))
+		if absf(q.x) < CRUSH_HALF.x + 0.3 and absf(q.z) < CRUSH_HALF.y + 0.3 and p.y < bottom and p.y > float(th.landing) - 1.0:
+			return true
+	return false
 
 
 ## Host: below the floor of the chasm or the spike pit (a space whose floor is under 0) = on the spikes: dead.
@@ -740,13 +861,49 @@ static func crushing(t: float) -> bool:
 	return fposmod(t, CRUSH_CYCLE) < CRUSH_SLAM + 0.1  # (the slam, and the moment it hits the floor)
 
 
-## Everyone: move a crusher's weight; the host crushes whoever is under it while it slams down.
+## Have this dungeon's crushers woken up (someone crossed the Pack Hall)? Kept in world_state.dungeon_awake (saved,
+## sent to everyone).
+func crushers_awake(d: Dictionary) -> bool:
+	var auth := GameAuthority.instance
+	return auth != null and String(d.id) in auth.world_state.get("dungeon_awake", [])
+
+
+## Host: someone at `p` far enough across the Pack Hall (or past it) wakes that dungeon's crushers.
+func _check_crushers_wake(auth: GameAuthority, p: Vector3) -> void:
+	for d in maker.dungeons:
+		if crushers_awake(d) or not DungeonMap.near_box(d, p, 0.0):
+			continue
+		var room := DungeonMap.space_at(d, p)
+		var q := DungeonMap.to_local(d, p)
+		if (room == CRUSH_ROOM and q.x > CRUSH_WAKE_X) or room in ["loot_door", "loot_room"]:
+			set_crushers_awake(d, true)
+
+
+## Host: wake (or put back to sleep) a dungeon's crushers, for everyone.
+func set_crushers_awake(d: Dictionary, awake: bool) -> void:
+	var auth := GameAuthority.instance
+	var list: Array = auth.world_state.get("dungeon_awake", []).duplicate()
+	if (String(d.id) in list) == awake:
+		return
+	if awake:
+		list.append(String(d.id))
+		print("DUNGEON %s: the crushers wake up" % d.id)
+		for pid in auth.players:
+			if DungeonMap.near_box(d, auth.players[pid].node.global_position, 5.0):
+				auth.tell(pid, "Behind you, something heavy starts to thunder.")
+	else:
+		list.erase(String(d.id))
+	auth.world_state["dungeon_awake"] = list
+	auth._ev_state.rpc(auth.world_state)
+
+
+## Everyone: move a crusher's weight; the host crushes whoever is under it while it slams down. Asleep, it hangs up.
 func _move_crusher(id: int, now: float, auth: GameAuthority) -> void:
 	var th: Dictionary = things[id]
 	if not th.has("weight"):
 		return
 	var t := now - int(th.turn) * CRUSH_CYCLE * 0.5
-	var down := crush_down(t)
+	var down := crush_down(t) if crushers_awake(th.d) else 0.0
 	var w: Node3D = th.weight
 	w.position.y = float(th.rest_y) - CRUSH_DROP * down
 	if down >= 1.0 and float(th.down) < 1.0:  # it hits the floor
@@ -756,10 +913,10 @@ func _move_crusher(id: int, now: float, auth: GameAuthority) -> void:
 			Sfx.play("dig", at + Vector3.UP * 0.3, 4.0, 0.45)
 			Fx.burst(get_parent(), at + Vector3.UP * 0.1, STONE, 10, 2.0)
 	th.down = down
-	if auth == null or not auth.is_host() or not crushing(t):
+	if auth == null or not auth.is_host() or not crushing(t) or not crushers_awake(th.d):
 		return
 	var inv := (th.xform as Transform3D).affine_inverse()
-	var bottom := float(th.landing) + 1.6 * (1.0 - down)  # (the weight's spiked bottom, above the floor)
+	var bottom := float(th.landing) + (CRUSH_DROP + 0.1) * (1.0 - down)  # (the weight's spiked bottom, above the floor)
 	for pid in auth.players:
 		var node: Node3D = auth.players[pid].node
 		if node == null or _clock - float(_dead_at.get(pid, -100.0)) < 5.0:
@@ -792,10 +949,148 @@ func _on_dungeon_room(dungeon_id: String, room: String, cleared: bool) -> void:
 	for d in maker.dungeons:
 		if String(d.id) == dungeon_id:
 			auth.keys.set_lock(list_id(d), PACK_LOCK, cleared)
+			if not cleared:
+				set_crushers_awake(d, false)  # (the pack moved back in: the crushers wait for the next crossing)
 			if cleared:
 				for pid in auth.players:
 					if DungeonMap.near_box(d, auth.players[pid].node.global_position, 5.0):
 						auth.tell(pid, "With the pack dead, a heavy door grinds open somewhere nearby.")
+
+
+## Everyone: show door/gate thing `id` as the world state has it (on loading, a friend joining, or a change).
+func _sync_doors(id: int) -> void:
+	var th: Dictionary = things[id]
+	var want := false
+	match String(th.kind):
+		"door":
+			want = is_door_open(th.d)
+		"hand_door":
+			want = opened_by_hand(id) != 0
+		"gate":
+			want = is_gate_open(th.d)
+		"lever":  # (its handle follows the gate: down while the gate is open)
+			if bool(th.get("open", false)) != is_gate_open(th.d):
+				th.open = is_gate_open(th.d)
+				_pull_lever(id, th.open)
+			return
+		_:
+			return
+	if bool(th.get("open", false)) == want:
+		return
+	if want:
+		_open_door(id, false, opened_by_hand(id) if th.kind == "hand_door" else 0)
+	else:
+		_close_door(id)
+
+
+func is_gate_open(d: Dictionary) -> bool:
+	var auth := GameAuthority.instance
+	return auth != null and auth.keys != null and auth.keys.gate_open(list_id(d))
+
+
+## Which way a hand door swung open (+1 / -1), 0 = shut. Kept in world_state.dungeon_opened (saved, sent to everyone).
+func opened_by_hand(id: int) -> int:
+	var auth := GameAuthority.instance
+	return int(auth.world_state.get("dungeon_opened", {}).get(str(id), 0)) if auth else 0
+
+
+## What E does on thing `id` (for the aim line): {} or {name, use}.
+func use_info(id: int) -> Dictionary:
+	var th: Dictionary = things.get(id, {})
+	if th.is_empty():
+		return {}
+	match String(th.kind):
+		"hand_door":
+			return {} if opened_by_hand(id) != 0 else {name = "Round door · E to open", use = id}
+		"lever":
+			return {name = "Old lever · E to pull" if not is_gate_open(th.d) else "Old lever (pulled)", use = id}
+	return {}
+
+
+## Our E on thing `id` (a hand door or a lever): ask the host.
+func ask_use(id: int) -> void:
+	var auth := GameAuthority.instance
+	var th: Dictionary = things.get(id, {})
+	if auth == null or th.is_empty():
+		return
+	if th.kind == "lever":
+		auth.keys.ask_pull_lever(list_id(th.d))  # (DungeonKeys: request -> host -> everyone; it says what happened)
+		return
+	if auth.is_host():
+		request_use(auth.local_peer_id(), id)
+	else:
+		_rpc_use.rpc_id(1, id)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_use(id: int) -> void:
+	var auth := GameAuthority.instance
+	if auth and auth.is_host():
+		request_use(multiplayer.get_remote_sender_id(), id)
+
+
+## Host: a player opens a hand door. It swings toward them (away from the side they push from, so it never hits them:
+## it swings open to their side of the wall, past them, on its hinge).
+func request_use(peer_id: int, id: int) -> void:
+	var auth := GameAuthority.instance
+	var ps := auth.get_player(peer_id) if auth else null
+	var th: Dictionary = things.get(id, {})
+	if ps == null or th.is_empty() or th.kind != "hand_door" or opened_by_hand(id) != 0:
+		return
+	var t: Transform3D = th.xform
+	var at := ps.node.global_position
+	if at.distance_to(t.origin) > USE_REACH + 1.5:
+		return
+	var way := 1 if (t.affine_inverse() * at).z < 0.0 else -1  # (+1: it swings to the door's back, where they stand)
+	var all: Dictionary = auth.world_state.get("dungeon_opened", {}).duplicate()
+	all[str(id)] = way
+	auth.world_state["dungeon_opened"] = all
+	_ev_hand_door.rpc(id, way)
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_hand_door(id: int, way: int) -> void:
+	var auth := GameAuthority.instance
+	if auth and not auth.is_host():
+		var all: Dictionary = auth.world_state.get("dungeon_opened", {}).duplicate()
+		all[str(id)] = way
+		auth.world_state["dungeon_opened"] = all
+	if things.has(id):
+		_open_door(id, true, way)
+
+
+## Everyone: the way out's gate opened (the lever was pulled) or shut again (the dungeon refilled).
+func _on_gate_changed(dungeon_id: String, open: bool) -> void:
+	for id in things:
+		var th: Dictionary = things[id]
+		if list_id(th.d) != dungeon_id:
+			continue
+		if th.kind == "gate":
+			if open:
+				_open_door(id, true, -1)  # (it swings toward the way out, where the one who pulled the lever stands)
+			else:
+				_close_door(id)
+
+
+const LEVER_PIVOT := Vector3(0.0, 1.05, 0.13)  ## where the lever's handle turns (tools/asset_forge/builds/dungeon_rootwood.py)
+
+
+## Everyone: the lever's handle swings down (pulled) or back up.
+func _pull_lever(id: int, down: bool) -> void:
+	var th: Dictionary = things[id]
+	var handle := (th.inst as Node).find_child("handle", true, false) as Node3D
+	if handle == null:
+		return
+	if not th.has("handle_rest"):
+		th.handle_rest = handle.transform
+	var rest: Transform3D = th.handle_rest
+	var to := deg_to_rad(110.0) if down else 0.0
+	var turn := func(a: float) -> void:
+		if is_instance_valid(handle):
+			var r := Basis(Vector3.RIGHT, a)
+			handle.transform = Transform3D(r * rest.basis, LEVER_PIVOT + r * (rest.origin - LEVER_PIVOT))
+	Sfx.play("chop", (th.xform as Transform3D) * LEVER_PIVOT, -2.0, 0.5)
+	create_tween().tween_method(turn, deg_to_rad(110.0) - to, to, 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
 ## Everyone: a dungeon door opened or shut.
@@ -809,8 +1104,9 @@ func _on_door_changed(dungeon_id: String, open: bool) -> void:
 				_close_door(id)
 
 
-## The loot door swings open on its left edge (its body goes; `slow` = with a creak, else at once).
-func _open_door(id: int, slow: bool) -> void:
+## A round door (or the gate) swings open on its left edge (its body goes; `slow` = with a creak, else at once).
+## `way`: +1 swings it to its back, -1 to its front, 0 = the loot door's usual way (to its front).
+func _open_door(id: int, slow: bool, way := 0) -> void:
 	var th: Dictionary = things[id]
 	if th.get("open", false):
 		return
@@ -819,10 +1115,11 @@ func _open_door(id: int, slow: bool) -> void:
 		if c is CollisionShape3D:
 			(c as CollisionShape3D).disabled = true
 	var t: Transform3D = th.xform
-	var hinge := t * Vector3(-0.46, 0, 0)
+	var hinge := t * Vector3(-0.74, 0, 0)  # (its left edge: the round door is 0.78 m round; it was 0.46, inside the door)
 	var shut := t
+	var angle := deg_to_rad(100.0) * (float(way) if way != 0 else -1.0)
 	var swing := func(f: float) -> void:
-		var r := Basis(Vector3.UP, deg_to_rad(-100.0) * f)
+		var r := Basis(Vector3.UP, angle * f)
 		(th.inst as Node3D).transform = Transform3D(r * shut.basis, hinge + r * (shut.origin - hinge))
 	if slow:
 		Sfx.play("chop", hinge + Vector3.UP, 0.0, 0.4)
@@ -852,6 +1149,47 @@ static func deadly_space(d: Dictionary, p: Vector3) -> String:
 		if float(s[5]) < 0.0 and q.x > float(s[1]) - 0.5 and q.x < float(s[3]) + 0.5 and q.z > float(s[2]) - 0.5 				and q.z < float(s[4]) + 0.5 and q.y < float(s[5]) + 1.2:
 			return String(s[0])
 	return ""
+
+
+# ================================================================== the recipe stand's scroll
+
+## Everyone: the recipe stand shows its scroll while the page is in it. Owner, Nov 20 (3rd play): taking it, the
+## scroll rolls up (its two rolls meet in the middle), shrinks with a little glow and is gone. Loading a stand that is
+## already empty just hides it.
+static func show_scroll(body: Node3D, inv: Inventory) -> void:
+	var scroll := body.find_child("Scroll", true, false) as Node3D
+	if scroll == null:
+		return
+	var has := false
+	for sl in inv.slots:
+		if not sl.is_empty() and Items.kind(String(sl.id)) == "page":
+			has = true
+	if has:
+		if not body.has_meta("scroll_rest"):
+			body.set_meta("scroll_rest", scroll.transform)
+		scroll.transform = body.get_meta("scroll_rest")
+		scroll.visible = true
+		body.set_meta("scroll_seen", true)
+		return
+	if not scroll.visible:
+		return
+	if not body.get_meta("scroll_seen", false) or not scroll.is_inside_tree():
+		scroll.visible = false
+		return
+	body.set_meta("scroll_seen", false)
+	var rest: Transform3D = scroll.transform
+	var tw := scroll.create_tween()
+	tw.tween_method(func(f: float) -> void:  # rolling up: narrower and narrower, lifting a little off the stand
+		scroll.transform = Transform3D(rest.basis.scaled_local(Vector3(1.0 - 0.85 * f, 1.0 + 0.6 * f, 1.0)), rest.origin + Vector3.UP * 0.04 * f),
+		0.0, 1.0, 0.45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_callback(func() -> void:
+		Fx.burst(scroll.get_parent(), scroll.global_position, Color(1.0, 0.85, 0.45), 10, 1.2))
+	tw.tween_method(func(f: float) -> void:  # then the little roll shrinks away
+		scroll.transform = Transform3D(rest.basis.scaled_local(Vector3(0.15, 1.6, 1.0) * (1.0 - f)), rest.origin + Vector3.UP * (0.04 + 0.12 * f)),
+		0.0, 1.0, 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+	tw.tween_callback(func() -> void:
+		scroll.visible = false
+		scroll.transform = rest)
 
 
 # ================================================================== chests (host, once, when the world is made)

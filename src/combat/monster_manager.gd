@@ -167,7 +167,7 @@ func _spawn_and_despawn() -> void:
 func _group_step(key: int, room: Dictionary, near: float, respawn: float, spawn: Callable, reach := SPAWN_NEAR) -> void:
 	var st: Dictionary = _rooms.get(key, {alive = [], cleared_at = -respawn})
 	_rooms[key] = st
-	st.alive = st.alive.filter(func(u): return monsters.has(u))
+	st.alive = st.alive.filter(func(u): return monsters.has(u) and (monsters[u] as Monster).is_alive())  # (only the living count: Mossgate's loot door, Nov 20)
 	if st.alive.is_empty() and near < reach and _clock - st.cleared_at >= respawn:
 		if auth.world.is_ready_at(room.center, 4.0):
 			st.alive = spawn.call(room)

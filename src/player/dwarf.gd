@@ -428,6 +428,11 @@ func _aim_info() -> Dictionary:
 	var poi_id := PoiField.poi_id_of(hit.collider)
 	if poi_id >= 0 and auth:
 		return {kind = "poi", poi_id = poi_id, name = "Rune shrine · E to take"}
+	var thing := DungeonBuild.id_of(hit.collider)  # a dungeon's round door or lever (owner, Nov 20: E opens / pulls)
+	if thing >= 0 and DungeonBuild.instance:
+		var use := DungeonBuild.instance.use_info(thing)
+		if not use.is_empty():
+			return {kind = "dungeon", name = use.name, dungeon_use = use.use}
 	var box_id := Storage.box_id_of(hit.collider)
 	if box_id >= 0 and auth:
 		var box := auth.storage.get_box(box_id)
