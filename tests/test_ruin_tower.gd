@@ -170,6 +170,9 @@ func test_rebuilding_chest_is_there_and_explains_itself() -> void:
 	var worn_marked := pic.filter(func(e): return e.piece == "ruin_wall_worn" and e.fix != "")
 	check_eq(worn_marked.size(), 0, "worn walls are shown as staying, not as broken")
 	check(int(wood.get("plank_root", 0)) <= 260, "worn walls aren't paid for: %d planks (was 447)" % wood.get("plank_root", 0))
+	# ...but fixing in stone closes those gaps too (owner, Nov 20): the worn walls are rebuilt and paid for.
+	var stone := auth.builder.ruin_needs("stone_watchtower", r)
+	check(int(stone.get("cut_stone", 0)) >= 450, "stone rebuilds the worn walls too: %d cut stone" % stone.get("cut_stone", 0))
 	auth.get_parent().queue_free()
 
 

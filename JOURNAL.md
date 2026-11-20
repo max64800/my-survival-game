@@ -6050,4 +6050,8 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   foundation stuck out past the triangle's slanted sides: walls have square ends, triangle corners are 60 degrees.
   The back half of each end is now cut at 30 degrees along the neighbouring side; the mortar sheet inside is cut 1.2 cm
   further in (cutting it at the same spot as the stones made a flicker spot). The 3D page now puts the wall where the
-  game does (on the edge line; the old robot layout put it 15 cm in). All pass the checks.
+  game does (on the edge line; the old robot layout put it 15 cm in). All pass the checks.- **F432 follow-up:** owner liked the wood fix and asked that fixing in stone closes the worn walls' gaps too. Now
+  wood keeps worn walls (258 planks + 33 rope), stone rebuilds them (501 cut stone + 50 mortar). Also counted the
+  starting cave's wood for the owner: about 300-330 rootwood (600-650 planks): 14-17 thick roots x 12, 3 Root Trees
+  x 30, up to 12 hanging roots x 2, 10 twigs. My slip: an untyped `var x :=` the game refused; and the great axe
+  chat's punching file didn't compile for a while, so I waited before testing.
