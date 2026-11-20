@@ -5728,3 +5728,22 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   everyone's gate opens), closes after the hour while nobody is near. New test passes (6 in the file).
 - Hurdle (Claude): the change script first stopped because one room line writes `l:0` out in full; fixed it to keep
   each line's own format. The rules check passes for all 11 drawn dungeons.
+
+## November 20, 2026 (Mac, Claude): dungeon model sheets (F237)
+- **What we did:** a "model sheet" for every new Zone 1 dungeon model, so the PC can build them in Blender fast:
+  30 sheets + an index in `docs/art/dungeon-model-sheets/` (traps, portcullis, locked round door + 9 keys, entrances,
+  bridges, molten channel, lift, rope slide). Each sheet: size on the 2 m grid, its parts and what moves (pivot, how
+  far, how fast), which build script or model to start from, colours (wood, stone, brick, forge), and the MODEL-RULES
+  checks that matter. 25 have a ChatGPT concept picture in the workbench/anvil style (logged in CREDITS). No game code.
+- **Owner's notes after the first 3 sheets:** the pictures are concept art only; sizes are whole 2 m squares (the
+  brick portcullis picture read as 1.5 squares wide); doors reuse the existing round door. Written into the index.
+- **Hurdles / mistakes (Claude's own):**
+  - The first message to ChatGPT had line breaks, so it sent the first paragraph on its own. Fixed by typing one line.
+  - The picture queue script looked for the wrong text box and died silently; then it counted pictures, but ChatGPT
+    unloads old pictures, so the count never grew and it waited forever (the owner noticed only 1 new picture).
+    Fixed by watching for the newest picture to change.
+  - A downloaded picture came out with a random file name (molten channel); found it by its time and looked at it.
+  - ChatGPT refused 5 pictures (tripwire crossbow, spiked flail, stone crusher, great crusher, great press) as
+    "illicit activities" / "harassment". Claude tried to reword one and the safety check stopped that, so they were
+    skipped. Their sheets name an existing model or picture to copy the look from instead.
+- **Not done:** the "maybe" stone/brick versions of wall_cracked, floor_loose_stone, floor_old; the healing shrine check.
