@@ -5,8 +5,10 @@ var flat_ground := func(p: Vector3) -> float: return p.y  # rock below y = 0, ai
 
 
 func test_costs() -> void:
-	check_eq(Pieces.cost("wall", "plank_root"), {plank_root = 4}, "wall = 4 planks")
-	check_eq(Pieces.cost("doorway", "cut_stone"), {cut_stone = 4, copper_ingot = 2}, "door hinges cost copper")
+	check_eq(Pieces.cost("wall", "plank_root"), {plank_root = 12, rope = 1}, "wall = 4 units x 3 planks + rope lashing")
+	check_eq(Pieces.cost("doorway", "cut_stone"), {cut_stone = 12, mortar = 1, copper_ingot = 2}, "door hinges cost copper")
+	check_eq(Pieces.cost("foundation", "clay_brick"), {clay_brick = 16, mortar = 2}, "8 units x 2 bricks + 1 mortar per 4 units")
+	check_eq(Pieces.cost("furn_bed_1", "plank_root").get("rope", 0), 0, "furniture keeps its old price")
 	check(not Pieces.allowed("mine_prop", "crystal_blue"), "no crystal mine props")
 	check(Pieces.allowed("mine_prop", "plank_root"), "wooden props are fine")
 	check_near(Pieces.hp("beam", "cut_stone"), 250.0, 0.01, "beam = half a wall's HP")

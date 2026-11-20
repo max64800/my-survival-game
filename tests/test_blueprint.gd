@@ -18,7 +18,7 @@ func test_capture_and_cost() -> void:
 	var bp := Blueprint.capture(_hut(), ground, Vector3(-1, 0, -1), Vector3(3, 3, 3), "Tiny Hut")
 	check_eq(bp.pieces.size(), 4, "4 pieces inside the box")
 	check_eq(bp.size, Vector3(4, 3, 4), "box size")
-	check_eq(bp.cost(), {cut_stone = 4, plank_root = 12}, "cost adds up (the wooden Shack doorway hangs on wooden hinges: no copper)")
+	check_eq(bp.cost(), {cut_stone = 12, mortar = 1, plank_root = 36, rope = 3}, "cost adds up (the wooden Shack doorway hangs on wooden hinges: no copper)")
 	check_eq(bp.air.size(), 48, "one air bit per cell")
 	check(bp.air[0] == 1, "cells above the ground are open air")
 

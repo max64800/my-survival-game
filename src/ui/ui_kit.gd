@@ -169,3 +169,19 @@ static func clear(parent: Node) -> void:
 ## Shrinks a floating panel back to just what it holds (after its content got smaller).
 static func fit(panel: Control) -> void:
 	panel.reset_size.call_deferred()
+
+
+## Half hearts for healing (food cards): `halves` 1 = ½ heart, 2 = 1 heart ... 10 = 5 hearts.
+static func hearts(halves: int, size: int = 18) -> HBoxContainer:
+	var box := HBoxContainer.new()
+	box.add_theme_constant_override("separation", 1)
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for i in ceili(halves / 2.0):
+		var t := TextureRect.new()
+		t.texture = load("res://assets/ui/heart_half.png" if i * 2 + 1 == halves else "res://assets/ui/heart.png")
+		t.custom_minimum_size = Vector2(size, size)
+		t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		t.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		box.add_child(t)
+	return box

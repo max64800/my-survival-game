@@ -37,6 +37,7 @@ var color_index := 0  ## which shirt color (0 = host)
 var fight: DwarfFight
 ## For tests and robots: move/jump without a keyboard. (x = right, y = back, like the keys.)
 var bot_move := Vector2.ZERO
+var _run_streak := 0.0  ## seconds since you started this run (Running ★25: a quick burst at the start)
 var running := false  ## running this frame (DwarfFight stops a crossbow reload when you run)
 var bot_jump := false
 
@@ -214,6 +215,8 @@ func _physics_process(delta: float) -> void:
 	if dev_fly and is_local:
 		_fly(delta)
 		return
+	if ragdoll and ragdoll.down():
+		return  # floppy: the rag doll moves us (DwarfRagdoll)
 	if _seat != null:
 		_sit_step(delta)
 		return
@@ -237,7 +240,9 @@ func _physics_process(delta: float) -> void:
 		running = false
 	if running:
 		_run_time += delta
-	var speed := (RUN_SPEED * (prog.run_speed_mult() if prog else 1.0) if running else WALK_SPEED) * fight_mult * (body.ailments.speed_mult() * maxf(0.2, 1.0 + body.buff_total("move_speed")) if body else 1.0)
+	_run_streak = _run_streak + delta if running else 0.0
+	var burst := 1.3 if running and _run_streak < 1.0 and prog and prog.has_star("running", 25) else 1.0  # Running ★25
+	var speed := (RUN_SPEED * (prog.run_speed_mult() if prog else 1.0) * burst if running else WALK_SPEED) * fight_mult * (body.ailments.speed_mult() * maxf(0.2, 1.0 + body.buff_total("move_speed")) if body else 1.0)
 	var target := dir * speed
 	var on_floor := is_on_floor()
 	var a := ACCEL if on_floor else AIR_ACCEL
@@ -296,7 +301,8 @@ func _physics_process(delta: float) -> void:
 	_footsteps(delta, Vector2(velocity.x, velocity.z).length())
 	model.set_motion(Vector2(velocity.x, velocity.z).length(), is_on_floor(), fight != null and fight.dodging())
 	if playing and Input.is_action_pressed("dig") and not model.swinging and not _holding_hammer() and not fight.weapon_mode() and _can_swing():
-		model.swing(SWING_TIME)
+		var ps_here: GameAuthority.PlayerState = GameAuthority.instance.get_player(peer_id) if GameAuthority.instance else null
+		model.swing(SWING_TIME * (ps_here.progress.dig_swing_mult(Items.kind(ps_here.selected_item()) == "axe") if ps_here else 1.0))  # Mining / Woodcutting ★25
 		if _online():
 			_net_swing.rpc()
 
@@ -322,6 +328,8 @@ func _process(delta: float) -> void:
 			_look_timer = 2.0  # also every 2 s, so friends who join late catch up
 			_net_look.rpc(look[0], look[1], look[2], look[3], look[4])
 	if not is_local:
+		if ragdoll and ragdoll.down():
+			return  # (the rag doll places a friend's dwarf, pulled toward where its owner has it)
 		var before := global_position
 		global_position = global_position.lerp(_net_pos, minf(1.0, delta * 15.0))
 		model.rotation.y = lerp_angle(model.rotation.y, _net_yaw, minf(1.0, delta * 15.0))
@@ -604,6 +612,40 @@ func shove(push: Vector3) -> void:
 
 func knock_down() -> void:
 	fight.knock_down()
+
+
+var ragdoll: DwarfRagdoll  ## made on the first big hit
+
+
+## A big hit (F237: mine cart, swinging boulder or anvil, spiked flail): the dwarf goes floppy like a rag doll,
+## tumbles, then gets back up. push = which way and how hard (m/s), e.g. cart_direction * 8.
+## Only the host's call counts (trap code runs there); every player then sees the same tumble.
+## Damage is up to the caller.
+func big_hit(push: Vector3) -> void:
+	if multiplayer.is_server():
+		_net_big_hit.rpc(push)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _net_big_hit(push: Vector3) -> void:
+	if multiplayer.get_remote_sender_id() > 1:
+		return  # only the host throws dwarfs
+	if model.dwarf_rig == null:  # (the old looks have no skeleton to go floppy)
+		if fight:
+			knock_down()
+		return
+	if _seat != null and is_local:
+		stand_up()
+	if ragdoll == null:
+		ragdoll = DwarfRagdoll.new()
+		ragdoll.dwarf = self
+		var sk := model.dwarf_rig.skeleton
+		sk.add_child(ragdoll)
+		for c in sk.get_children():  # before DwarfProportions, so he stays dwarf-shaped
+			if c is SkeletonModifier3D:
+				sk.move_child(ragdoll, c.get_index())
+				break
+	ragdoll.start(push)
 
 
 func got_parry() -> void:

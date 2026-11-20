@@ -117,3 +117,53 @@ func test_copper_pickaxe_digs_border_rock() -> void:
 	check_eq(Mat.hits_needed(Mat.BORDER, Items.dig_power("pickaxe_copper"), Items.tier("pickaxe_copper")), 7, "copper pickaxe: 7 hits (doc 2.3)")
 	check_eq(Mat.hits_needed(Mat.COPPER, 13, 1), 4, "copper pickaxe on copper ore: 4 hits")
 	check_eq(Mat.hits_needed(Mat.STONE, 10, 0), 3, "stone pickaxe on stone: 3 hits")
+
+
+func test_dwarf_makes_the_in_between_items_first() -> void:
+	var inv := Inventory.new(20)
+	inv.add("rootwood", 3)
+	inv.add("rope", 4)
+	var any := func(_id): return true
+	var steps := Crafting.plan(inv, "tanning_rack", "workbench", any)
+	check_eq(steps, ["plank_root", "plank_root", "plank_root", "tanning_rack"], "3 rootwood become 6 planks, then the rack")
+	inv.remove("rootwood", 1)
+	check_eq(Crafting.plan(inv, "tanning_rack", "workbench", any), [], "not enough wood: can't be done")
+	var bag := Inventory.new(20)
+	bag.add("bug_meat", 2)
+	bag.add("root_tuber", 2)
+	bag.add("hollowcap", 1)
+	check_eq(Crafting.plan(bag, "dish_miners_pie", "campfire", any), ["dish_roasted_bug", "dish_roasted_bug", "dish_miners_pie"],
+		"the kitchen is one station now: raw bug meat gets roasted first, then the pie")
+
+
+func test_helpers_link_to_stations_within_10_m() -> void:
+	check_eq(Station.EXTRA_RANGE, 10.0, "helpers count from 10 m away")
+	check_eq(Station.helps_kind("bellows"), "anvil", "bellows help the anvil")
+	check_eq(Station.helps_kind("anvil"), "", "an anvil isn't a helper")
+	var near := StationLinks.ghost_links("bellows", Vector3(8, 0, 0), [_fake("anvil", Vector3.ZERO), _fake("workbench", Vector3(1, 0, 0))])
+	check_eq(near.size(), 1, "bellows 8 m away: one line, to the anvil only")
+	check_eq(StationLinks.ghost_links("bellows", Vector3(12, 0, 0), [_fake("anvil", Vector3.ZERO)]).size(), 0, "12 m: too far, no line")
+
+
+class _FakeStation:
+	var kind := ""
+	var global_position := Vector3.ZERO
+
+
+func _fake(k: String, at: Vector3) -> _FakeStation:
+	var f := _FakeStation.new()
+	f.kind = k
+	f.global_position = at
+	return f
+
+
+
+func test_kitchen_levels() -> void:
+	check_eq(Recipes.get_recipe("dish_snail_stew").station, "campfire", "stews cook at the campfire")
+	check_eq(int(Recipes.get_recipe("dish_snail_stew").get("level", 1)), 2, "with a pot on it (level 2)")
+	check_eq(int(Recipes.get_recipe("dish_miners_pie").get("level", 1)), 3, "the best meals need the Stone Oven (level 3)")
+	check_eq(Station.helps_kind("cooking_pot"), "campfire", "the pot helps the campfire")
+	var fire := _fake("campfire", Vector3(2, 0, 0))
+	check_eq(Station.on_fire_spot("cooking_pot", Vector3(2.5, 0, 0), [fire]), Vector3(2, Station.POT_HEIGHT, 0), "a pot aimed near a fire sits on top of it")
+	check_eq(Station.on_fire_spot("cooking_pot", Vector3(6, 0, 0), [fire]), Vector3.INF, "far from a fire: placed normally")
+	check_eq(Station.on_fire_spot("cooking_pot", Vector3(2.5, 0, 0), [fire, _fake("cooking_pot", Vector3(2, 0.35, 0))]), Vector3.INF, "one pot per fire")

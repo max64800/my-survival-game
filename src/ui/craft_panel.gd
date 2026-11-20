@@ -22,6 +22,8 @@ var _scroll: ScrollContainer
 ## How many to make with one click (owner F129): 1, 5 or -1 = as many as you can.
 var amount := 1
 var _amount_row: HBoxContainer
+var _amount_slider: HSlider
+var _amount_label: Label
 ## Recipe cards (owner F187): click a card, it shows big at the bottom with one Craft button.
 const CARD := 86
 const CARD_COLUMNS := 5
@@ -30,6 +32,7 @@ var _detail: PanelContainer
 var _detail_pic: TextureRect
 var _detail_name: Label
 var _detail_needs: GridContainer
+var _detail_food: VBoxContainer  ## what a food does: healing hearts, then the other effects as bullets
 var _craft_button: Button
 ## Gear upgrades sit in their own panel, left of the bag, at a workbench or anvil (owner F178).
 var upgrade_panel: PanelContainer
@@ -39,6 +42,7 @@ var _up_list: VBoxContainer
 func _ready() -> void:
 	UiKit.panel(self)  # "dwarf workshop" look (owner F187)
 	custom_minimum_size = Vector2(500, 0)
+	visibility_changed.connect(func(): if not visible: reset_amount())  # closing the bench resets the amount
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 8)
 	add_child(box)
@@ -49,7 +53,7 @@ func _ready() -> void:
 	_bar = ProgressBar.new()
 	_bar.custom_minimum_size = Vector2(0, 14)
 	_bar.show_percentage = false
-	_bar.visible = false
+	_bar.modulate.a = 0.0  # always takes its space, just hidden: the menu doesn't jump when crafting starts (owner, Nov 20)
 	var fill := StyleBoxFlat.new()
 	fill.bg_color = Color(1.0, 0.75, 0.35)
 	_bar.add_theme_stylebox_override("fill", fill)
@@ -77,6 +81,7 @@ func _ready() -> void:
 	dv.add_child(top)
 	var pic_frame := PanelContainer.new()
 	pic_frame.add_theme_stylebox_override("panel", UiKit.style("slot", 6))
+	pic_frame.size_flags_vertical = Control.SIZE_SHRINK_BEGIN  # stays square when the text beside it is long
 	top.add_child(pic_frame)
 	_detail_pic = TextureRect.new()
 	_detail_pic.custom_minimum_size = Vector2(78, 78)
@@ -91,23 +96,32 @@ func _ready() -> void:
 	_detail_needs.columns = 3
 	_detail_needs.add_theme_constant_override("h_separation", 8)
 	info.add_child(_detail_needs)
+	_detail_food = VBoxContainer.new()
+	_detail_food.add_theme_constant_override("separation", 0)
+	info.add_child(_detail_food)
 	_amount_row = HBoxContainer.new()
 	_amount_row.add_theme_constant_override("separation", 6)
 	dv.add_child(_amount_row)
-	for a in [1, 5, -1]:
-		var b := UiKit.dark_button(Button.new(), 15)
-		b.name = "Amount%d" % a
-		b.text = "×%d" % a if a > 0 else "All"
-		b.toggle_mode = true
-		b.custom_minimum_size = Vector2(76, 42)
-		b.button_pressed = a == amount
-		var pick: int = a
-		b.pressed.connect(func(): amount = pick; _paint_amounts())
-		_amount_row.add_child(b)
+	# How many: a slider from 1 to as many as you can make, and All moves it to the end (owner, Nov 20).
+	_amount_slider = UiKit.slider(HSlider.new())
+	_amount_slider.name = "AmountSlider"
+	_amount_slider.min_value = 1
+	_amount_slider.step = 1
+	_amount_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_amount_slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_amount_slider.value_changed.connect(func(v): amount = int(v); _amount_label.text = "×%d" % amount)
+	_amount_row.add_child(_amount_slider)
+	_amount_label = UiKit.label(_amount_row, "×1", 17, UiKit.AMBER)
+	_amount_label.custom_minimum_size = Vector2(44, 0)
+	var all := UiKit.dark_button(Button.new(), 15)
+	all.name = "AmountAll"
+	all.text = "All"
+	all.custom_minimum_size = Vector2(64, 42)
+	all.pressed.connect(func(): _amount_slider.value = _amount_slider.max_value)
+	_amount_row.add_child(all)
 	_craft_button = UiKit.gold_button(Button.new(), 22)
 	_craft_button.text = "Craft"
-	_craft_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_craft_button.custom_minimum_size = Vector2(0, 44)
+	_craft_button.custom_minimum_size = Vector2(140, 44)
 	_craft_button.pressed.connect(func(): if _picked != "": start_making(_picked))
 	_amount_row.add_child(_craft_button)
 
@@ -131,10 +145,11 @@ func make_upgrade_panel() -> PanelContainer:
 	return upgrade_panel
 
 
-func _paint_amounts() -> void:
-	for b in _amount_row.get_children():
-		if b is Button:
-			(b as Button).set_pressed_no_signal(b.name == "Amount%d" % amount)
+## Back to 1 (each time the bench opens or closes, owner Nov 20).
+func reset_amount() -> void:
+	amount = 1
+	if _amount_slider:
+		_amount_slider.value = 1
 
 
 ## Which tab a recipe goes in, by the kind of thing it makes.
@@ -155,6 +170,7 @@ static func tab_of(recipe_id: String) -> String:
 
 func open_for(st: Station) -> void:
 	station = st
+	reset_amount()
 	visible = true
 	refresh()
 
@@ -186,7 +202,7 @@ func refresh() -> void:
 		var nxt := station.next_extra()
 		_title.text += "  ·  level %d of %d" % [station.level(), Station.max_level(station.kind)]
 		if nxt != "" and _status.text == "":
-			_status.text = "Place a %s within 4 m to reach level %d." % [Items.display_name(nxt), station.level() + 1]
+			_status.text = "Put a Cooking Pot on the fire to reach level %d." % (station.level() + 1) if nxt == "cooking_pot" else "Place a %s within %d m to reach level %d." % [Items.display_name(nxt), int(Station.EXTRA_RANGE), station.level() + 1]
 	if station and station.kind in AutoSmelt.KINDS and _status.text == "":
 		_status.text = "Works by itself: put %s in a chest within 5 m." % 			("wood" if station.kind == "kiln" else "ore and coal")
 	var keep_scroll := _scroll.scroll_vertical  # the list stays where it was after you make something (F129)
@@ -277,9 +293,9 @@ func start_making(recipe_id: String, count: int = -2) -> void:
 	if count == -2:  # from the Make button: the chosen amount (owner F129)
 		var me_ps := GameAuthority.instance.get_player(peer_id) if GameAuthority.instance else null
 		var can := can_make_count(recipe_id, me_ps.inventory) if me_ps else 1
-		count = can if amount < 0 else mini(amount, maxi(can, 1))
+		count = mini(amount, maxi(can, 1))
 	count = maxi(count, 1)
-	var t := craft_time(recipe_id)
+	var t := craft_time(recipe_id) * (_prog().craft_time_mult(false) if _prog() else 1.0)  # Crafting: −3% per 10 levels
 	if t <= 0.0:
 		for i in count:
 			_finish(recipe_id)
@@ -287,7 +303,7 @@ func start_making(recipe_id: String, count: int = -2) -> void:
 	var me := _me()
 	_making = {id = recipe_id, left = t, total = t, from = me.global_position if me else Vector3.ZERO, more = count - 1}
 	_work_beat = 0.0
-	_bar.visible = true
+	_bar.modulate.a = 1.0
 	_bar.max_value = t
 	_bar.value = 0.0
 	_status.text = "Making %s…%s" % [Items.display_name(Recipes.get_recipe(recipe_id).output), "" if count <= 1 else "  (%d more after this)" % (count - 1)]
@@ -298,7 +314,7 @@ func cancel_making(why: String) -> void:
 	if _making.is_empty():
 		return
 	_making = {}
-	_bar.visible = false
+	_bar.modulate.a = 0.0
 	_status.text = why
 	refresh()
 
@@ -334,21 +350,29 @@ func _process(delta: float) -> void:
 		var id: String = _making.id
 		var more: int = _making.get("more", 0)
 		_making = {}
-		_bar.visible = false
+		_bar.modulate.a = 0.0
 		_status.text = ""
 		_finish(id)
-		if more > 0:  # making several: start the next one (stops by itself when materials run out)
+		if more > 0 and _prog() and _prog().has_star("crafting", 75):
+			for i in more:  # Crafting ★75: the rest are made at once, no extra wait
+				_finish(id)
+		elif more > 0:  # making several: start the next one (stops by itself when materials run out)
 			get_tree().create_timer(0.2).timeout.connect(func():
 				var ps := GameAuthority.instance.get_player(peer_id) if GameAuthority.instance else null
 				if ps and visible and can_make_count(id, ps.inventory) > 0:
 					start_making(id, more))
 
 
+func _prog() -> Progression:
+	var ps := GameAuthority.instance.get_player(peer_id) if GameAuthority.instance else null
+	return ps.progress if ps else null
+
+
 ## Gear upgrades (building polish spec §4): everything you carry or wear that this station can improve.
 func _upgrade_rows(inv: Inventory) -> void:
 	UiKit.clear(_up_list)
 	var heading := Label.new()
-	heading.text = "Upgrade gear"
+	heading.text = "Upgrade and repair gear"
 	heading.add_theme_font_size_override("font_size", 20)
 	_up_list.add_child(heading)
 	var sub := Label.new()
@@ -368,7 +392,7 @@ func _upgrade_rows(inv: Inventory) -> void:
 		text.fit_content = true
 		text.scroll_active = false
 		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var cost := Upgrades.next_cost(s)
+		var cost := Upgrades.next_cost(s, 0.10 if _prog() and _prog().has_star("crafting", 25) else 0.0)
 		var ok := not cost.is_empty() and station.level() >= Upgrades.needed_level(s)
 		var parts := []
 		for item in cost:
@@ -381,7 +405,24 @@ func _upgrade_rows(inv: Inventory) -> void:
 		elif station.level() < Upgrades.needed_level(s):
 			parts.append("[color=#ff7070]needs station level %d[/color]" % Upgrades.needed_level(s))
 		text.text = "[b]%s[/b]\n[font_size=13]%s[/font_size]" % [Upgrades.display_name(s), ", ".join(parts)]
+		var fix := Durability.repair_cost(s, GameAuthority.repair_discount(_prog()) if _prog() else 0.0)
+		if not fix.is_empty():  # worn: show how worn and what a repair costs
+			var fparts := []
+			for item in fix:
+				fparts.append("[color=%s]%d %s[/color]" % ["white" if inv.count_of(item) >= fix[item] else "#ff7070", fix[item], Items.display_name(item)])
+			text.text += "\n[font_size=13]%s · repair: %s[/font_size]" % [Durability.status_text(s), ", ".join(fparts)]
 		row.add_child(text)
+		if not fix.is_empty():
+			var rb := Button.new()
+			rb.text = "Repair"
+			rb.custom_minimum_size = Vector2(70, 0)
+			for item in fix:
+				rb.disabled = rb.disabled or inv.count_of(item) < fix[item]
+			var at := i
+			rb.pressed.connect(func():
+				GameAuthority.instance.ask_repair(at, station.station_id)
+				get_tree().create_timer(0.15).timeout.connect(refresh))
+			row.add_child(rb)
 		var b := Button.new()
 		b.text = "Upgrade"
 		b.disabled = not ok
@@ -404,7 +445,18 @@ func _ready_to_make(recipe_id: String, inv: Inventory) -> bool:
 	var r := Recipes.get_recipe(recipe_id)
 	if station and r.station != Recipes.HAND and station.level() < int(r.get("level", 1)):
 		return false
-	return can_make_count(recipe_id, inv) > 0 and _fuel_have(inv) >= int(r.get("fuel", 0))
+	return (can_make_count(recipe_id, inv) > 0 or _can_chain(recipe_id, inv)) and _fuel_have(inv) >= int(r.get("fuel", 0))
+
+
+## Auto-crafting: the dwarf can make the missing in-between items here first (same station only, owner Nov 19).
+func _can_chain(recipe_id: String, inv: Inventory) -> bool:
+	var auth := GameAuthority.instance
+	var ps: GameAuthority.PlayerState = auth.get_player(peer_id) if auth else null
+	if ps == null:
+		return false
+	var lvl := station.level() if station else 1
+	return not Crafting.plan(inv, recipe_id, Recipes.get_recipe(recipe_id).station, func(id): \
+		return Recipes.is_unlocked(id, ps.seen, auth.taught_recipes()) and lvl >= int(Recipes.get_recipe(id).get("level", 1))).is_empty()
 
 
 ## Fuel is coal only, made from wood in the Bloomery (owner, Nov 19, F404; game_authority).
@@ -469,6 +521,7 @@ func _show_detail(inv: Inventory) -> void:
 		var n := UiKit.label(_detail_needs, "Fuel (coal)" if item == "fuel" else Items.display_name(item), 14, col)
 		n.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		UiKit.label(_detail_needs, "%d / %d" % [have, need], 14, col)
+	_food_lines(r.output)
 	# No yellow "where to get it" lines (owner F179: too much text). Only a short red note
 	# when the station's level is too low.
 	if station and r.station != Recipes.HAND and station.level() < int(r.get("level", 1)):
@@ -476,6 +529,8 @@ func _show_detail(inv: Inventory) -> void:
 		UiKit.label(_detail_needs, "needs level %d" % int(r.level), 14, UiKit.MISSING)
 		_detail_needs.add_child(Control.new())
 	_craft_button.disabled = not _ready_to_make(_picked, inv) or not _making.is_empty()
+	_amount_slider.max_value = maxi(1, can_make_count(_picked, inv))  # the slider never goes past what you can make
+	_amount_slider.editable = _amount_slider.max_value > 1
 
 
 ## The Gem Bench (combat doc 4.4): every item with sockets, its gems, and the gems you carry.
@@ -568,3 +623,21 @@ func _rune_slab(ps: GameAuthority.PlayerState, auth: GameAuthority) -> void:
 		l.text = "You carry no runes. Find them at rune shrines, in ruins, and on pack leaders."
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD
 		_list.add_child(l)
+
+
+## A food's effects under its ingredients: "Healing" with half hearts (hover = the exact speed), then bullets.
+func _food_lines(item: String) -> void:
+	UiKit.clear(_detail_food)
+	if not Foods.is_buff_food(item):
+		return
+	var regen: float = Foods.buff_of(item).get("regen", 0.0)
+	if regen > 0.0:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 4)
+		row.tooltip_text = "heals 1 health every %.1f s (normal: every %d s)" % [1.0 / (Vitals.HEALTH_REGEN + regen), roundi(1.0 / Vitals.HEALTH_REGEN)]
+		row.mouse_filter = Control.MOUSE_FILTER_STOP
+		_detail_food.add_child(row)
+		UiKit.label(row, "•  Healing", 14, UiKit.TEXT).mouse_filter = Control.MOUSE_FILTER_PASS
+		row.add_child(UiKit.hearts(Foods.heart_halves(regen), 18))
+	for line in Foods.effect_lines(item):
+		UiKit.label(_detail_food, "•  " + line, 14, UiKit.DIM if line.begins_with("lasts") else UiKit.TEXT)

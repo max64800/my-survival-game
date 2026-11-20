@@ -416,26 +416,27 @@ func monster_changed(m: Monster) -> void:
 # ================================================================== players attacking
 
 ## Our dwarf's swing landed: ask the host to hurt these monsters.
-func ask_attack(uids: PackedInt32Array, heavy: bool, combo_step: int, riposte: bool) -> void:
+## airborne = our dwarf was in the air (Jumping ★75: jump attacks).
+func ask_attack(uids: PackedInt32Array, heavy: bool, combo_step: int, riposte: bool, airborne: bool = false) -> void:
 	if auth.is_host():
-		request_attack(auth.local_peer_id(), uids, heavy, combo_step, riposte)
+		request_attack(auth.local_peer_id(), uids, heavy, combo_step, riposte, false, airborne)
 	else:
-		_rpc_attack.rpc_id(1, uids, heavy, combo_step, riposte)
+		_rpc_attack.rpc_id(1, uids, heavy, combo_step, riposte, airborne)
 
 
 @rpc("any_peer", "reliable")
-func _rpc_attack(uids: PackedInt32Array, heavy: bool, combo_step: int, riposte: bool) -> void:
+func _rpc_attack(uids: PackedInt32Array, heavy: bool, combo_step: int, riposte: bool, airborne: bool = false) -> void:
 	if auth.is_host():
 		var unique := PackedInt32Array()
 		for u in uids:
 			if not unique.has(u) and unique.size() < 8:
 				unique.append(u)
-		request_attack(multiplayer.get_remote_sender_id(), unique, heavy, clampi(combo_step, 0, 9), riposte)
+		request_attack(multiplayer.get_remote_sender_id(), unique, heavy, clampi(combo_step, 0, 9), riposte, false, airborne)
 
 
 ## Host: works out the damage (doc 2.2) for each monster hit. Returns total damage dealt.
 ## spin = the Whirlwind perk: a heavy hit on everything around you, no target limit.
-func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: int, riposte: bool, spin: bool = false) -> int:
+func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: int, riposte: bool, spin: bool = false, airborne: bool = false) -> int:
 	var ps := auth.get_player(peer)
 	if ps == null:
 		return 0
@@ -451,7 +452,7 @@ func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: 
 	var buff: float = gb.get("keen", 0.0) + (gb.get("bash", 0.0) if w == "shield" else 0.0)
 	var total := 0
 	var n := 0
-	var max_targets := 99 if spin else max_targets_for(w)
+	var max_targets := 99 if spin else max_targets_for(w) + ps.progress.extra_targets(w)  # Axe ★50, Spear ★50
 	for uid in uids:
 		var m: Monster = monsters.get(uid)
 		if m == null or not m.is_alive():
@@ -464,15 +465,35 @@ func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: 
 		var sneak: bool = m.state in [Monster.State.IDLE, Monster.State.WANDER, Monster.State.SLEEP]
 		var crush := heavy and m.stun.take_crush()
 		var sit := Combat.situation(sneak, m.stun.is_stunned(), crush, riposte)
-		var mult := 0.6 if (w == "axe" and n == 2) else 1.0
-		var dmg := roundi(Combat.damage(w, heavy, tier, _pierced(ps, m), combo_step, sit, 0.0, Upgrades.bonus(ps.inventory.get_slot(ps.hand_slot())), buff + auth.damage_boost(ps, m.kind) + ps.progress.weapon_damage_bonus(w) + _perk_buff(ps, peer, m, w), elem) * mult)
-		if not Controls.robot and randf() < Combat.crit_chance(w):  # now and then a critical hit (owner F137; never in tests: they need exact numbers)
+		var mult := 0.6 if (w == "axe" and n >= 2) else 1.0
+		var dist: float = ps.node.global_position.distance_to(m.global_position)
+		var star: float = ps.progress.star_damage_bonus(w, {combo_step = combo_step, riposte = riposte, stunned = m.stun.is_stunned(),
+			shelled = float(m.stats().get("armor", 0.0)) >= 20.0, airborne = airborne,
+			tip = dist >= wd.reach * ps.progress.reach_mult(w) * 0.8})  # skills.md ★ perks
+		var dmg := roundi(Combat.damage(w, heavy, tier, _pierced(ps, m, w), combo_step, sit, 0.0, Upgrades.bonus(ps.inventory.get_slot(ps.hand_slot())), buff + auth.damage_boost(ps, m.kind) + ps.progress.weapon_damage_bonus(w) + _perk_buff(ps, peer, m, w) + star, elem) * mult)
+		if riposte and ps.progress.riposte_crits(w):  # Sword ★100: a perfect parry's counter is a critical
+			dmg = roundi(dmg * Combat.CRIT_MULT)
+			_ev_note.rpc(m.uid, "Critical!")
+		elif not Controls.robot and randf() < Combat.crit_chance(w):  # now and then a critical hit (owner F137; never in tests: they need exact numbers)
 			dmg = roundi(dmg * Combat.CRIT_MULT)
 			_ev_note.rpc(m.uid, "Critical!")
 		total += dmg
 		_gem_buildup(m, gb)
-		_hurt_monster(m, peer, dmg, Combat.stun_value(w, heavy, tier) * (1.0 + gb.get("stun", 0.0)) * (ps.progress.heavy_stun_mult() if heavy else 1.0))
+		var stun: float = Combat.stun_value(w, heavy, tier) * (1.0 + gb.get("stun", 0.0)) * (ps.progress.heavy_stun_mult() if heavy else 1.0) * ps.progress.skill_stun_mult(w)
+		if Progression.weapon_skill(w) == "mace" and ps.progress.has_star("mace", 75) and float(m.stats().get("armor", 0.0)) >= 20.0:
+			stun *= 1.25  # Mace ★75: armored enemies stagger
+		if heavy and Progression.weapon_skill(w) == "warhammer" and ps.progress.has_star("warhammer", 100):
+			stun += 999.0  # Warhammer ★100: the slam knocks them down
+		if not heavy and Progression.weapon_skill(w) == "spear" and ps.progress.has_star("spear", 25):
+			var away := (m.global_position - ps.node.global_position) * Vector3(1, 0, 1)
+			if away.length() > 0.01:
+				m.knock(away.normalized() * 3.0)  # Spear ★25: a poke pushes them back
+		_hurt_monster(m, peer, dmg, stun)
 	auth.heal(peer, total * gb.get("leech", 0.0))
+	if heavy and Progression.weapon_skill(w) == "axe" and ps.progress.has_star("axe", 100) and n > 0:
+		auth.give_stamina(peer, 6.0 * mini(n, max_targets))  # Axe ★100: a heavy sweep gives stamina back per enemy
+	if total > 0:
+		auth.wear_slot(ps, ps.hand_slot())  # a swing that hit something wears the weapon once
 	return total
 
 
@@ -490,12 +511,13 @@ func _perk_buff(ps: GameAuthority.PlayerState, peer: int, m: Monster, w: String)
 	return b
 
 
-## The monster's stats with part of its armor ignored (Armor Breaker).
-func _pierced(ps: GameAuthority.PlayerState, m: Monster) -> Dictionary:
+## The monster's stats with part of its armor ignored (Armor Breaker perk, Mace skill, Crossbow ★100).
+func _pierced(ps: GameAuthority.PlayerState, m: Monster, w: String = "") -> Dictionary:
 	var st := m.stats()
-	if ps.progress.armor_pierce() > 0.0:
+	var pierce := minf(0.9, ps.progress.armor_pierce() + ps.progress.skill_armor_pierce(w))
+	if pierce > 0.0:
 		st = st.duplicate()
-		st.armor = st.get("armor", 0.0) * (1.0 - ps.progress.armor_pierce())
+		st.armor = st.get("armor", 0.0) * (1.0 - pierce)
 	return st
 
 
@@ -654,7 +676,7 @@ func request_shoot(peer: int, bolt: String, aimed: bool, uid: int, from: Vector3
 				elem[e] = gb[e]
 		var sneak: bool = m.state in [Monster.State.IDLE, Monster.State.WANDER, Monster.State.SLEEP]
 		var sit := Combat.situation(sneak, m.stun.is_stunned(), false, false)
-		dealt = Combat.shot_damage(aimed, tier, bolt, _pierced(ps, m), dist, sit, gb.get("keen", 0.0) + auth.damage_boost(ps, m.kind) + ps.progress.weapon_damage_bonus("crossbow") + _perk_buff(ps, peer, m, "crossbow"), elem)
+		dealt = Combat.shot_damage(aimed, tier, bolt, _pierced(ps, m, "crossbow"), dist, sit, gb.get("keen", 0.0) + auth.damage_boost(ps, m.kind) + ps.progress.weapon_damage_bonus("crossbow") + _perk_buff(ps, peer, m, "crossbow"), elem)
 		var stun_amount: float = (Combat.stun_value("crossbow", aimed, tier) + b.get("stun", 0.0)) * (1.0 + gb.get("stun", 0.0))
 		for k in BOLT_BUILDUP.get(bolt, {}):
 			m.add_buildup(k, BOLT_BUILDUP[bolt][k])
@@ -663,6 +685,10 @@ func request_shoot(peer: int, bolt: String, aimed: bool, uid: int, from: Vector3
 		auth.heal(peer, dealt * gb.get("leech", 0.0))
 	if b.has("glow"):
 		_ev_glow_bolt.rpc(point, b.glow)
+	elif dealt > 0 and ps.progress.has_star("crossbow", 75) and randf() < 0.3:
+		var back := ps.inventory.add(bolt, 1)  # Crossbow ★75: the bolt comes back to you
+		if back > 0:
+			auth.spawn_drop(bolt, back, ps.node.global_position + Vector3.UP)
 	elif randf() < 0.5:
 		auth.spawn_drop(bolt, 1, point + (from - point).normalized() * 0.4)  # half the bolts can be picked up again
 	return dealt
@@ -730,11 +756,17 @@ func _kill(m: Monster, peer: int) -> void:
 			loot.append([Gems.item_id("shiftstep"), 1])
 	for pid in auth.players:  # kills give XP to everyone nearby (progression doc 7.2)
 		if auth.players[pid].node.global_position.distance_to(m.global_position) < 30.0 or pid == peer:
+			var pr: Progression = auth.players[pid].progress
+			var was := pr.hunter_rank(m.kind)
+			pr.add_kill(m.kind)  # kill counts: everyone who shares the XP shares the kill
+			if pr.hunter_rank(m.kind) > was:
+				auth.tell(pid, "%s! +%d%% damage against %s." % [Progression.hunter_title(m.kind, was + 1),
+					roundi(Progression.HUNTER_BONUS[was + 1] * 100), Monsters.LIST[m.kind].name])
 			auth.give_xp(pid, xp, Progression.weapon_skill(Combat.weapon_of(auth.players[pid].selected_item())))
 	var killer := auth.get_player(peer)
 	if killer:
 		auth.heal(peer, killer.progress.perk_rank("last_swing") * 3.0)  # Last Swing
-	var more := killer.progress.extra_drop_chance() if killer else 0.0  # Monster Scavenger
+	var more := (killer.progress.extra_drop_chance() + auth.boost_total(killer, "extra_drops")) if killer else 0.0  # Monster Scavenger, food
 	for d in m.data.drops:
 		var times := (2 if m.leader else 1) + (1 if randf() < more else 0)
 		for t in times:
@@ -894,14 +926,24 @@ func _judge_incoming() -> void:
 			else:
 				var def: Dictionary = dwarf.call("defense_state") if dwarf.has_method("defense_state") else {holding = false, pressed_ago = -1.0, weapon = "fists", shield = false, tier = 0}
 				var sb := Gems.bonus(Gems.shield_slot(me.inventory)) if def.shield else {}
+				if def.shield:  # Shield skill: stronger, cheaper blocks
+					sb = sb.duplicate()
+					for k in me.progress.block_bonus():
+						sb[k] = sb.get(k, 0.0) + me.progress.block_bonus()[k]
+				else:
+					sb = sb.duplicate()
+				sb["parry_mult"] = me.progress.parry_mult(def.weapon, def.shield)  # Sword ★50, Shield ★100
 				result = Combat.defend(hit.damage, def.pressed_ago, def.holding, def.weapon, def.shield, def.tier, hit.crushing, sb)
+				if result.result == "hit" and dwarf.get("running") and me.progress.has_star("running", 75) and randf() < 0.2:
+					result = {result = "dodge", damage = 0.0, stun = 0.0, stamina = 0.0}  # Running ★75: they miss you on the run
 				var swinging: bool = dwarf.get("fight") != null and dwarf.fight._busy > 0.0
 				if result.result == "hit" and swinging:
 					result.damage *= 1.0 - Gems.bonus(me.inventory.get_slot(me.selected_slot)).get("guard", 0.0)  # Bulwark gem
 				if result.result == "block" and def.shield and hit.get("shield_stops", false):
 					result.damage = 0.0  # spit: a shield stops it completely (owner, Nov 17)
-				if result.result == "block" and sb.has("block_poison"):
-					ask_blocked(hit.uid)
+				if result.result == "block":
+					ask_blocked(hit.uid)  # the host wears the shield (and a Blight gem poisons the attacker)
+				result.damage *= 1.0 - me.vitals.buff_total("guard_" + Monsters.food_guard(m.kind))  # meat of its kind (food plan)
 				me.vitals.take_damage(result.damage)
 				# Poison/fire/frost buildup: all of it on a hit, half through a block, none on a parry.
 				var share: float = {"hit": 1.0, "block": 0.5}.get(result.result, 0.0)
@@ -954,6 +996,9 @@ func request_blocked(uid: int, peer: int) -> void:
 	var ps := auth.get_player(peer)
 	if m == null or ps == null or ps.node.global_position.distance_to(m.global_position) > 8.0:
 		return
+	# A blocked hit wears what blocked it once: the shield if one is equipped, else the weapon in hand.
+	var shield_at := Inventory.equip_index("shield")
+	auth.wear_slot(ps, shield_at if not ps.inventory.get_slot(shield_at).is_empty() else ps.hand_slot())
 	var sb := Gems.bonus(Gems.shield_slot(ps.inventory))
 	if sb.has("block_poison"):
 		m.add_buildup("poison", sb.block_poison)

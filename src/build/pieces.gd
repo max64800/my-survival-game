@@ -319,9 +319,22 @@ const BUILD_REACH := 8.0
 const WORKBENCH_RANGE := 20.0
 
 
+## Building economy (owner, Nov 20): a first 6 x 6 m Shack takes about 15 min of gathering, Stonehold about 2x
+## that, Hearthbrick about 3x. Per unit of a piece: `n` of the material, plus 1 `extra` every `per` units (rounded up).
+## Only the house itself (not furniture, decor or mine props). Other families (later zones) still cost 1 per unit.
+const UNIT_COST := {
+	"plank_root": {n = 3, extra = "rope", per = 8},  # rope lashings
+	"cut_stone": {n = 3, extra = "mortar", per = 4},
+	"clay_brick": {n = 2, extra = "mortar", per = 4},
+}
+
+
 static func cost(piece: String, family: String) -> Dictionary:
 	var p: Dictionary = LIST[piece]
-	var c := {family: p.units}
+	var u: Dictionary = {} if p.group in ["furnish", "decor", "mining"] else UNIT_COST.get(family, {})
+	var c := {family: int(p.units) * int(u.get("n", 1))}
+	if not u.is_empty():
+		c[u.extra] = ceili(float(p.units) / float(u.per))
 	for item in p.get("extra", {}):
 		if item == "copper_ingot" and family == "plank_root" and piece == "doorway":
 			continue  # the Shack's round doorway hangs on wooden hinges, no copper (owner, Nov 16)

@@ -81,6 +81,7 @@ const DATA := {
 	"gold_coin": {name = "Gold Coin", stack = 100, color = Color(0.95, 0.75, 0.25), short = "Au"},  ## found in old chests; pays for a perk reset
 	"silver_ingot": {name = "Silver Ingot", color = Color(0.85, 0.87, 0.92), short = "SI"},
 	"clay_brick": {name = "Clay Brick", color = Color(0.8, 0.4, 0.25), short = "CB"},
+	"mortar": {name = "Mortar", color = Color(0.72, 0.68, 0.6), short = "Mo"},  # stone + clay paste for Stonehold and Hearthbrick
 	"lantern_lens": {name = "Crystal Lens", color = Color(0.7, 0.9, 1.0), short = "Ln"},
 	"cut_stone": {name = "Cut Stone", color = Color(0.62, 0.6, 0.58), short = "CS"},
 	"cut_marble": {name = "Cut Marble", color = Color(0.95, 0.95, 0.93), short = "CM"},
@@ -96,6 +97,7 @@ const DATA := {
 	"pickaxe_stone": {name = "Stone Pickaxe", stack = 1, color = Color(0.7, 0.68, 0.62), short = "Pk", kind = "pickaxe", power = 10, tier = 0},
 	"pickaxe_copper": {name = "Copper Pickaxe", stack = 1, color = Color(0.9, 0.55, 0.3), short = "Pk", kind = "pickaxe", power = 13, tier = 1},
 	"pickaxe_silver": {name = "Silver Pickaxe", stack = 1, color = Color(0.85, 0.87, 0.92), short = "Pk", kind = "pickaxe", power = 17, tier = 2},
+	"tuber_seed": {name = "Tuber Seed", stack = 20, color = Color(0.7, 0.5, 0.3), short = "TS", kind = "seed"},  ## found in old chests; plant in a Farm Plot for Root Tubers
 	"root_seed": {name = "Root Seed", stack = 20, color = Color(0.45, 0.3, 0.18), short = "Rs", kind = "seed"},  ## plant with the Mason's Shovel (owner, Nov 18)
 	"masons_shovel": {name = "Mason's Shovel", stack = 1, color = Color(0.66, 0.62, 0.55), short = "Sh", kind = "shovel", tier = 0},  ## levels the ground (owner, Nov 17)
 	"axe_stone": {name = "Stone Axe", stack = 1, color = Color(0.7, 0.68, 0.62), short = "Ax", kind = "axe", power = 10, tier = 0},
@@ -110,6 +112,7 @@ const DATA := {
 	"smelter": {name = "Smelter", stack = 1, color = Color(0.7, 0.4, 0.3), short = "Sm", kind = "station"},
 	"kiln": {name = "Charcoal Kiln", stack = 1, color = Color(0.62, 0.42, 0.32), short = "Ki", kind = "station"},
 	"anvil": {name = "Anvil", stack = 1, color = Color(0.35, 0.35, 0.38), short = "An", kind = "station"},
+	"stone_oven": {name = "Stone Oven", stack = 1, color = Color(0.6, 0.45, 0.38), short = "SO", kind = "station"},  ## kitchen level 3 (owner, Nov 20)
 	"cooking_pot": {name = "Cooking Pot", stack = 1, color = Color(0.85, 0.5, 0.3), short = "CP", kind = "station"},
 	"tanning_rack": {name = "Tanning Rack", stack = 1, color = Color(0.6, 0.45, 0.3), short = "TR", kind = "station"},
 	"masonry_table": {name = "Mason's Table", stack = 1, color = Color(0.6, 0.6, 0.6), short = "MT", kind = "station"},
@@ -207,6 +210,7 @@ static var _all := {}
 static func _data() -> Dictionary:
 	if _all.is_empty():
 		_all = DATA.duplicate()
+		_all.merge(DungeonKeys.item_data())  # dungeon keys (owner, Nov 20, F237)
 		for r in RuneSlab.RUNES:  # runes found while exploring, carved at the Rune Slab
 			var colour := RuneSlab.colour_of(r)
 			_all["rune_" + r] = {name = "%s Rune (%s)" % [colour.capitalize(), RuneSlab.COLOURS[colour].capitalize()],
@@ -216,6 +220,10 @@ static func _data() -> Dictionary:
 			_all["gem_" + g] = {name = Gems.NORMAL[g].name, color = Gems.NORMAL[g].color, short = "G" + g.left(1).to_upper(), kind = "gem", stack = 20}
 		for g in Gems.EPIC:
 			_all["gem_" + g] = {name = Gems.EPIC[g].name, color = Gems.EPIC[g].color, short = "E" + g.left(1).to_upper(), kind = "gem", stack = 5}
+		for r in Recipes.LIST:  # a dungeon's page always teaches the same copper recipe, and its name says which (owner, Nov 19, F237)
+			if Recipes.LIST[r].unlock is String and Recipes.LIST[r].unlock == "ruin" and Recipes.LIST[r].station == "anvil":
+				var pg: String = Recipes.PAGE_OF_KIND[Recipes.page_kind(r)]
+				_all["page_" + r] = DATA[pg].merged({name = "%s: %s" % [DATA[pg].name, display_name(Recipes.LIST[r].output)], recipe = r, icon_of = pg}, true)
 		for id in Foods.DISHES:
 			var f: Dictionary = Foods.DISHES[id]
 			_all[id] = {name = f.name, stack = 20, color = f.get("color", Color(0.9, 0.7, 0.4)), short = f.get("short", "Fd"),
@@ -255,7 +263,7 @@ static var _icons := {}
 ## The item's picture, or null if it has none yet (then show color + short label instead).
 static func icon(id: String) -> Texture2D:
 	if not _icons.has(id):
-		var path := ICON_DIR + id + ".png"
+		var path := ICON_DIR + str(info(id).get("icon_of", id)) + ".png"  # (a dungeon page uses its kind's picture)
 		if not ResourceLoader.exists(path) and id.begins_with("rune_"):
 			path = ICON_DIR + "rune_" + id.split("_")[1] + ".png"  # all runes of one colour share a picture
 		_icons[id] = load(path) if ResourceLoader.exists(path) else null

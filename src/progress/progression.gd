@@ -74,14 +74,14 @@ const PERKS := {
 	"deep_pockets": ["utility", 3, "", false, "Deep Pockets", "+2 bag slots per rank (not in the game yet)"],
 	"ore_smasher": ["utility", 3, "deep_pockets", false, "Ore Smasher", "Ore breaks 15% faster per rank"],
 	"quick_smelter": ["utility", 3, "deep_pockets", false, "Quick Smelter", "Smelting is 15% faster per rank"],
-	"thrifty": ["utility", 3, "deep_pockets", false, "Thrifty", "Repairs cost 10% less per rank (not in the game yet)"],
+	"thrifty": ["utility", 3, "deep_pockets", false, "Thrifty", "Repairs cost 10% less per rank"],
 	"prospector": ["utility", 3, "ore_smasher", false, "Prospector", "10% chance per rank of 1 extra ore"],
 	"chest_looter": ["utility", 3, "quick_smelter", false, "Chest Looter", "More and rarer materials from chests (not in the game yet)"],
 	"steady_hands": ["utility", 3, "thrifty", false, "Steady Hands", "5% chance per rank to get 1 material back when crafting"],
 	"hearth_cook": ["utility", 3, "steady_hands", false, "Hearth Cook", "Food buffs last 10% longer per rank"],
 	"monster_scavenger": ["utility", 3, "chest_looter", false, "Monster Scavenger", "Monsters drop 10% more per rank, rare drops more often"],
 	"master_of_stone": ["utility", 1, "monster_scavenger", false, "Master of Stone", "Dig 20% faster; broken rock sometimes drops a rare gem"],
-	"quick_fix": ["utility", 1, "hearth_cook", true, "Quick Fix", "Fully repair what's in your hand (tools don't wear out yet)"],
+	"quick_fix": ["utility", 1, "hearth_cook", true, "Quick Fix", "Fully repair what's in your hand"],
 	# Together (support)
 	"shoulder_to_shoulder": ["together", 3, "", false, "Shoulder to Shoulder", "A friend within 10 m: stamina comes back 5% faster per rank"],
 	"shared_lessons": ["together", 2, "shoulder_to_shoulder", false, "Shared Lessons", "Friends within 20 m get 10% of your skill XP per rank"],
@@ -118,6 +118,7 @@ var xp := 0  ## XP into the current level
 var skill_level := _zeros()
 var skill_xp := _zeros()
 var perks := {}  ## perk id -> rank
+var kills := {}  ## creature kind -> kills you shared in (for later rewards, e.g. "20 bats: Bat Hunter")
 var _points_spent := 0
 
 
@@ -279,6 +280,115 @@ func jump_stamina_mult() -> float:
 	return (1.0 - skill_level.jumping * 0.003) * (0.75 if has_star("jumping", 25) else 1.0)
 
 
+# ---------------------------------------------------------------- skill bonuses and ★ perks (skills.md)
+
+func _lv(skill: String) -> int:
+	return skill_level.get(skill, 0)
+
+
+## Attack stamina: Sword and Axe use 2% less per 10 levels.
+func attack_stamina_mult(weapon: String) -> float:
+	var s := weapon_skill(weapon)
+	return 1.0 - _lv(s) * 0.002 if s in ["sword", "axe"] else 1.0
+
+
+## Share of armor a weapon's skill ignores: Mace +3% per 10 levels; Crossbow ★100 ignores 30%.
+func skill_armor_pierce(weapon: String) -> float:
+	var s := weapon_skill(weapon)
+	if s == "mace":
+		return _lv(s) * 0.003
+	if s == "crossbow" and has_star("crossbow", 100):
+		return 0.30
+	return 0.0
+
+
+## Stun from a hit, from skills: Warhammer +3% per 10 levels; Mace ★50 +15%; Shield ★50 (bash) +30%.
+func skill_stun_mult(weapon: String) -> float:
+	var s := weapon_skill(weapon)
+	var m := 1.0
+	if s == "warhammer":
+		m += _lv(s) * 0.003
+	if s == "mace" and has_star("mace", 50):
+		m += 0.15
+	if s == "shield" and has_star("shield", 50):
+		m += 0.30
+	return m
+
+
+## Spear reach: +1.5% per 10 levels.
+func reach_mult(weapon: String) -> float:
+	return 1.0 + _lv("spear") * 0.0015 if weapon_skill(weapon) == "spear" else 1.0
+
+
+## Shield block: +2% stronger and 2% cheaper per 10 levels (added to Combat.defend's gem bonus).
+func block_bonus() -> Dictionary:
+	return {block = _lv("shield") * 0.002, block_stamina = _lv("shield") * 0.002}
+
+
+## Parry window: Sword ★50 +20% (sword parries), Shield ★100 +30% (shield parries).
+func parry_mult(weapon: String, shield: bool) -> float:
+	if shield:
+		return 1.3 if has_star("shield", 100) else 1.0
+	return 1.2 if weapon_skill(weapon) == "sword" and has_star("sword", 50) else 1.0
+
+
+## Crossbow reload: Quick Reload perk, Crossbow −3% per 10 levels, ★50 −15%.
+func crossbow_reload_mult() -> float:
+	return reload_mult() * (1.0 - _lv("crossbow") * 0.003) * (0.85 if has_star("crossbow", 50) else 1.0)
+
+
+## How long a craft takes: Crafting −3% per 10 levels; cooking: Cooking −3% per 10 levels.
+func craft_time_mult(cooking: bool) -> float:
+	return 1.0 - _lv("cooking" if cooking else "crafting") * 0.003
+
+
+## Extra damage share from ★ perks for one hit (host). ctx: combo_step, riposte, stunned, armor, shelled, heavy,
+## airborne, tip (the target is at the very end of the reach).
+func star_damage_bonus(weapon: String, ctx: Dictionary) -> float:
+	var s := weapon_skill(weapon)
+	var b := 0.0
+	if ctx.get("airborne", false) and has_star("jumping", 75):
+		b += 0.20  # jump attack
+	match s:
+		"sword":
+			if has_star("sword", 75) and ctx.get("combo_step", 0) == 2:
+				b += 0.30  # 3rd hit of a combo
+		"mace":
+			if has_star("mace", 25) and ctx.get("shelled", false):
+				b += 0.25  # cracks rock-shelled enemies
+			if has_star("mace", 100) and ctx.get("stunned", false):
+				b += 0.25
+		"spear":
+			if has_star("spear", 100) and ctx.get("tip", false):
+				b += 0.30  # sweet spot
+		"shield":
+			pass
+	if ctx.get("riposte", false) and has_star("shield", 75):
+		b += 0.25  # the hit after a perfect parry
+	return b
+
+
+## Sword ★100: a perfect parry's counter-hit is a critical.
+func riposte_crits(weapon: String) -> bool:
+	return weapon_skill(weapon) == "sword" and has_star("sword", 100)
+
+
+## Most enemies one swing can hit: Axe ★50 hits 3, Spear ★50 goes through 1 more.
+func extra_targets(weapon: String) -> int:
+	var s := weapon_skill(weapon)
+	return 1 if (s == "axe" and has_star("axe", 50)) or (s == "spear" and has_star("spear", 50)) else 0
+
+
+## Digging / chopping swing time: Mining ★25 and Woodcutting ★25 swing 10% faster.
+func dig_swing_mult(with_axe: bool) -> float:
+	return 0.9 if has_star("woodcutting" if with_axe else "mining", 25) else 1.0
+
+
+## Walking while blocking (Shield ★25) or aiming (Crossbow ★25): faster than the normal 60%.
+func guard_walk_mult(aiming: bool) -> float:
+	return 0.8 if has_star("crossbow" if aiming else "shield", 25) else 0.6
+
+
 ## Extra damage from the weapon's skill, as a bonus to add (0.2 = +20%).
 func weapon_damage_bonus(weapon: String) -> float:
 	var s := weapon_skill(weapon)
@@ -363,7 +473,7 @@ func extra_ore_chance() -> float:
 
 
 func save_material_chance() -> float:
-	return perk_rank("steady_hands") * 0.05
+	return perk_rank("steady_hands") * 0.05 + (0.10 if has_star("crafting", 50) else 0.0)
 
 
 func extra_drop_chance() -> float:
@@ -392,10 +502,54 @@ static func quality_bonus(q: int) -> float:
 	return QUALITY_BONUS[clampi(q, 1, 5)]
 
 
+# ---------------------------------------------------------------- kill counts
+
+func add_kill(kind: String) -> void:
+	kills[kind] = int(kills.get(kind, 0)) + 1
+
+
+func kills_of(kind: String) -> int:
+	return int(kills.get(kind, 0))
+
+
+## Kill rewards (Nov 20): 10 / 50 / 100 kills of one creature = Hunter / Slayer / Bane, +5 / 10 / 15% damage to it.
+const HUNTER_STEPS := [10, 50, 100]
+const HUNTER_BONUS := [0.0, 0.05, 0.10, 0.15]
+const HUNTER_NAMES := ["", "Hunter", "Slayer", "Bane"]
+
+
+func hunter_rank(kind: String) -> int:
+	var r := 0
+	for need in HUNTER_STEPS:
+		if kills_of(kind) >= need:
+			r += 1
+	return r
+
+
+func hunter_bonus(kind: String) -> float:
+	return HUNTER_BONUS[hunter_rank(kind)]
+
+
+## "Bat Hunter" ("" below 10 kills). Uses the last word of the creature's name.
+static func hunter_title(kind: String, rank: int) -> String:
+	if rank <= 0:
+		return ""
+	var name: String = Monsters.LIST[kind].name if Monsters.LIST.has(kind) else kind.capitalize()
+	return "%s %s" % [name.split(" ")[-1], HUNTER_NAMES[mini(rank, 3)]]
+
+
+func total_kills() -> int:
+	var n := 0
+	for kind in kills:
+		n += int(kills[kind])
+	return n
+
+
 # ---------------------------------------------------------------- network / saving
 
 func to_data() -> Dictionary:
-	return {l = level, x = xp, sl = skill_level.duplicate(), sx = skill_xp.duplicate(), p = perks.duplicate(), ps = _points_spent}
+	return {l = level, x = xp, sl = skill_level.duplicate(), sx = skill_xp.duplicate(), p = perks.duplicate(), ps = _points_spent,
+		k = kills.duplicate()}
 
 
 ## Old saves had 4 big skills: their levels carry over to the new skills they became (XP into the level restarts).
@@ -414,6 +568,10 @@ func load_data(d: Dictionary) -> void:
 		for n in OLD_SKILLS.get(s, []):
 			skill_level[n] = maxi(skill_level[n], int(d.sl[s]))
 	# Perks from the old 4 trees (before Nov 19) are dropped and their points come back.
+	kills = {}
+	var k: Dictionary = d.get("k", {})  # saves from before Nov 20 have no kill counts
+	for kind in k:
+		kills[kind] = int(k[kind])
 	perks = {}
 	_points_spent = 0
 	for id in d.p:

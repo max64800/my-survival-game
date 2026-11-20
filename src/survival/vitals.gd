@@ -1,22 +1,25 @@
 class_name Vitals
 extends RefCounted
-## A dwarf's body: health, stamina, hunger, thirst, and the 3 buff-food slots.
+## A dwarf's body: health, stamina, hunger, thirst, and the food buffs (2 foods + 1 drink).
 ## Rules from docs/design/progression-and-economy.md section 6:
 ##  - Hunger/thirst drain slowly (empty after ~40 / ~36 minutes). Half speed while resting.
 ##  - You NEVER take damage or die from hunger or thirst. Low meters only slow healing
 ##    and, at zero, make you "tired" (less stamina).
-##  - 3 buff slots. The same dish can't fill two slots (eating it again refreshes it).
+##  - 2 food slots + 1 drink slot (owner, Nov 19). The same dish can't fill two slots (eating it again refreshes it).
 ##    A 4th dish replaces the one with the least time left. Buffs end when you die.
 
 const BASE_HEALTH := 100.0
 const BASE_STAMINA := 100.0
-const HEALTH_REGEN := 1.0 / 3.0  ## per second: 1 health every 3 s, so a hit really hurts (owner, Nov 19)
+const HEALTH_REGEN := 0.2  ## per second: 1 health every 5 s on your own (owner, Nov 19); food adds "regen"
+const REGEN_CAP := 0.5  ## zone 1's fastest healing: 1 health every 2 s (later zones raise it)
+const FOOD_CAP := 0.5  ## each kind of food effect stops at 50% (two dishes add up)
 const HEALTH_REGEN_DELAY := 6.0  ## seconds after being hurt
 const STAMINA_REGEN := 25.0  ## per second
 const STAMINA_REGEN_DELAY := 0.8  ## seconds after using stamina
 const HUNGER_DRAIN := 2.5 / 60.0  ## per second
 const THIRST_DRAIN := 2.8 / 60.0
-const BUFF_SLOTS := 3
+const FOOD_SLOTS := 2  ## 2 foods + 1 drink work at the same time (owner, Nov 19)
+const DRINK_SLOTS := 1
 const UPSET_TIME := 180.0  ## "Upset Belly" lasts 3 minutes
 
 var health := BASE_HEALTH
@@ -33,6 +36,7 @@ var effects := {}  ## timed effects from active perks: name -> {left (seconds), 
 var in_dark := false  ## no light reaches you (Darkness): no healing, stamina costs 50% more (F293)
 var friends_near := false  ## a friend within 10 m (Shoulder to Shoulder), set every frame on our computer
 var unbreakable_cd := 0.0  ## Unbreakable perk: seconds until it can save you again
+var second_wind_cd := 0.0  ## Running ★100: seconds until Second Wind works again
 var _since_damage := 999.0
 var _since_stamina := 999.0
 
@@ -43,6 +47,8 @@ func buff_total(key: String) -> float:
 	var t := 0.0
 	for b in buffs:
 		t += Foods.buff_of(b.id).get(key, 0.0)
+	if key != "regen":
+		t = clampf(t, -FOOD_CAP, FOOD_CAP)
 	for e in effects.values():
 		t += e.get(key, 0.0)
 	return t
@@ -74,6 +80,11 @@ func max_health() -> float:
 
 func max_stamina() -> float:
 	return (BASE_STAMINA * (1.0 + buff_total("max_stamina")) + (progress.max_stamina_bonus() if progress else 0.0)) * (0.8 if is_tired() else 1.0)
+
+
+## Health back per second right now: on your own 1 every 5 s, food speeds it up to the zone's cap.
+func regen_per_second() -> float:
+	return minf(REGEN_CAP, HEALTH_REGEN + buff_total("regen")) * health_regen_mult()
 
 
 func health_regen_mult() -> float:
@@ -119,6 +130,10 @@ func tick(delta: float, resting: bool = false) -> void:
 	upset_time = maxf(0.0, upset_time - delta)
 	cozy_time = maxf(0.0, cozy_time - delta)
 	unbreakable_cd = maxf(0.0, unbreakable_cd - delta)
+	second_wind_cd = maxf(0.0, second_wind_cd - delta)
+	if stamina <= 0.5 and second_wind_cd <= 0.0 and progress and progress.has_star("running", 100):
+		stamina = max_stamina() * 0.25  # Running ★100 Second Wind: out of stamina, a quarter comes back (every 2 min)
+		second_wind_cd = 120.0
 	for k in effects.keys():
 		effects[k].left -= delta
 		if effects[k].left <= 0.0:
@@ -131,7 +146,7 @@ func tick(delta: float, resting: bool = false) -> void:
 	if dot > 0.0:
 		health = maxf(0.0, health - dot)
 	if _since_damage >= HEALTH_REGEN_DELAY and not ailments.blocks_regen() and not in_dark:
-		health += HEALTH_REGEN * health_regen_mult() * delta
+		health += regen_per_second() * delta
 	if _since_stamina >= STAMINA_REGEN_DELAY:
 		stamina += STAMINA_REGEN * stamina_regen_mult() * delta
 	health = minf(health, max_health())
@@ -208,9 +223,14 @@ func _add_buff(id: String) -> void:
 		if b.id == id:
 			b.time_left = seconds  # same dish again: just refresh
 			return
-	if buffs.size() >= BUFF_SLOTS:
-		var weakest := 0
-		for i in buffs.size():
+	var drink := Foods.is_drink(id)
+	var same := []  # slots of the same sort (foods or drinks)
+	for i in buffs.size():
+		if Foods.is_drink(buffs[i].id) == drink:
+			same.append(i)
+	if same.size() >= (DRINK_SLOTS if drink else FOOD_SLOTS):
+		var weakest: int = same[0]
+		for i in same:
 			if buffs[i].time_left < buffs[weakest].time_left:
 				weakest = i
 		buffs.remove_at(weakest)

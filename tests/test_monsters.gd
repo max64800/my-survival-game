@@ -93,6 +93,7 @@ func test_sword_damage_and_kill() -> void:
 	auth.monsters.request_attack(1, PackedInt32Array([m.uid]), true, 0, false)
 	check(auth.monsters.monsters.is_empty(), "heavy finishes it")
 	check(ps.progress.skill_xp.sword >= 5, "Sword XP for the kill")
+	check_eq(ps.progress.kills_of("cave_spider"), 1, "the kill is counted")
 	_teardown()
 
 
@@ -994,3 +995,21 @@ func test_leaders_are_big_without_a_crown() -> void:
 			"%s leader has no extra parts (no crown)" % id)
 		plain.free()
 		lead.free()
+
+
+func test_sword_star_perks_in_a_real_fight() -> void:
+	await _setup()
+	ps.inventory.add("sword_stone", 1)
+	auth.request_select_slot(1, first_item_slot(ps))
+	var m := _spawn("rock_snail", Vector3(1.2, 0, 0), true)  # armor 30, lots of HP
+	m.state = Monster.State.CHASE
+	var plain := auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, 2, false)
+	m.shell_hits = 0
+	m.shell_left = 0.0
+	ps.progress.skill_level.sword = 75
+	var third := auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, 2, false)
+	check(third > plain, "Sword ★75: the 3rd combo hit does more (%d > %d)" % [third, plain])
+	m.shell_hits = 0
+	m.shell_left = 0.0
+	check(auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, 0, false, false, true) > plain - 1, "a jump attack counts too (no ★ jumping yet: same)")
+	_teardown()

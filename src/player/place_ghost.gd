@@ -68,6 +68,9 @@ static func where(id: String, point: Vector3, normal: Vector3, yaw: float, from:
 		pos = GameAuthority.wall_spot(id, point, out)
 		yaw = atan2(out.x, out.z)
 	var ok := (n.y >= 0.6 or on_wall) and (from + Vector3.UP * 1.0).distance_to(point) <= GameAuthority.REACH + 1.0
+	var on_fire := Station.on_fire_spot(id, point, auth.stations.values())  # a pot snaps onto a campfire
+	if ok and on_fire.is_finite():
+		return {pos = on_fire, yaw = yaw, ok = true}
 	if ok and Items.kind(id) == "station":
 		for st in auth.stations.values():
 			if st.global_position.distance_to(point) < 1.5:

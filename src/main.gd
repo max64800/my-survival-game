@@ -550,6 +550,10 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	place_ghost = PlaceGhost.new()  # see where a workbench/chest will go before placing it (F96)
 	place_ghost.dwarf = dwarf
 	add_child(place_ghost)
+	var links := StationLinks.new()  # lines from station helpers to their station (owner, Nov 20)
+	links.dwarf = dwarf
+	links.ghost = place_ghost
+	add_child(links)
 	add_child(bm)
 
 	hud = Hud.new()
@@ -918,9 +922,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				hud.show_toast("Still growing. Come back in %d:%02d." % [int(st.crop_left) / 60, int(st.crop_left) % 60], 2.5)
 			else:
 				var has_seed := false
-				for c in Station.CROPS:
-					has_seed = has_seed or me.inventory.count_of(c) > 0
-				hud.show_toast("Planted!" if has_seed else "Plant a Glowcap, Hollowcap, Bellcap or Root Tuber here.", 3.0)
+				for c in Station.CROPS.keys() + Station.SEEDS.keys():
+					has_seed = has_seed or (Station.can_plant(c) and me.inventory.count_of(c) > 0)
+				hud.show_toast("Planted!" if has_seed else "Plant a Glowcap, Hollowcap, Bellcap, Firecap or Tuber Seed here.", 3.0)
 			authority.ask_farm(st.station_id, held)
 			return
 		if st and Station.WATER.has(st.kind):
@@ -930,6 +934,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			else:
 				hud.show_toast("Still empty. It fills one bucket every few minutes." if st.under_drip else "No drips here! Place it under a dripping stalactite (look for falling drops).", 4.0)
 			return
+		if st and st.kind == "cooking_pot":  # the pot is part of the kitchen: cook at the fire under it
+			var fire := Station.fire_under(st, authority.stations.values())
+			if fire == null:
+				hud.show_toast("Put the Cooking Pot on a campfire to cook stews.", 3.0)
+				return
+			st = fire
 		if st:
 			hud.open_station(st)
 			Controls.set_captured(false)

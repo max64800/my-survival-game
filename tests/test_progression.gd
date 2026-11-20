@@ -178,3 +178,76 @@ func test_old_four_skill_save_carries_over() -> void:
 	check_eq(q.skill_level.woodcutting, 9, "... and Woodcutting")
 	check_eq(q.skill_level.running, 0, "new skills start at 0")
 	check(not q.skill_level.has("fighting"), "old names are gone")
+
+
+func test_skill_level_bonuses() -> void:
+	var p := Progression.new()
+	p.skill_level.sword = 50
+	check_near(p.attack_stamina_mult("sword"), 0.9, 0.0001, "Sword 50: 10% cheaper swings")
+	check_near(p.attack_stamina_mult("mace"), 1.0, 0.0001, "the mace gets no stamina bonus")
+	p.skill_level.mace = 100
+	check_near(p.skill_armor_pierce("mace"), 0.30, 0.0001, "Mace 100: ignores 30% armor")
+	p.skill_level.warhammer = 100
+	check_near(p.skill_stun_mult("mace_2h"), 1.3, 0.0001, "Warhammer 100: +30% stun")
+	p.skill_level.spear = 100
+	check_near(p.reach_mult("spear"), 1.15, 0.0001, "Spear 100: +15% reach")
+	p.skill_level.shield = 50
+	check_near(p.block_bonus().block, 0.10, 0.0001, "Shield 50: blocks 10% more")
+	p.skill_level.crossbow = 100
+	check_near(p.crossbow_reload_mult(), 0.7 * 0.85, 0.0001, "Crossbow 100: −30% reload, ★50 −15% more")
+	p.skill_level.cooking = 100
+	check_near(p.craft_time_mult(true), 0.7, 0.0001, "Cooking 100: cooking 30% faster")
+
+
+func test_star_perks() -> void:
+	var p := Progression.new()
+	check_near(p.star_damage_bonus("sword", {combo_step = 2}), 0.0, 0.0001, "no ★: nothing")
+	p.skill_level.sword = 100
+	check_near(p.star_damage_bonus("sword", {combo_step = 2}), 0.30, 0.0001, "Sword ★75: 3rd combo hit +30%")
+	check(p.riposte_crits("sword"), "Sword ★100: the counter after a perfect parry is a critical")
+	check_near(p.parry_mult("sword", false), 1.2, 0.0001, "Sword ★50: parry window +20%")
+	p.skill_level.mace = 100
+	check_near(p.star_damage_bonus("mace", {shelled = true, stunned = true}), 0.50, 0.0001, "Mace ★25 + ★100")
+	p.skill_level.axe = 50
+	check_eq(p.extra_targets("axe"), 1, "Axe ★50: hits 3 instead of 2")
+	p.skill_level.jumping = 75
+	check_near(p.star_damage_bonus("axe", {airborne = true}), 0.20, 0.0001, "Jumping ★75: +20% in the air")
+	p.skill_level.mining = 25
+	check_near(p.dig_swing_mult(false), 0.9, 0.0001, "Mining ★25: pickaxe swings 10% faster")
+	p.skill_level.shield = 25
+	check_near(p.guard_walk_mult(false), 0.8, 0.0001, "Shield ★25: walk faster while blocking")
+	p.skill_level.crafting = 50
+	check_near(p.save_material_chance(), 0.10, 0.0001, "Crafting ★50: 10% chance to save a material")
+
+
+func test_kill_counts() -> void:
+	var p := Progression.new()
+	p.add_kill("cave_bat")
+	p.add_kill("cave_bat")
+	p.add_kill("rock_snail")
+	check_eq(p.kills_of("cave_bat"), 2, "two bats")
+	check_eq(p.kills_of("rock_beetle"), 0, "no beetles")
+	check_eq(p.total_kills(), 3, "three in all")
+	var q := Progression.new()
+	q.load_data(p.to_data())
+	check_eq(q.kills_of("cave_bat"), 2, "kills survive saving and the network")
+	var old := p.to_data()
+	old.erase("k")
+	q.load_data(old)
+	check_eq(q.total_kills(), 0, "saves from before kill counts still load")
+
+
+func test_kill_rewards() -> void:
+	var p := Progression.new()
+	for i in 9:
+		p.add_kill("cave_bat")
+	check_eq(p.hunter_rank("cave_bat"), 0, "9 bats: nothing yet")
+	p.add_kill("cave_bat")
+	check_eq(p.hunter_rank("cave_bat"), 1, "10 bats")
+	check_eq(Progression.hunter_title("cave_bat", 1), "Bat Hunter", "the title")
+	check_near(p.hunter_bonus("cave_bat"), 0.05, 0.001, "+5% against bats")
+	check_eq(p.hunter_bonus("rock_snail"), 0.0, "nothing against snails")
+	for i in 90:
+		p.add_kill("cave_bat")
+	check_eq(Progression.hunter_title("cave_bat", p.hunter_rank("cave_bat")), "Bat Bane", "100 bats: Bat Bane")
+	check_near(p.hunter_bonus("cave_bat"), 0.15, 0.001, "+15%")

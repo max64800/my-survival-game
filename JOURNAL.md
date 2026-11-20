@@ -5499,3 +5499,378 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   inside the jungle test kit, and game_authority.gd didn't even load (lines inside other functions). The folder itself
   was fine, nothing had gone to GitHub. Fixed in the next commit by saving the working file minus the other Claudes'
   lines. The commit also swept up the creature Claude's files it had already marked for saving (it said that's fine).
+
+## 2026-11-19 (Mac) — Food plan round 2 (F426)
+- Owner: only zone 1 recipes, no other-zone effects (like spore sickness); every food speeds healing (normal 1 health
+  every 5 s, best meals together 1 every 2 s); 2 foods + 1 drink at once; mark what is farmable.
+- `tools/craft_wiki/food_plan.json`: 12 zone 1 dishes + 4 drinks, each with a healing bonus (step 1 +0.02/s ... step 5
+  +0.15/s; best 2 dishes + best drink = exactly the 0.5/s cap). Jungle foods listed as "later". New ingredients table
+  (Farm Plot grows glowcap, hollowcap, bellcap; firecap, meats, root tuber are not farmable). Crafting Book rebuilt.
+- Found: the game heals 2 health a second today (Vitals.HEALTH_REGEN), not 1 every 3 s, so 1 every 5 s is a big slow-down.
+  Root Tuber has no source in the game (no chest holds it), so the 4 tuber recipes can't be made yet: asked the owner.
+- Same day, in the game: Firecap added to the Farm Plot crops (6 min, gives 3). New item Tuber Seed (ChatGPT icon,
+  white background cut by script since rembg isn't on the Mac): 2-4 in Mossy ruin chests, 1-2 in camp chests;
+  planting one grows Root Tubers (`Station.SEEDS`). Test: test_tuber_seeds_and_firecaps_grow. Crafting Book rebuilt.
+- Same day: farm times (owner): every mushroom 15 min and gives 5; Root Tubers can't be planted, only Tuber Seeds
+  (20 min, gives 5). `Station.can_plant()` keeps tubers out of the plot; tests updated.
+- Same day: cooked meat in the best meals (Miner's Pie: 2 Roasted Bug; Old Hearth Stew: 2 Seared Bat). Auto-crafting
+  (owner's picks: same station only, times add up, silent): `Crafting.plan()` finds the in-between recipes, the host
+  makes them first and adds their cooking time to the job; the craft window lets you press Make when a plan exists.
+  Start-of-game cooking = one-ingredient meals + Bellcap Juice; Tuber Mash, Hollowcap/Snail/Bug Stew and Glowcap Tea now
+  come from Cook's Pages. Tests: planner + host plank chain. Hurdle: 4 digging tests fail with Jolt physics errors
+  ("too many bodies", unsupported scale) that come from the cave world, not crafting; a clean-copy baseline couldn't
+  load the game, so it proved nothing.
+- Same day: healing shown as half hearts (owner): 5 hearts max for all 7 zones, zone 1 tops out at ♥, hover = exact
+  speed. New `docs/design/food-and-healing.md` (heart scale per zone, healing rules, what's still to build).
+  Crafting Book food tables now show "Healing ½♥ / ♥" first in each bullet list. Not in the game yet: the food plan
+  itself isn't built (today's foods keep their old effects, game cards don't list food effects).
+
+## 2026-11-19 (Mac) — Zone 1 dungeons plan (F237)
+- Talked progression: owner wants zone 1 filled before any new zone. Checked the game: only 2 real places (start
+  tower, Fallen Outpost) plus ~3 one-chest ruins and ~4 camps; 12 copper recipes come from pages in single chests.
+- Owner's picks: mix of sizes, 4 kinds (outposts, mines, forges, tombs), themed pages, monsters + loot come back but
+  each dungeon always teaches the same copper recipe. Plan: `docs/design/zone1-dungeons-plan.md` (12 dungeons =
+  12 copper recipes). F237 bumped to 3×. Nothing built yet.
+- Noticed: silver gear unlocks all at once from one silver bar (unlike copper). Told the owner, not changed.
+- Hurdle: another chat had uncommitted food-plan files open at the same time; left them alone.
+
+## 2026-11-20 (Mac) — Station helper lines, 10 m range, kitchen = 3 levels
+- Owner: helpers should show a clear line to the station they boost while you hold a station, a helper or the build
+  hammer; range 10 m instead of 4. New `src/player/station_links.gd` (camera-facing glowing bands: gold = counts now,
+  green = where the one in your hand would connect); `Station.EXTRA_RANGE` 10; craft window hint says 10 m. Test added.
+- Kitchen agreed: Campfire (1), Cooking Pot placed on the fire (2), Stone Oven within 10 m (3). Food plan and
+  docs/design/food-and-healing.md updated; the pot-on-fire and the oven are not built yet (oven needs a model).
+- Not looked at in a real game window: the lines are untested by eye. Hurdle: another session had unsaved edits in
+  JOURNAL.md and FEEDBACK.md, so this entry was added to the saved copy only and FEEDBACK.md was left alone.
+
+## 2026-11-20 (Mac) — Zone 1 dungeons, step 1: fixed recipe pages + refill clock (F237)
+- Built: one page per copper recipe (12), named after what it teaches ("Weaponsmith's Page: Copper Mace") and using its
+  kind's picture. Reading it teaches only that recipe; a second copy says you know it and stays in your bag.
+- Built: `DungeonLoot` (src/world/dungeon_loot.gd). Dungeon chests remember their loot; an hour of play after someone
+  takes from one, it fills back up (the same page again), only while nobody stands within 30 m. The world now counts
+  its play time (`world_state.played`, saved). Plus a per-world shuffle for which dungeon teaches which recipe.
+  Nothing in the world uses it yet: the first dungeon comes next. Test: tests/test_dungeons.gd (4 tests).
+- Owner changed the plan: the Fallen Outpost and the start tower are ruins (plans, pages, tools), not dungeons. The 12
+  dungeons are new: 4 small wooden, 5 medium Stonehold, 3 big Hearthbrick; 5/8/12 min runs; rings by size; own names;
+  guards wait for new monsters; refill after 1 hour of play. Kinds still open (owner has a different idea). So step 2
+  ("three medium outposts") was not built: outposts are ruins now.
+- Mistakes/hurdles: (1) Claude's first question mixed up "how long to come back" and "how long to clear"; the owner
+  answered the second, so Claude asked again. (2) The page names came out as plain "Armourer's Page": Godot's
+  `merged()` keeps the old value unless you pass `true` to overwrite; the new test caught it.
+
+## 2026-11-20 (Mac) — Zone 1 food plan built + crafting window fixes
+- Food plan in the game: zone 1 dishes and drinks get their plan effects, healing is 1 health every 5 s on your own and
+  food speeds it up to 1 every 2 s, 2 foods + 1 drink at once, each effect stops at 50%, meat guards against its creature
+  (bat, beetle, spider, snail), lose food/water slower, digging and extra drops through the host. Food cards in the
+  crafting window show "Healing" with half-heart pictures (hover = exact speed) and the effects as bullets; bag tooltips too.
+- Crafting window (owner): the progress bar keeps its space, so the menu no longer jumps; the ×1 / ×5 / All buttons are
+  now a slider (1 to what you can make) with an All button; the amount resets to 1 when the bench opens or closes.
+- Found: the other session had already set healing to 1 health every 3 s (so my earlier "2 a second" was out of date).
+- Tests: vitals (healing, slots, guards), crafting, menu, monsters, farming all pass. Screenshot of the Cooking Pot card
+  checked. Kitchen levels (pot on the fire, Stone Oven) still to build. Another session had unsaved edits in
+  game_authority.gd, items.gd, FEEDBACK.md and JOURNAL.md: only this session's lines were committed.
+
+## 2026-11-20 (Mac) — The skills window becomes a tree
+- Owner picked the mock-up layout. New `src/ui/perk_tree_view.gd`: the 4 branches drawn around your level, which sits in
+  the carved ring of the painted hall; perk pictures masked to circles (passive) or diamonds (active) by a small shader,
+  dark when locked, gold lines and borders when learned, "1/3" badges, ★ on final perks, branch names.
+  `skills_panel.gd` rewritten: skills on the left (one opens at a time, never scrolls), details + Learn on the right,
+  reset button top right. Screenshots checked with tools/shot_skills.gd.
+- Hurdles: a new class needs Godot's import step before other scripts see it; untyped values from Arrays need written
+  types; a wrapping Label clipped under the gold card border (fixed with more padding and self-sizing text).
+  test_eat_from_hotbar expected the old +20% stew; the food plan made it +15% (test updated). The 4 Jolt physics
+  failures in test_authority are unchanged (cave world, not this work). No zoom/drag in the game tree yet.
+
+## 2026-11-20 (Mac) — The kitchen: pot on the fire, Stone Oven
+- Owner: place the Cooking Pot on top of the fire; level 3 = Stone Oven (agreed). Built: the campfire is the cooking
+  station (all 17 pot recipes moved to it: stews/drinks level 2, Miner's Pie + Old Hearth Stew level 3). A pot aimed
+  at a campfire snaps on top (one per fire; `Station.on_fire_spot`), counts only when on the fire (`EXTRA_REACH`), and
+  E on the pot opens the fire. New Stone Oven (stone 20, clay 10, 2 planks, Workbench) within 10 m = level 3.
+- Bonus: one station means auto-crafting now roasts the bug meat for a Miner's Pie by itself (the owner's example).
+- Shortcut: the Stone Oven borrows the Charcoal Kiln's model and icon until its real model is built on the PC.
+  Old saves: a pot away from a fire no longer cooks. Tests: kitchen levels, pot placement, cooking at the fire.
+
+## 2026-11-20 (Mac, overnight loop) — all 12 Zone 1 dungeons planned (F237)
+- Owner's choices this evening: outposts/towers are ruins; 12 new dungeons = 4 small wood (8-10 min), 5 medium
+  Stonehold (12-15 min, key + locked door + mini boss, 2 deadly traps), 3 big Hearthbrick forge halls (20-25 min,
+  ~30 spaces). Forge traps OK (fire jets, swing traps, pistons, rolling weights, molten metal only in stone channels
+  that can't spill), every trap with a clue and a safe way. No water. Inside: KayKit Skeletons made into dwarf
+  skeletons (picked by the owner from a pack search; made on the PC, noted in the plan's PC to-do list).
+- Built while the owner slept: pages "Small Wooden Dungeons", "Medium Stone Dungeons", "Big Clay Dungeons" (side views
+  + room lists); `docs/design/zone1-dungeons/` with one plan file per dungeon (rooms with 2 m grid sizes, creatures,
+  loot, models that exist vs new) and `00-missing-and-build-order.md` (about 20 new models, new trap/key/mini-boss
+  code, build order); `tools/dungeon_pages/` (the maps, `gen_docs.js` writes the files, `check.js` checks the rules);
+  `src/world/dungeon_list.gd` + `tests/test_dungeon_list.gd` (every world teaches all 12 copper recipes once each).
+- Checks: two passes of `check.js` over all 11 drawn dungeons (Mossgate Hold's real map is on the PC). Pass 1 found 3
+  dungeons one trap short (added a runaway cart, a coin press, falling ceiling stones) and deadly traps without a
+  written clue; pass 2 found a molten pit listed as a spike pit (wrong model) and odd creature names. All fixed.
+- Mistakes/hurdles (Claude's own): missed the PC's Mossgate Hold at first (its code isn't on GitHub; only grepped
+  `src` for "dungeon"), the owner caught it. The full test run showed 13 fails; ran them on a copy from before
+  Claude's commit: the same fail there, so they come from other work (food/build-menu chats). Copied the scripts into
+  the docs folder where they couldn't find the pages: moved pages + scripts together into tools/dungeon_pages.
+
+## 2026-11-20 (Mac, overnight) — Skill ★ perks and per-level bonuses
+- Owner said "go" on building every skill perk from skills.md that needs no new system. Built in `Progression`
+  (one small helper per perk) and hooked into fighting (host damage, stun, targets, pierce, crits; the dwarf's swing
+  stamina, reach, parry windows, walking while blocking/aiming, reloads, quick step, jump attacks), running, digging,
+  gathering, crafting and cooking. Full list and the skipped ones: docs/design/skills.md "★ perks and skill bonuses built".
+- Also: zoom (wheel, at the mouse), drag and double-click-to-fit for the skills tree; screenshot checked.
+- Tests: new checks for the bonuses, ★ perks, Second Wind and a real sword fight. Full run: 494 checks, 12 failed;
+  only one was mine (a builder test still expected the old 4 m helper range, fixed). The rest are not from this work:
+  4 cave physics (Jolt), test_build_menu (another session's PlaceGhost.held_turn not written yet), crystals growing
+  back (a test without its code yet), 2 ruin tower tests, 2 dwarf tests (fail the same with my changes taken out),
+  tool models (old).
+- Skipped (needs a system or the owner): Running 50, Jumping 50/100, Gathering 50/75/100, Crafting 100, Cooking 75,
+  Axe 25/75, Warhammer 75, Spear 75. Crafting 25 rounds away on today's small upgrade costs.
+
+## Nov 20 (Mac): dungeon traps redone, asset list, variety rules (F237)
+- The owner didn't like fire jets ("futuristic"). We listed every trap we have, plus 15 medieval ideas. The owner picked them.
+- New file `docs/design/zone1-dungeons/traps-and-variety.md`: the final trap list (clue + safe way for each), which traps
+  go in which of the 12 dungeons (each one has its own signature trap, and none repeats everywhere), the full list of
+  models to make, and the variety rules.
+- Owner ideas:
+  - A 3-lane mine cart tunnel with a dodge pattern.
+  - Ragdoll when a cart, swinging boulder or flail hits you.
+  - Push walls into chasms or spikes.
+  - Stairs where one faintly off-colour half collapses.
+  - Trapped chests you shoot first so the floor spikes fire and pull back.
+- Variety: chosen by the world seed, so co-op friends see the same thing.
+  - The whole dungeon can be mirrored.
+  - Side wings can swap places.
+  - Hidden things, chests and small traps move between 2-3 possible spots.
+  - The main path, the deadly traps, the key and the boss never change.
+- Out: fire jets, gas valve, pistons, the bellows trap, swing hooks, the coin press (the owner didn't get it; it was
+  just a crusher with a coin theme).
+- Hurdle (Claude): adding a note line with macOS `sed` failed (its "append" command needs a different format than on
+  Linux). Did it with a short Python script instead.
+- The 02-12 files and the three pages still show the old traps. Each file has a note at the top saying the new trap
+  file wins, until the pages are redrawn.
+
+## Nov 20 (Mac): dungeon pages redrawn with the new traps (F237)
+- The three dungeon pages (small, medium, big) now show the owner's trap picks in every room, each with a clue and a
+  safe way. Fire jets, pistons, bellows, swing hooks and the runaway cart are gone. Every page also has a note on how
+  each world makes a dungeon a bit different.
+- The room files 02-12 were made again from the pages, so they match. The generator now knows the new trap models.
+  The missing list (00) lost the old fire jet and piston rows.
+- The rules check passes for all 11 drawn dungeons (Mossgate Hold's map is on the PC).
+- Small changes made while placing the traps:
+  - Lampwick's swinging boulder sits over the Old Shaft.
+  - Tomb's Crusher Hall became Shield Hall, the Barrows' Crusher Gate became Spear Gate, and Brassgate's Great
+    Crusher Hall became Pendulum Hall.
+  - Hammerfall's Rolling Anvil Ramp became the Ore Cart Ramp.
+  - Cinderhold's push wall knocks you down a level (it hurts) instead of into the chasm, so the dungeon keeps
+    3 deadly traps.
+
+## Nov 20 (Mac): dungeon keys, locked doors, boss health bar and the variety picker (F237)
+- **Keys and doors** (`src/world/dungeon_keys.gd`): 9 keys, one per medium and big dungeon. The Hammerfall Works
+  has two (Gear Key + Hammer Key) for its gate with two locks, so two friends can open one lock each. A door opens only
+  for its own key. Co-op pattern: the player asks, the host checks the key and the distance, then everyone's door opens.
+- **The key goes back:** an hour of play after the boss dropped it, the key disappears from every bag, chest and floor.
+  The boss holds it again and the lock closes. It waits while someone is within 60 m of the door, so nobody gets shut
+  inside (a shortcut until the PC knows each dungeon's real size).
+- **Boss bar** (`src/ui/boss_bar.gd`): the boss's name and a long red bar at the top. It follows the creature's health
+  and hides when it dies.
+- **Variety picker** (`src/world/dungeon_variety.gd`): from the world seed and the dungeon it picks mirrored or not
+  (about half), which wings swap, 3 of the 5-6 hidden spots, a place for every chest and small trap, and one of 3
+  timing patterns for carts and blades. Each choice has its own dice, so adding a chest later never changes the others.
+  The main path, deadly traps, key, boss and recipe stand are never in its list, so they can't move.
+- Key pictures: cut from our own key model renders (`journey/treasure/`) into `assets/icons/key_iron.png` (medium)
+  and `key_copper.png` (big).
+- Not hooked in yet, on purpose: Mossgate's code lives on the PC. Each new file says at the top which lines the PC adds.
+- Hurdles (Claude): no GodotPrompter add-on is installed on the Mac, so Claude followed the game's own chest system
+  as the pattern. `godot` isn't on the Mac's path; it's at `~/Applications/Godot.app`. The dungeon plans don't list how many
+  places each chest or trap has yet, so the picker reads those numbers from the room file the PC will write.
+  FEEDBACK.md already had another chat's unsaved change, so only the F237 line was committed.
+- Tests: `test_dungeon_keys` (5) and `test_dungeon_variety` (3) pass, plus the icon, item, dungeon and list tests.
+- Full test run: 505 checks, 11 failed, all outside this work (digging by hand, build menu `held_turn`, crystals,
+  dwarf braids/aim, ruin tower rebuild, tool models). The same ones fail on the code from before this session.
+
+## November 20, 2026 (Mac, Claude): a new plan for the two-handed swings (F389)
+- **Owner: "teach the PC Claude to do animations better; the 2H attacks are still a struggle."** Researched the web:
+  nobody has solved two-handed swings by vibecoding. Free packs don't fit (already checked by the PC in chats 4-7);
+  Mixamo can't go in the public repo; Cascadeur's free version bans commercial use; text-to-motion AI (NVIDIA Kimodo /
+  ARDY, Tencent HY-Motion) kept as a backup (licences not checked). The owner also asked about making great weapons
+  one-handed (free off hand for a shield): easier, kept as the backup plan.
+- **Owner's pick: film himself.** Red glove left, blue glove right, a broom handle with yellow tape at the head end and
+  green at the grip end; side + front, slow + fast.
+- **Built:** `tools/mocap/swing_from_video.py`: Google MediaPipe Pose (Apache 2.0) finds his joints, colour finding
+  follows the gloves and tape, and the key poses (ready, top of the wind-up, hit, recovery) + timings are picked from
+  the stick head's speed. Saves numbers in arm lengths (so they shrink to the dwarf's 27 cm arm) and a picture sheet.
+  Filming guide in `tools/mocap/README.md`. Self-check `test_swing_tool.py` (a made-up stick video) passes.
+  Videos, the model file and the tool's Python setup are ignored by git (public repo).
+- **Written:** `docs/art/ANIMATION-RULES.md` (the lessons of all 7 animation chats: his measured body, packs not to
+  search again, the owner's wishes, how a heavy swing is timed, the checks, mistakes not to repeat) and
+  `docs/art/2H-ANIMATION-PLAN.md` (who does which step).
+- **Hurdles (Claude's own):** the first key-pose picker chose the still "ready" moment as the wind-up top, then counted
+  the hold at the top as part of the strike; the self-check caught both. Found that the PC's chats 5-7 two-handed code
+  (`dwarf_great_swing.gd`, the pose tuner) was never pushed: step 0 of the plan. ChatGPT had another chat's unsent
+  message in its box, so the reference pictures were not made (prompts are in the plan). The body-finding part is
+  untested on a real person until the first video.
+
+## November 20, 2026 (Mac, Claude): rag doll on big hits (F237)
+- **Owner: a mine cart, swinging boulder/anvil or spiked flail throws the dwarf as a floppy rag doll, then he gets up;
+  every co-op player sees the same tumble.** No trap code (the PC does that), Mossgate Hold's files untouched.
+- **Built:** `src/player/dwarf_ragdoll.gd`: ten physics pieces (hips, chest+head, upper/lower arms and legs) joined at
+  the joints tumble in the world, and every frame the matching bones are turned to match them. Lies 2.2 s, then blends
+  0.5 s into the get-up move. Entry point for the traps: `dwarf.big_hit(push)` (push = direction × m/s, damage is up
+  to the trap). Co-op: only the host's call counts, it goes to everyone at once with the same push; on friends'
+  screens the hips are also pulled toward where the dwarf's owner has them, so he lands in the same spot.
+  Test room: `godot --audio-driver Dummy --path . --script res://src/debug/ragdoll_room.gd -- claude=ragdoll shots=<folder>`
+  (four throws, pictures, closes itself). Test: `test_ragdoll` (thrown the right way, tumbles, stays on the floor,
+  can't walk while floppy, gets up and walks again).
+- **Hurdles:** no godot-prompter skills are installed on the Mac, so none could be checked. Godot's own "physical
+  bones" were skipped on purpose: the dwarf's skeleton is stretched and scaled into dwarf shape every frame, and they
+  would lose it. First try (Claude's mistake): bones read from outside the skeleton's update are the plain
+  human-sized animation, so the pieces were built too tall and the body slid off them; also the fall move drags the
+  skeleton's base, and the camera followed a spot under the floor. Fixed by building the pieces right after the
+  skeleton's update, holding the base still on the hips piece, and keeping the dwarf's position on the floor under
+  the hips. Not tested yet: two real co-op players (needs the PC's netcheck or two machines).
+
+## November 20, 2026 (Mac, Claude): kill counts
+- **Owner picked "kill counts" (ready for later rewards like "20 bats: Bat Hunter").** Each player's progress now keeps
+  how many of each creature they killed. Everyone who gets the kill's XP (within 30 m) gets the kill too, so friends
+  fighting together all count it. Saved with the game and sent to friends like XP; old saves load with 0 kills.
+- The skills window's top line shows "Level 3 · 12 kills"; hover it for each creature ("Cave Bat: 7").
+- Not done (no reward exists yet): rewards for counts, separate counts for leaders and crystal variants.
+- Tests: `test_kill_counts` (counting, saving, old saves) and the sword-kill test now checks the count. Both pass.
+
+## November 20, 2026 (Mac, Claude): building economy
+- **Measured first:** building was almost free. A first 6 x 6 m house (~35 pieces, ~160 units) cost ~160 planks
+  (3 Root Trees, a few minutes) in wood, ~380 stone (5-6 min) in stone; brick wasn't much harder.
+- **Owner's picks:** a first wooden house ~15 min of gathering; Stonehold ~2x, Hearthbrick ~3x the work; a second
+  ingredient for each style; breaking your own piece gives half back.
+- **Built (`Pieces.UNIT_COST`):** per unit, Rootwood 3 planks + 1 rope per 8 units (lashings); Cut Stone 3 cut stone
+  + 1 mortar per 4; Clay Brick 2 bricks + 1 mortar per 4 (rounded up). New item **Mortar** (1 stone + 1 clay = 2 at the
+  Mason's Table, unlocked by finding clay; placeholder icon drawn by script). Same 6 x 6 house now: ~240 rootwood +
+  20 rope; ~960 stone + 40 mortar; ~320 clay + 160 coal + 40 mortar. Furniture, decor and mine props keep the old price.
+  Blueprints and the ruin's Rebuilding Chest ask for the new costs automatically.
+- **Breaking your own piece: half back** (was 80%). The 10-second misclick pick-up still gives everything back.
+- Tests updated (wall, doorway, brick foundation, furniture, the lodge and hut blueprints, half back). Builder,
+  blueprint, building and 9 other files pass. Still failing, not from this: the 4 cave physics tests, 2 ruin tower
+  tests, and the build menu test (another chat's unfinished `PlaceGhost.held_turn`).
+- Not done: the rates (rootwood, stone per minute) are estimates from the code, not timed in a real game; the
+  Crafting Book page doesn't show Mortar yet; later zones' materials still cost 1 per unit.
+
+## Nov 20 (Mac): dungeons end with boss → treasure room → lever gate home (F237)
+- **Owner's idea:** like a classic dungeon crawl. On the way in you see a barred gate on the right in the first room
+  that you can't open. You explore, beat the mini boss, take its key, open the treasure room, and a tunnel leads back to
+  that gate. A lever on the inside opens it and you're at the exit.
+- **Owner's picks:** the gate closes again when the dungeon refills. Small dungeons get the gate + lever but no key.
+  The treasure room holds the recipe stand and the big chest. Hammerfall keeps one door with two locks.
+- **Plans changed** (the 3 dungeon pages, then the room files 02-12 made again): in the 8 keyed dungeons the boss
+  moved to the big last hall (it swapped places with the pack leader who stood there), the old locked door in the
+  middle now stands broken open, and a new treasure room sits behind the boss's locked door. Every first room has the
+  barred gate, and every way out ends behind it. Mossgate Hold's plan (01) got the same gate in words; its map is on the PC.
+- **Generator fix:** room sizes come from room names, so the new boss hall "Vault Hall" came out as a 4 x 4 nook.
+  Now a boss hall with the treasure door is always the big end size, and a treasure room is a normal room.
+- **Code:** `dungeon_keys.gd` got the exit gate: add_gate, ask_pull_lever (ask → host checks you're at the lever →
+  everyone's gate opens), closes after the hour while nobody is near. New test passes (6 in the file).
+- Hurdle (Claude): the change script first stopped because one room line writes `l:0` out in full; fixed it to keep
+  each line's own format. The rules check passes for all 11 drawn dungeons.
+
+## November 20, 2026 (Mac, Claude): dungeon model sheets (F237)
+- **What we did:** a "model sheet" for every new Zone 1 dungeon model, so the PC can build them in Blender fast:
+  30 sheets + an index in `docs/art/dungeon-model-sheets/` (traps, portcullis, locked round door + 9 keys, entrances,
+  bridges, molten channel, lift, rope slide). Each sheet: size on the 2 m grid, its parts and what moves (pivot, how
+  far, how fast), which build script or model to start from, colours (wood, stone, brick, forge), and the MODEL-RULES
+  checks that matter. 25 have a ChatGPT concept picture in the workbench/anvil style (logged in CREDITS). No game code.
+- **Owner's notes after the first 3 sheets:** the pictures are concept art only; sizes are whole 2 m squares (the
+  brick portcullis picture read as 1.5 squares wide); doors reuse the existing round door. Written into the index.
+- **Hurdles / mistakes (Claude's own):**
+  - The first message to ChatGPT had line breaks, so it sent the first paragraph on its own. Fixed by typing one line.
+  - The picture queue script looked for the wrong text box and died silently; then it counted pictures, but ChatGPT
+    unloads old pictures, so the count never grew and it waited forever (the owner noticed only 1 new picture).
+    Fixed by watching for the newest picture to change.
+  - A downloaded picture came out with a random file name (molten channel); found it by its time and looked at it.
+  - ChatGPT refused 5 pictures (tripwire crossbow, spiked flail, stone crusher, great crusher, great press) as
+    "illicit activities" / "harassment". Claude tried to reword one and the safety check stopped that, so they were
+    skipped. Their sheets name an existing model or picture to copy the look from instead.
+- **Not done:** the "maybe" stone/brick versions of wall_cracked, floor_loose_stone, floor_old; the healing shrine check.
+
+## Nov 20 (Mac): the one-way exit can be a gate or a high ledge (F237)
+- **Owner:** the exit in the first room doesn't have to be a gate on the right. It can be on any side, and sometimes it's
+  a hole high in the wall that you can't reach from below, only jump down from.
+- **Owner's picks:** two kinds: a barred gate + lever, or a high ledge. Jumping down never hurts (soft heap of moss and roots).
+- **Which gets which:** where the way back comes out above the first room it's a ledge (Mossgate, Mossprop, the
+  Quiet Barrows, Vigil of Orrin, Cinderhold); the other 7 keep the lever gate. Sides vary: left, right, back wall, above the door.
+- Pages, room files 02-12, Mossgate's plan (01) and the build list (00) updated; the generator lists a "soft landing heap"
+  model for ledges. The rules check passes. The ledge needs no code; the lever-gate code stays for the 7 gate dungeons.
+- Hurdle (Claude): one text swap missed because a code comment wrapped differently than expected; fixed by hand.
+
+## November 20, 2026 (Mac, Claude): mortar 2 + 2, fiber check, ChatGPT pictures
+- **Owner: is there enough fiber for the rope?** Counted seed 42 with new `tools/fiber_count.gd`: zone 1 has 340 fiber
+  tufts (2-3 fiber each) and 694 small roots (1 fiber each when chopped), about 500 rope in all; within 80 m of the
+  start only ~85 fiber (~28 rope). A first wooden house needs 20 rope, so it uses most of the nearby fiber: walk
+  further or wait the 10 min regrowth. Kept as is.
+- **Mortar now 2 stone + 2 clay = 1** (owner; was 1 + 1 = 2). A stone house's 40 mortar = 80 stone + 80 clay.
+- **ChatGPT pictures:** real icons for Mortar, Gold Coin and Stone Oven (were placeholders), in the chat "Create
+  Inventory Sprite Sheet", cut with a flood fill (no rembg on the Mac). A two-handed key-pose sheet of our dwarf
+  (`docs/art/2h-reference/great_axe_poses_side.jpg`, plan step 3), from a fresh render of our dwarf.
+- **Hurdles (Claude's own):** another chat's unsent dungeon-trap message showed up again in ChatGPT's new-chat box
+  and my upload landed beside it: removed only my picture and used an older art chat instead. Chrome blocked the
+  second download from the same page (it asks in the address bar), so the pose sheet was saved from a full-size
+  screenshot (1014 x 762). Removed the concept sheet's .import file by mistake, then re-imported it.
+
+## Nov 20 (Mac): where the 12 dungeons sit in each world (F237, task 1)
+- **New `src/world/dungeon_places.gd`:** from the world's seed alone it picks a spot for each of the 12 dungeons:
+  a round patch of solid rock beside a Mossy Hollows tunnel, with its door on that tunnel's floor. Small ones 40-100 m
+  from the start, medium 100-170 m, big 170 m+, at least 40 m apart (and never overlapping). Big ones are placed
+  first (they need the most room).
+- **Placement rule (owner, Nov 17):** every patch keeps off the watchtower's and the Fallen Outpost's ground, every
+  place (shrines, camps, ruins...), the stone columns, and it may not cut through any cave or tunnel. `reserve_all`
+  keeps pebbles, plants and crystals off the dungeons too.
+- **Mossgate Hold stays the PC's:** pass its spot into `DungeonPlaces.pick(maker, {pos = ...})` and the other 11 keep
+  clear of it. Mossgate's own code (cave_maker.gd, dungeon_map.gd) was only read, not changed.
+- **Tests:** `tests/test_dungeon_places.gd` (only=dungeon_places), 4 tests on 3 worlds: all 12 found in their rings,
+  40 m apart, inside rock, door on open air; out of ruins/places/columns; same world = same spots; Mossgate passed in.
+- **Hurdles (Claude's own):** Godot refused 4 lines with unclear number types (fixed with types). First run: some
+  doors were tested inside the wall instead of on the tunnel floor, and the small ones near the start ran out of
+  tries because most tunnels were too far away; fixed by stepping the door into the tunnel and only trying tunnels
+  near the right ring. The full test suite was not run (nothing outside the new files changed).
+
+## November 20, 2026 (Mac, Claude): fall damage, tools wear out, kill rewards
+- **Fall damage** (`src/survival/fall_damage.gd`, on the player's own computer): up to 4 m is free, then 12 health
+  per metre (about 12 m kills). Only time spent falling fast counts, so ladders, jumps and being moved (waking in a
+  bed) never hurt. Armor doesn't help. **Jumping ★100 works now** (no fall damage). The dungeon chasm kills if it's
+  deeper than ~12 m (its depth lives in the PC's Mossgate code).
+- **Tools and weapons wear out** (`src/items/durability.gd`): pickaxes, axes, weapons and shields; one use = a hit
+  on rock, wood or a creature, or a blocked hit. Stone 150 uses, copper 300, silver 500. At 0 the item is broken,
+  not lost: it works like bare hands (a broken shield doesn't block) until repaired. Warning at 10% left.
+  **Repair** in the bench's "Upgrade and repair gear" list (same station that upgrades it): up to half of the
+  item's main material from its recipe, by how worn it is. **Thrifty** (-10% per rank) and **Crafting ★25** (-10%)
+  make repairs cheaper; **Quick Fix** repairs what's in your hand. A thin wear bar under worn tools (green, yellow,
+  red), a greyed-out icon when broken, durability in the tooltip. Clothes and armor don't wear yet.
+- **Kill rewards:** 10 / 50 / 100 kills of one creature = "Bat Hunter / Slayer / Bane", +5 / 10 / 15% damage to it
+  (melee and crossbow), with a message when you reach it. The skills window's kills list shows titles and how many
+  to the next one.
+- **Hurdles (Claude's own):** the first fall tracker missed ~0.5 m of every fall (the slow first bit), the test
+  caught it; my first shield-wear line was nonsense (a made-up function behind `if false`) and was rewritten before
+  testing. Sending the whole bag on every swing would be wasteful, so wear is sent every 10 uses.
+- Tests: `test_fall_damage`, `test_durability`, `test_kill_rewards` pass; monsters, upgrades, combat, dwarf fist,
+  progression, menu (except the other chat's build menu) pass; authority has only its 4 known cave physics fails.
+  Nothing tried in a real game window yet.
+
+## Nov 20 (Mac): dungeon junk list + 4 ChatGPT pictures (F237, task 2)
+- **Checked first:** crates, sacks, kegs, barrel racks, ore baskets, the mine cart, timber stacks, treasure bits and a
+  stone rubble pile already exist. No bones, broken shields, broken weapons or rags existed.
+- **Owner's picks (multiple choice):** for all 12: bones + skull, broken shields, broken weapons, rags + rubble. Small
+  mines: broken pickaxe + shovel, snapped beam, helmet + smashed lantern. Medium stone: urns, fallen statue head,
+  rusty armour pile, coffin lid pieces. Big forges: slag, broken tongs + hammer, cracked crucible + mould, scrap heap.
+- **The list** (20 models, names, which dungeons, which picture) is in traps-and-variety.md → "Dungeon junk", with the
+  rule for the PC: junk only along walls and in corners, never on a path, stair, bridge, doorway or in front of a door,
+  lever, chest or recipe stand, plus an automatic test for it.
+- **Pictures:** `docs/art/dungeon-model-sheets/junk_shared.jpg`, `junk_small_mine.jpg`, `junk_medium_stone.jpg`,
+  `junk_big_forge.jpg` (concept only; the PC builds the real models in Blender by script). Logged in CREDITS.
+- **Hurdles (Claude's own):** I first used the wrong Chrome (the eqt.ae one). Its ChatGPT box held someone's unsent
+  question about Palm Jumeirah, and it got sent together with my first picture request; the picture came out fine
+  and is kept. The owner asked me to switch, so the other 3 were made in the owner's own ChatGPT, in the old dungeon
+  chat (its new-chat box still holds the old trap message, so I left that alone). The browser window got narrower
+  mid-way, so one click opened a menu instead of the text box; fixed by clicking again. A long wait script froze the
+  first tab (45 s limit); shorter waits worked. I listed a whole model folder by mistake (too much output).
+
+## November 20, 2026 (Mac, Claude): rare finds brainstorm (idea saved, nothing built)
+- **Owner: "rare finds are good, but what are we using them for?"** Claude suggested four, each feeding a system that
+  exists: geodes (a miner's gem source), pure copper nuggets (3 bars), Ancestor relics on a shrine (clan-wide bonuses,
+  duplicates into gold), golden plants (meals last twice as long). Also a table of all 9 gems, what they do and where
+  they drop today: most gems come from statues (1 in 20 kills); Jolt, Leech and Blight barely exist in zone 1; armor
+  has no sockets. Saved in `docs/design/rare-finds.md` with the open questions (armor sockets, geode gems, which to build).

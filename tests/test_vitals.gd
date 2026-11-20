@@ -49,14 +49,14 @@ func test_health_regen_waits_after_damage() -> void:
 	check(v.health > 70.0, "heals after 6 s")
 
 
-func test_heals_one_health_every_three_seconds() -> void:
+func test_heals_one_health_every_five_seconds() -> void:
 	var v := Vitals.new()
 	v.hunger = 50.0  # normal (well fed heals 20% faster)
 	v.thirst = 50.0
 	v.take_damage(50)
 	v.tick(5.99)  # the wait after a hit
 	v.tick(30.0)
-	check_near(v.health, 60.0, 0.5, "30 s of healing = 10 health (owner, Nov 19)")
+	check_near(v.health, 56.0, 0.5, "30 s of healing = 6 health: 1 every 5 s (owner, Nov 19)")
 
 
 func test_no_healing_in_the_dark() -> void:
@@ -91,7 +91,7 @@ func test_stamina_spend_and_regen() -> void:
 
 func test_buff_food_raises_max_health() -> void:
 	var v := Vitals.new()
-	check(v.consume("dish_hollowcap_stew"), "eat stew")
+	check(v.consume("dish_snail_stew"), "eat stew")
 	check_near(v.max_health(), 120.0, 0.01, "+20% max health")
 	check_eq(v.buffs.size(), 1, "one buff")
 
@@ -102,18 +102,34 @@ func test_same_dish_refreshes_not_stacks() -> void:
 	v.tick(600)
 	v.consume("dish_tuber_mash")
 	check_eq(v.buffs.size(), 1, "still one slot")
-	check_near(v.buffs[0].time_left, 30 * 60.0, 0.01, "timer refreshed")
+	check_near(v.buffs[0].time_left, 25 * 60.0, 0.01, "timer refreshed")
 
 
-func test_fourth_dish_replaces_least_time_left() -> void:
+func test_two_foods_and_one_drink() -> void:
 	var v := Vitals.new()
-	v.consume("dish_glowcap_skewer")  # 25 min
-	v.consume("dish_hearth_stew")  # 40 min
-	v.consume("dish_tuber_mash")  # 30 min
-	v.consume("dish_miners_pie")  # 35 min, replaces the skewer
-	check_eq(v.buffs.size(), 3, "3 slots max")
+	v.consume("dish_glowcap_skewer")  # 15 min
+	v.consume("dish_hearth_stew")  # 35 min
+	v.consume("drink_moss_ale")  # the drink has its own slot
+	check_eq(v.buffs.size(), 3, "2 foods + 1 drink")
+	v.consume("dish_miners_pie")  # a 3rd food replaces the food with the least time left
 	var ids := v.buffs.map(func(b): return b.id)
-	check(not ids.has("dish_glowcap_skewer"), "the shortest one was replaced")
+	check(not ids.has("dish_glowcap_skewer") and ids.has("drink_moss_ale"), "the skewer went, the drink stayed")
+	v.consume("drink_glowcap_tea")
+	ids = v.buffs.map(func(b): return b.id)
+	check(ids.has("drink_glowcap_tea") and not ids.has("drink_moss_ale"), "a new drink replaces the old drink")
+
+
+func test_food_speeds_up_healing_to_the_cap() -> void:
+	var v := Vitals.new()
+	check_near(v.regen_per_second() / v.health_regen_mult(), 0.2, 0.0001, "on your own: 1 health every 5 s")
+	v.consume("dish_cooked_snail")
+	check_near(v.regen_per_second() / v.health_regen_mult(), 0.22, 0.0001, "a campfire meal: a little faster")
+	v.consume("dish_hearth_stew")
+	v.consume("dish_miners_pie")
+	v.consume("drink_moss_ale")
+	check_near(v.regen_per_second() / v.health_regen_mult(), Vitals.REGEN_CAP, 0.0001, "the best meals: 1 every 2 s, never faster")
+	check_eq(Foods.heart_halves(0.02), 1, "campfire meal = half a heart")
+	check_eq(Foods.heart_halves(0.15), 2, "Old Hearth Stew = a whole heart")
 
 
 func test_buffs_run_out_and_clear_on_death() -> void:
@@ -159,3 +175,27 @@ func test_network_roundtrip() -> void:
 	w.load_data(v.to_data())
 	check_eq(w.health, v.health, "health copied")
 	check_eq(w.buffs.size(), 1, "buff copied")
+
+
+func test_meat_guards_and_bullet_lines() -> void:
+	check_eq(Monsters.food_guard("cave_bat"), "bat", "bats")
+	check_eq(Monsters.food_guard("great_rock_beetle"), "beetle", "beetles")
+	var v := Vitals.new()
+	v.consume("dish_seared_critter")
+	check_near(v.buff_total("guard_bat"), 0.15, 0.0001, "Seared Bat: 15% less from bats")
+	v.consume("dish_hearth_stew")
+	check_near(v.buff_total("guard_bat"), 0.35, 0.0001, "two bat dishes add up")
+	var lines := Foods.effect_lines("dish_hearth_stew")
+	check(lines.has("take 20% less from bats") and lines[-1] == "lasts 35 min", "bullets, and how long it lasts at the end")
+
+
+func test_second_wind() -> void:
+	var v := Vitals.new()
+	v.progress = Progression.new()
+	v.progress.skill_level.running = 100
+	v.stamina = 0.0
+	v.tick(0.1)
+	check(v.stamina >= v.max_stamina() * 0.25, "Running ★100: a quarter of your stamina comes back")
+	v.stamina = 0.0
+	v.tick(0.1)
+	check(v.stamina < v.max_stamina() * 0.25, "only once every 2 minutes")

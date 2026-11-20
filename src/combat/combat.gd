@@ -146,7 +146,7 @@ static func stun_value(w: String, heavy: bool, tier: int) -> float:
 ## crushing: only a shield perfect parry counts as a parry.
 ## bonus: shield gem bonuses (block = extra reduction, block_stamina = cheaper blocks).
 static func defend(hit: float, pressed_ago: float, holding: bool, w: String, has_shield: bool, tier: int, crushing: bool = false, bonus: Dictionary = {}) -> Dictionary:
-	var parry_ms: float = WEAPONS.shield.parry_ms if has_shield else WEAPONS.get(w, WEAPONS.fists).parry_ms
+	var parry_ms: float = (WEAPONS.shield.parry_ms if has_shield else WEAPONS.get(w, WEAPONS.fists).parry_ms) * bonus.get("parry_mult", 1.0)
 	var in_window := pressed_ago >= 0.0 and pressed_ago * 1000.0 <= parry_ms
 	if holding and in_window and (has_shield or not crushing):
 		return {result = "parry", damage = 0.0, stamina = 0.0, stun = STUN_SHIELD_PARRY if has_shield else STUN_WEAPON_PARRY}

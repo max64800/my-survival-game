@@ -83,6 +83,7 @@ var poi_field: PoiField
 ## What the whole world remembers (shared by every player): shrines emptied (and more keys added later:
 ## columns, learned, blueprints...). Old saves may still carry clues/bosses_dead/lairs_found: unused now.
 var world_state := {shrines = []}
+var _refill_timer := 0.0  ## counts down to the next dungeon-chest refill check
 var _next_station_id := 1
 var _progress_dirty := {}  ## peer ids whose XP changed and need a sync
 var _progress_sync := 0.0
@@ -110,6 +111,7 @@ class PlayerState:
 	var harvest_hits := 0
 	var leftovers := {}  ## material -> voxels dug that didn't add up to a whole item yet
 	var vitals := Vitals.new()  ## simulated on the player's own computer
+	var fall := FallDamage.new()  ## watches for long falls (own computer too)
 	var progress := Progression.new()  ## owned by the host, copied to the player
 	var seen := {}  ## every item id this player has held (unlocks recipes)
 	var bed_pos := Vector3.INF  ## where you wake up after dying (INF = the world start)
@@ -136,7 +138,8 @@ class PlayerState:
 	## otherwise the picked hotbar item if it's something you hold to use; otherwise (empty hand,
 	## rocks, ore...) the equipped pickaxe, so you can always dig.
 	func selected_item() -> String:
-		return inventory.get_slot(hand_slot()).get("id", "")
+		var s := inventory.get_slot(hand_slot())
+		return "" if Durability.broken(s) else s.get("id", "")  # a broken tool does nothing until it's repaired
 
 	## F can draw something: an equipped weapon, or at least an equipped shield.
 	func can_draw() -> bool:
@@ -239,6 +242,11 @@ func _process(delta: float) -> void:
 	if is_host():
 		_track_safe_spots(delta)
 		_tick_regrow(delta)
+		world_state.played = float(world_state.get("played", 0.0)) + delta  # this world's play time (dungeon refills)
+		_refill_timer -= delta
+		if _refill_timer <= 0.0:
+			_refill_timer = DungeonLoot.CHECK_EVERY
+			DungeonLoot.tick(self)
 		_auto_timer -= delta
 		var feed_now := _auto_timer <= 0.0
 		if feed_now:
@@ -450,6 +458,7 @@ func request_chop_pillar(peer_id: int, id: int) -> void:
 	var n := 2 if Items.kind(ps.selected_item()) == "axe" else 1
 	n = mini(n, RootPillars.CHOPS - used)
 	pillar_chops[id] = used + n
+	wear_slot(ps, ps.hand_slot())
 	var out := Vector3(chest.x - axis.x, 0.0, chest.z - axis.z).normalized()
 	var wood := n * (2 if ps.progress.has_star("woodcutting", 100) and randf() < 0.15 else 1)  # ★100: double wood
 	if used + n >= RootPillars.CHOPS and ps.progress.has_star("woodcutting", 50):
@@ -466,7 +475,7 @@ func request_chop_pillar(peer_id: int, id: int) -> void:
 	give_xp(peer_id, 3 * n, "woodcutting")
 	_ev_tree_used.rpc(id, used + n)
 	if used + n >= RootPillars.CHOPS:  # it cracks: 1-2 Root Seeds fall from it (owner, Nov 18)
-		tree_regrow[id] = RootPillars.REGROW_TIME
+		tree_regrow[id] = RootPillars.REGROW_TIME * _root_regrow_mult(get_player(peer_id))
 		spawn_drop("root_seed", randi_range(1, 2), (p.bottom as Vector3) + out * float(p.width) * 0.25 + Vector3.UP * 1.0)
 	_tell_feedback(peer_id, {state = "done", kind = "root", point = axis + out * float(p.width) * 0.15})
 
@@ -502,6 +511,7 @@ func request_chop_grove(peer_id: int, id: int) -> void:
 	if used >= int(t.wood):
 		return  # already felled (growing back)
 	var n := mini(2 if Items.kind(ps.selected_item()) == "axe" else 1, int(t.wood) - used)
+	wear_slot(ps, ps.hand_slot())
 	var out := Vector3(chest.x - axis.x, 0.0, chest.z - axis.z).normalized()
 	var wood := n * (2 if ps.progress.has_star("woodcutting", 100) and randf() < 0.15 else 1)  # ★100: double wood
 	spawn_drop("rootwood", wood, axis + out * 0.4 + Vector3.UP * 0.4)
@@ -839,6 +849,23 @@ func _ev_learned(recipe_id: String) -> void:
 	learned_recipe.emit(recipe_id)  # a card on the left with its picture (owner, Nov 19)
 
 
+## Stamina back (Axe ★100): the player's own computer owns their body.
+func give_stamina(peer_id: int, amount: float) -> void:
+	if amount <= 0.0:
+		return
+	if peer_id == local_peer_id():
+		var ps := get_player(peer_id)
+		if ps:
+			ps.vitals.stamina = minf(ps.vitals.max_stamina(), ps.vitals.stamina + amount)
+	elif get_player(peer_id):
+		_rpc_stamina.rpc_id(peer_id, amount)
+
+
+@rpc("authority", "reliable")
+func _rpc_stamina(amount: float) -> void:
+	give_stamina(local_peer_id(), amount)
+
+
 ## Healing (Leech gems): the player's own computer owns their health.
 func heal(peer_id: int, amount: float) -> void:
 	if amount <= 0.0:
@@ -951,7 +978,7 @@ func request_upgrade(peer_id: int, slot: int, station_id: int) -> String:
 		return "Upgrade this at a %s." % Items.display_name(Upgrades.station_for(s.id))
 	if ps.node.global_position.distance_to(st.global_position) > 6.0:
 		return "Too far from the %s." % Items.display_name(st.kind)
-	var cost := Upgrades.next_cost(s)
+	var cost := Upgrades.next_cost(s, 0.10 if ps.progress.has_star("crafting", 25) else 0.0)  # Crafting ★25
 	if cost.is_empty():
 		return "Already +3."
 	if st.level() < Upgrades.needed_level(s):
@@ -968,6 +995,68 @@ func request_upgrade(peer_id: int, slot: int, station_id: int) -> String:
 		Sfx.ui("craft", 0.0)
 		hud_message.emit("%s!" % Upgrades.display_name(s))
 	return ""
+
+
+func ask_repair(slot: int, station_id: int) -> void:
+	if is_host():
+		request_repair(local_peer_id(), slot, station_id)
+	else:
+		_rpc_repair.rpc_id(1, slot, station_id)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_repair(slot: int, station_id: int) -> void:
+	if is_host():
+		request_repair(multiplayer.get_remote_sender_id(), slot, station_id)
+
+
+## Repairs cost less with Thrifty (10% per rank) and Crafting ★25 (10%).
+static func repair_discount(p: Progression) -> float:
+	return 0.10 * p.perk_rank("thrifty") + (0.10 if p.has_star("crafting", 25) else 0.0)
+
+
+## Returns "" when done, otherwise why not.
+func request_repair(peer_id: int, slot: int, station_id: int) -> String:
+	var ps := get_player(peer_id)
+	var st: Station = stations.get(station_id)
+	if ps == null or st == null:
+		return "?"
+	var s := ps.inventory.get_slot(slot)
+	if s.is_empty() or not Durability.wears(s.id):
+		return "That doesn't wear out."
+	if st.kind != Upgrades.station_for(s.id):
+		return "Repair this at a %s." % Items.display_name(Upgrades.station_for(s.id))
+	if ps.node.global_position.distance_to(st.global_position) > 6.0:
+		return "Too far from the %s." % Items.display_name(st.kind)
+	var cost := Durability.repair_cost(s, repair_discount(ps.progress))
+	if cost.is_empty():
+		return "It's like new."
+	for item in cost:
+		if ps.inventory.count_of(item) < cost[item]:
+			return "Needs %d %s." % [cost[item], Items.display_name(item)]
+	for item in cost:
+		ps.inventory.remove(item, cost[item])
+	s["used"] = 0
+	ps.inventory.changed.emit()
+	give_xp(peer_id, 2, "crafting")
+	if peer_id == local_peer_id():
+		Sfx.ui("craft", 0.0)
+		hud_message.emit("%s repaired." % Upgrades.display_name(s))
+	return ""
+
+
+## Host: one use of the item in slot `i` (a dig, a chop, a hit, a block). Tells the player at 10% left and when it
+## breaks. The bag is sent to the player only every 10 uses (and at those moments), not on every swing.
+func wear_slot(ps: PlayerState, i: int) -> void:
+	var s := ps.inventory.get_slot(i)
+	var what := Durability.wear(s)
+	var peer := _peer_of(ps)
+	if what == "broke":
+		tell(peer, "Your %s broke! Repair it at a %s." % [Upgrades.display_name(s), Items.display_name(Upgrades.station_for(s.id))])
+	elif what == "warn":
+		tell(peer, "Your %s is almost worn out." % Upgrades.display_name(s))
+	if what != "" or (Durability.wears(s.get("id", "")) and Durability.used(s) % 10 == 0):
+		ps.inventory.changed.emit()
 
 
 func ask_swap(a: int, b: int) -> void:
@@ -1233,7 +1322,7 @@ func _break_plant_at(ps: PlayerState, point: Vector3) -> Dictionary:
 			# small roots give wood and grow back (owner, Nov 17: "I'm missing a ton of wood"); grass and ferns: fiber
 			spawn_drop("rootwood" if is_root else CaveLife.FIBER_DROP, 1, at + Vector3.UP * 0.3)
 			if is_root:
-				plant_regrow[plant] = REGROW_TIME
+				plant_regrow[plant] = REGROW_TIME * _root_regrow_mult(ps)
 			return {state = "done", hits = 1, needed = 1, point = at, kind = "rootwood" if is_root else "fiber"}
 	return {}
 
@@ -1246,7 +1335,7 @@ func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
 		return plant_hit
 	if Items.kind(ps.selected_item()) == "shovel":
 		return _judge_level(ps, point)
-	var power: float = Items.dig_power(ps.selected_item()) * ps.progress.dig_power_mult() \
+	var power: float = Items.dig_power(ps.selected_item()) * ps.progress.dig_power_mult() * (1.0 + boost_total(ps, "dig_power")) \
 		* (1.0 + Gems.bonus(ps.inventory.get_slot(ps.hand_slot())).get("dig", 0.0)) 		* (1.0 + Upgrades.bonus(ps.inventory.get_slot(ps.hand_slot())))  # +15% per upgrade step
 	if ps.progress.has_star("mining", 100) and randf() < 0.1:
 		power *= 2.0  # Mining ★100: lucky hit
@@ -1282,6 +1371,8 @@ func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
 		ps.dig_target = center
 		ps.dig_hits = 0
 	ps.dig_hits += 1
+	if not bare:
+		wear_slot(ps, ps.hand_slot())  # the pickaxe wears a little with every hit
 	if ps.dig_hits < needed:
 		_pay_hit(ps, mat, point + normal * 0.4)
 		return {state = "hit", hits = ps.dig_hits, needed = needed, material = mat, point = point, normal = normal}
@@ -1430,6 +1521,7 @@ func request_harvest(peer_id: int, glow_id: int) -> Dictionary:
 			_tell_feedback(peer_id, r)
 			return r
 		needed = ceili(k.hardness / power - 0.0001)
+		wear_slot(ps, ps.hand_slot())
 	if ps.harvest_id != glow_id:
 		ps.harvest_id = glow_id
 		ps.harvest_hits = 0
@@ -1459,7 +1551,7 @@ func request_harvest(peer_id: int, glow_id: int) -> Dictionary:
 	else:
 		removed_glow.append(glow_id)
 		_ev_remove_glow.rpc(glow_id)
-		_start_regrow(spot)
+		_start_regrow(spot, ps)
 	var done := {state = "done", hits = needed, needed = needed, point = spot.pos, kind = spot.kind}
 	_tell_feedback(peer_id, done)
 	return done
@@ -1491,10 +1583,10 @@ func _learn_from_page(ps: PlayerState, id: String) -> String:
 		_ev_learned_blueprint.rpc(BlueprintMenu.ready_made_name(key), id)
 		return "learned"
 	# A recipe page from a ruin: the whole group learns a recipe nobody knew yet, of the page's kind (a Cook's Page
-	# teaches food, an Armourer's Page armour... owner, Nov 19). A dungeon's scroll always teaches its own recipe.
-	var left := Recipes.page_recipes(id).filter(func(r): return not world_state.get("learned", []).has(r))
-	if Items.info(id).has("teaches_recipe"):
-		left = [Items.info(id).teaches_recipe] if not world_state.get("learned", []).has(Items.info(id).teaches_recipe) else []
+	# teaches food, an Armourer's Page armour... owner, Nov 19). A dungeon's page or scroll always teaches its one
+	# recipe (F237; Mossgate's scroll: "teaches_recipe").
+	var one: String = Items.info(id).get("recipe", Items.info(id).get("teaches_recipe", ""))
+	var left := ([one] if one != "" else Recipes.page_recipes(id)).filter(func(r): return not world_state.get("learned", []).has(r))
 	if left.is_empty() or not ps.inventory.remove(id, 1):
 		return "nothing_new"
 	var r: String = left[randi() % left.size()]
@@ -1546,15 +1638,21 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 			elif not ps.inventory.remove(id, 1):
 				return ""
 			var roll := randf()
+			if Foods.is_buff_food(id) and ps.progress.has_star("cooking", 100):
+				heal(peer_id, 10.0)  # Cooking ★100: your cooked food heals a little
 			if peer_id == local_peer_id():
 				ps.vitals.consume(id, roll)
 				Sfx.ui("eat", -4.0)
 			else:
 				_rpc_consumed.rpc_id(peer_id, id, roll)
-			# The host does the fighting math, so it remembers food damage buffs itself.
+			# The host does the fighting, digging and drops math, so it remembers those food buffs itself.
 			var fb: Dictionary = Foods.buff_of(id) if Foods.is_buff_food(id) else {}
-			if fb.has("damage"):
-				add_boost(ps, id, {damage = fb.damage}, Foods.minutes_of(id) * 60.0)
+			var host_part := {}
+			for k in ["damage", "dig_power", "extra_drops"]:
+				if fb.has(k):
+					host_part[k] = fb[k]
+			if not host_part.is_empty():
+				add_boost(ps, id, host_part, Foods.minutes_of(id) * 60.0)
 			return "ate"
 		"page":
 			return _read_page(ps, peer_id, id)
@@ -1592,10 +1690,14 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 				var out := Vector3(aim_normal.x, 0.0, aim_normal.z).normalized()
 				spot = wall_spot(id, aim_point, out)
 				yaw = atan2(out.x, out.z)
-			for st in stations.values():
-				if st.global_position.distance_to(aim_point) < 1.5:
-					return ""  # too close to another station
-			if Station.in_rock(id, spot, yaw, world):
+			var on_fire := Station.on_fire_spot(id, aim_point, stations.values())  # a pot goes on top of a campfire
+			if on_fire.is_finite():
+				spot = on_fire
+			else:
+				for st in stations.values():
+					if st.global_position.distance_to(aim_point) < 1.5:
+						return ""  # too close to another station
+			if not on_fire.is_finite() and Station.in_rock(id, spot, yaw, world):
 				return ""  # it would stand in the wall (owner, Nov 17: the ghost shows red)
 			if not ps.inventory.remove(id, 1):
 				return ""
@@ -1650,16 +1752,17 @@ func request_farm(peer_id: int, station_id: int, seed_item: String = "") -> Stri
 		return "picked"
 	if st.crop != "":
 		return "growing"
-	if not Station.CROPS.has(seed_item) or ps.inventory.count_of(seed_item) <= 0:
+	if not Station.can_plant(seed_item) or ps.inventory.count_of(seed_item) <= 0:
 		seed_item = ""
-		for c in Station.CROPS:
-			if ps.inventory.count_of(c) > 0:
+		for c in Station.CROPS.keys() + Station.SEEDS.keys():
+			if Station.can_plant(c) and ps.inventory.count_of(c) > 0:
 				seed_item = c
 				break
 	if seed_item == "":
 		return "no_seed"
 	ps.inventory.remove(seed_item, 1)
-	_ev_farm.rpc(station_id, seed_item, Station.CROPS[seed_item].grow)
+	var crop: String = Station.SEEDS.get(seed_item, seed_item)
+	_ev_farm.rpc(station_id, crop, Station.CROPS[crop].grow)
 	return "planted"
 
 
@@ -1729,6 +1832,15 @@ func add_boost(ps: PlayerState, name: String, data: Dictionary, seconds: float) 
 	ps.boosts[name] = b  # the same boost again refreshes it
 
 
+## One number summed over active boosts ("dig_power", "extra_drops"...).
+func boost_total(ps: PlayerState, key: String) -> float:
+	var total := 0.0
+	for b in ps.boosts.values():
+		if b.until > now():
+			total += b.get(key, 0.0)
+	return total
+
+
 ## Extra damage share from active boosts. Bug oil counts only against bugs.
 func damage_boost(ps: PlayerState, target_kind: String = "") -> float:
 	var t := now()
@@ -1741,7 +1853,7 @@ func damage_boost(ps: PlayerState, target_kind: String = "") -> float:
 		total += b.get("damage", 0.0)
 		if Monsters.LIST.get(target_kind, {}).get("shape", "") in BUG_SHAPES:
 			total += b.get("bugs", 0.0)
-	return total
+	return total + ps.progress.hunter_bonus(target_kind)  # kill rewards: Bat Hunter +5% against bats
 
 
 const BUG_SHAPES := ["rock_beetle", "cave_spider"]  ## Bugbane Oil works on beetles and spiders
@@ -1898,8 +2010,13 @@ func request_ability(peer_id: int, perk_id: String) -> String:
 		"rapid_volley":
 			send_effect(peer_id, "rapid_volley", {free_reloads = 3.0}, 60.0)
 		"quick_fix":
-			tell(peer_id, "Your tools don't wear out yet, so there's nothing to fix.")
-			return ""  # shortcut: tools have no durability yet; this works once they do
+			var held := ps.inventory.get_slot(ps.hand_slot())
+			if Durability.used(held) <= 0 or not Durability.wears(held.get("id", "")):
+				tell(peer_id, "Nothing in your hand needs fixing.")
+				return ""
+			held["used"] = 0
+			ps.inventory.changed.emit()
+			tell(peer_id, "%s is like new." % Upgrades.display_name(held))
 		"war_horn":
 			_war_horn(ps, 0.10 * rank, 20.0)
 		"healing_brew":
@@ -1982,6 +2099,19 @@ func request_craft(peer_id: int, recipe_id: String, station_id: int = 0) -> bool
 				break
 		if fuel_item == "":
 			return false
+	# Auto-crafting (owner, Nov 19): missing in-between items made at this same station get made first, silently;
+	# their cooking time is added to the final job.
+	var extra_seconds := 0.0
+	if not Crafting.missing(ps.inventory, recipe_id).is_empty():
+		var lvl := st.level() if st else 1
+		var steps := Crafting.plan(ps.inventory, recipe_id, r.station, func(id): \
+			return Recipes.is_unlocked(id, ps.seen, taught_recipes()) and lvl >= int(Recipes.get_recipe(id).get("level", 1)))
+		if steps.is_empty():
+			return false
+		for sub in steps.slice(0, -1):
+			if not Crafting.craft(ps.inventory, sub):
+				return false
+			extra_seconds += float(Recipes.get_recipe(sub).get("seconds", 0))
 	if r.get("seconds", 0) > 0 and st:
 		if not Crafting.missing(ps.inventory, recipe_id).is_empty() or not st.can_queue():
 			return false
@@ -1989,7 +2119,14 @@ func request_craft(peer_id: int, recipe_id: String, station_id: int = 0) -> bool
 			ps.inventory.remove(item, r.inputs[item])
 		if fuel_item != "":
 			ps.inventory.remove(fuel_item, r.fuel)
-		st.queue_job(r.output, r.count, r.seconds * (ps.progress.smelt_time_mult() if r.station == "smelter" else 1.0))
+		var cooking: bool = r.station == "campfire"
+		var made: int = r.count
+		if cooking and int(r.get("level", 1)) >= 2 and ps.progress.has_star("cooking", 25):
+			made += 1  # Cooking ★25: the pot makes one more dish
+		if cooking and ps.progress.has_star("cooking", 50) and randf() < 0.10:
+			made *= 2  # Cooking ★50: now and then a double dish
+		st.queue_job(r.output, made, (r.seconds + extra_seconds) * (ps.progress.smelt_time_mult() if r.station == "smelter" else 1.0) \
+			* ps.progress.craft_time_mult(cooking))
 	else:
 		if not Crafting.craft(ps.inventory, recipe_id):
 			return false
@@ -2000,7 +2137,7 @@ func request_craft(peer_id: int, recipe_id: String, station_id: int = 0) -> bool
 		var left := ps.inventory.add(back, 1)
 		if left > 0:
 			spawn_drop(back, left, _chest(ps))
-	var skill := "cooking" if r.station in ["campfire", "cooking_pot"] else "crafting"
+	var skill := "cooking" if r.station == "campfire" else "crafting"
 	if peer_id == local_peer_id():
 		Sfx.ui("craft", 0.0)
 	var xp := 10 if Items.stack_size(r.output) == 1 else (5 if skill == "cooking" else 1)
@@ -2015,7 +2152,8 @@ func request_pickup(peer_id: int, drop_id: int) -> bool:
 		return false
 	# Each computer bounces drops on its own, and far from the host the host's copy may have
 	# no floor loaded and fall away. So where it first appeared counts too.
-	if _chest(ps).distance_to(d.global_position) > PICKUP_RANGE and _chest(ps).distance_to(d.home) > PICKUP_RANGE + 4.0:
+	var reach := PICKUP_RANGE * (1.3 if ps.progress.has_star("gathering", 25) else 1.0)  # Gathering ★25
+	if _chest(ps).distance_to(d.global_position) > reach and _chest(ps).distance_to(d.home) > reach + 4.0:
 		return false
 	var left := ps.inventory.add(d.item_id, d.count)
 	if left == d.count:
@@ -2155,11 +2293,16 @@ func _apply_pending_digs() -> void:
 
 ## Roots (thin and big) grow back after REGROW_TIME (owner, Nov 15, F106); crystals after CRYSTAL_REGROW_TIME (owner F406,
 ## Nov 19: "mine them all and there's no way to get them back"), each where it was, so every cave fills up again.
-func _start_regrow(spot: Dictionary) -> void:
+## `by` = who chopped it (Woodcutting ★75: their roots grow back 25% faster).
+func _start_regrow(spot: Dictionary, by: PlayerState = null) -> void:
 	if spot.get("kind", "") in [GlowPlacer.ROOT, GlowPlacer.ROOT_DANGLE]:
-		regrow[spot.id] = REGROW_TIME
+		regrow[spot.id] = REGROW_TIME * _root_regrow_mult(by)
 	elif String(spot.get("kind", "")).begins_with("crystal"):
 		regrow[spot.id] = CRYSTAL_REGROW_TIME
+
+
+func _root_regrow_mult(by: PlayerState) -> float:
+	return 0.75 if by and by.progress.has_star("woodcutting", 75) else 1.0
 
 
 ## Host: count down; a root comes back only if the rock it hangs from is still there.
@@ -2354,12 +2497,14 @@ func seed_poi_loot() -> void:
 			if rng.randf() < 0.3:
 				storage.put(id, "rune_" + rune_slab.pick_drop("m", [rng.randf(), rng.randf(), rng.randf()]), 1)
 			storage.put(id, "gold_coin", rng.randi_range(5, 15))  # gold pays for a perk reset (owner, Nov 19)
+			storage.put(id, "tuber_seed", rng.randi_range(2, 4))  # the only way to start growing Root Tubers
 			storage.put(id, "rusty_scrap", rng.randi_range(2, 5))  # smelts into copper (its creatures are gone, Nov 19)
 		else:
 			# A camp someone left: a page, and maybe one bite of food.
 			storage.put(id, Recipes.random_page(rng.randf()) if rng.randf() < 0.6 else "blueprint_page", 1)
 			if rng.randf() < 0.5:
 				storage.put(id, ["dish_hollowcap_stew", "dish_tuber_mash", "drink_glowcap_tea"][rng.randi_range(0, 2)], 1)
+			storage.put(id, "tuber_seed", rng.randi_range(1, 2))
 
 
 @rpc("authority", "reliable")
@@ -2717,6 +2862,13 @@ func _tick_vitals(ps: PlayerState, delta: float) -> void:
 			resting = true
 			break
 	var v := ps.vitals
+	if ps.node is CharacterBody3D and not v.is_dead():  # long falls hurt (Jumping ★100: never)
+		var body := ps.node as CharacterBody3D
+		var drop := ps.fall.step(body.global_position.y, body.is_on_floor(), body.velocity.y, delta)
+		if FallDamage.damage_for(drop) > 0.0 and not ps.progress.has_star("jumping", 100):
+			v.take_damage(FallDamage.damage_for(drop))
+			Sfx.ui("hit_heavy", 0.0)
+			hud_message.emit("Ouch! You fell %d m." % roundi(drop))
 	if v.is_dead():
 		if not ps.dying:
 			ps.dying = true
@@ -2750,8 +2902,8 @@ func _tick_vitals(ps: PlayerState, delta: float) -> void:
 	var thirst_before := v.thirst
 	v.tick(delta, resting)
 	# Survival skill and perks slow the drain.
-	v.hunger = hunger_before - (hunger_before - v.hunger) * ps.progress.hunger_drain_mult() * (1.0 + rune_slab.bonus("hunger_drain"))
-	v.thirst = thirst_before - (thirst_before - v.thirst) * ps.progress.thirst_drain_mult() * (1.0 + rune_slab.bonus("thirst_drain"))
+	v.hunger = hunger_before - (hunger_before - v.hunger) * ps.progress.hunger_drain_mult() * (1.0 + rune_slab.bonus("hunger_drain")) * (1.0 - v.buff_total("hunger_slow"))
+	v.thirst = thirst_before - (thirst_before - v.thirst) * ps.progress.thirst_drain_mult() * (1.0 + rune_slab.bonus("thirst_drain")) * (1.0 - v.buff_total("thirst_slow"))
 
 
 func station_near(p: Vector3, radius: float = STATION_REACH) -> Station:

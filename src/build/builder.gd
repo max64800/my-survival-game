@@ -26,7 +26,7 @@ var _placed_at := {}  ## host: uid -> when it was placed (careful pick-up works 
 ## Taking pieces down (owner, Nov 15, F100): a careful pick-up gives everything back, but only right
 ## after placing (a misclick); breaking a piece gives back BREAK_SHARE of what it cost.
 const PICKUP_TIME := 10.0
-const BREAK_SHARE := 0.8
+const BREAK_SHARE := 0.5  ## owner, Nov 20: taking a piece down gives half back
 var _checks := []  ## host: [time, center, radius]
 var _falls := []  ## host: [time, points]
 var _breaks := []  ## host: [time, uid]
@@ -59,7 +59,7 @@ func ask_place(piece: String, family: String, pos: Vector3, rot: int) -> void:
 		_rpc_place.rpc_id(1, piece, family, pos, rot)
 
 
-## smash = false: careful pick-up (all back, only right after placing); true: break it (80% back).
+## smash = false: careful pick-up (all back, only right after placing); true: break it (half back).
 func ask_remove(uid: int, smash: bool = false) -> void:
 	if auth.is_host():
 		var why := request_remove(auth.local_peer_id(), uid, smash)
@@ -204,7 +204,7 @@ func pickup_seconds_left(uid: int) -> float:
 
 ## Host: take piece `uid` down. Returns "" when done, or why not (shown to the player).
 ## Careful pick-up (smash = false) gives back everything, but only within PICKUP_TIME seconds of
-## placing it; breaking it (smash = true) works any time and gives back 80% (rounded down, at least 1).
+## placing it; breaking it (smash = true) works any time and gives back half (rounded down, at least 1).
 func request_remove(peer_id: int, uid: int, smash: bool = false) -> String:
 	var ps := auth.get_player(peer_id)
 	if ps == null or not structure.pieces.has(uid):
@@ -214,7 +214,7 @@ func request_remove(peer_id: int, uid: int, smash: bool = false) -> String:
 		return "Too far away"
 	var fresh: bool = _clock - float(_placed_at.get(uid, -INF)) <= PICKUP_TIME
 	if not smash and not fresh:
-		return "Too late to pick it up (only right after placing). Press X to break it for 80%."
+		return "Too late to pick it up (only right after placing). Press X to break it for half back."
 	var cost := Pieces.cost(p.piece, p.family)
 	for item in cost:
 		var n: int = cost[item] if not smash else maxi(1, floori(cost[item] * BREAK_SHARE))

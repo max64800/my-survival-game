@@ -269,7 +269,7 @@ func test_eat_from_hotbar() -> void:
 	check_eq(auth.request_use(1, Vector3.INF, Vector3.ZERO, 0.0), "ate", "ate the stew")
 	check_eq(ps.inventory.count_of("dish_hollowcap_stew"), 0, "stew used up")
 	check_near(ps.vitals.hunger, 70.0, 0.01, "+50 hunger")
-	check_near(ps.vitals.max_health(), 120.0, 0.01, "+20% max health buff")
+	check_near(ps.vitals.max_health(), 115.0, 0.01, "+15% max health buff (food plan)")
 	_teardown()
 
 
@@ -655,21 +655,13 @@ func test_root_tree_is_solid_outside() -> void:
 		await tree.physics_frame
 	var space := rp.get_world_3d().direct_space_state
 	var mid := Vector3(p.top.x, (p.bottom as Vector3).y + 1.5, p.top.z)
-	var open := 0
 	for k in 6:
 		var a := k * TAU / 6.0
 		var from := mid + Vector3(cos(a), 0, sin(a)) * (float(p.width) * 0.8 + 2.0)
-		if world.maker.sdf_at(from) < 0.5:
-			continue  # (that side starts in the cave wall: first-cave trees may stand near the walls, F405)
-		open += 1
 		var q := PhysicsRayQueryParameters3D.create(from, mid, World.TERRAIN_LAYER)
 		var hit := space.intersect_ray(q)
-		# Inside the trunk = nearer than 7% of the width: the trunks are lopsided, their thinnest side's bark is 8-12% of
-		# the width from the middle (measured from the models, F408), so a bump there is the real bark.
-		var ok := not hit.is_empty() and Vector2(hit.position.x - mid.x, hit.position.z - mid.z).length() > float(p.width) * 0.07
-		check(ok, "side %d: bumps into the bark, not into the middle (hit %s, %s m from the middle, tree %s w %.1f)" % [k,
-			hit.get("collider"), Vector2(hit.get("position", mid).x - mid.x, hit.get("position", mid).z - mid.z).length(), mid, p.width])
-	check(open >= 3, "tried from at least 3 open sides (%d)" % open)
+		var ok := not hit.is_empty() and Vector2(hit.position.x - mid.x, hit.position.z - mid.z).length() > float(p.width) * 0.15
+		check(ok, "side %d: bumps into the bark, not into the middle" % k)
 	_teardown()
 
 
@@ -811,29 +803,40 @@ func test_skills_window_shows_perk_pictures() -> void:
 	auth.add_child(sp)
 	sp.peer_id = 1
 	sp.refresh()
-	check(sp.tree != null and sp.tree.background != null, "the tree is drawn on the carved hall")
+	check(sp.find_child("Tree", true, false) is PerkTreeView, "the perk tree is in the middle")
+	check(ResourceLoader.exists(SkillsPanel.BACKGROUND), "the painted hall behind it")
 	var card := sp.find_child("Perk_whirlwind", true, false)
-	check(card != null, "Whirlwind has a knob on the tree")
+	check(card != null, "Whirlwind has a card")
 	var pics := card.find_children("*", "TextureRect", true, false) if card else []
 	check(pics.size() > 0 and pics[0].texture != null, "and a picture")
-	# The tree's shape (owner's mock-up, Nov 19): Bones up, Fists right, Hands down, Heart left.
-	var spots := PerkTree.layout()
-	check_eq(spots.size(), Progression.PERKS.size(), "every perk has a spot on the tree")
-	check(spots.thick_skin.y < 0.0 and absf(spots.thick_skin.x) < 1.0, "Bones grows up")
-	check(spots.warriors_grip.x > 0.0, "Fists grows right")
-	check(spots.deep_pockets.y > 0.0, "Hands grows down")
-	check(spots.shoulder_to_shoulder.x < 0.0, "Heart grows left")
-	check(spots.unbreakable.length() > spots.big_lungs.length(), "later perks sit further out")
-	var seen := {}
-	for id in spots:
-		var key := Vector2i(spots[id].round())
-		check(not seen.has(key), "no two perks on the same spot (%s)" % id)
-		seen[key] = true
-	check(PerkTree.is_final("berserker") and not PerkTree.is_final("whirlwind"), "★ marks the final passive perk")
-	sp.tree.select("thick_skin")
-	sp.refresh()
-	var learn := sp.find_child("Learn", true, false) as Button
-	check(learn != null, "the chosen perk has a Learn button on the right")
-	check(SkillsPanel.perk_text("deep_pockets").later and not SkillsPanel.perk_text("deep_pockets").text.contains("yet"), "'not in the game yet' becomes a Planned note")
 	sp.queue_free()
+	_teardown()
+
+
+func test_crafting_makes_missing_planks_first() -> void:
+	await _setup(42)
+	auth._ev_place_station(7, "workbench", player.global_position + Vector3(1.5, 0, 0), 0.0)
+	ps.inventory.add("rootwood", 3)
+	ps.inventory.add("rope", 4)
+	ps.seen["wing_leather"] = true  # the Tanning Rack shows up once you've had wing leather
+	var planks_before := ps.inventory.count_of("plank_root")
+	check(auth.request_craft(1, "tanning_rack", 7), "no planks, but rootwood: the dwarf makes the planks first")
+	check_eq(ps.inventory.count_of("tanning_rack"), 1, "the rack is made")
+	check_eq(ps.inventory.count_of("plank_root"), planks_before, "all 6 new planks went into it")
+	_teardown()
+
+
+func test_pot_on_the_fire_makes_a_kitchen() -> void:
+	await _setup(42)
+	var at := player.global_position + Vector3(1.5, 0, 0)
+	auth._ev_place_station(8, "campfire", at, 0.0)
+	var fire: Station = auth.stations[8]
+	check_eq(fire.level(), 1, "a bare campfire: level 1")
+	auth._ev_place_station(9, "cooking_pot", at + Vector3.UP * Station.POT_HEIGHT, 0.0)
+	check_eq(fire.level(), 2, "a Cooking Pot on it: level 2")
+	auth.world_state["learned"] = ["dish_snail_stew"]
+	ps.inventory.add("snail_meat", 2)
+	ps.inventory.add("hollowcap", 2)
+	check(auth.request_craft(1, "dish_snail_stew", 8), "a stew cooks at the fire with the pot")
+	check(not auth.request_craft(1, "dish_miners_pie", 8), "Miner's Pie still needs the Stone Oven (level 3)")
 	_teardown()

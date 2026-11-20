@@ -21,6 +21,7 @@ var _lantern_hint_at := -100.0
 var _dodge_t := -1.0
 var _dodge_dir := Vector3.ZERO
 var stagger := 0.0  ## guard break / knockdown: can't act
+var _heavy_until := 0.0  ## a heavy swing is still going until this clock time
 var loaded := true  ## crossbow: a bolt is in it
 const KNOCK_DOWN_TIME := 2.0  ## down 0.85 s, then 1.1 s getting up
 var reload_left := -1.0  ## crossbow: seconds of reloading left (-1 = not reloading)
@@ -51,6 +52,8 @@ func has_shield() -> bool:
 	var ps := _ps()
 	if ps == null or Combat.WEAPONS[weapon()].hands == 2 or not off_hand_free(ps):
 		return false
+	if Durability.broken(ps.inventory.get_slot(Inventory.equip_index("shield"))):
+		return false  # a broken shield doesn't block until it's repaired
 	if Items.kind(item()) == "shield" or ps.inventory.equipped("shield") != "":
 		return true
 	for i in Inventory.HOTBAR_SIZE:
@@ -86,6 +89,8 @@ func shield_blocked_by_lantern() -> bool:
 	var ps := _ps()
 	if ps == null or off_hand_free(ps):
 		return false
+	if Durability.broken(ps.inventory.get_slot(Inventory.equip_index("shield"))):
+		return false  # a broken shield doesn't block until it's repaired
 	if Items.kind(item()) == "shield" or ps.inventory.equipped("shield") != "":
 		return true
 	for i in Inventory.HOTBAR_SIZE:
@@ -143,6 +148,8 @@ func guard_break() -> void:
 func knock_down() -> void:
 	if stagger > 0.5:
 		return  # (already down)
+	if clock < _heavy_until and weapon() == "mace_2h" and _ps() and _ps().progress.has_star("warhammer", 25):
+		return  # Warhammer ★25: heavy swings can't be interrupted
 	dwarf.model.react("knock")
 	stagger = KNOCK_DOWN_TIME
 	dwarf.get_tree().create_timer(0.85).timeout.connect(func() -> void:
@@ -153,6 +160,8 @@ func knock_down() -> void:
 
 func got_parry() -> void:
 	_riposte_until = clock + Combat.RIPOSTE_TIME
+	if has_shield() and _ps() and _ps().progress.has_star("shield", 100):
+		_ps().vitals.stamina = minf(_ps().vitals.max_stamina(), _ps().vitals.stamina + 20.0)  # Shield ★100: stamina back
 	message.emit("Perfect parry!", Color(1.0, 0.85, 0.3))
 
 
@@ -195,7 +204,7 @@ func step(delta: float, playing: bool, move_dir: Vector3) -> float:
 	elif _hold >= 0.0:
 		_attack(_hold >= Combat.HEAVY_HOLD)
 		_hold = -1.0
-	return 0.6 if is_blocking() else 1.0
+	return (_ps().progress.guard_walk_mult(false) if _ps() else 0.6) if is_blocking() else 1.0  # Shield ★25
 
 
 ## Where a roll moves you this frame.
@@ -208,7 +217,8 @@ func _attack(heavy: bool) -> void:
 		return
 	var ps := _ps()
 	var wd: Dictionary = Combat.WEAPONS[weapon()]
-	var cost: float = (wd.heavy_sta if heavy else wd.light_sta) * (1.0 - Gems.bonus(ps.inventory.get_slot(ps.hand_slot())).get("stamina", 0.0))
+	var cost: float = (wd.heavy_sta if heavy else wd.light_sta) * (1.0 - Gems.bonus(ps.inventory.get_slot(ps.hand_slot())).get("stamina", 0.0)) \
+		* ps.progress.attack_stamina_mult(weapon())
 	if heavy:
 		if not ps.vitals.use_stamina(cost):
 			message.emit("Too tired for a heavy attack", Color(0.9, 0.9, 0.9))
@@ -220,27 +230,33 @@ func _attack(heavy: bool) -> void:
 	_combo_step = (_combo_step + 1) % wd.combo.size() if clock < _combo_until else 0
 	var speed: float = wd.heavy_speed if heavy else wd.light_speed
 	_busy = speed
+	if heavy:
+		_heavy_until = clock + speed  # (Warhammer ★25: a heavy swing can't be knocked out of)
+	if _combo_step == 0 and Progression.weapon_skill(weapon()) == "sword" and ps.progress.has_star("sword", 25):
+		dwarf.shove(Basis(Vector3.UP, dwarf.model.rotation.y) * Vector3.FORWARD * 4.0)  # Sword ★25: a quick step in
 	_combo_until = clock + speed + Combat.COMBO_WINDOW
 	var step := _combo_step
 	var riposte := clock < _riposte_until
 	dwarf.model.attack(speed, heavy, step)  # (the combo's hits look different: DwarfRig.ATTACKS)
 	Sfx.play("swing", dwarf.global_position + Vector3.UP, -8.0, 0.8 if heavy else 1.1)
-	dwarf.get_tree().create_timer(speed * 0.4).timeout.connect(func(): _impact(heavy, step, riposte))
+	var airborne := not dwarf.is_on_floor()  # Jumping ★75: hits in the air
+	dwarf.get_tree().create_timer(speed * 0.4).timeout.connect(func(): _impact(heavy, step, riposte, airborne))
 	dwarf.face_camera()
 
 
 ## The swing lands: find monsters in front of us within reach.
-func _impact(heavy: bool, combo_step: int, riposte: bool) -> void:
+func _impact(heavy: bool, combo_step: int, riposte: bool, airborne: bool = false) -> void:
 	var auth := GameAuthority.instance
 	if auth == null or auth.monsters == null:
 		return
 	var w := weapon()
 	var wd: Dictionary = Combat.WEAPONS[w]
-	var reach: float = wd.reach + 0.5
+	var prog: Progression = _ps().progress if _ps() else Progression.new()
+	var reach: float = wd.reach * prog.reach_mult(w) + 0.5  # Spear: +1.5% reach per 10 levels
 	var arc := 160.0 if wd.get("sweep", false) else 70.0
 	if w == "mace_2h" and heavy:
 		arc = 360.0
-		reach = 2.5
+		reach = 2.5 * (1.25 if prog.has_star("warhammer", 50) else 1.0)  # Warhammer ★50: wider ground slam
 	var fwd := Basis(Vector3.UP, dwarf.model.rotation.y) * Vector3.FORWARD
 	var found := []
 	for m: Monster in auth.monsters.monsters.values():
@@ -258,7 +274,7 @@ func _impact(heavy: bool, combo_step: int, riposte: bool) -> void:
 	for f in found:
 		uids.append(f[1])
 	if not uids.is_empty():
-		auth.monsters.ask_attack(uids, heavy, combo_step, riposte)
+		auth.monsters.ask_attack(uids, heavy, combo_step, riposte, airborne)
 		dwarf.add_shake(0.3 if heavy else 0.15)
 	else:
 		var dummy: Station = auth.station_near(dwarf.global_position + fwd * 1.2, reach)
@@ -297,7 +313,7 @@ func _crossbow_step(delta: float) -> float:
 			_shoot(aiming())
 		else:
 			start_reload()
-	return 0.6 if aiming() or reload_left >= 0.0 else 1.0
+	return (_ps().progress.guard_walk_mult(true) if _ps() and aiming() else 0.6) if aiming() or reload_left >= 0.0 else 1.0  # Crossbow ★25
 
 
 ## R while holding the crossbow (or clicking when it's empty).
@@ -312,7 +328,7 @@ func start_reload() -> void:
 		fx.free_reloads -= 1.0
 		reload_left = 0.05
 		return
-	reload_left = Combat.RELOAD[clampi(tier(), 0, 4)] * (_ps().progress.reload_mult() if _ps() else 1.0)
+	reload_left = Combat.RELOAD[clampi(tier(), 0, 4)] * (_ps().progress.crossbow_reload_mult() if _ps() else 1.0)
 	dwarf.model.react("reload")
 	message.emit("Reloading…", Color(0.9, 0.9, 0.9))
 
