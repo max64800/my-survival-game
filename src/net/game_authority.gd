@@ -1636,6 +1636,16 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 		return ""
 	var id: String = slot.id
 	match Items.kind(id):
+		"waterskin":  # F401 (owner, Nov 20): an empty waterskin fills at a pool or under a waterfall
+			var water := CaveWater.instance
+			var at_water := water != null and ((aim_point != Vector3.INF and water.water_near(aim_point)) or water.water_near(ps.node.global_position))
+			if not at_water:
+				tell(peer_id, "Look at a pool or a waterfall to fill your waterskin.")
+				return ""
+			ps.inventory.slots[ps.hand_slot()] = {id = "waterskin_dirty", count = 1}
+			ps.inventory.changed.emit()
+			tell(peer_id, "Filled with pool water. Boil it at a campfire to make it clean.")
+			return "filled"
 		"food", "drink":
 			if id == "waterskin_clean" or id == "waterskin_dirty":
 				_take_sip(ps, ps.selected_slot)

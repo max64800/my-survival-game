@@ -9,6 +9,30 @@ extends Node3D
 
 const PUDDLES_PER_CAVERN := 2
 const MIST_SHARE := 0.35  ## of the low caverns
+const FILL_REACH := 0.8  ## how far past a pool's edge you can still dip a waterskin (m)
+const FALL_POOL_R := 1.0  ## a waterfall's pool, for filling
+
+static var instance: CaveWater
+## Every pool you can fill a waterskin at (F401, owner Nov 20): [{pos, r}] (puddles and the waterfalls' pools).
+var waters: Array[Dictionary] = []
+
+
+func _enter_tree() -> void:
+	instance = self
+
+
+func _exit_tree() -> void:
+	if instance == self:
+		instance = null
+
+
+## Is there water to fill a waterskin at, near this point? (In the same flat layer: not a pool a floor below.)
+func water_near(point: Vector3) -> bool:
+	for w in waters:
+		var d := Vector2(point.x - w.pos.x, point.z - w.pos.z).length()
+		if d <= float(w.r) + FILL_REACH and absf(point.y - float(w.pos.y)) < 1.2:
+			return true
+	return false
 
 
 func build(maker: CaveMaker, spots: Array[Dictionary]) -> void:
@@ -18,6 +42,9 @@ func build(maker: CaveMaker, spots: Array[Dictionary]) -> void:
 	var fall_shader: Shader = load("res://src/art/waterfall.gdshader")
 	for f in falls:
 		_make_fall(f, fall_shader)
+		waters.append({pos = f.pool, r = FALL_POOL_R})
+	for p in puddles:
+		waters.append({pos = p.pos, r = p.r})
 	if GroundSnap.instance and GroundSnap.instance.world:
 		GroundSnap.instance.world.changed.connect(_on_rock_changed)
 	for p in puddles:

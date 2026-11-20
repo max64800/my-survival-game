@@ -6118,4 +6118,10 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   the new files yet (ran the import). Then the stairs and foundation steps showed plain code shapes: the game joins
   parts less than 1 cm apart and the brick side walls sat 1.1 cm from the steps, so it called them floating. The
   steps now reach 0.6 cm from them. Full test run: 11 fails, all in other chats' areas (digging, dwarf, sounds, tool
-  models, a HUD text), none in building.
+  models, a HUD text), none in building.- **Nov 20, later (cave Claude): skills window, waterskins, tubers.** Owner checked: Root Tubers come from Tuber Seeds in
+  camp/ruin chests (nearest camp 50-90 m), 20 min for 5; mushrooms are planted themselves (15 min, 5). No seeds in the
+  first tower (owner). F401: an empty waterskin fills at pools/waterfalls (CaveWater.water_near). F433/F434: K window
+  bigger and plainer. **Hurdles:** the plank frame art is 14 px thick but the cards only kept text 4 px in, so names sat
+  on the frame and the bars hid under it; a two-line card made the window 925 px tall (screen 900), so back to one
+  line with a wide name slot (738 px). test_authority has 4 physics failures (Jolt body limit, root tree bark) that
+  aren't from my changes. git pull can't fast-forward (main is 14 ahead, 1 behind): not merged by me.

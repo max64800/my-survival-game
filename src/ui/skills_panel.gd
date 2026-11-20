@@ -50,7 +50,7 @@ func _ready() -> void:
 	top.add_child(right)
 	_points = UiKit.label(right, "", 17, UiKit.AMBER)
 	_points.add_theme_font_override("font", UiKit.heading_font())
-	_reset = UiKit.dark_button(Button.new(), 13)
+	_reset = UiKit.dark_button(Button.new(), 16)
 	_reset.name = "Reset"
 	_reset.pressed.connect(func():
 		GameAuthority.instance.ask_respec()
@@ -59,8 +59,8 @@ func _ready() -> void:
 	var cols := HBoxContainer.new()
 	cols.add_theme_constant_override("separation", 8)
 	box.add_child(cols)
-	var left := _side(cols, 270)
-	UiKit.label(left, "Skills  ·  grow by doing", 15, UiKit.AMBER).add_theme_font_override("font", UiKit.heading_font())
+	var left := _side(cols, 310)
+	UiKit.label(left, "Skills  ·  grow by doing", 16, UiKit.AMBER).add_theme_font_override("font", UiKit.heading_font())
 	_skills = VBoxContainer.new()
 	_skills.add_theme_constant_override("separation", 2)
 	left.add_child(_skills)
@@ -70,8 +70,8 @@ func _ready() -> void:
 	_tree.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_tree.picked.connect(func(id): _sel = id; _tree.selected = id; _tree.refresh(); _show_detail())
 	cols.add_child(_tree)
-	_detail = _side(cols, 290)
-	UiKit.label(box, "Circles = always on  ·  ◆ diamonds = press Z / G / T  ·  ★ = final perk  ·  wheel = zoom, drag = move, double-click = fit  ·  K close", 13, UiKit.DIM).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_detail = _side(cols, 320)
+	UiKit.label(box, "Circle = works by itself  ·  ◆ = press Z / G / T  ·  ★ = last perk  ·  scroll to zoom, drag to move  ·  K to close", 15, UiKit.DIM).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 
 func _side(parent: Node, width: float) -> VBoxContainer:
@@ -107,7 +107,8 @@ func refresh() -> void:
 	_level.tooltip_text = "\n".join(lines) if lines else "No kills yet"
 	_level.mouse_filter = Control.MOUSE_FILTER_STOP
 	_points.text = "Perk points: %d" % p.points_free()
-	_reset.text = "Reset perks · %d gold (you have %d)" % [p.respec_cost(), ps.inventory.count_of("gold_coin")]
+	_reset.text = "Reset perks: %d gold" % p.respec_cost()
+	_reset.tooltip_text = "Get all your perk points back to spend again. You have %d gold." % ps.inventory.count_of("gold_coin")
 	_reset.disabled = p.points_free() == p.points_total()
 	_tree.progress = p
 	_tree.selected = _sel
@@ -127,51 +128,58 @@ func _show_skills() -> void:
 		var open: bool = s == _open_skill
 		var card := PanelContainer.new()
 		card.name = "Skill_" + s
-		card.add_theme_stylebox_override("panel", UiKit.style("slot_selected" if open else "slot", 9 if open else 4, 10))
+		var frame_style := UiKit.style("slot_selected" if open else "slot", 9, 13)  # (frame art is 14 px: keep text inside it)
+		frame_style.content_margin_top = 5
+		frame_style.content_margin_bottom = 9 if not open else 12  # (the plank's thick rim is at the bottom)
+		card.add_theme_stylebox_override("panel", frame_style)
 		_skills.add_child(card)
 		var v := VBoxContainer.new()
 		v.add_theme_constant_override("separation", 1)
+		v.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		card.add_child(v)
-		var row := Button.new()  # the whole line opens / closes the skill
-		row.flat = true
-		row.custom_minimum_size = Vector2(0, 24)
-		row.pressed.connect(func(): _open_skill = "" if _open_skill == s else s; _show_skills())
-		v.add_child(row)
+		var click := Button.new()  # an invisible button over the whole card opens / closes the skill
+		click.flat = true
+		click.focus_mode = Control.FOCUS_NONE
+		click.pressed.connect(func(): _open_skill = "" if _open_skill == s else s; _show_skills())
+		card.add_child(click)
+		# F433 (owner, Nov 20: "too small to read, the words overlap the bar, too many words"): bigger letters, and the
+		# name has its own wide slot, so the bar and the level can never run into it.
 		var h := HBoxContainer.new()
-		h.set_anchors_preset(Control.PRESET_FULL_RECT)
-		h.offset_left = 4
-		h.offset_right = -14  # keep the level number off the card's edge
-		h.add_theme_constant_override("separation", 6)
+		h.add_theme_constant_override("separation", 8)
 		h.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		row.add_child(h)
-		var name := UiKit.label(h, info[0], 14, UiKit.TEXT)
-		name.custom_minimum_size = Vector2(82, 0)
+		v.add_child(h)
+		var name := UiKit.label(h, info[0], 16, UiKit.TEXT)
+		name.custom_minimum_size = Vector2(112, 0)
+		name.clip_text = true
 		var bar := ProgressBar.new()
 		bar.show_percentage = false
-		bar.custom_minimum_size = Vector2(0, 6)
+		bar.custom_minimum_size = Vector2(0, 7)
 		bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		h.add_child(bar)
+		var lvl := UiKit.label(h, "Master" if lv >= Progression.MAX_SKILL else "Lv %d" % lv, 16, UiKit.AMBER)
+		lvl.custom_minimum_size = Vector2(52, 0)
+		lvl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		var track := StyleBoxFlat.new()
+		track.bg_color = Color(0.04, 0.03, 0.02, 0.85)
+		track.border_color = Color(UiKit.AMBER, 0.45)
+		track.set_border_width_all(1)
+		track.set_corner_radius_all(3)
+		var fill := StyleBoxFlat.new()
+		fill.bg_color = UiKit.AMBER
+		fill.set_corner_radius_all(3)
+		bar.add_theme_stylebox_override("background", track)
+		bar.add_theme_stylebox_override("fill", fill)
 		bar.max_value = Progression.skill_xp_to_next(lv)
 		bar.value = p.skill_xp[s] if lv < Progression.MAX_SKILL else bar.max_value
-		bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		h.add_child(bar)
-		var next := 100
-		for m in Progression.MILESTONES:
-			if lv < m:
-				next = m
-				break
-		UiKit.label(h, MILESTONE_TEXT % next if lv < 100 else "Master", 12, UiKit.DIM)
-		var lvl := UiKit.label(h, str(lv), 14, UiKit.AMBER)
-		lvl.custom_minimum_size = Vector2(24, 0)
-		lvl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		for c in h.get_children():
 			c.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		if open:
-			_wrap(v, "[color=#%s]Every 10 levels: %s (a bit each level)[/color]" % [UiKit.AMBER.to_html(false), info[1]])
+			_wrap(v, "[color=#%s]Each level: %s[/color]" % [UiKit.AMBER.to_html(false), info[1]])
 			for i in 4:
 				var got: bool = lv >= Progression.MILESTONES[i]
-				_wrap(v, "[color=#%s]%s %s%s[/color]" % [(UiKit.TEXT if got else UiKit.DIM).to_html(false), MILESTONE_TEXT % Progression.MILESTONES[i],
-					info[2][i], "" if got else "  · %d to go" % (Progression.MILESTONES[i] - lv)])
+				_wrap(v, "[color=#%s]%s  %s %s[/color]" % [(UiKit.TEXT if got else UiKit.DIM).to_html(false), "✓" if got else "·",
+					MILESTONE_TEXT % Progression.MILESTONES[i], info[2][i]])
 
 
 ## Small wrapping text that always grows to fit (a plain Label in a container can get clipped when it wraps).
@@ -181,7 +189,8 @@ func _wrap(parent: Node, bbcode: String) -> void:
 	t.fit_content = true
 	t.scroll_active = false
 	t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	t.add_theme_font_size_override("normal_font_size", 12)
+	t.add_theme_font_size_override("normal_font_size", 14)
+	t.custom_minimum_size.x = 280  # (wraps at the card's width, never measures itself one word wide)
 	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	t.text = bbcode
 	parent.add_child(t)
@@ -215,31 +224,31 @@ func _show_detail() -> void:
 	var title := UiKit.label(_detail, ("★ " if _sel in PerkTreeView.FINALS else "") + info[4], 21, UiKit.AMBER)
 	title.add_theme_font_override("font", UiKit.heading_font())
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	var kind := UiKit.label(_detail, "%s  ·  %s" % [branch, "◆ Active" if info[3] else "● Passive"], 13, PerkTreeView.COLORS[info[0]])
+	# F434 (owner, Nov 20: "very tiny text"): bigger letters and plain words, one fact per line.
+	var kind := UiKit.label(_detail, "%s branch  ·  %s" % [branch, "◆ you press a key" if info[3] else "● works by itself"], 16, PerkTreeView.COLORS[info[0]])
 	kind.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	var pips := UiKit.label(_detail, "◆".repeat(have) + "◇".repeat(info[1] - have), 18, UiKit.AMBER)
+	var pips := UiKit.label(_detail, "◆".repeat(have) + "◇".repeat(info[1] - have), 24, UiKit.AMBER)
 	pips.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var planned: bool = info[5].contains("not in the game yet") or info[5].contains("(no ") or info[5].contains("don't wear out")
-	var text := UiKit.label(_detail, info[5].get_slice(" (", 0) + ".", 15, UiKit.TEXT)
+	var text := UiKit.label(_detail, info[5].get_slice(" (", 0).replace("per rank", "per point") + ".", 19, UiKit.TEXT)
 	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	text.custom_minimum_size.x = 260
 	var slot := p.ability_slots().find(_sel)
-	var lines := ["Points: %d of %d" % [have, info[1]]]
+	var lines := ["Learned: %d of %d points" % [have, info[1]]]
 	if info[3]:
-		lines.append("Use: " + ("press " + KEY_NAMES[slot] if slot >= 0 else ("no free key (the first 3 get Z, G, T)" if have > 0 else "goes on Z, G or T")))
+		lines.append("Key: " + ("press " + KEY_NAMES[slot] if slot >= 0 else ("no free key (only 3 fit on Z, G, T)" if have > 0 else "it goes on Z, G or T")))
 		var cd: float = Progression.ACTIVE[_sel]
-		lines.append("Recharge: %s" % ("%d min" % roundi(cd / 60.0) if cd >= 60.0 and fmod(cd, 60.0) == 0.0 else "%d s" % roundi(cd)))
-	else:
-		lines.append("Use: always on")
-	lines.append("Needs: " + (Progression.PERKS[info[2]][4] if info[2] != "" else "nothing, first in the branch"))
+		lines.append("Use again after: %s" % ("%d min" % roundi(cd / 60.0) if cd >= 60.0 and fmod(cd, 60.0) == 0.0 else "%d s" % roundi(cd)))
+	lines.append("First learn: " + (Progression.PERKS[info[2]][4] if info[2] != "" else "nothing, it's the first one"))
 	for l in lines:
-		UiKit.label(_detail, l, 13, UiKit.DIM)
+		var line := UiKit.label(_detail, l, 16, UiKit.DIM)
+		line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	if planned:
-		var warn := UiKit.label(_detail, "Planned: needs a game system that isn't built yet.", 13, UiKit.MISSING)
+		var warn := UiKit.label(_detail, "Not working yet: comes in a later update.", 16, UiKit.MISSING)
 		warn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var learn := UiKit.gold_button(Button.new(), 16)
 	learn.name = "Learn"
-	learn.text = "Fully learned" if have >= info[1] else "Learn · 1 point"
+	learn.text = "Fully learned" if have >= info[1] else "Learn (1 point)"
 	learn.disabled = why != ""
 	learn.custom_minimum_size = Vector2(0, 42)
 	learn.pressed.connect(func():
@@ -247,6 +256,6 @@ func _show_detail() -> void:
 		get_tree().create_timer(0.15).timeout.connect(refresh))
 	_detail.add_child(learn)
 	if why != "" and have < info[1]:
-		var w := UiKit.label(_detail, why, 13, UiKit.DIM)
+		var w := UiKit.label(_detail, why, 16, UiKit.DIM)
 		w.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		w.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
