@@ -137,8 +137,9 @@ func test_no_junk_over_drops_rails_or_the_plank_walk() -> void:
 			var at := _xz(p.pos)
 			for s in map.spaces:
 				var nm := String(s[0])
-				var bad := float(s[5]) < 0.0 or nm.contains("rail") or nm.contains("shaft") or nm == "chasm"
-				check(not (bad and _inside(s, at, 0.8)), "%s junk %s at %s keeps off %s" % [map.id, p.model, at, nm])
+				var drop := float(s[5]) < 0.0 or nm == "chasm" or nm.begins_with("shaft_")   # (and 0.8 m from its edge)
+				var rails := nm.contains("rail") or nm == "old_shaft"   # (the rail pieces themselves: 1 m, test above)
+				check(not (drop and _inside(s, at, 0.8)) and not (rails and _inside(s, at)), "%s junk %s at %s keeps off %s" % [map.id, p.model, at, nm])
 
 
 func test_junk_has_no_body_but_old_props_still_smash() -> void:

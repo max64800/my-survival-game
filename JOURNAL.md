@@ -6962,3 +6962,14 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   a 4 m tunnel looks central: now every piece lies lengthwise along its wall, 0.2 m from the boards, corners first half
   the time, 5-8 per big room / 2-3 small, tunnels more often (71 pieces); the test wants 1.0 m or less from a wall.
   Page version 12. Hurdle: main.gd and dwarf.gd also held another chat's unsaved changes: only my lines committed.
+- **Owner: "move to dung 2" (Lampwick Drift).** make_lampwick.py belongs to the Lampwick chat, so the junk lines were
+  tried on a temporary copy (writing to the scratchpad, never to the real plan): 25 pieces in 7 rooms (none where rails
+  run, over the Old Shaft, in the vault or the boulder's niche). Hurdles: (1) the 45 mine lamps hang 1.5 m up on the
+  walls but first counted as floor furniture, blocking most wall spots (21 -> 24 pieces once only low things count);
+  creature start spots dropped as blockers (they walk off): 25. (2) The test's 0.8 m edge round rail spaces reached
+  through the wall into the next room (a helmet in the Lamp Room, an axe head in the Office): the rail check is now
+  "not inside a rail space" + 1 m from every rail piece; the 0.8 m edge stays for drops. Test passed on the Lampwick
+  layout (swapped in, then the real plan put back byte for byte). (3) The new page "Lampwick Drift Junk"
+  (https://claude.ai/artifact/FCycKJhFN2Nef6QuM26b3G) first hid the whole upper level (it treated 3 m up as ceiling):
+  heights now count from each space's floor; all lamps lit on the page. Waiting for the owner's OK, then the lines
+  go to the Lampwick chat.
