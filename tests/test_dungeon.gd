@@ -203,6 +203,28 @@ func test_stalactites_hang_down() -> void:
 	check_eq(n, 6, "six stalactites")
 
 
+## Owner, Nov 20 (8/10): "most stalactites over or beside the chests, to bait people": each rock-ceiling chest has
+## one right where you stand to open it, and most stalactites hang within 2 m of a chest.
+func test_stalactites_bait_the_chests() -> void:
+	var plan := DungeonBuild.load_plan("mossgate")
+	var drips: Array[Vector2] = []
+	for p in plan.props:
+		if DungeonBuild.thing_kind(p) == "drip":
+			drips.append(Vector2(float(p.pos[0]), float(p.pos[2])))
+	var baiting := 0
+	for dp in drips:
+		for c in plan.chests:
+			if dp.distance_to(Vector2(float(c.pos[0]), float(c.pos[2]))) <= 2.0:
+				baiting += 1
+				break
+	check(baiting * 2 > drips.size(), "most stalactites hang by a chest (%d of %d)" % [baiting, drips.size()])
+	for chest_at in [Vector2(44.0, 28.6), Vector2(26.5, 2.6)]:
+		var over := false
+		for dp in drips:
+			over = over or dp.distance_to(chest_at) <= 1.5  # (you open a chest from about 1 m in front of it)
+		check(over, "a stalactite hangs where you stand to open the chest at %s" % [chest_at])
+
+
 ## Notes 3 and 5: chests have loot, the recipe stand holds the same scroll every time (the Copper Shield), and the
 ## furniture, rubble, hidden boulder and cracked floor can be broken.
 func test_chests_and_breakable_things() -> void:

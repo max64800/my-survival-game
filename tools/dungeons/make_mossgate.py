@@ -302,8 +302,11 @@ for x in range(36, 42, 2):
 lights.append([39.0, -2.6, 23.0])  # (owner, Nov 20: "nothing visible under it": a faint glow down in the pit shows the spikes)
 for i, (x, z) in enumerate([(26.5, 23.0), (31.0, 28.0), (44.0, 23.0), (35.0, 28.6)]):
 	creature("rock_beetle", x, 0.25, z, i * 80.0 + 20.0)
-for x, z, m in [(30.0, 22.0, "trap_drip_thin"), (41.0, 18.5, "trap_drip_fat"), (26.0, 28.0, "trap_drip_thin")]:
-	prop("dungeon/%s.glb" % m, x, 8.5 + 0.1, z, rng.choice([0, 120, 240]), role="trap", tilt=180.0)
+# Owner, Nov 20 (8/10 note: "make sure most stalactites are over or beside the chests, to bait people"): one hangs
+# right in front of the chest (where you stand to open it), one beside it; one stays over the hall's middle.
+for x, z, m in [(44.0, 27.4, "trap_drip_fat"), (42.3, 28.6, "trap_drip_thin"), (30.0, 22.0, "trap_drip_thin")]:
+	prop("dungeon/%s.glb" % m, x, 8.5 + 0.1, z, rng.choice([0, 120, 240]), role="trap", tilt=180.0,
+		label="Stalactite over the chest (bait)" if (x, z) == (44.0, 27.4) else "")
 chest("chest_small", 44.0, 28.6, 180.0, "Random chest")
 
 # 10 Chasm Bridge: posts and planks across the 4 m drop onto spikes, a broken plank in the middle, broken railings along the edge,
@@ -321,8 +324,10 @@ for i, x in enumerate([37.5, 40.0, 42.5]):
 for z in (1.0, 3.0, 9.0, 11.0):
 	prop("dungeon/railing_broken.glb", 35.6, 0.25, z, 90.0)
 	prop("dungeon/railing_broken.glb", 44.4, 0.25, z, 270.0)
-for x, m in [(38.2, "trap_drip_thin"), (40.0, "trap_drip_cluster"), (41.8, "trap_drip_fat")]:
-	prop("dungeon/%s.glb" % m, x, 7.5 + 0.1, 6.0, rng.choice([0, 90]), role="trap", label="Falling stalactites" if x == 39.0 else "", tilt=180.0)
+# (owner, Nov 20: most stalactites bait the chests) one cluster over the middle boards, two at the chest.
+for x, z, m in [(40.0, 6.0, "trap_drip_cluster"), (26.5, 3.8, "trap_drip_cluster"), (28.0, 2.2, "trap_drip_thin")]:
+	prop("dungeon/%s.glb" % m, x, 7.5 + 0.1, z, rng.choice([0, 90]), role="trap", tilt=180.0,
+		label="Falling stalactites" if x == 40.0 else ("Stalactites over the chest (bait)" if x == 26.5 else ""))
 for x in range(36, 44, 2):
 	for z in range(0, 12, 2):
 		prop("dungeon/trap_spikes.glb", x + 1.0, -4.0, z + 1.0, rng.choice([0, 90, 180, 270]), role="trap")  # (owner, Nov 20: 4 m like the pit)
