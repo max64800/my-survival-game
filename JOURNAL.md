@@ -6403,3 +6403,6 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   (copper 4 s). The old "reload while walking" test was changed to check the new rule. **Hurdle (Claude's own):** an
   earlier script of mine had saved `aimcheck.gd` with Windows line endings, so my next text swap silently found
   nothing; now my scripts turn the line endings to plain ones first and stop if the text isn't found.
+- **Reload, round 2 (F459):** 1 s shorter (copper 3 s). The reload move was always 1 s long, so for the rest of
+  the reload he just stood there; now the move is stretched to the real reload time (co-op friends get the same
+  time), and walking away stops it. Checked with 3 photos during one reload: he works the crossbow the whole time.
