@@ -6424,3 +6424,28 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   wobble plus its "turn before you move" rule made it stop to turn; the fly-out now goes straight.
 - **Tests:** 3 new (circle then dive through, sidestep, take turns); all 11 bat checks passed twice in a row.
   Looked at the trail in a muted test room.
+
+## November 20, 2026 (PC, creatures Claude for dungeon 2, chat 1): KayKit skeletons become Lampwick's miners
+- **Start:** 79 play sessions in the recordings folder are still unreviewed (told the owner; not read).
+- **Download:** KayKit's free "Character Pack: Skeletons" from its GitHub page (the itch.io page needs a browser).
+  Licence read: CC0, free for games you sell. The 3 skeletons we use (Minion, Rogue, Warrior) and the licence are in
+  `tools/asset_forge/packs/kaykit_skeletons/`; logged in `CREDITS.md`. Each comes with the same bones and 95 moves.
+- **New script `tools/asset_forge/builds/kaykit_miners.py`** makes 3 creatures from them (owner: "adjust them a
+  little bit"): Tunnel Rat (Minion, 0.95 m, hunched, grimy bone, leather cap, little shovel), Lost Miner (Rogue,
+  1.4 m, pale green ghost bone with a faint glow, long pale beard, iron helmet with a dead lamp, pickaxe) and the
+  Foreman (Warrior, 1.85 m, broad chest, red beard on a dark cloak, tall helmet with a lit lamp, big two-handed pick).
+  How: the stoop and broad chest are posed, then saved as the skeleton's new "standing" shape, so all the moves keep
+  it. Every face's colour is read off the pack's colour sheet (bone, cloth, metal, leather) and gets our own painted
+  picture instead. Beard, helmet and tool are built from our kit and tied to one bone each (head, hand), so they move
+  with the body. 24 moves kept (walk, shamble, run, swings, hit, fall apart, rise from the floor...).
+- **Two picture rounds:** round 1: beards thin like strings, helmets blotchy, the Foreman's red beard vanished on his
+  red cloak. Round 2: chunky flat beard locks, calmer paint, dark cloak, bigger helmets.
+- **Hurdles (Claude's own):** (1) the beard sat behind the chest's front, so most of it was hidden inside the ribs
+  (that was why it looked thin); now it hangs in front of the chest. (2) The "blotches" on the helmets were really the
+  skull poking through the dome; the dome is wider and taller now. (3) The first download gave empty files (the big
+  files are stored separately on GitHub); a second download address worked. (4) The checker found 3 flicker spots:
+  two pick pieces in exactly the same place (now one piece), two beard locks crossing at a shallow angle (same tilt,
+  own depth now), one on a helmet brim (gone with the bigger helmet). All 3 pass `check_models.py`.
+- **3D page "Lampwick Drift Miners"** (all three in lamplight, 10 move buttons, still until you press one). Waiting
+  for the owner's OK; the models are in `%TEMP%\kaykit_miners\`, not in `assets/` yet. No game code yet.
+- **Asked the owner:** good to go? braided beards (our rope picture) or plain hair? ghost colour? sizes?
