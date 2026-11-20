@@ -7086,3 +7086,31 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   (a time limit): ran the rest file by file. test_dwarf's hair and "material is null" checks fail with another chat's
   unsaved dwarf animation changes (not mine; left alone). Batch 3 of the mine set (mine lamp, rubble, grooved floor,
   the new bear jaws) had never been committed by the last dungeons chat: committed now with this.
+
+## November 20, 2026 (PC, spire Claude): Brewhall committed; ruin 4, the Lantern Spire, as a 3D page first (F479)
+- **Finishing the Brewhall:** re-ran the Fallen Outpost tests after the last chat's builder/ruin changes: wood (4 min),
+  saves (1.5 min) and stone (18.5 min) all passed. The stone one is just slow, not stuck: in a stone rebuild every
+  step checks every broken piece against every other piece. Committed only the Brewhall files and lines (other chats'
+  Dungeon 3 and ruin-junk lines in the same files were left out, piece by piece).
+- **The Lantern Spire (page only, no game code yet):** blueprint `lantern_spire` / `wooden_spire` in
+  `blueprint_library.gd` (not learnable yet): the watchtower's 12-sided ring, 3 walled floors (2 narrow windows each,
+  none beside the door), an open lantern gallery (pillars + railings), a battlement roof with a new fire bowl in the
+  middle; 11.6 m tall. `tools/ruins/make_spire_ruin.py` breaks it: the top half snapped off toward the front right;
+  the second floor broken down in a slope on that side, a ledge of the third floor at the back (its stairs still
+  reach it). New models (`tools/asset_forge/builds/stonehold_v2_spire.py`, from the real Stonehold wall/pillar/
+  battlement code, then broken): fire bowl, fallen fire bowl, the tower's top lying on its side, a curved wall piece.
+  Rebuild: wood 132 new pieces (1,050 planks, 132 rope), stone 133 (1,134 cut stone, 135 mortar), plus the fire bowl.
+  Page: https://claude.ai/artifact/4fGfAHxaiSMbLXmekoFQhD
+- **Hurdles / Claude's slips:** (1) left placeholder junk lines in the first model script; cleaned before running.
+  (2) Removing Blender objects then asking for their names crashed the script twice (fixed: keep a list of what
+  stays). (3) The fallen bowl first lay on top of its own plinth, and its logs stayed stuck to its tipped face (now
+  rolled out on the floor); coals were pale grey (darkened). (4) The pieces' turn numbers mix quarter turns and 30
+  degree turns: wrote proper helpers after getting one ruined wall turned the wrong way. (5) The curved wall piece
+  first landed beside the front steps (moved behind the fallen top). (6) The page's fire was a stiff yellow cone
+  (now a soft glow; the game plays its real fire).
+- **For the game step:** the fire bowl must become a game piece (stone + copper?); the game's worn-wall rule only
+  looks 2 m up (Stonehold floors are 2.25 m apart; the page uses up to 2.35 m like the Brewhall page). The fallen
+  pieces are debris cleared by the rebuild. No base space round the Spire.
+- **Owner, same evening:** OK'd the Spire as it is ("I really like how you built the floor below the fire": the open
+  lantern gallery) and the fire bowl's price (cut stone + a few copper ingots). Committed the page-stage files; the
+  page's source is kept in `tools/ruins/spire_page.html` so the next ruin page can be copied from it.

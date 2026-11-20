@@ -51,6 +51,10 @@ static func make(id: String) -> Blueprint:
 		"miners_homestead": lib._homestead()
 		"stone_hall": lib._stone_hall()
 		"forge_workshop": lib._forge()
+		"lantern_spire": lib._lantern_spire()  # (owner, Nov 20: ruin 4; not learnable yet, its 3D page first)
+		"wooden_spire":
+			lib._lantern_spire()
+			lib._to_wood()
 		"watchtower_cabin": lib._watchtower()
 		"stone_watchtower": lib._stone_watchtower()
 		"stone_outpost": lib._stone_outpost()
@@ -437,6 +441,48 @@ func _stone_watchtower() -> void:
 	var roof := w3 + 2.0
 	_ring_layer("floor", "floor_triangle", roof, 0)
 	_ring_rails(0, roof + 0.25)
+	_ring_edges(roof + 0.25, func(_j): return "battlement")
+
+
+## Owner, Nov 20 (ruin 4 of Zone 1): the Lantern Spire, a tall thin round Stonehold beacon tower, a landmark to find.
+## The watchtower's 12-sided ring (every flat side 3.73 m from the middle), three walled floors, then an open lantern
+## gallery (pillars on every corner, railings between) under a flat battlement roof; the fire bowl stands in the
+## roof's middle (tools/ruins/make_spire_ruin.py adds it until it is a game piece). Heights: foundations 0-1, walls
+## from 1, 3.25 and 5.5, floors at 3, 5.25 and 7.5, the gallery from 7.75, the roof at 9.75 (battlements from 10).
+## Few windows (owner, Nov 20): two narrow ones a floor, none beside the door. The stairs climb a different side on
+## every floor, their foot on open floor; each stairs hole has a railing round it.
+func _lantern_spire() -> void:
+	_start(Vector3(10, 12, 12))
+	_ring_layer("foundation", "foundation_triangle", 0.0)
+	_add("foundation_steps", STONE, _dir(0) * (_EDGE + 1.0), 0)                        # up to the round front door
+	var g := 1.0
+	_ring_edges(g, func(j): return "doorway" if j == 0 else ("window_wall" if j in [4, 8] else "wall"))
+	_add("door", STONE, _dir(0) * _EDGE + Vector3(0, g, 0), 0)
+	_ring_pillars(g, [11, 0])
+	_ring_stairs(2, g)
+	var f2 := 3.0
+	_ring_layer("floor", "floor_triangle", f2, 2)
+	_ring_rails(2, f2 + 0.25)
+	var w2 := f2 + 0.25
+	_ring_edges(w2, func(j): return "window_wall" if j in [1, 7] else "wall")
+	_ring_pillars(w2)
+	_ring_stairs(4, w2)
+	var f3 := w2 + 2.0
+	_ring_layer("floor", "floor_triangle", f3, 4)
+	_ring_rails(4, f3 + 0.25)
+	var w3 := f3 + 0.25
+	_ring_edges(w3, func(j): return "window_wall" if j in [4, 10] else "wall")
+	_ring_pillars(w3)
+	_ring_stairs(0, w3)
+	var f4 := w3 + 2.0                                                                  # the lantern gallery
+	_ring_layer("floor", "floor_triangle", f4, 0)
+	_ring_rails(0, f4 + 0.25)
+	_ring_edges(f4 + 0.25, func(_j): return "railing")
+	_ring_pillars(f4 + 0.25)
+	_ring_stairs(3, f4 + 0.25)
+	var roof := f4 + 2.25
+	_ring_layer("floor", "floor_triangle", roof, 3)
+	_ring_rails(3, roof + 0.25)
 	_ring_edges(roof + 0.25, func(_j): return "battlement")
 
 
