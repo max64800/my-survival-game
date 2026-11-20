@@ -22,6 +22,8 @@ const ZOOM_MIN := 1.1
 const ZOOM_MAX := 8.0
 const ZOOM_STEP := 0.5
 const SHOULDER := Vector3(0.55, 1.5, 0.0)
+## Where the camera sits while aiming (F452): x = to his right, y = height, z = distance behind.
+const AIM_CAMERA := Vector3(0.45, 0.9, 2.0)
 const POSE_SEND_TIME := 0.05  ## send our position 20 times a second
 const RUN_STAMINA := 8.0  ## per second
 const JUMP_STAMINA := 10.0
@@ -56,6 +58,7 @@ var _cam_yaw: Node3D
 var _cam_pitch: Node3D
 var _spring: SpringArm3D
 var _shake := 0.0
+var _aim_t := 0.0  ## 0 = normal camera, 1 = aiming over the shoulder (F452)
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
 var _respawn_point := Vector3.ZERO
 var _pose_timer := 0.0
@@ -347,15 +350,20 @@ func _process(delta: float) -> void:
 	# Zoomed in, the camera looks at the dwarf itself (chest height, no shoulder offset); zoomed out, over the
 	# shoulder as before (owner, Nov 16: zooming went to the middle of the screen, not to the dwarf).
 	var near := clampf((_spring.spring_length - ZOOM_MIN) / (CAMERA_DISTANCE - ZOOM_MIN), 0.0, 1.0)
-	var want_y := global_position.y + lerpf(1.0, SHOULDER.y, near)
+	# Aiming (F452, owner Nov 20: "I'm looking at his head"): whatever the zoom, the camera slides to a fixed spot over
+	# his right shoulder, so the crosshair sits just past it. Letting go slides back to the normal camera.
+	_aim_t = move_toward(_aim_t, 1.0 if fight and fight.aiming() else 0.0, delta * 6.0)
+	var aim_k := smoothstep(0.0, 1.0, _aim_t)
+	var want_y := global_position.y + lerpf(lerpf(1.0, SHOULDER.y, near), AIM_CAMERA.y, aim_k)
 	if is_nan(_cam_y) or absf(_cam_y - want_y) > 2.0:
 		_cam_y = want_y
 	_cam_y = lerpf(_cam_y, want_y, minf(1.0, delta * 14.0))
 	_cam_yaw.global_position = Vector3(global_position.x, _cam_y, global_position.z)
 	_cam_yaw.rotation.y = _yaw
 	_cam_pitch.rotation.x = _pitch
-	_spring.position = Vector3(lerpf(0.08, SHOULDER.x, near), 0, 0)
-	_spring.spring_length = lerpf(_spring.spring_length, _zoom, minf(1.0, delta * 10.0))  # smooth zoom
+	_spring.position = Vector3(lerpf(lerpf(0.08, SHOULDER.x, near), AIM_CAMERA.x, aim_k), 0, 0)
+	var want_len := lerpf(_zoom, AIM_CAMERA.z, aim_k)
+	_spring.spring_length = lerpf(_spring.spring_length, want_len, minf(1.0, delta * 10.0))  # smooth zoom
 	_shake = maxf(0.0, _shake - delta * 4.0)
 	camera.fov = lerpf(camera.fov, 32.0 if fight and fight.aiming() else 72.0, minf(1.0, delta * 10.0))  # crossbow zoom
 	camera.h_offset = randf_range(-1, 1) * _shake * 0.06

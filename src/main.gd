@@ -180,6 +180,12 @@ func _ready() -> void:
 			_monsters = false
 			if mode == "menu":
 				mode = "solo"
+		elif arg == "aimcheck":  # F452: photos of the over-the-shoulder aim camera
+			debug_script = "res://src/debug/aimcheck.gd"
+			_saving = false
+			_monsters = false
+			if mode == "menu":
+				mode = "solo"
 		elif arg == "gemcheck":  # Gem Bench combining, gem tooltips, poison/fire badges, fire through a block (Nov 20)
 			debug_script = "res://src/debug/gemcheck.gd"
 			_saving = false
