@@ -6250,3 +6250,8 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   a patch, merged, patch put back). Lesson: never chain "put back" after a step that can fail.
 - **Other hurdles:** the Godot program isn't on the PATH (found it in WinGet's folder); Blender's helper import
   worked first time; one shell path mixed up the temp folder with the scratch folder (nothing written).
+- **Owner's first look at the cart trap:** carts shouldn't come back, rails a lot longer, no glint, no frame or
+  levers. Asked 3 things; he chose: 12 m rails, a stopper where the cart stays, and each rotten wedge snaps when
+  someone steps into its lane. New model `rail_wedge` (two wedges and a cracked board, 4 pieces that burst off);
+  `rail_release` and the glint strips are gone. Both pass the checks. Page version 2: the blue dwarf walks across,
+  stops in the middle lane and gets knocked flying; Replay plays it again. Decisions written into `rail_triple.md`.

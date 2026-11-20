@@ -5,7 +5,15 @@
 **Dungeons:** ⭐ Lampwick Drift (Cart Junction), The Hammerfall Works (Ore Cart Ramp, faster).
 **What it does:** 3 rails side by side; carts run down each lane in a pattern. **Clue:** a rattle before each cart; the next lane's rails glint (worn). **Safe way:** learn the pattern and stand in the empty lane.
 
-## Size (2 m grid)
+## Owner's decisions (Nov 20, PC) — these win over the rest of this sheet
+- **One lane per 2 m square** (the dwarf is 72 cm wide; 66 cm lanes left no safe spot). The Cart Junction is 6 m wide.
+- **Rails 12 m long** (6 `rail_lane` pieces end to end), sloping 0.5 m every 2 m.
+- **No glint**, **no release frame or levers.** Each cart is held by a rotten wedge (`rail_wedge`) that cracks and
+  snaps when someone **steps into its lane**: that cart comes down at whoever stands there. The clue is the sound.
+- **Carts don't come back:** each crashes into the stopper (`rail_buffer`) and stays there for good.
+- Models: `tools/asset_forge/builds/dungeon_mine.py` (`rail_lane`, `rail_wedge`, `rail_buffer`, `trap_cart`).
+
+## Size (2 m grid, the Mac's first plan)
 - `rail_triple`: **2 m wide (one square) × 2 m long**, tiles along its length; 3 lanes 0.66 m apart, rail gauge 0.44 m like `rail_track`. A sloped version drops 0.5 m per 2 m.
 - `rail_buffer`: 2 × 1 m, buffer stops 0.6 m tall at the low end.
 - `rail_release`: 2 × 1 m frame, 1.6 m tall, at the high end.

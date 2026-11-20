@@ -7,14 +7,14 @@
 # Axes like the Shack script: x across, y up, z = front. Origin bottom-centre, on the floor line (y = 0).
 # Owner, Nov 20: ONE LANE PER 2 m SQUARE (the sheet's 3 lanes in one square were 66 cm each, but the dwarf is 72 cm
 # wide). The Cart Junction (6 m) is three lanes; you stand in the middle of the empty one.
-# Batch 1, the triple cart trap (carts roll toward +z, downhill; the game tilts the lanes 14 degrees, 0.5 m per 2 m):
+# Batch 1, the triple cart trap (carts roll toward +z, downhill; the game tilts the lanes 14 degrees, 0.5 m per 2 m).
+# Owner, Nov 20 (1st look): rails 12 m long (6 lanes end to end), no glint, no frame or lever at the top: each cart is
+# held by an old rotten wedge that snaps when someone steps into its lane; it crashes into the stopper and stays there.
 #   rail_lane      one lane, 2 x 2 m, tiles along z: a stone bed (top 0.22, level with the floor boards), 5 sleepers,
-#                  2 rails 0.8 m apart. Parts: "rails" (all of it) and "glint" (a bright worn strip on top of each
-#                  rail: the clue, the game makes the next lane's glint shine)
-#   rail_release   the frame at a lane's high end, 2 x 1 m, 1.6 m tall: posts on stone footings, a top beam, braces.
-#                  Parts: "frame", "chock" (the block holding the cart, flips up 80 degrees round its back edge to let
-#                  it go) and "lever" (on the beam, swings 40 degrees forward with the chock: looks only)
-#   rail_buffer    the stop at a lane's low end, 2 x 1 m: two posts braced from behind, a rope-wrapped bumper log.
+#                  2 rails 0.8 m apart. One part: "rails"
+#   rail_wedge     the rotten wedges holding a cart: one on each rail in front of the front wheels, a cracked board
+#                  pegged across them. Origin = the rail top. Parts piece0..piece3 (each bursts off when it snaps)
+#   rail_buffer    the stopper at a lane's low end, 2 x 1 m: two posts braced from behind, a rope-wrapped bumper log.
 #                  Parts: "frame" and "bumper" (pushed back 10 cm when a cart hits it)
 #   trap_cart      a heavy mine cart full of rock, 1.1 m wide, 1.5 m long, on 4 iron wheels 0.8 m apart (on the
 #                  rails); origin = the wheels' bottom (place it on the rail top, y 0.36 of a lane).
@@ -82,50 +82,36 @@ def rail_lane():
 			S.boulder((x + J(0.06), BED_TOP + r * 0.4, -0.75 + k * 0.5 + J(0.1)), r, r * 0.7, r, floor=BED_TOP - 0.01)
 	for x in (-GAUGE, GAUGE):  # the rails (0.5 cm short of each end, so two lanes end to end don't share a face)
 		iron((x, (RAIL[0] + RAIL[1]) / 2, 0.0), (0.06, RAIL[1] - RAIL[0], 1.99))
-	rails = meshes() - frame0
-	before = meshes()
-	for x in (-GAUGE, GAUGE):  # the worn glint: a narrower strip sunk into each rail's top (not on its face)
-		K.blk((x, RAIL_TOP - 0.004, 0.0), (0.034, 0.012, 1.97), T("iron", "a"), bevel=0.002)
-	glint = meshes() - before
-	return {"rails": rails, "glint": glint}
+	return {"rails": meshes() - frame0}
 
 
-# ---------------------------------------------------------------- release frame (top of a lane)
-def rail_release():
-	frame0 = meshes()
-	beam_y = 1.52
-	for sx in (-1, 1):
-		x = sx * 0.86
-		R.chisel_slab(x, 0.0, 0.26, 0.3, BED_TOP - 0.02, BED_TOP + 0.12)
-		S.hewn((x, BED_TOP + 0.1, 0.0), (x + J(0.006), beam_y - 0.05, J(0.006)), 0.085)
-		S.hewn((x, beam_y - 0.42, 0.0), (x - sx * 0.36, beam_y - 0.06, 0.0), 0.045)  # brace under the beam
-		iron((x, beam_y - 0.12, 0.0), (0.19, 0.06, 0.2))  # iron strap where the post meets the beam
-	S.hewn((-0.99, beam_y, 0.0), (0.99, beam_y + J(0.006), 0.0), 0.1)
-	for x in (-0.86, 0.86):
-		S.peg(x, beam_y, 0.1, "z")
-	# the lever's bracket on the beam's front
-	for sx in (-1, 1):
-		K.blk((sx * 0.06, beam_y + 0.02, 0.11), (0.04, 0.14, 0.07), T("wood", "dark"), bevel=0.01)  # (into the beam)
-	kit.cylinder(0.014, 0.18, K.G((0.0, beam_y + 0.04, 0.12)), T("iron", "dark"), rot=(0, 90, 0), verts=10, bevel=0.002)
-	frame = meshes() - frame0
-	before = meshes()
-	a = math.radians(15)
-	tip = (0.0, beam_y + 0.04 + 0.42 * math.cos(a), 0.12 - 0.42 * math.sin(a))
-	S.hewn((0.0, beam_y - 0.02, 0.125), tip, 0.026)
-	S.boulder(tip, 0.05, 0.05, 0.05, m=T("wood"))  # the knob
-	lever = meshes() - before
-	before = meshes()
-	# the chock: a hewn block across both rails, just downhill of the parked cart's front wheels, iron-shod
-	board((0.0, RAIL_TOP + 0.02 + 0.075, 0.42), (0.96, 0.15, 0.17))  # a squared block (it read as a log)
-	# it hangs from the beam on two iron rods (like the picture), so it swings up round the beam to let the cart go
-	for x in (-0.3, 0.3):
-		iron((x, (RAIL_TOP + 0.16 + beam_y) / 2, 0.42 - 0.07), (0.035, beam_y - RAIL_TOP - 0.16 + 0.03, 0.035))
-		iron((x, beam_y - 0.02, 0.2), (0.04, 0.035, 0.34))  # the rod's arm back to its hook in the beam
-	for x in (-GAUGE, GAUGE):
-		iron((x, RAIL_TOP + 0.011, 0.42), (0.1, 0.02, 0.15))  # shoes where it rests on the rails
-		iron((x, RAIL_TOP + 0.095, 0.42 + 0.088), (0.08, 0.13, 0.012))  # iron plate on its front, where carts push
-	chock = meshes() - before
-	return {"frame": frame, "lever": lever, "chock": chock}
+# ---------------------------------------------------------------- the rotten wedges (top of a lane)
+def side_prism(pts, x0, x1, m=None, role="board"):
+	"""A block of any side outline (z, y points), from x0 to x1 (for wedges)."""
+	n = len(pts)
+	verts = [(x0 + J(0.004), y, z) for z, y in pts] + [(x1 + J(0.004), y, z) for z, y in pts]
+	faces = [tuple(range(n)), tuple(range(n, 2 * n))] + [(i, (i + 1) % n, (i + 1) % n + n, i + n) for i in range(n)]
+	o = S._flat(K.mesh(verts, faces, m or T("wood")))
+	o["role"] = role
+	return o
+
+
+def rail_wedge():
+	"""A wedge on each rail (its slope against the cart's front wheel, which comes from -z), a cracked board across
+	them on top, wooden pegs. Old and rotten (aged paint), split along a crack."""
+	groups = {}
+	for k, x in enumerate((-GAUGE, GAUGE)):
+		before = meshes()
+		h = 0.17 + J(0.01)
+		side_prism([(-0.17, 0.0), (0.11, 0.0), (0.11 + J(0.01), h), (0.03, h + 0.005), (-0.06, h * 0.55)], x - 0.08, x + 0.08)
+		S.peg(x, h + 0.006, 0.07, "y")
+		groups[f"piece{k}"] = meshes() - before
+	top = 0.17
+	for k, (a, b) in enumerate(((-0.56, -0.03), (-0.01, 0.56))):  # the board, broken in two along a crack (2 cm apart)
+		before = meshes()
+		S.board_x(a + J(0.01), b + J(0.01), 0.0, 0.14, top - 0.006, top + 0.05, chips=2, broken="back" if k else "front")  # (jagged where they meet)
+		groups[f"piece{k + 2}"] = meshes() - before
+	return groups
 
 
 # ---------------------------------------------------------------- buffer (bottom of a lane)
@@ -205,7 +191,7 @@ def trap_cart():
 	return groups
 
 
-BUILDS = {"rail_lane": rail_lane, "rail_release": rail_release, "rail_buffer": rail_buffer, "trap_cart": trap_cart}
+BUILDS = {"rail_lane": rail_lane, "rail_wedge": rail_wedge, "rail_buffer": rail_buffer, "trap_cart": trap_cart}
 
 if __name__ == "__main__":
 	for name, fn in BUILDS.items():
@@ -218,5 +204,7 @@ if __name__ == "__main__":
 			S.make_grey()
 		else:
 			S.paint3()
+			if name == "rail_wedge":
+				R.age_paint()  # old and rotten
 		parts = R.save_parts(name, groups)
 		R.pictures(name, parts)
