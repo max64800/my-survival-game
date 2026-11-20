@@ -6263,3 +6263,12 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   that script builds everything the moment it loads). Checker: one flicker spot (the chain's last link and the
   strap's eye turned the same way) and the niche box 1-2 cm off the wall; fixed, all 5 pass. 3D page
   "Lampwick Trap Set". Hurdle: a long shell script broke on quote marks again, so the code went into a file.
+- **Owner's look at batch 2:** (1) the boulder's top chain links didn't move: now the whole chain swings, only the
+  eye stays on the beam. (2) Bear jaws' teeth pointed the wrong way: now they stand up when open and slot one between
+  each other when shut (1 cm clear, 1.7 cm between neighbours). (3) Tripwire white; no crossbow: a small dark hole in
+  the wall's hip beam with a poison bolt (the player's blight bolt shape) and a green stain under it; the wire's eye
+  sits on the sill under the hole (`trap_tripwire_wall` replaces `trap_tripwire_crossbow`). (4) Spike trap: you could
+  open the chest without standing on spikes, so it is a 2-square dead-end tunnel floor (2 x 4 m): chest square and
+  the square in front, both full of holes. Hurdles: `rough_board` built away from the middle came out short (boards
+  now built in the middle and slid into place); pegs and doubled rim beams floated (one rim round the whole piece).
+  All 5 pass the checks; page version 2.
