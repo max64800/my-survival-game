@@ -29,7 +29,10 @@ var boosted := false  ## a living pack leader is near
 var data: Dictionary
 var model: Node3D
 var _timer := 0.0
-const CHARGE_DAZE := 3.0  ## seconds a monster stands catching its breath after a charge (F111; not a real daze)
+const CHARGE_DAZE := 3.0  ## seconds a monster stands catching its breath after a pounce (F111; not a real daze)
+const CHARGE_STARS := 2.5  ## s a beetle is really dazed (stars) after every charge, hit or miss (owner F471)
+const CHARGE_AIM := 0.45   ## rad: a target this far off its nose is still charged at; farther, it runs where it looks
+const CHARGE_GRIP := 80.0  ## m/s² a charging beetle speeds up (a normal step is 20: the charge died after 2-4 m, F472)
 const CHARGE_RUN_PART := 0.6  ## a charge: it rears up for the first 40% of its wind-up, then runs for the last 60%
 var _think := 0.0
 var _attack: Dictionary = {}
@@ -431,7 +434,9 @@ func think(delta: float, mgr: Node) -> void:
 				if data.get("straight_charge", false):
 					# A charge doesn't steer: sidestep and it thunders past (then its back is open).
 					if _charge_dir == Vector3.ZERO:
-						_charge_dir = rush.normalized()
+						# Locked once, and it faces that way at once: no standing to turn in the middle of its run (F472).
+						_charge_dir = charge_line(-Basis(Vector3.UP, model.rotation.y).z, rush)
+						model.rotation.y = atan2(-_charge_dir.x, -_charge_dir.z)
 					_move(delta, _charge_dir, charge_speed)
 					mgr.charge_smash(self, _charge_dir)  # it breaks what it runs into (owner F447)
 				elif rush.length() > 1.2:
@@ -458,6 +463,8 @@ func think(delta: float, mgr: Node) -> void:
 						# After a charge it stands catching its breath: your chance to hit it (F111). It isn't dazed (no
 						# stars, no "Dazed!"): the old word here made it say dazed when it wasn't (owner F448).
 						_timer = maxf(_timer, CHARGE_DAZE)
+						if MonsterManager.is_charge(_attack) and data.get("straight_charge", false):
+							daze_after_charge(mgr)
 					_charge_dir = Vector3.ZERO
 					if _attack.get("dive", false):
 						_timer = DIVE_OUT  # it doesn't stop: on through you and up again
@@ -648,7 +655,8 @@ func _move(delta: float, dir: Vector3, speed: float) -> void:
 	speed *= ailments.speed_mult()
 	if data.get("weaves", false) and dir.length() > 0.1 and state != State.ATTACK:
 		dir = weave(dir)
-	if data.get("turns_in_place", false):
+	var charging := state == State.ATTACK and _charge_dir != Vector3.ZERO  # (straight on, full grip: F472)
+	if data.get("turns_in_place", false) and not charging:
 		var turned := _turn_toward(dir, delta)
 		dir = turned[0]
 		speed *= turned[1]
@@ -662,8 +670,9 @@ func _move(delta: float, dir: Vector3, speed: float) -> void:
 		if data.get("swoops", false) and _alt != INF:
 			velocity.y = clampf((_alt - global_position.y) * 3.0, -7.0, 6.0)
 	else:
-		velocity.x = move_toward(velocity.x, dir.x * speed, 20.0 * delta)
-		velocity.z = move_toward(velocity.z, dir.z * speed, 20.0 * delta)
+		var grip := CHARGE_GRIP if charging else 20.0
+		velocity.x = move_toward(velocity.x, dir.x * speed, grip * delta)
+		velocity.z = move_toward(velocity.z, dir.z * speed, grip * delta)
 		velocity.y -= _gravity * delta
 		if is_on_floor():
 			velocity.y = maxf(velocity.y, -0.5)
@@ -959,6 +968,26 @@ func _update_label() -> void:
 	_hp_label.modulate = Color(1.0, 0.85, 0.3) if leader else Color(1, 1, 1, 0.75)
 	_bars.visible = hp < max_hp()
 	_set_bar(_bar_fill, clampf(hp / max_hp(), 0.0, 1.0))
+
+
+## Which way a charge runs (F472): straight at the target if it is roughly in front (within CHARGE_AIM), else straight
+## ahead, where the beetle is looking (a dwarf who slipped to its side during the wind-up has dodged).
+static func charge_line(forward: Vector3, to_target: Vector3) -> Vector3:
+	var f := Vector3(forward.x, 0.0, forward.z).normalized()
+	var t := Vector3(to_target.x, 0.0, to_target.z)
+	if t.length() < 0.1 or f.angle_to(t) > CHARGE_AIM:
+		return f
+	return t.normalized()
+
+
+## Host: after every charge the beetle is dazed for a moment (owner F471: "like the bats after a parry"): stars
+## over its head, your chance to hit it. Everyone sees it (monster_changed sends it).
+func daze_after_charge(mgr: Node) -> void:
+	stun.value = 0.0
+	stun.stunned_left = CHARGE_STARS
+	state = State.STUNNED
+	if mgr and mgr.has_method("monster_changed"):
+		mgr.monster_changed(self)
 
 
 ## How far a charging beetle rears up (0..1), `elapsed` seconds into a charge whose wind-up is `tell` (owner F446):

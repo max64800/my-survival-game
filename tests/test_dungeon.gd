@@ -827,3 +827,21 @@ func test_dungeon_creatures_notice_you_only_in_their_room() -> void:
 	var src := FileAccess.get_file_as_string("res://src/combat/monster_manager.gd")
 	check(src.contains("DungeonMap.space_at(m.dungeon, p + Vector3.UP) != m.dungeon_room"), "they don't notice you through the walls")
 	check(src.contains("		if mon:  # (it stays in its room and only notices you there"), "bats get their room too")
+
+
+## Owner F470: a used bandage shows its cooldown as a grey shade over its slot that clears from the bottom to the top.
+func test_bandage_cooldown_shows_on_its_slot() -> void:
+	var src := FileAccess.get_file_as_string("res://src/net/game_authority.gd")
+	check(src.contains('send_cooldown(peer_id, "bandage", BANDAGE_COOLDOWN)'), "the host tells the player the wait")
+	var auth := GameAuthority.new()
+	check_eq(auth.cooldown_left("bandage"), 0.0, "no shade before any bandage")
+	auth._cooldown_started("bandage", 30.0)
+	check(auth.cooldown_left("bandage") > 0.95, "just used: the shade covers it all")
+	auth.my_cooldowns.bandage.start -= 15.0
+	auth.my_cooldowns.bandage.until -= 15.0
+	check_near(auth.cooldown_left("bandage"), 0.5, 0.02, "halfway")
+	check_near(Hud.cooldown_shade_height(60.0, 0.5), 30.0, 0.5, "half the slot is grey")
+	auth.my_cooldowns.bandage.until = GameAuthority.now() - 0.1
+	check_eq(auth.cooldown_left("bandage"), 0.0, "ready again: no shade")
+	check(auth.my_cooldowns.is_empty(), "and it is forgotten")
+	auth.free()

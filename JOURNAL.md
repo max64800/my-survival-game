@@ -6491,3 +6491,20 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   Lampwick blueprint yet (`tools/dungeons/make_lampwick.py`), no game code for its new traps (cart lanes, swing
   boulder, bear jaws, tripwire wall, chest spikes), the heal fountain waits for the owner's OK, and the creatures'
   game code (F462-F467).
+
+## November 20, 2026 (PC, enemies Claude, chat 2): bandage shade, dazed after a charge, full-length charges (F470-F472)
+- **Recordings rule changed (owner):** every new chat counted the unreviewed play recordings and told the owner the
+  number (79). The owner: those are videos for social media. CLAUDE.md now says never count or mention them; read a
+  session only when the owner says "check my last session".
+- **F470, bandage cooldown on the slot:** the host now sends you the wait when you use a bandage (`send_cooldown`), and
+  a grey shade covers its slot in the hotbar and the bag; its edge climbs from the bottom to the top over 30 s.
+- **F471, dazed after a charge:** after every charge (hit or miss) a beetle is really dazed for 2.5 s, so the 4 gold
+  stars show on every screen. Before, it only "caught its breath" (no stars, since F448).
+- **F472, charges that stop after a few metres (the big beetle most):** two causes found. A charge runs for a fixed
+  time, but the beetle sped up like a normal walk, so it covered only about half its reach (the Great Rock Beetle
+  about 6 of 12 m). And if you had moved, it stopped mid-run to turn (the big one turns slowest). Now it launches at
+  full speed, faces its line at once and runs straight. Test: 7.5 m and 10.2 m (up to the dwarf).
+- **Hurdles:** (1) Godot wasn't on the PATH; found it in the WinGet folder. (2) I first took F462-F464, but other
+  chats had already used up to F469 after my first check, so mine became F470-F472 (renamed in code and tests).
+  (3) Checking the old code against the new test didn't work, because the old code doesn't have the new helper. The
+  arithmetic (about 4 m and 6 m before) plus the new distances showed the change.

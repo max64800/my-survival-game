@@ -1228,3 +1228,36 @@ func test_bats_take_turns_diving() -> void:
 	check(auth.monsters.may_dive(a), "the first may dive")
 	check(not auth.monsters.may_dive(b), "the second waits its turn")
 	_teardown()
+
+
+## Owner F472 ("they charge only a couple of metres and stop, the big one most"): a charge launches at full speed in a
+## straight line (no slow start, no standing to turn), so it covers its whole reach. Owner F471: after every charge it
+## is dazed for a moment, with stars, like a parried bat.
+func test_beetle_charge_runs_its_full_length_then_is_dazed() -> void:
+	var ahead := Vector3(0, 0, -1)
+	check(Monster.charge_line(ahead, Vector3(1.0, 0, -5.0)).angle_to(Vector3(1.0, 0, -5.0)) < 0.01, "a target nearly in front: straight at it")
+	check(Monster.charge_line(ahead, Vector3(5.0, 0, -1.0)).angle_to(ahead) < 0.01, "a target off to its side: straight ahead (dodged)")
+	await _setup()
+	for kind in ["rock_beetle", "great_rock_beetle"]:
+		var atk: Dictionary = {}
+		for a in Monsters.LIST[kind].attacks:
+			if a.get("lunge", false):
+				atk = a
+		var m := _spawn(kind, Vector3(-(atk.reach as float) + 1.0, 0, 0))
+		for i in 10:
+			await tree.physics_frame
+		var to := player.global_position - m.global_position
+		m.model.rotation.y = atan2(-to.x, -to.z) + 0.2  # (a little off: it must not stop to turn mid-run)
+		m.target_peer = 1
+		var start := m.global_position
+		m._start_attack(atk, auth.monsters)
+		var ran := 0.0
+		for i in roundi((atk.tell as float) * 60.0) + 6:
+			await tree.physics_frame
+			ran = maxf(ran, Vector2(m.global_position.x - start.x, m.global_position.z - start.z).length())
+		check(ran > (atk.reach as float) * 0.7, "%s's charge covers most of its reach (ran %.1f of %.1f m)" % [kind, ran, atk.reach])
+		check(m.stun.is_stunned(), "%s is dazed after its charge" % kind)
+		check_eq(m.state, Monster.State.STUNNED, "and stands dazed (stars)")
+		m.queue_free()
+		auth.monsters.monsters.erase(m.uid)
+	_teardown()

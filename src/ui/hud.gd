@@ -560,6 +560,35 @@ func _refresh_slots() -> void:
 		(panel.get_node("Short") as Label).text = "" if s.is_empty() or tex != null else Items.short_label(s.id)
 		(panel.get_node("Count") as Label).text = "" if s.is_empty() or s.count <= 1 else str(s.count)
 		_show_wear(panel, s)
+		_show_cooldown(panel, s, auth)
+
+
+## An item that is cooling down (a bandage: 30 s) gets a grey shade over its slot. Right after you use it, the shade
+## covers the whole slot; then its edge climbs from the bottom to the top, and when it's gone you can use it again
+## (owner F470). Hotbar and bag both.
+func _show_cooldown(panel: Control, s: Dictionary, auth: GameAuthority) -> void:
+	var left := 0.0 if s.is_empty() or auth == null else auth.cooldown_left(s.id)
+	var shade: ColorRect = panel.get_node_or_null("Cooldown")
+	if left <= 0.0:
+		if shade:
+			shade.visible = false
+		return
+	if shade == null:
+		shade = ColorRect.new()
+		shade.name = "Cooldown"
+		shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		shade.color = Color(0.12, 0.12, 0.12, 0.68)
+		panel.add_child(shade)
+		if panel.has_node("KeyBadge"):
+			panel.move_child(shade, panel.get_node("KeyBadge").get_index())  # (the key number stays readable on top)
+	shade.visible = true
+	shade.position = Vector2(4, 4)
+	shade.size = Vector2(panel.size.x - 8, cooldown_shade_height(panel.size.y - 8, left))
+
+
+## How tall the grey cooldown shade is: it hangs from the slot's top and shrinks upward as the cooldown runs out.
+static func cooldown_shade_height(inner: float, left: float) -> float:
+	return roundf(inner * clampf(left, 0.0, 1.0))
 
 
 ## A thin bar along the bottom of a worn tool's slot (green -> yellow -> red); a broken one is greyed out.
@@ -1063,6 +1092,9 @@ func _process(delta: float) -> void:
 	var ps: GameAuthority.PlayerState = auth.get_player(peer_id) if auth else null
 	_update_work_bar(auth)
 	_update_reload_bar()
+	if auth and not auth.my_cooldowns.is_empty() and ps:  # the grey cooldown shades climb every frame (owner F470)
+		for i in _slot_panels:
+			_show_cooldown(_slot_panels[i], ps.inventory.get_slot(i), auth)
 	_goals_wait -= delta
 	if ps and _goals_wait <= 0.0:
 		_goals_wait = 1.0

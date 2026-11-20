@@ -47,8 +47,8 @@ Code layout, recorder details, how to run robots: `docs/CLAUDE-REFERENCE.md` (re
 - Editing the dwarf Shorts: `video/README.md` (pipeline, owner's video rules in `video/rules/`, scripts in `video/scripts/`).
 
 ## Feedback and play sessions
-- **Start of a chat on the PC:** only count the session folders in `Videos\Dwarf Game Recordings\` without `reviewed.txt`
-  and tell the owner the number in one line. Read reports and snapshots only when the owner says "check my last session".
+- **Play recordings (owner, Nov 20):** `Videos\Dwarf Game Recordings\` are the owner's videos for social media. Never count
+  them or mention them at the start of a chat. Read a session's report and snapshots only when the owner says "check my last session".
 - **Feedback lists:** `FEEDBACK.md` = open items, "Things that keep coming back", "Claude noticed…" and Patterns.
   `FEEDBACK-done.md` = every fixed item, unchanged, never deleted. New item: pull, then take the next free F-number.
   Before adding, **Grep both files by keyword** (never read them whole): a match → bump its "Said" count; a fixed item that

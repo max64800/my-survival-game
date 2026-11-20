@@ -1214,6 +1214,36 @@ func _rpc_tell(text: String) -> void:
 	hud_message.emit(text)
 
 
+## Our own item cooldowns (item id -> when it's ready, on our clock). Only looks: the host still checks every use.
+var my_cooldowns := {}
+
+
+## Host: tell one player an item of theirs is cooling down for `seconds` (owner F470: a grey shade on its slot).
+func send_cooldown(peer_id: int, item_id: String, seconds: float) -> void:
+	if peer_id == local_peer_id():
+		_cooldown_started(item_id, seconds)
+	elif get_player(peer_id):
+		_rpc_cooldown.rpc_id(peer_id, item_id, seconds)
+
+
+@rpc("authority", "reliable")
+func _rpc_cooldown(item_id: String, seconds: float) -> void:
+	_cooldown_started(item_id, seconds)
+
+
+func _cooldown_started(item_id: String, seconds: float) -> void:
+	my_cooldowns[item_id] = {start = now(), until = now() + seconds}
+
+
+## How much of an item's cooldown is still left for us: 1 = just used, 0 = ready.
+func cooldown_left(item_id: String) -> float:
+	var c: Dictionary = my_cooldowns.get(item_id, {})
+	if c.is_empty() or c.until <= now():
+		my_cooldowns.erase(item_id)  # (an old one is forgotten, so the HUD stops checking every frame)
+		return 0.0
+	return clampf((c.until - now()) / maxf(c.until - c.start, 0.01), 0.0, 1.0)
+
+
 ## A timed perk effect on one player's body (their own computer owns it).
 func send_effect(peer_id: int, effect: String, data: Dictionary, seconds: float) -> void:
 	var ps := get_player(peer_id)
@@ -1732,6 +1762,7 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 					tell(peer_id, "Your last bandage is still fresh. Wait %d s." % ceili(ps.boosts.bandage_cooldown.until - now()))
 					return "cooldown"
 				add_boost(ps, "bandage_cooldown", {}, BANDAGE_COOLDOWN)
+				send_cooldown(peer_id, "bandage", BANDAGE_COOLDOWN)  # a grey shade on its slot (owner F470)
 			if id == "waterskin_clean" or id == "waterskin_dirty":
 				_take_sip(ps, ps.selected_slot)
 			elif not ps.inventory.remove(id, 1):
