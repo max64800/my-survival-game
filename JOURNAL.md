@@ -6569,6 +6569,17 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - **Still open:** the first ~3 s after loading run at ~10 FPS (first-time drawing on the graphics card); one session
   (2:01 pm) had 1.5 slow minutes on the graphics card that the robot can't make happen (likely another program
   using it). F266/F417 wait for the owner's next play.
+- **Then (owner: "continue"): the choppy first seconds.** New in `perfcheck hitch`: a timer before every part of the
+  world splits the game-code time per part. It pointed at GlowSwarms: after loading it finished one whole swarm a
+  frame (48 feelers marched through the cave rock in game code: 40-110 ms) for all 77 swarms. Now a few feelers a
+  frame (3 ms at most), the nearest unfinished swarm first; swarms over 110 m away wait until you come near (they
+  hold still out there anyway). Robot: slow frames after loading ~25 → 0. New test
+  `test_swarms_finish_a_little_each_frame`. **Hurdles:** my first test read "done" on swarms that aren't finished
+  yet (they don't have that mark yet), fixed with get(). One robot run was slow the whole time (~120 ms frames)
+  because another chat's Blender was running: the graphics card is shared, which likely explains the owner's 1.5
+  slow minutes on Nov 20 at 2:01 pm.
+- **Full test run (600 checks):** 9 failed. 3 were mine (old tests said "only 5 creatures"; one built a model without its creature name): fixed, the miners are marked dungeon_only. The other 6 are in other chats' unfinished work (dwarf great swings, wall climbing). Also: another chat's F473 commit uses `blocked` without the line that makes it (nothing loaded for a while); their working file has the line. A scratch copy for testing didn't work (the big model files are stored separately by GitHub, the copy got placeholders).
+- **Dungeon 2 button (owner asked, same chat):** the dev start menu now has "Dungeon 1, Mossgate Hold" (the old button, renamed) and "Dungeon 2, Lampwick's miners". Lampwick's own map isn't built yet, so Dungeon 2 is Mossgate with every creature swapped for the miners (beetles, spiders, bats -> Tunnel Rats, snails -> Lost Miners, the big beetle -> the Foreman), same copper gear. The swap is cleared whenever the menu opens, so it never reaches a real world. Robot: `-- dungeontest dungeon2`: 22 miners in 8 rooms, bone piles on the gate hall floor. Owner's answer on drops / Foreman boost: wait, test first.
 - **Full test run (600 checks):** 9 failed. 3 were mine (old tests said "only 5 creatures"; one built a model without its creature name): fixed, the miners are marked dungeon_only. The other 6 are in other chats' unfinished work (dwarf great swings, wall climbing). Also: another chat's F473 commit uses `blocked` without the line that makes it (nothing loaded for a while); their working file has the line. A scratch copy for testing didn't work (the big model files are stored separately by GitHub, the copy got placeholders).
 
 ## Nov 20: creatures climb walls and ceilings (F236 🔁, F474, F475, enemies chat 3)

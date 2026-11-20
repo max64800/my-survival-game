@@ -202,8 +202,17 @@ var _new_nodes := 0
 
 class _Stamp extends Node:
 	var cb: Callable
+	var pcb: Callable
 	func _physics_process(_d: float) -> void:
-		cb.call()
+		if cb.is_valid():
+			cb.call()
+	func _process(_d: float) -> void:
+		if pcb.is_valid():
+			pcb.call()
+
+
+var _pr_start := 0
+var _pr_ms := 0.0
 
 
 func _hitch_start() -> void:
@@ -215,8 +224,16 @@ func _hitch_start() -> void:
 	last.cb = func() -> void:
 		_ph_end = Time.get_ticks_usec()
 		_ph_scripts = (_ph_end - _ph_start) / 1000.0
+	var pfirst := _Stamp.new()
+	pfirst.process_priority = -1000000
+	pfirst.pcb = func() -> void: _pr_start = Time.get_ticks_usec()
+	var plast := _Stamp.new()
+	plast.process_priority = 1000000
+	plast.pcb = func() -> void: _pr_ms = (Time.get_ticks_usec() - _pr_start) / 1000.0
 	add_child(first)
 	add_child(last)
+	add_child(pfirst)
+	add_child(plast)
 	get_tree().node_added.connect(func(n: Node) -> void:
 		_new_nodes += 1
 		if n is CollisionObject3D:
@@ -239,13 +256,56 @@ func _hitch_loop() -> void:
 		_ph_last_proc = now
 		var engine_after := (now - _ph_end) / 1000.0 if _ph_end > 0 else 0.0  # physics engine step after the scripts
 		if frame > 100.0:
-			print("  HITCH %6.1f s  frame %6.0f ms · physics scripts %6.1f ms · engine after scripts %6.1f ms · new: %d nodes, %d bodies, %d shapes, %d mesh faces · doing %s" % [
-				(Time.get_ticks_msec() - _ph_t0) / 1000.0, frame, _ph_scripts, engine_after,
+			print("  HITCH %6.1f s  frame %6.0f ms · process scripts (last frame) %6.1f ms · physics scripts %6.1f ms · engine after scripts %6.1f ms · new: %d nodes, %d bodies, %d shapes, %d mesh faces · doing %s" % [
+				(Time.get_ticks_msec() - _ph_t0) / 1000.0, frame, _pr_ms, _ph_scripts, engine_after,
 				_new_nodes, _new_bodies, _new_shapes, _new_faces, FreezeWatch.doing])
 		_new_nodes = 0
 		_new_bodies = 0
 		_new_shapes = 0
 		_new_faces = 0
+
+
+## Which part of the world is slow in _process: a timer stamp before every child of main (and of their children
+## that hold many nodes). Same priority (0) runs in tree order, so the gap between two stamps = that part's cost.
+var _split_names: Array[String] = []
+var _split_t: PackedInt64Array = []
+
+
+func _split_process() -> void:
+	var targets: Array[Node] = []
+	for c in _main.get_children():
+		targets.append(c)
+		for g in c.get_children():
+			if g.get_child_count() > 0 or g.is_processing():
+				targets.append(g)
+	_split_t.resize(targets.size() + 1)
+	var i := 0
+	for n in targets:
+		var st := _Stamp.new()
+		var k := i
+		st.pcb = func() -> void: _split_t[k] = Time.get_ticks_usec()
+		n.get_parent().add_child(st)
+		n.get_parent().move_child(st, n.get_index())
+		_split_names.append(String(n.get_path()).trim_prefix(String(_main.get_path())))
+		i += 1
+	var endst := _Stamp.new()
+	endst.process_priority = 999999
+	endst.pcb = func() -> void:
+		_split_t[i] = Time.get_ticks_usec()
+		var costs := []
+		for j in _split_names.size():
+			if _split_t[j] > 0 and _split_t[j + 1] >= _split_t[j]:
+				costs.append([(_split_t[j + 1] - _split_t[j]) / 1000.0, _split_names[j]])
+		costs.sort_custom(func(a, b): return a[0] > b[0])
+		var tot := 0.0
+		for c in costs:
+			tot += c[0]
+		if tot > 40.0:
+			var top := ""
+			for c in costs.slice(0, 4):
+				top += "%s %.0f ms, " % [c[1], c[0]]
+			print("    process split (%.0f ms): %s" % [tot, top])
+	add_child(endst)
 
 
 ## Walk a slow circle for 90 s, then jump 60 m away twice (new cave to load), like exploring.
@@ -254,6 +314,7 @@ func _hitch_walk() -> void:
 	var home := dwarf.global_position
 	print("
 ===== HITCH WALK from %s =====" % home.round())
+	_split_process()
 	var t0 := Time.get_ticks_msec()
 	var jumps := [30.0, 60.0]
 	while Time.get_ticks_msec() - t0 < 90000:
@@ -264,6 +325,9 @@ func _hitch_walk() -> void:
 			jumps.pop_front()
 			dwarf.global_position = home + Vector3(60 if jumps.size() == 1 else -60, 0, 0)
 			print("  jump at %.0f s to %s" % [s, dwarf.global_position.round()])
+		var sws := _main.get_node_or_null("GlowSwarms")
+		if sws and int(s) % 10 == 0 and absf(s - roundf(s)) < 0.01:
+			print("  %.0f s: swarms finished %d of %d" % [s, sws._todo, sws._swarms.size()])
 	print("======================================")
 
 

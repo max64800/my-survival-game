@@ -167,6 +167,34 @@ func test_crystals_grow_back() -> void:
 	auth.free()
 
 
+## F417: after loading, swarms are finished a few feelers a frame (never a whole swarm in one frame: that was 40-110 ms),
+## the nearest first; far swarms wait until you come near.
+func test_swarms_finish_a_little_each_frame() -> void:
+	var m := _maker()
+	var sw := GlowSwarms.new()
+	tree.root.add_child(sw)
+	sw.build(m)
+	check(sw._swarms.size() > 2, "the caves have swarms (%d)" % sw._swarms.size())
+	check(sw._swarms[0].done, "the first cave's swarm is ready at once")
+	var far: Dictionary = sw._swarms[sw._swarms.size() - 1]
+	var at: Vector3 = far.c
+	var worst := 0.0
+	for i in 400:
+		var t := Time.get_ticks_usec()
+		sw._finish_some(at)
+		worst = maxf(worst, (Time.get_ticks_usec() - t) / 1000.0)
+		if far.get("done", false):
+			break
+	check(far.get("done", false), "the swarm where you stand gets finished")
+	check(worst < GlowSwarms.FINISH_BUDGET + 4.0, "never long in one frame (worst %.1f ms)" % worst)
+	var waiting := 0
+	for s2 in sw._swarms:
+		if not s2.get("done", false) and (s2.c as Vector3).distance_to(at) > GlowSwarms.FINISH_NEAR:
+			waiting += 1
+	check(waiting > 0, "swarms far away wait until you come near")
+	sw.free()
+
+
 ## F407: the swarm is lifted over the real floor when its path would dip into it.
 func test_swarm_stays_above_the_floor() -> void:
 	var m := _maker()

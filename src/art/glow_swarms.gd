@@ -15,7 +15,7 @@ var _swarms: Array[Dictionary] = []
 var _time := 0.0
 var _trunks := []  ## Root Trees to fly round: [{p, r, top, bottom}]
 var _maker: CaveMaker
-var _todo := 0  ## swarms still to finish: one per frame after loading (owner, Nov 19: loading froze ~2 s on them)
+var _todo := 0  ## swarms finished so far (owner, Nov 19: loading froze ~2 s on them, so they're finished after loading)
 
 
 func build(maker: CaveMaker, trunks: Array = []) -> void:
@@ -38,8 +38,8 @@ func build(maker: CaveMaker, trunks: Array = []) -> void:
 		for k in count:
 			_swarms.append(_make(maker, room, rng, mesh))
 	if not _swarms.is_empty():
-		_finish(_swarms[0])  # the first cave's swarm is ready at once; the rest follow one per frame
-	_todo = 1
+		_finish(_swarms[0])  # the first cave's swarm is ready at once; the rest follow a little each frame
+	_todo = 0
 
 
 func _make(maker: CaveMaker, room: Dictionary, rng: RandomNumberGenerator, mesh: Mesh) -> Dictionary:
@@ -84,20 +84,63 @@ func _make(maker: CaveMaker, room: Dictionary, rng: RandomNumberGenerator, mesh:
 
 ## The slow part of a swarm (48 looks for its cave's walls), done one swarm per frame instead of all while loading.
 func _finish(sw: Dictionary) -> void:
+	while _ring_step(sw):
+		pass
+	_finish_end(sw)
+
+
+const RING := 48  ## feelers sent out from a swarm's middle to find its cave's walls
+const FINISH_BUDGET := 3.0  ## ms a frame for finishing swarms after loading
+const FINISH_NEAR := 110.0  ## m: swarms further than this wait until you come nearer (they hold still out there anyway)
+
+
+## One feeler; false when all of this swarm's feelers are out.
+func _ring_step(sw: Dictionary) -> bool:
+	var k: int = (sw.ring as PackedFloat32Array).size()
+	if k >= RING:
+		return false
 	var c: Vector3 = sw.c
 	var r: Vector3 = sw.r
-	for k in 48:
-		var a := k * TAU / 48.0
-		var dir := Vector3(cos(a), 0.0, sin(a))
-		var start := Vector3(c.x, sw.band, c.z)
-		var hit := GlowPlacer._march(_maker, start, dir, maxf(r.x, r.z) * 1.6) if _maker.sdf_at(start) > 0.0 else Vector3.INF
-		sw.ring.append(Vector2(hit.x - c.x, hit.z - c.z).length() if hit != Vector3.INF else minf(r.x, r.z) * 0.8)
+	var a := k * TAU / float(RING)
+	var dir := Vector3(cos(a), 0.0, sin(a))
+	var start := Vector3(c.x, sw.band, c.z)
+	var hit := GlowPlacer._march(_maker, start, dir, maxf(r.x, r.z) * 1.6) if _maker.sdf_at(start) > 0.0 else Vector3.INF
+	sw.ring.append(Vector2(hit.x - c.x, hit.z - c.z).length() if hit != Vector3.INF else minf(r.x, r.z) * 0.8)
+	return true
+
+
+## F417 (Nov 20): one whole swarm a frame took 40-110 ms (48 feelers through the cave rock), so the first seconds of play
+## ran at ~10 FPS. Now a few feelers a frame (at most FINISH_BUDGET ms), the nearest unfinished swarm first.
+func _finish_some(at: Vector3) -> void:
+	var t0 := Time.get_ticks_usec()
+	while Time.get_ticks_usec() - t0 < FINISH_BUDGET * 1000.0:
+		if _working == null or _working.get("done", false):
+			_working = null
+			var best := FINISH_NEAR
+			for sw in _swarms:
+				if not sw.get("done", false):
+					var d := (sw.c as Vector3).distance_to(at)
+					if d < best:
+						best = d
+						_working = sw
+			if _working == null:
+				return
+		if not _ring_step(_working):
+			_finish_end(_working)
+
+
+var _working = null  ## the swarm being finished now (Dictionary or null)
+
+
+func _finish_end(sw: Dictionary) -> void:
+	var c: Vector3 = sw.c
 	sw.head = _head_at(sw, 0.0)
 	sw.prev = sw.head
 	for i in (sw.off as PackedVector2Array).size():
 		sw.pos.append(sw.head + Vector3(sw.off[i].x, sw.off[i].y, 0.0) * 0.6)
 	_place(sw)
 	sw.done = true
+	_todo += 1
 	(sw.mmi as MultiMeshInstance3D).visible = true
 
 
@@ -139,8 +182,7 @@ func _process(delta: float) -> void:
 		return
 	var at := cam.global_position
 	if _todo < _swarms.size():
-		_finish(_swarms[_todo])
-		_todo += 1
+		_finish_some(at)
 	for sw in _swarms:
 		if not sw.get("done", false) or (sw.head as Vector3).distance_to(at) > ACTIVE:
 			continue
