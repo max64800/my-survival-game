@@ -94,7 +94,12 @@ func refresh() -> void:
 	if ps == null:
 		return
 	var p := ps.progress
-	_level.text = "Level %d" % p.level
+	_level.text = "Level %d  ·  %d kills" % [p.level, p.total_kills()]
+	var lines := PackedStringArray()
+	for kind in p.kills:
+		lines.append("%s: %d" % [Monsters.LIST[kind].name if Monsters.LIST.has(kind) else kind, p.kills[kind]])
+	_level.tooltip_text = "\n".join(lines) if lines else "No kills yet"
+	_level.mouse_filter = Control.MOUSE_FILTER_STOP
 	_points.text = "Perk points: %d" % p.points_free()
 	_reset.text = "Reset perks · %d gold (you have %d)" % [p.respec_cost(), ps.inventory.count_of("gold_coin")]
 	_reset.disabled = p.points_free() == p.points_total()

@@ -5643,3 +5643,11 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   (`dwarf_great_swing.gd`, the pose tuner) was never pushed: step 0 of the plan. ChatGPT had another chat's unsent
   message in its box, so the reference pictures were not made (prompts are in the plan). The body-finding part is
   untested on a real person until the first video.
+
+## November 20, 2026 (Mac, Claude): kill counts
+- **Owner picked "kill counts" (ready for later rewards like "20 bats: Bat Hunter").** Each player's progress now keeps
+  how many of each creature they killed. Everyone who gets the kill's XP (within 30 m) gets the kill too, so friends
+  fighting together all count it. Saved with the game and sent to friends like XP; old saves load with 0 kills.
+- The skills window's top line shows "Level 3 · 12 kills"; hover it for each creature ("Cave Bat: 7").
+- Not done (no reward exists yet): rewards for counts, separate counts for leaders and crystal variants.
+- Tests: `test_kill_counts` (counting, saving, old saves) and the sword-kill test now checks the count. Both pass.

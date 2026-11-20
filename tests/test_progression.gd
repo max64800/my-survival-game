@@ -218,3 +218,20 @@ func test_star_perks() -> void:
 	check_near(p.guard_walk_mult(false), 0.8, 0.0001, "Shield ★25: walk faster while blocking")
 	p.skill_level.crafting = 50
 	check_near(p.save_material_chance(), 0.10, 0.0001, "Crafting ★50: 10% chance to save a material")
+
+
+func test_kill_counts() -> void:
+	var p := Progression.new()
+	p.add_kill("cave_bat")
+	p.add_kill("cave_bat")
+	p.add_kill("rock_snail")
+	check_eq(p.kills_of("cave_bat"), 2, "two bats")
+	check_eq(p.kills_of("rock_beetle"), 0, "no beetles")
+	check_eq(p.total_kills(), 3, "three in all")
+	var q := Progression.new()
+	q.load_data(p.to_data())
+	check_eq(q.kills_of("cave_bat"), 2, "kills survive saving and the network")
+	var old := p.to_data()
+	old.erase("k")
+	q.load_data(old)
+	check_eq(q.total_kills(), 0, "saves from before kill counts still load")

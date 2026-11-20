@@ -93,6 +93,7 @@ func test_sword_damage_and_kill() -> void:
 	auth.monsters.request_attack(1, PackedInt32Array([m.uid]), true, 0, false)
 	check(auth.monsters.monsters.is_empty(), "heavy finishes it")
 	check(ps.progress.skill_xp.sword >= 5, "Sword XP for the kill")
+	check_eq(ps.progress.kills_of("cave_spider"), 1, "the kill is counted")
 	_teardown()
 
 

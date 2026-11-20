@@ -661,6 +661,7 @@ func _kill(m: Monster, peer: int) -> void:
 			loot.append([Gems.item_id("shiftstep"), 1])
 	for pid in auth.players:  # kills give XP to everyone nearby (progression doc 7.2)
 		if auth.players[pid].node.global_position.distance_to(m.global_position) < 30.0 or pid == peer:
+			auth.players[pid].progress.add_kill(m.kind)  # kill counts: everyone who shares the XP shares the kill
 			auth.give_xp(pid, xp, Progression.weapon_skill(Combat.weapon_of(auth.players[pid].selected_item())))
 	var killer := auth.get_player(peer)
 	if killer:

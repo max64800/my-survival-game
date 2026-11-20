@@ -118,6 +118,7 @@ var xp := 0  ## XP into the current level
 var skill_level := _zeros()
 var skill_xp := _zeros()
 var perks := {}  ## perk id -> rank
+var kills := {}  ## creature kind -> kills you shared in (for later rewards, e.g. "20 bats: Bat Hunter")
 var _points_spent := 0
 
 
@@ -501,10 +502,28 @@ static func quality_bonus(q: int) -> float:
 	return QUALITY_BONUS[clampi(q, 1, 5)]
 
 
+# ---------------------------------------------------------------- kill counts
+
+func add_kill(kind: String) -> void:
+	kills[kind] = int(kills.get(kind, 0)) + 1
+
+
+func kills_of(kind: String) -> int:
+	return int(kills.get(kind, 0))
+
+
+func total_kills() -> int:
+	var n := 0
+	for kind in kills:
+		n += int(kills[kind])
+	return n
+
+
 # ---------------------------------------------------------------- network / saving
 
 func to_data() -> Dictionary:
-	return {l = level, x = xp, sl = skill_level.duplicate(), sx = skill_xp.duplicate(), p = perks.duplicate(), ps = _points_spent}
+	return {l = level, x = xp, sl = skill_level.duplicate(), sx = skill_xp.duplicate(), p = perks.duplicate(), ps = _points_spent,
+		k = kills.duplicate()}
 
 
 ## Old saves had 4 big skills: their levels carry over to the new skills they became (XP into the level restarts).
@@ -523,6 +542,10 @@ func load_data(d: Dictionary) -> void:
 		for n in OLD_SKILLS.get(s, []):
 			skill_level[n] = maxi(skill_level[n], int(d.sl[s]))
 	# Perks from the old 4 trees (before Nov 19) are dropped and their points come back.
+	kills = {}
+	var k: Dictionary = d.get("k", {})  # saves from before Nov 20 have no kill counts
+	for kind in k:
+		kills[kind] = int(k[kind])
 	perks = {}
 	_points_spent = 0
 	for id in d.p:
