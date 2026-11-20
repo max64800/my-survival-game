@@ -5673,3 +5673,5 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   places each chest or trap has yet, so the picker reads those numbers from the room file the PC will write.
   FEEDBACK.md already had another chat's unsaved change, so only the F237 line was committed.
 - Tests: `test_dungeon_keys` (5) and `test_dungeon_variety` (3) pass, plus the icon, item, dungeon and list tests.
+- Full test run: 505 checks, 11 failed, all outside this work (digging by hand, build menu `held_turn`, crystals,
+  dwarf braids/aim, ruin tower rebuild, tool models). The same ones fail on the code from before this session.
