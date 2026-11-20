@@ -208,6 +208,7 @@ static var _all := {}
 static func _data() -> Dictionary:
 	if _all.is_empty():
 		_all = DATA.duplicate()
+		_all.merge(DungeonKeys.item_data())  # dungeon keys (owner, Nov 20, F237)
 		for r in RuneSlab.RUNES:  # runes found while exploring, carved at the Rune Slab
 			var colour := RuneSlab.colour_of(r)
 			_all["rune_" + r] = {name = "%s Rune (%s)" % [colour.capitalize(), RuneSlab.COLOURS[colour].capitalize()],

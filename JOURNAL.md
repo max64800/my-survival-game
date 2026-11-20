@@ -5651,3 +5651,25 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - The skills window's top line shows "Level 3 · 12 kills"; hover it for each creature ("Cave Bat: 7").
 - Not done (no reward exists yet): rewards for counts, separate counts for leaders and crystal variants.
 - Tests: `test_kill_counts` (counting, saving, old saves) and the sword-kill test now checks the count. Both pass.
+
+## Nov 20 (Mac): dungeon keys, locked doors, boss health bar and the variety picker (F237)
+- **Keys and doors** (`src/world/dungeon_keys.gd`): 9 keys, one per medium and big dungeon. The Hammerfall Works
+  has two (Gear Key + Hammer Key) for its gate with two locks, so two friends can open one lock each. A door opens only
+  for its own key. Co-op pattern: the player asks, the host checks the key and the distance, then everyone's door opens.
+- **The key goes back:** an hour of play after the boss dropped it, the key disappears from every bag, chest and floor.
+  The boss holds it again and the lock closes. It waits while someone is within 60 m of the door, so nobody gets shut
+  inside (a shortcut until the PC knows each dungeon's real size).
+- **Boss bar** (`src/ui/boss_bar.gd`): the boss's name and a long red bar at the top. It follows the creature's health
+  and hides when it dies.
+- **Variety picker** (`src/world/dungeon_variety.gd`): from the world seed and the dungeon it picks mirrored or not
+  (about half), which wings swap, 3 of the 5-6 hidden spots, a place for every chest and small trap, and one of 3
+  timing patterns for carts and blades. Each choice has its own dice, so adding a chest later never changes the others.
+  The main path, deadly traps, key, boss and recipe stand are never in its list, so they can't move.
+- Key pictures: cut from our own key model renders (`journey/treasure/`) into `assets/icons/key_iron.png` (medium)
+  and `key_copper.png` (big).
+- Not hooked in yet, on purpose: Mossgate's code lives on the PC. Each new file says at the top which lines the PC adds.
+- Hurdles (Claude): no GodotPrompter add-on is installed on the Mac, so Claude followed the game's own chest system
+  as the pattern. `godot` isn't on the Mac's path; it's at `~/Applications/Godot.app`. The dungeon plans don't list how many
+  places each chest or trap has yet, so the picker reads those numbers from the room file the PC will write.
+  FEEDBACK.md already had another chat's unsaved change, so only the F237 line was committed.
+- Tests: `test_dungeon_keys` (5) and `test_dungeon_variety` (3) pass, plus the icon, item, dungeon and list tests.
