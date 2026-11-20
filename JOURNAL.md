@@ -5622,36 +5622,6 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   - Cinderhold's push wall knocks you down a level (it hurts) instead of into the chasm, so the dungeon keeps
     3 deadly traps.
 
-## November 20, 2026 (Mac, Claude): a new plan for the two-handed swings (F389)
-- **Owner: "teach the PC Claude to do animations better; the 2H attacks are still a struggle."** Researched the web:
-  nobody has solved two-handed swings by vibecoding. Free packs don't fit (already checked by the PC in chats 4-7);
-  Mixamo can't go in the public repo; Cascadeur's free version bans commercial use; text-to-motion AI (NVIDIA Kimodo /
-  ARDY, Tencent HY-Motion) kept as a backup (licences not checked). The owner also asked about making great weapons
-  one-handed (free off hand for a shield): easier, kept as the backup plan.
-- **Owner's pick: film himself.** Red glove left, blue glove right, a broom handle with yellow tape at the head end and
-  green at the grip end; side + front, slow + fast.
-- **Built:** `tools/mocap/swing_from_video.py`: Google MediaPipe Pose (Apache 2.0) finds his joints, colour finding
-  follows the gloves and tape, and the key poses (ready, top of the wind-up, hit, recovery) + timings are picked from
-  the stick head's speed. Saves numbers in arm lengths (so they shrink to the dwarf's 27 cm arm) and a picture sheet.
-  Filming guide in `tools/mocap/README.md`. Self-check `test_swing_tool.py` (a made-up stick video) passes.
-  Videos, the model file and the tool's Python setup are ignored by git (public repo).
-- **Written:** `docs/art/ANIMATION-RULES.md` (the lessons of all 7 animation chats: his measured body, packs not to
-  search again, the owner's wishes, how a heavy swing is timed, the checks, mistakes not to repeat) and
-  `docs/art/2H-ANIMATION-PLAN.md` (who does which step).
-- **Hurdles (Claude's own):** the first key-pose picker chose the still "ready" moment as the wind-up top, then counted
-  the hold at the top as part of the strike; the self-check caught both. Found that the PC's chats 5-7 two-handed code
-  (`dwarf_great_swing.gd`, the pose tuner) was never pushed: step 0 of the plan. ChatGPT had another chat's unsent
-  message in its box, so the reference pictures were not made (prompts are in the plan). The body-finding part is
-  untested on a real person until the first video.
-
-## November 20, 2026 (Mac, Claude): kill counts
-- **Owner picked "kill counts" (ready for later rewards like "20 bats: Bat Hunter").** Each player's progress now keeps
-  how many of each creature they killed. Everyone who gets the kill's XP (within 30 m) gets the kill too, so friends
-  fighting together all count it. Saved with the game and sent to friends like XP; old saves load with 0 kills.
-- The skills window's top line shows "Level 3 · 12 kills"; hover it for each creature ("Cave Bat: 7").
-- Not done (no reward exists yet): rewards for counts, separate counts for leaders and crystal variants.
-- Tests: `test_kill_counts` (counting, saving, old saves) and the sword-kill test now checks the count. Both pass.
-
 ## Nov 20 (Mac): dungeon keys, locked doors, boss health bar and the variety picker (F237)
 - **Keys and doors** (`src/world/dungeon_keys.gd`): 9 keys, one per medium and big dungeon. The Hammerfall Works
   has two (Gear Key + Hammer Key) for its gate with two locks, so two friends can open one lock each. A door opens only
@@ -5675,3 +5645,52 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - Tests: `test_dungeon_keys` (5) and `test_dungeon_variety` (3) pass, plus the icon, item, dungeon and list tests.
 - Full test run: 505 checks, 11 failed, all outside this work (digging by hand, build menu `held_turn`, crystals,
   dwarf braids/aim, ruin tower rebuild, tool models). The same ones fail on the code from before this session.
+
+## November 20, 2026 (Mac, Claude): a new plan for the two-handed swings (F389)
+- **Owner: "teach the PC Claude to do animations better; the 2H attacks are still a struggle."** Researched the web:
+  nobody has solved two-handed swings by vibecoding. Free packs don't fit (already checked by the PC in chats 4-7);
+  Mixamo can't go in the public repo; Cascadeur's free version bans commercial use; text-to-motion AI (NVIDIA Kimodo /
+  ARDY, Tencent HY-Motion) kept as a backup (licences not checked). The owner also asked about making great weapons
+  one-handed (free off hand for a shield): easier, kept as the backup plan.
+- **Owner's pick: film himself.** Red glove left, blue glove right, a broom handle with yellow tape at the head end and
+  green at the grip end; side + front, slow + fast.
+- **Built:** `tools/mocap/swing_from_video.py`: Google MediaPipe Pose (Apache 2.0) finds his joints, colour finding
+  follows the gloves and tape, and the key poses (ready, top of the wind-up, hit, recovery) + timings are picked from
+  the stick head's speed. Saves numbers in arm lengths (so they shrink to the dwarf's 27 cm arm) and a picture sheet.
+  Filming guide in `tools/mocap/README.md`. Self-check `test_swing_tool.py` (a made-up stick video) passes.
+  Videos, the model file and the tool's Python setup are ignored by git (public repo).
+- **Written:** `docs/art/ANIMATION-RULES.md` (the lessons of all 7 animation chats: his measured body, packs not to
+  search again, the owner's wishes, how a heavy swing is timed, the checks, mistakes not to repeat) and
+  `docs/art/2H-ANIMATION-PLAN.md` (who does which step).
+- **Hurdles (Claude's own):** the first key-pose picker chose the still "ready" moment as the wind-up top, then counted
+  the hold at the top as part of the strike; the self-check caught both. Found that the PC's chats 5-7 two-handed code
+  (`dwarf_great_swing.gd`, the pose tuner) was never pushed: step 0 of the plan. ChatGPT had another chat's unsent
+  message in its box, so the reference pictures were not made (prompts are in the plan). The body-finding part is
+  untested on a real person until the first video.
+
+## November 20, 2026 (Mac, Claude): rag doll on big hits (F237)
+- **Owner: a mine cart, swinging boulder/anvil or spiked flail throws the dwarf as a floppy rag doll, then he gets up;
+  every co-op player sees the same tumble.** No trap code (the PC does that), Mossgate Hold's files untouched.
+- **Built:** `src/player/dwarf_ragdoll.gd`: ten physics pieces (hips, chest+head, upper/lower arms and legs) joined at
+  the joints tumble in the world, and every frame the matching bones are turned to match them. Lies 2.2 s, then blends
+  0.5 s into the get-up move. Entry point for the traps: `dwarf.big_hit(push)` (push = direction × m/s, damage is up
+  to the trap). Co-op: only the host's call counts, it goes to everyone at once with the same push; on friends'
+  screens the hips are also pulled toward where the dwarf's owner has them, so he lands in the same spot.
+  Test room: `godot --audio-driver Dummy --path . --script res://src/debug/ragdoll_room.gd -- claude=ragdoll shots=<folder>`
+  (four throws, pictures, closes itself). Test: `test_ragdoll` (thrown the right way, tumbles, stays on the floor,
+  can't walk while floppy, gets up and walks again).
+- **Hurdles:** no godot-prompter skills are installed on the Mac, so none could be checked. Godot's own "physical
+  bones" were skipped on purpose: the dwarf's skeleton is stretched and scaled into dwarf shape every frame, and they
+  would lose it. First try (Claude's mistake): bones read from outside the skeleton's update are the plain
+  human-sized animation, so the pieces were built too tall and the body slid off them; also the fall move drags the
+  skeleton's base, and the camera followed a spot under the floor. Fixed by building the pieces right after the
+  skeleton's update, holding the base still on the hips piece, and keeping the dwarf's position on the floor under
+  the hips. Not tested yet: two real co-op players (needs the PC's netcheck or two machines).
+
+## November 20, 2026 (Mac, Claude): kill counts
+- **Owner picked "kill counts" (ready for later rewards like "20 bats: Bat Hunter").** Each player's progress now keeps
+  how many of each creature they killed. Everyone who gets the kill's XP (within 30 m) gets the kill too, so friends
+  fighting together all count it. Saved with the game and sent to friends like XP; old saves load with 0 kills.
+- The skills window's top line shows "Level 3 · 12 kills"; hover it for each creature ("Cave Bat: 7").
+- Not done (no reward exists yet): rewards for counts, separate counts for leaders and crystal variants.
+- Tests: `test_kill_counts` (counting, saving, old saves) and the sword-kill test now checks the count. Both pass.

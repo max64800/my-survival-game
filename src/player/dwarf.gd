@@ -215,6 +215,8 @@ func _physics_process(delta: float) -> void:
 	if dev_fly and is_local:
 		_fly(delta)
 		return
+	if ragdoll and ragdoll.down():
+		return  # floppy: the rag doll moves us (DwarfRagdoll)
 	if _seat != null:
 		_sit_step(delta)
 		return
@@ -326,6 +328,8 @@ func _process(delta: float) -> void:
 			_look_timer = 2.0  # also every 2 s, so friends who join late catch up
 			_net_look.rpc(look[0], look[1], look[2], look[3], look[4])
 	if not is_local:
+		if ragdoll and ragdoll.down():
+			return  # (the rag doll places a friend's dwarf, pulled toward where its owner has it)
 		var before := global_position
 		global_position = global_position.lerp(_net_pos, minf(1.0, delta * 15.0))
 		model.rotation.y = lerp_angle(model.rotation.y, _net_yaw, minf(1.0, delta * 15.0))
@@ -603,6 +607,40 @@ func shove(push: Vector3) -> void:
 
 func knock_down() -> void:
 	fight.knock_down()
+
+
+var ragdoll: DwarfRagdoll  ## made on the first big hit
+
+
+## A big hit (F237: mine cart, swinging boulder or anvil, spiked flail): the dwarf goes floppy like a rag doll,
+## tumbles, then gets back up. push = which way and how hard (m/s), e.g. cart_direction * 8.
+## Only the host's call counts (trap code runs there); every player then sees the same tumble.
+## Damage is up to the caller.
+func big_hit(push: Vector3) -> void:
+	if multiplayer.is_server():
+		_net_big_hit.rpc(push)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _net_big_hit(push: Vector3) -> void:
+	if multiplayer.get_remote_sender_id() > 1:
+		return  # only the host throws dwarfs
+	if model.dwarf_rig == null:  # (the old looks have no skeleton to go floppy)
+		if fight:
+			knock_down()
+		return
+	if _seat != null and is_local:
+		stand_up()
+	if ragdoll == null:
+		ragdoll = DwarfRagdoll.new()
+		ragdoll.dwarf = self
+		var sk := model.dwarf_rig.skeleton
+		sk.add_child(ragdoll)
+		for c in sk.get_children():  # before DwarfProportions, so he stays dwarf-shaped
+			if c is SkeletonModifier3D:
+				sk.move_child(ragdoll, c.get_index())
+				break
+	ragdoll.start(push)
 
 
 func got_parry() -> void:
