@@ -317,7 +317,17 @@ func _spawn_pack(room_i: int, room: Dictionary) -> Array:
 		if maker.sdf_at(spot + Vector3.UP) <= 0.0:
 			continue
 		var at := spot + Vector3.UP * 0.3
-		if info.get("roosts", false):
+		var high := {}
+		if String(info.get("climbs", "")) == "all" and randf() < Monster.UP_HIGH:
+			# About 1 in 4 snails and spiders are up on a wall or ceiling when you find them (owner F475, F474).
+			var rng := RandomNumberGenerator.new()
+			rng.randomize()
+			high = Monster.high_spot(maker, spot, "all", rng)
+			if not high.is_empty() and _built_near(high.pos):
+				high = {}  # (nor over something a player built: the placement rule)
+		if not high.is_empty():
+			at = high.pos
+		elif info.get("roosts", false):
 			# Bats start asleep, hanging from the ceiling right above this spot.
 			var ceiling := GlowPlacer._march(maker, spot + Vector3.UP * 1.0, Vector3.UP, 30.0)
 			if ceiling == Vector3.INF:
@@ -325,9 +335,44 @@ func _spawn_pack(room_i: int, room: Dictionary) -> Array:
 			at = ceiling + Vector3.DOWN * 0.3
 		var uid := _next_uid
 		_next_uid += 1
-		_ev_spawn.rpc(uid, kind, at, has_leader and k == 0, room_i, Monsters.roll_variant(biome, randf(), randf()))
+		_ev_spawn.rpc(uid, kind, at, has_leader and k == 0, room_i, Monsters.roll_variant(biome, randf(), randf()),
+			high.get("normal", Vector3.ZERO))
 		uids.append(uid)
 	return uids
+
+
+## Host: something thrown landed at `p`: creatures up on the rock right there are knocked down (owner F475).
+func knock_off_near(p: Vector3, r: float, peer: int) -> void:
+	for m: Monster in monsters.values():
+		if m.is_alive() and m.clinging() and m.global_position.distance_to(p) < r:
+			m.alert(peer)
+			m.knocked_off()
+
+
+## Is a player-built piece within a few metres of `p`, or of the floor under it? (Creatures up high keep off them.)
+func _built_near(p: Vector3) -> bool:
+	if _root == null or not _root.is_inside_tree():
+		return false
+	var q := PhysicsShapeQueryParameters3D.new()
+	var s := CapsuleShape3D.new()
+	s.radius = 2.5
+	s.height = 12.0
+	q.shape = s
+	q.transform = Transform3D(Basis.IDENTITY, p + Vector3.DOWN * 3.0)
+	q.collision_mask = PieceNode.PIECE_LAYER
+	return not _root.get_world_3d().direct_space_state.intersect_shape(q, 1).is_empty()
+
+
+## Host: tell everyone which surface this creature is on now (climbing, F236/F474/F475), and any cue with it.
+func monster_cling(m: Monster, cue := "") -> void:
+	_ev_cling.rpc(m.uid, m.global_position, m.surface, cue)
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_cling(uid: int, pos: Vector3, n: Vector3, cue: String) -> void:
+	var m: Monster = monsters.get(uid)
+	if m:
+		m.show_cling(pos, n, cue)
 
 
 func _nearest_player_dist(p: Vector3) -> float:
@@ -369,7 +414,7 @@ func nearest_noticer(m: Monster) -> int:
 			continue
 		if d > maxf(sight, hear) or d >= best_d:
 			continue
-		if d > hear and not _can_see(m.global_position + Vector3.UP * 0.6, p + Vector3.UP):
+		if d > hear and not _can_see(m.global_position + m.global_transform.basis.y * 0.6, p + Vector3.UP):  # (its eyes: off the rock it clings to)
 			continue
 		best = pid
 		best_d = d
@@ -608,6 +653,7 @@ func _hurt_monster(m: Monster, peer: int, dmg: int, stun_amount: float) -> void:
 	if m.hp <= 0.0:
 		_kill(m, peer)
 	else:
+		m.knocked_off()  # up on a wall or ceiling: any hit knocks it down (a snail lands dazed on its shell, F475)
 		monster_changed(m)
 
 
@@ -1213,14 +1259,18 @@ func request_parried(uid: int, stun_amount: float, peer: int = 0) -> void:
 # ================================================================== everyone updates
 
 @rpc("authority", "call_local", "reliable")
-func _ev_spawn(uid: int, kind: String, pos: Vector3, leader: bool, pack: int, variant: String = "") -> void:
+func _ev_spawn(uid: int, kind: String, pos: Vector3, leader: bool, pack: int, variant: String = "", surface := Vector3.ZERO) -> void:
 	if not Monsters.LIST.has(kind):
 		return  # a creature the game no longer has (an old save's boss or early creature, Nov 19)
 	var m: Monster = MONSTER_SCRIPT.new()
 	m.setup(uid, kind, leader, pos, variant)
 	m.pack_id = pack
+	m._mgr = self
 	_root.add_child(m)
 	m.global_position = pos
+	if surface != Vector3.ZERO:
+		m.apply_surface(surface)  # (up on a wall or ceiling: climbing, F474/F475)
+		m._sent_surface = surface
 	monsters[uid] = m
 	_next_uid = maxi(_next_uid, uid + 1)
 
@@ -1443,12 +1493,12 @@ func _float_number(at: Vector3, text: String, big := false, away := Vector3.ZERO
 func snapshot() -> Array:
 	var out := []
 	for m: Monster in monsters.values():
-		out.append([m.uid, m.kind, m.global_position, m.leader, m.pack_id, m.hp, m.variant])
+		out.append([m.uid, m.kind, m.global_position, m.leader, m.pack_id, m.hp, m.variant, m.surface])
 	return out
 
 
 func load_snapshot(list: Array) -> void:
 	for e in list:
-		_ev_spawn(e[0], e[1], e[2], e[3], e[4], e[6] if e.size() > 6 else "")
+		_ev_spawn(e[0], e[1], e[2], e[3], e[4], e[6] if e.size() > 6 else "", e[7] if e.size() > 7 else Vector3.ZERO)
 		if monsters.has(e[0]):  # (skipped if it's a creature the game no longer has)
 			monsters[e[0]].hp = e[5]

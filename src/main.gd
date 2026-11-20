@@ -139,6 +139,11 @@ func _ready() -> void:
 			_saving = false
 			if mode == "menu":
 				mode = "solo"
+		elif arg == "climbcheck":  # photos of creatures on a ceiling, and a snail knocked down (F474/F475)
+			debug_script = "res://src/debug/climbcheck.gd"
+			_saving = false
+			if mode == "menu":
+				mode = "solo"
 		elif arg == "dungeoncheck":  # photos of the first dungeon (Mossgate Hold)
 			debug_script = "res://src/debug/dungeoncheck.gd"
 			_saving = false

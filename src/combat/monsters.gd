@@ -14,10 +14,13 @@ const LIST := {
 	# less damage (owner, Nov 18: once at half health, once at 10%, 10 s each: you have to wait it out, no stun-lock).
 	# swoops: a flyer that cruises high, dives to bite, then climbs away (retreat m, recover s).
 	# roosts: starts asleep, hanging from a cave ceiling.
+	# climbs (owner, Nov 20, docs/decisions/2026-11-20-creature-climbing.md): "all" = walls and ceilings, "walls" = walls
+	# only (out of holes, up ledges); none = never. falls_dazed: knocked off the rock by a hit, it lands on its back,
+	# dazed. wall_runner: chasing, it runs up any wall in its way. ambush: over you on the ceiling it hisses, then drops.
 	# soft_back: hits from behind do `back_mult` damage. straight_charge: a charge doesn't steer.
 	"rock_snail": {name = "Rock Snail", ragdoll = {stay = ["soft_foot"], hop = 0.3, roll = "side", spin = 3.2, narrow = 0.5}, size = 1.0, hp = 110, armor = 20, stun = 90, slash = 0.75, blunt = 1.25, pierce = 1.0,
 		fire = 0.0, frost = 0.0, poison = 0.0, walk = 0.6, run = 0.6, pack = [1, 2], xp = 14, leader = "Old Shellback", leader_chance = 0.15,  # (run = walk: it never runs, owner Nov 17)
-		color = Color(0.48, 0.44, 0.38), shape = "rock_snail", neutral = true, turns_in_place = true, shell_hide = {at = [0.5, 0.1], seconds = 10.0, cut = 0.9},
+		color = Color(0.48, 0.44, 0.38), shape = "rock_snail", neutral = true, climbs = "all", falls_dazed = true, turns_in_place = true, shell_hide = {at = [0.5, 0.1], seconds = 10.0, cut = 0.9},
 		attacks = [{name = "Shell Slam", land_sound = "snail_slam", tell = 1.2, damage = 20, type = "blunt", reach = 1.9, parry = "any"},
 			{name = "Lunging Bite", tell = 0.9, damage = 14, type = "pierce", reach = 1.7, parry = "any"},
 			# Spit (owner, Nov 17): short range (2-3 m), a shield stops it completely; he rears up, snaps, a gob flies.
@@ -41,7 +44,7 @@ const LIST := {
 	# ragdoll: on death it goes limp and falls apart into physics pieces (Ragdoll; the beetle first, owner Nov 18).
 	"rock_beetle": {name = "Rock Beetle", turns_in_place = true, turn_speed = 2.6, ragdoll = true, size = 0.9, hp = 80, armor = 30, stun = 70, slash = 0.75, blunt = 1.25, pierce = 1.0,
 		fire = 0.0, frost = 0.0, poison = 0.0, walk = 1.8, run = 4.5, pack = [1, 2], xp = 15, leader = "Rock Beetle Brute", leader_chance = 0.2,
-		color = Color(0.42, 0.39, 0.35), shape = "rock_beetle", soft_back = 2.0, straight_charge = true, recover = 1.8,
+		color = Color(0.42, 0.39, 0.35), shape = "rock_beetle", soft_back = 2.0, straight_charge = true, recover = 1.8, climbs = "walls",
 		attacks = [{name = "Mandible Snap", warn_sound = "beetle_hiss", tell = 0.7, damage = 10, type = "pierce", reach = 1.7, parry = "any"},
 			{name = "Charge", warn_sound = "beetle_rumble", tell = 1.1, damage = 18, type = "blunt", reach = 9.0, parry = "shield", lunge = true}],
 		drops = [["bug_meat", 2, 1.0], ["glow_gland", 1, 0.6]]},
@@ -56,7 +59,7 @@ const LIST := {
 	# then skitters back (hit_and_run). Planned later: webs. One heavy hit or two light ones kill it.
 	"cave_spider": {name = "Cave Spider", turns_in_place = true, turn_speed = 4.0, ragdoll = {hop = 0.5, spin = 2.0}, statue_hits = 2, size = 1.0, hp = 24, armor = 0, stun = 30, slash = 1.25, blunt = 1.0, pierce = 1.0,
 		fire = 0.0, frost = 0.0, poison = 0.0, walk = 2.2, run = 5.5, pack = [3, 5], xp = 6, leader = "Spider Broodmother", leader_chance = 0.15,
-		color = Color(0.25, 0.22, 0.2), shape = "cave_spider", hit_and_run = true, retreat = 4.0, recover = 1.2,
+		color = Color(0.25, 0.22, 0.2), shape = "cave_spider", climbs = "all", wall_runner = true, ambush = true, hit_and_run = true, retreat = 4.0, recover = 1.2,
 		attacks = [{name = "Bite", warn_sound = "beetle_hiss", tell = 0.5, damage = 7, type = "pierce", reach = 1.5, parry = "any", buildup = {poison = 34}},
 			{name = "Pounce", warn_sound = "beetle_hiss", tell = 0.8, damage = 11, type = "pierce", reach = 5.0, parry = "any", lunge = true, pounce = true, buildup = {poison = 34}}],
 		drops = [["bug_meat", 1, 1.0], ["bug_meat", 1, 0.4], ["spider_silk", 1, 0.7], ["spider_silk", 1, 0.35], ["venom_sac", 1, 0.3]]},

@@ -1803,6 +1803,7 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 			if not aim_point.is_finite() or _chest(ps).distance_to(aim_point) > 22.0 or not ps.inventory.remove(id, 1):
 				return ""
 			_ev_throw.rpc(_chest(ps), aim_point, id)
+			monsters.knock_off_near(aim_point, 1.5, _peer_of(ps))  # (a creature up high it lands by falls down, F475)
 			if id == "spore_bomb":
 				monsters.spawn_cloud(aim_point + Vector3.UP * 0.6, 3.0, 5.0, 40.0, 6.0, true)
 			elif id == "blasting_pod":

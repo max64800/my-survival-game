@@ -285,9 +285,7 @@ func damage_mult() -> float:
 # ================================================================== host brain
 
 var _knock := Vector3.ZERO  ## (host) a push from a hit, fading out fast
-var _climb_to := -INF       ## (host) the height of the dwarf it chases: against a wall below him, it climbs (F236)
-const CLIMB_SPEED := 2.2    ## m/s up a wall
-var _climbing := 0.0        ## (host) just left the wall while climbing: seconds of push over the lip left
+var _goal := Vector3.INF    ## (host) where it wants to get to, height and all (the dwarf it chases, its home): climbers
 var _stop := 0.0            ## (looks) a frozen blink when hit
 var _rest := 0.0            ## (host) standing still: seconds until it checks the floor again (speed, owner Nov 19)
 var far_dt := 0.0           ## (host) time saved up while it thinks less often, far from every dwarf
@@ -307,6 +305,9 @@ func think(delta: float, mgr: Node) -> void:
 	if _rise_pending:
 		_rise_pending = false
 		mgr.monster_rise(self)  # everyone sees it get up
+	_mgr = mgr
+	if _knock.length() > 0.05 and clinging():
+		_knock = Vector3.ZERO  # (a creature on the wall doesn't slide; a hit knocks it off instead: _hurt_monster)
 	if _knock.length() > 0.05:
 		move_and_collide(_knock * minf(delta, 0.05))  # (walls stop it; a long step can't fling it far)
 		_knock = _knock.move_toward(Vector3.ZERO, 14.0 * delta)
@@ -354,7 +355,10 @@ func think(delta: float, mgr: Node) -> void:
 		_think = 0.3
 		_perceive(mgr)
 	var target: Node3D = mgr.player_node(target_peer)
-	_climb_to = target.global_position.y if target and state in [State.CHASE, State.ATTACK, State.RECOVER] else -INF
+	_goal = target.global_position if target and state in [State.CHASE, State.ATTACK, State.RECOVER] \
+		else (home if state == State.RETURN else Vector3.INF)
+	if clinging() and _cling_think(delta, target, mgr):
+		return
 	if data.get("swoops", false):
 		# Cruise high above you, dive down to bite, climb away again (owner's bat design).
 		var ground := target.global_position.y if target else home.y - 2.5
@@ -713,6 +717,9 @@ func may_step(p: Vector3, from := Vector3.INF) -> bool:
 
 func _move(delta: float, dir: Vector3, speed: float) -> void:
 	speed *= ailments.speed_mult()
+	if clinging():
+		_crawl(delta, dir, speed)  # on a wall or ceiling: its feeler keeps it stuck to the rock (F236, F474, F475)
+		return
 	if data.get("weaves", false) and dir.length() > 0.1 and state != State.ATTACK:
 		dir = weave(dir)
 	var charging := state == State.ATTACK and _charge_dir != Vector3.ZERO  # (straight on, full grip: F472)
@@ -720,6 +727,7 @@ func _move(delta: float, dir: Vector3, speed: float) -> void:
 		var turned := _turn_toward(dir, delta)
 		dir = turned[0]
 		speed *= turned[1]
+	var blocked := false
 	if dir.length() > 0.1 and not data.get("flies", false) and is_on_floor() and _drop_ahead(dir):
 		blocked = true  # a pit it couldn't climb out of: stop at the edge and find another way (F125)
 	if dir.length() > 0.1 and not dungeon.is_empty() and not data.get("flies", false) \
@@ -741,17 +749,6 @@ func _move(delta: float, dir: Vector3, speed: float) -> void:
 		velocity.y -= _gravity * delta
 		if is_on_floor():
 			velocity.y = maxf(velocity.y, -0.5)
-		# Stuck against a wall with the dwarf above (a hole he dug, a ledge): climb up it, like a real beetle or snail
-		# (owner, F236 said twice: "they charge into a hole and you beat them easily; they should climb out").
-		if dir.length() > 0.1 and is_on_wall() and _climb_to > global_position.y + 0.4 and not data.get("no_climb", false):
-			velocity.y = maxf(velocity.y, CLIMB_SPEED)
-			_climbing = 0.4
-		elif _climbing > 0.0 and dir.length() > 0.1:  # over the lip: a last push up and forward, or it slips back
-			_climbing -= delta
-			velocity.y = maxf(velocity.y, CLIMB_SPEED * 0.7)
-			var flat := Vector2(dir.x, dir.z).normalized() * maxf(Vector2(velocity.x, velocity.z).length(), 1.6)
-			velocity.x = flat.x
-			velocity.z = flat.y
 	# Standing still (owner, Nov 19: 5 FPS, the physics step was too slow): a creature at rest on the floor (or a
 	# roosting bat) doesn't ask the physics engine to move it every step; twice a second it checks the floor is still
 	# there (a dwarf may have dug it away).
@@ -766,6 +763,317 @@ func _move(delta: float, dir: Vector3, speed: float) -> void:
 	move_and_slide()
 	if global_position.y < CaveMaker.Y_MIN - 20.0:
 		global_position = home + Vector3.UP
+	if _falling != "" and is_on_floor():
+		_landed()
+	elif not data.get("flies", false) and dir.length() > 0.1 and is_on_wall():
+		_try_cling(dir)
+
+
+# ================================================================== climbing walls and ceilings (F236, F474, F475)
+# The owner's decisions: docs/decisions/2026-11-20-creature-climbing.md. A climber (Monsters.LIST `climbs`: "walls" or
+# "all") that clings to rock has `surface` = the way that rock faces (its normal). Its whole body is turned so its feet
+# touch the rock; every step a feeler (a ray) finds the rock under its feet again and it slides along it ("stick with
+# feelers"; rejected: turning gravity sideways, which jitters on bumpy rock and breaks every "on the floor?" check).
+# The host moves it and decides when it lets go; everyone hears which surface it is on (MonsterManager._ev_cling).
+
+var surface := Vector3.ZERO  ## everyone: the way the rock it clings to faces (ZERO: on the floor, as before)
+var _mgr: Node               ## host: the manager (set every think)
+var _falling := ""           ## host: falling off: "knocked" (a hit: lands on its shell, dazed), "drop" (ambush: bites as it lands), "fall"
+var _hiss := 0.0             ## host: an ambush hiss: seconds before it lets go
+var _grip_lost := 0.0        ## host: seconds its feeler found no rock (dug away): then it falls
+var _feel_wait := 0.0        ## host: sitting still up there: seconds until it feels for the rock again
+var _sent_surface := Vector3.ZERO  ## host: the surface everyone last heard about
+var _on_back := 0.0          ## looks: seconds it still lies on its shell after being knocked down
+const FLOOR_UP := 0.7        ## a surface this flat (its normal's height) is a floor: walked on, not clung to
+const CEILING_DOWN := -0.35  ## a surface facing down more than this is a ceiling
+const CLING_SPEED := 0.8     ## a climber moves this part of its floor speed on a wall
+const FEEL := 0.9            ## m the feeler reaches into the rock
+const HISS_TIME := 0.6       ## s between the ambush hiss and the drop (owner: "a short hiss first so I can dodge")
+const AMBUSH_NEAR := 1.8     ## m (flat) from right over you, it hisses and lets go
+const FALL_DAZE := 4.0       ## s a knocked-down snail lies dazed on its shell (owner)
+const UP_HIGH := 0.25        ## part of the snails and spiders that start on a wall or ceiling (owner: "about 1 in 4")
+const DROP_BITE_TELL := 0.2  ## s: landing by you, its bite comes this fast (step away while it falls)
+
+
+func climbs() -> String:
+	return String(data.get("climbs", ""))
+
+
+func clinging() -> bool:
+	return surface != Vector3.ZERO
+
+
+## May a creature that climbs `how` ("", "walls", "all") cling to rock facing `n`?
+static func may_cling(how: String, n: Vector3) -> bool:
+	if how == "" or n.y >= FLOOR_UP:
+		return false
+	if n.y < CEILING_DOWN:
+		return how == "all"  # a ceiling (the Rock Beetle: walls only, owner)
+	return true
+
+
+## A turn that stands "up" on `n` (feet on the rock).
+static func up_on(n: Vector3) -> Basis:
+	if n == Vector3.ZERO:
+		return Basis.IDENTITY
+	n = n.normalized()
+	if n.dot(Vector3.UP) < -0.999:
+		return Basis(Vector3.RIGHT, PI)
+	return Basis(Quaternion(Vector3.UP, n))
+
+
+## Everyone: turn the body onto the surface it is on (ZERO: upright on the floor).
+func apply_surface(n: Vector3) -> void:
+	surface = n
+	global_transform.basis = up_on(n)
+	velocity = Vector3.ZERO
+
+
+## Host: it takes hold of the rock at `p` (facing `n`).
+func cling_to(p: Vector3, n: Vector3, cue := "") -> void:
+	_falling = ""
+	_grip_lost = 0.0
+	global_position = p
+	apply_surface(n)
+	_tell_surface(cue)
+
+
+## Host: it lets go of the wall or ceiling (or is knocked off) and falls. `why`: see _falling.
+func let_go(why: String) -> void:
+	if not clinging():
+		return
+	var n := surface
+	var r := (_body_shape.shape as CapsuleShape3D).radius if _body_shape else 0.4
+	# Off the rock first, upright again: under a ceiling a whole body below it, off a wall a body's width out.
+	global_position += n * ((_body_height() if n.y < CEILING_DOWN else r) + 0.08)
+	apply_surface(Vector3.ZERO)
+	_falling = why
+	_hiss = 0.0
+	_tell_surface("fall")
+
+
+## Host: knocked off by a hit (owner: any hit on a snail up high knocks it down; it lands dazed on its shell).
+func knocked_off() -> void:
+	if clinging():
+		let_go("knocked" if data.get("falls_dazed", false) else "fall")
+
+
+func _tell_surface(cue := "") -> void:
+	_sent_surface = surface
+	if _mgr and _mgr.has_method("monster_cling"):
+		_mgr.monster_cling(self, cue)
+
+
+func _set_surface(n: Vector3) -> void:
+	apply_surface(n)
+	if _sent_surface == Vector3.ZERO or n.angle_to(_sent_surface) > 0.3:
+		_tell_surface()
+
+
+func _feel(from: Vector3, dir: Vector3, length: float) -> Dictionary:
+	if not is_inside_tree():
+		return {}
+	var q := PhysicsRayQueryParameters3D.create(from, from + dir * length, World.TERRAIN_LAYER)
+	return get_world_3d().direct_space_state.intersect_ray(q)
+
+
+## Host, on the floor, pushing into a wall: a climber takes hold of it. Spiders run along walls whenever one is in the
+## way of a chase (owner); snails and beetles only climb to get up to you or home (out of holes, up ledges).
+func _try_cling(dir: Vector3) -> void:
+	var how := climbs()
+	if how == "" or state not in [State.CHASE, State.RETURN]:
+		return
+	var wn := get_wall_normal()
+	if Vector3(dir.x, 0.0, dir.z).normalized().dot(-wn) < 0.3:
+		return  # (it brushes along the wall, it isn't walking into it)
+	var above := _goal != Vector3.INF and _goal.y > global_position.y + 0.6
+	if not above and not (data.get("wall_runner", false) and state == State.CHASE):
+		return
+	var hit := _feel(global_position + Vector3.UP * 0.4, -wn, 1.2)
+	if hit.is_empty() or not may_cling(how, hit.normal):
+		return
+	cling_to(hit.position, hit.normal)
+
+
+## Host: the thinking of a creature on a wall or ceiling. True: done for this step.
+func _cling_think(delta: float, target: Node3D, _m: Node) -> bool:
+	if _hiss > 0.0:
+		_hiss -= delta  # (it holds still and hisses: look up and step aside)
+		if _hiss <= 0.0:
+			let_go("drop")
+		return true
+	match state:
+		State.CHASE:
+			if target == null or MonsterManager.ignores(target):
+				return false  # (the floor thinking sends it home)
+			var to := target.global_position - global_position
+			var d3 := to.length()
+			if d3 < _best_dist - 0.5:
+				_best_dist = d3
+				_no_progress = 0.0
+			else:
+				_no_progress += delta
+			if _no_progress > Monsters.GIVE_UP:
+				let_go("fall")  # (it can't get to you along the rock: it drops and tries the floor)
+				return true
+			var flat := Vector2(to.x, to.z).length()
+			var on_ceiling := surface.y < CEILING_DOWN
+			if to.y < -0.8 and flat < (AMBUSH_NEAR if on_ceiling else 1.6):
+				if on_ceiling and data.get("ambush", false):
+					_hiss = HISS_TIME  # right over you: a short hiss, then it drops on you (owner)
+					_tell_surface("hiss")
+				else:
+					let_go("drop" if data.get("ambush", false) else "fall")
+				return true
+			_move(delta, Vector3(to.x, 0.0, to.z).normalized(), data.run)
+			return true
+		State.IDLE, State.WANDER, State.SLEEP:
+			if state == State.WANDER:
+				state = State.IDLE  # (up there it waits; it doesn't wander off along the rock)
+			_timer = maxf(_timer, 2.0)
+			_move(delta, Vector3.ZERO, 0.0)
+			return true
+	return false
+
+
+## Host: one step along the rock toward `dir` (or toward _goal, height and all, when it has one).
+func _crawl(delta: float, dir: Vector3, speed: float) -> void:
+	var n := surface
+	var want := dir
+	if _goal != Vector3.INF and dir.length() > 0.1:
+		want = _goal - global_position  # (the wall leads up or down to it)
+	var t := want - n * want.dot(n)
+	if t.length() < 0.05 or speed <= 0.0 or dir.length() < 0.1:
+		# Sitting still: twice a second it checks the rock is still there (a dwarf may dig it away).
+		_feel_wait -= delta
+		if _feel_wait > 0.0:
+			return
+		_feel_wait = 0.5
+		if _feel(global_position + n * 0.3, -n, FEEL).is_empty():
+			_grip_lost += 0.5
+			if _grip_lost >= 1.0:
+				let_go("fall")
+		else:
+			_grip_lost = 0.0
+		return
+	_feel_wait = 0.0
+	t = t.normalized()
+	_face_along(t)
+	var step := speed * CLING_SPEED * delta
+	var p := global_position
+	# A corner going in (the wall meets the ceiling or the floor): rock right ahead along the surface.
+	var ahead := _feel(p + n * 0.25, t, step + 0.3)
+	if not ahead.is_empty():
+		var n2: Vector3 = ahead.normal
+		if n2.y >= FLOOR_UP:
+			_step_onto_floor(ahead.position + n * ((_body_shape.shape as CapsuleShape3D).radius + 0.05))
+		elif may_cling(climbs(), n2):
+			global_position = ahead.position
+			_set_surface(n2)
+		else:
+			let_go("fall")  # (a beetle reaching a ceiling can't hold on there)
+		return
+	if not dungeon.is_empty() and not may_step(p + t * step, p):
+		return  # (a dungeon creature keeps to its own room on the walls too)
+	p += t * step
+	var under := _feel(p + n * 0.4, -n, FEEL)
+	if under.is_empty():
+		under = _feel(p - n * 0.35, -t, 0.9)  # a corner going out (over a hole's lip): feel round it
+	if under.is_empty():
+		_grip_lost += delta
+		if _grip_lost > 0.6:
+			let_go("fall")
+		return
+	_grip_lost = 0.0
+	var n3: Vector3 = under.normal
+	if n3.y >= FLOOR_UP:
+		_step_onto_floor(under.position - Vector3(n.x, 0.0, n.z) * 0.2)  # over the lip, a little in from the edge
+		return
+	if not may_cling(climbs(), n3):
+		let_go("fall")
+		return
+	global_position = under.position
+	_set_surface(n.lerp(n3.normalized(), minf(1.0, delta * 12.0)).normalized())
+
+
+func _step_onto_floor(at: Vector3) -> void:
+	global_position = at + Vector3.UP * 0.05
+	apply_surface(Vector3.ZERO)
+	_tell_surface()
+
+
+## Host: it hit the floor after falling.
+func _landed() -> void:
+	var why := _falling
+	_falling = ""
+	if why == "knocked":
+		# On its shell, dazed with stars (owner F475); everyone sees it lie there.
+		stun.value = 0.0
+		stun.stunned_left = maxf(stun.stunned_left, FALL_DAZE)
+		state = State.STUNNED
+		_tell_surface("on_back")
+		if _mgr:
+			_mgr.monster_changed(self)
+	elif why == "drop" and _mgr:
+		state = State.CHASE
+		_best_dist = INF
+		_no_progress = 0.0
+		for a: Dictionary in data.get("attacks", []):
+			if not a.get("lunge", false) and mgr_target_near(a.reach + 0.5):
+				var bite := a.duplicate()
+				bite.tell = DROP_BITE_TELL  # landing by you it bites at once (you dodge by stepping away while it falls)
+				_start_attack(bite, _mgr)
+				break
+
+
+func mgr_target_near(r: float) -> bool:
+	var target: Node3D = _mgr.player_node(target_peer) if _mgr else null
+	return target != null and target.global_position.distance_to(global_position) < r
+
+
+## Its face turns along the rock toward `t` (a world direction along the surface).
+func _face_along(t: Vector3) -> void:
+	var local := global_transform.basis.inverse() * t
+	if Vector2(local.x, local.z).length() > 0.05:
+		model.rotation.y = lerp_angle(model.rotation.y, atan2(-local.x, -local.z), 0.3)
+
+
+## Where a snail or spider that starts up high clings near `floor_spot` (its floor spawn spot), or {} if there's no good
+## rock: a ceiling high enough to walk under ("all" climbers), else a wall a little above head height. Never over or in
+## something built or on its paths (CLAUDE.md placement rule): Monster.high_spot_clear. Planned on the cave's shape
+## (the host, at spawn).
+static func high_spot(maker: CaveMaker, floor_spot: Vector3, how: String, rng: RandomNumberGenerator) -> Dictionary:
+	if how == "":
+		return {}
+	if how == "all" and rng.randf() < 0.6:
+		var c := GlowPlacer._march(maker, floor_spot + Vector3.UP * 1.0, Vector3.UP, 9.0)
+		if c != Vector3.INF and c.y - floor_spot.y > 2.4:
+			var n := GlowPlacer.normal_at(maker, c + Vector3.DOWN * 0.3)
+			if may_cling(how, n) and high_spot_clear(maker, c, floor_spot):
+				return {pos = c, normal = n}
+	for i in 4:
+		var a := rng.randf() * TAU
+		var from := floor_spot + Vector3.UP * rng.randf_range(1.6, 2.8)
+		var w := GlowPlacer._march(maker, from, Vector3(cos(a), 0.0, sin(a)), 8.0)
+		if w == Vector3.INF:
+			continue
+		var n := GlowPlacer.normal_at(maker, w - Vector3(cos(a), 0.0, sin(a)) * 0.3)
+		var below := maker.find_floor(w.x + n.x, w.z + n.z, w.y)
+		if may_cling(how, n) and w.y - below.y > 1.3 and high_spot_clear(maker, w, below):
+			return {pos = w, normal = n}
+	return {}
+
+
+const HIGH_CLEAR := 1.5  ## m it keeps from built ground (the tower, the Outpost, dungeons and their doorways)
+const HIGH_POI_CLEAR := 8.0  ## m it keeps from a place (ruins, camps, the great hall: their paths and stairs)
+
+
+## The placement rule for creatures up high: not in or over something built, not over its paths (the floor below too).
+static func high_spot_clear(maker: CaveMaker, at: Vector3, floor_below: Vector3) -> bool:
+	for p in [at, floor_below]:
+		if maker.is_reserved(p, HIGH_CLEAR) or maker.in_dungeon_stone(p) or not maker._far_from_pois(p, HIGH_POI_CLEAR):
+			return false
+	return true
 
 
 ## How high the rock is above this flyer (INF: more than 12 m of room).
@@ -791,6 +1099,9 @@ func _face(target: Node3D) -> void:
 	if target == null:
 		return
 	var to := target.global_position - global_position
+	if clinging():
+		_face_along(to - surface * to.dot(surface))  # (on the rock it turns about its own feet)
+		return
 	if Vector2(to.x, to.z).length() > 0.1:
 		if data.get("turns_in_place", false):
 			_turn_toward(to, get_physics_process_delta_time())
@@ -942,6 +1253,8 @@ func _process(delta: float) -> void:
 	if _clock == 0.0:
 		_last_pos = global_position  # first frame: we didn't really "move" from the origin
 	var moved := Vector2(global_position.x - _last_pos.x, global_position.z - _last_pos.z).length()
+	if clinging():
+		moved = minf(global_position.distance_to(_last_pos), 1.0)  # (up a wall it moves up: its legs still walk)
 	_rise = global_position.y - _last_pos.y
 	if absf(_rise) > 1.0:
 		_rise = 0.0  # (put somewhere new, not flown there: no nose tip)
@@ -982,6 +1295,43 @@ func _process(delta: float) -> void:
 	else:
 		MonsterModel.dazed_sway(model, 0.0)  # (puts a swayed shell back once the daze is over)
 		model.rotation.z = sin(_clock * (5.0 + _speed * 2.5)) * 0.07 * clampf(_speed / 3.0, 0.0, 1.0)  # waddle
+	_lie_on_back(delta)
+
+
+## Everyone (from the host, MonsterManager._ev_cling): the creature is now on this surface (ZERO: the floor).
+## `cue`: "hiss" (an ambush: it is about to drop), "on_back" (knocked down: lies on its shell), "fall", "".
+func show_cling(pos: Vector3, n: Vector3, cue: String) -> void:
+	global_position = pos  # (the host is already there: the same numbers)
+	_net_pos = pos
+	apply_surface(n)
+	match cue:
+		"hiss":
+			_flash = HISS_TIME
+			Sfx.play("beetle_hiss", global_position, 2.0, 1.3 * _voice())  # (a sharper, higher hiss than its bite)
+		"on_back":
+			_on_back = FALL_DAZE
+			Sfx.play("shell_clunk", global_position, 0.0, _voice())
+
+
+## Only looks: a knocked-down snail lies upside down on its shell, legs (its foot) in the air, then rolls back.
+func _lie_on_back(delta: float) -> void:
+	if _on_back <= 0.0 and not model.has_meta("back_pos"):
+		return
+	if not model.has_meta("back_pos"):
+		model.set_meta("back_pos", model.position)
+	_on_back = maxf(0.0, _on_back - delta)
+	var k := clampf(minf((FALL_DAZE - _on_back) / 0.25, _on_back / 0.4), 0.0, 1.0)
+	k = k * k * (3.0 - 2.0 * k)  # (eased over and back)
+	model.rotation.z = PI * k
+	model.position = (model.get_meta("back_pos") as Vector3) + Vector3.UP * _body_height() * 0.8 * k
+	if _stars:
+		# The stars keep circling over it, not under the floor.
+		_stars.top_level = k > 0.0
+		if _stars.top_level:
+			_stars.global_position = global_position + Vector3.UP * (_body_height() + 0.2)
+	if _on_back <= 0.0:
+		model.position = model.get_meta("back_pos")
+		model.remove_meta("back_pos")
 
 
 ## Only looks and sounds: charge dust, wing beats, the jolt when hit.

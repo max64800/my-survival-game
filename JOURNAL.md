@@ -6570,3 +6570,32 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   (2:01 pm) had 1.5 slow minutes on the graphics card that the robot can't make happen (likely another program
   using it). F266/F417 wait for the owner's next play.
 - **Full test run (600 checks):** 9 failed. 3 were mine (old tests said "only 5 creatures"; one built a model without its creature name): fixed, the miners are marked dungeon_only. The other 6 are in other chats' unfinished work (dwarf great swings, wall climbing). Also: another chat's F473 commit uses `blocked` without the line that makes it (nothing loaded for a while); their working file has the line. A scratch copy for testing didn't work (the big model files are stored separately by GitHub, the copy got placeholders).
+
+## Nov 20: creatures climb walls and ceilings (F236 🔁, F474, F475, enemies chat 3)
+- **Owner's decisions** were already saved (`docs/decisions/2026-11-20-creature-climbing.md`). Claude picked how:
+  **"feelers"**. A climber grabs the wall, its whole body turns so its feet face the rock, and every step a feeler
+  (an invisible ray, like a cane) finds the rock under its feet again. Inside corners (wall to ceiling) it turns onto
+  the new surface. At a hole's lip it feels round the corner and steps onto the floor. **Rejected:** turning gravity
+  sideways (jitters on bumpy cave rock, breaks every "on the floor?" check) and Godot's path maps (floors only;
+  our caves change with every dig).
+- **Who:** Cave Spider and Rock Snail: walls and ceilings. Rock Beetle: walls only, and only to get up to you or home.
+  Great Rock Beetle: never. (The old Nov 19 climb, a push upward when stuck against a wall, is gone. The skeleton
+  miners don't climb: not in the owner's list.)
+- **Spiders:** chasing, they run up any wall in the way. Some wait on the ceiling. Walk under one: it hisses
+  (0.6 s to step aside), lets go, and bites as it lands if you're still there.
+- **Snails:** about 1 in 4 (spiders too) start on a wall or ceiling. Any hit knocks one down: a bolt, a long reach, or
+  a thrown bomb/pod landing next to it. It lands on its shell, upside down, dazed with stars for 4 s.
+- **Placement rule:** creatures up high never sit in or over built ground (the tower, the Outpost, dungeons), within
+  8 m of a place (ruins, camps, the great hall: their paths and stairs), or over a player's building.
+- **Co-op:** the host moves them and decides every fall. A new message tells everyone which surface a creature is on
+  (plus "hiss" and "lies on its shell"). Players who join later get it too.
+- **Tests:** new `tests/test_climbing.gd` (7 tests: who climbs where, the body turn, snail knocked down dazed, spider
+  hiss then drop, climbers out of a pit while the boss stays down, placement rule, co-op surface). Old
+  `test_beetles_and_snails_climb_out_of_holes` still passes. New robot `climbcheck` (pictures).
+- **Hurdles:** (1) A math error the first time a beetle crawled ("axis must be normalized"): blending between two
+  rock directions made a direction a hair too long. Swapped to a simpler blend. (2) The robot found no ceiling at
+  first (the start cavern is over 7 m tall), so it searched wider. (3) Its first picture looked straight up through
+  the dwarf's own body (the camera sits behind him), so it showed nothing. The tests check the ceiling instead;
+  the second picture showed the snail on its shell and the spider had already dropped and bitten.
+  (4) There's no "throw a rock" yet, only bombs and pods: those knock snails down for now.
+  (5) Another chat had staged its own changes in the same files: only my lines committed.
