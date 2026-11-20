@@ -21,7 +21,9 @@ const CAMERA_DISTANCE := 3.4  ## starting camera distance (and the longest reach
 const ZOOM_MIN := 1.1
 const ZOOM_MAX := 8.0
 const ZOOM_STEP := 0.5
-const SHOULDER := Vector3(0.55, 1.5, 0.0)
+## The normal camera's height: dwarf height, not human height (owner, Nov 20: "made for humans, not dwarfs";
+## was 1.5 m, now close to the aim camera's 0.9 m, which the owner liked).
+const SHOULDER := Vector3(0.55, 1.0, 0.0)
 ## Where the camera sits while aiming (F452): x = to his right, y = height, z = distance behind.
 const AIM_CAMERA := Vector3(0.45, 0.9, 2.0)
 const POSE_SEND_TIME := 0.05  ## send our position 20 times a second

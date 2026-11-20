@@ -6479,3 +6479,7 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   `foreman`. Hurdle: two Lost Miner looks flickered on the pick (socket 6 mm from the points, and the hand-made wobble
   sometimes closed the gap); the socket is bigger now. All 7 pass the checker. Page version 2: colour buttons on the
   cards, "Lie on the floor" added, Taunt gone. Waiting for the owner's OK, then `assets/` and the game code.
+- **F469 (later in the same chat): lower camera.** Owner: the normal camera feels "made for humans, not dwarfs";
+  the crossbow aim camera's height is better. The camera's turning point went from 1.5 m to 1.0 m above his feet
+  (aim camera: 0.9 m). One picture from the aim-check robot: the view now looks past his head instead of down on him.
+  No hurdles.
