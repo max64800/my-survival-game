@@ -5810,3 +5810,21 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - Tests: `test_fall_damage`, `test_durability`, `test_kill_rewards` pass; monsters, upgrades, combat, dwarf fist,
   progression, menu (except the other chat's build menu) pass; authority has only its 4 known cave physics fails.
   Nothing tried in a real game window yet.
+
+## Nov 20 (Mac): dungeon junk list + 4 ChatGPT pictures (F237, task 2)
+- **Checked first:** crates, sacks, kegs, barrel racks, ore baskets, the mine cart, timber stacks, treasure bits and a
+  stone rubble pile already exist. No bones, broken shields, broken weapons or rags existed.
+- **Owner's picks (multiple choice):** for all 12: bones + skull, broken shields, broken weapons, rags + rubble. Small
+  mines: broken pickaxe + shovel, snapped beam, helmet + smashed lantern. Medium stone: urns, fallen statue head,
+  rusty armour pile, coffin lid pieces. Big forges: slag, broken tongs + hammer, cracked crucible + mould, scrap heap.
+- **The list** (20 models, names, which dungeons, which picture) is in traps-and-variety.md → "Dungeon junk", with the
+  rule for the PC: junk only along walls and in corners, never on a path, stair, bridge, doorway or in front of a door,
+  lever, chest or recipe stand, plus an automatic test for it.
+- **Pictures:** `docs/art/dungeon-model-sheets/junk_shared.jpg`, `junk_small_mine.jpg`, `junk_medium_stone.jpg`,
+  `junk_big_forge.jpg` (concept only; the PC builds the real models in Blender by script). Logged in CREDITS.
+- **Hurdles (Claude's own):** I first used the wrong Chrome (the eqt.ae one). Its ChatGPT box held someone's unsent
+  question about Palm Jumeirah, and it got sent together with my first picture request; the picture came out fine
+  and is kept. The owner asked me to switch, so the other 3 were made in the owner's own ChatGPT, in the old dungeon
+  chat (its new-chat box still holds the old trap message, so I left that alone). The browser window got narrower
+  mid-way, so one click opened a menu instead of the text box; fixed by clicking again. A long wait script froze the
+  first tab (45 s limit); shorter waits worked. I listed a whole model folder by mistake (too much output).

@@ -76,6 +76,41 @@ Checks: every dungeon has a different signature; no trap is in every dungeon; sm
 - Maybe: stone/brick versions of wall_cracked, floor_loose_stone, floor_old
 - Check: healing shrine (PC kit)
 
+**Dungeon junk (owner's picks, Nov 20): 20 small floor models, just for looks**
+Pictures (concept only, never turned straight into the model): `docs/art/dungeon-model-sheets/junk_*.jpg`.
+Build each in Blender by script (MODEL-RULES rules 1, 2 and 6: hand-built, no two surfaces in one place, our textures).
+All of them low and flat (most under 0.4 m tall), no collision or only a low one, not breakable.
+**Placement rule for the PC:** junk never stands on a path, a stair, a bridge, a doorway or the 1.5 m in front of a
+door, a lever, a chest or the recipe stand. Only along walls and in room corners. Add an automatic test, like the
+other placement tests, that no junk piece is on a room's walk line.
+
+| # | Piece (model name) | Look | Dungeons | Picture |
+|---|---|---|---|---|
+| 1 | `junk_bones` | a few dwarf bones + a skull | all 12 | junk_shared.jpg, 1 |
+| 2 | `junk_shield_wood` | round wooden shield cracked in half, loose boards | small | junk_shared.jpg, 2 |
+| 3 | `junk_shield_iron` | iron-rimmed round shield broken in two | medium, big | junk_shared.jpg, 3 |
+| 4 | `junk_sword_snapped` | short sword in two pieces | all 12 | junk_shared.jpg, 4 |
+| 5 | `junk_axe_head` | axe head without a handle | all 12 | junk_shared.jpg, 5 |
+| 6 | `junk_spear_broken` | spear shaft broken in two | all 12 | junk_shared.jpg, 6 |
+| 7 | `junk_rags` | torn cloth + a burst empty sack | all 12 | junk_shared.jpg, 7 |
+| 8 | `junk_rubble_wood` | low pile of broken planks and splinters | small | junk_shared.jpg, 8 |
+| 9 | `junk_rubble_brick` | low pile of broken clay bricks + dust | big | junk_shared.jpg, 9 |
+| - | stone rubble | already exists: `assets/models/build/ruin_rubble__cut_stone.glb` | medium | (none needed) |
+| 10 | `junk_pickaxe_broken` + `junk_shovel_bent` | pickaxe with a snapped handle, bent shovel | small | junk_small_mine.jpg, top row |
+| 11 | `junk_beam_snapped` | cracked support beam with iron bands, splinters | small | junk_small_mine.jpg, middle |
+| 12 | `junk_helmet_lantern` | dented miner's helmet; lantern on its side, glass shards (2 models) | small | junk_small_mine.jpg, bottom row |
+| 13 | `junk_urns` | 3 burial urns: whole, cracked, smashed | medium | junk_medium_stone.jpg, top left |
+| 14 | `junk_statue_head` | carved dwarf head broken off a statue, on its side (show the face too, not just the beard as in the picture) | medium | junk_medium_stone.jpg, top right |
+| 15 | `junk_armour_pile` | dented rusty helmets + a chest plate in a heap | medium | junk_medium_stone.jpg, bottom left |
+| 16 | `junk_coffin_lid` | carved stone coffin lid in 3 flat chunks | medium | junk_medium_stone.jpg, bottom right |
+| 17 | `junk_slag` | cold slag lumps + a flat slag puddle (nothing glows) | big | junk_big_forge.jpg, 1 |
+| 18 | `junk_tongs_hammer` | snapped tongs, hammer with a split handle | big | junk_big_forge.jpg, 2 |
+| 19 | `junk_crucible_mould` | cracked melting pot + small broken mould (smaller than the trap mould) | big | junk_big_forge.jpg, 3 |
+| 20 | `junk_scrap` | bent bars, rings and offcuts in a small pile | big | junk_big_forge.jpg, 4 |
+
+Already exist, reuse as junk too: `crate_stack`, `grain_sacks`, `keg`, `furn_barrel_rack`, `ore_basket`, `mine_cart`,
+`timber_stack` (small), treasure bits (`tr_mug`, `tr_plate`, `tr_spoon`, `tr_candle_short`) in barracks and halls.
+
 **Creatures (PC):** 7 KayKit dwarf versions + 9 named mini bosses (see 00-missing-and-build-order.md).
 
 **New code:** ragdoll on big hits (synced in co-op), shootable chains, ropes and chests, trap timing patterns

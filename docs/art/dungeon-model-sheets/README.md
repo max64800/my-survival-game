@@ -50,6 +50,15 @@ Source list: `docs/design/zone1-dungeons/traps-and-variety.md` → "Assets to ma
 | [Rope lift + winch](lift_platform.md) | wood | Pell's, Emberdeep |
 | [Rope slide](rope_slide.md) | wood | Mossprop |
 
+| **Dungeon junk (Nov 20)** | | |
+| [Shared junk: bones, shields, weapons, rags, rubble](junk_shared.jpg) | all | all 12 |
+| [Small mines: pickaxe, shovel, beam, helmet, lantern](junk_small_mine.jpg) | wood | #1-#4 |
+| [Medium stone: urns, statue head, armour, coffin lid](junk_medium_stone.jpg) | stone | #5-#9 |
+| [Big forges: slag, tongs + hammer, crucible + mould, scrap](junk_big_forge.jpg) | forge | #10-#12 |
+
+Junk has no written sheet: the list, sizes and the "never on a path" rule are in
+`docs/design/zone1-dungeons/traps-and-variety.md` → "Dungeon junk".
+
 ⭐ = that dungeon's signature trap.
 
 ## Not covered here
