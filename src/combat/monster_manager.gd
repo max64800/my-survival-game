@@ -502,34 +502,43 @@ func monster_changed(m: Monster) -> void:
 
 ## Our dwarf's swing landed: ask the host to hurt these monsters.
 ## airborne = our dwarf was in the air (Jumping ★75: jump attacks).
-func ask_attack(uids: PackedInt32Array, heavy: bool, combo_step: int, riposte: bool, airborne: bool = false) -> void:
+func ask_attack(uids: PackedInt32Array, heavy: bool, combo_step: int, riposte: bool, airborne: bool = false, bash: bool = false) -> void:
 	if auth.is_host():
-		request_attack(auth.local_peer_id(), uids, heavy, combo_step, riposte, false, airborne)
+		request_attack(auth.local_peer_id(), uids, heavy, combo_step, riposte, false, airborne, bash)
 	else:
-		_rpc_attack.rpc_id(1, uids, heavy, combo_step, riposte, airborne)
+		_rpc_attack.rpc_id(1, uids, heavy, combo_step, riposte, airborne, bash)
 
 
 @rpc("any_peer", "reliable")
-func _rpc_attack(uids: PackedInt32Array, heavy: bool, combo_step: int, riposte: bool, airborne: bool = false) -> void:
+func _rpc_attack(uids: PackedInt32Array, heavy: bool, combo_step: int, riposte: bool, airborne: bool = false, bash: bool = false) -> void:
 	if auth.is_host():
 		var unique := PackedInt32Array()
 		for u in uids:
 			if not unique.has(u) and unique.size() < 8:
 				unique.append(u)
-		request_attack(multiplayer.get_remote_sender_id(), unique, heavy, clampi(combo_step, 0, 9), riposte, false, airborne)
+		request_attack(multiplayer.get_remote_sender_id(), unique, heavy, clampi(combo_step, 0, 9), riposte, false, airborne, bash)
 
 
 ## Host: works out the damage (doc 2.2) for each monster hit. Returns total damage dealt.
 ## spin = the Whirlwind perk: a heavy hit on everything around you, no target limit.
-func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: int, riposte: bool, spin: bool = false, airborne: bool = false) -> int:
+## bash = a shield bash while blocking (owner, chat 16): hits with the best shield carried, not the weapon in hand.
+func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: int, riposte: bool, spin: bool = false, airborne: bool = false, bash: bool = false) -> int:
 	var ps := auth.get_player(peer)
 	if ps == null:
 		return 0
 	var item := ps.selected_item()
+	var hand := ps.hand_slot()
+	if bash:
+		heavy = false
+		combo_step = 0
+		hand = _shield_slot(ps)
+		if hand < 0:
+			return 0  # no shield: no bash (stops cheating)
+		item = ps.inventory.get_slot(hand).get("id", "")
 	var w := Combat.weapon_of(item)
 	var tier := maxi(Items.tier(item), 0)
 	var wd: Dictionary = Combat.WEAPONS[w]
-	var gb := Gems.bonus(ps.inventory.get_slot(ps.hand_slot()))
+	var gb := Gems.bonus(ps.inventory.get_slot(hand))
 	var elem := {}
 	for e in ["fire", "frost", "poison"]:
 		if gb.has(e):
@@ -555,7 +564,7 @@ func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: 
 		var star: float = ps.progress.star_damage_bonus(w, {combo_step = combo_step, riposte = riposte, stunned = m.stun.is_stunned(),
 			shelled = float(m.stats().get("armor", 0.0)) >= 20.0, airborne = airborne,
 			tip = dist >= wd.reach * ps.progress.reach_mult(w) * 0.8})  # skills.md ★ perks
-		var dmg := roundi(Combat.damage(w, heavy, tier, _pierced(ps, m, w), combo_step, sit, 0.0, Upgrades.bonus(ps.inventory.get_slot(ps.hand_slot())), buff + auth.damage_boost(ps, m.kind) + ps.progress.weapon_damage_bonus(w) + _perk_buff(ps, peer, m, w) + star, elem) * mult)
+		var dmg := roundi(Combat.damage(w, heavy, tier, _pierced(ps, m, w), combo_step, sit, 0.0, Upgrades.bonus(ps.inventory.get_slot(hand)), buff + auth.damage_boost(ps, m.kind) + ps.progress.weapon_damage_bonus(w) + _perk_buff(ps, peer, m, w) + star, elem) * mult)
 		if riposte and ps.progress.riposte_crits(w):  # Sword ★100: a perfect parry's counter is a critical
 			dmg = roundi(dmg * Combat.CRIT_MULT)
 			_ev_note.rpc(m.uid, "Critical!")
@@ -578,8 +587,21 @@ func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: 
 	if heavy and Progression.weapon_skill(w) == "axe" and ps.progress.has_star("axe", 100) and n > 0:
 		auth.give_stamina(peer, 6.0 * mini(n, max_targets))  # Axe ★100: a heavy sweep gives stamina back per enemy
 	if total > 0:
-		auth.wear_slot(ps, ps.hand_slot())  # a swing that hit something wears the weapon once
+		auth.wear_slot(ps, hand)  # a swing that hit something wears the weapon once (a bash: the shield)
 	return total
+
+
+## Host: the slot of the shield a bash hits with: the equipped one, else the best on the hotbar (-1 = none).
+func _shield_slot(ps: GameAuthority.PlayerState) -> int:
+	var eq := Inventory.equip_index("shield")
+	if Items.kind(ps.inventory.get_slot(eq).get("id", "")) == "shield":
+		return eq
+	var best := -1
+	for i in Inventory.HOTBAR_SIZE:
+		var id: String = ps.inventory.get_slot(i).get("id", "")
+		if Items.kind(id) == "shield" and (best < 0 or Items.tier(id) > Items.tier(ps.inventory.get_slot(best).get("id", ""))):
+			best = i
+	return best
 
 
 ## Perk damage on top (owner's tree, Nov 19): Warrior's Grip, Steady Aim, Berserker, Pack Hunters.
@@ -1033,6 +1055,8 @@ func _judge_incoming() -> void:
 				result.damage *= 1.0 - me.vitals.buff_total("guard_" + Monsters.food_guard(m.kind))  # meat of its kind (food plan)
 				result.damage *= 1.0 - me.vitals.gear.get("guard_all", 0.0)  # Stone Amber armor
 				me.vitals.take_damage(result.damage)
+				if dwarf.get("fight") != null and result.result in ["hit", "block"]:  # your stun meter (owner, chat 15)
+					dwarf.fight.take_stun(result.damage * DwarfFight.STUN_PER_HIT if result.result == "hit" else float(hit.damage) * DwarfFight.STUN_PER_BLOCK)
 				if result.result == "hit" and result.damage > 0.0:
 					ask_hit_back(hit.uid, result.damage)  # Edge Quartz / Storm Topaz armor (the host checks)
 				# Poison/fire/frost buildup: all of it on a hit, none on a parry. Through a block: fire all of it,

@@ -97,6 +97,26 @@ func test_sword_damage_and_kill() -> void:
 	_teardown()
 
 
+## Owner, chat 16: one-handed weapons have no heavy attack; left click while blocking = a shield bash.
+func test_shield_bash_hits_with_the_shield() -> void:
+	await _setup()
+	ps.inventory.add("sword_stone", 1)
+	auth.request_select_slot(1, first_item_slot(ps))
+	for w in ["sword", "mace", "spear", "axe"]:
+		check(not DwarfFight.weapon_has_heavy(w), "%s: no heavy attack" % w)
+	check(DwarfFight.weapon_has_heavy("mace_2h"), "the great maul keeps its heavy")
+	var clip := String(DwarfRig.ANIMS[DwarfRig.ATTACKS.mace[0][0]]).trim_prefix("o/")
+	check(is_equal_approx(DwarfRig.attack_seconds("mace", false, 0, 9.0), DwarfOneSwing.clip_length(clip)),
+		"the mace swings at its own speed, not slowed like the sword (owner, chat 16)")
+	check_eq(auth.monsters.request_attack(1, PackedInt32Array(), false, 0, false, false, false, true), 0, "no shield: no bash")
+	ps.inventory.add("shield_stone", 1)
+	var m := _spawn("cave_spider", Vector3(1.2, 0, 0))
+	m.state = Monster.State.CHASE
+	var dealt := auth.monsters.request_attack(1, PackedInt32Array([m.uid]), true, 2, false, false, false, true)
+	check(dealt > 0 and dealt < 13, "the bash hits like the shield's light push (%d), not the sword (13 light, more heavy)" % dealt)
+	_teardown()
+
+
 func test_crystal_monster_hits_harder_and_drops_crystals() -> void:
 	await _setup()
 	var uid: int = auth.monsters._next_uid

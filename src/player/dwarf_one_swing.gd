@@ -18,7 +18,8 @@ const BAKED := "res://assets/anim/one_kaykit.json"
 const BAKED_VIDEO := "res://assets/anim/one_video.json"
 const BAKED_UAL := "res://assets/anim/one_ual.json"  ## Quaternius UAL 2 sword moves (chat 14, tools/asset_forge/one_ual_bake.gd)
 const MOVES := ["Chop", "SliceDiag", "SliceFlat", "Stab", "JumpChop", "BlockAttack",
-	"SwordHit1", "SwordHit2", "SwordHit3", "MaceHit1", "MaceHit2", "MaceHit3", "UalCombo", "UalA", "UalB", "UalC", "UalHeavy"]
+	"SwordHit1", "SwordHit2", "SwordHit3", "MaceHit1", "MaceHit2", "MaceHit3", "UalCombo", "UalA", "UalB", "UalC", "UalHeavy",
+	"UalHit1", "UalHit2", "UalHit3", "UalHeavyHit", "UalMace1", "UalMace2", "UalMace3", "UalMace4"]
 const HIT_AT := 0.40
 const BLEND_IN := 0.12  ## share of a swing spent easing in from wherever his arms were
 const BLEND_OUT := 0.18  ## s easing back to his own arms after a swing

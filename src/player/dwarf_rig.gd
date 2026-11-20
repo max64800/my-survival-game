@@ -51,11 +51,18 @@ const ANIMS := {
 	# Great axe and great maul (F389, owner Nov 20): the Lampwick Foreman's moves (DwarfGreatSwing), played by DwarfFist.
 	# The "g/" clips only time the swing (the upper body's idle; the bones come from the baked moves).
 	great_chop = "g/Chop", great_spin = "g/Spin",
+	stunned = "b/Idle_Shield_Break",  # stunned / guard broken (owner, chat 15)
+	mace_1 = "o/UalMace1", mace_2 = "o/UalMace2", mace_3 = "o/UalMace3", mace_4 = "o/UalMace4",
+	ual_1 = "o/UalHit1", ual_2 = "o/UalHit2", ual_3 = "o/UalHit3", ual_heavy = "o/UalHeavyHit",
 }
-## Which attack each weapon makes: [light attacks (taking turns), heavy attack] (names in ANIMS). Anything else: "sword".
+## Which attack each weapon makes: [light attacks (taking turns), heavy attack] (names in ANIMS). Anything else: "".
 const ATTACKS := {
-	"sword": [["attack_a", "attack_b"], "heavy"],
-	"mace": [["smash", "swipe"], "smash"],  # overhead smash, then a side swing
+	# sword (owner, chat 15: "as perfect as it can get"): Quaternius UAL 2's regular combo, one hit per click, and its
+	# hit C for the heavy blow (DwarfOneSwing, baked by tools/asset_forge/one_ual_bake.gd; played at UAL_SLOW)
+	"sword": [["ual_1", "ual_2", "ual_3"], "ual_heavy"],
+	"": [["attack_a", "attack_b"], "heavy"],  # (everything else: the old sword swings; the UAL moves need a sword or mace in hand)
+	# mace (owner, chat 15: "the heavy combo is the mace main combo"): UAL 2's heavy combo, one hit per click
+	"mace": [["mace_1", "mace_2", "mace_3", "mace_4"], "smash"],
 	# great axe and great maul (owner, Nov 20, F389): the Foreman's moves, light = the chop, heavy = the spin (owner's
 	# pick; the heavy swing's 1.9 s plays the spin near the Foreman's own speed).
 	"axe_2h": [["great_chop"], "great_spin"],
@@ -751,6 +758,7 @@ func great_pose(delta: float) -> Dictionary:
 
 ## The sword's / mace's swing pose this frame (DwarfFist lays the weapon by it): the "o/" swing playing now, eased
 ## in from wherever he was; after it, the last pose fades out (one_weight -> 0) back to his own arms.
+const UAL_BLEND_IN := 0.15  ## s, at least, easing into a UAL 2 sword move
 func one_pose(delta: float) -> Dictionary:
 	if not one_fixed.is_empty():  # (a tool holding one pose still)
 		one = one_fixed
@@ -767,7 +775,10 @@ func one_pose(delta: float) -> Dictionary:
 			_one_clock += delta  # (game time, frame by frame)
 		one_move = clip.trim_prefix("o/")
 		one_t = clampf(_one_clock * _upper_scale / tree.get_animation(clip).length, 0.0, 1.0)
-		var k := smoothstep(0.0, DwarfOneSwing.BLEND_IN, one_t)
+		var blend_in := DwarfOneSwing.BLEND_IN
+		if one_move.begins_with("Ual"):  # (chat 15: UAL 2's half-second hits eased in over 3 frames: a snap; owner: "he's losing his sword at the start")
+			blend_in = maxf(blend_in, UAL_BLEND_IN / maxf(tree.get_animation(clip).length / _upper_scale, 0.01))
+		var k := smoothstep(0.0, blend_in, one_t)
 		var now := DwarfOneSwing.swing(one_move, one_t)
 		one = DwarfGreatSwing.blend(_one_from, now, k) if _one_from_w > 0.0 else now
 		one_weight = lerpf(_one_from_w, 1.0, k)
@@ -889,8 +900,28 @@ func play_full(what: String, duration: float = 0.0) -> void:
 
 ## A weapon attack that fits the weapon (ATTACKS): weapon = Combat.weapon_of(the held item). step = the hit in the
 ## combo (DwarfFight._combo_step: hit 1, hit 2 take turns); -1 = just take turns.
+## How long an attack takes (s): the sword's UAL 2 moves at UAL_SLOW times their own length (owner, chat 15: "the real
+## speed is too fast, slowed down quite drastically"); the mace's at their own speed (owner, chat 16: "takes so long
+## to actually hit, twice as fast"); every other weapon: `fallback` (Combat.WEAPONS).
+const UAL_SLOW := 2.0
+const MACE_SLOW := 1.0
+
+
+static func ual_slow(weapon: String) -> float:
+	return MACE_SLOW if weapon == "mace" else UAL_SLOW
+
+
+static func attack_seconds(weapon: String, heavy: bool, step: int, fallback: float) -> float:
+	if not weapon in ["sword", "mace"]:
+		return fallback
+	var moves: Array = ATTACKS[weapon]
+	var what: String = moves[1] if heavy else (moves[0] as Array)[maxi(step, 0) % (moves[0] as Array).size()]
+	var clip: String = String(ANIMS.get(what, what)).trim_prefix("o/")
+	return DwarfOneSwing.clip_length(clip) * ual_slow(weapon) if DwarfOneSwing.has_move(clip) else fallback
+
+
 func attack(duration: float, heavy: bool, weapon: String = "sword", step: int = -1) -> void:
-	var moves: Array = ATTACKS.get(weapon, ATTACKS.sword)
+	var moves: Array = ATTACKS.get(weapon, ATTACKS[""])
 	var light: Array = moves[0]
 	_attack_flip = not _attack_flip
 	var i := step if step >= 0 else (0 if _attack_flip else 1)

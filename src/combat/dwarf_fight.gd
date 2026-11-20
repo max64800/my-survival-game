@@ -1,8 +1,9 @@
 class_name DwarfFight
 extends Node
 ## The dwarf's fighting controls (combat doc 1.5), used while a weapon or shield is in hand:
-##   Left click = light attack · hold it = keep swinging (combo) · middle click = heavy attack (F430)
-##   Right click hold = block · tap right before a hit = PERFECT PARRY
+##   Left click = light attack · click again or hold it = keep swinging (combo) · middle click = heavy attack, great
+##   weapons only (one-handed ones have none: owner, chat 16)
+##   Right click hold = block · tap right before a hit = PERFECT PARRY · left click while blocking (shield) = shield bash
 ##   Left Ctrl (+ direction) = dodge-roll (safe from 0.05 s to 0.30 s into the roll)
 ##   Crossbow: right click hold = aim (no spread, zoom) · left click = shoot · R = reload
 
@@ -23,6 +24,14 @@ var stagger := 0.0  ## guard break / knockdown: can't act
 var _heavy_until := 0.0  ## a heavy swing is still going until this clock time
 var loaded := true  ## crossbow: a bolt is in it
 const KNOCK_DOWN_TIME := 2.0  ## down 0.85 s, then 1.1 s getting up
+## Your own stun meter (owner, chat 15: "you should have your own stun meter as well"): hits fill it, blocked hits a
+## little; full = stunned (UAL 2's Shield broken move, no fighting or walking), then it can't fill for 2 s.
+const STUN_MAX := 100.0
+const STUN_TIME := 1.5  ## s stunned
+const STUN_PER_HIT := 2.5  ## stun per point of damage you take
+const STUN_PER_BLOCK := 1.0  ## per point of damage your block stopped
+const DEATH_FALL := 0.9  ## s of the knock-back move before you wake at your bed (owner, chat 15)
+var stun_meter := StunMeter.new(STUN_MAX, STUN_TIME)
 var reload_left := -1.0  ## crossbow: seconds of reloading left (-1 = not reloading)
 var reload_total := 1.0  ## crossbow: how long this reload takes in all (for the bar in the middle of the screen)
 
@@ -137,8 +146,16 @@ func defense_state() -> Dictionary:
 		weapon = weapon(), shield = has_shield(), tier = shield_tier() if has_shield() else tier()}
 
 
+## Fills your stun meter; full: stunned (owner, chat 15).
+func take_stun(amount: float) -> void:
+	if stun_meter.add(amount):
+		dwarf.model.react("stunned", STUN_TIME)
+		stagger = maxf(stagger, STUN_TIME)
+		message.emit("Stunned!", Color(1.0, 0.4, 0.3))
+
+
 func guard_break() -> void:
-	dwarf.model.react("knock")
+	dwarf.model.react("stunned", 1.2)  # (UAL 2's Shield broken, owner chat 15)
 	stagger = 1.2
 	message.emit("Guard broken!", Color(1.0, 0.4, 0.3))
 
@@ -168,6 +185,7 @@ func got_parry() -> void:
 ## Called every physics frame by the dwarf. Returns a speed multiplier for walking.
 func step(delta: float, playing: bool, move_dir: Vector3) -> float:
 	clock += delta
+	stun_meter.tick(delta)
 	_busy = maxf(0.0, _busy - delta)
 	if stagger > 0.0:
 		stagger -= delta
@@ -198,12 +216,43 @@ func step(delta: float, playing: bool, move_dir: Vector3) -> float:
 	elif Input.is_action_just_pressed("use"):
 		_last_press = clock
 	# F430 (owner, Nov 20: "holding the mouse button keeps the pickaxe swinging; I want the same for weapons"):
-	# hold left click = light swings one after another (the combo keeps going); middle click = heavy attack.
-	if Input.is_action_just_pressed("heavy_attack"):
+	# hold left click = light swings one after another (the combo keeps going).
+	# Owner, chat 16: one-handed weapons have no heavy attack; right click blocks, and left click while blocking with
+	# a shield = a shield bash (sword, mace, spear, axe alike). Great weapons keep middle click = heavy.
+	if is_blocking():
+		if Input.is_action_just_pressed("dig") and has_shield():
+			_shield_bash()
+	elif Input.is_action_just_pressed("heavy_attack") and has_heavy():
 		_attack(true)
 	elif Input.is_action_pressed("dig"):
 		_attack(false)  # (does nothing while the last swing is still going: the next starts as soon as it ends)
 	return (_ps().progress.guard_walk_mult(false) if _ps() else 0.6) if is_blocking() else 1.0  # Shield ★25
+
+
+## Only the great (two-handed) weapons have a heavy attack (owner, chat 16).
+func has_heavy() -> bool:
+	return weapon_has_heavy(weapon())
+
+
+static func weapon_has_heavy(w: String) -> bool:
+	return Combat.WEAPONS[w].hands == 2
+
+
+## Left click while blocking with a shield (owner, chat 16): a quick push with the shield, the guard stays up.
+## Hits like the shield's own light attack (its stun, its tier).
+func _shield_bash() -> void:
+	var ps := _ps()
+	var wd: Dictionary = Combat.WEAPONS["shield"]
+	if _busy > 0.0 or ps == null or ps.vitals.stamina < 1.0:
+		return
+	ps.vitals.use_stamina(minf(wd.light_sta * ps.progress.attack_stamina_mult("shield"), ps.vitals.stamina))
+	var speed: float = wd.light_speed
+	_busy = speed
+	_combo_until = 0.0  # a bash ends the combo
+	dwarf.model.attack(speed, false, 0, "shield")
+	Sfx.play("swing", dwarf.global_position + Vector3.UP, -8.0, 0.9)
+	dwarf.get_tree().create_timer(speed * 0.4).timeout.connect(func(): _impact(false, 0, false, false, true))
+	dwarf.face_camera()
 
 
 ## Where a roll moves you this frame.
@@ -227,7 +276,7 @@ func _attack(heavy: bool) -> void:
 			return
 		ps.vitals.use_stamina(minf(cost, ps.vitals.stamina))  # a light swing always happens
 	_combo_step = (_combo_step + 1) % wd.combo.size() if clock < _combo_until else 0
-	var speed: float = wd.heavy_speed if heavy else wd.light_speed
+	var speed: float = DwarfRig.attack_seconds(weapon(), heavy, _combo_step, wd.heavy_speed if heavy else wd.light_speed)
 	_busy = speed
 	if heavy:
 		_heavy_until = clock + speed  # (Warhammer ★25: a heavy swing can't be knocked out of)
@@ -244,11 +293,11 @@ func _attack(heavy: bool) -> void:
 
 
 ## The swing lands: find monsters in front of us within reach.
-func _impact(heavy: bool, combo_step: int, riposte: bool, airborne: bool = false) -> void:
+func _impact(heavy: bool, combo_step: int, riposte: bool, airborne: bool = false, bash: bool = false) -> void:
 	var auth := GameAuthority.instance
 	if auth == null or auth.monsters == null:
 		return
-	var w := weapon()
+	var w := "shield" if bash else weapon()
 	var wd: Dictionary = Combat.WEAPONS[w]
 	var prog: Progression = _ps().progress if _ps() else Progression.new()
 	var reach: float = wd.reach * prog.reach_mult(w) + 0.5  # Spear: +1.5% reach per 10 levels
@@ -273,7 +322,7 @@ func _impact(heavy: bool, combo_step: int, riposte: bool, airborne: bool = false
 	for f in found:
 		uids.append(f[1])
 	if not uids.is_empty():
-		auth.monsters.ask_attack(uids, heavy, combo_step, riposte, airborne)
+		auth.monsters.ask_attack(uids, heavy, combo_step, riposte, airborne, bash)
 		dwarf.add_shake(0.3 if heavy else 0.15)
 	else:
 		# A dungeon thing under the crosshair (rubble, the cracked wall, the hidden boulder, furniture): weapons break

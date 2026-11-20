@@ -40,6 +40,7 @@ var _loading_bar: ProgressBar
 var _swap_from := -1
 var _hover_slot := -1  ## the bag slot under the mouse (for "press 1-9 to put it on the hotbar", F155)
 const VITAL_BAR_H := [38.0, 30.0]  ## health and stamina bar heights, frame included (F247)
+const STUN_BAR_H := 20.0  ## your stun meter's bar (chat 15)
 var learned_cards: LearnedCards
 var _bars := {}  ## "health"/"stamina" -> framed ProgressBar, "hunger"/"thirst" -> VitalDial (F229)
 var _vitals: VBoxContainer  ## health + stamina bars above the hotbar
@@ -221,7 +222,9 @@ func _build() -> void:
 	root.add_child(_ailment_badges)
 	# F247 (owner, Nov 19): the old slider look stretched into a thin strip with the number on its top edge.
 	# Now each bar sits in the hotbar slots' wood-and-brass frame, a thick fill inside, the number in the middle.
-	for b in [["health", Color(0.86, 0.2, 0.16), VITAL_BAR_H[0]], ["stamina", Color(0.93, 0.74, 0.26), VITAL_BAR_H[1]]]:
+	# (+ your stun meter, owner chat 15: a thin purple bar, shown only while it has stun in it)
+	for b in [["health", Color(0.86, 0.2, 0.16), VITAL_BAR_H[0]], ["stamina", Color(0.93, 0.74, 0.26), VITAL_BAR_H[1]],
+			["stun", Color(0.62, 0.42, 0.86), STUN_BAR_H]]:
 		var frame := PanelContainer.new()
 		frame.name = b[0].capitalize() + "Frame"
 		frame.custom_minimum_size = Vector2(0, b[2])
@@ -248,6 +251,8 @@ func _build() -> void:
 		pb.add_theme_stylebox_override("fill", bar_fill)
 		frame.add_child(pb)
 		_bars[b[0]] = pb
+	_vitals.move_child(_bars.stun.get_parent(), 0)  # (the stun meter above the health bar)
+	_bars.stun.get_parent().visible = false
 	_place_vitals()
 	_health_text = _label(_bars.health.get_parent(), 17)  # over the bar, centred both ways inside the frame
 	_health_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -861,6 +866,7 @@ func _place_vitals() -> void:
 	_vitals.offset_right = w * 0.5
 	_vitals.offset_bottom = -HOTBAR_SLOT - 18.0 - 14.0
 	_vitals.offset_top = _vitals.offset_bottom - VITAL_BAR_H[0] - VITAL_BAR_H[1] - 4.0
+	_vitals.grow_vertical = Control.GROW_DIRECTION_BEGIN  # (the stun bar, when it shows, goes on top: chat 15)
 	if _ailment_badges:
 		_ailment_badges.anchor_left = 0.5
 		_ailment_badges.anchor_right = 0.5
@@ -1110,6 +1116,13 @@ func _process(delta: float) -> void:
 		_bars.health.value = v.health
 		_bars.stamina.max_value = v.max_stamina()
 		_bars.stamina.value = v.stamina
+		var fighter := _local_dwarf()
+		var sm: StunMeter = fighter.fight.stun_meter if fighter != null and fighter.fight != null else null
+		_bars.stun.get_parent().visible = sm != null and sm.fraction() > 0.0
+		if sm:
+			_bars.stun.max_value = 1.0
+			_bars.stun.step = 0.0
+			_bars.stun.value = sm.fraction()
 		_bars.hunger.set_value(v.hunger)
 		_bars.thirst.set_value(v.thirst)
 		_health_text.text = "%d / %d" % [ceili(v.health), roundi(v.max_health())]

@@ -42,6 +42,27 @@ func test_rigged_dwarf_builds_and_animates() -> void:
 
 
 ## Owner, Nov 17: pick points / axe blade in the swing, each weapon its own move, the shield always on the left arm.
+## Chat 15 (owner: "as perfect as it can get", "slowed down quite drastically"): the sword's combo is UAL 2's regular
+## combo, a hit per click, at half the pack's speed; weapons without their own moves keep the old swing.
+func test_sword_swings_the_ual_combo_slowly() -> void:
+	var m := DwarfModel.new()
+	tree.root.add_child(m)
+	var rig := m.dwarf_rig
+	var light: Array = DwarfRig.ATTACKS.sword[0]
+	check(light.size() == (Combat.WEAPONS.sword.combo as Array).size(), "one UAL hit for every step of the sword combo")
+	for what: String in light + [DwarfRig.ATTACKS.sword[1]]:
+		var clip: String = DwarfRig.ANIMS[what]
+		check(rig.tree.has_animation(clip) and DwarfOneSwing.has_move(clip.trim_prefix("o/")), "%s is baked and playable" % clip)
+	for step in 3:
+		var s := DwarfRig.attack_seconds("sword", false, step, 0.55)
+		check(is_equal_approx(s, DwarfOneSwing.clip_length(String(DwarfRig.ANIMS[light[step]]).trim_prefix("o/")) * DwarfRig.UAL_SLOW),
+			"hit %d plays at half the pack's speed (%.2f s)" % [step + 1, s])
+	check(DwarfRig.attack_seconds("axe", false, 0, 0.7) == 0.7, "the axe keeps its own speed")
+	check(not DwarfRig.ATTACKS.has("axe") and String(DwarfRig.ATTACKS[""][1]) == "heavy", "the axe keeps the old swing")
+	m.queue_free()
+	await frames(2)  # (gone before the next test builds its dwarf)
+
+
 func test_tools_sit_right_in_the_hands() -> void:
 	var m := DwarfModel.new()
 	tree.root.add_child(m)

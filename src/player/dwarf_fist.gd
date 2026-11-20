@@ -63,6 +63,8 @@ const GRIP_SLIDE_MAX := 0.05  ## m the fist may sit off the grip's middle
 const TWO_HANDED := ["axe_2h", "mace_2h"]
 ## One-handed weapons that swing the pack's moves (DwarfOneSwing, F389 chat 12; the owner didn't like their old moves).
 const ONE_HANDED := ["sword", "mace"]
+const SHIELD_ARM := ["clavicle_l", "upperarm_l", "lowerarm_l", "hand_l"]
+var _ual := false  ## the sword swing playing (or fading out) is one of UAL 2's
 var _one_w := 0.0  ## how much of the one-handed swing's pose he takes this frame (0..1)
 var _one: Dictionary = {}  ## that pose
 const ELBOW_OUT := Vector3(0.8, 0.5, 0.2)  ## where the great weapons' elbows point: out, down, back (shares)
@@ -137,7 +139,15 @@ func _process_modification_with_delta(_delta: float) -> void:
 		if rig.one_weight > 0.0 and not op.is_empty():
 			_one_w = rig.one_weight
 			_one = op
+			var keep := {}
+			if rig.one_move != "":
+				_ual = rig.one_move.begins_with("Ual")  # (kept through the fade back to standing)
+			if _ual and rig.shield_grip.get_child_count() > 0:
+				for b: String in SHIELD_ARM:  # (owner, chat 15: the shield arm keeps his standing pose, fixed to his chest)
+					keep[b] = sk.get_bone_pose_rotation(sk.find_bone(b))
 			_apply_pose(sk, op, _plant, _one_w)
+			for b: String in keep:
+				sk.set_bone_pose_rotation(sk.find_bone(b), keep[b])
 	if rig.shield_grip.get_child_count() > 0:
 		_close("_l", sk)
 		_wear_shield(sk)
@@ -883,9 +893,13 @@ var _hang := 0.0  ## 0 = the animation's arm (blocking, bashing), 1 = hanging st
 ## Puts the shield on: the left fist round its grip, its strap along the forearm, its face away from his body.
 func _wear_shield(sk: Skeleton3D) -> void:
 	# (a sword/mace swing's pose holds the shield in front of his chest: the owner's videos, F389 chat 13)
-	var blocking: bool = rig._hold != "" or bool(rig.tree.get("parameters/upper/active")) or _one_w > 0.0
+	# (UAL 2's moves keep the standing shield, hanging at his side: the pack's own guard sank it into his belly and
+	# face; owner, chat 15: "the left one with the shield should not move at all")
+	var ual := _one_w > 0.0 and _ual
+	var blocking: bool = rig._hold != "" or (bool(rig.tree.get("parameters/upper/active")) and not ual) or (_one_w > 0.0 and not ual)
 	_hang = move_toward(_hang, 0.0 if blocking else 1.0, get_process_delta_time() * 6.0) if rig.is_inside_tree() else _hang
-	if _one_w > 0.0:
+	# (UAL 2's moves bring their own shield arm, held still against his chest: one_ual_bake.gd; owner, chat 15)
+	if _one_w > 0.0 and not _ual:
 		_guard(sk)
 	if _hang > 0.0:
 		var sk_world := sk.global_transform

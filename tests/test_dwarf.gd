@@ -383,3 +383,33 @@ func test_beetle_charge_throws_a_couple_of_metres() -> void:
 	check(far > 0.8 and far < 2.5, "thrown a couple of metres (%.2f m)" % far)
 	check(dwarf.fight.stagger <= 0.0, "back up after %.1f s" % DwarfFight.KNOCK_DOWN_TIME)
 	root.queue_free()
+
+
+## Owner, chat 15: "you should have your own stun meter as well", and the pack's Shield broken when you're stunned.
+func test_your_own_stun_meter() -> void:
+	Controls.setup()
+	var root := _room([])
+	var auth := GameAuthority.new()
+	auth.drops_root = root
+	root.add_child(auth)
+	var dwarf := _dwarf_in(root)
+	auth.add_player(1, dwarf)
+	for i in 10:
+		await tree.physics_frame
+	var said := []
+	dwarf.model.reacted.connect(func(what: String, _d: float) -> void: said.append(what))
+	dwarf.fight.take_stun(20.0 * DwarfFight.STUN_PER_HIT)
+	check(dwarf.fight.stagger <= 0.0 and dwarf.fight.stun_meter.fraction() > 0.0, "a 20-damage hit fills it, no stun yet")
+	dwarf.fight.take_stun(25.0 * DwarfFight.STUN_PER_HIT)
+	check(is_equal_approx(dwarf.fight.stagger, DwarfFight.STUN_TIME), "the next big hit stuns you (%.1f s)" % dwarf.fight.stagger)
+	check("stunned" in said and dwarf.model.dwarf_rig.tree.has_animation(DwarfRig.ANIMS.stunned), "with the Shield broken move")
+	var t := DwarfFight.STUN_TIME + 0.3
+	while t > 0.0:
+		await tree.physics_frame
+		t -= 1.0 / 60.0
+	check(dwarf.fight.stagger <= 0.0, "and you can fight again")
+	dwarf.fight.take_stun(DwarfFight.STUN_MAX)
+	check(dwarf.fight.stagger <= 0.0, "not stunned again straight away (2 s rest)")
+	dwarf.fight.guard_break()
+	check(said.count("stunned") == 2, "a guard break plays the Shield broken move too")
+	root.queue_free()

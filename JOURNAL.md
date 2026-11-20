@@ -7223,3 +7223,75 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   were too dark (its fire bowl lies fallen) and the dwarf was in the way: added work lights and hid him.
 - **Open:** look at the Spire's photos in a real game (the robot run after the light change printed nothing yet);
   then task 2, the Old Kiln's 3D page.
+
+## Nov 20, 2026: dwarf-animations Claude, chat 15 (F389: UAL 2 sword moves, the shield arm)
+- **Owner on the "UAL Sword Moves" page:** "amazing", but the shield arm "turns and spins": hold it still. Asked
+  what else the pack has (told: shield bash, shield charge, shield guard/break, block, sword lunge, hook, throw, roll).
+- **Mistake 1 (Claude):** "froze" the left arm in the bake (one_ual_bake.gd) and showed the page after looking at 2
+  moments. Owner: "definitely not done", the shield through his head, the sword through the shield. Cause: the old
+  chat 13 guard (DwarfFist._guard, from his filmed videos) pulled the left fist in front of his chest in EVERY one-
+  handed swing, so the bake's arm never reached the game. Lesson: measure, don't eyeball two frames.
+- **New checks in one_swing_export.gd:** per frame, the shield disc against his head, body and the sword's line
+  (rough: it flags near-misses that look fine; trust pictures for now), and the sword node against the hand bone.
+- **The pack's own guard** sank the shield into his round belly, the hanging shield failed too (the pack bends his
+  whole body). What works: during UAL moves the left arm keeps his standing pose (DwarfFist keeps the 4 arm bones'
+  own turns, so they ride on his chest) and no guard; owner: "way better".
+- **Owner's next picture:** in the deep lunge he folds flat over the shield. Fix: the bake halves the body's bend
+  (`bend=0.5`, default).
+- **Owner's next round (4 pictures):** he "teleports" in the spin, the sword out of his hand, the shield arm bends at
+  the end. Causes, all measured: (1) the page stored every 3rd frame and blended the sword in a straight line while the
+  bones turned: now every frame (`every=1`, the file only 14.7 MB). (2) The bake had 30 poses a second; the pack's
+  spins turned over 180 deg between two, so they played backwards: now 120 (the strike finder reads speed over 1/30 s,
+  as before). (3) Halving the bend also halved the spin, which flipped 180 deg in one frame as it passed half a turn:
+  now only the lean is halved (twist kept, `_less_lean`). (4) The fade back to standing forgot the move was UAL and the
+  old guard grabbed the arm: DwarfFist remembers (`_ual`). (5) Short hits eased in over 3 frames: UAL moves ease in
+  over at least 0.15 s (DwarfRig.UAL_BLEND_IN). Result: combo, C and heavy keep the sword in hand (max 11-13 cm from the
+  hand bone, its normal grip); A's end and B's start still snap the right arm (60-70 deg in a frame).
+- **Owner asked:** swap our dwarf for the pack's model, reshaped? Told no: the bumping comes from his shape (belly,
+  short legs, big head), any model reshaped to him would bump the same way; moves made for chunky bodies or for a
+  shield (Mixamo Sword and Shield) help more.
+- **Hurdles:** a PowerShell single-quoted replace wrote a literal backtick-n into dwarf_fist.gd (fixed, compiled);
+  port 8766 was another chat's page server (used 8791).
+- Mixamo folder git-ignored (`tools/asset_forge/packs/mixamo/`). Owner: leave the shirt holes. Mixamo pack: not
+  downloaded yet. Page v4: https://claude.ai/artifact/9DKaixigUvFYqYcpPPXmTj. Not wired to attacks yet; not pushed.
+
+## Nov 20, 2026: dwarf-animations Claude, chat 15, later (the owner's picks: UAL moves wired into the game)
+- **Owner: "as perfect as it can get", but "real speed is too fast, slow it down drastically".** Wired in:
+  the sword's light combo = UAL 2's regular combo cut at its 3 hits (one_ual_bake.gd GAME: UalHit1-3, cut where the
+  tip-speed peaks say, 0.26/0.73/1.57 s), heavy = hit C (UalHeavyHit); both at DwarfRig.UAL_SLOW = 2 (half speed):
+  DwarfRig.attack_seconds gives DwarfFight the swing time. Other weapons without their own moves keep the old swing
+  (ATTACKS[""]; they used to borrow the sword's). Test: test_visuals.test_sword_swings_the_ual_combo_slowly. Hurdle:
+  the new test freed its dwarf "later" and broke the next test (a null material): it now waits 2 frames.
+- **Owner's picks from the pack's other moves:** roll and shield bash were already UAL's; the heavy combo became the
+  mace's main combo (UalMace1-4, one per click; Combat mace combo now [1.0, 1.1, 1.2, 1.4]); the mace's heavy is still
+  the old smash (asked him). Block without a shield was already UAL's Sword_Block (held as x/Sword_Guard).
+- **Owner: stun meter, Shield broken when stunned, knock-back when dying.** DwarfFight.stun_meter (StunMeter: hits add
+  2.5 per damage point, blocked hits 1 per point; full = 1.5 s stunned, then 2 s rest), MonsterManager feeds it, guard
+  breaks play Shield broken too, a thin purple HUD bar above health only while it has stun in it (the bar box now grows
+  upward). Dying: the knock-back for 0.9 s, then wake at the bed (GameAuthority). Test: test_dwarf.test_your_own_stun_meter.
+- **"Dwarf Moves" page** (https://claude.ai/artifact/PnEcX7nkBgHohnxFFnyywA): every weapon as the game plays it
+  (one_swing_export.gd `all=1`: DwarfModel.attack at the game's times, combos clicked as soon as allowed), the blocks,
+  bash, stunned, dying, roll, crossbow; each marked new / done / old / not done. Checked in the browser (all 17 clips
+  move and hold the right things; the "Loading" text stayed on top: fixed).
+- **Tests:** combat, monsters, visuals, scripts_load, authority all pass. test_dwarf's braid_tufts and aim_skips and
+  test_dwarf_fist's great_swings fail with or without this chat's changes (checked by setting them aside): older.
+  The full suite run hung for 45 min with other chats' runs going (stopped). Not played in a real game run yet.
+
+## November 21, 2026 (PC, dwarf-animations Claude, chat 16): no heavy for one-handed weapons, shield bash on block + click, faster mace
+- **Owner's rules (said while I was asking about the moves page):** one-handed weapons (sword, mace, spear, axe) have
+  no heavy attack; right click blocks; **left click while blocking (with a shield) = a shield bash**; combos work by
+  clicking again or holding the button (already so since F430). Great axe and great maul keep middle click = heavy.
+  Done: DwarfFight (`_shield_bash`, `weapon_has_heavy`), the bash plays the shield's push over the held guard (the
+  guard stays up), and the host counts it as a hit with your best shield (its tier, gems, wear), not your weapon
+  (MonsterManager.request_attack `bash`, sent to the host for friends too). Without a shield, click while blocking does nothing.
+- **Owner tried the mace: "takes so long to actually hit, twice as fast".** The mace's UAL moves now play at their
+  own speed (DwarfRig.MACE_SLOW = 1); the sword stays at half speed (UAL_SLOW = 2).
+- **Test:** test_monsters.test_shield_bash_hits_with_the_shield (no heavy for one-handed, no bash without a shield,
+  the bash hits like the shield, the mace at its own speed). monsters, combat, visuals pass.
+- **Hurdles / Claude's slips:** (1) my test first asked the test's stand-in dwarf for its fight controls (it has none):
+  made the check a plain rule instead. (2) My first mace-speed check compared it with the sword's move, which is
+  a different length: now it compares with the mace's own move. (3) A compile check failed once while Godot was
+  still loading; the second run was clean.
+- **Not done yet:** the real game play-test of chat 15's moves (the owner is testing them), the F-numbers for
+  these three wishes in FEEDBACK.md, great maul and crossbow moves, the Mixamo pack. The "Dwarf Moves" page still shows
+  the sword's heavy and the slow mace.

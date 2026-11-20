@@ -35,3 +35,5 @@ tools/mocap/.venv/
 tools/mocap/models/
 tools/mocap/videos/
 tools/mocap/out/
+# Mixamo animation files: licence forbids sharing the raw files (never in the public repo)
+tools/asset_forge/packs/mixamo/

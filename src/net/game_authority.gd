@@ -3007,7 +3007,11 @@ func _tick_vitals(ps: PlayerState, delta: float) -> void:
 	if v.is_dead():
 		if not ps.dying:
 			ps.dying = true
-			ask_died()
+			if ps.node is Dwarf:  # the knock-back first, then you wake at your bed (owner, chat 15)
+				(ps.node as Dwarf).model.react("die")
+				get_tree().create_timer(DwarfFight.DEATH_FALL).timeout.connect(ask_died)
+			else:
+				ask_died()
 		return
 	_dark_timer -= delta
 	if _dark_timer <= 0.0:  # F293: is any light reaching us? (twice a second is plenty)

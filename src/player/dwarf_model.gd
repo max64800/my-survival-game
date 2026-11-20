@@ -131,11 +131,12 @@ func swing(duration: float) -> void:
 
 
 ## Weapon attack: wind up, strike at 40% of the time, recover.
-func attack(duration: float, heavy: bool, combo_step: int = -1) -> void:
+## `move` = a weapon whose move to play instead of the held one's ("shield": the shield bash while blocking).
+func attack(duration: float, heavy: bool, combo_step: int = -1, move: String = "") -> void:
 	swinging = true
 	if dwarf_rig:
 		# Each weapon its own move (DwarfRig.ATTACKS): spear thrust, mace smash, shield bash, sword slash/chop.
-		var weapon := Combat.weapon_of(_held)
+		var weapon := move if move != "" else Combat.weapon_of(_held)
 		dwarf_rig.attack(duration, heavy, weapon, combo_step)  # (hit 1, hit 2 of the combo take turns)
 		# A pale swoosh behind the blade (brighter for a heavy blow). Not for a spear's thrust or a shield's push.
 		if weapon in DwarfFist.TWO_HANDED:  # (great weapons, F389: the strike starts after the slow wind-up and its
@@ -287,7 +288,7 @@ func set_pose(blocking: bool, aiming: bool, shield: bool) -> void:
 		dwarf_rig.set_hold("aim" if aiming else (("shield" if shield else "block") if blocking else ""))
 
 
-## A short reaction: "hit", "knock", "block", "eat", "throw".
+## A short reaction: "hit", "knock", "stunned", "die", "block", "eat", "throw".
 ## duration: how long it plays (-1 = its usual time). The crossbow reload passes the real reload time.
 func react(what: String, duration := -1.0) -> void:
 	reacted.emit(what, duration)
@@ -298,6 +299,10 @@ func react(what: String, duration := -1.0) -> void:
 			dwarf_rig.play_full("hit", 0.45)
 		"knock":
 			dwarf_rig.play_full("knock", 0.9)
+		"stunned":  # (owner, chat 15: UAL 2's Shield broken when you're stunned or your guard breaks)
+			dwarf_rig.play_full("stunned", duration if duration > 0.0 else 1.1)
+		"die":  # (owner, chat 15: the knock-back for dying, for now)
+			dwarf_rig.play_full("knock", DwarfFight.DEATH_FALL)
 		"eat":
 			dwarf_rig.play_upper("eat", 1.2)
 		"throw":
