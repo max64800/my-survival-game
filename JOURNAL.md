@@ -6641,3 +6641,26 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - **Still open:** the automatic check still finds a few single frames in the Spin where the handle comes 1-2 cm from
   his body or a fist slips up to 5 cm (rule: 3 cm / 2 cm); three fixes moved it around. Next chat: sword and mace from
   the same pack (1H chop, slashes, stab, block), a 3D page first.
+
+## November 20, 2026 (PC, junk-models Claude): dungeon junk, batches 1 and 2
+- **What:** the 20 "Dungeon junk" floor models from `traps-and-variety.md`. New build script
+  `tools/asset_forge/builds/dungeon_junk.py` (Blender, our own paintings, same helpers as the other dungeon sets).
+  Asked the other chats first: nobody was making junk; the Lampwick chat (dungeon 2) agreed I make the models and the
+  placement test, and told me where the room boxes, doors, chests and recipe stand live in the dungeon plans.
+- **Batch 1 (all 12 dungeons), owner OK'd ("this is great"):** `junk_bones` (two crossed leg bones, an arm bone, a
+  dwarf skull with dark eye holes and teeth, small bits), `junk_sword_snapped` (brass pommel and guard, leather grip,
+  blade snapped with a jagged edge), `junk_axe_head` (round empty eye, chipped edge), `junk_spear_broken` (shaft
+  snapped, splinters both ends, iron head). Now in `assets/models/dungeon/`.
+- **Batch 2, waiting for the owner's look:** `junk_rags` (torn burlap rag, scrap, burst tied sack), `junk_shield_wood`
+  and `junk_shield_iron` (6-board round shields broken in two; the iron one has a riveted rim snapped at the crack),
+  `junk_rubble_wood` (snapped planks in three layers). 3D page "Dungeon Junk Batch 1" (now shows both batches).
+- **Hurdles and Claude's own slips:** (1) The model file can't carry a "mix this colour in" step, so bone and brass
+  colours are baked into copies of the limestone/silver paintings. (2) First brass came out orange, then green; blades
+  almost black (the old-age paint darkens iron): brightened "steel" copies. (3) The axe's eye ring got stretched
+  upward instead of along the handle line: I scaled it in the wrong axis (the ring was turned first). (4) Pieces dipped
+  up to 4 cm under the floor (rings, a tilted sack); a "settle" step now puts every pile's lowest point on the floor,
+  and the sack is set down by itself so the rags don't hover. (5) Two rubble planks hovered 1.6 and 3.2 cm (checker
+  FLOAT); lowered onto the pile. (6) The rags' edges were grid steps and the cloth painting looked like wood: finer
+  grid, frayed edge, burlap paint. (7) My first local test page hit another chat's server on the same port: used my
+  own port. All 8 pass `check_models.py` (FLOAT, SHIMMER, SCRIPT).
+- **Next:** batch 3 after the owner's OK; the placement + automatic test when the junk goes into the dungeon plans.
