@@ -31,6 +31,9 @@ static func perk_icon(id: String) -> Texture2D:
 
 func _ready() -> void:
 	UiKit.panel(self)
+	# F429 (owner, Nov 20: "K just shows a big box"): wrapping text measures itself very tall for a moment, and a
+	# container never shrinks back by itself, so the window stayed 3216 px tall with everything off the screen.
+	minimum_size_changed.connect(func(): reset_size.call_deferred())
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 6)
 	add_child(box)

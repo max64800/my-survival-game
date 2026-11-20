@@ -59,7 +59,6 @@ const DODGE_STAMINA := 20.0
 const DODGE_DISTANCE := 3.0
 const DODGE_TIME := 0.45
 const DODGE_IFRAME := Vector2(0.05, 0.30)  ## safe from 0.05 s to 0.30 s into the roll
-const HEAVY_HOLD := 0.3  ## hold left click this long for a heavy attack
 const COMBO_WINDOW := 0.5
 const PARRY_COOLDOWN := 0.5  ## anti-spam: a new parry window can't start for 0.5 s
 const RIPOSTE_TIME := 1.0

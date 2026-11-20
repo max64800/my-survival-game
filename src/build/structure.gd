@@ -94,6 +94,23 @@ func overlaps(piece: String, pos: Vector3, rot: int) -> bool:
 	return false
 
 
+## The pieces in the way of placing `piece` there (the same test as overlaps()). (Rebuilding ruins, F350.)
+func overlapping(piece: String, pos: Vector3, rot: int) -> Array:
+	var out := []
+	var mine_y := _y_range(piece, pos, -0.16)
+	var mine := Pieces.footprint(piece, pos, rot, -0.16)
+	for uid in pieces:
+		var o: Dictionary = pieces[uid]
+		if fits_inside(piece, o.piece) or fits_inside(o.piece, piece):
+			continue
+		var oy := _y_range(o.piece, o.pos, -0.16)
+		if mine_y.y <= oy.x or oy.y <= mine_y.x:
+			continue
+		if Pieces.outlines_overlap(mine, Pieces.footprint(o.piece, o.pos, o.rot, -0.16)):
+			out.append(uid)
+	return out
+
+
 ## Bottom and top of a piece, grown (or shrunk, never past its middle).
 static func _y_range(piece: String, pos: Vector3, grow: float) -> Vector2:
 	var h: float = Pieces.LIST[piece].size.y

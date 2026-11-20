@@ -8,10 +8,12 @@ class_name BlueprintLibrary
 ## Every cell of the box is marked "air", so placed inside rock the chest carves the room out first.
 
 const IDS := ["delvers_hut", "miners_homestead", "stone_hall", "forge_workshop", "watchtower_cabin", "stone_watchtower",
-	"stone_outpost"]
+	"stone_outpost", "wooden_watchtower"]
 ## Known from the very start (F161): you place them and bring the materials. The rest are learned from
 ## Old Blueprints found in ruins (F98).
 const STARTER := ["delvers_hut"]
+## Learned only by rebuilding a ruin (owner, Nov 19), never from an Old Blueprint page.
+const REBUILD_ONLY := ["wooden_watchtower"]
 const NAMES := {
 	"delvers_hut": "Delver's Hut",
 	"miners_homestead": "Miner's Homestead",
@@ -20,6 +22,7 @@ const NAMES := {
 	"watchtower_cabin": "Watchtower & Cabin",
 	"stone_watchtower": "Stone Watchtower",
 	"stone_outpost": "Stone Outpost",
+	"wooden_watchtower": "Wooden Watchtower",
 }
 
 const WOOD := "plank_root"
@@ -47,6 +50,9 @@ static func make(id: String) -> Blueprint:
 		"watchtower_cabin": lib._watchtower()
 		"stone_watchtower": lib._stone_watchtower()
 		"stone_outpost": lib._stone_outpost()
+		"wooden_watchtower":  # (owner, Nov 19: rebuilding the ruined tower with wood teaches this one)
+			lib._stone_watchtower()
+			lib._to_wood()
 		_: return null
 	lib._bp.name = NAMES[id]
 	lib._bp.author = "Dwarf Game"
@@ -695,6 +701,17 @@ func _start(size: Vector3) -> void:
 	var cells := int(size.x * size.y * size.z)
 	_bp.air.resize(cells)
 	_bp.air.fill(1)
+
+
+## The same building in root planks (docs/design/ruin-rebuild-plan.md): every piece that has a wooden version becomes
+## wood; battlements (stone only) become wooden railings.
+func _to_wood() -> void:
+	for p in _bp.pieces:
+		if Pieces.allowed(p.id, WOOD):
+			p.mat = WOOD
+		elif String(p.id).begins_with("battlement"):
+			p.id = "railing"
+			p.mat = WOOD
 
 
 func _add(id: String, mat: String, pos: Vector3, rot: int) -> void:

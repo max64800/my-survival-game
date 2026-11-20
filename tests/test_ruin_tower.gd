@@ -143,7 +143,7 @@ func test_rebuilding_chest_is_there_and_explains_itself() -> void:
 	var local := Basis(Vector3.UP, RuinTower.last_turn * PI / 2.0).inverse() * (at - RuinTower.last_origin)
 	check(absf(local.x) > 2.6 or local.z > 6.5, "it stands beside the steps, not on them (%.1f, %.1f)" % [local.x, local.z])
 	var text := auth.builder.ruin_intro(box)
-	check("Rebuild the old tower" in text, "opening it says what it is")
+	check("Fix the old tower" in text and "broken" in text, "opening it says what it is: only the broken parts")
 	check(text.length() < 120, "short (owner F411: it was far too long): %d letters" % text.length())
 	var ways := auth.builder.ruin_choices(box)
 	check_eq(ways.size(), 2, "two pictures: wood and stone")
@@ -152,6 +152,12 @@ func test_rebuilding_chest_is_there_and_explains_itself() -> void:
 		check_eq(String(ways[1].key), "stone_watchtower", "stone -> the stone tower")
 		check(Items.display_name("plank_root") in String(ways[0].needs), "the wood picture lists the planks it needs")
 		check(Items.display_name("cut_stone") in String(ways[1].needs), "the stone picture lists the stone it needs")
+	var pic := auth.builder.ruin_picture(box)  # F431: one picture of the ruin, the broken parts marked
+	var kinds := {}
+	for p in pic:
+		kinds[p.fix] = kinds.get(p.fix, 0) + 1
+	check(kinds.get("", 0) > 0, "the picture shows the whole pieces that stay (%s)" % kinds)
+	check(kinds.get("broken", 0) + kinds.get("missing", 0) > 0, "and marks the broken or missing ones (%s)" % kinds)
 	var r: Dictionary = auth.world_state.ruins[str(box)]
 	var wood := auth.builder.ruin_needs("wooden_watchtower", r)
 	var whole := 0
@@ -197,7 +203,7 @@ func test_old_world_gets_its_rebuilding_chest() -> void:
 	if auth.storage.boxes.has(box):
 		var at: Vector3 = (auth.storage.boxes[box].node as Node3D).global_position
 		check(at.distance_to(first_at) < 0.05, "in the same place a new world gets it (%s vs %s)" % [at, first_at])
-		check("Rebuild the old tower" in auth.builder.ruin_intro(box), "and it works like a new world's")
+		check("Fix the old tower" in auth.builder.ruin_intro(box), "and it works like a new world's")
 	check(RuinTower.add_missing_chest(auth) == null, "loading it again adds no second chest")
 	auth.get_parent().queue_free()
 

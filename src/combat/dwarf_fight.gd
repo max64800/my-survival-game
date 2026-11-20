@@ -1,7 +1,7 @@
 class_name DwarfFight
 extends Node
 ## The dwarf's fighting controls (combat doc 1.5), used while a weapon or shield is in hand:
-##   Left click tap = light attack · hold 0.3 s = heavy attack · keep clicking = combo
+##   Left click = light attack · hold it = keep swinging (combo) · middle click = heavy attack (F430)
 ##   Right click hold = block · tap right before a hit = PERFECT PARRY
 ##   Left Ctrl (+ direction) = dodge-roll (safe from 0.05 s to 0.30 s into the roll)
 ##   Crossbow: right click hold = aim (no spread, zoom) · left click = shoot · R = reload
@@ -10,7 +10,6 @@ signal message(text: String, color: Color)
 
 var dwarf: Dwarf
 var clock := 0.0
-var _hold := -1.0  ## how long left click has been held (-1 = not held)
 var _busy := 0.0  ## seconds until we can attack again
 var _combo_step := 0
 var _combo_until := 0.0
@@ -179,7 +178,6 @@ func step(delta: float, playing: bool, move_dir: Vector3) -> float:
 			_busy = maxf(_busy, 0.15)  # recovery after a roll
 		return 0.0
 	if not playing:
-		_hold = -1.0
 		return 1.0
 	if Input.is_action_just_pressed("dodge") and _busy <= 0.0 and _ps() and _ps().vitals.use_stamina(Combat.DODGE_STAMINA * _ps().progress.dodge_stamina_mult()):
 		_dodge_t = 0.0
@@ -187,7 +185,6 @@ func step(delta: float, playing: bool, move_dir: Vector3) -> float:
 		_dodge_dir = move_dir.normalized() if move_dir.length() > 0.1 else Basis(Vector3.UP, dwarf.model.rotation.y) * Vector3.BACK
 		return 0.0
 	if not weapon_mode():
-		_hold = -1.0
 		return 1.0
 	if is_crossbow():
 		return _crossbow_step(delta)
@@ -199,11 +196,12 @@ func step(delta: float, playing: bool, move_dir: Vector3) -> float:
 		_last_press = clock
 	elif Input.is_action_just_pressed("use"):
 		_last_press = clock
-	if Input.is_action_pressed("dig"):
-		_hold = 0.0 if _hold < 0.0 else _hold + delta
-	elif _hold >= 0.0:
-		_attack(_hold >= Combat.HEAVY_HOLD)
-		_hold = -1.0
+	# F430 (owner, Nov 20: "holding the mouse button keeps the pickaxe swinging; I want the same for weapons"):
+	# hold left click = light swings one after another (the combo keeps going); middle click = heavy attack.
+	if Input.is_action_just_pressed("heavy_attack"):
+		_attack(true)
+	elif Input.is_action_pressed("dig"):
+		_attack(false)  # (does nothing while the last swing is still going: the next starts as soon as it ends)
 	return (_ps().progress.guard_walk_mult(false) if _ps() else 0.6) if is_blocking() else 1.0  # Shield ★25
 
 

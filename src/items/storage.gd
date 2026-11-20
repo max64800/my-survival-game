@@ -159,7 +159,7 @@ func request_take_all(peer_id: int, box_id: int) -> int:
 static func accepts(kind: String, item: String) -> bool:
 	if kind == "crate_ore":
 		return item in ORE_CRATE or item.begins_with("crystal_")
-	if kind != "builder":
+	if kind != "builder" and kind != "rebuild":
 		return true
 	if _piece_extras().has(item):
 		return true  # fiber for rugs and banners, crystals for sconces...
@@ -209,6 +209,8 @@ func _changed(box_id: int) -> void:
 		_ev_remove_box.rpc(box_id)  # an emptied grave crumbles away
 	else:
 		_ev_box.rpc(box_id, box.inv.to_data())
+	if box.kind == "rebuild" and auth and auth.builder:
+		auth.builder.ruin_chest_changed(box_id)  # the first planks or cut stone start the rebuilding
 
 
 func _far(ps: GameAuthority.PlayerState, box: Dictionary) -> bool:
@@ -304,7 +306,7 @@ func _build_look(body: StaticBody3D, kind: String) -> void:
 	cs.position = Vector3.UP * size.y * 0.5
 	body.add_child(cs)
 	var color: Color = {"chest_small": Color(0.55, 0.38, 0.22), "chest_stone": Color(0.55, 0.55, 0.55),
-		"builder": Color(0.3, 0.45, 0.7), "grave": Color(0.45, 0.43, 0.4)}.get(kind, Color.GRAY)
+		"builder": Color(0.3, 0.45, 0.7), "rebuild": Color(0.45, 0.35, 0.25), "grave": Color(0.45, 0.43, 0.4)}.get(kind, Color.GRAY)
 	# A loot barrel: its own model with a lid that swings open (owner, Nov 19); the building kit's barrel is solid.
 	# (the Rebuilding Chest looks like a Builder's Chest)
 	var model := Look.forged("stations", "barrel_box") if kind == "barrel" else Look.forged("stations", "builder" if kind == "rebuild" else kind)  # a real model, if made

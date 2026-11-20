@@ -38,6 +38,7 @@ const KEYS := {
 const MOUSE := {
 	"dig": [MOUSE_BUTTON_LEFT],
 	"use": [MOUSE_BUTTON_RIGHT],
+	"heavy_attack": [MOUSE_BUTTON_MIDDLE],  ## (F430: left click held now keeps swinging)
 	# The mouse wheel zooms the camera (feedback F18). Hotbar slots are keys 1-9.
 	"zoom_in": [MOUSE_BUTTON_WHEEL_UP],
 	"zoom_out": [MOUSE_BUTTON_WHEEL_DOWN],

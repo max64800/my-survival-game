@@ -80,8 +80,8 @@ If stamina hits **0** while you block a hit, your guard breaks: you stagger for 
 
 | Action | Input |
 |---|---|
-| Light attack | Left click (tap) |
-| Heavy attack | Hold left click **0.3 s**, release |
+| Light attack | Left click; hold it to keep swinging (F430) |
+| Heavy attack | **Middle click** (owner, Nov 20, F430: holding left click now keeps doing light swings, like the pickaxe) |
 | Block / parry | Right click (hold to block, tap at the right moment to parry) |
 | Shield bash | Hold right click + left click |
 | Dodge-roll | Left Ctrl + direction |

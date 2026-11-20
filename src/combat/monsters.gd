@@ -30,7 +30,8 @@ const LIST := {
 		hit_and_run = true, retreat = 7.0, recover = 1.6,
 		# F419 (owner, Nov 19): carry a light within 25 m of the roost and they wake; they keep attacking until you
 		# leave their cave (they don't give up after 10 s like the others).
-		wake_light = 25.0, stays_in_cave = true,
+		# F428 (owner, Nov 20: "make the bats' aggro range smaller"): 25 m → 12 m.
+		wake_light = 12.0, stays_in_cave = true,
 		attacks = [{name = "Swoop Bite", warn_sound = "bat_screech", tell = 0.6, damage = 6, type = "pierce", reach = 2.2, parry = "any"}],
 		drops = [["wing_leather", 1, 1.0], ["wing_leather", 1, 0.3], ["bat_fang", 1, 0.4], ["bat_meat", 1, 0.8]]},
 	# statue_hits: pickaxe hits to break its stone statue (default 4; owner, Nov 18: bat 2, beetle and snail 4, great 8).

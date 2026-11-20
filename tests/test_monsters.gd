@@ -945,22 +945,26 @@ func test_bats_wake_to_light_and_stay_until_you_leave() -> void:
 		if MonsterManager.inside_room(world.maker.rooms[i], player.global_position):
 			room_i = i
 	check(room_i >= 0, "the start spot is inside a cave")
-	var m := _spawn("cave_bat", Vector3(18, 0, 0), false, MonsterManager.BAT_KEY + room_i)
+	var m := _spawn("cave_bat", Vector3(10, 0, 0), false, MonsterManager.BAT_KEY + room_i)
+	var far := _spawn("cave_bat", Vector3(0, 0, 18), false, MonsterManager.BAT_KEY + room_i)
 	ps.fuel = 0.0
 	for i in 60:
 		await tree.physics_frame
-	check_eq(m.state, Monster.State.SLEEP, "no light: the bat sleeps on at 18 m")
+	check_eq(m.state, Monster.State.SLEEP, "no light: the bat sleeps on at 10 m")
 	ps.fuel = 100.0
 	for i in 60:
 		await tree.physics_frame
-	check(m.state != Monster.State.SLEEP and m.target_peer == 1, "a light 18 m away wakes it (state %d)" % m.state)
+	check(m.state != Monster.State.SLEEP and m.target_peer == 1, "a light 10 m away wakes it (state %d)" % m.state)
+	check_eq(far.state, Monster.State.SLEEP, "F428: a light 18 m away no longer wakes a bat")
 	for i in 900:  # 15 s: longer than the others give up after
 		await tree.physics_frame
 	check(m.state != Monster.State.RETURN, "still after you while you're in its cave (state %d)" % m.state)
 	var room: Dictionary = world.maker.rooms[room_i]
 	player.global_position = room.center + Vector3(room.radii.x * 2.0, 0, 0)
-	for i in 30:
+	for i in 180:  # (it may be catching its breath after a bite first: RECOVER)
 		await tree.physics_frame
+		if m.state == Monster.State.RETURN or m.target_peer == 0:
+			break
 	check(m.state == Monster.State.RETURN or m.target_peer == 0, "you left the cave: it gives up (state %d)" % m.state)
 	_teardown()
 
@@ -1012,4 +1016,26 @@ func test_sword_star_perks_in_a_real_fight() -> void:
 	m.shell_hits = 0
 	m.shell_left = 0.0
 	check(auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, 0, false, false, true) > plain - 1, "a jump attack counts too (no ★ jumping yet: same)")
+	_teardown()
+
+
+## F428 (owner, Nov 20: "I spawn and get the bats right away"): the starting cave's roost hangs on its far side,
+## never within ROOST_CLEAR m of where you wake up.
+func test_no_bat_roost_by_the_start() -> void:
+	await _setup()
+	var home: Vector3 = world.maker.spawn_point
+	var checked := 0
+	for i in world.maker.rooms.size():
+		var room: Dictionary = world.maker.rooms[i]
+		if room.get("kind", "") != "spawn":
+			continue  # the big starting cave
+		for n in 3:
+			for uid in auth.monsters._spawn_roost(room, i):
+				var m: Monster = auth.monsters.monsters[uid]
+				checked += 1
+				check(Vector2(m.global_position.x - home.x, m.global_position.z - home.z).length() >= MonsterManager.ROOST_CLEAR,
+					"bat %.0f m from the start" % m.global_position.distance_to(home))
+				check(Vector2(m.global_position.x - home.x, m.global_position.z - home.z).length() > Vector2(room.center.x - home.x, room.center.z - home.z).length(),
+					"on the far side of the cave")
+	check(checked > 0, "the starting cave still has its bats (%d)" % checked)
 	_teardown()

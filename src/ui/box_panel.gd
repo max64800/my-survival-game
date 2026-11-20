@@ -124,24 +124,24 @@ func refresh() -> void:
 		b.tooltip_text = "" if s.is_empty() else Items.display_name(s.id)
 
 
-## The Rebuilding Chest's two pictures (owner F411, Nov 19): put in planks -> the wooden tower, cut stone -> the
-## stone tower; under each, what it still needs.
+## The Rebuilding Chest's picture (owner F431, Nov 20: "it's not rebuilt from scratch, only what is broken"): the
+## ruin as it stands, the broken parts glowing; under it, what each material does and costs.
 func _show_ways() -> void:
 	_ways_for = box_id
 	UiKit.clear(_ways)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 4)
+	_ways.add_child(col)
+	UiKit.label(col, "Glowing = broken: only these get rebuilt", 15, UiKit.AMBER).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var pic := BlueprintPreview.new()
+	pic.custom_minimum_size = Vector2(470, 230)
+	col.add_child(pic)
+	pic.show_ruin(GameAuthority.instance.builder.ruin_picture(box_id))
 	for w: Dictionary in GameAuthority.instance.builder.ruin_choices(box_id):
-		var col := VBoxContainer.new()
-		col.add_theme_constant_override("separation", 2)
-		_ways.add_child(col)
-		UiKit.label(col, "%s  →  %s" % [w.put, w.name], 15, UiKit.AMBER).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		var pic := BlueprintPreview.new()
-		pic.custom_minimum_size = Vector2(230, 200)
-		col.add_child(pic)
-		pic.show_blueprint(BlueprintLibrary.make(String(w.key)))
-		var needs := UiKit.label(col, "Needs: " + String(w.needs), 12, UiKit.AMBER)
-		needs.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		needs.custom_minimum_size = Vector2(230, 0)
-		needs.modulate.a = 0.8
+		var line := UiKit.label(col, "%s: fixes them in %s → you learn the %s.  Needs: %s" % [w.put,
+			"wood" if String(w.key).begins_with("wooden") else "stone", w.name, w.needs], 13, UiKit.TEXT)
+		line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		line.custom_minimum_size = Vector2(470, 0)
 
 
 func _process(_d: float) -> void:

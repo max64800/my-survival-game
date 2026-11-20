@@ -5933,3 +5933,19 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   layout number, saves, friends joining and the planning caches keep it apart by themselves (no extra flags), and
   every "layout 14 or later" rule still holds. Test: test_the_dungeon_test_world_has_no_caves; 40 of 40 dungeon checks
   pass; the robot game starts in the small cave facing the door, no script errors.
+
+## November 20, 2026 (PC, Claude 2, caves): bats, skills window, hold-to-swing, Rebuilding Chest (F428-F431)
+- **F428 bats at the start:** the "start cave" is room 0 (kind "spawn"), 43 m from the wake-up room; its roost hung in
+  the middle, by the way in. The roost now hangs on the far side, and never within 30 m of where you wake. Bats wake to
+  light at 12 m (was 25 m). First try aimed at rooms near the wake-up spot and found none: a new test caught it.
+  The old wake test needed a longer wait (a bat catching its breath after a bite, RECOVER, wasn't "giving up" yet).
+- **F429 empty K window:** the window was 3216 px tall and centred, so only empty wood showed. A container never
+  shrinks back after wrapping text measures itself tall for a moment; it now resets its size when its insides change.
+  Found by making the skillscheck robot print sizes. Also found: the Nov 20 merge had dropped the PC's perk tree
+  (perk_tree.gd) and kept the Mac's skills window. The robot still used the PC one's `tree`; fixed to the Mac's.
+- **F430 hold to swing:** owner's pick (multiple choice): hold left click = keep doing light swings; heavy = middle click.
+- **F431 Rebuilding Chest:** owner's pick: one picture of the ruin with the broken parts glowing (Builder.ruin_picture,
+  BlueprintPreview.show_ruin). The wooden tower blueprint lived in 6 unsaved files that no chat claimed; they are this
+  rebuild feature, their tests pass, so they're saved with it.
+- **Mistake:** a python replace didn't match a line with "\n" in it (escaping), so I redid it with sed. Not checked in a
+  real game yet: middle-click heavy attacks and holding to swing (no robot presses mouse buttons).

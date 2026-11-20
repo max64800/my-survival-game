@@ -19,6 +19,7 @@ const DUNGEON_NEAR := 30.0  ## a dungeon room's creatures come when a player is 
 const DUNGEON_RESPAWN := 3600.0  ## creatures move back into a cleared dungeon room after an hour (decisions: "3 in-game
                                  ## days", assumed; there is no day clock yet)
 const BATS := [4, 6]  ## bats per roost (owner, Nov 19: "5 frost ones, or 5 ember ones")
+const ROOST_CLEAR := 30.0  ## metres: no bat roosts this close to where you wake up (F428, owner Nov 20)
 
 signal defended(result: Dictionary)  ## our own dwarf parried/blocked/took a hit (for the HUD)
 ## Host: a dungeon room's creatures came (cleared = false) or were all killed (true) (Mossgate's loot door, owner Nov 20).
@@ -246,11 +247,19 @@ func _spawn_roost(room: Dictionary, i: int) -> Array:
 	var maker: CaveMaker = auth.world.maker
 	var variant := roost_variant(maker.seed, i, room)
 	var uids := []
+	# F428 (owner, Nov 20: "I spawn and get the bats right away"): in the starting cave the roost hangs on the far side
+	# of the cave from where you come in (the wake-up room), and never within ROOST_CLEAR m of where you wake up.
+	var base: Vector3 = room.center
+	var home: Vector3 = maker.spawn_point
+	var flat := Vector2(room.center.x - home.x, room.center.z - home.z)
+	if room.get("kind", "") == "spawn" or flat.length() < maxf(room.radii.x, room.radii.z) + 10.0:
+		var away := Vector3(flat.x, 0.0, flat.y).normalized() if flat.length() > 0.5 else Vector3.FORWARD
+		base = room.center + away * minf(room.radii.x, room.radii.z) * 0.55
 	for k in randi_range(BATS[0], BATS[1]):
 		var a := randf() * TAU
 		var r := randf_range(1.0, minf(room.radii.x, room.radii.z) * 0.35)  # close together, like a real roost
-		var spot := maker.find_floor(room.center.x + cos(a) * r, room.center.z + sin(a) * r, room.center.y)
-		if maker.sdf_at(spot + Vector3.UP) <= 0.0:
+		var spot := maker.find_floor(base.x + cos(a) * r, base.z + sin(a) * r, base.y)
+		if maker.sdf_at(spot + Vector3.UP) <= 0.0 or Vector2(spot.x - home.x, spot.z - home.z).length() < ROOST_CLEAR:
 			continue
 		var ceiling := GlowPlacer._march(maker, spot + Vector3.UP * 1.0, Vector3.UP, 30.0)
 		if ceiling == Vector3.INF:

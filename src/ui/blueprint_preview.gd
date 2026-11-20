@@ -58,6 +58,59 @@ func show_blueprint(bp: Blueprint) -> void:
 	_cam.look_at(Vector3.ZERO)
 
 
+## A ruin as it stands (Builder.ruin_picture, owner F431): whole pieces as they are, broken ones glowing amber,
+## missing ones as faint amber ghosts, so you see exactly what the chest will rebuild.
+func show_ruin(pieces: Array[Dictionary]) -> void:
+	UiKit.clear(_turn)
+	if pieces.is_empty():
+		return
+	var low := INF
+	var high := -INF
+	var reach := 3.0
+	for p in pieces:
+		low = minf(low, p.pos.y)
+		high = maxf(high, p.pos.y)
+		reach = maxf(reach, Vector2(p.pos.x, p.pos.z).length())
+	for p in pieces:
+		var n: PieceNode = PieceNode.new()
+		n.piece = p.piece
+		n.family = p.family
+		n.ghost = p.fix == "missing"
+		n.position = p.pos - Vector3(0, (low + high) * 0.5, 0)
+		n.rotation.y = Pieces.yaw_of(p.rot)
+		_turn.add_child(n)
+		if p.fix != "":
+			_glow.call_deferred(n, p.fix == "missing")
+	var size := Vector3(reach * 2.0, high - low + 3.0, reach * 2.0)
+	_cam.fov = 40.0
+	var back := maxf(size.length() * 0.62, 3.0)
+	_cam.position = Vector3(0, back * 0.55, back * 1.25)
+	_cam.look_at(Vector3.ZERO)
+
+
+static var _broken_mat: StandardMaterial3D
+static var _missing_mat: StandardMaterial3D
+
+
+func _glow(n: Node, faint: bool) -> void:
+	if _broken_mat == null:
+		_broken_mat = StandardMaterial3D.new()  # laid over the piece's own paint, so you still see what it is
+		_broken_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		_broken_mat.albedo_color = Color(1.0, 0.55, 0.15, 0.45)
+		_broken_mat.emission_enabled = true
+		_broken_mat.emission = Color(1.0, 0.5, 0.1)
+		_broken_mat.emission_energy_multiplier = 1.4
+		_missing_mat = _broken_mat.duplicate()
+		_missing_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		_missing_mat.albedo_color = Color(1.0, 0.6, 0.2, 0.35)
+		_missing_mat.emission_energy_multiplier = 0.8
+	for mi in n.find_children("*", "MeshInstance3D", true, false):
+		if faint:
+			(mi as MeshInstance3D).material_override = _missing_mat
+		else:
+			(mi as MeshInstance3D).material_overlay = _broken_mat
+
+
 func _process(delta: float) -> void:
 	if is_visible_in_tree():
 		_turn.rotation.y += TURN_SPEED * delta

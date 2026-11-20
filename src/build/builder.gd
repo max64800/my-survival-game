@@ -1103,7 +1103,7 @@ func ruin_intro(box_id: int) -> String:
 	var r: Dictionary = auth.world_state.get("ruins", {}).get(str(box_id), {})
 	if r.is_empty():
 		return ""
-	return "Rebuild the old tower! Put in planks for wood or cut stone for stone.\nReward: its blueprint + %d XP." % RUIN_XP
+	return "Fix the old tower! Put in planks or cut stone: only its broken parts get rebuilt.\nReward: its blueprint + %d XP." % RUIN_XP
 
 
 ## The two ways to rebuild this ruin, for the chest's pictures: [{key, name, put, needs}] (wood first, then stone).
@@ -1132,6 +1132,36 @@ func ruin_needs(key: String, r: Dictionary) -> Dictionary:
 		for item in cost:
 			need[item] = need.get(item, 0) + cost[item]
 	return need
+
+
+## The ruin as it stands now, for the chest's picture (owner F431, Nov 20: "it's not rebuilt from scratch: only what
+## is broken"): [{piece, family, pos, rot, fix}], positions around the ruin's origin. fix = "" (a whole piece, stays),
+## "broken" (a worn or collapsed piece: rebuilt) or "missing" (gone: built new). Only the stone plan's slots count.
+func ruin_picture(box_id: int) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var r: Dictionary = auth.world_state.get("ruins", {}).get(str(box_id), {})
+	var bp := BlueprintLibrary.make(String(r.get("stone", ""))) if not r.is_empty() else null
+	if bp == null:
+		return out
+	var origin: Vector3 = r.origin
+	for uid in structure.pieces:
+		var q: Dictionary = structure.pieces[uid]
+		if Vector2(q.pos.x - origin.x, q.pos.z - origin.z).length() < 9.0:
+			out.append({piece = q.piece, family = q.family, pos = q.pos - origin, rot = q.rot,
+				fix = "broken" if String(q.piece).begins_with("ruin_") else ""})
+	for p in bp.world_pieces(origin, int(r.turn)):
+		if not _ruin_slot_whole(p) and not _ruin_broken_at(p):
+			out.append({piece = p.piece, family = p.family, pos = p.pos - origin, rot = p.rot, fix = "missing"})
+	return out
+
+
+## A broken piece of the ruin lies where this plan piece goes (it gets swapped for a whole one).
+func _ruin_broken_at(p: Dictionary) -> bool:
+	for uid in structure.pieces:
+		var q: Dictionary = structure.pieces[uid]
+		if String(q.piece).begins_with("ruin_") and q.pos.distance_to(p.pos) < 0.6:
+			return true
+	return false
 
 
 ## Host: something went into a Rebuilding Chest.
