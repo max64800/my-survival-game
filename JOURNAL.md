@@ -5788,3 +5788,25 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   doors were tested inside the wall instead of on the tunnel floor, and the small ones near the start ran out of
   tries because most tunnels were too far away; fixed by stepping the door into the tunnel and only trying tunnels
   near the right ring. The full test suite was not run (nothing outside the new files changed).
+
+## November 20, 2026 (Mac, Claude): fall damage, tools wear out, kill rewards
+- **Fall damage** (`src/survival/fall_damage.gd`, on the player's own computer): up to 4 m is free, then 12 health
+  per metre (about 12 m kills). Only time spent falling fast counts, so ladders, jumps and being moved (waking in a
+  bed) never hurt. Armor doesn't help. **Jumping ★100 works now** (no fall damage). The dungeon chasm kills if it's
+  deeper than ~12 m (its depth lives in the PC's Mossgate code).
+- **Tools and weapons wear out** (`src/items/durability.gd`): pickaxes, axes, weapons and shields; one use = a hit
+  on rock, wood or a creature, or a blocked hit. Stone 150 uses, copper 300, silver 500. At 0 the item is broken,
+  not lost: it works like bare hands (a broken shield doesn't block) until repaired. Warning at 10% left.
+  **Repair** in the bench's "Upgrade and repair gear" list (same station that upgrades it): up to half of the
+  item's main material from its recipe, by how worn it is. **Thrifty** (-10% per rank) and **Crafting ★25** (-10%)
+  make repairs cheaper; **Quick Fix** repairs what's in your hand. A thin wear bar under worn tools (green, yellow,
+  red), a greyed-out icon when broken, durability in the tooltip. Clothes and armor don't wear yet.
+- **Kill rewards:** 10 / 50 / 100 kills of one creature = "Bat Hunter / Slayer / Bane", +5 / 10 / 15% damage to it
+  (melee and crossbow), with a message when you reach it. The skills window's kills list shows titles and how many
+  to the next one.
+- **Hurdles (Claude's own):** the first fall tracker missed ~0.5 m of every fall (the slow first bit), the test
+  caught it; my first shield-wear line was nonsense (a made-up function behind `if false`) and was rewritten before
+  testing. Sending the whole bag on every swing would be wasteful, so wear is sent every 10 uses.
+- Tests: `test_fall_damage`, `test_durability`, `test_kill_rewards` pass; monsters, upgrades, combat, dwarf fist,
+  progression, menu (except the other chat's build menu) pass; authority has only its 4 known cave physics fails.
+  Nothing tried in a real game window yet.

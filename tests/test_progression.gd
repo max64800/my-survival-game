@@ -235,3 +235,19 @@ func test_kill_counts() -> void:
 	old.erase("k")
 	q.load_data(old)
 	check_eq(q.total_kills(), 0, "saves from before kill counts still load")
+
+
+func test_kill_rewards() -> void:
+	var p := Progression.new()
+	for i in 9:
+		p.add_kill("cave_bat")
+	check_eq(p.hunter_rank("cave_bat"), 0, "9 bats: nothing yet")
+	p.add_kill("cave_bat")
+	check_eq(p.hunter_rank("cave_bat"), 1, "10 bats")
+	check_eq(Progression.hunter_title("cave_bat", 1), "Bat Hunter", "the title")
+	check_near(p.hunter_bonus("cave_bat"), 0.05, 0.001, "+5% against bats")
+	check_eq(p.hunter_bonus("rock_snail"), 0.0, "nothing against snails")
+	for i in 90:
+		p.add_kill("cave_bat")
+	check_eq(Progression.hunter_title("cave_bat", p.hunter_rank("cave_bat")), "Bat Bane", "100 bats: Bat Bane")
+	check_near(p.hunter_bonus("cave_bat"), 0.15, 0.001, "+15%")

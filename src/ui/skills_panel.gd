@@ -97,7 +97,10 @@ func refresh() -> void:
 	_level.text = "Level %d  ·  %d kills" % [p.level, p.total_kills()]
 	var lines := PackedStringArray()
 	for kind in p.kills:
-		lines.append("%s: %d" % [Monsters.LIST[kind].name if Monsters.LIST.has(kind) else kind, p.kills[kind]])
+		var rank := p.hunter_rank(kind)
+		var next: String = "" if rank >= 3 else "  ·  %d to %s" % [Progression.HUNTER_STEPS[rank] - p.kills_of(kind), Progression.hunter_title(kind, rank + 1)]
+		lines.append("%s: %d%s%s" % [Monsters.LIST[kind].name if Monsters.LIST.has(kind) else kind, p.kills[kind],
+			"  ·  %s (+%d%% damage)" % [Progression.hunter_title(kind, rank), roundi(p.hunter_bonus(kind) * 100)] if rank > 0 else "", next])
 	_level.tooltip_text = "\n".join(lines) if lines else "No kills yet"
 	_level.mouse_filter = Control.MOUSE_FILTER_STOP
 	_points.text = "Perk points: %d" % p.points_free()

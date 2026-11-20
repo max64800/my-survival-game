@@ -1842,7 +1842,7 @@ func damage_boost(ps: PlayerState, target_kind: String = "") -> float:
 		total += b.get("damage", 0.0)
 		if Monsters.LIST.get(target_kind, {}).get("shape", "") in BUG_SHAPES:
 			total += b.get("bugs", 0.0)
-	return total
+	return total + ps.progress.hunter_bonus(target_kind)  # kill rewards: Bat Hunter +5% against bats
 
 
 const BUG_SHAPES := ["rock_beetle", "cave_spider"]  ## Bugbane Oil works on beetles and spiders

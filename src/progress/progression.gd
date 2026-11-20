@@ -512,6 +512,32 @@ func kills_of(kind: String) -> int:
 	return int(kills.get(kind, 0))
 
 
+## Kill rewards (Nov 20): 10 / 50 / 100 kills of one creature = Hunter / Slayer / Bane, +5 / 10 / 15% damage to it.
+const HUNTER_STEPS := [10, 50, 100]
+const HUNTER_BONUS := [0.0, 0.05, 0.10, 0.15]
+const HUNTER_NAMES := ["", "Hunter", "Slayer", "Bane"]
+
+
+func hunter_rank(kind: String) -> int:
+	var r := 0
+	for need in HUNTER_STEPS:
+		if kills_of(kind) >= need:
+			r += 1
+	return r
+
+
+func hunter_bonus(kind: String) -> float:
+	return HUNTER_BONUS[hunter_rank(kind)]
+
+
+## "Bat Hunter" ("" below 10 kills). Uses the last word of the creature's name.
+static func hunter_title(kind: String, rank: int) -> String:
+	if rank <= 0:
+		return ""
+	var name: String = Monsters.LIST[kind].name if Monsters.LIST.has(kind) else kind.capitalize()
+	return "%s %s" % [name.split(" ")[-1], HUNTER_NAMES[mini(rank, 3)]]
+
+
 func total_kills() -> int:
 	var n := 0
 	for kind in kills:
