@@ -253,7 +253,7 @@ func _show_menu() -> void:
 		_with_loading(func():
 			dungeon_test = true
 			_new_world(seed, "Dungeon Test")
-			add_child(load("res://src/debug/dungeon_test_start.gd").new()), seed, _new_layout))
+			add_child(load("res://src/debug/dungeon_test_start.gd").new()), seed, CaveMaker.DUNGEON_ONLY))  # (no caves: owner, Nov 20)
 	_menu.connect("continue_game", func(data: Dictionary): _close_menu(); _with_loading(func(): start_game(data.seed, {}, data), int(data.seed), int(data.get("layout", 1))))
 	_menu.connect("host_world", func(data: Dictionary):
 		_close_menu()
@@ -377,7 +377,7 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	elif snap.has("layout"):
 		CaveMaker.use_layout(int(snap.layout))
 	else:
-		CaveMaker.use_layout(_new_layout)
+		CaveMaker.use_layout(CaveMaker.DUNGEON_ONLY if dungeon_test else _new_layout)  # (the dungeon test: no caves, owner Nov 20)
 	print("Cave seed: ", seed, " (cave layout ", CaveMaker.layout, ")")
 	FreezeWatch.doing = "making the cave"
 	_make_environment()

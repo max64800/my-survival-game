@@ -5924,3 +5924,12 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   of the crushers and the gap were blocked (by the hidden boulder, and by the dwarf); I moved the camera and ran again.
   The crusher picture is still cluttered (a beetle dazed the dwarf), so the owner checks that one himself.
 - **Meanwhile:** the caves chat briefly restored monster_manager.gd from an older copy; my new lines were still there.
+- **Owner's follow-up (same day):** crushers "just inside the doorway" (picked from 2 choices): now 1.7 m in, as close
+  as the hidden boulder allows (it pokes 1.1 m through that doorway, so closer would push the weight into it). "More
+  empty spaces in the middle" of the bridge: both middle sections now have the 1 m gap (two jumps). Stalactites over
+  the bridge: the owner wasn't sure, Claude asked, he kept all 3. Page version 6.
+- **"Don't build any caves" for the dungeon test:** the test world is now its own cave layout (1014): one small
+  20 m cave like the wake-up cave, with Mossgate Hold behind its north wall, and solid rock everywhere else. As a
+  layout number, saves, friends joining and the planning caches keep it apart by themselves (no extra flags), and
+  every "layout 14 or later" rule still holds. Test: test_the_dungeon_test_world_has_no_caves; 40 of 40 dungeon checks
+  pass; the robot game starts in the small cave facing the door, no script errors.

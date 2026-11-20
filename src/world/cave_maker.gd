@@ -40,6 +40,11 @@ const LAYOUT_LATEST := 14
 ## to the ground").
 ## Layout 14: the first dungeon, Mossgate Hold, dug into solid rock behind a cave wall (owner, Nov 19: DungeonMap).
 const LAYOUT_DEFAULT := 14
+## The dungeon test world (owner, Nov 20: "do not build any caves at all, the way in should be a small cave like where
+## you spawn"): one small cave with Mossgate Hold behind its wall, nothing else. A layout number of its own (higher
+## than every real one, so every "layout 14 or later" rule holds), so saves, friends and the planning caches keep it
+## apart from real worlds by themselves.
+const DUNGEON_ONLY := 1014
 static var layout := LAYOUT_DEFAULT
 
 
@@ -62,7 +67,7 @@ static var X_MAX := 620.0
 
 ## Picks the cave layout for the next CaveMaker (and the World, map and borders that go with it).
 static func use_layout(v: int) -> void:
-	layout = clampi(v, 1, LAYOUT_LATEST)
+	layout = v if v == DUNGEON_ONLY else clampi(v, 1, LAYOUT_LATEST)
 	var half := 200.0 if layout == 1 else 400.0
 	HALF_SIZE = half
 	SLAB_X = half
@@ -170,6 +175,9 @@ func _init(p_seed: int = 1, big_caverns: int = 3, small_rooms: int = 12) -> void
 		var drng := RandomNumberGenerator.new()
 		drng.seed = p_seed + 6060
 		_dip = Vector2(drng.randf_range(-0.05, 0.05), drng.randf_range(-0.05, 0.05))
+	if made_layout == DUNGEON_ONLY:
+		_make_dungeon_only()
+		return
 	# Mossy Hollows first, with the same dice as before biomes existed (old caves stay the same).
 	var rng := RandomNumberGenerator.new()
 	rng.seed = p_seed
@@ -272,6 +280,24 @@ func _plan_dungeons() -> void:
 		# The cave floor in front of its door is kept clear too (no rocks, plants or crystals in the doorway).
 		var door := DungeonMap.to_world(d, Vector3(map.mouth.x, 0.0, map.mouth.y + float(d.entry_out) + 1.0))
 		reserve(door, 4.5, 5.0)
+	_corner_cache.clear()
+
+
+## The dungeon test world: a small cave (like the one you wake up in) and Mossgate Hold dug in behind its north wall.
+func _make_dungeon_only() -> void:
+	var c := Vector3(0.0, -20.0, 0.0)
+	rooms.append({center = c, radii = Vector3(10.0, 5.5, 10.0), big = false, kind = "room", sealed = false, biome = "mossy"})
+	_bake_shapes()
+	spawn_point = _find_spawn()
+	cavern_spawn = spawn_point
+	var fl := find_floor(c.x, c.z, c.y)
+	var map: Dictionary = DungeonMap.MAPS[0]
+	# Its round door 4 m into the rock behind the cave's wall (about 10 m out, its bumps up to 2 m), the hole from it running
+	# 4 m into the cave.
+	var mouth := Vector3(0.0, roundf(fl.y), -18.0)
+	var d := DungeonMap.place(map, mouth, 0, -4.0 - mouth.z)
+	dungeons.append(d)
+	reserve(DungeonMap.to_world(d, Vector3(map.mouth.x, 0.0, map.mouth.y + float(d.entry_out) + 1.0)), 4.5, 5.0)
 	_corner_cache.clear()
 
 

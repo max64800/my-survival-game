@@ -397,3 +397,27 @@ func test_the_loot_door_opens_when_the_pack_dies() -> void:
 	check(not auth.keys.is_open("mossgate_hold"), "the pack back: it shuts")
 	check(not db.things[id].get("open", false), "the door is shut again")
 	r.root.free()
+
+
+## The dungeon test world (owner, Nov 20: "do not build any caves at all"): one small cave and Mossgate Hold behind its
+## wall; the way in opens into that cave; everything else is solid rock.
+func test_the_dungeon_test_world_has_no_caves() -> void:
+	var was := CaveMaker.layout
+	CaveMaker.use_layout(CaveMaker.DUNGEON_ONLY)
+	var m := CaveMaker.new(42)
+	CaveMaker.use_layout(was)
+	check_eq(m.rooms.size(), 1, "one small cave")
+	check(m.segments.is_empty(), "no tunnels")
+	check_eq(m.dungeons.size(), 1, "Mossgate Hold")
+	if m.dungeons.is_empty():
+		return
+	var d: Dictionary = m.dungeons[0]
+	for s in d.map.spaces:
+		var mid := DungeonMap.space_floor(d, String(s[0])) + Vector3.UP * minf(1.5, float(s[6]) * 0.5)
+		check(m.sdf_at(mid) > 0.5, "%s is open" % s[0])
+	var mouth: Vector2 = d.map.mouth
+	var tip := DungeonMap.to_world(d, Vector3(mouth.x, 1.5, mouth.y + float(d.entry_out) - 0.5))
+	check(m.sdf_at(tip) > 0.3, "the way in comes out in the small cave")
+	check(m.sdf_at(m.spawn_point + Vector3.UP) > 0.3, "you start in the small cave")
+	for far in [Vector3(80, -20, 0), Vector3(-60, -20, 40), Vector3(0, -20, 60), Vector3(0, -40, -120)]:
+		check(m.sdf_at(far) < 0.0, "solid rock at %s (no caves)" % far)

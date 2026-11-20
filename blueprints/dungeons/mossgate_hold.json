@@ -19225,10 +19225,10 @@
 "yaw":90.0,
 "scale":1.0,
 "role":"trap",
-"label":"Gap in the bridge: jump!"
+"label":"Gaps in the bridge: jump!"
 },
 {
-"model":"dungeon/bridge_plank_broken.glb",
+"model":"dungeon/bridge_plank_gap.glb",
 "pos":[
 40.4,
 0.13,
@@ -19236,11 +19236,11 @@
 ],
 "yaw":90.0,
 "scale":1.0,
-"role":"door",
+"role":"trap",
 "label":""
 },
 {
-"model":"dungeon/bridge_plank.glb",
+"model":"dungeon/bridge_plank_broken.glb",
 "pos":[
 42.4,
 0.13,
@@ -19617,7 +19617,7 @@
 {
 "model":"dungeon/trap_crusher.glb",
 "pos":[
-53.0,
+52.2,
 0.25,
 5.0
 ],
@@ -19629,7 +19629,7 @@
 {
 "model":"dungeon/trap_crusher.glb",
 "pos":[
-53.0,
+52.2,
 0.25,
 7.0
 ],

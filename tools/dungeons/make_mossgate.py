@@ -297,11 +297,12 @@ chest("chest_small", 44.0, 28.6, 180.0, "Random chest")
 BRIDGE_Y = 0.13  # the deck's top (0.11 in the models) level with the floor boards' top (0.24): you walk straight on
 prop("dungeon/bridge_posts.glb", 34.6, BRIDGE_Y, 6.0, 90.0, role="door", label="")
 prop("dungeon/bridge_posts.glb", 43.4, BRIDGE_Y, 6.0, 270.0, role="door", label="")
-# Owner, Nov 20: "leave a couple of middle boards missing so you must jump": the second section has a 1 m gap.
-BRIDGE = {1: "bridge_plank_gap", 2: "bridge_plank_broken"}
+# Owner, Nov 20: "leave a couple of middle boards missing so you must jump", then "more empty spaces in the middle":
+# both middle sections have a 1 m gap (two jumps, a metre of boards between them), the last one is the broken one.
+BRIDGE = {1: "bridge_plank_gap", 2: "bridge_plank_gap", 3: "bridge_plank_broken"}
 for i, x in enumerate([36.4, 38.4, 40.4, 42.4]):
-	prop("dungeon/%s.glb" % BRIDGE.get(i, "bridge_plank"), x, BRIDGE_Y, 6.0, 90.0, role="trap" if i == 1 else "door",
-		label="Gap in the bridge: jump!" if i == 1 else ("Bridge (fall off: you die)" if i == 0 else ""))
+	prop("dungeon/%s.glb" % BRIDGE.get(i, "bridge_plank"), x, BRIDGE_Y, 6.0, 90.0, role="trap" if i in (1, 2) else "door",
+		label="Gaps in the bridge: jump!" if i == 1 else ("Bridge (fall off: you die)" if i == 0 else ""))
 for z in (1.0, 3.0, 9.0, 11.0):
 	prop("dungeon/railing_broken.glb", 35.6, 0.25, z, 90.0)
 	prop("dungeon/railing_broken.glb", 42.4, 0.25, z, 270.0)
@@ -318,8 +319,9 @@ chest("chest_small", 26.5, 2.6, 0.0, "Random chest")
 prop("cave/boulder_round.glb", 49.0, 0.0, 6.0, 30.0, scale=3.0, role="secret", label="Hidden boulder (6 hits)")
 
 # 12 Crusher Hall: two crushers side by side, slamming down in turn (the game: DungeonBuild, kills a dwarf under one).
-prop("dungeon/trap_crusher.glb", 53.0, 0.25, 5.0, 90.0, role="trap", label="Crushers (kill)")
-prop("dungeon/trap_crusher.glb", 53.0, 0.25, 7.0, 90.0, role="trap")
+# Owner, Nov 20: right inside the doorway (as close as the hidden boulder allows: it pokes 1.1 m through the doorway).
+prop("dungeon/trap_crusher.glb", 52.2, 0.25, 5.0, 90.0, role="trap", label="Crushers (kill)")
+prop("dungeon/trap_crusher.glb", 52.2, 0.25, 7.0, 90.0, role="trap")
 
 # 13 Pack Hall: hanging chains, an old cauldron and firewood; the pack leader (a bigger beetle) with beetles and spiders.
 for x, z in [(60.0, 4.0), (68.0, 4.0), (60.0, 14.0), (68.0, 14.0)]:
