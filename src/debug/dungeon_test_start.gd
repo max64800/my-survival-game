@@ -1,12 +1,12 @@
 extends Node
 ## "Test the dungeon" (owner, Nov 19): the dev-only start menu button makes a new world, then this puts the dwarf on
-## the cave floor in front of the first dungeon's door, facing it, wearing and carrying the best gear there is.
+## the cave floor in front of the first dungeon's door, facing it, wearing and carrying copper gear (owner, Nov 20: silver was too strong).
 ## Dev builds only (DevMenu.enabled()): the button never shows in the game players get.
 ## (A pickaxe on the hotbar too, owner Nov 19: the one in the pickaxe slot alone couldn't be swung at boulders.)
 
-const WEAR := {pickaxe = "pickaxe_silver", weapon = "sword_silver", shield = "shield_silver", lantern = "lantern_back",  # (the back lantern leaves the shield hand free)
+const WEAR := {pickaxe = "pickaxe_copper", weapon = "sword_copper", shield = "shield_copper", lantern = "lantern_back",  # (the back lantern leaves the shield hand free)
 	head = "helm_copper", chest = "mail_copper", legs = "greaves_copper", feet = "boots_copper"}
-const CARRY := [["pickaxe_silver", 1], ["crossbow_silver", 1], ["bolt_metal", 60], ["mace_silver", 1], ["spear_silver", 1], ["axe_silver", 1],
+const CARRY := [["pickaxe_copper", 1], ["crossbow_copper", 1], ["bolt_metal", 60], ["mace_copper", 1], ["spear_copper", 1], ["axe_copper", 1],
 	["bandage", 20], ["crystal_torch", 10]]
 
 var _main: Node
@@ -36,7 +36,7 @@ func _run() -> void:
 		for slot in WEAR:
 			inv.slots[Inventory.equip_index(slot)] = {id = WEAR[slot], count = 1}
 		for i in Inventory.HOTBAR_SIZE:
-			inv.slots[i] = {}  # the starting tools are replaced by the silver ones
+			inv.slots[i] = {}  # the starting tools are replaced by the copper ones (owner, Nov 20: silver made the dungeon far too easy)
 		for it in CARRY:
 			inv.add(it[0], it[1])
 		inv.changed.emit()
