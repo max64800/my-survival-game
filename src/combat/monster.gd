@@ -644,9 +644,13 @@ func add_buildup(kind: String, amount: float) -> void:
 	ailments.add(kind, amount * maxf(0.0, 1.0 - resist))
 
 
-## A dungeon creature may step to `p`: still in its own room, not under a crusher.
-func may_step(p: Vector3) -> bool:
-	if DungeonMap.space_at(dungeon, p + Vector3.UP * 0.5) != dungeon_room:
+## A dungeon creature may step to `p`: still in its own room, not under a crusher. One that already stands outside its
+## room (`from`: pushed or slid into a doorway) may walk anywhere but under a crusher, so it can get back in: before,
+## every step from a doorway was "out of its room", so it stood there charging and dazing itself over and over (owner,
+## Nov 20, F473).
+func may_step(p: Vector3, from := Vector3.INF) -> bool:
+	var outside_now := from != Vector3.INF and DungeonMap.space_at(dungeon, from + Vector3.UP * 0.5) != dungeon_room
+	if not outside_now and DungeonMap.space_at(dungeon, p + Vector3.UP * 0.5) != dungeon_room:
 		return false
 	return DungeonBuild.instance == null or not DungeonBuild.instance.near_crusher(p)
 
@@ -661,9 +665,14 @@ func _move(delta: float, dir: Vector3, speed: float) -> void:
 		dir = turned[0]
 		speed *= turned[1]
 	if dir.length() > 0.1 and not data.get("flies", false) and is_on_floor() and _drop_ahead(dir):
-		dir = Vector3.ZERO  # a pit it couldn't climb out of: stop at the edge and find another way (F125)
-	if dir.length() > 0.1 and not dungeon.is_empty() and not data.get("flies", false) and not may_step(global_position + Vector3(dir.x, 0, dir.z).normalized() * 0.7):
-		dir = Vector3.ZERO  # (a dungeon creature stops at its room's doorway and in front of a crusher)
+		blocked = true  # a pit it couldn't climb out of: stop at the edge and find another way (F125)
+	if dir.length() > 0.1 and not dungeon.is_empty() and not data.get("flies", false) \
+			and not may_step(global_position + Vector3(dir.x, 0, dir.z).normalized() * 0.7, global_position):
+		blocked = true  # (a dungeon creature stops at its room's doorway and in front of a crusher)
+	if blocked:
+		dir = Vector3.ZERO
+		velocity.x = 0.0  # it stops right there: a charge used to slide on, out of its room into the doorway (F473)
+		velocity.z = 0.0
 	if data.get("flies", false):
 		velocity = dir * speed
 		velocity.y = 0.0

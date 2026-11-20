@@ -738,6 +738,14 @@ func test_dungeon_creatures_stay_in_their_room() -> void:
 	check(not mon.may_step(DungeonMap.to_world(d, Vector3(73.0, 0.3, 10.0))), "nor through the loot door")
 	var c: Transform3D = db.things[db.crushers[0]].xform
 	check(not mon.may_step(c.origin), "nor under a crusher")
+	# Owner F473: a beetle stood in a doorway charging and dazing itself again and again: from outside its room every
+	# step was "out of its room". Now one that is already outside may walk back in (never under a crusher).
+	var doorway := DungeonMap.to_world(d, Vector3(54.0, 0.3, 6.0))
+	check(mon.may_step(DungeonMap.to_world(d, Vector3(54.0, 0.3, 6.7)), doorway), "out of its room it may walk (to get back in)")
+	check(mon.may_step(DungeonMap.to_world(d, Vector3(64.0, 0.3, 10.0)), doorway), "back into its hall")
+	check(not mon.may_step(c.origin, doorway), "but still never under a crusher")
+	check(not mon.may_step(DungeonMap.to_world(d, Vector3(54.0, 0.3, 6.0)), DungeonMap.to_world(d, Vector3(64.0, 0.3, 10.0))),
+		"inside its hall it still stops at the edge")
 	mon.free()
 	var pack: Array = DungeonBuild.load_plan("mossgate").creatures.filter(func(c): return float(c.pos[0]) > 56.0 and float(c.pos[0]) < 72.0 and float(c.pos[2]) < 18.0)
 	check_eq(pack.size(), 5, "five in the Pack Hall")

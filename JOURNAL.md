@@ -6508,3 +6508,8 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   chats had already used up to F469 after my first check, so mine became F470-F472 (renamed in code and tests).
   (3) Checking the old code against the new test didn't work, because the old code doesn't have the new helper. The
   arithmetic (about 4 m and 6 m before) plus the new distances showed the change.
+- **F473 (later, owner's screenshot): a beetle stuck in a doorway,** charging and dazing itself again and again. Cause:
+  dungeon creatures check "is the spot ahead still my room?" before every step; one already outside its room (it had
+  slid into the doorway) got "no" for every step, even the way back. Now one outside may walk until it's back in
+  (never under a crusher), and one stopped at its room's edge stops at once instead of sliding on. Hurdle: another
+  chat was changing the same file (skeleton creatures), so only my lines went into my save.

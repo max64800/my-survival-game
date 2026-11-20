@@ -59,7 +59,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 | Pictures / looks | F17, F22, F24, F25, F26, F28, F29, F30, F31, F68, F69, F70, F71, F72 | **The dwarf's look keeps coming up (F25 said twice)** |
 | Model quality (stations, gear, building pieces) | F34-F66, F73-F80, F82-F86 | Most common: parts floating / not touching (8 notes), too-perfect shapes, flat colour, loose rope |
 | Creature looks (Rock Beetle rounds) | F68, F142-F148, F163-F164, F166 | Gaps between parts (stones, joints) said most; then the face. The same "touching, worn, not too clean" wish as the building pieces |
-| Creature fights (charge, dazed) | F111 🔁, F234 🔁, F236 🔁, F446-F450, F453-F456, F460 (bats), F471-F472 | The beetle's charge comes up most; dazed must be clear to see (stars) and only happen when you earned it |
+| Creature fights (charge, dazed) | F111 🔁, F234 🔁, F236 🔁, F446-F450, F453-F456, F460 (bats), F471-F473 | The beetle's charge comes up most; dazed must be clear to see (stars) and only happen when you earned it |
 | Things growing inside built things (placement rule) | F254, F376 | The world's plants, rocks and clutter keep turning up inside or on built things (the tower, a ruin chest): every new placement gets its own keep-clear test |
 | The dwarf's moving hair (braids, back hair) | F192, F215, F221 | The back hair came back 5× (sheets, hook, "visor"): each fix guessed one cause. Measuring each cause on its own (Nov 17) found five. Measure first |
 | Dungeon traps: timing and distance | F438 🔁, F439 🔁, F441 🔁 | Stalactites and the bridge came back 3× each: "fair but dangerous" needs real numbers (seconds, metres, jump reach) tested in the robot game, not guesses |
