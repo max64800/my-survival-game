@@ -205,6 +205,8 @@ var great: Dictionary = DwarfGreatSwing.STANCE
 var _great_from: Dictionary = DwarfGreatSwing.STANCE  ## the pose the swing playing now started from
 var great_fixed: Dictionary = {}  ## tools only: hold this great-weapon pose still (great_pose_tuner.gd)
 var _great_started := -1.0  ## _upper_start of that swing
+var great_move := ""  ## the great swing playing now ("" = none; DwarfFist plays the owner's Blender poses by it, F389)
+var great_t := 0.0  ## how far into it (0..1)
 var _great_clock := 0.0  ## s into that swing
 var _carry_arm := 0.0  ## how far the right arm is lifted into the shoulder carry  ## how much the spear is turned to point straight ahead (the thrust)
 
@@ -625,8 +627,11 @@ func great_pose(delta: float) -> Dictionary:
 		else:
 			_great_clock += delta  # (game time, frame by frame: a slow frame doesn't skip the swing's key poses)
 		var t := _great_clock * _upper_scale / tree.get_animation(clip).length
-		great = DwarfGreatSwing.pose(clip.trim_prefix("g/"), clampf(t, 0.0, 1.0), _great_from)
+		great_move = clip.trim_prefix("g/")
+		great_t = clampf(t, 0.0, 1.0)
+		great = DwarfGreatSwing.pose(great_move, great_t, _great_from)
 	else:
+		great_move = ""
 		great = DwarfGreatSwing.blend(great, DwarfGreatSwing.STANCE, 1.0 - exp(-DwarfGreatSwing.RETURN * delta))
 	return great
 

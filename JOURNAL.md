@@ -6190,7 +6190,7 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   starter poses (wind-up: his left fist against his chest, 0.2 cm; chat 8's numbers) - run again on his poses. The
   old procedural swing test still fails (known since chat 8). Owner said yes to fixing the torn-looking shirt at the
   right shoulder (after the chop works).
-- **F436 (K window, round 3):** my F435 "make it bigger" stretched the finished window (Control.scale), so Godot drew
+- **F445 (K window, round 3; first written as F436, which the dungeon chat had just used):** my F435 "make it bigger" stretched the finished window (Control.scale), so Godot drew
   the letters small and blew them up: blurry. Now the window is rebuilt at the screen size (every size x `ui`), which
   keeps letters sharp. Owner picked two tabs (Skills / Perks): no more opening a skill, so the window never changes
   size; it sits above the hotbar. Took 3 photo rounds to fit all 14 skills (3, then 4, then 5 per row: long star

@@ -23,7 +23,9 @@ When a rule changes, delete the old text that disagrees. Current job: `docs/art/
 - Swings: **chop** (right to left), **sweep back**, **slam**. Hands **wide apart** (left at the end of the handle by
   the left hip, right high up the handle), except the slam (hands closer). Handle on a slant across the body.
 - Standing, walking, running: the great weapon rests on his right shoulder in **one** hand (approved, round 3).
-- Target poses come from the owner's own video (`tools/mocap/`), not from Claude's imagination.
+- **Key poses come from the owner's own hands in Blender** (`tools/blender_poses/`, owner's decision Nov 20), never from
+  Claude's imagination. The game plays them as he made them; Claude's code only keeps the handle in both fists and
+  out of his body.
 
 ## 4. How a heavy swing moves (so it reads as heavy)
 - **Wind-up:** slow and clear, 0.3–0.5 s. The player must see it coming.

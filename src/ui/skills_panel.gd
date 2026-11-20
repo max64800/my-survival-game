@@ -1,6 +1,6 @@
 class_name SkillsPanel
 extends PanelContainer
-## The K window, two tabs (owner, Nov 20, F436):
+## The K window, two tabs (owner, Nov 20, F445):
 ##  - "Skills": the 14 skills you grow by doing, all on one page, each with its ★ perks at 25 / 50 / 75 / 100 always shown.
 ##  - "Perks": the perk tree (PerkTreeView: 1 point per level, 4 branches; a perk opens once the one before it has a
 ##    point) and, on the right, the perk you clicked with its Learn button. ◆ = active perk on an ability key (Z / G / T).

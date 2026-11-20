@@ -4,9 +4,36 @@ Goal: the great axe's stance + chop, sweep back, slam look right to the owner, t
 Rules for doing it: `docs/art/ANIMATION-RULES.md`. Chance of success with all of this: ~80% (Claude's guess, not measured).
 
 **Why the old way kept failing:** Claude invented each pose as bone-angle numbers and only learnt it was wrong when the
-owner looked. No pack has two-handed moves that fit his short arms and big belly.
-**The new way:** the owner's own swing (video) gives the motion and timing, the PC's pose tuner fits it onto the
-dwarf's body, checks catch the handle going through him, and the owner picks from picture sheets.
+owner looked. No pack has two-handed moves that fit his short arms and big belly. Chat 8's tuned poses: "clearly not
+working" (owner, Nov 20; right hand should sit a lot higher up the handle).
+
+## The plan now: the owner poses him in Blender (owner's decision, Nov 20, chat 9)
+No more poses made up in code. The owner poses the game dwarf by hand, one key pose at a time; the game plays them.
+Chop first; sweep back and slam once the chop works.
+
+| # | Step | Who | Status |
+|---|------|-----|--------|
+| 1 | Pose file `tools/blender_poses/great_axe_poses.blend`: the game's dwarf + great axe, controls AXE (orange, turns round the left fist), LEFT/RIGHT HAND (balls that slide along the handle; the arms reach them by IK), HIPS (green: down = knees bend, feet planted), CHEST (red: twist/lean, shared 0.5/0.3/0.2 over the spine). 5 keys on frames 1/11/21/31/41, pre-placed from chat 8's numbers; auto-keying on | PC Claude | done (chat 9) |
+| 2 | Guide page "Posing the Great Axe" (https://claude.ai/artifact/4KvUukj3xFRtdy2Rfyr5Jj): G, R, arrow keys, Ctrl+S | PC Claude | done (chat 9) |
+| 3 | Owner poses the chop | owner | **to do** |
+| 4 | `read_poses.py` -> `assets/anim/great_axe_poses.json`; the game plays the poses (`DwarfGreatSwing.posed_pose`, `DwarfFist._posed_hold`) on the old timing; keep-out guard = safety net; test `test_owner_posed_chop_plays_as_made` | PC Claude | code done (chat 9); run again on his poses |
+| 5 | Re-record + republish "Great Axe Swings" (chop) for the owner to check | PC Claude | after 3 |
+| 6 | Sweep back + slam: add their keys to the same file (`make_pose_file.py` with more keys), same way | PC Claude + owner | after 5 |
+
+How it fits together (rebuild the file only if the dwarf's body or skeleton changes; it would wipe his poses):
+1. `godot --headless --audio-driver Dummy --fixed-fps 60 --path . --script res://tools/asset_forge/great_pose_blender_export.gd -- dwarf_keys.glb dwarf_keys.json claude=great_pose_export`
+2. `blender -b --python tools/blender_poses/make_pose_file.py -- dwarf_keys.glb dwarf_keys.json made.blend`
+3. `blender --window-geometry 0 0 1600 900 made.blend --python tools/blender_poses/view_setup.py -- <pics dir> tools/blender_poses/great_axe_poses.blend`
+4. After the owner poses: `blender -b tools/blender_poses/great_axe_poses.blend --python tools/blender_poses/read_poses.py -- assets/anim/great_axe_poses.json Chop`
+
+Things learnt (chat 9): Blender's IK can't handle the game's stretched bones (wrists missed 4-11 cm): the stance is
+baked in as his rest shape, and his "wider than tall" size too. The reader works on changes from the game's own stance
+(game_now = C^-1 * blender_now * blender_ref^-1 * C * game_ref), checked exact (0.0 degrees with the controls off).
+The arrow keys only jump between poses while a control is picked (the file opens with the AXE picked).
+
+## The video plan (before Nov 20, replaced by the Blender plan above)
+The owner's own swing (video) gives the motion and timing, the PC's pose tuner fits it onto the dwarf's body, checks
+catch the handle going through him, and the owner picks from picture sheets.
 
 | # | Step | Who | Status |
 |---|------|-----|--------|

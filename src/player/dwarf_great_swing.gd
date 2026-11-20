@@ -113,7 +113,79 @@ static func _timeline(keys: Array, from: Dictionary) -> Array:
 	return line
 
 
-static func _at(line: Array, t: float) -> Dictionary:
+## ---- The owner's own poses (F389, Nov 20: "I'll pose him by hand in Blender") ----
+## tools/blender_poses/great_axe_poses.blend -> read_poses.py -> POSED_FILE: per swing 5 key poses (ready, wind-up
+## top, middle, hit, recovery), each bone's turn as he set it. Played as they are, on the timing above (rules 4):
+## wind-up to 0.27, a 0.04 hold, through the middle to the hit at 0.40 (speeding up), recovery to 0.75 (slowing),
+## back to the ready pose at 1.0. A swing he hasn't posed yet keeps the old key poses (MOVES).
+const POSED_FILE := "res://assets/anim/great_axe_poses.json"
+const POSED_TIMES := {windup = [0.27, {hold = 0.04}], middle = [0.36, {through = true}], hit = [0.40, {ease = "in"}],
+	recovery = [0.75, {ease = "out"}]}
+static var _posed: Dictionary = {}  ## move -> [ready pose, [[time, pose, opts], ...]]
+static var _posed_loaded := false
+
+
+static func _load_posed() -> void:
+	_posed_loaded = true
+	if not FileAccess.file_exists(POSED_FILE):
+		return
+	var all: Variant = JSON.parse_string(FileAccess.get_file_as_string(POSED_FILE))
+	if not all is Dictionary:
+		return
+	for move: String in all:
+		if move.begins_with("_") or not all[move] is Array:
+			continue
+		var ready := {}
+		var keys: Array = []
+		for k: Dictionary in all[move]:
+			var bones := {}
+			for b: String in k.bones:
+				var q: Array = k.bones[b]
+				bones[b] = Quaternion(q[0], q[1], q[2], q[3]).normalized()
+			var a: Array = k.axe
+			var pp: Array = k.pelvis_pos
+			var pose := {bones = bones, pelvis = Vector3(pp[0], pp[1], pp[2]), slide = float(k.left_slide),
+				axe = Basis(Vector3(a[0], a[1], a[2]), Vector3(a[3], a[4], a[5]), Vector3(a[6], a[7], a[8])).orthonormalized()}
+			if k.name == "ready":
+				ready = pose
+			elif POSED_TIMES.has(k.name):
+				keys.append([float(POSED_TIMES[k.name][0]), pose, POSED_TIMES[k.name][1]])
+		if not ready.is_empty():
+			keys.append([1.0, ready, {}])
+			_posed[move] = [ready, keys]
+
+
+## True if the owner has posed this swing ("" = the ready stance: any posed swing gives one).
+static func has_posed(move: String) -> bool:
+	if not _posed_loaded:
+		_load_posed()
+	return not _posed.is_empty() if move == "" else _posed.has(move)
+
+
+## The owner's ready pose (the Chop's, else the first posed swing's).
+static func posed_ready() -> Dictionary:
+	if not has_posed(""):
+		return {}
+	return (_posed.get("Chop", _posed.values()[0]) as Array)[0]
+
+
+## The owner's pose `t` (0..1) into his swing `move`, started from the pose `from`.
+static func posed_pose(move: String, t: float, from: Dictionary) -> Dictionary:
+	if not has_posed(move):
+		return {}
+	return _at(_timeline((_posed[move] as Array)[1], from), t, true)
+
+
+## A posed pose part of the way from `a` to `b`: every bone turns the short way, the hips and the grip slide.
+static func blend_posed(a: Dictionary, b: Dictionary, k: float) -> Dictionary:
+	var bones := {}
+	for n: String in b.bones:
+		bones[n] = (a.bones.get(n, b.bones[n]) as Quaternion).slerp(b.bones[n], k)
+	return {bones = bones, pelvis = (a.pelvis as Vector3).lerp(b.pelvis, k), slide = lerpf(a.slide, b.slide, k),
+		axe = Basis((a.axe as Basis).get_rotation_quaternion().slerp((b.axe as Basis).get_rotation_quaternion(), k))}
+
+
+static func _at(line: Array, t: float, posed := false) -> Dictionary:
 	# the stretch between two keys he stops at (through keys inside it only bend the arc)
 	var a := 0
 	for i in line.size():
@@ -136,5 +208,6 @@ static func _at(line: Array, t: float) -> Dictionary:
 		var t0: float = line[i][0]
 		var t1: float = line[i + 1][0]
 		if v <= t1 or i == b - 1:
-			return blend(line[i][1], line[i + 1][1], clampf((v - t0) / maxf(t1 - t0, 0.001), 0.0, 1.0))
+			var kk := clampf((v - t0) / maxf(t1 - t0, 0.001), 0.0, 1.0)
+			return blend_posed(line[i][1], line[i + 1][1], kk) if posed else blend(line[i][1], line[i + 1][1], kk)
 	return (line[b][1] as Dictionary).duplicate()

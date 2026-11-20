@@ -210,6 +210,11 @@ const SPINE := {"spine_01": 0.5, "spine_02": 0.3, "spine_03": 0.2}  ## share of 
 const HEAD_KEEP := 0.6  ## share of the chest's twist the neck turns back (he keeps looking ahead)
 func _great_hold(sk: Skeleton3D, delta: float) -> void:
 	var p: Dictionary = rig.great_pose(delta)
+	# the owner's own poses (Blender), where he has made them: _posed_hold
+	if rig.great_fixed.is_empty() and use_posed and DwarfGreatSwing.has_posed(rig.great_move):
+		_posed_hold(sk, delta)
+		return
+	_posed_now = {}
 	var sk_world := sk.global_transform
 	var to_sk := sk_world.affine_inverse()
 	var rb := rig.global_basis.orthonormalized()
@@ -288,25 +293,104 @@ func _great_hold(sk: Skeleton3D, delta: float) -> void:
 	target_r = R
 	wrist_turn = 0.0
 	# the weapon: handle along `dir` through both fists, the blade facing the swing's way
+	_lay_weapon(sk, _body(F, p.edge), dir, fist_half + STUB, -F.z)
+
+
+## The great weapon laid through both fists: the handle along `dir`, its end `back` below the left fist's middle,
+## the blade facing `E` (as near as it can, square to the handle; `fallback` if E runs along the handle).
+func _lay_weapon(sk: Skeleton3D, E: Vector3, dir: Vector3, back: float, fallback: Vector3) -> void:
+	var sk_world := sk.global_transform
 	var hand_world := sk_world * sk.get_bone_global_pose(_hands["_r"])
 	var socket: Node3D = rig.right_hand
 	socket.scale = Vector3.ONE / hand_world.basis.get_scale()
 	var tool: Node3D = rig.grip.get_child(rig.grip.get_child_count() - 1)
 	handle = _handle_of(tool, Vector3.UP)
 	var blade := _blade_of(tool)
-	var E: Vector3 = _body(F, p.edge)
 	E = E - E.dot(dir) * dir
 	if E.length() < 1e-3:
-		E = -F.z - (-F.z).dot(dir) * dir
+		E = fallback - fallback.dot(dir) * dir
 	E = E.normalized()
 	var lb := Basis(blade, Vector3.UP, blade.cross(Vector3.UP))
 	var wb := Basis(E, dir, E.cross(dir))
 	var B := wb * lb.inverse()
 	var off: Vector3 = handle[0]
-	var at := left_center - dir * (fist_half + STUB) - B * (off + Vector3.UP * float(handle[1]))
+	var at := left_center - dir * back - B * (off + Vector3.UP * float(handle[1]))
 	rig.grip.transform = (hand_world * socket.transform).affine_inverse() * Transform3D(B, at)
 	if measure_clearance:
-		_clearance(sk, left_center - dir * (fist_half + STUB), dir)
+		_clearance(sk, left_center - dir * back, dir)
+
+
+## ---- The owner's own poses (F389, Nov 20: he poses the dwarf by hand in Blender, tools/blender_poses/) ----
+## Every bone he moved takes the turn he gave it (DwarfGreatSwing.posed_pose: his key poses on the swing's timing).
+## Then, as a safety net: the hands turn so the handle runs through both fists, and the keep-out guard (_keep_out)
+## slides the handle out of his body if it has to (both fists reach again). The axe's blade faces the way he set it.
+## Walking, the legs and hips stay the walk's (like the old way).
+const POSED_LEGS := ["pelvis", "thigh_l", "calf_l", "foot_l", "thigh_r", "calf_r", "foot_r"]
+static var use_posed := true  ## off = the old hand-made numbers (MOVES) for every swing (the tools' "before")
+var _posed_now := {}
+var _posed_from := {}
+var _posed_swing := -2.0  ## which swing the pose started from (DwarfRig._great_started)
+var _bone_ids := {}
+func _posed_hold(sk: Skeleton3D, delta: float) -> void:
+	var move: String = rig.great_move
+	if move != "":
+		if rig._great_started != _posed_swing:  # (a new swing: it starts from wherever he is now)
+			_posed_swing = rig._great_started
+			_posed_from = _posed_now if not _posed_now.is_empty() else DwarfGreatSwing.posed_ready()
+		_posed_now = DwarfGreatSwing.posed_pose(move, rig.great_t, _posed_from)
+	else:
+		_posed_swing = -2.0
+		var ready := DwarfGreatSwing.posed_ready()
+		_posed_now = ready if _posed_now.is_empty() else \
+			DwarfGreatSwing.blend_posed(_posed_now, ready, 1.0 - exp(-DwarfGreatSwing.RETURN * delta))
+	var p := _posed_now
+	_plant = move_toward(_plant, 1.0 if rig.move_speed < 0.3 else 0.0, delta * 4.0)
+	feet_miss = 0.0
+	for n: String in p.bones:
+		if not _bone_ids.has(n):
+			_bone_ids[n] = sk.find_bone(n)
+		var b: int = _bone_ids[n]
+		if b < 0:
+			continue
+		var q: Quaternion = p.bones[n]
+		if n in POSED_LEGS:
+			q = sk.get_bone_pose_rotation(b).slerp(q, _plant)
+		sk.set_bone_pose_rotation(b, q)
+	var pel := sk.find_bone("pelvis")
+	if pel >= 0:
+		sk.set_bone_pose_position(pel, sk.get_bone_pose_position(pel).lerp(p.pelvis, _plant))
+	# the handle through both fists as he holds them (the hands turn about the wrists to fit it: twice, each turn
+	# moves the fists' middles a little)
+	_measure(sk)
+	_measure(sk, "_l")
+	var D := (fist_center - left_center).normalized()
+	var arms := {}
+	for i in 2:
+		arms = _arms(sk, D)
+		D = (fist_center - left_center).normalized()
+	var L := left_center
+	var R := fist_center
+	var s := (R - L).dot(D)
+	var kept := _keep_out(sk, L, D, arms["_l"], arms["_r"])
+	if (kept[0] as Vector3).distance_to(L) > 0.002 or (kept[1] as Vector3).angle_to(D) > 0.01:
+		L = kept[0]
+		D = kept[1]
+		R = L + D * s
+		for side in ["_r", "_l"]:
+			var arm: Array = arms[side]
+			_fist_to(sk, side, arm[0], arm[1], arm[2], R if side == "_r" else L, D)
+		_measure(sk)
+		_measure(sk, "_l")
+	var dir := (fist_center - left_center).normalized() if fist_center.distance_to(left_center) > 0.04 else D
+	left_gap = fist_center.distance_to(left_center)
+	left_miss = left_center.distance_to(L)
+	right_miss = fist_center.distance_to(R)
+	target_l = L
+	target_r = R
+	wrist_turn = 0.0
+	var rb := rig.global_basis.orthonormalized()
+	var blade := _blade_of(rig.grip.get_child(rig.grip.get_child_count() - 1))
+	_lay_weapon(sk, rb * ((p.axe as Basis) * blade), dir, maxf(float(p.slide), fist_half), -rb.z)
 
 
 ## Each hand turned so the handle (along D) runs through its fist, then per arm: [upper arm, forearm, hand bones,

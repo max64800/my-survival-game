@@ -262,7 +262,7 @@ func _build() -> void:
 	skills.peer_id = peer_id
 	skills.visible = false
 	root.add_child(skills)
-	# F435/F436 (owner, Nov 20: "a lot bigger", then "blurry" and "it shouldn't go over the hotbar"): the window is
+	# F435/F445 (owner, Nov 20: "a lot bigger", then "blurry" and "it shouldn't go over the hotbar"): the window is
 	# rebuilt at the screen's size (sharp letters, never stretched) and sits in the space above the hotbar.
 	var fit_skills := func() -> void:
 		var above := root.size.y - SKILLS_HOTBAR_ROOM

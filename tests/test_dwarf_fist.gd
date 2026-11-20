@@ -200,6 +200,50 @@ func test_great_swings_keep_fists_and_handle_room() -> void:
 	m.queue_free()
 
 
+## F389, Nov 20: the owner's own Blender poses (DwarfGreatSwing.posed_pose) play as he made them: the chop, frame by
+## frame like the game: the handle runs through both fists, stays 3+ cm clear of his body, and at the top of the
+## wind-up (the hold) his chest bones are turned exactly as in the file.
+func test_owner_posed_chop_plays_as_made() -> void:
+	if not DwarfGreatSwing.has_posed("Chop"):
+		check(false, "the owner's chop poses are in %s" % DwarfGreatSwing.POSED_FILE)
+		return
+	var m := DwarfModel.new()
+	tree.root.add_child(m)
+	var rig := m.dwarf_rig
+	m.set_held("axe_2h_copper")
+	for i in 40:
+		rig.set_motion(0.0, true, false)
+		await frames(1)
+	rig.fist.measure_clearance = true
+	rig.play_upper("g/Chop", 1.1)
+	var worst := {line = 0.0, room = INF, spine = 0.0}
+	var at := {line = 0.0, room = 0.0, part = ""}
+	var key: Dictionary = DwarfGreatSwing.posed_pose("Chop", 0.29, DwarfGreatSwing.posed_ready())
+	var sp := rig.skeleton.find_bone("spine_02")
+	for f in 66:
+		rig.set_motion(0.0, true, false)
+		await rig.skeleton.skeleton_updated
+		var fs := rig.fist
+		var line := _handle_line(rig)
+		var off := maxf(_off_line(fs.left_center, line), _off_line(fs.fist_center, line))
+		if off > float(worst.line):
+			worst.line = off
+			at.line = rig.great_t
+		if fs.clearance < float(worst.room):
+			worst.room = fs.clearance
+			at.room = rig.great_t
+			at.part = "%s, %.0f cm up the handle, guard pushed %.1f cm, fists off %.1f/%.1f cm" % [fs.clear_part,
+				fs.clear_along * 100.0, fs.keep_push * 100.0, fs.left_miss * 100.0, fs.right_miss * 100.0]
+		if rig.great_t > 0.275 and rig.great_t < 0.305:  # (the hold at the top of the wind-up)
+			var q: Quaternion = key.bones["spine_02"]
+			worst.spine = maxf(float(worst.spine), rad_to_deg(rig.skeleton.get_bone_pose_rotation(sp).angle_to(q)))
+	check(float(worst.line) < 0.015, "posed chop: the handle through both fists all swing (worst %.1f cm at %d%%)" % [float(worst.line) * 100.0, roundi(float(at.line) * 100)])
+	check(float(worst.room) >= 0.03, "posed chop: the handle 3+ cm clear of his body (least %.1f cm at %d%%: %s)" % [float(worst.room) * 100.0, roundi(float(at.room) * 100), at.part])
+	check(float(worst.spine) < 0.5, "posed chop: his chest turned as the owner posed it (%.2f deg off)" % float(worst.spine))
+	rig.fist.measure_clearance = false
+	m.queue_free()
+
+
 ## Owner, Nov 19: the shield is held by its grip (the left fist), the forearm through the leather loops on its back.
 func test_shield_worn_on_the_forearm() -> void:
 	var m := DwarfModel.new()
