@@ -342,6 +342,9 @@ def model_list(args):
 		return every
 	out = []
 	for a in args:
+		if a.endswith(".glb"):   # a test model outside the game (e.g. journey/hearthbrick_v2/glb/x.glb)
+			out.append(Path(a).resolve())
+			continue
 		hit = [p for p in every if p.parent.name == a or f"{p.parent.name}/{p.stem}" == a or p.stem == a]
 		if not hit:
 			print(f"?? nothing called {a}")
@@ -393,7 +396,7 @@ def main():
 			sh = check_shimmer(parts)
 			if sh:
 				probs.append(("SHIMMER", sh))
-			if folder == "build":
+			if folder == "build" or "__" in name:   # test models named <piece>__<family> count as building pieces
 				ol = check_outline(name, tris, sizes)
 				if ol:
 					probs.append(("OUTLINE", ol))

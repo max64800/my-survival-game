@@ -5983,6 +5983,12 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   once on the website and most failed (on my PC it worked, so I hadn't checked the live page). Now one at a time with
   retries; I opened the live page myself to check. Another chat was mid-edit on dungeon_build.gd so the game didn't
   compile for a few minutes; waited instead of touching their file. My temporary data dump in the test was removed.
+- **Later, same chat:** owner OK'd round 1b (thicker bricks, one arch, the window); Stonehold needs no black-line check.
+  First paint with the old brick paintings was too dark and dull, so ChatGPT made a Hearthbrick texture sheet (6 brick
+  colours, ochre, burnt, 4 limestones, mortar, a carved rune band, timber, copper), cut by the new
+  `tools/asset_forge/derive_tex_hearthbrick.py` into `assets/textures/kit/hb*.png`. The rune band gets its own flat
+  mapping so exactly one row of runes fills the band. Window glass: see-through pale green with lead diamonds.
+  Round 2 (painted) is on the 3D page, waiting for the owner. Nothing installed in the game or committed yet.
 
 ## November 20, 2026 (PC, dungeons Claude, chat 6): the owner's 10 notes from his third Mossgate Hold play
 - **Asked first (note 3):** "make the spike pit the same as in the other room" was unclear, so Claude asked. The owner
@@ -6017,3 +6023,25 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   written wrong at first (the pit check counted the chasm's spikes too; the door check used a box shared by both
   halls). The robot pictures were cluttered by beetles attacking the dwarf, so the 3D page is the place to look.
   The browser helper wouldn't connect, so the page's code was checked with Node instead.
+
+## November 20, 2026 (PC, Hearthbrick Claude): Hearthbrick v2 batch 1 in the game, and the other 36 pieces built (F427)
+- **Batch 1 in the game:** wall, round doorway, arched window wall, foundation, floor (owner OK'd the paint). Build-menu
+  pictures remade. The model checker found one flicker spot: the window's sill sat inside bricks, because the window's
+  heights (0.574 m, 0.928 m) were 1-2 mm off the brick rows, so the bricks under the sill were never left out. The
+  window now sits exactly on the brick rows. All 5 pass; the robot test house (kitcheck, muted, claude= tag) snaps fine.
+  Dungeon Claude told.
+- **The other 36 pieces** (owner: "work through all the batches" while away), built by 5 helpers at once, each in its
+  own file so nobody overwrote anyone: `hearthbrick_v2_walls.py` (half wall, narrow wall, wide window, sloped wall,
+  2 gables), `_roofs.py` (8 curved terracotta tile roofs; outer corner = hollow hip; inner corner = copper valley),
+  `_ground.py` (half / triangle / stepped foundations, 3 floors, ceiling, stairs, ramp), `_round.py` (green round door
+  with copper hinges and ring, round brick pillar, column + its 3 stackable parts), `_frame.py` (beam, short beam,
+  brace, arch, railing with little arches, ladder, mine prop). The 4 diagonal pieces were skipped: the build menu
+  hides them ("legacy"). Not in the game yet: 3D page "Hearthbrick Full Set" for the owner's OK.
+- **Model checker:** it can now check a test model by its path (`check_models.py -- journey/.../x.glb`).
+- **Hurdles:** the walls helper copied the Shack's gable slant but the roofs helper used the old Hearthbrick roof
+  slant, so the gables would have stuck into the roof. Fixed the gables to the roof's underside line; that made the low
+  tip so thin the mortar sheet inside reached 1.7 cm below the ground (now trimmed to the ground line). Helpers each
+  found flicker spots (mortar sheets too close to dented brick faces) and fixed them. Blender saved stray pictures into
+  `C:\journey` when given short paths (some deleted; the empty folder needs removing by hand).
+- **Open questions for the owner:** roof tiles use the brick paintings (maybe a ChatGPT tile sheet); stairs are heavy
+  (21.5k triangles); brace, ladder, railing and mine prop aren't allowed in Hearthbrick in the game yet; door gap 2 cm.
