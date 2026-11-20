@@ -327,7 +327,7 @@ func test_crossbow_reload_needs_standing_still() -> void:
 	var was_robot := Controls.robot
 	Controls.robot = true
 	Controls.set_captured(true)  # playing (the reload only runs while you play, not in a menu)
-	check_eq(Combat.RELOAD[1], 4.0, "a copper crossbow takes 4 s to reload (twice the old 2 s)")
+	check_eq(Combat.RELOAD[1], 3.0, "a copper crossbow takes 3 s to reload (owner, Nov 20)")
 	dwarf.fight.loaded = false
 	dwarf.fight.start_reload()
 	check(dwarf.fight.reload_left > 0.0, "reloading started")
@@ -345,6 +345,11 @@ func test_crossbow_reload_needs_standing_still() -> void:
 		await tree.physics_frame
 	dwarf.fight.start_reload()
 	check(absf(dwarf.fight.reload_left - dwarf.fight.reload_total) < 0.05, "the next reload starts from the beginning")
+	var rig: DwarfRig = dwarf.model.dwarf_rig
+	if rig:  # the reload move is stretched to last the whole reload (owner, Nov 20: no standing still after it)
+		var clip_len := rig.tree.get_animation(rig._upper_clip).length if rig._upper_clip != "" else 0.0
+		var plays_for := clip_len / maxf(float(rig.tree.get("parameters/upper_speed/scale")), 0.001)
+		check(absf(plays_for - dwarf.fight.reload_total) < 0.1, "the reload move lasts as long as the reload (%.2f s vs %.2f s)" % [plays_for, dwarf.fight.reload_total])
 	var x0 := dwarf.global_position.x
 	for i in int(dwarf.fight.reload_total * 60) + 30:
 		await tree.physics_frame

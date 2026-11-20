@@ -311,6 +311,7 @@ func _crossbow_step(delta: float, move_dir := Vector3.ZERO) -> float:
 	if reload_left >= 0.0:
 		if dwarf.running or move_dir.length() > 0.1:
 			reload_left = -1.0
+			dwarf.model.react("reload_stop")  # the reload move stops too
 			message.emit("Reload stopped: stand still to reload", Color(0.9, 0.9, 0.9))
 		else:
 			reload_left -= delta
@@ -342,7 +343,7 @@ func start_reload() -> void:
 		return
 	reload_left = Combat.RELOAD[clampi(tier(), 0, 4)] * (_ps().progress.crossbow_reload_mult() if _ps() else 1.0)
 	reload_total = reload_left
-	dwarf.model.react("reload")
+	dwarf.model.react("reload", reload_total)  # the reload move lasts exactly as long as the reload (owner, Nov 20)
 	message.emit("Reloading…", Color(0.9, 0.9, 0.9))
 
 

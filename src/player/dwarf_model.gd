@@ -6,7 +6,7 @@ extends Node3D
 ## The right arm holds the pickaxe and can swing; the left hand holds the lantern.
 
 signal swing_impact  ## the pickaxe just hit (time to dig)
-signal reacted(what: String)  ## a reaction played (the Dwarf sends it to co-op friends)
+signal reacted(what: String, duration: float)  ## a reaction played (the Dwarf sends it to co-op friends)
 
 const SKIN := Color(0.93, 0.72, 0.58)
 const BEARD := Color(0.72, 0.33, 0.14)
@@ -288,8 +288,9 @@ func set_pose(blocking: bool, aiming: bool, shield: bool) -> void:
 
 
 ## A short reaction: "hit", "knock", "block", "eat", "throw".
-func react(what: String) -> void:
-	reacted.emit(what)
+## duration: how long it plays (-1 = its usual time). The crossbow reload passes the real reload time.
+func react(what: String, duration := -1.0) -> void:
+	reacted.emit(what, duration)
 	if dwarf_rig == null:
 		return
 	match what:
@@ -308,7 +309,9 @@ func react(what: String) -> void:
 		"shoot":
 			dwarf_rig.play_upper("Pistol_Shoot", 0.4)
 		"reload":
-			dwarf_rig.play_upper("Pistol_Reload", 1.0)
+			dwarf_rig.play_upper("Pistol_Reload", duration if duration > 0.0 else 1.0)
+		"reload_stop":
+			dwarf_rig.stop_upper()
 		"use":
 			dwarf_rig.play_upper("use", 0.7)
 

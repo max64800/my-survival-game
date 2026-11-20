@@ -89,9 +89,9 @@ func _ready() -> void:
 	model.tunic = DwarfModel.TUNICS[color_index % DwarfModel.TUNICS.size()]
 	add_child(model)
 	model.swing_impact.connect(_on_swing_impact)
-	model.reacted.connect(func(what: String):
+	model.reacted.connect(func(what: String, duration: float):
 		if is_local and _online():
-			_net_react.rpc(what))
+			_net_react.rpc(what, duration))
 	lantern = Lantern.new()
 	lantern.peer_id = peer_id
 	model.left_hand.add_child(lantern)
@@ -880,5 +880,5 @@ func _worn_items() -> Array:
 
 ## A friend's dwarf flinched, ate, threw, shot… (only looks).
 @rpc("authority", "reliable")
-func _net_react(what: String) -> void:
-	model.react(what)
+func _net_react(what: String, duration := -1.0) -> void:
+	model.react(what, duration)

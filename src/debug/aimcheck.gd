@@ -52,7 +52,10 @@ func _run() -> void:
 	ps.inventory.add("bolt_stone", 5)
 	dwarf.fight.loaded = false
 	dwarf.fight.start_reload()
-	await _wait(dwarf.fight.reload_total * 0.5)
-	print("aimcheck: reloading %.1f of %.1f s" % [dwarf.fight.reload_total - dwarf.fight.reload_left, dwarf.fight.reload_total])
-	await _shot("reload_halfway")
+	dwarf._zoom = Dwarf.ZOOM_MIN  # close, to see his hands work the crossbow
+	var t := dwarf.fight.reload_total
+	for f in [0.2, 0.5, 0.9]:  # the reload move should still be going near the end (owner, Nov 20)
+		await _wait(t * f - (t - dwarf.fight.reload_left))
+		print("aimcheck: reloading %.1f of %.1f s" % [t - dwarf.fight.reload_left, t])
+		await _shot("reload_%d" % roundi(f * 100))
 	get_tree().quit()

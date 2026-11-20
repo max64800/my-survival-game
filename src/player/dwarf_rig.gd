@@ -736,6 +736,12 @@ func play_upper(what: String, duration: float = 0.0) -> void:
 	_play("upper", what, duration)
 
 
+## Stop the upper-body action early (a crossbow reload you walked away from), fading back to the normal pose.
+func stop_upper() -> void:
+	tree.set("parameters/upper/request", AnimationNodeOneShot.ONE_SHOT_REQUEST_FADE_OUT)
+	_upper_clip = ""
+
+
 ## Whole-body action: roll, get hit.
 func play_full(what: String, duration: float = 0.0) -> void:
 	_play("full", what, duration)
