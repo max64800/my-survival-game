@@ -18,6 +18,12 @@
 #   junk_shield_iron    the same shield with an iron rim and rivets, broken in two (medium and big dungeons)
 #   junk_rubble_wood    a low pile of snapped planks in three layers and some chips (small dungeons)
 #   junk_rubble_wood_b .. _f  (owner, Nov 20) five more plank piles, more spread out, each stacked its own way
+# Batch 3 (junk_small_mine.jpg, small dungeons):
+#   junk_pickaxe_broken a pickaxe head, its handle snapped off short in the socket, the broken piece beside it
+#   junk_shovel_bent    a dented shovel with a bent shaft and a D grip
+#   junk_beam_snapped   a hand-hewn mine beam snapped in two: torn fibres, cracks, moss, a hugging iron band each
+#   junk_helmet         a dented miner's helmet on its brim: band with rivets, front badge, a dent
+#   junk_lantern        a square lantern lying on its side, top pane smashed, a fallen candle, shards on the floor
 import math
 import random
 import sys
@@ -589,6 +595,322 @@ def rags_pair(seed):
 	turn(meshes() - before, rr.uniform(0, 360), (0.0, 0.0, 0.0), off=(math.cos(a) * d, 0.0, math.sin(a) * d))
 
 
+# ================================================================ batch 3 (junk_small_mine.jpg, small dungeons)
+def dull(m):
+	"""A rougher, less shiny copy of a metal (old dented iron that doesn't mirror the light)."""
+	name = m.name + "_dull"
+	if name in bpy.data.materials:
+		return bpy.data.materials[name]
+	d = m.copy()
+	d.name = name
+	d["tile"] = m["tile"]
+	b = d.node_tree.nodes["Principled BSDF"]
+	b.inputs["Roughness"].default_value = 0.8
+	b.inputs["Metallic"].default_value = 0.25
+	return d
+
+
+def GLASS():
+	"""Old smoky lantern glass: dark green-grey, shiny."""
+	if "lantern_glass" in bpy.data.materials:
+		return bpy.data.materials["lantern_glass"]
+	m = bpy.data.materials.new("lantern_glass")
+	m.use_nodes = True
+	b = m.node_tree.nodes["Principled BSDF"]
+	b.inputs["Base Color"].default_value = (0.2, 0.26, 0.25, 1)
+	b.inputs["Roughness"].default_value = 0.12
+	return m
+
+
+def RUST(v="a"):
+	return tinted("iron", v, (1.18, 0.98, 0.8), "rust")
+
+
+def bolt(c, up=True, r=0.011, m=None):
+	"""A six-sided bolt head: facing up (up=True) or facing the front (+z)."""
+	return kit.cylinder(r, 0.008, K.G(c), m or T("iron", "dark"), rot=(0, 0, 0) if up else (90, 0, 0), verts=6, bevel=0.002)
+
+
+def junk_pickaxe_broken():
+	"""A pickaxe head lying flat, its handle snapped off short in the socket, the broken-off piece beside it."""
+	head = RUST("a")
+	out, inner = [], []
+	ts = [i / 10 for i in range(-10, 11)]
+	for t in ts:   # a crescent: the picks bend toward the handle (+z) to sharp tips (owner, Nov 20: it bent the wrong way)
+		x, zc, w = 0.29 * t, 0.17 * t * t, 0.038 * (1 - abs(t)) ** 0.7 + 0.004
+		out.append((x, zc + w))
+		inner.append((x, zc + w * 0.25))
+	for t in reversed(ts):
+		x, zc, w = 0.29 * t, 0.17 * t * t, 0.038 * (1 - abs(t)) ** 0.7 + 0.004
+		out.append((x, zc - w))
+		inner.append((x, zc - w * 0.25))
+	slab(out, 0.012, 0.012, 0.04, head, inner=inner)
+	K.blk((0.0, 0.032, 0.0), (0.085, 0.064, 0.092), RUST("b"), bevel=0.008)   # the socket (its faces 7 mm past the head's edges)
+	for x in (-0.025, 0.025):
+		bolt((x, 0.066, 0.0))
+	bolt((0.0, 0.032, 0.047), up=False)
+	R_, y = 0.024, 0.031
+	rod((0.0, y, 0.03), (0.0, y, 0.15), R_, R_ * 0.97, T("wood", "dark"), sides=8, seed=301, jit=0.05)   # the stub
+	splinters((0.0, y, 0.15), (0, 0, 1), R_, 302)
+	before = meshes()   # the broken-off piece, lying turned beside it, with its iron end band
+	rod((0.0, R_, 0.0), (0.0, R_, 0.21), R_ * 0.97, R_, T("wood", "dark"), sides=8, seed=303, jit=0.05)
+	splinters((0.0, R_, 0.0), (0, 0, -1), R_, 304)
+	rod((0.0, R_, 0.17), (0.0, R_, 0.215), R_ * 1.22, R_ * 1.22, RUST("c"), sides=8, seed=305, jit=0.03, rings=2)
+	bolt((0.0, R_ * 2.22 + 0.002, 0.193))
+	turn(meshes() - before, -78, (0.0, 0.0, 0.0), off=(-0.08, 0.0, 0.3))
+
+
+def junk_shovel_bent():
+	"""A dented shovel lying flat, its shaft bent, a D-shaped grip at the end."""
+	blade = []
+	for i in range(13):   # a rounded spade: square shoulders, round pointed tip (toward -x)
+		a = math.radians(90 + i * 180 / 12)
+		r = 1.0 + 0.1 * math.sin(i * 1.7)
+		blade.append((-0.29 + math.cos(a) * 0.19 * r, math.sin(a) * 0.14 * r))
+	blade += [(-0.1, -0.135), (-0.08, -0.04), (-0.08, 0.04), (-0.1, 0.135)]
+	slab(blade, 0.0, 0.01, 0.018, RUST("a"), k=0.25, toward=(-0.2, 0.0))
+	for sz in (-1, 1):   # the blade's raised side edges (a scoop), dented
+		rod((-0.4, 0.012, sz * 0.122), (-0.12, 0.014, sz * 0.13), 0.009, 0.011, RUST("b"), sides=6, seed=310 + sz, jit=0.2)
+	y = 0.022
+	rod((-0.12, y, 0.0), (-0.02, y, 0.0), 0.03, 0.024, RUST("c"), sides=8, seed=312, jit=0.04)   # the socket
+	bolt((-0.07, y + 0.03, 0.0))
+	wood = T("wood", "dark")
+	pts = [(-0.03, y, 0.0), (0.17, y, 0.012), (0.3, y, 0.07), (0.48, y, 0.1)]   # the shaft, bent in the middle
+	for i in range(3):
+		rod(pts[i], pts[i + 1], 0.02, 0.02, wood, sides=8, seed=313 + i, jit=0.04, rings=2)
+	for p in pts[1:3]:
+		lump(p, (0.021, 0.021, 0.021), wood, 320 + int(p[0] * 100), seg=8, ring=5, jit=0.03)   # (knuckles at the bends)
+	# the D grip: two iron straps from the shaft end and a wooden cross grip
+	ex, ez = pts[-1][0], pts[-1][2]
+	for sz in (-1, 1):
+		rod((ex - 0.01, y, ez), (ex + 0.1, y, ez + sz * 0.065), 0.011, 0.011, RUST("b"), sides=6, seed=325 + sz, jit=0.05, rings=2)
+	rod((ex + 0.1, y, ez - 0.075), (ex + 0.1, y, ez + 0.075), 0.019, 0.019, wood, sides=8, seed=327, jit=0.04, rings=2)
+	rod((ex - 0.02, y, ez), (ex + 0.02, y, ez), 0.025, 0.025, RUST("c"), sides=8, seed=328, jit=0.03, rings=2)   # ferrule
+
+
+def hewn_beam(x0, x1, H, D, seed, brk=0, tear=0.16, cracks=((-0.4, 0.1, 1.2),), moss=2):
+	"""A hand-hewn beam lying along x (owner, Nov 20: two plain boxes with spikes were not good enough): a rounded,
+	uneven square cross-section that changes along its length, real cracks cut into the wood (dark grooves), moss
+	patches, and at a snapped end (brk = +1: the x1 end, -1: the x0 end) torn fibres: every strip of the surface ends
+	at its own length (the top ones longest, peeling), closed by a spiky fan, not a flat cut. Returns (object, rings)."""
+	import bmesh
+	rr = random.Random(seed)
+	NA = 32                                   # points round the beam
+	n_r = max(8, int((x1 - x0) / 0.035))      # rings along it
+	ph = [rr.uniform(0, 6.28) for _ in range(8)]
+	cy = 0.016 + H / 2
+	tear_len = [tear * (0.25 + 0.75 * max(0.0, math.sin(2 * math.pi * k / NA))) * rr.uniform(0.35, 1.0) for k in range(NA)]
+	for k in range(NA):   # fibres come in strips of 2-3 neighbours
+		if rr.random() < 0.5:
+			tear_len[(k + 1) % NA] = tear_len[k] * rr.uniform(0.85, 1.05)
+	crack_lines = [(cx0, cx1, ca + rr.uniform(-0.2, 0.2), rr.uniform(0, 6.28)) for (cx0, cx1, ca) in cracks]
+	moss_spots = [(rr.uniform(x0 + 0.1, x1 - 0.1), rr.uniform(1.2, 1.9), rr.uniform(0.03, 0.055)) for _ in range(moss)]
+
+	def section(x, k):
+		"""The surface point at length x, angle step k (game coords)."""
+		a = 2 * math.pi * k / NA
+		c, s = math.cos(a), math.sin(a)
+		ex = 2 / 4.5   # a rounded square (no perfect box, no perfect circle)
+		pz = math.copysign(abs(c) ** ex, c) * D / 2
+		py = math.copysign(abs(s) ** ex, s) * H / 2
+		bump = (0.0045 * math.sin(x * 9 + ph[0] + a * 3) + 0.003 * math.sin(x * 23 + ph[1] + a * 5)
+			+ 0.0025 * math.sin(a * 7 + ph[2]) + 0.0015 * math.sin(x * 41 + a * 2 + ph[3]))
+		bump += 0.003 * math.sin(math.floor(x / 0.18 + ph[4]) * 2.7 + math.floor(a / 1.57) * 1.3)   # adze facets
+		r = 1 + bump / (0.5 * min(H, D))
+		bend_y = 0.004 * math.sin(x * 2.2 + ph[5])
+		bend_z = 0.005 * math.sin(x * 1.7 + ph[6])
+		p = Vector((x, cy + bend_y + py * r, bend_z + pz * r))
+		for (cx0, cx1, ca, cp) in crack_lines:   # cut the cracks in
+			if cx0 <= x <= cx1:
+				aa = ca + 0.12 * math.sin(x * 11 + cp)
+				d = abs(math.atan2(math.sin(a - aa), math.cos(a - aa)))
+				if d < 0.12:
+					f = min(1.0, (x - cx0) / 0.08, (cx1 - x) / 0.08)
+					p -= Vector((0, py, pz)).normalized() * 0.017 * f * (1 - d / 0.12)
+		return p
+
+	bm = bmesh.new()
+	uv = bm.loops.layers.uv.new("UVMap")   # (the same name as every other part: one map when they are joined)
+	rings = []
+	xs = [x0 + (x1 - x0) * i / n_r for i in range(n_r + 1)]
+	for i, x in enumerate(xs):
+		ring = []
+		for k in range(NA):
+			xx = x
+			at_end = (brk > 0 and i == n_r) or (brk < 0 and i == 0)
+			dist = (n_r - i) if brk > 0 else i
+			if brk and not at_end and dist <= 2:   # the wood loosens just before the break
+				xx += brk * tear_len[k] * 0.15 * (1 - dist / 3)
+			if at_end:
+				xx += brk * tear_len[k]
+			p = section(xx, k)
+			if at_end:   # the torn fibres pinch in a little
+				p = Vector((p.x, cy + (p.y - cy) * rr.uniform(0.82, 0.97), p.z * rr.uniform(0.82, 0.97)))
+			ring.append(bm.verts.new((p.x, -p.z, p.y)))   # (game -> Blender)
+		rings.append(ring)
+	faces = []
+	for i in range(n_r):
+		for k in range(NA):
+			k2 = (k + 1) % NA
+			f = bm.faces.new((rings[i][k], rings[i][k2], rings[i + 1][k2], rings[i + 1][k]))
+			faces.append((f, k))
+	for (end_i, sgn) in ((0, -1), (n_r, 1)):
+		ring = rings[end_i]
+		if (brk > 0 and end_i == n_r) or (brk < 0 and end_i == 0):
+			mean = sum((v.co for v in ring), Vector()) / NA
+			ctr = bm.verts.new(mean - Vector((sgn * 0.05, 0, 0)))   # (the fan's centre sits back: the fibres stick out)
+			for k in range(NA):
+				bm.faces.new((ring[k], ring[(k + 1) % NA], ctr))
+		else:
+			bm.faces.new(ring)
+	# paint: the plank painting wrapped round (one painting per face width), along the grain; cracks dark; moss green
+	for f, k in faces:
+		xm = sum(v.co.x for v in f.verts) / 4
+		am = 2 * math.pi * (k + 0.5) / NA
+		for (cx0, cx1, ca, cp) in crack_lines:
+			aa = ca + 0.12 * math.sin(xm * 11 + cp)
+			if cx0 + 0.03 <= xm <= cx1 - 0.03 and abs(math.atan2(math.sin(am - aa), math.cos(am - aa))) < 0.1:
+				f.material_index = 0   # (owner, Nov 20: no dark patches; the groove itself shows the crack)
+				f.tag = True
+		if not f.tag:
+			for (mx, ma, mr) in moss_spots:
+				if math.hypot(xm - mx, (am - ma) * 0.075) < mr * rr.uniform(0.7, 1.0):
+					f.material_index = 2
+		for lp, kk in zip(f.loops, (k, k + 1, k + 1, k)):
+			lp[uv].uv = (kk / NA * 4.0 + seed * 0.13, lp.vert.co.x / 1.1)
+	for f in bm.faces:
+		if len(f.verts) != 4:   # the end caps: the painting laid flat across them
+			for lp in f.loops:
+				lp[uv].uv = (lp.vert.co.y * 4 + 0.5, lp.vert.co.z * 4 + 0.5)
+	ring_pts = [[(v.co.x, v.co.z, -v.co.y) for v in ring] for ring in rings]   # (back in game coords)
+	me = bpy.data.meshes.new("beam")
+	bm.to_mesh(me)
+	bm.free()
+	o = bpy.data.objects.new("beam", me)
+	bpy.context.scene.collection.objects.link(o)
+	for m in (kit.tex_mat("shackplank", f"v{seed % 8}"), tinted("shackplank", f"v{seed % 8}", (0.42, 0.36, 0.3), "crack"),
+			tinted("soil", "a", (0.62, 0.85, 0.35), "moss")):   # (cracks: the same wood, much darker; round 2 black looked like patches)
+		me.materials.append(m)
+	for p in me.polygons:   # smooth: with this many small faces, flat shading looked like blocks (round 1)
+		p.use_smooth = len(p.vertices) == 4 and p.material_index != 1
+	K.fix_normals(o)
+	return o, ring_pts
+
+
+def beam_band(rings, i, cy, m):
+	"""An iron band hugging the beam's own uneven shape round ring i: 1 cm proud, 5.4 cm wide, with bolts."""
+	ring = rings[i]
+	x = sum(p[0] for p in ring) / len(ring)
+	n = len(ring)
+	verts, faces = [], []
+	for (xx, g) in ((x - 0.027, 0.011), (x + 0.027, 0.011), (x + 0.027, -0.012), (x - 0.027, -0.012)):
+		for (_, y, z) in ring:
+			dy, dz = y - cy, z
+			ln = math.hypot(dy, dz)
+			verts.append((xx, cy + dy * (1 + g / ln), dz * (1 + g / ln)))
+	for k in range(n):
+		k2 = (k + 1) % n
+		for (a, b) in ((0, 1), (1, 2), (2, 3), (3, 0)):
+			faces.append((a * n + k, a * n + k2, b * n + k2, b * n + k))
+	K.mesh(verts, faces, m)
+	top = max(ring, key=lambda p: p[1])
+	front = max(ring, key=lambda p: p[2])
+	bolt((x, top[1] + 0.012, top[2]))
+	bolt((x, front[1], front[2] + 0.012), up=False)
+
+
+def junk_beam_snapped():
+	"""A cracked, hand-hewn mine support beam, snapped in two: torn fibres at the break, moss, an iron band with bolts
+	on each piece, a few chips on the floor."""
+	H, D = 0.15, 0.17
+	cy = 0.016 + H / 2
+	_, rings = hewn_beam(-0.72, 0.2, H, D, 381, brk=1, tear=0.26,
+		cracks=((-0.5, 0.14, 1.35), (-0.2, 0.15, 0.25), (-0.65, -0.25, 2.2)), moss=0)   # (owner, Nov 20: no dark spots)
+	beam_band(rings, 4, cy, RUST("a"))
+	for k in range(4):   # a few long fibres peeling off the top at the break
+		a = math.radians(60 + k * 20)
+		y0, z0 = cy + math.sin(a) * H * 0.4, math.cos(a) * D * 0.4
+		rod((0.14, y0, z0), (0.3 + k * 0.015, y0 + 0.01 + k * 0.004, z0 * 1.12), 0.011, 0.0015, T("wood", "b"), sides=4,
+			seed=390 + k, jit=0.25, rings=3)
+	before = meshes()
+	_, rings2 = hewn_beam(0.44, 0.84, H, D, 385, brk=-1, tear=0.22, cracks=((0.45, 0.72, 0.6),), moss=0)
+	beam_band(rings2, len(rings2) - 5, cy, RUST("b"))
+	turn(meshes() - before, 8, (0.44, 0.0, 0.0), off=(0.0, 0.0, 0.04))
+	for i, (x, z, a, s) in enumerate(((0.12, 0.22, 20, 1.0), (0.3, 0.27, -30, 0.8), (0.42, 0.2, 60, 0.6), (0.2, -0.2, 100, 0.7))):
+		before = meshes()   # chips on the floor
+		board_slab([(-0.05 * s, -0.012), (0.055 * s, -0.014), (0.065 * s, 0.0), (0.05 * s, 0.014), (-0.06 * s, 0.011)], 0.0, 0.014, 350 + i)
+		turn(meshes() - before, a, (0.0, 0.0, 0.0), off=(x, 0.0, z))
+
+
+def junk_helmet():
+	"""A dented miner's helmet sitting on its brim: a dome, a riveted band and a front badge, a dent."""
+	metal = dull(RUST("b"))   # (round 1: shiny facets looked like mirrors)
+	bpy.ops.mesh.primitive_uv_sphere_add(segments=22, ring_count=11, radius=1, location=(0, 0, 0))
+	o = bpy.context.object
+	rr = random.Random(361)
+	dent = Vector((-0.55, -0.45, 0.7)).normalized()   # (Blender axes) front left, up high
+	for v in o.data.vertices:
+		v.co *= rr.uniform(0.97, 1.03)
+		if v.co.z < 0:
+			v.co.z = 0.0
+		d = (v.co.normalized() - dent).length if v.co.length > 0.1 else 9
+		if d < 0.45:
+			v.co *= 1 - 0.16 * (1 - d / 0.45)
+	o.scale = (0.125, 0.135, 0.12)
+	o.location = (0, 0, 0.016)
+	bpy.ops.object.transform_apply(location=True, rotation=False, scale=True)
+	kit._finish(o, metal, 0, 0)
+	ring = []   # the brim: a wavy flat ring
+	n = 18
+	verts, faces = [], []
+	for k in range(n):
+		a = 2 * math.pi * k / n
+		r0, r1 = 0.118, 0.175 + rr.uniform(-0.008, 0.008) + (0.012 if 2 < k < 6 else 0)
+		y = rr.uniform(0.0, 0.005)
+		for r in (r0, r1):
+			for yy in (y, y + 0.016):
+				verts.append((math.cos(a) * r, yy, math.sin(a) * r))
+	for k in range(n):
+		b, c = 4 * k, 4 * ((k + 1) % n)
+		faces += [(b, c, c + 2, b + 2), (b + 1, b + 3, c + 3, c + 1), (b, b + 1, c + 1, c), (b + 2, c + 2, c + 3, b + 3)]
+	K.mesh(verts, faces, dull(RUST("a")))
+	arc_band(0.122, 0.136, 0.014, 0.05, 0, 360, dull(RUST("c")), n=18, seed=362)   # the band round the dome
+	for k in range(6):
+		a = math.radians(30 + k * 60)
+		lump((math.cos(a) * 0.137, 0.032, math.sin(a) * 0.137), (0.009, 0.009, 0.009), T("iron", "dark"), 363 + k, seg=6, ring=4)
+	kit.cylinder(0.034, 0.012, K.G((0.0, 0.05, 0.14)), RUST("c"), rot=(90 - 18, 0, 0), verts=8, bevel=0.003)   # the badge
+	for sx in (-1, 1):   # a raised mountain mark on it
+		K.blk((sx * 0.009, 0.052, 0.148), (0.006, 0.026, 0.006), T("iron", "dark"), bevel=0.0015, rz=-sx * 28, rx=-18)
+
+
+def junk_lantern():
+	"""A square miner's lantern lying on its side, its top pane smashed, glass shards on the floor."""
+	fr = RUST("a")
+	L, S = 0.3, 0.17
+	for x in (-L / 2, L / 2):   # the two end caps
+		K.blk((x, S / 2 + 0.002, 0.0), (0.04, S + 0.004, S + 0.012), RUST("b"), bevel=0.008)
+	for (yy, zz) in ((0.018, -0.07), (0.018, 0.07), (S - 0.014, -0.07), (S - 0.014, 0.07)):   # four corner bars
+		K.blk((0.0, yy, zz), (L - 0.02, 0.026, 0.026), fr, bevel=0.005)
+	glass = GLASS()
+	K.blk((0.0, 0.016, 0.0), (L - 0.04, 0.004, 0.12), glass, bevel=0)   # the bottom pane (on the floor side)
+	K.blk((0.0, S / 2, -0.07), (L - 0.04, 0.12, 0.004), glass, bevel=0)   # the back pane, whole
+	K.blk((-0.03, 0.045, 0.07), (0.2, 0.04, 0.004), glass, bevel=0)        # the front pane: only a low strip left
+	K.blk((0.09, 0.14, 0.07), (0.06, 0.035, 0.004), glass, bevel=0, rz=25)  # and a shard in the top corner
+	# the top pane, smashed: only jagged pieces left round its edges
+	for i, poly in enumerate(([(-0.13, -0.065), (-0.02, -0.065), (-0.05, -0.03), (-0.1, -0.035), (-0.13, 0.01)],
+			[(0.04, 0.065), (0.13, 0.065), (0.13, -0.02), (0.1, 0.01), (0.07, 0.03)])):
+		slab(poly, S - 0.017, 0.003, 0.004, glass, k=0.1)
+	kit.cylinder(0.018, 0.06, K.G((0.02, 0.036, 0.0)), kit.mat("linen"), rot=(0, 90, 0), verts=8, bevel=0.003)   # a candle stub, fallen
+	for x in (-L / 2, L / 2):
+		bolt((x, S + 0.006, 0.0))   # (on the end caps)
+	K.blk((-L / 2 - 0.03, 0.012, 0.0), (0.03, 0.024, 0.024), RUST("c"), bevel=0.004)   # the hanging eye
+	kit.ring(0.036, 0.009, K.G((-L / 2 - 0.075, 0.01, 0.0)), RUST("c"), seg=12)            # the ring, lying flat
+	for i, (x, z, a, s) in enumerate(((0.26, 0.12, 20, 1.0), (0.32, 0.03, 75, 0.7), (0.22, 0.22, -30, 0.8), (0.34, 0.17, 140, 0.6))):
+		before = meshes()   # glass shards on the floor
+		slab([(-0.03 * s, -0.015 * s), (0.035 * s, -0.02 * s), (0.02 * s, 0.022 * s), (-0.02 * s, 0.016 * s)], 0.0, 0.003, 0.004, glass, k=0.1)
+		turn(meshes() - before, a, (0.0, 0.0, 0.0), off=(x, 0.0, z))
+
+
 def settle():
 	"""Set the finished pile down: its lowest point on the floor (y = 0), its middle at the origin (x, z)."""
 	objs = [o for o in bpy.data.objects if o.type == "MESH"]
@@ -607,7 +929,9 @@ def settle():
 BUILDS = {"junk_bones": junk_bones, "junk_sword_snapped": junk_sword_snapped, "junk_axe_head": junk_axe_head,
 	"junk_spear_broken": junk_spear_broken,
 	"junk_rags": junk_rags, "junk_shield_wood": junk_shield_wood, "junk_shield_iron": junk_shield_iron,
-	"junk_rubble_wood": junk_rubble_wood}
+	"junk_rubble_wood": junk_rubble_wood,
+	"junk_pickaxe_broken": junk_pickaxe_broken, "junk_shovel_bent": junk_shovel_bent, "junk_beam_snapped": junk_beam_snapped,
+	"junk_helmet": junk_helmet, "junk_lantern": junk_lantern}
 # five more rag piles, two rags each, all different (names written out: the model checker looks for them)
 for _i, _name in enumerate(("junk_rags_b", "junk_rags_c", "junk_rags_d", "junk_rags_e", "junk_rags_f")):
 	BUILDS[_name] = (lambda sd: (lambda: rags_pair(sd)))(200 + 37 * _i)

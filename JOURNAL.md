@@ -6694,3 +6694,19 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   in a script, and my loop built the names from letters, so one wasn't found: wrote the names out. (2) One plank in a
   new pile hovered 4.7 cm: it only touched the board under it in the safety margin round its jagged end; boards now
   rest only on boards that are really under them (or get dropped somewhere else).
+- **Batch 3 (mine junk, small dungeons), owner OK'd after fixes:** `junk_pickaxe_broken`, `junk_shovel_bent`,
+  `junk_beam_snapped`, `junk_helmet`, `junk_lantern` (helmet and lantern are 2 models, as the plan says). Owner's notes:
+  the pickaxe bent the wrong way (the picks now curve toward the handle); the beam was "two beams with spikes, so low
+  poly": rebuilt as one hand-hewn shape (a rounded, uneven square that changes along its length, 32 points round,
+  a ring every 3.5 cm), cracks cut in as grooves, iron bands that hug the uneven wood, and a torn break where each strip
+  of wood ends at its own length (the top fibres longest, peeling) instead of a flat cut with sticks. Then "remove the
+  black spots": the dark crack paint and the moss (it came out almost black) are gone; the grooves stay.
+- **Hurdles and Claude's own slips:** (1) the pickaxe socket's back face sat exactly on the head's edge and the two beam
+  halves' splinters crossed in the gap: both flicker spots (checker SHIMMER), fixed. (2) Helmet crack lines and the
+  lantern's candle and bolts floated (FLOAT): crack lines removed, the others moved onto what holds them. (3) The helmet
+  shone like a mirror and the lantern glass looked like a bright screen: duller metal, dark smoky glass. (4) The new
+  beam showed no wood painting: its picture map had a different name from the other parts', so after joining it sat on
+  a second map the game never reads; then the many small faces looked like blocks until the shading was smoothed.
+  (5) Longer torn ends reached below the floor and lifted the whole pile, so the floor chips hovered: beam raised.
+  (6) The shell tool choked twice on apostrophes inside long scripts: those patches now go through files.
+  All 23 junk models are in `assets/models/dungeon/` and pass the checker.
