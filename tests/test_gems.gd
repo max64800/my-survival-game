@@ -101,6 +101,38 @@ func test_ember_sword_burns() -> void:
 	_teardown()
 
 
+## Owner, Nov 20 ("make sure they're in the game"): on a creature, fire really hurts it over time and
+## frost really stops it, through the creature's own thinking step.
+func test_creature_burns_and_freezes() -> void:
+	await _setup()
+	var uid: int = auth.monsters._next_uid
+	var p := world.maker.find_floor(player.global_position.x + 1.2, player.global_position.z, player.global_position.y + 2.0)
+	auth.monsters._ev_spawn(uid, "rock_snail", p + Vector3.UP * 0.3, false, 0)
+	var m := auth.monsters.get_monster(uid)
+	m.hp = 100.0
+	m.add_buildup("burn", Ailments.FULL)
+	check(m.ailments.has("burn"), "a full cup of fire: the snail burns")
+	for i in 10:
+		m.think(0.1, auth.monsters)
+	check_near(m.hp, 97.0, 0.2, "burning 1 s: 3 damage")
+	for k in 5:
+		m.add_buildup("chill", Ailments.FULL)
+	check(m.ailments.has("frozen"), "5 frost stacks: frozen")
+	check(not m.ailments.has("burn"), "frost puts the fire out")
+	m.velocity = Vector3(3, 0, 0)
+	for i in 3:  # (it slides to a stop in about 0.15 s)
+		m.think(0.1, auth.monsters)
+	check(Vector2(m.velocity.x, m.velocity.z).length() < 0.01, "a frozen snail doesn't move")
+	check(m.ailments.has("frozen"), "...still frozen after 0.3 s (1.5 s in all)")
+	m.hp = 2.0
+	m.add_buildup("burn", Ailments.FULL)
+	for i in 20:
+		if m.is_alive():
+			m.think(0.1, auth.monsters)
+	check(not m.is_alive(), "fire can finish it off")
+	_teardown()
+
+
 func test_shield_gems_change_blocks() -> void:
 	var plain := Combat.defend(20.0, -1.0, true, "sword", true, 1)
 	var bulwark := Combat.defend(20.0, -1.0, true, "sword", true, 1, false, {block = 0.08, block_stamina = 0.2})

@@ -50,6 +50,10 @@ func _ready() -> void:
 	_status = UiKit.label(box, "", 14, UiKit.AMBER)
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_status.custom_minimum_size = Vector2(460, 0)  # a wrapping label needs a width, or it grows very tall
+	# Always exactly 2 rows tall, empty or full: its text changes while crafting, and a changing height
+	# slid the whole menu up and down, because the menus are centred by height (F387).
+	_status.max_lines_visible = 2
+	_status.custom_minimum_size.y = _status.get_line_height() * 2 + _status.get_theme_constant("line_spacing")
 	_bar = ProgressBar.new()
 	_bar.custom_minimum_size = Vector2(0, 14)
 	_bar.show_percentage = false

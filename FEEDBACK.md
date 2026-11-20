@@ -156,7 +156,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F362. Barrels don't open; the lid should lift up and slide to the side, and inside just a black circle.** *From: you (PC, Nov 19). Said: 1×* — Nov 19: loot barrels have their own model now (the building-kit barrel stays solid): a black circle under the rim, the lid its own part; it lifts a little, slides 30 cm aside and sets down on the rim; closing slides it back. Test in `test_chest_lid_swings_open_and_shut`.
 - [ ] **F363. Hunt the broken-number (NaN) warnings** (was N4, you said yes). *From: Claude, you said yes (PC, Nov 19). Said: 1×* — Nov 19: not reproduced yet: creatures dying in odd poses (new test), the swing trail, the snail spit and walking your path in your world (tools/nan_hunt.gd) were all fine. A lookout (src/debug/nan_watch.gd) now writes the name of the first broken thing into the log; after your next game I'll know what it is. Nov 19 (snail Claude): the lookout itself tripped in your 14:08 game (a thing deleted while waiting its turn in its list), so it missed the broken numbers at 14:15 (then 106 rock chunks were flying); fixed, it now skips deleted things.
 
-- [ ] **F387. While crafting, the progress bar moves the right-hand menu up and down.** *From: you (PC, Nov 19, to-do review). Said: 1×*
+- [ ] **F387. While crafting, the progress bar moves the right-hand menu up and down.** *From: you (PC, Nov 19, to-do review). Said: 1×* — Nov 20: the bar already kept its space; the words above it ("Making…", "Place an Anvil within 5 m…") still switched between 0, 1 and 2 rows, and the menus are centred by height, so they slid. Those words now always take exactly 2 rows. Test: test_craft_status_keeps_its_height. Check in the game.
 - [ ] **F388. Later (not a priority): every crafting station shows the dwarf working at it** (stirring the cooking pot, hammering at the anvil, and so on). *From: you (PC, Nov 19, to-do review). Said: 1×*
 
 **Claude noticed, waiting for your OK** (not fixed until you say so):
@@ -164,6 +164,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **The test robot couldn't place its workbench** ("Needs a Workbench within 20 m" right after crafting one): placing may fail silently. Look into it?
 - [ ] **Armor: the legs slot.** The game still has Leather Trousers (and copper/shell greaves), but the armor plan says 3 pieces (helmet, chest, boots). On the new body the trousers still show the old simple shapes. Remove the legs items, or make hand-built trousers for every set?
 - [ ] **Hide helmet: a few dark smudges** on the side of the cap in Claude's photos. Clean them up?
+- [ ] **F461. You can't see poison, fire or frost on a creature (or on another dwarf).** Checked Nov 20: the effects all work (burning hurts, frost slows and freezes, poison stacks, armor gems lower them; tests pass), but a burning or frozen creature looks exactly like a normal one, and co-op friends' computers don't even know it. Add small flames / frost crust / green bubbles on whoever has it, shared in co-op?
 
 
 

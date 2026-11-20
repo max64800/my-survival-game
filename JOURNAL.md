@@ -6449,3 +6449,22 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - **3D page "Lampwick Drift Miners"** (all three in lamplight, 10 move buttons, still until you press one). Waiting
   for the owner's OK; the models are in `%TEMP%\kaykit_miners\`, not in `assets/` yet. No game code yet.
 - **Asked the owner:** good to go? braided beards (our rope picture) or plain hair? ghost colour? sizes?
+
+## November 20, 2026 (PC, crafting-bar + status-effects chat)
+- **Start:** 79 play sessions in the recordings folder are still unreviewed (told the owner; not read).
+- **F387 (crafting moves the menu):** the bar itself was already fixed (it always keeps its space, just hidden).
+  The real cause left: the words above it. While crafting they switch between nothing, "Making Stone Pick…" (1 row)
+  and "Place an Anvil within 5 m to reach level 2." (2 rows), for example in the short gap between two items when
+  making several. The menus are centred on the screen by their height, so every change slid them up or down.
+  Fix: those words always take exactly 2 rows (`max_lines_visible` 2 + a fixed height). Test
+  `test_craft_status_keeps_its_height`.
+- **Poison / fire / frost check (owner: "make sure they're in the game"):** read every path. Working: creature
+  attacks (snail spit, spider bites, red/blue/green creatures, poison clouds), weapon gems (chance of a stack per hit),
+  shield gems (block poisons, parry burns/chills), armor gems lowering them, block rules (fire goes through, frost
+  half, poison none), poison and fire stopping natural healing, frost slowing and freezing (dwarves and creatures),
+  the round badges above your health bar, bolt buildup. New test `test_creature_burns_and_freezes`: a burning snail
+  loses 3 health a second, 5 frost stacks freeze it and put the fire out, fire can kill it.
+- **Hurdle (Claude's own):** the first version of that test said "a frozen snail doesn't move" right after 0.1 s and
+  failed. Not a bug: a frozen creature slides to a stop in about 0.15 s. The test now waits 0.3 s.
+- **Gap found (asked the owner, F461):** nothing on a creature (or another dwarf) shows it's burning, frozen or
+  poisoned, and in co-op the other computers don't know it. Waiting for the owner's OK.

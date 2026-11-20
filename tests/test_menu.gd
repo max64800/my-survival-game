@@ -165,6 +165,24 @@ func test_crafting_tabs_and_amounts() -> void:
 	check_eq(CraftPanel.can_make_count("pickaxe_stone", inv), 0, "no stone: no pickaxe")
 
 
+## F387: the crafting words above the bar always take 2 rows, so the menu never changes height
+## (and slides up and down) while you craft.
+func test_craft_status_keeps_its_height() -> void:
+	var panel := CraftPanel.new()
+	tree.root.add_child(panel)
+	var status: Label = panel.get("_status")
+	status.text = ""
+	var empty_h := status.get_combined_minimum_size().y
+	status.text = "Making Stone Pickaxe…"
+	var one_h := status.get_combined_minimum_size().y
+	status.text = "Place a Dwarf's Anvil within 5 m to reach level 2. Place a Dwarf's Anvil within 5 m to reach level 2. Place a Dwarf's Anvil within 5 m."
+	var long_h := status.get_combined_minimum_size().y
+	check(empty_h > 20.0, "an empty status still keeps its space (%.0f px)" % empty_h)
+	check_eq(one_h, empty_h, "one line of text: same height")
+	check_eq(long_h, empty_h, "very long text: still the same height (cut at 2 rows)")
+	panel.queue_free()
+
+
 ## F155: number keys 1-9 mean hotbar slots 0-8.
 func test_number_keys_mean_hotbar_slots() -> void:
 	check_eq(Hud.hotbar_key(KEY_1), 0, "1 = the first hotbar slot")
