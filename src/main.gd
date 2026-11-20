@@ -865,6 +865,14 @@ func _unhandled_input(event: InputEvent) -> void:
 		Controls.set_captured(not _dev_items.visible)
 		get_viewport().set_input_as_handled()
 		return
+	if DevMenu.enabled() and event.is_action_pressed("dev_god") and dwarf:
+		# God mode (owner, Nov 20: "not killable and not agro mobs"): no damage, full health, monsters ignore you.
+		dwarf.dev_god = not dwarf.dev_god
+		var me := authority.get_player(authority.local_peer_id()) if authority else null
+		if me:
+			me.vitals.god = dwarf.dev_god
+		hud.show_toast("Dev: god mode (nothing hurts you, monsters ignore you) · F9 to turn off" if dwarf.dev_god else "Dev: god mode off", 3.0)
+		return
 	if DevMenu.enabled() and event.is_action_pressed("dev_bright"):
 		var amb: Ambience = get_node_or_null("Ambience")
 		if amb:

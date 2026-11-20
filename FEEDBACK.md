@@ -68,6 +68,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 
 ## Open (still to do)
 
+- [ ] **F506. Dungeon junk: "we need a bit more" and "some are in the middle or close to the middle of the rooms".** Nov 20 (PC, junk chat): 5-8 per big room (was 3-5), 2-3 per small one, tunnels more often (71 pieces, was 49); every piece now lies lengthwise along its wall, hugging it (0.2 m from the boards), corners tried first half the time; the test now wants every piece within 1.0 m of a wall. Waiting for your test in the game (Dev: Test the dungeon). *From: you (PC, Nov 20, the Mossgate Hold 3D page). Said: 1×*
 - [ ] **F442. Dungeon chests give too much: "a ton of bandages and 90 gold" after Mossgate Hold.** Later (owner: "we can work on that later"); goes with the loot tables (DungeonBuild.LOOT). Also: some monsters still need fixing (owner, Nov 20). *From: you (PC, Nov 20). Said: 1×*
 
 

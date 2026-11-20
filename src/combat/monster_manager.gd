@@ -385,9 +385,9 @@ func _nearest_player_dist(p: Vector3) -> float:
 	return best
 
 
-## A dwarf flying with the dev fly key is left alone by every monster (owner, Nov 17).
+## A dwarf flying with the dev fly key (owner, Nov 17) or in god mode (F9, owner Nov 20) is left alone by every monster.
 static func ignores(node: Node) -> bool:
-	return node is Dwarf and (node as Dwarf).dev_fly
+	return node is Dwarf and ((node as Dwarf).dev_fly or (node as Dwarf).dev_god)
 
 
 ## Who does this monster notice? (sight inside your lantern light, hearing) — doc 5.1.

@@ -6955,3 +6955,10 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   (7) `_clear_head` only guarded the top of his head: it now also checks his face and beard balls. (8) Test renders
   differ by a few pixels run to run: compared by eye instead.
 - **Tests:** `test_dwarf_fist` 6/7: the one-handed check passes; the great-axe Spin check still fails (a fist 3.8 cm off, the old open item from chat 11).
+- **Owner: "is it in the game, can I test? F9 = god mode; a bit more junk, some are close to the middle" (F505, F506).**
+  Yes: the game builds Mossgate from the same plan (Dev: Test the dungeon). F9 (dev builds) = god mode: Vitals.god
+  blocks all damage and keeps health full, Dwarf.dev_god makes every monster ignore you (the same check as F6 flying);
+  new test in test_vitals. Junk: every piece was already within 0.9 m of rock, but turned pieces stuck out and 0.9 m in
+  a 4 m tunnel looks central: now every piece lies lengthwise along its wall, 0.2 m from the boards, corners first half
+  the time, 5-8 per big room / 2-3 small, tunnels more often (71 pieces); the test wants 1.0 m or less from a wall.
+  Page version 12. Hurdle: main.gd and dwarf.gd also held another chat's unsaved changes: only my lines committed.

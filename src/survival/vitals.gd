@@ -23,6 +23,7 @@ const DRINK_SLOTS := 1
 const UPSET_TIME := 180.0  ## "Upset Belly" lasts 3 minutes
 
 var health := BASE_HEALTH
+var god := false  ## dev god mode (F9, owner Nov 20): no damage, health stays full (not saved)
 var stamina := BASE_STAMINA
 var hunger := 100.0
 var thirst := 100.0
@@ -144,6 +145,9 @@ func tick(delta: float, resting: bool = false) -> void:
 		if buffs[i].time_left <= 0.0:
 			buffs.remove_at(i)
 	var dot := ailments.tick(delta)
+	if god:
+		dot = 0.0
+		health = max_health()  # (and no starving, poison or bleeding down either)
 	if dot > 0.0:
 		health = maxf(0.0, health - dot)
 	if _since_damage >= HEALTH_REGEN_DELAY and not ailments.blocks_regen() and not in_dark:
@@ -177,6 +181,8 @@ func drain_stamina(per_second: float, delta: float) -> bool:
 
 ## Returns true if this killed the dwarf.
 func take_damage(amount: float) -> bool:
+	if god:
+		return false  # dev god mode (F9): nothing hurts you
 	var real := amount * maxf(0.0, 1.0 + buff_total("damage_taken"))
 	if _rank("berserker") > 0 and health < max_health() * 0.3:
 		real *= 0.9

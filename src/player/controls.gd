@@ -34,6 +34,7 @@ const KEYS := {
 	"dev_fly": [KEY_F6],  ## dev builds only: fly through rock (Space up, Ctrl down, Shift fast)
 	"dev_bright": [KEY_F7],  ## dev builds only: light up the whole cave, no fog
 	"dev_items": [KEY_F8],  ## dev builds only: get any item straight into your bag (DevItems)
+	"dev_god": [KEY_F9],  ## dev builds only: god mode: nothing hurts you, monsters leave you alone
 }
 const MOUSE := {
 	"dig": [MOUSE_BUTTON_LEFT],

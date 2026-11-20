@@ -4,7 +4,9 @@
 # Owner's placement rule (traps-and-variety.md, "Dungeon junk"; checked by tests/test_dungeon_junk.gd):
 #   only along walls and in room corners; never on a path, a stair, a bridge, a doorway, or within 1.5 m in front of a
 #   door, a lever, a chest or the recipe stand; never on rails or plank walks (the caller lists those as keep-off boxes).
-# Owner, Nov 20: 3-5 pieces in a big room, 1-2 in a small one, an odd piece now and then in the tunnels.
+# Owner, Nov 20: 3-5 pieces in a big room, 1-2 in a small one, an odd piece now and then in the tunnels; then
+# (first look at the page): "a bit more" and "some are close to the middle": 5-8 / 2-3, a tunnel piece more often,
+# every piece lies lengthwise along its wall (hugging it), and corners are tried first half the time.
 import math, random, sys
 from pathlib import Path
 
@@ -13,7 +15,7 @@ from glb_bounds import bounds  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 FLOOR_TOP = 0.25   # junk stands on the floor boards (their top is 0.24: 1 cm apart, no shimmer), like the furniture
-WALL_FACE = 0.25   # the wall boards' face is ~0.15 m in from the wall line (old walls bulge a bit more): 0.25 is clear
+WALL_FACE = 0.2    # the wall boards' face is ~0.15 m in from the wall line (old walls bulge a bit more): 0.2 is clear
 DOOR_CLEAR = 2.0   # a doorway or door: 1.5 m in front of it, plus half its 3 m opening's corner
 THING_CLEAR = 1.5  # a chest, the lever, the recipe stand: the owner's 1.5 m
 TRAP_CLEAR = 1.2   # a trap's middle (spikes and plates are 2 m cells or smaller)
@@ -196,16 +198,15 @@ def place_junk(spaces, group_of, cells, floor_y, rooms, themes, doors, path_door
 	def try_entry(entry, g):
 		cands = spots.get(g, [])[:]
 		rng.shuffle(cands)
+		if rng.random() < 0.5:   # corners first, half the time
+			cands.sort(key=lambda c: -len(c[1]))
 		for (cx, cz), walls in cands:
 			parts = CLUSTER.get(entry) or [[model_of(entry, rng), 0.0, 0.0, 0.0]]
 			lead = parts[0][0]
 			sx, sz = size(lead)[:2]
 			(wx, wz) = walls[0]
 			wall_yaw = 90.0 if wx != 0 else 0.0   # the model's long side (x) along the wall
-			if sx > 1.6 * sz:
-				yaw = wall_yaw + rng.uniform(-12, 12) + rng.choice([0, 180])
-			else:
-				yaw = rng.uniform(0, 360)
+			yaw = wall_yaw + rng.uniform(-15, 15) + rng.choice([0, 180])  # lengthwise along the wall: it hugs it
 			# Push it toward its wall(s) until its footprint touches WALL_FACE.
 			x, z = cx, cz
 			for _ in range(2):
@@ -246,12 +247,14 @@ def place_junk(spaces, group_of, cells, floor_y, rooms, themes, doors, path_door
 		area = sum((s[3] - s[1]) * (s[4] - s[2]) for s in boxes)
 		length = max([max(s[3] - s[1], s[4] - s[2]) for s in boxes] or [0])
 		if g in rooms:
-			want = rng.randint(3, 5) if area >= 80 else rng.randint(1, 2)
-			pool = list(themes.get(g, corridor))
+			want = rng.randint(5, 8) if area >= 80 else rng.randint(2, 3)
 		else:
-			want = (1 if rng.random() < 0.5 else 0) + (1 if length >= long_corridor else 0)
-			pool = list(themes.get(g, corridor))
+			want = (1 if rng.random() < 0.7 else 0) + (1 if length >= long_corridor else 0)
+		pool = list(themes.get(g, corridor))
 		rng.shuffle(pool)
+		more = pool[:]
+		rng.shuffle(more)
+		pool = more + pool   # each kind at most twice (the families pick another model the 2nd time)
 		n = 0
 		while pool and n < want:
 			if try_entry(pool.pop(), g):

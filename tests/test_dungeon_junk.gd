@@ -4,7 +4,7 @@ extends TestCase
 ## floor; never on a walk line, a stair, a bridge, a doorway, within 1.5 m in front of a door, a lever, a chest or the
 ## recipe stand, on a trap, on rails or on the Old Shaft's plank walk. Checked in every dungeon plan that has junk.
 
-const NEAR_WALL := 1.3   # its middle is at most this far from rock (a wall or a corner)
+const NEAR_WALL := 1.0   # its middle is at most this far from rock (a wall or a corner; owner: not near the middle)
 const DOOR_CLEAR := 2.0  # from a doorway's middle (its 3 m opening + the 1.5 m in front of it)
 const THING_CLEAR := 1.5 # from a door, a lever, a chest, the recipe stand (the owner's 1.5 m)
 const PATH_CLEAR := 1.1  # from the walk line between a room's doorways
@@ -57,7 +57,7 @@ static func _doors_of(s: Array, doors: Array) -> Array:
 func test_mossgate_has_junk() -> void:
 	var plan := DungeonBuild.load_plan("mossgate")
 	var j := _junk(plan)
-	check(j.size() >= 30 and j.size() <= 80, "Mossgate has a few junk pieces per room (%d)" % j.size())
+	check(j.size() >= 60 and j.size() <= 130, "Mossgate has a few junk pieces per room (%d)" % j.size())
 	var kinds := {}
 	for p in j:
 		kinds[p.model] = true

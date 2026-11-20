@@ -199,3 +199,22 @@ func test_second_wind() -> void:
 	v.stamina = 0.0
 	v.tick(0.1)
 	check(v.stamina < v.max_stamina() * 0.25, "only once every 2 minutes")
+
+
+## Dev god mode (F9, owner Nov 20: "not killable and not agro mobs"): nothing hurts you, health stays full, and
+## monsters leave you alone (like dev fly).
+func test_god_mode_cannot_be_hurt_and_monsters_ignore_you() -> void:
+	var v := Vitals.new()
+	v.god = true
+	check(not v.take_damage(9999.0), "a huge hit doesn't kill in god mode")
+	check_eq(v.health, v.max_health(), "health stays full")
+	v.hunger = 0.0
+	v.thirst = 0.0
+	for i in 600:
+		v.tick(1.0)
+	check_eq(v.health, v.max_health(), "no starving down either")
+	var d := Dwarf.new()
+	check(not MonsterManager.ignores(d), "monsters see a normal dwarf")
+	d.dev_god = true
+	check(MonsterManager.ignores(d), "monsters ignore a dwarf in god mode")
+	d.free()

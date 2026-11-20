@@ -193,6 +193,7 @@ func _unhandled_input(event: InputEvent) -> void:
 ## Dev only (F6, owner Nov 17): fly anywhere, straight through rock, to look at the whole cave.
 ## Mouse aims, WASD moves, Space up, Ctrl down, Shift fast.
 var dev_fly := false
+var dev_god := false  ## dev builds only (F9): monsters leave you alone (MonsterManager.ignores); Vitals.god: no damage
 const FLY_SPEED := 12.0
 const FLY_FAST := 45.0
 
