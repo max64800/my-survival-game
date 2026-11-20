@@ -211,6 +211,7 @@ var great_t := 0.0  ## how far into it (0..1)
 var _great_clock := 0.0  ## s into that swing
 ## The sword's and the mace's swings now (DwarfOneSwing, F389 chat 12): the pose and how much of it he takes (0..1;
 ## eases in at the start of a swing, out after it).
+var one_fixed: Dictionary = {}  ## tools only: hold this sword/mace swing pose still (F389 chat 13)
 var one: Dictionary = {}
 var one_weight := 0.0
 var one_move := ""  ## the one-handed swing playing now ("" = none)
@@ -749,6 +750,10 @@ func great_pose(delta: float) -> Dictionary:
 ## The sword's / mace's swing pose this frame (DwarfFist lays the weapon by it): the "o/" swing playing now, eased
 ## in from wherever he was; after it, the last pose fades out (one_weight -> 0) back to his own arms.
 func one_pose(delta: float) -> Dictionary:
+	if not one_fixed.is_empty():  # (a tool holding one pose still)
+		one = one_fixed
+		one_weight = 1.0
+		return one
 	var clip := _upper_clip if tree.get("parameters/upper/active") else ""
 	if clip.begins_with("o/") and tree.has_animation(clip):
 		if _one_started != _upper_start:

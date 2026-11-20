@@ -11,8 +11,13 @@ extends RefCounted
 ## clip is sped up or slowed down so its strike (the weapon tip's fastest moment, found by the bake) lands right there.
 ## By the dwarf-animations Claude, chat 12, Nov 20, 2026.
 
+## The owner's OWN filmed combos (F389 chat 13, owner Nov 20: "copy my videos"; IMG_4428 sword, IMG_4429 mace), copied
+## by tools/mocap/one_hand_targets.py (his tracked moves -> bone directions) + tools/asset_forge/one_video_bake.gd into
+## BAKED_VIDEO: SwordHit1-3, MaceHit1-3 (one light combo: click, click, click). The same frame layout.
 const BAKED := "res://assets/anim/one_kaykit.json"
-const MOVES := ["Chop", "SliceDiag", "SliceFlat", "Stab", "JumpChop", "BlockAttack"]
+const BAKED_VIDEO := "res://assets/anim/one_video.json"
+const MOVES := ["Chop", "SliceDiag", "SliceFlat", "Stab", "JumpChop", "BlockAttack",
+	"SwordHit1", "SwordHit2", "SwordHit3", "MaceHit1", "MaceHit2", "MaceHit3"]
 const HIT_AT := 0.40
 const BLEND_IN := 0.12  ## share of a swing spent easing in from wherever his arms were
 const BLEND_OUT := 0.18  ## s easing back to his own arms after a swing
@@ -21,9 +26,16 @@ static var _clips := {}  ## name -> [length (s), frames per second, strike (s), 
 
 
 static func _load() -> void:
-	if not _clips.is_empty() or not FileAccess.file_exists(BAKED):
+	if not _clips.is_empty():
 		return
-	var all: Variant = JSON.parse_string(FileAccess.get_file_as_string(BAKED))
+	for file: String in [BAKED, BAKED_VIDEO]:
+		_load_file(file)
+
+
+static func _load_file(file: String) -> void:
+	if not FileAccess.file_exists(file):
+		return
+	var all: Variant = JSON.parse_string(FileAccess.get_file_as_string(file))
 	if not all is Dictionary:
 		return
 	var fps := float((all as Dictionary).get("fps", 30.0))
@@ -39,8 +51,12 @@ static func _load() -> void:
 			var h: Array = f.handle
 			var e: Array = f.edge
 			var pp: Array = f.pelvis
-			poses.append({bones = bones, pelvis = Vector3(pp[0], pp[1], pp[2]),
-				handle = Vector3(h[0], h[1], h[2]).normalized(), edge = Vector3(e[0], e[1], e[2]).normalized()})
+			var pose := {bones = bones, pelvis = Vector3(pp[0], pp[1], pp[2]),
+				handle = Vector3(h[0], h[1], h[2]).normalized(), edge = Vector3(e[0], e[1], e[2]).normalized()}
+			if f.has("tip"):  # (the owner's filmed moves: the weapon tip's spot against his body, chat 13)
+				var r: Array = f.tip
+				pose["tip"] = Vector3(r[0], r[1], r[2])
+			poses.append(pose)
 		_clips[clip] = [float(all[clip].length), fps, float(all[clip].strike), poses]
 
 

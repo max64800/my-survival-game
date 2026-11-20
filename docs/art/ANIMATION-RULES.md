@@ -35,6 +35,21 @@ KayKit moves (owner OK'd); next job: sword and mace from the same pack.
 - The 3D page recorder must save **every bone's place every frame** (head and hair hang on root helper bones), and
   check the page itself in a browser before telling the owner it's fixed.
 
+## 2c. How to copy the owner's own videos (one-handed, chat 13: `tools/mocap/one_hand_*.py`, `one_video_bake.gd`)
+- Track every frame (`track_all_frames.py`), then `one_hand_scan.py` (mends lost frames, finds the white stick with
+  `stick_finder.py`), `one_hand_targets.py` (bone directions), `one_video_bake.gd` -> `assets/anim/one_video.json`,
+  pictures with `one_video_preview.gd` (front with the shield hidden + behind, next to his frames).
+- Measure only round the combo (his first seconds walking in are tracked wildly). Bone lengths and the picture-plane
+  directions come from the pixels; the tracker's depth only gives the sign. Body turn = middle of the tracker's guess and
+  the shoulder width in the picture.
+- **The hit = where the weapon is stretched out furthest**, not the fastest frame (owner, Nov 20).
+- His long arm carries the fist far out; the dwarf's can't: the weapon's tip aims at the filmed tip spot measured
+  against the body (side-to-side in shoulder widths, up-down in shoulder heights), only for low swings.
+- Raised: a short-looking stick leans back; the sword never cuts through his big head (`_clear_head`).
+- The shield fist reaches a guard spot in front of his chest (`_guard`), never the filmed arm directions (his chest
+  and belly are much wider than the owner's: the fist ended at his side).
+- The pale blue glove reads as white: use the tracker's hand points, not colour.
+
 ## 3. What the owner wants (two-handed)
 - Great axe and great maul (done, chat 11): the Foreman's **2H stance**, **light = Chop**, **heavy = Spin**. Left fist
   at the end of the handle, right fist slid high up it (46 cm). Never invent poses: copy pack moves (2b).

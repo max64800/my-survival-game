@@ -6844,3 +6844,39 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - **Hurdles:** a Mossgate test read the code's text for the old "only in its room" line; updated it to the new line.
 - **Checks:** test_lampwick 25/25 (8 new), test_skeleton_miners 8/8, test_dungeon 58/58, test_monsters 49/49; the
   robot climbed the rails and walked down the Back Rails with no errors, the rats attacking.
+
+## November 20, 2026 (PC, dwarf-animations Claude, chat 13): the owner's own sword and mace videos onto the dwarf (F389)
+- **Task:** copy the owner's filmed sword (IMG_4428) and mace (IMG_4429) combos onto the dwarf, 3 hits = one light
+  combo, the left fist held at his chest (the shield). Videos stay out of the repo.
+- **Did:** tracked every frame again (MediaPipe) and wrote a stick finder (`tools/mocap/stick_finder.py`: the white
+  stick is a thin bright line from the fist; a "top-hat" filter keeps thin bright things and drops the white shirt).
+  `one_hand_scan.py` mends lost frames and finds the stick in each one; `one_hand_targets.py` turns 6 clips (SwordHit1-3,
+  MaceHit1-3) into bone directions; `tools/asset_forge/one_video_bake.gd` bakes them into `assets/anim/one_video.json`
+  (same layout as the pack moves; `DwarfOneSwing` loads both). `one_video_preview.gd` takes front + behind pictures of
+  held poses next to his video frames. Read the combos: sword = diagonal down to the left hip, backhand rising to the
+  high right, twirl + overhead chop; mace = diagonal down, backhand at head height, overhead chop.
+- **Owner's notes on the hit-1 sheet (4 rounds):** the hit is where the sword is stretched out furthest (picture 5), not
+  the fastest moment; his sword goes far out to the corner (the dwarf's hung along his body); start straight up beside the
+  head; wind-up behind the head, not through it; the shield arm across the chest like in picture 3; wrist bent oddly.
+  Fixed all of those (below). **Still open:** "none of the sword rotations are correct" on pictures 3 and 6 (the blade's
+  turn round the handle); neither the "as now" nor the quarter-turn version was right: ask him where the edge should face.
+- **Hurdles (many Claude's own):** (1) The pale blue glove is almost white: colour finding failed; used the tracker's hand
+  points. (2) The tracker sometimes put both hands on the orange fist: those frames are filled in from their neighbours.
+  (3) My lengths were measured over the whole video, including the wild first seconds (him walking into place): every bone
+  got fake depth and he stood sideways. Measured only round the combo, bone lengths from the picture's pixels, and the
+  body's turn as the middle of the tracker's guess and the shoulders' width in the picture (chat 10's way). (4) The
+  preview held poses without a playing swing, so the shield code let the arm hang; it now keeps the guard while a
+  sword/mace pose is on (true in the game too). (5) Copying the shield arm's directions put his fist out at his side (his
+  chest and belly are much wider): the left fist now reaches for a guard spot in front of his chest (`DwarfFist._guard`),
+  measured from his chest's middle with a quarter of his twist (from the shoulder, the start's twist popped the elbow up).
+  (6) The stick finder stopped at 260 pixels: the long stick at the hit looked short, so it was read as pointing at the
+  camera and stood up. Longer search, and only a clearly short stick (under 75%) counts as depth. (7) "Further out": first
+  tried copying the line shoulder -> tip (made it worse: his tip is only 20 degrees out, the camera makes it look far).
+  Then the tip's spot against his body in shoulder widths: 4 widths down went below the dwarf's floor (he is short and
+  wide). Now side-to-side in shoulder widths, up-down in shoulder heights, front-back kept from the stick, only for low
+  swings (`DwarfFist._tip_dir`). (8) The door frame is white too: the start frame read it as the stick; the clip starts
+  6 frames later. (9) Raised sword through his big head: a raised short-looking stick leans back, and `_clear_head`
+  tips the sword back until it clears. (10) Bent wrist: the forearm now rolls first (`_roll_forearm`). (11) My picture
+  crop assumed 520x720 renders, but the window ignored that (1600x900 with the CLAUDE TEST frame): empty tiles once.
+- **Tests:** `test_dwarf_fist`: the one-handed check passes; the great-axe check still fails on the Spin (a fist 5 cm
+  off), the old open item from chat 11. The new clips are not wired to the attacks yet (ATTACKS still the old moves).

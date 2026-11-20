@@ -176,6 +176,8 @@ func _hold(sk: Skeleton3D) -> void:
 	var inv := sk_world.basis.inverse()  # (directions in skeleton space: the dwarf is a bit wider than tall)
 	var ax := Vector3.FORWARD if rig.tool_look == "spear" else Vector3.UP  # (the spear points along its holder's -Z)
 	var handle_dir := want.basis * ax
+	if holding and _one_w > 0.0:
+		_roll_forearm(sk, handle_dir, inv)
 	# The wrist's turn (skeleton space). The dwarf's stretched arm bones can't hold every turn exactly (a turned bone
 	# under a squashed parent loses a little), so the fist's hole is lined up again until it lies along the handle.
 	for i in 8:
@@ -219,6 +221,28 @@ func _hold(sk: Skeleton3D) -> void:
 		else:  # the handle's end a small stub past the little finger
 			at = fist_center - fist_axis * (fist_half + STUB) - want.basis * (off + ax * float(handle[1]))
 	rig.grip.transform = (hand_world * socket.transform).affine_inverse() * Transform3D(want.basis, at)
+
+
+## A sword/mace swing (F389 chat 13): the forearm rolls (like turning a doorknob, up to ROLL_MAX) so the fist's hole
+## already lies nearly along the weapon, and the wrist has to bend less (owner, Nov 20: "his wrist is weirdly turned").
+const ROLL_MAX := 90.0
+func _roll_forearm(sk: Skeleton3D, handle_dir: Vector3, inv: Basis) -> void:
+	var low := sk.find_bone("lowerarm_r")
+	var sw := sk.global_transform
+	_measure(sk)
+	var fa := ((sw * sk.get_bone_global_pose(_hands["_r"]).origin) - (sw * sk.get_bone_global_pose(low).origin)).normalized()
+	var best := 0.0
+	var least := fist_axis.angle_to(handle_dir)
+	for i in range(-9, 10):
+		var a := deg_to_rad(ROLL_MAX * i / 9.0)
+		var off := fist_axis.rotated(fa, a).angle_to(handle_dir)
+		if off < least - 0.01:
+			least = off
+			best = a
+	if best != 0.0:
+		var g := sk.get_bone_global_pose(low)
+		g.basis = Basis((inv * fa).normalized(), best * _one_w) * g.basis
+		_set_turn(sk, low, g)
 
 
 ## Two-handed (DwarfGreatSwing: the Lampwick Foreman's moves, F389 Nov 20): every big bone takes the move's turn
@@ -648,6 +672,12 @@ func _turn_fist(sk: Skeleton3D, side: String, dir_sk: Vector3) -> void:
 func _one_aim(sk: Skeleton3D, p: Dictionary) -> Basis:
 	var skb := sk.global_transform.basis
 	var dir := (skb * (p.handle as Vector3)).normalized()
+	if p.has("tip"):  # (the owner's filmed moves: the weapon's tip at the filmed spot against his body)
+		# (only for a low weapon: the hit and after it; raised, his stick's own direction looked right; owner, Nov 20)
+		var low_share := clampf(-(p.tip as Vector3).y * 2.0, 0.0, 1.0)
+		if low_share > 0.0:
+			dir = dir.slerp(_tip_dir(sk, p.tip as Vector3, p.handle as Vector3), low_share)
+		dir = _clear_head(sk, dir)
 	var E := skb * (p.edge as Vector3)
 	E = E - E.dot(dir) * dir
 	if E.length() < 1e-3:
@@ -656,6 +686,49 @@ func _one_aim(sk: Skeleton3D, p: Dictionary) -> Basis:
 	var blade := _blade_of(rig.grip.get_child(rig.grip.get_child_count() - 1))
 	var lb := Basis(blade, Vector3.UP, blade.cross(Vector3.UP))
 	return Basis(E, dir, E.cross(dir)) * lb.inverse()
+
+
+## The way the weapon points from the right fist so its tip aims at `tip` (F389 chat 13): the stick tip's spot against
+## the owner's body from the middle of his shoulders (skeleton space), in shoulder widths (x his left, z front) and
+## shoulder heights above the floor (y up), measured on the dwarf in his own; the lean to the front stays the handle's. The owner's long arm carries his fist far out, the dwarf's short one
+## can't, so the wrist turns the weapon further out instead (owner, Nov 20: "my sword is so much further out").
+func _tip_dir(sk: Skeleton3D, tip: Vector3, handle: Vector3) -> Vector3:
+	var sw := sk.global_transform
+	var l := sw * sk.get_bone_global_pose(sk.find_bone("upperarm_l")).origin
+	var r := sw * sk.get_bone_global_pose(sk.find_bone("upperarm_r")).origin
+	var hand := sw * sk.get_bone_global_pose(_hands["_r"]).origin
+	var b := sw.basis.orthonormalized()  # (directions only: his skeleton is squashed)
+	var mid := (l + r) * 0.5
+	var height := (mid - rig.global_position).dot(rig.global_basis.y.normalized())  # (his shoulders above his feet)
+	var at := mid + b * Vector3(tip.x * l.distance_to(r), tip.y * height, 0.0)
+	# (only left-right and up-down come from the spot, what the owner sees from the front and behind; the lean toward
+	# the front keeps the filmed handle's: measured in shoulder widths it tipped the raised sword far forward)
+	var d := b.inverse() * (at - hand)
+	d.z = 0.0
+	var flat := sqrt(maxf(1.0 - handle.z * handle.z, 0.0))
+	d = d.normalized() * flat if d.length() > 1e-4 else Vector3(handle.x, handle.y, 0.0)
+	return (b * Vector3(d.x, d.y, handle.z)).normalized()
+
+
+## A raised sword/mace tips back until it clears his head (F389 chat 13: the owner's stick passes just behind his head
+## in the wind-up; the dwarf's head is much bigger next to his short arm, and the same direction cut through it).
+const HEAD_ROOM := 0.17  ## m round the middle of his head (and hair)
+func _clear_head(sk: Skeleton3D, dir: Vector3) -> Vector3:
+	var sw := sk.global_transform
+	var head := sw * sk.get_bone_global_pose(sk.find_bone("Head")).origin + rig.global_basis.y.normalized() * 0.10
+	var hand := sw * sk.get_bone_global_pose(_hands["_r"]).origin
+	var back := rig.global_basis.z.normalized()  # (he faces -Z)
+	var length := 0.8
+	var d := dir
+	for i in 12:
+		var t := clampf((head - hand).dot(d), 0.0, length)
+		if (hand + d * t).distance_to(head) >= HEAD_ROOM:
+			return d
+		var axis := d.cross(back)
+		if axis.length() < 1e-3:
+			return d
+		d = d.rotated(axis.normalized(), deg_to_rad(8.0))
+	return d
 
 
 ## Which way the blade sticks out from the handle (tool holder space, square to the handle; cached per tool): the
@@ -743,6 +816,42 @@ static func _reach(sk: Skeleton3D, up_b: int, low_b: int, hand_b: int, at: Vecto
 		_set_turn(sk, low_b, g)
 
 
+## Swinging the sword or the mace, the shield is held up in front of his chest (owner's videos, F389 chat 13: his
+## left fist stays at his chest the whole combo). Copying the video's arm directions put the dwarf's fist out at his side
+## (his chest and belly are much wider than the owner's), so the fist reaches for a spot in front of his chest instead:
+## GUARD (in his own arm lengths, along the low spine's turned axes: front, to his right, up), the elbow out and down.
+const GUARD := Vector3(0.72, 0.42, -0.30)
+const GUARD_TWIST := 0.25  ## share of his body's twist the guard spot follows
+var guard_pole := Vector2(0.7, -0.7)  ## where the guard's elbow points: out to his left, up (shares)
+var guard_miss := 0.0  ## how far the left fist ended from its guard spot (share of his arm; tools)
+func _guard(sk: Skeleton3D) -> void:
+	var up_b := sk.find_bone("upperarm_l")
+	var low_b := sk.find_bone("lowerarm_l")
+	var hand_b: int = _hands["_l"]
+	var ch := sk.find_bone("spine_01")  # (halfway between the hips and the chest: turning with the chest, the guard swung
+	# off to his side when the wind-up turns his chest; owner, Nov 20: "the left arm should be like in my picture")
+	var turn := sk.get_bone_global_pose(ch).basis.get_rotation_quaternion() * sk.get_bone_global_rest(ch).basis.get_rotation_quaternion().inverse()
+	# (only a quarter of his twist: the owner holds the shield in front of him all through the swing; owner, Nov 20:
+	# "the arm should be exactly the same as picture 3", with the guard following the low spine it moved at the start)
+	turn = Quaternion.IDENTITY.slerp(turn, GUARD_TWIST)
+	var front := turn * Vector3.BACK  # (the skeleton faces +Z, his left is +X)
+	var left := turn * Vector3.RIGHT
+	var up := turn * Vector3.UP
+	var A := sk.get_bone_global_pose(up_b).origin
+	var arm := A.distance_to(sk.get_bone_global_pose(low_b).origin) + sk.get_bone_global_pose(low_b).origin.distance_to(sk.get_bone_global_pose(hand_b).origin)
+	# (measured from the middle of his chest and where the shoulder sits standing straight: the twist at the start brought
+	# his left shoulder far forward, and a spot measured from it popped the elbow up)
+	var c3 := sk.find_bone("spine_03")
+	var calm := sk.get_bone_global_pose(c3).origin + turn * (sk.get_bone_global_rest(up_b).origin - sk.get_bone_global_rest(c3).origin)
+	var at := calm + arm * (front * GUARD.x - left * GUARD.y + up * GUARD.z)
+	var before := [sk.get_bone_pose_rotation(up_b), sk.get_bone_pose_rotation(low_b)]
+	_reach(sk, up_b, low_b, hand_b, at, left * guard_pole.x + up * guard_pole.y)
+	guard_miss = (sk.get_bone_global_pose(hand_b).origin - at).length() / maxf(arm, 0.001)  # (share of his arm)
+	if _one_w < 1.0:  # (eases in and out with the swing)
+		sk.set_bone_pose_rotation(up_b, (before[0] as Quaternion).slerp(sk.get_bone_pose_rotation(up_b), _one_w))
+		sk.set_bone_pose_rotation(low_b, (before[1] as Quaternion).slerp(sk.get_bone_pose_rotation(low_b), _one_w))
+
+
 ## Not blocking, the shield hangs upright at his side (owner, Nov 19: "tilt the shield more", a picture with the line
 ## straight up and down): the shield lies along the forearm, and the animation's forearm slants in over his round
 ## belly, so the forearm hangs straight down from the elbow instead, a little out from his side.
@@ -752,8 +861,11 @@ var _hang := 0.0  ## 0 = the animation's arm (blocking, bashing), 1 = hanging st
 
 ## Puts the shield on: the left fist round its grip, its strap along the forearm, its face away from his body.
 func _wear_shield(sk: Skeleton3D) -> void:
-	var blocking: bool = rig._hold != "" or bool(rig.tree.get("parameters/upper/active"))
+	# (a sword/mace swing's pose holds the shield in front of his chest: the owner's videos, F389 chat 13)
+	var blocking: bool = rig._hold != "" or bool(rig.tree.get("parameters/upper/active")) or _one_w > 0.0
 	_hang = move_toward(_hang, 0.0 if blocking else 1.0, get_process_delta_time() * 6.0) if rig.is_inside_tree() else _hang
+	if _one_w > 0.0:
+		_guard(sk)
 	if _hang > 0.0:
 		var sk_world := sk.global_transform
 		var up_b := sk.find_bone("upperarm_l")

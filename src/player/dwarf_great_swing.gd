@@ -117,5 +117,8 @@ static func blend(a: Dictionary, b: Dictionary, k: float) -> Dictionary:
 	var bones := {}
 	for n: String in b.bones:
 		bones[n] = (a.bones.get(n, b.bones[n]) as Quaternion).slerp(b.bones[n], k)
-	return {bones = bones, pelvis = (a.pelvis as Vector3).lerp(b.pelvis, k),
+	var out := {bones = bones, pelvis = (a.pelvis as Vector3).lerp(b.pelvis, k),
 		handle = (a.handle as Vector3).slerp(b.handle, k).normalized(), edge = (a.edge as Vector3).slerp(b.edge, k).normalized()}
+	if a.has("tip") or b.has("tip"):  # (the one-handed video moves' weapon tip spot: DwarfFist._one_aim)
+		out["tip"] = (a.get("tip", b.get("tip")) as Vector3).lerp(b.get("tip", a.get("tip")), k)
+	return out
