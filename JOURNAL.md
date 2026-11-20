@@ -6272,3 +6272,8 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   the square in front, both full of holes. Hurdles: `rough_board` built away from the middle came out short (boards
   now built in the middle and slid into place); pegs and doubled rim beams floated (one rim round the whole piece).
   All 5 pass the checks; page version 2.
+- **Owner OK'd batch 2**, with two notes, both done: the tripwire is now 3 mm thin and runs wall to wall with no pegs
+  (a 1 m wire the game stretches); the "orange thing under the spikes" was a floor joist seen through the holes (and
+  the spikes went down through it), so the joists now run between the hole rows. A corner flicker spot came from the
+  shared rim-beam helper (one beam's end ran into the other's side): the 4 rim beams are placed by hand now. All 5
+  models in `assets/models/dungeon/`, model test passes, page version 3.

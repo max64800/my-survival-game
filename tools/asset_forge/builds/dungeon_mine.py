@@ -30,7 +30,8 @@
 #   trap_tripwire_wall  (owner, Nov 20: no crossbow) a 2 x 2 m root wood wall with a hip-high cross beam, a small dark
 #                  hole in it (a green poison stain under it: the clue) and an iron eye on the sill for the wire.
 #                  Parts: "frame", "bolt" (a poison bolt deep in the hole: the code fires it)
-#   tripwire       2 m of white wire 0.12 m up between two iron pegs. Parts: "pegs", "wire_l", "wire_r" (cut: they fall)
+#   tripwire       (owner, Nov 20) a 3 mm white wire 0.12 m up, 1 m long: the game stretches it from wall to wall, no
+#                  pegs. Parts: "wire_l", "wire_r" (cut: they fall)
 #   trap_chest_spikes  (owner, Nov 20) a 2 x 1 dead-end tunnel's floor, 2 x 4 m: the chest's square (z = -1) and the
 #                  square you stand on to open it (z = +1), both with iron-ringed spike holes.
 #                  Parts: "floor", "spikes" (built up; the game hides them 0.62 m down, slams them up)
@@ -383,24 +384,21 @@ def trap_tripwire_wall(w=2.0, h=2.0):
 
 
 def tripwire():
-	pegs0 = meshes()
-	for sx in (-1, 1):
-		x = sx * 0.97
-		kit.cone(0.016, 0.01, 0.27, K.G((x, 0.035, 0.0)), T("iron", "dark"), verts=8, bevel=0.003)  # driven into the floor
-		kit.ring(0.022, 0.006, K.G((x, 0.12, 0.0)), T("iron", "dark"), rot=(0, 90, 0), seg=10)       # its eye
-	pegs = meshes() - pegs0
-	groups = {"pegs": pegs}
-	shiny = kit.mat("bone", 0.12, rough=0.35)  # (owner, Nov 20: white)
-	for name, a, b in (("wire_l", -0.955, 0.012), ("wire_r", -0.012, 0.955)):
+	"""Owner, Nov 20: very thin (hard to see), and it runs straight from wall to wall, no pegs. 1 m long along x,
+	origin in its middle: the game stretches it (x) to the corridor's width. Two halves, so it can be cut."""
+	white = kit.mat("bone", 0.12, rough=0.35)
+	groups = {}
+	for name, a, b in (("wire_l", -0.5, 0.008), ("wire_r", -0.008, 0.5)):
 		before = meshes()
-		kit.cylinder(0.005, b - a, K.G(((a + b) / 2, 0.12, 0.0)), shiny, rot=(0, 90, 0), verts=6, bevel=0.0)
+		kit.cylinder(0.0015, b - a, K.G(((a + b) / 2, 0.12, 0.0)), white, rot=(0, 90, 0), verts=6, bevel=0.0)
 		groups[name] = meshes() - before
 	return groups
 
 
-def spike_floor(zc, holes, w=2.0, dd=2.0, t=0.25):
-	"""One 2 x 2 m root wood floor square (centre z = zc) with iron-ringed holes at `holes` (x, z from its middle)."""
-	zs = (zc - dd / 2 + 0.3, zc, zc + dd / 2 - 0.3)
+def spike_floor(zc, holes, joists, w=2.0, dd=2.0, t=0.25):
+	"""One 2 x 2 m root wood floor square (centre z = zc) with iron-ringed holes at `holes` (x, z from its middle).
+	The joists (z from the middle) run between the hole rows (owner, Nov 20: orange bark showed through the holes)."""
+	zs = tuple(zc + j for j in joists)
 	for z in zs:
 		S.hewn((-w / 2 + 0.165, 0.1, z + J(0.01)), (w / 2 - 0.165, 0.1 + J(0.006), z + J(0.01)), 0.06)
 	y0, y1 = 0.148, t - 0.015
@@ -417,7 +415,7 @@ def spike_floor(zc, holes, w=2.0, dd=2.0, t=0.25):
 		o = bpy.data.objects[(meshes() - before).pop()]  # (rough_board built away from z = 0 came out short)
 		o.location.y -= zc  # (Blender y = -game z)
 		boards.append((a, b, o))
-		for zz in (zs[0], zs[2]):
+		for zz in zs:
 			gx, gz = (a + b) / 2 + J(0.04), zz + J(0.015)
 			if min(math.hypot(gx - hx, gz - zc - hz) for hx, hz in holes) > SPIKE_HOLE + 0.06:  # (never in a spike hole)
 				S.peg(gx, y1 - 0.026, gz, "y")
@@ -443,9 +441,12 @@ def trap_chest_spikes():
 		a = k * math.tau / 12 + math.radians(15)
 		chest_sq.append((0.8 * math.cos(a), 0.8 * math.sin(a)))
 	stand_sq = [(x, z) for x in (-0.72, -0.24, 0.24, 0.72) for z in (-0.72, -0.24, 0.24, 0.72)]  # where you stand: a grid
-	spike_floor(-1.0, chest_sq)
-	spike_floor(1.0, stand_sq)
-	S.rim_beams([(-1.0, -2.0), (1.0, -2.0), (1.0, 2.0), (-1.0, 2.0)], y=0.1)  # one rim round the whole 2 x 4 m (1.4 cm into the boards)
+	spike_floor(-1.0, chest_sq, (-0.39, 0.0, 0.39))  # (each joist 18 cm or more from every hole's middle)
+	spike_floor(1.0, stand_sq, (-0.48, 0.0, 0.48))
+	for sx in (-1, 1):  # the rim: long side beams the whole length, end beams stopping 1 cm short of them (no corner overlap)
+		S.hewn((sx * 0.92, 0.115, -1.985), (sx * 0.92, 0.115 + J(0.004), 1.985), 0.068)
+	for sz in (-1, 1):
+		S.hewn((-0.84, 0.115, sz * 1.92), (0.84, 0.115 + J(0.004), sz * 1.92), 0.068)
 	floor = meshes() - floor0
 	before = meshes()
 	for zc, holes in ((-1.0, chest_sq), (1.0, stand_sq)):
