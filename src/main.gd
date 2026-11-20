@@ -168,6 +168,18 @@ func _ready() -> void:
 			_monsters = false
 			if mode == "menu":
 				mode = "solo"
+		elif arg == "skillscheck":  # photos of the K window (perk tree, owner's mock-up Nov 19)
+			debug_script = "res://src/debug/skillscheck.gd"
+			_saving = false
+			_monsters = false
+			if mode == "menu":
+				mode = "solo"
+		elif arg == "turncheck":  # F397: Q / E turn stations 5° a tap, smoothly while held
+			debug_script = "res://src/debug/turncheck.gd"
+			_saving = false
+			_monsters = false
+			if mode == "menu":
+				mode = "solo"
 		elif arg == "cavecheck":  # F404-F407 + F350: photos of the cave floor, Root Trees, Rebuilding Chest, swarm
 			debug_script = "res://src/debug/cavecheck.gd"
 			_saving = false

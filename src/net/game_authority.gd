@@ -63,6 +63,7 @@ var removed_plants: Array[int] = []  ## cave-life plants broken so far (saved, s
 var regrow := {}
 var plant_regrow := {}  ## small roots (cave-life plant id) -> seconds until they grow back (saved)
 const REGROW_TIME := 600.0  ## 10 minutes
+const CRYSTAL_REGROW_TIME := 5400.0  ## 90 minutes (owner F406)
 var _drops: Dictionary = {}  ## drop_id -> Drop
 var _next_drop_id := 1
 var _pending_digs: Array[Vector4] = []  ## digs waiting for that part of the cave to load
@@ -1477,7 +1478,7 @@ func _learn_from_page(ps: PlayerState, id: String) -> String:
 	if id == "blueprint_page" or Items.info(id).has("teaches"):
 		# An old blueprint from a ruin: the whole group can now place that ready-made building (F98).
 		# A named plan (Watchtower Plans, F254) teaches its own building; an Old Blueprint a random one.
-		var unknown := BlueprintMenu.ready_made_keys().filter(func(k): return not world_state.get("blueprints", []).has(k))
+		var unknown := BlueprintMenu.ready_made_keys().filter(func(k): return not world_state.get("blueprints", []).has(k) and not BlueprintLibrary.REBUILD_ONLY.has(k))
 		if Items.info(id).has("teaches"):
 			unknown = unknown.filter(func(k): return k == Items.info(id).teaches)
 		if unknown.is_empty() or not ps.inventory.remove(id, 1):
@@ -2152,10 +2153,13 @@ func _apply_pending_digs() -> void:
 	_pending_digs = still
 
 
-## Roots (thin and big) grow back after REGROW_TIME (owner, Nov 15, F106).
+## Roots (thin and big) grow back after REGROW_TIME (owner, Nov 15, F106); crystals after CRYSTAL_REGROW_TIME (owner F406,
+## Nov 19: "mine them all and there's no way to get them back"), each where it was, so every cave fills up again.
 func _start_regrow(spot: Dictionary) -> void:
 	if spot.get("kind", "") in [GlowPlacer.ROOT, GlowPlacer.ROOT_DANGLE]:
 		regrow[spot.id] = REGROW_TIME
+	elif String(spot.get("kind", "")).begins_with("crystal"):
+		regrow[spot.id] = CRYSTAL_REGROW_TIME
 
 
 ## Host: count down; a root comes back only if the rock it hangs from is still there.
