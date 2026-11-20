@@ -7295,3 +7295,14 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - **Not done yet:** the real game play-test of chat 15's moves (the owner is testing them), the F-numbers for
   these three wishes in FEEDBACK.md, great maul and crossbow moves, the Mixamo pack. The "Dwarf Moves" page still shows
   the sword's heavy and the slow mace.
+
+## Nov 21, 2026 (Mac, gems chat): status badges, test findings, pull and handover
+- **Status badges** (owner: simple circles with a ring that runs down like a timer): round badges above the health
+  bar for Burning, Chilled, Poisoned, Frozen (`src/ui/ailment_badges.gd`, ChatGPT icons in `assets/icons/status/`),
+  "x2/x3" for stacks. Pushed with the gems (`5e2d070`); the PC's gemcheck robot passed them.
+- **Test findings:** after the gems, 11 checks failed; 1 was mine (build menu "80% back" → "half back", fixed); the rest
+  were older or from PC commits (since fixed on the PC: dig sound, shovel, Jolt tests).
+- **Pull (Nov 21):** the Mac had an empty FEEDBACK.md (cause unknown, nothing lost) and the temporary REBUILD_ONLY stand-in;
+  both set aside with `git stash` (not deleted), then pulled 92 PC commits cleanly. The PC had pushed the real REBUILD_ONLY.
+- **Handover:** `docs/HANDOVER-2026-11-21.md`: where the 4 PC chats stopped (ruin junk, dungeons, spire, dwarf
+  animations) and what each must finish first. The shield bash now exists, so the Storm Topaz bash stun is a to-do there.
