@@ -7306,3 +7306,7 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   both set aside with `git stash` (not deleted), then pulled 92 PC commits cleanly. The PC had pushed the real REBUILD_ONLY.
 - **Handover:** `docs/HANDOVER-2026-11-21.md`: where the 4 PC chats stopped (ruin junk, dungeons, spire, dwarf
   animations) and what each must finish first. The shield bash now exists, so the Storm Topaz bash stun is a to-do there.
+- **Later (Nov 21):** `DungeonKeys.drop_key` was never called, so bosses dropped no gem. Now any `boss = true` creature
+  (the Foreman) puts a Rough gem in its statue 50% of the time (`MonsterManager._kill`). Deep Onyx in a wood axe gives
+  extra wood (`GameAuthority` wood harvest). Slip: first used a variable from another block (`tool`); compile caught it.
+  Geodes not started (owner's limit ran out).

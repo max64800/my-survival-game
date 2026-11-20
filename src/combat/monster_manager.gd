@@ -881,6 +881,8 @@ func _kill(m: Monster, peer: int) -> void:
 		for t in times:
 			if randf() < d[2]:
 				loot.append([d[0], d[1]])
+	if m.data.get("boss", false) and randf() < Gems.BOSS_CHANCE:
+		loot.append([Gems.item_id(Gems.roll()), 1])  # a boss: 50% a Rough gem in its statue (gems.md)
 	if m.leader and randf() < 0.1:
 		var rune := auth.rune_slab.pick_drop(GameAuthority.rune_biome_at(m.global_position), [randf(), randf(), randf(), randf()])
 		if rune != "":

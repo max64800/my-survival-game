@@ -1653,6 +1653,9 @@ func request_harvest(peer_id: int, glow_id: int) -> Dictionary:
 		count += 1  # Gathering skill
 	elif k.tool == "axe" and ps.progress.has_star("woodcutting", 100) and randf() < 0.15:
 		count *= 2  # Woodcutting ★100: double wood
+	if k.tool == "axe" and Items.kind(ps.selected_item()) == "axe" \
+			and randf() < Gems.bonus(ps.inventory.get_slot(ps.hand_slot())).get("extra_ore", 0.0):
+		count += 1  # Deep Onyx in a wood axe: extra wood (docs/design/gems.md)
 	spawn_drop(k.item, count, spot.pos + spot.normal * 0.6)
 	if k.has("extra"):
 		spawn_drop(k.extra, 1, spot.pos + spot.normal * 0.6 + Vector3.UP * 0.3)

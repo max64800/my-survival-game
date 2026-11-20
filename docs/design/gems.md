@@ -66,5 +66,5 @@ costs stamina, 2 s wait between bashes. Storm Topaz in the shield adds bash stun
   armor effects (`Gems.armor_bonus`, `Vitals.gear`, `MonsterManager.request_hit_back`), the new poison / fire /
   frost (`src/survival/ailments.gd`), snail and spider poison, fire / ice creatures in dungeons, the dungeon's last
   chest gem (`DungeonBuild.add_chests`, loot "big"), the boss gem (`DungeonKeys.drop_key`), statues 2%.
-- Not yet: the shield bash, geodes, the "highest level per metal" limit (only matters once Brilliant exists),
-  extra wood from Deep Onyx in a wood axe. Bosses don't exist in the game yet, so their gem drop waits for them.
+- Nov 21: boss gem in the statue (`MonsterManager._kill`, any `boss = true` creature, e.g. the Foreman); extra wood from Deep Onyx in a wood axe.
+- Not yet: Storm Topaz bash stun (the bash exists now), geodes, the "highest level per metal" limit (only matters once Brilliant exists).
