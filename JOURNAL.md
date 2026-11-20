@@ -6513,3 +6513,7 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   slid into the doorway) got "no" for every step, even the way back. Now one outside may walk until it's back in
   (never under a crusher), and one stopped at its room's edge stops at once instead of sliding on. Hurdle: another
   chat was changing the same file (skeleton creatures), so only my lines went into my save.
+- **Climbing, decided (not built yet):** the owner wants creatures off the floor: spiders on walls, beetles out of
+  holes (F236, now said 3×), snails on walls and ceilings (F474, F475). Four answers, written in
+  `docs/decisions/2026-11-20-creature-climbing.md`; handed to a new chat. Mistake: my FEEDBACK.md save also took one
+  line another chat had just changed (F389, the great axe chat's note). Their text, unchanged, but it went in under my name.
