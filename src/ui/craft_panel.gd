@@ -372,7 +372,7 @@ func _prog() -> Progression:
 func _upgrade_rows(inv: Inventory) -> void:
 	UiKit.clear(_up_list)
 	var heading := Label.new()
-	heading.text = "Upgrade gear"
+	heading.text = "Upgrade and repair gear"
 	heading.add_theme_font_size_override("font_size", 20)
 	_up_list.add_child(heading)
 	var sub := Label.new()
@@ -405,7 +405,24 @@ func _upgrade_rows(inv: Inventory) -> void:
 		elif station.level() < Upgrades.needed_level(s):
 			parts.append("[color=#ff7070]needs station level %d[/color]" % Upgrades.needed_level(s))
 		text.text = "[b]%s[/b]\n[font_size=13]%s[/font_size]" % [Upgrades.display_name(s), ", ".join(parts)]
+		var fix := Durability.repair_cost(s, GameAuthority.repair_discount(_prog()) if _prog() else 0.0)
+		if not fix.is_empty():  # worn: show how worn and what a repair costs
+			var fparts := []
+			for item in fix:
+				fparts.append("[color=%s]%d %s[/color]" % ["white" if inv.count_of(item) >= fix[item] else "#ff7070", fix[item], Items.display_name(item)])
+			text.text += "\n[font_size=13]%s · repair: %s[/font_size]" % [Durability.status_text(s), ", ".join(fparts)]
 		row.add_child(text)
+		if not fix.is_empty():
+			var rb := Button.new()
+			rb.text = "Repair"
+			rb.custom_minimum_size = Vector2(70, 0)
+			for item in fix:
+				rb.disabled = rb.disabled or inv.count_of(item) < fix[item]
+			var at := i
+			rb.pressed.connect(func():
+				GameAuthority.instance.ask_repair(at, station.station_id)
+				get_tree().create_timer(0.15).timeout.connect(refresh))
+			row.add_child(rb)
 		var b := Button.new()
 		b.text = "Upgrade"
 		b.disabled = not ok

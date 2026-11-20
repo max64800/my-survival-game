@@ -52,6 +52,8 @@ func has_shield() -> bool:
 	var ps := _ps()
 	if ps == null or Combat.WEAPONS[weapon()].hands == 2 or not off_hand_free(ps):
 		return false
+	if Durability.broken(ps.inventory.get_slot(Inventory.equip_index("shield"))):
+		return false  # a broken shield doesn't block until it's repaired
 	if Items.kind(item()) == "shield" or ps.inventory.equipped("shield") != "":
 		return true
 	for i in Inventory.HOTBAR_SIZE:
@@ -87,6 +89,8 @@ func shield_blocked_by_lantern() -> bool:
 	var ps := _ps()
 	if ps == null or off_hand_free(ps):
 		return false
+	if Durability.broken(ps.inventory.get_slot(Inventory.equip_index("shield"))):
+		return false  # a broken shield doesn't block until it's repaired
 	if Items.kind(item()) == "shield" or ps.inventory.equipped("shield") != "":
 		return true
 	for i in Inventory.HOTBAR_SIZE:

@@ -399,6 +399,8 @@ func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: 
 	auth.heal(peer, total * gb.get("leech", 0.0))
 	if heavy and Progression.weapon_skill(w) == "axe" and ps.progress.has_star("axe", 100) and n > 0:
 		auth.give_stamina(peer, 6.0 * mini(n, max_targets))  # Axe ★100: a heavy sweep gives stamina back per enemy
+	if total > 0:
+		auth.wear_slot(ps, ps.hand_slot())  # a swing that hit something wears the weapon once
 	return total
 
 
@@ -841,8 +843,8 @@ func _judge_incoming() -> void:
 					result.damage *= 1.0 - Gems.bonus(me.inventory.get_slot(me.selected_slot)).get("guard", 0.0)  # Bulwark gem
 				if result.result == "block" and def.shield and hit.get("shield_stops", false):
 					result.damage = 0.0  # spit: a shield stops it completely (owner, Nov 17)
-				if result.result == "block" and sb.has("block_poison"):
-					ask_blocked(hit.uid)
+				if result.result == "block":
+					ask_blocked(hit.uid)  # the host wears the shield (and a Blight gem poisons the attacker)
 				result.damage *= 1.0 - me.vitals.buff_total("guard_" + Monsters.food_guard(m.kind))  # meat of its kind (food plan)
 				me.vitals.take_damage(result.damage)
 				# Poison/fire/frost buildup: all of it on a hit, half through a block, none on a parry.
@@ -896,6 +898,9 @@ func request_blocked(uid: int, peer: int) -> void:
 	var ps := auth.get_player(peer)
 	if m == null or ps == null or ps.node.global_position.distance_to(m.global_position) > 8.0:
 		return
+	# A blocked hit wears what blocked it once: the shield if one is equipped, else the weapon in hand.
+	var shield_at := Inventory.equip_index("shield")
+	auth.wear_slot(ps, shield_at if not ps.inventory.get_slot(shield_at).is_empty() else ps.hand_slot())
 	var sb := Gems.bonus(Gems.shield_slot(ps.inventory))
 	if sb.has("block_poison"):
 		m.add_buildup("poison", sb.block_poison)

@@ -518,6 +518,8 @@ func _refresh_slots() -> void:
 		if not s.is_empty():
 			icon.add_theme_stylebox_override("panel", _slot_style(Items.color(s.id).darkened(0.15), Items.color(s.id).lightened(0.3)))
 			panel.tooltip_text = Upgrades.display_name(s)  # "Copper Sword +2"
+			if Durability.wears(s.id):
+				panel.tooltip_text += "\n" + Durability.status_text(s)
 			if Items.kind(s.id) == "page":
 				panel.tooltip_text += "\nRight-click to read it."
 			elif Foods.is_buff_food(s.id):  # healing hearts first, then the other effects (owner, Nov 19)
@@ -528,6 +530,29 @@ func _refresh_slots() -> void:
 					panel.tooltip_text += "\n• " + line
 		(panel.get_node("Short") as Label).text = "" if s.is_empty() or tex != null else Items.short_label(s.id)
 		(panel.get_node("Count") as Label).text = "" if s.is_empty() or s.count <= 1 else str(s.count)
+		_show_wear(panel, s)
+
+
+## A thin bar along the bottom of a worn tool's slot (green -> yellow -> red); a broken one is greyed out.
+func _show_wear(panel: Control, s: Dictionary) -> void:
+	var bar: ColorRect = panel.get_node_or_null("Wear")
+	var pic: TextureRect = panel.get_node("Pic")
+	var worn := not s.is_empty() and Durability.wears(s.id) and Durability.used(s) > 0
+	pic.modulate = Color(0.45, 0.4, 0.4) if not s.is_empty() and Durability.broken(s) else Color.WHITE
+	if not worn:
+		if bar:
+			bar.visible = false
+		return
+	if bar == null:
+		bar = ColorRect.new()
+		bar.name = "Wear"
+		bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		panel.add_child(bar)
+	var f := Durability.fraction(s)
+	bar.visible = true
+	bar.color = Color(0.85, 0.25, 0.2) if f < 0.25 else (Color(0.9, 0.75, 0.25) if f < 0.5 else Color(0.45, 0.8, 0.35))
+	bar.position = Vector2(4, panel.size.y - 6)
+	bar.size = Vector2(maxf(2.0, (panel.size.x - 8) * f), 3)
 
 
 func _on_slot_input(event: InputEvent, index: int) -> void:

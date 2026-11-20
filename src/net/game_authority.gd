@@ -130,7 +130,8 @@ class PlayerState:
 	## otherwise the picked hotbar item if it's something you hold to use; otherwise (empty hand,
 	## rocks, ore...) the equipped pickaxe, so you can always dig.
 	func selected_item() -> String:
-		return inventory.get_slot(hand_slot()).get("id", "")
+		var s := inventory.get_slot(hand_slot())
+		return "" if Durability.broken(s) else s.get("id", "")  # a broken tool does nothing until it's repaired
 
 	## F can draw something: an equipped weapon, or at least an equipped shield.
 	func can_draw() -> bool:
@@ -448,6 +449,7 @@ func request_chop_pillar(peer_id: int, id: int) -> void:
 	var n := 2 if Items.kind(ps.selected_item()) == "axe" else 1
 	n = mini(n, RootPillars.CHOPS - used)
 	pillar_chops[id] = used + n
+	wear_slot(ps, ps.hand_slot())
 	var out := Vector3(chest.x - axis.x, 0.0, chest.z - axis.z).normalized()
 	var wood := n * (2 if ps.progress.has_star("woodcutting", 100) and randf() < 0.15 else 1)  # ★100: double wood
 	if used + n >= RootPillars.CHOPS and ps.progress.has_star("woodcutting", 50):
@@ -500,6 +502,7 @@ func request_chop_grove(peer_id: int, id: int) -> void:
 	if used >= int(t.wood):
 		return  # already felled (growing back)
 	var n := mini(2 if Items.kind(ps.selected_item()) == "axe" else 1, int(t.wood) - used)
+	wear_slot(ps, ps.hand_slot())
 	var out := Vector3(chest.x - axis.x, 0.0, chest.z - axis.z).normalized()
 	var wood := n * (2 if ps.progress.has_star("woodcutting", 100) and randf() < 0.15 else 1)  # ★100: double wood
 	spawn_drop("rootwood", wood, axis + out * 0.4 + Vector3.UP * 0.4)
@@ -985,6 +988,68 @@ func request_upgrade(peer_id: int, slot: int, station_id: int) -> String:
 	return ""
 
 
+func ask_repair(slot: int, station_id: int) -> void:
+	if is_host():
+		request_repair(local_peer_id(), slot, station_id)
+	else:
+		_rpc_repair.rpc_id(1, slot, station_id)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_repair(slot: int, station_id: int) -> void:
+	if is_host():
+		request_repair(multiplayer.get_remote_sender_id(), slot, station_id)
+
+
+## Repairs cost less with Thrifty (10% per rank) and Crafting ★25 (10%).
+static func repair_discount(p: Progression) -> float:
+	return 0.10 * p.perk_rank("thrifty") + (0.10 if p.has_star("crafting", 25) else 0.0)
+
+
+## Returns "" when done, otherwise why not.
+func request_repair(peer_id: int, slot: int, station_id: int) -> String:
+	var ps := get_player(peer_id)
+	var st: Station = stations.get(station_id)
+	if ps == null or st == null:
+		return "?"
+	var s := ps.inventory.get_slot(slot)
+	if s.is_empty() or not Durability.wears(s.id):
+		return "That doesn't wear out."
+	if st.kind != Upgrades.station_for(s.id):
+		return "Repair this at a %s." % Items.display_name(Upgrades.station_for(s.id))
+	if ps.node.global_position.distance_to(st.global_position) > 6.0:
+		return "Too far from the %s." % Items.display_name(st.kind)
+	var cost := Durability.repair_cost(s, repair_discount(ps.progress))
+	if cost.is_empty():
+		return "It's like new."
+	for item in cost:
+		if ps.inventory.count_of(item) < cost[item]:
+			return "Needs %d %s." % [cost[item], Items.display_name(item)]
+	for item in cost:
+		ps.inventory.remove(item, cost[item])
+	s["used"] = 0
+	ps.inventory.changed.emit()
+	give_xp(peer_id, 2, "crafting")
+	if peer_id == local_peer_id():
+		Sfx.ui("craft", 0.0)
+		hud_message.emit("%s repaired." % Upgrades.display_name(s))
+	return ""
+
+
+## Host: one use of the item in slot `i` (a dig, a chop, a hit, a block). Tells the player at 10% left and when it
+## breaks. The bag is sent to the player only every 10 uses (and at those moments), not on every swing.
+func wear_slot(ps: PlayerState, i: int) -> void:
+	var s := ps.inventory.get_slot(i)
+	var what := Durability.wear(s)
+	var peer := _peer_of(ps)
+	if what == "broke":
+		tell(peer, "Your %s broke! Repair it at a %s." % [Upgrades.display_name(s), Items.display_name(Upgrades.station_for(s.id))])
+	elif what == "warn":
+		tell(peer, "Your %s is almost worn out." % Upgrades.display_name(s))
+	if what != "" or (Durability.wears(s.get("id", "")) and Durability.used(s) % 10 == 0):
+		ps.inventory.changed.emit()
+
+
 func ask_swap(a: int, b: int) -> void:
 	if is_host():
 		request_swap(local_peer_id(), a, b)
@@ -1297,6 +1362,8 @@ func _judge_hit(ps: PlayerState, point: Vector3, normal: Vector3) -> Dictionary:
 		ps.dig_target = center
 		ps.dig_hits = 0
 	ps.dig_hits += 1
+	if not bare:
+		wear_slot(ps, ps.hand_slot())  # the pickaxe wears a little with every hit
 	if ps.dig_hits < needed:
 		_pay_hit(ps, mat, point + normal * 0.4)
 		return {state = "hit", hits = ps.dig_hits, needed = needed, material = mat, point = point, normal = normal}
@@ -1445,6 +1512,7 @@ func request_harvest(peer_id: int, glow_id: int) -> Dictionary:
 			_tell_feedback(peer_id, r)
 			return r
 		needed = ceili(k.hardness / power - 0.0001)
+		wear_slot(ps, ps.hand_slot())
 	if ps.harvest_id != glow_id:
 		ps.harvest_id = glow_id
 		ps.harvest_hits = 0
@@ -1931,8 +1999,13 @@ func request_ability(peer_id: int, perk_id: String) -> String:
 		"rapid_volley":
 			send_effect(peer_id, "rapid_volley", {free_reloads = 3.0}, 60.0)
 		"quick_fix":
-			tell(peer_id, "Your tools don't wear out yet, so there's nothing to fix.")
-			return ""  # shortcut: tools have no durability yet; this works once they do
+			var held := ps.inventory.get_slot(ps.hand_slot())
+			if Durability.used(held) <= 0 or not Durability.wears(held.get("id", "")):
+				tell(peer_id, "Nothing in your hand needs fixing.")
+				return ""
+			held["used"] = 0
+			ps.inventory.changed.emit()
+			tell(peer_id, "%s is like new." % Upgrades.display_name(held))
 		"war_horn":
 			_war_horn(ps, 0.10 * rank, 20.0)
 		"healing_brew":
