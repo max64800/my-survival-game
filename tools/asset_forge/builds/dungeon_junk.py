@@ -33,6 +33,12 @@
 #                       (one upside down, showing inside), a shoulder plate, an arm guard, stones (owner round 2)
 #   junk_coffin_lid     a carved stone coffin lid in three flat chunks: raised rim, a diamond knot on each
 #   junk_coffin_piece_a .. _c  (owner, Nov 20) the lid's three chunks as models of their own, to scatter about
+# Batch 5 (junk_big_forge.jpg + junk_shared.jpg #9, big dungeons):
+#   junk_slag           cold slag (nothing glows): three knobbly lumps with bubbles, a flat puddle that set hard
+#   junk_tongs_hammer   snapped tongs (a handle broken off beside them), a hammer with its handle split and broken
+#   junk_crucible_mould a cracked clay melting pot in two pieces, a small stone mould with a cross channel in two halves
+#   junk_scrap          an L bar, a flat bar leaning on it, a thick ring, a broken ring, a riveted offcut, a bent rod
+#   junk_rubble_brick   a low pile of broken Hearthbrick bricks (whole, halves, chunks) in a patch of red brick dust
 import math
 import random
 import sys
@@ -1440,6 +1446,211 @@ def junk_coffin_lid(only=None):
 		parts = meshes() - before
 		turn(parts, (-3.0, 2.5, -2.0)[ci], ((xa + xb) / 2, 0.0, 0.0), off=((-0.05, 0.0, 0.05)[ci], 0.0, (0.02, -0.01, 0.03)[ci]))
 
+# ---------------------------------------------------------------- batch 5: forge junk (big dungeons)
+SLAG = lambda v="a": dull(tinted("iron", v, (1.55, 1.3, 1.15), "slag"))   # (round 1 came out almost black: lighter, rusty)
+CRUCIBLE = lambda v="a": tinted("clay", v, (1.05, 0.74, 0.56), "crucible")
+
+
+def wavy(cx, cz, rx, rz, n, seed, amp=0.18):
+	"""A blobby outline round (cx, cz), counter-clockwise seen from above."""
+	rr = random.Random(seed)
+	ph = [rr.uniform(0, 6.28) for _ in range(3)]
+	pts = []
+	for k in range(n):
+		a = -2 * math.pi * k / n
+		r = 1 + amp * (0.6 * math.sin(3 * a + ph[0]) + 0.4 * math.sin(5 * a + ph[1])) + rr.uniform(-0.04, 0.04)
+		pts.append((cx + math.cos(a) * rx * r, cz + math.sin(a) * rz * r))
+	return pts
+
+
+def slag_lump(c, r, seed):
+	"""A cold lump of slag: a knobbly rock of melted-and-hardened waste, little bubbles stuck to it."""
+	rr = random.Random(seed)
+	x, z = c
+	before = meshes()
+	lump((x, r[1] * 0.82, z), r, SLAG("abc"[seed % 3]), seed, seg=10, ring=7, jit=0.2, yaw=rr.uniform(0, 90))
+	for i in range(rr.randint(3, 5)):   # bubbles, half sunk into it
+		a = rr.uniform(0, 6.28)
+		el = rr.uniform(0.1, 1.0)   # (on the lump's own surface, 85 % out, so every bubble is sunk into it)
+		br = rr.uniform(0.2, 0.32) * min(r)
+		lump((x + math.cos(a) * math.cos(el) * r[0] * 0.85, r[1] * 0.82 + math.sin(el) * r[1] * 0.85,
+			z + math.sin(a) * math.cos(el) * r[2] * 0.85), (br, br * 0.85, br),
+			SLAG("abc"[(seed + i) % 3]), seed + 10 + i, seg=7, ring=5, jit=0.12)
+	drop(meshes() - before, 0.01)   # (its knobbly shape can lift it: set it down on the floor)
+
+
+def junk_slag():
+	"""Cold slag from the forge (nothing glows): three knobbly lumps and a flat puddle that ran out and set hard."""
+	slab(wavy(-0.12, 0.12, 0.2, 0.13, 26, 601), 0.0, 0.012, 0.028, SLAG("b"), k=0.35)   # the puddle
+	rr = random.Random(602)
+	for i in range(7):   # low blobs on the puddle's top, sunk into it
+		a, d = rr.uniform(0, 6.28), rr.uniform(0.0, 0.11)
+		br = rr.uniform(0.022, 0.04)
+		lump((-0.12 + math.cos(a) * d, 0.022, 0.12 + math.sin(a) * d * 0.6), (br, br * 0.4, br * 0.9), SLAG("abc"[i % 3]), 610 + i,
+			seg=8, ring=4, jit=0.15)
+	slag_lump((-0.14, -0.12), (0.11, 0.075, 0.09), 621)
+	slag_lump((0.1, -0.13), (0.065, 0.06, 0.06), 632)
+	slag_lump((0.17, 0.06), (0.07, 0.05, 0.075), 643)
+
+
+def junk_tongs_hammer():
+	"""Snapped smith's tongs (one handle broken off, the piece beside them) and a hammer whose handle split and broke,
+	its broken half lying a little away."""
+	m, m2 = dull(RUST("a")), dull(RUST("b"))
+	r = 0.013   # (round 1: thin as sticks)
+	# the lower arm, flat on the floor: handle -> pivot -> curved jaw
+	A = [(-0.36, r, 0.06), (-0.14, r, 0.032), (0.02, r, 0.005), (0.07, r, -0.008), (0.12, r, -0.03), (0.165, r, -0.014)]
+	for i in range(len(A) - 1):
+		rod(A[i], A[i + 1], r, r * (0.8 if i == len(A) - 2 else 1.0), m, sides=6, seed=650 + i, jit=0.05, rings=2)
+	# the upper arm, crossing over it at the pivot; its handle snapped off short and lies beside
+	h = 0.038
+	B = [(-0.13, 0.015, -0.036), (-0.05, 0.028, -0.017), (0.02, h, -0.005), (0.07, h, 0.008), (0.12, 0.034, 0.03), (0.165, 0.024, 0.014)]
+	for i in range(len(B) - 1):
+		rod(B[i], B[i + 1], r, r * (0.8 if i == len(B) - 2 else 1.0), m, sides=6, seed=660 + i, jit=0.05, rings=2)
+	for p in A[1:-1] + B[1:-1]:   # (round knuckles where the arms bend)
+		lump(p, (r * 1.02, r * 1.02, r * 1.02), m, 670 + int(p[0] * 300), seg=6, ring=4, jit=0.03)
+	lump((0.02, 0.025, 0.0), (0.022, 0.028, 0.022), m2, 680, seg=8, ring=5, jit=0.05)              # the pivot rivet
+	lump((-0.13, 0.015, -0.036), (0.015, 0.014, 0.016), m, 681, seg=6, ring=4, jit=0.25)            # the snapped end
+	before = meshes()   # the broken-off handle
+	rod((-0.11, r, 0.0), (0.11, r, 0.0), r * 0.95, r, m, sides=6, seed=682, jit=0.05, rings=3)
+	lump((0.11, r, 0.0), (0.015, 0.014, 0.016), m, 683, seg=6, ring=4, jit=0.25)
+	turn(meshes() - before, 12, (0.0, 0.0, 0.0), off=(-0.26, 0.0, -0.13))
+	# the hammer: a heavy head lying on its side, the handle snapped and split near it
+	before = meshes()
+	hy = 0.034
+	K.blk((0.0, hy, 0.0), (0.062, 0.068, 0.15), RUST("b"), bevel=0.008)                          # the head
+	for sz in (-1, 1):   # its striking faces, a little wider, mushroomed from use
+		K.blk((0.0, hy, sz * 0.071), (0.07, 0.074, 0.016), RUST("c"), bevel=0.006)
+	K.blk((-0.026, hy, 0.0), (0.016, 0.028, 0.03), T("wood", "dark"), bevel=0.003)               # the wedged handle end
+	K.blk((-0.035, hy, 0.0), (0.006, 0.03, 0.006), RUST("a"), bevel=0.001)                        # its iron wedge
+	R_ = 0.017
+	rod((0.02, hy, 0.0), (0.13, hy, 0.0), R_, R_ * 0.97, T("wood", "dark"), sides=8, seed=690, jit=0.05)   # the stub
+	splinters((0.13, hy, 0.0), (1, 0, 0), R_, 691, n=6)
+	rod((0.06, hy + R_ * 0.7, -0.004), (0.11, hy + R_ * 0.5, 0.004), 0.004, 0.003, T("wood", "b"), sides=5, seed=692, jit=0.1, rings=2)   # the split
+	parts = meshes() - before
+	turn(parts, -20, (0.0, 0.0, 0.0), off=(0.3, 0.0, 0.0))
+	before = meshes()   # the handle's broken half
+	rod((0.0, R_, 0.0), (0.21, R_, 0.0), R_ * 0.97, R_ * 1.05, T("wood", "dark"), sides=8, seed=693, jit=0.05)
+	splinters((0.0, R_, 0.0), (-1, 0, 0), R_, 694, n=6)
+	turn(meshes() - before, 35, (0.0, 0.0, 0.0), off=(0.42, 0.0, 0.14))
+
+
+def crucible_piece(a0, a1, top, seed, floor=False):
+	"""Part of a cracked clay melting pot: a thick round wall from angle a0 to a1 (degrees), broken off ragged at
+	the top (top = (low, high)) and at both sides. floor: this piece kept the pot's bottom."""
+	rr = random.Random(seed)
+	H = [rr.uniform(*top) for _ in range(13)]
+	ej = [rr.uniform(-8, 8) for _ in range(6)]
+	r = lambda y: 0.11 + 0.06 * y
+	def wall(s, t):
+		e0, e1 = a0 + ej[int(t * 5.99)], a1 + ej[5 - int(t * 5.99)]   # ragged side breaks
+		a = math.radians(e0 + (e1 - e0) * s)
+		y = 0.012 + H[min(12, int(s * 12.999))] * t
+		return (math.cos(a) * r(y), y, math.sin(a) * r(y))
+	sheet(wall, 12, 5, CRUCIBLE("abc"[seed % 3]), 0.026)
+	if floor:   # the bottom, following the wall round and broken straight across the open side
+		pts = [(math.cos(math.radians(a0 + (a1 - a0) * k / 10)) * 0.115, math.sin(math.radians(a0 + (a1 - a0) * k / 10)) * 0.115)
+			for k in range(11)]
+		pts = list(reversed(pts))
+		slab(pts, 0.0, 0.026, 0.03, CRUCIBLE("b"), k=0.08)
+
+
+def junk_crucible_mould():
+	"""A cracked clay melting pot (crucible) in two pieces, the big one still standing on its bottom, and a small
+	broken stone casting mould with a cross-shaped channel, in two halves (smaller than the trap mould)."""
+	crucible_piece(-60, 160, (0.15, 0.21), 701, floor=True)
+	before = meshes()
+	crucible_piece(178, 280, (0.13, 0.19), 702)
+	half = meshes() - before
+	spin(half, "x", 7, (0.0, 0.0, -0.1))
+	turn(half, 0, (0.0, 0.0, 0.0), off=(-0.05, 0.0, -0.04))
+	drop(half, 0.004)
+	st = lambda v: T("warmstone", v)
+	for hx, sgn, yaw in ((0.32, -1, 6), (0.39, 1, -14)):   # the mould: two halves pulled apart
+		before = meshes()
+		x0, x1 = (-0.075, 0.0) if sgn < 0 else (0.0, 0.075)
+		K.blk(((x0 + x1) / 2, 0.016, 0.0), (x1 - x0, 0.032, 0.15), st("abc"[sgn + 1]), bevel=0.005)   # its base
+		for cz in (-1, 1):   # the raised corners, leaving a cross-shaped channel between them
+			K.blk(((x0 + x1) / 2 + sgn * 0.0125, 0.042, cz * 0.05), (0.05, 0.026, 0.05), st("c"), bevel=0.004)
+		bx = x1 if sgn < 0 else x0
+		for i, cz in enumerate((-0.05, 0.0, 0.05)):   # the ragged break: chunks sticking out of it
+			lump((bx, 0.018, cz), (0.012, 0.016, 0.022), st("abc"[i]), 710 + i + sgn, seg=6, ring=4, jit=0.25)
+		turn(meshes() - before, yaw, (0.0, 0.0, 0.0), off=(hx + sgn * 0.02, 0.0, 0.06))
+
+
+def junk_scrap():
+	"""A small pile of forge scrap: an L-shaped bar, a flat bar with a bolt hole leaning on it, a thick ring, a
+	broken ring, a riveted plate offcut and a bent rod."""
+	m = lambda v: dull(RUST(v))
+	riv = T("iron", "b")
+	# the L bar, flat on the floor
+	K.blk((0.0, 0.015, -0.08), (0.34, 0.03, 0.05), m("a"), bevel=0.005)
+	K.blk((0.15, 0.015, 0.0), (0.05, 0.03, 0.12), m("a"), bevel=0.005)
+	for x in (-0.13, 0.05):
+		lump((x, 0.031, -0.08), (0.008, 0.006, 0.008), riv, 720 + int(x * 100), seg=6, ring=4)
+	# a flat bar, one end on the floor, the other resting on the L bar's short arm
+	ang = math.degrees(math.atan2(0.03, 0.3))
+	K.blk((0.02, 0.019, 0.02), (0.32, 0.014, 0.04), m("b"), bevel=0.004, rz=ang)
+	# a thick ring and a broken one
+	bpy.ops.mesh.primitive_torus_add(major_radius=0.055, minor_radius=0.016, major_segments=18, minor_segments=7,
+		location=K.G((-0.1, 0.0128, 0.08)))
+	o = bpy.context.object
+	o.scale = (1.0, 1.0, 0.8)
+	bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+	kit._finish(o, m("c"), 0, 0)
+	for k in range(4):
+		a = math.radians(45 + 90 * k)
+		lump((-0.1 + math.cos(a) * 0.055, 0.025, 0.08 + math.sin(a) * 0.055), (0.007, 0.005, 0.007), riv, 730 + k, seg=6, ring=4)
+	tube([(0.2 + math.cos(math.radians(a)) * 0.045, 0.011, 0.14 + math.sin(math.radians(a)) * 0.045) for a in range(20, 290, 30)],
+		0.011, m("b"), sides=6)
+	# a riveted plate offcut, its cut edge stepped
+	slab([(0.27, -0.12), (0.4, -0.13), (0.42, -0.04), (0.37, -0.02), (0.36, 0.03), (0.28, 0.02)], 0.0, 0.01, 0.013, m("c"), k=0.12)
+	for (x, z) in ((0.3, -0.1), (0.39, -0.1), (0.31, 0.0)):
+		lump((x, 0.015, z), (0.008, 0.006, 0.008), riv, 740 + int(x * 100 + z * 10), seg=6, ring=4)
+	# a bent rod
+	tube([(-0.32, 0.009, 0.0), (-0.24, 0.009, -0.01), (-0.2, 0.009, 0.03), (-0.17, 0.009, 0.1)], 0.009, m("a"), sides=6)
+
+
+def junk_rubble_brick():
+	"""A low pile of broken clay bricks (the Hearthbrick ones) in a patch of red brick dust: whole bricks, halves
+	with a broken end, chunks; dropped one by one so each lies on what is really under it (no two in the same place)."""
+	rr = random.Random(751)
+	slab(wavy(0.0, 0.0, 0.48, 0.3, 28, 752, amp=0.15), 0.0, 0.003, 0.016, tinted("clay", "b", (1.12, 0.84, 0.7), "dust"), k=0.55)
+	laid = []
+	BL, BW, BH = 0.2, 0.095, 0.06
+	tries = 0
+	while len(laid) < 11 and tries < 120:
+		tries += 1
+		kind = rr.choice(("whole", "half", "half", "chunk"))
+		ln = BL if kind == "whole" else (rr.uniform(0.09, 0.13) if kind == "half" else rr.uniform(0.05, 0.075))
+		x, z, yaw = rr.uniform(-0.36, 0.36), rr.uniform(-0.2, 0.2), rr.uniform(-90, 90)
+		fp = _footprint(x, z, ln + 0.03, BW + 0.01, yaw)
+		core = _footprint(x, z, ln - 0.03, BW - 0.02, yaw)
+		near = [(c, cc, top) for (c, cc, top) in laid if _overlap(fp, c)]
+		if any(not _overlap(core, cc) for (c, cc, top) in near):
+			continue
+		y0 = max(top for (c, cc, top) in near) - 0.004 if near else 0.002
+		if y0 > 0.07:
+			continue
+		before = meshes()
+		m = T("brick", rr.choice("abc"))
+		if kind == "whole":
+			K.blk((0.0, y0 + BH / 2, 0.0), (BL, BH, BW), m, bevel=0.008)
+		else:   # a broken brick: one clean end, one jagged
+			out = [(-ln / 2, -BW / 2), (ln / 2 - 0.01, -BW / 2)] + jag(ln / 2, -BW / 2, BW / 2, 5, 0.018, rr.randint(0, 999)) + \
+				[(-ln / 2, BW / 2)]
+			if kind == "chunk":
+				out = [(-ln / 2 + 0.01, -BW / 2)] + out[1:-1] + jag(-ln / 2, BW / 2, -BW / 2, 4, 0.015, rr.randint(0, 999))
+			slab(out, y0, BH - 0.01, BH, m, k=0.08)
+		turn(meshes() - before, yaw, (0.0, 0.0, 0.0), off=(x, 0.0, z))
+		laid.append((fp, core, y0 + BH))
+	for i in range(9):   # small brick bits in the dust
+		a, d = rr.uniform(0, 6.28), rr.uniform(0.25, 0.5)
+		s = rr.uniform(0.6, 1.0)
+		lump((math.cos(a) * d, 0.012, math.sin(a) * d * 0.65), (0.022 * s, 0.016 * s, 0.018 * s), T("brick", "abc"[i % 3]), 760 + i,
+			seg=6, ring=4, jit=0.22)
+
+
 def settle():
 	"""Set the finished pile down: its lowest point on the floor (y = 0), its middle at the origin (x, z)."""
 	objs = [o for o in bpy.data.objects if o.type == "MESH"]
@@ -1462,7 +1673,9 @@ BUILDS = {"junk_bones": junk_bones, "junk_sword_snapped": junk_sword_snapped, "j
 	"junk_pickaxe_broken": junk_pickaxe_broken, "junk_shovel_bent": junk_shovel_bent, "junk_beam_snapped": junk_beam_snapped,
 	"junk_helmet": junk_helmet, "junk_lantern": junk_lantern,
 	"junk_urns": junk_urns, "junk_statue_head": junk_statue_head, "junk_armour_pile": junk_armour_pile,
-	"junk_coffin_lid": junk_coffin_lid}
+	"junk_coffin_lid": junk_coffin_lid,
+	"junk_slag": junk_slag, "junk_tongs_hammer": junk_tongs_hammer, "junk_crucible_mould": junk_crucible_mould,
+	"junk_scrap": junk_scrap, "junk_rubble_brick": junk_rubble_brick}
 # five more rag piles, two rags each, all different (names written out: the model checker looks for them)
 for _i, _name in enumerate(("junk_rags_b", "junk_rags_c", "junk_rags_d", "junk_rags_e", "junk_rags_f")):
 	BUILDS[_name] = (lambda sd: (lambda: rags_pair(sd)))(200 + 37 * _i)

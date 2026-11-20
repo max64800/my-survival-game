@@ -6880,3 +6880,16 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   crop assumed 520x720 renders, but the window ignored that (1600x900 with the CLAUDE TEST frame): empty tiles once.
 - **Tests:** `test_dwarf_fist`: the one-handed check passes; the great-axe check still fails on the Spin (a fist 5 cm
   off), the old open item from chat 11. The new clips are not wired to the attacks yet (ATTACKS still the old moves).
+- **Batch 5 (forge junk, big dungeons), owner OK'd ("all of that works"):** `junk_slag` (three knobbly lumps with
+  bubbles and a flat puddle, nothing glows), `junk_tongs_hammer` (tongs with a snapped handle, a hammer with a split,
+  broken handle), `junk_crucible_mould` (a cracked clay melting pot in two pieces, a small stone mould with a cross
+  channel in two halves), `junk_scrap` (L bar, a leaning flat bar, rings, a riveted offcut, a bent rod),
+  `junk_rubble_brick` (broken Hearthbrick bricks dropped one by one into a patch of red brick dust). All 20 junk
+  kinds from the plan are now built: 40 junk models in `assets/models/dungeon/`, all pass the checker.
+- **Hurdles:** (1) A slag bubble hovered 2.8 cm (FLOAT): bubbles were placed on a round shape that the lump's
+  narrow top doesn't fill; now each sits on the lump's own surface. (2) Round 1 slag came out almost black (owner
+  dislikes dark spots) and the tongs looked like thin sticks: slag lightened to a rusty grey, tongs thicker and longer.
+  (3) My browser tool wouldn't connect to check the 3D page, so I checked it with Chrome running hidden on a local
+  copy. The first local test server started in the game folder instead of the page folder (404 page); stopped and
+  restarted in the right folder.
+- **Next:** placing the junk in the dungeons (none placed yet), with the placement rule and its automatic test.
