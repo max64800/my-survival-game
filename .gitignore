@@ -30,3 +30,8 @@ video/editor/models/
 video/editor/motion/node_modules/
 video/editor/motion/public*/
 video/editor/motion/out/
+# owner's swing videos and the mocap tool's local setup (never in the public repo)
+tools/mocap/.venv/
+tools/mocap/models/
+tools/mocap/videos/
+tools/mocap/out/

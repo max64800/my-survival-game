@@ -5621,3 +5621,25 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   - Hammerfall's Rolling Anvil Ramp became the Ore Cart Ramp.
   - Cinderhold's push wall knocks you down a level (it hurts) instead of into the chasm, so the dungeon keeps
     3 deadly traps.
+
+## November 20, 2026 (Mac, Claude): a new plan for the two-handed swings (F389)
+- **Owner: "teach the PC Claude to do animations better; the 2H attacks are still a struggle."** Researched the web:
+  nobody has solved two-handed swings by vibecoding. Free packs don't fit (already checked by the PC in chats 4-7);
+  Mixamo can't go in the public repo; Cascadeur's free version bans commercial use; text-to-motion AI (NVIDIA Kimodo /
+  ARDY, Tencent HY-Motion) kept as a backup (licences not checked). The owner also asked about making great weapons
+  one-handed (free off hand for a shield): easier, kept as the backup plan.
+- **Owner's pick: film himself.** Red glove left, blue glove right, a broom handle with yellow tape at the head end and
+  green at the grip end; side + front, slow + fast.
+- **Built:** `tools/mocap/swing_from_video.py`: Google MediaPipe Pose (Apache 2.0) finds his joints, colour finding
+  follows the gloves and tape, and the key poses (ready, top of the wind-up, hit, recovery) + timings are picked from
+  the stick head's speed. Saves numbers in arm lengths (so they shrink to the dwarf's 27 cm arm) and a picture sheet.
+  Filming guide in `tools/mocap/README.md`. Self-check `test_swing_tool.py` (a made-up stick video) passes.
+  Videos, the model file and the tool's Python setup are ignored by git (public repo).
+- **Written:** `docs/art/ANIMATION-RULES.md` (the lessons of all 7 animation chats: his measured body, packs not to
+  search again, the owner's wishes, how a heavy swing is timed, the checks, mistakes not to repeat) and
+  `docs/art/2H-ANIMATION-PLAN.md` (who does which step).
+- **Hurdles (Claude's own):** the first key-pose picker chose the still "ready" moment as the wind-up top, then counted
+  the hold at the top as part of the strike; the self-check caught both. Found that the PC's chats 5-7 two-handed code
+  (`dwarf_great_swing.gd`, the pose tuner) was never pushed: step 0 of the plan. ChatGPT had another chat's unsent
+  message in its box, so the reference pictures were not made (prompts are in the plan). The body-finding part is
+  untested on a real person until the first video.

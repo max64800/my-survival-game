@@ -1,0 +1,61 @@
+# Animation rules (read before changing any dwarf move)
+
+Like `MODEL-RULES.md`, but for moves. Written Nov 20, 2026 from the 7 dwarf-animation chats (F282, F389).
+When a rule changes, delete the old text that disagrees. Current job: `docs/art/2H-ANIMATION-PLAN.md`.
+
+## 1. Know his body (measured, not guessed)
+- Arm: **27 cm** shoulder to wrist. Left arm reaches ~33 cm. Beard sticks out **48 cm**, belly **38 cm**.
+- Numbers from another rig (KayKit, Quaternius, a human) are wrong for him: measure on his own skeleton
+  (`twohand_preview.gd markers=1`, `great_pose_tuner.gd`).
+- His belly is bound to the low spine bones: chest twist must go mostly there, or it won't show.
+- Elbows **out to the sides**, fists **in front of the shoulders**. Elbows that keep the idle bend fold the arms into
+  his belly (chat 6: the real reason "the axe can't be held in front of him").
+
+## 2. Don't search again (already checked)
+- Quaternius UAL 1 + 2 (his own pack): no two-handed weapon moves.
+- KayKit Character Animations (CC0): tried in chat 5, owner said stance, swings and hands all wrong. Removed.
+- Kevin Iglesias melee (no stated licence), KinemIQ, Modular RPG Characters: not usable in a public repo.
+- Mixamo: fine in a sold game but its files can't go in the public repo. Cascadeur free: no commercial use.
+- **Godot's import retarget renames every bone** and breaks his other moves: retarget in code if ever needed.
+
+## 3. What the owner wants (two-handed)
+- Great axe first, then great maul, then sword + shield. One stance + 2-3 swings on repeat. No more.
+- Swings: **chop** (right to left), **sweep back**, **slam**. Hands **wide apart** (left at the end of the handle by
+  the left hip, right high up the handle), except the slam (hands closer). Handle on a slant across the body.
+- Standing, walking, running: the great weapon rests on his right shoulder in **one** hand (approved, round 3).
+- Target poses come from the owner's own video (`tools/mocap/`), not from Claude's imagination.
+
+## 4. How a heavy swing moves (so it reads as heavy)
+- **Wind-up:** slow and clear, 0.3–0.5 s. The player must see it coming.
+- **Hold at the top:** a short still moment, 0.05–0.15 s.
+- **Strike:** fast, 0.1–0.2 s. Heavy means a longer wind-up and recovery, **not** a slower strike.
+- **Contact:** the game already freezes both fighters (`HIT_STOP` 0.06 / 0.11 s) and shakes the screen. Don't add more.
+- **Recovery:** 0.3–0.5 s, the weapon's weight pulls him a little past the hit.
+- **Hips lead:** hips start turning before the chest, the chest before the arms. Knees bend at the hit.
+- **Arcs:** the axe head follows one smooth curve. If it wobbles or cuts a corner, add a middle key.
+- Copy **directions, angles, twist, lean and timing** from the owner's video; never his distances (his arms are long).
+
+## 5. Checks (a move isn't done until they pass)
+- Both fists on the handle (within 2 cm of their spots) at every key **and** at 10 in-between moments per swing.
+- Handle at least **3 cm clear** of his body (belly, beard, chest) at every key and in between.
+  Chat 7 found the chop and slam pass through him between wind-up and hit: add a middle key there.
+- Axe head ends **in front** of him at the hit (never sticking out to his side or behind).
+- Tuner tip: polish each key pose from its **own** best start. Starting from the pose before makes it get stuck.
+- Test: `test_dwarf_fist` (+ any new check goes there).
+
+## 6. Working with the owner
+- Show a **picture sheet** before building into the game: each key pose from the front, the side and from behind
+  (the game camera), the handle and fists marked.
+- For a new pose: **3 versions side by side**, the owner picks one. Picking is faster than fix-and-look rounds.
+- At most 2 rounds of pictures before asking the owner what's wrong.
+- The owner looks at moves mostly **from behind** (game camera): that view matters most.
+
+## 7. Mistakes not to repeat
+- Swing clock must count **game time** (`delta`), not real time: slow frames skipped key poses in the preview.
+- Never stop all Godot programs (other chats' games run too): stop only your own.
+- Untyped `:=` from Arrays and a function named `convert` broke the build for every chat: type everything, run the
+  file's test before pushing.
+- Preview pages may show cached files: load with `no-cache`.
+- A long Python edit inside a shell command broke the quoting: save scripts as files.
+- **Push the work at the end of every chat.** Chats 6-7 (great swing + tuner) were left unsaved on the PC.
+- Use `/effort high` for animation chats: normal thinking failed this job many times.
