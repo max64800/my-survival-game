@@ -6221,3 +6221,32 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   I added a Mac-only stand-in (not committed) and told the owner. Chrome blocked the 3rd download again; saved
   the sheet through a zoomed screenshot and painted out the mouse pointer that was in it. GDScript wouldn't guess
   the type of `gear.get(...)` values (fixed with `float(...)`). The boss-key test counted all drops (now only keys).
+
+
+## November 20, 2026 (PC, dungeons Claude, chat 7): stalactites bait the chests; Lampwick Drift batch 1 (the cart trap)
+- **Mossgate (owner's 8/10 note "most stalactites over or beside the chests"):** 4 of the 6 stalactites now hang by
+  the two rock-ceiling chests (one where you stand to open it, one beside it); one over the bridge's middle boards,
+  one in the Pillar Hall's middle. New check `test_stalactites_bait_the_chests`; 57 of 57 dungeon checks pass.
+  3D page updated (version 8).
+- **Owner's answers:** push to GitHub (done); add a real thud (done); creatures = the planned KayKit skeletons
+  turned into dwarf miners (Lost Miner, Tunnel Rat, Foreman; later); Lampwick's 12-model list OK.
+- **Thud:** the dungeon asked for a sound called "dig" that never existed, so stalactites and crushers landed in
+  silence. Now `thud` ("boulder_drop" by themightyglider, CC0, made from real Freesound recordings; plus a deeper
+  copy) for landings, `dig_break` for a stalactite's crack, `dig_rock` for hits on stone. Logged in CREDITS.
+- **Lampwick model list:** 12 new models in 3 batches (cart trap; other traps; the mine's look). The Mac had already
+  drawn sheets for most of them (`docs/art/dungeon-model-sheets/`).
+- **Batch 1 (new script `tools/asset_forge/builds/dungeon_mine.py`):** `rail_lane`, `rail_release`, `rail_buffer`,
+  `trap_cart`. The sheet put 3 lanes in one 2 m square (66 cm each), but the dwarf is 72 cm wide, so he could never
+  stand safely between carts. Asked the owner: one lane per 2 m square. Two picture rounds: the chock read as a fallen
+  log (now a squared block hanging from the beam on iron rods, so it also touches the frame); the buffer's struts ended
+  past their footings. The model checker then found floating rails and rocks and two flicker spots; all fixed, all 4
+  pass. 3D page "Lampwick Cart Junction" (3 lanes, carts released in the order middle, left, right, glint first).
+  Waiting for the owner's OK before the models go into `assets/`.
+- **My slip (git):** pushing needed the Mac's new work first. My first "set aside CREDITS.md" step failed, and the
+  "put back" step after it unpacked an OLD saved bundle of another session's work (from Nov 19) into 29 files, with
+  clash marks in main.gd and JOURNAL.md (the game wouldn't have loaded for about 2 minutes). All 30 files had been
+  untouched before (git only unpacks into clean files) and nobody had saved them since, so I put each back to the last
+  saved version; the old bundle is still saved for its owner. Then I merged the careful way (CREDITS.md change saved as
+  a patch, merged, patch put back). Lesson: never chain "put back" after a step that can fail.
+- **Other hurdles:** the Godot program isn't on the PATH (found it in WinGet's folder); Blender's helper import
+  worked first time; one shell path mixed up the temp folder with the scratch folder (nothing written).
