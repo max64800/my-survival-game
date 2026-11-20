@@ -94,6 +94,8 @@ func drop_key(key: String, pos: Vector3) -> void:
 	out[key] = float(auth.world_state.get("played", 0.0))
 	auth.world_state.dungeon_keys = out
 	auth.spawn_drop(key, 1, pos)
+	if randf() < Gems.BOSS_CHANCE:  # a boss drops one of its dungeon's gems half the time (gems.md)
+		auth.spawn_drop(Gems.item_id(Gems.dungeon_gems(KEYS[key].dungeon).pick_random()), 1, pos + Vector3(0.4, 0, 0))
 
 
 # ================================================================== ask → host → everyone
