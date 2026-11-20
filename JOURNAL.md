@@ -6468,3 +6468,14 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   failed. Not a bug: a frozen creature slides to a stop in about 0.15 s. The test now waits 0.3 s.
 - **Gap found (asked the owner, F461):** nothing on a creature (or another dwarf) shows it's burning, frozen or
   poisoned, and in co-op the other computers don't know it. Waiting for the owner's OK.
+- **Owner's look (Nov 20):** "I really like it". Lampwick keeps these three; a different boss per mine later (F468).
+  New feedback F462-F468: lie scattered and rise when you come near (F462), fall apart then turn to stone (F463), no
+  taunt, the pack's flinch plus our white flash, nearly always running (F464), the picks hit with the flat side
+  (F465), colour variety for Rat and Lost Miner, the Lost Miner gives frost (F466), the Rat easier, faster, softer
+  hits (F467). Claude's mix-up to correct: the owner thought the 2nd was the boss; the boss is the 3rd (Foreman).
+- **Version 2 of the models:** (F465) the pick head turned a quarter turn so its points face the way the hand swings
+  (KayKit's own axe has its blades that way); the shovel already slices edge first. (F466) 3 looks each, built by the
+  same script: `tunnel_rat_grime/soot/rust`, `lost_miner_frost/rime/ghost` (all with icy eyes, for the frost), and
+  `foreman`. Hurdle: two Lost Miner looks flickered on the pick (socket 6 mm from the points, and the hand-made wobble
+  sometimes closed the gap); the socket is bigger now. All 7 pass the checker. Page version 2: colour buttons on the
+  cards, "Lie on the floor" added, Taunt gone. Waiting for the owner's OK, then `assets/` and the game code.

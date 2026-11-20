@@ -9,8 +9,8 @@
 #   blender --background --factory-startup --python builds/kaykit_miners.py -- <out_dir> [only=lost_miner,...]
 #
 # Models (Godot: front +Z, feet on y = 0; parts = separate meshes):
-#   tunnel_rat   (Skeleton_Minion) small fast pest, 0.95 m: hunched, scruffy beard, dented cap helmet, a little shovel
-#   lost_miner   (Skeleton_Rogue)  old ghostly miner, 1.4 m: pale green bone, long beard, cracked helmet with a dead
+#   tunnel_rat_<grime|soot|rust>  (Skeleton_Minion) small fast pest, 0.95 m: hunched, scruffy beard, cap, little shovel
+#   lost_miner_<frost|rime|ghost> (Skeleton_Rogue) old frosty ghost miner, 1.4 m: icy pale bone, long beard, helmet with a dead
 #                lamp, a pickaxe
 #   foreman      (Skeleton_Warrior) the end boss, 1.85 m: broad, iron foreman's helmet with a lit lamp and a badge,
 #                a thick beard, a heavy two-handed pick
@@ -57,10 +57,25 @@ PAINT = {
 	"beard_ghost": ("ropev_a", (0.66, 0.78, 0.72), 1.0, 0.0),
 	"beard_red": ("ropev_a", (0.55, 0.30, 0.17), 1.0, 0.0),
 	"wood": ("wood_b", (0.62, 0.46, 0.32), 1.0, 0.0),
+	# looks (owner, Nov 20: colour variety for the Rat and the Lost Miner; the Lost Miner gives you frost)
+	"bone_soot": ("limestone_c", (0.47, 0.44, 0.41), 0.6, 0.0),
+	"wool_soot": ("sack_b", (0.22, 0.21, 0.20), 0.9, 0.0),
+	"beard_soot": ("ropev_a", (0.38, 0.37, 0.36), 1.0, 0.0),
+	"bone_rust": ("limestone_c", (0.70, 0.55, 0.41), 0.6, 0.0),
+	"wool_rust": ("sack_b", (0.50, 0.28, 0.17), 0.9, 0.0),
+	"beard_brown": ("ropev_a", (0.47, 0.34, 0.22), 1.0, 0.0),
+	"bone_frost": ("limestone_b", (0.62, 0.72, 0.84), 0.55, 0.0),
+	"wool_frost": ("sack_b", (0.28, 0.34, 0.45), 0.9, 0.0),
+	"beard_frost": ("ropev_a", (0.76, 0.86, 0.96), 1.0, 0.0),
+	"bone_rime": ("limestone_b", (0.84, 0.86, 0.88), 0.55, 0.0),
+	"wool_rime": ("sack_b", (0.40, 0.43, 0.47), 0.9, 0.0),
+	"beard_rime": ("ropev_a", (0.93, 0.95, 0.97), 1.0, 0.0),
 	"copper": ("copper_b", (0.85, 0.62, 0.45), 1.0, 0.0),
 }
 TILE = {"bone": 0.7, "bone_ghost": 0.7, "bone_grime": 0.7, "wool": 0.6, "wool_ghost": 0.6, "wool_dark": 0.6,
 	"iron": 0.45, "leather": 0.5, "beard": 0.25, "beard_ghost": 0.25, "beard_red": 0.25, "wood": 0.5, "copper": 0.4}
+for _k in PAINT:
+	TILE.setdefault(_k, 0.25 if _k.startswith("beard") else 0.6 if _k.startswith("wool") else 0.7)
 
 # body: which paint each of the pack's colour kinds gets
 CREATURES = {
@@ -68,17 +83,22 @@ CREATURES = {
 		paint={"bone": "bone_grime", "cloth": "wool", "metal": "iron", "leather": "leather"},
 		eyes=(1.0, 0.72, 0.2), eye_glow=2.2, beard="beard", beard_len=0.36, beard_w=0.40,
 		pose={"spine": (22, 0, 0), "chest": (10, 0, 0), "head": (-24, 0, 0)}, chest_scale=(1.05, 1.0, 1.0),
-		helmet="cap", tool="shovel"),
+		helmet="cap", tool="shovel",
+		looks={"grime": {}, "soot": dict(paint={"bone": "bone_soot", "cloth": "wool_soot"}, beard="beard_soot", eyes=(1.0, 0.42, 0.12)),
+			"rust": dict(paint={"bone": "bone_rust", "cloth": "wool_rust"}, beard="beard_brown", eyes=(0.85, 1.0, 0.3))}),
 	"lost_miner": dict(src="Skeleton_Rogue", height=1.4, drop=["Skeleton_Rogue_Hood"],
 		paint={"bone": "bone_ghost", "cloth": "wool_ghost", "metal": "iron", "leather": "leather"},
 		eyes=(0.45, 1.0, 0.75), eye_glow=2.6, beard="beard_ghost", beard_len=0.70, beard_w=0.50, ghost=0.12,
 		pose={"spine": (10, 0, 0), "chest": (6, 0, 0), "head": (-12, 0, 0)}, chest_scale=(1.15, 1.0, 1.1),
-		helmet="miner", tool="pickaxe"),
+		helmet="miner", tool="pickaxe",
+		looks={"frost": dict(paint={"bone": "bone_frost", "cloth": "wool_frost"}, beard="beard_frost", eyes=(0.5, 0.82, 1.0)),
+			"rime": dict(paint={"bone": "bone_rime", "cloth": "wool_rime"}, beard="beard_rime", eyes=(0.35, 0.95, 1.0)),
+			"ghost": dict(eyes=(0.55, 0.9, 1.0))}),
 	"foreman": dict(src="Skeleton_Warrior", height=1.85, drop=["Skeleton_Warrior_Helmet"],
 		paint={"bone": "bone", "cloth": "wool_dark", "metal": "iron", "leather": "leather"},
 		eyes=(1.0, 0.45, 0.12), eye_glow=3.0, beard="beard_red", beard_len=0.62, beard_w=0.62,
 		pose={"spine": (0, 0, 0), "chest": (-4, 0, 0), "head": (4, 0, 0)}, chest_scale=(1.32, 1.12, 1.25),
-		helmet="foreman", tool="big_pick"),
+		helmet="foreman", tool="big_pick", looks={"": {}}),
 }
 
 _mats = {}
@@ -396,7 +416,7 @@ def tool(kind):
 		r = 0.04 if kind == "pickaxe" else 0.055
 		kit.cylinder(r, L, (0, L / 2 - 0.2, 0), wood, rot=(90, 0, 0), verts=7, bevel=0.006)
 		hy = L - 0.25
-		kit.box((r * 2.6, r * 3.2, r * 2.6), (0, hy, 0), ir, bevel=0.012, wobble=0.006)  # the socket
+		kit.box((r * 3.1, r * 3.6, r * 3.1), (0, hy, 0), ir, bevel=0.012, wobble=0.006)  # the socket (well clear of the points: no flicker)
 		span = 0.42 if kind == "pickaxe" else 0.62
 		for s in (-1, 1):  # two curved points (each a bent tapering wedge)
 			for k in range(3):
@@ -414,7 +434,10 @@ def tool(kind):
 		kit.box((0.2, 0.05, 0.035), (0, -0.19, 0), wood, bevel=0.01, wobble=0.004)  # the D-grip's bar
 		kit.box((0.06, 0.24, 0.17), (0, 0.67, 0), ir, bevel=0.01, wobble=0.006)  # socket
 		kit.box((0.28, 0.32, 0.035), (0, 0.92, 0.02), ir, bevel=0.02, wobble=0.012)  # the dented blade
-	return group(new_objs(before), "tool")
+	o = group(new_objs(before), "tool")
+	if kind in ("pickaxe", "big_pick"):  # owner, Nov 20 (F465): the point leads the swing (it hit with the flat side)
+		o.data.transform(Matrix.Rotation(math.radians(90), 4, "Y"))
+	return o
 
 
 def place(obj, mat):
@@ -423,8 +446,12 @@ def place(obj, mat):
 
 # ---------------------------------------------------------------- build
 
-def build(name):
-	cfg = CREATURES[name]
+def build(name, look):
+	cfg = dict(CREATURES[name])
+	over = cfg["looks"][look]
+	for k, v in over.items():
+		cfg[k] = {**cfg[k], **v} if isinstance(v, dict) else v
+	rng.seed(sum(map(ord, name)))  # every look gets the same beard and helmet shape
 	kit.reset()
 	_mats.clear()
 	bpy.ops.import_scene.gltf(filepath=str(PACK / f"{cfg['src']}.glb"))
@@ -466,7 +493,7 @@ def build(name):
 	arm.animation_data.action = bpy.data.actions.get("Idle")
 	OUT.mkdir(parents=True, exist_ok=True)
 	bpy.ops.object.select_all(action="SELECT")
-	out = OUT / f"{name}.glb"
+	out = OUT / (f"{name}_{look}.glb" if look else f"{name}.glb")
 	bpy.ops.export_scene.gltf(filepath=str(out), export_format="GLB", use_selection=True, export_yup=True,
 		export_animation_mode="ACTIONS", export_image_format="JPEG", export_image_quality=85, export_apply=False)
 	print("SAVED", out, "scale", round(s, 3), "actions", len(bpy.data.actions))
@@ -477,4 +504,5 @@ if __name__ == "__main__":
 	for n in CREATURES:
 		if ONLY and n not in ONLY:
 			continue
-		build(n)
+		for look in CREATURES[n]["looks"]:
+			build(n, look)
