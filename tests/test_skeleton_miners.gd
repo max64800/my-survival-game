@@ -209,3 +209,15 @@ func test_stone_corpses_dont_block_and_lose_their_stars() -> void:
 	m.die_visual()
 	check(m._stars == null, "dead: the stars are gone")
 	_teardown()
+
+
+## Owner, Nov 20: "I don't see them attacking, so I don't see when to parry": a star + "ting" on the pick 0.4 s
+## before every blow lands (right away when the whole warning is shorter), drawn on top of everything.
+func test_pick_glint_comes_before_the_blow() -> void:
+	check_near(CreatureRig.glint_wait(0.55), 0.15, 0.001, "the Tunnel Rat's chop: the star 0.4 s before the blow")
+	check_near(CreatureRig.glint_wait(1.0), 0.6, 0.001, "the Foreman's chop: also 0.4 s before")
+	check_eq(CreatureRig.glint_wait(0.3), 0.0, "a warning shorter than 0.4 s: the star right away")
+	for kind in ["tunnel_rat", "lost_miner", "foreman"]:
+		for atk: Dictionary in Monsters.LIST[kind].attacks:
+			check(float(atk.tell) - CreatureRig.glint_wait(float(atk.tell)) >= 0.4 or CreatureRig.glint_wait(float(atk.tell)) == 0.0,
+				"%s %s: you get the whole warning time after the star" % [kind, atk.name])

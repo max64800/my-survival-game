@@ -7114,3 +7114,20 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - **Owner, same evening:** OK'd the Spire as it is ("I really like how you built the floor below the fire": the open
   lantern gallery) and the fire bowl's price (cut stone + a few copper ingots). Committed the page-stage files; the
   page's source is kept in `tools/ruins/spire_page.html` so the next ruin page can be copied from it.
+
+## Nov 20 — Old Pell's Diggings, step 3: a spark before the miners' blows (dungeons chat, F518)
+- **Owner:** "I can't see the enemies attack: their picks are small and they're behind my dwarf, so I don't know when
+  to parry." We brainstormed six ideas (raise and hold, a spark, an arrow at the screen edge, a see-through dwarf,
+  bigger picks, a warning sound). The owner picked **just a spark first**: a white-gold star plus a "ting".
+- **Built:** `src/art/pick_glint.gd` (PickGlint). It's a star drawn once in code, always facing the camera, and drawn
+  on top of everything (no depth test), so the dwarf can't hide it. It pops in, settles and shrinks in 0.38 s.
+  `CreatureRig.attack` starts it 0.4 s before the blow lands (`glint_wait`: right away if the warning is shorter),
+  at the pick head (the hand socket + TRAIL_LEN, like the swing trail). The "ting" is the existing Kenney clink
+  (already in CREDITS) at pitch 2.3. Every screen makes its own from the swing it already plays, so it's co-op ready.
+  All skeleton miners get it, the Foreman too.
+- **Checked:** test_skeleton_miners 10/10 (new: test_pick_glint_comes_before_the_blow). Minercheck robot (muted,
+  `claude=pick_spark`): the picture 0.25 s before two Tunnel Rats' blows shows both stars on top of the dwarf's legs.
+- **Hurdles:** (1) The first question from the owner's message was only an email address with no task: asked what
+  it was for instead of guessing, and kept it out of every file. (2) The miners' warning is short (0.45-0.55 s),
+  so a star 0.4 s before the blow shows almost as soon as the swing starts; if that's still too late, the next step
+  is the longer raise-and-hold. (3) Other chats had Godot running; left those alone.

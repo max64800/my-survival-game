@@ -98,6 +98,40 @@ func attack(clip: String, tell: float, red := false) -> void:
 	_busy_kind = "attack"
 	_walk = ""
 	_swing_trail(clip, speed, red)
+	_glint_later(glint_wait(tell))
+
+
+## The star + "ting" on the pick a moment before the blow (owner, Nov 20: "I don't see when to parry"):
+## GLINT_LEAD seconds before it lands, or right away when the whole warning is shorter than that.
+const GLINT_LEAD := 0.4
+
+
+static func glint_wait(tell: float) -> float:
+	return maxf(0.0, tell - GLINT_LEAD)
+
+
+func _glint_later(wait: float) -> void:
+	if hand == null or not hand.is_inside_tree():
+		return
+	var h := hand
+	var go := func() -> void:
+		if not is_instance_valid(h) or not h.is_inside_tree() or dead:
+			return
+		var s := maxf(h.global_basis.get_scale().y, 0.001)
+		var at := h.global_transform * Vector3(0, TRAIL_LEN / s, 0)
+		PickGlint.on(h, TRAIL_LEN / s)
+		Sfx.play("clink", at, -3.0, 2.3)  # (a real metal clink pitched up: a small "ting")
+	if wait <= 0.01:
+		go.call()
+		return
+	var timer := Timer.new()  # (on the hand: if the creature goes away first, its timer goes with it)
+	timer.one_shot = true
+	timer.wait_time = wait
+	h.add_child(timer)
+	timer.timeout.connect(func() -> void:
+		go.call()
+		timer.queue_free())
+	timer.start()
 
 
 ## The pick's swoosh (owner, Nov 20: "trails from the enemies and bosses"): from a moment before the blow lands to
