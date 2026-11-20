@@ -6255,3 +6255,11 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   someone steps into its lane. New model `rail_wedge` (two wedges and a cracked board, 4 pieces that burst off);
   `rail_release` and the glint strips are gone. Both pass the checks. Page version 2: the blue dwarf walks across,
   stops in the middle lane and gets knocked flying; Replay plays it again. Decisions written into `rail_triple.md`.
+- **Owner OK'd batch 1** (models now in `assets/models/dungeon/`). **Batch 2** in `dungeon_mine.py`:
+  `trap_swing_boulder`, `trap_bear_jaws`, `trap_tripwire_crossbow` + `tripwire`, `trap_chest_spikes`. Real-number fix:
+  the sheet's boulder swung side to side +-60 degrees between posts 4 m apart, but with a 2.6 m chain it reaches 2.3 m
+  out and would hit the posts (only 24 degrees fit), so it swings along the path; the beam is lowered to fit a 4 m
+  ceiling. The crossbow is borrowed from the player's crossbow script (only its shape code, run on its own, because
+  that script builds everything the moment it loads). Checker: one flicker spot (the chain's last link and the
+  strap's eye turned the same way) and the niche box 1-2 cm off the wall; fixed, all 5 pass. 3D page
+  "Lampwick Trap Set". Hurdle: a long shell script broke on quote marks again, so the code went into a file.
