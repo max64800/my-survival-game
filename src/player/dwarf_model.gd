@@ -138,7 +138,12 @@ func attack(duration: float, heavy: bool, combo_step: int = -1) -> void:
 		var weapon := Combat.weapon_of(_held)
 		dwarf_rig.attack(duration, heavy, weapon, combo_step)  # (hit 1, hit 2 of the combo take turns)
 		# A pale swoosh behind the blade (brighter for a heavy blow). Not for a spear's thrust or a shield's push.
-		if weapon not in ["spear", "shield"]:  # (during the strike itself, not the wind-up: owner, Nov 18, "juicy swipes")
+		if weapon in DwarfFist.TWO_HANDED:  # (great weapons, F389: the strike starts after the slow wind-up and its
+			# hold, DwarfGreatSwing: from 0.31 to the hit at 0.40 and a little past; only the head end of the long handle)
+			get_tree().create_timer(duration * 0.30).timeout.connect(func() -> void:
+				var tip := WeaponTrail._tool_length(_hand)
+				WeaponTrail.follow(_hand, duration * 0.16, Color(1.0, 0.95, 0.85, 0.75 if heavy else 0.55), tip * 0.55, tip))
+		elif weapon not in ["spear", "shield"]:  # (during the strike itself, not the wind-up: owner, Nov 18, "juicy swipes")
 			get_tree().create_timer(duration * 0.12).timeout.connect(func() -> void:
 				WeaponTrail.follow(_hand, duration * 0.4, Color(1.0, 0.95, 0.85, 0.7 if heavy else 0.5)))
 		get_tree().create_timer(duration).timeout.connect(func(): swinging = false)

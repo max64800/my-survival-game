@@ -16,10 +16,13 @@ var frames := 0
 var _move := -1  ## which of `moves` plays now
 var markers := false
 var balls: Array[MeshInstance3D] = []
+var handle_line: MeshInstance3D
+var fixed := false  ## fixed=1: pictures of the key poses held still (the picture sheet)
+var _shots: Array = []  ## [move, time] still to take (fixed=1)
 var _move_frame := 0  ## the frame it started
 var _worst := INF  ## the handle's least room during the swing playing now (m), and when (share of the swing)
 var _worst_t := 0.0
-const NAMES := {0.28: "windup", 0.25: "windup", 0.30: "windup", 0.40: "hit", 0.42: "hit", 0.58: "follow", 0.70: "follow", 1.0: "end"}
+const NAMES := {0.13: "0lift", 0.27: "1windup", 0.36: "2middle", 0.40: "3hit", 0.75: "4recovery", 1.0: "5end"}
 
 
 func _init() -> void:
@@ -31,6 +34,7 @@ func _init() -> void:
 		if a.begins_with("walk="): walk = float(a.substr(5))
 		if a.begins_with("len="): clip_len = float(a.substr(4))
 		if a == "markers=1": markers = true
+		if a == "fixed=1": fixed = true
 	DirAccess.make_dir_recursive_absolute(out)
 	var w := Node3D.new()
 	root.add_child(w)
@@ -59,6 +63,19 @@ func _init() -> void:
 		ball.visible = markers
 		w.add_child(ball)
 		balls.append(ball)
+	# markers=1: an orange line along the checked part of the handle (drawn on top, so it shows through his body too)
+	handle_line = MeshInstance3D.new()
+	handle_line.mesh = CylinderMesh.new()
+	(handle_line.mesh as CylinderMesh).top_radius = 0.006
+	(handle_line.mesh as CylinderMesh).bottom_radius = 0.006
+	(handle_line.mesh as CylinderMesh).height = DwarfFist.HANDLE_ROOM
+	var hmat := StandardMaterial3D.new()
+	hmat.albedo_color = Color(1.0, 0.45, 0.1)
+	hmat.no_depth_test = true
+	hmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	handle_line.material_override = hmat
+	handle_line.visible = markers
+	w.add_child(handle_line)
 	cam = Camera3D.new()
 	cam.fov = 40
 	w.add_child(cam)
@@ -86,9 +103,31 @@ func _process(_d: float) -> bool:
 	if balls.size() == 2:
 		balls[0].global_position = rig.fist.target_l
 		balls[1].global_position = rig.fist.target_r
+	var f := rig.fist
+	if markers and f.fist_center.distance_to(f.left_center) > 0.01:
+		var dir := (f.fist_center - f.left_center).normalized()
+		var end := f.left_center - dir * (f.fist_half + DwarfFist.STUB)
+		var side := dir.cross(Vector3.UP if absf(dir.y) < 0.9 else Vector3.RIGHT).normalized()
+		handle_line.global_transform = Transform3D(Basis(side, dir, side.cross(dir)), end + dir * DwarfFist.HANDLE_ROOM * 0.5)
 	if frames == 40:
 		_shot("stance")
 		_report("stance")
+	if fixed:  # fixed=1: each key pose held still for its picture (a live frame can land just before a fast hit)
+		if frames == 41:
+			for mv: String in moves:
+				for key: Array in DwarfGreatSwing.MOVES[mv]:
+					if float(key[0]) < 1.0:
+						_shots.append([mv, float(key[0])])
+		var i := (frames - 44) / 4
+		if frames >= 44 and (frames - 44) % 4 == 0 and i <= _shots.size():
+			if i > 0:  # (the pose set 4 frames ago has settled: its picture)
+				var s: Array = _shots[i - 1]
+				var nm: String = NAMES.get(snappedf(s[1], 0.01), "at%d" % roundi(float(s[1]) * 100))
+				_shot("%s_%s" % [s[0], nm])
+				_report("%s %s" % [s[0], nm])
+			if i < _shots.size():
+				rig.great_fixed = DwarfGreatSwing.pose(_shots[i][0], _shots[i][1], DwarfGreatSwing.STANCE)
+		return frames > 50 + 4 * _shots.size()
 	var per := int(clip_len * 60.0) + 2
 	if frames >= 45 and (frames - 45) % per == 0 and (frames - 45) / per < moves.size():
 		if _move >= 0:

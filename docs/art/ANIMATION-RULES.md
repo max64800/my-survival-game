@@ -36,9 +36,12 @@ When a rule changes, delete the old text that disagrees. Current job: `docs/art/
 - Copy **directions, angles, twist, lean and timing** from the owner's video; never his distances (his arms are long).
 
 ## 5. Checks (a move isn't done until they pass)
-- Both fists on the handle (within 2 cm of their spots) at every key **and** at 10 in-between moments per swing.
-- Handle at least **3 cm clear** of his body (belly, beard, chest) at every key and in between.
-  Chat 7 found the chop and slam pass through him between wind-up and hit: add a middle key there.
+- Both fists on the handle (within 2 cm of their spots) at every key **and** in between: check about one moment per
+  game frame (`great_pose_tuner.gd check=1`: 120 per swing; the test: 60). 10 moments missed real touches (chat 8):
+  the strike crosses most of its arc in 2% of the swing.
+- Handle at least **3 cm clear** of his body (belly, beard, chest) at every key and in between. The keep-out guard
+  (`DwarfFist._keep_out`, small balls on his skin) slides the handle out every frame; key poses still matter (the
+  guard moves the axe head away from its target when it has to push hard).
 - Axe head ends **in front** of him at the hit (never sticking out to his side or behind).
 - Tuner tip: polish each key pose from its **own** best start. Starting from the pose before makes it get stuck.
 - Test: `test_dwarf_fist` (+ any new check goes there).
@@ -59,3 +62,7 @@ When a rule changes, delete the old text that disagrees. Current job: `docs/art/
 - A long Python edit inside a shell command broke the quoting: save scripts as files.
 - **Push the work at the end of every chat.** Chats 6-7 (great swing + tuner) were left unsaved on the PC.
 - Use `/effort high` for animation chats: normal thinking failed this job many times.
+- `pass` is a GDScript keyword; `Basis.get_column` doesn't exist (use `basis[i]`); a Packed array read out of a
+  Dictionary is a copy (appending to it does nothing). Check-compile `dwarf_fist.gd` before every run: a parse error
+  there breaks the game for every chat.
+- One shape per bone is far too fat for his body (the head bone carries the beard): use many small balls.

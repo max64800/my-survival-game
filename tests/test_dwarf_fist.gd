@@ -147,6 +147,59 @@ func test_two_handed_weapons_take_both_hands() -> void:
 	m.queue_free()
 
 
+## The animation rules' check (docs/art/ANIMATION-RULES.md 5, F389): every great axe swing, at each key and at 60
+## moments in between: both fists within 2 cm of their spots, the handle 3+ cm clear of his body, his feet where they
+## stood (hips turn, knees bend, feet planted), and at the hit the axe head in front of him.
+func test_great_swings_keep_fists_and_handle_room() -> void:
+	var m := DwarfModel.new()
+	tree.root.add_child(m)
+	var rig := m.dwarf_rig
+	m.set_held("axe_2h_copper")
+	for i in 40:
+		rig.set_motion(0.0, true, false)
+		await frames(1)
+	var tool: Node3D = rig.grip.get_child(rig.grip.get_child_count() - 1)
+	var lo := INF
+	var hi := -INF
+	for mi: MeshInstance3D in tool.find_children("*", "MeshInstance3D", true, false):
+		lo = minf(lo, mi.get_aabb().position.y)
+		hi = maxf(hi, mi.get_aabb().end.y)
+	var tool_len := (hi - lo) * tool.scale.y
+	rig.fist.measure_clearance = true
+	for mv: String in DwarfGreatSwing.MOVES:
+		var ts: Array[float] = []
+		for i in 60:  # (about one per frame of a light swing: 10 moments missed the fast strike's dips, chat 8)
+			ts.append((float(i) + 0.5) / 60.0)
+		for key: Array in DwarfGreatSwing.MOVES[mv]:
+			ts.append(float(key[0]))
+		var worst := {room = INF, miss = 0.0, feet = 0.0}
+		var at := {room = 0.0, miss = 0.0, feet = 0.0}
+		for t in ts:
+			rig.great_fixed = DwarfGreatSwing.pose(mv, t, DwarfGreatSwing.STANCE)
+			rig.set_motion(0.0, true, false)
+			await frames(2)
+			var f := rig.fist
+			if f.clearance < float(worst.room):
+				worst.room = f.clearance
+				at.room = t
+			if maxf(f.left_miss, f.right_miss) > float(worst.miss):
+				worst.miss = maxf(f.left_miss, f.right_miss)
+				at.miss = t
+			if f.feet_miss > float(worst.feet):
+				worst.feet = f.feet_miss
+				at.feet = t
+			if is_equal_approx(t, 0.40):
+				var dir := (f.fist_center - f.left_center).normalized()
+				var head := rig.global_transform.affine_inverse() * (f.left_center + dir * (tool_len * 0.9 - f.fist_half - DwarfFist.STUB))
+				check(-head.z > 0.4, "%s: at the hit the axe head is in front of him (%.0f cm)" % [mv, -head.z * 100.0])
+		check(float(worst.miss) <= 0.02, "%s: both fists on their spots all swing (worst %.1f cm at %d%%)" % [mv, float(worst.miss) * 100.0, roundi(float(at.miss) * 100)])
+		check(float(worst.room) >= 0.03, "%s: the handle 3+ cm clear of his body all swing (least %.1f cm at %d%%)" % [mv, float(worst.room) * 100.0, roundi(float(at.room) * 100)])
+		check(float(worst.feet) <= 0.02, "%s: his feet stay planted (worst %.1f cm off at %d%%)" % [mv, float(worst.feet) * 100.0, roundi(float(at.feet) * 100)])
+	rig.great_fixed = {}
+	rig.fist.measure_clearance = false
+	m.queue_free()
+
+
 ## Owner, Nov 19: the shield is held by its grip (the left fist), the forearm through the leather loops on its back.
 func test_shield_worn_on_the_forearm() -> void:
 	var m := DwarfModel.new()

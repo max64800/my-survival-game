@@ -214,7 +214,10 @@ func _great_hold(sk: Skeleton3D, delta: float) -> void:
 	var to_sk := sk_world.affine_inverse()
 	var rb := rig.global_basis.orthonormalized()
 	var q := Quaternion(rb.y, deg_to_rad(-float(p.twist))) * Quaternion(rb.x, deg_to_rad(-float(p.lean)))
-	var q_sk := _to_sk_turn(to_sk.basis, q)
+	# hips lead, knees bend, feet planted (standing only: walking, the legs are the animation's)
+	_plant = move_toward(_plant, 1.0 if rig.move_speed < 0.3 else 0.0, delta * 4.0)
+	var q_hip := _hips(sk, p, rb, _plant)
+	var q_sk := _to_sk_turn(to_sk.basis, q * q_hip.inverse())  # (the spine turns the rest of the way)
 	for bone_name: String in SPINE:  # (shared out over the spine bones, so he bends round, not at one joint)
 		var b := sk.find_bone(bone_name)
 		var g := sk.get_bone_global_pose(b)
@@ -245,22 +248,18 @@ func _great_hold(sk: Skeleton3D, delta: float) -> void:
 		g.basis = Basis(_to_sk_turn(to_sk.basis, turn)) * g.basis
 		_set_turn(sk, cb, g)
 	# the hands turn first (the handle through each fist): then it's known where each wrist must go for its fist
-	var arms := {}
-	for side in ["_l", "_r"]:
-		var up_b := sk.find_bone("upperarm" + side)
-		var low_b := sk.find_bone("lowerarm" + side)
-		var hand_b: int = _hands[side]
-		_turn_fist(sk, side, (to_sk.basis * D).normalized())
-		_measure(sk, side)
-		var sh := sk_world * sk.get_bone_global_pose(up_b).origin
-		var el := sk_world * sk.get_bone_global_pose(low_b).origin
-		var wr := sk_world * sk.get_bone_global_pose(hand_b).origin
-		var c := left_center if side == "_l" else fist_center
-		arms[side] = [up_b, low_b, hand_b, sh, (sh.distance_to(el) + el.distance_to(wr)) * 0.985, c - wr]
+	var arms := _arms(sk, D)
 	var al: Array = arms["_l"]
 	var wl: Vector3 = L - al[5]  # (the left wrist's spot)
 	if wl.distance_to(al[3]) > float(al[4]):
 		L = (al[3] as Vector3) + (wl - al[3]).normalized() * float(al[4]) + (al[5] as Vector3)
+	# never through his body, at any moment of any swing (also one cut short by the next): see _keep_out
+	var kept := _keep_out(sk, L, D, al, arms["_r"])
+	if not (kept[1] as Vector3).is_equal_approx(D):  # (the handle tipped: the hands turn again to fit it)
+		arms = _arms(sk, kept[1])
+		al = arms["_l"]
+	L = kept[0]
+	D = kept[1]
 	# the right fist: as high up the handle as the pose wants and his arm reaches
 	var ar: Array = arms["_r"]
 	var w: Vector3 = L - ar[5] - ar[3]
@@ -310,6 +309,207 @@ func _great_hold(sk: Skeleton3D, delta: float) -> void:
 		_clearance(sk, left_center - dir * (fist_half + STUB), dir)
 
 
+## Each hand turned so the handle (along D) runs through its fist, then per arm: [upper arm, forearm, hand bones,
+## shoulder (world), reach, fist middle - wrist].
+func _arms(sk: Skeleton3D, D: Vector3) -> Dictionary:
+	var sk_world := sk.global_transform
+	var to_sk := sk_world.affine_inverse()
+	var arms := {}
+	for side in ["_l", "_r"]:
+		var up_b := sk.find_bone("upperarm" + side)
+		var low_b := sk.find_bone("lowerarm" + side)
+		var hand_b: int = _hands[side]
+		_turn_fist(sk, side, (to_sk.basis * D).normalized())
+		_measure(sk, side)
+		var sh := sk_world * sk.get_bone_global_pose(up_b).origin
+		var el := sk_world * sk.get_bone_global_pose(low_b).origin
+		var wr := sk_world * sk.get_bone_global_pose(hand_b).origin
+		var c := left_center if side == "_l" else fist_center
+		arms[side] = [up_b, low_b, hand_b, sh, (sh.distance_to(el) + el.distance_to(wr)) * 0.985, c - wr]
+	return arms
+
+
+## The handle keeps KEEP_OUT from his body at every moment (owner, F389: "never through his belly or beard"). Chat 8:
+## tuning the key poses alone never managed it: the strike covers most of its arc in 2% of the swing and the handle
+## brushed his belly in between, and a combo starts each swing from wherever the last one was. So: once, his skin
+## (body, beard, kilt; not arms, hands or braids) is covered with small balls, one per KEEP_CELL patch, each riding
+## on the bone that moves it (one egg per bone was tried first: far too fat, it shoved the axe round to his front).
+## Every frame, where the handle comes too close to a ball, the left fist (and the handle with it) slides out, and
+## where his arm can't reach that far, the handle tips away round the left fist.
+const KEEP_OUT := 0.055  ## m (2 cm more than the rules ask: the balls sit a little inside the skin between their points,
+	## and the hands start each frame from where they were)
+const KEEP_CELL := 0.07  ## m, the patch each ball covers
+const KEEP_SKIP := ["arm", "hand", "index", "middle", "ring", "pinky", "thumb", "clavicle", "hair", "foot", "ball", "calf"]
+var _shapes: Array = []  ## [bone, middle (bone space), radius (m)]
+var keep_push := 0.0  ## m the guard moved the left fist this frame (the tools)
+func _fit_shapes(sk: Skeleton3D) -> void:
+	var sk_world := sk.global_transform
+	var cells := {}  # Vector3i -> [bone, sum of points (world), count, points]
+	for mi: MeshInstance3D in sk.find_children("*", "MeshInstance3D", false, false):
+		if not mi.visible or mi.skin == null or mi.mesh == null:
+			continue
+		var skin := mi.skin
+		var bind_bone := []
+		var bind_x := []
+		for i in skin.get_bind_count():
+			var bi := sk.find_bone(skin.get_bind_name(i))
+			bind_bone.append(bi)
+			bind_x.append(sk_world * sk.get_bone_global_pose(maxi(bi, 0)) * skin.get_bind_pose(i))
+		for sf in mi.mesh.get_surface_count():
+			var arr := mi.mesh.surface_get_arrays(sf)
+			var verts: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+			var bones = arr[Mesh.ARRAY_BONES]
+			var weights = arr[Mesh.ARRAY_WEIGHTS]
+			if bones == null or weights == null or verts.is_empty():
+				continue
+			var per: int = (bones as PackedInt32Array).size() / verts.size()
+			for vi in verts.size():
+				var top := 0
+				var p := Vector3.ZERO
+				for k in per:
+					var wgt: float = weights[vi * per + k]
+					if wgt <= 0.0:
+						continue
+					p += ((bind_x[bones[vi * per + k]] as Transform3D) * verts[vi]) * wgt
+					if wgt > float(weights[vi * per + top]):
+						top = k
+				var bi: int = bind_bone[bones[vi * per + top]]
+				if bi < 0:
+					continue
+				var bname := sk.get_bone_name(bi)
+				var skipped := false
+				for word: String in KEEP_SKIP:
+					if word in bname:
+						skipped = true
+						break
+				if skipped:
+					continue
+				var key := Vector3i((p / KEEP_CELL).floor())
+				key = Vector3i(key.x, key.y, key.z * 64 + bi % 64)  # (one ball per patch and bone)
+				if not cells.has(key):
+					cells[key] = [bi, Vector3.ZERO, 0, []]
+				var c: Array = cells[key]
+				c[1] = (c[1] as Vector3) + p
+				c[2] = int(c[2]) + 1
+				(c[3] as Array).append(p)
+	_shapes.clear()
+	for key: Vector3i in cells:
+		var c: Array = cells[key]
+		if int(c[2]) < 3:
+			continue
+		var mid: Vector3 = (c[1] as Vector3) / float(c[2])
+		var r := 0.0
+		for p: Vector3 in c[3]:
+			r = maxf(r, p.distance_to(mid))
+		var bone_world := sk_world * sk.get_bone_global_pose(c[0])
+		_shapes.append([c[0], bone_world.affine_inverse() * mid, maxf(r, 0.01)])
+
+
+## L, D moved so the handle (from its end, HANDLE_ROOM long) keeps KEEP_OUT from every ball. `arm` = the left arm
+## ([.., .., .., shoulder, reach, fist - wrist]) so the fist never goes past his reach; `right` = the right arm, so the
+## handle only tips as far as the right fist can still follow it (chat 8: it floated 13 cm off the handle).
+func _keep_out(sk: Skeleton3D, L: Vector3, D: Vector3, arm: Array, right: Array) -> Array:
+	if _shapes.is_empty():
+		_fit_shapes(sk)
+	var start := L
+	var sk_world := sk.global_transform
+	var bone_world := {}
+	var balls: Array = []  # [middle (world), radius]
+	for shape: Array in _shapes:
+		if not bone_world.has(shape[0]):
+			bone_world[shape[0]] = sk_world * sk.get_bone_global_pose(shape[0])
+		balls.append([(bone_world[shape[0]] as Transform3D) * (shape[1] as Vector3), shape[2]])
+	for _r in 8:
+		var worst := Vector3.ZERO
+		var worst_at := 0.0
+		var a := L - D * (fist_half + STUB)
+		for ball: Array in balls:
+			var c: Vector3 = ball[0]
+			var along := clampf((c - a).dot(D), 0.0, HANDLE_ROOM)
+			var q := a + D * along
+			var need: float = float(ball[1]) + KEEP_OUT - q.distance_to(c)
+			if need <= 0.0:
+				continue
+			var out := (q - c).normalized() if q.distance_to(c) > 1e-3 else -rig.global_basis.z
+			if need > worst.length():
+				worst = out * (need + 0.005)
+				worst_at = along - (fist_half + STUB)  # (how far up the handle from the left fist)
+		if worst == Vector3.ZERO:
+			break
+		var sh: Vector3 = arm[3]
+		var wrist: Vector3 = L + worst - (arm[5] as Vector3)
+		if wrist.distance_to(sh) <= float(arm[4]) or worst_at < 0.08:
+			L = sh + (wrist - sh).limit_length(float(arm[4])) + (arm[5] as Vector3)
+			D = _within_reach(L, D, right)  # (the right fist must still reach the handle)
+		else:  # (his arm can't reach that far: the handle tips away round the left fist instead)
+			D = _within_reach(L, (D * worst_at + worst).normalized(), right)
+	keep_push = L.distance_to(start)
+	return [L, D]
+
+
+## `D` turned (round L) just enough that the handle's line still passes within the right fist's reach.
+static func _within_reach(L: Vector3, D: Vector3, right: Array) -> Vector3:
+	var c: Vector3 = (right[3] as Vector3) + (right[5] as Vector3)  # (where the right fist can be: round this, reach far)
+	var to := c - L
+	if to.length() < 1e-3:
+		return D
+	var most := asin(clampf(float(right[4]) * 0.97 / to.length(), 0.0, 1.0))
+	var ang := D.angle_to(to)
+	if ang <= most:
+		return D
+	var ax := to.cross(D)
+	if ax.length() < 1e-5:
+		return D
+	return to.normalized().rotated(ax.normalized(), most)
+
+
+## "Hips lead, knees bend" (owner, F389; docs/art/ANIMATION-RULES.md 4): the hips turn and lean their share of the
+## swing (DwarfGreatSwing.HIP_TWIST/HIP_LEAN, a little ahead of the chest), drop by `knee` and go forward by `fwd`
+## (the lunge), and both legs bend so the feet stay where they stood, a little apart (FEET: the left foot forward).
+## Returns the hips' turn (world) so the spine only turns the rest of the way. `k` 0..1 = how much (standing).
+const FEET := {"_l": Vector3(-0.03, 0.0, 0.07), "_r": Vector3(0.03, 0.0, -0.05)}  ## m (x his right, z his front)
+const KNEE_OUT := 0.35  ## the knees point forward and this share out to the sides
+var _plant := 0.0
+var feet_miss := 0.0  ## m, how far the feet ended from where they stood this frame (the test)
+func _hips(sk: Skeleton3D, p: Dictionary, rb: Basis, k: float) -> Quaternion:
+	var pel := sk.find_bone("pelvis")
+	if pel < 0 or k <= 0.0:
+		feet_miss = 0.0
+		return Quaternion.IDENTITY
+	var to_sk := sk.global_transform.affine_inverse()
+	var hip_twist: float = p.get("hip", DwarfGreatSwing.HIP_TWIST * float(p.twist)) * k
+	var hip_lean: float = p.get("hip_lean", DwarfGreatSwing.HIP_LEAN * float(p.lean)) * k
+	var q_hip := Quaternion(rb.y, deg_to_rad(-hip_twist)) * Quaternion(rb.x, deg_to_rad(-hip_lean))
+	# where each foot stands now (skeleton space), before the hips move
+	var feet := {}
+	for side in ["_l", "_r"]:
+		var fb := sk.find_bone("foot" + side)
+		var off: Vector3 = FEET[side]
+		feet[side] = [fb, sk.get_bone_global_pose(fb), to_sk.basis * (rb * Vector3(off.x, off.y, -off.z) * k)]
+	# the hips: down and forward, then turned
+	var parent := sk.get_bone_parent(pel)
+	var to_parent := sk.get_bone_global_pose(parent).basis.inverse() if parent >= 0 else Basis()
+	var move: Vector3 = to_sk.basis * (-rb.y * float(p.get("knee", 0.0)) - rb.z * float(p.get("fwd", 0.0))) * k
+	sk.set_bone_pose_position(pel, sk.get_bone_pose_position(pel) + to_parent * move)
+	var g := sk.get_bone_global_pose(pel)
+	g.basis = Basis(_to_sk_turn(to_sk.basis, q_hip)) * g.basis
+	_set_turn(sk, pel, g)
+	# the legs bend so each foot lands back where it stood, the foot turned as before (flat on the floor)
+	feet_miss = 0.0
+	for side in ["_l", "_r"]:
+		var f: Array = feet[side]
+		var out := rb.x if side == "_r" else -rb.x
+		var pole := (to_sk.basis * (-rb.z + out * KNEE_OUT)).normalized()
+		var at: Vector3 = (f[1] as Transform3D).origin + (f[2] as Vector3)
+		for i in 2:  # (2 x 2 rounds: the squashed leg bones lose a little of each turn)
+			_reach(sk, sk.find_bone("thigh" + side), sk.find_bone("calf" + side), f[0], at, pole)
+		var fg := sk.get_bone_global_pose(f[0])
+		fg.basis = (f[1] as Transform3D).basis
+		_set_turn(sk, f[0], fg)
+		feet_miss = maxf(feet_miss, (sk.global_transform.basis * (sk.get_bone_global_pose(f[0]).origin - at)).length())
+	return q_hip
+
+
 ## The handle's room in front of his body (owner, F389: "never through his chest or beard"): how close the handle,
 ## from its end to where the head starts, comes to his skin, shirt and beard (his arms and hands don't count: they
 ## hold it). For the test and the preview tool (slow: it skins every point of the body by hand).
@@ -318,6 +518,7 @@ const HANDLE_ROOM := 0.75  ## m of handle checked from its end (past that the he
 var measure_clearance := false
 var clearance := 0.0  ## m, this frame (measure_clearance on)
 var clear_part := ""  ## the body bone nearest the handle
+var clear_along := 0.0  ## m along the handle from its end, where it comes nearest (the tools)
 var clearance_hair := 0.0  ## the same for his hair and beard braids (they hang down his front)
 func _clearance(sk: Skeleton3D, end: Vector3, dir: Vector3) -> void:
 	clearance = INF
@@ -370,6 +571,7 @@ func _clearance(sk: Skeleton3D, end: Vector3, dir: Vector3) -> void:
 				elif dist < clearance:
 					clearance = dist
 					clear_part = bname
+					clear_along = along
 
 
 ## A body point or direction (x his right, y up, z his front) in world space, by the chest's frame F.
