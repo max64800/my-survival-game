@@ -7310,3 +7310,8 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   (the Foreman) puts a Rough gem in its statue 50% of the time (`MonsterManager._kill`). Deep Onyx in a wood axe gives
   extra wood (`GameAuthority` wood harvest). Slip: first used a variable from another block (`tool`); compile caught it.
   Geodes not started (owner's limit ran out).
+- **Later still (Nov 21, owner's answers):** Root Tuber harvest gives back 1-2 seeds (never none); Cooking ★75 = a 3rd
+  food (was "4th", never built); zone 1 Cook's Pages = zone 1 recipes only (already true, only zone 1 exists; note in the
+  handover for zone 2). Storm Topaz in a shield adds bash stun; Deep Onyx extra wood now on every wood source (root trees,
+  grove trees, hanging roots, small roots, roots and giant mushrooms; one helper `onyx_wood`). Test `test_owner_nov21_rules`.
+  Slip: a "%" in a test message broke Godot's text formatting; reworded.

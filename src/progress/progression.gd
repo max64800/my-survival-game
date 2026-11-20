@@ -20,7 +20,7 @@ const SKILL_INFO := {
 	"woodcutting": ["Woodcutting", "+3% chop power, −2% stamina", ["Axe swings 10% faster when chopping", "+1 wood per Root Tree", "Chopped roots grow back faster", "15% chance of double wood"]],
 	"gathering": ["Gathering", "+3% chance of an extra item", ["Pick things up from a bit further away", "Things on the ground glow from further away", "Mushrooms and plants regrow faster near you", "Rare finds turn up more often"]],
 	"crafting": ["Crafting", "−3% craft time, better quality odds", ["Repair and upgrade cost 10% less", "Chance to save 1 material", "Craft several at once with no extra wait", "Best quality possible on anything"]],
-	"cooking": ["Cooking", "−3% cook time, +2% food buff time", ["Cooking pots make 1 more dish at a time", "Chance of a double dish", "You can eat a 4th buff food", "Your cooked food also heals a little"]],
+	"cooking": ["Cooking", "−3% cook time, +2% food buff time", ["Cooking pots make 1 more dish at a time", "Chance of a double dish", "You can eat a 3rd buff food (3 foods + 1 drink)", "Your cooked food also heals a little"]],
 	"sword": ["Sword", "+2% damage, −2% attack stamina", ["Quick step forward on the first swing", "Parry window 20% bigger", "3rd hit of a combo does extra damage", "Perfect parry gives a free critical hit back"]],
 	"axe": ["Axe", "+2% damage, −2% stamina", ["Hits make enemies bleed a little", "Hits 3 enemies instead of 2", "Heavy hits break enemy shields faster", "Heavy sweep gives stamina back for each enemy hit"]],
 	"mace": ["Mace", "+2% damage, +3% armor piercing", ["Hits crack rock-shelled enemies faster", "Stuns build up 15% faster", "Hits on armored enemies make them stagger", "Stunned enemies take extra damage"]],

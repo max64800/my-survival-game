@@ -35,7 +35,7 @@ const NORMAL := {
 	"leech": {name = "Blood Ruby", color = Color(0.6, 0.1, 0.15),
 		weapon = {leech = SMALL}, shield = {parry_heal = [1.0, 2.0, 4.0]}, tool = {}, armor = {heal = SMALL}},
 	"jolt": {name = "Storm Topaz", color = Color(1.0, 0.85, 0.25),
-		weapon = {stun = ELEMENT}, shield = {parry_stun = ELEMENT}, tool = {}, armor = {stun_back = SMALL}},
+		weapon = {stun = ELEMENT}, shield = {parry_stun = ELEMENT, bash_stun = ELEMENT}, tool = {}, armor = {stun_back = SMALL}},
 	"blight": {name = "Bog Jade", color = Color(0.4, 0.8, 0.3),
 		weapon = {poison_chance = ELEMENT}, shield = {block_poison = ELEMENT}, tool = {}, armor = {resist_poison = ELEMENT}},
 	"ember": {name = "Forge Garnet", color = Color(1.0, 0.35, 0.2),

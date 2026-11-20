@@ -32,7 +32,7 @@ Internal ids stay the old ones so saves keep working.
 | Wind Amethyst (swift) | swings −2/5/10% stamina | blocks −2/5/10% stamina | dig / chop −2/5/10% stamina | stamina refills 2/5/10% faster |
 | Deep Onyx (burrow) | – | – | dig / chop 2/5/10% faster, 2/5/10% extra ore | 2/5/10% chance of double ore and stone |
 | Blood Ruby (leech) | heal 2/5/10% of damage dealt | parry heals 1/2/4 | – | healing 2/5/10% faster (natural healing and bandages) |
-| Storm Topaz (jolt) | +5/15/25% stun power | parry stun +5/15/25% (the shield bash, once built) | – | 2/5/10% chance to stun what hits you |
+| Storm Topaz (jolt) | +5/15/25% stun power | parry stun +5/15/25%, shield bash stun +5/15/25% | – | 2/5/10% chance to stun what hits you |
 | Bog Jade (blight) | 5/15/25% chance a hit adds a poison stack | 5/15/25% chance a block poisons the attacker | – | 5/15/25% less poison |
 | Forge Garnet (ember) | 5/15/25% chance a hit sets it burning | 5/15/25% chance a parry burns the attacker | – | 5/15/25% less fire |
 | Frost Sapphire (rime) | 5/15/25% chance a hit adds a frost stack | 5/15/25% chance a parry chills the attacker | – | 5/15/25% less frost |
@@ -66,5 +66,5 @@ costs stamina, 2 s wait between bashes. Storm Topaz in the shield adds bash stun
   armor effects (`Gems.armor_bonus`, `Vitals.gear`, `MonsterManager.request_hit_back`), the new poison / fire /
   frost (`src/survival/ailments.gd`), snail and spider poison, fire / ice creatures in dungeons, the dungeon's last
   chest gem (`DungeonBuild.add_chests`, loot "big"), the boss gem (`DungeonKeys.drop_key`), statues 2%.
-- Nov 21: boss gem in the statue (`MonsterManager._kill`, any `boss = true` creature, e.g. the Foreman); extra wood from Deep Onyx in a wood axe.
-- Not yet: Storm Topaz bash stun (the bash exists now), geodes, the "highest level per metal" limit (only matters once Brilliant exists).
+- Nov 21: boss gem in the statue (`MonsterManager._kill`, any `boss = true` creature, e.g. the Foreman); extra wood from Deep Onyx in a wood axe (every wood source, `GameAuthority.onyx_wood`); Storm Topaz in a shield: +5/15/25% shield-bash stun (`bash_stun`).
+- Not yet: geodes, the "highest level per metal" limit (only matters once Brilliant exists).

@@ -481,6 +481,13 @@ func _rpc_chop_pillar(id: int) -> void:
 		request_chop_pillar(multiplayer.get_remote_sender_id(), id)
 
 
+## Deep Onyx in a wood axe: sometimes 1 extra wood (docs/design/gems.md). Every wood source uses it.
+func onyx_wood(ps: PlayerState) -> int:
+	if Items.kind(ps.selected_item()) != "axe":
+		return 0
+	return 1 if randf() < Gems.bonus(ps.inventory.get_slot(ps.hand_slot())).get("extra_ore", 0.0) else 0
+
+
 func request_chop_pillar(peer_id: int, id: int) -> void:
 	var ps := get_player(peer_id)
 	if ps == null or pillars == null:
@@ -508,6 +515,7 @@ func request_chop_pillar(peer_id: int, id: int) -> void:
 	wear_slot(ps, ps.hand_slot())
 	var out := Vector3(chest.x - axis.x, 0.0, chest.z - axis.z).normalized()
 	var wood := n * (2 if ps.progress.has_star("woodcutting", 100) and randf() < 0.15 else 1)  # ★100: double wood
+	wood += onyx_wood(ps)
 	if used + n >= RootPillars.CHOPS and ps.progress.has_star("woodcutting", 50):
 		wood += 1  # Woodcutting ★50: +1 wood per Root Tree
 	var drop_at := axis + out * float(p.width) * 0.18 + Vector3.UP * 0.4
@@ -561,6 +569,7 @@ func request_chop_grove(peer_id: int, id: int) -> void:
 	wear_slot(ps, ps.hand_slot())
 	var out := Vector3(chest.x - axis.x, 0.0, chest.z - axis.z).normalized()
 	var wood := n * (2 if ps.progress.has_star("woodcutting", 100) and randf() < 0.15 else 1)  # ★100: double wood
+	wood += onyx_wood(ps)
 	spawn_drop("rootwood", wood, axis + out * 0.4 + Vector3.UP * 0.4)
 	give_xp(peer_id, 3 * n, "woodcutting")
 	_ev_grove_used.rpc(id, used + n)
@@ -699,7 +708,7 @@ func request_break_hanging(peer_id: int, kind: String, id: String) -> void:
 			return
 		removed_hroots.append(id)
 		_ev_break_hanging.rpc("hroot", id)
-		spawn_drop("rootwood", 2, _chest(ps) + Vector3.UP * 0.3)
+		spawn_drop("rootwood", 2 + onyx_wood(ps), _chest(ps) + Vector3.UP * 0.3)
 
 
 @rpc("authority", "call_local", "reliable")
@@ -1434,7 +1443,7 @@ func _break_plant_at(ps: PlayerState, point: Vector3) -> Dictionary:
 			removed_plants.append(plant)
 			_ev_break_plant.rpc(plant)
 			# small roots give wood and grow back (owner, Nov 17: "I'm missing a ton of wood"); grass and ferns: fiber
-			spawn_drop("rootwood" if is_root else CaveLife.FIBER_DROP, 1, at + Vector3.UP * 0.3)
+			spawn_drop("rootwood" if is_root else CaveLife.FIBER_DROP, 1 + (onyx_wood(ps) if is_root else 0), at + Vector3.UP * 0.3)
 			if is_root:
 				plant_regrow[plant] = REGROW_TIME * _root_regrow_mult(ps)
 			return {state = "done", hits = 1, needed = 1, point = at, kind = "rootwood" if is_root else "fiber"}
@@ -1653,9 +1662,8 @@ func request_harvest(peer_id: int, glow_id: int) -> Dictionary:
 		count += 1  # Gathering skill
 	elif k.tool == "axe" and ps.progress.has_star("woodcutting", 100) and randf() < 0.15:
 		count *= 2  # Woodcutting ★100: double wood
-	if k.tool == "axe" and Items.kind(ps.selected_item()) == "axe" \
-			and randf() < Gems.bonus(ps.inventory.get_slot(ps.hand_slot())).get("extra_ore", 0.0):
-		count += 1  # Deep Onyx in a wood axe: extra wood (docs/design/gems.md)
+	if k.tool == "axe":
+		count += onyx_wood(ps)
 	spawn_drop(k.item, count, spot.pos + spot.normal * 0.6)
 	if k.has("extra"):
 		spawn_drop(k.extra, 1, spot.pos + spot.normal * 0.6 + Vector3.UP * 0.3)
@@ -1881,6 +1889,10 @@ func request_farm(peer_id: int, station_id: int, seed_item: String = "") -> Stri
 		var left := ps.inventory.add(st.crop, give)
 		if left > 0:
 			spawn_drop(st.crop, left, st.global_position + Vector3.UP * 0.8)
+		if st.crop == "root_tuber":  # 5 tubers give back 1-2 seeds, never none (owner, Nov 21)
+			var seeds := ps.inventory.add("tuber_seed", randi_range(1, 2))
+			if seeds > 0:
+				spawn_drop("tuber_seed", seeds, st.global_position + Vector3.UP * 0.8)
 		give_xp(peer_id, 3, "gathering")
 		_ev_farm.rpc(station_id, "", 0.0)
 		return "picked"

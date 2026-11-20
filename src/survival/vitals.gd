@@ -224,6 +224,11 @@ func consume(item_id: String, roll: float = 1.0) -> bool:
 	return true
 
 
+## 2 foods at once, 3 with Cooking ★75 (owner, Nov 21).
+func food_slots() -> int:
+	return FOOD_SLOTS + (1 if progress and progress.has_star("cooking", 75) else 0)
+
+
 func _add_buff(id: String) -> void:
 	var seconds := Foods.minutes_of(id) * 60.0
 	for b in buffs:
@@ -235,7 +240,7 @@ func _add_buff(id: String) -> void:
 	for i in buffs.size():
 		if Foods.is_drink(buffs[i].id) == drink:
 			same.append(i)
-	if same.size() >= (DRINK_SLOTS if drink else FOOD_SLOTS):
+	if same.size() >= (DRINK_SLOTS if drink else food_slots()):
 		var weakest: int = same[0]
 		for i in same:
 			if buffs[i].time_left < buffs[weakest].time_left:

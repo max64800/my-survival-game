@@ -176,3 +176,17 @@ func test_armor_gems() -> void:
 	ps.vitals.add_ailment("poison", 100)
 	check_near(ps.vitals.ailments.buildup.poison, 85.0, 0.5, "Cut Bog Jade: 15% less poison")
 	_teardown()
+
+
+func test_owner_nov21_rules() -> void:
+	await _setup()
+	check_near(Gems.effect("jolt_2", "shield").get("bash_stun", 0.0), 0.15, 0.0001, "Cut Storm Topaz in a shield: +15% bash stun")
+	check(ps.vitals.food_slots() == 2, "2 foods without Cooking ★75")
+	ps.progress.skill_level["cooking"] = 75
+	check(ps.vitals.food_slots() == 3, "Cooking ★75: a 3rd food")
+	ps.inventory.slots[ps.hand_slot()] = {id = "axe_copper", count = 1, gems = ["burrow_3"]}
+	var extra := 0
+	for i in 400:
+		extra += auth.onyx_wood(ps)
+	check(extra > 15 and extra < 70, "Polished Deep Onyx in a wood axe: about 10 in 100 extra wood (got %d of 400)" % extra)
+	_teardown()
