@@ -16,7 +16,7 @@ A great hall round a broken giant anvil, with a wing going up and a wing going d
 
 | # | Space | Level | Size | What's there | Has |
 |---|---|---|---|---|---|
-| 1 | Works Gate | Level 2 (the works) | 16 x 12 | Entrance: a round brick gate with a hammer carved over it. On the right, a barred gate with no handle on this side: the way out, opened later from the far side. | gate: exit gate (lever on the far side) |
+| 1 | Works Gate | Level 2 (the works) | 16 x 12 | Entrance: a round brick gate with a hammer carved over it. On the left, a barred gate with no handle on this side: the way out, opened later from the far side. | gate: exit gate (lever on the far side) |
 | 2 | Yard | Level 2 (the works) | 16 x 12 | Old carts and crates. Bone Thralls. | mob: thralls |
 | 3 | Clerk's Office | Level 2 (the works) | 8 x 8 | Ledgers and a chest. A loose floor stone hides a buried chest. | loot: chest; hid: buried chest |
 | 4 | Toolroom | Level 2 (the works) | 8 x 8 | Bone Wardens among the tool racks. | mob: wardens; loot: chest |

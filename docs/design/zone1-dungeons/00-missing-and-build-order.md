@@ -51,7 +51,8 @@ About 20 new models in all. The small wooden dungeons need almost nothing new (o
 3. **Keys and locked doors:** a key item per dungeon, a door that opens only for it, shared in co-op (anyone in the
    group with the key opens it), the key goes back into the mini boss when the dungeon refills. Built on the Mac (Nov 20): `src/world/dungeon_keys.gd`.
    **Owner, Nov 20:** the mini boss waits near the end, its key opens the treasure room (recipe stand + big chest), and
-   the way out ends at a barred gate in the first room, opened by a lever from inside (closes again on refill).
+   the way out ends at a one-way exit seen in the first room, on any side: a barred gate opened by a lever from inside
+   (closes again on refill; 7 dungeons) or a high ledge you jump down from onto a soft heap (5 dungeons).
 4. **Mini boss fights:** health bar with the name, one special move each.
 5. **Trap code** (request → host decides → everyone sees, like every action):
    every trap in traps-and-variety.md (triple carts, push wall, swinging boulder/anvil/crucible, rolling boulder/anvil,

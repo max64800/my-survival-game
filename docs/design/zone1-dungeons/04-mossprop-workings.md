@@ -10,13 +10,13 @@ Wooden walkways and ladders bolted up the wall of one tall cave. This one is abo
 | Built from | root wood (Delver's Shack pieces, `plank_root`), inside old dwarf stone (can't be dug) |
 | Floor to ceiling | 4 m in rooms, more in tall halls |
 | Teaches one of | Copper Axe, Crossbow, Spear, Copper-shod Boots (shuffled per world) |
-| Way out | From the Top Hall, a rope slide drops you to the barred gate at Base Camp. A lever opens it from inside. |
+| Way out | From the Top Hall, a rope slide runs to a high ledge over Base Camp. Jump down onto the soft heap below. |
 
 ## Rooms (sizes in metres on the 2 m grid, width x length)
 
 | # | Space | Level | Size | What's there | Has |
 |---|---|---|---|---|---|
-| 1 | Base Camp | Level 1 (cave floor) | 6 x 6 | Entrance. An old tent and a chest at the foot of the cliff. On the right, a barred gate with no handle on this side: the way out, opened later from the far side. | loot: chest; gate: exit gate (lever on the far side) |
+| 1 | Base Camp | Level 1 (cave floor) | 6 x 6 | Entrance. An old tent and a chest at the foot of the cliff. High in the cliff face, a dark hole far too high to climb or jump up to, with a soft heap of moss and roots below it: the way out, used later from above. | loot: chest; gate: exit ledge (too high to climb, soft landing) |
 | 2 | Lower Walkway (corridor) | Level 1 (cave floor) | 2 x 10 | A broken railing. Lost Miners shove you off: a short fall, not deadly. | mob: lost miners |
 | 3 | Rockfall Ledge | Level 1 (cave floor) | 6 x 6 | Stalactites fall when you step onto the ledge. A ladder goes up. Clue: cracks and trickling dust. Safe: shoot them down with a crossbow first, or run through fast. | trap: falling stalactites |
 | 4 | Tool Niche | Level 1 (cave floor) | 4 x 4 | Behind a boulder at the foot of the ladder: a chest of old tools, on spike holes. Clue: holes in the floor round it. Safe: shoot the chest first: the spikes fire and pull back. | hid: hidden boulder; loot: chest; trap: trapped chest |
@@ -29,7 +29,7 @@ Wooden walkways and ladders bolted up the wall of one tall cave. This one is abo
 | 11 | Upper Ladder (corridor) | Level 3 (10 m up) | 2 x 2 shaft, 7 m between levels | The last long climb. |  |
 | 12 | Crusher Gallery (corridor) | Level 3 (10 m up) | 2 x 10 | A narrow passage with a crusher. Clue: a heavy thud and grooves in the floor. Safe: watch its rhythm and run while it rises. | trap: crusher |
 | 13 | Bat Roost | Level 3 (10 m up) | 6 x 6 | Side cave full of Tunnel Rats. A loose floor stone hides a buried chest. | mob: tunnel rats; hid: buried chest |
-| 14 | Top Hall | Level 3 (10 m up) | 10 x 10 | Tunnel Rats, then the Foreman and his Lost Miners. The recipe stand. A rope slide drops you to the barred gate at Base Camp: pull the lever to open it. | mob: Foreman + miners; page: recipe stand; out: rope slide to room 1 |
+| 14 | Top Hall | Level 3 (10 m up) | 10 x 10 | Tunnel Rats, then the Foreman and his Lost Miners. The recipe stand. A rope slide carries you down to a high ledge over Base Camp: jump down onto the soft heap, and you're at the exit. | mob: Foreman + miners; page: recipe stand; out: rope slide to room 1 |
 
 Paths: 1-2, 2-3, 3-4, 3-5, 5-6, 6-7, 5-8, 8-9, 9-10, 9-11, 11-12, 12-13, 12-14, 14 → 1 (way out).
 
@@ -52,7 +52,7 @@ Paths: 1-2, 2-3, 3-4, 3-5, 5-6, 6-7, 5-8, 8-9, 9-10, 9-11, 11-12, 12-13, 12-14, 
 |---|---|---|
 | root wood building pieces (walls, floors, round doorways, stairs, pillars, beams, railings, ladders) | exists | |
 | dungeon_entrance | exists | the round door in the cave wall |
-| gate_round + lever (exit gate: lever only on the inside) | exists |  |
+| soft landing heap (moss, roots, old sacks) under a high ledge | new | the jump never hurts |
 | trap_drip_thin / trap_drip_fat / trap_drip_cluster | exists |  |
 | cave boulder (Boulders.SHAPES) | exists |  |
 | floor_spike_holes | new | shoot the chest first: the spikes fire and pull back |

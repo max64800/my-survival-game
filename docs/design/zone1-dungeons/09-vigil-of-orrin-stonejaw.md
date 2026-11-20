@@ -10,13 +10,13 @@ A temple of runes climbing up through the rock to a bell tower. The rune carving
 | Built from | Stonehold stone (`cut_stone`), inside old dwarf stone (can't be dug) |
 | Floor to ceiling | 5 m in rooms, more in tall halls |
 | Teaches one of | Copper Helm, Copper Mail, Copper Greaves, Copper Shield, Copper Sword (shuffled per world) |
-| Way out | From Orrin's Rest, a worn stone slide spirals down to the barred gate in the Pilgrims' Door room. A lever opens it from inside. |
+| Way out | From Orrin's Rest, a worn stone slide spirals down to a high ledge over the Pilgrims' Door. Jump down onto the soft heap below. |
 
 ## Rooms (sizes in metres on the 2 m grid, width x length)
 
 | # | Space | Level | Size | What's there | Has |
 |---|---|---|---|---|---|
-| 1 | Pilgrims' Door | Level 1 (entrance) | 8 x 8 | Entrance: a round door carved with glowing runes. On the right, a barred gate with no handle on this side: the way out, opened later from the far side. | gate: exit gate (lever on the far side) |
+| 1 | Pilgrims' Door | Level 1 (entrance) | 8 x 8 | Entrance: a round door carved with glowing runes. High above the door, a dark hole far too high to climb or jump up to, with a soft heap of moss and roots below it: the way out, used later from above. | gate: exit ledge (too high to climb, soft landing) |
 | 2 | Hall of Pillars | Level 1 (entrance) | 12 x 12 | Bone Thralls. Darts from holes between the pillars. Clue: rows of small holes. Safe: the darts fire in bursts; run in the gap, or hold up a shield. | mob: thralls; trap: dart wall |
 | 3 | Robing Room | Level 1 (entrance) | 8 x 8 | Old robes. A loose floor stone hides a buried chest. | loot: chest; hid: buried chest |
 | 4 | First Stair (corridor) | Level 1 (entrance) | 4 x 8 stair, 8 m between levels | Up. Loose ceiling stones fall. Clue: cracks and trickling dust. Safe: shoot them down with a crossbow first, or run through fast. | trap: falling stones |
@@ -35,7 +35,7 @@ A temple of runes climbing up through the rock to a bell tower. The rune carving
 | 17 | Bellringer's Loft | Level 3 (bell tower) | 4 x 4 | A boulder hides the bellringer's chest, on spike holes. Clue: holes in the floor. Safe: shoot the chest first. | hid: hidden boulder; loot: chest; trap: trapped chest |
 | 18 | Antechamber | Level 3 (bell tower) | 8 x 8 | Bone Thralls and Rune Callers. | mob: thralls; mob: rune callers |
 | 19 | Orrin's Vigil | Level 3 (bell tower) | 12 x 14 | Under the great bell: Orrin's Last Acolyte, a big Rune Caller, with Orrin's guard. It holds the Rune Key. Behind the bell, a stone door opens only to the Rune Key. | boss: Last Acolyte; mob: pack; key: Rune Key; lock: rune door |
-| 20 | Pilgrims' Slide (corridor) | Level 3 (bell tower) | 4 x 12 | A worn stone slide spirals down. It ends behind the barred gate in the Pilgrims' Door room: pull the lever to open it, and you're at the exit. | out: slide to room 1 |
+| 20 | Pilgrims' Slide (corridor) | Level 3 (bell tower) | 4 x 12 | A worn stone slide spirals down and shoots you out onto a high ledge over the Pilgrims' Door. Jump down onto the soft heap, and you're at the exit. | out: slide to room 1 |
 | 21 | Orrin's Rest | Level 3 (bell tower) | 8 x 8 | Where Orrin sat his last watch. The recipe stand and the big chest. | page: recipe stand; loot: big chest |
 
 Paths: 1-2, 2-3, 2-4, 4-5, 5-8, 8-6, 6-7, 8-9, 9-10, 10-11, 10-12, 12-13, 13-14, 14-15, 15-17, 15-16, 16-18, 18-19, 21-20, 20 → 1 (way out), 19-21.
@@ -64,7 +64,7 @@ Paths: 1-2, 2-3, 2-4, 4-5, 5-8, 8-6, 6-7, 8-9, 9-10, 10-11, 10-12, 12-13, 13-14,
 |---|---|---|
 | Stonehold stone building pieces (walls, floors, round doorways, stairs, pillars, beams, railings, ladders) | exists | |
 | dungeon_entrance (stone/brick version) | new | the round door in the cave wall |
-| gate_round + lever (exit gate: lever only on the inside) | exists |  |
+| soft landing heap (moss, roots, old sacks) under a high ledge | new | the jump never hurts |
 | trap_dart_wall | exists |  |
 | floor_loose_stone + chest | exists |  |
 | trap_ceiling_stones | new | stone version of the drips: loose ceiling blocks |

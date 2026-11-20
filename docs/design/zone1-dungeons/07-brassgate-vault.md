@@ -16,7 +16,7 @@ The old dwarf treasury: a toll hall and counting rooms on top, a mint below, and
 
 | # | Space | Level | Size | What's there | Has |
 |---|---|---|---|---|---|
-| 1 | Brass Gate | Level 1 (toll halls) | 8 x 8 | Entrance: a round door with a big brass lock face. On the right, a barred gate with no handle on this side: the way out, opened later from the far side. | gate: exit gate (lever on the far side) |
+| 1 | Brass Gate | Level 1 (toll halls) | 8 x 8 | Entrance: a round door with a big brass lock face. On the left, a barred gate with no handle on this side: the way out, opened later from the far side. | gate: exit gate (lever on the far side) |
 | 2 | Toll Hall | Level 1 (toll halls) | 12 x 12 | Where traders paid. Bone Wardens still stand guard. | mob: wardens; loot: chest |
 | 3 | Counting Room | Level 1 (toll halls) | 8 x 8 | Old desks. A loose floor stone hides a buried chest. | loot: chest; hid: buried chest |
 | 4 | Guard Corridor (corridor) | Level 1 (toll halls) | 4 x 12 | A thin wire fires a crossbow from a guard slot. Clue: a shiny wire at ankle height. Safe: step over it, or cut it. | trap: tripwire crossbow |

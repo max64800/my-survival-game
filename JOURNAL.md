@@ -5747,3 +5747,13 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
     "illicit activities" / "harassment". Claude tried to reword one and the safety check stopped that, so they were
     skipped. Their sheets name an existing model or picture to copy the look from instead.
 - **Not done:** the "maybe" stone/brick versions of wall_cracked, floor_loose_stone, floor_old; the healing shrine check.
+
+## Nov 20 (Mac): the one-way exit can be a gate or a high ledge (F237)
+- **Owner:** the exit in the first room doesn't have to be a gate on the right. It can be on any side, and sometimes it's
+  a hole high in the wall that you can't reach from below, only jump down from.
+- **Owner's picks:** two kinds: a barred gate + lever, or a high ledge. Jumping down never hurts (soft heap of moss and roots).
+- **Which gets which:** where the way back comes out above the first room it's a ledge (Mossgate, Mossprop, the
+  Quiet Barrows, Vigil of Orrin, Cinderhold); the other 7 keep the lever gate. Sides vary: left, right, back wall, above the door.
+- Pages, room files 02-12, Mossgate's plan (01) and the build list (00) updated; the generator lists a "soft landing heap"
+  model for ledges. The rules check passes. The ledge needs no code; the lever-gate code stays for the 7 gate dungeons.
+- Hurdle (Claude): one text swap missed because a code comment wrapped differently than expected; fixed by hand.

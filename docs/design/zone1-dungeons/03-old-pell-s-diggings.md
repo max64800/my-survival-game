@@ -16,7 +16,7 @@ A miner's hut at the top, then a shaft straight down into what he dug out below.
 
 | # | Space | Level | Size | What's there | Has |
 |---|---|---|---|---|---|
-| 1 | Pell's Hut | Level 1 (hut) | 6 x 6 | Entrance. Bed, table, a chest, a trapdoor in the floor. On the right, a barred gate with no handle on this side: the way out, opened later from the far side. | loot: chest; gate: exit gate (lever on the far side) |
+| 1 | Pell's Hut | Level 1 (hut) | 6 x 6 | Entrance. Bed, table, a chest, a trapdoor in the floor. In the back wall, a barred gate with no handle on this side: the way out, opened later from the far side. | loot: chest; gate: exit gate (lever on the far side) |
 | 2 | Winch Shed | Level 1 (hut) | 6 x 6 | Over the shaft. A thin wire fires a hidden crossbow. Clue: a shiny wire at ankle height. Safe: step over it, or cut it. | trap: tripwire crossbow |
 | 3 | Pantry | Level 1 (hut) | 4 x 4 | Shelves of old jars. The back wall is cracked: Pell's stash is behind it. | hid: cracked wall; loot: stash |
 | 4 | The Shaft (corridor) | Level 2 (6 m down) | 2 x 2 shaft, 7 m between levels | A long ladder down, with Tunnel Rats in the side holes. | mob: tunnel rats |

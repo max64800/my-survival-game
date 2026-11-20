@@ -10,13 +10,13 @@ A foundry on both sides of one huge chasm. You climb up through it, crossing the
 | Built from | Hearthbrick clay brick (`clay_brick`), inside old dwarf stone (can't be dug) |
 | Floor to ceiling | 6 m in rooms, more in tall halls |
 | Teaches one of | Copper Mace, Two-handed Copper Axe, Two-handed Copper Mace (shuffled per world) |
-| Way out | A brick slide behind the Foundry Treasury spirals down to the barred gate in the Cinder Gate room. A lever opens it from inside. |
+| Way out | A brick slide behind the Foundry Treasury spirals down to a high ledge over the Cinder Gate. Jump down onto the soft heap below. |
 
 ## Rooms (sizes in metres on the 2 m grid, width x length)
 
 | # | Space | Level | Size | What's there | Has |
 |---|---|---|---|---|---|
-| 1 | Cinder Gate | Level 1 (ore docks) | 8 x 8 | Entrance: a round brick door, black with old smoke. On the right, a barred gate with no handle on this side: the way out, opened later from the far side. | gate: exit gate (lever on the far side) |
+| 1 | Cinder Gate | Level 1 (ore docks) | 8 x 8 | Entrance: a round brick door, black with old smoke. High in the right wall, a dark hole far too high to climb or jump up to, with a soft heap of moss and roots below it: the way out, used later from above. | gate: exit ledge (too high to climb, soft landing) |
 | 2 | Ore Dock | Level 1 (ore docks) | 16 x 12 | Ore carts on rails. Bone Thralls. | mob: thralls; loot: chest |
 | 3 | Ore Sorters | Level 1 (ore docks) | 8 x 8 | Sorting tables. Grave Creepers. | mob: creepers |
 | 4 | Tool Crib | Level 1 (ore docks) | 4 x 4 | A small store with a chest. | loot: chest |
@@ -43,7 +43,7 @@ A foundry on both sides of one huge chasm. You climb up through it, crossing the
 | 25 | Tapping Hall | Level 3 (top gantries, 12 m up) | 16 x 12 | Thralls and Creepers. Coal braziers tip over on chains. Clue: glowing coals. Safe: shoot the chain to tip it early. | trap: tipping brazier; mob: thralls; mob: creepers |
 | 26 | Ash Shrine | Level 3 (top gantries, 12 m up) | 8 x 8 | A healing shrine before the last fight. | heal: healing shrine |
 | 27 | Foundry Master's Hall | Level 3 (top gantries, 12 m up) | 16 x 16 | The Cinder Warden with the Foundry Guard. It holds the Foundry Key. At the back, a gate is locked: it needs the Foundry Key. | boss: Cinder Warden; mob: pack; key: Foundry Key; lock: locked gate |
-| 28 | Ash Slide (corridor) | Level 3 (top gantries, 12 m up) | 4 x 14 | A brick slide that spirals down. It ends behind the barred gate in the Cinder Gate room: pull the lever to open it, and you're at the exit. | out: slide to room 1 |
+| 28 | Ash Slide (corridor) | Level 3 (top gantries, 12 m up) | 4 x 14 | A brick slide spirals down to a high ledge over the Cinder Gate. Jump down onto the soft heap, and you're at the exit. | out: slide to room 1 |
 | 29 | Foundry Treasury | Level 3 (top gantries, 12 m up) | 8 x 8 | The foundry's treasure room. The recipe stand and the big chest. | page: recipe stand; loot: big chest |
 
 Paths: 1-2, 2-3, 2-4, 2-5, 5-6, 5-7, 7-8, 7-9, 9-10, 10-11, 11-12, 12-13, 12-14, 14-15, 12-16, 16-17, 16-18, 18-19, 19-21, 21-20, 21-22, 22-23, 22-24, 24-25, 25-26, 25-27, 29-28, 28 → 1 (way out), 27-29.
@@ -72,7 +72,7 @@ Paths: 1-2, 2-3, 2-4, 2-5, 5-6, 5-7, 7-8, 7-9, 9-10, 10-11, 11-12, 12-13, 12-14,
 |---|---|---|
 | Hearthbrick clay brick building pieces (walls, floors, round doorways, stairs, pillars, beams, railings, ladders) | exists | |
 | dungeon_entrance (stone/brick version) | new | the round door in the cave wall |
-| gate_round + lever (exit gate: lever only on the inside) | exists |  |
+| soft landing heap (moss, roots, old sacks) under a high ledge | new | the jump never hurts |
 | floor_loose_stone + chest | exists |  |
 | trap_brazier_tip + ember_floor | new | shoot the chain to tip it early |
 | cave boulder (Boulders.SHAPES) | exists |  |

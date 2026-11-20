@@ -16,7 +16,7 @@ A long, dark mine tunnel. Old lamps hang along it, and you light them as you go,
 
 | # | Space | Level | Size | What's there | Has |
 |---|---|---|---|---|---|
-| 1 | Lamp Room | Level 1 | 6 x 6 | Entrance. A rail cart on old tracks, the first lamp to light. On the right, a barred gate with no handle on this side: the way out, opened later from the far side. | loot: chest; gate: exit gate (lever on the far side) |
+| 1 | Lamp Room | Level 1 | 6 x 6 | Entrance. A rail cart on old tracks, the first lamp to light. On the left, a barred gate with no handle on this side: the way out, opened later from the far side. | loot: chest; gate: exit gate (lever on the far side) |
 | 2 | Rail Tunnel (corridor) | Level 1 | 2 x 10 | Long and narrow. A thin wire across the floor fires a hidden crossbow. Clue: a shiny wire at ankle height. Safe: step over it, or cut it. | trap: tripwire crossbow |
 | 3 | Cart Junction | Level 1 | 6 x 6 | Three rails side by side, sloping down. Carts come rattling down each rail at different times in a pattern: dodge the middle one, step into the middle to dodge the left one, stay there for the right one. A hit throws you like a rag doll. Clue: each rail rattles just before its cart. Safe: learn the pattern and stand in the empty lane. | mob: tunnel rats; **deadly: triple carts** |
 | 4 | Tool Store | Level 1 | 6 x 6 | Side room. One floor stone is loose: a buried chest under it. | loot: chest; hid: buried chest |

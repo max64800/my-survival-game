@@ -16,7 +16,7 @@ The great forge goes down and down: workshops at the top, the cooling and quench
 
 | # | Space | Level | Size | What's there | Has |
 |---|---|---|---|---|---|
-| 1 | Ember Gate | Level 1 (workshops) | 8 x 8 | Entrance: a round brick door, warm to the touch. On the right, a barred gate with no handle on this side: the way out, opened later from the far side. | gate: exit gate (lever on the far side) |
+| 1 | Ember Gate | Level 1 (workshops) | 8 x 8 | Entrance: a round brick door, warm to the touch. In the back wall, a barred gate with no handle on this side: the way out, opened later from the far side. | gate: exit gate (lever on the far side) |
 | 2 | Ash Hall | Level 1 (workshops) | 16 x 12 | Grey ash on everything. Bone Thralls. | mob: thralls; loot: chest |
 | 3 | Soot Corridor (corridor) | Level 1 (workshops) | 4 x 14 | Big bowls of hot coals hang on chains and tip over, spilling embers. Clue: glowing coals, creaking chains. Safe: shoot the chain so it tips early, then wait until the embers go dark. | trap: tipping brazier |
 | 4 | Tool Hall | Level 1 (workshops) | 16 x 12 | Racks of old tools. Bone Wardens. | mob: wardens; loot: chest |

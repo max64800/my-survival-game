@@ -80,7 +80,7 @@ function models(tag, sizeKey) {
   if (/molten/.test(v)) add(/moulds/.test(v) ? "mould_lid (+ cracked) over molten metal" : "molten_channel (stone channel + glowing metal surface)", "new", "never spills: works like spikes");
   if (/great press/.test(v)) add("trap_press", "new");
   if (/chasm drop/.test(v)) add("bridge_chain_section (drops and rises)", "new");
-  if (k === "gate") add("gate_round + lever (exit gate: lever only on the inside)", "exists");
+  if (k === "gate") /ledge/.test(v) ? add("soft landing heap (moss, roots, old sacks) under a high ledge", "new", "the jump never hurts") : add("gate_round + lever (exit gate: lever only on the inside)", "exists");
   if (k === "out") {
     if (/lift/.test(v)) add("lift platform + winch", "new");
     else if (/slide/.test(v)) add(stone ? "stone slide (building pieces)" : "rope slide", stone ? "exists" : "new");

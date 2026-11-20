@@ -53,7 +53,7 @@ td.n { font-variant-numeric: tabular-nums; color: var(--muted); width: 1.5em; }
 <main>
   <div class="intro">
     <h1>Medium stone dungeons</h1>
-    <p>Draft for dungeons #5 to #9 of zone 1, built from Stonehold stone inside rock you can't dig. Each has about 20 spaces over 2-3 levels (12-15 minutes), a mini boss near the end whose key opens the treasure room, two deadly traps, 4-5 other traps and 3-4 hidden things. Each teaches one of Copper Helm, Mail, Greaves, Shield and Sword (shuffled per world). No water anywhere. Every one ends the same way (owner, Nov 20): beat the mini boss, its key opens the treasure room (recipe stand + big chest), and a way out runs back to the barred gate you saw in the first room. A lever opens it from inside.</p>
+    <p>Draft for dungeons #5 to #9 of zone 1, built from Stonehold stone inside rock you can't dig. Each has about 20 spaces over 2-3 levels (12-15 minutes), a mini boss near the end whose key opens the treasure room, two deadly traps, 4-5 other traps and 3-4 hidden things. Each teaches one of Copper Helm, Mail, Greaves, Shield and Sword (shuffled per world). No water anywhere. Every one ends the same way (owner, Nov 20): beat the mini boss, its key opens the treasure room (recipe stand + big chest), and a way out runs back to the one-way exit you saw in the first room: a barred gate with a lever on the inside, or a high ledge you jump down from onto a soft heap. It can be on any side.</p>
     <p class="muted">Side views, as on the small dungeons page: each level has its main path in the middle, side rooms above and below it. Higher up the picture means higher in the cave.</p>
   </div>
 
@@ -122,7 +122,7 @@ const D = [
     facts: ["tomb", "3 levels down", "20 spaces", "~12-15 min", "deadly: Long Barrow, Ash Bridge"],
     layers: ["Level 1", "Level 2 (8 m down)", "Level 3 (16 m down)"],
     rooms: [
-      {n:1, c:0, name:"Barrow Door", what:"Entrance: a low round door under a mossy mound of stone. On the right, a barred gate with no handle on this side: the way out, opened later from the far side.", tags:["gate:exit gate (lever on the far side)"]},
+      {n:1, c:0, name:"Barrow Door", what:"Entrance: a low round door under a mossy mound of stone. High in the left wall, a dark hole far too high to climb or jump up to, with a soft heap of moss and roots below it: the way out, used later from above.", tags:["gate:exit ledge (too high to climb, soft landing)"]},
       {n:2, c:1, k:1, name:"Long Barrow", what:"A long sloping barrow. Step on the wrong stone and a huge boulder rolls down after you. Clue: a long groove in the floor, a dark hole high in the far wall. Safe: run to one of the side alcoves.", tags:["deadly:rolling boulder"]},
       {n:3, c:2, name:"First Ring", what:"Burial rooms round the stair. Bone Thralls.", tags:["mob:thralls","loot:chest"]},
       {n:4, c:2, s:-1, name:"Barrow of the Smith", what:"A loose floor stone hides a buried chest.", tags:["hid:buried chest"]},
@@ -141,18 +141,18 @@ const D = [
       {n:17, c:5, l:2, k:1, name:"Spear Gate", what:"Iron spears stab out of the walls and pull back. Clue: rows of holes, a rusty tip. Safe: crawl low, or go when they pull back.", tags:["trap:spear wall"]},
       {n:18, c:4, l:2, s:1, name:"Mourning Niche", what:"A boulder hides a niche with a chest.", tags:["hid:hidden boulder","loot:chest"]},
       {n:19, c:6, l:2, name:"First King's Barrow", what:"The oldest grave. The Barrow Keeper, a big Rune Caller, with its pack. It holds the Barrow Key. The King's grave chamber is behind a locked gate: it needs the Barrow Key.", tags:["boss:Barrow Keeper","mob:pack","key:Barrow Key","lock:locked gate"]},
-      {n:20, c:6, l:2, s:1, k:1, name:"Air Shaft", what:"An old air shaft with a rope: climb up. It ends behind the barred gate in the Barrow Door room: pull the lever to open it, and you're at the exit.", tags:["out:climb to room 1"]},
+      {n:20, c:6, l:2, s:1, k:1, name:"Air Shaft", what:"An old air shaft with a rope: climb up, and a short crawl brings you out on a high ledge over the Barrow Door. Jump down onto the soft heap, and you're at the exit.", tags:["out:climb to room 1"]},
       {n:21, c:6, l:2, s:-1, name:"King's Grave Chamber", what:"Behind the Barrow gate: the First King's grave. The recipe stand and the big chest.", tags:["page:recipe stand","loot:big chest"]},
     ],
     links: [[1,2],[2,3],[3,4],[4,5],[3,6],[6,7],[7,8],[8,9],[7,10],[10,11],[11,12],[10,13],[7,14],[14,15],[15,16],[16,17],[15,18],[17,19],[21,20],[20,1,"out"],[19,21]],
-    outNote: "From the King's Grave Chamber, a rope up the old Air Shaft leads to the barred gate in the Barrow Door room. A lever opens it from inside.",
+    outNote: "From the King's Grave Chamber, a rope up the old Air Shaft leads to a high ledge over the Barrow Door. Jump down onto the soft heap below.",
   },
   {
     name: "Brassgate Vault", idea: "The old dwarf treasury: a toll hall and counting rooms on top, a mint below, and the strongroom behind a door only the Vault Captain's key opens.",
     facts: ["vault", "2 levels", "20 spaces", "~12-15 min", "deadly: Coin Chute, Pendulum Hall"],
     layers: ["Level 1 (toll halls)", "Level 2 (the mint)"],
     rooms: [
-      {n:1, c:0, name:"Brass Gate", what:"Entrance: a round door with a big brass lock face. On the right, a barred gate with no handle on this side: the way out, opened later from the far side.", tags:["gate:exit gate (lever on the far side)"]},
+      {n:1, c:0, name:"Brass Gate", what:"Entrance: a round door with a big brass lock face. On the left, a barred gate with no handle on this side: the way out, opened later from the far side.", tags:["gate:exit gate (lever on the far side)"]},
       {n:2, c:1, name:"Toll Hall", what:"Where traders paid. Bone Wardens still stand guard.", tags:["mob:wardens","loot:chest"]},
       {n:3, c:1, s:1, name:"Counting Room", what:"Old desks. A loose floor stone hides a buried chest.", tags:["loot:chest","hid:buried chest"]},
       {n:4, c:2, k:1, name:"Guard Corridor", what:"A thin wire fires a crossbow from a guard slot. Clue: a shiny wire at ankle height. Safe: step over it, or cut it.", tags:["trap:tripwire crossbow"]},
@@ -212,7 +212,7 @@ const D = [
     facts: ["rune temple", "3 levels up", "20 spaces", "~12-15 min", "deadly: Hall of Echoes, Crusher Steps"],
     layers: ["Level 3 (bell tower)", "Level 2 (rune halls)", "Level 1 (entrance)"],
     rooms: [
-      {n:1, c:0, l:2, name:"Pilgrims' Door", what:"Entrance: a round door carved with glowing runes. On the right, a barred gate with no handle on this side: the way out, opened later from the far side.", tags:["gate:exit gate (lever on the far side)"]},
+      {n:1, c:0, l:2, name:"Pilgrims' Door", what:"Entrance: a round door carved with glowing runes. High above the door, a dark hole far too high to climb or jump up to, with a soft heap of moss and roots below it: the way out, used later from above.", tags:["gate:exit ledge (too high to climb, soft landing)"]},
       {n:2, c:1, l:2, name:"Hall of Pillars", what:"Bone Thralls. Darts from holes between the pillars. Clue: rows of small holes. Safe: the darts fire in bursts; run in the gap, or hold up a shield.", tags:["mob:thralls","trap:dart wall"]},
       {n:3, c:1, l:2, s:-1, name:"Robing Room", what:"Old robes. A loose floor stone hides a buried chest.", tags:["loot:chest","hid:buried chest"]},
       {n:4, c:2, l:2, k:1, name:"First Stair", what:"Up. Loose ceiling stones fall. Clue: cracks and trickling dust. Safe: shoot them down with a crossbow first, or run through fast.", tags:["trap:falling stones"]},
@@ -231,11 +231,11 @@ const D = [
       {n:17, c:8, l:0, s:-1, name:"Bellringer's Loft", what:"A boulder hides the bellringer's chest, on spike holes. Clue: holes in the floor. Safe: shoot the chest first.", tags:["hid:hidden boulder","loot:chest","trap:trapped chest"]},
       {n:18, c:10, l:0, name:"Antechamber", what:"Bone Thralls and Rune Callers.", tags:["mob:thralls","mob:rune callers"]},
       {n:19, c:11, l:0, name:"Orrin's Vigil", what:"Under the great bell: Orrin's Last Acolyte, a big Rune Caller, with Orrin's guard. It holds the Rune Key. Behind the bell, a stone door opens only to the Rune Key.", tags:["boss:Last Acolyte","mob:pack","key:Rune Key","lock:rune door"]},
-      {n:20, c:11, l:0, s:1, k:1, name:"Pilgrims' Slide", what:"A worn stone slide spirals down. It ends behind the barred gate in the Pilgrims' Door room: pull the lever to open it, and you're at the exit.", tags:["out:slide to room 1"]},
+      {n:20, c:11, l:0, s:1, k:1, name:"Pilgrims' Slide", what:"A worn stone slide spirals down and shoots you out onto a high ledge over the Pilgrims' Door. Jump down onto the soft heap, and you're at the exit.", tags:["out:slide to room 1"]},
       {n:21, c:11, l:0, s:-1, name:"Orrin's Rest", what:"Where Orrin sat his last watch. The recipe stand and the big chest.", tags:["page:recipe stand","loot:big chest"]},
     ],
     links: [[1,2],[2,3],[2,4],[4,5],[5,8],[8,6],[6,7],[8,9],[9,10],[10,11],[10,12],[12,13],[13,14],[14,15],[15,17],[15,16],[16,18],[18,19],[21,20],[20,1,"out"],[19,21]],
-    outNote: "From Orrin's Rest, a worn stone slide spirals down to the barred gate in the Pilgrims' Door room. A lever opens it from inside.",
+    outNote: "From Orrin's Rest, a worn stone slide spirals down to a high ledge over the Pilgrims' Door. Jump down onto the soft heap below.",
   },
 ];
 

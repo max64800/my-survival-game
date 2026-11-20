@@ -10,13 +10,13 @@ Rings of small burial rooms around a deep spiral stair. Each level down is older
 | Built from | Stonehold stone (`cut_stone`), inside old dwarf stone (can't be dug) |
 | Floor to ceiling | 5 m in rooms, more in tall halls |
 | Teaches one of | Copper Helm, Copper Mail, Copper Greaves, Copper Shield, Copper Sword (shuffled per world) |
-| Way out | From the King's Grave Chamber, a rope up the old Air Shaft leads to the barred gate in the Barrow Door room. A lever opens it from inside. |
+| Way out | From the King's Grave Chamber, a rope up the old Air Shaft leads to a high ledge over the Barrow Door. Jump down onto the soft heap below. |
 
 ## Rooms (sizes in metres on the 2 m grid, width x length)
 
 | # | Space | Level | Size | What's there | Has |
 |---|---|---|---|---|---|
-| 1 | Barrow Door | Level 1 | 8 x 8 | Entrance: a low round door under a mossy mound of stone. On the right, a barred gate with no handle on this side: the way out, opened later from the far side. | gate: exit gate (lever on the far side) |
+| 1 | Barrow Door | Level 1 | 8 x 8 | Entrance: a low round door under a mossy mound of stone. High in the left wall, a dark hole far too high to climb or jump up to, with a soft heap of moss and roots below it: the way out, used later from above. | gate: exit ledge (too high to climb, soft landing) |
 | 2 | Long Barrow (corridor) | Level 1 | 4 x 12 | A long sloping barrow. Step on the wrong stone and a huge boulder rolls down after you. Clue: a long groove in the floor, a dark hole high in the far wall. Safe: run to one of the side alcoves. | **deadly: rolling boulder** |
 | 3 | First Ring | Level 1 | 12 x 12 | Burial rooms round the stair. Bone Thralls. | mob: thralls; loot: chest |
 | 4 | Barrow of the Smith | Level 1 | 8 x 8 | A loose floor stone hides a buried chest. | hid: buried chest |
@@ -35,7 +35,7 @@ Rings of small burial rooms around a deep spiral stair. Each level down is older
 | 17 | Spear Gate (corridor) | Level 3 (16 m down) | 4 x 12 | Iron spears stab out of the walls and pull back. Clue: rows of holes, a rusty tip. Safe: crawl low, or go when they pull back. | trap: spear wall |
 | 18 | Mourning Niche | Level 3 (16 m down) | 4 x 4 | A boulder hides a niche with a chest. | hid: hidden boulder; loot: chest |
 | 19 | First King's Barrow | Level 3 (16 m down) | 12 x 14 | The oldest grave. The Barrow Keeper, a big Rune Caller, with its pack. It holds the Barrow Key. The King's grave chamber is behind a locked gate: it needs the Barrow Key. | boss: Barrow Keeper; mob: pack; key: Barrow Key; lock: locked gate |
-| 20 | Air Shaft (corridor) | Level 3 (16 m down) | 4 x 12 | An old air shaft with a rope: climb up. It ends behind the barred gate in the Barrow Door room: pull the lever to open it, and you're at the exit. | out: climb to room 1 |
+| 20 | Air Shaft (corridor) | Level 3 (16 m down) | 4 x 12 | An old air shaft with a rope: climb up, and a short crawl brings you out on a high ledge over the Barrow Door. Jump down onto the soft heap, and you're at the exit. | out: climb to room 1 |
 | 21 | King's Grave Chamber | Level 3 (16 m down) | 8 x 8 | Behind the Barrow gate: the First King's grave. The recipe stand and the big chest. | page: recipe stand; loot: big chest |
 
 Paths: 1-2, 2-3, 3-4, 4-5, 3-6, 6-7, 7-8, 8-9, 7-10, 10-11, 11-12, 10-13, 7-14, 14-15, 15-16, 16-17, 15-18, 17-19, 21-20, 20 → 1 (way out), 19-21.
@@ -64,7 +64,7 @@ Paths: 1-2, 2-3, 3-4, 4-5, 3-6, 6-7, 7-8, 8-9, 7-10, 10-11, 11-12, 10-13, 7-14, 
 |---|---|---|
 | Stonehold stone building pieces (walls, floors, round doorways, stairs, pillars, beams, railings, ladders) | exists | |
 | dungeon_entrance (stone/brick version) | new | the round door in the cave wall |
-| gate_round + lever (exit gate: lever only on the inside) | exists |  |
+| soft landing heap (moss, roots, old sacks) under a high ledge | new | the jump never hurts |
 | trap_roll_boulder + ramp groove + side alcoves | new |  |
 | floor_loose_stone + chest | exists |  |
 | trap_ceiling_stones | new | stone version of the drips: loose ceiling blocks |

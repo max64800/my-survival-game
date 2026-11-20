@@ -8,9 +8,10 @@ extends Node
 ## An hour of play after a key dropped (DungeonLoot.REFILL), it goes back to its boss: it vanishes from every bag,
 ## chest and floor, and its lock closes again.
 ##
-## Owner, Nov 20: the locked door is in the boss room and opens the treasure room. Every dungeon (all 12) also has an
-## exit gate in its first room with no handle outside: the way out ends behind it, and a lever there opens it. It
-## closes again when the dungeon refills (an hour after it was opened, while nobody is near).
+## Owner, Nov 20: the locked door is in the boss room and opens the treasure room. The way out ends at a one-way exit
+## seen in the first room: in 7 dungeons a barred gate with no handle outside that a lever inside opens (it closes
+## again when the dungeon refills: an hour after it was opened, while nobody is near). The other 5 end on a high ledge
+## you jump down from onto a soft heap (no code needed).
 ##
 ## Hook-in (PC, not done yet): in GameAuthority._ready, like Storage: `keys = DungeonKeys.new(); keys.name = "DungeonKeys";
 ## add_child(keys)`. Door built → add_door(dungeon_id, pos). E on the door → ask_unlock(dungeon_id). Boss spawns
