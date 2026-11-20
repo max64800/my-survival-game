@@ -595,6 +595,36 @@ func test_boulder_breaks_and_comes_back() -> void:
 	_teardown()
 
 
+## Owner F447 (Nov 20): a charging beetle bursts a boulder, and it drops all the stone mining it to the end would give.
+func test_charging_beetle_smash_gives_all_the_stone() -> void:
+	await _setup(42)
+	var bo := Boulders.new()
+	auth.get_parent().add_child(bo)
+	bo.build(world.maker, Callable(), true)
+	auth.boulders = bo
+	var r := bo.rock(0)
+	check(not r.is_empty(), "there's a boulder")
+	if r.is_empty():
+		_teardown()
+		return
+	player.global_position = (r.pos as Vector3) + Vector3(1.6, 0.1, 0.0)
+	auth.request_hit_boulder(1, 0)  # one pickaxe-less hit first: 1 stone
+	var stone_before := _stone_on_floor()
+	check(auth.smash_boulder(0, (r.pos as Vector3) + Vector3(3, 0, 0)), "the charge bursts it")
+	check_eq(_stone_on_floor() - stone_before, (Boulders.HITS - 1) * 2, "all the stone its other hits would give")
+	check(bo.rock(0).broken, "it is broken")
+	check(not auth.smash_boulder(0, Vector3.ZERO), "a broken boulder can't burst twice")
+	_teardown()
+
+
+func _stone_on_floor() -> int:
+	var n := 0
+	for d in auth.drops_root.get_children():
+		if d is Drop and (d as Drop).item_id == "stone":
+			n += (d as Drop).count
+	return n
+
+
 ## Owner, Nov 19 ("yes"): dig the rock out from under a boulder and it drops into the hole, never floating in the air.
 func test_boulder_drops_when_dug_under() -> void:
 	await _setup(42)

@@ -1121,16 +1121,30 @@ func test_dazed_shows_stars_and_sways() -> void:
 		check(m._stars == null or not m._stars.visible, "%s: no stars when not dazed" % kind)
 		m.set_hp(m.hp, 1.0, true)  # the host says: dazed
 		var tilt := 0.0
+		var whole := 0.0
+		var legs_moved := 0.0
+		var legs: Array = m.model.get_meta("legs", [])
+		var leg_rest := legs.map(func(l: Array) -> Transform3D: return (l[0] as Node3D).transform)
+		var body: Node3D = m.model.get_meta("forged_root").find_child("body", true, false) if m.model.has_meta("forged_root") else null
+		var body_rest: Transform3D = body.transform if body else Transform3D()
 		for i in 40:
 			m._process(0.02)
-			tilt = maxf(tilt, absf(m.model.rotation.z))
+			whole = maxf(whole, absf(m.model.rotation.z))
+			if body:
+				tilt = maxf(tilt, body.transform.basis.get_euler().z - body_rest.basis.get_euler().z)
+			for k in legs.size():
+				legs_moved = maxf(legs_moved, (legs[k][0] as Node3D).transform.origin.distance_to(leg_rest[k].origin))
 		check(m._stars != null and m._stars.visible, "%s: stars while dazed" % kind)
 		check_eq(m._stars.get_child_count(), 4, "%s: 4 stars" % kind)
 		check(m._stars.global_position.y > m.global_position.y, "%s: the stars are up by its head" % kind)
 		if kind == "rock_beetle":
-			check(tilt > 0.03 and tilt < 0.2, "the beetle sways a little (%.2f rad)" % tilt)
+			check(tilt > 0.03 and tilt < 0.2, "the beetle's shell sways a little (%.2f rad)" % tilt)
+			check(whole < 0.001, "only the shell sways, not the whole beetle")
+			check(legs_moved < 0.001, "its legs stay where they are")
 		m.set_hp(m.hp, 0.0, false)  # the daze is over
 		m._process(0.02)
 		check(not m._stars.visible, "%s: stars gone when the daze is over" % kind)
+		if kind == "rock_beetle":
+			check(body.transform.is_equal_approx(body_rest), "the shell is back in its place")
 		m.queue_free()
 	_teardown()

@@ -411,9 +411,11 @@ func smash_boulder(id: int, from: Vector3) -> bool:
 		return false
 	var at: Vector3 = Boulders.middle(r)
 	var out := ((from - at) * Vector3(1, 0, 1)).normalized()
+	var left: int = Boulders.HITS - int(boulder_hits.get(id, 0))
 	boulder_hits.erase(id)
 	boulder_back[id] = Boulders.RESPAWN
-	spawn_drop("stone", 3, at + out * 0.6 * float(r.scale) + Vector3.UP * 0.3)
+	# Everything mining it to the end would give (owner, Nov 20): 2 stone for each hit it still had left.
+	spawn_drop("stone", left * 2, at + out * 0.6 * float(r.scale) + Vector3.UP * 0.3)
 	_ev_boulder.rpc(id, true)
 	return true
 
@@ -428,8 +430,10 @@ func smash_column(cid: int, from: Vector3) -> bool:
 		return false
 	var at := poi_field.column_middle(cid)
 	var out := ((from - at) * Vector3(1, 0, 1)).normalized()
+	# Everything mining it to the end would give (owner, Nov 20): 2 stone for each hit left, plus the last pile.
+	var left: int = int(c.hits) - int(column_hits.get(cid, 0))
 	column_hits.erase(cid)
-	spawn_drop("stone", 3, at + out * (float(c.width) * 0.6 + 0.3))
+	spawn_drop("stone", left * 2 + 3, at + out * (float(c.width) * 0.6 + 0.3))
 	var gone: Array = world_state.get("columns", []).duplicate()
 	gone.append(cid)
 	world_state.columns = gone

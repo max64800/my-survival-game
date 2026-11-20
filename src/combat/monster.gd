@@ -794,6 +794,7 @@ func _process(delta: float) -> void:
 	elif model.has_meta("foot"):
 		MonsterModel.dazed_sway(model, 0.0)  # a snail hops, it doesn't waddle
 	else:
+		MonsterModel.dazed_sway(model, 0.0)  # (puts a swayed shell back once the daze is over)
 		model.rotation.z = sin(_clock * (5.0 + _speed * 2.5)) * 0.07 * clampf(_speed / 3.0, 0.0, 1.0)  # waddle
 
 
@@ -804,8 +805,11 @@ func _creature_fx(delta: float) -> void:
 		_dust_t -= delta
 		if _dust_t <= 0.0:
 			var fast := _speed > 2.5
-			_dust_t = 0.06 if fast else 0.25  # pawing the ground, then a trail while it thunders along
-			Fx.dust(get_parent(), global_position, Color(0.45, 0.4, 0.33), 3 if fast else 1, 0.5 * _size)
+			_dust_t = 0.05 if fast else 0.2  # pawing the ground, then a trail while it thunders along
+			# Big, light puffs left behind it (owner, Nov 20, liked the 3D page's trail: the old small dark ones
+			# were hard to see in a cave).
+			var back := global_basis.z * Vector3(1, 0, 1) * 0.4 * _size
+			Fx.dust(get_parent(), global_position + back, Color(0.66, 0.6, 0.5), 4 if fast else 2, (0.9 if fast else 0.7) * _size)
 		if _charging <= 0.0:
 			MonsterModel.set_angry(model, false)
 			if data.get("straight_charge", false):  # the charge ends with a thump: stone chips and dust shake off its shell

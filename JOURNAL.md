@@ -6304,3 +6304,23 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - **Hurdles (Claude's own):** my first edit script failed because `monster.gd` has Windows line endings (fixed by
   converting before and after); a missing type made Godot refuse to load the scripts (`var dazed: bool`); the stars
   test first failed on the bat, which was asleep upside down, so its stars were "under" it.
+
+## November 20, 2026 (PC, enemies Claude, chat 1, later): the owner's look at the beetle page
+- **3D page "Rock Beetle Daze and Charge"** (buttons for each new look, with the old look beside it). It didn't load
+  at first: artifact pages won't serve `.glb` files, and when I sent the model as text, the page's safety rules blocked
+  the "data:" link inside it. Fixed by having the page rebuild the model from the text itself, and loading its
+  pictures as plain images.
+- **Owner's notes (F453-F456):** stars smaller and higher (they clipped through the shell); only the shell sways,
+  not the whole beetle; what a charge breaks drops everything mining it would give; and the dust trail like the
+  page's (the game had one, but small and dark, so he never saw it). I asked about one unclear line ("does help, a
+  lot"); he said: nothing more than the breaking and the full drop.
+- **Done:** stars a third smaller, above the creature's top; shell, head and feelers sway about the shell's
+  underside while the legs stay put; a smashed boulder gives 2 stone per hit it had left (column: same + last pile);
+  bigger, lighter dust puffs left behind the beetle. New test `test_charging_beetle_smash_gives_all_the_stone`;
+  the sway test now checks the legs stay still and the shell goes back after the daze.
+- **Dungeon test gear (F457):** the owner felt far too strong in the dungeon: "Test the dungeon" gave silver
+  everything. Now it's copper (pickaxe, sword, shield, crossbow, mace, spear, axe; the armor was copper already).
+  **Hurdle (Claude's own, a repeat):** I saved FEEDBACK-done.md with the beetle chat's 4 unsaved lines (F453-F456) in
+  it, the same mistake as an hour before. I looked at the size of the change but didn't stop when it was bigger than
+  my one line. Fix for next time: if a shared file already has someone else's changes, don't save it; leave my line
+  unsaved for that chat to save, and say so.

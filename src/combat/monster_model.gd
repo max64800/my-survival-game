@@ -603,13 +603,46 @@ static func _blinks(model: Node3D, clock: float, flinch: float, asleep: bool) ->
 		(b[0] as MeshInstance3D).basis = (b[1] as Basis) * Basis(Vector3.RIGHT, BLINK_SHUT * shut)  # (a basis: tucked this far back, its angles can read as flipped)
 
 
-## Dazed (stunned): sway the snail's body only, its foot stays put (owner, Nov 17). Other creatures tip as a whole.
+## Dazed (stunned): sway the snail's body only, its foot stays put (owner, Nov 17). A creature with legs (beetles,
+## spiders) sways only its shell, head and feelers; the legs stay planted (owner, Nov 20). Others tip as a whole.
+## Call it with 0 once the daze is over to put the shell back.
 static func dazed_sway(model: Node3D, angle: float) -> void:
 	if model.has_meta("foot"):
 		model.set_meta("sway", angle)
 		model.rotation.z = 0.0
-	else:
+		return
+	var shell := _shell_parts(model)
+	if shell.is_empty():
 		model.rotation.z = angle
+		return
+	if angle == 0.0 and not model.get_meta("swayed", false):
+		return
+	model.set_meta("swayed", angle != 0.0)
+	model.rotation.z = 0.0
+	var pivot: Vector3 = model.get_meta("shell_pivot")
+	var about := Transform3D(Basis.IDENTITY, pivot) * Transform3D(Basis(Vector3.BACK, angle), Vector3.ZERO) 		* Transform3D(Basis.IDENTITY, -pivot)
+	for p in shell:
+		(p[0] as Node3D).transform = about * (p[1] as Transform3D)
+
+
+## The parts that sway when dazed: everything beside the "body" part except the legs (their shins hang on them).
+## Remembered with their resting place; the turn goes about the middle of the shell's underside.
+static func _shell_parts(model: Node3D) -> Array:
+	if model.has_meta("shell_parts"):
+		return model.get_meta("shell_parts")
+	var list := []
+	var root: Node3D = model.get_meta("forged_root", null)
+	var legs: Array = model.get_meta("legs", [])
+	var body: MeshInstance3D = root.find_child("body", true, false) as MeshInstance3D if root else null
+	if body and not legs.is_empty():
+		var leg_nodes := legs.map(func(l: Array) -> Node: return l[0])
+		for c in body.get_parent().get_children():
+			if c is Node3D and not leg_nodes.has(c):
+				list.append([c, (c as Node3D).transform])
+		var b := body.get_aabb()
+		model.set_meta("shell_pivot", body.transform * Vector3(b.get_center().x, b.position.y, b.get_center().z))
+	model.set_meta("shell_parts", list)
+	return list
 
 
 ## Dazed (owner F449, every creature): a ring of 4 little chunky gold stars circling over its head. Each star is
@@ -629,7 +662,7 @@ static func add_daze_stars(model: Node3D) -> Node3D:
 	var r: float = head[1]
 	for i in 4:
 		var star := MeshInstance3D.new()
-		star.mesh = _star_mesh(0.075 * clampf(r / 0.3, 0.8, 1.6), i)
+		star.mesh = _star_mesh(0.05 * clampf(r / 0.2, 0.8, 1.5), i)  # (smaller, owner Nov 20)
 		star.material_override = mat
 		star.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		star.set_meta("angle", TAU * i / 4.0)
@@ -670,13 +703,15 @@ static func _head_spot(model: Node3D) -> Array:
 				have_eyes = true
 	if not have_box:
 		return [Vector3(0, 0.8, 0), 0.25]
-	var top := box.end.y
+	# Above everything (owner, Nov 20: they clipped through the beetle's shell), over its eyes.
+	var top := box.end.y + 0.1
 	var width := minf(box.size.x, box.size.z)
+	var ring := clampf(width * 0.2, 0.1, 0.28)
 	if have_eyes:
 		var c := eyes.get_center()
-		return [Vector3(c.x, maxf(eyes.end.y + 0.18, c.y + 0.25), c.z), clampf(width * 0.3, 0.14, 0.4)]
+		return [Vector3(c.x, maxf(top, eyes.end.y + 0.25), c.z), ring]
 	var front := box.position.z + box.size.z * 0.25  # (creatures face -Z)
-	return [Vector3(box.get_center().x, top + 0.12, front), clampf(width * 0.3, 0.14, 0.4)]
+	return [Vector3(box.get_center().x, top, front), ring]
 
 
 ## A node's place inside the model (its parents' transforms, up to the model).
