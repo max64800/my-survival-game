@@ -6799,3 +6799,32 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   (5) Longer torn ends reached below the floor and lifted the whole pile, so the floor chips hovered: beam raised.
   (6) The shell tool choked twice on apostrophes inside long scripts: those patches now go through files.
   All 23 junk models are in `assets/models/dungeon/` and pass the checker.
+
+## November 20, 2026 (PC, junk-models Claude, chat 3): dungeon junk batch 4 (stone junk), owner OK'd
+
+- **What we did:** batch 4 for the medium dungeons: `junk_urns`, `junk_statue_head`, `junk_armour_pile`,
+  `junk_coffin_lid`. Owner's notes and what changed:
+  1. "The head is floating": it was 10 cm up in the air. Now it rests on the floor, sunk in a little.
+  2. "I like the clay vases, another 5 different broken ones": `junk_urn_broken_a`..`_e`, each smashed its own way
+     (a low stump with shards spread all round; one tall tooth of wall left standing; knocked over on its side with
+     shards spilled out; a small one with its lid knocked off beside it; a wide squat one split in half, the other half
+     lying on its back).
+  3. "The helmets need to be hollow, put one upside down, and the armour needs a lot more details": the helms are now
+     thin domes open underneath (one sits on its rim with a dent, one lies upside down so you see inside). The
+     breastplate got a ridge down the middle, a scooped neck and armholes, rolled edges, dents, a riveted waist band,
+     two skirt plates and two torn leather straps with brass buckles. New beside it: a shoulder plate (three riveted
+     plates) and an arm guard with leather straps.
+  4. "The coffin lid is great, also make its 3 pieces separate": `junk_coffin_piece_a`..`_c`, one chunk each, to
+     scatter round the dungeons.
+  All 12 models pass the checker and are in `assets/models/dungeon/` (35 junk models now). Owner: "really good".
+- **Hurdles and Claude's own slips:** (1) Why the head floated: the helper that sets a turned piece down on the floor
+  read each part's position from Blender's "world" copy, which isn't updated until Blender redraws. After turning the
+  head onto its side that copy was out of date, so the head was measured wrong. It now reads the up-to-date position.
+  Only batch 4 used that helper, so nothing approved earlier changed. (2) The new hollow helms flickered (checker
+  SHIMMER) in two places: the brow band's underside sat at exactly the same height as the dome's rim edge (band raised
+  1 cm), and the two skirt plates had different curves, so they cut through each other in the middle (same curve now, each
+  4 mm above the one before). I first moved the wrong parts (the crossed bands and nose guard) before measuring which
+  parts were really near the flicker spot. (3) The first try at "the other half of the urn" cut a second urn in half,
+  which would have left open holes. Replaced before building with a thin curved trough made directly.
+- **Next:** batch 5 (big dungeons, `junk_big_forge.jpg`): `junk_slag` (nothing glows), `junk_tongs_hammer`,
+  `junk_crucible_mould` (smaller than the trap mould), `junk_scrap`, plus `junk_rubble_brick` (`junk_shared.jpg` #9).

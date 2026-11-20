@@ -24,6 +24,15 @@
 #   junk_beam_snapped   a hand-hewn mine beam snapped in two: torn fibres, cracks, moss, a hugging iron band each
 #   junk_helmet         a dented miner's helmet on its brim: band with rivets, front badge, a dent
 #   junk_lantern        a square lantern lying on its side, top pane smashed, a fallen candle, shards on the floor
+# Batch 4 (junk_medium_stone.jpg, medium dungeons):
+#   junk_urns           three burial urns: whole, cracked, smashed (its bottom and shards)
+#   junk_urn_broken_a .. _e  (owner, Nov 20: "another 5 different ones of the broken vase") one smashed urn each:
+#                       low stump, tall tooth, lying on its side, a small one with its lid, a wide one split in half
+#   junk_statue_head    a dwarf statue's head lying on its side, face showing, braided beard, stone chips
+#   junk_armour_pile    a rusty breastplate on its back (ridge, rolled edges, skirt plates, straps), two hollow helms
+#                       (one upside down, showing inside), a shoulder plate, an arm guard, stones (owner round 2)
+#   junk_coffin_lid     a carved stone coffin lid in three flat chunks: raised rim, a diamond knot on each
+#   junk_coffin_piece_a .. _c  (owner, Nov 20) the lid's three chunks as models of their own, to scatter about
 import math
 import random
 import sys
@@ -85,7 +94,7 @@ def DARK():
 	return kit.mat("charcoal", shade=-0.7, rough=1.0)
 
 
-def lump(c, r, m, seed, seg=8, ring=5, jit=0.12, yaw=0.0):
+def lump(c, r, m, seed, seg=8, ring=5, jit=0.12, yaw=0.0, roll=0.0):
 	"""A chunky rounded lump (bone knobs, skull, pommel): a low sphere, every corner nudged, flat cut faces.
 	c = centre, r = (x, y, z) radii (game axes), yaw = turn round up (degrees)."""
 	bpy.ops.mesh.primitive_uv_sphere_add(segments=seg, ring_count=ring, radius=1, location=K.G(c))
@@ -94,7 +103,7 @@ def lump(c, r, m, seed, seg=8, ring=5, jit=0.12, yaw=0.0):
 	for v in o.data.vertices:
 		v.co *= rr.uniform(1 - jit, 1 + jit)
 	o.scale = K.GS(r)
-	o.rotation_euler = (0, 0, math.radians(yaw))
+	o.rotation_euler = (0, math.radians(-roll), math.radians(yaw))   # (roll: a lean sideways, round the front axis)
 	bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
 	return kit._finish(o, m, 0, 0)
 
@@ -911,6 +920,526 @@ def junk_lantern():
 		turn(meshes() - before, a, (0.0, 0.0, 0.0), off=(x, 0.0, z))
 
 
+
+# ================================================================ batch 4 (junk_medium_stone.jpg, medium dungeons)
+# (owner, Nov 20: no black spots; so no dark paint patches or moss on these either)
+def spin(objs, axis, deg, pivot=(0.0, 0.0, 0.0)):
+	"""Turn finished parts round a game-space axis ("x", "y" or "z") through pivot (game coords)."""
+	ax = {"x": (1, 0, 0), "y": (0, 0, 1), "z": (0, -1, 0)}[axis]   # (the same axis in Blender)
+	piv = Vector(K.G(pivot))
+	rot = Matrix.Rotation(math.radians(deg), 4, Vector(ax))
+	for name in objs:
+		o = bpy.data.objects[name]
+		o.data.transform(o.matrix_basis)
+		o.matrix_basis = Matrix.Identity(4)
+		for v in o.data.vertices:
+			v.co = piv + (rot @ (v.co - piv))
+
+
+def drop(objs, sink=0.004):
+	"""Set turned parts down so their lowest point is on the floor (sink: this far into it, so they touch)."""
+	# (matrix_basis, not matrix_world: after spin() the world matrix is out of date until Blender redraws, so the
+	# statue head was measured wrong and left 10 cm in the air, owner Nov 20)
+	lo = min((bpy.data.objects[n].matrix_basis @ v.co).z for n in objs for v in bpy.data.objects[n].data.vertices)
+	for n in objs:
+		o = bpy.data.objects[n]
+		o.data.transform(o.matrix_basis)
+		o.matrix_basis = Matrix.Identity(4)
+		for v in o.data.vertices:
+			v.co.z -= lo + sink
+
+
+def lathe(profile, c, m, seed, n=20, jit=0.025, crack=None, top_cap=True):
+	"""A pot turned on a wheel: profile = [(radius, height), ...] bottom to top, spun round an upright axis at c (x, z)
+	with a little hand-made wobble. crack = (angle, from height, to height): a zigzag groove pressed into it."""
+	rr = random.Random(seed)
+	wob = [rr.uniform(1 - jit, 1 + jit) for _ in range(n)]
+	verts, faces = [], []
+	for j, (r, y) in enumerate(profile):
+		for k in range(n):
+			a = 2 * math.pi * k / n
+			rk = r * (wob[k] * 0.6 + 0.4 * rr.uniform(1 - jit, 1 + jit))
+			if crack and crack[1] <= y <= crack[2]:
+				ca = crack[0] + 0.18 * math.sin(y * 60)
+				d = abs(math.atan2(math.sin(a - ca), math.cos(a - ca)))
+				if d < 0.2:
+					rk -= 0.01 * (1 - d / 0.2)
+			verts.append((c[0] + math.cos(a) * rk, y, c[1] + math.sin(a) * rk))
+	rows = len(profile)
+	for j in range(rows - 1):
+		for k in range(n):
+			k2 = (k + 1) % n
+			faces.append((j * n + k, j * n + k2, (j + 1) * n + k2, (j + 1) * n + k))
+	faces.append(tuple(range(n - 1, -1, -1)))
+	if top_cap:
+		faces.append(tuple((rows - 1) * n + k for k in range(n)))
+	return K.mesh(verts, faces, m)
+
+
+CLAY = lambda v="a": tinted("clay", v, (1.12, 0.82, 0.62), "urn")
+
+
+def urn_body(cx, cz, seed, crack=None):
+	"""A burial urn with its lid on: a fat belly, a carved band of raised diamonds round it, a knob on top."""
+	prof = [(0.07, 0.0), (0.1, 0.012), (0.135, 0.06), (0.152, 0.12), (0.15, 0.18), (0.13, 0.24), (0.098, 0.275),
+		(0.085, 0.29), (0.096, 0.296), (0.098, 0.31)]
+	lathe(prof, (cx, cz), CLAY("a"), seed, crack=crack)
+	lathe([(0.104, 0.304), (0.106, 0.322), (0.088, 0.338), (0.05, 0.35), (0.03, 0.352)], (cx, cz), CLAY("b"), seed + 1)   # the lid
+	lump((cx, 0.372, cz), (0.032, 0.026, 0.032), CLAY("b"), seed + 2, seg=8, ring=5, jit=0.06)                          # the knob
+	for y in (0.105, 0.195):   # two raised rings round the belly
+		lathe([(0.152, y - 0.006), (0.158, y - 0.004), (0.158, y + 0.004), (0.152, y + 0.006)], (cx, cz), CLAY("c"), seed + 3 + int(y * 100), jit=0.01)
+	for k in range(10):   # the carved band: raised diamonds between the rings
+		a = 2 * math.pi * (k + 0.5) / 10
+		r = 0.152
+		K.blk((cx + math.cos(a) * r, 0.15, cz + math.sin(a) * r), (0.034, 0.034, 0.012), CLAY("c"), bevel=0.003,
+			ry=-math.degrees(a) + 90, rz=45)
+
+
+def junk_urns():
+	"""Three burial urns side by side: one whole, one cracked from rim to belly, one smashed with its shards about."""
+	urn_body(-0.36, 0.0, 401)
+	urn_body(0.0, -0.02, 411, crack=(math.radians(-80), 0.05, 0.33))
+	smashed_urn(0.38, 0.02, 421)
+	for i, (x, z, a, sc) in enumerate(((0.6, 0.12, 20, 1.0), (0.58, -0.12, 75, 0.8), (0.42, 0.24, -30, 0.9), (0.68, 0.0, 140, 0.6),
+			(0.24, 0.22, 60, 0.5), (0.52, 0.28, 10, 0.55))):
+		shard(x, z, a, sc, i)
+
+
+def shard(x, z, a, sc, i):
+	"""A curved-looking bit of urn wall lying flat on the floor."""
+	before = meshes()
+	slab([(-0.05 * sc, -0.03 * sc), (0.045 * sc, -0.04 * sc), (0.06 * sc, 0.0), (0.03 * sc, 0.035 * sc), (-0.04 * sc, 0.03 * sc)],
+		0.0, 0.009, 0.013, CLAY("abc"[i % 3]), k=0.3)
+	turn(meshes() - before, a, (0.0, 0.0, 0.0), off=(x, 0.0, z))
+
+
+def smashed_urn(cx, cz, seed, size=1.0, tall=1.0, low=0.07, high=0.2, teeth=0.4, band=True, wide=1.0):
+	"""What is left of a smashed urn: its bottom, broken off at a different height all round (low..high), a clay
+	wall 1.3 cm thick with its inner floor. size scales it, tall stretches it up, wide makes it squat and fat."""
+	rr = random.Random(seed)
+	n = 20
+	belly = 0.152 * size * wide
+	foot = 0.07 * size * wide
+	outer = lambda y: foot + (belly - foot) * min(1.0, y / (0.12 * size * tall)) ** 0.6
+	tops = [rr.uniform(low, high) * size * tall for _ in range(n)]
+	for k in range(n):   # broken in a few big teeth
+		if rr.random() < teeth:
+			tops[(k + 1) % n] = tops[k] * rr.uniform(0.9, 1.05)
+	verts, faces = [], []
+	R_ = 5
+	for j in range(R_ + 1):   # the outside, up to each column's broken top
+		for k in range(n):
+			a = 2 * math.pi * k / n
+			y = tops[k] * j / R_
+			r = outer(y) * rr.uniform(0.98, 1.02)
+			verts.append((cx + math.cos(a) * r, y, cz + math.sin(a) * r))
+	for j in range(R_ + 1):   # the inside, 1.3 cm in, back down to the inner floor
+		for k in range(n):
+			a = 2 * math.pi * k / n
+			y = max(0.018, tops[k] * (R_ - j) / R_)
+			r = max(0.035, outer(y) - 0.013)
+			verts.append((cx + math.cos(a) * r, y, cz + math.sin(a) * r))
+	rows = 2 * (R_ + 1)
+	for j in range(rows - 1):
+		for k in range(n):
+			k2 = (k + 1) % n
+			faces.append((j * n + k, j * n + k2, (j + 1) * n + k2, (j + 1) * n + k))
+	faces.append(tuple(range(n - 1, -1, -1)))                      # the outside bottom
+	faces.append(tuple((rows - 1) * n + k for k in range(n)))      # the inner floor
+	K.mesh(verts, faces, CLAY("a"))
+	yb = 0.15 * size * tall
+	if band:
+		for k in range(0, n, 2):   # part of the carved band still on it (only where the wall still stands that high)
+			a = 2 * math.pi * k / n
+			if min(tops[k], tops[(k + 1) % n], tops[k - 1]) > yb + 0.03 * size:
+				r = outer(yb)
+				K.blk((cx + math.cos(a) * r, yb, cz + math.sin(a) * r), (0.034 * size, 0.034 * size, 0.012), CLAY("c"),
+					bevel=0.003, ry=-math.degrees(a) + 90, rz=45)
+
+
+def lid_on_floor(x, z, seed, size=1.0):
+	"""An urn's lid knocked off, lying right way up on the floor, its knob on top."""
+	prof = [(0.104 * size, 0.0), (0.106 * size, 0.018 * size), (0.088 * size, 0.034 * size), (0.05 * size, 0.046 * size),
+		(0.03 * size, 0.048 * size)]
+	lathe(prof, (x, z), CLAY("b"), seed)
+	lump((x, 0.066 * size, z), (0.032 * size, 0.026 * size, 0.032 * size), CLAY("b"), seed + 1, seg=8, ring=5, jit=0.06)
+
+
+def urn_broken(v):
+	"""Five more smashed urns (owner, Nov 20), each broken its own way, its shards lying about it."""
+	rr = random.Random(700 + v * 31)
+	if v == 0:     # a low stump, shards spread wide all round
+		smashed_urn(0.0, 0.0, 731, low=0.04, high=0.1, band=False)
+		spots = [(rr.uniform(0.2, 0.42), a) for a in range(0, 360, 45)]
+	elif v == 1:   # one tall tooth left standing, the rest low
+		smashed_urn(0.0, 0.0, 762, size=1.08, low=0.06, high=0.27, teeth=0.75)
+		spots = [(rr.uniform(0.2, 0.32), a) for a in (-40, 10, 60, 200)]
+	elif v == 2:   # knocked over: lying on its side, its broken mouth to the right, shards spilled out of it
+		before = meshes()
+		smashed_urn(0.0, 0.0, 793, low=0.17, high=0.26, teeth=0.5)
+		parts = meshes() - before
+		spin(parts, "z", -84, (0.0, 0.0, 0.0))
+		drop(parts, 0.01)
+		spots = [(rr.uniform(0.3, 0.45), a) for a in (-25, 0, 20, 45)] + [(0.22, 160)]
+	elif v == 3:   # a small urn smashed low, its lid knocked off beside it
+		smashed_urn(0.0, 0.0, 824, size=0.75, low=0.05, high=0.14)
+		lid_on_floor(-0.24, 0.12, 825, size=0.75)
+		spots = [(rr.uniform(0.16, 0.26), a) for a in (-60, 20, 80)]
+	else:          # a wide squat urn split down the middle: one half stands, the other half lies on its back beside it
+		smashed_urn(0.0, 0.0, 855, wide=1.25, tall=0.8, low=0.05, high=0.22, teeth=0.85)
+		rh = random.Random(856)
+		ends = [rh.uniform(0.1, 0.17) for _ in range(9)]
+		def half(si, t):   # the other half lying on its back: a curved clay trough, broken ends ragged
+			ang = math.pi * si
+			rad = 0.185 - 0.03 * t
+			ln = ends[min(8, int(si * 8.999))]
+			return (0.4 + math.cos(ang) * rad, rad * (1.0 - math.sin(ang)) + 0.006, 0.05 - ln + 2 * ln * t)
+		sheet(half, 16, 6, CLAY("b"), 0.013)
+		spots = [(rr.uniform(0.28, 0.36), a) for a in (-70, 120, 200)]
+	for i, (r, a) in enumerate(spots):
+		a2 = math.radians(a + rr.uniform(-12, 12))
+		shard(math.cos(a2) * r, math.sin(a2) * r, rr.uniform(0, 360), rr.uniform(0.45, 1.0), i + v)
+
+
+# ---------------------------------------------------------------- junk_statue_head
+def plait(top, bottom, r, m, seed, n=6):
+	"""A thick stone braid: long knots leaning left, right, left (a plait), a band and a tuft at the end."""
+	a, b = Vector(top), Vector(bottom)
+	d = (b - a).normalized()
+	for i in range(n):
+		t = i / (n - 1)
+		p = a + (b - a) * t
+		rk = r * (1.0 - 0.25 * t)
+		lump((p.x, p.y, p.z), (rk * 1.0, rk * 1.55, rk * 0.85), m, seed + i, seg=8, ring=6, jit=0.04, roll=(28 if i % 2 else -28))
+	rk = r * 0.75
+	lump(tuple(b + d * 0.02), (rk * 1.2, 0.014, rk * 1.05), m, seed + 20, seg=9, ring=4, jit=0.03)   # the band
+	lump(tuple(b + d * 0.045), (rk * 0.75, 0.03, rk * 0.7), m, seed + 21, seg=7, ring=5, jit=0.1)    # the tuft
+
+
+def junk_statue_head():
+	"""A dwarf's head broken off a big stone statue, lying on its side, face to the front (owner: show the face, not
+	only the beard): a stone helm with a rim, a heavy brow over the eyes, a big nose, a drooping moustache, a beard
+	of three thick plaits. Round 2: one size of lump everywhere read as a heap of rocks, so the parts are bolder."""
+	st = lambda v=None: T("greystone", v)
+	before = meshes()
+	lump((0.0, 0.3, -0.04), (0.155, 0.165, 0.155), st("a"), 431, seg=11, ring=8, jit=0.04)        # the head
+	lump((0.0, 0.37, -0.03), (0.172, 0.12, 0.172), st("b"), 432, seg=12, ring=7, jit=0.03)        # the helm
+	arc_band(0.168, 0.196, 0.325, 0.355, 0, 360, st("c"), n=20, seed=433)                         # its rim
+	lump((0.0, 0.302, 0.105), (0.13, 0.034, 0.055), st("b"), 434, seg=9, ring=6, jit=0.05)        # the heavy brow
+	for sx in (-1, 1):
+		lump((sx * 0.05, 0.272, 0.112), (0.028, 0.02, 0.02), st("c"), 435 + sx, seg=8, ring=5, jit=0.03)          # eyes
+		lump((sx * 0.088, 0.228, 0.088), (0.055, 0.045, 0.045), st("a"), 437 + sx, seg=8, ring=5, jit=0.05)       # cheeks
+		lump((sx * 0.15, 0.27, -0.02), (0.03, 0.055, 0.04), st("b"), 439 + sx, seg=7, ring=5, jit=0.05)           # ears
+		lump((sx * 0.068, 0.188, 0.148), (0.078, 0.022, 0.03), st("c"), 441 + sx, seg=8, ring=5, jit=0.04, yaw=-sx * 15,
+			roll=sx * 18)                                                                                         # moustache
+	lump((0.0, 0.235, 0.148), (0.04, 0.058, 0.05), st("c"), 443, seg=8, ring=6, jit=0.04)         # the nose
+	lump((0.0, 0.205, 0.168), (0.036, 0.03, 0.034), st("c"), 444, seg=8, ring=5, jit=0.04)        # its bulb
+	lump((0.0, 0.11, 0.07), (0.15, 0.11, 0.09), st("b"), 445, seg=10, ring=6, jit=0.05)           # the beard's mass
+	for i, x in enumerate((-0.075, 0.0, 0.075)):
+		plait((x, 0.15, 0.135 - abs(x) * 0.2), (x * 1.2, -0.07, 0.14 - abs(x) * 0.3), 0.042, st("abc"[i]), 450 + i * 30)
+	lump((0.0, 0.01, -0.03), (0.12, 0.05, 0.1), st("a"), 446, seg=9, ring=5, jit=0.12)            # the broken neck stump
+	head = meshes() - before
+	spin(head, "z", 78, (0.0, 0.17, 0.0))   # lying on its side: the top of the head to the left, the face to the front
+	spin(head, "x", -14, (0.0, 0.17, 0.0))  # a little tipped back, face up to the light
+	drop(head, 0.012)   # (sunk a little so it rests on the floor, not on one point)
+	for i, (x, z, s) in enumerate(((0.36, 0.18, 1.0), (0.32, -0.2, 0.7), (-0.4, 0.22, 0.8), (0.44, -0.02, 0.6))):
+		lump((x, 0.02 * s, z), (0.04 * s, 0.028 * s, 0.034 * s), st("abc"[i % 3]), 470 + i, seg=6, ring=4, jit=0.2)   # stone chips
+
+
+# ---------------------------------------------------------------- junk_armour_pile
+def sheet(fn, NA, NB, m, thick, wrap=False, cap=False):
+	"""A thin bent sheet of metal (or leather or clay): fn(s, t) -> a game point, s and t from 0 to 1. wrap: s goes
+	all the way round (a closed ring); cap: close the t = 1 end with a flat face. Solidified to thick (both ways)."""
+	cols = NA if wrap else NA + 1
+	verts, faces = [], []
+	for i in range(NB + 1):
+		for k in range(cols):
+			verts.append(fn(k / NA, i / NB))
+	for i in range(NB):
+		for k in range(NA):
+			k2 = (k + 1) % cols if wrap else k + 1
+			faces.append((i * cols + k, i * cols + k2, (i + 1) * cols + k2, (i + 1) * cols + k))
+	if cap:
+		faces.append(tuple(NB * cols + k for k in range(cols)))
+	o = K.mesh(verts, faces, m)
+	sol = o.modifiers.new("thick", "SOLIDIFY")
+	sol.thickness = thick
+	sol.offset = 0.0
+	return o
+
+
+def tube(pts, r, m, sides=6):
+	"""A round rod bent along a line of points (a rolled metal edge, a wire)."""
+	verts, faces = [], []
+	P = [Vector(p) for p in pts]
+	for i, p in enumerate(P):
+		d = (P[min(i + 1, len(P) - 1)] - P[max(i - 1, 0)]).normalized()
+		up = Vector((0, 1, 0)) if abs(d.y) < 0.9 else Vector((1, 0, 0))
+		u = d.cross(up).normalized()
+		v = d.cross(u)
+		for k in range(sides):
+			a = 2 * math.pi * k / sides
+			verts.append(tuple(p + (u * math.cos(a) + v * math.sin(a)) * r))
+	for i in range(len(P) - 1):
+		for k in range(sides):
+			k2 = (k + 1) % sides
+			faces.append((i * sides + k, i * sides + k2, (i + 1) * sides + k2, (i + 1) * sides + k))
+	faces.append(tuple(range(sides - 1, -1, -1)))
+	faces.append(tuple((len(P) - 1) * sides + k for k in range(sides)))
+	return K.mesh(verts, faces, m)
+
+
+def ring(rx, rz, dr, y0, y1, m, n=24, seed=1):
+	"""A band all the way round an oval (rx, rz): dr thick outward, from height y0 to y1."""
+	rr = random.Random(seed)
+	verts, faces = [], []
+	for k in range(n):
+		a = 2 * math.pi * k / n
+		w = rr.uniform(-0.0015, 0.0015)
+		for sc in (1.0, 1.0 + dr):
+			for y in (y0, y1):
+				verts.append((math.cos(a) * (rx * sc + w), y, math.sin(a) * (rz * sc + w)))
+	for k in range(n):
+		b, c = 4 * k, 4 * ((k + 1) % n)
+		faces += [(b, b + 1, c + 1, c), (b + 2, c + 2, c + 3, b + 3), (b, c, c + 2, b + 2), (b + 1, b + 3, c + 3, c + 1)]
+	return K.mesh(verts, faces, m)
+
+
+def old_helm(c, seed, upside_down=False, tilt=0.0, yaw=0.0, dent=None):
+	"""A rusty dwarf helm, hollow (owner, Nov 20: a helm must be open underneath): a thin dome, a riveted brow band
+	round its rim, two crossed bands over the top, a knob, a nose guard. upside_down: lying on its dome, the open
+	inside up. dent = (angle, height 0..1): one knock pushed into the dome."""
+	m, band = dull(RUST("b")), dull(RUST("a"))
+	RX, RY, RZ = 0.105, 0.11, 0.115
+	rr = random.Random(seed)
+	wob = [rr.uniform(0.99, 1.01) for _ in range(20)]
+	before = meshes()
+
+	def dome(s, t):
+		a = 2 * math.pi * s
+		el = -0.04 + 1.4 * t
+		k = wob[int(s * 20) % 20] * (1.0 - 0.6 * t) + 1.0 * 0.6 * t
+		if dent:
+			da = math.atan2(math.sin(a - dent[0]), math.cos(a - dent[0]))
+			k -= 0.09 * math.exp(-(da * da) / 0.12 - ((t - dent[1]) ** 2) / 0.02)
+		return (RX * math.cos(el) * math.cos(a) * k, RY * math.sin(el) * k, RZ * math.cos(el) * math.sin(a) * k)
+	sheet(dome, 20, 8, m, 0.008, wrap=True, cap=True)
+	lump((0.0, RY * 1.02, 0.0), (0.024, 0.022, 0.024), band, seed + 9, seg=8, ring=5, jit=0.05)        # the knob on top
+	ring(RX * 1.03, RZ * 1.03, 0.065, 0.006, 0.03, band, n=24, seed=seed)   # the brow band (inner side inside the wall: no shimmer)
+	for k in range(8):   # its rivets
+		a = 2 * math.pi * (k + 0.5) / 8
+		lump((math.cos(a) * RX * 1.095, 0.011, math.sin(a) * RZ * 1.095), (0.007, 0.007, 0.007), T("iron", "b"), seed + k,
+			seg=6, ring=4)
+	for pa in (0.0, 90.0):   # the two crossed bands, hugging the dome from brow band to brow band
+		ux, uz = math.cos(math.radians(pa)), math.sin(math.radians(pa))
+		wx, wz = -uz, ux
+		verts, faces = [], []
+		N = 14
+		for i in range(N + 1):
+			ph = math.radians(12 + 156 * i / N)
+			for sc in (1.03, 1.1):
+				for sw in (-0.013, 0.013):
+					px = ux * math.cos(ph) * RX * sc + wx * sw
+					py = math.sin(ph) * RY * sc
+					pz = uz * math.cos(ph) * RZ * sc + wz * sw
+					verts.append((px, py, pz))
+		for i in range(N):
+			b0, b1 = 4 * i, 4 * (i + 1)
+			faces += [(b0, b0 + 1, b1 + 1, b1), (b0 + 2, b1 + 2, b1 + 3, b0 + 3), (b0, b1, b1 + 2, b0 + 2), (b0 + 1, b0 + 3, b1 + 3, b1 + 1)]
+		faces += [(0, 2, 3, 1), (4 * N, 4 * N + 1, 4 * N + 3, 4 * N + 2)]
+		K.mesh(verts, faces, band)
+	K.blk((0.0, -0.02, RZ * 1.1 + 0.01), (0.03, 0.09, 0.012), band, bevel=0.004)   # the nose guard, hanging off the band
+	lump((0.0, 0.011, RZ * 1.1 + 0.017), (0.008, 0.008, 0.006), T("iron", "b"), seed + 20, seg=6, ring=4)
+	parts = meshes() - before
+	if upside_down:
+		spin(parts, "x", 180.0)
+	spin(parts, "x", tilt)
+	turn(parts, yaw, (0.0, 0.0, 0.0), off=(c[0], 0.0, c[2]))
+	drop(parts, 0.006)
+
+
+def plate_w(t):
+	"""Half the breastplate's width t of the way down it: narrow at the shoulders, scooped armholes, a waist."""
+	u = min(1.0, t / 0.38)
+	return 0.15 + 0.055 * (3 * u * u - 2 * u ** 3) - 0.012 * max(0.0, t - 0.6) / 0.4
+
+
+def plate_pt(sx, t, lift=0.0):
+	"""A point on the breastplate lying on its back (sx -1..1 across, t 0..1 neck to waist), lift above its middle."""
+	ztop = -0.2 + 0.065 * max(0.0, 1 - (sx / 0.5) ** 2)   # the neck scoop
+	z = ztop + (0.21 - ztop) * t
+	x = sx * plate_w(t)
+	y = 0.11 * math.sqrt(max(0.0, 1 - sx * sx)) * (1 - 0.22 * (2 * t - 1) ** 2)
+	y += 0.014 * max(0.0, 1 - abs(sx) / 0.12)            # the ridge down the middle
+	y -= 0.013 * math.exp(-((x - 0.08) ** 2 + (z + 0.04) ** 2) / 0.0025)   # a dent (a hammer blow)
+	y -= 0.009 * math.exp(-((x + 0.11) ** 2 + (z - 0.12) ** 2) / 0.0015)   # a smaller one
+	return (x, y + 0.012 + lift, z)
+
+
+def chest_plate(c, seed, yaw=0.0):
+	"""A rusty breastplate lying on its back (owner round 2: much more detail): a curved shell with a ridge down
+	the middle, a scooped neck and armholes, rolled edges, a riveted waist band, two skirt plates below it and two
+	torn leather shoulder straps with brass buckles, lying off onto the floor."""
+	m, edge, band = dull(RUST("a")), dull(RUST("b")), dull(RUST("c"))
+	riv = T("iron", "b")
+	before = meshes()
+	sheet(lambda s, t: plate_pt(-1 + 2 * s, t), 18, 12, m, 0.01)
+	# the rolled edges: round the neck and armholes (top), and along the waist
+	top = [plate_pt(-0.98 + 1.96 * k / 16, 0.0, 0.004) for k in range(17)]
+	tube(top, 0.008, edge, sides=6)
+	for sg in (-1, 1):   # down each armhole
+		tube([plate_pt(sg * 0.985, 0.4 * k / 6, 0.002) for k in range(7)], 0.007, edge, sides=6)
+	tube([plate_pt(-0.97 + 1.94 * k / 16, 1.0, 0.004) for k in range(17)], 0.007, edge, sides=6)
+	# the waist band, sunk a little into the shell so it is joined to it, with rivets
+	sheet(lambda s, t: plate_pt(-0.98 + 1.96 * s, 0.74 + 0.07 * t, 0.006), 18, 2, band, 0.008)
+	for k in range(9):
+		sx = -0.88 + 1.76 * k / 8
+		p = plate_pt(sx, 0.775, 0.012)
+		lump(p, (0.007, 0.006, 0.007), riv, seed + k, seg=6, ring=4)
+	# two skirt plates (lames) below the waist, each overlapping the one above
+	for j in range(2):
+		z0 = 0.2 + 0.05 * j
+		wj = 0.19 - 0.012 * j
+		def lame(s, t, j=j, z0=z0, wj=wj):
+			sx = -1 + 2 * s
+			# (the same curve for both: each lies 4 mm clear above the one before it, no shimmer)
+			y = 0.11 * 0.72 * math.sqrt(max(0.0, 1 - sx * sx)) + 0.012 + 0.016 * (1 - t) + 0.004
+			return (sx * wj, y, z0 + 0.065 * t)
+		sheet(lame, 16, 3, edge if j else m, 0.008)
+		for sx in (-0.82, 0.82):
+			x, y, z = lame((sx + 1) / 2, 0.2)
+			lump((x, y + 0.006, z), (0.007, 0.006, 0.007), riv, seed + 30 + j, seg=6, ring=4)
+	# two leather shoulder straps, torn, lying off the top edge onto the floor, a brass buckle on each
+	lea = T("leather", "a")
+	for sg, ln in ((-1, 0.15), (1, 0.11)):
+		x0, y0, z0 = plate_pt(sg * 0.72, 0.0, 0.0)
+		def strap(s, t, x0=x0, y0=y0, z0=z0, ln=ln, sg=sg):
+			return (x0 + (s - 0.5) * 0.036 + sg * 0.03 * t, max(0.004, y0 * (1 - t) ** 2.2 + 0.004), z0 + 0.012 - ln * t)
+		sheet(strap, 2, 6, lea, 0.006)
+		bx, by, bz = strap(0.5, 0.62)
+		for dz in (-0.012, 0.012):   # the buckle: a small brass frame, two bars and two sides
+			K.blk((bx, by + 0.005, bz + dz), (0.048, 0.008, 0.007), BRASS(), bevel=0.002)
+		for dx in (-0.021, 0.021):
+			K.blk((bx + dx, by + 0.005, bz), (0.007, 0.008, 0.03), BRASS(), bevel=0.002)
+		lump((x0, y0 + 0.006, z0 + 0.012), (0.008, 0.007, 0.008), riv, seed + 40 + sg, seg=6, ring=4)   # its rivet
+	turn(meshes() - before, yaw, (0.0, 0.0, 0.0), off=c)
+
+
+def pauldron(c, seed, yaw=0.0):
+	"""A loose shoulder plate: three curved plates riveted together, lying curved side up."""
+	before = meshes()
+	riv = T("iron", "b")
+	for j in range(3):
+		def plate(s, t, j=j):
+			sx = -1 + 2 * s
+			w = 0.1 - 0.012 * j
+			y = 0.065 * (1 - 0.14 * j) * math.sqrt(max(0.0, 1 - sx * sx)) * (1 - 0.3 * t * t) + 0.004 + 0.012 * (1 - t)
+			return (sx * w, y, -0.06 + 0.05 * j + 0.07 * t)
+		sheet(plate, 12, 3, dull(RUST("abc"[j])), 0.008)
+		for sx in (-0.8, 0.8):
+			x, y, z = plate((sx + 1) / 2, 0.15)
+			lump((x, y + 0.006, z), (0.007, 0.006, 0.007), riv, seed + j * 2 + (sx > 0), seg=6, ring=4)
+	tube([(x, 0.006, 0.105 + 0.03 * math.sin(x * 20)) for x in (-0.05, -0.02, 0.01, 0.04)], 0.006, T("leather", "a"), sides=5)
+	turn(meshes() - before, yaw, (0.0, 0.0, 0.0), off=c)
+
+
+def vambrace(c, seed, yaw=0.0):
+	"""An arm guard: a half tube of iron lying curved side up, wider at the elbow, a rolled edge and two leather
+	straps across it."""
+	before = meshes()
+	L = 0.22
+	r = lambda t: 0.05 - 0.014 * t + 0.008 * max(0.0, 0.15 - t) / 0.15
+	sheet(lambda s, t: (r(t) * math.cos(math.pi * s), r(t) * math.sin(math.pi * s) + 0.004, -L / 2 + L * t), 10, 6,
+		dull(RUST("b")), 0.007)
+	tube([(r(0.0) * math.cos(math.pi * k / 10), r(0.0) * math.sin(math.pi * k / 10) + 0.004, -L / 2) for k in range(11)], 0.006,
+		dull(RUST("a")), sides=6)
+	for tt in (0.3, 0.75):   # the straps hug the curve, sunk a little into it
+		sheet(lambda s, t, tt=tt: ((r(tt) + 0.004) * math.cos(math.pi * (-0.06 + 1.12 * s)),
+			max(0.003, (r(tt) + 0.004) * math.sin(math.pi * (-0.06 + 1.12 * s)) + 0.004), -L / 2 + L * tt - 0.014 + 0.028 * t),
+			8, 1, T("leather", "a"), 0.006)
+	turn(meshes() - before, yaw, (0.0, 0.0, 0.0), off=c)
+
+
+def junk_armour_pile():
+	"""Dented rusty armour in a heap (owner round 2): the breastplate on its back, one helm sitting on its rim, one
+	upside down on its dome showing it is hollow, a shoulder plate, an arm guard, a few stones."""
+	chest_plate((0.08, 0.0, 0.04), 481, yaw=-18)
+	old_helm((-0.36, 0.0, -0.12), 491, tilt=0.0, yaw=25, dent=(math.radians(200), 0.45))
+	old_helm((-0.3, 0.0, 0.2), 497, upside_down=True, tilt=14.0, yaw=-40)
+	pauldron((0.42, 0.0, -0.2), 505, yaw=35)
+	vambrace((0.44, 0.0, 0.24), 507, yaw=-70)
+	for i, (x, z, s) in enumerate(((-0.12, -0.3, 0.8), (-0.55, 0.06, 0.9), (0.2, 0.34, 0.7), (0.6, 0.02, 0.6))):
+		lump((x, 0.028 * s, z), (0.05 * s, 0.035 * s, 0.045 * s), T("greystone", "abc"[i % 3]), 500 + i, seg=7, ring=5, jit=0.18)
+
+
+# ---------------------------------------------------------------- junk_coffin_lid
+def coffin_w(x):
+	"""Half the coffin lid's width at x (wider at the shoulders, x = -0.55)."""
+	if x < -0.55:
+		return 0.21 + (0.3 - 0.21) * (x + 0.92) / 0.37
+	return 0.3 - (0.3 - 0.24) * (x + 0.55) / 1.47
+
+
+def junk_coffin_lid(only=None):
+	"""A carved stone coffin lid broken in three flat chunks, pulled a little apart: a raised rim round the edge and
+	a raised diamond knot carved on each chunk. only = 0, 1 or 2: just that chunk, as a model of its own."""
+	st = lambda v=None: T("greystone", v)
+	T_, RIM = 0.1, 0.022
+	cuts = [-0.92, -0.3, 0.38, 0.92]
+	jags = {1: jag(-0.3, -0.31, 0.31, 7, 0.05, 511), 2: jag(0.38, -0.31, 0.31, 7, 0.05, 512)}
+	for ci in range(3):
+		if only is not None and ci != only:
+			continue
+		xa, xb = cuts[ci], cuts[ci + 1]
+		before = meshes()
+		poly = []
+		left = jags.get(ci)       # (the break on this chunk's left, from -z to +z)
+		right = jags.get(ci + 1)
+		xs = [xa + (xb - xa) * t for t in (0.0, 0.25, 0.5, 0.75, 1.0)]
+		if ci == 0:
+			xs = [-0.92, -0.75, -0.55, -0.42] + [x for x in xs if x > -0.42]
+		lo = [(x, -coffin_w(x)) for x in xs]
+		hi = [(x, coffin_w(x)) for x in reversed(xs)]
+		if right:
+			lo = [p for p in lo if p[0] < min(q[0] for q in right) - 0.005]
+			hi = [p for p in hi if p[0] < min(q[0] for q in right) - 0.005]
+			mid = [(x, max(-coffin_w(x), min(coffin_w(x), z))) for (x, z) in right]
+		else:
+			mid = []
+		if left:
+			lo = [p for p in lo if p[0] > max(q[0] for q in left) + 0.005]
+			hi = [p for p in hi if p[0] > max(q[0] for q in left) + 0.005]
+			back = [(x, max(-coffin_w(x), min(coffin_w(x), z))) for (x, z) in reversed(left)]
+		else:
+			back = []
+		poly = lo + mid + hi + back
+		slab(poly, 0.0, T_ - 0.012, T_, st("abc"[ci]), k=0.04)
+		# the raised rim along the long edges (inset 1.5 cm, kept clear of the breaks)
+		x0 = (max(q[0] for q in left) + 0.03) if left else xa + 0.085
+		x1 = (min(q[0] for q in right) - 0.03) if right else xb - 0.085
+		for sgn in (-1, 1):
+			rim = []
+			xs2 = [x0 + (x1 - x0) * t / 6 for t in range(7)]
+			for x in xs2:
+				rim.append((x, sgn * (coffin_w(x) - 0.015)))
+			for x in reversed(xs2):
+				rim.append((x, sgn * (coffin_w(x) - 0.075)))
+			slab(rim, T_ - 0.004, RIM - 0.004, RIM + 0.004, st("b"), k=0.15)
+		if ci in (0, 2):   # the rim across the end
+			xe = xa + 0.06 if ci == 0 else xb - 0.06
+			w = coffin_w(xe) - 0.015
+			slab([(xe - 0.03, -w), (xe + 0.03, -w), (xe + 0.03, w), (xe - 0.03, w)], T_ - 0.004, RIM - 0.01, RIM - 0.002, st("b"), k=0.15)
+		# the diamond knot: two diamond frames, one inside the other, and a small raised centre
+		cxm = (x0 + x1) / 2
+		for (a, wd) in ((0.17, 0.026), (0.095, 0.022)):
+			for (sx, sz) in ((1, 1), (1, -1), (-1, 1), (-1, -1)):
+				ln = a * math.sqrt(2)
+				K.blk((cxm + sx * a / 2, T_ + 0.007, sz * a / 2), (ln + wd * 0.4, 0.016, wd), st("c"), bevel=0.004,
+					ry=45 * sx * sz)
+		K.blk((cxm, T_ + 0.008, 0.0), (0.04, 0.018, 0.04), st("c"), bevel=0.005, ry=45)
+		parts = meshes() - before
+		turn(parts, (-3.0, 2.5, -2.0)[ci], ((xa + xb) / 2, 0.0, 0.0), off=((-0.05, 0.0, 0.05)[ci], 0.0, (0.02, -0.01, 0.03)[ci]))
+
 def settle():
 	"""Set the finished pile down: its lowest point on the floor (y = 0), its middle at the origin (x, z)."""
 	objs = [o for o in bpy.data.objects if o.type == "MESH"]
@@ -931,10 +1460,18 @@ BUILDS = {"junk_bones": junk_bones, "junk_sword_snapped": junk_sword_snapped, "j
 	"junk_rags": junk_rags, "junk_shield_wood": junk_shield_wood, "junk_shield_iron": junk_shield_iron,
 	"junk_rubble_wood": junk_rubble_wood,
 	"junk_pickaxe_broken": junk_pickaxe_broken, "junk_shovel_bent": junk_shovel_bent, "junk_beam_snapped": junk_beam_snapped,
-	"junk_helmet": junk_helmet, "junk_lantern": junk_lantern}
+	"junk_helmet": junk_helmet, "junk_lantern": junk_lantern,
+	"junk_urns": junk_urns, "junk_statue_head": junk_statue_head, "junk_armour_pile": junk_armour_pile,
+	"junk_coffin_lid": junk_coffin_lid}
 # five more rag piles, two rags each, all different (names written out: the model checker looks for them)
 for _i, _name in enumerate(("junk_rags_b", "junk_rags_c", "junk_rags_d", "junk_rags_e", "junk_rags_f")):
 	BUILDS[_name] = (lambda sd: (lambda: rags_pair(sd)))(200 + 37 * _i)
+# five more smashed urns and the coffin lid's three chunks on their own (owner, Nov 20)
+for _i, _name in enumerate(("junk_urn_broken_a", "junk_urn_broken_b", "junk_urn_broken_c", "junk_urn_broken_d",
+		"junk_urn_broken_e")):
+	BUILDS[_name] = (lambda v: (lambda: urn_broken(v)))(_i)
+for _i, _name in enumerate(("junk_coffin_piece_a", "junk_coffin_piece_b", "junk_coffin_piece_c")):
+	BUILDS[_name] = (lambda v: (lambda: junk_coffin_lid(v)))(_i)
 # five more plank piles, each spread and stacked its own way (owner, Nov 20)
 for _i, _name in enumerate(("junk_rubble_wood_b", "junk_rubble_wood_c", "junk_rubble_wood_d", "junk_rubble_wood_e",
 		"junk_rubble_wood_f")):
