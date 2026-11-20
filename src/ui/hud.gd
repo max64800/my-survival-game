@@ -5,6 +5,7 @@ extends CanvasLayer
 
 const SLOT_SIZE := 58
 const HOTBAR_SLOT := 88  ## the item bar at the bottom of the screen is bigger than the bag's slots
+const SKILLS_HOTBAR_ROOM := 125.0  ## the K window stays above the hotbar (owner, Nov 20)
 const BAG_HINT := "Click: pick up / swap  ·  Shift+Click: quick move  ·  Double-click: equip  ·  Right-click: split"
 
 ## A button on the Escape menu was pressed: "resume", "save", "invite", "menu" or "quit" (F87).
@@ -261,12 +262,12 @@ func _build() -> void:
 	skills.peer_id = peer_id
 	skills.visible = false
 	root.add_child(skills)
-	# F435 (owner, Nov 20: "we need this menu a lot bigger"): on a big screen the window grows with it (up to 92% wide,
-	# 90% tall), so it never looks like a small box in the middle. Clicks still land right (Godot scales them too).
+	# F435/F436 (owner, Nov 20: "a lot bigger", then "blurry" and "it shouldn't go over the hotbar"): the window is
+	# rebuilt at the screen's size (sharp letters, never stretched) and sits in the space above the hotbar.
 	var fit_skills := func() -> void:
-		var k := minf(root.size.x * 0.92 / maxf(skills.size.x, 1.0), root.size.y * 0.9 / maxf(skills.size.y, 1.0))
-		skills.scale = Vector2.ONE * maxf(1.0, k)
-		skills.position = (root.size - skills.size * skills.scale) * 0.5
+		var above := root.size.y - SKILLS_HOTBAR_ROOM
+		skills.set_ui(clampf(minf(root.size.x * 0.94 / 1350.0, above / 840.0), 0.8, 3.0))
+		skills.position = Vector2((root.size.x - skills.size.x) * 0.5, maxf(8.0, (above - skills.size.y) * 0.5))
 	skills.resized.connect(fit_skills)
 	root.resized.connect(fit_skills)
 	box_panel = BoxPanel.new()

@@ -1,25 +1,33 @@
 class_name SkillsPanel
 extends PanelContainer
-## The skills window (K key), laid out like the owner's mock-up (Nov 20, claude.ai/artifact/MBTFW9LdXc4mA3jNNpvYWR):
-##  - left: the 14 skills you grow by doing. Click one to see its ★ perks at 25 / 50 / 75 / 100; only one is open
-##    at a time and the list never needs scrolling.
-##  - middle: the perk tree (PerkTreeView): 1 point per level, 4 branches. A perk opens once the one before it has a point.
-##  - right: the perk you clicked, with its Learn button. ◆ = active perk on an ability key (Z / G / T).
-## Resetting your perk points costs gold coins (top right).
+## The K window, two tabs (owner, Nov 20, F436):
+##  - "Skills": the 14 skills you grow by doing, all on one page, each with its ★ perks at 25 / 50 / 75 / 100 always shown.
+##  - "Perks": the perk tree (PerkTreeView: 1 point per level, 4 branches; a perk opens once the one before it has a
+##    point) and, on the right, the perk you clicked with its Learn button. ◆ = active perk on an ability key (Z / G / T).
+## The window has one fixed size (switching tabs never changes it) that fits above the hotbar. It is BUILT at the
+## screen's size (`ui` = how much bigger than the 1600 x 900 design), not stretched afterwards, so the letters stay
+## sharp (owner, Nov 20: stretching it made everything blurry).
 
 const BRANCHES := [["toughness", "Bones"], ["fighting", "Fists"], ["utility", "Hands"], ["together", "Heart"]]  ## names (owner, Nov 19); ids stay
 const KEY_NAMES := ["Z", "G", "T"]
 const BACKGROUND := "res://assets/ui/skills_background.jpg"
 const MILESTONE_TEXT := "★%d"
+const PAGE := Vector2(1300, 700)  ## the tabs' page, at ui = 1 (the window is about 1350 x 820)
+const COLS := 5  ## skill cards per row on the Skills tab (3 rows: all 14 fit with no scrolling)
 
 var peer_id := 1
+var ui := 1.0  ## set by the HUD from the screen size (see set_ui)
+var tab := "skills"
 var _level: Label
 var _points: Label
 var _reset: Button
-var _skills: VBoxContainer
+var _tabs := {}  ## "skills" / "perks" -> its tab Button
+var _skills: GridContainer
+var _skills_page: Control
+var _perks_page: Control
+var _help: Label
 var _tree: PerkTreeView
 var _detail: VBoxContainer
-var _open_skill := "mining"
 var _sel := "thick_skin"
 
 
@@ -30,59 +38,129 @@ static func perk_icon(id: String) -> Texture2D:
 
 
 func _ready() -> void:
-	UiKit.panel(self)
 	# F429 (owner, Nov 20: "K just shows a big box"): wrapping text measures itself very tall for a moment, and a
 	# container never shrinks back by itself, so the window stayed 3216 px tall with everything off the screen.
 	minimum_size_changed.connect(func(): reset_size.call_deferred())
+	_build()
+
+
+## The HUD calls this when the screen size changes: rebuild everything at the new size (sharp letters).
+func set_ui(k: float) -> void:
+	if absf(k - ui) < 0.01:
+		return
+	ui = k
+	_build()
+	if visible:
+		refresh()
+
+
+func _px(n: float) -> int:
+	return roundi(n * ui)
+
+
+func _lbl(parent: Node, text: String, size: float, color: Color, heading := false) -> Label:
+	var l := UiKit.label(parent, text, _px(size), color)
+	if heading:
+		l.add_theme_font_override("font", UiKit.heading_font())
+	return l
+
+
+func _build() -> void:
+	for c in get_children():
+		remove_child(c)
+		c.queue_free()
+	UiKit.panel(self, _px(22))
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 6)
+	box.add_theme_constant_override("separation", _px(6))
 	add_child(box)
+	# Top row: level and kills | the two tabs | perk points and reset.
 	var top := HBoxContainer.new()
-	top.add_theme_constant_override("separation", 16)
+	top.add_theme_constant_override("separation", _px(16))
 	box.add_child(top)
-	_level = UiKit.label(top, "", 16, UiKit.DIM)
+	_level = _lbl(top, "", 17, UiKit.DIM)
 	_level.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	UiKit.title(top, "Skills")
+	var tabs := HBoxContainer.new()
+	tabs.add_theme_constant_override("separation", _px(10))
+	top.add_child(tabs)
+	for t in [["skills", "Skills"], ["perks", "Perks"]]:
+		var b := UiKit.dark_button(Button.new(), _px(22))
+		b.name = "Tab_" + t[0]
+		b.text = "  %s  " % t[1]
+		b.custom_minimum_size = Vector2(_px(170), _px(44))
+		b.pressed.connect(func(): show_tab(t[0]))
+		tabs.add_child(b)
+		_tabs[t[0]] = b
 	var right := HBoxContainer.new()
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	right.alignment = BoxContainer.ALIGNMENT_END
-	right.add_theme_constant_override("separation", 14)
+	right.add_theme_constant_override("separation", _px(14))
 	top.add_child(right)
-	_points = UiKit.label(right, "", 17, UiKit.AMBER)
-	_points.add_theme_font_override("font", UiKit.heading_font())
-	_reset = UiKit.dark_button(Button.new(), 16)
+	_points = _lbl(right, "", 18, UiKit.AMBER, true)
+	_reset = UiKit.dark_button(Button.new(), _px(16))
 	_reset.name = "Reset"
 	_reset.pressed.connect(func():
 		GameAuthority.instance.ask_respec()
 		get_tree().create_timer(0.15).timeout.connect(refresh))
 	right.add_child(_reset)
-	var cols := HBoxContainer.new()
-	cols.add_theme_constant_override("separation", 8)
-	box.add_child(cols)
-	var left := _side(cols, 330)
-	UiKit.label(left, "Skills  ·  grow by doing", 16, UiKit.AMBER).add_theme_font_override("font", UiKit.heading_font())
-	_skills = VBoxContainer.new()
-	_skills.add_theme_constant_override("separation", 2)
-	left.add_child(_skills)
+	# The page: both tabs live in the same fixed-size box, so switching never changes the window's size.
+	var page := Control.new()
+	page.custom_minimum_size = PAGE * ui
+	box.add_child(page)
+	_skills_page = _framed(page)
+	var scroll := ScrollContainer.new()  # (never needed at the design size; only a safety net on odd screens)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_skills_page.get_child(0).add_child(scroll)
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_skills = GridContainer.new()
+	_skills.columns = COLS
+	_skills.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_skills.add_theme_constant_override("h_separation", _px(8))
+	_skills.add_theme_constant_override("v_separation", _px(6))
+	scroll.add_child(_skills)
+	_perks_page = HBoxContainer.new()
+	_perks_page.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_perks_page.add_theme_constant_override("separation", _px(8))
+	page.add_child(_perks_page)
 	_tree = PerkTreeView.new()
 	_tree.name = "Tree"
-	_tree.custom_minimum_size = Vector2(660, 620)
 	_tree.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_tree.picked.connect(func(id): _sel = id; _tree.selected = id; _tree.refresh(); _show_detail())
-	cols.add_child(_tree)
-	_detail = _side(cols, 320)
-	UiKit.label(box, "Circle = works by itself  ·  ◆ = press Z / G / T  ·  ★ = last perk  ·  scroll to zoom, drag to move  ·  K to close", 15, UiKit.DIM).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_perks_page.add_child(_tree)
+	var side := PanelContainer.new()
+	side.add_theme_stylebox_override("panel", UiKit.style("card", _px(12)))
+	side.custom_minimum_size.x = _px(380)
+	_perks_page.add_child(side)
+	_detail = VBoxContainer.new()
+	_detail.add_theme_constant_override("separation", _px(6))
+	side.add_child(_detail)
+	_help = _lbl(box, "", 15, UiKit.DIM)
+	_help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	show_tab(tab)
 
 
-func _side(parent: Node, width: float) -> VBoxContainer:
+## A wooden card filling the page, with a VBox inside.
+func _framed(page: Control) -> PanelContainer:
 	var frame := PanelContainer.new()
-	frame.add_theme_stylebox_override("panel", UiKit.style("card", 10))
-	frame.custom_minimum_size = Vector2(width, 620)
-	parent.add_child(frame)
+	frame.add_theme_stylebox_override("panel", UiKit.style("card", _px(12)))
+	frame.set_anchors_preset(Control.PRESET_FULL_RECT)
+	page.add_child(frame)
 	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", 6)
 	frame.add_child(v)
-	return v
+	return frame
+
+
+func show_tab(which: String) -> void:
+	tab = which
+	_skills_page.visible = which == "skills"
+	_perks_page.visible = which == "perks"
+	for k in _tabs:
+		var b: Button = _tabs[k]
+		b.add_theme_color_override("font_color", UiKit.AMBER if k == which else UiKit.DIM)
+		b.modulate = Color.WHITE if k == which else Color(0.8, 0.8, 0.8)
+	_help.text = ("Skills grow by doing: dig for Mining, chop for Woodcutting, fight with a weapon for its skill. ★ = a bonus at levels 25, 50, 75 and 100."
+		if which == "skills" else "Circle = works by itself  ·  ◆ = press Z / G / T  ·  ★ = last perk  ·  scroll to zoom, drag to move  ·  K to close")
+	if which == "perks" and _tree.progress:
+		_tree.refresh.call_deferred()
 
 
 func _progress() -> Progression:
@@ -117,7 +195,7 @@ func refresh() -> void:
 	_show_detail()
 
 
-# ---------------------------------------------------------------- left: skills
+# ---------------------------------------------------------------- the Skills tab
 
 func _show_skills() -> void:
 	var p := _progress()
@@ -125,41 +203,25 @@ func _show_skills() -> void:
 	for s in Progression.SKILLS:
 		var info: Array = Progression.SKILL_INFO[s]
 		var lv: int = p.skill_level[s]
-		var open: bool = s == _open_skill
 		var card := PanelContainer.new()
 		card.name = "Skill_" + s
-		var frame_style := UiKit.style("slot_selected" if open else "slot", 9, 18)  # (frame art is 14 px: keep text inside it)
-		frame_style.content_margin_top = 8  # (owner, Nov 20: "Mining" and "Lv 0" still touched the rim)
-		frame_style.content_margin_bottom = 10 if not open else 13  # (the plank's thick rim is at the bottom)
-		card.add_theme_stylebox_override("panel", frame_style)
+		var st := UiKit.style("slot", _px(10), _px(16))  # (the frame art is 14 px: the text stays inside it)
+		st.content_margin_top = _px(10)
+		st.content_margin_bottom = _px(12)
+		card.add_theme_stylebox_override("panel", st)
+		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_skills.add_child(card)
 		var v := VBoxContainer.new()
-		v.add_theme_constant_override("separation", 1)
-		v.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		v.add_theme_constant_override("separation", _px(3))
 		card.add_child(v)
-		var click := Button.new()  # an invisible button over the whole card opens / closes the skill
-		click.flat = true
-		click.focus_mode = Control.FOCUS_NONE
-		click.pressed.connect(func(): _open_skill = "" if _open_skill == s else s; _show_skills())
-		card.add_child(click)
-		# F433 (owner, Nov 20: "too small to read, the words overlap the bar, too many words"): bigger letters, and the
-		# name has its own wide slot, so the bar and the level can never run into it.
 		var h := HBoxContainer.new()
-		h.add_theme_constant_override("separation", 8)
-		h.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		v.add_child(h)
-		var name := UiKit.label(h, info[0], 16, UiKit.TEXT)
-		name.custom_minimum_size = Vector2(112, 0)
-		name.clip_text = true
+		var name := _lbl(h, info[0], 19, UiKit.TEXT, true)
+		name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_lbl(h, "Master" if lv >= Progression.MAX_SKILL else "Level %d" % lv, 18, UiKit.AMBER)
 		var bar := ProgressBar.new()
 		bar.show_percentage = false
-		bar.custom_minimum_size = Vector2(0, 7)
-		bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		h.add_child(bar)
-		var lvl := UiKit.label(h, "Master" if lv >= Progression.MAX_SKILL else "Lv %d" % lv, 16, UiKit.AMBER)
-		lvl.custom_minimum_size = Vector2(52, 0)
-		lvl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		bar.custom_minimum_size = Vector2(0, _px(7))
 		var track := StyleBoxFlat.new()
 		track.bg_color = Color(0.04, 0.03, 0.02, 0.85)
 		track.border_color = Color(UiKit.AMBER, 0.45)
@@ -172,31 +234,29 @@ func _show_skills() -> void:
 		bar.add_theme_stylebox_override("fill", fill)
 		bar.max_value = Progression.skill_xp_to_next(lv)
 		bar.value = p.skill_xp[s] if lv < Progression.MAX_SKILL else bar.max_value
-		for c in h.get_children():
-			c.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		if open:
-			_wrap(v, "[color=#%s]Each level: %s[/color]" % [UiKit.AMBER.to_html(false), info[1]])
-			for i in 4:
-				var got: bool = lv >= Progression.MILESTONES[i]
-				_wrap(v, "[color=#%s]%s  %s %s[/color]" % [(UiKit.TEXT if got else UiKit.DIM).to_html(false), "✓" if got else "·",
-					MILESTONE_TEXT % Progression.MILESTONES[i], info[2][i]])
+		v.add_child(bar)
+		_wrap(v, "[color=#%s]Each level: %s[/color]" % [UiKit.AMBER.to_html(false), info[1]], 14)
+		for i in 4:
+			var got: bool = lv >= Progression.MILESTONES[i]
+			_wrap(v, "[color=#%s]%s %s  %s[/color]" % [(UiKit.TEXT if got else UiKit.DIM).to_html(false), "✓" if got else "·",
+				MILESTONE_TEXT % Progression.MILESTONES[i], info[2][i]], 14)
 
 
-## Small wrapping text that always grows to fit (a plain Label in a container can get clipped when it wraps).
-func _wrap(parent: Node, bbcode: String) -> void:
+## Wrapping text that always grows to fit (a plain Label in a container can get clipped when it wraps).
+func _wrap(parent: Node, bbcode: String, size: float) -> void:
 	var t := RichTextLabel.new()
 	t.bbcode_enabled = true
 	t.fit_content = true
 	t.scroll_active = false
 	t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	t.add_theme_font_size_override("normal_font_size", 14)
-	t.custom_minimum_size.x = 280  # (wraps at the card's width, never measures itself one word wide)
+	t.add_theme_font_size_override("normal_font_size", _px(size))
+	t.custom_minimum_size.x = _px(215)  # (wraps at the card's width, never measures itself one word wide)
 	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	t.text = bbcode
 	parent.add_child(t)
 
 
-# ---------------------------------------------------------------- right: the perk you clicked
+# ---------------------------------------------------------------- the Perks tab: the perk you clicked
 
 func _show_detail() -> void:
 	var p := _progress()
@@ -212,7 +272,7 @@ func _show_detail() -> void:
 			branch = br[1]
 	var pic := TextureRect.new()
 	pic.texture = perk_icon(_sel)
-	pic.custom_minimum_size = Vector2(170, 170)
+	pic.custom_minimum_size = Vector2.ONE * _px(170)
 	pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	pic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -221,18 +281,17 @@ func _show_detail() -> void:
 	mat.set_shader_parameter("diamond", info[3])
 	pic.material = mat
 	_detail.add_child(pic)
-	var title := UiKit.label(_detail, ("★ " if _sel in PerkTreeView.FINALS else "") + info[4], 25, UiKit.AMBER)
-	title.add_theme_font_override("font", UiKit.heading_font())
+	var title := _lbl(_detail, ("★ " if _sel in PerkTreeView.FINALS else "") + info[4], 25, UiKit.AMBER, true)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	# F434 (owner, Nov 20: "very tiny text"): bigger letters and plain words, one fact per line.
-	var kind := UiKit.label(_detail, "%s branch  ·  %s" % [branch, "◆ you press a key" if info[3] else "● works by itself"], 16, PerkTreeView.COLORS[info[0]])
+	var kind := _lbl(_detail, "%s branch  ·  %s" % [branch, "◆ you press a key" if info[3] else "● works by itself"], 17, PerkTreeView.COLORS[info[0]])
 	kind.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	var pips := UiKit.label(_detail, "◆".repeat(have) + "◇".repeat(info[1] - have), 24, UiKit.AMBER)
+	var pips := _lbl(_detail, "◆".repeat(have) + "◇".repeat(info[1] - have), 24, UiKit.AMBER)
 	pips.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var planned: bool = info[5].contains("not in the game yet") or info[5].contains("(no ") or info[5].contains("don't wear out")
-	var text := UiKit.label(_detail, info[5].get_slice(" (", 0).replace("per rank", "per point") + ".", 21, UiKit.TEXT)
+	var text := _lbl(_detail, info[5].get_slice(" (", 0).replace("per rank", "per point") + ".", 21, UiKit.TEXT)
 	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	text.custom_minimum_size.x = 260
+	text.custom_minimum_size.x = _px(340)
 	var slot := p.ability_slots().find(_sel)
 	var lines := ["Learned: %d of %d points" % [have, info[1]]]
 	if info[3]:
@@ -241,28 +300,28 @@ func _show_detail() -> void:
 		lines.append("Use again after: %s" % ("%d min" % roundi(cd / 60.0) if cd >= 60.0 and fmod(cd, 60.0) == 0.0 else "%d s" % roundi(cd)))
 	lines.append("First learn: " + (Progression.PERKS[info[2]][4] if info[2] != "" else "nothing, it's the first one"))
 	for l in lines:
-		var line := UiKit.label(_detail, l, 17, UiKit.DIM)
+		var line := _lbl(_detail, l, 17, UiKit.DIM)
 		line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	if planned:
-		var warn := UiKit.label(_detail, "Not working yet: comes in a later update.", 16, UiKit.MISSING)
+		var warn := _lbl(_detail, "Not working yet: comes in a later update.", 17, UiKit.MISSING)
 		warn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	var learn := UiKit.gold_button(Button.new(), 16)
+	var learn := UiKit.gold_button(Button.new(), _px(18))
 	learn.name = "Learn"
 	learn.text = "Fully learned" if have >= info[1] else "Learn (1 point)"
 	learn.disabled = why != ""
-	learn.custom_minimum_size = Vector2(0, 42)
+	learn.custom_minimum_size = Vector2(0, _px(46))
 	learn.pressed.connect(func():
 		GameAuthority.instance.ask_buy_perk(_sel)
 		get_tree().create_timer(0.15).timeout.connect(refresh))
 	_detail.add_child(learn)
 	if why != "" and have < info[1]:
-		var w := UiKit.label(_detail, why, 17, UiKit.DIM)
+		var w := _lbl(_detail, why, 17, UiKit.DIM)
 		w.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		w.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	# (owner, Nov 20: "a lot of empty space" here) how points work, at the bottom of the card
 	var gap := Control.new()
 	gap.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_detail.add_child(gap)
-	var how := UiKit.label(_detail, "You get 1 perk point each time your level goes up. Level up by doing anything: digging, fighting, crafting, exploring.", 16, UiKit.DIM)
+	var how := _lbl(_detail, "You get 1 perk point each time your level goes up. Level up by doing anything: digging, fighting, crafting, exploring.", 16, UiKit.DIM)
 	how.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	how.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

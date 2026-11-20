@@ -46,6 +46,8 @@ func _run() -> void:
 	await _shot("01_skills_window")
 	var sp: SkillsPanel = _main.hud.skills
 	print("skillscheck: window %s at %s, screen %s" % [sp.size, sp.position, sp.get_viewport_rect().size])
+	sp.show_tab("perks")  # (two tabs since Nov 20: Skills, then Perks)
+	await _wait(0.4)
 	var tree: PerkTreeView = sp.find_child("Tree", true, false)
 	tree.picked.emit("war_horn")
 	await _wait(0.4)

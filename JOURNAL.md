@@ -6140,3 +6140,58 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - **Hurdles (Claude's own):** a test counted the new old ceilings as old floors (fixed: only floors and walls); a
   sprint test forgot the stalactite lets go 0.9 m before you're under it. The robot can't jump, so it walked into
   the chasm and the bridge stalactites weren't tested there.
+
+## November 20, 2026 (PC, Hearthbrick follow-ups Claude): roof tiles, lighter stairs, door gap, diagonal pieces (F444)
+
+- The owner said to work on all four open Hearthbrick questions.
+- **Roof tiles:** in the owner's ChatGPT chat "Generate Building Kit Sheet" (through Chrome, Claude's own tab) made a
+  4 x 2 sheet of roof-tile surfaces in the same style as the brick sheet (`assets/concepts/building-kit/hearthbrick_roof_tile_sheet.png`).
+  `derive_tex_hearthbrick_roof.py` cuts it into 8 textures (`hbtile_a..d`, moss, flash, dark, ridge). The tiles were tall,
+  so each texture is a square cut from the middle (no stretching). Roof tiles are now tagged "tile" and ridge/hip tiles
+  "ridge", and `HB.paint` gives them the new paints. All 8 roofs rebuilt and installed.
+- **Lighter stairs:** counted the triangles part by part: the 357 bricks made 15.7k of the 21.5k, because every brick
+  had all 12 edges chiselled, even the ones buried inside. New helper `HB.bevel_seen` chisels only the edges of the
+  faces you can see. Stairs 21.5k -> 13.4k, foundation steps -> 6.2k, look unchanged in the picture.
+  Hurdle (mine): the first try made the limestone heavier, because it also chiselled the dent lines inside the stones'
+  faces; fixed by only chiselling real corners (more than 35 degrees), like before.
+- **Door gap:** making the door the full 0.78 m made it poke 3 mm out of its own box (pieces keep a 7 mm edge margin).
+  So the door fills its box (0.773 m) and the doorway's brick ring came in from 0.79 to 0.783 m (still outside the
+  0.78 m walk-through hole): exactly 1 cm all round, the smallest gap the no-shimmer rule allows.
+- **Diagonal pieces:** every old diagonal piece (all 4 materials) failed the checks: they were straight 2.83 m walls
+  turned 45 degrees, so their square ends poked 10 cm out of the square, plus shimmer. New `hearthbrick_v2_diagonal.py`
+  builds the v2 wall / half wall / window wall / railing 2.83 m long, cuts the ends to points along the square's sides
+  (mortar 1.2 cm further in), paints, then turns them 45 degrees. All 4 pass. The stone, wood and copper diagonals still
+  fail (not asked; they're hidden and only load in old saves).
+- Checks: model checks ok for all 16 changed pieces; Godot import; test_build_geometry passed.
+
+
+## November 20, 2026 (PC, dwarf-animations Claude, chat 9): the owner will pose the great axe himself in Blender (F389)
+- **Owner's decision:** stop inventing great axe poses in code; he poses the dwarf by hand in Blender, chop first.
+  His note on chat 8's page: "clearly not working; the hold is a bit better, but his right arm should be a lot
+  further up the hilt" (F389 bumped to said 4x). Saved chat 8's unsaved files first (owner OK).
+- **Did:** (1) `great_pose_blender_export.gd` records the game dwarf (real skeleton, body, great axe) in the stance
+  and chat 8's 5 chop key poses. (2) `tools/blender_poses/make_pose_file.py` builds `great_axe_poses.blend`: big
+  coloured controls in Object Mode only (AXE stick, LEFT/RIGHT HAND balls that can only slide along the handle, HIPS
+  ring, CHEST ring), arms bend by themselves (IK = the computer bends the elbow so the wrist reaches the ball), feet
+  stay planted, elbows aim out to his sides, head/beard/hair/kilt hem ride along. 5 poses on frames 1-41 with a big
+  label over his head; auto-keying on. `view_setup.py` sets the view from behind and takes the guide's pictures.
+  (3) `read_poses.py` turns his poses back into the game's bone turns (`assets/anim/great_axe_poses.json`); the game
+  plays them on the swing's timing (`DwarfGreatSwing.posed_pose`, `DwarfFist._posed_hold`), hands turned so the
+  handle runs through both fists, keep-out guard as safety net. New test `test_owner_posed_chop_plays_as_made`.
+  (4) Guide page "Posing the Great Axe" for the owner (G, R, arrow keys, Ctrl+S). Plan doc rewritten for this way.
+- **Hurdles (Claude's own):** Blender's arm IK missed the wrists by 4-11 cm: the game stretches his bones, and IK
+  ignores that. Fixed by baking the stance in as his rest shape (and his "wider than tall" size, which skewed every
+  copied turn). Then my script still used the pre-bake position numbers: helper spots sat 5 cm off (fixed). The
+  forearms twisted (locked their spin). The file was 56 MB (bump pictures, 2048 pictures): now 20 MB, the game's own
+  pictures untouched. The arrow keys stopped on every frame (the labels had 41 keys) and did nothing with nothing
+  picked: labels keyed on the 5 pose frames only, file opens with the axe picked. Python on Windows wrote CRLF line
+  endings into files I edited (put back to LF). The reader itself was exact from the start (0.0 degrees).
+- **Still open:** the owner poses the chop; then re-record + republish "Great Axe Swings". The new test fails on the
+  starter poses (wind-up: his left fist against his chest, 0.2 cm; chat 8's numbers) - run again on his poses. The
+  old procedural swing test still fails (known since chat 8). Owner said yes to fixing the torn-looking shirt at the
+  right shoulder (after the chop works).
+- **F436 (K window, round 3):** my F435 "make it bigger" stretched the finished window (Control.scale), so Godot drew
+  the letters small and blew them up: blurry. Now the window is rebuilt at the screen size (every size x `ui`), which
+  keeps letters sharp. Owner picked two tabs (Skills / Perks): no more opening a skill, so the window never changes
+  size; it sits above the hotbar. Took 3 photo rounds to fit all 14 skills (3, then 4, then 5 per row: long star
+  lines wrap and make cards taller).
