@@ -33,6 +33,9 @@ const KEYS := {
 	key_hammer = {name = "Hammer Key", dungeon = "the_hammerfall_works", boss = "The Smeltwarden"},
 	key_foundry = {name = "Foundry Key", dungeon = "cinderhold_foundry", boss = "The Cinder Warden"},
 }
+## Locks that no key opens: the host opens them when something happens in the dungeon (owner, Nov 20: Mossgate Hold's
+## loot door opens when the Pack Hall's pack is dead: DungeonBuild calls set_lock).
+const EVENT_LOCKS := {mossgate_hold = ["pack"]}
 const REACH := 4.0
 ## shortcut: a lock only closes again while nobody is this close to its door (so nobody gets shut inside); a
 ## medium dungeon fits in 60 m. Upgrade to the dungeon's real bounds once the PC builds them.
@@ -75,10 +78,27 @@ func add_door(dungeon_id: String, pos: Vector3) -> void:
 	doors[dungeon_id] = pos
 
 
+## Every lock of the door: its keys' and its event locks.
+static func locks_of(dungeon_id: String) -> Array:
+	return keys_of(dungeon_id) + EVENT_LOCKS.get(dungeon_id, [])
+
+
 ## Every lock of the door is open.
 func is_open(dungeon_id: String) -> bool:
 	var opened: Array = auth.world_state.get("dungeon_doors", {}).get(dungeon_id, [])
-	return keys_of(dungeon_id).all(func(k): return opened.has(k))
+	return locks_of(dungeon_id).all(func(k): return opened.has(k))
+
+
+## Host: open (or shut) one of a door's event locks, for everyone (saved with the world).
+func set_lock(dungeon_id: String, lock: String, open: bool) -> void:
+	var opened: Array = auth.world_state.get("dungeon_doors", {}).get(dungeon_id, []).duplicate()
+	if opened.has(lock) == open:
+		return
+	if open:
+		opened.append(lock)
+	else:
+		opened.erase(lock)
+	_ev_door.rpc(dungeon_id, opened)
 
 
 ## Host: the boss still carries its key (false while the key is out in the world).

@@ -78,6 +78,7 @@ var stations_root: Node3D
 var rune_slab := RuneSlab.new()  ## one per world, shared by everyone
 var builder: Builder
 var storage: Storage
+var keys: DungeonKeys  ## dungeon keys and locked doors (F237; Mossgate's loot door: owner, Nov 20)
 var monsters: MonsterManager
 var poi_field: PoiField
 ## What the whole world remembers (shared by every player): shrines emptied (and more keys added later:
@@ -182,6 +183,9 @@ func _ready() -> void:
 	storage = Storage.new()
 	storage.name = "Storage"
 	add_child(storage)
+	keys = DungeonKeys.new()
+	keys.name = "DungeonKeys"
+	add_child(keys)
 	monsters = MonsterManager.new()
 	monsters.name = "Monsters"
 	add_child(monsters)
@@ -2811,10 +2815,12 @@ func _rpc_hurt(amount: float, buildup: Dictionary = {}) -> void:
 
 
 func _take_hurt(ps: PlayerState, amount: float, buildup: Dictionary) -> void:
-	ps.vitals.take_damage(amount * (1.0 - ps.armor_cut()))  # clothes/armor soak some up (F23)
+	# clothes/armor soak some up (F23); `pierce`: nothing does (a falling stalactite: always 50, owner Nov 20)
+	ps.vitals.take_damage(amount * (1.0 if buildup.get("pierce", false) else 1.0 - ps.armor_cut()))
 	Sfx.ui("hit_heavy", 0.0)
 	for k in buildup:
-		ps.vitals.add_ailment(k, buildup[k])
+		if k != "pierce":
+			ps.vitals.add_ailment(k, buildup[k])
 
 
 ## Host only: friendly fire on/off (combat doc 2.7: on by default).

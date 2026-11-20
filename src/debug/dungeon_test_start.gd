@@ -81,7 +81,10 @@ func _run() -> void:
 					["gate_hall", Vector3(36.0, 0.3, 45.0), Vector3(32.0, 1.4, 37.0)],
 					["doorway", Vector3(30.0, 0.3, 38.0), Vector3(34.0, 1.2, 46.0)],
 					["pillar_hall", Vector3(34.0, 0.3, 29.0), Vector3(36.0, 1.0, 19.0)],
-					["bridge", Vector3(31.0, 0.3, 6.0), Vector3(40.0, 0.6, 6.0)]]:
+					["bridge", Vector3(31.0, 0.3, 6.0), Vector3(40.0, 0.6, 6.0)],
+					["bridge_gap", Vector3(35.0, 0.3, 3.2), Vector3(38.4, 0.0, 6.0)],  # (owner's 2nd play, Nov 20)
+					["crushers", Vector3(55.6, 0.3, 7.4), Vector3(53.0, 1.2, 5.6)],
+					["cracked_wall", Vector3(65.0, 0.3, 39.5), Vector3(65.0, 1.2, 36.0)]]:
 				dwarf.set_physics_process(false)
 				dwarf.global_position = DungeonMap.to_world(d, v[1])
 				var look: Vector3 = DungeonMap.to_world(d, v[2]) - (dwarf.global_position + Vector3.UP * 1.5)

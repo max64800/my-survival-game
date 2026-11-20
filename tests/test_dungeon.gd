@@ -232,3 +232,168 @@ func test_the_chasm_and_spike_pit_kill() -> void:
 	check_eq(DungeonBuild.deadly_space(d, DungeonMap.to_world(d, Vector3(39, 0.3, 6))), "", "the bridge is safe")
 	check_eq(DungeonBuild.deadly_space(d, DungeonMap.to_world(d, Vector3(30, 0.3, 6))), "", "the chasm room's floor is safe")
 	check_eq(DungeonBuild.deadly_space(d, DungeonMap.to_world(d, Vector3(39, -10.0, 6))), "", "still falling (not yet on the spikes)")
+
+
+# ---- The owner's second play of the dungeon test (Nov 20) ----
+
+## A small game round the dungeon: the host, one player and the built dungeon (seed 42).
+func _rig() -> Dictionary:
+	var m := _maker(42)
+	if m.dungeons.is_empty():
+		return {}
+	var root := Node3D.new()
+	tree.root.add_child(root)
+	var auth := GameAuthority.new()
+	root.add_child(auth)
+	auth.drops_root = Node3D.new()
+	root.add_child(auth.drops_root)
+	var player := Node3D.new()
+	root.add_child(player)
+	var ps := auth.add_player(1, player)
+	var db := DungeonBuild.new()
+	db.maker = m
+	root.add_child(db)
+	return {root = root, auth = auth, player = player, ps = ps, db = db, d = m.dungeons[0]}
+
+
+func _thing(db: DungeonBuild, model: String) -> int:
+	for id in db.things:
+		if db.things[id].model == model:
+			return id
+	return -1
+
+
+## Note 1: stalactites come down in under a second and always hurt 50 (armour or not), anyone within 1.5 m.
+func test_stalactites_fall_fast_and_hurt() -> void:
+	var r := _rig()
+	if r.is_empty():
+		return
+	var db: DungeonBuild = r.db
+	for id in db.things:
+		if db.things[id].kind == "drip":
+			check(db.drip_time(db.things[id]) < 1.0, "stalactite %d lands in under 1 s (%.2f s)" % [id, db.drip_time(db.things[id])])
+	check(DungeonBuild.DRIP_HIT >= 1.4, "it hurts you even a step off its line")
+	var ps: GameAuthority.PlayerState = r.ps
+	ps.vitals.health = 100.0
+	(r.auth as GameAuthority).hurt(1, DungeonBuild.DRIP_DAMAGE, {pierce = true})
+	check_near(ps.vitals.health, 50.0, 0.01, "50 damage, armour doesn't cut it")
+	r.root.free()
+
+
+## Note 2: the spike pit is open right up to the floor (no rock skin under the cracked boards), lit at the bottom,
+## its boards give way quickly, and they come apart (boards that fall one by one).
+func test_the_spike_pit_shows_under_the_breaking_floor() -> void:
+	var m := _maker(42)
+	if m.dungeons.is_empty():
+		return
+	var d: Dictionary = m.dungeons[0]
+	for y in [-3.0, -1.0, -0.1, 0.1]:
+		check(m.sdf_at(DungeonMap.to_world(d, Vector3(39, y, 23))) > 0.3, "the pit is open at y %.1f" % y)
+	var plan := DungeonBuild.load_plan("mossgate")
+	check(plan.lights.any(func(l): return float(l[1]) < -1.0), "a light down in the pit shows the spikes")
+	check_eq(plan.props.filter(func(p): return String(p.model) == "dungeon/trap_spikes.glb" and float(p.pos[1]) == -4.0).size(), 9,
+		"nine spike beds on the pit's floor")
+	check(DungeonBuild.FLOOR_GIVE <= 0.2, "the cracked floor gives way fast")
+	var boards := 0
+	var scene := load("res://assets/models/dungeon/trap_floor_break.glb") as PackedScene
+	var inst := scene.instantiate()
+	boards = inst.find_children("board*", "MeshInstance3D", true, false).size()
+	inst.free()
+	check(boards >= 6, "the cracked tile has loose boards that fall (%d)" % boards)
+
+
+## Note 3: the cracked wall in front of the hidden vault (right of the way in) breaks; so does anything with any hit.
+func test_the_cracked_wall_breaks() -> void:
+	check_eq(DungeonBuild.thing_kind({model = "dungeon/wall_cracked.glb"}), "rubble", "the cracked wall is a breakable thing")
+	var r := _rig()
+	if r.is_empty():
+		return
+	var db: DungeonBuild = r.db
+	var id := _thing(db, "dungeon/wall_cracked.glb")
+	check(id >= 0, "the cracked wall is built as its own body")
+	if id >= 0:
+		(r.player as Node3D).global_position = (db.things[id].centre as Vector3) - Vector3.UP * 1.1
+		for i in DungeonBuild.RUBBLE_HITS:
+			db.request_hit(1, id)
+		check(db.is_broken(id), "four hits break it (bare hands, tool or weapon: no tool check)")
+	r.root.free()
+
+
+## Note 4: standing by the Rune Shrine's basin heals.
+func test_the_shrine_basin_heals() -> void:
+	var r := _rig()
+	if r.is_empty():
+		return
+	var db: DungeonBuild = r.db
+	check_eq(db.heals.size(), 1, "one healing basin")
+	var ps: GameAuthority.PlayerState = r.ps
+	ps.vitals.health = 20.0
+	db._check_heal(r.auth, 1, db.heals[0] + Vector3(1.2, 0, 0), 1.0)
+	check_near(ps.vitals.health, 20.0 + DungeonBuild.HEAL_RATE, 0.01, "next to the basin you heal")
+	db._check_heal(r.auth, 1, db.heals[0] + Vector3(6, 0, 0), 1.0)
+	check_near(ps.vitals.health, 20.0 + DungeonBuild.HEAL_RATE, 0.01, "away from it you don't")
+	r.root.free()
+
+
+## Note 5: the bridge's hand ropes and the edge railings are solid, and one section has a 1 m hole you jump.
+func test_the_bridge_has_ropes_and_a_gap() -> void:
+	var plan := DungeonBuild.load_plan("mossgate")
+	check(plan.props.any(func(p): return String(p.model) == "dungeon/bridge_plank_gap.glb"), "a bridge section with a gap")
+	check(not DungeonBuild.NO_BODY.has("dungeon/railing_broken.glb"), "the edge railings are solid")
+	for model in ["dungeon/bridge_plank.glb", "dungeon/bridge_plank_gap.glb"]:
+		var ropes := (DungeonBuild.BOXES[model] as Array).filter(func(b): return (b[0] as Vector3).y > 0.4)
+		check_eq(ropes.size(), 2, "%s: both hand ropes are solid" % model)
+	for b in DungeonBuild.BOXES["dungeon/bridge_plank_gap.glb"]:
+		var c: Vector3 = b[0]
+		var sz: Vector3 = b[1]
+		if c.y < 0.2:
+			check(absf(c.z) - sz.z * 0.5 >= 0.49, "the deck leaves a hole in the middle (%s)" % c)
+
+
+## Note 6: the crushers slam down fast, take turns (one is always up), and kill a dwarf under one.
+func test_the_crushers_kill() -> void:
+	check(DungeonBuild.CRUSH_SLAM <= 0.2, "they slam down fast")
+	check_near(DungeonBuild.crush_down(0.0), 0.0, 0.001, "up at the start")
+	check_near(DungeonBuild.crush_down(DungeonBuild.CRUSH_SLAM), 1.0, 0.001, "down after the slam")
+	var t := 0.0
+	while t < DungeonBuild.CRUSH_CYCLE:
+		check(DungeonBuild.crush_down(t) < 0.5 or DungeonBuild.crush_down(t - DungeonBuild.CRUSH_CYCLE * 0.5) < 0.5,
+			"never both down at %.1f s" % t)
+		t += 0.1
+	var r := _rig()
+	if r.is_empty():
+		return
+	var db: DungeonBuild = r.db
+	check_eq(db.crushers.size(), 2, "two working crushers")
+	var id: int = db.crushers[0]
+	var th: Dictionary = db.things[id]
+	var ps: GameAuthority.PlayerState = r.ps
+	ps.vitals.health = 100.0
+	(r.player as Node3D).global_position = (th.xform as Transform3D).origin + Vector3.UP * 0.25
+	db._clock = 100.0
+	db._move_crusher(id, 1000.0 * DungeonBuild.CRUSH_CYCLE + 0.05, r.auth)  # (0.05 s into its slam)
+	check(ps.vitals.health <= 0.0, "a dwarf under it while it slams is dead")
+	r.root.free()
+
+
+## Note 7: the loot door opens when the Pack Hall's pack is dead (a DungeonKeys lock: saved, sent to everyone) and
+## shuts when the pack comes back.
+func test_the_loot_door_opens_when_the_pack_dies() -> void:
+	var r := _rig()
+	if r.is_empty():
+		return
+	var db: DungeonBuild = r.db
+	var auth: GameAuthority = r.auth
+	var id := _thing(db, "dungeon/door_loot.glb")
+	check(id >= 0, "the loot door is built as its own body")
+	check(not auth.keys.is_open("mossgate_hold"), "shut at first")
+	db._on_dungeon_room("mossgate", "guard_room", true)
+	check(not auth.keys.is_open("mossgate_hold"), "another room's creatures don't open it")
+	db._on_dungeon_room("mossgate", "pack_hall", true)
+	check(auth.keys.is_open("mossgate_hold"), "the pack dead: it opens")
+	check(auth.world_state.dungeon_doors.mossgate_hold.has("pack"), "kept in the world state (saved, sent to friends)")
+	check(db.things[id].get("open", false), "the door swings open")
+	db._on_dungeon_room("mossgate", "pack_hall", false)
+	check(not auth.keys.is_open("mossgate_hold"), "the pack back: it shuts")
+	check(not db.things[id].get("open", false), "the door is shut again")
+	r.root.free()

@@ -38,12 +38,12 @@ const MOSSGATE := {
 		["shrine_pillars", 18, 18, 24, 22, 0, 3.5],
 		["gate_pillars", 32, 30, 36, 36, 0, 3.5],
 		["pillar_hall", 24, 16, 46, 30, 0, 8],        # 9 (the tall one)
-		["spike_pit", 36, 20, 42, 26, -4, 4],         # under the breaking floor in the middle of the Pillar Hall
+		["spike_pit", 36, 20, 42, 26, -4, 5],         # under the breaking floor (reaches 1 m up into the hall: no rock skin at 0)
 		["pillar_chasm", 32, 12, 36, 16, 0, 3.5],
 		["chasm_room", 24, 0, 46, 12, 0, 7],          # 10
 		["chasm", 36, 0, 42, 12, -24, 31],            # the long drop (spikes at the bottom)
 		["boulder_way", 46, 4, 50, 8, 0, 3],          # 11 the hidden boulder fills it (low, so it fills it)
-		["crusher_hall", 50, 4, 56, 8, 0, 5.5],       # 12 two crushers (their frames are 5.4 m tall)
+		["crusher_hall", 50, 4, 56, 8, 0, 4.5],       # 12 two crushers (under a 4 m root wood ceiling, their chains run up into it)
 		["pack_hall", 56, 0, 72, 18, 0, 6],           # 13
 		["loot_door", 72, 8, 74, 12, 0, 3.5],
 		["loot_room", 74, 4, 84, 16, 0, 4.5],         # 14

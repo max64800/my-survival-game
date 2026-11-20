@@ -21,7 +21,9 @@ rng = random.Random(1907)
 GROUP = {"way_out_n": "way_out", "way_out_w": "way_out", "chasm": "chasm_room", "spike_pit": "pillar_hall"}
 ROOMS = {"gate_hall", "guard_room", "store_room", "vault", "tombs", "shrine", "pillar_hall", "chasm_room",
 	"crusher_hall", "pack_hall", "loot_room"}
-NATURAL_CEILING = {"pillar_hall", "chasm_room", "crusher_hall"}  # rock overhead (stalactites, the crushers' chains)
+NATURAL_CEILING = {"pillar_hall", "chasm_room"}  # rock overhead (stalactites)
+# (owner, Nov 20: the crushers "a bit hidden": the Crusher Hall got a root wood ceiling at 4 m, the crushers' beams sit
+# right under it and their chains run up through it, no torch: you see them late)
 NO_PIECES = {(48, 4), (48, 6)}  # the hidden boulder's spot: bare rock round the boulder
 
 
@@ -158,7 +160,7 @@ for g, side, line, along, rot, cell in rock_edges:
 	# A torch on about every third wall of a room (none in the dark vault: you find it with your lantern).
 	n = torch_every.get(g, 0)
 	torch_every[g] = n + 1
-	if g not in ("vault", "boulder_way") and n % (3 if g in ROOMS else 5) == 1:
+	if g not in ("vault", "boulder_way", "crusher_hall") and n % (3 if g in ROOMS else 5) == 1:
 		ox, oz = {"w": (0.2, 0), "e": (-0.2, 0), "n": (0, 0.2), "s": (0, -0.2)}[side]
 		prop("decor/furn_wall_torch_iron.glb", x + ox, 1.2, z + oz, yaw, role="light")
 		lights.append([round(x + ox * 3, 2), 2.0, round(z + oz * 3, 2)])
@@ -283,6 +285,7 @@ for x, z in [(28.0, 20.0), (28.0, 26.0), (44.0, 20.0), (44.0, 26.0), (33.0, 18.0
 for x in range(36, 42, 2):
 	for z in range(20, 26, 2):
 		prop("dungeon/trap_spikes.glb", x + 1.0, -4.0, z + 1.0, rng.choice([0, 90, 180, 270]), role="trap", label="Spike pit (kills)" if (x, z) == (38, 22) else "")
+lights.append([39.0, -2.6, 23.0])  # (owner, Nov 20: "nothing visible under it": a faint glow down in the pit shows the spikes)
 for i, (x, z) in enumerate([(26.5, 23.0), (31.0, 28.0), (44.0, 23.0), (35.0, 28.6)]):
 	creature("rock_beetle", x, 0.25, z, i * 80.0 + 20.0)
 for x, z, m in [(30.0, 22.0, "trap_drip_thin"), (41.0, 18.5, "trap_drip_fat"), (26.0, 28.0, "trap_drip_thin")]:
@@ -294,9 +297,11 @@ chest("chest_small", 44.0, 28.6, 180.0, "Random chest")
 BRIDGE_Y = 0.13  # the deck's top (0.11 in the models) level with the floor boards' top (0.24): you walk straight on
 prop("dungeon/bridge_posts.glb", 34.6, BRIDGE_Y, 6.0, 90.0, role="door", label="")
 prop("dungeon/bridge_posts.glb", 43.4, BRIDGE_Y, 6.0, 270.0, role="door", label="")
+# Owner, Nov 20: "leave a couple of middle boards missing so you must jump": the second section has a 1 m gap.
+BRIDGE = {1: "bridge_plank_gap", 2: "bridge_plank_broken"}
 for i, x in enumerate([36.4, 38.4, 40.4, 42.4]):
-	prop("dungeon/bridge_plank_broken.glb" if i == 2 else "dungeon/bridge_plank.glb", x, BRIDGE_Y, 6.0, 90.0, role="door",
-		label="Bridge (fall off: you die)" if i == 1 else "")
+	prop("dungeon/%s.glb" % BRIDGE.get(i, "bridge_plank"), x, BRIDGE_Y, 6.0, 90.0, role="trap" if i == 1 else "door",
+		label="Gap in the bridge: jump!" if i == 1 else ("Bridge (fall off: you die)" if i == 0 else ""))
 for z in (1.0, 3.0, 9.0, 11.0):
 	prop("dungeon/railing_broken.glb", 35.6, 0.25, z, 90.0)
 	prop("dungeon/railing_broken.glb", 42.4, 0.25, z, 270.0)
@@ -312,7 +317,7 @@ chest("chest_small", 26.5, 2.6, 0.0, "Random chest")
 # 11 The hidden boulder: one of our cave boulders, made big enough to fill the low tunnel (breaks like cave boulders).
 prop("cave/boulder_round.glb", 49.0, 0.0, 6.0, 30.0, scale=3.0, role="secret", label="Hidden boulder (6 hits)")
 
-# 12 Crusher Hall: two crushers side by side, thump-thump, scrape marks under them.
+# 12 Crusher Hall: two crushers side by side, slamming down in turn (the game: DungeonBuild, kills a dwarf under one).
 prop("dungeon/trap_crusher.glb", 53.0, 0.25, 5.0, 90.0, role="trap", label="Crushers (kill)")
 prop("dungeon/trap_crusher.glb", 53.0, 0.25, 7.0, 90.0, role="trap")
 
@@ -344,7 +349,7 @@ lights.append([79.0, 2.2, 7.0])
 # 15 Way Out: a long low tunnel back to the Store Room.
 lights.append([78.0, 1.8, 30.0])
 
-for x, z in [(34.0, 50.0), (34.0, 33.0), (66.0, 40.0), (12.0, 40.0), (28.0, 6.0), (64.0, 9.0), (53.0, 6.0)]:
+for x, z in [(34.0, 50.0), (34.0, 33.0), (66.0, 40.0), (12.0, 40.0), (28.0, 6.0), (64.0, 9.0)]:  # (no light over the crushers)
 	lights.append([x, 3.0, z])
 
 # --- Write it out. ---

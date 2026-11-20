@@ -21,6 +21,8 @@ const DUNGEON_RESPAWN := 3600.0  ## creatures move back into a cleared dungeon r
 const BATS := [4, 6]  ## bats per roost (owner, Nov 19: "5 frost ones, or 5 ember ones")
 
 signal defended(result: Dictionary)  ## our own dwarf parried/blocked/took a hit (for the HUD)
+## Host: a dungeon room's creatures came (cleared = false) or were all killed (true) (Mossgate's loot door, owner Nov 20).
+signal dungeon_room(dungeon_id: String, room: String, cleared: bool)
 
 var auth: GameAuthority
 var monsters := {}  ## uid -> Monster
@@ -125,6 +127,15 @@ func _spawn_and_despawn() -> void:
 	var maker: CaveMaker = auth.world.maker
 	for g in _dungeon_groups():
 		_group_step(g.key, g, _nearest_player_dist(g.center), DUNGEON_RESPAWN, _spawn_dungeon_group.bind(g), DUNGEON_NEAR)
+		# Tell the dungeon when a room's creatures came, or were all killed (not when they just left: nobody near).
+		var st: Dictionary = _rooms[g.key]
+		var now: int = st.alive.size()
+		var was: int = g.get("was", 0)
+		g.was = now
+		if was == 0 and now > 0:
+			dungeon_room.emit(String(g.d.id), String(g.room), false)
+		elif was > 0 and now == 0 and float(st.cleared_at) > -DUNGEON_RESPAWN:
+			dungeon_room.emit(String(g.d.id), String(g.room), true)
 	for i in maker.rooms.size():
 		if dungeon_only:
 			break

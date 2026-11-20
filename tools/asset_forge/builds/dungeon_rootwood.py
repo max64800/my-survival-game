@@ -14,6 +14,7 @@
 #                     "frame" (beams, stay) and board0, board1... (each falls on its own)
 #   bridge_plank      batch 3: a 2 m section of plank bridge (rope stringers, planks across, hand ropes), tiles along z
 #   bridge_plank_broken  the same with planks gone, one hanging, a hand rope snapped
+#   bridge_plank_gap  the same with the four middle planks gone (you jump the gap), hand ropes whole
 #   dungeon_entrance  the front door frame in the cave wall (3 m wide): the round doorway, big posts, lintel, rune board
 #   door_loot         the loot room's heavy round door: iron bands, lock plate, a big ring (fits the normal doorway)
 #   chain_hanging     1.5 m of the crusher's iron chain under a ceiling plate (origin = the ceiling, chain hangs down)
@@ -239,10 +240,12 @@ def rope(p0, p1, r, ends=True):
 	return o
 
 
-def bridge(broken=False):
+def bridge(broken=False, gap=False):
 	"""A 2 m section of plank bridge (along z, 1.3 m wide): two thick rope stringers under split planks laid
 	across, hand ropes at 0.95 m tied down to the planks. Sections side by side make a bridge of any length.
-	broken: two planks gone, one hanging off a stringer, the left hand rope snapped with both ends dangling."""
+	broken: two planks gone, one hanging off a stringer, the left hand rope snapped with both ends dangling.
+	gap (owner, Nov 20: "leave a couple of middle boards missing so you must jump"): the four middle planks gone
+	(about 1 m of bare rope), both hand ropes whole."""
 	L = 0.994
 	for x in (-0.5, 0.5):
 		rope((x, 0.04, -L), (x, 0.04, L), 0.035)
@@ -251,7 +254,7 @@ def bridge(broken=False):
 		w = K.rng.uniform(0.2, 0.23)
 		zs.append((z, min(z + w, L - 0.01)))
 		z += w + K.rng.uniform(0.025, 0.035)
-	gone = {3, 4} if broken else set()
+	gone = {3, 4} if broken else ({2, 3, 4, 5} if gap else set())
 	for i, (z0, z1) in enumerate(zs):
 		if i in gone:
 			continue
@@ -935,7 +938,7 @@ def pictures(name, parts):
 BUILDS = {"wall_broken": wall_broken, "recipe_stand": recipe_stand, "recipe_scroll": recipe_scroll, "bridge_posts": bridge_posts,
 	"wall_cracked": wall_cracked, "wall_old": wall_old, "floor_old": floor_old,
 	"floor_loose_stone": floor_loose_stone, "gate_round": gate_round, "lever": lever, "railing_broken": railing_broken,
-	"bridge_plank": bridge, "bridge_plank_broken": lambda: bridge(True), "dungeon_entrance": entrance,
+	"bridge_plank": bridge, "bridge_plank_broken": lambda: bridge(True), "bridge_plank_gap": lambda: bridge(gap=True), "dungeon_entrance": entrance,
 	"door_loot": loot_door, "chain_hanging": chain_hanging, "trap_dart_plate": dart_plate, "trap_dart_wall": dart_wall, "trap_floor_break": floor_break, "trap_crusher": crusher}
 
 if __name__ == "__main__":

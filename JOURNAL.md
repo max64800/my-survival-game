@@ -5892,3 +5892,35 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   re-check. Lesson: put temporary probes only in my own files.
 - **Not mine, unsaved:** 6 files (Wooden Watchtower / Rebuilding Chest: blueprint_library, cave_ins, structure,
   storage, auto_smelt, test_blueprint_library). No chat claims them. Waiting for the owner.
+
+## November 20, 2026 (PC, dungeons Claude, chat 5): the owner's 7 notes from his second Mossgate Hold play
+- **Read first:** the Mac's handover note and its F237 files. Its keys and locked doors (`DungeonKeys`) were written but
+  never switched on in the game; now `GameAuthority` makes one at start, like the chests (Storage).
+- **Shown first on the 3D page** (same link, version 5): a bridge section with its 4 middle boards gone (new Blender
+  model `bridge_plank_gap`, made by the same script as the other bridge parts), the crushers slamming in turn (they
+  move on the page), a low wooden ceiling over the crushers, and a deeper spike pit with a glow at the bottom.
+- **1, stalactites:** they took 1.6 s to fall from 8 m, so you had walked 6 m on; and only someone within 1 m got hurt.
+  Now a short crack, then they fall 3 times as hard (under 1 s in all), aim at where you'll be (from your walking
+  speed), hurt anyone within 1.5 m, and armour no longer cuts the 50 (a new "pierce" flag on hurts).
+- **2, spike pit:** the real bug: the pit's box stopped at floor level and the hall's started there, so the cave maker
+  left a thin skin of rock exactly under the cracked boards. Now the pit reaches 1 m up into the hall. The boards give
+  way after 0.15 s and every board tumbles down into the pit one by one; a faint light shows the spikes.
+- **3, the thing you couldn't break:** the cracked wall in front of the hidden vault was never a breakable thing (only
+  a solid wall picture). Now it breaks like the rubble (4 hits, its boards burst out). Weapons now break dungeon
+  things too (they go through the fight code, not the tool swing), and the boulder takes any hit.
+- **4, healing basin:** it had no code at all. Standing within 2.5 m heals 8 health a second, with one message.
+- **5, bridge:** hand ropes and edge railings are solid now; the gap section has a 1 m hole you jump.
+- **6, crushers:** they were only pictures. Now each weight slams down 1.5 m in 0.15 s, stays, rises, waits (3 s a
+  turn; the two take turns, so one is always up). A dwarf under one while it slams dies (the host decides). Every
+  computer times them from its own clock of the day, so friends see the same slam. Hidden a bit: a 4 m wooden ceiling
+  that the chains vanish into and no torch. (The owner meant to send a picture of "hidden"; it hasn't arrived yet.)
+- **7, loot door:** the monster code now tells the dungeon when a room's creatures are all killed. The Pack Hall's
+  pack dead = the loot door's "pack" lock opens (a DungeonKeys lock: saved in the world, sent to everyone) and the
+  door swings open. When the pack moves back in, it shuts again.
+- **Tests:** 7 new checks in test_dungeon (one per note); all 39 dungeon checks pass (mine + the Mac's). A muted,
+  marked robot game (seed 42) builds it all with no script errors; the dwarf even got hit by a stalactite on the way.
+- **Hurdles (Claude's own):** a long command with a script inside it broke the shell (a quote problem), so the edit
+  went into a script file instead. One edit didn't match because I counted the tabs wrong. The first robot pictures
+  of the crushers and the gap were blocked (by the hidden boulder, and by the dwarf); I moved the camera and ran again.
+  The crusher picture is still cluttered (a beetle dazed the dwarf), so the owner checks that one himself.
+- **Meanwhile:** the caves chat briefly restored monster_manager.gd from an older copy; my new lines were still there.

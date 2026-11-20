@@ -277,6 +277,14 @@ func _impact(heavy: bool, combo_step: int, riposte: bool, airborne: bool = false
 		auth.monsters.ask_attack(uids, heavy, combo_step, riposte, airborne)
 		dwarf.add_shake(0.3 if heavy else 0.15)
 	else:
+		# A dungeon thing under the crosshair (rubble, the cracked wall, the hidden boulder, furniture): weapons break
+		# them too (owner, Nov 20: "ANY hit must break it"; tools go through Dwarf._on_swing_impact).
+		var aimed: Dictionary = dwarf.aim()
+		var thing_id := DungeonBuild.id_of(aimed.get("collider"))
+		if thing_id >= 0 and DungeonBuild.instance:
+			DungeonBuild.instance.ask_hit(thing_id)
+			dwarf.add_shake(0.3 if heavy else 0.15)
+			return
 		var dummy: Station = auth.station_near(dwarf.global_position + fwd * 1.2, reach)
 		if dummy and dummy.kind == "training_dummy":
 			auth.ask_train(dummy.station_id)
