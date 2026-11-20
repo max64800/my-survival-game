@@ -64,12 +64,15 @@ const LAMPWICK := {
 	mouth = Vector2(26, 60),
 	since = 15,     ## the first cave layout that has it (older worlds keep only Mossgate)
 	best = 120.0,   ## metres from the start it likes best (Mossgate: 150)
+	chase_out = true,  ## owner, Nov 20: a woken creature follows you out of its room (Monster.chases_out)
 	spaces = [
 		["entry", 24, 52, 28, 60, 0, 3.5],            # the way in
 		["lamp_room", 22, 46, 28, 52, 0, 4.5],        # 1 (the barred gate on its east wall)
 		["rail_tunnel", 24, 36, 28, 46, 0, 3.5],      # 2 (the tripwire)
 		["rail_bend", 22, 34, 28, 38, 0, 3.5],        #   (the tunnel turns west into the junction's foot)
-		["cart_junction", 16, 22, 22, 38, 0, 8],      # 3 three rails climbing 3 m north (z 33.6 -> 22), the carts
+		["cart_junction", 16, 22, 22, 40, 0, 8],      # 3 three rails climbing 3 m north (z 33.6 -> 22), the carts
+		                                              #   (its level foot runs on 2 m past the way in: owner, Nov 20,
+		                                              #   a crashed cart blocked the doorway after you died)
 		["junction_top", 16, 18, 22, 22, UP, 4.5],    #   the landing at the top of the rails
 		["tool_store", 10, 16, 16, 22, UP, 4.5],      # 4 (the loose stone)
 		["drip_tunnel", 18, 8, 22, 18, UP, 4.5],      # 5 (stalactites)

@@ -71,7 +71,7 @@ const LIST := {
 	# no_variant: no fiery/icy crystal ones (crystals can't follow the bones; the Lost Miner is icy already).
 	# No drops yet (only the statue's stone): asked the owner what the dead miners' bones should give.
 	# F467: the Tunnel Rat is a small fast pest in groups, easy to kill, soft hits.
-	"tunnel_rat": {name = "Tunnel Rat", dungeon_only = true, rises = true, rise_near = 8.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 2,
+	"tunnel_rat": {name = "Tunnel Rat", dungeon_only = true, rises = true, rise_near = 11.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 2,
 		size = 1.0, height = 1.0, hp = 26, armor = 0, stun = 30, slash = 1.0, blunt = 1.25, pierce = 0.75,
 		fire = 0.0, frost = 0.0, poison = 1.0, walk = 2.0, run = 5.0, pack = [3, 5], xp = 5,
 		color = Color(0.62, 0.56, 0.45), shape = "tunnel_rat", recover = 0.8,
@@ -79,7 +79,7 @@ const LIST := {
 			{name = "Shovel Jab", anim = "1H_Melee_Attack_Stab", tell = 0.45, damage = 5, type = "pierce", reach = 1.7, parry = "any"}],
 		drops = []},
 	# F466/F467: the Lost Miner is slow and tough, and its pick is ice cold (chill buildup: 3 hits freeze you).
-	"lost_miner": {name = "Lost Miner", dungeon_only = true, rises = true, rise_near = 8.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 4,
+	"lost_miner": {name = "Lost Miner", dungeon_only = true, rises = true, rise_near = 11.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 4,
 		size = 1.0, height = 1.45, hp = 95, armor = 15, stun = 80, slash = 0.9, blunt = 1.25, pierce = 0.75,
 		fire = -0.25, frost = 0.75, poison = 1.0, walk = 1.0, run = 2.6, pack = [1, 3], xp = 14,
 		color = Color(0.7, 0.82, 0.78), shape = "lost_miner", recover = 1.2,
@@ -90,8 +90,9 @@ const LIST := {
 	# knocks you down: step back out of it). Owner, Nov 20: the spin reached far too far and he only ever spun
 	# (he got into its 2.7 m range before the chop's 2.3 m). Now the spin is short (hits up to 2.6 m, the chop's
 	# range is longer so he opens with the chop) and rests 7 s after each use (rest = seconds before it comes again).
+	# Owner, Nov 20: 30% less health (420 -> 294), and his swings break the stone of fallen miners (like a beetle's charge).
 	"foreman": {name = "The Foreman", dungeon_only = true, rises = true, rise_near = 10.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 10, boss = true,
-		size = 1.0, height = 1.9, hp = 420, armor = 30, stun = 220, slash = 0.9, blunt = 1.25, pierce = 0.75,
+		smashes_statues = true, size = 1.0, height = 1.9, hp = 294, armor = 30, stun = 220, slash = 0.9, blunt = 1.25, pierce = 0.75,
 		fire = 0.0, frost = 0.5, poison = 1.0, walk = 1.4, run = 3.6, pack = [1, 1], xp = 80,
 		color = Color(0.55, 0.5, 0.44), shape = "foreman", recover = 1.6,
 		attacks = [{name = "Great Chop", anim = "2H_Melee_Attack_Chop", warn_sound = "beetle_rumble", tell = 1.0, damage = 26, type = "slash", reach = 2.3, parry = "any"},

@@ -7,7 +7,8 @@ there and it rebuilds automatically."
 ## The owner's picks (Nov 19)
 - **How it builds:** one piece at a time, quickly, bottom floor first (like a build site), until the chest runs out.
 - **Wooden version takes planks** (made at the Workbench), not raw rootwood.
-- **Reward:** the structure's blueprint (in the material you rebuilt it with) **and** building experience.
+- **Reward:** **both** of the structure's blueprints (wood and stone, whichever you rebuilt it with; owner, Nov 20) **and**
+  building experience.
 - **Rubble:** the rebuilding clears it as it goes, floor by floor.
 
 ## How it works
@@ -20,7 +21,7 @@ there and it rebuilds automatically."
    on a floor is cleared when that floor is being rebuilt.
 4. **Like any build site:** it builds while someone stands by the chest with the Build Hammer, one piece every moment,
    bottom floor first; it says what it still needs.
-5. **When the last piece is in:** everyone learns the blueprint ("Wooden Watchtower" or "Stone Watchtower"), everyone
+5. **When the last piece is in:** everyone learns both blueprints ("Wooden Watchtower" and "Stone Watchtower"), everyone
    near gets a big lump of crafting experience (the game has no building skill yet), and the chest goes away
    (leftovers drop beside it). The world remembers the ruin is rebuilt.
 6. **Co-op:** the host decides; everyone sees the pieces appear. Saved like any build site.
@@ -29,6 +30,13 @@ there and it rebuilds automatically."
 Made from the Stone Watchtower: every piece in root planks; pieces that have no wooden version (battlements) become
 wooden railings.
 
+## The Fallen Outpost (owner, Nov 20, F478)
+Rebuilt the same way: its chest stands in front of the gatehouse, beside the way in; rebuilding teaches the "Wooden
+Outpost" and the "Stone Outpost". The Stone Outpost blueprint is lined up exactly like its ruin (the front and the right
+wall slid, F305; `BlueprintLibrary._outpost_line_up`), with a small step in the right wall where the two parts meet, so
+nothing whole is torn down. The torn-off gate halves are cleared at the end. The big gate has no wooden version, so the
+wooden rebuild still hangs a stone gate. Each ruin's record names its two blueprints, its name and how far it reaches.
+
 ## Later
-- The Fallen Outpost and other ruins the same way (each ruin names its whole blueprint).
+- More ruins the same way (F479: "we need a lot more ruins"); each ruin names its two blueprints.
 - A building skill, if the owner wants one.

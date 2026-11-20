@@ -198,7 +198,7 @@ func _dungeon_groups() -> Array:
 			var room := DungeonMap.space_at(d, DungeonMap.to_world(d, Vector3(local.x, fl + 1.0, local.z)))
 			if not by.has(room):
 				by[room] = []
-			by[room].append([String(c.kind), local, fl])
+			by[room].append([String(c.kind), local, fl, c.get("wake", [])])
 		var gi := 0
 		for room in by:
 			var mid := Vector3.ZERO
@@ -236,6 +236,7 @@ func _spawn_dungeon_group(_room: Dictionary, g: Dictionary) -> Array:
 		if mon:  # (it stays in its room and only notices you there: Monster.may_step, nearest_noticer)
 			mon.dungeon = g.d
 			mon.dungeon_room = String(g.room)
+			mon.dungeon_wake = c[3] if c.size() > 3 else []
 		uids.append(uid)
 	print("DUNGEON_MONSTERS %s: %d in the %s" % [g.d.id, uids.size(), g.room])
 	return uids
@@ -398,9 +399,18 @@ func nearest_noticer(m: Monster) -> int:
 		if ignores(ps.node):
 			continue
 		var p: Vector3 = ps.node.global_position
-		if not m.dungeon.is_empty() and DungeonMap.space_at(m.dungeon, p + Vector3.UP) != m.dungeon_room:
-			continue  # (a dungeon creature only notices you in its own room: owner, Nov 20, the bats woke early)
 		var d := p.distance_to(m.global_position)
+		if not m.dungeon.is_empty():
+			var room := DungeonMap.space_at(m.dungeon, p + Vector3.UP)
+			if room != m.dungeon_room and room != "" and room in m.dungeon_wake and m.state == Monster.State.SLEEP and d < best_d:
+				best = pid  # (Lampwick: the rats above the carts wake as you come into the junction, owner Nov 20)
+				best_d = d
+				continue
+			# A dungeon creature only notices you in its own room (owner, Nov 20, the bats woke early). In Lampwick a
+			# pile of bones also sees you from the next room, close by (owner, Nov 20: they lay there while shot at).
+			if room != m.dungeon_room and not (m.chases_out() and m.state == Monster.State.SLEEP
+					and d <= float(m.data.get("rise_near", 4.0)) and _can_see(m.global_position + Vector3.UP * 0.5, p + Vector3.UP)):
+				continue
 		var lit := ps.fuel > 0.0
 		var sight := Monsters.SIGHT if lit else Monsters.SIGHT_DARK
 		if m.data.get("likes_light", false):
@@ -1180,6 +1190,24 @@ func charge_smash(m: Monster, dir: Vector3) -> int:
 			ok = not done.has(key) and smash_statue(st, m.global_position)
 		if ok:
 			done[key] = true
+			broke += 1
+	return broke
+
+
+## Host: a swing of a creature that smashes stone (the Foreman) lands: every fallen miner's stone in its reach breaks
+## (in front of it; all round for a spin).
+func smash_statues_in_reach(m: Monster, atk: Dictionary) -> int:
+	var fwd := -Basis(Vector3.UP, m.model.rotation.y).z
+	var all_round := String(atk.get("anim", "")).contains("Spin")
+	var broke := 0
+	for id in statues.keys():
+		var at: Vector3 = Statue.where(id, statues[id].pos)
+		var to := (at - m.global_position) * Vector3(1, 0, 1)
+		if to.length() > float(atk.get("reach", 2.0)) + 0.8 or absf(at.y - m.global_position.y) > 2.0:
+			continue
+		if not all_round and to.length() > 0.3 and to.normalized().dot(fwd) < 0.2:
+			continue
+		if smash_statue(id, m.global_position):
 			broke += 1
 	return broke
 

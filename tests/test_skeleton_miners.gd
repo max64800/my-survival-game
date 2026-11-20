@@ -178,3 +178,19 @@ func test_foreman_spin_rests() -> void:
 		check(m._pick_attack(1.0).name != whirl_name, "right after a spin he only chops")
 	check_eq(m._pick_attack(2.2).name, Monsters.LIST.foreman.attacks[0].name, "at 2.2 m only the chop reaches")
 	_teardown()
+
+
+## Owner, Nov 20: the bone piles all lay the same way; and the Foreman's swing breaks a fallen miner's stone.
+func test_piles_lie_every_way_and_the_foreman_smashes_stone() -> void:
+	await _setup()
+	var a := _spawn("tunnel_rat", Vector3(12, 0, 0))
+	var b := _spawn("tunnel_rat", Vector3(12, 0, 3))
+	check(absf(a.model.rotation.y - b.model.rotation.y) > 0.2, "two piles lie different ways")
+	var boss := _spawn("foreman", Vector3(-12, 0, 0))
+	var at := boss.global_position + Vector3(0, 0, -1.2)
+	auth.monsters.statues[999] = {pos = at, kind = "lost_miner", loot = [], hits = 0, needed = 4, left = 60.0}
+	boss.model.rotation.y = 0.0  # (facing -z: the stone is right in front)
+	var n := auth.monsters.smash_statues_in_reach(boss, Monsters.LIST.foreman.attacks[0])
+	check_eq(n, 1, "his chop breaks the stone in front of him")
+	check(not auth.monsters.statues.has(999), "it is gone")
+	_teardown()

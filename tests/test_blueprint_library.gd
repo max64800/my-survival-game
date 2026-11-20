@@ -3,7 +3,7 @@ extends TestCase
 
 
 func test_four_blueprints_exist() -> void:
-	check_eq(BlueprintLibrary.IDS.size(), 8, "eight blueprints (the starter hut, six found in ruins, the Wooden Watchtower learned by rebuilding the ruin)")
+	check_eq(BlueprintLibrary.IDS.size(), 9, "nine blueprints (the starter hut, six found in ruins, the Wooden Watchtower and Wooden Outpost learned by rebuilding ruins)")
 	for id in BlueprintLibrary.IDS:
 		check(BlueprintLibrary.make(id) != null, "%s can be made" % id)
 

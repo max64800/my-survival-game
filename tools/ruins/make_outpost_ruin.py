@@ -1,5 +1,6 @@
 # The RUINED Stone Outpost (the "Fallen Outpost", owner Nov 17): made from the real blueprint, then broken.
-#   godot --headless --path . -s res://tools/dump_blueprint.gd -- stone_outpost <outpost.json>
+#   godot --headless --path . -s res://tools/dump_blueprint.gd -- stone_outpost_grid <outpost.json>
+#   (the grid layout: this script slides it the way the Stone Outpost blueprint is lined up, BlueprintLibrary._outpost_line_up)
 #   python tools/ruins/make_outpost_ruin.py <outpost.json> [page=<folder>]
 # Writes blueprints/ruins/outpost_ruin.json (pieces, chests with loot, beetle spots) for the world to place, and
 # with page=<folder> the 3D preview page's files. Same damage ideas as the watchtower ruin: no doors (two lie

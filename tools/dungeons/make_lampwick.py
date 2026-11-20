@@ -28,6 +28,7 @@ JUNC_TOP, BACK_TOP = 22.0, 28.0          # where the climbing rails reach the up
 JUNC_LOW = JUNC_TOP + 12.0 * C           # their foot (z 33.62)
 BACK_LOW = BACK_TOP + 12.0 * C           # (39.62)
 RAIL_TOP = 0.36                          # a lane's rail top above its origin (the carts' wheels sit there)
+FOOT_END = JUNC_LOW + 6.0                # the end of the level rails at the junction's foot (the stoppers)
 
 GROUP = {"rail_bend": "rail_tunnel", "junction_top": "cart_junction", "back_rails_w": "back_rails",
 	"shaft_n": "old_shaft", "shaft_s": "old_shaft"}
@@ -92,9 +93,9 @@ CREATURE_MODEL = {"tunnel_rat": "creatures/tunnel_rat_rust.glb", "lost_miner": "
 	"foreman": "creatures/foreman.glb"}
 
 
-def creature(kind, x, z, yaw=0.0, floor=UP):
+def creature(kind, x, z, yaw=0.0, floor=UP, wake=None):
 	creatures.append({"kind": kind, "model": CREATURE_MODEL[kind], "pos": r3((x, floor + 0.25, z)), "yaw": yaw, "scale": 1.0,
-		"floor": floor})
+		"floor": floor, **({"wake": wake} if wake else {})})
 
 
 def chest(kind, x, z, yaw, label, sure=False, loot="random", y=None):
@@ -212,7 +213,8 @@ for g, sp, side, line, along, rot, cell, y0 in rock_edges:
 
 # Junctions: the round doorway (1.5x) in the middle of a 4 m opening, 1 m narrow walls beside it, two high, a half
 # wall over it up to a taller room's ceiling. Special ones: the cracked wall to the vault, the barred way-out gate.
-SPECIAL_J = {("bat_gallery", "vault"): "cracked", ("back_rails", "lamp_room"): "gate"}
+SPECIAL_J = {("bat_gallery", "vault"): "cracked", ("back_rails", "lamp_room"): "gate",
+	("office", "office_door"): "hand_door"}  # (owner, Nov 20: a door you open, so you can't see the boss from outside)
 for (a, b, along_z, line), jn in junctions.items():
 	spots = sorted(jn["spots"])
 	y = jn["y"]
@@ -235,6 +237,8 @@ for (a, b, along_z, line), jn in junctions.items():
 		sys.exit("junction %s/%s is %.0f m wide (doorways need 4 m)" % (a, b, hi - lo))
 	x, z = p(mid)
 	piece("doorway", x, y, z, rot, DOOR_SCALE)
+	if kind == "hand_door":
+		prop("dungeon/door_loot.glb", x, y, z, 90.0 if along_z else 0.0, DOOR_SCALE, role="door", label="Round door: E to open", opens="hand")
 	if kind == "gate":
 		prop("dungeon/gate_round.glb", x, y, z, 90.0 if along_z else 0.0, DOOR_SCALE, role="door", label="Barred gate: the way out")
 		# The lever: on the Back Rails' north wall, 1.2 m past the gate, its back on the boards' face.
@@ -279,18 +283,18 @@ for i in range(3):
 	for k in range(6):
 		px, py, pz = slope_point(xc, JUNC_TOP, 11.0 - 2.0 * k)
 		prop("dungeon/rail_lane.glb", px, py, pz, 0.0, tilt=TILT)
-	for zc in (JUNC_LOW + 1.0, JUNC_LOW + 3.0):
+	for zc in (JUNC_LOW + 1.0, JUNC_LOW + 3.0, JUNC_LOW + 5.0):  # (3 level pieces: a crashed cart stops past the doorway)
 		prop("dungeon/rail_lane.glb", xc, 0.0, zc, 0.0)
-	prop("dungeon/rail_buffer.glb", xc, 0.0, JUNC_LOW + 4.0 - 0.47, 0.0)
+	prop("dungeon/rail_buffer.glb", xc, 0.0, FOOT_END - 0.47, 0.0)
 	start = slope_point(xc, JUNC_TOP, 1.0, RAIL_TOP)
 	foot = slope_point(xc, JUNC_TOP, 12.0, RAIL_TOP)
-	stop = (xc, RAIL_TOP, JUNC_LOW + 4.0 - 0.47 - 0.29 - 0.86)
+	stop = (xc, RAIL_TOP, FOOT_END - 0.47 - 0.29 - 0.86)
 	prop("dungeon/trap_cart.glb", *start, 0.0, role="trap", tilt=TILT, label="Cart (its lane's wedge snaps when you step in)" if i == 0 else "",
-		path=[r3(start), r3(foot), r3(stop)], lane=[xc - 1.0, JUNC_TOP, xc + 1.0, JUNC_LOW + 4.0])
+		path=[r3(start), r3(foot), r3(stop)], lane=[xc - 1.0, JUNC_TOP, xc + 1.0, FOOT_END])
 	prop("dungeon/rail_wedge.glb", *slope_point(xc, JUNC_TOP, 1.0 + 0.45 + 0.17, RAIL_TOP), 0.0, role="trap", tilt=TILT,
 		label="Rotten wedge" if i == 0 else "")
 for i, (x, z) in enumerate([(17.5, 19.6), (20.4, 20.6), (19.0, 18.8)]):
-	creature("tunnel_rat", x, z, 180.0 + i * 40.0)
+	creature("tunnel_rat", x, z, 180.0 + i * 40.0, wake=["cart_junction"])  # (they get up as you come in below, owner Nov 20)
 
 # 4 Tool Store: shelves, a barrel rack, crates; the loose stone with a buried chest under it.
 prop("decor/shack_shelf.glb", 13.0, F, 16.45, 0.0)
@@ -303,7 +307,7 @@ chest("chest_small", 15.2, 17.2, 270.0, "Random chest")
 # 5 Drip Tunnel: stalactites low over the way (shoot them down first, or run); rats.
 DRIP_Y = UP + 4.5 + 0.6
 for x, z, m in [(19.2, 15.4, "trap_drip_fat"), (20.8, 12.6, "trap_drip_cluster"), (19.6, 9.8, "trap_drip_thin")]:
-	prop("dungeon/%s.glb" % m, x, DRIP_Y, z, rng.choice([0, 120, 240]), role="trap", tilt=180.0, floor=UP,
+	prop("dungeon/%s.glb" % m, x, DRIP_Y, z, rng.choice([0, 120, 240]), role="trap", tilt=180.0, floor=UP, warn=0.35, fall=0.45,
 		label="Stalactite (cracks and dust)" if m == "trap_drip_fat" else "")
 for x, z in [(20.6, 16.4), (19.4, 11.2)]:
 	creature("tunnel_rat", x, z, 0.0)

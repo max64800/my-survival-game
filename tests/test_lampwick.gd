@@ -364,3 +364,88 @@ func test_the_vault_chest_spikes() -> void:
 func test_each_basin_keeps_its_own_water() -> void:
 	check_eq(DungeonBuild.basin_key({id = "mossgate"}), "dungeon_basin", "Mossgate's basin as before")
 	check(DungeonBuild.basin_key({id = "lampwick"}) != "dungeon_basin", "Lampwick's basin has its own")
+
+
+# ---------------------------------------------------------------- the owner's first play of Lampwick (Nov 20)
+
+func test_the_dart_poisons_and_carts_hurt_through_armour() -> void:
+	check(MineTraps.DART_POISON >= Ailments.FULL, "one dart is a full dose of poison")
+	check(MineTraps.CART_DAMAGE >= 40.0, "a cart hurts")
+
+
+func test_bear_jaws_can_be_sprung_safely() -> void:
+	var r := _rig()
+	var db: DungeonBuild = r.db
+	var ps: GameAuthority.PlayerState = r.ps
+	var jaws := _all(db, "jaws")
+	db.request_hit(1, jaws[0], true)
+	check(db.is_broken(jaws[0]), "a bolt springs them")
+	(r.player as Node3D).global_position = db.things[jaws[1]].centre
+	db.request_hit(1, jaws[1])
+	check(db.is_broken(jaws[1]), "a hit springs them")
+	var hp0: float = ps.vitals.health
+	db.mine.host_check(r.auth, 1, (db.things[jaws[0]].xform as Transform3D).origin, 0.1)
+	check_eq(ps.vitals.health, hp0, "sprung jaws don't bite")
+	check(db.mine._held.is_empty(), "nobody is held")
+	r.root.free()
+
+
+## After you die and come back, the crashed carts must not block the Rail Tunnel's doorway (x 22, z 35-37).
+func test_crashed_carts_leave_the_way_in_free() -> void:
+	var r := _rig()
+	var db: DungeonBuild = r.db
+	for id in _all(db, "cart"):
+		var stop: Vector3 = db.things[id].path[db.things[id].path.size() - 1]
+		var q := DungeonMap.to_local(r.d, stop)
+		check(q.z - 0.86 > 37.1, "a stopped cart (lane x %.0f) ends at z %.2f, past the doorway" % [q.x, q.z - 0.86])
+	r.root.free()
+
+
+func test_the_boss_room_has_a_door() -> void:
+	var r := _rig()
+	var db: DungeonBuild = r.db
+	var found := false
+	for id in _all(db, "hand_door"):
+		var q := DungeonMap.to_local(r.d, (db.things[id].xform as Transform3D).origin)
+		if absf(q.z - 18.0) < 0.5 and q.x > 40.0 and q.x < 44.0:
+			found = true
+			check(not db.use_info(id).is_empty(), "E opens it")
+	check(found, "a round door into the Foreman's Office")
+	r.root.free()
+
+
+func test_stalactites_fall_slower_here_and_quieter() -> void:
+	var r := _rig()
+	var db: DungeonBuild = r.db
+	for id in _all(db, "drip"):
+		check(db.drip_time(db.things[id]) >= 0.7, "a stalactite takes a moment to come down (%.2f s)" % db.drip_time(db.things[id]))
+	r.root.free()
+
+
+func test_the_healing_basin_can_be_reached() -> void:
+	var r := _rig()
+	var db: DungeonBuild = r.db
+	var ps: GameAuthority.PlayerState = r.ps
+	ps.vitals.health = 40.0
+	(r.player as Node3D).global_position = db.heals[0] + Vector3(1.0, 0, 0)
+	db._check_heal(r.auth, 1, db.heals[0] + Vector3(1.0, 0, 0), 1.0)
+	check(ps.vitals.health > 40.0, "standing by the basin heals you")
+	var q := PhysicsRayQueryParameters3D.create(db.heals[0] + Vector3(3.0, 0.3, 0), db.heals[0] + Vector3(0.6, 0.3, 0))
+	await tree.physics_frame
+	var hit := db.get_world_3d().direct_space_state.intersect_ray(q)
+	check(hit.is_empty() or (hit.position as Vector3).distance_to(db.heals[0]) < 0.7, "nothing blocks the walk to it (the rubble is walked over)")
+	r.root.free()
+
+
+func test_lampwick_creatures_follow_you_out() -> void:
+	var d := _lampwick(_test_world())
+	check(bool(d.map.get("chase_out", false)), "Lampwick's creatures follow you out of their room")
+	check(not bool(DungeonMap.MOSSGATE.get("chase_out", false)), "Mossgate's stay in their rooms (as before)")
+	var rats: Array = DungeonBuild.load_plan("lampwick").creatures.filter(func(c): return c.get("wake", []).has("cart_junction"))
+	check_eq(rats.size(), 3, "the rats above the carts wake when you come into the junction")
+
+
+func test_the_foreman_is_weaker_and_smashes_stone() -> void:
+	var boss: Dictionary = Monsters.LIST.foreman
+	check(boss.hp <= 300, "30%% less health (%d)" % boss.hp)
+	check(boss.get("smashes_statues", false), "his swings break fallen miners' stone")

@@ -6828,3 +6828,19 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   which would have left open holes. Replaced before building with a thin curved trough made directly.
 - **Next:** batch 5 (big dungeons, `junk_big_forge.jpg`): `junk_slag` (nothing glows), `junk_tongs_hammer`,
   `junk_crucible_mould` (smaller than the trap mould), `junk_scrap`, plus `junk_rubble_brick` (`junk_shared.jpg` #9).
+
+## November 20, 2026 (PC, dungeons Claude for dungeon 2, game code): the owner's first play of Lampwick (F480-F494)
+- **Fixed (14 notes):** the dart poisons (one dart = a full dose; it gave 45 of the 100 needed); carts hit for 40
+  through armour; the rats above the carts wake as you come into the junction; Lampwick's creatures follow you out of
+  their room (a map setting, `chase_out`: Mossgate's stay in their rooms, as the owner once asked there) and bone piles
+  see you from the next room (wake distance 11 m); stalactites quieter everywhere, slower in Lampwick only (0.8 s);
+  the boulder is silent; bear jaws spring safely on a bolt or a hit; the piles lie every way; the rubble round the
+  healing basin no longer blocks the way; a round door you open on the boss room; the Foreman has 294 health (was 420)
+  and his swings break fallen miners' stone.
+- **The big bug:** after dying you couldn't get back in: the crashed cart in the east lane stopped right in the Rail
+  Tunnel's doorway. The junction's level foot is 2 m longer now, so carts stop past it (a test checks every lane).
+- **Running without Shift (F494):** not a speed bug: Shift is the only run key. But walking (4 m/s) plays the "jog"
+  legs and swings the tool back like running, so it looks like running. Asked the owner before changing the walk.
+- **Hurdles:** a Mossgate test read the code's text for the old "only in its room" line; updated it to the new line.
+- **Checks:** test_lampwick 25/25 (8 new), test_skeleton_miners 8/8, test_dungeon 58/58, test_monsters 49/49; the
+  robot climbed the rails and walked down the Back Rails with no errors, the rats attacking.

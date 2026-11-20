@@ -21,6 +21,12 @@ var _carve: Array = []
 var _state := "wait"        ## wait (for the rock to load) -> carve -> build -> done
 var drop_rubble := true     ## rubble on the ground falls onto the cave floor (the outpost's ground is carved flat)
 var chest_only := false     ## an old world's tower already stands: only add its Rebuilding Chest (see add_missing_chest)
+## What rebuilding this ruin teaches (owner, Nov 20: both, whichever material you rebuild it with), what its chest calls
+## it, and how far from its middle its pieces and rubble reach (the outpost overrides these).
+var stone_key := "stone_watchtower"
+var wood_key := "wooden_watchtower"
+var ruin_name := "tower"
+var reach := 9.0
 static var last_origin := Vector3.INF  ## where the last one was built (the towercheck robot looks there)
 static var last_turn := 0
 
@@ -29,8 +35,11 @@ static var last_turn := 0
 ## Host, after loading a save: if the world has no ruin chest yet, add one. The tower's spot comes from the same dice
 ## as when it was built; the chest is only added when the tower's whole pieces really stand there (see _tower_here).
 static func add_missing_chest(p_auth: GameAuthority) -> RuinTower:
-	if p_auth.world == null or not p_auth.world_state.get("ruins", {}).is_empty():
+	if p_auth.world == null:
 		return null
+	for r in p_auth.world_state.get("ruins", {}).values():
+		if String(r.get("stone", "")) == "stone_watchtower":
+			return null  # (the outpost has a chest of its own: look only for the tower's)
 	var t := RuinTower.new(p_auth)
 	t.chest_only = true
 	p_auth.add_child(t)
@@ -233,8 +242,7 @@ static var last_rebuild_box := -1  ## the Rebuilding Chest's box id (tests and t
 func _add_rebuild_chest(basis: Basis) -> void:
 	var rad := float(plan.get("radius", 4.2))
 	var pick := Vector3.INF
-	for o: Vector2 in [Vector2(3.4, rad + 1.6), Vector2(-3.4, rad + 1.6), Vector2(3.4, rad + 3.0), Vector2(-3.4, rad + 3.0),
-			Vector2(3.0, rad + 0.6), Vector2(-3.0, rad + 0.6)]:
+	for o: Vector2 in _chest_spots(rad):
 		var p: Vector3 = origin + basis * Vector3(o.x, 0.0, o.y)
 		p.y = auth.world.maker.find_floor(p.x, p.z, p.y + 2.5).y
 		if absf(p.y - origin.y) > 1.5:
@@ -243,12 +251,24 @@ func _add_rebuild_chest(basis: Basis) -> void:
 			pick = p
 			break
 	if pick == Vector3.INF:  # (never seen: fall back to the middle of the path, which is always carved)
-		pick = origin + basis * Vector3(0.0, 0.0, rad + 3.2)
+		pick = origin + basis * Vector3(0.0, 0.0, _path_z(rad))
 		pick.y = auth.world.maker.find_floor(pick.x, pick.z, pick.y + 2.5).y
-	var to_path := (origin + basis * Vector3(0.0, 0.0, rad + 2.0)) - pick
+	var to_path := (origin + basis * Vector3(0.0, 0.0, _path_z(rad) - 1.2)) - pick
 	var box_id: int = auth.storage.create_box("rebuild", pick, atan2(-to_path.x, -to_path.z))  # (its front, box -Z, toward the path)
 	last_rebuild_box = box_id
 	var ruins: Dictionary = auth.world_state.get("ruins", {}).duplicate()
-	ruins[str(box_id)] = {origin = origin, turn = turn, stone = "stone_watchtower", wood = "wooden_watchtower", done = false}
+	ruins[str(box_id)] = {origin = origin, turn = turn, stone = stone_key, wood = wood_key, name = ruin_name, reach = reach, done = false}
 	auth.world_state["ruins"] = ruins
-	print("RUIN_TOWER rebuilding chest %d at %s" % [box_id, pick])
+	print("RUIN_TOWER rebuilding chest %d for the %s at %s" % [box_id, ruin_name, pick])
+
+
+## Where the chest may stand, in the ruin's own frame (x right, z toward the door), best first: beside the steps'
+## corridor (|x| > 2.6), in front of the door.
+func _chest_spots(rad: float) -> Array[Vector2]:
+	return [Vector2(3.4, rad + 1.6), Vector2(-3.4, rad + 1.6), Vector2(3.4, rad + 3.0), Vector2(-3.4, rad + 3.0),
+		Vector2(3.0, rad + 0.6), Vector2(-3.0, rad + 0.6)]
+
+
+## The middle of the path in front of the door, the last resort for the chest (always carved).
+func _path_z(rad: float) -> float:
+	return rad + 3.2

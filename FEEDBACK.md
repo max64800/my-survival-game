@@ -168,6 +168,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F465. Their weapons are turned wrong: the swing doesn't hit with the pick's sharp point.** *From: you (PC, Nov 20, Lampwick Drift Miners page). Said: 1×* — the pick head sits sideways on the handle (flat side forward); turn it a quarter turn. Nov 20: turned in the model (version 2); in the game now (the robot's pictures were too far away to see the point): check it in a fight.
 - [ ] **Skeleton miners: what do they drop?** (Claude, Nov 20) Right now only the stone of their statue (no item for bones or mining gear exists yet). Add drops (old coal, copper bits, a lamp)? And should the Foreman make his Lost Miners hit harder while he lives, like a pack leader?
 - [ ] **F468. Later: a different boss in each mine** (Lampwick's Foreman is perfect as is). *From: you (PC, Nov 20, Lampwick Drift Miners page). Said: 1×* — ideas told to you: Lantern Foreman, Old Pell with a rock sack (throws), moss Prop Warden with a plank shield (blocks, raises miners).
+- [ ] **F494. Sometimes the dwarf runs without pressing Shift.** *From: you (PC, Nov 20, first play of Lampwick Drift). Said: 1×* — Looked into it (Nov 20): Shift is the only run key and the real speed only goes up with Shift. But normal walking (4 m/s) plays the "jog" leg animation and swings the tool back like running, so walking looks like running. Asked you whether to change the walking look (another chat is working on the dwarf animation file).
 
 
 

@@ -21,8 +21,12 @@ var state := State.IDLE
 var home := Vector3.ZERO
 ## A dungeon creature's dungeon and room (owner, Nov 20: "the pack came out and crushed me in the hallway"): it never
 ## steps out of its room, gives up when you leave it, and never walks under a crusher.
+## Lampwick Drift (owner, Nov 20: "if I aggro them from another room, they go to me"): its map says chase_out, and
+## there a woken creature follows you anywhere in the dungeon (only a long way from home does it give up).
+## dungeon_wake: more rooms where seeing you wakes it (the rats above the carts wake when you come into the junction).
 var dungeon := {}
 var dungeon_room := ""
+var dungeon_wake: Array = []
 var target_peer := 0
 var stun := StunMeter.new()
 var boosted := false  ## a living pack leader is near
@@ -124,6 +128,7 @@ func _ready() -> void:
 	add_child(model)
 	rig = CreatureRig.find(model)  # (a skeleton creature: it plays its model's own moves)
 	if rig and state == State.SLEEP and data.get("rises", false):
+		model.rotation.y = fposmod(float(uid) * 2.39996, TAU)  # (each lies its own way: owner, Nov 20, "all the same direction")
 		rig.lie()  # scattered on the floor until someone comes near (F462)
 	if variant != "":
 		# Crystal variants: glowing crystals on the back that light up the cave around them
@@ -437,8 +442,10 @@ func think(delta: float, mgr: Node) -> void:
 			var gives_up := global_position.distance_to(home) > Monsters.LEASH or _no_progress > Monsters.GIVE_UP
 			if data.get("stays_in_cave", false):  # (bats, F419: only when you leave their cave)
 				gives_up = not mgr.in_cave(self, target.global_position)
-			if not dungeon.is_empty() and DungeonMap.space_at(dungeon, target.global_position + Vector3.UP) != dungeon_room:
-				gives_up = true  # (you left its room)
+			if not dungeon.is_empty():
+				var at_room := DungeonMap.space_at(dungeon, target.global_position + Vector3.UP)
+				if at_room == "" or (at_room != dungeon_room and not chases_out()):
+					gives_up = true  # (you left its room; in Lampwick only when you leave the dungeon)
 			if gives_up:
 				state = State.RETURN
 				target_peer = 0
@@ -488,6 +495,8 @@ func think(delta: float, mgr: Node) -> void:
 			elif not _attack.get("dive", false):
 				_move(delta, Vector3.ZERO, 0.0)
 			if _timer <= 0.0:
+				if data.get("smashes_statues", false):
+					mgr.smash_statues_in_reach(self, _attack)  # (the Foreman's swings break fallen miners' stone, owner Nov 20)
 				if _attack.has("follow"):
 					var f: Dictionary = _attack.follow
 					var next := _attack.duplicate()
@@ -710,11 +719,17 @@ func add_buildup(kind: String, amount: float) -> void:
 	ailments.add(kind, amount * maxf(0.0, 1.0 - resist))
 
 
+func chases_out() -> bool:
+	return not dungeon.is_empty() and bool(dungeon.map.get("chase_out", false))
+
+
 ## A dungeon creature may step to `p`: still in its own room, not under a crusher. One that already stands outside its
 ## room (`from`: pushed or slid into a doorway) may walk anywhere but under a crusher, so it can get back in: before,
 ## every step from a doorway was "out of its room", so it stood there charging and dazing itself over and over (owner,
 ## Nov 20, F473).
 func may_step(p: Vector3, from := Vector3.INF) -> bool:
+	if chases_out() and state in [State.CHASE, State.ATTACK, State.RECOVER, State.RETURN]:
+		return DungeonMap.space_at(dungeon, p + Vector3.UP * 0.5) != "" and (DungeonBuild.instance == null or not DungeonBuild.instance.near_crusher(p))
 	var outside_now := from != Vector3.INF and DungeonMap.space_at(dungeon, from + Vector3.UP * 0.5) != dungeon_room
 	if not outside_now and DungeonMap.space_at(dungeon, p + Vector3.UP * 0.5) != dungeon_room:
 		return false

@@ -272,6 +272,7 @@ func test_rebuild_the_ruin_in_wood() -> void:
 	check_eq(ruin_left, 0, "no collapsed walls left")
 	check(worn_left > 0, "the worn walls still stand (%d)" % worn_left)
 	check((auth.world_state.get("blueprints", []) as Array).has("wooden_watchtower"), "everyone knows the Wooden Watchtower")
+	check((auth.world_state.get("blueprints", []) as Array).has("stone_watchtower"), "and the Stone one: rebuilding teaches both (owner, Nov 20)")
 	check(auth.world_state.ruins[str(box)].done, "the world remembers it's rebuilt")
 	check(not auth.storage.boxes.has(box), "the Rebuilding Chest is gone once the tower stands (owner)")
 	var xp_after: int = int(ps.progress.skill_xp.get("crafting", 0)) + int(ps.progress.skill_level.get("crafting", 0)) * 100000

@@ -71,7 +71,8 @@ const BOXES := {
 const NO_BODY := ["decor/furn_wall_torch_iron.glb", "dungeon/trap_dart_plate.glb", "dungeon/chain_hanging.glb",
 	"dungeon/recipe_scroll.glb", "treasure/tr_coins_wide.glb", "treasure/tr_chalice.glb",
 	"decor/fossil_plaque.glb", "decor/rune_shield.glb",
-	"build/ruin_rubble__cut_stone.glb", "dungeon/recipe_stand.glb", "dungeon/rail_wedge.glb"]
+	"build/ruin_rubble__cut_stone.glb", "dungeon/recipe_stand.glb", "dungeon/rail_wedge.glb",
+	"dungeon/rubble_ore.glb"]  # (Lampwick's low rubble: you walk over it to the healing basin, owner Nov 20)
 
 ## Furniture you can smash (owner, decisions round 2: "a little root wood + small finds").
 const SMASH := ["decor/crate_stack.glb", "decor/keg.glb", "props/barrel.glb", "decor/furn_barrel_rack.glb",
@@ -724,18 +725,20 @@ func _drop_drip(id: int) -> void:
 			(c as CollisionShape3D).disabled = true
 	var top: Vector3 = th.centre
 	Fx.burst(get_parent(), top, STONE, 10, 1.5, Vector3.DOWN)
-	Sfx.play("dig_break", top, -2.0, 0.6)  # the crack as it lets go
+	Sfx.play("dig_break", top, -12.0, 0.6)  # the crack as it lets go (owner, Nov 20: "too much sound": quieter)
 	var parts := _parts(body)
 	for k in parts.size():
 		var part: Node3D = parts[k]
 		var y0 := part.global_position.y
 		var drop := maxf(0.5, y0 - DRIP_LENGTH - float(th.landing))
 		var tw := create_tween()
-		tw.tween_interval(DRIP_WARN + k * DRIP_PART_GAP)
-		tw.tween_property(part, "global_position:y", y0 - drop, DRIP_FALL).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		tw.tween_interval(drip_warn(th) + k * DRIP_PART_GAP)
+		tw.tween_property(part, "global_position:y", y0 - drop, drip_fall(th)).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		var loud := k == 0  # (one thud per stalactite, not one per stone of a cluster: owner, Nov 20, "too much sound")
 		tw.tween_callback(func() -> void:
 			RockShatter.burst(get_parent(), part.global_position, Vector3.UP, STONE, Mat.STONE, 0.6)
-			Sfx.play("thud", part.global_position, 2.0, 0.9)  # (owner, Nov 20: a real recorded rock thud)
+			if loud:
+				Sfx.play("thud", part.global_position, -6.0, 0.9)  # (owner, Nov 20: a real recorded rock thud)
 			part.visible = false)
 
 
@@ -864,8 +867,17 @@ func _check_deadly_drop(auth: GameAuthority, pid: int, p: Vector3) -> void:
 
 
 ## Seconds from letting go to landing, for a stalactite thing.
-func drip_time(_th: Dictionary) -> float:
-	return DRIP_WARN + DRIP_FALL
+func drip_time(th: Dictionary) -> float:
+	return drip_warn(th) + drip_fall(th)
+
+
+## A plan's stalactite may take its own time (owner, Nov 20, Lampwick: "they fall way too fast"; Mossgate keeps its own).
+static func drip_warn(th: Dictionary) -> float:
+	return float(th.prop.get("warn", DRIP_WARN))
+
+
+static func drip_fall(th: Dictionary) -> float:
+	return float(th.prop.get("fall", DRIP_FALL))
 
 
 ## Host: standing by the Rune Shrine's healing basin heals you (owner, Nov 20).

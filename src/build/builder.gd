@@ -1100,6 +1100,15 @@ const RUIN_XP := 300  ## experience for each dwarf near a rebuilt ruin (owner, N
 const RUIN_KEEP := ["ruin_wall_worn"]
 const RUIN_KEEP_SLOTS := ["wall", "window_wall"]
 const RUIN_KEEP_FAMILIES := ["plank_root"]
+const RUIN_DEBRIS := ["gate_broken"]  ## broken pieces lying about (the outpost's torn-off gate): cleared when it's rebuilt
+## Whole pieces that make way when a new piece needs their spot (the outpost's battlements where its walkway now runs
+## on over the forge, owner Nov 20: they stood a walkway's height lower).
+const RUIN_MAKE_WAY := ["battlement", "battlement_corner"]
+
+
+## How far from the ruin's middle its pieces and rubble reach (the tower 9 m, the outpost 26 m).
+func _ruin_reach(box_id: int) -> float:
+	return float(auth.world_state.get("ruins", {}).get(str(box_id), {}).get("reach", 9.0))
 
 
 ## Does fixing in this material leave the worn walls standing?
@@ -1113,7 +1122,7 @@ func ruin_intro(box_id: int) -> String:
 	var r: Dictionary = auth.world_state.get("ruins", {}).get(str(box_id), {})
 	if r.is_empty():
 		return ""
-	return "Fix the old tower! Put in planks or cut stone: only its broken parts get rebuilt.\nReward: its blueprint + %d XP." % RUIN_XP
+	return "Fix the old %s! Put in planks or cut stone: only its broken parts get rebuilt.\nReward: its blueprints + %d XP." % [String(r.get("name", "tower")), RUIN_XP]
 
 
 ## The two ways to rebuild this ruin, for the chest's pictures: [{key, name, put, needs}] (wood first, then stone).
@@ -1135,8 +1144,10 @@ func ruin_needs(key: String, r: Dictionary) -> Dictionary:
 	var need := {}
 	if bp == null:
 		return need
-	for p in bp.world_pieces(r.origin, int(r.turn)):
-		if _ruin_slot_whole(p):
+	var plan := bp.world_pieces(r.origin, int(r.turn))
+	var go := _worn_to_go(plan)
+	for p in plan:
+		if _ruin_slot_whole(p, go):
 			continue
 		var cost := Pieces.cost(p.piece, p.family)
 		for item in cost:
@@ -1154,11 +1165,12 @@ func ruin_picture(box_id: int) -> Array[Dictionary]:
 	if bp == null:
 		return out
 	var origin: Vector3 = r.origin
+	var reach := float(r.get("reach", 9.0))
 	for uid in structure.pieces:
 		var q: Dictionary = structure.pieces[uid]
-		if Vector2(q.pos.x - origin.x, q.pos.z - origin.z).length() < 9.0:
+		if Vector2(q.pos.x - origin.x, q.pos.z - origin.z).length() < reach:
 			out.append({piece = q.piece, family = q.family, pos = q.pos - origin, rot = q.rot,
-				fix = "broken" if String(q.piece).begins_with("ruin_") and not q.piece in RUIN_KEEP else ""})
+				fix = "broken" if (String(q.piece).begins_with("ruin_") and not q.piece in RUIN_KEEP) or q.piece in RUIN_DEBRIS else ""})
 	for p in bp.world_pieces(origin, int(r.turn)):
 		if not _ruin_slot_whole(p) and not _ruin_broken_at(p):
 			out.append({piece = p.piece, family = p.family, pos = p.pos - origin, rot = p.rot, fix = "missing"})
@@ -1200,23 +1212,55 @@ func ruin_chest_changed(box_id: int) -> void:
 	if site.is_empty():
 		return
 	site.ruin = key
+	site.worn_go = _worn_to_go(site.plan)
 	for i in site.plan.size():  # what still stands whole is done already
-		if _ruin_slot_whole(site.plan[i]):
+		if _ruin_slot_whole(site.plan[i], site.worn_go):
 			_ev_site_piece.rpc(box_id, i)
 	_set_status(box_id, "Rebuilding in %s" % ("wood" if key == String(r.wood) else "stone"))
 
 
-## A whole piece of the ruin already stands where this plan piece goes (any material), or a worn wall that stays.
-func _ruin_slot_whole(p: Dictionary) -> bool:
-	var same: Array = [p.piece] + RUIN_EQUIVALENT.get(p.piece, [])
+## A whole piece of the ruin already stands where this plan piece goes (any material), or a worn wall that stays
+## (not one in `go`: those carry something new and are rebuilt).
+func _ruin_slot_whole(p: Dictionary, go := {}) -> bool:
 	var wall_slot: bool = p.piece in RUIN_KEEP_SLOTS and ruin_keeps_worn(String(p.family))
+	if _ruin_same_here(p):
+		return true
+	if wall_slot:
+		for uid in structure.pieces:
+			var q: Dictionary = structure.pieces[uid]
+			if q.piece in RUIN_KEEP and not go.has(uid) and q.pos.distance_to(p.pos) < 0.6:
+				return true
+	return false
+
+
+## The very piece (or what stands for it, a battlement for a railing) is already there.
+func _ruin_same_here(p: Dictionary) -> bool:
+	var same: Array = [p.piece] + RUIN_EQUIVALENT.get(p.piece, [])
 	for uid in structure.pieces:
 		var q: Dictionary = structure.pieces[uid]
 		if q.piece in same and q.rot == p.rot and q.pos.distance_to(p.pos) < 0.05:
 			return true
-		if wall_slot and q.piece in RUIN_KEEP and q.pos.distance_to(p.pos) < 0.6:
-			return true
 	return false
+
+
+## Fixing in wood leaves worn walls standing, but not one that something new will stand right on top of (owner,
+## Nov 20: a new railing over a worn wall's missing top stones left a hole under it): those are rebuilt whole.
+## Returns {uid: true} of those worn walls (none when fixing in stone: every worn wall is rebuilt then anyway).
+func _worn_to_go(plan: Array) -> Dictionary:
+	var go := {}
+	if plan.is_empty() or not ruin_keeps_worn(String(plan[0].family)):
+		return go
+	var news: Array = plan.filter(func(a): return not _ruin_same_here(a))
+	for uid in structure.pieces:
+		var q: Dictionary = structure.pieces[uid]
+		if not q.piece in RUIN_KEEP:
+			continue
+		for a in news:
+			var dy: float = a.pos.y - q.pos.y
+			if dy > 1.9 and dy < 2.1 and Vector2(a.pos.x - q.pos.x, a.pos.z - q.pos.z).length() < 0.1:
+				go[uid] = true
+				break
+	return go
 
 
 ## One clearing job per step: rubble on the floor being rebuilt, or a broken wall where the next piece goes.
@@ -1226,10 +1270,11 @@ func _ruin_step(box_id: int, site: Dictionary) -> bool:
 	for p in site.plan:
 		base = minf(base, p.pos.y)
 	var origin: Vector3 = site.origin
+	var reach := _ruin_reach(box_id)
 	for rid in rubble:
 		var rb: Rubble = rubble[rid]
 		var at := rb.global_position
-		if Vector2(at.x - origin.x, at.z - origin.z).length() > 9.0:
+		if Vector2(at.x - origin.x, at.z - origin.z).length() > reach:
 			continue
 		if floori((at.y - base + 0.25) / STEP_HEIGHT) <= steps.current:
 			_ev_remove_rubble.rpc(rid)
@@ -1239,12 +1284,18 @@ func _ruin_step(box_id: int, site: Dictionary) -> bool:
 		var p: Dictionary = site.plan[i]
 		if p.built or steps.band_of[i] != steps.current:
 			continue
+		if not site.has("worn_go"):
+			site.worn_go = _worn_to_go(site.plan)  # (a loaded save: worked out again)
 		for uid in structure.pieces:  # (a worn wall is lower than a whole one: look by place, not only by overlap)
 			var q: Dictionary = structure.pieces[uid]
-			var keep: bool = q.piece in RUIN_KEEP and ruin_keeps_worn(String(p.family))
+			var keep: bool = q.piece in RUIN_KEEP and ruin_keeps_worn(String(p.family)) and not site.worn_go.has(uid)
 			if String(q.piece).begins_with("ruin_") and not keep and (q.pos.distance_to(p.pos) < 0.6 or uid in structure.overlapping(p.piece, p.pos, p.rot)):
 				_ev_remove_piece.rpc(uid)  # the broken wall comes down; the whole one goes up next
 				_set_status(box_id, "Taking down a broken wall…")
+				return true
+			if q.piece in RUIN_MAKE_WAY and uid in structure.overlapping(p.piece, p.pos, p.rot):
+				_ev_remove_piece.rpc(uid)  # an old battlement where the new walkway goes (it goes back up higher)
+				_set_status(box_id, "Taking down an old battlement…")
 				return true
 	return false
 
@@ -1254,21 +1305,26 @@ func _finish_ruin(box_id: int, site: Dictionary, chest: Dictionary) -> void:
 	var key: String = site.ruin
 	var origin: Vector3 = site.origin
 	var keep_worn: bool = site.plan.size() > 0 and ruin_keeps_worn(String(site.plan[0].family))
-	for uid in structure.pieces.keys():  # anything broken still standing in the rebuilt tower goes
+	var reach := _ruin_reach(box_id)
+	for uid in structure.pieces.keys():  # anything broken still standing in the rebuilt ruin goes (and its torn-off gate)
 		var q: Dictionary = structure.pieces[uid]
-		if String(q.piece).begins_with("ruin_") and not (keep_worn and q.piece in RUIN_KEEP) and Vector2(q.pos.x - origin.x, q.pos.z - origin.z).length() < 9.0:
+		var broken: bool = (String(q.piece).begins_with("ruin_") and not (keep_worn and q.piece in RUIN_KEEP)) or q.piece in RUIN_DEBRIS
+		if broken and Vector2(q.pos.x - origin.x, q.pos.z - origin.z).length() < reach:
 			_ev_remove_piece.rpc(uid)
 	var ruins: Dictionary = auth.world_state.get("ruins", {}).duplicate()
+	var learn: Array = [key]
 	if ruins.has(str(box_id)):
 		var r: Dictionary = (ruins[str(box_id)] as Dictionary).duplicate()
 		r.done = true
 		ruins[str(box_id)] = r
 		auth.world_state["ruins"] = ruins
+		learn = [String(r.wood), String(r.stone)]  # owner, Nov 20: whichever material you rebuild it with, you learn both
 	var known: Array = auth.world_state.get("blueprints", []).duplicate()
-	if not known.has(key):
-		known.append(key)
-		auth.world_state.blueprints = known
-	auth._ev_learned_blueprint.rpc(BlueprintLibrary.NAMES.get(key, key), "blueprint_page")  # (the card shows a blueprint page)
+	for k in learn:
+		if not known.has(k):
+			known.append(k)
+		auth._ev_learned_blueprint.rpc(BlueprintLibrary.NAMES.get(k, k), "blueprint_page")  # (the card shows a blueprint page)
+	auth.world_state.blueprints = known
 	for pid in auth.players:
 		var ps: GameAuthority.PlayerState = auth.players[pid]
 		if ps.node and ps.node.global_position.distance_to(chest.node.global_position) < 40.0:

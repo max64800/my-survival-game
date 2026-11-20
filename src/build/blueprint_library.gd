@@ -8,12 +8,12 @@ class_name BlueprintLibrary
 ## Every cell of the box is marked "air", so placed inside rock the chest carves the room out first.
 
 const IDS := ["delvers_hut", "miners_homestead", "stone_hall", "forge_workshop", "watchtower_cabin", "stone_watchtower",
-	"stone_outpost", "wooden_watchtower"]
+	"stone_outpost", "wooden_watchtower", "wooden_outpost"]
 ## Known from the very start (F161): you place them and bring the materials. The rest are learned from
 ## Old Blueprints found in ruins (F98).
 const STARTER := ["delvers_hut"]
 ## Learned only by rebuilding a ruin (owner, Nov 19), never from an Old Blueprint page.
-const REBUILD_ONLY := ["wooden_watchtower"]
+const REBUILD_ONLY := ["wooden_watchtower", "wooden_outpost"]
 const NAMES := {
 	"delvers_hut": "Delver's Hut",
 	"miners_homestead": "Miner's Homestead",
@@ -23,6 +23,7 @@ const NAMES := {
 	"stone_watchtower": "Stone Watchtower",
 	"stone_outpost": "Stone Outpost",
 	"wooden_watchtower": "Wooden Watchtower",
+	"wooden_outpost": "Wooden Outpost",
 }
 
 const WOOD := "plank_root"
@@ -53,8 +54,13 @@ static func make(id: String) -> Blueprint:
 		"wooden_watchtower":  # (owner, Nov 19: rebuilding the ruined tower with wood teaches this one)
 			lib._stone_watchtower()
 			lib._to_wood()
+		"wooden_outpost":  # (owner, Nov 20, F478: rebuilding the Fallen Outpost teaches this one)
+			lib._stone_outpost()
+			lib._to_wood()
+		"stone_outpost_grid":  # (not a blueprint you learn: the old grid layout, which tools/ruins/make_outpost_ruin.py breaks)
+			lib._stone_outpost(false)
 		_: return null
-	lib._bp.name = NAMES[id]
+	lib._bp.name = NAMES.get(id, id)
 	lib._bp.author = "Dwarf Game"
 	lib._bp.source = "ancient"
 	return lib._bp
@@ -444,7 +450,7 @@ func _stone_watchtower() -> void:
 const _OUT_RT := 13.732051   # round towers' centres: 27 cm in from the corners (14 - 0.268)
 
 
-func _stone_outpost() -> void:
+func _stone_outpost(line_up := true) -> void:
 	_start(Vector3(36, 7, 36))
 	# --- the two square towers and the barracks round the back one
 	_sq_tower(-14, -14, func(side, c, lvl): return "doorway" if (side == "e" and c == -11) or (side == "s" and c == -11) else ("window_wall" if lvl == 1 and c == -11 else "wall"))
@@ -488,7 +494,8 @@ func _stone_outpost() -> void:
 		_wall_z("battlement", 6, z, 4.5, STONE)
 	# --- the curtain wall (two walls high) wherever no building stands on its line
 	var walk := {}   # cells with the walkway on top: "x,z" -> true
-	for c in [[-9, 13], [-7, 13], [-13, 9], [13, -9], [13, -7]]:
+	# (owner, Nov 20: the right wall's walkway goes on over the armoury/forge, z -6..2)
+	for c in [[-9, 13], [-7, 13], [-13, 9], [13, -9], [13, -7], [13, -5], [13, -3], [13, -1], [13, 1]]:
 		walk["%d,%d" % c] = true
 	var runs := [["x", 14, [-9, -7, 7]], ["x", -14, [3, 5, 7, 9]], ["z", -14, [1, 3, 5, 7, 9]], ["z", 14, [-9, -7, -5, -3, -1, 1, 3, 5, 7]]]
 	# Where the walkway meets a round tower's other side (not the stairs side), the tower's flat face is 0.73 m into
@@ -537,10 +544,18 @@ func _stone_outpost() -> void:
 				pillars["%d,%d" % [cx - signi(cx), pz]] = Vector2i(cx - signi(cx), pz)
 	for key in pillars:
 		var pp: Vector2i = pillars[key]
-		if key in ["-6,12", "12,-6", "-12,10", "12,-10", "-10,12"]:
+		if pp.x == 12 and pp.y >= -6 and pp.y <= 2:
+			# Over the armoury/forge (floor 0-0.25, roof 2.25-2.5): posts stand on its floor and go up through its roof's
+			# edge (0.25-2.25, 2.25-4.25), not on its end walls (z -6 and 2: there the upper post stands on the wall).
+			if pp.y > -6 and pp.y < 2:
+				_add("pillar", STONE, Vector3(pp.x, 0.25, pp.y), 0)
+			_add("pillar", STONE, Vector3(pp.x, 2.25, pp.y), 0)
+			continue
+		if key in ["-6,12", "-12,10", "12,-10", "-10,12"]:
 			continue  # a building's wall or a round tower is already there
 		for y in [0.0, 2.0]:
 			_add("pillar", STONE, Vector3(pp.x, y, pp.y), 0)
+	_wall_x("railing", 13, 2, 4.5, STONE)  # across the walkway's end over the forge (it stops before the breach)
 	# stairs up: left wall (to the front-left tower) and back wall (to the back-right tower), with a landing
 	_add("floor", STONE, Vector3(-13, 0.0, 3), 0)         # a slab under the first flight: it then meets the landing
 	_add("stairs", STONE, Vector3(-13, 0.25, 3), 2)       # climbs toward the front (+z)
@@ -572,6 +587,50 @@ func _stone_outpost() -> void:
 	_wall_x("railing", 1, 4, 0.25, STONE)
 	_wall_z("railing", 0, 3, 0.25, STONE)
 	_wall_z("railing", 2, 3, 0.25, STONE)
+	if line_up:
+		_outpost_line_up()
+
+
+## Owner, Nov 17 (F305) and Nov 20 (F478): the outpost as its ruin stands, so it can be rebuilt over the ruin. A 12-sided
+## tower can't match the 2 m grid on two sides, so two parts slide (the same numbers as tools/ruins/make_outpost_ruin.py):
+## the whole front (gate, gatehouse, front wall, front-right tower, the right wall up to the breach) 0.73 m out and 0.27 m
+## left, so the front walkway meets the front-left round tower's flat side; the right wall from the breach back (with its
+## walkway and the armoury/forge) 0.73 m out and 0.27 m back, to meet the back-right round tower. The posts that closed
+## the old 27 cm seams go. Where the two parts meet (the breach in the right wall) they are 1 m apart sideways and 3 m
+## apart along the wall: a 2 m wall, a 1 m wall across and a 1 m wall close it (owner, Nov 20: "there is a gap").
+const _OUT_FRONT := Vector3(-0.27, 0, 0.73)
+const _OUT_RIGHT := Vector3(0.73, 0, -0.27)
+
+
+func _outpost_part(id: String, x: float, z: float) -> String:
+	var near := func(px: float, pz: float) -> bool: return absf(x - px) < 0.2 and absf(z - pz) < 0.2
+	if id == "pillar" and (near.call(-9.1, 14.0) or near.call(14.0, -9.1)):
+		return "gone"
+	if absf(x - 14.0) < 0.1 and absf(z - 5.0) < 0.1:
+		return "gone"  # the one wall cell between the two parts: replaced by the step below
+	if (x > -9.35 and z >= 7.9) or (id == "foundation_steps" and near.call(11.0, 7.0)) or (x >= 13.9 and z >= 5.9 and z < 7.9):
+		return "front"
+	if x >= 9.9 and z >= -9.35 and z < 4.5 and Vector2(x - _OUT_RT, z + 13.0).length() > 4.0:
+		return "right"
+	return ""
+
+
+func _outpost_line_up() -> void:
+	var kept: Array[Dictionary] = []
+	for p in _bp.pieces:
+		var part := _outpost_part(String(p.id), p.pos.x, p.pos.z)
+		if part == "gone":
+			continue
+		if part != "":
+			p.pos += _OUT_FRONT if part == "front" else _OUT_RIGHT
+		kept.append(p)
+	_bp.pieces = kept
+	# The step in the right wall: the back part's wall line (x 14.73) ends at z 3.73, the front part's (x 13.73) at 6.73.
+	for y in [0.0, 2.0]:
+		_add("wall", STONE, Vector3(14.73, y, 4.73), 1)         # z 3.73 .. 5.73
+		_add("wall_narrow", STONE, Vector3(14.23, y, 5.73), 0)  # across, x 13.73 .. 14.73
+		_add("wall_narrow", STONE, Vector3(13.73, y, 6.23), 1)  # z 5.73 .. 6.73
+	_add("battlement", STONE, Vector3(14.73, 4.0, 4.73), 1)
 
 
 ## A round tower for the outpost (the watchtower's 12-sided ring, 2 floors + a battlement roof) centred at `c`:

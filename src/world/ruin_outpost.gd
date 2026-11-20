@@ -80,6 +80,19 @@ func _init(p_auth: GameAuthority) -> void:
 	super(p_auth)
 	name = "RuinOutpost"
 	drop_rubble = false
+	stone_key = "stone_outpost"   # (owner, Nov 20, F478: rebuildable like the watchtower)
+	wood_key = "wooden_outpost"
+	ruin_name = "outpost"
+	reach = 26.0                  # its corners are 25.5 m from the middle (36 x 36 m), the gate halves lie outside
+
+
+## The Rebuilding Chest stands in front of the gatehouse, beside the way in (the torn-off gate halves lie at x ±4.3).
+func _chest_spots(_rad: float) -> Array[Vector2]:
+	return [Vector2(7.0, 17.2), Vector2(-7.0, 17.2), Vector2(7.0, 18.6), Vector2(-7.0, 18.6), Vector2(2.2, 19.2), Vector2(-2.2, 19.2)]
+
+
+func _path_z(_rad: float) -> float:
+	return 18.6
 
 
 func _ready() -> void:
@@ -103,7 +116,10 @@ func _ready() -> void:
 	if st != "pending":
 		built_origin = origin
 		built_turn = turn
-		set_process(false)
+		if _has_chest():
+			set_process(false)
+		else:
+			_state = "chest_wait"  # built before it was rebuildable (Nov 20): add its Rebuilding Chest once its rock loads
 		return
 	# Carve its space: the whole square plus a margin, down to about its ground line, up to its top (ordinary digs:
 	# saved and sent to friends). Owner: carving from higher up left rock bumps that buried doorways and steps.
@@ -123,7 +139,34 @@ func _ready() -> void:
 		y += 1.2
 
 
+## Its Rebuilding Chest is already in the world record. Outposts built Nov 19-20 got the tower's chest by mistake
+## (it would have rebuilt a watchtower): that one is set right here.
+func _has_chest() -> bool:
+	var ruins: Dictionary = auth.world_state.get("ruins", {}).duplicate()
+	for k in ruins:
+		var r: Dictionary = ruins[k]
+		if (r.get("origin", Vector3.INF) as Vector3).distance_to(origin) < 1.0:
+			if String(r.get("stone", "")) != stone_key:
+				r = r.duplicate()
+				r.merge({stone = stone_key, wood = wood_key, name = ruin_name, reach = reach}, true)
+				ruins[k] = r
+				auth.world_state["ruins"] = ruins
+			return true
+	return false
+
+
 func _process(delta: float) -> void:
+	if _state == "chest_wait":
+		_check -= delta
+		if _check > 0.0:
+			return
+		_check = CHECK_EVERY
+		var box := AABB(origin + Basis(Vector3.UP, turn * PI / 2.0) * Vector3(0, 0, 17), Vector3.ZERO).grow(8.0)  # the ground before the gate
+		if auth.world.terrain.is_area_meshed(box):
+			_add_rebuild_chest(Basis(Vector3.UP, turn * PI / 2.0))
+			_state = "done"
+			set_process(false)
+		return
 	if _state == "wait":
 		_check -= delta
 		if _check > 0.0:

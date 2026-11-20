@@ -13,7 +13,8 @@ extends Node
 ##   swing         the boulder on its chain swings along the plank walk (every computer off the same clock); hit by
 ##                 it: a rag doll tumble and SWING_DAMAGE. A bolt in its chain drops it for good.
 ##   jaws          bear jaws in the dust: a player stepping on them is bitten (JAWS_DAMAGE) and held JAWS_HOLD s;
-##                 a friend can pry them open (E). Creatures don't set them off.
+##                 a friend can pry them open (E). Creatures don't set them off. A bolt or any hit springs them
+##                 harmlessly (owner, Nov 20).
 ##   tripwire      a thin wire at ankle height: walk into it and the dart wall beside it fires a poison bolt across
 ##                 the tunnel. Jump over it, or cut it (hit it).
 ##   dart_wall     the wall with the hole (fired by its tripwire).
@@ -23,7 +24,7 @@ extends Node
 const CART_WAIT := 0.6        ## seconds of cracking and rattling after the wedge snaps, before the cart moves
 const CART_ACCEL := 4.0       ## m/s² down the lane (it reaches about 9 m/s at the foot)
 const CART_HIT := 1.0         ## m from the cart's middle that it hits you
-const CART_DAMAGE := 30.0
+const CART_DAMAGE := 40.0     ## armour doesn't help (owner, Nov 20: "they need some damage")
 const SWING_PERIOD := 3.2     ## seconds for a whole swing there and back (a 2.6 m chain)
 const SWING_MAX := 60.0       ## degrees out each way
 const SWING_PIVOT := Vector3(0.0, 3.5, 0.13)  ## the chain's top, in the model (dungeon_mine.py SWING_PIVOT)
@@ -38,7 +39,7 @@ const JAW_HINGE_Y := 0.04
 const WIRE_REACH := 0.35      ## m either side of the wire that your feet touch it
 const WIRE_HIGH := 0.45       ## feet higher than this above the wire's foot clear it (a jump)
 const DART_DAMAGE := 18.0
-const DART_POISON := 45.0
+const DART_POISON := 100.0    ## a full dose: one dart poisons you (owner, Nov 20; Ailments.FULL)
 const DART_LINE := 0.6        ## m from the bolt's line that it hits you
 const DART_HOLE := Vector3(0.12, 0.95, 0.15)  ## the hole, in the dart wall model
 const SPIKE_STAND := 0.35     ## seconds on the spike floor before it fires
@@ -75,7 +76,7 @@ static func kind_of(p: Dictionary) -> String:
 
 
 ## Kinds whose body melee hits do nothing to (the tripwire can be cut; bolts are handled in on_hit).
-const NO_MELEE := ["lamp", "cart", "wedge", "swing", "jaws", "dart_wall", "chest_spikes"]
+const NO_MELEE := ["lamp", "cart", "wedge", "swing", "dart_wall", "chest_spikes"]
 
 
 func _ready() -> void:
@@ -274,7 +275,7 @@ func _run_cart(id: int, th: Dictionary, delta: float, auth: GameAuthority) -> vo
 		if Vector2(p.x - c.x, p.z - c.z).length() < CART_HIT and absf(p.y + 0.6 - c.y) < 1.3:
 			_cart_hit[key] = true
 			print("MINE: player %d hit by a cart" % pid)
-			auth.hurt(pid, CART_DAMAGE)
+			auth.hurt(pid, CART_DAMAGE, {pierce = true})
 			if node.has_method("big_hit"):
 				node.big_hit(Vector3(fwd.x, 0.0, fwd.z).normalized() * 9.0 + Vector3.UP * 3.0)
 
@@ -308,7 +309,6 @@ func on_broke(id: int) -> bool:
 			_shut_jaws(th, 0.0)
 		"swing":
 			th.gone = true
-			Sfx.play("clink", th.centre, 4.0, 0.6)
 			_drop_swing(th, 0.0)
 		"tripwire":
 			th.gone = true
@@ -347,14 +347,7 @@ func ball_at(th: Dictionary, deg: float) -> Vector3:
 
 func _move_swing(th: Dictionary, now: float, auth: GameAuthority) -> void:
 	var deg := swing_angle(now)
-	_swing_pose(th, deg)
-	# The chain creaks at each end of the swing (the clue).
-	var going := signf(swing_angle(now + 0.05) - deg)
-	if going != 0.0 and going != float(th.last_sign):
-		th.last_sign = going
-		var me := auth.get_player(auth.local_peer_id()) if auth else null
-		if me and me.node and me.node.global_position.distance_to(th.centre) < 25.0:
-			Sfx.play("clink", (th.xform as Transform3D) * SWING_PIVOT, -6.0, 0.45)
+	_swing_pose(th, deg)  # (silent: owner, Nov 20, "I don't want it to make noises"; the grooves are its clue)
 	if auth == null or not auth.is_host():
 		return
 	var ball := ball_at(th, deg)
@@ -381,7 +374,6 @@ func _drop_swing(th: Dictionary, now: float) -> void:
 	tw.tween_method(func(f: float) -> void: _swing_pose(th, from * (1.0 - f), SWING_DROP * f * f), 0.0, 1.0, 0.35)
 	tw.tween_callback(func() -> void:
 		var at := ball_at(th, 0.0) + Vector3.DOWN * SWING_DROP
-		Sfx.play("thud", at, 6.0, 0.7)
 		RockShatter.burst(db.get_parent(), at, Vector3.UP, DungeonBuild.STONE, Mat.STONE, 0.7))
 
 
@@ -544,6 +536,13 @@ func on_hit(peer_id: int, id: int, by_bolt: bool) -> bool:
 				_fire_spikes(id, auth)
 			"tripwire":
 				db._break(id)  # (a bolt cuts it too)
+			"jaws":
+				print("MINE: bear jaws sprung by a bolt")
+				db._break(id)  # (they snap shut on nothing)
+		return true
+	if kind == "jaws":  # any hit springs them too
+		print("MINE: bear jaws sprung by a hit")
+		db._break(id)
 		return true
 	if kind == "tripwire":  # cut: it falls in two, harmlessly
 		var ps := auth.get_player(peer_id)

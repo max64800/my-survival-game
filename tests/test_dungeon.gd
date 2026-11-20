@@ -837,7 +837,8 @@ func test_bandages_have_a_cooldown() -> void:
 ## Dungeon creatures only notice you in their own room (the bats woke before the owner came in).
 func test_dungeon_creatures_notice_you_only_in_their_room() -> void:
 	var src := FileAccess.get_file_as_string("res://src/combat/monster_manager.gd")
-	check(src.contains("DungeonMap.space_at(m.dungeon, p + Vector3.UP) != m.dungeon_room"), "they don't notice you through the walls")
+	check(src.contains("var room := DungeonMap.space_at(m.dungeon, p + Vector3.UP)") and src.contains("if room != m.dungeon_room and not (m.chases_out()"),
+		"they don't notice you through the walls (only Lampwick's bone piles see into the next room)")
 	check(src.contains("		if mon:  # (it stays in its room and only notices you there"), "bats get their room too")
 
 
