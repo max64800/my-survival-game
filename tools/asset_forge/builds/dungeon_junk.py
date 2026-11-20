@@ -12,10 +12,12 @@
 #   junk_axe_head       an iron axe head with no handle, a chip out of its edge, the empty eye
 #   junk_spear_broken   a spear shaft snapped in two (splinters), the iron head still on the front half
 # Batch 2 (rest of junk_shared.jpg):
-#   junk_rags           a torn crumpled cloth, a small scrap, a burst empty sack (tied neck, a hole in its side)
+#   junk_rags           a torn crumpled cloth, a small scrap, a burst empty sack (gathered neck)
+#   junk_rags_b .. _f   (owner, Nov 20) five more rag piles, two rags each, all different shapes and places
 #   junk_shield_wood    a round 6-board shield (0.6 m) broken in two, iron boss, a loose board, chunks (small dungeons)
 #   junk_shield_iron    the same shield with an iron rim and rivets, broken in two (medium and big dungeons)
 #   junk_rubble_wood    a low pile of snapped planks in three layers and some chips (small dungeons)
+#   junk_rubble_wood_b .. _f  (owner, Nov 20) five more plank piles, more spread out, each stacked its own way
 import math
 import random
 import sys
@@ -430,6 +432,65 @@ def junk_rubble_wood():
 		turn(meshes() - before, a, (0.0, 0.0, 0.0), off=(x, 0.0, z))
 
 
+def _footprint(x, z, ln, wd, yaw):
+	"""The four floor corners of a board turned by yaw (the same way turn() turns it)."""
+	c, s = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
+	return [(x + px * c + pz * s, z - px * s + pz * c) for (px, pz) in
+		((-ln / 2, -wd / 2), (ln / 2, -wd / 2), (ln / 2, wd / 2), (-ln / 2, wd / 2))]
+
+
+def _overlap(a, b):
+	"""Do two turned rectangles (corner lists) overlap? (separating-axis test)"""
+	for poly in (a, b):
+		for i in range(4):
+			(x0, z0), (x1, z1) = poly[i], poly[(i + 1) % 4]
+			nx, nz = z1 - z0, x0 - x1
+			pa = [nx * px + nz * pz for (px, pz) in a]
+			pb = [nx * px + nz * pz for (px, pz) in b]
+			if max(pa) < min(pb) or max(pb) < min(pa):
+				return False
+	return True
+
+
+def rubble_pile(seed):
+	"""Owner, Nov 20 ("I really like how you made them"): more plank piles, each its own spread and stacking. Boards
+	are dropped one by one; a board that lands on others rests on the highest one under it (4 mm into it, so it
+	touches), so no two boards ever lie at the same height in the same place (no flicker). Piles stay 3 boards high."""
+	rr = random.Random(seed)
+	sx, sz = rr.uniform(0.55, 0.95), rr.uniform(0.3, 0.5)   # how far the pile spreads (half sizes)
+	laid = []   # (corners, top)
+	n = rr.randint(6, 9)
+	tries = 0
+	while len(laid) < n and tries < 80:
+		tries += 1
+		ln, wd, t = rr.uniform(0.3, 0.85), rr.uniform(0.09, 0.13), rr.uniform(0.026, 0.034)
+		x, z = rr.uniform(-sx, sx) * (0.6 if ln > 0.6 else 1.0), rr.uniform(-sz, sz)
+		yaw = rr.uniform(-90, 90)
+		fp = _footprint(x, z, ln + 0.06, wd + 0.01, yaw)       # (with its jagged ends: keep clear of this)
+		core = _footprint(x, z, ln - 0.06, wd - 0.02, yaw)     # (surely solid board: rest only on this)
+		near = [(c, cc, top) for (c, cc, top) in laid if _overlap(fp, c)]
+		if any(not _overlap(core, cc) for (c, cc, top) in near):
+			continue   # it would only graze a board's edge (it would hover or sink into it): drop it somewhere else
+		y0 = max(top for (c, cc, top) in near) - 0.004 if near else 0.0
+		if y0 > 0.075:
+			continue
+		rubble_board(x, z, ln, wd, yaw, y0, t, seed=seed + 11 * len(laid))
+		laid.append((fp, core, y0 + t))
+	for i in range(rr.randint(4, 8)):   # chips and splinters, lying about (more of them further out)
+		for _ in range(20):
+			x, z, a, s = rr.uniform(-sx - 0.2, sx + 0.2), rr.uniform(-sz - 0.15, sz + 0.15), rr.uniform(0, 180), rr.uniform(0.6, 1.1)
+			fp = _footprint(x, z, 0.14 * s, 0.045, a)
+			if not any(_overlap(fp, c) for (c, cc, top) in laid):
+				break
+		else:
+			continue
+		before = meshes()
+		board_slab([(-0.05 * s, -0.018), (0.055 * s, -0.02), (0.07 * s, 0.0), (0.05 * s, 0.02), (-0.06 * s, 0.017)], 0.0, 0.018,
+			seed + 300 + i)
+		turn(meshes() - before, a, (0.0, 0.0, 0.0), off=(x, 0.0, z))
+		laid.append((fp, fp, 0.018))
+
+
 # ---------------------------------------------------------------- junk_rags
 def rag(cx, cz, rx, rz, seed, m, holes=2, fold=0.03):
 	"""A torn cloth lying crumpled on the floor: a wavy sheet with a ragged edge, holes and one fold."""
@@ -478,7 +539,7 @@ def rag(cx, cz, rx, rz, seed, m, holes=2, fold=0.03):
 def junk_rags():
 	rag(-0.18, 0.02, 0.27, 0.22, 7, tinted("sack", "a", (1.25, 1.18, 1.0), "rag"), holes=3, fold=0.035)
 	rag(0.04, 0.24, 0.1, 0.08, 9, tinted("sack", "b", (1.15, 1.08, 0.9), "rag"), holes=1, fold=0.012)
-	# the burst sack: slumped, its neck gathered and tied, a torn hole in its side, empty
+	# the burst sack: slumped, empty, its neck gathered
 	sack = T("sack", "a")
 	bpy.ops.mesh.primitive_uv_sphere_add(segments=14, ring_count=9, radius=1, location=(0, 0, 0))
 	o = bpy.context.object
@@ -505,12 +566,27 @@ def junk_rags():
 	tx, ty, tz = top.x, -top.y, top.z   # (back to game axes: x, z, y)
 	lump((tx, tz - 0.004, ty), (0.032, 0.012, 0.03), DARK(), 12, seg=8, ring=4)   # the open neck, dark inside
 	lump((tx, tz + 0.004, ty), (0.045, 0.014, 0.042), sack, 13, seg=9, ring=4, jit=0.15)  # the frayed top round it
-	kit.ring(0.04, 0.008, (top.x, top.y, top.z - 0.03), T("rope", "a"), seg=12)  # the tie
-	lump((0.33, 0.07, 0.03), (0.035, 0.04, 0.03), DARK(), 14, seg=8, ring=5, jit=0.15)  # the torn hole (front right)
-	for k in range(3):   # torn flaps round the hole
-		a = math.radians(-40 + k * 70)
-		K.blk((0.33 + math.cos(a) * 0.035, 0.07 + math.sin(a) * 0.035, 0.04), (0.03, 0.022, 0.006), T("sack", "b"), bevel=0.002,
-			rz=math.degrees(a) + 90, ry=-35)
+	# (owner, Nov 20: no rope tie and no torn hole on its side: both looked like blobs)
+
+
+def rags_pair(seed):
+	"""Owner, Nov 20 ("I really like the rag texture"): more rag piles, two pieces each, every one different: a big
+	rag and a small one, their own sizes, shapes, holes, folds and places."""
+	rr = random.Random(seed)
+	big = (rr.uniform(0.2, 0.3), rr.uniform(0.15, 0.24))
+	if rr.random() < 0.5:
+		big = (big[1], big[0])
+	before = meshes()
+	rag(0.0, 0.0, big[0], big[1], seed, tinted("sack", "a", (1.25, 1.18, 1.0), "rag"), holes=rr.randint(1, 3),
+		fold=rr.uniform(0.015, 0.04))
+	turn(meshes() - before, rr.uniform(0, 360), (0.0, 0.0, 0.0))
+	a = rr.uniform(0, 6.28)
+	d = max(big) + rr.uniform(0.04, 0.14)
+	s = (rr.uniform(0.07, 0.15), rr.uniform(0.06, 0.12))
+	before = meshes()
+	rag(0.0, 0.0, s[0], s[1], seed + 50, tinted("sack", "b", (1.15, 1.08, 0.9), "rag"), holes=rr.randint(0, 1),
+		fold=rr.uniform(0.0, 0.015))
+	turn(meshes() - before, rr.uniform(0, 360), (0.0, 0.0, 0.0), off=(math.cos(a) * d, 0.0, math.sin(a) * d))
 
 
 def settle():
@@ -532,6 +608,13 @@ BUILDS = {"junk_bones": junk_bones, "junk_sword_snapped": junk_sword_snapped, "j
 	"junk_spear_broken": junk_spear_broken,
 	"junk_rags": junk_rags, "junk_shield_wood": junk_shield_wood, "junk_shield_iron": junk_shield_iron,
 	"junk_rubble_wood": junk_rubble_wood}
+# five more rag piles, two rags each, all different (names written out: the model checker looks for them)
+for _i, _name in enumerate(("junk_rags_b", "junk_rags_c", "junk_rags_d", "junk_rags_e", "junk_rags_f")):
+	BUILDS[_name] = (lambda sd: (lambda: rags_pair(sd)))(200 + 37 * _i)
+# five more plank piles, each spread and stacked its own way (owner, Nov 20)
+for _i, _name in enumerate(("junk_rubble_wood_b", "junk_rubble_wood_c", "junk_rubble_wood_d", "junk_rubble_wood_e",
+		"junk_rubble_wood_f")):
+	BUILDS[_name] = (lambda sd: (lambda: rubble_pile(sd)))(500 + 53 * _i)
 
 if __name__ == "__main__":
 	for name, fn in BUILDS.items():

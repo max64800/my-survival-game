@@ -6685,3 +6685,12 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   before the page settled (looked like his head faced backwards): checked again, it was fine.
 - **Still open:** the great axe check still fails on a few single frames now and then (Spin/Chop handle 0-2 cm from
   his body, a fist 5 cm off), as in chat 11.
+- **Owner's look at batch 2 (later):** "the bag is okay": took the rope ring off the sack and the dark torn patch on
+  its side (both looked like blobs). Loved the rag paint and the plank pile, so 5 more of each: `junk_rags_b`..`_f`
+  (a big and a small rag, each pile its own shapes and layout) and `junk_rubble_wood_b`..`_f` (6-9 boards dropped one
+  by one: a board that lands on others rests on the highest one under it, so two boards never lie in the same place
+  at the same height; piles more spread out, chips further out). Batch 2 OK'd: all 18 junk models are now in
+  `assets/models/dungeon/`, all pass the checker. Hurdles: (1) the model checker looks for each model's name written
+  in a script, and my loop built the names from letters, so one wasn't found: wrote the names out. (2) One plank in a
+  new pile hovered 4.7 cm: it only touched the board under it in the safety margin round its jagged end; boards now
+  rest only on boards that are really under them (or get dropped somewhere else).
