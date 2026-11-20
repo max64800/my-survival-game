@@ -1,7 +1,5 @@
 # #11 The Hammerfall Works
 
-> **Traps changed Nov 20:** see [traps-and-variety.md](traps-and-variety.md). It wins over the trap notes below.
-
 *Draft, Nov 20 (Mac, overnight). Generated from the dungeon pages; edit the page data and run gen_docs again.*
 
 A great hall round a broken giant anvil, with a wing going up and a wing going down. Each wing's mini boss holds half of the key to the twin-locked gate.
@@ -22,26 +20,26 @@ A great hall round a broken giant anvil, with a wing going up and a wing going d
 | 2 | Yard | Level 2 (the works) | 16 x 12 | Old carts and crates. Bone Thralls. | mob: thralls |
 | 3 | Clerk's Office | Level 2 (the works) | 8 x 8 | Ledgers and a chest. A loose floor stone hides a buried chest. | loot: chest; hid: buried chest |
 | 4 | Toolroom | Level 2 (the works) | 8 x 8 | Bone Wardens among the tool racks. | mob: wardens; loot: chest |
-| 5 | Gatehouse Tunnel (corridor) | Level 2 (the works) | 4 x 14 | A swinging hammer. Clue: floor grooves and a creak. Safe: time it, or shoot the release pin. | trap: swing hammer |
+| 5 | Gatehouse Tunnel (corridor) | Level 2 (the works) | 4 x 14 | An anvil on a chain swings across the tunnel. Clue: grooves and a creak. Safe: time it, or shoot the chain. | trap: swinging anvil |
 | 6 | Great Anvil Hall | Level 2 (the works) | 16 x 12 | The broken giant anvil. The way on is a gate with two locks: one needs the Gear Key, one the Hammer Key. | mob: wardens; mob: creepers |
 | 7 | Gear Stair (corridor) | Level 3 (gear galleries, 8 m up) | 4 x 8 stair, 9 m between levels | Up to the gear galleries. |  |
-| 8 | Gearworks | Level 3 (gear galleries, 8 m up) | 8 x 8 | Giant gears. Pistons punch out of the walls. Clue: scuffed floor. Safe: step on the plate, step back, run while it resets. | trap: push pistons; mob: thralls |
-| 9 | Belt Walk (corridor) | Level 3 (gear galleries, 8 m up) | 4 x 14 | Hooks on chains swing across the walk. Clue: the clank. Safe: time it, or shoot the chain. | trap: swing hooks |
+| 8 | Gearworks | Level 3 (gear galleries, 8 m up) | 8 x 8 | Thralls. A wall block slams out and shoves you into the gears (hurts). Clue: scrape marks, a gap round the block. Safe: walk along its own wall, or bait it. | trap: push wall; mob: thralls |
+| 9 | Belt Walk (corridor) | Level 3 (gear galleries, 8 m up) | 4 x 14 | A spiked iron ball on a chain spins round a post. Clue: a scrape circle on the floor. Safe: run past right behind the ball, or shoot the chain. | trap: spiked flail |
 | 10 | Gearmaster's Loft | Level 3 (gear galleries, 8 m up) | 4 x 4 | The Gearmaster, a big Rune Caller, holds the Gear Key. | boss: Gearmaster; key: Gear Key |
 | 11 | Oil Store | Level 3 (gear galleries, 8 m up) | 8 x 8 | Old oil jars. One wall is cracked. | hid: cracked wall |
 | 12 | Oil Vault | Level 3 (gear galleries, 8 m up) | 4 x 4 | Behind the cracked wall: a hidden chest. | loot: vault chest |
 | 13 | Undercroft Stair (corridor) | Level 1 (undercroft, 8 m down) | 4 x 8 stair, 9 m between levels | Down under the works. |  |
-| 14 | Furnace Undercroft | Level 1 (undercroft, 8 m down) | 8 x 8 | Fire jets from the old furnaces. Clue: soot and a hiss. Safe: their rhythm, or shoot the gas valve. | trap: fire jets; mob: creepers |
+| 14 | Furnace Undercroft | Level 1 (undercroft, 8 m down) | 8 x 8 | Grave Creepers. Coal braziers tip over on chains. Clue: glowing coals. Safe: shoot the chain to tip it early, wait for the embers to go dark. | trap: tipping brazier; mob: creepers |
 | 15 | Molten Channel | Level 1 (undercroft, 8 m down) | 8 x 8 | Molten metal in a stone channel, with stepping blocks that sink if you stand too long. Clue: glow and heat haze. Safe: keep moving, or shoot the chain that lowers a bridge. | **deadly: molten channel** |
-| 16 | Smelter's Hall | Level 1 (undercroft, 8 m down) | 16 x 12 | The Smeltwarden, a huge Bone Warden, holds the Hammer Key. | boss: Smeltwarden; key: Hammer Key |
-| 17 | Slag Cellar | Level 1 (undercroft, 8 m down) | 8 x 8 | A boulder hides a niche with a chest. | hid: hidden boulder; loot: chest |
+| 16 | Smelter's Hall | Level 1 (undercroft, 8 m down) | 16 x 12 | The Smeltwarden holds the Hammer Key. A portcullis slams down behind you. Clue: gate grooves in the doorway. Safe: wedge it, or win the fight. | boss: Smeltwarden; key: Hammer Key; trap: portcullis |
+| 17 | Slag Cellar | Level 1 (undercroft, 8 m down) | 8 x 8 | A wire fires a crossbow; behind a boulder, a chest on spike holes. Clue: a shiny wire, holes in the floor. Safe: step over the wire; shoot the chest first. | hid: hidden boulder; loot: chest; trap: tripwire crossbow; trap: trapped chest |
 | 18 | Rest Shrine | Level 1 (undercroft, 8 m down) | 8 x 8 | A healing shrine. | heal: healing shrine |
 | 19 | Twin-Lock Gate | Level 2 (the works) | 8 x 8 | Both keys open it. | lock: two locks |
 | 20 | Press Hall | Level 2 (the works) | 16 x 12 | A great press that crushes outright. Clue: dented floor and a slow hiss. Safe: bait it (step on the plate, jump back) and run under while it rises. | **deadly: great press** |
 | 21 | Proving Ground | Level 2 (the works) | 16 x 12 | Where blades were tested. The big fight: Wardens and Creepers. | mob: wardens; mob: creepers |
-| 22 | Rolling Anvil Ramp (corridor) | Level 2 (the works) | 4 x 14 | An anvil on a cart rolls down the ramp. Clue: rattling rails. Safe: duck into the alcoves. | **deadly: rolling anvil** |
+| 22 | Ore Cart Ramp (corridor) | Level 2 (the works) | 4 x 14 | Three rails down a steep ramp. Ore carts come down each one in a pattern, faster than in Lampwick Drift. A hit throws you like a rag doll. Clue: each rail rattles before its cart. Safe: learn the pattern and stand in the empty lane. | **deadly: triple ore carts** |
 | 23 | Alcove | Level 2 (the works) | 4 x 4 | A deep alcove with a chest at the back. | hid: deep alcove; loot: chest |
-| 24 | Bridge of Chains | Level 2 (the works) | 4 x 14 (bridge), gap 10 deep | Swinging hammers over a gap. A hit knocks you onto a ledge below (it hurts, you climb back). Clue: the creak. Safe: time them, or shoot each release pin. | trap: swing hammers |
+| 24 | Bridge of Chains | Level 2 (the works) | 4 x 14 (bridge), gap 10 deep | Big blades swing across the bridge. Clue: a whoosh, cuts in the railings. Safe: time the gaps, or shoot a blade's rope. | trap: pendulum blades |
 | 25 | Pattern Room | Level 2 (the works) | 8 x 8 | Rune Callers among the casting patterns. A chest. | mob: rune callers; loot: chest |
 | 26 | Antechamber | Level 2 (the works) | 8 x 8 | Bone Thralls in rows. | mob: thralls |
 | 27 | Quiet Forge | Level 2 (the works) | 8 x 8 | A healing shrine before the last fight. | heal: healing shrine |
@@ -76,20 +74,25 @@ Paths: 1-2, 2-3, 2-4, 4-30, 2-5, 5-6, 6-7, 7-8, 8-9, 9-10, 9-11, 11-12, 6-13, 13
 | Hearthbrick clay brick building pieces (walls, floors, round doorways, stairs, pillars, beams, railings, ladders) | exists | |
 | dungeon_entrance (stone/brick version) | new | the round door in the cave wall |
 | floor_loose_stone + chest | exists |  |
-| trap_swing_hammer (+ release pin) | new |  |
-| trap_piston | new |  |
-| trap_swing_hook | new |  |
+| trap_swing_anvil | new | ragdoll on hit |
+| trap_push_wall (stone/brick) + floor scrape | new |  |
+| trap_flail (post + chain + spiked ball) | new | ragdoll on hit |
 | tr_key_copper / tr_key_iron (recoloured per key) | exists | key items are new code |
 | wall_cracked / wall_broken | exists |  |
-| trap_fire_jet (nozzle + soot marks) | new |  |
-| gas_valve (shootable) | new |  |
+| trap_brazier_tip + ember_floor | new | shoot the chain to tip it early |
 | molten_channel (stone channel + glowing metal surface) | new | never spills: works like spikes |
+| portcullis (stone/brick frame) | new |  |
 | cave boulder (Boulders.SHAPES) | exists |  |
+| trap_tripwire_crossbow (crossbow + wire + peg) | new |  |
+| floor_spike_holes | new | shoot the chest first: the spikes fire and pull back |
+| trap_spikes | exists |  |
 | healing shrine | check | Mossgate Hold has one: check the PC's kit |
 | door_locked_round (stone/brick, with a keyhole) | new |  |
 | trap_press | new |  |
-| trap_roll_weight + ramp groove | new |  |
+| ore_cart (forge mine cart) | new |  |
+| rail_lanes_3 + cart_stop + cart_release | new | 3 rails side by side, carts in a pattern; ragdoll on hit |
 | (building pieces only) | exists |  |
+| trap_pendulum_blade + ceiling slot | new |  |
 | recipe_stand + recipe_scroll | exists |  |
 | lift platform + winch | new |  |
 | chests (chest_loot, chest_small), furniture, crystal torches, hanging_lantern | exists | |

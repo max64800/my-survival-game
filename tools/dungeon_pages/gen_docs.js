@@ -50,7 +50,7 @@ function models(tag, sizeKey) {
   if (/great crusher/.test(v)) add("trap_crusher_great", "new", "bigger crusher that kills outright");
   if (/pit|shaft|chute/.test(v) && !/molten/.test(v) && k === "deadly") { add("trap_floor_break", "exists"); add("trap_spikes", "exists"); }
   if (/chasm/.test(v)) { stone ? add("bridge_stone_slab (+ cracked)", "new", "stone/brick bridge slabs that fall away") : add("bridge_plank / bridge_plank_broken / bridge_posts", "exists"); add("trap_spikes", "exists"); }
-  if (/boulder/.test(v)) add("cave boulder (Boulders.SHAPES)", "exists");
+  if (/hidden boulder/.test(v)) add("cave boulder (Boulders.SHAPES)", "exists");
   if (/cracked wall/.test(v)) add("wall_cracked / wall_broken", "exists");
   if (/buried chest/.test(v)) add("floor_loose_stone + chest", "exists");
   if (/secret lever/.test(v)) add("lever", "exists");
@@ -59,14 +59,22 @@ function models(tag, sizeKey) {
   if (/recipe stand/.test(v)) add("recipe_stand + recipe_scroll", "exists");
   if (/key/.test(k)) add("tr_key_copper / tr_key_iron (recoloured per key)", "exists", "key items are new code");
   if (k === "lock") add(stone ? "door_locked_round (stone/brick, with a keyhole)" : "gate_round", stone ? "new" : "exists");
-  if (/fire jets/.test(v)) { add("trap_fire_jet (nozzle + soot marks)", "new"); add("gas_valve (shootable)", "new"); }
-  if (/pistons/.test(v)) add("trap_piston", "new");
-  if (/bellows/.test(v)) add("trap_bellows (big wall bellows)", "new", "the station `bellows` model can be the start");
-  if (/swing hammer/.test(v)) add("trap_swing_hammer (+ release pin)", "new");
-  if (/swing hooks/.test(v)) add("trap_swing_hook", "new");
+  if (/carts/.test(v)) { add(/ore/.test(v) ? "ore_cart (forge mine cart)" : "mine_cart", /ore/.test(v) ? "new" : "exists"); add("rail_lanes_3 + cart_stop + cart_release", "new", "3 rails side by side, carts in a pattern; ragdoll on hit"); }
+  if (/push wall/.test(v)) add("trap_push_wall (" + (stone ? "stone/brick" : "wood") + ") + floor scrape", "new");
+  if (/swinging boulder/.test(v)) add("trap_swing_boulder (+ beam/arch hook)", "new", "ragdoll on hit");
+  if (/swinging anvil/.test(v)) add("trap_swing_anvil", "new", "ragdoll on hit");
+  if (/tipping brazier/.test(v)) add("trap_brazier_tip + ember_floor", "new", "shoot the chain to tip it early");
+  if (/pendulum blade/.test(v)) add("trap_pendulum_blade + ceiling slot", "new");
+  if (/bell pendulum/.test(v)) add("trap_bell_pendulum", "new");
+  if (/spear wall/.test(v)) add("trap_spear_wall (" + (stone ? "iron spears" : "wooden stakes") + ")", "new");
+  if (/tripwire/.test(v)) add("trap_tripwire_crossbow (crossbow + wire + peg)", "new");
+  if (/bear jaw/.test(v)) add("trap_bear_jaw (open + shut)", "new");
+  if (/portcullis/.test(v)) add("portcullis (stone/brick frame)", "new");
+  if (/collapsing stairs/.test(v)) { add("stairs_collapsing (faint off-colour half)", "new"); add("trap_spikes", "exists"); }
+  if (/spiked flail/.test(v)) add("trap_flail (post + chain + spiked ball)", "new", "ragdoll on hit");
+  if (/trapped chest/.test(v)) { add("floor_spike_holes", "new", "shoot the chest first: the spikes fire and pull back"); add("trap_spikes", "exists"); }
   if (/swinging crucible/.test(v)) add("trap_swing_crucible", "new");
-  if (/rolling (weight|anvil)/.test(v)) add("trap_roll_weight + ramp groove", "new");
-  if (/runaway cart/.test(v)) { add("mine_cart", "exists"); add("rail_track", "exists"); }
+  if (/rolling (boulder|anvil)/.test(v)) add(/anvil/.test(v) ? "trap_roll_anvil + ramp groove" : "trap_roll_boulder + ramp groove + side alcoves", "new");
   if (/molten/.test(v)) add(/moulds/.test(v) ? "mould_lid (+ cracked) over molten metal" : "molten_channel (stone channel + glowing metal surface)", "new", "never spills: works like spikes");
   if (/great press/.test(v)) add("trap_press", "new");
   if (/chasm drop/.test(v)) add("bridge_chain_section (drops and rises)", "new");

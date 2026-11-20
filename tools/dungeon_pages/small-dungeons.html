@@ -78,26 +78,27 @@ td.n { font-variant-numeric: tabular-nums; color: var(--muted); width: 1.5em; }
 
   <div id="sheets"></div>
 
-  <p class="foot muted">Traps use the models Mossgate Hold already has. Inside live the dungeon miners from the KayKit Skeletons pack (being made on the PC): Lost Miners (slow, tough), Tunnel Rats (small, fast, in groups) and the Foreman (the leader at the recipe stand). Spiders inside or not: your call. Your call on everything here: names, rooms, traps, which creatures.</p>
+  <p class="foot muted"><b>A bit different in every world</b> (picked by the world seed, the same for everyone in co-op): half the worlds mirror the dungeon left to right, side wings can swap places, hidden things, chests and small traps (bear jaws, tripwires, trapped chests) move between 2-3 spots, and carts and blades use one of 3 timing patterns. The main path, the deadly traps, the key, the boss and the recipe stand never move.</p>
+  <p class="foot muted">Most traps use Mossgate Hold's kit. New: the 3-lane cart tunnel, push wall, swinging boulder, spear wall, tripwire crossbow, bear jaws and trapped chests. Carts and boulders throw you like a rag doll. Inside live the dungeon miners from the KayKit Skeletons pack (being made on the PC): Lost Miners (slow, tough), Tunnel Rats (small, fast, in groups) and the Foreman (the leader at the recipe stand). Spiders inside or not: your call. Your call on everything here: names, rooms, traps, which creatures.</p>
 </main>
 
 <script>
 const D = [
   {
     name: "Lampwick Drift", idea: "A long, dark mine tunnel. Old lamps hang along it, and you light them as you go, so the way you came glows behind you.",
-    facts: ["1 level", "13 spaces", "~8-10 min", "long and twisty", "deadly: the Old Shaft"],
+    facts: ["1 level", "13 spaces", "~8-10 min", "long and twisty", "deadly: the triple cart tunnel"],
     layers: ["Level 1"],
     rooms: [
       {n:1, c:0, name:"Lamp Room", what:"Entrance. A rail cart on old tracks, the first lamp to light.", tags:["loot:chest"]},
-      {n:2, c:1, k:1, name:"Rail Tunnel", what:"Long and narrow. Holes in the wall shoot darts as you pass. Clue: rows of small holes. Safe: the darts fire in bursts; run in the gap, or hold up a shield.", tags:["trap:dart wall"]},
-      {n:3, c:2, name:"Cart Junction", what:"The rails split. A runaway cart comes rattling down the main track. Clue: the rails rattle first. Safe: step onto the side track to the tool store.", tags:["mob:tunnel rats","trap:runaway cart"]},
+      {n:2, c:1, k:1, name:"Rail Tunnel", what:"Long and narrow. A thin wire across the floor fires a hidden crossbow. Clue: a shiny wire at ankle height. Safe: step over it, or cut it.", tags:["trap:tripwire crossbow"]},
+      {n:3, c:2, name:"Cart Junction", what:"Three rails side by side, sloping down. Carts come rattling down each rail at different times in a pattern: dodge the middle one, step into the middle to dodge the left one, stay there for the right one. A hit throws you like a rag doll. Clue: each rail rattles just before its cart. Safe: learn the pattern and stand in the empty lane.", tags:["mob:tunnel rats","deadly:triple carts"]},
       {n:4, c:2, s:1, name:"Tool Store", what:"Side room. One floor stone is loose: a buried chest under it.", tags:["loot:chest","hid:buried chest"]},
       {n:5, c:3, k:1, name:"Drip Tunnel", what:"Stalactites hang low and fall when you walk under them. Clue: cracks and trickling dust. Safe: shoot them down with a crossbow first, or run through fast.", tags:["trap:falling stalactites","mob:tunnel rats"]},
       {n:6, c:4, name:"Bat Gallery", what:"Tall and dark, Tunnel Rats in the dark. One wall is cracked.", tags:["mob:tunnel rats"]},
-      {n:7, c:4, s:1, name:"Hidden Vault", what:"Behind the cracked wall: break it to get in. Gold and a chance of a gem.", tags:["hid:cracked wall","loot:vault chest"]},
-      {n:8, c:5, name:"The Old Shaft", what:"Rotten boards over a deep shaft full of spikes. Cracked boards and a creak warn you. Walk the edge beam. Safe: keep to the solid edge along the wall.", tags:["deadly:shaft + spikes"]},
-      {n:9, c:6, name:"Old Copper Face", what:"Where they last dug. Lost Miners. One boulder in the wall hides a niche with a chest.", tags:["mob:lost miners","hid:hidden boulder"]},
-      {n:10, c:7, k:1, name:"Prop Corridor", what:"Old props hold up a crusher. Watch its rhythm, then run. Clue: a heavy thud and grooves in the floor. Safe: watch its rhythm and run while it rises.", tags:["trap:crusher"]},
+      {n:7, c:4, s:1, name:"Hidden Vault", what:"Behind the cracked wall. The chest sits on spike holes. Clue: holes in the floor round it. Safe: shoot the chest with a crossbow: the spikes fire and pull back, then open it.", tags:["hid:cracked wall","loot:vault chest","trap:trapped chest"]},
+      {n:8, c:5, name:"The Old Shaft", what:"A plank walk with railings over a deep shaft. A boulder on a chain swings across it and knocks you back. Clue: grooves on the planks and a creaking chain. Safe: time it, or shoot the chain.", tags:["trap:swinging boulder"]},
+      {n:9, c:6, name:"Old Copper Face", what:"Where they last dug. Lost Miners. Bear jaw traps in the rubble grab your leg. Clue: a rusty glint in the dust. Safe: look down; a friend can pry it open. One boulder in the wall hides a niche with a chest.", tags:["mob:lost miners","trap:bear jaws","hid:hidden boulder"]},
+      {n:10, c:7, k:1, name:"Prop Corridor", what:"Old props hold up the roof. Tunnel Rats in the dark.", tags:["mob:tunnel rats"]},
       {n:11, c:7, s:1, name:"Miners' Rest", what:"Side room with a healing shrine and a chest.", tags:["heal:healing shrine","loot:chest"]},
       {n:12, c:8, name:"Foreman's Office", what:"The Foreman and his Lost Miners. The recipe stand.", tags:["mob:Foreman + miners","page:recipe stand"]},
       {n:13, c:8, s:1, k:1, name:"Back Rails", what:"A lever opens a gate onto rails that run back to the Lamp Room.", tags:["out:gate to room 1"]},
@@ -107,19 +108,19 @@ const D = [
   },
   {
     name: "Old Pell's Diggings", idea: "A miner's hut at the top, then a shaft straight down into what he dug out below. This one is about going down.",
-    facts: ["2 levels", "13 spaces", "~8-10 min", "goes down a ladder shaft", "deadly: the Rotten Gallery"],
+    facts: ["2 levels", "13 spaces", "~8-10 min", "goes down a ladder shaft", "deadly: the push wall"],
     layers: ["Level 1 (hut)", "Level 2 (6 m down)"],
     rooms: [
       {n:1, c:0, l:0, name:"Pell's Hut", what:"Entrance. Bed, table, a chest, a trapdoor in the floor.", tags:["loot:chest"]},
-      {n:2, c:1, l:0, name:"Winch Shed", what:"Over the shaft. Loose rock above falls when you walk under it. Clue: cracks and trickling dust. Safe: shoot them down with a crossbow first, or run through fast.", tags:["trap:falling stalactites"]},
+      {n:2, c:1, l:0, name:"Winch Shed", what:"Over the shaft. A thin wire fires a hidden crossbow. Clue: a shiny wire at ankle height. Safe: step over it, or cut it.", tags:["trap:tripwire crossbow"]},
       {n:3, c:1, l:0, s:1, name:"Pantry", what:"Shelves of old jars. The back wall is cracked: Pell's stash is behind it.", tags:["hid:cracked wall","loot:stash"]},
       {n:4, c:2, l:1, k:1, name:"The Shaft", what:"A long ladder down, with Tunnel Rats in the side holes.", tags:["mob:tunnel rats"]},
       {n:5, c:3, l:1, name:"Ladder Landing", what:"The bottom of the shaft, thick with webs; Tunnel Rats.", tags:["mob:tunnel rats"]},
-      {n:6, c:4, l:1, k:1, name:"Cave-in Tunnel", what:"Half fallen in. Holes in the wall shoot darts. Clue: rows of small holes. Safe: the darts fire in bursts; run in the gap, or hold up a shield.", tags:["trap:dart wall"]},
-      {n:7, c:5, l:1, name:"Sorting Room", what:"Old ore tables and a chest. Lost Miners still sorting ore. A cracked floor plate fires darts. Clue: a cracked floor plate. Safe: step round it, or shoot or throw something onto it to use it up.", tags:["trap:dart plate","loot:chest","mob:lost miners"]},
+      {n:6, c:4, l:1, k:1, name:"Cave-in Tunnel", what:"Half fallen in. Sharp wooden stakes stab out of the wall and pull back. Clue: rows of holes, a stake tip poking out. Safe: crawl low, or go when they pull back.", tags:["trap:spear wall"]},
+      {n:7, c:5, l:1, name:"Sorting Room", what:"Old ore tables and a chest. Lost Miners still sorting ore. A cracked plate fires darts and bear jaws hide under the dust. Clue: a cracked floor plate, a rusty glint. Safe: step round them; shoot something onto the plate to use it up.", tags:["trap:dart plate","trap:bear jaws","loot:chest","mob:lost miners"]},
       {n:8, c:5, l:1, s:1, k:1, name:"Spoil Tunnel", what:"A side tunnel where they dumped the rubble.", tags:[]},
       {n:9, c:6, l:1, s:1, name:"Spider Den", what:"Webs and a Tunnel Rat pack (or spiders, your call). A loose floor stone hides a buried chest.", tags:["mob:tunnel rat pack","hid:buried chest"]},
-      {n:10, c:6, l:1, name:"Rotten Gallery", what:"The boards give way into a deep spike pit. The cracked boards are the clue. Safe: keep to the solid edge along the wall.", tags:["deadly:pit + spikes"]},
+      {n:10, c:6, l:1, name:"Rotten Gallery", what:"A wall block slams out and shoves you onto rotten boards over a spike pit. Clue: scrape marks on the floor and a gap round the block. Safe: walk along the block's own wall, or step on its plate and jump back to set it off.", tags:["deadly:push wall + pit + spikes"]},
       {n:11, c:7, l:1, k:1, name:"Deep Seam", what:"A narrow seam with a crusher. Clue: a heavy thud and grooves in the floor. Safe: watch its rhythm and run while it rises.", tags:["trap:crusher"]},
       {n:12, c:7, l:1, s:1, name:"Miner's Shrine", what:"A healing shrine. A boulder in the wall hides a niche with a chest.", tags:["heal:healing shrine","hid:hidden boulder"]},
       {n:13, c:8, l:1, name:"Pell's Last Dig", what:"The Foreman and his Lost Miners. The recipe stand.", tags:["mob:Foreman + miners","page:recipe stand","out:rope lift to room 1"]},
@@ -129,18 +130,18 @@ const D = [
   },
   {
     name: "Mossprop Workings", idea: "Wooden walkways and ladders bolted up the wall of one tall cave. This one is about climbing, with a long drop always beside you.",
-    facts: ["3 levels", "14 spaces", "~8-10 min", "climbs up a cliff", "deadly: the Plank Bridge"],
+    facts: ["3 levels", "14 spaces", "~8-10 min", "climbs up a cliff", "deadly: the swinging boulder bridge"],
     layers: ["Level 3 (10 m up)", "Level 2 (5 m up)", "Level 1 (cave floor)"],
     rooms: [
       {n:1, c:0, l:2, name:"Base Camp", what:"Entrance. An old tent and a chest at the foot of the cliff.", tags:["loot:chest"]},
       {n:2, c:1, l:2, k:1, name:"Lower Walkway", what:"A broken railing. Lost Miners shove you off: a short fall, not deadly.", tags:["mob:lost miners"]},
       {n:3, c:2, l:2, name:"Rockfall Ledge", what:"Stalactites fall when you step onto the ledge. A ladder goes up. Clue: cracks and trickling dust. Safe: shoot them down with a crossbow first, or run through fast.", tags:["trap:falling stalactites"]},
-      {n:4, c:2, l:2, s:1, name:"Tool Niche", what:"Behind a boulder at the foot of the ladder: a chest of old tools.", tags:["hid:hidden boulder","loot:chest"]},
+      {n:4, c:2, l:2, s:1, name:"Tool Niche", what:"Behind a boulder at the foot of the ladder: a chest of old tools, on spike holes. Clue: holes in the floor round it. Safe: shoot the chest first: the spikes fire and pull back.", tags:["hid:hidden boulder","loot:chest","trap:trapped chest"]},
       {n:5, c:3, l:1, name:"Prop Room", what:"Inside the cliff, behind the props. Darts from holes in the wall. Clue: rows of small holes. Safe: the darts fire in bursts; run in the gap, or hold up a shield.", tags:["trap:dart wall"]},
       {n:6, c:3, l:1, s:1, name:"Store Shed", what:"Supplies and a chest. One wall is cracked.", tags:["loot:chest"]},
       {n:7, c:4, l:1, s:1, name:"Hidden Vault", what:"Behind the Store Shed's cracked wall. Gold and a chance of a gem.", tags:["hid:cracked wall","loot:vault chest"]},
-      {n:8, c:4, l:1, name:"Plank Bridge", what:"Across the chasm. Cracked planks break, and the spikes far below mean instant death. Lost Miners wait on the far side. Safe: step only on the whole slabs, along the railing side.", tags:["deadly:chasm + spikes","mob:lost miners"]},
-      {n:9, c:5, l:1, k:1, name:"Far Ledge", what:"A thin ledge. A cracked plate fires darts at you. Clue: a cracked floor plate. Safe: step round it, or shoot or throw something onto it to use it up.", tags:["trap:dart plate"]},
+      {n:8, c:4, l:1, name:"Plank Bridge", what:"Across the chasm. A boulder on a chain swings across the bridge and knocks you off; spikes far below. Lost Miners wait on the far side. Clue: a creaking chain, a broken railing where it hits. Safe: time it, or shoot the chain from the near side.", tags:["deadly:swinging boulder + chasm","mob:lost miners"]},
+      {n:9, c:5, l:1, k:1, name:"Far Ledge", what:"A thin ledge. Sharp stakes stab out of the cliff wall. Clue: rows of holes, a stake tip. Safe: crawl low, or go when they pull back.", tags:["trap:spear wall"]},
       {n:10, c:5, l:1, s:1, name:"Climbers' Rest", what:"A healing shrine before the top.", tags:["heal:healing shrine"]},
       {n:11, c:5, l:0, k:1, name:"Upper Ladder", what:"The last long climb.", tags:[]},
       {n:12, c:6, l:0, k:1, name:"Crusher Gallery", what:"A narrow passage with a crusher. Clue: a heavy thud and grooves in the floor. Safe: watch its rhythm and run while it rises.", tags:["trap:crusher"]},

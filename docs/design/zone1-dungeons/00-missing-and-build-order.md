@@ -15,7 +15,7 @@ Dungeons", "Medium Stone Dungeons" and "Big Clay Dungeons" draw the same maps.*
 
 ## New 3D models (made in Blender on the PC, our style, MODEL-RULES.md checks)
 
-> **Nov 20: the full, up-to-date asset list is in [traps-and-variety.md](traps-and-variety.md).** Fire jets, gas valve, pistons, bellows trap, swing hooks and the coin press are out.
+> **Nov 20: the full, up-to-date asset list is in [traps-and-variety.md](traps-and-variety.md).** Fire jets, gas valve, pistons, bellows trap, swing hooks and the coin press are out; their rows were removed below.
 
 | Model | Used in | Note |
 |---|---|---|
@@ -25,11 +25,6 @@ Dungeons", "Medium Stone Dungeons" and "Big Clay Dungeons" draw the same maps.*
 | trap_crusher_stone | #5 #6 #7 #8 #9 | stone/brick frame for the crusher |
 | trap_crusher_great | #7 | bigger crusher that kills outright |
 | bridge_stone_slab (+ cracked) | #5 #6 #8 #9 #12 | stone/brick bridge slabs that fall away |
-| trap_fire_jet + soot marks, gas_valve (shootable) | #10 #11 #12 | fire jets and the valve that shuts them off |
-| trap_piston | #10 #11 #12 | pushes you, never deadly by itself |
-| trap_bellows (big wall bellows) | #10 #12 | the station bellows model can be the start |
-| trap_swing_hammer (+ release pin), trap_swing_hook, trap_swing_crucible | #10 #11 #12 | swing traps; shoot the pin/chain to stop them |
-| trap_roll_weight + ramp groove | #10 #11 | the rolling weight / anvil cart, with side alcoves |
 | trap_press | #11 | the great press |
 | molten_channel, mould_lid (+ cracked) | #10 #11 #12 | molten metal in stone: can never spill |
 | bridge_chain_section | #12 | a bridge section that drops and rises |
@@ -57,11 +52,10 @@ About 20 new models in all. The small wooden dungeons need almost nothing new (o
    group with the key opens it), the key goes back into the mini boss when the dungeon refills.
 4. **Mini boss fights:** health bar with the name, one special move each.
 5. **Trap code** (request → host decides → everyone sees, like every action):
-   fire jets (on a rhythm, off when the valve is shot), pistons and bellows (push, never kill), swing traps (stop when
-   the pin or chain is shot), rolling weight (rolls when you pass the plate, alcoves are safe), great press and great
-   crusher (bait with the plate, run while it rises), molten metal (kills like spikes, can't spill, glows), dropping
-   bridge section, sinking stepping blocks. Every trap: a clue (look or sound) and a safe way through.
-6. **Things you can shoot:** crossbow bolts trigger valves, pins, chains and stalactites.
+   every trap in traps-and-variety.md (triple carts, push wall, swinging boulder/anvil/crucible, rolling boulder/anvil,
+   tipping brazier, pendulum blades and bells, spear wall, tripwire crossbow, bear jaws, portcullis, collapsing stairs,
+   spiked flail, trapped chest, great crusher and press, molten metal, dropping bridge). Ragdoll on big hits. Every trap: a clue (look or sound) and a safe way through.
+6. **Things you can shoot:** crossbow bolts cut chains and ropes, set off trapped chests and bring down stalactites.
 7. **Lamps you can light** (Lampwick Drift) and **ways out** (lever gates, rope lift, rope slide, lift, secret stair).
 8. **Dungeon chests and the recipe stand** use `DungeonLoot` (built): 1-hour refill, same page again.
 9. **A robot check** that all 12 exist in a new world, every room can be reached, and nothing grows inside.
@@ -73,6 +67,6 @@ About 20 new models in all. The small wooden dungeons need almost nothing new (o
    light, the rope lift and the rope slide. Placing 4 small ones in the ring.
 3. **Keys and locked doors + mini bosses + the stone models** (entrance, locked door, ceiling stones, stone crusher,
    stone bridge). Then **medium #5** (Tomb of Hald Ironbrow) as the first, then #6-#9. Rune Callers' ranged attack.
-4. **Forge traps** one by one (fire jets + valve, pistons, swing traps, rolling weight, press, molten channel), each
+4. **Forge traps** one by one (tipping braziers, swinging anvils, push walls, rolling anvil, press, molten channel, ore carts), each
    tried in a test room first. Then **big #10** (Emberdeep Forge), then #11 and #12.
 5. **Robot check of all 12** and the placement tests.

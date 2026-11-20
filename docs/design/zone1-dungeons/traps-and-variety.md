@@ -1,7 +1,6 @@
 # Zone 1 dungeons: traps, assets and variety
 
-*Nov 20, the owner's trap picks. **This file wins over the trap column in files 02-12 and the three pages** until
-those are redrawn.*
+*Nov 20, the owner's trap picks. The three pages and files 02-12 were redrawn to match (same day).*
 
 ## Owner's trap decisions (Nov 20)
 - **Out:** fire jets (too futuristic), gas valve, steam bellows, pistons, swinging hooks, coin press, sinking blocks.
@@ -33,17 +32,17 @@ those are redrawn.*
 | # | Dungeon | Traps (room) |
 |---|---|---|
 | 1 | Mossgate Hold (PC) | As built on the PC: darts, dart plate, stalactites, breaking floor, crusher, **spike pit**. *Later maybe:* 1 trapped chest |
-| 2 | Lampwick Drift | ⭐ **Triple cart tunnel** (Cart Junction) · tripwire crossbow (Rail Tunnel) · stalactites (Drip Tunnel) · bear jaws (Old Copper Face) · swinging boulder (Prop Corridor) · trapped chest (Hidden Vault) |
+| 2 | Lampwick Drift | ⭐ **Triple cart tunnel** (Cart Junction) · tripwire crossbow (Rail Tunnel) · stalactites (Drip Tunnel) · swinging boulder (The Old Shaft) · bear jaws (Old Copper Face) · trapped chest (Hidden Vault) |
 | 3 | Old Pell's Diggings | ⭐ **Push wall onto rotten floor over spikes** (Rotten Gallery) · spear wall, wooden stakes (Cave-in Tunnel) · bear jaws + dart plate (Sorting Room) · tripwire crossbow (Winch Shed) · crusher (Deep Seam) |
 | 4 | Mossprop Workings | ⭐ **Swinging boulder over the plank bridge** (knocks you off, Plank Bridge) · stalactites (Rockfall Ledge) · trapped chest (Tool Niche) · dart wall (Prop Room) · spear wall (Far Ledge) · crusher (Crusher Gallery) |
 | 5 | Tomb of Hald Ironbrow | ⭐ **Collapsing stairs** (Broken Stair) · **cracked stone bridge** (Bridge of Oaths) · dart wall (Hall of Candles) · ceiling stones (Statue Corridor) · portcullis ambush (Key Chapel) · trapped chest (Embalmers' Room) · tripwire crossbow (Collapsed Tunnel) |
-| 6 | The Quiet Barrows | ⭐ **Rolling boulder** (Long Barrow) · **swinging boulders over the bridge** (Ash Bridge) · ceiling stones (Spiral Stair) · bear jaws (Keeper's Corridor) · trapped chest (Sunken Barrow) · spear wall (Crusher Gate, crusher removed) · dart plate (Mourning Niche path) |
-| 7 | Brassgate Vault | ⭐ **Pendulum blades** (Great Crusher Hall becomes Pendulum Hall) · **push wall into the coin chute** (Coin Chute) · tripwire crossbow (Guard Corridor) · dart plate (Weighing Hall) · crusher (Workers' Hall) · portcullis ambush (Captain's Quarters) · **2 trapped chests**, it's a vault (Treasury) |
+| 6 | The Quiet Barrows | ⭐ **Rolling boulder** (Long Barrow) · **swinging boulders over the bridge** (Ash Bridge) · ceiling stones (Spiral Stair) · bear jaws (Keeper's Corridor) · trapped chest (Sunken Barrow) · dart plate (Hall of Bones) · spear wall (Spear Gate) |
+| 7 | Brassgate Vault | ⭐ **Pendulum blades** (Pendulum Hall) · **push wall into the coin chute** (Coin Chute) · tripwire crossbow (Guard Corridor) · dart plate (Weighing Hall) · crusher (Workers' Hall) · portcullis ambush (Captain's Quarters) · **2 trapped chests**, it's a vault (Treasury Corridor) |
 | 8 | Hall of the Shieldbearers | ⭐ **Spiked flail sweeping the bridge** (Shield Bridge) · **breaking floor into the spike pit** (Practice Pit) · spear wall from weapon racks (Barracks Row) · bear jaws (Training Yard) · tripwire crossbow (Drill Cellar) · portcullis ambush (Sergeant's Quarters) · trapped chest (Armoury) |
 | 9 | Vigil of Orrin Stonejaw | ⭐ **Bell pendulums**: giant bells with sharp rims swing across the hall (Hall of Echoes) · **great crusher** on the stairs (Crusher Steps) · dart wall (Hall of Pillars) · ceiling stones (First Stair) · dart plate (Rune Gallery) · spear wall (Broken Bridge) · trapped chest (Bellringer's Loft) |
 | 10 | Emberdeep Forge | ⭐ **Rolling anvil** (Rolling Ingot Ramp) · **molten channel** (Quench Hall) · **swinging crucible over molten pit** (Crucible Bridge) · tipping braziers (Soot Corridor, Furnace Gallery) · push wall into slag (Bellows Walk) · swinging anvils (Hammer Row) · bear jaws (Coal Store) · dart wall (Collapsed Tunnel) · trapped chest (Master's Study) |
-| 11 | The Hammerfall Works | ⭐ **Great press** (Press Hall) · **triple ore-cart ramp**, faster than Lampwick (Rolling Anvil Ramp) · **molten channel** (Molten Channel) · swinging anvil (Gatehouse Tunnel) · push wall (Gearworks) · spiked flail (Belt Walk) · tipping braziers (Furnace Undercroft) · pendulum blades (Bridge of Chains) · portcullis ambush (Smelter's Hall) · tripwire crossbow + trapped chest (Slag Cellar) |
-| 12 | Cinderhold Foundry | ⭐ **Dropping chain bridge** (Chain Bridge) · **molten moulds** (Casting Floor) · **swinging crucible knocks you off** (First Bridge) · push wall into the chasm (Upper Gantry) · tipping braziers (Smelter Row, Tapping Hall) · collapsing brick stairs (between levels) · bear jaws (Slag Heap) · spiked flail (Bellows Hall) · portcullis ambush (Crucible Hall) · trapped chest |
+| 11 | The Hammerfall Works | ⭐ **Great press** (Press Hall) · **triple ore-cart ramp**, faster than Lampwick (Ore Cart Ramp) · **molten channel** (Molten Channel) · swinging anvil (Gatehouse Tunnel) · push wall (Gearworks) · spiked flail (Belt Walk) · tipping braziers (Furnace Undercroft) · pendulum blades (Bridge of Chains) · portcullis ambush (Smelter's Hall) · tripwire crossbow + trapped chest (Slag Cellar) |
+| 12 | Cinderhold Foundry | ⭐ **Dropping chain bridge** (Chain Bridge) · **molten moulds** (Casting Floor) · **swinging crucible knocks you off** (First Bridge) · push wall off the gantry (Upper Gantry) · tipping braziers (Smelter Row, Tapping Hall) · collapsing brick stairs (Ash Stair) · bear jaws (Slag Heap) · spiked flail (Bellows Hall) · portcullis ambush (Crucible Hall) · trapped chest (Coal Bunker) |
 
 Checks: every dungeon has a different signature; no trap is in every dungeon; small ones keep the simple wood traps
 (the tutorial), medium adds stone ones, big adds forge ones.

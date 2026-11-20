@@ -1,7 +1,5 @@
 # #6 The Quiet Barrows
 
-> **Traps changed Nov 20:** see [traps-and-variety.md](traps-and-variety.md). It wins over the trap notes below.
-
 *Draft, Nov 20 (Mac, overnight). Generated from the dungeon pages; edit the page data and run gen_docs again.*
 
 Rings of small burial rooms around a deep spiral stair. Each level down is older and darker.
@@ -19,7 +17,7 @@ Rings of small burial rooms around a deep spiral stair. Each level down is older
 | # | Space | Level | Size | What's there | Has |
 |---|---|---|---|---|---|
 | 1 | Barrow Door | Level 1 | 8 x 8 | Entrance: a low round door under a mossy mound of stone. |  |
-| 2 | Long Barrow (corridor) | Level 1 | 4 x 12 | A long low tunnel with darts from the wall. Clue: rows of small holes. Safe: the darts fire in bursts; run in the gap, or hold up a shield. | trap: dart wall |
+| 2 | Long Barrow (corridor) | Level 1 | 4 x 12 | A long sloping barrow. Step on the wrong stone and a huge boulder rolls down after you. Clue: a long groove in the floor, a dark hole high in the far wall. Safe: run to one of the side alcoves. | **deadly: rolling boulder** |
 | 3 | First Ring | Level 1 | 12 x 12 | Burial rooms round the stair. Bone Thralls. | mob: thralls; loot: chest |
 | 4 | Barrow of the Smith | Level 1 | 8 x 8 | A loose floor stone hides a buried chest. | hid: buried chest |
 | 5 | Barrow of the Hunter | Level 1 | 8 x 8 | Grave Creepers wait in the dark. | mob: creepers |
@@ -27,14 +25,14 @@ Rings of small burial rooms around a deep spiral stair. Each level down is older
 | 7 | Second Ring | Level 2 (8 m down) | 12 x 12 | Bone Wardens. The gate down is locked: it needs the Barrow Key. | mob: wardens |
 | 8 | Barrow of the Twins | Level 2 (8 m down) | 8 x 8 | Two coffins and a chest. The back wall is cracked. | loot: chest; hid: cracked wall |
 | 9 | Twins' Vault | Level 2 (8 m down) | 4 x 4 | Behind the cracked wall. Gold and a chance of a gem. | loot: vault chest |
-| 10 | Keeper's Corridor (corridor) | Level 2 (8 m down) | 4 x 12 | Floor plates fire darts. Clue: a cracked floor plate. Safe: step round it, or shoot or throw something onto it to use it up. | trap: dart plate |
+| 10 | Keeper's Corridor (corridor) | Level 2 (8 m down) | 4 x 12 | Bear jaw traps hide in the grave dust. Clue: a rusty glint. Safe: look down and step round; a friend can pry one open. | trap: bear jaws |
 | 11 | Keeper's Barrow | Level 2 (8 m down) | 12 x 12 | The Barrow Keeper, a big Rune Caller, holds the Barrow Key. | boss: Barrow Keeper; key: Barrow Key |
-| 12 | Sunken Barrow | Level 2 (8 m down) | 12 x 12 | The floor gives way into a spike pit. A chest sits on the far side. Clue: cracked floor tiles. Safe: keep to the solid edge along the wall. | **deadly: pit + spikes**; loot: chest |
+| 12 | Sunken Barrow | Level 2 (8 m down) | 12 x 12 | A barrow half sunk into the floor. Its chest sits on spike holes. Clue: holes in the floor round it. Safe: shoot the chest first: the spikes fire and pull back. | loot: chest; trap: trapped chest |
 | 13 | Shrine of Rest | Level 2 (8 m down) | 8 x 8 | A healing shrine. | heal: healing shrine |
 | 14 | Deep Stair (corridor) | Level 2 (8 m down) | 4 x 8 stair, 8 m between levels | Behind the locked gate, down to the oldest barrows. | lock: locked gate |
-| 15 | Hall of Bones | Level 3 (16 m down) | 12 x 12 | Grave Creepers and Thralls together. | mob: creepers; mob: thralls |
-| 16 | Ash Bridge | Level 3 (16 m down) | 4 x 14 (bridge), gap 10 deep | A narrow bridge over a chasm, spikes below. Clue: cracked slabs. Rune Callers shoot from the far side. Safe: step only on the whole slabs, along the railing side. | **deadly: chasm + spikes**; mob: rune callers |
-| 17 | Crusher Gate (corridor) | Level 3 (16 m down) | 4 x 12 | A stone crusher in the doorway. Clue: a heavy thud and grooves in the floor. Safe: watch its rhythm and run while it rises. | trap: crusher |
+| 15 | Hall of Bones | Level 3 (16 m down) | 12 x 12 | Bones stacked to the ceiling. Grave Creepers and Thralls. A cracked plate fires darts. Clue: a cracked floor plate. Safe: step round it, or shoot something onto it. | mob: creepers; mob: thralls; trap: dart plate |
+| 16 | Ash Bridge | Level 3 (16 m down) | 4 x 14 (bridge), gap 10 deep | A stone bridge over a chasm. Boulders on chains swing across it and knock you off. Rune Callers shoot from the far side. Clue: creaking chains, chipped railings. Safe: time each one, or shoot its chain. | **deadly: swinging boulder + chasm**; mob: rune callers |
+| 17 | Spear Gate (corridor) | Level 3 (16 m down) | 4 x 12 | Iron spears stab out of the walls and pull back. Clue: rows of holes, a rusty tip. Safe: crawl low, or go when they pull back. | trap: spear wall |
 | 18 | Mourning Niche | Level 3 (16 m down) | 4 x 4 | A boulder hides a niche with a chest. | hid: hidden boulder; loot: chest |
 | 19 | First King's Barrow | Level 3 (16 m down) | 12 x 14 | The oldest grave. A pack with a big Warden leader. The recipe stand. | mob: pack + leader; page: recipe stand |
 | 20 | Air Shaft (corridor) | Level 3 (16 m down) | 4 x 12 | An old air shaft with a rope: climb straight up to the Barrow Door. | out: climb to room 1 |
@@ -64,18 +62,20 @@ Paths: 1-2, 2-3, 3-4, 4-5, 3-6, 6-7, 7-8, 8-9, 7-10, 10-11, 11-12, 10-13, 7-14, 
 |---|---|---|
 | Stonehold stone building pieces (walls, floors, round doorways, stairs, pillars, beams, railings, ladders) | exists | |
 | dungeon_entrance (stone/brick version) | new | the round door in the cave wall |
-| trap_dart_wall | exists |  |
+| trap_roll_boulder + ramp groove + side alcoves | new |  |
 | floor_loose_stone + chest | exists |  |
 | trap_ceiling_stones | new | stone version of the drips: loose ceiling blocks |
 | wall_cracked / wall_broken | exists |  |
-| trap_dart_plate | exists |  |
+| trap_bear_jaw (open + shut) | new |  |
 | tr_key_copper / tr_key_iron (recoloured per key) | exists | key items are new code |
-| trap_floor_break | exists |  |
+| floor_spike_holes | new | shoot the chest first: the spikes fire and pull back |
 | trap_spikes | exists |  |
 | healing shrine | check | Mossgate Hold has one: check the PC's kit |
 | door_locked_round (stone/brick, with a keyhole) | new |  |
+| trap_dart_plate | exists |  |
 | bridge_stone_slab (+ cracked) | new | stone/brick bridge slabs that fall away |
-| trap_crusher_stone | new | stone/brick frame for the crusher |
+| trap_swing_boulder (+ beam/arch hook) | new | ragdoll on hit |
+| trap_spear_wall (iron spears) | new |  |
 | cave boulder (Boulders.SHAPES) | exists |  |
 | recipe_stand + recipe_scroll | exists |  |
 | rope_ladder | exists |  |

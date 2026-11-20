@@ -5606,3 +5606,18 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   Linux). Did it with a short Python script instead.
 - The 02-12 files and the three pages still show the old traps. Each file has a note at the top saying the new trap
   file wins, until the pages are redrawn.
+
+## Nov 20 (Mac): dungeon pages redrawn with the new traps (F237)
+- The three dungeon pages (small, medium, big) now show the owner's trap picks in every room, each with a clue and a
+  safe way. Fire jets, pistons, bellows, swing hooks and the runaway cart are gone. Every page also has a note on how
+  each world makes a dungeon a bit different.
+- The room files 02-12 were made again from the pages, so they match. The generator now knows the new trap models.
+  The missing list (00) lost the old fire jet and piston rows.
+- The rules check passes for all 11 drawn dungeons (Mossgate Hold's map is on the PC).
+- Small changes made while placing the traps:
+  - Lampwick's swinging boulder sits over the Old Shaft.
+  - Tomb's Crusher Hall became Shield Hall, the Barrows' Crusher Gate became Spear Gate, and Brassgate's Great
+    Crusher Hall became Pendulum Hall.
+  - Hammerfall's Rolling Anvil Ramp became the Ore Cart Ramp.
+  - Cinderhold's push wall knocks you down a level (it hurts) instead of into the chasm, so the dungeon keeps
+    3 deadly traps.
