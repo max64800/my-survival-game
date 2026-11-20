@@ -6195,3 +6195,7 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   keeps letters sharp. Owner picked two tabs (Skills / Perks): no more opening a skill, so the window never changes
   size; it sits above the hotbar. Took 3 photo rounds to fit all 14 skills (3, then 4, then 5 per row: long star
   lines wrap and make cards taller).
+- **My mistake:** I numbered the K-window item F436 without checking right before writing; the dungeon chat had just
+  used F436 and F437, so I renumbered mine F445. Then that fix commit swept in the animation chat's files, which they
+  had staged (git add) but not saved, including two 20 MB .blend files. I told them instead of undoing it. Lesson:
+  commit with `git commit <my files>` so only my own files go in, never a plain commit after git add.
