@@ -15,9 +15,9 @@ const VARIANT_ART := {"": "mossy", "red": "ember", "blue": "frost", "green": "sp
 ## cave's two snails differ) and every computer sees the same. Crystal variants keep crystals on top to stand out.
 const LOOKS := ["mossy", "ember", "frost", "spore"]
 ## The skeleton miners (CreatureRig, Nov 20): their own looks, mixed by the creature's number (owner F466); the
-## Foreman has one. tools/asset_forge/builds/kaykit_miners.py makes them.
+## Foreman and the Prop Warden have one each. tools/asset_forge/builds/kaykit_miners.py makes them.
 const RIG_LOOKS := {"tunnel_rat": ["tunnel_rat_grime", "tunnel_rat_soot", "tunnel_rat_rust"],
-	"lost_miner": ["lost_miner_frost", "lost_miner_rime", "lost_miner_ghost"], "foreman": ["foreman"], "prop_warden": ["foreman"]}
+	"lost_miner": ["lost_miner_frost", "lost_miner_rime", "lost_miner_ghost"], "foreman": ["foreman"], "prop_warden": ["prop_warden"]}
 
 
 static func look_of(variant: String, seed: int) -> String:

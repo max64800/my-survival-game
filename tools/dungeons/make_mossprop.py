@@ -41,7 +41,7 @@ def prop(model, x, y, z, yaw=0.0, scale=1.0, role="decor", label="", tilt=0.0, *
 
 MODEL = {"tunnel_rat": ["creatures/tunnel_rat_rust.glb", "creatures/tunnel_rat_grime.glb", "creatures/tunnel_rat_soot.glb"],
 	"lost_miner": ["creatures/lost_miner_frost.glb", "creatures/lost_miner_rime.glb", "creatures/lost_miner_ghost.glb"],
-	"prop_warden": ["creatures/foreman.glb"]}
+	"prop_warden": ["creatures/prop_warden.glb"]}
 
 
 def creature(kind, x, z, yaw=0.0, floor=0.0, wake=None):

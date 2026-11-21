@@ -87,11 +87,19 @@ PAINT = {
 	"wool_rime2": ("sack_b", (0.35, 0.35, 0.36), 0.9, 0.0),
 	# round 3: pitch-black iron for the helmets and the tools' heads
 	"iron_black": ("iron_b", (0.07, 0.07, 0.06), 0.7, 0.0),
+	# the Prop Warden (Mossprop Workings' boss, F468): moss-stained bone, rotten grey-green timber, a mossy beard
+	"bone_moss": ("limestone_c", (0.43, 0.44, 0.33), 0.6, 0.0),
+	"wool_mossy": ("sack_b", (0.14, 0.17, 0.09), 0.9, 0.0),
+	"leather_rot": ("leather_dark", (0.19, 0.16, 0.10), 0.7, 0.0),
+	"beard_moss": ("ropev_a", (0.22, 0.25, 0.16), 1.0, 0.0),
+	"plank_rot": ("wood_b", (0.27, 0.26, 0.19), 1.0, 0.0),
+	"plank_dark": ("wood_b", (0.17, 0.16, 0.11), 1.0, 0.0),
+	"moss": ("soil_b", (0.19, 0.29, 0.09), 1.0, 0.0),
 }
 TILE = {"bone": 0.7, "bone_ghost": 0.7, "bone_grime": 0.7, "wool": 0.6, "wool_ghost": 0.6, "wool_dark": 0.6,
 	"iron": 0.45, "iron_black": 0.45, "leather": 0.5, "beard": 0.25, "beard_ghost": 0.25, "beard_red": 0.25, "wood": 0.5, "copper": 0.4}
 for _k in PAINT:
-	TILE.setdefault(_k, 0.25 if _k.startswith("beard") else 0.6 if _k.startswith(("wool", "shirt")) else 0.5 if _k.startswith("leather") else 0.7)
+	TILE.setdefault(_k, 0.35 if _k == "moss" else 0.25 if _k.startswith("beard") else 0.6 if _k.startswith(("wool", "shirt")) else 0.5 if _k.startswith("leather") else 0.7)
 
 # body: which paint each of the pack's colour kinds gets
 CREATURES = {
@@ -115,6 +123,13 @@ CREATURES = {
 		eyes=(1.0, 0.45, 0.12), eye_glow=3.0, beard="beard_red", beard_len=0.62, beard_w=0.62,
 		pose={"spine": (0, 0, 0), "chest": (-4, 0, 0), "head": (4, 0, 0)}, chest_scale=(1.32, 1.12, 1.25),
 		helmet="foreman", tool="big_pick", looks={"": {}}),
+	# Mossprop Workings' boss (F468): the miner who propped the tunnels, rotted with them. A rotten-timber helm with
+	# moss on it, a double-bit felling axe (his Great Chop), a big plank shield on the left arm (blocks from the front).
+	"prop_warden": dict(src="Skeleton_Warrior", height=1.9, drop=["Skeleton_Warrior_Helmet"],
+		paint={"bone": "bone_moss", "cloth": "wool_mossy", "metal": "iron", "leather": "leather_rot", "shirt": "leather_rot"},
+		eyes=(0.75, 1.0, 0.35), eye_glow=3.0, beard="beard_moss", beard_len=0.66, beard_w=0.60,
+		pose={"spine": (0, 0, 0), "chest": (-4, 0, 0), "head": (4, 0, 0)}, chest_scale=(1.32, 1.12, 1.25),
+		helmet="warden", tool="felling_axe", shield="plank", tache_in=0.02, looks={"": {}}),  # (tache_in: his moustache floated 1 cm off the face)
 }
 
 # owner, Nov 21 (F527): "the heads are too big, make them normal size": every head is this much of the pack's
@@ -422,7 +437,7 @@ def beard(jaw_lo, jaw_hi, chest_front, cfg):
 		o.data.materials.append(m)
 		kit.roughen(o, amount=0.014, cuts=1, seed=i)
 	for s in (-1, 1):  # moustache
-		o = kit.cone(0.06 * k, 0.02 * k, 0.24 * k, (s * 0.12 * k, front - 0.03 * k, jaw_hi.z - 0.1 * k), m, rot=(0, s * 60, 0), verts=5, bevel=0.0)
+		o = kit.cone(0.06 * k, 0.02 * k, 0.24 * k, (s * 0.12 * k, front - 0.03 * k + cfg.get("tache_in", 0.0), jaw_hi.z - 0.1 * k), m, rot=(0, s * 60, 0), verts=5, bevel=0.0)
 		o.scale = (1.0, 0.6, 1.0)
 	objs = new_objs(before)
 	for o in objs:
@@ -438,7 +453,7 @@ def helmet(head_lo, head_hi, kind):
 	ry = (head_hi.y - head_lo.y) / 2 * 1.3  # (F527: the smaller skull's back poked through the dome)
 	z0 = head_hi.z - (0.42 if kind != "cap" else 0.36) * HK
 	tall = head_hi.z + (0.07 if kind != "foreman" else 0.12) * HK - z0  # the dome's top clears the skull
-	shell = paint_mat("iron_black")  # (round 3: black helmets, the Rat's cap too)
+	shell = paint_mat("plank_rot" if kind == "warden" else "iron_black")  # (round 3: black helmets, the Rat's cap too)
 	band = paint_mat("iron_black")
 	# dome: a squashed low-poly half ball, a bit dented
 	bpy.ops.mesh.primitive_uv_sphere_add(segments=10, ring_count=6, radius=1.0, location=(cx, cy, z0))
@@ -508,6 +523,13 @@ def helmet(head_lo, head_hi, kind):
 			parts += new_objs(before2)
 		if kind == "foreman":  # the badge on the band's side (the sheet's octagon with a peak)
 			pass
+	if kind == "warden":  # the Prop Warden's timber helm: no lamp, moss growing over the top and spilling on the brim
+		before2 = set(bpy.data.objects)
+		k = HK
+		moss_clump((cx + 0.03 * k, cy + 0.02 * k, z0 + tall * 0.92), (rx * 0.75, ry * 0.7, 0.07 * k))
+		moss_clump((cx - rx * 0.62, cy + ry * 0.35, z0 + tall * 0.55), (0.11 * k, 0.13 * k, 0.07 * k))
+		moss_clump((cx + rx * 0.9, cy - ry * 0.2, z0 + 0.03 * k), (0.12 * k, 0.15 * k, 0.05 * k))
+		parts += new_objs(before2)
 	return group([p for p in parts if p is not glow], "helmet"), glow
 
 
@@ -526,6 +548,8 @@ CRACKS = {
 	"foreman": [("c", 16, 1.1, 36, -0.8, 1.1), ("c", 26, 0.3, 60, -0.1, 0.7), ("c", -30, 0.1, -44, -1.1, 0.9),
 		("s", -46, 1.0, -64, -0.4, 0.65), ("s", -56, 1.0, -74, -0.35, 0.65), ("s", -66, 1.0, -84, -0.3, 0.65),
 		("c", 165, 1.1, 190, -0.9, 1.0), ("c", 100, 1.1, 115, -0.6, 0.8)],
+	"prop_warden": [("c", -18, 1.1, -40, -0.8, 1.1), ("c", 30, 0.9, 52, -0.9, 0.9), ("c", -60, 0.4, -95, 0.0, 0.7),
+		("s", 60, 1.0, 76, -0.4, 0.65), ("s", 70, 1.0, 86, -0.35, 0.65), ("c", 160, 1.1, 185, -0.9, 1.0)],
 }
 
 
@@ -685,9 +709,70 @@ def tool(kind):
 		kit.box((0.2, 0.05, 0.035), (0, -0.19, 0), wood, bevel=0.01, wobble=0.004)  # the D-grip's bar
 		kit.box((0.06, 0.24, 0.17), (0, 0.67, 0), ir, bevel=0.01, wobble=0.006)  # socket
 		kit.box((0.28, 0.32, 0.035), (0, 0.92, 0.02), ir, bevel=0.02, wobble=0.012)  # the dented blade
+	elif kind == "felling_axe":  # the Prop Warden's: a long timberman's handle, a double-bit iron head (two blades)
+		L, r = 1.3, 0.05
+		kit.cylinder(r, L, (0, L / 2 - 0.2, 0), wood, rot=(90, 0, 0), verts=7, bevel=0.006)
+		hy = L - 0.28
+		kit.box((r * 2.9, r * 3.4, r * 2.9), (0, hy, 0), ir, bevel=0.012, wobble=0.006)  # the eye of the head
+		for s in (-1, 1):  # each blade: a wedge that flares out to a wide thin edge
+			zc = s * (r * 1.45 + 0.11)
+			b = kit.box((0.07, 0.15, 0.24), (0, hy, zc), ir, bevel=0.01, wobble=0.0)
+			for v in b.data.vertices:  # (the kit bakes the place into the points: measure from the blade's middle)
+				t = s * (v.co.z - zc) / 0.24 + 0.5  # 0 at the eye, 1 at the edge
+				v.co.y = hy + (v.co.y - hy) * (1.0 + 1.1 * t)
+				v.co.x *= 1.0 - 0.75 * t
+		for k in range(2):
+			kit.ring(r * 1.15, 0.012, (0, hy - 0.13 - k * 0.06, 0), ir, rot=(90, 0, 0), seg=10)
 	o = group(new_objs(before), "tool")
-	if kind in ("pickaxe", "big_pick"):  # owner, Nov 20 (F465): the point leads the swing (it hit with the flat side)
+	if kind in ("pickaxe", "big_pick", "felling_axe"):  # owner, Nov 20 (F465): the point leads the swing (it hit with the flat side)
 		o.data.transform(Matrix.Rotation(math.radians(90), 4, "Y"))
+	return o
+
+
+def moss_clump(loc, size):
+	"""A lumpy cushion of moss (half sunk into whatever it grows on)."""
+	bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=1, radius=1.0, location=loc)
+	o = bpy.context.object
+	o.scale = size
+	bpy.ops.object.transform_apply(scale=True)
+	return kit._finish(o, paint_mat("moss"), 0, min(size) * 0.25)
+
+
+def shield(kind):
+	"""The Prop Warden's plank shield, in the left forearm's own space: x = across, y = along the arm (to the hand),
+	z = out from the arm (the strap at 0). Four rotten planks with broken tops,
+	two battens and a brace nailed across the front, an iron band on the bottom, moss in the joints."""
+	before = set(bpy.data.objects)
+	rot, dark, ir, strap = paint_mat("plank_rot"), paint_mat("plank_dark"), paint_mat("iron_black"), paint_mat("leather_rot")
+	W, GAP, T, ZC = 0.15, 0.014, 0.05, 0.15  # plank width, gap between, thickness, middle (z)
+	BOT = -0.42
+	xs = [(i - 1.5) * (W + GAP) for i in range(4)]
+	for i, x in enumerate(xs):
+		h = 0.92 + rng.uniform(-0.03, 0.04) - (0.12 if i == 3 else 0.0)  # the last plank broke off short
+		p = kit.box((W + rng.uniform(-0.01, 0.0), h, T), (x, BOT + h / 2, ZC), dark if i == 1 else rot, bevel=0.012, wobble=0.008,
+			rot=(0, 0, rng.uniform(-1.5, 1.5)))
+		for v in p.data.vertices:  # rotten, broken top end
+			if v.co.y > h / 2 - 0.02:
+				v.co.y -= rng.uniform(0.0, 0.07) + (0.06 * (v.co.x / W + 0.5) if i == 3 else 0.0)
+	FZ = ZC + T / 2  # the planks' front
+	for y in (-0.22, 0.28):  # battens across the front (sunk 0.8 cm into the planks)
+		kit.box((0.68, 0.09, 0.035), (0, y, FZ + 0.0175 - 0.008), dark, bevel=0.01, wobble=0.006, rot=(0, 0, rng.uniform(-2, 2)))
+		for x in xs:
+			kit.rivet((x + rng.uniform(-0.02, 0.02), y + rng.uniform(-0.015, 0.015), FZ + 0.035 - 0.004), ir, r=0.017)
+	ang = math.degrees(math.atan2(0.41, 0.52))  # the brace between them (front 1.2 cm behind the battens' front)
+	kit.box((0.66, 0.075, 0.03), (0, 0.03, FZ + 0.015 - 0.01), rot, bevel=0.01, wobble=0.005, rot=(0, 0, ang))
+	kit.box((0.70, 0.06, 0.075), (0, BOT + 0.025, ZC), ir, bevel=0.01, wobble=0.006)  # iron band round the bottom
+	for x in (-0.3, 0.0, 0.3):
+		kit.rivet((x, BOT + 0.025, ZC + 0.0375 - 0.004), ir, r=0.015)
+	for y in (-0.08, 0.13):  # two leather straps behind, round the forearm (sunk 0.5 cm into the planks)
+		kit.box((0.16, 0.05, 0.09), (0.0, y, ZC - T / 2 + 0.005 - 0.045), strap, bevel=0.008, wobble=0.004)
+	moss_clump((xs[0] + 0.03, 0.28 + 0.05, FZ + 0.02), (0.11, 0.035, 0.03))  # moss on the battens' tops and the plank ends
+	moss_clump((xs[2] + 0.04, -0.22 + 0.05, FZ + 0.02), (0.13, 0.035, 0.03))
+	moss_clump((xs[1], BOT + 0.9, ZC), (0.08, 0.05, 0.045))
+	moss_clump((xs[3] - 0.05, BOT + 0.06, FZ + 0.01), (0.10, 0.04, 0.03))
+	o = group(new_objs(before), "shield")
+	o.data.transform(o.matrix_world)  # (the join keeps the first part's place: bake it in, so place() is exact)
+	o.matrix_world = Matrix.Identity(4)
 	return o
 
 
@@ -735,6 +820,12 @@ def build(name, look):
 	slot = arm.data.bones["handslot.r"]
 	place(t, arm.matrix_world @ slot.matrix_local)
 	skin_to(t, arm, "handslot.r")
+	if cfg.get("shield"):
+		sh = shield(cfg["shield"])
+		# strapped to the forearm, not the hand: the forearm's z points out-left-forward in every move (probed), the
+		# hand socket turns every way (and grips the axe in the two-handed moves: the board went through the handle)
+		place(sh, arm.matrix_world @ arm.data.bones["lowerarm.l"].matrix_local @ Matrix.Translation((0, 0.14, 0.0)))
+		skin_to(sh, arm, "lowerarm.l")
 	# dwarf size: the whole rig scaled (moves keep working: the scale sits on the rig, not in the bones)
 	lo, hi = bounds([o for o in bpy.data.objects if o.type == "MESH" and o.name != "tool"])
 	s = cfg["height"] / (hi.z - lo.z)

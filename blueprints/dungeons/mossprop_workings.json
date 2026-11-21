@@ -10735,7 +10735,7 @@
   },
   {
    "kind": "prop_warden",
-   "model": "creatures/foreman.glb",
+   "model": "creatures/prop_warden.glb",
    "pos": [
     37.0,
     10.25,
