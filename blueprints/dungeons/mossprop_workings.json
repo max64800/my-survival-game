@@ -1,0 +1,11037 @@
+{
+ "name": "Mossprop Workings",
+ "map": "mossprop",
+ "pieces": [
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    23.0,
+    10.0,
+    13.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    23.0,
+    10.0,
+    19.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    20.0,
+    10.0,
+    13.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "doorway",
+   "mat": "plank_root",
+   "pos": [
+    20.0,
+    10.0,
+    16.0
+   ],
+   "rot": 1,
+   "scale": 1.5
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    20.0,
+    10.0,
+    14.5
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    20.0,
+    12.0,
+    14.5
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    20.0,
+    10.0,
+    17.5
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    20.0,
+    12.0,
+    17.5
+   ],
+   "rot": 1
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    20.0,
+    13.0,
+    16.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    20.0,
+    14.0,
+    15.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    20.0,
+    14.0,
+    17.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "doorway",
+   "mat": "plank_root",
+   "pos": [
+    24.0,
+    10.0,
+    14.0
+   ],
+   "rot": 1,
+   "scale": 1.5
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    24.0,
+    10.0,
+    12.5
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    24.0,
+    12.0,
+    12.5
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    24.0,
+    10.0,
+    15.5
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    24.0,
+    12.0,
+    15.5
+   ],
+   "rot": 1
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    24.0,
+    13.0,
+    14.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    24.0,
+    14.0,
+    13.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    24.0,
+    14.0,
+    15.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    24.0,
+    12.0,
+    17.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    24.0,
+    14.0,
+    17.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    24.0,
+    10.0,
+    19.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "doorway",
+   "mat": "plank_root",
+   "pos": [
+    22.0,
+    10.0,
+    24.0
+   ],
+   "rot": 0,
+   "scale": 1.5
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    20.5,
+    10.0,
+    24.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    20.5,
+    12.0,
+    24.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    23.5,
+    10.0,
+    24.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    23.5,
+    12.0,
+    24.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    22.0,
+    13.0,
+    24.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    21.0,
+    14.0,
+    24.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    23.0,
+    14.0,
+    24.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    31.0,
+    16.0,
+    15.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    33.0,
+    16.0,
+    17.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    35.0,
+    10.0,
+    11.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    35.0,
+    10.0,
+    13.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    37.0,
+    16.0,
+    15.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    37.0,
+    10.0,
+    23.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    39.0,
+    16.0,
+    15.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    39.0,
+    10.0,
+    23.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    41.0,
+    16.0,
+    17.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    43.0,
+    10.0,
+    15.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    43.0,
+    16.0,
+    23.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    30.0,
+    12.0,
+    11.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "doorway",
+   "mat": "plank_root",
+   "pos": [
+    30.0,
+    10.0,
+    14.0
+   ],
+   "rot": 1,
+   "scale": 1.5
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    30.0,
+    10.0,
+    12.5
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    30.0,
+    12.0,
+    12.5
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    30.0,
+    10.0,
+    15.5
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    30.0,
+    12.0,
+    15.5
+   ],
+   "rot": 1
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    30.0,
+    13.0,
+    14.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    30.0,
+    14.0,
+    13.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    30.0,
+    14.0,
+    15.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    30.0,
+    14.0,
+    17.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    44.0,
+    14.0,
+    15.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    44.0,
+    14.0,
+    23.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    33.0,
+    14.0,
+    10.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    37.0,
+    12.0,
+    10.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    41.0,
+    10.0,
+    10.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    33.0,
+    14.0,
+    24.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "doorway",
+   "mat": "plank_root",
+   "pos": [
+    38.0,
+    10.0,
+    24.0
+   ],
+   "rot": 0,
+   "scale": 1.5
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    36.5,
+    10.0,
+    24.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    36.5,
+    12.0,
+    24.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    39.5,
+    10.0,
+    24.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    39.5,
+    12.0,
+    24.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    38.0,
+    13.0,
+    24.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    37.0,
+    14.0,
+    24.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    39.0,
+    14.0,
+    24.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    43.0,
+    10.0,
+    24.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    21.0,
+    5.0,
+    19.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    24.0,
+    7.0,
+    19.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    19.0,
+    5.0,
+    18.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    19.0,
+    7.0,
+    18.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "doorway",
+   "mat": "plank_root",
+   "pos": [
+    22.0,
+    5.0,
+    24.0
+   ],
+   "rot": 0,
+   "scale": 1.5
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    20.5,
+    5.0,
+    24.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    20.5,
+    7.0,
+    24.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    23.5,
+    5.0,
+    24.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    23.5,
+    7.0,
+    24.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    22.0,
+    8.0,
+    24.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    25.0,
+    5.0,
+    19.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    25.0,
+    5.0,
+    21.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    25.0,
+    9.0,
+    21.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    27.0,
+    9.0,
+    19.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    29.0,
+    5.0,
+    21.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    29.0,
+    9.0,
+    23.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    25.0,
+    7.0,
+    18.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    27.0,
+    7.0,
+    18.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "doorway",
+   "mat": "plank_root",
+   "pos": [
+    26.0,
+    5.0,
+    24.0
+   ],
+   "rot": 0,
+   "scale": 1.5
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    24.5,
+    5.0,
+    24.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    24.5,
+    7.0,
+    24.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    27.5,
+    5.0,
+    24.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    27.5,
+    7.0,
+    24.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    26.0,
+    8.0,
+    24.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    47.0,
+    5.0,
+    29.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    47.0,
+    9.0,
+    29.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    49.0,
+    9.0,
+    31.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    51.0,
+    5.0,
+    31.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "doorway",
+   "mat": "plank_root",
+   "pos": [
+    46.0,
+    5.0,
+    30.0
+   ],
+   "rot": 1,
+   "scale": 1.5
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    46.0,
+    5.0,
+    28.5
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    46.0,
+    7.0,
+    28.5
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    46.0,
+    5.0,
+    31.5
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    46.0,
+    7.0,
+    31.5
+   ],
+   "rot": 1
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    46.0,
+    8.0,
+    30.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    46.0,
+    7.0,
+    33.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    52.0,
+    7.0,
+    31.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    51.0,
+    7.0,
+    28.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    15.0,
+    10.0,
+    15.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    15.0,
+    14.0,
+    17.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    17.0,
+    14.0,
+    17.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    14.0,
+    10.0,
+    15.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    17.0,
+    10.0,
+    12.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    17.0,
+    12.0,
+    12.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    17.0,
+    10.0,
+    18.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    19.0,
+    12.0,
+    18.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    25.0,
+    10.0,
+    15.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    29.0,
+    10.0,
+    13.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    29.0,
+    12.0,
+    12.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    29.0,
+    0.0,
+    51.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    29.0,
+    3.0,
+    51.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    29.0,
+    3.0,
+    61.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    31.0,
+    3.0,
+    55.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    31.0,
+    0.0,
+    63.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    28.0,
+    2.0,
+    51.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    28.0,
+    2.0,
+    53.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    28.0,
+    2.0,
+    55.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    28.0,
+    2.0,
+    57.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    28.0,
+    2.0,
+    59.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    28.0,
+    2.0,
+    61.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    28.0,
+    2.0,
+    63.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    32.0,
+    2.0,
+    51.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    32.0,
+    2.0,
+    53.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    32.0,
+    2.0,
+    55.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall",
+   "mat": "plank_root",
+   "pos": [
+    32.0,
+    0.0,
+    57.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    32.0,
+    2.0,
+    57.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    32.0,
+    2.0,
+    59.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    32.0,
+    2.0,
+    61.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    32.0,
+    2.0,
+    63.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    11.0,
+    5.0,
+    27.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    10.0,
+    4.0,
+    27.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    10.0,
+    4.0,
+    29.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "doorway",
+   "mat": "plank_root",
+   "pos": [
+    14.0,
+    2.0,
+    28.0
+   ],
+   "rot": 1,
+   "scale": 1.5
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    14.0,
+    2.0,
+    26.5
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    14.0,
+    4.0,
+    26.5
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    14.0,
+    2.0,
+    29.5
+   ],
+   "rot": 1
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    14.0,
+    4.0,
+    29.5
+   ],
+   "rot": 1
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    11.0,
+    4.0,
+    26.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    13.0,
+    4.0,
+    26.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    11.0,
+    4.0,
+    30.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    13.0,
+    4.0,
+    30.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    24.0,
+    7.0,
+    15.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    24.0,
+    7.0,
+    17.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    28.0,
+    7.0,
+    15.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    28.0,
+    7.0,
+    17.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    25.0,
+    7.0,
+    14.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    27.0,
+    7.0,
+    14.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    28.5,
+    0.0,
+    64.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "wall_narrow",
+   "mat": "plank_root",
+   "pos": [
+    31.5,
+    0.0,
+    64.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    29.0,
+    2.0,
+    64.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "half_wall",
+   "mat": "plank_root",
+   "pos": [
+    31.0,
+    2.0,
+    64.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    19.0,
+    5.0,
+    27.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    21.0,
+    5.0,
+    25.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    25.0,
+    5.0,
+    25.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    27.0,
+    5.0,
+    25.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    27.0,
+    5.0,
+    27.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    43.0,
+    5.0,
+    27.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    45.0,
+    5.0,
+    29.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    45.0,
+    5.0,
+    35.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    35.0,
+    5.0,
+    27.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    21.0,
+    10.0,
+    25.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    23.0,
+    10.0,
+    25.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    23.0,
+    10.0,
+    27.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    33.0,
+    10.0,
+    27.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    39.0,
+    10.0,
+    25.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    43.0,
+    10.0,
+    27.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    45.0,
+    10.0,
+    29.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "mine_prop",
+   "mat": "plank_root",
+   "pos": [
+    21.0,
+    0.0,
+    28.2
+   ],
+   "rot": 0
+  },
+  {
+   "id": "brace",
+   "mat": "plank_root",
+   "pos": [
+    21.0,
+    3.0,
+    28.2
+   ],
+   "rot": 0
+  },
+  {
+   "id": "beam",
+   "mat": "plank_root",
+   "pos": [
+    21.0,
+    9.69,
+    27.95
+   ],
+   "rot": 0
+  },
+  {
+   "id": "railing",
+   "mat": "plank_root",
+   "pos": [
+    21.0,
+    5.24,
+    27.85
+   ],
+   "rot": 0
+  },
+  {
+   "id": "railing",
+   "mat": "plank_root",
+   "pos": [
+    21.0,
+    10.24,
+    27.85
+   ],
+   "rot": 0
+  },
+  {
+   "id": "beam",
+   "mat": "plank_root",
+   "pos": [
+    23.0,
+    9.69,
+    27.95
+   ],
+   "rot": 0
+  },
+  {
+   "id": "brace",
+   "mat": "plank_root",
+   "pos": [
+    25.0,
+    8.0,
+    28.2
+   ],
+   "rot": 0
+  },
+  {
+   "id": "beam",
+   "mat": "plank_root",
+   "pos": [
+    25.0,
+    4.69,
+    27.95
+   ],
+   "rot": 0
+  },
+  {
+   "id": "beam",
+   "mat": "plank_root",
+   "pos": [
+    25.0,
+    9.69,
+    27.95
+   ],
+   "rot": 0
+  },
+  {
+   "id": "railing",
+   "mat": "plank_root",
+   "pos": [
+    25.0,
+    10.24,
+    27.85
+   ],
+   "rot": 0
+  },
+  {
+   "id": "railing",
+   "mat": "plank_root",
+   "pos": [
+    27.0,
+    10.24,
+    27.85
+   ],
+   "rot": 0
+  },
+  {
+   "id": "mine_prop",
+   "mat": "plank_root",
+   "pos": [
+    29.0,
+    0.0,
+    28.2
+   ],
+   "rot": 0
+  },
+  {
+   "id": "brace",
+   "mat": "plank_root",
+   "pos": [
+    29.0,
+    3.0,
+    28.2
+   ],
+   "rot": 0
+  },
+  {
+   "id": "brace",
+   "mat": "plank_root",
+   "pos": [
+    29.0,
+    8.0,
+    28.2
+   ],
+   "rot": 0
+  },
+  {
+   "id": "beam",
+   "mat": "plank_root",
+   "pos": [
+    29.0,
+    4.69,
+    27.95
+   ],
+   "rot": 0
+  },
+  {
+   "id": "beam",
+   "mat": "plank_root",
+   "pos": [
+    29.0,
+    9.69,
+    27.95
+   ],
+   "rot": 0
+  },
+  {
+   "id": "mine_prop",
+   "mat": "plank_root",
+   "pos": [
+    31.0,
+    5.0,
+    28.2
+   ],
+   "rot": 0
+  },
+  {
+   "id": "beam",
+   "mat": "plank_root",
+   "pos": [
+    31.0,
+    4.69,
+    27.95
+   ],
+   "rot": 0
+  },
+  {
+   "id": "railing",
+   "mat": "plank_root",
+   "pos": [
+    31.0,
+    5.24,
+    27.85
+   ],
+   "rot": 0
+  },
+  {
+   "id": "railing",
+   "mat": "plank_root",
+   "pos": [
+    31.0,
+    10.24,
+    27.85
+   ],
+   "rot": 0
+  },
+  {
+   "id": "mine_prop",
+   "mat": "plank_root",
+   "pos": [
+    33.0,
+    -5.0,
+    28.2
+   ],
+   "rot": 0
+  },
+  {
+   "id": "brace",
+   "mat": "plank_root",
+   "pos": [
+    33.0,
+    3.0,
+    28.2
+   ],
+   "rot": 0
+  },
+  {
+   "id": "beam",
+   "mat": "plank_root",
+   "pos": [
+    33.0,
+    4.69,
+    27.95
+   ],
+   "rot": 0
+  },
+  {
+   "id": "mine_prop",
+   "mat": "plank_root",
+   "pos": [
+    35.0,
+    -5.0,
+    28.2
+   ],
+   "rot": 0
+  },
+  {
+   "id": "brace",
+   "mat": "plank_root",
+   "pos": [
+    35.0,
+    8.0,
+    28.2
+   ],
+   "rot": 0
+  },
+  {
+   "id": "railing",
+   "mat": "plank_root",
+   "pos": [
+    35.0,
+    5.24,
+    27.85
+   ],
+   "rot": 0
+  },
+  {
+   "id": "brace",
+   "mat": "plank_root",
+   "pos": [
+    37.0,
+    -2.0,
+    28.2
+   ],
+   "rot": 0
+  },
+  {
+   "id": "beam",
+   "mat": "plank_root",
+   "pos": [
+    37.0,
+    9.69,
+    27.95
+   ],
+   "rot": 0
+  },
+  {
+   "id": "railing",
+   "mat": "plank_root",
+   "pos": [
+    37.0,
+    5.24,
+    27.85
+   ],
+   "rot": 0
+  },
+  {
+   "id": "mine_prop",
+   "mat": "plank_root",
+   "pos": [
+    39.0,
+    5.0,
+    28.2
+   ],
+   "rot": 0
+  },
+  {
+   "id": "beam",
+   "mat": "plank_root",
+   "pos": [
+    39.0,
+    9.69,
+    27.95
+   ],
+   "rot": 0
+  },
+  {
+   "id": "mine_prop",
+   "mat": "plank_root",
+   "pos": [
+    41.0,
+    0.0,
+    28.2
+   ],
+   "rot": 0
+  },
+  {
+   "id": "railing",
+   "mat": "plank_root",
+   "pos": [
+    41.0,
+    5.24,
+    27.85
+   ],
+   "rot": 0
+  },
+  {
+   "id": "railing",
+   "mat": "plank_root",
+   "pos": [
+    41.0,
+    10.24,
+    27.85
+   ],
+   "rot": 0
+  },
+  {
+   "id": "mine_prop",
+   "mat": "plank_root",
+   "pos": [
+    43.0,
+    0.0,
+    28.2
+   ],
+   "rot": 0
+  },
+  {
+   "id": "brace",
+   "mat": "plank_root",
+   "pos": [
+    43.0,
+    3.0,
+    28.2
+   ],
+   "rot": 0
+  },
+  {
+   "id": "railing",
+   "mat": "plank_root",
+   "pos": [
+    43.0,
+    10.24,
+    27.85
+   ],
+   "rot": 0
+  },
+  {
+   "id": "mine_prop",
+   "mat": "plank_root",
+   "pos": [
+    45.0,
+    5.0,
+    28.2
+   ],
+   "rot": 0
+  },
+  {
+   "id": "mine_prop",
+   "mat": "plank_root",
+   "pos": [
+    43.8,
+    0.0,
+    29.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "brace",
+   "mat": "plank_root",
+   "pos": [
+    43.8,
+    3.0,
+    29.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "brace",
+   "mat": "plank_root",
+   "pos": [
+    43.8,
+    8.0,
+    29.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "railing",
+   "mat": "plank_root",
+   "pos": [
+    44.15,
+    10.24,
+    29.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "mine_prop",
+   "mat": "plank_root",
+   "pos": [
+    43.8,
+    0.0,
+    31.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "brace",
+   "mat": "plank_root",
+   "pos": [
+    43.8,
+    3.0,
+    31.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "brace",
+   "mat": "plank_root",
+   "pos": [
+    43.8,
+    8.0,
+    31.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "railing",
+   "mat": "plank_root",
+   "pos": [
+    44.15,
+    10.24,
+    31.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "brace",
+   "mat": "plank_root",
+   "pos": [
+    43.8,
+    3.0,
+    35.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "pillar",
+   "mat": "plank_root",
+   "pos": [
+    16.2,
+    0.0,
+    31.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "pillar",
+   "mat": "plank_root",
+   "pos": [
+    16.2,
+    0.0,
+    33.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "pillar",
+   "mat": "plank_root",
+   "pos": [
+    16.2,
+    0.0,
+    35.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "railing",
+   "mat": "plank_root",
+   "pos": [
+    15.85,
+    2.24,
+    35.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "pillar",
+   "mat": "plank_root",
+   "pos": [
+    16.2,
+    0.0,
+    37.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "railing",
+   "mat": "plank_root",
+   "pos": [
+    15.85,
+    2.24,
+    37.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "pillar",
+   "mat": "plank_root",
+   "pos": [
+    16.2,
+    0.0,
+    39.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "pillar",
+   "mat": "plank_root",
+   "pos": [
+    16.2,
+    0.0,
+    41.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "pillar",
+   "mat": "plank_root",
+   "pos": [
+    16.2,
+    0.0,
+    43.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "pillar",
+   "mat": "plank_root",
+   "pos": [
+    16.2,
+    0.0,
+    45.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "railing",
+   "mat": "plank_root",
+   "pos": [
+    15.85,
+    2.24,
+    45.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
+    17.0,
+    2.0,
+    27.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "pillar",
+   "mat": "plank_root",
+   "pos": [
+    16.2,
+    0.0,
+    30.2
+   ],
+   "rot": 0
+  },
+  {
+   "id": "pillar",
+   "mat": "plank_root",
+   "pos": [
+    20.2,
+    0.0,
+    30.2
+   ],
+   "rot": 0
+  },
+  {
+   "id": "pillar",
+   "mat": "plank_root",
+   "pos": [
+    20.2,
+    0.0,
+    26.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "ladder",
+   "mat": "plank_root",
+   "pos": [
+    15.0,
+    0.24,
+    46.2
+   ],
+   "rot": 0
+  },
+  {
+   "id": "ladder",
+   "mat": "plank_root",
+   "pos": [
+    15.0,
+    2.24,
+    46.2
+   ],
+   "rot": 0
+  },
+  {
+   "id": "ladder",
+   "mat": "plank_root",
+   "pos": [
+    19.0,
+    2.24,
+    24.2
+   ],
+   "rot": 0
+  },
+  {
+   "id": "ladder",
+   "mat": "plank_root",
+   "pos": [
+    19.0,
+    4.24,
+    24.2
+   ],
+   "rot": 0
+  },
+  {
+   "id": "ladder",
+   "mat": "plank_root",
+   "pos": [
+    19.0,
+    6.24,
+    24.2
+   ],
+   "rot": 0
+  },
+  {
+   "id": "ladder",
+   "mat": "plank_root",
+   "pos": [
+    45.0,
+    5.24,
+    34.2
+   ],
+   "rot": 0
+  },
+  {
+   "id": "ladder",
+   "mat": "plank_root",
+   "pos": [
+    45.0,
+    7.24,
+    34.2
+   ],
+   "rot": 0
+  },
+  {
+   "id": "ladder",
+   "mat": "plank_root",
+   "pos": [
+    45.0,
+    9.24,
+    34.2
+   ],
+   "rot": 0
+  },
+  {
+   "id": "ladder",
+   "mat": "plank_root",
+   "pos": [
+    45.0,
+    11.24,
+    34.2
+   ],
+   "rot": 0
+  },
+  {
+   "id": "column",
+   "mat": "plank_root",
+   "pos": [
+    31.0,
+    10.24,
+    12.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "column",
+   "mat": "plank_root",
+   "pos": [
+    31.0,
+    12.24,
+    12.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "column",
+   "mat": "plank_root",
+   "pos": [
+    31.0,
+    14.24,
+    12.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "column",
+   "mat": "plank_root",
+   "pos": [
+    31.0,
+    10.24,
+    22.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "column",
+   "mat": "plank_root",
+   "pos": [
+    31.0,
+    12.24,
+    22.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "column",
+   "mat": "plank_root",
+   "pos": [
+    31.0,
+    14.24,
+    22.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "column",
+   "mat": "plank_root",
+   "pos": [
+    43.0,
+    10.24,
+    12.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "column",
+   "mat": "plank_root",
+   "pos": [
+    43.0,
+    12.24,
+    12.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "column",
+   "mat": "plank_root",
+   "pos": [
+    43.0,
+    14.24,
+    12.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "column",
+   "mat": "plank_root",
+   "pos": [
+    43.0,
+    10.24,
+    22.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "column",
+   "mat": "plank_root",
+   "pos": [
+    43.0,
+    12.24,
+    22.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "column",
+   "mat": "plank_root",
+   "pos": [
+    43.0,
+    14.24,
+    22.0
+   ],
+   "rot": 0
+  }
+ ],
+ "props": [
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    21.0,
+    10.0,
+    13.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    21.0,
+    10.0,
+    15.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    21.0,
+    10.0,
+    17.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    21.0,
+    10.0,
+    19.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    21.0,
+    10.0,
+    21.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    21.0,
+    10.0,
+    23.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    23.0,
+    10.0,
+    15.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    23.0,
+    10.0,
+    17.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    23.0,
+    10.0,
+    21.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    23.0,
+    10.0,
+    23.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    20.0,
+    12.0,
+    13.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    20.0,
+    14.0,
+    13.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    20.0,
+    10.0,
+    19.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    20.0,
+    12.0,
+    19.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    20.0,
+    14.0,
+    19.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "decor/furn_wall_torch_iron.glb",
+   "pos": [
+    20.2,
+    11.2,
+    19.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "light",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    20.0,
+    10.0,
+    21.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    20.0,
+    12.0,
+    21.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    20.0,
+    14.0,
+    21.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    20.0,
+    10.0,
+    23.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    20.0,
+    12.0,
+    23.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    20.0,
+    14.0,
+    23.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    24.0,
+    10.0,
+    17.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    24.0,
+    12.0,
+    19.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    24.0,
+    14.0,
+    19.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "decor/furn_wall_torch_iron.glb",
+   "pos": [
+    23.8,
+    11.2,
+    19.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "light",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    24.0,
+    10.0,
+    21.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    24.0,
+    12.0,
+    21.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    24.0,
+    14.0,
+    21.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    24.0,
+    10.0,
+    23.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    24.0,
+    12.0,
+    23.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    24.0,
+    14.0,
+    23.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    21.0,
+    10.0,
+    12.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    21.0,
+    12.0,
+    12.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    21.0,
+    14.0,
+    12.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    23.0,
+    10.0,
+    12.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    23.0,
+    12.0,
+    12.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    23.0,
+    14.0,
+    12.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "decor/furn_wall_torch_iron.glb",
+   "pos": [
+    23.0,
+    11.2,
+    12.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "light",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    31.0,
+    10.0,
+    11.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    31.0,
+    16.24,
+    11.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    31.0,
+    10.0,
+    13.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    31.0,
+    16.24,
+    13.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    31.0,
+    10.0,
+    15.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    31.0,
+    10.0,
+    17.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    31.0,
+    16.24,
+    17.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    31.0,
+    10.0,
+    19.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    31.0,
+    16.24,
+    19.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    31.0,
+    10.0,
+    21.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    31.0,
+    16.24,
+    21.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    31.0,
+    10.0,
+    23.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    31.0,
+    16.24,
+    23.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    33.0,
+    10.0,
+    11.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    33.0,
+    16.24,
+    11.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    33.0,
+    10.0,
+    13.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    33.0,
+    16.24,
+    13.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    33.0,
+    10.0,
+    15.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    33.0,
+    16.24,
+    15.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    33.0,
+    10.0,
+    17.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    33.0,
+    10.0,
+    19.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    33.0,
+    16.24,
+    19.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    33.0,
+    10.0,
+    21.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    33.0,
+    16.24,
+    21.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    33.0,
+    10.0,
+    23.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    33.0,
+    16.24,
+    23.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    35.0,
+    16.24,
+    11.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    35.0,
+    16.24,
+    13.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    35.0,
+    10.0,
+    15.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    35.0,
+    16.24,
+    15.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    35.0,
+    10.0,
+    17.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    35.0,
+    16.24,
+    17.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    35.0,
+    10.0,
+    19.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    35.0,
+    16.24,
+    19.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    35.0,
+    10.0,
+    21.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    35.0,
+    16.24,
+    21.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    35.0,
+    10.0,
+    23.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    35.0,
+    16.24,
+    23.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    37.0,
+    10.0,
+    11.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    37.0,
+    16.24,
+    11.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    37.0,
+    10.0,
+    13.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    37.0,
+    16.24,
+    13.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    37.0,
+    10.0,
+    15.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    37.0,
+    10.0,
+    17.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    37.0,
+    16.24,
+    17.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    37.0,
+    10.0,
+    19.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    37.0,
+    16.24,
+    19.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    37.0,
+    10.0,
+    21.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    37.0,
+    16.24,
+    21.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    37.0,
+    16.24,
+    23.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    39.0,
+    10.0,
+    11.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    39.0,
+    16.24,
+    11.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    39.0,
+    10.0,
+    13.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    39.0,
+    16.24,
+    13.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    39.0,
+    10.0,
+    15.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    39.0,
+    10.0,
+    17.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    39.0,
+    16.24,
+    17.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    39.0,
+    10.0,
+    19.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    39.0,
+    16.24,
+    19.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    39.0,
+    10.0,
+    21.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    39.0,
+    16.24,
+    21.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    39.0,
+    16.24,
+    23.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    41.0,
+    10.0,
+    11.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    41.0,
+    16.24,
+    11.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    41.0,
+    10.0,
+    13.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    41.0,
+    16.24,
+    13.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    41.0,
+    10.0,
+    15.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    41.0,
+    16.24,
+    15.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    41.0,
+    10.0,
+    17.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    41.0,
+    10.0,
+    19.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    41.0,
+    16.24,
+    19.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    41.0,
+    10.0,
+    21.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    41.0,
+    16.24,
+    21.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    41.0,
+    10.0,
+    23.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    41.0,
+    16.24,
+    23.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    43.0,
+    10.0,
+    11.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    43.0,
+    16.24,
+    11.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    43.0,
+    10.0,
+    13.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    43.0,
+    16.24,
+    13.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    43.0,
+    16.24,
+    15.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    43.0,
+    10.0,
+    17.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    43.0,
+    16.24,
+    17.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    43.0,
+    10.0,
+    19.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    43.0,
+    16.24,
+    19.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    43.0,
+    10.0,
+    21.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    43.0,
+    16.24,
+    21.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    43.0,
+    10.0,
+    23.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    30.0,
+    10.0,
+    11.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    30.0,
+    14.0,
+    11.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    30.0,
+    10.0,
+    17.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    30.0,
+    12.0,
+    17.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "decor/furn_wall_torch_iron.glb",
+   "pos": [
+    30.2,
+    11.2,
+    17.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "light",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    30.0,
+    10.0,
+    19.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    30.0,
+    12.0,
+    19.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    30.0,
+    14.0,
+    19.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    30.0,
+    10.0,
+    21.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    30.0,
+    12.0,
+    21.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    30.0,
+    14.0,
+    21.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    30.0,
+    10.0,
+    23.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    30.0,
+    12.0,
+    23.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    30.0,
+    14.0,
+    23.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    44.0,
+    10.0,
+    11.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    44.0,
+    12.0,
+    11.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    44.0,
+    14.0,
+    11.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "decor/furn_wall_torch_iron.glb",
+   "pos": [
+    43.8,
+    11.2,
+    11.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "light",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    44.0,
+    10.0,
+    13.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    44.0,
+    12.0,
+    13.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    44.0,
+    14.0,
+    13.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    44.0,
+    10.0,
+    15.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    44.0,
+    12.0,
+    15.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    44.0,
+    10.0,
+    17.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    44.0,
+    12.0,
+    17.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    44.0,
+    14.0,
+    17.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    44.0,
+    10.0,
+    19.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    44.0,
+    12.0,
+    19.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    44.0,
+    14.0,
+    19.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "decor/furn_wall_torch_iron.glb",
+   "pos": [
+    43.8,
+    11.2,
+    19.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "light",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    44.0,
+    10.0,
+    21.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    44.0,
+    12.0,
+    21.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    44.0,
+    14.0,
+    21.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    44.0,
+    10.0,
+    23.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    44.0,
+    12.0,
+    23.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    31.0,
+    10.0,
+    10.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    31.0,
+    12.0,
+    10.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    31.0,
+    14.0,
+    10.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    33.0,
+    10.0,
+    10.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    33.0,
+    12.0,
+    10.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "decor/furn_wall_torch_iron.glb",
+   "pos": [
+    33.0,
+    11.2,
+    10.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "light",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    35.0,
+    10.0,
+    10.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    35.0,
+    12.0,
+    10.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    35.0,
+    14.0,
+    10.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    37.0,
+    10.0,
+    10.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    37.0,
+    14.0,
+    10.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    39.0,
+    10.0,
+    10.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    39.0,
+    12.0,
+    10.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    39.0,
+    14.0,
+    10.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    41.0,
+    12.0,
+    10.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    41.0,
+    14.0,
+    10.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "decor/furn_wall_torch_iron.glb",
+   "pos": [
+    41.0,
+    11.2,
+    10.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "light",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    43.0,
+    10.0,
+    10.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    43.0,
+    12.0,
+    10.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    43.0,
+    14.0,
+    10.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    31.0,
+    10.0,
+    24.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    31.0,
+    12.0,
+    24.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    31.0,
+    14.0,
+    24.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    33.0,
+    10.0,
+    24.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    33.0,
+    12.0,
+    24.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    35.0,
+    10.0,
+    24.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    35.0,
+    12.0,
+    24.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    35.0,
+    14.0,
+    24.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "decor/furn_wall_torch_iron.glb",
+   "pos": [
+    35.0,
+    11.2,
+    23.8
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "light",
+   "label": ""
+  },
+  {
+   "model": "dungeon/gate_round.glb",
+   "pos": [
+    38.0,
+    10.0,
+    24.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.5,
+   "role": "door",
+   "label": "Barred gate: the short way out to the slide"
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    41.0,
+    10.0,
+    24.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    41.0,
+    12.0,
+    24.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    41.0,
+    14.0,
+    24.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    43.0,
+    12.0,
+    24.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    43.0,
+    14.0,
+    24.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    17.0,
+    5.0,
+    19.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    17.0,
+    9.24,
+    19.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    17.0,
+    5.0,
+    21.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    17.0,
+    9.24,
+    21.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    17.0,
+    5.0,
+    23.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    17.0,
+    9.24,
+    23.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    19.0,
+    5.0,
+    19.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    19.0,
+    9.24,
+    19.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    19.0,
+    5.0,
+    21.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    19.0,
+    9.24,
+    21.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    19.0,
+    5.0,
+    23.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    19.0,
+    9.24,
+    23.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    21.0,
+    9.24,
+    19.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    21.0,
+    5.0,
+    21.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    21.0,
+    9.24,
+    21.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    21.0,
+    5.0,
+    23.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    21.0,
+    9.24,
+    23.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    23.0,
+    5.0,
+    19.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    23.0,
+    9.24,
+    19.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    23.0,
+    5.0,
+    21.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    23.0,
+    9.24,
+    21.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    23.0,
+    5.0,
+    23.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    23.0,
+    9.24,
+    23.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    16.0,
+    5.0,
+    19.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    16.0,
+    7.0,
+    19.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_dart_wall.glb",
+   "pos": [
+    16.0,
+    5.0,
+    21.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "trap",
+   "label": "Dart holes"
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    16.0,
+    7.0,
+    21.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    16.0,
+    5.0,
+    23.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    16.0,
+    7.0,
+    23.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    24.0,
+    5.0,
+    19.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    24.0,
+    5.0,
+    21.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    24.0,
+    7.0,
+    21.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    24.0,
+    5.0,
+    23.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    24.0,
+    7.0,
+    23.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "decor/furn_wall_torch_iron.glb",
+   "pos": [
+    23.8,
+    6.2,
+    23.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "light",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    17.0,
+    5.0,
+    18.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    17.0,
+    7.0,
+    18.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    21.0,
+    5.0,
+    18.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    21.0,
+    7.0,
+    18.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    23.0,
+    5.0,
+    18.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    23.0,
+    7.0,
+    18.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "decor/furn_wall_torch_iron.glb",
+   "pos": [
+    23.0,
+    6.2,
+    18.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "light",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    17.0,
+    5.0,
+    24.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    17.0,
+    7.0,
+    24.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    19.0,
+    5.0,
+    24.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    19.0,
+    7.0,
+    24.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    25.0,
+    9.24,
+    19.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    25.0,
+    5.0,
+    23.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    25.0,
+    9.24,
+    23.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    27.0,
+    5.0,
+    19.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    27.0,
+    5.0,
+    21.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    27.0,
+    9.24,
+    21.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    27.0,
+    5.0,
+    23.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    27.0,
+    9.24,
+    23.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    29.0,
+    5.0,
+    19.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    29.0,
+    9.24,
+    19.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    29.0,
+    9.24,
+    21.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    29.0,
+    5.0,
+    23.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    30.0,
+    5.0,
+    19.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    30.0,
+    7.0,
+    19.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    30.0,
+    5.0,
+    21.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    30.0,
+    7.0,
+    21.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "decor/furn_wall_torch_iron.glb",
+   "pos": [
+    29.8,
+    6.2,
+    21.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "light",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    30.0,
+    5.0,
+    23.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    30.0,
+    7.0,
+    23.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_cracked.glb",
+   "pos": [
+    26.0,
+    5.0,
+    18.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "secret",
+   "label": "Cracked wall (hollow sound)",
+   "floor": 5.0
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    29.0,
+    5.0,
+    18.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    29.0,
+    7.0,
+    18.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    29.0,
+    5.0,
+    24.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    29.0,
+    7.0,
+    24.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    47.0,
+    5.0,
+    31.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    47.0,
+    9.24,
+    31.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    47.0,
+    5.0,
+    33.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    47.0,
+    9.24,
+    33.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    49.0,
+    5.0,
+    29.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    49.0,
+    9.24,
+    29.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    49.0,
+    5.0,
+    31.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    49.0,
+    5.0,
+    33.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    49.0,
+    9.24,
+    33.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    51.0,
+    5.0,
+    29.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    51.0,
+    9.24,
+    29.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    51.0,
+    9.24,
+    31.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    51.0,
+    5.0,
+    33.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    51.0,
+    9.24,
+    33.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/trap_spear_wall.glb",
+   "pos": [
+    46.0,
+    5.0,
+    33.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "trap",
+   "label": "Rows of holes (a stake tip shows)",
+   "phase": 0.0
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    52.0,
+    5.0,
+    29.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    52.0,
+    7.0,
+    29.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "decor/furn_wall_torch_iron.glb",
+   "pos": [
+    51.8,
+    6.2,
+    29.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "light",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    52.0,
+    5.0,
+    31.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    52.0,
+    5.0,
+    33.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    52.0,
+    7.0,
+    33.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    47.0,
+    5.0,
+    28.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    47.0,
+    7.0,
+    28.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    49.0,
+    5.0,
+    28.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    49.0,
+    7.0,
+    28.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "decor/furn_wall_torch_iron.glb",
+   "pos": [
+    49.0,
+    6.2,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "light",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    51.0,
+    5.0,
+    28.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    47.0,
+    5.0,
+    34.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    47.0,
+    7.0,
+    34.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    49.0,
+    5.0,
+    34.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    49.0,
+    7.0,
+    34.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    51.0,
+    5.0,
+    34.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    51.0,
+    7.0,
+    34.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "decor/furn_wall_torch_iron.glb",
+   "pos": [
+    51.0,
+    6.2,
+    33.8
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "light",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    15.0,
+    10.0,
+    13.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    15.0,
+    14.24,
+    13.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    15.0,
+    14.24,
+    15.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    15.0,
+    10.0,
+    17.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    17.0,
+    10.0,
+    13.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    17.0,
+    14.24,
+    13.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    17.0,
+    10.0,
+    15.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    17.0,
+    14.24,
+    15.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    17.0,
+    10.0,
+    17.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    19.0,
+    10.0,
+    13.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    19.0,
+    14.24,
+    13.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    19.0,
+    10.0,
+    15.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    19.0,
+    14.24,
+    15.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    19.0,
+    10.0,
+    17.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    19.0,
+    14.24,
+    17.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    14.0,
+    10.0,
+    13.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    14.0,
+    12.0,
+    13.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    14.0,
+    12.0,
+    15.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "decor/furn_wall_torch_iron.glb",
+   "pos": [
+    14.2,
+    11.2,
+    15.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "light",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    14.0,
+    10.0,
+    17.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    14.0,
+    12.0,
+    17.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    15.0,
+    10.0,
+    12.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    15.0,
+    12.0,
+    12.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    19.0,
+    10.0,
+    12.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    19.0,
+    12.0,
+    12.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "decor/furn_wall_torch_iron.glb",
+   "pos": [
+    19.0,
+    11.2,
+    12.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "light",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    15.0,
+    10.0,
+    18.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    15.0,
+    12.0,
+    18.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    17.0,
+    12.0,
+    18.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    19.0,
+    10.0,
+    18.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    25.0,
+    10.0,
+    13.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    25.0,
+    14.24,
+    13.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    25.0,
+    14.24,
+    15.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    27.0,
+    10.0,
+    13.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    27.0,
+    14.24,
+    13.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    27.0,
+    10.0,
+    15.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    27.0,
+    14.24,
+    15.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    29.0,
+    14.24,
+    13.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    29.0,
+    10.0,
+    15.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    29.0,
+    14.24,
+    15.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    25.0,
+    10.0,
+    12.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    25.0,
+    12.0,
+    12.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    27.0,
+    10.0,
+    12.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    27.0,
+    12.0,
+    12.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "decor/furn_wall_torch_iron.glb",
+   "pos": [
+    27.0,
+    11.2,
+    12.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "light",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    29.0,
+    10.0,
+    12.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    25.0,
+    10.0,
+    16.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    25.0,
+    12.0,
+    16.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    27.0,
+    10.0,
+    16.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    27.0,
+    12.0,
+    16.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    29.0,
+    10.0,
+    16.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    29.0,
+    12.0,
+    16.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "decor/furn_wall_torch_iron.glb",
+   "pos": [
+    29.0,
+    11.2,
+    15.8
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "light",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    29.0,
+    0.0,
+    53.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    29.0,
+    3.24,
+    53.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    29.0,
+    0.0,
+    55.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    29.0,
+    3.24,
+    55.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    29.0,
+    0.0,
+    57.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    29.0,
+    3.24,
+    57.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    29.0,
+    0.0,
+    59.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    29.0,
+    3.24,
+    59.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    29.0,
+    0.0,
+    61.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    29.0,
+    0.0,
+    63.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    29.0,
+    3.24,
+    63.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    31.0,
+    0.0,
+    51.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    31.0,
+    3.24,
+    51.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    31.0,
+    0.0,
+    53.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    31.0,
+    3.24,
+    53.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    31.0,
+    0.0,
+    55.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    31.0,
+    0.0,
+    57.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    31.0,
+    3.24,
+    57.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    31.0,
+    0.0,
+    59.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    31.0,
+    3.24,
+    59.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    31.0,
+    0.0,
+    61.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    31.0,
+    3.24,
+    61.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    31.0,
+    3.24,
+    63.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    28.0,
+    0.0,
+    51.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    28.0,
+    0.0,
+    53.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "decor/furn_wall_torch_iron.glb",
+   "pos": [
+    28.2,
+    1.2,
+    53.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "light",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    28.0,
+    0.0,
+    55.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    28.0,
+    0.0,
+    57.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    28.0,
+    0.0,
+    59.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    28.0,
+    0.0,
+    61.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "decor/furn_wall_torch_iron.glb",
+   "pos": [
+    28.2,
+    1.2,
+    61.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "light",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    28.0,
+    0.0,
+    63.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    32.0,
+    0.0,
+    51.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    32.0,
+    0.0,
+    53.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    32.0,
+    0.0,
+    55.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "decor/furn_wall_torch_iron.glb",
+   "pos": [
+    31.8,
+    1.2,
+    55.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "light",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    32.0,
+    0.0,
+    59.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    32.0,
+    0.0,
+    61.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    32.0,
+    0.0,
+    63.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "decor/furn_wall_torch_iron.glb",
+   "pos": [
+    31.8,
+    1.2,
+    63.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "light",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    11.0,
+    2.0,
+    27.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    11.0,
+    2.0,
+    29.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    11.0,
+    5.24,
+    29.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    13.0,
+    2.0,
+    27.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    13.0,
+    5.24,
+    27.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    13.0,
+    2.0,
+    29.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    13.0,
+    5.24,
+    29.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    10.0,
+    2.0,
+    27.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    10.0,
+    2.0,
+    29.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    11.0,
+    2.0,
+    26.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    13.0,
+    2.0,
+    26.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    11.0,
+    2.0,
+    30.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    13.0,
+    2.0,
+    30.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    25.0,
+    5.0,
+    15.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    25.0,
+    8.24,
+    15.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    25.0,
+    5.0,
+    17.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    25.0,
+    8.24,
+    17.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    27.0,
+    5.0,
+    15.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    27.0,
+    8.24,
+    15.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    27.0,
+    5.0,
+    17.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    27.0,
+    8.24,
+    17.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    24.0,
+    5.0,
+    15.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    24.0,
+    5.0,
+    17.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    28.0,
+    5.0,
+    15.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    28.0,
+    5.0,
+    17.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    25.0,
+    5.0,
+    14.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    27.0,
+    5.0,
+    14.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/dungeon_entrance.glb",
+   "pos": [
+    30.0,
+    0.0,
+    64.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "door",
+   "label": "The way in: round stone door"
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    21.0,
+    5.0,
+    27.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    23.0,
+    5.0,
+    25.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    23.0,
+    5.0,
+    27.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_floor_break.glb",
+   "pos": [
+    25.0,
+    5.0,
+    27.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "trap",
+   "label": "Rotten boards (they give way)"
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    29.0,
+    5.0,
+    25.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    29.0,
+    5.0,
+    27.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    39.0,
+    5.0,
+    25.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    39.0,
+    5.0,
+    27.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_floor_break.glb",
+   "pos": [
+    41.0,
+    5.0,
+    25.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "trap",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    41.0,
+    5.0,
+    27.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    43.0,
+    5.0,
+    25.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    45.0,
+    5.0,
+    25.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    45.0,
+    5.0,
+    27.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    45.0,
+    5.0,
+    31.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    45.0,
+    5.0,
+    33.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    31.0,
+    5.0,
+    25.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    31.0,
+    5.0,
+    27.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    33.0,
+    5.0,
+    25.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    33.0,
+    5.0,
+    27.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    35.0,
+    5.0,
+    25.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    37.0,
+    5.0,
+    25.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    37.0,
+    5.0,
+    27.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    21.0,
+    10.0,
+    27.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    25.0,
+    10.0,
+    25.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    25.0,
+    10.0,
+    27.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    27.0,
+    10.0,
+    25.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    27.0,
+    10.0,
+    27.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    29.0,
+    10.0,
+    25.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    29.0,
+    10.0,
+    27.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    31.0,
+    10.0,
+    25.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_floor_break.glb",
+   "pos": [
+    31.0,
+    10.0,
+    27.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "trap",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    33.0,
+    10.0,
+    25.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    35.0,
+    10.0,
+    25.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    35.0,
+    10.0,
+    27.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    37.0,
+    10.0,
+    25.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    37.0,
+    10.0,
+    27.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    39.0,
+    10.0,
+    27.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    41.0,
+    10.0,
+    25.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    41.0,
+    10.0,
+    27.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    43.0,
+    10.0,
+    25.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    45.0,
+    10.0,
+    25.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    45.0,
+    10.0,
+    27.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    45.0,
+    10.0,
+    31.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    45.0,
+    10.0,
+    33.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/prop_old.glb",
+   "pos": [
+    19.0,
+    2.24,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/beam_old.glb",
+   "pos": [
+    19.0,
+    4.69,
+    27.95
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/prop_old.glb",
+   "pos": [
+    21.0,
+    5.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/brace_old.glb",
+   "pos": [
+    21.0,
+    8.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/beam_old.glb",
+   "pos": [
+    21.0,
+    4.69,
+    27.95
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/prop_old.glb",
+   "pos": [
+    23.0,
+    0.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/brace_old.glb",
+   "pos": [
+    23.0,
+    3.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/prop_old.glb",
+   "pos": [
+    23.0,
+    5.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/brace_old.glb",
+   "pos": [
+    23.0,
+    8.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/beam_old.glb",
+   "pos": [
+    23.0,
+    4.69,
+    27.95
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/railing_broken.glb",
+   "pos": [
+    23.0,
+    5.24,
+    27.85
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/railing_broken.glb",
+   "pos": [
+    23.0,
+    10.24,
+    27.85
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/prop_old.glb",
+   "pos": [
+    25.0,
+    0.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/prop_old.glb",
+   "pos": [
+    25.0,
+    5.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/prop_old.glb",
+   "pos": [
+    27.0,
+    0.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/brace_old.glb",
+   "pos": [
+    27.0,
+    3.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/prop_old.glb",
+   "pos": [
+    27.0,
+    5.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/brace_old.glb",
+   "pos": [
+    27.0,
+    8.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/beam_old.glb",
+   "pos": [
+    27.0,
+    4.69,
+    27.95
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/beam_old.glb",
+   "pos": [
+    27.0,
+    9.69,
+    27.95
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/prop_old.glb",
+   "pos": [
+    29.0,
+    5.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/railing_broken.glb",
+   "pos": [
+    29.0,
+    10.24,
+    27.85
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/prop_old.glb",
+   "pos": [
+    31.0,
+    -5.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/brace_old.glb",
+   "pos": [
+    31.0,
+    -2.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/prop_old.glb",
+   "pos": [
+    31.0,
+    0.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/brace_old.glb",
+   "pos": [
+    31.0,
+    3.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/brace_old.glb",
+   "pos": [
+    31.0,
+    8.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/beam_old.glb",
+   "pos": [
+    31.0,
+    9.69,
+    27.95
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/brace_old.glb",
+   "pos": [
+    33.0,
+    -2.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/prop_old.glb",
+   "pos": [
+    33.0,
+    0.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/prop_old.glb",
+   "pos": [
+    33.0,
+    5.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/brace_old.glb",
+   "pos": [
+    33.0,
+    8.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/beam_old.glb",
+   "pos": [
+    33.0,
+    9.69,
+    27.95
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/railing_broken.glb",
+   "pos": [
+    33.0,
+    5.24,
+    27.85
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/railing_broken.glb",
+   "pos": [
+    33.0,
+    10.24,
+    27.85
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/brace_old.glb",
+   "pos": [
+    35.0,
+    -2.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/prop_old.glb",
+   "pos": [
+    35.0,
+    0.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/prop_old.glb",
+   "pos": [
+    35.0,
+    5.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/beam_old.glb",
+   "pos": [
+    35.0,
+    4.69,
+    27.95
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/beam_old.glb",
+   "pos": [
+    35.0,
+    9.69,
+    27.95
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/railing_broken.glb",
+   "pos": [
+    35.0,
+    10.24,
+    27.85
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/prop_old.glb",
+   "pos": [
+    37.0,
+    -5.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/prop_old.glb",
+   "pos": [
+    37.0,
+    0.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/brace_old.glb",
+   "pos": [
+    37.0,
+    3.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/prop_old.glb",
+   "pos": [
+    37.0,
+    5.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/beam_old.glb",
+   "pos": [
+    37.0,
+    4.69,
+    27.95
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/prop_old.glb",
+   "pos": [
+    39.0,
+    0.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/brace_old.glb",
+   "pos": [
+    39.0,
+    3.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/beam_old.glb",
+   "pos": [
+    39.0,
+    4.69,
+    27.95
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/railing_broken.glb",
+   "pos": [
+    39.0,
+    5.24,
+    27.85
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/prop_old.glb",
+   "pos": [
+    41.0,
+    5.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/brace_old.glb",
+   "pos": [
+    41.0,
+    8.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/beam_old.glb",
+   "pos": [
+    41.0,
+    4.69,
+    27.95
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/beam_old.glb",
+   "pos": [
+    41.0,
+    9.69,
+    27.95
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/prop_old.glb",
+   "pos": [
+    43.0,
+    5.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/brace_old.glb",
+   "pos": [
+    43.0,
+    8.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/beam_old.glb",
+   "pos": [
+    43.0,
+    4.69,
+    27.95
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/beam_old.glb",
+   "pos": [
+    43.0,
+    9.69,
+    27.95
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/prop_old.glb",
+   "pos": [
+    45.0,
+    0.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/brace_old.glb",
+   "pos": [
+    45.0,
+    3.0,
+    28.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/beam_old.glb",
+   "pos": [
+    45.0,
+    4.69,
+    27.95
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/beam_old.glb",
+   "pos": [
+    45.0,
+    9.69,
+    27.95
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/railing_broken.glb",
+   "pos": [
+    44.15,
+    5.24,
+    29.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/prop_old.glb",
+   "pos": [
+    43.8,
+    5.0,
+    29.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/railing_broken.glb",
+   "pos": [
+    44.15,
+    5.24,
+    31.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/prop_old.glb",
+   "pos": [
+    43.8,
+    5.0,
+    31.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/prop_old.glb",
+   "pos": [
+    43.8,
+    0.0,
+    33.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/brace_old.glb",
+   "pos": [
+    43.8,
+    3.0,
+    33.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/railing_broken.glb",
+   "pos": [
+    44.15,
+    5.24,
+    33.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/prop_old.glb",
+   "pos": [
+    43.8,
+    5.0,
+    33.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/brace_old.glb",
+   "pos": [
+    43.8,
+    8.0,
+    33.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/railing_broken.glb",
+   "pos": [
+    44.15,
+    10.24,
+    33.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/prop_old.glb",
+   "pos": [
+    43.8,
+    0.0,
+    35.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/railing_broken.glb",
+   "pos": [
+    44.15,
+    5.24,
+    35.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_swing_boulder.glb",
+   "pos": [
+    34.0,
+    5.0,
+    26.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "trap",
+   "label": "Swinging boulder (shoot the chain)"
+  },
+  {
+   "model": "dungeon/trap_spikes.glb",
+   "pos": [
+    31.0,
+    -5.0,
+    25.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "trap",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_spikes.glb",
+   "pos": [
+    31.0,
+    -5.0,
+    27.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "trap",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_spikes.glb",
+   "pos": [
+    31.0,
+    -5.0,
+    29.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "trap",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_spikes.glb",
+   "pos": [
+    31.0,
+    -5.0,
+    31.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "trap",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_spikes.glb",
+   "pos": [
+    31.0,
+    -5.0,
+    33.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "trap",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_spikes.glb",
+   "pos": [
+    33.0,
+    -5.0,
+    25.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "trap",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_spikes.glb",
+   "pos": [
+    33.0,
+    -5.0,
+    27.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "trap",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_spikes.glb",
+   "pos": [
+    33.0,
+    -5.0,
+    29.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "trap",
+   "label": "The chasm (falling in kills)"
+  },
+  {
+   "model": "dungeon/trap_spikes.glb",
+   "pos": [
+    33.0,
+    -5.0,
+    31.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "trap",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_spikes.glb",
+   "pos": [
+    33.0,
+    -5.0,
+    33.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "trap",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_spikes.glb",
+   "pos": [
+    35.0,
+    -5.0,
+    25.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "trap",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_spikes.glb",
+   "pos": [
+    35.0,
+    -5.0,
+    27.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "trap",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_spikes.glb",
+   "pos": [
+    35.0,
+    -5.0,
+    29.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "trap",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_spikes.glb",
+   "pos": [
+    35.0,
+    -5.0,
+    31.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "trap",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_spikes.glb",
+   "pos": [
+    35.0,
+    -5.0,
+    33.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "trap",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_spikes.glb",
+   "pos": [
+    37.0,
+    -5.0,
+    25.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "trap",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_spikes.glb",
+   "pos": [
+    37.0,
+    -5.0,
+    27.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "trap",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_spikes.glb",
+   "pos": [
+    37.0,
+    -5.0,
+    29.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "trap",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_spikes.glb",
+   "pos": [
+    37.0,
+    -5.0,
+    31.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "trap",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_spikes.glb",
+   "pos": [
+    37.0,
+    -5.0,
+    33.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "trap",
+   "label": ""
+  },
+  {
+   "model": "dungeon/chain_hanging.glb",
+   "pos": [
+    25.0,
+    9.65,
+    27.9
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/chain_hanging.glb",
+   "pos": [
+    25.0,
+    8.15,
+    27.9
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/chain_hanging.glb",
+   "pos": [
+    25.0,
+    6.65,
+    27.9
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/chain_hanging.glb",
+   "pos": [
+    41.0,
+    9.65,
+    27.9
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/chain_hanging.glb",
+   "pos": [
+    41.0,
+    8.15,
+    27.9
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/chain_hanging.glb",
+   "pos": [
+    41.0,
+    6.65,
+    27.9
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_campfire_cold.glb",
+   "pos": [
+    31.0,
+    0.0,
+    45.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_bedroll_rotten.glb",
+   "pos": [
+    28.5,
+    0.0,
+    43.5
+   ],
+   "yaw": 70.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "decor/crate_stack.glb",
+   "pos": [
+    34.5,
+    0.0,
+    41.5
+   ],
+   "yaw": 20.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "decor/timber_stack.glb",
+   "pos": [
+    27.0,
+    0.0,
+    48.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    15.0,
+    2.0,
+    31.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/railing_broken.glb",
+   "pos": [
+    15.85,
+    2.24,
+    31.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    15.0,
+    2.0,
+    33.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/railing_broken.glb",
+   "pos": [
+    15.85,
+    2.24,
+    33.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    15.0,
+    2.0,
+    35.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    15.0,
+    2.0,
+    37.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    15.0,
+    2.0,
+    39.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/railing_broken.glb",
+   "pos": [
+    15.85,
+    2.24,
+    39.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    15.0,
+    2.0,
+    41.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    15.0,
+    2.0,
+    43.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/railing_broken.glb",
+   "pos": [
+    15.85,
+    2.24,
+    43.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    15.0,
+    2.0,
+    45.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    15.0,
+    2.0,
+    25.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    17.0,
+    2.0,
+    25.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    19.0,
+    2.0,
+    25.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    15.0,
+    2.0,
+    27.0
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    19.0,
+    2.0,
+    27.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    15.0,
+    2.0,
+    29.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    17.0,
+    2.0,
+    29.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    19.0,
+    2.0,
+    29.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_drip_fat.glb",
+   "pos": [
+    15.0,
+    15.9,
+    25.5
+   ],
+   "yaw": 240,
+   "scale": 1.0,
+   "role": "trap",
+   "label": "Stalactite (cracks and dust)",
+   "tilt": 180.0,
+   "floor": 2.0,
+   "warn": 0.35,
+   "fall": 0.45
+  },
+  {
+   "model": "dungeon/trap_drip_cluster.glb",
+   "pos": [
+    16.6,
+    15.9,
+    27.6
+   ],
+   "yaw": 120,
+   "scale": 1.0,
+   "role": "trap",
+   "label": "",
+   "tilt": 180.0,
+   "floor": 2.0,
+   "warn": 0.35,
+   "fall": 0.45
+  },
+  {
+   "model": "dungeon/trap_drip_thin.glb",
+   "pos": [
+    15.4,
+    15.9,
+    29.2
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "trap",
+   "label": "",
+   "tilt": 180.0,
+   "floor": 2.0,
+   "warn": 0.35,
+   "fall": 0.45
+  },
+  {
+   "model": "cave/boulder_round.glb",
+   "pos": [
+    15.4,
+    2.0,
+    28.0
+   ],
+   "yaw": 30.0,
+   "scale": 2.2,
+   "role": "secret",
+   "label": "Hidden boulder (hit it)"
+  },
+  {
+   "model": "dungeon/trap_chest_spikes.glb",
+   "pos": [
+    11.5,
+    2.0,
+    28.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "trap",
+   "label": "Spike holes round the chest"
+  },
+  {
+   "model": "decor/timber_stack.glb",
+   "pos": [
+    18.0,
+    5.24,
+    19.5
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "decor/furn_work_table.glb",
+   "pos": [
+    22.6,
+    5.24,
+    19.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "decor/shack_shelf.glb",
+   "pos": [
+    29.6,
+    5.24,
+    21.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "decor/grain_sacks.glb",
+   "pos": [
+    25.4,
+    5.24,
+    19.4
+   ],
+   "yaw": 30.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "decor/mushroom_fountain.glb",
+   "pos": [
+    49.5,
+    5.25,
+    31.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "heal",
+   "label": "Healing basin"
+  },
+  {
+   "model": "decor/shack_bench.glb",
+   "pos": [
+    51.4,
+    5.24,
+    31.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_grooved.glb",
+   "pos": [
+    21.0,
+    10.0,
+    19.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "trap",
+   "label": "Grooves (the crushers land here)"
+  },
+  {
+   "model": "dungeon/trap_crusher.glb",
+   "pos": [
+    21.0,
+    11.25,
+    19.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "trap",
+   "label": "Crushers (watch their rhythm)",
+   "floor": 10.0
+  },
+  {
+   "model": "dungeon/floor_grooved.glb",
+   "pos": [
+    23.0,
+    10.0,
+    19.0
+   ],
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "trap",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_crusher.glb",
+   "pos": [
+    23.0,
+    11.25,
+    19.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "trap",
+   "label": "",
+   "floor": 10.0
+  },
+  {
+   "model": "dungeon/floor_loose_stone.glb",
+   "pos": [
+    17.0,
+    10.0,
+    15.0
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "secret",
+   "label": "Loose stone"
+  },
+  {
+   "model": "dungeon/recipe_stand.glb",
+   "pos": [
+    33.0,
+    10.24,
+    11.2
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "loot",
+   "label": "Recipe stand (same recipe every time)"
+  },
+  {
+   "model": "dungeon/recipe_scroll.glb",
+   "pos": [
+    33.0,
+    11.14,
+    11.207
+   ],
+   "yaw": 0.0,
+   "scale": 1.0,
+   "role": "loot",
+   "label": "",
+   "tilt": 20.0
+  },
+  {
+   "model": "dungeon/lever.glb",
+   "pos": [
+    41.0,
+    10.0,
+    23.85
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "role": "door",
+   "label": "Lever: E to open the gate"
+  },
+  {
+   "model": "dungeon/rope_slide.glb",
+   "pos": [
+    38.6,
+    10.24,
+    27.4
+   ],
+   "yaw": -9.76,
+   "scale": 1.0,
+   "role": "door",
+   "label": "Rope slide: E to slide down to Base Camp"
+  },
+  {
+   "model": "dungeon/junk_beam_snapped.glb",
+   "pos": [
+    23.411,
+    0.0,
+    31.319
+   ],
+   "yaw": 11.14,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_c.glb",
+   "pos": [
+    20.874,
+    0.0,
+    33.382
+   ],
+   "yaw": 306.96,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_e.glb",
+   "pos": [
+    27.793,
+    0.0,
+    32.187
+   ],
+   "yaw": 41.23,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood.glb",
+   "pos": [
+    23.817,
+    0.0,
+    29.196
+   ],
+   "yaw": 117.02,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood.glb",
+   "pos": [
+    26.092,
+    0.0,
+    33.317
+   ],
+   "yaw": 262.68,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_f.glb",
+   "pos": [
+    26.978,
+    0.0,
+    29.371
+   ],
+   "yaw": 266.12,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_f.glb",
+   "pos": [
+    25.428,
+    0.0,
+    31.388
+   ],
+   "yaw": 58.95,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_beam_snapped.glb",
+   "pos": [
+    25.596,
+    0.0,
+    29.794
+   ],
+   "yaw": 89.94,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood.glb",
+   "pos": [
+    39.498,
+    0.0,
+    32.899
+   ],
+   "yaw": 303.5,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_beam_snapped.glb",
+   "pos": [
+    42.377,
+    0.0,
+    29.975
+   ],
+   "yaw": 223.12,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_beam_snapped.glb",
+   "pos": [
+    40.123,
+    0.0,
+    30.577
+   ],
+   "yaw": 312.16,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_f.glb",
+   "pos": [
+    41.148,
+    0.0,
+    30.038
+   ],
+   "yaw": 8.3,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_e.glb",
+   "pos": [
+    42.273,
+    0.0,
+    33.496
+   ],
+   "yaw": 15.07,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_beam_snapped.glb",
+   "pos": [
+    35.814,
+    0.0,
+    48.981
+   ],
+   "yaw": 358.65,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_f.glb",
+   "pos": [
+    32.751,
+    0.0,
+    36.659
+   ],
+   "yaw": 319.36,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_e.glb",
+   "pos": [
+    26.899,
+    0.0,
+    37.621
+   ],
+   "yaw": 96.91,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_f.glb",
+   "pos": [
+    32.625,
+    0.0,
+    49.433
+   ],
+   "yaw": 193.95,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_e.glb",
+   "pos": [
+    29.379,
+    0.0,
+    45.235
+   ],
+   "yaw": 123.13,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_b.glb",
+   "pos": [
+    35.725,
+    0.0,
+    40.724
+   ],
+   "yaw": 111.53,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_e.glb",
+   "pos": [
+    17.94,
+    0.0,
+    42.475
+   ],
+   "yaw": 177.62,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood.glb",
+   "pos": [
+    22.468,
+    0.0,
+    41.036
+   ],
+   "yaw": 38.53,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_f.glb",
+   "pos": [
+    20.122,
+    0.0,
+    35.232
+   ],
+   "yaw": 178.56,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_beam_snapped.glb",
+   "pos": [
+    21.228,
+    0.0,
+    40.988
+   ],
+   "yaw": 142.76,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_f.glb",
+   "pos": [
+    15.168,
+    2.24,
+    38.403
+   ],
+   "yaw": 327.59,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_d.glb",
+   "pos": [
+    15.343,
+    2.24,
+    42.539
+   ],
+   "yaw": 186.43,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_beam_snapped.glb",
+   "pos": [
+    14.673,
+    2.24,
+    34.947
+   ],
+   "yaw": 269.6,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_c.glb",
+   "pos": [
+    17.268,
+    2.24,
+    28.959
+   ],
+   "yaw": 29.29,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood.glb",
+   "pos": [
+    16.607,
+    2.24,
+    24.632
+   ],
+   "yaw": 50.91,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_c.glb",
+   "pos": [
+    16.675,
+    2.24,
+    25.982
+   ],
+   "yaw": 72.92,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_f.glb",
+   "pos": [
+    28.666,
+    5.24,
+    25.015
+   ],
+   "yaw": 141.4,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_beam_snapped.glb",
+   "pos": [
+    29.656,
+    5.24,
+    24.48
+   ],
+   "yaw": 345.39,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_beam_snapped.glb",
+   "pos": [
+    39.375,
+    5.24,
+    24.922
+   ],
+   "yaw": 101.67,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_b.glb",
+   "pos": [
+    25.919,
+    10.24,
+    24.428
+   ],
+   "yaw": 139.21,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_b.glb",
+   "pos": [
+    24.823,
+    10.24,
+    25.133
+   ],
+   "yaw": 247.59,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_beam_snapped.glb",
+   "pos": [
+    27.632,
+    10.24,
+    24.598
+   ],
+   "yaw": 107.78,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_e.glb",
+   "pos": [
+    30.237,
+    10.24,
+    24.586
+   ],
+   "yaw": 22.05,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_e.glb",
+   "pos": [
+    16.82,
+    5.24,
+    22.45
+   ],
+   "yaw": 28.27,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_f.glb",
+   "pos": [
+    19.561,
+    5.24,
+    22.059
+   ],
+   "yaw": 85.27,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_c.glb",
+   "pos": [
+    25.538,
+    5.24,
+    22.008
+   ],
+   "yaw": 355.28,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_b.glb",
+   "pos": [
+    26.89,
+    5.24,
+    21.033
+   ],
+   "yaw": 182.8,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_b.glb",
+   "pos": [
+    35.302,
+    10.24,
+    19.554
+   ],
+   "yaw": 274.36,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_e.glb",
+   "pos": [
+    33.697,
+    10.24,
+    22.264
+   ],
+   "yaw": 36.85,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_f.glb",
+   "pos": [
+    31.843,
+    10.24,
+    19.189
+   ],
+   "yaw": 219.4,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_bones.glb",
+   "pos": [
+    18.778,
+    10.24,
+    17.215
+   ],
+   "yaw": 345.81,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_e.glb",
+   "pos": [
+    15.496,
+    10.24,
+    17.338
+   ],
+   "yaw": 113.42,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_lantern.glb",
+   "pos": [
+    26.6,
+    5.24,
+    24.5
+   ],
+   "yaw": 54.87,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_lantern.glb",
+   "pos": [
+    42.6,
+    5.24,
+    25.0
+   ],
+   "yaw": 344.91,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_lantern.glb",
+   "pos": [
+    28.0,
+    10.24,
+    24.5
+   ],
+   "yaw": 266.02,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_lantern.glb",
+   "pos": [
+    44.6,
+    10.24,
+    31.0
+   ],
+   "yaw": 343.12,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_lantern.glb",
+   "pos": [
+    14.5,
+    2.24,
+    33.5
+   ],
+   "yaw": 220.61,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_lantern.glb",
+   "pos": [
+    29.6,
+    0.0,
+    44.2
+   ],
+   "yaw": 28.52,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  }
+ ],
+ "creatures": [
+  {
+   "kind": "lost_miner",
+   "model": "creatures/lost_miner_ghost.glb",
+   "pos": [
+    15.0,
+    2.25,
+    37.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "floor": 2.0
+  },
+  {
+   "kind": "lost_miner",
+   "model": "creatures/lost_miner_ghost.glb",
+   "pos": [
+    15.0,
+    2.25,
+    41.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "floor": 2.0
+  },
+  {
+   "kind": "tunnel_rat",
+   "model": "creatures/tunnel_rat_soot.glb",
+   "pos": [
+    34.0,
+    0.25,
+    36.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "floor": 0.0
+  },
+  {
+   "kind": "tunnel_rat",
+   "model": "creatures/tunnel_rat_soot.glb",
+   "pos": [
+    36.5,
+    0.25,
+    37.0
+   ],
+   "yaw": 200.0,
+   "scale": 1.0,
+   "floor": 0.0
+  },
+  {
+   "kind": "lost_miner",
+   "model": "creatures/lost_miner_rime.glb",
+   "pos": [
+    40.0,
+    5.25,
+    26.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "floor": 5.0
+  },
+  {
+   "kind": "lost_miner",
+   "model": "creatures/lost_miner_ghost.glb",
+   "pos": [
+    42.5,
+    5.25,
+    25.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "floor": 5.0
+  },
+  {
+   "kind": "tunnel_rat",
+   "model": "creatures/tunnel_rat_grime.glb",
+   "pos": [
+    15.5,
+    10.25,
+    13.5
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "floor": 10.0
+  },
+  {
+   "kind": "tunnel_rat",
+   "model": "creatures/tunnel_rat_rust.glb",
+   "pos": [
+    17.5,
+    10.25,
+    16.5
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "floor": 10.0
+  },
+  {
+   "kind": "tunnel_rat",
+   "model": "creatures/tunnel_rat_soot.glb",
+   "pos": [
+    18.5,
+    10.25,
+    13.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "floor": 10.0
+  },
+  {
+   "kind": "tunnel_rat",
+   "model": "creatures/tunnel_rat_soot.glb",
+   "pos": [
+    15.0,
+    10.25,
+    16.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "floor": 10.0
+  },
+  {
+   "kind": "prop_warden",
+   "model": "creatures/foreman.glb",
+   "pos": [
+    37.0,
+    10.25,
+    15.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "floor": 10.0,
+   "wake": [
+    "top_hall"
+   ]
+  },
+  {
+   "kind": "lost_miner",
+   "model": "creatures/lost_miner_ghost.glb",
+   "pos": [
+    33.0,
+    10.25,
+    18.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "floor": 10.0,
+   "wake": [
+    "top_hall"
+   ]
+  },
+  {
+   "kind": "lost_miner",
+   "model": "creatures/lost_miner_ghost.glb",
+   "pos": [
+    41.0,
+    10.25,
+    18.0
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "floor": 10.0,
+   "wake": [
+    "top_hall"
+   ]
+  },
+  {
+   "kind": "lost_miner",
+   "model": "creatures/lost_miner_ghost.glb",
+   "pos": [
+    37.0,
+    10.25,
+    20.5
+   ],
+   "yaw": 180.0,
+   "scale": 1.0,
+   "floor": 10.0,
+   "wake": [
+    "top_hall"
+   ]
+  }
+ ],
+ "chests": [
+  {
+   "kind": "chest_small",
+   "pos": [
+    33.0,
+    0.0,
+    43.0
+   ],
+   "yaw": 200.0,
+   "label": "Camp chest",
+   "always": false,
+   "loot": "random"
+  },
+  {
+   "kind": "chest_small",
+   "pos": [
+    11.0,
+    2.24,
+    28.0
+   ],
+   "yaw": 90.0,
+   "label": "Old tools (always): shoot it first",
+   "always": true,
+   "loot": "buried"
+  },
+  {
+   "kind": "chest_small",
+   "pos": [
+    28.4,
+    5.24,
+    19.4
+   ],
+   "yaw": 180.0,
+   "label": "Store chest",
+   "always": false,
+   "loot": "random"
+  },
+  {
+   "kind": "chest_stone",
+   "pos": [
+    26.0,
+    5.24,
+    15.2
+   ],
+   "yaw": 180.0,
+   "label": "Vault chest (always)",
+   "always": true,
+   "loot": "vault"
+  },
+  {
+   "kind": "chest_small",
+   "pos": [
+    17.0,
+    9.5,
+    15.0
+   ],
+   "yaw": 0.0,
+   "label": "Buried chest (under the loose stone)",
+   "always": true,
+   "loot": "buried"
+  },
+  {
+   "kind": "chest_copper",
+   "pos": [
+    41.0,
+    10.24,
+    11.2
+   ],
+   "yaw": 0.0,
+   "label": "The Prop Warden's chest (always)",
+   "always": true,
+   "loot": "big"
+  }
+ ],
+ "lights": [
+  [
+   20.6,
+   12.0,
+   19.0
+  ],
+  [
+   23.4,
+   12.0,
+   19.0
+  ],
+  [
+   23.0,
+   12.0,
+   12.6
+  ],
+  [
+   30.6,
+   12.0,
+   17.0
+  ],
+  [
+   43.4,
+   12.0,
+   11.0
+  ],
+  [
+   43.4,
+   12.0,
+   19.0
+  ],
+  [
+   33.0,
+   12.0,
+   10.6
+  ],
+  [
+   41.0,
+   12.0,
+   10.6
+  ],
+  [
+   35.0,
+   12.0,
+   23.4
+  ],
+  [
+   23.4,
+   7.0,
+   23.0
+  ],
+  [
+   23.0,
+   7.0,
+   18.6
+  ],
+  [
+   29.4,
+   7.0,
+   21.0
+  ],
+  [
+   51.4,
+   7.0,
+   29.0
+  ],
+  [
+   49.0,
+   7.0,
+   28.6
+  ],
+  [
+   51.0,
+   7.0,
+   33.4
+  ],
+  [
+   14.6,
+   12.0,
+   15.0
+  ],
+  [
+   19.0,
+   12.0,
+   12.6
+  ],
+  [
+   27.0,
+   12.0,
+   12.6
+  ],
+  [
+   29.0,
+   12.0,
+   15.4
+  ],
+  [
+   28.6,
+   2.0,
+   53.0
+  ],
+  [
+   28.6,
+   2.0,
+   61.0
+  ],
+  [
+   31.4,
+   2.0,
+   55.0
+  ],
+  [
+   31.4,
+   2.0,
+   63.0
+  ],
+  [
+   34.0,
+   -3.5,
+   29.0
+  ],
+  [
+   49.5,
+   6.6,
+   31.0
+  ],
+  [
+   26.6,
+   6.04,
+   24.5
+  ],
+  [
+   42.6,
+   6.04,
+   25.0
+  ],
+  [
+   28.0,
+   11.040000000000001,
+   24.5
+  ],
+  [
+   44.6,
+   11.040000000000001,
+   31.0
+  ],
+  [
+   14.5,
+   3.04,
+   33.5
+  ],
+  [
+   29.6,
+   0.8,
+   44.2
+  ]
+ ],
+ "recipe_stand": {
+  "pos": [
+   33.0,
+   10.24,
+   11.2
+  ],
+  "yaw": 0.0,
+  "page": "scroll_mossprop"
+ }
+}

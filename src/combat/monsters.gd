@@ -106,6 +106,15 @@ const LIST := {
 				follow = {tell = 0.5, damage = 12, whirl_speed = 3.8, warn_sound = null, follow = {tell = 0.5, damage = 12,
 					follow = {tell = 0.5, damage = 12, follow = {tell = 0.5, damage = 20, knockdown = true}}}}}],
 		drops = []},
+	# Mossprop Workings' boss (owner, Nov 21): the Pit Boss's body for now, with a big plank shield in front: hits from
+	# the front do a fifth (MonsterManager._shield_blocks) unless heavy or he is stunned. Raising fallen miners: next.
+	"prop_warden": {name = "The Prop Warden", dungeon_only = true, rises = true, rise_near = 10.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 10, boss = true,
+		smashes_statues = true, front_shield = true, size = 1.0, height = 1.9, hp = 420, armor = 50, stun = 200, slash = 1.0, blunt = 1.25, pierce = 0.75,
+		fire = 1.25, frost = 0.5, poison = 1.0, walk = 1.3, run = 3.3, pack = [1, 1], xp = 80,
+		color = Color(0.5, 0.52, 0.4), shape = "foreman", recover = 1.6,
+		attacks = [{name = "Great Chop", anim = "2H_Melee_Attack_Chop", warn_sound = "beetle_rumble", tell = 1.0, damage = 24, type = "slash", reach = 2.3, parry = "any"},
+			{name = "Plank Sweep", anim = "2H_Melee_Attack_Spin", warn_sound = "beetle_rumble", tell = 0.97, damage = 16, type = "blunt", reach = 2.0, rest = 8.0, parry = "shield", knockdown = true}],
+		drops = []},
 }
 
 

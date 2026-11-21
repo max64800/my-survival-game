@@ -17,7 +17,7 @@ const LOOKS := ["mossy", "ember", "frost", "spore"]
 ## The skeleton miners (CreatureRig, Nov 20): their own looks, mixed by the creature's number (owner F466); the
 ## Foreman has one. tools/asset_forge/builds/kaykit_miners.py makes them.
 const RIG_LOOKS := {"tunnel_rat": ["tunnel_rat_grime", "tunnel_rat_soot", "tunnel_rat_rust"],
-	"lost_miner": ["lost_miner_frost", "lost_miner_rime", "lost_miner_ghost"], "foreman": ["foreman"]}
+	"lost_miner": ["lost_miner_frost", "lost_miner_rime", "lost_miner_ghost"], "foreman": ["foreman"], "prop_warden": ["foreman"]}
 
 
 static func look_of(variant: String, seed: int) -> String:

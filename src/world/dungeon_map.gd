@@ -139,7 +139,37 @@ const PELL := {
 	],
 }
 
-const MAPS := [MOSSGATE, LAMPWICK, PELL]
+## Mossprop Workings: one tall mossy cave you climb. A rotten timber prop tower stands against its north cliff (decks at
+## 5 and 10 m); the rooms are dug into the rock behind it. Boss: the Prop Warden. Built by tools/dungeons/make_mossprop.py
+## (docs/design/zone1-dungeons/04-mossprop-workings.md). The way back down: a rope slide from the top deck to Base Camp.
+const MOSSPROP := {
+	id = "mossprop",
+	name = "Mossprop Workings",
+	mouth = Vector2(30, 60),
+	since = 17,
+	best = 130.0,
+	chase_out = true,
+	deadly = ["chasm"],
+	spaces = [
+		["entry", 28, 50, 32, 60, 0, 3.5],            # the way in
+		["great_cave", 14, 24, 46, 50, 0, 16],        # the tall cave (natural rock, 16 m up): the tower stands in it
+		["base_camp", 26, 40, 36, 50, 0, 4],          # 1 old camp at the cliff foot; the rope slide lands here
+		["lower_walk", 14, 30, 16, 46, 2, 3],         # 2 rotten boards 2 m up along the west wall (Lost Miners shove)
+		["rockfall_ledge", 14, 24, 20, 30, 2, 4],     # 3 under loose stalactites; the ladder up through the deck
+		["tool_niche", 10, 26, 14, 30, 2, 3],         # 4 behind the hidden boulder: the spiked chest
+		["prop_room", 16, 18, 24, 24, 5, 4],          # 5 dart wall
+		["store_shed", 24, 18, 30, 24, 5, 4],         # 6 supplies, the cracked north wall
+		["vault", 24, 14, 28, 18, 5, 3],              # 7 the hidden vault
+		["chasm", 30, 24, 38, 34, -5, 5],             # 8 10 m under the bridge: spikes (falling in kills)
+		["climbers_rest", 46, 28, 52, 34, 5, 4],      # 10 healing basin; a spear wall by the upper ladder
+		["gallery", 20, 12, 24, 24, 10, 6],           # 12 crushers (rock overhead)
+		["roost", 14, 12, 20, 18, 10, 4],             # 13 Tunnel Rats' roost, the loose stone
+		["hall_door", 24, 12, 30, 16, 10, 4],
+		["top_hall", 30, 10, 44, 24, 10, 6],          # 14 the Prop Warden; the barred gate out onto the top deck
+	],
+}
+
+const MAPS := [MOSSGATE, LAMPWICK, PELL, MOSSPROP]
 
 
 ## One placed dungeon: where its mouth is in the world, which way it faces, and its boxes in world terms.

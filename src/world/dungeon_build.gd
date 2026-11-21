@@ -14,7 +14,7 @@ extends Node3D
 ## Falling into the chasm or the spike pit kills you (decisions: instant death; the grave goes where you last stood).
 
 const PLANS := {"mossgate": "res://blueprints/dungeons/mossgate_hold.json", "lampwick": "res://blueprints/dungeons/lampwick_drift.json",
-	"pell": "res://blueprints/dungeons/old_pells_diggings.json"}
+	"pell": "res://blueprints/dungeons/old_pells_diggings.json", "mossprop": "res://blueprints/dungeons/mossprop_workings.json"}
 ## What you bump into, in each model's own metres: [centre, size] boxes. Models not listed and not in NO_BODY get
 ## the box round the whole model.
 const BOXES := {
@@ -74,6 +74,11 @@ const BOXES := {
 	"dungeon/trap_spear_wall.glb": [[Vector3(0, 1, 0), Vector3(2, 2, 0.29)]],
 	"dungeon/recipe_stand.glb": [[Vector3(0, 0.48, 0), Vector3(0.7, 0.97, 0.62)]],
 	"dungeon/trap_push_wall.glb": [[Vector3(0, 1, 0), Vector3(2, 2, 0.29)]],
+	# Mossprop Workings: the old prop frame's two posts and cap (you walk between the posts); the rope slide's two posts
+	# (top on the deck, bottom 10.24 m down and 18.9 m out in Base Camp; the rope itself has no body).
+	"dungeon/prop_old.glb": [[Vector3(-0.8, 1.35, 0), Vector3(0.3, 2.7, 0.3)], [Vector3(0.8, 1.45, 0), Vector3(0.3, 2.6, 0.3)],
+		[Vector3(0, 2.8, 0), Vector3(2.0, 0.3, 0.3)]],
+	"dungeon/rope_slide.glb": [[Vector3(0, 1.15, 0), Vector3(0.4, 2.3, 0.4)], [Vector3(0, -9.24, 18.873), Vector3(0.4, 2.0, 0.4)]],
 	"dungeon/lift_winch.glb": [[Vector3(-1.15, 1.3, -0.6), Vector3(0.16, 2.6, 0.16)], [Vector3(-1.15, 1.3, 0.6), Vector3(0.16, 2.6, 0.16)]],
 	# Brassgate Vault's forced vault door (handover Nov 22: "must be walkable"): its wall (2.1 m wide, 20 cm thick, flat
 	# back at z -0.97) in bands round the round doorway (0.75 m round, middle 0.66 m up, flat at the floor: 1.4 m high,
@@ -100,7 +105,7 @@ const NO_BODY := ["decor/furn_wall_torch_iron.glb", "dungeon/trap_dart_plate.glb
 	"dungeon/recipe_scroll.glb", "treasure/tr_coins_wide.glb", "treasure/tr_chalice.glb",
 	"decor/fossil_plaque.glb", "decor/rune_shield.glb",
 	"build/ruin_rubble__cut_stone.glb", "dungeon/recipe_stand.glb", "dungeon/rail_wedge.glb",
-	"dungeon/rubble_ore.glb", "dungeon/lift_platform.glb"]  # (Lampwick's low rubble: you walk over it to the healing basin, owner Nov 20)
+	"dungeon/rubble_ore.glb", "dungeon/lift_platform.glb", "dungeon/brace_old.glb"]  # (Lampwick's low rubble: you walk over it to the healing basin, owner Nov 20)
 
 ## Furniture you can smash (owner, decisions round 2: "a little root wood + small finds").
 const SMASH := ["decor/crate_stack.glb", "decor/keg.glb", "props/barrel.glb", "decor/furn_barrel_rack.glb",
@@ -155,7 +160,7 @@ const HEAL_RATE := 8.0        ## health a second
 const HEAL_POOL := 30.0       ## owner, Nov 20: it heals 30 health in all, then it is dry until the dungeon refills
 ## The loot door opens when the Pack Hall's pack is dead (owner, Nov 20). It is a lock of DungeonKeys (the same saved,
 ## sent-to-everyone door state as the bigger dungeons' key doors); it shuts again when the pack moves back in.
-const LIST_ID := {"mossgate": "mossgate_hold", "lampwick": "lampwick_drift", "pell": "old_pells_diggings"}  ## the dungeon's id in DungeonList / DungeonKeys
+const LIST_ID := {"mossgate": "mossgate_hold", "lampwick": "lampwick_drift", "pell": "old_pells_diggings", "mossprop": "mossprop_workings"}  ## the dungeon's id in DungeonList / DungeonKeys
 const PACK_LOCK := "pack"
 const PACK_ROOM := "pack_hall"
 const KILL := 1000000.0       ## instant death (more than any health and armour)

@@ -234,6 +234,9 @@ func _physics_process(delta: float) -> void:
 		return
 	if ragdoll and ragdoll.down():
 		return  # floppy: the rag doll moves us (DwarfRagdoll)
+	if not _slide.is_empty():
+		_slide_step(delta)
+		return
 	if _seat != null:
 		_sit_step(delta)
 		return
@@ -647,6 +650,43 @@ func _guard_fall(delta: float) -> void:
 		velocity = Vector3.ZERO
 		_shove = Vector3.ZERO
 		_in_rock = 0.0
+
+
+## Riding a rope slide (Mossprop Workings, owner Nov 21: "a way to get down that rope back to the first level"): from
+## grab point `a` to let-go point `b` (world, where the hands are), the rope sagging a little in the middle. The host
+## said yes (MineTraps._ev_slide); we move ourselves, like walking, so everyone sees us through the usual sync.
+var _slide := {}
+const SLIDE_TOP_SPEED := 9.0
+const SLIDE_SPEED_UP := 4.0
+const SLIDE_SAG := 0.25
+
+
+func slide_down(a: Vector3, b: Vector3) -> void:
+	_slide = {a = a, b = b, t = 0.0, speed = 1.5, length = maxf(a.distance_to(b), 0.1)}
+	velocity = Vector3.ZERO
+	_shove = Vector3.ZERO
+
+
+func sliding() -> bool:
+	return not _slide.is_empty()
+
+
+func _slide_step(delta: float) -> void:
+	var a: Vector3 = _slide.a
+	var b: Vector3 = _slide.b
+	_slide.speed = minf(float(_slide.speed) + SLIDE_SPEED_UP * delta, SLIDE_TOP_SPEED)
+	var t := minf(float(_slide.t) + float(_slide.speed) * delta / float(_slide.length), 1.0)
+	_slide.t = t
+	var hands := a.lerp(b, t) - Vector3.UP * SLIDE_SAG * 4.0 * t * (1.0 - t)
+	global_position = hands - Vector3.UP * lerpf(1.75, 1.45, t)  # (feet just over the ground at the end)
+	var flat := (b - a) * Vector3(1, 0, 1)
+	if flat.length() > 0.01:
+		model.rotation.y = lerp_angle(model.rotation.y, atan2(-flat.x, -flat.z), minf(1.0, delta * 10.0))
+	model.set_climbing(true, delta)  # (hands up on the rope)
+	model.set_motion(0.0, false, false)
+	if t >= 1.0:
+		_slide = {}
+		velocity = flat.normalized() * 3.0 if flat.length() > 0.01 else Vector3.ZERO
 
 
 ## Bear jaws hold your leg for `secs` (0 = let go): you can't walk or jump, you can still swing and look round.

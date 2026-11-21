@@ -82,7 +82,7 @@ func _run() -> void:
 				dwarf.global_position.distance_to(door), DungeonMap.space_at(d, dwarf.global_position + fwd * 8.0 + Vector3.UP)])
 			print("DUNGEON_TEST shot ", _main.take_screenshot(a.trim_prefix("shots=").path_join("dungeon_test.png")))
 			var face := DungeonMap.mouth_z(d.map)
-			var views := LAMPWICK_VIEWS if d.id == "lampwick" else PELL_VIEWS if d.id == "pell" else [["door_close", Vector3(34.0, 0.3, face + 4.5), Vector3(34.0, 1.3, face)],
+			var views := LAMPWICK_VIEWS if d.id == "lampwick" else PELL_VIEWS if d.id == "pell" else MOSSPROP_VIEWS if d.id == "mossprop" else [["door_close", Vector3(34.0, 0.3, face + 4.5), Vector3(34.0, 1.3, face)],
 					["corridor", Vector3(34.0, 0.3, face - 1.0), Vector3(34.0, 1.4, 44.0)],
 					["gate_hall", Vector3(36.0, 0.3, 45.0), Vector3(32.0, 1.4, 37.0)],
 					["doorway", Vector3(30.0, 0.3, 38.0), Vector3(34.0, 1.2, 46.0)],
@@ -113,6 +113,15 @@ func _run() -> void:
 				await _pell_walks(d)
 			get_tree().quit()
 	queue_free()
+
+
+## Mossprop Workings' robot pictures (-- dungeontest dungeon4 shots=<folder>): [name, stand (map metres), look at].
+const MOSSPROP_VIEWS := [
+	["mp_camp", Vector3(31.0, 0.3, 48.0), Vector3(28.0, 6.0, 30.0)],
+	["mp_tower", Vector3(40.0, 0.3, 40.0), Vector3(30.0, 6.0, 26.0)],
+	["mp_deck2", Vector3(28.0, 5.3, 25.0), Vector3(40.0, 5.0, 27.0)],
+	["mp_slide", Vector3(36.0, 10.3, 25.0), Vector3(36.0, 2.0, 44.0)],
+	["mp_warden", Vector3(37.0, 10.3, 22.0), Vector3(37.0, 11.0, 13.0)]]
 
 
 ## Old Pell's Diggings' robot pictures (-- dungeontest dungeon3 shots=<folder>): [name, stand (map metres), look at].

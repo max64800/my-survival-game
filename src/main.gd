@@ -138,6 +138,8 @@ func _ready() -> void:
 			dungeon_test_layout = CaveMaker.DUNGEON_ONLY_2
 		elif arg == "dungeon3":  # with dungeontest: the menu's "Dungeon 3" (Old Pell's Diggings' test world)
 			dungeon_test_layout = CaveMaker.DUNGEON_ONLY_3
+		elif arg == "dungeon4":  # with dungeontest: the menu's "Dungeon 4" (Mossprop Workings' test world)
+			dungeon_test_layout = CaveMaker.DUNGEON_ONLY_4
 		elif arg == "minercheck":  # photos of the skeleton miners lying, rising, running, swinging, turning to stone
 			debug_script = "res://src/debug/minercheck.gd"
 			dungeon_test = true
@@ -307,6 +309,13 @@ func _show_menu() -> void:
 			dungeon_test = true
 			_new_world(seed, "Dungeon 3 Test")
 			add_child(load("res://src/debug/dungeon_test_start.gd").new()), seed, CaveMaker.DUNGEON_ONLY_3))
+	_menu.connect("test_dungeon4", func():  # (owner, Nov 21: Dungeon 4 = Mossprop Workings)
+		_close_menu()
+		dungeon_test_layout = CaveMaker.DUNGEON_ONLY_4
+		_with_loading(func():
+			dungeon_test = true
+			_new_world(seed, "Dungeon 4 Test")
+			add_child(load("res://src/debug/dungeon_test_start.gd").new()), seed, CaveMaker.DUNGEON_ONLY_4))
 	_menu.connect("continue_game", func(data: Dictionary): _close_menu(); _with_loading(func(): start_game(data.seed, {}, data), int(data.seed), int(data.get("layout", 1))))
 	_menu.connect("host_world", func(data: Dictionary):
 		_close_menu()

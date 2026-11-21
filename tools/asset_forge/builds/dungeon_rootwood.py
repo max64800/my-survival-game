@@ -897,6 +897,80 @@ def age_paint(amount=0.55):  # (round 2: 0.35 didn't read next to new wood)
 			slot.material = m2
 
 
+# ---------------------------------------------------------------- batch 6: Mossprop Workings (owner, Nov 21)
+# Owner, Nov 21 (dungeon #4): "we need a lot more rotten wood, because right now it looks perfect". The prop tower's
+# timbers, gone old: same sizes as the Shack mine prop, brace and beam (mine_prop_v3, brace_v3, beam_v3), so they
+# line up with them, painted with age_paint.
+def prop_old(w=2.0, h=3.0):
+	"""An old mine prop: the right post rotted at the foot and packed up on two split wedges, a splint pegged over a
+	crack in the left post, the cap beam sagging in the middle, one knee brace snapped off short, no copper straps."""
+	S.boulder((-0.8, 0.06, 0.0), 0.155, 0.08, 0.155)
+	S.boulder((0.8, 0.06, 0.0), 0.16, 0.08, 0.15)
+	S.hewn((-0.8, 0.1, 0.0), (-0.8 + J(0.008), h - 0.3, J(0.008)), 0.15)
+	S.hewn((-0.8 - 0.02, 0.9, 0.18), (-0.8 + 0.015, 1.75, 0.18), 0.05)  # the splint over the crack
+	for y in (1.0, 1.62):
+		S.peg(-0.8, y, 0.22, "z")
+	S.hewn((0.62, 0.2, 0.0), (0.98, 0.21, J(0.01)), 0.065)  # the packing wedges under the rotten foot
+	S.hewn((0.66, 0.32, 0.02), (0.95, 0.33, 0.0), 0.065)
+	S.hewn((0.8, 0.37, 0.0), (0.8 + J(0.01), h - 0.3, J(0.008)), 0.145)
+	S.hewn((-0.86, h - 0.62, 0.0), (-0.42, h - 0.29, 0.0), 0.062)  # the left knee brace
+	S.pegs_on(-0.67, h - 0.58, 0.056)
+	S.hewn((0.86, h - 0.62, 0.0), (0.7, h - 0.5, 0.0), 0.06)  # the right one, snapped off short
+	S.hewn((-w / 2 + 0.03, h - 0.18, 0.0), (0.03, h - 0.24, J(0.006)), 0.15)  # the cap beam, sagging
+	S.hewn((-0.03, h - 0.24, 0.0), (w / 2 - 0.03, h - 0.19, J(0.006)), 0.15)
+	S.peg(-0.8, h - 0.18 + 0.15 * 0.82, 0.0, "y")
+
+
+def brace_old(w=2.0, h=2.0):
+	"""An old diagonal brace: snapped a little past the middle, the top half sagged and splinted back on with a short
+	timber pegged across the break."""
+	a, b = (-w / 2 + 0.14, 0.14), (w / 2 - 0.14, h - 0.14)
+	t = 0.56
+	m = (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
+	S.hewn((a[0], a[1], 0.0), (m[0] + 0.02, m[1] + 0.02, 0.0), 0.09)
+	S.hewn((m[0] - 0.03, m[1] - 0.07, 0.03), (b[0], b[1] - 0.04, J(0.004)), 0.085)  # the top half, sagged
+	d = 0.3
+	S.hewn((m[0] - d, m[1] - d - 0.02, 0.11), (m[0] + d, m[1] + d - 0.05, 0.11), 0.045)  # the splint
+	for k in (-0.6, 0.6):
+		S.peg(m[0] + d * k, m[1] + d * k - 0.03, 0.15, "z")
+	S.hewn((-w / 2 + 0.03, 0.114, 0.0), (-w / 2 + 0.5, 0.114 + J(0.006), 0.0), 0.088)
+	S.hewn((w / 2 - 0.36, h - 0.14, 0.0), (w / 2 - 0.03, h - 0.13, 0.0), 0.082)  # (the top shoe, rotted short)
+	S.pegs_on(a[0] + 0.05, a[1] + 0.03, 0.082)
+
+
+def beam_old(w=2.0, s=0.3):
+	"""An old beam: sagging, its middle eaten thin by rot, one end peg gone."""
+	S.hewn((-w / 2 + 0.03, s / 2, 0.0), (-0.26, s / 2 - 0.02, J(0.006)), 0.128)
+	S.hewn((-0.3, s / 2 - 0.025, 0.0), (0.3, s / 2 - 0.03, 0.01), 0.098)  # the rotten middle
+	S.hewn((0.26, s / 2 - 0.025, 0.0), (w / 2 - 0.03, s / 2 + J(0.008), J(0.006)), 0.128)
+	S.peg(-w / 2 + 0.16, s / 2 + 0.128 * 0.82, J(0.02), "y")
+
+
+# The rope slide down from the Top Hall's winch house to Base Camp (owner, Nov 21: "a way to get down that rope back to
+# the first level"). Origin = the foot of the top post. Its numbers are the dungeon's (tools/dungeons/make_mossprop.py
+# SLIDE_TOP / SLIDE_BOT): the rope runs along +z (the dungeon turns it with yaw) and drops TOP_Y - BOT_Y.
+SLIDE_RUN, SLIDE_DROP = 18.873, 10.24
+
+
+def rope_slide(run=SLIDE_RUN, drop=SLIDE_DROP):
+	"""Two hewn posts (one on the Top Hall's deck, one on the cave floor at Base Camp) with a thick rope tied round
+	the top of each, pulled tight between them, and a hand grip (a short hewn bar on a rope loop) at the top."""
+	tie_top, tie_bot = 1.85, 1.6
+	for (z, y0, tie) in ((0.0, 0.0, tie_top), (run, -drop, tie_bot)):
+		S.boulder((0.0, y0 + 0.06, z), 0.17, 0.08, 0.17, floor=y0 + S.E)
+		S.hewn((0.0, y0 + 0.1, z), (J(0.01), y0 + tie + 0.25, z + J(0.01)), 0.11)
+		rope((0.0, y0 + tie - 0.06, z), (0.0, y0 + tie + 0.06, z), 0.13, ends=False)  # the rope wound round the post
+	a = (0.0, tie_top, 0.1)
+	b = (0.0, -drop + tie_bot, run - 0.1)
+	sag = 0.25
+	pts = [(0.0, a[1] + (b[1] - a[1]) * k - sag * 4 * k * (1 - k), a[2] + (b[2] - a[2]) * k) for k in (0.0, 0.25, 0.5, 0.75, 1.0)]
+	for p, q in zip(pts, pts[1:]):
+		rope(p, q, 0.035)
+	g = (0.0, tie_top - 0.13, 0.55)  # the grip hangs on a loop just below the rope, near the top post
+	rope((0.0, pts[0][1] + (pts[1][1] - pts[0][1]) * 0.1 - 0.02, 0.55), (0.0, g[1] - 0.02, 0.55), 0.02)
+	S.hewn((-0.22, g[1] - 0.05, 0.55), (0.22, g[1] - 0.05, 0.55), 0.035)
+
+
 # ---------------------------------------------------------------- save
 def save_parts(name, groups=None):
 	"""Apply modifiers, join each group into one named part (or everything into "model"), export .glb."""
@@ -947,7 +1021,7 @@ BUILDS = {"wall_broken": wall_broken, "recipe_stand": recipe_stand, "recipe_scro
 	"wall_cracked": wall_cracked, "wall_old": wall_old, "floor_old": floor_old,
 	"floor_loose_stone": floor_loose_stone, "gate_round": gate_round, "lever": lever, "railing_broken": railing_broken,
 	"bridge_plank": bridge, "bridge_plank_broken": lambda: bridge(True), "bridge_plank_gap": lambda: bridge(gap=True), "bridge_ropes": lambda: bridge(bare=True), "bridge_ropes_3m": lambda: bridge(bare=True, half=1.494), "dungeon_entrance": entrance,
-	"door_loot": loot_door, "chain_hanging": chain_hanging, "trap_dart_plate": dart_plate, "trap_dart_wall": dart_wall, "trap_floor_break": floor_break, "trap_crusher": crusher}
+	"door_loot": loot_door, "prop_old": prop_old, "brace_old": brace_old, "beam_old": beam_old, "rope_slide": rope_slide, "chain_hanging": chain_hanging, "trap_dart_plate": dart_plate, "trap_dart_wall": dart_wall, "trap_floor_break": floor_break, "trap_crusher": crusher}
 
 if __name__ == "__main__":
 	for name, fn in BUILDS.items():
@@ -960,7 +1034,7 @@ if __name__ == "__main__":
 			S.make_grey()
 		else:
 			S.paint3()
-			if name in ("wall_old", "floor_old"):
+			if name in ("wall_old", "floor_old", "prop_old", "brace_old", "beam_old", "rope_slide"):
 				age_paint()
 		parts = save_parts(name, groups)
 		pictures(name, parts)

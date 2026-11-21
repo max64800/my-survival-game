@@ -576,6 +576,9 @@ func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: 
 		elif not Controls.robot and randf() < Combat.crit_chance(w):  # now and then a critical hit (owner F137; never in tests: they need exact numbers)
 			dmg = roundi(dmg * Combat.CRIT_MULT)
 			_ev_note.rpc(m.uid, "Critical!")
+		if _shield_blocks(m, ps.node.global_position, heavy):
+			dmg = roundi(dmg * SHIELD_BLOCK)
+			_ev_note.rpc(m.uid, "Blocked!")
 		total += dmg
 		_gem_buildup(m, gb)
 		var stun: float = Combat.stun_value(w, heavy, tier) * (1.0 + gb.get("stun", 0.0) + (gb.get("bash_stun", 0.0) if bash else 0.0)) * (ps.progress.heavy_stun_mult() if heavy else 1.0) * ps.progress.skill_stun_mult(w)
@@ -594,6 +597,21 @@ func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: 
 	if total > 0:
 		auth.wear_slot(ps, hand)  # a swing that hit something wears the weapon once (a bash: the shield)
 	return total
+
+
+## The Prop Warden's plank shield (owner, Nov 21): a hit from the front does only this much, unless it is a heavy
+## swing or he is stunned. Get round him (or stun him) to hurt him properly.
+const SHIELD_BLOCK := 0.2
+
+
+func _shield_blocks(m: Monster, from: Vector3, heavy: bool) -> bool:
+	if heavy or not m.data.get("front_shield", false) or m.stun.is_stunned() or m.model == null:
+		return false
+	var to_me := (from - m.global_position) * Vector3(1, 0, 1)
+	var ahead := -m.model.global_transform.basis.z * Vector3(1, 0, 1)
+	if to_me.length() < 0.01 or ahead.length() < 0.01:
+		return false
+	return to_me.normalized().dot(ahead.normalized()) > 0.3
 
 
 ## Host: the slot of the shield a bash hits with: the equipped one, else the best on the hotbar (-1 = none).

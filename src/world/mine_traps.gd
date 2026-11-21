@@ -119,11 +119,17 @@ static func kind_of(p: Dictionary) -> String:
 			return "lift_call" if p.has("calls") else ""  # (the other levers open gates: DungeonBuild)
 		"dungeon/trap_dart_plate.glb":
 			return "plate" if p.get("fires", false) else ""  # (Mossgate's plates are only for show)
+		"dungeon/rope_slide.glb":
+			return "slide"
 	return ""
 
 
 ## Kinds whose body melee hits do nothing to (the tripwire can be cut; bolts are handled in on_hit).
-const NO_MELEE := ["lamp", "cart", "wedge", "swing", "dart_wall", "chest_spikes"]
+const NO_MELEE := ["lamp", "cart", "wedge", "swing", "dart_wall", "chest_spikes", "slide"]
+## Mossprop Workings' rope slide (owner, Nov 21: "a way to get down that rope back to the first level"), in the
+## model's own metres: where you grab the rope at the top post, and where you let go before the bottom post.
+const SLIDE_GRAB := Vector3(0, 1.85, 0.55)
+const SLIDE_DROP := Vector3(0, -10.24 + 1.6, 18.873 - 1.2)
 
 
 func _ready() -> void:
@@ -511,6 +517,16 @@ func _shut_jaws(th: Dictionary, now: float) -> void:
 
 
 @rpc("authority", "call_local", "reliable")
+func _ev_slide(peer: int, a: Vector3, b: Vector3) -> void:
+	var auth := GameAuthority.instance
+	if auth == null or peer != auth.local_peer_id():
+		return
+	var me := auth.get_player(peer)
+	if me and me.node and me.node.has_method("slide_down"):
+		me.node.slide_down(a, b)
+
+
+@rpc("authority", "call_local", "reliable")
 func _ev_hold(peer: int, secs: float) -> void:
 	var auth := GameAuthority.instance
 	if auth == null or peer != auth.local_peer_id():
@@ -681,6 +697,8 @@ func use_info(id: int) -> Dictionary:
 			return {name = "Rope lift · E to ride it %s" % ("down" if lift_up(id) else "up"), use = id}
 		"lift_call":
 			return {name = "%s · E to call the lift" % ("Winch" if String(th.model).ends_with("winch.glb") else "Lever"), use = id}
+		"slide":
+			return {name = "Rope slide · E to slide down", use = id}
 	return {}
 
 
@@ -689,8 +707,15 @@ func request_use(peer_id: int, id: int) -> bool:
 	var auth := GameAuthority.instance
 	var ps := auth.get_player(peer_id) if auth else null
 	var th: Dictionary = db.things.get(id, {})
-	if th.is_empty() or not String(th.kind) in ["lamp", "jaws", "lift", "lift_call"]:
+	if th.is_empty() or not String(th.kind) in ["lamp", "jaws", "lift", "lift_call", "slide"]:
 		return false
+	if th.kind == "slide":  # only from the top post: the host says go, the rider's own game slides them down
+		var t: Transform3D = th.xform
+		if ps != null and ps.node.global_position.distance_to(t.origin) < DungeonBuild.USE_REACH + 2.0:
+			_ev_slide.rpc(peer_id, t * SLIDE_GRAB, t * SLIDE_DROP)
+		elif ps != null:
+			auth.tell(peer_id, "Climb up to the top post to ride the rope down.")
+		return true
 	if th.kind in ["lift", "lift_call"]:
 		var lift := id if th.kind == "lift" else lift_of(id)
 		var at: Vector3 = lift_pos(lift) if th.kind == "lift" else th.centre
