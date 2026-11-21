@@ -49,6 +49,8 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - **F79, rules that don't stick: roofs (said 1×, but the plan already said it on Nov 14).** The plan said Stonehold = flat roof only, sloped roofs hollow, but the build menu still offers every roof to every material and some roof pieces came out filled. **Different approach:** Rule 4 in `MODEL-RULES.md`, enforced in the build menu code with a test, plus a thickness test for roof pieces.
 
 - **F82, tanning rack ropes not attached (said 2×, rope problems overall many times).** F45 (Nov 15) said "the hide is laced on with rope", but the lacing ropes still stop short of the hide, so it floats. **Different approach:** Rule 1 of MODEL-RULES plus the photo sheets (`tools/model_review/`): every rope must be checked from the side view, and the floating-parts check must treat the hide and ropes as separate parts that have to touch.
+- **F582/F583 🔁, Mossprop still looks like a box (said 2×).** F539 (Nov 21): ~100 stalactites, 70 rock lumps and 14 shelves were added inside the square room. Nov 21 play: the lumps look awful and the room is still square. **Different approach:** shape the cave itself (dimples and bulges in the walls and ceiling), and drop the lumps.
+- **F591 🔁, the boss room has no door (said 2×).** F490 gave an earlier boss room a door you open; Mossprop's boss room never got one. **Different approach:** every dungeon's boss room gets the door, with a test that checks it.
 
 ## Patterns (what kind of things you notice most)
 
@@ -71,8 +73,8 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 | Creature fights (charge, dazed) | F111 🔁, F234 🔁, F236 🔁, F446-F450, F453-F456, F460 (bats), F471-F473, F474-F475 (climbing) | The beetle's charge comes up most; dazed must be clear to see (stars) and only happen when you earned it |
 | Things growing inside built things (placement rule) | F254, F376 | The world's plants, rocks and clutter keep turning up inside or on built things (the tower, a ruin chest): every new placement gets its own keep-clear test |
 | The dwarf's moving hair (braids, back hair) | F192, F215, F221 | The back hair came back 5× (sheets, hook, "visor"): each fix guessed one cause. Measuring each cause on its own (Nov 17) found five. Measure first |
-| Dungeon traps: timing and distance | F438 🔁, F439 🔁, F441 🔁, F508, F510, F511, F515, F543, F544, F546 | Stalactites and the bridge came back 3× each: "fair but dangerous" needs real numbers (seconds, metres, jump reach) tested in the robot game, not guesses. Nov 21 (F543/F546 fixed): tests now pin the safe way over rotten boards and where the ladder spikes hit |
-| Dungeons feel empty / too bright / too boxy | F506 (2×), F517, F539 | "A bit more" junk wasn't enough: you want them full of stuff and dark. Go big on the first try (double, not +50%). F539 (fixed Nov 21): ~100 stalactites + 70 rock lumps in one go |
+| Dungeon traps: timing and distance | F438 🔁, F439 🔁, F441 🔁, F508, F510, F511, F515, F543, F544, F546, F584, F585, F587, F589, F590 | Stalactites and the bridge came back 3× each: "fair but dangerous" needs real numbers (seconds, metres, jump reach) tested in the robot game, not guesses. Nov 21 (F543/F546 fixed): tests now pin the safe way over rotten boards and where the ladder spikes hit |
+| Dungeons feel empty / too bright / too boxy | F506 (2×), F517, F539, F582 🔁, F583 🔁 | "A bit more" junk wasn't enough: you want them full of stuff and dark. Go big on the first try (double, not +50%). F539 (fixed Nov 21): ~100 stalactites + 70 rock lumps in one go |
 
 ---
 
@@ -249,6 +251,18 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F580. I learned Forge Workshop from somewhere and don't know where or why.** Likely: finishing a ruin rebuild teaches its blueprint to everyone (builder.gd). Must say clearly what you learned and why. *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 2.
 - [ ] **F581. After rebuilding the tower the junk is gone, but the crate with bolts on the 2nd floor is still there: it should go too.** *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 2.
 
+- [ ] **F582. 🔁 Mossprop: the rock lumps on the walls look awful: take those rocks out of the game.** (Came back from F539.) Your picture: the big grey lumps by the moss shelves. *From: you (PC, Nov 21, second play of Mossprop Workings, dungeon 4). Said: 1×* → Mossprop chat.
+- [ ] **F583. 🔁 Mossprop: the cave is still one big square: dig dimples and bulges in so the ceiling and both walls aren't flat (the floor can stay flat).** (Came back from F539.) *From: you (PC, Nov 21, second play of Mossprop Workings, dungeon 4). Said: 2×* → Mossprop chat.
+- [ ] **F584. Mossprop's arena: far too many stalactites, and very few of them actually fall: far fewer, and make them fall (that many would kill everyone).** *From: you (PC, Nov 21, second play of Mossprop Workings, dungeon 4). Said: 1×* → Mossprop chat.
+- [ ] **F585. Mossprop: shooting the trapped chest with a crossbow does nothing: it should open and set off its traps.** ("You did not fix the chest.") *From: you (PC, Nov 21, second play of Mossprop Workings, dungeon 4). Said: 2×* → Mossprop chat.
+- [ ] **F586. Hits to kill: bats die in 1 hit, the other creatures in 2, bosses in about 5.** *From: you (PC, Nov 21, second play of Mossprop Workings, dungeon 4). Said: 1×* → Mossprop chat.
+- [ ] **F587. Mossprop: after the second ladder, the rigged wall on the left is easy to spot (a lighter plank panel) and does nothing.** Your picture: the panel between the beams. *From: you (PC, Nov 21, second play of Mossprop Workings, dungeon 4). Said: 1×* → Mossprop chat.
+- [ ] **F588. Mossprop: the wall hiding the stone chest still has big gaps at both sides: you can see in without breaking it.** ("Again.") Your picture: the two gaps beside the boarded frame. *From: you (PC, Nov 21, second play of Mossprop Workings, dungeon 4). Said: 2×* → Mossprop chat.
+- [ ] **F589. Mossprop: a lot more rotten boards that break on the very top walkway.** (Follows F543.) *From: you (PC, Nov 21, second play of Mossprop Workings, dungeon 4). Said: 1×* → Mossprop chat.
+- [ ] **F590. Mossprop: the crushers still don't work.** *From: you (PC, Nov 21, second play of Mossprop Workings, dungeon 4). Said: 2×* → Mossprop chat.
+- [ ] **F591. 🔁 Mossprop: the boss room still has no door: it should have one.** (Came back from F490.) *From: you (PC, Nov 21, second play of Mossprop Workings, dungeon 4). Said: 2×* → Mossprop chat.
+- [ ] **F592. Mossprop: the boss brings his fallen soldiers back: very unfair here, take it out. Keep the reviving for the next dungeon's boss (you like it).** *From: you (PC, Nov 21, second play of Mossprop Workings, dungeon 4). Said: 1×* → Mossprop chat.
+- [ ] **F593. Lost Miners (the middle skeletons) still reach too far: if you run away, you should get out of their hit without dodging.** (Follows F526.) *From: you (PC, Nov 21, second play of Mossprop Workings, dungeon 4). Said: 2×* → Mossprop chat.
 
 ## Done
 
