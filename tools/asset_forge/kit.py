@@ -480,6 +480,8 @@ def save(out, preview=None, recenter=True, tex_size=None, lid=None):
 		o.select_set(o.type == "MESH")
 	bpy.context.view_layer.objects.active = [o for o in bpy.context.scene.objects if o.type == "MESH"][0]
 	for o in bpy.context.selected_objects:
+		if o.type == "MESH" and not o.data.uv_layers:  # a part with no UVs, made active, would wipe everyone's textures on join
+			o.data.uv_layers.new(name="UVMap")
 		bpy.context.view_layer.objects.active = o
 		for m in list(o.modifiers):
 			bpy.ops.object.modifier_apply(modifier=m.name)

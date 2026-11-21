@@ -7315,3 +7315,48 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   handover for zone 2). Storm Topaz in a shield adds bash stun; Deep Onyx extra wood now on every wood source (root trees,
   grove trees, hanging roots, small roots, roots and giant mushrooms; one helper `onyx_wood`). Test `test_owner_nov21_rules`.
   Slip: a "%" in a test message broke Godot's text formatting; reworded.
+
+## Nov 21-22, 2026 (Mac, decor night): 500 decor models built and reviewed in two rounds
+- **Blender on the Mac:** installed Blender 5.3 with Homebrew (same version as the PC). The model tools found it by
+  themselves (`forge.py` falls back to `blender` on the PATH); building, previews and `check_models.py` all work here.
+- **Round 1 (132 models):** 7 helpers built dungeon story pieces, props, trophies, home furniture, kitchen/lights and fun
+  pieces (`tools/asset_forge/builds/decor_nov21_a.py` … `_g.py`). The owner scored 114 of them 1-10 on the
+  "Decor Scoring Bench" page (average 6.0). Liked: wall trophies, full shelves, clear dungeon story scenes. Disliked:
+  lumpy moss (every mossy model 1-3), too-simple shapes, markings stuck ON stone instead of cut in, parts poking out,
+  fake piles, things that make no sense, mismatched colours, pillows/food clutter. Saved as rules in
+  `docs/art/DECOR-BRIEF-NOV21.md` (every helper reads it first) and in Claude's memory.
+- **Round 2 (500 for the owner's Remove / Improve / Good page "Decor Verdict Bench"):** deleted 25 (the "remove" ones and
+  all mossy ones; owner: no moss for now), rebuilt 51 from the owner's notes, plus 18 not-yet-scored ones, plus 431 new:
+  30 for each of the 12 dungeons (prefixes mg lw op mp th qb bv hs vo ef hw cf), 12 for each of the 4 ruins (rt ro rb rs)
+  and 23 home pieces (hm). All 500 pass the FLOAT/SHIMMER checker. Nothing is in the build menu or dungeons yet and
+  nothing is committed (owner: wait for the verdicts).
+- **Hurdles / Claude's slips:** (1) Claude's first two helper briefs got cut off before the model list, so 2 helpers
+  started with nothing; one never resumed and had to be started again (lost ~20 minutes). Later briefs put the list
+  FIRST. (2) The page generator only read `MODELS = {...}` lists; the new sets build their list automatically, so it
+  found 0 new models; fixed by reading `def xx_...` names. (3) A helper found that a plain-colour part without a UV map
+  could wipe every texture when the model is joined (flat grey models). Fixed once in `kit.save` (every part gets a UV
+  map before joining); a scan of all decor models found none spoiled. (4) Helpers' own lessons, now in the brief:
+  joining overlapping carve cutters can wipe a part; round log ends sink 1 cm under the floor and make other parts look
+  "floating"; `bpy.data.objects[-1]` is sorted by name, not build order; turning gems/rocks spins them round the world
+  centre. (5) The owner's 5-hour Claude limit ran out with the last helper half done; it resumed after the reset.
+- **For the owner to know:** Hammerfall's helper only looked at 19 of its 30 previews; the Outpost decor is wooden
+  although the Outpost ruin is mostly cut stone; glass renders white in previews (check in game); the Tomb's guard statue
+  is 2.6 m tall.
+- **Next:** read the verdicts, delete "remove", rebuild "improve" from the notes, then put the "good" ones into the build
+  menu (home) and the dungeon/ruin plans, with placement tests.
+- **Round 2 verdicts (Nov 22):** 400 good, 95 improve, 5 remove. Deleted the 5 + tunnel_mouth_collapsed. 7 helpers
+  rebuilt 93 models from the notes (lw_cart_turntable left: no note) and made 14 `_empty` twins of lootable props
+  (loot amounts in each build file's header). New owner rules added to the brief: crossbow bolts only (no arrows/bows),
+  avoid rails, no water/puddles, nothing lit unless working, hollow things hollow, round buckets/bells, gravity, no
+  clipping, figures from the real dwarf model (no "Roblox" boxes), trophies = real monster head on one panel.
+  Round 3 check page: "Decor Fix Check" (108 models, db `verdicts3`).
+- **Hurdles:** the brief had the monster folders swapped (bats/beetles/snails are in creatures/, spiders in monsters/);
+  fixed. The real-dwarf figures are heavy (60-74k triangles, up to 3 MB); the game's crossbow_stone item model has a
+  shimmer at its clamp (found by a helper, waiting for the owner's OK). Looting, the strongbox lid opening in game and
+  walking through the forced vault door need game code later.
+- **Round 3 + handover (Nov 22):** owner's round-3 check: 101 good, 6 improve (cold forge hearth, slimmer armour x2,
+  shield trophy without stand, Hald's tomb without the effigy, Orrin's face visible), 1 removed (cf_statue_casting).
+  All done. Owner also had lw_cart_turntable deleted (avoid rails) and kept the loot props full-looking.
+  17 heavy models slimmed under 2 MB each (cause: unused vertex colours in the game's dwarf model, ~2 MB per figure,
+  and too many bevel steps on tiny parts). Handover for the PC: `docs/HANDOVER-2026-11-22.md` (the Ruin junk chat also
+  writes `docs/art/DECOR-CATALOG.md`).
