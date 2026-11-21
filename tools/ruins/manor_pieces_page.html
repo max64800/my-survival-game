@@ -1,0 +1,298 @@
+<title>Hearth Manor New Pieces</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@500;700&family=Alegreya+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the same lantern-lit cave stage as the Twin Gate page, two stations in a row
+   (the five new Hearthbrick pieces alone, then a little brick house that uses them all), a sheet beside it. */
+:root {
+	--rock: #17130f;
+	--sheet: #221b15;
+	--line: #4a3b2c;
+	--ink: #efe3cf;
+	--dim: #b9a68b;
+	--lantern: #e7a24a;
+	--lantern-ink: #1d140b;
+	--kit: #5fb4ff;
+	--display: "Alegreya SC", Georgia, "Times New Roman", serif;
+	--body: "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+	--mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+	color-scheme: dark;
+}
+html, body { height: 100%; margin: 0; }
+body { background: var(--rock); color: var(--ink); font: 16px/1.5 var(--body); }
+.wrap { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 360px; grid-template-rows: minmax(0, 1fr); gap: 16px;
+	padding-block: 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); box-sizing: border-box; }
+.stage { position: relative; min-height: 420px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #0d0a08; }
+canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.views { position: absolute; left: 12px; top: 12px; right: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+.tools { position: absolute; left: 12px; right: 12px; bottom: 12px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+button { font: 600 14px var(--body); color: var(--ink); background: #1d1711dd; border: 1px solid var(--line); border-radius: 6px; padding: 7px 12px; cursor: pointer; }
+button:hover { border-color: var(--lantern); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--lantern); outline-offset: 2px; }
+button[aria-pressed="true"] { background: var(--lantern); color: var(--lantern-ink); border-color: var(--lantern); }
+.build { display: flex; align-items: center; gap: 8px; background: #1d1711dd; border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; font: 600 14px var(--body); }
+.build input { width: 150px; accent-color: var(--lantern); }
+.build output { font: 500 13px var(--mono); color: var(--dim); min-width: 3.5em; font-variant-numeric: tabular-nums; }
+.hint { margin-left: auto; color: var(--dim); font: 13px var(--body); }
+#loading[hidden] { display: none; }
+#loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--dim); font: 14px var(--mono); pointer-events: none; text-align: center; padding: 16px; }
+aside { background: var(--sheet); border: 1px solid var(--line); border-radius: 8px; padding: 20px 18px; display: flex; flex-direction: column; gap: 18px; min-width: 0; overflow-y: auto; }
+h1 { font: 700 30px/1.1 var(--display); margin: 0; text-wrap: balance; }
+h2 { font: 700 13px var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--lantern); margin: 0 0 8px; }
+p { margin: 0; }
+.lede { margin-top: 8px; color: var(--ink); }
+.note { font-size: 14px; color: var(--dim); margin-top: 8px; }
+ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+li { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dashed var(--line); padding-bottom: 3px; }
+li span:last-child { font: 500 14px var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+ol { margin: 0; padding-left: 22px; display: grid; gap: 4px; }
+.pieces { display: flex; flex-wrap: wrap; gap: 6px; }
+.pieces button { font-size: 13px; padding: 4px 9px; }
+.pieces button b { font: 500 12px var(--mono); color: var(--dim); margin-left: 4px; }
+.pieces button[aria-pressed="true"] b { color: var(--lantern-ink); }
+.ask { border: 1px solid var(--lantern); border-radius: 6px; padding: 10px 12px; font-size: 15px; }
+.new { color: var(--kit); font-weight: 700; }
+@media (max-width: 860px) {
+	.wrap { height: auto; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; }
+	.stage { min-height: 75vh; }
+	aside { overflow: visible; }
+	.hint { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+	<div class="stage" id="stage">
+		<div id="loading">Setting out the pieces&hellip;</div>
+		<div class="views" role="group" aria-label="Which station to look at">
+			<button id="v_all" aria-pressed="true">Both</button>
+			<button id="v_alone">The new pieces alone</button>
+			<button id="v_house">On a little house</button>
+		</div>
+		<div class="tools">
+			<button id="glow" aria-pressed="true">Glow the new pieces</button>
+			<label class="build" for="buildup">Build it up <input id="buildup" type="range" min="0" max="100" value="100"><output id="buildout">100%</output></label>
+			<span class="hint">Drag to turn &middot; scroll to zoom &middot; right-drag to move</span>
+		</div>
+	</div>
+	<aside>
+		<header>
+			<h1>Hearth Manor: 5 New Brick Pieces</h1>
+			<p class="lede">The manor needs <b>balconies</b> and <b>more roofs</b>, so it needs a few pieces Hearthbrick doesn't have yet. They glow <span class="new">blue</span>. The little house on the right is only a test bench to show them in use; the manor itself comes next.</p>
+		</header>
+		<section>
+			<h2>1. Bracket</h2>
+			<ul><li><span>Size</span><span>0.5 &times; 1 m, sticks out 0.8 m</span></li></ul>
+			<p class="note">Holds up a floor that sticks out past the wall (a balcony). A rounded limestone foot, then 5 rows of bricks, each row reaching a bit further out (like an upside-down staircase), and a limestone cap on top.</p>
+		</section>
+		<section>
+			<h2>2. Trim band + 3. its corner</h2>
+			<ul><li><span>Size</span><span>2 m long, 0.4 m tall</span></li></ul>
+			<p class="note">A stripe that wraps the house where the upper floor starts, so tall walls don't look flat. Limestone, a row of little brick &ldquo;teeth&rdquo;, bricks, and a limestone top. The corner block joins two bands round a corner.</p>
+		</section>
+		<section>
+			<h2>4. Short railing (1 m)</h2>
+			<p class="note">Half a normal railing, with one little arch instead of three. A balcony is 1 m deep, so its two ends need a 1 m railing.</p>
+		</section>
+		<section>
+			<h2>5. Roof window</h2>
+			<p class="note">Sits on a steep roof. A brick front with a round leaded window, its own little tile roof with ridge tiles, dark wooden boards on its sides. The manor's roofs get several of these.</p>
+		</section>
+		<section>
+			<h2>The pieces around them</h2>
+			<p class="note">Pieces you already have. Click one to light it up orange.</p>
+			<div class="pieces" id="pieces" role="group" aria-label="Light up a piece"></div>
+		</section>
+		<div class="ask">
+			<p>Do these 5 look right? Once you say OK, I'll build the manor with them: a big hall, two wings, a gatehouse porch, a back kitchen, and a tall corner tower with a balcony all the way round, about 12 roofs in all.</p>
+		</div>
+	</aside>
+</div>
+<script type="importmap">
+{ "imports": {
+	"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+	"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+const NAMES = { wall: "Wall", doorway: "Doorway", window_wall: "Small window", floor: "Floor", floor_half: "Half floor",
+	railing: "Railing", roof_45: "Steep roof", gable_45: "Steep gable" };
+// Stations in a row: [key, x, label, camera distance]
+const STATIONS = [["alone", -6, "Alone", 12], ["house", 6, "On a house", 16]];
+
+const loadingEl = document.getElementById("loading");
+const stage = document.getElementById("stage");
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+renderer.shadowMap.enabled = true;
+renderer.localClippingEnabled = true;
+stage.prepend(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d0a08);
+const camera = new THREE.PerspectiveCamera(40, 1, 0.05, 300);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.maxPolarAngle = Math.PI * 0.49;
+controls.minDistance = 1.5;
+controls.maxDistance = 90;
+scene.add(new THREE.HemisphereLight(0x9fb2c8, 0x2a1d12, 1.0));
+const sun = new THREE.DirectionalLight(0xffd9a8, 2.3);
+sun.position.set(14, 26, 20);
+sun.castShadow = true;
+sun.shadow.mapSize.set(4096, 4096);
+Object.assign(sun.shadow.camera, { left: -32, right: 32, top: 20, bottom: -20, far: 80 });
+scene.add(sun);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(90, 40), new THREE.MeshStandardMaterial({ color: 0x2b241d, roughness: 1 }));
+ground.rotation.x = -Math.PI / 2;
+ground.position.y = -0.01;
+ground.receiveShadow = true;
+scene.add(ground);
+
+function label(text, x, y) {
+	const c = document.createElement("canvas");
+	c.width = 512; c.height = 96;
+	const g = c.getContext("2d");
+	g.font = "700 54px 'Alegreya SC', Georgia, serif";
+	g.fillStyle = "#e7a24a";
+	g.textAlign = "center";
+	g.fillText(text, 256, 66);
+	const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false }));
+	s.scale.set(5.4, 1.0, 1);
+	s.position.set(x, y, 0);
+	scene.add(s);
+}
+
+// Artifact pages may not fetch blob:/data: URLs, which three.js uses for pictures inside a model: rebuild each
+// model into one binary here.
+globalThis.createImageBitmap = undefined;
+const loader = new GLTFLoader();
+async function loadModel(url) {
+	const j = await (await fetch(url)).json();
+	const uri = j.buffers[0].uri, b64 = uri.slice(uri.indexOf(",") + 1);
+	const raw = atob(b64), bin = new Uint8Array(raw.length);
+	for (let i = 0; i < raw.length; i++) bin[i] = raw.charCodeAt(i);
+	delete j.buffers[0].uri; j.buffers[0].byteLength = bin.length;
+	const js = new TextEncoder().encode(JSON.stringify(j));
+	const pad = n => (4 - (n % 4)) % 4;
+	const jsLen = js.length + pad(js.length), binLen = bin.length + pad(bin.length);
+	const out = new Uint8Array(12 + 8 + jsLen + 8 + binLen), dv = new DataView(out.buffer);
+	dv.setUint32(0, 0x46546C67, true); dv.setUint32(4, 2, true); dv.setUint32(8, out.length, true);
+	dv.setUint32(12, jsLen, true); dv.setUint32(16, 0x4E4F534A, true);
+	out.set(js, 20); out.fill(0x20, 20 + js.length, 20 + jsLen);
+	const b0 = 20 + jsLen;
+	dv.setUint32(b0, binLen, true); dv.setUint32(b0 + 4, 0x004E4942, true);
+	out.set(bin, b0 + 8);
+	return (await loader.parseAsync(out.buffer, "")).scene;
+}
+
+const yawOf = r => (r < 4 ? r * 90 : (r - 4) * 30) * Math.PI / 180;
+const keyOf = p => (p.mat === "prop" ? p.id : `${p.id}__${p.mat}`);
+const starMats = [];      // the new pieces' materials (blue glow)
+const starClips = [];     // [plane, bottom y, height] for each new piece, for "Build it up"
+const pieceMats = {};     // piece id -> its materials, for the orange "light it up"
+const counts = {};
+const tops = {};
+try {
+	const stations = await (await fetch("scene.json")).json();
+	const kinds = [...new Set(Object.values(stations).flat().map(keyOf))];
+	const models = {};
+	await Promise.all(kinds.map(async (k) => {
+		const m = await loadModel(`m/${k}.json`);
+		m.updateMatrixWorld(true);
+		const parts = [];
+		m.traverse(o => { if (o.isMesh) parts.push({ geo: o.geometry, mat: o.material, local: o.matrixWorld.clone() }); });
+		models[k] = parts;
+	}));
+	const tmp = new THREE.Matrix4();
+	for (const [key, ox] of STATIONS) {
+		let top = 0;
+		for (const p of stations[key]) {
+			const at = new THREE.Matrix4().compose(new THREE.Vector3(p.pos[0] + ox, p.pos[1], p.pos[2]),
+				new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yawOf(p.rot)), new THREE.Vector3(1, 1, 1));
+			const h = { corbel: 1.0, cornice: 0.4, cornice_corner: 0.4, railing_narrow: 1.0, railing: 1.0, floor: 0.25, floor_half: 0.25, dormer: 2.0 }[p.id] ?? 2.0;
+			top = Math.max(top, p.pos[1] + h);
+			let plane = null;
+			if (p.star) { plane = new THREE.Plane(new THREE.Vector3(0, -1, 0), p.pos[1] + h); starClips.push([plane, p.pos[1], h]); }
+			else counts[p.id] = (counts[p.id] || 0) + 1;
+			for (const part of models[keyOf(p)]) {
+				const mat = part.mat.clone();
+				mat.emissive = new THREE.Color(p.star ? 0x2a9dff : 0xff7a1a);
+				mat.emissiveIntensity = 0;
+				if (plane) { mat.clippingPlanes = [plane]; mat.clipShadows = true; mat.side = THREE.DoubleSide; starMats.push(mat); }
+				else (pieceMats[p.id] ||= []).push(mat);
+				const mesh = new THREE.Mesh(part.geo, mat);
+				mesh.matrixAutoUpdate = false;
+				mesh.matrix.copy(tmp.multiplyMatrices(at, part.local));
+				mesh.castShadow = mesh.receiveShadow = true;
+				scene.add(mesh);
+			}
+		}
+		tops[key] = top;
+	}
+	for (const [key, ox, text] of STATIONS) label(text, ox, tops[key] + 1.0);
+	const box = document.getElementById("pieces");
+	for (const id of Object.keys(counts).sort((a, b) => counts[b] - counts[a])) {
+		if (!NAMES[id]) continue;
+		const b = document.createElement("button");
+		b.setAttribute("aria-pressed", "false");
+		b.innerHTML = `${NAMES[id]}<b>${counts[id]}</b>`;
+		b.onclick = () => {
+			const on = b.getAttribute("aria-pressed") !== "true";
+			b.setAttribute("aria-pressed", on);
+			pieceMats[id].forEach(m => (m.emissiveIntensity = on ? 0.6 : 0));
+		};
+		box.append(b);
+	}
+	setGlow(true);
+	show(location.hash.slice(1) || "all");
+	loadingEl.hidden = true;
+} catch (err) {
+	loadingEl.textContent = "Couldn't set out the pieces: " + err.message;
+	console.error(err);
+}
+
+function setGlow(on) {
+	document.getElementById("glow").setAttribute("aria-pressed", on);
+	starMats.forEach(m => (m.emissiveIntensity = on ? 0.16 : 0));
+}
+document.getElementById("glow").onclick = () => setGlow(document.getElementById("glow").getAttribute("aria-pressed") !== "true");
+
+const buildIn = document.getElementById("buildup"), buildOut = document.getElementById("buildout");
+buildIn.oninput = () => {
+	const f = buildIn.value / 100;
+	buildOut.textContent = buildIn.value + "%";
+	for (const [plane, y0, h] of starClips) plane.constant = y0 + 0.002 + f * h;
+};
+
+function show(which) {
+	const st = STATIONS.find(s => s[0] === which);
+	if (!st && which !== "all") which = "all";
+	const at = st ? new THREE.Vector3(st[1], tops[st[0]] * 0.45, 0) : new THREE.Vector3(0, 2.2, 0);
+	const dist = st ? st[3] : 26;
+	camera.position.copy(at).add(new THREE.Vector3(st ? 0.45 : 0.1, 0.55, 0.75).normalize().multiplyScalar(dist));
+	controls.target.copy(at);
+	const cam = new URLSearchParams(location.search).get("cam");  // test views: ?cam=x,y,z,tx,ty,tz
+	if (cam) { const v = cam.split(",").map(Number); camera.position.set(v[0], v[1], v[2]); controls.target.set(v[3], v[4], v[5]); }
+	for (const k of ["all", ...STATIONS.map(s => s[0])]) document.getElementById("v_" + k).setAttribute("aria-pressed", k === which);
+}
+for (const k of ["all", ...STATIONS.map(s => s[0])]) document.getElementById("v_" + k).onclick = () => show(k);
+
+function resize() {
+	const w = stage.clientWidth, h = stage.clientHeight;
+	renderer.setSize(w, h, false);
+	camera.aspect = w / h;
+	camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(stage);
+resize();
+renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
+</script>
