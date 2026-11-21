@@ -8129,3 +8129,9 @@ Checked in the front preview only; the owner judges the motion on the localhost 
 
 Owner drew the reloading bow at belly height, not chest height. `SIDE_W` is now (0.10, -0.17, 0.17): 11 cm lower and 7 cm further out so the bow doesn't sink into his big belly.
 Left-hand worst miss in Reload rose from 6.9 to 8.0 cm (lower = longer reach). Checked in one front preview only.
+
+
+# Crossbow reload: bow moved toward his right arm (chat 18)
+
+Owner: "move it even further right towards his arm, the right arm". `SIDE_W` x 0.10 to 0.04 (his right = -X, so the bow's stock now sits by his right arm).
+Left-hand worst miss in Reload is now 9.3 cm (the bow's end is further from the left hand). Watch for the hand not quite touching.
