@@ -134,6 +134,27 @@ def lantern(big=False):
 			kit.tbox("leather", (0.03, 0.015, 0.3), (x, 0.11, 0.17), variant="dark", bevel=0.004)
 
 
+def hip_hook():
+	"""F562 (owner, Nov 21): the belt hook that hangs the lantern on the dwarf's hip, so both hands are free.
+	Built to sit on lantern()'s carry ring (top of the ring's tube line at z=0.37): an iron S-hook (lower ring
+	through the carry ring, a short shank, upper ring) and a folded leather belt loop through the upper ring.
+	Alone it is "lantern_hip_hook" (the game hangs it above the code-built lantern); with lantern() it is the item."""
+	iron = kit.tex_mat("iron")
+	r, tube = 0.022, 0.008
+	low = 0.37 - 0.009 - tube + r  # the lower ring rests on the carry ring (its bottom inside the carry ring's hole)
+	kit.ring(r, tube, (0, 0, low), iron, rot=(0, 90, 0), seg=12)
+	kit.box((0.014, 0.014, 0.04), (0, 0, low + r + 0.016), iron, bevel=0.003, wobble=0)
+	up = low + r + 0.036 + r - tube
+	kit.ring(r, tube, (0, 0, up), iron, rot=(90, 0, 0), seg=12)
+	# The belt loop: a leather strap through the upper ring, folded up both sides (the belt goes through the fold).
+	top = up + r - tube
+	kit.tbox("leather", (0.034, 0.08, 0.012), (0, 0, top - 0.006), variant="dark", bevel=0.003)
+	for y in (-0.034, 0.034):
+		kit.tbox("leather", (0.034, 0.012, 0.094), (0, y, top + 0.035), variant="dark", bevel=0.003)
+	kit.tbox("leather", (0.034, 0.08, 0.012), (0, 0, top + 0.076), variant="dark", bevel=0.003)
+	kit.cylinder(0.008, 0.008, (0, -0.043, top + 0.05), kit.tex_mat("copper"), rot=(90, 0, 0), verts=8, bevel=0)  # a rivet
+
+
 def spore_mask():
 	face = kit.gem((0, 0, 0.09), (0.12, 0.06, 0.1), kit.tex_mat("leather"), seed=4)
 	kit.soft(face, 1)
@@ -200,6 +221,7 @@ def water_bucket():
 
 BUILD = {
 	"lantern": lambda: lantern(False), "lantern_back": lambda: lantern(True), "satchel": satchel,
+	"lantern_hip": lambda: (lantern(False), hip_hook()), "lantern_hip_hook": hip_hook,
 	"spore_mask": spore_mask, "prospectors_lens": prospectors_lens, "war_horn": war_horn, "water_bucket": water_bucket,
 	"waterskin_empty": lambda: waterskin("empty"), "waterskin_dirty": lambda: waterskin("dirty"),
 	"waterskin_clean": lambda: waterskin("clean"),

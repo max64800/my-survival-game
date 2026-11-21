@@ -131,6 +131,7 @@ const LIST := {
 	"drink_moss_ale": {station = "campfire", level = 2, inputs = {root_tuber = 3, hollowcap = 1, water_bucket = 2}, output = "drink_moss_ale", count = 3, seconds = 30, unlock = "rune"},
 	"drink_spore_mead": {station = "campfire", level = 2, inputs = {spore_truffle = 2, ember_morel = 1, water_bucket = 2}, output = "drink_spore_mead", count = 3, seconds = 30, unlock = "rune"},
 	"spore_mask": {station = "workbench", inputs = {leather = 2, spore_powder = 3, fiber = 4}, output = "spore_mask", count = 1, unlock = "rune"},
+	"lantern_hip": {station = "workbench", inputs = {stone = 2, rootwood = 1, crystal_blue = 1, leather = 2, rope = 2}, output = "lantern_hip", count = 1, unlock = ["leather"]},  # F562
 	"lantern_back": {station = "anvil", inputs = {copper_ingot = 4, leather = 2, lantern_lens = 1, rope = 2}, output = "lantern_back", count = 1, unlock = ["copper_ingot"]},
 	# --- masonry table
 	"cut_stone": {station = "masonry_table", inputs = {stone = 2}, output = "cut_stone", count = 1, unlock = []},

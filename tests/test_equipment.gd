@@ -118,3 +118,42 @@ func test_right_click_equips_and_shield_is_usable() -> void:
 	check(not DwarfFight.off_hand_free(ps), "the hand lantern fills the off hand")
 	ps.lantern_stowed = true
 	check(DwarfFight.off_hand_free(ps), "L puts the lantern away: the shield can be used")
+
+
+## F562 (owner, Nov 21: "an item that puts the lantern on the dwarf's hip, so fighting is easy").
+func test_hip_lantern_frees_both_hands() -> void:
+	var ps := GameAuthority.PlayerState.new()
+	ps.needs_lantern = true
+	ps.inventory.add("lantern_hip", 1)
+	check_eq(ps.inventory.equipped("lantern"), "lantern_hip", "the Hip Lantern goes in the lantern slot")
+	check(Lantern.has_lantern(ps), "and it lights")
+	check_eq(Lantern.spot_of(ps), "hip", "it hangs on the hip")
+	check(DwarfFight.off_hand_free(ps), "both hands free: shield and two-handers work")
+	check(not ps.lantern_stowed, "without putting it away")
+	var r := Recipes.get_recipe("lantern_hip")
+	check_eq(r.get("station", ""), "workbench", "made at the Workbench (early, no copper needed)")
+	check(not r.inputs.has("lantern"), "it doesn't eat the lantern you're wearing (equipped things can't be used up)")
+	check(not Recipes.LIST.lantern_hip.unlock.has("copper_ingot"), "no copper needed")
+	ps.inventory.slots[Inventory.equip_index("lantern")] = {id = "lantern", count = 1}
+	check_eq(Lantern.spot_of(ps), "hand", "the plain lantern is still held in the hand")
+
+
+## The Hip Lantern hangs at the dwarf's side, at belt height, with its hook on (and gives a bit less light).
+func test_hip_lantern_hangs_at_the_belt() -> void:
+	var dm := DwarfModel.new()
+	tree.root.add_child(dm)
+	var lantern := Lantern.new()
+	dm.left_hand.add_child(lantern)
+	lantern.set_process(false)  # (no player here: it would go back to the hand)
+	lantern.place("hip")
+	for i in 5:  # (the hip bone is posed after a few frames)
+		await tree.process_frame
+	lantern._to_belt()
+	var local := dm.to_local(lantern.global_position + Vector3(0, Lantern.BELT_ABOVE, 0))
+	check(absf(local.x) > 0.2, "out at the side (x %.2f)" % local.x)
+	check(local.y > 0.2 and local.y < 0.9, "at belt height (y %.2f)" % local.y)
+	check(lantern._hook != null and lantern._hook.visible, "the belt hook shows")
+	lantern.place("hand")
+	check(not lantern._hook.visible, "no hook when it's back in the hand")
+	check(Lantern.HIP_RANGE < Lantern.FULL_RANGE, "a bit less light than in the hand")
+	dm.queue_free()

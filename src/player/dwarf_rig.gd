@@ -192,6 +192,7 @@ var weight: DwarfWeight  ## heavy steps, waddle, breathing, landing squash
 var tree: AnimationTree
 var right_hand: Node3D  ## tools go here
 var left_hand: Node3D   ## the lantern hangs here
+var hip: Node3D  ## the Hip Lantern hangs here, on the pelvis bone (F562)
 var _air := 0.0
 var _air_time := 0.0  ## how long we've been off the ground (for the landing dip)
 var _rolling := false
@@ -294,6 +295,7 @@ func build(tint: Color) -> void:
 	# Hands: things held keep their own size (cancel the dwarf scale and the big-hand scale).
 	right_hand = _hand_socket("hand_r")
 	left_hand = _hand_socket("hand_l")
+	hip = _hand_socket("pelvis")
 	grip = Node3D.new()
 	grip.name = "Grip"
 	grip.transform = grip_transform("", "")

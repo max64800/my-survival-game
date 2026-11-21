@@ -385,9 +385,21 @@ func _upgrade_rows(inv: Inventory) -> void:
 	heading.add_theme_font_size_override("font_size", 20)
 	_up_list.add_child(heading)
 	var sub := Label.new()
-	sub.text = "+15% each step, up to +3"
+	sub.text = "Upgrades: +15% each step, up to +3. Repairs are free."
+	sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	sub.add_theme_font_size_override("font_size", 13)
 	_up_list.add_child(sub)
+	# One big button that fixes everything this station can fix (owner F568: "repairing should cost nothing").
+	var worn := repairable_here(inv, station.kind)
+	var all := Button.new()
+	all.name = "RepairAll"
+	all.text = "Repair all (free)" if worn > 0 else "Nothing needs repair"
+	all.disabled = worn == 0
+	all.custom_minimum_size = Vector2(0, 40)
+	all.pressed.connect(func():
+		GameAuthority.instance.ask_repair_all(station.station_id)
+		get_tree().create_timer(0.15).timeout.connect(refresh))
+	_up_list.add_child(all)
 	var any := false
 	for i in inv.slots.size():
 		var s := inv.get_slot(i)
@@ -414,19 +426,13 @@ func _upgrade_rows(inv: Inventory) -> void:
 		elif station.level() < Upgrades.needed_level(s):
 			parts.append("[color=#ff7070]needs station level %d[/color]" % Upgrades.needed_level(s))
 		text.text = "[b]%s[/b]\n[font_size=13]%s[/font_size]" % [Upgrades.display_name(s), ", ".join(parts)]
-		var fix := Durability.repair_cost(s, GameAuthority.repair_discount(_prog()) if _prog() else 0.0)
-		if not fix.is_empty():  # worn: show how worn and what a repair costs
-			var fparts := []
-			for item in fix:
-				fparts.append("[color=%s]%d %s[/color]" % ["white" if inv.count_of(item) >= fix[item] else "#ff7070", fix[item], Items.display_name(item)])
-			text.text += "\n[font_size=13]%s · repair: %s[/font_size]" % [Durability.status_text(s), ", ".join(fparts)]
+		if Durability.needs_repair(s):  # worn: show how worn; repairing is free
+			text.text += "\n[font_size=13]%s · repair: free[/font_size]" % Durability.status_text(s)
 		row.add_child(text)
-		if not fix.is_empty():
+		if Durability.needs_repair(s):
 			var rb := Button.new()
 			rb.text = "Repair"
 			rb.custom_minimum_size = Vector2(70, 0)
-			for item in fix:
-				rb.disabled = rb.disabled or inv.count_of(item) < fix[item]
 			var at := i
 			rb.pressed.connect(func():
 				GameAuthority.instance.ask_repair(at, station.station_id)
@@ -447,6 +453,15 @@ func _upgrade_rows(inv: Inventory) -> void:
 		l.text = "Nothing to upgrade here. (%s)" % ("copper and silver gear" if station.kind == "anvil" else "stone, wood, leather and shell gear")
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		_up_list.add_child(l)
+
+
+## How many worn things you carry or wear that a `kind` station can repair (for "Repair all").
+static func repairable_here(inv: Inventory, kind: String) -> int:
+	var n := 0
+	for s in inv.slots:
+		if Durability.needs_repair(s) and Upgrades.station_for(s.id) == kind:
+			n += 1
+	return n
 
 
 ## Can you make it right now (enough of everything, station level high enough)?

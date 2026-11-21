@@ -95,7 +95,7 @@ func shield_item() -> String:
 
 
 static func off_hand_free(ps: GameAuthority.PlayerState) -> bool:
-	return Lantern.is_on_back(ps) or ps.lantern_stowed or not Lantern.has_lantern(ps)
+	return Lantern.hands_free(ps) or ps.lantern_stowed or not Lantern.has_lantern(ps)
 
 
 ## A shield you carry, but the hand lantern is in your other hand (so it can't be used).

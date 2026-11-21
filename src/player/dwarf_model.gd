@@ -28,6 +28,9 @@ const METAL := Color(0.6, 0.6, 0.63)
 
 var right_arm: Node3D  ## shoulder pivot, rotates on X to swing
 var left_hand: Node3D  ## where the lantern hangs
+var hip: Node3D  ## follows the hips: the Hip Lantern hangs from the belt here (F562)
+const HIP_OUT := 0.26  ## the belt's side, from the middle of the hips (metres)
+const HIP_BACK := 0.0  ## a little behind the side, out of the shield's way
 var swinging := false
 var _mats := {}
 var _hand: Node3D  ## what the right hand holds
@@ -91,7 +94,17 @@ func _ready() -> void:
 	left_hand = Node3D.new()
 	left_hand.position = Vector3(0, -0.55, 0)
 	left_arm.add_child(left_hand)
+	hip = Node3D.new()
+	hip.position = Vector3(0, 0.55, 0)  # the belt
+	add_child(hip)
 	_rest()
+
+
+## Where the Hip Lantern's belt loop sits (world space): the belt at the left-hand side, a little behind.
+func hip_point() -> Vector3:
+	var b := global_basis.orthonormalized()
+	var side := -1.0 if to_local(left_hand.global_position).x < 0.0 else 1.0
+	return hip.global_position + b * Vector3(side * HIP_OUT, 0.0, HIP_BACK)
 
 
 ## Working on a build site with the Build Hammer: the same strong overhead swing, but it hits nothing.
@@ -332,6 +345,7 @@ func _build_dwarf_rig() -> void:
 	dwarf_rig.build(tunic)
 	_hand = dwarf_rig.grip  # (the rig turns it in the fist per tool and animation: DwarfRig.GRIPS)
 	left_hand = dwarf_rig.left_hand
+	hip = dwarf_rig.hip
 	right_arm = Node3D.new()  # (only used by the shapes look; kept so other code works)
 	add_child(right_arm)
 	set_held("")

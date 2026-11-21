@@ -35,7 +35,7 @@ Hours of doing mostly that one thing (the XP curve is tuned to match):
 | Mining | +3% dig power, −2% swing stamina | Pickaxe swings 10% faster | +10% chance of double ore | Crystal spots give +1 crystal | **Lucky hit:** 1 in 10 hits digs twice as hard |
 | Woodcutting | +3% chop power, −2% stamina | Axe swings 10% faster when chopping | +1 wood per Root Tree | Chopped roots grow back faster | 15% chance of double wood |
 | Gathering | +3% chance of an extra item | Pick things up from a bit further away | Things on the ground glow from further away | Mushrooms and plants regrow faster near you | Rare finds turn up more often |
-| Crafting | −3% craft time, better quality odds | Repair and upgrade cost 10% less | Chance to save 1 material | Craft several at once with no extra wait | Best quality possible on anything |
+| Crafting | −3% craft time, better quality odds | Upgrades cost 10% less (repairs are free, F568) | Chance to save 1 material | Craft several at once with no extra wait | Best quality possible on anything |
 | Cooking | −3% cook time, +2% food buff time | Cooking pots make 1 more dish at a time | Chance of a double dish | You can eat a 4th buff food | Your cooked food also heals a little |
 | Sword | +2% damage, −2% attack stamina | Quick step forward on the first swing | Parry window 20% bigger | 3rd hit of a combo does extra damage | Perfect parry gives a free critical hit back |
 | Axe (2-handed) | +2% damage, −2% stamina | Hits make enemies bleed a little | Hits 3 enemies instead of 2 | Heavy hits break enemy shields faster | Heavy sweep gives stamina back for each enemy hit |

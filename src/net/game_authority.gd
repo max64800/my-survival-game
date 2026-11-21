@@ -107,6 +107,7 @@ class PlayerState:
 	var hands_empty := false  ## the picked hotbar number pressed again: tool put away (owner, Nov 17)
 	var fuel := GameAuthority.MAX_FUEL
 	var needs_lantern := false  ## true = started with nothing: no light until a Lantern is made
+	var thrifty_saved := 0.0  ## Thrifty perk: wear skipped so far (1.0 = skip the next one)
 	var lantern_stowed := false  ## L: the lantern put away (no light, no fuel used) (owner, Nov 17)
 	var dig_target := Vector3.INF
 	var dig_hits := 0
@@ -1105,12 +1106,7 @@ func _rpc_repair(slot: int, station_id: int) -> void:
 		request_repair(multiplayer.get_remote_sender_id(), slot, station_id)
 
 
-## Repairs cost less with Thrifty (10% per rank) and Crafting ★25 (10%).
-static func repair_discount(p: Progression) -> float:
-	return 0.10 * p.perk_rank("thrifty") + (0.10 if p.has_star("crafting", 25) else 0.0)
-
-
-## Returns "" when done, otherwise why not.
+## Returns "" when done, otherwise why not. Repairing is free (owner F568: "like Valheim").
 func request_repair(peer_id: int, slot: int, station_id: int) -> String:
 	var ps := get_player(peer_id)
 	var st: Station = stations.get(station_id)
@@ -1123,14 +1119,8 @@ func request_repair(peer_id: int, slot: int, station_id: int) -> String:
 		return "Repair this at a %s." % Items.display_name(Upgrades.station_for(s.id))
 	if ps.node.global_position.distance_to(st.global_position) > 6.0:
 		return "Too far from the %s." % Items.display_name(st.kind)
-	var cost := Durability.repair_cost(s, repair_discount(ps.progress))
-	if cost.is_empty():
+	if not Durability.needs_repair(s):
 		return "It's like new."
-	for item in cost:
-		if ps.inventory.count_of(item) < cost[item]:
-			return "Needs %d %s." % [cost[item], Items.display_name(item)]
-	for item in cost:
-		ps.inventory.remove(item, cost[item])
 	s["used"] = 0
 	ps.inventory.changed.emit()
 	give_xp(peer_id, 2, "crafting")
@@ -1140,14 +1130,63 @@ func request_repair(peer_id: int, slot: int, station_id: int) -> String:
 	return ""
 
 
+func ask_repair_all(station_id: int) -> void:
+	if is_host():
+		request_repair_all(local_peer_id(), station_id)
+	else:
+		_rpc_repair_all.rpc_id(1, station_id)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_repair_all(station_id: int) -> void:
+	if is_host():
+		request_repair_all(multiplayer.get_remote_sender_id(), station_id)
+
+
+## "Repair all" at a station (F568): every worn thing you carry or wear that this station fixes. Returns how many.
+func request_repair_all(peer_id: int, station_id: int) -> int:
+	var ps := get_player(peer_id)
+	var st: Station = stations.get(station_id)
+	if ps == null or st == null or ps.node.global_position.distance_to(st.global_position) > 6.0:
+		return 0
+	var n := 0
+	for s in ps.inventory.slots:
+		if Durability.needs_repair(s) and Upgrades.station_for(s.id) == st.kind:
+			s["used"] = 0
+			n += 1
+	if n == 0:
+		return 0
+	ps.inventory.changed.emit()
+	give_xp(peer_id, 2 * n, "crafting")
+	if peer_id == local_peer_id():
+		Sfx.ui("craft", 0.0)
+		hud_message.emit("Repaired %d item%s: like new." % [n, "" if n == 1 else "s"])
+	return n
+
+
+## Thrifty (F568: repairs are free now, so it makes gear last longer): each rank skips 1 wear in 10.
+## Counted, not rolled, so a rank-3 tool lasts exactly 1/0.7 as long.
+static func thrifty_skips(ps: PlayerState) -> bool:
+	var rank := ps.progress.perk_rank("thrifty")
+	if rank <= 0:
+		return false
+	ps.thrifty_saved += 0.1 * rank
+	if ps.thrifty_saved >= 1.0:
+		ps.thrifty_saved -= 1.0
+		return true
+	return false
+
+
 ## Host: one use of the item in slot `i` (a dig, a chop, a hit, a block). Tells the player at 10% left and when it
 ## breaks. The bag is sent to the player only every 10 uses (and at those moments), not on every swing.
 func wear_slot(ps: PlayerState, i: int) -> void:
 	var s := ps.inventory.get_slot(i)
+	if Durability.wears(s.get("id", "")) and thrifty_skips(ps):
+		return
 	var what := Durability.wear(s)
 	var peer := _peer_of(ps)
 	if what == "broke":
-		tell(peer, "Your %s broke! Repair it at a %s." % [Upgrades.display_name(s), Items.display_name(Upgrades.station_for(s.id))])
+		tell(peer, "Your %s broke! Repair it at a %s (free)." % [Upgrades.display_name(s), Items.display_name(Upgrades.station_for(s.id))])
 	elif what == "warn":
 		tell(peer, "Your %s is almost worn out." % Upgrades.display_name(s))
 	if what != "" or (Durability.wears(s.get("id", "")) and Durability.used(s) % 10 == 0):

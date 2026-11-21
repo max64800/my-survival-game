@@ -572,6 +572,8 @@ func _refresh_slots() -> void:
 " + hits
 			if Durability.wears(s.id):
 				panel.tooltip_text += "\n" + Durability.status_text(s)
+			if Items.kind(s.id) == "lantern":
+				panel.tooltip_text += "\n" + Lantern.tip(s.id)  # F562: which one frees your hands
 			if Items.kind(s.id) == "page":
 				panel.tooltip_text += "\nRight-click to read it."
 			elif Foods.is_buff_food(s.id):  # healing hearts first, then the other effects (owner, Nov 19)

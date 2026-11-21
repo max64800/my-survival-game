@@ -469,7 +469,9 @@ func _aim_info() -> Dictionary:
 		return {kind = "door", name = "Door · E to %s" % ("close" if door.is_open else "open"), door_uid = door.uid}
 	if hit.collider is Station:
 		var st: Station = hit.collider
-		return {kind = "station", name = "%s · E to use" % Items.display_name(st.kind), station = st}
+		# F568: say that benches also upgrade and (freely) repair gear, so the side panel isn't missed.
+		var does := "E: craft, upgrade, repair (free)" if st.kind in ["workbench", "anvil"] else "E to use"
+		return {kind = "station", name = "%s · %s" % [Items.display_name(st.kind), does], station = st}
 	var poi_id := PoiField.poi_id_of(hit.collider)
 	if poi_id >= 0 and auth:
 		return {kind = "poi", poi_id = poi_id, name = "Rune shrine · E to take"}

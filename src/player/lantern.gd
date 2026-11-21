@@ -10,11 +10,16 @@ const EMPTY_RANGE := 4.5
 const EMPTY_ENERGY := 0.45
 const WARM := Color(1.0, 0.78, 0.52)
 const LOW_FUEL := 30.0  ## seconds left when it starts to flicker
+const HIP_RANGE := 13.0  ## the Hip Lantern (F562): both hands free, but the body blocks a little light
+const HOOK_MODEL := "res://assets/models/items/lantern_hip_hook.glb"
+const HOOK_DROP := 0.054  ## the hook's bottom, above the lantern's middle (it hangs on the carry ring)
+const BELT_ABOVE := 0.23  ## the belt loop's middle, above the lantern's middle
 
 var peer_id := 1
 var light: OmniLight3D
 var _glass_mat: StandardMaterial3D
 var _flicker := 0.0
+var _hook: Node3D  ## the belt hook, shown only on the hip
 
 
 func _ready() -> void:
@@ -78,6 +83,34 @@ func _piece(mesh: Mesh, mat: Material, pos: Vector3) -> MeshInstance3D:
 	return mi
 
 
+## The Hip Lantern (F562, owner Nov 21: "so fighting is easy"): hangs from the belt, both hands free.
+static func is_on_hip(ps: GameAuthority.PlayerState) -> bool:
+	return ps != null and (ps.inventory.equipped("lantern") == "lantern_hip"
+		or (not ps.inventory.is_player and ps.inventory.count_of("lantern_hip") > 0 and not is_on_back(ps)))
+
+
+## Is the off hand free for a shield or a two-hander (back or hip lantern)?
+static func hands_free(ps: GameAuthority.PlayerState) -> bool:
+	return is_on_back(ps) or is_on_hip(ps)
+
+
+## "hand", "hip" or "back".
+static func spot_of(ps: GameAuthority.PlayerState) -> String:
+	if is_on_back(ps):
+		return "back"
+	return "hip" if is_on_hip(ps) else "hand"
+
+
+## Tooltip line: where it sits and how far it lights.
+static func tip(id: String) -> String:
+	match id:
+		"lantern_hip":
+			return "Hangs on your belt: both hands free · %d m light" % int(HIP_RANGE)
+		"lantern_back":
+			return "On your back: both hands free · 16 m light"
+	return "Held in your left hand (no shield or two-handers) · %d m light" % int(FULL_RANGE)
+
+
 ## The back lantern (progression doc 5.4) sits above your head and frees both hands.
 static func is_on_back(ps: GameAuthority.PlayerState) -> bool:
 	return ps != null and (ps.inventory.equipped("lantern") == "lantern_back"
@@ -93,7 +126,7 @@ static func has_lantern(ps: GameAuthority.PlayerState) -> bool:
 	return ps.inventory.equipped("lantern") != ""  # it lights while it's in the lantern slot (F23)
 
 
-var _on_back := false
+var _spot := "hand"
 
 
 func _process(delta: float) -> void:
@@ -103,20 +136,16 @@ func _process(delta: float) -> void:
 	if not visible:
 		return
 	var fuel := ps.fuel if ps else GameAuthority.MAX_FUEL
-	var back := is_on_back(ps)
-	if back != _on_back:
-		_on_back = back
-		var model := get_parent()
-		while model and not model is DwarfModel:
-			model = model.get_parent()
-		if model:
-			reparent(model if back else (model as DwarfModel).left_hand, false)
-			position = Vector3(0, 1.75, 0.25) if back else Vector3.ZERO
-	if not back:
-		# Hang straight down from the hand, whatever the hand is doing (it swings, it doesn't tilt).
+	var spot := spot_of(ps)
+	if spot != _spot:
+		place(spot)
+	elif spot == "hip":
+		_to_belt()  # every frame: follows the hips (and the hip bone isn't posed yet in the first frames)
+	if spot != "back":
+		# Hang straight down from the hand or belt, whatever it's doing (it swings, it doesn't tilt).
 		var yaw := global_basis.z
 		global_basis = Basis(Vector3.UP, atan2(yaw.x, yaw.z))
-	var full_range := (16.0 if back else FULL_RANGE) * (ps.progress.lantern_range_mult() if ps else 1.0)  # (Lantern Bearer perk)
+	var full_range: float = {back = 16.0, hip = HIP_RANGE}.get(spot, FULL_RANGE) * (ps.progress.lantern_range_mult() if ps else 1.0)  # (Lantern Bearer perk)
 	var t := 1.0 if fuel > 0.0 else 0.0
 	if fuel > 0.0 and fuel < LOW_FUEL:
 		_flicker += delta * 14.0
@@ -125,3 +154,40 @@ func _process(delta: float) -> void:
 	light.omni_range = lerpf(light.omni_range, lerpf(EMPTY_RANGE, full_range, t), minf(1.0, delta * 4.0))
 	light.light_energy = lerpf(light.light_energy, energy, minf(1.0, delta * 6.0))
 	_glass_mat.emission_energy_multiplier = 0.6 + 2.4 * t
+
+
+## Move the lantern to the hand, the hip (on its belt hook) or the back.
+func place(spot: String) -> void:
+	_spot = spot
+	var model := get_parent()
+	while model and not model is DwarfModel:
+		model = model.get_parent()
+	if model == null:
+		return
+	var dm := model as DwarfModel
+	match spot:
+		"back":
+			reparent(dm, false)
+			position = Vector3(0, 1.75, 0.25)
+		"hip":
+			reparent(dm.hip, false)
+			_to_belt()
+		_:
+			reparent(dm.left_hand, false)
+			position = Vector3.ZERO
+	if spot == "hip" and _hook == null and ResourceLoader.exists(HOOK_MODEL):
+		_hook = (load(HOOK_MODEL) as PackedScene).instantiate()
+		_hook.position = Vector3(0, HOOK_DROP, 0)
+		add_child(_hook)
+		for mi: MeshInstance3D in _hook.find_children("*", "MeshInstance3D", true, false):
+			mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF  # (it would block the lantern's own light)
+	if _hook:
+		_hook.visible = spot == "hip"
+
+
+func _to_belt() -> void:
+	var dm := get_parent()
+	while dm and not dm is DwarfModel:
+		dm = dm.get_parent()
+	if dm:
+		global_position = (dm as DwarfModel).hip_point() - Vector3(0, BELT_ABOVE, 0)
