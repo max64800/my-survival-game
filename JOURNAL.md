@@ -8009,3 +8009,20 @@ wall upside down, a diagonal lattice, cutting a round hole, a round lid, the pyr
 - Version 12 of the Moves page broke: I put "the sword's" inside a single-quoted JS string, the apostrophe ended it, the page script died (no buttons, endless loading). Found by opening the page on localhost in a test browser and reading the console. Not a download problem; compressing the data was a detour (the page now loads a gzip'd file, about 15 MB).
 - I stopped the test server too early, so the owner's localhost tab closed. Owner wants localhost from now on: server stays running on port 8765 from the scratchpad moves folder.
 - Owner says the hands look huge/wide. Not changed yet: dwarf hands are 1.3x thick on purpose (DwarfProportions), and the left hand's roll shows them flat toward the camera.
+
+
+## Nov 22, 2026: ruin props, checks after VS Code closed (ruin-decor chat, part 2)
+
+**What we did**
+- VS Code closed mid-job. Nothing was lost: the ruin props were already committed (f9c786d2).
+- Owner: reuse is fine for the Kiln, but the Kiln ruin isn't in the game yet, so it was skipped. Only places that are
+  already built get props: Mossgate, Lampwick, Old Pell's (done before) and Watchtower, Outpost, Brewhall, Spire.
+  Twin Gate (3D page only) and Mossprop (another Claude is still building it) were left alone.
+- Ran every dungeon, ruin, loot and save check one at a time: all pass.
+
+**Mistakes and hurdles**
+- The full test run crashed: out of memory in test_build_geometry (look.gd `forged`) while 4 Claudes and their Godot
+  runs shared the PC. Not a code fault; running the checks one file at a time worked.
+- test_ruin_outpost takes over 10 minutes on a busy PC (the wood rebuild alone: 190 s), so it looked stuck. Running
+  each of its checks on its own (`fn=`) showed all pass.
+- Closing VS Code also stopped the background test runs; they had to be started again.
