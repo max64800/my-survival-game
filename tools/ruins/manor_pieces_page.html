@@ -85,6 +85,7 @@ ol { margin: 0; padding-left: 22px; display: grid; gap: 4px; }
 			<h2>1. Bracket</h2>
 			<ul><li><span>Size</span><span>0.5 &times; 1 m, sticks out 0.8 m</span></li></ul>
 			<p class="note">Holds up a floor that sticks out past the wall (a balcony). A rounded limestone foot, then 5 rows of bricks, each row reaching a bit further out (like an upside-down staircase), and a limestone cap on top.</p>
+			<p class="note">It snaps to 3 spots on each 2 m wall: both ends and the middle. Where two walls meet, one bracket covers both ends. Never over a door.</p>
 		</section>
 		<section>
 			<h2>2. Trim band + 3. its corner</h2>
@@ -121,7 +122,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 const NAMES = { wall: "Wall", doorway: "Doorway", window_wall: "Small window", floor: "Floor", floor_half: "Half floor",
-	railing: "Railing", roof_45: "Steep roof", gable_45: "Steep gable" };
+	railing: "Railing", stairs: "Stairs", roof_45: "Steep roof", gable_45: "Steep gable" };
 // Stations in a row: [key, x, label, camera distance]
 const STATIONS = [["alone", -6, "Alone", 12], ["house", 6, "On a house", 16]];
 
@@ -218,7 +219,7 @@ try {
 		for (const p of stations[key]) {
 			const at = new THREE.Matrix4().compose(new THREE.Vector3(p.pos[0] + ox, p.pos[1], p.pos[2]),
 				new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yawOf(p.rot)), new THREE.Vector3(1, 1, 1));
-			const h = { corbel: 1.0, cornice: 0.4, cornice_corner: 0.4, railing_narrow: 1.0, railing: 1.0, floor: 0.25, floor_half: 0.25, dormer: 2.0 }[p.id] ?? 2.0;
+			const h = { corbel: 1.0, cornice: 0.4, cornice_corner: 0.4, railing_narrow: 1.0, railing: 1.0, floor: 0.25, floor_half: 0.25, dormer: 2.0, stairs: 2.0 }[p.id] ?? 2.0;
 			top = Math.max(top, p.pos[1] + h);
 			let plane = null;
 			if (p.star) { plane = new THREE.Plane(new THREE.Vector3(0, -1, 0), p.pos[1] + h); starClips.push([plane, p.pos[1], h]); }
