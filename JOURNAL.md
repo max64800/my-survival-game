@@ -7442,3 +7442,25 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - **Tests:** test_skeleton_miners 11/11 (new test), scripts_load passes. test_monsters failed once on the sword ★75
   jump-attack check (a Rock Snail, untouched by this); with my files set back it passed, and with them again it
   passed too (50/50): a random one, not this change. Not yet seen in a real fight: the owner tries it.
+
+## November 21, 2026 (PC, kiln page Claude): ruin 5, the Old Kiln, as a 3D page (F479)
+- **What we did:** the Old Kiln's page stage, the same steps as the Spire. A new blueprint `hearthbrick_kiln` (and
+  `wooden_kiln`, whose kiln stays brick: a wooden oven would burn) in `BlueprintLibrary.make()` only, not in IDS yet:
+  a fat 12-sided brick kiln open on top (a gallery round the inside with its middle open, stairs up, two round doors),
+  a lean-to firewood shed against its right side, the kiln-master's two-floor house with a peaked roof, and a yard
+  with brick half walls. The ring helpers (`_ring_layer`, `_ring_edges`, ...) got an optional material (stone stays
+  the default, so the old towers don't change). `tools/ruins/make_kiln_ruin.py` breaks it into
+  `blueprints/ruins/kiln_ruin.json` (230 pieces, 3 chests, 4 beetles) and writes the page files. Two new wreck models
+  by Blender script (`builds/hearthbrick_v2_kiln.py`), saved in `journey/hearthbrick_v2/glb/`, not in the game:
+  the fallen kiln rim chunk and a toppled brick stack. Page `tools/ruins/kiln_page.html`:
+  https://claude.ai/artifact/QB4Sz6JymBJRyjgftFmgau
+- **Checks:** the game's own blueprint checks (nothing outside the box, nothing overlaps, nothing falls) run on both
+  kiln blueprints: 0 problems. Rebuild cost worked out with the game's price list: wood 44 pieces (276 planks, 30
+  rope, 76 clay bricks for the kiln), brick 61 pieces (388 clay bricks, 61 mortar).
+- **Hurdles / Claude's slips:** (1) two broken walls were first "turned round" so their high end pointed the wrong way
+  (a collapsed wall's high end already sat away from the break); fixed in the script before making anything.
+  (2) The brick stack model sat off its spot (34 cm past its box); now centred. (3) A long shell command with quotes
+  broke the shell; moved it into a script file. (4) The browser tool would not connect, so the page was photographed
+  with Chrome on its own (headless) instead: 3 photos, all fine.
+- **Waiting for the owner:** the look, and whether the wooden version should keep the kiln brick (like the Brewhall's
+  chimney). Then the game stage (like the Brewhall's, commit 7cc3fe22).

@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Old Kiln</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@500;700&family=Alegreya+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one lantern-lit cave stage with the three kiln yards in a row (the ruin on the right, its fallen rim lying
+   out past it), a plan sheet beside it (under it on phones). One look on purpose: the ruin lives underground. */
+:root {
+	--rock: #17130f;
+	--sheet: #221b15;
+	--line: #4a3b2c;
+	--ink: #efe3cf;
+	--dim: #b9a68b;
+	--lantern: #e7a24a;
+	--lantern-ink: #1d140b;
+	--new: #ff9a3d;
+	--display: "Alegreya SC", Georgia, "Times New Roman", serif;
+	--body: "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+	--mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+	color-scheme: dark;
+}
+html, body { height: 100%; margin: 0; }
+body { background: var(--rock); color: var(--ink); font: 16px/1.5 var(--body); }
+.wrap { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 340px; grid-template-rows: minmax(0, 1fr); gap: 16px;
+	padding: 16px; box-sizing: border-box; }
+.stage { position: relative; min-height: 420px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #0d0a08; }
+canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.tools { position: absolute; left: 12px; right: 12px; bottom: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.views { position: absolute; left: 12px; top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+button { font: 600 14px var(--body); color: var(--ink); background: #1d1711dd; border: 1px solid var(--line); border-radius: 6px; padding: 7px 12px; cursor: pointer; }
+button:hover { border-color: var(--lantern); }
+button:focus-visible { outline: 2px solid var(--lantern); outline-offset: 2px; }
+button[aria-pressed="true"] { background: var(--lantern); color: var(--lantern-ink); border-color: var(--lantern); }
+.hint { margin-left: auto; color: var(--dim); font: 13px var(--body); }
+#loading[hidden] { display: none; }
+#loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--dim); font: 14px var(--mono); pointer-events: none; text-align: center; padding: 16px; }
+aside { background: var(--sheet); border: 1px solid var(--line); border-radius: 8px; padding: 20px 18px; display: flex; flex-direction: column; gap: 18px; min-width: 0; overflow-y: auto; }
+h1 { font: 700 32px/1.1 var(--display); margin: 0; letter-spacing: .01em; text-wrap: balance; }
+.lede { margin: 6px 0 0; color: var(--dim); }
+h2 { font: 700 13px var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--lantern); margin: 0 0 8px; }
+ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+li { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dashed var(--line); padding-bottom: 3px; }
+li span:last-child { font: 500 14px var(--mono); font-variant-numeric: tabular-nums; color: var(--ink); text-align: right; }
+.note { font-size: 14px; color: var(--dim); margin: 8px 0 0; }
+.ask { border: 1px solid var(--lantern); border-radius: 6px; padding: 10px 12px; font-size: 15px; }
+.ask p { margin: 0; }
+.ask p + p { margin-top: 8px; }
+.swatch { display: inline-block; width: 11px; height: 11px; border-radius: 2px; background: var(--new); vertical-align: -1px; margin-right: 4px; }
+@media (max-width: 860px) {
+	.wrap { height: auto; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; }
+	.stage { min-height: 75vh; }
+	aside { overflow: visible; }
+	.hint { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+	<div class="stage" id="stage">
+		<div id="loading">Building the Old Kiln&hellip;</div>
+		<div class="views" role="group" aria-label="Which kiln yard to look at">
+			<button id="v_all" aria-pressed="true">All three</button>
+			<button id="v_ruin">The ruin</button>
+			<button id="v_wood">Rebuilt in wood</button>
+			<button id="v_brick">Rebuilt in brick</button>
+		</div>
+		<div class="tools" role="group" aria-label="Look at the kiln yard">
+			<button id="mark" aria-pressed="false">Mark new pieces</button>
+			<button id="roof" aria-pressed="true">Roof on</button>
+			<button id="upper" aria-pressed="true">Upper floor on</button>
+			<span class="hint">Drag to turn &middot; scroll to zoom &middot; right-drag to move</span>
+		</div>
+	</div>
+	<aside>
+		<header>
+			<h1>The Old Kiln</h1>
+			<p class="lede">The fifth ruin: where the kiln-master fired Hearthbrick. A fat round brick kiln, open on top like a giant chimney, a lean-to shed against it, and the kiln-master's two-floor house with a walled yard. Left: rebuilt with root planks. Middle: rebuilt with clay bricks, as it first stood. Right: the ruin as you find it.</p>
+		</header>
+		<section>
+			<h2>What you find</h2>
+			<ul>
+				<li><span>Kiln, 12 sides</span><span>7.7 m wide, 6.25 m tall</span></li>
+				<li><span>House</span><span>12 &times; 8 m, 2 floors</span></li>
+				<li><span>Yard in front</span><span>12 &times; 6 m</span></li>
+				<li><span>Whole place</span><span>about 32 &times; 15 m</span></li>
+				<li><span>Flat base space round it</span><span>yes (your pick)</span></li>
+			</ul>
+			<p class="note">A piece of the kiln's rim broke off on its right side and fell across the shed, crushing its roof; it lies on the floor past the shed. The kiln's upper wall is broken down there, most of the rim is gone, and a piece of the gallery floor fell in. Its last load of bricks still stands, half toppled, on the firing floor. The house's roof caved in at its left end and took the upstairs corner with it; doors gone, worn walls, two yard walls fallen. Three chests (one up on the kiln's gallery) and four rock beetles.</p>
+		</section>
+		<section>
+			<h2>Rebuild in wood</h2>
+			<ul id="cost_wood"></ul>
+			<p class="note">The house, the shed and the yard walls come back in wood; whole and worn brick walls stay (unless something new goes on top of one). The kiln itself is rebuilt in brick even here: a wooden oven would burn (like the Brewhall's chimney).</p>
+		</section>
+		<section>
+			<h2>Rebuild in brick</h2>
+			<ul id="cost_brick"></ul>
+			<p class="note">Worn walls are rebuilt too, so every gap closes. Either way the wreckage is cleared and you learn both blueprints, the Wooden Kiln and the Hearthbrick Kiln, plus building XP.</p>
+		</section>
+		<section>
+			<h2>What makes it different</h2>
+			<div class="ask">
+				<p>The kiln is <b>open on top</b>: inside, a gallery runs round the wall at the first floor, its middle open, so from up there you look straight down onto the firing floor (railings round the hole). Stairs up on the back left, their foot on open floor.</p>
+				<p>Two round doors into the kiln: the front one, and one on the right into the firewood shed. The house has a front door to the yard and a side door toward the kiln, steps landing on open ground, no window beside a door.</p>
+				<p>Two new wreck models: the <b>fallen rim chunk</b> and a <b>toppled brick stack</b> (you hit it to clear it).</p>
+			</div>
+		</section>
+		<p class="note"><span class="swatch"></span>"Mark new pieces" glows orange on every piece the rebuild adds.</p>
+	</aside>
+</div>
+
+<script type="importmap">
+{ "imports": {
+	"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+	"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+const COST = {"wood":[["New pieces","44"],["Rootwood Plank","276"],["Rope","30"],["Clay Brick (the kiln)","76"],["Mortar","14"]],"brick":[["New pieces","61"],["Clay Brick","388"],["Mortar","61"]]};
+for (const k of ["wood", "brick"]) {
+	document.getElementById("cost_" + k).innerHTML = COST[k].map(([a, b]) => `<li><span>${a}</span><span>${b}</span></li>`).join("");
+}
+
+const loadingEl = document.getElementById("loading");
+const stage = document.getElementById("stage");
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.shadowMap.enabled = true;
+stage.prepend(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d0a08);
+scene.fog = new THREE.Fog(0x0d0a08, 80, 170);
+const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 400);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.maxPolarAngle = Math.PI * 0.49;
+controls.minDistance = 3;
+controls.maxDistance = 130;
+
+scene.add(new THREE.HemisphereLight(0x9fb2c8, 0x2a1d12, 0.95));
+const sun = new THREE.DirectionalLight(0xffd9a8, 2.2);
+sun.position.set(18, 34, 26);
+sun.castShadow = true;
+sun.shadow.mapSize.set(4096, 4096);
+Object.assign(sun.shadow.camera, { left: -80, right: 80, top: 40, bottom: -40, far: 140 });
+scene.add(sun);
+
+// Three kiln yards in a row, 40 m apart: the ruin on the right, so its fallen rim can lie out past it.
+const VIEWS = [["wood", -40, "Rebuilt in wood"], ["brick", 0, "Rebuilt in brick"], ["ruin", 40, "The ruin"]];
+const floorMesh = new THREE.Mesh(new THREE.PlaneGeometry(170, 70), new THREE.MeshStandardMaterial({ color: 0x2b241d, roughness: 1 }));
+floorMesh.rotation.x = -Math.PI / 2;
+floorMesh.position.set(2, 0, 2);
+floorMesh.receiveShadow = true;
+scene.add(floorMesh);
+
+function label(text, x) {
+	const c = document.createElement("canvas");
+	c.width = 512; c.height = 96;
+	const g = c.getContext("2d");
+	g.font = "700 54px 'Alegreya SC', Georgia, serif";
+	g.fillStyle = "#e7a24a";
+	g.textAlign = "center";
+	g.fillText(text, 256, 66);
+	const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false }));
+	s.scale.set(12, 2.25, 1);
+	s.position.set(x, 11.5, 0);
+	scene.add(s);
+}
+
+// Artifact pages may not fetch blob:/data: URLs, which three.js uses for pictures inside a model: rebuild each
+// model into one binary here, and load its pictures as plain <img>.
+globalThis.createImageBitmap = undefined;
+const loader = new GLTFLoader();
+async function loadModel(url) {
+	const j = await (await fetch(url)).json();
+	const uri = j.buffers[0].uri, b64 = uri.slice(uri.indexOf(",") + 1);
+	const raw = atob(b64), bin = new Uint8Array(raw.length);
+	for (let i = 0; i < raw.length; i++) bin[i] = raw.charCodeAt(i);
+	delete j.buffers[0].uri; j.buffers[0].byteLength = bin.length;
+	const js = new TextEncoder().encode(JSON.stringify(j));
+	const pad = n => (4 - (n % 4)) % 4;
+	const jsLen = js.length + pad(js.length), binLen = bin.length + pad(bin.length);
+	const out = new Uint8Array(12 + 8 + jsLen + 8 + binLen), dv = new DataView(out.buffer);
+	dv.setUint32(0, 0x46546C67, true); dv.setUint32(4, 2, true); dv.setUint32(8, out.length, true);
+	dv.setUint32(12, jsLen, true); dv.setUint32(16, 0x4E4F534A, true);
+	out.set(js, 20); out.fill(0x20, 20 + js.length, 20 + jsLen);
+	const b0 = 20 + jsLen;
+	dv.setUint32(b0, binLen, true); dv.setUint32(b0 + 4, 0x004E4942, true);
+	out.set(bin, b0 + 8);
+	return (await loader.parseAsync(out.buffer, "")).scene;
+}
+
+const layers = { roof: [], upper: [] };
+const glowMats = [];
+const yawOf = r => (r < 4 ? r * 90 : (r - 4) * 30) * Math.PI / 180;
+try {
+	const bp = await (await fetch("bp.json")).json();
+	const keyOf = p => (p.mat === "prop" ? p.id : `${p.id}__${p.mat}`);
+	const kinds = [...new Set(Object.values(bp.views).flat().map(keyOf))];
+	const models = {};
+	let done = 0;
+	await Promise.all(kinds.map(async (k) => {
+		const m = await loadModel(`m/${k}.json`);
+		m.updateMatrixWorld(true);
+		const parts = [];
+		m.traverse(o => { if (o.isMesh) parts.push({ geo: o.geometry, mat: o.material, local: o.matrixWorld.clone() }); });
+		models[k] = parts;
+		loadingEl.textContent = `Building the Old Kiln… ${++done} of ${kinds.length} kinds of piece`;
+	}));
+	// One InstancedMesh per kind of piece, per yard, per layer (roofs / upper floor / the rest), per new-or-old.
+	const groups = {};
+	for (const [view, ox] of VIEWS) {
+		for (const p of bp.views[view] || []) {
+			const y = p.pos[1];
+			const roofy = p.id.startsWith("roof_") || p.id === "gable_26" || (p.id === "half_wall" && y > 5 && p.pos[0] < -1);
+			const layer = roofy ? "roof" : (y > 2.9 ? "upper" : "base");
+			const gk = [keyOf(p), view, layer, p.new ? 1 : 0].join("|");
+			const m = new THREE.Matrix4().compose(new THREE.Vector3(p.pos[0] + ox, y, p.pos[2]),
+				new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yawOf(p.rot)), new THREE.Vector3(1, 1, 1));
+			(groups[gk] ||= { key: keyOf(p), layer, isNew: !!p.new, mats: [] }).mats.push(m);
+		}
+	}
+	const tmp = new THREE.Matrix4();
+	for (const g of Object.values(groups)) {
+		for (const part of models[g.key]) {
+			let mat = part.mat;
+			if (g.isNew) {
+				mat = part.mat.clone();
+				mat.emissive = new THREE.Color(0xff7a1a);
+				mat.emissiveIntensity = 0;
+				glowMats.push(mat);
+			}
+			const im = new THREE.InstancedMesh(part.geo, mat, g.mats.length);
+			g.mats.forEach((m, i) => im.setMatrixAt(i, tmp.multiplyMatrices(m, part.local)));
+			im.castShadow = im.receiveShadow = true;
+			im.computeBoundingSphere();
+			scene.add(im);
+			if (g.layer !== "base") layers[g.layer].push(im);
+		}
+	}
+	for (const [, ox, text] of VIEWS) label(text, ox);
+	show("all");
+	loadingEl.hidden = true;
+} catch (err) {
+	loadingEl.textContent = "Couldn't build the Old Kiln: " + err.message;
+	console.error(err);
+}
+
+// Camera spots: from the front, a little above; the ruin's view takes in its wreckage too.
+function show(which) {
+	const ox = { all: 2, ruin: 42, wood: -40, brick: 0 }[which];
+	const at = new THREE.Vector3(ox, 3, 1);
+	const dist = which === "all" ? 112 : 44;
+	camera.position.copy(at).add(new THREE.Vector3(which === "all" ? 0.15 : 0.35, 0.5, 0.85).normalize().multiplyScalar(dist));
+	controls.target.copy(at);
+	const cam = new URLSearchParams(location.search).get("cam");  // test views: ?cam=x,y,z,tx,ty,tz
+	if (cam) {
+		const v = cam.split(",").map(Number);
+		camera.position.set(v[0], v[1], v[2]);
+		controls.target.set(v[3], v[4], v[5]);
+	}
+	for (const k of ["all", "ruin", "wood", "brick"]) document.getElementById("v_" + k).setAttribute("aria-pressed", k === which);
+}
+for (const k of ["all", "ruin", "wood", "brick"]) document.getElementById("v_" + k).onclick = () => show(k);
+
+const roofBtn = document.getElementById("roof"), upperBtn = document.getElementById("upper"), markBtn = document.getElementById("mark");
+function applyLayers() {
+	const roofOn = roofBtn.getAttribute("aria-pressed") === "true", upOn = upperBtn.getAttribute("aria-pressed") === "true";
+	layers.roof.forEach(m => (m.visible = roofOn && upOn));
+	layers.upper.forEach(m => (m.visible = upOn));
+}
+roofBtn.onclick = () => { const on = roofBtn.getAttribute("aria-pressed") !== "true"; roofBtn.setAttribute("aria-pressed", on); roofBtn.textContent = on ? "Roof on" : "Roof off"; applyLayers(); };
+upperBtn.onclick = () => { const on = upperBtn.getAttribute("aria-pressed") !== "true"; upperBtn.setAttribute("aria-pressed", on); upperBtn.textContent = on ? "Upper floor on" : "Upper floor off"; applyLayers(); };
+markBtn.onclick = () => {
+	const on = markBtn.getAttribute("aria-pressed") !== "true";
+	markBtn.setAttribute("aria-pressed", on);
+	glowMats.forEach(m => (m.emissiveIntensity = on ? 0.55 : 0));
+};
+
+function resize() {
+	const w = stage.clientWidth, h = stage.clientHeight;
+	renderer.setSize(w, h, false);
+	camera.aspect = w / h;
+	camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(stage);
+resize();
+renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
+</script>
+</body>
+</html>

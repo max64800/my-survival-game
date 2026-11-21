@@ -74,6 +74,11 @@ static func make(id: String) -> Blueprint:
 			lib._brewhall()
 			lib._to_wood()
 			lib._brewhall_chimney_stays_brick()
+		"hearthbrick_kiln": lib._old_kiln()  # (owner, Nov 21: ruin 5, F479; not learnable yet, its 3D page first)
+		"wooden_kiln":  # (the kiln itself stays brick: a wooden oven would burn)
+			lib._old_kiln()
+			lib._to_wood()
+			lib._kiln_stays_brick()
 		_: return null
 	lib._bp.name = NAMES.get(id, id)
 	lib._bp.author = "Dwarf Game"
@@ -373,49 +378,50 @@ func _rot(steps: int) -> int:
 
 
 ## One flat layer of the 12-sided plan (foundations or floors); `skip_square` = a square left open (stairs hole).
-func _ring_layer(square_id: String, tri_id: String, y: float, skip_square: int = -1) -> void:
+func _ring_layer(square_id: String, tri_id: String, y: float, skip_square: int = -1, mat := STONE, middle := true) -> void:
 	for k in 6:
 		var n := _dir(2 * k)
-		_add(tri_id, STONE, n * (_APO * 2.0 / 3.0) + Vector3(0, y, 0) + _ring_off, _rot(2 * k))          # middle hexagon
+		if middle:
+			_add(tri_id, mat, n * (_APO * 2.0 / 3.0) + Vector3(0, y, 0) + _ring_off, _rot(2 * k))          # middle hexagon
 		if k != skip_square:
-			_add(square_id, STONE, n * (_APO + 1.0) + Vector3(0, y, 0) + _ring_off, _rot(2 * k))         # square on its edge
+			_add(square_id, mat, n * (_APO + 1.0) + Vector3(0, y, 0) + _ring_off, _rot(2 * k))         # square on its edge
 		var u := _dir(2 * k + 1)
-		_add(tri_id, STONE, u * (2.0 + 2.0 / sqrt(3.0)) + Vector3(0, y, 0) + _ring_off, _rot(2 * k + 1))  # triangle in the gap
+		_add(tri_id, mat, u * (2.0 + 2.0 / sqrt(3.0)) + Vector3(0, y, 0) + _ring_off, _rot(2 * k + 1))  # triangle in the gap
 
 
 ## The 12 outer edges at height y: `pick(j)` says which piece goes on edge j ("" = nothing).
-func _ring_edges(y: float, pick: Callable) -> void:
+func _ring_edges(y: float, pick: Callable, mat := STONE) -> void:
 	for j in 12:
 		var id: String = pick.call(j)
 		if id != "":
-			_add(id, STONE, _dir(j) * _EDGE + Vector3(0, y, 0) + _ring_off, _rot(j))
+			_add(id, mat, _dir(j) * _EDGE + Vector3(0, y, 0) + _ring_off, _rot(j))
 
 
 ## Stone pillars on the 12 outer corners (they cover the joints where two walls meet at an angle). Not the ones in
 ## `skip`: corner j sits between edges j and j+1, and a pillar beside a doorway cut into its arch stones (owner).
-func _ring_pillars(y: float, skip: Array = []) -> void:
+func _ring_pillars(y: float, skip: Array = [], mat := STONE) -> void:
 	for j in 12:
 		if j in skip:
 			continue
 		var a := (j + 0.5) * PI / 6.0
-		_add("pillar", STONE, Vector3(sin(a), 0, cos(a)) * (_CORNER - 0.05) + Vector3(0, y, 0) + _ring_off, _rot(j))
+		_add("pillar", mat, Vector3(sin(a), 0, cos(a)) * (_CORNER - 0.05) + Vector3(0, y, 0) + _ring_off, _rot(j))
 
 
 ## Stairs in square `k` climbing along the ring (toward yaw step 2k+3). Stairs are 2 m tall but Stonehold floors are
 ## 2.25 m apart: a floor slab under them lifts them so their top step meets the next floor (owner: a lip at the top
 ## made the dwarf hop going down and struggle going up).
-func _ring_stairs(k: int, y: float) -> void:
-	_add("floor", STONE, _dir(2 * k) * (_APO + 1.0) + Vector3(0, y, 0) + _ring_off, _rot(2 * k))
-	_add("stairs", STONE, _dir(2 * k) * (_APO + 1.0) + Vector3(0, y + 0.25, 0) + _ring_off, _rot(2 * k + 9))
+func _ring_stairs(k: int, y: float, mat := STONE) -> void:
+	_add("floor", mat, _dir(2 * k) * (_APO + 1.0) + Vector3(0, y, 0) + _ring_off, _rot(2 * k))
+	_add("stairs", mat, _dir(2 * k) * (_APO + 1.0) + Vector3(0, y + 0.25, 0) + _ring_off, _rot(2 * k + 9))
 
 
 ## Railings round the stairs hole in square `k` on the floor above: its inner edge and the side the stairs
 ## start from (the far side stays open: that's where you step off).
-func _ring_rails(k: int, y: float) -> void:
+func _ring_rails(k: int, y: float, mat := STONE) -> void:
 	var n := _dir(2 * k)
 	var t := _dir(2 * k + 3)
-	_add("railing", STONE, n * _APO + Vector3(0, y, 0) + _ring_off, _rot(2 * k))
-	_add("railing", STONE, n * (_APO + 1.0) - t + Vector3(0, y, 0) + _ring_off, _rot(2 * k + 3))
+	_add("railing", mat, n * _APO + Vector3(0, y, 0) + _ring_off, _rot(2 * k))
+	_add("railing", mat, n * (_APO + 1.0) - t + Vector3(0, y, 0) + _ring_off, _rot(2 * k + 3))
 
 
 func _stone_watchtower() -> void:
@@ -946,6 +952,129 @@ func _brew_chimney_level(y: float, mat: String) -> void:
 func _brewhall_chimney_stays_brick() -> void:
 	for p in _bp.pieces:
 		if p.pos.x > 6.1:
+			p.mat = BRICK
+
+
+## Owner, Nov 21 (ruin 5 of Zone 1, F479): the Old Kiln, where the kiln-master fired Hearthbrick. Clay brick.
+## Plan on the 2 m grid (x right, z front):
+##   - The kiln (centre x 6.27, z -1): a fat round brick oven tower on the watchtower's 12-sided ring, open on top
+##     like a giant chimney. The firing floor on foundations (0..1), its round door at the front (steps up to it), a
+##     second round door on its right into the shed. Walls 1..3, then a gallery floor at 3 round the inside (its
+##     middle open: you look down into the firing floor, railings round the hole), stairs up to it on the back left
+##     (their foot on open floor), walls 3.25..5.25 with two small windows, a half-wall rim on top (to 6.25).
+##   - The lean-to shed (x 10..14, z -2..0) against the kiln's right side (its flat side is exactly on x 10): one
+##     slope from the kiln wall down to its end wall, open at the front (a pillar at the corner), for firewood.
+##   - The kiln-master's house (x -14..-2, z -6..2): two floors on foundations, a peaked roof (ridge along x, gables
+##     at both ends), the round front door into the yard, a side door toward the kiln (steps up to both, landing on
+##     open ground), stairs inside climbing to the back (railings round their hole). Few windows, none beside a door.
+##   - The yard (x -14..-2, z 2..8) in front of the house: brick half walls round it, a gate gap in front of the
+##     door and one on the kiln side.
+## Heights: foundations 0..1, walls 1..3, floors at 3, walls 3.25..5.25, the house roof from 5.25 (ridge 7.25).
+## No flat roof anywhere (Hearthbrick roofs slope); no furniture (you furnish it yourself).
+const _KILN := Vector3(6.268, 0, -1)   # the kiln's middle: its right flat side lands on x = 10 (3.732 m out)
+
+
+func _old_kiln() -> void:
+	_start(Vector3(30, 8, 18))
+	var B := BRICK
+	# --- the kiln
+	_ring_off = _KILN
+	_ring_layer("foundation", "foundation_triangle", 0.0, -1, B)
+	_add("foundation_steps", B, _dir(0) * (_EDGE + 1.0) + _KILN, 0)                    # up to its round front door
+	var g := 1.0
+	_ring_edges(g, func(j): return "doorway" if j in [0, 3] else "wall", B)
+	_add("door", B, _dir(0) * _EDGE + Vector3(0, g, 0) + _KILN, 0)
+	_add("door", B, _dir(3) * _EDGE + Vector3(0, g, 0) + _KILN, _rot(3))              # into the shed
+	_ring_pillars(g, [11, 0, 2, 3], B)                                                  # (none beside a doorway)
+	_ring_stairs(4, g, B)                                                               # back left, up to the gallery
+	var f2 := 3.0
+	_ring_layer("floor", "floor_triangle", f2, 4, B, false)                             # the gallery: its middle open
+	for k in 6:                                                                         # railings round the open middle
+		_add("railing", B, _dir(2 * k) * _APO + Vector3(0, f2 + 0.25, 0) + _KILN, _rot(2 * k))
+	_add("railing", B, _dir(8) * (_APO + 1.0) - _dir(11) + Vector3(0, f2 + 0.25, 0) + _KILN, _rot(11))   # stairs' foot side
+	var w2 := f2 + 0.25
+	_ring_edges(w2, func(j): return "window_wall" if j in [6, 9] else "wall", B)
+	_ring_pillars(w2, [], B)
+	_ring_edges(w2 + 2.0, func(_j): return "half_wall", B)                             # the rim (open on top)
+	_ring_off = Vector3.ZERO
+	# --- the lean-to shed against the kiln's right side (x 10..14, z -2..0)
+	_add("foundation", B, Vector3(11, 0, -1), 0)
+	_add("foundation", B, Vector3(13, 0, -1), 0)
+	_wall_x("wall", 11, -2, g, B)
+	_wall_x("wall", 13, -2, g, B)
+	_wall_z("wall", 14, -1, g, B)
+	_add("pillar", B, Vector3(13.95, g, -0.05), 0)                                      # the open front's corner
+	_add("roof_26", B, Vector3(11, 4.0, -1), 1)                                         # one slope, high by the kiln
+	_add("roof_26", B, Vector3(13, 3.0, -1), 1)
+	_wall_x("half_wall", 11, -2, 3.0, B)
+	_add("gable_26", B, Vector3(11, 4.0, -2), 2)
+	_add("gable_26", B, Vector3(13, 3.0, -2), 2)
+	# --- the kiln-master's house (x -14..-2, z -6..2)
+	var hx := [-13, -11, -9, -7, -5, -3]
+	var hz := [-5, -3, -1, 1]
+	for x in hx:
+		for z in hz:
+			_add("foundation", B, Vector3(x, 0, z), 0)
+	_add("foundation_steps", B, Vector3(-9, 0, 3), 0)     # from the yard up to the front door
+	_add("foundation_steps", B, Vector3(-1, 0, -3), 1)    # from the kiln side up to the side door
+	var y := 1.0
+	for e in [["window_wall", -13], ["wall", -11], ["doorway", -9], ["wall", -7], ["window_wall", -5], ["wall", -3]]:
+		_wall_x(e[0], e[1], 2, y, B)
+	for e in [["wall", -13], ["wall", -11], ["window_wall", -9], ["wall", -7], ["wall", -5], ["wall", -3]]:
+		_wall_x(e[0], e[1], -6, y, B)
+	for e in [["wall", -5], ["window_wall", -3], ["wall", -1], ["wall", 1]]:
+		_wall_z(e[0], -14, e[1], y, B)
+	for e in [["wall", -5], ["doorway", -3], ["wall", -1], ["wall", 1]]:
+		_wall_z(e[0], -2, e[1], y, B)
+	_add("door", B, Vector3(-9, y, 2), 0)
+	_add("door", B, Vector3(-2, y, -3), 1)
+	# stairs in the left half climbing to the back, their foot on open floor (a slab lifts their top to the floor)
+	_add("floor", B, Vector3(-11, y, -3), 0)
+	_add("stairs", B, Vector3(-11, y + 0.25, -3), 0)
+	var y2 := 3.0
+	for x in hx:
+		for z in hz:
+			if not (x == -11 and z == -3):
+				_add("floor", B, Vector3(x, y2, z), 0)
+	var y3 := y2 + 0.25
+	_wall_z("railing", -12, -3, y3, B)
+	_wall_z("railing", -10, -3, y3, B)
+	_wall_x("railing", -11, -2, y3, B)
+	for e in [["wall", -13], ["window_wall", -11], ["wall", -9], ["wall", -7], ["window_wall", -5], ["wall", -3]]:
+		_wall_x(e[0], e[1], 2, y3, B)
+	for e in [["wall", -13], ["wall", -11], ["wall", -9], ["window_wall", -7], ["wall", -5], ["wall", -3]]:
+		_wall_x(e[0], e[1], -6, y3, B)
+	for e in [["wall", -5], ["wall", -3], ["window_wall", -1], ["wall", 1]]:
+		_wall_z(e[0], -14, e[1], y3, B)
+	for e in [["wall", -5], ["wall", -3], ["window_wall", -1], ["wall", 1]]:
+		_wall_z(e[0], -2, e[1], y3, B)
+	# the roof: ridge along x at z = -2, two rows each side; gables at both ends (half walls under the upper ones)
+	var top := y3 + 2.0
+	for x in hx:
+		_add("roof_26", B, Vector3(x, top, 1), 0)
+		_add("roof_26", B, Vector3(x, top + 1.0, -1), 0)
+		_add("roof_26", B, Vector3(x, top + 1.0, -3), 2)
+		_add("roof_26", B, Vector3(x, top, -5), 2)
+	for gx in [-14, -2]:
+		_add("gable_26", B, Vector3(gx, top, 1), 1)
+		_wall_z("half_wall", gx, -1, top, B)
+		_add("gable_26", B, Vector3(gx, top + 1.0, -1), 1)
+		_wall_z("half_wall", gx, -3, top, B)
+		_add("gable_26", B, Vector3(gx, top + 1.0, -3), 3)
+		_add("gable_26", B, Vector3(gx, top, -5), 3)
+	# --- the yard: brick half walls round it on the ground, a gate gap in front of the door and one toward the kiln
+	for x in [-13, -11, -7, -5, -3]:
+		_wall_x("half_wall", x, 8, 0.0, B)
+	for z in [3, 5, 7]:
+		_wall_z("half_wall", -14, z, 0.0, B)
+	for z in [3, 7]:
+		_wall_z("half_wall", -2, z, 0.0, B)
+
+
+## The Wooden Kiln keeps its kiln in brick (a wooden oven would burn): only the house, the yard and the shed are wood.
+func _kiln_stays_brick() -> void:
+	for p in _bp.pieces:
+		if p.pos.x > 0.0 and p.pos.x < 10.5:
 			p.mat = BRICK
 
 
