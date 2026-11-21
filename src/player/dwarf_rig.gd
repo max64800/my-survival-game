@@ -926,7 +926,11 @@ static func attack_seconds(weapon: String, heavy: bool, step: int, fallback: flo
 	var moves: Array = ATTACKS[weapon]
 	var what: String = moves[1] if heavy else (moves[0] as Array)[maxi(step, 0) % (moves[0] as Array).size()]
 	var clip: String = String(ANIMS.get(what, what)).trim_prefix("o/")
-	return DwarfOneSwing.clip_length(clip) * ual_slow(weapon) if DwarfOneSwing.has_move(clip) else fallback
+	if not DwarfOneSwing.has_move(clip):
+		return fallback
+	# owner, chat 18: the sword's third hit (the jump and spin) 30% slower
+	var third := 1.0 / 0.7 if weapon == "sword" and what == "ual_3" else 1.0
+	return DwarfOneSwing.clip_length(clip) * ual_slow(weapon) * third
 
 
 func attack(duration: float, heavy: bool, weapon: String = "sword", step: int = -1) -> void:

@@ -13,18 +13,18 @@ const UPPER := ["spine_01", "spine_02", "spine_03", "neck_01", "Head", "clavicle
 	"upperarm_l", "upperarm_r", "lowerarm_l", "lowerarm_r", "hand_l", "hand_r"]
 const CHAIN := ["spine_01", "spine_02", "spine_03", "clavicle_l", "clavicle_r", "upperarm_l", "upperarm_r"]
 ## Spots on the bow, in the bow's own space (-Z = pointing, +Y = up; stock back near z 0.1, limbs near z -0.62).
-const FORE := Vector3(0, -0.04, -0.08)
-const GROOVE := Vector3(0, 0.10, -0.06)
-const STRING := Vector3(0, 0.07, -0.16)
-const LATCH := Vector3(0, 0.07, -0.03)
+const FORE := Vector3(0, -0.04, -0.12)
+const GROOVE := Vector3(0, 0.10, -0.11)
+const STRING := Vector3(0, 0.07, -0.18)
+const LATCH := Vector3(0, 0.07, -0.09)
 const LEFT_ROLL := 160.0  ## degrees the left hand turns about its forearm (palm up under the bow)
 const PITCH_FIX := 25.0  ## degrees: the measured bow sat this much too high in the picture (the hand and tool scales are not even)
 const PALM := 0.07        ## from the left wrist to the middle of the palm (skeleton units)
 ## Right wrist spot, from the right shoulder: [sideways (+ = toward the middle), up, ahead].
 const AIM_W := Vector3(0.19, 0.02, 0.15)
 const AIM_F := Vector3(0.03, 0.04, 1.0)
-const LOW_W := Vector3(0.17, -0.08, 0.12)
-const LOW_F := Vector3(0.0, -0.55, 0.83)
+const LOW_W := Vector3(0.16, -0.05, 0.17)
+const LOW_F := Vector3(0.0, -0.30, 0.95)
 var _sk: Skeleton3D
 var _g := {}              ## bone -> rest global transform (T pose)
 var _shoulder := {}       ## "l"/"r" -> the shoulder joint in skeleton space, chest at rest
