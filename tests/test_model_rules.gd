@@ -114,7 +114,8 @@ func _made_by_script(stem: String, text: String, _dir: String) -> bool:
 
 
 func _said(w: String, text: String) -> bool:
-	for q in ["\"%s\"", "'%s'", "{%s}", "\"%s_{", "\"%s{", "'%s_{", "\"_%s\""]:  # ("_far": name + "_far" in a loop)
+	# ("_far": name + "_far" in a loop; "def name(": the decor scripts build each model in a function of its own name)
+	for q in ["\"%s\"", "'%s'", "{%s}", "\"%s_{", "\"%s{", "'%s_{", "\"_%s\"", "def %s("]:
 		if text.contains(q % w):
 			return true
 	return false
