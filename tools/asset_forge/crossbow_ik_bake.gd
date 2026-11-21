@@ -25,6 +25,12 @@ const AIM_W := Vector3(0.19, 0.02, 0.15)
 const AIM_F := Vector3(0.03, 0.04, 1.0)
 const LOW_W := Vector3(0.16, -0.05, 0.17)
 const LOW_F := Vector3(0.0, -0.30, 0.95)
+## Reload (owner, chat 18): the bow points to HIS LEFT (+X), left hand takes a bolt from the belt and sets it at the bow's end.
+const SIDE_W := Vector3(0.20, -0.04, 0.17)
+const SIDE_F := Vector3(1.0, -0.12, 0.22)
+const SIDE_HOLD := Vector3(0, -0.04, -0.22)  ## (bow space) left hand under the fore-end
+const BOLT_END := Vector3(0, 0.10, -0.40)    ## (bow space) the groove near the bow's end
+const BELT := Vector3(-0.04, -0.17, 0.10)    ## (from the left shoulder, skeleton space) the bolt pouch at the belt
 var _sk: Skeleton3D
 var _g := {}              ## bone -> rest global transform (T pose)
 var _shoulder := {}       ## "l"/"r" -> the shoulder joint in skeleton space, chest at rest
@@ -38,14 +44,15 @@ var _clips := {
 	"Shoot": {"len": 0.4, "loop": false, "keys": [[0.0, AIM_W, AIM_F, FORE],
 		[0.17, AIM_W + Vector3(0, 0.02, -0.03), Vector3(0.03, 0.22, 1.0), FORE],
 		[1.0, AIM_W, AIM_F, FORE]]},
-	"Reload": {"len": 2.2, "loop": false, "keys": [
+	"Reload": {"len": 2.6, "loop": false, "keys": [
 		[0.00, AIM_W, AIM_F, FORE],
-		[0.14, LOW_W, LOW_F, FORE],
-		[0.26, LOW_W, LOW_F, GROOVE],
-		[0.36, LOW_W, LOW_F, GROOVE],
-		[0.48, LOW_W, LOW_F, STRING],
-		[0.66, LOW_W, LOW_F, LATCH],
-		[0.76, LOW_W, LOW_F, FORE],
+		[0.14, SIDE_W, SIDE_F, SIDE_HOLD],
+		[0.26, SIDE_W, SIDE_F, SIDE_HOLD],
+		[0.36, SIDE_W, SIDE_F, SIDE_HOLD, BELT, 1.0],
+		[0.46, SIDE_W, SIDE_F, SIDE_HOLD, BELT, 1.0],
+		[0.64, SIDE_W, SIDE_F, BOLT_END],
+		[0.78, SIDE_W, SIDE_F, BOLT_END],
+		[0.88, SIDE_W, SIDE_F, SIDE_HOLD],
 		[1.00, AIM_W, AIM_F, FORE]]},
 }
 
@@ -137,7 +144,17 @@ func _pose(keys: Array, t: float) -> Dictionary:
 	var k := smoothstep(0.0, 1.0, clampf((t - a[0]) / span, 0.0, 1.0))
 	return {w = (a[1] as Vector3).lerp(b[1], k),
 		f = (a[2] as Vector3).normalized().slerp((b[2] as Vector3).normalized(), k),
-		l = (a[3] as Vector3).lerp(b[3], k), miss = 0.0}
+		l = (a[3] as Vector3).lerp(b[3], k), miss = 0.0,
+		la = _abs_of(a).lerp(_abs_of(b), k), m = lerpf(_mix_of(a), _mix_of(b), k)}
+
+
+## A key's left-hand spot from the LEFT SHOULDER in skeleton space (optional 5th/6th entries: spot, 1 = use it).
+func _abs_of(key: Array) -> Vector3:
+	return key[4] as Vector3 if key.size() > 4 else Vector3.ZERO
+
+
+func _mix_of(key: Array) -> float:
+	return float(key[5]) if key.size() > 5 else 0.0
 
 
 func _local_rotations(pose: Dictionary) -> Dictionary:
@@ -151,6 +168,7 @@ func _local_rotations(pose: Dictionary) -> Dictionary:
 	var bow_o := wrist_r + hand_rot * _o_hb
 	var r := _arm("r", wrist_r)
 	var left_spot := bow_o + bow * ((pose.l as Vector3) * _tool_scale)
+	left_spot = left_spot.lerp((_shoulder["l"] as Vector3) + (pose.la as Vector3), pose.m)
 	var guess: Vector3 = (left_spot - (_shoulder["l"] as Vector3)).normalized()
 	var wrist_l := left_spot - guess * PALM
 	var l := _arm("l", wrist_l)
