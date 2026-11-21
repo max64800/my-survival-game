@@ -7464,3 +7464,11 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   with Chrome on its own (headless) instead: 3 photos, all fine.
 - **Waiting for the owner:** the look, and whether the wooden version should keep the kiln brick (like the Brewhall's
   chimney). Then the game stage (like the Brewhall's, commit 7cc3fe22).
+- **Owner: "every single piece has its own place... so when we're placing all of that, we know where to place them
+  correctly."** The catalogue now gives every one of the 530 pieces: what it is, one Place (+ "also"), the numbered room
+  and the spot in it, a Mount from a fixed list (with the height for wall and ceiling pieces), size, how many, how far
+  to keep clear, vibe, notes. No guesses left. Three helpers rewrote one part each and looked at 156 pictures (contact
+  sheets): many "wall" pieces really stand on legs or posts (now "floor, back to a wall"), 57 descriptions corrected,
+  4 more rule clashes found (a wet patch, an oil stain, a lit cooking spit, two lit lamps). My own check: all 530 once,
+  every room name/number is in its dungeon's Rooms table. **Hurdle:** Mossgate Hold's design page has no Rooms table,
+  so its rooms use the game map's numbers (`src/world/dungeon_map.gd`); The Quiet Barrows is cut stone (medium), not wood.
