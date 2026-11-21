@@ -7664,3 +7664,39 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   failure messages; FAIL lines are never folded now.
 - **Noticed (asking the owner):** a `claude=` test game prints "PLAYER GAME (not a robot)", the line the recorder uses to
   pick the owner's play log.
+
+
+## Nov 21: ruin 6, the Twin Gate (first grand ruin), parts 1 and 2 (Claude)
+**Part 1 (earlier chat)**
+- **Read** GRAND-RUIN-RECIPE.md, the Old Kiln's code and page, the ruin-ideas page, the owner's new example picture (a
+  player castle: heavy stone bottoms, tops jutting out on brackets, many roof heights, a plan of joined rectangles).
+- **Blueprint written** (`stonehold_twin_gate` / `wooden_twin_gate` in blueprint_library.gd, make() only): two 10 m
+  square gate towers that turn 12-sided higher up, the left one topped by a 6-sided lantern room with the fire bowl
+  (about 16 m, the tallest point; the right twin stops a stage lower: symmetry broken once); a gatehouse with two gates,
+  guard rooms and a gate room jutting 1 m over a porch, a 12 m grand stair; a walled drill yard; a barracks on a
+  railed terrace (3-floor middle block, 2-floor wings whose upper floors jut out, a low kitchen). It loads: 1,221
+  pieces, 14,704 cut stone + 1,392 mortar + 55 copper (the Fallen Outpost: 8,340 stone). Owner decides.
+- **5 new Stonehold models** (`tools/asset_forge/builds/stonehold_v2_twin.py`, in journey/stonehold_v2/glb, not in the
+  game): corbel (bracket), cornice (trim band), cornice_corner, buttress, bartizan (corner turret).
+- **Hurdle:** the price is almost twice the Outpost's. Kept: a showpiece is big, the page shows it.
+
+**Part 2 (this chat)**
+- **Blueprint fix:** the wings' ground-floor fronts are plain walls except the doors (a window would sit behind a bracket).
+- **`tools/ruins/make_twin_gate_ruin.py`** (copied from the kiln's): adds the trims to both plans (12+16 brackets, trim
+  bands at 2.95 and 5.2 m with corner blocks, 21 buttresses, 8 turrets), each tied to the wall or floor it hangs on, so
+  it disappears in the ruin when that is gone. Then breaks it: right tower cracked in half (its outer half lies past it
+  as two big wall pieces and rubble), the gate room's right roof, the right wing's and the kitchen's roofs fallen in,
+  part of the left yard wall down, doors gone, outer gate leaves lying past the steps, worn walls. Nothing stands on a
+  collapsed wall; battlements and railings whose floor fell go too. 3 chests (guard room, captain, lantern room),
+  42 decor pieces, 4 beetles. Writes blueprints/ruins/twin_gate_ruin.json (1,085 pieces) + the page files.
+- **Rule checker in the script:** every prop, chest and bit of rubble is tested (stands on a floor, not in a wall, not
+  in a doorway, not by stairs, not on a walk line, not near a chest, not touching each other).
+- **Hurdles (Claude's own):** first run had 21 rule breaks. The rooms are only 2 m high, so the tall banners, spear
+  racks, crest and trophy pole poked into the ceiling: swapped for shorter pieces (torn banners, axe racks, chained
+  shields). Two chests sat 5 cm into the wall (wrong wall thickness in my sum). The checker counted the gatehouse's
+  outside steps as "stairs" for things inside behind the wall: fixed. Two braziers touched a wall, rubble sat in a
+  fallen wall, the two gate leaves overlapped: moved. Second run: 0 breaks.
+- **Page** `tools/ruins/twin_gate_page.html` (from the kiln page): ruin / wood / stone in a row, Mark new pieces,
+  Roof and Upper floors on/off (a roof = a floor with nothing standing on it), the whole price beside the Outpost's.
+  Rebuild cost: wood 403 pieces (3,099 planks, 401 rope), stone 359 pieces (3,594 cut stone, 362 mortar); trims unpriced.
+- **Hurdle:** a local web server for the screenshot was refused by the safety check; used Chrome on the file instead.
