@@ -43,7 +43,7 @@ static func play(name: String, at: Vector3, volume_db: float = 0.0, pitch: float
 
 
 ## A flat sound (menus, your own pickups).
-static func ui(name: String, volume_db: float = -4.0) -> void:
+static func ui(name: String, volume_db: float = -4.0, pitch: float = 1.0) -> void:
 	var tree := Engine.get_main_loop() as SceneTree
 	var list := _variants(name)
 	if muted or list.is_empty() or tree == null or tree.root == null:
@@ -51,7 +51,7 @@ static func ui(name: String, volume_db: float = -4.0) -> void:
 	var p := AudioStreamPlayer.new()
 	p.stream = list.pick_random()
 	p.volume_db = volume_db
-	p.pitch_scale = randf_range(0.95, 1.05)
+	p.pitch_scale = pitch * randf_range(0.95, 1.05)
 	tree.root.add_child(p)
 	p.play()
 	p.finished.connect(p.queue_free)

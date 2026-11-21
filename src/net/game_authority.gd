@@ -2974,7 +2974,7 @@ func _rpc_hurt(amount: float, buildup: Dictionary = {}) -> void:
 func _take_hurt(ps: PlayerState, amount: float, buildup: Dictionary) -> void:
 	# clothes/armor soak some up (F23); `pierce`: nothing does (a falling stalactite: always 50, owner Nov 20)
 	ps.vitals.take_damage(amount * (1.0 if buildup.get("pierce", false) else 1.0 - ps.armor_cut()))
-	Sfx.ui("hit_heavy", 0.0)
+	Sfx.ui("hurt", -2.0)  # F551: a leather-and-gear body thump (old-world, not a hard impact)
 	for k in buildup:
 		if k != "pierce":
 			ps.vitals.add_ailment(k, buildup[k])
@@ -3030,7 +3030,7 @@ func _tick_vitals(ps: PlayerState, delta: float) -> void:
 		var drop := ps.fall.step(body.global_position.y, body.is_on_floor(), body.velocity.y, delta)
 		if FallDamage.damage_for(drop) > 0.0 and not ps.progress.has_star("jumping", 100):
 			v.take_damage(FallDamage.damage_for(drop))
-			Sfx.ui("hit_heavy", 0.0)
+			Sfx.ui("hurt", 0.0, 0.85)  # F551: a fall lands heavier (lower)
 			hud_message.emit("Ouch! You fell %d m." % roundi(drop))
 	if v.is_dead():
 		if not ps.dying:
