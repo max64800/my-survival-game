@@ -38,7 +38,10 @@ NEW_MAT = "cut_stone"
 # the new trims' sizes (for the checks; measured from their models)
 RJ.PIECES.update({"corbel": {"size": [0.49, 1.0, 0.81], "group": ""},
 	"cornice": {"size": [1.99, 0.39, 0.16], "group": ""}, "cornice_corner": {"size": [0.31, 0.39, 0.31], "group": ""},
-	"buttress": {"size": [0.79, 2.84, 1.23], "group": ""}, "bartizan": {"size": [1.48, 2.99, 1.48], "group": ""}})
+	"buttress": {"size": [0.79, 2.84, 1.23], "group": ""}, "bartizan": {"size": [3.33, 2.99, 3.33], "group": ""},
+	"battlement_narrow": {"size": [0.99, 0.88, 0.39], "group": ""}})
+TRIMS = ("corbel", "cornice", "cornice_corner", "buttress", "bartizan", "battlement_narrow")
+TURRET_SH = 0.32                            # the turret's middle sits this far in from the tower corner (both ways)
 
 
 def rot_from(steps):
@@ -106,9 +109,11 @@ def extras():
 			put("buttress", cx + j, 0.0, -5.626, 2, [("wall", cx + j - 1, 1.0, -5.0), ("wall", cx + j + 1, 1.0, -5.0)])
 		for sx in (-1, 1):
 			for sz in (-1, 1):
+				if sx == -o and sz == 1:
+					continue                              # (the gate room's roof juts past this corner: no room)
 				x, z = cx + 5 * sx, 5 * sz
 				rot = {(1, 1): 0, (1, -1): 1, (-1, -1): 2, (-1, 1): 3}[(sx, sz)]
-				put("bartizan", x + sx * 0.902, 5.9, z + sz * 0.902, rot,
+				put("bartizan", x - sx * TURRET_SH, 6.0, z - sz * TURRET_SH, rot,
 					[("wall", x - sx, 5.5, z), ("wall", x, 5.5, z - sz), ("floor", x - sx, 7.5, z - sz)])
 	# --- the gate room's jutting floor (z 3 -> 4): brackets under it on the guard rooms' fronts
 	for sx in (-1, 1):
@@ -137,14 +142,32 @@ def extras():
 	corner(17, -17, 1, 1, 2.95, [("wall", 16, 1.0, -17), ("wall", 17, 1.0, -18)])
 	for x in (-11, -7, -3, 3, 7, 11, 15):
 		put("buttress", x, 0.0, -23.626, 2, [("wall", x - 1, 1.0, -23), ("wall", x + 1, 1.0, -23)])
+	# --- the wings' roofs: a 1 m battlement on both ends of the strip that juts out (x 5 and 13, z -15..-14)
+	for sx in (-1, 1):
+		for ex in (5, 13):
+			put("battlement_narrow", sx * ex, 5.5, -14.5, 1, [("floor_half", sx * (ex + (1 if ex == 5 else -1)), 5.25, -14.5)])
 	return out
+
+
+def turret_corner_gaps(e):
+	"""The deck battlements (or wooden railings) a turret takes the place of: the two next to its corner."""
+	x, z = e["pos"][0], e["pos"][2]
+	sx = 1 if x > (11 if x > 0 else -11) else -1
+	sz = 1 if z > 0 else -1
+	cx, cz = x + sx * TURRET_SH, z + sz * TURRET_SH        # the corner
+	return [(cx - sx, 7.75, cz), (cx, 7.75, cz - sz)]
+
+
+def turret_gap(p, turrets):
+	return p["id"] in ("battlement", "railing") and any(at(p, *g) for e in turrets for g in turret_corner_gaps(e))
 
 
 EXTRAS = extras()
 
 
 def with_extras(plan):
-	return plan + [dict(p) for p, _ in EXTRAS]
+	turrets = [p for p, _ in EXTRAS if p["id"] == "bartizan"]
+	return [p for p in plan if not turret_gap(p, turrets)] + [dict(p) for p, _ in EXTRAS]
 
 
 # ---------------------------------------------------------------- break it
@@ -213,7 +236,7 @@ def break_r_tower(p, q):
 			if face and abs(x - 13) < 0.1:
 				q["id"] = "ruin_wall_collapsed"
 			return q
-		if pid == "stairs" and x > 11.5:
+		if pid in ("stairs", "stairs_corner") and x > 11.5:
 			return None
 		return q if x < 12.5 else None
 	if wallish:                                           # the ground floor
@@ -242,7 +265,7 @@ for p in plan_of(bp) + [dict(e) for e, _ in EXTRAS]:
 		continue                                          # doors gone
 	if pid == "gate_leaf" and z > 0:
 		continue                                          # the outer gate torn off
-	if pid in ("cornice", "cornice_corner", "corbel", "buttress", "bartizan"):
+	if pid in TRIMS:
 		pieces.append(q)                                  # (checked against their hosts below)
 		continue
 	if in_r_tower(x, z) or (y > 7.6 and x > 6 and math.hypot(x - R_CX, z) < 4.3):
@@ -261,8 +284,8 @@ for p in plan_of(bp) + [dict(e) for e, _ in EXTRAS]:
 		q["id"] = "ruin_wall_collapsed"
 	elif pid in WALLISH and any(at(p, *c) for c in WORN):
 		q["id"] = "ruin_wall_worn"
-	elif pid in ("wall", "window_wall") and rng.random() < 0.3:
-		q["id"] = "ruin_wall_worn"
+	elif pid in ("wall", "window_wall", "lattice_wall") and rng.random() < 0.3 and pid != "lattice_wall":
+		q["id"] = "ruin_wall_worn"                        # (the lattice draws too: the worn walls stay where they were)
 	pieces.append(q)
 
 
@@ -298,6 +321,9 @@ while changed:
 		if p["id"] in ("battlement", "railing") and p["pos"][1] > 1.5 and not supported(p):
 			pieces.remove(p)
 			changed = True
+		elif p["id"] == "edge_strip" and not supported(dict(p, pos=[p["pos"][0], p["pos"][1] + 0.25, p["pos"][2]])):
+			pieces.remove(p)                              # (its floor fell in)
+			changed = True
 
 # the trims go where what they hang on is gone or broken
 WHOLE = ("wall", "window_wall", "window_wide", "doorway", "wall_narrow")
@@ -311,6 +337,9 @@ for (e, hosts) in EXTRAS:
 			ok = False
 	if not ok:
 		pieces[:] = [p for p in pieces if not (p["id"] == e["id"] and p["pos"] == e["pos"] and p["rot"] == e["rot"])]
+# the deck corners open where a turret still stands (where one fell, the deck's own battlements stay)
+standing = [p for p in pieces if p["id"] == "bartizan"]
+pieces[:] = [p for p in pieces if not turret_gap(p, standing)]
 
 
 def add(pid, x, y, z, yaw_deg, mat="cut_stone"):
@@ -371,7 +400,7 @@ props = [
 	on_wall("hs_war_horn_stand", "-z", 3.0, 4.0, 1.0),
 	on_wall("hs_axe_rack", "+z", -3.0, 4.0, 1.0),
 	# the gate room (its left half still roofed)
-	on_wall("hs_tower_shields_chained", "+z", -3.0, -3.5, 5.5),
+	on_wall("hs_tower_shields_chained", "+z", -3.0, -5.0, 5.5),       # (on the solid wall: the lattice is beside it)
 	on_wall("banner_torn_faded", "+z", -3.0, -1.2, 5.5),
 	# the barracks' mess hall
 	free_at("mg_mess_trestle", 2.5, -21.4, 1.0),
@@ -486,6 +515,8 @@ def check_things():
 					break
 		for p in build:
 			lo, hi = p["pos"][1], top_of(p)
+			if p["id"] == "bartizan" and y + h < 7.5 and any(abs(pos[0] - c) < 4.85 and abs(pos[2]) < 4.85 for c in TOWERS):
+				continue                                  # (its box reaches into the tower's corner; its stones don't)
 			if p["id"] in RJ.STAIRS:
 				grow = RJ.STAIR_CLEAR if kind != "debris" else 0.5
 				if p["id"] == "foundation_steps" and y > hi - 0.05:
@@ -595,7 +626,7 @@ if page:
 		if k in views:
 			views[k] = views[k] + keep_props
 	views = {k: [shifted(p) for p in v] for k, v in views.items()}
-	trims = ("corbel", "cornice", "cornice_corner", "buttress", "bartizan")
+	trims = TRIMS
 	json.dump({"views": views, "trims": list(trims)}, open(page / "bp.json", "w"), separators=(",", ":"))
 	json.dump({"wood": [{"id": p["id"], "mat": p["mat"]} for p in new_w], "stone": [{"id": p["id"], "mat": p["mat"]} for p in new_s]},
 		open(page / "new_pieces.json", "w"), separators=(",", ":"))

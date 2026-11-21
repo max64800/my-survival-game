@@ -981,9 +981,9 @@ def flat_roof(w=2.0, h=0.3, dd=2.0):
 	flagstones(x0, x1, z0, z1, E + jh + 0.004, h - E)
 
 
-def battlement(w=2.0, h=0.9, d=0.4):
+def battlement(w=2.0, h=0.9, d=0.4, merlons=None, rivets=(-0.8, -0.4, 0.0, 0.4, 0.8)):
 	"""Battlement edge: two courses of blocks, a riveted copper band along the front at their top, then three
-	square merlons (ends and middle) with low sill stones in the gaps."""
+	square merlons (ends and middle) with low sill stones in the gaps. `merlons`: other merlon middles (x)."""
 	base = 0.44
 	bh = 0.075   # the copper band's own course: a long cap stone set back, the band lying in front of it,
 	courses(w, base - bh, d, y0=E, y1=base - bh, dark_base=False)   # so the band's face is level with the stones below (owner)
@@ -992,22 +992,25 @@ def battlement(w=2.0, h=0.9, d=0.4):
 	blk((0, base - bh / 2, -0.008), (w - 2 * E - 0.004, bh - g, d - 2 * E - 0.018), stone_m(), bevel=0.01)
 	_tag(_new_since(before), "stone")
 	z = d / 2 - E - 0.012 + 0.01   # copper_band sinks it 1 cm: front face ends ~1.2 cm inside the outline
-	copper_band(-w / 2 + E + 0.004, w / 2 - E - 0.004, base - bh / 2, bh - 0.012, z, 1, rivets=(-0.8, -0.4, 0.0, 0.4, 0.8))
+	copper_band(-w / 2 + E + 0.004, w / 2 - E - 0.004, base - bh / 2, bh - 0.012, z, 1, rivets=rivets)
 	mw = 0.44
 	fr = K.Frame()
-	for x in (-w / 2 + E + mw / 2, 0.0, w / 2 - E - mw / 2):  # a dark core deep inside each merlon (never seen from outside)
+	mx = merlons if merlons is not None else (-w / 2 + E + mw / 2, 0.0, w / 2 - E - mw / 2)
+	for x in mx:  # a dark core deep inside each merlon (never seen from outside)
 		before = set(bpy.data.objects)
 		blk((x, (base + h - E - 0.06) / 2, 0.0), (mw - 0.12, h - E - 0.06 - base, d * 0.5), mortar_m(), bevel=0)
 		_tag(_new_since(before), "mortar")
 	before = set(bpy.data.objects)   # and one behind the band row and the low sill stones, below their tops
 	blk((0, base + 0.01, 0.0), (w - 2 * E - 0.08, 0.14, d * 0.5), mortar_m(), bevel=0)
 	_tag(_new_since(before), "mortar")
-	for x in (-w / 2 + E + mw / 2, 0.0, w / 2 - E - mw / 2):
+	for x in mx:
 		top = h - E - 0.004
 		hl = (top - base) * K.rng.uniform(0.48, 0.55)
 		block((x, base + 0.0015 + (hl - 0.003) / 2, 0.0), (mw - g, hl - 0.003, d - 2 * E - 0.008), stone_m(), cut=0.035, tilt=0.0, free="xz")
 		block((x, base + hl + 0.0015 + (top - base - hl - 0.003) / 2, 0.0), (mw - g - 0.02, top - base - hl - 0.003, d - 2 * E - 0.016), stone_m(), cut=0.04, tilt=0.0, free="xz")
-	for x0, x1 in ((-w / 2 + E + mw, -mw / 2), (mw / 2, w / 2 - E - mw)):  # sill stones in the gaps, tight on the band course
+	edges = [-w / 2 + E] + [e for x in sorted(mx) for e in (x - mw / 2, x + mw / 2)] + [w / 2 - E]
+	gaps = [(edges[i], edges[i + 1]) for i in range(0, len(edges), 2) if edges[i + 1] - edges[i] > 0.01]
+	for x0, x1 in gaps:  # sill stones in the gaps, tight on the band course
 		block(((x0 + x1) / 2, base + 0.0015 + 0.05, 0.0), (x1 - x0 - g, 0.1, d - 2 * E - 0.02), stone_m(), cut=0.03, tilt=0.0, free="z")
 
 

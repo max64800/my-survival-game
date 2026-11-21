@@ -43,7 +43,7 @@ FREE_CLEAR = 1.0     # the free-standing camp: every corner this far from every 
 CAMP = [("campfire_cold", 0.0, 0.0), ("bedroll_rotten", 1.35, 0.0), ("cookpot_tipped", 1.0, 105.0)]  # (dist, angle)
 HUG = {"wall", "wall_narrow", "half_wall", "window_wall", "window_wide", "ruin_wall_worn", "ruin_wall_collapsed"}
 OPENINGS = {"doorway": DOOR_CLEAR, "gateway": GATE_CLEAR}
-STAIRS = {"stairs", "foundation_steps"}
+STAIRS = {"stairs", "stairs_corner", "stairs_spiral", "foundation_steps"}
 
 RUINS = {
 	"watchtower_ruin": {

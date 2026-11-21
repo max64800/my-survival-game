@@ -1105,6 +1105,9 @@ func _kiln_stays_brick() -> void:
 ##     a three-floor middle block (the mess hall with the main door, the sergeants' floor, the captain's floor, roof
 ##     7.75), two two-floor wings (bunk rooms) whose upper floors jut 1 m out over the terrace, roof 5.5; doors from the
 ##     middle block onto both wing roofs. A low kitchen (x 13..17) on the right wing's end, its own door outside.
+## The new kit pieces (owner, Nov 21: "rebuild the ruin" with them): in each tower a spiral stair up to the deck, corner
+## stairs, a stair railing and a down-sloped wall on the first flight; two floor hatches (murder holes) in the gate
+## room over the passage; lattice walls on its back over the yard; edge strips along the jutting floors.
 ## tools/ruins/make_twin_gate_ruin.py adds the new pieces (the brackets under the jutting floors, the trim bands at the
 ## floor lines, the buttresses, the little corner turrets) until they are game pieces. No furniture: you furnish it.
 const _TWIN_L := -11.0
@@ -1152,13 +1155,18 @@ func _twin_tower(cx: float, m: int) -> void:
 	_add("door", S, _tp(0, 1.0, -5), 0)                                 # to the yard
 	_add("door", S, _tp(5, 1.0, 0), 1)                                  # into the guard room
 	_add("door", S, _tp(5, 5.5, 0), 1)                                  # into the gate room
-	# Stairs: floor 1 -> 2 in the front middle climbing to the back, 2 -> 3 on the outer side climbing to the front,
-	# 3 -> the deck on the gate side climbing to the back; each foot on open floor, each starting where the last ends.
-	var flights := [[Vector2(0, 2), 1.0, 0], [Vector2(-2, 0), 3.25, 2], [Vector2(2, 0), 5.5, 0]]
+	# Stairs (owner, Nov 21: the new pieces worked in): floor 1 -> 2 straight in the front middle climbing to the back,
+	# a stair railing on its gate side and a down-sloped wall closing its outer side; 2 -> 3 corner stairs on the outer
+	# side climbing to the front; 3 -> the deck a spiral stair on the gate side, in and out toward the gate side.
+	# Each foot on open floor, each starting where the last ends.
+	var flights := [[Vector2(0, 2), 1.0, 0, "stairs"], [Vector2(-2, 0), 3.25, 2, "stairs_corner"],
+		[Vector2(2, 0), 5.5, 0 if m == 1 else 2, "stairs_spiral"]]
 	for f in flights:
 		var c: Vector2 = f[0]
 		_add("floor", S, _tp(c.x, f[1], c.y), 0)                        # (a slab lifts each top step to the floor)
-		_add("stairs", S, _tp(c.x, f[1] + 0.25, c.y), f[2])
+		_add(f[3], S, _tp(c.x, f[1] + 0.25, c.y), f[2])
+	_add("railing_stairs", S, _tp(1, 1.25, 2), 1)                       # (climbs with the steps toward -z)
+	_add("sloped_wall_down", S, _tp(-1, 1.0, 2), 1)                     # (full at the stairs' foot, under the floor above)
 	var floors := [3.0, 5.25, 7.5]
 	for i in 3:
 		var hole: Vector2 = flights[i][0]
@@ -1167,9 +1175,13 @@ func _twin_tower(cx: float, m: int) -> void:
 				if not (u == hole.x and v == hole.y):
 					_add("floor", S, _tp(u, floors[i], v), 0)
 		var ry: float = floors[i] + 0.25
-		_add("railing", S, _tp(hole.x - 1, ry, hole.y), 1)               # round the hole: both sides and the foot's end
-		_add("railing", S, _tp(hole.x + 1, ry, hole.y), 1)
-		_add("railing", S, _tp(hole.x, ry, hole.y + (1 if flights[i][2] == 0 else -1)), 0)
+		# round the hole: both sides and the foot's end (not over the stair railing; the spiral: not its way out)
+		_add("railing", S, _tp(hole.x - 1, ry, hole.y), 1)
+		if i == 2:
+			_add("railing", S, _tp(hole.x, ry, hole.y - 1), 0)
+		elif i == 1:
+			_add("railing", S, _tp(hole.x + 1, ry, hole.y), 1)
+		_add("railing", S, _tp(hole.x, ry, hole.y + (1 if flights[i][2] == 0 or i == 2 else -1)), 0)
 	for c in cells:
 		_add("battlement", S, _tp(c, 7.75, 5), 0)
 		_add("battlement", S, _tp(c, 7.75, -5), 0)
@@ -1259,14 +1271,20 @@ func _twin_gatehouse() -> void:
 	# the gate room: two slabs (5..5.5, level with the towers' third floor), its front 1 m out over the porch
 	for x in [-5, -3, -1, 1, 3, 5]:
 		for z in [-2, 0, 2]:
-			_add("floor", S, Vector3(x, 5.0, z), 0)
-			_add("floor", S, Vector3(x, 5.25, z), 0)
+			if absi(x) == 1 and z == 2:                                 # two murder holes over the passage, behind the outer gate
+				_add("floor_hatch", S, Vector3(x, 5.25, z), 0)
+			else:
+				_add("floor", S, Vector3(x, 5.0, z), 0)
+				_add("floor", S, Vector3(x, 5.25, z), 0)
 			_add("floor", S, Vector3(x, 7.5, z), 0)
 		_add("floor_half", S, Vector3(x, 5.25, 3.5), 0)                 # the jutting strip (on brackets)
 		_add("floor_half", S, Vector3(x, 7.5, 3.5), 0)
+		_add("edge_strip", S, Vector3(x, 5.25, 4), 0)                   # a lip along both its floor lines
+		_add("edge_strip", S, Vector3(x, 7.5, 4), 0)
 		var front := "window_wide" if absi(x) == 1 else ("window_wall" if absi(x) == 3 else "wall")
 		_wall_x(front, x, 4, 5.5, S)
-		_wall_x("window_wall" if absi(x) == 1 else "wall", x, -3, 5.5, S)
+		var back := "window_wall" if absi(x) == 1 else ("lattice_wall" if absi(x) == 3 else "wall")   # (looks down on the yard)
+		_wall_x(back, x, -3, 5.5, S)
 		_wall_x("battlement", x, 4, 7.75, S)
 		_wall_x("battlement", x, -3, 7.75, S)
 
@@ -1353,6 +1371,7 @@ func _twin_barracks() -> void:
 				_add("floor", S, Vector3(x, 3.0, z), 0)
 				_add("floor", S, Vector3(x, 5.25, z), 0)
 			_add("floor_half", S, Vector3(x, 3.0, -14.5), 0)
+			_add("edge_strip", S, Vector3(x, 3.0, -14), 0)              # (the lip on the jutting floor's edge)
 			_add("floor_half", S, Vector3(x, 5.25, -14.5), 0)
 			_wall_x("battlement", x, -14, 5.5, S)
 			_wall_x("battlement", x, -23, 5.5, S)

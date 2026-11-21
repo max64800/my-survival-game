@@ -70,6 +70,7 @@ li span:last-child { font: 500 14px var(--mono); font-variant-numeric: tabular-n
 		</div>
 		<div class="tools" role="group" aria-label="Look at the Twin Gate">
 			<button id="mark" aria-pressed="false">Mark new pieces</button>
+			<button id="kit" aria-pressed="false">Show the new building pieces</button>
 			<button id="roof" aria-pressed="true">Roof on</button>
 			<button id="upper" aria-pressed="true">Upper floors on</button>
 			<span class="hint">Drag to turn &middot; scroll to zoom &middot; right-drag to move</span>
@@ -92,6 +93,18 @@ li span:last-child { font: 500 14px var(--mono); font-variant-numeric: tabular-n
 			<p class="note">The right tower cracked in half: its outer half fell outward and lies past it in two big wall pieces and rubble, so you can look into all three floors. The gate room's right roof, the right barracks wing's roof and the kitchen's roof fell in. Part of the left yard wall is down. The doors are gone and the outer gate's two leaves were torn off; they lie past the grand steps. The left tower still stands and its fire still burns on top. The guards' things are still there: bunks, weapon racks, a mess table, the sergeants' muster table, the captain's chair, kitchen pieces, shield pells and braziers in the yard (42 pieces from the decor set). Three chests (guard room, captain's room, lantern room) and four rock beetles.</p>
 		</section>
 		<section>
+			<h2>New building pieces, worked in</h2>
+			<ul>
+				<li><span>Spiral stairs</span><span>each tower, top floor up to the wall walk</span></li>
+				<li><span>Corner stairs</span><span>each tower, 2nd to 3rd floor</span></li>
+				<li><span>Stair railing + sloped wall</span><span>each tower's first stairs, one on each side</span></li>
+				<li><span>Floor hatches</span><span>2 "murder holes" in the gate room over the passage</span></li>
+				<li><span>Lattice walls</span><span>gate room's back, looking down on the yard</span></li>
+				<li><span>Edge strips</span><span>along every floor that juts out</span></li>
+			</ul>
+			<p class="note">"Show the new building pieces" glows them blue. The Roof Cap isn't used: Stonehold roofs are flat.</p>
+		</section>
+		<section>
 			<h2>Rebuild in wood</h2>
 			<ul id="cost_wood"></ul>
 			<p class="note">Everything comes back in planks; whole and worn stone walls stay (unless something new goes on top of one). The new stone trims come back in stone.</p>
@@ -104,8 +117,8 @@ li span:last-child { font: 500 14px var(--mono); font-variant-numeric: tabular-n
 		<section>
 			<h2>Your call: the price</h2>
 			<div class="ask">
-				<p>Building the <b>whole Twin Gate</b> from nothing in stone costs <b>14,758 cut stone</b>, 1,397 mortar, 57 copper ingots and 4 blue glow crystals (1,221 pieces). The Outpost, our biggest so far, costs 8,340 cut stone. So this is about 1&frac34; times the Outpost.</p>
-				<p>New models (not game pieces yet): <b>brackets</b> under every floor that juts out, <b>trim bands</b> along the floor lines with corner blocks, <b>buttresses</b> at the walls' feet, and a <b>turret</b> on every corner of both towers. Their price is still open, so they aren't in the rebuild cost.</p>
+				<p>Building the <b>whole Twin Gate</b> from nothing in stone costs <b>14,812 cut stone</b>, 1,417 mortar, 57 copper ingots and 4 blue glow crystals (1,245 pieces). The Outpost, our biggest so far, costs 8,340 cut stone. So this is about 1&frac34; times the Outpost.</p>
+				<p>New models (not game pieces yet): <b>brackets</b> under every floor that juts out, <b>trim bands</b> along the floor lines with corner blocks, <b>buttresses</b> at the walls' feet, <b>walk-in round turrets</b> on six tower corners (big enough to step into from the roof; not the two front corners beside the gate room, where its roof is in the way), and short <b>1 m battlements</b> closing the ends of the barracks wing roofs. Their price is still open, so they aren't in the rebuild cost.</p>
 			</div>
 		</section>
 		<p class="note"><span class="swatch"></span>"Mark new pieces" glows orange on every piece the rebuild adds.</p>
@@ -123,7 +136,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
-const COST = {"wood":[["New pieces","406 + 81 trims"],["Rootwood Plank","3,129"],["Rope","404"],["Cut Stone","18"],["Mortar","2"],["Copper Ingot","4"]],"stone":[["New pieces","360 + 81 trims"],["Cut Stone","3,603"],["Mortar","363"],["Copper Ingot","4"]]};
+const COST = {"wood":[["New pieces","396 + 81 trims"],["Rootwood Plank","3,090"],["Rope","394"],["Cut Stone","18"],["Mortar","2"],["Copper Ingot","4"]],"stone":[["New pieces","358 + 81 trims"],["Cut Stone","3,564"],["Mortar","361"],["Copper Ingot","4"]]};
 for (const k of ["wood", "stone"]) {
 	document.getElementById("cost_" + k).innerHTML = COST[k].map(([a, b]) => `<li><span>${a}</span><span>${b}</span></li>`).join("");
 }
@@ -202,7 +215,8 @@ async function loadModel(url) {
 }
 
 const layers = { roof: [], upper: [] };
-const glowMats = [];
+const glowMats = [], kitMats = [];
+const NEWKIT = new Set(["stairs_spiral", "stairs_corner", "railing_stairs", "sloped_wall_down", "floor_hatch", "lattice_wall", "edge_strip"]);
 const yawOf = r => (r < 4 ? r * 90 : (r - 4) * 30) * Math.PI / 180;
 try {
 	const bp = await (await fetch("bp.json")).json();
@@ -245,18 +259,19 @@ try {
 			const gk = [keyOf(p), view, layer, p.new ? 1 : 0].join("|");
 			const m = new THREE.Matrix4().compose(new THREE.Vector3(p.pos[0] + ox, y, p.pos[2]),
 				new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yawOf(p.rot)), new THREE.Vector3(1, 1, 1));
-			(groups[gk] ||= { key: keyOf(p), layer, isNew: !!p.new, mats: [] }).mats.push(m);
+			(groups[gk] ||= { key: keyOf(p), layer, isNew: !!p.new, kit: NEWKIT.has(p.id), mats: [] }).mats.push(m);
 		}
 	}
 	const tmp = new THREE.Matrix4();
 	for (const g of Object.values(groups)) {
 		for (const part of models[g.key]) {
 			let mat = part.mat;
-			if (g.isNew) {
+			if (g.isNew || g.kit) {
 				mat = part.mat.clone();
 				mat.emissive = new THREE.Color(0xff7a1a);
 				mat.emissiveIntensity = 0;
-				glowMats.push(mat);
+				if (g.isNew) glowMats.push(mat);
+				if (g.kit) kitMats.push(mat);
 			}
 			const im = new THREE.InstancedMesh(part.geo, mat, g.mats.length);
 			g.mats.forEach((m, i) => im.setMatrixAt(i, tmp.multiplyMatrices(m, part.local)));
@@ -303,8 +318,18 @@ upperBtn.onclick = () => { const on = upperBtn.getAttribute("aria-pressed") !== 
 markBtn.onclick = () => {
 	const on = markBtn.getAttribute("aria-pressed") !== "true";
 	markBtn.setAttribute("aria-pressed", on);
+	if (on && kitBtn.getAttribute("aria-pressed") === "true") kitBtn.click();
 	glowMats.forEach(m => (m.emissiveIntensity = on ? 0.55 : 0));
 };
+const kitBtn = document.getElementById("kit");
+kitBtn.onclick = () => {
+	const on = kitBtn.getAttribute("aria-pressed") !== "true";
+	kitBtn.setAttribute("aria-pressed", on);
+	if (on && markBtn.getAttribute("aria-pressed") === "true") markBtn.click();
+	kitMats.forEach(m => { m.emissive = new THREE.Color(0x2a9dff); m.emissiveIntensity = on ? 0.8 : 0; });
+	if (!on) glowMats.forEach(m => (m.emissive = new THREE.Color(0xff7a1a)));
+};
+if (new URLSearchParams(location.search).get("kit") === "1") setTimeout(() => kitBtn.click(), 0);  // (test views)
 
 function resize() {
 	const w = stage.clientWidth, h = stage.clientHeight;

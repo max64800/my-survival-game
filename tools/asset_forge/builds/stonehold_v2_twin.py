@@ -30,7 +30,8 @@ import stonehold_v2 as SV  # noqa: E402
 E = SV.E
 OUT_DEFAULT = SV.OUT_DEFAULT
 SIZES = {"corbel": (0.5, 1.0, 0.82), "cornice": (2.0, 0.4, 0.17), "cornice_corner": (0.32, 0.4, 0.32),
-	"buttress": (0.8, 2.85, 1.24), "bartizan": (1.5, 3.0, 1.5)}
+	"buttress": (0.8, 2.85, 1.24), "bartizan": (3.34, 3.0, 3.34),
+	"battlement_narrow": (1.0, 0.9, 0.4)}
 K.SIZE.update(SIZES)
 
 
@@ -125,95 +126,114 @@ def buttress():
 
 
 # ---------------- the bartizan ----------------
-BK = -0.75 + E + 0.002      # its two back faces (against the tower's faces, 1 cm off)
+# (owner, Nov 21 page review: "bigger, walk-in") A round turret about 2.7 m across, its middle on the tower's corner,
+# so its back quarter is the tower's own corner and you walk straight in from the deck. Built in the tower corner's
+# frame: the corner at (0, 0), the tower at -x, -z, its walls on the lines x = 0 and z = 0 (0.3 thick), the deck's
+# floor reaching those lines, top level with the turret floor. Below the floor the turret's stones run back into the
+# walls' middles (x = 0 / z = 0), so it grows out of the walls; above it a parapet runs round the outside and, along
+# both deck edges, on to where the deck's next battlements start (2 m from the corner). The piece is centred in its
+# box: the corner sits at (+SH, +SH).
+TR = 1.344                  # the turret's outside radius
+TI = TR - 0.28              # the parapet's inside radius
+BAND = 0.194                # the parapet along the deck edges: as deep as a battlement (both sides of the line)
+REACH = 1.984               # ...and as far along them (the next battlement starts at 2 m)
+SH = (REACH - TR) / 2       # the corner's offset from the piece's middle
+YF = 1.75                   # the turret floor's top (level with the deck)
 
 
-def tear(r, n=18):
-	"""The outline seen from above: a circle of radius r tucked into the corner (touching both back faces), the
-	corner behind it filled: [(x, z)...] counter-clockwise."""
-	c = BK + r
-	pts = [(BK, BK)]
-	for i in range(n + 1):
-		a = math.radians(-90 + 270 * i / n)
-		pts.append((c + r * math.cos(a), c + r * math.sin(a)))
-	return pts
+def arc(r, a0, a1, n):
+	return [(r * math.cos(math.radians(a0 + (a1 - a0) * i / n)), r * math.sin(math.radians(a0 + (a1 - a0) * i / n)))
+		for i in range(n + 1)]
 
 
-def ring_stones(outer, inner, y0, y1, per=3, shift=0, slits=()):
-	"""Stones round a ring between two outlines with the same points: `per` segments each; `slits` = segment
-	indices left open (arrow loops)."""
-	n = len(outer)
-	segs = list(range(n))
-	groups, cur = [], []
-	for k in range(n):
-		i = (k + shift) % n
+def moved(pts):
+	return [(x + SH, z + SH) for (x, z) in pts]
+
+
+def open_stones(outer, inner, y0, y1, groups, mat=None):
+	"""Stones between two open outlines with the same points (no closing stone): `groups` = lists of segment
+	indices, one stone each."""
+	g = 0.0025
+	for grp in groups:
+		ids = list(grp) + [grp[-1] + 1]
+		pts = [outer[i] for i in ids] + [inner[i] for i in reversed(ids)]
+		for (i0, i1, j0, j1) in ((0, 1, -1, -2), (len(ids) - 1, len(ids) - 2, len(ids), len(ids) + 1)):
+			d = Vector(pts[i1]) - Vector(pts[i0])
+			d2 = Vector(pts[j1]) - Vector(pts[j0])
+			pts[i0] = tuple(Vector(pts[i0]) + d.normalized() * g)
+			pts[j0] = tuple(Vector(pts[j0]) + d2.normalized() * g)
+		SV.slab_xz(moved(pts), y0, y1, mat or (kit.tex_mat("greystone", "dark") if K.rng.random() < 0.12 else SV.stone_m()), c=0.018)
+
+
+def runs(n, per, shift=0):
+	"""Segment indices 0..n-1 split into runs of about `per` (the first one `shift` shorter)."""
+	out, cur = [], []
+	first = per - shift if 0 < shift < per else per
+	for i in range(n):
 		cur.append(i)
-		if len(cur) == per or i in (0, n - 1):
-			groups.append(cur)
+		if len(cur) == (first if not out else per):
+			out.append(cur)
 			cur = []
 	if cur:
-		groups.append(cur)
-	g = 0.0025
-	split = []
-	for grp in groups:
-		if any(i in slits for i in grp):
-			split += [[i] for i in grp if i not in slits]
-		else:
-			split.append(grp)
-	for grp in split:
-		a, b = grp[0], (grp[-1] + 1) % n
-		ids = grp + [b]
-		pts = [outer[i] for i in ids] + [inner[i] for i in reversed(ids)]
-		o0, o1 = Vector(outer[a]), Vector(outer[b])
-		d = (o1 - o0).normalized() * g if (o1 - o0).length > 1e-6 else Vector((0, 0))
-		pts[0] = tuple(Vector(pts[0]) + d)
-		pts[len(ids) - 1] = tuple(Vector(pts[len(ids) - 1]) - d)
-		pts[len(ids)] = tuple(Vector(pts[len(ids)]) - d)
-		pts[-1] = tuple(Vector(pts[-1]) + d)
-		SV.slab_xz(pts, y0, y1, kit.tex_mat("greystone", "dark") if K.rng.random() < 0.12 else SV.stone_m(), c=0.018)
+		out.append(cur)
+	return out
 
 
 def bartizan():
-	R = 0.742
-	deck = 1.6
-	# the corbelled cone: courses stepping out from a small pendant stone tucked in the corner, a full-size course
-	# under the floor
-	SV.block((BK + 0.16, E + 0.21, BK + 0.16), (0.2, 0.4, 0.2), SV.stone_m(), cut=0.03, tilt=0.0, free="xyz")   # the pendant
-	courses = [(0.16, 0.42, 0.68), (0.27, 0.68, 0.92), (0.38, 0.92, 1.12), (0.49, 1.12, 1.3), (0.6, 1.3, 1.44), (R, 1.44, deck)]
+	n = 24
+	# the corbelled body under the floor: three-quarter rings stepping out course by course; each ring's two ends
+	# lie in the walls' middle planes (x = 0, z = 0), so it reads as grown out of the corner; a dark heart inside
+	courses = [(0.42, 0.004, 0.3), (0.64, 0.3, 0.58), (0.85, 0.58, 0.86), (1.04, 0.86, 1.14), (1.2, 1.14, 1.42), (TR, 1.42, YF - 0.25)]
 	for i, (r, y0, y1) in enumerate(courses):
-		out = tear(r, 12 if r < R else 18)
-		inn = SV._inset(out, min(0.2, r * 0.55))
-		ring_stones(out, inn, y0 + 0.002, y1 - 0.002, per=2 if r < R else 3, shift=i)
-		if r < R:
-			SV.slab_xz(inn, y0 + 0.01, y1 - 0.01, SV.mortar_m(), c=0.005, role="mortar")   # its heart (never seen)
-	# the floor (level with the deck) and the parapet
-	out = tear(R, 18)
-	inn = SV._inset(out, 0.2)
-	flo = SV._inset(inn, 0.004)
-	SV.slab_xz(flo, deck - 0.156, deck - 0.004, kit.tex_mat("greystone", "dark"), c=0.012)
-	band_y = 2.32
-	for k, (y0, y1) in enumerate([(deck, 1.85), (1.85, 2.1), (2.1, band_y - 0.002)]):
-		ring_stones(out, inn, y0 + 0.002, y1, per=3, shift=k, slits=(4, 10, 16) if k > 0 else ())
-	# the copper band round the parapet's top course, then merlons
-	cap_in = SV._inset(out, 0.012)
-	SV.slab_xz(SV._inset(out, 0.019), band_y, band_y + 0.075, SV.stone_m(), c=0.008)
-	for i in range(1, len(cap_in) - 1):
-		a, b = Vector(cap_in[i]), Vector(cap_in[i + 1])
-		mid = (a + b) / 2
+		ri = max(r - 0.24, r * 0.45)
+		k = max(6, int(round(n * r / TR)))
+		out, inn = arc(r, -90, 180, k), arc(ri, -90, 180, k)
+		open_stones(out, inn, y0 + 0.002, y1 - 0.002, runs(k, 2 if r < 0.9 else 3, i % 2))
+		heart = arc(ri - 0.004, -90, 180, k) + [(0.0, 0.0)]
+		SV.slab_xz(moved(heart), y0 + 0.01, y1 - 0.01, SV.mortar_m(), c=0.005, role="mortar")
+	# the rim course under the parapet, the flagstone floor inside it (level with the deck, 1 cm off the deck's edge)
+	out, inn = arc(TR, -90, 180, n), arc(TR - 0.24, -90, 180, n)
+	open_stones(out, inn, YF - 0.25 + 0.002, YF - 0.004, runs(n, 3, 1))
+	fr = TR - 0.24 - 0.004
+	flo = [(0.005, -math.sqrt(fr * fr - 0.005 ** 2))] + arc(fr, -89.7, 179.7, n)[1:-1] + [(-math.sqrt(fr * fr - 0.005 ** 2), 0.005), (0.005, 0.005)]
+	SV.slab_xz(moved(flo), YF - 0.25 + 0.004, YF - 0.004, kit.tex_mat("greystone", "dark"), c=0.012)
+	# the parapet: along one deck edge, round the outside, back along the other edge
+	def rim(off, reach=REACH):
+		"""The parapet's outside line pulled in by `off`: edge run, round, edge run."""
+		r, bd = TR - off, BAND - off
+		a0 = math.degrees(math.atan2(-math.sqrt(r * r - bd * bd), bd))
+		return [(bd, -reach)] + arc(r, a0, 90 - a0, n) + [(-reach, bd)]
+	outer = rim(0.0)
+	ai0 = math.degrees(math.atan2(-math.sqrt(TI * TI - BAND * BAND), -BAND))
+	inner = [(-BAND, -REACH)] + arc(TI, ai0, 90 - ai0, n) + [(-REACH, -BAND)]
+	segs = len(outer) - 1                            # 0: the first edge's run, 1..n the round, n+1 the other edge
+	band_y = YF + 0.62
+	for k, (y0, y1) in enumerate([(YF, YF + 0.32), (YF + 0.32, band_y - 0.002)]):
+		grp = [[0]] + [[i + 1 for i in g] for g in runs(n, 3, k + 1)] + [[segs - 1]]
+		open_stones(outer, inner, y0 + 0.002, y1, grp)
+	# a cap course set back 1.9 cm with the copper band lying in front of it (as on the battlements), then merlons
+	open_stones(rim(0.019), inner, band_y, band_y + 0.075, runs(segs, 4, 2))
+	ring = rim(0.012, REACH - 0.006)
+	for i in range(len(ring) - 1):
+		a, b = Vector(ring[i]), Vector(ring[i + 1])
+		mid = (a + b) / 2 + Vector((SH, SH))
 		before = set(bpy.data.objects)
-		o = K.blk((mid.x, band_y + 0.037, mid.y), ((b - a).length + 0.004, 0.06, 0.012), SV.copper_m(), bevel=0.002,
+		K.blk((mid.x, band_y + 0.037, mid.y), ((b - a).length + 0.004, 0.06, 0.012), SV.copper_m(), bevel=0.002,
 			ry=math.degrees(math.atan2(-(b - a).y, (b - a).x)))
 		SV._tag(SV._new_since(before), "copper")
 	m_top = band_y + 0.077
-	for (i0, i1) in ((1, 4), (7, 10), (13, 16)):   # three merlons round the front, a fourth on the back corner
-		pts = [out[i] for i in range(i0, i1 + 1)] + [inn[i] for i in range(i1, i0 - 1, -1)]
-		SV.slab_xz(pts, m_top, 3.0 - E, SV.stone_m(), c=0.02)
-	SV.slab_xz([out[0], out[1], inn[1], inn[0]], m_top, 3.0 - E, SV.stone_m(), c=0.02)
-	SV.slab_xz([out[-1], out[0], inn[0], inn[-1]], m_top, 3.0 - E, SV.stone_m(), c=0.02)
+	for grp in ([0], [2, 3], [7, 8], [12, 13], [17, 18], [22, 23], [segs - 1]):   # (one on each edge run, five round)
+		open_stones(outer, inner, m_top, 3.0 - E, [grp])
+
+
+def battlement_narrow():
+	"""A 1 m battlement (owner, Nov 21: closes the two 1 m ends of each barracks wing's roof): the same courses,
+	copper band and sill stones as the 2 m one, one merlon in its middle."""
+	SV.battlement(w=1.0, merlons=(0.0,), rivets=(-0.3, 0.0, 0.3))
 
 
 PIECES = {"corbel": corbel, "cornice": cornice, "cornice_corner": cornice_corner, "buttress": buttress,
-	"bartizan": bartizan}
+	"bartizan": bartizan, "battlement_narrow": battlement_narrow}
 
 
 if __name__ == "__main__":
