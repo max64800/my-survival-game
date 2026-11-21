@@ -6,7 +6,7 @@
 #   python tools/dungeons/make_mossprop.py   -> blueprints/dungeons/mossprop_workings.json (the game builds from it)
 # Positions are the dungeon's own metres (x right, z toward the cave you come in from, y up), like DungeonMap. The rooms
 # are read from src/world/dungeon_map.gd's MOSSPROP, so the rock and the pieces always match.
-import json, random, re, sys
+import json, math, random, re, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -72,7 +72,7 @@ INWARD_YAW = {"w": 90.0, "e": 270.0, "n": 0.0, "s": 180.0}
 OPEN = {("tool_niche", "e", 28): "door", ("prop_room", "s", 22): "door", ("store_shed", "s", 26): "door",
 	("climbers_rest", "w", 30): "door", ("gallery", "s", 22): "door", ("gallery", "w", 16): "door",
 	("roost", "e", 16): "door", ("gallery", "e", 14): "door", ("hall_door", "w", 14): "door",
-	("hall_door", "e", 14): "door", ("top_hall", "w", 14): "door", ("top_hall", "s", 38): "gate",
+	("hall_door", "e", 14): "hand_door", ("top_hall", "w", 14): "hand_door", ("top_hall", "s", 38): "gate",
 	("store_shed", "n", 26): "cracked", ("vault", "s", 26): "cracked"}
 OPEN_SIDES = {("entry", "n"), ("entry", "s")}  # the cave end, and the round stone door's wall (below)
 DART = ("prop_room", "w", 21.0)                # the dart wall: its middle 2 m of the west wall
@@ -124,6 +124,9 @@ for name in sorted(WALLED, key=lambda n: -wall_h(n)):   # (the taller room puts 
 				if name == "store_shed":
 					prop("dungeon/wall_cracked.glb", ox, fy, oz, 90.0 if rot == 1 else 0.0, role="secret",
 						label="Cracked wall (hollow sound)", floor=fy)
+				for k in (-1.5, 1.5):  # (owner, Nov 21, F588: "gaps at both sides": the cracked wall is 2 m, its gap 4 m)
+					px, pz = (line, mid + k) if rot == 1 else (mid + k, line)
+					piece("wall_narrow", px, fy, pz, rot)
 				for k in (-1, 1):
 					px, pz = (line, mid + k) if rot == 1 else (mid + k, line)
 					for r in range(1, int(wh // 2)):
@@ -133,6 +136,9 @@ for name in sorted(WALLED, key=lambda n: -wall_h(n)):   # (the taller room puts 
 			if kind == "gate":
 				prop("dungeon/gate_round.glb", ox, fy, oz, 90.0 if rot == 1 else 0.0, DOOR_SCALE, role="door",
 					label="Barred gate: the short way out to the slide")
+			if kind == "hand_door":  # (owner, Nov 21, F591: the boss room gets a round door you open, like F490's)
+				prop("dungeon/door_loot.glb", ox, fy, oz, 90.0 if rot == 1 else 0.0, DOOR_SCALE, role="door",
+					label="Round door: E to open", opens="hand")
 			for k in (-1.5, 1.5):
 				px, pz = (line, mid + k) if rot == 1 else (mid + k, line)
 				piece("wall_narrow", px, fy, pz, rot)
@@ -149,7 +155,9 @@ for name in sorted(WALLED, key=lambda n: -wall_h(n)):   # (the taller room puts 
 			if wh % 2 and r == int(wh // 2):
 				piece("half_wall", x, y, z, rot)
 			elif r == 0 and (name, side, along) == DART:
-				prop("dungeon/trap_dart_wall.glb", x, y, z, yaw, role="trap", label="Dart holes")
+				# (owner, Nov 21, F587: "easy to spot and does nothing": trap_dart_wall is only for show; this is the
+				# working dart wall Old Pell's and Lampwick use, fired by the tripwire across the Prop Room)
+				prop("dungeon/trap_tripwire_wall.glb", x, y, z, yaw, role="trap", label="Dart hole (green stain under it)")
 			elif r == 0 and (name, side, along) == SPEAR:
 				prop("dungeon/trap_spear_wall.glb", x, y, z, 270.0, role="trap", label="Rows of holes (a stake tip shows)",
 					phase=0.0)
@@ -182,6 +190,12 @@ deck3 = [(x, z) for x in range(20, 46, 2) for z in (24, 26)] + [(44, z) for z in
 # safe way along (SAFE_L2, checked by test_rotten_boards_leave_a_way): the bad boards take turns, cliff side and edge.
 BREAK = {(20, 26, L2), (24, 26, L2), (28, 24, L2), (40, 24, L2), (42, 24, L2), (30, 26, L3)}
 SAFE_L2 = [(20, 24), (22, 24), (24, 24), (26, 24), (26, 26), (28, 26), (38, 26), (40, 26), (42, 26), (44, 26)]
+# The top deck (owner, Nov 21, F589: "a lot more rotten boards on the very top walkway"): one safe way, from the upper
+# ladder's top along the arm, past the rope slide and the Top Hall's gate, to the Crusher Gallery's door; nearly every
+# other board is rotten (a 5 m fall onto deck 2). (26, 24) stays sound: an old lantern stands on its edge.
+SAFE_L3 = [(44, 32), (44, 30), (44, 28), (44, 26), (42, 26), (40, 26), (38, 26), (38, 24), (36, 24), (34, 24), (32, 24),
+	(30, 24), (28, 24), (28, 26), (26, 26), (24, 26), (24, 24), (22, 24), (20, 24)]
+BREAK |= {(x, z, L3) for x, z in deck3 if (x, z) not in SAFE_L3 and (x, z) != (26, 24)}
 broken = []   # (x, z, top) of every rotten board (no junk lies on them)
 
 
@@ -313,6 +327,12 @@ creature("tunnel_rat", 36.5, 37.0, 200.0)
 # Rest (healing basin), the upper ladder. F2 = the boards' top. ----
 F2 = L2 + 0.24
 prop("decor/timber_stack.glb", 18.0, F2, 19.5, 0.0)
+# The Prop Room's tripwire (owner, Nov 21, F587): a thin wire at ankle height from the dart hole's sill (west wall) to the
+# east wall. Walk into it and the dart fires along it; step over it, or cut it. The hole is 0.12 m along the wall's face
+# from its middle (toward -z here).
+WIRE = (16.0, 21.0 - 0.12, 24.0)
+prop("dungeon/tripwire.glb", (WIRE[0] + WIRE[2]) / 2, F2, WIRE[1], 0.0, role="trap", label="Tripwire (step over it, or cut it)",
+	stretch=round(WIRE[2] - WIRE[0] - 0.3, 2))
 prop("decor/furn_work_table.glb", 22.6, F2, 19.0, 180.0)
 prop("decor/shack_shelf.glb", 29.6, F2, 21.0, 270.0)
 prop("decor/grain_sacks.glb", 25.4, F2, 19.4, 30.0)
@@ -403,7 +423,7 @@ scatter(3, F2, 28.2, 29.7, 24.4, 25.2)             # deck 2, along the cliff
 scatter(3, F2, 38.5, 43.5, 24.4, 25.2)
 scatter(4, F3, 24.5, 35.5, 24.4, 25.2)             # deck 3, along the cliff
 scatter(2, F3, 40.5, 43.5, 24.4, 25.2)
-scatter(2, F2, 16.6, 20.0, 20.0, 23.4)             # in the Prop Room and the Store Shed
+scatter(2, F2, 16.6, 20.0, 21.8, 23.4)             # in the Prop Room (off the tripwire) and the Store Shed
 scatter(2, F2, 24.6, 27.6, 21.0, 23.4)
 scatter(3, F3, 31.0, 43.0, 13.0, 23.0, ROT + ["junk_bones", "junk_helmet"], gap=1.6)   # the Top Hall
 scatter(2, F3, 14.6, 19.4, 12.6, 17.4, ["junk_bones", "junk_rubble_wood_c", "junk_rubble_wood_e"])   # the Roost
@@ -414,16 +434,56 @@ for x, y, z in ((26.6, F2, 24.5), (38.8, F2, 24.6), (28.0, F3, 24.5), (44.6, F3,
 	lights.append([x, y + 0.8, z])
 
 # ---- 7. A real cave (owner, Nov 21, F539: "less boxy, many more stalactites"): stalactites hanging in clumps from the
-# 16 m roof, big rock lumps bulging out of the walls and the roof's edges, boulders heaped at the wall feet, moss
-# hanging off rock shelves. All of it is "grown" (placement rule): kept clear of everything built (BUILT boxes), of the
+# 16 m roof. Owner, Nov 21 (F582/F583): no rock lumps or shelves ("they look awful"); the rock itself is shaped instead:
+# the walls and roof bulge and dimple (DungeonMap.rough_bump, MOSSPROP.rough), so the stalactites hang from where the
+# roof really is (roof_at). All of it is "grown" (placement rule): kept clear of everything built (BUILT boxes), of the
 # paths, the creatures, the rope slide's line and the swinging boulder, and over a floor it leaves at least 2.2 m of
 # head room. Checked again in the game's tests (test_the_cave_keeps_clear). ----
 ROOF = 16.0
+_ROUGH = SRC.split("rough = {")[1].split("]},")[0]
+AMP = float(re.search(r"amp = ([\d.]+)", _ROUGH).group(1))
+KEEP = [[float(v) for v in m.split(",")] for m in re.findall(r"\[(\d, [^\]]+)\]", _ROUGH)]
+PHASE = json.loads(re.search(r"const ROUGH_PHASE := (\[.*\])", (ROOT / "src/world/dungeon_map.gd").read_text(
+	encoding="utf-8")).group(1))
+
+
+def rough_bump(wall, a, b, q):
+	"""DungeonMap.rough_bump, the same numbers: how far a cave wall (3 = the roof) is pushed out (+) or in (-)."""
+	ph = PHASE[wall]
+	v = (0.55 * math.sin(0.52 * a + 0.31 * b + ph[0]) + 0.30 * math.sin(0.23 * a - 0.83 * b + ph[1])
+		+ 0.15 * math.sin(1.37 * a + 1.1 * b + ph[2])) * AMP
+	for k in KEEP:
+		if int(k[0]) == 1 and v >= 0.0:
+			continue
+		out = [max(k[1] - q[0], q[0] - k[4], 0.0), max(k[2] - q[1], q[1] - k[5], 0.0), max(k[3] - q[2], q[2] - k[6], 0.0)]
+		v *= min(max(math.sqrt(sum(c * c for c in out)) / 1.5, 0.0), 1.0)
+	return v
+
+
+def roof_at(x, z):
+	"""Where the cave's roof is over (x, z) (DungeonMap._rough_in: it stays flat by the north cliff)."""
+	return ROOF + rough_bump(3, x, z, (x, ROOF, z)) * min(max((z - 23.5 - 1.5) / 2.5, 0.0), 1.0)
+
+
+def wall_room(x, y, z):
+	"""How far (x, y, z) is from the nearest bumpy cave wall (DungeonMap._rough_in's west, east, south; the flat cliff)."""
+	q = (x, y, z)
+	return min(x - 13.5 + rough_bump(0, z, y, q), 46.5 - x + rough_bump(1, z, y, q), 50.5 - z + rough_bump(2, x, y, q), z - 23.5)
+
+
+_ROUND = ((0, 0), (1, 0), (-1, 0), (0, 1), (0, -1))
+
+
+def roof_over(x, z, r):
+	"""The highest the roof gets over a thing r wide: hung from there, its top is in the rock all round."""
+	return max(roof_at(x + dx * r, z + dz * r) for dx, dz in _ROUND)
+
+
+def roof_flat(x, z, r):
+	"""Is the roof over a thing r wide even enough (under 0.6 m up and down) that it doesn't hang half buried?"""
+	return roof_over(x, z, r) - min(roof_at(x + dx * r, z + dz * r) for dx, dz in _ROUND) < 0.6
 # Measured model sizes at scale 1: half width, and how far down it hangs (drips) or up it stands (rocks).
 DRIPS = {"cave/drip_a.glb": (0.4, 0.91, 0.17), "cave/drip_b.glb": (0.34, 1.07, 0.17), "cave/drip_d.glb": (0.44, 0.32, 0.17)}
-ROCKS = {"cave/grock_c.glb": (0.43, 0.96), "cave/grock_h.glb": (0.98, 2.06), "cave/grock_j.glb": (0.99, 1.9),
-	"cave/grock_k.glb": (1.31, 2.23), "cave/grock_q.glb": (2.32, 3.72), "cave/grock_medium_2.glb": (1.52, 1.9)}
-SHELVES = ["cave/shelf_a.glb", "cave/shelf_b.glb", "cave/shelf_c.glb", "cave/shelf_d.glb"]
 HEAD = 2.2   # m of head room kept over every floor
 
 
@@ -478,106 +538,90 @@ def grown(model, x, y, z, yaw, scale, tilt=0.0):
 	prop(model, x, y, z, yaw, round(scale, 2), tilt=tilt, grown=True)
 
 
-# Stalactites in clumps (2-6 together), all over the roof except over the Rockfall Ledge (its loose ones are a trap).
+# Owner, Nov 21 (F584): "far too many stalactites, and very few of them actually fall". So: a few loose ones over the
+# walkways and the cave floor that really fall (dungeon/trap_drip_*, like the Rockfall Ledge's: you walk under one, it
+# cracks, then drops on whoever is there), spread out (4 m+ apart), each over one floor with nothing built in its way
+# down. Then far fewer grown ones, small and in little clumps, only where they can't fall on anyone.
+WALKS = [(q["pos"], 1.0 * float(q.get("scale", 1.0))) for q in pieces if q["id"] == "floor"] + [
+	(q["pos"], 1.0 * float(q.get("scale", 1.0))) for q in props if q["model"] in ("dungeon/floor_old.glb",
+	"dungeon/trap_floor_break.glb", "dungeon/floor_grooved.glb")]
+
+
+def floor_under(x, z, below):
+	"""The highest walkway (or the cave's floor, 0) under (x, z) and below `below`."""
+	best = 0.0
+	for (px, py, pz), h in WALKS:
+		if abs(px - x) < h and abs(pz - z) < h and py < below:
+			best = max(best, py)
+	return best
+
+
+def way_down_clear(x, z, r, ylo, yhi):
+	"""Nothing built (but the floor it lands on) stands in a falling stalactite's way down, nor the rope slide."""
+	for x0, x1, z0, z1, y0, y1 in BUILT:
+		if x + r > x0 and x - r < x1 and z + r > z0 and z - r < z1 and yhi > y0 and ylo < y1:
+			return False
+	return not _near_slide(x, z, ylo, yhi, r)
+
+
+FALLERS = []
+_DECKS = [(w[0][0], w[0][2]) for w in WALKS if w[0][1] > 0.5 and 14.0 < w[0][0] < 46.0 and 24.0 < w[0][2] < 50.0]
+rng.shuffle(_DECKS)
+for k in range(600):
+	if len(FALLERS) >= 12:
+		break
+	# (the walkways' boards first, so some hang over the decks and the Lower Walk; then anywhere over the cave floor)
+	x, z = _DECKS[k] if k < len(_DECKS) else (rng.uniform(15.0, 45.0), rng.uniform(25.0, 49.0))
+	if (x < 21.0 and z < 31.0) or any((x - a) ** 2 + (z - b) ** 2 < 16.0 for a, b, _f in FALLERS):
+		continue
+	if not roof_flat(x, z, 0.8) or wall_room(x, roof_at(x, z) - 1.5, z) < 1.2:
+		continue
+	top = roof_over(x, z, 0.8)
+	fl = floor_under(x, z, top - 2.0)
+	if top - fl < 5.0 or not way_down_clear(x, z, 0.8, fl + 0.4, top - 0.2):
+		continue
+	FALLERS.append((x, z, fl))
+	m = ("trap_drip_fat", "trap_drip_thin", "trap_drip_cluster")[len(FALLERS) % 3]
+	prop("dungeon/%s.glb" % m, x, top - 0.1, z, rng.choice([0, 120, 240]), role="trap", tilt=180.0, floor=fl,
+		warn=0.5, fall=0.6, label="Loose stalactite (cracks, then falls)" if len(FALLERS) == 1 else "")
+# Stalactites in little clumps (2-4 together), never over a walkway or the cave floor's paths' fallers, nor over the
+# Rockfall Ledge (its loose ones are a trap).
 drips = 0
 for _ in range(400):
-	if drips >= 90:
+	if drips >= 24:
 		break
 	cx, cz = rng.uniform(14.6, 45.4), rng.uniform(24.4, 49.6)
 	if cx < 21.0 and cz < 31.0:
 		continue
-	for _ in range(rng.randint(2, 6)):
-		x, z = cx + rng.uniform(-1.6, 1.6), cz + rng.uniform(-1.6, 1.6)
-		m = rng.choice(list(DRIPS) + ["cave/drip_a.glb", "cave/drip_b.glb"])
+	if any((cx - a) ** 2 + (cz - b) ** 2 < 9.0 for a, b, _f in FALLERS):
+		continue
+	for _ in range(rng.randint(2, 4)):
+		x, z = cx + rng.uniform(-1.4, 1.4), cz + rng.uniform(-1.4, 1.4)
+		m = rng.choice(list(DRIPS) + ["cave/drip_d.glb"])
 		half, down, base = DRIPS[m]
-		sc = rng.uniform(1.2, 3.4)
-		y = ROOF + base * sc * 0.8
+		sc = rng.uniform(1.0, 2.0)
 		r = half * sc
-		if not in_cave(x, z, r) or not clear(x, z, r, y - down * sc, ROOF):
+		top = roof_over(x, z, r)
+		y = top + base * sc * 0.8
+		if not in_cave(x, z, r) or not roof_flat(x, z, r) or not clear(x, z, r, y - down * sc, top) \
+				or min(wall_room(x, top - 0.3, z), wall_room(x, top - down * sc, z)) < r + 0.3:
 			continue
 		grown(m, x, y, z, rng.uniform(0, 360), sc, 180.0)
 		drips += 1
-# And shorter ones over the tower (you look up at them from the decks).
+# And a few short ones over the tower (you look up at them from the decks).
 for _ in range(300):
-	if drips >= 104:
+	if drips >= 32:
 		break
 	x, z = rng.uniform(21.0, 45.4), rng.uniform(25.2, 28.8)
 	m = rng.choice(list(DRIPS))
 	half, down, base = DRIPS[m]
 	sc = rng.uniform(1.0, 2.2)
-	y = ROOF + base * sc * 0.8
-	if clear(x, z, half * sc, y - down * sc, ROOF):
+	top = roof_over(x, z, half * sc)
+	y = top + base * sc * 0.8
+	if clear(x, z, half * sc, y - down * sc, top) and wall_room(x, top - 0.3, z) > half * sc + 0.3 \
+			and roof_flat(x, z, half * sc):
 		grown(m, x, y, z, rng.uniform(0, 360), sc, 180.0)
 		drips += 1
-# Rock lumps on the walls (half in the rock), from the wall feet up to the roof's edge: x 14 (west), x 46 (east),
-# z 50 (south, the way-in side), z 24 (the cliff, only up above the top deck).
-lumps = 0
-for _ in range(900):
-	if lumps >= 46:
-		break
-	side = rng.choice("wwesssen")
-	m = rng.choice(list(ROCKS))
-	half, tall = ROCKS[m]
-	sc = rng.uniform(0.7, 1.4) if "grock_q" in m else rng.uniform(1.0, 2.2)
-	r = half * sc
-	y = rng.choice([-0.3, rng.uniform(0.0, ROOF - tall * sc * 0.6)])
-	if side == "w":
-		x, z = 14.0 + rng.uniform(-0.3, 0.3), rng.uniform(24.5, 49.5)
-	elif side == "e":
-		x, z = 46.0 + rng.uniform(-0.3, 0.3), rng.uniform(24.5, 49.5)
-	elif side == "s":
-		x, z = rng.uniform(14.5, 45.5), 50.0 + rng.uniform(-0.3, 0.3)
-	else:
-		x, z = rng.uniform(14.5, 45.5), 24.0 + rng.uniform(-0.2, 0.2)
-	top = min(y + tall * sc, ROOF + 0.5)
-	if y < 0.5 and any((x - a) ** 2 + (z - b) ** 2 < (rr + r + 0.4) ** 2 for a, b, rr in KEEP_OUT):
-		continue
-	if 27.0 < x < 33.0 and z > 47.0 and y < 5.0:
-		continue   # (the way in)
-	if not clear(x, z, r * 1.42 + 0.3, y, top):   # (turned and tilted, its corners reach further)
-		continue
-	grown(m, x, y, z, rng.uniform(0, 360), sc, rng.uniform(-18.0, 18.0))
-	lumps += 1
-# Lumps hanging off the roof's edge, all round (upside down, half in the roof).
-for _ in range(300):
-	if lumps >= 70:
-		break
-	m = rng.choice(list(ROCKS))
-	half, tall = ROCKS[m]
-	sc = rng.uniform(0.6, 1.0) if "grock_q" in m else rng.uniform(1.0, 1.8)
-	r = half * sc
-	edge = rng.choice("wesn")
-	x = {"w": 14.3, "e": 45.7}.get(edge, rng.uniform(15.0, 45.0))
-	z = {"s": 49.7, "n": 24.3}.get(edge, rng.uniform(25.0, 49.0))
-	y = ROOF + tall * sc * 0.35
-	if not clear(x, z, r * 1.42 + 0.3, y - tall * sc, ROOF):
-		continue
-	grown(m, x, y, z, rng.uniform(0, 360), sc, 180.0 + rng.uniform(-15.0, 15.0))
-	lumps += 1
-# Rock shelves on the walls with moss hanging off them (the cave's name).
-shelves = 0
-for _ in range(300):
-	if shelves >= 14:
-		break
-	side = rng.choice("wes")
-	sc = rng.uniform(2.0, 3.2)
-	y = rng.uniform(4.0, 13.0)
-	if side == "w":
-		x, z, yaw = 14.0, rng.uniform(31.0, 49.0), 90.0
-	elif side == "e":
-		x, z, yaw = 46.0, rng.uniform(36.0, 49.0), 270.0
-	else:
-		x, z, yaw = rng.uniform(16.0, 44.0), 50.0, 180.0
-	r = 0.6 * sc
-	if not clear(x, z, r, y - 0.6 * sc - 1.2, y + 0.5 * sc):
-		continue
-	grown(rng.choice(SHELVES), x, y, z, yaw, sc)
-	fx, fz = {90.0: (0.4, 0.0), 270.0: (-0.4, 0.0), 180.0: (0.0, -0.4)}[yaw]
-	for k in (-1, 1):   # moss hanging over its front edge
-		dx, dz = (0.0, 0.35 * sc * k) if yaw != 180.0 else (0.35 * sc * k, 0.0)
-		grown("cave/moss_drape.glb", x + fx * sc + dx, y - 0.35 * sc, z + fz * sc + dz, yaw, 1.6)
-	shelves += 1
-
 plan = {"name": "Mossprop Workings", "map": "mossprop", "pieces": pieces, "props": props, "creatures": creatures,
 	"chests": chests, "lights": lights, "recipe_stand": RECIPE_STAND}
 

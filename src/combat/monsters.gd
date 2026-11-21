@@ -28,7 +28,7 @@ const LIST := {
 		drops = [["snail_meat", 1, 1.0], ["snail_meat", 1, 0.5], ["shell_piece", 2, 0.8]]},
 	# Cave bats (owner, Nov 18): packs of 5-10; hit one and the whole pack wakes and swoops at you, flies back, swoops
 	# again; easy (one heavy or two light sword hits each), they drop the wing leather that tans into leather armour.
-	"cave_bat": {name = "Cave Bat", turns_in_place = true, turn_speed = 3.2, weaves = true, ragdoll = {hop = 0.4, spin = 6.0}, statue_hits = 2, size = 1.0, hp = 20, armor = 0, stun = 35, slash = 1.0, blunt = 1.0, pierce = 1.25,
+	"cave_bat": {name = "Cave Bat", turns_in_place = true, turn_speed = 3.2, weaves = true, ragdoll = {hop = 0.4, spin = 6.0}, statue_hits = 1, size = 1.0, hp = 20, armor = 0, stun = 35, slash = 1.0, blunt = 1.0, pierce = 1.25,
 		fire = 0.0, frost = 0.0, poison = 0.0, walk = 3.0, run = 6.5, pack = [5, 10], xp = 4, leader = "Bat Matriarch", leader_chance = 0.15,
 		color = Color(0.3, 0.26, 0.28), shape = "cave_bat", flap_sound = "bat_flap", flies = true, swoops = true, roosts = true, sleeps = true,
 		hit_and_run = true, retreat = 7.0, recover = 1.6,
@@ -40,7 +40,8 @@ const LIST := {
 		# climbs away on the other side; no stopping. The tell is worked out from how far it has to fly (Monster._start_dive).
 		attacks = [{name = "Dive Through", warn_sound = "bat_screech", tell = 0.6, damage = 6, type = "pierce", reach = 1.2, parry = "any", dive = true}],
 		drops = [["wing_leather", 1, 1.0], ["wing_leather", 1, 0.3], ["bat_fang", 1, 0.4], ["bat_meat", 1, 0.8]]},
-	# statue_hits: pickaxe hits to break its stone statue (default 4; owner, Nov 18: bat 2, beetle and snail 4, great 8).
+	# statue_hits: pickaxe hits to break its stone statue (default 2; owner, Nov 21, F586: bats 1, every other creature 2,
+	# bosses 5).
 	# ragdoll: on death it goes limp and falls apart into physics pieces (Ragdoll; the beetle first, owner Nov 18).
 	"rock_beetle": {name = "Rock Beetle", turns_in_place = true, turn_speed = 2.6, ragdoll = true, size = 0.9, hp = 100, armor = 0, stun = 70, slash = 0.75, blunt = 1.25, pierce = 1.0,
 		fire = 0.0, frost = 0.0, poison = 0.0, walk = 1.8, run = 4.5, pack = [1, 2], xp = 15, leader = "Rock Beetle Brute", leader_chance = 0.2,
@@ -48,7 +49,7 @@ const LIST := {
 		attacks = [{name = "Mandible Snap", warn_sound = "beetle_hiss", tell = 0.7, damage = 10, type = "pierce", reach = 1.7, parry = "any"},
 			{name = "Charge", warn_sound = "beetle_rumble", tell = 1.1, damage = 18, type = "blunt", reach = 9.0, parry = "shield", lunge = true}],
 		drops = [["bug_meat", 2, 1.0], ["glow_gland", 1, 0.6]]},
-	"great_rock_beetle": {name = "Great Rock Beetle", elite = true, turns_in_place = true, turn_speed = 1.8, ragdoll = true, statue_hits = 8, size = 1.5, hp = 240, armor = 40, stun = 160, slash = 0.75, blunt = 1.25, pierce = 1.0,
+	"great_rock_beetle": {name = "Great Rock Beetle", elite = true, turns_in_place = true, turn_speed = 1.8, ragdoll = true, statue_hits = 2, size = 1.5, hp = 240, armor = 40, stun = 160, slash = 0.75, blunt = 1.25, pierce = 1.0,
 		fire = 0.0, frost = 0.0, poison = 0.25, walk = 2.0, run = 5.0, pack = [1, 1], xp = 45, leader = "Great Rock Beetle Matron", leader_chance = 0.1,
 		color = Color(0.33, 0.31, 0.29), shape = "rock_beetle", soft_back = 2.0, straight_charge = true, recover = 2.0,
 		attacks = [{name = "Horn Gore", warn_sound = "beetle_hiss", tell = 0.9, damage = 22, type = "pierce", reach = 2.4, parry = "any"},
@@ -79,24 +80,27 @@ const LIST := {
 			{name = "Shovel Jab", anim = "1H_Melee_Attack_Stab", tell = 0.45, damage = 5, type = "pierce", reach = 1.7, parry = "any"}],
 		drops = []},
 	# F466/F467: the Lost Miner is slow and tough, and its pick is ice cold (chill buildup: 3 hits freeze you).
-	"lost_miner": {name = "Hollow Miner", dungeon_only = true, rises = true, rise_near = 11.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 4,
+	"lost_miner": {name = "Hollow Miner", dungeon_only = true, rises = true, rise_near = 11.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 2,
 		size = 1.0, height = 1.45, hp = 110, armor = 0, stun = 80, slash = 1.0, blunt = 1.25, pierce = 0.75,
 		fire = -0.25, frost = 0.75, poison = 1.0, walk = 1.0, run = 2.6, pack = [1, 3], xp = 14,
 		color = Color(0.7, 0.82, 0.78), shape = "lost_miner", recover = 1.2,
-		attacks = [{name = "Frost Pick", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_hiss", tell = 0.9, damage = 14, type = "pierce", reach = 1.8, parry = "any", buildup = {chill = 34}},
-			{name = "Pick Jab", anim = "1H_Melee_Attack_Stab", tell = 0.7, damage = 10, type = "pierce", reach = 1.9, parry = "any", buildup = {chill = 34}},
+		# F593 (owner, Nov 21, said twice: "if you run away, you should get out of their hit without dodging"): shorter
+		# picks (1.8/1.9 -> 1.5/1.4 m) and a leap slower than you walk (lunge_speed), so turning to walk off after the
+		# spark (0.3 s to react) always gets you out (test_running_away_from_a_lost_miner).
+		attacks = [{name = "Frost Pick", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_hiss", tell = 0.9, damage = 14, type = "pierce", reach = 1.5, parry = "any", buildup = {chill = 34}},
+			{name = "Pick Jab", anim = "1H_Melee_Attack_Stab", tell = 0.7, damage = 10, type = "pierce", reach = 1.4, parry = "any", buildup = {chill = 34}},
 			# Owner, Nov 21 ("the bigger ones should lunge forward, quite fast"): from 2-3 m it leaps in with a chop (a
 			# small lunge: it only hits, no knock-down), then stands catching its breath; 4 s before the next.
 			# F526 (owner, Nov 21, Mossprop: "the dash is way too long, and they do two attacks"): from 3 m, not 4, and
 			# after the leap no other swing for `quiet_after` s (it was chopping again the moment it landed).
-			{name = "Leaping Chop", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_hiss", tell = 0.9, damage = 14, type = "pierce", reach = 3.0, parry = "any", lunge = true, small_lunge = true, rest = 4.0, quiet_after = 3.5, buildup = {chill = 34}}],
+			{name = "Leaping Chop", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_hiss", tell = 0.9, damage = 14, type = "pierce", reach = 3.0, parry = "any", lunge = true, small_lunge = true, lunge_speed = 3.4, rest = 4.0, quiet_after = 3.5, buildup = {chill = 34}}],
 		drops = []},
 	# The end boss with his Lost Miners (F467): a big two-handed chop, and the spin (only a shield parries it, it
 	# knocks you down: step back out of it). Owner, Nov 20: the spin reached far too far and he only ever spun
 	# (he got into its 2.7 m range before the chop's 2.3 m). Now the spin is short (hits up to 2.6 m, the chop's
 	# range is longer so he opens with the chop) and rests 7 s after each use (rest = seconds before it comes again).
 	# Owner, Nov 20: 30% less health (420 -> 294); chat 16 (F532, the owner's OK on the balance plan): 450 and armor 50, and his swings break the stone of fallen miners (like a beetle's charge).
-	"foreman": {name = "The Pit Boss", dungeon_only = true, rises = true, rise_near = 10.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 10, boss = true,
+	"foreman": {name = "The Pit Boss", dungeon_only = true, rises = true, rise_near = 10.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 5, boss = true,
 		smashes_statues = true, size = 1.0, height = 1.9, hp = 450, armor = 50, stun = 220, slash = 1.0, blunt = 1.25, pierce = 0.75,
 		fire = 0.0, frost = 0.5, poison = 1.0, walk = 1.4, run = 3.6, pack = [1, 1], xp = 80,
 		color = Color(0.55, 0.5, 0.44), shape = "foreman", recover = 1.6,
@@ -118,7 +122,7 @@ const LIST := {
 	# his plank and slams it down (2 s: a deep rumble, the statues glow and shake), then up to 2 of them get up (never
 	# more than 3 miners up at once). Hit him during the slam (his shield is up over his head) and it is called off;
 	# a statue you mined away can't be raised. He doesn't smash his own miners' stone (the Pit Boss does; owner kept it, Nov 21).
-	"prop_warden": {name = "The Prop Warden", dungeon_only = true, rises = true, rise_near = 10.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 10, boss = true,
+	"prop_warden": {name = "The Prop Warden", dungeon_only = true, rises = true, rise_near = 10.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 5, boss = true,
 		front_shield = true, size = 1.0, height = 1.9, hp = 300, armor = 50, stun = 200, slash = 1.0, blunt = 1.25, pierce = 0.75,
 		fire = 1.25, frost = 0.5, poison = 1.0, walk = 1.3, run = 3.3, pack = [1, 1], xp = 80,
 		color = Color(0.5, 0.52, 0.4), shape = "foreman", recover = 1.6,

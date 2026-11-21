@@ -26,23 +26,6 @@ const KINDS := {
 }
 const CLUSTERS_BIG_ROOM := 70  ## (owner, Nov 17: "a lot more stalactites on the roof")
 const CLUSTERS_ROOM := 16
-## Rock shelves on walls (F232, tools/asset_forge/builds/cave_shelves.py): rock only; the game puts its own moss,
-## mushrooms and recoloured crystals on top (owner: "use our existing mushrooms... crystals, a different colour").
-## SHELF_TOPS: where things sit on each model (its own space: +Z = out of the wall, +Y = up), and what.
-const SHELVES := {
-	"shelf_a": {model = "res://assets/models/cave/shelf_a.glb", size = [0.8, 2.2]},
-	"shelf_b": {model = "res://assets/models/cave/shelf_b.glb", size = [0.8, 2.0]},
-	"shelf_c": {model = "res://assets/models/cave/shelf_c.glb", size = [0.8, 1.8]},
-	"shelf_d": {model = "res://assets/models/cave/shelf_d.glb", size = [0.8, 1.8]},
-}
-const SHELF_TOPS := {
-	"shelf_b": [[Vector3(-0.08, 0.0, 0.16), "moss", 0.55], [Vector3(0.16, 0.0, 0.12), "moss", 0.4], [Vector3(0.02, -0.02, 0.36), "moss_drape", 0.5]],
-	"shelf_c": [[Vector3(-0.1, 0.24, 0.12), "cap", 0.32], [Vector3(0.15, -0.22, 0.18), "cap", 0.4]],
-	"shelf_d": [[Vector3(0.0, 0.0, 0.14), "crystal", 0.32]],
-}
-const SHELF_CRYSTALS := [Color(0.72, 0.42, 1.0), Color(1.0, 0.68, 0.3), Color(1.0, 0.45, 0.6)]  # not the cave's blue
-const WALL_SHELVES_BIG_ROOM := 14
-const WALL_SHELVES_ROOM := 4
 ## Roots hanging from ceilings (F232, tools/asset_forge/builds/cave_hanging.py; no rock chunk, they come out of the real
 ## ceiling). Owner: "I really like 3... make them very big and random... 1 is good too".
 const HROOTS := {
@@ -172,7 +155,6 @@ func _finish(plan: Dictionary, maker: CaveMaker, world: World) -> void:
 	for k in DRIPS:
 		_make_drip_set(k, _drips[k])
 	_place_hanging_roots(maker, rng)
-	# _place_shelves(maker, rng)  # off (owner, Nov 17: "really bad... doesn't blend with walls"); ledges in the rock instead?
 	_built = true
 	for id in _pending_hroots:
 		hide_hroot(id)
@@ -368,60 +350,7 @@ func _place_hanging_roots(maker: CaveMaker, rng: RandomNumberGenerator) -> void:
 		_make_model_cells(k, _model_mesh(HROOTS[k].model), items[k])
 
 
-## Rock shelves on room walls, 0.8-6 m above the floor, different sizes and tints, with their moss, mushrooms and
-## crystals. (After everything else, with the same dice, so nothing above moves.)
-func _place_shelves(maker: CaveMaker, rng: RandomNumberGenerator) -> void:
-	var items := {}
-	for k in SHELVES:
-		items[k] = []
-	var extras := {"moss": [], "moss_drape": [], "cap": [], "crystal0": [], "crystal1": [], "crystal2": []}
-	var names := SHELVES.keys()
-	for room in maker.rooms:
-		if room.get("sealed", false):
-			continue
-		for i in (WALL_SHELVES_BIG_ROOM if room.big else WALL_SHELVES_ROOM):
-			var ang := rng.randf() * TAU
-			var dir := Vector3(cos(ang), rng.randf_range(-0.25, 0.25), sin(ang)).normalized()
-			var kind: String = names[rng.randi_range(0, names.size() - 1)]
-			var size := rng.randf_range(SHELVES[kind].size[0], SHELVES[kind].size[1])
-			var tint := Color.from_hsv(rng.randf_range(0.04, 0.1), rng.randf_range(0.0, 0.12), rng.randf_range(0.85, 1.08))
-			var roll := rng.randi()
-			if maker.sdf_at(room.center) <= 0.0:
-				continue
-			var hit := GlowPlacer._march(maker, room.center, dir, 60.0)
-			if hit == Vector3.INF:
-				continue
-			var n := GlowPlacer.normal_at(maker, hit)
-			if absf(n.y) > 0.3:
-				continue  # walls only
-			var fl := GlowPlacer._march(maker, hit + Vector3(n.x, 0, n.z).normalized() * 0.8, Vector3.DOWN, 10.0)
-			if fl == Vector3.INF or hit.y - fl.y < 0.8 or hit.y - fl.y > 6.0:
-				continue
-			if CaveMaker.biome_at(hit) == "fungal":
-				tint *= Color(0.84, 0.74, 0.94)
-			var out := Vector3(n.x, 0, n.z).normalized()
-			var basis := Basis(Vector3.UP.cross(out), Vector3.UP, out)
-			var xf := Transform3D(basis.scaled(Vector3.ONE * size), hit - out * 0.05 * size)  # the wall slice pushed into the rock
-			items[kind].append([xf, tint])
-			for top in SHELF_TOPS.get(kind, []):
-				var at: Vector3 = xf * (top[0] as Vector3)
-				var s: float = top[2] * size
-				match top[1]:
-					"moss", "moss_drape":
-						var b := Basis(Vector3.UP, roll * 0.001) if top[1] == "moss" else Basis.looking_at(out, Vector3.UP)
-						extras[top[1]].append([Transform3D(b.scaled(Vector3.ONE * s), at), CaveLife._tint("moss", roll, CaveMaker.biome_at(at), 0.8),
-							Color(CaveLife._fuzz("moss", "damp", 0.8), 0.8, 0, 0)])
-					"cap":
-						extras.cap.append([Transform3D(Basis(Vector3.UP, roll * 0.002).scaled(Vector3.ONE * s), at), Color(0.92, 0.86, 0.74)])
-					"crystal":
-						extras["crystal%d" % (roll % SHELF_CRYSTALS.size())].append([Transform3D(Basis(Vector3.UP, roll * 0.003).scaled(Vector3.ONE * s), at), Color.WHITE])
-	for k in SHELVES:
-		_make_model_cells(k, _model_mesh(SHELVES[k].model), items[k])
-	_make_model_cells("moss", CaveLife.mesh_of("moss"), extras.moss, true)
-	_make_model_cells("moss_drape", CaveLife.mesh_of("moss_drape"), extras.moss_drape, true)
-	_make_model_cells("cap", _model_mesh("res://assets/models/cave/glowcap.glb"), extras.cap)
-	for c in SHELF_CRYSTALS.size():
-		_make_model_cells("crystal%d" % c, _model_mesh("res://assets/models/cave/crystal.glb", SHELF_CRYSTALS[c]), extras["crystal%d" % c])
+
 
 
 ## Any model, in 32 m squares: items are [Transform3D, colour] (or [Transform3D, colour, custom data]).

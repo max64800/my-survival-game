@@ -1384,7 +1384,7 @@ var _next_statue := 1
 
 ## Host: a new statue where this monster died, holding `loot`. Returns its id.
 func add_statue(m: Monster, loot: Array) -> int:
-	var needed: int = m.data.get("statue_hits", 4)
+	var needed: int = m.data.get("statue_hits", 2)
 	var items := loot.duplicate()
 	items.append(["stone", needed])  # (one stone for each hit it takes)
 	if randf() < Gems.STATUE_CHANCE:  # half the time the creature's own gem (spider: Bog Jade, red: Forge Garnet...)
@@ -1448,6 +1448,8 @@ const RAISE_REACH := 16.0     ## m: outside a dungeon (tests), how far he reache
 
 ## Host: the stone miners he could raise now, nearest first, as many as he may (empty = no Rally Slam).
 func raisable_statues(m: Monster) -> Array:
+	if not m.dungeon.is_empty() and m.dungeon.map.get("no_raising", false):
+		return []  # (this dungeon's boss doesn't raise the fallen: Mossprop, F592)
 	var up := 0
 	for u in monsters:
 		var o: Monster = monsters[u]

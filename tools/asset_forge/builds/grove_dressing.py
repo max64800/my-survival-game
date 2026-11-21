@@ -24,29 +24,7 @@ STONES = [("greystone", "a"), ("warmstone", "b"), ("slate", "a"), ("basalt", "b"
 	("amberrock", "a"), ("warmstone", "a"), ("slate", "b"), ("basalt", "a")]
 
 # (every name spelled out: the model-rules test finds a model's build script by its name)
-ROCKS = {
-	"grock_a": KF / "Rock_3_A_Color1.gltf",
-	"grock_b": KF / "Rock_3_B_Color1.gltf",
-	"grock_c": KF / "Rock_3_C_Color1.gltf",
-	"grock_d": KF / "Rock_3_D_Color1.gltf",
-	"grock_e": KF / "Rock_3_E_Color1.gltf",
-	"grock_f": KF / "Rock_3_F_Color1.gltf",
-	"grock_g": KF / "Rock_3_G_Color1.gltf",
-	"grock_h": KF / "Rock_3_H_Color1.gltf",
-	"grock_i": KF / "Rock_3_I_Color1.gltf",
-	"grock_j": KF / "Rock_3_J_Color1.gltf",
-	"grock_k": KF / "Rock_3_K_Color1.gltf",
-	"grock_l": KF / "Rock_3_L_Color1.gltf",
-	"grock_m": KF / "Rock_3_M_Color1.gltf",
-	"grock_n": KF / "Rock_3_N_Color1.gltf",
-	"grock_o": KF / "Rock_3_O_Color1.gltf",
-	"grock_p": KF / "Rock_3_P_Color1.gltf",
-	"grock_q": KF / "Rock_3_Q_Color1.gltf",
-	"grock_r": KF / "Rock_3_R_Color1.gltf",
-	"grock_medium_1": Q / "Rock_Medium_1.gltf",
-	"grock_medium_2": Q / "Rock_Medium_2.gltf",
-	"grock_medium_3": Q / "Rock_Medium_3.gltf",
-}
+ROCKS = {}   # (owner, Nov 21, F582: the grove rocks are out of the game)
 PEBBLES = {
 	"gpebble_round_1": Q / "Pebble_Round_1.gltf",
 	"gpebble_round_2": Q / "Pebble_Round_2.gltf",

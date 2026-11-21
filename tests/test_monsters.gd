@@ -693,6 +693,34 @@ func test_bat_ragdoll_falls_out_of_the_air() -> void:
 
 ## Owner (Nov 18): everything that dies turns to stone; nothing drops; mine the statue with a pickaxe (hits by size)
 ## for its stone and loot; left alone it crumbles after a few minutes.
+## Owner, Nov 21 (F593, said twice): Lost Miners reached too far: "if you run away, you should get out of their hit
+## without dodging". For each of their attacks: you're as close as it starts from, it shows its spark, you take 0.3 s to
+## react, then walk straight off (Dwarf.WALK_SPEED); when its blow lands you're past where it hits (reach + 0.8 m; a
+## leap's hit is short, but it rushes after you for the last 60% of its wind-up at Monster.lunge_speed).
+func test_running_away_from_a_lost_miner() -> void:
+	var data: Dictionary = Monsters.LIST.lost_miner
+	for atk: Dictionary in data.attacks:
+		var walk := Dwarf.WALK_SPEED * (float(atk.tell) - 0.3)
+		var hit := float(atk.reach) + 0.8
+		var rush := 0.0
+		var starts := [0.8, float(atk.reach)]
+		if atk.get("lunge", false):
+			hit = float(data.size) * 0.6 + 0.8 + 0.8
+			rush = Monster.lunge_speed(data, atk) * float(atk.tell) * Monster.CHARGE_RUN_PART
+			starts = [2.0, float(atk.reach)]  # (it only leaps from over 2 m)
+		for start: float in starts:
+			var gap := start + walk - rush
+			check(gap > hit, "%s from %.1f m: walking off, you end %.1f m away (it hits to %.1f m)" % [atk.name, start, gap, hit])
+		if atk.get("lunge", false):
+			check(start_hits(data, atk), "%s still hits a dwarf who stands still" % atk.name)
+
+
+## A leap's rush (for the last 60% of its wind-up) gets it from its furthest start to within its hit of someone standing.
+func start_hits(data: Dictionary, atk: Dictionary) -> bool:
+	var rush := Monster.lunge_speed(data, atk) * float(atk.tell) * Monster.CHARGE_RUN_PART
+	return maxf(float(atk.reach) - rush, 1.2) <= float(data.size) * 0.6 + 0.8 + 0.8
+
+
 func test_dead_creature_turns_to_stone_and_is_mined() -> void:
 	await _setup()
 	var m := _spawn("rock_beetle", Vector3(3.0, 0, 0))
@@ -704,7 +732,7 @@ func test_dead_creature_turns_to_stone_and_is_mined() -> void:
 	check(auth._drops.size() == drops_before, "nothing drops when it dies: the loot is inside the stone")
 	var id: int = auth.monsters.statues.keys()[0]
 	var st: Dictionary = auth.monsters.statues[id]
-	check(st.needed == 4 and st.loot.any(func(d: Array) -> bool: return d[0] == "stone"), "a beetle takes 4 hits and holds stone")
+	check(st.needed == 2 and st.loot.any(func(d: Array) -> bool: return d[0] == "stone"), "a beetle takes 2 hits (F586) and holds stone")
 	for i in 420:  # (it falls, lies still, then turns to stone)
 		await tree.physics_frame
 	var body: Node3D = Statue.nodes.get(id)
@@ -724,9 +752,10 @@ func test_dead_creature_turns_to_stone_and_is_mined() -> void:
 	check(auth.monsters.request_hit_statue(1, id) == "no_tool", "a sword or fist bounces off: pickaxe only")
 	ps.inventory.slots = saved
 	var r := ""
-	for i in 4:
-		r = auth.monsters.request_hit_statue(1, id)
-	check(r == "dug", "4 pickaxe hits break it")
+	r = auth.monsters.request_hit_statue(1, id)
+	check(r != "dug", "1 hit is not enough")
+	r = auth.monsters.request_hit_statue(1, id)
+	check(r == "dug", "2 pickaxe hits break it")
 	check(auth._drops.size() > drops_before, "then its stone and loot drop")
 	await tree.process_frame
 	check(not Statue.nodes.has(id), "and the stone body is gone")
@@ -736,7 +765,10 @@ func test_dead_creature_turns_to_stone_and_is_mined() -> void:
 		await tree.physics_frame
 	auth.monsters._kill(m2, 1)
 	var id2: int = auth.monsters.statues.keys()[0]
-	check(auth.monsters.statues[id2].needed == 2, "a bat takes 2 hits")
+	check(auth.monsters.statues[id2].needed == 1, "a bat takes 1 hit (F586)")
+	for k in Monsters.LIST:
+		var want := 1 if k == "cave_bat" else (5 if Monsters.LIST[k].get("boss", false) else 2)
+		check_eq(int(Monsters.LIST[k].get("statue_hits", 2)), want, "%s: hits to mine its statue (F586)" % k)
 	auth.monsters.statues[id2].left = 0.01
 	for i in 3:
 		await tree.physics_frame

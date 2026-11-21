@@ -150,6 +150,8 @@ const MOSSPROP := {
 	best = 130.0,
 	chase_out = true,
 	deadly = ["chasm"],
+	no_raising = true,  ## (owner, Nov 21, F592: the Prop Warden doesn't bring the miners back here; kept for the next boss)
+	crushers_always = true,  ## (owner, Nov 21, F590: "the crushers still don't work": they waited for a Pack Hall it hasn't got)
 	spaces = [
 		["entry", 28, 50, 32, 60, 0, 3.5],            # the way in
 		["great_cave", 14, 24, 46, 50, 0, 16],        # the tall cave (natural rock, 16 m up): the tower stands in it
@@ -167,6 +169,18 @@ const MOSSPROP := {
 		["hall_door", 24, 12, 30, 16, 10, 4],
 		["top_hall", 30, 10, 44, 24, 10, 6],          # 14 the Prop Warden; the barred gate out onto the top deck
 	],
+	## The great cave is natural rock (owner, Nov 21, F583: "still one big square"): its west, east and south walls and
+	## its roof bulge in and dimple out (rough_bump); the floor and the north cliff (the tower's) stay flat. Near built
+	## things the rock stays where the box puts it (mode 0) or may only dimple out (mode 1): [mode, x0, y0, z0, x1, y1, z1].
+	## tools/dungeons/make_mossprop.py reads these to hang its stalactites from the roof; test_the_rock_keeps_off_the_tower.
+	rough = {space = "great_cave", amp = 1.8, keep = [
+		[0, 11.0, 0.0, 22.0, 21.0, 18.0, 31.5],   # the Rockfall Ledge, its doorway and its falling stalactites
+		[1, 11.0, 0.0, 31.5, 17.5, 6.5, 45.0],    # behind the Lower Walk (its boards stand 0.5 m off the wall)
+		[0, 11.0, 0.0, 45.0, 18.0, 4.0, 48.5],    # the ladder up onto the Lower Walk
+		[0, 41.5, 0.0, 22.0, 49.0, 13.5, 37.5],   # the tower's east arm, the Climbers' Rest door, the ladder spikes
+		[0, 24.5, 0.0, 46.0, 35.5, 5.5, 53.0],    # the way in and Base Camp's back
+		[0, 30.5, 11.0, 22.0, 37.5, 18.0, 29.5],  # the swinging boulder's chain up to the roof
+	]},
 }
 
 const MAPS := [MOSSGATE, LAMPWICK, PELL, MOSSPROP]
@@ -193,8 +207,15 @@ static func place(map: Dictionary, mouth_world: Vector3, turn: int, entry_out: f
 	var hmx := Vector3(mouth.x + DOOR_HOLE.x * 0.5, DOOR_HOLE.y, mouth.y + entry_out)
 	boxes.append([hmn, hmx])
 	hi = hi.max(hmx)
-	lo -= Vector3.ONE * SHELL
-	hi += Vector3.ONE * SHELL
+	var rough_i := -1
+	var pad := 0.0  # (a rough cave dimples out up to amp: its old dwarf stone shell goes out with it)
+	if map.has("rough"):
+		pad = float(map.rough.amp)
+		for i in map.spaces.size():
+			if map.spaces[i][0] == map.rough.space:
+				rough_i = i
+	lo -= Vector3.ONE * (SHELL + pad)
+	hi += Vector3.ONE * (SHELL + pad)
 	# The world box round it all (for quick "nowhere near" answers).
 	var wlo := Vector3.ONE * 1e9
 	var whi := -Vector3.ONE * 1e9
@@ -205,7 +226,7 @@ static func place(map: Dictionary, mouth_world: Vector3, turn: int, entry_out: f
 				wlo = wlo.min(w)
 				whi = whi.max(w)
 	return {map = map, id = String(map.id), mouth = mouth_world, turn = turn, basis = basis, inv = basis.inverse(),
-		boxes = boxes, lo = lo, hi = hi, wlo = wlo, whi = whi, entry_out = entry_out}
+		boxes = boxes, lo = lo, hi = hi, wlo = wlo, whi = whi, entry_out = entry_out, rough_i = rough_i}
 
 
 ## Where the round door stands, in the map's own z.
@@ -239,8 +260,10 @@ static func sdf(d: Dictionary, p: Vector3) -> float:
 		return -1e9
 	var q := to_local(d, p)
 	var best := -1e9
-	for b in d.boxes:
-		best = maxf(best, _box_in(q, b[0], b[1]))
+	var ri: int = d.get("rough_i", -1)
+	for i in d.boxes.size():
+		var b: Array = d.boxes[i]
+		best = maxf(best, _rough_in(q, b[0], b[1], d.map.rough) if i == ri else _box_in(q, b[0], b[1]))
 	return best
 
 
@@ -266,6 +289,33 @@ static func space_floor(d: Dictionary, space: String) -> Vector3:
 		if s[0] == space:
 			return to_world(d, Vector3((float(s[1]) + float(s[3])) * 0.5, float(s[5]), (float(s[2]) + float(s[4])) * 0.5))
 	return Vector3.INF
+
+
+## A rough box (map.rough): like _box_in, but each wall and the roof moved in or out by rough_bump. Inside it is the
+## distance to the nearest (moved) side; outside, how far past the furthest one (close enough for carving rock).
+static func _rough_in(q: Vector3, mn: Vector3, mx: Vector3, r: Dictionary) -> float:
+	var w := q.x - mn.x + rough_bump(r, 0, q.z, q.y, q)
+	var e := mx.x - q.x + rough_bump(r, 1, q.z, q.y, q)
+	var s := mx.z - q.z + rough_bump(r, 2, q.x, q.y, q)
+	var c := mx.y - q.y + rough_bump(r, 3, q.x, q.z, q) * clampf((q.z - mn.z - 1.5) / 2.5, 0.0, 1.0)
+	return minf(minf(minf(w, e), minf(s, q.z - mn.z)), minf(c, q.y - mn.y))
+
+
+## How far wall `wall` (0 west, 1 east, 2 south, 3 the roof) is pushed out (+, a dimple) or in (-, a bulge) at its spot
+## (a, b) along it: three waves of about 12, 8 and 4 m, up to amp. q (the map's metres) fades it out near built things
+## (map.rough.keep). Same numbers on every computer (no dice): make_mossprop.py works it out the same way.
+const ROUGH_PHASE := [[0.3, 2.1, 4.0], [1.7, 5.2, 0.9], [3.3, 0.6, 2.8], [5.0, 3.9, 1.4]]
+static func rough_bump(r: Dictionary, wall: int, a: float, b: float, q: Vector3) -> float:
+	var ph: Array = ROUGH_PHASE[wall]
+	var v := (0.55 * sin(0.52 * a + 0.31 * b + float(ph[0])) + 0.30 * sin(0.23 * a - 0.83 * b + float(ph[1])) \
+		+ 0.15 * sin(1.37 * a + 1.1 * b + float(ph[2]))) * float(r.amp)
+	for k: Array in r.keep:
+		if int(k[0]) == 1 and v >= 0.0:
+			continue
+		var out := Vector3(maxf(maxf(float(k[1]) - q.x, q.x - float(k[4])), 0.0),
+			maxf(maxf(float(k[2]) - q.y, q.y - float(k[5])), 0.0), maxf(maxf(float(k[3]) - q.z, q.z - float(k[6])), 0.0))
+		v *= clampf(out.length() / 1.5, 0.0, 1.0)
+	return v
 
 
 ## Positive inside the box (how far to its nearest side), negative outside.

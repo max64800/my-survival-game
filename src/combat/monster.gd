@@ -520,7 +520,7 @@ func think(delta: float, mgr: Node) -> void:
 				# Charges and pounces: rush at the target during the last part of the wind-up.
 				var rush := target.global_position - global_position
 				rush.y = 0
-				var charge_speed := maxf(data.run * 2.0, _attack.reach / maxf(_attack.tell * 0.6, 0.1))
+				var charge_speed := lunge_speed(data, _attack)
 				if data.get("straight_charge", false) or _attack.get("straight", false):
 					# A charge doesn't steer: sidestep and it thunders past (then its back is open).
 					# (`straight` on one attack: the Prop Warden's Shield Charge, F548; he breaks nothing on the way.)
@@ -1124,6 +1124,14 @@ func _landed() -> void:
 				bite.tell = DROP_BITE_TELL  # landing by you it bites at once (you dodge by stepping away while it falls)
 				_start_attack(bite, _mgr)
 				break
+
+
+## How fast a creature rushes in during a charge or a leap (an attack may set its own: the Lost Miner's leap is slower
+## than you walk, F593).
+static func lunge_speed(d: Dictionary, atk: Dictionary) -> float:
+	if atk.has("lunge_speed"):
+		return float(atk.lunge_speed)
+	return maxf(float(d.run) * 2.0, float(atk.reach) / maxf(float(atk.tell) * 0.6, 0.1))
 
 
 func mgr_target_near(r: float) -> bool:

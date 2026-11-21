@@ -255,11 +255,19 @@ func test_rotten_boards_leave_a_way() -> void:
 	for c in way:
 		var key := "%d,%d,5" % [c[0], c[1]]
 		check(boards.has(key) and not bad.has(key), "a sound board on deck 2 at %s" % [c])
+	# The top deck (owner, Nov 21, F589): many more rotten boards, and still one sound way from the upper ladder's top,
+	# past the rope slide and the Top Hall's gate, to the Crusher Gallery's door.
+	check(on.call(10) >= 8, "many rotten boards on the top deck (%d)" % on.call(10))
+	var top := [[45, 33], [45, 31], [45, 29], [45, 27], [43, 27], [41, 27], [39, 27], [39, 25], [37, 25], [35, 25], [33, 25],
+		[31, 25], [29, 25], [29, 27], [27, 27], [25, 27], [25, 25], [23, 25], [21, 25]]
+	for c in top:
+		var key := "%d,%d,10" % [c[0], c[1]]
+		check(boards.has(key) and not bad.has(key), "a sound board on the top deck at %s" % [c])
 	for z in [31, 33, 35, 37, 39, 41, 43]:
 		check(not (bad.has("15,%d,2" % z) and bad.has("15,%d,2" % (z + 2))), "never two rotten boards in a row on the Lower Walk (z %d)" % z)
 
 
-## Owner, Nov 21 (F539): a real cave, many stalactites and rock. Placement rule: none of it stands in anything built,
+## Owner, Nov 21 (F539): a real cave, many stalactites. Placement rule: none of it stands in anything built,
 ## hangs into the rope slide's way, or leaves less than 2 m of head room over a floor. Uses each model's real size.
 func test_the_cave_keeps_clear() -> void:
 	var plan := DungeonBuild.load_plan("mossprop")
@@ -275,7 +283,7 @@ func test_the_cave_keeps_clear() -> void:
 			built.append(AABB(Vector3(p.pos[0] - 1.0, p.pos[1], p.pos[2] - 1.0), Vector3(2.0, 0.24, 2.0)))
 	var sizes := {}
 	var drips := 0
-	var rocks := 0
+	var lumps := 0
 	var bad := 0
 	for p in plan.props:
 		if not p.get("grown", false):
@@ -294,10 +302,194 @@ func test_the_cave_keeps_clear() -> void:
 				print("  a %s at %s hangs in the rope slide's way" % [p.model, p.pos])
 				break
 		drips += 1 if "drip" in String(p.model) else 0
-		rocks += 1 if "grock" in String(p.model) or "shelf" in String(p.model) else 0
-	check_eq(bad, 0, "the cave's rock keeps clear of everything built and the rope slide")
-	check(drips >= 80, "many stalactites (%d)" % drips)
-	check(rocks >= 60, "rock lumps and shelves on the walls and roof (%d)" % rocks)
+	for p in plan.props:
+		lumps += 1 if "grock" in String(p.model) or "cave/shelf" in String(p.model) else 0
+	check_eq(bad, 0, "the cave's stalactites keep clear of everything built and the rope slide")
+	check(drips >= 16 and drips <= 40, "far fewer grown stalactites (F584: %d)" % drips)
+	check_eq(lumps, 0, "no rock lumps or rock shelves (F582: \"they look awful\")")
+
+
+## Owner, Nov 21 (F587): the wall on the left after the second ladder (the Prop Room's dart wall) was easy to spot and did
+## nothing: it was the show-only model, with no wire or plate to fire it. Now it's the working dart wall (as at Old Pell's
+## and Lampwick) with a tripwire across the room from its sill: walk into the wire and the dart hits you; walls only.
+func test_the_prop_room_dart_wall_fires() -> void:
+	var plan := DungeonBuild.load_plan("mossprop")
+	for p in plan.props:
+		check(String(p.model) != "dungeon/trap_dart_wall.glb", "no show-only dart wall left")
+	var r := _rig()
+	var db: DungeonBuild = r.db
+	var d: Dictionary = r.d
+	var ps = r.ps
+	var wires := _all(db, "tripwire")
+	check_eq(wires.size(), 1, "one tripwire")
+	if wires.size() != 1:
+		r.root.free()
+		return
+	var dart: int = db.mine._dart_of(wires[0])
+	check(dart >= 0, "the wire fires a dart wall")
+	if dart < 0:
+		r.root.free()
+		return
+	var wall := (db.things[dart].xform as Transform3D).origin
+	check(wall.distance_to(DungeonMap.to_world(d, Vector3(16.0, 5.0, 21.0))) < 0.5, "the Prop Room's west wall")
+	var player: Node3D = r.player
+	player.global_position = DungeonMap.to_world(d, Vector3(18.5, 5.24, 21.0 - 0.12))  # walking north across the wire
+	var hp0: float = ps.vitals.health
+	db.mine.host_check(r.auth, 1, player.global_position, 0.1)
+	check(db.is_broken(wires[0]), "walked into: the wire snaps")
+	check(db.is_broken(dart), "and the dart fires")
+	check(ps.vitals.health < hp0, "it hits you (%.0f -> %.0f)" % [hp0, ps.vitals.health])
+	r.root.free()
+
+
+## Owner, Nov 21 (F585, said twice): shooting the Rockfall Ledge's trapped chest with a crossbow did nothing. The cause:
+## a bolt's line didn't see chests at all (their layer wasn't in its mask), so it flew through. Now it stops on the chest,
+## finds the chest's spike floor, the spikes slam up with nobody on them, and the chest's lid springs open.
+func test_shooting_the_trapped_chest() -> void:
+	check(DwarfFight.BOLT_MASK & Storage.BOX_LAYER != 0, "a bolt can hit a chest")
+	var r := _rig()
+	var db: DungeonBuild = r.db
+	var auth: GameAuthority = r.auth
+	DungeonBuild.add_chests(auth, db.maker)
+	var chest: Node3D = null
+	var at := DungeonMap.to_world(r.d, Vector3(11.0, 2.84, 28.0))  # (the trapped chest's middle)
+	for bid in auth.storage.boxes:
+		var node: Node3D = auth.storage.boxes[bid].node
+		if node.global_position.distance_to(at) < 1.0:
+			chest = node
+	check(chest != null, "the trapped chest is there")
+	var id: int = db.mine.spikes_near(at)
+	check(id >= 0, "a bolt at the chest finds its spike floor")
+	if chest == null or id < 0:
+		r.root.free()
+		return
+	var lid := ChestOpen.lid_of(chest)
+	var shut := lid.rotation.x if lid else 0.0
+	db.request_hit(1, id, true)
+	check(db.is_broken(id), "shot: its spikes slam up")
+	await tree.create_timer(0.5).timeout
+	check(lid != null and absf(lid.rotation.x - shut) > 0.3, "and the chest springs open")
+	r.root.free()
+
+
+## Owner, Nov 21 (F590, said twice): "the crushers still don't work". They slept until someone crossed a Pack Hall,
+## and Mossprop has none. Now they run from the start (like Old Pell's) and crush a dwarf under them as they slam.
+func test_the_crushers_work() -> void:
+	var r := _rig()
+	var db: DungeonBuild = r.db
+	check_eq(db.crushers.size(), 2, "two crushers in the Crusher Gallery")
+	if db.crushers.size() != 2:
+		r.root.free()
+		return
+	var id: int = db.crushers[0]
+	var th: Dictionary = db.things[id]
+	check(db.crushers_awake(th.d), "awake from the start, with nobody near")
+	var t := 1000.0 * DungeonBuild.CRUSH_CYCLE
+	db._move_crusher(id, t + DungeonBuild.CRUSH_SLAM + 0.1, r.auth)
+	check(float(th.down) >= 1.0, "its weight comes down")
+	db._move_crusher(id, t + DungeonBuild.CRUSH_CYCLE * 0.9, r.auth)
+	check(float(th.down) < 0.5, "and goes back up")
+	var ps: GameAuthority.PlayerState = r.ps
+	ps.vitals.health = 100.0
+	(r.player as Node3D).global_position = (th.xform as Transform3D).origin + Vector3.UP * 0.25
+	db._clock = 100.0
+	db._move_crusher(id, t + 0.05, r.auth)  # (0.05 s into its slam)
+	check(ps.vitals.health <= 0.0, "a dwarf under it while it slams is crushed")
+	r.root.free()
+
+
+## Owner, Nov 21 (F584): "far too many stalactites, and very few of them actually fall". The cave's loose ones (not
+## the Rockfall Ledge's 3) are real falling traps: a dwarf walking under each brings it down, and it lands on him.
+func test_the_cave_stalactites_fall() -> void:
+	var r := _rig()
+	var db: DungeonBuild = r.db
+	var player: Node3D = r.player
+	var fell := 0
+	var drips := 0
+	for id in _all(db, "drip"):
+		var th: Dictionary = db.things[id]
+		var local := DungeonMap.to_local(th.d, th.centre)
+		if local.x < 21.0 and local.z < 31.0:
+			continue  # (the Rockfall Ledge's: test_dungeon's)
+		drips += 1
+		var c: Vector3 = th.centre
+		var under := Vector3(c.x, float(th.landing) + 0.05, c.z)
+		for k in 30:  # walking past at 4 m/s, 0.6 m to one side, through the host's check
+			player.global_position = under + Vector3(-3.0 + 0.4 * k, 0, 0.6)
+			db._host_tick = 0.0
+			db._physics_process(0.1)
+			if db.is_broken(id):
+				break
+		if not db.is_broken(id):
+			print("  stalactite %d at %s did not fall (landing %.2f)" % [id, local, float(th.landing)])
+			continue
+		if db.drip_damage(th, under) >= 50.0:  # (where it lands: right under it)
+			fell += 1
+		else:
+			print("  stalactite %d at %s fell but didn't hurt" % [id, local])
+	check(drips >= 8 and drips <= 16, "a handful of loose stalactites in the cave (%d)" % drips)
+	check_eq(fell, drips, "every one of them falls on a dwarf walking under it and hurts")
+	r.root.free()
+
+
+## Owner, Nov 21 (F583): the cave isn't a dug-out box: its side walls, south wall and roof bulge and dimple (the floor
+## stays flat). The rock never moves into anything built (placement rule), and every stalactite hangs from the real roof.
+func test_the_rock_keeps_off_the_tower() -> void:
+	var rough := DungeonMap.place(DungeonMap.MOSSPROP, Vector3(30.0, 0.0, 60.0), 0, 8.0)
+	var flat_map: Dictionary = DungeonMap.MOSSPROP.duplicate(true)
+	flat_map.erase("rough")
+	var flat := DungeonMap.place(flat_map, Vector3(30.0, 0.0, 60.0), 0, 8.0)
+	check(DungeonMap.to_local(rough, Vector3(20.0, 3.0, 40.0)).is_equal_approx(Vector3(20.0, 3.0, 40.0)), "(the test map's metres are the plan's)")
+	# It really is rough: how far in or out each wall goes along its length, high up (no keep-clear zones there).
+	var r: Dictionary = DungeonMap.MOSSPROP.rough
+	for wall in 4:
+		var lo := 99.0
+		var hi := -99.0
+		for k in 27:
+			var a := 24.0 + k if wall < 2 else 15.0 + k * 1.15
+			var v := DungeonMap.rough_bump(r, wall, a, 11.0 if wall < 3 else 40.0 + (k % 5), Vector3(30.0, 16.0, 40.0))
+			lo = minf(lo, v)
+			hi = maxf(hi, v)
+		check(lo < -0.8 and hi > 0.8, "wall %d bulges in (%.1f m) and dimples out (%.1f m)" % [wall, -lo, hi])
+	check(absf(DungeonMap.sdf(rough, Vector3(30.0, 0.2, 40.0)) - DungeonMap.sdf(flat, Vector3(30.0, 0.2, 40.0))) < 0.01, "the floor stays flat")
+	# Nothing built has rock pushed into it: at each thing's corners the rock is no nearer than before (or over 1 m off).
+	var plan := DungeonBuild.load_plan("mossprop")
+	var spots: Array = []
+	for q in plan.pieces:
+		var sc := float(q.get("scale", 1.0))
+		var h: float = {"doorway": 3.0, "floor": 0.24, "railing": 1.0, "half_wall": 1.0}.get(String(q.id), 2.0) * sc
+		for c in [Vector3(-1, 0, -1), Vector3(1, 0, -1), Vector3(-1, 0, 1), Vector3(1, 0, 1), Vector3.ZERO]:
+			for y in [0.1, h]:
+				spots.append([String(q.id), Vector3(q.pos[0], q.pos[1], q.pos[2]) + c * 0.95 * sc + Vector3.UP * y])
+	for p in plan.props + plan.creatures + plan.chests:
+		if p.get("grown", false) or "trap_drip" in String(p.get("model", "")):
+			continue  # (stalactites hang from the roof: checked below)
+		for y in [0.1, 1.5]:
+			spots.append([String(p.get("model", p.get("kind", ""))), Vector3(p.pos[0], p.pos[1], p.pos[2]) + Vector3.UP * y])
+	var bad := 0
+	for sp in spots:
+		var at: Vector3 = sp[1]
+		var was := DungeonMap.sdf(flat, at)
+		if DungeonMap.sdf(rough, at) < minf(was, 1.0) - 0.02:
+			bad += 1
+			if bad < 6:
+				print("  the rock moves into %s at %s" % [sp[0], at])
+	check_eq(bad, 0, "the rough rock keeps off everything built (%d spots checked)" % spots.size())
+	# Every stalactite's top is in the roof's rock, and 1.5 m under it is the cave's air (none float, none are buried).
+	var floating := 0
+	var drips := 0
+	for p in plan.props:
+		var loose: bool = "trap_drip" in String(p.model) and not (p.pos[0] < 21.0 and p.pos[2] < 31.0)  # (F584's fallers)
+		if not loose and (not p.get("grown", false) or not "drip" in String(p.model)):
+			continue
+		drips += 1
+		var top := Vector3(p.pos[0], p.pos[1], p.pos[2]) + Vector3.UP * (0.1 if loose else 0.0)
+		if DungeonMap.sdf(rough, top) > 0.05 or DungeonMap.sdf(rough, top - Vector3.UP * 1.5) < 0.0:
+			floating += 1
+			if floating < 6:
+				print("  a stalactite at %s doesn't hang from the roof (%.2f, %.2f)" % [top, DungeonMap.sdf(rough, top), DungeonMap.sdf(rough, top - Vector3.UP * 1.5)])
+	check(drips > 30, "(the stalactites were checked: %d)" % drips)
+	check_eq(floating, 0, "every stalactite hangs from the bumpy roof")
 
 
 func _model_box(model: String) -> AABB:
@@ -316,6 +508,32 @@ func _model_box(model: String) -> AABB:
 		first = false
 	n.free()
 	return box
+
+
+## Owner, Nov 21 (F588, said twice): the wall hiding the stone chest had gaps at both sides (the cracked wall is 2 m wide,
+## its hole in the shed's wall 4 m). Along that wall, 1 m up, every spot is covered by a wall, a narrow wall or the
+## cracked wall itself: you only see in by breaking it.
+func test_the_vault_wall_has_no_gaps() -> void:
+	var plan := DungeonBuild.load_plan("mossprop")
+	var walls: Array[AABB] = []
+	var cracked := 0
+	for q in plan.pieces:
+		var w: float = {"wall": 2.0, "wall_narrow": 1.0}.get(String(q.id), 0.0)
+		if w > 0.0 and absf(float(q.pos[2]) - 18.0) < 0.3 and int(q.get("rot", 0)) == 0:
+			walls.append(AABB(Vector3(q.pos[0] - w * 0.5, q.pos[1], 17.8), Vector3(w, 2.0, 0.4)))
+	for p in plan.props:
+		if String(p.model) in ["dungeon/wall_cracked.glb", "dungeon/wall_old.glb"] and absf(float(p.pos[2]) - 18.0) < 0.3:
+			var b := _place_box(_model_box(String(p.model)), p)
+			walls.append(AABB(Vector3(b.position.x, b.position.y, 17.8), Vector3(b.size.x, b.size.y, 0.4)))
+			cracked += 1 if "cracked" in String(p.model) else 0
+	check_eq(cracked, 1, "the cracked wall is there")
+	var gaps := 0
+	for k in 37:
+		var at := Vector3(22.4 + 0.2 * k, 6.0, 18.0)  # (the shed's floor is 5 m up)
+		if not walls.any(func(b: AABB) -> bool: return b.grow(0.02).has_point(at)):
+			gaps += 1
+			print("  a gap in the vault's wall at x %.1f" % at.x)
+	check_eq(gaps, 0, "no gaps beside the cracked wall")
 
 
 ## A model's box placed like DungeonBuild does it (yaw, then tilt, then scale), in the plan's metres.

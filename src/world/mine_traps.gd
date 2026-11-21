@@ -424,6 +424,9 @@ func on_broke(id: int) -> bool:
 		"chest_spikes":
 			th.gone = true
 			_slam_spikes(th)
+			var box := chest_by(th)
+			if box:
+				ChestOpen.open(box)  # (owner, Nov 21, F585: it springs open as its spikes go off)
 		_:
 			return false
 	return true
@@ -635,6 +638,18 @@ func _fire_spikes(id: int, auth: GameAuthority) -> void:
 		if node and on_spike_floor(th, node.global_position):
 			auth.hurt(pid, SPIKE_DAMAGE)
 			auth.tell(pid, "Spikes shoot up out of the floor!")
+
+
+## The chest a spike floor guards (its body; null if there's none near).
+func chest_by(th: Dictionary) -> Node3D:
+	var auth := GameAuthority.instance
+	if auth == null or auth.storage == null:
+		return null
+	for bid in auth.storage.boxes:
+		var node: Node3D = auth.storage.boxes[bid].node
+		if is_instance_valid(node) and node.global_position.distance_to(th.centre) < 2.5:
+			return node
+	return null
 
 
 ## The spike floor near a point (a bolt hit the vault's chest): its id, or -1.

@@ -336,6 +336,24 @@ func test_the_spark_sits_on_the_tool_points() -> void:
 
 ## The Prop Warden's Rally Slam (owner, Nov 21): his fallen Lost Miners' stone glows, then up to 2 get up; a hit on him
 ## during the slam calls it off; a statue mined away can't come back; never more than 3 miners up; he doesn't smash them.
+## Owner, Nov 21 (F592): the Prop Warden doesn't raise his miners in Mossprop Workings (its map says no_raising);
+## the Rally Slam's code stays for the next boss.
+func test_no_raising_in_mossprop() -> void:
+	await _setup()
+	var mm := auth.monsters
+	var boss := _spawn("prop_warden", Vector3(-12, 0, 0))
+	var old := MonsterManager.STATUE_LIFE - 10.0
+	for i in 2:
+		mm.statues[900 + i] = {pos = boss.global_position + Vector3(2.0 + i, 0, 0), kind = "lost_miner", loot = [], hits = 0, needed = 4, left = old}
+	check_eq(mm.raisable_statues(boss).size(), 2, "out in the caves he could raise them")
+	boss.dungeon = {map = DungeonMap.MOSSPROP}
+	check(mm.raisable_statues(boss).is_empty(), "in Mossprop he raises nobody")
+	for i in 20:
+		check(not boss._pick_attack(10.0, mm).has("raise_miners"), "and never uses the Rally Slam there")
+	boss.dungeon = {}  # (only a map, no rooms: off again before he thinks)
+	_teardown()
+
+
 func test_prop_warden_raises_fallen_miners() -> void:
 	await _setup()
 	var mm := auth.monsters

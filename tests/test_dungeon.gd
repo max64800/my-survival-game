@@ -456,6 +456,48 @@ func test_the_dungeon_test_world_has_no_caves() -> void:
 		check(m.sdf_at(far) < 0.0, "solid rock at %s (no caves)" % far)
 
 
+## Owner, Nov 20 (F490) and Nov 21 (F591, came back): every dungeon's boss room has a door. Each way into the room
+## where a boss sleeps (a doorway on its walls) is shut by a round door you open, the loot door or a barred gate:
+## you never see the boss from outside. (A way on that you only reach through his room doesn't count: BOSS_WAY_ON.)
+const BOSS_WAY_ON := {"lampwick": Vector2(42.0, 28.0)}  # (the Back Rails, down to the way out)
+func test_every_boss_room_has_a_door() -> void:
+	var rooms := 0
+	for map: Dictionary in DungeonMap.MAPS:
+		var plan := DungeonBuild.load_plan(String(map.id))
+		for c in plan.get("creatures", []):
+			var kind := String(c.model).get_file().get_basename()
+			if not Monsters.LIST.get(kind, {}).get("boss", false):
+				continue
+			var room: Array = []
+			for sp: Array in map.spaces:
+				if float(sp[1]) <= c.pos[0] and c.pos[0] <= float(sp[3]) and float(sp[2]) <= c.pos[2] and c.pos[2] <= float(sp[4]) \
+						and absf(float(c.pos[1]) - float(sp[5])) < 1.0:
+					room = sp
+			check(not room.is_empty(), "%s: the %s stands in a room" % [map.id, kind])
+			if room.is_empty():
+				continue
+			rooms += 1
+			var ways := 0
+			for q in plan.pieces:
+				if String(q.id) != "doorway" or absf(float(q.pos[1]) - float(room[5])) > 0.5:
+					continue
+				var x := float(q.pos[0])
+				var z := float(q.pos[2])
+				var on_x := (absf(x - float(room[1])) < 0.3 or absf(x - float(room[3])) < 0.3) and z > float(room[2]) and z < float(room[4])
+				var on_z := (absf(z - float(room[2])) < 0.3 or absf(z - float(room[4])) < 0.3) and x > float(room[1]) and x < float(room[3])
+				if not on_x and not on_z or BOSS_WAY_ON.get(String(map.id), Vector2.INF).distance_to(Vector2(x, z)) < 0.5:
+					continue
+				ways += 1
+				var shut := false
+				for p in plan.props:
+					if String(p.model) in ["dungeon/door_loot.glb", "dungeon/gate_round.glb"] \
+							and Vector2(p.pos[0] - x, p.pos[2] - z).length() < 0.5:
+						shut = true
+				check(shut, "%s: the way into the %s's room at (%.1f, %.1f) has a door" % [map.id, kind, x, z])
+			check(ways > 0, "%s: the %s's room has a way in (%d)" % [map.id, kind, ways])
+	check(rooms >= 3, "the boss rooms were checked (%d)" % rooms)
+
+
 # ---- The owner's third play of the dungeon test (Nov 20) ----
 
 ## Note 1: a dwarf walking under a stalactite (at walking speed, through the real trap check) brings it down on him.

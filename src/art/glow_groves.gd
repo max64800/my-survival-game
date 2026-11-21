@@ -19,9 +19,9 @@ const DARK := ["dtree_dead_1", "dtree_dead_2", "dtree_dead_3", "dtree_dead_4", "
 const COLOURS := {"mossy": [Color(0.25, 0.95, 0.85), Color(0.30, 0.55, 1.0), Color(0.55, 1.0, 0.35), Color(1.0, 0.75, 0.30)],
 	"fungal": [Color(0.70, 0.40, 1.0), Color(1.0, 0.45, 0.70), Color(1.0, 0.55, 0.25), Color(0.50, 0.45, 1.0)]}
 const SECOND_SHARE := 0.35
-const ROCKS := ["grock_a", "grock_b", "grock_c", "grock_d", "grock_e", "grock_f", "grock_g", "grock_h", "grock_i",
-	"grock_j", "grock_k", "grock_l", "grock_m", "grock_n", "grock_o", "grock_p", "grock_q", "grock_r",
-	"grock_medium_1", "grock_medium_2", "grock_medium_3"]
+## The big grove rocks are out of the game (owner, Nov 21, F582: "the rock lumps look awful: take those rocks out of
+## the game"; their models are gone). Kept as an empty list so the groves' dice, and so their plants, stay the same.
+const ROCKS := []
 const PEBBLES := ["gpebble_round_1", "gpebble_round_2", "gpebble_round_3", "gpebble_round_4", "gpebble_round_5",
 	"gpebble_square_1", "gpebble_square_2", "gpebble_square_3", "gpebble_square_4", "gpebble_square_5", "gpebble_square_6"]
 ## (F404 🔁, owner Nov 19: the tall sharp green grass grew here among the orange mushrooms: the 4 grass kinds are out)

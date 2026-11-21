@@ -32,6 +32,9 @@ const STUN_MAX := 100.0
 const STUN_TIME := 1.5  ## s stunned
 const STUN_PER_HIT := 2.5  ## stun per point of damage you take
 const STUN_PER_BLOCK := 1.0  ## per point of damage your block stopped
+## What a crossbow bolt can hit: rock, creatures, built pieces, dwarves, and chests/stations (owner, Nov 21, F585:
+## "shooting the trapped chest does nothing": the bolt flew straight through chests, they weren't in this list).
+const BOLT_MASK := World.TERRAIN_LAYER | Monster.MONSTER_LAYER | PieceNode.PIECE_LAYER | Dwarf.BODY_LAYER | Storage.BOX_LAYER
 const DEATH_FALL := 0.9  ## s of the knock-back move before you wake at your bed (owner, chat 15)
 var stun_meter := StunMeter.new(STUN_MAX, STUN_TIME)
 var reload_left := -1.0  ## crossbow: seconds of reloading left (-1 = not reloading)
@@ -437,7 +440,7 @@ func _shoot(aimed: bool) -> void:
 		var spread := deg_to_rad(Combat.HIP_SPREAD) * sqrt(randf())
 		dir = dir.rotated(cam.global_basis.y, cos(randf() * TAU) * spread).rotated(cam.global_basis.x, sin(randf() * TAU) * spread)
 	var q := PhysicsRayQueryParameters3D.create(from, from + dir * Combat.BOLT_MAX)
-	q.collision_mask = World.TERRAIN_LAYER | Monster.MONSTER_LAYER | PieceNode.PIECE_LAYER | Dwarf.BODY_LAYER
+	q.collision_mask = BOLT_MASK
 	q.exclude = [dwarf.get_rid()]
 	var hit := dwarf.get_world_3d().direct_space_state.intersect_ray(q)
 	var point: Vector3 = hit.get("position", from + dir * Combat.BOLT_MAX)
