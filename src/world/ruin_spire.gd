@@ -87,6 +87,20 @@ static func ground_under(maker: CaveMaker, pts: Array, from_y: float) -> Vector2
 	return g
 
 
+## Open, fairly level ground for 10 m in front of its door (owner rule, F350: the way in can't be blocked or buried):
+## never higher than the doorstep (1 m up), never a drop.
+static func door_is_open(maker: CaveMaker, p: Vector3, base: float, basis: Basis) -> bool:
+	for z in [5.5, 7.0, 8.5, 10.0]:
+		for x in [-1.2, 0.0, 1.2]:
+			var at: Vector3 = p + basis * Vector3(x, 0, z)
+			if maker.sdf_at(Vector3(at.x, base + 4.0, at.z)) <= 0.0:
+				return false
+			var f := maker.find_floor(at.x, at.z, base + 4.0).y
+			if f > base + 1.1 or f < base - 1.5:
+				return false
+	return true
+
+
 ## Where it goes: in the first cavern from rooms_to_try with room for it, the spot whose floor is flattest under the
 ## tower and under each piece of its wreckage, with the least rock in the tower's way, and no stone column anywhere
 ## near (the placement rule: nothing the world grows stands in the tower or on its wreckage). Returns {room, pos, turn}
@@ -129,6 +143,8 @@ static func pick(maker: CaveMaker, plan: Dictionary) -> Dictionary:
 				var to: Vector3 = c0 - p  # the door (local +z) faces the way you come from
 				var turn := posmod(roundi(atan2(to.x, to.z) / (PI / 2.0)), 4)
 				var basis := Basis(Vector3.UP, turn * PI / 2.0)
+				if not door_is_open(maker, p, base, basis):
+					continue  # its door would open onto a wall or a bank of earth
 				var bumps := 0.0
 				var flat := true
 				for w in wreck:

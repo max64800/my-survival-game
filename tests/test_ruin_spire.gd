@@ -105,6 +105,7 @@ func test_spot_keeps_clear_of_what_the_world_grows() -> void:
 			if c._in_column(at, 1.0) or not c.is_reserved(at):
 				bad += 1
 		check_eq(bad, 0, "seed %d: no column on its wreckage, all of it on kept-clear ground" % sd)
+		check(RuinSpire.door_is_open(c, spot.pos, spot.pos.y, basis), "seed %d: open, level ground in front of its door" % sd)
 		for a in 12:
 			var at: Vector3 = spot.pos + Vector3(cos(a * TAU / 12.0), 0.3, sin(a * TAU / 12.0)) * 4.4
 			check(c.is_reserved(at), "seed %d: the tower's ground is kept clear" % sd)
