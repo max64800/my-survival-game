@@ -20,9 +20,10 @@ const UPPER := ["spine_01", "spine_02", "spine_03", "neck_01", "Head", "clavicle
 	"upperarm_l", "upperarm_r", "lowerarm_l", "lowerarm_r", "hand_l", "hand_r"]
 ## Bones kept at their rest turn in the whole skeleton (hips: the legs' own; neck and head: looking ahead).
 const KEEP_REST := ["pelvis", "neck_01", "Head"]
-## The extra turn of his chest (degrees round the up line, spread up the spine): the KayKit hands lie 40 degrees left
-## of ahead once its hips' turn is left out, so the bow (right hand at the stock, left hand under the front) points ahead.
-const TWIST := -40.0
+## The extra turn of his chest (degrees round the up line, spread up the spine): the KayKit hands lie 40 degrees right
+## of ahead once its hips' turn is left out, so +40 (chat 18; chat 17 had -40, the wrong way round: the bow stuck out
+## BEHIND him) puts the bow (right hand at the stock, left hand under the front) pointing ahead.
+const TWIST := 40.0
 const TWIST_SHARE := {"spine_01": 0.33, "spine_02": 0.67, "spine_03": 1.0}
 const BAKE := preload("res://tools/asset_forge/great_kaykit_bake.gd")
 

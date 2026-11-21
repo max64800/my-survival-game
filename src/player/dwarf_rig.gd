@@ -48,7 +48,7 @@ const ANIMS := {
 	eat = "b/Consume", use = "Interact", throw = "b/OverhandThrow",
 	# Held poses (as long as the button is down). The shield is always on the left arm (owner, Nov 17), the weapon in
 	# the right hand: the shield block raises the left arm (the right keeps the weapon ready).
-	block = "x/Sword_Guard", shield = "b/Idle_Shield", aim = "Pistol_Aim_Neutral",
+	block = "x/Sword_Guard", shield = "b/Idle_Shield", aim = "c/Aim",
 	# Great axe and great maul (F389, owner Nov 20): the Lampwick Foreman's moves (DwarfGreatSwing), played by DwarfFist.
 	# The "g/" clips only time the swing (the upper body's idle; the bones come from the baked moves).
 	great_chop = "g/Chop", great_spin = "g/Spin",

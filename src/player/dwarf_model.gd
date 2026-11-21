@@ -315,9 +315,9 @@ func react(what: String, duration := -1.0) -> void:
 		"get_up":  # after a knock-down (F234): the waking-up move, a bit quicker
 			dwarf_rig.play_full("wake", 1.1)
 		"shoot":
-			dwarf_rig.play_upper("Pistol_Shoot", 0.4)
+			dwarf_rig.play_upper("c/Shoot", 0.4)
 		"reload":
-			dwarf_rig.play_upper("Pistol_Reload", duration if duration > 0.0 else 1.0)
+			dwarf_rig.play_upper("c/Reload", duration if duration > 0.0 else 1.0)
 		"reload_stop":
 			dwarf_rig.stop_upper()
 		"use":

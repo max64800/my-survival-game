@@ -176,6 +176,21 @@ func test_crossbow_numbers() -> void:
 
 
 
+## Owner, chat 18 (F535): the crossbow uses the KayKit "c/" moves (the bow held in front, a two-hand reload), not the
+## pistol's, and every "c/" clip has a grip turn so the bow lies along his arms.
+func test_crossbow_uses_its_own_moves() -> void:
+	check_eq(DwarfRig.ANIMS.aim, "c/Aim", "aiming holds the crossbow's own aim")
+	var src: String = FileAccess.get_file_as_string("res://src/player/dwarf_model.gd")
+	check(src.contains('play_upper("c/Shoot"') and src.contains('play_upper("c/Reload"'), "shoot and reload play the c/ clips")
+	check(not src.contains("Pistol_"), "no pistol clips left in the model")
+	for clip in ["c/Aim", "c/Shoot", "c/Reload"]:
+		check(DwarfRig.GRIPS.crossbow.has(clip), "%s has a crossbow grip" % clip)
+	var rig := DwarfRig.new()
+	for clip in ["c/Aim", "c/Shoot", "c/Reload"]:
+		check(ResourceLoader.exists(DwarfRig.CROSSBOW_LIB) and (load(DwarfRig.CROSSBOW_LIB) as AnimationLibrary).has_animation(clip.get_slice("/", 1)), "%s is baked" % clip)
+	rig.free()
+
+
 ## F137: every weapon has a small critical-hit chance.
 func test_every_weapon_can_crit() -> void:
 	for w in Combat.WEAPONS:
