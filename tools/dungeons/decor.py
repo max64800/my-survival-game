@@ -17,7 +17,7 @@ PATH_EDGE = 1.0
 DOOR_EDGE = 2.0
 THING_EDGE = 1.5
 TRAP_EDGE = 1.2
-GAP = 0.15
+GAP = 0.1    # (10 cm between two pieces: clearly apart, no shimmer)
 SIDE_YAW = {"n": 0.0, "s": 180.0, "w": 90.0, "e": 270.0}   # back against this wall of the room: front into the room
 SIDE_IN = {"n": (0, 1), "s": (0, -1), "w": (1, 0), "e": (-1, 0)}
 
@@ -74,10 +74,15 @@ def rects_dist(a, b):
 
 
 def check(items, cells, lines, doors, things, traps, obstacles, keep_off=()):
-	"""items: [(model, x, z, yaw, room)]. Returns ([problem text], [(name, footprint corners)] of the placed pieces).
-	obstacles: (x, z, radius) of things already on the floor (furniture, columns, creatures)."""
+	"""items: [(model, x, z, yaw, room[, up])] (up: a wall-hung piece's bottom this high over the floor).
+	Returns ([problem text], [(name, footprint corners, bottom, top)] of the placed pieces).
+	obstacles: (x, z, radius[, bottom, top]) of things already there (furniture, columns, creatures, wall lamps): a piece
+	only meets one if they overlap in height too (a map hung over a table is fine)."""
 	probs, placed = [], []
-	for model, x, z, yaw, room in items:
+	for it in items:
+		model, x, z, yaw, room = it[:5]
+		up = it[5] if len(it) > 5 else 0.0
+		lo, hi = up, up + height(model)
 		cs = footprint(model, x, z, yaw)
 		px, pz = sum(c[0] for c in cs) / 4, sum(c[1] for c in cs) / 4
 		rad = max(math.hypot(c[0] - px, c[1] - pz) for c in cs)
@@ -89,44 +94,54 @@ def check(items, cells, lines, doors, things, traps, obstacles, keep_off=()):
 			if any(in_rect(c, r) for r in keep_off):
 				probs.append("%s: over a keep-off area at (%.2f, %.2f)" % (name, c[0], c[1]))
 				break
-		for line in lines.get(room, []):
+		for line in ([] if up > 0.3 else lines.get(room, [])):   # (a hung piece is over your head: walk under it)
 			d = poly_dist((px, pz), line)
 			e = min(poly_dist(c, line) for c in cs)
 			if (d < PATH_MID or e < PATH_EDGE) and not any(q.startswith(name + ": on a walk") for q in probs):
 				probs.append("%s: on a walk line %s (middle %.2f, edge %.2f)" % (name, [tuple(p) for p in (line[0], line[-1])], d, e))
-		for (ox, oz) in doors:
+		for (ox, oz) in ([] if up > 0.3 else doors):
 			d = rect_dist(cs, (ox, oz))
 			if d < DOOR_EDGE:
 				probs.append("%s: %.2f m from the doorway at (%.1f, %.1f)" % (name, d, ox, oz))
-		for (ox, oz) in things:
+		for (ox, oz) in ([] if up > 0.3 else things):
 			d = rect_dist(cs, (ox, oz))
 			if d < THING_EDGE:
 				probs.append("%s: %.2f m from the chest/lever/stand at (%.1f, %.1f)" % (name, d, ox, oz))
-		for (ox, oz) in traps:
+		for (ox, oz) in ([] if up > 0.3 else traps):
 			d = rect_dist(cs, (ox, oz))
 			if d < TRAP_EDGE:
 				probs.append("%s: %.2f m from the trap at (%.1f, %.1f)" % (name, d, ox, oz))
-		for (ox, oz, r) in obstacles:
+		for ob in obstacles:
+			ox, oz, r = ob[:3]
+			if len(ob) > 3 and (ob[4] <= lo or ob[3] >= hi):
+				continue   # above or below it
 			d = rect_dist(cs, (ox, oz)) - r
 			if d < GAP:
 				probs.append("%s: touches something at (%.1f, %.1f) (gap %.2f)" % (name, ox, oz, d))
-		for other, ocs in placed:
+		for other, ocs, olo, ohi in placed:
+			if ohi <= lo or olo >= hi:
+				continue
 			d = rects_dist(cs, ocs)
 			if d < GAP:
 				probs.append("%s: touches %s (gap %.2f)" % (name, other, d))
-		placed.append((name, cs))
+		placed.append((name, cs, lo, hi))
 	return probs, placed
 
 
+_h = {}
+
+
 def height(model):
-	from glb_bounds import bounds
-	return float(bounds(str(junk.ROOT / "assets/models" / model))[1][1])
+	if model not in _h:
+		from glb_bounds import bounds
+		_h[model] = float(bounds(str(junk.ROOT / "assets/models" / model))[1][1])
+	return _h[model]
 
 
 def blocks_wall_spot(items, pos, reach=0.5, low=0.9):
 	"""Does a decor piece taller than `low` stand within `reach` of this wall spot (a torch holder, a plaque)?"""
-	for model, x, z, yaw, room in items:
-		if height(model) > low and rect_dist(footprint(model, x, z, yaw), (pos[0], pos[2])) < reach:
+	for model, x, z, yaw, room, *up in items:
+		if (up[0] if up else 0.0) + height(model) > low and rect_dist(footprint(model, x, z, yaw), (pos[0], pos[2])) < reach:
 			return True
 	return False
 
@@ -134,11 +149,12 @@ def blocks_wall_spot(items, pos, reach=0.5, low=0.9):
 def props(items, floor_y):
 	"""Plan props (role "decor", `cat` = from the catalogue, `foot` = its footprint size for the test)."""
 	out = []
-	for model, x, z, yaw, room in items:
+	for model, x, z, yaw, room, *up in items:
 		sx, sz = size(model)[:2]
 		cs = footprint(model, x, z, yaw)
-		out.append({"model": model, "pos": [round(x, 3), round(floor_y(room) + FLOOR_TOP, 3), round(z, 3)],
+		out.append({"model": model, "pos": [round(x, 3), round(floor_y(room) + FLOOR_TOP + (up[0] if up else 0.0), 3), round(z, 3)],
 			"yaw": round(yaw % 360.0, 1), "scale": 1.0, "role": "decor", "label": "", "cat": True,
 			"foot": [round(sx, 2), round(sz, 2)],   # (its footprint's size and middle: the test needs no model)
-			"mid": [round(sum(c[0] for c in cs) / 4, 3), round(sum(c[1] for c in cs) / 4, 3)]})
+			"mid": [round(sum(c[0] for c in cs) / 4, 3), round(sum(c[1] for c in cs) / 4, 3)],
+			**({"hung": up[0]} if up else {})})
 	return out

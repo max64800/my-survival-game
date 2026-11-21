@@ -263,8 +263,7 @@ F = UP + 0.25
 
 # 1 Lamp Room: an old cart on its bit of rail, crates, a chest. The barred gate on the east wall (above).
 prop("dungeon/trap_cart.glb", 23.0, RAIL_TOP, 49.0, 0.0, label="An old ore cart")
-prop("decor/crate_stack.glb", 23.0, 0.25, 51.2, 20.0)
-prop("decor/keg.glb", 27.2, 0.25, 51.2, 0.0)
+# (Nov 22, decor catalogue: the crate stack and keg made way for the notice board by the way in, section 4b)
 chest("chest_small", 26.6, 46.9, 0.0, "Random chest", y=0.25)
 
 # 2 Rail Tunnel: a thin white wire across at ankle height, from the dart hole's sill to the far wall (cut it, or step
@@ -297,12 +296,10 @@ for i, (x, z) in enumerate([(17.5, 19.6), (20.4, 20.6), (19.0, 18.8)]):
 	creature("tunnel_rat", x, z, 180.0 + i * 40.0, wake=["cart_junction"])  # (they get up as you come in below, owner Nov 20)
 
 # 4 Tool Store: shelves, a barrel rack, crates; the loose stone with a buried chest under it.
-prop("decor/shack_shelf.glb", 13.0, F, 16.45, 0.0)
-prop("decor/furn_barrel_rack.glb", 10.7, F, 20.0, 90.0)
-prop("decor/crate_stack.glb", 15.0, F, 21.2, 30.0)
-prop("decor/firewood_rack.glb", 10.6, F, 17.4, 90.0)
+# (Nov 22, decor catalogue: the shelf, barrel rack, crates and firewood rack made way for the store's own oil corner,
+# section 4b; the random chest moved from the corner right of the door to the south wall)
 chest("chest_small", 13.0, 19.0, 90.0, "Buried chest (under the loose stone)", True, "buried")
-chest("chest_small", 15.2, 17.2, 270.0, "Random chest")
+chest("chest_small", 14.8, 21.3, 180.0, "Random chest")
 
 # 5 Drip Tunnel: stalactites low over the way (shoot them down first, or run); rats.
 DRIP_Y = UP + 4.5 + 0.6
@@ -367,7 +364,7 @@ for i, (x, z) in enumerate([(41.0, 9.0), (43.0, 12.6), (41.4, 14.6)]):
 prop("dungeon/rubble_ore.glb", 35.0, F, 13.0, 0.0)
 prop("decor/mushroom_fountain.glb", 35.0, F + 0.01, 13.0, 0.0, role="heal", label="Healing basin")
 lights.append([35.0, UP + 1.6, 13.0])
-prop("decor/shack_bench.glb", 37.4, F, 11.0, 270.0)
+# (Nov 22, decor catalogue: the plain bench made way for the rest nook bench, section 4b)
 prop("decor/shack_table.glb", 33.2, F, 11.0, 0.0)
 prop("decor/shack_stool.glb", 33.2, F, 12.2, 0.0)
 chest("chest_small", 33.0, 15.4, 180.0, "Random chest")
@@ -396,6 +393,114 @@ for i in range(2):
 for x, z, y, m in [(42.4, 43.4, 7.0, "trap_drip_fat"), (34.0, 48.6, 3.5, "trap_drip_thin"), (30.8, 47.3, 3.5, "trap_drip_thin")]:
 	prop("dungeon/%s.glb" % m, x, y + 0.6, z, rng.choice([0, 120, 240]), role="trap", tilt=180.0, floor=0.0, warn=0.35, fall=0.45)
 
+# --- 4b. Decor from the decor catalogue (docs/art/DECOR-CATALOG.md, Nov 22): every piece in its own room and spot, off
+# the walk lines and rails, clear of doors, chests, traps and the wall lamps (tools/dungeons/decor.py;
+# tests/test_dungeon_decor.gd). Left out until the owner answers the rule clashes: the lit ones (lw_lamp_rack_wall,
+# lw_signal_lamp_post, lw_walkway_ladder, lw_ledger_desk, lw_last_shift_stool), the rails (lw_spare_rail_rack,
+# lw_rail_switch_lever, lw_cart_jammed), the oil stains (lw_lamp_fallen_spill, lw_broken_lamp_rack), cage_floor_open
+# (straw), table_overturned (puddle), last_meal (food). No room (small rooms, traps, props): the second skull spike, a
+# second lantern post, Pell's carving (it has its own place in Old Pell's Diggings), the ore sorting table, sieve and
+# the skeleton with his note (the Old Copper Face is all ore piles and bear jaws), barrel_smashed, lw_lamp_barrow.
+import decor  # noqa: E402
+import junk  # noqa: E402
+
+
+def _d(n):
+	return "decor/%s.glb" % n
+
+
+W = decor.wall
+HUNG = -0.03   # a wall-hung board's back 3 cm nearer the wall than a standing piece's: on the boards' face
+DECOR = [
+	# 1 Lamp Room (x 22-28, z 46-52; the way in south at x 26, the rail tunnel north, the barred gate east): the bell
+	# frame in the corner by the cart's rails, the notice board and the lamp token board either side of the way in.
+	("lw_bell_frame", "lamp_room", decor.corner(_d("lw_bell_frame"), "n", 46, "w", 22)),
+	("notice_board_torn", "lamp_room", decor.corner(_d("notice_board_torn"), "s", 52, "w", 22)),
+	("lw_lamp_token_board", "lamp_room", W(_d("lw_lamp_token_board"), "e", 28, 51.0, out=HUNG), 0.6),
+	# 3 Cart Junction, the landing at the top of the rails: the signal code board.
+	("lw_signal_code_board", "cart_junction", W(_d("lw_signal_code_board"), "n", 18, 17.0, out=HUNG), 0.7),
+	# 4 Tool Store (x 10-16, z 16-22; its door east): the oil corner on the back (west) wall, the hook beside it, the
+	# oil can crate and chimney crate right of the door, the trunk on the south wall.
+	("lw_oil_barrel_tap", "tool_store", W(_d("lw_oil_barrel_tap"), "w", 10, 19.0)),
+	("lw_oil_flask_shelf", "tool_store", W(_d("lw_oil_flask_shelf"), "w", 10, 19.0, out=HUNG), 1.0),
+	("lw_leaking_oil_cask", "tool_store", W(_d("lw_leaking_oil_cask"), "w", 10, 20.35)),
+	("hanging_hook", "tool_store", W(_d("hanging_hook"), "w", 10, 17.1)),
+	("lw_oil_can_crate", "tool_store", decor.corner(_d("lw_oil_can_crate"), "n", 16, "e", 16)),
+	("lw_chimney_crate", "tool_store", W(_d("lw_chimney_crate"), "n", 16, 14.5)),
+	("storage_trunk", "tool_store", W(_d("storage_trunk"), "s", 22, 12.6)),
+	# 6 Bat Gallery (x 14-24, z 0-8; doors south (the drip tunnel), east (the shaft) and the cracked wall west): the
+	# fallen bell and the collapsed walkway on the north wall, bone piles in the dark corners, skulls by the doorway.
+	("lw_bell_fallen", "bat_gallery", W(_d("lw_bell_fallen"), "n", 0, 16.3)),
+	("lw_collapsed_walkway", "bat_gallery", W(_d("lw_collapsed_walkway"), "n", 0, 21.63)),
+	("bone_pile", "bat_gallery", decor.corner(_d("bone_pile"), "n", 0, "w", 14)),
+	("bone_pile", "bat_gallery", decor.corner(_d("bone_pile"), "s", 8, "w", 14)),
+	("skull_spike", "bat_gallery", W(_d("skull_spike"), "s", 8, 17.2)),
+	# 8 The Old Shaft: the ore bucket hoist on the solid floor by the start of the plank walk.
+	("lw_ore_bucket_hoist", "old_shaft", decor.corner(_d("lw_ore_bucket_hoist"), "n", 0, "w", 26)),
+	# 9 Old Copper Face: the pickaxe stuck in the dig face (north wall) between the ore piles.
+	("pickaxe_in_wall", "copper_face", W(_d("pickaxe_in_wall"), "n", 0, 41.15)),
+	# 10 Prop Corridor (x 40-44, z 6-16): burnt-out lantern posts along the east wall between the props, Pell's carving.
+	("lantern_post_burnt", "prop_corridor", W(_d("lantern_post_burnt"), "e", 44, 12.5)),
+	# 11 Miners' Rest (x 32-38, z 10-16; door east): the rest nook bench on the north wall, the dice crate in the corner.
+	("lw_rest_nook_bench", "miners_rest", W(_d("lw_rest_nook_bench"), "n", 10, 35.4)),
+	("dice_on_crate", "miners_rest", decor.corner(_d("dice_on_crate"), "n", 10, "e", 38)),
+	# 12 The Foreman's Office (x 38-48, z 18-28; doors north and south at x 42): the lamp-maker's corner left of the
+	# north door (workbench, spool shelf over it, parts board beside it); the twisting wheel on the east wall; the
+	# foreman's papers along the west wall (collapsed bookshelf, ore samples, writing desk, the torn map over the table).
+	("lw_lamp_workbench", "office", W(_d("lw_lamp_workbench"), "n", 18, 44.8)),
+	("lw_wick_spool_shelf", "office", W(_d("lw_wick_spool_shelf"), "n", 18, 44.8, out=HUNG), 1.2),
+	("lw_lamp_parts_board", "office", W(_d("lw_lamp_parts_board"), "e", 48, 21.2, out=HUNG), 0.7),
+	("lw_wick_twisting_wheel", "office", W(_d("lw_wick_twisting_wheel"), "e", 48, 26.0)),
+	("bookshelf_collapsed", "office", W(_d("bookshelf_collapsed"), "w", 38, 21.0)),
+	("ore_sample_shelf", "office", W(_d("ore_sample_shelf"), "w", 38, 23.0)),
+	("writing_desk", "office", W(_d("writing_desk"), "w", 38, 24.6)),
+	("map_torn_wall", "office", W(_d("map_torn_wall"), "w", 38, 26.4, out=HUNG), 1.0),
+]
+_DFLOOR = {"cart_junction": UP}   # (the signal board hangs on the landing, at the top of the rails)
+_dfloor = lambda g: _DFLOOR.get(g, SP[g][5] if g in SP else 0.0)
+_items = [(_d(n), at[0], at[1], at[2], room) + tuple(up) for n, room, at, *up in DECOR]
+_dxz = lambda p: (p["pos"][0], p["pos"][2])
+_dlow = lambda p: p["pos"][1] - (UP if p["pos"][1] >= UP - 0.05 else 0.0) < 1.0
+_rails = [p for p in props if re.search(r"rail_(lane|buffer|wedge)|trap_cart", p["model"])]
+_flatj = {"dungeon/floor_old.glb", "dungeon/wall_old.glb", "dungeon/wall_cracked.glb"}
+_ways = [_dxz(p) for p in props if p["model"] in ("dungeon/dungeon_entrance.glb", "dungeon/wall_cracked.glb")]
+_doorways = [_dxz(p) for p in pieces if p["id"] == "doorway"]
+_cells = {k: v[0] for k, v in cells.items()}
+# A wall lamp a tall piece would stand in front of slides along its own wall piece (it still lights; owner Nov 20: E).
+_SLIDE = {0.0: (1, 0), 180.0: (1, 0), 90.0: (0, 1), 270.0: (0, 1)}
+for p in props:
+	if p["role"] == "lamp" and decor.blocks_wall_spot(_items, p["pos"], reach=0.45, low=1.3):
+		dx, dz = _SLIDE[p["yaw"] % 360.0]
+		for d in (0.9, -0.9):
+			to = [p["pos"][0] + dx * d, p["pos"][1], p["pos"][2] + dz * d]
+			if not decor.blocks_wall_spot(_items, to, reach=0.45, low=1.3):
+				LAMPS[LAMPS.index((p["pos"][0], p["pos"][2]))] = (round(to[0], 3), round(to[2], 3))
+				p["pos"] = r3(to)
+				break
+		else:   # no room on its wall piece (the Lamp Room's south wall, by the notice board): that lamp goes
+			p["role"] = "gone"
+LAMPS[:] = [l for l in LAMPS if l in [(p["pos"][0], p["pos"][2]) for p in props if p["role"] == "lamp"]]
+props = [p for p in props if p["role"] != "gone"]
+# Creatures that would start inside a piece step aside (the Office's miner, a Prop Corridor rat).
+for c in creatures:
+	if (c["pos"][0], c["pos"][2]) == (40.2, 21.0):
+		c["pos"][0], c["pos"][2] = 40.8, 23.4
+	elif (c["pos"][0], c["pos"][2]) == (43.0, 12.6):
+		c["pos"][0], c["pos"][2] = 41.8, 12.6
+_problems, _ = decor.check(_items, _cells, junk.walk_lines(SPACES, group, _cells, _doorways + _ways),
+	doors=_doorways + _ways + [_dxz(p) for p in props if p["role"] == "door" and "lever" not in p["model"]],
+	things=[_dxz(c) for c in chests] + [(RECIPE_STAND["pos"][0], RECIPE_STAND["pos"][2])] + [_dxz(p) for p in props if "lever" in p["model"]],
+	traps=[_dxz(p) for p in props if p["role"] in ("trap", "secret") and p["model"] not in _flatj and _dlow(p)],
+	obstacles=[(p["pos"][0], p["pos"][2], max(junk.size(p["model"])[:2]) / 2, 0.0, decor.height(p["model"])) for p in props
+		if p["role"] in ("decor", "light", "heal") and p["model"] not in _flatj and p not in _rails and _dlow(p)]
+		+ [(p["pos"][0], p["pos"][2], 0.4, 1.3, 2.4) for p in props if p["role"] == "lamp"]   # (the wall lamps, 1.75 m up)
+		+ [(p["pos"][0], p["pos"][2], 0.9) for p in pieces if p["id"] in ("mine_prop", "railing")]
+		+ [(c["pos"][0], c["pos"][2], 0.5, 0.0, 1.5) for c in creatures if c["pos"][1] - (UP if c["pos"][1] >= UP - 0.05 else 0.0) < 1.0],
+	keep_off=[[p["pos"][0] - 1.3, p["pos"][2] - 1.3, p["pos"][0] + 1.3, p["pos"][2] + 1.3] for p in _rails])
+if _problems:
+	sys.exit("decor breaks the placement rules:\n  " + "\n  ".join(_problems))
+props += decor.props(_items, _dfloor)
+
 # --- 5. Junk (owner, Nov 20): along the walls and in the corners, never on a walk line, a rail, the plank walk, or by
 # a door, chest, lever or the recipe stand (tools/dungeons/junk.py; tests/test_dungeon_junk.gd). Lampwick is a small
 # mine: the "all 12" junk + the small dungeons' (broken tools, snapped beams, helmets, lanterns, wood rubble) + old
@@ -403,15 +508,23 @@ for x, z, y, m in [(42.4, 43.4, 7.0, "trap_drip_fat"), (34.0, 48.6, 3.5, "trap_d
 # Rails), over the Old Shaft, in the spike-floored vault or the boulder's niche. Its own dice: nothing above moves.
 import junk  # noqa: E402
 
-JUNK_THEMES = {
-	"lamp_room": ["crate_stack", "rags", "lantern", "helmet", "bones", "keg"],
-	"tool_store": ["tools", "tools", "rubble_wood", "ore_basket", "timber_stack", "beam_snapped"],
+JUNK_THEMES = {   # (owner, Nov 22: no kind twice in a room but candles and pots, more variety, as full as Mossgate's
+	# first two rooms: about 1.8 things per 10 m2 with the furniture, decor and chests; old props for variety)
+	"lamp_room": ["crate_stack", "rags", "lantern", "helmet", "bones", "keg", "furn_bucket_wood", "torch_dropped",
+		"tools", "furn_stool", "scrap", "ore_basket"],
+	"tool_store": ["tools", "rubble_wood", "ore_basket", "timber_stack", "beam_snapped", "furn_bucket_metal",
+		"furn_crate_iron", "scrap", "rags", "lantern"],
 	"drip_tunnel": ["helmet", "rags", "bones", "lantern"],
-	"bat_gallery": ["bones", "rubble_wood", "beam_snapped", "rags", "timber_stack", "lantern", "tools"],
-	"copper_face": ["tools", "ore_basket", "rubble_wood", "helmet", "lantern", "mine_cart"],
+	"bat_gallery": ["bones", "rubble_wood", "beam_snapped", "rags", "timber_stack", "lantern", "tools", "helmet",
+		"torch_dropped", "scrap", "rubble_brick", "ore_basket", "furn_bucket_wood", "spear_broken", "mine_cart"],
+	"copper_face": ["tools", "ore_basket", "rubble_wood", "helmet", "lantern", "furn_bucket_metal", "scrap",
+		"torch_dropped"],
 	"prop_corridor": ["beam_snapped", "rubble_wood", "tools"],
-	"miners_rest": ["meal", "rags", "candles", "bones", "helmet"],
-	"office": ["meal", "rags", "candles", "axe_head", "sword_snapped", "crate_stack", "bones"],
+	"miners_rest": ["meal", "rags", "candles", "bones", "helmet", "furn_stool", "cookpot_tipped", "furn_bucket_wood",
+		"lantern", "urns"],
+	"office": ["meal", "rags", "candles", "axe_head", "sword_snapped", "crate_stack", "bones", "furn_chair", "scrap",
+		"helmet", "furn_crate_iron", "urns", "furn_drawers", "lantern", "keg", "furn_bucket_metal", "grain_sacks",
+		"shield_wood", "furn_stool", "timber_stack"],
 }
 JUNK_ROOMS = ROOMS | {"bat_gallery"}   # (the Bat Gallery is a 10 x 8 m room with a rock ceiling)
 _jfloor = lambda g: SP[g][5] if g in SP else 0.0
@@ -421,6 +534,15 @@ _rails = [p for p in props if re.search(r"rail_(lane|buffer|wedge)|trap_cart", p
 _flatj = {"dungeon/floor_old.glb", "dungeon/wall_old.glb", "dungeon/wall_cracked.glb"}
 _ways = [_jxz(p) for p in props if p["model"] in ("dungeon/dungeon_entrance.glb", "dungeon/wall_cracked.glb")]
 _doorways = [_jxz(p) for p in pieces if p["id"] == "doorway"]
+# How many: about 1.8 things per 10 m2 of floor in every room, counting what's already there (owner, Nov 22).
+_jcounts = {}
+for g in JUNK_ROOMS:
+	_floor = [c for c, v in cells.items() if v[0] == g]
+	_there = sum(1 for p in props if p["role"] in ("decor", "light", "heal") and p["model"] not in _flatj and p not in _rails
+		and _jlow(p) and cells.get(junk.cell_of(p["pos"][0], p["pos"][2]), (None,))[0] == g)
+	_there += sum(1 for c in chests if cells.get(junk.cell_of(c["pos"][0], c["pos"][2]), (None,))[0] == g)
+	_jcounts[g] = max(2, round(1.8 * len(_floor) * 4 / 10) - _there)
+print("junk per room:", dict(sorted(_jcounts.items())))
 props += junk.place_junk(
 	SPACES, group, {k: v[0] for k, v in cells.items()}, _jfloor, JUNK_ROOMS, JUNK_THEMES,
 	doors=_doorways + _ways + [_jxz(p) for p in props if p["role"] == "door" and "lever" not in p["model"]],
@@ -434,6 +556,7 @@ props += junk.place_junk(
 	seed=2012,
 	keep_off=[[p["pos"][0] - 1.3, p["pos"][2] - 1.3, p["pos"][0] + 1.3, p["pos"][2] + 1.3] for p in _rails],
 	skip={"cart_junction", "rail_tunnel", "back_rails", "old_shaft", "shaft_door", "vault", "niche"},
+	counts=_jcounts,
 )
 
 # --- Write it out. ---

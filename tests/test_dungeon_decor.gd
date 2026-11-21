@@ -82,7 +82,8 @@ func test_decor_stands_on_the_floor_inside_the_rooms() -> void:
 			for s in map.spaces:
 				if _inside(s, at):
 					floor_y = maxf(floor_y, float(s[5]))
-			check(absf(float(p.pos[1]) - floor_y - 0.25) < 0.06, "%s decor %s at %s stands on the floor" % [map.id, p.model, at])
+			var up := float(p.get("hung", 0.0))   # (a wall-hung board: its bottom this high over the floor)
+			check(absf(float(p.pos[1]) - floor_y - 0.25 - up) < 0.06, "%s decor %s at %s stands on the floor (or hangs %.1f m up)" % [map.id, p.model, at, up])
 			for c in _corners(p):
 				var inside := false
 				for s in map.spaces:
@@ -110,6 +111,8 @@ func test_decor_keeps_off_doors_paths_and_chests() -> void:
 		if plan.has("recipe_stand"):
 			keep.append([_xz(plan.recipe_stand.pos), "recipe stand"])
 		for p in _decor(plan):
+			if float(p.get("hung", 0.0)) > 0.3:
+				continue  # (hung on a wall over your head: you walk under it)
 			var cs := _corners(p)
 			var at := _xz(p.mid)
 			for dv in doors:
@@ -145,4 +148,8 @@ func test_decor_pieces_do_not_overlap() -> void:
 			for j in range(i + 1, d.size()):
 				var a := PackedVector2Array(_corners(d[i]))
 				var b := PackedVector2Array(_corners(d[j]))
+				var ha := float(d[i].get("hung", 0.0)) > 0.3
+				var hb := float(d[j].get("hung", 0.0)) > 0.3
+				if ha != hb:
+					continue  # (a board hung over a standing piece: decor.py checks their heights)
 				check(Geometry2D.intersect_polygons(a, b).is_empty(), "%s decor %s and %s don't overlap" % [mp[0].id, d[i].model, d[j].model])

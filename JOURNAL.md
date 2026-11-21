@@ -7555,3 +7555,17 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   which the map doesn't count as a room (always possible, the new dice found it): junk keeps off that stretch now.
   (4) The decor photos from behind the dwarf are dim and far: checked one close crop, the owner looks in the game.
 - **Next:** Lampwick Drift's decor (owner: "adjust dung 1 then start working on dung 2").
+- **Lampwick Drift decor (same chat, owner: "adjust dung 1 then start working on dung 2"):** 27 catalogue pieces in the
+  Lamp Room, landing, Tool Store (oil corner), Bat Gallery, Old Shaft, Copper Face, Prop Corridor, Miners' Rest and the
+  Foreman's Office (lamp-maker's corner, papers, torn map); 6 hang on walls (`hung` in the plan). decor.py now knows
+  heights (a map over a table is fine; nothing stands through a wall lamp). Wall lamps a tall piece would hide slide
+  along their wall piece; one in the Lamp Room had no room and went (44 lamps). A rat and a miner that would start
+  inside furniture stepped aside. Left out: 10 rule clashes (lit, rails, oil stains) + 3 round-1 clashes, and (no room in
+  the tiny trap rooms) the ore sorting table, sieve, skeleton with note, a second skull spike and lantern post, Pell's
+  carving, barrel_smashed, lamp barrow. Junk: richer themes, filled to ~1.8 per 10 m2 like Mossgate. Tests:
+  test_dungeon_decor 4/4, test_dungeon_junk 7/7; test_lampwick 28/29: the Foreman's health check fails from another
+  chat's unsaved monsters.gd change (not this work).
+- **Hurdles:** hung boards first failed the decor test (it wanted everything on the floor): the test now reads `hung`.
+  The lamp slide first ignored how high a hung board reaches.
+- **Paused** for the owner's new token rules (Nov 21 message from the token-check chat). Helpers (build menu, looting)
+  were still running at the pause.
