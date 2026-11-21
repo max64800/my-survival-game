@@ -26,11 +26,11 @@ const AIM_F := Vector3(0.03, 0.04, 1.0)
 const LOW_W := Vector3(0.16, -0.05, 0.17)
 const LOW_F := Vector3(0.0, -0.30, 0.95)
 ## Reload (owner, chat 18): the bow points to HIS LEFT (+X), left hand takes a bolt from the belt and sets it at the bow's end.
-const SIDE_W := Vector3(0.20, -0.04, 0.17)
+const SIDE_W := Vector3(0.13, -0.04, 0.15)
 const SIDE_F := Vector3(1.0, -0.12, 0.22)
 const SIDE_HOLD := Vector3(0, -0.04, -0.22)  ## (bow space) left hand under the fore-end
 const FRONT := Vector3(0.0, -0.08, 0.25)    ## (from the left shoulder) out in front of the belly, so the hand never cuts through it
-const BOLT_END := Vector3(0, 0.10, -0.40)    ## (bow space) the groove near the bow's end
+const BOLT_END := Vector3(0, 0.10, -0.30)    ## (bow space) the groove near the bow's end
 const BELT := Vector3(-0.02, -0.17, 0.20)    ## (from the left shoulder, skeleton space) the bolt pouch at the belt
 var _sk: Skeleton3D
 var _g := {}              ## bone -> rest global transform (T pose)
