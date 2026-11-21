@@ -342,6 +342,14 @@ func think(delta: float, mgr: Node) -> void:
 		_rise_pending = false
 		mgr.monster_rise(self)  # everyone sees it get up
 	_mgr = mgr
+	if not (global_position.is_finite() and velocity.is_finite() and _knock.is_finite()):
+		# Safety net (owner F564: the play log had 8,000 "not a number" warnings in 20 s from one creature, which also
+		# cost frames): a creature whose place broke goes back home, standing still, instead of flooding the log.
+		global_position = home + Vector3.UP * 0.3
+		velocity = Vector3.ZERO
+		_knock = Vector3.ZERO
+		_dive_out = false
+		_last_pos = global_position
 	if _knock.length() > 0.05 and clinging():
 		_knock = Vector3.ZERO  # (a creature on the wall doesn't slide; a hit knocks it off instead: _hurt_monster)
 	if _knock.length() > 0.05:
@@ -459,7 +467,9 @@ func think(delta: float, mgr: Node) -> void:
 				return
 			var to := target.global_position - global_position
 			var dist := Vector2(to.x, to.z).length()
-			if variant == "violet":
+			if variant == "violet" and not data.get("flies", false):
+				# (Only walkers blink. A bat blinked onto the floor beside you: it "teleported when it attacked" and got
+				# stuck in the floor, owner F564 / F368. A Shift-crested bat fights like any bat.)
 				_blink -= delta
 				if _blink <= 0.0 and dist < 12.0 and _try_blink(target, to, mgr):
 					_blink = Monsters.VARIANTS.violet.blink
@@ -1162,6 +1172,7 @@ const DIVE_OUT := 1.1      ## s it flies on and climbs away after passing throug
 const DIVE_MIN := 3.0      ## m: it dives from this far away...
 const DIVE_MAX := 11.0     ## ...up to this far
 const TRAIL_LIFE := 0.4    ## s a bit of the trail lasts
+const TRAIL_TINT := Color(0.9, 0.91, 0.95)  ## the streak of air behind a diving bat: the same pale air for every bat (F563)
 func _rock_above() -> float:
 	var from := global_position + Vector3.UP * 0.2
 	var q := PhysicsRayQueryParameters3D.create(from, from + Vector3.UP * 12.0, World.TERRAIN_LAYER)
@@ -1535,8 +1546,7 @@ func _draw_trail(delta: float) -> void:
 	im.clear_surfaces()
 	if _trail_pts.size() < 2:
 		return
-	var tint: Color = Monsters.VARIANTS.get(variant, {}).get("color", Color(0.85, 0.87, 0.95))
-	tint = tint.lerp(Color(0.92, 0.92, 0.96), 0.5)
+	var tint := TRAIL_TINT  # (pale air for every bat: a crested one's purple streak looked like "purple things behind it", F563)
 	for wing in [-1.0, 1.0]:
 		im.surface_begin(Mesh.PRIMITIVE_TRIANGLE_STRIP)
 		for p in _trail_pts:

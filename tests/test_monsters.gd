@@ -1284,3 +1284,60 @@ func test_beetle_charge_runs_its_full_length_then_is_dazed() -> void:
 		m.queue_free()
 		auth.monsters.monsters.erase(m.uid)
 	_teardown()
+
+
+## F564 (owner, Nov 21: "some bats teleport when they try to attack me", the purple ones, F563): a Shift-crested bat
+## chasing a dwarf who keeps moving never ends up at a "not a number" place (the play log had 8,000 warnings from one),
+## and it doesn't blink (teleport) onto the floor: only crested walkers blink.
+func test_shift_crested_bat_stays_finite_and_never_blinks() -> void:
+	await _setup()
+	var m := _spawn("cave_bat", Vector3(5, 0, 0))
+	m.variant = "violet"
+	m.alert(1)
+	var start := player.global_position
+	var finite := true
+	var biggest_jump := 0.0
+	var last := m.global_position
+	for i in 2400:
+		player.global_position = start + Vector3(cos(i * 0.01), 0, sin(i * 0.01)) * 3.0
+		await tree.physics_frame
+		if not (m.global_position.is_finite() and m.velocity.is_finite() and m.model.global_transform.origin.is_finite()):
+			finite = false
+			break
+		biggest_jump = maxf(biggest_jump, m.global_position.distance_to(last))
+		last = m.global_position
+	check(finite, "the bat's place stays a real number")
+	check(biggest_jump < 1.0, "it never jumps from one spot to another (biggest step %.1f m)" % biggest_jump)
+	_teardown()
+
+
+## F564: whatever breaks a creature's place, the next think puts it back home instead of flooding the log every frame.
+func test_a_creature_at_a_broken_place_goes_home() -> void:
+	await _setup()
+	var m := _spawn("cave_bat", Vector3(5, 0, 0))
+	m.alert(1)
+	m.global_position = Vector3(NAN, NAN, NAN)
+	m.velocity = Vector3(INF, 0, 0)
+	await tree.physics_frame
+	await tree.physics_frame
+	check(m.global_position.is_finite(), "its place is a real number again")
+	check(m.global_position.distance_to(m.home) < 3.0, "back by its home")
+	_teardown()
+
+
+## F563 (owner: "purple bats with purple things on their backside"): the streak of air behind a diving bat is pale air
+## for every bat, never the crest's colour.
+func test_bat_dive_trail_is_pale_air() -> void:
+	await _setup()
+	var m := _spawn("cave_bat", Vector3(5, 0, 0))
+	m.variant = "violet"
+	m._trail_left = 0.3
+	for i in 5:
+		m.global_position += Vector3(0.3, 0, 0)
+		m._draw_trail(0.016)
+	var im := m._streak.mesh as ImmediateMesh
+	check(im.get_surface_count() > 0, "it drew a streak")
+	if im.get_surface_count() > 0:
+		var c: Color = im.surface_get_arrays(0)[Mesh.ARRAY_COLOR][0]
+		check(c.s < 0.1, "the streak is pale, not purple (saturation %.2f)" % c.s)
+	_teardown()
