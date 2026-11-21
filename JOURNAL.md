@@ -8123,3 +8123,9 @@ Fix: bow held closer to the body (`SIDE_W` x 0.20 to 0.13) and the bolt spot nea
 The owner drew the left arm as a bent "L": upper arm down, forearm across to the bow. We pulled the bow in close to his chest
 (`SIDE_W` now 0.10, -0.06, 0.10; `BOLT_END` z -0.24 in `crossbow_ik_bake.gd`). The pole vector already pointed the elbow down and back, so only the distance mattered: a shorter reach = a bent arm.
 Checked in the front preview only; the owner judges the motion on the localhost page.
+
+
+# Crossbow reload: bow lowered to belly height (chat 18)
+
+Owner drew the reloading bow at belly height, not chest height. `SIDE_W` is now (0.10, -0.17, 0.17): 11 cm lower and 7 cm further out so the bow doesn't sink into his big belly.
+Left-hand worst miss in Reload rose from 6.9 to 8.0 cm (lower = longer reach). Checked in one front preview only.
