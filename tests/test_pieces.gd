@@ -2,7 +2,7 @@ extends TestCase
 ## The building pieces (building polish spec §1-§2): the catalog, the soft numbers, and snapping.
 
 const PLACES := ["cell", "edge", "corner", "free", "ceiling"]
-const GROUPS := ["foundation", "floor", "wall", "roof", "support", "around", "mining", "decor", "furnish", "legacy"]
+const GROUPS := ["foundation", "floor", "wall", "roof", "support", "around", "mining", "decor", "furnish", "legacy"] + Pieces.HOME_GROUPS
 
 
 func test_every_piece_is_valid() -> void:
