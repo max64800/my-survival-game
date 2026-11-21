@@ -220,6 +220,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F556. Later (not now): crafting benches you load with materials and leave; they craft by themselves, slowly, one by one (like Conan Exiles).** (Goes with F388.) *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 2.
 - [ ] **F562. A way to craft an item that puts the lantern on the dwarf's hip, so fighting is easy.** *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 3.
 - [ ] **F568. A menu to upgrade and repair gear; repairing should cost nothing, like Valheim.** *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 3.
+- [ ] **F594. Hitting an enemy needs more feedback, like Valheim: feel every hit; a good combo stuns or drops them; crits.** It takes far too many hits to stun (sword: about 14 hits on a skeleton). (Goes with F340.) *From: you (PC, Nov 21). Said: 1×* — Nov 21: researched (docs/research/Melee hit feedback design.md); 5-step plan in docs/design/HIT-FEEL-PLAN.md. Your picks: crits earned only (no luck), stun shown by the enemy (sway + dizzy stars, no bar), knockdowns for normal enemies only (elites and bosses only stun). Next: step 1 (fast stuns).
 
 
 ## Done
