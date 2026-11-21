@@ -12,6 +12,9 @@ func _init() -> void:
 	var holder := Node3D.new()
 	root.add_child(holder)
 	var rig := DwarfRig.new()
+	# (Nov 21, F549) without the body: wearing it adds its springy shirt and hair bones to the skeleton, and a body
+	# built on that dump got a second, wrong set of them (the axe handle then brushed the shirt hem)
+	rig.use_body = false
 	holder.add_child(rig)
 	rig.build(Color(0.6, 0.45, 0.3))
 	await process_frame

@@ -327,7 +327,9 @@ for side in ("l", "r"):
 	fingers = [[a.lerp(b, 0.5) for a, b in zip(chains["index"], chains["middle"])],
 		[a.lerp(b, 0.5) for a, b in zip(chains["ring"], chains["pinky"])]]
 	mids = [a.lerp(b, 0.5) for a, b in zip(fingers[0], fingers[1])]
-	fingers = [[Vector((p.x, m.y + (p.y - m.y) * 1.1, p.z)) for p, m in zip(f, mids)] for f in fingers]  # (big chunky fists)
+	# (Nov 21, F549, owner: "hands too big, very wide fingers"): slimmer fingers and palm, same length (fists still close
+	# round the tools); was spread 1.1, fingers 0.029, palm 0.032 thick and 0.03 past the knuckles
+	fingers = [[Vector((p.x, m.y + (p.y - m.y) * 1.05, p.z)) for p, m in zip(f, mids)] for f in fingers]  # (chunky fists)
 	pts = [p for c in chains.values() for p in c] + [wr] + [p for f in fingers for p in f]
 	lo = Vector([min(p[i] for p in pts) - 0.06 for i in range(3)])
 	hi = Vector([max(p[i] for p in pts) + 0.06 for i in range(3)])
@@ -335,20 +337,20 @@ for side in ("l", "r"):
 	knuck = [f[0] for f in fingers]
 	mid = (knuck[0] + knuck[1]) / 2
 	along = (mid - wr).length
-	cl.add(cl.ell(QV(wr.lerp(mid, 0.55)), (along * 0.6, 0.032, (knuck[1] - knuck[0]).length / 2 + 0.03)), 0.014)  # the palm (flatter: Nov 18)
-	cl.add(cl.ell(QV(wr.lerp(mid, 0.1)), (0.034, 0.028, 0.036)), 0.02)                                          # the wrist end
+	cl.add(cl.ell(QV(wr.lerp(mid, 0.55)), (along * 0.57, 0.027, (knuck[1] - knuck[0]).length / 2 + 0.02)), 0.012)  # the palm (flatter: Nov 18)
+	cl.add(cl.ell(QV(wr.lerp(mid, 0.1)), (0.032, 0.026, 0.033)), 0.02)                                          # the wrist end
 	for k, f in enumerate(fingers):
-		r0 = 0.029
+		r0 = 0.022
 		f = [f[0].lerp(wr, 0.25)] + f[1:]  # (from inside the palm)
 		for j in range(len(f) - 1):
 			cl.add(cl.tube(QV(f[j]), QV(f[j + 1]), r0 * (1 - 0.06 * j), r0 * (1 - 0.06 * (j + 1))), 0.004)
-		cl.add(cl.ell(QV(f[-1]), (0.025, 0.024, 0.025)), 0.006)                       # a round fingertip
-		cl.add(cl.ell(QV(f[1] + Vector((0, 0, 0.01))), (0.025, 0.015, 0.025)), 0.006)  # the knuckle on top
+		cl.add(cl.ell(QV(f[-1]), (0.019, 0.018, 0.019)), 0.005)                       # a round fingertip
+		cl.add(cl.ell(QV(f[1] + Vector((0, 0, 0.008))), (0.019, 0.012, 0.019)), 0.005)  # the knuckle on top
 	th = chains["thumb"]
 	th = [th[0].lerp(mid, 0.15)] + th[1:]
 	for j in range(len(th) - 1):
-		cl.add(cl.tube(QV(th[j]), QV(th[j + 1]), 0.029 * (1 - 0.07 * j), 0.029 * (1 - 0.07 * (j + 1))), 0.006)
-	cl.add(cl.ell(QV(th[-1]), (0.026, 0.026, 0.026)), 0.006)
+		cl.add(cl.tube(QV(th[j]), QV(th[j + 1]), 0.022 * (1 - 0.07 * j), 0.022 * (1 - 0.07 * (j + 1))), 0.005)
+	cl.add(cl.ell(QV(th[-1]), (0.02, 0.02, 0.02)), 0.005)
 	finish(cl.mesh(f"hand_{side}", skin, PARTS), 4000)
 	del cl
 
