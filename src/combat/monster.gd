@@ -482,10 +482,10 @@ func think(delta: float, mgr: Node) -> void:
 				_no_progress += delta
 			var gives_up := global_position.distance_to(home) > Monsters.LEASH or _no_progress > Monsters.GIVE_UP
 			if data.get("stays_in_cave", false):  # (bats, F419: only when you leave their cave)
-				gives_up = not mgr.in_cave(self, target.global_position)
+				gives_up = not mgr.in_cave(self, target.global_position) and not angry()
 			if not dungeon.is_empty():
 				var at_room := DungeonMap.space_at(dungeon, target.global_position + Vector3.UP)
-				if at_room == "" or (at_room != dungeon_room and not chases_out()):
+				if (at_room == "" and not angry()) or (at_room != dungeon_room and not chases_out()):
 					gives_up = true  # (you left its room; in Lampwick only when you leave the dungeon)
 			if gives_up:
 				state = State.RETURN
@@ -785,7 +785,21 @@ func add_buildup(kind: String, amount: float) -> void:
 
 
 func chases_out() -> bool:
-	return not dungeon.is_empty() and bool(dungeon.map.get("chase_out", false))
+	return (not dungeon.is_empty() and bool(dungeon.map.get("chase_out", false))) or angry()
+
+
+## Hit (owner F572 🔁, Nov 21: "I shot them from another room and they did nothing"): for GRUDGE seconds after a hit it
+## follows you out of its room, its dungeon or its bat cave, instead of giving up at once because you stand elsewhere.
+const GRUDGE := 15.0
+var grudge_until := -1.0  ## (host) its _clock time the grudge ends
+
+
+func hurt_by_someone() -> void:
+	grudge_until = _clock + GRUDGE
+
+
+func angry() -> bool:
+	return _clock < grudge_until
 
 
 ## A dungeon creature may step to `p`: still in its own room, not under a crusher. One that already stands outside its

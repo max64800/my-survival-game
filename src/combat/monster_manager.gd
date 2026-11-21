@@ -698,6 +698,7 @@ func _hurt_monster(m: Monster, peer: int, dmg: int, stun_amount: float, eff := 0
 	m.last_hitter = peer
 	m.hit_by[peer] = _clock
 	m.stun.add(stun_amount)
+	m.hurt_by_someone()  # (it follows you out of its room for a while: F572)
 	m.alert(peer)
 	alert_pack(m, peer)
 	var hitter_ps := auth.get_player(peer)

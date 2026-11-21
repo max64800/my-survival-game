@@ -1341,3 +1341,30 @@ func test_bat_dive_trail_is_pale_air() -> void:
 		var c: Color = im.surface_get_arrays(0)[Mesh.ARRAY_COLOR][0]
 		check(c.s < 0.1, "the streak is pale, not purple (saturation %.2f)" % c.s)
 	_teardown()
+
+
+## F572 🔁 (owner, Nov 21: "I shot them from another room and they did nothing"): a hit always wakes a creature and it
+## comes after you for a while, even when you stand outside its room or its bat cave. Only woken (not hit), a bat
+## whose cave you aren't in still turns back as before (F419).
+func test_a_hit_from_another_room_makes_it_come_after_you() -> void:
+	await _setup()
+	var rooms: Array = world.maker.rooms
+	var far_i := 0
+	for i in rooms.size():
+		if not MonsterManager.inside_room(rooms[i], player.global_position, MonsterManager.CAVE_MARGIN):
+			far_i = i
+			break
+	var woken := _spawn("cave_bat", Vector3(6, 0, 0), false, MonsterManager.BAT_KEY + far_i)
+	var shot := _spawn("cave_bat", Vector3(-6, 0, 0), false, MonsterManager.BAT_KEY + far_i)
+	woken.alert(1)
+	auth.monsters._hurt_monster(shot, 1, 1, 0.0)
+	var woken_chasing := 0
+	var shot_chasing := 0
+	for i in 90:
+		await tree.physics_frame
+		woken_chasing += 1 if woken.state == Monster.State.CHASE else 0
+		shot_chasing += 1 if shot.state in [Monster.State.CHASE, Monster.State.ATTACK, Monster.State.RECOVER] else 0
+	check(woken_chasing < 10, "only woken, a bat whose cave you're not in doesn't chase you (as before; %d frames)" % woken_chasing)
+	check(shot_chasing >= 85, "shot, it comes after you and keeps at it (%d of 90 frames)" % shot_chasing)
+	check(shot.global_position.distance_to(player.global_position) < 9.0, "it's flying round you")
+	_teardown()
