@@ -119,10 +119,10 @@ const ROLL_TIME := 0.75
 const MOVE_POINTS := {idle = 0.0, walk = 4.0, jog = 5.3, sprint = 6.5}
 ## How fast the standing/walk/run loops play (1 = as made; owner Nov 18: "way too fast").
 const LOOP_SPEED := 0.7
-## Feet that grip the floor (Nov 19, waiting for the owner's pick): at 70% the feet skate (they move back only 64% as
-## fast as the dwarf walks, 39% when running; tools/asset_forge/dwarf_gait_check.gd), so with this on the loops play at
-## the speed where the feet stay put instead: speed (m/s) -> how fast the loop plays.
-static var grip_feet := false
+## Feet that grip the floor: at 70% the feet skate (they move back only 64% as fast as the dwarf walks, 39% when
+## running; tools/asset_forge/dwarf_gait_check.gd), so the loops play at the speed where the feet stay put instead:
+## speed (m/s) -> how fast the loop plays. On since the owner's F577 (Nov 21: "legs need to move faster, he slides").
+static var grip_feet := true
 ## The heavy-steps layer (DwarfWeight): off, the owner kept the old moves (Nov 19). The Dwarf Moves page tool turns it on.
 static var use_weight := false
 const GRIP_RATES := {0.0: 0.7, 1.6: 1.3, 4.0: 1.0, 6.5: 1.65}
@@ -663,6 +663,40 @@ func _process(delta: float) -> void:
 	_lift_roll(delta)
 	_hold_amount = move_toward(_hold_amount, 1.0 if _hold != "" else 0.0, delta * 8.0)
 	tree.set("parameters/hold/blend_amount", _hold_amount)
+	_watch_feet()
+
+
+## Foot plants (F577: "step sounds that match the feet"). `steps` goes up by one each time the other foot becomes the
+## lower one, i.e. it just came down; the dwarf plays a step sound then instead of on a timer.
+var steps := 0
+var _low_foot := 0  # -1 = left foot is down, 1 = right, 0 = not known yet
+var _feet := Vector2i(-2, -2)
+## How much lower (skeleton units, the rig's metres) the coming-down foot must be before it counts: no double clicks
+## when both feet are level.
+const PLANT_MARGIN := 0.012
+
+
+## Which foot is down now: `was` stays until the other foot is clearly (PLANT_MARGIN) lower.
+static func lower_foot(was: int, left_y: float, right_y: float) -> int:
+	if left_y < right_y - PLANT_MARGIN:
+		return -1
+	if right_y < left_y - PLANT_MARGIN:
+		return 1
+	return was
+
+
+func _watch_feet() -> void:
+	if skeleton == null:
+		return
+	if _feet.x == -2:
+		_feet = Vector2i(skeleton.find_bone("foot_l"), skeleton.find_bone("foot_r"))
+	if _feet.x < 0 or _feet.y < 0:
+		return
+	var now := lower_foot(_low_foot, skeleton.get_bone_global_pose(_feet.x).origin.y,
+		skeleton.get_bone_global_pose(_feet.y).origin.y)
+	if now != _low_foot and _low_foot != 0:
+		steps += 1
+	_low_foot = now
 
 
 ## The turn (world space) from "as the fist holds it" (GRIPS) to where the held tool points now: the running carry

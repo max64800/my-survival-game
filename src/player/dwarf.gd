@@ -601,19 +601,30 @@ func _try_step_up(motion: Vector3) -> void:
 
 
 var _step_t := 0.0
+var _steps_heard := 0
 
 
-## Footsteps on stone: faster when running.
+## Footsteps on stone, each time a foot comes down (F577, owner Nov 21: "step sounds that match the feet"). The rigged
+## dwarf counts his foot plants (DwarfRig.steps); the old shapes look has no feet to watch, so it keeps a timer.
 func _footsteps(delta: float, speed: float) -> void:
+	var rig: DwarfRig = model.dwarf_rig if model else null
+	var counted := rig.steps if rig else 0
+	var new_step := counted != _steps_heard
+	_steps_heard = counted
 	if not is_on_floor() or speed < 1.0:
 		_step_t = 0.0
 		return
-	_step_t -= delta
-	if _step_t <= 0.0:
+	if rig:
+		if not new_step:
+			return
+	else:
+		_step_t -= delta
+		if _step_t > 0.0:
+			return
 		_step_t = 0.42 if speed < 5.0 else 0.3
-		Sfx.play("step", global_position, -14.0)
-		if speed >= 5.0:  # running kicks up a little dust
-			Fx.dust(get_parent(), global_position + Vector3.UP * 0.05, Color(0.5, 0.45, 0.38), 2, 0.25)
+	Sfx.play("step", global_position, -14.0)
+	if speed >= 5.0:  # running kicks up a little dust
+		Fx.dust(get_parent(), global_position + Vector3.UP * 0.05, Color(0.5, 0.45, 0.38), 2, 0.25)
 
 
 # ---------------------------------------------------------------- fighting (see DwarfFight)
