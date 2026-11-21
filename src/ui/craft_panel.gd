@@ -14,6 +14,7 @@ var _making := {}  ## {id, left, total, from (where you stood)}
 var _bar: ProgressBar
 var _work_beat := 0.0
 const CANCEL_DISTANCE := 0.6
+const BATCH_MAX_SECONDS := 8.0  ## making many at once never takes longer than this (F555)
 ## Recipes sorted into tabs (owner F127) by what they make.
 const TABS := ["Tools", "Weapons", "Armor", "Stations", "Materials", "Food"]
 var _tab := ""
@@ -291,26 +292,37 @@ static func can_make_count(recipe_id: String, inv: Inventory) -> int:
 	return most
 
 
+## How long making `count` at once takes (owner F555: "I'm crafting 1 by 1, it takes so long").
+## One bar for the whole amount: the first takes the normal time, each extra one a third of it,
+## never more than 8 s in all. Crafting ★75: the extras add no time at all.
+static func batch_time(one: float, count: int, star75: bool = false) -> float:
+	if one <= 0.0 or count <= 1 or star75:
+		return one
+	return minf(one * (1.0 + (count - 1) / 3.0), maxf(one, BATCH_MAX_SECONDS))
+
+
 func start_making(recipe_id: String, count: int = -2) -> void:
 	if not _making.is_empty():
 		return
-	if count == -2:  # from the Make button: the chosen amount (owner F129)
-		var me_ps := GameAuthority.instance.get_player(peer_id) if GameAuthority.instance else null
-		var can := can_make_count(recipe_id, me_ps.inventory) if me_ps else 1
-		count = mini(amount, maxi(can, 1))
+	var me_ps := GameAuthority.instance.get_player(peer_id) if GameAuthority.instance else null
+	if count == -2:  # from the Craft button: the chosen amount (owner F129)
+		count = amount
+	if me_ps:
+		count = mini(count, maxi(can_make_count(recipe_id, me_ps.inventory), 1))
 	count = maxi(count, 1)
-	var t := craft_time(recipe_id) * (_prog().craft_time_mult(false) if _prog() else 1.0)  # Crafting: −3% per 10 levels
-	if t <= 0.0:
+	var one := craft_time(recipe_id) * (_prog().craft_time_mult(false) if _prog() else 1.0)  # Crafting: −3% per 10 levels
+	if one <= 0.0:
 		for i in count:
 			_finish(recipe_id)
 		return
+	var t := batch_time(one, count, _prog() != null and _prog().has_star("crafting", 75))
 	var me := _me()
-	_making = {id = recipe_id, left = t, total = t, from = me.global_position if me else Vector3.ZERO, more = count - 1}
+	_making = {id = recipe_id, left = t, total = t, from = me.global_position if me else Vector3.ZERO, count = count}
 	_work_beat = 0.0
 	_bar.modulate.a = 1.0
 	_bar.max_value = t
 	_bar.value = 0.0
-	_status.text = "Making %s…%s" % [Items.display_name(Recipes.get_recipe(recipe_id).output), "" if count <= 1 else "  (%d more after this)" % (count - 1)]
+	_status.text = "Making %s%s…" % ["" if count <= 1 else "%d " % count, Items.display_name(Recipes.get_recipe(recipe_id).output)]
 	refresh()
 
 
@@ -352,19 +364,12 @@ func _process(delta: float) -> void:
 	_bar.value = _making.total - _making.left
 	if _making.left <= 0.0:
 		var id: String = _making.id
-		var more: int = _making.get("more", 0)
+		var count: int = _making.get("count", 1)
 		_making = {}
 		_bar.modulate.a = 0.0
 		_status.text = ""
-		_finish(id)
-		if more > 0 and _prog() and _prog().has_star("crafting", 75):
-			for i in more:  # Crafting ★75: the rest are made at once, no extra wait
-				_finish(id)
-		elif more > 0:  # making several: start the next one (stops by itself when materials run out)
-			get_tree().create_timer(0.2).timeout.connect(func():
-				var ps := GameAuthority.instance.get_player(peer_id) if GameAuthority.instance else null
-				if ps and visible and can_make_count(id, ps.inventory) > 0:
-					start_making(id, more))
+		for i in count:  # the whole amount at once (F555); the host checks each one, so a short bag just stops
+			_finish(id)
 
 
 func _prog() -> Progression:

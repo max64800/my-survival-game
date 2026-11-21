@@ -1270,10 +1270,13 @@ func _process(delta: float) -> void:
 		_build_label.text = "Blueprint: %s (%s)\nQ turn · left click place (a blue build site) · right click or B: back to single pieces" % [build_mode.blueprint.name, BuildMenu._cost_text(build_mode.blueprint.cost())]
 	elif build_mode and build_mode.active():
 		var c := BuildMenu._cost_text(Pieces.cost(build_mode.piece, build_mode.family))
-		_build_label.text = "Building: %s (%s)\nCost: %s%s%s\n\nB  choose another piece or material\nLeft click  place it\nQ / E  turn it left / right\nShift + mouse wheel  raise / lower\nRight click  pick up (first 10 s)\nX  break it (half back)\nV  blueprints  ·  C  save your own" % [
+		# F579: no wall of keys: one lesson at a time ("NEXT: ..."), ticked off as you do it (BuildLessons),
+		# then just a short one-line key list.
+		_build_label.text = "Building: %s (%s)\nCost: %s%s%s\n\n%s" % [
 			Pieces.LIST[build_mode.piece].name, Pieces.FAMILIES[build_mode.family].name, c,
 			" (now %+.1f m)" % build_mode.lift if build_mode.lift != 0.0 else "",
-			"" if build_mode.problem == "" else "\nCan't place: " + build_mode.problem]
+			"" if build_mode.problem == "" else "\nCan't place: " + build_mode.problem,
+			build_mode.lessons.text()]
 		if build_mode.level_text() != "":  # F159: what placing it does to the ground
 			_build_label.text += "\n" + build_mode.level_text()
 		var aimed: Dictionary = auth.builder.structure.pieces.get(build_mode.aimed_uid, {}) if auth and auth.builder else {}

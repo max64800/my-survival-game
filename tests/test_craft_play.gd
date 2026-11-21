@@ -43,3 +43,36 @@ func test_no_free_shield() -> void:
 	check_eq(ps.inventory.count_of("plank_root") + ps.inventory.count_of("rope"), 0, "and they were used up")
 	check(said.any(func(t): return "Made a Wooden Shield from 6" in t), "it says what it used: %s (F561)" % [said])
 	auth.get_parent().queue_free()
+
+
+## F555 🔁 (owner: "I'm crafting 1 by 1, it takes so long"): one bar for the whole amount, all made together.
+func test_craft_the_whole_amount_in_one_go() -> void:
+	await _setup()
+	check_near(CraftPanel.batch_time(1.0, 1), 1.0, 0.01, "one plank: the normal time")
+	check_near(CraftPanel.batch_time(1.0, 10), 4.0, 0.01, "ten: 4 s, not 10 × 1 s")
+	check_near(CraftPanel.batch_time(2.0, 99), CraftPanel.BATCH_MAX_SECONDS, 0.01, "never longer than 8 s")
+	check_near(CraftPanel.batch_time(1.0, 10, true), 1.0, 0.01, "Crafting ★75: no extra wait")
+	ps.inventory.add("rootwood", 12)
+	var panel := CraftPanel.new()
+	panel.peer_id = 1
+	auth.get_parent().add_child(panel)
+	panel.open_for(auth.stations[7])
+	panel.visible = true
+	panel.amount = 10
+	panel.start_making("plank_root")
+	check_eq(panel._making.get("count", 0), 10, "the Craft button takes the chosen amount (10)")
+	var made_at := -1.0
+	var t := 0.0
+	while t < 12.0 and made_at < 0.0:
+		panel._process(0.1)
+		t += 0.1
+		if not panel._making.is_empty():
+			continue
+		made_at = t
+	check(made_at > 0.0 and made_at < 4.5, "the whole batch finished in one bar (%.1f s)" % made_at)
+	check_eq(ps.inventory.count_of("plank_root"), 20, "all 10 made at once: 20 planks")
+	check_eq(ps.inventory.count_of("rootwood"), 2, "10 rootwood used, 2 left")
+	panel.amount = 50
+	panel.start_making("plank_root")
+	check_eq(panel._making.get("count", 0), 2, "asking for more than you can make: only what the bag allows")
+	auth.get_parent().queue_free()
