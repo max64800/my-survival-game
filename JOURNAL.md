@@ -8229,3 +8229,31 @@ test_dungeon_places, test_dungeon_variety, test_loot_props all pass (run one at 
   don't. The check now skips turrets for things inside a tower, below the roof.
 - A small price script called a list that doesn't exist (`Pieces.DEFS`); the right one is `Pieces.LIST`.
 - The browser helper wouldn't connect, so I took the page screenshot with Chrome on its own (headless) instead.
+
+
+## Nov 21: Slimmer dwarf hands (F549)
+
+**What we did.** The owner said twice that the dwarf's hands look too big, with very wide fingers (easiest to see in
+the crossbow reload). The hands are now rebuilt slimmer in the Blender body build (`tools/asset_forge/builds/dwarf_body.py`):
+- The two fat fingers and the thumb are 4.4 cm thick instead of 5.8 cm (they filled the whole width of the hand).
+- The palm is a little thinner and narrower, and the fingers sit a little closer together.
+- The fingers are just as long, so the fists still close round tools and stay easy to read (the owner said on Nov 18
+  that the fists can be bigger, so we didn't shrink them too far).
+Only the hands changed: the face, body and clothes come out exactly the same size and shape.
+
+**Mistakes and hurdles.**
+- **The first try (earlier chat) did nothing.** Changing the hand size in `DwarfProportions` (THICK) didn't show,
+  because the body is fitted to the bones in that exact shape. Think of a glove sewn onto a hand: if you shrink the hand,
+  the glove shrinks with it. The real size lives in the Blender script.
+- **Blender ran out of memory** during the paint bake on the first build (a game preview was running at the same time).
+  The second try, with nothing else of ours running, worked.
+- **Claude's mistake: the skeleton dump tool copied the old body's bones.** `dwarf_skeleton_dump.gd` puts the current body
+  on the dwarf before writing the skeleton, and wearing the body adds 42 springy shirt and hair bones. So the new body got
+  a second, wrong set of them (147 bones instead of 105), and in a test the axe handle brushed the shirt hem. Found by
+  comparing the old and new files bone by bone. Fixed: the dump now switches the body off (`rig.use_body = false`) and
+  writes the 65 real bones; the body was rebuilt on that and has 105 bones again, like before.
+- **Three dwarf tests fail, with the old body too**, so they were already broken before this change: the back hair swings
+  ~16 cm in a dash (limit 10), the aim test hits a "material is null" error, and the great-axe swing test gives different
+  numbers on every run (Spin fails with both bodies). Left for their own fix.
+
+**Check:** crossbow reload, front view, before and after: the fingers are clearly slimmer and the fist still reads.
