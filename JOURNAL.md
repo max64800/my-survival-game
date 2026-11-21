@@ -7295,6 +7295,12 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - **Not done yet:** the real game play-test of chat 15's moves (the owner is testing them), the F-numbers for
   these three wishes in FEEDBACK.md, great maul and crossbow moves, the Mixamo pack. The "Dwarf Moves" page still shows
   the sword's heavy and the slow mace.
+- **Later the same day (chat 16):** F-numbers given: F519 (no heavy on one-handed weapons), F520 (block + left click
+  = shield bash), F521 (mace twice as fast), all straight into FEEDBACK-done.md. The "Dwarf Moves" page is updated
+  (same link): the recorder (one_swing_export.gd all=1) now records "block + bash" for the sword, mace and spear
+  instead of a heavy, and the mace at its new speed. Checked in the browser: all 16 moves load, the shield pushes
+  out in front during the bash. Hurdle: a search over the whole game folder for the page's file ran past 2 minutes
+  (stopped it; read the page from the artifact instead).
 
 ## Nov 21, 2026 (Mac, gems chat): status badges, test findings, pull and handover
 - **Status badges** (owner: simple circles with a ring that runs down like a timer): round badges above the health

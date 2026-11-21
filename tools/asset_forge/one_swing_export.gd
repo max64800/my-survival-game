@@ -392,12 +392,17 @@ func _record_all(model: DwarfModel, rig: DwarfRig, lib: AnimationLibrary, tools:
 			steps.append([t, model.attack.bind(d, false, step)])
 			t += d
 		lib.add_animation(holder + "_Combo", await _record(rig, holder, "", 0.0, t + AFTER, steps))
-		var h := DwarfRig.attack_seconds(weapon, true, 0, wd.heavy_speed)
-		lib.add_animation(holder + "_Heavy", await _record(rig, holder, "", 0.0, h + AFTER, [[0.0, model.attack.bind(h, true, 0)]]))
+		var hold := func(on: bool, sh: bool) -> void: model.set_pose(on, false, sh)
+		if DwarfFight.weapon_has_heavy(weapon):  # (chat 16, F519: only great weapons have a heavy attack)
+			var h := DwarfRig.attack_seconds(weapon, true, 0, wd.heavy_speed)
+			lib.add_animation(holder + "_Heavy", await _record(rig, holder, "", 0.0, h + AFTER, [[0.0, model.attack.bind(h, true, 0)]]))
+		elif w[2]:  # F520: block (right click held), then left click = the shield bash, as DwarfFight._shield_bash
+			var sb: float = Combat.WEAPONS.shield.light_speed
+			lib.add_animation(holder + "_Bash", await _record(rig, holder, "", 0.0, 0.5 + sb + 0.9, [[0.0, hold.bind(true, true)],
+				[0.5, model.attack.bind(sb, false, 0, "shield")], [0.5 + sb + 0.6, hold.bind(false, true)]]))
 		if holder != "Sword":
 			continue
 		# the sword's guard (no shield), the shield's guard, stunned, dying, the roll
-		var hold := func(on: bool, sh: bool) -> void: model.set_pose(on, false, sh)
 		lib.add_animation("Sword_GuardShield", await _record(rig, holder, "", 0.0, 2.2, [[0.0, hold.bind(true, true)], [1.6, hold.bind(false, true)]]))
 		lib.add_animation("Sword_Stunned", await _record(rig, holder, "", 0.0, DwarfFight.STUN_TIME + AFTER, [[0.0, model.react.bind("stunned", DwarfFight.STUN_TIME)]]))
 		lib.add_animation("Sword_Death", await _record(rig, holder, "", 0.0, 1.6, [[0.0, model.react.bind("die", -1.0)]]))
@@ -407,12 +412,5 @@ func _record_all(model: DwarfModel, rig: DwarfRig, lib: AnimationLibrary, tools:
 			rig.set_motion(0.0, true, false)
 			await process_frame
 		lib.add_animation("Sword_Guard", await _record(rig, holder, "", 0.0, 2.2, [[0.0, hold.bind(true, false)], [1.6, hold.bind(false, false)]]))
-		# the shield bash: the shield selected (nothing in the right fist)
-		model.set_shield("shield_copper")
-		model.set_held("shield_copper")
-		for i in 20:
-			rig.set_motion(0.0, true, false)
-			await process_frame
-		var b := DwarfRig.attack_seconds("shield", false, 0, Combat.WEAPONS.shield.light_speed)
-		lib.add_animation("Shield_Bash", await _record(rig, holder, "", 0.0, b + AFTER, [[0.0, model.attack.bind(b, false, 0)]]))
+		model.set_shield("shield_copper")  # (the shield back on for the next weapons)
 	return shield_copy
