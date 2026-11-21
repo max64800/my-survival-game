@@ -30,7 +30,7 @@ const PACK_MOVES := ["b/Shield_OneShot", "b/Shield_Dash", "b/Idle_Shield", "b/Id
 const NODES := ["turn", "Sword", "Mace", "shield"]
 ## bow=1 (chat 17, with all=1): the crossbow's KayKit moves ("c/", crossbow_kaykit_bake.gd), "Crossbow_Try<move>",
 ## and all three in a row ("Crossbow_TryAll")
-const BOW_TRY := ["Aim", "Shoot", "Reload", "Reload1H"]
+const BOW_TRY := ["Aim", "Shoot", "Reload"]
 ## all=1 (chat 15, owner: "an artifact where I can see everything we've implemented in terms of moves"): every weapon
 ## the way the game plays it (DwarfModel.attack at DwarfRig.attack_seconds, the combo clicked the moment the last hit
 ## lets you, as DwarfFight does), then the blocks, the shield bash, stunned, dying, the roll and the crossbow.
