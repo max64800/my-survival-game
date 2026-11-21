@@ -68,7 +68,9 @@ const ATTACKS := {
 	"axe_2h": [["great_chop"], "great_spin"],
 	"mace_2h": [["great_chop"], "great_spin"],
 	"hammer": [["smash"], "smash"],
-	"spear": [["stab"], "stab"],
+	# spear (owner, chat 16: "two hits and then a spin attack"): two thrusts, then UAL 2's hit C (a full turn), which
+	# the sword no longer uses (F519); the spin hits all round him (DwarfFight._impact)
+	"spear": [["stab", "stab", "ual_heavy"], "stab"],
 	"shield": [["bash"], "bash"],
 }
 ## How each tool sits in the fist: tool look -> {animation ("" = any other) -> [turn (degrees, x/y/z, in the tool's own
@@ -911,7 +913,7 @@ static func ual_slow(_weapon: String) -> float:
 
 
 static func attack_seconds(weapon: String, heavy: bool, step: int, fallback: float) -> float:
-	if not weapon in ["sword", "mace"]:
+	if not weapon in ["sword", "mace", "spear"]:
 		return fallback
 	var moves: Array = ATTACKS[weapon]
 	var what: String = moves[1] if heavy else (moves[0] as Array)[maxi(step, 0) % (moves[0] as Array).size()]

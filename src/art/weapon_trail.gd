@@ -14,6 +14,7 @@ const SHADER := preload("res://src/art/weapon_trail.gdshader")
 var _holder: Node3D  ## the weapon's hand socket
 var _near := 0.12    ## where the ribbon starts along the weapon (metres from the hand): almost at the hilt
 var _far := 0.85     ## where it ends (the tip)
+var _axis := Vector3.UP  ## the way the weapon points from the hand (the spear: forward, -Z)
 var _life := 0.0
 var _t := 0.0
 var _samples: Array = []  ## [time, near point, far point], newest first
@@ -23,13 +24,14 @@ var _mat := ShaderMaterial.new()
 
 ## Follows `holder` (the hand socket) for `seconds`. `near`/`far`: metres along the tool from the hand; far < 0 =
 ## measured from the tool in the hand (its tip).
-static func follow(holder: Node3D, seconds: float, color: Color, near: float = -1.0, far: float = -1.0) -> WeaponTrail:
+static func follow(holder: Node3D, seconds: float, color: Color, near: float = -1.0, far: float = -1.0, axis := Vector3.UP) -> WeaponTrail:
 	if DisplayServer.get_name() == "headless" or not holder.is_inside_tree():
 		return null  # (the test computer draws nothing: its shader would only make the engine complain)
 	var t := WeaponTrail.new()
 	t._holder = holder
 	t._life = seconds
-	var tip := far if far > 0.0 else _tool_length(holder)
+	t._axis = axis
+	var tip := far if far > 0.0 else _tool_length(holder, axis)
 	t._far = tip
 	t._near = near if near >= 0.0 else tip * 0.15
 	t._mat.shader = SHADER
@@ -39,13 +41,13 @@ static func follow(holder: Node3D, seconds: float, color: Color, near: float = -
 
 
 ## How far the held tool reaches from the hand along the socket's +Y (its tip), from its meshes.
-static func _tool_length(holder: Node3D) -> float:
+static func _tool_length(holder: Node3D, axis := Vector3.UP) -> float:
 	var inv := holder.global_transform.affine_inverse()
 	var far := 0.0
 	for mi: MeshInstance3D in holder.find_children("*", "MeshInstance3D", true, false):
 		var b := mi.get_aabb()
 		for i in 8:
-			far = maxf(far, (inv * (mi.global_transform * b.get_endpoint(i))).y)
+			far = maxf(far, (inv * (mi.global_transform * b.get_endpoint(i))).dot(axis))
 	return far if far > 0.15 else 0.85
 
 
@@ -61,7 +63,7 @@ func _process(delta: float) -> void:
 	_life -= delta
 	if is_instance_valid(_holder) and _life > 0.0:
 		var g := _holder.global_transform
-		_samples.push_front([_t, g * Vector3(0, _near, 0), g * Vector3(0, _far, 0)])
+		_samples.push_front([_t, g * (_axis * _near), g * (_axis * _far)])
 	while not _samples.is_empty() and _t - float(_samples.back()[0]) > KEEP_TIME:
 		_samples.pop_back()  # (old moments age out; after the swing the tail shrinks away)
 	_mesh.clear_surfaces()

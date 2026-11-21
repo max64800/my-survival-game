@@ -7307,6 +7307,14 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   Page re-recorded (same link). Hurdles: (1) a Python edit script tripped over a backslash, did the edits by hand.
   (2) test_sword_star_perks compared a 1st-hit jump attack with a 3rd hit: fine before, wrong now that the 3rd hit is
   much stronger; it compares 3rd with 3rd now. (3) Another chat changed monster_manager.gd meanwhile: left it out.
+- **Owner, later (chat 16): F528 the spear: two thrusts, then a spin.** DwarfRig.ATTACKS.spear = stab, stab, ual_heavy
+  (UAL 2's hit C, a full ~400 deg turn, free since F519); the spear joined DwarfFist.ONE_HANDED (for the spin only) and
+  turns so its tip leads (SPEAR_IN_SWING: its -Z where a sword's +Y would be); the spin's hit is all round him
+  (DwarfFight.SPEAR_SPIN_STEP); the swoosh trail learned the spear's direction (WeaponTrail.follow axis). Combo 1x,
+  1.3x, 1.9x. Page re-recorded and checked: he leaps, turns and the spear sweeps out flat, tip first.
+  Hurdles: (1) the page had shown "did not load" for the owner (it loaded for me: likely mid-swap of the new version,
+  or the 30 MB download hiccuped): it now retries by itself 3 times. (2) F525 was already taken by another chat
+  (I'd put it on the page): it's F528. (3) test_dwarf_fist great_swings still fails, as before this chat.
 
 ## Nov 21, 2026 (Mac, gems chat): status badges, test findings, pull and handover
 - **Status badges** (owner: simple circles with a ring that runs down like a timer): round badges above the health

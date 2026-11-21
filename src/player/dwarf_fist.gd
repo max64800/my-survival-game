@@ -62,7 +62,9 @@ const GRIP_SLIDE_MAX := 0.05  ## m the fist may sit off the grip's middle
 ## fists. Walking or running (not swinging), the weapon rests on his right shoulder in one hand instead.
 const TWO_HANDED := ["axe_2h", "mace_2h"]
 ## One-handed weapons that swing the pack's moves (DwarfOneSwing, F389 chat 12; the owner didn't like their old moves).
-const ONE_HANDED := ["sword", "mace"]
+const ONE_HANDED := ["sword", "mace", "spear"]  ## (the spear: only its spin, chat 16; its thrusts are "stab")
+## The spear points along its holder's -Z, a sword's blade along +Y: in a pack move the spear turns so its tip leads.
+const SPEAR_IN_SWING := Quaternion(Vector3.FORWARD, Vector3.UP)
 const SHIELD_ARM := ["clavicle_l", "upperarm_l", "lowerarm_l", "hand_l"]
 var _ual := false  ## the sword swing playing (or fading out) is one of UAL 2's
 var _one_w := 0.0  ## how much of the one-handed swing's pose he takes this frame (0..1)
@@ -181,6 +183,8 @@ func _hold(sk: Skeleton3D) -> void:
 	want.basis = Basis(extra) * want.basis
 	if _one_w > 0.0:  # (a sword or mace swing: the weapon points the way the pack's does, its edge leading)
 		var aim := _one_aim(sk, _one).get_rotation_quaternion()
+		if rig.tool_look == "spear":
+			aim = aim * SPEAR_IN_SWING  # (its -Z where the sword's +Y would be: the tip leads the spin)
 		want.basis = Basis(want.basis.get_rotation_quaternion().slerp(aim, _one_w))
 	var before := sk.get_bone_global_pose(hand).basis.get_rotation_quaternion()
 	var inv := sk_world.basis.inverse()  # (directions in skeleton space: the dwarf is a bit wider than tall)

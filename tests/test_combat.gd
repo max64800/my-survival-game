@@ -49,6 +49,16 @@ func test_combos_build_up_to_a_big_last_hit() -> void:
 		check(combo[-1] >= 1.8, "%s: the last hit does at least 1.8x (%.2f)" % [w, combo[-1]])
 
 
+## Owner, chat 16: "the spear does two hits and then a spin attack".
+func test_spear_two_thrusts_then_a_spin() -> void:
+	var moves: Array = DwarfRig.ATTACKS.spear[0]
+	check_eq(moves.size(), Combat.WEAPONS.spear.combo.size(), "one move per combo hit")
+	check_eq(moves.size(), 3, "3 hits")
+	check(moves[0] == "stab" and moves[1] == "stab", "two thrusts first")
+	check_eq(moves[DwarfFight.SPEAR_SPIN_STEP], "ual_heavy", "then the spin (UAL 2's hit C)")
+	check(DwarfRig.attack_seconds("spear", false, 2, 0.6) > 0.6, "the spin takes its own (longer) time")
+
+
 func test_elemental_skips_armor() -> void:
 	var plain := Combat.damage("sword", false, 0, {armor = 100})
 	var with_fire := Combat.damage("sword", false, 0, {armor = 100}, 0, 1.0, 0, 0, 0, {fire = 8})

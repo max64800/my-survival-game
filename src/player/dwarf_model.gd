@@ -144,9 +144,12 @@ func attack(duration: float, heavy: bool, combo_step: int = -1, move: String = "
 			get_tree().create_timer(duration * 0.30).timeout.connect(func() -> void:
 				var tip := WeaponTrail._tool_length(_hand)
 				WeaponTrail.follow(_hand, duration * 0.16, Color(1.0, 0.95, 0.85, 0.75 if heavy else 0.55), tip * 0.55, tip))
-		elif weapon not in ["spear", "shield"]:  # (during the strike itself, not the wind-up: owner, Nov 18, "juicy swipes")
+		elif weapon not in ["spear", "shield"] or (weapon == "spear" and combo_step == DwarfFight.SPEAR_SPIN_STEP):
+			# (during the strike itself, not the wind-up: owner, Nov 18, "juicy swipes"; the spear only in its spin)
+			var spin := weapon == "spear"
 			get_tree().create_timer(duration * 0.12).timeout.connect(func() -> void:
-				WeaponTrail.follow(_hand, duration * 0.4, Color(1.0, 0.95, 0.85, 0.7 if heavy else 0.5)))
+				WeaponTrail.follow(_hand, duration * 0.4, Color(1.0, 0.95, 0.85, 0.7 if (heavy or spin) else 0.5), -1.0, -1.0,
+					Vector3.FORWARD if spin else Vector3.UP))  # (the spear points along its holder's -Z)
 		get_tree().create_timer(duration).timeout.connect(func(): swinging = false)
 		return
 	if rig:

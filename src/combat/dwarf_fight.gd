@@ -23,6 +23,7 @@ var _dodge_dir := Vector3.ZERO
 var stagger := 0.0  ## guard break / knockdown: can't act
 var _heavy_until := 0.0  ## a heavy swing is still going until this clock time
 var loaded := true  ## crossbow: a bolt is in it
+const SPEAR_SPIN_STEP := 2  ## the spear's 3rd combo hit is a spin (owner, chat 16: "two hits and then a spin")
 const KNOCK_DOWN_TIME := 2.0  ## down 0.85 s, then 1.1 s getting up
 ## Your own stun meter (owner, chat 15: "you should have your own stun meter as well"): hits fill it, blocked hits a
 ## little; full = stunned (UAL 2's Shield broken move, no fighting or walking), then it can't fill for 2 s.
@@ -308,6 +309,8 @@ func _impact(heavy: bool, combo_step: int, riposte: bool, airborne: bool = false
 	var prog: Progression = _ps().progress if _ps() else Progression.new()
 	var reach: float = wd.reach * prog.reach_mult(w) + 0.5  # Spear: +1.5% reach per 10 levels
 	var arc := 160.0 if wd.get("sweep", false) else 70.0
+	if w == "spear" and not heavy and combo_step == SPEAR_SPIN_STEP:
+		arc = 360.0  # the spear's spin (owner, chat 16) hits everything round him
 	if w == "mace_2h" and heavy:
 		arc = 360.0
 		reach = 2.5 * (1.25 if prog.has_star("warhammer", 50) else 1.0)  # Warhammer ★50: wider ground slam
