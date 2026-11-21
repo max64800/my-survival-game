@@ -78,7 +78,7 @@ static var X_MAX := 620.0
 
 ## Picks the cave layout for the next CaveMaker (and the World, map and borders that go with it).
 static func use_layout(v: int) -> void:
-	layout = v if DUNGEON_TESTS.has(v) else clampi(v, 1, LAYOUT_LATEST)
+	layout = v if DUNGEON_TESTS.has(v) or not RuinTests.of_layout(v).is_empty() else clampi(v, 1, LAYOUT_LATEST)
 	var half := 200.0 if layout == 1 else 400.0
 	HALF_SIZE = half
 	SLAB_X = half
@@ -189,6 +189,9 @@ func _init(p_seed: int = 1, big_caverns: int = 3, small_rooms: int = 12) -> void
 	if DUNGEON_TESTS.has(made_layout):
 		_make_dungeon_only(int(DUNGEON_TESTS[made_layout]))
 		return
+	if not RuinTests.of_layout(made_layout).is_empty():
+		_make_ruin_only(RuinTests.of_layout(made_layout))
+		return
 	# Mossy Hollows first, with the same dice as before biomes existed (old caves stay the same).
 	var rng := RandomNumberGenerator.new()
 	rng.seed = p_seed
@@ -275,6 +278,7 @@ func _seg_inside_room(sg: Dictionary, c: Vector3, r: Vector3) -> bool:
 # Rule (owner, Nov 17): nothing the world grows stands inside something built or on its paths. Pebbles, plants, crystals
 # and the old columns are made fresh every time a world loads, so they ask is_reserved() and skip that ground.
 
+var tower_spot := {}  ## only in a ruin test world (RuinTests); real worlds work it out with RuinTower.find_spot
 var outpost_spot := {}  ## where the Fallen Outpost goes ({room, pos, turn}; worked out once, in _reserve_tower)
 var brewhall_spot := {}  ## where the Brewhall goes (F479; the same)
 var spire_spot := {}  ## where the Lantern Spire goes (F479; the same)
@@ -314,6 +318,26 @@ func _make_dungeon_only(map_i := 0) -> void:
 	var d := DungeonMap.place(map, mouth, 0, -4.0 - mouth.z)
 	dungeons.append(d)
 	reserve(DungeonMap.to_world(d, Vector3(map.mouth.x, 0.0, map.mouth.y + float(d.entry_out) + 1.0)), 4.5, 5.0)
+	_corner_cache.clear()
+
+
+## A ruin test world (owner, Nov 21; RuinTests): one dome cave with a flat floor, the ruin's middle a little behind its
+## middle, its door (+z) facing you. You arrive in front of it. Nothing else is planned.
+func _make_ruin_only(e: Dictionary) -> void:
+	var c := Vector3(0.0, -20.0, 0.0)
+	rooms.append({center = c, radii = e.cave, big = true, kind = "room", sealed = false, biome = "mossy", shape = SHAPE_DOME})
+	_bake_shapes()
+	var mid := Vector3(0.0, c.y, -float(e.back))
+	var low := INF  # the lowest ground under its body, like the real worlds' picks (it never floats)
+	for sx in 5:
+		for sz in 5:
+			var h := float(e.half)
+			low = minf(low, find_floor(mid.x + (sx - 2) * h / 2.0, mid.z + (sz - 2) * h / 2.0, c.y).y)
+	var spot := {room = 0, pos = Vector3(mid.x, low - 0.05, mid.z), turn = 0}
+	set(String(e.key) + "_spot", spot)
+	var front := find_floor(0.0, float(e.cave.z) * 0.55, c.y)
+	spawn_point = front + Vector3.UP * 1.0
+	cavern_spawn = spawn_point
 	_corner_cache.clear()
 
 

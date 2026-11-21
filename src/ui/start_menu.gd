@@ -13,6 +13,7 @@ signal test_dungeon  ## dev builds only: a new world, standing at the first dung
 signal test_dungeon2  ## dev builds only: the same at the second dungeon, Lampwick Drift
 signal test_dungeon3  ## dev builds only: the same at the third dungeon, Old Pell's Diggings
 signal test_dungeon4  ## dev builds only: the same at the fourth dungeon, Mossprop Workings
+signal test_ruin(key: String, wood: bool)  ## dev builds only: a cave with just that ruin (RuinTests), at its chest
 
 var _status: Label
 var _seed_edit: LineEdit
@@ -108,15 +109,35 @@ func _ready() -> void:
 		var purple := StyleBoxFlat.new()
 		purple.bg_color = Color(0.22, 0.08, 0.26)
 		purple.set_corner_radius_all(8)
+		# Owner, Nov 21: dungeons in one column, ruins in another beside it.
+		var cols := HBoxContainer.new()
+		cols.add_theme_constant_override("separation", 16)
+		box.add_child(cols)
+		var dcol := VBoxContainer.new()
+		dcol.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		cols.add_child(dcol)
+		UiKit.label(dcol, "Dev: Dungeons (copper gear, at the door)", 14, UiKit.AMBER)
 		# Owner, Nov 20: "Dungeon 1" and "Dungeon 2" (F477: Dungeon 2 is Lampwick Drift, the planned second dungeon).
-		var dev := _button(box, "Dev: Dungeon 1, Mossgate Hold (new world, copper gear, at the door)", func(): test_dungeon.emit())
-		dev.add_theme_stylebox_override("normal", purple)
-		var dev2 := _button(box, "Dev: Dungeon 2, Lampwick Drift (new world, copper gear, at the door)", func(): test_dungeon2.emit())
-		dev2.add_theme_stylebox_override("normal", purple)
-		var dev3 := _button(box, "Dev: Dungeon 3, Old Pell's Diggings (new world, copper gear, at the door)", func(): test_dungeon3.emit())
-		dev3.add_theme_stylebox_override("normal", purple)
-		var dev4 := _button(box, "Dev: Dungeon 4, Mossprop Workings (new world, copper gear, at the door)", func(): test_dungeon4.emit())
-		dev4.add_theme_stylebox_override("normal", purple)
+		for d in [["Dungeon 1, Mossgate Hold", test_dungeon], ["Dungeon 2, Lampwick Drift", test_dungeon2],
+				["Dungeon 3, Old Pell's Diggings", test_dungeon3], ["Dungeon 4, Mossprop Workings", test_dungeon4]]:
+			var sig: Signal = d[1]
+			_button(dcol, d[0], func(): sig.emit()).add_theme_stylebox_override("normal", purple)
+		# Ruins (owner, Nov 21): a cave with just that ruin; opening its Rebuilding Chest rebuilds it at once, in
+		# stone (brick) or wood. One row per RuinTests.LIST entry.
+		var rcol := VBoxContainer.new()
+		rcol.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		cols.add_child(rcol)
+		UiKit.label(rcol, "Dev: Ruins (open the chest = rebuilt)", 14, UiKit.AMBER)
+		for e in RuinTests.LIST:
+			var row := HBoxContainer.new()
+			row.add_theme_constant_override("separation", 6)
+			rcol.add_child(row)
+			var key := String(e.key)
+			var hard: String = e.get("hard", "Stone")
+			var b1 := _button(row, "%s: %s" % [e.name, hard], func(): test_ruin.emit(key, false))
+			b1.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			b1.add_theme_stylebox_override("normal", purple)
+			_button(row, "Wood", func(): test_ruin.emit(key, true)).add_theme_stylebox_override("normal", purple)
 	_status = UiKit.label(box, "", 15, UiKit.AMBER)
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD
 	_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

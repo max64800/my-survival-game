@@ -25,6 +25,10 @@ var authority: GameAuthority
 ## ruins or cave creatures are planned (much faster), and you start (and wake after dying) at the dungeon's door.
 var dungeon_test := false
 var dungeon_test_layout := CaveMaker.DUNGEON_ONLY  ## which dungeon test world (DUNGEON_ONLY_2 = Lampwick Drift)
+## The dev "Ruins" test worlds (owner, Nov 21; RuinTests): dungeon_test is on too (nothing else is planned), the cave
+## holds only this ruin, and opening its Rebuilding Chest rebuilds it at once (in wood if ruin_test_wood).
+var ruin_test := ""
+var ruin_test_wood := false
 var dwarf: Dwarf
 var hud: Hud
 var _dev_items: DevItems  ## F8 in dev builds: any item into your bag (owner, Nov 19)
@@ -134,6 +138,14 @@ func _ready() -> void:
 			_saving = false
 			if mode == "menu":
 				mode = "solo"
+		elif arg.begins_with("ruintest="):  # the start menu's dev "Ruins" buttons, without the menu (robots): ruintest=tower
+			_start_ruin_test(arg.trim_prefix("ruintest="))
+			debug_script = "res://src/debug/ruin_test_start.gd"
+			_saving = false
+			if mode == "menu":
+				mode = "solo"
+		elif arg == "ruinwood":  # with ruintest=: the menu's "Wood" button
+			ruin_test_wood = true
 		elif arg == "dungeon2":  # with dungeontest: the menu's "Dungeon 2" (Lampwick Drift's test world)
 			dungeon_test_layout = CaveMaker.DUNGEON_ONLY_2
 		elif arg == "dungeon3":  # with dungeontest: the menu's "Dungeon 3" (Old Pell's Diggings' test world)
@@ -283,6 +295,17 @@ func _on_defended(r: Dictionary) -> void:
 		hud.show_toast(what + "  (" + r.name + ")", 2.0)
 
 
+## A ruin test world (RuinTests): like the dungeon test (nothing else planned), its own layout with only that ruin.
+func _start_ruin_test(key: String) -> void:
+	var e := RuinTests.of_key(key)
+	if e.is_empty():
+		push_warning("No ruin test called %s (see RuinTests.LIST)" % key)
+		e = RuinTests.LIST[0]
+	ruin_test = String(e.key)
+	dungeon_test = true
+	dungeon_test_layout = int(e.layout)
+
+
 func _show_menu() -> void:
 	_menu = load("res://src/ui/start_menu.gd").new()
 	add_child(_menu)
@@ -316,6 +339,13 @@ func _show_menu() -> void:
 			dungeon_test = true
 			_new_world(seed, "Dungeon 4 Test")
 			add_child(load("res://src/debug/dungeon_test_start.gd").new()), seed, CaveMaker.DUNGEON_ONLY_4))
+	_menu.connect("test_ruin", func(key: String, wood: bool):  # (owner, Nov 21: a column of ruins beside the dungeons)
+		_close_menu()
+		_start_ruin_test(key)
+		ruin_test_wood = wood
+		_with_loading(func():
+			_new_world(seed, "Ruin Test: %s" % RuinTests.of_key(key).get("name", key))
+			add_child(load("res://src/debug/ruin_test_start.gd").new()), seed, dungeon_test_layout))
 	_menu.connect("continue_game", func(data: Dictionary): _close_menu(); _with_loading(func(): start_game(data.seed, {}, data), int(data.seed), int(data.get("layout", 1))))
 	_menu.connect("host_world", func(data: Dictionary):
 		_close_menu()
@@ -574,7 +604,8 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	var fresh := snap.is_empty() and save.is_empty() and authority.is_host()
 	authority.start_with_nothing = fresh and not _robot_run and not dungeon_test and not world.maker.start.is_empty()
 	authority.add_player(me, dwarf, authority.is_host())
-	authority.monsters.enabled = _monsters or dungeon_test
+	authority.monsters.enabled = (_monsters or dungeon_test) and ruin_test == ""  # (a ruin test world: no beetles)
+	authority.builder.instant_ruins = not RuinTests.of_layout(world.maker.made_layout).is_empty()  # (never a real world)
 	authority.monsters.dungeon_only = dungeon_test  # (the dungeon test: only the dungeon's own creatures)
 	if not snap.is_empty():
 		authority.load_snapshot(snap)
@@ -602,6 +633,10 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 		# The Lantern Spire (owner, Nov 20, F479), the same way. Robots: only with spirecheck.
 		if not dungeon_test and (not _robot_run or OS.get_cmdline_user_args().has("spirecheck")):
 			authority.world_state["spire"] = "pending"
+		if ruin_test == "tower":  # a ruin test world: only its ruin (RuinTests)
+			authority.add_child(RuinTower.new(authority))
+		elif ruin_test != "":
+			authority.world_state[ruin_test] = "pending"
 		if authority.start_with_nothing:
 			authority.spawn_start_items()
 	if authority.is_host() and authority.world_state.has("outpost"):

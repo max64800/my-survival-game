@@ -32,6 +32,10 @@ var _falls := []  ## host: [time, points]
 var _breaks := []  ## host: [time, uid]
 var _pending_falls: Array[PackedVector3Array] = []  ## falls waiting for that area to load here
 var sites := {}  ## Builder's Chest box id -> build site (see _ev_site)
+## Ruin test worlds only (dev, owner Nov 21; RuinTests): a ruin's build site goes up all at once, free, no hammer needed.
+## Never set in a real game.
+var instant_ruins := false
+const RUSH_USEC := 60000  ## at most this long per frame (60 ms): the biggest ruin goes up in a few frames, no long freeze
 var _site_timer := 0.0
 var _site_ticks := 0
 const MAX_SITES := 3
@@ -351,7 +355,8 @@ func _ev_remove_piece(uid: int) -> void:
 	if n:
 		n.queue_free()
 	if auth.is_host() and not p.is_empty():
-		_queue_shaky()
+		if not batch:
+			_queue_shaky()  # (in a batch: once, at end_batch)
 		if Pieces.LIST[p.piece].get("use", "") == "store":
 			_spill_furniture(p)
 		if Pieces.LIST[p.piece].get("supports_rock", false):
@@ -426,6 +431,11 @@ func _process(delta: float) -> void:
 	_show_plans()
 	if not auth.is_host():
 		return
+	if instant_ruins:
+		for box_id in sites.keys():  # (every frame, not every tick: as fast as it can)
+			var chest: Dictionary = auth.storage.get_box(box_id)
+			if sites[box_id].has("ruin") and not chest.is_empty():
+				_rush(box_id, sites[box_id], chest)
 	_site_timer -= delta
 	if _site_timer <= 0.0:
 		_site_timer = SITE_TICK
@@ -913,6 +923,8 @@ func _tick_sites() -> void:
 		if chest.is_empty():
 			_set_status(box_id, "Paused: the Builder's Chest is gone")
 			continue
+		if instant_ruins and site.has("ruin"):
+			continue  # (rushed every frame instead: _process)
 		if not _someone_building(chest):
 			_set_status(box_id, "Paused: stand by the Builder's Chest with your Build Hammer to build")
 			continue
@@ -922,6 +934,29 @@ func _tick_sites() -> void:
 			continue
 		if _site_ticks % 2 == 0:
 			_build_step(box_id, site, chest)
+
+
+## Ruin test worlds (instant_ruins): step the ruin's site again and again until it's done, the frame's time is up, or
+## nothing moves (someone stands in the way: it goes on next frame).
+func _rush(box_id: int, site: Dictionary, chest: Dictionary) -> void:
+	var t0 := Time.get_ticks_usec()
+	while Time.get_ticks_usec() - t0 < RUSH_USEC:
+		if not sites.has(box_id):
+			return  # done (the chest went away)
+		var mark := _site_mark(site)
+		if not _carve_step(box_id, site, chest) and not _fill_step(box_id, site, chest):
+			_build_step(box_id, site, chest)
+		if sites.has(box_id) and _site_mark(site) == mark:
+			return
+
+
+## How far a site has got, to see whether a step changed anything.
+func _site_mark(site: Dictionary) -> Array:
+	var built := 0
+	for p in site.plan:
+		if p.built:
+			built += 1
+	return [site.carve.size(), site.get("fill", []).size(), structure.pieces.size(), rubble.size(), built]
 
 
 ## Carves one cell of rock. Returns true if it did (or is waiting to).
@@ -1069,11 +1104,18 @@ static func _list_text(items: Dictionary) -> String:
 
 
 func _build_step(box_id: int, site: Dictionary, chest: Dictionary) -> void:
-	if site.has("ruin") and _ruin_step(box_id, site):
-		return
+	if site.has("ruin"):
+		batch = instant_ruins  # (rushing: one strength check for everything taken down, not one each)
+		var cleared := _ruin_step(box_id, site)
+		if instant_ruins:
+			end_batch()
+		if cleared:
+			return
 	var inv: Inventory = chest.inv
 	var first_missing := {}
 	var done := 0
+	var rush := instant_ruins and site.has("ruin")  # (a ruin test world: every piece that's ready in one go)
+	var placed := 0
 	var in_the_way := {}
 	for i in site.plan.size():
 		var q: Dictionary = site.plan[i]
@@ -1092,7 +1134,7 @@ func _build_step(box_id: int, site: Dictionary, chest: Dictionary) -> void:
 			return
 		if structure.overlaps(p.piece, p.pos, p.rot) or Pieces.rock_problem(p.piece, p.pos, p.rot, auth.world.sdf_at) != "":
 			continue  # blocked: something else is there
-		var cost := plan_cost(p)
+		var cost := {} if rush else plan_cost(p)  # (a ruin test world: free)
 		var missing := {}
 		for item in cost:
 			if inv.count_of(item) < cost[item]:
@@ -1119,7 +1161,11 @@ func _build_step(box_id: int, site: Dictionary, chest: Dictionary) -> void:
 		_ev_add_piece.rpc(uid, p.piece, p.family, p.pos, p.rot, anchored)
 		_ev_site_piece.rpc(box_id, i)
 		_set_status(box_id, "Building… %d of %d" % [done + 1, site.plan.size()])
-		return
+		if not rush:
+			return
+		placed += 1
+	if placed > 0:
+		return  # (rushing: the next step finishes it, or builds the next floor)
 	if done == site.plan.size():
 		_set_status(box_id, "Done!")
 		if site.has("ruin"):
@@ -1364,7 +1410,9 @@ func _ruin_step(box_id: int, site: Dictionary) -> bool:
 		base = minf(base, p.pos.y)
 	var origin: Vector3 = site.origin
 	var reach := _ruin_reach(box_id)
-	for rid in rubble:
+	var rush := instant_ruins  # (a ruin test world: everything this floor needs cleared in one go)
+	var cleared := false
+	for rid in rubble.keys():
 		var rb: Rubble = rubble[rid]
 		var at := rb.global_position
 		if Vector2(at.x - origin.x, at.z - origin.z).length() > reach:
@@ -1372,7 +1420,9 @@ func _ruin_step(box_id: int, site: Dictionary) -> bool:
 		if floori((at.y - base + 0.25) / STEP_HEIGHT) <= steps.current:
 			_ev_remove_rubble.rpc(rid)
 			_set_status(box_id, "Clearing the rubble…")
-			return true
+			if not rush:
+				return true
+			cleared = true
 	for i in site.plan.size():
 		var p: Dictionary = site.plan[i]
 		if p.built or steps.band_of[i] != steps.current:
@@ -1382,21 +1432,32 @@ func _ruin_step(box_id: int, site: Dictionary) -> bool:
 		# (F565: only the pieces near it, and the overlap test once, not once per piece in the world)
 		var ov := structure.overlapping(p.piece, p.pos, p.rot)
 		for uid in structure.near(Pieces.box(p.piece, p.pos, p.rot).grow(0.6)):  # (a worn wall is lower than a whole one: look by place, not only by overlap)
+			if not structure.pieces.has(uid):
+				continue  # (rushing: already taken down for another piece)
 			var q: Dictionary = structure.pieces[uid]
 			var keep: bool = q.piece in RUIN_KEEP and ruin_keeps_worn(String(p.family)) and not site.worn_go.has(uid)
 			if String(q.piece).begins_with("ruin_") and not keep and (q.pos.distance_to(p.pos) < 0.6 or uid in ov):
 				_ev_remove_piece.rpc(uid)  # the broken wall comes down; the whole one goes up next
 				_set_status(box_id, "Taking down a broken wall…")
-				return true
+				if not rush:
+					return true
+				cleared = true
+				continue
 			if q.piece in RUIN_DEBRIS and uid in ov:
 				_ev_remove_piece.rpc(uid)  # the Brewhall's fallen chimney lies where the yard railing goes back up (F479)
 				_set_status(box_id, "Clearing the wreckage…")
-				return true
+				if not rush:
+					return true
+				cleared = true
+				continue
 			if q.piece in RUIN_MAKE_WAY and uid in ov:
 				_ev_remove_piece.rpc(uid)  # an old battlement where the new walkway goes (it goes back up higher)
 				_set_status(box_id, "Taking down an old battlement…")
-				return true
-	return false
+				if not rush:
+					return true
+				cleared = true
+				continue
+	return cleared
 
 
 ## The last piece is in: everyone learns the blueprint, everyone near gets crafting experience.

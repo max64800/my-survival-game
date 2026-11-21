@@ -139,7 +139,7 @@ chests = [
 	{"kind": "chest_small", "pos": [-13.0, 3.25, -1.0], "yaw": 90, "loot": {"recipe_page": 1}},                   # barracks B, upstairs
 	{"kind": "chest_copper", "pos": [12.8, 0.25, -3.6], "yaw": 270, "loot": {"recipe_page": 2, "blueprint_page": 1}},  # the armoury
 	{"kind": "chest_small", "pos": [-4.0, 0.0, 12.6], "yaw": 180, "loot": {"recipe_page": 1}},                    # the left gatehouse tower
-	{"kind": "chest_copper", "pos": [-12.6, 5.5, -12.6], "yaw": 45, "loot": {"outpost_plans": 1, "recipe_page": 1}},  # the back tower's roof
+	{"kind": "chest_copper", "pos": [-10.4, 5.5, -12.9], "yaw": 0, "loot": {"outpost_plans": 1, "recipe_page": 1}},  # the back tower's roof, one cell along from the stairs' top (owner, Nov 22: it stood on the stairs)
 	{"kind": "barrel", "pos": [-6.0, 1.0, -12.6], "yaw": 0, "loot": {}},                                          # storage barrels
 	{"kind": "barrel", "pos": [-12.5, 1.0, -1.0], "yaw": 0, "loot": {}},
 	{"kind": "barrel", "pos": [13.0, 0.25, -5.4], "yaw": 0, "loot": {}},

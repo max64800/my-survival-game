@@ -109,7 +109,9 @@ func _ready() -> void:
 	if plan.is_empty() or auth.world == null:
 		queue_free()
 		return
-	var spot := find_spot(auth.world.maker, float(plan.get("radius", 4.2)), float(plan.get("height", 9.0)))
+	var spot: Dictionary = auth.world.maker.tower_spot  # (only a ruin test world sets it: RuinTests)
+	if spot.is_empty():
+		spot = find_spot(auth.world.maker, float(plan.get("radius", 4.2)), float(plan.get("height", 9.0)))
 	if spot.is_empty():
 		push_warning("RuinTower: no room for the watchtower in the first cave")
 		queue_free()
