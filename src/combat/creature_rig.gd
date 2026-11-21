@@ -64,6 +64,7 @@ static func find(model: Node3D) -> CreatureRig:
 		rig.hand = BoneAttachment3D.new()
 		rig.hand.bone_name = "handslot.r"
 		sk.add_child(rig.hand)
+		rig.tips = tool_tips(sk, forged)
 	return rig
 
 
@@ -123,6 +124,64 @@ static func glint_wait(tell: float) -> float:
 	return maxf(0.0, tell - GLINT_LEAD)
 
 
+## The tool's points in the hand socket's own space (owner, Nov 21: "make sure the star is on the tip"): measured from
+## the "tool" mesh itself. A pick has two (the ends of its head), a shovel one (the top of its blade).
+var tips: Array[Vector3] = []
+
+
+static func tool_tips(skel: Skeleton3D, root: Node) -> Array[Vector3]:
+	var out: Array[Vector3] = []
+	var hb := skel.find_bone("handslot.r")
+	for mi: MeshInstance3D in root.find_children("*", "MeshInstance3D", true, false):
+		if not String(mi.name).to_lower().begins_with("tool") or mi.mesh == null or mi.skin == null:
+			continue
+		var bind := Transform3D.IDENTITY
+		var found := false
+		for i in mi.skin.get_bind_count():
+			if mi.skin.get_bind_name(i) == &"handslot.r" or mi.skin.get_bind_bone(i) == hb:
+				bind = mi.skin.get_bind_pose(i)  # mesh space -> the hand socket's space
+				found = true
+		if not found:
+			continue
+		var pts: Array[Vector3] = []
+		var top := -INF
+		for si in mi.mesh.get_surface_count():
+			for v: Vector3 in mi.mesh.surface_get_arrays(si)[Mesh.ARRAY_VERTEX]:
+				var p := bind * v
+				pts.append(p)
+				top = maxf(top, p.y)
+		var lo := Vector3(INF, 0, 0)
+		var hi := Vector3(-INF, 0, 0)
+		var peak := Vector3(0, -INF, 0)
+		for p in pts:
+			if p.y < top * 0.7:
+				continue  # (only the head end of the handle)
+			if p.x < lo.x:
+				lo = p
+			if p.x > hi.x:
+				hi = p
+			if p.y > peak.y:
+				peak = p
+		if hi.x - lo.x > 0.35:
+			out.append(lo)  # a pick's two points
+			out.append(hi)
+		else:
+			out.append(peak)  # a shovel's blade top
+	return out
+
+
+## The point that leads the swing: of the tool's points, the one furthest in front of the creature right now.
+func lead_tip() -> Vector3:
+	if tips.is_empty() or hand == null or not hand.is_inside_tree():
+		return Vector3(0, TRAIL_LEN / maxf(hand.global_basis.get_scale().y, 0.001) if hand else TRAIL_LEN, 0)
+	var front := hand.get_parent_node_3d().global_basis.z.normalized() if hand.get_parent_node_3d() else Vector3.BACK
+	var best := tips[0]
+	for t in tips:
+		if (hand.global_transform * t).dot(front) > (hand.global_transform * best).dot(front):
+			best = t
+	return best
+
+
 func _glint_later(wait: float) -> void:
 	if hand == null or not hand.is_inside_tree():
 		return
@@ -130,9 +189,9 @@ func _glint_later(wait: float) -> void:
 	var go := func() -> void:
 		if not is_instance_valid(h) or not h.is_inside_tree() or dead:
 			return
-		var s := maxf(h.global_basis.get_scale().y, 0.001)
-		var at := h.global_transform * Vector3(0, TRAIL_LEN / s, 0)
-		PickGlint.on(h, TRAIL_LEN / s)
+		var tip := lead_tip()
+		var at := h.global_transform * tip
+		PickGlint.on(h, tip)
 		Sfx.play("clink", at, -3.0, 2.3)  # (a real metal clink pitched up: a small "ting")
 	if wait <= 0.01:
 		go.call()

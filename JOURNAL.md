@@ -7472,3 +7472,19 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   4 more rule clashes found (a wet patch, an oil stain, a lit cooking spit, two lit lamps). My own check: all 530 once,
   every room name/number is in its dungeon's Rooms table. **Hurdle:** Mossgate Hold's design page has no Rooms table,
   so its rooms use the game map's numbers (`src/world/dungeon_map.gd`); The Quiet Barrows is cut stone (medium), not wood.
+
+## Nov 21 — Old Pell's: the miners' moves page, the spark on the real pick point (dungeons chat)
+- **3D page "Old Pell's Miner Moves"** (https://claude.ai/artifact/3wamMqXGZv6d8x8vm58yqU): the real Foreman and Lost
+  Miner models with their own moves, playing the new Pick Whirl (chases you) and Leaping Chop with the game's timings;
+  buttons for what your dwarf does (stand, walk, run, roll) and a log of every hit. Hurdles: the browser tool would not
+  connect, so the check picture came from Edge in the background; it showed the "Loading" text stuck on top, a too
+  bright floor, too much red glow and the Foreman seen from behind: fixed before publishing.
+- **Owner: "make sure the star is actually on the tip of the pickaxes."** The star sat 0.95 m straight up the hand
+  socket, a guess. Measured from the models: the tips sit 0.67-1.2 m up, and a pick's two points stick out sideways
+  (±0.23 m Lost Miner, ±0.34 m Foreman). Now `CreatureRig.tool_tips` measures each "tool" mesh's points in the hand
+  socket's space (through the skin's bind pose) when a miner appears, and the star goes on the point that faces
+  forward when it starts. Works for new models too. Test: `test_the_spark_sits_on_the_tool_points`; miner tests 12/12.
+  Robot picture (muted): stars at the tools. The page's star uses the same points. Hurdle: Godot's script mode
+  wouldn't put models in a scene to measure them; read the numbers straight from the .glb files with Python instead.
+- The robot also showed Lost Miners attacking from 3.9-4.0 m: the new Leaping Chop works in the real game.
+- **Next (new chat):** the owner wants smaller, scarier skulls with scratches and cracks on all 3 miners.

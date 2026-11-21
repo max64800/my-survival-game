@@ -11,17 +11,17 @@ const COLOR := Color(1.0, 0.93, 0.7)  ## white-gold, like sun on metal
 static var _tex: ImageTexture
 
 var _holder: Node3D  ## the hand socket
-var _along := 0.9    ## where on the tool it sits: metres from the hand along the socket's +Y (the pick's head)
+var _at := Vector3(0, 0.9, 0)  ## where on the tool it sits, in the hand socket's own space (the leading point)
 var _t := 0.0
 
 
-## A star on the tool held by `holder`, `along` metres from the hand (in the hand's own units).
-static func on(holder: Node3D, along: float) -> PickGlint:
+## A star on the tool held by `holder`, at `at` in the hand socket's own space (CreatureRig.lead_tip).
+static func on(holder: Node3D, at: Vector3) -> PickGlint:
 	if DisplayServer.get_name() == "headless" or not is_instance_valid(holder) or not holder.is_inside_tree():
 		return null  # (the test computer draws nothing)
 	var g := PickGlint.new()
 	g._holder = holder
-	g._along = along
+	g._at = at
 	holder.get_tree().root.add_child(g)
 	return g
 
@@ -60,7 +60,7 @@ func _process(delta: float) -> void:
 
 
 func _follow() -> void:
-	global_position = _holder.global_transform * Vector3(0, _along, 0)
+	global_position = _holder.global_transform * _at
 
 
 ## A four-pointed star with a soft glow, drawn once.

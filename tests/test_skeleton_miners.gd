@@ -250,3 +250,17 @@ func test_foreman_whirl_chases_and_lost_miners_leap() -> void:
 	check(not MonsterManager.is_charge(leap), "a leap only hits: no knock-down or shove like a beetle's charge")
 	for a: Dictionary in Monsters.LIST.tunnel_rat.attacks:
 		check(not a.get("lunge", false), "the small Tunnel Rats stay as they are")
+
+
+## Owner, Nov 21: "make sure the star is actually on the tip of the pickaxes": the points are measured from each tool.
+func test_the_spark_sits_on_the_tool_points() -> void:
+	for want in [["tunnel_rat_grime", 1, 0.9], ["lost_miner_frost", 2, 0.6], ["foreman", 2, 0.9]]:
+		var s: Node = (load("res://assets/models/creatures/%s.glb" % want[0]) as PackedScene).instantiate()
+		var sk: Skeleton3D = s.find_children("*", "Skeleton3D", true, false)[0]
+		var tips := CreatureRig.tool_tips(sk, s)
+		check_eq(tips.size(), want[1], "%s: %d point(s) on its tool" % [want[0], want[1]])
+		for t in tips:
+			check(t.y > float(want[2]), "%s: the point is up at the head of the tool, not at the hand (%s)" % [want[0], t])
+		if tips.size() == 2:
+			check(tips[0].x < -0.15 and tips[1].x > 0.15, "%s: the two ends of the pick's head (%s, %s)" % [want[0], tips[0], tips[1]])
+		s.free()
