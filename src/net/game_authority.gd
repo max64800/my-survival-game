@@ -106,7 +106,7 @@ class PlayerState:
 	var weapon_drawn := false  ## F: fighting with the equipped weapon (+ shield)
 	var hands_empty := false  ## the picked hotbar number pressed again: tool put away (owner, Nov 17)
 	var fuel := GameAuthority.MAX_FUEL
-	var needs_lantern := false  ## true = started with nothing: no light until a Lantern is made
+	var needs_lantern := false  ## true = started with nothing: no light until you pick up the Lantern
 	var thrifty_saved := 0.0  ## Thrifty perk: wear skipped so far (1.0 = skip the next one)
 	var lantern_stowed := false  ## L: the lantern put away (no light, no fuel used) (owner, Nov 17)
 	var dig_target := Vector3.INF
@@ -222,7 +222,7 @@ func add_player(peer_id: int, node: Node3D, give_start_items: bool = true) -> Pl
 	var ps := PlayerState.new()
 	ps.node = node
 	if start_with_nothing and peer_id == local_peer_id():
-		ps.needs_lantern = true  # wakes up with nothing: makes a lantern from what's in the room
+		ps.needs_lantern = true  # wakes up with nothing: picks up the lantern lying in the room
 	elif give_start_items:
 		# Friends who join later (and test robots) arrive ready to dig, with a lantern built in.
 		ps.inventory.add("pickaxe_stone", 1)
@@ -2401,6 +2401,17 @@ func spawn_start_items() -> void:
 		var id := _next_drop_id
 		_next_drop_id += 1
 		_ev_spawn_drop.rpc(id, item, 1, loose[i], Vector3.ZERO)
+	# Your lantern lies on the floor next to where you wake (owner, Nov 22: "he picks it up and not crafts").
+	_ev_spawn_drop.rpc(_next_drop_id, "lantern", 1, start_lantern_spot(), Vector3.ZERO)
+	_next_drop_id += 1
+
+
+## Where the start lantern lies: a step to the side of where you wake, a little toward the peephole.
+func start_lantern_spot() -> Vector3:
+	var st: Dictionary = world.maker.start
+	var u: Vector3 = st.dir
+	var p: Vector3 = st.spawn + Vector3(-u.z, 0.0, u.x) * 0.9 + u * 0.5
+	return Vector3(p.x, float(st.floor_y) + 0.25, p.z)
 
 
 # Host-side helpers that decide things, then tell everyone.

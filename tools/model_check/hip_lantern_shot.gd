@@ -44,6 +44,7 @@ func _process(_d: float) -> bool:
 	if frames < 20:
 		for l in lanterns:
 			l.place("hip")
+			l._hang("hip")
 	if frames == 30:
 		root.get_viewport().get_texture().get_image().save_png(out)
 		return true

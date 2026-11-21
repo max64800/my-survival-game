@@ -422,9 +422,9 @@ So wood is a cheap backup and crystals are the "good" fuel, which fits the cave.
 
 | Lantern | Where it sits | Light radius | Brightness | Fuel use | Recipe (station) | Unlocks when |
 |---|---|---|---|---|---|---|
-| `lantern_hand` | Left hand | 14 m (Step 1 code) | 100% | ×1.0 | Start item | Start |
-| `lantern_hip` | On your belt (hip). **Hands free** (F562, Nov 21) | 13 m | 100% | ×1.0 | 2 stone, 1 rootwood, 1 crystal_blue, 2 leather, 2 rope (Workbench) | First leather |
-| `lantern_back` | On your back, glowing above your head. **Hands free** | 16 m | 100% | ×1.0 | 4 copper_ingot, 2 leather, 1 lantern_lens, 2 rope (Anvil) | First copper ingot |
+| `lantern_hand` | Left hand | 24 m (owner, Nov 22: +50%) | 100% | ×1.0 | Lies on the starting-room floor (pick it up). A spare: 2 copper_ingot, 1 rootwood, 1 crystal_blue (Workbench) | Start / first copper ingot |
+| `lantern_hip` | On your belt (hip). **Hands free** (F562, Nov 21) | 16 m (Nov 22) | 100% | ×1.0 | 2 stone, 1 rootwood, 1 crystal_blue, 2 leather, 2 rope (Workbench) | First leather |
+| `lantern_back` | On your back, glowing above your head. **Hands free** | 24 m (Nov 22) | 100% | ×1.0 | 4 copper_ingot, 2 leather, 1 lantern_lens, 2 rope (Anvil) | First copper ingot |
 | `lantern_bright` | Back | 19 m | 120% | ×0.85 | 6 silver_ingot, 2 chitin_plate, 2 lantern_lens, 5 crystal_amber (Anvil) | First silver ingot |
 | `lantern_grand` *(future)* | Back | 22 m | 140% | ×0.75 | 6 iron_ingot, 3 lantern_lens, 3 crystal_white (Anvil) | First iron ingot |
 

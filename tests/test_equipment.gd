@@ -149,9 +149,12 @@ func test_hip_lantern_hangs_at_the_belt() -> void:
 	for i in 5:  # (the hip bone is posed after a few frames)
 		await tree.process_frame
 	lantern._to_belt()
-	var local := dm.to_local(lantern.global_position + Vector3(0, Lantern.BELT_ABOVE, 0))
+	lantern._hang("hip")
+	var local := dm.to_local(lantern.global_position + Vector3(0, Lantern.BELT_ABOVE * Lantern.HIP_SCALE, 0))
 	check(absf(local.x) > 0.2, "out at the side (x %.2f)" % local.x)
 	check(local.y > 0.2 and local.y < 0.9, "at belt height (y %.2f)" % local.y)
+	var bottom := dm.to_local(lantern.to_global(Vector3(0, -0.25, 0))).y  # (the base, as drawn: the rig scales it)
+	check(bottom > 0.02, "its bottom swings clear of the ground (owner, Nov 22: it hung by his feet) (%.2f)" % bottom)
 	check(lantern._hook != null and lantern._hook.visible, "the belt hook shows")
 	lantern.place("hand")
 	check(not lantern._hook.visible, "no hook when it's back in the hand")

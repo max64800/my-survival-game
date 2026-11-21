@@ -840,14 +840,12 @@ func _update_first_steps(ps: GameAuthority.PlayerState, has_lantern: bool) -> vo
 	var inv := ps.inventory
 	var has_pick := inv.count_of("pickaxe_stone") + inv.count_of("pickaxe_copper") + inv.count_of("pickaxe_silver") > 0
 	var t := ""
-	if not has_pick and (inv.count_of("stone") < 3 or inv.count_of("rootwood") < 2):
+	if not has_lantern:
+		t = "Pick up your Lantern from the floor (walk over it)."
+	elif not has_pick and (inv.count_of("stone") < 3 or inv.count_of("rootwood") < 2):
 		t = "Pick up the loose rocks (walk over them) and pull down the hanging roots (click them)."
 	elif not has_pick:
 		t = "Press Tab and make a Stone Pickaxe."
-	elif not has_lantern and inv.count_of("crystal_blue") < 1:
-		t = "Grab the little glow crystal on the floor, then make a Lantern (Tab)."
-	elif not has_lantern:
-		t = "Press Tab and make a Lantern."
 	elif _in_start_room() and get_tree().root.find_child("Peephole", true, false) != null:
 		t = "Something glows through that little hole… Dig through the soft wall (hold left click)."
 	else:

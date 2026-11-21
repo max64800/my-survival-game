@@ -82,17 +82,16 @@ func test_reachable_crystals_in_every_big_cavern() -> void:
 
 func test_first_tools_by_hand_from_the_room() -> void:
 	var p := Recipes.get_recipe("pickaxe_stone")
-	var l := Recipes.get_recipe("lantern")
-	check(p.station == Recipes.HAND and l.station == Recipes.HAND, "pickaxe and lantern are made by hand")
-	check(p.unlock.is_empty() and l.unlock.is_empty(), "known from the start")
-	# The room holds 6 rocks, 3 roots and 1 crystal: enough for both (3+2 rocks, 2+1 roots, 1 crystal).
+	check(p.station == Recipes.HAND and p.unlock.is_empty(), "the pickaxe is made by hand, known from the start")
+	# The room holds 6 rocks and 3 roots: enough for the pickaxe (3 rocks, 2 roots).
 	var inv := Inventory.new()
 	inv.add("stone", 6)
 	inv.add("rootwood", 3)
-	inv.add("crystal_blue", 1)
 	check(Crafting.craft(inv, "pickaxe_stone"), "made a stone pickaxe")
-	check(Crafting.craft(inv, "lantern"), "made a lantern")
-	check(inv.count_of("pickaxe_stone") == 1 and inv.count_of("lantern") == 1, "both are in the bag")
+	check(inv.count_of("pickaxe_stone") == 1, "it is in the bag")
+	# The lantern lies on the floor (owner, Nov 22); a spare one needs copper.
+	var l := Recipes.get_recipe("lantern")
+	check(l.inputs.has("copper_ingot") and l.unlock.has("copper_ingot"), "a new lantern is made with copper")
 
 
 func test_waking_with_nothing_and_the_lantern_rules() -> void:
@@ -119,7 +118,7 @@ func test_waking_with_nothing_and_the_lantern_rules() -> void:
 	check(ps.fuel == fuel, "no lantern = no fuel burning")
 	check(not auth.request_refill(auth.local_peer_id()), "can't refill a lantern you don't have")
 	ps.inventory.add("lantern", 1)
-	check(Lantern.has_lantern(ps), "made one: now you have a lantern")
+	check(Lantern.has_lantern(ps), "picked one up: now you have a lantern")
 	ps.fuel = 100.0
 	check(not auth.request_refill(auth.local_peer_id()), "nothing to burn yet")
 	ps.inventory.add("rootwood", 1)
@@ -131,5 +130,14 @@ func test_waking_with_nothing_and_the_lantern_rules() -> void:
 	for d in root.get_children():
 		if d is Drop:
 			loose += 1
-	check(loose == 7, "6 rocks and 1 crystal lie in the room (%d)" % loose)
+	check(loose == 8, "6 rocks, 1 crystal and your lantern lie in the room (%d)" % loose)
+	var lamp: Drop = null
+	for d in root.get_children():
+		if d is Drop and d.item_id == "lantern":
+			lamp = d
+	check(lamp != null, "the lantern lies on the floor (owner, Nov 22: pick it up, don't craft it)")
+	if lamp:
+		var wake: Vector3 = world.maker.start.spawn
+		var flat := Vector2(lamp.global_position.x - wake.x, lamp.global_position.z - wake.z).length()
+		check(flat > 0.6 and flat < 1.6, "it lies a step from where you wake (%.2f m)" % flat)
 	root.queue_free()

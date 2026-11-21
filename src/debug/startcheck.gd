@@ -89,10 +89,13 @@ func _run() -> void:
 	await _wait(0.6)
 	await _shot("03_bag_and_crafting")
 	var pick := auth.request_craft(me, "pickaxe_stone")
-	var lamp := auth.request_craft(me, "lantern")
+	# The lantern lies on the floor (owner, Nov 22): walk onto it to pick it up.
+	dwarf.global_position = auth.start_lantern_spot() + Vector3.UP * 0.75
+	await _wait(1.0)
+	var lamp := ps.inventory.equipped("lantern") == "lantern"
 	_main._set_bag(false)
 	Controls.set_captured(true)
-	_say("crafted pickaxe: %s, lantern: %s; lantern visible now: %s" % [pick, lamp, Lantern.has_lantern(ps)])
+	_say("crafted pickaxe: %s, picked up lantern: %s; lantern visible now: %s" % [pick, lamp, Lantern.has_lantern(ps)])
 	for i in Inventory.HOTBAR_SIZE:
 		if ps.inventory.get_slot(i).get("id", "") == "pickaxe_stone":
 			auth.request_select_slot(me, i)

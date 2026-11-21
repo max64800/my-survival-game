@@ -9,9 +9,8 @@ const HAND := "hand"
 
 const LIST := {
 	# --- by hand (bag menu)
-	# Your first tools, made from what's lying in the starting room (feedback F11).
+	# Your first tool, made from what's lying in the starting room (feedback F11). The lantern lies on the floor (owner, Nov 22).
 	"pickaxe_stone": {station = HAND, inputs = {stone = 3, rootwood = 2}, output = "pickaxe_stone", count = 1, unlock = []},
-	"lantern": {station = HAND, inputs = {stone = 2, rootwood = 1, crystal_blue = 1}, output = "lantern", count = 1, unlock = []},
 	# A stick with a blue crystal on top: cheap light to mark your way (owner F177).
 	"crystal_torch": {station = HAND, inputs = {rootwood = 1, crystal_blue = 1}, output = "crystal_torch", count = 2, unlock = ["crystal_blue"]},
 	"rope":{station = HAND, inputs = {fiber = 3}, output = "rope", count = 1, unlock = []},
@@ -131,6 +130,8 @@ const LIST := {
 	"drink_moss_ale": {station = "campfire", level = 2, inputs = {root_tuber = 3, hollowcap = 1, water_bucket = 2}, output = "drink_moss_ale", count = 3, seconds = 30, unlock = "rune"},
 	"drink_spore_mead": {station = "campfire", level = 2, inputs = {spore_truffle = 2, ember_morel = 1, water_bucket = 2}, output = "drink_spore_mead", count = 3, seconds = 30, unlock = "rune"},
 	"spore_mask": {station = "workbench", inputs = {leather = 2, spore_powder = 3, fiber = 4}, output = "spore_mask", count = 1, unlock = "rune"},
+	# A spare hand lantern needs copper (owner, Nov 22: you find your first one in the starting room).
+	"lantern": {station = "workbench", inputs = {copper_ingot = 2, rootwood = 1, crystal_blue = 1}, output = "lantern", count = 1, unlock = ["copper_ingot"]},
 	"lantern_hip": {station = "workbench", inputs = {stone = 2, rootwood = 1, crystal_blue = 1, leather = 2, rope = 2}, output = "lantern_hip", count = 1, unlock = ["leather"]},  # F562
 	"lantern_back": {station = "anvil", inputs = {copper_ingot = 4, leather = 2, lantern_lens = 1, rope = 2}, output = "lantern_back", count = 1, unlock = ["copper_ingot"]},
 	# --- masonry table

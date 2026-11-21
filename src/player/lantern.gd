@@ -3,17 +3,19 @@ extends Node3D
 ## The dwarf's lantern. Bright while it has fuel; a small dim glow when empty,
 ## so the cave is never pitch black. Fuel is kept by the GameAuthority.
 
-const FULL_RANGE := 16.0
+const FULL_RANGE := 24.0  ## owner, Nov 22: +50% (was 16)
 const FULL_ENERGY := 1.9
 const ATTENUATION := 0.85  ## how fast light fades with distance (lower = reaches further)
 const EMPTY_RANGE := 4.5
 const EMPTY_ENERGY := 0.45
 const WARM := Color(1.0, 0.78, 0.52)
 const LOW_FUEL := 30.0  ## seconds left when it starts to flicker
-const HIP_RANGE := 13.0  ## the Hip Lantern (F562): both hands free, but the body blocks a little light
+const HIP_RANGE := 16.0  ## (owner, Nov 22: was 13) the Hip Lantern (F562): both hands free, but the body blocks a little light
 const HOOK_MODEL := "res://assets/models/items/lantern_hip_hook.glb"
+const BACK_RANGE := 24.0  ## the Back Lantern (owner, Nov 22: was 16)
 const HOOK_DROP := 0.054  ## the hook's bottom, above the lantern's middle (it hangs on the carry ring)
-const BELT_ABOVE := 0.23  ## the belt loop's middle, above the lantern's middle
+const HIP_SCALE := 0.75  ## a smaller lantern on the belt: full size plus the hook is longer than a dwarf's leg (owner, Nov 22)
+const BELT_ABOVE := 0.144  ## the belt, above the lantern's middle (the short hook's loop top sits 2.6 cm above it; owner Nov 22: the 20 cm hook hung it by his ankles)
 
 var peer_id := 1
 var light: OmniLight3D
@@ -107,7 +109,7 @@ static func tip(id: String) -> String:
 		"lantern_hip":
 			return "Hangs on your belt: both hands free · %d m light" % int(HIP_RANGE)
 		"lantern_back":
-			return "On your back: both hands free · 16 m light"
+			return "On your back: both hands free · %d m light" % int(BACK_RANGE)
 	return "Held in your left hand (no shield or two-handers) · %d m light" % int(FULL_RANGE)
 
 
@@ -117,7 +119,7 @@ static func is_on_back(ps: GameAuthority.PlayerState) -> bool:
 		or (not ps.inventory.is_player and ps.inventory.count_of("lantern_back") > 0))
 
 
-## Do they have a lantern? In a new game the host wakes without one and crafts it (feedback F11).
+## Do they have a lantern? In a new game the host wakes without one and picks it up off the floor (F11; owner Nov 22).
 ## Everyone else (friends who join, test robots) has one built in, like before.
 ## (A friend's dwarf whose bag we can't see counts as having one.)
 static func has_lantern(ps: GameAuthority.PlayerState) -> bool:
@@ -142,10 +144,8 @@ func _process(delta: float) -> void:
 	elif spot == "hip":
 		_to_belt()  # every frame: follows the hips (and the hip bone isn't posed yet in the first frames)
 	if spot != "back":
-		# Hang straight down from the hand or belt, whatever it's doing (it swings, it doesn't tilt).
-		var yaw := global_basis.z
-		global_basis = Basis(Vector3.UP, atan2(yaw.x, yaw.z))
-	var full_range: float = {back = 16.0, hip = HIP_RANGE}.get(spot, FULL_RANGE) * (ps.progress.lantern_range_mult() if ps else 1.0)  # (Lantern Bearer perk)
+		_hang(spot)
+	var full_range: float = {back = BACK_RANGE, hip = HIP_RANGE}.get(spot, FULL_RANGE) * (ps.progress.lantern_range_mult() if ps else 1.0)  # (Lantern Bearer perk)
 	var t := 1.0 if fuel > 0.0 else 0.0
 	if fuel > 0.0 and fuel < LOW_FUEL:
 		_flicker += delta * 14.0
@@ -154,6 +154,12 @@ func _process(delta: float) -> void:
 	light.omni_range = lerpf(light.omni_range, lerpf(EMPTY_RANGE, full_range, t), minf(1.0, delta * 4.0))
 	light.light_energy = lerpf(light.light_energy, energy, minf(1.0, delta * 6.0))
 	_glass_mat.emission_energy_multiplier = 0.6 + 2.4 * t
+
+
+## Hang straight down from the hand or belt, whatever it's doing (it swings, it doesn't tilt). Smaller on the belt.
+func _hang(spot: String) -> void:
+	var yaw := global_basis.z
+	global_basis = Basis(Vector3.UP, atan2(yaw.x, yaw.z)).scaled(Vector3.ONE * (HIP_SCALE if spot == "hip" else 1.0))
 
 
 ## Move the lantern to the hand, the hip (on its belt hook) or the back.
@@ -168,7 +174,7 @@ func place(spot: String) -> void:
 	match spot:
 		"back":
 			reparent(dm, false)
-			position = Vector3(0, 1.75, 0.25)
+			transform = Transform3D(Basis(), Vector3(0, 1.75, 0.25))  # (full size again if it was on the belt)
 		"hip":
 			reparent(dm.hip, false)
 			_to_belt()
@@ -190,4 +196,4 @@ func _to_belt() -> void:
 	while dm and not dm is DwarfModel:
 		dm = dm.get_parent()
 	if dm:
-		global_position = (dm as DwarfModel).hip_point() - Vector3(0, BELT_ABOVE, 0)
+		global_position = (dm as DwarfModel).hip_point() - Vector3(0, BELT_ABOVE * HIP_SCALE, 0)
