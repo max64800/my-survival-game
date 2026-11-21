@@ -52,6 +52,15 @@ func _run() -> void:
 		["chasm", Vector3(34.0, 0.3, 6.0), Vector3(39.0, -6.0, 6.0)],
 		["pack_hall", Vector3(58.0, 0.3, 6.0), Vector3(70.0, 2.0, 12.0)],
 	]
+	if "views=decor" in OS.get_cmdline_user_args():  # (Nov 22: the decor catalogue's pieces, one corner per photo)
+		views = [
+			["decor_gatekeeper", Vector3(33.0, 0.3, 41.0), Vector3(29.0, 0.6, 45.5)],
+			["decor_gate_winch", Vector3(34.5, 0.3, 40.0), Vector3(38.5, 0.8, 45.8)],
+			["decor_guard_cots", Vector3(55.0, 0.3, 40.5), Vector3(53.5, 0.4, 35.0)],
+			["decor_guard_south", Vector3(53.0, 0.3, 39.0), Vector3(57.0, 0.4, 44.5)],
+			["decor_store", Vector3(64.5, 0.3, 38.6), Vector3(66.0, 0.5, 43.5)],
+			["decor_pillar_east", Vector3(41.0, 0.3, 28.6), Vector3(45.0, 0.5, 22.5)],
+		]
 	for v in views:
 		await _teleport(DungeonMap.to_world(d, v[1]), DungeonMap.to_world(d, v[2]))
 		print("DUNGEONCHECK %s: standing in '%s', looking at '%s' (open %.1f)" % [v[0], DungeonMap.space_at(d, DungeonMap.to_world(d, v[1] + Vector3.UP)), DungeonMap.space_at(d, DungeonMap.to_world(d, v[2])), maker.sdf_at(DungeonMap.to_world(d, v[2]))])

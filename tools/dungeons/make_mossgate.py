@@ -231,37 +231,30 @@ for x in (33.0, 35.0):
 # 1 Gate Hall: banners, barrels, crates, a bench; three beetles chewing the floor.
 for x in (30.0, 38.0):
 	prop("decor/furn_banner_tall_1.glb", x, 0.0, 36.35, 0.0)
-prop("props/barrel.glb" if (ROOT / "assets/models/props/barrel.glb").exists() else "decor/keg.glb", 27.2, 0.25, 37.2, 30.0)
-prop("decor/crate_stack.glb", 40.6, 0.25, 37.4, 15.0)
+# (Nov 22, decor catalogue: the keg and crate stack made way for the snapped gate bar; the chest moved to the north-west
+# corner: the gatekeeper's corner is where it stood)
 prop("decor/shack_bench.glb", 27.4, 0.25, 43.5, 90.0)
 for i, (x, z) in enumerate([(31.5, 40.0), (36.0, 42.5), (38.5, 39.0)]):
 	creature("rock_beetle", x, 0.25, z, 40.0 + i * 110.0)
-chest("chest_small", 28.5, 44.6, 180.0, "Random chest")
+chest("chest_small", 27.2, 37.3, 90.0, "Random chest")
 
 # 2 Dart Hall: raised plates in the floor; the holed beam on the south wall.
 for x, z in [(44.0, 39.4), (45.6, 40.6), (47.2, 39.6), (48.4, 40.8)]:
 	prop("dungeon/trap_dart_plate.glb", x, 0.25, z, rng.choice([0, 15, 30]), role="trap", label="Raised plate" if x == 45.6 else "")
 
 # 3 Guard Room: weapon stands, a table with stools, a whetstone; four spiders up in the corners.
-prop("decor/furn_weapon_stand.glb", 51.0, 0.25, 35.4, 0.0)
-piece("spear_rack", 57.0, 0.25, 35.0, 0)
-prop("decor/shack_table.glb", 55.0, 0.25, 41.0, 0.0)
-prop("decor/shack_stool.glb", 55.0, 0.25, 42.2, 0.0)
-prop("decor/shack_stool.glb", 53.6, 0.25, 41.0, 90.0)
+# (Nov 22, decor catalogue: the weapon stand, spear rack, table and stools made way for the guards' own pieces, section 5)
 prop("decor/furn_whetstone.glb", 58.6, 0.25, 44.4, 200.0)
 for i, (x, z) in enumerate([(51.0, 45.0), (59.0, 45.0), (59.0, 36.0), (52.5, 38.0)]):
 	creature("cave_spider", x, 3.6 if i < 3 else 0.25, z, i * 90.0)
 chest("chest_small", 58.0, 37.4, 270.0, "Random chest")
 
 # 4 Store Room: shelves, barrels, sacks, crates; a snail.
-prop("decor/shack_shelf.glb", 66.0, 0.25, 43.6, 180.0)
-prop("decor/furn_barrel_rack.glb", 69.3, 0.25, 37.2, 270.0)
-prop("decor/keg.glb", 62.8, 0.25, 37.0, 10.0)
-prop("decor/grain_sacks.glb", 68.6, 0.25, 41.0, 260.0)
-prop("decor/crate_stack.glb", 63.0, 0.25, 39.4, 80.0)
-creature("rock_snail", 67.0, 0.25, 39.0, 200.0)
-chest("chest_small", 64.5, 42.6, 180.0, "Random chest")
-chest("chest_small", 68.0, 42.6, 180.0, "Random chest")
+# (Nov 22, decor catalogue: the shelf, barrel rack, keg, sacks and crates made way for the store's own pieces along the
+# south wall, section 5; the two chests moved to the north corners, out of their way)
+creature("rock_snail", 66.0, 0.25, 39.0, 200.0)
+chest("chest_small", 62.9, 37.0, 90.0, "Random chest")
+chest("chest_small", 69.1, 37.0, 270.0, "Random chest")
 
 # 5 Hidden Vault (behind the cracked wall): the chest that's always there and an old wall marking.
 chest("chest_stone", 65.0, 28.0, 0.0, "Vault chest (always)", True, "vault")
@@ -376,35 +369,135 @@ lights.append([78.0, 1.8, 30.0])
 for x, z in [(34.0, 50.0), (34.0, 33.0), (66.0, 40.0), (12.0, 40.0), (28.0, 6.0), (64.0, 9.0)]:  # (no light over the crushers)
 	lights.append([x, 3.0, z])
 
-# --- 5. Junk (owner, Nov 20): along the walls and in the corners, never on a walk line or by a door, chest, lever or
-# the recipe stand (tools/dungeons/junk.py; tests/test_dungeon_junk.gd). Mossgate is small: the "all 12" junk + the
-# small dungeons' (wood shield, wood rubble, broken tools, snapped beam, helmet, lantern) + the old props; the Old Tombs
-# also get broken urns and coffin chunks (owner, Nov 20). Its own dice, so nothing placed above moves.
+# --- 5. Decor from the decor catalogue (docs/art/DECOR-CATALOG.md, Nov 22): every piece in its own room and spot, off
+# the walk lines and clear of doors, chests and traps (tools/dungeons/decor.py; tests/test_dungeon_decor.gd).
+# Left out until the owner answers the rule clashes: mg_lantern_post (lit), mg_toll_table (coins, no looted twin).
+import decor  # noqa: E402
 import junk  # noqa: E402
 
-JUNK_THEMES = {   # (owner, Nov 20, 2nd look in the game: "it needs a lot more, it still feels empty": more kinds, ~2x as many)
-	"gate_hall": ["beam_snapped", "rubble_wood", "rags", "crate_stack", "keg", "meal", "bones", "scrap", "lantern",
-		"rubble_brick", "grain_sacks", "shield_wood"],
-	"guard_room": ["sword_snapped", "spear_broken", "shield_wood", "shield_iron", "helmet", "axe_head", "armour_pile",
-		"meal", "bones", "candles", "rags", "keg"],
-	"store_room": ["crate_stack", "grain_sacks", "ore_basket", "timber_stack", "rags", "rubble_wood", "keg", "scrap",
-		"urns", "beam_snapped"],
-	"vault": ["bones", "rags", "lantern", "scrap", "urn_broken", "candles"],
-	"tombs": ["bones", "urn_broken", "urn_broken", "coffin_piece", "coffin_piece", "coffin_lid", "rags", "candles",
-		"statue_head", "urns"],
-	"shrine": ["bones", "rags", "candles", "statue_head", "urn_broken", "lantern"],
-	"pillar_hall": ["beam_snapped", "rubble_wood", "rubble_brick", "bones", "tools", "mine_cart", "timber_stack",
-		"statue_head", "scrap", "rags"],
-	"chasm_room": ["bones", "lantern", "helmet", "rags", "spear_broken", "rubble_brick", "scrap", "beam_snapped"],
-	"crusher_hall": ["bones", "rags", "helmet", "armour_pile", "scrap", "rubble_brick"],
-	"pack_hall": ["bones", "bones", "helmet", "shield_wood", "rags", "sword_snapped", "meal", "armour_pile", "spear_broken",
-		"scrap"],
-	"loot_room": ["helmet", "axe_head", "rags", "bones", "scrap", "candles", "armour_pile"],
-}
+
+def _d(n):
+	return "decor/%s.glb" % n
+
+
+W = decor.wall
+DECOR = [
+	# 1 Gate Hall (x 26-42, z 36-46; the way in at the south wall's middle, x 34). The gatekeeper's corner: left of
+	# the way in as you come in (south wall, west end): desk, ledger shelf, key board, the forced strongbox, the chair.
+	("mg_gatekeeper_desk", "gate_hall", W(_d("mg_gatekeeper_desk"), "s", 46, 29.8)),
+	("mg_ledger_shelf", "gate_hall", W(_d("mg_ledger_shelf"), "s", 46, 28.6)),
+	("mg_key_board", "gate_hall", W(_d("mg_key_board"), "s", 46, 31.0)),
+	("mg_strongbox_forced", "gate_hall", decor.corner(_d("mg_strongbox_forced"), "s", 46, "w", 26)),
+	("mg_gatekeeper_chair", "gate_hall", decor.mid(_d("mg_gatekeeper_chair"), 29.6, 44.55, 30.0)),
+	# right of the way in: the gate's winch and the alarm bell; the snapped gate bar dragged to the north wall.
+	("mg_gate_windlass", "gate_hall", W(_d("mg_gate_windlass"), "s", 46, 37.3)),
+	("mg_alarm_bell", "gate_hall", W(_d("mg_alarm_bell"), "s", 46, 38.9)),
+	("mg_gate_bar_snapped", "gate_hall", W(_d("mg_gate_bar_snapped"), "n", 36, 40.6)),
+	# 3 Guard Room (x 50-60, z 34-46; doors west and east at z 40). Cots along the north wall (left as you come in),
+	# heads to the wall, the armour stand in the corner beside them; mess shelf and trestle further along; shields and
+	# crossbows on the wall facing you; helmets just inside the door; the last watch's table and the fallen spear rack.
+	("mg_guard_cot", "guard_room", W(_d("mg_guard_cot"), "n", 34, 51.9)),
+	("mg_guard_cot", "guard_room", W(_d("mg_guard_cot"), "n", 34, 53.0)),
+	("mg_guard_cot", "guard_room", W(_d("mg_guard_cot"), "n", 34, 54.1)),
+	("mg_armour_stand", "guard_room", decor.corner(_d("mg_armour_stand"), "n", 34, "w", 50)),
+	("mg_bowl_shelf", "guard_room", W(_d("mg_bowl_shelf"), "n", 34, 56.2)),
+	("mg_mess_trestle", "guard_room", decor.mid(_d("mg_mess_trestle"), 54.2, 37.55, 0.0)),  # (owner, Nov 22: out in the room)
+	("mg_shield_wall", "guard_room", W(_d("mg_shield_wall"), "e", 60, 43.2)),
+	("mg_crossbow_rack", "guard_room", W(_d("mg_crossbow_rack"), "e", 60, 44.95)),
+	("mg_helmet_pegs", "guard_room", W(_d("mg_helmet_pegs"), "w", 50, 43.6)),
+	("mg_last_watch", "guard_room", decor.mid(_d("mg_last_watch"), 53.0, 42.4, 0.0)),
+	("mg_spear_rack_fallen", "guard_room", W(_d("mg_spear_rack_fallen"), "s", 46, 56.3)),
+	# 4 Store Room (x 62-70, z 36-44; doors west, east (the gate) and the cracked wall north): everything along the
+	# south wall, the rope board right of the door, the collapsed shelf in the far corner with its crate slid off.
+	("mg_rope_wall", "store_room", W(_d("mg_rope_wall"), "w", 62, 43.0)),
+	("mg_water_butt", "store_room", W(_d("mg_water_butt"), "s", 44, 63.1)),
+	("mg_supply_shelf", "store_room", W(_d("mg_supply_shelf"), "s", 44, 64.4)),
+	("mg_grain_bin", "store_room", W(_d("mg_grain_bin"), "s", 44, 65.7)),
+	("mg_collapsed_shelf", "store_room", decor.corner(_d("mg_collapsed_shelf"), "s", 44, "e", 70)),
+	("mg_crate_pried_open", "store_room", decor.mid(_d("mg_crate_pried_open"), 66.9, 41.85, 15.0)),
+	# 9 Pillar Hall (x 24-46, z 16-30; the spike pit in the middle). The carpenter's corner by the east wall between
+	# the columns; the cold cook spot by the west columns; two root-gripped stone columns beside the real ones.
+	("mg_wheelbarrow", "pillar_hall", W(_d("mg_wheelbarrow"), "e", 46, 21.5)),
+	("mg_sawhorse_left", "pillar_hall", W(_d("mg_sawhorse_left"), "e", 46, 23.0)),
+	("mg_tool_chest", "pillar_hall", W(_d("mg_tool_chest"), "e", 46, 24.9)),
+	("mg_cookpot_tripod", "pillar_hall", decor.mid(_d("mg_cookpot_tripod"), 26.4, 27.2, 0.0)),
+	("column_rootwrapped", "pillar_hall", decor.mid(_d("column_rootwrapped"), 30.6, 21.6, 0.0)),
+	("column_rootwrapped", "pillar_hall", decor.mid(_d("column_rootwrapped"), 31.8, 19.4, 90.0)),
+]
+_items = [(_d(n), at[0], at[1], at[2], room) for n, room, at in DECOR]
 _doorways = [(p["pos"][0], p["pos"][2]) for p in pieces if p["id"] == "doorway"]
 _ways = [(p["pos"][0], p["pos"][2]) for p in props if p["model"] in ("dungeon/dungeon_entrance.glb", "dungeon/wall_cracked.glb")]
 _low = lambda p: p["pos"][1] < 1.0  # on the floor (not torches, chains, stalactites' bases up high... see traps)
 _flat = {"dungeon/floor_old.glb", "dungeon/wall_old.glb", "dungeon/wall_cracked.glb"}  # (the loose stone counts as a trap: keep off it)
+_problems, _ = decor.check(_items, cells, junk.walk_lines(SPACES, group, cells, _doorways + _ways,
+		[("chasm_room", [(34.0, 12.0), (34.0, 6.0), (46.0, 6.0)])]),
+	doors=_doorways + _ways + [(p["pos"][0], p["pos"][2]) for p in props if p["role"] == "door" and "lever" not in p["model"]],
+	things=[tuple(c["pos"][0::2]) for c in chests] + [(79.0, 5.2)] + [(p["pos"][0], p["pos"][2]) for p in props if "lever" in p["model"]],
+	traps=[(p["pos"][0], p["pos"][2]) for p in props if p["role"] in ("trap", "secret") and p["model"] not in _flat and _low(p)],
+	obstacles=[(p["pos"][0], p["pos"][2], max(junk.size(p["model"])[:2]) / 2) for p in props
+		if _low(p) and p["role"] in ("decor", "light", "heal") and p["model"] not in _flat]
+		+ [(p["pos"][0], p["pos"][2], 0.6) for p in pieces if p["id"] == "column" and p["pos"][1] < 1]
+		+ [(c["pos"][0], c["pos"][2], 0.5) for c in creatures if c["pos"][1] < 1],
+	keep_off=[[35.2, -1.0, 44.8, 13.0], [35.2, 19.2, 42.8, 26.8]])
+if _problems:
+	sys.exit("decor breaks the placement rules:\n  " + "\n  ".join(_problems))
+props += decor.props(_items, lambda g: 0.0)
+# A tall piece against a wall would stand through the cold torch holder hanging there (1.2 m up): that holder goes.
+props = [p for p in props if p["model"] != "decor/furn_wall_torch_iron.glb" or not decor.blocks_wall_spot(_items, p["pos"])]
+
+# --- 6. Junk (owner, Nov 20): along the walls and in the corners, never on a walk line or by a door, chest, lever or
+# the recipe stand (tools/dungeons/junk.py; tests/test_dungeon_junk.gd). Mossgate is small: the "all 12" junk + the
+# small dungeons' (wood shield, wood rubble, broken tools, snapped beam, helmet, lantern) + the old props; the Old Tombs
+# also get broken urns and coffin chunks (owner, Nov 20). Its own dice, so nothing placed above moves.
+JUNK_THEMES = {   # (owner, Nov 20, 2nd look in the game: "it needs a lot more, it still feels empty": more kinds, ~2x as many)
+	# (owner, Nov 22: no kind twice in a room but candles and pots, and "more variety": many more kinds per room, old
+	# props too, so the rooms past the Gate Hall and Guard Room hold real furniture-sized pieces like those two do)
+	"gate_hall": ["beam_snapped", "rubble_wood", "rags", "crate_stack", "keg", "meal", "bones", "scrap", "lantern",
+		"rubble_brick", "grain_sacks", "shield_wood", "furn_bucket_wood", "torch_dropped", "spear_broken", "furn_crate_iron"],
+	"guard_room": ["sword_snapped", "spear_broken", "shield_wood", "shield_iron", "helmet", "axe_head", "armour_pile",
+		"meal", "bones", "candles", "rags", "keg", "furn_dummy", "furn_whetstone", "furn_stool", "furn_bucket_metal"],
+	"store_room": ["crate_stack", "grain_sacks", "ore_basket", "timber_stack", "rags", "rubble_wood", "keg", "scrap",
+		"urns", "beam_snapped", "furn_bucket_wood", "furn_crate_iron", "tools", "furn_bucket_metal", "shack_stool"],
+	"vault": ["bones", "rags", "lantern", "scrap", "urn_broken", "candles", "helmet", "axe_head", "furn_vase_wide",
+		"furn_crate_iron"],
+	"tombs": ["bones", "urn_broken", "coffin_piece", "coffin_lid", "rags", "candles", "statue_head", "urns", "helmet",
+		"sword_snapped", "shield_iron", "torch_dropped", "lantern", "rubble_brick", "stone_stool", "furn_bench_long",
+		"scrap", "axe_head", "armour_pile", "spear_broken"],
+	"shrine": ["bones", "rags", "candles", "statue_head", "urn_broken", "lantern", "rubble_brick", "stone_stool", "scrap",
+		"axe_head", "shield_wood", "urns", "torch_dropped", "furn_bucket_metal", "furn_vase_tall", "furn_vase_wide",
+		"helmet", "sword_snapped", "furn_bench_long", "rubble_wood"],
+	"pillar_hall": ["beam_snapped", "rubble_wood", "rubble_brick", "bones", "tools", "mine_cart", "timber_stack",
+		"statue_head", "scrap", "rags", "ore_basket", "firewood_rack", "furn_bucket_wood", "lantern", "torch_dropped",
+		"helmet", "crate_stack", "grain_sacks", "keg", "furn_crate_iron", "shack_stool", "furn_anvil_log", "furn_whetstone",
+		"furn_bucket_metal", "shield_wood", "spear_broken", "axe_head", "armour_pile", "urns", "urn_broken",
+		"cookpot_tipped", "furn_barrel_rack", "shack_table", "furn_stool", "meal", "candles", "sword_snapped"],
+	"chasm_room": ["bones", "lantern", "helmet", "rags", "spear_broken", "rubble_brick", "scrap", "beam_snapped",
+		"rubble_wood", "torch_dropped", "shield_wood", "sword_snapped", "tools", "ore_basket", "crate_stack",
+		"furn_bucket_wood", "keg", "timber_stack", "axe_head", "armour_pile", "furn_crate_iron", "shield_iron", "meal",
+		"mine_cart"],
+	"crusher_hall": ["bones", "rags", "helmet", "armour_pile", "scrap", "rubble_brick", "torch_dropped", "shield_iron"],
+	"pack_hall": ["bones", "helmet", "shield_wood", "shield_iron", "rags", "sword_snapped", "meal", "armour_pile",
+		"spear_broken", "scrap", "axe_head", "beam_snapped", "rubble_wood", "cookpot_tipped", "lantern", "torch_dropped",
+		"furn_stool", "furn_bucket_wood", "keg", "crate_stack", "urns", "urn_broken", "rubble_brick", "tools",
+		"grain_sacks", "furn_crate_iron", "timber_stack", "furn_bench_long", "shack_stool", "statue_head", "campfire_cold",
+		"furn_bucket_metal", "ore_basket", "candles", "furn_table_long", "furn_barrel_rack"],
+	"loot_room": ["helmet", "axe_head", "rags", "bones", "scrap", "candles", "armour_pile", "shield_iron", "sword_snapped",
+		"urns", "statue_head", "lantern", "furn_crate_iron", "urn_broken", "furn_drawers", "shield_wood"],
+}
+# How many (owner, Nov 22: "look at the first room and the room to the right... see their size versus how many things
+# are in there and learn from it"): those two hold about 1.8 pieces per 10 m2 (furniture, decor, chests and junk
+# together; about half of it furniture-sized), the rest held 0.6-1.4. Every other room gets as much, counted on the floor
+# you can stand on (not the chasm or the spike pit); the Pack Hall a little less (1.5: you fight the pack in it). The
+# Gate Hall and Guard Room keep their counts.
+DENSITY = {"pack_hall": 1.5}
+_keep_off = [[35.2, -1.0, 44.8, 13.0], [35.2, 19.2, 42.8, 26.8], [31.0, 56.0, 37.0, 61.0]]  # the chasm and the spike pit (and their edges); the way in past the map, through the cave wall
+_counts = {"gate_hall": 15, "guard_room": 12}
+for g in ROOMS - set(_counts):
+	floor = [c for c, cg in cells.items() if cg == g and not any(in_r[0] <= c[0] + 1 <= in_r[2] and in_r[1] <= c[1] + 1 <= in_r[3] for in_r in _keep_off)]
+	there = sum(1 for p in props if _low(p) and p["role"] in ("decor", "light", "heal") and p["model"] not in _flat
+		and cells.get(junk.cell_of(p["pos"][0], p["pos"][2])) == g) + sum(1 for c in chests if cells.get(junk.cell_of(c["pos"][0], c["pos"][2])) == g)
+	_counts[g] = max(2, round(DENSITY.get(g, 1.8) * len(floor) * 4 / 10) - there)
+print("junk per room:", dict(sorted(_counts.items())))
 props += junk.place_junk(
 	SPACES, group, cells, lambda g: 0.0, ROOMS, JUNK_THEMES,
 	doors=_doorways + _ways + [(p["pos"][0], p["pos"][2]) for p in props if p["role"] == "door" and "lever" not in p["model"]],
@@ -417,13 +510,13 @@ props += junk.place_junk(
 		+ [(p["pos"][0], p["pos"][2], 1.0) for p in pieces if p["id"] == "spear_rack"]
 		+ [(c["pos"][0], c["pos"][2], 0.8) for c in creatures if c["pos"][1] < 1],
 	seed=2011,
-	keep_off=[[35.2, -1.0, 44.8, 13.0], [35.2, 19.2, 42.8, 26.8]],  # the chasm and the spike pit (and their edges)
+	keep_off=_keep_off,
 	extra_paths=[("chasm_room", [(34.0, 12.0), (34.0, 6.0), (46.0, 6.0)])],  # over the bridge
 	skip={"boulder_way", "loot_door"},
-	big=(12, 16), small=(5, 7), repeat=3, tunnel_every=8.0,  # (owner, Nov 20: "a lot more")
+	big=(12, 16), small=(5, 7), repeat=3, tunnel_every=8.0, counts=_counts,  # (owner, Nov 20: "a lot more")
 )
 
-# --- 6. Dark (owner, Nov 20, F517: "dungeon 2 is dark, dungeon 1 should be dark as well"; picked "almost no light"):
+# --- 7. Dark (owner, Nov 20, F517: "dungeon 2 is dark, dungeon 1 should be dark as well"; picked "almost no light"):
 # only the torch nearest the way in still burns, and the faint glow down in the spike pit stays (owner, Nov 20: see the
 # spikes). The other torches hang cold on the walls (the torch model is just its iron holder: the light was its flame).
 _way_in = min(lights, key=lambda l: math.hypot(l[0] - 34.0, l[2] - CAVE_Z))

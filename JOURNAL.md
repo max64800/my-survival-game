@@ -7529,3 +7529,29 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   `docs/design/GRAND-RUIN-RECIPE.md` (10 lessons, what our grid can make, the pieces we're missing: brackets, spire
   roofs, dormers, cornices, buttresses, a grand portal, turrets, spiral stairs; a checklist). Saved as a memory too.
   Next: ruin 6, the Twin Gate, by that recipe (new chat).
+
+## Nov 22 — Decor catalogue pieces placed in Mossgate Hold; junk across the whole room (decor chat)
+- **Owner's pick:** place the decor in the places that already exist, home decor into the build menu, looting for the
+  lootable pieces, the special pieces; no more junk for now. Two helpers took the build menu and the looting/special
+  pieces (their own files; their notes follow when they report); I did Mossgate.
+- **Mossgate decor:** new `tools/dungeons/decor.py` turns "back against the south wall, here" into a spot and checks
+  the owner's rules (footprint inside its room, off walk lines, 2 m from doorways, 1.5 m from chests/levers/doors, off
+  traps, no overlaps). 31 catalogue pieces in the Gate Hall (gatekeeper's corner, winch, bell, snapped bar), Guard Room
+  (3 cots, armour stand, racks, mess table, last watch, fallen spear rack), Store Room and Pillar Hall. Old stand-ins
+  they replace went (Guard Room table/stools/weapon stand/spear rack, Store Room shelf/rack/keg/sacks/crates), 3 chests
+  moved a few metres, 7 cold torch holders behind tall pieces taken down. Left out for the owner: lantern posts (lit),
+  toll table (coins, no looted twin), barricade (tunnel too narrow), smashed barrel (no room). Test
+  `tests/test_dungeon_decor.gd`; the dungeon photo robot got `views=decor`.
+- **Owner played it (F506 again, the other way round):** "a ton of the pieces are just on the right and left hand side
+  of the rooms... all of it should be across the entire room". Now about half the junk lies out in the room, any turn;
+  flat bits may lie on a walking route, solid ones keep a lane free. Then: "no more than one item of each in the same
+  room" (candles, pots excepted), "spin" them at random, and "look at the first room and the room to the right... their
+  size versus how many things are in there": those two hold ~1.8 pieces per 10 m², about half furniture-sized; every
+  other room now gets the same (Pack Hall 1.5), with ~20 old props added for variety. Gate Hall and Guard Room ("perfect")
+  keep their counts. Lampwick's junk re-made with the same rules. Tests: test_dungeon_junk 7/7 (2 new), decor 4/4.
+- **Hurdles / Claude's slips:** (1) my decor check first compared pieces as circles, so neighbouring cots and shelves
+  "touched"; switched to real outlines. (2) A long shell edit broke on its quotes, and a stray `cat` in one command hung
+  waiting for input (stopped it); did the edits from script files. (3) One rag landed in the last 4 m of the way in,
+  which the map doesn't count as a room (always possible, the new dice found it): junk keeps off that stretch now.
+  (4) The decor photos from behind the dwarf are dim and far: checked one close crop, the owner looks in the game.
+- **Next:** Lampwick Drift's decor (owner: "adjust dung 1 then start working on dung 2").

@@ -3,12 +3,15 @@ extends TestCase
 ## placement rule, like test_columns_keep_out_of_the_tower: junk lies only along walls and in room corners, on the
 ## floor; never on a walk line, a stair, a bridge, a doorway, within 1.5 m in front of a door, a lever, a chest or the
 ## recipe stand, on a trap, on rails or on the Old Shaft's plank walk. Checked in every dungeon plan that has junk.
+## Owner, Nov 22 (F506): "all of it should be across the entire room": about half lies out in the room (`spot` "room").
+## Those keep off doors, chests and traps too; flat junk (no body) may lie on a walk line, solid junk keeps a lane free.
 
 const NEAR_WALL := 1.0   # its middle is at most this far from rock (a wall or a corner; owner: not near the middle)
 const DOOR_CLEAR := 2.0  # from a doorway's middle (its 3 m opening + the 1.5 m in front of it)
 const THING_CLEAR := 1.5 # from a door, a lever, a chest, the recipe stand (the owner's 1.5 m)
 const PATH_CLEAR := 1.1  # from the walk line between a room's doorways
 const TRAP_CLEAR := 1.0
+const LANE_CLEAR := 0.9  # solid junk out in the room: its middle from a walk line (junk.py: 1.0)
 const DOORS := ["dungeon/dungeon_entrance.glb", "dungeon/wall_cracked.glb", "dungeon/door_loot.glb", "dungeon/gate_round.glb"]
 
 
@@ -77,6 +80,8 @@ func test_junk_lies_on_the_floor_by_a_wall() -> void:
 					floor_y = maxf(floor_y, float(s[5]))
 			check(floor_y > -99.0, "%s junk %s at %s is inside a room" % [map.id, p.model, at])
 			check(absf(float(p.pos[1]) - floor_y - 0.25) < 0.06, "%s junk %s at %s lies on the floor" % [map.id, p.model, at])
+			if p.get("spot", "") == "room":
+				continue  # (out in the room: owner, Nov 22)
 			var by_wall := false
 			for dir in [Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0, -1)]:
 				if not _in_any(map, at + dir * NEAR_WALL):
@@ -121,11 +126,15 @@ func test_junk_keeps_off_doors_paths_and_traps() -> void:
 					continue
 				var ds := _doors_of(s, doors)
 				var mid := Vector2((float(s[1]) + float(s[3])) / 2.0, (float(s[2]) + float(s[4])) / 2.0)
+				var out_in_room: bool = p.get("spot", "") == "room"
+				if out_in_room and DungeonBuild._is_flat_junk(String(p.model)):
+					continue  # (you walk over it)
+				var clear := LANE_CLEAR if out_in_room else PATH_CLEAR
 				if ds.size() == 1:
-					check(_seg(at, ds[0], mid) >= PATH_CLEAR, "%s junk %s at %s is off the walk line in %s" % [map.id, p.model, at, s[0]])
+					check(_seg(at, ds[0], mid) >= clear, "%s junk %s at %s is off the walk line in %s" % [map.id, p.model, at, s[0]])
 				for i in ds.size():
 					for k2 in range(i + 1, ds.size()):
-						check(_seg(at, ds[i], ds[k2]) >= PATH_CLEAR, "%s junk %s at %s is off the walk line %s-%s in %s" % [map.id, p.model, at, ds[i], ds[k2], s[0]])
+						check(_seg(at, ds[i], ds[k2]) >= clear, "%s junk %s at %s is off the walk line %s-%s in %s" % [map.id, p.model, at, ds[i], ds[k2], s[0]])
 
 
 ## Holes and narrow ways: no junk in Mossgate's chasm or spike pit (or on the bridge), none on Lampwick's rails or
@@ -140,6 +149,30 @@ func test_no_junk_over_drops_rails_or_the_plank_walk() -> void:
 				var drop := float(s[5]) < 0.0 or nm == "chasm" or nm.begins_with("shaft_")   # (and 0.8 m from its edge)
 				var rails := nm.contains("rail") or nm == "old_shaft"   # (the rail pieces themselves: 1 m, test above)
 				check(not (drop and _inside(s, at, 0.8)) and not (rails and _inside(s, at)), "%s junk %s at %s keeps off %s" % [map.id, p.model, at, nm])
+
+
+func test_half_the_junk_lies_out_in_the_rooms() -> void:
+	var j := _junk(DungeonBuild.load_plan("mossgate"))
+	var out := j.filter(func(p): return p.get("spot", "") == "room").size()
+	check(out >= j.size() / 3 and out <= j.size() * 3 / 4, "about half of Mossgate's junk lies out in the rooms (%d of %d; owner, Nov 22)" % [out, j.size()])
+
+
+## Owner, Nov 22: "no more than one item of each in the same room" (candles and pots may come in numbers).
+func test_no_junk_twice_in_a_room() -> void:
+	for mp in _plans():
+		var map: Dictionary = mp[0]
+		var seen := {}
+		for p in _junk(mp[1]):
+			var m := String(p.model)
+			if m.contains("candle") or m.contains("junk_urn"):
+				continue
+			var at := _xz(p.pos)
+			for s in map.spaces:
+				if _inside(s, at) and float(s[5]) >= 0.0:
+					var key := "%s/%s" % [s[0], m]
+					check(not seen.has(key), "%s: %s lies only once in %s" % [map.id, m, s[0]])
+					seen[key] = true
+					break
 
 
 func test_junk_has_no_body_but_old_props_still_smash() -> void:

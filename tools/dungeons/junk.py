@@ -22,6 +22,28 @@ TRAP_CLEAR = 1.2   # a trap's middle (spikes and plates are 2 m cells or smaller
 PATH_CLEAR = 1.2   # the walk line from doorway to doorway: the junk's middle stays this far away...
 PATH_EDGE = 0.8    # ...and no corner of it comes closer than this
 JUNK_GAP = 0.25    # between two junk pieces (or junk and furniture), edge to edge
+# Owner, Nov 22 (F506, in the game: "a ton of the pieces are just on the right and left hand side of the rooms... all of
+# it should be across the entire room, not just in the corners"): about half the junk now lies out in the room. Flat
+# junk you walk over (no body: bones, rags, rubble, broken weapons, beams...) may lie anywhere, even on a walk line;
+# solid junk (crates, kegs, carts) out in the room keeps a walking lane free: its middle 1.0 m, its corners 0.7 m away.
+MIDDLE = 0.5
+LANE_MID = 1.0
+LANE_EDGE = 0.7
+
+
+# Owner, Nov 22 (in the game: "two mugs exactly one beside each other... two head statues facing the exact same way"):
+# no kind twice in a room (a family's pieces are all different models), except things that come in numbers: candles and
+# pots. Small, roundish pieces turn any way; long ones lie along their wall, give or take 30 degrees; a group's parts
+# (a dropped meal) each get their own turn.
+MANY = {"candles", "urns", "urn_broken"}
+# Pieces with a front (shelves, racks, cabinets): only against a wall, their back to it, front into the room.
+FACE_IN = {"furn_bookcase", "furn_cabinet", "furn_drawers", "shack_shelf", "furn_weapon_stand", "firewood_rack",
+	"furn_barrel_rack"}
+
+
+def is_flat(model):
+	"""No body in the game (DungeonBuild._is_flat_junk): you walk over it."""
+	return model.startswith("dungeon/junk_") or model.startswith("treasure/tr_")
 
 # Families: one entry in a room's list, a random one of its models (so the copies don't look copied).
 FAMILY = {
@@ -40,7 +62,12 @@ CLUSTER = {
 }
 # Old props reused as junk (owner): their real paths.
 REUSE = {n: "decor/%s.glb" % n for n in ("crate_stack", "grain_sacks", "keg", "furn_barrel_rack", "ore_basket",
-	"mine_cart", "timber_stack")}
+	"mine_cart", "timber_stack",
+	# (Nov 22: more old props for variety, none of them the catalogue's: buckets, iron crates, stools, vases...)
+	"furn_bucket_wood", "furn_bucket_metal", "furn_crate_iron", "furn_stool", "furn_chair", "shack_stool",
+	"furn_vase_tall", "furn_vase_wide", "furn_cauldron", "furn_bench_long", "furn_anvil_log", "furn_whetstone",
+	"stone_stool", "shack_table", "furn_table_long", "furn_bookcase", "furn_cabinet", "furn_drawers", "shack_shelf",
+	"furn_weapon_stand", "firewood_rack", "furn_dummy")}
 
 _size = {}
 
@@ -141,7 +168,7 @@ def walk_lines(spaces, group_of, cells, doors, extra=()):
 
 def place_junk(spaces, group_of, cells, floor_y, rooms, themes, doors, path_doors, things, traps, furniture,
 		seed, keep_off=(), extra_paths=(), skip=(), corridor=("bones", "rags", "axe_head", "sword_snapped", "tools"),
-		long_corridor=16.0, big=(5, 8), small=(2, 3), repeat=2, tunnel_every=0.0):
+		long_corridor=16.0, big=(5, 8), small=(2, 3), repeat=2, tunnel_every=0.0, counts=None):
 	"""Junk props for one dungeon.
 	spaces: the map's [name, x0, z0, x1, z1, floor_y, height] boxes; group_of(name) -> its room.
 	cells: {(x, z) 2 m cell corner: room}; floor_y(room) -> its floor height.
@@ -153,13 +180,32 @@ def place_junk(spaces, group_of, cells, floor_y, rooms, themes, doors, path_door
 	(pits, chasms, rails, plank walks); extra_paths: [(room, [(x, z), ...])] walk lines the doors don't give (a bridge).
 	skip: rooms with no junk.
 	big / small: how many in a big (80 m2 or more) / small room; repeat: each kind of junk at most this often per room;
-	tunnel_every: one more tunnel piece per this many metres of tunnel (0: none)."""
+	tunnel_every: one more tunnel piece per this many metres of tunnel (0: none); counts: {room: how many}, instead of big/small."""
 	rng = random.Random(seed)
 	lines = walk_lines(spaces, group_of, cells, path_doors, extra_paths)
+	used = {}   # room -> models (and groups) already lying there
+
+	def parts_of(entry, g):
+		"""The models to lay for this entry in room g (its own turn and a little shuffle for a group's parts), or None
+		if every model it could be already lies in the room."""
+		u = used.setdefault(g, set())
+		if entry in CLUSTER:
+			if entry not in MANY and entry in u:
+				return None
+			return [[m, dx + rng.uniform(-0.04, 0.04), dz + rng.uniform(-0.04, 0.04), dyaw + rng.uniform(-60, 60)]
+				for m, dx, dz, dyaw in CLUSTER[entry]]
+		if entry in FAMILY:
+			free_models = ["dungeon/%s.glb" % m for m in FAMILY[entry] if entry in MANY or "dungeon/%s.glb" % m not in u]
+			return [[rng.choice(free_models), 0.0, 0.0, 0.0]] if free_models else None
+		m = model_of(entry, rng)
+		return None if (m in u and entry not in MANY) else [[m, 0.0, 0.0, 0.0]]
+
+	def mark(entry, g, models):
+		used.setdefault(g, set()).update(models + [entry])
 	placed = []      # (x, z, radius) of junk so far
 	props = []
 
-	def free(model, x, z, yaw, g, dx=0.0, dz=0.0):
+	def free(model, x, z, yaw, g, dx=0.0, dz=0.0, out_in_room=False):
 		cs = corners(model, x, z, yaw, dx, dz)
 		px, pz = sum(c[0] for c in cs) / 4, sum(c[1] for c in cs) / 4
 		rad = max(math.hypot(c[0] - px, c[1] - pz) for c in cs)
@@ -168,9 +214,14 @@ def place_junk(spaces, group_of, cells, floor_y, rooms, themes, doors, path_door
 				return None  # a corner over another room, a doorway gap or rock
 			if any(in_rect(c, r) for r in keep_off):
 				return None
-		for line in lines.get(g, []):
-			if poly_dist((px, pz), line) < PATH_CLEAR or any(poly_dist(c, line) < PATH_EDGE for c in cs):
-				return None
+		if not out_in_room:
+			for line in lines.get(g, []):
+				if poly_dist((px, pz), line) < PATH_CLEAR or any(poly_dist(c, line) < PATH_EDGE for c in cs):
+					return None
+		elif not is_flat(model):
+			for line in lines.get(g, []):
+				if poly_dist((px, pz), line) < LANE_MID or any(poly_dist(c, line) < LANE_EDGE for c in cs):
+					return None
 		for (ox, oz) in doors:
 			if math.hypot(px - ox, pz - oz) < DOOR_CLEAR + rad:
 				return None
@@ -205,18 +256,55 @@ def place_junk(spaces, group_of, cells, floor_y, rooms, themes, doors, path_door
 				if a[0] * b[0] + a[1] * b[1] == 0:   # two walls at a right angle: a corner
 					spots[g].append(((x + 1.0, z + 1.0), [a, b]))
 
+	def try_middle(entry, g):
+		"""Out in the room: any of its cells, anywhere in it, turned any way."""
+		cands = [c for c, cg in cells.items() if cg == g]
+		rng.shuffle(cands)
+		for (cx, cz) in cands[:40]:
+			x, z = cx + 1.0 + rng.uniform(-0.7, 0.7), cz + 1.0 + rng.uniform(-0.7, 0.7)
+			yaw = rng.uniform(0.0, 360.0)
+			parts = parts_of(entry, g)
+			if parts is None:
+				return False
+			got = []
+			for model, ddx, ddz, dyaw in parts:
+				f = free(model, *part_at(x, z, yaw, ddx, ddz), yaw + dyaw, g, out_in_room=True)
+				if f is None:
+					got = None
+					break
+				got.append((model, f, dyaw, ddx, ddz))
+			if not got:
+				continue
+			for model, f, dyaw, ddx, ddz in got:
+				px, pz = part_at(x, z, yaw, ddx, ddz)
+				placed.append(f)
+				props.append({"model": model, "pos": [round(px, 3), round(floor_y(g) + FLOOR_TOP, 3), round(pz, 3)],
+					"yaw": round((yaw + dyaw) % 360.0, 1), "scale": 1.0, "role": "junk", "label": "", "spot": "room"})
+			mark(entry, g, [m for m, *_ in got])
+			return True
+		return False
+
 	def try_entry(entry, g):
+		if g in rooms and entry not in FACE_IN and rng.random() < MIDDLE and try_middle(entry, g):
+			return True
 		cands = spots.get(g, [])[:]
 		rng.shuffle(cands)
 		if rng.random() < 0.5:   # corners first, half the time
 			cands.sort(key=lambda c: -len(c[1]))
 		for (cx, cz), walls in cands:
-			parts = CLUSTER.get(entry) or [[model_of(entry, rng), 0.0, 0.0, 0.0]]
+			parts = parts_of(entry, g)
+			if parts is None:
+				return False
 			lead = parts[0][0]
 			sx, sz = size(lead)[:2]
 			(wx, wz) = walls[0]
 			wall_yaw = 90.0 if wx != 0 else 0.0   # the model's long side (x) along the wall
-			yaw = wall_yaw + rng.uniform(-15, 15) + rng.choice([0, 180])  # lengthwise along the wall: it hugs it
+			if entry in FACE_IN:   # back to the wall, front into the room
+				yaw = math.degrees(math.atan2(-wx, -wz)) + rng.uniform(-4, 4)
+			elif max(sx, sz) < 1.5 * min(sx, sz):   # small and roundish: any way (owner, Nov 22)
+				yaw = rng.uniform(0.0, 360.0)
+			else:   # long: along its wall, give or take 30 degrees, either end first
+				yaw = wall_yaw + rng.uniform(-30, 30) + rng.choice([0, 180])
 			# Push it toward its wall(s) until its footprint touches WALL_FACE.
 			x, z = cx, cz
 			for _ in range(2):
@@ -251,6 +339,7 @@ def place_junk(spaces, group_of, cells, floor_y, rooms, themes, doors, path_door
 				placed.append(f)
 				props.append({"model": model, "pos": [round(px, 3), round(floor_y(g) + FLOOR_TOP, 3), round(pz, 3)],
 					"yaw": round((yaw + dyaw) % 360.0, 1), "scale": 1.0, "role": "junk", "label": ""})
+			mark(entry, g, [m for m, *_ in got])
 			return True
 		return False
 
@@ -258,7 +347,9 @@ def place_junk(spaces, group_of, cells, floor_y, rooms, themes, doors, path_door
 		boxes = [s for s in spaces if group_of(s[0]) == g and s[5] == floor_y(g)]
 		area = sum((s[3] - s[1]) * (s[4] - s[2]) for s in boxes)
 		length = max([max(s[3] - s[1], s[4] - s[2]) for s in boxes] or [0])
-		if g in rooms:
+		if counts and g in counts:   # (owner, Nov 22: "see their size versus how many things are in there")
+			want = counts[g]
+		elif g in rooms:
 			want = rng.randint(*big) if area >= 80 else rng.randint(*small)
 		else:
 			want = (1 if rng.random() < 0.7 else 0) + (1 if length >= long_corridor else 0)
