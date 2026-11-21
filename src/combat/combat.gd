@@ -197,3 +197,22 @@ static func weapon_of(item: String) -> String:
 	if k == "weapon" or k == "shield":
 		return Items.info(item).weapon
 	return "fists"
+
+
+## What a weapon (or a tool or shield you can hit with) hits for, as one line for its tooltip and the crafting card
+## (owner F571, Nov 21: "weapons should show their damage"): on an enemy without armor, with its tier and upgrades.
+## "" for things that don't fight.
+static func damage_text(slot: Dictionary) -> String:
+	var id: String = slot.get("id", "")
+	var w := weapon_of(id)
+	if w == "fists" or not WEAPONS.has(w):
+		return ""
+	var tier := maxi(Items.tier(id), 0)
+	if w == "crossbow":
+		return "Damage %d · aimed %d (stone bolt)" % [shot_damage(false, tier, "bolt_stone", {armor = 0}, 0.0),
+			shot_damage(true, tier, "bolt_stone", {armor = 0}, 0.0)]
+	var up := Upgrades.bonus(slot)
+	var text := "Damage %d" % damage(w, false, tier, {armor = 0}, 0, 1.0, 0.0, up)
+	if has_heavy(w, tier):
+		text += " · heavy %d" % damage(w, true, tier, {armor = 0}, 0, 1.0, 0.0, up)
+	return text

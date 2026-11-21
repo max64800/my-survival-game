@@ -648,6 +648,9 @@ func _rune_slab(ps: GameAuthority.PlayerState, auth: GameAuthority) -> void:
 ## A food's effects under its ingredients: "Healing" with half hearts (hover = the exact speed), then bullets.
 func _food_lines(item: String) -> void:
 	UiKit.clear(_detail_food)
+	var hits := Combat.damage_text({id = item})  # (owner F571: weapons show their damage)
+	if hits != "":
+		UiKit.label(_detail_food, "•  " + hits, 15, UiKit.AMBER)
 	if not Foods.is_buff_food(item):
 		return
 	var regen: float = Foods.buff_of(item).get("regen", 0.0)

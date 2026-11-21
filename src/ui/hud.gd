@@ -15,8 +15,6 @@ var peer_id := 1
 var seed_text := ""
 
 var _aim_label: Label
-var _dig_bar: ProgressBar
-var _dig_bar_timer := 0.0
 var _hotbar: HBoxContainer
 var _hotbar_home: Control  ## where the hotbar lives while playing (bottom of the screen)
 var _bag_panel: PanelContainer
@@ -60,7 +58,13 @@ var dev_menu: DevMenu  ## P in dev builds
 var _work_box: VBoxContainer  ## by a Builder's Chest: what's being built, how far along (owner, Nov 16)
 var _work_label: Label
 var _work_bar: ProgressBar
-var _reload_box: VBoxContainer  ## crossbow reload bar under the crosshair (owner, Nov 20)
+var _reload_box: PanelContainer  ## crossbow reload bar under the crosshair (owner, Nov 20; framed, no word: F573)
+var _reload_fill: StyleBoxFlat
+var _reload_done := 0.0  ## seconds the full bar still flashes gold after the bolt is in
+const RELOAD_W := 220.0
+const RELOAD_H := 30.0
+const RELOAD_COLOR := Color(0.55, 0.68, 0.82)  ## steel blue while it winds
+const RELOAD_DONE_COLOR := Color(1.0, 0.82, 0.3)  ## gold flash: loaded
 var _reload_bar: ProgressBar
 var box_panel: BoxPanel
 var build_mode: BuildMode
@@ -104,27 +108,37 @@ func _build() -> void:
 	_aim_label.custom_minimum_size = Vector2(200, 0)
 	_aim_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
-	_dig_bar = ProgressBar.new()
-	_dig_bar.show_percentage = false
-	_dig_bar.custom_minimum_size = Vector2(90, 8)
-	_dig_bar.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	_dig_bar.position += Vector2(-45, 52)
-	_dig_bar.visible = false
-	root.add_child(_dig_bar)
 
-	# Crossbow reloading: a bar in the middle of the screen, under the crosshair (owner, Nov 20).
-	_reload_box = VBoxContainer.new()
+	# Crossbow reloading: a bar in the middle of the screen, under the crosshair (owner, Nov 20). Owner F573 (Nov 21):
+	# no Reloading word and a much better bar: now a thick bar in the hotbar's wood-and-brass frame, a steel-blue fill
+	# with a shine on top, that flashes gold for a moment when the bolt is in.
+	_reload_box = PanelContainer.new()
+	_reload_box.name = "ReloadFrame"
+	_reload_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_reload_box.add_theme_stylebox_override("panel", UiKit.style("slot", 6.0, 8.0))
 	_reload_box.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	_reload_box.custom_minimum_size = Vector2(240, 0)
-	_reload_box.position += Vector2(-120, 70)
+	_reload_box.custom_minimum_size = Vector2(RELOAD_W, RELOAD_H)
+	_reload_box.position += Vector2(-RELOAD_W * 0.5, 64)
 	_reload_box.visible = false
 	root.add_child(_reload_box)
-	var reload_label := _label(_reload_box, 16)
-	reload_label.text = "Reloading (stand still)"
-	reload_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_reload_bar = ProgressBar.new()
-	_reload_bar.custom_minimum_size = Vector2(240, 14)
+	_reload_bar.name = "Reload"
+	_reload_bar.custom_minimum_size = Vector2(0, RELOAD_H - 12.0)
+	_reload_bar.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_reload_bar.show_percentage = false
+	_reload_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var rback := StyleBoxFlat.new()
+	rback.bg_color = Color(0.07, 0.045, 0.03, 0.92)
+	rback.set_corner_radius_all(3)
+	_reload_bar.add_theme_stylebox_override("background", rback)
+	_reload_fill = StyleBoxFlat.new()
+	_reload_fill.bg_color = RELOAD_COLOR
+	_reload_fill.set_corner_radius_all(3)
+	_reload_fill.border_width_top = 3
+	_reload_fill.border_color = RELOAD_COLOR.lightened(0.35)
+	_reload_fill.border_width_bottom = 2
+	_reload_fill.border_blend = true
+	_reload_bar.add_theme_stylebox_override("fill", _reload_fill)
 	_reload_box.add_child(_reload_bar)
 
 	_hotbar = HBoxContainer.new()
@@ -552,6 +566,10 @@ func _refresh_slots() -> void:
 		if not s.is_empty():
 			icon.add_theme_stylebox_override("panel", _slot_style(Items.color(s.id).darkened(0.15), Items.color(s.id).lightened(0.3)))
 			panel.tooltip_text = Upgrades.display_name(s)  # "Copper Sword +2"
+			var hits := Combat.damage_text(s)  # (owner F571: weapons show their damage)
+			if hits != "":
+				panel.tooltip_text += "
+" + hits
 			if Durability.wears(s.id):
 				panel.tooltip_text += "\n" + Durability.status_text(s)
 			if Items.kind(s.id) == "page":
@@ -568,27 +586,62 @@ func _refresh_slots() -> void:
 		_show_cooldown(panel, s, auth)
 
 
-## An item that is cooling down (a bandage: 30 s) gets a grey shade over its slot. Right after you use it, the shade
+## An item that is cooling down (a bandage: 30 s) gets a dark shade over its slot. Right after you use it, the shade
 ## covers the whole slot; then its edge climbs from the bottom to the top, and when it's gone you can use it again
-## (owner F470). Hotbar and bag both.
+## (owner F470). Owner F570 (Nov 21: "barely visible, make it a lot more visible"): the shade is much darker, its edge
+## is a bright gold line, and the seconds left count down big in the middle. Hotbar and bag both.
 func _show_cooldown(panel: Control, s: Dictionary, auth: GameAuthority) -> void:
 	var left := 0.0 if s.is_empty() or auth == null else auth.cooldown_left(s.id)
 	var shade: ColorRect = panel.get_node_or_null("Cooldown")
 	if left <= 0.0:
 		if shade:
 			shade.visible = false
+			(panel.get_node("Secs") as Label).visible = false
 		return
 	if shade == null:
 		shade = ColorRect.new()
 		shade.name = "Cooldown"
 		shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		shade.color = Color(0.12, 0.12, 0.12, 0.68)
+		shade.color = COOLDOWN_SHADE
 		panel.add_child(shade)
+		var edge := ColorRect.new()
+		edge.name = "Edge"
+		edge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		edge.color = COOLDOWN_EDGE
+		shade.add_child(edge)
+		var secs := Label.new()
+		secs.name = "Secs"
+		secs.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		secs.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		secs.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		secs.add_theme_color_override("font_color", Color(1.0, 0.92, 0.6))
+		secs.add_theme_color_override("font_outline_color", Color(0.05, 0.03, 0.02))
+		panel.add_child(secs)
 		if panel.has_node("KeyBadge"):
 			panel.move_child(shade, panel.get_node("KeyBadge").get_index())  # (the key number stays readable on top)
 	shade.visible = true
 	shade.position = Vector2(4, 4)
 	shade.size = Vector2(panel.size.x - 8, cooldown_shade_height(panel.size.y - 8, left))
+	var edge: ColorRect = shade.get_node("Edge")
+	edge.position = Vector2(0, shade.size.y - 3)
+	edge.size = Vector2(shade.size.x, 3)
+	var secs: Label = panel.get_node("Secs")
+	secs.visible = true
+	secs.text = str(ceili(cooldown_seconds(auth, s.id)))
+	secs.add_theme_font_size_override("font_size", roundi(panel.size.x * 0.36))
+	secs.add_theme_constant_override("outline_size", roundi(panel.size.x * 0.09))
+	secs.position = Vector2.ZERO
+	secs.size = panel.size
+
+
+const COOLDOWN_SHADE := Color(0.03, 0.03, 0.04, 0.86)  ## (was 0.68 grey: barely visible, F570)
+const COOLDOWN_EDGE := Color(1.0, 0.8, 0.3)
+
+
+## Seconds until an item's cooldown is over (0 when ready).
+static func cooldown_seconds(auth: GameAuthority, item_id: String) -> float:
+	var c: Dictionary = auth.my_cooldowns.get(item_id, {}) if auth else {}
+	return 0.0 if c.is_empty() else maxf(0.0, float(c.until) - GameAuthority.now())
 
 
 ## How tall the grey cooldown shade is: it hangs from the slot's top and shrinks upward as the cooldown runs out.
@@ -596,26 +649,53 @@ static func cooldown_shade_height(inner: float, left: float) -> float:
 	return roundf(inner * clampf(left, 0.0, 1.0))
 
 
-## A thin bar along the bottom of a worn tool's slot (green -> yellow -> red); a broken one is greyed out.
+## Durability (owner F504, said 2×: "the way it shows now isn't good"; they picked: under the tool, inside the slot's
+## frame but not touching it). Every tool, weapon and piece of gear that wears shows a chunky bar under its picture,
+## inside the frame's rim with a gap all round: a dark trough with a coloured fill (green -> yellow -> red), even when
+## it's brand new. A broken one is greyed out and its trough shows empty.
 func _show_wear(panel: Control, s: Dictionary) -> void:
 	var bar: ColorRect = panel.get_node_or_null("Wear")
 	var pic: TextureRect = panel.get_node("Pic")
-	var worn := not s.is_empty() and Durability.wears(s.id) and Durability.used(s) > 0
+	var wears := not s.is_empty() and Durability.wears(s.id)
 	pic.modulate = Color(0.45, 0.4, 0.4) if not s.is_empty() and Durability.broken(s) else Color.WHITE
-	if not worn:
+	if not wears:
 		if bar:
 			bar.visible = false
 		return
 	if bar == null:
-		bar = ColorRect.new()
+		bar = ColorRect.new()  # the trough
 		bar.name = "Wear"
 		bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		bar.color = Color(0.06, 0.04, 0.03, 0.92)
 		panel.add_child(bar)
+		var fill := ColorRect.new()
+		fill.name = "Fill"
+		fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		bar.add_child(fill)
+		if panel.has_node("KeyBadge"):
+			panel.move_child(bar, panel.get_node("KeyBadge").get_index())
 	var f := Durability.fraction(s)
+	var r := wear_bar_rect(panel.size.x)
 	bar.visible = true
-	bar.color = Color(0.85, 0.25, 0.2) if f < 0.25 else (Color(0.9, 0.75, 0.25) if f < 0.5 else Color(0.45, 0.8, 0.35))
-	bar.position = Vector2(4, panel.size.y - 6)
-	bar.size = Vector2(maxf(2.0, (panel.size.x - 8) * f), 3)
+	bar.position = r.position
+	bar.size = r.size
+	var fill: ColorRect = bar.get_node("Fill")
+	fill.color = wear_color(f)
+	fill.position = Vector2(1, 1)
+	fill.size = Vector2(roundf((r.size.x - 2.0) * clampf(f, 0.0, 1.0)), r.size.y - 2.0)
+
+
+## Where the durability bar sits in a slot `s` pixels wide: under the picture, inside the frame's rim, with a gap of
+## WEAR_GAP from the rim on every side (never touching the frame).
+const WEAR_GAP := 3.0
+static func wear_bar_rect(s: float) -> Rect2:
+	var inset := roundf(s * 0.17)  # (the frame's rim: _size_slot)
+	var h := maxf(5.0, roundf(s * 0.085))
+	return Rect2(Vector2(inset + WEAR_GAP, s - inset - WEAR_GAP - h), Vector2(s - 2.0 * (inset + WEAR_GAP), h))
+
+
+static func wear_color(f: float) -> Color:
+	return Color(0.9, 0.25, 0.2) if f < 0.25 else (Color(0.95, 0.78, 0.25) if f < 0.5 else Color(0.45, 0.85, 0.35))
 
 
 func _on_slot_input(event: InputEvent, index: int) -> void:
@@ -723,14 +803,8 @@ func _on_dig_feedback(pid: int, result: Dictionary) -> void:
 	if pid != peer_id:
 		return
 	match result.get("state", ""):
-		"hit":
-			_dig_bar.max_value = result.needed
-			_dig_bar.value = result.hits
-			_dig_bar.visible = true
-			_dig_bar_timer = 1.2
-		"dug":
-			_dig_bar.value = _dig_bar.max_value
-			_dig_bar_timer = 0.25
+		"hit", "dug":
+			pass  # (no progress bar on what you mine: owner F574, Nov 21. The cracks and chips show it.)
 		"blocked":
 			show_toast(result.get("why", "Too hard! This rock needs a better pickaxe."))
 		"no_tool":
@@ -1085,19 +1159,27 @@ func _update_work_bar(auth: GameAuthority) -> void:
 Take out your Build Hammer here to build it (walk away to stop)." % [nm, roundi(f * 100.0)]
 
 
-func _update_reload_bar() -> void:
+func _update_reload_bar(delta: float = 0.0) -> void:
 	var me := _local_dwarf()
 	var reloading := me != null and me.fight != null and me.fight.is_crossbow() and me.fight.reload_left >= 0.0
-	_reload_box.visible = reloading
 	if reloading:
 		_reload_bar.value = (1.0 - me.fight.reload_left / maxf(me.fight.reload_total, 0.01)) * 100.0
+		_reload_fill.bg_color = RELOAD_COLOR
+		_reload_done = 0.35 if _reload_bar.value > 0.0 else 0.0
+	elif _reload_done > 0.0 and me != null and me.fight != null and me.fight.is_crossbow() and me.fight.loaded:
+		_reload_done -= delta  # (just loaded: the full bar flashes gold, then goes)
+		_reload_bar.value = 100.0
+		_reload_fill.bg_color = RELOAD_DONE_COLOR
+	else:
+		_reload_done = 0.0
+	_reload_box.visible = reloading or _reload_done > 0.0
 
 
 func _process(delta: float) -> void:
 	var auth := GameAuthority.instance
 	var ps: GameAuthority.PlayerState = auth.get_player(peer_id) if auth else null
 	_update_work_bar(auth)
-	_update_reload_bar()
+	_update_reload_bar(delta)
 	if auth and not auth.my_cooldowns.is_empty() and ps:  # the grey cooldown shades climb every frame (owner F470)
 		for i in _slot_panels:
 			_show_cooldown(_slot_panels[i], ps.inventory.get_slot(i), auth)
@@ -1204,9 +1286,6 @@ func _process(delta: float) -> void:
 	if _map_timer <= 0.0 and dwarf and auth and auth.world:
 		_map_timer = 0.5
 		map_data.reveal(dwarf.global_position, auth.world.sdf_at)
-	_dig_bar_timer -= delta
-	if _dig_bar_timer <= 0.0:
-		_dig_bar.visible = false
 	_toast_timer -= delta
 	_toast.modulate.a = clampf(_toast_timer, 0.0, 1.0)
 	_help_timer -= delta
