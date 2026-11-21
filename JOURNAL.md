@@ -7514,3 +7514,11 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   by chance; longer wait and a retry fixed both. Added `?roof=0` to the page for test views. An ordering slip in the
   wall chunk: re-cutting a broken wall's mortar sheet clears every sheet built before it, so the broken wall is built
   first now.
+
+- **Owner's OK + a new direction (Nov 21):** the kiln page "looks a lot better" (OK'd; crown price and furniture after
+  rebuilding still to answer). Then: "all our towers are circular or squared, very easy shapes": from ruin 6 on, every
+  ruin must be a showpiece like the best player builds in other games (5 screenshots sent). Researched building
+  write-ups (mostly thin: wish lists and beginner tips) and studied the screenshots; wrote the rules into
+  `docs/design/GRAND-RUIN-RECIPE.md` (10 lessons, what our grid can make, the pieces we're missing: brackets, spire
+  roofs, dormers, cornices, buttresses, a grand portal, turrets, spiral stairs; a checklist). Saved as a memory too.
+  Next: ruin 6, the Twin Gate, by that recipe (new chat).
