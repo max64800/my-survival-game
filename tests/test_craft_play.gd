@@ -76,3 +76,43 @@ func test_craft_the_whole_amount_in_one_go() -> void:
 	panel.start_making("plank_root")
 	check_eq(panel._making.get("count", 0), 2, "asking for more than you can make: only what the bag allows")
 	auth.get_parent().queue_free()
+
+
+## Owner, Nov 22: the "Upgrade and repair gear" panel stayed on screen alone and couldn't be closed. A craft that ended
+## (or was stopped) after the bench window closed redrew the window and turned the panel back on.
+func test_upgrade_panel_never_shows_without_the_bench_window() -> void:
+	await _setup()
+	ps.inventory.add("rootwood", 4)
+	var panel := CraftPanel.new()
+	panel.peer_id = 1
+	auth.get_parent().add_child(panel)
+	var up := panel.make_upgrade_panel()
+	auth.get_parent().add_child(up)
+	panel.open_for(auth.stations[7])
+	check(up.visible, "at a Workbench the upgrade panel shows beside it")
+	panel.start_making("plank_root")
+	panel.visible = false
+	check(not up.visible, "closing the bench window hides it")
+	panel.cancel_making("Stopped")
+	check(not up.visible, "a craft stopped after closing doesn't bring it back")
+	panel.refresh()
+	check(not up.visible, "nor does any later redraw")
+	auth.get_parent().queue_free()
+
+
+## Owner, Nov 22: "crafted shield with no planks but with wood ... we need to highlight that it will be created
+## from wood --> planks and then the shield, otherwise looks like a bug". The bench says it makes planks first.
+func test_bench_says_it_makes_planks_from_wood_first() -> void:
+	await _setup()
+	ps.inventory.add("rootwood", 3)
+	ps.inventory.add("rope", 2)
+	var panel := CraftPanel.new()
+	panel.peer_id = 1
+	auth.get_parent().add_child(panel)
+	panel.open_for(auth.stations[7])
+	var lines := panel.chain_lines("shield_stone", ps.inventory)
+	check_eq(lines, ["First makes 6 %s from 3 %s" % [Items.display_name("plank_root"), Items.display_name("rootwood")]],
+		"no planks, 3 rootwood: it says it turns them into 6 planks first")
+	ps.inventory.add("plank_root", 6)
+	check(panel.chain_lines("shield_stone", ps.inventory).is_empty(), "with the planks already in the bag: no extra line")
+	auth.get_parent().queue_free()

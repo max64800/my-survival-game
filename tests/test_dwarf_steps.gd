@@ -9,6 +9,15 @@ func test_legs_keep_up_with_the_dwarf() -> void:
 	check(DwarfRig.loop_rate(6.5) > DwarfRig.loop_rate(4.0), "running legs faster still")
 
 
+## 🔁 F577 (owner, Nov 22: "walking with no shift still feels like moonwalking"): the slow walk animation can't keep up
+## with 4 m/s (its feet slid back at ~15% of his speed), so plain walking plays the trot, and Shift the sprint.
+func test_plain_walking_trots_and_shift_sprints() -> void:
+	check_eq(DwarfRig.MOVE_POINTS.jog, Dwarf.WALK_SPEED, "walking speed plays the trot (jog)")
+	check_eq(DwarfRig.MOVE_POINTS.sprint, Dwarf.RUN_SPEED, "running speed plays the sprint, a different animation")
+	check(DwarfRig.MOVE_POINTS.walk < Dwarf.WALK_SPEED, "the slow walk is only for slow moves (blocking, aiming)")
+	check(DwarfRig.loop_rate(Dwarf.RUN_SPEED) > DwarfRig.loop_rate(Dwarf.WALK_SPEED), "sprint legs move faster")
+
+
 ## A step counts once, when the other foot comes clearly lower; level feet never click twice.
 func test_a_step_is_a_foot_coming_down() -> void:
 	check_eq(DwarfRig.lower_foot(0, 0.10, 0.20), -1, "left lower: left is down")

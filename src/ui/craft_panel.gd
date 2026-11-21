@@ -263,7 +263,9 @@ func refresh() -> void:
 		l.text = "Nothing to make here yet. Explore and collect more!"
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD
 		_list.add_child(l)
-	var upgrades := station != null and station.kind in ["workbench", "anvil"]
+	# (only while this window is open: a craft ending after it closed used to bring the panel back alone, with no
+	# way to close it; owner, Nov 22)
+	var upgrades := visible and station != null and station.kind in ["workbench", "anvil"]
 	if upgrade_panel:
 		upgrade_panel.visible = upgrades
 		if upgrades:
@@ -474,13 +476,37 @@ func _ready_to_make(recipe_id: String, inv: Inventory) -> bool:
 
 ## Auto-crafting: the dwarf can make the missing in-between items here first (same station only, owner Nov 19).
 func _can_chain(recipe_id: String, inv: Inventory) -> bool:
+	return not _chain_plan(recipe_id, inv).is_empty()
+
+
+## The auto-craft plan: in-between recipes first, the picked one last ([] = can't be made, even by chaining).
+func _chain_plan(recipe_id: String, inv: Inventory) -> Array:
 	var auth := GameAuthority.instance
 	var ps: GameAuthority.PlayerState = auth.get_player(peer_id) if auth else null
 	if ps == null:
-		return false
+		return []
 	var lvl := station.level() if station else 1
-	return not Crafting.plan(inv, recipe_id, Recipes.get_recipe(recipe_id).station, func(id): \
-		return Recipes.is_unlocked(id, ps.seen, auth.taught_recipes()) and lvl >= int(Recipes.get_recipe(id).get("level", 1))).is_empty()
+	return Crafting.plan(inv, recipe_id, Recipes.get_recipe(recipe_id).station, func(id): \
+		return Recipes.is_unlocked(id, ps.seen, auth.taught_recipes()) and lvl >= int(Recipes.get_recipe(id).get("level", 1)))
+
+
+## Owner, Nov 22: "crafted a shield with no planks but with wood ... looks like a bug". When the bench will make the
+## in-between items first, say so: one line per step, e.g. "First makes 6 Rootwood Plank from 3 Rootwood".
+func chain_lines(recipe_id: String, inv: Inventory) -> Array:
+	if can_make_count(recipe_id, inv) > 0:
+		return []
+	var steps := _chain_plan(recipe_id, inv)
+	var times := {}
+	for i in steps.size() - 1:
+		times[steps[i]] = times.get(steps[i], 0) + 1
+	var lines := []
+	for id in times:
+		var r := Recipes.get_recipe(id)
+		var from := []
+		for item in r.inputs:
+			from.append("%d %s" % [int(r.inputs[item]) * times[id], Items.display_name(item)])
+		lines.append("First makes %d %s from %s" % [int(r.count) * times[id], Items.display_name(r.output), " + ".join(from)])
+	return lines
 
 
 ## Fuel is coal only, made from wood in the Bloomery (owner, Nov 19, F404; game_authority).
@@ -535,7 +561,7 @@ func _show_detail(inv: Inventory) -> void:
 	for item in needs:
 		var have := _fuel_have(inv) if item == "fuel" else inv.count_of(item)
 		var need: int = needs[item]
-		var col := UiKit.TEXT if have >= need else UiKit.MISSING
+		var col := UiKit.TEXT if have >= need else (UiKit.AMBER if _can_chain(_picked, inv) and item != "fuel" else UiKit.MISSING)
 		var pic := TextureRect.new()
 		pic.texture = Items.icon("coal" if item == "fuel" else item)
 		pic.custom_minimum_size = Vector2(22, 22)
@@ -546,6 +572,11 @@ func _show_detail(inv: Inventory) -> void:
 		n.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		UiKit.label(_detail_needs, "%d / %d" % [have, need], 14, col)
 	_food_lines(r.output)
+	var chain := chain_lines(_picked, inv)
+	for line in chain:
+		UiKit.label(_detail_food, "⚒  " + line, 14, UiKit.AMBER)
+	if not chain.is_empty():
+		UiKit.label(_detail_food, "⚒  then the %s" % Items.display_name(r.output), 14, UiKit.AMBER)
 	# No yellow "where to get it" lines (owner F179: too much text). Only a short red note
 	# when the station's level is too low.
 	if station and r.station != Recipes.HAND and station.level() < int(r.get("level", 1)):
