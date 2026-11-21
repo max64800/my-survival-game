@@ -381,7 +381,7 @@ def _d(n):
 
 # Old plain furniture that made way for the catalogue's own pieces.
 GONE = {("decor/shack_bed.glb", 38.6, 45.6), ("decor/keg.glb", 32.8, 51.2), ("decor/firewood_rack.glb", 39.4, 51.0),
-	("decor/grain_sacks.glb", 26.8, 49.2), ("decor/shack_table.glb", 23.4, 23.2), ("decor/shack_table.glb", 48.4, 54.2),
+	("decor/grain_sacks.glb", 26.8, 49.2), ("decor/shack_table.glb", 23.4, 23.2), ("decor/shack_table.glb", 35.8, 46.0), ("decor/shack_stool.glb", 35.8, 47.1), ("decor/shack_table.glb", 48.4, 54.2),
 	("decor/shack_shelf.glb", 34.5, 44.45), ("dungeon/junk_rags.glb", 8.9, 27.0), ("decor/crate_stack.glb", 28.6, 49.1), ("decor/crate_stack.glb", 29.0, 40.9), ("dungeon/rail_wedge.glb", 27.2, 45.0), ("dungeon/rubble_ore.glb", 29.0, 28.8)}
 props[:] = [p for p in props if (p["model"], p["pos"][0], p["pos"][2]) not in GONE]
 
@@ -403,6 +403,9 @@ DECOR = [
 	("spider_eggs", "den", W(_d("spider_eggs"), "n", 22, 10.0, out=HUNG), 1.0),
 	("spider_eggs", "den", W(_d("spider_eggs"), "w", 8, 25.5, out=HUNG), 1.0),
 	("pickaxe_in_wall", "dig", W(_d("pickaxe_in_wall"), "e", 50, 50.0, out=HUNG), 1.0),
+	("op_diary_table", "dig", W(_d("op_diary_table"), "w", 36, 53.6)),
+	("last_meal", "pells_hut", W(_d("last_meal"), "n", 44, 35.4)),
+	("table_overturned", "pells_hut", decor.mid(_d("table_overturned"), 36.4, 45.6, 20.0)),
 	# Winch Shed (x 24-30, z 44-50)
 	# Ladder Landing (x 24-30, z 40-46)
 	("op_watch_post", "landing", decor.corner(_d("op_watch_post"), "s", 46, "e", 30)),

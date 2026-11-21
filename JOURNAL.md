@@ -7634,3 +7634,9 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - **Left out, for the owner to answer (rule clashes):** op_diary_table (spilled ink), table_overturned (puddle), last_meal
   (food). **No room:** op_trapmaker_table, op_trap_parts_rack, op_bell_tripwire, rope_ladder_broken, op_ore_scale (small
   rooms, walk lines, traps and torches take the free wall).
+
+- **Owner's answer (Nov 22): "the placement rules should be fluid"** and "you decide" the rest. So the 3 rule-clash pieces
+  (op_diary_table in the Last Dig, last_meal and table_overturned in the hut) are now placed, 29 catalogue pieces in all.
+  The trapmaker table, parts rack, bell tripwire, rope ladder and ore scale still found no free spot: left out.
+- **Mistake:** my new Pell tests loaded the plan as "old_pells_diggings" (the file name) but the game calls it "pell", so
+  they found nothing. Caught on the next run; fixed.

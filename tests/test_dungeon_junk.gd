@@ -80,7 +80,7 @@ func test_mossgate_has_junk() -> void:
 
 
 func test_pell_has_junk_on_both_levels() -> void:
-	var j := _junk(DungeonBuild.load_plan("old_pells_diggings"))
+	var j := _junk(DungeonBuild.load_plan("pell"))
 	var up := j.filter(func(p): return float(p.pos[1]) > -3.0).size()
 	check(up >= 3 and j.size() - up >= 25, "Old Pell's Diggings has junk up in the hut (%d) and down in the diggings (%d)" % [up, j.size() - up])
 

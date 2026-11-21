@@ -85,7 +85,7 @@ func test_mossgate_has_its_catalogue_decor() -> void:
 
 
 func test_pell_has_its_catalogue_decor() -> void:
-	var plan := DungeonBuild.load_plan("old_pells_diggings")
+	var plan := DungeonBuild.load_plan("pell")
 	var d := _decor(plan)
 	check(d.size() >= 20, "Old Pell's Diggings has its catalogue decor (%d pieces)" % d.size())
 	var kinds := {}
@@ -93,7 +93,7 @@ func test_pell_has_its_catalogue_decor() -> void:
 		kinds[p.model] = true
 		check(ResourceLoader.exists("res://assets/models/" + String(p.model)), "decor model %s exists" % p.model)
 	for m in ["decor/op_diary_table.glb", "decor/table_overturned.glb", "decor/last_meal.glb"]:
-		check(not kinds.has(m), "%s waits for the owner's answer (rule clash)" % m)
+		check(kinds.has(m), "%s is placed (owner, Nov 22: the rules are fluid, place it if it works)" % m)
 
 
 func test_decor_stands_on_the_floor_inside_the_rooms() -> void:
