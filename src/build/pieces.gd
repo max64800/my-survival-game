@@ -304,7 +304,7 @@ const LIST := {
 		model = "decor/golden_pickaxe", families = ["cut_stone"], station = {"mason": 2}},
 	"first_coin_frame": {name = "First Coin", group = "trophies", size = Vector3(0.3, 1.32, 0.2), units = 1, place = "free", shape = "block", extra = {gold_coin = 1},
 		model = "decor/first_coin_frame", families = WOODS, station = {"workbench": 1}},
-	"foreman_helmet_trophy": {name = "Foreman's Helmet", group = "trophies", size = Vector3(0.75, 1.7, 0.61), units = 2, place = "free", shape = "block", extra = {copper_ingot = 2},
+	"foreman_helmet_trophy": {name = "Pit Boss's Helmet", group = "trophies", size = Vector3(0.75, 1.7, 0.61), units = 2, place = "free", shape = "block", extra = {copper_ingot = 2},
 		model = "decor/foreman_helmet_trophy", families = WOODS, station = {"workbench": 1}},
 	"hm_spider_trophy": {name = "Spider Trophy", group = "trophies", size = Vector3(0.5, 0.55, 0.4), units = 1, place = "edge", shape = "plaque", on_wall = true, extra = {venom_sac = 1, spider_silk = 2},
 		model = "decor/hm_spider_trophy", families = WOODS, station = {"workbench": 1}},

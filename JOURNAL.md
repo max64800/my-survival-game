@@ -7640,3 +7640,9 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   The trapmaker table, parts rack, bell tripwire, rope ladder and ore scale still found no free spot: left out.
 - **Mistake:** my new Pell tests loaded the plan as "old_pells_diggings" (the file name) but the game calls it "pell", so
   they found nothing. Caught on the next run; fixed.
+
+## Nov 21, 2026 (PC, dwarf-animations Claude, chat 17): skeleton miners renamed
+- Owner hadn't recognised the "Tunnel Rat": it is the small skeleton miner (shown on the "Cracked Skull Miners" page).
+  Owner picked new names (F533): Bone Rot (small), Hollow Miner (medium), The Pit Boss (large). Only the names players see
+  changed (`monsters.gd`, trophy in `pieces.gd`); inside ids stay, so saves and dungeon files still work.
+- Owner hasn't played the new fighting or fought the Pit Boss yet; numbers stay as they are.
