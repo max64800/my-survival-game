@@ -229,12 +229,12 @@ func _process(delta: float) -> void:
 			tidy_ruin(str(k))
 
 
-## Everyone: ruin `k` is being rebuilt (or is rebuilt): the lootable junk lying inside it goes, like the rest of its
-## inside junk (owner F581: the bolt crate on floor 2 was still there after the rebuild).
+## Everyone: ruin `k` is being rebuilt (or is rebuilt): its lootable junk goes, like the rest of its junk, inside
+## (owner F581: the bolt crate on floor 2 was still there after the rebuild) and outside (owner, Nov 21).
 func tidy_ruin(k: String) -> void:
 	for key in props.keys():
 		var pr: Dictionary = props[key]
-		if String(pr.get("ruin", "")) == k and pr.get("inside", false):
+		if String(pr.get("ruin", "")) == k:
 			if is_instance_valid(pr.node):
 				(pr.node as Node).queue_free()
 			props.erase(key)

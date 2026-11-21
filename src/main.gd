@@ -801,7 +801,7 @@ func _make_environment() -> void:
 
 
 func _process(delta: float) -> void:
-	if world and _ready_to_play and _saving and authority.is_host():
+	if world and _ready_to_play and saves_world() and authority.is_host():
 		_autosave -= delta
 		if _autosave <= 0.0:
 			_autosave = 300.0  # every 5 minutes (spec 5.11)
@@ -839,9 +839,16 @@ func _process(delta: float) -> void:
 		get_tree().create_timer(3.0).timeout.connect(func(): FreezeWatch.doing = "playing")
 
 
+## Dev test worlds (the menu's Dungeon and Ruin tests) are never saved, so no test saves pile up (owner, Nov 21).
+func saves_world() -> bool:
+	return _saving and not dungeon_test
+
+
 ## Saves now (host only). Shows a small note.
 func save_now(note: String = "Saved") -> void:
-	if not _saving or world == null or not authority.is_host():
+	if not saves_world() or world == null or not authority.is_host():
+		if dungeon_test and hud and note == "Saved":
+			hud.show_toast("Test world: never saved", 2.0)
 		return
 	var err := SaveGame.save(self)
 	if hud:

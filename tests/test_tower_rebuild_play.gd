@@ -137,7 +137,13 @@ func test_blue_plan_only_with_the_hammer_and_no_freezes() -> void:
 	lp._process(0.1)
 	var left := 0
 	for key in lp.props:
-		if String(lp.props[key].get("ruin", "")) == k and lp.props[key].get("inside", false):
+		if String(lp.props[key].get("ruin", "")) == k:
 			left += 1
-	check(had > 0 and left == 0, "the bolt crate inside the tower goes after the rebuild (%d before, %d left; F581)" % [had, left])
+	check(had > 0 and left == 0, "the tower's lootable junk (inside and out) goes after the rebuild (%d before, %d left; F581)" % [had, left])
+	# Owner, Nov 21: all the ruin's junk goes, inside and outside.
+	var rj := RuinJunk.new(auth)
+	auth.add_child(rj)
+	rj._check = 0.0
+	rj._process(0.1)
+	check_eq(rj.count, 0, "and none of its junk, inside or outside, is drawn")
 	auth.get_parent().queue_free()

@@ -131,8 +131,8 @@ func test_ruin_junk_keeps_off_the_way_in() -> void:
 		(kinds[k] as Node).free()
 
 
-## The junk inside goes when the ruin is being rebuilt; the junk outside stays.
-func test_rebuilt_ruin_drops_its_inside_junk() -> void:
+## All its junk, inside and outside, goes when the ruin is being rebuilt (owner, Nov 21; the outside used to stay).
+func test_rebuilt_ruin_drops_all_its_junk() -> void:
 	var ruins := {"5": {name = "tower", junk = [["res://assets/models/dungeon/junk_bones.glb", Vector3(1, 0, 0), 0.0, true],
 		["res://assets/models/dungeon/junk_rags.glb", Vector3(9, 0, 0), 0.0, false]]}}
 	var rj := RuinJunk.new(null)
@@ -140,7 +140,7 @@ func test_rebuilt_ruin_drops_its_inside_junk() -> void:
 	check_eq(rj.count, 2, "both drawn while the ruin stands")
 	rj._gone["5"] = true
 	rj._draw(ruins)
-	check_eq(rj.count, 1, "only the outside junk once it is rebuilt")
+	check_eq(rj.count, 0, "inside and outside junk gone once it is rebuilt")
 	rj.free()
 
 

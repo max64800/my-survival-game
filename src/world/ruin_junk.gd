@@ -5,7 +5,8 @@ extends Node3D
 ## Where it goes: blueprints/ruins/<ruin>_junk.json (made by tools/ruins/ruin_junk.py, in the ruin's own frame).
 ## Co-op: the host turns that list into world spots ONCE, when the rock around the ruin has loaded (the ground outside
 ## is measured on the host's rock), and writes it into the ruin's record (world_state.ruins: saved and sent to friends).
-## Every computer draws it from there. The junk inside goes as soon as the ruin is being rebuilt (owner, Nov 20).
+## Every computer draws it from there. The junk inside goes as soon as the ruin is being rebuilt (owner, Nov 20), and
+## the junk outside too (owner, Nov 21: "any garbage outside the perimeter gets removed"; the rebuild clears the rubble).
 
 const PLANS := {"tower": RuinTower.PLAN, "outpost": RuinOutpost.OUTPOST_PLAN, "brewhall": RuinBrewhall.PLAN_PATH,
 	"spire": RuinSpire.PLAN_PATH}
@@ -17,7 +18,7 @@ const MAX_STEP := 1.0  ## outside junk whose ground is more than this above/belo
 var auth: GameAuthority
 var _check := 0.0
 var _drawn := ""         ## what is drawn now (redrawn when it changes)
-var _gone := {}          ## ruin box id -> true: its inside junk went (stays gone, even before the "done" news arrives)
+var _gone := {}          ## ruin box id -> true: its junk went (stays gone, even before the "done" news arrives)
 var _root: Node3D
 var count := 0           ## how many pieces are drawn now (tests)
 static var instance: RuinJunk
@@ -160,8 +161,8 @@ func _draw(ruins: Dictionary) -> void:
 	var all := {}  # model -> [Transform3D]
 	for k in ruins:
 		for j in ruins[k].get("junk", []):
-			if bool(j[3]) and _gone.has(k):
-				continue  # being rebuilt (or rebuilt): the inside is tidy now
+			if _gone.has(k):
+				continue  # being rebuilt (or rebuilt): inside and outside are tidy now (owner, Nov 21)
 			(all.get_or_add(String(j[0]), []) as Array).append(Transform3D(Basis(Vector3.UP, float(j[2])), j[1] as Vector3))
 	var n := 0
 	for model in all:
