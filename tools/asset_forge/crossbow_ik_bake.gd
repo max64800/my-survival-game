@@ -29,8 +29,9 @@ const LOW_F := Vector3(0.0, -0.30, 0.95)
 const SIDE_W := Vector3(0.20, -0.04, 0.17)
 const SIDE_F := Vector3(1.0, -0.12, 0.22)
 const SIDE_HOLD := Vector3(0, -0.04, -0.22)  ## (bow space) left hand under the fore-end
+const FRONT := Vector3(0.0, -0.08, 0.25)    ## (from the left shoulder) out in front of the belly, so the hand never cuts through it
 const BOLT_END := Vector3(0, 0.10, -0.40)    ## (bow space) the groove near the bow's end
-const BELT := Vector3(-0.04, -0.17, 0.10)    ## (from the left shoulder, skeleton space) the bolt pouch at the belt
+const BELT := Vector3(-0.02, -0.17, 0.20)    ## (from the left shoulder, skeleton space) the bolt pouch at the belt
 var _sk: Skeleton3D
 var _g := {}              ## bone -> rest global transform (T pose)
 var _shoulder := {}       ## "l"/"r" -> the shoulder joint in skeleton space, chest at rest
@@ -50,6 +51,7 @@ var _clips := {
 		[0.26, SIDE_W, SIDE_F, SIDE_HOLD],
 		[0.36, SIDE_W, SIDE_F, SIDE_HOLD, BELT, 1.0],
 		[0.46, SIDE_W, SIDE_F, SIDE_HOLD, BELT, 1.0],
+		[0.55, SIDE_W, SIDE_F, SIDE_HOLD, FRONT, 1.0],
 		[0.64, SIDE_W, SIDE_F, BOLT_END],
 		[0.78, SIDE_W, SIDE_F, BOLT_END],
 		[0.88, SIDE_W, SIDE_F, SIDE_HOLD],
