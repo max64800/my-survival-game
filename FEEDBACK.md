@@ -221,7 +221,6 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F556. Later (not now): crafting benches you load with materials and leave; they craft by themselves, slowly, one by one (like Conan Exiles).** (Goes with F388.) *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 2.
 - [ ] **F562. A way to craft an item that puts the lantern on the dwarf's hip, so fighting is easy.** *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 3.
 - [ ] **F568. A menu to upgrade and repair gear; repairing should cost nothing, like Valheim.** *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 3.
-- [ ] **F576. Redo the skills window: the Perks tab opens first; the Skills tab shows too much; every starred bullet point on one line.** (Follows F445.) *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 2.
 
 - [ ] **F582. 🔁 Mossprop: the rock lumps on the walls look awful: take those rocks out of the game.** (Came back from F539.) Your picture: the big grey lumps by the moss shelves. *From: you (PC, Nov 21, second play of Mossprop Workings, dungeon 4). Said: 1×* → Mossprop chat.
 - [ ] **F583. 🔁 Mossprop: the cave is still one big square: dig dimples and bulges in so the ceiling and both walls aren't flat (the floor can stay flat).** (Came back from F539.) *From: you (PC, Nov 21, second play of Mossprop Workings, dungeon 4). Said: 2×* → Mossprop chat.

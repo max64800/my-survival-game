@@ -1,8 +1,9 @@
 class_name SkillsPanel
 extends PanelContainer
 ## The K window, two tabs (owner, Nov 20, F445):
-##  - "Skills": the 14 skills you grow by doing, all on one page, each with its ★ perks at 25 / 50 / 75 / 100 always shown.
-##  - "Perks": the perk tree (PerkTreeView: 1 point per level, 4 branches; a perk opens once the one before it has a
+##  - "Skills": the 14 skills you grow by doing, all on one page, each with its ★ perks at 25 / 50 / 75 / 100 always shown,
+##    one line each; what every level gives is in the card's hover text (owner, Nov 21, F576: it showed too much).
+##  - "Perks" (opens first, F576): the perk tree (PerkTreeView: 1 point per level, 4 branches; a perk opens once the one before it has a
 ##    point) and, on the right, the perk you clicked with its Learn button. ◆ = active perk on an ability key (Z / G / T).
 ## The window has one fixed size (switching tabs never changes it) that fits above the hotbar. It is BUILT at the
 ## screen's size (`ui` = how much bigger than the 1600 x 900 design), not stretched afterwards, so the letters stay
@@ -13,11 +14,11 @@ const KEY_NAMES := ["Z", "G", "T"]
 const BACKGROUND := "res://assets/ui/skills_background.jpg"
 const MILESTONE_TEXT := "★%d"
 const PAGE := Vector2(1300, 700)  ## the tabs' page, at ui = 1 (the window is about 1350 x 820)
-const COLS := 5  ## skill cards per row on the Skills tab (3 rows: all 14 fit with no scrolling)
+const COLS := 4  ## skill cards per row on the Skills tab (4 rows: wide enough for every ★ line on one line, F576)
 
 var peer_id := 1
 var ui := 1.0  ## set by the HUD from the screen size (see set_ui)
-var tab := "skills"
+var tab := "perks"  ## the Perks tab opens first (owner, Nov 21, F576)
 var _level: Label
 var _points: Label
 var _reset: Button
@@ -82,7 +83,7 @@ func _build() -> void:
 	var tabs := HBoxContainer.new()
 	tabs.add_theme_constant_override("separation", _px(10))
 	top.add_child(tabs)
-	for t in [["skills", "Skills"], ["perks", "Perks"]]:
+	for t in [["perks", "Perks"], ["skills", "Skills"]]:
 		var b := UiKit.dark_button(Button.new(), _px(22))
 		b.name = "Tab_" + t[0]
 		b.text = "  %s  " % t[1]
@@ -157,7 +158,7 @@ func show_tab(which: String) -> void:
 		var b: Button = _tabs[k]
 		b.add_theme_color_override("font_color", UiKit.AMBER if k == which else UiKit.DIM)
 		b.modulate = Color.WHITE if k == which else Color(0.8, 0.8, 0.8)
-	_help.text = ("Skills grow by doing: dig for Mining, chop for Woodcutting, fight with a weapon for its skill. ★ = a bonus at levels 25, 50, 75 and 100."
+	_help.text = ("Skills grow by doing (dig for Mining, chop for Woodcutting...). ★ = a bonus at levels 25, 50, 75 and 100. Point at a skill to see what each level gives."
 		if which == "skills" else "Circle = works by itself  ·  ◆ = press Z / G / T  ·  ★ = last perk  ·  scroll to zoom, drag to move  ·  K to close")
 	if which == "perks" and _tree.progress:
 		_tree.refresh.call_deferred()
@@ -197,8 +198,9 @@ func refresh() -> void:
 
 # ---------------------------------------------------------------- the Skills tab
 
-func _show_skills() -> void:
-	var p := _progress()
+func _show_skills(p: Progression = null) -> void:
+	if p == null:
+		p = _progress()
 	UiKit.clear(_skills)
 	for s in Progression.SKILLS:
 		var info: Array = Progression.SKILL_INFO[s]
@@ -235,25 +237,13 @@ func _show_skills() -> void:
 		bar.max_value = Progression.skill_xp_to_next(lv)
 		bar.value = p.skill_xp[s] if lv < Progression.MAX_SKILL else bar.max_value
 		v.add_child(bar)
-		_wrap(v, "[color=#%s]Each level: %s[/color]" % [UiKit.AMBER.to_html(false), info[1]], 14)
+		card.tooltip_text = "Each level: %s" % info[1]  # (hover: kept off the card so it shows less, F576)
 		for i in 4:
 			var got: bool = lv >= Progression.MILESTONES[i]
-			_wrap(v, "[color=#%s]%s %s  %s[/color]" % [(UiKit.TEXT if got else UiKit.DIM).to_html(false), "✓" if got else "·",
-				MILESTONE_TEXT % Progression.MILESTONES[i], info[2][i]], 14)
-
-
-## Wrapping text that always grows to fit (a plain Label in a container can get clipped when it wraps).
-func _wrap(parent: Node, bbcode: String, size: float) -> void:
-	var t := RichTextLabel.new()
-	t.bbcode_enabled = true
-	t.fit_content = true
-	t.scroll_active = false
-	t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	t.add_theme_font_size_override("normal_font_size", _px(size))
-	t.custom_minimum_size.x = _px(215)  # (wraps at the card's width, never measures itself one word wide)
-	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	t.text = bbcode
-	parent.add_child(t)
+			var star := _lbl(v, "%s %s  %s" % ["✓" if got else "·", MILESTONE_TEXT % Progression.MILESTONES[i], info[2][i]],
+				13, UiKit.TEXT if got else UiKit.DIM)
+			star.name = "Star_%d" % i
+			star.autowrap_mode = TextServer.AUTOWRAP_OFF  # one line each (F576)
 
 
 # ---------------------------------------------------------------- the Perks tab: the perk you clicked

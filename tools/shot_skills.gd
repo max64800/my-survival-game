@@ -9,9 +9,12 @@ func _init() -> void:
 
 func _run() -> void:
 	var out := "user://skills_window.png"
+	var tab := "perks"
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("out="):
 			out = a.trim_prefix("out=")
+		elif a.begins_with("tab="):
+			tab = a.trim_prefix("tab=")
 	root.size = Vector2i(1600, 900)
 	var auth := GameAuthority.new()
 	root.add_child(auth)
@@ -34,6 +37,7 @@ func _run() -> void:
 	sp.peer_id = 1
 	root.add_child(sp)
 	sp.refresh()
+	sp.show_tab(tab)
 	for i in 30:
 		await process_frame
 	sp.position = (Vector2(root.size) - sp.size) / 2.0

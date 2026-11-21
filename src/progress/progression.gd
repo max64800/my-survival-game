@@ -14,7 +14,7 @@ const SKILLS := ["running", "jumping", "mining", "woodcutting", "gathering", "cr
 const MILESTONES := [25, 50, 75, 100]
 ## What each skill's ★ perks do (skills.md). Index 0..3 = level 25, 50, 75, 100.
 const SKILL_INFO := {
-	"running": ["Running", "+2% run speed, −3% run stamina", ["Quick burst of speed when you start running", "Rubble and slopes don't slow you", "Running past enemies makes them miss more", "Second Wind: at 0 stamina, get 25% back (every 2 min)"]],
+	"running": ["Running", "+2% run speed, −3% run stamina", ["Quick burst of speed when you start running", "Rubble and slopes don't slow you", "Running past enemies makes them miss more", "Second Wind: 25% stamina back at 0 (every 2 min)"]],
 	"jumping": ["Jumping", "+3% jump height, −3% jump stamina", ["Jumping uses less stamina", "Climb up ledges a bit higher", "Jump attack: hits in the air do +20%", "No fall damage up to 8 m"]],
 	"mining": ["Mining", "+3% dig power, −2% swing stamina", ["Pickaxe swings 10% faster", "+10% chance of double ore", "Crystal spots give +1 crystal", "Lucky hit: 1 in 10 hits digs twice as hard"]],
 	"woodcutting": ["Woodcutting", "+3% chop power, −2% stamina", ["Axe swings 10% faster when chopping", "+1 wood per Root Tree", "Chopped roots grow back faster", "15% chance of double wood"]],
@@ -26,7 +26,7 @@ const SKILL_INFO := {
 	"mace": ["Mace", "+2% damage, +3% armor piercing", ["Hits crack rock-shelled enemies faster", "Stuns build up 15% faster", "Hits on armored enemies make them stagger", "Stunned enemies take extra damage"]],
 	"warhammer": ["Warhammer", "+2% damage, +3% stun", ["Heavy swings can't be interrupted", "Ground slam reaches 25% wider", "Slam breaks rock and digs a little", "Ground slam knocks enemies down"]],
 	"spear": ["Spear", "+2% damage, +1.5% reach", ["A poke pushes enemies back", "Thrust goes through 1 extra enemy", "Throw your spear (pick it up again)", "Sweet spot: hits at the tip of your reach do +30%"]],
-	"shield": ["Shield", "+2% block strength, −2% block stamina", ["Walk faster while blocking", "Shield bash stuns more", "After a perfect parry, your next hit does +25%", "Parry window 30% bigger; perfect parries give stamina back"]],
+	"shield": ["Shield", "+2% block strength, −2% block stamina", ["Walk faster while blocking", "Shield bash stuns more", "After a perfect parry, your next hit does +25%", "+30% parry window; perfect parries give stamina"]],
 	"crossbow": ["Crossbow", "+2% damage, −3% reload time", ["Walk faster while aiming", "Reload 15% faster", "30% chance the bolt comes back to you", "Bolts ignore 30% of armor"]],
 }
 ## Which weapon (Combat.weapon_of) trains which skill. Pickaxe and fists train none.
