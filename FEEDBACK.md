@@ -14,6 +14,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 
 ## Things that keep coming back 🔁
 
+- **F577 🔁, the dwarf moonwalks when walking (said 2×).** 1st time (Nov 21, Claude 3): the walk/run loops played faster so the feet grip. 2nd time (Nov 22, PC): "walking with no shift still feels like moonwalking". Why: the slow walk animation's steps are too short for 4 m/s; its feet slid back at only ~15% of his speed, and it would need 6× speed to grip. **Different approach (Nov 22, Claude 2, your pick "trot for walking"):** plain walking now plays the trot (feet grip ~96%), Shift plays the sprint (faster legs, leans further forward). Speeds unchanged. Test: test_plain_walking_trots_and_shift_sprints. **Check in the game.**
 - **F555 🔁, crafting one at a time (said 2×).** 1st time (Nov 15, F129): added x1, x5, x10 or All. 2nd time (Nov 21, rootwood planks): "I'm crafting 1 by 1, it takes so long". 3rd try (Nov 21, Claude 2): the picker was there, but each one still had its own wait. Now one bar for the whole amount and all made together (10 planks ≈ 4 s, max 8 s). Watch if it comes back.
 - **F557 🔁, the first cave can't pay for the tower (said 3×).** F246, then F432 (Nov 20): only fill what's broken. Nov 21: all the first cave's wood = about 100-120 planks, still not enough. **Different approach:** count the first cave's real wood in a test world and set the tower's price from that number. **Nov 21 (Claude 2): tried: ruin rebuilds cost 30% of new pieces; the wooden tower is now 79 planks + 10 rope.**
 - **F560 🔁, the rebuild menu is too complicated (said 3×).** F99 (no pictures), F411 (explanation too long, show pictures). Nov 21: still too complicated: only pictures of what you need, two options. **Nov 21 (Claude 2): tried: one short line + two cards of item pictures only.**
@@ -233,6 +234,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F608. The Pit Boss (Old Pell's) does his overhead then immediately a second hit with no wind-up — that second hit needs to be removed.** Also remove about half the garbage/decor from his room, it gets in the way. *From: you (PC, Nov 22). Said: 1×*
 - [ ] **F609. Medium skeletons (Hollow Miner) can run into and push the player.** They shouldn't be able to move you. *From: you (PC, Nov 22). Said: 1×*
 - [ ] **F610. The Pit Boss (or other bosses) can't find their way back if they get stuck in a hallway, elevator shaft, or behind a doorway.** They need to handle these nav dead-ends. *From: you (PC, Nov 22). Said: 1×*
+- [ ] **F613. The hip lantern should swing as he walks and runs** (now it hangs still on the belt). *From: you (PC, Nov 22, after the F612 hip fix). Said: 1×* → Claude 3. Idea: a small swing on its belt ring that follows his steps and lags a little when he turns or stops, like the hair does (F215). Spot: `src/player/lantern.gd` `_hang()`.
 
 
 ## Done
