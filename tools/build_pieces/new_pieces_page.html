@@ -1,0 +1,335 @@
+<title>Seven New Building Pieces</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@500;700&family=Alegreya+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one lantern-lit cave stage with the seven proposals in a row (sand-coloured sketches beside real painted
+   pieces), a sheet beside it (under it on phones) listing each one for a yes/no. One dark look on purpose. */
+:root {
+	--rock: #17130f;
+	--sheet: #221b15;
+	--line: #4a3b2c;
+	--ink: #efe3cf;
+	--dim: #b9a68b;
+	--lantern: #e7a24a;
+	--lantern-ink: #1d140b;
+	--sand: #ccad80;
+	--display: "Alegreya SC", Georgia, "Times New Roman", serif;
+	--body: "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+	--mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+	color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--rock); color: var(--ink); font: 16px/1.5 var(--body); }
+.wrap { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 360px; grid-template-rows: minmax(0, 1fr); gap: 16px;
+	padding-block: 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); box-sizing: border-box; }
+.stage { position: relative; min-height: 420px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #0d0a08; }
+canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.views { position: absolute; left: 12px; top: 12px; right: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+.tools { position: absolute; left: 12px; right: 12px; bottom: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+button { font: 600 14px var(--body); color: var(--ink); background: #1d1711dd; border: 1px solid var(--line); border-radius: 6px; padding: 7px 12px; cursor: pointer; }
+button:hover { border-color: var(--lantern); }
+button:focus-visible { outline: 2px solid var(--lantern); outline-offset: 2px; }
+button[aria-pressed="true"] { background: var(--lantern); color: var(--lantern-ink); border-color: var(--lantern); }
+.hint { margin-left: auto; color: var(--dim); font: 13px var(--body); }
+#loading[hidden] { display: none; }
+#loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--dim); font: 14px var(--mono); pointer-events: none; text-align: center; padding: 16px; }
+aside { background: var(--sheet); border: 1px solid var(--line); border-radius: 8px; padding: 20px 18px; display: flex; flex-direction: column; gap: 18px; min-width: 0; overflow-y: auto; }
+h1 { font: 700 30px/1.1 var(--display); margin: 0; text-wrap: balance; }
+.lede { margin: 6px 0 0; color: var(--dim); }
+h2 { font: 700 13px var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--lantern); margin: 0 0 8px; }
+ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+ol li { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 2px 8px; border-bottom: 1px dashed var(--line); padding-bottom: 8px; }
+ol li b { grid-column: 2; }
+ol li .n { grid-row: span 3; font: 500 15px var(--mono); color: var(--lantern); }
+ol li .for { grid-column: 2; color: var(--dim); font-size: 15px; }
+ol li .kit { grid-column: 2; font: 12px var(--mono); color: var(--dim); }
+.ask { border: 1px solid var(--lantern); border-radius: 6px; padding: 10px 12px; font-size: 15px; }
+.ask p { margin: 0; }
+.ask p + p { margin-top: 8px; }
+.key { display: flex; gap: 14px; flex-wrap: wrap; font-size: 14px; color: var(--dim); }
+.sw { display: inline-block; width: 11px; height: 11px; border-radius: 2px; vertical-align: -1px; margin-right: 5px; }
+@media (max-width: 860px) {
+	.wrap { height: auto; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; }
+	.stage { min-height: 75vh; }
+	aside { overflow: visible; }
+	.hint { display: none; }
+}
+</style>
+
+<div class="wrap">
+	<div class="stage" id="stage">
+		<div id="loading">Laying out the pieces&hellip;</div>
+		<div class="views" role="group" aria-label="Which piece to look at" id="views"></div>
+		<div class="tools">
+			<button id="labels" aria-pressed="true">Labels on</button>
+			<span class="hint">Drag to turn &middot; scroll to zoom &middot; right-drag to move</span>
+		</div>
+	</div>
+	<aside>
+		<header>
+			<h1>Seven new building pieces</h1>
+			<p class="lede">Kinds of piece that big survival builders use and our kit doesn't have yet. Each one stands beside real pieces (2 m walls, 2 m floors, 2 m stairs) so you can see its size. Names and looks are our own.</p>
+		</header>
+		<div class="key">
+			<span><span class="sw" style="background:var(--sand)"></span>Sand colour = rough sketch</span>
+			<span><span class="sw" style="background:#7d776f"></span>Painted = real game piece</span>
+		</div>
+		<section>
+			<h2>The proposals</h2>
+			<ol>
+				<li><span class="n">1</span><b>Corner stairs and spiral stairs</b><span class="for">Stairs that turn, so towers can climb inside a small room. Corner stairs turn a quarter; spiral stairs go round a post in one 2&nbsp;&times;&nbsp;2 m spot.</span><span class="kit">2 pieces &middot; all three kits</span></li>
+				<li><span class="n">2</span><b>Stair railing</b><span class="for">A railing that slants along the stairs, for grand staircases and so nobody falls off the side.</span><span class="kit">all three kits</span></li>
+				<li><span class="n">3</span><b>Upside-down slanted wall</b><span class="for">Hangs from a ceiling and fills the space under overhangs. Two side by side make a pointed arch (shown with a floor on top).</span><span class="kit">all three kits</span></li>
+				<li><span class="n">4</span><b>Thin edge strip</b><span class="for">A narrow lip along a floor's edge, so upper floors get a neat trim line. Right floor has it, left floor doesn't.</span><span class="kit">all three kits</span></li>
+				<li><span class="n">5</span><b>Roof peak cap</b><span class="for">Closes the tip where 4 slanted roofs meet, with a little knob on top.</span><span class="kit">Shack and Hearthbrick only (Stonehold roofs are flat)</span></li>
+				<li><span class="n">6</span><b>Round floor hatch</b><span class="for">A floor with a round trapdoor, so you can climb between floors with a ladder. Round, like all our doors.</span><span class="kit">all three kits</span></li>
+				<li><span class="n">7</span><b>Open lattice wall</b><span class="for">A see-through screen wall: you can look and shoot through it, but not walk through.</span><span class="kit">all three kits</span></li>
+			</ol>
+		</section>
+		<section>
+			<h2>Your call</h2>
+			<div class="ask">
+				<p>Tell me <b>yes or no for each number</b> (for example: "1 yes, 2 yes, 3 no&hellip;"). Change anything you like too, such as size or shape.</p>
+				<p>Only the yes pieces get real models, hand-built and painted like the workbenches, in each kit's own design. These sketches are thrown away.</p>
+			</div>
+		</section>
+	</aside>
+</div>
+
+<script type="importmap">
+{ "imports": {
+	"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+	"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+const loadingEl = document.getElementById("loading");
+const stage = document.getElementById("stage");
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.shadowMap.enabled = true;
+stage.prepend(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d0a08);
+scene.fog = new THREE.Fog(0x0d0a08, 90, 200);
+const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 400);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.maxPolarAngle = Math.PI * 0.49;
+controls.minDistance = 2;
+controls.maxDistance = 140;
+
+scene.add(new THREE.HemisphereLight(0x9fb2c8, 0x2a1d12, 1.0));
+const sun = new THREE.DirectionalLight(0xffd9a8, 2.2);
+sun.position.set(30, 40, 30);
+sun.castShadow = true;
+sun.shadow.mapSize.set(4096, 4096);
+Object.assign(sun.shadow.camera, { left: -70, right: 70, top: 40, bottom: -40, far: 160 });
+sun.target.position.set(36, 0, 0);
+scene.add(sun, sun.target);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(200, 80), new THREE.MeshStandardMaterial({ color: 0x2b241d, roughness: 1 }));
+ground.rotation.x = -Math.PI / 2;
+ground.position.set(36, -0.01, 0);
+ground.receiveShadow = true;
+scene.add(ground);
+
+const labelSprites = [];
+function label(text, x, y, z, big) {
+	const c = document.createElement("canvas");
+	c.width = 1024; c.height = 128;
+	const g = c.getContext("2d");
+	g.font = (big ? "700 64px" : "500 52px") + " 'Alegreya SC', Georgia, serif";
+	g.fillStyle = big ? "#e7a24a" : "#efe3cf";
+	g.textAlign = "center";
+	g.fillText(text, 512, 86);
+	const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false }));
+	const w = big ? 9 : 5.2;
+	s.scale.set(w, w / 8, 1);
+	s.position.set(x, y, z);
+	scene.add(s);
+	labelSprites.push(s);
+}
+
+// Artifact pages may not fetch blob:/data: URLs, which three.js uses for pictures inside a model: rebuild each
+// model into one binary here, and load its pictures as plain <img>.
+globalThis.createImageBitmap = undefined;
+const loader = new GLTFLoader();
+async function loadModel(url) {
+	const j = await (await fetch(url)).json();
+	const uri = j.buffers[0].uri, b64 = uri.slice(uri.indexOf(",") + 1);
+	const raw = atob(b64), bin = new Uint8Array(raw.length);
+	for (let i = 0; i < raw.length; i++) bin[i] = raw.charCodeAt(i);
+	delete j.buffers[0].uri; j.buffers[0].byteLength = bin.length;
+	const js = new TextEncoder().encode(JSON.stringify(j));
+	const pad = n => (4 - (n % 4)) % 4;
+	const jsLen = js.length + pad(js.length), binLen = bin.length + pad(bin.length);
+	const out = new Uint8Array(12 + 8 + jsLen + 8 + binLen), dv = new DataView(out.buffer);
+	dv.setUint32(0, 0x46546C67, true); dv.setUint32(4, 2, true); dv.setUint32(8, out.length, true);
+	dv.setUint32(12, jsLen, true); dv.setUint32(16, 0x4E4F534A, true);
+	out.set(js, 20); out.fill(0x20, 20 + js.length, 20 + jsLen);
+	const b0 = 20 + jsLen;
+	dv.setUint32(b0, binLen, true); dv.setUint32(b0 + 4, 0x004E4942, true);
+	out.set(bin, b0 + 8);
+	return (await loader.parseAsync(out.buffer, "")).scene;
+}
+
+const KEYS = ["stairs_corner__sketch", "stairs_spiral__sketch", "railing_stairs__sketch", "sloped_wall_down__sketch",
+	"edge_strip__sketch", "roof_cap__sketch", "floor_hatch__sketch", "lattice_wall__sketch",
+	"wall__cut_stone", "floor__cut_stone", "stairs__cut_stone", "railing__cut_stone", "sloped_wall__cut_stone",
+	"wall__clay_brick", "roof_45_outer__clay_brick", "wall__plank_root", "floor__plank_root"];
+const models = {};
+
+// Put a model with its origin at (x, z), turned yaw degrees, its lowest point at height y. Returns the group.
+function place(key, x, y, z, yaw = 0) {
+	const g = models[key].clone(true);
+	g.rotation.y = yaw * Math.PI / 180;
+	g.position.set(x, 0, z);
+	g.updateMatrixWorld(true);
+	const box = new THREE.Box3().setFromObject(g);
+	g.position.y = y - box.min.y;
+	g.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; });
+	scene.add(g);
+	g.updateMatrixWorld(true);
+	return g;
+}
+// The highest point of a placed model.
+function topPoint(g) {
+	let best = null;
+	const v = new THREE.Vector3();
+	g.traverse(o => {
+		if (!o.isMesh) return;
+		const p = o.geometry.attributes.position;
+		for (let i = 0; i < p.count; i++) {
+			v.fromBufferAttribute(p, i).applyMatrix4(o.matrixWorld);
+			if (!best || v.y > best.y + 1e-4) best = v.clone();
+		}
+	});
+	return best;
+}
+
+// The seven stations, 12 m apart; camera spots look at each from the front, a little above.
+const SP = 12;
+const STATIONS = [
+	["1", "Turning stairs"], ["2", "Stair railing"], ["3", "Upside-down slanted wall"], ["4", "Thin edge strip"],
+	["5", "Roof peak cap"], ["6", "Round floor hatch"], ["7", "Open lattice wall"]];
+
+function build() {
+	// 1: real stairs, corner stairs, spiral stairs, with a row of walls behind for height.
+	let x = 0;
+	for (const wx of [-3, -1, 1, 3]) place("wall__cut_stone", x + wx, 0, -1.4);
+	place("stairs__cut_stone", x - 2.7, 0, 0);
+	place("stairs_corner__sketch", x, 0, 0);
+	place("stairs_spiral__sketch", x + 2.7, 0, 0);
+	label("real stairs", x - 2.7, 2.6, 0.6); label("corner (new)", x, 2.6, 0.6); label("spiral (new)", x + 2.7, 2.6, 0.6);
+	// 2: real stairs with the slanted railing on its right side; a real flat railing beside for comparison.
+	x = SP;
+	place("stairs__cut_stone", x, 0, 0);
+	place("railing_stairs__sketch", x + 1.0, 0, 0);
+	place("railing__cut_stone", x + 3.6, 0, 0.6);
+	label("stair railing (new)", x + 0.4, 3.4, 0.4); label("real railing", x + 3.6, 1.5, 0.6);
+	// 3: two walls 4 m apart, a floor across the top, two upside-down slanted walls making a pointed arch.
+	x = 2 * SP;
+	place("wall__cut_stone", x - 3, 0, 0); place("wall__cut_stone", x + 3, 0, 0);
+	for (const fx of [-3, -1, 1, 3]) place("floor__cut_stone", x + fx, 2, 0);
+	place("sloped_wall_down__sketch", x - 1, 0, 0, 0);
+	place("sloped_wall_down__sketch", x + 1, 0, 0, 180);
+	place("sloped_wall__cut_stone", x + 5.8, 0, 0);
+	label("two of them = an arch (new)", x, 3.0, 0.4); label("real slanted wall", x + 5.8, 2.6, 0.4);
+	// 4: two floors on side walls; the right one has the edge strip on its front.
+	x = 3 * SP;
+	for (const wx of [-2, 0, 2]) place("wall__cut_stone", x + wx, 0, 0, 90);
+	place("floor__cut_stone", x - 1, 2, 0); place("floor__cut_stone", x + 1, 2, 0);
+	place("edge_strip__sketch", x + 1, 1.98, 1.05);
+	label("without", x - 1.4, 2.7, 1.1); label("with edge strip (new)", x + 1.4, 3.2, 1.1);
+	// 5: a 4 x 4 m brick room with four steep corner roofs; the cap closes their tip.
+	x = 4 * SP;
+	for (const s of [-1, 1]) {
+		for (const t of [-1, 1]) { place("wall__clay_brick", x + t, 0, 2 * s); place("wall__clay_brick", x + 2 * s, 0, t, 90); }
+	}
+	const tips = [];
+	for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+		let pick = 0;
+		for (const yaw of [0, 90, 180, 270]) {   // turn each corner roof so its high point faces the middle
+			const g = place("roof_45_outer__clay_brick", 0, 0, 0, yaw);
+			const tp = topPoint(g);
+			scene.remove(g);
+			if (tp.x * sx < 0 && tp.z * sz < 0) pick = yaw;
+		}
+		tips.push(topPoint(place("roof_45_outer__clay_brick", x + sx, 2, sz, pick)));
+	}
+	const tipY = Math.max(...tips.map(t => t.y));
+	place("roof_cap__sketch", x, tipY - 0.3, 0);
+	// 6: an upper floor on walls; the middle one is the round hatch (lid open).
+	x = 5 * SP;
+	for (const wx of [-2, 0, 2]) place("wall__cut_stone", x + wx, 0, -1);
+	place("wall__cut_stone", x - 3, 0, 0, 90); place("wall__cut_stone", x + 3, 0, 0, 90);
+	place("floor__cut_stone", x - 2, 2, 0); place("floor_hatch__sketch", x, 2, 0); place("floor__cut_stone", x + 2, 2, 0);
+	label("round floor hatch (new)", x, 3.6, 0.6);
+	// 7: a wall, the lattice wall, a wall, on a floor.
+	x = 6 * SP;
+	for (const fx of [-2, 0, 2]) place("floor__cut_stone", x + fx, 0, 0);
+	place("wall__cut_stone", x - 2, 0.25, 0); place("lattice_wall__sketch", x, 0.25, 0); place("wall__cut_stone", x + 2, 0.25, 0);
+	label("lattice wall (new)", x, 2.9, 0.4);
+	for (let i = 0; i < STATIONS.length; i++) label(STATIONS[i].join("  "), i * SP, 5.0, 0, true);
+}
+
+const viewsEl = document.getElementById("views");
+const VIEW_BTNS = [["all", "All seven"], ...STATIONS.map(([n, t]) => [n, n + " " + t.split(" ")[0]])];
+for (const [id, text] of VIEW_BTNS) {
+	const b = document.createElement("button");
+	b.id = "v_" + id; b.textContent = id === "all" ? text : id; b.title = text;
+	b.setAttribute("aria-label", id === "all" ? text : "Piece " + id);
+	b.onclick = () => show(id);
+	viewsEl.append(b);
+}
+function show(id) {
+	const x = id === "all" ? 3 * SP : (Number(id) - 1) * SP;
+	const at = new THREE.Vector3(x, 1.6, 0);
+	const dir = id === "all" ? new THREE.Vector3(0.05, 0.42, 1) : new THREE.Vector3(0.45, 0.5, 1);
+	camera.position.copy(at).add(dir.normalize().multiplyScalar(id === "all" ? 92 : 14));
+	controls.target.copy(at);
+	const cam = new URLSearchParams(location.search).get("cam");  // test views: ?cam=x,y,z,tx,ty,tz
+	if (cam) { const v = cam.split(",").map(Number); camera.position.set(v[0], v[1], v[2]); controls.target.set(v[3], v[4], v[5]); }
+	for (const [k] of VIEW_BTNS) document.getElementById("v_" + k).setAttribute("aria-pressed", k === id);
+}
+const labelBtn = document.getElementById("labels");
+labelBtn.onclick = () => {
+	const on = labelBtn.getAttribute("aria-pressed") !== "true";
+	labelBtn.setAttribute("aria-pressed", on); labelBtn.textContent = on ? "Labels on" : "Labels off";
+	labelSprites.forEach(s => (s.visible = on));
+};
+
+try {
+	let done = 0;
+	await Promise.all(KEYS.map(async k => {
+		models[k] = await loadModel(`m/${k}.json`);
+		loadingEl.textContent = `Laying out the pieces… ${++done} of ${KEYS.length}`;
+	}));
+	build();
+	const start = location.hash.slice(1);
+	show(STATIONS.some(([n]) => n === start) ? start : "all");
+	loadingEl.hidden = true;
+} catch (err) {
+	loadingEl.textContent = "Couldn't lay out the pieces: " + err.message;
+	console.error(err);
+}
+
+function resize() {
+	const w = stage.clientWidth, h = stage.clientHeight;
+	renderer.setSize(w, h, false);
+	camera.aspect = w / h;
+	camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(stage);
+resize();
+renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
+</script>
