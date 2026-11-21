@@ -521,6 +521,12 @@ func think(delta: float, mgr: Node) -> void:
 					_move(delta, rush.normalized(), charge_speed)
 				else:
 					_move(delta, Vector3.ZERO, 0.0)
+			elif _attack.has("whirl_speed") and target:
+				# The Foreman's whirl (owner, Nov 21: "he should move towards the player, you have to dodge that"):
+				# while it keeps spinning he slides after you at about your walking speed.
+				var after := target.global_position - global_position
+				after.y = 0
+				_move(delta, after.normalized() if after.length() > 0.8 else Vector3.ZERO, float(_attack.whirl_speed))
 			elif not _attack.get("dive", false):
 				_move(delta, Vector3.ZERO, 0.0)
 			if _timer <= 0.0:
@@ -529,8 +535,11 @@ func think(delta: float, mgr: Node) -> void:
 				if _attack.has("follow"):
 					var f: Dictionary = _attack.follow
 					var next := _attack.duplicate()
-					next.tell = f.tell
-					next.damage = f.damage
+					for k in f:  # (tell, damage, and anything else the next blow changes; null = drop it, e.g. a warning sound)
+						if f[k] == null:
+							next.erase(k)
+						elif k != "follow":
+							next[k] = f[k]
 					if f.has("follow"):
 						next.follow = f.follow  # chains like Hall Quake's 3 rings
 					else:
@@ -1231,7 +1240,8 @@ func show_tell(seconds: float, attack_name: String = "", aim: Node3D = null) -> 
 		_charge_len = seconds
 		MonsterModel.set_angry(model, true)
 	if rig:
-		rig.attack(String(atk.get("anim", "1H_Melee_Attack_Chop")), seconds, String(atk.get("parry", "")) == "shield")  # its own swing; the blow lands with the hit
+		rig.attack(String(atk.get("anim", "1H_Melee_Attack_Chop")), seconds, String(atk.get("parry", "")) == "shield",
+			atk.has("whirl_speed"))  # its own swing; the blow lands with the hit (a whirl's next turns: no new wind-up)
 		return
 	# Squash relative to the monster's own size (leaders are bigger than 1).
 	var base: Vector3 = model.get_meta("base_scale", model.scale)

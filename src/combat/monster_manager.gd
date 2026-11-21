@@ -484,7 +484,7 @@ func send_tell(m: Monster, atk: Dictionary) -> void:
 ## A charge (a beetle running into you) knocks you down and shoves you (F234). A spider's pounce is a lunge too, but
 ## a small one: it only bites (owner, Nov 19, F416: "spiders shouldn't knock you down").
 static func is_charge(atk: Dictionary) -> bool:
-	return atk.get("lunge", false) and not atk.get("pounce", false)
+	return atk.get("lunge", false) and not atk.get("pounce", false) and not atk.get("small_lunge", false)  # (a Lost Miner's leap-chop only hits, owner Nov 21)
 
 
 func _heaviest(m: Monster) -> float:

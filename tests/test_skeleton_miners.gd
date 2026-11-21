@@ -221,3 +221,32 @@ func test_pick_glint_comes_before_the_blow() -> void:
 		for atk: Dictionary in Monsters.LIST[kind].attacks:
 			check(float(atk.tell) - CreatureRig.glint_wait(float(atk.tell)) >= 0.4 or CreatureRig.glint_wait(float(atk.tell)) == 0.0,
 				"%s %s: you get the whole warning time after the star" % [kind, atk.name])
+
+
+## Owner, Nov 21 ("a tiny bit harder"): the Foreman's whirl goes on and slides after you (dodge it); the Lost Miners
+## leap in with a fast chop from up to 4 m (no knock-down).
+func test_foreman_whirl_chases_and_lost_miners_leap() -> void:
+	var whirl: Dictionary = Monsters.LIST.foreman.attacks[1]
+	var turns := 1
+	var total: float = whirl.tell
+	var f: Dictionary = whirl.get("follow", {})
+	var last := whirl
+	while not f.is_empty():
+		turns += 1
+		total += float(f.tell)
+		last = f
+		f = f.get("follow", {})
+	check(turns >= 4, "the whirl hits several times (%d)" % turns)
+	check_near(total, 2.97, 0.3, "about 3 s of whirling")
+	check(not whirl.get("knockdown", false) and last.get("knockdown", false), "only the last turn knocks you down")
+	check(float(whirl.follow.whirl_speed) < Dwarf.WALK_SPEED * 1.0 and float(whirl.follow.whirl_speed) > 3.0,
+		"he slides after you a little slower than you walk (run or roll out)")
+	var leap: Dictionary = {}
+	for a: Dictionary in Monsters.LIST.lost_miner.attacks:
+		if a.get("lunge", false):
+			leap = a
+	check(not leap.is_empty(), "the Lost Miner has a leap")
+	check_eq(float(leap.get("reach", 0.0)), 4.0, "from up to 4 m")
+	check(not MonsterManager.is_charge(leap), "a leap only hits: no knock-down or shove like a beetle's charge")
+	for a: Dictionary in Monsters.LIST.tunnel_rat.attacks:
+		check(not a.get("lunge", false), "the small Tunnel Rats stay as they are")

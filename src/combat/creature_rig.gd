@@ -20,7 +20,8 @@ const LOOPS := ["Idle", "Idle_Combat", "2H_Melee_Idle", "Walking_A", "Walking_D_
 const IMPACT := {"1H_Melee_Attack_Chop": 0.57, "1H_Melee_Attack_Stab": 0.40, "2H_Melee_Attack_Chop": 0.72, "2H_Melee_Attack_Spin": 0.8}
 ## How fast each walk or run moves over the ground at normal speed (in the skeleton's own size; measured from the
 ## foot swing). The move plays faster or slower to match how fast the creature really goes.
-const GROUND_SPEED := {"Walking_D_Skeletons": 0.49, "Walking_A": 0.75, "Running_A": 1.52}
+const WHIRL := Vector2(0.62, 1.25)  ## the spinning part of 2H_Melee_Attack_Spin (seconds into the move)
+const GROUND_SPEED :={"Walking_D_Skeletons": 0.49, "Walking_A": 0.75, "Running_A": 1.52}
 const RUN_FROM := 0.55  ## faster than this part of its run speed: the run (owner F464: nearly always running)
 
 var ap: AnimationPlayer
@@ -88,10 +89,22 @@ func rise_time() -> float:
 
 
 ## A swing whose blow lands `tell` seconds from now.
-func attack(clip: String, tell: float, red := false) -> void:
+func attack(clip: String, tell: float, red := false, again := false) -> void:
 	if dead or not ap.has_animation(clip):
 		return
 	lying = false
+	if again and clip.contains("Spin"):
+		# The whirl's next turn (owner, Nov 21): straight back into the spinning part (WHIRL), no new wind-up or spark.
+		var turn := clampf((WHIRL.y - WHIRL.x) / maxf(tell, 0.05), 0.5, 2.5)
+		ap.play(clip, 0.08, turn)
+		ap.seek(WHIRL.x, true)
+		_busy = (ap.get_animation(clip).length - WHIRL.x) / turn
+		_busy_kind = "attack"
+		_walk = ""
+		if hand != null and hand.is_inside_tree():
+			WeaponTrail.follow(hand, tell, TRAIL_BOSS if red else TRAIL, 0.25 / maxf(hand.global_basis.get_scale().y, 0.001),
+				TRAIL_LEN / maxf(hand.global_basis.get_scale().y, 0.001))
+		return
 	var speed := clampf(float(IMPACT.get(clip, 0.5)) / maxf(tell, 0.05), 0.5, 2.5)
 	ap.play(clip, 0.12, speed)
 	_busy = ap.get_animation(clip).length / speed

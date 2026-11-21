@@ -84,7 +84,10 @@ const LIST := {
 		fire = -0.25, frost = 0.75, poison = 1.0, walk = 1.0, run = 2.6, pack = [1, 3], xp = 14,
 		color = Color(0.7, 0.82, 0.78), shape = "lost_miner", recover = 1.2,
 		attacks = [{name = "Frost Pick", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_hiss", tell = 0.9, damage = 14, type = "pierce", reach = 1.8, parry = "any", buildup = {chill = 34}},
-			{name = "Pick Jab", anim = "1H_Melee_Attack_Stab", tell = 0.7, damage = 10, type = "pierce", reach = 1.9, parry = "any", buildup = {chill = 34}}],
+			{name = "Pick Jab", anim = "1H_Melee_Attack_Stab", tell = 0.7, damage = 10, type = "pierce", reach = 1.9, parry = "any", buildup = {chill = 34}},
+			# Owner, Nov 21 ("the bigger ones should lunge forward, quite fast"): from 2-4 m it leaps in with a chop (a
+			# small lunge: it only hits, no knock-down), then stands catching its breath; 4 s before the next.
+			{name = "Leaping Chop", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_hiss", tell = 0.9, damage = 14, type = "pierce", reach = 4.0, parry = "any", lunge = true, small_lunge = true, rest = 4.0, buildup = {chill = 34}}],
 		drops = []},
 	# The end boss with his Lost Miners (F467): a big two-handed chop, and the spin (only a shield parries it, it
 	# knocks you down: step back out of it). Owner, Nov 20: the spin reached far too far and he only ever spun
@@ -96,7 +99,12 @@ const LIST := {
 		fire = 0.0, frost = 0.5, poison = 1.0, walk = 1.4, run = 3.6, pack = [1, 1], xp = 80,
 		color = Color(0.55, 0.5, 0.44), shape = "foreman", recover = 1.6,
 		attacks = [{name = "Great Chop", anim = "2H_Melee_Attack_Chop", warn_sound = "beetle_rumble", tell = 1.0, damage = 26, type = "slash", reach = 2.3, parry = "any"},
-			{name = "Pick Whirl", anim = "2H_Melee_Attack_Spin", warn_sound = "beetle_rumble", tell = 0.97, damage = 32, type = "blunt", reach = 1.8, rest = 7.0, parry = "shield", knockdown = true}],
+			# Owner, Nov 21 ("when he spins he should move towards the player: you have to dodge that"): the whirl now
+			# goes on for 4 more turns (about 3 s in all), sliding after you at 3.8 m/s (you walk 4, run 6.5): every
+			# turn hits (12), the last one hardest (20) and it knocks you down. Roll out or run.
+			{name = "Pick Whirl", anim = "2H_Melee_Attack_Spin", warn_sound = "beetle_rumble", tell = 0.97, damage = 12, type = "blunt", reach = 1.8, rest = 9.0, parry = "shield", knockdown = false,
+				follow = {tell = 0.5, damage = 12, whirl_speed = 3.8, warn_sound = null, follow = {tell = 0.5, damage = 12,
+					follow = {tell = 0.5, damage = 12, follow = {tell = 0.5, damage = 20, knockdown = true}}}}}],
 		drops = []},
 }
 

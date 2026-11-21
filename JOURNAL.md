@@ -7427,3 +7427,18 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - **Owner asked: are all ~500 Mac pieces in the catalogue correctly?** Every decor-night model has exactly one row
   (checked by a script against the model files: 530 + 12 `_empty` twins). The words come from the build files;
   41 "where it goes" cells are marked (guess); nobody looked at all the pictures.
+
+## Nov 21 — Old Pell's Diggings: a tiny bit harder (dungeons chat, F525-F526)
+- **Dungeon test hotbar checked** in a real game run (robot, muted): keys 1-9 show pickaxe, sword, mace, spear,
+  crossbow, great axe, great maul, bandages, torches. Waited my turn for the one-test-game slot (Ruin junk, Spire, me).
+- **Owner:** "make it a tiny bit harder": (1) the Foreman should come at you while he spins, you have to dodge it;
+  (2) the bigger miners should lunge forward, quite fast. Owner picked "long spin, walk speed" and "4 m, fast".
+- **Foreman's whirl:** Pick Whirl now has 4 follow-up turns (attack `follow` chain; a follow can now change any of
+  the attack's fields, null drops one, e.g. the warning sound). While a turn has `whirl_speed` he slides after you
+  (3.8 m/s). Each turn hits 12, the last 20 + knock-down (one knock-down at the end, not a stun-lock). The rig plays
+  only the spinning part (CreatureRig.WHIRL, 0.62-1.25 s) for each next turn: no new wind-up or spark.
+- **Lost Miner's Leaping Chop:** a lunge (2-4 m) marked `small_lunge`, so `MonsterManager.is_charge` says no: it only
+  hits, no beetle-style knock-down and shove. 4 s rest.
+- **Tests:** test_skeleton_miners 11/11 (new test), scripts_load passes. test_monsters failed once on the sword ★75
+  jump-attack check (a Rock Snail, untouched by this); with my files set back it passed, and with them again it
+  passed too (50/50): a random one, not this change. Not yet seen in a real fight: the owner tries it.
