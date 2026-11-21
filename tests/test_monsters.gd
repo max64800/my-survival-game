@@ -88,10 +88,11 @@ func test_sword_damage_and_kill() -> void:
 	var m := _spawn("cave_spider", Vector3(1.2, 0, 0))
 	m.state = Monster.State.CHASE  # it saw us: no sneak bonus
 	var dealt := auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, 0, false)
-	check_eq(dealt, 13, "stone sword light on a cave spider (slash ×1.25): 10 × 1.25 = 12.5 → 13")
-	check_near(m.hp, 11.0, 0.01, "24 - 13 = 11 HP left")
-	auth.monsters.request_attack(1, PackedInt32Array([m.uid]), true, 0, false)
-	check(auth.monsters.monsters.is_empty(), "heavy finishes it")
+	check_eq(dealt, 10, "stone sword light on a cave spider (a plain creature since F532): 10")
+	check_near(m.hp, 20.0, 0.01, "30 - 10 = 20 HP left")
+	auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, 1, false)  # 13 (hit 2: ×1.3)
+	auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, 0, false)  # 10 more: 30 - 33 < 0
+	check(auth.monsters.monsters.is_empty(), "three hits finish it")
 	check(ps.progress.skill_xp.sword >= 5, "Sword XP for the kill")
 	check_eq(ps.progress.kills_of("cave_spider"), 1, "the kill is counted")
 	_teardown()
@@ -123,7 +124,7 @@ func test_crystal_monster_hits_harder_and_drops_crystals() -> void:
 	var p := world.maker.find_floor(player.global_position.x + 1.2, player.global_position.z, player.global_position.y + 2.0)
 	auth.monsters._ev_spawn(uid, "cave_spider", p + Vector3.UP * 0.3, false, 0, "red")
 	var m := auth.monsters.get_monster(uid)
-	check_near(m.hp, 24.0 * 1.4, 0.01, "24 HP × 1.4")
+	check_near(m.hp, 30.0 * 1.4, 0.01, "30 HP × 1.4 (F532)")
 	m.target_peer = 1
 	auth.monsters.send_tell(m, {name = "Bite", tell = 0.0, damage = 6, type = "pierce", reach = 1.3, parry = "any"})
 	auth.monsters._judge_incoming()
@@ -175,9 +176,9 @@ func test_crossbow_shot() -> void:
 		if ps.inventory.get_slot(i).get("id", "") == "crossbow_stone":
 			auth.request_select_slot(1, i)
 	# Aimed stone bolt on a Rock Snail: 34 × pierce 1.0 × 100/120 (armor 20) = 28.3 → 28
-	check_eq(auth.monsters.request_shoot(1, "bolt_stone", true, m.uid, from, m.global_position + Vector3.UP), 28, "aimed shot damage")
+	check_eq(auth.monsters.request_shoot(1, "bolt_stone", true, m.uid, from, m.global_position + Vector3.UP), 34, "aimed shot damage (no snail armor since F532)")
 	check_eq(ps.inventory.count_of("bolt_stone"), 2, "the bolt was used")
-	check_near(m.hp, 82.0, 0.01, "110 - 28")
+	check_near(m.hp, 76.0, 0.01, "110 - 34")
 	auth.monsters.request_shoot(1, "bolt_ember", false, m.uid, from, m.global_position + Vector3.UP)
 	check_near(m.ailments.buildup.burn, 40.0, 0.01, "ember bolt: 40 burn buildup (no fire resist)")
 	check_eq(auth.monsters.request_shoot(1, "bolt_ember", true, m.uid, from, m.global_position), 0, "out of ember bolts")
@@ -297,7 +298,7 @@ func test_pack_leader_boost_ends_when_it_dies() -> void:
 	check(member.boosted, "member near its leader is boosted")
 	check_near(member.damage_mult(), 1.2, 0.001, "+20% damage")
 	check_near(leader.damage_mult(), 1.3, 0.001, "leader itself hits ×1.3")
-	check_near(leader.max_hp(), 60.0, 0.01, "leader has ×2.5 HP")
+	check_near(leader.max_hp(), 75.0, 0.01, "leader has ×2.5 HP (30 × 2.5, F532)")
 	auth.monsters._ev_remove(leader.uid)
 	auth.monsters._update_boosts()
 	check(not member.boosted, "boost gone when the leader is gone")

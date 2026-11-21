@@ -79,8 +79,8 @@ func test_crystal_variants() -> void:
 	check_eq(Monsters.roll_variant("fungal", 0.05, 0.1), "green", "jungle: green is the most common crystal")
 	check_eq(Monsters.roll_variant("mossy", 0.03, 0.1), "red", "mossy: red first")
 	check_eq(Monsters.roll_variant("mossy", 0.05, 0.1), "", "mossy chance is 4%")
-	check_near(Monsters.max_hp("great_rock_beetle", false, "green"), 220.0 * 1.4, 0.01, "variants have 40% more health")
-	check_eq(Monsters.target_stats("great_rock_beetle", false, "amber").armor, 45 + 30, "amber skin: +30 armor")
+	check_near(Monsters.max_hp("great_rock_beetle", false, "green"), 240.0 * 1.4, 0.01, "variants have 40% more health")
+	check_eq(Monsters.target_stats("great_rock_beetle", false, "amber").armor, 40 + 40, "amber skin: +40 armor (F532)")
 	for v in Monsters.VARIANTS:
 		check(Items.exists(Monsters.VARIANTS[v].crystal), "%s drops a real crystal" % v)
 	var model := MonsterModel.build("rock_beetle", Color.GRAY, 1.0, false)

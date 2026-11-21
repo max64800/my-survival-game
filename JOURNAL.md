@@ -7322,6 +7322,13 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   lowers damage per second (the finishers are the slow swings), it takes away the payoff. F532 (weak spots, armor,
   armor-piercing, enemy and boss health) is a plan shown to the owner first. Hurdle: test_bats_stay_under_the_ceiling
   failed once in the monsters run: another chat is changing the creatures' flying right now, not this chat's code.
+- **Owner, later (chat 16): F532 balance plan OK'd and built** (Monsters: weak spots in 3 steps 0.75/1/1.25, armor
+  only on elites and bosses, Monsters.rank and PARTY_HP: +30%/+50%/+75% health per extra player; Combat: spear 40% and
+  crossbow 50% armor piercing, the maces' 30% gone and 25% more stun; Foreman 450 hp, 50 armor). Owner: "we do not have
+  a tunnel rat": the dungeon list still has one, left untouched (asked). Old tests checked the old numbers (spider,
+  snail armor, leader, amber, Foreman 294, the doc's mace example): updated to the new plan. Not from this chat:
+  test_dungeon_junk (a junk axe head in a room) and earlier test_bats_stay_under_the_ceiling (other chats' work).
+  Not done: creatures already out when a friend joins keep their old health (new ones get the new).
 
 ## Nov 21, 2026 (Mac, gems chat): status badges, test findings, pull and handover
 - **Status badges** (owner: simple circles with a ring that runs down like a timer): round badges above the health

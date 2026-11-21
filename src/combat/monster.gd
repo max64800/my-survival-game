@@ -100,7 +100,7 @@ func setup(p_uid: int, p_kind: String, p_leader: bool, p_home: Vector3, p_varian
 	home = p_home
 	data = Monsters.info(kind)
 	variant = p_variant if Monsters.VARIANTS.has(p_variant) and not data.get("no_variant", false) else ""
-	hp = Monsters.max_hp(kind, leader, variant)
+	hp = Monsters.max_hp(kind, leader, variant, Monsters.party())  # (more players: more health, F532)
 	stun = StunMeter.new(data.stun * (Monsters.LEADER.stun if leader else 1.0) * (Monsters.VARIANT_STATS.stun if variant != "" else 1.0), 3.0)
 	state = State.SLEEP if data.get("sleeps", false) else State.IDLE
 	_timer = randf_range(3.0, 8.0)
@@ -267,7 +267,7 @@ func die_visual(statue := -1) -> void:
 
 
 func max_hp() -> float:
-	return Monsters.max_hp(kind, leader, variant)
+	return Monsters.max_hp(kind, leader, variant, Monsters.party())
 
 
 ## Numbers for damage math.

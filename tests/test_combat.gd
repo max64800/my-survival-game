@@ -6,8 +6,9 @@ const STONE_40 := {armor = 40, slash = 0.5, blunt = 1.5, pierce = 0.75, fire = 0
 
 
 func test_doc_example_copper_mace_on_stone() -> void:
-	# Doc 2.2: Copper mace heavy on a 40-armor stone creature = 38.
-	check_eq(Combat.damage("mace", true, 1, STONE_40), 38, "copper mace heavy vs stone")
+	# Doc 2.2: Copper mace heavy on a 40-armor stone creature = 38; 35 since F532 (chat 16: armor piercing moved from
+	# the mace to the spear and crossbow).
+	check_eq(Combat.damage("mace", true, 1, STONE_40), 35, "copper mace heavy vs stone")
 
 
 func test_doc_example_copper_sword_on_stone() -> void:
@@ -78,6 +79,26 @@ func test_hit_number_colour_follows_the_damage_type() -> void:
 	check_eq(Combat.effect("slash", beetle), -1, "slash on a beetle: grey")
 	check_eq(Combat.effect("pierce", beetle), 0, "pierce: white")
 	check_eq(Combat.effect("blunt", beetle), 1, "blunt: yellow")
+
+
+## F532 (owner, chat 16): armor only on elites and bosses; more health per extra player (boss 75%, elite 50%, the
+## rest 30%); the spear and crossbow pierce armor, the mace stuns more instead.
+func test_balance_plan_f532() -> void:
+	check_eq(Monsters.rank("cave_spider", false), "normal", "a spider is normal")
+	check_eq(Monsters.rank("cave_spider", true), "elite", "a pack leader is an elite")
+	check_eq(Monsters.rank("cave_spider", false, "red"), "elite", "a crested one is an elite")
+	check_eq(Monsters.rank("great_rock_beetle", false), "elite", "the Great Rock Beetle is an elite")
+	check_eq(Monsters.rank("foreman", false), "boss", "the Foreman is a boss")
+	for id in ["cave_bat", "cave_spider", "rock_snail", "rock_beetle", "lost_miner"]:
+		check_eq(Monsters.target_stats(id, false).armor, 0.0, "%s: no armor" % id)
+	check(Monsters.target_stats("foreman", false).armor > 0.0, "the boss wears armor")
+	check_near(Monsters.max_hp("rock_beetle", false, "", 2), 100.0 * 1.3, 0.01, "normal: +30% with 2 players")
+	check_near(Monsters.max_hp("great_rock_beetle", false, "", 3), 240.0 * 2.0, 0.01, "elite: +50% per extra player")
+	check_near(Monsters.max_hp("foreman", false, "", 4), 450.0 * 3.25, 0.01, "boss: +75% per extra player")
+	var plated := {armor = 50}
+	check(Combat.damage("spear", false, 1, plated) > Combat.damage("sword", false, 1, plated) * 1.05, "the spear goes through armor")
+	check(Combat.shot_damage(false, 1, "bolt_stone", plated, 5.0) > Combat.shot_damage(false, 1, "bolt_stone", {}, 5.0) * 0.75, "bolts pierce armor")
+	check(Combat.stun_value("mace", false, 1) > Combat.stun_value("sword", false, 1) * 2.0, "the mace stuns most")
 
 
 func test_elemental_skips_armor() -> void:

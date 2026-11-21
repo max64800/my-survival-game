@@ -448,7 +448,7 @@ func test_lampwick_creatures_follow_you_out() -> void:
 
 func test_the_foreman_is_weaker_and_smashes_stone() -> void:
 	var boss: Dictionary = Monsters.LIST.foreman
-	check(boss.hp <= 300, "30%% less health (%d)" % boss.hp)
+	check_eq(boss.hp, 450, "the owner's balance plan (F532, chat 16): 450 health and 50 armor (Nov 20 had cut it to 294)")
 	check(boss.get("smashes_statues", false), "his swings break fallen miners' stone")
 
 
