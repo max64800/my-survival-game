@@ -396,9 +396,9 @@ for x, z, y, m in [(42.4, 43.4, 7.0, "trap_drip_fat"), (34.0, 48.6, 3.5, "trap_d
 # --- 4b. Decor from the decor catalogue (docs/art/DECOR-CATALOG.md, Nov 22): every piece in its own room and spot, off
 # the walk lines and rails, clear of doors, chests, traps and the wall lamps (tools/dungeons/decor.py;
 # tests/test_dungeon_decor.gd). Every lw_ piece is in (owner, Nov 22: the rules are fluid: lit, rails and stains are
-# fine). Still left out: cage_floor_open (straw), table_overturned (puddle), last_meal (food); no room (small rooms,
-# traps, props): the second skull spike, a second lantern post, Pell's carving (it has its own place in Old Pell's
-# Diggings), the skeleton with his note, barrel_smashed.
+# fine). The leftovers are in too, some in other rooms than the catalogue's (the skeleton, his last meal and the
+# overturned table in the Miners' Rest, the smashed barrel in the Office). Still left out (no room anywhere):
+# cage_floor_open, a second lantern post, Pell's carving (it has its own place in Old Pell's Diggings).
 import decor  # noqa: E402
 import junk  # noqa: E402
 
@@ -471,6 +471,13 @@ DECOR = [
 	("lw_walkway_ladder", "cart_junction", decor.mid(_d("lw_walkway_ladder"), 21.43, 20.1, 270.0)),
 	("lw_lamp_fallen_spill", "bat_gallery", decor.mid(_d("lw_lamp_fallen_spill"), 20.1, 5.2, 90.0)),
 	("lw_broken_lamp_rack", "office", decor.mid(_d("lw_broken_lamp_rack"), 39.9, 19.6, 0.0)),
+	# the leftovers (owner, Nov 22: the rules are fluid). The Copper Face is full, so the dead miner sits in the
+	# Miners' Rest by the healing basin, his last meal beside him; the smashed barrel went to the Foreman's Office
+	("skeleton_with_note", "miners_rest", decor.mid(_d("skeleton_with_note"), 37.21, 11.5, 270.0)),
+	("last_meal", "miners_rest", decor.mid(_d("last_meal"), 36.3, 11.9, 0.0)),
+	("table_overturned", "miners_rest", decor.mid(_d("table_overturned"), 35.3, 15.19, 180.0)),
+	("skull_spike", "bat_gallery", decor.mid(_d("skull_spike"), 23.6, 7.62, 180.0)),
+	("barrel_smashed", "office", decor.mid(_d("barrel_smashed"), 44.1, 20.8, 0.0)),
 ]
 _DFLOOR = {"cart_junction": UP}   # (the signal board hangs on the landing, at the top of the rails)
 _dfloor = lambda g: _DFLOOR.get(g, SP[g][5] if g in SP else 0.0)
