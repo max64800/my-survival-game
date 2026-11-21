@@ -231,9 +231,13 @@ func _ready() -> void:
 	# recorder copies this log and not a test robot's (they all write to the same log folder).
 	add_child(FreezeWatch.new())
 	add_child(NanWatch.new())  # writes the first "broken number" things to the log (Claude, Nov 19)
-	if not Controls.robot:
+	# A game Claude starts to test something (claude=... / muted) is never the owner's play log (owner, Nov 21),
+	# or the recorder could copy a Claude test instead of the owner's real session.
+	if not Controls.robot and not ClaudeTest.active():
 		print("PLAYER GAME (not a robot) started ", Time.get_datetime_string_from_system())
 		FreezeWatch.open_player_file()
+	elif ClaudeTest.active():
+		print("CLAUDE TEST GAME (not the owner's) started ", Time.get_datetime_string_from_system())
 	if Controls.robot:
 		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_NO_FOCUS, true)
 	if debug_script != "":
