@@ -147,6 +147,10 @@ func test_dungeon_and_ruin_plans() -> void:
 	_setup()
 	auth.loot_props.place_ruin("7", {name = "tower", origin = Vector3(10, 2, 5), turn = 1}, plan)
 	check(auth.loot_props.props.has("r:7:1"), "a ruin's lootable prop is placed, keyed by the ruin and its index")
+	var jk: Array = auth.loot_props.props.keys().filter(func(k): return String(k).begins_with("r:7:j"))
+	check_eq(jk.size(), 1, "the tower's lootable catalogue piece (its junk list) is placed too")
+	if jk.size() == 1:
+		check(String(auth.loot_props.props[jk[0]].model).ends_with("rt_arrow_crate_spill.glb"), "the bolt crate")
 	var t: Transform3D = auth.loot_props.props["r:7:1"].xform
 	check(t.origin.distance_to(Vector3(10, 2, 5) + Basis(Vector3.UP, PI / 2.0) * Vector3(4, 0, 2)) < 0.01, "turned with the ruin")
 	player.global_position = t.origin

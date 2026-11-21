@@ -14,7 +14,12 @@ const STAIR_CLEAR := 0.9  # (the tool keeps 1.0)
 const PATH_CLEAR := 0.9   # from the path out of the door / gateway (the tool keeps 1.0)
 const FREE_CLEAR := 0.9   # the free-standing camp's middle from every building piece (the tool keeps 1.0 for every corner)
 ## The way in, in each ruin's frame: from just inside the door (gateway) straight out.
-const PATHS := {"tower": [Vector2(0.0, 3.0), Vector2(0.0, 12.0)], "outpost": [Vector2(-0.27, 13.0), Vector2(-0.27, 25.0)]}
+const PATHS := {"tower": [Vector2(0.0, 3.0), Vector2(0.0, 12.0)], "outpost": [Vector2(-0.27, 13.0), Vector2(-0.27, 25.0)],
+	"brewhall": [Vector2(-5.0, 5.5), Vector2(-5.0, 14.0)], "spire": [Vector2(0.0, 3.0), Vector2(0.0, 12.0)]}
+## The catalogue decor ("cat", owner Nov 21: "the rules are fluid") stands free in the room, not hugging a wall, and keeps
+## less room: this much from a doorway's middle (the gateway: 1.8), stairs 0.5 (the tool: from the piece's outline).
+const DECOR_DOOR := 1.2
+const DECOR_STAIR := 0.4
 
 
 func _ruins() -> Array:
@@ -45,7 +50,7 @@ static func _poly_dist(q: Vector2, poly: PackedVector2Array) -> float:
 	return d
 
 
-func test_both_ruins_have_junk() -> void:
+func test_ruins_have_junk() -> void:
 	for r in _ruins():
 		var junk: Array = r[2]
 		check(junk.size() >= 10, "%s: some junk (got %d)" % [r[0], junk.size()])
@@ -65,7 +70,9 @@ func test_ruin_junk_keeps_off_the_ruin() -> void:
 		var pieces: Array = plan.pieces.filter(func(p): return Pieces.LIST.has(String(p.id)))
 		for j in r[2]:
 			var at := Vector2(float(j.pos[0]), float(j.pos[2]))
-			var y := float(j.pos[1])
+			var y := float(j.pos[1]) - float(j.get("hung", 0.0))  # (a hung piece: the floor under it)
+			var cat := bool(j.get("cat", false))
+			var gap: bool = cat and j.ground and j.inside and float(j.pos[1]) == 0.0 and r[0] == "outpost" and 				(absf(at.x) > 13.0 or absf(at.y) > 13.0)  # (a palisade or gate bar filling a breach in the curtain)
 			var tag := "%s: %s at %s" % [r[0], j.model, at]
 			var on_floor := false
 			var near_wall := INF
@@ -77,28 +84,29 @@ func test_ruin_junk_keeps_off_the_ruin() -> void:
 				var fp := _fp(p)
 				var group: String = Pieces.LIST[id].get("group", "")
 				if id in ["stairs", "foundation_steps"]:
-					check(not (lo - 0.3 < y and y < hi + 0.3 and Geometry2D.is_point_in_polygon(at, _fp(p, STAIR_CLEAR))), tag + ": clear of the %s" % id)
+					check(not (lo - 0.3 < y and y < hi + 0.3 and Geometry2D.is_point_in_polygon(at, _fp(p, DECOR_STAIR if cat else STAIR_CLEAR))),
+						tag + ": clear of the %s" % id)
 					continue
 				if group in ["floor", "foundation"] and absf(hi - y) < 0.06 and Geometry2D.is_point_in_polygon(at, fp):
 					on_floor = true
 					continue
-				if hi > y + 0.05 and lo < y + 0.3:
+				if hi > y + 0.05 and lo < y + 0.3 and not gap:
 					check(not Geometry2D.is_point_in_polygon(at, _fp(p, 0.05)), tag + ": not inside a %s" % id)
 				if hi > y + 0.05:
 					near_piece = minf(near_piece, _poly_dist(at, fp))
 				if id == "doorway" and absf(lo - y) < 1.0:
-					check(at.distance_to(Vector2(p.pos[0], p.pos[2])) >= DOOR_CLEAR, tag + ": off the doorway")
+					check(at.distance_to(Vector2(p.pos[0], p.pos[2])) >= (DECOR_DOOR if cat else DOOR_CLEAR), tag + ": off the doorway")
 				if id == "gateway" and absf(lo - y) < 1.0:
-					check(at.distance_to(Vector2(p.pos[0], p.pos[2])) >= GATE_CLEAR, tag + ": off the gateway")
+					check(at.distance_to(Vector2(p.pos[0], p.pos[2])) >= GATE_CLEAR * (0.6 if cat else 1.0), tag + ": off the gateway")
 				if id in HUG and lo - y > -0.1 and lo - y <= 0.35:
 					near_wall = minf(near_wall, _poly_dist(at, fp))
 				if j.ground and group == "foundation" and lo < 0.1:
 					near_wall = minf(near_wall, _poly_dist(at, fp))
-			check(on_floor != bool(j.ground), tag + (": on the ground (no floor piece under it)" if j.ground else ": on a floor piece"))
+			check(on_floor != bool(j.ground) or gap, tag + (": on the ground (no floor piece under it)" if j.ground else ": on a floor piece"))
 			if j.get("free", false):
 				check(j.ground and not j.inside, tag + ": the camp stands outside, on the ground")
 				check(near_piece >= FREE_CLEAR, tag + ": the camp keeps clear of the ruin (%.2f m)" % near_piece)
-			else:
+			elif not cat:
 				check(near_wall <= NEAR_WALL, tag + ": hugs a wall (%.2f m)" % near_wall)
 			for c in plan.get("chests", []):
 				if absf(float(c.pos[1]) - y) < 1.0:
@@ -106,11 +114,11 @@ func test_ruin_junk_keeps_off_the_ruin() -> void:
 
 
 func test_ruin_junk_keeps_off_the_way_in() -> void:
-	var tower := RuinTower.new(null)
-	var outpost := RuinOutpost.new(null)
+	var kinds := {"tower": RuinTower.new(null), "outpost": RuinOutpost.new(null), "brewhall": RuinBrewhall.new(null),
+		"spire": RuinSpire.new(null)}
 	for r in _ruins():
 		var n: String = r[0]
-		var spots: Array[Vector2] = (tower if n == "tower" else outpost)._chest_spots(float(r[1].get("radius", 4.2)))
+		var spots: Array[Vector2] = (kinds[n] as RuinTower)._chest_spots(float(r[1].get("radius", 4.2)))
 		var path: Array = PATHS[n]
 		for j in r[2]:
 			if not j.ground:
@@ -119,8 +127,8 @@ func test_ruin_junk_keeps_off_the_way_in() -> void:
 			check(_seg_dist(at, path[0], path[1]) >= PATH_CLEAR, "%s: %s at %s off the way in" % [n, j.model, at])
 			for s in spots:
 				check(at.distance_to(s) >= THING_CLEAR, "%s: %s at %s clear of the Rebuilding Chest spot %s" % [n, j.model, at, s])
-	tower.free()
-	outpost.free()
+	for k in kinds:
+		(kinds[k] as Node).free()
 
 
 ## The junk inside goes when the ruin is being rebuilt; the junk outside stays.
@@ -135,3 +143,32 @@ func test_rebuilt_ruin_drops_its_inside_junk() -> void:
 	check_eq(rj.count, 1, "only the outside junk once it is rebuilt")
 	rj.free()
 
+
+
+## The catalogue pieces (owner, Nov 21: "Brewhall and Spire: nothing; Outpost and Watchtower: 2 props each"): every
+## ruin's own pieces are in its list, on each floor, and the lootable ones are left to LootProps (searchable).
+func test_ruins_have_their_catalogue_decor() -> void:
+	var prefix := {"tower": "rt_", "outpost": "ro_", "brewhall": "rb_", "spire": "rs_"}
+	for r in _ruins():
+		var n: String = r[0]
+		var cat: Array = r[2].filter(func(j): return j.get("cat", false))
+		check(cat.size() >= 10, "%s: catalogue decor (got %d)" % [n, cat.size()])
+		var floors := {}
+		for j in cat:
+			check(String(j.model).get_file().begins_with(prefix[n]), "%s: %s is its own catalogue piece" % [n, j.model])
+			if not j.ground:
+				floors[snappedf(float(j.pos[1]) - float(j.get("hung", 0.0)), 0.25)] = true
+			if j.get("loot", false):
+				check(LootProps.LOOT.has(LootProps.model_id(String(j.model))), "%s: %s is lootable" % [n, j.model])
+		check(floors.size() >= (1 if n == "outpost" else 2), "%s: decor on its floors (%s)" % [n, floors.keys()])
+		check(cat.any(func(j): return not j.inside), "%s: a piece out on the ground" % n)
+	for n in ["tower", "outpost"]:
+		check(RuinJunk.load_list(n).any(func(j): return j.get("loot", false)), "%s: a lootable piece" % n)
+
+
+## Old saves get the decor too: junk from before it (no "jv") is made again, once.
+func test_old_ruin_junk_is_made_again() -> void:
+	check(RuinJunk.needs_junk({name = "spire"}), "a new ruin gets junk")
+	check(RuinJunk.needs_junk({name = "tower", junk = []}), "a tower saved before the decor gets it made again")
+	check(not RuinJunk.needs_junk({name = "tower", junk = [], jv = RuinJunk.JUNK_V}), "...but only once")
+	check(not RuinJunk.needs_junk({name = "kiln"}), "the kiln has no junk list")

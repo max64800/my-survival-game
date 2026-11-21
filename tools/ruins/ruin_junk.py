@@ -8,13 +8,22 @@
 #   (where the Rebuilding Chest stands); never inside a building piece.
 #   The ruin camp (owner's pick, step 3): one cold campfire standing free on the bare ground outside, a bedroll (feet
 #   to the fire) and a cook pot beside it, all at least FREE_CLEAR from every building piece ("free" in the list).
-# Run: python tools/ruins/ruin_junk.py   (both ruins)
-import json, math, random, re, sys
+# Decor (owner, Nov 21: "fill the ruins with props and junk, like the dungeons"): the ruin pieces of the decor
+#   catalogue (docs/art/DECOR-CATALOG.md, "## Ruined Tower" .. "## Lantern Spire") go in FIRST, each searched for
+#   outward from the spot the catalogue gives (DECOR below) and checked with the same rules as junk (floor under every
+#   corner, not inside a piece, off stairs, doorways, chests and walk lines). The owner: "if you think it works, place
+#   it", so a piece with no free spot is left out and printed. Decor is written into the same junk file with "cat": true
+#   (tests/test_ruin_decor.gd); "loot": true ones (a bolt crate, a crossbow rack) are placed by LootProps instead.
+#   Then junk fills round it: one of each kind per floor (candles, plates and pots may repeat), as full as it fits.
+# Run: python tools/ruins/ruin_junk.py [ruin ...]   (every ruin)
+import json
+import os, math, random, re, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tools/dungeons"))
-from junk import model_of, CLUSTER, corners, part_at, seg_dist  # noqa: E402
+from junk import model_of, CLUSTER, corners, part_at, seg_dist, size  # noqa: E402
+from decor import _origin, rect_dist  # noqa: E402
 from glb_bounds import bounds  # noqa: E402
 
 FLOOR_LIFT = 0.01    # junk stands 1 cm over the floor piece's top (no shimmer)
@@ -27,6 +36,9 @@ STAIR_CLEAR = 1.0    # stairs and foundation steps: their outline grown this muc
 PATH_CLEAR = 1.0     # a walk line: the junk's middle stays this far away...
 PATH_EDGE = 0.6      # ...and no corner closer than this
 JUNK_GAP = 0.25      # junk to junk, edge to edge
+DECOR_STAIR = 0.5    # decor: from stairs' outline (owner, Nov 21: the rules are fluid; the steps themselves stay free)
+DECOR_DOOR = 0.6     # decor: a doorway's clearance times this, from the piece's outline (1.2 m; the gateway 1.8 m)
+DECOR_EDGE = 0.12    # decor: its corners may hang this far past a floor's edge (a round tower's bent walls)
 FREE_CLEAR = 1.0     # the free-standing camp: every corner this far from every building piece
 CAMP = [("campfire_cold", 0.0, 0.0), ("bedroll_rotten", 1.35, 0.0), ("cookpot_tipped", 1.0, 105.0)]  # (dist, angle)
 HUG = {"wall", "wall_narrow", "half_wall", "window_wall", "window_wide", "ruin_wall_worn", "ruin_wall_collapsed"}
@@ -54,7 +66,8 @@ RUINS = {
 		"out_reach": 22.0,
 		"camp_reach": 26.0,
 		"out_want": (7, 10),
-		"yard_want": (9, 12),
+		"yard_want": (14, 18),
+		"wall_box": 14.0,                        # decor inside the curtain walls goes when it is rebuilt
 		# The way in through the gateway, and the Rebuilding Chest's spots (RuinOutpost._chest_spots)
 		"paths": [[(-0.27, 13.0), (-0.27, 25.0)]],
 		"keep": [(7.0, 17.2), (-7.0, 17.2), (7.0, 18.6), (-7.0, 18.6), (2.2, 19.2), (-2.2, 19.2)],
@@ -64,6 +77,100 @@ RUINS = {
 		"out_pool": ["rubble_wood", "beam_snapped", "rags", "shield_wood", "spear_broken", "bones", "crate_stack",
 			"timber_stack", "keg", "helmet", "armour_pile", "torch_dropped"],
 	},
+	"brewhall_ruin": {
+		"seed": 331,
+		"yard": False,
+		"out_reach": 13.0,
+		"camp_reach": 17.0,
+		"out_want": (6, 8),
+		# The way in to the front door's steps, and the Rebuilding Chest's spots (RuinBrewhall._chest_spots)
+		"paths": [[(-5.0, 5.5), (-5.0, 14.0)]],
+		"keep": [(-2.6, 6.6), (-7.4, 6.6), (-2.6, 7.8), (-7.4, 7.8), (0.4, 6.8), (-1.2, 8.4)],
+		"pool": ["helmet", "rags", "lantern", "meal", "candles", "grain_sacks", "bones", "scrap", "rubble_wood", "keg",
+			"crate_stack", "bedroll_rotten", "torch_dropped", "cookpot_tipped", "shield_wood", "beam_snapped"],
+		"out_pool": ["rubble_wood", "beam_snapped", "rags", "bones", "crate_stack", "timber_stack", "keg", "torch_dropped",
+			"grain_sacks"],
+	},
+	"spire_ruin": {
+		"seed": 612,
+		"yard": False,
+		"out_reach": 10.0,
+		"camp_reach": 15.0,
+		"out_want": (5, 7),
+		"paths": [[(0.0, 3.0), (0.0, 12.0)]],
+		"keep": [(-3.4, 5.8), (-3.4, 7.2), (-4.6, 5.0), (-2.8, 8.4), (3.4, 5.8), (3.4, 7.2)],
+		"pool": ["helmet", "rags", "lantern", "meal", "candles", "bones", "scrap", "spear_broken", "torch_dropped",
+			"cookpot_tipped", "grain_sacks", "bedroll_rotten", "shield_wood"],
+		"out_pool": ["rubble_wood", "beam_snapped", "rags", "bones", "crate_stack", "timber_stack", "torch_dropped",
+			"helmet"],
+	},
+}
+REPEAT = {"candles", "meal", "cookpot_tipped"}   # (owner: one of each kind per room; candles and pots may repeat)
+
+# The catalogue's ruin decor: (id, floor top y, how it stands, hint x, hint z, extras). Spots are in the ruin's own
+# frame (x right, z toward the door). "wall": back to the nearest wall to the hint ("up": hung this high); "mid": free
+# standing near the hint ("yaw"); "ground": outside on the bare ground near the hint ("yaw"); "gap": exactly there,
+# filling a breach in a wall. "n": how many (each spot searched on its own, from its hint).
+DECOR = {
+	"watchtower_ruin": [
+		("rt_water_cistern", 0.0, "ground", -4.6, -3.0, {"yaw": 300}),
+		("rt_stair_landing_broken", 0.0, "ground", 4.4, -3.6, {"yaw": 30}),
+		("rt_weapon_rack", 3.25, "wall", 0.0, -3.4, {}),
+		("rt_arrow_crate_spill", 3.25, "mid", 0.4, 0.6, {"yaw": 0, "loot": True}),
+		("rt_arrow_slit_shutter", 3.25, "wall", 3.2, 0.6, {}),
+		("rt_watch_table_map", 5.5, "mid", 0.0, -0.4, {"yaw": 90}),
+		("rt_map_tube_rack", 5.5, "wall", -1.8, 3.0, {}),
+		("rt_watch_roster_slab", 5.5, "wall", -1.0, -3.4, {"up": 0.5}),
+		("rt_watch_hooks", 5.5, "wall", 3.2, 1.6, {"up": 1.0}),
+		("rt_arrow_slit_shutter", 5.5, "wall", -3.2, 0.4, {}),
+		("rt_lookout_brazier", 7.75, "mid", 0.0, 1.4, {"yaw": 0}),
+		("rt_signal_mirror_stand", 7.75, "mid", -1.2, 2.6, {"yaw": 0}),
+		("rt_fallen_bell", 0.0, "ground", 0.6, -5.6, {"yaw": 20}),
+	],
+	"outpost_ruin": [
+		("ro_gate_bar_brackets", 0.0, "gap", -14.0, 1.0, {"yaw": 90}),
+		("ro_palisade_section", 0.0, "gap", 3.0, -14.0, {"yaw": 0}),
+		("ro_palisade_section", 0.0, "gap", 14.73, 5.0, {"yaw": 270}),
+		("ro_flag_pole", 0.0, "ground", 0.0, 0.0, {"yaw": 0}),
+		("ro_camp_cookery", 0.0, "ground", -4.0, -5.0, {"yaw": 0}),
+		("ro_stake_bundle", 0.0, "ground", -11.0, 3.0, {"yaw": 90}),
+		("ro_duty_board", 0.0, "ground", 4.6, 9.9, {"yaw": 180}),
+		("ro_ladder_platform", 0.0, "ground", 11.5, 7.0, {"yaw": 270}),
+		("ro_archery_bale", 0.0, "ground", -9.0, 4.0, {"yaw": 0}),
+		("ro_archery_bale", 0.0, "ground", -7.0, 4.0, {"yaw": 0}),
+		("ro_armour_bench", 0.25, "wall", 13.4, 1.3, {}),
+		("ro_quiver_rack", 0.25, "wall", 13.4, -1.5, {"up": 0.4, "loot": True}),
+		("ro_supply_cart", 0.0, "ground", -6.5, 17.5, {"yaw": 0}),
+		("ro_gate_wing_broken", 0.0, "ground", 4.5, 18.5, {"yaw": 30}),
+	],
+	"brewhall_ruin": [
+		("rb_brew_kettle", 1.0, "wall", 5.5, -4.0, {}),
+		("rb_recipe_board", 1.0, "wall", 1.0, -5.6, {}),
+		("rb_mash_tun", 1.0, "mid", -3.6, 2.2, {"yaw": 0}),
+		("rb_fermenting_vats", 1.0, "wall", -7.6, 1.6, {}),
+		("rb_grain_quern", 1.0, "wall", -0.6, -1.0, {}),
+		("rb_horn_wall", 1.0, "wall", -7.6, -1.4, {"up": 1.0}),
+		("rb_feast_table_broken", 1.0, "mid", -2.0, -0.4, {"yaw": 90}),
+		("rb_drying_rack", 3.25, "wall", -2.6, 3.6, {}),
+		("rb_cask_bay", 3.25, "wall", -7.4, 0.0, {"reach": 8.0}),
+		("rb_vat_burst", 0.0, "ground", 4.2, 0.2, {"yaw": 0}),
+		("rb_cooper_bench", 0.0, "ground", 2.4, 3.0, {"yaw": 0}),
+		("rb_cask_rolled", 0.0, "ground", 2.5, 7.5, {"yaw": 90}),
+	],
+	"spire_ruin": [
+		("rs_keeper_log_desk", 1.0, "wall", -1.8, 3.0, {}),
+		("rs_oil_hoist", 0.0, "ground", -4.8, -1.0, {"yaw": 270}),
+		("rs_oil_jar_stand", 1.0, "wall", -2.0, -3.0, {}),
+		("rs_chimney_rack", 1.0, "wall", 1.8, 3.0, {}),
+		("rs_lens_workbench", 3.25, "wall", -3.4, 1.0, {}),
+		("rs_wick_board", 3.25, "wall", -1.6, 3.2, {}),
+		("rs_reflector_plates", 3.25, "wall", 0.0, -3.4, {}),
+		("rs_great_lens_cradle", 3.25, "mid", 0.8, 1.2, {"yaw": 0}),
+		("rs_keeper_last_watch", 3.25, "wall", 0.0, 3.0, {}),
+		("rs_signal_shutters", 0.0, "ground", 7.0, 9.6, {"yaw": 200}),
+		("rs_lantern_cage_fallen", 0.0, "ground", 13.4, 9.4, {"yaw": 30}),
+		("rs_lens_shattered", 0.0, "ground", 14.6, 3.4, {"yaw": 0}),
+	],
 }
 
 
@@ -110,6 +217,16 @@ def footprint(p, grow=0.0):
 	for (x, z) in outline(p["id"], grow):
 		w = turn(x, z, yaw)
 		out.append((p["pos"][0] + w[0], p["pos"][2] + w[1]))
+	return out
+
+
+def grow_by(poly, g):
+	"""A convex outline grown outward by about g (from its middle)."""
+	mx, mz = sum(c[0] for c in poly) / len(poly), sum(c[1] for c in poly) / len(poly)
+	out = []
+	for (x, z) in poly:
+		d = math.hypot(x - mx, z - mz) or 1.0
+		out.append((x + (x - mx) / d * g, z + (z - mz) / d * g))
 	return out
 
 
@@ -184,7 +301,7 @@ def make(name):
 		elif PIECES[p["id"]]["group"] == "foundation" and p["id"] not in STAIRS:
 			fp = p["fp"]
 			for i in range(len(fp)):
-				edges.append((fp[i], fp[(i + 1) % len(fp)], 0.0, -1.0))   # (outside, on the ground only)
+				edges.append((fp[i], fp[(i + 1) % len(fp)], 0.0, None))   # (outside, on the ground only)
 
 	# Walk lines at each level: between every two openings (doorways, the gateway, stairs, foundation steps).
 	def openings_at(y):
@@ -203,46 +320,68 @@ def make(name):
 	chests = [(c["pos"][0], c["pos"][1], c["pos"][2]) for c in plan.get("chests", [])]
 	torches = [tuple(t) for t in plan.get("torches", [])]
 
-	def free(parts_at, y, kind):
-		"""parts_at: [(model, corners)]. None, or the parts' (x, z, radius)."""
+	why = {}
+
+	def _no(r):
+		why[r] = why.get(r, 0) + 1
+		why["last"] = r
+		return None
+
+	def free(parts_at, y, kind, up=0.0, solo=False, stair=STAIR_CLEAR, edge=0.0, yard_lines=True):
+		"""parts_at: [(model, corners)]. None, or the parts' (x, z, radius). up: a hung piece's bottom over the floor
+		(it skips the walk lines, chests and torches: you walk under it). solo: a decor piece (checked against the
+		other decor by its real outline, in place_decor, instead of by circles). Decor (owner: "if you think it works")
+		keeps DECOR_STAIR from stairs, may hang `edge` over a floor's edge, and on the bare ground (yard_lines False)
+		keeps off only the way in, not every door-to-door line across the yard."""
 		out = []
+		if why is not None:
+			why["last"] = None
 		for model, cs in parts_at:
 			px, pz = sum(c[0] for c in cs) / 4, sum(c[1] for c in cs) / 4
 			rad = max(math.hypot(c[0] - px, c[1] - pz) for c in cs)
-			for pt in cs + [(px, pz)]:
+			for pt in grow_by(cs, -edge) + [(px, pz)]:
 				if level_of(pt, y) != kind:
-					return None
-			top = y + max(height(model), 0.3)
+					return _no('floor')
+			low = y + up
+			top = low + max(height(model), 0.3)
 			for p in pieces:
 				if kind == "piece" and p in supports and abs(p["top"] - y) < 0.06:
 					continue
 				lo, hi = p["pos"][1], p["top"]
 				if p["id"] in STAIRS:
-					if lo - 0.3 < y < hi + 0.3 and overlap(cs, footprint(p, STAIR_CLEAR)):
-						return None
+					if lo - 0.3 < y < hi + 0.3 and overlap(cs, footprint(p, stair)):
+						return _no('stairs' + (':%s@%s' % (p['id'], p['pos']) if os.environ.get('DBG') else ''))
 					continue
-				if hi > y + 0.05 and lo < top and overlap(cs, footprint(p, 0.05)):
-					return None
-				if p["id"] in OPENINGS and abs(lo - y) < 1.0 and math.hypot(px - p["pos"][0], pz - p["pos"][2]) < OPENINGS[p["id"]] + rad:
-					return None
-			for (cx, cy, cz) in chests:
-				if abs(cy - y) < 1.0 and math.hypot(px - cx, pz - cz) < THING_CLEAR + rad:
-					return None
-			for (tx, ty, tz) in torches:
-				if abs(ty - y) < 1.0 and math.hypot(px - tx, pz - tz) < TORCH_CLEAR + rad:
-					return None
+				if hi > low + 0.05 and lo < top and overlap(cs, footprint(p, 0.05)):
+					return _no('piece' + (':%s@%s' % (p['id'], p['pos']) if os.environ.get('DBG') else ''))
+				if p["id"] in OPENINGS and abs(lo - y) < 1.0 and not far(cs, px, pz, rad, solo, p["pos"][0], p["pos"][2], OPENINGS[p["id"]] * (DECOR_DOOR if solo else 1.0)):
+					return _no('opening')
+			for (cx, cy, cz) in ([] if up > 0.3 else chests):
+				if abs(cy - y) < 1.0 and not far(cs, px, pz, rad, solo, cx, cz, THING_CLEAR):
+					return _no('chest')
+			for (tx, ty, tz) in ([] if up > 0.3 else torches):
+				if abs(ty - y) < 1.0 and not far(cs, px, pz, rad, solo, tx, tz, TORCH_CLEAR):
+					return _no('torch')
 			if y == 0.0:
 				for (kx, kz) in opt["keep"]:
-					if math.hypot(px - kx, pz - kz) < THING_CLEAR + rad:
-						return None
-			for (a, b) in lines.get(y, []):
+					if not far(cs, px, pz, rad, solo, kx, kz, THING_CLEAR):
+						return _no('keep')
+			for (a, b) in ([] if up > 0.3 or (solo and kind == "piece") else
+					lines.get(y, []) if yard_lines else [tuple(l) for l in opt["paths"]]):   # (decor indoors: rooms are walked round it)
 				if seg_dist((px, pz), a, b) < PATH_CLEAR or any(seg_dist(c, a, b) < PATH_EDGE for c in cs):
-					return None
-			for (ox, oz, oy, r) in placed:
+					return _no('path')
+			for (ox, oz, oy, r) in ([] if solo else placed):
 				if abs(oy - y) < 1.0 and math.hypot(px - ox, pz - oz) < r + rad + JUNK_GAP:
-					return None
+					return _no('junk')
 			out.append((px, pz, rad))
 		return out
+
+	def far(cs, px, pz, rad, solo, ox, oz, clear):
+		"""Is a piece (corners cs, middle, radius) at least `clear` from the spot (ox, oz)? Junk: by its middle and
+		radius; decor (solo): by its real outline (a long table may stand 1.5 m from a chest beside its end)."""
+		if solo:
+			return rect_dist(cs, (ox, oz)) >= clear
+		return math.hypot(px - ox, pz - oz) >= clear + rad
 
 	# The yard: bare ground with the ruin's walls (or its buildings) in all four directions.
 	CELL, HALF = 0.25, 30.0
@@ -278,9 +417,9 @@ def make(name):
 		d = ((b[0] - a[0]) / L, (b[1] - a[1]) / L)
 		for nrm in ((-d[1], d[0]), (d[1], -d[0])):
 			for y in levels:
-				if base >= 0.0 and not (-0.1 <= base - y <= 0.35):
-					continue  # a wall hugs the floor it stands on
-				if base < 0.0 and y != 0.0:
+				if base is not None and not (-0.1 <= base - y <= 0.35):
+					continue  # a wall hugs the floor it stands on (a cellar's too)
+				if base is None and y != 0.0:
 					continue  # a foundation's side: only the bare ground beside it
 				t = 0.35
 				while t <= L - 0.35:
@@ -361,6 +500,73 @@ def make(name):
 		print("  camp  NO SPOT")
 		return False
 
+	decor_fps = []   # (corners, low, high) of the decor placed
+
+	def place_decor():
+		"""The catalogue pieces (DECOR), nearest free spot to each hint first."""
+		for (did, y, mount, hx, hz, ex) in DECOR.get(name, []):
+			model = "decor/%s.glb" % did
+			sx, sz, ox, oz = size(model)
+			up = ex.get("up", 0.0)
+			tries = []   # (distance from the hint, x, z, yaw, kind)
+			if mount == "wall":
+				for zone, spots in cands.items():
+					for (q, d, nrm, face, cy, kind) in spots:
+						if abs(cy - y) > 0.01 or kind != "piece":
+							continue
+						yaw = math.degrees(math.atan2(nrm[0], nrm[1]))   # (front, +z, into the room; back flat on the wall)
+						for out in (0.0, 0.1, 0.2, 0.3, 0.45, 0.6, 0.8):   # (a round tower's walls bend: step off it a little)
+							w = face + WALL_GAP + out + sz / 2
+							cx, cz = q[0] + nrm[0] * w, q[1] + nrm[1] * w
+							tries.append((math.hypot(cx - hx, cz - hz) + out * 2.0, *_origin(model, cx, cz, yaw), yaw, kind))
+			elif mount == "gap":
+				tries.append((0.0, *_origin(model, hx, hz, ex["yaw"]), ex["yaw"], "ground"))
+			else:
+				kind = "ground" if mount == "ground" else "piece"
+				n = int(ex.get("reach", 4.0) / 0.25)
+				for i in range(-n, n + 1):
+					for k in range(-n, n + 1):
+						cx, cz = hx + i * 0.25, hz + k * 0.25
+						tries.append((math.hypot(cx - hx, cz - hz), *_origin(model, cx, cz, ex["yaw"]), ex["yaw"], kind))
+			tries.sort(key=lambda t: t[0])
+			why.clear()
+			got = None
+			for (dist, x, z, yaw, kind) in tries:
+				if dist > ex.get("reach", 5.0):
+					break
+				cs = corners(model, x, z, yaw)
+				low, high = y + up, y + up + height(model)
+				if any(overlap(cs, [(c[0], c[1]) for c in grow_by(o, 0.1)]) for (o, olo, ohi) in decor_fps if ohi > low and olo < high):
+					continue
+				if mount == "gap":
+					f = [(sum(c[0] for c in cs) / 4, sum(c[1] for c in cs) / 4, 0.0)]   # (it fills the breach: placed as given)
+				else:
+					f = free([(model, cs)], y, kind, up, solo=True, stair=DECOR_STAIR, edge=DECOR_EDGE, yard_lines=False)
+				if f is None:
+					if os.environ.get("DBG") == did and dist < 1.6:
+						print("    dbg (%.2f, %.2f) yaw %.0f: %s" % (x, z, yaw, why.get("last")))
+					continue
+				got = (dist, x, z, yaw, kind, cs, f[0], low, high)
+				break
+			if got is None:
+				print("  decor %-26s y=%-5s NO SPOT near (%.1f, %.1f) %s" % (did, y, hx, hz, {k: v for k, v in why.items() if k != "last"}))
+				continue
+			dist, x, z, yaw, kind, cs, f, low, high = got
+			decor_fps.append((cs, low, high))
+			placed.append((f[0], f[1], y, f[2]))
+			box = opt.get("wall_box", 0.0)
+			inside = mount == "gap" or kind == "piece" or in_yard(f[0], f[1]) or (abs(f[0]) < box and abs(f[1]) < box)
+			j = {"model": model, "pos": [round(x, 3), round(y + up + (FLOOR_LIFT if kind == "piece" else 0.0), 3), round(z, 3)],
+				"yaw": round(yaw % 360.0, 1), "ground": kind == "ground", "inside": inside, "cat": True}
+			if up:
+				j["hung"] = up
+			if ex.get("loot"):
+				j["loot"] = True
+			junk.append(j)
+			print("  decor %-26s y=%-5s at (%.2f, %.2f) yaw %3.0f, %.1f m from its spot%s" % (did, y, f[0], f[1], yaw % 360, dist,
+				"" if inside else " (outside)"))
+
+	place_decor()
 	try_camp()   # (first: it needs the most room)
 	area = {}
 	for p in supports:
@@ -375,12 +581,10 @@ def make(name):
 			want, pool = rng.randint(*opt["yard_want"]), list(opt["pool"])
 		else:
 			a = area.get(zone[1], 0.0)
-			want = rng.randint(3, 5) if a >= 80 else (rng.randint(2, 3) if a >= 25 else rng.randint(1, 2))
+			want = max(2, int(a / 5.0))   # (owner, Nov 21: as full as Mossgate's Gate Hall)
 			pool = list(opt["pool"])
 		rng.shuffle(pool)
-		more = pool[:]
-		rng.shuffle(more)
-		pool = more + pool   # each kind at most twice
+		pool = [e for e in pool if e in REPEAT] + pool   # one of each kind (candles, plates, pots: twice)
 		n = 0
 		while pool and n < want:
 			if try_entry(pool.pop(), zone):

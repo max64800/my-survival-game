@@ -7,7 +7,10 @@ extends Node3D
 ## is measured on the host's rock), and writes it into the ruin's record (world_state.ruins: saved and sent to friends).
 ## Every computer draws it from there. The junk inside goes as soon as the ruin is being rebuilt (owner, Nov 20).
 
-const PLANS := {"tower": RuinTower.PLAN, "outpost": RuinOutpost.OUTPOST_PLAN}
+const PLANS := {"tower": RuinTower.PLAN, "outpost": RuinOutpost.OUTPOST_PLAN, "brewhall": RuinBrewhall.PLAN_PATH,
+	"spire": RuinSpire.PLAN_PATH}
+## 2 (Nov 21): the catalogue decor joined the lists; a ruin whose junk is older is made again.
+const JUNK_V := 2
 const CHECK_EVERY := 1.0
 const MAX_STEP := 1.0  ## outside junk whose ground is more than this above/below the ruin's base is left out (a ledge)
 
@@ -52,6 +55,8 @@ static func world_list(world: World, ruin_name: String, origin: Vector3, turn: i
 	var out := []
 	var basis := Basis(Vector3.UP, turn * PI / 2.0)
 	for j in load_list(ruin_name):
+		if j.get("loot", false):
+			continue  # (a lootable piece: LootProps places it, so it can be searched)
 		var p: Vector3 = origin + basis * Vector3(float(j.pos[0]), float(j.pos[1]), float(j.pos[2]))
 		if j.get("ground", false):
 			var y := floor_at(world, p.x, p.z, origin.y)
@@ -112,12 +117,17 @@ func _process(delta: float) -> void:
 		_draw(ruins)
 
 
+## A ruin record with no junk list yet, or one older than JUNK_V (a world saved before the catalogue decor).
+static func needs_junk(r: Dictionary) -> bool:
+	return PLANS.has(String(r.get("name", ""))) and not (r.has("junk") and int(r.get("jv", 1)) >= JUNK_V)
+
+
 ## Host: a ruin with no junk yet (just built, or a world saved before Nov 20) gets it once the rock around it has loaded.
 func _make_missing(ruins: Dictionary) -> void:
 	var changed := false
 	for k in ruins:
 		var r: Dictionary = ruins[k]
-		if r.has("junk") or not PLANS.has(String(r.get("name", ""))):
+		if not needs_junk(r):
 			continue
 		var origin: Vector3 = r.origin
 		var reach := float(r.get("reach", 9.0)) + 2.0
@@ -126,6 +136,7 @@ func _make_missing(ruins: Dictionary) -> void:
 			continue
 		var r2 := r.duplicate()
 		r2.junk = world_list(auth.world, String(r.name), origin, int(r.turn))
+		r2.jv = JUNK_V
 		ruins = ruins.duplicate()
 		ruins[k] = r2
 		changed = true

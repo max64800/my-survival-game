@@ -259,3 +259,11 @@ func place_ruin(k: String, r: Dictionary, plan := {}) -> void:
 		var b := Basis(Vector3.UP, deg_to_rad(float(p.get("yaw", 0.0))) + turn * PI / 2.0)
 		place("r:%s:%d" % [k, i], String(p.model), Transform3D(b.scaled_local(Vector3.ONE * float(p.get("scale", 1.0))), pos),
 			String(p.get("label", "")))
+	# The lootable catalogue pieces in the ruin's junk list (the arrow crate, the quiver rack: Nov 21).
+	var junk := RuinJunk.load_list(String(r.get("name", "")))
+	for i in junk.size():
+		var j: Dictionary = junk[i]
+		if not j.get("loot", false) or not LOOT.has(model_id(String(j.model))):
+			continue
+		var pos: Vector3 = origin + basis * Vector3(float(j.pos[0]), float(j.pos[1]), float(j.pos[2]))
+		place("r:%s:j%d" % [k, i], String(j.model), Transform3D(Basis(Vector3.UP, deg_to_rad(float(j.yaw)) + turn * PI / 2.0), pos))
