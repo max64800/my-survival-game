@@ -15,8 +15,8 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 ## Things that keep coming back 🔁
 
 - **F555 🔁, crafting one at a time (said 2×).** 1st time (Nov 15, F129): added x1, x5, x10 or All. 2nd time (Nov 21, rootwood planks): "I'm crafting 1 by 1, it takes so long". Next: check the amount picker really shows at every station, and craft the whole amount in one go.
-- **F557 🔁, the first cave can't pay for the tower (said 3×).** F246, then F432 (Nov 20): only fill what's broken. Nov 21: all the first cave's wood = about 100-120 planks, still not enough. **Different approach:** count the first cave's real wood in a test world and set the tower's price from that number.
-- **F560 🔁, the rebuild menu is too complicated (said 3×).** F99 (no pictures), F411 (explanation too long, show pictures). Nov 21: still too complicated: only pictures of what you need, two options.
+- **F557 🔁, the first cave can't pay for the tower (said 3×).** F246, then F432 (Nov 20): only fill what's broken. Nov 21: all the first cave's wood = about 100-120 planks, still not enough. **Different approach:** count the first cave's real wood in a test world and set the tower's price from that number. **Nov 21 (Claude 2): tried: ruin rebuilds cost 30% of new pieces; the wooden tower is now 79 planks + 10 rope.**
+- **F560 🔁, the rebuild menu is too complicated (said 3×).** F99 (no pictures), F411 (explanation too long, show pictures). Nov 21: still too complicated: only pictures of what you need, two options. **Nov 21 (Claude 2): tried: one short line + two cards of item pictures only.**
 - **F569 🔁, glowing vines move when one breaks (said 4×).** F338 (Nov 18): a swing broke every strand within half a metre; fixed to only the one you hit. Nov 21: the others still move, and they're hard to hit. **Different approach:** pick them with E.
 - **F572 🔁, creatures don't react from another room (said 2×).** F483/F486 (Nov 20): aggroed creatures leave their room. Nov 21: shot them from another room and nothing happened: a hit must always wake them.
 
@@ -60,7 +60,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 | Moving around (walking, jumping, climbing) | F2, F3 | |
 | Controls + camera | F18, F23, F27, F385 | |
 | Making the game / tools | F4, F5, F6, F7, F16 |
-| Rebuilding the tower (price, menu, chest, lag) | F557 🔁, F559, F560 🔁, F565, F567, F578, F579, F581 | Nov 21: one play of the tower rebuild gave 8 notes. The price and the menu came back again | |
+| Rebuilding the tower (price, menu, chest, lag) | F579 (F557, F559, F560, F565, F567, F578, F581 done Nov 21) | Nov 21: one play of the tower rebuild gave 8 notes. The price and the menu came back again | |
 | Sound | F8, F15, F67, F353, F377, F551, F558, F577 | Sounds must feel old-world: wood, stone, leather, metal. No beeps or whooshes |
 | The start of the game (first 5 minutes) | F10, F11 | |
 | A world that feels alive (enemies, ruins, cave life) | F9, F21, F188-F190, F237, F404 🔁, F412-F415, F418, F479 | Columns asked for 3× (F9, F21, F189); caves feel hollow/empty (F9, F188); not enough places to discover (F237); more ruins (F479). Then too much: "we overdid it with the ground" (F404): calm floors, a few special things |
@@ -225,17 +225,11 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F554. A ruin gave me a copper blueprint ("copper maze"?) and copper greaves: it shouldn't.** Ruin loot must not hand out copper gear or its recipes this early. *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 2.
 - [ ] **F555. 🔁 Crafting planks one at a time takes so long: pick how many, then craft them all in one go.** (Came back from F129, which added x1/x5/x10/All on Nov 15.) *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 2.
 - [ ] **F556. Later (not now): crafting benches you load with materials and leave; they craft by themselves, slowly, one by one (like Conan Exiles).** (Goes with F388.) *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 2.
-- [ ] **F557. 🔁 The first cave doesn't have enough wood to rebuild the tower (our sums said it did).** I collected all the wood in the first cave: just over 100 planks, maybe 120. (Came back from F432 / F246.) *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 2.
 - [ ] **F558. Hitting wood sometimes sounds like metal, most of all the first hit.** Every hit on wood must sound like wood. *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 2.
-- [ ] **F559. Rebuilding the tower says "carving rock".** It shouldn't. *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 2.
-- [ ] **F560. 🔁 The rebuilding menu is still too complicated.** It should only show, in pictures, what you need for the two options. That's it. (Came back from F411 / F99.) *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 2.
-- [ ] **F561. I crafted a wooden shield without having the resources on me.** (It needs 6 rootwood planks + 2 rope.) *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 2.
 - [ ] **F562. A way to craft an item that puts the lantern on the dwarf's hip, so fighting is easy.** *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 3.
 - [ ] **F563. Purple bats with purple things on their backside, behind them: what is that?** *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 3.
 - [ ] **F564. Some bats teleport when they try to attack me.** Claude found in the play log: at 21:22 something's position turned into "not a number" (8,000 warnings in 20 s, near (18, -42, 24)): likely a bat. A flood of warnings also slows the game. (Goes with F368, bats stuck in the floor/ceiling.) *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 3.
-- [ ] **F565. 10 FPS and freezes while rebuilding the tower.** Play log (21:24-21:27, at the tower): the graphics card took about 60 ms a frame (16 FPS) and some frames took 0.6-1.8 s, up to 0.7 s of game code. Lead: all the blue see-through pieces (F567). (Goes with F266.) *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 2.
 - [ ] **F566. A lot more roots in the tunnels: I went through a tunnel and found none.** *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 2.
-- [ ] **F567. After putting materials into the tower's chest, every piece turned blue. Blue only while I hold the hammer.** (Goes with F101.) *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 2.
 - [ ] **F568. A menu to upgrade and repair gear; repairing should cost nothing, like Valheim.** *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 3.
 - [ ] **F569. 🔁 Glowing vines: break one and the others move; they're very hard to hit even up close (I have to jump); let me just pick them with E when I'm close.** (Came back from F338.) *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 2.
 - [ ] **F570. The bandage cooldown bar is barely visible: make it a lot more visible.** (Follows F470.) *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 3.
@@ -246,10 +240,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F575. Ferns and other grass/fiber pickups should give a lot more fiber each.** *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 2.
 - [ ] **F576. Redo the skills window: the Perks tab opens first; the Skills tab shows too much; every starred bullet point on one line.** (Follows F445.) *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 2.
 - [ ] **F577. The dwarf's legs move too slowly when walking and sprinting, so he slides; the step sound doesn't match the steps.** (Goes with F30.) *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 3.
-- [ ] **F578. Opening the tower's chest after putting some things in doesn't show what still has to go in.** *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 2.
 - [ ] **F579. The building hammer's help on the right (B, left click, Q/E) needs a much better way of teaching.** *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 2.
-- [ ] **F580. I learned Forge Workshop from somewhere and don't know where or why.** Likely: finishing a ruin rebuild teaches its blueprint to everyone (builder.gd). Must say clearly what you learned and why. *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 2.
-- [ ] **F581. After rebuilding the tower the junk is gone, but the crate with bolts on the 2nd floor is still there: it should go too.** *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 2.
 
 - [ ] **F582. 🔁 Mossprop: the rock lumps on the walls look awful: take those rocks out of the game.** (Came back from F539.) Your picture: the big grey lumps by the moss shelves. *From: you (PC, Nov 21, second play of Mossprop Workings, dungeon 4). Said: 1×* → Mossprop chat.
 - [ ] **F583. 🔁 Mossprop: the cave is still one big square: dig dimples and bulges in so the ceiling and both walls aren't flat (the floor can stay flat).** (Came back from F539.) *From: you (PC, Nov 21, second play of Mossprop Workings, dungeon 4). Said: 2×* → Mossprop chat.
