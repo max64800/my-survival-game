@@ -900,15 +900,14 @@ func play_full(what: String, duration: float = 0.0) -> void:
 
 ## A weapon attack that fits the weapon (ATTACKS): weapon = Combat.weapon_of(the held item). step = the hit in the
 ## combo (DwarfFight._combo_step: hit 1, hit 2 take turns); -1 = just take turns.
-## How long an attack takes (s): the sword's UAL 2 moves at UAL_SLOW times their own length (owner, chat 15: "the real
-## speed is too fast, slowed down quite drastically"); the mace's at their own speed (owner, chat 16: "takes so long
-## to actually hit, twice as fast"); every other weapon: `fallback` (Combat.WEAPONS).
-const UAL_SLOW := 2.0
-const MACE_SLOW := 1.0
+## How long an attack takes (s): the sword's and mace's UAL 2 moves at UAL_SLOW times their own length. (Chat 15 had
+## them at half speed; owner, chat 16: the mace "takes so long to actually hit, twice as fast", then "the sword should
+## be faster, like the mace": both at the pack's own speed now.) Every other weapon: `fallback` (Combat.WEAPONS).
+const UAL_SLOW := 1.0
 
 
-static func ual_slow(weapon: String) -> float:
-	return MACE_SLOW if weapon == "mace" else UAL_SLOW
+static func ual_slow(_weapon: String) -> float:
+	return UAL_SLOW
 
 
 static func attack_seconds(weapon: String, heavy: bool, step: int, fallback: float) -> float:

@@ -7301,6 +7301,12 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   instead of a heavy, and the mace at its new speed. Checked in the browser: all 16 moves load, the shield pushes
   out in front during the bash. Hurdle: a search over the whole game folder for the page's file ran past 2 minutes
   (stopped it; read the page from the artifact instead).
+- **Owner, later (chat 16): F522 sword as fast as the mace** (DwarfRig.UAL_SLOW = 1 for both); **F523 combos build
+  up** (each hit stronger, the last 1.8x to 2x: Combat.WEAPONS combo; test_combat.test_combos_build_up_to_a_big_last_hit);
+  **F524 great axe/maul: right click = heavy spin**, their block + parry on the middle click (DwarfFight.block_action).
+  Page re-recorded (same link). Hurdles: (1) a Python edit script tripped over a backslash, did the edits by hand.
+  (2) test_sword_star_perks compared a 1st-hit jump attack with a 3rd hit: fine before, wrong now that the 3rd hit is
+  much stronger; it compares 3rd with 3rd now. (3) Another chat changed monster_manager.gd meanwhile: left it out.
 
 ## Nov 21, 2026 (Mac, gems chat): status badges, test findings, pull and handover
 - **Status badges** (owner: simple circles with a ring that runs down like a timer): round badges above the health
@@ -7410,14 +7416,3 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   Spire chat. (3) A cleanup `rm` of old photos was stopped by a safety check: used a new folder instead. (4) The id
   check counted `keg` as missing: it's an older `night_decor.py` model; the decor-night files only have helpers with
   that name.
-- **Owner's answers (Nov 22):** the cave grass stays in the ruin camp; the rotten bedroll stays; **yes** to the cluster
-  fix. Fixed in `tools/dungeons/junk.py` and `tools/ruins/ruin_junk.py`: new `part_at()` = where a group's part
-  (dropped meal: plate, mug, spoon; two candles) stands, turned with the group only. The spot check and the written spot
-  both use it (before, the check swung each part's offset by its own extra turn too, so it checked another spot).
-  **Hurdle:** my first fix went the other way (wrote what the check used); the numbers showed the spoon swinging round
-  next to the mug, away from the hand-made layout, so I undid it and fixed the check instead. Re-made: Mossgate Hold
-  and Lampwick Drift (only junk moved; furniture, chests, creatures the same; Mossgate 1337 props), Watchtower 16
-  junk, Outpost 41 (camps still there). `test_dungeon_junk` 5/5, `test_ruin_junk` 4/4.
-- **Owner asked: are all ~500 Mac pieces in the catalogue correctly?** Every decor-night model has exactly one row
-  (checked by a script against the model files: 530 + 12 `_empty` twins). The words come from the build files;
-  41 "where it goes" cells are marked (guess); nobody looked at all the pictures.

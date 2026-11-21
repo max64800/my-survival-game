@@ -16,18 +16,18 @@ static func crit_chance(weapon: String) -> float:
 
 
 const WEAPONS := {
-	"sword": {type = "slash", light = 10, heavy = 22, light_speed = 0.55, heavy_speed = 1.10, reach = 1.8, light_sta = 8, heavy_sta = 18, light_stun = 6, heavy_stun = 18, parry_ms = 180, block = 0.35, hands = 1, combo = [1.0, 1.0, 1.25]},
-	"axe": {type = "slash", light = 12, heavy = 26, light_speed = 0.70, heavy_speed = 1.30, reach = 1.7, light_sta = 10, heavy_sta = 20, light_stun = 8, heavy_stun = 22, parry_ms = 150, block = 0.35, hands = 1, combo = [1.0, 1.1, 1.3], cleave = 0.6},
-	"mace": {type = "blunt", light = 11, heavy = 25, light_speed = 0.75, heavy_speed = 1.35, reach = 1.6, light_sta = 10, heavy_sta = 20, light_stun = 12, heavy_stun = 35, parry_ms = 150, block = 0.35, hands = 1, combo = [1.0, 1.1, 1.2, 1.4], armor_break = 0.3},  # (4 hits: UAL 2's heavy combo, owner chat 15)
-	"spear": {type = "pierce", light = 11, heavy = 24, light_speed = 0.60, heavy_speed = 1.20, reach = 2.6, light_sta = 9, heavy_sta = 18, light_stun = 6, heavy_stun = 16, parry_ms = 150, block = 0.35, hands = 1, combo = [1.0, 1.0, 1.1, 1.3]},
-	"axe_2h": {type = "slash", light = 22, heavy = 48, light_speed = 1.10, heavy_speed = 1.90, reach = 2.2, light_sta = 16, heavy_sta = 32, light_stun = 14, heavy_stun = 40, parry_ms = 150, block = 0.50, hands = 2, combo = [1.0, 1.15, 1.3], sweep = true},
-	"mace_2h": {type = "blunt", light = 24, heavy = 52, light_speed = 1.20, heavy_speed = 2.10, reach = 2.0, light_sta = 18, heavy_sta = 36, light_stun = 22, heavy_stun = 60, parry_ms = 150, block = 0.50, hands = 2, combo = [1.0, 1.2], armor_break = 0.3},
+	"sword": {type = "slash", light = 10, heavy = 22, light_speed = 0.55, heavy_speed = 1.10, reach = 1.8, light_sta = 8, heavy_sta = 18, light_stun = 6, heavy_stun = 18, parry_ms = 180, block = 0.35, hands = 1, combo = [1.0, 1.3, 1.8]},
+	"axe": {type = "slash", light = 12, heavy = 26, light_speed = 0.70, heavy_speed = 1.30, reach = 1.7, light_sta = 10, heavy_sta = 20, light_stun = 8, heavy_stun = 22, parry_ms = 150, block = 0.35, hands = 1, combo = [1.0, 1.3, 1.8], cleave = 0.6},
+	"mace": {type = "blunt", light = 11, heavy = 25, light_speed = 0.75, heavy_speed = 1.35, reach = 1.6, light_sta = 10, heavy_sta = 20, light_stun = 12, heavy_stun = 35, parry_ms = 150, block = 0.35, hands = 1, combo = [1.0, 1.2, 1.5, 2.0], armor_break = 0.3},  # (4 hits: UAL 2's heavy combo, owner chat 15)
+	"spear": {type = "pierce", light = 11, heavy = 24, light_speed = 0.60, heavy_speed = 1.20, reach = 2.6, light_sta = 9, heavy_sta = 18, light_stun = 6, heavy_stun = 16, parry_ms = 150, block = 0.35, hands = 1, combo = [1.0, 1.2, 1.5, 2.0]},
+	"axe_2h": {type = "slash", light = 22, heavy = 48, light_speed = 1.10, heavy_speed = 1.90, reach = 2.2, light_sta = 16, heavy_sta = 32, light_stun = 14, heavy_stun = 40, parry_ms = 150, block = 0.50, hands = 2, combo = [1.0, 1.35, 1.9], sweep = true},
+	"mace_2h": {type = "blunt", light = 24, heavy = 52, light_speed = 1.20, heavy_speed = 2.10, reach = 2.0, light_sta = 18, heavy_sta = 36, light_stun = 22, heavy_stun = 60, parry_ms = 150, block = 0.50, hands = 2, combo = [1.0, 1.8], armor_break = 0.3},
 	"shield": {type = "blunt", light = 5, heavy = 12, light_speed = 0.60, heavy_speed = 1.00, reach = 1.4, light_sta = 6, heavy_sta = 16, light_stun = 10, heavy_stun = 30, parry_ms = 200, block = 0.50, hands = 1, combo = [1.0]},
 	# Tools still swing in a pinch (weak, but better than fists).
 	"pickaxe": {type = "pierce", light = 6, heavy = 12, light_speed = 0.55, heavy_speed = 1.10, reach = 1.6, light_sta = 5, heavy_sta = 12, light_stun = 4, heavy_stun = 10, parry_ms = 120, block = 0.20, hands = 1, combo = [1.0]},
 	# Crossbow (doc 3.2, 3.6): "light" = hip shot, "heavy" = aimed shot. Damage also × the bolt's multiplier.
 	"crossbow": {type = "pierce", light = 24, heavy = 34, light_speed = 0.30, heavy_speed = 0.40, reach = 40.0, light_sta = 4, heavy_sta = 4, light_stun = 15, heavy_stun = 20, parry_ms = 80, block = 0.15, hands = 2, combo = [1.0], ranged = true},
-	"fists": {type = "blunt", light = 3, heavy = 6, light_speed = 0.45, heavy_speed = 0.9, reach = 1.2, light_sta = 4, heavy_sta = 10, light_stun = 3, heavy_stun = 8, parry_ms = 100, block = 0.10, hands = 1, combo = [1.0, 1.0]},
+	"fists": {type = "blunt", light = 3, heavy = 6, light_speed = 0.45, heavy_speed = 0.9, reach = 1.2, light_sta = 4, heavy_sta = 10, light_stun = 3, heavy_stun = 8, parry_ms = 100, block = 0.10, hands = 1, combo = [1.0, 1.3]},
 }
 
 ## Tier scaling (doc 3.4): damage ×, stun ×, shield block.

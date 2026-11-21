@@ -1037,7 +1037,7 @@ func test_sword_star_perks_in_a_real_fight() -> void:
 	check(third > plain, "Sword ★75: the 3rd combo hit does more (%d > %d)" % [third, plain])
 	m.shell_hits = 0
 	m.shell_left = 0.0
-	check(auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, 0, false, false, true) > plain - 1, "a jump attack counts too (no ★ jumping yet: same)")
+	check(auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, 2, false, false, true) > plain - 1, "a jump attack counts too (no ★ jumping yet: same)")  # (same 3rd hit: chat 16 made the 3rd much stronger than the 1st)
 	_teardown()
 
 

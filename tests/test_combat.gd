@@ -40,6 +40,15 @@ func test_combo_finisher_hits_harder() -> void:
 	check(third > first, "3rd sword hit (thrust) is stronger: %d vs %d" % [third, first])
 
 
+## Owner, chat 16: "the end of the combo damage really good, progressively better and better".
+func test_combos_build_up_to_a_big_last_hit() -> void:
+	for w in ["sword", "axe", "mace", "spear", "axe_2h", "mace_2h"]:
+		var combo: Array = Combat.WEAPONS[w].combo
+		for i in range(1, combo.size()):
+			check(combo[i] > combo[i - 1], "%s: hit %d stronger than hit %d" % [w, i + 1, i])
+		check(combo[-1] >= 1.8, "%s: the last hit does at least 1.8x (%.2f)" % [w, combo[-1]])
+
+
 func test_elemental_skips_armor() -> void:
 	var plain := Combat.damage("sword", false, 0, {armor = 100})
 	var with_fire := Combat.damage("sword", false, 0, {armor = 100}, 0, 1.0, 0, 0, 0, {fire = 8})

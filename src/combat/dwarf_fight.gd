@@ -1,9 +1,9 @@
 class_name DwarfFight
 extends Node
 ## The dwarf's fighting controls (combat doc 1.5), used while a weapon or shield is in hand:
-##   Left click = light attack · click again or hold it = keep swinging (combo) · middle click = heavy attack, great
-##   weapons only (one-handed ones have none: owner, chat 16)
+##   Left click = light attack · click again or hold it = keep swinging (combo), each hit stronger than the last
 ##   Right click hold = block · tap right before a hit = PERFECT PARRY · left click while blocking (shield) = shield bash
+##   Great axe / great maul: right click = heavy spin, middle click held = block (one-handed weapons have no heavy)
 ##   Left Ctrl (+ direction) = dodge-roll (safe from 0.05 s to 0.30 s into the roll)
 ##   Crossbow: right click hold = aim (no spread, zoom) · left click = shoot · R = reload
 
@@ -126,8 +126,13 @@ func aiming() -> bool:
 	return is_crossbow() and stagger <= 0.0 and Input.is_action_pressed("use") and Controls.captured()
 
 
+## The button that blocks: right click, but the middle click for great weapons (their right click is the heavy spin).
+func block_action() -> String:
+	return "heavy_attack" if has_heavy() else "use"
+
+
 func is_blocking() -> bool:
-	return weapon_mode() and not is_crossbow() and stagger <= 0.0 and _dodge_t < 0.0 and Input.is_action_pressed("use") \
+	return weapon_mode() and not is_crossbow() and stagger <= 0.0 and _dodge_t < 0.0 and Input.is_action_pressed(block_action()) \
 		and Controls.captured()
 
 
@@ -210,19 +215,20 @@ func step(delta: float, playing: bool, move_dir: Vector3) -> float:
 	if Input.is_action_just_pressed("use") and clock - _lantern_hint_at > 4.0 and shield_blocked_by_lantern():
 		_lantern_hint_at = clock  # say why the shield isn't raised (owner, Nov 17: "I cannot use the shield")
 		message.emit("Your lantern is in your other hand: press L to put it away and raise the shield.", Color.WHITE)
-	if Input.is_action_just_pressed("use") and clock - _last_press >= Combat.PARRY_COOLDOWN:
+	if Input.is_action_just_pressed(block_action()) and clock - _last_press >= Combat.PARRY_COOLDOWN:
 		_block_pressed_at = clock  # anti-spam: a new parry window only every 0.5 s
 		_last_press = clock
-	elif Input.is_action_just_pressed("use"):
+	elif Input.is_action_just_pressed(block_action()):
 		_last_press = clock
 	# F430 (owner, Nov 20: "holding the mouse button keeps the pickaxe swinging; I want the same for weapons"):
 	# hold left click = light swings one after another (the combo keeps going).
 	# Owner, chat 16: one-handed weapons have no heavy attack; right click blocks, and left click while blocking with
-	# a shield = a shield bash (sword, mace, spear, axe alike). Great weapons keep middle click = heavy.
+	# a shield = a shield bash (sword, mace, spear, axe alike). Great weapons: right click = heavy (owner, chat 16:
+	# "the heavy spin should be the right mouse button"), their block moved to the middle click.
 	if is_blocking():
 		if Input.is_action_just_pressed("dig") and has_shield():
 			_shield_bash()
-	elif Input.is_action_just_pressed("heavy_attack") and has_heavy():
+	elif Input.is_action_just_pressed("use") and has_heavy():
 		_attack(true)
 	elif Input.is_action_pressed("dig"):
 		_attack(false)  # (does nothing while the last swing is still going: the next starts as soon as it ends)
