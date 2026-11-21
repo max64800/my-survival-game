@@ -107,13 +107,18 @@ const LIST := {
 					follow = {tell = 0.5, damage = 12, follow = {tell = 0.5, damage = 20, knockdown = true}}}}}],
 		drops = []},
 	# Mossprop Workings' boss (owner, Nov 21): the Pit Boss's body for now, with a big plank shield in front: hits from
-	# the front do a fifth (MonsterManager._shield_blocks) unless heavy or he is stunned. Raising fallen miners: next.
+	# the front do a fifth (MonsterManager._shield_blocks) unless heavy or he is stunned.
+	# Rally Slam (owner's picks, Nov 21): about every 25 s, if a fallen Lost Miner lies in stone in his room, he raises
+	# his plank and slams it down (2 s: a deep rumble, the statues glow and shake), then up to 2 of them get up (never
+	# more than 3 miners up at once). Hit him during the slam (his shield is up over his head) and it is called off;
+	# a statue you mined away can't be raised. He doesn't smash his own miners' stone (the Pit Boss does).
 	"prop_warden": {name = "The Prop Warden", dungeon_only = true, rises = true, rise_near = 10.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 10, boss = true,
-		smashes_statues = true, front_shield = true, size = 1.0, height = 1.9, hp = 420, armor = 50, stun = 200, slash = 1.0, blunt = 1.25, pierce = 0.75,
+		front_shield = true, size = 1.0, height = 1.9, hp = 420, armor = 50, stun = 200, slash = 1.0, blunt = 1.25, pierce = 0.75,
 		fire = 1.25, frost = 0.5, poison = 1.0, walk = 1.3, run = 3.3, pack = [1, 1], xp = 80,
 		color = Color(0.5, 0.52, 0.4), shape = "foreman", recover = 1.6,
 		attacks = [{name = "Great Chop", anim = "2H_Melee_Attack_Chop", warn_sound = "beetle_rumble", tell = 1.0, damage = 24, type = "slash", reach = 2.3, parry = "any"},
-			{name = "Plank Sweep", anim = "2H_Melee_Attack_Spin", warn_sound = "beetle_rumble", tell = 0.97, damage = 16, type = "blunt", reach = 2.0, rest = 8.0, parry = "shield", knockdown = true}],
+			{name = "Plank Sweep", anim = "2H_Melee_Attack_Spin", warn_sound = "beetle_rumble", tell = 0.97, damage = 16, type = "blunt", reach = 2.0, rest = 8.0, parry = "shield", knockdown = true},
+			{name = "Rally Slam", anim = "2H_Melee_Attack_Chop", warn_sound = "beetle_rumble", tell = 2.0, damage = 0, type = "blunt", reach = 14.0, rest = 25.0, parry = "any", raise_miners = 2, land_sound = "snail_slam"}],
 		drops = []},
 }
 

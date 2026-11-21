@@ -153,6 +153,61 @@ static func remove(id: int, mined: bool) -> void:
 	t.chain().tween_callback(func() -> void: _free(c))
 
 
+const STIR_GLOW := Color(0.55, 0.95, 0.85)  ## the Prop Warden's call: a cold miner-blue glow
+
+
+## The Prop Warden's Rally Slam (owner, Nov 21): this statue glows and shakes for `seconds` (0 = stop: he was hit).
+static func stir(id: int, seconds: float) -> void:
+	var c: Node3D = nodes.get(id)
+	if not is_instance_valid(c):
+		return
+	var old: Node = c.get_node_or_null("StirGlow")
+	if old:
+		old.queue_free()
+	if c.has_meta("stir_from"):
+		c.position = c.get_meta("stir_from")
+		c.remove_meta("stir_from")
+	if c.has_meta("stir_tween"):
+		var tw: Tween = c.get_meta("stir_tween")
+		if tw and tw.is_valid():
+			tw.kill()
+		c.remove_meta("stir_tween")
+	if seconds <= 0.0:
+		return
+	var box := _bounds(c)
+	var light := OmniLight3D.new()
+	light.name = "StirGlow"
+	light.light_color = STIR_GLOW
+	light.omni_range = 2.5
+	light.light_energy = 0.0
+	c.add_child(light)
+	light.global_position = box.get_center() + Vector3.UP * 0.3
+	Fx.burst(c.get_parent(), box.get_center(), STIR_GLOW, 10, 1.2)
+	var from := c.position
+	c.set_meta("stir_from", from)
+	light.create_tween().tween_property(light, "light_energy", 3.0, seconds).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	var t := c.create_tween()  # (shaking harder and harder until he slams)
+	c.set_meta("stir_tween", t)
+	var n := maxi(1, int(seconds / 0.08))
+	for i in n:
+		var k := 0.01 + 0.04 * float(i) / float(n)
+		t.tween_property(c, "position", from + Vector3(randf_range(-k, k), randf_range(0.0, k), randf_range(-k, k)), 0.08)
+	t.tween_property(c, "position", from, 0.05)
+
+
+## Raised: the stone falls off as dust (the Lost Miner that gets up in its place is a new creature).
+static func raise_away(id: int) -> void:
+	var c: Node3D = nodes.get(id)
+	nodes.erase(id)
+	if not is_instance_valid(c):
+		return
+	var box := _bounds(c)
+	Fx.burst(c.get_parent(), box.get_center(), STONE.lightened(0.2), 24, 2.0)
+	Fx.burst(c.get_parent(), box.get_center(), STIR_GLOW, 14, 2.5)
+	Sfx.play("dig_soft", box.get_center(), -4.0, 0.6)
+	_free(c)
+
+
 static func _free(c: Node3D) -> void:
 	for f in c.get_meta("left", []):
 		if is_instance_valid(f):

@@ -264,3 +264,49 @@ func test_the_spark_sits_on_the_tool_points() -> void:
 		if tips.size() == 2:
 			check(tips[0].x < -0.15 and tips[1].x > 0.15, "%s: the two ends of the pick's head (%s, %s)" % [want[0], tips[0], tips[1]])
 		s.free()
+
+
+## The Prop Warden's Rally Slam (owner, Nov 21): his fallen Lost Miners' stone glows, then up to 2 get up; a hit on him
+## during the slam calls it off; a statue mined away can't come back; never more than 3 miners up; he doesn't smash them.
+func test_prop_warden_raises_fallen_miners() -> void:
+	await _setup()
+	var mm := auth.monsters
+	var boss := _spawn("prop_warden", Vector3(-12, 0, 0))
+	check(not boss.data.get("smashes_statues", false), "he doesn't break his own miners' stone")
+	check(mm.raisable_statues(boss).is_empty(), "no fallen miners: nothing to raise")
+	var slam: Dictionary = {}
+	for a in boss.attack_options():
+		if a.has("raise_miners"):
+			slam = a
+	check(not slam.is_empty(), "he has the Rally Slam")
+	check_eq(float(slam.rest), 25.0, "about every 25 s")
+	for i in 20:
+		check(not boss._pick_attack(10.0, mm).has("raise_miners"), "no slam while nothing lies there")
+	var old := MonsterManager.STATUE_LIFE - 10.0
+	for i in 3:
+		mm.statues[900 + i] = {pos = boss.global_position + Vector3(2.0 + i, 0, 0), kind = "lost_miner", loot = [], hits = 0, needed = 4, left = old}
+	mm.statues[950] = {pos = boss.global_position + Vector3(0, 0, 2), kind = "lost_miner", loot = [], hits = 0, needed = 4, left = MonsterManager.STATUE_LIFE}
+	mm.statues[960] = {pos = boss.global_position + Vector3(0, 0, -2), kind = "tunnel_rat", loot = [], hits = 0, needed = 2, left = old}
+	check_eq(mm.raisable_statues(boss), [900, 901], "the 2 nearest old-enough miners (not a fresh one, not a rat)")
+	check_eq(boss._pick_attack(10.0, mm).get("name", ""), "Rally Slam", "out of reach of his swings, he calls them")
+	# A hit during the slam calls it off.
+	boss._start_attack(slam, mm)
+	check_eq(boss.raising, [900, 901], "the slam picked its statues")
+	check(not mm._shield_blocks(boss, boss.global_position - boss.model.global_transform.basis.z * 2.0, false), "his plank is up: no shield")
+	mm._hurt_monster(boss, 1, 5, 0.0)
+	check(boss.raising.is_empty() and boss.state == Monster.State.RECOVER, "hit: called off")
+	check(mm.statues.has(900) and mm.statues.has(901), "the stone stays")
+	# Next time: one statue is mined away during the slam.
+	boss._start_attack(slam, mm)
+	mm.statues.erase(900)
+	var up: Array = mm.finish_raise(boss)
+	check_eq(up.size(), 1, "the mined one can't come back")
+	check(not mm.statues.has(901), "its stone is gone")
+	var miner: Monster = mm.get_monster(up[0])
+	check(miner != null and miner.kind == "lost_miner", "a Lost Miner again")
+	check(miner.state != Monster.State.SLEEP, "it gets up at once")
+	# Never more than 3 up: with 3 standing, nothing more rises.
+	_spawn("lost_miner", Vector3(-10, 0, 2))
+	_spawn("lost_miner", Vector3(-10, 0, -2))
+	check(mm.raisable_statues(boss).is_empty(), "3 miners standing: no more")
+	_teardown()

@@ -483,7 +483,7 @@ func think(delta: float, mgr: Node) -> void:
 				_circle_and_dive(delta, target, dist, mgr)
 				return
 			# Far above it (a hole's edge), or it's still clinging to the wall: climb up first, then fight (F236).
-			var atk := _pick_attack(dist) if to.y < 1.3 and (is_on_floor() or to.y < 0.4) else {}
+			var atk := _pick_attack(dist, mgr) if to.y < 1.3 and (is_on_floor() or to.y < 0.4) else {}
 			if not atk.is_empty():
 				_start_attack(atk, mgr)
 				return
@@ -530,7 +530,9 @@ func think(delta: float, mgr: Node) -> void:
 			elif not _attack.get("dive", false):
 				_move(delta, Vector3.ZERO, 0.0)
 			if _timer <= 0.0:
-				if data.get("smashes_statues", false):
+				if _attack.has("raise_miners"):
+					mgr.finish_raise(self)  # (the Prop Warden's Rally Slam: his fallen miners get up)
+				elif data.get("smashes_statues", false):
 					mgr.smash_statues_in_reach(self, _attack)  # (the Foreman's swings break fallen miners' stone, owner Nov 20)
 				if _attack.has("follow"):
 					var f: Dictionary = _attack.follow
@@ -711,11 +713,15 @@ func _dive_step(delta: float) -> void:
 
 ## Attack name -> _clock time it may be used again (attacks with `rest`, e.g. the Foreman's spin).
 var _rest_until := {}
+var raising: Array = []  ## (host) the Prop Warden's Rally Slam: the statue ids he is raising now
 
 
-func _pick_attack(dist: float) -> Dictionary:
+## `mgr` (when given) lets a raise move be picked only while there is a fallen miner to raise.
+func _pick_attack(dist: float, mgr: Node = null) -> Dictionary:
 	var options := []
 	for a in attack_options():
+		if a.has("raise_miners") and (mgr == null or mgr.raisable_statues(self).is_empty()):
+			continue
 		if dist <= a.reach and dist >= a.get("min_reach", 0.0) and (not a.get("lunge", false) or dist > 2.0) 				and _clock >= float(_rest_until.get(a.name, 0.0)):
 			options.append(a)
 	return options.pick_random() if not options.is_empty() else {}
@@ -729,6 +735,8 @@ func _start_attack(atk: Dictionary, mgr: Node) -> void:
 	state = State.ATTACK
 	_timer = atk.tell
 	mgr.send_tell(self, atk)
+	if atk.has("raise_miners"):
+		mgr.start_raise(self, atk)
 
 
 ## Is there a drop deeper than MAX_DROP just ahead (a hole it couldn't climb back out of)?

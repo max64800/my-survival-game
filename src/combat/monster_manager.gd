@@ -605,8 +605,8 @@ const SHIELD_BLOCK := 0.2
 
 
 func _shield_blocks(m: Monster, from: Vector3, heavy: bool) -> bool:
-	if heavy or not m.data.get("front_shield", false) or m.stun.is_stunned() or m.model == null:
-		return false
+	if heavy or not m.data.get("front_shield", false) or m.stun.is_stunned() or m.model == null or not m.raising.is_empty():
+		return false  # (during his Rally Slam the plank is up over his head: hit him now)
 	var to_me := (from - m.global_position) * Vector3(1, 0, 1)
 	var ahead := -m.model.global_transform.basis.z * Vector3(1, 0, 1)
 	if to_me.length() < 0.01 or ahead.length() < 0.01:
@@ -688,6 +688,8 @@ func _hurt_monster(m: Monster, peer: int, dmg: int, stun_amount: float, eff := 0
 	if not shell.is_empty() and m.shell_left > 0.0:
 		dmg = maxi(1, roundi(dmg * (1.0 - shell.cut)))
 	m.hp -= dmg
+	if not m.raising.is_empty() and m.hp > 0.0:
+		cancel_raise(m)  # a hit during the Rally Slam calls it off (owner, Nov 21)
 	if not shell.is_empty() and m.shell_left <= 0.0 and m.hp > 0.0 and m.shell_hits < shell.at.size() 			and m.hp <= m.max_hp() * float(shell.at[m.shell_hits]):
 		while m.shell_hits < shell.at.size() and m.hp <= m.max_hp() * float(shell.at[m.shell_hits]):
 			m.shell_hits += 1  # (a big hit past both marks uses both: it hides once)
@@ -1431,6 +1433,103 @@ func request_hit_statue(peer_id: int, id: int) -> String:
 	_ev_statue_gone.rpc(id, true)
 	auth._tell_feedback(peer_id, {state = "dug", hits = st.hits, needed = st.needed, material = Mat.STONE, point = at, normal = out, boulder = true, statue = true})
 	return "dug"
+
+
+# ================================================================== the Prop Warden's Rally Slam (owner, Nov 21)
+# About every 25 s (its rest) he raises his plank and slams it down; the stone of his fallen Lost Miners in his room
+# glows and shakes for the 2 s wind-up, then up to 2 of them get up again. Never more than RAISE_MAX_UP miners up at
+# once. A hit on him during the slam calls it off; a statue mined away can't be raised. Host decides, everyone sees.
+const RAISE_KIND := "lost_miner"
+const RAISE_MAX_UP := 3       ## miners standing at once (with the raised ones)
+const RAISE_MIN_AGE := 4.0    ## s a statue lies before he can raise it (time to start mining it)
+const RAISE_REACH := 16.0     ## m: outside a dungeon (tests), how far he reaches; in one, his own room
+
+
+## Host: the stone miners he could raise now, nearest first, as many as he may (empty = no Rally Slam).
+func raisable_statues(m: Monster) -> Array:
+	var up := 0
+	for u in monsters:
+		var o: Monster = monsters[u]
+		if o.kind == RAISE_KIND and o.is_alive() and o.pack_id == m.pack_id and o.global_position.distance_to(m.global_position) < 30.0:
+			up += 1
+	var room_for := RAISE_MAX_UP - up
+	if room_for <= 0:
+		return []
+	var found := []
+	for id in statues:
+		var st: Dictionary = statues[id]
+		if st.kind != RAISE_KIND or STATUE_LIFE - float(st.left) < RAISE_MIN_AGE:
+			continue
+		var p: Vector3 = st.pos
+		if m.dungeon.is_empty():
+			if p.distance_to(m.global_position) > RAISE_REACH:
+				continue
+		elif DungeonMap.space_at(m.dungeon, p + Vector3.UP) != m.dungeon_room:
+			continue
+		found.append([p.distance_to(m.global_position), id])
+	found.sort()
+	var ids := []
+	for f in found.slice(0, mini(room_for, 2)):
+		ids.append(f[1])
+	return ids
+
+
+## Host: the slam starts: pick the statues, and everyone sees them glow and shake.
+func start_raise(m: Monster, atk: Dictionary) -> void:
+	m.raising = raisable_statues(m).slice(0, int(atk.get("raise_miners", 2)))
+	if m.raising.is_empty():
+		return
+	_ev_note.rpc(m.uid, "Rise, my miners!")
+	_ev_stir.rpc(PackedInt32Array(m.raising), float(atk.tell))
+
+
+## Host: a hit during the slam: called off (the glow stops; he needs a moment, and the move rests as usual).
+func cancel_raise(m: Monster) -> void:
+	var ids := PackedInt32Array(m.raising)
+	m.raising = []
+	m.state = Monster.State.RECOVER
+	m._attack = {}
+	m._timer = 1.2
+	_ev_stir.rpc(ids, 0.0)
+	_ev_note.rpc(m.uid, "Stopped!")
+
+
+## Host: the slam lands: each chosen statue still there becomes a Lost Miner again, getting up and coming for you.
+func finish_raise(m: Monster) -> Array:
+	var uids := []
+	for id in m.raising:
+		var st: Dictionary = statues.get(id, {})
+		if st.is_empty():
+			continue  # mined away (or crumbled) during the slam
+		statues.erase(id)
+		_ev_statue_gone_raised.rpc(id)
+		var uid := _next_uid
+		_next_uid += 1
+		_ev_spawn.rpc(uid, RAISE_KIND, (st.pos as Vector3) + Vector3.UP * 0.3, false, m.pack_id)
+		var mon: Monster = monsters.get(uid)
+		if mon == null:
+			continue
+		mon.dungeon = m.dungeon
+		mon.dungeon_room = m.dungeon_room
+		mon.alert(m.target_peer if m.target_peer != 0 else m.last_hitter)  # (it gets up from its bones, then runs at you)
+		var room: Dictionary = _rooms.get(m.pack_id, {})
+		if not room.is_empty():
+			room.alive.append(uid)  # (the room isn't cleared while they stand)
+		uids.append(uid)
+	m.raising = []
+	return uids
+
+
+## Everyone: the chosen statues glow and shake for `seconds` (0 = stop).
+@rpc("authority", "call_local", "reliable")
+func _ev_stir(ids: PackedInt32Array, seconds: float) -> void:
+	for id in ids:
+		Statue.stir(id, seconds)
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_statue_gone_raised(id: int) -> void:
+	Statue.raise_away(id)
 
 
 ## Host: unmined statues crumble away after a while.
