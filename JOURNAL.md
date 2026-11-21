@@ -6255,28 +6255,6 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   someone steps into its lane. New model `rail_wedge` (two wedges and a cracked board, 4 pieces that burst off);
   `rail_release` and the glint strips are gone. Both pass the checks. Page version 2: the blue dwarf walks across,
   stops in the middle lane and gets knocked flying; Replay plays it again. Decisions written into `rail_triple.md`.
-- **Owner OK'd batch 1** (models now in `assets/models/dungeon/`). **Batch 2** in `dungeon_mine.py`:
-  `trap_swing_boulder`, `trap_bear_jaws`, `trap_tripwire_crossbow` + `tripwire`, `trap_chest_spikes`. Real-number fix:
-  the sheet's boulder swung side to side +-60 degrees between posts 4 m apart, but with a 2.6 m chain it reaches 2.3 m
-  out and would hit the posts (only 24 degrees fit), so it swings along the path; the beam is lowered to fit a 4 m
-  ceiling. The crossbow is borrowed from the player's crossbow script (only its shape code, run on its own, because
-  that script builds everything the moment it loads). Checker: one flicker spot (the chain's last link and the
-  strap's eye turned the same way) and the niche box 1-2 cm off the wall; fixed, all 5 pass. 3D page
-  "Lampwick Trap Set". Hurdle: a long shell script broke on quote marks again, so the code went into a file.
-- **Owner's look at batch 2:** (1) the boulder's top chain links didn't move: now the whole chain swings, only the
-  eye stays on the beam. (2) Bear jaws' teeth pointed the wrong way: now they stand up when open and slot one between
-  each other when shut (1 cm clear, 1.7 cm between neighbours). (3) Tripwire white; no crossbow: a small dark hole in
-  the wall's hip beam with a poison bolt (the player's blight bolt shape) and a green stain under it; the wire's eye
-  sits on the sill under the hole (`trap_tripwire_wall` replaces `trap_tripwire_crossbow`). (4) Spike trap: you could
-  open the chest without standing on spikes, so it is a 2-square dead-end tunnel floor (2 x 4 m): chest square and
-  the square in front, both full of holes. Hurdles: `rough_board` built away from the middle came out short (boards
-  now built in the middle and slid into place); pegs and doubled rim beams floated (one rim round the whole piece).
-  All 5 pass the checks; page version 2.
-- **Owner OK'd batch 2**, with two notes, both done: the tripwire is now 3 mm thin and runs wall to wall with no pegs
-  (a 1 m wire the game stretches); the "orange thing under the spikes" was a floor joist seen through the holes (and
-  the spikes went down through it), so the joists now run between the hole rows. A corner flicker spot came from the
-  shared rim-beam helper (one beam's end ran into the other's side): the 4 rim beams are placed by hand now. All 5
-  models in `assets/models/dungeon/`, model test passes, page version 3.
 
 ## November 20, 2026 (PC, enemies Claude, chat 1): Rock Beetle charge, and "dazed" fixed for every creature
 - **Start:** the merge clashes from the last chat were gone (no "UU" files, no clash marks in src/ or tests/).
@@ -6304,26 +6282,6 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - **Hurdles (Claude's own):** my first edit script failed because `monster.gd` has Windows line endings (fixed by
   converting before and after); a missing type made Godot refuse to load the scripts (`var dazed: bool`); the stars
   test first failed on the bat, which was asleep upside down, so its stars were "under" it.
-
-## November 20, 2026 (PC, enemies Claude, chat 1, later): the owner's look at the beetle page
-- **3D page "Rock Beetle Daze and Charge"** (buttons for each new look, with the old look beside it). It didn't load
-  at first: artifact pages won't serve `.glb` files, and when I sent the model as text, the page's safety rules blocked
-  the "data:" link inside it. Fixed by having the page rebuild the model from the text itself, and loading its
-  pictures as plain images.
-- **Owner's notes (F453-F456):** stars smaller and higher (they clipped through the shell); only the shell sways,
-  not the whole beetle; what a charge breaks drops everything mining it would give; and the dust trail like the
-  page's (the game had one, but small and dark, so he never saw it). I asked about one unclear line ("does help, a
-  lot"); he said: nothing more than the breaking and the full drop.
-- **Done:** stars a third smaller, above the creature's top; shell, head and feelers sway about the shell's
-  underside while the legs stay put; a smashed boulder gives 2 stone per hit it had left (column: same + last pile);
-  bigger, lighter dust puffs left behind the beetle. New test `test_charging_beetle_smash_gives_all_the_stone`;
-  the sway test now checks the legs stay still and the shell goes back after the daze.
-- **Dungeon test gear (F457):** the owner felt far too strong in the dungeon: "Test the dungeon" gave silver
-  everything. Now it's copper (pickaxe, sword, shield, crossbow, mace, spear, axe; the armor was copper already).
-  **Hurdle (Claude's own, a repeat):** I saved FEEDBACK-done.md with the beetle chat's 4 unsaved lines (F453-F456) in
-  it, the same mistake as an hour before. I looked at the size of the change but didn't stop when it was bigger than
-  my one line. Fix for next time: if a shared file already has someone else's changes, don't save it; leave my line
-  unsaved for that chat to save, and say so.
 
 
 ## November 20, 2026 (PC, gems-check Claude): checking the Mac's gem rebuild, physics tests green again
@@ -6406,6 +6364,57 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - **Reload, round 2 (F459):** 1 s shorter (copper 3 s). The reload move was always 1 s long, so for the rest of
   the reload he just stood there; now the move is stretched to the real reload time (co-op friends get the same
   time), and walking away stops it. Checked with 3 photos during one reload: he works the crossbow the whole time.
+
+
+## November 20, 2026 (PC, enemies Claude, chat 1, later): the owner's look at the beetle page
+- **3D page "Rock Beetle Daze and Charge"** (buttons for each new look, with the old look beside it). It didn't load
+  at first: artifact pages won't serve `.glb` files, and when I sent the model as text, the page's safety rules blocked
+  the "data:" link inside it. Fixed by having the page rebuild the model from the text itself, and loading its
+  pictures as plain images.
+- **Owner's notes (F453-F456):** stars smaller and higher (they clipped through the shell); only the shell sways,
+  not the whole beetle; what a charge breaks drops everything mining it would give; and the dust trail like the
+  page's (the game had one, but small and dark, so he never saw it). I asked about one unclear line ("does help, a
+  lot"); he said: nothing more than the breaking and the full drop.
+- **Done:** stars a third smaller, above the creature's top; shell, head and feelers sway about the shell's
+  underside while the legs stay put; a smashed boulder gives 2 stone per hit it had left (column: same + last pile);
+  bigger, lighter dust puffs left behind the beetle. New test `test_charging_beetle_smash_gives_all_the_stone`;
+  the sway test now checks the legs stay still and the shell goes back after the daze.
+
+
+## November 20, 2026 (PC, dungeons Claude, chat 8): Lampwick Drift batch 3, the mine's look
+- **Start:** 77 play sessions in the recordings folder are still unreviewed (told the owner; not read).
+- **Batch 3 in `dungeon_mine.py`:** `mine_lamp` (a board on the wall, an iron arm and hook, a square lantern with
+  copper posts and broken glass; parts "bracket", "lantern" (it sways on the hook) and "flame" (only when lit)),
+  `wall_copper_face` (2 x 2 m dug rock with stones sticking out, a copper vein with a branch and blue-green rust;
+  its edges all sit at one depth so pieces fit together), `rubble_ore` (rock and ore round a grey dust patch; bear
+  jaws lie in the dust, sunk 1 cm, chain under the dust; every pile has the patch so an empty one gives nothing away),
+  `floor_grooved` (the Old Shaft's walk: boards across it, two worn dark grooves along it where the boulder scrapes).
+- **Two picture rounds:** round 1: the grooves were too faint, the copper too small and dark, and the dust a flat
+  red ring with a hole. Round 2: wider, deeper grooves painted dark inside; bigger, brighter copper on darker rock;
+  a grey dust bed covering the middle too. The checker found one flicker spot (two wall stones overlapping); stones
+  now keep apart. All 4 pass. Still not great: the copper wall's round stones look a bit spotty (asked the owner).
+- **3D page "Lampwick Mine Look":** two lamps (Light button), the rock face as 4 pieces (4 x 4 m), the rubble with
+  jaws (Step button), 3 grooved squares with the batch 2 boulder swinging over them. Waiting for the owner's OK
+  before the models go into `assets/`.
+- **Hurdles (Claude's own):** the page's second lamp was first copied after the first one had been changed (it
+  would have got a doubled sway); fixed before publishing by copying both first.
+- **Owner's look at batch 3:** (1) no copper wall piece: the game's normal copper ore goes in the mine
+  (`wall_copper_face` removed from the script). (2) The lanterns: "I like this way really much", saved into
+  `assets/models/dungeon/mine_lamp.glb`. (3) Bear jaws: no chain, no stake, just the black trap; it lies about in
+  different rooms, only a player sets it off, 25 damage (written into `trap_bear_jaws.md`). New jaws pass the
+  checker, saved into `assets/`; 57/57 dungeon checks pass. Rubble and grooved floor: waiting for the owner's word.
+- **Owner:** the rubble goes round the healing shrines; the grooved walk is good. Rubble now has a round dusty middle
+  (1.12 m) for a healing basin (Mossgate's mushroom fountain is 0.94 m), no chain gap; one pebble flickered against a
+  stone, so pebbles keep clear now. Both pass the checker and are in `assets/models/dungeon/`. Batch 3 done.
+- **Healing basin (owner: the mushroom fountain "doesn't look good"):** it was an old plain-colour model (box
+  stones, a perfect circle). New `heal_fountain` in `dungeon_mine.py`: a carved stone mushroom (limestone stem,
+  brown rock cap with glowing spots) in a ring of 12 chunky stones round glowing water, three falling streams; 1.0 m
+  across, so it fits the rubble ring's middle. Round 1: the glow spots floated over the lumpy cap (now placed on its
+  surface with a ray), the water poked out past the stones, gaps between the stones, glass-rod streams. Round 2
+  fixed those; the water still looks a bit flat. Passes the checker. Page version 2 (fountain in the rubble, jaws on
+  their own, copper wall gone). Waiting for the owner's OK. Hurdle: my "thins as it falls" water cone was built
+  upside down at first (wide at the bottom).
+- **Creatures:** the owner asked to download KayKit's skeletons and turn them into dwarf miners: handed to a new chat.
 
 ## November 20, 2026 (PC, enemies Claude, chat 1, the bat): bats circle, then dive through you (F460)
 - **Owner's wish:** better flying around; the attack should go *through* you at twice their speed with a trail,
@@ -6518,6 +6527,26 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   `docs/decisions/2026-11-20-creature-climbing.md`; handed to a new chat. Mistake: my FEEDBACK.md save also took one
   line another chat had just changed (F389, the great axe chat's note). Their text, unchanged, but it went in under my name.
 
+## November 20, 2026 (PC, dwarf-animations Claude, chat 10): the owner's filmed combo onto the dwarf by script; then the Foreman's moves instead (F389)
+- **Owner's new plan:** great axe combo = chop, stab, overhead; he filmed it (front view, 3 combos) and no longer
+  wants to move Blender controls himself. Saved chat 9's uncommitted pose scripts first.
+- **Did:** tracked every video frame (MediaPipe, `tools/mocap/track_all_frames.py`), picked the 15 key frames from
+  hand speed (owner confirmed the sheet), turned them into directions (`tools/mocap/video_targets.py` ->
+  `tools/blender_poses/great_axe_video_targets.json`). New `tools/blender_poses/pose_from_video.py` moves every pose
+  file control by script (a small search puts the axe through both fists, within his 33 cm reach, 3.5 cm off his body)
+  and `render_poses.py` makes front + behind pictures. Claude's per-pose readings: `great_axe_video_keys.json`.
+  The real pose file was NOT changed (all on a scratch copy).
+- **Hurdles (Claude's own):** the camera's depth guess was too noisy to aim the handle from the fists (axe stood
+  upright in the middle pose): read the slant from the picture instead. My render script wiped the controls' keys
+  (all 5 pictures the same pose). The search gave different answers each run (shoulders moved with the last arm
+  pose): measured from the chest instead. The pose file's rest shape had crooked shoulders (left 14 cm forward,
+  right 15 cm back and 6 cm up, from the old game stance): levelled. His arms (33 cm) can't reach low in front of
+  his belly, so the hit fought the body every time; my "both fists to his left hip" fix put his hands behind him and
+  his right shoulder up at his nose (owner). 3 picture rounds; owner: poses 1-3 better, hit and recovery no better.
+- **Owner's decision:** drop our two-handed swings; copy the Lampwick Foreman's 2 moves (KayKit Skeletons pack,
+  2H Chop + 2H Spin, the same KayKit moves chat 5 tried) onto the dwarf, right hand slid high up the handle, 3D page
+  first. Next chat does it (task change). Shirt tear at the right shoulder: still to fix (owner said yes).
+
 ## November 20, 2026 (PC, creatures Claude for dungeon 2, chat 2): the skeleton miners come alive in the game
 - **Start:** 80 play sessions in the recordings folder are still unreviewed (told the owner; not read).
 - **The new thing:** our older creatures move by named parts (code swings each leg). These three move by a skeleton,
@@ -6547,6 +6576,35 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   floor); it now waits until it stands. (5) Another chat was changing `monster.gd` at the same time (doorway fix):
   small separate edits, and only my lines committed.
 - **Lampwick's blueprint isn't in the game yet** (dungeons chat): the miners aren't placed in any dungeon yet.
+
+## Nov 20: creatures climb walls and ceilings (F236 🔁, F474, F475, enemies chat 3)
+- **Owner's decisions** were already saved (`docs/decisions/2026-11-20-creature-climbing.md`). Claude picked how:
+  **"feelers"**. A climber grabs the wall, its whole body turns so its feet face the rock, and every step a feeler
+  (an invisible ray, like a cane) finds the rock under its feet again. Inside corners (wall to ceiling) it turns onto
+  the new surface. At a hole's lip it feels round the corner and steps onto the floor. **Rejected:** turning gravity
+  sideways (jitters on bumpy cave rock, breaks every "on the floor?" check) and Godot's path maps (floors only;
+  our caves change with every dig).
+- **Who:** Cave Spider and Rock Snail: walls and ceilings. Rock Beetle: walls only, and only to get up to you or home.
+  Great Rock Beetle: never. (The old Nov 19 climb, a push upward when stuck against a wall, is gone. The skeleton
+  miners don't climb: not in the owner's list.)
+- **Spiders:** chasing, they run up any wall in the way. Some wait on the ceiling. Walk under one: it hisses
+  (0.6 s to step aside), lets go, and bites as it lands if you're still there.
+- **Snails:** about 1 in 4 (spiders too) start on a wall or ceiling. Any hit knocks one down: a bolt, a long reach, or
+  a thrown bomb/pod landing next to it. It lands on its shell, upside down, dazed with stars for 4 s.
+- **Placement rule:** creatures up high never sit in or over built ground (the tower, the Outpost, dungeons), within
+  8 m of a place (ruins, camps, the great hall: their paths and stairs), or over a player's building.
+- **Co-op:** the host moves them and decides every fall. A new message tells everyone which surface a creature is on
+  (plus "hiss" and "lies on its shell"). Players who join later get it too.
+- **Tests:** new `tests/test_climbing.gd` (7 tests: who climbs where, the body turn, snail knocked down dazed, spider
+  hiss then drop, climbers out of a pit while the boss stays down, placement rule, co-op surface). Old
+  `test_beetles_and_snails_climb_out_of_holes` still passes. New robot `climbcheck` (pictures).
+- **Hurdles:** (1) A math error the first time a beetle crawled ("axis must be normalized"): blending between two
+  rock directions made a direction a hair too long. Swapped to a simpler blend. (2) The robot found no ceiling at
+  first (the start cavern is over 7 m tall), so it searched wider. (3) Its first picture looked straight up through
+  the dwarf's own body (the camera sits behind him), so it showed nothing. The tests check the ceiling instead;
+  the second picture showed the snail on its shell and the spider had already dropped and bitten.
+  (4) There's no "throw a rock" yet, only bombs and pods: those knock snails down for now.
+  (5) Another chat had staged its own changes in the same files: only my lines committed.
 
 
 ## Nov 20 (eve, PC, FPS Claude): the FPS drops found and fixed (F266, F417)
@@ -6580,37 +6638,6 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   slow minutes on Nov 20 at 2:01 pm.
 - **Full test run (600 checks):** 9 failed. 3 were mine (old tests said "only 5 creatures"; one built a model without its creature name): fixed, the miners are marked dungeon_only. The other 6 are in other chats' unfinished work (dwarf great swings, wall climbing). Also: another chat's F473 commit uses `blocked` without the line that makes it (nothing loaded for a while); their working file has the line. A scratch copy for testing didn't work (the big model files are stored separately by GitHub, the copy got placeholders).
 - **Dungeon 2 button (owner asked, same chat):** the dev start menu now has "Dungeon 1, Mossgate Hold" (the old button, renamed) and "Dungeon 2, Lampwick's miners". Lampwick's own map isn't built yet, so Dungeon 2 is Mossgate with every creature swapped for the miners (beetles, spiders, bats -> Tunnel Rats, snails -> Lost Miners, the big beetle -> the Foreman), same copper gear. The swap is cleared whenever the menu opens, so it never reaches a real world. Robot: `-- dungeontest dungeon2`: 22 miners in 8 rooms, bone piles on the gate hall floor. Owner's answer on drops / Foreman boost: wait, test first.
-- **Full test run (600 checks):** 9 failed. 3 were mine (old tests said "only 5 creatures"; one built a model without its creature name): fixed, the miners are marked dungeon_only. The other 6 are in other chats' unfinished work (dwarf great swings, wall climbing). Also: another chat's F473 commit uses `blocked` without the line that makes it (nothing loaded for a while); their working file has the line. A scratch copy for testing didn't work (the big model files are stored separately by GitHub, the copy got placeholders).
-
-## Nov 20: creatures climb walls and ceilings (F236 🔁, F474, F475, enemies chat 3)
-- **Owner's decisions** were already saved (`docs/decisions/2026-11-20-creature-climbing.md`). Claude picked how:
-  **"feelers"**. A climber grabs the wall, its whole body turns so its feet face the rock, and every step a feeler
-  (an invisible ray, like a cane) finds the rock under its feet again. Inside corners (wall to ceiling) it turns onto
-  the new surface. At a hole's lip it feels round the corner and steps onto the floor. **Rejected:** turning gravity
-  sideways (jitters on bumpy cave rock, breaks every "on the floor?" check) and Godot's path maps (floors only;
-  our caves change with every dig).
-- **Who:** Cave Spider and Rock Snail: walls and ceilings. Rock Beetle: walls only, and only to get up to you or home.
-  Great Rock Beetle: never. (The old Nov 19 climb, a push upward when stuck against a wall, is gone. The skeleton
-  miners don't climb: not in the owner's list.)
-- **Spiders:** chasing, they run up any wall in the way. Some wait on the ceiling. Walk under one: it hisses
-  (0.6 s to step aside), lets go, and bites as it lands if you're still there.
-- **Snails:** about 1 in 4 (spiders too) start on a wall or ceiling. Any hit knocks one down: a bolt, a long reach, or
-  a thrown bomb/pod landing next to it. It lands on its shell, upside down, dazed with stars for 4 s.
-- **Placement rule:** creatures up high never sit in or over built ground (the tower, the Outpost, dungeons), within
-  8 m of a place (ruins, camps, the great hall: their paths and stairs), or over a player's building.
-- **Co-op:** the host moves them and decides every fall. A new message tells everyone which surface a creature is on
-  (plus "hiss" and "lies on its shell"). Players who join later get it too.
-- **Tests:** new `tests/test_climbing.gd` (7 tests: who climbs where, the body turn, snail knocked down dazed, spider
-  hiss then drop, climbers out of a pit while the boss stays down, placement rule, co-op surface). Old
-  `test_beetles_and_snails_climb_out_of_holes` still passes. New robot `climbcheck` (pictures).
-- **Hurdles:** (1) A math error the first time a beetle crawled ("axis must be normalized"): blending between two
-  rock directions made a direction a hair too long. Swapped to a simpler blend. (2) The robot found no ceiling at
-  first (the start cavern is over 7 m tall), so it searched wider. (3) Its first picture looked straight up through
-  the dwarf's own body (the camera sits behind him), so it showed nothing. The tests check the ceiling instead;
-  the second picture showed the snail on its shell and the spider had already dropped and bitten.
-  (4) There's no "throw a rock" yet, only bombs and pods: those knock snails down for now.
-  (5) Another chat had staged its own changes in the same files: only my lines committed.
-- **Dungeon 2 button (owner asked, same chat):** the dev start menu now has "Dungeon 1, Mossgate Hold" (the old button, renamed) and "Dungeon 2, Lampwick's miners". Lampwick's own map isn't built yet, so Dungeon 2 is Mossgate with every creature swapped for the miners (beetles, spiders, bats -> Tunnel Rats, snails -> Lost Miners, the big beetle -> the Foreman), same copper gear. The swap is cleared whenever the menu opens, so it never reaches a real world. Robot: `-- dungeontest dungeon2`: 22 miners in 8 rooms, bone piles on the gate hall floor. Owner's answer on drops / Foreman boost: wait, test first.
 
 ## November 20, 2026 (PC, dwarf-animations Claude, chat 11): the Lampwick Foreman's moves on the great axe (F389, owner: "really good")
 - **Did:** new `tools/asset_forge/great_kaykit_bake.gd` copies the Foreman's moves (the CC0 KayKit Skeletons warrior:
@@ -6642,6 +6669,24 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   his body or a fist slips up to 5 cm (rule: 3 cm / 2 cm); three fixes moved it around. Next chat: sword and mace from
   the same pack (1H chop, slashes, stab, block), a 3D page first.
 
+## November 20, 2026 (PC, outpost-rebuild Claude): a 3D page of the Fallen Outpost rebuilt in wood and in stone (F478)
+- **What we did:** the owner wants the Fallen Outpost rebuildable like the watchtower (Rebuilding Chest, wood or stone,
+  its blueprint + building experience). First step, a 3D page: the ruin as it is, rebuilt in wood, rebuilt in stone,
+  side by side, plus the whole Wooden Outpost blueprint and a "Mark new pieces" button. The pieces were worked out with
+  the same rules the game's rebuild uses (whole old stone stays; in wood the worn walls stay too; battlements become
+  wooden railings). Wood rebuild: 96 new pieces, 567 planks + 94 rope; stone: 179 new pieces, 1,863 cut stone.
+  Logged F478 and F479 ("we need a lot more ruins", linked to F237). Waiting for the owner's OK before game code.
+- **Hurdles found:** (1) The outpost's Rebuilding Chest code is the tower's, so the outpost's chest would have rebuilt
+  a *watchtower*, and the rebuild only looks 9 m around the ruin (the outpost is 37 m wide). To fix in the game step.
+  (2) The ruin was lined up with its round towers on Nov 17 (F305: the front and the right wall slid 73 cm / 27 cm),
+  but the Stone Outpost blueprint kept the old layout, so about 170 whole pieces didn't match their spots and would
+  have been torn down and put back 27 cm off. The page uses the blueprint with the same slide; the game step makes the
+  blueprint match. (3) The big gate and its leaves have no wooden version, so the wooden rebuild still needs 18 cut
+  stone, 2 mortar and 4 copper (asked the owner).
+- **Claude's own slips:** couldn't find Godot at first (not on the PATH; it's in the WinGet folder, see the godot MCP
+  setting); the page first showed an error (a setting used before it was made) and a loading text that never went
+  away: both seen in my own browser screenshot and fixed before showing it.
+
 ## November 20, 2026 (PC, junk-models Claude): dungeon junk, batches 1 and 2
 - **What:** the 20 "Dungeon junk" floor models from `traps-and-variety.md`. New build script
   `tools/asset_forge/builds/dungeon_junk.py` (Blender, our own paintings, same helpers as the other dungeon sets).
@@ -6664,52 +6709,22 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   grid, frayed edge, burlap paint. (7) My first local test page hit another chat's server on the same port: used my
   own port. All 8 pass `check_models.py` (FLOAT, SHIMMER, SCRIPT).
 - **Next:** batch 3 after the owner's OK; the placement + automatic test when the junk goes into the dungeon plans.
-
-## November 20, 2026 (PC, dwarf-animations Claude, chat 12): sword and mace from the KayKit pack, owner said no; his own videos next (F389)
-- **What we did:** copied the KayKit Skeletons warrior's one-handed moves (chop, diagonal slash, side slash, stab,
-  jump chop, shield bash) onto the dwarf the chat 11 way (`tools/asset_forge/one_kaykit_bake.gd` ->
-  `assets/anim/one_kaykit.json`, no mirror: the pack holds 1H weapons in the right hand too). New `DwarfOneSwing`
-  plays them as "o/" clips (`DwarfRig.one_pose`), eased in and out over his own arms; `DwarfFist` points the weapon the
-  pack's way, its edge leading. Not wired to the attacks yet. Page "Sword and Mace Swings"
-  (https://claude.ai/artifact/Ews5QNEzqpwwpUZS5LnKs5, recorder `tools/asset_forge/one_swing_export.gd`). New check
-  `test_one_handed_swings_hold_and_hit_in_front`.
-- **Owner's verdict:** "not a big fan": the swings look stationary, the free left arm sticks out like a T-pose (it
-  should hold a shield), and they aren't big swings ("goes to the chest and then swings"). He filmed two new videos
-  (Downloads: IMG_4428 = sword, IMG_4429 = mace; 3 hits each, repeated 3 times, front view, blue glove right, orange
-  left, a white stick). His choice: all 3 hits are one light combo (click, click, click). Next chat copies those.
-- **Hurdles (Claude's own):** the game's hit first landed on the swing's fastest frame, which was already past his
-  side: now on the fast frame where the blade is most in front. His hips only joined a swing after a slow fade (the
-  standing/walking blend was only updated during great-axe swings). My new test counted frames, but tests run faster
-  than real time, so the fade "never ended": it now waits by the clock. Two other chats' page servers sat on ports
-  8765 and 8791 (opened their pages by mistake, closed them): use an unusual port. My first page picture was taken
-  before the page settled (looked like his head faced backwards): checked again, it was fine.
-- **Still open:** the great axe check still fails on a few single frames now and then (Spin/Chop handle 0-2 cm from
-  his body, a fist 5 cm off), as in chat 11.
-- **Owner's look at batch 2 (later):** "the bag is okay": took the rope ring off the sack and the dark torn patch on
-  its side (both looked like blobs). Loved the rag paint and the plank pile, so 5 more of each: `junk_rags_b`..`_f`
-  (a big and a small rag, each pile its own shapes and layout) and `junk_rubble_wood_b`..`_f` (6-9 boards dropped one
-  by one: a board that lands on others rests on the highest one under it, so two boards never lie in the same place
-  at the same height; piles more spread out, chips further out). Batch 2 OK'd: all 18 junk models are now in
-  `assets/models/dungeon/`, all pass the checker. Hurdles: (1) the model checker looks for each model's name written
-  in a script, and my loop built the names from letters, so one wasn't found: wrote the names out. (2) One plank in a
-  new pile hovered 4.7 cm: it only touched the board under it in the safety margin round its jagged end; boards now
-  rest only on boards that are really under them (or get dropped somewhere else).
-- **Batch 3 (mine junk, small dungeons), owner OK'd after fixes:** `junk_pickaxe_broken`, `junk_shovel_bent`,
-  `junk_beam_snapped`, `junk_helmet`, `junk_lantern` (helmet and lantern are 2 models, as the plan says). Owner's notes:
-  the pickaxe bent the wrong way (the picks now curve toward the handle); the beam was "two beams with spikes, so low
-  poly": rebuilt as one hand-hewn shape (a rounded, uneven square that changes along its length, 32 points round,
-  a ring every 3.5 cm), cracks cut in as grooves, iron bands that hug the uneven wood, and a torn break where each strip
-  of wood ends at its own length (the top fibres longest, peeling) instead of a flat cut with sticks. Then "remove the
-  black spots": the dark crack paint and the moss (it came out almost black) are gone; the grooves stay.
-- **Hurdles and Claude's own slips:** (1) the pickaxe socket's back face sat exactly on the head's edge and the two beam
-  halves' splinters crossed in the gap: both flicker spots (checker SHIMMER), fixed. (2) Helmet crack lines and the
-  lantern's candle and bolts floated (FLOAT): crack lines removed, the others moved onto what holds them. (3) The helmet
-  shone like a mirror and the lantern glass looked like a bright screen: duller metal, dark smoky glass. (4) The new
-  beam showed no wood painting: its picture map had a different name from the other parts', so after joining it sat on
-  a second map the game never reads; then the many small faces looked like blocks until the shading was smoothed.
-  (5) Longer torn ends reached below the floor and lifted the whole pile, so the floor chips hovered: beam raised.
-  (6) The shell tool choked twice on apostrophes inside long scripts: those patches now go through files.
-  All 23 junk models are in `assets/models/dungeon/` and pass the checker.
+- **Later the same evening (outpost rebuild in the game):** the owner saw the page and asked for 4 things: (1) a gap in
+  the right wall: it was where the two moved parts of the wall meet (one moved 73 cm forward, the other 27 cm back and
+  1 m out), leaving a 3 m hole: now a 2 m wall, a 1 m wall across and a 1 m wall make a small step that closes it;
+  (2) rebuilding with either material teaches **both** blueprints (tower too); (3) the walkway on the right wall goes on
+  over the forge: stone posts stand on the forge floor and go up through its roof's edge (the post heights were chosen
+  so the game's overlap check is happy), a railing closes its end, the old lower battlements there make way;
+  (4) a hole under a new railing: the railing stood on a worn wall whose top stones are missing, so in wood a worn wall
+  that gets something new on top is now rebuilt whole. Game code: the Wooden Outpost blueprint, the Stone Outpost lined
+  up like its ruin (`_outpost_line_up`), each ruin's chest names its own two blueprints, size and chest spot (the outpost's
+  had said "watchtower", and the rebuild only looked 9 m around), old worlds' outpost chests are set right, the torn-off
+  gate halves are cleared. 6 new tests in test_ruin_outpost.
+- **Hurdles:** the placement test found that the outpost's "nothing grows here" circle (22.5 m) didn't reach its corner
+  towers (25.5 m from the middle): widened. Another chat was changing the cave maker mid-test (Lampwick Drift), which
+  crashed every cave test for a while; reran once it settled. My own slips: one search-and-replace ate half a comment
+  line (parse error, fixed); a page script drew one worn wall twice (fixed); a wall test asked for wall past where the
+  wall becomes a tower (fixed the test, not the game).
 
 ## November 20, 2026 (PC, dungeons Claude for dungeon 2, game code): Lampwick Drift is a real dungeon; the Foreman's spin
 - **Start:** checked that nobody else was building Lampwick's game code: the models chat (chat 8) only makes models
@@ -6965,6 +6980,9 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - **Checks:** test_lampwick 29/29, test_skeleton_miners 9/9, test_dungeon 63/63, test_monsters 49/49 (its stone test
   now checks walk-through). One test_dungeon run crashed in the cave maker once (another chat saving a file mid-run);
   the rerun passed. test_dwarf's 3 known failures are other chats'.
+- **Owner: "still won't load" (stuck at 85 of 86 models).** All 86 files were published and fine; on the live site one
+  download hung (the page now asks for 86 files at once, 68 before), and the page waited for it forever. Now it loads
+  6 at a time, tries a stuck file again (20 s, 3 tries), and if one still fails it builds without it and names it.
 
 ## November 20, 2026 (PC, dwarf-animations Claude, chat 14): sword turn picked, video copy dropped, UAL 2 sword moves (F389)
 - **Did:** rebuilt chat 13's scratch data (frames, tracking, scan, targets; the bake came out identical). Close-up sheet
@@ -6990,6 +7008,7 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   (7) `_clear_head` only guarded the top of his head: it now also checks his face and beard balls. (8) Test renders
   differ by a few pixels run to run: compared by eye instead.
 - **Tests:** `test_dwarf_fist` 6/7: the one-handed check passes; the great-axe Spin check still fails (a fist 3.8 cm off, the old open item from chat 11).
+- **Owner (end of chat): "2h axe is good for now"**: leave the great axe and its Spin check alone.
 - **Owner: "is it in the game, can I test? F9 = god mode; a bit more junk, some are close to the middle" (F505, F506).**
   Yes: the game builds Mossgate from the same plan (Dev: Test the dungeon). F9 (dev builds) = god mode: Vitals.god
   blocks all damage and keeps health full, Dwarf.dev_god makes every monster ignore you (the same check as F6 flying);
@@ -6997,24 +7016,6 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   a 4 m tunnel looks central: now every piece lies lengthwise along its wall, 0.2 m from the boards, corners first half
   the time, 5-8 per big room / 2-3 small, tunnels more often (71 pieces); the test wants 1.0 m or less from a wall.
   Page version 12. Hurdle: main.gd and dwarf.gd also held another chat's unsaved changes: only my lines committed.
-- **Owner: "move to dung 2" (Lampwick Drift).** make_lampwick.py belongs to the Lampwick chat, so the junk lines were
-  tried on a temporary copy (writing to the scratchpad, never to the real plan): 25 pieces in 7 rooms (none where rails
-  run, over the Old Shaft, in the vault or the boulder's niche). Hurdles: (1) the 45 mine lamps hang 1.5 m up on the
-  walls but first counted as floor furniture, blocking most wall spots (21 -> 24 pieces once only low things count);
-  creature start spots dropped as blockers (they walk off): 25. (2) The test's 0.8 m edge round rail spaces reached
-  through the wall into the next room (a helmet in the Lamp Room, an axe head in the Office): the rail check is now
-  "not inside a rail space" + 1 m from every rail piece; the 0.8 m edge stays for drops. Test passed on the Lampwick
-  layout (swapped in, then the real plan put back byte for byte). (3) The new page "Lampwick Drift Junk"
-  (https://claude.ai/artifact/FCycKJhFN2Nef6QuM26b3G) first hid the whole upper level (it treated 3 m up as ceiling):
-  heights now count from each space's floor; all lamps lit on the page. Waiting for the owner's OK, then the lines
-  go to the Lampwick chat.
-- **Owner: "no 3D pages for junk, I'll check in the game"** (saved as a memory). The Lampwick chat was closed, so with
-  the owner's OK Claude added the tested junk lines to make_lampwick.py itself: Lampwick's plan came out byte for
-  byte the same as the tested one; junk and Lampwick tests pass. Owner picked next: junk round the Watchtower and the
-  Fallen Outpost (inside and outside the walls), and new "ruin camp" junk models first (cold campfire ring, rotten
-  bedroll, dropped torch), then new junk for the other dungeons (ideas list given to the owner).
-  Found: the ruin plans' "props" (a crate, sacks) are never built by the game (RuinTower._build only builds pieces,
-  chests and torches): ruin junk needs a small new game part. Left for a new chat.
 
 ## Nov 20 — Dungeon 3, Old Pell's Diggings, step 1 (dungeons chat, F507)
 - **Owner:** "start working on dung 3 please while I continue to test dung 2". Asked two things first: just build it
@@ -7045,6 +7046,56 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   shots=<folder> claude=<what>` (16 room pictures).
 - **Next (step 2 and 3):** the spear wall (Cave-in Tunnel), the shoving wall (Rotten Gallery), the rope lift (the way
   out; a ladder for now).
+- **Owner: "move to dung 2" (Lampwick Drift).** make_lampwick.py belongs to the Lampwick chat, so the junk lines were
+  tried on a temporary copy (writing to the scratchpad, never to the real plan): 25 pieces in 7 rooms (none where rails
+  run, over the Old Shaft, in the vault or the boulder's niche). Hurdles: (1) the 45 mine lamps hang 1.5 m up on the
+  walls but first counted as floor furniture, blocking most wall spots (21 -> 24 pieces once only low things count);
+  creature start spots dropped as blockers (they walk off): 25. (2) The test's 0.8 m edge round rail spaces reached
+  through the wall into the next room (a helmet in the Lamp Room, an axe head in the Office): the rail check is now
+  "not inside a rail space" + 1 m from every rail piece; the 0.8 m edge stays for drops. Test passed on the Lampwick
+  layout (swapped in, then the real plan put back byte for byte). (3) The new page "Lampwick Drift Junk"
+  (https://claude.ai/artifact/FCycKJhFN2Nef6QuM26b3G) first hid the whole upper level (it treated 3 m up as ceiling):
+  heights now count from each space's floor; all lamps lit on the page. Waiting for the owner's OK, then the lines
+  go to the Lampwick chat.
+- **Owner: "no 3D pages for junk, I'll check in the game"** (saved as a memory). The Lampwick chat was closed, so with
+  the owner's OK Claude added the tested junk lines to make_lampwick.py itself: Lampwick's plan came out byte for
+  byte the same as the tested one; junk and Lampwick tests pass. Owner picked next: junk round the Watchtower and the
+  Fallen Outpost (inside and outside the walls), and new "ruin camp" junk models first (cold campfire ring, rotten
+  bedroll, dropped torch), then new junk for the other dungeons (ideas list given to the owner).
+  Found: the ruin plans' "props" (a crate, sacks) are never built by the game (RuinTower._build only builds pieces,
+  chests and torches): ruin junk needs a small new game part. Left for a new chat.
+
+
+## Nov 20, 2026: dwarf-animations Claude, chat 15 (F389: UAL 2 sword moves, the shield arm)
+- **Owner on the "UAL Sword Moves" page:** "amazing", but the shield arm "turns and spins": hold it still. Asked
+  what else the pack has (told: shield bash, shield charge, shield guard/break, block, sword lunge, hook, throw, roll).
+- **Mistake 1 (Claude):** "froze" the left arm in the bake (one_ual_bake.gd) and showed the page after looking at 2
+  moments. Owner: "definitely not done", the shield through his head, the sword through the shield. Cause: the old
+  chat 13 guard (DwarfFist._guard, from his filmed videos) pulled the left fist in front of his chest in EVERY one-
+  handed swing, so the bake's arm never reached the game. Lesson: measure, don't eyeball two frames.
+- **New checks in one_swing_export.gd:** per frame, the shield disc against his head, body and the sword's line
+  (rough: it flags near-misses that look fine; trust pictures for now), and the sword node against the hand bone.
+- **The pack's own guard** sank the shield into his round belly, the hanging shield failed too (the pack bends his
+  whole body). What works: during UAL moves the left arm keeps his standing pose (DwarfFist keeps the 4 arm bones'
+  own turns, so they ride on his chest) and no guard; owner: "way better".
+- **Owner's next picture:** in the deep lunge he folds flat over the shield. Fix: the bake halves the body's bend
+  (`bend=0.5`, default).
+- **Owner's next round (4 pictures):** he "teleports" in the spin, the sword out of his hand, the shield arm bends at
+  the end. Causes, all measured: (1) the page stored every 3rd frame and blended the sword in a straight line while the
+  bones turned: now every frame (`every=1`, the file only 14.7 MB). (2) The bake had 30 poses a second; the pack's
+  spins turned over 180 deg between two, so they played backwards: now 120 (the strike finder reads speed over 1/30 s,
+  as before). (3) Halving the bend also halved the spin, which flipped 180 deg in one frame as it passed half a turn:
+  now only the lean is halved (twist kept, `_less_lean`). (4) The fade back to standing forgot the move was UAL and the
+  old guard grabbed the arm: DwarfFist remembers (`_ual`). (5) Short hits eased in over 3 frames: UAL moves ease in
+  over at least 0.15 s (DwarfRig.UAL_BLEND_IN). Result: combo, C and heavy keep the sword in hand (max 11-13 cm from the
+  hand bone, its normal grip); A's end and B's start still snap the right arm (60-70 deg in a frame).
+- **Owner asked:** swap our dwarf for the pack's model, reshaped? Told no: the bumping comes from his shape (belly,
+  short legs, big head), any model reshaped to him would bump the same way; moves made for chunky bodies or for a
+  shield (Mixamo Sword and Shield) help more.
+- **Hurdles:** a PowerShell single-quoted replace wrote a literal backtick-n into dwarf_fist.gd (fixed, compiled);
+  port 8766 was another chat's page server (used 8791).
+- Mixamo folder git-ignored (`tools/asset_forge/packs/mixamo/`). Owner: leave the shirt holes. Mixamo pack: not
+  downloaded yet. Page v4: https://claude.ai/artifact/9DKaixigUvFYqYcpPPXmTj. Not wired to attacks yet; not pushed.
 
 ## Nov 20 — Old Pell's Diggings, step 2 and the owner's first play (dungeons chat, F507-F516, F494 🔁)
 - **Owner:** "build whatever you need for Dungeon 3 so I can test it." New script `tools/asset_forge/builds/dungeon_pell.py`
@@ -7087,6 +7138,7 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   unsaved dwarf animation changes (not mine; left alone). Batch 3 of the mine set (mine lamp, rubble, grooved floor,
   the new bear jaws) had never been committed by the last dungeons chat: committed now with this.
 
+
 ## November 20, 2026 (PC, spire Claude): Brewhall committed; ruin 4, the Lantern Spire, as a 3D page first (F479)
 - **Finishing the Brewhall:** re-ran the Fallen Outpost tests after the last chat's builder/ruin changes: wood (4 min),
   saves (1.5 min) and stone (18.5 min) all passed. The stone one is just slow, not stuck: in a stone rebuild every
@@ -7111,26 +7163,6 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - **For the game step:** the fire bowl must become a game piece (stone + copper?); the game's worn-wall rule only
   looks 2 m up (Stonehold floors are 2.25 m apart; the page uses up to 2.35 m like the Brewhall page). The fallen
   pieces are debris cleared by the rebuild. No base space round the Spire.
-- **Owner, same evening:** OK'd the Spire as it is ("I really like how you built the floor below the fire": the open
-  lantern gallery) and the fire bowl's price (cut stone + a few copper ingots). Committed the page-stage files; the
-  page's source is kept in `tools/ruins/spire_page.html` so the next ruin page can be copied from it.
-
-## Nov 20 — Old Pell's Diggings, step 3: a spark before the miners' blows (dungeons chat, F518)
-- **Owner:** "I can't see the enemies attack: their picks are small and they're behind my dwarf, so I don't know when
-  to parry." We brainstormed six ideas (raise and hold, a spark, an arrow at the screen edge, a see-through dwarf,
-  bigger picks, a warning sound). The owner picked **just a spark first**: a white-gold star plus a "ting".
-- **Built:** `src/art/pick_glint.gd` (PickGlint). It's a star drawn once in code, always facing the camera, and drawn
-  on top of everything (no depth test), so the dwarf can't hide it. It pops in, settles and shrinks in 0.38 s.
-  `CreatureRig.attack` starts it 0.4 s before the blow lands (`glint_wait`: right away if the warning is shorter),
-  at the pick head (the hand socket + TRAIL_LEN, like the swing trail). The "ting" is the existing Kenney clink
-  (already in CREDITS) at pitch 2.3. Every screen makes its own from the swing it already plays, so it's co-op ready.
-  All skeleton miners get it, the Foreman too.
-- **Checked:** test_skeleton_miners 10/10 (new: test_pick_glint_comes_before_the_blow). Minercheck robot (muted,
-  `claude=pick_spark`): the picture 0.25 s before two Tunnel Rats' blows shows both stars on top of the dwarf's legs.
-- **Hurdles:** (1) The first question from the owner's message was only an email address with no task: asked what
-  it was for instead of guessing, and kept it out of every file. (2) The miners' warning is short (0.45-0.55 s),
-  so a star 0.4 s before the blow shows almost as soon as the swing starts; if that's still too late, the next step
-  is the longer raise-and-hold. (3) Other chats had Godot running; left those alone.
 
 ## November 20, 2026 (PC, ruin junk Claude): junk in and around the Watchtower and the Fallen Outpost; Mossgate fuller and dark (F506, F517)
 - **How ruin junk works (owner OK'd):** the host works out each ruin's junk once and saves it in the ruin's record
@@ -7158,6 +7190,46 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   (7) My first commit rebuilt JOURNAL/FEEDBACK from a copy taken before other chats committed theirs, so it dropped
   their newest entries (the Spire, Pell's step 3, F518): put back in the next commit. Lesson: build "saved copy + my
   lines" right before committing, and check the change is only my lines.
+- **Owner, same evening:** OK'd the Spire as it is ("I really like how you built the floor below the fire": the open
+  lantern gallery) and the fire bowl's price (cut stone + a few copper ingots). Committed the page-stage files; the
+  page's source is kept in `tools/ruins/spire_page.html` so the next ruin page can be copied from it.
+- **Owner: "as perfect as it can get", but "real speed is too fast, slow it down drastically".** Wired in:
+  the sword's light combo = UAL 2's regular combo cut at its 3 hits (one_ual_bake.gd GAME: UalHit1-3, cut where the
+  tip-speed peaks say, 0.26/0.73/1.57 s), heavy = hit C (UalHeavyHit); both at DwarfRig.UAL_SLOW = 2 (half speed):
+  DwarfRig.attack_seconds gives DwarfFight the swing time. Other weapons without their own moves keep the old swing
+  (ATTACKS[""]; they used to borrow the sword's). Test: test_visuals.test_sword_swings_the_ual_combo_slowly. Hurdle:
+  the new test freed its dwarf "later" and broke the next test (a null material): it now waits 2 frames.
+- **Owner's picks from the pack's other moves:** roll and shield bash were already UAL's; the heavy combo became the
+  mace's main combo (UalMace1-4, one per click; Combat mace combo now [1.0, 1.1, 1.2, 1.4]); the mace's heavy is still
+  the old smash (asked him). Block without a shield was already UAL's Sword_Block (held as x/Sword_Guard).
+- **Owner: stun meter, Shield broken when stunned, knock-back when dying.** DwarfFight.stun_meter (StunMeter: hits add
+  2.5 per damage point, blocked hits 1 per point; full = 1.5 s stunned, then 2 s rest), MonsterManager feeds it, guard
+  breaks play Shield broken too, a thin purple HUD bar above health only while it has stun in it (the bar box now grows
+  upward). Dying: the knock-back for 0.9 s, then wake at the bed (GameAuthority). Test: test_dwarf.test_your_own_stun_meter.
+- **"Dwarf Moves" page** (https://claude.ai/artifact/PnEcX7nkBgHohnxFFnyywA): every weapon as the game plays it
+  (one_swing_export.gd `all=1`: DwarfModel.attack at the game's times, combos clicked as soon as allowed), the blocks,
+  bash, stunned, dying, roll, crossbow; each marked new / done / old / not done. Checked in the browser (all 17 clips
+  move and hold the right things; the "Loading" text stayed on top: fixed).
+- **Tests:** combat, monsters, visuals, scripts_load, authority all pass. test_dwarf's braid_tufts and aim_skips and
+  test_dwarf_fist's great_swings fail with or without this chat's changes (checked by setting them aside): older.
+  The full suite run hung for 45 min with other chats' runs going (stopped). Not played in a real game run yet.
+
+## Nov 20 — Old Pell's Diggings, step 3: a spark before the miners' blows (dungeons chat, F518)
+- **Owner:** "I can't see the enemies attack: their picks are small and they're behind my dwarf, so I don't know when
+  to parry." We brainstormed six ideas (raise and hold, a spark, an arrow at the screen edge, a see-through dwarf,
+  bigger picks, a warning sound). The owner picked **just a spark first**: a white-gold star plus a "ting".
+- **Built:** `src/art/pick_glint.gd` (PickGlint). It's a star drawn once in code, always facing the camera, and drawn
+  on top of everything (no depth test), so the dwarf can't hide it. It pops in, settles and shrinks in 0.38 s.
+  `CreatureRig.attack` starts it 0.4 s before the blow lands (`glint_wait`: right away if the warning is shorter),
+  at the pick head (the hand socket + TRAIL_LEN, like the swing trail). The "ting" is the existing Kenney clink
+  (already in CREDITS) at pitch 2.3. Every screen makes its own from the swing it already plays, so it's co-op ready.
+  All skeleton miners get it, the Foreman too.
+- **Checked:** test_skeleton_miners 10/10 (new: test_pick_glint_comes_before_the_blow). Minercheck robot (muted,
+  `claude=pick_spark`): the picture 0.25 s before two Tunnel Rats' blows shows both stars on top of the dwarf's legs.
+- **Hurdles:** (1) The first question from the owner's message was only an email address with no task: asked what
+  it was for instead of guessing, and kept it out of every file. (2) The miners' warning is short (0.45-0.55 s),
+  so a star 0.4 s before the blow shows almost as soon as the swing starts; if that's still too late, the next step
+  is the longer raise-and-hold. (3) Other chats had Godot running; left those alone.
 
 ## Nov 21 — Ruin junk, step 3: the ruin camp (ruin junk chat)
 - **Owner's first pick:** "ruin camp" junk: someone camped in the ruins long ago. Four new models, built by script in
@@ -7224,59 +7296,6 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - **Open:** look at the Spire's photos in a real game (the robot run after the light change printed nothing yet);
   then task 2, the Old Kiln's 3D page.
 
-## Nov 20, 2026: dwarf-animations Claude, chat 15 (F389: UAL 2 sword moves, the shield arm)
-- **Owner on the "UAL Sword Moves" page:** "amazing", but the shield arm "turns and spins": hold it still. Asked
-  what else the pack has (told: shield bash, shield charge, shield guard/break, block, sword lunge, hook, throw, roll).
-- **Mistake 1 (Claude):** "froze" the left arm in the bake (one_ual_bake.gd) and showed the page after looking at 2
-  moments. Owner: "definitely not done", the shield through his head, the sword through the shield. Cause: the old
-  chat 13 guard (DwarfFist._guard, from his filmed videos) pulled the left fist in front of his chest in EVERY one-
-  handed swing, so the bake's arm never reached the game. Lesson: measure, don't eyeball two frames.
-- **New checks in one_swing_export.gd:** per frame, the shield disc against his head, body and the sword's line
-  (rough: it flags near-misses that look fine; trust pictures for now), and the sword node against the hand bone.
-- **The pack's own guard** sank the shield into his round belly, the hanging shield failed too (the pack bends his
-  whole body). What works: during UAL moves the left arm keeps his standing pose (DwarfFist keeps the 4 arm bones'
-  own turns, so they ride on his chest) and no guard; owner: "way better".
-- **Owner's next picture:** in the deep lunge he folds flat over the shield. Fix: the bake halves the body's bend
-  (`bend=0.5`, default).
-- **Owner's next round (4 pictures):** he "teleports" in the spin, the sword out of his hand, the shield arm bends at
-  the end. Causes, all measured: (1) the page stored every 3rd frame and blended the sword in a straight line while the
-  bones turned: now every frame (`every=1`, the file only 14.7 MB). (2) The bake had 30 poses a second; the pack's
-  spins turned over 180 deg between two, so they played backwards: now 120 (the strike finder reads speed over 1/30 s,
-  as before). (3) Halving the bend also halved the spin, which flipped 180 deg in one frame as it passed half a turn:
-  now only the lean is halved (twist kept, `_less_lean`). (4) The fade back to standing forgot the move was UAL and the
-  old guard grabbed the arm: DwarfFist remembers (`_ual`). (5) Short hits eased in over 3 frames: UAL moves ease in
-  over at least 0.15 s (DwarfRig.UAL_BLEND_IN). Result: combo, C and heavy keep the sword in hand (max 11-13 cm from the
-  hand bone, its normal grip); A's end and B's start still snap the right arm (60-70 deg in a frame).
-- **Owner asked:** swap our dwarf for the pack's model, reshaped? Told no: the bumping comes from his shape (belly,
-  short legs, big head), any model reshaped to him would bump the same way; moves made for chunky bodies or for a
-  shield (Mixamo Sword and Shield) help more.
-- **Hurdles:** a PowerShell single-quoted replace wrote a literal backtick-n into dwarf_fist.gd (fixed, compiled);
-  port 8766 was another chat's page server (used 8791).
-- Mixamo folder git-ignored (`tools/asset_forge/packs/mixamo/`). Owner: leave the shirt holes. Mixamo pack: not
-  downloaded yet. Page v4: https://claude.ai/artifact/9DKaixigUvFYqYcpPPXmTj. Not wired to attacks yet; not pushed.
-
-## Nov 20, 2026: dwarf-animations Claude, chat 15, later (the owner's picks: UAL moves wired into the game)
-- **Owner: "as perfect as it can get", but "real speed is too fast, slow it down drastically".** Wired in:
-  the sword's light combo = UAL 2's regular combo cut at its 3 hits (one_ual_bake.gd GAME: UalHit1-3, cut where the
-  tip-speed peaks say, 0.26/0.73/1.57 s), heavy = hit C (UalHeavyHit); both at DwarfRig.UAL_SLOW = 2 (half speed):
-  DwarfRig.attack_seconds gives DwarfFight the swing time. Other weapons without their own moves keep the old swing
-  (ATTACKS[""]; they used to borrow the sword's). Test: test_visuals.test_sword_swings_the_ual_combo_slowly. Hurdle:
-  the new test freed its dwarf "later" and broke the next test (a null material): it now waits 2 frames.
-- **Owner's picks from the pack's other moves:** roll and shield bash were already UAL's; the heavy combo became the
-  mace's main combo (UalMace1-4, one per click; Combat mace combo now [1.0, 1.1, 1.2, 1.4]); the mace's heavy is still
-  the old smash (asked him). Block without a shield was already UAL's Sword_Block (held as x/Sword_Guard).
-- **Owner: stun meter, Shield broken when stunned, knock-back when dying.** DwarfFight.stun_meter (StunMeter: hits add
-  2.5 per damage point, blocked hits 1 per point; full = 1.5 s stunned, then 2 s rest), MonsterManager feeds it, guard
-  breaks play Shield broken too, a thin purple HUD bar above health only while it has stun in it (the bar box now grows
-  upward). Dying: the knock-back for 0.9 s, then wake at the bed (GameAuthority). Test: test_dwarf.test_your_own_stun_meter.
-- **"Dwarf Moves" page** (https://claude.ai/artifact/PnEcX7nkBgHohnxFFnyywA): every weapon as the game plays it
-  (one_swing_export.gd `all=1`: DwarfModel.attack at the game's times, combos clicked as soon as allowed), the blocks,
-  bash, stunned, dying, roll, crossbow; each marked new / done / old / not done. Checked in the browser (all 17 clips
-  move and hold the right things; the "Loading" text stayed on top: fixed).
-- **Tests:** combat, monsters, visuals, scripts_load, authority all pass. test_dwarf's braid_tufts and aim_skips and
-  test_dwarf_fist's great_swings fail with or without this chat's changes (checked by setting them aside): older.
-  The full suite run hung for 45 min with other chats' runs going (stopped). Not played in a real game run yet.
-
 ## November 21, 2026 (PC, dwarf-animations Claude, chat 16): no heavy for one-handed weapons, shield bash on block + click, faster mace
 - **Owner's rules (said while I was asking about the moves page):** one-handed weapons (sword, mace, spear, axe) have
   no heavy attack; right click blocks; **left click while blocking (with a shield) = a shield bash**; combos work by
@@ -7295,40 +7314,6 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 - **Not done yet:** the real game play-test of chat 15's moves (the owner is testing them), the F-numbers for
   these three wishes in FEEDBACK.md, great maul and crossbow moves, the Mixamo pack. The "Dwarf Moves" page still shows
   the sword's heavy and the slow mace.
-- **Later the same day (chat 16):** F-numbers given: F519 (no heavy on one-handed weapons), F520 (block + left click
-  = shield bash), F521 (mace twice as fast), all straight into FEEDBACK-done.md. The "Dwarf Moves" page is updated
-  (same link): the recorder (one_swing_export.gd all=1) now records "block + bash" for the sword, mace and spear
-  instead of a heavy, and the mace at its new speed. Checked in the browser: all 16 moves load, the shield pushes
-  out in front during the bash. Hurdle: a search over the whole game folder for the page's file ran past 2 minutes
-  (stopped it; read the page from the artifact instead).
-- **Owner, later (chat 16): F522 sword as fast as the mace** (DwarfRig.UAL_SLOW = 1 for both); **F523 combos build
-  up** (each hit stronger, the last 1.8x to 2x: Combat.WEAPONS combo; test_combat.test_combos_build_up_to_a_big_last_hit);
-  **F524 great axe/maul: right click = heavy spin**, their block + parry on the middle click (DwarfFight.block_action).
-  Page re-recorded (same link). Hurdles: (1) a Python edit script tripped over a backslash, did the edits by hand.
-  (2) test_sword_star_perks compared a 1st-hit jump attack with a 3rd hit: fine before, wrong now that the 3rd hit is
-  much stronger; it compares 3rd with 3rd now. (3) Another chat changed monster_manager.gd meanwhile: left it out.
-- **Owner, later (chat 16): F528 the spear: two thrusts, then a spin.** DwarfRig.ATTACKS.spear = stab, stab, ual_heavy
-  (UAL 2's hit C, a full ~400 deg turn, free since F519); the spear joined DwarfFist.ONE_HANDED (for the spin only) and
-  turns so its tip leads (SPEAR_IN_SWING: its -Z where a sword's +Y would be); the spin's hit is all round him
-  (DwarfFight.SPEAR_SPIN_STEP); the swoosh trail learned the spear's direction (WeaponTrail.follow axis). Combo 1x,
-  1.3x, 1.9x. Page re-recorded and checked: he leaps, turns and the spear sweeps out flat, tip first.
-  Hurdles: (1) the page had shown "did not load" for the owner (it loaded for me: likely mid-swap of the new version,
-  or the 30 MB download hiccuped): it now retries by itself 3 times. (2) F525 was already taken by another chat
-  (I'd put it on the page): it's F528. (3) test_dwarf_fist great_swings still fails, as before this chat.
-- **Owner, later (chat 16): F529 stone has no finisher / no heavy** (Combat.combo_hits, Combat.has_heavy; the host
-  checks it too), **F530 the finisher Crushes** (Combat.is_finisher), **F531 coloured hit numbers** (Combat.effect:
-  grey resists, white normal, yellow weak; MonsterManager EFFECT_COLOR, sent with every hit and bolt). Before deciding,
-  the owner saw a table of stone vs copper (cost, damage, combos, damage per second): taking the finisher away barely
-  lowers damage per second (the finishers are the slow swings), it takes away the payoff. F532 (weak spots, armor,
-  armor-piercing, enemy and boss health) is a plan shown to the owner first. Hurdle: test_bats_stay_under_the_ceiling
-  failed once in the monsters run: another chat is changing the creatures' flying right now, not this chat's code.
-- **Owner, later (chat 16): F532 balance plan OK'd and built** (Monsters: weak spots in 3 steps 0.75/1/1.25, armor
-  only on elites and bosses, Monsters.rank and PARTY_HP: +30%/+50%/+75% health per extra player; Combat: spear 40% and
-  crossbow 50% armor piercing, the maces' 30% gone and 25% more stun; Foreman 450 hp, 50 armor). Owner: "we do not have
-  a tunnel rat": the dungeon list still has one, left untouched (asked). Old tests checked the old numbers (spider,
-  snail armor, leader, amber, Foreman 294, the doc's mace example): updated to the new plan. Not from this chat:
-  test_dungeon_junk (a junk axe head in a room) and earlier test_bats_stay_under_the_ceiling (other chats' work).
-  Not done: creatures already out when a friend joins keep their old health (new ones get the new).
 
 ## Nov 21, 2026 (Mac, gems chat): status badges, test findings, pull and handover
 - **Status badges** (owner: simple circles with a ring that runs down like a timer): round badges above the health
@@ -7406,6 +7391,12 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   only looked for the name in quotes. It now accepts `def <name>(` too: 9/9 pass. Commit 16fadae2, pushed.
 - **Messages:** ListAgents showed 3 other chats with names that don't say their job, so each got the same message
   with every chat's extra job labelled and a request to reply which chat it is.
+- **Later the same day (chat 16):** F-numbers given: F519 (no heavy on one-handed weapons), F520 (block + left click
+  = shield bash), F521 (mace twice as fast), all straight into FEEDBACK-done.md. The "Dwarf Moves" page is updated
+  (same link): the recorder (one_swing_export.gd all=1) now records "block + bash" for the sword, mace and spear
+  instead of a heavy, and the mace at its new speed. Checked in the browser: all 16 moves load, the shield pushes
+  out in front during the bash. Hurdle: a search over the whole game folder for the page's file ran past 2 minutes
+  (stopped it; read the page from the artifact instead).
 
 
 ## November 22, 2026 (PC, spire game Claude): the Spire's photos in a real game; its door fixed (F479)
@@ -7438,6 +7429,12 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   Spire chat. (3) A cleanup `rm` of old photos was stopped by a safety check: used a new folder instead. (4) The id
   check counted `keg` as missing: it's an older `night_decor.py` model; the decor-night files only have helpers with
   that name.
+- **Owner, later (chat 16): F522 sword as fast as the mace** (DwarfRig.UAL_SLOW = 1 for both); **F523 combos build
+  up** (each hit stronger, the last 1.8x to 2x: Combat.WEAPONS combo; test_combat.test_combos_build_up_to_a_big_last_hit);
+  **F524 great axe/maul: right click = heavy spin**, their block + parry on the middle click (DwarfFight.block_action).
+  Page re-recorded (same link). Hurdles: (1) a Python edit script tripped over a backslash, did the edits by hand.
+  (2) test_sword_star_perks compared a 1st-hit jump attack with a 3rd hit: fine before, wrong now that the 3rd hit is
+  much stronger; it compares 3rd with 3rd now. (3) Another chat changed monster_manager.gd meanwhile: left it out.
 - **Owner's answers (Nov 22):** the cave grass stays in the ruin camp; the rotten bedroll stays; **yes** to the cluster
   fix. Fixed in `tools/dungeons/junk.py` and `tools/ruins/ruin_junk.py`: new `part_at()` = where a group's part
   (dropped meal: plate, mug, spoon; two candles) stands, turned with the group only. The spot check and the written spot
@@ -7510,6 +7507,14 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   wouldn't put models in a scene to measure them; read the numbers straight from the .glb files with Python instead.
 - The robot also showed Lost Miners attacking from 3.9-4.0 m: the new Leaping Chop works in the real game.
 - **Next (new chat):** the owner wants smaller, scarier skulls with scratches and cracks on all 3 miners.
+- **Owner, later (chat 16): F528 the spear: two thrusts, then a spin.** DwarfRig.ATTACKS.spear = stab, stab, ual_heavy
+  (UAL 2's hit C, a full ~400 deg turn, free since F519); the spear joined DwarfFist.ONE_HANDED (for the spin only) and
+  turns so its tip leads (SPEAR_IN_SWING: its -Z where a sword's +Y would be); the spin's hit is all round him
+  (DwarfFight.SPEAR_SPIN_STEP); the swoosh trail learned the spear's direction (WeaponTrail.follow axis). Combo 1x,
+  1.3x, 1.9x. Page re-recorded and checked: he leaps, turns and the spear sweeps out flat, tip first.
+  Hurdles: (1) the page had shown "did not load" for the owner (it loaded for me: likely mid-swap of the new version,
+  or the 30 MB download hiccuped): it now retries by itself 3 times. (2) F525 was already taken by another chat
+  (I'd put it on the page): it's F528. (3) test_dwarf_fist great_swings still fails, as before this chat.
 
 - **Later the same day (owner's 2 asks):** (1) "a lot more furniture and items, from our decor set": the ruin now
   holds 21 decor models (docs/art/DECOR-CATALOG.md): kitchen downstairs (bread oven, mug rack, dish rack, chopping
@@ -7536,6 +7541,14 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   `docs/design/GRAND-RUIN-RECIPE.md` (10 lessons, what our grid can make, the pieces we're missing: brackets, spire
   roofs, dormers, cornices, buttresses, a grand portal, turrets, spiral stairs; a checklist). Saved as a memory too.
   Next: ruin 6, the Twin Gate, by that recipe (new chat).
+- **Owner, later (chat 16): F529 stone has no finisher / no heavy** (Combat.combo_hits, Combat.has_heavy; the host
+  checks it too), **F530 the finisher Crushes** (Combat.is_finisher), **F531 coloured hit numbers** (Combat.effect:
+  grey resists, white normal, yellow weak; MonsterManager EFFECT_COLOR, sent with every hit and bolt). Before deciding,
+  the owner saw a table of stone vs copper (cost, damage, combos, damage per second): taking the finisher away barely
+  lowers damage per second (the finishers are the slow swings), it takes away the payoff. F532 (weak spots, armor,
+  armor-piercing, enemy and boss health) is a plan shown to the owner first. Hurdle: test_bats_stay_under_the_ceiling
+  failed once in the monsters run: another chat is changing the creatures' flying right now, not this chat's code.
+
 
 ## Nov 22 — Decor catalogue pieces placed in Mossgate Hold; junk across the whole room (decor chat)
 - **Owner's pick:** place the decor in the places that already exist, home decor into the build menu, looting for the
@@ -7562,20 +7575,6 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   which the map doesn't count as a room (always possible, the new dice found it): junk keeps off that stretch now.
   (4) The decor photos from behind the dwarf are dim and far: checked one close crop, the owner looks in the game.
 - **Next:** Lampwick Drift's decor (owner: "adjust dung 1 then start working on dung 2").
-- **Lampwick Drift decor (same chat, owner: "adjust dung 1 then start working on dung 2"):** 27 catalogue pieces in the
-  Lamp Room, landing, Tool Store (oil corner), Bat Gallery, Old Shaft, Copper Face, Prop Corridor, Miners' Rest and the
-  Foreman's Office (lamp-maker's corner, papers, torn map); 6 hang on walls (`hung` in the plan). decor.py now knows
-  heights (a map over a table is fine; nothing stands through a wall lamp). Wall lamps a tall piece would hide slide
-  along their wall piece; one in the Lamp Room had no room and went (44 lamps). A rat and a miner that would start
-  inside furniture stepped aside. Left out: 10 rule clashes (lit, rails, oil stains) + 3 round-1 clashes, and (no room in
-  the tiny trap rooms) the ore sorting table, sieve, skeleton with note, a second skull spike and lantern post, Pell's
-  carving, barrel_smashed, lamp barrow. Junk: richer themes, filled to ~1.8 per 10 m2 like Mossgate. Tests:
-  test_dungeon_decor 4/4, test_dungeon_junk 7/7; test_lampwick 28/29: the Foreman's health check fails from another
-  chat's unsaved monsters.gd change (not this work).
-- **Hurdles:** hung boards first failed the decor test (it wanted everything on the floor): the test now reads `hung`.
-  The lamp slide first ignored how high a hung board reaches.
-- **Paused** for the owner's new token rules (Nov 21 message from the token-check chat). Helpers (build menu, looting)
-  were still running at the pause.
 
 ## Nov 21: Where do our Claude tokens go? (token check chat)
 - **What we did:** read the logs of every chat from the last 7 days (190 chats, about 18,600 Claude steps) with a small
@@ -7610,36 +7609,30 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   rebuilt by a SessionStart hook at every chat start; new CLAUDE.md rules: Grep the map, never read code files over
   300 lines whole, "where is X" hunts go to Haiku helpers; and a **Handoff prompt recipe** in `docs/CLAUDE-REFERENCE.md`
   (short, next step first, exact `file:function` spots, done/owner chose/waiting/watch out).
+- **Lampwick Drift decor (same chat, owner: "adjust dung 1 then start working on dung 2"):** 27 catalogue pieces in the
+  Lamp Room, landing, Tool Store (oil corner), Bat Gallery, Old Shaft, Copper Face, Prop Corridor, Miners' Rest and the
+  Foreman's Office (lamp-maker's corner, papers, torn map); 6 hang on walls (`hung` in the plan). decor.py now knows
+  heights (a map over a table is fine; nothing stands through a wall lamp). Wall lamps a tall piece would hide slide
+  along their wall piece; one in the Lamp Room had no room and went (44 lamps). A rat and a miner that would start
+  inside furniture stepped aside. Left out: 10 rule clashes (lit, rails, oil stains) + 3 round-1 clashes, and (no room in
+  the tiny trap rooms) the ore sorting table, sieve, skeleton with note, a second skull spike and lantern post, Pell's
+  carving, barrel_smashed, lamp barrow. Junk: richer themes, filled to ~1.8 per 10 m2 like Mossgate. Tests:
+  test_dungeon_decor 4/4, test_dungeon_junk 7/7; test_lampwick 28/29: the Foreman's health check fails from another
+  chat's unsaved monsters.gd change (not this work).
+- **Hurdles:** hung boards first failed the decor test (it wanted everything on the floor): the test now reads `hung`.
+  The lamp slide first ignored how high a hung board reaches.
+- **Paused** for the owner's new token rules (Nov 21 message from the token-check chat). Helpers (build menu, looting)
+  were still running at the pause.
 
-### Old Pell's Diggings decor + junk (Nov 22, decor chat)
-- **Housekeeping first:** committed the looting helper's work (107fba91), the home-decor build menu (2750a884) and its 262
-  menu icons (bbc95116). Nothing pushed.
-- **Decor:** `tools/dungeons/make_pell.py` section 4b places 26 catalogue pieces (Pell's cot, armchair, tinker bench, maps,
-  bone board, pipe rack, strongbox, signpost, watch post, sieve stack, tumbler, boot, barricade, decoy chest, spider eggs,
-  graffiti, hat on the pick, madness board, X-marks dig patch, ...) through the same `decor.check` as Mossgate and
-  Lampwick. The old plain furniture that sat where they go (bed, keg, firewood rack, shelf, two tables, two crates,
-  rail wedge, rags, ore rubble, grain sacks) was taken away; a miner and two rats step aside.
-- **Junk:** section 4c, about 1.8 things per 10 m2, one of each kind per room (candles and pots may repeat), over the
-  whole room. 33 pieces go in the big Last Dig, a few in the others. Nothing in the way-in tunnel outside.
-- **Hurdle (the big one): Pell has two floors that sit on top of each other** when seen from above (the hut at 0, the
-  diggings at -6). The checks only knew one floor, so the first run said every piece was "outside its room" and the
-  stool in the Last Dig "blocked" the hut's door above it. Fix: the script checks each floor on its own, and
-  `test_dungeon_decor` and `test_dungeon_junk` now ask "which floors is this piece on?" (`_on`) before checking doors,
-  chests, walk lines and drops. Mossgate and Lampwick still pass with the same checks.
-- **Mistakes (mine):** (1) I used `v[0]` on the cell names, which are plain words, so I got the first *letter* of every
-  room. (2) A typed-in "rope" junk name doesn't exist (the game only knows the names in junk.py). (3) First commit try
-  was blocked: a bare `git reset` isn't allowed, so I use `git reset -q -- <my files>`. (4) The icon file list had
-  Windows line endings, so `git add` said "pathspec did not match": strip the `\r`. (5) A long Python text pasted into a
-  shell command broke on quotes: write it to a file with the Write tool instead.
-- **Left out, for the owner to answer (rule clashes):** op_diary_table (spilled ink), table_overturned (puddle), last_meal
-  (food). **No room:** op_trapmaker_table, op_trap_parts_rack, op_bell_tripwire, rope_ladder_broken, op_ore_scale (small
-  rooms, walk lines, traps and torches take the free wall).
 
-- **Owner's answer (Nov 22): "the placement rules should be fluid"** and "you decide" the rest. So the 3 rule-clash pieces
-  (op_diary_table in the Last Dig, last_meal and table_overturned in the hut) are now placed, 29 catalogue pieces in all.
-  The trapmaker table, parts rack, bell tripwire, rope ladder and ore scale still found no free spot: left out.
-- **Mistake:** my new Pell tests loaded the plan as "old_pells_diggings" (the file name) but the game calls it "pell", so
-  they found nothing. Caught on the next run; fixed.
+## Nov 21: F532 balance plan built (chat 16)
+- **Owner, later (chat 16): F532 balance plan OK'd and built** (Monsters: weak spots in 3 steps 0.75/1/1.25, armor
+  only on elites and bosses, Monsters.rank and PARTY_HP: +30%/+50%/+75% health per extra player; Combat: spear 40% and
+  crossbow 50% armor piercing, the maces' 30% gone and 25% more stun; Foreman 450 hp, 50 armor). Owner: "we do not have
+  a tunnel rat": the dungeon list still has one, left untouched (asked). Old tests checked the old numbers (spider,
+  snail armor, leader, amber, Foreman 294, the doc's mace example): updated to the new plan. Not from this chat:
+  test_dungeon_junk (a junk axe head in a room) and earlier test_bats_stay_under_the_ceiling (other chats' work).
+  Not done: creatures already out when a friend joins keep their old health (new ones get the new).
 
 ## Nov 21, 2026 (PC, dwarf-animations Claude, chat 17): skeleton miners renamed
 - Owner hadn't recognised the "Tunnel Rat": it is the small skeleton miner (shown on the "Cracked Skull Miners" page).
