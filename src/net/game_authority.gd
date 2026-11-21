@@ -80,6 +80,7 @@ var builder: Builder
 var storage: Storage
 var keys: DungeonKeys  ## dungeon keys and locked doors (F237; Mossgate's loot door: owner, Nov 20)
 var monsters: MonsterManager
+var loot_props: LootProps  ## lootable decor in dungeons and ruins (E: take its items, it shows empty; Nov 22)
 var poi_field: PoiField
 ## What the whole world remembers (shared by every player): shrines emptied (and more keys added later:
 ## columns, learned, blueprints...). Old saves may still carry clues/bosses_dead/lairs_found: unused now.
@@ -191,6 +192,9 @@ func _ready() -> void:
 	monsters = MonsterManager.new()
 	monsters.name = "Monsters"
 	add_child(monsters)
+	loot_props = LootProps.new()
+	loot_props.name = "LootProps"
+	add_child(loot_props)
 
 
 func _exit_tree() -> void:

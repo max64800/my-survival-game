@@ -75,6 +75,25 @@ const BOXES := {
 	"dungeon/recipe_stand.glb": [[Vector3(0, 0.48, 0), Vector3(0.7, 0.97, 0.62)]],
 	"dungeon/trap_push_wall.glb": [[Vector3(0, 1, 0), Vector3(2, 2, 0.29)]],
 	"dungeon/lift_winch.glb": [[Vector3(-1.15, 1.3, -0.6), Vector3(0.16, 2.6, 0.16)], [Vector3(-1.15, 1.3, 0.6), Vector3(0.16, 2.6, 0.16)]],
+	# Brassgate Vault's forced vault door (handover Nov 22: "must be walkable"): its wall (2.1 m wide, 20 cm thick, flat
+	# back at z -0.97) in bands round the round doorway (0.75 m round, middle 0.66 m up, flat at the floor: 1.4 m high,
+	# measured on the model), each band's inner edge where the hole is widest in it, so no box covers the opening;
+	# the wall above it; and the door disc swung wide open on the left. The 3 cm threshold has no box (you step over).
+	"decor/bv_vault_door_forced.glb": [
+		[Vector3(-0.79, 0.09, -0.873), Vector3(0.52, 0.18, 0.2)], [Vector3(0.79, 0.09, -0.873), Vector3(0.52, 0.18, 0.2)],
+		[Vector3(-0.865, 0.28, -0.873), Vector3(0.37, 0.2, 0.2)], [Vector3(0.865, 0.28, -0.873), Vector3(0.37, 0.2, 0.2)],
+		[Vector3(-0.89, 0.655, -0.873), Vector3(0.32, 0.55, 0.2)], [Vector3(0.89, 0.655, -0.873), Vector3(0.32, 0.55, 0.2)],
+		[Vector3(-0.865, 1.03, -0.873), Vector3(0.37, 0.2, 0.2)], [Vector3(0.865, 1.03, -0.873), Vector3(0.37, 0.2, 0.2)],
+		[Vector3(-0.79, 1.205, -0.873), Vector3(0.52, 0.15, 0.2)], [Vector3(0.79, 1.205, -0.873), Vector3(0.52, 0.15, 0.2)],
+		[Vector3(-0.715, 1.355, -0.873), Vector3(0.67, 0.15, 0.2)], [Vector3(0.715, 1.355, -0.873), Vector3(0.67, 0.15, 0.2)],
+		[Vector3(0, 1.725, -0.873), Vector3(2.1, 0.59, 0.2)],
+		[Vector3(-0.86, 0.71, 0.1), Vector3(0.28, 1.42, 1.5)]],
+	# Vigil of Orrin Stonejaw's spyhole wall (owner idea, Nov 22: peek at the boss through it): the wall block round its
+	# clear hole (20 cm wide, 30 cm high, 0.9-1.2 m up, measured on the model), so you can look and shoot through it,
+	# and the low stand-stone in front.
+	"decor/vo_spyhole_wall.glb": [[Vector3(-0.35, 0.86, -0.19), Vector3(0.5, 1.72, 0.36)], [Vector3(0.35, 0.86, -0.19), Vector3(0.5, 1.72, 0.36)],
+		[Vector3(0, 0.45, -0.19), Vector3(0.2, 0.9, 0.36)], [Vector3(0, 1.46, -0.19), Vector3(0.2, 0.52, 0.36)],
+		[Vector3(0, 0.07, 0.25), Vector3(0.5, 0.14, 0.3)]],
 }
 ## Things you walk through (small, up high, or traps whose moves come later).
 const NO_BODY := ["decor/furn_wall_torch_iron.glb", "dungeon/trap_dart_plate.glb", "dungeon/chain_hanging.glb",
@@ -229,8 +248,8 @@ static func placements(d: Dictionary, plan: Dictionary, game := false) -> Dictio
 		var steps := r * 3 if r < 4 else r - 4
 		add.call("build/%s__%s.glb" % [p.id, p.mat], _xform(d, p.pos, steps * 30.0, float(p.get("scale", 1.0)), 0.0))
 	for p in plan.get("props", []):
-		if game and (thing_kind(p) != "" or p.get("role", "") == "loot"):
-			continue  # (breakables are built one by one; the recipe stand is a Storage box that draws itself)
+		if game and (thing_kind(p) != "" or p.get("role", "") == "loot" or LootProps.is_lootable(p)):
+			continue  # (breakables are built one by one; the recipe stand is a Storage box that draws itself; lootable decor: LootProps)
 		add.call(String(p.model), _xform(d, p.pos, float(p.yaw), float(p.get("scale", 1.0)), float(p.get("tilt", 0.0))))
 	if not game:
 		for c in plan.get("chests", []):
@@ -271,6 +290,9 @@ func _hook() -> void:
 	auth.keys.door_changed.connect(_on_door_changed)
 	auth.keys.gate_changed.connect(_on_gate_changed)
 	auth.monsters.dungeon_room.connect(_on_dungeon_room)
+	if auth.loot_props:
+		for d in maker.dungeons:
+			place_lootables(auth.loot_props, d, load_plan(String(d.id)))
 	for id in things:
 		var th: Dictionary = things[id]
 		var t: Transform3D = th.xform
@@ -279,6 +301,16 @@ func _hook() -> void:
 		elif th.kind == "lever":
 			auth.keys.add_gate(list_id(th.d), t * Vector3(0, 1.05, 0.1))
 	print("DUNGEON_BUILD hooked into the game (doors, gate lever, pack)")
+
+
+## Everyone: the plan's lootable decor (role "lootable") goes to LootProps, keyed "d:<dungeon id>:<prop index>".
+static func place_lootables(lp: LootProps, d: Dictionary, plan: Dictionary) -> void:
+	var props: Array = plan.get("props", [])
+	for i in props.size():
+		var p: Dictionary = props[i]
+		if LootProps.is_lootable(p):
+			lp.place("d:%s:%d" % [d.id, i], String(p.model), _xform(d, p.pos, float(p.get("yaw", 0.0)), float(p.get("scale", 1.0)),
+				float(p.get("tilt", 0.0))), String(p.get("label", "")))
 
 
 func _exit_tree() -> void:
@@ -410,7 +442,12 @@ static func _own_mesh(m: MeshInstance3D) -> Mesh:
 	return mesh
 
 
-func _add_boxes(body: StaticBody3D, model: String, t: Transform3D, whole: AABB) -> void:
+## The model's collision boxes (BOXES, or the box round the whole model) on `body`. Also LootProps' (shared).
+static func add_boxes(body: StaticBody3D, model: String, t: Transform3D, whole: AABB) -> void:
+	_add_boxes(body, model, t, whole)
+
+
+static func _add_boxes(body: StaticBody3D, model: String, t: Transform3D, whole: AABB) -> void:
 	var boxes: Array = BOXES.get(model, [[whole.get_center(), whole.size]])
 	for bx in boxes:
 		var cs := CollisionShape3D.new()

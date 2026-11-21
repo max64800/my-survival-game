@@ -981,6 +981,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			dwarf.model.react("use")
 			DungeonBuild.instance.ask_use(info.dungeon_use)
 			return
+		if info.has("loot_key") and authority.loot_props:  # lootable decor: take its items, it shows empty (LootProps)
+			dwarf.model.react("use")
+			authority.loot_props.ask_loot(info.loot_key)
+			return
 		if info.has("box_id"):
 			# The lid swings open on its hinge and the menu opens with it (ChestOpen; owner F345). It shuts again when
 			# the menu closes (BoxPanel).

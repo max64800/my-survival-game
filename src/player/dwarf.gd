@@ -467,6 +467,11 @@ func _aim_info() -> Dictionary:
 	var poi_id := PoiField.poi_id_of(hit.collider)
 	if poi_id >= 0 and auth:
 		return {kind = "poi", poi_id = poi_id, name = "Rune shrine · E to take"}
+	var loot_key := LootProps.key_of(hit.collider)  # lootable decor: a coin chest, an ingot cart... (Nov 22: E takes)
+	if loot_key != "" and auth and auth.loot_props:
+		var li := auth.loot_props.use_info(loot_key)
+		if not li.is_empty():
+			return li
 	var thing := DungeonBuild.id_of(hit.collider)  # a dungeon's round door or lever (owner, Nov 20: E opens / pulls)
 	if thing >= 0 and DungeonBuild.instance:
 		var use := DungeonBuild.instance.use_info(thing)
