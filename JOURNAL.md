@@ -7378,3 +7378,15 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   only looked for the name in quotes. It now accepts `def <name>(` too: 9/9 pass. Commit 16fadae2, pushed.
 - **Messages:** ListAgents showed 3 other chats with names that don't say their job, so each got the same message
   with every chat's extra job labelled and a request to reply which chat it is.
+
+
+## November 22, 2026 (PC, spire game Claude): the Spire's photos in a real game; its door fixed (F479)
+- **What we did:** took photos of the Lantern Spire in a real game (robot `-- spirecheck`, with work lights since its
+  fire bowl lies fallen). Measuring the ground in front of its door on 3 worlds showed a problem: on one it faced solid
+  rock, on another the ground was 0.8 m above the doorstep. Now a spot is only picked with 10 m of open, level ground
+  in front of the door (`RuinSpire.door_is_open`, tested on 3 worlds). New photos: tower on open floor, steps clear,
+  the fallen top on level ground. All 8 Spire tests pass. The owner: "we're done with this" (Spire finished).
+- **Hurdles / Claude's slips:** (1) my log filter hid the robot's lines, so I first thought the photo run had failed.
+  (2) My second push was blocked by the safety check (the owner's OK covered the first one only): commit c0eafc4c waits
+  for the owner's push.
+- **Next:** ruin 5, the Old Kiln, as a 3D page first (new chat).
