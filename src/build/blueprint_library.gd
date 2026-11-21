@@ -1295,8 +1295,9 @@ func _twin_barracks() -> void:
 			_wall_x("railing", x, -13, 1.0, S)
 		else:
 			_add("foundation_steps", S, Vector3(x, 0, -12), 0)          # the stair down to the yard
-	for s in [-13, 13]:
-		_wall_z("railing", s, -14, 1.0, S)
+	for s in [-13, 13]:   # (owner, Nov 21: a wall, not a fence, where the yard wall meets the wings)
+		_wall_z("wall", s, -14, 1.0, S)
+		_add("wall_narrow", S, Vector3(s, 3.0, -13.5), 1)
 	# --- the middle block (x -5..5): three floors, the main door, stairs zig-zagging up, the roof 7.5
 	var ys := [1.0, 3.25, 5.5]
 	for lvl in 3:
@@ -1308,13 +1309,16 @@ func _twin_barracks() -> void:
 				1: f = "window_wall" if absi(x) <= 2 else "wall"
 				2: f = "window_wide" if x == 0 else ("window_wall" if absi(x) == 2 else "wall")
 			_wall_x(f, x, -15, y, S)
-			_wall_x("window_wall" if (lvl == 1 and absi(x) == 2) or (lvl == 2 and x == 0) else "wall", x, -23, y, S)
+			var bk := "window_wall" if (lvl == 1 and absi(x) == 2) or (lvl == 2 and x == 0) else "wall"
+			_wall_x("doorway" if lvl == 0 and x == 0 else bk, x, -23, y, S)   # (the back door: out into the big cave)
 		for side in [-5, 5]:
 			for z in zs:
 				var w := "doorway" if z == -20 else ("window_wall" if lvl == 2 and z == -16 else "wall")
 				_wall_z(w, side, z, y, S)
 			_add("door", S, Vector3(side, y, -20), 1)
 	_add("door", S, Vector3(0, 1.0, -15), 0)
+	_add("door", S, Vector3(0, 1.0, -23), 0)
+	_add("foundation_steps", S, Vector3(0, 0, -24), 2)                  # (owner, Nov 21: the way on, into the big cave)
 	var flights := [[Vector2(-2, -18), 1.0, 0], [Vector2(2, -18), 3.25, 2], [Vector2(-2, -18), 5.5, 0]]
 	for f in flights:
 		var c: Vector2 = f[0]
