@@ -79,6 +79,10 @@ static func make(id: String) -> Blueprint:
 			lib._old_kiln()
 			lib._to_wood()
 			lib._kiln_stays_brick()
+		"stonehold_twin_gate": lib._twin_gate()  # (owner, Nov 21: ruin 6, the first showpiece; not learnable yet, its 3D page first)
+		"wooden_twin_gate":
+			lib._twin_gate()
+			lib._to_wood()
 		_: return null
 	lib._bp.name = NAMES.get(id, id)
 	lib._bp.author = "Dwarf Game"
@@ -1079,6 +1083,297 @@ func _kiln_stays_brick() -> void:
 	for p in _bp.pieces:
 		if p.pos.x > 0.0 and p.pos.x < 10.5:
 			p.mat = BRICK
+
+
+## Owner, Nov 21 (ruin 6 of Zone 1, the first showpiece: docs/design/GRAND-RUIN-RECIPE.md): the Twin Gate, a Stonehold
+## gate fort across a tunnel. Plan on the 2 m grid (x right, z front = the tunnel side; numbers before the 8 m shift
+## at the end, which centres it in its box):
+##   - Two gate towers (10 x 10 m, centres x -11 and 11, z -5..5) on foundations: a square base of three floors (walls
+##     1, 3.25, 5.5; floors 3, 5.25; the deck 7.5), stairs climbing a different way on every floor (feet on open floor,
+##     railings round the holes), a door to the drill yard and one into the guard room. On the deck the watchtower's
+##     12-sided ring rises two more floors (walls 7.75 and 10, floor 9.75, its own deck 12), so each tower changes shape
+##     as it climbs. The left tower then has a 6-sided lantern room on the ring's middle hexagon (walls 12.25, roof 14.25,
+##     the fire bowl on top: the tallest point, about 16 m); the right twin stops at its ring's battlements (symmetry
+##     broken once, on purpose).
+##   - The gatehouse between them (x -6..6, z -3..3) on foundations: the outer gate (a 4 m gateway with two leaves) at
+##     z 3, a passage, the inner gate at z -3 (two gates: the Twin Gate), a tall guard room either side (round doors into
+##     the passage and the towers). In front, between the towers, a porch and a 12 m grand stair up to it. Over it all the
+##     gate room (walls 5.5..7.5, level with the towers' third floor, doors into both): it juts 1 m out over the porch.
+##     Its roof (7.75) joins the towers' decks: one wall walk from tower to tower.
+##   - The drill yard behind (x -13..13, z -13..-5), closed by two-high walls with battlements and pillars.
+##   - The barracks (x -13..13, z -23..-15) on foundations, a terrace in front (railings, a 6 m stair down to the yard):
+##     a three-floor middle block (the mess hall with the main door, the sergeants' floor, the captain's floor, roof
+##     7.75), two two-floor wings (bunk rooms) whose upper floors jut 1 m out over the terrace, roof 5.5; doors from the
+##     middle block onto both wing roofs. A low kitchen (x 13..17) on the right wing's end, its own door outside.
+## tools/ruins/make_twin_gate_ruin.py adds the new pieces (the brackets under the jutting floors, the trim bands at the
+## floor lines, the buttresses, the little corner turrets) until they are game pieces. No furniture: you furnish it.
+const _TWIN_L := -11.0
+const _TWIN_R := 11.0
+var _tw_c := 0.0   # the tower being built: its middle (x) and which way its gate side faces (+1: +x)
+var _tw_m := 1
+
+
+func _twin_gate() -> void:
+	_start(Vector3(40, 17, 36))
+	_twin_tower(_TWIN_L, 1)
+	_twin_ring_stage(_TWIN_L, 3, 3, 5, true)
+	_twin_tower(_TWIN_R, -1)
+	_twin_ring_stage(_TWIN_R, 9, 3, 1, false)
+	_twin_gatehouse()
+	_twin_yard()
+	_twin_barracks()
+	for p in _bp.pieces:
+		p.pos.z += 8.0   # centred in its box (z -15..15)
+
+
+## A spot in the tower being built: u across it (+5 = its gate side), v along z.
+func _tp(u: float, y: float, v: float) -> Vector3:
+	return Vector3(_tw_c + _tw_m * u, y, v)
+
+
+## The tower's square base (see _twin_gate). Its wall pieces by side ("front", "back", "outer", "inner") and floor.
+func _twin_tower(cx: float, m: int) -> void:
+	_tw_c = cx
+	_tw_m = m
+	var S := STONE
+	var cells := [-4, -2, 0, 2, 4]
+	for u in cells:
+		for v in cells:
+			_add("foundation", S, _tp(u, 0, v), 0)
+	_add("foundation_steps", S, _tp(0, 0, -6), 2)                       # down to the drill yard
+	var ys := [1.0, 3.25, 5.5]
+	for lvl in 3:
+		var y: float = ys[lvl]
+		for c in cells:
+			_add(_twin_wall("front", c, lvl), S, _tp(c, y, 5), 0)
+			_add(_twin_wall("back", c, lvl), S, _tp(c, y, -5), 0)
+			_add(_twin_wall("outer", c, lvl), S, _tp(-5, y, c), 1)
+			_add(_twin_wall("inner", c, lvl), S, _tp(5, y, c), 1)
+	_add("door", S, _tp(0, 1.0, -5), 0)                                 # to the yard
+	_add("door", S, _tp(5, 1.0, 0), 1)                                  # into the guard room
+	_add("door", S, _tp(5, 5.5, 0), 1)                                  # into the gate room
+	# Stairs: floor 1 -> 2 in the front middle climbing to the back, 2 -> 3 on the outer side climbing to the front,
+	# 3 -> the deck on the gate side climbing to the back; each foot on open floor, each starting where the last ends.
+	var flights := [[Vector2(0, 2), 1.0, 0], [Vector2(-2, 0), 3.25, 2], [Vector2(2, 0), 5.5, 0]]
+	for f in flights:
+		var c: Vector2 = f[0]
+		_add("floor", S, _tp(c.x, f[1], c.y), 0)                        # (a slab lifts each top step to the floor)
+		_add("stairs", S, _tp(c.x, f[1] + 0.25, c.y), f[2])
+	var floors := [3.0, 5.25, 7.5]
+	for i in 3:
+		var hole: Vector2 = flights[i][0]
+		for u in cells:
+			for v in cells:
+				if not (u == hole.x and v == hole.y):
+					_add("floor", S, _tp(u, floors[i], v), 0)
+		var ry: float = floors[i] + 0.25
+		_add("railing", S, _tp(hole.x - 1, ry, hole.y), 1)               # round the hole: both sides and the foot's end
+		_add("railing", S, _tp(hole.x + 1, ry, hole.y), 1)
+		_add("railing", S, _tp(hole.x, ry, hole.y + (1 if flights[i][2] == 0 else -1)), 0)
+	for c in cells:
+		_add("battlement", S, _tp(c, 7.75, 5), 0)
+		_add("battlement", S, _tp(c, 7.75, -5), 0)
+		_add("battlement", S, _tp(-5, 7.75, c), 1)
+		if absi(c) == 4:                                                 # (open where the gate room's roof joins)
+			_add("battlement", S, _tp(5, 7.75, c), 1)
+
+
+func _twin_wall(side: String, c: int, lvl: int) -> String:
+	match side:
+		"inner":
+			return "doorway" if c == 0 and lvl != 1 else "wall"
+		"back":
+			if lvl == 0:
+				return "doorway" if c == 0 else "wall"
+			return "window_wall" if (lvl == 1 and absi(c) == 2) or (lvl == 2 and c == 0) else "wall"
+		"front":
+			if lvl == 2 and c == 0:
+				return "window_wide"
+			return "window_wall" if lvl == 1 and absi(c) == 2 else "wall"
+		"outer":
+			return "window_wall" if (lvl == 1 and c == 0) or (lvl == 2 and absi(c) == 2) else "wall"
+	return "wall"
+
+
+## The 12-sided stage on a tower's deck (7.75): a door out onto the wall walk on edge door_j, stairs in squares k1
+## (deck -> 9.75) and k2 (-> 12); then battlements, or (lantern) the 6-sided lantern room with the fire bowl on top.
+func _twin_ring_stage(cx: float, door_j: int, k1: int, k2: int, lantern: bool) -> void:
+	_ring_off = Vector3(cx, 0, 0)
+	var y := 7.75
+	_ring_edges(y, func(j): return "doorway" if j == door_j else ("window_wall" if j in [0, 6, (door_j + 6) % 12] else "wall"))
+	_add("door", STONE, _dir(door_j) * _EDGE + Vector3(0, y, 0) + _ring_off, _rot(door_j))
+	_ring_pillars(y, [posmod(door_j - 1, 12), door_j])
+	_ring_stairs(k1, y)
+	_ring_layer("floor", "floor_triangle", 9.75, k1)
+	_ring_rails(k1, 10.0)
+	_ring_edges(10.0, func(j): return "window_wall" if j % 4 == 1 else "wall")
+	_ring_pillars(10.0)
+	_ring_stairs(k2, 10.0)
+	_ring_layer("floor", "floor_triangle", 12.0, k2)
+	var top := 12.25
+	_ring_edges(top, func(_j): return "battlement")
+	if not lantern:
+		_ring_rails(k2, top)
+		_ring_off = Vector3.ZERO
+		return
+	# the lantern room: walls on the middle hexagon's six edges (its door on the front edge, by the stairs' top);
+	# one railing on the stairs' foot side (the lantern's wall closes the other)
+	_add("railing", STONE, _dir(2 * k2) * (_APO + 1.0) - _dir(2 * k2 + 3) + Vector3(0, top, 0) + _ring_off, _rot(2 * k2 + 3))
+	for k in 6:
+		_add("doorway" if k == 0 else "window_wall", STONE, _dir(2 * k) * _APO + Vector3(0, top, 0) + _ring_off, _rot(2 * k))
+		if k not in [0, 5]:                                              # (no pillar beside the doorway)
+			_add("pillar", STONE, _dir(2 * k + 1) * 1.95 + Vector3(0, top, 0) + _ring_off, _rot(2 * k + 1))
+		_add("floor_triangle", STONE, _dir(2 * k) * (_APO * 2.0 / 3.0) + Vector3(0, top + 2.0, 0) + _ring_off, _rot(2 * k))
+		_add("battlement", STONE, _dir(2 * k) * _APO + Vector3(0, top + 2.25, 0) + _ring_off, _rot(2 * k))
+	_add("door", STONE, _dir(0) * _APO + Vector3(0, top, 0) + _ring_off, 0)
+	_add("beacon_bowl", STONE, Vector3(0, top + 2.25, 0) + _ring_off, 0)
+	_ring_off = Vector3.ZERO
+
+
+## The gatehouse between the towers, its porch and grand stair, and the gate room over it (see _twin_gate).
+func _twin_gatehouse() -> void:
+	var S := STONE
+	for x in [-5, -3, -1, 1, 3, 5]:
+		for z in [-2, 0, 2, 4]:
+			_add("foundation", S, Vector3(x, 0, z), 0)                  # (z 4: the porch)
+		_add("foundation_steps", S, Vector3(x, 0, 6), 0)                # the grand stair up to the outer gate
+		if absi(x) < 5:                                                 # (not against the towers' walls)
+			_add("foundation_steps", S, Vector3(x, 0, -4), 2)           # down from the inner gate to the yard
+	for y in [1.0, 3.0]:                                                # the guard rooms: one tall floor (1..5)
+		for x in [-5, -3, 3, 5]:
+			var id := "window_wall" if y > 2.0 and absi(x) == 5 else "wall"
+			_wall_x(id, x, 3, y, S)
+			_wall_x(id, x, -3, y, S)
+		for x in [-2, 2]:                                               # the passage's sides
+			for z in [-2, 0, 2]:
+				_wall_z("doorway" if y < 2.0 and z == 0 else "wall", x, z, y, S)
+	_add("door", S, Vector3(-2, 1, 0), 1)
+	_add("door", S, Vector3(2, 1, 0), 1)
+	for z in [3, -3]:                                                   # the two gates
+		_wall_x("gateway", 0, z, 1.0, S)
+		_add("gate_leaf", S, Vector3(-0.8, 1.0, z), 0)
+		_add("gate_leaf", S, Vector3(0.8, 1.0, z), 2)
+	for z in [3, -3]:                                                   # lanterns either side of both gates
+		for x in [-3, 3]:
+			_on_wall_z("wall_sconce", S, x, z, 3.2, 1 if z > 0 else -1)
+	# the gate room: two slabs (5..5.5, level with the towers' third floor), its front 1 m out over the porch
+	for x in [-5, -3, -1, 1, 3, 5]:
+		for z in [-2, 0, 2]:
+			_add("floor", S, Vector3(x, 5.0, z), 0)
+			_add("floor", S, Vector3(x, 5.25, z), 0)
+			_add("floor", S, Vector3(x, 7.5, z), 0)
+		_add("floor_half", S, Vector3(x, 5.25, 3.5), 0)                 # the jutting strip (on brackets)
+		_add("floor_half", S, Vector3(x, 7.5, 3.5), 0)
+		var front := "window_wide" if absi(x) == 1 else ("window_wall" if absi(x) == 3 else "wall")
+		_wall_x(front, x, 4, 5.5, S)
+		_wall_x("window_wall" if absi(x) == 1 else "wall", x, -3, 5.5, S)
+		_wall_x("battlement", x, 4, 7.75, S)
+		_wall_x("battlement", x, -3, 7.75, S)
+
+
+## The drill yard's side walls (two walls high, battlements, a pillar on the middle joint).
+func _twin_yard() -> void:
+	for side in [-13, 13]:
+		for z in [-6, -8, -10, -12]:
+			_wall_z("wall", side, z, 0.0, STONE)
+			_wall_z("wall", side, z, 2.0, STONE)
+			_wall_z("battlement", side, z, 4.0, STONE)
+		for y in [0.0, 2.0]:
+			_add("pillar", STONE, Vector3(side, y, -9), 0)
+
+
+## The barracks on its terrace, and the kitchen (see _twin_gate).
+func _twin_barracks() -> void:
+	var S := STONE
+	var xs := range(-12, 13, 2)
+	var zs := [-22, -20, -18, -16]
+	for x in xs:
+		for z in zs:
+			_add("foundation", S, Vector3(x, 0, z), 0)
+		_add("foundation", S, Vector3(x, 0, -14), 0)                    # the terrace
+		if absi(x) > 2:
+			_wall_x("railing", x, -13, 1.0, S)
+		else:
+			_add("foundation_steps", S, Vector3(x, 0, -12), 0)          # the stair down to the yard
+	for s in [-13, 13]:
+		_wall_z("railing", s, -14, 1.0, S)
+	# --- the middle block (x -5..5): three floors, the main door, stairs zig-zagging up, the roof 7.5
+	var ys := [1.0, 3.25, 5.5]
+	for lvl in 3:
+		var y: float = ys[lvl]
+		for x in [-4, -2, 0, 2, 4]:
+			var f := "wall"
+			match lvl:
+				0: f = "doorway" if x == 0 else ("window_wall" if absi(x) == 4 else "wall")
+				1: f = "window_wall" if absi(x) <= 2 else "wall"
+				2: f = "window_wide" if x == 0 else ("window_wall" if absi(x) == 2 else "wall")
+			_wall_x(f, x, -15, y, S)
+			_wall_x("window_wall" if (lvl == 1 and absi(x) == 2) or (lvl == 2 and x == 0) else "wall", x, -23, y, S)
+		for side in [-5, 5]:
+			for z in zs:
+				var w := "doorway" if z == -20 else ("window_wall" if lvl == 2 and z == -16 else "wall")
+				_wall_z(w, side, z, y, S)
+			_add("door", S, Vector3(side, y, -20), 1)
+	_add("door", S, Vector3(0, 1.0, -15), 0)
+	var flights := [[Vector2(-2, -18), 1.0, 0], [Vector2(2, -18), 3.25, 2], [Vector2(-2, -18), 5.5, 0]]
+	for f in flights:
+		var c: Vector2 = f[0]
+		_add("floor", S, Vector3(c.x, f[1], c.y), 0)
+		_add("stairs", S, Vector3(c.x, f[1] + 0.25, c.y), f[2])
+	var floors := [3.0, 5.25, 7.5]
+	for i in 3:
+		var hole: Vector2 = flights[i][0]
+		for x in [-4, -2, 0, 2, 4]:
+			for z in zs:
+				if not (x == hole.x and z == hole.y):
+					_add("floor", S, Vector3(x, floors[i], z), 0)
+		var ry: float = floors[i] + 0.25
+		_add("railing", S, Vector3(hole.x - 1, ry, hole.y), 1)
+		_add("railing", S, Vector3(hole.x + 1, ry, hole.y), 1)
+		_add("railing", S, Vector3(hole.x, ry, hole.y + (1 if flights[i][2] == 0 else -1)), 0)
+	for x in [-4, -2, 0, 2, 4]:
+		_wall_x("battlement", x, -15, 7.75, S)
+		_wall_x("battlement", x, -23, 7.75, S)
+	for side in [-5, 5]:
+		for z in zs:
+			_wall_z("battlement", side, z, 7.75, S)
+	# --- the wings (x -13..-5 and 5..13): two floors, the upper one 1 m out over the terrace, the roof 5.25
+	for s in [-1, 1]:
+		var wx := [6 * s, 8 * s, 10 * s, 12 * s]
+		for x in wx:
+			_wall_x("doorway" if absi(x) == 10 else "wall", x, -15, 1.0, S)   # (plain: brackets sit over it)
+			_wall_x("wall", x, -23, 1.0, S)
+			_wall_x("wall" if absi(x) == 10 else "window_wall", x, -14, 3.25, S)
+			_wall_x("window_wall" if absi(x) == 10 else "wall", x, -23, 3.25, S)
+			for z in zs:
+				_add("floor", S, Vector3(x, 3.0, z), 0)
+				_add("floor", S, Vector3(x, 5.25, z), 0)
+			_add("floor_half", S, Vector3(x, 3.0, -14.5), 0)
+			_add("floor_half", S, Vector3(x, 5.25, -14.5), 0)
+			_wall_x("battlement", x, -14, 5.5, S)
+			_wall_x("battlement", x, -23, 5.5, S)
+		_add("door", S, Vector3(10 * s, 1.0, -15), 0)
+		for z in zs:
+			_wall_z("doorway" if s > 0 and z == -20 else "wall", 13 * s, z, 1.0, S)   # (the right one: into the kitchen)
+			_wall_z("window_wall" if z == -18 else "wall", 13 * s, z, 3.25, S)
+			_wall_z("battlement", 13 * s, z, 5.5, S)
+		for ex in [13 * s, 5 * s]:                                      # the jutting floor's two ends
+			_add("wall_narrow", S, Vector3(ex, 3.25, -14.5), 1)
+	_add("door", S, Vector3(13, 1.0, -20), 1)
+	# --- the kitchen (x 13..17, z -23..-17): one floor, its own door and steps outside
+	for x in [14, 16]:
+		for z in [-22, -20, -18]:
+			_add("foundation", S, Vector3(x, 0, z), 0)
+			_add("floor", S, Vector3(x, 3.0, z), 0)
+		_wall_x("doorway" if x == 16 else "wall", x, -17, 1.0, S)
+		_wall_x("wall", x, -23, 1.0, S)
+		_wall_x("battlement", x, -17, 3.25, S)
+		_wall_x("battlement", x, -23, 3.25, S)
+	for z in [-22, -20, -18]:
+		_wall_z("window_wall" if z == -20 else "wall", 17, z, 1.0, S)
+		_wall_z("battlement", 17, z, 3.25, S)
+	_add("door", S, Vector3(16, 1.0, -17), 0)
+	_add("foundation_steps", S, Vector3(16, 0, -16), 0)
 
 
 # ---------------------------------------------------------------- helpers
