@@ -1401,3 +1401,10 @@ func test_a_hit_from_another_room_makes_it_come_after_you() -> void:
 	check(shot_chasing >= 85, "shot, it comes after you and keeps at it (%d of 90 frames)" % shot_chasing)
 	check(shot.global_position.distance_to(player.global_position) < 9.0, "it's flying round you")
 	_teardown()
+
+
+## F609: Hollow Miner (medium skeleton) must not body-push the player.
+## It has a no_push flag so the CHASE state stops at 1.5 m instead of running into the player.
+func test_hollow_miner_no_push() -> void:
+	check(Monsters.info("lost_miner").get("no_push", false), "Hollow Miner has the no_push flag")
+	check(not Monsters.info("tunnel_rat").get("no_push", false), "Bone Rot (small skeleton) does not have no_push")

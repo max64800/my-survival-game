@@ -76,24 +76,18 @@ const LIST := {
 		size = 1.0, height = 1.0, hp = 26, armor = 0, stun = 12, slash = 1.0, blunt = 1.25, pierce = 0.75,
 		fire = 0.0, frost = 0.0, poison = 1.0, walk = 2.0, run = 5.0, pack = [3, 5], xp = 5,
 		color = Color(0.62, 0.56, 0.45), shape = "tunnel_rat", recover = 0.8,
-		attacks = [{name = "Shovel Chop", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_hiss", tell = 0.55, damage = 6, type = "slash", reach = 1.5, parry = "any"},
-			{name = "Shovel Jab", anim = "1H_Melee_Attack_Stab", tell = 0.45, damage = 5, type = "pierce", reach = 1.7, parry = "any"}],
+		# F606: only the overhand chop (readable wind-up); the stab had no warn_sound and was too fast.
+		attacks = [{name = "Shovel Chop", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_hiss", tell = 0.55, damage = 6, type = "slash", reach = 1.5, parry = "any"}],
 		drops = []},
 	# F466/F467: the Lost Miner is slow and tough, and its pick is ice cold (chill buildup: 3 hits freeze you).
 	"lost_miner": {name = "Hollow Miner", dungeon_only = true, rises = true, rise_near = 11.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 2,
 		size = 1.0, height = 1.45, hp = 110, armor = 0, stun = 50, slash = 1.0, blunt = 1.25, pierce = 0.75,
 		fire = -0.25, frost = 0.75, poison = 1.0, walk = 1.0, run = 2.6, pack = [1, 3], xp = 14,
+		no_push = true,  # F609: stops at 1.5 m in chase so it can't body-push the player
 		color = Color(0.7, 0.82, 0.78), shape = "lost_miner", recover = 1.2,
-		# F593 (owner, Nov 21, said twice: "if you run away, you should get out of their hit without dodging"): shorter
-		# picks (1.8/1.9 -> 1.5/1.4 m) and a leap slower than you walk (lunge_speed), so turning to walk off after the
-		# spark (0.3 s to react) always gets you out (test_running_away_from_a_lost_miner).
-		attacks = [{name = "Frost Pick", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_hiss", tell = 0.9, damage = 14, type = "pierce", reach = 1.5, parry = "any", buildup = {chill = 34}},
-			{name = "Pick Jab", anim = "1H_Melee_Attack_Stab", tell = 0.7, damage = 10, type = "pierce", reach = 1.4, parry = "any", buildup = {chill = 34}},
-			# Owner, Nov 21 ("the bigger ones should lunge forward, quite fast"): from 2-3 m it leaps in with a chop (a
-			# small lunge: it only hits, no knock-down), then stands catching its breath; 4 s before the next.
-			# F526 (owner, Nov 21, Mossprop: "the dash is way too long, and they do two attacks"): from 3 m, not 4, and
-			# after the leap no other swing for `quiet_after` s (it was chopping again the moment it landed).
-			{name = "Leaping Chop", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_hiss", tell = 0.9, damage = 14, type = "pierce", reach = 3.0, parry = "any", lunge = true, small_lunge = true, lunge_speed = 3.4, rest = 4.0, quiet_after = 3.5, buildup = {chill = 34}}],
+		# F593: picks shortened so running away gets you out. F605: only the Leaping Chop now (owner Nov 22:
+		# "should only do lunge"); Frost Pick and Pick Jab removed. At ≤2 m the miner circles and waits for space.
+		attacks = [{name = "Leaping Chop", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_hiss", tell = 0.9, damage = 14, type = "pierce", reach = 3.0, parry = "any", lunge = true, small_lunge = true, lunge_speed = 3.4, rest = 4.0, quiet_after = 3.5, buildup = {chill = 34}}],
 		drops = []},
 	# The end boss with his Lost Miners (F467): a big two-handed chop, and the spin (only a shield parries it, it
 	# knocks you down: step back out of it). Owner, Nov 20: the spin reached far too far and he only ever spun
@@ -104,7 +98,8 @@ const LIST := {
 		smashes_statues = true, size = 1.0, height = 1.9, hp = 450, armor = 50, stun = 360, slash = 1.0, blunt = 1.25, pierce = 0.75,
 		fire = 0.0, frost = 0.5, poison = 1.0, walk = 1.4, run = 3.6, pack = [1, 1], xp = 80,
 		color = Color(0.55, 0.5, 0.44), shape = "foreman", recover = 1.6,
-		attacks = [{name = "Great Chop", anim = "2H_Melee_Attack_Chop", warn_sound = "beetle_rumble", tell = 1.0, damage = 26, type = "slash", reach = 2.3, parry = "any"},
+		# F608: rest = 2 s after the chop so he doesn't immediately chain a second hit with no wind-up.
+		attacks = [{name = "Great Chop", anim = "2H_Melee_Attack_Chop", warn_sound = "beetle_rumble", tell = 1.0, damage = 26, type = "slash", reach = 2.3, parry = "any", rest = 2.0},
 			# Owner, Nov 21 ("when he spins he should move towards the player: you have to dodge that"): the whirl now
 			# goes on for 4 more turns (about 3 s in all), sliding after you at 3.8 m/s (you walk 4, run 6.5): every
 			# turn hits (12), the last one hardest (20) and it knocks you down. Roll out or run.

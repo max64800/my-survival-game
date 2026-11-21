@@ -501,7 +501,10 @@ func think(delta: float, mgr: Node) -> void:
 				return
 			var speed: float = data.run * (1.0 + (Monsters.PACK_BOOST.speed if boosted else 0.0))
 			to.y = 0
-			_move(delta, to.normalized(), speed)
+			if data.get("no_push", false) and dist < 1.5:  # F609: stop before running into the player
+				_move(delta, Vector3.ZERO, 0.0)
+			else:
+				_move(delta, to.normalized(), speed)
 			_face(target)
 		State.ATTACK:
 			if _attack.get("dive", false):
@@ -1313,7 +1316,7 @@ func show_tell(seconds: float, attack_name: String = "", aim: Node3D = null) -> 
 ## Only looks: a gob of spit flies from the snail's mouth to the target in a low arc and splats.
 ## (Whether it hurts is judged by the target's own computer, like every attack: a shield stops it completely.)
 func _spit_fx(aim: Node3D) -> void:
-	if not is_alive() or not is_inside_tree():
+	if not is_alive() or not is_inside_tree() or shell_shut:  # F601: shell hides cancel the spit
 		return
 	Sfx.play("snail_spit", global_position, 0.0, _voice())  # a real recording (CC0, "80 CC0 creature SFX")
 	var fwd := -model.global_transform.basis.z.normalized()

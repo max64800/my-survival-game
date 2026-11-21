@@ -223,6 +223,16 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F598. The Pit Boss spinning attack shows a hit star / ting effect that it shouldn't.** The spin hits play the same sparks and "ting" as a blocked weapon hit; it shouldn't. *From: you (PC, Nov 21, playing Old Pell's). Said: 1×*
 - [ ] **F599. Old Pell's elevator lever is on the wrong side of the wall — should be right next to the rope lift.** Currently it is accessible from the other side of a wall instead of being beside the elevator. *From: you (PC, Nov 21, playing Old Pell's). Said: 1×*
 - [ ] **F600. Pressure-plate arrow traps fire every time you step on them.** They should be single-use (fire once per dungeon reset). *From: you (PC, Nov 21, playing Old Pell's). Said: 1×*
+- [ ] **F601. Rock Snail can still finish its spit attack while hiding in its shell.** Once it tucks in, all attacks should be cancelled. *From: you (PC, Nov 22). Said: 1×*
+- [ ] **F602. Rock Beetle charge: ragdoll sometimes doesn't play; also sometimes the beetle starts its charge while half-turned and doesn't aim at the player.** Both need fixing. *From: you (PC, Nov 22). Said: 1×*
+- [ ] **F603. Any garbage or furniture (barrels, crates, bones, props) in dungeons should be destructible by boss, player, and enemy attacks.** They get in the way of fighting. *From: you (PC, Nov 22). Said: 1×*
+- [ ] **F604. Weapons should be able to hit multiple enemies at once if they are close enough together.** (Skipped — owner's numbering went from 3 to 5.) *From: you (PC, Nov 22). Said: 1×*
+- [ ] **F605. Medium skeletons (Hollow Miner) still do the stab attack — they should only do the lunge (Leaping Chop).** Remove the non-lunge attacks from their list. *From: you (PC, Nov 22). Said: 1×*
+- [ ] **F606. Small skeletons (Bone Rot) have 4 attacks, 2 of which have no wind-up. They should only do the overhand chop.** Remove the other attacks. *From: you (PC, Nov 22). Said: 1×*
+- [ ] **F607. Knockback needed on every weapon: finishing a combo sends nearby enemies flying back (except bosses).** Walking into the combo keeps enemies in range; not walking = they get knocked away. *From: you (PC, Nov 22). Said: 1×*
+- [ ] **F608. The Pit Boss (Old Pell's) does his overhead then immediately a second hit with no wind-up — that second hit needs to be removed.** Also remove about half the garbage/decor from his room, it gets in the way. *From: you (PC, Nov 22). Said: 1×*
+- [ ] **F609. Medium skeletons (Hollow Miner) can run into and push the player.** They shouldn't be able to move you. *From: you (PC, Nov 22). Said: 1×*
+- [ ] **F610. The Pit Boss (or other bosses) can't find their way back if they get stuck in a hallway, elevator shaft, or behind a doorway.** They need to handle these nav dead-ends. *From: you (PC, Nov 22). Said: 1×*
 
 
 ## Done
