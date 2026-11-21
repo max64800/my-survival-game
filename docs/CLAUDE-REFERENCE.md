@@ -30,3 +30,18 @@ Moved out of `CLAUDE.md` on Nov 16, 2026 to save tokens. The rules are still in 
 - Autopilot: `godot --audio-driver Dummy --path . -- autopilot seed=42 shots=<folder>`: a report (load time, items dug, FPS) + screenshots.
 - `godot --audio-driver Dummy --path . -- seed=1234` starts a specific cave. Robots: `-- buildcheck part=house|edges`, `-- kitcheck`.
 - Budget hook: `.claude/settings.json` runs `tools/claude-budget/check.py` before every step (keep it as it is).
+
+## Handoff prompt recipe (owner, Nov 21)
+The new chat knows nothing, and every word of the prompt is re-read on every step, so make it **short and exact**
+(aim for 150–300 words). A good prompt lets the new Claude start working with 2–3 small reads, not a hunt.
+Fill these, in this order, one short line each:
+1. **Who + model:** "You are a Claude on the dwarf game (PC). Model: Sonnet." (the `# 👉 FIRST TYPE: /model …` heading goes above the block)
+2. **Task:** one sentence, the goal in the owner's words, plus F-numbers.
+3. **Next step first:** the very next thing to do, as a numbered list (max 5 steps).
+4. **Exact places:** `file:function` (and the CODE-MAP line) for every spot to change, e.g.
+   `src/world/loot_props.gd: ask_loot()`. Never "look around the loot code".
+5. **Done:** commit hashes + one line each. "Don't redo / don't re-read X."
+6. **Owner chose:** decisions and taste notes the owner gave in this chat (quotes are best).
+7. **Waiting for the owner:** open questions, so the new chat asks instead of guessing.
+8. **Watch out:** traps found this chat (failing test from another chat, shared files to stage by hunk, etc.).
+Leave out: the story of how we got here (that's in JOURNAL.md), rules already in CLAUDE.md, whole file dumps.

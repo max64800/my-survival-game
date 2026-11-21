@@ -38,10 +38,14 @@ Code layout, recorder details, how to run robots: `docs/CLAUDE-REFERENCE.md` (re
   Close every test game when you're done. Test worlds save to `user://claude_test_saves` (named "🤖 TEST…");
   delete that folder after testing (the game also deletes ones older than a day). Never touch `user://saves`.
 - **New chat banner (owner, Nov 19):** when the owner should start a new chat (chat is getting long, or the task changed),
-  make the **very first line** of the message `# 🛑 START A NEW CHAT 🛑` followed by one short line saying why.
-  Never bury it at the end. The status line also shows how full the chat is (green, yellow, red = NEW CHAT).
+  make the **very first line** of the message `# 🛑 START A NEW CHAT 🛑`, the **second line** the model as a big
+  heading (owner, Nov 21: "I nearly missed it"): `# 👉 FIRST TYPE: /model sonnet` (or opus; see "Saving tokens"),
+  then one short line saying why. Repeat the same `# 👉 FIRST TYPE: /model …` heading right above the prompt block.
+  Never write the model as plain or bold text, and never only at the end (Claude can't switch a chat's model itself;
+  the owner types it before pasting). The status line also shows how full the chat is (yellow 80k, red 150k = NEW CHAT).
   **Always add a ready-to-paste prompt for the new chat** (owner, Nov 19) in one copyable code block: who the new
   Claude is, the task, which feedback numbers and files to start from, what is already done, and what the owner chose.
+  Follow the **Handoff prompt recipe** in `docs/CLAUDE-REFERENCE.md` (short, exact `file:function` spots, next step first).
 
 ## Videos (Shorts about the game)
 - Editing the dwarf Shorts: `video/README.md` (pipeline, owner's video rules in `video/rules/`, scripts in `video/scripts/`).
@@ -57,14 +61,31 @@ Code layout, recorder details, how to run robots: `docs/CLAUDE-REFERENCE.md` (re
 - **Fixing rule (owner):** problems the owner *mentioned* get fixed. Problems Claude found that the owner didn't mention:
   ask first, one yes/no each (they wait under "Claude noticed, waiting for your OK").
 
-## Saving tokens (owner, Nov 16)
+## Saving tokens (owner, Nov 16; token check Nov 21)
+Nov 21 check: 60% of all tokens = Claude re-reading the chat on every step, so **short chats matter most**.
+- **Short chats:** at 150k tokens (red status line) finish the current step, then give the new chat banner + prompt.
+  Also start a new chat for every new task. Chats are capped at 200k (1M is off in `.claude/settings.json`).
+  Do big reading in helpers so the main chat stays small.
+- **Read only the part you need (owner, Nov 21):** everything opened stays in the chat and is re-read every step.
+  - **Code map first:** `docs/CODE-MAP.md` lists every file and function with line numbers (rebuilt at every chat start).
+    Grep it (never read it whole), then read ~60 lines around that line.
+  - **Never read a whole code file over 300 lines.** Grep for the name, then read only that part (offset/limit).
+  - **"Where does X happen?" hunts go to a Haiku helper** that answers with `file:line` + one line each, not file dumps.
+- **Model per task (owner, Nov 21).** Default is Opus. Pick the model for every new-chat prompt:
+  - **Opus:** new systems, design/planning, new 3D models and art rounds, grand ruins, a bug that one try didn't fix.
+  - **Sonnet:** following a written plan, clear feedback fixes, small tweaks, tests, placing pieces, docs/journal/feedback
+    upkeep, page tweaks, video editing. If Sonnet fails twice on something, say so and suggest `/model opus`.
+  - **Helpers are always Haiku** (forced in settings). Give them narrow search/read jobs.
+- **No marketing, SEO, blog or other non-game skills in this project** (owner, Nov 21); they're switched off in
+  `.claude/settings.json`, along with the claude.ai connectors (Canva, Drive, Docs). Never turn them back on here.
+  The Shorts' own writing skills in `.claude/skills/` stay.
+- **Keep the 1-hour cache** (`promptCacheTtl: 1h`): the owner often steps away to play-test, and a 5-minute cache
+  would reload the whole chat after every break.
 - RTK shrinks terminal output (installed on the Mac and the PC). If a result is empty or garbled, re-run with `rtk bypass <cmd>`.
 - Default thinking is medium, also for big jobs (owner, Nov 16: "just try with medium, you pick ultrathink too often").
-  Only suggest ultrathink for a problem medium has already failed on twice. Helpers (Agent tool) use effort low for
-  searching/reading, medium for normal work.
+  Only suggest ultrathink for a problem medium has already failed on twice. Helpers use effort low.
 - Never read big files whole. `JOURNAL.md`: append new entries at the end without reading it (Grep or the last ~40 lines for
   format). Design specs, `MODEL-RULES.md`, `CREATURE-STYLE.md`: Grep the heading, read only that section.
 - Pictures cost a lot: look at the fewest screenshots that answer the question (usually 1–3), use crops/zoom, not full sets.
 - Run single tests (`only=name`) while fixing; run the full suite once at the end. Show only the failing lines of output.
 - Blender/model work: at most 2 render-review rounds before asking the owner.
-- One chat per task: start a new chat (or /compact) when switching tasks.

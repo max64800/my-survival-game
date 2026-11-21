@@ -7576,3 +7576,37 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   The lamp slide first ignored how high a hung board reaches.
 - **Paused** for the owner's new token rules (Nov 21 message from the token-check chat). Helpers (build menu, looting)
   were still running at the pause.
+
+## Nov 21: Where do our Claude tokens go? (token check chat)
+- **What we did:** read the logs of every chat from the last 7 days (190 chats, about 18,600 Claude steps) with a small
+  script and worked out what costs the most. Nothing in the game was changed.
+- **What we found:** 60% of the cost is Claude re-reading the whole chat on every step. An average step re-read
+  about 330,000 tokens. The 3 biggest chats (Nov 16-17, caves, rock textures, Rock Snail) ran almost to 1 million
+  tokens and used about a third of the whole week by themselves. 99% of the work ran on Opus, the priciest everyday model.
+  Every chat also starts with about 62,000 tokens before the owner types anything (145 marketing/SEO skills,
+  extra plugins and connectors load into every game chat). Command output, pictures and thinking are small (RTK works).
+  Artifacts (3D pages) are cheap: writing and publishing them is under 1%.
+- **Already better:** since starting new chats more often (last 2 days), steps over 400,000 tokens fell from 45% to 6%.
+- **Hurdles:** the settings names had to be checked in the Claude Code docs first so we didn't guess wrong ones.
+  The model is set to `opus[1m]` (1-million-token chats), which is why chats could grow so huge.
+  Then it hung on "Loading the miners…" (owner: "quite some time"). Cause (Claude's own): a leftover line in the
+  page's model-copy code crashed, and the error was swallowed. Fix (version 3): three.js's own SkeletonUtils copy,
+  all 7 downloaded at once with a "3 of 7" counter, errors shown on the page. Claude checked it in Chrome: loads in
+  a few seconds, the close-up buttons work.
+- **What we changed (owner said yes):** `.claude/settings.json` now caps chats at 200k (1M off), forces helpers onto
+  Haiku, keeps the 1-hour cache, and turns off 144 marketing/SEO/blog skills, the SEO and last30days plugins and the
+  claude.ai connectors for this game only. The status line now warns at 80k (yellow) and 150k (red = new chat).
+  CLAUDE.md got the new rules: short chats, a model picked per task (Opus or Sonnet), shown in big letters above every
+  new-chat prompt. A cheap Haiku test run confirmed the marketing skills and connectors are gone.
+  The 4 other running Claudes got a message to stop at a safe point and switch to the new rules.
+- **Hurdle:** Claude can't switch a chat's model by itself from a prompt, so the owner types `/model sonnet` (or opus)
+  before pasting the new prompt. The Shorts' own writing skills (humanizer, stop-slop) share names with marketing
+  skills, so they were kept on purpose.
+- Owner nearly missed "Use model: SONNET" in a new-chat banner (it was plain bold text near the bottom). New rule in
+  CLAUDE.md: the model is the banner's **second line** as a big `# 👉 FIRST TYPE: /model …` heading, repeated above the prompt.
+- **Read only what you need** (owner asked: "the bigger the game, the more they reread?"). Answer: Claude re-reads the
+  *chat*, not the game, but a big file opened whole stays in the chat and is re-read every step. Fixes:
+  `tools/codemap/make_codemap.py` builds `docs/CODE-MAP.md` (every file + function with line numbers, 467 files, 0.2 s),
+  rebuilt by a SessionStart hook at every chat start; new CLAUDE.md rules: Grep the map, never read code files over
+  300 lines whole, "where is X" hunts go to Haiku helpers; and a **Handoff prompt recipe** in `docs/CLAUDE-REFERENCE.md`
+  (short, next step first, exact `file:function` spots, done/owner chose/waiting/watch out).
