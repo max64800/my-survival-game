@@ -3,11 +3,15 @@
 #   godot --headless --path . -s res://tools/dump_blueprint.gd -- wooden_kiln <wood.json>
 #   python tools/ruins/make_kiln_ruin.py <brick.json> [wood=<wood.json>] [page=<folder>]
 # Writes blueprints/ruins/kiln_ruin.json (pieces, chests with loot, beetle spots) for the world to place.
+# The kiln's top is the Kiln Crown (owner, Nov 21: a ring of sloped tile roof, still a hole in the middle, railings
+# on top), a new piece this script adds to both plans (and its six railings) until it is a game piece.
 # The ruin is the blueprint piece for piece (so it rebuilds on the very same spots). What happened: a piece of the
-# kiln's rim broke off on its right side (yaw 90 degrees) and fell across the lean-to shed, crushing its roof; it lies
-# past the shed (kiln_rim_fallen). The kiln's upper walls there are broken down, the gallery floor has a hole where a
-# triangle fell in, most of the rim is gone. The kiln's last load of bricks still stands toppled on its firing floor
-# (brick_stack_toppled), another in the yard. The house's roof caved in at its left end, taking the upper floor's
+# kiln's upper wall broke off on its right side (yaw 90 degrees) and fell across the lean-to shed, crushing its roof;
+# it lies past the shed (kiln_wall_fallen). The crown's right side fell in with it (kiln_crown_broken), two of its
+# railings still stand. The gallery floor has a hole where a triangle fell in. The kiln's last load of bricks still stands toppled on its firing floor
+# (brick_stack_toppled), another in the yard. The kiln-master's things are still there (owner, Nov 21: "a lot more
+# furniture and items"), from the decor set (docs/art/DECOR-CATALOG.md): his kitchen downstairs, his bedroom and desk
+# upstairs, the kiln's pot shelves, the shed's charcoal, the yard's clay bin and ash cart. The house's roof caved in at its left end, taking the upper floor's
 # front corner with it; its walls worn, doors gone, two of the yard's half walls fallen.
 # No rubble in doorways, on steps or stairs (owner, Nov 17). A flat clear base space round it (owner, Nov 21).
 # With page=<folder> (and wood=): the 3D page's files: the ruin, rebuilt in wood, rebuilt in brick, side by side,
@@ -28,6 +32,17 @@ wood_bp = next((json.load(open(a[5:], encoding="utf-8")) for a in args if a.star
 rng = random.Random(5)
 
 KX, KZ = 6.268, -1.0      # the kiln's middle (BlueprintLibrary._KILN)
+APO = 1.7320508
+
+
+def with_crown(b):
+	"""The blueprint plus the Kiln Crown on the walls' top (5.25) and railings on its lip (6.25), round the hole."""
+	out = list(b["pieces"]) + [{"id": "kiln_crown", "mat": "clay_brick", "pos": [KX, 5.25, KZ], "rot": 0}]
+	for k in range(6):
+		a = math.radians(2 * k * 30)
+		out.append({"id": "railing", "mat": "clay_brick", "pos": [round(KX + math.sin(a) * APO, 4), 6.25,
+			round(KZ + math.cos(a) * APO, 4)], "rot": rot_from(2 * k)})
+	return out
 
 
 def rot_from(steps):
@@ -62,17 +77,21 @@ ROOF_GONE_X = (-13, -11)                  # the house roof caved in at its left 
 UPPER_FLOOR_GONE = [(-13, 1), (-13, -1)]  # and took the upper floor's front-left corner with it
 YARD_GONE = [(-5, 8), (-3, 8)]            # two of the yard's half walls fell
 pieces = []
-for p in bp["pieces"]:
+for p in with_crown(bp):
 	x, y, z = p["pos"]
 	y = round(y, 2)
 	pid = p["id"]
 	q = {"id": pid, "mat": p["mat"], "pos": [round(x, 4), y, round(z, 4)], "rot": p["rot"]}
 	if pid == "door":
 		continue                                                    # doors gone
+	if pid == "kiln_crown":
+		q["id"] = "kiln_crown_broken"                              # its right side fell in
+		pieces.append(q)
+		continue
 	if in_kiln(x, z):
 		j = round(ring_j(x, z)) % 12
-		if pid == "half_wall" and y > 5.0 and j not in (6, 7, 8, 9, 10, 11, 0):
-			continue                                                # most of the rim is gone
+		if pid == "railing" and y > 6.0 and j not in (6, 10):
+			continue                                                # two of the crown's railings still stand
 		if 3.1 < y < 3.4 and pid in ("wall", "window_wall"):
 			if j in (2, 3, 4):
 				q["id"] = "ruin_wall_collapsed"                    # broken down where the rim chunk tore away,
@@ -140,16 +159,16 @@ def kiln_spot(step, d, y):
 	return KX + math.sin(a) * d, y, KZ + math.cos(a) * d
 
 
-# The rim chunk: fell outward to the right, over the shed, its broken-off top farthest out (the model's top points +z
-# before turning: yaw 90 turns it to +x). Its near edge just past the shed's end wall.
-add("kiln_rim_fallen", 16.1, 0.0, -1.2, 90)
+# The wall chunk: fell outward to the right, over the shed, its broken-off top farthest out (the model's top points
+# +z before turning: yaw 90 turns it to +x). Its near edge just past the shed's end wall.
+add("kiln_wall_fallen", 15.6, 0.0, -1.2, 90)
 # The kiln's last load of bricks on the firing floor (in the open middle, clear of the doors and the stairs' foot),
 # another stack in the yard (clear of the path from the gate to the door, x -10..-8).
 add("brick_stack_toppled", KX - 0.1, 1.0, KZ + 0.2, 0)
 add("brick_stack_toppled", -12.0, 0.0, 6.0, 30)
 # Rubble where things fell: under the gallery's hole, on the gallery by the broken walls, in the shed, under the
 # house's fallen corner (upstairs and down), where the yard walls fell. Never in a doorway, on steps or stairs.
-for (x, y, z) in [kiln_spot(2.0, 2.4, 1.0), kiln_spot(4.0, 2.75, 3.25), (12.3, 1.0, -1.1), (15.2, 0.0, 2.6),
+for (x, y, z) in [kiln_spot(2.0, 2.4, 1.0), kiln_spot(4.0, 2.75, 3.25), (15.2, 0.0, 2.6),
 		(-13.0, 1.0, 0.7), (-13.0, 3.25, -4.6), (-4.0, 0.0, 7.4), (-9.6, 3.25, 1.0)]:
 	add("ruin_rubble", x, y, z, rng.randrange(0, 360))
 
@@ -159,7 +178,44 @@ chests = [
 	{"kind": "chest_copper", "pos": [round(KX, 3), 3.25, round(KZ + 2.9, 3)], "yaw": 180,                        # the kiln's
 		"loot": {"recipe_page": 2, "blueprint_page": 1}},                                                        # gallery
 ]
-props = []
+# The kiln-master's things (decor models, assets/models/decor; their front is +z, yaw turns it). Hand-placed by the
+# junk rules (tools/ruins/ruin_junk.py): backs 5 cm off a wall's face, never in a doorway's 1.5 m, on the stairs, their
+# foot or top, the walk lines between the doors, or within 1.5 m of a chest. Floors: house 1.0 / 3.25, kiln 1.0 / 3.25.
+def wall_back(j, depth, y):
+	"""A spot against the kiln's inside wall on edge j, facing the middle."""
+	r = EDGE_IN - 0.05 - depth / 2
+	a = math.radians(j * 30)
+	return [round(KX + math.sin(a) * r, 3), y, round(KZ + math.cos(a) * r, 3)], (j * 30 + 180) % 360
+
+
+EDGE_IN = 3.7320508 - 0.15
+props = [
+	# the house, downstairs: the kitchen and work room
+	{"model": "bread_oven", "pos": [-13.0, 1.01, -5.28], "yaw": 0},
+	{"model": "mug_rack", "pos": [-7.0, 1.01, -5.69], "yaw": 0},
+	{"model": "dish_rack", "pos": [-11.0, 2.0, -5.66], "yaw": 0},
+	{"model": "kitchen_block", "pos": [-7.5, 1.01, -3.3], "yaw": 15},
+	{"model": "table_overturned", "pos": [-4.2, 1.01, 0.7], "yaw": 200},
+	{"model": "storage_trunk", "pos": [-13.28, 1.01, -1.1], "yaw": 90},
+	{"model": "boot_rack", "pos": [-11.3, 1.01, 1.65], "yaw": 180},
+	# upstairs: the kiln-master's bedroom and desk
+	{"model": "bunk_bed", "pos": [-4.0, 3.26, -5.3], "yaw": 0},
+	{"model": "wardrobe", "pos": [-2.52, 3.26, -3.2], "yaw": 270},
+	{"model": "washbasin", "pos": [-2.45, 3.26, 0.9], "yaw": 270},
+	{"model": "writing_desk", "pos": [-7.0, 3.26, 1.48], "yaw": 180},
+	{"model": "rocking_chair", "pos": [-8.4, 3.26, -0.5], "yaw": 160},
+	{"model": "fur_rug", "pos": [-5.4, 3.26, -2.0], "yaw": 0},
+	# the shed: the charcoal for the firing
+	{"model": "cf_charcoal_bay", "pos": [12.5, 1.01, -1.38], "yaw": 0},
+	# the yard: the clay bin, an ash cart tipped over, a crate of the last order pried open
+	{"model": "cf_sand_bin", "pos": [-13.3, 0.01, 3.4], "yaw": 90},
+	{"model": "cf_slag_cart_tipped", "pos": [-6.5, 0.01, 6.8], "yaw": 30},
+	{"model": "mg_crate_pried_open", "pos": [-6.0, 0.01, 2.68], "yaw": 0},
+]
+for (model, j, depth, y) in [("cf_crucible_shelf", 10, 0.32, 1.01), ("cf_casting_shelf", 6, 0.3, 1.01),
+		("cf_scrap_crate", 5, 0.58, 1.01), ("cf_pattern_shelf", 10, 0.36, 3.26)]:   # the kiln's pot shelves
+	pos, yaw = wall_back(j, depth, y)
+	props.append({"model": model, "pos": pos, "yaw": yaw})
 beetles = [[KX - 1.6, 1.0, KZ + 1.9], [-7.0, 1.0, -1.0], [-6.0, 0.0, 5.0], [12.0, 0.0, 3.0]]
 
 out = GAME / "blueprints" / "ruins" / "kiln_ruin.json"
@@ -172,7 +228,7 @@ print("WROTE", out.name, len(pieces), "pieces,", len(chests), "chests;", counts)
 
 
 # ---------------------------------------------------------------- the rebuilds (builder.gd's rules)
-DEBRIS = ("ruin_rubble", "kiln_rim_fallen", "brick_stack_toppled", "ruin_wall_collapsed")
+DEBRIS = ("ruin_rubble", "kiln_wall_fallen", "kiln_crown_broken", "brick_stack_toppled", "ruin_wall_collapsed")
 
 
 def same_here(p, ruin):
@@ -218,13 +274,15 @@ def plan_of(b):
 if page:
 	(page / "m").mkdir(parents=True, exist_ok=True)
 	views = {"ruin": pieces}
-	views["brick"], new_b = rebuild(plan_of(bp), False)
+	views["brick"], new_b = rebuild(plan_of({"pieces": with_crown(bp)}), False)
 	new_w = []
 	if wood_bp:
-		views["wood"], new_w = rebuild(plan_of(wood_bp), True)
+		views["wood"], new_w = rebuild(plan_of({"pieces": with_crown(wood_bp)}), True)
 	extra = []
 	for c in chests:
 		extra.append({"id": c["kind"], "mat": "prop", "pos": c["pos"], "rot": 4 + round(c["yaw"] / 30) % 12})
+	for pr in props:
+		extra.append({"id": pr["model"], "mat": "prop", "pos": pr["pos"], "rot": 4 + round(pr["yaw"] / 30) % 12})
 	for i, b in enumerate(beetles):
 		extra.append({"id": "rock_beetle_mossy", "mat": "prop", "pos": b, "rot": 4 + (i * 5) % 12})
 	views["ruin"] = views["ruin"] + extra
@@ -245,6 +303,8 @@ if page:
 			if f.exists():
 				continue
 			src = GAME / SRC[p["id"]] if p["id"] in SRC else GAME / f"assets/models/build/{key}.glb"
+			if p["mat"] == "prop" and p["id"] not in SRC:
+				src = GAME / f"assets/models/decor/{key}.glb"
 			if not src.exists():
 				src = NEWDIR / f"{key}.glb"
 			dat = src.read_bytes()

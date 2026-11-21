@@ -961,7 +961,10 @@ func _brewhall_chimney_stays_brick() -> void:
 ##     like a giant chimney. The firing floor on foundations (0..1), its round door at the front (steps up to it), a
 ##     second round door on its right into the shed. Walls 1..3, then a gallery floor at 3 round the inside (its
 ##     middle open: you look down into the firing floor, railings round the hole), stairs up to it on the back left
-##     (their foot on open floor), walls 3.25..5.25 with two small windows, a half-wall rim on top (to 6.25).
+##     (their foot on open floor), walls 3.25..5.25 with two small windows. On top (owner, Nov 21): a ring of
+##     sloped tile roof rising inward to a stone lip round a six-sided hole (still open like a chimney, right over
+##     the gallery's open middle), railings on the lip: the Kiln Crown, one new piece (kiln_crown, 5.25..6.25);
+##     tools/ruins/make_kiln_ruin.py adds it and its railings until it is a game piece.
 ##   - The lean-to shed (x 10..14, z -2..0) against the kiln's right side (its flat side is exactly on x 10): one
 ##     slope from the kiln wall down to its end wall, open at the front (a pillar at the corner), for firewood.
 ##   - The kiln-master's house (x -14..-2, z -6..2): two floors on foundations, a peaked roof (ridge along x, gables
@@ -995,7 +998,7 @@ func _old_kiln() -> void:
 	var w2 := f2 + 0.25
 	_ring_edges(w2, func(j): return "window_wall" if j in [6, 9] else "wall", B)
 	_ring_pillars(w2, [], B)
-	_ring_edges(w2 + 2.0, func(_j): return "half_wall", B)                             # the rim (open on top)
+	# (the Kiln Crown on top, 5.25: added by tools/ruins/make_kiln_ruin.py until it is a game piece)
 	_ring_off = Vector3.ZERO
 	# --- the lean-to shed against the kiln's right side (x 10..14, z -2..0)
 	_add("foundation", B, Vector3(11, 0, -1), 0)

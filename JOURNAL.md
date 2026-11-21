@@ -7496,3 +7496,21 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   wouldn't put models in a scene to measure them; read the numbers straight from the .glb files with Python instead.
 - The robot also showed Lost Miners attacking from 3.9-4.0 m: the new Leaping Chop works in the real game.
 - **Next (new chat):** the owner wants smaller, scarier skulls with scratches and cracks on all 3 miners.
+
+- **Later the same day (owner's 2 asks):** (1) "a lot more furniture and items, from our decor set": the ruin now
+  holds 21 decor models (docs/art/DECOR-CATALOG.md): kitchen downstairs (bread oven, mug rack, dish rack, chopping
+  block, overturned table, trunk, boot rack), bedroom and desk upstairs (bunks, wardrobe, washbasin, writing desk,
+  rocking chair, rug), the foundry set's pot, casting and pattern shelves and a scrap crate in the kiln, a charcoal bay
+  in the shed, a clay bin, a tipped ash cart and a pried-open crate in the yard. Placed by hand by the junk rules (backs
+  off the walls, clear of doors, stairs, walk lines and chests); "props" in kiln_ruin.json, ruin only (the rebuilt
+  ones stay empty, the owner's furnishing rule). (2) "roofs all round the round tower, still a hole in the middle,
+  fences on top": a new piece, the Kiln Crown (builds/hearthbrick_v2_kiln.py): twelve thin tile slopes rising from the
+  walls to a limestone lip round a six-sided smoke hole, round hip tiles, timber wall plates; six railings on the lip.
+  Its broken twin sits on the ruin; the fallen wall chunk lost its old half-wall rim (now kiln_wall_fallen). The
+  half-wall rim is gone from the blueprint; make_kiln_ruin.py adds the crown and its railings until it is a game
+  piece. Page updated (same link). Suggested crown price: 60 clay bricks, 12 mortar, 10 root planks.
+- **Hurdles:** the page now has 55 kinds of model (69 MB), past the 64 MB upload limit: only the new and changed
+  files were sent. Headless Chrome took its first picture while the page was still loading, and once a download failed
+  by chance; longer wait and a retry fixed both. Added `?roof=0` to the page for test views. An ordering slip in the
+  wall chunk: re-cutting a broken wall's mortar sheet clears every sheet built before it, so the broken wall is built
+  first now.

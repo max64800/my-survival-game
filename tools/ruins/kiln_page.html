@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@500;700&family=Alegreya+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: one lantern-lit cave stage with the three kiln yards in a row (the ruin on the right, its fallen rim lying
+/* Layout: one lantern-lit cave stage with the three kiln yards in a row (the ruin on the right, its fallen wall lying
    out past it), a plan sheet beside it (under it on phones). One look on purpose: the ruin lives underground. */
 :root {
 	--rock: #17130f;
@@ -78,18 +78,18 @@ li span:last-child { font: 500 14px var(--mono); font-variant-numeric: tabular-n
 	<aside>
 		<header>
 			<h1>The Old Kiln</h1>
-			<p class="lede">The fifth ruin: where the kiln-master fired Hearthbrick. A fat round brick kiln, open on top like a giant chimney, a lean-to shed against it, and the kiln-master's two-floor house with a walled yard. Left: rebuilt with root planks. Middle: rebuilt with clay bricks, as it first stood. Right: the ruin as you find it.</p>
+			<p class="lede">The fifth ruin: where the kiln-master fired Hearthbrick. A fat round brick kiln under a ring of tile roof with a smoke hole in the middle, a lean-to shed against it, and the kiln-master's two-floor house with a walled yard. Left: rebuilt with root planks. Middle: rebuilt with clay bricks, as it first stood. Right: the ruin as you find it.</p>
 		</header>
 		<section>
 			<h2>What you find</h2>
 			<ul>
-				<li><span>Kiln, 12 sides</span><span>7.7 m wide, 6.25 m tall</span></li>
+				<li><span>Kiln, 12 sides</span><span>7.7 m wide, 7.25 m tall</span></li>
 				<li><span>House</span><span>12 &times; 8 m, 2 floors</span></li>
 				<li><span>Yard in front</span><span>12 &times; 6 m</span></li>
 				<li><span>Whole place</span><span>about 32 &times; 15 m</span></li>
 				<li><span>Flat base space round it</span><span>yes (your pick)</span></li>
 			</ul>
-			<p class="note">A piece of the kiln's rim broke off on its right side and fell across the shed, crushing its roof; it lies on the floor past the shed. The kiln's upper wall is broken down there, most of the rim is gone, and a piece of the gallery floor fell in. Its last load of bricks still stands, half toppled, on the firing floor. The house's roof caved in at its left end and took the upstairs corner with it; doors gone, worn walls, two yard walls fallen. Three chests (one up on the kiln's gallery) and four rock beetles.</p>
+			<p class="note">A piece of the kiln's upper wall broke off on its right side and fell across the shed, crushing its roof; it lies on the floor past the shed. The kiln's tile roof fell in on that side (two of its railings still stand), and a piece of the gallery floor fell in. Its last load of bricks still stands, half toppled, on the firing floor. The house's roof caved in at its left end and took the upstairs corner with it; doors gone, worn walls, two yard walls fallen. The kiln-master's things are still there: his kitchen downstairs, bed, wardrobe and desk upstairs, pot shelves in the kiln, charcoal in the shed, a clay bin and a tipped ash cart in the yard (21 pieces from the decor set). Three chests (one up on the kiln's gallery) and four rock beetles.</p>
 		</section>
 		<section>
 			<h2>Rebuild in wood</h2>
@@ -104,9 +104,9 @@ li span:last-child { font: 500 14px var(--mono); font-variant-numeric: tabular-n
 		<section>
 			<h2>What makes it different</h2>
 			<div class="ask">
-				<p>The kiln is <b>open on top</b>: inside, a gallery runs round the wall at the first floor, its middle open, so from up there you look straight down onto the firing floor (railings round the hole). Stairs up on the back left, their foot on open floor.</p>
+				<p>The <b>Kiln Crown</b> (your idea): a ring of sloped tile roof all round the top, rising to a stone lip round a six-sided smoke hole, railings standing on the lip. The hole sits right over the gallery inside, whose middle is open too, so from the gallery you look down onto the firing floor and up through the roof. Stairs up on the back left, their foot on open floor.</p>
 				<p>Two round doors into the kiln: the front one, and one on the right into the firewood shed. The house has a front door to the yard and a side door toward the kiln, steps landing on open ground, no window beside a door.</p>
-				<p>Two new wreck models: the <b>fallen rim chunk</b> and a <b>toppled brick stack</b> (you hit it to clear it).</p>
+				<p>New models: the <b>Kiln Crown</b> (a new building piece; suggested price 60 clay bricks, 12 mortar, 10 root planks), its <b>broken</b> version, the <b>fallen wall chunk</b> and a <b>toppled brick stack</b> (you hit it to clear it). The furniture is only in the ruin: the rebuilt ones stay empty for you to furnish.</p>
 			</div>
 		</section>
 		<p class="note"><span class="swatch"></span>"Mark new pieces" glows orange on every piece the rebuild adds.</p>
@@ -124,7 +124,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
-const COST = {"wood":[["New pieces","44"],["Rootwood Plank","276"],["Rope","30"],["Clay Brick (the kiln)","76"],["Mortar","14"]],"brick":[["New pieces","61"],["Clay Brick","388"],["Mortar","61"]]};
+const COST = {"wood":[["New pieces","43 + crown"],["Rootwood Plank","286"],["Rope","30"],["Clay Brick (the kiln)","116"],["Mortar","24"]],"brick":[["New pieces","61 + crown"],["Clay Brick","436"],["Mortar","72"],["Rootwood Plank (crown rafters)","10"]]};
 for (const k of ["wood", "brick"]) {
 	document.getElementById("cost_" + k).innerHTML = COST[k].map(([a, b]) => `<li><span>${a}</span><span>${b}</span></li>`).join("");
 }
@@ -157,7 +157,7 @@ sun.shadow.mapSize.set(4096, 4096);
 Object.assign(sun.shadow.camera, { left: -80, right: 80, top: 40, bottom: -40, far: 140 });
 scene.add(sun);
 
-// Three kiln yards in a row, 40 m apart: the ruin on the right, so its fallen rim can lie out past it.
+// Three kiln yards in a row, 40 m apart: the ruin on the right, so its fallen wall can lie out past it.
 const VIEWS = [["wood", -40, "Rebuilt in wood"], ["brick", 0, "Rebuilt in brick"], ["ruin", 40, "The ruin"]];
 const floorMesh = new THREE.Mesh(new THREE.PlaneGeometry(170, 70), new THREE.MeshStandardMaterial({ color: 0x2b241d, roughness: 1 }));
 floorMesh.rotation.x = -Math.PI / 2;
@@ -224,7 +224,7 @@ try {
 	for (const [view, ox] of VIEWS) {
 		for (const p of bp.views[view] || []) {
 			const y = p.pos[1];
-			const roofy = p.id.startsWith("roof_") || p.id === "gable_26" || (p.id === "half_wall" && y > 5 && p.pos[0] < -1);
+			const roofy = p.id.startsWith("roof_") || p.id.startsWith("kiln_crown") || p.id === "gable_26" || (p.id === "half_wall" && y > 5 && p.pos[0] < -1) || (p.id === "railing" && y > 6);
 			const layer = roofy ? "roof" : (y > 2.9 ? "upper" : "base");
 			const gk = [keyOf(p), view, layer, p.new ? 1 : 0].join("|");
 			const m = new THREE.Matrix4().compose(new THREE.Vector3(p.pos[0] + ox, y, p.pos[2]),
@@ -252,6 +252,7 @@ try {
 	}
 	for (const [, ox, text] of VIEWS) label(text, ox);
 	show("all");
+	if (new URLSearchParams(location.search).get("roof") === "0") setTimeout(() => roofBtn.click(), 0);  // (test views)
 	loadingEl.hidden = true;
 } catch (err) {
 	loadingEl.textContent = "Couldn't build the Old Kiln: " + err.message;
