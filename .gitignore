@@ -40,3 +40,4 @@ tools/asset_forge/packs/mixamo/
 
 # Code map: rebuilt on every Claude chat start (tools/codemap/make_codemap.py), local only
 docs/CODE-MAP.md
+docs/CODE-MAP.md  # made at every Claude chat start by tools/codemap/make_codemap.py
