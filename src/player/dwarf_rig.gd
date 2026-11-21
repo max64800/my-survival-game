@@ -27,6 +27,7 @@ var use_body := BODY_ON or "newdwarf" in OS.get_cmdline_user_args()
 ## the shoulders with a big beard on the chest, so a full human nod pushed the face into the chest (F183).
 const BODY_HEAD_FOLLOW := 0.35
 const LIBS := {"": "res://assets/characters/anims/UAL1.glb", "b": "res://assets/characters/anims/UAL2.glb"}
+const CROSSBOW_LIB := "res://assets/anim/crossbow_kaykit.res"  ## "c/": Aim, Shoot, Reload, Reload1H (KayKit, chat 17)
 const HEIGHT := 0.98  ## where the head bone ends up (metres); with the helmet the dwarf is ~1.3 m tall
 const WIDTH := 1.2    ## a little extra width overall (most of the bulk comes from DwarfProportions)
 const BEARD_COLOR := Color(0.62, 0.32, 0.14)
@@ -51,6 +52,7 @@ const ANIMS := {
 	# Great axe and great maul (F389, owner Nov 20): the Lampwick Foreman's moves (DwarfGreatSwing), played by DwarfFist.
 	# The "g/" clips only time the swing (the upper body's idle; the bones come from the baked moves).
 	great_chop = "g/Chop", great_spin = "g/Spin",
+	great_slice = "g/Slice", great_shove = "g/Stab", great_whirl = "g/Spinning",  # (the great maul, owner chat 17)
 	stunned = "b/Idle_Shield_Break",  # stunned / guard broken (owner, chat 15)
 	mace_1 = "o/UalMace1", mace_2 = "o/UalMace2", mace_3 = "o/UalMace3", mace_4 = "o/UalMace4",
 	ual_1 = "o/UalHit1", ual_2 = "o/UalHit2", ual_3 = "o/UalHit3", ual_heavy = "o/UalHeavyHit",
@@ -66,7 +68,9 @@ const ATTACKS := {
 	# great axe and great maul (owner, Nov 20, F389): the Foreman's moves, light = the chop, heavy = the spin (owner's
 	# pick; the heavy swing's 1.9 s plays the spin near the Foreman's own speed).
 	"axe_2h": [["great_chop"], "great_spin"],
-	"mace_2h": [["great_chop"], "great_spin"],
+	# great maul (owner, chat 17): a side swing, a shove with the head, then right click = the whirl (three turns,
+	# you can still walk slowly: DwarfFight.WHIRL_WALK). Left, left, right = the whole combo.
+	"mace_2h": [["great_slice", "great_shove"], "great_whirl"],
 	"hammer": [["smash"], "smash"],
 	# spear (owner, chat 16: "two hits and then a spin attack"): two thrusts, then UAL 2's hit C (a full turn), which
 	# the sword no longer uses (F519); the spin hits all round him (DwarfFight._impact)
@@ -94,7 +98,11 @@ const GRIPS := {
 	"mace_2h": {"": [Vector3(0, 90, 0), GRIP_SLIDE]},
 	"hammer": {"": [Vector3(0, 90, 0), GRIP_SLIDE]},
 	"shovel": {"": [Vector3(0, 90, 0), GRIP_SLIDE]},
+	# the KayKit crossbow moves (chat 17): the bow along the line from his right hand to his left (measured)
+	"crossbow": {"c/Aim": [CROSSBOW_TURN, 0.0], "c/Shoot": [CROSSBOW_TURN, 0.0], "c/Reload": [CROSSBOW_TURN, 0.0],
+		"c/Reload1H": [CROSSBOW_TURN, 0.0]},
 }
+const CROSSBOW_TURN := Vector3(-8, 54, -9)
 ## The shield on the left arm (shield_grip), per animation: [turn (degrees, in the shield model's own space), slide].
 ## Hanging: its face (+X of the model) out to his left; in the block and the bash: to the front.
 const SHIELD_GRIPS := {
@@ -964,6 +972,8 @@ func _build_tree(body: Node3D) -> void:
 	for lib_name in LIBS:
 		tree.add_animation_library(lib_name, _library(LIBS[lib_name]))
 	tree.add_animation_library("x", _made_library())
+	if ResourceLoader.exists(CROSSBOW_LIB):  # the crossbow's KayKit moves (tools/asset_forge/crossbow_kaykit_bake.gd, chat 17)
+		tree.add_animation_library("c", load(CROSSBOW_LIB))
 	# the great swings' timers: the upper body's idle, one per swing (DwarfGreatSwing places the arms and chest)
 	var great_lib := AnimationLibrary.new()
 	for move: String in DwarfGreatSwing.MOVES:

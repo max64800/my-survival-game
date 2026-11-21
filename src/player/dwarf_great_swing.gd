@@ -17,10 +17,12 @@ extends RefCounted
 ## By the dwarf-animations Claude, chat 11, Nov 20, 2026.
 
 const BAKED := "res://assets/anim/great_kaykit.json"
-const MOVES := ["Chop", "Spin"]
+const MOVES := ["Chop", "Spin", "Slice", "Stab", "Spinning"]  # (the last 3: the great maul's, owner chat 17)
 ## The clip second the strike lands (the end of the fastest frames, great_kaykit_bake.gd prints them; the Chop's
 ## whole downward strike is 2 frames, 0.80-0.87 s): it lands on HIT_AT of the swing.
-const STRIKE := {"Chop": 0.87, "Spin": 0.73}
+const STRIKE := {"Chop": 0.87, "Spin": 0.73, "Slice": 0.43, "Stab": 0.40}
+## Looping moves: played this many times over the swing (the great maul's whirl, owner chat 17: three turns).
+const LOOPS := {"Spinning": 3}
 const HIT_AT := 0.40
 ## Bones the moves turn, parents first (each one's turn is set after its parent's).
 const ORDER := ["pelvis", "spine_01", "spine_02", "spine_03", "neck_01", "Head", "clavicle_l", "upperarm_l",
@@ -96,6 +98,9 @@ static func swing(move: String, t: float) -> Dictionary:
 	_load()
 	if not _clips.has(move):
 		return {}
+	if LOOPS.has(move):  # (round and round: no single strike moment)
+		var length := float(_clips[move][0])
+		return clip_pose(move, fposmod(clampf(t, 0.0, 0.999) * float(LOOPS[move]) * length, length))
 	return clip_pose(move, clip_time(move, t))
 
 

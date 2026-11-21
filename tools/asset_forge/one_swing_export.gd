@@ -28,6 +28,9 @@ var chain_slow := 1.0  ## a chain's hits at this many times their own length
 const PACK_MOVES := ["b/Shield_OneShot", "b/Shield_Dash", "b/Idle_Shield", "b/Idle_Shield_Break", "b/Sword_Block",
 	"b/Sword_Dash", "b/Melee_Hook", "b/OverhandThrow", "b/Hit_Knockback", "Roll", "Punch_Jab", "Punch_Cross", "b/Slide_Start"]
 const NODES := ["turn", "Sword", "Mace", "shield"]
+## bow=1 (chat 17, with all=1): the crossbow's KayKit moves ("c/", crossbow_kaykit_bake.gd), "Crossbow_Try<move>",
+## and all three in a row ("Crossbow_TryAll")
+const BOW_TRY := ["Aim", "Shoot", "Reload", "Reload1H"]
 ## all=1 (chat 15, owner: "an artifact where I can see everything we've implemented in terms of moves"): every weapon
 ## the way the game plays it (DwarfModel.attack at DwarfRig.attack_seconds, the combo clicked the moment the last hit
 ## lets you, as DwarfFight does), then the blocks, the shield bash, stunned, dying, the roll and the crossbow.
@@ -400,6 +403,22 @@ func _record_all(model: DwarfModel, rig: DwarfRig, lib: AnimationLibrary, tools:
 			var sb: float = Combat.WEAPONS.shield.light_speed
 			lib.add_animation(holder + "_Bash", await _record(rig, holder, "", 0.0, 0.5 + sb + 0.9, [[0.0, hold.bind(true, true)],
 				[0.5, model.attack.bind(sb, false, 0, "shield")], [0.5 + sb + 0.6, hold.bind(false, true)]]))
+		if holder == "GreatMaul" and "bow=1" in OS.get_cmdline_user_args():
+			# chat 17: the crossbow's KayKit moves, each alone at its own speed, then aim, shoot, reload in a row
+			model.set_held("crossbow_copper")
+			for i in 20:
+				rig.set_motion(0.0, true, false)
+				await process_frame
+			var ln := {}
+			for mv: String in BOW_TRY:
+				ln[mv] = rig.tree.get_animation("c/" + mv).length
+				lib.add_animation("Crossbow_Try" + mv, await _record(rig, "Crossbow", "", 0.0, ln[mv] + AFTER,
+					[[0.0, rig.play_upper.bind("c/" + mv, ln[mv])]]))
+			var a: float = ln.Aim
+			lib.add_animation("Crossbow_TryAll", await _record(rig, "Crossbow", "", 0.0, a + ln.Shoot + ln.Reload + AFTER,
+				[[0.0, rig.play_upper.bind("c/Aim", a)], [a, rig.play_upper.bind("c/Shoot", ln.Shoot)],
+				[a + ln.Shoot, rig.play_upper.bind("c/Reload", ln.Reload)]]))
+			model.set_held(w[1])
 		if holder != "Sword":
 			continue
 		# the sword's guard (no shield), the shield's guard, stunned, dying, the roll

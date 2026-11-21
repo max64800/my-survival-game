@@ -14,7 +14,9 @@ extends SceneTree
 ## By the dwarf-animations Claude, chat 11, Nov 20, 2026.
 const PACK := "res://tools/asset_forge/packs/kaykit_skeletons/Skeleton_Warrior.glb"
 const OUT := "res://assets/anim/great_kaykit.json"
-const CLIPS := {"Stance": "2H_Melee_Idle", "Chop": "2H_Melee_Attack_Chop", "Spin": "2H_Melee_Attack_Spin"}
+const CLIPS := {"Stance": "2H_Melee_Idle", "Chop": "2H_Melee_Attack_Chop", "Spin": "2H_Melee_Attack_Spin",
+	# the great maul (owner, chat 17): side swing, head shove, then the whirl on the right click
+	"Slice": "2H_Melee_Attack_Slice", "Stab": "2H_Melee_Attack_Stab", "Spinning": "2H_Melee_Attack_Spinning"}
 const FPS := 30.0
 const HEAD_CHEST := 0.0  ## share of the chest's turn (vs the hips') the neck and head take
 ## dwarf bone -> [KayKit bone, KayKit bone, share of the second] (the turn is blended between the two)

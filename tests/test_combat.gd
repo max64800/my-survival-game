@@ -60,6 +60,19 @@ func test_spear_two_thrusts_then_a_spin() -> void:
 	check(DwarfRig.attack_seconds("spear", false, 2, 0.6) > 0.6, "the spin takes its own (longer) time")
 
 
+## Owner, chat 17: the great maul is "left click, left click, right click": side swing, head shove, then a whirl
+## you can still walk (slower) in.
+func test_great_maul_slice_shove_then_whirl() -> void:
+	var a: Array = DwarfRig.ATTACKS.mace_2h
+	check_eq(a[0], ["great_slice", "great_shove"], "left clicks: side swing, then head shove")
+	check_eq(a[1], "great_whirl", "right click: the whirl")
+	for k in a[0] + [a[1]]:
+		var mv := String(DwarfRig.ANIMS[k]).trim_prefix("g/")
+		check(DwarfGreatSwing.MOVES.has(mv), "%s is a baked great move (%s)" % [k, mv])
+	check(DwarfGreatSwing.LOOPS.get("Spinning", 0) >= 2, "the whirl turns round more than once")
+	check(DwarfFight.WHIRL_WALK > 0.2 and DwarfFight.WHIRL_WALK < 1.0, "walk during the whirl, but slower")
+
+
 ## Owner, chat 16: stone swords/maces/spears have no finisher, stone great weapons no heavy; the finisher Crushes.
 func test_stone_has_no_finisher_and_no_heavy() -> void:
 	for w in ["sword", "mace", "spear"]:

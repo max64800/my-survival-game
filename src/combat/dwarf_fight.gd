@@ -23,6 +23,7 @@ var _dodge_dir := Vector3.ZERO
 var stagger := 0.0  ## guard break / knockdown: can't act
 var _heavy_until := 0.0  ## a heavy swing is still going until this clock time
 var loaded := true  ## crossbow: a bolt is in it
+const WHIRL_WALK := 0.5  ## walking speed share during the great maul's whirl (owner, chat 17)
 const SPEAR_SPIN_STEP := 2  ## the spear's 3rd combo hit is a spin (owner, chat 16: "two hits and then a spin")
 const KNOCK_DOWN_TIME := 2.0  ## down 0.85 s, then 1.1 s getting up
 ## Your own stun meter (owner, chat 15: "you should have your own stun meter as well"): hits fill it, blocked hits a
@@ -233,6 +234,8 @@ func step(delta: float, playing: bool, move_dir: Vector3) -> float:
 		_attack(true)
 	elif Input.is_action_pressed("dig"):
 		_attack(false)  # (does nothing while the last swing is still going: the next starts as soon as it ends)
+	if clock < _heavy_until and weapon() == "mace_2h":
+		return WHIRL_WALK  # (owner, chat 17: "you can still move a little bit slower" in the maul's whirl)
 	return (_ps().progress.guard_walk_mult(false) if _ps() else 0.6) if is_blocking() else 1.0  # Shield ★25
 
 
