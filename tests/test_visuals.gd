@@ -55,8 +55,10 @@ func test_sword_swings_the_ual_combo_slowly() -> void:
 		check(rig.tree.has_animation(clip) and DwarfOneSwing.has_move(clip.trim_prefix("o/")), "%s is baked and playable" % clip)
 	for step in 3:
 		var s := DwarfRig.attack_seconds("sword", false, step, 0.55)
-		check(is_equal_approx(s, DwarfOneSwing.clip_length(String(DwarfRig.ANIMS[light[step]]).trim_prefix("o/")) * DwarfRig.UAL_SLOW),
-			"hit %d plays at half the pack's speed (%.2f s)" % [step + 1, s])
+		# owner, chat 18: the third hit (the jump and spin) plays 30% slower than the other two
+		var third := 1.0 / 0.7 if step == 2 else 1.0
+		check(is_equal_approx(s, DwarfOneSwing.clip_length(String(DwarfRig.ANIMS[light[step]]).trim_prefix("o/")) * DwarfRig.UAL_SLOW * third),
+			"hit %d plays at the pack's speed%s (%.2f s)" % [step + 1, " (30%% slower)" if step == 2 else "", s])
 	check(DwarfRig.attack_seconds("axe", false, 0, 0.7) == 0.7, "the axe keeps its own speed")
 	check(not DwarfRig.ATTACKS.has("axe") and String(DwarfRig.ATTACKS[""][1]) == "heavy", "the axe keeps the old swing")
 	m.queue_free()
