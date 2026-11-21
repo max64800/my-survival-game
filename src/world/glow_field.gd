@@ -624,21 +624,48 @@ func _make_twig_mesh() -> Mesh:
 
 
 func _make_fiber_mesh() -> Mesh:
+	# F553 (owner, Nov 21: "the grass is still way too spiky"): no more needle cones. Soft, flat, wide blades with
+	# blunt tips that arch out and droop, in two rings (short outer, longer inner): a low, bushy tuft.
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	for i in 7:
-		var blade := CylinderMesh.new()
-		blade.radial_segments = 3
-		blade.rings = 0
-		blade.top_radius = 0.0
-		blade.bottom_radius = 0.025
-		blade.height = 0.35 + 0.05 * (i % 3)
-		var a := i * 0.9
-		var t := Transform3D(Basis(Vector3.UP, a) * Basis(Vector3.RIGHT, 0.35), Vector3(cos(a), 0, sin(a)) * 0.08)
-		t.origin += t.basis.y * blade.height * 0.5
-		st.append_from(blade, 0, t)
+	for i in 11:
+		var outer := i < 6
+		var a := i * 2.4 + (0.0 if outer else 0.5)
+		var h := (0.18 if outer else 0.25) + 0.03 * (i % 3)
+		var w := 0.05 if outer else 0.042
+		var lean := 0.75 if outer else 0.4
+		_soft_blade(st, Vector3(cos(a), 0, sin(a)) * (0.07 if outer else 0.03), a, h, w, lean)
 	st.generate_normals()
 	return st.commit()
+
+
+## One soft grass blade: a flat strip (two-sided), wide at the bottom, a round-ish blunt tip, arching out along `yaw`.
+static func _soft_blade(st: SurfaceTool, base: Vector3, yaw: float, height: float, width: float, lean: float) -> void:
+	const STEPS := 4
+	var out := Vector3(cos(yaw), 0, sin(yaw))
+	var side := out.cross(Vector3.UP).normalized()
+	var pts: Array[Vector3] = []
+	var wid: Array[float] = []
+	for k in STEPS + 1:
+		var t := float(k) / STEPS
+		var bend := lean * t + lean * 0.8 * t * t  # arches more toward the tip (droops)
+		pts.append(base + out * sin(bend) * height * t * 0.9 + Vector3.UP * cos(bend) * height * t)
+		wid.append(width * (1.0 - 0.45 * t * t))  # stays wide: the tip is blunt, not a needle
+	for k in STEPS:
+		var p0 := pts[k] - side * wid[k] * 0.5
+		var p1 := pts[k] + side * wid[k] * 0.5
+		var q0 := pts[k + 1] - side * wid[k + 1] * 0.5
+		var q1 := pts[k + 1] + side * wid[k + 1] * 0.5
+		for tri in [[p0, q0, p1], [p1, q0, q1], [p0, p1, q0], [p1, q1, q0]]:  # both faces
+			for v in tri:
+				st.add_vertex(v)
+	# the rounded end: a small fan over the tip
+	var tip := pts[STEPS] + (pts[STEPS] - pts[STEPS - 1]).normalized() * wid[STEPS] * 0.45
+	var e0 := pts[STEPS] - side * wid[STEPS] * 0.5
+	var e1 := pts[STEPS] + side * wid[STEPS] * 0.5
+	for tri in [[e0, tip, e1], [e0, e1, tip]]:
+		for v in tri:
+			st.add_vertex(v)
 
 
 ## A root 1 m long (stretched to fit the gap to the floor), hanging down from the ceiling:

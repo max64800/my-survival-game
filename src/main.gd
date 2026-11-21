@@ -865,7 +865,7 @@ func _notification(what: int) -> void:
 ## E turns what you're placing to the right (Q to the left), but only when you aren't aiming at something to open,
 ## sit on or pick up: then E still does that (owner, Nov 19).
 func _turn_with_e(info: Dictionary) -> bool:
-	for k in ["seat", "pick_glow", "box_id", "poi_id", "station", "door_uid"]:
+	for k in ["seat", "pick_glow", "pick_strand", "box_id", "poi_id", "station", "door_uid"]:
 		if info.has(k):
 			return false
 	var aimed := dwarf.aim()
@@ -975,6 +975,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		if info.has("seat"):  # a chair, stool or bench: sit down (move or jump to stand up)
 			dwarf.sit_on(info.seat)
+			return
+		if info.has("pick_strand"):  # a glowing vine (F569): E picks it, no swing needed
+			dwarf.model.react("use")
+			authority.ask_break_hanging("strand", str(info.pick_strand))
 			return
 		if info.has("pick_glow"):  # mushrooms, fiber, twigs, thin roots (owner, Nov 17: "picked up with E")
 			dwarf.model.react("use")

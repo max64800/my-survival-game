@@ -220,7 +220,7 @@ func test_roots_give_wood_four_times() -> void:
 		_teardown()
 		return
 	player.global_position = root.pos + Vector3(1.2, 0.9, 0.0)  # beside the root (they grow out of the floor)
-	# A stone pickaxe is poor at wood (0.3 power): 30 / 3 = 10 hits per chop-through.
+	# A stone pickaxe is poor at wood (0.6 power, F550): 5 hits per chop-through.
 	var chops := 0
 	for i in 60:
 		if auth.request_harvest(1, root.id).get("state") == "done":
@@ -231,7 +231,7 @@ func test_roots_give_wood_four_times() -> void:
 	_teardown()
 
 
-## Owner, Nov 17: "axes aren't better at cutting wood". A stone axe needs 2 hits, a stone pickaxe about 10.
+## Owner, Nov 17: "axes aren't better at cutting wood". A stone axe needs 2 hits, a stone pickaxe 5 (F550: was 10).
 func test_axe_beats_pickaxe_on_wood() -> void:
 	await _setup(42)
 	var root := _first_spot(GlowPlacer.ROOT)
@@ -244,7 +244,7 @@ func test_axe_beats_pickaxe_on_wood() -> void:
 	auth.request_select_slot(1, 0)
 	var axe: int = auth.request_harvest(1, root.id).get("needed", 0)
 	check(axe > 0 and axe <= 2, "a stone axe chops a root in 2 hits (got %d)" % axe)
-	check(pick >= 4 * axe, "a pickaxe takes far longer (%d vs %d)" % [pick, axe])
+	check(pick >= 2 * axe, "a pickaxe takes longer (%d vs %d)" % [pick, axe])
 	_teardown()
 
 

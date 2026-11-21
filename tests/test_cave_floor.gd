@@ -210,3 +210,25 @@ func test_swarm_stays_above_the_floor() -> void:
 		got = sw._above_floor(d, head, 1.0 / 60.0)
 	check(got.y >= fl.y + GlowSwarms.FLOOR_GAP - 0.05, "lifted over the floor (%.2f over it)" % (got.y - fl.y))
 	sw.free()
+
+
+## F566 (owner, Nov 21: "I went through a tunnel and found none"): nearly every walking tunnel has wood roots,
+## and none stand on built ground, paths or an old place's treasure (the placement rule).
+func test_roots_in_nearly_every_tunnel() -> void:
+	var m := _maker()
+	var roots: Array = GlowPlacer.place(m).filter(func(s: Dictionary) -> bool:
+		return s.kind == GlowPlacer.ROOT and not s.get("hidden", false) and not s.get("bridge", false))
+	var tunnels: Array = GlowPlacer._root_tunnels(m).filter(func(sg: Dictionary) -> bool:
+		return CaveMaker.biome_at(((sg.a as Vector3) + (sg.b as Vector3)) * 0.5) != "fungal")
+	var near_root := 0  # tunnel pieces with a wood root within 15 m of their middle
+	for sg in tunnels:
+		var mid: Vector3 = ((sg.a as Vector3) + (sg.b as Vector3)) * 0.5
+		if roots.any(func(r: Dictionary) -> bool: return (r.pos as Vector3).distance_to(mid) < 15.0):
+			near_root += 1
+	check(near_root >= tunnels.size() * 0.85, "walking a tunnel, a wood root is never far (%d of %d tunnel pieces)" % [near_root, tunnels.size()])
+	check(roots.size() >= 700, "more than twice the wood roots of before (353): %d" % roots.size())
+	var taken := RuinTreasure.keep_clear(m)
+	for r in roots:
+		check(not m.is_reserved(r.pos, 0.5), "no root on built ground or a path")
+		for z in taken:
+			check((r.pos as Vector3).distance_to(z.pos) >= float(z.r) + 0.5, "no root in an old place's treasure")

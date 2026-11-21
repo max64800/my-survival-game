@@ -440,9 +440,12 @@ func aim() -> Dictionary:
 
 func _aim_info() -> Dictionary:
 	var hit := aim()
+	var auth := GameAuthority.instance
+	var sid := vine_in_aim(hit)
+	if sid >= 0:  # F569: glowing vines are picked with E (they're thin and sway: hard to hit with a swing)
+		return {kind = "vine", name = "Glowing Vine · E to pick", pick_strand = sid}
 	if hit.is_empty():
 		return {}
-	var auth := GameAuthority.instance
 	if auth and auth.glow and auth.glow.id_of(hit.collider) >= 0:
 		var spot := auth.glow.get_spot(auth.glow.id_of(hit.collider))
 		var k: Dictionary = GlowPlacer.KINDS.get(spot.get("kind", ""), {})
@@ -857,7 +860,12 @@ func _on_dig_feedback(pid: int, result: Dictionary) -> void:
 	var soft: bool = result.get("material", Mat.STONE) in [Mat.MOSS, Mat.DIRT, Mat.CLAY]
 	if result.get("state", "") in ["hit", "dug"]:
 		FreezeWatch.hits += 1
+	var wood: bool = result.get("kind", "") in GlowPlacer.TALL  # roots, Root Trees, grove trees, giant mushrooms
 	match result.get("state", ""):
+		"hit" when result.has("kind"):  # a root or mushroom that needs more hits: the swing already played its chop
+			# (F558: this used to fall through to the rock sound + cracks below, so wood sounded like metal on the first hit)
+			Fx.burst(get_parent(), at, Color(0.45, 0.32, 0.2) if wood else col, 6, 2.5)
+			_shake = 0.35
 		"hit":
 			if not soft and not result.get("statue", false):  # cracks spread on rock with each hit (F261); dirt and moss just
 				# crumble; a stone corpse cracks itself (Statue.hit): owner, Nov 20, the cracks showed on the floor
@@ -879,12 +887,26 @@ func _on_dig_feedback(pid: int, result: Dictionary) -> void:
 		"blocked":
 			Fx.burst(get_parent(), at, Color(1.0, 0.9, 0.6), 4, 5.0)
 			_shake = 0.2
-			Sfx.play("clink", at)
+			Sfx.play("chop" if wood else "clink", at, -6.0 if wood else 0.0)  # wood knocks like wood, never a metal clink (F558)
 		"done":
 			var k: String = result.get("kind", "")
 			if k == "fiber":  # a grass tuft, fern or small root broke (F197): a puff of green bits
 				Fx.burst(get_parent(), at + Vector3.UP * 0.15, Color(0.6, 0.66, 0.38), 12, 2.5)
 			Sfx.play("crystal" if k.begins_with("crystal") else ("chop" if k in GlowPlacer.TALL else "pickup"), at)
+
+
+## The glowing vine (curtain strand) along your aim, in reach and in front of what you aim at, or -1 (F569).
+## Generous (0.6 m from the aim line): the vines sway away from you as you come close.
+const VINE_PICK_NEAR := 0.6
+
+
+func vine_in_aim(hit: Dictionary) -> int:
+	var auth := GameAuthority.instance
+	if auth == null or auth.curtains == null or camera == null:
+		return -1
+	var chest := global_position + Vector3.UP * 1.1
+	var reach_to: Vector3 = hit.position if not hit.is_empty() else chest + (-camera.global_basis.z) * GameAuthority.REACH
+	return auth.curtains.strand_near_ray(chest, reach_to, VINE_PICK_NEAR)
 
 
 # ---------------------------------------------------------------- sitting

@@ -505,13 +505,11 @@ func request_chop_pillar(peer_id: int, id: int) -> void:
 		return
 	var used: int = pillar_chops.get(id, 0)
 	if used >= RootPillars.CHOPS:
-		var left: float = tree_regrow.get(id, 0.0)
-		var step: int = {"broken": 0, "regrow1": 1, "regrow2": 2}.get(RootPillars.regrow_stage(left), 0)
-		_tell_feedback(peer_id, {state = "blocked", point = axis,
-			why = "Growing back from both ends (step %d of 3, whole in %d min). Leave it be." % [step, ceili(left / 60.0)]})
+		# No "grows back in 45 min" message (owner F552): you can see it growing back. Just a dull knock.
+		_tell_feedback(peer_id, {state = "blocked", point = axis, why = "", kind = "root"})
 		return
 	if p.stage != "tree":
-		_tell_feedback(peer_id, {state = "blocked", point = axis, why = "Still growing. Leave it be."})
+		_tell_feedback(peer_id, {state = "blocked", point = axis, why = "Still growing. Leave it be.", kind = "root"})
 		return
 	var n := 2 if Items.kind(ps.selected_item()) == "axe" else 1
 	n = mini(n, RootPillars.CHOPS - used)
@@ -705,7 +703,7 @@ func request_break_hanging(peer_id: int, kind: String, id: String) -> void:
 		for s in bunch:
 			removed_strands.append(s)
 		_ev_break_hanging.rpc("strand", ",".join(Array(bunch).map(func(x): return str(x))))
-		spawn_drop(CaveLife.FIBER_DROP, 1, _chest(ps) + Vector3.UP * 0.3)
+		spawn_drop(CaveLife.FIBER_DROP, CaveLife.FIBER_PER_VINE, _chest(ps) + Vector3.UP * 0.3)
 	elif kind == "hroot" and clutter:
 		var top := clutter.hroot_top(id)
 		if top == Vector3.INF or Vector2(top.x - _chest(ps).x, top.z - _chest(ps).z).length() > REACH + 2.0:
@@ -1447,7 +1445,7 @@ func _break_plant_at(ps: PlayerState, point: Vector3) -> Dictionary:
 			removed_plants.append(plant)
 			_ev_break_plant.rpc(plant)
 			# small roots give wood and grow back (owner, Nov 17: "I'm missing a ton of wood"); grass and ferns: fiber
-			spawn_drop("rootwood" if is_root else CaveLife.FIBER_DROP, 1 + (onyx_wood(ps) if is_root else 0), at + Vector3.UP * 0.3)
+			spawn_drop("rootwood" if is_root else CaveLife.FIBER_DROP, 1 + onyx_wood(ps) if is_root else CaveLife.FIBER_PER_PLANT, at + Vector3.UP * 0.3)
 			if is_root:
 				plant_regrow[plant] = REGROW_TIME * _root_regrow_mult(ps)
 			return {state = "done", hits = 1, needed = 1, point = at, kind = "rootwood" if is_root else "fiber"}
@@ -1614,9 +1612,9 @@ func _dig_ramp(ps: PlayerState, center: Vector3, tool_tier: int, counts: Diction
 
 
 ## Wood (roots, giant mushrooms): an axe is clearly the tool for it (owner, Nov 17: "axes aren't better at cutting
-## wood"). A stone axe chops a root in 2 hits, a stone pickaxe needs about 10.
+## wood"). A stone axe chops a root in 2 hits, a stone pickaxe needs about 5 (owner F550: half of the old 10).
 const AXE_ON_WOOD := 1.5
-const PICK_ON_WOOD := 0.3
+const PICK_ON_WOOD := 0.6
 
 
 ## Hitting something that grows on the cave: crystals, mushrooms, fiber, roots.
@@ -1654,7 +1652,7 @@ func request_harvest(peer_id: int, glow_id: int) -> Dictionary:
 		ps.harvest_hits = 0
 	ps.harvest_hits += 1
 	if ps.harvest_hits < needed:
-		var r := {state = "hit", hits = ps.harvest_hits, needed = needed, point = spot.pos}
+		var r := {state = "hit", hits = ps.harvest_hits, needed = needed, point = spot.pos, kind = spot.kind}  # kind: wood sounds like wood (F558)
 		_tell_feedback(peer_id, r)
 		return r
 	ps.harvest_hits = 0

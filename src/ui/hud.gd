@@ -806,7 +806,8 @@ func _on_dig_feedback(pid: int, result: Dictionary) -> void:
 		"hit", "dug":
 			pass  # (no progress bar on what you mine: owner F574, Nov 21. The cracks and chips show it.)
 		"blocked":
-			show_toast(result.get("why", "Too hard! This rock needs a better pickaxe."))
+			if result.get("why", "-") != "":  # "" = nothing to say (F552: a broken tree growing back)
+				show_toast(result.get("why", "Too hard! This rock needs a better pickaxe."))
 		"no_tool":
 			show_toast("Pick your pickaxe in the hotbar (key 1).")
 

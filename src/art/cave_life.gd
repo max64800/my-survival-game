@@ -38,6 +38,8 @@ const EVERY_ROOM := 50
 const EVERY_TUNNEL := 5
 const EVERY_HELPERS := 3  ## threads that feel for the floors of the everywhere cover (big caves only)
 const FIBER_DROP := "fiber"  ## what a broken grass tuft, fern or small root drops (owner, F197)
+const FIBER_PER_PLANT := 3  ## fiber from one grass tuft or fern (owner F575: "a lot more fiber each"; was 1)
+const FIBER_PER_VINE := 2  ## fiber from one glowing vine (was 1)
 
 ## What grows round each kind of life, by surface: floor (flat), slope, wall. (rootlet = either small root look)
 const MIX := {
