@@ -24,6 +24,9 @@ Stonehold (`cut_stone`, `stonehold_v2.py`), Hearthbrick (`clay_brick`, `hearthbr
 1. Stairs set: `stairs_corner`, `stairs_spiral`, `railing_stairs`, in one kit first (Stonehold), then the others.
 2. `sloped_wall_down`, `edge_strip`, `floor_hatch`, `lattice_wall`.
 3. `roof_cap` (Shack + Hearthbrick).
+**Status (Nov 21):** all models DONE and installed in `assets/models/build/` (23 files: 7 Stonehold, 8 Shack,
+8 Hearthbrick; build code in `stonehold_v2.py`, `shack_v2.py` (`*_v3`), `hearthbrick_v2_new.py`, shared helpers in
+`new_pieces_common.py`). NOT done yet: pieces.gd entries, code shapes (collision) in `piece_mesh.gd`, icons, tests.
 Each piece: model + automatic model checks, entry in `src/build/pieces.gd` LIST (walkable stairs:
 `walkable_slope`, like `stairs`), icon (`tools/model_check/make_piece_icons.py`), test.
 

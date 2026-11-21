@@ -1349,9 +1349,9 @@ def paint3():
 					a = math.atan2(q.dot(v_), q.dot(u_))
 					a = ac + ((a - ac + math.pi) % math.tau - math.pi)
 					uv[li].uv = (ou + a * r / 0.32, ov + q.dot(ax) / 0.5)
-		elif role in ("board", "brace"):
+		elif role in ("board", "brace", "darkboard"):
 			me.materials.clear()
-			me.materials.append(next_plank())
+			me.materials.append(next_plank_dark() if role == "darkboard" else next_plank())
 			uv = _uvs(o)
 			vs = [v.co for v in me.vertices]
 			lo = [min(v[k] for v in vs) for k in range(3)]
@@ -1417,6 +1417,209 @@ def _mix():
 	LOG_STYLE = "round"
 
 
+# ---------------- new stair pieces (owner, Nov 21: docs/design/new-pieces-plan.md) ----------------
+K.SIZE.update({"stairs_corner": (2, 2, 2), "stairs_spiral": (2, 2, 2), "railing_stairs": (2, 3, 0.15)})
+
+
+def _shrink(pts, g=0.004):
+	"""An outline pulled g toward its middle (the gap between two boards)."""
+	cx, cz = sum(p[0] for p in pts) / len(pts), sum(p[1] for p in pts) / len(pts)
+	out = []
+	for x, z in pts:
+		dx, dz = cx - x, cz - z
+		L = max(1e-6, math.hypot(dx, dz))
+		out.append((x + dx / L * g, z + dz / L * g))
+	return out
+
+
+def wedge_board(pts, y0, y1, role="board"):
+	o = _flat(K.floor_poly(_shrink(pts), y0, y1, T("wood")))
+	o["role"] = role
+	return o
+
+
+def stairs_corner_v3(w=2.0, h=2.0, dd=2.0, n=8):
+	"""Shack corner stairs: 8 wedge steps fanning a quarter turn round a hewn corner post. Every step is two
+	thick split boards on a hewn bearer that runs out from the post, held up at its far end by a hewn post on
+	a lumpy stone (the low steps sit straight on stones), pegged down."""
+	cx, cz = -w / 2 + E, dd / 2 - E
+	X1, Z0 = w / 2 - E, -dd / 2 + E
+	pr = 0.11   # half the corner post's room (a hewn post's bark corners reach past its half-width)
+	t = 0.07
+	rise = (h - 0.008) / n
+
+	def ray(a):
+		return math.cos(a), -math.sin(a)
+
+	def far(a):
+		dx, dz = ray(a)
+		return min((X1 - cx) / dx if dx > 1e-6 else 9, (Z0 - cz) / dz if dz < -1e-6 else 9)
+
+	def near(a):
+		dx, dz = ray(a)
+		return min(2 * pr / dx if dx > 1e-6 else 9, 2 * pr / -dz if dz < -1e-6 else 9) + 0.005
+
+	def pt(a, r):
+		dx, dz = ray(a)
+		return (cx + dx * r, cz + dz * r)
+	px, pz = cx + pr, cz - pr
+	boulder((px + 0.04, 0.05, pz - 0.04), 0.115, 0.08, 0.115)
+	hewn((px, 0.09, pz), (px + J(0.004), h - 0.02, pz + J(0.004)), 0.075)
+	ca = math.atan2(-(Z0 - cz), X1 - cx)
+	for i in range(n):
+		a0, a1 = math.radians(90 * i / n), math.radians(90 * (i + 1) / n)
+		am = (a0 + a1) / 2 + J(0.03)
+		top = (i + 1) * rise - abs(J(0.004))
+		for (b0, b1) in ((a0, am), (am, a1)):
+			poly = [pt(b0, near(b0)), pt(b0, far(b0))] + ([(X1, Z0)] if b0 < ca < b1 else []) + [pt(b1, far(b1)), pt(b1, near(b1))]
+			wedge_board(poly, top - t, top)
+			fx, fz = pt((b0 + b1) / 2, far((b0 + b1) / 2) - 0.14)
+			peg(fx, top - 0.032, fz, "y")
+		ac = (a0 + a1) / 2
+		yb = top - t - 0.042
+		edge_gap = 0.052 / max(0.05, math.sin(min(ac, math.pi / 2 - ac)))   # the first and last bearers run close to an edge
+		(ix, iz), (ox, oz) = pt(ac, max(2 * pr + 0.004, edge_gap)), pt(ac, far(ac) - 0.09)
+		hewn((ix, yb, iz), (ox, yb + J(0.004), oz), 0.04)
+		sx, sz = pt(ac, far(ac) - 0.2)
+		bot = yb - 0.042
+		if bot < 0.22:
+			boulder((sx, 0.0, sz), 0.1, max(0.04, (bot - 0.01) / 1.2), 0.1)
+		else:
+			boulder((sx, 0.05, sz), 0.1, 0.07, 0.1)
+			hewn((sx, 0.08, sz), (sx + J(0.006), bot - 0.002, sz + J(0.006)), 0.055)
+
+
+def stairs_spiral_v3(w=2.0, h=2.0, dd=2.0, n=12):
+	"""Shack spiral stairs: one thick round log as the middle post, on a stone, and 12 wedge steps going one
+	full turn up 2 m. Each step is two split boards on a hewn bearer set against the log, pegged down."""
+	R = min(w, dd) / 2 - E - 0.03
+	rl = 0.17
+	boulder((0, 0.05, 0), 0.26, 0.08, 0.26)
+	real_log((0, 0.09, 0), (J(0.006), h - 0.022, J(0.006)), rl, "round", stub=False)
+	t = 0.06
+	step = math.tau / n
+	ri = rl + 0.03
+	for i in range(n):
+		a0, a1 = step * i, step * (i + 1) + 0.05
+		am = (a0 + a1) / 2 + J(0.03)
+		top = 0.012 + (h - 0.024) * (i + 1) / n
+		for (b0, b1) in ((a0, am), (am, a1)):
+			pts = [(R * math.cos(b0 + (b1 - b0) * k / 3), -R * math.sin(b0 + (b1 - b0) * k / 3)) for k in range(4)]
+			pts += [(ri * math.cos(b1), -ri * math.sin(b1)), (ri * math.cos(b0), -ri * math.sin(b0))]
+			wedge_board(pts, top - t, top)
+			bc = (b0 + b1) / 2
+			peg(0.72 * math.cos(bc), top - 0.032, -0.72 * math.sin(bc), "y")
+		ac = (a0 + a1) / 2
+		yb = top - t - 0.042
+		hewn((rl * 0.9 * math.cos(ac), yb, -rl * 0.9 * math.sin(ac)), ((R - 0.06) * math.cos(ac), yb, -(R - 0.06) * math.sin(ac)), 0.04)
+
+
+def railing_stairs_v3(w=2.0, h=3.0, d=0.15):
+	"""Shack stair railing (owner, Nov 21: dark wood, like a real railing): two hewn newel posts standing on the
+	bottom and top steps, a hewn hand rail on the slant, and dark split pickets standing on the steps, set
+	against the rail's side. Along x, rising toward +x (a quarter turn makes it rise toward -z like the stairs);
+	its top meets the plain railing's top at both floors."""
+	n, dzs = 5, (2.0 - 2 * E) / 5
+	steps = [(-1 + E + i * dzs, -1 + E + (i + 1) * dzs, (i + 1) * (2.0 / n) - (0.008 if i == n - 1 else 0.0)) for i in range(n)]
+
+	def rail_y(x):   # the rail's centre line
+		return (h - 1.0) + x - 0.05
+	rr, nr = 0.034, 0.058
+	x0, x1 = steps[0][0] + nr + 0.004, steps[-1][1] - nr - 0.004
+	hewn((x0, steps[0][2] + 0.003, 0), (x0, rail_y(x0) + 0.14, J(0.004)), nr)
+	hewn((x1, steps[-1][2] + 0.003, 0), (x1, h - 0.024, J(0.004)), nr)
+	ra, rb = x0 + nr - 0.006, x1 - nr + 0.006
+	hewn((ra, rail_y(ra), 0), (rb, rail_y(rb), 0), rr)
+	pd = 0.026
+	pz = rr + pd / 2 + 0.003
+	for (sa, sb, top) in steps:
+		for f in (0.18, 0.5, 0.82):
+			xc = sa + (sb - sa) * f + J(0.01)
+			bw = K.rng.uniform(0.07, 0.09)
+			if xc - bw / 2 < x0 + nr + 0.01 or xc + bw / 2 > x1 - nr - 0.01:
+				continue
+			o = rough_vboard(xc - bw / 2, xc + bw / 2, top + 0.003, (rail_y(xc - bw / 2) + 0.025, rail_y(xc + bw / 2) + 0.025), pz, pd)
+			o["role"] = "darkboard"
+
+
+# ---------------- batch 2 new pieces (docs/design/new-pieces-plan.md) ----------------
+import new_pieces_common as NC  # noqa: E402
+
+K.SIZE.update({"sloped_wall_down": (2, 2, 0.3), "edge_strip": (2, 0.3, 0.07), "floor_hatch": (2, 0.31, 2),
+	"lattice_wall": (2, 2, 0.3), "roof_cap": (1.1, 0.5, 1.1)})
+HATCH = (0.0, 0.4, 0.42, 0.47)   # the hole's centre x, z, its open radius, the rim's outer radius (clear of the front rim log)
+
+
+def sloped_wall_down_v3():
+	"""Upside-down sloped wall: the Shack sloped wall turned half a turn round its front-back line (full along the
+	top, the barge board now running along the slanted underside)."""
+	gable_v3(2.0, 2.0)
+	NC.flip_down(2.0)
+
+
+def edge_board(x0, x1, y0, y1, d, role="board"):
+	"""A hand-split board standing on its edge (its face to the front): a wavy top, chipped corners."""
+	top = [(x1 - 0.02, y1)] + [(x1 - (x1 - x0) * k / 6 + J(0.03), y1 - abs(J(0.008))) for k in range(1, 6)] + [(x0 + 0.02, y1)]
+	pts = [(x0 + 0.015, y0), (x1 - 0.02, y0), (x1, y0 + 0.018), (x1, y1 - 0.014)] + top + [(x0, y1 - 0.02), (x0, y0 + 0.012)]
+	o = _flat(K.slab_poly(K.Frame(), pts, J(0.003), d - K.rng.uniform(0.0, 0.008), T("wood")))
+	o["role"] = role
+	return o
+
+
+def edge_strip_v3(w=2.0, h=0.3, d=0.07):
+	"""A thin wooden lip along a floor's edge: two split boards on edge, one on the other, pegged."""
+	dd = d - 2 * E - 0.006
+	xa, xb = -w / 2 + E, w / 2 - E
+	edge_board(xa, xb, E + 0.002, 0.15, dd, "darkboard")
+	xm = K.J(0.3)
+	edge_board(xa, xm - 0.003, 0.153, h - E, dd)
+	edge_board(xm + 0.003, xb, 0.153, h - E, dd)
+	for x in (xa + 0.12, xm - 0.12, xm + 0.12, xb - 0.12):
+		for y in (0.08, 0.225):
+			peg(x, y, dd / 2 - 0.006, "z")
+
+
+def floor_hatch_v3(w=2.0, dd=2.0, t=0.25):
+	"""Floor with a round hatch: the Shack floor with a round hole near its front, a dark board curb ring round
+	it, and the round lid of dark split boards swung open, lying on the deck behind it (two battens, pegged)."""
+	floor_v3(w, dd, t)
+	cx, cz, r_in, r_out = HATCH
+	NC.cut_round_hole(cx, cz, r_in + 0.025)
+	o = NC.ring_mesh(cx, cz, r_in, r_out, 0.105, t - E - 0.022, T("wood"), n=36)
+	o["role"] = "darkboard"
+	lr = r_out - 0.016   # the lid covers the 42 cm opening and rests on the curb
+	lz = cz - 2 * lr - 0.006
+	y0 = t - 0.016
+	NC.lid_boards(cx, lz, lr, y0, y0 + 0.03, 4, lambda: T("wood"), "darkboard")
+	for sx in (-0.2, 0.2):
+		half = math.sqrt(lr * lr - sx * sx) - 0.04
+		o = _flat(K.blk((cx + sx, y0 + 0.03 + 0.006, lz), (0.08, 0.016, 2 * half), T("wood"), bevel=0.005))
+		o["role"] = "board"
+		for zz in (lz - half + 0.06, lz, lz + half - 0.06):
+			peg(cx + sx, y0 + 0.038, zz, "y")
+
+
+def lattice_wall_v3(w=2.0, h=2.0, d=0.3):
+	"""Open lattice wall: a hewn frame (two posts, a sill and a head beam) round a see-through lattice of dark
+	split laths crossing on the diagonal, a peg at every crossing."""
+	r = 0.085
+	px = w / 2 - E - r * 1.45
+	for sx in (-1, 1):
+		hewn((sx * px, E + 0.016, 0.0), (sx * px + J(0.005), h - E - 0.016, J(0.004)), r)
+	ys, yh = 0.13, h - 0.14
+	for y in (ys, yh):
+		hewn((-px + 0.06, y, 0.0), (px - 0.06, y + J(0.008), 0.0), 0.075)
+	pts = NC.lattice(-px + 0.04, px - 0.04, ys + 0.03, yh - 0.03, 0.0, 0.34, 0.06, 0.05, lambda: T("wood"), "darkboard")
+	for (x, y) in pts:
+		peg(x, y, 0.05 * 0.82 + 0.004, "z")
+
+
+def roof_cap_v3():
+	"""Roof peak cap: closes the tip where four sloped roofs meet. Four faces of rough shingles (open underneath,
+	like the roof pieces) and a split board along each hip; no knob on top (owner)."""
+	NC.pyramid_cap(0.49, E + 0.026, 0.40, 4, 0.03, lambda: T("shingle", "a"), "shingle", lambda: T("wood"), "board")
+
+
 PIECES = {"foundation3": foundation_v3, "foundation_hewn": _hewn, "foundation_mix": _mix,
 	"wall_v3": wall_v3, "doorway_v3": doorway_v3, "door_v3": door_v3, "roof_26_v3": lambda: roof_v3(2.0, 1.0),
 	"window_wall_v3": window_wall_v3,
@@ -1433,7 +1636,8 @@ PIECES = {"foundation3": foundation_v3, "foundation_hewn": _hewn, "foundation_mi
 	"foundation_leg_v3": foundation_leg_v3, "foundation_foot_v3": foundation_foot_v3,
 	"half_wall_v3": lambda: wall_any_v3(2.0, 1.0), "wall_narrow_v3": lambda: wall_any_v3(1.0, 2.0),
 	"window_wide_v3": lambda: window_wall_v3(ow=1.6, oh=0.9, ob=0.6, shutters=False, sides=False, post_r=0.126),
-	"foundation_half_v3": _hewn_style(lambda: foundation_v3(2.0, 1.0, 1.0)), "foundation_triangle_v3": foundation_triangle_v3, "foundation": foundation, "wall": wall, "doorway": doorway, "door": door, "roof_26": lambda: roof(2.0, 1.0)}
+	"foundation_half_v3": _hewn_style(lambda: foundation_v3(2.0, 1.0, 1.0)), "foundation_triangle_v3": foundation_triangle_v3,
+	"stairs_corner_v3": stairs_corner_v3, "stairs_spiral_v3": stairs_spiral_v3, "railing_stairs_v3": railing_stairs_v3, "sloped_wall_down_v3": sloped_wall_down_v3, "edge_strip_v3": edge_strip_v3, "floor_hatch_v3": floor_hatch_v3, "lattice_wall_v3": lattice_wall_v3, "roof_cap_v3": roof_cap_v3, "foundation": foundation, "wall": wall, "doorway": doorway, "door": door, "roof_26": lambda: roof(2.0, 1.0)}
 
 
 def make_grey():

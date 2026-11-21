@@ -28,7 +28,7 @@ K.SIZE.update({"gateway": (4, 4, 0.3), "gate_leaf": (1.6, 3.6, 0.15), "gate_brok
 	"straw_dummy": (1.0, 1.9, 1.0), "archery_target": (1.2, 1.7, 1.6), "spear_rack": (1.6, 2.0, 0.4),
 	"door_broken": (2.0, 0.3, 1.8), "ruin_wall_worn": (2, 2, 0.3), "ruin_wall_collapsed": (2, 2, 0.3), "ruin_rubble": (1.6, 0.7, 1.6),
 	"wall_narrow": (1, 2, 0.3), "window_wide": (2, 2, 0.3), "floor_half": (2, 0.25, 1), "small_floor": (1, 0.25, 1),
-	"ramp": (2, 1, 2)})   # outline checks for pieces kit_zone1 doesn't list
+	"ramp": (2, 1, 2), "stairs_corner": (2, 2, 2), "stairs_spiral": (2, 2, 2), "railing_stairs": (2, 3, 0.15)})   # outline checks for pieces kit_zone1 doesn't list
 
 
 def stone_m():
@@ -277,11 +277,11 @@ def courses(w, h, d, hole=None, y0=E, y1=None, circle=None, back_hole=None, dark
 			rows[r] = (min(lo, a), max(hi_, b), yb)
 		rws = [rows[k] + (k,) for k in sorted(rows)]
 		pts = [(x1 - 0.01, y0 + 0.004)]
-		pts.append((x1 - 0.01, rws[-1][2] - 0.01))
-		for k in range(len(rws) - 1, -1, -1):
+		pts.append((x1 - 0.01, rws[-1][2] - 0.03))
+		for k in range(len(rws) - 1, -1, -1):   # the steps stay 3 cm under the stones' tops (no shimmer, Nov 21)
 			lo, hi_, yb, r = rws[k]
 			ya = rws[k - 1][2] if k > 0 else y0
-			pts += [(lo + 0.03, yb - 0.01), (lo + 0.03, ya)]
+			pts += [(lo + 0.03, yb - 0.03), (lo + 0.03, ya - 0.03)]
 		pts[-1] = (pts[-1][0], y0 + 0.004)
 		before = set(bpy.data.objects)
 		K.slab_poly(fr, pts, 0.0, d * 0.62, mortar_m())
@@ -656,6 +656,158 @@ def railing(w=2.0, h=1.0, d=0.15):
 	n = 3
 	for k in range(n):
 		baluster(-inner / 2 + inner * (k + 1) / (n + 1), y0, y1)
+
+
+# ---------------- new stair pieces (owner, Nov 21: docs/design/new-pieces-plan.md) ----------------
+def _post_stones(cx, cz, pw, y0, y1, n=5):
+	"""A square stone newel post of stacked chisel-cut stones, the bottom one dark."""
+	ys = [y0 + (y1 - y0) * i / n for i in range(n + 1)]
+	for i in range(n):
+		m = kit.tex_mat("greystone", "dark") if i == 0 else stone_m()
+		block((cx, (ys[i] + ys[i + 1]) / 2, cz), (pw - 0.004, ys[i + 1] - ys[i] - 0.003, pw - 0.004), m, cut=0.035, tilt=0.0, dent=0.012, free="")
+
+
+def stairs_corner(w=2.0, h=2.0, dd=2.0, n=8):
+	"""Corner stairs: 8 steps fan a quarter turn round a stone newel post in the front-left corner, 2 m up in one
+	cell. Each step is a stack of stone rows cut exactly to its wedge (the rows line up from step to step, like
+	the straight stairs); every row is split into an inner and an outer stone, the joint moving row to row."""
+	cx, cz = -w / 2 + E, dd / 2 - E          # the corner the steps turn round
+	X1, Z0 = w / 2 - E, -dd / 2 + E          # the far sides
+	pw = 0.3
+	rise = (h - E) / n
+	g = 0.0015
+
+	def ray(a):
+		return math.cos(a), -math.sin(a)
+
+	def far(a):
+		dx, dz = ray(a)
+		return min((X1 - cx) / dx if dx > 1e-6 else 9, (Z0 - cz) / dz if dz < -1e-6 else 9)
+
+	def near(a):   # where the ray leaves the post's square
+		dx, dz = ray(a)
+		return min(pw / dx if dx > 1e-6 else 9, pw / -dz if dz < -1e-6 else 9) + 0.004
+
+	def pt(a, t):
+		dx, dz = ray(a)
+		return (cx + dx * t, cz + dz * t)
+	_post_stones(cx + pw / 2, cz - pw / 2, pw, E, h - E)
+	ca = math.atan2(-(Z0 - cz), X1 - cx)     # the far corner's angle
+	for i in range(n):
+		a0, a1 = math.radians(90 * i / n), math.radians(90 * (i + 1) / n)
+		top = E + (i + 1) * rise - (E if i == n - 1 else 0.0)
+		for k in range(i + 1):
+			y0, y1 = E + k * rise + g, min(top, E + (k + 1) * rise) - g
+			s = (0.42 if (i + k) % 2 else 0.58) + J(0.06)
+			m0, m1 = near(a0) + s * (far(a0) - near(a0)), near(a1) + s * (far(a1) - near(a1))
+			inner = [pt(a0, near(a0)), pt(a0, m0), pt(a1, m1), pt(a1, near(a1))]
+			outer = [pt(a0, m0), pt(a0, far(a0))] + ([(X1, Z0)] if a0 < ca < a1 else []) + [pt(a1, far(a1)), pt(a1, m1)]
+			for poly in (inner, outer):
+				m = kit.tex_mat("greystone", "dark") if (k == 0 or K.rng.random() < 0.12) else stone_m()
+				slab_xz(_inset(poly, g), y0, y1, m, c=K.rng.uniform(0.022, 0.032))
+
+
+def stairs_spiral(w=2.0, h=2.0, dd=2.0, n=12):
+	"""Spiral stairs: a round post of stacked stone drums, and 12 wedge-shaped stone treads set into it, one full
+	turn up 2 m inside one cell. Each tread overlaps the one below a little (seen from above: no gaps)."""
+	R = min(w, dd) / 2 - E - 0.03
+	rp, sides = 0.19, 16
+	ring = [(rp * math.cos(math.tau * (k + 0.5) / sides), rp * math.sin(math.tau * (k + 0.5) / sides)) for k in range(sides)]
+	cuts = [E] + sorted(K.rng.uniform(0.15, 0.85) * (h - 2 * E) + E for _ in range(4)) + [h - E]
+	for i in range(len(cuts) - 1):
+		rot = K.rng.uniform(0, math.tau)
+		pts = [(x * math.cos(rot) - z * math.sin(rot), x * math.sin(rot) + z * math.cos(rot)) for (x, z) in ring]
+		slab_xz(pts, cuts[i] + 0.0015, cuts[i + 1] - 0.0015, kit.tex_mat("greystone", "dark") if i == 0 else stone_m(), c=0.02)
+	tt = 0.13
+	ri = rp + 0.005
+	step = math.tau / n
+	for i in range(n):
+		a0, a1 = step * i, step * (i + 1) + 0.05
+		top = E + (h - 2 * E) * (i + 1) / n
+		pts = [(R * math.cos(a0 + (a1 - a0) * k / 5), -R * math.sin(a0 + (a1 - a0) * k / 5)) for k in range(6)]
+		pts += [(ri * math.cos(a1 - (a1 - a0) * k / 2), -ri * math.sin(a1 - (a1 - a0) * k / 2)) for k in range(3)]
+		m = kit.tex_mat("greystone", "dark") if K.rng.random() < 0.15 else stone_m()
+		slab_xz(pts, top - tt, top, m, c=K.rng.uniform(0.022, 0.032))
+
+
+def _stair_tread_tops(h=2.0, dd=2.0, n=5):
+	"""The straight stairs' steps seen from the side, as (x from, x to, top) with x = -z (rising toward +x)."""
+	dz, rise = (dd - 2 * E) / n, (h - E) / n
+	return [(-(dd / 2 - E) + i * dz, -(dd / 2 - E) + (i + 1) * dz, E + (i + 1) * rise - (E if i == n - 1 else 0.0)) for i in range(n)]
+
+
+def stair_baluster(x, y0, rail_bot, m=None, sq=0.11, rmax=0.05, sides=12):
+	"""A turned dark-wood baluster for a slanted hand rail: square foot, turned vase body, and a square top
+	block cut on the slant so it sits flat under the rail (rail_bot(x) = the rail's underside)."""
+	m = m or timber_m()
+	start = set(bpy.data.objects)
+	foot = 0.09
+	block((x, y0 + 0.002 + foot / 2, 0.0), (sq, foot - 0.002, sq), m, cut=0.016, tilt=0.0, free="")
+	lo, hi = rail_bot(x - sq / 2) - 0.002, rail_bot(x + sq / 2) - 0.002
+	cb = lo - 0.07
+	o = K.slab_poly(K.Frame(), [(x - sq / 2, cb), (x + sq / 2, cb), (x + sq / 2, hi), (x - sq / 2, lo)], 0.0, sq, m)
+	b = o.modifiers.new("chisel", "BEVEL")
+	b.width, b.segments, b.limit_method, b.angle_limit = 0.014, 1, "ANGLE", math.radians(35)
+	a, bb = y0 + foot + 0.002, cb - 0.002
+	prof = [(0.0, 0.045), (0.08, 0.036), (0.25, 0.04), (0.45, rmax), (0.6, rmax * 0.95), (0.78, 0.04), (0.9, 0.034), (1.0, 0.045)]
+	verts, faces = [], []
+	for t, r in prof:
+		y = a + (bb - a) * t
+		for k in range(sides):
+			ang = math.tau * k / sides
+			verts.append((x + math.cos(ang) * r, y, math.sin(ang) * r))
+	np_ = len(prof)
+	for i in range(np_ - 1):
+		for k in range(sides):
+			p0, p1 = i * sides + k, i * sides + (k + 1) % sides
+			faces.append((p0, p1, p1 + sides, p0 + sides))
+	faces.append(tuple(reversed(range(sides))))
+	faces.append(tuple(range((np_ - 1) * sides, np_ * sides)))
+	K.mesh(verts, faces, m, smooth=True)
+	_tag(_new_since(start), "timber")
+
+
+def railing_stairs(w=2.0, h=3.0, d=0.15):
+	"""Stair railing (owner, Nov 21: "wooden, like dark wood, similar to real railing"): it runs along the side of
+	the straight stairs (2 m run, 2 m rise; here along x, rising toward +x: turned a quarter it rises toward -z like
+	the stairs). Two square dark-wood newel posts with riveted copper bands (Stonehold), a slanted hand rail, and
+	turned balusters standing on the steps, two per step. The rail's top meets the plain railing's top (1 m above
+	the floor) at both ends."""
+	steps = _stair_tread_tops()
+	dmax = d - 2 * E - 0.002
+
+	def rail_top(x):
+		return (h - 1.0) + x - 0.008   # 1 m at the bottom floor's edge, 3 m at the top floor's edge
+	rh = 0.11
+	np_ = 0.12
+
+	def newel(xc, y0, y1):
+		before = set(bpy.data.objects)
+		blk((xc, y0 + 0.002 + 0.035, 0), (dmax, 0.066, dmax), timber_m(), bevel=0.012)
+		blk((xc, (y0 + 0.07 + y1 - 0.06) / 2, 0), (np_, y1 - 0.06 - y0 - 0.074, np_), timber_m(), bevel=0.012)
+		blk((xc, y1 - 0.03, 0), (dmax, 0.056, dmax), timber_m(), bevel=0.014)
+		_tag(_new_since(before), "timber")
+		before = set(bpy.data.objects)
+		for yb in (y0 + 0.2, (y0 + y1) / 2):   # clear of the hand rail's end
+			for k in range(4):
+				fr = K.Frame(ox=xc, yaw=90 * k)
+				fr.box((0, yb, np_ / 2 - 0.004), (np_ - 0.012, 0.06, 0.012), copper_m(), bevel=0.003)
+				kit.rivet(K.G(fr.p(0.0, yb, np_ / 2 - 0.001)), kit.tex_mat("copper", "dark"), r=0.011)
+		_tag(_new_since(before), "copper")
+	x0 = steps[0][0] + dmax / 2 + 0.002
+	x1 = steps[-1][1] - dmax / 2 - 0.002
+	newel(x0, steps[0][2], rail_top(x0 + np_ / 2) + 0.13)
+	newel(x1, steps[-1][2], h - E)
+	ra, rb = x0 + np_ / 2 + 0.002, x1 - np_ / 2 - 0.002
+	o = K.slab_poly(K.Frame(), [(ra, rail_top(ra) - rh), (rb, rail_top(rb) - rh), (rb, rail_top(rb)), (ra, rail_top(ra))], 0.0, dmax - 0.02, timber_m())
+	b = o.modifiers.new("chisel", "BEVEL")
+	b.width, b.segments, b.limit_method, b.angle_limit = 0.022, 2, "ANGLE", math.radians(35)
+	o["role"] = "timber"
+	for i, (sa, sb, top) in enumerate(steps):
+		xs = [sa + (sb - sa) * 0.3, sa + (sb - sa) * 0.75]
+		for x in xs:
+			if ra + 0.06 < x < rb - 0.06:
+				stair_baluster(x, top, lambda xx: rail_top(xx) - rh)
 
 
 def floor(w=2.0, h=0.25, dd=2.0):
@@ -1112,6 +1264,88 @@ def boulder(c, sx, sy, sz, m, floor=0.0):
 FAMILY = {"straw_dummy": "plank_root", "archery_target": "plank_root", "spear_rack": "plank_root"}
 
 
+# ---------------- batch 2 new pieces (docs/design/new-pieces-plan.md) ----------------
+import new_pieces_common as NC  # noqa: E402
+
+K.SIZE.update({"sloped_wall_down": (2, 2, 0.3), "edge_strip": (2, 0.3, 0.07), "floor_hatch": (2, 0.31, 2),
+	"lattice_wall": (2, 2, 0.3)})
+HATCH = (0.0, 0.47, 0.42, 0.47)   # the hole's centre x, z, its open radius, the rim's outer radius
+
+
+def sloped_wall_down(w=2.0, h=2.0, d=0.3):
+	"""Upside-down sloped wall: full along the top, slanting down to the left (fills the space under stairs or a
+	ramp). It is the sloped wall turned half a turn round its front-back line."""
+	sloped_wall(w, h, d)
+	NC.flip_down(h)
+
+
+def edge_strip(w=2.0, h=0.3, d=0.07):
+	"""A thin lip of stone along a floor's edge: a row of four chisel-cut stones, one now and then dark."""
+	x = -w / 2 + E
+	while x < w / 2 - E - 0.01:
+		nx = min(w / 2 - E, x + K.rng.uniform(0.42, 0.6))
+		if w / 2 - E - nx < 0.3:
+			nx = w / 2 - E
+		m = kit.tex_mat("greystone", "dark") if K.rng.random() < 0.2 else stone_m()
+		block(((x + nx) / 2, h / 2, 0.0), (nx - x - 0.004, h - 2 * E - 0.004, d - 2 * E - 0.004), m, cut=0.014, tilt=0.0, dent=0.006, free="xy")
+		x = nx
+
+
+def _hatch_lid(h, role="timber", n=4, m_fn=None, strap_m=None, strap_role="copper"):
+	"""The round dark-wood lid, swung open and lying flat on the floor behind the hole (its hinge on the hole's
+	back edge), with two straps across its boards and hinge knuckles at the hinge line."""
+	cx, cz, r_in, r_out = HATCH
+	lr = r_out - 0.004
+	lz = cz - 2 * lr - 0.006        # the lid's centre once it is folded back over its hinge
+	y0 = h - E + 0.003
+	boards = NC.lid_boards(cx, lz, lr, y0, y0 + 0.045, n, m_fn or timber_m, role)
+	before = set(bpy.data.objects)
+	for sx in (-0.2, 0.2):
+		half = math.sqrt(lr * lr - sx * sx) - 0.03
+		blk((cx + sx, y0 + 0.045 + 0.005, lz), (0.06, 0.012, 2 * half), (strap_m or copper_m)(), bevel=0.003)
+		kit.cylinder(0.022, 0.09, K.G((cx + sx, y0 + 0.022, lz + lr + 0.004)), (strap_m or copper_m)(), rot=(0, 90, 0), verts=10, bevel=0.003)
+	NC.tag(NC._since(before), strap_role)
+	return boards
+
+
+def floor_hatch(w=2.0, h=0.25, dd=2.0):
+	"""Floor with a round hatch: the stone floor with a round hole near its front, lined with a dark timber ring
+	under a copper band, and the round dark-wood lid swung open, lying on the floor behind it."""
+	floor(w, h, dd)
+	cx, cz, r_in, r_out = HATCH
+	NC.cut_round_hole(cx, cz, r_in + 0.025, deeper=())
+	before = set(bpy.data.objects)
+	NC.ring_mesh(cx, cz, r_in, r_out - 0.006, E + 0.004, h - E - 0.024, timber_m(), n=36)
+	_tag(_new_since(before), "timber")
+	before = set(bpy.data.objects)
+	NC.ring_mesh(cx, cz, r_in - 0.004, r_out, h - E - 0.022, h - E, copper_m(), n=36)
+	_tag(_new_since(before), "copper")
+	_hatch_lid(h)
+
+
+def lattice_wall(w=2.0, h=2.0, d=0.3):
+	"""Open lattice wall: a stone frame (two posts of stacked stones, a sill and a lintel) round a see-through
+	lattice of dark timber laths crossing on the diagonal, a copper rivet at every crossing."""
+	pw, sill, lint = 0.26, 0.2, 0.26
+	dd = d - 2 * E - 0.004
+	x0, x1 = -w / 2 + E, w / 2 - E
+	for xa, xb in ((x0, x0 + pw), (x1 - pw, x1)):
+		ys = [sill, sill + 0.5 + K.J(0.06), sill + 1.0 + K.J(0.06), h - E - lint]
+		for i in range(3):
+			block(((xa + xb) / 2, (ys[i] + ys[i + 1]) / 2, 0.0), (xb - xa - 0.004, ys[i + 1] - ys[i] - 0.004, dd), stone_m(), cut=0.028, tilt=0.0, dent=0.012, free="xz")
+	for (ya, yb, dark) in ((E + 0.003, sill, True), (h - E - lint, h - E - 0.002, False)):
+		xm = K.J(0.25)
+		for (a, b) in ((x0, xm), (xm, x1)):
+			m = kit.tex_mat("greystone", "dark") if dark else stone_m()
+			block(((a + b) / 2, (ya + yb) / 2, 0.0), (b - a - 0.004, yb - ya - 0.004, dd), m, cut=0.03, tilt=0.0, dent=0.014, free="yz")
+	ox0, ox1, oy0, oy1 = x0 + pw - 0.02, x1 - pw + 0.02, sill - 0.02, h - E - lint + 0.02
+	pts = NC.lattice(ox0, ox1, oy0, oy1, 0.0, 0.34, 0.065, 0.075, timber_m, "timber")
+	before = set(bpy.data.objects)
+	for (x, y) in pts:
+		kit.rivet(K.G((x, y, 0.075 * 0.82 + 0.002)), kit.tex_mat("copper", "dark"), r=0.013)
+	_tag(_new_since(before), "copper")
+
+
 PIECES = {"foundation": foundation, "wall": wall, "doorway": doorway, "door": door, "flat_roof": flat_roof,
 	"battlement": battlement, "door_broken": door_broken, "half_wall": half_wall, "wall_narrow": wall_narrow,
 	"window_wall": window_wall, "window_wide": window_wide, "pillar": pillar, "beam": beam, "beam_half": beam_half,
@@ -1120,7 +1354,8 @@ PIECES = {"foundation": foundation, "wall": wall, "doorway": doorway, "door": do
 	"foundation_half": foundation_half, "foundation_triangle": foundation_triangle, "sloped_wall": sloped_wall,
 	"ruin_wall_worn": ruin_wall_worn, "ruin_wall_collapsed": ruin_wall_collapsed, "ruin_rubble": ruin_rubble,
 	"gateway": gateway, "gate_leaf": gate_leaf, "gate_broken": gate_broken, "straw_dummy": straw_dummy,
-	"archery_target": archery_target, "spear_rack": spear_rack}
+	"archery_target": archery_target, "spear_rack": spear_rack, "stairs_corner": stairs_corner, "sloped_wall_down": sloped_wall_down, "edge_strip": edge_strip, "floor_hatch": floor_hatch, "lattice_wall": lattice_wall,
+	"stairs_spiral": stairs_spiral, "railing_stairs": railing_stairs}
 
 
 def paint():
