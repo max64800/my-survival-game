@@ -7759,3 +7759,10 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
 
 **Done (owner: "we're good to go on these guys").** All 7 models were put into the game (the old painted pictures were deleted and Godot made new ones). check_models passed on all 7. Tests passed: test_skeleton_miners (12/12) and test_model_rules (9/9). The minercheck robot showed the dark miners in a dungeon. F527 is crossed off.
 - Hurdle: the owner's new journal rule arrived after I had already written into JOURNAL.md. I moved my lines into this inbox file, so the other chats' JOURNAL lines stayed untouched.
+
+
+## Nov 21: Claude test games no longer pass as the owner's play log (token check chat)
+- Found while building the quiet runner: a `claude=` test game printed "PLAYER GAME (not a robot)", the line the recorder
+  uses to pick the owner's log, and opened the owner's watch file. Owner said fix it. `src/main.gd`: Claude test games
+  (claude=... or muted) now print "CLAUDE TEST GAME (not the owner's)" and leave `user://watch.txt` alone.
+  Checked with a real muted run.
