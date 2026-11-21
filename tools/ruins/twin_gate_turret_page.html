@@ -1,0 +1,309 @@
+<title>Twin Gate Turret Pieces</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@500;700&family=Alegreya+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the same lantern-lit cave stage as the Twin Gate page, four small stations in a row
+   (turret alone, turret on its tower corner, short battlement alone, short battlement on its roof), a sheet beside it. */
+:root {
+	--rock: #17130f;
+	--sheet: #221b15;
+	--line: #4a3b2c;
+	--ink: #efe3cf;
+	--dim: #b9a68b;
+	--lantern: #e7a24a;
+	--lantern-ink: #1d140b;
+	--kit: #5fb4ff;
+	--display: "Alegreya SC", Georgia, "Times New Roman", serif;
+	--body: "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+	--mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+	color-scheme: dark;
+}
+html, body { height: 100%; margin: 0; }
+body { background: var(--rock); color: var(--ink); font: 16px/1.5 var(--body); }
+.wrap { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 360px; grid-template-rows: minmax(0, 1fr); gap: 16px;
+	padding-block: 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); box-sizing: border-box; }
+.stage { position: relative; min-height: 420px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #0d0a08; }
+canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.views { position: absolute; left: 12px; top: 12px; right: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+.tools { position: absolute; left: 12px; right: 12px; bottom: 12px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+button { font: 600 14px var(--body); color: var(--ink); background: #1d1711dd; border: 1px solid var(--line); border-radius: 6px; padding: 7px 12px; cursor: pointer; }
+button:hover { border-color: var(--lantern); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--lantern); outline-offset: 2px; }
+button[aria-pressed="true"] { background: var(--lantern); color: var(--lantern-ink); border-color: var(--lantern); }
+.build { display: flex; align-items: center; gap: 8px; background: #1d1711dd; border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; font: 600 14px var(--body); }
+.build input { width: 150px; accent-color: var(--lantern); }
+.build output { font: 500 13px var(--mono); color: var(--dim); min-width: 3.5em; font-variant-numeric: tabular-nums; }
+.hint { margin-left: auto; color: var(--dim); font: 13px var(--body); }
+#loading[hidden] { display: none; }
+#loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--dim); font: 14px var(--mono); pointer-events: none; text-align: center; padding: 16px; }
+aside { background: var(--sheet); border: 1px solid var(--line); border-radius: 8px; padding: 20px 18px; display: flex; flex-direction: column; gap: 18px; min-width: 0; overflow-y: auto; }
+h1 { font: 700 30px/1.1 var(--display); margin: 0; text-wrap: balance; }
+h2 { font: 700 13px var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--lantern); margin: 0 0 8px; }
+p { margin: 0; }
+.lede { margin-top: 8px; color: var(--ink); }
+.note { font-size: 14px; color: var(--dim); margin-top: 8px; }
+ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+li { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dashed var(--line); padding-bottom: 3px; }
+li span:last-child { font: 500 14px var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+ol { margin: 0; padding-left: 22px; display: grid; gap: 4px; }
+.pieces { display: flex; flex-wrap: wrap; gap: 6px; }
+.pieces button { font-size: 13px; padding: 4px 9px; }
+.pieces button b { font: 500 12px var(--mono); color: var(--dim); margin-left: 4px; }
+.pieces button[aria-pressed="true"] b { color: var(--lantern-ink); }
+.ask { border: 1px solid var(--lantern); border-radius: 6px; padding: 10px 12px; font-size: 15px; }
+.new { color: var(--kit); font-weight: 700; }
+@media (max-width: 860px) {
+	.wrap { height: auto; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; }
+	.stage { min-height: 75vh; }
+	aside { overflow: visible; }
+	.hint { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+	<div class="stage" id="stage">
+		<div id="loading">Setting out the pieces&hellip;</div>
+		<div class="views" role="group" aria-label="Which station to look at">
+			<button id="v_all" aria-pressed="true">All four</button>
+			<button id="v_turret">The turret</button>
+			<button id="v_turret_on">Turret on the tower</button>
+			<button id="v_batt">Short battlement</button>
+			<button id="v_batt_on">Short battlement on the roof</button>
+		</div>
+		<div class="tools">
+			<button id="glow" aria-pressed="true">Glow the new pieces</button>
+			<label class="build" for="buildup">Build it up <input id="buildup" type="range" min="0" max="100" value="100"><output id="buildout">100%</output></label>
+			<span class="hint">Drag to turn &middot; scroll to zoom &middot; right-drag to move</span>
+		</div>
+	</div>
+	<aside>
+		<header>
+			<h1>The Turret and the Short Battlement</h1>
+			<p class="lede">Both are <b>brand-new pieces</b>, and each one is a <b>single piece</b>. They aren't put together from the building pieces you already have. In the 3D view they glow <span class="new">blue</span>; everything around them is pieces you already know.</p>
+		</header>
+		<section>
+			<h2>The walk-in turret</h2>
+			<ul>
+				<li><span>Size</span><span>3.3 &times; 3.3 m, 3 m tall</span></li>
+				<li><span>Floor</span><span>1.75 m up, level with the roof</span></li>
+				<li><span>Used</span><span>6 tower corners</span></li>
+			</ul>
+			<p class="note">What's inside the one piece, from the bottom up (drag "Build it up" to watch it grow):</p>
+			<ol class="note">
+				<li>6 rings of stone, each wider than the one below, like an upside-down staircase. They carry the turret out past the tower's corner.</li>
+				<li>A flagstone floor, at the same height as the tower roof, so you walk straight in.</li>
+				<li>2 rows of wall stones, about waist high.</li>
+				<li>A copper band with rivets.</li>
+				<li>A top row of stones and 7 stone teeth (merlons), the same shape as on the battlements.</li>
+			</ol>
+			<p class="note">Its back quarter is open: that part is the tower's own roof corner. Its side walls run along the roof's edges and meet the normal battlements there.</p>
+		</section>
+		<section>
+			<h2>The short battlement</h2>
+			<ul>
+				<li><span>Size</span><span>1 m long, 0.9 m tall</span></li>
+				<li><span>Used</span><span>4, ends of the barracks roofs</span></li>
+			</ul>
+			<p class="note">The normal battlement cut in half: same stones and copper band, but 1 m long with one stone tooth in the middle instead of three. The barracks roofs stuck out 1 m past their battlements, and no 1 m piece existed, so this closes the gap. In the view it stands next to a normal 2 m battlement so you can compare.</p>
+		</section>
+		<section>
+			<h2>The pieces around them</h2>
+			<p class="note">These are pieces you already have. Click one to light it up orange.</p>
+			<div class="pieces" id="pieces" role="group" aria-label="Light up a piece"></div>
+		</section>
+		<div class="ask">
+			<p>Neither one is a game piece yet: only the ruin has them, and you can't build them yourself. If you want them in the build menu, I can turn them into real Stonehold pieces with a price.</p>
+		</div>
+	</aside>
+</div>
+
+<script type="importmap">
+{ "imports": {
+	"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+	"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+const NAMES = { floor: "Floor", floor_half: "Half floor", floor_triangle: "Triangle floor", battlement: "Battlement (2 m)",
+	wall: "Wall", window_wall: "Window wall", wall_narrow: "Narrow wall", pillar: "Pillar", stairs: "Stairs",
+	corbel: "Bracket", cornice: "Trim band", cornice_corner: "Trim corner", edge_strip: "Edge strip" };
+// Stations in a row: [key, x, label, camera distance]
+const STATIONS = [["turret", -19, "The turret", 9], ["turret_on", -7, "On the tower", 17], ["batt", 4, "Short battlement", 5.5], ["batt_on", 14, "On the roof", 13]];
+
+const loadingEl = document.getElementById("loading");
+const stage = document.getElementById("stage");
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+renderer.shadowMap.enabled = true;
+renderer.localClippingEnabled = true;
+stage.prepend(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d0a08);
+const camera = new THREE.PerspectiveCamera(40, 1, 0.05, 300);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.maxPolarAngle = Math.PI * 0.49;
+controls.minDistance = 1.5;
+controls.maxDistance = 90;
+scene.add(new THREE.HemisphereLight(0x9fb2c8, 0x2a1d12, 1.0));
+const sun = new THREE.DirectionalLight(0xffd9a8, 2.3);
+sun.position.set(14, 26, 20);
+sun.castShadow = true;
+sun.shadow.mapSize.set(4096, 4096);
+Object.assign(sun.shadow.camera, { left: -32, right: 32, top: 20, bottom: -20, far: 80 });
+scene.add(sun);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(90, 40), new THREE.MeshStandardMaterial({ color: 0x2b241d, roughness: 1 }));
+ground.rotation.x = -Math.PI / 2;
+ground.position.y = -0.01;
+ground.receiveShadow = true;
+scene.add(ground);
+
+function label(text, x, y) {
+	const c = document.createElement("canvas");
+	c.width = 512; c.height = 96;
+	const g = c.getContext("2d");
+	g.font = "700 54px 'Alegreya SC', Georgia, serif";
+	g.fillStyle = "#e7a24a";
+	g.textAlign = "center";
+	g.fillText(text, 256, 66);
+	const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false }));
+	s.scale.set(5.4, 1.0, 1);
+	s.position.set(x, y, 0);
+	scene.add(s);
+}
+
+// Artifact pages may not fetch blob:/data: URLs, which three.js uses for pictures inside a model: rebuild each
+// model into one binary here.
+globalThis.createImageBitmap = undefined;
+const loader = new GLTFLoader();
+async function loadModel(url) {
+	const j = await (await fetch(url)).json();
+	const uri = j.buffers[0].uri, b64 = uri.slice(uri.indexOf(",") + 1);
+	const raw = atob(b64), bin = new Uint8Array(raw.length);
+	for (let i = 0; i < raw.length; i++) bin[i] = raw.charCodeAt(i);
+	delete j.buffers[0].uri; j.buffers[0].byteLength = bin.length;
+	const js = new TextEncoder().encode(JSON.stringify(j));
+	const pad = n => (4 - (n % 4)) % 4;
+	const jsLen = js.length + pad(js.length), binLen = bin.length + pad(bin.length);
+	const out = new Uint8Array(12 + 8 + jsLen + 8 + binLen), dv = new DataView(out.buffer);
+	dv.setUint32(0, 0x46546C67, true); dv.setUint32(4, 2, true); dv.setUint32(8, out.length, true);
+	dv.setUint32(12, jsLen, true); dv.setUint32(16, 0x4E4F534A, true);
+	out.set(js, 20); out.fill(0x20, 20 + js.length, 20 + jsLen);
+	const b0 = 20 + jsLen;
+	dv.setUint32(b0, binLen, true); dv.setUint32(b0 + 4, 0x004E4942, true);
+	out.set(bin, b0 + 8);
+	return (await loader.parseAsync(out.buffer, "")).scene;
+}
+
+const yawOf = r => (r < 4 ? r * 90 : (r - 4) * 30) * Math.PI / 180;
+const keyOf = p => (p.mat === "prop" ? p.id : `${p.id}__${p.mat}`);
+const starMats = [];      // the new pieces' materials (blue glow)
+const starClips = [];     // [plane, bottom y, height] for each new piece, for "Build it up"
+const pieceMats = {};     // piece id -> its materials, for the orange "light it up"
+const counts = {};
+const tops = {};
+try {
+	const stations = await (await fetch("scene.json")).json();
+	const kinds = [...new Set(Object.values(stations).flat().map(keyOf))];
+	const models = {};
+	await Promise.all(kinds.map(async (k) => {
+		const m = await loadModel(`m/${k}.json`);
+		m.updateMatrixWorld(true);
+		const parts = [];
+		m.traverse(o => { if (o.isMesh) parts.push({ geo: o.geometry, mat: o.material, local: o.matrixWorld.clone() }); });
+		models[k] = parts;
+	}));
+	const tmp = new THREE.Matrix4();
+	for (const [key, ox] of STATIONS) {
+		let top = 0;
+		for (const p of stations[key]) {
+			const at = new THREE.Matrix4().compose(new THREE.Vector3(p.pos[0] + ox, p.pos[1], p.pos[2]),
+				new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yawOf(p.rot)), new THREE.Vector3(1, 1, 1));
+			const h = p.id === "bartizan" ? 3.0 : (p.id === "battlement_narrow" || p.id === "battlement" ? 0.9 : 2.0);
+			top = Math.max(top, p.pos[1] + h);
+			let plane = null;
+			if (p.star) { plane = new THREE.Plane(new THREE.Vector3(0, -1, 0), p.pos[1] + h); starClips.push([plane, p.pos[1], h]); }
+			else if (!key.startsWith("batt") || key === "batt_on") counts[p.id] = (counts[p.id] || 0) + 1;
+			for (const part of models[keyOf(p)]) {
+				const mat = part.mat.clone();
+				mat.emissive = new THREE.Color(p.star ? 0x2a9dff : 0xff7a1a);
+				mat.emissiveIntensity = 0;
+				if (plane) { mat.clippingPlanes = [plane]; mat.clipShadows = true; mat.side = THREE.DoubleSide; starMats.push(mat); }
+				else if (key !== "batt") (pieceMats[p.id] ||= []).push(mat);
+				const mesh = new THREE.Mesh(part.geo, mat);
+				mesh.matrixAutoUpdate = false;
+				mesh.matrix.copy(tmp.multiplyMatrices(at, part.local));
+				mesh.castShadow = mesh.receiveShadow = true;
+				scene.add(mesh);
+			}
+		}
+		tops[key] = top;
+	}
+	for (const [key, ox, text] of STATIONS) label(text, ox, tops[key] + 1.0);
+	const box = document.getElementById("pieces");
+	for (const id of Object.keys(counts).sort((a, b) => counts[b] - counts[a])) {
+		if (!NAMES[id]) continue;
+		const b = document.createElement("button");
+		b.setAttribute("aria-pressed", "false");
+		b.innerHTML = `${NAMES[id]}<b>${counts[id]}</b>`;
+		b.onclick = () => {
+			const on = b.getAttribute("aria-pressed") !== "true";
+			b.setAttribute("aria-pressed", on);
+			pieceMats[id].forEach(m => (m.emissiveIntensity = on ? 0.6 : 0));
+		};
+		box.append(b);
+	}
+	setGlow(true);
+	show(location.hash.slice(1) || "all");
+	loadingEl.hidden = true;
+} catch (err) {
+	loadingEl.textContent = "Couldn't set out the pieces: " + err.message;
+	console.error(err);
+}
+
+function setGlow(on) {
+	document.getElementById("glow").setAttribute("aria-pressed", on);
+	starMats.forEach(m => (m.emissiveIntensity = on ? 0.16 : 0));
+}
+document.getElementById("glow").onclick = () => setGlow(document.getElementById("glow").getAttribute("aria-pressed") !== "true");
+
+const buildIn = document.getElementById("buildup"), buildOut = document.getElementById("buildout");
+buildIn.oninput = () => {
+	const f = buildIn.value / 100;
+	buildOut.textContent = buildIn.value + "%";
+	for (const [plane, y0, h] of starClips) plane.constant = y0 + 0.002 + f * h;
+};
+
+function show(which) {
+	const st = STATIONS.find(s => s[0] === which);
+	if (!st && which !== "all") which = "all";
+	const at = st ? new THREE.Vector3(st[1], tops[st[0]] * 0.45, 0) : new THREE.Vector3(-1.5, 2.5, 0);
+	const dist = st ? st[3] : 44;
+	camera.position.copy(at).add(new THREE.Vector3(st ? 0.45 : 0.1, 0.55, 0.75).normalize().multiplyScalar(dist));
+	controls.target.copy(at);
+	const cam = new URLSearchParams(location.search).get("cam");  // test views: ?cam=x,y,z,tx,ty,tz
+	if (cam) { const v = cam.split(",").map(Number); camera.position.set(v[0], v[1], v[2]); controls.target.set(v[3], v[4], v[5]); }
+	for (const k of ["all", ...STATIONS.map(s => s[0])]) document.getElementById("v_" + k).setAttribute("aria-pressed", k === which);
+}
+for (const k of ["all", ...STATIONS.map(s => s[0])]) document.getElementById("v_" + k).onclick = () => show(k);
+
+function resize() {
+	const w = stage.clientWidth, h = stage.clientHeight;
+	renderer.setSize(w, h, false);
+	camera.aspect = w / h;
+	camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(stage);
+resize();
+renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
+</script>
