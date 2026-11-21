@@ -233,7 +233,7 @@ for x in (30.0, 38.0):
 	prop("decor/furn_banner_tall_1.glb", x, 0.0, 36.35, 0.0)
 # (Nov 22, decor catalogue: the keg and crate stack made way for the snapped gate bar; the chest moved to the north-west
 # corner: the gatekeeper's corner is where it stood)
-prop("decor/shack_bench.glb", 27.4, 0.25, 43.5, 90.0)
+# (the bench made way for the diggers' barricade, Nov 22)
 for i, (x, z) in enumerate([(31.5, 40.0), (36.0, 42.5), (38.5, 39.0)]):
 	creature("rock_beetle", x, 0.25, z, 40.0 + i * 110.0)
 chest("chest_small", 27.2, 37.3, 90.0, "Random chest")
@@ -371,7 +371,7 @@ for x, z in [(34.0, 50.0), (34.0, 33.0), (66.0, 40.0), (12.0, 40.0), (28.0, 6.0)
 
 # --- 5. Decor from the decor catalogue (docs/art/DECOR-CATALOG.md, Nov 22): every piece in its own room and spot, off
 # the walk lines and clear of doors, chests and traps (tools/dungeons/decor.py; tests/test_dungeon_decor.gd).
-# Left out until the owner answers the rule clashes: mg_lantern_post (lit), mg_toll_table (coins, no looted twin).
+# The rule clashes are fine (owner, Nov 22: the rules are fluid): the lit lantern posts and the toll table are in.
 import decor  # noqa: E402
 import junk  # noqa: E402
 
@@ -393,6 +393,14 @@ DECOR = [
 	("mg_gate_windlass", "gate_hall", W(_d("mg_gate_windlass"), "s", 46, 37.3)),
 	("mg_alarm_bell", "gate_hall", W(_d("mg_alarm_bell"), "s", 46, 38.9)),
 	("mg_gate_bar_snapped", "gate_hall", W(_d("mg_gate_bar_snapped"), "n", 36, 40.6)),
+	# the gate lanterns either side of the round door (in the way in, just outside it: inside, the paths fork from the
+	# door), the toll table right of the way in, out of the paths; the diggers' barricade, dragged out of the Rubble
+	# Tunnel (too narrow to stand it in) against the wall beside the tunnel's mouth, where the bench stood.
+	# (side on to the wall, the lantern arms reaching toward the door: the way in is only 4 m wide)
+	("mg_lantern_post", "entry", decor.mid(_d("mg_lantern_post"), 32.6, 48.6, 0.0)),
+	("mg_lantern_post", "entry", decor.mid(_d("mg_lantern_post"), 35.4, 48.6, 0.0)),
+	("mg_toll_table", "gate_hall", decor.mid(_d("mg_toll_table"), 40.4, 43.4, 0.0)),
+	("mg_barricade", "gate_hall", W(_d("mg_barricade"), "w", 26, 43.4)),
 	# 3 Guard Room (x 50-60, z 34-46; doors west and east at z 40). Cots along the north wall (left as you come in),
 	# heads to the wall, the armour stand in the corner beside them; mess shelf and trestle further along; shields and
 	# crossbows on the wall facing you; helmets just inside the door; the last watch's table and the fallen spear rack.

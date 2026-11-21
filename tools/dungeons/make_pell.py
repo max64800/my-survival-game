@@ -367,7 +367,7 @@ prop("decor/crate_stack.glb", 41.0, F, 49.1, 10.0)
 # --- 4b. Decor from the decor catalogue (docs/art/DECOR-CATALOG.md, Nov 22): every piece in its own room and spot, off
 # the walk lines, clear of doors, chests, traps and the wall torches (tools/dungeons/decor.py; tests/test_dungeon_decor.gd).
 # Pell has two levels that overlap seen from above (the hut over the Last Dig), so each level is checked on its own.
-# Left out until the owner answers the rule clashes: op_diary_table (spilled ink), table_overturned (puddle), last_meal (food).
+# The rule clashes are fine now (owner, Nov 22: the rules are fluid): every op_ piece in the catalogue is placed.
 import decor  # noqa: E402
 import junk  # noqa: E402
 
@@ -424,6 +424,18 @@ DECOR = [
 	# Pell's Last Dig (x 36-50, z 40-56)
 	("op_madness_board", "dig", W(_d("op_madness_board"), "w", 36, 51.0, out=HUNG), 0.8),
 	("op_x_marks_dig", "dig", decor.corner(_d("op_x_marks_dig"), "s", 56, "e", 50)),
+	# The rule-clash pieces (owner, Nov 22: the rules are fluid). The trapmaker's table out in the Winch Shed (its walls
+	# are the shaft, the tripwire and the doors); the still in the pantry's dry corner; the scale beside the sieve stack;
+	# the cold hearth in the hut; the bell tripwire by the ladder's foot; the rat traps in the Spider Den, where the
+# rat pack is (no room left in the pantry beside the still).
+	("op_trapmaker_table", "winch_shed", decor.mid(_d("op_trapmaker_table"), 26.5, 47.1, 0.0)),
+	("op_wire_spools", "winch_shed", decor.mid(_d("op_wire_spools"), 27.4, 46.2, 0.0)),
+	("op_trap_parts_rack", "winch_shed", W(_d("op_trap_parts_rack"), "s", 50, 26.5, out=HUNG), 0.9),
+	("op_still", "pantry", decor.mid(_d("op_still"), 20.55, 48.9, 90.0)),
+	("op_ore_scale", "sorting", decor.mid(_d("op_ore_scale"), 29.3, 29.0, 0.0)),
+	("op_hearth_tripod", "pells_hut", decor.mid(_d("op_hearth_tripod"), 34.8, 46.2, 0.0)),
+	("op_bell_tripwire", "landing", decor.mid(_d("op_bell_tripwire"), 25.6, 44.6, 0.0)),
+	("op_rat_traps", "den", decor.mid(_d("op_rat_traps"), 10.5, 22.7, 90.0)),
 ]
 for _c in creatures:   # (the Sorting Room's miner and a Den rat step aside)
 	if (_c["pos"][0], _c["pos"][2]) == (26.0, 23.2):

@@ -395,12 +395,10 @@ for x, z, y, m in [(42.4, 43.4, 7.0, "trap_drip_fat"), (34.0, 48.6, 3.5, "trap_d
 
 # --- 4b. Decor from the decor catalogue (docs/art/DECOR-CATALOG.md, Nov 22): every piece in its own room and spot, off
 # the walk lines and rails, clear of doors, chests, traps and the wall lamps (tools/dungeons/decor.py;
-# tests/test_dungeon_decor.gd). Left out until the owner answers the rule clashes: the lit ones (lw_lamp_rack_wall,
-# lw_signal_lamp_post, lw_walkway_ladder, lw_ledger_desk, lw_last_shift_stool), the rails (lw_spare_rail_rack,
-# lw_rail_switch_lever, lw_cart_jammed), the oil stains (lw_lamp_fallen_spill, lw_broken_lamp_rack), cage_floor_open
-# (straw), table_overturned (puddle), last_meal (food). No room (small rooms, traps, props): the second skull spike, a
-# second lantern post, Pell's carving (it has its own place in Old Pell's Diggings), the ore sorting table, sieve and
-# the skeleton with his note (the Old Copper Face is all ore piles and bear jaws), barrel_smashed, lw_lamp_barrow.
+# tests/test_dungeon_decor.gd). Every lw_ piece is in (owner, Nov 22: the rules are fluid: lit, rails and stains are
+# fine). Still left out: cage_floor_open (straw), table_overturned (puddle), last_meal (food); no room (small rooms,
+# traps, props): the second skull spike, a second lantern post, Pell's carving (it has its own place in Old Pell's
+# Diggings), the skeleton with his note, barrel_smashed.
 import decor  # noqa: E402
 import junk  # noqa: E402
 
@@ -455,6 +453,24 @@ DECOR = [
 	("ore_sample_shelf", "office", W(_d("ore_sample_shelf"), "w", 38, 23.0)),
 	("writing_desk", "office", W(_d("writing_desk"), "w", 38, 24.6)),
 	("map_torn_wall", "office", W(_d("map_torn_wall"), "w", 38, 26.4, out=HUNG), 1.0),
+	# The rule-clash pieces (owner, Nov 22: the rules are fluid). The lamp rack over the Lamp Room's south wall; the
+	# barrow and the ledger desk just outside it in the way in (the room itself is doors, rails and the chest); the spare
+	# rails over the Tool Store's trunk; the last shift's stool by the copper face; the sorting table and sieve in the
+	# niche behind the boulder (the copper face is ore piles and bear jaws); the switch lever, the signal lamp and the jammed cart
+	# where the back rails turn west; the walkway ladder at the top of the junction's rails; the fallen lamp in the Bat Gallery; the broken lamp rack by the office's north door.
+	("lw_lamp_rack_wall", "lamp_room", W(_d("lw_lamp_rack_wall"), "s", 52, 24.6, out=HUNG), 0.6),
+	("lw_lamp_barrow", "entry", decor.mid(_d("lw_lamp_barrow"), 24.55, 55.0, 0.0)),
+	("lw_ledger_desk", "entry", W(_d("lw_ledger_desk"), "e", 28, 54.6)),
+	("lw_spare_rail_rack", "tool_store", W(_d("lw_spare_rail_rack"), "s", 22, 12.6, out=HUNG), 1.0),
+	("lw_last_shift_stool", "copper_face", decor.mid(_d("lw_last_shift_stool"), 43.35, 2.8, 90.0)),
+	("lw_ore_sorting_table", "niche", decor.mid(_d("lw_ore_sorting_table"), 46.9, 2.59, 0.0)),
+	("lw_ore_sieve_cradle", "niche", decor.mid(_d("lw_ore_sieve_cradle"), 46.3, 5.54, 180.0)),
+	("lw_rail_switch_lever", "back_rails", decor.corner(_d("lw_rail_switch_lever"), "s", 50, "e", 44)),
+	("lw_cart_jammed", "back_rails", decor.mid(_d("lw_cart_jammed"), 41.3, 47.3, 0.0)),
+	("lw_signal_lamp_post", "back_rails", decor.mid(_d("lw_signal_lamp_post"), 42.8, 47.0, 0.0)),
+	("lw_walkway_ladder", "cart_junction", decor.mid(_d("lw_walkway_ladder"), 21.43, 20.1, 270.0)),
+	("lw_lamp_fallen_spill", "bat_gallery", decor.mid(_d("lw_lamp_fallen_spill"), 20.1, 5.2, 90.0)),
+	("lw_broken_lamp_rack", "office", decor.mid(_d("lw_broken_lamp_rack"), 39.9, 19.6, 0.0)),
 ]
 _DFLOOR = {"cart_junction": UP}   # (the signal board hangs on the landing, at the top of the rails)
 _dfloor = lambda g: _DFLOOR.get(g, SP[g][5] if g in SP else 0.0)

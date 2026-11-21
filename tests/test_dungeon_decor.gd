@@ -10,8 +10,15 @@ const PATH_EDGE := 0.9   # every footprint corner from a walk line (decor.py: 1.
 const DOOR_EDGE := 1.9   # its footprint from a doorway's middle (decor.py: 2.0)
 const THING_EDGE := 1.4  # from a door, lever, chest, the recipe stand (decor.py: 1.5)
 const DOORS := ["dungeon/dungeon_entrance.glb", "dungeon/wall_cracked.glb", "dungeon/door_loot.glb", "dungeon/gate_round.glb"]
-## Rule clashes the owner hasn't answered yet (catalogue, top list): not placed.
-const WAITING := ["decor/mg_lantern_post.glb", "decor/mg_toll_table.glb"]
+## The rule-clash pieces, placed once the owner said the rules are fluid (Nov 22): lit, rails, stains, coins.
+const CLASH_PIECES := {
+	"mossgate": ["mg_barricade", "mg_lantern_post", "mg_toll_table"],
+	"lampwick": ["lw_lamp_rack_wall", "lw_lamp_barrow", "lw_ledger_desk", "lw_spare_rail_rack", "lw_ore_sorting_table",
+		"lw_ore_sieve_cradle", "lw_last_shift_stool", "lw_rail_switch_lever", "lw_signal_lamp_post", "lw_walkway_ladder",
+		"lw_lamp_fallen_spill", "lw_cart_jammed", "lw_broken_lamp_rack"],
+	"pell": ["op_trapmaker_table", "op_trap_parts_rack", "op_wire_spools", "op_still", "op_rat_traps", "op_ore_scale",
+		"op_hearth_tripod", "op_bell_tripwire"],
+}
 
 
 func _plans() -> Array:
@@ -80,8 +87,15 @@ func test_mossgate_has_its_catalogue_decor() -> void:
 		kinds[p.model] = true
 		check(ResourceLoader.exists("res://assets/models/" + String(p.model)), "decor model %s exists" % p.model)
 	check(kinds.size() >= 25, "each catalogue piece once or so, not one copied (%d kinds)" % kinds.size())
-	for m in WAITING:
-		check(not kinds.has(m), "%s waits for the owner's answer (rule clash)" % m)
+
+
+func test_the_rule_clash_pieces_are_in() -> void:
+	for id in CLASH_PIECES:
+		var kinds := {}
+		for p in _decor(DungeonBuild.load_plan(id)):
+			kinds[String(p.model)] = true
+		for n in CLASH_PIECES[id]:
+			check(kinds.has("decor/%s.glb" % n), "%s has %s (owner, Nov 22: the rules are fluid)" % [id, n])
 
 
 func test_pell_has_its_catalogue_decor() -> void:
@@ -127,7 +141,8 @@ func test_decor_keeps_off_doors_paths_and_chests() -> void:
 		for p in plan.props:
 			if String(p.model) in DOORS:
 				doors.append([_xz(p.pos), float(p.pos[1])])
-			if String(p.get("role", "")) == "door" or String(p.model).contains("lever"):
+			# (a real lever; the decor switch lever by Lampwick's back rails is just furniture)
+			if String(p.get("role", "")) == "door" or (String(p.model).contains("lever") and not String(p.model).begins_with("decor/")):
 				keep.append([_xz(p.pos), p.model, float(p.pos[1])])
 		for c in plan.chests:
 			keep.append([_xz(c.pos), "chest " + String(c.kind), float(c.pos[1])])
