@@ -6,7 +6,7 @@ extends TestCase
 const ROOT_TREE := ["rootwood", "tree_moss", "heartwood", "root_seed"]
 ## Old ruin and camp chests (game_authority.gd seed_poi_loot and _seed_fungal_loot).
 const CHESTS := ["blueprint_page", "gold_coin", "rusty_scrap", "silver_ingot", "crystal_amber", "rope", "spore_truffle",
-	"ember_morel", "mushroom_flesh", "cook_page", "armour_page", "weapon_page", "tool_page"]
+	"ember_morel", "mushroom_flesh", "cook_page", "tool_page"]  # (armour/weapon pages: dungeons only, F554)
 ## Got some other way: a Drip Bucket fills with clean water, a waterskin is filled at a pool.
 const OTHER := ["water_bucket", "waterskin_dirty"]
 ## Found by this test (Nov 19), older than the boss removal: nothing in the world gives these yet. Waiting for the

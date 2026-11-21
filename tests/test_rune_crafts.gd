@@ -141,7 +141,7 @@ func test_each_page_kind_teaches_its_own_kind() -> void:
 	var seen := {}
 	for i in 200:
 		seen[Recipes.random_page(i / 200.0)] = true
-	check_eq(seen.size(), 4, "ruin chests roll all four kinds")
+	check_eq(seen.size(), 2, "ruin chests roll food and tool pages (armour and weapons: dungeons, F554)")
 	# The card itself: picture, name, where to make it.
 	var cards := LearnedCards.new()
 	tree.root.add_child(cards)

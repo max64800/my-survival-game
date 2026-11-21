@@ -70,7 +70,8 @@ const LIST := {
 	"clay_brick": {station = "smelter", inputs = {clay = 2}, output = "clay_brick", count = 2, seconds = 10, fuel = 1, unlock = ["clay"]},
 	"lantern_lens": {station = "smelter", inputs = {crystal_blue = 3, clay = 1}, output = "lantern_lens", count = 1, seconds = 30, fuel = 1, unlock = ["crystal_blue"]},
 	# --- anvil
-	# Copper gear is found, not known (owner, Nov 19): each piece needs its own Old Recipe Page. The Copper
+	# Copper gear is found, not known (owner, Nov 19): each piece needs its own page. Copper tools come from ruin
+	# pages, copper armour and weapons from the dungeons (owner, Nov 21, F554; see random_page). The Copper
 	# Pickaxe needs Root Tree Heartwood (owner, Nov 19: it came from the Keeper boss before).
 	"helm_copper": {station = "anvil", inputs = {copper_ingot = 30, leather = 10}, output = "helm_copper", count = 1, unlock = "ruin"},
 	"mail_copper": {station = "anvil", inputs = {copper_ingot = 30, leather = 10}, output = "mail_copper", count = 1, unlock = "ruin"},
@@ -263,8 +264,10 @@ static func page_recipes(page_id: String) -> Array:
 
 
 ## A page for a ruin chest: each kind as likely as how many recipes it can teach. `roll` 0..1.
+## Ruins teach food and copper tools only; copper armour and weapons come from the dungeons (owner, Nov 21, F554).
+const RUIN_PAGE_KINDS := ["food", "tool"]
 static func random_page(roll: float) -> String:
-	var kinds := ["food", "armour", "weapon", "tool"]
+	var kinds := RUIN_PAGE_KINDS
 	var counts := kinds.map(func(k): return page_recipes(PAGE_OF_KIND[k]).size())
 	var total := 0
 	for c in counts:
