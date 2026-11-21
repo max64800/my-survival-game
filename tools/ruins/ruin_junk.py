@@ -14,7 +14,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tools/dungeons"))
-from junk import model_of, CLUSTER, corners, seg_dist  # noqa: E402
+from junk import model_of, CLUSTER, corners, part_at, seg_dist  # noqa: E402
 from glb_bounds import bounds  # noqa: E402
 
 FLOOR_LIFT = 0.01    # junk stands 1 cm over the floor piece's top (no shimmer)
@@ -310,19 +310,17 @@ def make(name):
 			yaw = math.degrees(math.atan2(-d[1], d[0])) + rng.uniform(-12, 12) + rng.choice([0, 180])
 			x, z = q
 			for _ in range(2):  # push it to the wall: its nearest corner WALL_GAP off the face
-				cs = [c for pt in parts for c in corners(pt[0], x, z, yaw + pt[3], pt[1], pt[2])]
+				cs = [c for pt in parts for c in corners(pt[0], *part_at(x, z, yaw, pt[1], pt[2]), yaw + pt[3])]
 				near = min((c[0] - q[0]) * nrm[0] + (c[1] - q[1]) * nrm[1] for c in cs)
 				x += nrm[0] * (face + WALL_GAP - near)
 				z += nrm[1] * (face + WALL_GAP - near)
-			at = [(pt[0], corners(pt[0], x, z, yaw + pt[3], pt[1], pt[2])) for pt in parts]
+			at = [(pt[0], corners(pt[0], *part_at(x, z, yaw, pt[1], pt[2]), yaw + pt[3])) for pt in parts]
 			got = free(at, y, kind)
 			if got is None:
 				continue
 			for pt, f in zip(parts, got):
 				placed.append((f[0], f[1], y, f[2]))
-				a = math.radians(yaw + pt[3])  # (the same turn the spot check used: junk.corners)
-				px = x + pt[1] * math.cos(a) + pt[2] * math.sin(a)
-				pz = z - pt[1] * math.sin(a) + pt[2] * math.cos(a)
+				px, pz = part_at(x, z, yaw, pt[1], pt[2])   # (the spot the check used)
 				junk.append({"model": pt[0], "pos": [round(px, 3), round(y + (FLOOR_LIFT if kind == "piece" else 0.0), 3),
 					round(pz, 3)], "yaw": round((yaw + pt[3]) % 360.0, 1), "ground": kind == "ground",
 					"inside": zone[0] != "out"})

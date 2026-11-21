@@ -61,6 +61,14 @@ def model_of(entry, rng):
 	return "dungeon/junk_%s.glb" % entry
 
 
+def part_at(x, z, yaw, dx, dz):
+	"""Where a group's part stands: its (dx, dz) from the group's spot, turned with the whole group (yaw only; the
+	part's own extra turn only turns the part). Owner OK, Nov 22: the check and the written spot both use this
+	(before, the check also swung the offset by the part's own turn, so it checked a different spot)."""
+	a = math.radians(yaw)
+	return (x + dx * math.cos(a) + dz * math.sin(a), z - dx * math.sin(a) + dz * math.cos(a))
+
+
 def corners(model, x, z, yaw, dx=0.0, dz=0.0):
 	"""The four corners of a model's footprint, placed at (x, z) turned `yaw` degrees (Godot: +yaw turns x toward -z)."""
 	sx, sz, cx, cz = size(model)
@@ -212,7 +220,7 @@ def place_junk(spaces, group_of, cells, floor_y, rooms, themes, doors, path_door
 			# Push it toward its wall(s) until its footprint touches WALL_FACE.
 			x, z = cx, cz
 			for _ in range(2):
-				cs = [c for part in parts for c in corners(part[0], x, z, yaw + part[3], part[1], part[2])]
+				cs = [c for part in parts for c in corners(part[0], *part_at(x, z, yaw, part[1], part[2]), yaw + part[3])]
 				for (ox, oz) in walls:
 					if ox:
 						line = cx + ox * 1.0
@@ -231,7 +239,7 @@ def place_junk(spaces, group_of, cells, floor_y, rooms, themes, doors, path_door
 				continue  # a wide piece whose middle ends up too far out (owner: none near the middle)
 			got = []
 			for model, ddx, ddz, dyaw in parts:
-				f = free(model, x, z, yaw + dyaw, g, ddx, ddz)
+				f = free(model, *part_at(x, z, yaw, ddx, ddz), yaw + dyaw, g)
 				if f is None:
 					got = None
 					break
@@ -239,9 +247,7 @@ def place_junk(spaces, group_of, cells, floor_y, rooms, themes, doors, path_door
 			if not got:
 				continue
 			for model, f, dyaw, ddx, ddz in got:
-				a = math.radians(yaw)
-				px = x + ddx * math.cos(a) + ddz * math.sin(a)
-				pz = z - ddx * math.sin(a) + ddz * math.cos(a)
+				px, pz = part_at(x, z, yaw, ddx, ddz)
 				placed.append(f)
 				props.append({"model": model, "pos": [round(px, 3), round(floor_y(g) + FLOOR_TOP, 3), round(pz, 3)],
 					"yaw": round((yaw + dyaw) % 360.0, 1), "scale": 1.0, "role": "junk", "label": ""})

@@ -7410,3 +7410,14 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   Spire chat. (3) A cleanup `rm` of old photos was stopped by a safety check: used a new folder instead. (4) The id
   check counted `keg` as missing: it's an older `night_decor.py` model; the decor-night files only have helpers with
   that name.
+- **Owner's answers (Nov 22):** the cave grass stays in the ruin camp; the rotten bedroll stays; **yes** to the cluster
+  fix. Fixed in `tools/dungeons/junk.py` and `tools/ruins/ruin_junk.py`: new `part_at()` = where a group's part
+  (dropped meal: plate, mug, spoon; two candles) stands, turned with the group only. The spot check and the written spot
+  both use it (before, the check swung each part's offset by its own extra turn too, so it checked another spot).
+  **Hurdle:** my first fix went the other way (wrote what the check used); the numbers showed the spoon swinging round
+  next to the mug, away from the hand-made layout, so I undid it and fixed the check instead. Re-made: Mossgate Hold
+  and Lampwick Drift (only junk moved; furniture, chests, creatures the same; Mossgate 1337 props), Watchtower 16
+  junk, Outpost 41 (camps still there). `test_dungeon_junk` 5/5, `test_ruin_junk` 4/4.
+- **Owner asked: are all ~500 Mac pieces in the catalogue correctly?** Every decor-night model has exactly one row
+  (checked by a script against the model files: 530 + 12 `_empty` twins). The words come from the build files;
+  41 "where it goes" cells are marked (guess); nobody looked at all the pictures.
