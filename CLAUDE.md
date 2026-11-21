@@ -5,7 +5,9 @@ Full design: `docs/superpowers/specs/2026-11-14-dwarf-survival-game-design.md`.
 Code layout, recorder details, how to run robots: `docs/CLAUDE-REFERENCE.md` (read only the part you need).
 
 ## The owner's two rules
-1. **Journal everything.** After every work session, add an entry to `JOURNAL.md`: what we did, every mistake and hurdle (including Claude's own), and how it was fixed.
+1. **Journal everything.** After every work session, write an entry: what we did, every mistake and hurdle (including Claude's own),
+   and how it was fixed. Write it as your **own new file** `journal-inbox/<YYYY-MM-DD-HHMM>-<topic>.md` (never edit `JOURNAL.md`
+   directly, other chats share it), commit it with your work, then run `python3 tools/journal/merge_inbox.py`.
 2. **5th-grade explanations.** The owner does not code. Explain everything simply: short sentences, everyday comparisons, define any tech word the first time.
 
 ## Working rules
@@ -72,6 +74,7 @@ Nov 21 check: 60% of all tokens = Claude re-reading the chat on every step, so *
   - **Never read a whole code file over 300 lines.** Grep for the name, then read only that part (offset/limit).
   - **"Where does X happen?" hunts go to a Haiku helper** that answers with `file:line` + one line each, not file dumps.
 - **Model per task (owner, Nov 21).** Default is Opus. Pick the model for every new-chat prompt:
+  - **Opusplan** (`/model opusplan`: Opus plans, Sonnet does the work): jobs that start with design, then a lot of routine work.
   - **Opus:** new systems, design/planning, new 3D models and art rounds, grand ruins, a bug that one try didn't fix.
   - **Sonnet:** following a written plan, clear feedback fixes, small tweaks, tests, placing pieces, docs/journal/feedback
     upkeep, page tweaks, video editing. If Sonnet fails twice on something, say so and suggest `/model opus`.
@@ -87,5 +90,7 @@ Nov 21 check: 60% of all tokens = Claude re-reading the chat on every step, so *
 - Never read big files whole. `JOURNAL.md`: append new entries at the end without reading it (Grep or the last ~40 lines for
   format). Design specs, `MODEL-RULES.md`, `CREATURE-STYLE.md`: Grep the heading, read only that section.
 - Pictures cost a lot: look at the fewest screenshots that answer the question (usually 1–3), use crops/zoom, not full sets.
-- Run single tests (`only=name`) while fixing; run the full suite once at the end. Show only the failing lines of output.
+- Run single tests (`only=name`) while fixing; run the full suite once at the end. Always through `tools/run_tests.sh`
+  (prints only FAILs + summary). Every other game/Godot/Blender run goes through `python3 tools/quiet_run.py <command>`
+  (drops shutdown chatter, folds repeats). `QUIET=0` / `verbose=1` only when the short output isn't enough.
 - Blender/model work: at most 2 render-review rounds before asking the owner.

@@ -20,6 +20,7 @@ var errors := ErrorCounter.new()
 ## Run: godot --headless --path . --script res://tests/run_tests.gd
 ## Optional: -- only=cave   (only files whose name contains "cave")
 ##           -- fn=root_tree   (only tests whose name contains "root_tree"; with only= it's quick)
+##           -- verbose=1   (also print every PASS line; by default only FAILs + the summary, to save Claude tokens)
 
 
 func _initialize() -> void:
@@ -31,11 +32,14 @@ func _run() -> void:
 	Controls.robot = true  # tests never hold the real mouse, and save into user://robot_saves
 	var only := ""
 	var fn := ""
+	var verbose := false
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("only="):
 			only = arg.trim_prefix("only=")
 		if arg.begins_with("fn="):
 			fn = arg.trim_prefix("fn=")
+		if arg == "verbose=1":
+			verbose = true
 	var files := DirAccess.get_files_at("res://tests")
 	var total := 0
 	var failed := 0
@@ -65,7 +69,10 @@ func _run() -> void:
 			total += 1
 			var ms := Time.get_ticks_msec() - start
 			if t.failures.is_empty():
-				print("  PASS  %s.%s  (%d ms)" % [f.get_basename(), m.name, ms])
+				if verbose:
+					print("  PASS  %s.%s  (%d ms)" % [f.get_basename(), m.name, ms])
+				elif ms > 20000:
+					print("  PASS  %s.%s  (slow: %d s)" % [f.get_basename(), m.name, ms / 1000])
 			else:
 				failed += 1
 				print("  FAIL  %s.%s" % [f.get_basename(), m.name])

@@ -27,6 +27,9 @@ Moved out of `CLAUDE.md` on Nov 16, 2026 to save tokens. The rules are still in 
 ## Running the game and checks
 - Auto-checks: `tools/run_tests.sh` (Mac) / `tools\run_tests.bat` (Windows). Set `GODOT` to the Godot program.
   `only=name` runs one file. Every new system gets a `tests/test_*.gd`.
+  Prints only FAILs, slow tests (>20 s) and the summary; `verbose=1` shows every PASS, `QUIET=0` the raw output.
+- Any other run: `python3 tools/quiet_run.py <godot> --headless --audio-driver Dummy --path . -- claude=<test> ...`
+  (game prints folded into "(x17)", Godot's end-of-run "leaked at exit" lines dropped, long output cut to first 40 + last 80).
 - Autopilot: `godot --audio-driver Dummy --path . -- autopilot seed=42 shots=<folder>`: a report (load time, items dug, FPS) + screenshots.
 - `godot --audio-driver Dummy --path . -- seed=1234` starts a specific cave. Robots: `-- buildcheck part=house|edges`, `-- kitcheck`.
 - Budget hook: `.claude/settings.json` runs `tools/claude-budget/check.py` before every step (keep it as it is).

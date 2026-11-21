@@ -189,5 +189,24 @@
     "pptx": "off",
     "xlsx": "off",
     "google-workspace": "off"
+  },
+  "permissions": {
+    "deny": [
+      "Agent(claude-blog-brain:blog-cluster-curator)",
+      "Agent(claude-blog-brain:blog-data-curator)",
+      "Agent(claude-blog-brain:blog-distribution-curator)",
+      "Agent(claude-blog-brain:blog-eeat-curator)",
+      "Agent(claude-blog-brain:blog-flow-curator)",
+      "Agent(claude-blog-brain:blog-geo-curator)",
+      "Agent(claude-blog-brain:blog-monitoring-curator)",
+      "Agent(claude-blog-brain:blog-multilingual-curator)",
+      "Agent(claude-blog-brain:blog-persona-curator)",
+      "Agent(claude-blog-brain:blog-quality-curator)",
+      "Agent(claude-blog-brain:blog-schema-curator)",
+      "Agent(claude-blog-brain:blog-strategy-curator)",
+      "Agent(claude-blog-brain:blog-writing-curator)",
+      "Agent(claude-blog-brain:claude-blog-secretary)",
+      "Agent(claude-blog-brain:workflow-coverage)"
+    ]
   }
 }
