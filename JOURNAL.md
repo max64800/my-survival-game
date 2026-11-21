@@ -7315,6 +7315,13 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   Hurdles: (1) the page had shown "did not load" for the owner (it loaded for me: likely mid-swap of the new version,
   or the 30 MB download hiccuped): it now retries by itself 3 times. (2) F525 was already taken by another chat
   (I'd put it on the page): it's F528. (3) test_dwarf_fist great_swings still fails, as before this chat.
+- **Owner, later (chat 16): F529 stone has no finisher / no heavy** (Combat.combo_hits, Combat.has_heavy; the host
+  checks it too), **F530 the finisher Crushes** (Combat.is_finisher), **F531 coloured hit numbers** (Combat.effect:
+  grey resists, white normal, yellow weak; MonsterManager EFFECT_COLOR, sent with every hit and bolt). Before deciding,
+  the owner saw a table of stone vs copper (cost, damage, combos, damage per second): taking the finisher away barely
+  lowers damage per second (the finishers are the slow swings), it takes away the payoff. F532 (weak spots, armor,
+  armor-piercing, enemy and boss health) is a plan shown to the owner first. Hurdle: test_bats_stay_under_the_ceiling
+  failed once in the monsters run: another chat is changing the creatures' flying right now, not this chat's code.
 
 ## Nov 21, 2026 (Mac, gems chat): status badges, test findings, pull and handover
 - **Status badges** (owner: simple circles with a ring that runs down like a timer): round badges above the health

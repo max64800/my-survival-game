@@ -538,6 +538,11 @@ func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: 
 	var w := Combat.weapon_of(item)
 	var tier := maxi(Items.tier(item), 0)
 	var wd: Dictionary = Combat.WEAPONS[w]
+	if heavy and not spin and not Combat.has_heavy(w, tier):
+		heavy = false  # (one-handed and stone great weapons have none: owner, chat 16)
+	if not heavy and combo_step >= Combat.combo_hits(w, tier):
+		combo_step = 0  # (a stone sword, mace or spear has no finisher: owner, chat 16)
+	var finisher := not heavy and not bash and Combat.is_finisher(w, tier, combo_step)
 	var gb := Gems.bonus(ps.inventory.get_slot(hand))
 	var elem := {}
 	for e in ["fire", "frost", "poison"]:
@@ -557,7 +562,7 @@ func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: 
 		if n > max_targets:
 			break
 		var sneak: bool = m.state in [Monster.State.IDLE, Monster.State.WANDER, Monster.State.SLEEP]
-		var crush := heavy and m.stun.take_crush()
+		var crush := (heavy or finisher) and m.stun.take_crush()  # (the combo finisher Crushes too: owner, chat 16)
 		var sit := Combat.situation(sneak, m.stun.is_stunned(), crush, riposte)
 		var mult := 0.6 if (w == "axe" and n >= 2) else 1.0
 		var dist: float = ps.node.global_position.distance_to(m.global_position)
@@ -582,7 +587,7 @@ func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: 
 			var away := (m.global_position - ps.node.global_position) * Vector3(1, 0, 1)
 			if away.length() > 0.01:
 				m.knock(away.normalized() * 3.0)  # Spear ★25: a poke pushes them back
-		_hurt_monster(m, peer, dmg, stun)
+		_hurt_monster(m, peer, dmg, stun, Combat.effect(wd.type, m.stats()))
 	auth.heal(peer, total * gb.get("leech", 0.0))
 	if heavy and Progression.weapon_skill(w) == "axe" and ps.progress.has_star("axe", 100) and n > 0:
 		auth.give_stamina(peer, 6.0 * mini(n, max_targets))  # Axe ★100: a heavy sweep gives stamina back per enemy
@@ -649,7 +654,8 @@ func _gem_buildup(m: Monster, gb: Dictionary) -> void:
 
 
 ## Host: one hit lands on a monster (sword, bolt...).
-func _hurt_monster(m: Monster, peer: int, dmg: int, stun_amount: float) -> void:
+## eff: how it takes this damage type (Combat.effect): the colour of the hit's number.
+func _hurt_monster(m: Monster, peer: int, dmg: int, stun_amount: float, eff := 0) -> void:
 	# Rock Beetle: its back is soft (owner: charge, sidestep, hit it from behind).
 	var back: float = m.data.get("soft_back", 0.0)
 	var hitter: Node3D = player_node(peer)
@@ -683,7 +689,7 @@ func _hurt_monster(m: Monster, peer: int, dmg: int, stun_amount: float) -> void:
 		var away := (m.global_position - from) * Vector3(1, 0, 1)
 		if away.length() > 0.01:
 			m.knock(away.normalized() * clampf(1.8 + dmg * 0.06, 1.8, 5.0) / maxf(1.0, float(m.data.get("size", 1.0))))
-	_ev_hit.rpc(m.uid, dmg, from, peer)
+	_ev_hit.rpc(m.uid, dmg, from, peer, eff)
 	if m.hp <= 0.0:
 		_kill(m, peer)
 	else:
@@ -790,7 +796,7 @@ func request_shoot(peer: int, bolt: String, aimed: bool, uid: int, from: Vector3
 		for k in BOLT_BUILDUP.get(bolt, {}):
 			m.add_buildup(k, BOLT_BUILDUP[bolt][k])
 		_gem_buildup(m, gb)
-		_hurt_monster(m, peer, dealt, stun_amount)
+		_hurt_monster(m, peer, dealt, stun_amount, Combat.effect(String(Combat.BOLTS.get(bolt, Combat.BOLTS.bolt_stone).get("type", "pierce")), m.stats()))
 		auth.heal(peer, dealt * gb.get("leech", 0.0))
 	if b.has("glow"):
 		_ev_glow_bolt.rpc(point, b.glow)
@@ -1478,7 +1484,7 @@ func _ev_note(uid: int, text: String) -> void:
 
 
 @rpc("authority", "call_local", "reliable")
-func _ev_hit(uid: int, dmg: int, from := Vector3.ZERO, peer := 0) -> void:
+func _ev_hit(uid: int, dmg: int, from := Vector3.ZERO, peer := 0, eff := 0) -> void:
 	var m: Monster = monsters.get(uid)
 	if m:
 		# Juicy hits (owner, Nov 18): sparks spray AWAY from the hitter, both fighters freeze for a blink (a bigger hit, a
@@ -1504,7 +1510,7 @@ func _ev_hit(uid: int, dmg: int, from := Vector3.ZERO, peer := 0) -> void:
 				me.add_shake(0.45 if heavy else 0.25)
 				if heavy and away.length() > 0.01:
 					me.shove(-away.normalized() * 2.2)  # (a heavy hit bounces you back off it)
-		_float_number(m.global_position + Vector3.UP * 1.4, str(dmg), heavy, dir)
+		_float_number(m.global_position + Vector3.UP * 1.4, str(dmg), heavy, dir, EFFECT_COLOR[eff + 1])
 
 
 @rpc("authority", "unreliable_ordered")
@@ -1518,7 +1524,12 @@ func _ev_poses(ids: PackedInt32Array, pos: PackedVector3Array, yaw: PackedFloat3
 ## A number (or a word) that pops up over a creature. Round 2 (owner, Nov 18, the Disney rules: "nothing flies
 ## straight, not the damage numbers"): it pops in (small, too big, then its size) and flies in an arc, away from the
 ## hit, up and over; a big hit's number is bigger and warmer.
-func _float_number(at: Vector3, text: String, big := false, away := Vector3.ZERO) -> void:
+## The hit number's colour by how the creature takes the damage type (owner, chat 16): resists = grey, normal = white,
+## weak to it = yellow. A big hit is still bigger.
+const EFFECT_COLOR := [Color(0.6, 0.6, 0.6), Color(1.0, 1.0, 1.0), Color(1.0, 0.85, 0.15)]
+
+
+func _float_number(at: Vector3, text: String, big := false, away := Vector3.ZERO, color := Color(-1, 0, 0)) -> void:
 	var l := Label3D.new()
 	l.text = text
 	l.billboard = BaseMaterial3D.BILLBOARD_ENABLED
@@ -1526,7 +1537,7 @@ func _float_number(at: Vector3, text: String, big := false, away := Vector3.ZERO
 	l.pixel_size = 0.005
 	l.outline_size = 12 if big else 10
 	l.no_depth_test = true
-	l.modulate = Color(1.0, 0.62, 0.25) if big else Color(1.0, 0.9, 0.5)
+	l.modulate = color if color.r >= 0.0 else (Color(1.0, 0.62, 0.25) if big else Color(1.0, 0.9, 0.5))
 	_root.add_child(l)
 	l.global_position = at
 	var side := Vector3(away.x, 0.0, away.z)

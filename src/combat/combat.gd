@@ -79,6 +79,34 @@ const CRUSH := 2.0
 const RIPOSTE := 1.3
 
 
+## Stone swords, maces and spears have no combo finisher (owner, chat 16): their combo loops on the hits before it.
+const NO_STONE_FINISHER := ["sword", "mace", "spear"]
+
+
+## How many hits the combo has for this weapon at this tier.
+static func combo_hits(w: String, tier: int) -> int:
+	var n: int = (WEAPONS.get(w, WEAPONS.fists).combo as Array).size()
+	return n - 1 if tier <= 0 and w in NO_STONE_FINISHER and n > 1 else n
+
+
+## Only the great weapons have a heavy attack (F519), and not the stone ones (owner, chat 16).
+static func has_heavy(w: String, tier: int) -> bool:
+	return WEAPONS.get(w, WEAPONS.fists).hands == 2 and w != "crossbow" and tier > 0
+
+
+## The last hit of a full combo (it can Crush a stunned enemy like a heavy hit did: owner, chat 16).
+static func is_finisher(w: String, tier: int, combo_step: int) -> bool:
+	var n: int = (WEAPONS.get(w, WEAPONS.fists).combo as Array).size()
+	return n > 1 and combo_hits(w, tier) == n and combo_step == n - 1
+
+
+## How a creature takes this damage type (owner, chat 16: the hit number's colour): 1 = weak to it (yellow),
+## -1 = resists it (grey), 0 = normal (white).
+static func effect(type: String, target: Dictionary) -> int:
+	var m: float = target.get(type, 1.0)
+	return 1 if m > 1.01 else (-1 if m < 0.99 else 0)
+
+
 ## Physical + elemental damage after armor and resistances (doc 2.2). Returns a whole number ≥ 1.
 ## w = weapon id, tier 0-4, quality/upgrade = bonus fractions (0.08 = +8%).
 ## target = {armor, slash, blunt, pierce (multipliers), fire/frost/poison (resist 0..1)}

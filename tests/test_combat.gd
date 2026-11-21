@@ -59,6 +59,27 @@ func test_spear_two_thrusts_then_a_spin() -> void:
 	check(DwarfRig.attack_seconds("spear", false, 2, 0.6) > 0.6, "the spin takes its own (longer) time")
 
 
+## Owner, chat 16: stone swords/maces/spears have no finisher, stone great weapons no heavy; the finisher Crushes.
+func test_stone_has_no_finisher_and_no_heavy() -> void:
+	for w in ["sword", "mace", "spear"]:
+		var n: int = Combat.WEAPONS[w].combo.size()
+		check_eq(Combat.combo_hits(w, 0), n - 1, "stone %s: no finisher" % w)
+		check_eq(Combat.combo_hits(w, 1), n, "copper %s: the whole combo" % w)
+		check(not Combat.is_finisher(w, 0, n - 1) and Combat.is_finisher(w, 1, n - 1), "%s: only copper's last hit is a finisher" % w)
+	for w in ["axe_2h", "mace_2h"]:
+		check(not Combat.has_heavy(w, 0) and Combat.has_heavy(w, 1), "%s: heavy spin from copper up" % w)
+		check_eq(Combat.combo_hits(w, 0), Combat.WEAPONS[w].combo.size(), "stone %s keeps its whole combo" % w)
+	check(not Combat.has_heavy("sword", 1), "one-handed: never a heavy")
+
+
+## Owner, chat 16: grey numbers = resists the damage type, white = normal, yellow = weak to it.
+func test_hit_number_colour_follows_the_damage_type() -> void:
+	var beetle := {slash = 0.75, blunt = 1.25, pierce = 1.0}
+	check_eq(Combat.effect("slash", beetle), -1, "slash on a beetle: grey")
+	check_eq(Combat.effect("pierce", beetle), 0, "pierce: white")
+	check_eq(Combat.effect("blunt", beetle), 1, "blunt: yellow")
+
+
 func test_elemental_skips_armor() -> void:
 	var plain := Combat.damage("sword", false, 0, {armor = 100})
 	var with_fire := Combat.damage("sword", false, 0, {armor = 100}, 0, 1.0, 0, 0, 0, {fire = 8})

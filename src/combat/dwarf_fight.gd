@@ -237,8 +237,9 @@ func step(delta: float, playing: bool, move_dir: Vector3) -> float:
 
 
 ## Only the great (two-handed) weapons have a heavy attack (owner, chat 16).
+## (and not the stone ones: owner, chat 16; a stone great weapon blocks with right click like the rest)
 func has_heavy() -> bool:
-	return weapon_has_heavy(weapon())
+	return Combat.has_heavy(weapon(), tier())
 
 
 static func weapon_has_heavy(w: String) -> bool:
@@ -282,7 +283,7 @@ func _attack(heavy: bool) -> void:
 		if ps.vitals.stamina < 1.0:
 			return
 		ps.vitals.use_stamina(minf(cost, ps.vitals.stamina))  # a light swing always happens
-	_combo_step = (_combo_step + 1) % wd.combo.size() if clock < _combo_until else 0
+	_combo_step = (_combo_step + 1) % Combat.combo_hits(weapon(), tier()) if clock < _combo_until else 0  # (stone: no finisher)
 	var speed: float = DwarfRig.attack_seconds(weapon(), heavy, _combo_step, wd.heavy_speed if heavy else wd.light_speed)
 	_busy = speed
 	if heavy:
