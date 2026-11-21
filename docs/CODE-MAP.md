@@ -346,7 +346,7 @@ only ~60 lines of the file around the line number it gives. Line numbers are fro
 - src/build/blueprint.gd:197 _unrle
 - src/build/blueprint.gd:210 _checksum
 
-## src/build/blueprint_library.gd (1431 lines) — The ready-made blueprints that come with the game (building polish spec §7). Built here in
+## src/build/blueprint_library.gd (1435 lines) — The ready-made blueprints that come with the game (building polish spec §7). Built here in
 - src/build/blueprint_library.gd:1 BlueprintLibrary
 - src/build/blueprint_library.gd:43 list
 - src/build/blueprint_library.gd:50 make
@@ -383,14 +383,14 @@ only ~60 lines of the file around the line number it gives. Line numbers are fro
 - src/build/blueprint_library.gd:1234 _twin_gatehouse
 - src/build/blueprint_library.gd:1275 _twin_yard
 - src/build/blueprint_library.gd:1286 _twin_barracks
-- src/build/blueprint_library.gd:1381 _start
-- src/build/blueprint_library.gd:1391 _to_wood
-- src/build/blueprint_library.gd:1400 _add
-- src/build/blueprint_library.gd:1405 _floors
-- src/build/blueprint_library.gd:1412 _wall_x
-- src/build/blueprint_library.gd:1417 _wall_z
-- src/build/blueprint_library.gd:1423 _on_wall_z
-- src/build/blueprint_library.gd:1429 _on_wall_x
+- src/build/blueprint_library.gd:1385 _start
+- src/build/blueprint_library.gd:1395 _to_wood
+- src/build/blueprint_library.gd:1404 _add
+- src/build/blueprint_library.gd:1409 _floors
+- src/build/blueprint_library.gd:1416 _wall_x
+- src/build/blueprint_library.gd:1421 _wall_z
+- src/build/blueprint_library.gd:1427 _on_wall_z
+- src/build/blueprint_library.gd:1433 _on_wall_x
 
 ## src/build/build_mode.gd (380 lines) — Build mode: active while the Build Hammer is in your hand.
 - src/build/build_mode.gd:1 BuildMode
@@ -689,40 +689,40 @@ only ~60 lines of the file around the line number it gives. Line numbers are fro
 - src/combat/creature_rig.gd:242 die
 - src/combat/creature_rig.gd:252 step
 
-## src/combat/dwarf_fight.gd (462 lines) — The dwarf's fighting controls (combat doc 1.5), used while a weapon or shield is in hand:
+## src/combat/dwarf_fight.gd (465 lines) — The dwarf's fighting controls (combat doc 1.5), used while a weapon or shield is in hand:
 - src/combat/dwarf_fight.gd:1 DwarfFight
-- src/combat/dwarf_fight.gd:40 item
-- src/combat/dwarf_fight.gd:46 weapon_mode
-- src/combat/dwarf_fight.gd:50 weapon
-- src/combat/dwarf_fight.gd:54 tier
-- src/combat/dwarf_fight.gd:61 has_shield
-- src/combat/dwarf_fight.gd:77 shield_item
-- src/combat/dwarf_fight.gd:93 off_hand_free
-- src/combat/dwarf_fight.gd:98 shield_blocked_by_lantern
-- src/combat/dwarf_fight.gd:112 shield_tier
-- src/combat/dwarf_fight.gd:122 is_crossbow
-- src/combat/dwarf_fight.gd:126 aiming
-- src/combat/dwarf_fight.gd:131 block_action
-- src/combat/dwarf_fight.gd:135 is_blocking
-- src/combat/dwarf_fight.gd:140 dodging
-- src/combat/dwarf_fight.gd:144 invulnerable
-- src/combat/dwarf_fight.gd:149 defense_state
-- src/combat/dwarf_fight.gd:156 take_stun
-- src/combat/dwarf_fight.gd:163 guard_break
-- src/combat/dwarf_fight.gd:171 knock_down
-- src/combat/dwarf_fight.gd:184 got_parry
-- src/combat/dwarf_fight.gd:192 step
-- src/combat/dwarf_fight.gd:241 has_heavy
-- src/combat/dwarf_fight.gd:245 weapon_has_heavy
-- src/combat/dwarf_fight.gd:251 _shield_bash
-- src/combat/dwarf_fight.gd:267 dodge_velocity
-- src/combat/dwarf_fight.gd:271 _attack
-- src/combat/dwarf_fight.gd:304 _impact
-- src/combat/dwarf_fight.gd:369 _crossbow_step
-- src/combat/dwarf_fight.gd:391 start_reload
-- src/combat/dwarf_fight.gd:410 bolt
-- src/combat/dwarf_fight.gd:419 _shoot
-- src/combat/dwarf_fight.gd:460 _ps
+- src/combat/dwarf_fight.gd:41 item
+- src/combat/dwarf_fight.gd:47 weapon_mode
+- src/combat/dwarf_fight.gd:51 weapon
+- src/combat/dwarf_fight.gd:55 tier
+- src/combat/dwarf_fight.gd:62 has_shield
+- src/combat/dwarf_fight.gd:78 shield_item
+- src/combat/dwarf_fight.gd:94 off_hand_free
+- src/combat/dwarf_fight.gd:99 shield_blocked_by_lantern
+- src/combat/dwarf_fight.gd:113 shield_tier
+- src/combat/dwarf_fight.gd:123 is_crossbow
+- src/combat/dwarf_fight.gd:127 aiming
+- src/combat/dwarf_fight.gd:132 block_action
+- src/combat/dwarf_fight.gd:136 is_blocking
+- src/combat/dwarf_fight.gd:141 dodging
+- src/combat/dwarf_fight.gd:145 invulnerable
+- src/combat/dwarf_fight.gd:150 defense_state
+- src/combat/dwarf_fight.gd:157 take_stun
+- src/combat/dwarf_fight.gd:164 guard_break
+- src/combat/dwarf_fight.gd:172 knock_down
+- src/combat/dwarf_fight.gd:185 got_parry
+- src/combat/dwarf_fight.gd:193 step
+- src/combat/dwarf_fight.gd:244 has_heavy
+- src/combat/dwarf_fight.gd:248 weapon_has_heavy
+- src/combat/dwarf_fight.gd:254 _shield_bash
+- src/combat/dwarf_fight.gd:270 dodge_velocity
+- src/combat/dwarf_fight.gd:274 _attack
+- src/combat/dwarf_fight.gd:307 _impact
+- src/combat/dwarf_fight.gd:372 _crossbow_step
+- src/combat/dwarf_fight.gd:394 start_reload
+- src/combat/dwarf_fight.gd:413 bolt
+- src/combat/dwarf_fight.gd:422 _shoot
+- src/combat/dwarf_fight.gd:463 _ps
 
 ## src/combat/gems.gd (225 lines) — Gems (owner's plan, Nov 20: docs/design/gems.md). Socketed at a Gem Bench into weapons, shields, tools
 - src/combat/gems.gd:1 Gems
@@ -1412,35 +1412,35 @@ only ~60 lines of the file around the line number it gives. Line numbers are fro
 - src/items/upgrades.gd:52 material_for
 - src/items/upgrades.gd:68 next_cost
 
-## src/main.gd (1057 lines) — Starts a game: makes the cave, the glow, the referee, the dwarf(s) and the screen.
+## src/main.gd (1061 lines) — Starts a game: makes the cave, the glow, the referee, the dwarf(s) and the screen.
 - src/main.gd:51 _ready
-- src/main.gd:265 _on_defended
-- src/main.gd:280 _show_menu
-- src/main.gd:332 _with_loading
-- src/main.gd:370 _prefetch
-- src/main.gd:380 _new_world
-- src/main.gd:388 pause_action
-- src/main.gd:412 _close_menu
-- src/main.gd:420 start_game
-- src/main.gd:638 _spawn_dwarf
-- src/main.gd:676 _spawn_spot
-- src/main.gd:690 player_name
-- src/main.gd:695 _free_slot
-- src/main.gd:702 _on_peer_connected
-- src/main.gd:730 _on_peer_disconnected
-- src/main.gd:747 _on_server_disconnected
-- src/main.gd:755 _on_connection_failed
-- src/main.gd:764 _welcome
-- src/main.gd:774 _player_joined
-- src/main.gd:784 _make_environment
-- src/main.gd:790 _process
-- src/main.gd:830 save_now
-- src/main.gd:838 _notification
-- src/main.gd:854 _turn_with_e
-- src/main.gd:870 _unhandled_input
-- src/main.gd:1043 _set_bag
-- src/main.gd:1048 take_screenshot
-- src/main.gd:1056 is_ready_to_play
+- src/main.gd:269 _on_defended
+- src/main.gd:284 _show_menu
+- src/main.gd:336 _with_loading
+- src/main.gd:374 _prefetch
+- src/main.gd:384 _new_world
+- src/main.gd:392 pause_action
+- src/main.gd:416 _close_menu
+- src/main.gd:424 start_game
+- src/main.gd:642 _spawn_dwarf
+- src/main.gd:680 _spawn_spot
+- src/main.gd:694 player_name
+- src/main.gd:699 _free_slot
+- src/main.gd:706 _on_peer_connected
+- src/main.gd:734 _on_peer_disconnected
+- src/main.gd:751 _on_server_disconnected
+- src/main.gd:759 _on_connection_failed
+- src/main.gd:768 _welcome
+- src/main.gd:778 _player_joined
+- src/main.gd:788 _make_environment
+- src/main.gd:794 _process
+- src/main.gd:834 save_now
+- src/main.gd:842 _notification
+- src/main.gd:858 _turn_with_e
+- src/main.gd:874 _unhandled_input
+- src/main.gd:1047 _set_bag
+- src/main.gd:1052 take_screenshot
+- src/main.gd:1060 is_ready_to_play
 
 ## src/net/game_authority.gd (3100 lines) — The referee. Every action that changes the shared world goes through here:
 - src/net/game_authority.gd:1 GameAuthority
@@ -1781,16 +1781,16 @@ only ~60 lines of the file around the line number it gives. Line numbers are fro
 - src/player/dwarf_fist.gd:1018 _measure
 - src/player/dwarf_fist.gd:1029 _measure_side
 
-## src/player/dwarf_great_swing.gd (124 lines) — How the dwarf holds and swings the great axe and the great maul (F389, owner's decision Nov 20: "use the Lampw
+## src/player/dwarf_great_swing.gd (129 lines) — How the dwarf holds and swings the great axe and the great maul (F389, owner's decision Nov 20: "use the Lampw
 - src/player/dwarf_great_swing.gd:1 DwarfGreatSwing
-- src/player/dwarf_great_swing.gd:39 _load
-- src/player/dwarf_great_swing.gd:62 has_moves
-- src/player/dwarf_great_swing.gd:68 clip_length
-- src/player/dwarf_great_swing.gd:74 clip_pose
-- src/player/dwarf_great_swing.gd:87 stance
-- src/player/dwarf_great_swing.gd:95 swing
-- src/player/dwarf_great_swing.gd:103 clip_time
-- src/player/dwarf_great_swing.gd:112 blend
+- src/player/dwarf_great_swing.gd:41 _load
+- src/player/dwarf_great_swing.gd:64 has_moves
+- src/player/dwarf_great_swing.gd:70 clip_length
+- src/player/dwarf_great_swing.gd:76 clip_pose
+- src/player/dwarf_great_swing.gd:89 stance
+- src/player/dwarf_great_swing.gd:97 swing
+- src/player/dwarf_great_swing.gd:108 clip_time
+- src/player/dwarf_great_swing.gd:117 blend
 
 ## src/player/dwarf_model.gd (402 lines) — The dwarf's body. Normally the real rigged, animated dwarf (DwarfRig, src/player/dwarf_rig.gd).
 - src/player/dwarf_model.gd:1 DwarfModel
@@ -1847,70 +1847,70 @@ only ~60 lines of the file around the line number it gives. Line numbers are fro
 - src/player/dwarf_ragdoll.gd:124 _physics_process
 - src/player/dwarf_ragdoll.gd:155 _process_modification_with_delta
 
-## src/player/dwarf_rig.gd (1669 lines) — The real dwarf: a rigged, animated model built from free CC0 Quaternius packs
+## src/player/dwarf_rig.gd (1675 lines) — The real dwarf: a rigged, animated model built from free CC0 Quaternius packs
 - src/player/dwarf_rig.gd:1 DwarfRig
-- src/player/dwarf_rig.gd:124 loop_rate
-- src/player/dwarf_rig.gd:237 build
-- src/player/dwarf_rig.gd:310 _wear_body
-- src/player/dwarf_rig.gd:365 _hide_skin_under_shirt
-- src/player/dwarf_rig.gd:449 _bind_to_skeleton
-- src/player/dwarf_rig.gd:470 _fit_colliders
-- src/player/dwarf_rig.gd:529 _add_swing_bones
-- src/player/dwarf_rig.gd:570 _hair_on_shirt
-- src/player/dwarf_rig.gd:613 _torso_mesh
-- src/player/dwarf_rig.gd:623 _add_springs
-- src/player/dwarf_rig.gd:636 dwarf_rest_poses
-- src/player/dwarf_rig.gd:650 _process
-- src/player/dwarf_rig.gd:671 hold_turn
-- src/player/dwarf_rig.gd:700 _lift_roll
-- src/player/dwarf_rig.gd:711 _update_grip
-- src/player/dwarf_rig.gd:730 great_two_hands
-- src/player/dwarf_rig.gd:736 great_pose
-- src/player/dwarf_rig.gd:764 one_pose
-- src/player/dwarf_rig.gd:794 grip_transform
-- src/player/dwarf_rig.gd:803 shield_transform
-- src/player/dwarf_rig.gd:809 snap_grip
-- src/player/dwarf_rig.gd:818 set_climbing
-- src/player/dwarf_rig.gd:824 set_sitting
-- src/player/dwarf_rig.gd:830 set_hold
-- src/player/dwarf_rig.gd:842 set_motion
-- src/player/dwarf_rig.gd:888 play_upper
-- src/player/dwarf_rig.gd:893 stop_upper
-- src/player/dwarf_rig.gd:899 play_full
-- src/player/dwarf_rig.gd:911 ual_slow
-- src/player/dwarf_rig.gd:915 attack_seconds
-- src/player/dwarf_rig.gd:924 attack
-- src/player/dwarf_rig.gd:934 stab
-- src/player/dwarf_rig.gd:938 _play
-- src/player/dwarf_rig.gd:961 _build_tree
-- src/player/dwarf_rig.gd:1046 _add_oneshot
-- src/player/dwarf_rig.gd:1063 _arm_filter
-- src/player/dwarf_rig.gd:1075 _roll_on
-- src/player/dwarf_rig.gd:1080 _upper_filter
-- src/player/dwarf_rig.gd:1091 _hand_socket
-- src/player/dwarf_rig.gd:1101 _borrow_meshes
-- src/player/dwarf_rig.gd:1117 set_wear
-- src/player/dwarf_rig.gd:1186 _wear_armor
-- src/player/dwarf_rig.gd:1232 _wear_built_armor
-- src/player/dwarf_rig.gd:1255 _helmet_shape
-- src/player/dwarf_rig.gd:1279 _on_bone
-- src/player/dwarf_rig.gd:1290 _head_space
-- src/player/dwarf_rig.gd:1303 _piece
-- src/player/dwarf_rig.gd:1314 _ball
-- src/player/dwarf_rig.gd:1324 _ring
-- src/player/dwarf_rig.gd:1333 _tube
-- src/player/dwarf_rig.gd:1345 _wear_spore_mask
-- src/player/dwarf_rig.gd:1381 _build_helmet
-- src/player/dwarf_rig.gd:1431 _build_beard
-- src/player/dwarf_rig.gd:1482 _quad
-- src/player/dwarf_rig.gd:1489 _big_beard
-- src/player/dwarf_rig.gd:1518 _add_rim
-- src/player/dwarf_rig.gd:1535 _tint_clothes
-- src/player/dwarf_rig.gd:1549 _made_library
-- src/player/dwarf_rig.gd:1587 _split_anim
-- src/player/dwarf_rig.gd:1617 _source
-- src/player/dwarf_rig.gd:1623 _library
-- src/player/dwarf_rig.gd:1636 _head_only
+- src/player/dwarf_rig.gd:128 loop_rate
+- src/player/dwarf_rig.gd:241 build
+- src/player/dwarf_rig.gd:314 _wear_body
+- src/player/dwarf_rig.gd:369 _hide_skin_under_shirt
+- src/player/dwarf_rig.gd:453 _bind_to_skeleton
+- src/player/dwarf_rig.gd:474 _fit_colliders
+- src/player/dwarf_rig.gd:533 _add_swing_bones
+- src/player/dwarf_rig.gd:574 _hair_on_shirt
+- src/player/dwarf_rig.gd:617 _torso_mesh
+- src/player/dwarf_rig.gd:627 _add_springs
+- src/player/dwarf_rig.gd:640 dwarf_rest_poses
+- src/player/dwarf_rig.gd:654 _process
+- src/player/dwarf_rig.gd:675 hold_turn
+- src/player/dwarf_rig.gd:704 _lift_roll
+- src/player/dwarf_rig.gd:715 _update_grip
+- src/player/dwarf_rig.gd:734 great_two_hands
+- src/player/dwarf_rig.gd:740 great_pose
+- src/player/dwarf_rig.gd:768 one_pose
+- src/player/dwarf_rig.gd:798 grip_transform
+- src/player/dwarf_rig.gd:807 shield_transform
+- src/player/dwarf_rig.gd:813 snap_grip
+- src/player/dwarf_rig.gd:822 set_climbing
+- src/player/dwarf_rig.gd:828 set_sitting
+- src/player/dwarf_rig.gd:834 set_hold
+- src/player/dwarf_rig.gd:846 set_motion
+- src/player/dwarf_rig.gd:892 play_upper
+- src/player/dwarf_rig.gd:897 stop_upper
+- src/player/dwarf_rig.gd:903 play_full
+- src/player/dwarf_rig.gd:915 ual_slow
+- src/player/dwarf_rig.gd:919 attack_seconds
+- src/player/dwarf_rig.gd:928 attack
+- src/player/dwarf_rig.gd:938 stab
+- src/player/dwarf_rig.gd:942 _play
+- src/player/dwarf_rig.gd:965 _build_tree
+- src/player/dwarf_rig.gd:1052 _add_oneshot
+- src/player/dwarf_rig.gd:1069 _arm_filter
+- src/player/dwarf_rig.gd:1081 _roll_on
+- src/player/dwarf_rig.gd:1086 _upper_filter
+- src/player/dwarf_rig.gd:1097 _hand_socket
+- src/player/dwarf_rig.gd:1107 _borrow_meshes
+- src/player/dwarf_rig.gd:1123 set_wear
+- src/player/dwarf_rig.gd:1192 _wear_armor
+- src/player/dwarf_rig.gd:1238 _wear_built_armor
+- src/player/dwarf_rig.gd:1261 _helmet_shape
+- src/player/dwarf_rig.gd:1285 _on_bone
+- src/player/dwarf_rig.gd:1296 _head_space
+- src/player/dwarf_rig.gd:1309 _piece
+- src/player/dwarf_rig.gd:1320 _ball
+- src/player/dwarf_rig.gd:1330 _ring
+- src/player/dwarf_rig.gd:1339 _tube
+- src/player/dwarf_rig.gd:1351 _wear_spore_mask
+- src/player/dwarf_rig.gd:1387 _build_helmet
+- src/player/dwarf_rig.gd:1437 _build_beard
+- src/player/dwarf_rig.gd:1488 _quad
+- src/player/dwarf_rig.gd:1495 _big_beard
+- src/player/dwarf_rig.gd:1524 _add_rim
+- src/player/dwarf_rig.gd:1541 _tint_clothes
+- src/player/dwarf_rig.gd:1555 _made_library
+- src/player/dwarf_rig.gd:1593 _split_anim
+- src/player/dwarf_rig.gd:1623 _source
+- src/player/dwarf_rig.gd:1629 _library
+- src/player/dwarf_rig.gd:1642 _head_only
 
 ## src/player/dwarf_weight.gd (206 lines) — Makes the dwarf feel heavy and chunky (owner, Nov 19: "heavy + chunky"; F30, F342 squash and stretch).
 - src/player/dwarf_weight.gd:1 DwarfWeight
@@ -3020,10 +3020,10 @@ only ~60 lines of the file around the line number it gives. Line numbers are fro
 - src/world/world.gd:246 _process
 - src/world/world.gd:272 _send_guides
 
-## tests/run_tests.gd (76 lines) — Counts every engine/script error, so a crashing check can't sneak through as PASS.
+## tests/run_tests.gd (83 lines) — Counts every engine/script error, so a crashing check can't sneak through as PASS.
 - tests/run_tests.gd:5 ErrorCounter
-- tests/run_tests.gd:25 _initialize
-- tests/run_tests.gd:29 _run
+- tests/run_tests.gd:26 _initialize
+- tests/run_tests.gd:30 _run
 
 ## tests/test_ailments.gd (89 lines) — Poison, burn and chill on a dwarf (combat doc 2.6).
 - tests/test_ailments.gd:5 test_buildup_tips_over_into_poison
@@ -3284,7 +3284,7 @@ only ~60 lines of the file around the line number it gives. Line numbers are fro
 - tests/test_climbing.gd:209 test_up_high_keeps_clear_of_built_things
 - tests/test_climbing.gd:248 test_everyone_sees_the_surface
 
-## tests/test_combat.gd (171 lines) — Fighting rules, checked against the worked examples in the combat doc.
+## tests/test_combat.gd (184 lines) — Fighting rules, checked against the worked examples in the combat doc.
 - tests/test_combat.gd:8 test_doc_example_copper_mace_on_stone
 - tests/test_combat.gd:14 test_doc_example_copper_sword_on_stone
 - tests/test_combat.gd:19 test_silver_sword_light_on_nothing
@@ -3294,15 +3294,16 @@ only ~60 lines of the file around the line number it gives. Line numbers are fro
 - tests/test_combat.gd:38 test_combo_finisher_hits_harder
 - tests/test_combat.gd:45 test_combos_build_up_to_a_big_last_hit
 - tests/test_combat.gd:54 test_spear_two_thrusts_then_a_spin
-- tests/test_combat.gd:64 test_stone_has_no_finisher_and_no_heavy
-- tests/test_combat.gd:77 test_hit_number_colour_follows_the_damage_type
-- tests/test_combat.gd:86 test_balance_plan_f532
-- tests/test_combat.gd:104 test_elemental_skips_armor
-- tests/test_combat.gd:111 test_parry_block_hit
-- tests/test_combat.gd:126 test_crushing_needs_a_shield
-- tests/test_combat.gd:131 test_stun_meter
-- tests/test_combat.gd:151 test_crossbow_numbers
-- tests/test_combat.gd:167 test_every_weapon_can_crit
+- tests/test_combat.gd:65 test_great_maul_slice_shove_then_whirl
+- tests/test_combat.gd:77 test_stone_has_no_finisher_and_no_heavy
+- tests/test_combat.gd:90 test_hit_number_colour_follows_the_damage_type
+- tests/test_combat.gd:99 test_balance_plan_f532
+- tests/test_combat.gd:117 test_elemental_skips_armor
+- tests/test_combat.gd:124 test_parry_block_hit
+- tests/test_combat.gd:139 test_crushing_needs_a_shield
+- tests/test_combat.gd:144 test_stun_meter
+- tests/test_combat.gd:164 test_crossbow_numbers
+- tests/test_combat.gd:180 test_every_weapon_can_crit
 
 ## tests/test_comfort.gd (46 lines) — The Cozy rest buff: comfort from a fire/bed, different furniture nearby, and a roof.
 - tests/test_comfort.gd:5 _station
@@ -3377,34 +3378,40 @@ only ~60 lines of the file around the line number it gives. Line numbers are fro
 - tests/test_dungeon.gd:846 test_bandage_cooldown_shows_on_its_slot
 - tests/test_dungeon.gd:865 test_mossgate_is_dark
 
-## tests/test_dungeon_decor.gd (155 lines) — Dungeon decor from the decor catalogue (docs/art/DECOR-CATALOG.md, owner Nov 22: every piece in its own room a
+## tests/test_dungeon_decor.gd (185 lines) — Dungeon decor from the decor catalogue (docs/art/DECOR-CATALOG.md, owner Nov 22: every piece in its own room a
 - tests/test_dungeon_decor.gd:17 _plans
 - tests/test_dungeon_decor.gd:26 _decor
 - tests/test_dungeon_decor.gd:30 _xz
 - tests/test_dungeon_decor.gd:35 _corners
 - tests/test_dungeon_decor.gd:46 _dist
 - tests/test_dungeon_decor.gd:55 _inside
-- tests/test_dungeon_decor.gd:59 _seg
-- tests/test_dungeon_decor.gd:63 test_mossgate_has_its_catalogue_decor
-- tests/test_dungeon_decor.gd:76 test_decor_stands_on_the_floor_inside_the_rooms
-- tests/test_dungeon_decor.gd:95 test_decor_keeps_off_doors_paths_and_chests
-- tests/test_dungeon_decor.gd:144 test_decor_pieces_do_not_overlap
+- tests/test_dungeon_decor.gd:61 _on
+- tests/test_dungeon_decor.gd:66 _same_level
+- tests/test_dungeon_decor.gd:70 _seg
+- tests/test_dungeon_decor.gd:74 test_mossgate_has_its_catalogue_decor
+- tests/test_dungeon_decor.gd:87 test_pell_has_its_catalogue_decor
+- tests/test_dungeon_decor.gd:99 test_decor_stands_on_the_floor_inside_the_rooms
+- tests/test_dungeon_decor.gd:118 test_decor_keeps_off_doors_paths_and_chests
+- tests/test_dungeon_decor.gd:174 test_decor_pieces_do_not_overlap
 
-## tests/test_dungeon_junk.gd (182 lines) — Dungeon junk (owner, Nov 20; traps-and-variety.md "Dungeon junk"; laid out by tools/dungeons/junk.py). The own
+## tests/test_dungeon_junk.gd (205 lines) — Dungeon junk (owner, Nov 20; traps-and-variety.md "Dungeon junk"; laid out by tools/dungeons/junk.py). The own
 - tests/test_dungeon_junk.gd:18 _plans
 - tests/test_dungeon_junk.gd:27 _junk
 - tests/test_dungeon_junk.gd:31 _xz
 - tests/test_dungeon_junk.gd:35 _inside
 - tests/test_dungeon_junk.gd:39 _in_any
-- tests/test_dungeon_junk.gd:46 _seg
-- tests/test_dungeon_junk.gd:51 _doors_of
-- tests/test_dungeon_junk.gd:60 test_mossgate_has_junk
-- tests/test_dungeon_junk.gd:72 test_junk_lies_on_the_floor_by_a_wall
-- tests/test_dungeon_junk.gd:93 test_junk_keeps_off_doors_paths_and_traps
-- tests/test_dungeon_junk.gd:142 test_no_junk_over_drops_rails_or_the_plank_walk
-- tests/test_dungeon_junk.gd:154 test_half_the_junk_lies_out_in_the_rooms
-- tests/test_dungeon_junk.gd:161 test_no_junk_twice_in_a_room
-- tests/test_dungeon_junk.gd:178 test_junk_has_no_body_but_old_props_still_smash
+- tests/test_dungeon_junk.gd:48 _on
+- tests/test_dungeon_junk.gd:52 _same_level
+- tests/test_dungeon_junk.gd:56 _seg
+- tests/test_dungeon_junk.gd:61 _doors_of
+- tests/test_dungeon_junk.gd:70 test_mossgate_has_junk
+- tests/test_dungeon_junk.gd:82 test_pell_has_junk_on_both_levels
+- tests/test_dungeon_junk.gd:88 test_junk_lies_on_the_floor_by_a_wall
+- tests/test_dungeon_junk.gd:109 test_junk_keeps_off_doors_paths_and_traps
+- tests/test_dungeon_junk.gd:165 test_no_junk_over_drops_rails_or_the_plank_walk
+- tests/test_dungeon_junk.gd:177 test_half_the_junk_lies_out_in_the_rooms
+- tests/test_dungeon_junk.gd:184 test_no_junk_twice_in_a_room
+- tests/test_dungeon_junk.gd:201 test_junk_has_no_body_but_old_props_still_smash
 
 ## tests/test_dungeon_keys.gd (131 lines) — Dungeon keys and locked doors (owner, Nov 20, F237): one key per medium and big dungeon, a door opens only for
 - tests/test_dungeon_keys.gd:11 _setup
@@ -6139,27 +6146,27 @@ only ~60 lines of the file around the line number it gives. Line numbers are fro
 - tools/asset_forge/builds/items_tools.py:389 pickaxe_fang
 - tools/asset_forge/builds/items_tools.py:398 shield_shell
 
-## tools/asset_forge/builds/kaykit_miners.py (759 lines) — Lampwick Drift's creatures (dungeon 2, owner Nov 20, 2026: "download them and try to adjust them a little bit"
-- tools/asset_forge/builds/kaykit_miners.py:124 paint_mat
-- tools/asset_forge/builds/kaykit_miners.py:162 bone_marks
-- tools/asset_forge/builds/kaykit_miners.py:219 socket_mat
-- tools/asset_forge/builds/kaykit_miners.py:230 glow_mat
-- tools/asset_forge/builds/kaykit_miners.py:240 classify
-- tools/asset_forge/builds/kaykit_miners.py:258 uv_box
-- tools/asset_forge/builds/kaykit_miners.py:279 repaint
-- tools/asset_forge/builds/kaykit_miners.py:310 skin_to
-- tools/asset_forge/builds/kaykit_miners.py:321 unparent_bone
-- tools/asset_forge/builds/kaykit_miners.py:331 apply_mods
-- tools/asset_forge/builds/kaykit_miners.py:341 reshape
-- tools/asset_forge/builds/kaykit_miners.py:371 bounds
-- tools/asset_forge/builds/kaykit_miners.py:376 group
-- tools/asset_forge/builds/kaykit_miners.py:390 new_objs
-- tools/asset_forge/builds/kaykit_miners.py:396 beard
-- tools/asset_forge/builds/kaykit_miners.py:430 helmet
-- tools/asset_forge/builds/kaykit_miners.py:529 crack_skull
-- tools/asset_forge/builds/kaykit_miners.py:658 tool
-- tools/asset_forge/builds/kaykit_miners.py:691 place
-- tools/asset_forge/builds/kaykit_miners.py:697 build
+## tools/asset_forge/builds/kaykit_miners.py (762 lines) — Lampwick Drift's creatures (dungeon 2, owner Nov 20, 2026: "download them and try to adjust them a little bit"
+- tools/asset_forge/builds/kaykit_miners.py:127 paint_mat
+- tools/asset_forge/builds/kaykit_miners.py:165 bone_marks
+- tools/asset_forge/builds/kaykit_miners.py:222 socket_mat
+- tools/asset_forge/builds/kaykit_miners.py:233 glow_mat
+- tools/asset_forge/builds/kaykit_miners.py:243 classify
+- tools/asset_forge/builds/kaykit_miners.py:261 uv_box
+- tools/asset_forge/builds/kaykit_miners.py:282 repaint
+- tools/asset_forge/builds/kaykit_miners.py:313 skin_to
+- tools/asset_forge/builds/kaykit_miners.py:324 unparent_bone
+- tools/asset_forge/builds/kaykit_miners.py:334 apply_mods
+- tools/asset_forge/builds/kaykit_miners.py:344 reshape
+- tools/asset_forge/builds/kaykit_miners.py:374 bounds
+- tools/asset_forge/builds/kaykit_miners.py:379 group
+- tools/asset_forge/builds/kaykit_miners.py:393 new_objs
+- tools/asset_forge/builds/kaykit_miners.py:399 beard
+- tools/asset_forge/builds/kaykit_miners.py:433 helmet
+- tools/asset_forge/builds/kaykit_miners.py:532 crack_skull
+- tools/asset_forge/builds/kaykit_miners.py:661 tool
+- tools/asset_forge/builds/kaykit_miners.py:694 place
+- tools/asset_forge/builds/kaykit_miners.py:700 build
 
 ## tools/asset_forge/builds/kiln.py (56 lines) — Kiln (folder: stations): a round fired-clay dome on a ring of bricks, an arched glowing mouth with coals
 
@@ -6742,6 +6749,9 @@ only ~60 lines of the file around the line number it gives. Line numbers are fro
 - tools/asset_forge/creature_textures.py:128 recolor
 - tools/asset_forge/creature_textures.py:143 main
 
+## tools/asset_forge/crossbow_kaykit_bake.gd (87 lines) — Bakes the KayKit skeletons' crossbow moves (aim, shoot, reload) onto the dwarf as plain upper-body clips
+- tools/asset_forge/crossbow_kaykit_bake.gd:26 _init
+
 ## tools/asset_forge/derive_tex_calm.py (19 lines) — Calm kit colours (owner F73/F74, Nov 15): recolour our own hand-painted stone texture.
 - tools/asset_forge/derive_tex_calm.py:7 load
 - tools/asset_forge/derive_tex_calm.py:8 tint
@@ -6826,13 +6836,13 @@ only ~60 lines of the file around the line number it gives. Line numbers are fro
 ## tools/asset_forge/glb_scale.py (27 lines) — Give a finished .glb model its size in the game (by Claude 3, Nov 16, 2026).
 - tools/asset_forge/glb_scale.py:12 set_scale
 
-## tools/asset_forge/great_kaykit_bake.gd (174 lines) — Bakes the Lampwick Foreman's two-handed moves onto the dwarf (F389, owner Nov 20: "use the Foreman's moves").
-- tools/asset_forge/great_kaykit_bake.gd:42 _init
-- tools/asset_forge/great_kaykit_bake.gd:121 _globals
-- tools/asset_forge/great_kaykit_bake.gd:132 _sample
-- tools/asset_forge/great_kaykit_bake.gd:155 _mirror
-- tools/asset_forge/great_kaykit_bake.gd:166 _delta
-- tools/asset_forge/great_kaykit_bake.gd:172 _off_line
+## tools/asset_forge/great_kaykit_bake.gd (176 lines) — Bakes the Lampwick Foreman's two-handed moves onto the dwarf (F389, owner Nov 20: "use the Foreman's moves").
+- tools/asset_forge/great_kaykit_bake.gd:44 _init
+- tools/asset_forge/great_kaykit_bake.gd:123 _globals
+- tools/asset_forge/great_kaykit_bake.gd:134 _sample
+- tools/asset_forge/great_kaykit_bake.gd:157 _mirror
+- tools/asset_forge/great_kaykit_bake.gd:168 _delta
+- tools/asset_forge/great_kaykit_bake.gd:174 _off_line
 
 ## tools/asset_forge/great_swing_export.gd (160 lines) — Records the game dwarf swinging the great axe (F389: DwarfGreatSwing + DwarfFist, exactly as the game plays it
 - tools/asset_forge/great_swing_export.gd:14 _init
@@ -6901,17 +6911,17 @@ only ~60 lines of the file around the line number it gives. Line numbers are fro
 ## tools/asset_forge/one_kaykit_bake.gd (114 lines) — Bakes the KayKit Skeletons warrior's ONE-handed moves onto the dwarf (F389, owner Nov 20: "do the same for the
 - tools/asset_forge/one_kaykit_bake.gd:21 _init
 
-## tools/asset_forge/one_swing_export.gd (416 lines) — Records the game dwarf swinging the sword and the mace with the KayKit warrior's one-handed moves (F389 chat 1
-- tools/asset_forge/one_swing_export.gd:39 _init
-- tools/asset_forge/one_swing_export.gd:165 _record
-- tools/asset_forge/one_swing_export.gd:266 _clear_check
-- tools/asset_forge/one_swing_export.gd:310 _box_of
-- tools/asset_forge/one_swing_export.gd:325 _thin_axis
-- tools/asset_forge/one_swing_export.gd:329 _axis
-- tools/asset_forge/one_swing_export.gd:334 _disc_dist
-- tools/asset_forge/one_swing_export.gd:343 _slim
-- tools/asset_forge/one_swing_export.gd:362 _own
-- tools/asset_forge/one_swing_export.gd:369 _record_all
+## tools/asset_forge/one_swing_export.gd (424 lines) — Records the game dwarf swinging the sword and the mace with the KayKit warrior's one-handed moves (F389 chat 1
+- tools/asset_forge/one_swing_export.gd:41 _init
+- tools/asset_forge/one_swing_export.gd:167 _record
+- tools/asset_forge/one_swing_export.gd:268 _clear_check
+- tools/asset_forge/one_swing_export.gd:312 _box_of
+- tools/asset_forge/one_swing_export.gd:327 _thin_axis
+- tools/asset_forge/one_swing_export.gd:331 _axis
+- tools/asset_forge/one_swing_export.gd:336 _disc_dist
+- tools/asset_forge/one_swing_export.gd:345 _slim
+- tools/asset_forge/one_swing_export.gd:364 _own
+- tools/asset_forge/one_swing_export.gd:371 _record_all
 
 ## tools/asset_forge/one_ual_bake.gd (199 lines) — Bakes Quaternius's Universal Animation Library 2 sword moves (CC0, already the dwarf's own pack) into the swin
 - tools/asset_forge/one_ual_bake.gd:44 _init
@@ -7112,7 +7122,7 @@ only ~60 lines of the file around the line number it gives. Line numbers are fro
 - tools/dungeons/make_mossgate.py:149 wall_pos
 - tools/dungeons/make_mossgate.py:379 _d
 
-## tools/dungeons/make_pell.py (378 lines) — Old Pell's Diggings (dungeon map 3): every root wood piece, ladder, trap, piece of furniture, chest and creatu
+## tools/dungeons/make_pell.py (521 lines) — Old Pell's Diggings (dungeon map 3): every root wood piece, ladder, trap, piece of furniture, chest and creatu
 - tools/dungeons/make_pell.py:35 level
 - tools/dungeons/make_pell.py:39 floor_y
 - tools/dungeons/make_pell.py:43 height
@@ -7123,9 +7133,14 @@ only ~60 lines of the file around the line number it gives. Line numbers are fro
 - tools/dungeons/make_pell.py:72 creature
 - tools/dungeons/make_pell.py:77 chest
 - tools/dungeons/make_pell.py:149 wall_pos
+- tools/dungeons/make_pell.py:378 _d
 
 ## tools/fiber_count.gd (24 lines) — How much fiber a world has (Nov 20 economy check): spots by kind, and the fiber near the start.
 - tools/fiber_count.gd:6 _init
+
+## tools/journal/merge_inbox.py (70 lines) — Moves journal entries from journal-inbox/ into JOURNAL.md (owner, Nov 21).
+- tools/journal/merge_inbox.py:18 git
+- tools/journal/merge_inbox.py:23 main
 
 ## tools/make_starter_blueprint.gd (34 lines) — Writes res://blueprints/small_rootwood_lodge.dwbp (the blueprint that ships with the game).
 - tools/make_starter_blueprint.gd:6 _initialize
@@ -7239,6 +7254,9 @@ only ~60 lines of the file around the line number it gives. Line numbers are fro
 - tools/perf_probe.gd:177 _cap
 - tools/perf_probe.gd:184 _all
 
+## tools/quiet_run.py (62 lines) — Runs a command (a Godot game run, the tests, a Blender script...) and prints only the useful part of its outpu
+- tools/quiet_run.py:25 main
+
 ## tools/ruins/make_brewhall_ruin.py (203 lines) — The RUINED Brewhall (owner, Nov 20, F479: the third ruin): made from the real blueprint, then broken.
 - tools/ruins/make_brewhall_ruin.py:27 near
 - tools/ruins/make_brewhall_ruin.py:31 at
@@ -7282,22 +7300,50 @@ only ~60 lines of the file around the line number it gives. Line numbers are fro
 - tools/ruins/make_spire_ruin.py:171 rebuild
 - tools/ruins/make_spire_ruin.py:202 plan_of
 
+## tools/ruins/make_twin_gate_ruin.py (622 lines) — The RUINED Twin Gate (owner, Nov 21: ruin 6, the first GRAND ruin, docs/design/GRAND-RUIN-RECIPE.md).
+- tools/ruins/make_twin_gate_ruin.py:44 rot_from
+- tools/ruins/make_twin_gate_ruin.py:49 steps_of
+- tools/ruins/make_twin_gate_ruin.py:53 turned
+- tools/ruins/make_twin_gate_ruin.py:60 plan_of
+- tools/ruins/make_twin_gate_ruin.py:69 extras
+- tools/ruins/make_twin_gate_ruin.py:146 with_extras
+- tools/ruins/make_twin_gate_ruin.py:151 near
+- tools/ruins/make_twin_gate_ruin.py:155 at
+- tools/ruins/make_twin_gate_ruin.py:162 in_r_tower
+- tools/ruins/make_twin_gate_ruin.py:166 break_r_tower
+- tools/ruins/make_twin_gate_ruin.py:269 is_piece
+- tools/ruins/make_twin_gate_ruin.py:273 supported
+- tools/ruins/make_twin_gate_ruin.py:316 add
+- tools/ruins/make_twin_gate_ruin.py:345 dims
+- tools/ruins/make_twin_gate_ruin.py:355 on_wall
+- tools/ruins/make_twin_gate_ruin.py:364 free_at
+- tools/ruins/make_twin_gate_ruin.py:431 corners_of
+- tools/ruins/make_twin_gate_ruin.py:437 poly_pt_dist
+- tools/ruins/make_twin_gate_ruin.py:443 seg_dist
+- tools/ruins/make_twin_gate_ruin.py:450 poly_dist
+- tools/ruins/make_twin_gate_ruin.py:456 top_of
+- tools/ruins/make_twin_gate_ruin.py:460 check_things
+- tools/ruins/make_twin_gate_ruin.py:524 shifted
+- tools/ruins/make_twin_gate_ruin.py:544 same_here
+- tools/ruins/make_twin_gate_ruin.py:549 rebuild
+
 ## tools/ruins/make_watchtower_ruin.py (146 lines) — The RUINED Stone Watchtower (owner, Nov 17): made from the real blueprint, then broken.
 - tools/ruins/make_watchtower_ruin.py:25 steps
 - tools/ruins/make_watchtower_ruin.py:29 dir_of
 - tools/ruins/make_watchtower_ruin.py:33 at
 - tools/ruins/make_watchtower_ruin.py:79 add
 
-## tools/ruins/ruin_junk.py (397 lines) — Ruin junk (owner, Nov 20): small floor models "just for looks" in and around the ruins (the Watchtower, the Fa
-- tools/ruins/ruin_junk.py:72 _pieces
-- tools/ruins/ruin_junk.py:86 steps_of
-- tools/ruins/ruin_junk.py:90 turn
-- tools/ruins/ruin_junk.py:96 outline
-- tools/ruins/ruin_junk.py:107 footprint
-- tools/ruins/ruin_junk.py:116 overlap
-- tools/ruins/ruin_junk.py:129 inside
-- tools/ruins/ruin_junk.py:147 height
-- tools/ruins/ruin_junk.py:156 make
+## tools/ruins/ruin_junk.py (595 lines) — Ruin junk (owner, Nov 20): small floor models "just for looks" in and around the ruins (the Watchtower, the Fa
+- tools/ruins/ruin_junk.py:178 _pieces
+- tools/ruins/ruin_junk.py:192 steps_of
+- tools/ruins/ruin_junk.py:196 turn
+- tools/ruins/ruin_junk.py:202 outline
+- tools/ruins/ruin_junk.py:213 footprint
+- tools/ruins/ruin_junk.py:222 grow_by
+- tools/ruins/ruin_junk.py:232 overlap
+- tools/ruins/ruin_junk.py:245 inside
+- tools/ruins/ruin_junk.py:263 height
+- tools/ruins/ruin_junk.py:272 make
 
 ## tools/shot_skills.gd (44 lines) — Photographs the skills window with a sample dwarf (level 18, some perks). Usage:
 - tools/shot_skills.gd:6 _init
