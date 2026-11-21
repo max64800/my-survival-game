@@ -36,6 +36,10 @@ var hand: BoneAttachment3D  ## follows the weapon hand (the pick's swing trail: 
 const TRAIL_LEN := 0.95  ## m from the hand to the pick's head (the trail's far edge)
 const TRAIL := Color(0.95, 0.88, 0.75, 0.45)
 const TRAIL_BOSS := Color(1.0, 0.5, 0.38, 0.6)  ## the shield-only swings (the same red as their outline)
+var skel: Skeleton3D
+var shield: ShieldArm    ## the Prop Warden's raised shield arm (F548), or null
+var _guard_swing := true  ## the swing playing now keeps the shield up (not his two-handed moves)
+const SHIELD_FADE := 6.0  ## how fast the shield comes up / goes down (whole way in 1/6 s)
 
 
 ## The rig of a model made from a skeleton pack, or null (an older creature).
@@ -60,12 +64,25 @@ static func find(model: Node3D) -> CreatureRig:
 		n = n.get_parent()
 	rig.unit = s
 	var sk := skels[0] as Skeleton3D
+	rig.skel = sk
 	if sk.find_bone("handslot.r") >= 0:
 		rig.hand = BoneAttachment3D.new()
 		rig.hand.bone_name = "handslot.r"
 		sk.add_child(rig.hand)
 		rig.tips = tool_tips(sk, forged)
 	return rig
+
+
+## A creature with a front shield (the Prop Warden, F548): its left arm holds the shield up in front (ShieldArm).
+func hold_shield() -> void:
+	var sk := skel
+	if sk == null:
+		return
+	var arm := ShieldArm.new()
+	arm.name = "ShieldArm"
+	if arm.setup(ap, sk):
+		sk.add_child(arm)
+		shield = arm
 
 
 ## Lying scattered on the floor until someone comes near.
@@ -94,6 +111,13 @@ func attack(clip: String, tell: float, red := false, again := false) -> void:
 	if dead or not ap.has_animation(clip):
 		return
 	lying = false
+	_guard_swing = not clip.begins_with("2H_")  # (his two-handed moves need the shield arm: the sweep, the Rally Slam)
+	if clip in LOOPS:
+		# A charge (the Prop Warden's Shield Charge): no swing to play, he runs (step() matches the run to his speed)
+		# behind his raised shield; only the spark before it lands.
+		_busy = 0.0
+		_glint_later(glint_wait(tell))
+		return
 	if again and clip.contains("Spin"):
 		# The whirl's next turn (owner, Nov 21): straight back into the spinning part (WHIRL), no new wind-up or spark.
 		var turn := clampf((WHIRL.y - WHIRL.x) / maxf(tell, 0.05), 0.5, 2.5)
@@ -251,7 +275,12 @@ func die() -> float:
 ## `frozen`: a hit's freeze-blink (the move waits).
 func step(delta: float, speed: float, run: float, alert: bool, frozen: bool) -> void:
 	if dead:
+		if shield:
+			shield.influence = 0.0
 		return
+	if shield:
+		var up := alert and not lying and (_busy <= 0.0 or _busy_kind == "hit" or (_busy_kind == "attack" and _guard_swing))
+		shield.influence = move_toward(shield.influence, 1.0 if up else 0.0, delta * SHIELD_FADE)
 	ap.speed_scale = 0.0 if frozen else 1.0
 	if frozen:
 		return

@@ -64,6 +64,8 @@ func _run() -> void:
 	var made := []
 	var row := [["tunnel_rat", -3.0, 6.0], ["lost_miner", -1.5, 7.0], ["foreman", 0.0, 8.0], ["lost_miner", 1.5, 7.0],
 		["tunnel_rat", 3.0, 6.0], ["tunnel_rat", 4.5, 6.5]]
+	if "warden" in OS.get_cmdline_user_args():
+		row[2][0] = "prop_warden"  # (-- warden: the Prop Warden in the middle instead, F548: his raised shield)
 	for r in row:
 		var at: Vector3 = stand + out * float(r[2]) + side * float(r[1])
 		var f := maker.find_floor(at.x, at.z, at.y + 3.0)

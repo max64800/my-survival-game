@@ -78,6 +78,9 @@ const BOXES := {
 	# (top on the deck, bottom 10.24 m down and 18.9 m out in Base Camp; the rope itself has no body).
 	"dungeon/prop_old.glb": [[Vector3(-0.8, 1.35, 0), Vector3(0.3, 2.7, 0.3)], [Vector3(0.8, 1.45, 0), Vector3(0.3, 2.6, 0.3)],
 		[Vector3(0, 2.8, 0), Vector3(2.0, 0.3, 0.3)]],
+	# The root wood Mine Prop piece the same way (F545: its one whole box was an invisible wall in the arch).
+	"build/mine_prop__plank_root.glb": [[Vector3(-0.835, 1.35, 0), Vector3(0.29, 2.7, 0.36)],
+		[Vector3(0.835, 1.35, 0), Vector3(0.29, 2.7, 0.36)], [Vector3(0, 2.845, 0), Vector3(1.96, 0.29, 0.36)]],
 	"dungeon/rope_slide.glb": [[Vector3(0, 1.15, 0), Vector3(0.4, 2.3, 0.4)], [Vector3(0, -9.24, 18.873), Vector3(0.4, 2.0, 0.4)]],
 	"dungeon/lift_winch.glb": [[Vector3(-1.15, 1.3, -0.6), Vector3(0.16, 2.6, 0.16)], [Vector3(-1.15, 1.3, 0.6), Vector3(0.16, 2.6, 0.16)]],
 	# Brassgate Vault's forced vault door (handover Nov 22: "must be walkable"): its wall (2.1 m wide, 20 cm thick, flat
@@ -186,13 +189,14 @@ var heal_ds: Array = []          ## the dungeon each basin is in (each keeps its
 var mine: MineTraps  ## Lampwick Drift's traps and lamps
 var crushers: Array = []        ## thing ids of the crushers (each moves its weight every frame)
 var ladders: Array[Vector3] = []  ## the plans' ladder pieces, in the world (Old Pell's shafts)
+var ladder_tall: Array[float] = []  ## how tall each one is (a piece at scale 1.25 is 2.5 m: Mossprop's upper ladder)
 
 
 ## Is there a dungeon ladder at `pos` (a dwarf's feet)? The same reach as built ladders (Builder.ladder_at).
 func ladder_at(pos: Vector3) -> bool:
-	for l in ladders:
-		var dd := pos - l
-		if Vector2(dd.x, dd.z).length() < 0.8 and dd.y > -0.5 and dd.y < Pieces.LIST.ladder.size.y + 0.3:
+	for i in ladders.size():
+		var dd := pos - ladders[i]
+		if Vector2(dd.x, dd.z).length() < 0.8 and dd.y > -0.5 and dd.y < ladder_tall[i] + 0.3:
 			return true
 	return false
 
@@ -370,6 +374,7 @@ func _build(d: Dictionary, plan: Dictionary) -> void:
 	for p in plan.get("pieces", []):  # (Old Pell's shafts: root wood ladders you climb like built ones)
 		if p.id == "ladder":
 			ladders.append(DungeonMap.to_world(d, Vector3(p.pos[0], p.pos[1], p.pos[2])))
+			ladder_tall.append(Pieces.LIST.ladder.size.y * float(p.get("scale", 1.0)))
 	# Torch light (it counts as light, so you heal by the torches: Darkness).
 	for l in plan.get("lights", []):
 		var o := OmniLight3D.new()

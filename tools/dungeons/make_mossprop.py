@@ -175,16 +175,26 @@ for x in (MOUTH_X - 1.0, MOUTH_X + 1.0):
 FRONT = 28.2
 HOLE = (18, 24)   # the rockfall ladder comes up through here
 deck2 = [(x, z) for x in range(18, 46, 2) for z in (24, 26) if (x, z) != HOLE and not 30 <= x < 38] + \
-	[(44, z) for z in (28, 30, 32, 34)]
+	[(44, z) for z in (28, 30, 32, 34)] + [(42, 32), (42, 34)]   # (42, *): the way round to the upper ladder's front (F546)
 bridge = [(x, z) for x in range(30, 38, 2) for z in (24, 26)]
 deck3 = [(x, z) for x in range(20, 46, 2) for z in (24, 26)] + [(44, z) for z in (28, 30, 32)]
-BREAK = {(24, 26, L2), (40, 24, L2), (30, 26, L3)}   # rotten boards that give way (a 5 m fall)
+# Rotten boards that give way (a 5 m fall). Owner, Nov 21 (F543): many more on levels 1 and 2. Deck 2 always keeps a
+# safe way along (SAFE_L2, checked by test_rotten_boards_leave_a_way): the bad boards take turns, cliff side and edge.
+BREAK = {(20, 26, L2), (24, 26, L2), (28, 24, L2), (40, 24, L2), (42, 24, L2), (30, 26, L3)}
+SAFE_L2 = [(20, 24), (22, 24), (24, 24), (26, 24), (26, 26), (28, 26), (38, 26), (40, 26), (42, 26), (44, 26)]
+broken = []   # (x, z, top) of every rotten board (no junk lies on them)
+
+
+def break_floor(cx, y, cz, label=""):
+	prop("dungeon/trap_floor_break.glb", cx, y, cz, rng.choice([0, 90, 180, 270]), role="trap", label=label)
+	broken.append((cx, cz, y + 0.24))
+
+
 for lv, cells in ((L2, deck2 + bridge), (L3, deck3)):
 	for x, z in cells:
 		cx, cz = x + 1.0, z + 1.0
 		if (x, z, lv) in BREAK:
-			prop("dungeon/trap_floor_break.glb", cx, lv, cz, rng.choice([0, 90, 180, 270]), role="trap",
-				label="Rotten boards (they give way)" if (x, z) == (24, 26) else "")
+			break_floor(cx, lv, cz, "Rotten boards (they give way)" if (x, z) == (24, 26) else "")
 		else:
 			old_or("dungeon/floor_old.glb", cx, lv, cz, rng.choice([0, 90, 180, 270]), "floor", 0, chance=0.75)
 
@@ -237,11 +247,20 @@ for x in range(18, 46, 2):
 for z in (28, 30, 32, 34):
 	frame(43.8, 0.0, z + 1, True)
 	brace(43.8, 3.0, z + 1, True)
-	rail(44.15, L2 + 0.24, z + 1, 1, 270.0)
+	if z < 32:   # (32, 34: open onto the way round, F546)
+		rail(44.15, L2 + 0.24, z + 1, 1, 270.0)
 	if z < 34:
 		frame(43.8, 5.0, z + 1, True)
 		brace(43.8, 8.0, z + 1, True)
 		rail(44.15, L3 + 0.24, z + 1, 1, 270.0)
+# The way round to the upper ladder's front (owner, Nov 21, F546: you walk round it and climb): 2 more boards west of
+# the arm, on their own frames, railed all round (1 cm clear of each other's ends).
+for z in (32, 34):
+	frame(42.2, 0.0, z + 1, True)
+	brace(42.2, 3.0, z + 1, True)
+	piece("railing", 42.15, L2 + 0.24, z + 1.0, 1)
+piece("railing", 43.26, L2 + 0.24, 32.15, 0)
+piece("railing", 43.26, L2 + 0.24, 35.85, 0)
 # The bridge's swinging boulder, and the chasm's spikes 10 m down (falling in kills).
 prop("dungeon/trap_swing_boulder.glb", 34.0, L2, 26.0, 90.0, role="trap", label="Swinging boulder (shoot the chain)")
 for x in range(30, 38, 2):
@@ -261,18 +280,23 @@ prop("decor/crate_stack.glb", 34.5, 0.0, 41.5, 20.0)
 prop("decor/timber_stack.glb", 27.0, 0.0, 48.0, 90.0)
 chest("chest_small", 33.0, 43.0, 200.0, "Camp chest", y=0.0)
 for z in range(30, 46, 2):
-	old_or("dungeon/floor_old.glb", 15.0, 2.0, z + 1.0, rng.choice([0, 90, 180, 270]), "floor", 0)
+	if z in (34, 40):   # (F543: a 2 m drop; jump them)
+		break_floor(15.0, 2.0, z + 1.0, "Rotten boards" if z == 34 else "")
+	else:
+		old_or("dungeon/floor_old.glb", 15.0, 2.0, z + 1.0, rng.choice([0, 90, 180, 270]), "floor", 0)
 	piece("pillar", 16.2, 0.0, z + 1.0)
 	rail(15.85, 2.24, z + 1.0, 1, 90.0, chance_broken=0.5, chance_gone=0.2)
 for x, z in ((14, 24), (16, 24), (18, 24), (14, 26), (16, 26), (18, 26), (14, 28), (16, 28), (18, 28)):
-	old_or("dungeon/floor_old.glb", x + 1.0, 2.0, z + 1.0, rng.choice([0, 90, 180, 270]), "floor", 0)
+	if (x, z) == (16, 24):
+		break_floor(x + 1.0, 2.0, z + 1.0)
+	else:
+		old_or("dungeon/floor_old.glb", x + 1.0, 2.0, z + 1.0, rng.choice([0, 90, 180, 270]), "floor", 0)
 for x, z in ((16.2, 30.2), (20.2, 30.2), (20.2, 26.0)):
 	piece("pillar", x, 0.0, z)
-# Ladders (2 m pieces stacked, one more above the top to step off): up onto the Lower Walk, and the Rockfall Ledge up
-# through the deck's hole.
+# Ladders (2 m pieces): up onto the Lower Walk (its top level with the boards: owner, Nov 21, F541 "way too long"), and
+# the Rockfall Ledge up through the deck's hole (1 m above the deck: you step off sideways).
+piece("ladder", 15.0, 0.24, 46.2, 0)
 for k in range(2):
-	piece("ladder", 15.0, 0.24 + 2.0 * k, 46.2, 0)
-for k in range(3):
 	piece("ladder", 19.0, 2.24 + 2.0 * k, 24.2, 0)
 for x, z, m in ((15.0, 25.5, "trap_drip_fat"), (16.6, 27.6, "trap_drip_cluster"), (15.4, 29.2, "trap_drip_thin")):
 	prop("dungeon/%s.glb" % m, x, 15.9, z, rng.choice([0, 120, 240]), role="trap", tilt=180.0, floor=2.0, warn=0.35,
@@ -280,8 +304,8 @@ for x, z, m in ((15.0, 25.5, "trap_drip_fat"), (16.6, 27.6, "trap_drip_cluster")
 prop("cave/boulder_round.glb", 15.4, 2.0, 28.0, 30.0, scale=2.2, role="secret", label="Hidden boulder (hit it)")
 prop("dungeon/trap_chest_spikes.glb", 11.5, 2.0, 28.0, 90.0, role="trap", label="Spike holes round the chest")
 chest("chest_small", 11.0, 28.0, 90.0, "Old tools (always): shoot it first", True, "buried", y=2.24)
-creature("lost_miner", 15.0, 37.0, 180.0, 2.0)
-creature("lost_miner", 15.0, 41.0, 180.0, 2.0)
+creature("lost_miner", 31.0, 38.0, 180.0)   # (F540: down with the rats, not on the Lower Walk)
+creature("lost_miner", 39.0, 37.5, 200.0)
 creature("tunnel_rat", 34.0, 36.0, 180.0)
 creature("tunnel_rat", 36.5, 37.0, 200.0)
 
@@ -294,13 +318,27 @@ prop("decor/shack_shelf.glb", 29.6, F2, 21.0, 270.0)
 prop("decor/grain_sacks.glb", 25.4, F2, 19.4, 30.0)
 chest("chest_small", 28.4, 19.4, 180.0, "Store chest", y=F2)
 chest("chest_stone", 26.0, 15.2, 180.0, "Vault chest (always)", True, "vault", y=F2)
-creature("lost_miner", 40.0, 26.0, 270.0, L2)
-creature("lost_miner", 42.5, 25.0, 270.0, L2)
+creature("lost_miner", 27.0, 25.2, 270.0, L2)   # (F542: before the swinging boulder, where you meet them first)
+creature("lost_miner", 28.8, 26.6, 270.0, L2)
 prop("decor/mushroom_fountain.glb", 49.5, F2 + 0.01, 31.0, 0.0, role="heal", label="Healing basin")
 lights.append([49.5, L2 + 1.6, 31.0])
 prop("decor/shack_bench.glb", 51.4, F2, 31.0, 270.0)
-for k in range(4):
-	piece("ladder", 45.0, F2 + 2.0 * k, 34.2, 0)
+# The upper ladder (owner, Nov 21, F546): walk round to its front (south) and climb; it ends level with the top deck.
+# 2 pieces at 1.25x (2.5 m each). On its right, out of the rock face (x 46): two spear walls, one above the other, their
+# stake rows 1.5 m apart. They sleep until someone comes near, then stab in and out for good; they hit any part of a
+# climber, never someone standing on a deck (test_the_ladder_spikes).
+LADDER_UP = (45.2, 34.2)
+for k in range(2):
+	piece("ladder", LADDER_UP[0], F2 + 2.5 * k, LADDER_UP[1], 0, 1.25)
+SPIKE_Z = 35.16
+piece("half_wall", 46.0, F2, SPIKE_Z, 1)
+for k, ph in ((0, 0.0), (1, 0.4)):
+	prop("dungeon/trap_spear_wall.glb", 46.0, F2 + 1.0 + 2.0 * k, SPIKE_Z, 270.0, role="trap", phase=ph, climb=True,
+		wake=2.5, label="Rows of holes by the ladder" if k == 0 else "")
+prop("dungeon/wall_old.glb", 46.0, F2 + 5.0, SPIKE_Z, 270.0)
+# The Climbers' Rest spear wall's back (its stakes run 0.9 m back): boxed in, so you don't see them from the room (F544).
+prop("dungeon/wall_old.glb", 47.32, L2, 33.0, 270.0)
+piece("wall_narrow", 46.66, L2, 32.0, 0)
 
 # ---- 5. Level 3: Crusher Gallery, Rat Roost (loose stone), Top Hall (the Prop Warden), the top deck, the slide. ----
 F3 = L3 + 0.24
@@ -333,7 +371,7 @@ ROT = ["junk_rubble_wood", "junk_rubble_wood_b", "junk_rubble_wood_c", "junk_rub
 KEEP_OUT = [(c["pos"][0], c["pos"][2], 1.2) for c in creatures] + [(c["pos"][0], c["pos"][2], 1.2) for c in chests] + \
 	[(p["pos"][0], p["pos"][2], 1.3) for p in props if p["role"] in ("door", "trap", "secret", "heal", "loot")
 		and "spikes" not in p["model"] and "floor" not in p["model"] and "chain" not in p["model"]] + \
-	[(15.0, 47.0, 1.6), (19.0, 24.6, 1.4), (45.0, 34.6, 1.4), (35.4, 46.0, 1.6), (31.0, 45.0, 1.4), (28.5, 43.5, 1.4),
+	[(15.0, 47.0, 1.6), (19.0, 24.6, 1.4), (45.2, 34.7, 1.4), (35.4, 46.0, 1.6), (31.0, 45.0, 1.4), (28.5, 43.5, 1.4),
 		(34.5, 41.5, 1.4), (27.0, 48.0, 1.6), (30.0, 54.0, 2.5)]
 placed = []
 
@@ -347,6 +385,8 @@ def scatter(n, y, x0, x1, z0, z1, kinds=ROT, gap=1.1):
 			continue
 		if any((x - a) ** 2 + (z - b) ** 2 < gap * gap and abs(y - c) < 1 for a, b, c in placed):
 			continue
+		if any(abs(x - a) < 1.4 and abs(z - b) < 1.4 and abs(y - c) < 0.5 for a, b, c in broken):
+			continue   # (nothing lies on the rotten boards)
 		placed.append((x, z, y))
 		prop("dungeon/%s.glb" % rng.choice(kinds), x, y, z, rng.uniform(0, 360))
 		n -= 1
@@ -368,10 +408,175 @@ scatter(2, F2, 24.6, 27.6, 21.0, 23.4)
 scatter(3, F3, 31.0, 43.0, 13.0, 23.0, ROT + ["junk_bones", "junk_helmet"], gap=1.6)   # the Top Hall
 scatter(2, F3, 14.6, 19.4, 12.6, 17.4, ["junk_bones", "junk_rubble_wood_c", "junk_rubble_wood_e"])   # the Roost
 # Old lanterns left on the decks and the walk (they still glow a little).
-for x, y, z in ((26.6, F2, 24.5), (42.6, F2, 25.0), (28.0, F3, 24.5), (44.6, F3, 31.0), (14.5, 2.24, 33.5),
+for x, y, z in ((26.6, F2, 24.5), (38.8, F2, 24.6), (28.0, F3, 24.5), (44.6, F3, 31.0), (14.5, 2.24, 33.5),
 		(29.6, 0.0, 44.2)):
 	prop("dungeon/junk_lantern.glb", x, y, z, rng.uniform(0, 360))
 	lights.append([x, y + 0.8, z])
+
+# ---- 7. A real cave (owner, Nov 21, F539: "less boxy, many more stalactites"): stalactites hanging in clumps from the
+# 16 m roof, big rock lumps bulging out of the walls and the roof's edges, boulders heaped at the wall feet, moss
+# hanging off rock shelves. All of it is "grown" (placement rule): kept clear of everything built (BUILT boxes), of the
+# paths, the creatures, the rope slide's line and the swinging boulder, and over a floor it leaves at least 2.2 m of
+# head room. Checked again in the game's tests (test_the_cave_keeps_clear). ----
+ROOF = 16.0
+# Measured model sizes at scale 1: half width, and how far down it hangs (drips) or up it stands (rocks).
+DRIPS = {"cave/drip_a.glb": (0.4, 0.91, 0.17), "cave/drip_b.glb": (0.34, 1.07, 0.17), "cave/drip_d.glb": (0.44, 0.32, 0.17)}
+ROCKS = {"cave/grock_c.glb": (0.43, 0.96), "cave/grock_h.glb": (0.98, 2.06), "cave/grock_j.glb": (0.99, 1.9),
+	"cave/grock_k.glb": (1.31, 2.23), "cave/grock_q.glb": (2.32, 3.72), "cave/grock_medium_2.glb": (1.52, 1.9)}
+SHELVES = ["cave/shelf_a.glb", "cave/shelf_b.glb", "cave/shelf_c.glb", "cave/shelf_d.glb"]
+HEAD = 2.2   # m of head room kept over every floor
+
+
+def _box_of_piece(q):
+	sc = float(q.get("scale", 1.0))
+	h = {"doorway": 3.1, "floor": 0.3, "railing": 1.1, "half_wall": 1.05}.get(q["id"], 2.1) * sc
+	x, y, z = q["pos"]
+	return (x - 1.05 * sc, x + 1.05 * sc, z - 1.05 * sc, z + 1.05 * sc, y - 0.05, y + h)
+
+
+def _box_of_prop(q):
+	sc = float(q.get("scale", 1.0))
+	x, y, z = q["pos"]
+	if "swing_boulder" in q["model"]:   # its chain runs up to the roof; it swings along the bridge
+		return (x - 4.5, x + 4.5, z - 3.0, z + 3.0, y - 2.0, ROOF + 1.0)
+	if q.get("tilt", 0) == 180.0:
+		return (x - 1.1 * sc, x + 1.1 * sc, z - 1.1 * sc, z + 1.1 * sc, y - 3.2 * sc, y + 0.3)
+	h = 0.3 if "floor" in q["model"] else (1.1 if "railing" in q["model"] else 3.2)
+	return (x - 1.1 * sc, x + 1.1 * sc, z - 1.1 * sc, z + 1.1 * sc, y - 0.3, y + h * sc)
+
+
+BUILT = [_box_of_piece(q) for q in pieces] + [_box_of_prop(q) for q in props if q["model"].startswith("dungeon/")
+	or q["model"].startswith("decor/")] + [(c["pos"][0] - 1.0, c["pos"][0] + 1.0, c["pos"][2] - 1.0, c["pos"][2] + 1.0,
+	c["pos"][1] - 0.3, c["pos"][1] + 2.4) for c in creatures + chests]
+# The rope slide's rope: from its top post down to Base Camp (rope_slide.glb's two posts, turned to its yaw).
+SLIDE_TOP, SLIDE_BOTTOM = (38.6, F3 + 2.3, 27.4), (35.4, F3 - 8.24, 46.0)
+
+
+def _near_slide(x, z, ylo, yhi, r):
+	(ax, ay, az), (bx, by, bz) = SLIDE_TOP, SLIDE_BOTTOM
+	for k in range(41):
+		t = k / 40.0
+		px, py, pz = ax + (bx - ax) * t, ay + (by - ay) * t, az + (bz - az) * t
+		if (px - x) ** 2 + (pz - z) ** 2 < (r + 1.5) ** 2 and ylo - 1.5 < py < yhi + 1.5:
+			return True
+	return False
+
+
+def clear(x, z, r, ylo, yhi):
+	"""Is a grown thing (r wide each way, from ylo to yhi) clear of everything built and of the rope?"""
+	for x0, x1, z0, z1, y0, y1 in BUILT:
+		if x + r > x0 and x - r < x1 and z + r > z0 and z - r < z1 and yhi > y0 and ylo < y1 + HEAD:
+			return False
+	return not _near_slide(x, z, ylo, yhi, r)
+
+
+def in_cave(x, z, r):
+	return 14.0 + r * 0.3 <= x <= 46.0 - r * 0.3 and 24.0 + r * 0.3 <= z <= 50.0 - r * 0.3
+
+
+def grown(model, x, y, z, yaw, scale, tilt=0.0):
+	prop(model, x, y, z, yaw, round(scale, 2), tilt=tilt, grown=True)
+
+
+# Stalactites in clumps (2-6 together), all over the roof except over the Rockfall Ledge (its loose ones are a trap).
+drips = 0
+for _ in range(400):
+	if drips >= 90:
+		break
+	cx, cz = rng.uniform(14.6, 45.4), rng.uniform(24.4, 49.6)
+	if cx < 21.0 and cz < 31.0:
+		continue
+	for _ in range(rng.randint(2, 6)):
+		x, z = cx + rng.uniform(-1.6, 1.6), cz + rng.uniform(-1.6, 1.6)
+		m = rng.choice(list(DRIPS) + ["cave/drip_a.glb", "cave/drip_b.glb"])
+		half, down, base = DRIPS[m]
+		sc = rng.uniform(1.2, 3.4)
+		y = ROOF + base * sc * 0.8
+		r = half * sc
+		if not in_cave(x, z, r) or not clear(x, z, r, y - down * sc, ROOF):
+			continue
+		grown(m, x, y, z, rng.uniform(0, 360), sc, 180.0)
+		drips += 1
+# And shorter ones over the tower (you look up at them from the decks).
+for _ in range(300):
+	if drips >= 104:
+		break
+	x, z = rng.uniform(21.0, 45.4), rng.uniform(25.2, 28.8)
+	m = rng.choice(list(DRIPS))
+	half, down, base = DRIPS[m]
+	sc = rng.uniform(1.0, 2.2)
+	y = ROOF + base * sc * 0.8
+	if clear(x, z, half * sc, y - down * sc, ROOF):
+		grown(m, x, y, z, rng.uniform(0, 360), sc, 180.0)
+		drips += 1
+# Rock lumps on the walls (half in the rock), from the wall feet up to the roof's edge: x 14 (west), x 46 (east),
+# z 50 (south, the way-in side), z 24 (the cliff, only up above the top deck).
+lumps = 0
+for _ in range(900):
+	if lumps >= 46:
+		break
+	side = rng.choice("wwesssen")
+	m = rng.choice(list(ROCKS))
+	half, tall = ROCKS[m]
+	sc = rng.uniform(0.7, 1.4) if "grock_q" in m else rng.uniform(1.0, 2.2)
+	r = half * sc
+	y = rng.choice([-0.3, rng.uniform(0.0, ROOF - tall * sc * 0.6)])
+	if side == "w":
+		x, z = 14.0 + rng.uniform(-0.3, 0.3), rng.uniform(24.5, 49.5)
+	elif side == "e":
+		x, z = 46.0 + rng.uniform(-0.3, 0.3), rng.uniform(24.5, 49.5)
+	elif side == "s":
+		x, z = rng.uniform(14.5, 45.5), 50.0 + rng.uniform(-0.3, 0.3)
+	else:
+		x, z = rng.uniform(14.5, 45.5), 24.0 + rng.uniform(-0.2, 0.2)
+	top = min(y + tall * sc, ROOF + 0.5)
+	if y < 0.5 and any((x - a) ** 2 + (z - b) ** 2 < (rr + r + 0.4) ** 2 for a, b, rr in KEEP_OUT):
+		continue
+	if 27.0 < x < 33.0 and z > 47.0 and y < 5.0:
+		continue   # (the way in)
+	if not clear(x, z, r * 1.42 + 0.3, y, top):   # (turned and tilted, its corners reach further)
+		continue
+	grown(m, x, y, z, rng.uniform(0, 360), sc, rng.uniform(-18.0, 18.0))
+	lumps += 1
+# Lumps hanging off the roof's edge, all round (upside down, half in the roof).
+for _ in range(300):
+	if lumps >= 70:
+		break
+	m = rng.choice(list(ROCKS))
+	half, tall = ROCKS[m]
+	sc = rng.uniform(0.6, 1.0) if "grock_q" in m else rng.uniform(1.0, 1.8)
+	r = half * sc
+	edge = rng.choice("wesn")
+	x = {"w": 14.3, "e": 45.7}.get(edge, rng.uniform(15.0, 45.0))
+	z = {"s": 49.7, "n": 24.3}.get(edge, rng.uniform(25.0, 49.0))
+	y = ROOF + tall * sc * 0.35
+	if not clear(x, z, r * 1.42 + 0.3, y - tall * sc, ROOF):
+		continue
+	grown(m, x, y, z, rng.uniform(0, 360), sc, 180.0 + rng.uniform(-15.0, 15.0))
+	lumps += 1
+# Rock shelves on the walls with moss hanging off them (the cave's name).
+shelves = 0
+for _ in range(300):
+	if shelves >= 14:
+		break
+	side = rng.choice("wes")
+	sc = rng.uniform(2.0, 3.2)
+	y = rng.uniform(4.0, 13.0)
+	if side == "w":
+		x, z, yaw = 14.0, rng.uniform(31.0, 49.0), 90.0
+	elif side == "e":
+		x, z, yaw = 46.0, rng.uniform(36.0, 49.0), 270.0
+	else:
+		x, z, yaw = rng.uniform(16.0, 44.0), 50.0, 180.0
+	r = 0.6 * sc
+	if not clear(x, z, r, y - 0.6 * sc - 1.2, y + 0.5 * sc):
+		continue
+	grown(rng.choice(SHELVES), x, y, z, yaw, sc)
+	fx, fz = {90.0: (0.4, 0.0), 270.0: (-0.4, 0.0), 180.0: (0.0, -0.4)}[yaw]
+	for k in (-1, 1):   # moss hanging over its front edge
+		dx, dz = (0.0, 0.35 * sc * k) if yaw != 180.0 else (0.35 * sc * k, 0.0)
+		grown("cave/moss_drape.glb", x + fx * sc + dx, y - 0.35 * sc, z + fz * sc + dz, yaw, 1.6)
+	shelves += 1
 
 plan = {"name": "Mossprop Workings", "map": "mossprop", "pieces": pieces, "props": props, "creatures": creatures,
 	"chests": chests, "lights": lights, "recipe_stand": RECIPE_STAND}

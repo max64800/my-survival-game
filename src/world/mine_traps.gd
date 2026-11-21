@@ -20,6 +20,8 @@ extends Node
 ##   dart_wall     the wall with the hole (fired by its tripwire, or its floor plate).
 ##   spears        Old Pell's spear wall: its stakes stab out SPEAR_REACH m and pull back, over and over (every computer
 ##                 off the same clock; a wall's "phase" sets when). Out, they hurt whoever stands in front of it.
+##                 With "wake" (Mossprop's ladder, F546) it sleeps until someone comes that near, then stabs on for good;
+##                 with "climb" its stakes hit any part of you (you climb past it on a ladder).
 ##   push          Old Pell's push wall: step in front of it and, a moment later, its block slams out PUSH_OUT m and
 ##                 shoves you away from the wall (onto the rotten boards over the spike pit), then slides back in.
 ##                 Step in and jump back to set it off safely, then pass while it slides back.
@@ -62,6 +64,8 @@ const SPEAR_HOLD := 0.35      ## seconds they stay out
 const SPEAR_BACK := 0.5       ## seconds to pull back (then they wait in the wall: the time to go)
 const SPEAR_REACH := 0.8      ## m the stakes stick out of the wall
 const SPEAR_DAMAGE := 22.0
+const SPEAR_ROWS_AT := Vector2(0.5, 1.25)  ## m up the wall: the bottom of the lower stakes, the top of the upper ones
+const SPEAR_DWARF := 1.35     ## m from a dwarf's feet to the top of the head (a climb wall's stakes hit any of it)
 ## Owner, Nov 20 (first play of Old Pell's): "pistons should ragdoll you ... move further and be quicker", no marks.
 const PUSH_WAIT := 0.15       ## seconds from stepping in front of it to the slam (a click: jump back!)
 const PUSH_SLAM := 0.12
@@ -823,14 +827,37 @@ static func spear_out(t: float) -> float:
 
 
 ## Is `p` (feet) in front of a spear wall, where its stakes reach when `out` of the way out?
+## A "climb" wall (beside a ladder, F546) hurts anyone whose body (feet to head) meets its stakes, not only feet in front.
 static func in_spears(th: Dictionary, p: Vector3, out: float) -> bool:
 	var q := (th.xform as Transform3D).affine_inverse() * p
-	return absf(q.x) < 0.95 and q.z > 0.0 and q.z < SPEAR_REACH * out + 0.35 and q.y > -0.3 and q.y < 1.0
+	var low := -0.3
+	var high := 1.0
+	if th.prop.get("climb", false):
+		low = SPEAR_ROWS_AT.x - SPEAR_DWARF
+		high = SPEAR_ROWS_AT.y
+	return absf(q.x) < 0.95 and q.z > 0.0 and q.z < SPEAR_REACH * out + 0.35 and q.y > low and q.y < high
+
+
+## Is a sleeping spear wall (prop "wake" = how near, m) woken by someone at `p`? Near it across, and not far above
+## or below.
+static func wakes_spears(th: Dictionary, p: Vector3) -> bool:
+	var c: Vector3 = (th.xform as Transform3D).origin
+	return Vector2(p.x - c.x, p.z - c.z).length() < float(th.prop.get("wake", 0.0)) and p.y > c.y - 3.0 and p.y < c.y + 2.0
 
 
 ## Everyone: the stakes stab out and back (the same clock everywhere); the host hurts whoever they reach.
 func _move_spears(id: int, th: Dictionary, now: float, auth: GameAuthority) -> void:
-	var t := now - float(th.prop.get("phase", 0.0))
+	if th.prop.has("wake") and float(th.get("woke", -1.0)) < 0.0:  # asleep (F546): still, until someone comes near
+		if auth and auth.is_host():
+			for pid in auth.players:
+				var who: Node3D = auth.players[pid].node
+				if who and wakes_spears(th, who.global_position):
+					print("MINE: player %d woke a spear wall" % pid)
+					_ev_spears_wake.rpc(id, now)
+					break
+		if float(th.get("woke", -1.0)) < 0.0:
+			return
+	var t := now - float(th.get("woke", 0.0)) - float(th.prop.get("phase", 0.0))
 	var out := spear_out(t)
 	var sp := th.get("spears") as Node3D
 	if sp:
@@ -854,6 +881,14 @@ func _move_spears(id: int, th: Dictionary, now: float, auth: GameAuthority) -> v
 		print("MINE: player %d stabbed by a spear wall" % pid)
 		auth.hurt(pid, SPEAR_DAMAGE)
 		auth.tell(pid, "Sharp stakes stab out of the wall!")
+
+
+## Everyone: a sleeping spear wall wakes (the host saw someone come near) and stabs on from then, for good.
+@rpc("authority", "call_local", "reliable")
+func _ev_spears_wake(id: int, at: float) -> void:
+	var th: Dictionary = db.things.get(id, {})
+	if not th.is_empty() and float(th.get("woke", -1.0)) < 0.0:
+		th.woke = at
 
 
 ## Everyone: a push wall fires (the host saw someone step in front of it).

@@ -127,6 +127,8 @@ func _ready() -> void:
 	_size = s
 	add_child(model)
 	rig = CreatureRig.find(model)  # (a skeleton creature: it plays its model's own moves)
+	if rig and data.get("front_shield", false):
+		rig.hold_shield()  # (the Prop Warden: his plank shield up in front while he comes at you, F548)
 	if rig and state == State.SLEEP and data.get("rises", false):
 		model.rotation.y = fposmod(float(uid) * 2.39996, TAU)  # (each lies its own way: owner, Nov 20, "all the same direction")
 		rig.lie()  # scattered on the floor until someone comes near (F462)
@@ -509,14 +511,16 @@ func think(delta: float, mgr: Node) -> void:
 				var rush := target.global_position - global_position
 				rush.y = 0
 				var charge_speed := maxf(data.run * 2.0, _attack.reach / maxf(_attack.tell * 0.6, 0.1))
-				if data.get("straight_charge", false):
+				if data.get("straight_charge", false) or _attack.get("straight", false):
 					# A charge doesn't steer: sidestep and it thunders past (then its back is open).
+					# (`straight` on one attack: the Prop Warden's Shield Charge, F548; he breaks nothing on the way.)
 					if _charge_dir == Vector3.ZERO:
 						# Locked once, and it faces that way at once: no standing to turn in the middle of its run (F472).
 						_charge_dir = charge_line(-Basis(Vector3.UP, model.rotation.y).z, rush)
 						model.rotation.y = atan2(-_charge_dir.x, -_charge_dir.z)
 					_move(delta, _charge_dir, charge_speed)
-					mgr.charge_smash(self, _charge_dir)  # it breaks what it runs into (owner F447)
+					if data.get("straight_charge", false):
+						mgr.charge_smash(self, _charge_dir)  # it breaks what it runs into (owner F447)
 				elif rush.length() > 1.2:
 					_move(delta, rush.normalized(), charge_speed)
 				else:
@@ -730,6 +734,11 @@ func _pick_attack(dist: float, mgr: Node = null) -> Dictionary:
 func _start_attack(atk: Dictionary, mgr: Node) -> void:
 	if atk.has("rest"):
 		_rest_until[atk.name] = _clock + float(atk.rest)
+	if atk.has("quiet_after"):
+		# No other swing until this long after the blow (F526: a Lost Miner's leap is its only blow, no chop on landing).
+		for o: Dictionary in attack_options():
+			if o.name != atk.name:
+				_rest_until[o.name] = maxf(float(_rest_until.get(o.name, 0.0)), _clock + float(atk.tell) + float(atk.quiet_after))
 	_attack = atk
 	_charge_dir = Vector3.ZERO  # a new charge picks its own straight line
 	state = State.ATTACK

@@ -180,6 +180,74 @@ func test_foreman_spin_rests() -> void:
 	_teardown()
 
 
+## F547 (owner, Nov 21): the Prop Warden's Plank Sweep comes at random against his chop, not only up close; from
+## further off he charges behind his shield (F548), never from close by.
+func test_prop_warden_picks_his_moves() -> void:
+	await _setup()
+	var m := _spawn("prop_warden", Vector3(12, 0, 0))
+	var seen := {}
+	for i in 60:
+		seen[String(m._pick_attack(2.2).get("name", ""))] = true
+	check(seen.has("Axe Chop") and seen.has("Plank Sweep"), "at chop range he picks the chop or the sweep (%s)" % [seen.keys()])
+	check(not seen.has("Shield Charge"), "no charge from close by")
+	var far := m._pick_attack(6.0)
+	check_eq(String(far.get("name", "")), "Shield Charge", "from 6 m he charges")
+	m._start_attack(far, auth.monsters)
+	check(m._pick_attack(6.0).is_empty(), "the charge rests before it comes again")
+	_teardown()
+
+
+## F548 (owner, Nov 21: "no shield showed"): the Prop Warden holds his shield up in front while he comes at you, and
+## lowers it for his two-handed moves.
+func test_prop_warden_raises_his_shield() -> void:
+	var model := MonsterModel.build("foreman", Color.WHITE, 1.0, false, "prop_warden", 0)
+	var holder := Node3D.new()
+	tree.root.add_child(holder)
+	holder.add_child(model)
+	var rig := CreatureRig.find(model)
+	check(rig != null, "he moves by his skeleton")
+	if rig == null:
+		holder.free()
+		return
+	rig.hold_shield()
+	check(rig.shield != null, "he has a shield arm (from the Block move)")
+	if rig.shield == null:
+		holder.free()
+		return
+	for i in 20:
+		rig.step(0.05, 1.3, 3.3, true, false)
+	check(rig.shield.influence > 0.95, "walking at you: the shield is up (%.2f)" % rig.shield.influence)
+	rig.attack("2H_Melee_Attack_Spin", 0.97)
+	for i in 10:
+		rig.step(0.05, 0.0, 3.3, true, false)
+	check(rig.shield.influence < 0.05, "the sweep needs both hands: the shield comes down (%.2f)" % rig.shield.influence)
+	var sk := rig.skel
+	var hand := sk.find_bone("hand.l")
+	var guard := Quaternion(rig.shield._pose.get(hand, Quaternion.IDENTITY))
+	var rest := Quaternion(sk.get_bone_pose_rotation(hand))
+	check(guard.angle_to(rest) > 0.05, "the Block pose really moves his left hand")
+	holder.free()
+	var plain := MonsterModel.build("foreman", Color.WHITE, 1.0, false, "foreman", 0)
+	var h2 := Node3D.new()
+	h2.add_child(plain)
+	var r2 := CreatureRig.find(plain)
+	check(r2 != null and r2.shield == null, "the Pit Boss has no shield arm")
+	h2.free()
+
+
+## F526 (owner, Nov 21): the Lost Miner's leap was way too long and it chopped again as it landed: a short leap, its only blow.
+func test_lost_miner_only_leaps() -> void:
+	var leap: Dictionary = Monsters.LIST.lost_miner.attacks.filter(func(a): return a.get("lunge", false))[0]
+	check(leap.reach <= 3.0, "it leaps from 3 m at most (was 4)")
+	await _setup()
+	var m := _spawn("lost_miner", Vector3(12, 0, 0))
+	var picked := m._pick_attack(2.6)
+	check_eq(String(picked.get("name", "")), String(leap.name), "from 2.6 m it leaps")
+	m._start_attack(picked, auth.monsters)
+	check(m._pick_attack(1.0).is_empty(), "landing next to you it doesn't swing again")
+	_teardown()
+
+
 ## Owner, Nov 20: the bone piles all lay the same way; and the Foreman's swing breaks a fallen miner's stone.
 func test_piles_lie_every_way_and_the_foreman_smashes_stone() -> void:
 	await _setup()
@@ -224,7 +292,7 @@ func test_pick_glint_comes_before_the_blow() -> void:
 
 
 ## Owner, Nov 21 ("a tiny bit harder"): the Foreman's whirl goes on and slides after you (dodge it); the Lost Miners
-## leap in with a fast chop from up to 4 m (no knock-down).
+## leap in with a fast chop from up to 3 m (no knock-down; F526: was 4, "way too long").
 func test_foreman_whirl_chases_and_lost_miners_leap() -> void:
 	var whirl: Dictionary = Monsters.LIST.foreman.attacks[1]
 	var turns := 1
@@ -246,7 +314,7 @@ func test_foreman_whirl_chases_and_lost_miners_leap() -> void:
 		if a.get("lunge", false):
 			leap = a
 	check(not leap.is_empty(), "the Lost Miner has a leap")
-	check_eq(float(leap.get("reach", 0.0)), 4.0, "from up to 4 m")
+	check_eq(float(leap.get("reach", 0.0)), 3.0, "from up to 3 m (F526)")
 	check(not MonsterManager.is_charge(leap), "a leap only hits: no knock-down or shove like a beetle's charge")
 	for a: Dictionary in Monsters.LIST.tunnel_rat.attacks:
 		check(not a.get("lunge", false), "the small Tunnel Rats stay as they are")

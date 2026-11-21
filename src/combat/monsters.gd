@@ -85,9 +85,11 @@ const LIST := {
 		color = Color(0.7, 0.82, 0.78), shape = "lost_miner", recover = 1.2,
 		attacks = [{name = "Frost Pick", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_hiss", tell = 0.9, damage = 14, type = "pierce", reach = 1.8, parry = "any", buildup = {chill = 34}},
 			{name = "Pick Jab", anim = "1H_Melee_Attack_Stab", tell = 0.7, damage = 10, type = "pierce", reach = 1.9, parry = "any", buildup = {chill = 34}},
-			# Owner, Nov 21 ("the bigger ones should lunge forward, quite fast"): from 2-4 m it leaps in with a chop (a
+			# Owner, Nov 21 ("the bigger ones should lunge forward, quite fast"): from 2-3 m it leaps in with a chop (a
 			# small lunge: it only hits, no knock-down), then stands catching its breath; 4 s before the next.
-			{name = "Leaping Chop", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_hiss", tell = 0.9, damage = 14, type = "pierce", reach = 4.0, parry = "any", lunge = true, small_lunge = true, rest = 4.0, buildup = {chill = 34}}],
+			# F526 (owner, Nov 21, Mossprop: "the dash is way too long, and they do two attacks"): from 3 m, not 4, and
+			# after the leap no other swing for `quiet_after` s (it was chopping again the moment it landed).
+			{name = "Leaping Chop", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_hiss", tell = 0.9, damage = 14, type = "pierce", reach = 3.0, parry = "any", lunge = true, small_lunge = true, rest = 4.0, quiet_after = 3.5, buildup = {chill = 34}}],
 		drops = []},
 	# The end boss with his Lost Miners (F467): a big two-handed chop, and the spin (only a shield parries it, it
 	# knocks you down: step back out of it). Owner, Nov 20: the spin reached far too far and he only ever spun
@@ -106,18 +108,23 @@ const LIST := {
 				follow = {tell = 0.5, damage = 12, whirl_speed = 3.8, warn_sound = null, follow = {tell = 0.5, damage = 12,
 					follow = {tell = 0.5, damage = 12, follow = {tell = 0.5, damage = 20, knockdown = true}}}}}],
 		drops = []},
-	# Mossprop Workings' boss (owner, Nov 21): the Pit Boss's body for now, with a big plank shield in front: hits from
-	# the front do a fifth (MonsterManager._shield_blocks) unless heavy or he is stunned.
+	# Mossprop Workings' boss (owner, Nov 21): a mossy skeleton miner with a felling axe and a plank shield on his left
+	# arm (his own model, F468): hits from the front do a fifth (MonsterManager._shield_blocks) unless heavy or he is stunned.
+	# F548 (owner, Nov 21: "a different boss, not the Pit Boss's moves"): he holds the shield up in front while he walks
+	# at you (ShieldArm), swings the axe one-handed, and from 3.5-8 m he charges behind the shield in a straight line
+	# (knocks you down; step aside and he runs past, then stands catching his breath: hit his back).
+	# F547: 300 health (was 420: "way too much"), and the Plank Sweep comes at random against the chop (same reach).
 	# Rally Slam (owner's picks, Nov 21): about every 25 s, if a fallen Lost Miner lies in stone in his room, he raises
 	# his plank and slams it down (2 s: a deep rumble, the statues glow and shake), then up to 2 of them get up (never
 	# more than 3 miners up at once). Hit him during the slam (his shield is up over his head) and it is called off;
-	# a statue you mined away can't be raised. He doesn't smash his own miners' stone (the Pit Boss does).
+	# a statue you mined away can't be raised. He doesn't smash his own miners' stone (the Pit Boss does; owner kept it, Nov 21).
 	"prop_warden": {name = "The Prop Warden", dungeon_only = true, rises = true, rise_near = 10.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 10, boss = true,
-		front_shield = true, size = 1.0, height = 1.9, hp = 420, armor = 50, stun = 200, slash = 1.0, blunt = 1.25, pierce = 0.75,
+		front_shield = true, size = 1.0, height = 1.9, hp = 300, armor = 50, stun = 200, slash = 1.0, blunt = 1.25, pierce = 0.75,
 		fire = 1.25, frost = 0.5, poison = 1.0, walk = 1.3, run = 3.3, pack = [1, 1], xp = 80,
 		color = Color(0.5, 0.52, 0.4), shape = "foreman", recover = 1.6,
-		attacks = [{name = "Great Chop", anim = "2H_Melee_Attack_Chop", warn_sound = "beetle_rumble", tell = 1.0, damage = 24, type = "slash", reach = 2.3, parry = "any"},
-			{name = "Plank Sweep", anim = "2H_Melee_Attack_Spin", warn_sound = "beetle_rumble", tell = 0.97, damage = 16, type = "blunt", reach = 2.0, rest = 8.0, parry = "shield", knockdown = true},
+		attacks = [{name = "Axe Chop", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_rumble", tell = 0.9, damage = 22, type = "slash", reach = 2.3, parry = "any"},
+			{name = "Plank Sweep", anim = "2H_Melee_Attack_Spin", warn_sound = "beetle_rumble", tell = 0.97, damage = 16, type = "blunt", reach = 2.3, rest = 8.0, parry = "shield", knockdown = true},
+			{name = "Shield Charge", anim = "Running_B", warn_sound = "beetle_rumble", tell = 1.2, damage = 20, type = "blunt", reach = 8.0, min_reach = 3.5, rest = 9.0, parry = "shield", knockdown = true, lunge = true, straight = true},
 			{name = "Rally Slam", anim = "2H_Melee_Attack_Chop", warn_sound = "beetle_rumble", tell = 2.0, damage = 0, type = "blunt", reach = 14.0, rest = 25.0, parry = "any", raise_miners = 2, land_sound = "snail_slam"}],
 		drops = []},
 }

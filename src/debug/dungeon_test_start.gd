@@ -121,7 +121,8 @@ const MOSSPROP_VIEWS := [
 	["mp_tower", Vector3(40.0, 0.3, 40.0), Vector3(30.0, 6.0, 26.0)],
 	["mp_deck2", Vector3(28.0, 5.3, 25.0), Vector3(40.0, 5.0, 27.0)],
 	["mp_slide", Vector3(36.0, 10.3, 25.0), Vector3(36.0, 2.0, 44.0)],
-	["mp_warden", Vector3(37.0, 10.3, 22.0), Vector3(37.0, 11.0, 13.0)]]
+	["mp_warden", Vector3(37.0, 10.3, 22.0), Vector3(37.0, 11.0, 13.0)],
+	["mp_warden_side", Vector3(41.0, 10.3, 21.0), Vector3(36.5, 10.8, 18.0)]]  # (F548: his shield up, seen from the side)
 
 
 ## Old Pell's Diggings' robot pictures (-- dungeontest dungeon3 shots=<folder>): [name, stand (map metres), look at].

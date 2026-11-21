@@ -1625,27 +1625,17 @@
    "id": "floor",
    "mat": "plank_root",
    "pos": [
+    45.0,
+    5.0,
+    33.0
+   ],
+   "rot": 0
+  },
+  {
+   "id": "floor",
+   "mat": "plank_root",
+   "pos": [
     43.0,
-    5.0,
-    27.0
-   ],
-   "rot": 0
-  },
-  {
-   "id": "floor",
-   "mat": "plank_root",
-   "pos": [
-    45.0,
-    5.0,
-    29.0
-   ],
-   "rot": 0
-  },
-  {
-   "id": "floor",
-   "mat": "plank_root",
-   "pos": [
-    45.0,
     5.0,
     35.0
    ],
@@ -2196,10 +2186,90 @@
    "mat": "plank_root",
    "pos": [
     43.8,
+    8.0,
+    33.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "railing",
+   "mat": "plank_root",
+   "pos": [
+    44.15,
+    10.24,
+    33.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "mine_prop",
+   "mat": "plank_root",
+   "pos": [
+    42.2,
+    0.0,
+    33.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "brace",
+   "mat": "plank_root",
+   "pos": [
+    42.2,
+    3.0,
+    33.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "railing",
+   "mat": "plank_root",
+   "pos": [
+    42.15,
+    5.24,
+    33.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "brace",
+   "mat": "plank_root",
+   "pos": [
+    42.2,
     3.0,
     35.0
    ],
    "rot": 1
+  },
+  {
+   "id": "railing",
+   "mat": "plank_root",
+   "pos": [
+    42.15,
+    5.24,
+    35.0
+   ],
+   "rot": 1
+  },
+  {
+   "id": "railing",
+   "mat": "plank_root",
+   "pos": [
+    43.26,
+    5.24,
+    32.15
+   ],
+   "rot": 0
+  },
+  {
+   "id": "railing",
+   "mat": "plank_root",
+   "pos": [
+    43.26,
+    5.24,
+    35.85
+   ],
+   "rot": 0
   },
   {
    "id": "pillar",
@@ -2220,6 +2290,16 @@
     33.0
    ],
    "rot": 0
+  },
+  {
+   "id": "railing",
+   "mat": "plank_root",
+   "pos": [
+    15.85,
+    2.24,
+    33.0
+   ],
+   "rot": 1
   },
   {
    "id": "pillar",
@@ -2302,22 +2382,12 @@
    "rot": 0
   },
   {
-   "id": "railing",
-   "mat": "plank_root",
-   "pos": [
-    15.85,
-    2.24,
-    45.0
-   ],
-   "rot": 1
-  },
-  {
    "id": "floor",
    "mat": "plank_root",
    "pos": [
-    17.0,
+    15.0,
     2.0,
-    27.0
+    29.0
    ],
    "rot": 0
   },
@@ -2365,16 +2435,6 @@
    "id": "ladder",
    "mat": "plank_root",
    "pos": [
-    15.0,
-    2.24,
-    46.2
-   ],
-   "rot": 0
-  },
-  {
-   "id": "ladder",
-   "mat": "plank_root",
-   "pos": [
     19.0,
     2.24,
     24.2
@@ -2395,49 +2455,41 @@
    "id": "ladder",
    "mat": "plank_root",
    "pos": [
-    19.0,
-    6.24,
-    24.2
-   ],
-   "rot": 0
-  },
-  {
-   "id": "ladder",
-   "mat": "plank_root",
-   "pos": [
-    45.0,
+    45.2,
     5.24,
     34.2
    ],
-   "rot": 0
+   "rot": 0,
+   "scale": 1.25
   },
   {
    "id": "ladder",
    "mat": "plank_root",
    "pos": [
-    45.0,
-    7.24,
+    45.2,
+    7.74,
     34.2
    ],
-   "rot": 0
+   "rot": 0,
+   "scale": 1.25
   },
   {
-   "id": "ladder",
+   "id": "half_wall",
    "mat": "plank_root",
    "pos": [
-    45.0,
-    9.24,
-    34.2
+    46.0,
+    5.24,
+    35.16
    ],
-   "rot": 0
+   "rot": 1
   },
   {
-   "id": "ladder",
+   "id": "wall_narrow",
    "mat": "plank_root",
    "pos": [
-    45.0,
-    11.24,
-    34.2
+    46.66,
+    5.0,
+    32.0
    ],
    "rot": 0
   },
@@ -7717,7 +7769,7 @@
    "label": "The way in: round stone door"
   },
   {
-   "model": "dungeon/floor_old.glb",
+   "model": "dungeon/trap_floor_break.glb",
    "pos": [
     21.0,
     5.0,
@@ -7725,7 +7777,7 @@
    ],
    "yaw": 180,
    "scale": 1.0,
-   "role": "decor",
+   "role": "trap",
    "label": ""
   },
   {
@@ -7765,57 +7817,9 @@
    "label": "Rotten boards (they give way)"
   },
   {
-   "model": "dungeon/floor_old.glb",
-   "pos": [
-    29.0,
-    5.0,
-    25.0
-   ],
-   "yaw": 180,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
-   "model": "dungeon/floor_old.glb",
-   "pos": [
-    29.0,
-    5.0,
-    27.0
-   ],
-   "yaw": 0,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
-   "model": "dungeon/floor_old.glb",
-   "pos": [
-    39.0,
-    5.0,
-    25.0
-   ],
-   "yaw": 0,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
-   "model": "dungeon/floor_old.glb",
-   "pos": [
-    39.0,
-    5.0,
-    27.0
-   ],
-   "yaw": 270,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
    "model": "dungeon/trap_floor_break.glb",
    "pos": [
-    41.0,
+    29.0,
     5.0,
     25.0
    ],
@@ -7827,7 +7831,7 @@
   {
    "model": "dungeon/floor_old.glb",
    "pos": [
-    41.0,
+    29.0,
     5.0,
     27.0
    ],
@@ -7839,9 +7843,69 @@
   {
    "model": "dungeon/floor_old.glb",
    "pos": [
+    39.0,
+    5.0,
+    25.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    39.0,
+    5.0,
+    27.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_floor_break.glb",
+   "pos": [
+    41.0,
+    5.0,
+    25.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "trap",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    41.0,
+    5.0,
+    27.0
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_floor_break.glb",
+   "pos": [
     43.0,
     5.0,
     25.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "trap",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    43.0,
+    5.0,
+    27.0
    ],
    "yaw": 270,
    "scale": 1.0,
@@ -7855,7 +7919,7 @@
     5.0,
     25.0
    ],
-   "yaw": 180,
+   "yaw": 0,
    "scale": 1.0,
    "role": "decor",
    "label": ""
@@ -7868,6 +7932,18 @@
     27.0
    ],
    "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    45.0,
+    5.0,
+    29.0
+   ],
+   "yaw": 270,
    "scale": 1.0,
    "role": "decor",
    "label": ""
@@ -7879,7 +7955,7 @@
     5.0,
     31.0
    ],
-   "yaw": 270,
+   "yaw": 90,
    "scale": 1.0,
    "role": "decor",
    "label": ""
@@ -7888,6 +7964,18 @@
    "model": "dungeon/floor_old.glb",
    "pos": [
     45.0,
+    5.0,
+    35.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    43.0,
     5.0,
     33.0
    ],
@@ -9061,18 +9149,6 @@
    "label": ""
   },
   {
-   "model": "dungeon/railing_broken.glb",
-   "pos": [
-    44.15,
-    5.24,
-    33.0
-   ],
-   "yaw": 270.0,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
    "model": "dungeon/prop_old.glb",
    "pos": [
     43.8,
@@ -9080,30 +9156,6 @@
     33.0
    ],
    "yaw": 90.0,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
-   "model": "dungeon/brace_old.glb",
-   "pos": [
-    43.8,
-    8.0,
-    33.0
-   ],
-   "yaw": 90.0,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
-   "model": "dungeon/railing_broken.glb",
-   "pos": [
-    44.15,
-    10.24,
-    33.0
-   ],
-   "yaw": 270.0,
    "scale": 1.0,
    "role": "decor",
    "label": ""
@@ -9121,13 +9173,25 @@
    "label": ""
   },
   {
-   "model": "dungeon/railing_broken.glb",
+   "model": "dungeon/brace_old.glb",
    "pos": [
-    44.15,
-    5.24,
+    43.8,
+    3.0,
     35.0
    ],
-   "yaw": 270.0,
+   "yaw": 90.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/prop_old.glb",
+   "pos": [
+    42.2,
+    0.0,
+    35.0
+   ],
+   "yaw": 90.0,
    "scale": 1.0,
    "role": "decor",
    "label": ""
@@ -9151,7 +9215,7 @@
     -5.0,
     25.0
    ],
-   "yaw": 0,
+   "yaw": 270,
    "scale": 1.0,
    "role": "trap",
    "label": ""
@@ -9163,7 +9227,7 @@
     -5.0,
     27.0
    ],
-   "yaw": 90,
+   "yaw": 180,
    "scale": 1.0,
    "role": "trap",
    "label": ""
@@ -9175,7 +9239,7 @@
     -5.0,
     29.0
    ],
-   "yaw": 90,
+   "yaw": 270,
    "scale": 1.0,
    "role": "trap",
    "label": ""
@@ -9187,7 +9251,7 @@
     -5.0,
     31.0
    ],
-   "yaw": 270,
+   "yaw": 180,
    "scale": 1.0,
    "role": "trap",
    "label": ""
@@ -9199,7 +9263,7 @@
     -5.0,
     33.0
    ],
-   "yaw": 180,
+   "yaw": 90,
    "scale": 1.0,
    "role": "trap",
    "label": ""
@@ -9211,7 +9275,7 @@
     -5.0,
     25.0
    ],
-   "yaw": 270,
+   "yaw": 180,
    "scale": 1.0,
    "role": "trap",
    "label": ""
@@ -9223,7 +9287,7 @@
     -5.0,
     27.0
    ],
-   "yaw": 180,
+   "yaw": 90,
    "scale": 1.0,
    "role": "trap",
    "label": ""
@@ -9235,7 +9299,7 @@
     -5.0,
     29.0
    ],
-   "yaw": 90,
+   "yaw": 0,
    "scale": 1.0,
    "role": "trap",
    "label": "The chasm (falling in kills)"
@@ -9247,7 +9311,7 @@
     -5.0,
     31.0
    ],
-   "yaw": 180,
+   "yaw": 90,
    "scale": 1.0,
    "role": "trap",
    "label": ""
@@ -9259,7 +9323,7 @@
     -5.0,
     33.0
    ],
-   "yaw": 90,
+   "yaw": 270,
    "scale": 1.0,
    "role": "trap",
    "label": ""
@@ -9307,7 +9371,7 @@
     -5.0,
     31.0
    ],
-   "yaw": 0,
+   "yaw": 270,
    "scale": 1.0,
    "role": "trap",
    "label": ""
@@ -9331,42 +9395,6 @@
     -5.0,
     25.0
    ],
-   "yaw": 270,
-   "scale": 1.0,
-   "role": "trap",
-   "label": ""
-  },
-  {
-   "model": "dungeon/trap_spikes.glb",
-   "pos": [
-    37.0,
-    -5.0,
-    27.0
-   ],
-   "yaw": 270,
-   "scale": 1.0,
-   "role": "trap",
-   "label": ""
-  },
-  {
-   "model": "dungeon/trap_spikes.glb",
-   "pos": [
-    37.0,
-    -5.0,
-    29.0
-   ],
-   "yaw": 90,
-   "scale": 1.0,
-   "role": "trap",
-   "label": ""
-  },
-  {
-   "model": "dungeon/trap_spikes.glb",
-   "pos": [
-    37.0,
-    -5.0,
-    31.0
-   ],
    "yaw": 0,
    "scale": 1.0,
    "role": "trap",
@@ -9377,9 +9405,45 @@
    "pos": [
     37.0,
     -5.0,
-    33.0
+    27.0
    ],
    "yaw": 180,
+   "scale": 1.0,
+   "role": "trap",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_spikes.glb",
+   "pos": [
+    37.0,
+    -5.0,
+    29.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "trap",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_spikes.glb",
+   "pos": [
+    37.0,
+    -5.0,
+    31.0
+   ],
+   "yaw": 270,
+   "scale": 1.0,
+   "role": "trap",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_spikes.glb",
+   "pos": [
+    37.0,
+    -5.0,
+    33.0
+   ],
+   "yaw": 90,
    "scale": 1.0,
    "role": "trap",
    "label": ""
@@ -9535,25 +9599,13 @@
     2.0,
     33.0
    ],
-   "yaw": 270,
+   "yaw": 180,
    "scale": 1.0,
    "role": "decor",
    "label": ""
   },
   {
-   "model": "dungeon/railing_broken.glb",
-   "pos": [
-    15.85,
-    2.24,
-    33.0
-   ],
-   "yaw": 90.0,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
-   "model": "dungeon/floor_old.glb",
+   "model": "dungeon/trap_floor_break.glb",
    "pos": [
     15.0,
     2.0,
@@ -9561,8 +9613,8 @@
    ],
    "yaw": 180,
    "scale": 1.0,
-   "role": "decor",
-   "label": ""
+   "role": "trap",
+   "label": "Rotten boards"
   },
   {
    "model": "dungeon/floor_old.glb",
@@ -9571,7 +9623,7 @@
     2.0,
     37.0
    ],
-   "yaw": 180,
+   "yaw": 270,
    "scale": 1.0,
    "role": "decor",
    "label": ""
@@ -9583,7 +9635,7 @@
     2.0,
     39.0
    ],
-   "yaw": 270,
+   "yaw": 0,
    "scale": 1.0,
    "role": "decor",
    "label": ""
@@ -9601,13 +9653,25 @@
    "label": ""
   },
   {
-   "model": "dungeon/floor_old.glb",
+   "model": "dungeon/trap_floor_break.glb",
    "pos": [
     15.0,
     2.0,
     41.0
    ],
    "yaw": 180,
+   "scale": 1.0,
+   "role": "trap",
+   "label": ""
+  },
+  {
+   "model": "dungeon/railing_broken.glb",
+   "pos": [
+    15.85,
+    2.24,
+    41.0
+   ],
+   "yaw": 90.0,
    "scale": 1.0,
    "role": "decor",
    "label": ""
@@ -9620,18 +9684,6 @@
     43.0
    ],
    "yaw": 0,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
-   "model": "dungeon/railing_broken.glb",
-   "pos": [
-    15.85,
-    2.24,
-    43.0
-   ],
-   "yaw": 90.0,
    "scale": 1.0,
    "role": "decor",
    "label": ""
@@ -9655,7 +9707,43 @@
     2.0,
     25.0
    ],
+   "yaw": 180,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_floor_break.glb",
+   "pos": [
+    17.0,
+    2.0,
+    25.0
+   ],
    "yaw": 270,
+   "scale": 1.0,
+   "role": "trap",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    19.0,
+    2.0,
+    25.0
+   ],
+   "yaw": 90,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/floor_old.glb",
+   "pos": [
+    15.0,
+    2.0,
+    27.0
+   ],
+   "yaw": 0,
    "scale": 1.0,
    "role": "decor",
    "label": ""
@@ -9665,7 +9753,7 @@
    "pos": [
     17.0,
     2.0,
-    25.0
+    27.0
    ],
    "yaw": 0,
    "scale": 1.0,
@@ -9676,18 +9764,6 @@
    "model": "dungeon/floor_old.glb",
    "pos": [
     19.0,
-    2.0,
-    25.0
-   ],
-   "yaw": 0,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
-   "model": "dungeon/floor_old.glb",
-   "pos": [
-    15.0,
     2.0,
     27.0
    ],
@@ -9699,30 +9775,6 @@
   {
    "model": "dungeon/floor_old.glb",
    "pos": [
-    19.0,
-    2.0,
-    27.0
-   ],
-   "yaw": 90,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
-   "model": "dungeon/floor_old.glb",
-   "pos": [
-    15.0,
-    2.0,
-    29.0
-   ],
-   "yaw": 90,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
-   "model": "dungeon/floor_old.glb",
-   "pos": [
     17.0,
     2.0,
     29.0
@@ -9739,7 +9791,7 @@
     2.0,
     29.0
    ],
-   "yaw": 270,
+   "yaw": 90,
    "scale": 1.0,
    "role": "decor",
    "label": ""
@@ -9767,7 +9819,7 @@
     15.9,
     27.6
    ],
-   "yaw": 120,
+   "yaw": 0,
    "scale": 1.0,
    "role": "trap",
    "label": "",
@@ -9783,7 +9835,7 @@
     15.9,
     29.2
    ],
-   "yaw": 0,
+   "yaw": 240,
    "scale": 1.0,
    "role": "trap",
    "label": "",
@@ -9882,6 +9934,60 @@
     51.4,
     5.24,
     31.0
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/trap_spear_wall.glb",
+   "pos": [
+    46.0,
+    6.24,
+    35.16
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "trap",
+   "label": "Rows of holes by the ladder",
+   "phase": 0.0,
+   "climb": true,
+   "wake": 2.5
+  },
+  {
+   "model": "dungeon/trap_spear_wall.glb",
+   "pos": [
+    46.0,
+    8.24,
+    35.16
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "trap",
+   "label": "",
+   "phase": 0.4,
+   "climb": true,
+   "wake": 2.5
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    46.0,
+    10.24,
+    35.16
+   ],
+   "yaw": 270.0,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/wall_old.glb",
+   "pos": [
+    47.32,
+    5.0,
+    33.0
    ],
    "yaw": 270.0,
    "scale": 1.0,
@@ -10000,11 +10106,23 @@
    "label": "Rope slide: E to slide down to Base Camp"
   },
   {
+   "model": "dungeon/junk_rubble_wood_b.glb",
+   "pos": [
+    28.543,
+    0.0,
+    32.011
+   ],
+   "yaw": 265.78,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
    "model": "dungeon/junk_beam_snapped.glb",
    "pos": [
-    23.411,
+    24.766,
     0.0,
-    31.319
+    30.538
    ],
    "yaw": 11.14,
    "scale": 1.0,
@@ -10024,37 +10142,109 @@
    "label": ""
   },
   {
+   "model": "dungeon/junk_beam_snapped.glb",
+   "pos": [
+    23.028,
+    0.0,
+    31.473
+   ],
+   "yaw": 257.25,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_b.glb",
+   "pos": [
+    22.923,
+    0.0,
+    32.599
+   ],
+   "yaw": 4.63,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood.glb",
+   "pos": [
+    28.662,
+    0.0,
+    29.166
+   ],
+   "yaw": 31.64,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_d.glb",
+   "pos": [
+    21.826,
+    0.0,
+    29.753
+   ],
+   "yaw": 240.8,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_d.glb",
+   "pos": [
+    26.783,
+    0.0,
+    32.613
+   ],
+   "yaw": 57.12,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_c.glb",
+   "pos": [
+    40.582,
+    0.0,
+    33.94
+   ],
+   "yaw": 326.12,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_d.glb",
+   "pos": [
+    39.089,
+    0.0,
+    32.761
+   ],
+   "yaw": 142.15,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_b.glb",
+   "pos": [
+    41.615,
+    0.0,
+    30.299
+   ],
+   "yaw": 78.86,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
    "model": "dungeon/junk_rubble_wood_e.glb",
    "pos": [
-    27.793,
+    42.577,
     0.0,
-    32.187
+    32.371
    ],
-   "yaw": 41.23,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
-   "model": "dungeon/junk_rubble_wood.glb",
-   "pos": [
-    23.817,
-    0.0,
-    29.196
-   ],
-   "yaw": 117.02,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
-   "model": "dungeon/junk_rubble_wood.glb",
-   "pos": [
-    26.092,
-    0.0,
-    33.317
-   ],
-   "yaw": 262.68,
+   "yaw": 296.89,
    "scale": 1.0,
    "role": "decor",
    "label": ""
@@ -10062,81 +10252,9 @@
   {
    "model": "dungeon/junk_rubble_wood_f.glb",
    "pos": [
-    26.978,
+    41.246,
     0.0,
-    29.371
-   ],
-   "yaw": 266.12,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
-   "model": "dungeon/junk_rubble_wood_f.glb",
-   "pos": [
-    25.428,
-    0.0,
-    31.388
-   ],
-   "yaw": 58.95,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
-   "model": "dungeon/junk_beam_snapped.glb",
-   "pos": [
-    25.596,
-    0.0,
-    29.794
-   ],
-   "yaw": 89.94,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
-   "model": "dungeon/junk_rubble_wood.glb",
-   "pos": [
-    39.498,
-    0.0,
-    32.899
-   ],
-   "yaw": 303.5,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
-   "model": "dungeon/junk_beam_snapped.glb",
-   "pos": [
-    42.377,
-    0.0,
-    29.975
-   ],
-   "yaw": 223.12,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
-   "model": "dungeon/junk_beam_snapped.glb",
-   "pos": [
-    40.123,
-    0.0,
-    30.577
-   ],
-   "yaw": 312.16,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
-   "model": "dungeon/junk_rubble_wood_f.glb",
-   "pos": [
-    41.148,
-    0.0,
-    30.038
+    31.742
    ],
    "yaw": 8.3,
    "scale": 1.0,
@@ -10144,49 +10262,49 @@
    "label": ""
   },
   {
-   "model": "dungeon/junk_rubble_wood_e.glb",
+   "model": "dungeon/junk_rubble_wood.glb",
    "pos": [
-    42.273,
+    33.805,
     0.0,
-    33.496
+    44.472
    ],
-   "yaw": 15.07,
+   "yaw": 31.17,
    "scale": 1.0,
    "role": "decor",
    "label": ""
   },
   {
-   "model": "dungeon/junk_beam_snapped.glb",
+   "model": "dungeon/junk_rubble_wood_b.glb",
    "pos": [
-    35.814,
+    35.852,
     0.0,
-    48.981
+    49.047
    ],
-   "yaw": 358.65,
+   "yaw": 248.09,
    "scale": 1.0,
    "role": "decor",
    "label": ""
   },
   {
-   "model": "dungeon/junk_rubble_wood_f.glb",
+   "model": "dungeon/junk_rubble_wood.glb",
    "pos": [
-    32.751,
+    32.426,
     0.0,
-    36.659
+    46.167
    ],
-   "yaw": 319.36,
+   "yaw": 159.6,
    "scale": 1.0,
    "role": "decor",
    "label": ""
   },
   {
-   "model": "dungeon/junk_rubble_wood_e.glb",
+   "model": "dungeon/junk_rubble_wood.glb",
    "pos": [
-    26.899,
+    32.286,
     0.0,
-    37.621
+    47.841
    ],
-   "yaw": 96.91,
+   "yaw": 32.33,
    "scale": 1.0,
    "role": "decor",
    "label": ""
@@ -10216,13 +10334,13 @@
    "label": ""
   },
   {
-   "model": "dungeon/junk_rubble_wood_b.glb",
+   "model": "dungeon/junk_rubble_wood_c.glb",
    "pos": [
-    35.725,
+    25.214,
     0.0,
-    40.724
+    37.566
    ],
-   "yaw": 111.53,
+   "yaw": 298.98,
    "scale": 1.0,
    "role": "decor",
    "label": ""
@@ -10230,11 +10348,23 @@
   {
    "model": "dungeon/junk_rubble_wood_e.glb",
    "pos": [
-    17.94,
+    18.519,
     0.0,
-    42.475
+    36.781
    ],
-   "yaw": 177.62,
+   "yaw": 265.96,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_beam_snapped.glb",
+   "pos": [
+    23.439,
+    0.0,
+    40.281
+   ],
+   "yaw": 111.29,
    "scale": 1.0,
    "role": "decor",
    "label": ""
@@ -10242,9 +10372,9 @@
   {
    "model": "dungeon/junk_rubble_wood.glb",
    "pos": [
-    22.468,
+    20.446,
     0.0,
-    41.036
+    35.826
    ],
    "yaw": 38.53,
    "scale": 1.0,
@@ -10254,9 +10384,9 @@
   {
    "model": "dungeon/junk_rubble_wood_f.glb",
    "pos": [
-    20.122,
-    0.0,
-    35.232
+    14.751,
+    2.24,
+    33.512
    ],
    "yaw": 178.56,
    "scale": 1.0,
@@ -10264,37 +10394,13 @@
    "label": ""
   },
   {
-   "model": "dungeon/junk_beam_snapped.glb",
+   "model": "dungeon/junk_rubble_wood_c.glb",
    "pos": [
-    21.228,
-    0.0,
-    40.988
-   ],
-   "yaw": 142.76,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
-   "model": "dungeon/junk_rubble_wood_f.glb",
-   "pos": [
-    15.168,
+    14.934,
     2.24,
-    38.403
+    36.645
    ],
-   "yaw": 327.59,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
-   "model": "dungeon/junk_rubble_wood_d.glb",
-   "pos": [
-    15.343,
-    2.24,
-    42.539
-   ],
-   "yaw": 186.43,
+   "yaw": 173.13,
    "scale": 1.0,
    "role": "decor",
    "label": ""
@@ -10302,9 +10408,9 @@
   {
    "model": "dungeon/junk_beam_snapped.glb",
    "pos": [
-    14.673,
+    15.112,
     2.24,
-    34.947
+    42.74
    ],
    "yaw": 269.6,
    "scale": 1.0,
@@ -10324,25 +10430,97 @@
    "label": ""
   },
   {
+   "model": "dungeon/junk_rubble_wood_e.glb",
+   "pos": [
+    14.374,
+    2.24,
+    27.076
+   ],
+   "yaw": 352.78,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_beam_snapped.glb",
+   "pos": [
+    17.306,
+    2.24,
+    26.505
+   ],
+   "yaw": 238.08,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_d.glb",
+   "pos": [
+    39.45,
+    5.24,
+    25.025
+   ],
+   "yaw": 332.92,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_beam_snapped.glb",
+   "pos": [
+    25.149,
+    10.24,
+    25.032
+   ],
+   "yaw": 209.29,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_c.glb",
+   "pos": [
+    34.484,
+    10.24,
+    24.64
+   ],
+   "yaw": 194.62,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
    "model": "dungeon/junk_rubble_wood.glb",
    "pos": [
-    16.607,
-    2.24,
-    24.632
+    31.446,
+    10.24,
+    24.469
    ],
-   "yaw": 50.91,
+   "yaw": 184.86,
    "scale": 1.0,
    "role": "decor",
    "label": ""
   },
   {
-   "model": "dungeon/junk_rubble_wood_c.glb",
+   "model": "dungeon/junk_rubble_wood.glb",
    "pos": [
-    16.675,
-    2.24,
-    25.982
+    33.235,
+    10.24,
+    24.645
    ],
-   "yaw": 72.92,
+   "yaw": 119.14,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_b.glb",
+   "pos": [
+    41.591,
+    10.24,
+    25.03
+   ],
+   "yaw": 108.37,
    "scale": 1.0,
    "role": "decor",
    "label": ""
@@ -10350,95 +10528,47 @@
   {
    "model": "dungeon/junk_rubble_wood_f.glb",
    "pos": [
-    28.666,
-    5.24,
-    25.015
-   ],
-   "yaw": 141.4,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
-   "model": "dungeon/junk_beam_snapped.glb",
-   "pos": [
-    29.656,
-    5.24,
-    24.48
-   ],
-   "yaw": 345.39,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
-   "model": "dungeon/junk_beam_snapped.glb",
-   "pos": [
-    39.375,
-    5.24,
-    24.922
-   ],
-   "yaw": 101.67,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
-   "model": "dungeon/junk_rubble_wood_b.glb",
-   "pos": [
-    25.919,
+    42.967,
     10.24,
-    24.428
+    24.511
    ],
-   "yaw": 139.21,
+   "yaw": 132.45,
    "scale": 1.0,
    "role": "decor",
    "label": ""
   },
   {
-   "model": "dungeon/junk_rubble_wood_b.glb",
+   "model": "dungeon/junk_rubble_wood_d.glb",
    "pos": [
-    24.823,
-    10.24,
-    25.133
-   ],
-   "yaw": 247.59,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
-   "model": "dungeon/junk_beam_snapped.glb",
-   "pos": [
-    27.632,
-    10.24,
-    24.598
-   ],
-   "yaw": 107.78,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
-   "model": "dungeon/junk_rubble_wood_e.glb",
-   "pos": [
-    30.237,
-    10.24,
-    24.586
-   ],
-   "yaw": 22.05,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
-   "model": "dungeon/junk_rubble_wood_e.glb",
-   "pos": [
-    16.82,
+    17.27,
     5.24,
-    22.45
+    21.555
    ],
-   "yaw": 28.27,
+   "yaw": 238.26,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood.glb",
+   "pos": [
+    17.857,
+    5.24,
+    20.488
+   ],
+   "yaw": 299.36,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood.glb",
+   "pos": [
+    26.687,
+    5.24,
+    22.673
+   ],
+   "yaw": 1.09,
    "scale": 1.0,
    "role": "decor",
    "label": ""
@@ -10446,71 +10576,23 @@
   {
    "model": "dungeon/junk_rubble_wood_f.glb",
    "pos": [
-    19.561,
+    27.39,
     5.24,
-    22.059
+    21.802
    ],
-   "yaw": 85.27,
+   "yaw": 71.88,
    "scale": 1.0,
    "role": "decor",
    "label": ""
   },
   {
-   "model": "dungeon/junk_rubble_wood_c.glb",
+   "model": "dungeon/junk_rubble_wood_d.glb",
    "pos": [
-    25.538,
-    5.24,
-    22.008
-   ],
-   "yaw": 355.28,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
-   "model": "dungeon/junk_rubble_wood_b.glb",
-   "pos": [
-    26.89,
-    5.24,
-    21.033
-   ],
-   "yaw": 182.8,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
-   "model": "dungeon/junk_rubble_wood_b.glb",
-   "pos": [
-    35.302,
+    37.533,
     10.24,
-    19.554
+    18.436
    ],
-   "yaw": 274.36,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
-   "model": "dungeon/junk_rubble_wood_e.glb",
-   "pos": [
-    33.697,
-    10.24,
-    22.264
-   ],
-   "yaw": 36.85,
-   "scale": 1.0,
-   "role": "decor",
-   "label": ""
-  },
-  {
-   "model": "dungeon/junk_rubble_wood_f.glb",
-   "pos": [
-    31.843,
-    10.24,
-    19.189
-   ],
-   "yaw": 219.4,
+   "yaw": 196.75,
    "scale": 1.0,
    "role": "decor",
    "label": ""
@@ -10518,11 +10600,35 @@
   {
    "model": "dungeon/junk_bones.glb",
    "pos": [
-    18.778,
+    40.178,
     10.24,
-    17.215
+    15.758
    ],
-   "yaw": 345.81,
+   "yaw": 37.18,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_beam_snapped.glb",
+   "pos": [
+    41.862,
+    10.24,
+    13.326
+   ],
+   "yaw": 327.41,
+   "scale": 1.0,
+   "role": "decor",
+   "label": ""
+  },
+  {
+   "model": "dungeon/junk_rubble_wood_c.glb",
+   "pos": [
+    18.671,
+    10.24,
+    14.466
+   ],
+   "yaw": 247.04,
    "scale": 1.0,
    "role": "decor",
    "label": ""
@@ -10530,11 +10636,11 @@
   {
    "model": "dungeon/junk_rubble_wood_e.glb",
    "pos": [
-    15.496,
+    17.233,
     10.24,
-    17.338
+    12.98
    ],
-   "yaw": 113.42,
+   "yaw": 73.15,
    "scale": 1.0,
    "role": "decor",
    "label": ""
@@ -10546,7 +10652,7 @@
     5.24,
     24.5
    ],
-   "yaw": 54.87,
+   "yaw": 18.74,
    "scale": 1.0,
    "role": "decor",
    "label": ""
@@ -10554,11 +10660,11 @@
   {
    "model": "dungeon/junk_lantern.glb",
    "pos": [
-    42.6,
+    38.8,
     5.24,
-    25.0
+    24.6
    ],
-   "yaw": 344.91,
+   "yaw": 119.45,
    "scale": 1.0,
    "role": "decor",
    "label": ""
@@ -10570,7 +10676,7 @@
     10.24,
     24.5
    ],
-   "yaw": 266.02,
+   "yaw": 170.21,
    "scale": 1.0,
    "role": "decor",
    "label": ""
@@ -10582,7 +10688,7 @@
     10.24,
     31.0
    ],
-   "yaw": 343.12,
+   "yaw": 336.85,
    "scale": 1.0,
    "role": "decor",
    "label": ""
@@ -10594,7 +10700,7 @@
     2.24,
     33.5
    ],
-   "yaw": 220.61,
+   "yaw": 48.23,
    "scale": 1.0,
    "role": "decor",
    "label": ""
@@ -10606,40 +10712,3022 @@
     0.0,
     44.2
    ],
-   "yaw": 28.52,
+   "yaw": 116.94,
    "scale": 1.0,
    "role": "decor",
    "label": ""
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    41.116,
+    16.206,
+    45.021
+   ],
+   "yaw": 299.13,
+   "scale": 1.52,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    42.85,
+    16.335,
+    46.665
+   ],
+   "yaw": 179.92,
+   "scale": 2.46,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    14.289,
+    16.239,
+    45.697
+   ],
+   "yaw": 227.07,
+   "scale": 1.76,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    15.444,
+    16.243,
+    44.234
+   ],
+   "yaw": 209.44,
+   "scale": 1.78,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    15.865,
+    16.173,
+    45.462
+   ],
+   "yaw": 44.8,
+   "scale": 1.27,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    41.614,
+    16.246,
+    40.78
+   ],
+   "yaw": 180.0,
+   "scale": 1.81,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    42.396,
+    16.2,
+    40.786
+   ],
+   "yaw": 55.81,
+   "scale": 1.47,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    42.009,
+    16.203,
+    41.816
+   ],
+   "yaw": 128.84,
+   "scale": 1.49,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    28.964,
+    16.238,
+    37.563
+   ],
+   "yaw": 247.41,
+   "scale": 1.75,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_d.glb",
+   "pos": [
+    30.477,
+    16.251,
+    37.128
+   ],
+   "yaw": 174.7,
+   "scale": 1.85,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    30.424,
+    16.458,
+    38.986
+   ],
+   "yaw": 122.65,
+   "scale": 3.37,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    29.945,
+    16.273,
+    38.679
+   ],
+   "yaw": 199.41,
+   "scale": 2.01,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_d.glb",
+   "pos": [
+    28.539,
+    16.254,
+    42.196
+   ],
+   "yaw": 11.32,
+   "scale": 1.87,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    28.09,
+    16.414,
+    41.646
+   ],
+   "yaw": 135.96,
+   "scale": 3.05,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    27.977,
+    16.254,
+    40.63
+   ],
+   "yaw": 328.91,
+   "scale": 1.87,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    29.523,
+    16.335,
+    42.802
+   ],
+   "yaw": 45.8,
+   "scale": 2.47,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    26.711,
+    16.399,
+    43.261
+   ],
+   "yaw": 81.09,
+   "scale": 2.94,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    26.927,
+    16.168,
+    42.394
+   ],
+   "yaw": 309.74,
+   "scale": 1.24,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_d.glb",
+   "pos": [
+    28.041,
+    16.339,
+    42.57
+   ],
+   "yaw": 50.36,
+   "scale": 2.49,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    28.893,
+    16.198,
+    44.134
+   ],
+   "yaw": 226.56,
+   "scale": 1.45,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_d.glb",
+   "pos": [
+    28.643,
+    16.239,
+    43.983
+   ],
+   "yaw": 90.48,
+   "scale": 1.76,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    25.671,
+    16.39,
+    33.419
+   ],
+   "yaw": 65.7,
+   "scale": 2.87,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    26.116,
+    16.317,
+    32.328
+   ],
+   "yaw": 63.23,
+   "scale": 2.33,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    27.829,
+    16.284,
+    31.816
+   ],
+   "yaw": 106.7,
+   "scale": 2.09,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    27.326,
+    16.279,
+    32.468
+   ],
+   "yaw": 23.3,
+   "scale": 2.05,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_d.glb",
+   "pos": [
+    25.77,
+    16.335,
+    31.874
+   ],
+   "yaw": 279.17,
+   "scale": 2.46,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    29.193,
+    16.354,
+    41.764
+   ],
+   "yaw": 45.4,
+   "scale": 2.6,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    28.59,
+    16.325,
+    41.69
+   ],
+   "yaw": 340.05,
+   "scale": 2.39,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    29.319,
+    16.406,
+    41.582
+   ],
+   "yaw": 309.13,
+   "scale": 2.98,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    28.651,
+    16.383,
+    43.336
+   ],
+   "yaw": 189.83,
+   "scale": 2.82,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    29.219,
+    16.28,
+    42.426
+   ],
+   "yaw": 271.18,
+   "scale": 2.06,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    33.831,
+    16.212,
+    43.842
+   ],
+   "yaw": 165.99,
+   "scale": 1.56,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    33.876,
+    16.25,
+    46.49
+   ],
+   "yaw": 56.25,
+   "scale": 1.84,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_d.glb",
+   "pos": [
+    30.921,
+    16.188,
+    45.708
+   ],
+   "yaw": 352.87,
+   "scale": 1.38,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    34.055,
+    16.451,
+    43.982
+   ],
+   "yaw": 101.24,
+   "scale": 3.32,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    32.53,
+    16.342,
+    45.832
+   ],
+   "yaw": 302.72,
+   "scale": 2.52,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    25.127,
+    16.459,
+    43.553
+   ],
+   "yaw": 110.69,
+   "scale": 3.38,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    27.641,
+    16.274,
+    43.236
+   ],
+   "yaw": 9.98,
+   "scale": 2.02,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_d.glb",
+   "pos": [
+    25.087,
+    16.4,
+    44.363
+   ],
+   "yaw": 26.75,
+   "scale": 2.94,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    26.943,
+    16.29,
+    44.111
+   ],
+   "yaw": 160.39,
+   "scale": 2.14,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    27.078,
+    16.327,
+    44.753
+   ],
+   "yaw": 176.94,
+   "scale": 2.4,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    31.489,
+    16.326,
+    37.767
+   ],
+   "yaw": 300.48,
+   "scale": 2.4,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    31.68,
+    16.204,
+    37.153
+   ],
+   "yaw": 130.09,
+   "scale": 1.5,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_d.glb",
+   "pos": [
+    34.163,
+    16.249,
+    37.377
+   ],
+   "yaw": 2.19,
+   "scale": 1.83,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    31.467,
+    16.254,
+    38.688
+   ],
+   "yaw": 53.73,
+   "scale": 1.87,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    22.237,
+    16.184,
+    26.593
+   ],
+   "yaw": 343.56,
+   "scale": 1.35,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    20.899,
+    16.379,
+    34.074
+   ],
+   "yaw": 227.29,
+   "scale": 2.79,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    20.607,
+    16.288,
+    33.142
+   ],
+   "yaw": 10.55,
+   "scale": 2.12,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    19.491,
+    16.234,
+    33.095
+   ],
+   "yaw": 138.7,
+   "scale": 1.72,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_d.glb",
+   "pos": [
+    39.74,
+    16.364,
+    46.998
+   ],
+   "yaw": 161.43,
+   "scale": 2.67,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    42.566,
+    16.237,
+    48.81
+   ],
+   "yaw": 300.19,
+   "scale": 1.75,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    41.637,
+    16.225,
+    47.394
+   ],
+   "yaw": 30.89,
+   "scale": 1.65,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_d.glb",
+   "pos": [
+    40.42,
+    16.222,
+    46.471
+   ],
+   "yaw": 190.84,
+   "scale": 1.63,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    39.478,
+    16.182,
+    44.486
+   ],
+   "yaw": 115.27,
+   "scale": 1.34,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    41.245,
+    16.311,
+    44.849
+   ],
+   "yaw": 214.12,
+   "scale": 2.29,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    36.883,
+    16.289,
+    49.517
+   ],
+   "yaw": 156.99,
+   "scale": 2.13,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    17.573,
+    16.421,
+    32.675
+   ],
+   "yaw": 164.9,
+   "scale": 3.1,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    19.097,
+    16.394,
+    31.707
+   ],
+   "yaw": 352.64,
+   "scale": 2.89,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    18.334,
+    16.27,
+    31.888
+   ],
+   "yaw": 318.77,
+   "scale": 1.98,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    27.467,
+    16.182,
+    47.378
+   ],
+   "yaw": 246.88,
+   "scale": 1.34,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    26.482,
+    16.199,
+    47.47
+   ],
+   "yaw": 114.66,
+   "scale": 1.46,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_d.glb",
+   "pos": [
+    26.608,
+    16.353,
+    46.353
+   ],
+   "yaw": 14.75,
+   "scale": 2.59,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    28.034,
+    16.421,
+    47.684
+   ],
+   "yaw": 272.16,
+   "scale": 3.1,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_d.glb",
+   "pos": [
+    25.871,
+    16.178,
+    47.658
+   ],
+   "yaw": 357.58,
+   "scale": 1.31,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    20.68,
+    16.355,
+    44.5
+   ],
+   "yaw": 124.01,
+   "scale": 2.61,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    20.854,
+    16.343,
+    41.545
+   ],
+   "yaw": 267.05,
+   "scale": 2.52,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    21.241,
+    16.278,
+    43.989
+   ],
+   "yaw": 134.05,
+   "scale": 2.05,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    42.264,
+    16.29,
+    30.393
+   ],
+   "yaw": 283.71,
+   "scale": 2.13,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    26.803,
+    16.373,
+    37.575
+   ],
+   "yaw": 97.66,
+   "scale": 2.74,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    27.235,
+    16.415,
+    38.037
+   ],
+   "yaw": 66.64,
+   "scale": 3.05,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    28.591,
+    16.299,
+    39.474
+   ],
+   "yaw": 148.81,
+   "scale": 2.2,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    26.426,
+    16.381,
+    40.458
+   ],
+   "yaw": 329.26,
+   "scale": 2.8,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    27.809,
+    16.327,
+    40.185
+   ],
+   "yaw": 310.98,
+   "scale": 2.41,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    36.285,
+    16.313,
+    30.155
+   ],
+   "yaw": 349.43,
+   "scale": 2.3,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    38.398,
+    16.306,
+    31.096
+   ],
+   "yaw": 274.34,
+   "scale": 2.25,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    36.016,
+    16.206,
+    30.331
+   ],
+   "yaw": 13.78,
+   "scale": 1.52,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    36.111,
+    16.425,
+    31.358
+   ],
+   "yaw": 332.63,
+   "scale": 3.13,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    38.188,
+    16.198,
+    30.214
+   ],
+   "yaw": 213.11,
+   "scale": 1.46,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    35.629,
+    16.163,
+    32.476
+   ],
+   "yaw": 333.06,
+   "scale": 1.2,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    17.12,
+    16.308,
+    43.093
+   ],
+   "yaw": 149.29,
+   "scale": 2.27,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    17.505,
+    16.354,
+    43.2
+   ],
+   "yaw": 301.95,
+   "scale": 2.6,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    17.644,
+    16.295,
+    43.723
+   ],
+   "yaw": 106.18,
+   "scale": 2.17,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_d.glb",
+   "pos": [
+    17.346,
+    16.275,
+    44.206
+   ],
+   "yaw": 263.49,
+   "scale": 2.02,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_a.glb",
+   "pos": [
+    18.936,
+    16.267,
+    45.661
+   ],
+   "yaw": 282.0,
+   "scale": 1.96,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_d.glb",
+   "pos": [
+    26.813,
+    16.184,
+    29.018
+   ],
+   "yaw": 39.96,
+   "scale": 1.35,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    21.575,
+    16.224,
+    27.465
+   ],
+   "yaw": 284.31,
+   "scale": 1.65,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    22.604,
+    16.187,
+    27.527
+   ],
+   "yaw": 45.09,
+   "scale": 1.37,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_d.glb",
+   "pos": [
+    17.904,
+    16.423,
+    47.892
+   ],
+   "yaw": 31.67,
+   "scale": 3.11,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    16.49,
+    16.204,
+    47.497
+   ],
+   "yaw": 3.42,
+   "scale": 1.5,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    17.178,
+    16.324,
+    48.606
+   ],
+   "yaw": 335.19,
+   "scale": 2.38,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_d.glb",
+   "pos": [
+    43.463,
+    16.193,
+    27.717
+   ],
+   "yaw": 92.42,
+   "scale": 1.42,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_d.glb",
+   "pos": [
+    42.246,
+    16.193,
+    27.38
+   ],
+   "yaw": 257.95,
+   "scale": 1.42,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_d.glb",
+   "pos": [
+    26.483,
+    16.186,
+    28.535
+   ],
+   "yaw": 48.74,
+   "scale": 1.36,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_d.glb",
+   "pos": [
+    23.558,
+    16.165,
+    26.484
+   ],
+   "yaw": 357.17,
+   "scale": 1.22,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_d.glb",
+   "pos": [
+    40.735,
+    16.167,
+    25.994
+   ],
+   "yaw": 69.52,
+   "scale": 1.23,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_d.glb",
+   "pos": [
+    42.113,
+    16.151,
+    25.681
+   ],
+   "yaw": 324.25,
+   "scale": 1.11,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_d.glb",
+   "pos": [
+    44.726,
+    16.17,
+    27.858
+   ],
+   "yaw": 241.07,
+   "scale": 1.25,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    23.415,
+    16.172,
+    28.652
+   ],
+   "yaw": 113.59,
+   "scale": 1.26,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_d.glb",
+   "pos": [
+    22.285,
+    16.274,
+    27.0
+   ],
+   "yaw": 249.38,
+   "scale": 2.02,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_b.glb",
+   "pos": [
+    21.298,
+    16.171,
+    28.22
+   ],
+   "yaw": 311.58,
+   "scale": 1.25,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_d.glb",
+   "pos": [
+    21.856,
+    16.266,
+    28.461
+   ],
+   "yaw": 295.39,
+   "scale": 1.96,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_d.glb",
+   "pos": [
+    39.129,
+    16.142,
+    26.433
+   ],
+   "yaw": 273.15,
+   "scale": 1.04,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_d.glb",
+   "pos": [
+    24.781,
+    16.188,
+    28.371
+   ],
+   "yaw": 60.87,
+   "scale": 1.38,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/drip_d.glb",
+   "pos": [
+    41.464,
+    16.264,
+    26.0
+   ],
+   "yaw": 356.41,
+   "scale": 1.94,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.0,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_h.glb",
+   "pos": [
+    17.26,
+    5.552,
+    50.2
+   ],
+   "yaw": 231.91,
+   "scale": 1.82,
+   "role": "decor",
+   "label": "",
+   "tilt": -16.7826398900666,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_k.glb",
+   "pos": [
+    45.9,
+    3.429,
+    42.22
+   ],
+   "yaw": 297.65,
+   "scale": 2.1,
+   "role": "decor",
+   "label": "",
+   "tilt": -16.167979516825405,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_medium_2.glb",
+   "pos": [
+    45.733,
+    10.918,
+    41.631
+   ],
+   "yaw": 283.83,
+   "scale": 1.58,
+   "role": "decor",
+   "label": "",
+   "tilt": 3.0349002691444227,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_q.glb",
+   "pos": [
+    31.769,
+    6.888,
+    50.22
+   ],
+   "yaw": 154.18,
+   "scale": 1.18,
+   "role": "decor",
+   "label": "",
+   "tilt": 13.397582992571568,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_medium_2.glb",
+   "pos": [
+    25.107,
+    10.766,
+    49.987
+   ],
+   "yaw": 158.99,
+   "scale": 2.15,
+   "role": "decor",
+   "label": "",
+   "tilt": -2.03522778506243,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_h.glb",
+   "pos": [
+    17.152,
+    10.04,
+    50.146
+   ],
+   "yaw": 178.12,
+   "scale": 1.12,
+   "role": "decor",
+   "label": "",
+   "tilt": -0.14026577816277097,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_j.glb",
+   "pos": [
+    45.703,
+    12.363,
+    47.936
+   ],
+   "yaw": 289.95,
+   "scale": 1.04,
+   "role": "decor",
+   "label": "",
+   "tilt": 3.200414890635468,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_h.glb",
+   "pos": [
+    41.514,
+    8.577,
+    50.164
+   ],
+   "yaw": 148.47,
+   "scale": 2.18,
+   "role": "decor",
+   "label": "",
+   "tilt": -1.1134212533656722,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_c.glb",
+   "pos": [
+    33.63,
+    7.549,
+    50.136
+   ],
+   "yaw": 33.12,
+   "scale": 2.07,
+   "role": "decor",
+   "label": "",
+   "tilt": -6.48716483326271,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_medium_2.glb",
+   "pos": [
+    14.269,
+    11.209,
+    40.865
+   ],
+   "yaw": 335.77,
+   "scale": 1.89,
+   "role": "decor",
+   "label": "",
+   "tilt": 8.722623558442827,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_j.glb",
+   "pos": [
+    46.152,
+    9.703,
+    42.677
+   ],
+   "yaw": 61.86,
+   "scale": 1.99,
+   "role": "decor",
+   "label": "",
+   "tilt": 9.065575171636013,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_q.glb",
+   "pos": [
+    42.483,
+    0.414,
+    49.768
+   ],
+   "yaw": 330.21,
+   "scale": 1.22,
+   "role": "decor",
+   "label": "",
+   "tilt": 0.22478481083659219,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_j.glb",
+   "pos": [
+    45.829,
+    7.158,
+    47.581
+   ],
+   "yaw": 110.26,
+   "scale": 1.07,
+   "role": "decor",
+   "label": "",
+   "tilt": 9.919012094127098,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_k.glb",
+   "pos": [
+    46.108,
+    -0.3,
+    41.176
+   ],
+   "yaw": 309.47,
+   "scale": 1.05,
+   "role": "decor",
+   "label": "",
+   "tilt": -3.5375973547197237,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_medium_2.glb",
+   "pos": [
+    14.801,
+    8.669,
+    49.984
+   ],
+   "yaw": 82.56,
+   "scale": 1.78,
+   "role": "decor",
+   "label": "",
+   "tilt": 8.511702952823207,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_h.glb",
+   "pos": [
+    40.952,
+    -0.3,
+    49.814
+   ],
+   "yaw": 94.92,
+   "scale": 1.96,
+   "role": "decor",
+   "label": "",
+   "tilt": -12.57942493532321,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_medium_2.glb",
+   "pos": [
+    17.912,
+    6.409,
+    49.772
+   ],
+   "yaw": 254.73,
+   "scale": 1.37,
+   "role": "decor",
+   "label": "",
+   "tilt": 17.589711069792834,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_q.glb",
+   "pos": [
+    28.317,
+    13.626,
+    50.268
+   ],
+   "yaw": 96.03,
+   "scale": 0.94,
+   "role": "decor",
+   "label": "",
+   "tilt": 3.8038043901683736,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_h.glb",
+   "pos": [
+    13.844,
+    8.414,
+    33.673
+   ],
+   "yaw": 55.11,
+   "scale": 1.17,
+   "role": "decor",
+   "label": "",
+   "tilt": -3.005985923061349,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_medium_2.glb",
+   "pos": [
+    13.895,
+    8.47,
+    48.445
+   ],
+   "yaw": 322.83,
+   "scale": 1.98,
+   "role": "decor",
+   "label": "",
+   "tilt": 11.362448383997148,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_h.glb",
+   "pos": [
+    20.155,
+    -0.3,
+    49.906
+   ],
+   "yaw": 188.9,
+   "scale": 1.62,
+   "role": "decor",
+   "label": "",
+   "tilt": -14.880272250058425,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_q.glb",
+   "pos": [
+    18.19,
+    9.536,
+    50.264
+   ],
+   "yaw": 176.65,
+   "scale": 1.38,
+   "role": "decor",
+   "label": "",
+   "tilt": 16.28460104729814,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_j.glb",
+   "pos": [
+    44.624,
+    8.663,
+    49.911
+   ],
+   "yaw": 5.55,
+   "scale": 2.14,
+   "role": "decor",
+   "label": "",
+   "tilt": 10.906546028756683,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_medium_2.glb",
+   "pos": [
+    45.77,
+    -0.3,
+    40.998
+   ],
+   "yaw": 113.63,
+   "scale": 2.07,
+   "role": "decor",
+   "label": "",
+   "tilt": -11.72743925210658,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_c.glb",
+   "pos": [
+    16.695,
+    14.956,
+    49.859
+   ],
+   "yaw": 168.84,
+   "scale": 1.56,
+   "role": "decor",
+   "label": "",
+   "tilt": 3.2860373428021674,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_medium_2.glb",
+   "pos": [
+    31.661,
+    14.063,
+    50.198
+   ],
+   "yaw": 222.53,
+   "scale": 1.53,
+   "role": "decor",
+   "label": "",
+   "tilt": 12.041796858850589,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_c.glb",
+   "pos": [
+    14.181,
+    -0.3,
+    42.034
+   ],
+   "yaw": 199.82,
+   "scale": 1.08,
+   "role": "decor",
+   "label": "",
+   "tilt": -3.7447526090414023,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_h.glb",
+   "pos": [
+    46.143,
+    -0.3,
+    40.622
+   ],
+   "yaw": 210.85,
+   "scale": 1.34,
+   "role": "decor",
+   "label": "",
+   "tilt": -3.7746974567159857,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_q.glb",
+   "pos": [
+    14.004,
+    11.525,
+    38.801
+   ],
+   "yaw": 330.94,
+   "scale": 0.93,
+   "role": "decor",
+   "label": "",
+   "tilt": 17.180127280503903,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_k.glb",
+   "pos": [
+    19.926,
+    3.264,
+    49.8
+   ],
+   "yaw": 352.12,
+   "scale": 1.49,
+   "role": "decor",
+   "label": "",
+   "tilt": 13.72565686946713,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_j.glb",
+   "pos": [
+    40.431,
+    4.198,
+    49.701
+   ],
+   "yaw": 357.69,
+   "scale": 1.15,
+   "role": "decor",
+   "label": "",
+   "tilt": -11.320657791529378,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_k.glb",
+   "pos": [
+    13.843,
+    12.571,
+    40.823
+   ],
+   "yaw": 101.2,
+   "scale": 1.91,
+   "role": "decor",
+   "label": "",
+   "tilt": -3.704204138756964,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_k.glb",
+   "pos": [
+    45.984,
+    -0.3,
+    41.194
+   ],
+   "yaw": 7.19,
+   "scale": 1.38,
+   "role": "decor",
+   "label": "",
+   "tilt": -3.399294116218229,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_medium_2.glb",
+   "pos": [
+    13.714,
+    14.416,
+    39.689
+   ],
+   "yaw": 137.22,
+   "scale": 1.23,
+   "role": "decor",
+   "label": "",
+   "tilt": 7.7974172646775095,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_j.glb",
+   "pos": [
+    37.846,
+    12.08,
+    50.031
+   ],
+   "yaw": 277.34,
+   "scale": 1.51,
+   "role": "decor",
+   "label": "",
+   "tilt": -2.4723039355582728,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_h.glb",
+   "pos": [
+    13.911,
+    12.009,
+    40.909
+   ],
+   "yaw": 70.52,
+   "scale": 1.54,
+   "role": "decor",
+   "label": "",
+   "tilt": 2.394559917650316,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_k.glb",
+   "pos": [
+    19.663,
+    6.626,
+    49.936
+   ],
+   "yaw": 116.68,
+   "scale": 1.19,
+   "role": "decor",
+   "label": "",
+   "tilt": -4.221500965213348,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_k.glb",
+   "pos": [
+    14.246,
+    12.949,
+    42.164
+   ],
+   "yaw": 359.91,
+   "scale": 1.74,
+   "role": "decor",
+   "label": "",
+   "tilt": 14.286850717207123,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_c.glb",
+   "pos": [
+    46.129,
+    1.726,
+    33.043
+   ],
+   "yaw": 58.68,
+   "scale": 1.22,
+   "role": "decor",
+   "label": "",
+   "tilt": 2.3199029972195255,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_c.glb",
+   "pos": [
+    45.713,
+    -0.3,
+    38.55
+   ],
+   "yaw": 281.87,
+   "scale": 1.3,
+   "role": "decor",
+   "label": "",
+   "tilt": 0.8061714791436785,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_j.glb",
+   "pos": [
+    45.816,
+    -0.3,
+    39.711
+   ],
+   "yaw": 6.54,
+   "scale": 2.09,
+   "role": "decor",
+   "label": "",
+   "tilt": 1.043850973742309,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_j.glb",
+   "pos": [
+    46.266,
+    7.542,
+    48.147
+   ],
+   "yaw": 293.1,
+   "scale": 1.09,
+   "role": "decor",
+   "label": "",
+   "tilt": -14.565798202616797,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_c.glb",
+   "pos": [
+    29.543,
+    6.249,
+    50.174
+   ],
+   "yaw": 355.4,
+   "scale": 1.1,
+   "role": "decor",
+   "label": "",
+   "tilt": -0.5669385493903611,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_medium_2.glb",
+   "pos": [
+    46.107,
+    -0.3,
+    43.589
+   ],
+   "yaw": 195.91,
+   "scale": 1.09,
+   "role": "decor",
+   "label": "",
+   "tilt": -9.524658580585522,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_q.glb",
+   "pos": [
+    35.851,
+    11.979,
+    50.243
+   ],
+   "yaw": 339.74,
+   "scale": 1.18,
+   "role": "decor",
+   "label": "",
+   "tilt": -12.297712711255326,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_q.glb",
+   "pos": [
+    45.755,
+    6.344,
+    43.187
+   ],
+   "yaw": 60.03,
+   "scale": 1.11,
+   "role": "decor",
+   "label": "",
+   "tilt": 9.917766174976787,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_q.glb",
+   "pos": [
+    45.7,
+    17.04,
+    45.908
+   ],
+   "yaw": 39.93,
+   "scale": 0.8,
+   "role": "decor",
+   "label": "",
+   "tilt": 188.86505067387947,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_medium_2.glb",
+   "pos": [
+    43.279,
+    17.163,
+    49.7
+   ],
+   "yaw": 289.43,
+   "scale": 1.75,
+   "role": "decor",
+   "label": "",
+   "tilt": 186.41329199735836,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_medium_2.glb",
+   "pos": [
+    29.676,
+    16.81,
+    49.7
+   ],
+   "yaw": 309.56,
+   "scale": 1.22,
+   "role": "decor",
+   "label": "",
+   "tilt": 178.99401287059118,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_j.glb",
+   "pos": [
+    14.3,
+    16.686,
+    44.791
+   ],
+   "yaw": 232.43,
+   "scale": 1.03,
+   "role": "decor",
+   "label": "",
+   "tilt": 176.91728006131896,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_h.glb",
+   "pos": [
+    14.3,
+    16.874,
+    35.42
+   ],
+   "yaw": 270.83,
+   "scale": 1.21,
+   "role": "decor",
+   "label": "",
+   "tilt": 186.78288596151344,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_c.glb",
+   "pos": [
+    14.3,
+    16.562,
+    38.312
+   ],
+   "yaw": 25.25,
+   "scale": 1.67,
+   "role": "decor",
+   "label": "",
+   "tilt": 172.37015982791817,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_k.glb",
+   "pos": [
+    14.3,
+    17.306,
+    40.236
+   ],
+   "yaw": 297.86,
+   "scale": 1.67,
+   "role": "decor",
+   "label": "",
+   "tilt": 175.14999048676702,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_k.glb",
+   "pos": [
+    35.983,
+    17.009,
+    49.7
+   ],
+   "yaw": 113.86,
+   "scale": 1.29,
+   "role": "decor",
+   "label": "",
+   "tilt": 186.08512282725133,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_j.glb",
+   "pos": [
+    27.389,
+    17.122,
+    49.7
+   ],
+   "yaw": 71.03,
+   "scale": 1.69,
+   "role": "decor",
+   "label": "",
+   "tilt": 180.39712331944247,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_h.glb",
+   "pos": [
+    36.913,
+    17.026,
+    49.7
+   ],
+   "yaw": 19.54,
+   "scale": 1.42,
+   "role": "decor",
+   "label": "",
+   "tilt": 165.28210966133787,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_q.glb",
+   "pos": [
+    14.3,
+    16.858,
+    45.473
+   ],
+   "yaw": 78.21,
+   "scale": 0.66,
+   "role": "decor",
+   "label": "",
+   "tilt": 169.52597521399844,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_h.glb",
+   "pos": [
+    14.3,
+    16.92,
+    39.29
+   ],
+   "yaw": 93.06,
+   "scale": 1.28,
+   "role": "decor",
+   "label": "",
+   "tilt": 190.8908671270746,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_medium_2.glb",
+   "pos": [
+    25.396,
+    17.13,
+    49.7
+   ],
+   "yaw": 117.15,
+   "scale": 1.7,
+   "role": "decor",
+   "label": "",
+   "tilt": 184.47879505185148,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_h.glb",
+   "pos": [
+    14.3,
+    16.815,
+    37.238
+   ],
+   "yaw": 342.78,
+   "scale": 1.13,
+   "role": "decor",
+   "label": "",
+   "tilt": 186.70935213685357,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_q.glb",
+   "pos": [
+    29.648,
+    17.191,
+    49.7
+   ],
+   "yaw": 274.73,
+   "scale": 0.91,
+   "role": "decor",
+   "label": "",
+   "tilt": 182.73093520833532,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_q.glb",
+   "pos": [
+    38.53,
+    17.03,
+    49.7
+   ],
+   "yaw": 215.87,
+   "scale": 0.79,
+   "role": "decor",
+   "label": "",
+   "tilt": 190.93056932293177,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_j.glb",
+   "pos": [
+    34.256,
+    16.961,
+    49.7
+   ],
+   "yaw": 63.15,
+   "scale": 1.45,
+   "role": "decor",
+   "label": "",
+   "tilt": 167.32573784044237,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_c.glb",
+   "pos": [
+    45.7,
+    16.389,
+    37.574
+   ],
+   "yaw": 140.65,
+   "scale": 1.16,
+   "role": "decor",
+   "label": "",
+   "tilt": 179.65622633055423,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_h.glb",
+   "pos": [
+    30.34,
+    16.869,
+    49.7
+   ],
+   "yaw": 55.71,
+   "scale": 1.2,
+   "role": "decor",
+   "label": "",
+   "tilt": 177.92032400351854,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_q.glb",
+   "pos": [
+    34.267,
+    17.042,
+    49.7
+   ],
+   "yaw": 328.77,
+   "scale": 0.8,
+   "role": "decor",
+   "label": "",
+   "tilt": 187.0245825894951,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_h.glb",
+   "pos": [
+    14.3,
+    17.087,
+    47.171
+   ],
+   "yaw": 271.95,
+   "scale": 1.51,
+   "role": "decor",
+   "label": "",
+   "tilt": 194.5036069261002,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_q.glb",
+   "pos": [
+    45.7,
+    17.153,
+    45.889
+   ],
+   "yaw": 211.22,
+   "scale": 0.89,
+   "role": "decor",
+   "label": "",
+   "tilt": 193.96584786229846,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_c.glb",
+   "pos": [
+    14.3,
+    16.387,
+    35.282
+   ],
+   "yaw": 6.5,
+   "scale": 1.15,
+   "role": "decor",
+   "label": "",
+   "tilt": 177.30198499275403,
+   "grown": true
+  },
+  {
+   "model": "cave/grock_j.glb",
+   "pos": [
+    45.7,
+    17.133,
+    48.271
+   ],
+   "yaw": 324.74,
+   "scale": 1.7,
+   "role": "decor",
+   "label": "",
+   "tilt": 185.74100165052837,
+   "grown": true
+  },
+  {
+   "model": "cave/shelf_d.glb",
+   "pos": [
+    33.801,
+    9.242,
+    50.0
+   ],
+   "yaw": 180.0,
+   "scale": 2.39,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/moss_drape.glb",
+   "pos": [
+    32.964,
+    8.405,
+    49.043
+   ],
+   "yaw": 180.0,
+   "scale": 1.6,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/moss_drape.glb",
+   "pos": [
+    34.638,
+    8.405,
+    49.043
+   ],
+   "yaw": 180.0,
+   "scale": 1.6,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/shelf_a.glb",
+   "pos": [
+    46.0,
+    4.051,
+    47.112
+   ],
+   "yaw": 270.0,
+   "scale": 2.85,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/moss_drape.glb",
+   "pos": [
+    44.861,
+    3.054,
+    46.116
+   ],
+   "yaw": 270.0,
+   "scale": 1.6,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/moss_drape.glb",
+   "pos": [
+    44.861,
+    3.054,
+    48.109
+   ],
+   "yaw": 270.0,
+   "scale": 1.6,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/shelf_b.glb",
+   "pos": [
+    14.0,
+    11.231,
+    34.126
+   ],
+   "yaw": 90.0,
+   "scale": 3.02,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/moss_drape.glb",
+   "pos": [
+    15.206,
+    10.176,
+    33.07
+   ],
+   "yaw": 90.0,
+   "scale": 1.6,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/moss_drape.glb",
+   "pos": [
+    15.206,
+    10.176,
+    35.181
+   ],
+   "yaw": 90.0,
+   "scale": 1.6,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/shelf_d.glb",
+   "pos": [
+    22.233,
+    9.088,
+    50.0
+   ],
+   "yaw": 180.0,
+   "scale": 2.86,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/moss_drape.glb",
+   "pos": [
+    21.233,
+    8.088,
+    48.857
+   ],
+   "yaw": 180.0,
+   "scale": 1.6,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/moss_drape.glb",
+   "pos": [
+    23.233,
+    8.088,
+    48.857
+   ],
+   "yaw": 180.0,
+   "scale": 1.6,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/shelf_c.glb",
+   "pos": [
+    14.0,
+    12.182,
+    41.597
+   ],
+   "yaw": 90.0,
+   "scale": 2.59,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/moss_drape.glb",
+   "pos": [
+    15.035,
+    11.276,
+    40.691
+   ],
+   "yaw": 90.0,
+   "scale": 1.6,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/moss_drape.glb",
+   "pos": [
+    15.035,
+    11.276,
+    42.503
+   ],
+   "yaw": 90.0,
+   "scale": 1.6,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/shelf_b.glb",
+   "pos": [
+    25.969,
+    10.695,
+    50.0
+   ],
+   "yaw": 180.0,
+   "scale": 2.09,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/moss_drape.glb",
+   "pos": [
+    25.237,
+    9.963,
+    49.163
+   ],
+   "yaw": 180.0,
+   "scale": 1.6,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/moss_drape.glb",
+   "pos": [
+    26.701,
+    9.963,
+    49.163
+   ],
+   "yaw": 180.0,
+   "scale": 1.6,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/shelf_b.glb",
+   "pos": [
+    17.756,
+    12.472,
+    50.0
+   ],
+   "yaw": 180.0,
+   "scale": 2.52,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/moss_drape.glb",
+   "pos": [
+    16.873,
+    11.589,
+    48.991
+   ],
+   "yaw": 180.0,
+   "scale": 1.6,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/moss_drape.glb",
+   "pos": [
+    18.64,
+    11.589,
+    48.991
+   ],
+   "yaw": 180.0,
+   "scale": 1.6,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/shelf_b.glb",
+   "pos": [
+    21.102,
+    12.667,
+    50.0
+   ],
+   "yaw": 180.0,
+   "scale": 2.47,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/moss_drape.glb",
+   "pos": [
+    20.238,
+    11.804,
+    49.013
+   ],
+   "yaw": 180.0,
+   "scale": 1.6,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/moss_drape.glb",
+   "pos": [
+    21.965,
+    11.804,
+    49.013
+   ],
+   "yaw": 180.0,
+   "scale": 1.6,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/shelf_a.glb",
+   "pos": [
+    17.027,
+    12.722,
+    50.0
+   ],
+   "yaw": 180.0,
+   "scale": 2.59,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/moss_drape.glb",
+   "pos": [
+    16.121,
+    11.815,
+    48.964
+   ],
+   "yaw": 180.0,
+   "scale": 1.6,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/moss_drape.glb",
+   "pos": [
+    17.934,
+    11.815,
+    48.964
+   ],
+   "yaw": 180.0,
+   "scale": 1.6,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/shelf_b.glb",
+   "pos": [
+    24.989,
+    9.056,
+    50.0
+   ],
+   "yaw": 180.0,
+   "scale": 2.08,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/moss_drape.glb",
+   "pos": [
+    24.261,
+    8.328,
+    49.168
+   ],
+   "yaw": 180.0,
+   "scale": 1.6,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/moss_drape.glb",
+   "pos": [
+    25.716,
+    8.328,
+    49.168
+   ],
+   "yaw": 180.0,
+   "scale": 1.6,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/shelf_c.glb",
+   "pos": [
+    14.0,
+    10.886,
+    43.38
+   ],
+   "yaw": 90.0,
+   "scale": 3.02,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/moss_drape.glb",
+   "pos": [
+    15.208,
+    9.829,
+    42.323
+   ],
+   "yaw": 90.0,
+   "scale": 1.6,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/moss_drape.glb",
+   "pos": [
+    15.208,
+    9.829,
+    44.437
+   ],
+   "yaw": 90.0,
+   "scale": 1.6,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/shelf_c.glb",
+   "pos": [
+    14.0,
+    11.199,
+    45.214
+   ],
+   "yaw": 90.0,
+   "scale": 2.75,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/moss_drape.glb",
+   "pos": [
+    15.101,
+    10.235,
+    44.251
+   ],
+   "yaw": 90.0,
+   "scale": 1.6,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/moss_drape.glb",
+   "pos": [
+    15.101,
+    10.235,
+    46.178
+   ],
+   "yaw": 90.0,
+   "scale": 1.6,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/shelf_c.glb",
+   "pos": [
+    22.283,
+    6.891,
+    50.0
+   ],
+   "yaw": 180.0,
+   "scale": 2.78,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/moss_drape.glb",
+   "pos": [
+    21.31,
+    5.918,
+    48.889
+   ],
+   "yaw": 180.0,
+   "scale": 1.6,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/moss_drape.glb",
+   "pos": [
+    23.255,
+    5.918,
+    48.889
+   ],
+   "yaw": 180.0,
+   "scale": 1.6,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/shelf_b.glb",
+   "pos": [
+    46.0,
+    10.835,
+    40.255
+   ],
+   "yaw": 270.0,
+   "scale": 3.06,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/moss_drape.glb",
+   "pos": [
+    44.777,
+    9.765,
+    39.184
+   ],
+   "yaw": 270.0,
+   "scale": 1.6,
+   "role": "decor",
+   "label": "",
+   "grown": true
+  },
+  {
+   "model": "cave/moss_drape.glb",
+   "pos": [
+    44.777,
+    9.765,
+    41.325
+   ],
+   "yaw": 270.0,
+   "scale": 1.6,
+   "role": "decor",
+   "label": "",
+   "grown": true
   }
  ],
  "creatures": [
   {
    "kind": "lost_miner",
-   "model": "creatures/lost_miner_ghost.glb",
+   "model": "creatures/lost_miner_frost.glb",
    "pos": [
-    15.0,
-    2.25,
-    37.0
+    31.0,
+    0.25,
+    38.0
    ],
    "yaw": 180.0,
    "scale": 1.0,
-   "floor": 2.0
+   "floor": 0.0
   },
   {
    "kind": "lost_miner",
-   "model": "creatures/lost_miner_ghost.glb",
+   "model": "creatures/lost_miner_rime.glb",
    "pos": [
-    15.0,
-    2.25,
-    41.0
+    39.0,
+    0.25,
+    37.5
    ],
-   "yaw": 180.0,
+   "yaw": 200.0,
    "scale": 1.0,
-   "floor": 2.0
+   "floor": 0.0
   },
   {
    "kind": "tunnel_rat",
-   "model": "creatures/tunnel_rat_soot.glb",
+   "model": "creatures/tunnel_rat_rust.glb",
    "pos": [
     34.0,
     0.25,
@@ -10651,7 +13739,7 @@
   },
   {
    "kind": "tunnel_rat",
-   "model": "creatures/tunnel_rat_soot.glb",
+   "model": "creatures/tunnel_rat_rust.glb",
    "pos": [
     36.5,
     0.25,
@@ -10663,11 +13751,11 @@
   },
   {
    "kind": "lost_miner",
-   "model": "creatures/lost_miner_rime.glb",
+   "model": "creatures/lost_miner_ghost.glb",
    "pos": [
-    40.0,
+    27.0,
     5.25,
-    26.0
+    25.2
    ],
    "yaw": 270.0,
    "scale": 1.0,
@@ -10675,11 +13763,11 @@
   },
   {
    "kind": "lost_miner",
-   "model": "creatures/lost_miner_ghost.glb",
+   "model": "creatures/lost_miner_rime.glb",
    "pos": [
-    42.5,
+    28.8,
     5.25,
-    25.0
+    26.6
    ],
    "yaw": 270.0,
    "scale": 1.0,
@@ -10687,11 +13775,35 @@
   },
   {
    "kind": "tunnel_rat",
-   "model": "creatures/tunnel_rat_grime.glb",
+   "model": "creatures/tunnel_rat_soot.glb",
    "pos": [
     15.5,
     10.25,
     13.5
+   ],
+   "yaw": 0,
+   "scale": 1.0,
+   "floor": 10.0
+  },
+  {
+   "kind": "tunnel_rat",
+   "model": "creatures/tunnel_rat_soot.glb",
+   "pos": [
+    17.5,
+    10.25,
+    16.5
+   ],
+   "yaw": 180,
+   "scale": 1.0,
+   "floor": 10.0
+  },
+  {
+   "kind": "tunnel_rat",
+   "model": "creatures/tunnel_rat_grime.glb",
+   "pos": [
+    18.5,
+    10.25,
+    13.0
    ],
    "yaw": 90,
    "scale": 1.0,
@@ -10701,35 +13813,11 @@
    "kind": "tunnel_rat",
    "model": "creatures/tunnel_rat_rust.glb",
    "pos": [
-    17.5,
-    10.25,
-    16.5
-   ],
-   "yaw": 90,
-   "scale": 1.0,
-   "floor": 10.0
-  },
-  {
-   "kind": "tunnel_rat",
-   "model": "creatures/tunnel_rat_soot.glb",
-   "pos": [
-    18.5,
-    10.25,
-    13.0
-   ],
-   "yaw": 270,
-   "scale": 1.0,
-   "floor": 10.0
-  },
-  {
-   "kind": "tunnel_rat",
-   "model": "creatures/tunnel_rat_soot.glb",
-   "pos": [
     15.0,
     10.25,
     16.0
    ],
-   "yaw": 0,
+   "yaw": 90,
    "scale": 1.0,
    "floor": 10.0
   },
@@ -10765,7 +13853,7 @@
   },
   {
    "kind": "lost_miner",
-   "model": "creatures/lost_miner_ghost.glb",
+   "model": "creatures/lost_miner_frost.glb",
    "pos": [
     41.0,
     10.25,
@@ -11000,9 +14088,9 @@
    24.5
   ],
   [
-   42.6,
+   38.8,
    6.04,
-   25.0
+   24.6
   ],
   [
    28.0,
