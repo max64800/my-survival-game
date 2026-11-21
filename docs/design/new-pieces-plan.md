@@ -26,7 +26,8 @@ Stonehold (`cut_stone`, `stonehold_v2.py`), Hearthbrick (`clay_brick`, `hearthbr
 3. `roof_cap` (Shack + Hearthbrick).
 **Status (Nov 21):** all models DONE and installed in `assets/models/build/` (23 files: 7 Stonehold, 8 Shack,
 8 Hearthbrick; build code in `stonehold_v2.py`, `shack_v2.py` (`*_v3`), `hearthbrick_v2_new.py`, shared helpers in
-`new_pieces_common.py`). NOT done yet: pieces.gd entries, code shapes (collision) in `piece_mesh.gd`, icons, tests.
+`new_pieces_common.py`). **In the game (Nov 21):** pieces.gd entries, code shapes (collision) in `piece_mesh.gd` (spiral stairs collide as a
+smooth spiral slope: `PieceMesh.spiral_slope_parts`), icons, tests in `tests/test_new_pieces.gd`.
 Each piece: model + automatic model checks, entry in `src/build/pieces.gd` LIST (walkable stairs:
 `walkable_slope`, like `stairs`), icon (`tools/model_check/make_piece_icons.py`), test.
 

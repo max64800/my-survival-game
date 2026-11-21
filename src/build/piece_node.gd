@@ -250,7 +250,8 @@ static func floating_parts(p_piece: String, m: Mesh) -> int:
 ## pillar feet, overhanging shingles. Smaller is fine down to half (a slim sconce).
 static func model_misfit(p_piece: String, box: AABB) -> String:
 	var want := Pieces.box(p_piece, Vector3.ZERO, 0)
-	if absf(box.position.y) > 0.1:
+	var lift: float = Pieces.LIST[p_piece].get("model_lift", 0.1)  # how high a model may start (stair railing: on the steps)
+	if box.position.y < -0.1 or box.position.y > lift:
 		return "bottom at %.2f m, should be 0" % box.position.y
 	for axis in [0, 2]:
 		var w: float = want.size[axis]
@@ -371,6 +372,27 @@ func _box(size: Vector3, pos: Vector3, solid: bool = true) -> void:
 ## Stairs collide like a smooth ramp, so walking up them feels nice.
 func _ramp_shape(s: Vector3) -> void:
 	var cs := CollisionShape3D.new()
+	if piece == "stairs_corner":
+		# Corner stairs can't be one smooth slope: they collide as their real steps (code shape), and the
+		# dwarf's step-up (0.5 m) climbs them 25 cm at a time.
+		cs.shape = PieceMesh.solid(piece).create_trimesh_shape()
+		add_child(cs)
+		return
+	if piece == "stairs_spiral":
+		# A smooth spiral slope of slanted treads (step-ups fail under the low-hanging top tread), and the post.
+		var post := CylinderShape3D.new()
+		post.radius = 0.19
+		post.height = s.y
+		cs.shape = post
+		cs.position = Vector3(0, s.y * 0.5, 0)
+		add_child(cs)
+		for pts: PackedVector3Array in PieceMesh.spiral_slope_parts(s):
+			var part := CollisionShape3D.new()
+			var hull := ConvexPolygonShape3D.new()
+			hull.points = pts
+			part.shape = hull
+			add_child(part)
+		return
 	var sh := ConvexPolygonShape3D.new()
 	var hx := s.x * 0.5
 	var hz := s.z * 0.5

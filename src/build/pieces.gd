@@ -5,7 +5,8 @@ class_name Pieces
 ##         like a wall), "corner" (on a grid point), "free" (0.5 m steps), "ceiling" (hangs from rock).
 ## group  = which tab of the build menu.
 ## shape  = how it's drawn ("box" if missing): roof, ridge, roof_outer, roof_inner, gable, arch,
-##          arch_doorway, column, brace, ladder, railing, door, steps.
+##          arch_doorway, column, brace, ladder, railing, door, steps, stairs_corner, stairs_spiral,
+##          railing_stairs, hatch, gable_down, roof_cap.
 ## rise   = how high a roof/gable climbs over its depth (26° roofs: 1 m over 2 m; 45°: 2 m over 2 m).
 ## station= the station level that unlocks it, per station (workbench = wood, mason = stone/brick,
 ##          anvil = copper). A station missing from the list can't make this piece.
@@ -14,6 +15,7 @@ class_name Pieces
 const GRID := 2.0  ## the main piece size
 const FINE := 1.0  ## the snapping grid (2 m pieces + 1 m halves)
 const ALL := {"workbench": 1, "mason": 1, "anvil": 1}
+const KIT_FAMILIES := ["plank_root", "cut_stone", "clay_brick"]  ## the three kits: Shack, Stonehold, Hearthbrick
 
 const LIST := {
 	# --- foundations: thick blocks that can sink into uneven ground; always steady.
@@ -95,6 +97,31 @@ const LIST := {
 		families = ["plank_root", "plank_mushroom", "cut_stone", "clay_brick"], station = {"workbench": 1, "anvil": 1, "mason": 1}},  # Stonehold + Hearthbrick ladders (owner, Nov 20)
 	"railing": {name = "Railing", group = "around", size = Vector3(2, 1, 0.15), units = 1, place = "edge", shape = "railing",
 		families = ["plank_root", "plank_mushroom", "silver_ingot", "cut_stone", "clay_brick"], station = {"workbench": 1, "anvil": 1, "mason": 1}},  # stone balustrade (Stonehold v2), brick little arches (Hearthbrick v2)
+	# New pieces (owner, Nov 21; docs/design/new-pieces-plan.md), one model per kit: Shack (wood), Stonehold, Hearthbrick.
+	# Corner stairs fan a quarter turn round the front-left corner: in at the front, out at the back-left, 2 m up.
+	"stairs_corner": {name = "Corner Stairs", group = "around", size = Vector3(2, 2, 2), units = 6, place = "cell", shape = "stairs_corner",
+		walkable_slope = true, families = KIT_FAMILIES, station = {"workbench": 2, "mason": 2}},
+	# Spiral stairs: 12 treads round a post, one full turn up 2 m (the top tread sits over the bottom one).
+	"stairs_spiral": {name = "Spiral Stairs", group = "around", size = Vector3(2, 2, 2), units = 6, place = "cell", shape = "stairs_spiral",
+		walkable_slope = true, families = KIT_FAMILIES, station = {"workbench": 2, "mason": 2}},
+	# Stair railing: stands on the side of the straight stairs, climbing 2 m over its 2 m (1 m tall at the low end,
+	# 3 m above the floor at the high end, toward +x). The models' posts stand on the steps (model_lift).
+	"railing_stairs": {name = "Stair Railing", group = "around", size = Vector3(2, 3, 0.15), units = 2, place = "edge", shape = "railing_stairs",
+		model_lift = 0.45, families = KIT_FAMILIES, station = {"workbench": 1, "mason": 1}},
+	"edge_strip": {name = "Edge Strip", group = "around", size = Vector3(2, 0.3, 0.07), units = 1, place = "edge",
+		families = KIT_FAMILIES, station = {"workbench": 1, "mason": 1}},
+	# A floor with a round hole near its front (fall or drop through it) and its dark-wood lid lying open behind it.
+	"floor_hatch": {name = "Floor Hatch", group = "floor", size = Vector3(2, 0.31, 2), units = 4, place = "cell", shape = "hatch",
+		families = KIT_FAMILIES, station = {"workbench": 2, "mason": 2}},
+	# The sloped wall upside down: full along the top, slanting down to the floor at the left (fills under stairs).
+	# Its models' stone/brick rows stop a little above the sharp tip (model_lift).
+	"sloped_wall_down": {name = "Sloped Wall (down)", group = "wall", size = Vector3(2, 2, 0.3), units = 3, place = "edge", shape = "gable_down",
+		rise = 2.0, model_lift = 0.35, families = KIT_FAMILIES, station = {"workbench": 1, "mason": 1}},
+	"lattice_wall": {name = "Lattice Wall", group = "wall", size = Vector3(2, 2, 0.3), units = 3, place = "edge",
+		families = KIT_FAMILIES, station = {"workbench": 2, "mason": 2}},
+	# Closes the tip where four sloped roofs meet (sloped roofs only: not Stonehold, rule 4).
+	"roof_cap": {name = "Roof Cap", group = "roof", size = Vector3(1.1, 0.5, 1.1), units = 2, place = "corner", shape = "roof_cap",
+		families = ["plank_root", "clay_brick"], station = {"workbench": 2, "mason": 2}},
 	# --- triangles (building kit, Nov 15): EQUILATERAL, every side 2 m (one wall length), so any wall
 	# fits any edge and six make a hexagon. The origin is the triangle's middle (centroid); rot 0 has
 	# one edge facing +z (at z = +0.577) and the point at z = −1.155. They turn in 30° steps and

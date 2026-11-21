@@ -64,6 +64,12 @@ static func _make(piece: String, style: String, detail: bool) -> ArrayMesh:
 		"brace": _brace(s)
 		"ladder": _ladder(s)
 		"railing": _railing(s)
+		"railing_stairs": _stair_railing(s)
+		"stairs_corner": _corner_steps(s, 8)
+		"stairs_spiral": _spiral_steps(s, 12)
+		"hatch": _floor_hatch(s)
+		"gable_down": _prism_z([Vector2(-s.x * 0.5, 0), Vector2(-s.x * 0.5, s.y), Vector2(s.x * 0.5, s.y)], -s.z * 0.5, s.z * 0.5)
+		"roof_cap": _roof_cap(s)
 		"door": _circle_door(s, float(info.circle)) if info.has("circle") else _door(s)
 		"steps": _steps(s, 2)
 		"ramp": _ramp(s)
@@ -445,6 +451,131 @@ static func _railing(s: Vector3) -> void:
 		_box(Vector3(x, s.y * 0.5, 0), Vector3(0.1, s.y, 0.1))
 	_box(Vector3(0, s.y - 0.05, 0), Vector3(s.x, 0.1, 0.14))
 	_box(Vector3(0, s.y * 0.5, 0), Vector3(s.x, 0.06, 0.06))
+
+
+## Stair railing: along x, climbing (s.y − 1) m from the left end to the right end like the stairs beside it.
+## Solid: a slanted panel 1 m tall (you can't step off the stairs' side). Look: three posts and two slanted rails.
+static func _stair_railing(s: Vector3) -> void:
+	var hx := s.x * 0.5
+	var hz := s.z * 0.5
+	var climb := s.y - 1.0
+	if not _detail:
+		_prism_z([Vector2(-hx, 0), Vector2(-hx, 1.0), Vector2(hx, s.y), Vector2(hx, climb)], -hz, hz)
+		return
+	_prism_z([Vector2(-hx, 0.88), Vector2(-hx, 1.0), Vector2(hx, s.y), Vector2(hx, s.y - 0.12)], -hz, hz)  # hand rail
+	_prism_z([Vector2(-hx, 0.4), Vector2(-hx, 0.46), Vector2(hx, climb + 0.46), Vector2(hx, climb + 0.4)], -0.04, 0.04)
+	for x: float in [-hx + 0.06, 0.0, hx - 0.06]:
+		var y0: float = 0.0 if x < -0.5 else (x + hx) / s.x * climb  # the first post stands on the floor
+		var y1: float = (x + hx) / s.x * climb + 0.94
+		_box(Vector3(x, (y0 + y1) * 0.5, 0), Vector3(0.1, y1 - y0, 0.1))
+
+
+## Where a ray from the corner c (x, z) at angle a (0 = +x, 90° = −z) leaves the square ±hx, ±hz.
+static func _square_exit(c: Vector2, a: float, hx: float, hz: float) -> Vector2:
+	var d := Vector2(cos(a), -sin(a))
+	var t := 99.0
+	if d.x > 0.000001:
+		t = minf(t, (hx - c.x) / d.x)
+	if d.y < -0.000001:
+		t = minf(t, (-hz - c.y) / d.y)
+	return c + d * t
+
+
+## Corner stairs: n wedge steps fanning a quarter turn round the front-left corner, from along the front
+## edge (lowest) to along the left edge (top, s.y up). Each step is solid down to the floor, like the models.
+static func _corner_steps(s: Vector3, n: int) -> void:
+	var hx := s.x * 0.5
+	var hz := s.z * 0.5
+	var c := Vector2(-hx, hz)
+	var far := atan2(2.0 * hz, 2.0 * hx)  # the back-right corner's angle
+	for i in n:
+		var a0 := PI * 0.5 * i / n
+		var a1 := PI * 0.5 * (i + 1) / n
+		var pts := [c, _square_exit(c, a0, hx, hz)]
+		if a0 + 0.0001 < far and far < a1 - 0.0001:
+			pts.append(Vector2(hx, -hz))
+		pts.append(_square_exit(c, a1, hx, hz))
+		_prism_y(pts, 0.0, s.y * (i + 1) / n)
+	_box(Vector3(-hx + 0.16, s.y * 0.5, hz - 0.16), Vector3(0.3, s.y, 0.3))  # the post at the turn
+
+
+## Spiral stairs: a round post and n thin wedge treads, one full turn up s.y, climbing the same way as the
+## corner stairs (from +x toward −z). Open underneath, so you can walk below the high treads.
+static func _spiral_steps(s: Vector3, n: int) -> void:
+	var r_out := minf(s.x, s.z) * 0.5 - 0.05
+	var r_in := 0.14  # inside the post, so every tread is held by it
+	_cyl(Vector3.ZERO, 0.19, 0.19, s.y)
+	for i in n:
+		var a0 := TAU * i / n
+		var a1 := TAU * (i + 1) / n + 0.05  # a little over the next one (seen from above: no gaps)
+		var pts := []
+		for k in 4:
+			var a := lerpf(a0, a1, k / 3.0)
+			pts.append(Vector2(cos(a), -sin(a)) * r_out)
+		pts.append(Vector2(cos(a1), -sin(a1)) * r_in)
+		pts.append(Vector2(cos(a0), -sin(a0)) * r_in)
+		var top := s.y * (i + 1) / n
+		_prism_y(pts, top - 0.13, top)
+
+
+## The spiral stairs' solid treads as smooth slanted wedges, each rising from the one before to its own top, so
+## together they make one smooth spiral slope (no step-ups: the top tread hangs low over the bottom one, and a
+## step-up needs 0.5 m of head room). Each is a list of corner points for a ConvexPolygonShape3D.
+static func spiral_slope_parts(s: Vector3, n: int = 12) -> Array:
+	var r_out := minf(s.x, s.z) * 0.5 - 0.05
+	var r_in := 0.3  # closer in, the slope is too steep to stand on (it acts as a wall); no dwarf fits there anyway
+	var parts := []
+	for i in n:
+		var pts := PackedVector3Array()
+		for k in 4:
+			var t := k / 3.0
+			var a := TAU * (i + t) / n
+			var y := s.y * (i + t) / n
+			for r in ([r_out, r_in] if k in [0, 3] else [r_out]):
+				pts.append(Vector3(cos(a) * r, y, -sin(a) * r))
+				pts.append(Vector3(cos(a) * r, maxf(0.0, y - 0.13), -sin(a) * r))
+		parts.append(pts)
+	return parts
+
+
+## Where the floor hatch's hole is: centre z and radius (the models: Stonehold/Hearthbrick z 0.47, Shack z 0.40,
+## both radius 0.42; this sits between them). A dwarf (0.72 m wide) drops through it.
+const HATCH_Z := 0.435
+const HATCH_R := 0.42
+
+
+## Floor hatch: a 0.25 m floor with a round hole, built from strips; its round lid lies open behind the hole.
+static func _floor_hatch(s: Vector3) -> void:
+	var t := 0.25
+	var hx := s.x * 0.5
+	var hz := s.z * 0.5
+	var z0 := HATCH_Z - HATCH_R
+	var z1 := HATCH_Z + HATCH_R
+	_box(Vector3(0, t * 0.5, (-hz + z0) * 0.5), Vector3(s.x, t, z0 + hz))  # behind the hole
+	_box(Vector3(0, t * 0.5, (z1 + hz) * 0.5), Vector3(s.x, t, hz - z1))   # in front of it
+	var strips := 14
+	for i in strips:
+		var za := z0 + (z1 - z0) * i / strips
+		var zb := z0 + (z1 - z0) * (i + 1) / strips
+		var d := 0.0 if (za <= HATCH_Z and HATCH_Z <= zb) else minf(absf(za - HATCH_Z), absf(zb - HATCH_Z))
+		var half := sqrt(maxf(0.0, HATCH_R * HATCH_R - d * d))
+		for sgn in [-1.0, 1.0]:
+			_box(Vector3(sgn * (half + hx) * 0.5, t * 0.5, (za + zb) * 0.5), Vector3(hx - half, t, zb - za))
+	if _detail:
+		_cyl(Vector3(0, t, HATCH_Z - 2.0 * HATCH_R - 0.01), HATCH_R, HATCH_R, s.y - t)  # the lid, lying open
+
+
+## Roof cap: a low pyramid over where four sloped roofs meet.
+static func _roof_cap(s: Vector3) -> void:
+	var hx := s.x * 0.5
+	var hz := s.z * 0.5
+	var top := Vector3(0, s.y, 0)
+	var b := [Vector3(-hx, 0, -hz), Vector3(hx, 0, -hz), Vector3(hx, 0, hz), Vector3(-hx, 0, hz)]
+	_face(b, Vector3.DOWN)
+	for i in 4:
+		var p: Vector3 = b[i]
+		var q: Vector3 = b[(i + 1) % 4]
+		_face([p, q, top], (p + q) * 0.5 + Vector3.UP * 0.3)
 
 
 ## Stonehold's flat roof: a thick slab, with a slightly raised rim so rain (and eyes) see an edge.
