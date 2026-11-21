@@ -8608,3 +8608,38 @@ Changes:
 - First picture: the belt loop stuck out behind the trousers. Moved it 4 cm closer and level with the side.
 - Two script text edits broke on a "\n" in the text (it turned into a real line break). Redone with the editor.
 - The new icon is a cut-out of the Blender picture, not a ChatGPT-painted icon like the others.
+
+
+## Nov 21: Ruin test buttons in the dev menu
+
+**What we did.**
+- The start menu's dev part (dev builds only) now has two columns. The dungeon buttons are on the left. A new
+  "Ruins" column is on the right, with two buttons per ruin: stone (brick for the Brewhall) and "Wood".
+- The owner picked the answers: opening the Rebuilding Chest rebuilds the whole ruin at once, but only in these test
+  worlds, never in real games. And two buttons per ruin.
+- Each button makes a small test world: one dome cave holding just that ruin. The dwarf stands at its Rebuilding
+  Chest with a Build Hammer, pickaxe, axe, torches and the Back Lantern.
+- The four ruins really in the game: Stone Watchtower, Fallen Outpost, Brewhall, Lantern Spire. The Old Kiln is left
+  out because nothing places it in a world yet.
+- Adding a ruin later takes one line in `src/debug/ruin_tests.gd` (`RuinTests.LIST`).
+- Robots can run it too: `-- claude=ruintest ruintest=<tower|outpost|brewhall|spire> [ruinwood] shots=<folder>`.
+  That opens the chest by itself, takes a picture before and after, and quits.
+- New test: `test_every_ruin_test_cave_holds_its_ruin` checks flat ground, open air, that you arrive in front of the
+  ruin, and that test layouts never clash with real or dungeon ones.
+- Times to rebuild at once: tower 1.5 s, Outpost 3.3 s, Brewhall 1.0 s, Spire 2.0 s, wooden tower 1.4 s.
+
+**Mistakes and hurdles (Claude's own).**
+- The Outpost's test cave had a 2 m bump in the middle, so the flat-ground test failed. Fixed: each ruin now stands
+  on the lowest ground under its whole body.
+- The Outpost rebuild was slow: about 10 s at first. Building faster each tick didn't help, and building every frame
+  made it worse (over 11 s). Claude timed each part and found the real cause. Every old broken piece taken away ran
+  a whole-world "is it still standing?" check, about 2 s each time. Fixed: in test worlds all old pieces are taken
+  away together, with one check at the end. Now 3.3 s.
+- The first pictures failed ("Can't save PNG") because Claude forgot to make the picture folders first.
+- The bag window covered the "after" picture. The robot now closes it too.
+- The timing code used to find the slow part was taken out again before the final runs.
+
+**Owner tried it: F611.** In the rebuilt wooden Outpost, a chest stood where the stairs come out. It was the copper
+chest with the Outpost plans on the back corner tower's roof, one tile from the stairs' top. It now stands one floor
+tile along, against the wall. A new check (`test_no_ruin_chest_stands_on_the_stairs`) looks at every ruin. It found
+the same problem in the Lantern Spire (its chest stands in the stairwell hole), which waits for the owner's OK.
