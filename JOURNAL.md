@@ -7829,3 +7829,35 @@ from the first plan wait until these seven are done (owner's call).
 
 **Next**
 - The owner watches "Crossbow: new moves to try". If OK, the game's aim, shoot and reload switch from the pistol clips to "c/Aim", "c/Shoot", "c/Reload" (DwarfRig.ANIMS.aim, DwarfModel.react shoot/reload).
+
+
+## Nov 21, 2026: the ruins get their own props (ruin-decor chat)
+
+**What we did**
+- The owner said: "Brewhall and Spire: nothing; Outpost and Watchtower: 2 props each". The props made for each ruin
+  (the catalogue pieces: rt_, ro_, rb_, rs_) now stand in the game, like in the dungeons.
+- `tools/ruins/ruin_junk.py` got a Decor list per ruin: each piece, its floor, and how it stands (on a wall, free in
+  the room, on the ground outside, or filling a gap in the Outpost's wall). The tool finds the nearest free spot to a
+  hint. Watchtower 15, Outpost 14, Brewhall 12, Spire 12 pieces, all placed.
+- Brewhall and Spire now have junk too (they had none): new `brewhall_ruin_junk.json`, `spire_ruin_junk.json`.
+- The bolt crate (Watchtower) and the crossbow rack (Outpost) can be searched for loot: LootProps places them from the
+  junk list (keys `r:<ruin>:j<n>`).
+- Old worlds get the new props too: the junk list has a version (`jv`); an older one is made again, once.
+- Tests: test_ruin_junk checks all 4 ruins (the props keep off stairs, doors and chests), new
+  test_ruins_have_their_catalogue_decor and test_old_ruin_junk_is_made_again; test_loot_props checks the bolt crate.
+
+**Mistakes and hurdles**
+- Half the props found no spot at first. The junk rules (hug a wall, keep 2 m from doors, never on a walk line) are
+  too strict for big tables and vats. Owner's rule "if you think it works": props keep 1.2 m from doors (from their
+  edge), 0.5 m from stairs, may step off a curved tower wall, and indoors don't avoid door-to-door lines.
+- Cellar walls were skipped: the tool took "below the ground" walls for foundation edges. Fixed.
+- The Outpost's yard props were marked "outside" because the wall breaches broke the yard test. Fix: a box around the
+  curtain wall counts as inside.
+- Python ran out of memory (OpenBLAS threads). Fix: `OPENBLAS_NUM_THREADS=1`.
+- The full test run is longer than 10 minutes, so it went to the background.
+- Some rooms are too full for the biggest props: the water cistern, broken stair landing and oil hoist went outside
+  on the ground; the cask bay went up to the Brewhall loft.
+
+**Next**
+- The Kiln has no props of its own. Its plan lists 21 reused round-1 pieces, but plan props only show on the 3D
+  pages, not in the game. Waiting for the owner: new Kiln pieces, or reuse the round-1 ones.
