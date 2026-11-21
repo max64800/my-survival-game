@@ -7360,3 +7360,15 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   17 heavy models slimmed under 2 MB each (cause: unused vertex colours in the game's dwarf model, ~2 MB per figure,
   and too many bevel steps on tiny parts). Handover for the PC: `docs/HANDOVER-2026-11-22.md` (the Ruin junk chat also
   writes `docs/art/DECOR-CATALOG.md`).
+
+## Nov 22 — PC coordinator: pulling the Mac's decor night (the Dungeons chat did it)
+- **Pull:** stopped once because JOURNAL.md had other chats' unsaved lines. Fix without losing anything: a backup
+  copy, set just that file aside, `git pull --ff-only`, then a 3-way merge of their lines with the Mac's new ones
+  (no clashes; the file ended up exactly their version + the Mac's 65 new lines), and the set-aside copy dropped.
+- **Import:** Godot's import-only mode (no editor window, less memory) made the 542 missing `.import` files for the
+  642 decor models, no errors. Committed, since the project keeps `.import` files.
+- **test_model_rules:** failed on ~400 decor models "without a build script". A test slip, not a model one: the
+  Mac's `decor_nov21_*.py` build each model in a function named like it (`def bv_assay_bench():`), and the test
+  only looked for the name in quotes. It now accepts `def <name>(` too: 9/9 pass. Commit 16fadae2, pushed.
+- **Messages:** ListAgents showed 3 other chats with names that don't say their job, so each got the same message
+  with every chat's extra job labelled and a request to reply which chat it is.
