@@ -364,6 +364,146 @@ prop("dungeon/lever.glb", 45.0, D, 40.0 + 0.15, 0.0, role="trap", label="Lever: 
 # Behind the gate (the lift's top): crates.
 prop("decor/crate_stack.glb", 41.0, F, 49.1, 10.0)
 
+# --- 4b. Decor from the decor catalogue (docs/art/DECOR-CATALOG.md, Nov 22): every piece in its own room and spot, off
+# the walk lines, clear of doors, chests, traps and the wall torches (tools/dungeons/decor.py; tests/test_dungeon_decor.gd).
+# Pell has two levels that overlap seen from above (the hut over the Last Dig), so each level is checked on its own.
+# Left out until the owner answers the rule clashes: op_diary_table (spilled ink), table_overturned (puddle), last_meal (food).
+import decor  # noqa: E402
+import junk  # noqa: E402
+
+HUNG = -0.03
+W = decor.wall
+
+
+def _d(n):
+	return "decor/%s.glb" % n
+
+
+# Old plain furniture that made way for the catalogue's own pieces.
+GONE = {("decor/shack_bed.glb", 38.6, 45.6), ("decor/keg.glb", 32.8, 51.2), ("decor/firewood_rack.glb", 39.4, 51.0),
+	("decor/grain_sacks.glb", 26.8, 49.2), ("decor/shack_table.glb", 23.4, 23.2), ("decor/shack_table.glb", 48.4, 54.2),
+	("decor/shack_shelf.glb", 34.5, 44.45), ("dungeon/junk_rags.glb", 8.9, 27.0), ("decor/crate_stack.glb", 28.6, 49.1), ("decor/crate_stack.glb", 29.0, 40.9), ("dungeon/rail_wedge.glb", 27.2, 45.0), ("dungeon/rubble_ore.glb", 29.0, 28.8)}
+props[:] = [p for p in props if (p["model"], p["pos"][0], p["pos"][2]) not in GONE]
+
+DECOR = [
+	# Pell's Hut (x 32-40, z 44-52)
+	("op_cot", "pells_hut", W(_d("op_cot"), "n", 44, 33.4)),
+	("op_root_armchair", "pells_hut", decor.corner(_d("op_root_armchair"), "s", 52, "e", 40)),
+	("op_bone_board", "pells_hut", W(_d("op_bone_board"), "w", 32, 47.0, out=HUNG), 1.0),
+	("op_map_rack", "pells_hut", W(_d("op_map_rack"), "n", 44, 36.0, out=HUNG), 0.7),
+	("op_key_board", "pells_hut", W(_d("op_key_board"), "e", 40, 45.4, out=HUNG), 0.8),
+	("op_tinker_bench", "pells_hut", decor.corner(_d("op_tinker_bench"), "s", 52, "w", 32)),
+	("op_strongbox_pried", "pells_hut", decor.mid(_d("op_strongbox_pried"), 38.6, 45.5, 0.0)),
+	("op_pipe_rack", "pells_hut", W(_d("op_pipe_rack"), "w", 32, 46.0, out=HUNG), 1.0),
+	("op_rock_shelf", "pells_hut", W(_d("op_rock_shelf"), "n", 44, 37.4, out=HUNG), 0.8),
+	("spider_eggs", "landing", W(_d("spider_eggs"), "s", 46, 25.6, out=HUNG), 1.0),
+	("op_spike_crate", "cave_in", W(_d("op_spike_crate"), "w", 24, 36.9)),
+	("graffiti_pell", "spoil", W(_d("graffiti_pell"), "n", 24, 17.0, out=HUNG), 0.5),
+	("op_decoy_chest", "den", decor.corner(_d("op_decoy_chest"), "s", 28, "w", 8)),
+	("spider_eggs", "den", W(_d("spider_eggs"), "n", 22, 10.0, out=HUNG), 1.0),
+	("spider_eggs", "den", W(_d("spider_eggs"), "w", 8, 25.5, out=HUNG), 1.0),
+	("pickaxe_in_wall", "dig", W(_d("pickaxe_in_wall"), "e", 50, 50.0, out=HUNG), 1.0),
+	# Winch Shed (x 24-30, z 44-50)
+	# Ladder Landing (x 24-30, z 40-46)
+	("op_watch_post", "landing", decor.corner(_d("op_watch_post"), "s", 46, "e", 30)),
+	# Cave-in Tunnel
+	("op_warning_plank", "cave_in", W(_d("op_warning_plank"), "e", 28, 38.8, out=HUNG), 1.0),
+	# Sorting Room (x 22-30, z 22-30)
+	("op_tumbler", "sorting", W(_d("op_tumbler"), "n", 22, 27.0)),
+	("op_sieve_stack", "sorting", decor.corner(_d("op_sieve_stack"), "s", 30, "e", 30)),
+	("op_caught_boot", "sorting", decor.corner(_d("op_caught_boot"), "n", 22, "w", 22)),
+	# Spoil Tunnel (x 14-22, z 24-28)
+	("op_signpost", "landing", W(_d("op_signpost"), "e", 30, 41.8)),
+	# Spider Den (x 8-14, z 22-28)
+	("op_barricade", "den", W(_d("op_barricade"), "s", 28, 11.0)),
+	# Miner's Shrine (x 30-36, z 32-38)
+	("op_hat_on_pick", "shrine", W(_d("op_hat_on_pick"), "n", 32, 33.0)),
+	# Pell's Last Dig (x 36-50, z 40-56)
+	("op_madness_board", "dig", W(_d("op_madness_board"), "w", 36, 51.0, out=HUNG), 0.8),
+	("op_x_marks_dig", "dig", decor.corner(_d("op_x_marks_dig"), "s", 56, "e", 50)),
+]
+for _c in creatures:   # (the Sorting Room's miner and a Den rat step aside)
+	if (_c["pos"][0], _c["pos"][2]) == (26.0, 23.2):
+		_c["pos"][0], _c["pos"][2] = 25.0, 25.0
+	elif (_c["pos"][0], _c["pos"][2]) == (9.2, 26.8):
+		_c["pos"][0], _c["pos"][2] = 10.6, 24.6
+	elif (_c["pos"][0], _c["pos"][2]) == (12.4, 26.4):
+		_c["pos"][0], _c["pos"][2] = 12.0, 25.2
+_lvl = lambda g: 1 if SP[g][5] >= 0 else 2
+_plvl = lambda p: 1 if p["pos"][1] > -3.0 else 2
+_flatj = {"dungeon/floor_old.glb", "dungeon/wall_old.glb", "dungeon/wall_cracked.glb", "dungeon/trap_floor_break.glb",
+	"dungeon/floor_grooved.glb", "dungeon/floor_loose_stone.glb"}
+_dxz = lambda p: (p["pos"][0], p["pos"][2])
+_cells_l = {l: {(k[0], k[1]): v for k, v in cells.items() if k[2] == l and k not in NO_PIECES} for l in (1, 2)}
+_spaces_l = {l: [s for s in SPACES if s[0] not in NOT_ROOMS and level(s[0]) == l] for l in (1, 2)}
+_items = {1: [], 2: []}
+for n, room, at, *up in DECOR:
+	_items[_lvl(room)].append((_d(n), at[0], at[1], at[2], room) + tuple(up))
+_problems = []
+for l in (1, 2):
+	_dw = [_dxz(p) for p in pieces if p["id"] == "doorway" and _plvl(p) == l]
+	_dw += [_dxz(p) for p in props if p["model"] in ("dungeon/dungeon_entrance.glb", "dungeon/wall_cracked.glb") and _plvl(p) == l]
+	_obst = [(p["pos"][0], p["pos"][2], max(junk.size(p["model"])[:2]) / 2, 0.0, decor.height(p["model"])) for p in props
+		if p["role"] in ("decor", "heal") and p["model"] not in _flatj and _plvl(p) == l]
+	_obst += [(p["pos"][0], p["pos"][2], 0.4, 1.0, 2.4) for p in props if p["role"] == "light" and _plvl(p) == l]
+	_obst += [(p["pos"][0], p["pos"][2], 0.9) for p in pieces if p["id"] in ("mine_prop", "railing") and _plvl(p) == l]
+	_obst += [(c["pos"][0], c["pos"][2], 0.5, 0.0, 1.5) for c in creatures if _plvl(c) == l]
+	_pr, _ = decor.check(_items[l], _cells_l[l], junk.walk_lines(_spaces_l[l], lambda n: GROUP.get(n, n), _cells_l[l], _dw),
+		doors=_dw + [_dxz(p) for p in props if p["role"] == "door" and "lever" not in p["model"] and _plvl(p) == l],
+		things=[_dxz(c) for c in chests if _plvl(c) == l] + ([(RECIPE_STAND["pos"][0], RECIPE_STAND["pos"][2])] if l == 2 else [])
+			+ [_dxz(p) for p in props if "lever" in p["model"] and _plvl(p) == l],
+		traps=[_dxz(p) for p in props if p["role"] in ("trap", "secret") and p["model"] not in _flatj and _plvl(p) == l],
+		obstacles=_obst)
+	_problems += _pr
+if _problems:
+	sys.exit("decor breaks the placement rules:\n  " + "\n  ".join(_problems))
+for l in (1, 2):
+	props += decor.props(_items[l], lambda g: SP[g][5])
+
+# --- 4c. Junk (owner, Nov 22): across the whole room, about 1.8 things per 10 m2 counting the furniture, decor and chests;
+# one of each kind per room but candles and pots (tools/dungeons/junk.py; tests/test_dungeon_junk.gd). Own dice (seed).
+JUNK_THEMES = {
+	"pells_hut": ["meal", "rags", "candles", "bones", "furn_stool", "cookpot_tipped", "furn_bucket_wood", "lantern",
+		"tools", "furn_bucket_metal", "scrap", "helmet", "urns", "axe_head"],
+	"winch_shed": ["tools", "furn_bucket_metal", "scrap", "rubble_wood", "timber_stack", "lantern", "beam_snapped", "rags"],
+	"pantry": ["meal", "rags", "furn_bucket_wood", "grain_sacks", "keg", "candles", "bones", "urns"],
+	"landing": ["tools", "rubble_wood", "lantern", "helmet", "bones", "rags", "scrap", "beam_snapped"],
+	"cave_in": ["rubble_wood", "beam_snapped", "tools", "helmet", "bones", "scrap"],
+	"sorting": ["ore_basket", "tools", "rubble_wood", "furn_bucket_metal", "scrap", "helmet", "lantern", "rags", "furn_stool",
+		"crate_stack", "bones", "timber_stack"],
+	"spoil": ["rubble_wood", "tools", "ore_basket", "bones", "scrap", "rags"],
+	"den": ["bones", "rags", "helmet", "scrap", "rubble_wood", "torch_dropped"],
+	"shrine": ["candles", "urns", "bones", "rags", "helmet", "lantern"],
+	"dig": ["tools", "ore_basket", "rubble_wood", "helmet", "lantern", "furn_bucket_metal", "scrap", "bones", "beam_snapped",
+		"timber_stack", "rags", "torch_dropped", "furn_stool", "crate_stack", "spear_broken", "axe_head", "candles", "meal"],
+}
+JUNK_ROOMS = set(JUNK_THEMES)
+_jcounts = {}
+for g in JUNK_ROOMS:
+	_floor = [c for c, v in cells.items() if v == g]
+	_low = lambda p: p["pos"][1] < SP[g][5] + 1.0
+	_there = sum(1 for p in props if p["role"] in ("decor", "light", "heal") and p["model"] not in _flatj and _low(p)
+		and cells.get((*junk.cell_of(p["pos"][0], p["pos"][2]), _lvl(g))) == g)
+	_there += sum(1 for c in chests if cells.get((*junk.cell_of(c["pos"][0], c["pos"][2]), _lvl(g))) == g)
+	_jcounts[g] = max(2, round(1.8 * len(_floor) * 4 / 10) - _there)
+print("junk per room:", dict(sorted(_jcounts.items())))
+for l in (1, 2):
+	_dw = [_dxz(p) for p in pieces if p["id"] == "doorway" and _plvl(p) == l]
+	_dw += [_dxz(p) for p in props if p["model"] in ("dungeon/dungeon_entrance.glb", "dungeon/wall_cracked.glb") and _plvl(p) == l]
+	props += junk.place_junk(
+		_spaces_l[l], lambda n: GROUP.get(n, n), _cells_l[l], lambda g: SP[g][5], {r for r in JUNK_ROOMS if _lvl(r) == l}, JUNK_THEMES,
+		doors=_dw + [_dxz(p) for p in props if p["role"] == "door" and "lever" not in p["model"] and _plvl(p) == l],
+		path_doors=_dw,
+		things=[_dxz(c) for c in chests if _plvl(c) == l] + ([(RECIPE_STAND["pos"][0], RECIPE_STAND["pos"][2])] if l == 2 else [])
+			+ [_dxz(p) for p in props if "lever" in p["model"] and _plvl(p) == l],
+		traps=[_dxz(p) for p in props if p["role"] in ("trap", "secret") and p["model"] not in _flatj and _plvl(p) == l],
+		furniture=[(p["pos"][0], p["pos"][2], max(junk.size(p["model"])[:2]) / 2) for p in props
+			if p["role"] in ("decor", "light", "heal") and p["model"] not in _flatj and _plvl(p) == l and p["pos"][1] < SP["landing"][5] + 1.0 + (6.0 if l == 1 else 0.0)]
+			+ [(p["pos"][0], p["pos"][2], 0.9) for p in pieces if p["id"] in ("mine_prop", "railing") and _plvl(p) == l],
+		seed=2013, skip={"entry"},
+		counts={r: n for r, n in _jcounts.items() if _lvl(r) == l},
+	)
+
 # --- Write it out. ---
 missing = sorted({p["model"] for p in props if not (ROOT / "assets/models" / p["model"]).exists()} |
 	{c["model"] for c in creatures if not (ROOT / "assets/models" / c["model"]).exists()} |

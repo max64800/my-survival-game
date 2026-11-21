@@ -56,6 +56,17 @@ static func _inside(s: Array, p: Vector2, margin := 0.0) -> bool:
 	return p.x >= float(s[1]) - margin and p.x <= float(s[3]) + margin and p.y >= float(s[2]) - margin and p.y <= float(s[4]) + margin
 
 
+## The rooms a piece standing at height `py` can be in (Old Pell's two levels overlap seen from above: the hut at 0 over the
+## Last Dig at -6): the floors at or below it, within 3.5 m.
+static func _on(map: Dictionary, py: float) -> Array:
+	return map.spaces.filter(func(s): return float(s[5]) <= py + 0.1 and py - float(s[5]) < 3.5)
+
+
+## Is something at height `y` on the same level as a piece standing at `py`?
+static func _same_level(y: float, py: float) -> bool:
+	return absf(y - py) < 3.5
+
+
 static func _seg(p: Vector2, a: Vector2, b: Vector2) -> float:
 	return p.distance_to(Geometry2D.get_closest_point_to_segment(p, a, b))
 
@@ -73,21 +84,33 @@ func test_mossgate_has_its_catalogue_decor() -> void:
 		check(not kinds.has(m), "%s waits for the owner's answer (rule clash)" % m)
 
 
+func test_pell_has_its_catalogue_decor() -> void:
+	var plan := DungeonBuild.load_plan("old_pells_diggings")
+	var d := _decor(plan)
+	check(d.size() >= 20, "Old Pell's Diggings has its catalogue decor (%d pieces)" % d.size())
+	var kinds := {}
+	for p in d:
+		kinds[p.model] = true
+		check(ResourceLoader.exists("res://assets/models/" + String(p.model)), "decor model %s exists" % p.model)
+	for m in ["decor/op_diary_table.glb", "decor/table_overturned.glb", "decor/last_meal.glb"]:
+		check(not kinds.has(m), "%s waits for the owner's answer (rule clash)" % m)
+
+
 func test_decor_stands_on_the_floor_inside_the_rooms() -> void:
 	for mp in _plans():
 		var map: Dictionary = mp[0]
 		for p in _decor(mp[1]):
 			var at := _xz(p.mid)
 			var floor_y := -99.0
-			for s in map.spaces:
+			for s in _on(map, float(p.pos[1])):
 				if _inside(s, at):
 					floor_y = maxf(floor_y, float(s[5]))
 			var up := float(p.get("hung", 0.0))   # (a wall-hung board: its bottom this high over the floor)
 			check(absf(float(p.pos[1]) - floor_y - 0.25 - up) < 0.06, "%s decor %s at %s stands on the floor (or hangs %.1f m up)" % [map.id, p.model, at, up])
 			for c in _corners(p):
 				var inside := false
-				for s in map.spaces:
-					if _inside(s, c, -0.1) and float(s[5]) >= 0.0:
+				for s in _on(map, float(p.pos[1])):
+					if _inside(s, c, -0.1):
 						inside = true
 				check(inside, "%s decor %s: its corner %s is inside a room, not in a wall" % [map.id, p.model, c])
 
@@ -99,31 +122,38 @@ func test_decor_keeps_off_doors_paths_and_chests() -> void:
 		var doors := []
 		for pc in plan.pieces:
 			if pc.id == "doorway" or String(pc.id).begins_with("stairs"):
-				doors.append(_xz(pc.pos))
+				doors.append([_xz(pc.pos), float(pc.pos[1])])
 		var keep := []
 		for p in plan.props:
 			if String(p.model) in DOORS:
-				doors.append(_xz(p.pos))
+				doors.append([_xz(p.pos), float(p.pos[1])])
 			if String(p.get("role", "")) == "door" or String(p.model).contains("lever"):
-				keep.append([_xz(p.pos), p.model])
+				keep.append([_xz(p.pos), p.model, float(p.pos[1])])
 		for c in plan.chests:
-			keep.append([_xz(c.pos), "chest " + String(c.kind)])
+			keep.append([_xz(c.pos), "chest " + String(c.kind), float(c.pos[1])])
 		if plan.has("recipe_stand"):
-			keep.append([_xz(plan.recipe_stand.pos), "recipe stand"])
+			keep.append([_xz(plan.recipe_stand.pos), "recipe stand", float(plan.recipe_stand.pos[1])])
 		for p in _decor(plan):
 			if float(p.get("hung", 0.0)) > 0.3:
 				continue  # (hung on a wall over your head: you walk under it)
 			var cs := _corners(p)
 			var at := _xz(p.mid)
-			for dv in doors:
+			var py := float(p.pos[1])
+			var dlist := []
+			for dd in doors:
+				if _same_level(dd[1], py):
+					dlist.append(dd[0])
+			for dv in dlist:
 				check(_dist(cs, dv) >= DOOR_EDGE, "%s decor %s keeps out of the doorway at %s" % [map.id, p.model, dv])
 			for k in keep:
+				if not _same_level(k[2], py):
+					continue
 				check(_dist(cs, k[0]) >= THING_EDGE, "%s decor %s keeps 1.5 m from %s at %s" % [map.id, p.model, k[1], k[0]])
-			for s in map.spaces:
-				if not _inside(s, at) or float(s[5]) < 0.0:
+			for s in _on(map, py):
+				if not _inside(s, at):
 					continue
 				var ds := []
-				for dv in doors:
+				for dv in dlist:
 					if _inside(s, dv, 0.3) and not _inside(s, dv, -0.3):
 						ds.append(dv)
 				var mid := Vector2((float(s[1]) + float(s[3])) / 2.0, (float(s[2]) + float(s[4])) / 2.0)

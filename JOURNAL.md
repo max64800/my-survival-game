@@ -7610,3 +7610,27 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   rebuilt by a SessionStart hook at every chat start; new CLAUDE.md rules: Grep the map, never read code files over
   300 lines whole, "where is X" hunts go to Haiku helpers; and a **Handoff prompt recipe** in `docs/CLAUDE-REFERENCE.md`
   (short, next step first, exact `file:function` spots, done/owner chose/waiting/watch out).
+
+### Old Pell's Diggings decor + junk (Nov 22, decor chat)
+- **Housekeeping first:** committed the looting helper's work (107fba91), the home-decor build menu (2750a884) and its 262
+  menu icons (bbc95116). Nothing pushed.
+- **Decor:** `tools/dungeons/make_pell.py` section 4b places 26 catalogue pieces (Pell's cot, armchair, tinker bench, maps,
+  bone board, pipe rack, strongbox, signpost, watch post, sieve stack, tumbler, boot, barricade, decoy chest, spider eggs,
+  graffiti, hat on the pick, madness board, X-marks dig patch, ...) through the same `decor.check` as Mossgate and
+  Lampwick. The old plain furniture that sat where they go (bed, keg, firewood rack, shelf, two tables, two crates,
+  rail wedge, rags, ore rubble, grain sacks) was taken away; a miner and two rats step aside.
+- **Junk:** section 4c, about 1.8 things per 10 m2, one of each kind per room (candles and pots may repeat), over the
+  whole room. 33 pieces go in the big Last Dig, a few in the others. Nothing in the way-in tunnel outside.
+- **Hurdle (the big one): Pell has two floors that sit on top of each other** when seen from above (the hut at 0, the
+  diggings at -6). The checks only knew one floor, so the first run said every piece was "outside its room" and the
+  stool in the Last Dig "blocked" the hut's door above it. Fix: the script checks each floor on its own, and
+  `test_dungeon_decor` and `test_dungeon_junk` now ask "which floors is this piece on?" (`_on`) before checking doors,
+  chests, walk lines and drops. Mossgate and Lampwick still pass with the same checks.
+- **Mistakes (mine):** (1) I used `v[0]` on the cell names, which are plain words, so I got the first *letter* of every
+  room. (2) A typed-in "rope" junk name doesn't exist (the game only knows the names in junk.py). (3) First commit try
+  was blocked: a bare `git reset` isn't allowed, so I use `git reset -q -- <my files>`. (4) The icon file list had
+  Windows line endings, so `git add` said "pathspec did not match": strip the `\r`. (5) A long Python text pasted into a
+  shell command broke on quotes: write it to a file with the Write tool instead.
+- **Left out, for the owner to answer (rule clashes):** op_diary_table (spilled ink), table_overturned (puddle), last_meal
+  (food). **No room:** op_trapmaker_table, op_trap_parts_rack, op_bell_tripwire, rope_ladder_broken, op_ore_scale (small
+  rooms, walk lines, traps and torches take the free wall).
