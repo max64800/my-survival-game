@@ -248,7 +248,8 @@ func test_parry_stuns_the_monster() -> void:
 	auth.monsters._judge_incoming()
 	check_eq(ps.vitals.health, 100.0, "perfect parry: no damage")
 	check(fake.parried, "the dwarf was told")
-	check_near(m.stun.value, Combat.STUN_WEAPON_PARRY, 0.01, "stun meter filled by 25")
+	# F594: spider stun_max is now 13 (45% of hp=30), so a parry (25) stuns it outright (value resets to 0).
+	check(m.stun.is_stunned() or m.stun.value >= Combat.STUN_WEAPON_PARRY, "parry stun applied (spider stunned outright or meter filled)")
 	_teardown()
 
 

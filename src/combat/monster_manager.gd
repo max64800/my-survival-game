@@ -581,7 +581,7 @@ func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: 
 			_ev_note.rpc(m.uid, "Blocked!")
 		total += dmg
 		_gem_buildup(m, gb)
-		var stun: float = Combat.stun_value(w, heavy, tier) * (1.0 + gb.get("stun", 0.0) + (gb.get("bash_stun", 0.0) if bash else 0.0)) * (ps.progress.heavy_stun_mult() if heavy else 1.0) * ps.progress.skill_stun_mult(w)
+		var stun: float = Combat.stun_value(w, heavy, tier, combo_step) * (1.0 + gb.get("stun", 0.0) + (gb.get("bash_stun", 0.0) if bash else 0.0)) * (ps.progress.heavy_stun_mult() if heavy else 1.0) * ps.progress.skill_stun_mult(w)
 		if Progression.weapon_skill(w) == "mace" and ps.progress.has_star("mace", 75) and float(m.stats().get("armor", 0.0)) >= 20.0:
 			stun *= 1.25  # Mace ★75: armored enemies stagger
 		if heavy and Progression.weapon_skill(w) == "warhammer" and ps.progress.has_star("warhammer", 100):

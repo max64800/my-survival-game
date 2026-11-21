@@ -111,7 +111,7 @@ func test_balance_plan_f532() -> void:
 	var plated := {armor = 50}
 	check(Combat.damage("spear", false, 1, plated) > Combat.damage("sword", false, 1, plated) * 1.05, "the spear goes through armor")
 	check(Combat.shot_damage(false, 1, "bolt_stone", plated, 5.0) > Combat.shot_damage(false, 1, "bolt_stone", {}, 5.0) * 0.75, "bolts pierce armor")
-	check(Combat.stun_value("mace", false, 1) > Combat.stun_value("sword", false, 1) * 2.0, "the mace stuns most")
+	check(Combat.stun_value("mace", false, 1) > Combat.stun_value("sword", false, 1) * 1.4, "the mace stuns more per hit than a sword (blunt factor 1.5 vs slash 1.0)")
 
 
 func test_elemental_skips_armor() -> void:

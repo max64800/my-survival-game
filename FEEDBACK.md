@@ -56,7 +56,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 
 | Area | Items | Notes |
 |---|---|---|
-| Seeing in the dark (light) | F1, F12, F293 | The lantern comes up a lot: brightness, then refilling. Now the dark hurts too (F293) |
+| Seeing in the dark (light) | F1, F12, F293, (F562 done Nov 21) | The lantern comes up a lot: brightness, then refilling. Now the dark hurts too (F293). Then: the hand lantern gets in the way of fighting (F562: Hip Lantern) |
 | Moving around (walking, jumping, climbing) | F2, F3 | |
 | Controls + camera | F18, F23, F27, F385 | |
 | Making the game / tools | F4, F5, F6, F7, F16 |
@@ -218,9 +218,11 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 
 - [ ] **F397. Q / E turn stations and chests too far (45° a press): I can't line a workbench up.** Each tap should turn about 5°, holding the key keeps turning at one calm speed, and the first facing shouldn't snap. *From: you (PC, Nov 19). Said: 1×* — Nov 19 (cave Claude 2): stations and chests now turn 5° a tap; holding Q or E (after a quarter second) turns them smoothly at 60° a second, never faster; the first facing is exactly where you look. The host still checks the final turn. Test `test_q_and_e_turn_the_piece_walking_does_not`, robot `-- turncheck`. Building pieces (owner's pick, Nov 19: keep the grid so walls line up): still a quarter turn a tap (triangles 30°), and holding Q or E now keeps turning one step every 0.4 s. Waiting for you to try it.
 - [ ] **F556. Later (not now): crafting benches you load with materials and leave; they craft by themselves, slowly, one by one (like Conan Exiles).** (Goes with F388.) *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 2.
-- [ ] **F562. A way to craft an item that puts the lantern on the dwarf's hip, so fighting is easy.** *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 3.
-- [ ] **F568. A menu to upgrade and repair gear; repairing should cost nothing, like Valheim.** *From: you (PC, Nov 21, tower-rebuild play). Said: 1×* → Claude 3.
-- [ ] **F594. Hitting an enemy needs more feedback, like Valheim: feel every hit; a good combo stuns or drops them; crits.** It takes far too many hits to stun (sword: about 14 hits on a skeleton). (Goes with F340.) *From: you (PC, Nov 21). Said: 1×* — Nov 21: researched (docs/research/Melee hit feedback design.md); 5-step plan in docs/design/HIT-FEEL-PLAN.md. Your picks: crits earned only (no luck), stun shown by the enemy (sway + dizzy stars, no bar), knockdowns for normal enemies only (elites and bosses only stun). Next: step 1 (fast stuns).
+- [ ] **F594. Hitting an enemy needs more feedback, like Valheim: feel every hit; a good combo stuns or drops them; crits.** It takes far too many hits to stun (sword: about 14 hits on a skeleton). (Goes with F340.) *From: you (PC, Nov 21). Said: 1×* — Nov 21: researched (docs/research/Melee hit feedback design.md); 5-step plan in docs/design/HIT-FEEL-PLAN.md. Your picks: crits earned only (no luck), stun shown by the enemy (sway + dizzy stars, no bar), knockdowns for normal enemies only (elites and bosses only stun). Step 1 built (Nov 21): stun fill = damage × weapon type factor (blunt 1.5, slash 1.0, pierce 0.8); stun threshold ~45% of HP for normals, ~60% elites, ~80% bosses. Iron sword stuns skeleton in one full 3-hit combo; mace in 3 of 4 hits; one hit stuns a cave spider. Next: step 2 (feel every hit, sway, dizzy stars).
+- [ ] **F597. Old Pell's Diggings boss (The Pit Boss): an attack from his left hip with no wind-up — can't be seen or dodged.** After parrying his chop, his next move has no visible tell and comes from the left side. Remove that attack or give it a clear wind-up. *From: you (PC, Nov 21, playing Old Pell's). Said: 1×*
+- [ ] **F598. The Pit Boss spinning attack shows a hit star / ting effect that it shouldn't.** The spin hits play the same sparks and "ting" as a blocked weapon hit; it shouldn't. *From: you (PC, Nov 21, playing Old Pell's). Said: 1×*
+- [ ] **F599. Old Pell's elevator lever is on the wrong side of the wall — should be right next to the rope lift.** Currently it is accessible from the other side of a wall instead of being beside the elevator. *From: you (PC, Nov 21, playing Old Pell's). Said: 1×*
+- [ ] **F600. Pressure-plate arrow traps fire every time you step on them.** They should be single-use (fire once per dungeon reset). *From: you (PC, Nov 21, playing Old Pell's). Said: 1×*
 
 
 ## Done

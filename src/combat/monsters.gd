@@ -18,7 +18,7 @@ const LIST := {
 	# only (out of holes, up ledges); none = never. falls_dazed: knocked off the rock by a hit, it lands on its back,
 	# dazed. wall_runner: chasing, it runs up any wall in its way. ambush: over you on the ceiling it hisses, then drops.
 	# soft_back: hits from behind do `back_mult` damage. straight_charge: a charge doesn't steer.
-	"rock_snail": {name = "Rock Snail", ragdoll = {stay = ["soft_foot"], hop = 0.3, roll = "side", spin = 3.2, narrow = 0.5}, size = 1.0, hp = 110, armor = 0, stun = 90, slash = 0.75, blunt = 1.25, pierce = 1.0,
+	"rock_snail": {name = "Rock Snail", ragdoll = {stay = ["soft_foot"], hop = 0.3, roll = "side", spin = 3.2, narrow = 0.5}, size = 1.0, hp = 110, armor = 0, stun = 50, slash = 0.75, blunt = 1.25, pierce = 1.0,
 		fire = 0.0, frost = 0.0, poison = 0.0, walk = 0.6, run = 0.6, pack = [1, 2], xp = 14, leader = "Old Shellback", leader_chance = 0.15,  # (run = walk: it never runs, owner Nov 17)
 		color = Color(0.48, 0.44, 0.38), shape = "rock_snail", neutral = true, climbs = "all", falls_dazed = true, turns_in_place = true, shell_hide = {at = [0.5, 0.1], seconds = 10.0, cut = 0.9},
 		attacks = [{name = "Shell Slam", land_sound = "snail_slam", tell = 1.2, damage = 20, type = "blunt", reach = 1.9, parry = "any"},
@@ -43,13 +43,13 @@ const LIST := {
 	# statue_hits: pickaxe hits to break its stone statue (default 2; owner, Nov 21, F586: bats 1, every other creature 2,
 	# bosses 5).
 	# ragdoll: on death it goes limp and falls apart into physics pieces (Ragdoll; the beetle first, owner Nov 18).
-	"rock_beetle": {name = "Rock Beetle", turns_in_place = true, turn_speed = 2.6, ragdoll = true, size = 0.9, hp = 100, armor = 0, stun = 70, slash = 0.75, blunt = 1.25, pierce = 1.0,
+	"rock_beetle": {name = "Rock Beetle", turns_in_place = true, turn_speed = 2.6, ragdoll = true, size = 0.9, hp = 100, armor = 0, stun = 45, slash = 0.75, blunt = 1.25, pierce = 1.0,
 		fire = 0.0, frost = 0.0, poison = 0.0, walk = 1.8, run = 4.5, pack = [1, 2], xp = 15, leader = "Rock Beetle Brute", leader_chance = 0.2,
 		color = Color(0.42, 0.39, 0.35), shape = "rock_beetle", soft_back = 2.0, straight_charge = true, recover = 1.8, climbs = "walls",
 		attacks = [{name = "Mandible Snap", warn_sound = "beetle_hiss", tell = 0.7, damage = 10, type = "pierce", reach = 1.7, parry = "any"},
 			{name = "Charge", warn_sound = "beetle_rumble", tell = 1.1, damage = 18, type = "blunt", reach = 9.0, parry = "shield", lunge = true}],
 		drops = [["bug_meat", 2, 1.0], ["glow_gland", 1, 0.6]]},
-	"great_rock_beetle": {name = "Great Rock Beetle", elite = true, turns_in_place = true, turn_speed = 1.8, ragdoll = true, statue_hits = 2, size = 1.5, hp = 240, armor = 40, stun = 160, slash = 0.75, blunt = 1.25, pierce = 1.0,
+	"great_rock_beetle": {name = "Great Rock Beetle", elite = true, turns_in_place = true, turn_speed = 1.8, ragdoll = true, statue_hits = 2, size = 1.5, hp = 240, armor = 40, stun = 144, slash = 0.75, blunt = 1.25, pierce = 1.0,
 		fire = 0.0, frost = 0.0, poison = 0.25, walk = 2.0, run = 5.0, pack = [1, 1], xp = 45, leader = "Great Rock Beetle Matron", leader_chance = 0.1,
 		color = Color(0.33, 0.31, 0.29), shape = "rock_beetle", soft_back = 2.0, straight_charge = true, recover = 2.0,
 		attacks = [{name = "Horn Gore", warn_sound = "beetle_hiss", tell = 0.9, damage = 22, type = "pierce", reach = 2.4, parry = "any"},
@@ -58,7 +58,7 @@ const LIST := {
 	# Cave Spider (owner, Nov 19): a Zone 1 pest, Claude 1's model (cave_spider_v0..3.glb), in as it is for the owner to
 	# test. Small groups; it scuttles in, bites, and pounces from a few metres (pounce = a leap during the lunge),
 	# then skitters back (hit_and_run). Planned later: webs. One heavy hit or two light ones kill it.
-	"cave_spider": {name = "Cave Spider", turns_in_place = true, turn_speed = 4.0, ragdoll = {hop = 0.5, spin = 2.0}, statue_hits = 2, size = 1.0, hp = 30, armor = 0, stun = 30, slash = 1.0, blunt = 1.0, pierce = 1.0,
+	"cave_spider": {name = "Cave Spider", turns_in_place = true, turn_speed = 4.0, ragdoll = {hop = 0.5, spin = 2.0}, statue_hits = 2, size = 1.0, hp = 30, armor = 0, stun = 13, slash = 1.0, blunt = 1.0, pierce = 1.0,
 		fire = 0.0, frost = 0.0, poison = 0.0, walk = 2.2, run = 5.5, pack = [3, 5], xp = 6, leader = "Spider Broodmother", leader_chance = 0.15,
 		color = Color(0.25, 0.22, 0.2), shape = "cave_spider", climbs = "all", wall_runner = true, ambush = true, hit_and_run = true, retreat = 4.0, recover = 1.2,
 		attacks = [{name = "Bite", warn_sound = "beetle_hiss", tell = 0.5, damage = 7, type = "pierce", reach = 1.5, parry = "any", buildup = {poison = 34}},
@@ -73,7 +73,7 @@ const LIST := {
 	# No drops yet (only the statue's stone): asked the owner what the dead miners' bones should give.
 	# F467: the Tunnel Rat is a small fast pest in groups, easy to kill, soft hits.
 	"tunnel_rat": {name = "Bone Rot", dungeon_only = true, rises = true, rise_near = 11.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 2,
-		size = 1.0, height = 1.0, hp = 26, armor = 0, stun = 30, slash = 1.0, blunt = 1.25, pierce = 0.75,
+		size = 1.0, height = 1.0, hp = 26, armor = 0, stun = 12, slash = 1.0, blunt = 1.25, pierce = 0.75,
 		fire = 0.0, frost = 0.0, poison = 1.0, walk = 2.0, run = 5.0, pack = [3, 5], xp = 5,
 		color = Color(0.62, 0.56, 0.45), shape = "tunnel_rat", recover = 0.8,
 		attacks = [{name = "Shovel Chop", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_hiss", tell = 0.55, damage = 6, type = "slash", reach = 1.5, parry = "any"},
@@ -81,7 +81,7 @@ const LIST := {
 		drops = []},
 	# F466/F467: the Lost Miner is slow and tough, and its pick is ice cold (chill buildup: 3 hits freeze you).
 	"lost_miner": {name = "Hollow Miner", dungeon_only = true, rises = true, rise_near = 11.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 2,
-		size = 1.0, height = 1.45, hp = 110, armor = 0, stun = 80, slash = 1.0, blunt = 1.25, pierce = 0.75,
+		size = 1.0, height = 1.45, hp = 110, armor = 0, stun = 50, slash = 1.0, blunt = 1.25, pierce = 0.75,
 		fire = -0.25, frost = 0.75, poison = 1.0, walk = 1.0, run = 2.6, pack = [1, 3], xp = 14,
 		color = Color(0.7, 0.82, 0.78), shape = "lost_miner", recover = 1.2,
 		# F593 (owner, Nov 21, said twice: "if you run away, you should get out of their hit without dodging"): shorter
@@ -101,7 +101,7 @@ const LIST := {
 	# range is longer so he opens with the chop) and rests 7 s after each use (rest = seconds before it comes again).
 	# Owner, Nov 20: 30% less health (420 -> 294); chat 16 (F532, the owner's OK on the balance plan): 450 and armor 50, and his swings break the stone of fallen miners (like a beetle's charge).
 	"foreman": {name = "The Pit Boss", dungeon_only = true, rises = true, rise_near = 10.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 5, boss = true,
-		smashes_statues = true, size = 1.0, height = 1.9, hp = 450, armor = 50, stun = 220, slash = 1.0, blunt = 1.25, pierce = 0.75,
+		smashes_statues = true, size = 1.0, height = 1.9, hp = 450, armor = 50, stun = 360, slash = 1.0, blunt = 1.25, pierce = 0.75,
 		fire = 0.0, frost = 0.5, poison = 1.0, walk = 1.4, run = 3.6, pack = [1, 1], xp = 80,
 		color = Color(0.55, 0.5, 0.44), shape = "foreman", recover = 1.6,
 		attacks = [{name = "Great Chop", anim = "2H_Melee_Attack_Chop", warn_sound = "beetle_rumble", tell = 1.0, damage = 26, type = "slash", reach = 2.3, parry = "any"},
@@ -123,7 +123,7 @@ const LIST := {
 	# more than 3 miners up at once). Hit him during the slam (his shield is up over his head) and it is called off;
 	# a statue you mined away can't be raised. He doesn't smash his own miners' stone (the Pit Boss does; owner kept it, Nov 21).
 	"prop_warden": {name = "The Prop Warden", dungeon_only = true, rises = true, rise_near = 10.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 5, boss = true,
-		front_shield = true, size = 1.0, height = 1.9, hp = 300, armor = 50, stun = 200, slash = 1.0, blunt = 1.25, pierce = 0.75,
+		front_shield = true, size = 1.0, height = 1.9, hp = 300, armor = 50, stun = 240, slash = 1.0, blunt = 1.25, pierce = 0.75,
 		fire = 1.25, frost = 0.5, poison = 1.0, walk = 1.3, run = 3.3, pack = [1, 1], xp = 80,
 		color = Color(0.5, 0.52, 0.4), shape = "foreman", recover = 1.6,
 		attacks = [{name = "Axe Chop", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_rumble", tell = 0.9, damage = 22, type = "slash", reach = 2.3, parry = "any"},

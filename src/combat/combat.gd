@@ -71,6 +71,8 @@ const STUN_SHIELD_BLOCK := 5.0
 const STUN_DECAY := 8.0
 const STUN_DECAY_DELAY := 2.5
 const STUN_IMMUNE_AFTER := 2.0
+## F594 Valheim-style: stun fill = damage dealt × this factor per weapon type.
+const STUN_FACTOR := {blunt = 1.5, slash = 1.0, pierce = 0.8}
 
 ## Situations that multiply damage (doc 2.3). They don't stack: the biggest one counts.
 const SNEAK := 2.0
@@ -162,9 +164,14 @@ static func range_falloff(dist: float) -> float:
 	return 1.0 if dist <= BOLT_RANGE else clampf(1.0 - (dist - BOLT_RANGE) / (BOLT_MAX - BOLT_RANGE), 0.0, 1.0)
 
 
-static func stun_value(w: String, heavy: bool, tier: int) -> float:
+## F594: stun fill = weapon base damage × tier × combo multiplier × stun type factor.
+## combo_step matters because later combo hits land harder. Parry stun stays as absolute values.
+static func stun_value(w: String, heavy: bool, tier: int, combo_step: int = 0) -> float:
 	var wd: Dictionary = WEAPONS.get(w, WEAPONS.fists)
-	return (wd.heavy_stun if heavy else wd.light_stun) * TIER_STUN[clampi(tier, 0, 4)]
+	var base: float = wd.heavy if heavy else wd.light
+	var combo: Array = wd.combo
+	var cm: float = combo[mini(combo_step, combo.size() - 1)]
+	return base * TIER_DAMAGE[clampi(tier, 0, 4)] * cm * STUN_FACTOR.get(wd.type, 1.0)
 
 
 ## Judging a defense at the moment a hit lands (doc 2.4).
