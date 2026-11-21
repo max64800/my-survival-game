@@ -40,6 +40,17 @@ func _run() -> void:
 		await _teleport(dwarf, fl + Vector3.UP * 0.2, o + Vector3.UP * 4.0)
 		await RenderingServer.frame_post_draw
 		print("TOWERCHECK shot ", _main.take_screenshot(_shots.path_join("tower_%s.png" % v[0])))
+	# The ruin camp (ruin junk step 3): stand 3 m from its cold campfire, toward the tower, and look down at it.
+	for j in RuinJunk.load_list("tower"):
+		if j.get("free", false) and String(j.model).ends_with("junk_campfire_cold.glb"):
+			var c: Vector3 = o + basis * Vector3(float(j.pos[0]), 0.0, float(j.pos[2]))
+			var back: Vector3 = (o - c).normalized()
+			var p: Vector3 = c + back * 4.5
+			var fl: Vector3 = _main.world.maker.find_floor(p.x, p.z, o.y + 4.0)
+			var cf: Vector3 = _main.world.maker.find_floor(c.x, c.z, o.y + 4.0)
+			await _teleport(dwarf, fl + Vector3.UP * 0.2, cf + back.cross(Vector3.UP) * 1.3)  # (aim beside it: the dwarf hides the middle)
+			await RenderingServer.frame_post_draw
+			print("TOWERCHECK shot ", _main.take_screenshot(_shots.path_join("tower_camp.png")))
 	get_tree().quit()
 
 

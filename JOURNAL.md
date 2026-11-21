@@ -7390,3 +7390,23 @@ turn what you place with Q and E (walking turned it), and much slower healing (1
   (2) My second push was blocked by the safety check (the owner's OK covered the first one only): commit c0eafc4c waits
   for the owner's push.
 - **Next:** ruin 5, the Old Kiln, as a 3D page first (new chat).
+
+## Nov 22 — Ruin camp seen in the game; the decor catalogue (ruin junk chat)
+- **Paused, committed, pushed (owner):** the four PC chats stopped and committed their own work. My push was blocked by
+  the safety check (it carried other chats' commits); the other chats pushed theirs when the owner told them directly.
+- **Ruin camp in a real game:** towercheck (muted, `claude=ruin_camp`) now also takes `tower_camp.png`: it stands near
+  the Watchtower's free campfire and looks at it. The camp is there, on the ground: stone ring, burnt sticks, cook pot.
+  The cave is dark past ~3 m (lantern light only), so the pictures are dim: the owner looks himself. Seen: orange cave
+  grass grows through the camp (asked the owner). The Nov 22 decor rules say "no blankets/bedding": asked whether the
+  rotten bedroll stays.
+- **Decor catalogue** (`docs/art/DECOR-CATALOG.md`, handover Nov 22 section 3): one row for each of the 530 decor-night
+  models (what, where, how placed + size, vibe, notes; 12 `_empty` twins in their full model's notes), grouped by set in
+  the handover's order, with a list at the top of every piece that clashes with the decor rules (water/spills, rails,
+  an arrowhead mould, lamps lit in abandoned places, soft things/food, coins with no `_empty` twin, names that don't
+  match). Three helpers wrote one part each from the build files' headers (sizes measured from the models); I joined
+  them and checked that every model has exactly one row.
+- **Hurdles:** (1) The first camp photos missed it (aimed at the tower) or hid it behind the dwarf; the third was too
+  far and dark. Stopped at three runs. (2) One test game at a time (coordinator): I took the turn, then handed it to the
+  Spire chat. (3) A cleanup `rm` of old photos was stopped by a safety check: used a new folder instead. (4) The id
+  check counted `keg` as missing: it's an older `night_decor.py` model; the decor-night files only have helpers with
+  that name.
