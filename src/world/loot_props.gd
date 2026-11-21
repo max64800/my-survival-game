@@ -225,6 +225,19 @@ func _process(delta: float) -> void:
 	for k in ruins:
 		if not _ruins_placed.has(str(k)):
 			place_ruin(str(k), ruins[k])
+		if ruins[k].get("done", false) or (auth.builder and auth.builder.sites.has(int(k))):
+			tidy_ruin(str(k))
+
+
+## Everyone: ruin `k` is being rebuilt (or is rebuilt): the lootable junk lying inside it goes, like the rest of its
+## inside junk (owner F581: the bolt crate on floor 2 was still there after the rebuild).
+func tidy_ruin(k: String) -> void:
+	for key in props.keys():
+		var pr: Dictionary = props[key]
+		if String(pr.get("ruin", "")) == k and pr.get("inside", false):
+			if is_instance_valid(pr.node):
+				(pr.node as Node).queue_free()
+			props.erase(key)
 
 
 ## Show what the host says is looted (on loading a save, a friend joining, or after a change).
@@ -266,4 +279,8 @@ func place_ruin(k: String, r: Dictionary, plan := {}) -> void:
 		if not j.get("loot", false) or not LOOT.has(model_id(String(j.model))):
 			continue
 		var pos: Vector3 = origin + basis * Vector3(float(j.pos[0]), float(j.pos[1]), float(j.pos[2]))
-		place("r:%s:j%d" % [k, i], String(j.model), Transform3D(Basis(Vector3.UP, deg_to_rad(float(j.yaw)) + turn * PI / 2.0), pos))
+		var key := "r:%s:j%d" % [k, i]
+		place(key, String(j.model), Transform3D(Basis(Vector3.UP, deg_to_rad(float(j.yaw)) + turn * PI / 2.0), pos))
+		if props.has(key):
+			props[key].ruin = k
+			props[key].inside = bool(j.get("inside", true))

@@ -143,7 +143,7 @@ func test_rebuilding_chest_is_there_and_explains_itself() -> void:
 	var local := Basis(Vector3.UP, RuinTower.last_turn * PI / 2.0).inverse() * (at - RuinTower.last_origin)
 	check(absf(local.x) > 2.6 or local.z > 6.5, "it stands beside the steps, not on them (%.1f, %.1f)" % [local.x, local.z])
 	var text := auth.builder.ruin_intro(box)
-	check("Fix the old tower" in text and "broken" in text, "opening it says what it is: only the broken parts")
+	check("Fix the old tower" in text, "opening it says what it is")
 	check(text.length() < 120, "short (owner F411: it was far too long): %d letters" % text.length())
 	var ways := auth.builder.ruin_choices(box)
 	check_eq(ways.size(), 2, "two pictures: wood and stone")
@@ -172,7 +172,7 @@ func test_rebuilding_chest_is_there_and_explains_itself() -> void:
 	check(int(wood.get("plank_root", 0)) <= 260, "worn walls aren't paid for: %d planks (was 447)" % wood.get("plank_root", 0))
 	# ...but fixing in stone closes those gaps too (owner, Nov 20): the worn walls are rebuilt and paid for.
 	var stone := auth.builder.ruin_needs("stone_watchtower", r)
-	check(int(stone.get("cut_stone", 0)) >= 450, "stone rebuilds the worn walls too: %d cut stone" % stone.get("cut_stone", 0))
+	check(int(stone.get("cut_stone", 0)) >= 450 * Builder.RUIN_SHARE, "stone rebuilds the worn walls too: %d cut stone (×RUIN_SHARE, F557)" % stone.get("cut_stone", 0))
 	auth.get_parent().queue_free()
 
 

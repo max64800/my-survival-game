@@ -12,7 +12,7 @@ var _had := false  ## it had something in it (an empty chest you opened to fill 
 var _title: Label
 var _grid: GridContainer
 var _status: Label
-var _ways: HBoxContainer  ## an untouched Rebuilding Chest: a picture of each tower it can rebuild (owner F411)
+var _ways: HBoxContainer  ## pictures of what goes in: the two ways (an untouched Rebuilding Chest, F560) or what's still missing (F578)
 var _ways_for := -1  ## which chest the pictures are of (they're built once, not every frame)
 
 
@@ -88,7 +88,9 @@ func refresh() -> void:
 		_status.text = GameAuthority.instance.builder.ruin_intro(box_id)
 		if _ways_for != box_id:
 			_show_ways()
-	_ways.visible = intro and _ways.get_child_count() > 0
+	elif box.kind in ["builder", "rebuild"]:
+		_show_missing(GameAuthority.instance.builder.still_needed(box_id))
+	_ways.visible = _ways.get_child_count() > 0 and box.kind in ["builder", "rebuild"]
 	var inv: Inventory = box.inv
 	if visible and _had and not has_items(inv):
 		_had = false
@@ -124,24 +126,68 @@ func refresh() -> void:
 		b.tooltip_text = "" if s.is_empty() else Items.display_name(s.id)
 
 
-## The Rebuilding Chest's picture (owner F431, Nov 20: "it's not rebuilt from scratch, only what is broken"): the
-## ruin as it stands, the broken parts glowing; under it, what each material does and costs.
+## The Rebuilding Chest before it starts (owner F560, said 3×: "only show, in pictures, what you need for the two
+## options. That's it."): two cards, each just the pictures and counts of what that way needs.
 func _show_ways() -> void:
 	_ways_for = box_id
+	_missing_sig = ""
 	UiKit.clear(_ways)
+	var choices: Array[Dictionary] = GameAuthority.instance.builder.ruin_choices(box_id)
+	for n in choices.size():
+		if n > 0:
+			UiKit.label(_ways, "or", 18, UiKit.AMBER).size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		var w: Dictionary = choices[n]
+		var card := PanelContainer.new()
+		card.add_theme_stylebox_override("panel", UiKit.style("slot", 8))
+		_ways.add_child(card)
+		var col := VBoxContainer.new()
+		col.add_theme_constant_override("separation", 6)
+		card.add_child(col)
+		UiKit.label(col, "Wood" if w.wood else "Stone", 16, UiKit.AMBER).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_need_row(col, w.need)
+
+
+## F578: once it's being built, the pictures of what still has to go in (rebuilt only when that changes).
+var _missing_sig := ""
+func _show_missing(need: Dictionary) -> void:
+	var sig := str(box_id) + str(need)
+	if sig == _missing_sig:
+		return
+	_missing_sig = sig
+	_ways_for = -1
+	UiKit.clear(_ways)
+	if need.is_empty():
+		return
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 4)
 	_ways.add_child(col)
-	UiKit.label(col, "Glowing = broken: only these get rebuilt", 15, UiKit.AMBER).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	var pic := BlueprintPreview.new()
-	pic.custom_minimum_size = Vector2(470, 230)
-	col.add_child(pic)
-	pic.show_ruin(GameAuthority.instance.builder.ruin_picture(box_id))
-	for w: Dictionary in GameAuthority.instance.builder.ruin_choices(box_id):
-		var line := UiKit.label(col, "%s: fixes them in %s → you learn the %s.  Needs: %s" % [w.put,
-			"wood" if String(w.key).begins_with("wooden") else "stone", w.name, w.needs], 13, UiKit.TEXT)
-		line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		line.custom_minimum_size = Vector2(470, 0)
+	UiKit.label(col, "Still to put in:", 15, UiKit.AMBER).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_need_row(col, need)
+
+
+## A row of item pictures, each with its count under it.
+static func _need_row(parent: Control, need: Dictionary) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	parent.add_child(row)
+	for item in need:
+		var cell := VBoxContainer.new()
+		cell.tooltip_text = Items.display_name(item)
+		cell.mouse_filter = Control.MOUSE_FILTER_PASS
+		row.add_child(cell)
+		var tex := Items.icon(item)
+		if tex:
+			var pic := TextureRect.new()
+			pic.texture = tex
+			pic.custom_minimum_size = Vector2(48, 48)
+			pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			pic.tooltip_text = Items.display_name(item)
+			cell.add_child(pic)
+		else:
+			UiKit.label(cell, Items.short_label(item), 13, UiKit.TEXT)
+		UiKit.label(cell, "%d" % int(need[item]), 16, UiKit.TEXT).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 
 func _process(_d: float) -> void:

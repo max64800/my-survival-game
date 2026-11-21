@@ -10,6 +10,8 @@ var piece := "wall"
 var family := "plank_root"
 var ghost := false  ## true = the see-through preview while placing
 var _ghost_mat: StandardMaterial3D
+var plan := false  ## a blueprint's blue plan piece (set before adding it)
+static var _plan_mat: StandardMaterial3D
 static var _mats := {}
 
 
@@ -17,10 +19,18 @@ func _ready() -> void:
 	if ghost:
 		collision_layer = 0
 		collision_mask = 0
-		_ghost_mat = StandardMaterial3D.new()
-		_ghost_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		_ghost_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		_ghost_mat.albedo_color = Color(0.3, 1.0, 0.4, 0.35)
+		if plan:  # every blue plan piece shares one glass (F565: fewer draw calls)
+			if _plan_mat == null:
+				_plan_mat = StandardMaterial3D.new()
+				_plan_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+				_plan_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+				_plan_mat.albedo_color = Color(0.35, 0.6, 1.0, 0.3)
+			_ghost_mat = _plan_mat
+		else:
+			_ghost_mat = StandardMaterial3D.new()
+			_ghost_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+			_ghost_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+			_ghost_mat.albedo_color = Color(0.3, 1.0, 0.4, 0.35)
 	else:
 		collision_layer = PIECE_LAYER | World.TERRAIN_LAYER  # walkable like ground
 		collision_mask = 0
@@ -202,6 +212,16 @@ static var _fire_spots := {}  ## piece__family -> [[position, size]] from the mo
 ## or null to use the shape made in code. Built in the same piece space as PieceMesh, so it lines up
 ## with the solid shape. Only the look changes; bumping into it still uses PieceMesh.solid().
 static var use_models := true  ## false = always the shapes made in code (robots: `nomodels`)
+
+
+## F565: a build site starts reading its pieces' models in the background, so the first wall or floor of a kind
+## doesn't freeze the game for 50-100 ms while its file is read.
+static func start_loading(p_piece: String, p_family: String) -> void:
+	var key := p_piece + "__" + p_family
+	if not use_models or _forged_meshes.has(key) or not Pieces.LIST.has(p_piece):
+		return
+	var model: String = Pieces.LIST[p_piece].get("model", "build/" + key)
+	Look.start_loading(model.get_slice("/", 0), model.get_slice("/", 1))
 
 
 static func forged_mesh(p_piece: String, p_family: String) -> Mesh:

@@ -99,6 +99,15 @@ static func start_preloading(folders: Array) -> void:
 						_loading[path] = true
 
 
+## F565: start reading one model file on a helper thread (a blueprint about to be built: its pieces' models).
+static func start_loading(folder: String, id: String) -> void:
+	var path := "res://assets/models/%s/%s.glb" % [folder, id]
+	if _forged.has(path) or _loading.has(path) or not ResourceLoader.exists(path):
+		return
+	if ResourceLoader.load_threaded_request(path, "PackedScene", true) == OK:
+		_loading[path] = true
+
+
 static func finish_preloading() -> void:
 	for path: String in _loading.keys():
 		_collect(path)

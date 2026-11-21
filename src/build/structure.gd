@@ -13,12 +13,13 @@ var version := 0  ## goes up whenever a piece is added or removed (the hammer's 
 ## took many seconds once a ruin of 700 pieces stood in the world). Neighbour lists are kept until something changes.
 const CELL := 4.0
 var _cells := {}   ## Vector3i -> Array of uids
-var _nb := {}      ## uid -> its neighbours (cleared on every add/remove)
+var _nb := {}      ## uid -> its neighbours (forgotten near every add/remove)
 
 
 func add(uid: int, piece: String, family: String, pos: Vector3, rot: int, anchored: bool) -> void:
 	anchored = anchored or is_foundation(piece)  # foundations are always steady (spec §5)
 	if pieces.has(uid):
+		_forget_neighbors(uid)
 		_unindex(uid)
 	pieces[uid] = {piece = piece, family = family, pos = pos, rot = rot, hp = Pieces.hp(piece, family),
 		anchored = anchored, stability = 1.0 if anchored else 0.0}
@@ -26,8 +27,17 @@ func add(uid: int, piece: String, family: String, pos: Vector3, rot: int, anchor
 		if not _cells.has(c):
 			_cells[c] = []
 		_cells[c].append(uid)
-	_nb.clear()
+	_forget_neighbors(uid)
 	version += 1
+
+
+## Only the pieces near a changed one have new neighbours (F565: forgetting every piece's made each new piece cost
+## tens of milliseconds in a world full of ruins).
+func _forget_neighbors(uid: int) -> void:
+	_nb.erase(uid)
+	if pieces.has(uid):
+		for other in near(box_of(uid)):
+			_nb.erase(other)
 
 
 func _cells_of(b: AABB) -> Array:
@@ -38,6 +48,19 @@ func _cells_of(b: AABB) -> Array:
 		for y in range(lo.y, hi.y + 1):
 			for z in range(lo.z, hi.z + 1):
 				out.append(Vector3i(x, y, z))
+	return out
+
+
+## The pieces whose grid cells this box's cells touch (everything that could touch or overlap it). F565: checking
+## only these instead of every piece in the world made the tower rebuild freeze for up to 0.7 s.
+func near(b: AABB) -> Array:
+	var out := []
+	var seen := {}
+	for c in _cells_of(b):
+		for uid in _cells.get(c, []):
+			if not seen.has(uid):
+				seen[uid] = true
+				out.append(uid)
 	return out
 
 
@@ -65,9 +88,9 @@ static func strength_color(s: float) -> Color:
 
 func remove(uid: int) -> void:
 	if pieces.has(uid):
+		_forget_neighbors(uid)
 		_unindex(uid)
 	pieces.erase(uid)
-	_nb.clear()
 	version += 1
 
 
@@ -82,7 +105,7 @@ func box_of(uid: int) -> AABB:
 func overlaps(piece: String, pos: Vector3, rot: int) -> bool:
 	var mine_y := _y_range(piece, pos, -0.16)
 	var mine := _overlap_outline(piece, pos, rot)
-	for uid in pieces:
+	for uid in near(Pieces.box(piece, pos, rot)):
 		var o: Dictionary = pieces[uid]
 		if fits_inside(piece, o.piece) or fits_inside(o.piece, piece):
 			continue  # a door goes inside a doorway
@@ -117,7 +140,7 @@ func overlapping(piece: String, pos: Vector3, rot: int) -> Array:
 	var out := []
 	var mine_y := _y_range(piece, pos, -0.16)
 	var mine := _overlap_outline(piece, pos, rot)
-	for uid in pieces:
+	for uid in near(Pieces.box(piece, pos, rot)):
 		var o: Dictionary = pieces[uid]
 		if fits_inside(piece, o.piece) or fits_inside(o.piece, piece):
 			continue
@@ -178,7 +201,7 @@ func preview_stability(piece: String, family: String, pos: Vector3, rot: int, an
 		return 1.0
 	var b := Pieces.box(piece, pos, rot)
 	var best := 0.0
-	for uid in pieces:
+	for uid in near(b):
 		var nb := box_of(uid)
 		if not _touching(piece, pos, rot, pieces[uid]):
 			continue
@@ -210,6 +233,33 @@ func recompute() -> Array:
 		if pieces[uid].stability < Pieces.MIN_STABILITY:
 			falling.append(uid)
 	return falling
+
+
+## F565: after one piece is added, only it and what it now helps hold up get steadier (adding a piece never makes
+## anything weaker, so nothing new can fall). Spreads its strength out from it, instead of recompute() over every piece
+## in the world (that took 40-150 ms per piece while rebuilding the tower). Same result as recompute().
+func settle_added(uid: int) -> void:
+	if not pieces.has(uid):
+		return
+	var me: Dictionary = pieces[uid]
+	if not me.anchored:
+		var my_box := box_of(uid)
+		for other in neighbors(uid):
+			me.stability = maxf(me.stability, pieces[other].stability - _loss(me.family, box_of(other), my_box, me.piece))
+	var todo := [uid]
+	var guard := 0
+	while not todo.is_empty() and guard < 100000:
+		guard += 1
+		var a: int = todo.pop_back()
+		var a_box := box_of(a)
+		for other in near(a_box):
+			var o: Dictionary = pieces[other]
+			if other == a or o.anchored or not neighbors(other).has(a):
+				continue
+			var s: float = pieces[a].stability - _loss(o.family, a_box, box_of(other), o.piece)
+			if s > o.stability + 0.0001:
+				o.stability = s
+				todo.append(other)
 
 
 ## Loss for `family` sitting next to a neighbour box: "up" if the neighbour is underneath.

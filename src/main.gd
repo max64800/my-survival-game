@@ -641,7 +641,7 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	authority.monsters.defended.connect(_on_defended)
 	authority.hud_message.connect(func(t: String): hud.show_toast(t, 3.0))
 	authority.learned_recipe.connect(func(r: String): hud.learned_cards.show_recipe(r))
-	authority.learned_blueprint.connect(func(w: String, page: String): hud.learned_cards.show_blueprint(w, page))
+	authority.learned_blueprint.connect(func(w: String, page: String, why: String): hud.learned_cards.show_blueprint(w, page, why))
 	hud.peer_id = me
 	hud.seed_text = str(seed)
 	add_child(hud)

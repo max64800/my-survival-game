@@ -77,5 +77,6 @@ func show_recipe(recipe_id: String) -> Control:
 	return show_card("Recipe learned", Items.display_name(r.output), Items.icon(r.output), where)
 
 
-func show_blueprint(what: String, page_id: String) -> Control:
-	return show_card("Blueprint learned", what, Items.icon(page_id), "V opens your blueprints")
+## F580: `why` says where it came from ("From reading the Old Blueprint", "For rebuilding the old tower").
+func show_blueprint(what: String, page_id: String, why := "") -> Control:
+	return show_card("Blueprint learned", what, Items.icon(page_id), (why + "  ·  " if why != "" else "") + "V opens your blueprints")

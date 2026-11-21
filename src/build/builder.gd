@@ -327,7 +327,7 @@ func _ev_add_piece(uid: int, piece: String, family: String, pos: Vector3, rot: i
 		ladders[uid] = true
 	_next_uid = maxi(_next_uid, uid + 1)
 	if auth.is_host() and not batch:
-		_queue_shaky()
+		structure.settle_added(uid)  # (F565: a new piece only makes things steadier: no whole-world check)
 
 
 ## Many pieces at once (the world placing a ruin): no sound per piece, and the strength check (it looks at every
@@ -423,6 +423,7 @@ func _process(delta: float) -> void:
 	_clock += delta
 	if not _pending_falls.is_empty():
 		_apply_pending_falls()
+	_show_plans()
 	if not auth.is_host():
 		return
 	_site_timer -= delta
@@ -782,23 +783,29 @@ func _ev_site(box_id: int, json: String, origin: Vector3, rot: int, built: Array
 	var chest: Dictionary = auth.storage.get_box(box_id)
 	var chest_pos: Vector3 = chest.node.global_position if not chest.is_empty() else origin
 	var plan := bp.world_pieces(origin, rot)
+	if String(chest.get("kind", "")) == "rebuild":
+		ruin_share_costs(plan)  # (before sorting: the same sums as the chest's menu, ruin_needs)
 	plan.sort_custom(func(a, b):
 		if absf(a.pos.y - b.pos.y) > 0.01:
 			return a.pos.y < b.pos.y
 		return a.pos.distance_to(chest_pos) < b.pos.distance_to(chest_pos))
+	for p in plan:
+		PieceNode.start_loading(p.piece, p.family)
 	var ghost_root := Node3D.new()
 	add_child(ghost_root)
+	ghost_root.visible = _plans_shown
 	for i in plan.size():
 		plan[i].built = built.has(i)
 		var g: PieceNode = PIECE_SCRIPT.new()
 		g.ghost = true
+		g.plan = true
 		g.piece = plan[i].piece
 		g.family = plan[i].family
 		ghost_root.add_child(g)
 		g.global_position = plan[i].pos
 		g.rotation.y = Pieces.yaw_of(plan[i].rot)
 		g.set_ghost_plan.call_deferred()
-		g.visible = not plan[i].built
+		g.visible = false  # (_show_plans shows the floor being built, F565)
 		plan[i].ghost = g
 	var carve := bp.carve_cells(origin, rot)
 	var ground := bp.ground_cells(origin, rot, 1)  # F159: its footprint and a 1 m walkway round it
@@ -812,6 +819,7 @@ func _ev_site(box_id: int, json: String, origin: Vector3, rot: int, built: Array
 	fill.sort_custom(func(a, b): return a.distance_to(chest_pos) < b.distance_to(chest_pos))
 	sites[box_id] = {json = json, origin = origin, rot = rot, plan = plan, carve = carve, fill = fill, ghosts = ghost_root,
 		status = "Starting…", leftovers = {}, name = bp.name}
+	_plan_step(sites[box_id])
 
 
 @rpc("authority", "call_local", "reliable")
@@ -821,6 +829,30 @@ func _ev_site_piece(box_id: int, index: int) -> void:
 		return
 	site.plan[index].built = true
 	site.plan[index].ghost.visible = false
+	_plan_step(site)
+
+
+## F567 (owner, Nov 21: "every piece turned blue; blue only while I hold the hammer") and F565 (10 FPS at the tower:
+## hundreds of see-through pieces on top of each other cost the graphics card ~60 ms a frame): a build site's blue
+## plan shows only while you hold the Build Hammer, and only the floor being built now.
+func _plan_step(site: Dictionary) -> void:
+	var steps := site_steps(site.plan)
+	for i in site.plan.size():
+		var p: Dictionary = site.plan[i]
+		p.ghost.visible = not p.built and steps.band_of[i] == steps.current
+
+
+var _plans_shown := false
+
+
+func _show_plans() -> void:
+	var ps: GameAuthority.PlayerState = auth.get_player(auth.local_peer_id()) if auth.multiplayer.has_multiplayer_peer() else null
+	var show: bool = ps != null and ps.selected_item() == "build_hammer"
+	if show == _plans_shown:
+		return
+	_plans_shown = show
+	for box_id in sites:
+		(sites[box_id].ghosts as Node3D).visible = show
 
 
 @rpc("authority", "call_local", "reliable")
@@ -916,7 +948,7 @@ func _carve_step(box_id: int, site: Dictionary, chest: Dictionary) -> bool:
 				var left: int = auth.storage.put(box_id, item, v / per)
 				if left > 0:
 					auth.spawn_drop(item, left, chest.node.global_position + Vector3.UP)
-		_set_status(box_id, "Carving rock… %d cells left" % site.carve.size())
+		_set_status(box_id, "Clearing the way…" if site.has("ruin") else "Carving rock… %d cells left" % site.carve.size())  # (F559)
 		site.carved_this_tick = site.get("carved_this_tick", 0) + 1
 		if site.carved_this_tick < CARVES_PER_TICK:
 			continue  # a few scoops per tick
@@ -976,12 +1008,49 @@ static func site_steps(plan: Array, blocked: Dictionary = {}) -> Dictionary:
 	return {band_of = bands, current = current, count = order.size(), number = order.find(current) + 1}
 
 
+## What a plan piece costs: its own price (a ruin's, see ruin_share_costs) or the normal one.
+static func plan_cost(p: Dictionary) -> Dictionary:
+	return p.get("cost", Pieces.cost(p.piece, p.family))
+
+
+## F557 (owner, Nov 21, said 3×: "all the first cave's wood is about 100-120 planks, not enough"): rebuilding a ruin
+## reuses most of its old stone and timber, so each piece costs only RUIN_SHARE of a new one. Shared out over the plan
+## in order (so 0.3 of a 2-plank wall isn't rounded up to a whole plank on every piece): sets `cost` on every piece.
+const RUIN_SHARE := 0.3
+static func ruin_share_costs(plan: Array) -> void:
+	var sum := {}
+	for p in plan:
+		var cost := Pieces.cost(p.piece, p.family)
+		var mine := {}
+		for item in cost:
+			var before: float = sum.get(item, 0.0)
+			sum[item] = before + cost[item] * RUIN_SHARE
+			var n := floori(sum[item] + 0.0001) - floori(before + 0.0001)
+			if n > 0:
+				mine[item] = n
+		p.cost = mine
+
+
+## F578 (owner, Nov 21: "the chest doesn't show what still has to go in"): everything this build site still needs
+## beyond what's in its chest (item -> count). {} if it isn't a build site.
+func still_needed(box_id: int) -> Dictionary:
+	var site: Dictionary = sites.get(box_id, {})
+	var chest: Dictionary = auth.storage.get_box(box_id)
+	if site.is_empty() or chest.is_empty():
+		return {}
+	var todo := []
+	for i in site.plan.size():
+		if not site.plan[i].built:
+			todo.append(i)
+	return missing_for(site.plan, todo, chest.inv)
+
+
 ## What's still missing (beyond what's in the chest) for these plan pieces: item -> count.
 static func missing_for(plan: Array, which: Array, inv: Inventory) -> Dictionary:
 	var need := {}
 	for i in which:
 		var p: Dictionary = plan[i]
-		var cost := Pieces.cost(p.piece, p.family)
+		var cost := plan_cost(p)
 		for item in cost:
 			need[item] = need.get(item, 0) + cost[item]
 	var out := {}
@@ -1023,7 +1092,7 @@ func _build_step(box_id: int, site: Dictionary, chest: Dictionary) -> void:
 			return
 		if structure.overlaps(p.piece, p.pos, p.rot) or Pieces.rock_problem(p.piece, p.pos, p.rot, auth.world.sdf_at) != "":
 			continue  # blocked: something else is there
-		var cost := Pieces.cost(p.piece, p.family)
+		var cost := plan_cost(p)
 		var missing := {}
 		for item in cost:
 			if inv.count_of(item) < cost[item]:
@@ -1080,7 +1149,7 @@ Whole building still needs: %s" % all_text))
 
 
 func _identical_exists(p: Dictionary) -> bool:
-	for uid in structure.pieces:
+	for uid in structure.near(Pieces.box(p.piece, p.pos, p.rot)):
 		var q: Dictionary = structure.pieces[uid]
 		if q.piece == p.piece and q.family == p.family and q.rot == p.rot and q.pos.distance_to(p.pos) < 0.05:
 			return true
@@ -1124,8 +1193,8 @@ func ruin_intro(box_id: int) -> String:
 	var r: Dictionary = auth.world_state.get("ruins", {}).get(str(box_id), {})
 	if r.is_empty():
 		return ""
-	return "Fix the old %s! Put in planks or %s: only its broken parts get rebuilt.\nReward: its blueprints + %d XP." % [
-		String(r.get("name", "tower")), Items.display_name(ruin_hard(r)).to_lower(), RUIN_XP]
+	return "Fix the old %s! Put in planks or %s:" % [String(r.get("name", "tower")),
+		Items.display_name(ruin_hard(r)).to_lower()]  # (F560, said 3×: the pictures under it say the rest)
 
 
 ## The ruin's own hard material (the one its "stone" blueprint is built in): cut stone, or clay brick for the Brewhall
@@ -1141,8 +1210,9 @@ func ruin_choices(box_id: int) -> Array[Dictionary]:
 	if r.is_empty():
 		return out
 	for pair in [[String(r.wood), Items.display_name("plank_root")], [String(r.stone), Items.display_name(ruin_hard(r))]]:
+		var need := ruin_needs(pair[0], r)
 		out.append({key = pair[0], name = BlueprintLibrary.NAMES.get(pair[0], pair[0]), put = pair[1],
-			needs = _list_text(ruin_needs(pair[0], r))})
+			needs = _list_text(need), need = need, wood = pair[0] == String(r.wood)})
 	return out
 
 
@@ -1154,11 +1224,12 @@ func ruin_needs(key: String, r: Dictionary) -> Dictionary:
 	if bp == null:
 		return need
 	var plan := bp.world_pieces(r.origin, int(r.turn))
+	ruin_share_costs(plan)
 	var go := _worn_to_go(plan, float(r.get("over", 2.1)))
 	for p in plan:
 		if _ruin_slot_whole(p, go):
 			continue
-		var cost := Pieces.cost(p.piece, p.family)
+		var cost := plan_cost(p)
 		for item in cost:
 			need[item] = need.get(item, 0) + cost[item]
 	return need
@@ -1188,7 +1259,7 @@ func ruin_picture(box_id: int) -> Array[Dictionary]:
 
 ## A broken piece of the ruin lies where this plan piece goes (it gets swapped for a whole one).
 func _ruin_broken_at(p: Dictionary) -> bool:
-	for uid in structure.pieces:
+	for uid in structure.near(Pieces.box(p.piece, p.pos, p.rot).grow(0.6)):
 		var q: Dictionary = structure.pieces[uid]
 		if String(q.piece).begins_with("ruin_") and q.pos.distance_to(p.pos) < 0.6:
 			return true
@@ -1221,11 +1292,22 @@ func ruin_chest_changed(box_id: int) -> void:
 	if site.is_empty():
 		return
 	site.ruin = key
+	_ruin_ground(site, bp)
 	site.worn_go = _worn_to_go(site.plan, float(r.get("over", 2.1)))
 	for i in site.plan.size():  # what still stands whole is done already
 		if _ruin_slot_whole(site.plan[i], site.worn_go):
 			_ev_site_piece.rpc(box_id, i)
 	_set_status(box_id, "Rebuilding in %s" % ("wood" if key == String(r.wood) else ("brick" if ruin_hard(r) == BlueprintLibrary.BRICK else "stone")))
+
+
+## F559 (owner, Nov 21: rebuilding the tower said "carving rock"): a ruin already stands on its ground. Rebuilding it
+## only clears rock inside the building (rare), never a walkway into the cave round it, and levels nothing.
+func _ruin_ground(site: Dictionary, bp: Blueprint) -> void:
+	var inside := {}
+	for c in bp.carve_cells(site.origin, site.rot):
+		inside[c] = true
+	site.carve = (site.carve as Array).filter(func(c): return inside.has(c))
+	site.fill = []
 
 
 ## A whole piece of the ruin already stands where this plan piece goes (any material), or a worn wall that stays
@@ -1235,7 +1317,7 @@ func _ruin_slot_whole(p: Dictionary, go := {}) -> bool:
 	if _ruin_same_here(p):
 		return true
 	if wall_slot:
-		for uid in structure.pieces:
+		for uid in structure.near(Pieces.box(p.piece, p.pos, p.rot).grow(0.6)):
 			var q: Dictionary = structure.pieces[uid]
 			if q.piece in RUIN_KEEP and not go.has(uid) and q.pos.distance_to(p.pos) < 0.6:
 				return true
@@ -1245,7 +1327,7 @@ func _ruin_slot_whole(p: Dictionary, go := {}) -> bool:
 ## The very piece (or what stands for it, a battlement for a railing) is already there.
 func _ruin_same_here(p: Dictionary) -> bool:
 	var same: Array = [p.piece] + RUIN_EQUIVALENT.get(p.piece, [])
-	for uid in structure.pieces:
+	for uid in structure.near(Pieces.box(p.piece, p.pos, p.rot)):
 		var q: Dictionary = structure.pieces[uid]
 		if q.piece in same and q.rot == p.rot and q.pos.distance_to(p.pos) < 0.05:
 			return true
@@ -1297,18 +1379,20 @@ func _ruin_step(box_id: int, site: Dictionary) -> bool:
 			continue
 		if not site.has("worn_go"):
 			site.worn_go = _worn_to_go(site.plan, float(auth.world_state.get("ruins", {}).get(str(box_id), {}).get("over", 2.1)))  # (a loaded save)
-		for uid in structure.pieces:  # (a worn wall is lower than a whole one: look by place, not only by overlap)
+		# (F565: only the pieces near it, and the overlap test once, not once per piece in the world)
+		var ov := structure.overlapping(p.piece, p.pos, p.rot)
+		for uid in structure.near(Pieces.box(p.piece, p.pos, p.rot).grow(0.6)):  # (a worn wall is lower than a whole one: look by place, not only by overlap)
 			var q: Dictionary = structure.pieces[uid]
 			var keep: bool = q.piece in RUIN_KEEP and ruin_keeps_worn(String(p.family)) and not site.worn_go.has(uid)
-			if String(q.piece).begins_with("ruin_") and not keep and (q.pos.distance_to(p.pos) < 0.6 or uid in structure.overlapping(p.piece, p.pos, p.rot)):
+			if String(q.piece).begins_with("ruin_") and not keep and (q.pos.distance_to(p.pos) < 0.6 or uid in ov):
 				_ev_remove_piece.rpc(uid)  # the broken wall comes down; the whole one goes up next
 				_set_status(box_id, "Taking down a broken wall…")
 				return true
-			if q.piece in RUIN_DEBRIS and uid in structure.overlapping(p.piece, p.pos, p.rot):
+			if q.piece in RUIN_DEBRIS and uid in ov:
 				_ev_remove_piece.rpc(uid)  # the Brewhall's fallen chimney lies where the yard railing goes back up (F479)
 				_set_status(box_id, "Clearing the wreckage…")
 				return true
-			if q.piece in RUIN_MAKE_WAY and uid in structure.overlapping(p.piece, p.pos, p.rot):
+			if q.piece in RUIN_MAKE_WAY and uid in ov:
 				_ev_remove_piece.rpc(uid)  # an old battlement where the new walkway goes (it goes back up higher)
 				_set_status(box_id, "Taking down an old battlement…")
 				return true
@@ -1328,17 +1412,20 @@ func _finish_ruin(box_id: int, site: Dictionary, chest: Dictionary) -> void:
 			_ev_remove_piece.rpc(uid)
 	var ruins: Dictionary = auth.world_state.get("ruins", {}).duplicate()
 	var learn: Array = [key]
+	var ruin_name := "ruin"
 	if ruins.has(str(box_id)):
 		var r: Dictionary = (ruins[str(box_id)] as Dictionary).duplicate()
 		r.done = true
 		ruins[str(box_id)] = r
 		auth.world_state["ruins"] = ruins
+		ruin_name = String(r.get("name", "ruin"))
 		learn = [String(r.wood), String(r.stone)]  # owner, Nov 20: whichever material you rebuild it with, you learn both
 	var known: Array = auth.world_state.get("blueprints", []).duplicate()
 	for k in learn:
 		if not known.has(k):
 			known.append(k)
-		auth._ev_learned_blueprint.rpc(BlueprintLibrary.NAMES.get(k, k), "blueprint_page")  # (the card shows a blueprint page)
+		# F580 (owner, Nov 21: "I learned Forge Workshop from somewhere and don't know why"): the card says why.
+		auth._ev_learned_blueprint.rpc(BlueprintLibrary.NAMES.get(k, k), "blueprint_page", "For rebuilding the old %s" % ruin_name)
 	auth.world_state.blueprints = known
 	for pid in auth.players:
 		var ps: GameAuthority.PlayerState = auth.players[pid]
@@ -1382,6 +1469,9 @@ func load_snapshot(s: Dictionary) -> void:
 		_ev_site(st[0], st[1], st[2], st[3], st[4])
 		if st.size() > 5 and String(st[5]) != "" and sites.has(st[0]):
 			sites[st[0]].ruin = String(st[5])  # (a ruin being rebuilt)
+			var r := Blueprint.from_json(st[1])
+			if r.ok:
+				_ruin_ground(sites[st[0]], r.blueprint)
 	for r in s.get("rubble", []):
 		_add_rubble(r[0], r[1], r[2], r[3], r[3], false)
 		rubble[r[0]].hits = r[4]

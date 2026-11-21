@@ -3,7 +3,7 @@ extends Node
 
 signal hud_message(text: String)  ## a line for our own screen
 signal learned_recipe(recipe_id: String)  ## a recipe page taught the group something (a card on the left)
-signal learned_blueprint(what: String, page_id: String)
+signal learned_blueprint(what: String, page_id: String, why: String)
 ## The referee. Every action that changes the shared world goes through here:
 ##
 ##   1. A player ASKS for something       (ask_*: called by the player's own computer)
@@ -937,8 +937,8 @@ func taught_recipes() -> Dictionary:
 
 
 @rpc("authority", "call_local", "reliable")
-func _ev_learned_blueprint(what: String, page_id: String) -> void:
-	learned_blueprint.emit(what, page_id)  # a card on the left (LearnedCards)
+func _ev_learned_blueprint(what: String, page_id: String, why: String) -> void:
+	learned_blueprint.emit(what, page_id, why)  # a card on the left (LearnedCards)
 
 
 @rpc("authority", "call_local", "reliable")
@@ -1709,7 +1709,7 @@ func _learn_from_page(ps: PlayerState, id: String) -> String:
 		known.append(key)
 		world_state.blueprints = known
 		_ev_state.rpc(world_state)
-		_ev_learned_blueprint.rpc(BlueprintMenu.ready_made_name(key), id)
+		_ev_learned_blueprint.rpc(BlueprintMenu.ready_made_name(key), id, "From reading the %s" % Items.display_name(id))
 		return "learned"
 	# A recipe page from a ruin: the whole group learns a recipe nobody knew yet, of the page's kind (a Cook's Page
 	# teaches food, an Armourer's Page armour... owner, Nov 19). A dungeon's page or scroll always teaches its one
@@ -2252,7 +2252,9 @@ func request_craft(peer_id: int, recipe_id: String, station_id: int = 0) -> bool
 	# Auto-crafting (owner, Nov 19): missing in-between items made at this same station get made first, silently;
 	# their cooking time is added to the final job.
 	var extra_seconds := 0.0
+	var crafted_first := false
 	if not Crafting.missing(ps.inventory, recipe_id).is_empty():
+		crafted_first = true
 		var lvl := st.level() if st else 1
 		var steps := Crafting.plan(ps.inventory, recipe_id, r.station, func(id): \
 			return Recipes.is_unlocked(id, ps.seen, taught_recipes()) and lvl >= int(Recipes.get_recipe(id).get("level", 1)))
@@ -2290,6 +2292,13 @@ func request_craft(peer_id: int, recipe_id: String, station_id: int = 0) -> bool
 	var skill := "cooking" if r.station == "campfire" else "crafting"
 	if peer_id == local_peer_id():
 		Sfx.ui("craft", 0.0)
+	if Items.stack_size(r.output) == 1 and (peer_id == local_peer_id() or multiplayer.get_peers().has(peer_id)):
+		# F561 (owner, Nov 21: "I crafted a wooden shield without the resources"): say what it took from the bag.
+		var used := []
+		for item in r.inputs:
+			used.append("%d %s" % [r.inputs[item], Items.display_name(item)])
+		tell(peer_id, "Made a %s from %s%s." % [Items.display_name(r.output), ", ".join(used),
+			" (some made first from what was in your bag)" if extra_seconds > 0.0 or crafted_first else ""])
 	var xp := 10 if Items.stack_size(r.output) == 1 else (5 if skill == "cooking" else 1)
 	give_xp(peer_id, xp, skill)
 	return true
