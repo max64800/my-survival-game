@@ -12,6 +12,8 @@ func _ready() -> void:
 	_grid = VBoxContainer.new()
 	_grid.add_theme_constant_override("separation", 8)
 	add_child(_grid)
+	# F708 (like the chest menu's F633): whenever the menu appears, the cursor shows, whoever opened it.
+	visibility_changed.connect(func(): if visible: Controls.set_captured(false))
 
 
 ## The menu's tabs (building polish spec §7), in order, with their names.

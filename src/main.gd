@@ -928,8 +928,14 @@ func _notification(what: int) -> void:
 		_away = true
 	if what == NOTIFICATION_APPLICATION_FOCUS_IN and _away:
 		_away = false
-		if _ready_to_play and hud and not hud.is_paused():
+		if _ready_to_play and hud and not hud.is_paused() and not menu_wants_cursor():
 			Controls.set_captured(true)
+
+
+## A menu is open that you use with the mouse (bag, station, chest, build menu B, blueprint book, map, skills, dev).
+## While one is, a click that misses its buttons or coming back from Alt+Tab never hides the cursor (F708, F633).
+func menu_wants_cursor() -> bool:
+	return hud.is_bag_open() or hud.is_build_menu_open() or hud.is_blueprints_open() or hud.is_map_open() 		or hud.is_skills_open() or hud.is_dev_menu_open() or (hud.box_panel != null and hud.box_panel.visible)
 
 
 ## E turns what you're placing to the right (Q to the left), but only when you aren't aiming at something to open,
@@ -1122,7 +1128,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			Controls.set_captured(false)
 	elif event.is_action_pressed("interact") and hud.is_bag_open():
 		_set_bag(false)
-	elif event is InputEventMouseButton and event.pressed and not Controls.captured() and not hud.is_bag_open():
+	elif event is InputEventMouseButton and event.pressed and not Controls.captured() and not menu_wants_cursor():
 		Controls.set_captured(true)
 		hud.set_paused(false)
 

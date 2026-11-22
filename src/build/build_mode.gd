@@ -108,7 +108,13 @@ var _tint_version := -1
 var _tint_timer := 0.0
 
 
-## Hammer out: every built piece glows faintly in its strength color (blue/green/yellow/red).
+## Hammer out: only SHAKY pieces glow faintly, yellow or red, as a "this might fall" warning. Strong and good pieces
+## don't glow at all (F567, said 3×: the strong colour was blue, so a rebuilt tower turned all blue with the hammer).
+## Aim at any piece to read how steady it is (the HUD line).
+static func warning_tint(stability: float) -> Color:
+	return Structure.strength_color(stability) if stability < 0.5 else Color(0, 0, 0, 0)
+
+
 func _update_tints(delta: float, on: bool) -> void:
 	var auth := GameAuthority.instance
 	if auth == null or auth.builder == null:
@@ -129,7 +135,7 @@ func _update_tints(delta: float, on: bool) -> void:
 	_tint_version = b.structure.version
 	for uid in b.nodes:
 		if b.structure.pieces.has(uid):
-			(b.nodes[uid] as PieceNode).set_tint(Structure.strength_color(b.structure.pieces[uid].stability))
+			(b.nodes[uid] as PieceNode).set_tint(warning_tint(b.structure.pieces[uid].stability))
 	_tint_on = true
 
 

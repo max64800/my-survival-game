@@ -428,7 +428,6 @@ func _process(delta: float) -> void:
 	_clock += delta
 	if not _pending_falls.is_empty():
 		_apply_pending_falls()
-	_show_plans()
 	if not auth.is_host():
 		return
 	if instant_ruins:
@@ -804,7 +803,7 @@ func _ev_site(box_id: int, json: String, origin: Vector3, rot: int, built: Array
 		PieceNode.start_loading(p.piece, p.family)
 	var ghost_root := Node3D.new()
 	add_child(ghost_root)
-	ghost_root.visible = false if is_ruin else _plans_shown  # F631/F567: a ruin rebuilds by itself, no blue plan ever
+	ghost_root.visible = false  # F567 (said 3×): no build site ever shows its blue plan, ruin or your own blueprint
 	for i in plan.size():
 		plan[i].built = built.has(i)
 		var g: PieceNode = PIECE_SCRIPT.new()
@@ -816,7 +815,7 @@ func _ev_site(box_id: int, json: String, origin: Vector3, rot: int, built: Array
 		g.global_position = plan[i].pos
 		g.rotation.y = Pieces.yaw_of(plan[i].rot)
 		g.set_ghost_plan.call_deferred()
-		g.visible = false  # (_show_plans shows the floor being built, F565)
+		g.visible = false  # (the whole plan stays hidden anyway, F567)
 		plan[i].ghost = g
 	var carve := bp.carve_cells(origin, rot)
 	var ground := bp.ground_cells(origin, rot, 1)  # F159: its footprint and a 1 m walkway round it
@@ -851,22 +850,6 @@ func _plan_step(site: Dictionary) -> void:
 	for i in site.plan.size():
 		var p: Dictionary = site.plan[i]
 		p.ghost.visible = not p.built and steps.band_of[i] == steps.current
-
-
-var _plans_shown := false
-
-
-func _show_plans() -> void:
-	var ps: GameAuthority.PlayerState = auth.get_player(auth.local_peer_id()) if auth.multiplayer.has_multiplayer_peer() else null
-	var show: bool = ps != null and ps.selected_item() == "build_hammer"
-	if show == _plans_shown:
-		return
-	_plans_shown = show
-	for box_id in sites:
-		var site: Dictionary = sites[box_id]
-		if site.has("ruin"):
-			continue  # F631/F567: a ruin never shows the blue plan, hammer or not
-		(site.ghosts as Node3D).visible = show
 
 
 @rpc("authority", "call_local", "reliable")

@@ -151,3 +151,22 @@ func test_take_down_text_says_how() -> void:
 	check(Hud.take_down_text(0.0).begins_with("X: break"), "too late: only breaking")
 	check(Hud.take_down_text(-1.0).contains("pick up") and Hud.take_down_text(-1.0).contains("half back"), "a friend's computer still shows both ways")
 	check(not Hud.take_down_text(0.0).contains("%%") and not Hud.take_down_text(3.0).contains("%%"), "no doubled % signs")
+
+
+## F708 (owner, Nov 22: "in the build menu the mouse cursor sometimes disappears"): like the chest menu (F633), the
+## build menu always shows the cursor when it appears, even if something had grabbed the mouse just before.
+func test_build_menu_always_shows_the_cursor() -> void:
+	var was_robot := Controls.robot
+	Controls.robot = true  # (pretend mouse: never grabs the real one)
+	var root := Control.new()
+	tree.root.add_child(root)
+	var menu := BuildMenu.new()
+	menu.visible = false
+	root.add_child(menu)
+	for i in 3:
+		Controls.set_captured(true)  # the game had the mouse (playing, or a stray click grabbed it)
+		menu.visible = false
+		menu.visible = true
+		check(not Controls.captured(), "opening the build menu shows the cursor (try %d)" % (i + 1))
+	root.queue_free()
+	Controls.robot = was_robot
