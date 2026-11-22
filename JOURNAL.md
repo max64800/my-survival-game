@@ -10735,3 +10735,66 @@ like an old model. Furniture shows as a box and only turns 90°. A spawn spot sh
 - **A pickaxe decor bumped a wall torch** after the room grew. The script's own rule check caught it; moved 2 m along the wall.
 
 **Found but not ours (other chats' recent changes, tests not updated yet):** test_dwarf.test_your_own_stun_meter (the stun now knocks you down for 1.2 s instead of the old stun), test_dwarf_fist (spin swing fists), two bat tests in test_monsters, and test_pell's dart plate test (fails on the old map too).
+
+
+## Nov 22, 2026 (PC, late evening): black screen, full to-do list, and a deep "learn Godot + game design" research
+
+**What we did**
+- Black screen on the main monitor: it was a Claude test game (the Twin Gate speed test, `claude=twin_gate_fps`). The
+  old copies had already closed; a new copy was busy measuring, so it was left alone and the owner was told how to move it.
+- Looked for a chat that "learned Godot": none had. It was only feedback item F704 (discussion only).
+- Built the whole to-do list from the roadmap, the zone 1 plans and the 135 open feedback items, with rough
+  percentages (Zone 1 about 55%, whole game about 20-25%). Owner's reminder: 12 dungeons = 4 small (done),
+  4 medium, 4 large.
+- Owner's new job (F704): research Godot and game design as deeply as possible. 5 helpers researched in parallel
+  (speed, AI workflow + co-op + Steam, fight and movement feel, guiding players + dungeons, sound + playtests + scope +
+  Next Fest), then one helper wrote the report: `docs/research/reports/Godot and game design lessons.md`
+  (notes in `docs/research/research_notes/Godot and game design lessons/`).
+
+**Mistakes and hurdles**
+- My first chat search matched almost every chat, because every handoff prompt contains words like "learn". Fixed by
+  searching only for the owner's exact kind of wording, which found F704.
+- Python printing crashed twice on Windows (an empty path split, then the "→" character). Fixed with a safer split
+  and `PYTHONIOENCODING=utf-8`.
+- The helpers could not read members-only GDC talks, so many numbers are from wikis or articles. The report tags each
+  claim Sourced / Secondary / Guess. The report writer caught a helper's mistake: dodge invincibility frames from a
+  wiki were counted at 30 FPS, so "10-13 frames" really means about 0.3-0.4 s, not 0.17-0.2 s.
+- Not yet added to FEEDBACK.md: crouching, medium armor, new dwarf heads, music, voice lines, the 12-ruin goal
+  (waiting for the owner's OK to add them as new F-numbers).
+
+
+## Nov 22 (night, PC): your bed is your wake-up spot, one per person (F727)
+
+**What we did**
+- Every bed now remembers who it belongs to. A Bed station and the bed furniture (Rootwood Bed, Low Bed, Hammock, Bunk Bed) all count.
+- Placing a bed makes it yours and your wake-up spot straight away. One per person: a new bed moves your spot there,
+  and your old bed turns into a plain bed. A plain bed still works for resting, and pressing E on it makes it yours again.
+- Looking at a bed says "Your bed", "Friend 1's bed" (or "Host's bed"), or "Bed · E to make it your bed".
+  You can't take a friend's bed: E just says whose it is.
+- If your bed is taken down, smashed or falls with a collapsing building, you get a message and wake up at the world start again.
+- The owners are saved with the world, and friends who join get the list too.
+- Co-op ready: E asks the host, the host decides, and one message tells every computer who owns the bed.
+- New test file: `tests/test_beds.gd` (4 tests).
+
+**Hurdles and mistakes**
+- Players don't have a fixed name in the game yet: they are "Host" or "Friend 1-3" (a player number given when they join).
+  So beds belong to that number. A friend who joins as Friend 1 next time gets Friend 1's bed, the same way they already
+  get Friend 1's bag. Fine for now; when Steam names come in, beds should switch to those.
+- Found a small old gap: a friend who left and came back got their bag back but lost their bed spot. Fixed it at the same time.
+- Claude's own slip: the first test run printed "4 checks" and Claude worried the tests had crashed early. The number
+  counts tests, not checks; the verbose run showed all 4 tests passing.
+- Claude's slip at commit time: the FEEDBACK files already held another chat's F716 move (not yet committed by them), so it rode along in the F727 commit. Harmless (same text), but next time check `git diff FEEDBACK.md` for other chats' lines first.
+- Tests: all bed, builder, authority, save, furniture, home decor and comfort tests pass. The full suite was too long for
+  Claude's 10-minute command limit (first run cut off), and the second run crashed inside the dungeon tests. Failures seen,
+  none from the bed code: spiral stairs too tall (another chat's F716), build lessons not remembered, a clay-brick floor
+  model still being made, and 3 dwarf tests (hair swing, stun meter, a missing material) where other chats have open edits.
+
+
+## Nov 22, 2026 (PC, late evening): research turned into to-do items
+
+- Added F735-F757 to FEEDBACK.md: the owner's missing items (crouch, medium armor, new heads, music, voice lines,
+  12 ruins, Orrumhal, 8 more dungeons) and every action from the "Godot and game design lessons" research.
+- Bumped instead of copying: F391 leather armor, F422 rune slabs, F697 bronze, F700 moves, F442 loot, F311 Next Fest dates.
+- Hurdle: my edit script stopped because F732 (roll safety) had vanished from the open list. Another chat had just
+  fixed it (safe from the first frame to 0.40 s), which already matches the research, so I dropped that bump.
+  The script checks every line before saving, so nothing half-written was saved.
