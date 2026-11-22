@@ -135,7 +135,24 @@ func test_after_each_quarter_it_fades_away_and_rushes() -> void:
 	start = m.global_position
 	auth.monsters._hurt_monster(m, 1, 40, 0.0)  # (140 -> 100: past 112.5, a quarter gone)
 	check(Ghost.rush(m) > 1.0, "it rushes after its jump")
+	# F659: it breaks into small dots (no mist balls) that start in its old body...
+	await tree.process_frame
+	var dots := tree.get_nodes_in_group("ghost_dots")
+	check(dots.size() == 1, "it breaks into dots (%d dot clouds)" % dots.size())
+	var mm: MultiMesh = (dots[0] as MultiMeshInstance3D).multimesh if not dots.is_empty() else null
+	check(mm != null and mm.instance_count >= 60, "lots of them")
+	var near_old := 0
+	if mm != null:
+		for i in mm.instance_count:
+			near_old += int((mm.get_meta("dots")[i] as Vector3).distance_to(start + Vector3.UP * 0.9) < 1.3)
+	check(mm != null and near_old > mm.instance_count * 0.9, "they start in its old body (%d)" % near_old)
 	await tree.create_timer(0.8).timeout
+	# ...and gather again where it comes back
+	var near_new := 0
+	if is_instance_valid(mm):
+		for i in mm.instance_count:
+			near_new += int((mm.get_meta("dots")[i] as Vector3).distance_to(m.global_position + Vector3.UP * 0.9) < 1.3)
+	check(mm != null and near_new > mm.instance_count * 0.9, "they gather where it comes back (%d)" % near_new)
 	var moved := m.global_position.distance_to(start)
 	check(moved >= 2.0, "it came back somewhere else (%.1f m away)" % moved)
 	check(world.maker.sdf_at(m.global_position + Vector3.UP * 0.8) > 0.3, "with room to float there")
@@ -159,5 +176,6 @@ func test_it_dies_into_mist_not_stone() -> void:
 		check(f < 1.0, "fading away (%.2f)" % f)
 	await tree.create_timer(1.3).timeout
 	check(not is_instance_valid(model), "then it is gone")
+	check(tree.get_nodes_in_group("ghost_dots").is_empty(), "and so are its dots")
 	check(tree.root.find_children("*", "Statue", true, false).is_empty(), "no stone statue left behind")
 	_teardown()

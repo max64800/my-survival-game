@@ -22,6 +22,8 @@ const JUMP_MIN := 3.0  ## how far it jumps (m)
 const JUMP_MAX := 5.5
 const FADE_OUT := 0.18  ## s into mist
 const FADE_IN := 0.4  ## s back out of it
+const DOTS := 140  ## F659: it breaks into this many small glowing dots that fly to the new spot and gather there
+const DOTS_FLY := 0.6  ## s the dots take from its old body to its new one (it is invisible for this long)
 
 
 ## The model (MonsterModel.build: shape "ghost"). The dwarf inside builds when it enters the scene, then gets dressed.
@@ -122,18 +124,20 @@ static func pick_spot(from: Vector3, seed: int, maker: CaveMaker) -> Vector3:
 static func show_fade(m: Monster, to: Vector3) -> void:
 	var from := m.global_position
 	var model := m.model
-	m.set_meta("ghost_rush", Time.get_ticks_msec() / 1000.0 + FADE_OUT + FADE_IN + RUSH_TIME)
+	var now := Time.get_ticks_msec() / 1000.0
+	m.set_meta("ghost_rush", now + FADE_OUT + DOTS_FLY + FADE_IN + RUSH_TIME)
+	m.set_meta("ghost_hidden", now + FADE_OUT + DOTS_FLY)
 	if model == null or not m.is_inside_tree():
 		m.global_position = to
 		return
-	_mist_trail(m.get_parent(), from + Vector3.UP * 0.7, to + Vector3.UP * 0.7, model)
+	_dots(m.get_parent(), from, to, model, true)
 	var t := m.create_tween()
 	t.tween_method(func(f: float) -> void: set_fade(model, f), 1.0, 0.0, FADE_OUT)
 	t.tween_callback(func() -> void:
 		m.global_position = to
 		m.set("_net_pos", to)  # (a friend's copy doesn't glide there: it is there)
 		m.velocity = Vector3.ZERO)
-	t.tween_interval(0.08)
+	t.tween_interval(DOTS_FLY - 0.1)  # (it starts to show again as the last dots arrive)
 	t.tween_method(func(f: float) -> void: set_fade(model, f), 0.0, 1.0, FADE_IN)
 
 
@@ -142,42 +146,125 @@ static func rush(m: Monster) -> float:
 	return RUSH if Time.get_ticks_msec() / 1000.0 < float(m.get_meta("ghost_rush", 0.0)) else 1.0
 
 
-## A line of soft mist puffs from where it was to where it went, each fading away (glowing in its colour).
-static func _mist_trail(parent: Node, a: Vector3, b: Vector3, model: Node3D) -> void:
+## True while it is only dots (between fading out and coming back): it waits there, unseen.
+static func hidden(m: Monster) -> bool:
+	return Time.get_ticks_msec() / 1000.0 < float(m.get_meta("ghost_hidden", 0.0))
+
+
+## F659: it breaks into lots of small glowing dots (its own colour). They burst out of its body, swirl through the air
+## to `b` and, with `gather`, form its body again there (then fade as it shows again). Without `gather` (its death)
+## they drift up and apart and fade out. One MultiMesh = one draw call; each dot follows its own curve.
+## (Not GPUParticles3D: particles can't be sent to an exact spot to rebuild the body there.)
+static func _dots(parent: Node, a: Vector3, b: Vector3, model: Node3D, gather: bool) -> void:
 	if parent == null:
 		return
 	var col := Color(0.6, 0.95, 0.9)
 	var ms := mats(model)
 	if not ms.is_empty():
 		col = (ms[0] as ShaderMaterial).get_shader_parameter("tint")
-	var n := clampi(ceili(a.distance_to(b) / 0.45), 3, 14)
-	for i in n + 1:
-		var puff := MeshInstance3D.new()
-		var ball := SphereMesh.new()
-		ball.radius = 0.22
-		ball.height = 0.4
-		ball.radial_segments = 10
-		ball.rings = 5
-		puff.mesh = ball
-		var mat := StandardMaterial3D.new()
-		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-		mat.albedo_color = Color(col.r, col.g, col.b, 0.35)
-		puff.material_override = mat
-		puff.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		puff.add_to_group("ghost_mist")
-		parent.add_child(puff)
-		var t0 := float(i) / n
-		puff.global_position = a.lerp(b, t0) + Vector3(sin(i * 2.1) * 0.15, sin(i * 1.3) * 0.12, cos(i * 1.7) * 0.15)
-		puff.scale = Vector3.ONE * (0.6 + 0.5 * sin(t0 * PI))
-		var tw := puff.create_tween()
-		tw.tween_interval(t0 * FADE_OUT * 1.5)
-		tw.set_parallel(true)
-		tw.tween_property(puff, "scale", puff.scale * 1.8, 1.1)
-		tw.tween_property(mat, "albedo_color:a", 0.0, 1.1)
-		tw.tween_property(puff, "position:y", puff.position.y + 0.4, 1.1)
-		tw.chain().tween_callback(puff.queue_free)
+	col = col.lightened(0.35)
+	var size := model.global_transform.basis.get_scale().y if model.is_inside_tree() else 1.0
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(Vector3i(a.round()))
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_colors = true
+	mm.mesh = _dot_mesh()
+	mm.instance_count = DOTS
+	var node := MultiMeshInstance3D.new()
+	node.multimesh = mm
+	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	node.add_to_group("ghost_dots")
+	parent.add_child(node)
+	node.global_transform = Transform3D.IDENTITY
+	node.custom_aabb = AABB(Vector3(-50, -50, -50), Vector3(100, 100, 100))  # (it moves its dots itself: never cull it)
+	# each dot: where it starts (in the old body), its curve's two pull points, where it ends, when it leaves, how long
+	var p0: Array[Vector3] = []
+	var p1: Array[Vector3] = []
+	var p2: Array[Vector3] = []
+	var p3: Array[Vector3] = []
+	var go: Array[float] = []
+	var fly: Array[float] = []
+	var big: Array[float] = []
+	var trip := FADE_OUT + DOTS_FLY if gather else 1.3
+	for i in DOTS:
+		var start := a + _body_point(rng) * size
+		var out := (start - a) * Vector3(1, 0, 1)
+		out = (out.normalized() if out.length() > 0.01 else Vector3.RIGHT) * rng.randf_range(0.4, 1.0) * size
+		out.y = rng.randf_range(-0.1, 0.5) * size
+		var end := b + _body_point(rng) * size if gather else a + Vector3(0, rng.randf_range(0.8, 1.8), 0) * size \
+				+ out * 1.6
+		p0.append(start)
+		p1.append(start + out * 1.3)
+		var out2 := Vector3(rng.randf_range(-1, 1), rng.randf_range(0.0, 0.8), rng.randf_range(-1, 1)) * 0.7 * size
+		p2.append(end + out2 if gather else end - out * 0.4)
+		p3.append(end)
+		var leave := rng.randf_range(0.0, FADE_OUT)
+		go.append(leave)
+		fly.append(trip - leave - rng.randf_range(0.0, 0.12))
+		big.append(rng.randf_range(0.6, 1.4) * size)
+	var total := trip + (FADE_IN if gather else 0.0)
+	var now: Array[Vector3] = p0.duplicate()
+	mm.set_meta("dots", now)  # (where each dot is now: the tests read it, a headless run doesn't keep MultiMesh spots)
+	var step := func(t: float) -> void:
+		for i in DOTS:
+			var u := clampf((t - go[i]) / fly[i], 0.0, 1.0)
+			var e := u * u * (3.0 - 2.0 * u)
+			var k := 1.0 - e
+			var pos := p0[i] * k * k * k + p1[i] * 3.0 * k * k * e + p2[i] * 3.0 * k * e * e + p3[i] * e * e * e
+			var w := sin(u * PI) * 0.12 * size  # (a little swirl on the way)
+			pos += Vector3(sin(t * 9.0 + i), cos(t * 7.0 + i * 1.7), cos(t * 8.0 + i * 2.3)) * w
+			var alpha := clampf(t / 0.08, 0.0, 1.0)
+			if gather:
+				alpha *= 1.0 - clampf((t - trip) / FADE_IN, 0.0, 1.0)  # (gathered: they melt into its body as it shows)
+			else:
+				alpha *= 1.0 - u * u
+			now[i] = pos
+			mm.set_instance_transform(i, Transform3D(Basis.from_scale(Vector3.ONE * big[i] * (0.6 + 0.4 * alpha)), pos))
+			mm.set_instance_color(i, Color(col.r, col.g, col.b, alpha))
+	step.call(0.0)
+	var tw := node.create_tween()
+	tw.tween_method(step, 0.0, total, total)
+	tw.tween_callback(node.queue_free)
+
+
+## A random spot inside a ghost's body (feet at 0, about 1.7 m tall, widest at the shoulders).
+static func _body_point(rng: RandomNumberGenerator) -> Vector3:
+	var h := rng.randf_range(0.05, 1.7)
+	var r := (0.12 + 0.28 * sin(clampf(h / 1.7, 0.0, 1.0) * PI * 0.85)) * sqrt(rng.randf())
+	return Vector3(0, h, 0) + Vector3.FORWARD.rotated(Vector3.UP, rng.randf() * TAU) * r
+
+
+static var _dot: QuadMesh
+
+
+## One small round glowing dot that always faces you (shared by every ghost).
+static func _dot_mesh() -> QuadMesh:
+	if _dot != null:
+		return _dot
+	var tex := GradientTexture2D.new()
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(0.5, 0.0)
+	tex.width = 32
+	tex.height = 32
+	var g := Gradient.new()
+	g.set_color(0, Color(1, 1, 1, 1))
+	g.set_color(1, Color(1, 1, 1, 0))
+	g.add_point(0.45, Color(1, 1, 1, 0.8))
+	tex.gradient = g
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	mat.billboard_keep_scale = true
+	mat.vertex_color_use_as_albedo = true
+	mat.albedo_texture = tex
+	_dot = QuadMesh.new()
+	_dot.size = Vector2(0.05, 0.05)
+	_dot.material = mat
+	return _dot
 
 
 ## Its death: no bones, no stone. It rises a little and fades into mist, then it is gone (the monster is already off
@@ -187,7 +274,7 @@ static func vanish(m: Monster) -> void:
 	if model == null:
 		m.queue_free.call_deferred()
 		return
-	_mist_trail(m.get_parent(), model.global_position + Vector3.UP * 0.4, model.global_position + Vector3.UP * 1.2, model)
+	_dots(m.get_parent(), model.global_position, model.global_position, model, false)
 	var t := m.create_tween()
 	t.set_parallel(true)
 	t.tween_method(func(f: float) -> void: set_fade(model, f), 1.0, 0.0, 1.2)

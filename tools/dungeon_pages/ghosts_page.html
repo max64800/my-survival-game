@@ -74,8 +74,8 @@ p { margin: 0 0 8px; }
 		</dl>
 		<h2>How it fights</h2>
 		<p>It floats a hand above the floor and swings a ghostly silver mace with the dwarf's own mace moves.</p>
-		<p>Every time it loses a quarter of its health, it fades into mist, a trail drifts 3 to 5.5 m away, and it comes back there and rushes at you, nearly twice as fast for 2 seconds.</p>
-		<p>When it dies it rises a little and fades away. No bones, no stone statue.</p>
+		<p>Every time it loses a quarter of its health, it breaks into lots of small glowing dots that fly 3 to 5.5 m away and gather again, and it comes back there and rushes at you, nearly twice as fast for 2 seconds.</p>
+		<p>When it dies it rises a little and breaks into dots that drift up and fade. No bones, no stone statue.</p>
 		<h2>On this page</h2>
 		<p>The ghost holds still here with its mace held low. Press Float to you to watch it glide at you slowly, the way it comes for you in the dungeon, and swing.</p>
 	</aside>
@@ -408,20 +408,75 @@ async function attack() {
 
 function setFade(f) { if (ghost) for (const m of ghost.mats) m.uniforms.fade.value = f; }
 
-// soft glowing puffs from a to b that grow, rise and fade (Ghost._mist_trail)
-function mistTrail(a, b) {
-	const col = ghost.mats[0].uniforms.tint.value;
-	const n = Math.max(3, Math.min(14, Math.ceil(a.distanceTo(b) / 0.45)));
-	for (let i = 0; i <= n; i++) {
-		const t0 = i / n;
-		const m = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false });
-		const p = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 5), m);
-		p.position.lerpVectors(a, b, t0).add(new THREE.Vector3(Math.sin(i * 2.1) * 0.15, Math.sin(i * 1.3) * 0.12, Math.cos(i * 1.7) * 0.15));
-		const s = 0.6 + 0.5 * Math.sin(t0 * Math.PI);
-		p.scale.setScalar(s);
-		scene.add(p);
-		puffs.push({ p, m, s, y: p.position.y, start: performance.now() / 1000 + t0 * 0.27 });
+// F659: it breaks into lots of small glowing dots that burst out of its body, swirl through the air to b and, with
+// gather, form its body there again (without: they drift up and apart and fade). Same curves as Ghost._dots.
+const DOTS = 140, FADE_OUT = 0.18, DOTS_FLY = 0.6, FADE_IN = 0.4;
+const dotTex = (() => {
+	const c = document.createElement("canvas"); c.width = c.height = 32;
+	const g = c.getContext("2d"), r = g.createRadialGradient(16, 16, 0, 16, 16, 16);
+	r.addColorStop(0, "rgba(255,255,255,1)"); r.addColorStop(0.45, "rgba(255,255,255,0.8)"); r.addColorStop(1, "rgba(255,255,255,0)");
+	g.fillStyle = r; g.fillRect(0, 0, 32, 32);
+	return new THREE.CanvasTexture(c);
+})();
+function bodyPoint() {
+	const h = 0.05 + Math.random() * 1.65;
+	const r = (0.12 + 0.28 * Math.sin(Math.min(1, h / 1.7) * Math.PI * 0.85)) * Math.sqrt(Math.random());
+	const a = Math.random() * Math.PI * 2;
+	return new THREE.Vector3(Math.sin(a) * r, h, Math.cos(a) * r);
+}
+const rnd = (a, b) => a + Math.random() * (b - a);
+function dots(a, b, gather) {
+	const col = ghost.mats[0].uniforms.tint.value.clone();
+	col.lerp(new THREE.Color(1, 1, 1), 0.35);
+	const size = ghost.root.scale.y;
+	const pos = new Float32Array(DOTS * 3), alpha = new Float32Array(DOTS), big = new Float32Array(DOTS);
+	const geo = new THREE.BufferGeometry();
+	geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+	geo.setAttribute("alpha", new THREE.BufferAttribute(alpha, 1));
+	geo.setAttribute("big", new THREE.BufferAttribute(big, 1));
+	const mat = new THREE.ShaderMaterial({
+		uniforms: { col: { value: col }, tex: { value: dotTex }, px: { value: renderer.getPixelRatio() * canvas.clientHeight } },
+		vertexShader: `attribute float alpha; attribute float big; varying float vA; uniform float px;
+			void main() { vA = alpha; vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * mv;
+			gl_PointSize = 0.05 * big * (0.6 + 0.4 * alpha) * px * projectionMatrix[1][1] * 0.5 / -mv.z; }`,
+		fragmentShader: `uniform vec3 col; uniform sampler2D tex; varying float vA;
+			void main() { gl_FragColor = vec4(col, vA * texture2D(tex, gl_PointCoord).a); }`,
+		transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+	});
+	const pts = new THREE.Points(geo, mat);
+	pts.frustumCulled = false;
+	scene.add(pts);
+	const trip = gather ? FADE_OUT + DOTS_FLY : 1.3;
+	const d = [];
+	for (let i = 0; i < DOTS; i++) {
+		const start = bodyPoint().multiplyScalar(size).add(a);
+		let out = start.clone().sub(a).setY(0);
+		out = (out.length() > 0.01 ? out.normalize() : new THREE.Vector3(1, 0, 0)).multiplyScalar(rnd(0.4, 1.0) * size);
+		out.y = rnd(-0.1, 0.5) * size;
+		const end = gather ? bodyPoint().multiplyScalar(size).add(b)
+			: a.clone().add(new THREE.Vector3(0, rnd(0.8, 1.8) * size, 0)).addScaledVector(out, 1.6);
+		const out2 = new THREE.Vector3(rnd(-1, 1), rnd(0, 0.8), rnd(-1, 1)).multiplyScalar(0.7 * size);
+		const go = rnd(0, FADE_OUT);
+		d.push({ p0: start, p1: start.clone().addScaledVector(out, 1.3), p2: gather ? end.clone().add(out2) : end.clone().addScaledVector(out, -0.4),
+			p3: end, go, fly: trip - go - rnd(0, 0.12) });
+		big[i] = rnd(0.6, 1.4) * size;
 	}
+	puffs.push({ pts, geo, mat, d, gather, trip, total: trip + (gather ? FADE_IN : 0), start: performance.now() / 1000 });
+}
+function stepDots(q, t) {
+	const pos = q.geo.attributes.position.array, alpha = q.geo.attributes.alpha.array, v = new THREE.Vector3();
+	q.d.forEach((o, i) => {
+		const u = Math.min(1, Math.max(0, (t - o.go) / o.fly)), e = u * u * (3 - 2 * u), k = 1 - e;
+		v.copy(o.p0).multiplyScalar(k * k * k).addScaledVector(o.p1, 3 * k * k * e).addScaledVector(o.p2, 3 * k * e * e).addScaledVector(o.p3, e * e * e);
+		const w = Math.sin(u * Math.PI) * 0.12 * ghost.root.scale.y;
+		v.x += Math.sin(t * 9 + i) * w; v.y += Math.cos(t * 7 + i * 1.7) * w; v.z += Math.cos(t * 8 + i * 2.3) * w;
+		let a = Math.min(1, t / 0.08);
+		a *= q.gather ? 1 - Math.min(1, Math.max(0, (t - q.trip) / FADE_IN)) : 1 - u * u;
+		pos[i * 3] = v.x; pos[i * 3 + 1] = v.y; pos[i * 3 + 2] = v.z; alpha[i] = a;
+	});
+	q.geo.attributes.position.needsUpdate = true;
+	q.geo.attributes.alpha.needsUpdate = true;
+	q.mat.uniforms.px.value = renderer.getPixelRatio() * canvas.clientHeight;
 }
 
 function tween(sec, fn) {
@@ -440,11 +495,11 @@ async function jump() {
 	const dist = 1.5 + Math.random();
 	let to = ghost.base.clone().add(new THREE.Vector3(Math.cos(ang) * dist, 0, Math.sin(ang) * dist));
 	if (from.distanceTo(ghost.base) > 0.5) to = ghost.base.clone();  // (keeps it on the page: hop back to the middle)
-	mistTrail(from.clone().add(new THREE.Vector3(0, 0.7, 0)), to.clone().add(new THREE.Vector3(0, 0.7, 0)));
-	await tween(0.18, f => setFade(1 - f));
+	dots(from, to, true);
+	await tween(FADE_OUT, f => setFade(1 - f));
 	ghost.root.position.copy(to);
-	await tween(0.08, () => {});
-	await tween(0.4, f => setFade(f));
+	await tween(DOTS_FLY - 0.1, () => {});  // (it shows again as the last dots arrive)
+	await tween(FADE_IN, f => setFade(f));
 	ghost.busy = false;
 }
 
@@ -482,7 +537,7 @@ async function vanish() {
 	if (!ghost || ghost.busy) return;
 	ghost.busy = true;
 	const p = ghost.root.position.clone();
-	mistTrail(p.clone().add(new THREE.Vector3(0, 0.4, 0)), p.clone().add(new THREE.Vector3(0, 1.2, 0)));
+	dots(p, p, false);
 	await tween(1.2, f => { setFade(1 - f); ghost.root.position.y = p.y + 0.5 * f; });
 	await tween(1.0, () => {});
 	ghost.root.position.copy(ghost.base);
@@ -522,13 +577,9 @@ renderer.setAnimationLoop(() => {
 		if (!ghost.busy && !still) ghost.root.position.y = ghost.base.y + Math.sin(t * 2.1) * 0.05;
 	}
 	for (let i = puffs.length - 1; i >= 0; i--) {
-		const q = puffs[i];
-		const f = (t - q.start) / 1.1;
-		if (f < 0) continue;
-		if (f >= 1) { scene.remove(q.p); q.p.geometry.dispose(); q.m.dispose(); puffs.splice(i, 1); continue; }
-		q.p.scale.setScalar(q.s * (1 + 0.8 * f));
-		q.m.opacity = 0.35 * (1 - f);
-		q.p.position.y = q.y + 0.4 * f;
+		const q = puffs[i], f = t - q.start;
+		if (f >= q.total) { scene.remove(q.pts); q.geo.dispose(); q.mat.dispose(); puffs.splice(i, 1); continue; }
+		stepDots(q, f);
 	}
 	controls.update();
 	renderer.render(scene, camera);
