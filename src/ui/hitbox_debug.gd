@@ -1,6 +1,6 @@
 class_name HitboxDebug
 extends CanvasLayer
-## Press F9 in-game to open/close this overlay.
+## Press F10 in-game to open/close this overlay (F9 is already "god mode").
 ##
 ## Yellow ring = an enemy's longest base attack reach.
 ## Orange ring = effective reach (yellow + 0.8) — this is what the game actually checks.
@@ -66,16 +66,17 @@ func set_dwarf(d: Node3D) -> void:
 
 
 # ===========================================================================
-# Toggle (F9)
+# Toggle (F10)
 # ===========================================================================
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_F9:
+		if event.keycode == KEY_F10:
 			visible = not visible
 			_mi.visible = visible
 			if visible:
 				_update_all_labels()
+			get_viewport().set_input_as_handled()
 
 
 # ===========================================================================
@@ -179,7 +180,7 @@ func _build_panel() -> void:
 
 	# --- header ---
 	var title := Label.new()
-	title.text = "Hitboxes  (F9 to close)"
+	title.text = "Hitboxes  (F10 to close)"
 	title.add_theme_font_size_override("font_size", 14)
 	outer.add_child(title)
 
