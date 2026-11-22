@@ -854,6 +854,63 @@ def place(obj, mat):
 
 # ---------------------------------------------------------------- build
 
+def _action_fcurves(action):
+	"""Return all FCurves for an action — works with Blender 3.x (flat) and 4.4+ (layered)."""
+	if hasattr(action, "fcurves"):        # Blender 3.x flat API
+		return list(action.fcurves)
+	result = []                           # Blender 4.4+ layered actions
+	for layer in getattr(action, "layers", []):
+		for strip in layer.strips:
+			# Blender 4.4–5.x: channelbag(slot) or iterate channelbags
+			if hasattr(strip, "channelbags"):
+				for cb in strip.channelbags:
+					result.extend(cb.fcurves)
+			elif hasattr(strip, "channelbag"):
+				for slot in action.slots:
+					try:
+						cb = strip.channelbag(slot)
+						if cb:
+							result.extend(cb.fcurves)
+					except Exception:
+						pass
+	return result
+
+
+def _blend_walk_into_spin():
+	"""F684: blend Walking_A leg rotations into the WHIRL window (0.62–1.25 s) of
+	2H_Melee_Attack_Spin so the foreman's feet appear to step rather than slide
+	when the game moves him forward during whirl_speed follow attacks."""
+	spin = bpy.data.actions.get("2H_Melee_Attack_Spin")
+	walk = bpy.data.actions.get("Walking_A")
+	if not spin or not walk:
+		return
+	fps = float(bpy.context.scene.render.fps)
+	w0 = 0.62 * fps   # WHIRL start frame (matches creature_rig.gd WHIRL.x)
+	w1 = 1.25 * fps   # WHIRL end frame  (matches creature_rig.gd WHIRL.y)
+	wlen = float(walk.frame_range[1] - walk.frame_range[0])
+	if wlen <= 0.0:
+		return
+	leg_kw = ("upperleg", "lowerleg", "foot", "toes")
+	spin_fcs = _action_fcurves(spin)
+	walk_fcs = _action_fcurves(walk)
+	walk_lookup = {(fc.data_path, fc.array_index): fc for fc in walk_fcs}
+	for s_fc in spin_fcs:
+		if not any(k in s_fc.data_path for k in leg_kw):
+			continue
+		w_fc = walk_lookup.get((s_fc.data_path, s_fc.array_index))
+		if w_fc is None:
+			continue
+		for t in (0.0, 0.25, 0.5, 0.75, 1.0):
+			frame = w0 + t * (w1 - w0)
+			walk_frame = float(walk.frame_range[0]) + t * wlen * 0.5
+			spin_val = s_fc.evaluate(frame)
+			walk_val = w_fc.evaluate(walk_frame)
+			blended = spin_val * 0.35 + walk_val * 0.65
+			kp = s_fc.keyframe_points.insert(frame, blended)
+			kp.interpolation = "LINEAR"
+		s_fc.update()
+
+
 def build(name, look):
 	cfg = dict(CREATURES[name])
 	over = cfg["looks"][look]
@@ -910,6 +967,7 @@ def build(name, look):
 	for a in list(bpy.data.actions):
 		if a.name not in KEEP:
 			bpy.data.actions.remove(a)
+	_blend_walk_into_spin()  # F684: add leg stepping motion to the WHIRL window
 	arm.animation_data.action = bpy.data.actions.get("Idle")
 	OUT.mkdir(parents=True, exist_ok=True)
 	bpy.ops.object.select_all(action="SELECT")

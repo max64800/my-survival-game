@@ -361,6 +361,15 @@ func _clear_outline(meshes: Array) -> void:
 			(mi as MeshInstance3D).material_overlay = null
 
 
+func clear_red() -> void:
+	_outline_gen += 1  # any pending timer sees gen mismatch and skips its clear
+	if model == null or _outline_mat == null:
+		return
+	for mi: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
+		if mi.material_overlay == _outline_mat:
+			mi.material_overlay = null
+
+
 ## Looks: freeze for a blink (the hit "lands").
 func hit_stop(seconds: float) -> void:
 	_stop = maxf(_stop, seconds)
@@ -824,6 +833,8 @@ func _pick_attack(dist: float, mgr: Node = null) -> Dictionary:
 
 func _start_attack(atk: Dictionary, mgr: Node) -> void:
 	if rig != null and (rig.knocked_down or (rig._busy_kind == "rise" and rig._busy > 0.0)):
+		if String(atk.get("parry", "")) == "shield":
+			clear_red()  # F680: abort clears red so the outline doesn't hang with no attack
 		return  # never attack while on the floor or still getting up
 	if atk.has("rest"):
 		_rest_until[atk.name] = _clock + float(atk.rest)
