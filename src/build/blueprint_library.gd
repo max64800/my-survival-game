@@ -9,15 +9,15 @@ class_name BlueprintLibrary
 
 const IDS := ["delvers_hut", "miners_homestead", "stone_hall", "forge_workshop", "watchtower_cabin", "stone_watchtower",
 	"stone_outpost", "wooden_watchtower", "wooden_outpost", "hearthbrick_brewhall", "wooden_brewhall", "lantern_spire", "wooden_spire",
-	"hearthbrick_manor", "wooden_manor"]
+	"hearthbrick_manor", "wooden_manor", "stonehold_twin_gate", "wooden_twin_gate", "stonehold_cliff_watch", "wooden_cliff_watch"]
 ## Known from the very start (F161): you place them and bring the materials. The rest are learned from
 ## Old Blueprints found in ruins (F98).
 const STARTER := ["delvers_hut"]
 ## Learned only by rebuilding a ruin (owner, Nov 19), never from an Old Blueprint page.
 ## The Brewhall's two (F479): its cellar goes below the ground line, which only the ruin digs out.
-## The Lantern Spire's two (F479): a landmark you rebuild where it stands. The Hearth Manor's two (F479) the same.
+## The Lantern Spire's two (F479): a landmark you rebuild where it stands. The Hearth Manor's two (F479) the same, and the Twin Gate's and Cliff Watch's (owner, Nov 22: so the dev menu has them).
 const REBUILD_ONLY := ["wooden_watchtower", "wooden_outpost", "hearthbrick_brewhall", "wooden_brewhall", "lantern_spire", "wooden_spire",
-	"hearthbrick_manor", "wooden_manor"]
+	"hearthbrick_manor", "wooden_manor", "stonehold_twin_gate", "wooden_twin_gate", "stonehold_cliff_watch", "wooden_cliff_watch"]
 const NAMES := {
 	"delvers_hut": "Delver's Hut",
 	"miners_homestead": "Miner's Homestead",
@@ -34,6 +34,10 @@ const NAMES := {
 	"wooden_spire": "Wooden Spire",
 	"hearthbrick_manor": "Hearth Manor",
 	"wooden_manor": "Wooden Manor",
+	"stonehold_twin_gate": "Twin Gate",
+	"wooden_twin_gate": "Wooden Twin Gate",
+	"stonehold_cliff_watch": "Cliff Watch",
+	"wooden_cliff_watch": "Wooden Cliff Watch",
 }
 
 const WOOD := "plank_root"
@@ -90,6 +94,10 @@ static func make(id: String) -> Blueprint:
 		"hearthbrick_manor": lib._hearth_manor()  # (owner, Nov 22: ruin 7, a showpiece; not learnable yet, its 3D page first)
 		"wooden_manor":  # (its trims, brackets, short railings and roof windows are Hearthbrick only: they stay brick)
 			lib._hearth_manor()
+			lib._to_wood()
+		"stonehold_cliff_watch": lib._cliff_watch()  # (owner, Nov 22: ruin 8, layered; not learnable yet, its 3D page first)
+		"wooden_cliff_watch":  # (its brackets and trim bands have no wooden version: they stay stone)
+			lib._cliff_watch()
 			lib._to_wood()
 		_: return null
 	lib._bp.name = NAMES.get(id, id)
@@ -1612,6 +1620,179 @@ func _hearth_manor() -> void:
 			_add("cornice_corner", B, Vector3(c.x, by, c.y), 0)
 	for p in _bp.pieces:
 		p.pos.x += 1.0   # cells on odd numbers, like every other blueprint (box x -18..18)
+
+
+## Owner, Nov 22 (ruin 8 of Zone 1, F479; a LAYERED showpiece: docs/design/GRAND-RUIN-RECIPE.md "Layered builds"):
+## Cliff Watch, a Stonehold lookout whose back is set into the cave's rock wall. "It goes up, then it expands, then it
+## goes up, then it expands again." Plan on the 2 m grid (x right, z front; numbers before the shift at the end, which
+## puts the cells on odd numbers like every other blueprint). Seen from the front AND from the side, the outline zig-zags:
+##   - The plinth (x -9..9, z -5..7): foundations, side terraces, railings, a 6 m flight of steps up to the main door.
+##   - Storey 1, the gate hall (x -5..5, z -5..3, walls 1): the round main door in the middle of the front, a side door
+##     onto the left terrace, stairs up.
+##   - Storey 2 juts OUT (walls 3.25): 2 m past both sides on brackets (the side terraces below stay covered walks),
+##     and a bay window juts 2 m out over the main door on brackets.
+##   - Storey 3 steps IN (x -3..3, z -5..1, walls 5.5): a narrow block; the roof of storey 2 round it is a walkable
+##     terrace with battlements (doors out on both sides and the front).
+##   - Storey 4 juts OUT again (x -5..5, z -5..3, walls 7.75): on brackets on the walls of storey 3, a stone pillar under
+##     each front corner standing on the terrace.
+##   - The roof deck (floor 9.75, battlements), and on it the six-sided lantern room (walls 10, roof 12) with the fire
+##     bowl on top: the tallest point (about 14 m). So it changes shape: square, wider, narrow, wider, six-sided.
+##   - Stairs climb on every storey, each foot on open floor, each top onto floor, railings round the holes.
+##   - Trim bands under the battlements, corner blocks. Every floor a whole tile (F626). No furniture: you furnish it.
+func _cliff_watch() -> void:
+	_start(Vector3(22, 15, 18))
+	var S := STONE
+	# --- the plinth: foundations under everything, a 6 m flight of steps in front, railings round the terraces
+	for x in range(-8, 9, 2):
+		for z in range(-4, 7, 2):
+			_add("foundation", S, Vector3(x, 0, z), 0)
+	for x in [-2, 0, 2]:
+		_add("foundation_steps", S, Vector3(x, 0, 8), 0)
+	for x in [-8, -6, -4, 4, 6, 8]:
+		_wall_x("railing", x, 7, 1.0, S)
+	for z in range(-4, 7, 2):
+		_wall_z("railing", -9, z, 1.0, S)
+		_wall_z("railing", 9, z, 1.0, S)
+	for x in [-8, -6, 6, 8]:
+		_wall_x("railing", x, -5, 1.0, S)
+	# --- storey 1, the gate hall (cells x -4..4, z -4..2)
+	for e in [["window_wall", -4], ["wall", -2], ["doorway", 0], ["wall", 2], ["window_wall", 4]]:
+		_wall_x(e[0], e[1], 3, 1.0, S)
+	for x in range(-4, 5, 2):
+		_wall_x("wall", x, -5, 1.0, S)
+	for z in [-4, -2, 0, 2]:
+		_wall_z("doorway" if z == 2 else "wall", -5, z, 1.0, S)
+		_wall_z("window_wall" if z == -2 else "wall", 5, z, 1.0, S)
+	_add("door", S, Vector3(0, 1.0, 3), 0)
+	_add("door", S, Vector3(-5, 1.0, 2), 1)
+	_add("floor", S, Vector3(-2, 1.0, 0), 0)            # stairs 1 -> 2 climbing to the back (a slab lifts their top)
+	_add("stairs", S, Vector3(-2, 1.25, 0), 0)
+	# --- storey 2: its floor juts 2 m out at both sides and in the bay over the door
+	var f2 := []
+	for x in range(-6, 7, 2):
+		for z in [-4, -2, 0, 2]:
+			f2.append(Vector2(x, z))
+	for x in [-2, 0, 2]:
+		f2.append(Vector2(x, 4))
+	for c in f2:
+		if c != Vector2(-2, 0):
+			_add("floor", S, Vector3(c.x, 3.0, c.y), 0)
+	_wall_z("railing", -3, 0, 3.25, S)
+	_wall_z("railing", -1, 0, 3.25, S)
+	_wall_x("railing", -2, 1, 3.25, S)
+	for x in range(-6, 7, 2):
+		_wall_x("wall", x, -5, 3.25, S)
+	for z in [-4, -2, 0, 2]:
+		for sx in [-7, 7]:
+			_wall_z("window_wall" if z in [-2, 2] else "wall", sx, z, 3.25, S)
+	for x in [-6, -4, 4, 6]:
+		_wall_x("window_wall" if absi(x) == 4 else "wall", x, 3, 3.25, S)
+	for e in [["window_wall", -2], ["window_wide", 0], ["window_wall", 2]]:
+		_wall_x(e[0], e[1], 5, 3.25, S)
+	_wall_z("wall", -3, 4, 3.25, S)
+	_wall_z("wall", 3, 4, 3.25, S)
+	_add("floor", S, Vector3(2, 3.25, 0), 0)            # stairs 2 -> 3 climbing to the back
+	_add("stairs", S, Vector3(2, 3.5, 0), 0)
+	# brackets under the jutting floors (a wall's two ends and middle; never over a door)
+	for z in [-4.75, -4, -3, -2, -1, 0, 1, 2.75]:
+		_on_wall_x("corbel", S, 5, z, 2.0, 1)
+		if z < 1.0:
+			_on_wall_x("corbel", S, -5, z, 2.0, -1)
+	for x in [-2.75, -2, 2, 2.75]:
+		_on_wall_z("corbel", S, x, 3, 2.0, 1)
+	# --- storey 3 steps in (cells x -2..2, z -4..0); the roof of storey 2 round it is a terrace with battlements
+	for x in range(-6, 7, 2):
+		for z in [-4, -2, 0, 2]:
+			if Vector2(x, z) != Vector2(2, 0):
+				_add("floor", S, Vector3(x, 5.25, z), 0)
+	for x in [-2, 0, 2]:
+		_add("floor", S, Vector3(x, 5.25, 4), 0)
+	_wall_z("railing", 1, 0, 5.5, S)
+	for x in [-2, 0, 2]:
+		_wall_x("wall", x, -5, 5.5, S)
+	for x in [-2, 2]:
+		_wall_x("window_wall", x, 1, 5.5, S)
+	_wall_x("doorway", 0, 1, 5.5, S)
+	_add("door", S, Vector3(0, 5.5, 1), 0)
+	for sx in [-3, 3]:
+		for z in [-4, -2, 0]:
+			_wall_z("doorway" if z == -2 else "wall", sx, z, 5.5, S)
+		_add("door", S, Vector3(sx, 5.5, -2), 1)
+	for z in [-4, -2, 0, 2]:
+		_wall_z("battlement", -7, z, 5.5, S)
+		_wall_z("battlement", 7, z, 5.5, S)
+	for x in [-6, -4, 4, 6]:
+		_wall_x("battlement", x, 3, 5.5, S)
+		_wall_x("battlement", x, -5, 5.5, S)
+	for x in [-2, 0, 2]:
+		_wall_x("battlement", x, 5, 5.5, S)
+	_wall_z("battlement", -3, 4, 5.5, S)
+	_wall_z("battlement", 3, 4, 5.5, S)
+	_add("floor", S, Vector3(-2, 5.5, -2), 0)           # stairs 3 -> 4 climbing to the back
+	_add("stairs", S, Vector3(-2, 5.75, -2), 0)
+	# --- storey 4 juts out again (cells x -4..4, z -4..2): brackets on the walls of storey 3, pillars under its corners
+	for x in range(-4, 5, 2):
+		for z in [-4, -2, 0, 2]:
+			if Vector2(x, z) != Vector2(-2, -2):
+				_add("floor", S, Vector3(x, 7.5, z), 0)
+	_wall_z("railing", -3, -2, 7.75, S)
+	_wall_z("railing", -1, -2, 7.75, S)
+	_wall_x("railing", -2, -1, 7.75, S)
+	for z in [-4.75, -4, 0, 0.75]:
+		_on_wall_x("corbel", S, 3, z, 6.5, 1)
+		_on_wall_x("corbel", S, -3, z, 6.5, -1)
+	for x in [-2.75, -2, 2, 2.75]:
+		_on_wall_z("corbel", S, x, 1, 6.5, 1)
+	for sx in [-5, 5]:
+		_add("pillar", S, Vector3(sx, 5.5, 3), 0)
+	for x in range(-4, 5, 2):
+		_wall_x("wall", x, -5, 7.75, S)
+		_wall_x("window_wide" if x == 0 else ("window_wall" if absi(x) == 2 else "wall"), x, 3, 7.75, S)
+	for z in [-4, -2, 0, 2]:
+		_wall_z("window_wall" if z in [-2, 2] else "wall", -5, z, 7.75, S)
+		_wall_z("window_wall" if z in [-2, 2] else "wall", 5, z, 7.75, S)
+	_add("floor", S, Vector3(4, 7.75, 0), 0)            # stairs 4 -> the roof deck climbing to the back
+	_add("stairs", S, Vector3(4, 8.0, 0), 0)
+	# --- the roof deck with battlements, the six-sided lantern room on it (door to the front), the fire bowl on top
+	for x in range(-4, 5, 2):
+		for z in [-4, -2, 0, 2]:
+			if Vector2(x, z) != Vector2(4, 0):
+				_add("floor", S, Vector3(x, 9.75, z), 0)
+	_wall_z("railing", 3, 0, 10.0, S)
+	_wall_x("railing", 4, 1, 10.0, S)
+	for x in range(-4, 5, 2):
+		_wall_x("battlement", x, 3, 10.0, S)
+		_wall_x("battlement", x, -5, 10.0, S)
+	for z in [-4, -2, 0, 2]:
+		_wall_z("battlement", -5, z, 10.0, S)
+		_wall_z("battlement", 5, z, 10.0, S)
+	var hc := Vector3(0, 10.0, -2)
+	for k in 6:
+		_add("doorway" if k == 0 else "window_wall", S, _dir(2 * k) * _APO + hc, _rot(2 * k))
+		if k not in [0, 5]:                                  # (no pillar beside the doorway)
+			_add("pillar", S, _dir(2 * k + 1) * 1.95 + hc, _rot(2 * k + 1))
+		_add("floor_triangle", S, _dir(2 * k) * (_APO * 2.0 / 3.0) + hc + Vector3(0, 2.0, 0), _rot(2 * k))
+		_add("battlement", S, _dir(2 * k) * _APO + hc + Vector3(0, 2.25, 0), _rot(2 * k))
+	_add("door", S, _dir(0) * _APO + hc, 0)
+	_add("beacon_bowl", S, hc + Vector3(0, 2.25, 0), 0)
+	# --- trim bands under the battlements (outside faces, not the back in the rock), corner blocks
+	for z in [-4, -2, 0, 2]:
+		_on_wall_x("cornice", S, -7, z, 5.2, -1)
+		_on_wall_x("cornice", S, 7, z, 5.2, 1)
+		_on_wall_x("cornice", S, -5, z, 9.7, -1)
+		_on_wall_x("cornice", S, 5, z, 9.7, 1)
+	for x in [-6, -4, 4, 6]:
+		_on_wall_z("cornice", S, x, 3, 5.2, 1)
+	for x in [-2, 0, 2]:
+		_on_wall_z("cornice", S, x, 5, 5.2, 1)
+	for x in range(-4, 5, 2):
+		_on_wall_z("cornice", S, x, 3, 9.7, 1)
+	for c in [Vector3(-7.17, 5.2, 3.17), Vector3(7.17, 5.2, 3.17), Vector3(-3.17, 5.2, 5.17), Vector3(3.17, 5.2, 5.17),
+			Vector3(-5.17, 9.7, 3.17), Vector3(5.17, 9.7, 3.17)]:
+		_add("cornice_corner", S, c, 0)
+	for p in _bp.pieces:
+		p.pos.x += 1.0   # cells on odd numbers, like every other blueprint (box x -11..11)
+		p.pos.z -= 1.0   # (box z -9..9)
 
 
 # ---------------------------------------------------------------- helpers

@@ -3,7 +3,7 @@ extends TestCase
 
 
 func test_four_blueprints_exist() -> void:
-	check_eq(BlueprintLibrary.IDS.size(), 15, "fifteen blueprints (the starter hut, six found in ruins, the Wooden Watchtower, the Wooden Outpost, the two Brewhalls, the two Spires and the two Manors learned by rebuilding ruins)")
+	check_eq(BlueprintLibrary.IDS.size(), 19, "nineteen blueprints (the starter hut, six found in ruins, the Wooden Watchtower, the Wooden Outpost, the two Brewhalls, the two Spires, the two Manors, the two Twin Gates and the two Cliff Watches learned by rebuilding ruins)")
 	for id in BlueprintLibrary.IDS:
 		check(BlueprintLibrary.make(id) != null, "%s can be made" % id)
 
@@ -85,6 +85,49 @@ func test_hearth_manor_stairs_lead_onto_floor() -> void:
 			check(_floor_top_at(bp, cell.x, cell.z, top), "spiral at %s: floor at %s, top %.2f" % [p.pos, cell, top])
 			check(not _blocked_edge(bp, edge.x, edge.z, top), "spiral at %s: nothing blocks its side at %.2f" % [p.pos, top])
 	check_eq(spirals, 3, "the tower has three spiral flights")
+
+
+## Ruin 8, Cliff Watch (owner, Nov 22, F479): layered ("up, out, up, out"). Sound like the manor, every stair lands on
+## floor at both ends (F626), and the outline steps OUT above a step IN twice.
+func test_cliff_watch_is_layered_and_sound() -> void:
+	for id in ["stonehold_cliff_watch", "wooden_cliff_watch"]:
+		var bp := BlueprintLibrary.make(id)
+		var half := Vector3(bp.size.x * 0.5 + 0.5, bp.size.y + 0.5, bp.size.z * 0.5 + 0.5)
+		var s := Structure.new()
+		var uid := 1
+		for p in bp.pieces:
+			check(Pieces.allowed(p.id, p.mat), "%s: %s can be made of %s" % [id, p.id, p.mat])
+			check(not p.id in ["floor_half", "small_floor", "roof_cap"], "%s: no %s (F626)" % [id, p.id])
+			var v: Vector3 = p.pos
+			check(absf(v.x) <= half.x and v.y >= 0.0 and v.y <= half.y and absf(v.z) <= half.z, "%s: %s at %s is inside the box" % [id, p.id, v])
+			check(not s.overlaps(p.id, p.pos, p.rot), "%s: %s at %s doesn't overlap another piece" % [id, p.id, p.pos])
+			s.add(uid, p.id, p.mat, p.pos, p.rot, p.pos.y < 0.3)
+			uid += 1
+		var names := []
+		for u in s.recompute():
+			names.append("%s@%s" % [s.pieces[u].piece, s.pieces[u].pos])
+		check(names.is_empty(), "%s: nothing falls down (%s)" % [id, ", ".join(names)])
+	var bp := BlueprintLibrary.make("stonehold_cliff_watch")
+	var flights := 0
+	for p in bp.pieces:
+		if p.id != "stairs":
+			continue
+		flights += 1
+		var up := Vector3(0, 0, -1).rotated(Vector3.UP, Pieces.yaw_of(p.rot))
+		var foot: Vector3 = p.pos - up * 2.0
+		var top: Vector3 = p.pos + up * 2.0
+		check(_floor_top_at(bp, foot.x, foot.z, p.pos.y - 0.25) or _floor_top_at(bp, foot.x, foot.z, p.pos.y),
+			"stairs at %s: their foot is on open floor" % p.pos)
+		check(_floor_top_at(bp, top.x, top.z, p.pos.y + 2.0), "stairs at %s: their top lands on floor" % p.pos)
+		check(not _blocked_edge(bp, (p.pos + up).x, (p.pos + up).z, p.pos.y + 1.75), "stairs at %s: nothing blocks their top" % p.pos)
+	check_eq(flights, 4, "four flights: up to every storey and the roof deck")
+	# the widest wall of each storey: 1 (10 m), 2 out (14 m), 3 in (6 m), 4 out (10 m)
+	var widest := {}
+	for p in bp.pieces:
+		if p.id in ["wall", "window_wall", "doorway"] and p.rot == 1:
+			widest[p.pos.y] = maxf(widest.get(p.pos.y, 0.0), absf(p.pos.x - 1.0))
+	check(widest[3.25] > widest[1.0] and widest[5.5] < widest[3.25] and widest[7.75] > widest[5.5],
+		"the outline steps out, in, out again (%s)" % widest)
 
 
 func _floor_top_at(bp: Blueprint, x: float, z: float, top: float) -> bool:

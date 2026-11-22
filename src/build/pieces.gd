@@ -114,14 +114,16 @@ const LIST := {
 	# Hearthbrick only. Bracket: under a floor that juts 1 m past the wall (its back on the wall's face; snaps to a
 	# wall's two ends and middle, never over a door). Trim band: on a wall's face at a floor line, corner block where
 	# two bands meet. Short railing: the 1 m ends of a balcony. Roof window: sits on a steep roof in the same cell.
+	# Bracket, trim band and corner also in Stonehold (models from the Twin Gate, owner OK Nov 21; tools/asset_forge/builds/
+	# stonehold_v2_twin.py) for Cliff Watch (ruin 8, Nov 22).
 	"railing_narrow": {name = "Short Railing", group = "around", size = Vector3(1, 1, 0.15), units = 1, place = "edge", shape = "railing",
 		families = ["clay_brick"], station = {"mason": 1}},
 	"corbel": {name = "Bracket", group = "support", size = Vector3(0.5, 1.0, 0.82), units = 2, place = "edge", on_wall = true,
-		families = ["clay_brick"], station = {"mason": 2}},
+		families = ["clay_brick", "cut_stone"], station = {"mason": 2}},
 	"cornice": {name = "Trim Band", group = "decor", size = Vector3(2.0, 0.4, 0.17), units = 2, place = "edge", on_wall = true,
-		families = ["clay_brick"], station = {"mason": 2}},
+		families = ["clay_brick", "cut_stone"], station = {"mason": 2}},
 	"cornice_corner": {name = "Trim Corner", group = "decor", size = Vector3(0.32, 0.4, 0.32), units = 1, place = "free",
-		families = ["clay_brick"], station = {"mason": 2}},
+		families = ["clay_brick", "cut_stone"], station = {"mason": 2}},
 	"dormer": {name = "Roof Window", group = "roof", size = Vector3(2, 2, 2), units = 6, place = "cell", model_lift = 0.5,
 		families = ["clay_brick"], station = {"mason": 2}},
 	# A floor with a round hole near its front (fall or drop through it) and its dark-wood lid lying open behind it.

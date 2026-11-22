@@ -41,8 +41,14 @@ func test_every_kit_has_its_model() -> void:
 ## Hearth Manor's 5 Hearthbrick pieces (owner OK Nov 22, F479): the game uses their hand-made models.
 func test_manor_pieces_use_their_models() -> void:
 	for id in ["corbel", "cornice", "cornice_corner", "railing_narrow", "dormer"]:
-		check(Pieces.allowed(id, "clay_brick") and not Pieces.allowed(id, "cut_stone"), "%s is Hearthbrick only" % id)
+		check(Pieces.allowed(id, "clay_brick"), "%s is made in Hearthbrick" % id)
 		check(PieceNode.forged_mesh(id, "clay_brick") != null, "%s uses its hand-made model" % id)
+	for id in ["railing_narrow", "dormer"]:
+		check(not Pieces.allowed(id, "cut_stone"), "%s is Hearthbrick only" % id)
+	# Cliff Watch (ruin 8, Nov 22): the Twin Gate's stone bracket, trim band and corner are game pieces too.
+	for id in ["corbel", "cornice", "cornice_corner"]:
+		check(Pieces.allowed(id, "cut_stone"), "%s is made in Stonehold" % id)
+		check(PieceNode.forged_mesh(id, "cut_stone") != null, "%s uses its stone model" % id)
 
 
 func test_down_sloped_wall_is_full_along_the_top() -> void:
