@@ -451,6 +451,67 @@ if LOOK == "a":
 		n = c - np.array(HEAD_C)
 		n /= np.linalg.norm(n)
 		body = smin(body, tube(tuple(c - np.array((0.022, 0, 0)) - n * 0.004), tuple(c + np.array((0.022, 0, 0)) - n * 0.004), 0.0065, 0.0065), 0.003)
+	# Made-by-hand details, not more damage (owner, Nov 22: the deep dents made him look "like a crunched soda can"):
+	# tidy things a dwarf sewed and wrapped, like the mace's careful bands and studs.
+	def edge_at(a):
+		e = 0.655 + 0.03 * math.cos(a) + 0.014 * math.sin(a * 9 + 0.5) + 0.008 * math.sin(a * 4 + 2.0)
+		for a0 in (0.9, -2.2, 2.7):
+			e += 0.05 * math.exp(-((math.atan2(math.sin(a - a0), math.cos(a - a0))) / 0.1) ** 2)
+		return e
+	def on_cape(a, dz):
+		d = np.array((math.sin(a), math.cos(a), 0.0))
+		return np.array(hit(body, (0.0, 0.035, edge_at(a) + dz), d)), d
+	# a rolled hem along the cape's lower edge (not over the torn bits), with running stitches across it
+	tears = (0.9, -2.2, 2.7)
+	hem = None
+	run = []
+	for i in range(73):
+		a = -math.pi + i / 72.0 * math.tau
+		sp = tuple(np.sin(np.array([a - t for t in tears])))
+		torn = min(abs(math.atan2(math.sin(a - t), math.cos(a - t))) for t in tears) < 0.16
+		if torn or abs(math.sin(a)) > 0.93:  # (gaps at the tears and where the sleeves come out)
+			if len(run) > 1:
+				body = rope(body, run, 0.011, 0.011, 0.005)
+			run = []
+			continue
+		p0, d = on_cape(a, 0.016)
+		run.append(tuple(p0 - d * 0.003))
+		if i % 3 == 0:
+			body = smin(body, tube(tuple(p0 + (0, 0, -0.016) + d * 0.006), tuple(p0 + (0, 0, 0.016) + d * 0.006), 0.0055, 0.0055), 0.003)
+	if len(run) > 1:
+		body = rope(body, run, 0.011, 0.011, 0.005)
+	# a band of little stitched runes above the hem, front and back (simple marks, each two or three strokes)
+	glyphs = (((0, -1), (0, 1)), ((0, -1), (0, 1), (0, 0.2), (0.8, 0.8)), ((-0.6, -1), (0, 1), (0.6, -1)),
+		((0, -1), (0, 1), (0, 1), (0.7, 0.3)), ((-0.6, 1), (0.6, -1), (-0.6, -1), (0.6, 1)))
+	for k in range(16):
+		a = -math.pi + (k + 0.5) / 16.0 * math.tau
+		if abs(math.sin(a)) > 0.85 or min(abs(math.atan2(math.sin(a - t), math.cos(a - t))) for t in tears) < 0.25:
+			continue
+		c, d = on_cape(a, 0.058)
+		side = np.array((math.cos(a), -math.sin(a), 0.0))
+		g = glyphs[k % len(glyphs)]
+		for j in range(0, len(g) - 1, 2 if len(g) % 2 == 0 else 1):
+			u, v = g[j], g[j + 1]
+			pa = c + side * u[0] * 0.02 + np.array((0, 0, u[1] * 0.026)) + d * 0.003
+			pb = c + side * v[0] * 0.02 + np.array((0, 0, v[1] * 0.026)) + d * 0.003
+			body = smin(body, tube(tuple(pa), tuple(pb), 0.0085, 0.0085), 0.003)
+	# cloth strips wrapped round each forearm: a flat band spiralling three times, its two ends tucked
+	for s in (-1, 1):
+		pts = []
+		for i in range(37):
+			u = i / 36.0
+			x = s * (0.43 + 0.15 * u)
+			ph = u * 3 * math.tau
+			rr = 0.112 - 0.004 * u
+			pts.append((x, 0.035 + rr * math.cos(ph), 0.778 + rr * math.sin(ph)))
+		pts = [tuple(np.array(hit(body, (q[0], 0.035, 0.778), (0, q[1] - 0.035, q[2] - 0.778))) + np.array((0, q[1] - 0.035, q[2] - 0.778)) / 0.11 * 0.003) for q in pts]
+		body = rope(body, pts, 0.017, 0.017, 0.004)
+	# round studs hammered into the rope belt at the back and sides
+	for k in range(9):
+		a = math.pi * (0.25 + 0.5 * k / 8.0) * 2 - math.pi * 0.5
+		d = np.array((math.sin(a), math.cos(a), 0.0))
+		p0 = np.array(hit(body, (0.0, 0.03, bz), d))
+		body = smin(body, ell(tuple(p0 + d * 0.006), (0.019, 0.019, 0.019)), 0.004)
 	body = smax(body, -face, 0.02)  # (the face hollow stays open)
 
 if LOOK == "c":

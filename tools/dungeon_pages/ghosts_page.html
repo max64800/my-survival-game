@@ -321,32 +321,34 @@ function placeMace() {
 	g.mace.quaternion.copy(q);
 }
 
-// Its arms and head drift while it floats (GhostRig: the arms sway a little as it glides): each upper arm swings
-// forward and back round the ghost's side-to-side line, opposite each other, more while it glides; the forearms
-// follow a moment later and the hood nods. (Not during a swing: the mace move owns the bones then.)
+// While it glides at you its arms sweep back behind it and stay there, held still and gracefully (owner, Nov 22: "like an
+// anime run, but more gracefully", no swaying): each upper arm turns back round the ghost's side-to-side line and out a
+// little, the forearms trail a touch further, the mace arm a little less. It eases into that pose and back out of it.
+// (Not during a swing: the mace move owns the bones then.)
 const _q = new THREE.Quaternion(), _p = new THREE.Quaternion(), _ax = new THREE.Vector3();
-function turnBone(b, i, axis, ang) {
+function turnBone(b, i, q) {
 	b.parent.getWorldQuaternion(_p);
-	_q.setFromAxisAngle(axis, ang);
-	b.quaternion.copy(_p.clone().invert().multiply(_q).multiply(_p).multiply(ghost.idle[i]));
+	b.quaternion.copy(_p.clone().invert().multiply(q).multiply(_p).multiply(ghost.idle[i]));
 	b.updateMatrixWorld(true);
 }
-function sway(t) {
+let lastT = 0;
+function trail(t) {
 	const g = ghost;
+	const dt = Math.min(0.1, t - lastT); lastT = t;
+	g.trail = g.trail ?? 0;
+	g.trail += ((g.trailWant ?? 0) - g.trail) * Math.min(1, dt * 2.5);
+	const e = g.trail * g.trail * (3 - 2 * g.trail);
 	g.root.updateMatrixWorld(true);
 	const side = _ax.set(1, 0, 0).applyQuaternion(g.root.quaternion).clone();
 	const fwd = new THREE.Vector3(0, 0, 1).applyQuaternion(g.root.quaternion);
-	const amt = 0.07 + 0.3 * (g.glide ?? 0);
-	for (const [name, ph, k] of [["upperarm_l", 0, 1], ["upperarm_r", Math.PI, 0.6], ["lowerarm_l", -0.7, 0.7], ["lowerarm_r", Math.PI - 0.7, 0.4]]) {
+	for (const [name, back, out] of [["upperarm_l", 0.75, 0.22], ["upperarm_r", 0.5, -0.15], ["lowerarm_l", 0.3, 0], ["lowerarm_r", 0.15, 0]]) {
 		const b = g.holder.getObjectByName(name);
-		if (b) turnBone(b, g.bones.indexOf(b), side, amt * k * Math.sin(t * 2.4 + ph) - (name.startsWith("lower") ? amt * 0.4 : 0));
+		if (!b) continue;
+		const q = new THREE.Quaternion().setFromAxisAngle(side, back * e).premultiply(new THREE.Quaternion().setFromAxisAngle(fwd, out * e));
+		turnBone(b, g.bones.indexOf(b), q);
 	}
 	const hd = g.holder.getObjectByName("Head");
-	if (hd) {
-		hd.parent.getWorldQuaternion(_p);
-		const nod = new THREE.Quaternion().setFromAxisAngle(side, 0.05 * Math.sin(t * 1.3)).multiply(new THREE.Quaternion().setFromAxisAngle(fwd, 0.04 * Math.sin(t * 0.9)));
-		hd.quaternion.copy(_p.clone().invert().multiply(nod).multiply(_p).multiply(g.idle[g.bones.indexOf(hd)]));
-	}
+	if (hd) turnBone(hd, g.bones.indexOf(hd), new THREE.Quaternion().setFromAxisAngle(side, -0.12 * e));  // (chin up a touch, eyes on you)
 }
 
 // One frame of a dwarf mace move (assets/anim/one_ual.json): each big bone's turn in skeleton space.
@@ -450,6 +452,7 @@ async function float() {
 	g.root.position.copy(from);
 	g.root.rotation.y = yaw;
 	await tween(0.5, f => setFade(f));
+	g.trailWant = 1;
 	const len = from.distanceTo(to) / 1.2 * 1.25;  // (it eases in and out: a little longer than at full speed)
 	await tween(len, f => {
 		const t = performance.now() / 1000;
@@ -457,12 +460,11 @@ async function float() {
 		g.root.position.lerpVectors(from, to, e);
 		g.root.position.y = g.base.y + Math.sin(t * 2.1) * 0.05;
 		const speed = 6 * f * (1 - f);  // (0 at the ends, fastest in the middle)
-		g.glide = Math.min(1, speed / 1.5);
+		if (f > 0.78) g.trailWant = 0;  // (the arms come forward as it slows, ready to swing)
 		g.root.rotation.x = 0.18 * Math.min(1, speed * 1.2);
 		g.root.rotation.z = Math.sin(t * 1.3) * 0.04;
 	});
-	g.glide = 0;
-	await tween(0.4, f => { g.root.rotation.x *= 1 - f; g.root.rotation.z *= 1 - f; });
+	await tween(0.6, f => { g.root.rotation.x *= 1 - f; g.root.rotation.z *= 1 - f; });
 	g.busy = false;
 	await attack();
 }
@@ -506,7 +508,7 @@ renderer.setAnimationLoop(() => {
 	const t = performance.now() / 1000;
 	if (ghost) {
 		for (const m of ghost.mats) m.uniforms.time.value = t;
-		if (!ghost.swinging && !still) sway(t);
+		if (!ghost.swinging && !still) trail(t);
 		placeMace();
 		if (!ghost.busy && !still) ghost.root.position.y = ghost.base.y + Math.sin(t * 2.1) * 0.05;
 	}
