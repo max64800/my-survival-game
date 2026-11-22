@@ -49,8 +49,12 @@ static func burst(parent: Node, pos: Vector3, color: Color, amount: int = 10, sp
 
 
 ## A soft puff of dust that drifts up and fades (digging, landing, things breaking).
-static func dust(parent: Node, pos: Vector3, color: Color, amount: int = 5, size: float = 0.45) -> void:
+## `extents` > 0 = spread over a box that size around `pos` (a new piece's foot, F724).
+static func dust(parent: Node, pos: Vector3, color: Color, amount: int = 5, size: float = 0.45, extents := Vector3.ZERO) -> void:
 	var p := CPUParticles3D.new()
+	if extents != Vector3.ZERO:
+		p.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+		p.emission_box_extents = extents
 	p.one_shot = true
 	p.emitting = false
 	p.amount = amount
@@ -146,3 +150,87 @@ static func _dust() -> Texture2D:
 		t.height = 64
 		_dust_tex = t
 	return _dust_tex
+
+
+## F724 (owner, Nov 22): a little puff as a piece goes up, different for each material.
+## wood = pale chips + sawdust, brick = red chips + red dust, metal = a few sparks, the rest (stone) = grit + grey dust.
+static func build_dust_kind(family: String) -> String:
+	if family in Pieces.WOODS or family.begins_with("plank"):
+		return "wood"
+	if family.contains("brick"):
+		return "brick"
+	if family.ends_with("_ingot"):
+		return "metal"
+	return "stone"
+
+
+## {chips: colour of the flying bits, dust: colour of the cloud} for a material.
+static func build_dust_colors(family: String) -> Dictionary:
+	var base: Color = Pieces.FAMILIES.get(family, {}).get("color", Color(0.55, 0.5, 0.45))
+	match build_dust_kind(family):
+		"wood":  # fresh-cut wood is paler than the planks
+			return {chips = base.lightened(0.25), dust = Color(0.8, 0.68, 0.48)}
+		"brick":
+			return {chips = base.darkened(0.1), dust = base.lerp(Color(0.8, 0.5, 0.38), 0.5)}
+		"metal":
+			return {chips = Color(1.0, 0.8, 0.45), dust = Color(0.5, 0.48, 0.45)}
+	return {chips = base, dust = base.lerp(Color(0.75, 0.73, 0.7), 0.5)}
+
+
+static var _wood_chip: Mesh
+
+
+## The puff around the foot of a new piece. `box` = the piece's space in the world.
+static func build_puff(parent: Node, box: AABB, family: String) -> void:
+	var kind := build_dust_kind(family)
+	var cols := build_dust_colors(family)
+	var foot := Vector3(box.get_center().x, box.position.y + minf(box.size.y, 0.6) * 0.5, box.get_center().z)
+	var spread := Vector3(box.size.x * 0.4, minf(box.size.y, 0.6) * 0.3, box.size.z * 0.4)
+	var big := clampf(box.size.x * box.size.z, 0.3, 6.0)  # bigger pieces, bigger puff
+	if kind == "metal":
+		burst(parent, foot, cols.chips, 5, 2.5)  # glowing sparks
+	else:
+		var p := CPUParticles3D.new()
+		p.one_shot = true
+		p.emitting = false
+		p.amount = int(clampf(big * 4.0, 5, 18))
+		p.lifetime = 0.8
+		p.explosiveness = 0.9
+		p.randomness = 0.5
+		p.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+		p.emission_box_extents = spread
+		p.direction = Vector3.UP
+		p.spread = 75.0
+		p.initial_velocity_min = 1.0
+		p.initial_velocity_max = 2.4
+		p.gravity = Vector3(0, -12, 0)
+		p.angle_min = 0.0
+		p.angle_max = 360.0
+		p.angular_velocity_min = -500.0
+		p.angular_velocity_max = 500.0
+		p.particle_flag_rotate_y = true
+		p.scale_amount_min = 0.5
+		p.scale_amount_max = 1.0
+		var shrink := Curve.new()
+		shrink.add_point(Vector2(0.0, 1.0))
+		shrink.add_point(Vector2(0.7, 1.0))
+		shrink.add_point(Vector2(1.0, 0.0))
+		p.scale_amount_curve = shrink
+		p.mesh = _chip() if kind == "wood" else _chunk()
+		p.material_override = _chunk_mat(cols.chips, false)
+		p.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		parent.add_child(p)
+		p.global_position = foot
+		p.emitting = true
+		p.finished.connect(p.queue_free)
+	# The soft cloud, spread along the piece's foot.
+	dust(parent, foot, cols.dust, int(clampf(big * 3.0, 4, 14)), 0.5 if kind == "wood" else 0.6, spread)
+
+
+## A thin wood chip (a shaving off a plank).
+static func _chip() -> Mesh:
+	if _wood_chip == null:
+		var b := BoxMesh.new()
+		b.size = Vector3(0.09, 0.012, 0.035)
+		_wood_chip = b
+	return _wood_chip

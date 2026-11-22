@@ -341,11 +341,14 @@ func _ev_add_piece(uid: int, piece: String, family: String, pos: Vector3, rot: i
 	_next_uid = maxi(_next_uid, uid + 1)
 	if auth.is_host() and not batch:
 		structure.settle_added(uid)  # (F565: a new piece only makes things steadier: no whole-world check)
+	if not batch and not _loading:  # F724: a puff of chips and dust as it goes up (everyone sees it: this runs on every screen)
+		Fx.build_puff(get_parent(), Pieces.box(piece, pos, rot), family)
 
 
 ## Many pieces at once (the world placing a ruin): no sound per piece, and the strength check (it looks at every
 ## piece, so doing it per piece took minutes for the 700-piece outpost) runs once at the end.
 var batch := false
+var _loading := false  ## reading a saved world's pieces (load_snapshot)
 
 
 func end_batch() -> void:
@@ -1518,10 +1521,12 @@ func load_snapshot(s: Dictionary) -> void:
 	for f in s.get("falls", []):
 		fall_log.append(f)
 		_pending_falls.append(f)
+	_loading = true  # (no dust puff for every piece of a loaded world)
 	for p in s.get("pieces", []):
 		_ev_add_piece(p[0], p[1], p[2], p[3], p[4], p[5])
 		if p.size() > 6 and p[6]:
 			_ev_door(p[0], int(p[6]))  # old saves stored true (= 1)
+	_loading = false
 	_next_uid = s.get("next", _next_uid)
 	for st in s.get("sites", []):
 		_ev_site(st[0], st[1], st[2], st[3], st[4])
