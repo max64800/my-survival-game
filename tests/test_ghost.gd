@@ -242,3 +242,20 @@ func test_the_long_maces_stay_out_of_the_neck() -> void:
 		print("%s closest mace-to-neck %.2f m at %.0f%%" % [kind[0], closest, at * 100])
 		check(closest > 0.2, "%s's mace keeps out of the neck (%.2f m)" % [kind[0], closest])
 		model.free()
+
+
+## Owner, Nov 22: the ghosts were "still very fat" (then about 1.8 m arm to arm in the game). Now under 1.65 m arm to arm (arms out)
+## and under 0.82 m deep.
+func test_the_ghosts_are_not_fat() -> void:
+	for kind in ["ghost_a", "ghost_b", "ghost_c"]:
+		var model := MonsterModel.build("ghost", Color.WHITE, 1.0, false, kind, 1)
+		tree.root.add_child(model)
+		var box := AABB()
+		var first := true
+		for mi: MeshInstance3D in model.find_children("ghost_*_body", "MeshInstance3D", true, false):
+			var bb := mi.global_transform * mi.get_aabb()
+			box = bb if first else box.merge(bb)
+			first = false
+		print("%s body %.2f wide, %.2f deep, %.2f tall" % [kind, box.size.x, box.size.z, box.size.y])
+		check(not first and box.size.x < 1.65 and box.size.z < 0.82, "%s is slim (%.2f wide, %.2f deep)" % [kind, box.size.x, box.size.z])
+		model.free()

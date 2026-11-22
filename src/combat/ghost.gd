@@ -64,6 +64,9 @@ static func _dress(dm: DwarfModel, look: String, color: Color) -> void:
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		mi.add_to_group("ghost_skin")
 	src.free()
+	# (owner, Nov 22: "still very fat"): no extra dwarf width under the ghost body, so it's as slim as on the 3D page
+	dm.dwarf_rig.scale.x /= DwarfRig.WIDTH
+	dm.dwarf_rig.scale.z /= DwarfRig.WIDTH
 	dm.set_held(MACE)
 	var shape: Array = MACE_SHAPE.get(look, [1.0, 1.0])
 	for mi: MeshInstance3D in dm.dwarf_rig.grip.find_children("*", "MeshInstance3D", true, false):

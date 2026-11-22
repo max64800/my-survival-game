@@ -1054,6 +1054,35 @@ for o in (o_body, o_eyes, o_fists):
 		cs._apply_all(o)
 	print("GHOST made", o.name, len(o.data.polygons), "faces", flush=True)
 
+# ---------------------------------------------------------------- slimmer (owner, Nov 22: "still very fat")
+# The whole sculpt is squeezed after it's made: narrower and shallower round the middle, thinner sleeves, smaller fists.
+# The sleeves stretch a little so the wrists stay at his hands (the mace stays in the fist).
+SLIM_X, SLIM_Y, SLIM_ARM, SLIM_FIST = 0.8, 0.82, 0.8, 0.85
+X0, X1 = 0.3, HAND_X - 0.08  # (the middle is squeezed up to X0, the sleeve stretches back to full width at X1)
+
+
+def slim(co, fist=False):
+	x, y, z = co[:, 0].copy(), co[:, 1].copy(), co[:, 2].copy()
+	ax = np.abs(x)
+	if fist:  # each fist smaller round its own middle, where it is
+		c = np.stack([np.sign(x) * (HAND_X + 0.08), np.full_like(x, 0.005), np.full_like(x, 0.766)], 1)
+		return c + (co - c) * SLIM_FIST
+	sx = np.where(ax <= X0, ax * SLIM_X, X0 * SLIM_X + (ax - X0) * (X1 - X0 * SLIM_X) / (X1 - X0))
+	sx = np.where(ax >= X1, ax, sx)
+	out = 1.0 - np.clip((ax - X1 + 0.06) / 0.06, 0.0, 1.0)  # (1 inside, 0 at the cuff)
+	arm = np.clip((ax - 0.26) / 0.1, 0.0, 1.0) * out
+	y = 0.03 + (y - 0.03) * (1.0 - (1.0 - SLIM_Y) * out)
+	z = np.where(arm > 0, 0.778 + (z - 0.778) * (1.0 - (1.0 - SLIM_ARM) * arm), z)
+	return np.stack([np.sign(x) * sx, y, z], 1)
+
+
+for o, f in ((o_body, False), (o_eyes, False), (o_fists, True)):
+	co = world_verts(o)
+	m = np.array(o.matrix_world)
+	loc = (slim(co, f) - m[:3, 3]) @ np.linalg.inv(m[:3, :3]).T
+	o.data.vertices.foreach_set("co", loc.astype(np.float32).ravel())
+	o.data.update()
+
 # ---------------------------------------------------------------- which bones move each point
 SKIP = ("hair_", "cloth_")
 LEGS = ("thigh_", "calf_", "foot_", "ball_")  # his legs: their pull goes to the hips (the tail must not walk)
