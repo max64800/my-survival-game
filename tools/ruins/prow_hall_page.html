@@ -1,0 +1,364 @@
+<title>Prow Hall</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@500;700&family=Alegreya+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one lantern-lit cave stage with the hall set into the cave rock, a plan sheet beside
+   it (under it on phones). One look on purpose: the hall lives underground. */
+:root {
+	--rock: #17130f;
+	--sheet: #221b15;
+	--line: #4a3b2c;
+	--ink: #efe3cf;
+	--dim: #b9a68b;
+	--lantern: #e7a24a;
+	--lantern-ink: #1d140b;
+	--new: #ff9a3d;
+	--display: "Alegreya SC", Georgia, "Times New Roman", serif;
+	--body: "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+	--mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+	color-scheme: dark;
+}
+html, body { height: 100%; margin: 0; }
+body { background: var(--rock); color: var(--ink); font: 16px/1.5 var(--body); }
+.wrap { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 340px; grid-template-rows: minmax(0, 1fr); gap: 16px;
+	padding: 16px; box-sizing: border-box; }
+.stage { position: relative; min-height: 420px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #0d0a08; }
+canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.tools { position: absolute; left: 12px; right: 12px; bottom: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.views { position: absolute; left: 12px; top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+button { font: 600 14px var(--body); color: var(--ink); background: #1d1711dd; border: 1px solid var(--line); border-radius: 6px; padding: 7px 12px; cursor: pointer; }
+button:hover { border-color: var(--lantern); }
+button:focus-visible { outline: 2px solid var(--lantern); outline-offset: 2px; }
+button[aria-pressed="true"] { background: var(--lantern); color: var(--lantern-ink); border-color: var(--lantern); }
+.hint { margin-left: auto; color: var(--dim); font: 13px var(--body); }
+#loading[hidden] { display: none; }
+#loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--dim); font: 14px var(--mono); pointer-events: none; text-align: center; padding: 16px; }
+aside { background: var(--sheet); border: 1px solid var(--line); border-radius: 8px; padding: 20px 18px; display: flex; flex-direction: column; gap: 18px; min-width: 0; overflow-y: auto; }
+h1 { font: 700 32px/1.1 var(--display); margin: 0; letter-spacing: .01em; text-wrap: balance; }
+.lede { margin: 6px 0 0; color: var(--dim); }
+h2 { font: 700 13px var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--lantern); margin: 0 0 8px; }
+ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+li { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dashed var(--line); padding-bottom: 3px; }
+li span:last-child { font: 400 15px var(--body); font-variant-numeric: tabular-nums; color: var(--ink); text-align: right; }
+.note { font-size: 14px; color: var(--dim); margin: 8px 0 0; }
+.ask { border: 1px solid var(--lantern); border-radius: 6px; padding: 10px 12px; font-size: 15px; }
+.ask p { margin: 0; }
+.ask p + p { margin-top: 8px; }
+.swatch { display: inline-block; width: 11px; height: 11px; border-radius: 2px; background: var(--new); vertical-align: -1px; margin-right: 4px; }
+@media (max-width: 860px) {
+	.wrap { height: auto; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; }
+	.stage { min-height: 75vh; }
+	aside { overflow: visible; }
+	.hint { display: none; }
+}
+</style>
+<div class="wrap">
+	<div class="stage" id="stage">
+		<div id="loading">Building the Prow Hall&hellip;</div>
+		<div class="views" role="group" aria-label="What to look at">
+			<button id="w_ruin" aria-pressed="true">The ruin</button>
+			<button id="w_stone" aria-pressed="false">Rebuilt in stone</button>
+			<button id="w_wood" aria-pressed="false">Mended in wood</button>
+			<span style="width:10px"></span>
+			<button id="c_front" aria-pressed="true">Front</button>
+			<button id="c_bridge" aria-pressed="false">The bridge side</button>
+			<button id="c_above" aria-pressed="false">From above</button>
+		</div>
+		<div class="tools" role="group" aria-label="How much of it to show">
+			<span class="hint" style="margin-left:0">Storeys:</span>
+			<button data-s="1" aria-pressed="false">1</button>
+			<button data-s="2" aria-pressed="false">2</button>
+			<button data-s="3" aria-pressed="false">3</button>
+			<button data-s="4" aria-pressed="false">4</button>
+			<button data-s="5" aria-pressed="false">5</button>
+			<button data-s="9" aria-pressed="true">All</button>
+			<button id="rock" aria-pressed="true">Cave rock on</button>
+			<span class="hint">Drag to turn &middot; scroll to zoom &middot; right-drag to move</span>
+		</div>
+	</div>
+	<aside>
+		<header>
+			<h1>Prow Hall</h1>
+			<p class="lede">Ruin 9, a Stonehold castle set into the cave. A great hall with a round tower on each corner, a pointed prow on the front like a ship's bow, a big round keep at the back sunk into the rock wall, and a bridge out to a lone tower on a rock lump. Press "Rebuilt in stone" to see the blueprint whole, or "Mended in wood" to see the ruin patched up with wood where it fell.</p>
+		</header>
+		<section>
+			<h2>The parts</h2>
+			<ul>
+				<li><span>Great hall</span><span>20 &times; 12 m, 2 storeys + roof walk</span></li>
+				<li><span>Prow</span><span>8 m wide, a point of triangles, 3 storeys, the two main doors</span></li>
+				<li><span>4 corner towers</span><span>round (12 sides), front 4 storeys, back 5</span></li>
+				<li><span>Keep</span><span>big round tower, 15 m across, a small one on its roof, a crown of 6 balconies on brackets, about 15 m up</span></li>
+				<li><span>Bridge</span><span>10 m long, 10 m up, over a dip in the cave floor</span></li>
+				<li><span>Lone tower</span><span>on a 7 m rock lump, a fire bowl on top</span></li>
+			</ul>
+			<p class="note">Every part is a different height, stepping up to the keep. 29 flights of stairs, each starts and ends on whole floor. The cave shape (rock wall, lump, dip) is made by the world, not by building pieces.</p>
+		</section>
+		<section>
+			<h2 id="costH">Build it in stone</h2>
+			<ul id="cost"></ul>
+			<p class="note" id="costNote">It is big: about 2,400 pieces. You decide if the price is too much.</p>
+		</section>
+		<section>
+			<h2>Your call</h2>
+			<div class="ask">
+				<p>Does this look like the castle you pictured? Once you OK it, I make the real ruin in the game (chests, the family's things) and dig its cave.</p>
+				<p>Two things to decide: the bridge is a plain walkway with railings (stone arches under it would need a new piece), and the hall's long walls are 8 m flat between towers (trim bands break them up a bit). Fine as they are?</p>
+			</div>
+		</section>
+	</aside>
+</div>
+<script type="importmap">
+{ "imports": {
+	"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+	"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+const loadingEl = document.getElementById("loading");
+const stage = document.getElementById("stage");
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.shadowMap.enabled = true;
+stage.prepend(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d0a08);
+scene.fog = new THREE.Fog(0x0d0a08, 110, 220);
+const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 500);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.maxPolarAngle = Math.PI * 0.49;
+controls.minDistance = 3;
+controls.maxDistance = 160;
+
+scene.add(new THREE.HemisphereLight(0x9fb2c8, 0x3a2a1a, 1.5));
+const fill = new THREE.DirectionalLight(0xffc890, 1.1);  // a lantern glow from the bridge side, so no side is black
+fill.position.set(-50, 30, 10);
+scene.add(fill);
+const sun = new THREE.DirectionalLight(0xffd9a8, 2.2);
+sun.position.set(30, 45, 35);
+sun.castShadow = true;
+sun.shadow.mapSize.set(4096, 4096);
+Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 50, bottom: -50, far: 160 });
+scene.add(sun);
+
+let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+const smooth = t => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
+
+// Artifact pages may not fetch blob:/data: URLs, which three.js uses for pictures inside a model: rebuild each
+// model into one binary here, and load its pictures as plain <img>.
+globalThis.createImageBitmap = undefined;
+const loader = new GLTFLoader();
+async function loadModel(url) {
+	const j = await (await fetch(url)).json();
+	const uri = j.buffers[0].uri, b64 = uri.slice(uri.indexOf(",") + 1);
+	const raw = atob(b64), bin = new Uint8Array(raw.length);
+	for (let i = 0; i < raw.length; i++) bin[i] = raw.charCodeAt(i);
+	delete j.buffers[0].uri; j.buffers[0].byteLength = bin.length;
+	const js = new TextEncoder().encode(JSON.stringify(j));
+	const pad = n => (4 - (n % 4)) % 4;
+	const jsLen = js.length + pad(js.length), binLen = bin.length + pad(bin.length);
+	const out = new Uint8Array(12 + 8 + jsLen + 8 + binLen), dv = new DataView(out.buffer);
+	dv.setUint32(0, 0x46546C67, true); dv.setUint32(4, 2, true); dv.setUint32(8, out.length, true);
+	dv.setUint32(12, jsLen, true); dv.setUint32(16, 0x4E4F534A, true);
+	out.set(js, 20); out.fill(0x20, 20 + js.length, 20 + jsLen);
+	const b0 = 20 + jsLen;
+	dv.setUint32(b0, binLen, true); dv.setUint32(b0 + 4, 0x004E4942, true);
+	out.set(bin, b0 + 8);
+	return (await loader.parseAsync(out.buffer, "")).scene;
+}
+
+// The cave: one rough rock surface. The floor with a dip under the bridge, the rock wall wrapped round the keep's back
+// (cliff faces with ledges, the same rock the blueprint keeps uncarved), the lump under the lone tower (flat on top
+// at 7 m, a ledge halfway down). Rock off = the floor and the dip only.
+const rockGroup = new THREE.Group();
+const rockMat = new THREE.MeshStandardMaterial({ roughness: 1, flatShading: true, vertexColors: true });
+const hash = (x, z) => { const h = Math.sin(x * 127.1 + z * 311.7) * 43758.5453; return h - Math.floor(h); };
+function vnoise(x, z) {
+	const xi = Math.floor(x), zi = Math.floor(z), fx = smooth(x - xi), fz = smooth(z - zi);
+	const a = hash(xi, zi), b = hash(xi + 1, zi), c = hash(xi, zi + 1), d = hash(xi + 1, zi + 1);
+	return a + (b - a) * fx + (c - a) * fz + (a - b - c + d) * fx * fz;
+}
+const fbm = (x, z) => vnoise(x, z) * 0.5 + vnoise(x * 2 + 5.2, z * 2 + 1.3) * 0.3 + vnoise(x * 4 + 9.1, z * 4 + 3.7) * 0.2;
+// Height h in ledges: flat shelves every `step` m, short steep faces between them.
+const ledges = (h, step) => { const k = h / step, f = k - Math.floor(k); return (Math.floor(k) + smooth((f - 0.3) / 0.7)) * step; };
+let terrain, rockGeo, flatGeo;
+function buildCave(bp) {
+	const [bx, bz] = bp.b0, [dx, dz] = bp.d8, [kx, kz] = bp.keep, [lx, lz] = bp.lone;
+	const floorAt = (x, z) => {
+		const t = (x - bx) * dx + (z - bz) * dz, side = Math.abs((x - bx) * -dz + (z - bz) * dx);
+		const along = smooth(Math.min(t - 0.5, 9 - t) / 2.0), across = smooth(1 - side / 4.5);
+		return -bp.dip * along * across + (fbm(x * 0.3, z * 0.3) - 0.5) * 0.25;
+	};
+	const rockAt = (x, z) => {
+		// the wall: inside where the blueprint keeps rock (behind the keep, right of x = -6, 8.6 m clear of the keep);
+		// the noise only pulls it back, so it never reaches into a building
+		const s = Math.min(kz - z, x + 6, Math.hypot(x - kx, z - kz) - 8.6) - 1.8 * fbm(x * 0.12, z * 0.12);
+		let w = -9;
+		if (s > 0) {
+			const H = 16 + 7 * fbm(x * 0.05 + 3, z * 0.05) + 7 * fbm(x * 0.16 + 1, z * 0.16 + 4);   // a jagged top line
+			w = ledges(H * smooth(s / 4.0), 4.5) + (fbm(x * 0.45, z * 0.45) - 0.5) * 2.6 * smooth(s / 2.0)
+				+ (fbm(x * 1.3, z * 1.3) - 0.5) * 0.8;
+		}
+		// the lump: flat top inside 5.5 m (the lone tower's foundations), a rough side with a ledge, wider at the foot
+		const r = Math.hypot(x - lx, z - lz) - 1.4 * fbm(x * 0.35 + 7, z * 0.35);
+		const u = r <= 5.5 ? 7 : 7 * (1 - smooth((r - 5.5) / 3.2));
+		const l = r <= 5.5 ? 7 : ledges(u, 3.5) + (fbm(x * 0.8, z * 0.8) - 0.5) * 0.5 * (u > 0.2 ? 1 : 0);
+		return Math.max(w, l);
+	};
+	const make = withRock => {
+		const g = new THREE.PlaneGeometry(200, 170, 400, 340);
+		const pos = g.attributes.position, col = new Float32Array(pos.count * 3);
+		for (let i = 0; i < pos.count; i++) {
+			const x = pos.getX(i), z = -pos.getY(i);   // (the plane is turned flat: its y is the world's -z)
+			pos.setZ(i, Math.max(floorAt(x, z), withRock ? rockAt(x, z) : -9));
+		}
+		g.computeVertexNormals();
+		const nrm = g.attributes.normal, c = new THREE.Color();
+		for (let i = 0; i < pos.count; i++) {
+			const x = pos.getX(i), z = -pos.getY(i), h = pos.getZ(i), up = nrm.getZ(i), n = fbm(x * 0.5, z * 0.5);
+			if (h < 0.3) c.setHex(0x3a3027).offsetHSL(0, 0, (n - 0.5) * 0.05 + Math.min(0, h) * 0.012);   // the cave floor
+			else if (up > 0.8) c.setHex(0x5a4b3d).offsetHSL(0, 0, (n - 0.5) * 0.06);                      // ledge tops, dusty
+			else c.setHex(0x4a3d33).offsetHSL(0.01 * (n - 0.5), 0, (n - 0.5) * 0.09 + h * 0.003);           // rock faces
+			c.toArray(col, i * 3);
+		}
+		g.setAttribute("color", new THREE.BufferAttribute(col, 3));
+		return g;
+	};
+	rockGeo = make(true);
+	flatGeo = make(false);
+	terrain = new THREE.Mesh(rockGeo, rockMat);
+	terrain.rotation.x = -Math.PI / 2;
+	terrain.castShadow = terrain.receiveShadow = true;
+	scene.add(terrain);
+	// fallen boulders at the foot of the wall and round the lump
+	const boulderMat = new THREE.MeshStandardMaterial({ color: 0x47392f, roughness: 1, flatShading: true });
+	for (let i = 0; i < 70; i++) {
+		const a = rnd() * Math.PI * 2, nearLump = i < 22;
+		let x, z;
+		if (nearLump) { const d = 7.5 + rnd() * 3; x = lx + Math.sin(a) * d; z = lz + Math.cos(a) * d; }
+		else { x = -4 + rnd() * 60; z = kz - 0.5 - rnd() * 6; if (Math.hypot(x - kx, z - kz) < 9.4) continue; }
+		if (rockAt(x, z) > 1.5) continue;
+		const b = new THREE.Mesh(new THREE.DodecahedronGeometry(0.35 + rnd() * 0.8, 0), boulderMat);
+		b.position.set(x, Math.max(floorAt(x, z), rockAt(x, z)) + 0.2, z);
+		b.scale.set(1, 0.6 + rnd() * 0.4, 1);
+		b.rotation.set(rnd() * 3, rnd() * 3, rnd() * 3);
+		b.castShadow = b.receiveShadow = true;
+		rockGroup.add(b);
+	}
+	scene.add(rockGroup);
+}
+
+const layers = [];  // [{im, y, view}] for the storey cut-away and the ruin / whole switch
+const NICE = { cut_stone: "Cut Stone", mortar: "Mortar", copper_ingot: "Copper Ingot", plank_root: "Rootwood Plank", rope: "Rope" };
+let costs = null;
+const yawOf = r => (r < 4 ? r * 90 : (r - 4) * 30) * Math.PI / 180;
+let view = new URLSearchParams(location.search).get("v") || "ruin", top = 99;
+function refresh() {
+	layers.forEach(l => (l.im.visible = l.view === view && l.y <= top));
+	for (const k of ["ruin", "stone", "wood"]) document.getElementById("w_" + k).setAttribute("aria-pressed", k === view);
+	if (!costs) return;
+	const m = view === "wood" ? "wood" : "stone";
+	document.getElementById("costH").textContent = m === "wood" ? "Mend it in wood" : "Build it in stone";
+	document.getElementById("costNote").textContent = m === "wood"
+		? "Only what fell or broke (about 650 of the 2,400 pieces) is new, in wood; everything still standing stays the old stone. High up on the keep the patches stay stone: wood gets too weak that high. Mending it in stone instead: " +
+		  Object.entries(costs.stone_mend).sort((a, b) => b[1] - a[1]).map(([a, b]) => `${b.toLocaleString("en")} ${NICE[a] || a}`).join(", ") + "."
+		: "It is big: about 2,400 pieces. You decide if the price is too much.";
+	document.getElementById("cost").innerHTML = Object.entries(costs[m])
+		.sort((a, b) => b[1] - a[1]).map(([a, b]) => `<li><span>${NICE[a] || a}</span><span>${b.toLocaleString("en")}</span></li>`).join("");
+}
+try {
+	const bp = await (await fetch("bp.json")).json();
+	costs = bp.cost;
+	refresh();
+	buildCave(bp);
+	const keyOf = p => `${p.id}__${p.mat}`;
+	const kinds = [...new Set(Object.values(bp.views).flat().map(keyOf))];
+	const models = {};
+	let done = 0;
+	await Promise.all(kinds.map(async (k) => {
+		const m = await loadModel(`m/${k}.json`);
+		m.updateMatrixWorld(true);
+		const parts = [];
+		m.traverse(o => { if (o.isMesh) parts.push({ geo: o.geometry, mat: o.material, local: o.matrixWorld.clone() }); });
+		models[k] = parts;
+		loadingEl.textContent = `Building the Prow Hall… ${++done} of ${kinds.length} kinds of piece`;
+	}));
+	// One InstancedMesh per kind of piece, per view, per height (so the storey buttons can hide what is above).
+	const groups = {};
+	for (const v of Object.keys(bp.views)) {
+		for (const p of bp.views[v]) {
+			const y = p.pos[1];
+			const gk = [keyOf(p), v, y].join("|");
+			const m = new THREE.Matrix4().compose(new THREE.Vector3(p.pos[0], y, p.pos[2]),
+				new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yawOf(p.rot)), new THREE.Vector3(1, 1, 1));
+			(groups[gk] ||= { key: keyOf(p), y, view: v, mats: [] }).mats.push(m);
+		}
+	}
+	const tmp = new THREE.Matrix4();
+	for (const g of Object.values(groups)) {
+		for (const part of models[g.key]) {
+			const im = new THREE.InstancedMesh(part.geo, part.mat, g.mats.length);
+			g.mats.forEach((m, i) => im.setMatrixAt(i, tmp.multiplyMatrices(m, part.local)));
+			im.castShadow = im.receiveShadow = true;
+			im.computeBoundingSphere();
+			scene.add(im);
+			layers.push({ im, y: g.y, view: g.view });
+		}
+	}
+	refresh();
+	loadingEl.hidden = true;
+} catch (err) {
+	loadingEl.textContent = "Couldn't build the Prow Hall: " + err.message;
+	console.error(err);
+}
+
+// Camera spots: the front (the prow and its doors), the bridge side (the lone tower and the dip), from above (the plan).
+const CAMS = { front: [[26, 22, 50], [-2, 5, -2]], bridge: [[-58, 24, 22], [-8, 6, -6]], above: [[4, 92, 22], [2, 0, 0]] };
+function look(which) {
+	const [p, t] = CAMS[which];
+	camera.position.set(...p);
+	controls.target.set(...t);
+	const cam = new URLSearchParams(location.search).get("cam");  // test views: ?cam=x,y,z,tx,ty,tz
+	if (cam) {
+		const v = cam.split(",").map(Number);
+		camera.position.set(v[0], v[1], v[2]);
+		controls.target.set(v[3], v[4], v[5]);
+	}
+	for (const k in CAMS) document.getElementById("c_" + k).setAttribute("aria-pressed", k === which);
+}
+for (const k in CAMS) document.getElementById("c_" + k).onclick = () => look(k);
+look(new URLSearchParams(location.search).get("c") || "front");
+for (const k of ["ruin", "stone", "wood"]) document.getElementById("w_" + k).onclick = () => { view = k; refresh(); };
+
+// Storey N shows everything below storey N+1's floor (floors at 3.0, 5.25, 7.5, 9.75, 12.0).
+const TOP = { 1: 2.99, 2: 5.24, 3: 7.49, 4: 9.74, 5: 11.99, 9: 99 };
+const sBtns = [...document.querySelectorAll("[data-s]")];
+function storeys(n) {
+	top = TOP[n];
+	refresh();
+	sBtns.forEach(b => b.setAttribute("aria-pressed", b.dataset.s === String(n)));
+}
+sBtns.forEach(b => (b.onclick = () => storeys(+b.dataset.s)));
+const s0 = new URLSearchParams(location.search).get("s");  // (test views)
+if (s0) storeys(+s0);
+const rockBtn = document.getElementById("rock");
+rockBtn.onclick = () => { const on = rockBtn.getAttribute("aria-pressed") !== "true"; rockBtn.setAttribute("aria-pressed", on); rockBtn.textContent = on ? "Cave rock on" : "Cave rock off"; rockGroup.visible = on; if (terrain) terrain.geometry = on ? rockGeo : flatGeo; };
+
+function resize() {
+	const w = stage.clientWidth, h = stage.clientHeight;
+	renderer.setSize(w, h, false);
+	camera.aspect = w / h;
+	camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(stage);
+resize();
+renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
+</script>

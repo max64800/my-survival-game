@@ -150,6 +150,69 @@ func test_cliff_watch_is_layered_and_sound() -> void:
 		"the outline steps out, in, out again (%s)" % widest)
 
 
+## Ruin 9, the Prow Hall (owner, Nov 22, F656 + F657): real stone pieces, inside its box, nothing overlaps, nothing
+## stands inside its own rock (the lone tower's foundations may sink 25 cm into the lump), and nothing falls when the
+## pieces resting on the cave floor or the rock hold (in the game the rock anchors them: Pieces.touches_rock).
+## Both the stone hall and its wooden rebuild (owner, Nov 22).
+func test_prow_hall_is_sound() -> void:
+	for id in ["stonehold_prow_hall", "wooden_prow_hall"]:
+		_check_prow_hall(id)
+
+
+func _check_prow_hall(id: String) -> void:
+	var bp := BlueprintLibrary.make(id)
+	var half := Vector3(bp.size.x * 0.5 + 0.5, bp.size.y + 0.5, bp.size.z * 0.5 + 0.5)
+	var s := Structure.new()
+	var uid := 1
+	for p in bp.pieces:
+		check(Pieces.allowed(p.id, p.mat), "%s can be made of %s" % [p.id, p.mat])
+		check(not p.id in ["floor_half", "small_floor", "roof_cap"], "no %s (F626)" % p.id)
+		var v: Vector3 = p.pos
+		check(absf(v.x) <= half.x and v.y >= 0.0 and v.y <= half.y and absf(v.z) <= half.z, "%s at %s is inside the box" % [p.id, v])
+		var rock := BlueprintLibrary.prow_rock_top(v.x, v.z)
+		check(v.y >= rock - 0.3, "%s at %s isn't inside the rock (top %.2f)" % [p.id, v, rock])
+		check(not s.overlaps(p.id, p.pos, p.rot), "%s at %s doesn't overlap another piece" % [p.id, p.pos])
+		s.add(uid, p.id, p.mat, p.pos, p.rot, v.y < 0.3 or (rock > 0.0 and v.y < rock + 0.05))
+		uid += 1
+	var names := []
+	for u in s.recompute():
+		names.append("%s@%s" % [s.pieces[u].piece, s.pieces[u].pos])
+	check(names.is_empty(), "%s: nothing falls down (%s)" % [id, ", ".join(names)])
+	var rock_cells := 0
+	for a in bp.air:
+		rock_cells += 1 if a == 0 else 0
+	check(rock_cells > 500, "the lump and the cave wall stay rock (%d cells)" % rock_cells)
+
+
+## F626 for the Prow Hall: every stair's foot is on open floor (a square or a triangle) and its top lands on floor,
+## with no wall or railing across its top.
+func test_prow_hall_stairs_lead_onto_floor() -> void:
+	var bp := BlueprintLibrary.make("stonehold_prow_hall")
+	var flights := 0
+	for p in bp.pieces:
+		if p.id != "stairs":
+			continue
+		flights += 1
+		var up := Vector3(0, 0, -1).rotated(Vector3.UP, Pieces.yaw_of(p.rot))
+		var foot: Vector3 = p.pos - up * 2.0
+		var top: Vector3 = p.pos + up * 2.0
+		check(_any_floor_at(bp, foot, p.pos.y - 0.25) or _any_floor_at(bp, foot, p.pos.y), "stairs at %s: their foot is on open floor" % p.pos)
+		check(_any_floor_at(bp, top, p.pos.y + 2.0), "stairs at %s: their top lands on floor" % p.pos)
+		var edge: Vector3 = p.pos + up
+		check(not _blocked_edge(bp, edge.x, edge.z, p.pos.y + 1.75), "stairs at %s: nothing blocks their top" % p.pos)
+	check_eq(flights, 29, "stairs up every storey: hall 2, prow 1, towers 4+4+5+5, lone tower 2, keep 4 + 2")
+
+
+## Any floor-like piece (square or triangle) whose top is at `top` and whose outline holds the point `at`.
+func _any_floor_at(bp: Blueprint, at: Vector3, top: float) -> bool:
+	for q in bp.pieces:
+		if q.id in ["floor", "foundation", "floor_triangle", "foundation_triangle"]:
+			if absf(q.pos.y + Pieces.LIST[q.id].size.y - top) < 0.06:
+				if Geometry2D.is_point_in_polygon(Vector2(at.x, at.z), Pieces.footprint(q.id, q.pos, q.rot)):
+					return true
+	return false
+
+
 func _floor_top_at(bp: Blueprint, x: float, z: float, top: float) -> bool:
 	for q in bp.pieces:
 		if q.id in ["floor", "foundation"] and absf(q.pos.x - x) < 0.1 and absf(q.pos.z - z) < 0.1:
