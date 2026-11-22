@@ -9995,3 +9995,52 @@ the existing `charge_shove` path and are excluded from this new pushback.
   WinGet (`...\WinGet\Packages\GodotEngine.GodotEngine_Microsoft.Winget.Source_8wekyb3d8bbwe\Godot_v4.7.2-stable_win64_console.exe`).
 
 **Files changed:** `src/ui/box_panel.gd`, `tests/test_tower_rebuild_play.gd`, `FEEDBACK.md`.
+
+
+## Nov 22 (Mac): owner's phone notes + 35 TikToks sorted into the to-do list
+- **Did:** read the captions of all 35 "Game Developing" TikToks (35th = the bushes link), watched the two the owner
+  picked, and added the owner's notes as F695-F705 in FEEDBACK.md (hit flash, hitbox viewer, bronze, cave paths,
+  teeth stalactites, slide/double jump/climb/wall run, smooth walk-to-run, hold-to-dash, bushes, Godot learning, AnyMove).
+- **Found:** the owner's link (7699085693695397142) is "5 repos for Claude Code" (we already use godot-mcp). The
+  picture → 3D with bones video is the one before it (7703557617578216727): AnyMove (Apache 2.0). Its bones are placed
+  by hand in a file, not automatically, and its 3D step is picture-to-3D (against our model rule), but it takes our
+  own Blender models. The bushes video is an outdoor Unity jungle, not a cave.
+- **Hurdles:** TikTok pages wouldn't load in the web reader and the embed link no longer gives captions. Fix: read the
+  caption text straight out of each page. Claude's own mistake: the first loop ran once because zsh doesn't split
+  a word list in a variable; fixed by reading the links from a file. 10 of the 35 videos were the owner's own posts
+  (Dubai, vibe coding), not game dev; skipped.
+- **Hurdle 2:** this Mac copy was a day behind the PC. Claude's first commit used F519-F529, numbers the PC had
+  already used (it is at F681), and wrote into JOURNAL.md directly (the rule changed to journal-inbox files). Fix:
+  moved the commit onto the latest version, renumbered to F695-F705, wrote this as an inbox file. A Godot-made
+  .uid file blocked the sync; it was moved aside (the PC's copy wins).
+
+
+## Nov 22 (Mac): AnyMove cost question + multi-picture 3D note
+- **Did:** explained the AnyMove cost to the owner: the tool is free, the $0.26 per move pays a rented cloud video
+  maker (MiniMax on fal.ai). Added F706: next time, test turning several pictures from different sides into one 3D
+  model (TRELLIS, free, on the PC), as a shape guide only.
+- **Hurdles:** none.
+
+
+## Nov 22 (Mac): AnyMove free route + the "free assets" GitHub
+- **Did:** owner asked to skip paying for AnyMove. Noted in F705: swap the paid video step for a free one on the PC
+  (Wan), skip the paid picture-to-3D step, pay only if the free videos fail (ask first).
+- **Checked:** the GitHub from the TikToks (softwarewithnick) is almost surely awesome-unity: a list of Unity code and
+  open-source Unity games, not free art. Not useful for Godot, and several projects in it copy other games. The useful
+  free sites were in another video (devjourneyluke): ambientCG (CC0 textures), Freesound, Sketchfab (check each
+  licence).
+- **Hurdles:** none.
+
+
+## Nov 22 (Mac): free sound sources (F707)
+- **Did:** owner wants many more sounds (breaking, chopping, upgrading, hits, spin moves, furniture, parry). Searched
+  for free sources that are CC0 (free to sell AND fine in our public repo) and listed them in F707: untamedpixels 800
+  pack, rubberduck's breaking + RPG packs, 150 Combat SFX, SFXMint swords, Proving Ground Vol. 1, Freesound (CC0 only).
+- **Hurdles:** one web search was blocked by the safety check because it ran next to another command; ran it again on
+  its own. Some "free" sites don't say CC0 (for example the 20,000-sound Casper site): left out.
+
+
+## Nov 22 (Mac): handover to the PC
+- **Did:** wrote `docs/HANDOVER-2026-11-22-evening.md`: the new to-do items F695-F707, which are ready and which wait
+  for the owner, a suggested order, and the F519-F529 → F695-F705 renumbering note.
+- **Hurdles:** none.
