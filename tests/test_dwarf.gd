@@ -139,6 +139,34 @@ func test_does_not_step_up_tall_wall() -> void:
 	root.queue_free()
 
 
+## Owner (Nov 22 notes): walking speeds up into running smoothly, not a sudden jump from walk speed to run speed.
+func test_walk_eases_into_run_not_a_snap() -> void:
+	Controls.setup()
+	Controls.robot = true
+	Controls.set_captured(true)
+	var root := _room([])
+	var dwarf := _dwarf_in(root)
+	Input.action_press("move_forward")
+	for i in 60:  # walk a full second first, let the speed settle
+		await tree.physics_frame
+	var walk_speed := Vector2(dwarf.velocity.x, dwarf.velocity.z).length()
+	check(absf(walk_speed - Dwarf.WALK_SPEED) < 0.1, "settled at walk speed first (%.2f)" % walk_speed)
+	Input.action_press("run")
+	var biggest_step := 0.0
+	var prev := walk_speed
+	for i in 60:  # watch the first second of switching to running
+		await tree.physics_frame
+		var now := Vector2(dwarf.velocity.x, dwarf.velocity.z).length()
+		biggest_step = maxf(biggest_step, now - prev)
+		prev = now
+	check(biggest_step < 0.5, "no single-frame jump from walk to run speed (biggest step %.2f m/s, F701)" % biggest_step)
+	check(prev > Dwarf.WALK_SPEED + 1.0, "eventually reaches run speed (%.2f)" % prev)
+	Input.action_release("move_forward")
+	Input.action_release("run")
+	Controls.robot = false
+	root.queue_free()
+
+
 func test_lantern_ignores_dwarf_body_for_shadows() -> void:
 	var root := Node3D.new()
 	tree.root.add_child(root)

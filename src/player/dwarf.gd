@@ -16,6 +16,7 @@ const JUMP_BUFFER := 0.15       ## a jump pressed this long before landing still
 const STEP_HEIGHT := 0.5        ## ledges up to this tall are stepped up without jumping
 const ACCEL := 14.0
 const AIR_ACCEL := 4.0
+const SPEED_BLEND := 6.0  ## m/s² walk eases into run (and back), not a sudden jump (F701)
 const SWING_TIME := 0.55
 const CAMERA_DISTANCE := 3.4  ## starting camera distance (and the longest reach used for aiming)
 const ZOOM_MIN := 1.1
@@ -42,6 +43,7 @@ var fight: DwarfFight
 ## For tests and robots: move/jump without a keyboard. (x = right, y = back, like the keys.)
 var bot_move := Vector2.ZERO
 var _run_streak := 0.0  ## seconds since you started this run (Running ★25: a quick burst at the start)
+var _speed_smooth := WALK_SPEED  ## eases toward the real target speed (F701), instead of snapping to it
 var running := false  ## running this frame (DwarfFight stops a crossbow reload when you run)
 var _was_playing := false  ## (F494: Shift is let go when you come back to the game)
 var _layout := -2  ## the keyboard language last frame (-2 = not looked yet; F494: Ctrl+Shift switches it)
@@ -274,7 +276,9 @@ func _physics_process(delta: float) -> void:
 		_run_time += delta
 	_run_streak = _run_streak + delta if running else 0.0
 	var burst := 1.3 if running and _run_streak < 1.0 and prog and prog.has_star("running", 25) else 1.0  # Running ★25
-	var speed := (RUN_SPEED * (prog.run_speed_mult() if prog else 1.0) * burst if running else WALK_SPEED) * fight_mult * (body.ailments.speed_mult() * maxf(0.2, 1.0 + body.buff_total("move_speed")) if body else 1.0)
+	var top_speed := (RUN_SPEED * (prog.run_speed_mult() if prog else 1.0) * burst if running else WALK_SPEED) * fight_mult * (body.ailments.speed_mult() * maxf(0.2, 1.0 + body.buff_total("move_speed")) if body else 1.0)
+	_speed_smooth = move_toward(_speed_smooth, top_speed, SPEED_BLEND * delta)  # walk eases into run (F701)
+	var speed := _speed_smooth
 	if held_left > 0.0:  # (Lampwick's bear jaws hold your leg: MineTraps)
 		held_left -= delta
 		speed = 0.0
