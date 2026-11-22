@@ -564,6 +564,31 @@ func request_hit(peer_id: int, id: int, by_bolt := false) -> void:
 				_ev_hit.rpc(id)
 
 
+## F603: a monster's attack lands — break nearby smash/rubble props without a player distance check.
+func request_monster_hit(id: int) -> void:
+	var th: Dictionary = things.get(id, {})
+	if th.is_empty() or is_broken(id) or th.kind in ["floor", "crusher", "door", "hand_door", "gate", "lever", "drip", "boulder"]:
+		return
+	var auth := GameAuthority.instance
+	var at: Vector3 = th.centre
+	var hits: int = _hits.get(id, 0) + 1
+	_hits[id] = hits
+	if th.kind == "rubble":
+		if hits >= RUBBLE_HITS:
+			_break(id)
+		else:
+			_ev_hit.rpc(id)
+	else:
+		if hits >= SMASH_HITS:
+			auth.spawn_drop("rootwood", randi_range(1, 2), at + Vector3.UP * 0.3)
+			if randf() < SMALL_FIND_CHANCE:
+				var f: Array = SMALL_FINDS.pick_random()
+				auth.spawn_drop(String(f[0]), int(f[1]), at + Vector3.UP * 0.5)
+			_break(id)
+		else:
+			_ev_hit.rpc(id)
+
+
 ## Host: thing `id` is gone for good (saved; friends who join see it gone too).
 func _break(id: int) -> void:
 	var auth := GameAuthority.instance

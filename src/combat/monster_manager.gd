@@ -591,6 +591,10 @@ func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: 
 			if away.length() > 0.01:
 				m.knock(away.normalized() * 3.0)  # Spear ★25: a poke pushes them back
 		_hurt_monster(m, peer, dmg, stun, Combat.effect(wd.type, m.stats()))
+		if finisher and not m.data.get("boss", false):  # F607: combo finisher sends non-bosses flying
+			var away_fin := (m.global_position - ps.node.global_position) * Vector3(1, 0, 1)
+			if away_fin.length() > 0.01:
+				m.knock(away_fin.normalized() * 6.0 / maxf(1.0, float(m.data.get("size", 1.0))))
 	auth.heal(peer, total * gb.get("leech", 0.0))
 	if heavy and Progression.weapon_skill(w) == "axe" and ps.progress.has_star("axe", 100) and n > 0:
 		auth.give_stamina(peer, 6.0 * mini(n, max_targets))  # Axe ★100: a heavy sweep gives stamina back per enemy
@@ -868,11 +872,11 @@ func _ev_glow_bolt(at: Vector3, seconds: float) -> void:
 	get_tree().create_timer(seconds).timeout.connect(l.queue_free)
 
 
-## How many monsters one swing can hit: axe cleaves 2, spear pokes through 2, great weapons sweep.
+## F604: every weapon can hit up to 3 targets per swing; sweeps hit everything in arc.
 static func max_targets_for(w: String) -> int:
 	if Combat.WEAPONS[w].get("sweep", false) or w == "mace_2h":
 		return 99
-	return 2 if w in ["axe", "spear"] else 1
+	return 3
 
 
 func _kill(m: Monster, peer: int) -> void:
@@ -1263,6 +1267,30 @@ func smash_statues_in_reach(m: Monster, atk: Dictionary) -> int:
 		if smash_statue(id, m.global_position):
 			broke += 1
 	return broke
+
+
+## F603: host — a monster's attack lands: break any smash/rubble furniture within its reach.
+func attack_smash_things(m: Monster, atk: Dictionary) -> void:
+	if DungeonBuild.instance == null or m.dungeon.is_empty():
+		return
+	var fwd := -Basis(Vector3.UP, m.model.rotation.y).z if m.model else Vector3.FORWARD
+	var all_round := String(atk.get("anim", "")).contains("Spin")
+	var reach := float(atk.get("reach", 2.0)) + 0.3
+	for id: int in DungeonBuild.instance.things.keys():
+		var th: Dictionary = DungeonBuild.instance.things[id]
+		if th.kind not in ["smash", "rubble"]:
+			continue
+		if DungeonBuild.instance.is_broken(id):
+			continue
+		var centre: Vector3 = th.centre
+		var to: Vector3 = (centre - m.global_position) * Vector3(1, 0, 1)
+		if to.length() > reach + float(th.radius):
+			continue
+		if absf(centre.y - m.global_position.y) > 2.0:
+			continue
+		if not all_round and to.length() > 0.3 and to.normalized().dot(fwd) < 0.0:
+			continue
+		DungeonBuild.instance.request_monster_hit(id)
 
 
 ## Host: a stone body breaks in one go (a beetle charged through it): its loot drops, as if mined.

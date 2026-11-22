@@ -253,6 +253,13 @@ func die_visual(statue := -1) -> void:
 		# It goes limp and falls apart into physics pieces, pushed away from the player (Ragdoll, owner Nov 18).
 		var cam := get_viewport().get_camera_3d() if is_inside_tree() else null
 		var from := cam.global_position if cam else global_position + Vector3.BACK
+		# F602: killed during wind-up (rearing, velocity≈0) → give the ragdoll a small push in the charge direction.
+		if state == State.ATTACK and _attack.get("lunge", false) and data.get("straight_charge", false) \
+				and velocity.length() < 1.0 and model:
+			var fwd := -Basis(Vector3.UP, model.rotation.y).z
+			fwd.y = 0.0
+			if fwd.length() > 0.1:
+				velocity = fwd.normalized() * 2.5
 		if Ragdoll.make(self, model, from, velocity, statue):  # (killed in a charge, it flies on)
 			queue_free.call_deferred()
 			return
@@ -551,6 +558,7 @@ func think(delta: float, mgr: Node) -> void:
 					mgr.finish_raise(self)  # (the Prop Warden's Rally Slam: his fallen miners get up)
 				elif data.get("smashes_statues", false):
 					mgr.smash_statues_in_reach(self, _attack)  # (the Foreman's swings break fallen miners' stone, owner Nov 20)
+				mgr.attack_smash_things(self, _attack)  # F603: break furniture within attack reach
 				if _attack.has("follow"):
 					var f: Dictionary = _attack.follow
 					var next := _attack.duplicate()
@@ -604,10 +612,23 @@ func think(delta: float, mgr: Node) -> void:
 			hp = minf(max_hp(), hp + max_hp() * 0.1 * delta)
 			var to := home - global_position
 			to.y = 0
-			if to.length() < 1.5:
+			var dist_home := to.length()
+			if dist_home < 1.5:
 				state = State.IDLE
 				_timer = randf_range(3.0, 8.0)
+				_best_dist = INF
+				_no_progress = 0.0
 				mgr.monster_changed(self)
+			else:
+				if dist_home < _best_dist - 0.5:
+					_best_dist = dist_home
+					_no_progress = 0.0
+				else:
+					_no_progress += delta
+				if _no_progress > 5.0 and data.get("dungeon_only", false):  # F610: teleport home if stuck in doorway/shaft
+					global_position = home + Vector3.UP * 0.1
+					_best_dist = INF
+					_no_progress = 0.0
 			_move(delta, to.normalized(), data.walk)
 
 
@@ -752,6 +773,13 @@ func _start_attack(atk: Dictionary, mgr: Node) -> void:
 		for o: Dictionary in attack_options():
 			if o.name != atk.name:
 				_rest_until[o.name] = maxf(float(_rest_until.get(o.name, 0.0)), _clock + float(atk.tell) + float(atk.quiet_after))
+	# F602: snap to face the player before the wind-up so a straight charge never starts half-turned.
+	if atk.get("lunge", false) and data.get("straight_charge", false) and target_peer != 0:
+		var tgt: Node3D = mgr.player_node(target_peer)
+		if tgt != null:
+			var to_tgt: Vector3 = (tgt.global_position - global_position) * Vector3(1, 0, 1)
+			if to_tgt.length() > 0.1:
+				model.rotation.y = atan2(-to_tgt.x, -to_tgt.z)
 	_attack = atk
 	_charge_dir = Vector3.ZERO  # a new charge picks its own straight line
 	state = State.ATTACK
