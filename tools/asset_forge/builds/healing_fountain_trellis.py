@@ -3,7 +3,7 @@
 #   - turned to face the front (-Y), sized to 1.2 m tall, bottom on the floor
 #   - paint brightened (TRELLIS came out very dark)
 #   - all the glowing water (basin pool + the pour from the mouth) cut out: hard to animate
-#   - the basin filled with pebbles and our glowing green healing crystals, a small crystal in the mouth
+#   - the basin filled with pebbles and our glowing green healing crystals; the mouth left empty
 #   - fewer triangles (65k -> about 16k), loose crumbs removed
 # Source: journey/3d/trellis_f706/healing_fountain_trellis.glb (TRELLIS website, MIT, from our 4 ChatGPT views).
 #   blender --background --factory-startup --python builds/healing_fountain_trellis.py -- [out.glb] [preview.png]
@@ -75,7 +75,7 @@ def cut_water(o, cols_before):
 	r, g, b = cols_before[:, 0], cols_before[:, 1], cols_before[:, 2]
 	cents = np.array([tuple(p.center) for p in o.data.polygons])
 	bright = (g > 0.3) & (g > r * 1.5) & (b > r * 1.1)   # the glowing pour and pool top
-	dark = (g > 0.08) & (g > r * 1.3) & (b > r * 1.05) & (cents[:, 2] < 0.42)   # the darker teal water lower in the basin
+	dark = (g > 0.06) & (g > r * 1.25) & (b > r * 1.0)   # the darker teal water in the basin and left in the mouth (owner, Nov 22)
 	water = bright | dark
 	pool = bright & (cents[:, 2] < 0.42)
 	pc = cents[pool]
@@ -132,8 +132,7 @@ def crystals(centre, radius, level, mouth):
 		rr = radius * 0.55
 		x, y = cx + math.cos(math.radians(a)) * rr, cy + math.sin(math.radians(a)) * rr
 		kit.crystal_cluster((x, y, bed), 0.6 + 0.1 * (i % 3), gp if i % 2 else g, seed=11 + i, n=3 + i % 3)
-	if mouth is not None:   # a small crystal where the water poured out
-		kit.crystal((float(mouth[0]), float(mouth[1]) + 0.06, float(mouth[2])), 0.03, 0.13, gp, tilt=(90, 0, 0), sides=6)
+	# no crystal in the mouth (owner, Nov 22: "erase that")
 
 
 if __name__ == "__main__":
