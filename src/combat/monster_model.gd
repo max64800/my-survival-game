@@ -28,6 +28,8 @@ static func build(shape: String, color: Color, size: float, leader: bool, kind: 
 	# 1. A creature forged from the approved pictures, in this variant's look.
 	# 2. Else a hand-built model: res://assets/models/monsters/<kind>_v<N>.glb or <kind>.glb.
 	# (front +Z, feet at the bottom, ~1 m = size 1). 3. Else simple shapes made here.
+	if shape == "ghost":
+		return Ghost.build_model(kind, color, size)  # (the dwarf's skeleton under a ghost body: Ghost)
 	var forged: Node3D = null
 	var art_look := false
 	if RIG_LOOKS.has(kind):

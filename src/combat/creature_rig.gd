@@ -44,6 +44,8 @@ const SHIELD_FADE := 6.0  ## how fast the shield comes up / goes down (whole way
 
 ## The rig of a model made from a skeleton pack, or null (an older creature).
 static func find(model: Node3D) -> CreatureRig:
+	if model.has_meta("ghost_model"):
+		return GhostRig.make(model)  # (a dungeon ghost: the dwarf's skeleton and moves, Ghost)
 	var forged: Node3D = model.get_meta("forged_root", null)
 	if forged == null:
 		return null

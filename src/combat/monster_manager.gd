@@ -691,6 +691,7 @@ func _hurt_monster(m: Monster, peer: int, dmg: int, stun_amount: float, eff := 0
 	var shell: Dictionary = m.data.get("shell_hide", {})
 	if not shell.is_empty() and m.shell_left > 0.0:
 		dmg = maxi(1, roundi(dmg * (1.0 - shell.cut)))
+	var hp_before := m.hp
 	m.hp -= dmg
 	if not m.raising.is_empty() and m.hp > 0.0:
 		cancel_raise(m)  # a hit during the Rally Slam calls it off (owner, Nov 21)
@@ -720,6 +721,10 @@ func _hurt_monster(m: Monster, peer: int, dmg: int, stun_amount: float, eff := 0
 	else:
 		m.knocked_off()  # up on a wall or ceiling: any hit knocks it down (a snail lands dazed on its shell, F475)
 		monster_changed(m)
+		if m.data.get("ghost", false):
+			var spot := Ghost.jump_after_hit(m, hp_before, auth.world.maker if auth and auth.world else null)
+			if spot != Vector3.INF:
+				ghost_fade(m, spot)
 
 
 # ================================================================== friendly fire (doc 2.7)
@@ -923,6 +928,11 @@ func _kill(m: Monster, peer: int) -> void:
 		room.alive.erase(m.uid)
 		if room.alive.is_empty():
 			room.cleared_at = _clock
+	if m.data.get("ghost", false):  # a ghost fades into mist: no stone body, its loot falls where it was (Ghost)
+		for d in loot:
+			auth.spawn_drop(d[0], d[1], m.global_position + Vector3.UP * 0.5)
+		_ev_remove.rpc(m.uid, -1)
+		return
 	_ev_remove.rpc(m.uid, add_statue(m, loot))
 
 
@@ -1609,6 +1619,22 @@ func _ev_shell(uid: int, hidden: bool) -> void:
 		_incoming = _incoming.filter(func(h): return h.uid != uid)
 		if hidden:
 			_float_number(m.global_position + Vector3.UP * 1.3, "Hides in its shell!")
+
+
+## A ghost fades into mist and comes back at `to` (Ghost; the host picked the spot after a quarter of its health).
+## Its swing is called off: the hits it was about to land are dropped everywhere.
+func ghost_fade(m: Monster, to: Vector3) -> void:
+	m.state = Monster.State.CHASE
+	m._attack = {}
+	_ev_ghost_fade.rpc(m.uid, to)
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_ghost_fade(uid: int, to: Vector3) -> void:
+	_incoming = _incoming.filter(func(h: Dictionary) -> bool: return int(h.get("uid", -1)) != uid)
+	var m: Monster = monsters.get(uid)
+	if m:
+		Ghost.show_fade(m, to)
 
 
 ## Host: a pile of bones gets up (F462). Everyone sees it rise.

@@ -244,6 +244,9 @@ func die_visual(statue := -1) -> void:
 		l.visible = false
 	if _bars:
 		_bars.visible = false
+	if rig is GhostRig and is_inside_tree():
+		Ghost.vanish(self)  # a ghost fades into mist (no bones, no stone); it is gone when the mist is
+		return
 	if rig and is_inside_tree():
 		# A skeleton falls apart into a pile of bones, then the bones turn to stone (owner F463).
 		Statue.from_rig(self, model, statue, rig)
@@ -506,7 +509,7 @@ func think(delta: float, mgr: Node) -> void:
 			if not atk.is_empty():
 				_start_attack(atk, mgr)
 				return
-			var speed: float = data.run * (1.0 + (Monsters.PACK_BOOST.speed if boosted else 0.0))
+			var speed: float = data.run * (1.0 + (Monsters.PACK_BOOST.speed if boosted else 0.0)) * Ghost.rush(self)
 			to.y = 0
 			if data.get("no_push", false) and dist < 1.5:  # F609: stop before running into the player
 				_move(delta, Vector3.ZERO, 0.0)

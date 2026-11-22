@@ -768,6 +768,8 @@ func test_dead_creature_turns_to_stone_and_is_mined() -> void:
 	var id2: int = auth.monsters.statues.keys()[0]
 	check(auth.monsters.statues[id2].needed == 1, "a bat takes 1 hit (F586)")
 	for k in Monsters.LIST:
+		if Monsters.LIST[k].get("ghost", false):
+			continue  # (a ghost leaves no statue: it fades into mist, Ghost)
 		var want := 1 if k == "cave_bat" else (5 if Monsters.LIST[k].get("boss", false) else 2)
 		check_eq(int(Monsters.LIST[k].get("statue_hits", 2)), want, "%s: hits to mine its statue (F586)" % k)
 	auth.monsters.statues[id2].left = 0.01

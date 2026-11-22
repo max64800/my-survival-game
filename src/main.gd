@@ -158,6 +158,12 @@ func _ready() -> void:
 			_saving = false
 			if mode == "menu":
 				mode = "solo"
+		elif arg == "ghostcheck":  # photos of the dungeon ghosts floating, swinging their maces, fading away (Ghost)
+			debug_script = "res://src/debug/ghostcheck.gd"
+			dungeon_test = true
+			_saving = false
+			if mode == "menu":
+				mode = "solo"
 		elif arg == "climbcheck":  # photos of creatures on a ceiling, and a snail knocked down (F474/F475)
 			debug_script = "res://src/debug/climbcheck.gd"
 			_saving = false

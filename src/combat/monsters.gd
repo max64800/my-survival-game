@@ -90,6 +90,41 @@ const LIST := {
 		# Its leap rushes at 2.6 m/s (was 3.4): the dwarf walks 3 m/s now (was 4), and walking off must still get you out.
 		attacks = [{name = "Leaping Chop", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_hiss", tell = 0.9, damage = 14, type = "pierce", reach = 3.0, parry = "any", lunge = true, small_lunge = true, lunge_speed = 2.6, rest = 4.0, quiet_after = 3.5, buildup = {chill = 34}}],
 		drops = []},
+	# The ghosts of the medium dungeons #5-#8 (Claude, Nov 22, 2026; owner: the dwarf's skeleton and his mace moves,
+	# "three different attacks, and the boss can do all four"). A ghost is a dwarf wearing a ghost body (Ghost, GhostRig):
+	# it floats, swings a ghostly mace with one of the dwarf's own mace moves (anim = DwarfRig's "mace_1".."mace_4", slowed
+	# down so you see it coming), and after every quarter of its health it fades into mist and comes back a few metres
+	# away, rushing at you (ghost = true: MonsterManager.ghost_fade). Weapons pass half through it (low slash/pierce).
+	"ghost_a": {name = "Drifting Shade", dungeon_only = true, sleeps = true, no_variant = true, ragdoll = false, ghost = true, rise_near = 7.0,
+		size = 1.0, height = 1.5, hp = 150, armor = 0, stun = 60, slash = 0.8, blunt = 0.9, pierce = 0.6,
+		fire = 1.25, frost = 0.25, poison = 0.0, walk = 1.2, run = 3.0, pack = [1, 2], xp = 18,
+		color = Color(0.5, 0.95, 0.8), shape = "ghost", recover = 1.2,
+		attacks = [{name = "Shade Swing", anim = "mace_1", warn_sound = "beetle_hiss", tell = 0.85, damage = 16, type = "blunt", reach = 2.2, parry = "any", rest = 2.5}],
+		drops = []},
+	"ghost_b": {name = "Wrathful Shade", dungeon_only = true, sleeps = true, no_variant = true, ragdoll = false, ghost = true, rise_near = 7.0,
+		size = 1.0, height = 1.6, hp = 140, armor = 0, stun = 55, slash = 0.8, blunt = 0.9, pierce = 0.6,
+		fire = 1.25, frost = 0.25, poison = 0.0, walk = 1.4, run = 3.4, pack = [1, 2], xp = 20,
+		color = Color(0.55, 0.75, 1.0), shape = "ghost", recover = 1.4,
+		# the angry one: it swoops in with its blow (a short lunge)
+		attacks = [{name = "Swooping Blow", anim = "mace_2", warn_sound = "beetle_hiss", tell = 0.8, damage = 18, type = "blunt", reach = 3.0, parry = "any", lunge = true, small_lunge = true, lunge_speed = 3.6, rest = 3.5}],
+		drops = []},
+	"ghost_c": {name = "Bearded Shade", dungeon_only = true, sleeps = true, no_variant = true, ragdoll = false, ghost = true, rise_near = 7.0,
+		size = 1.05, height = 1.55, hp = 170, armor = 0, stun = 70, slash = 0.8, blunt = 0.9, pierce = 0.6,
+		fire = 1.25, frost = 0.25, poison = 0.0, walk = 1.1, run = 2.8, pack = [1, 1], xp = 22,
+		color = Color(0.6, 0.95, 0.7), shape = "ghost", recover = 1.6,
+		attacks = [{name = "Old Grudge", anim = "mace_3", warn_sound = "beetle_rumble", tell = 0.95, damage = 20, type = "blunt", reach = 2.3, parry = "any", rest = 3.0}],
+		drops = []},
+	# The ghosts' lord: the bearded shade, bigger and paler, with all four mace moves in one combo (the last one knocks you
+	# down), and the big smash alone from further away.
+	"ghost_lord": {name = "The Grey Warden", dungeon_only = true, sleeps = true, no_variant = true, ragdoll = false, ghost = true, rise_near = 7.0, boss = true,
+		size = 1.35, height = 2.0, hp = 520, armor = 30, stun = 320, slash = 0.8, blunt = 0.9, pierce = 0.6,
+		fire = 1.25, frost = 0.25, poison = 0.0, walk = 1.3, run = 3.2, pack = [1, 1], xp = 90,
+		color = Color(0.78, 0.9, 1.0), shape = "ghost", recover = 1.8,
+		attacks = [{name = "Warden's Combo", anim = "mace_1", warn_sound = "beetle_rumble", tell = 0.9, damage = 16, type = "blunt", reach = 2.6, parry = "any", rest = 6.0,
+				follow = {anim = "mace_2", tell = 0.6, damage = 16, warn_sound = null, follow = {anim = "mace_3", tell = 0.6, damage = 18,
+					follow = {anim = "mace_4", tell = 0.75, damage = 26, knockdown = true}}}},
+			{name = "Grave Smash", anim = "mace_4", warn_sound = "beetle_rumble", tell = 1.0, damage = 24, type = "blunt", reach = 3.4, parry = "any", lunge = true, small_lunge = true, lunge_speed = 3.8, rest = 5.0}],
+		drops = []},
 	# The end boss with his Lost Miners (F467): a big two-handed chop, and the spin (only a shield parries it, it
 	# knocks you down: step back out of it). Owner, Nov 20: the spin reached far too far and he only ever spun
 	# (he got into its 2.7 m range before the chop's 2.3 m). Now the spin is short (hits up to 2.6 m, the chop's
