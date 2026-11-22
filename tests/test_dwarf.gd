@@ -622,6 +622,33 @@ func test_dodge_ignores_one_flipped_frame_and_rolls_with_your_real_momentum() ->
 	root.queue_free()
 
 
+## Owner (PC, Nov 22 night, F702 real-world repro): "I'm looking forward, I press Ctrl, I dash backwards. And
+## then it dodges forward" - standing still (no movement key held) and dodging used to default to a backstep,
+## which then flips which way is "backward" next time (the roll ends by facing the way it just went).
+func test_dodging_with_no_movement_key_rolls_forward_not_backstep() -> void:
+	Controls.setup()
+	Controls.robot = true
+	Controls.set_captured(true)
+	var root := _room([])
+	var auth := GameAuthority.new()
+	auth.drops_root = root
+	root.add_child(auth)
+	var dwarf := _dwarf_in(root)
+	auth.add_player(1, dwarf)
+	for i in 10:
+		await tree.physics_frame
+	var p0 := dwarf.global_position
+	dwarf.bot_dodge = true  # no bot_move at all: standing still, looking forward
+	await tree.physics_frame
+	check(dwarf.fight.dodging(), "the dodge triggered")
+	while dwarf.fight.dodging():
+		await tree.physics_frame
+	var moved := dwarf.global_position - p0
+	check(moved.z < -0.5, "standing still and dodging rolls the way you're facing, not backward (moved.z=%.2f)" % moved.z)
+	Controls.robot = false
+	root.queue_free()
+
+
 ## Owner (F234, said again from F111): "a beetle hit sends you flying much too far; a couple of metres at most, then the
 ## dwarf gets back up". The push was added to his speed every frame and kept (103 m on a flat floor, 177 m knocked down).
 func test_beetle_charge_throws_a_couple_of_metres() -> void:

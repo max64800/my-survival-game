@@ -225,8 +225,10 @@ func step(delta: float, playing: bool, move_dir: Vector3) -> float:
 	if (Input.is_action_just_pressed("dodge") or dwarf.bot_dodge) and _busy <= 0.0 and _ps() and _ps().vitals.use_stamina(Combat.DODGE_STAMINA * _ps().progress.dodge_stamina_mult()):
 		dwarf.bot_dodge = false
 		_dodge_t = 0.0
-		# No direction pressed = roll backward.
-		_dodge_dir = move_dir.normalized() if move_dir.length() > 0.1 else Basis(Vector3.UP, dwarf.model.rotation.y) * Vector3.BACK
+		# No direction pressed = roll the way you're already facing (owner, PC, Nov 22: "I'm looking forward, I
+		# press Ctrl, I dash backwards" - this used to default to a backstep, which then flips which way is
+		# "backward" every time, since the roll ends by facing the way it just went).
+		_dodge_dir = move_dir.normalized() if move_dir.length() > 0.1 else Basis(Vector3.UP, dwarf.model.rotation.y) * Vector3.FORWARD
 		return 0.0
 	if not weapon_mode():
 		return 1.0
