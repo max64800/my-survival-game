@@ -181,17 +181,17 @@ function ghostMat(tint, opts = {}) {
 
 // the depth pass (like the game's ghost_depth.gdshader): a copy of every mesh, drawn first, invisible, marks the
 // front-most surface, so the see-through body shows only its outside and never tears where it folds over itself
-// Each ghost's own mace (same numbers as Ghost.MACE_SHAPE): [how long, how thin]. Only the bare shaft between the
-// grip wrap and the fins stretches, so the grip and head keep their shape; everything gets thinner.
-const MACE_SHAPE = { a: [1.0, 0.62], b: [1.6, 0.6], c: [2.0, 0.58] }, SHAFT = [0.23, 0.33];
+// Each ghost's own mace (same numbers as Ghost.MACE_SHAPE): [how long, how thin the stick, how wide the head, how
+// long the head]. Only the bare shaft between the grip wrap and the fins stretches; the head has its own size.
+const MACE_SHAPE = { a: [1.0, 0.62, 0.62, 1.0], b: [1.6, 0.8, 1.35, 1.25], c: [1.6, 0.8, 1.35, 1.25] }, SHAFT = [0.23, 0.33];
 function reshapeMace(geo, look) {
-	const [long, thin] = MACE_SHAPE[look] || [1, 1], [a, b] = SHAFT;
-	const stretch = (0.7 * long - 0.7 + (b - a)) / (b - a);
+	const [long, thin, hw, hl] = MACE_SHAPE[look] || [1, 1, 1, 1], [a, b] = SHAFT;
+	const stretch = (0.7 * long - a - (0.7 - b) * hl) / (b - a);
 	const g = geo.clone(), p = g.attributes.position;
 	for (let i = 0; i < p.count; i++) {
-		let y = p.getY(i);
-		if (y > b) y += (b - a) * (stretch - 1); else if (y > a) y = a + (y - a) * stretch;
-		p.setXYZ(i, p.getX(i) * thin, y, p.getZ(i) * thin);
+		let y = p.getY(i), w = thin;
+		if (y > b) { y = a + (b - a) * stretch + (y - b) * hl; w = hw; } else if (y > a) y = a + (y - a) * stretch;
+		p.setXYZ(i, p.getX(i) * w, y, p.getZ(i) * w);
 	}
 	g.computeVertexNormals();
 	g.computeBoundingSphere();

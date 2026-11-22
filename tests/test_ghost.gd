@@ -188,6 +188,7 @@ func test_it_dies_into_mist_not_stone() -> void:
 ## Owner, Nov 22: thin maces (no toys), the Bearded Shade's twice as long, the Wrathful Shade's long too.
 func test_each_ghost_has_its_own_thin_mace() -> void:
 	var lengths := {}
+	var widths := {}
 	for kind in ["ghost_a", "ghost_b", "ghost_c"]:
 		var model := MonsterModel.build("ghost", Color.WHITE, 1.0, false, kind, 1)
 		tree.root.add_child(model)
@@ -199,10 +200,13 @@ func test_each_ghost_has_its_own_thin_mace() -> void:
 			box = bb if first else box.merge(bb)
 			first = false
 		lengths[kind] = box.size.y
-		check(not first and box.size.x < 0.13, "%s's mace is slim (%.2f m across)" % [kind, box.size.x])
+		widths[kind] = box.size.x  # (the head is the widest part)
+		check(not first and box.size.x < 0.3, "%s's mace isn't a toy club (%.2f m across)" % [kind, box.size.x])
 		model.free()
-	check(lengths.ghost_c > lengths.ghost_a * 1.9, "the Bearded Shade's mace is twice as long (%.2f vs %.2f m)" % [lengths.ghost_c, lengths.ghost_a])
-	check(lengths.ghost_b > lengths.ghost_a * 1.5, "the Wrathful Shade's is long too (%.2f m)" % lengths.ghost_b)
+	# owner, Nov 22: the Wrathful Shade's length was right, its head bigger; the Bearded Shade (and the boss) the same mace
+	check(lengths.ghost_b > lengths.ghost_a * 1.5, "the Wrathful Shade's mace is long (%.2f vs %.2f m)" % [lengths.ghost_b, lengths.ghost_a])
+	check(widths.ghost_b > widths.ghost_a * 1.8, "and its head is big (%.2f vs %.2f m)" % [widths.ghost_b, widths.ghost_a])
+	check(is_equal_approx(lengths.ghost_c, lengths.ghost_b) and is_equal_approx(widths.ghost_c, widths.ghost_b), "the Bearded Shade has the same mace")
 
 
 ## F658 (owner: the Wrathful Shade's mace "goes into his neck"): over the whole swing, the long mace's shaft and head

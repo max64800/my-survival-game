@@ -17,7 +17,10 @@ const MACE := "mace_silver"
 ## Each ghost's mace, reshaped from the silver mace (owner, Nov 22: "make them a lot thinner", the skeletons' thick
 ## weapons looked like toys; the Bearded Shade's "twice as long", the Wrathful Shade's "very long" too):
 ## [how long (x the mace's 0.7 m: only the bare shaft between the grip wrap and the head stretches), how thick].
-const MACE_SHAPE := {"a": [1.0, 0.62], "b": [1.6, 0.6], "c": [2.0, 0.58]}
+## Each ghost's mace: [how long, how thin the stick, how wide the head, how long the head] (x the silver mace).
+## Owner, Nov 22: the Wrathful Shade's length is right but its stick thicker and its head bigger; the Bearded Shade and
+## the boss get exactly the same mace.
+const MACE_SHAPE := {"a": [1.0, 0.62, 0.62, 1.0], "b": [1.6, 0.8, 1.35, 1.25], "c": [1.6, 0.8, 1.35, 1.25]}
 const SHAFT := [0.23, 0.33]  ## m up the silver mace (its own model): the bare shaft, from the top of the grip wrap to the fins under the head
 const HOVER := 0.22  ## m: how high it floats above the floor
 const MARKS := 4  ## it fades away after each quarter of its health
@@ -68,9 +71,9 @@ static func _dress(dm: DwarfModel, look: String, color: Color) -> void:
 	dm.dwarf_rig.scale.x /= DwarfRig.WIDTH
 	dm.dwarf_rig.scale.z /= DwarfRig.WIDTH
 	dm.set_held(MACE)
-	var shape: Array = MACE_SHAPE.get(look, [1.0, 1.0])
+	var shape: Array = MACE_SHAPE.get(look, [1.0, 1.0, 1.0, 1.0])
 	for mi: MeshInstance3D in dm.dwarf_rig.grip.find_children("*", "MeshInstance3D", true, false):
-		mi.mesh = reshape_mace(mi.mesh, shape[0], shape[1])
+		mi.mesh = reshape_mace(mi.mesh, shape[0], shape[1], shape[2], shape[3])
 	var mace := ShaderMaterial.new()
 	mace.shader = SHADER
 	mace.set_shader_parameter("tint", color.lightened(0.35))
@@ -89,16 +92,16 @@ static var _maces := {}  ## (the reshaped meshes, made once per mesh and shape)
 
 ## The silver mace `long` times as long and `thin` times as thick: the bare shaft stretches (the grip wrap stays a
 ## fist long, the head keeps its shape and moves up), and every part slims. The mesh's own space: handle up +Y.
-static func reshape_mace(mesh: Mesh, long: float, thin: float) -> Mesh:
-	if mesh == null or (is_equal_approx(long, 1.0) and is_equal_approx(thin, 1.0)):
+static func reshape_mace(mesh: Mesh, long: float, thin: float, head_wide := 1.0, head_long := 1.0) -> Mesh:
+	if mesh == null or (is_equal_approx(long, 1.0) and is_equal_approx(thin, 1.0) and is_equal_approx(head_wide, 1.0) and is_equal_approx(head_long, 1.0)):
 		return mesh
-	var key := "%d_%.2f_%.2f" % [mesh.get_instance_id(), long, thin]
+	var key := "%d_%.2f_%.2f_%.2f_%.2f" % [mesh.get_instance_id(), long, thin, head_wide, head_long]
 	if _maces.has(key):
 		return _maces[key]
 	var a := float(SHAFT[0])
 	var b := float(SHAFT[1])
 	var full := 0.7  # (the silver mace's length)
-	var stretch := (full * long - full + (b - a)) / (b - a)  # the shaft's stretch that makes the whole mace `long` x
+	var stretch := (full * long - a - (full - b) * head_long) / (b - a)  # the shaft's stretch that makes the whole mace `long` x
 	var out := ArrayMesh.new()
 	for si in mesh.get_surface_count():
 		var arr := mesh.surface_get_arrays(si)
@@ -106,16 +109,22 @@ static func reshape_mace(mesh: Mesh, long: float, thin: float) -> Mesh:
 		for i in v.size():
 			var p := v[i]
 			var y := p.y
-			if y > b:
-				y += (b - a) * (stretch - 1.0)
+			var w := thin
+			if y > b:  # the fins and the head: their own size, on top of the stretched shaft
+				y = a + (b - a) * stretch + (y - b) * head_long
+				w = head_wide
 			elif y > a:
 				y = a + (y - a) * stretch
-			v[i] = Vector3(p.x * thin, y, p.z * thin)
+			v[i] = Vector3(p.x * w, y, p.z * w)
 		arr[Mesh.ARRAY_VERTEX] = v
 		if arr[Mesh.ARRAY_NORMAL] != null:
 			var n: PackedVector3Array = arr[Mesh.ARRAY_NORMAL]
+			var v0: PackedVector3Array = mesh.surface_get_arrays(si)[Mesh.ARRAY_VERTEX]
 			for i in n.size():
-				n[i] = Vector3(n[i].x / thin, n[i].y, n[i].z / thin).normalized()
+				var hd := v0[i].y > b
+				var w := head_wide if hd else thin
+				var h := head_long if hd else stretch if v0[i].y > a else 1.0
+				n[i] = Vector3(n[i].x / w, n[i].y / h, n[i].z / w).normalized()
 			arr[Mesh.ARRAY_NORMAL] = n
 		arr[Mesh.ARRAY_TANGENT] = null
 		out.add_surface_from_arrays(mesh.surface_get_primitive_type(si), arr)
