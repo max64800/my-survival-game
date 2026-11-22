@@ -328,7 +328,7 @@ func _impact(heavy: bool, combo_step: int, riposte: bool, airborne: bool = false
 		var flat := Vector3(to.x, 0, to.z)
 		if flat.length() > reach + m.data.size * 0.4 or absf(to.y) > 2.0:
 			continue
-		if arc < 360.0 and rad_to_deg(fwd.angle_to(flat.normalized())) > arc * 0.5:
+		if arc < 360.0 and flat.length() > 0.3 and rad_to_deg(fwd.angle_to(flat.normalized())) > arc * 0.5:
 			continue
 		found.append([flat.length(), m.uid])
 	found.sort()

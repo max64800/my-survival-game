@@ -73,7 +73,7 @@ const LIST := {
 	# No drops yet (only the statue's stone): asked the owner what the dead miners' bones should give.
 	# F467: the Tunnel Rat is a small fast pest in groups, easy to kill, soft hits.
 	"tunnel_rat": {name = "Bone Rot", dungeon_only = true, rises = true, rise_near = 11.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 2,
-		size = 1.0, height = 1.0, hp = 26, armor = 0, stun = 12, slash = 1.0, blunt = 1.25, pierce = 0.75,
+		size = 1.0, height = 1.0, hp = 60, armor = 0, stun = 12, slash = 1.0, blunt = 1.25, pierce = 0.75,
 		fire = 0.0, frost = 0.0, poison = 1.0, walk = 2.0, run = 5.0, pack = [3, 5], xp = 5,
 		color = Color(0.62, 0.56, 0.45), shape = "tunnel_rat", recover = 0.8,
 		# F606: only the overhand chop (readable wind-up); the stab had no warn_sound and was too fast.
@@ -155,9 +155,9 @@ const LIST := {
 		front_shield = true, size = 1.0, height = 1.9, hp = 300, armor = 50, stun = 240, slash = 1.0, blunt = 1.25, pierce = 0.75,
 		fire = 1.25, frost = 0.5, poison = 1.0, walk = 1.3, run = 3.3, pack = [1, 1], xp = 80,
 		color = Color(0.5, 0.52, 0.4), shape = "foreman", recover = 1.6,
-		attacks = [{name = "Axe Chop", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_rumble", tell = 0.9, damage = 22, type = "slash", reach = 2.3, parry = "any"},
+		attacks = [{name = "Axe Chop", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_rumble", tell = 0.9, damage = 22, type = "slash", reach = 2.3, rest = 5.0, parry = "any"},
 			{name = "Plank Sweep", anim = "2H_Melee_Attack_Spin", warn_sound = "beetle_rumble", tell = 0.97, damage = 16, type = "blunt", reach = 2.3, rest = 8.0, parry = "shield", knockdown = true},
-			{name = "Shield Charge", anim = "Running_B", warn_sound = "beetle_rumble", tell = 1.2, damage = 20, type = "blunt", reach = 8.0, min_reach = 3.5, rest = 9.0, parry = "shield", knockdown = true, lunge = true, straight = true},
+			{name = "Shield Charge", anim = "Running_B", warn_sound = "beetle_rumble", tell = 1.2, damage = 20, type = "blunt", reach = 8.0, min_reach = 3.5, rest = 9.0, parry = "shield", knockdown = true, lunge = true, straight = true, lunge_reach = 3.0},
 			{name = "Rally Slam", anim = "2H_Melee_Attack_Chop", warn_sound = "beetle_rumble", tell = 2.0, damage = 0, type = "blunt", reach = 14.0, rest = 25.0, parry = "any", raise_miners = 2, land_sound = "snail_slam"}],
 		drops = []},
 }

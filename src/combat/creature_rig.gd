@@ -123,7 +123,8 @@ func attack(clip: String, tell: float, red := false, again := false) -> void:
 		# A charge (the Prop Warden's Shield Charge): no swing to play, he runs (step() matches the run to his speed)
 		# behind his raised shield; only the spark before it lands.
 		_busy = 0.0
-		_glint_later(glint_wait(tell))
+		if not red:
+			_glint_later(glint_wait(tell))
 		return
 	if again and clip.contains("Spin"):
 		# The whirl's next turn (owner, Nov 21): straight back into the spinning part (WHIRL), no new wind-up or spark.
@@ -143,7 +144,8 @@ func attack(clip: String, tell: float, red := false, again := false) -> void:
 	_busy_kind = "attack"
 	_walk = ""
 	_swing_trail(clip, speed, red)
-	_glint_later(glint_wait(tell))
+	if not red:
+		_glint_later(glint_wait(tell))
 
 
 ## The star + "ting" on the pick a moment before the blow (owner, Nov 20: "I don't see when to parry"):

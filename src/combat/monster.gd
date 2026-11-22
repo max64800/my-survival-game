@@ -342,7 +342,7 @@ func _red_outline(seconds: float) -> void:
 		_outline_mat.albedo_color = Color(1.0, 0.08, 0.04)
 		_outline_mat.cull_mode = BaseMaterial3D.CULL_FRONT  # (only the grown back faces show: a rim round it)
 		_outline_mat.grow = true
-		_outline_mat.grow_amount = 0.025
+		_outline_mat.grow_amount = 0.05
 	_outline_gen += 1
 	var gen := _outline_gen
 	var meshes: Array = []
@@ -550,6 +550,9 @@ func think(delta: float, mgr: Node) -> void:
 			var atk :=_pick_attack(dist, mgr) if to.y < 1.3 and (is_on_floor() or to.y < 0.4) else {}
 			if not atk.is_empty():
 				_start_attack(atk, mgr)
+				return
+			if rig != null and rig._busy_kind == "rise" and rig._busy > 0.0:
+				_move(delta, Vector3.ZERO, 0.0)  # hold still and face forward while getting up: no direction snap
 				return
 			var speed: float = data.run * (1.0 + (Monsters.PACK_BOOST.speed if boosted else 0.0)) * Ghost.rush(self)
 			to.y = 0
@@ -820,8 +823,8 @@ func _pick_attack(dist: float, mgr: Node = null) -> Dictionary:
 
 
 func _start_attack(atk: Dictionary, mgr: Node) -> void:
-	if rig != null and rig.knocked_down:
-		return  # never start an attack while on the floor (F652)
+	if rig != null and (rig.knocked_down or (rig._busy_kind == "rise" and rig._busy > 0.0)):
+		return  # never attack while on the floor or still getting up
 	if atk.has("rest"):
 		_rest_until[atk.name] = _clock + float(atk.rest)
 	if atk.has("quiet_after"):

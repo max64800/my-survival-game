@@ -158,6 +158,7 @@ const MOSSPROP := {
 		["base_camp", 26, 40, 36, 50, 0, 4],          # 1 old camp at the cliff foot; the rope slide lands here
 		["lower_walk", 14, 30, 16, 46, 2, 3],         # 2 rotten boards 2 m up along the west wall (Lost Miners shove)
 		["rockfall_ledge", 14, 24, 20, 30, 2, 4],     # 3 under loose stalactites; the ladder up through the deck
+		["second_floor_hall", 23, 23, 32, 29, 4, 7],  # the landing at the top of the first ladder (guards here wake when you arrive on floor 2)
 		["tool_niche", 10, 26, 14, 30, 2, 3],         # 4 behind the hidden boulder: the spiked chest
 		["prop_room", 16, 18, 24, 24, 5, 4],          # 5 dart wall
 		["store_shed", 24, 18, 30, 24, 5, 4],         # 6 supplies, the cracked north wall

@@ -476,7 +476,7 @@ func send_tell(m: Monster, atk: Dictionary) -> void:
 	var crushing: bool = atk.parry == "shield" or (m.variant == "amber" and atk.damage >= _heaviest(m))
 	# A charge reaches far while it winds up, but it only hits if the monster really gets to you
 	# (F111: it was hitting from 9 m away): at the end it counts as touching range.
-	var reach: float = atk.reach if not atk.get("lunge", false) else float(m.data.get("size", 1.0)) * 0.6 + 0.8
+	var reach: float = atk.reach if not atk.get("lunge", false) else float(atk.get("lunge_reach", m.data.get("size", 1.0) * 0.6 + 0.8))
 	_ev_tell.rpc(m.uid, m.target_peer, atk.tell, dmg, reach, crushing, atk.get("knockdown", false), atk.name, buildup,
 		is_charge(atk), atk.get("shield_stops", false))
 
