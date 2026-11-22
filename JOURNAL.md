@@ -10877,3 +10877,15 @@ worth asking about on the next session.
 - The model checks also said "too tall", because the rail rises 1 m over the 2 m landing (just like the stair railing). The check now allows that for the spiral stairs only.
 
 **Note for old saves:** spiral stairs built before this change were 2 × 2 m. They now load as the new 4 × 4 m stairs, so they may poke into things next to them.
+
+
+## Nov 22 (night, PC): F716 follow-up, a commit slip caught and fixed
+
+- To keep other chats' half-done work out of the F716 commit, Claude built the commit in a private copy of
+  git's "to be saved" list (the index). But other chats saved three commits while the tests ran, so the copy
+  was out of date: the commit quietly **undid their newer work** (39 files instead of 21).
+- Caught right away from the file count, before anything was pushed. Fix: the same 21 F716 files put on top
+  of the newest commit instead (215d5264); the others' work is all back.
+- Lesson: make that private copy right before committing, and check the file count before and after.
+- The full test suite didn't finish on this PC (over 15 min; the cave tests take 20-40 s each). The building,
+  ruin, stairs and walking tests were run one by one instead: all passed.
