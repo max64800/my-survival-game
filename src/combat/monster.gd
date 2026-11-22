@@ -91,6 +91,7 @@ var hit_by := {}  ## host: peer -> clock time of their last hit (Pack Hunters pe
 var _dot_sync := 0.0
 var _trail := 10.0
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
+var _kd_daze := 0.0  ## finisher knockdown: seconds left frozen on the floor before rising
 
 
 func setup(p_uid: int, p_kind: String, p_leader: bool, p_home: Vector3, p_variant: String = "") -> void:
@@ -316,6 +317,16 @@ func knock(push: Vector3) -> void:
 	_knock = Vector3(push.x, 0.0, push.z)
 
 
+## Host: non-lethal knockdown for `duration` seconds (falls apart, then rises). Used by finisher and stun.
+func start_knockdown(duration: float) -> void:
+	if rig == null or data.get("boss", false):
+		return
+	_kd_daze = duration
+	if _knock.length() > 6.0:
+		_knock = _knock.normalized() * 6.0  # keep the direction but cap so player can follow up
+	rig.knock_down()
+
+
 ## Looks: a red outline round the whole creature while it winds up an attack no weapon parries (only a shield).
 static var _outline_mat: StandardMaterial3D
 
@@ -396,12 +407,26 @@ func think(delta: float, mgr: Node) -> void:
 		if shell_left <= 0.0:
 			mgr.monster_shell(self, false)  # comes back out
 		return
+	if _kd_daze > 0.0:
+		_kd_daze -= delta
+		if _kd_daze <= 0.0 and rig != null and rig.knocked_down:
+			rig.get_up()
+			_no_progress = 0.0  # don't give up immediately after getting up
+		else:
+			velocity = Vector3(0, velocity.y, 0)
+			_move(delta, Vector3.ZERO, 0.0)
+			return
 	if stun.is_stunned():
+		if rig != null and not rig.knocked_down and not rig.dead:  # stun start: fall apart
+			rig.knock_down()
 		state = State.STUNNED
 		velocity = Vector3(0, velocity.y, 0)
 		_move(delta, Vector3.ZERO, 0.0)
 		return
 	if state == State.STUNNED:
+		if rig != null and rig.knocked_down:  # stun ended: get back up
+			rig.get_up()
+			_no_progress = 0.0  # don't give up immediately after getting up
 		state = State.FLEE if data.get("passive", false) or (data.get("neutral", false) and hp < max_hp() * 0.5) else State.CHASE
 		_timer = 6.0
 	_think -= delta
@@ -491,6 +516,9 @@ func think(delta: float, mgr: Node) -> void:
 			else:
 				_no_progress += delta
 			var gives_up := global_position.distance_to(home) > Monsters.LEASH or _no_progress > Monsters.GIVE_UP
+			# F620: dungeon boss blocked by shaft/doorway geometry: give up quickly when literally not moving.
+			if data.get("dungeon_only", false) and velocity.length() < 0.1 and _no_progress > 3.0:
+				gives_up = true
 			if data.get("stays_in_cave", false):  # (bats, F419: only when you leave their cave)
 				gives_up = not mgr.in_cave(self, target.global_position) and not angry()
 			if not dungeon.is_empty():
@@ -765,7 +793,16 @@ func _pick_attack(dist: float, mgr: Node = null) -> Dictionary:
 			continue
 		if dist <= a.reach and dist >= a.get("min_reach", 0.0) and (not a.get("lunge", false) or dist > 2.0) 				and _clock >= float(_rest_until.get(a.name, 0.0)):
 			options.append(a)
-	return options.pick_random() if not options.is_empty() else {}
+	if options.is_empty():
+		return {}
+	# F622: prefer a whirl/spin when the player is running fast (the spin chases a moving target).
+	if mgr != null and target_peer != 0:
+		var tgt: Node3D = mgr.player_node(target_peer)
+		if tgt is CharacterBody3D and (tgt as CharacterBody3D).velocity.length() > 4.0:
+			var spinners: Array = options.filter(func(a: Dictionary) -> bool: return a.has("whirl_speed"))
+			if not spinners.is_empty():
+				return spinners[0]
+	return options.pick_random()
 
 
 func _start_attack(atk: Dictionary, mgr: Node) -> void:
@@ -1618,7 +1655,9 @@ func _draw_trail(delta: float) -> void:
 
 ## Dazed: little stars circle its head (owner F449, every creature). Built the first time it is dazed.
 func _daze_stars() -> void:
-	var dazed: bool = stun.is_stunned() and is_alive() and not model.get_meta("roosting", false)  # (a hanging bat wakes when hit)
+	# Knocked down = already on the floor; stars above an empty space look wrong.
+	var on_floor := rig != null and rig.knocked_down
+	var dazed: bool = stun.is_stunned() and is_alive() and not on_floor and not model.get_meta("roosting", false)  # (a hanging bat wakes when hit)
 	if dazed and _stars == null:
 		_stars = MonsterModel.add_daze_stars(model)
 	if _stars:

@@ -137,11 +137,12 @@ const LIST := {
 		# F608: rest = 2 s after the chop so he doesn't immediately chain a second hit with no wind-up.
 		attacks = [{name = "Great Chop", anim = "2H_Melee_Attack_Chop", warn_sound = "beetle_rumble", tell = 1.0, damage = 26, type = "slash", reach = 2.3, parry = "any", rest = 2.0},
 			# Owner, Nov 21 ("when he spins he should move towards the player: you have to dodge that"): the whirl now
-			# goes on for 4 more turns (about 3 s in all), sliding after you at 2.6 m/s (you walk 3, run 5.2): every
-			# turn hits (12), the last one hardest (20) and it knocks you down. Roll out or run.
+			# goes on for 4 more turns (about 4 s in all), sliding after you at 2.6 m/s (you walk 3, run 5.2): every
+			# turn hits (12), the last one hardest (20) and it knocks you down. Each follow turn gives 0.9 s to dodge.
+			# Nov 22: tells raised from 0.5 to 0.9 s — was near-untelegraphed; now the glint shows 0.5 s before each blow.
 			{name = "Pick Whirl", anim = "2H_Melee_Attack_Spin", warn_sound = "beetle_rumble", tell = 0.97, damage = 12, type = "blunt", reach = 1.8, rest = 9.0, parry = "shield", knockdown = false,
-				follow = {tell = 0.5, damage = 12, whirl_speed = 2.6, warn_sound = null, follow = {tell = 0.5, damage = 12,
-					follow = {tell = 0.5, damage = 12, follow = {tell = 0.5, damage = 20, knockdown = true}}}}}],
+				follow = {tell = 0.9, damage = 12, whirl_speed = 2.6, warn_sound = null, follow = {tell = 0.9, damage = 12,
+					follow = {tell = 0.9, damage = 12, follow = {tell = 0.9, damage = 20, knockdown = true}}}}}],
 		drops = []},
 	# Mossprop Workings' boss (owner, Nov 21): a mossy skeleton miner with a felling axe and a plank shield on his left
 	# arm (his own model, F468): hits from the front do a fifth (MonsterManager._shield_blocks) unless heavy or he is stunned.

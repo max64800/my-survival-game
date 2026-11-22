@@ -591,10 +591,11 @@ func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: 
 			if away.length() > 0.01:
 				m.knock(away.normalized() * 3.0)  # Spear ★25: a poke pushes them back
 		_hurt_monster(m, peer, dmg, stun, Combat.effect(wd.type, m.stats()))
-		if finisher and not m.data.get("boss", false):  # F607: combo finisher sends non-bosses flying
+		if finisher and not m.data.get("boss", false):  # F607/F617: combo finisher sends non-bosses flying
 			var away_fin := (m.global_position - ps.node.global_position) * Vector3(1, 0, 1)
 			if away_fin.length() > 0.01:
-				m.knock(away_fin.normalized() * 6.0 / maxf(1.0, float(m.data.get("size", 1.0))))
+				m.knock(away_fin.normalized() * 14.0 / maxf(1.0, float(m.data.get("size", 1.0))))
+			m.start_knockdown(2.5)  # falls apart, gets back up 2.5 s later
 	auth.heal(peer, total * gb.get("leech", 0.0))
 	if heavy and Progression.weapon_skill(w) == "axe" and ps.progress.has_star("axe", 100) and n > 0:
 		auth.give_stamina(peer, 6.0 * mini(n, max_targets))  # Axe ★100: a heavy sweep gives stamina back per enemy

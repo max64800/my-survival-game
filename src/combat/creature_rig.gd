@@ -28,6 +28,7 @@ var ap: AnimationPlayer
 var unit := 1.0          ## how big one skeleton unit is in metres (the model's scale)
 var lying := false
 var dead := false
+var knocked_down := false  ## non-lethal fall: plays death anim, then rises on get_up()
 var _busy := 0.0         ## seconds a one-off move (rise, swing, flinch) still plays before walking takes over
 var _busy_kind := ""     ## "rise", "attack" or "hit"
 var _walk := ""          ## the walk or run move playing now
@@ -112,6 +113,8 @@ func rise_time() -> float:
 func attack(clip: String, tell: float, red := false, again := false) -> void:
 	if dead or not ap.has_animation(clip):
 		return
+	if _busy_kind == "rise" and _busy > 0.0:
+		return  # finish getting up before swinging (never hit while rising)
 	lying = false
 	_guard_swing = not clip.begins_with("2H_")  # (his two-handed moves need the shield arm: the sweep, the Rally Slam)
 	if clip in LOOPS:
@@ -273,6 +276,32 @@ func die() -> float:
 	return ap.get_animation(DEATH).length
 
 
+## Non-lethal fall: plays the death-fall animation but the creature is NOT dead and will get up.
+func knock_down() -> void:
+	if dead or knocked_down:
+		return
+	knocked_down = true
+	lying = false
+	ap.speed_scale = 1.0
+	ap.play(DEATH, 0.1)
+	ap.speed_scale = 1.0  # (overwrite any freeze that step() left behind)
+	_busy = ap.get_animation(DEATH).length
+	_busy_kind = "hit"
+	_walk = ""
+
+
+## Called when a knocked-down creature should get back up.
+func get_up() -> void:
+	if dead or not knocked_down:
+		return
+	knocked_down = false
+	ap.speed_scale = 1.0
+	ap.play(RISE, 0.1)
+	_busy = ap.get_animation(RISE).length
+	_busy_kind = "rise"
+	_walk = ""
+
+
 ## Every frame. `speed` = how fast it really moves (m/s), `run` = its run speed, `alert` = it knows you're there.
 ## `frozen`: a hit's freeze-blink (the move waits).
 func step(delta: float, speed: float, run: float, alert: bool, frozen: bool) -> void:
@@ -291,6 +320,10 @@ func step(delta: float, speed: float, run: float, alert: bool, frozen: bool) -> 
 		if _moving > 0.6:
 			rise()  # (it keeps moving, so it has got up: a player who joined late missed the host's "rise")
 		return
+	if knocked_down:
+		if _busy > 0.0:
+			_busy -= delta
+		return  # hold the floor pose until get_up() is called
 	if _busy > 0.0:
 		_busy -= delta
 		return

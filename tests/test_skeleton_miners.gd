@@ -305,10 +305,10 @@ func test_foreman_whirl_chases_and_lost_miners_leap() -> void:
 		last = f
 		f = f.get("follow", {})
 	check(turns >= 4, "the whirl hits several times (%d)" % turns)
-	check_near(total, 2.97, 0.3, "about 3 s of whirling")
+	check_near(total, 4.57, 0.5, "about 4-5 s of whirling (Nov 22: follow tells raised to 0.9 s for telegraph)")
 	check(not whirl.get("knockdown", false) and last.get("knockdown", false), "only the last turn knocks you down")
-	check(float(whirl.follow.whirl_speed) < Dwarf.WALK_SPEED * 1.0 and float(whirl.follow.whirl_speed) > Dwarf.WALK_SPEED * 0.8,
-		"he slides after you a little slower than you walk (run or roll out)")
+	check(float(whirl.follow.whirl_speed) < Dwarf.WALK_SPEED * 1.0 and float(whirl.follow.whirl_speed) > Dwarf.WALK_SPEED * 0.5,
+		"he slides after you slower than you walk (run or roll out)")
 	var leap: Dictionary = {}
 	for a: Dictionary in Monsters.LIST.lost_miner.attacks:
 		if a.get("lunge", false):

@@ -264,7 +264,6 @@ func _shield_bash() -> void:
 	_busy = speed
 	_combo_until = 0.0  # a bash ends the combo
 	dwarf.model.attack(speed, false, 0, "shield")
-	Sfx.play("swing", dwarf.global_position + Vector3.UP, -8.0, 0.9)
 	dwarf.get_tree().create_timer(speed * 0.4).timeout.connect(func(): _impact(false, 0, false, false, true))
 	dwarf.face_camera()
 
@@ -300,7 +299,6 @@ func _attack(heavy: bool) -> void:
 	var step := _combo_step
 	var riposte := clock < _riposte_until
 	dwarf.model.attack(speed, heavy, step)  # (the combo's hits look different: DwarfRig.ATTACKS)
-	Sfx.play("swing", dwarf.global_position + Vector3.UP, -8.0, 0.8 if heavy else 1.1)
 	var airborne := not dwarf.is_on_floor()  # Jumping ★75: hits in the air
 	dwarf.get_tree().create_timer(speed * 0.4).timeout.connect(func(): _impact(heavy, step, riposte, airborne))
 	dwarf.face_camera()
@@ -340,6 +338,20 @@ func _impact(heavy: bool, combo_step: int, riposte: bool, airborne: bool = false
 	if not uids.is_empty():
 		auth.monsters.ask_attack(uids, heavy, combo_step, riposte, airborne, bash)
 		dwarf.add_shake(0.3 if heavy else 0.15)
+		# F621: also break smash/rubble furniture in the same arc even when monsters were hit.
+		if DungeonBuild.instance != null:
+			for id: int in DungeonBuild.instance.things.keys():
+				var th: Dictionary = DungeonBuild.instance.things[id]
+				if th.kind not in ["smash", "rubble"] or DungeonBuild.instance.is_broken(id):
+					continue
+				var centre: Vector3 = th.centre
+				var to_th := centre - dwarf.global_position
+				var flat_th := Vector3(to_th.x, 0, to_th.z)
+				if flat_th.length() > reach + float(th.radius) or absf(to_th.y) > 2.0:
+					continue
+				if arc < 360.0 and rad_to_deg(fwd.angle_to(flat_th.normalized())) > arc * 0.5:
+					continue
+				DungeonBuild.instance.ask_hit(id)
 	else:
 		# A dungeon thing under the crosshair (rubble, the cracked wall, the hidden boulder, furniture): weapons break
 		# them too (owner, Nov 20: "ANY hit must break it"; tools go through Dwarf._on_swing_impact).
@@ -447,7 +459,6 @@ func _shoot(aimed: bool) -> void:
 	var uid := MonsterManager.uid_of(hit.get("collider"))
 	dwarf.face_camera()
 	dwarf.model.attack(0.3, false)
-	Sfx.play("swing", dwarf.global_position + Vector3.UP, -4.0, 1.6)
 	var auth := GameAuthority.instance
 	var thing_id := DungeonBuild.id_of(hit.get("collider"))
 	if thing_id >= 0 and DungeonBuild.instance:  # a bolt brings a dungeon stalactite down (decisions round 2)
