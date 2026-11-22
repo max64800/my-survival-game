@@ -53,7 +53,8 @@ p { margin: 0 0 8px; }
 			<button id="k-ghost_lord" aria-pressed="false">The Grey Warden</button>
 		</div>
 		<div class="tools">
-			<button id="attack">Attack</button>
+			<button id="float">Float to you</button>
+<button id="attack">Attack</button>
 			<button id="jump">Fade &amp; jump</button>
 			<button id="vanish">Die into mist</button>
 			<button id="spin" aria-pressed="false">Spin</button>
@@ -76,7 +77,7 @@ p { margin: 0 0 8px; }
 		<p>Every time it loses a quarter of its health, it fades into mist, a trail drifts 3 to 5.5 m away, and it comes back there and rushes at you, nearly twice as fast for 2 seconds.</p>
 		<p>When it dies it rises a little and fades away. No bones, no stone statue.</p>
 		<h2>On this page</h2>
-		<p>The ghost holds still here with its mace up. In the game it bobs and swings on his skeleton.</p>
+		<p>The ghost holds still here with its mace held low. Press Float to you to watch it glide at you slowly, the way it comes for you in the dungeon, and swing.</p>
 	</aside>
 </div>
 
@@ -95,7 +96,7 @@ import * as SkeletonUtils from "three/addons/utils/SkeletonUtils.js";
 // the four ghosts as the game lists them (src/combat/monsters.gd)
 const KINDS = {
 	ghost_a: { name: "Drifting Shade", look: "a", color: [0.5, 0.95, 0.8], size: 1.0, hp: 150,
-		who: "An old miner's spirit: a rolled hood, a torn cape, a rope belt with a ghost lantern and a broken chain, ragged sleeves, and torn strips flowing into its misty tail.", clips: [1], moves: "Shade Swing (mace move 1)" },
+		who: "An old miner's spirit: a pointed hood with a rolled rim, a lucky rune stone on a cord, a torn cape, a patched robe, a rope belt with a ghost lantern, a pouch and a broken chain, his old pick tucked in at the back, ragged sleeves, and torn strips flowing into its misty tail.", clips: [1], moves: "Shade Swing (mace move 1)" },
 	ghost_b: { name: "Wrathful Shade", look: "b", color: [0.55, 0.75, 1.0], size: 1.0, hp: 140,
 		who: "The angry one: a tall pointed hood leaning forward, a short cape and slanted eyes.", clips: [2], moves: "Swooping Blow (mace move 2)" },
 	ghost_c: { name: "Bearded Shade", look: "c", color: [0.6, 0.95, 0.7], size: 1.05, hp: 170,
@@ -269,15 +270,15 @@ async function show(kind) {
 		holder.updateMatrixWorld(true);
 		const ua = bone("upperarm_" + side), hd = bone("hand_" + side);
 		const a = ua.getWorldPosition(new THREE.Vector3()), b = hd.getWorldPosition(new THREE.Vector3());
-		const want = new THREE.Vector3(sx * 0.3, -1, side === "r" ? 0.55 : 0.2).normalize();
+		const want = new THREE.Vector3(sx * 0.3, -1, side === "r" ? 0.3 : 0.2).normalize();
 		const q = new THREE.Quaternion().setFromUnitVectors(b.sub(a).normalize(), want);
 		const world = ua.getWorldQuaternion(new THREE.Quaternion()).premultiply(q);
 		const parent = ua.parent.getWorldQuaternion(new THREE.Quaternion());
 		ua.quaternion.copy(parent.invert().multiply(world));
 	}
-	// the right elbow bends so the mace is held up in front
+	// the right elbow bends a little: the mace hangs low in his fist, its head forward (owner, Nov 22: not held up)
 	const la = bone("lowerarm_r");
-	if (la) la.rotateX(-0.9);
+	if (la) la.rotateX(-0.35);
 	holder.updateMatrixWorld(true);
 	// the mace in his right fist (placed every frame by the swing's handle direction: placeMace)
 	const mc = mace.scene.clone(true);
@@ -290,6 +291,7 @@ async function show(kind) {
 	root.scale.setScalar(k.size);
 	root.position.y = 0.22 * k.size;
 	scene.add(root);
+	root.rotation.order = "YXZ";
 	ghost = { root, holder, mace: mc, bones, idle, handle: null, mats: [mat, mMat], kind, base: root.position.clone(), busy: false };
 	placeMace();
 	document.getElementById("loading").hidden = true;
@@ -313,10 +315,38 @@ function placeMace() {
 	const hp = hand.getWorldPosition(new THREE.Vector3()), lp = arm.getWorldPosition(new THREE.Vector3());
 	const fist = hp.clone().addScaledVector(hp.clone().sub(lp).normalize(), 0.06);
 	const up = g.handle ? new THREE.Vector3(...g.handle).applyQuaternion(skel.getWorldQuaternion(new THREE.Quaternion())).normalize()
-		: new THREE.Vector3(0, 1, 0.35).normalize();
+		: new THREE.Vector3(0.1, -0.5, 1).normalize();
 	const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), up);
 	g.mace.position.copy(g.root.worldToLocal(fist.addScaledVector(up, -0.1)));
 	g.mace.quaternion.copy(q);
+}
+
+// Its arms and head drift while it floats (GhostRig: the arms sway a little as it glides): each upper arm swings
+// forward and back round the ghost's side-to-side line, opposite each other, more while it glides; the forearms
+// follow a moment later and the hood nods. (Not during a swing: the mace move owns the bones then.)
+const _q = new THREE.Quaternion(), _p = new THREE.Quaternion(), _ax = new THREE.Vector3();
+function turnBone(b, i, axis, ang) {
+	b.parent.getWorldQuaternion(_p);
+	_q.setFromAxisAngle(axis, ang);
+	b.quaternion.copy(_p.clone().invert().multiply(_q).multiply(_p).multiply(ghost.idle[i]));
+	b.updateMatrixWorld(true);
+}
+function sway(t) {
+	const g = ghost;
+	g.root.updateMatrixWorld(true);
+	const side = _ax.set(1, 0, 0).applyQuaternion(g.root.quaternion).clone();
+	const fwd = new THREE.Vector3(0, 0, 1).applyQuaternion(g.root.quaternion);
+	const amt = 0.07 + 0.3 * (g.glide ?? 0);
+	for (const [name, ph, k] of [["upperarm_l", 0, 1], ["upperarm_r", Math.PI, 0.6], ["lowerarm_l", -0.7, 0.7], ["lowerarm_r", Math.PI - 0.7, 0.4]]) {
+		const b = g.holder.getObjectByName(name);
+		if (b) turnBone(b, g.bones.indexOf(b), side, amt * k * Math.sin(t * 2.4 + ph) - (name.startsWith("lower") ? amt * 0.4 : 0));
+	}
+	const hd = g.holder.getObjectByName("Head");
+	if (hd) {
+		hd.parent.getWorldQuaternion(_p);
+		const nod = new THREE.Quaternion().setFromAxisAngle(side, 0.05 * Math.sin(t * 1.3)).multiply(new THREE.Quaternion().setFromAxisAngle(fwd, 0.04 * Math.sin(t * 0.9)));
+		hd.quaternion.copy(_p.clone().invert().multiply(nod).multiply(_p).multiply(g.idle[g.bones.indexOf(hd)]));
+	}
 }
 
 // One frame of a dwarf mace move (assets/anim/one_ual.json): each big bone's turn in skeleton space.
@@ -340,18 +370,29 @@ let moves = null;
 async function attack() {
 	if (!ghost || ghost.busy) return;
 	ghost.busy = true;
+	ghost.swinging = true;
 	moves ??= await fetch("mace_moves.json").then(r => r.json());
-	for (const n of KINDS[ghost.kind].clips) {
+	const g = ghost;
+	for (const n of KINDS[g.kind].clips) {
 		const c = moves["UalMace" + n];
 		const len = c.length * 1.25;  // (a touch slower than the game, to watch it)
+		const first = n === KINDS[g.kind].clips[0];
 		await tween(len, f => {
 			const fr = c.frames[Math.min(c.frames.length - 1, Math.floor(f * c.frames.length))];
-			pose(fr, Math.min(1, f / 0.12, (1 - f) / 0.12 + (n === KINDS[ghost.kind].clips.at(-1) ? 0 : 1)));
+			pose(fr, first ? Math.min(1, f / 0.12) : 1);
 		});
 	}
-	ghost.bones.forEach((b, i) => b.quaternion.copy(ghost.idle[i]));
-	ghost.handle = null;
-	ghost.busy = false;
+	// then it eases back into its float, no snap (owner, Nov 22: "he teleports back to his T-pose")
+	const end = g.bones.map(b => b.quaternion.clone());
+	const hEnd = g.handle;
+	await tween(0.6, f => {
+		const e = f * f * (3 - 2 * f);
+		g.bones.forEach((b, i) => b.quaternion.slerpQuaternions(end[i], g.idle[i], e));
+		g.handle = e < 0.5 ? hEnd : null;
+	});
+	g.handle = null;
+	g.swinging = false;
+	g.busy = false;
 }
 
 function setFade(f) { if (ghost) for (const m of ghost.mats) m.uniforms.fade.value = f; }
@@ -396,6 +437,36 @@ async function jump() {
 	ghost.busy = false;
 }
 
+// It glides at you slowly the way it does in the game (walk 1.2 m/s, GhostRig.step): out of the dark behind it, bobbing,
+// leaning into the glide, its tail swaying; it slows as it reaches you, then swings.
+async function float() {
+	if (!ghost || ghost.busy) return;
+	ghost.busy = true;
+	const g = ghost;
+	const toCam = camera.position.clone().sub(g.base).setY(0).normalize();
+	const from = g.base.clone().addScaledVector(toCam, -3.6), to = g.base.clone().addScaledVector(toCam, 0.6);
+	const yaw = Math.atan2(toCam.x, toCam.z);
+	await tween(0.25, f => setFade(1 - f));
+	g.root.position.copy(from);
+	g.root.rotation.y = yaw;
+	await tween(0.5, f => setFade(f));
+	const len = from.distanceTo(to) / 1.2 * 1.25;  // (it eases in and out: a little longer than at full speed)
+	await tween(len, f => {
+		const t = performance.now() / 1000;
+		const e = f * f * (3 - 2 * f);
+		g.root.position.lerpVectors(from, to, e);
+		g.root.position.y = g.base.y + Math.sin(t * 2.1) * 0.05;
+		const speed = 6 * f * (1 - f);  // (0 at the ends, fastest in the middle)
+		g.glide = Math.min(1, speed / 1.5);
+		g.root.rotation.x = 0.18 * Math.min(1, speed * 1.2);
+		g.root.rotation.z = Math.sin(t * 1.3) * 0.04;
+	});
+	g.glide = 0;
+	await tween(0.4, f => { g.root.rotation.x *= 1 - f; g.root.rotation.z *= 1 - f; });
+	g.busy = false;
+	await attack();
+}
+
 async function vanish() {
 	if (!ghost || ghost.busy) return;
 	ghost.busy = true;
@@ -404,6 +475,7 @@ async function vanish() {
 	await tween(1.2, f => { setFade(1 - f); ghost.root.position.y = p.y + 0.5 * f; });
 	await tween(1.0, () => {});
 	ghost.root.position.copy(ghost.base);
+	ghost.root.rotation.set(0, 0, 0);
 	await tween(0.6, f => setFade(f));
 	ghost.busy = false;
 }
@@ -412,6 +484,7 @@ for (const id of Object.keys(KINDS)) document.getElementById("k-" + id).addEvent
 document.getElementById("jump").addEventListener("click", jump);
 document.getElementById("attack").addEventListener("click", attack);
 document.getElementById("vanish").addEventListener("click", vanish);
+document.getElementById("float").addEventListener("click", float);
 const spinBtn = document.getElementById("spin");
 spinBtn.addEventListener("click", () => {
 	controls.autoRotate = !controls.autoRotate;
@@ -433,6 +506,7 @@ renderer.setAnimationLoop(() => {
 	const t = performance.now() / 1000;
 	if (ghost) {
 		for (const m of ghost.mats) m.uniforms.time.value = t;
+		if (!ghost.swinging && !still) sway(t);
 		placeMace();
 		if (!ghost.busy && !still) ghost.root.position.y = ghost.base.y + Math.sin(t * 2.1) * 0.05;
 	}

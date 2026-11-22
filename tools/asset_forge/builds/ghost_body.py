@@ -144,6 +144,22 @@ else:  # a soft fold hanging down the back of the hood
 	hood = smin(hood, tube((0, 0.12, 1.16), (0, 0.27, 1.08), 0.11, 0.03), 0.05)
 hood = smin(hood, ell((0, 0.04, 0.86), (0.25, 0.25, 0.11)), 0.06)  # it falls onto the shoulders
 face = ell(FACE_C, (0.155, 0.15, 0.165))
+TRI_TOP, TRI_BASE, TRI_W = 1.215, 0.925, 0.168  # the Drifting Shade's pointed face opening (owner, Nov 22: "a triangle hood")
+
+
+def tri(x, z, grow=0.0):
+	"""Distance (front view) to the Drifting Shade's face opening: a tall triangle, point up, its corners rounded
+	and its bottom edge sagging a little. Negative inside."""
+	a, b = TRI_TOP - TRI_BASE, TRI_W
+	n = math.hypot(a, b)
+	side = (a * (np.abs(x) - TRI_W) + b * (z - TRI_BASE)) / n
+	bottom = TRI_BASE - 0.025 * (1 - (x / TRI_W) ** 2) - z
+	return smax(side, bottom, 0.035) - grow
+
+
+if LOOK == "a":  # a pocket behind the triangle, rounded at the back (the eyes sit on its back wall)
+	face = smax(tri(X, Z), ell((0.0, -0.235, 1.05), (0.2, 0.15, 0.25)), 0.02)
+hood_whole = hood  # (before the face is cut: the rim's line is laid on its surface)
 hood = smax(hood, -face, 0.025)
 
 # The chest and the broad shoulders: a chunky barrel, wider than the dwarf.
@@ -237,8 +253,26 @@ if LOOK == "a":
 	cowl = smax(cowl, Z - 0.9, 0.03)  # (the hood itself stays as it is)
 	body = smin(body, cowl, 0.006)
 	# the hood's rolled rim round the face, a little uneven, and its long point drooping down his back
-	rim = ring((0, -0.198, 1.035), "y", 0.168, 0.182, 0.029) + 0.004 * np.sin(np.arctan2(Z - 1.035, X) * 13)
-	body = smin(body, rim, 0.012)
+	# (it runs round the pointed opening, laid on the hood's cloth: a rope of points just outside the triangle's edge)
+	corners = [(0.0, TRI_TOP + 0.01), (-TRI_W - 0.014, TRI_BASE - 0.012), (TRI_W + 0.014, TRI_BASE - 0.012)]
+	outline = []
+	for i in range(3):
+		(x0, z0), (x1, z1) = corners[i], corners[(i + 1) % 3]
+		for j in range(10):
+			u = j / 10
+			x, z = x0 + (x1 - x0) * u, z0 + (z1 - z0) * u
+			if i == 1:  # (the bottom edge sags like the opening)
+				z -= 0.025 * (1 - (x / TRI_W) ** 2)
+			y = hit(hood_whole, (x, 0.04, z), (0, -1, 0))[1] + 0.012
+			outline.append((x, y, z))
+	outline.append(outline[0])
+	for i in range(len(outline) - 1):
+		r = 0.027 + 0.004 * math.sin(i * 1.9)
+		body = smin(body, tube(outline[i], outline[i + 1], r, 0.027 + 0.004 * math.sin((i + 1) * 1.9)), 0.012)
+	# a raised seam from the opening's point over the top of the hood and down its back
+	seam = [tuple(np.array(hit(hood_whole, HEAD_C, (0, -math.cos(a), math.sin(a)))) - np.array((0, -math.cos(a), math.sin(a))) * 0.004)
+		for a in np.linspace(math.radians(58), math.radians(170), 9)]
+	body = rope(body, seam, 0.014, 0.012, 0.008)
 	body = rope(body, [(0, 0.2, 1.19), (0, 0.31, 1.1), (0.02, 0.35, 0.98), (0.05, 0.34, 0.9)], 0.085, 0.022, 0.03)
 	# creases in the hood cloth: two soft grooves each side
 	for s in (-1, 1):
@@ -256,9 +290,28 @@ if LOOK == "a":
 	f2 = hit(body, (0.11, 0.03, 0.52), (0.0, -1, 0.0))
 	body = rope(body, [f0, f1, f2], 0.017, 0.015, 0.01)
 	# two sewn-on patches: on his chest and on his back
-	for start, d, half in (((0.05, 0.03, 0.41), (0, -1, 0), (0.042, 0.03, 0.036)), ((0.1, 0.03, 0.64), (0, 1, 0), (0.065, 0.03, 0.055))):
+	for start, d, half in (((0.05, 0.03, 0.41), (0, -1, 0), (0.042, 0.03, 0.036)), ((0.26, 0.03, 0.75), (0, 1, 0), (0.05, 0.03, 0.045))):
 		p = np.array(hit(body, start, d)) - np.array(d) * 0.024
 		body = smin(body, rbox(tuple(p), half, 0.008, 0.18) + wobble(0.007, 5), 0.006)  # (sewn on a little crooked)
+		# big chunky stitches across its edges (on the cloth side: front patches face -y, back ones +y)
+		ct, st = math.cos(0.18), math.sin(0.18)
+		fy = p[1] + d[1] * 0.033
+		for ex, ez, ax in ((1, 0, "x"), (-1, 0, "x"), (0, 1, "z"), (0, -1, "z")):
+			for u in (-0.5, 0.5):
+				lx = ex * half[0] if ax == "x" else u * half[0] * 1.2
+				lz = ez * half[2] if ax == "z" else u * half[2] * 1.2
+				c = np.array((p[0] + lx * ct + lz * st, fy, p[2] - lx * st + lz * ct))
+				dd = np.array((ct, 0, -st)) if ax == "x" else np.array((st, 0, ct))
+				body = smin(body, tube(tuple(c - dd * 0.014), tuple(c + dd * 0.014), 0.0065, 0.0065), 0.003)
+	# his lucky stone: a little rune stone on a cord round his neck, hanging below the hood on his chest
+	stone = np.array(hit(body, (0, 0.03, 0.75), (0, -1, 0))) + np.array((0, -0.012, 0))
+	body = smin(body, rbox(tuple(stone), (0.028, 0.012, 0.034), 0.012, 0.12) + wobble(0.004, 9), 0.006)
+	body = smax(body, -tube(tuple(stone + (-0.012, -0.026, 0.018)), tuple(stone + (0.01, -0.026, -0.02)), 0.0075, 0.0075), 0.003)  # its rune
+	for s in (-1, 1):
+		cord = [tuple(stone + (s * 0.012, 0.004, 0.044))]
+		for x, z in ((0.04, 0.8), (0.075, 0.86)):
+			cord.append(tuple(np.array(hit(body, (s * x, 0.03, z), (0, -1, 0))) + (0, -0.004, 0)))
+		body = rope(body, cord, 0.0085, 0.0085, 0.006)
 	# the rope belt: twisted, round his waist, a knot at the front and two frayed ends hanging down
 	bz = 0.505
 	belt = ring((0, 0.03, bz), "z", 0.312, 0.288, 0.03)
@@ -290,6 +343,26 @@ if LOOK == "a":
 		if k == 4:
 			link = smax(link, -ell((cx, cy, cz - 0.03), (0.03, 0.03, 0.014)), 0.004)
 		body = smin(body, link, 0.004)
+	# a leather pouch hanging from the belt behind his right hip: a fat bag, its flap folded over and a toggle on it
+	out = np.array((-0.4, 0.92, 0.0)) / math.hypot(0.4, 0.92)
+	pc = np.array((-0.13, 0.29, 0.44)) + out * 0.03
+	body = smin(body, ell(tuple(pc), (0.062, 0.04, 0.058)) + wobble(0.005, 21), 0.012)
+	flap = pc + out * 0.012 + (0, 0, 0.022)
+	body = smin(body, smax(ell(tuple(flap), (0.066, 0.042, 0.045)), (0.012 + pc[2]) - Z, 0.008), 0.004)
+	body = smin(body, ell(tuple(pc + out * 0.05 + (0, 0, 0.005)), (0.014, 0.012, 0.012)), 0.004)
+	# his old pick tucked in the back of the belt, its head up on his back just under the cape's edge
+	h0 = np.array(hit(body, (0.18, 0.03, 0.34), (0, 1, 0))) + (0, 0.014, 0)
+	h1 = np.array(hit(body, (0.03, 0.03, 0.6), (0, 1, 0))) + (0, 0.02, 0)
+	body = rope(body, [tuple(h0), tuple((h0 + h1) / 2 + (0, 0.004, 0)), tuple(h1)], 0.021, 0.019, 0.008)
+	hd = h1 - h0
+	hd /= np.linalg.norm(hd)
+	across = np.array((hd[2], 0, -hd[0]))  # (across the handle, flat on his back)
+	for s, ln in ((1, 0.15), (-1, 0.11)):  # a long point and a shorter one, both curving down a little
+		mid = h1 + across * s * ln * 0.55 - hd * 0.012
+		tip = h1 + across * s * ln - hd * 0.035
+		mid[1] = hit(body, (mid[0], 0.03, mid[2]), (0, 1, 0))[1] + 0.016  # (both lie on his curved back)
+		tip[1] = hit(body, (tip[0], 0.03, tip[2]), (0, 1, 0))[1] + 0.004
+		body = rope(body, [tuple(h1 + hd * 0.006), tuple(mid), tuple(tip)], 0.03, 0.009, 0.006)
 	# the sleeves: a band at the cuff, the cuff opened up (the fist sits in it, 1.5 cm clear), a ragged flap hanging down
 	for s in (-1, 1):
 		body = smin(body, ring((s * (HAND_X - 0.035), 0.035, 0.778), "x", 0.122, 0.122, 0.02), 0.01)
@@ -318,6 +391,66 @@ if LOOK == "a":
 			pts.append((tip[0] + 0.12 * u * math.sin(u * 4.5 + ph), tip[1] + 0.03 + 0.12 * u + 0.05 * math.cos(u * 4.5 + ph),
 				tip[2] + 0.14 * u + 0.025 * k))
 		body = rope(body, pts, 0.03, 0.013, 0.012)
+	# worn cloth (owner, Nov 22: "more dents and stuff, like the mace"): the hood and the cape are old and knocked about.
+	# Long folds running down the cape from the shoulders to its torn edge: soft grooves laid on its surface.
+	for k in range(14):
+		a = k / 14.0 * math.tau + R.uniform(-0.12, 0.12)
+		d = np.array((math.sin(a), math.cos(a), 0.0))
+		pts = []
+		for z in (0.84, 0.76, 0.68):
+			pts.append(tuple(np.array(hit(body, (0.0, 0.035, z), d)) + d * 0.013))
+		r = R.uniform(0.013, 0.019)
+		for i in range(2):
+			body = smax(body, -tube(pts[i], pts[i + 1], r * 0.6, r), 0.01)
+	# more creases fanning back from the hood opening's corners and point over the cloth
+	for (sx, sz), fan in (((1, -1), (0.2, 0.55, 0.9)), ((-1, -1), (0.2, 0.55, 0.9)), ((0, 1), (-0.5, 0.5))):
+		for f in fan:
+			pts = []
+			for u in (0.0, 0.5, 1.0):
+				if sx == 0:  # (from the point: back over the top, fanning out a little)
+					n = np.array((f * u * 0.5, -0.6 + 1.1 * u, 0.8 + 0.2 * u))
+				else:  # (from a bottom corner: back round the side of the head)
+					n = np.array((sx * (0.55 + 0.4 * u), -0.75 + 0.95 * u, -0.05 + f * 0.6 * u))
+				n /= np.linalg.norm(n)
+				pts.append(tuple(np.array(hit(hood_whole, HEAD_C, n)) + n * 0.016))
+			for i in range(2):
+				body = smax(body, -tube(pts[i], pts[i + 1], 0.012, 0.018), 0.012)
+	# dents and dings knocked into the hood and the cape, a few big, most small
+	for k in range(70):
+		if k < 30:  # the hood
+			c0 = np.array(HEAD_C)
+			n = np.array((R.uniform(-1, 1), R.uniform(-0.2, 1), R.uniform(-0.3, 1)))
+		else:  # the cape round his shoulders
+			c0 = np.array((0.0, 0.035, R.uniform(0.7, 0.8)))
+			n = np.array((R.uniform(-1, 1), R.uniform(-1, 1), R.uniform(-0.1, 0.5)))
+		n /= np.linalg.norm(n)
+		p = np.array(hit(body, tuple(c0), n))
+		if tri(p[0], p[2], 0.05) < 0 and p[1] < -0.1:
+			continue  # (none on the rim round his face)
+		r = R.uniform(0.016, 0.03) if k % 5 else R.uniform(0.035, 0.045)
+		body = smax(body, -ell(tuple(p + n * r * 0.78), (r * 1.15, r * 1.15, r * 0.85)), 0.01)  # (shallow: dings, not holes)
+	# a fine lumpy hand-pressed unevenness in the cloth (finer than the whole body's wobble)
+	rr = random.Random(44)
+	lump = np.zeros_like(X)
+	for _ in range(5):
+		kk = [rr.uniform(32, 48) for _ in range(3)]
+		ph = [rr.uniform(0, 6.3) for _ in range(3)]
+		lump += np.sin(kk[0] * X + ph[0]) * np.sin(kk[1] * Y + ph[1]) * np.sin(kk[2] * Z + ph[2])
+	body = body + 0.0022 * lump * np.clip((Z - 0.6) / 0.06, 0, 1)
+	# loose threads hanging from the cape's three tears
+	for a0 in (0.9, -2.2, 2.7):
+		for j, da in enumerate((-0.05, 0.04)):
+			a = a0 + da
+			d = np.array((math.sin(a), math.cos(a), 0.0))
+			top = np.array(hit(body, (0.0, 0.035, 0.72), d)) - d * 0.006
+			low = top + d * 0.012 + (0.0, 0.0, -0.05 - 0.02 * j)
+			body = rope(body, [tuple(top), tuple(top + d * 0.01 + (0, 0, -0.025)), tuple(low)], 0.0085, 0.006, 0.004)
+	# chunky cross-stitches along the seam over the hood
+	for i in range(1, len(seam) - 1, 1):
+		c = np.array(seam[i])
+		n = c - np.array(HEAD_C)
+		n /= np.linalg.norm(n)
+		body = smin(body, tube(tuple(c - np.array((0.022, 0, 0)) - n * 0.004), tuple(c + np.array((0.022, 0, 0)) - n * 0.004), 0.0065, 0.0065), 0.003)
 	body = smax(body, -face, 0.02)  # (the face hollow stays open)
 
 if LOOK == "c":
@@ -344,7 +477,9 @@ o_body = to_mesh(NAME + "_body", body, MAT_BODY)
 eyes = np.minimum(ell((-0.062, -0.087 - 0.0, 1.045), (0.034, 0.02, 0.022)), ell((0.062, -0.087, 1.045), (0.034, 0.02, 0.022)))
 if LOOK == "b":  # angry: slanted, narrower
 	eyes = np.minimum(ell((-0.062, -0.087, 1.04), (0.036, 0.02, 0.016)), ell((0.062, -0.087, 1.04), (0.036, 0.02, 0.016)))
-if LOOK == "a":  # the lantern's glass: it touches the cap and the foot, inside the four posts (clear of them)
+if LOOK == "a":  # smaller eyes, lower in the pointed opening (owner, Nov 22), and the lantern's glass: it touches
+	# the cap and the foot, inside the four posts (clear of them)
+	eyes = np.minimum(ell((-0.05, -0.09, 1.0), (0.023, 0.02, 0.016)), ell((0.05, -0.09, 1.0), (0.023, 0.02, 0.016)))
 	eyes = np.minimum(eyes, ell(LANTERN, (0.026, 0.026, 0.056)))
 o_eyes = to_mesh(NAME + "_eyes", eyes, ck.color(NAME + "_eyes", (1.0, 1.0, 0.85)), min_island=8)
 
@@ -369,9 +504,10 @@ for o in (o_body, o_eyes, o_fists):
 	fz = (co[:, 2] - FACE_C[2]) / 0.165
 	in_face = np.sqrt(fx * fx + fy * fy + fz * fz)
 	lit = np.clip((in_face - 1.0) / 0.12, 0.0, 1.0) if o is o_body else np.ones(len(co))
-	if LOOK == "a" and o is o_body:  # dark only behind the hood's rim (its rolled rim is lit)
-		e = np.sqrt((co[:, 0] / 0.13) ** 2 + ((co[:, 2] - FACE_C[2]) / 0.145) ** 2)
-		lit = np.maximum(np.clip((e - 1.0) / 0.15, 0.0, 1.0), np.clip((-0.2 - co[:, 1]) / 0.03, 0.0, 1.0))
+	if LOOK == "a" and o is o_body:  # dark only inside the pointed opening, behind its rim (the rolled rim is lit)
+		e = tri(co[:, 0], co[:, 2], 0.012)
+		lit = np.maximum(np.clip(e / 0.025, 0.0, 1.0), np.clip((-0.19 - co[:, 1]) / 0.03, 0.0, 1.0))
+		lit = np.where(co[:, 2] < 0.85, 1.0, lit)
 	lit = 0.08 + 0.92 * lit
 	mist = np.clip((0.5 - co[:, 2]) / 0.44, 0.0, 1.0) if o is o_body else np.zeros(len(co))
 	if o is o_eyes:
@@ -385,7 +521,7 @@ for o in (o_body, o_eyes, o_fists):
 		p.use_smooth = True
 	# fewer faces: the game's light copy
 	n = len(o.data.polygons)
-	want = {o_body: 16000 if LOOK == "a" else 7000, o_eyes: 500, o_fists: 900}[o]
+	want = {o_body: 24000 if LOOK == "a" else 7000, o_eyes: 500, o_fists: 900}[o]
 	if n > want:
 		md = o.modifiers.new("fewer", "DECIMATE")
 		md.ratio = want / n
