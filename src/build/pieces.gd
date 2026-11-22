@@ -101,8 +101,9 @@ const LIST := {
 	# Corner stairs fan a quarter turn round the front-left corner: in at the front, out at the back-left, 2 m up.
 	"stairs_corner": {name = "Corner Stairs", group = "around", size = Vector3(2, 2, 2), units = 6, place = "cell", shape = "stairs_corner",
 		walkable_slope = true, families = KIT_FAMILIES, station = {"workbench": 2, "mason": 2}},
-	# Spiral stairs: 12 treads round a post, one full turn up 2 m (the top tread sits over the bottom one).
-	"stairs_spiral": {name = "Spiral Stairs", group = "around", size = Vector3(2, 2, 2), units = 6, place = "cell", shape = "stairs_spiral",
+	# Spiral stairs (F716): 4×4 m, 9 wide treads up 3/4 of a turn round a thick post, then a landing over the way
+	# in (PieceMesh.SPIRAL_*). The rail and post stand up to 1 m over its 2 m top, like the stair railing.
+	"stairs_spiral": {name = "Spiral Stairs", group = "around", size = Vector3(4, 2, 4), units = 16, place = "cell", shape = "stairs_spiral",
 		walkable_slope = true, families = KIT_FAMILIES, station = {"workbench": 2, "mason": 2}},
 	# Stair railing: stands on the side of the straight stairs, climbing 2 m over its 2 m (1 m tall at the low end,
 	# 3 m above the floor at the high end, toward +x). The models' posts stand on the steps (model_lift).

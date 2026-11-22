@@ -135,16 +135,33 @@ func test_dwarf_walks_up_the_turning_stairs() -> void:
 			_piece("foundation", fam, o + Vector3(0, y, -2))
 		paths["corner stairs " + fam] = [o + Vector3(0.4, 0, 2.2), o + Vector3(0.4, 0, 0.6), o + Vector3(0.1, 0, -0.1),
 			o + Vector3(-0.5, 0, -0.5), o + Vector3(-0.6, 0, -2.3)]
-		# Spiral stairs: start under the top tread, go round once, step off to the right onto a 2 m platform.
+		# F716 spiral stairs (4×4): start under the landing, go round 3/4 of a turn, onto the landing, then
+		# step off to the right onto a 2 m platform.
 		o = Vector3(12 * k, 0, 12)
 		_piece("stairs_spiral", fam, o)
 		for y in [0.0, 1.0]:
-			_piece("foundation", fam, o + Vector3(2, y, 0))
-		var path := [o + Vector3(0.55, 0, 0.3)]
-		for a in range(20, 340, 20):  # round the post at 0.62 m (the dwarf is 0.36 wide each side; treads reach 0.95)
-			path.append(o + Vector3(cos(deg_to_rad(a)), 0, -sin(deg_to_rad(a))) * 0.62)
-		path.append(o + Vector3(2.3, 0, 0))
+			_piece("foundation", fam, o + Vector3(3, y, 1))
+		var path := [o + Vector3(1.0, 0, 0.9)]
+		for a in range(10, 270, 20):  # round the post at 1.05 m (the dwarf is 0.36 wide each side)
+			path.append(o + Vector3(cos(deg_to_rad(a)), 0, -sin(deg_to_rad(a))) * 1.05)
+		path.append(o + Vector3(1.0, 0, 1.0))
+		path.append(o + Vector3(3.0, 0, 1.0))
 		paths["spiral stairs " + fam] = path
+		# The same inside a tower (walls all round but the way in and out, F716: the old one was worst there).
+		o = Vector3(12 * k, 0, 24)
+		_piece("stairs_spiral", fam, o)
+		for y in [0.0, 1.0]:
+			_piece("foundation", fam, o + Vector3(3, y, 1))
+		for e in [[Vector3(-1, 0, -2), 0], [Vector3(1, 0, -2), 0], [Vector3(-1, 0, 2), 0], [Vector3(1, 0, 2), 0],
+				[Vector3(-2, 0, -1), 1], [Vector3(-2, 0, 1), 1], [Vector3(2, 0, -1), 1]]:
+			_piece("wall", fam, o + e[0])
+			_root.get_child(-1).rotation.y = Pieces.yaw_of(e[1])
+		var tower := [o + Vector3(1.0, 0, 0.9)]
+		for a in range(10, 270, 20):
+			tower.append(o + Vector3(cos(deg_to_rad(a)), 0, -sin(deg_to_rad(a))) * 1.05)
+		tower.append(o + Vector3(1.0, 0, 1.0))
+		tower.append(o + Vector3(3.0, 0, 1.0))
+		paths["spiral stairs in a tower " + fam] = tower
 	var walkers := await _walk(paths)
 	for name in walkers:
 		var w = walkers[name]

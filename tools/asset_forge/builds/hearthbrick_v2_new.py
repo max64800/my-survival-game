@@ -138,28 +138,31 @@ def stairs_corner(w=2.0, h=2.0, dd=2.0, n=8):
 
 
 # ---------------- spiral stairs ----------------
-def stairs_spiral(w=2.0, h=2.0, dd=2.0, n=12):
-	"""Spiral stairs: a round brick column (curved bricks round a mortar core, a limestone foot drum) and 12
-	rough limestone treads set into it, one full turn up 2 m in one cell. Each tread overlaps the one below a
-	little, so from above there are no gaps; every tread is two stones, an inner and an outer one."""
-	R = min(w, dd) / 2 - E - 0.03
-	r_out, r_in = 0.19, 0.08
-	foot = 0.2
-	HR.lime_ring(E, foot, 0.06, r_out, 5, K.rng.uniform(0, 1))
-	HR.mortar_core(foot + 0.002, h - E - 0.004, r_out - 0.03)
-	HR.courses(foot, h - E, r_in, r_out)
-	tt = 0.13
-	ri = r_out - 0.008   # set a little into the column (its bricks sit up to 1.2 cm sunk)
-	step = math.tau / n
-	for i in range(n):
-		a0, a1 = step * i, step * (i + 1) + 0.05
-		top = E + (h - 2 * E) * (i + 1) / n
-		rm = ri + (R - ri) * (0.48 + K.J(0.06))
-		for (ra, rb) in ((ri, rm), (rm, R)):
-			pts = [(rb * math.cos(a0 + (a1 - a0) * k / 5), -rb * math.sin(a0 + (a1 - a0) * k / 5)) for k in range(6)]
-			kn = 3 if ra == ri else 5
-			pts += [(ra * math.cos(a1 - (a1 - a0) * k / kn), -ra * math.sin(a1 - (a1 - a0) * k / kn)) for k in range(kn + 1)]
-			_lime_slab(_ccw(pts), top - tt, top)
+def stairs_spiral():
+	"""F716 spiral stairs (owner, Nov 22: hard to climb, the top ends in empty space): 4 × 4 m. A thick round
+	brick column (curved bricks round a mortar core, a limestone foot drum and cap), nine wide rough limestone
+	treads (an inner and an outer stone each) 3/4 of a turn up, then a landing of 9 limestone flags over the way
+	in. Brick piers carry a limestone rail with turned limestone balusters. Layout: spiral_layout.py."""
+	import spiral_layout as SL
+	r_out = SL.POST
+	foot, top = 0.2, 2.93
+	HR.lime_ring(E, foot, 0.08, r_out, 6, K.rng.uniform(0, 1))
+	HR.mortar_core(foot + 0.002, top - 0.004, r_out - 0.03)
+	HR.courses(foot, top - 0.08, 0.2, r_out)
+	HR.lime_ring(top - 0.08 + 0.002, top, 0.08, r_out, 6, K.rng.uniform(0, 1))
+
+	def rail(p0, t0, p1, t1):
+		before = set(bpy.data.objects)
+		SV.spiral_rail(p0, t0, p1, t1, HB.m_lime(), bar=SL.BAR)
+		HB.tag(HB.since(before), "lime")
+
+	SL.build(post=lambda y1: None,
+		tread=lambda poly, t, inner: _lime_slab(SV._inset(poly, 0.002), t - SL.H * 0.09, t),
+		flag=lambda poly, y0, y1: _lime_slab(poly, y0, y1),
+		pier=lambda cx, cz, w, y0, y1: _brick_pier(cx, cz, w, max(y0, E), y1),
+		rail=rail,
+		baluster=lambda x, z, y0, y1: SV.spiral_baluster(x, z, y0, y1, HB.m_lime(), role="lime"),
+		rng=K.rng, post_top=top)
 
 
 # ---------------- stair railing ----------------
@@ -271,6 +274,6 @@ if __name__ == "__main__":
 			SV.make_grey()
 		else:
 			paint()
-		png = str(K.JOUR / f"{name}__clay_brick.png") if install else None
+		png = str(K.JOUR / f"{name}__clay_brick.png") if install else (str(out_dir / f"{name}.png") if "preview" in args else None)
 		kit.save(str(out_dir / f"{name}__clay_brick.glb"), png, recenter=False, tex_size=512)
 		print("PIECE_OK", name)

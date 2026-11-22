@@ -1418,7 +1418,7 @@ def _mix():
 
 
 # ---------------- new stair pieces (owner, Nov 21: docs/design/new-pieces-plan.md) ----------------
-K.SIZE.update({"stairs_corner": (2, 2, 2), "stairs_spiral": (2, 2, 2), "railing_stairs": (2, 3, 0.15)})
+K.SIZE.update({"stairs_corner": (2, 2, 2), "stairs_spiral": (4, 3, 4), "railing_stairs": (2, 3, 0.15)})
 
 
 def _shrink(pts, g=0.004):
@@ -1489,29 +1489,49 @@ def stairs_corner_v3(w=2.0, h=2.0, dd=2.0, n=8):
 			hewn((sx, 0.08, sz), (sx + J(0.006), bot - 0.002, sz + J(0.006)), 0.055)
 
 
-def stairs_spiral_v3(w=2.0, h=2.0, dd=2.0, n=12):
-	"""Shack spiral stairs: one thick round log as the middle post, on a stone, and 12 wedge steps going one
-	full turn up 2 m. Each step is two split boards on a hewn bearer set against the log, pegged down."""
-	R = min(w, dd) / 2 - E - 0.03
-	rl = 0.17
-	boulder((0, 0.05, 0), 0.26, 0.08, 0.26)
-	real_log((0, 0.09, 0), (J(0.006), h - 0.022, J(0.006)), rl, "round", stub=False)
+def stairs_spiral_v3():
+	"""F716 Shack spiral stairs (owner, Nov 22: hard to climb, the top ends in empty space): 4 × 4 m. One thick
+	round log on a stone as the middle post, nine wide steps 3/4 of a turn up (two split boards each, pegged to a
+	hewn bearer set into the log), then a board landing on three hewn joists over the way in. Hewn posts carry a
+	hewn hand rail with hewn pickets. Layout: spiral_layout.py."""
+	import spiral_layout as SL
 	t = 0.06
-	step = math.tau / n
-	ri = rl + 0.03
-	for i in range(n):
-		a0, a1 = step * i, step * (i + 1) + 0.05
-		am = (a0 + a1) / 2 + J(0.03)
-		top = 0.012 + (h - 0.024) * (i + 1) / n
-		for (b0, b1) in ((a0, am), (am, a1)):
-			pts = [(R * math.cos(b0 + (b1 - b0) * k / 3), -R * math.sin(b0 + (b1 - b0) * k / 3)) for k in range(4)]
-			pts += [(ri * math.cos(b1), -ri * math.sin(b1)), (ri * math.cos(b0), -ri * math.sin(b0))]
-			wedge_board(pts, top - t, top)
-			bc = (b0 + b1) / 2
-			peg(0.72 * math.cos(bc), top - 0.032, -0.72 * math.sin(bc), "y")
-		ac = (a0 + a1) / 2
-		yb = top - t - 0.042
-		hewn((rl * 0.9 * math.cos(ac), yb, -rl * 0.9 * math.sin(ac)), ((R - 0.06) * math.cos(ac), yb, -(R - 0.06) * math.sin(ac)), 0.04)
+	boulder((0, 0.06, 0), 0.4, 0.1, 0.4)
+
+	def post(y1):
+		real_log((0, 0.12, 0), (J(0.006), y1, J(0.006)), SL.POST - 0.01, "round", stub=False)
+
+	def tread(poly, top, inner):
+		wedge_board(poly, top - t, top)
+		xs = sum(p[0] for p in poly) / len(poly)
+		zs = sum(p[1] for p in poly) / len(poly)
+		peg(xs, top - 0.032, zs, "y")
+		if inner:   # one bearer under the whole tread, from the log to the outer edge
+			i = round(top / (SL.H * 0.1)) - 1
+			ac = SL.STEP * (i + 0.5)
+			yb = top - t - 0.042
+			hewn((0.24 * math.cos(ac), yb, -0.24 * math.sin(ac)), (1.7 * math.cos(ac), yb, -1.7 * math.sin(ac)), 0.04)
+
+	def flag(poly, y0, y1):
+		wedge_board(poly, y1 - t, y1)
+
+	def pier(cx, cz, w, y0, y1):
+		hewn((cx, max(y0, E + 0.016), cz), (cx + J(0.004), y1, cz + J(0.004)), w / 2 - 0.01)
+
+	rr = SL.BAR / 2 - 0.005
+
+	def rail(p0, t0, p1, t1):
+		hewn((p0[0], t0 - rr - 0.005, p0[1]), (p1[0], t1 - rr - 0.005, p1[1]), rr)
+
+	SL.build(post=post, tread=tread, flag=flag, pier=pier, rail=rail,
+		baluster=lambda x, z, y0, y1: hewn((x, y0, z), (x + J(0.004), y1 + 0.02, z + J(0.004)), 0.032),
+		rng=K.rng, post_top=2.93)
+	# the landing's joists, under its boards (their tops just under the boards, the underside at 1.75 m)
+	jr = (SL.H - t - SL.LANDING) / 2 + 0.008   # a hewn top is rough: sink it a little into the boards
+	for z in (0.36, 1.0, 1.62):
+		hewn((0.36 if z < 0.5 else 0.06, SL.LANDING + jr, z), (1.86, SL.LANDING + jr, z + J(0.01)), jr)
+	# and a rim beam along the far edge, from the newel to the corner pillar, that the joists rest on
+	hewn((1.86, SL.LANDING + jr, 0.08), (1.86, SL.LANDING + jr, 1.72), jr)
 
 
 def railing_stairs_v3(w=2.0, h=3.0, d=0.15):
@@ -1678,6 +1698,6 @@ if __name__ == "__main__":
 			paint()
 		fname = GAME_NAME[name] if install else name
 		# install: also save the preview picture (journey/...) that make_piece_icons.py turns into the build-menu icon
-		png = str(K.JOUR / f"{fname}__plank_root.png") if install else None
+		png = str(K.JOUR / f"{fname}__plank_root.png") if install else (str(out_dir / f"{fname}.png") if "preview" in args else None)
 		kit.save(str(out_dir / f"{fname}__plank_root.glb"), png, recenter=False, tex_size=512)
 		print("PIECE_OK", name)

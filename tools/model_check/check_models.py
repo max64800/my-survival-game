@@ -259,6 +259,11 @@ def check_shimmer(parts):
 	return [t for _, t in found]
 
 
+# Pieces allowed to stand higher than their game size (the part over it has no bumping box, like a railing):
+# the spiral stairs' rail and post rise 1 m over the 2 m landing (F716).
+OVER_TOP = {"stairs_spiral": 1.0}
+
+
 def check_outline(name, tris, sizes):
 	piece = name.split("__")[0]
 	if piece not in sizes:
@@ -272,7 +277,7 @@ def check_outline(name, tris, sizes):
 	for t, _ in tris:
 		for v in t:
 			note("below the bottom", -v.y, v)
-			note("above the top", v.y - size[1], v)
+			note("above the top", v.y - size[1] - OVER_TOP.get(piece, 0.0), v)
 			if shape == "tri":
 				# edges: front z = +TRI_IN, and the two slanted sides through the point (0, -TRI_OUT)
 				note("past the front edge", v.z - TRI_IN, v)

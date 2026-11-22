@@ -28,7 +28,7 @@ K.SIZE.update({"gateway": (4, 4, 0.3), "gate_leaf": (1.6, 3.6, 0.15), "gate_brok
 	"straw_dummy": (1.0, 1.9, 1.0), "archery_target": (1.2, 1.7, 1.6), "spear_rack": (1.6, 2.0, 0.4),
 	"door_broken": (2.0, 0.3, 1.8), "ruin_wall_worn": (2, 2, 0.3), "ruin_wall_collapsed": (2, 2, 0.3), "ruin_rubble": (1.6, 0.7, 1.6),
 	"wall_narrow": (1, 2, 0.3), "window_wide": (2, 2, 0.3), "floor_half": (2, 0.25, 1), "small_floor": (1, 0.25, 1),
-	"ramp": (2, 1, 2), "stairs_corner": (2, 2, 2), "stairs_spiral": (2, 2, 2), "railing_stairs": (2, 3, 0.15)})   # outline checks for pieces kit_zone1 doesn't list
+	"ramp": (2, 1, 2), "stairs_corner": (2, 2, 2), "stairs_spiral": (4, 3, 4), "railing_stairs": (2, 3, 0.15)})   # outline checks for pieces kit_zone1 doesn't list
 
 
 def stone_m():
@@ -740,27 +740,85 @@ def stairs_corner(w=2.0, h=2.0, dd=2.0, n=8):
 				slab_xz(_inset(poly, g), y0, y1, m, c=K.rng.uniform(0.022, 0.032))
 
 
-def stairs_spiral(w=2.0, h=2.0, dd=2.0, n=12):
-	"""Spiral stairs: a round post of stacked stone drums, and 12 wedge-shaped stone treads set into it, one full
-	turn up 2 m inside one cell. Each tread overlaps the one below a little (seen from above: no gaps)."""
-	R = min(w, dd) / 2 - E - 0.03
-	rp, sides = 0.19, 16
-	ring = [(rp * math.cos(math.tau * (k + 0.5) / sides), rp * math.sin(math.tau * (k + 0.5) / sides)) for k in range(sides)]
-	cuts = [E] + sorted(K.rng.uniform(0.15, 0.85) * (h - 2 * E) + E for _ in range(4)) + [h - E]
+def stone_drums(r, y0, y1, n_cuts=6, sides=16, cap=0.0):
+	"""A round post of stacked stone drums (the bottom one dark), each turned a little; cap = a wider top drum."""
+	ring = [(r * math.cos(math.tau * (k + 0.5) / sides), r * math.sin(math.tau * (k + 0.5) / sides)) for k in range(sides)]
+	cuts = [y0] + sorted(K.rng.uniform(0.1, 0.9) * (y1 - y0) + y0 for _ in range(n_cuts)) + [y1]
 	for i in range(len(cuts) - 1):
 		rot = K.rng.uniform(0, math.tau)
 		pts = [(x * math.cos(rot) - z * math.sin(rot), x * math.sin(rot) + z * math.cos(rot)) for (x, z) in ring]
 		slab_xz(pts, cuts[i] + 0.0015, cuts[i + 1] - 0.0015, kit.tex_mat("greystone", "dark") if i == 0 else stone_m(), c=0.02)
-	tt = 0.13
-	ri = rp + 0.005
-	step = math.tau / n
+	if cap:
+		ring = [(x * (r + cap) / r, z * (r + cap) / r) for (x, z) in ring]
+		slab_xz(ring, y1 + 0.0015, y1 + 0.06, stone_m(), c=0.022)
+
+
+def spiral_rail(p0, t0, p1, t1, m, bar=0.14, d=0.12):
+	"""A straight slanted rail bar from (x, z) p0 to p1, its top t0 / t1, chisel-cut."""
+	L = math.hypot(p1[0] - p0[0], p1[1] - p0[1])
+	yaw = math.degrees(math.atan2(-(p1[1] - p0[1]), p1[0] - p0[0]))
+	o = K.slab_poly(K.Frame(p0[0], p0[1], yaw), [(0, t0 - bar), (L, t1 - bar), (L, t1), (0, t0)], 0.0, d, m)
+	b = o.modifiers.new("chisel", "BEVEL")
+	b.width, b.segments, b.limit_method, b.angle_limit = 0.02, 2, "ANGLE", math.radians(35)
+	return o
+
+
+def spiral_baluster(x, z, y0, y1, m, sq=0.1, rmax=0.045, sides=12, role="stone"):
+	"""A turned baluster at (x, z): a square foot, a vase body, a square top block flat under the rail (its low
+	side just touches the slanted rail)."""
+	start = set(bpy.data.objects)
+	foot, top = 0.08, 0.07
+	block((x, y0 + foot / 2, z), (sq, foot - 0.002, sq), m, cut=0.014, tilt=0.0, free="")
+	block((x, y1 - 0.009 - top / 2, z), (sq, top - 0.002, sq), m, cut=0.014, tilt=0.0, free="")
+	a, bb = y0 + foot + 0.001, y1 - 0.009 - top - 0.001
+	prof = [(0.0, 0.04), (0.08, 0.032), (0.25, 0.036), (0.45, rmax), (0.6, rmax * 0.95), (0.78, 0.036), (0.9, 0.03), (1.0, 0.04)]
+	verts, faces = [], []
+	for t, r in prof:
+		for k in range(sides):
+			ang = math.tau * k / sides
+			verts.append((x + math.cos(ang) * r, a + (bb - a) * t, z + math.sin(ang) * r))
+	np_ = len(prof)
+	for i in range(np_ - 1):
+		for k in range(sides):
+			p0, p1 = i * sides + k, i * sides + (k + 1) % sides
+			faces.append((p0, p1, p1 + sides, p0 + sides))
+	faces.append(tuple(reversed(range(sides))))
+	faces.append(tuple(range((np_ - 1) * sides, np_ * sides)))
+	K.mesh(verts, faces, m, smooth=True)
+	_tag(_new_since(start), role)
+
+
+def stone_pier(cx, cz, w, y0, y1):
+	"""A square pillar of stacked chisel-cut stones (the bottom one dark, the foot and cap a little wider)."""
+	y0 = max(y0, E)
+	n = max(2, round((y1 - y0) / 0.32))
+	ys = [y0 + 0.002 + (y1 - y0 - 0.002) * i / n for i in range(n + 1)]
 	for i in range(n):
-		a0, a1 = step * i, step * (i + 1) + 0.05
-		top = E + (h - 2 * E) * (i + 1) / n
-		pts = [(R * math.cos(a0 + (a1 - a0) * k / 5), -R * math.sin(a0 + (a1 - a0) * k / 5)) for k in range(6)]
-		pts += [(ri * math.cos(a1 - (a1 - a0) * k / 2), -ri * math.sin(a1 - (a1 - a0) * k / 2)) for k in range(3)]
-		m = kit.tex_mat("greystone", "dark") if K.rng.random() < 0.15 else stone_m()
-		slab_xz(pts, top - tt, top, m, c=K.rng.uniform(0.022, 0.032))
+		m = kit.tex_mat("greystone", "dark") if i == 0 and y0 < 0.01 else stone_m()
+		end = i in (0, n - 1)
+		ww = w if end else w - 0.03
+		block((cx, (ys[i] + ys[i + 1]) / 2, cz), (ww, ys[i + 1] - ys[i] - 0.003, ww), m, cut=0.024, tilt=0.0, dent=0.01, free="")
+
+
+def stairs_spiral():
+	"""F716 spiral stairs (owner, Nov 22: hard to climb, the top ends in empty space): 4 × 4 m. Nine wide stone
+	treads (each an inner and an outer stone) climb 3/4 of a turn round a thick post of stacked drums, then a
+	landing of 9 flagstones fills the last quarter at the top, over the way in. A stone rail with turned
+	balusters runs round the outside on corner pillars, and along the landing's drop. Layout: spiral_layout.py."""
+	import spiral_layout as SL
+
+	def tread(poly, top, inner):
+		m = kit.tex_mat("greystone", "dark") if K.rng.random() < 0.12 else stone_m()
+		slab_xz(_inset(poly, 0.003), top - SL.H * 0.09, top, m, c=K.rng.uniform(0.022, 0.032))
+
+	def flag(poly, y0, y1):
+		slab_xz(_inset(poly, 0.002), y0, y1, stone_m(), c=K.rng.uniform(0.022, 0.03))
+
+	SL.build(post=lambda y1: stone_drums(SL.POST, E, y1, cap=0.03),
+		tread=tread, flag=flag, pier=stone_pier,
+		rail=lambda p0, t0, p1, t1: spiral_rail(p0, t0, p1, t1, stone_m(), bar=SL.BAR),
+		baluster=lambda x, z, y0, y1: spiral_baluster(x, z, y0, y1, stone_m()),
+		rng=K.rng, post_top=2.93)
 
 
 STAIR_STEPS = 8   # F711 (owner, Nov 22: "the first and second steps are far too tall"): 8 steps of 25 cm, not 5 of 40 cm
@@ -1448,6 +1506,6 @@ if __name__ == "__main__":
 		# install=1: into the game (assets/models/build) plus the preview picture make_piece_icons.py turns into
 		# the build-menu icon (owner OK'd the shapes, Nov 17). The broken door is a ruin prop, not a game piece yet.
 		fam = FAMILY.get(name, "cut_stone")
-		png = str(K.JOUR / f"{name}__{fam}.png") if install else None
+		png = str(K.JOUR / f"{name}__{fam}.png") if install else (str(out_dir / f"{name}.png") if "preview" in args else None)
 		kit.save(str(out_dir / f"{name}__{fam}.glb"), png, recenter=False, tex_size=512)
 		print("PIECE_OK", name)

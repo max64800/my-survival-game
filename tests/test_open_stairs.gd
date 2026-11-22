@@ -6,7 +6,7 @@ extends TestCase
 const SPOTS := {  # stairs piece -> [a barrel or crate that fits under it, one that doesn't] (its own frame)
 	"stairs": [["crate", Vector3(0, 0, -0.85)], ["crate", Vector3(0, 0, 0.0)]],
 	"stairs_corner": [["barrel", Vector3(-0.55, 0, -0.6)], ["barrel", Vector3(0.5, 0, 0.5)]],
-	"stairs_spiral": [["barrel", Vector3(0.24, 0, 0.66)], ["barrel", Vector3(0.5, 0, -0.4)]],
+	"stairs_spiral": [["barrel", Vector3(1.0, 0, 1.0)], ["barrel", Vector3(0.9, 0, -0.5)]],  # F716: under the landing
 }
 
 

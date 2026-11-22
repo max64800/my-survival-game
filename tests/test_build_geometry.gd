@@ -173,7 +173,8 @@ func test_code_shapes_sit_on_their_base() -> void:
 			for axis in [0, 2]:
 				if b.position[axis] < want.position[axis] - 0.12 or b.end[axis] > want.end[axis] + 0.12:
 					bad.append("%s/%s sticks out on %s (%.2f..%.2f, space %.2f..%.2f)" % [id, fam, "xyz"[axis], b.position[axis], b.end[axis], want.position[axis], want.end[axis]])
-			if b.end.y > want.end.y + 0.12:
+			var over := 1.0 if id == "stairs_spiral" else 0.0  # F716: its rail and post stand 1 m over the landing
+			if b.end.y > want.end.y + 0.12 + over:
 				bad.append("%s/%s too tall (%.2f > %.2f)" % [id, fam, b.end.y, want.end.y])
 	check(bad.is_empty(), "every shape sits in its space: %s" % [bad])
 

@@ -457,14 +457,29 @@ func _ramp_shape(s: Vector3) -> void:
 		add_child(cs)
 		return
 	if piece == "stairs_spiral":
-		# A smooth spiral slope of slanted treads (step-ups fail under the low-hanging top tread), and the post.
+		# F716: a smooth spiral slope of slanted treads, the post, the landing (and its pillar), the outside
+		# corner pillars and the rails, so you can't fall off the open side.
 		var post := CylinderShape3D.new()
-		post.radius = 0.19
-		post.height = s.y
+		post.radius = PieceMesh.SPIRAL_POST
+		post.height = s.y + 0.95
 		cs.shape = post
-		cs.position = Vector3(0, s.y * 0.5, 0)
+		cs.position = Vector3(0, post.height * 0.5, 0)
 		add_child(cs)
-		for pts: PackedVector3Array in PieceMesh.spiral_slope_parts(s):
+		var hulls: Array = PieceMesh.spiral_slope_parts(s) + PieceMesh.spiral_rail_parts(s)
+		var boxes := [[Vector3(0.995, (PieceMesh.SPIRAL_LANDING + s.y) * 0.5, 0.995), Vector3(1.99, s.y - PieceMesh.SPIRAL_LANDING, 1.99)],
+			[Vector3(1.72, PieceMesh.SPIRAL_LANDING * 0.5, 1.72), Vector3(0.24, PieceMesh.SPIRAL_LANDING, 0.24)]]
+		for a in [PI * 0.25, PI * 0.75, PI * 1.25]:
+			var c := PieceMesh._sq(a, 1.73)
+			var h := PieceMesh.spiral_slope_y(s, a) + PieceMesh.SPIRAL_RAIL_H
+			boxes.append([Vector3(c.x, h * 0.5, c.y), Vector3(0.22, h, 0.22)])
+		for b in boxes:
+			var bs := BoxShape3D.new()
+			bs.size = b[1]
+			var part := CollisionShape3D.new()
+			part.shape = bs
+			part.position = b[0]
+			add_child(part)
+		for pts: PackedVector3Array in hulls:
 			var part := CollisionShape3D.new()
 			var hull := ConvexPolygonShape3D.new()
 			hull.points = pts

@@ -66,7 +66,7 @@ static func _make(piece: String, style: String, detail: bool) -> ArrayMesh:
 		"railing": _railing(s)
 		"railing_stairs": _stair_railing(s)
 		"stairs_corner": _corner_steps(s, 8)
-		"stairs_spiral": _spiral_steps(s, 12)
+		"stairs_spiral": _spiral_steps(s)
 		"hatch": _floor_hatch(s)
 		"gable_down": _prism_z([Vector2(-s.x * 0.5, 0), Vector2(-s.x * 0.5, s.y), Vector2(s.x * 0.5, s.y)], -s.z * 0.5, s.z * 0.5)
 		"roof_cap": _roof_cap(s)
@@ -486,7 +486,17 @@ static func _square_exit(c: Vector2, a: float, hx: float, hz: float) -> Vector2:
 ## F169: how thick the stairs' undersides are, straight down. The models (stonehold_v2.py, hearthbrick_v2_*.py) match.
 const STAIRS_UNDER := 0.58     # straight stairs: the slanted underside is this far below the line of the step tips
 const CORNER_UNDER := 0.2      # corner stairs: each step reaches this far below the step before it
-const SPIRAL_TREAD := 0.13     # spiral stairs: each tread's thickness
+## F716 (owner, Nov 22: "my dwarf had a very hard time climbing them, and they should come to a solid block"):
+## the spiral is 4×4 m. 9 wide treads climb 3/4 of a turn round a thick post (from +x toward −z), then a landing
+## fills the last quarter (+x, +z) at the top, over the way in, so nothing hangs low over a tread. A rail runs
+## round the outside. The models (spiral_layout.py in tools/asset_forge/builds) use the same numbers.
+const SPIRAL_TREAD := 0.18     # spiral stairs: each tread's thickness
+const SPIRAL_STEPS := 9        # treads, 30° each
+const SPIRAL_POST := 0.32      # the post's radius
+const SPIRAL_REACH := 1.84     # treads reach this far from the middle along x or z (a wall's inner face is at 1.85)
+const SPIRAL_LANDING := 1.75   # the landing's underside (its top is the piece's top)
+const SPIRAL_RAIL := 1.76      # the outer rail's middle, from the post along x or z
+const SPIRAL_RAIL_H := 0.85    # how high the rail stands over the slope
 
 
 ## F169: how high the open space under a stair piece is at a spot (x, z in the piece's own unturned frame, its
@@ -508,13 +518,16 @@ static func stair_underside(piece: String, s: Vector3, q: Vector2) -> float:
 			var i := clampi(int(a / (PI * 0.5) * n), 0, n - 1)
 			return maxf(0.0, s.y * i / n - CORNER_UNDER)
 		"stairs_spiral":
-			var r := q.length()
-			if r < 0.25:
+			if q.length() < SPIRAL_POST + 0.02:
 				return 0.0  # the post
-			if r > minf(s.x, s.z) * 0.5:
-				return INF
+			for c in [Vector2(1.72, 1.72), Vector2(1.73, -1.73), Vector2(-1.73, -1.73), Vector2(-1.73, 1.73)]:
+				if absf(q.x - c.x) < 0.16 and absf(q.y - c.y) < 0.16:
+					return 0.0  # a corner pillar
+			if q.x >= 0.0 and q.y >= 0.0:
+				return SPIRAL_LANDING
 			var a := fposmod(atan2(-q.y, q.x), TAU)
-			return maxf(0.0, s.y * a / TAU - SPIRAL_TREAD)
+			var i := clampi(int(a / (PI / 6.0)), 0, SPIRAL_STEPS - 1)
+			return maxf(0.0, s.y * 0.1 * (i + 1) - SPIRAL_TREAD)
 	return 0.0
 
 
@@ -535,41 +548,96 @@ static func _corner_steps(s: Vector3, n: int) -> void:
 	_box(Vector3(-hx + 0.16, s.y * 0.5, hz - 0.16), Vector3(0.3, s.y, 0.3))  # the post at the turn
 
 
-## Spiral stairs: a round post and n thin wedge treads, one full turn up s.y, climbing the same way as the
-## corner stairs (from +x toward −z). Open underneath, so you can walk below the high treads.
-static func _spiral_steps(s: Vector3, n: int) -> void:
-	var r_out := minf(s.x, s.z) * 0.5 - 0.05
-	var r_in := 0.14  # inside the post, so every tread is held by it
-	_cyl(Vector3.ZERO, 0.19, 0.19, s.y)
-	for i in n:
-		var a0 := TAU * i / n
-		var a1 := TAU * (i + 1) / n + 0.05  # a little over the next one (seen from above: no gaps)
-		var pts := []
-		for k in 4:
-			var a := lerpf(a0, a1, k / 3.0)
-			pts.append(Vector2(cos(a), -sin(a)) * r_out)
-		pts.append(Vector2(cos(a1), -sin(a1)) * r_in)
-		pts.append(Vector2(cos(a0), -sin(a0)) * r_in)
-		var top := s.y * (i + 1) / n
-		_prism_y(pts, top - 0.13, top)
+## Where a ray from the middle at angle a (0 = +x, 90° = −z) meets the square ±h.
+static func _sq(a: float, h: float) -> Vector2:
+	var d := Vector2(cos(a), -sin(a))
+	return d * h / maxf(absf(d.x), absf(d.y))
 
 
-## The spiral stairs' solid treads as smooth slanted wedges, each rising from the one before to its own top, so
-## together they make one smooth spiral slope (no step-ups: the top tread hangs low over the bottom one, and a
-## step-up needs 0.5 m of head room). Each is a list of corner points for a ConvexPolygonShape3D.
-static func spiral_slope_parts(s: Vector3, n: int = 12) -> Array:
-	var r_out := minf(s.x, s.z) * 0.5 - 0.05
-	var r_in := 0.3  # closer in, the slope is too steep to stand on (it acts as a wall); no dwarf fits there anyway
+## Spiral tread i seen from above (x, z): a 30° wedge from the post out to the square, a little over the next
+## tread (no gaps seen from above; the last one stops at the landing).
+static func spiral_tread(i: int) -> Array:
+	var a0 := PI / 6.0 * i
+	var a1 := PI / 6.0 * (i + 1) + (0.05 if i < SPIRAL_STEPS - 1 else 0.0)
+	var pts := [_sq(a0, SPIRAL_REACH)]
+	for c in [PI * 0.25, PI * 0.75, PI * 1.25]:
+		if a0 < c and c < a1:
+			pts.append(_sq(c, SPIRAL_REACH))
+	pts.append(_sq(a1, SPIRAL_REACH))
+	pts.append(Vector2(cos(a1), -sin(a1)) * (SPIRAL_POST - 0.06))
+	pts.append(Vector2(cos(a0), -sin(a0)) * (SPIRAL_POST - 0.06))
+	return pts
+
+
+## The smooth slope you walk up at angle a: from the floor (no lip: under the landing there's no head room for a
+## step-up), through the middle of every tread top, to 10 cm under the landing (a step-up there, in the open).
+static func spiral_slope_y(s: Vector3, a: float) -> float:
+	var u := a / (PI / 6.0)
+	return minf(s.y, s.y * (0.1 * u + 0.05 * minf(1.0, u)))
+
+
+## The rails as solid panels (corner points: 4 at the bottom, then the same 4 at the top), for the code shape and
+## the bumping: round the outside from the 45° corner to the landing, and along the landing's drop.
+static func spiral_rail_parts(s: Vector3) -> Array:
 	var parts := []
-	for i in n:
+	var keys := [PI * 0.25, PI * 0.5, PI * 0.75, PI, PI * 1.25, PI * 1.5]
+	for k in keys.size() - 1:
+		var p0 := _sq(keys[k], SPIRAL_RAIL)
+		var p1 := _sq(keys[k + 1], SPIRAL_RAIL)
+		var y0 := spiral_slope_y(s, keys[k])
+		var y1 := spiral_slope_y(s, keys[k + 1])
+		parts.append(_panel(p0, p1, y0 - 0.15, y1 - 0.15, y0 + SPIRAL_RAIL_H, y1 + SPIRAL_RAIL_H))
+	parts.append(_panel(Vector2(SPIRAL_POST - 0.02, 0.08), Vector2(1.9, 0.08), s.y, s.y, s.y + 0.85, s.y + 0.85))
+	return parts
+
+
+static func _panel(p0: Vector2, p1: Vector2, b0: float, b1: float, t0: float, t1: float) -> PackedVector3Array:
+	var n := (p1 - p0).normalized().orthogonal() * 0.05
+	var pts := PackedVector3Array()
+	for y in [[b0, b1], [t0, t1]]:
+		pts.append(Vector3(p0.x - n.x, y[0], p0.y - n.y))
+		pts.append(Vector3(p1.x - n.x, y[1], p1.y - n.y))
+		pts.append(Vector3(p1.x + n.x, y[1], p1.y + n.y))
+		pts.append(Vector3(p0.x + n.x, y[0], p0.y + n.y))
+	return pts
+
+
+## Spiral stairs (F716): the post, the treads, the landing on its corner pillar, the floor-standing pillars at the
+## outside corners and the rails. Open under the treads and the landing.
+static func _spiral_steps(s: Vector3) -> void:
+	_cyl(Vector3.ZERO, SPIRAL_POST, SPIRAL_POST, s.y + 0.95)
+	for i in SPIRAL_STEPS:
+		var top := s.y * 0.1 * (i + 1)
+		_prism_y(spiral_tread(i), top - SPIRAL_TREAD, top)
+	_box(Vector3(0.995, (SPIRAL_LANDING + s.y) * 0.5, 0.995), Vector3(1.99, s.y - SPIRAL_LANDING, 1.99))
+	_box(Vector3(1.72, SPIRAL_LANDING * 0.5, 1.72), Vector3(0.24, SPIRAL_LANDING, 0.24))
+	for a in [PI * 0.25, PI * 0.75, PI * 1.25]:
+		var c := _sq(a, 1.73)
+		var h := spiral_slope_y(s, a) + SPIRAL_RAIL_H + 0.08
+		_box(Vector3(c.x, h * 0.5, c.y), Vector3(0.22, h, 0.22))
+	for p: PackedVector3Array in spiral_rail_parts(s):
+		_prism_sides([p[0], p[1], p[2], p[3]], [p[4], p[5], p[6], p[7]], Vector3.DOWN, Vector3.UP)
+
+
+## The spiral stairs' treads as one smooth slanted slope (30° wedges, each from the one before up to its own
+## top), so the dwarf walks up instead of hopping 20 cm steps. Each is a list of corner points for a
+## ConvexPolygonShape3D, 10° each (a wider one bulges: its hull joins points round the turn into a steep wall).
+## They start 0.6 m from the middle: closer in the slope is steeper than a dwarf can stand on (it acts as a
+## wall), and no dwarf fits there anyway (the post is 0.32 m, the dwarf 0.36 m each side).
+static func spiral_slope_parts(s: Vector3) -> Array:
+	var parts := []
+	var step := PI / 18.0
+	for i in SPIRAL_STEPS * 3:
 		var pts := PackedVector3Array()
-		for k in 4:
-			var t := k / 3.0
-			var a := TAU * (i + t) / n
-			var y := s.y * (i + t) / n
-			for r in ([r_out, r_in] if k in [0, 3] else [r_out]):
-				pts.append(Vector3(cos(a) * r, y, -sin(a) * r))
-				pts.append(Vector3(cos(a) * r, maxf(0.0, y - 0.13), -sin(a) * r))
+		var angles := [step * i, step * (i + 1)]
+		for c in [PI * 0.25, PI * 0.75, PI * 1.25]:
+			if step * i < c and c < step * (i + 1):
+				angles.append(c)
+		for a: float in angles:
+			var y := spiral_slope_y(s, a)
+			for q in [_sq(a, SPIRAL_REACH), Vector2(cos(a), -sin(a)) * 0.6]:
+				pts.append(Vector3(q.x, y, q.y))
+				pts.append(Vector3(q.x, maxf(0.0, y - 0.15), q.y))
 		parts.append(pts)
 	return parts
 
