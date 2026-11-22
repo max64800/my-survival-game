@@ -49,6 +49,8 @@ var _health_text: Label
 var _level_label: Label
 var _buff_label: Label
 var _ailment_badges: AilmentBadges  ## burning / chilled / poisoned / frozen, above the health bar
+var _edge_flash: ScreenEdgeFlash  ## red flash on a hit, green/orange/blue glow while poisoned/burning/chilled (F695)
+var _edge_flash_vitals: Vitals  ## whose "damaged" signal _edge_flash is listening to right now
 var craft: CraftPanel
 var skills: SkillsPanel
 var map_panel: MapPanel
@@ -92,6 +94,9 @@ func _build() -> void:
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(root)
+
+	_edge_flash = ScreenEdgeFlash.new()
+	root.add_child(_edge_flash)
 
 	var cross := Label.new()
 	cross.text = "+"
@@ -1195,6 +1200,12 @@ func _process(delta: float) -> void:
 	_goals_label.visible = not (_bag_panel.visible or skills.visible or map_panel.visible or build_menu.visible or blueprint_menu.visible)
 	if ps:
 		var v := ps.vitals
+		if v != _edge_flash_vitals:  # a new/other player's body: listen to its hits instead (F695)
+			if _edge_flash_vitals and _edge_flash_vitals.damaged.is_connected(_edge_flash.flash_hit):
+				_edge_flash_vitals.damaged.disconnect(_edge_flash.flash_hit)
+			v.damaged.connect(_edge_flash.flash_hit)
+			_edge_flash_vitals = v
+		_edge_flash.set_status("burn" if v.ailments.has("burn") else "poison" if v.ailments.has("poison") else "chill" if (v.ailments.has("chill") or v.ailments.has("frozen")) else "")
 		_bars.health.max_value = v.max_health()
 		_bars.health.value = v.health
 		_bars.stamina.max_value = v.max_stamina()

@@ -1,6 +1,8 @@
 class_name Vitals
 extends RefCounted
 ## A dwarf's body: health, stamina, hunger, thirst, and the food buffs (2 foods + 1 drink).
+
+signal damaged(amount: float)  ## a real hit landed (not poison/burn ticking): the screen edges flash red (F695)
 ## Rules from docs/design/progression-and-economy.md section 6:
 ##  - Hunger/thirst drain slowly (empty after ~40 / ~36 minutes). Half speed while resting.
 ##  - You NEVER take damage or die from hunger or thirst. Low meters only slow healing
@@ -192,6 +194,8 @@ func take_damage(amount: float) -> bool:
 		health = 1.0  # Unbreakable: a killing hit leaves you standing, once every 10 minutes
 		unbreakable_cd = 600.0
 	_since_damage = 0.0
+	if real > 0.0:
+		damaged.emit(real)
 	return health <= 0.0
 
 
