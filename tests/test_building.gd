@@ -104,6 +104,23 @@ func test_overlap_blocks_duplicates() -> void:
 	check(s.overlaps("wall", Vector3(1.5, 0, 0), 0), "a wall half on top of it is not")
 
 
+## F733 (owner, Nov 22): a stone Sloped Wall and a wooden Sloped Wall (down) are the two halves of one wall spot.
+func test_two_wall_halves_share_one_spot() -> void:
+	check(Pieces.allowed("sloped_wall", "cut_stone") and Pieces.allowed("sloped_wall_down", "plank_root"),
+		"both halves can be made: the low one in stone, the high one in wood")
+	var s := Structure.new()
+	s.add(1, "sloped_wall", "cut_stone", Vector3(1, 0, 0), 0, true)
+	check(not s.overlaps("sloped_wall_down", Vector3(1, 0, 0), 0), "the other half fits in the same wall spot")
+	check(s.overlapping("sloped_wall_down", Vector3(1, 0, 0), 0).is_empty(), "nothing is in its way (rebuilding sees the same)")
+	check(s.overlaps("sloped_wall", Vector3(1, 0, 0), 0), "the same half twice does not")
+	check(s.overlaps("sloped_wall_down", Vector3(1, 0, 0), 2), "half a turn round, both would fill the same side: no")
+	check(s.overlaps("wall", Vector3(1, 0, 0), 0), "a whole wall in a half-filled spot: no")
+	s.add(2, "sloped_wall_down", "plank_root", Vector3(1, 0, 0), 0, false)
+	check(s.overlaps("sloped_wall", Vector3(1, 0, 0), 0) and s.overlaps("sloped_wall_down", Vector3(1, 0, 0), 0),
+		"both halves in: the spot is full")
+	check(not s.overlaps("sloped_wall", Vector3(0, 0, 1), 1), "a wall meeting it at the corner is still fine")
+
+
 func test_removing_support_drops_the_rest() -> void:
 	var s := Structure.new()
 	s.add(1, "pillar", "cut_stone", Vector3(0, 0, 0), 0, true)

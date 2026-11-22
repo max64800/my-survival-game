@@ -107,7 +107,7 @@ li span:last-child { font: 500 14px var(--mono); font-variant-numeric: tabular-n
 		<section>
 			<h2>Rebuild in wood</h2>
 			<ul id="cost_wood"></ul>
-			<p class="note">Everything comes back in planks; whole and worn stone walls stay (unless something new goes on top of one). The new stone trims come back in stone.</p>
+			<p class="note">Everything comes back in planks; whole stone walls stay. Worn walls (their broken tops left triangle holes) are rebuilt in planks too. The new stone trims come back in stone.</p>
 		</section>
 		<section>
 			<h2>Rebuild in stone</h2>
@@ -147,7 +147,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
-const COST = {"wood":[["New pieces","396 + 81 trims"],["Rootwood Plank","3,090"],["Rope","394"],["Cut Stone","18"],["Mortar","2"],["Copper Ingot","4"]],"stone":[["New pieces","358 + 81 trims"],["Cut Stone","3,564"],["Mortar","361"],["Copper Ingot","4"]]};
+const COST = {"wood":[["Rootwood Plank","962"],["Rope","109"],["Cut Stone","104"],["Mortar","8"],["Copper Ingot","2"]],"stone":[["Cut Stone","1,163"],["Mortar","124"],["Copper Ingot","1"]]};  // (what the chest asks: Builder.ruin_needs, F557 shares, Nov 22)
 for (const k of ["wood", "stone"]) {
 	document.getElementById("cost_" + k).innerHTML = COST[k].map(([a, b]) => `<li><span>${a}</span><span>${b}</span></li>`).join("");
 }

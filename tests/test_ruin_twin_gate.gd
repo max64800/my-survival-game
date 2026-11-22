@@ -315,6 +315,15 @@ func test_rebuild_the_twin_gate_in_wood_rushed_stays_fast() -> void:
 	auth.storage.put(box, BlueprintLibrary.WOOD, 1)
 	check(b.sites.has(box), "a wooden rebuild starts")
 	var site: Dictionary = b.sites.get(box, {})
+	# F733 (owner, Nov 22: "those angular half walls should be rebuilt as well"): every worn wall comes down and goes
+	# back up whole, decided by the walls' wood, not by which piece sorts first (that was luck: the chest's spot).
+	var worn := b.structure.pieces.keys().filter(func(u): return b.structure.pieces[u].piece == "ruin_wall_worn")
+	check(worn.size() > 50, "the ruin has its worn walls (%d)" % worn.size())
+	check(worn.all(func(u): return site.get("worn_go", {}).has(u)), "every worn wall is rebuilt in wood (%d of %d)" % [
+		worn.filter(func(u): return site.get("worn_go", {}).has(u)).size(), worn.size()])
+	var flipped: Array = site.get("plan", []).duplicate()
+	flipped.reverse()
+	check(Builder._plan_keeps_worn(flipped) == Builder._plan_keeps_worn(site.get("plan", [])), "the plan's order doesn't change it")
 	var stuck_at := -1
 	for i in site.get("plan", []).size():
 		var p: Dictionary = site.plan[i]

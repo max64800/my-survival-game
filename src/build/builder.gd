@@ -1228,6 +1228,9 @@ const RUIN_XP := 300  ## experience for each dwarf near a rebuilt ruin (owner, N
 const RUIN_KEEP := ["ruin_wall_worn"]
 const RUIN_KEEP_SLOTS := ["wall", "window_wall"]
 const RUIN_KEEP_FAMILIES := ["plank_root"]
+## F733 (owner, Nov 22: "those angular half walls should be rebuilt as well"): ruins whose worn walls are all rebuilt
+## even in wood (the Twin Gate: its broken tops left triangle holes under every new wall and balcony; by ruin name).
+const RUIN_REBUILD_WORN := ["twin_gate"]
 const RUIN_DEBRIS := ["gate_broken", "chimney_fallen", "spire_top_fallen", "spire_wall_chunk", "beacon_bowl_fallen"]  ## broken
 ## pieces lying about (the outpost's torn-off gate, the Brewhall's fallen chimney, the Lantern Spire's fallen top, wall
 ## piece and fire bowl): cleared when it's rebuilt
@@ -1248,6 +1251,15 @@ func _ruin_reach(box_id: int) -> float:
 ## Does fixing in this material leave the worn walls standing?
 static func ruin_keeps_worn(family: String) -> bool:
 	return family in RUIN_KEEP_FAMILIES
+
+
+## Does this plan leave worn walls standing? By its walls' material, never by whichever piece sorts first (F733: that
+## was a stone trim or a wooden floor depending on where the chest stood, so the worn walls stayed or went by luck).
+static func _plan_keeps_worn(plan: Array) -> bool:
+	for p in plan:
+		if p.piece in RUIN_KEEP_SLOTS:
+			return ruin_keeps_worn(String(p.family))
+	return false
 
 
 ## What an untouched Rebuilding Chest says when you open it (owner, F350). Short (owner F411, Nov 19: "far too long"):
@@ -1288,7 +1300,7 @@ func ruin_needs(key: String, r: Dictionary) -> Dictionary:
 		return need
 	var plan := bp.world_pieces(r.origin, int(r.turn))
 	ruin_share_costs(plan)
-	var go := _worn_to_go(plan, float(r.get("over", 2.1)))
+	var go := _worn_to_go(plan, float(r.get("over", 2.1)), String(r.get("name", "")) in RUIN_REBUILD_WORN)
 	for p in plan:
 		if _ruin_slot_whole(p, go):
 			continue
@@ -1356,7 +1368,7 @@ func ruin_chest_changed(box_id: int) -> void:
 		return
 	site.ruin = key
 	_ruin_ground(site, bp)
-	site.worn_go = _worn_to_go(site.plan, float(r.get("over", 2.1)))
+	site.worn_go = _worn_to_go(site.plan, float(r.get("over", 2.1)), String(r.get("name", "")) in RUIN_REBUILD_WORN)
 	for i in site.plan.size():  # what still stands whole is done already
 		if _ruin_slot_whole(site.plan[i], site.worn_go):
 			_ev_site_piece.rpc(box_id, i)
@@ -1402,9 +1414,15 @@ func _ruin_same_here(p: Dictionary) -> bool:
 ## Returns {uid: true} of those worn walls (none when fixing in stone: every worn wall is rebuilt then anyway).
 ## `over`: how far above a worn wall a new piece counts as standing on it (2.1 m; the Lantern Spire 2.35 m, F479: its
 ## Stonehold floors are 2.25 m apart. Not for every ruin: it tore down the watchtower's worn walls in a wood rebuild).
-func _worn_to_go(plan: Array, over := 2.1) -> Dictionary:
+## `all`: every worn wall goes (RUIN_REBUILD_WORN).
+func _worn_to_go(plan: Array, over := 2.1, all := false) -> Dictionary:
 	var go := {}
-	if plan.is_empty() or not ruin_keeps_worn(String(plan[0].family)):
+	if not _plan_keeps_worn(plan):
+		return go
+	if all:
+		for uid in structure.pieces:
+			if structure.pieces[uid].piece in RUIN_KEEP:
+				go[uid] = true
 		return go
 	var news: Array = plan.filter(func(a): return not _ruin_same_here(a))
 	for uid in structure.pieces:
@@ -1445,7 +1463,8 @@ func _ruin_step(box_id: int, site: Dictionary) -> bool:
 		if p.built or steps.band_of[i] != steps.current:
 			continue
 		if not site.has("worn_go"):
-			site.worn_go = _worn_to_go(site.plan, float(auth.world_state.get("ruins", {}).get(str(box_id), {}).get("over", 2.1)))  # (a loaded save)
+			var rr: Dictionary = auth.world_state.get("ruins", {}).get(str(box_id), {})
+			site.worn_go = _worn_to_go(site.plan, float(rr.get("over", 2.1)), String(rr.get("name", "")) in RUIN_REBUILD_WORN)  # (a loaded save)
 		# (F565: only the pieces near it, and the overlap test once, not once per piece in the world)
 		var ov := structure.overlapping(p.piece, p.pos, p.rot)
 		for uid in structure.near(Pieces.box(p.piece, p.pos, p.rot).grow(0.6)):  # (a worn wall is lower than a whole one: look by place, not only by overlap)
@@ -1510,7 +1529,8 @@ func _ruin_dig_rock(p: Dictionary) -> bool:
 func _finish_ruin(box_id: int, site: Dictionary, chest: Dictionary) -> void:
 	var key: String = site.ruin
 	var origin: Vector3 = site.origin
-	var keep_worn: bool = site.plan.size() > 0 and ruin_keeps_worn(String(site.plan[0].family))
+	var rec_name := String(auth.world_state.get("ruins", {}).get(str(box_id), {}).get("name", ""))
+	var keep_worn: bool = _plan_keeps_worn(site.plan) and not rec_name in RUIN_REBUILD_WORN
 	var reach := _ruin_reach(box_id)
 	for uid in structure.pieces.keys():  # anything broken still standing in the rebuilt ruin goes (and its torn-off gate)
 		var q: Dictionary = structure.pieces[uid]

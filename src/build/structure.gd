@@ -111,6 +111,8 @@ func overlaps(piece: String, pos: Vector3, rot: int) -> bool:
 			continue  # a door goes inside a doorway
 		if fits_under_stairs(piece, pos, rot, o) or fits_under_stairs(o.piece, o.pos, o.rot, {piece = piece, pos = pos, rot = rot}):
 			continue  # F169: a chest, barrel or table in the open space under the stairs
+		if halves_fit(piece, pos, rot, o):
+			continue  # F733: a sloped wall and an upside-down one fill one wall spot together (any two materials)
 
 		var oy := _y_range(o.piece, o.pos, -0.16)
 		if mine_y.y <= oy.x or oy.y <= mine_y.x:
@@ -149,6 +151,8 @@ func overlapping(piece: String, pos: Vector3, rot: int) -> Array:
 			continue
 		if fits_under_stairs(piece, pos, rot, o) or fits_under_stairs(o.piece, o.pos, o.rot, {piece = piece, pos = pos, rot = rot}):
 			continue  # F169: a chest, barrel or table in the open space under the stairs
+		if halves_fit(piece, pos, rot, o):
+			continue  # F733: a sloped wall and an upside-down one fill one wall spot together (any two materials)
 		var oy := _y_range(o.piece, o.pos, -0.16)
 		if mine_y.y <= oy.x or oy.y <= mine_y.x:
 			continue
@@ -200,6 +204,22 @@ static func fits_under_stairs(piece: String, pos: Vector3, rot: int, stair: Dict
 			if PieceMesh.stair_underside(stair.piece, s, Vector2(l.x, l.z)) < top:
 				return false
 	return true
+
+
+## F733 (owner, Nov 22: "a half wall that is stone and the other half wall that is wood... counted as the half wall,
+## so you can combine them"): a Sloped Wall (full along the bottom) and a Sloped Wall (down) (full along the top) on
+## the same wall spot, turned the same way, are the two halves of one square wall: they never overlap. (Half a turn
+## apart they cross: both would fill the same side.)
+const WALL_HALVES := ["sloped_wall", "sloped_wall_down"]
+
+
+static func halves_fit(piece: String, pos: Vector3, rot: int, o: Dictionary) -> bool:
+	if not (piece in WALL_HALVES and o.piece in WALL_HALVES) or piece == o.piece:
+		return false
+	if pos.distance_to(o.pos) > 0.05:
+		return false
+	var turn := fposmod(Pieces.yaw_of(rot) - Pieces.yaw_of(int(o.rot)), TAU)
+	return turn < 0.01 or turn > TAU - 0.01
 
 
 static func fits_inside(inner: String, outer: String) -> bool:
