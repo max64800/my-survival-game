@@ -73,6 +73,8 @@ Every new piece: Blender by script in the style (MODEL-RULES.md), a game piece w
 - [ ] Bands at floor lines; no flat wall longer than 6 m.
 - [ ] The BLUEPRINT-RECIPE rules (stairs, steps, windows, round doors, roofs per style); everything on the grid,
       stairs meet floors, nothing floats (the blueprint checks).
+- [ ] Stairs up to a balcony land on floor as wide as the stairs, with room to step off and walk to the door
+      (owner, Nov 22, F615: a 1 m balcony beside a 2 m stair "doesn't really work"; make a 2 m landing there).
 - [ ] Cost: a showpiece is big. Show the price on the page; the owner decides if it is too much.
 - [ ] Page from `tools/ruins/kiln_page.html` (ruin / wood / original, "Mark new pieces", roof and upper floor on/off,
       decor inside the ruin). Photograph it yourself first; at most 2 photo rounds.

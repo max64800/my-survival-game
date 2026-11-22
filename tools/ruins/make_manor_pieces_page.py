@@ -40,10 +40,17 @@ def house():
 	# the balcony: two half floors jutting 1 m out, brackets under them, railings round them.
 	# Brackets snap to 3 spots on each 2 m wall: its two ends and its middle (where two walls meet, one bracket
 	# covers both ends; at the house's corners it sits flush with the corner)
-	s += [P("floor_half", x, 2, 0.5) for x in (-1, 1)]
+	s.append(P("floor_half", 1, 2, 0.5))
 	s += [P("corbel", x, 1.0, 0.57, star=True) for x in (-1.75, -1.0, 0.0, 1.0, 1.75)]
-	s += [P("railing", x, 2.25, 1.0) for x in (-1, 1)]
+	s.append(P("railing", 1, 2.25, 1.0))
 	s.append(P("railing_narrow", 1.925, 2.25, 0.41, 1, star=True))   # (the left end is open: the stairs come up there)
+	# a 2 m deep landing where the stairs come up, in front of the upper door, so the stairs' whole width lands on
+	# floor (owner, Nov 22, F615: "the balcony is too short"): railing along its front and its short side, a pillar
+	# under its outer corner
+	s.append(P("floor", -1, 2, 1))
+	s.append(P("railing", -1, 2.25, 1.925))
+	s.append(P("railing_narrow", -0.075, 2.25, 1.41, 1, star=True))
+	s.append(P("pillar", -0.2, 0, 1.8))
 	# outside stairs up to the balcony's open left end: a slab, then stairs climbing toward +x (foot away from walls)
 	s += [P("floor", -3, 0, 1), P("stairs", -3, 0.25, 1, 3)]
 	# trim bands at the upper floor line: both sides and the back, corner blocks where they meet
