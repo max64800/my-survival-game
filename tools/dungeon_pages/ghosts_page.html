@@ -160,6 +160,7 @@ void main() {
 	a = mix(0.85, a, lit);
 	a *= clamp(1.0 - guide.g * (0.55 + 0.6 * n), 0.0, 1.0);
 	if (guide.b > 0.5) { col = eyeColor * 2.2; a = 1.0; }
+	else if (guide.b > 0.01) { float sc = guide.b / 0.35; col = mix(col, vec3(0.0), sc); a = mix(a, 0.97, sc); }  // (scratch marks: long, thin, pitch black)
 	a *= smoothstep(0.0, 0.35, fade - (1.0 - fade) * n);
 #ifdef DEPTH_ONLY
 	if (fade < 0.6) discard;
@@ -228,11 +229,19 @@ const cache = {};
 // data itself and rebuilds a .glb in memory: the published page isn't allowed to read "data:" links.
 async function unpack(url) {
 	const js = await (await fetch(url)).json();
-	const b64 = js.buffers[0].uri.split(",")[1];
+	const uri = js.buffers[0].uri;
 	delete js.buffers[0].uri;
-	const raw = atob(b64);
-	const bin = new Uint8Array((raw.length + 3) & ~3);
-	for (let i = 0; i < raw.length; i++) bin[i] = raw.charCodeAt(i);
+	let bin;
+	if (!uri.startsWith("data:")) {  // (a big model keeps its data in its own file next to the page)
+		const parts = await Promise.all(uri.split("|").map(u => fetch(u).then(r => r.text())));
+		const raw = atob(parts.join(""));
+		bin = new Uint8Array((raw.length + 3) & ~3);
+		for (let i = 0; i < raw.length; i++) bin[i] = raw.charCodeAt(i);
+	} else {
+		const raw = atob(uri.split(",")[1]);
+		bin = new Uint8Array((raw.length + 3) & ~3);
+		for (let i = 0; i < raw.length; i++) bin[i] = raw.charCodeAt(i);
+	}
 	let txt = new TextEncoder().encode(JSON.stringify(js));
 	const tl = (txt.length + 3) & ~3;
 	const glb = new Uint8Array(12 + 8 + tl + 8 + bin.length);

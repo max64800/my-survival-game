@@ -53,6 +53,11 @@ void fragment() {
 	if (guide.b > 0.5) {
 		col = eye_color.rgb * 2.2;
 		a = 1.0;
+	} else if (guide.b > 0.01) {
+		// scratch marks (owner, Nov 22: long, thin, pitch black; built in at 0.35, ghost_body.py)
+		float sc = clamp(guide.b / 0.35, 0.0, 1.0);
+		col = mix(col, vec3(0.0), sc);
+		a = mix(a, 0.97, sc);
 	}
 	// fading into mist: it breaks up into drifting patches first
 	a *= smoothstep(0.0, 0.35, fade - (1.0 - fade) * n);

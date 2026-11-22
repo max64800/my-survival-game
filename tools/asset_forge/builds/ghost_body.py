@@ -237,6 +237,7 @@ def tail_at(t):
 	return c, 0.27 * (1.0 - t) ** 1.25 + 0.01
 
 
+SCRATCH = []  # the Drifting Shade's scratch marks (a, middle, b, width): they glow a little (the guide's blue)
 LANTERN = (0.2, -0.235, 0.355)  # the Drifting Shade's lantern at his left hip (its glass glows, in the eyes' mesh)
 if LOOK == "a":
 	# The Drifting Shade (owner, Nov 22: "way too simplistic... a lot more details"): an old miner's spirit in a hooded
@@ -512,6 +513,46 @@ if LOOK == "a":
 		d = np.array((math.sin(a), math.cos(a), 0.0))
 		p0 = np.array(hit(body, (0.0, 0.03, bz), d))
 		body = smin(body, ell(tuple(p0 + d * 0.006), (0.019, 0.019, 0.019)), 0.004)
+	# scratch marks, big and small, all round him (owner, Nov 22): clean slashes with pointed ends, some alone and some in
+	# claw-like sets of three, smooth cloth left between them (not dents everywhere: that was the "crunched soda can")
+	rs = random.Random(91)
+	SCRATCH.clear()
+	# (owner, 2nd look: most of them on his front, the side you face: -y is his front)
+	spots = [(HEAD_C, (-1, 1), (-1, -0.25), (-0.1, 1))] * 8 + [(HEAD_C, (-1, 1), (-0.2, 1), (-0.1, 1))] * 2 \
+		+ [((0.0, 0.035, 0.7), (-1, 1), (-1, -0.2), (-0.2, 0.6))] * 11 + [((0.0, 0.035, 0.7), (-1, 1), (0.2, 1), (-0.2, 0.6))] * 3 \
+		+ [((0.0, 0.05, 0.42), (-1, 1), (-1, -0.2), (-0.3, 0.2))] * 9 + [((0.0, 0.05, 0.42), (-1, 1), (0.2, 1), (-0.3, 0.2))] * 2
+	for s0 in (-1, 1):
+		spots += [((s0 * 0.48, 0.035, 0.778), (-0.15, 0.15), (-1, 0.3), (-1, 1))] * 3
+	# (owner, 3rd look: more on the shoulders, the arms and low down; added last, so the first ones stay where they were)
+	for s0 in (-1, 1):
+		sx = (0.3, 1) if s0 > 0 else (-1, -0.3)
+		spots += [((s0 * 0.22, 0.03, 0.78), sx, (-1, 0.3), (0.1, 1))] * 4 + [((s0 * 0.4, 0.035, 0.778), (-0.15, 0.15), (-1, 0.3), (-1, 1))] * 4
+	spots += [((0.0, 0.05, 0.3), (-1, 1), (-1, -0.1), (-0.4, 0.1))] * 7 + [((0.0, 0.05, 0.42), (-1, 1), (-1, 0.2), (-0.3, 0.2))] * 4
+	for c0, rx, ry, rz in spots:
+		for _ in range(20):  # (find a spot clear of the face, the lantern and the fists)
+			n = np.array((rs.uniform(*rx), rs.uniform(*ry), rs.uniform(*rz)))
+			n /= np.linalg.norm(n)
+			p0 = np.array(hit(body, tuple(c0), n))
+			if (tri(p0[0], p0[2], 0.06) < 0 and p0[1] < -0.1) or np.linalg.norm(p0 - np.array(LANTERN)) < 0.12 					or abs(p0[0]) > HAND_X - 0.06:
+				continue
+			break
+		else:
+			continue
+		big = rs.random() < 0.4
+		L = rs.uniform(0.11, 0.18) if big else rs.uniform(0.06, 0.1)  # (owner, 2nd look: long and thin, pitch black)
+		r = 0.0085 if big else 0.007
+		tdir = np.cross(n, (rs.uniform(-1, 1), rs.uniform(-1, 1), rs.uniform(-1, 1)))
+		tdir /= np.linalg.norm(tdir)
+		gap = np.cross(n, tdir)
+		count = 3 if rs.random() < 0.35 else 1
+		for j in range(count):
+			c = p0 + gap * (j - (count - 1) / 2) * 0.026
+			c = np.array(hit(body, tuple(np.array(c0) + (c - np.array(c0)) * 0.7), c - np.array(c0)))
+			Lj = L * (1.0 - 0.18 * abs(j - (count - 1) / 2))
+			a, m, b = c - tdir * Lj + n * 0.004, c - n * 0.007, c + tdir * Lj + n * 0.004
+			SCRATCH.append((a, m, b, r))
+			body = smax(body, -tube(tuple(a), tuple(m), 0.003, r), 0.004)
+			body = smax(body, -tube(tuple(m), tuple(b), r, 0.003), 0.004)
 	body = smax(body, -face, 0.02)  # (the face hollow stays open)
 
 if LOOK == "c":
@@ -573,7 +614,17 @@ for o in (o_body, o_eyes, o_fists):
 	mist = np.clip((0.5 - co[:, 2]) / 0.44, 0.0, 1.0) if o is o_body else np.zeros(len(co))
 	if o is o_eyes:
 		mist[:] = 0.0
-	rgb = np.stack([lit, mist, np.full(len(co), 1.0 if o is o_eyes else 0.0)], 1)
+	glow = np.full(len(co), 1.0 if o is o_eyes else 0.0)
+	if o is o_body and SCRATCH:  # (inside a scratch: 0.35, painted pitch black; the eyes are 1, anything over 0.5)
+		near = np.full(len(co), 9.0)
+		for a, m, b, r in SCRATCH:
+			for p0, p1, r0, r1 in ((a, m, 0.003, r), (m, b, r, 0.003)):
+				ab = np.array(p1) - np.array(p0)
+				t = np.clip(((co - p0) @ ab) / (ab @ ab), 0, 1)
+				dd = np.linalg.norm(co - (np.array(p0) + t[:, None] * ab), axis=1) / (r0 + (r1 - r0) * t + 0.003)
+				near = np.minimum(near, dd)
+		glow = 0.35 * np.clip((1.15 - near) / 0.3, 0.0, 1.0)
+	rgb = np.stack([lit, mist, glow], 1)
 	at = o.data.color_attributes.new("guide", "FLOAT_COLOR", "POINT")
 	at.data.foreach_set("color", np.concatenate([rgb, np.ones((len(rgb), 1))], 1).ravel())
 	o.data.color_attributes.active_color = at
@@ -582,7 +633,7 @@ for o in (o_body, o_eyes, o_fists):
 		p.use_smooth = True
 	# fewer faces: the game's light copy
 	n = len(o.data.polygons)
-	want = {o_body: 24000 if LOOK == "a" else 7000, o_eyes: 500, o_fists: 900}[o]
+	want = {o_body: 70000 if LOOK == "a" else 7000, o_eyes: 500, o_fists: 900}[o]
 	if n > want:
 		md = o.modifiers.new("fewer", "DECIMATE")
 		md.ratio = want / n
