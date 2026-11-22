@@ -35,6 +35,7 @@ var swinging := false
 var _mats := {}
 var _hand: Node3D  ## what the right hand holds
 var _held := "?"
+var hit_shapes: HitShapes  ## the hurt bubbles and the weapon's hit box (HitShapes; F9 shows them)
 
 
 ## Dwarf bodies live on their own visual layer (layer 2). Lanterns don't let this
@@ -151,6 +152,13 @@ func attack(duration: float, heavy: bool, combo_step: int = -1, move: String = "
 		# Each weapon its own move (DwarfRig.ATTACKS): spear thrust, mace smash, shield bash, sword slash/chop.
 		var weapon := move if move != "" else Combat.weapon_of(_held)
 		dwarf_rig.attack(duration, heavy, weapon, combo_step)  # (hit 1, hit 2 of the combo take turns)
+		if hit_shapes:  # the hit box lights up in F9 for the strike itself (the window the new check will use)
+			var part := "fists" if weapon == "fists" else ("shield" if weapon == "shield" else "weapon")
+			if part == "weapon":  # measured again now the weapon sits in the hand (the first box, made the moment
+				_fit_weapon_box(dwarf_rig.tool_look)  # it was picked up, sat beside the spear: owner, Nov 22)
+			hit_shapes.flash(part, duration * 0.25, duration * 0.3)
+			if weapon == "mace_2h" and heavy:
+				hit_shapes.flash("slam", duration * 0.38, duration * 0.12)
 		# A pale swoosh behind the blade (brighter for a heavy blow). Not for a spear's thrust or a shield's push.
 		if weapon in DwarfFist.TWO_HANDED:  # (great weapons, F389: the strike starts after the slow wind-up and its
 			# hold, DwarfGreatSwing: from 0.31 to the hit at 0.40 and a little past; only the head end of the long handle)
@@ -198,6 +206,21 @@ func set_held(item: String) -> void:
 	if dwarf_rig:
 		dwarf_rig.tool_look = look
 		dwarf_rig.snap_grip()
+	_fit_weapon_box.call_deferred(look)
+
+
+func _fit_shield_box() -> void:
+	if hit_shapes and is_inside_tree():
+		hit_shapes.weapon_box(dwarf_rig.shield_grip, "shield", "shield")
+
+
+## The held weapon's hit box, measured from the model now in the hand (HitShapes.WEAPON).
+func _fit_weapon_box(look: String) -> void:
+	if hit_shapes == null or not is_inside_tree():
+		return
+	hit_shapes.remove("weapon")
+	if Combat.WEAPONS.has(look) and look not in ["fists", "crossbow", "shield"]:
+		hit_shapes.weapon_box(_hand, look)
 
 
 ## The rigged look: a CC0 character squashed into dwarf proportions, tools in its right hand,
@@ -297,6 +320,10 @@ func set_shield(item: String) -> void:
 		c.queue_free()
 	if item != "":
 		dwarf_rig.shield_grip.add_child(ToolModels.build("shield", Items.color(item), VISUAL_LAYER, item))
+	if hit_shapes:
+		hit_shapes.remove("shield")
+		if item != "":
+			_fit_shield_box.call_deferred()
 
 
 ## Held poses for the rigged dwarf: block (sword up), shield up (left arm), crossbow aim.
@@ -349,6 +376,8 @@ func _build_dwarf_rig() -> void:
 	hip = dwarf_rig.hip
 	right_arm = Node3D.new()  # (only used by the shapes look; kept so other code works)
 	add_child(right_arm)
+	if not (get_parent() != null and get_parent().has_meta("ghost_model")):  # (a shade gets its own: HitShapes)
+		hit_shapes = HitShapes.for_dwarf(self)
 	set_held("")
 
 

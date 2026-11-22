@@ -151,7 +151,7 @@ func _fire_through_block() -> void:
 	for i in 5:  # each red slam carries 30 fire; 100 lights you up
 		v.stamina = v.max_stamina()
 		var before: float = v.health
-		_attack(m, "Shell Slam")
+		_attack(m, "Lunging Bite")
 		await _wait(1.5)
 		print("gemcheck: slam %d: health %.0f -> %.0f, %s (snail stunned: %s, stamina %.0f)" % [i + 1, before, v.health, v.ailments.describe(), m.stun.is_stunned(), v.stamina])
 	print("gemcheck: after 5 blocked red slams: %s, health %.0f -> %.0f" % [v.ailments.describe(), hp0, v.health])
@@ -165,7 +165,7 @@ func _fire_through_block() -> void:
 	var green := _snail(990103, "")
 	await _wait(1.5)
 	for atk in green.data.attacks:
-		if atk.name == "Shell Slam":
+		if atk.name == "Lunging Bite":
 			var poisoned: Dictionary = atk.duplicate()
 			poisoned.buildup = {poison = 100}
 			_attack(green, "Shell Slam (with poison)", poisoned)

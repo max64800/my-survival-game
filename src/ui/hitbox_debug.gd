@@ -4,7 +4,7 @@ extends CanvasLayer
 ##
 ## Yellow ring = an enemy's longest base attack reach.
 ## Orange ring = effective reach (yellow + 0.8) — this is what the game actually checks.
-## Blue wireframe = the dwarf's body collision (what enemy attacks aim at).
+## Green bubbles = bodies that can be hurt (HitShapes). Red box = a weapon striking right now, grey = at rest.
 ##
 ## Use [−] [+] to adjust reach values. Changes apply instantly. Hit Save to keep them
 ## across sessions. When the numbers feel right, tell Claude and they'll be written back
@@ -111,8 +111,8 @@ func _process(_dt: float) -> void:
 	_batch_rings(yellows, Color(1.0, 1.0, 0.0, 0.9))
 	_batch_rings(oranges, Color(1.0, 0.55, 0.0, 0.6))
 
-	if _dwarf:
-		_draw_capsule(_dwarf.global_position, 0.36, 1.35, Color(0.4, 0.8, 1.0, 0.75))
+	# The new shape hitboxes (HitShapes): green = can be hurt, red = a weapon striking now, grey = a weapon at rest.
+	HitShapes.draw_all(get_tree(), _imesh)
 
 
 func _batch_rings(rings: Array, color: Color) -> void:
@@ -372,7 +372,7 @@ func _load() -> void:
 	var f := FileAccess.open(SAVE_PATH, FileAccess.READ)
 	if f == null:
 		return
-	var parsed := JSON.parse_string(f.get_as_text())
+	var parsed: Variant = JSON.parse_string(f.get_as_text())
 	f.close()
 	if not parsed is Dictionary:
 		return

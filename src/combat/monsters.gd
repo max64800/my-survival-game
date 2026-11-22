@@ -21,8 +21,7 @@ static var LIST := {
 	"rock_snail": {name = "Rock Snail", ragdoll = {stay = ["soft_foot"], hop = 0.3, roll = "side", spin = 3.2, narrow = 0.5}, size = 1.0, hp = 110, armor = 0, stun = 50, slash = 0.75, blunt = 1.25, pierce = 1.0,
 		fire = 0.0, frost = 0.0, poison = 0.0, walk = 0.6, run = 0.6, pack = [1, 2], xp = 14, leader = "Old Shellback", leader_chance = 0.15,  # (run = walk: it never runs, owner Nov 17)
 		color = Color(0.48, 0.44, 0.38), shape = "rock_snail", neutral = true, climbs = "all", falls_dazed = true, turns_in_place = true, shell_hide = {at = [0.5, 0.1], seconds = 10.0, cut = 0.9},
-		attacks = [{name = "Shell Slam", land_sound = "snail_slam", tell = 1.2, damage = 20, type = "blunt", reach = 1.9, parry = "any"},
-			{name = "Lunging Bite", tell = 0.9, damage = 14, type = "pierce", reach = 1.7, parry = "any"},
+		attacks = [{name = "Lunging Bite", tell = 0.9, damage = 14, type = "pierce", reach = 1.7, parry = "any"},
 			# Spit (owner, Nov 17): short range (2-3 m), a shield stops it completely; he rears up, snaps, a gob flies.
 			{name = "Spit", tell = 0.8, damage = 12, type = "blunt", reach = 3.0, min_reach = 1.6, parry = "any", spit = true, shield_stops = true, buildup = {poison = 100}}],
 		drops = [["snail_meat", 1, 1.0], ["snail_meat", 1, 0.5], ["shell_piece", 2, 0.8]]},
@@ -154,7 +153,8 @@ static var LIST := {
 	# more than 3 miners up at once). Hit him during the slam (his shield is up over his head) and it is called off;
 	# a statue you mined away can't be raised. He doesn't smash his own miners' stone (the Pit Boss does; owner kept it, Nov 21).
 	"prop_warden": {name = "The Prop Warden", dungeon_only = true, rises = true, rise_near = 10.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 5, boss = true,
-		front_shield = true, size = 1.0, height = 1.9, hp = 300, armor = 50, stun = 240, slash = 1.0, blunt = 1.25, pierce = 0.75,
+		front_shield = true, no_push = true, size = 1.0, height = 1.9, hp = 300,  # (no_push, F728: like the Pit Boss, F675)
+		armor = 50, stun = 240, slash = 1.0, blunt = 1.25, pierce = 0.75,
 		fire = 1.25, frost = 0.5, poison = 1.0, walk = 1.3, run = 3.3, pack = [1, 1], xp = 80,
 		color = Color(0.5, 0.52, 0.4), shape = "foreman", recover = 1.6,
 		attacks = [{name = "Axe Chop", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_rumble", tell = 0.9, damage = 22, type = "slash", reach = 2.3, rest = 5.0, parry = "any", knock = 2.5},

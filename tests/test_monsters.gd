@@ -1410,3 +1410,5 @@ func test_a_hit_from_another_room_makes_it_come_after_you() -> void:
 func test_hollow_miner_no_push() -> void:
 	check(Monsters.info("lost_miner").get("no_push", false), "Hollow Miner has the no_push flag")
 	check(not Monsters.info("tunnel_rat").get("no_push", false), "Bone Rot (small skeleton) does not have no_push")
+	for boss in ["foreman", "prop_warden"]:  # F675, F728: no boss runs on into you and shoves you along
+		check(Monsters.info(boss).get("no_push", false), "%s stops before running into the player" % boss)

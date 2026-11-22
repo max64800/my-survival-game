@@ -32,6 +32,7 @@ var stun := StunMeter.new()
 var boosted := false  ## a living pack leader is near
 var data: Dictionary
 var model: Node3D
+var hit_shapes: HitShapes  ## hurt bubbles + what it hits with (HitShapes)
 var rig: CreatureRig  ## only looks: a creature that moves by a skeleton (null: one that moves by named parts)
 var _rise_pending := false  ## host: it started getting up; tell everyone (think)
 var _timer := 0.0
@@ -128,6 +129,7 @@ func _ready() -> void:
 	_size = s
 	add_child(model)
 	rig = CreatureRig.find(model)  # (a skeleton creature: it plays its model's own moves)
+	hit_shapes = HitShapes.for_monster(model, kind, data)  # hurt bubbles + what it hits with (F9 shows them)
 	if rig and data.get("front_shield", false):
 		rig.hold_shield()  # (the Prop Warden: his plank shield up in front while he comes at you, F548)
 	if rig and state == State.SLEEP and data.get("rises", false):
