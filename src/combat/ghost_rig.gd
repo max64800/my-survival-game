@@ -36,18 +36,27 @@ func rise_time() -> float:
 	return 0.1
 
 
-## A mace swing ("mace_1".."mace_4") whose blow lands `tell` seconds from now.
+## A swing whose blow lands `tell` seconds from now: a mace move ("mace_1".."mace_4", the dwarf's mace combo) or any
+## other baked one-handed move by its own name ("Chop", "SliceDiag": DwarfOneSwing.MOVES; not JumpChop, its hips leap 1.3 m). Owner, Nov 22: mace moves 2
+## and 3 alone made no sense ("he's just spinning", "he teleports into position and doesn't wind up"): they start
+## where the hit before them ends, so they only play inside a combo; a ghost's single blow is a move that starts
+## from standing and winds up.
 func attack(clip: String, tell: float, _red := false, _again := false) -> void:
 	if dead or dm == null or dm.dwarf_rig == null:
 		return
-	var step := clampi(clip.trim_prefix("mace_").to_int() - 1, 0, 3)
 	var duration := maxf(tell, 0.1) / DwarfOneSwing.HIT_AT
-	dm.attack(duration, false, step, "mace")
+	if clip.begins_with("mace_"):
+		dm.attack(duration, false, clampi(clip.trim_prefix("mace_").to_int() - 1, 0, 3), "mace")
+	else:
+		dm.attack(duration, false, 0, "mace")  # (the swinging flag and the swoosh)
+		dm.dwarf_rig.play_upper("o/" + clip, duration)  # (then the move itself in place of mace move 1)
 	_busy = duration
 	_busy_kind = "attack"
 
 
 static func swing_seconds(clip: String) -> float:
+	if not clip.begins_with("mace_"):
+		return DwarfOneSwing.clip_length(clip)
 	var step := clampi(clip.trim_prefix("mace_").to_int() - 1, 0, 3)
 	return DwarfRig.attack_seconds("mace", false, step, 1.0)
 

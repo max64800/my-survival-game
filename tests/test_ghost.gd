@@ -95,7 +95,10 @@ func test_three_different_mace_moves_and_the_boss_has_all_four() -> void:
 	var seen := {}
 	for kind in ["ghost_a", "ghost_b", "ghost_c"]:
 		var a := _anims(kind)
-		check(a.size() == 1 and String(a[0]).begins_with("mace_"), "%s swings one mace move (%s)" % [kind, a])
+		check(a.size() == 1 and DwarfOneSwing.has_move(String(DwarfRig.ANIMS.get(a[0], "o/" + a[0])).trim_prefix("o/")),
+			"%s swings one baked one-handed move (%s)" % [kind, a])
+		# owner, Nov 22: a combo's middle hit alone snaps and doesn't wind up; only the combo starter plays alone
+		check(not String(a[0]) in ["mace_2", "mace_3", "mace_4"] or kind == "ghost_lord", "%s's single blow starts from standing" % kind)
 		if not a.is_empty():
 			check(not seen.has(a[0]), "%s's move is its own" % kind)
 			seen[a[0]] = true
@@ -111,8 +114,9 @@ func test_the_ghost_swings_the_dwarf_mace_move() -> void:
 	var rig := CreatureRig.find(model) as GhostRig
 	check(rig != null, "it has its rig")
 	if rig:
-		rig.attack("mace_2", 0.8)
+		rig.attack("SliceDiag", 0.8)
 		check(rig.dm.swinging, "the swing plays")
+		check(rig.dm.dwarf_rig._upper_clip == "o/SliceDiag", "it plays its own move (%s)" % rig.dm.dwarf_rig._upper_clip)
 		check(absf(rig._busy - 0.8 / DwarfOneSwing.HIT_AT) < 0.01, "the blow lands with the tell (the strike at HIT_AT)")
 		for i in 5:
 			rig.step(0.1, 0.0, 3.0, true, false)

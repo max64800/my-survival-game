@@ -105,14 +105,14 @@ const LIST := {
 		size = 1.0, height = 1.6, hp = 140, armor = 0, stun = 55, slash = 0.8, blunt = 0.9, pierce = 0.6,
 		fire = 1.25, frost = 0.25, poison = 0.0, walk = 1.4, run = 3.4, pack = [1, 2], xp = 20,
 		color = Color(0.55, 0.75, 1.0), shape = "ghost", recover = 1.4,
-		# the angry one: it swoops in with its blow (a short lunge)
-		attacks = [{name = "Swooping Blow", anim = "mace_2", warn_sound = "beetle_hiss", tell = 0.8, damage = 18, type = "blunt", reach = 3.0, parry = "any", lunge = true, small_lunge = true, lunge_speed = 3.6, rest = 3.5}],
+		# the angry one: it rocks back, mace high, and swoops in with a slanting blow (a short lunge; owner, Nov 22: mace move 2 alone was "just spinning")
+		attacks = [{name = "Swooping Blow", anim = "SliceDiag", warn_sound = "beetle_hiss", tell = 0.85, damage = 18, type = "blunt", reach = 3.0, parry = "any", lunge = true, small_lunge = true, lunge_speed = 3.6, rest = 3.5}],
 		drops = []},
 	"ghost_c": {name = "Bearded Shade", dungeon_only = true, sleeps = true, no_variant = true, ragdoll = false, ghost = true, rise_near = 7.0,
 		size = 1.05, height = 1.55, hp = 170, armor = 0, stun = 70, slash = 0.8, blunt = 0.9, pierce = 0.6,
 		fire = 1.25, frost = 0.25, poison = 0.0, walk = 1.1, run = 2.8, pack = [1, 1], xp = 22,
 		color = Color(0.6, 0.95, 0.7), shape = "ghost", recover = 1.6,
-		attacks = [{name = "Old Grudge", anim = "mace_3", warn_sound = "beetle_rumble", tell = 0.95, damage = 20, type = "blunt", reach = 2.3, parry = "any", rest = 3.0}],
+		attacks = [{name = "Old Grudge", anim = "Chop", warn_sound = "beetle_rumble", tell = 1.05, damage = 20, type = "blunt", reach = 2.3, parry = "any", rest = 3.0}],
 		drops = []},
 	# The ghosts' lord: the bearded shade, bigger and paler, with all four mace moves in one combo (the last one knocks you
 	# down), and the big smash alone from further away.
