@@ -48,3 +48,6 @@ and **too many clicks**.
 - **Nov 17 night: all four steps built** (start + Escape + Settings with mouse speed; build menu; blueprint book with a
   turning 3D preview; map; skills as readable perk cards). Fonts: Cinzel Bold + Alegreya Sans. Not done: map zoom,
   Music/Effects sliders (no music yet), world thumbnails on the start screen. **Next:** the owner's look at all of it.
+- **Nov 22: build menu v2 built (F709)** from the OK'd mock-up `assets/concepts/ui/menu_build_v2_mockup.png`: a wide
+  bar along the bottom (1 Material cards · 2 Piece with 6 big tabs, Home sub-buttons, ticks and on-card "what's missing" ·
+  the chosen piece with have / need · key caps). **Next:** the owner tests it in game. Furniture pieces still have no menu pictures.

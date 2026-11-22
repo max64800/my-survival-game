@@ -327,7 +327,11 @@ func _build() -> void:
 	build_menu.peer_id = peer_id
 	build_menu.visible = false
 	root.add_child(build_menu)
-	build_menu.resized.connect(func(): build_menu.position = (root.size - build_menu.size) * 0.5)
+	# F709: a wide bar along the bottom, so the green preview stays visible above it.
+	var place_build_menu := func(): build_menu.position = Vector2((root.size.x - build_menu.size.x) * 0.5,
+		maxf(8.0, root.size.y - build_menu.size.y - 12.0))
+	build_menu.resized.connect(place_build_menu)
+	root.resized.connect(place_build_menu)
 	blueprint_menu = BlueprintMenu.new()
 	blueprint_menu.visible = false
 	root.add_child(blueprint_menu)

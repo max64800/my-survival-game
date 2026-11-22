@@ -62,6 +62,19 @@ func _run() -> void:
 		await _wait(1.5)
 		await _shot("03_chest")
 		_main._set_bag(false)
+	# F709: the build menu (B with the hammer), a bar along the bottom.
+	ps.inventory.add("build_hammer", 1)
+	for i in Inventory.SIZE:
+		if ps.inventory.get_slot(i).get("id", "") == "build_hammer":
+			if i != 0:
+				auth.request_swap(me, i, 0)
+			auth.request_select_slot(me, 0)
+			break
+	await _wait(0.5)
+	_main.hud.set_build_menu_open(true)
+	await _wait(0.8)
+	await _shot("04_build_menu")
+	_main.hud.set_build_menu_open(false)
 	get_tree().quit()
 
 

@@ -20,7 +20,7 @@ func test_home_tabs_are_full_and_on_the_menu() -> void:
 	var list := _home()
 	check(list.size() >= 70, "the home tabs hold every approved piece (%d)" % list.size())
 	for g in Pieces.HOME_GROUPS:
-		check(BuildMenu.TABS.has(g), "%s is a build menu tab" % g)
+		check(BuildMenu.tab_of(g) != "", "%s is on a build menu tab" % g)
 		check(BuildMenu.pieces_in(g).size() <= 25, "%s fits on screen (%d pieces)" % [g, BuildMenu.pieces_in(g).size()])
 	for k in WAITING:
 		check(not Pieces.LIST.has(k), "%s waits for the owner" % k)

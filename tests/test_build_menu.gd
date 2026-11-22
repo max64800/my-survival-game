@@ -3,13 +3,44 @@ extends TestCase
 
 
 func test_every_piece_is_on_a_tab() -> void:
-	var seen := 0
-	for g in BuildMenu.TABS:
-		seen += BuildMenu.pieces_in(g).size()
+	var seen := {}
+	for t in BuildMenu.TABS:
+		for g in BuildMenu.TABS[t].groups:
+			for id in BuildMenu.pieces_in(g):
+				check(not seen.has(id), "%s is on only one tab" % id)
+				seen[id] = true
 	var legacy := BuildMenu.pieces_in("legacy").size()
-	check_eq(seen + legacy, Pieces.LIST.size(), "every piece shows up on exactly one tab (old 45° pieces hidden)")
-	check(BuildMenu.pieces_in("roof").has("roof_45"), "roofs on the Roofs tab")
+	check_eq(seen.size() + legacy, Pieces.LIST.size(), "every piece shows up on exactly one tab (old 45° pieces hidden)")
+	check(BuildMenu.tab_pieces("roofs").has("roof_45"), "roofs on the Roofs tab")
 	check_eq(BuildMenu.station_item("cut_stone"), "masonry_table", "stone is worked at the Mason's Table")
+	for g in BuildMenu.HOME_SUBS:
+		check_eq(BuildMenu.tab_of(g), "home", "%s is a sub-button inside Home" % g)
+		check(not BuildMenu.tab_pieces("home", g).is_empty(), "the %s button shows pieces" % g)
+
+
+## F709 (owner OK'd mock-up): only 6 big tabs, and a piece you can build right now gets a green tick;
+## one you can't is faded and says on the card what's missing.
+func test_six_tabs_and_buildable_pieces_get_a_tick() -> void:
+	check_eq(BuildMenu.TABS.keys(), ["floors", "walls", "roofs", "stairs", "home", "lights"], "the 6 tabs, in order")
+	var menu := BuildMenu.new()
+	menu.mode = BuildMode.new()
+	menu.mode.piece = "wall"
+	menu.mode.family = "plank_root"
+	var inv := Inventory.new()
+	var cost := Pieces.cost("wall", "plank_root")
+	check(not cost.is_empty(), "a wall costs something")
+	var poor := menu._piece_button("wall", "plank_root", "", inv)
+	check(poor.get_node_or_null("Tick") == null, "nothing in the bag: no tick")
+	var first: String = cost.keys()[0]
+	check(BuildMenu.card_note("wall", "plank_root", inv, "").begins_with("need %d more" % cost[first]), "the card says what's missing")
+	check_eq(BuildMenu.card_note("wall", "plank_root", inv, "Needs a Workbench within 20 m"), "Needs a Workbench within 20 m", "or the station lock")
+	for item in cost:
+		inv.add(item, cost[item])
+	var rich := menu._piece_button("wall", "plank_root", "", inv)
+	check(rich.get_node_or_null("Tick") != null, "enough in the bag: a green tick")
+	check(menu._piece_button("wall", "plank_root", "Needs a Workbench within 20 m", inv).get_node_or_null("Tick") == null, "no station nearby: no tick")
+	for n in [poor, rich, menu.mode, menu]:
+		n.free()
 
 
 ## Ready-made buildings are learned from Old Blueprint pages (F98); once known, all are in the book and load.
