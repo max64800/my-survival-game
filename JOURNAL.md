@@ -10044,3 +10044,15 @@ the existing `charge_shove` path and are excluded from this new pushback.
 - **Did:** wrote `docs/HANDOVER-2026-11-22-evening.md`: the new to-do items F695-F707, which are ready and which wait
   for the owner, a suggested order, and the F519-F529 → F695-F705 renumbering note.
 - **Hurdles:** none.
+
+
+## 2026-11-22: Pushing hit a feedback-number clash (Mac vs PC)
+
+- When pushing F688, the Mac had pushed its evening to-do list as F682-F694, but the PC had already used F682-F689
+  for other items (Foreman, knockback, wood, void crash, ghost mace, Rebuilding Chest).
+- Fix: the PC numbers stayed (they're already in code comments and commit messages); the Mac's 13 items moved up by 13
+  to F695-F707 (FEEDBACK.md, its handover doc, its journal notes). Old Mac commit messages keep the old numbers.
+- Lesson: "pull, then take the next free number" only works if both machines push soon after. Still open: two PC items
+  are both called F686 (knockback, wood model).
+- Owner's next ask logged: F567 🔁 (blue outlines with the hammer, 3rd time), F708 (B menu cursor vanishes),
+  F709 (big build menu overhaul).
