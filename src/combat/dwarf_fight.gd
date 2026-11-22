@@ -156,11 +156,11 @@ func defense_state() -> Dictionary:
 		weapon = weapon(), shield = has_shield(), tier = shield_tier() if has_shield() else tier()}
 
 
-## Fills your stun meter; full: stunned (owner, chat 15).
+## Fills your stun meter; full: stunned — falls down and gets back up (owner, Nov 22: "just freezing" was wrong).
 func take_stun(amount: float) -> void:
 	if stun_meter.add(amount):
-		dwarf.model.react("stunned", STUN_TIME)
-		stagger = maxf(stagger, STUN_TIME)
+		stagger = 0.0  # bypass the "already in brief stagger" guard so knock_down always plays the fall
+		knock_down()
 		message.emit("Stunned!", Color(1.0, 0.4, 0.3))
 
 
