@@ -983,15 +983,26 @@ MAT_BODY = ck.color(NAME + "_body", (0.55, 0.85, 0.8) if LOOK != "b" else (0.6, 
 o_body = to_mesh(NAME + "_body", body, MAT_BODY)
 
 # The eyes: two glowing lumps set into the back of the face hollow (they sink into the hood: they touch it).
-eyes = np.minimum(ell((-0.062, -0.087 - 0.0, 1.045), (0.034, 0.02, 0.022)), ell((0.062, -0.087, 1.045), (0.034, 0.02, 0.022)))
-if LOOK == "b":  # angry: slanted down to the middle, under the frown
-	eyes = np.minimum(tube((-0.03, -0.087, 1.03), (-0.088, -0.087, 1.055), 0.017, 0.012),
-		tube((0.03, -0.087, 1.03), (0.088, -0.087, 1.055), 0.017, 0.012))
+# Owner, Nov 22 (a drawing): angry teardrops on every ghost: round at the bottom, the point going up and out, and the
+# inner bottom cut off in a straight line that rises to the middle.
+def angry_eye(sx, cx, cy, cz, k=1.0):
+	# a flat teardrop (a cookie-cutter shape, pushed out of the hood): a round bulb low and in, tapering to a point
+	# up and out, then the inner bottom cut off straight
+	bx, bz, tx, tz, r0, r1 = sx * (cx - 0.01 * k), cz - 0.006 * k, sx * (cx + 0.03 * k), cz + 0.03 * k, 0.019 * k, 0.003 * k
+	dx, dz = tx - bx, tz - bz
+	h = np.clip(((X - bx) * dx + (Z - bz) * dz) / (dx * dx + dz * dz), 0.0, 1.0)
+	flat = np.sqrt((X - bx - h * dx) ** 2 + (Z - bz - h * dz) ** 2) - (r0 + (r1 - r0) * h)
+	u = sx * (X - sx * cx)  # (outwards from the eye's middle)
+	flat = smax(flat, (cz - 0.014 * k - 0.5 * u) - Z, 0.003)
+	return smax(flat, np.abs(Y - cy) - 0.014, 0.004)
+
+
+EYE = {"a": (0.05, -0.094, 1.0, 1.0), "b": (0.064, -0.092, 1.035, 1.3), "c": (0.064, -0.092, 1.043, 1.3)}[LOOK]
+eyes = np.minimum(angry_eye(-1, *EYE), angry_eye(1, *EYE))
 for g in GEMS:  # (the Bearded Shade's brooch stone)
 	eyes = np.minimum(eyes, g)
-if LOOK == "a":  # smaller eyes, lower in the pointed opening (owner, Nov 22), and the lantern's glass: it touches
+if LOOK == "a":  # (its eyes are smaller, lower in the pointed opening: EYE) the lantern's glass: it touches
 	# the cap and the foot, inside the four posts (clear of them)
-	eyes = np.minimum(ell((-0.05, -0.09, 1.0), (0.023, 0.02, 0.016)), ell((0.05, -0.09, 1.0), (0.023, 0.02, 0.016)))
 	eyes = np.minimum(eyes, ell(LANTERN, (0.026, 0.026, 0.056)))
 o_eyes = to_mesh(NAME + "_eyes", eyes, ck.color(NAME + "_eyes", (1.0, 1.0, 0.85)), min_island=8)
 
