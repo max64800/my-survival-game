@@ -9561,3 +9561,16 @@ The Warhammer ★25 heavy-swing immunity in `knock_down()` still applies.
 - A text replace missed because the line had 2 tabs, not 3. Fixed the indent.
 - Bearded round 1: the beard looked like a flat slab and the waist tatters looked like drips. Round 2: tapered beard with thick, long braids, and torn flaps lying flat on the robe.
 - Speed check with 4 ghosts still needs a quiet PC (other Godot runs were open).
+
+
+# Nov 22: Wrathful and Bearded Shades get proper single blows (F658)
+
+**What we did**
+- Owner: the boss combo is really good and the new looks are good, but the Wrathful Shade "is just spinning" and the Bearded Shade "teleports into position and doesn't wind up".
+- Cause: both ghosts used a middle hit of the dwarf's 4-hit mace combo (move 2 and move 3). Those hits start where the hit before them ended, so on their own the ghost snapped into that pose and struck with no wind-up. They only make sense inside the combo, which is why the boss looked right.
+- Fix: GhostRig.attack can now play any baked one-handed move by name. Wrathful = SliceDiag (rocks back with the mace high, then a slanting blow), Bearded = Chop (lifts the mace high, holds, then a hard overhead chop, tell 1.05 s). The boss keeps its combo. The 3D page plays the same moves. test_ghost checks that no single blow is a mid-combo hit.
+
+**Mistakes and hurdles**
+- Claude first picked JumpChop for the Wrathful Shade, then read the numbers: its hips leap 1.3 m up and 1.3 m forward, and in the game that would look like a jump and a snap back. Switched to SliceDiag.
+- Still pictures of a swing were hard to read, so Claude froze the page's clock and read each move's numbers (when the mace is raised, when it strikes) to pick moves with a real wind-up.
+- run_tests.sh needs GODOT set on this PC (it isn't on the PATH).
