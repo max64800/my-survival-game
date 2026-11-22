@@ -3,7 +3,8 @@
 #   godot --headless --audio-driver Dummy --path . -s res://tools/dump_blueprint.gd -- wooden_twin_gate <wood.json>
 #   python tools/ruins/make_twin_gate_ruin.py <stone.json> [wood=<wood.json>] [page=<folder>]
 # Writes blueprints/ruins/twin_gate_ruin.json (pieces, chests with loot, props, beetle spots) for the world to place.
-# The blueprint gets the new Stonehold trims (tools/asset_forge/builds/stonehold_v2_twin.py, not game pieces yet):
+# The new Stonehold trims (tools/asset_forge/builds/stonehold_v2_twin.py; game pieces and in the blueprint since Nov 22,
+# BlueprintLibrary._twin_trims, which must stay the same as extras() here):
 # brackets (corbel) under every floor that juts out, trim bands (cornice) at the floor lines with corner blocks,
 # buttresses on the foundation buildings' walls, and a turret (bartizan) on every corner of both towers.
 # What happened: the right tower cracked in half and its outer half fell outward (two big wall pieces and rubble lie
@@ -166,6 +167,8 @@ EXTRAS = extras()
 
 
 def with_extras(plan):
+	if any(p["id"] in TRIMS for p in plan):
+		return plan                               # (Nov 22: the blueprint has them itself now, BlueprintLibrary._twin_trims)
 	turrets = [p for p, _ in EXTRAS if p["id"] == "bartizan"]
 	return [p for p in plan if not turret_gap(p, turrets)] + [dict(p) for p, _ in EXTRAS]
 
@@ -257,7 +260,7 @@ GONE = [(-13, 2.0, -10), (-13, 2.0, -12), (-13, 4.0, -10), (-13, 4.0, -12)]   # 
 
 pieces, extra_ids = [], set()
 extra_hosts = {}
-for p in plan_of(bp) + [dict(e) for e, _ in EXTRAS]:
+for p in [p for p in plan_of(bp) if p["id"] not in TRIMS] + [dict(e) for e, _ in EXTRAS]:   # (never twice: the blueprint has them too)
 	pid = p["id"]
 	x, y, z = p["pos"]
 	q = dict(p, pos=list(p["pos"]))

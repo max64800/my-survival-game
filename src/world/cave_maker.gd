@@ -284,6 +284,7 @@ var brewhall_spot := {}  ## where the Brewhall goes (F479; the same)
 var spire_spot := {}  ## where the Lantern Spire goes (F479; the same)
 var manor_spot := {}  ## where the Hearth Manor goes (F479; the same)
 var prow_hall_spot := {}  ## where the Prow Hall goes (F656 + F657; the same)
+var twin_gate_spot := {}  ## where the Twin Gate goes (F479 + F656 + F657; the same)
 var reserved: Array[Dictionary] = []  ## {pos, r, h}: a circle of ground (r wide), from pos.y up to pos.y + h
 var dungeons: Array[Dictionary] = []  ## layout 14: the dungeons dug into the rock (DungeonMap.place)
 
@@ -428,6 +429,20 @@ func _reserve_tower() -> void:
 		prow_hall_spot = RuinProwHall.pick(self)
 		if not prow_hall_spot.is_empty():
 			reserve(prow_hall_spot.pos, RuinProwHall.REACH + 3.0, RuinProwHall.WALL_TOP)
+	# The Twin Gate (owner, Nov 22, F479 + F656 + F657): a circle out past its moat, its lumps and the rock wall it grows
+	# (after the Prow Hall, whose cavern it leaves alone).
+	if not RuinTower.load_plan(RuinTwinGate.PLAN_PATH).is_empty():
+		twin_gate_spot = RuinTwinGate.pick(self)
+		if twin_gate_spot.is_empty():
+			# No spot clear of the stone columns (seed 42, Nov 22: the Prow Hall took the other big cavern): it takes
+			# the best spot anyway and the columns standing in it are never grown (moved far off the map), so the
+			# placement rule still holds. Worlds that found a spot the first way don't change.
+			twin_gate_spot = RuinTwinGate.pick(self, true)
+			if not twin_gate_spot.is_empty():
+				for i in RuinTwinGate.columns_in(self, twin_gate_spot):
+					_cols[i] = Vector4(1.0e7, 1.0e7, _cols[i].z, _cols[i].w)
+		if not twin_gate_spot.is_empty():
+			reserve(twin_gate_spot.pos, RuinTwinGate.REACH + 3.0, RuinTwinGate.WALL_TOP)
 
 
 ## Layout 8 (owner, Nov 17): 1 or 2 smaller stone columns (5 to 11 m wide) in the plain big caverns, the same kind as

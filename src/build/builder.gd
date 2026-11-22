@@ -1218,8 +1218,9 @@ const RUIN_DEBRIS := ["gate_broken", "chimney_fallen", "spire_top_fallen", "spir
 ## pieces lying about (the outpost's torn-off gate, the Brewhall's fallen chimney, the Lantern Spire's fallen top, wall
 ## piece and fire bowl): cleared when it's rebuilt
 ## Whole pieces that make way when a new piece needs their spot (the outpost's battlements where its walkway now runs
-## on over the forge, owner Nov 20: they stood a walkway's height lower).
-const RUIN_MAKE_WAY := ["battlement", "battlement_corner"]
+## on over the forge, owner Nov 20: they stood a walkway's height lower), and the old spiral stairs in a Twin Gate
+## built before Nov 22 (F713: they blocked its new straight stairs, so the rebuild stopped and left gaps).
+const RUIN_MAKE_WAY := ["battlement", "battlement_corner", "stairs_spiral"]
 
 
 ## How far from the ruin's middle its pieces and rubble reach (the tower 9 m, the outpost 26 m).
@@ -1451,12 +1452,34 @@ func _ruin_step(box_id: int, site: Dictionary) -> bool:
 				continue
 			if q.piece in RUIN_MAKE_WAY and uid in ov:
 				_ev_remove_piece.rpc(uid)  # an old battlement where the new walkway goes (it goes back up higher)
-				_set_status(box_id, "Taking down an old battlement…")
+				_set_status(box_id, "Taking down an old battlement…" if String(q.piece).begins_with("battlement") else "Taking down the old stairs…")
 				if not rush:
 					return true
 				cleared = true
 				continue
+	if not cleared:
+		for i in site.plan.size():
+			var p: Dictionary = site.plan[i]
+			if not p.built and steps.band_of[i] <= steps.current and _ruin_dig_rock(p):
+				_set_status(box_id, "Clearing rock where the next piece goes…")
+				if not rush:
+					return true
+				cleared = true
 	return cleared
+
+
+## F713 (owner, Nov 22: rebuilding the Twin Gate "didn't finish the job": gaps everywhere): rock where a rebuilt
+## piece goes (its foot in a bump of the cave floor) is dug away, the world making room, instead of waiting forever.
+## True when it dug.
+func _ruin_dig_rock(p: Dictionary) -> bool:
+	if auth.world == null or Pieces.rock_problem(p.piece, p.pos, p.rot, auth.world.sdf_at) == "":
+		return false
+	var dug := false
+	for cp in Pieces.check_points(p.piece, p.pos, p.rot):
+		if auth.world.sdf_at(cp[0]) < -0.3:
+			auth._host_dig(cp[0], 9, 0.9, true)  # tier 9: any rock gives way
+			dug = true
+	return dug
 
 
 ## The last piece is in: everyone learns the blueprint, everyone near gets crafting experience.

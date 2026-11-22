@@ -92,7 +92,7 @@ static func make(id: String) -> Blueprint:
 			lib._old_kiln()
 			lib._to_wood()
 			lib._kiln_stays_brick()
-		"stonehold_twin_gate": lib._twin_gate()  # (owner, Nov 21: ruin 6, the first showpiece; not learnable yet, its 3D page first)
+		"stonehold_twin_gate": lib._twin_gate()  # (owner, Nov 21: ruin 6, the first showpiece; learned by rebuilding its ruin, F657 cave shapes Nov 22)
 		"wooden_twin_gate":
 			lib._twin_gate()
 			lib._to_wood()
@@ -1208,8 +1208,8 @@ func _kiln_stays_brick() -> void:
 ## The new kit pieces (owner, Nov 21: "rebuild the ruin" with them): in each tower a spiral stair up to the deck, corner
 ## stairs, a stair railing and a down-sloped wall on the first flight; two floor hatches (murder holes) in the gate
 ## room over the passage; lattice walls on its back over the yard; edge strips along the jutting floors.
-## tools/ruins/make_twin_gate_ruin.py adds the new pieces (the brackets under the jutting floors, the trim bands at the
-## floor lines, the buttresses, the little corner turrets) until they are game pieces. No furniture: you furnish it.
+## Its trims (_twin_trims: brackets under the jutting floors, trim bands at the floor lines, buttresses, the little
+## corner turrets) are the same as tools/ruins/make_twin_gate_ruin.py adds to the ruin. No furniture: you furnish it.
 const _TWIN_L := -11.0
 const _TWIN_R := 11.0
 var _tw_c := 0.0   # the tower being built: its middle (x) and which way its gate side faces (+1: +x)
@@ -1225,8 +1225,87 @@ func _twin_gate() -> void:
 	_twin_gatehouse()
 	_twin_yard()
 	_twin_barracks()
+	_twin_trims()
 	for p in _bp.pieces:
 		p.pos.z += 8.0   # centred in its box (z -15..15)
+	# F657 (owner, Nov 22: "yes, add cave shapes"): it digs only round itself; the rock wall behind the barracks and
+	# the two lumps the ruin grows (RuinTwinGate) stay rock.
+	_air_only_round_pieces(func(lx: float, y: float, lz: float) -> bool: return y < RuinTwinGate.rock_at(lx, lz))
+
+
+const _OUT_ROT := {Vector2i(0, 1): 0, Vector2i(1, 0): 1, Vector2i(0, -1): 2, Vector2i(-1, 0): 3}  # +z of the piece faces this way
+const _TURRET_SH := 0.32   # a corner turret's middle sits this far in from the tower corner (both ways)
+
+
+## The Twin Gate's Stonehold trims (the same as tools/ruins/make_twin_gate_ruin.py extras()): trim bands at the floor
+## lines with corner blocks, buttresses, brackets under the jutting floors, a walk-in turret on 6 tower corners (each
+## takes the place of the two deck battlements beside its corner), short battlements closing the wings' roof ends.
+## They stay stone in the wooden version (no wooden trims).
+func _twin_trims() -> void:
+	var S := STONE
+	var band := func(along_x: bool, line: float, sd: int, cells: Array, y: float) -> void:
+		for c in cells:
+			if along_x:
+				_add("cornice", S, Vector3(c, y, line + sd * 0.245), _OUT_ROT[Vector2i(0, sd)])
+			else:
+				_add("cornice", S, Vector3(line + sd * 0.245, y, c), _OUT_ROT[Vector2i(sd, 0)])
+	var corner := func(x: float, z: float, sx: int, sz: int, y: float) -> void:
+		_add("cornice_corner", S, Vector3(x + sx * 0.17, y, z + sz * 0.17), 0)
+	var gaps: Array[Vector3] = []
+	for cx in [_TWIN_L, _TWIN_R]:
+		var o: int = 1 if cx > 0 else -1
+		var xs := [cx - 4, cx - 2, cx, cx + 2, cx + 4]
+		for y in [2.95, 5.2]:
+			band.call(true, 5.0, 1, xs, y)
+			band.call(true, -5.0, -1, xs.filter(func(x): return not (y < 3 and absf(absf(x) - 13) < 0.1)), y)  # (the yard wall)
+			band.call(false, cx + 5 * o, o, [-4, -2, 0, 2, 4], y)
+			for sx in [-1, 1]:
+				for sz in [-1, 1]:
+					corner.call(cx + 5 * sx, 5 * sz, sx, sz, y)
+		for j in [-3, -1, 1, 3]:
+			_add("buttress", S, Vector3(cx + j, 0, 5.626), 0)
+			_add("buttress", S, Vector3(cx + 5.626 * o, 0, j), _OUT_ROT[Vector2i(o, 0)])
+		for j in [-3, 3]:
+			_add("buttress", S, Vector3(cx + j, 0, -5.626), 2)
+		for sx in [-1, 1]:
+			for sz in [-1, 1]:
+				if sx == -o and sz == 1:
+					continue                                  # (the gate room's roof juts past this corner: no room)
+				var x: float = cx + 5 * sx
+				var z: float = 5.0 * sz
+				var rot: int = {Vector2i(1, 1): 0, Vector2i(1, -1): 1, Vector2i(-1, -1): 2, Vector2i(-1, 1): 3}[Vector2i(sx, sz)]
+				_add("bartizan", S, Vector3(x - sx * _TURRET_SH, 6.0, z - sz * _TURRET_SH), rot)
+				gaps.append(Vector3(x - sx, 7.75, z))
+				gaps.append(Vector3(x, 7.75, z - sz))
+	for sx in [-1, 1]:   # the gate room's jutting floor (z 3 -> 4): brackets under it on the guard rooms' fronts
+		for a in [2.5, 3.5, 4.5, 5.5]:
+			_add("corbel", S, Vector3(sx * a, 4.25, 3.57), 0)
+	for sx in [-1, 1]:   # the barracks wings' jutting upper floor
+		for i in 8:
+			var a := 5.5 + i
+			if absf(a - 10) >= 1.0:                           # (never in front of the wing's door)
+				_add("corbel", S, Vector3(sx * a, 2.0, -14.43), 0)
+	for y in [2.95, 5.2]:
+		band.call(true, -15.0, 1, [-2, 0, 2], y)
+		if y > 3:
+			band.call(true, -14.0, 1, [-12, -10, -8, -6, 6, 8, 10, 12], y)
+		band.call(false, -13.0, -1, [-22, -20, -18, -16], y)
+		corner.call(-13, -23, -1, -1, y)
+	band.call(true, -23.0, -1, range(-12, 17, 2), 2.95)
+	band.call(true, -23.0, -1, range(-12, 13, 2), 5.2)
+	band.call(false, 13.0, 1, [-22, -20, -18, -16], 5.2)
+	corner.call(13, -23, 1, -1, 5.2)
+	band.call(true, -17.0, 1, [14, 16], 2.95)                 # the kitchen
+	band.call(false, 17.0, 1, [-22, -20, -18], 2.95)
+	corner.call(17, -23, 1, -1, 2.95)
+	corner.call(17, -17, 1, 1, 2.95)
+	for x in [-11, -7, -3, 3, 7, 11, 15]:
+		_add("buttress", S, Vector3(x, 0, -23.626), 2)
+	for sx in [-1, 1]:   # a 1 m battlement on both ends of the strip the wings' roofs jut out
+		for ex in [5, 13]:
+			_add("battlement_narrow", S, Vector3(sx * ex, 5.5, -14.5), 1)
+	_bp.pieces.assign(_bp.pieces.filter(func(p): return not (p.id == "battlement" and gaps.any(func(g: Vector3) -> bool:
+		return absf(p.pos.x - g.x) < 0.15 and absf(p.pos.z - g.z) < 0.15 and absf(p.pos.y - g.y) < 0.05))))
 
 
 ## A spot in the tower being built: u across it (+5 = its gate side), v along z.
@@ -2170,6 +2249,15 @@ func _prow_hall() -> void:
 	# under the bridge stays a dip); the lump and the cave wall stay rock.
 	for p in _bp.pieces:
 		p.pos += PROW_SHIFT
+	_air_only_round_pieces(func(lx: float, y: float, lz: float) -> bool:
+		var by_lump := Vector2(lx - PROW_LUMP.x, lz - PROW_LUMP.z).length() < PROW_LUMP_R + 1.6 and y < PROW_LUMP.y
+		return by_lump or y < prow_rock_top(lx, lz))
+
+
+## F657 (the grand ruins built into the cave): only the space round the building itself is "air" (dug out when you
+## build it): its pieces plus 1.5 m round and over them, so the cave keeps its own shape round it. `keep_rock`
+## (x, y, z in the box's frame, y = the cell's middle) says where the ruin's own rock (lumps, cave wall) stays rock.
+func _air_only_round_pieces(keep_rock: Callable) -> void:
 	var sx := int(_bp.size.x)
 	var sy := int(_bp.size.y)
 	var sz := int(_bp.size.z)
@@ -2187,10 +2275,7 @@ func _prow_hall() -> void:
 	for cy in sy:
 		for cz in sz:
 			for cx in sx:
-				var lx := cx + 0.5 - sx * 0.5
-				var lz := cz + 0.5 - sz * 0.5
-				var by_lump := Vector2(lx - PROW_LUMP.x, lz - PROW_LUMP.z).length() < PROW_LUMP_R + 1.6 and cy + 0.5 < PROW_LUMP.y
-				if near[i] == 0 or by_lump or cy + 0.5 < prow_rock_top(lx, lz):
+				if near[i] == 0 or keep_rock.call(cx + 0.5 - sx * 0.5, cy + 0.5, cz + 0.5 - sz * 0.5):
 					_bp.air[i] = 0
 				i += 1
 
@@ -2249,7 +2334,7 @@ func _to_wood() -> void:
 	for p in _bp.pieces:
 		if Pieces.allowed(p.id, WOOD):
 			p.mat = WOOD
-		elif String(p.id).begins_with("battlement"):
+		elif String(p.id).begins_with("battlement") and p.id != "battlement_narrow":
 			p.id = "railing"
 			p.mat = WOOD
 

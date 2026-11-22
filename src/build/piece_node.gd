@@ -301,6 +301,8 @@ func _build() -> void:
 	if not ghost:
 		if Pieces.LIST[piece].get("walkable_slope", false):
 			_ramp_shape(s)
+		elif made and Pieces.LIST[piece].get("collide_as_model", false):
+			_model_slices(made, s)
 		else:
 			var cs := CollisionShape3D.new()
 			cs.shape = PieceMesh.solid(piece).create_trimesh_shape()
@@ -391,6 +393,61 @@ func _box(size: Vector3, pos: Vector3, solid: bool = true) -> void:
 
 
 ## Stairs collide like a smooth ramp, so walking up them feels nice.
+## F715 (owner, Nov 22: "these walls need a better collision... I was trying to jump over them and I couldn't"): a
+## broken wall collides as its real broken top, not the whole wall: 8 upright slices along it, each as tall as the
+## model's stones in that slice (a slice with no stone is a gap you can walk through). Worked out once per model.
+static var _slices := {}
+const SLICES := 8
+
+
+func _model_slices(made: Mesh, s: Vector3) -> void:
+	var key := "%s/%s" % [piece, family]
+	if not _slices.has(key):
+		var tops := PackedFloat32Array()
+		tops.resize(SLICES)
+		tops.fill(0.0)
+		var lo := -s.x * 0.5
+		var w := s.x / SLICES
+		for si in made.get_surface_count():
+			var arr := made.surface_get_arrays(si)
+			var v: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+			var idx: PackedInt32Array = arr[Mesh.ARRAY_INDEX] if arr[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
+			var n := idx.size() if idx.size() > 0 else v.size()
+			for t in range(0, n - 2, 3):
+				var a := v[idx[t]] if idx.size() > 0 else v[t]
+				var b := v[idx[t + 1]] if idx.size() > 0 else v[t + 1]
+				var c := v[idx[t + 2]] if idx.size() > 0 else v[t + 2]
+				var k0 := clampi(int(floor((minf(a.x, minf(b.x, c.x)) - lo) / w)), 0, SLICES - 1)
+				var k1 := clampi(int(floor((maxf(a.x, maxf(b.x, c.x)) - lo) / w - 0.001)), 0, SLICES - 1)
+				for k in range(k0, k1 + 1):
+					tops[k] = maxf(tops[k], _top_in_slab([a, b, c], lo + k * w, lo + (k + 1) * w))
+		_slices[key] = tops
+	var tops: PackedFloat32Array = _slices[key]
+	for k in SLICES:
+		if tops[k] < 0.05:
+			continue
+		var cs := CollisionShape3D.new()
+		var box := BoxShape3D.new()
+		box.size = Vector3(s.x / SLICES, minf(tops[k], s.y), s.z)
+		cs.shape = box
+		cs.position = Vector3(-s.x * 0.5 + (k + 0.5) * s.x / SLICES, box.size.y * 0.5, 0.0)
+		add_child(cs)
+
+
+## The highest point of a triangle between x0 and x1 (its corners in there, and where its edges cross x0 and x1).
+static func _top_in_slab(t: Array, x0: float, x1: float) -> float:
+	var top := -1.0
+	for i in 3:
+		var p: Vector3 = t[i]
+		var q: Vector3 = t[(i + 1) % 3]
+		if p.x >= x0 and p.x <= x1:
+			top = maxf(top, p.y)
+		for x in [x0, x1]:
+			if (p.x - x) * (q.x - x) < 0.0:
+				top = maxf(top, lerpf(p.y, q.y, (x - p.x) / (q.x - p.x)))
+	return top
+
+
 func _ramp_shape(s: Vector3) -> void:
 	var cs := CollisionShape3D.new()
 	if piece == "stairs_corner":

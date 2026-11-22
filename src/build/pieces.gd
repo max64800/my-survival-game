@@ -124,6 +124,14 @@ const LIST := {
 		families = ["clay_brick", "cut_stone"], station = {"mason": 2}},
 	"cornice_corner": {name = "Trim Corner", group = "decor", size = Vector3(0.32, 0.4, 0.32), units = 1, place = "free",
 		families = ["clay_brick", "cut_stone"], station = {"mason": 2}},
+	# the Twin Gate's other Stonehold trims (owner, Nov 21 page review; tools/asset_forge/builds/stonehold_v2_twin.py)
+	"buttress": {name = "Buttress", group = "support", size = Vector3(0.8, 2.85, 1.24), units = 4, place = "edge", on_wall = true,
+		families = ["cut_stone"], station = {"mason": 2}},
+	"bartizan": {name = "Corner Turret", group = "roof", size = Vector3(3.34, 3.0, 3.34), units = 14, place = "free",
+		shape = "bartizan", overlap_rect = Rect2(0.5, 0.5, 1.0, 1.0), families = ["cut_stone"], station = {"mason": 2}},
+		# (walk-in: its floor is level with a deck 3 m up; it only takes room past the tower's corner, overlap_rect)
+	"battlement_narrow": {name = "Short Battlement", group = "roof", size = Vector3(1, 0.9, 0.4), units = 2, place = "edge",
+		families = ["cut_stone"], station = {"mason": 1}},
 	"dormer": {name = "Roof Window", group = "roof", size = Vector3(2, 2, 2), units = 6, place = "cell", model_lift = 0.5,
 		families = ["clay_brick"], station = {"mason": 2}},
 	# A floor with a round hole near its front (fall or drop through it) and its dark-wood lid lying open behind it.
@@ -176,12 +184,12 @@ const LIST := {
 	"spear_rack": {name = "Spear Rack", group = "decor", size = Vector3(1.6, 2.0, 0.4), units = 2, place = "free",
 		families = ["plank_root"], station = {"workbench": 1}},
 	# Ruin pieces (Nov 17): the world places them in old ruins (src/world/ruin_tower.gd); nobody can build them
-	# (the build menu hides "legacy"). Models: tools/asset_forge/builds/stonehold_v2.py (stone) and
+	# (the build menu hides "legacy"). collide_as_model (F715): they collide as their broken top, not a full wall. Models: tools/asset_forge/builds/stonehold_v2.py (stone) and
 	# hearthbrick_v2_ruin.py (clay brick).
 	"ruin_wall_worn": {name = "Worn Wall", group = "legacy", size = Vector3(2, 2, 0.3), units = 4, place = "edge",
-		families = ["cut_stone", "clay_brick"], station = {"mason": 99}},
+		families = ["cut_stone", "clay_brick"], station = {"mason": 99}, collide_as_model = true},
 	"ruin_wall_collapsed": {name = "Collapsed Wall", group = "legacy", size = Vector3(2, 2, 0.3), units = 3, place = "edge",
-		families = ["cut_stone", "clay_brick"], station = {"mason": 99}},
+		families = ["cut_stone", "clay_brick"], station = {"mason": 99}, collide_as_model = true},
 	"ruin_rubble": {name = "Rubble", group = "legacy", size = Vector3(1.6, 0.7, 1.6), units = 2, place = "free",
 		families = ["cut_stone", "clay_brick"], station = {"mason": 99}},
 	"door_broken": {name = "Broken Door", group = "legacy", size = Vector3(2.0, 0.3, 1.8), units = 1, place = "free",

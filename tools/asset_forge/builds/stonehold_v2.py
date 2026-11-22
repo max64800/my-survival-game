@@ -763,7 +763,10 @@ def stairs_spiral(w=2.0, h=2.0, dd=2.0, n=12):
 		slab_xz(pts, top - tt, top, m, c=K.rng.uniform(0.022, 0.032))
 
 
-def _stair_tread_tops(h=2.0, dd=2.0, n=5):
+STAIR_STEPS = 8   # F711 (owner, Nov 22: "the first and second steps are far too tall"): 8 steps of 25 cm, not 5 of 40 cm
+
+
+def _stair_tread_tops(h=2.0, dd=2.0, n=STAIR_STEPS):
 	"""The straight stairs' steps seen from the side, as (x from, x to, top) with x = -z (rising toward +x)."""
 	dz, rise = (dd - 2 * E) / n, (h - E) / n
 	return [(-(dd / 2 - E) + i * dz, -(dd / 2 - E) + (i + 1) * dz, E + (i + 1) * rise - (E if i == n - 1 else 0.0)) for i in range(n)]
@@ -801,46 +804,41 @@ def stair_baluster(x, y0, rail_bot, m=None, sq=0.11, rmax=0.05, sides=12):
 
 
 def railing_stairs(w=2.0, h=3.0, d=0.15):
-	"""Stair railing (owner, Nov 21: "wooden, like dark wood, similar to real railing"): it runs along the side of
-	the straight stairs (2 m run, 2 m rise; here along x, rising toward +x: turned a quarter it rises toward -z like
-	the stairs). Two square dark-wood newel posts with riveted copper bands (Stonehold), a slanted hand rail, and
-	turned balusters standing on the steps, two per step. The rail's top meets the plain railing's top (1 m above
-	the floor) at both ends."""
+	"""Stair railing: it runs along the side of the straight stairs (2 m run, 2 m rise; here along x, rising toward
+	+x: turned a quarter it rises toward -z like the stairs). F712 (owner, Nov 22: stone stairs with a wooden railing
+	"doesn't look that good"): all stone, like the stone railing beside it: two chunky newel posts of stacked
+	chisel-cut stones (the bottom one dark, a wider foot and cap), a thick slanted stone hand rail, and a turned stone
+	baluster on every step. The rail's top meets the plain railing's top (1 m above the floor) at
+	both ends."""
 	steps = _stair_tread_tops()
 	dmax = d - 2 * E - 0.002
 
 	def rail_top(x):
 		return (h - 1.0) + x - 0.008   # 1 m at the bottom floor's edge, 3 m at the top floor's edge
-	rh = 0.11
-	np_ = 0.12
+	rh = 0.15
+	pw = 0.22    # the posts' foot and cap stones (along the rail); the stones between are a little narrower
 
 	def newel(xc, y0, y1):
-		before = set(bpy.data.objects)
-		blk((xc, y0 + 0.002 + 0.035, 0), (dmax, 0.066, dmax), timber_m(), bevel=0.012)
-		blk((xc, (y0 + 0.07 + y1 - 0.06) / 2, 0), (np_, y1 - 0.06 - y0 - 0.074, np_), timber_m(), bevel=0.012)
-		blk((xc, y1 - 0.03, 0), (dmax, 0.056, dmax), timber_m(), bevel=0.014)
-		_tag(_new_since(before), "timber")
-		before = set(bpy.data.objects)
-		for yb in (y0 + 0.2, (y0 + y1) / 2):   # clear of the hand rail's end
-			for k in range(4):
-				fr = K.Frame(ox=xc, yaw=90 * k)
-				fr.box((0, yb, np_ / 2 - 0.004), (np_ - 0.012, 0.06, 0.012), copper_m(), bevel=0.003)
-				kit.rivet(K.G(fr.p(0.0, yb, np_ / 2 - 0.001)), kit.tex_mat("copper", "dark"), r=0.011)
-		_tag(_new_since(before), "copper")
-	x0 = steps[0][0] + dmax / 2 + 0.002
-	x1 = steps[-1][1] - dmax / 2 - 0.002
-	newel(x0, steps[0][2], rail_top(x0 + np_ / 2) + 0.13)
+		n = max(2, round((y1 - y0) / 0.32))
+		ys = [y0 + 0.002 + (y1 - y0 - 0.002) * i / n for i in range(n + 1)]
+		for i in range(n):
+			m = kit.tex_mat("greystone", "dark") if i == 0 else stone_m()
+			end = i in (0, n - 1)
+			sz = (pw if end else pw - 0.03, ys[i + 1] - ys[i] - 0.003, dmax if end else dmax - 0.016)
+			block((xc, (ys[i] + ys[i + 1]) / 2, 0), sz, m, cut=0.024, tilt=0.0, dent=0.01, free="")
+	x0 = steps[0][0] + pw / 2 + 0.002
+	x1 = steps[-1][1] - pw / 2 - 0.002
+	newel(x0, steps[0][2], rail_top(x0 + pw / 2) + 0.16)
 	newel(x1, steps[-1][2], h - E)
-	ra, rb = x0 + np_ / 2 + 0.002, x1 - np_ / 2 - 0.002
-	o = K.slab_poly(K.Frame(), [(ra, rail_top(ra) - rh), (rb, rail_top(rb) - rh), (rb, rail_top(rb)), (ra, rail_top(ra))], 0.0, dmax - 0.02, timber_m())
+	ra, rb = x0 + pw / 2 + 0.002, x1 - pw / 2 - 0.002
+	o = K.slab_poly(K.Frame(), [(ra, rail_top(ra) - rh), (rb, rail_top(rb) - rh), (rb, rail_top(rb)), (ra, rail_top(ra))], 0.0, dmax - 0.02, stone_m())
 	b = o.modifiers.new("chisel", "BEVEL")
 	b.width, b.segments, b.limit_method, b.angle_limit = 0.022, 2, "ANGLE", math.radians(35)
-	o["role"] = "timber"
 	for i, (sa, sb, top) in enumerate(steps):
-		xs = [sa + (sb - sa) * 0.3, sa + (sb - sa) * 0.75]
+		xs = [sa + (sb - sa) * 0.5]
 		for x in xs:
 			if ra + 0.06 < x < rb - 0.06:
-				stair_baluster(x, top, lambda xx: rail_top(xx) - rh)
+				stair_baluster(x, top, lambda xx: rail_top(xx) - rh, m=stone_m(), sq=0.1, rmax=0.045)
 
 
 def floor(w=2.0, h=0.25, dd=2.0):
@@ -1385,7 +1383,7 @@ def lattice_wall(w=2.0, h=2.0, d=0.3):
 PIECES = {"foundation": foundation, "wall": wall, "doorway": doorway, "door": door, "flat_roof": flat_roof,
 	"battlement": battlement, "door_broken": door_broken, "half_wall": half_wall, "wall_narrow": wall_narrow,
 	"window_wall": window_wall, "window_wide": window_wide, "pillar": pillar, "beam": beam, "beam_half": beam_half,
-	"stairs": stairs, "foundation_steps": foundation_steps, "ramp": ramp, "railing": railing, "floor": floor,
+	"stairs": lambda: stairs(n=STAIR_STEPS), "foundation_steps": foundation_steps, "ramp": ramp, "railing": railing, "floor": floor,
 	"floor_half": floor_half, "small_floor": small_floor, "ceiling_panel": ceiling_panel, "floor_triangle": floor_triangle,
 	"foundation_half": foundation_half, "foundation_triangle": foundation_triangle, "sloped_wall": sloped_wall,
 	"ruin_wall_worn": ruin_wall_worn, "ruin_wall_collapsed": ruin_wall_collapsed, "ruin_rubble": ruin_rubble,

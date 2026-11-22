@@ -95,7 +95,7 @@ li span:last-child { font: 500 14px var(--mono); font-variant-numeric: tabular-n
 		<section>
 			<h2>New building pieces, worked in</h2>
 			<ul>
-				<li><span>Spiral stairs</span><span>each tower, top floor up to the wall walk</span></li>
+				<li><span>Straight stone stairs</span><span>each tower, every floor (no spirals, F713)</span></li>
 				<li><span>Corner stairs</span><span>each tower, 2nd to 3rd floor</span></li>
 				<li><span>Stair railing + sloped wall</span><span>each tower's first stairs, one on each side</span></li>
 				<li><span>Floor hatches</span><span>2 "murder holes" in the gate room over the passage</span></li>
@@ -120,6 +120,17 @@ li span:last-child { font: 500 14px var(--mono); font-variant-numeric: tabular-n
 				<p>Building the <b>whole Twin Gate</b> from nothing in stone costs <b>14,812 cut stone</b>, 1,417 mortar, 57 copper ingots and 4 blue glow crystals (1,245 pieces). The Outpost, our biggest so far, costs 8,340 cut stone. So this is about 1&frac34; times the Outpost.</p>
 				<p>New models (not game pieces yet): <b>brackets</b> under every floor that juts out, <b>trim bands</b> along the floor lines with corner blocks, <b>buttresses</b> at the walls' feet, <b>walk-in round turrets</b> on six tower corners (big enough to step into from the roof; not the two front corners beside the gate room, where its roof is in the way), and short <b>1 m battlements</b> closing the ends of the barracks wing roofs. Their price is still open, so they aren't in the rebuild cost.</p>
 			</div>
+		</section>
+		<section>
+			<h2>Fixed after your play test (Nov 22)</h2>
+			<ul>
+				<li><span>Tower stairs</span><span>straight flights, no spirals</span></li>
+				<li><span>Stone stairs</span><span>8 steps of 25 cm (were 5 of 40)</span></li>
+				<li><span>Stair railing</span><span>all stone, like the stairs</span></li>
+				<li><span>Front yard + drill yard</span><span>level ground, no rock lump</span></li>
+				<li><span>Broken wall tops</span><span>collide as their broken shape</span></li>
+				<li><span>Rebuilding</span><span>finishes every piece</span></li>
+			</ul>
 		</section>
 		<p class="note"><span class="swatch"></span>"Mark new pieces" glows orange on every piece the rebuild adds.</p>
 	</aside>
@@ -216,7 +227,7 @@ async function loadModel(url) {
 
 const layers = { roof: [], upper: [] };
 const glowMats = [], kitMats = [];
-const NEWKIT = new Set(["stairs_spiral", "stairs_corner", "railing_stairs", "sloped_wall_down", "floor_hatch", "lattice_wall", "edge_strip"]);
+const NEWKIT = new Set(["stairs", "stairs_corner", "railing_stairs", "sloped_wall_down", "floor_hatch", "lattice_wall", "edge_strip"]);
 const yawOf = r => (r < 4 ? r * 90 : (r - 4) * 30) * Math.PI / 180;
 try {
 	const bp = await (await fetch("bp.json")).json();
