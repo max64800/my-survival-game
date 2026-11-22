@@ -8,7 +8,7 @@ class_name Monsters
 ## cloud = a spore cloud left when the attack lands: at "self", "target" or "between" them,
 ## radius m, time s, rate = poison buildup per second inside, dps = damage per second inside.
 
-const LIST := {
+static var LIST := {
 	# ---- The first three, designed with the owner (docs/design/monsters-first-three.md).
 	# shell_hide: when its health drops to each of `at` (fractions) it hides in its shell for `seconds`, taking `cut`
 	# less damage (owner, Nov 18: once at half health, once at 10%, 10 s each: you have to wait it out, no stun-lock).

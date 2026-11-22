@@ -15,7 +15,7 @@ static func crit_chance(weapon: String) -> float:
 	return float(CRIT.get(weapon, 0.06))
 
 
-const WEAPONS := {
+static var WEAPONS := {
 	"sword": {type = "slash", light = 10, heavy = 22, light_speed = 0.55, heavy_speed = 1.10, reach = 1.8, light_sta = 8, heavy_sta = 18, light_stun = 6, heavy_stun = 18, parry_ms = 180, block = 0.35, hands = 1, combo = [1.0, 1.3, 1.8]},
 	"axe": {type = "slash", light = 12, heavy = 26, light_speed = 0.70, heavy_speed = 1.30, reach = 1.7, light_sta = 10, heavy_sta = 20, light_stun = 8, heavy_stun = 22, parry_ms = 150, block = 0.35, hands = 1, combo = [1.0, 1.3, 1.8], cleave = 0.6},
 	"mace": {type = "blunt", light = 11, heavy = 25, light_speed = 0.75, heavy_speed = 1.35, reach = 1.6, light_sta = 10, heavy_sta = 20, light_stun = 15, heavy_stun = 44, parry_ms = 150, block = 0.35, hands = 1, combo = [1.0, 1.2, 1.5, 2.0]},  # (4 hits: UAL 2's heavy combo, owner chat 15)
@@ -59,6 +59,9 @@ const DODGE_STAMINA := 20.0
 const DODGE_DISTANCE := 3.0
 const DODGE_TIME := 0.45
 const DODGE_IFRAME := Vector2(0.05, 0.30)  ## safe from 0.05 s to 0.30 s into the roll
+## Keep holding the dodge button past the usual roll and it keeps going, up to this long (F702: tap = short
+## dash, hold = longer). Stays at or under DwarfRig.ROLL_TIME (0.75 s) so he's still mid-tumble the whole time.
+const DASH_HOLD_MAX := 0.75
 const COMBO_WINDOW := 0.5
 const PARRY_COOLDOWN := 0.5  ## anti-spam: a new parry window can't start for 0.5 s
 const RIPOSTE_TIME := 1.0
