@@ -18,3 +18,8 @@
 - Found a small old gap: a friend who left and came back got their bag back but lost their bed spot. Fixed it at the same time.
 - Claude's own slip: the first test run printed "4 checks" and Claude worried the tests had crashed early. The number
   counts tests, not checks; the verbose run showed all 4 tests passing.
+- Claude's slip at commit time: the FEEDBACK files already held another chat's F716 move (not yet committed by them), so it rode along in the F727 commit. Harmless (same text), but next time check `git diff FEEDBACK.md` for other chats' lines first.
+- Tests: all bed, builder, authority, save, furniture, home decor and comfort tests pass. The full suite was too long for
+  Claude's 10-minute command limit (first run cut off), and the second run crashed inside the dungeon tests. Failures seen,
+  none from the bed code: spiral stairs too tall (another chat's F716), build lessons not remembered, a clay-brick floor
+  model still being made, and 3 dwarf tests (hair swing, stun meter, a missing material) where other chats have open edits.
