@@ -60,7 +60,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 | Area | Items | Notes |
 |---|---|---|
 | Seeing in the dark (light) | F1, F12, F293, (F562 done Nov 21) | The lantern comes up a lot: brightness, then refilling. Now the dark hurts too (F293). Then: the hand lantern gets in the way of fighting (F562: Hip Lantern) |
-| Moving around (walking, jumping, climbing) | F2, F3, F716, (F711, F713, F715 done Nov 22) | Stairs and jumping inside ruins: spiral stairs you can't climb (said 3×, all swapped for straight stairs), too-tall steps, wall tops you can't jump over |
+| Moving around (walking, jumping, climbing) | F2, F3, (F711, F713, F715, F716 done Nov 22) | Stairs and jumping inside ruins: spiral stairs you can't climb (said 3×; ruins got straight stairs, the spiral piece rebuilt with a landing), too-tall steps, wall tops you can't jump over |
 | Controls + camera | F18, F23, F27, F385 | |
 | Making the game / tools | F4, F5, F6, F7, F16 |
 | Rebuilding the tower (price, menu, chest, lag) | (F557, F559, F560, F565, F567, F578, F579, F581 done Nov 21; F631, F633, F634, F635, F636 done Nov 22) | Nov 21: one play of the tower rebuild gave 8 notes. The price and the menu came back again. Nov 22: still needed a hammer and someone standing there, and the menu had more rough edges | |
@@ -88,7 +88,6 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F732. A short "can't be hurt" window during the roll.** "need invulnerability window during roll pls." *From: you (PC, Nov 22, night). Said: 1×* (Goes with F702, the roll fixes.)
 - [ ] **F730. Old Pell's: the pile of wood and rope, the rope isn't really tied around the logs.** *From: you (PC, Nov 22, dungeon 3, screenshot). Said: 1×*
 - [ ] **F729 🔁. Old Pell's lift lever still floats: fix it onto the wall.** See "Things that keep coming back". *From: you (PC, Nov 22, dungeon 3). Said: 4×*
-- [ ] **F716. Spiral stairs you build yourself: hard to climb, and the top ends in empty space.** "The round stairs might be okay, but my dwarf had a very hard time actually climbing them. And they should come to a solid block", (you saw empty space at the top). Plan: a rail on the outside edge, wider steps, and a flat landing at the top; 3D page first, then a walk-up test. *From: you (PC, Nov 22, night). Said: 1×*
 - [ ] **F710. The Prow Hall's main building feels cramped: every floor is too low.** "Because it's so big... all of the floors feel too small." In the main building (not the towers) each storey should be about 1.5× or 2× as tall as now. You know the whole castle has to be rebuilt for it. *From: you (PC, Nov 22, evening). Said: 1×*
 - [ ] **F717. Little particle bursts on a hit: not a priority, for later.** A spark + a little dust when you hit something or get hit; tiny bits of rock fly off when you hit a snail or beetle; a hit on a skeleton throws off bits in the skeleton's own bone-white colour. *From: you (PC, Nov 22, night). Said: 1×*
 - [ ] **F725. The Clay Brick Triangle Foundation looks like an old model.** It doesn't match the other Hearthbrick pieces (screenshot: the brick deck with three arches). *From: you (PC, Nov 22, night). Said: 1×*

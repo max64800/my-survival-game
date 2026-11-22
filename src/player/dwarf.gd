@@ -476,6 +476,13 @@ func _aim_info() -> Dictionary:
 				nm = "Thin Root"
 			return {kind = "glow", name = nm + " · E to pick", pick_glow = auth.glow.id_of(hit.collider)}
 		return {kind = "glow", name = nm}
+	if auth and hit.collider is PieceNode and Pieces.LIST[(hit.collider as PieceNode).piece].get("use", "") == "bed":  # F727
+		var bed: PieceNode = hit.collider
+		var key := "p%d" % bed.uid
+		return {kind = "bed", name = auth.bed_label(key, Pieces.LIST[bed.piece].name), bed_key = key}
+	if auth and hit.collider is Station and (hit.collider as Station).kind == "bed":
+		var key := "s%d" % (hit.collider as Station).station_id
+		return {kind = "bed", name = auth.bed_label(key, "Bed"), bed_key = key}
 	if hit.collider is PieceNode and Pieces.LIST[(hit.collider as PieceNode).piece].get("use", "") == "sit":
 		var chair: PieceNode = hit.collider
 		return {kind = "seat", name = "%s · E to sit" % Pieces.LIST[chair.piece].name, seat = chair}

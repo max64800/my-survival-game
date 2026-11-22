@@ -804,6 +804,7 @@ func _on_peer_connected(id: int) -> void:
 		friend.inventory.load_data(d.inv)
 		friend.progress.load_data(d.progress)
 		friend.fuel = d.fuel
+		friend.bed_pos = d.get("bed", Vector3.INF)  # your own bed is still your wake-up spot (F727)
 		authority._progress_dirty[id] = true
 	if hud:
 		hud.show_toast("%s joined!" % player_name(id))
@@ -955,7 +956,7 @@ func menu_wants_cursor() -> bool:
 ## E turns what you're placing to the right (Q to the left), but only when you aren't aiming at something to open,
 ## sit on or pick up: then E still does that (owner, Nov 19).
 func _turn_with_e(info: Dictionary) -> bool:
-	for k in ["seat", "pick_glow", "pick_strand", "box_id", "poi_id", "station", "door_uid"]:
+	for k in ["seat", "pick_glow", "pick_strand", "box_id", "poi_id", "station", "door_uid", "bed_key"]:
 		if info.has(k):
 			return false
 	var aimed := dwarf.aim()
@@ -1067,6 +1068,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		if info.has("seat"):  # a chair, stool or bench: sit down (move or jump to stand up)
 			dwarf.sit_on(info.seat)
+			return
+		if info.has("bed_key"):  # F727: a free bed becomes yours (your wake-up spot); the host says yes or why not
+			dwarf.model.react("use")
+			authority.ask_claim_bed(info.bed_key)
 			return
 		if info.has("pick_strand"):  # a glowing vine (F569): E picks it, no swing needed
 			dwarf.model.react("use")

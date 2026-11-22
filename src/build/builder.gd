@@ -197,7 +197,7 @@ func request_place(peer_id: int, piece: String, family: String, pos: Vector3, ro
 	auth.give_xp(peer_id, 2, "crafting")
 	match Pieces.LIST[piece].get("use", ""):  # furniture that does something (Furnish tab, owner Nov 19)
 		"bed":
-			ps.bed_pos = pos + Vector3.UP * 0.9  # you wake up in your newest bed
+			auth.set_bed(peer_id, "p%d" % uid)  # you wake up in your newest bed; it's yours (F727)
 		"store":
 			auth.storage.create_box(piece, pos, Pieces.yaw_of(rot), peer_id)
 	return ""
@@ -371,6 +371,8 @@ func _ev_remove_piece(uid: int) -> void:
 			_queue_shaky()  # (in a batch: once, at end_batch)
 		if Pieces.LIST[p.piece].get("use", "") == "store":
 			_spill_furniture(p)
+		if Pieces.LIST[p.piece].get("use", "") == "bed":
+			auth.bed_gone("p%d" % uid)  # its owner wakes up at the world start again (F727)
 		if Pieces.LIST[p.piece].get("supports_rock", false):
 			queue_check(Pieces.box(p.piece, p.pos, p.rot).end, 1.5)  # was holding rock up!
 

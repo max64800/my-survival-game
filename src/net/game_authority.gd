@@ -1024,6 +1024,131 @@ func _ev_remove_station(station_id: int) -> void:
 		Sfx.play("build", st.global_position)
 		stations.erase(station_id)
 		st.queue_free()
+	if is_host():
+		bed_gone("s%d" % station_id)
+
+
+# ---------------------------------------------------------------- beds (F727, owner Nov 22: "the bed is the spawn point, one per person")
+# Each bed (a Bed station "s<id>", or bed furniture "p<piece uid>") can belong to one player: their wake-up spot.
+# One per person: a new bed (placed, or a plain bed you press E on) moves your wake-up spot there and your
+# old bed turns into a plain bed (still good for resting, and any player can claim it with E).
+# Owners are kept by player number (slot: 0 = host, 1-3 = friends), so they survive saving and rejoining.
+
+## Bed key → owner's slot. On every computer (the "Your bed" label); only the host changes it; saved with the world.
+var bed_owners := {}
+
+
+## A player's number (0 = host, 1-3 = friends): the same each time they join this world.
+func slot_of(peer_id: int) -> int:
+	var m := get_parent()
+	if m and "player_slots" in m:
+		return int(m.player_slots.get(peer_id, -1))
+	return 0 if peer_id == 1 else peer_id  # (tests: no main scene)
+
+
+## The online player with this number, or -1.
+func peer_of_slot(slot: int) -> int:
+	for pid in players:
+		if slot_of(pid) == slot:
+			return pid
+	return -1
+
+
+static func slot_name(slot: int) -> String:
+	return "Host" if slot == 0 else "Friend %d" % slot
+
+
+## Where you wake up in this bed (INF = there's no such bed).
+func bed_wake_spot(key: String) -> Vector3:
+	var id := int(key.substr(1))
+	if key.begins_with("s") and stations.has(id):
+		return stations[id].global_position + Vector3.UP * 0.5
+	if key.begins_with("p") and builder and builder.structure.pieces.has(id):
+		return builder.structure.pieces[id].pos + Vector3.UP * 0.9
+	return Vector3.INF
+
+
+## What the look-at line says about this bed, on this computer.
+func bed_label(key: String, bed_name: String) -> String:
+	var owner_slot: int = bed_owners.get(key, -1)
+	if owner_slot < 0:
+		return "%s · E to make it your bed (you wake up here)" % bed_name
+	if owner_slot == slot_of(local_peer_id()):
+		return "Your bed"
+	return "%s's bed" % slot_name(owner_slot)
+
+
+## Host: bed `key` becomes `peer_id`'s bed and wake-up spot; their old bed turns plain.
+func set_bed(peer_id: int, key: String) -> void:
+	var ps := get_player(peer_id)
+	var at := bed_wake_spot(key)
+	if ps == null or not at.is_finite():
+		return
+	var slot := slot_of(peer_id)
+	for k in bed_owners.keys():
+		if bed_owners[k] == slot and k != key:
+			_ev_bed_owner.rpc(k, -1)
+	_ev_bed_owner.rpc(key, slot)
+	ps.bed_pos = at
+
+
+func ask_claim_bed(key: String) -> void:
+	if is_host():
+		request_claim_bed(local_peer_id(), key)
+	else:
+		_rpc_claim_bed.rpc_id(1, key)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_claim_bed(key: String) -> void:
+	if is_host():
+		request_claim_bed(multiplayer.get_remote_sender_id(), key)
+
+
+## Host: E on a bed. Returns "" when it's yours now, or why not (also told to the player).
+func request_claim_bed(peer_id: int, key: String) -> String:
+	var ps := get_player(peer_id)
+	var at := bed_wake_spot(key)
+	if ps == null or not at.is_finite():
+		return "?"
+	if ps.node.global_position.distance_to(at) > REACH + 2.0:
+		return "too_far"
+	var owner_slot: int = bed_owners.get(key, -1)
+	var why := ""
+	if owner_slot == slot_of(peer_id):
+		why = "This is already your bed. You wake up here."
+	elif owner_slot >= 0:
+		why = "That's %s's bed. Place your own (or pick a free one)." % slot_name(owner_slot)
+	if why != "":
+		tell(peer_id, why)
+		return why
+	set_bed(peer_id, key)
+	tell(peer_id, "This is your bed now. You wake up here.")
+	return ""
+
+
+## Host: bed `key` was taken down or destroyed. Its owner wakes up at the world start again until they get a new bed.
+func bed_gone(key: String) -> void:
+	if not bed_owners.has(key):
+		return
+	var slot: int = bed_owners[key]
+	_ev_bed_owner.rpc(key, -1)
+	var pid := peer_of_slot(slot)
+	if pid >= 0:
+		get_player(pid).bed_pos = Vector3.INF
+		tell(pid, "Your bed is gone! You'll wake up at the world start until you place a new bed.")
+	else:  # an offline friend: fix the dwarf kept for when they come back
+		var loaded = get_parent().get("_loaded") if get_parent() else null
+		if loaded is Dictionary and loaded.get("players", {}).has(slot):
+			loaded.players[slot].bed = Vector3.INF
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_bed_owner(key: String, slot: int) -> void:
+	if slot < 0:
+		bed_owners.erase(key)
+	else:
+		bed_owners[key] = slot
 
 
 func ask_carve(item_id: String) -> void:
@@ -1898,7 +2023,7 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 				var drip := glow != null and GlowPlacer.drip_near(glow.spots_near(aim_point, 20.0), aim_point)
 				_ev_water.rpc(sid, 0, drip)
 			if id == "bed":
-				ps.bed_pos = aim_point + Vector3.UP * 0.5
+				set_bed(peer_id, "s%d" % sid)  # F727: your newest bed is your wake-up spot
 			return "placed"
 		"chest":
 			if not aim_point.is_finite() or aim_normal.normalized().y < 0.6 or _chest(ps).distance_to(aim_point) > REACH + 1.0:
@@ -2796,7 +2921,8 @@ func snapshot() -> Dictionary:
 		grove_chops = grove_chops.duplicate(), grove_regrow = grove_regrow.duplicate(),
 		planted = planted.duplicate(true),
 		edits = edit_log.duplicate(), glow = removed_glow.duplicate(), plants = removed_plants.duplicate(), drops = drops, next_drop = _next_drop_id,
-		stations = sts, chops = chops, regrow = regrow.duplicate(), plant_regrow = plant_regrow.duplicate(), runes = rune_slab.to_data(), build = builder.snapshot(), boxes = storage.snapshot(), monsters = monsters.snapshot(), state = world_state}
+		stations = sts, chops = chops, regrow = regrow.duplicate(), plant_regrow = plant_regrow.duplicate(), runes = rune_slab.to_data(), build = builder.snapshot(), boxes = storage.snapshot(), monsters = monsters.snapshot(), state = world_state,
+		beds = bed_owners.duplicate()}
 
 
 func load_snapshot(snap: Dictionary) -> void:
@@ -2860,6 +2986,8 @@ func load_snapshot(snap: Dictionary) -> void:
 			stations[st[0]].set_water(st[5])
 		if st.size() > 8 and stations.has(st[0]):
 			stations[st[0]].set_crop(st[7], st[8])  # what's growing on a farm plot
+	for k in snap.get("beds", {}):  # whose bed is whose (F727)
+		bed_owners[String(k)] = int(snap.beds[k])
 	for id in snap.get("regrow", {}):
 		regrow[id] = snap.regrow[id]
 	if glow:  # saves from before roots grew back: their chopped roots start growing now
