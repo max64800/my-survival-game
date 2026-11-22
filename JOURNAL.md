@@ -10993,3 +10993,13 @@ worth asking about on the next session.
 - Artifact pages don't serve `.glb` files. Packing the models as `.json` failed too: the page's safety rules block the hidden `data:` links inside them. Fix: each model goes up as a base64 `.txt` file, and the page unpacks it with `loader.parse`.
 - After those failed loads, Chrome blocked 3D drawing for the artifact site ("context lost, blocked"), and then the Chrome connection dropped. So the final live page was only checked on the local copy before the `.txt` change. If the page shows blank boxes, restart Chrome.
 - F780 was already taken by another chat (spiral stairs), so the fountain became F782. FEEDBACK and CREDITS also held other chats' unsaved edits, so I committed only my own lines.
+
+
+## 2026-11-23 — F782 round 2: crystals instead of water, lighter stone
+
+**What we did**
+- The owner loved the new 3D page way (models packed as text). The fountain changes they asked for: lighter, and no water at all (it would be hard to animate). So the basin now holds a pebble-and-moss bed with glowing green healing crystal clusters, and a small crystal grows out of the mouth instead of the water stream. The stone is limestone now, about 25% brighter.
+
+**Mistakes and hurdles**
+- Switching the stone to a fixed limestone stopped the build from using up random numbers, so every small random wobble moved. One basin stone then lined up exactly with the head block, and the shimmer check caught it. Fix: I moved the head block 1.5 cm back, so they can never line up.
+- First crystals were too small and hid behind the basin rim, and the pale tips looked white. Fix: raised the bed 6 cm, made the clusters bigger and the tips greener (2nd and last render round).
