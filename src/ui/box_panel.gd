@@ -14,7 +14,7 @@ var _grid: GridContainer
 var _status: Label
 var _ways: HBoxContainer  ## pictures of what goes in: the two ways (an untouched Rebuilding Chest, F560) or what's still missing (F578)
 var _ways_for := -1  ## which chest the pictures are of (they're built once, not every frame)
-var _ways_sig := ""  ## box + whether you have the hard material (F634: rebuilt when that changes)
+var _ways_sig := ""  ## which box these cards are for (F689: cards no longer depend on what you're holding)
 
 
 func _ready() -> void:
@@ -128,12 +128,10 @@ func refresh() -> void:
 
 
 ## The Rebuilding Chest before it starts (owner F560, said 3×: "only show, in pictures, what you need for the two
-## options. That's it."): two cards, each just the pictures and counts of what that way needs.
+## options. That's it."): two cards, each just the pictures and counts of what that way needs. Both always show
+## (owner, Nov 22, F689): the top line already names both ways, so the pictures should match it, not hide one.
 func _show_ways() -> void:
-	var r: Dictionary = GameAuthority.instance.world_state.get("ruins", {}).get(str(box_id), {})
-	var ps: GameAuthority.PlayerState = GameAuthority.instance.get_player(GameAuthority.instance.local_peer_id())
-	var has_hard: bool = ps != null and ps.inventory.count_of(Builder.ruin_hard(r)) > 0
-	var sig := str(box_id) + str(has_hard)
+	var sig := str(box_id)
 	if sig == _ways_sig:
 		return
 	_ways_sig = sig
@@ -141,7 +139,6 @@ func _show_ways() -> void:
 	_missing_sig = ""
 	UiKit.clear(_ways)
 	var choices: Array[Dictionary] = GameAuthority.instance.builder.ruin_choices(box_id)
-	choices = choices.filter(func(w): return w.wood or has_hard)  # F634: hide stone/brick until you have it
 	for n in choices.size():
 		if n > 0:
 			UiKit.label(_ways, "or", 18, UiKit.AMBER).size_flags_vertical = Control.SIZE_SHRINK_CENTER

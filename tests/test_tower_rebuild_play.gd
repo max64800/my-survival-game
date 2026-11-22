@@ -48,7 +48,8 @@ func _hold(item: String) -> void:
 
 ## F631 (owner, Nov 22: "putting materials in a Rebuilding Chest should start the rebuild by itself, no hammer, no
 ## swinging") + F567 (bundled by the owner: no blue plan at ruins at all) + F633 (the cursor sometimes stayed
-## hidden opening this menu) + F634 (the stone/brick card hides until you have the material) + F635 (bigger
+## hidden opening this menu) + F634/F689 (both cards show from the start, matching "planks or cut stone" above
+## them; F634 used to hide the stone card until you had the material, F689 reversed that) + F635 (bigger
 ## pictures, each with its own name, not just on hover) + F636 (a clear line when the tower's done, and where
 ## to see what it taught) + F565 (10 FPS and freezes while rebuilding).
 func test_rebuilds_itself_no_hammer_no_blue_plan() -> void:
@@ -69,16 +70,11 @@ func test_rebuilds_itself_no_hammer_no_blue_plan() -> void:
 	auth.get_parent().add_child(panel)
 	panel.open(box)
 	check(not Controls.captured(), "opening the Rebuilding Chest shows the cursor (F633)")
-	# F560/F634: the untouched chest shows only the wood card until you have the hard material.
+	# F560/F689: both cards (wood and stone) show from the start, matching the "planks or cut stone" line above them.
 	var cards := panel._ways.get_children().filter(func(c): return c is PanelContainer)
-	check_eq(cards.size(), 1, "only the wood card shows with nothing cut yet (F634, %d cards)" % cards.size())
-	check(panel._status.text.length() < 50, "one short line above them: \"%s\"" % panel._status.text)
-	# F634: holding cut stone brings the stone card in too.
-	_hold("cut_stone")
-	panel.refresh()
-	cards = panel._ways.get_children().filter(func(c): return c is PanelContainer)
 	var pics := panel._ways.find_children("*", "TextureRect", true, false)
-	check(cards.size() == 2 and pics.size() >= 3, "the stone card appears once you have cut stone (F634, %d cards, %d pictures)" % [cards.size(), pics.size()])
+	check(cards.size() == 2 and pics.size() >= 3, "both cards show even with nothing cut yet (F689, %d cards, %d pictures)" % [cards.size(), pics.size()])
+	check(panel._status.text.length() < 50, "one short line above them: \"%s\"" % panel._status.text)
 	# F635: each picture says its own name under it, not just on hover.
 	var names := panel._ways.find_children("*", "Label", true, false).map(func(l): return l.text)
 	check("Rootwood Plank" in names, "the wood picture names itself (F635): %s" % [names])
