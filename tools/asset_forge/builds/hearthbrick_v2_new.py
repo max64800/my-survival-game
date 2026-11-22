@@ -138,14 +138,14 @@ def stairs_corner(w=2.0, h=2.0, dd=2.0, n=8):
 
 
 # ---------------- spiral stairs ----------------
-def stairs_spiral():
+def stairs_spiral(stacked=False):
 	"""F716 spiral stairs (owner, Nov 22: hard to climb, the top ends in empty space): 4 × 4 m. A thick round
 	brick column (curved bricks round a mortar core, a limestone foot drum and cap), nine wide rough limestone
 	treads (an inner and an outer stone each) 3/4 of a turn up, then a landing of 9 limestone flags over the way
 	in. Brick piers carry a limestone rail with turned limestone balusters. Layout: spiral_layout.py."""
 	import spiral_layout as SL
 	r_out = SL.POST
-	foot, top = 0.2, 2.93
+	foot, top = 0.2, (SL.STACK_TOP if stacked else 2.93)
 	HR.lime_ring(E, foot, 0.08, r_out, 6, K.rng.uniform(0, 1))
 	HR.mortar_core(foot + 0.002, top - 0.004, r_out - 0.03)
 	HR.courses(foot, top - 0.08, 0.2, r_out)
@@ -162,7 +162,12 @@ def stairs_spiral():
 		pier=lambda cx, cz, w, y0, y1: _brick_pier(cx, cz, w, max(y0, E), y1),
 		rail=rail,
 		baluster=lambda x, z, y0, y1: SV.spiral_baluster(x, z, y0, y1, HB.m_lime(), role="lime"),
-		rng=K.rng, post_top=top)
+		rng=K.rng, post_top=top, stacked=stacked)
+
+
+def stairs_spiral_stacked():
+	"""F780: the same spiral stairs with another flight on top (no landing rail, the column stops under the next one)."""
+	stairs_spiral(stacked=True)
 
 
 # ---------------- stair railing ----------------
@@ -246,7 +251,7 @@ def roof_cap():
 	NC.pyramid_cap(0.49, E + 0.026, 0.40, 4, 0.03, HB.m_brick, "tile", HB.m_brick, "ridge")
 
 
-PIECES = {"stairs_corner": stairs_corner, "stairs_spiral": stairs_spiral, "railing_stairs": railing_stairs,
+PIECES = {"stairs_corner": stairs_corner, "stairs_spiral": stairs_spiral, "stairs_spiral_stacked": stairs_spiral_stacked, "railing_stairs": railing_stairs,
 	"sloped_wall_down": sloped_wall_down, "edge_strip": edge_strip, "floor_hatch": floor_hatch,
 	"lattice_wall": lattice_wall, "roof_cap": roof_cap}
 

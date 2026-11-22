@@ -11,6 +11,7 @@ var family := "plank_root"
 var ghost := false  ## true = the see-through preview while placing
 var _ghost_mat: StandardMaterial3D
 var plan := false  ## a blueprint's blue plan piece (set before adding it)
+var capped := false  ## spiral stairs (F780): another flight sits on top (no landing rail, the post stops at the top)
 static var _plan_mat: StandardMaterial3D
 static var _mats := {}
 
@@ -204,6 +205,29 @@ func rebuild(p_piece: String, p_family: String) -> void:
 	_build()
 
 
+## F780: spiral stairs with another flight on top swap to their "stacked" model (no landing rail across the way
+## on up, the post stops at the top so the one above carries it on: no two posts in the same place).
+func set_capped(on: bool) -> void:
+	if on == capped:
+		return
+	capped = on
+	rebuild(piece, family)
+
+
+static func stacked_mesh(p_family: String) -> Mesh:
+	var key := "stairs_spiral_stacked__" + p_family
+	if not _forged_meshes.has(key):
+		var m: Mesh = null
+		var scene := Look.forged("build", key) if use_models else null
+		if scene:
+			var parts := scene.find_children("*", "MeshInstance3D", true, false)
+			if parts.size() == 1:
+				m = (parts[0] as MeshInstance3D).mesh
+			scene.free()
+		_forged_meshes[key] = m
+	return _forged_meshes[key]
+
+
 static var _forged_meshes := {}
 static var _fire_spots := {}  ## piece__family -> [[position, size]] from the model's fire_spot markers
 
@@ -292,6 +316,8 @@ func _build() -> void:
 	_look = mi
 	# Ghosts use the code shape, except furniture: its real outline, like a crafting bench's (F726: it was a box).
 	var made := forged_mesh(piece, family) if not ghost or (Pieces.turns_freely(piece) and not plan) else null
+	if capped and not ghost:
+		made = stacked_mesh(family)
 	mi.mesh = made if made else PieceMesh.visual(piece, family)
 	mi.material_override = _ghost_mat if ghost else (null if made else _mat(family))
 	if ghost:
@@ -459,15 +485,34 @@ func _ramp_shape(s: Vector3) -> void:
 	if piece == "stairs_spiral":
 		# F716: a smooth spiral slope of slanted treads, the post, the landing (and its pillar), the outside
 		# corner pillars and the rails, so you can't fall off the open side.
+		# F781 (owner, Nov 22: "very jittery"): the slope is one smooth bent sheet (a single trimesh: no seams between
+		# separate pieces for the dwarf's feet to catch on). The thin parts (post, rails, pillars) sit on their own
+		# body on the piece layer only: dwarfs and monsters still bump into them, but the camera doesn't, so it no
+		# longer jumps in and out every time a rail or the post passes between it and the dwarf.
+		var thin := StaticBody3D.new()
+		thin.name = "Thin"
+		thin.collision_layer = 0 if ghost else PIECE_LAYER
+		thin.collision_mask = 0
+		thin.set_meta("piece_uid", uid)
+		add_child(thin)
 		var post := CylinderShape3D.new()
 		post.radius = PieceMesh.SPIRAL_POST
-		post.height = s.y + 0.95
+		post.height = s.y + (0.0 if capped else 0.95)  # (F780: a spiral on top carries the post on up)
 		cs.shape = post
 		cs.position = Vector3(0, post.height * 0.5, 0)
-		add_child(cs)
-		var hulls: Array = PieceMesh.spiral_slope_parts(s) + PieceMesh.spiral_rail_parts(s)
-		var boxes := [[Vector3(0.995, (PieceMesh.SPIRAL_LANDING + s.y) * 0.5, 0.995), Vector3(1.99, s.y - PieceMesh.SPIRAL_LANDING, 1.99)],
-			[Vector3(1.72, PieceMesh.SPIRAL_LANDING * 0.5, 1.72), Vector3(0.24, PieceMesh.SPIRAL_LANDING, 0.24)]]
+		thin.add_child(cs)
+		var slope := CollisionShape3D.new()
+		var sheet := ConcavePolygonShape3D.new()
+		# The landing's top is part of the same sheet (a box's side edge, 25 cm thick, caught the dwarf's side
+		# on the last tread and bumped him up).
+		var faces := PieceMesh.spiral_slope_faces(s)
+		var l := 1.99
+		faces.append_array([Vector3(0, s.y, 0), Vector3(l, s.y, 0), Vector3(l, s.y, l), Vector3(0, s.y, 0), Vector3(l, s.y, l), Vector3(0, s.y, l)])
+		sheet.set_faces(faces)
+		sheet.backface_collision = true
+		slope.shape = sheet
+		add_child(slope)
+		var boxes := [[Vector3(1.72, PieceMesh.SPIRAL_LANDING * 0.5, 1.72), Vector3(0.24, PieceMesh.SPIRAL_LANDING, 0.24)]]
 		for a in [PI * 0.25, PI * 0.75, PI * 1.25]:
 			var c := PieceMesh._sq(a, 1.73)
 			var h := PieceMesh.spiral_slope_y(s, a) + PieceMesh.SPIRAL_RAIL_H
@@ -478,13 +523,13 @@ func _ramp_shape(s: Vector3) -> void:
 			var part := CollisionShape3D.new()
 			part.shape = bs
 			part.position = b[0]
-			add_child(part)
-		for pts: PackedVector3Array in hulls:
+			thin.add_child(part)
+		for pts: PackedVector3Array in PieceMesh.spiral_rail_parts(s, not capped):
 			var part := CollisionShape3D.new()
 			var hull := ConvexPolygonShape3D.new()
 			hull.points = pts
 			part.shape = hull
-			add_child(part)
+			thin.add_child(part)
 		return
 	var sh := ConvexPolygonShape3D.new()
 	var hx := s.x * 0.5

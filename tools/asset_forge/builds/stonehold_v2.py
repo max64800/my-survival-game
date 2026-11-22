@@ -28,7 +28,7 @@ K.SIZE.update({"gateway": (4, 4, 0.3), "gate_leaf": (1.6, 3.6, 0.15), "gate_brok
 	"straw_dummy": (1.0, 1.9, 1.0), "archery_target": (1.2, 1.7, 1.6), "spear_rack": (1.6, 2.0, 0.4),
 	"door_broken": (2.0, 0.3, 1.8), "ruin_wall_worn": (2, 2, 0.3), "ruin_wall_collapsed": (2, 2, 0.3), "ruin_rubble": (1.6, 0.7, 1.6),
 	"wall_narrow": (1, 2, 0.3), "window_wide": (2, 2, 0.3), "floor_half": (2, 0.25, 1), "small_floor": (1, 0.25, 1),
-	"ramp": (2, 1, 2), "stairs_corner": (2, 2, 2), "stairs_spiral": (4, 3, 4), "railing_stairs": (2, 3, 0.15)})   # outline checks for pieces kit_zone1 doesn't list
+	"ramp": (2, 1, 2), "stairs_corner": (2, 2, 2), "stairs_spiral": (4, 3, 4), "stairs_spiral_stacked": (4, 3, 4), "railing_stairs": (2, 3, 0.15)})   # outline checks for pieces kit_zone1 doesn't list
 
 
 def stone_m():
@@ -800,7 +800,7 @@ def stone_pier(cx, cz, w, y0, y1):
 		block((cx, (ys[i] + ys[i + 1]) / 2, cz), (ww, ys[i + 1] - ys[i] - 0.003, ww), m, cut=0.024, tilt=0.0, dent=0.01, free="")
 
 
-def stairs_spiral():
+def stairs_spiral(stacked=False):
 	"""F716 spiral stairs (owner, Nov 22: hard to climb, the top ends in empty space): 4 × 4 m. Nine wide stone
 	treads (each an inner and an outer stone) climb 3/4 of a turn round a thick post of stacked drums, then a
 	landing of 9 flagstones fills the last quarter at the top, over the way in. A stone rail with turned
@@ -818,7 +818,12 @@ def stairs_spiral():
 		tread=tread, flag=flag, pier=stone_pier,
 		rail=lambda p0, t0, p1, t1: spiral_rail(p0, t0, p1, t1, stone_m(), bar=SL.BAR),
 		baluster=lambda x, z, y0, y1: spiral_baluster(x, z, y0, y1, stone_m()),
-		rng=K.rng, post_top=2.93)
+		rng=K.rng, post_top=2.93, stacked=stacked)
+
+
+def stairs_spiral_stacked():
+	"""F780: the same spiral stairs with another flight on top (no landing rail, the post stops under the next one)."""
+	stairs_spiral(stacked=True)
 
 
 STAIR_STEPS = 8   # F711 (owner, Nov 22: "the first and second steps are far too tall"): 8 steps of 25 cm, not 5 of 40 cm
@@ -1447,7 +1452,7 @@ PIECES = {"foundation": foundation, "wall": wall, "doorway": doorway, "door": do
 	"ruin_wall_worn": ruin_wall_worn, "ruin_wall_collapsed": ruin_wall_collapsed, "ruin_rubble": ruin_rubble,
 	"gateway": gateway, "gate_leaf": gate_leaf, "gate_broken": gate_broken, "straw_dummy": straw_dummy,
 	"archery_target": archery_target, "spear_rack": spear_rack, "stairs_corner": stairs_corner, "sloped_wall_down": sloped_wall_down, "edge_strip": edge_strip, "floor_hatch": floor_hatch, "lattice_wall": lattice_wall,
-	"stairs_spiral": stairs_spiral, "railing_stairs": railing_stairs}
+	"stairs_spiral": stairs_spiral, "stairs_spiral_stacked": stairs_spiral_stacked, "railing_stairs": railing_stairs}
 
 
 def paint():

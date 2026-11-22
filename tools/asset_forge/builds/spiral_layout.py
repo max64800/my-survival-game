@@ -21,6 +21,7 @@ STEPS = 9
 STEP = math.pi / 6
 POST = 0.32       # the post's radius
 REACH = 1.84      # treads reach the square this far out (a wall's inner face is at 1.85)
+STACK_TOP = H - 0.01   # stacked: the post and pillars end 1 cm under the next flight's (no shimmer)
 LANDING = 1.75    # the landing's underside
 LAND = 1.99       # the landing reaches this far along x and z
 RAIL = 1.73       # the rail's (and its pillars') middle line, from the post along x or z
@@ -90,8 +91,12 @@ def _side_point(a):
 	return sq(a, RAIL)
 
 
-def build(post, tread, flag, pier, rail, baluster, rng, post_top=2.95):
+def build(post, tread, flag, pier, rail, baluster, rng, post_top=2.95, stacked=False):
+	"""stacked (F780): another flight stands on this one (the game swaps this model in), so no landing rail (it
+	blocks the way on up), and the post and the last corner pillar stop 1 cm under the next flight's own."""
 	J = lambda s: rng.uniform(-s, s)
+	if stacked:
+		post_top = STACK_TOP
 	post(post_top)
 	# treads
 	for i in range(STEPS):
@@ -118,7 +123,7 @@ def build(post, tread, flag, pier, rail, baluster, rng, post_top=2.95):
 	for c in CORNERS:
 		cx, cz = sq(c, RAIL)
 		tops[c] = rail_top(c)
-		pier(cx, cz, PW, 0.0, tops[c] + 0.08)
+		pier(cx, cz, PW, 0.0, min(tops[c] + 0.08, STACK_TOP) if stacked else tops[c] + 0.08)
 	end = (-0.14, RAIL)                                # the rail's top end: a newel on the last tread
 	a_end = math.atan2(-end[1], end[0]) % math.tau
 	ends = [(CORNERS[0], CORNERS[1]), (CORNERS[1], CORNERS[2]), (CORNERS[2], None)]
@@ -156,6 +161,8 @@ def build(post, tread, flag, pier, rail, baluster, rng, post_top=2.95):
 					continue
 				baluster(x, z, tread_top(i) + 0.002, under(x, z))
 	pier(end[0], end[1], PW, tread_top(STEPS - 1) + 0.002, rail_top(a_end) + 0.1)
+	if stacked:
+		return
 	# the landing's rail, along its drop (z ≈ 0.11), from the post to a newel at the far edge
 	lz = 0.11
 	pier(1.83, lz, PW, H - 0.004, H + 0.95)

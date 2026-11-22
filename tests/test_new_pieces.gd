@@ -13,7 +13,7 @@ var _root: Node3D
 class Faller extends CharacterBody3D:
 	func _init() -> void:
 		collision_layer = 0
-		collision_mask = World.TERRAIN_LAYER
+		collision_mask = World.TERRAIN_LAYER | PieceNode.PIECE_LAYER  # (= Dwarf: a spiral stair's rails and post are on the piece layer only)
 		var shape := CollisionShape3D.new()
 		var cap := CapsuleShape3D.new()
 		cap.radius = 0.36

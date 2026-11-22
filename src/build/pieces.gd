@@ -768,6 +768,11 @@ static func snap(piece: String, p: Vector3, n: Vector3, yaw: float, rot: int, li
 		anchor_piece: Dictionary = {}) -> Dictionary:
 	var info: Dictionary = LIST[piece]
 	if not anchor_piece.is_empty():
+	if piece == "stairs_spiral" and not anchor_piece.is_empty():
+		var sp := _snap_spiral(p, n, rot, anchor, anchor_piece)
+		if not sp.is_empty():
+			sp.pos.y += lift
+			return sp
 		var e := _snap_to_edges(piece, p, n, anchor_piece)
 		if not e.is_empty():
 			e.pos.y += lift
@@ -827,6 +832,38 @@ static func snap(piece: String, p: Vector3, n: Vector3, yaw: float, rot: int, li
 const FREE_MOVE := 0.1  ## furniture moves in 10 cm steps
 
 
+
+## F780 (owner, Nov 22: "I cannot get them to snap together"): spiral stairs on spiral stairs and beside floors.
+##  - aiming at the top half of a spiral stair: the next flight goes 2 m up, turned the same way, so its first
+##    step starts right where the landing below ends (9 steps + the landing = one full turn).
+##  - aiming at the side of a floor/foundation: flush against it, the landing quarter next to it, on its grid.
+##    Beside a floor the landing is level with the floor's top (stairs up to it); beside a foundation the
+##    stairs stand on the same ground. Q picks the other landing corner.
+## Returns {} when the normal rules should decide.
+static func _snap_spiral(p: Vector3, n: Vector3, rot: int, anchor: AABB, a: Dictionary) -> Dictionary:
+	var a_pos: Vector3 = a.pos
+	if a.piece == "stairs_spiral" and (n.y > 0.5 or p.y > a_pos.y + 1.0):
+		return {pos = a_pos + Vector3(0, LIST["stairs_spiral"].size.y, 0), rot = a.rot}
+	var group: String = LIST[a.piece].get("group", "")
+	if absf(n.y) >= 0.5 or not (group in ["floor", "foundation"]) or anchor.size == Vector3.ZERO or not on_square_grid(a.piece, a.rot):
+		return {}
+	var s: Vector3 = LIST["stairs_spiral"].size
+	var axis := 0 if absf(n.x) > absf(n.z) else 2
+	var side := signf(n[axis])
+	var pos := _on_grid("cell", p, s, 0)
+	pos[axis] = (anchor.end[axis] if side > 0.0 else anchor.position[axis]) + side * s[axis] * 0.5
+	pos.y = anchor.end.y - s.y if group == "floor" else anchor.position.y
+	var picks: Array[int] = []
+	for q in 4:
+		var c := Basis(Vector3.UP, yaw_of(q)) * Vector3(1, 0, 1)  # where the landing quarter ends up
+		if c[axis] * side < 0.0:
+			picks.append(q)
+	var other := 2 - axis
+	picks.sort_custom(func(qa: int, qb: int) -> bool:  # the corner nearer the crosshair first
+		var ca := (Basis(Vector3.UP, yaw_of(qa)) * Vector3(1, 0, 1))[other]
+		var cb := (Basis(Vector3.UP, yaw_of(qb)) * Vector3(1, 0, 1))[other]
+		return (ca - cb) * (p[other] - pos[other]) > 0.0)
+	return {pos = pos, rot = picks[posmod(rot, 2)]}
 
 ## Snapping to the real edges of a built piece (60° triangles, and anything turned 30°/60°).
 ## Returns {} when the normal square-grid rules should decide instead.

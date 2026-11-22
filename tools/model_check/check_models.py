@@ -264,8 +264,12 @@ def check_shimmer(parts):
 OVER_TOP = {"stairs_spiral": 1.0}
 
 
+VARIANT_OF = {"stairs_spiral_stacked": "stairs_spiral"}   # a model the game swaps in for a piece (F780: one with a flight on top)
+
+
 def check_outline(name, tris, sizes):
 	piece = name.split("__")[0]
+	piece = VARIANT_OF.get(piece, piece)
 	if piece not in sizes:
 		return ["no piece called '%s' in pieces.gd" % piece]
 	size, shape = sizes[piece]

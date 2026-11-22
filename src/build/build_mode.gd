@@ -309,6 +309,8 @@ func _process(delta: float) -> void:
 	var anchor := AABB()
 	var anchor_piece := {}
 	var hit_node: Object = hit.get("collider")
+	if hit_node is Node and (hit_node as Node).get_parent() is PieceNode:
+		hit_node = (hit_node as Node).get_parent()  # a spiral stair's rail or post (its own body, F781)
 	if hit_node is PieceNode and auth.builder.structure.pieces.has((hit_node as PieceNode).uid):
 		anchor = auth.builder.structure.box_of((hit_node as PieceNode).uid)
 		anchor_piece = auth.builder.structure.pieces[(hit_node as PieceNode).uid]

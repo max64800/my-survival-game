@@ -73,6 +73,7 @@ var _cam_y := NAN
 var _zoom := CAMERA_DISTANCE  ## where the mouse wheel wants the camera
 
 var _yaw := 0.0
+var _cam_tick := 0  ## the physics frame the camera's height last glided on (F781)
 var _pitch := -0.25
 var _cam_yaw: Node3D
 var _cam_pitch: Node3D
@@ -95,7 +96,7 @@ var _look_timer := 0.0
 
 func _ready() -> void:
 	collision_layer = BODY_LAYER
-	collision_mask = World.TERRAIN_LAYER | Monster.MONSTER_LAYER  # (owner, Nov 18: you could walk right through a beetle)
+	collision_mask = World.TERRAIN_LAYER | Monster.MONSTER_LAYER | PieceNode.PIECE_LAYER  # (owner, Nov 18: you could walk right through a beetle; F781: the spiral stairs' rails and post are on the piece layer only)
 	floor_max_angle = deg_to_rad(52)
 	floor_snap_length = 0.45
 	var shape := CollisionShape3D.new()
@@ -218,7 +219,7 @@ const FLY_FAST := 45.0
 
 func set_dev_fly(on: bool) -> void:
 	dev_fly = on
-	collision_mask = 0 if on else World.TERRAIN_LAYER | Monster.MONSTER_LAYER  # through rock (and back to solid)
+	collision_mask = 0 if on else World.TERRAIN_LAYER | Monster.MONSTER_LAYER | PieceNode.PIECE_LAYER  # through rock (and back to solid)
 	_spring.collision_mask = 0 if on else World.TERRAIN_LAYER  # the camera too
 	velocity = Vector3.ZERO
 
@@ -348,7 +349,8 @@ func _physics_process(delta: float) -> void:
 	_guard_fall(delta)
 	_send_body_xp(delta)
 	model.set_climbing(ladder and not is_on_floor(), delta)  # hands on the rungs
-	if on_floor and not ladder and velocity.y <= 0.01 and dir.length() > 0.1 and is_on_wall():
+	# (F781: only a wall in front is a step: brushing past one beside you, like a spiral stair's post, lifted you)
+	if on_floor and not ladder and velocity.y <= 0.01 and dir.length() > 0.1 and is_on_wall() and get_wall_normal().dot(dir.normalized()) < -0.3:
 		_try_step_up(dir * speed * delta)
 
 	# Face where we're going, or where we're digging.
@@ -415,6 +417,9 @@ func _process(delta: float) -> void:
 		_net_pose.rpc(global_position, model.rotation.y)
 	# The camera follows smoothly up and down, so stepping up a ledge doesn't jolt.
 	# Zoomed in, the camera looks at the dwarf itself (chest height, no shoulder offset); zoomed out, over the
+	if _step_dy != 0.0 and model:
+		_step_dy = move_toward(_step_dy, 0.0, delta * 1.5)
+		model.position.y = _step_dy
 	# shoulder as before (owner, Nov 16: zooming went to the middle of the screen, not to the dwarf).
 	var near := clampf((_spring.spring_length - ZOOM_MIN) / (CAMERA_DISTANCE - ZOOM_MIN), 0.0, 1.0)
 	# Aiming (F452, owner Nov 20: "I'm looking at his head"): whatever the zoom, the camera slides to a fixed spot over
@@ -424,7 +429,14 @@ func _process(delta: float) -> void:
 	var want_y := global_position.y + lerpf(lerpf(1.0, SHOULDER.y, near), AIM_CAMERA.y, aim_k)
 	if is_nan(_cam_y) or absf(_cam_y - want_y) > 2.0:
 		_cam_y = want_y
-	_cam_y = lerpf(_cam_y, want_y, minf(1.0, delta * 14.0))
+	# F781 (owner, Nov 22: climbing the spiral stairs was "very jittery"): the body only moves 60 times a second, but
+	# this runs every drawn frame. Gliding the camera's height every frame made him hop up and down against it while
+	# climbing, so the height glide now steps along with the body, like the camera's sideways follow always did.
+	var tick := Engine.get_physics_frames()
+	if tick != _cam_tick:
+		var k := minf(1.0, 14.0 * float(mini(tick - _cam_tick, 4)) / Engine.physics_ticks_per_second)
+		_cam_y = lerpf(_cam_y, want_y, k)
+		_cam_tick = tick
 	_cam_yaw.global_position = Vector3(global_position.x, _cam_y, global_position.z)
 	_cam_yaw.rotation.y = _yaw
 	_cam_pitch.rotation.x = _pitch
@@ -470,7 +482,7 @@ func aim() -> Dictionary:
 		return {}
 	if chest.distance_to(hit.position) > GameAuthority.REACH:
 		return {}
-	return hit
+	return _piece_of(hit)
 
 
 func _aim_info() -> Dictionary:
@@ -492,6 +504,36 @@ func _aim_info() -> Dictionary:
 		elif spot.get("kind") == GlowPlacer.GIANT:
 			nm = "Giant Mushroom (%d chops left · copper axe)" % spot.get("chops", 1)
 		if k.get("tool", "") == "hand":  # mushrooms, fiber, twigs, thin roots: E picks them (owner, Nov 17)
+## F775: a sprinting dwarf can't turn on the spot: his path swings round at most SPRINT_TURN_SPEED turns a second
+## (walking still turns at once). `k` = how far into the sprint (0..1).
+func _sprint_turn(dir: Vector3, k: float, delta: float) -> Vector3:
+	var hv := Vector2(velocity.x, velocity.z)
+	if k <= 0.0 or dir.length() <= 0.1 or hv.length() < WALK_SPEED * 0.8:
+		return dir
+	var cur := atan2(hv.x, hv.y)
+	var want := atan2(dir.x, dir.z)
+	var step := TAU * lerpf(4.0, DwarfFeel.SPRINT_TURN_SPEED, k) * delta
+	var ang := cur + clampf(angle_difference(cur, want), -step, step)
+	return Vector3(sin(ang), 0.0, cos(ang)) * dir.length()
+
+
+## F766: the camera never sits inside rock. The spring arm feels how far back it can go; when rock is closer than the
+## camera, the camera jumps in at once; when the rock is gone, it glides back out (no popping).
+## Then the rock between the camera and his chest fades to a see-through speckle (terrain.gdshader "see_*").
+func _place_camera(delta: float) -> void:
+	var room := CameraRoom.room(_spring, [get_rid()])  # (F783: thin pieces like railings don't push it in)
+	if room < _cam_len:
+		_cam_len = room
+	else:
+		_cam_len = lerpf(_cam_len, room, minf(1.0, delta * DwarfFeel.CAM_RETURN_SPEED))
+	camera.position = _spring.position + Vector3(0, 0, _cam_len)
+	var rock: ShaderMaterial = World.rock_mat
+	if rock:
+		rock.set_shader_parameter("see_from", camera.global_position)
+		rock.set_shader_parameter("see_to", _cam_yaw.global_position)
+		rock.set_shader_parameter("see_radius", 0.0 if dev_fly else DwarfFeel.CAM_FADE_RADIUS)
+
+
 			if spot.get("kind") == GlowPlacer.ROOT_DANGLE:
 				nm = "Thin Root"
 			return {kind = "glow", name = nm + " · E to pick", pick_glow = auth.glow.id_of(hit.collider)}
@@ -512,6 +554,14 @@ func _aim_info() -> Dictionary:
 	if hit.collider is Station:
 		var st: Station = hit.collider
 		# F568: say that benches also upgrade and (freely) repair gear, so the side panel isn't missed.
+	return _piece_of(hit)
+
+
+## A spiral stair's rail or post is its own small body inside the piece (F781): aiming at it means the piece.
+static func _piece_of(hit: Dictionary) -> Dictionary:
+	var c: Object = hit.get("collider")
+	if c is Node and not (c is PieceNode) and (c as Node).get_parent() is PieceNode:
+		hit.collider = (c as Node).get_parent()
 		var does := "E: craft, upgrade, repair (free)" if st.kind in ["workbench", "anvil"] else "E to use"
 		return {kind = "station", name = "%s · %s" % [Items.display_name(st.kind), does], station = st}
 	var poi_id := PoiField.poi_id_of(hit.collider)
@@ -686,7 +736,14 @@ func is_invulnerable() -> bool:
 
 func guard_break() -> void:
 	fight.guard_break()
+	var y0 := global_position.y
 
+	_step_dy = clampf(_step_dy - (global_position.y - y0), -STEP_HEIGHT, 0.0)  # F781: the body pops up, the look glides
+
+
+## F781 (owner, Nov 22: "very jittery"): a step-up lifts the body in one go; the model starts this far below it
+## and glides up (about a tenth of a second), so you see a smooth climb, not a hop.
+var _step_dy := 0.0
 
 ## Never lost inside the rock (owner, Nov 18: a beetle's charge knocked him through the floor and out of the map):
 ## remembers the last floor you stood on, and if your body ends up inside solid rock it puts you back there.

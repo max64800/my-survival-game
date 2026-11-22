@@ -134,6 +134,8 @@ func problem(ps: GameAuthority.PlayerState, piece: String, family: String, pos: 
 	for pid in auth.players:
 		var body: Vector3 = auth.players[pid].node.global_position
 		if b.grow(0.1).has_point(body + Vector3.UP * 0.3) or b.grow(0.1).has_point(body + Vector3.UP * 1.1):
+			if piece == "stairs_spiral" and _clear_of_spiral(body, pos, rot):
+				continue  # F780: standing under the new flight (on the landing below) is fine
 			return "Someone is in the way"
 	var anchored := Pieces.touches_rock(piece, pos, rot, sdf, family)
 	if structure.preview_stability(piece, family, pos, rot, anchored) < Pieces.MIN_STABILITY:
@@ -336,6 +338,8 @@ func _ev_add_piece(uid: int, piece: String, family: String, pos: Vector3, rot: i
 	if auth and auth.world and not Pieces.leg_spots(piece, family).is_empty():
 		n.set_legs(Pieces.leg_drops(piece, family, pos, rot, auth.world.sdf_at))  # F162: legs down to the rock
 	nodes[uid] = n
+	if piece == "stairs_spiral":
+		_recap_spirals(pos)
 	if piece == "ladder":
 		ladders[uid] = true
 	_next_uid = maxi(_next_uid, uid + 1)
@@ -371,6 +375,8 @@ func _ev_remove_piece(uid: int) -> void:
 	nodes.erase(uid)
 	if n:
 		n.queue_free()
+	if not p.is_empty() and p.piece == "stairs_spiral":
+		_recap_spirals(p.pos)
 	if auth.is_host() and not p.is_empty():
 		if not batch:
 			_queue_shaky()  # (in a batch: once, at end_batch)
@@ -1617,3 +1623,35 @@ func _spill_furniture(p: Dictionary) -> void:
 					auth.spawn_drop(s.id, s.count, p.pos + Vector3.UP * 0.6)
 			auth.storage._ev_remove_box.rpc(id)
 			return
+
+
+## F780: a spiral stair is mostly open space (it winds up around its post), so a dwarf standing on the landing
+## below, under where the new flight will be, is not in the way. In the way = the steps would go through him.
+static func _clear_of_spiral(body: Vector3, pos: Vector3, rot: int) -> bool:
+	var s: Vector3 = Pieces.LIST["stairs_spiral"].size
+	var l := Basis(Vector3.UP, Pieces.yaw_of(rot)).inverse() * (body - pos)
+	var feet := l.y
+	for d in [Vector2.ZERO, Vector2(0.36, 0), Vector2(-0.36, 0), Vector2(0, 0.36), Vector2(0, -0.36)]:
+		var under := PieceMesh.stair_underside("stairs_spiral", s, Vector2(l.x, l.z) + d)
+		if under < feet + 1.45 and feet < under + 0.5:
+			return false
+	return true
+
+
+## The spiral stair 2 m under `pos` and the one at `pos` (F780): a flight with another one on top drops its
+## landing rail and its post top, so the way on up is open and the two posts don't overlap.
+func _recap_spirals(pos: Vector3) -> void:
+	for y in [pos.y - 2.0, pos.y]:
+		var me := _spiral_at(Vector3(pos.x, y, pos.z))
+		if me >= 0 and nodes.has(me):
+			var p: Dictionary = structure.pieces[me]
+			var up := _spiral_at(p.pos + Vector3(0, 2, 0))
+			(nodes[me] as PieceNode).set_capped(up >= 0 and structure.pieces[up].rot == p.rot)
+
+
+func _spiral_at(pos: Vector3) -> int:
+	for uid in structure.near(AABB(pos + Vector3(-0.1, 0.1, -0.1), Vector3(0.2, 0.2, 0.2))):
+		var p: Dictionary = structure.pieces[uid]
+		if p.piece == "stairs_spiral" and (p.pos as Vector3).distance_to(pos) < 0.05:
+			return uid
+	return -1

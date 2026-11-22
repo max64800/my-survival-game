@@ -14,7 +14,7 @@ class Walker extends CharacterBody3D:
 
 	func _init() -> void:
 		collision_layer = 0
-		collision_mask = World.TERRAIN_LAYER
+		collision_mask = World.TERRAIN_LAYER | PieceNode.PIECE_LAYER  # (= Dwarf: a spiral stair's rails and post are on the piece layer only)
 		floor_max_angle = deg_to_rad(52)  # = Dwarf
 		floor_snap_length = 0.45
 		var shape := CollisionShape3D.new()

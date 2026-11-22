@@ -1418,7 +1418,7 @@ def _mix():
 
 
 # ---------------- new stair pieces (owner, Nov 21: docs/design/new-pieces-plan.md) ----------------
-K.SIZE.update({"stairs_corner": (2, 2, 2), "stairs_spiral": (4, 3, 4), "railing_stairs": (2, 3, 0.15)})
+K.SIZE.update({"stairs_corner": (2, 2, 2), "stairs_spiral": (4, 3, 4), "stairs_spiral_stacked": (4, 3, 4), "railing_stairs": (2, 3, 0.15)})
 
 
 def _shrink(pts, g=0.004):
@@ -1489,7 +1489,7 @@ def stairs_corner_v3(w=2.0, h=2.0, dd=2.0, n=8):
 			hewn((sx, 0.08, sz), (sx + J(0.006), bot - 0.002, sz + J(0.006)), 0.055)
 
 
-def stairs_spiral_v3():
+def stairs_spiral_v3(stacked=False):
 	"""F716 Shack spiral stairs (owner, Nov 22: hard to climb, the top ends in empty space): 4 × 4 m. One thick
 	round log on a stone as the middle post, nine wide steps 3/4 of a turn up (two split boards each, pegged to a
 	hewn bearer set into the log), then a board landing on three hewn joists over the way in. Hewn posts carry a
@@ -1525,13 +1525,19 @@ def stairs_spiral_v3():
 
 	SL.build(post=post, tread=tread, flag=flag, pier=pier, rail=rail,
 		baluster=lambda x, z, y0, y1: hewn((x, y0, z), (x + J(0.004), y1 + 0.02, z + J(0.004)), 0.032),
-		rng=K.rng, post_top=2.93)
+		rng=K.rng, post_top=2.93, stacked=stacked)
 	# the landing's joists, under its boards (their tops just under the boards, the underside at 1.75 m)
 	jr = (SL.H - t - SL.LANDING) / 2 + 0.008   # a hewn top is rough: sink it a little into the boards
 	for z in (0.36, 1.0, 1.62):
 		hewn((0.36 if z < 0.5 else 0.06, SL.LANDING + jr, z), (1.86, SL.LANDING + jr, z + J(0.01)), jr)
 	# and a rim beam along the far edge, from the newel to the corner pillar, that the joists rest on
 	hewn((1.86, SL.LANDING + jr, 0.08), (1.86, SL.LANDING + jr, 1.72), jr)
+
+
+
+def stairs_spiral_stacked_v3():
+	"""F780: the Shack spiral stairs with another flight on top (no landing rail, the log stops under the next one)."""
+	stairs_spiral_v3(stacked=True)
 
 
 def railing_stairs_v3(w=2.0, h=3.0, d=0.15):
@@ -1657,7 +1663,7 @@ PIECES = {"foundation3": foundation_v3, "foundation_hewn": _hewn, "foundation_mi
 	"half_wall_v3": lambda: wall_any_v3(2.0, 1.0), "wall_narrow_v3": lambda: wall_any_v3(1.0, 2.0),
 	"window_wide_v3": lambda: window_wall_v3(ow=1.6, oh=0.9, ob=0.6, shutters=False, sides=False, post_r=0.126),
 	"foundation_half_v3": _hewn_style(lambda: foundation_v3(2.0, 1.0, 1.0)), "foundation_triangle_v3": foundation_triangle_v3,
-	"stairs_corner_v3": stairs_corner_v3, "stairs_spiral_v3": stairs_spiral_v3, "railing_stairs_v3": railing_stairs_v3, "sloped_wall_down_v3": sloped_wall_down_v3, "edge_strip_v3": edge_strip_v3, "floor_hatch_v3": floor_hatch_v3, "lattice_wall_v3": lattice_wall_v3, "roof_cap_v3": roof_cap_v3, "foundation": foundation, "wall": wall, "doorway": doorway, "door": door, "roof_26": lambda: roof(2.0, 1.0)}
+	"stairs_corner_v3": stairs_corner_v3, "stairs_spiral_v3": stairs_spiral_v3, "stairs_spiral_stacked_v3": stairs_spiral_stacked_v3, "railing_stairs_v3": railing_stairs_v3, "sloped_wall_down_v3": sloped_wall_down_v3, "edge_strip_v3": edge_strip_v3, "floor_hatch_v3": floor_hatch_v3, "lattice_wall_v3": lattice_wall_v3, "roof_cap_v3": roof_cap_v3, "foundation": foundation, "wall": wall, "doorway": doorway, "door": door, "roof_26": lambda: roof(2.0, 1.0)}
 
 
 def make_grey():

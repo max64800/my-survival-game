@@ -578,7 +578,7 @@ static func spiral_slope_y(s: Vector3, a: float) -> float:
 
 ## The rails as solid panels (corner points: 4 at the bottom, then the same 4 at the top), for the code shape and
 ## the bumping: round the outside from the 45° corner to the landing, and along the landing's drop.
-static func spiral_rail_parts(s: Vector3) -> Array:
+static func spiral_rail_parts(s: Vector3, landing_rail := true) -> Array:
 	var parts := []
 	var keys := [PI * 0.25, PI * 0.5, PI * 0.75, PI, PI * 1.25, PI * 1.5]
 	for k in keys.size() - 1:
@@ -587,7 +587,8 @@ static func spiral_rail_parts(s: Vector3) -> Array:
 		var y0 := spiral_slope_y(s, keys[k])
 		var y1 := spiral_slope_y(s, keys[k + 1])
 		parts.append(_panel(p0, p1, y0 - 0.15, y1 - 0.15, y0 + SPIRAL_RAIL_H, y1 + SPIRAL_RAIL_H))
-	parts.append(_panel(Vector2(SPIRAL_POST - 0.02, 0.08), Vector2(1.9, 0.08), s.y, s.y, s.y + 0.85, s.y + 0.85))
+	if landing_rail:  # (F780: left out when another flight sits on top: you walk on up that way)
+		parts.append(_panel(Vector2(SPIRAL_POST - 0.02, 0.08), Vector2(1.9, 0.08), s.y, s.y, s.y + 0.85, s.y + 0.85))
 	return parts
 
 
@@ -619,27 +620,26 @@ static func _spiral_steps(s: Vector3) -> void:
 		_prism_sides([p[0], p[1], p[2], p[3]], [p[4], p[5], p[6], p[7]], Vector3.DOWN, Vector3.UP)
 
 
-## The spiral stairs' treads as one smooth slanted slope (30° wedges, each from the one before up to its own
-## top), so the dwarf walks up instead of hopping 20 cm steps. Each is a list of corner points for a
-## ConvexPolygonShape3D, 10° each (a wider one bulges: its hull joins points round the turn into a steep wall).
-## They start 0.6 m from the middle: closer in the slope is steeper than a dwarf can stand on (it acts as a
-## wall), and no dwarf fits there anyway (the post is 0.32 m, the dwarf 0.36 m each side).
-static func spiral_slope_parts(s: Vector3) -> Array:
-	var parts := []
-	var step := PI / 18.0
-	for i in SPIRAL_STEPS * 3:
-		var pts := PackedVector3Array()
-		var angles := [step * i, step * (i + 1)]
-		for c in [PI * 0.25, PI * 0.75, PI * 1.25]:
-			if step * i < c and c < step * (i + 1):
-				angles.append(c)
-		for a: float in angles:
-			var y := spiral_slope_y(s, a)
-			for q in [_sq(a, SPIRAL_REACH), Vector2(cos(a), -sin(a)) * 0.6]:
-				pts.append(Vector3(q.x, y, q.y))
-				pts.append(Vector3(q.x, maxf(0.0, y - 0.15), q.y))
-		parts.append(pts)
-	return parts
+## F781 (owner, Nov 22: "very jittery; make it one smooth ramp, not every single step"): the same slope as one bent
+## sheet of triangles (for a ConcavePolygonShape3D), 5° slices from 0.6 m out to the square, so there are no seams
+## between separate shapes for the dwarf to catch on.
+static func spiral_slope_faces(s: Vector3) -> PackedVector3Array:
+	var faces := PackedVector3Array()
+	var prev_in := Vector3.ZERO
+	var prev_out := Vector3.ZERO
+	for k in SPIRAL_STEPS * 6 + 1:
+		var a := PI / 36.0 * k
+		# F781: the last half tread lifts 10 cm more, so the ramp meets the landing's top (no lip to hop up)
+		var y := spiral_slope_y(s, a) + s.y * 0.1 * clampf(a / (PI / 6.0) - 8.5, 0.0, 0.5)
+		var o := _sq(a, SPIRAL_REACH)
+		var i := Vector2(cos(a), -sin(a)) * (SPIRAL_POST - 0.02)  # right into the post: no edge to catch on by it
+		var p_in := Vector3(i.x, y, i.y)
+		var p_out := Vector3(o.x, y, o.y)
+		if k > 0:
+			faces.append_array([prev_in, prev_out, p_out, prev_in, p_out, p_in])
+		prev_in = p_in
+		prev_out = p_out
+	return faces
 
 
 ## Where the floor hatch's hole is: centre z and radius (the models: Stonehold/Hearthbrick z 0.47, Shack z 0.40,
