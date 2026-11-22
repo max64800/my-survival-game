@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hurt screen: 6 new options (F695)</title>
+<style>
+  body { margin: 0; background: #1b1410; color: #ead9bd; font: 16px/1.45 Georgia, "Times New Roman", serif; }
+  header { padding: 18px 26px 6px; }
+  h1 { margin: 0 0 4px; font-size: 26px; color: #f3c77a; }
+  header p { margin: 4px 0; max-width: 1100px; }
+  .controls { position: sticky; top: 0; z-index: 5; background: #2a1e16ee; border-bottom: 3px solid #4a3424;
+    padding: 10px 26px; display: flex; flex-wrap: wrap; gap: 18px; align-items: center; }
+  .controls label { font-size: 15px; }
+  .controls select, .controls input { font: inherit; }
+  button.hit { font: bold 18px Georgia, serif; padding: 6px 22px; background: #8a2416; color: #fff2dc;
+    border: 3px solid #3a0c06; border-radius: 10px 14px 9px 13px; cursor: pointer; }
+  button.hit:active { transform: translateY(2px); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(560px, 1fr)); gap: 22px; padding: 20px 26px 40px; }
+  .card { background: #2a1e16; border: 3px solid #4a3424; border-radius: 14px 18px 12px 16px; padding: 12px 14px 14px; }
+  .card h2 { margin: 0 0 6px; font-size: 20px; color: #f3c77a; }
+  .card h2 span { color: #c9a26a; font-size: 15px; font-weight: normal; }
+  .card canvas { width: 100%; aspect-ratio: 16/9; display: block; border-radius: 8px; background: #000; }
+  .card p { margin: 8px 0 0; font-size: 15px; }
+  .tag { display: inline-block; background: #4a3424; border-radius: 6px; padding: 0 7px; margin-right: 4px; font-size: 13px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Hurt screen: 6 new options</h1>
+  <p>What the screen does when your dwarf gets hurt. Everything here is painted with rough ink edges, like our hand-painted
+  models, not smooth computer glows. The middle of the screen always stays clear.</p>
+  <p>Press <b>Hit me!</b> or leave "Auto hits" on. Try a <b>light</b> and a <b>heavy</b> hit, a hit from the <b>left</b>,
+  and pull <b>Health</b> down low to see the "badly hurt" look. Tell me the number you like (or mix two, like "3 with 5's heartbeat").</p>
+</header>
+<div class="controls">
+  <button class="hit" id="hitBtn">Hit me!</button>
+  <label>Hit size <select id="size"><option value="0.3">light (scratch)</option><option value="0.6" selected>medium</option><option value="1">heavy (big club)</option></select></label>
+  <label>Hit from <select id="dir"><option value="left">left</option><option value="right">right</option><option value="front" selected>front (top edge)</option><option value="back">behind (bottom edge)</option><option value="random">random</option></select></label>
+  <label>Health <input type="range" id="hp" min="0.05" max="1" step="0.05" value="1"> <span id="hpv">100%</span></label>
+  <label>Status <select id="status"><option value="">none</option><option value="poison">poisoned</option><option value="burn">burning</option><option value="chill">chilled</option></select></label>
+  <label><input type="checkbox" id="auto" checked> Auto hits</label>
+</div>
+<div class="grid" id="grid"></div>
+
+<script>
+"use strict";
+const W = 384, H = 216, AR = W / H, N = W * H;
+
+const OPTIONS = [
+  { id: 1, name: "Ink Rim", tags: ["size"],
+    text: "Thick red ink brushes in from all four edges, then dries back to nothing. A scratch gives a thin ragged rim; a heavy club hit paints a fat, rough border." },
+  { id: 2, name: "Which Side", tags: ["size", "direction"],
+    text: "The ink lands mostly on the side the hit came from (left hit = left edge), with only a thin rim elsewhere. You know where to turn without looking at the map." },
+  { id: 3, name: "Blood Spatter", tags: ["size", "direction"],
+    text: "Chunky painted blood splats hit the edge on the side you got hit, with little drips running down, then fade. More and bigger splats for a bigger hit." },
+  { id: 4, name: "Lantern Gutter", tags: ["size", "direction"],
+    text: "Like your lantern nearly going out: sooty darkness creeps in from the edges with a red ember glow along its rim, flickers, then pulls back. Very cave-like." },
+  { id: 5, name: "Badly Hurt", tags: ["low health", "size"],
+    text: "Below 40% health the world loses some colour and the edges throb slowly with a heartbeat (lub-dub). Lower health = stronger and a bit faster. Hits use the Ink Rim on top." },
+  { id: 6, name: "Full Set", tags: ["size", "direction", "low health"],
+    text: "Everything together: ink on the side you got hit, a few blood splats on big hits only, and the Badly Hurt heartbeat when low. My pick if you want one answer." },
+];
+
+// ---------- noise (same kind a Godot shader would use) ----------
+function hash(i, j) {
+  let h = (Math.imul(i, 374761393) + Math.imul(j, 668265263)) | 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  h ^= h >>> 16;
+  return (h >>> 0) / 4294967296;
+}
+function vnoiseP(x, y, P) { // value noise that wraps around every P in x (so it loops around the screen seamlessly)
+  const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+  const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+  const x0 = ((xi % P) + P) % P, x1 = (x0 + 1) % P;
+  const a = hash(x0, yi), b = hash(x1, yi), c = hash(x0, yi + 1), d = hash(x1, yi + 1);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
+function fbmP(x, y, P, oct) {
+  let s = 0, a = 0.5, f = 1, n = 0;
+  for (let i = 0; i < oct; i++) { s += a * vnoiseP(x * f, y * f + i * 13.7, P * f); n += a; a *= 0.5; f *= 2; }
+  return s / n;
+}
+const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+const clamp01 = x => Math.min(1, Math.max(0, x));
+
+// ---------- per-pixel fields, worked out once ----------
+const D = new Float32Array(N), AX = new Float32Array(N), AY = new Float32Array(N);
+const RAG = new Float32Array(N), RAG2 = new Float32Array(N), HAIR = new Float32Array(N), DRY = new Float32Array(N), GRAIN = new Float32Array(N);
+for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+  const i = y * W + x, u = (x + 0.5) / W, v = (y + 0.5) / H;
+  const px = (u - 0.5) * AR, py = v - 0.5;
+  const dx = Math.min(u, 1 - u) * AR, dy = Math.min(v, 1 - v), k = 0.09, hm = clamp01(0.5 + 0.5 * (dy - dx) / k);
+  D[i] = (dy + (dx - dy) * hm) - k * hm * (1 - hm);               // distance to nearest edge (screen heights), corners rounded in
+  const len = Math.hypot(px, py) || 1; AX[i] = px / len; AY[i] = py / len;
+  const a = (Math.atan2(py, px) + Math.PI) / (2 * Math.PI);        // 0..1 around the screen
+  const tongues = fbmP(a * 34, D[i] * 18, 34, 3);                 // small brush tongues on top of the big wobble
+  RAG[i] = 0.55 * fbmP(a * 6, D[i] * 5, 6, 4) + 0.45 * tongues;
+  RAG2[i] = 0.55 * fbmP(a * 6 + 3, D[i] * 5 + 20, 6, 4) + 0.45 * tongues;
+  HAIR[i] = fbmP(a * 140, D[i] * 40, 140, 2);
+  DRY[i] = fbmP(a * 64, D[i] * 34, 64, 2);
+  GRAIN[i] = fbmP(u * 80, v * 45, 80, 2);
+}
+
+// ---------- the painted cave scene behind everything ----------
+function paintCave() {
+  const c = document.createElement("canvas"); c.width = W; c.height = H;
+  const g = c.getContext("2d");
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const sky = g.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, "#2b2420"); sky.addColorStop(0.55, "#4a3a2c"); sky.addColorStop(1, "#5d4630");
+  g.fillStyle = sky; g.fillRect(0, 0, W, H);
+  const blob = (cx, cy, r, col) => { g.fillStyle = col; g.beginPath(); const n = 9;
+    for (let k = 0; k <= n; k++) { const a = k / n * Math.PI * 2, rr = r * (0.75 + rnd() * 0.45); g.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr * 0.8); }
+    g.fill(); };
+  for (let k = 0; k < 26; k++) blob(rnd() * W, rnd() * H * 0.45, 20 + rnd() * 40, ["#3a2f27", "#433529", "#2f2620"][k % 3]);
+  g.fillStyle = "#6b5238"; g.beginPath(); g.moveTo(0, H * 0.7); for (let x = 0; x <= W; x += 24) g.lineTo(x, H * 0.66 + rnd() * 10); g.lineTo(W, H); g.lineTo(0, H); g.fill();
+  for (let k = 0; k < 16; k++) blob(rnd() * W, H * 0.7 + rnd() * H * 0.3, 6 + rnd() * 14, ["#7a5e40", "#5a4430"][k % 2]);
+  // rock columns + crystals so colour drain shows
+  for (const cx of [60, 310]) { g.fillStyle = "#3d3129"; g.beginPath(); g.moveTo(cx - 18, H * 0.72); g.lineTo(cx - 12, 0); g.lineTo(cx + 14, 0); g.lineTo(cx + 20, H * 0.72); g.fill(); }
+  const crystal = (x, y, s, col) => { g.fillStyle = col; g.beginPath(); g.moveTo(x, y); g.lineTo(x + s * 0.35, y - s); g.lineTo(x + s * 0.7, y); g.fill(); };
+  crystal(250, 150, 26, "#3aa7c9"); crystal(262, 152, 18, "#6fd2e6"); crystal(105, 156, 22, "#9a5ad0"); crystal(118, 157, 14, "#c08ae8");
+  g.fillStyle = "#3f7a34"; for (let k = 0; k < 12; k++) { g.fillRect(150 + rnd() * 90, 158 + rnd() * 6, 2, -6 - rnd() * 6); }
+  const lamp = g.createRadialGradient(W / 2, H * 0.6, 4, W / 2, H * 0.6, 150); lamp.addColorStop(0, "rgba(255,190,100,0.45)"); lamp.addColorStop(1, "rgba(255,190,100,0)");
+  g.fillStyle = lamp; g.fillRect(0, 0, W, H);
+  return g.getImageData(0, 0, W, H).data;
+}
+const CAVE = paintCave();
+
+function drawHud(g, hp) {
+  g.strokeStyle = "rgba(255,240,210,0.85)"; g.lineWidth = 1.5;   // crosshair
+  g.beginPath(); g.moveTo(W / 2 - 5, H / 2); g.lineTo(W / 2 + 5, H / 2); g.moveTo(W / 2, H / 2 - 5); g.lineTo(W / 2, H / 2 + 5); g.stroke();
+  g.fillStyle = "rgba(20,12,8,0.75)"; g.fillRect(14, H - 20, 90, 8);  // health bar
+  g.fillStyle = hp < 0.4 ? "#c0301c" : "#b8402a"; g.fillRect(15, H - 19, 88 * hp, 6);
+  for (let k = 0; k < 6; k++) { g.fillStyle = "rgba(30,20,14,0.7)"; g.fillRect(W / 2 - 66 + k * 22, H - 24, 20, 20);
+    g.strokeStyle = "rgba(200,170,120,0.6)"; g.lineWidth = 1; g.strokeRect(W / 2 - 66 + k * 22 + 0.5, H - 23.5, 19, 19); }
+}
+
+// ---------- state ----------
+const DIRS = { left: [-1, 0], right: [1, 0], front: [0, -1], back: [0, 1] };
+const STATUS = { poison: [70, 190, 60], burn: [235, 110, 20], chill: [90, 165, 240] };
+const params = new URLSearchParams(location.search);
+const FREEZE = params.has("t") ? parseFloat(params.get("t")) : null;   // for still pictures: ?t=0.25
+let hit = null, autoTimer = 0;
+const $ = id => document.getElementById(id);
+if (params.has("size")) $("size").value = params.get("size");
+if (params.has("dir")) $("dir").value = params.get("dir");
+if (params.has("hp")) $("hp").value = params.get("hp");
+if (params.has("status")) $("status").value = params.get("status");
+if (FREEZE !== null) $("auto").checked = false;
+
+function makeHit() {
+  let dname = $("dir").value; if (dname === "random") dname = ["left", "right", "front", "back"][Math.floor(Math.random() * 4)];
+  const dir = DIRS[dname], s = parseFloat($("size").value);
+  let seed = FREEZE !== null ? 99 : Math.floor(Math.random() * 1e6) + 1;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const base = Math.atan2(dir[1], dir[0]), splats = [];
+  const count = 3 + Math.round(s * 5);
+  for (let k = 0; k < count; k++) {
+    const th = base + (rnd() - 0.5) * 1.5, cx = Math.cos(th), cy = Math.sin(th);
+    const reach = Math.min((W / 2) / Math.max(1e-3, Math.abs(cx)), (H / 2) / Math.max(1e-3, Math.abs(cy)));
+    const R = H * (0.035 + rnd() * 0.04) * (0.6 + s);
+    const sp = { x: W / 2 + cx * reach * (0.93 - rnd() * 0.07), y: H / 2 + cy * reach * (0.93 - rnd() * 0.07), R, off: Math.floor(rnd() * 256), big: k < 2 + Math.round(s * 2), drops: [], drips: [] };
+    for (let d = 0; d < 3 + Math.floor(rnd() * 3); d++) { const a = rnd() * Math.PI * 2, dist = R * (1.25 + rnd() * 0.7); sp.drops.push({ x: Math.cos(a) * dist, y: Math.sin(a) * dist, r: R * (0.1 + rnd() * 0.16) }); }
+    if (sp.y < H * 0.8) for (let d = 0; d < 1 + Math.floor(rnd() * 2); d++) sp.drips.push({ x: (rnd() - 0.5) * R * 0.9, w: R * (0.12 + rnd() * 0.08), L: R * (1.2 + rnd() * 1.8) });
+    splats.push(sp);
+  }
+  hit = { start: performance.now() / 1000, s, dir, splats };
+}
+$("hitBtn").onclick = makeHit;
+$("hp").oninput = () => $("hpv").textContent = Math.round($("hp").value * 100) + "%";
+$("hp").oninput();
+
+// 1-D wobble tables for splat outlines
+const TAB1 = new Float32Array(512), TAB2 = new Float32Array(512);
+for (let k = 0; k < 512; k++) { TAB1[k] = fbmP(k / 512 * 7, 3.3, 7, 3); TAB2[k] = fbmP(k / 512 * 22, 8.1, 22, 2); }
+
+function splatBuffer(out, t, s, onlyBig) {
+  out.fill(0);
+  if (!hit) return;
+  const pop = Math.min(1, t / 0.07), fade = 1 - smooth(0.9, 1.5 + 0.5 * s, t);
+  if (fade <= 0) return;
+  const dripGrow = 1 - Math.pow(1 - Math.min(1, t / 1.3), 2);
+  for (const sp of hit.splats) {
+    if (onlyBig && !sp.big) continue;
+    const R = sp.R * (onlyBig ? 0.7 : 1) * (0.55 + 0.45 * pop);
+    const ext = R * 2.6 + 4;
+    const x0 = Math.max(0, Math.floor(sp.x - ext)), x1 = Math.min(W - 1, Math.ceil(sp.x + ext));
+    const y0 = Math.max(0, Math.floor(sp.y - ext)), y1 = Math.min(H - 1, Math.ceil(sp.y + ext + R * 3.2));
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+      const dx = x + 0.5 - sp.x, dy = y + 0.5 - sp.y, r = Math.hypot(dx, dy);
+      const ai = (Math.floor((Math.atan2(dy, dx) / (2 * Math.PI) + 0.5) * 512) + sp.off) & 511;
+      const edge = R * (0.72 + 0.5 * TAB1[ai]) * (1 + 0.9 * Math.pow(TAB2[ai], 5));
+      let inside = edge - r;  // >0 = in the blob (in pixels)
+      for (const d of sp.drops) inside = Math.max(inside, d.r * pop - Math.hypot(dx - d.x * pop, dy - d.y * pop));
+      for (const d of sp.drips) {
+        const L = d.L * dripGrow;
+        if (dy > 0 && dy < L) inside = Math.max(inside, d.w * (1 - 0.3 * dy / Math.max(1, L)) - Math.abs(dx - d.x));
+        inside = Math.max(inside, d.w * 1.25 - Math.hypot(dx - d.x, dy - L));
+      }
+      if (inside <= -1) continue;
+      const i = y * W + x, a = clamp01(inside + 1) * fade;
+      if (a > out[i * 2]) { out[i * 2] = a; out[i * 2 + 1] = inside; }
+    }
+  }
+}
+
+// one layer of rough ink: returns alpha, writes colour into col[]
+const col = [0, 0, 0];
+function ink(i, width, rag, cMid, cDark, cLine, alpha) {
+  if (width <= 0.0005) return 0;
+  const b = width * (0.45 + 1.1 * rag);
+  const inside = b - D[i];
+  if (inside <= -1 / H) return 0;
+  let a = alpha * clamp01(inside * H + 1);
+  const lineW = (0.0015 + width * 0.035) * (0.4 + 1.4 * DRY[i]);
+  if (inside < lineW) { col[0] = cLine[0]; col[1] = cLine[1]; col[2] = cLine[2]; }
+  else {
+    const sh = 0.8 + 0.4 * HAIR[i], gr = 0.85 + 0.3 * GRAIN[i];
+    const k = clamp01((inside - lineW) / (width * 0.6));       // darker deep at the edge, brighter near the brush tip
+    for (let c = 0; c < 3; c++) col[c] = (cMid[c] * (1 - k) + cDark[c] * k) * sh * gr;
+    if (inside < lineW + 0.03 && DRY[i] > 0.6) a *= 0.2;       // dry-brush gaps near the tip
+    a *= 0.72 + 0.28 * clamp01(1 - D[i] / Math.max(1e-3, width)) ;  // see-through near the tip, solid at the very edge
+  }
+  return a;
+}
+function blend(px, a) { if (a <= 0) return; px[0] += (col[0] - px[0]) * a; px[1] += (col[1] - px[1]) * a; px[2] += (col[2] - px[2]) * a; }
+
+const RED = [168, 26, 16], RED_DK = [92, 8, 5], LINE = [34, 4, 2];
+const SOOT = [26, 18, 14], SOOT_DK = [8, 5, 4], SOOT_LINE = [60, 20, 8];
+
+function hitEnvelope(t, s) {   // how wide the ink is over time: snaps in, holds, dries back
+  if (t < 0) return 0;
+  const grow = 1 - Math.pow(1 - Math.min(1, t / 0.07), 3);
+  const dur = 0.9 + 0.7 * s;
+  return grow * Math.pow(1 - smooth(0.12, dur, t), 0.8);
+}
+function heart(T, l) {          // lub-dub
+  const bpm = 52 + 28 * l, ph = (T * bpm / 60) % 1;
+  const g = x => Math.exp(-(x / 0.05) * (x / 0.05));
+  return g(ph) + g(ph - 1) + 0.6 * g(ph - 0.24);
+}
+
+// ---------- cards ----------
+const cards = OPTIONS.map(o => {
+  const el = document.createElement("div"); el.className = "card";
+  el.innerHTML = `<h2>${o.id}. ${o.name} <span>${o.tags.map(t => `<span class="tag">${t}</span>`).join("")}</span></h2><canvas width="${W}" height="${H}"></canvas><p>${o.text}</p>`;
+  $("grid").appendChild(el);
+  const cv = el.querySelector("canvas"), g = cv.getContext("2d");
+  return { o, g, img: g.createImageData(W, H) };
+});
+const SPL_ALL = new Float32Array(N * 2), SPL_BIG = new Float32Array(N * 2);
+
+function frame(now) {
+  const T = FREEZE !== null ? 0.02 : now / 1000;
+  if ($("auto").checked && FREEZE === null && T - autoTimer > 2.6) { autoTimer = T; makeHit(); }
+  const t = hit ? (FREEZE !== null ? FREEZE : T - hit.start) : 99;
+  const s = hit ? hit.s : 0.6, dir = hit ? hit.dir : [0, -1];
+  const hp = parseFloat($("hp").value), low = clamp01((0.4 - hp) / 0.3);
+  const st = STATUS[$("status").value];
+  const env = hitEnvelope(t, s);
+  splatBuffer(SPL_ALL, t, s, false);
+  if (s >= 0.6) splatBuffer(SPL_BIG, t, s, true); else SPL_BIG.fill(0);
+  const beat = heart(T, low);
+  const wob = 0.5 + 0.5 * Math.sin(T * 0.8);
+  const flick = 1 + 0.07 * Math.sin(T * 31) * Math.sin(T * 7.3);
+  const stLine = st ? st.map(c => c * 0.3) : null, stDark = st ? st.map(c => c * 0.6) : null;
+
+  for (const card of cards) {
+    const id = card.o.id, data = card.img.data, px = [0, 0, 0];
+    for (let i = 0; i < N; i++) {
+      px[0] = CAVE[i * 4]; px[1] = CAVE[i * 4 + 1]; px[2] = CAVE[i * 4 + 2];
+      const side = Math.max(0, AX[i] * dir[0] + AY[i] * dir[1]);
+      const rag = RAG[i] * (1 - wob * 0.4) + RAG2[i] * wob * 0.4;
+      // low health: colour drains, edges throb (options 5 and 6)
+      if ((id === 5 || id === 6) && low > 0) {
+        const edge = 1 - smooth(0, 0.5, D[i]);
+        const drain = low * (0.3 + 0.45 * edge), lum = px[0] * 0.3 + px[1] * 0.59 + px[2] * 0.11;
+        for (let c = 0; c < 3; c++) px[c] = (px[c] + (lum - px[c]) * drain) * (1 - 0.15 * low * edge);
+        blend(px, ink(i, low * (0.045 + 0.04 * beat), rag, [110, 14, 8], [50, 4, 3], LINE, 0.55 + 0.3 * beat));
+      }
+      // status glow, same rough-ink look but thin
+      if (st) blend(px, ink(i, 0.03 + 0.008 * Math.sin(T * 2.2), rag, st, stDark, stLine, 0.6));
+      // the hit itself
+      if (env > 0) {
+        if (id === 1 || id === 5) blend(px, ink(i, env * (0.035 + 0.09 * s), RAG[i], RED, RED_DK, LINE, 0.93));
+        else if (id === 2 || id === 6) blend(px, ink(i, env * (0.04 + 0.11 * s) * (0.12 + 1.6 * side * side), RAG[i], RED, RED_DK, LINE, 0.93));
+        else if (id === 3) blend(px, ink(i, env * (0.03 + 0.05 * s) * (0.2 + side * side), RAG[i], RED, RED_DK, LINE, 0.8));
+        else if (id === 4) {
+          const w = env * (0.05 + 0.11 * s) * (0.55 + 0.6 * side) * flick;
+          const b = w * (0.62 + 0.76 * RAG[i]);
+          for (let c = 0; c < 3; c++) px[c] *= 1 - 0.2 * s * env;          // the lantern dims a little
+          const gap = D[i] - b;
+          if (gap > 0 && w > 0.001) {                                       // ember glow just past the soot
+            const glow = Math.exp(-((gap / (0.008 + w * 0.12)) ** 2)) * env * (0.6 + 0.4 * HAIR[i]) * 0.5;
+            px[0] += 200 * glow; px[1] += 55 * glow; px[2] += 10 * glow;
+          }
+          blend(px, ink(i, w, RAG[i], SOOT, SOOT_DK, SOOT_LINE, 0.95));
+        }
+      }
+      const spl = id === 3 ? SPL_ALL : id === 6 ? SPL_BIG : null;
+      if (spl && spl[i * 2] > 0) {
+        const inside = spl[i * 2 + 1], gr = 0.8 + 0.4 * GRAIN[i];
+        if (inside < 1.6) { col[0] = LINE[0]; col[1] = LINE[1]; col[2] = LINE[2]; }
+        else { const k = clamp01((inside - 1.6) / 6); for (let c = 0; c < 3; c++) col[c] = (RED[c] * (1 - k) + RED_DK[c] * k) * gr * (0.7 + 0.6 * HAIR[i]); }
+        if (inside > 4 && DRY[i] > 0.78) { col[0] += 60; col[1] += 25; col[2] += 15; }  // wet shine
+        blend(px, spl[i * 2] * 0.95);
+      }
+      data[i * 4] = px[0]; data[i * 4 + 1] = px[1]; data[i * 4 + 2] = px[2]; data[i * 4 + 3] = 255;
+    }
+    card.g.putImageData(card.img, 0, 0);
+    drawHud(card.g, hp);
+  }
+  if (FREEZE === null) requestAnimationFrame(frame);
+}
+if (FREEZE !== null) makeHit();
+requestAnimationFrame(frame);
+["size", "dir", "hp", "status"].forEach(k => $(k).addEventListener("change", () => { if (FREEZE !== null) { makeHit(); requestAnimationFrame(frame); } }));
+</script>
+</body>
+</html>
