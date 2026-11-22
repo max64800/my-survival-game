@@ -210,7 +210,8 @@ func test_dwarf_walks_up_every_tower_flight() -> void:
 			var b := Basis(Vector3.UP, Pieces.yaw_of(p.rot))
 			var local := []
 			if p.id == "stairs":
-				local = [Vector3(0, 0, 1.9), Vector3(0, 0, 0.8), Vector3(0, 0, -1.6)]
+				# (-1.25: a step past the top onto the floor; F783: the Twin Gate deck flights end at a door 0.73 m on)
+				local = [Vector3(0, 0, 1.9), Vector3(0, 0, 0.8), Vector3(0, 0, -1.25)]
 			elif p.id == "stairs_corner":
 				local = [Vector3(0.4, 0, 2.2), Vector3(0.4, 0, 0.6), Vector3(0.1, 0, -0.1), Vector3(-0.5, 0, -0.5), Vector3(-0.6, 0, -1.8)]
 			if local.is_empty():

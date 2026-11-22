@@ -240,6 +240,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F388. Later (not a priority): every crafting station shows the dwarf working at it** (stirring the cooking pot, hammering at the anvil, and so on). *From: you (PC, Nov 19, to-do review). Said: 1×*
 
 **Claude noticed, waiting for your OK** (not fixed until you say so):
+- [ ] **The Watchtower Cabin's stairs start right against a wall** (found Nov 23 by the new walk-through check, F783): you can only step on from the side. Turn or move them so their foot is on open floor?
 - [ ] **The game can crash hard during a dungeon fight** (found Nov 22, PC, running the full test list in the background): one test (`test_killing_the_pack_opens_the_loot_door`) made the game itself crash (not just fail), inside the dungeon-building code (`dungeon_build.gd`). Not touched by my F701/F702 work. Look into it?
 - [ ] **Loading freezes for about 10 s** while crystals and roots are placed (the freeze watcher caught it in the test robot). Spread it over several frames?
 - [ ] **The test robot couldn't place its workbench** ("Needs a Workbench within 20 m" right after crafting one): placing may fail silently. Look into it?

@@ -316,6 +316,7 @@ func _ready() -> void:
 		built_origin = origin
 		built_turn = turn
 		_swap_old_stairs()
+		_fix_blocked_ways()
 		set_process(false)
 		return
 	_carve = carve_points(origin, turn)
@@ -328,39 +329,80 @@ const OLD_PIECES := [["stairs_spiral", Vector3(-9, 5.75, 8), 0], ["stairs_spiral
 	["railing", Vector3(-9, 7.75, 7), 0], ["railing", Vector3(9, 7.75, 7), 0], ["railing", Vector3(-13, 5.5, 7), 0],
 	["floor", Vector3(-13, 5.25, 6), 0], ["floor", Vector3(-9, 5.5, 8), 0], ["floor", Vector3(9, 5.5, 8), 0]]
 ## (F565 🔁, Nov 22: the straight stairs stand on the floor, F169; the slab that lifted them goes with the spirals)
-const NEW_PIECES := [["stairs", Vector3(-9, 5.5, 8), 0], ["stairs", Vector3(9, 5.5, 8), 0],
-	["railing", Vector3(-8, 7.75, 8), 1], ["railing", Vector3(8, 7.75, 8), 1], ["railing", Vector3(-14, 5.5, 6), 1],
+## (F783, Nov 23: the deck flights climb toward the gate now, their top at the stage's door; see FIX_F783)
+const NEW_PIECES := [["stairs", Vector3(-9, 5.5, 8), 3], ["stairs", Vector3(9, 5.5, 8), 1],
+	["railing", Vector3(-9, 7.75, 7), 0], ["railing", Vector3(9, 7.75, 7), 0], ["railing", Vector3(-14, 5.5, 6), 1],
 	["railing", Vector3(-13, 5.5, 5), 0], ["railing", Vector3(-12, 5.5, 6), 1]]
+## F783 (owner, Nov 23): a Twin Gate built (or rebuilt) before Nov 23 has a railing 0.7 m inside each tower's top
+## door (it guarded the deck stairs' hole right behind the door) and a railing across the corner stairs' way out
+## (they come out sideways). Host, once on loading: those railings come out, the deck stairs turn to climb toward
+## the door (railings on their long sides).
+const FIX_F783_OLD := [["railing", Vector3(-8, 7.75, 8), 1], ["railing", Vector3(8, 7.75, 8), 1],
+	["railing", Vector3(-12, 5.5, 8), 1], ["railing", Vector3(14, 5.5, 8), 1],
+	["stairs", Vector3(-9, 5.5, 8), 0], ["stairs", Vector3(9, 5.5, 8), 0]]
+const FIX_F783_NEW := [["stairs", Vector3(-9, 5.5, 8), 3], ["stairs", Vector3(9, 5.5, 8), 1],
+	["railing", Vector3(-9, 7.75, 7), 0], ["railing", Vector3(9, 7.75, 7), 0]]
 
 
 func _swap_old_stairs() -> int:
+	var found := _find_pieces(OLD_PIECES)
+	if not found.values().has("stairs_spiral"):
+		return 0  # (a newer Twin Gate, or the old stairs are already gone)
+	var added := _swap(found, NEW_PIECES)
+	print("TWIN_GATE swapped its old spiral stairs: %d old pieces down, %d new up" % [found.size(), added])
+	return added
+
+
+## F783: takes out the railings that blocked the towers' top doors and the corner stairs' way out (FIX_F783_OLD).
+## Returns how many pieces went in (0: nothing to fix).
+func _fix_blocked_ways() -> int:
+	var found := _find_pieces(FIX_F783_OLD)
+	if found.is_empty():
+		return 0
+	var added := _swap(found, FIX_F783_NEW)
+	print("TWIN_GATE cleared its blocked doors and stairs: %d old pieces down, %d new up" % [found.size(), added])
+	return added
+
+
+## The pieces of `list` ([id, spot in the plan, rot]) standing in the world: uid -> [id, material].
+func _find_pieces(list: Array) -> Dictionary:
 	var b: Builder = auth.builder
 	var basis := Basis(Vector3.UP, turn * PI / 2.0)
 	var found := {}
-	for o in OLD_PIECES:
+	for o in list:
 		var pos: Vector3 = origin + basis * (o[1] as Vector3)
 		var rot: int = Pieces.add_rot(int(o[2]), turn)
 		for uid in b.structure.near(Pieces.box(o[0], pos, rot)):
 			var q: Dictionary = b.structure.pieces[uid]
 			if q.piece == o[0] and q.rot == rot and (q.pos as Vector3).distance_to(pos) < 0.05:
 				found[uid] = String(q.piece)
-	if not found.values().has("stairs_spiral"):
-		return 0  # (a newer Twin Gate, or the old stairs are already gone)
+	return found
+
+
+## Takes the `found` pieces down and puts `new` in where nothing stands, each in the material the same kind of piece
+## had (a wooden rebuild keeps its look), else the plan's. Only pieces the plan has (never into the right tower's
+## fallen half).
+func _swap(found: Dictionary, new: Array) -> int:
+	var b: Builder = auth.builder
+	var basis := Basis(Vector3.UP, turn * PI / 2.0)
+	var had := {}
 	for uid in found:
+		had[found[uid]] = String(b.structure.pieces[uid].family)
 		b._ev_remove_piece.rpc(uid)
 	var added := 0
-	for n in NEW_PIECES:
+	for n in new:
 		var mat := ""
 		for p in plan.get("pieces", []):
 			if String(p.id) == n[0] and int(p.rot) == n[2] and Vector3(p.pos[0], p.pos[1], p.pos[2]).distance_to(n[1]) < 0.05:
 				mat = String(p.mat)
+		if mat != "":
+			mat = String(had.get(n[0], mat))
 		var pos: Vector3 = origin + basis * (n[1] as Vector3)
 		var rot: int = Pieces.add_rot(int(n[2]), turn)
 		if mat == "" or not b.structure.overlapping(n[0], pos, rot).is_empty():
 			continue
 		b._ev_add_piece.rpc(b._next_uid, String(n[0]), mat, pos, rot, false)
 		added += 1
-	print("TWIN_GATE swapped its old spiral stairs: %d old pieces down, %d new up" % [found.size(), added])
 	return added
 
 

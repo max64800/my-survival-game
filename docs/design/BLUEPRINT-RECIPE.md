@@ -31,6 +31,8 @@ The Delver's Hut (`BlueprintLibrary._delvers_hut`) is the example to copy.
 3. **Run the tests:** `tools\run_tests.bat only=test_blueprint_library`. They check that every piece is real and
    inside the box, that nothing overlaps, and that everything stands up. Add a check for what makes this one
    special.
+   Also run `only=test_walk_through` and follow `docs/design/WALK-THROUGH-RULES.md` (owner, Nov 23: doors need room
+   on both sides, nothing across a stair's way in or out).
 4. **Check the cost and look at it:**
    - `godot --headless --audio-driver Dummy --path . -s res://tools/dump_blueprint.gd -- <id> out.json` prints
      the total cost and writes the piece list.

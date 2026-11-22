@@ -254,6 +254,23 @@ func test_rebuild_the_twin_gate_in_stone() -> void:
 		straight += int(b.structure.pieces[u].piece == "stairs" and (b.structure.pieces[u].pos as Vector3).distance_to(at) < 0.05)
 	check(spirals == 0 and straight == 1, "no spiral left, the straight stairs in (%d, %d)" % [spirals, straight])
 	check_eq(slabs, 0, "and the slab the old spiral sat on is gone")
+	# F783: a gate built before Nov 23 had railings across both tower doors and its deck stairs facing the wrong way.
+	var rail_at := o + basis * Vector3(-8, 7.75, 8)
+	for u in b.structure.near(Pieces.box("stairs", at, srot)):
+		if b.structure.pieces[u].piece == "stairs" and (b.structure.pieces[u].pos as Vector3).distance_to(at) < 0.05:
+			b._ev_remove_piece(u)
+	b._ev_add_piece(b._next_uid, "stairs", "cut_stone", at, srot, false)   # (the old way round: rot 0)
+	if b.structure.overlapping("railing", rail_at, Pieces.add_rot(1, fix.turn)).is_empty():
+		b._ev_add_piece(b._next_uid, "railing", "cut_stone", rail_at, Pieces.add_rot(1, fix.turn), false)
+	check(fix._fix_blocked_ways() >= 1, "the old railing and stairs are taken out")
+	var rails := 0
+	var turned := 0
+	for u in b.structure.near(AABB(rail_at - Vector3(3, 3, 3), Vector3(6, 6, 6))):
+		var pc: Dictionary = b.structure.pieces[u]
+		rails += int(pc.piece == "railing" and (pc.pos as Vector3).distance_to(rail_at) < 0.05)
+		turned += int(pc.piece == "stairs" and (pc.pos as Vector3).distance_to(at) < 0.05 and int(pc.rot) == Pieces.add_rot(3, fix.turn))
+	check_eq(rails, 0, "no railing across the tower door any more")
+	check_eq(turned, 1, "the deck stairs now climb toward the door")
 	fix.free()
 	var ps: GameAuthority.PlayerState = auth.players[1]
 	ps.inventory.add("build_hammer", 1)

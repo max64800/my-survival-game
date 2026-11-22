@@ -79,6 +79,8 @@ Every new piece: Blender by script in the style (MODEL-RULES.md), a game piece w
 - [ ] The dwarf can walk everywhere (owner, Nov 22, F626): balconies and galleries are whole floor tiles (no half
       or small floors), spiral stairs need a tower of 4×4 cells or more and go in and out onto open floor (never
       a wall or a railing), no roof cap. Add a test like `test_hearth_manor_stairs_lead_onto_floor`.
+- [ ] Every lesson in `docs/design/WALK-THROUGH-RULES.md` (doors with room on both sides, nothing across a stair's
+      way out, corner stairs come out sideways). `test_walk_through` must pass.
 - [ ] Cost: a showpiece is big. Show the price on the page; the owner decides if it is too much.
 - [ ] Page from `tools/ruins/kiln_page.html` (ruin / wood / original, "Mark new pieces", roof and upper floor on/off,
       decor inside the ruin). Photograph it yourself first; at most 2 photo rounds.

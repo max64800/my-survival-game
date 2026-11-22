@@ -1336,11 +1336,14 @@ func _twin_tower(cx: float, m: int) -> void:
 	_add("door", S, _tp(5, 5.5, 0), 1)                                  # into the gate room
 	# Stairs (owner, Nov 21: the new pieces worked in): floor 1 -> 2 straight in the front middle climbing to the back,
 	# a stair railing on its gate side and a down-sloped wall closing its outer side; 2 -> 3 corner stairs on the outer
-	# side climbing to the front; 3 -> the deck straight stairs on the gate side climbing to the back (F626: they were
-	# spiral stairs you couldn't climb).
+	# side climbing to the front; 3 -> the deck straight stairs on the gate side (F626: they were spiral stairs you
+	# couldn't climb).
 	# Each foot on open floor, each starting where the last ends.
+	# F783 (owner, Nov 23: "the doors opening towards the towers are blocked by railings"): the deck flight used to
+	# climb to the back, so its hole lay right behind the stage's door and a railing stood 0.7 m inside it. It now
+	# climbs toward the gate side and comes out at that door: up the stairs, straight out onto the gate's roof.
 	var flights := [[Vector2(0, 2), 1.0, 0, "stairs"], [Vector2(-2, 0), 3.25, 2, "stairs_corner"],
-		[Vector2(2, 0), 5.5, 0, "stairs"]]
+		[Vector2(2, 0), 5.5, 3 if m == 1 else 1, "stairs"]]
 	for f in flights:
 		var c: Vector2 = f[0]
 		_add("floor", S, _tp(c.x, f[1], c.y), 0)                        # (a slab lifts each top step to the floor)
@@ -1359,10 +1362,22 @@ func _twin_tower(cx: float, m: int) -> void:
 				if not Vector2(u, v) in holes:
 					_add("floor", S, _tp(u, floors[i], v), 0)
 		var ry: float = floors[i] + 0.25
-		# round the hole: both sides and the foot's end (not over the stair railing, never across its way out)
+		if i == 2:
+			# the deck flight climbs across the tower (+u): railings on both long sides and the foot's end; its top
+			# end stays open, toward the stage's door
+			_add("railing", S, _tp(hole.x, ry, hole.y - 1), 0)
+			_add("railing", S, _tp(hole.x, ry, hole.y + 1), 0)
+			_add("railing", S, _tp(hole.x - 1, ry, hole.y), 1)
+			continue
+		# round the hole: both sides and the foot's end (not over the stair railing, never across its way out).
+		# F783 (owner, Nov 23: "the spiral staircase is blocked"): corner stairs come out SIDEWAYS (in at their front,
+		# out at their left side), so the side they come out of gets no railing. The piece turns the same way in both
+		# towers but the right tower is mirrored, so that side is +u in the left tower and -u in the right one.
 		for h: Vector2 in holes:
-			_add("railing", S, _tp(h.x - 1, ry, h.y), 1)
-			if i >= 1:
+			var corner_out: bool = flights[i][3] == "stairs_corner" and h == hole
+			if not (corner_out and _tw_m == -1):
+				_add("railing", S, _tp(h.x - 1, ry, h.y), 1)
+			if i >= 1 and not (corner_out and _tw_m == 1):
 				_add("railing", S, _tp(h.x + 1, ry, h.y), 1)
 		_add("railing", S, _tp(hole.x, ry, holes[-1].y + foot), 0)
 	for c in cells:
