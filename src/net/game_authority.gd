@@ -940,6 +940,13 @@ func _ev_learned_blueprint(what: String, page_id: String, why: String) -> void:
 	learned_blueprint.emit(what, page_id, why)  # a card on the left (LearnedCards)
 
 
+## F636 (owner, Nov 22: "after rebuilding the tower, what's next? where do I see the blueprint I learned?"): a clear
+## line for everyone the moment a ruin finishes, on top of the blueprint-learned cards that follow it.
+@rpc("authority", "call_local", "reliable")
+func _ev_ruin_rebuilt(name: String) -> void:
+	hud_message.emit("The old %s stands again!" % name)
+
+
 @rpc("authority", "call_local", "reliable")
 func _ev_learned(recipe_id: String) -> void:
 	learned_recipe.emit(recipe_id)  # a card on the left with its picture (owner, Nov 19)

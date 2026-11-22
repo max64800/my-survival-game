@@ -793,7 +793,8 @@ func _ev_site(box_id: int, json: String, origin: Vector3, rot: int, built: Array
 	var chest: Dictionary = auth.storage.get_box(box_id)
 	var chest_pos: Vector3 = chest.node.global_position if not chest.is_empty() else origin
 	var plan := bp.world_pieces(origin, rot)
-	if String(chest.get("kind", "")) == "rebuild":
+	var is_ruin := String(chest.get("kind", "")) == "rebuild"
+	if is_ruin:
 		ruin_share_costs(plan)  # (before sorting: the same sums as the chest's menu, ruin_needs)
 	plan.sort_custom(func(a, b):
 		if absf(a.pos.y - b.pos.y) > 0.01:
@@ -803,7 +804,7 @@ func _ev_site(box_id: int, json: String, origin: Vector3, rot: int, built: Array
 		PieceNode.start_loading(p.piece, p.family)
 	var ghost_root := Node3D.new()
 	add_child(ghost_root)
-	ghost_root.visible = _plans_shown
+	ghost_root.visible = false if is_ruin else _plans_shown  # F631/F567: a ruin rebuilds by itself, no blue plan ever
 	for i in plan.size():
 		plan[i].built = built.has(i)
 		var g: PieceNode = PIECE_SCRIPT.new()
@@ -862,7 +863,10 @@ func _show_plans() -> void:
 		return
 	_plans_shown = show
 	for box_id in sites:
-		(sites[box_id].ghosts as Node3D).visible = show
+		var site: Dictionary = sites[box_id]
+		if site.has("ruin"):
+			continue  # F631/F567: a ruin never shows the blue plan, hammer or not
+		(site.ghosts as Node3D).visible = show
 
 
 @rpc("authority", "call_local", "reliable")
@@ -925,7 +929,7 @@ func _tick_sites() -> void:
 			continue
 		if instant_ruins and site.has("ruin"):
 			continue  # (rushed every frame instead: _process)
-		if not _someone_building(chest):
+		if not site.has("ruin") and not _someone_building(chest):
 			_set_status(box_id, "Paused: stand by the Builder's Chest with your Build Hammer to build")
 			continue
 		if _carve_step(box_id, site, chest):
@@ -1481,6 +1485,7 @@ func _finish_ruin(box_id: int, site: Dictionary, chest: Dictionary) -> void:
 		auth.world_state["ruins"] = ruins
 		ruin_name = String(r.get("name", "ruin"))
 		learn = [String(r.wood), String(r.stone)]  # owner, Nov 20: whichever material you rebuild it with, you learn both
+	auth._ev_ruin_rebuilt.rpc(ruin_name)  # F636: a clear "it's done" line before the blueprint cards
 	var known: Array = auth.world_state.get("blueprints", []).duplicate()
 	for k in learn:
 		if not known.has(k):

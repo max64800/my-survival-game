@@ -3,7 +3,7 @@ extends PanelContainer
 ## A chest, grave or Builder's Chest. Click a stack to move it to your bag;
 ## click a stack in your bag to put it in here. "Take all" empties it into your bag.
 
-const SLOT := 52
+const SLOT := 60
 
 signal emptied  ## you took the last thing out (owner, Nov 18: then the menu closes by itself)
 
@@ -14,6 +14,7 @@ var _grid: GridContainer
 var _status: Label
 var _ways: HBoxContainer  ## pictures of what goes in: the two ways (an untouched Rebuilding Chest, F560) or what's still missing (F578)
 var _ways_for := -1  ## which chest the pictures are of (they're built once, not every frame)
+var _ways_sig := ""  ## box + whether you have the hard material (F634: rebuilt when that changes)
 
 
 func _ready() -> void:
@@ -47,6 +48,7 @@ func open(id: int) -> void:
 	box_id = id
 	visible = true
 	_had = false
+	Controls.set_captured(false)  # F633: the cursor sometimes stayed hidden when this opened
 	refresh()
 	var box := GameAuthority.instance.storage.get_box(box_id)
 	_had = not box.is_empty() and has_items(box.inv)
@@ -86,8 +88,7 @@ func refresh() -> void:
 	var intro: bool = box.kind == "rebuild" and _status.text == ""
 	if intro:  # not started yet: one short line and a picture of each tower (F350, F411)
 		_status.text = GameAuthority.instance.builder.ruin_intro(box_id)
-		if _ways_for != box_id:
-			_show_ways()
+		_show_ways()
 	elif box.kind in ["builder", "rebuild"]:
 		_show_missing(GameAuthority.instance.builder.still_needed(box_id))
 	_ways.visible = _ways.get_child_count() > 0 and box.kind in ["builder", "rebuild"]
@@ -129,21 +130,29 @@ func refresh() -> void:
 ## The Rebuilding Chest before it starts (owner F560, said 3×: "only show, in pictures, what you need for the two
 ## options. That's it."): two cards, each just the pictures and counts of what that way needs.
 func _show_ways() -> void:
+	var r: Dictionary = GameAuthority.instance.world_state.get("ruins", {}).get(str(box_id), {})
+	var ps: GameAuthority.PlayerState = GameAuthority.instance.get_player(GameAuthority.instance.local_peer_id())
+	var has_hard: bool = ps != null and ps.inventory.count_of(Builder.ruin_hard(r)) > 0
+	var sig := str(box_id) + str(has_hard)
+	if sig == _ways_sig:
+		return
+	_ways_sig = sig
 	_ways_for = box_id
 	_missing_sig = ""
 	UiKit.clear(_ways)
 	var choices: Array[Dictionary] = GameAuthority.instance.builder.ruin_choices(box_id)
+	choices = choices.filter(func(w): return w.wood or has_hard)  # F634: hide stone/brick until you have it
 	for n in choices.size():
 		if n > 0:
 			UiKit.label(_ways, "or", 18, UiKit.AMBER).size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		var w: Dictionary = choices[n]
 		var card := PanelContainer.new()
-		card.add_theme_stylebox_override("panel", UiKit.style("slot", 8))
+		card.add_theme_stylebox_override("panel", UiKit.style("slot", 12))
 		_ways.add_child(card)
 		var col := VBoxContainer.new()
-		col.add_theme_constant_override("separation", 6)
+		col.add_theme_constant_override("separation", 8)
 		card.add_child(col)
-		UiKit.label(col, "Wood" if w.wood else "Stone", 16, UiKit.AMBER).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		UiKit.label(col, "Wood" if w.wood else "Stone", 19, UiKit.AMBER).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_need_row(col, w.need)
 
 
@@ -155,20 +164,21 @@ func _show_missing(need: Dictionary) -> void:
 		return
 	_missing_sig = sig
 	_ways_for = -1
+	_ways_sig = ""
 	UiKit.clear(_ways)
 	if need.is_empty():
 		return
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 4)
 	_ways.add_child(col)
-	UiKit.label(col, "Still to put in:", 15, UiKit.AMBER).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	UiKit.label(col, "Still to put in:", 17, UiKit.AMBER).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_need_row(col, need)
 
 
-## A row of item pictures, each with its count under it.
+## A row of item pictures, each with its name and count under it (F635: the name always shows, no hovering needed).
 static func _need_row(parent: Control, need: Dictionary) -> void:
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
+	row.add_theme_constant_override("separation", 14)
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	parent.add_child(row)
 	for item in need:
@@ -180,14 +190,16 @@ static func _need_row(parent: Control, need: Dictionary) -> void:
 		if tex:
 			var pic := TextureRect.new()
 			pic.texture = tex
-			pic.custom_minimum_size = Vector2(48, 48)
+			pic.custom_minimum_size = Vector2(64, 64)
 			pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 			pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 			pic.tooltip_text = Items.display_name(item)
 			cell.add_child(pic)
-		else:
-			UiKit.label(cell, Items.short_label(item), 13, UiKit.TEXT)
-		UiKit.label(cell, "%d" % int(need[item]), 16, UiKit.TEXT).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		var name_label := UiKit.label(cell, Items.display_name(item), 13, UiKit.TEXT)
+		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		name_label.custom_minimum_size = Vector2(64, 0)
+		UiKit.label(cell, "%d" % int(need[item]), 17, UiKit.TEXT).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 
 func _process(_d: float) -> void:

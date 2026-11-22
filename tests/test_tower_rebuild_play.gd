@@ -46,8 +46,12 @@ func _hold(item: String) -> void:
 	ps.selected_slot = ps.inventory.slots.find_custom(func(s): return not s.is_empty() and s.id == item)
 
 
-## F567 (blue only while holding the hammer) + F565 (10 FPS and freezes while rebuilding).
-func test_blue_plan_only_with_the_hammer_and_no_freezes() -> void:
+## F631 (owner, Nov 22: "putting materials in a Rebuilding Chest should start the rebuild by itself, no hammer, no
+## swinging") + F567 (bundled by the owner: no blue plan at ruins at all) + F633 (the cursor sometimes stayed
+## hidden opening this menu) + F634 (the stone/brick card hides until you have the material) + F635 (bigger
+## pictures, each with its own name, not just on hover) + F636 (a clear line when the tower's done, and where
+## to see what it taught) + F565 (10 FPS and freezes while rebuilding).
+func test_rebuilds_itself_no_hammer_no_blue_plan() -> void:
 	var box := await _tower()
 	if box < 0:
 		auth.get_parent().queue_free()
@@ -59,19 +63,32 @@ func test_blue_plan_only_with_the_hammer_and_no_freezes() -> void:
 	var planks := int(wood_need.get("plank_root", 0))
 	check(planks > 20 and planks <= 85, "the wooden tower costs %d planks (the first cave gave the owner ~110; F557)" % planks)
 	print("TOWER_PRICE wood %s | stone %s" % [wood_need, b.ruin_needs(String(r.stone), r)])
-	# F560: the untouched chest shows two cards of pictures, nothing else.
+	# F633: opening the Rebuilding Chest always shows the cursor again.
+	Controls.set_captured(true)
 	var panel := BoxPanel.new()
 	auth.get_parent().add_child(panel)
 	panel.open(box)
+	check(not Controls.captured(), "opening the Rebuilding Chest shows the cursor (F633)")
+	# F560/F634: the untouched chest shows only the wood card until you have the hard material.
 	var cards := panel._ways.get_children().filter(func(c): return c is PanelContainer)
-	var pics := panel._ways.find_children("*", "TextureRect", true, false)
-	check(cards.size() == 2 and pics.size() >= 3, "the chest shows two picture cards (%d cards, %d pictures; F560)" % [cards.size(), pics.size()])
+	check_eq(cards.size(), 1, "only the wood card shows with nothing cut yet (F634, %d cards)" % cards.size())
 	check(panel._status.text.length() < 50, "one short line above them: \"%s\"" % panel._status.text)
+	# F634: holding cut stone brings the stone card in too.
+	_hold("cut_stone")
+	panel.refresh()
+	cards = panel._ways.get_children().filter(func(c): return c is PanelContainer)
+	var pics := panel._ways.find_children("*", "TextureRect", true, false)
+	check(cards.size() == 2 and pics.size() >= 3, "the stone card appears once you have cut stone (F634, %d cards, %d pictures)" % [cards.size(), pics.size()])
+	# F635: each picture says its own name under it, not just on hover.
+	var names := panel._ways.find_children("*", "Label", true, false).map(func(l): return l.text)
+	check("Rootwood Plank" in names, "the wood picture names itself (F635): %s" % [names])
 	var t0 := Time.get_ticks_usec()
 	auth.storage.put(box, "plank_root", 5)
 	var start_ms := (Time.get_ticks_usec() - t0) / 1000
-	check(b.sites.has(box), "planks start the rebuild")
+	check(b.sites.has(box), "planks start the rebuild by themselves, with no hammer and nobody swinging (F631)")
 	check(start_ms < 250, "putting the first planks in doesn't freeze the game (%d ms)" % start_ms)
+	var site: Dictionary = b.sites[box]
+	check(not (site.ghosts as Node3D).visible, "a ruin never shows the blue plan, hammer or not (F567)")
 	# F578: after something went in, the chest shows what still has to go in.
 	var left_need := b.still_needed(box)
 	check(int(left_need.get("plank_root", 0)) > 0 and int(left_need.get("plank_root", 0)) <= planks,
@@ -80,23 +97,6 @@ func test_blue_plan_only_with_the_hammer_and_no_freezes() -> void:
 	check(panel._ways.visible and "Still to put in" in str(panel._ways.find_children("*", "Label", true, false).map(func(l): return l.text)),
 		"opening the chest shows the pictures of what's still missing (F578)")
 	panel.queue_free()
-	_hold("stone")
-	await tree.process_frame
-	var site: Dictionary = b.sites[box]
-	check(not (site.ghosts as Node3D).visible, "no blue pieces without the hammer (F567)")
-	_hold("build_hammer")
-	await tree.process_frame
-	check((site.ghosts as Node3D).visible, "the blue plan shows with the hammer")
-	var steps := Builder.site_steps(site.plan)
-	var shown := 0
-	var wrong := 0
-	for i in site.plan.size():
-		var p: Dictionary = site.plan[i]
-		if (p.ghost as Node3D).visible:
-			shown += 1
-			if p.built or steps.band_of[i] != steps.current:
-				wrong += 1
-	check(shown > 0 and wrong == 0, "only the floor being built shows blue (%d shown, %d wrong; F565)" % [shown, wrong])
 	var todo := []
 	for i in site.plan.size():
 		if not site.plan[i].built:
@@ -104,12 +104,14 @@ func test_blue_plan_only_with_the_hammer_and_no_freezes() -> void:
 	var need := Builder.missing_for(site.plan, todo, auth.storage.get_box(box).inv)
 	for item in need:
 		auth.storage.put(box, item, int(need[item]) + 10)
-	var ps: GameAuthority.PlayerState = auth.players[1]
-	ps.node.global_position = auth.storage.get_box(box).node.global_position + Vector3(1.2, 0.2, 0.0)
+	# F631: nobody stands by the chest and nobody holds the Build Hammer for any of this; the player stays at spawn.
 	var whys := []
 	auth.learned_blueprint.connect(func(_w, _p, why): whys.append(why))
+	var rebuilt_lines := []
+	auth.hud_message.connect(func(t: String): rebuilt_lines.append(t))
 	var worst := 0
 	var carving := 0
+	var ghost_shown := false
 	check((b.sites[box].fill as Array).is_empty(), "a ruin levels no ground round it (F559)")
 	for k in 3000:
 		if not b.sites.has(box):
@@ -118,12 +120,16 @@ func test_blue_plan_only_with_the_hammer_and_no_freezes() -> void:
 		var t := Time.get_ticks_usec()
 		b._tick_sites()
 		worst = maxi(worst, Time.get_ticks_usec() - t)
+		if b.sites.has(box) and (b.sites[box].ghosts as Node3D).visible:
+			ghost_shown = true
 		if "arving" in b.site_status(box):
 			carving += 1
 	check_eq(carving, 0, "rebuilding never says \"carving rock\" (F559)")
-	check(not b.sites.has(box), "the rebuild finished")
+	check(not ghost_shown, "the blue plan never once showed while it rebuilt (F567)")
+	check(not b.sites.has(box), "the rebuild finished with nobody standing by it or holding the hammer (F631)")
 	check(whys.size() == 2 and whys.all(func(w): return "rebuilding the old tower" in w),
 		"the blueprints learned say why: %s (F580)" % [whys])
+	check(rebuilt_lines.any(func(t): return "tower" in t and "stands" in t), "a clear line says the tower's done (F636): %s" % [rebuilt_lines])
 	check(worst < 80000, "no step of the rebuild freezes the game (slowest %d ms; was up to 700)" % (worst / 1000))
 	# F581: the bolt crate lying inside goes with the rest of the inside junk.
 	var lp := auth.loot_props
