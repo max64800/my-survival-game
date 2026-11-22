@@ -223,7 +223,27 @@ scene.add(floor);
 
 const loader = new GLTFLoader();
 const cache = {};
-function load(url) { return cache[url] ??= new Promise((ok, bad) => loader.load(url, ok, undefined, bad)); }
+// The models come as glTF text with their data packed inside (the page host won't serve .glb). The page unpacks that
+// data itself and rebuilds a .glb in memory: the published page isn't allowed to read "data:" links.
+async function unpack(url) {
+	const js = await (await fetch(url)).json();
+	const b64 = js.buffers[0].uri.split(",")[1];
+	delete js.buffers[0].uri;
+	const raw = atob(b64);
+	const bin = new Uint8Array((raw.length + 3) & ~3);
+	for (let i = 0; i < raw.length; i++) bin[i] = raw.charCodeAt(i);
+	let txt = new TextEncoder().encode(JSON.stringify(js));
+	const tl = (txt.length + 3) & ~3;
+	const glb = new Uint8Array(12 + 8 + tl + 8 + bin.length);
+	const dv = new DataView(glb.buffer);
+	dv.setUint32(0, 0x46546C67, true); dv.setUint32(4, 2, true); dv.setUint32(8, glb.length, true);
+	dv.setUint32(12, tl, true); dv.setUint32(16, 0x4E4F534A, true);
+	glb.fill(0x20, 20, 20 + tl); glb.set(txt, 20);
+	dv.setUint32(20 + tl, bin.length, true); dv.setUint32(24 + tl, 0x004E4942, true);
+	glb.set(bin, 28 + tl);
+	return new Promise((ok, bad) => loader.parse(glb.buffer, "", ok, bad));
+}
+function load(url) { return cache[url] ??= unpack(url); }
 
 let ghost = null;   // the shown ghost: { root, mats, kind }
 let pick = 0;
