@@ -9479,3 +9479,31 @@ Ran the script; all 6 × 4 ogg files written.
 - `assets/sfx/clink_0–3.ogg` — regenerated (organic inharmonic tap)
 - `assets/sfx/block_0–3.ogg` — regenerated (wood-and-leather thud)
 - `FEEDBACK.md` — added F659, F660, F661 (all fixed)
+
+
+## Nov 22, 2026: ghost fade & jump becomes a swarm of dots (F659)
+
+**What we did**
+- The owner saw low-poly "pentagon" mist balls when a ghost fades and jumps. Now the ghost breaks into 140 small round
+  glowing dots. They burst out of its body, swirl through the air to the new spot, form its body there, and melt into it
+  as it shows again. When it dies, the dots drift up and fade.
+- Game: `Ghost._dots` in `src/combat/ghost.gd`. All dots are one MultiMesh (one draw call), each dot follows its own
+  curve. Picked over GPUParticles3D because Godot particles can't be sent to an exact spot to rebuild the body.
+- The ghost now stays invisible for 0.6 s while it is dots, and waits at the new spot meanwhile (`Ghost.hidden`,
+  checked in `Monster.think`), so it doesn't move or swing while you can't see it.
+- 3D page: "Fade & jump" and "Die into mist" use the same curves (THREE.Points with a small shader). Published, checked live.
+- Test: the fade test now checks the dots start in the old body and gather where the ghost comes back.
+
+**Mistakes and hurdles**
+- The test first found 0 dots anywhere: headless test runs use a pretend renderer that doesn't remember MultiMesh
+  positions. Fix: the dots also keep their positions in a plain list (`multimesh` meta "dots") that the test reads.
+- Then the dots didn't gather where the ghost was: it kept chasing the player while invisible and walked away from
+  them. Fix: it waits while it is dots (it looked wrong in the game too, not only in the test).
+- `godot` isn't on the PATH on the PC; had to set `GODOT` to the WinGet Godot console exe for `tools/run_tests.sh`.
+- **Claude's mistake:** `git add src/combat/monster.gd` with the temp index took the whole shared file, and another
+  chat's unfinished copy didn't have the F630 bat-flight code, so my commit removed it. Spotted it in the commit's
+  line count (20 lines changed for my 3), fixed with a new commit: the file from before mine plus only my 3 lines.
+  Lesson: for files other chats also edit, commit HEAD's version plus only my lines (like FEEDBACK.md).
+- Speed check of the 14 MB Drifting Shade (4 of them, `perfcheck fight=ghost_a*4`): 57 fps once, 24 fps the next
+  time, because 7 Godot programs from other chats were running. Not trustworthy yet. Clue: the big ghost makes fewer
+  draw calls than the small one (985 vs 2137) and the slow part was script time, not drawing. Re-run on a quiet PC.
