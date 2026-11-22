@@ -234,6 +234,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F608. The Pit Boss (Old Pell's) does his overhead then immediately a second hit with no wind-up — that second hit needs to be removed.** Also remove about half the garbage/decor from his room, it gets in the way. *From: you (PC, Nov 22). Said: 1×*
 - [ ] **F609. Medium skeletons (Hollow Miner) can run into and push the player.** They shouldn't be able to move you. *From: you (PC, Nov 22). Said: 1×*
 - [ ] **F610. The Pit Boss (or other bosses) can't find their way back if they get stuck in a hallway, elevator shaft, or behind a doorway.** They need to handle these nav dead-ends. *From: you (PC, Nov 22). Said: 1×*
+- [ ] **F615. Hearth Manor test house: the outside stairs up to the balcony don't really work, because the balcony is too short.** Where the stairs come up there's no room to step off and walk along to the upper door: the balcony needs to reach out past the stairs' top (you drew it beside the stairs, along the wall). *From: you (PC, Nov 22, the manor pieces page https://claude.ai/artifact/93z4TCiBprjXjhR5jErbG6). Said: 1×* → the manor chat (F479, ruin 7).
 
 
 ## Done
