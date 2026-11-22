@@ -20,8 +20,6 @@ var _riposte_until := 0.0
 var _lantern_hint_at := -100.0
 var _dodge_t := -1.0
 var _dodge_dir := Vector3.ZERO
-var _dodge_held_grace := 0.0  ## seconds of slack so one dropped input frame doesn't end a held dash early (F702)
-const DODGE_RELEASE_GRACE := 0.1
 var stagger := 0.0  ## guard break / knockdown: can't act
 var _heavy_until := 0.0  ## a heavy swing is still going until this clock time
 var loaded := true  ## crossbow: a bolt is in it
@@ -211,11 +209,8 @@ func step(delta: float, playing: bool, move_dir: Vector3) -> float:
 		return 0.0
 	if _dodge_t >= 0.0:
 		_dodge_t += delta
-		# Still holding the button past the usual roll keeps the dash going, up to DASH_HOLD_MAX (F702). A little
-		# grace so one dropped input frame on a real keyboard doesn't end the dash early (owner, PC, Nov 22: a held
-		# "big dodge" was cutting out partway, then just sprinting the rest of the way instead of dashing).
-		_dodge_held_grace = DODGE_RELEASE_GRACE if Input.is_action_pressed("dodge") else maxf(0.0, _dodge_held_grace - delta)
-		var still_held := _dodge_held_grace > 0.0 and _dodge_t < Combat.DASH_HOLD_MAX
+		# Still holding the button past the usual roll keeps the dash going, up to DASH_HOLD_MAX (F702).
+		var still_held := Input.is_action_pressed("dodge") and _dodge_t < Combat.DASH_HOLD_MAX
 		if _dodge_t >= Combat.DODGE_TIME and not still_held:
 			_dodge_t = -1.0
 			_busy = maxf(_busy, 0.15)  # recovery after a roll
@@ -283,16 +278,9 @@ func _shield_bash() -> void:
 	dwarf.face_camera()
 
 
-## How much faster a fully-held dash moves than a tapped roll, by the end of the hold (owner, PC, Nov 22: "the
-## dodge forward should be longer... he should fly further"): past DODGE_TIME it isn't just the same roll speed
-## sustained longer, it picks up speed the rest of the way to DASH_HOLD_MAX, for a real forward burst.
-const DASH_SPEED_MULT := 1.8
-
-
 ## Where a roll moves you this frame.
 func dodge_velocity() -> Vector3:
-	var k := clampf((_dodge_t - Combat.DODGE_TIME) / (Combat.DASH_HOLD_MAX - Combat.DODGE_TIME), 0.0, 1.0)
-	return _dodge_dir * (Combat.DODGE_DISTANCE / Combat.DODGE_TIME) * lerpf(1.0, DASH_SPEED_MULT, k)
+	return _dodge_dir * (Combat.DODGE_DISTANCE / Combat.DODGE_TIME)
 
 
 ## How long the roll is on track to last (s), updated live so the roll animation can be stretched or shortened to
@@ -301,7 +289,7 @@ func dodge_velocity() -> Vector3:
 func dodge_expected_duration() -> float:
 	if _dodge_t < 0.0:
 		return Combat.DODGE_TIME
-	var still_held := _dodge_held_grace > 0.0 and _dodge_t < Combat.DASH_HOLD_MAX
+	var still_held := Input.is_action_pressed("dodge") and _dodge_t < Combat.DASH_HOLD_MAX
 	return Combat.DASH_HOLD_MAX if still_held else maxf(_dodge_t, Combat.DODGE_TIME)
 
 

@@ -1,0 +1,177 @@
+<title>Dwarf-Face Healing Fountain</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans+SC:wght@500;800&family=Alegreya+Sans:wght@400;500;700&display=swap">
+<style>
+/* Layout: a dark cave wall; three viewers in one row (old, shape guide, new), then the pictures they came from. */
+:root {
+	--bg: #1d1b19; --panel: #282521; --line: #3d3832; --fg: #ece5da; --muted: #b3a998;
+	--copper: #c9834a; --heal: #5fe0a0;
+	--display: "Alegreya Sans SC", "Trebuchet MS", sans-serif;
+	--body: "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+	color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font: 17px/1.5 var(--body); }
+.wrap { max-width: 1240px; margin: 0 auto; padding-block: 28px 48px;
+	padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+	display: grid; gap: 28px; }
+h1 { font: 800 clamp(30px, 5vw, 46px)/1.05 var(--display); margin: 0; letter-spacing: 0.01em; text-wrap: balance; }
+h1 span { color: var(--heal); }
+h2 { font: 800 24px/1.2 var(--display); margin: 0; letter-spacing: 0.02em; }
+p { margin: 0; max-width: 68ch; }
+.lead { color: var(--muted); }
+.views { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.view { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; display: grid; min-width: 0; }
+.view.new { border-color: var(--heal); }
+.view canvas { width: 100%; aspect-ratio: 4 / 5; display: block; cursor: grab; touch-action: none; }
+.cap { padding: 12px 14px 14px; display: grid; gap: 4px; }
+.tag { font: 500 13px/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.view.new .tag { color: var(--heal); }
+.cap b { font-size: 19px; }
+.cap small { color: var(--muted); font-size: 15px; }
+.bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+button { font: 500 16px var(--body); color: var(--fg); background: var(--panel); border: 1px solid var(--line);
+	border-radius: 5px; padding: 7px 14px; cursor: pointer; }
+button[aria-pressed="true"] { border-color: var(--copper); color: var(--copper); }
+button:focus-visible { outline: 2px solid var(--heal); outline-offset: 2px; }
+.hint { color: var(--muted); font-size: 15px; }
+.pics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+figure { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+figure img { display: block; width: 100%; }
+figcaption { padding: 10px 14px; color: var(--muted); font-size: 15px; }
+ul { margin: 0; padding-left: 20px; max-width: 70ch; display: grid; gap: 4px; }
+@media (max-width: 820px) { .views, .pics { grid-template-columns: minmax(0, 1fr); } .view canvas { aspect-ratio: 1 / 1; } }
+</style>
+
+<div class="wrap">
+	<header style="display:grid;gap:10px">
+		<h1>The new <span>healing fountain</span></h1>
+		<p class="lead">F782, for all four dungeons. A stone dwarf face pours glowing green water into a round stone basin, held up by old mine timbers with copper straps, with roots and moss growing over it. It is not in the game yet: tell me what to change first.</p>
+	</header>
+
+	<div class="bar">
+		<button id="spin" type="button" aria-pressed="false">Spin: off</button>
+		<button id="front" type="button">Face the front</button>
+		<span class="hint">Drag to turn a model, scroll or pinch to zoom.</span>
+	</div>
+
+	<section class="views" aria-label="Three fountains side by side">
+		<div class="view"><canvas id="c0"></canvas><div class="cap"><span class="tag">Now in the game</span><b>Mushroom fountain</b><small>0.95 m wide, 0.95 m tall.</small></div></div>
+		<div class="view"><canvas id="c1"></canvas><div class="cap"><span class="tag">Shape guide only (F706)</span><b>TRELLIS, from the 4 pictures</b><small>Made by the free TRELLIS website. Thrown away, never used in the game (model rule 1).</small></div></div>
+		<div class="view new"><canvas id="c2"></canvas><div class="cap"><span class="tag">New, built by hand in Blender</span><b>Dwarf-face fountain</b><small>1.2 m wide, 1.2 m tall. Passes the model checks (no shimmer, nothing floating).</small></div></div>
+	</section>
+
+	<section style="display:grid;gap:12px">
+		<h2>Things to look at</h2>
+		<ul>
+			<li>Does the stone face read as a dwarf (heavy brow, shut eyes, big nose, moustache, beard down to the water)?</li>
+			<li>Is the water green and glowing enough? It can glow more in the dark dungeons.</li>
+			<li>It is a bit bigger than the old one (1.2 m instead of 0.95 m). I can shrink it to fit the old spot exactly.</li>
+			<li>The back is a pile of rough boulders, so it can stand against a wall or in the open.</li>
+		</ul>
+	</section>
+
+	<section style="display:grid;gap:12px">
+		<h2>The ChatGPT pictures</h2>
+		<div class="pics">
+			<figure><img src="fountain_ideas.png" alt="Four fountain ideas: a stone dwarf face, a root-fed basin, a mine-timber trough, a crystal rune stone" loading="lazy"><figcaption>The four ideas. You picked the top-left one.</figcaption></figure>
+			<figure><img src="fountain_turnaround.png" alt="Design 1 seen from the front, side, back and top" loading="lazy"><figcaption>Design 1 from the front, side, back and top. These four went into TRELLIS.</figcaption></figure>
+		</div>
+	</section>
+</div>
+
+<script type="importmap">
+{ "imports": {
+	"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+	"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+const files = ["old_fountain.txt", "trellis_fountain.txt", "new_fountain.txt"];
+const loader = new GLTFLoader();
+const views = [];
+let spin = false;
+let newHeight = 1.2;
+
+function makeView(i) {
+	const canvas = document.getElementById("c" + i);
+	const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+	renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+	renderer.outputColorSpace = THREE.SRGBColorSpace;
+	renderer.toneMapping = THREE.ACESFilmicToneMapping;
+	const scene = new THREE.Scene();
+	scene.background = new THREE.Color(0x2c2925);
+	scene.add(new THREE.HemisphereLight(0xfff4e0, 0x3a3128, 1.6));
+	const sun = new THREE.DirectionalLight(0xffe8c8, 2.2);
+	sun.position.set(2, 3, 3);
+	scene.add(sun);
+	const floor = new THREE.Mesh(new THREE.CircleGeometry(1.1, 40), new THREE.MeshStandardMaterial({ color: 0x3a352f, roughness: 1 }));
+	floor.rotation.x = -Math.PI / 2;
+	floor.position.y = -0.002;
+	scene.add(floor);
+	const camera = new THREE.PerspectiveCamera(35, 0.8, 0.05, 50);
+	const controls = new OrbitControls(camera, canvas);
+	controls.enableDamping = true;
+	controls.autoRotateSpeed = 1.5;
+	const v = { canvas, renderer, scene, camera, controls };
+	views.push(v);
+	return v;
+}
+
+function frontView(v) {
+	const t = new THREE.Vector3(0, 0.55, 0);
+	v.controls.target.copy(t);
+	v.camera.position.set(1.15, 1.25, 2.55);   // a little from the side, like the pictures
+	v.controls.update();
+}
+
+function size(v) {
+	const w = v.canvas.clientWidth, h = v.canvas.clientHeight;
+	if (v.canvas.width !== Math.round(w * v.renderer.getPixelRatio())) {
+		v.renderer.setSize(w, h, false);
+		v.camera.aspect = w / h;
+		v.camera.updateProjectionMatrix();
+	}
+}
+
+files.forEach((f, i) => {
+	const v = makeView(i);
+	frontView(v);
+	// each model is sent as text (base64) because the page host only serves plain file types
+	fetch(f).then((r) => r.text()).then((t) => Uint8Array.from(atob(t.trim()), (ch) => ch.charCodeAt(0)).buffer).then((buf) => loader.parse(buf, "", (g) => {
+		const m = g.scene;
+		const box = new THREE.Box3().setFromObject(m);
+		const s = box.getSize(new THREE.Vector3());
+		if (i === 1) {   // TRELLIS gives no real size: scale it to the new fountain's height
+			const k = newHeight / s.y;
+			m.scale.setScalar(k);
+			m.rotation.y = Math.PI / 2;   // it comes out facing sideways
+			m.traverse((o) => { if (o.material) { o.material.metalness = 0; o.material.roughness = 1; } });   // no shiny-black metal look
+			m.updateMatrixWorld(true);
+			box.setFromObject(m);
+		}
+		const c = box.getCenter(new THREE.Vector3());
+		m.position.x -= c.x;
+		m.position.z -= c.z;
+		m.position.y -= box.min.y;
+		v.scene.add(m);
+	}, (e) => console.error(f, e)));
+});
+
+document.getElementById("spin").addEventListener("click", (e) => {
+	spin = !spin;
+	e.currentTarget.setAttribute("aria-pressed", String(spin));
+	e.currentTarget.textContent = spin ? "Spin: on" : "Spin: off";
+	views.forEach((v) => (v.controls.autoRotate = spin));
+});
+document.getElementById("front").addEventListener("click", () => views.forEach(frontView));
+
+function loop() {
+	views.forEach((v) => { size(v); v.controls.update(); v.renderer.render(v.scene, v.camera); });
+	requestAnimationFrame(loop);
+}
+loop();
+</script>
