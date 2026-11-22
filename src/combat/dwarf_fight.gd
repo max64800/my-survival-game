@@ -4,7 +4,7 @@ extends Node
 ##   Left click = light attack · click again or hold it = keep swinging (combo), each hit stronger than the last
 ##   Right click hold = block · tap right before a hit = PERFECT PARRY · left click while blocking (shield) = shield bash
 ##   Great axe / great maul: right click = heavy spin, middle click held = block (one-handed weapons have no heavy)
-##   Left Ctrl (+ direction) = dodge-roll (safe from 0.05 s to 0.30 s into the roll)
+##   Left Ctrl (+ direction) = dodge-roll (safe from 0.05 s to 0.30 s into the roll); hold it down for a longer dash (F702)
 ##   Crossbow: right click hold = aim (no spread, zoom) · left click = shoot · R = reload
 
 signal message(text: String, color: Color)
@@ -203,13 +203,16 @@ func step(delta: float, playing: bool, move_dir: Vector3) -> float:
 		return 0.0
 	if _dodge_t >= 0.0:
 		_dodge_t += delta
-		if _dodge_t >= Combat.DODGE_TIME:
+		# Still holding the button past the usual roll keeps the dash going, up to DASH_HOLD_MAX (F702).
+		var still_held := Input.is_action_pressed("dodge") and _dodge_t < Combat.DASH_HOLD_MAX
+		if _dodge_t >= Combat.DODGE_TIME and not still_held:
 			_dodge_t = -1.0
 			_busy = maxf(_busy, 0.15)  # recovery after a roll
 		return 0.0
 	if not playing:
 		return 1.0
-	if Input.is_action_just_pressed("dodge") and _busy <= 0.0 and _ps() and _ps().vitals.use_stamina(Combat.DODGE_STAMINA * _ps().progress.dodge_stamina_mult()):
+	if (Input.is_action_just_pressed("dodge") or dwarf.bot_dodge) and _busy <= 0.0 and _ps() and _ps().vitals.use_stamina(Combat.DODGE_STAMINA * _ps().progress.dodge_stamina_mult()):
+		dwarf.bot_dodge = false
 		_dodge_t = 0.0
 		# No direction pressed = roll backward.
 		_dodge_dir = move_dir.normalized() if move_dir.length() > 0.1 else Basis(Vector3.UP, dwarf.model.rotation.y) * Vector3.BACK
@@ -328,7 +331,7 @@ func _impact(heavy: bool, combo_step: int, riposte: bool, airborne: bool = false
 		var to := m.global_position - dwarf.global_position
 		var flat := Vector3(to.x, 0, to.z)
 		var kd := m.rig != null and m.rig.knocked_down
-		var eff_reach := reach + m.data.size * 0.4 + (m.data.height * 0.5 if kd else 0.0)
+		var eff_reach: float = reach + m.data.size * 0.4 + (m.data.height * 0.5 if kd else 0.0)
 		if flat.length() > eff_reach or absf(to.y) > 2.0:
 			continue
 		if not kd and arc < 360.0 and flat.length() > 0.3 and rad_to_deg(fwd.angle_to(flat.normalized())) > arc * 0.5:

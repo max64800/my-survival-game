@@ -57,6 +57,7 @@ func _notification(what: int) -> void:
 		for act in InputMap.get_actions():
 			Input.action_release(act)
 var bot_jump := false
+var bot_dodge := false  ## tests: start a dodge this frame, like a real press (skips Input's just-pressed timing)
 
 var _since_floor := 0.0
 var _run_time := 0.0  ## Running and Jumping practice not yet told to the host

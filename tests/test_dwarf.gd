@@ -388,6 +388,42 @@ func test_crossbow_reload_needs_standing_still() -> void:
 	root.queue_free()
 
 
+## Owner (Mac, Nov 22 phone notes): dash — a short tap of dodge still gives the usual short roll; holding the
+## button down dashes farther, building on the dodge we already have (F702).
+func test_holding_dodge_dashes_farther_than_a_tap() -> void:
+	Controls.setup()
+	Controls.robot = true
+	Controls.set_captured(true)
+	var root := _room([])
+	var auth := GameAuthority.new()
+	auth.drops_root = root
+	root.add_child(auth)
+	var dwarf := _dwarf_in(root)
+	auth.add_player(1, dwarf)
+	for i in 10:
+		await tree.physics_frame
+	var p0 := dwarf.global_position
+	dwarf.bot_dodge = true  # a tap: trigger it once, nothing held down after
+	await tree.physics_frame
+	while dwarf.fight.dodging():
+		await tree.physics_frame
+	var tap_dist := (dwarf.global_position - p0).length()
+	check(tap_dist > 1.0 and tap_dist < 4.0, "a tap gives the usual short dash (%.2f m)" % tap_dist)
+	for i in 15:  # let the short recovery after a roll clear
+		await tree.physics_frame
+	var p1 := dwarf.global_position
+	dwarf.bot_dodge = true
+	Input.action_press("dodge")  # hold it down the whole time
+	await tree.physics_frame
+	while dwarf.fight.dodging():
+		await tree.physics_frame
+	Input.action_release("dodge")
+	var hold_dist := (dwarf.global_position - p1).length()
+	check(hold_dist > tap_dist + 0.5, "holding it dashes farther than a tap (%.2f m vs %.2f m, F702)" % [hold_dist, tap_dist])
+	Controls.robot = false
+	root.queue_free()
+
+
 ## Owner (F234, said again from F111): "a beetle hit sends you flying much too far; a couple of metres at most, then the
 ## dwarf gets back up". The push was added to his speed every frame and kept (103 m on a flat floor, 177 m knocked down).
 func test_beetle_charge_throws_a_couple_of_metres() -> void:
