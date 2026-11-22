@@ -290,7 +290,8 @@ func _build() -> void:
 	# The look: one shared, detailed shape per piece + material (PieceMesh, spec §6).
 	var mi := MeshInstance3D.new()
 	_look = mi
-	var made := forged_mesh(piece, family) if not ghost else null
+	# Ghosts use the code shape, except furniture: its real outline, like a crafting bench's (F726: it was a box).
+	var made := forged_mesh(piece, family) if not ghost or (Pieces.turns_freely(piece) and not plan) else null
 	mi.mesh = made if made else PieceMesh.visual(piece, family)
 	mi.material_override = _ghost_mat if ghost else (null if made else _mat(family))
 	if ghost:

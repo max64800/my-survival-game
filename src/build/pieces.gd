@@ -585,15 +585,39 @@ static func hp(piece: String, family: String) -> float:
 
 ## Turning. `rot` is one small number, saved and sent as it always was:
 ##   0..3  = quarter turns (90°), as before, so old saves and blueprints still work;
-##   4..15 = 30° steps: rot 4 + k means k × 30° (only made when a 30°/60° angle is needed).
+##   4..15 = 30° steps: rot 4 + k means k × 30° (only made when a 30°/60° angle is needed);
+##   16..87 = 5° steps: rot 16 + k means k × 5° (furniture turned any way, like the stations: F726).
 const FINE_ROT := 4
+const FREE_ROT := 16
+const FREE_STEPS := 72  ## 5° steps in a full circle
 const TRI_DEPTH := 1.7320508  ## an equilateral triangle with 2 m sides is √3 m deep
 const TRI_IN := 0.57735027  ## centre → edge, for 2 m sides (scaled by size.x / 2)
 const TRI_OUT := 1.1547005  ## centre → corner
 
 
+## Whole 30° steps (a 5° turn counts down to the 30° step below it).
 static func steps_of(rot: int) -> int:
-	return rot * 3 if rot < FINE_ROT else rot - FINE_ROT
+	return fives_of(rot) / 6
+
+
+## The turn in 5° steps (0..71).
+static func fives_of(rot: int) -> int:
+	if rot >= FREE_ROT:
+		return rot - FREE_ROT
+	return rot * 18 if rot < FINE_ROT else (rot - FINE_ROT) * 6
+
+
+## The number to store for k × 5° (a quarter or 30° turn when it is one, so the grid rules still apply).
+static func rot_from_fives(k: int) -> int:
+	k = posmod(k, FREE_STEPS)
+	return rot_from_steps(k / 6) if k % 6 == 0 else FREE_ROT + k
+
+
+## Furniture and other loose decor: placed in small steps and turned any way, like a crafting bench (F726).
+static func turns_freely(piece: String) -> bool:
+	var info: Dictionary = LIST.get(piece, {})
+	return info.get("place", "") == "free" and not info.get("on_wall", false) and not info.get("group", "") in ["legacy", "roof", "mining"]
+
 
 
 ## The number to store for k × 30° (a quarter turn when it is one).
@@ -603,15 +627,15 @@ static func rot_from_steps(k: int) -> int:
 
 
 static func yaw_of(rot: int) -> float:
-	return steps_of(rot) * PI / 6.0
+	return fives_of(rot) * PI / 36.0
 
 
 static func valid_rot(rot: int) -> bool:
-	return rot >= 0 and rot < FINE_ROT + 12
+	return rot >= 0 and rot < FREE_ROT + FREE_STEPS
 
 
 static func add_rot(a: int, b: int) -> int:
-	return rot_from_steps(steps_of(a) + steps_of(b))
+	return rot_from_fives(fives_of(a) + fives_of(b))
 
 
 ## Pieces that open and close like doors (E): the round door and the big gate's leaves.
@@ -630,7 +654,7 @@ static func on_square_grid(piece: String, rot: int) -> bool:
 ## Size after turning by `rot` quarter turns (odd turns swap width and depth).
 static func turned_size(piece: String, rot: int) -> Vector3:
 	var s: Vector3 = LIST[piece].size
-	return Vector3(s.z, s.y, s.x) if steps_of(rot) % 6 == 3 else s
+	return Vector3(s.z, s.y, s.x) if fives_of(rot) % 36 == 18 else s
 
 
 ## The piece's outline seen from above, in its own space (x, z): a rectangle, or the triangle.
@@ -785,7 +809,14 @@ static func snap(piece: String, p: Vector3, n: Vector3, yaw: float, rot: int, li
 	if info.place == "ceiling":
 		pos.y = snappedf(p.y, 0.5) - h if n.y < -0.5 else snappedf(p.y, 0.5)
 	pos.y += lift
+	if turns_freely(piece):
+		# F726: furniture goes where you aim (10 cm steps) and keeps its own turn, `rot` = 5° steps.
+		return {pos = Vector3(snappedf(p.x, FREE_MOVE), pos.y, snappedf(p.z, FREE_MOVE)), rot = rot_from_fives(rot)}
 	return {pos = pos, rot = q}
+
+
+const FREE_MOVE := 0.1  ## furniture moves in 10 cm steps
+
 
 
 ## Snapping to the real edges of a built piece (60° triangles, and anything turned 30°/60°).

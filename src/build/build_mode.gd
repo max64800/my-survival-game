@@ -50,8 +50,9 @@ func choose(p_piece: String, p_family: String) -> void:
 	if blueprint:  # picking a piece in the B menu always goes back to single pieces (F101)
 		stop_blueprint()
 		message.emit("Back to building single pieces.")
-	if Pieces.is_tri(p_piece) != Pieces.is_tri(piece):  # keep facing the same way: 30° steps vs quarter turns
-		rot = posmod(rot * 3, 12) if Pieces.is_tri(p_piece) else posmod(roundi(rot / 3.0), 4)
+	if _turn_unit(p_piece) != _turn_unit(piece):  # keep facing the same way: 5° (furniture), 30° (triangles) or 90° steps
+		var u := _turn_unit(p_piece)
+		rot = posmod(roundi(float(rot * _turn_unit(piece)) / u), Pieces.FREE_STEPS / u)
 	_learn("choose")
 	piece = p_piece
 	family = p_family if Pieces.allowed(p_piece, p_family) else Pieces.LIST[p_piece].get("families", [p_family])[0]
@@ -182,13 +183,23 @@ func turn(dir: int) -> void:
 
 func _step(dir: int) -> void:
 	_learn("turn")
-	rot = posmod(rot + dir, 12 if Pieces.is_tri(piece) and not blueprint else 4)
+	rot = posmod(rot + dir, 4 if blueprint else Pieces.FREE_STEPS / _turn_unit(piece))
 	changed.emit()
 
 
+## One Q / E step for this piece, in 5° steps: furniture 5° (like the stations, F726), triangles 30°, the rest 90°.
+static func _turn_unit(p: String) -> int:
+	return 1 if Pieces.turns_freely(p) else (6 if Pieces.is_tri(p) else 18)
+
+
+## Furniture held down turns smoothly at the stations' calm speed (60° a second, F397), not in 0.4 s steps.
+const FREE_HOLD_DELAY := PlaceGhost.HOLD_DELAY
+const FREE_REPEAT := 1.0 / 12.0
+
+
 ## How many extra steps holding the key adds between `before` and `after` seconds held.
-static func held_steps(before: float, after: float) -> int:
-	var n := func(t: float) -> int: return 0 if t < HOLD_DELAY else floori((t - HOLD_DELAY) / REPEAT) + 1
+static func held_steps(before: float, after: float, delay: float = HOLD_DELAY, every: float = REPEAT) -> int:
+	var n := func(t: float) -> int: return 0 if t < delay else floori((t - delay) / every) + 1
 	return n.call(after) - n.call(before)
 
 
@@ -201,7 +212,8 @@ func _keep_turning(delta: float) -> void:
 		return
 	var before := _hold_time
 	_hold_time += delta
-	for i in held_steps(before, _hold_time):
+	var fine := Pieces.turns_freely(piece) and not blueprint
+	for i in (held_steps(before, _hold_time, FREE_HOLD_DELAY, FREE_REPEAT) if fine else held_steps(before, _hold_time)):
 		_step(_hold_dir)
 
 
@@ -255,7 +267,8 @@ func _process(delta: float) -> void:
 	if active() and not _was_active and dwarf:
 		# Taking the hammer out: the piece starts facing the way you look, then stays put while you walk (owner,
 		# Nov 19: "it turns when you walk"); only Q / E turn it from here.
-		rot = posmod(roundi((dwarf.model.rotation.y + PI) / (PI / 2.0)), 4) * (3 if Pieces.is_tri(piece) else 1)
+		var u := _turn_unit(piece)
+		rot = posmod(roundi((dwarf.model.rotation.y + PI) / (PI / 36.0 * u)), Pieces.FREE_STEPS / u)
 	_was_active = active()
 	if not active() or blueprint:
 		_show_fill({})
