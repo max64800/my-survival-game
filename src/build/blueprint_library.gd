@@ -109,8 +109,11 @@ static func make(id: String) -> Blueprint:
 		"wooden_prow_hall":  # (owner, Nov 22: "rebuild it in wood"; cornices, corbels, fire bowl and the keep's top tower stay stone)
 			lib._prow_hall()
 			lib._to_wood()
+			lib._stairs_on_the_floor()  # (before the stone top: it matches the stone hall piece by piece)
 			lib._prow_keep_top_stays_stone()
 		_: return null
+	if id != "wooden_prow_hall":
+		lib._stairs_on_the_floor()
 	lib._bp.name = NAMES.get(id, id)
 	lib._bp.author = "Dwarf Game"
 	lib._bp.source = "ancient"
@@ -1254,10 +1257,11 @@ func _twin_tower(cx: float, m: int) -> void:
 	_add("door", S, _tp(5, 5.5, 0), 1)                                  # into the gate room
 	# Stairs (owner, Nov 21: the new pieces worked in): floor 1 -> 2 straight in the front middle climbing to the back,
 	# a stair railing on its gate side and a down-sloped wall closing its outer side; 2 -> 3 corner stairs on the outer
-	# side climbing to the front; 3 -> the deck a spiral stair on the gate side, in and out toward the gate side.
+	# side climbing to the front; 3 -> the deck straight stairs on the gate side climbing to the back (F626: they were
+	# spiral stairs you couldn't climb).
 	# Each foot on open floor, each starting where the last ends.
 	var flights := [[Vector2(0, 2), 1.0, 0, "stairs"], [Vector2(-2, 0), 3.25, 2, "stairs_corner"],
-		[Vector2(2, 0), 5.5, 0 if m == 1 else 2, "stairs_spiral"]]
+		[Vector2(2, 0), 5.5, 0, "stairs"]]
 	for f in flights:
 		var c: Vector2 = f[0]
 		_add("floor", S, _tp(c.x, f[1], c.y), 0)                        # (a slab lifts each top step to the floor)
@@ -1267,18 +1271,21 @@ func _twin_tower(cx: float, m: int) -> void:
 	var floors := [3.0, 5.25, 7.5]
 	for i in 3:
 		var hole: Vector2 = flights[i][0]
+		var foot := 1 if flights[i][2] == 0 else -1                     # (which way the stairs' foot faces)
+		var holes := [hole]
+		if flights[i][3] == "stairs_corner":
+			holes.append(hole + Vector2(0, 2 * foot))                   # (its tall steps start at the edge: head room)
 		for u in cells:
 			for v in cells:
-				if not (u == hole.x and v == hole.y):
+				if not Vector2(u, v) in holes:
 					_add("floor", S, _tp(u, floors[i], v), 0)
 		var ry: float = floors[i] + 0.25
-		# round the hole: both sides and the foot's end (not over the stair railing; the spiral: not its way out)
-		_add("railing", S, _tp(hole.x - 1, ry, hole.y), 1)
-		if i == 2:
-			_add("railing", S, _tp(hole.x, ry, hole.y - 1), 0)
-		elif i == 1:
-			_add("railing", S, _tp(hole.x + 1, ry, hole.y), 1)
-		_add("railing", S, _tp(hole.x, ry, hole.y + (1 if flights[i][2] == 0 or i == 2 else -1)), 0)
+		# round the hole: both sides and the foot's end (not over the stair railing, never across its way out)
+		for h: Vector2 in holes:
+			_add("railing", S, _tp(h.x - 1, ry, h.y), 1)
+			if i >= 1:
+				_add("railing", S, _tp(h.x + 1, ry, h.y), 1)
+		_add("railing", S, _tp(hole.x, ry, holes[-1].y + foot), 0)
 	for c in cells:
 		_add("battlement", S, _tp(c, 7.75, 5), 0)
 		_add("battlement", S, _tp(c, 7.75, -5), 0)
@@ -1621,7 +1628,7 @@ func _hearth_manor() -> void:
 	_add("foundation_steps", B, Vector3(6, 0, -4), 2)
 	_add("roof_45", B, Vector3(6, 3.0, 0), 0)
 	_add("roof_45", B, Vector3(6, 3.0, -2), 2)
-	# --- the tower (cells x 8..14, z -6..0): 4 by 4 (F626: room for spiral stairs that open onto floor), three
+	# --- the tower (cells x 8..14, z -6..0): 4 by 4, three
 	# storeys, then a lookout room on its roof with a gallery of whole floors round it
 	var tx := [8, 10, 12, 14]
 	var tz := [-6, -4, -2, 0]
@@ -1630,10 +1637,11 @@ func _hearth_manor() -> void:
 			_add("foundation", B, Vector3(x, 0, z), 0)
 	var lv := [g, u, 5.5]          # its three storeys' walls
 	var fys := [3.0, 5.25, 7.5]    # the floors above them
-	# Each spiral stair goes in and comes out on the same side (its +x side, turned with it), so that side always faces
-	# open floor: up from the ground in the back-right corner, from the first floor in the back-left, from the second
-	# in the front-right (out onto the gallery by the lookout's door).
-	var flights := [[Vector2(14, -6), 2], [Vector2(8, -6), 0], [Vector2(14, 0), 2]]
+	# Straight stairs (F626, 2nd time: the spiral stairs couldn't be climbed): each starts on open floor and comes out
+	# onto open floor. Up from the ground along the right wall toward the back, from the first floor along the left
+	# wall toward the front, from the second along the right wall toward the front (out onto the gallery by the
+	# lookout's door). [cell, turn (0: climbs toward -z, 2: toward +z)]
+	var flights := [[Vector2(14, -2), 0], [Vector2(8, -4), 2], [Vector2(14, -2), 2]]
 	for i in 3:
 		var y: float = lv[i]
 		for x in tx:
@@ -1644,12 +1652,17 @@ func _hearth_manor() -> void:
 			_wall_z("doorway" if i == 0 and z == 0 else "wall", 7, z, y, B)
 		var c: Vector2 = flights[i][0]
 		_add("floor", B, Vector3(c.x, y, c.y), 0)                       # (a slab lifts its top level with the floor)
-		_add("stairs_spiral", B, Vector3(c.x, y + 0.25, c.y), flights[i][1])
+		_add("stairs", B, Vector3(c.x, y + 0.25, c.y), flights[i][1])
 		for x in tx:
 			for z in tz:
 				if x != int(c.x) or z != int(c.y):
 					_add("floor", B, Vector3(x, fys[i], z), 0)
-		_wall_x("railing", c.x, -5 if c.y < -3 else -1, fys[i] + 0.25, B)   # the hole's other open side
+		# railings round the hole above: across its foot end, and its inner side (not where a wall or room stands)
+		var up: int = flights[i][1]
+		_wall_x("railing", c.x, c.y + (1 if up == 0 else -1), fys[i] + 0.25, B)
+		var inner := c.x + (1 if c.x < 11 else -1)
+		if i < 2:
+			_wall_z("railing", inner, c.y, fys[i] + 0.25, B)
 	_add("door", B, Vector3(7, g, 0), 1)
 	# the gallery: railings all round the tower's top
 	var ry := 7.75
@@ -1668,12 +1681,16 @@ func _hearth_manor() -> void:
 	for z in [-4, -2]:
 		_wall_z("window_wide", 9, z, ry, B)
 		_wall_z("window_wide", 13, z, ry, B)
-	# its pyramid roof: four outside corners, each turned so its high corner points at the middle (no cap: F626)
+	# its flat roof deck with railings round it (F626, 2nd time: the owner chose this over the odd pyramid roof)
 	var py := ry + 2.0
-	_add("roof_45_outer", B, Vector3(10, py, -4), 2)
-	_add("roof_45_outer", B, Vector3(12, py, -4), 1)
-	_add("roof_45_outer", B, Vector3(10, py, -2), 3)
-	_add("roof_45_outer", B, Vector3(12, py, -2), 0)
+	for x in [10, 12]:
+		for z in [-4, -2]:
+			_add("floor", B, Vector3(x, py, z), 0)
+		_wall_x("railing", x, -5, py + 0.25, B)
+		_wall_x("railing", x, -1, py + 0.25, B)
+	for z in [-4, -2]:
+		_wall_z("railing", 9, z, py + 0.25, B)
+		_wall_z("railing", 13, z, py + 0.25, B)
 	# --- trim bands at the floor lines (outside only, never where a balcony, roof or gallery is), corner blocks
 	var b3 := 2.95
 	for x in [-4, -2, 0, 2, 4]:
@@ -2235,6 +2252,38 @@ func _to_wood() -> void:
 		elif String(p.id).begins_with("battlement"):
 			p.id = "railing"
 			p.mat = WOOD
+
+
+## F169 (owner, Nov 22: "do you have to build this little platform under the stairs?"): the stairs are open now,
+## so the floor slab that lifted a flight 25 cm (its top step level with the floor above) is a step in the way under
+## them. Where that slab lies on a floor or foundation, it goes and the flight stands on that floor; its top step is
+## then one ordinary 25 cm step below the floor above.
+func _stairs_on_the_floor() -> void:
+	var tops := {}  # "x,y,z" of the top middle of every floor and foundation
+	var slabs := {}  # "x,y,z" of a floor's bottom middle -> its index
+	for i in _bp.pieces.size():
+		var p: Dictionary = _bp.pieces[i]
+		if p.id == "floor" or p.id == "foundation":
+			tops[_key(p.pos + Vector3(0, Pieces.LIST[p.id].size.y, 0))] = true
+		if p.id == "floor":
+			slabs[_key(p.pos)] = i
+	var gone := {}
+	for p: Dictionary in _bp.pieces:
+		if p.id != "stairs" and p.id != "stairs_corner":
+			continue
+		var under: Vector3 = p.pos - Vector3(0, 0.25, 0)
+		if slabs.has(_key(under)) and tops.has(_key(under)):
+			gone[slabs[_key(under)]] = true
+			p.pos = under
+	var kept: Array[Dictionary] = []
+	for i in _bp.pieces.size():
+		if not gone.has(i):
+			kept.append(_bp.pieces[i])
+	_bp.pieces = kept
+
+
+func _key(v: Vector3) -> String:
+	return "%.2f,%.2f,%.2f" % [v.x, v.y, v.z]
 
 
 func _add(id: String, mat: String, pos: Vector3, rot: int) -> void:

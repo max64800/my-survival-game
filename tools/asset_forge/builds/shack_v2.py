@@ -1480,10 +1480,10 @@ def stairs_corner_v3(w=2.0, h=2.0, dd=2.0, n=8):
 		edge_gap = 0.052 / max(0.05, math.sin(min(ac, math.pi / 2 - ac)))   # the first and last bearers run close to an edge
 		(ix, iz), (ox, oz) = pt(ac, max(2 * pr + 0.004, edge_gap)), pt(ac, far(ac) - 0.09)
 		hewn((ix, yb, iz), (ox, yb + J(0.004), oz), 0.04)
-		sx, sz = pt(ac, far(ac) - 0.2)
+		sx, sz = pt(ac, far(ac) - 0.13)   # F169: out by the outer edge, so the middle under the stairs stays free
 		bot = yb - 0.042
 		if bot < 0.22:
-			boulder((sx, 0.0, sz), 0.1, max(0.04, (bot - 0.01) / 1.2), 0.1)
+			boulder((sx, 0.0, sz), 0.1, max(0.04, (bot + 0.012) / 0.84), 0.1)   # (tall enough to touch the bearer)
 		else:
 			boulder((sx, 0.05, sz), 0.1, 0.07, 0.1)
 			hewn((sx, 0.08, sz), (sx + J(0.006), bot - 0.002, sz + J(0.006)), 0.055)

@@ -174,3 +174,43 @@ func test_dwarf_drops_through_the_hatch() -> void:
 		else:
 			check_near(y, 3.25, 0.05, "%s: the floor beside the hole holds a dwarf" % name)
 	_root.queue_free()
+
+
+## F169 / F626 (owner, Nov 22: "I can't climb the spiral stairs in the Hearth Manor"): the Manor's and the Twin
+## Gate's towers now climb by straight (and corner) stairs; a dwarf walks up every flight, built as real pieces.
+func test_dwarf_walks_up_every_tower_flight() -> void:
+	for id in ["hearthbrick_manor", "stonehold_twin_gate"]:
+		_ground()
+		var bp := BlueprintLibrary.make(id)
+		var paths := {}
+		for p in bp.pieces:
+			var n: PieceNode = preload("res://src/build/piece_node.gd").new()
+			n.piece = p.id
+			n.family = p.mat
+			_root.add_child(n)
+			n.global_position = p.pos
+			n.rotation.y = Pieces.yaw_of(p.rot)
+			var b := Basis(Vector3.UP, Pieces.yaw_of(p.rot))
+			var local := []
+			if p.id == "stairs":
+				local = [Vector3(0, 0, 1.9), Vector3(0, 0, 0.8), Vector3(0, 0, -1.6)]
+			elif p.id == "stairs_corner":
+				local = [Vector3(0.4, 0, 2.2), Vector3(0.4, 0, 0.6), Vector3(0.1, 0, -0.1), Vector3(-0.5, 0, -0.5), Vector3(-0.6, 0, -1.8)]
+			if local.is_empty():
+				continue
+			var path := []
+			for q: Vector3 in local:
+				path.append(p.pos + b * q + Vector3.UP * 0.3)
+			paths["%s %s at %s" % [id, p.id, p.pos]] = [path, p.pos.y + 2.0]
+		check(paths.size() >= 3, "%s: at least three flights (%d)" % [id, paths.size()])
+		await tree.physics_frame
+		var only := {}
+		for k in paths:
+			only[k] = paths[k][0]
+		var walkers := await _walk(only)
+		for name in walkers:
+			var w = walkers[name]
+			check(w.done, "%s: reached the top (stopped at %s, stuck %.1f s)" % [name, w.global_position, w.stuck_time])
+			check_near(w.global_position.y, paths[name][1], 0.3, "%s: standing on the floor above" % name)
+		_root.queue_free()
+		await tree.physics_frame

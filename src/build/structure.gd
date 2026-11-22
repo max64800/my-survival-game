@@ -109,6 +109,9 @@ func overlaps(piece: String, pos: Vector3, rot: int) -> bool:
 		var o: Dictionary = pieces[uid]
 		if fits_inside(piece, o.piece) or fits_inside(o.piece, piece):
 			continue  # a door goes inside a doorway
+		if fits_under_stairs(piece, pos, rot, o) or fits_under_stairs(o.piece, o.pos, o.rot, {piece = piece, pos = pos, rot = rot}):
+			continue  # F169: a chest, barrel or table in the open space under the stairs
+
 		var oy := _y_range(o.piece, o.pos, -0.16)
 		if mine_y.y <= oy.x or oy.y <= mine_y.x:
 			continue
@@ -144,6 +147,8 @@ func overlapping(piece: String, pos: Vector3, rot: int) -> Array:
 		var o: Dictionary = pieces[uid]
 		if fits_inside(piece, o.piece) or fits_inside(o.piece, piece):
 			continue
+		if fits_under_stairs(piece, pos, rot, o) or fits_under_stairs(o.piece, o.pos, o.rot, {piece = piece, pos = pos, rot = rot}):
+			continue  # F169: a chest, barrel or table in the open space under the stairs
 		var oy := _y_range(o.piece, o.pos, -0.16)
 		if mine_y.y <= oy.x or oy.y <= mine_y.x:
 			continue
@@ -169,6 +174,34 @@ func _touching(piece: String, pos: Vector3, rot: int, other: Dictionary) -> bool
 
 
 ## Pieces made to sit inside another one's opening (and the roof window on its steep roof, F479).
+## F169 (owner, Nov 22): stairs are open underneath, so a piece fits under one when every spot of it (seen from
+## above) has room up to its top under the stairs' underside (PieceMesh.stair_underside).
+static func fits_under_stairs(piece: String, pos: Vector3, rot: int, stair: Dictionary) -> bool:
+	if not (stair.piece in ["stairs", "stairs_corner", "stairs_spiral"]) or piece.begins_with("stairs"):
+		return false
+	var top: float = pos.y + Pieces.LIST[piece].size.y - stair.pos.y
+	if pos.y < stair.pos.y - 0.05:
+		return false
+	var s: Vector3 = Pieces.LIST[stair.piece].size
+	var inv := Basis(Vector3.UP, Pieces.yaw_of(stair.rot)).inverse()
+	var fp := Pieces.footprint(piece, pos, rot, -0.03)
+	var lo := fp[0]
+	var hi := fp[0]
+	for q in fp:
+		lo = Vector2(minf(lo.x, q.x), minf(lo.y, q.y))
+		hi = Vector2(maxf(hi.x, q.x), maxf(hi.y, q.y))
+	const N := 8
+	for ix in N + 1:
+		for iz in N + 1:
+			var q := Vector2(lerpf(lo.x, hi.x, float(ix) / N), lerpf(lo.y, hi.y, float(iz) / N))
+			if ix > 0 and ix < N and iz > 0 and iz < N and not Geometry2D.is_point_in_polygon(q, fp):
+				continue
+			var l := inv * Vector3(q.x - stair.pos.x, 0, q.y - stair.pos.z)
+			if PieceMesh.stair_underside(stair.piece, s, Vector2(l.x, l.z)) < top:
+				return false
+	return true
+
+
 static func fits_inside(inner: String, outer: String) -> bool:
 	return (inner == "door" and outer in ["doorway", "arch_doorway"]) or (inner == "gate_leaf" and outer == "gateway") 		or (inner == "dormer" and outer == "roof_45")
 

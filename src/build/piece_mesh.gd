@@ -482,7 +482,42 @@ static func _square_exit(c: Vector2, a: float, hx: float, hz: float) -> Vector2:
 
 
 ## Corner stairs: n wedge steps fanning a quarter turn round the front-left corner, from along the front
-## edge (lowest) to along the left edge (top, s.y up). Each step is solid down to the floor, like the models.
+## edge (lowest) to along the left edge (top, s.y up). Each step reaches CORNER_UNDER below the one before (F169).
+## F169: how thick the stairs' undersides are, straight down. The models (stonehold_v2.py, hearthbrick_v2_*.py) match.
+const STAIRS_UNDER := 0.58     # straight stairs: the slanted underside is this far below the line of the step tips
+const CORNER_UNDER := 0.2      # corner stairs: each step reaches this far below the step before it
+const SPIRAL_TREAD := 0.13     # spiral stairs: each tread's thickness
+
+
+## F169: how high the open space under a stair piece is at a spot (x, z in the piece's own unturned frame, its
+## bottom at y 0): 0 = solid there (or the post), INF = nothing above (outside it). Used so chests, barrels and
+## other furniture can go under stairs (Structure.fits_under_stairs).
+static func stair_underside(piece: String, s: Vector3, q: Vector2) -> float:
+	var hx := s.x * 0.5
+	var hz := s.z * 0.5
+	if absf(q.x) > hx or absf(q.y) > hz:
+		return INF
+	match piece:
+		"stairs":
+			return maxf(0.0, (hz - q.y) / (2.0 * hz) * s.y - STAIRS_UNDER)
+		"stairs_corner":
+			if q.x < -hx + 0.32 and q.y > hz - 0.32:
+				return 0.0  # the post at the turn
+			var n := 8
+			var a := atan2(hz - q.y, q.x + hx)
+			var i := clampi(int(a / (PI * 0.5) * n), 0, n - 1)
+			return maxf(0.0, s.y * i / n - CORNER_UNDER)
+		"stairs_spiral":
+			var r := q.length()
+			if r < 0.25:
+				return 0.0  # the post
+			if r > minf(s.x, s.z) * 0.5:
+				return INF
+			var a := fposmod(atan2(-q.y, q.x), TAU)
+			return maxf(0.0, s.y * a / TAU - SPIRAL_TREAD)
+	return 0.0
+
+
 static func _corner_steps(s: Vector3, n: int) -> void:
 	var hx := s.x * 0.5
 	var hz := s.z * 0.5
@@ -495,7 +530,8 @@ static func _corner_steps(s: Vector3, n: int) -> void:
 		if a0 + 0.0001 < far and far < a1 - 0.0001:
 			pts.append(Vector2(hx, -hz))
 		pts.append(_square_exit(c, a1, hx, hz))
-		_prism_y(pts, 0.0, s.y * (i + 1) / n)
+		# F169: open below; each step reaches only CORNER_UNDER under the step before it (like the models)
+		_prism_y(pts, maxf(0.0, s.y * i / n - CORNER_UNDER), s.y * (i + 1) / n)
 	_box(Vector3(-hx + 0.16, s.y * 0.5, hz - 0.16), Vector3(0.3, s.y, 0.3))  # the post at the turn
 
 

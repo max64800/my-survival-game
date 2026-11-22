@@ -115,9 +115,14 @@ def stairs_corner(w=2.0, h=2.0, dd=2.0, n=8):
 		a0, a1 = math.radians(90 * i / n), math.radians(90 * (i + 1) / n)
 		top = E + (i + 1) * rise - (E if i == n - 1 else 0.0)
 		ch = rise / 2
-		_mortar_slab(piece(a0, a1, 0.0, 1.0), E + 0.03, top - ch + 0.03)
-		for k in range(i + 1):
+		# F169: each step is its own two courses plus one course under it (open below: no solid block under the
+		# stairs); their undersides step up round the turn like a thin twisting slab
+		k0 = max(0, i - 1)
+		_mortar_slab(piece(a0, a1, 0.0, 1.0), E + (i * rise - ch if i else 0.0) + 0.03, top - ch + 0.03)
+		for k in range(k0, i + 1):
 			for c in range(2):
+				if k < i and c == 0:
+					continue
 				ya = E + k * rise + c * ch
 				yb = min(top, ya + ch)
 				if k == i and c == 1:   # the limestone tread: an inner and an outer stone

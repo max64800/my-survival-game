@@ -565,20 +565,45 @@ def foundation(w=2.0, h=1.0, dd=2.0):
 	flagstones(-w / 2 + E, w / 2 - E, -dd / 2 + E, dd / 2 - E, top0, h - E)
 
 
-def stairs(w=2.0, h=2.0, dd=2.0, n=5):
-	"""Solid stone stairs (the kit sheet): one slice of big stones per step, each slice one step higher than the
-	one in front. Owner, Nov 17: fewer, bigger steps and bricks, and no gaps seen from the side: the slices press
-	flat against each other, and every row is exactly one step tall, so the rows line up from step to step."""
+WAIST = 0.18   # F169: how thick the stairs' slanted underside is (straight down), under each step's inner corner
+
+
+def stairs(w=2.0, h=2.0, dd=2.0, n=5, open_under=True):
+	"""Stone stairs (the kit sheet): one row of big stones per step, every row exactly one step tall, so the rows
+	line up from step to step (owner, Nov 17). F169 (owner, Nov 22: "we just need the actual stairs, not the entire
+	block under it"): the steps rest on a thin slanted underside of wedge stones (WAIST thick), open below, so you can
+	walk under the high end or put a chest there. open_under=False: the old solid slices (the low foundation steps)."""
 	dz = (dd - 2 * E) / n
 	rise = (h - E) / n
 	for i in range(n):
 		zf = dd / 2 - E - i * dz
 		top = E + (i + 1) * rise - (0.0 if i < n - 1 else E)
-		courses(w, top, dz - 0.002, y0=E, y1=top, zc=zf - dz / 2, dark_base=(i == 0), row_h=rise, block_l=(0.5, 0.8), tight=True)
+		y0 = E + i * rise if open_under else E
+		courses(w, top, dz - 0.002, y0=y0, y1=top, zc=zf - dz / 2, dark_base=(i == 0), row_h=rise, block_l=(0.5, 0.8), tight=True)
+		if open_under and i > 0:
+			stair_waist(w, zf, dz, y0, rise, i)
+
+
+def stair_waist(w, zf, dz, y_top, rise, i):
+	"""The slanted underside below one step (seen from the side: x = -z): from the step's bottom down to a line
+	WAIST below the steps' inner corners, cut off at the floor. Split across into 2-3 wedge stones."""
+	xa, xb = -zf + 0.0015, -zf + dz - 0.0015
+	ya, yb = y_top - rise - WAIST, y_top - WAIST
+	if ya < E:   # it reaches the floor: cut it off there
+		xg = xa + (E - ya) / (yb - ya) * (xb - xa)
+		pts = [(xg, E), (xb, yb), (xb, y_top - 0.002), (xa, y_top - 0.002), (xa, E)]
+		if xg - xa < 0.004:
+			pts = pts[:-1]
+	else:
+		pts = [(xa, ya), (xb, yb), (xb, y_top - 0.002), (xa, y_top - 0.002)]
+	cuts = [-w / 2 + E] + sorted(K.rng.uniform(-0.35, 0.35) + c for c in ((-0.33, 0.33) if i % 2 else (0.0,))) + [w / 2 - E]
+	for a, b in zip(cuts, cuts[1:]):
+		m = kit.tex_mat("greystone", "dark") if K.rng.random() < 0.15 else stone_m()
+		prism(K.Frame(ox=(a + b) / 2, yaw=90), pts, 0.0, b - a - 0.003, m, cut=K.rng.uniform(0.02, 0.03))
 
 
 def foundation_steps():
-	stairs(2.0, 1.0, 2.0, n=3)
+	stairs(2.0, 1.0, 2.0, n=3, open_under=False)
 
 
 def ramp(w=2.0, h=1.0, dd=2.0, strips=8):
@@ -667,6 +692,9 @@ def _post_stones(cx, cz, pw, y0, y1, n=5):
 		block((cx, (ys[i] + ys[i + 1]) / 2, cz), (pw - 0.004, ys[i + 1] - ys[i] - 0.003, pw - 0.004), m, cut=0.035, tilt=0.0, dent=0.012, free="")
 
 
+CORNER_UNDER = 0.2   # F169: how far each corner step reaches below the step before it (the game's shape: same)
+
+
 def stairs_corner(w=2.0, h=2.0, dd=2.0, n=8):
 	"""Corner stairs: 8 steps fan a quarter turn round a stone newel post in the front-left corner, 2 m up in one
 	cell. Each step is a stack of stone rows cut exactly to its wedge (the rows line up from step to step, like
@@ -696,8 +724,13 @@ def stairs_corner(w=2.0, h=2.0, dd=2.0, n=8):
 	for i in range(n):
 		a0, a1 = math.radians(90 * i / n), math.radians(90 * (i + 1) / n)
 		top = E + (i + 1) * rise - (E if i == n - 1 else 0.0)
-		for k in range(i + 1):
-			y0, y1 = E + k * rise + g, min(top, E + (k + 1) * rise) - g
+		# F169: each step is its own row plus a thin row under it (CORNER_UNDER), open below; together their
+		# undersides step up round the turn like a thin twisting slab
+		rows = [(E + i * rise, top)]
+		if i > 0:
+			rows.insert(0, (max(E, E + i * rise - CORNER_UNDER), E + i * rise))
+		for k, (ra, rb) in enumerate(rows):
+			y0, y1 = ra + g, rb - g
 			s = (0.42 if (i + k) % 2 else 0.58) + J(0.06)
 			m0, m1 = near(a0) + s * (far(a0) - near(a0)), near(a1) + s * (far(a1) - near(a1))
 			inner = [pt(a0, near(a0)), pt(a0, m0), pt(a1, m1), pt(a1, near(a1))]

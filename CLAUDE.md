@@ -60,6 +60,7 @@ Code layout, recorder details, how to run robots: `docs/CLAUDE-REFERENCE.md` (re
   Before adding, **Grep both files by keyword** (never read them whole): a match → bump its "Said" count; a fixed item that
   comes back → 🔁, move it into "Things that keep coming back" with what was tried, tell the owner, try a different approach.
   When fixed: cross it out with date + what changed and move it to `FEEDBACK-done.md`. Keep the Patterns table current.
+- **Play test while Claude tests (owner, Nov 22):** as soon as a change is in the game and only tests/commit remain, say so in a big heading `# 🎮 GO PLAY TEST THIS NOW 🎮` with exactly what to try and where, then "I'm still running tests". Don't wait for the full suite.
 - **Fixing rule (owner):** problems the owner *mentioned* get fixed. Problems Claude found that the owner didn't mention:
   ask first, one yes/no each (they wait under "Claude noticed, waiting for your OK").
 

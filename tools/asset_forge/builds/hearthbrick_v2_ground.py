@@ -266,10 +266,12 @@ def foundation_triangle(h=1.0):
 
 
 # ---------------- stairs ----------------
-def stairs(w=2.0, h=2.0, dd=2.0, n=5):
-	"""Solid brick stairs: each step a slice of bricks (the riser) with a limestone nosing along its front edge
-	and flat bricks behind it on the tread; brick side walls cut to the steps, their front ends in limestone."""
-	sw = 0.2
+def stairs(w=2.0, h=2.0, dd=2.0, n=5, open_under=True):
+	"""Brick stairs: each step a slice of bricks (the riser) with a limestone nosing along its front edge and flat
+	bricks behind it on the tread. F169 (owner, Nov 22: "we just need the actual stairs, not the entire block under
+	it"): the steps run the full width and rest on a thin slanted underside of rough limestone slabs, open below.
+	open_under=False (the low foundation steps): solid, with brick side walls cut to the steps and a back wall."""
+	sw = 0.2 if not open_under else E   # open: the steps run the full width (to E from the edge)
 	dz = (dd - 2 * E) / n
 	rise = (h - E) / n
 	per = max(3, round(rise / 0.105))   # brick courses per step; the top one is the nosing / tread
@@ -290,8 +292,11 @@ def stairs(w=2.0, h=2.0, dd=2.0, n=5):
 		before = set(bpy.data.objects)
 		cz0, cz1 = (zback + 0.055 if i == n - 1 else zb + 0.001), zf - 0.055   # the last one stops at the brick back wall
 		cy1 = top - nh * 0.5   # the tread bricks and the nosing sit half in it
-		blk((0, (E + cy1) / 2, (cz0 + cz1) / 2), (W - 0.006, cy1 - E, cz1 - cz0), HB.m_mortar(), bevel=0)
-		if prev > E + 0.01:
+		cy0 = prev + 0.002 if open_under else E
+		blk((0, (cy0 + cy1) / 2, (cz0 + cz1) / 2), (W - 0.006, cy1 - cy0, cz1 - cz0), HB.m_mortar(), bevel=0)
+		if open_under and i > 0:
+			lime_waist(w, zf, dz, prev, rise, i)
+		if prev > E + 0.01 and not open_under:
 			blk((0, (E + prev - 0.001) / 2, zf - 0.016), (W - 0.006, prev - 0.001 - E, 0.026), HB.m_mortar(), bevel=0)
 		tag(since(before), "mortar")
 		# riser bricks
@@ -319,6 +324,8 @@ def stairs(w=2.0, h=2.0, dd=2.0, n=5):
 				HB.m_brick(), cut=0.014, dent=0.012, free="y", seeds=0)
 			tag(since(before), "brick")
 			o["dark"] = K.rng.random() < 0.06
+	if open_under:
+		return
 	# the brick back wall (seen from behind), up to under the top tread
 	p = HB.Panel(oz=zback + 0.1)
 	for c in range(n * per - 1):
@@ -327,6 +334,21 @@ def stairs(w=2.0, h=2.0, dd=2.0, n=5):
 		for (a, b) in HB.lay_row(xa, xb, off):
 			HB.brick(p, a, b, ya, yb, 0.2, None, dark=K.rng.random() < 0.06)
 	stair_sides(w, h, dd, n, sw, rise, ch)
+
+
+def lime_waist(w, zf, dz, y_top, rise, i):
+	"""F169: the slanted underside below one step, seen from the side (x = -z): from the step's bottom down to a
+	line SV.WAIST below the steps' inner corners, cut off at the floor; two or three rough limestone slabs across."""
+	xa, xb = -zf + 0.0015, -zf + dz - 0.0015
+	ya, yb = y_top - rise - SV.WAIST, y_top - SV.WAIST
+	if ya < E:
+		xg = xa + (E - ya) / (yb - ya) * (xb - xa)
+		pts = [(xg, E), (xb, yb), (xb, y_top - 0.002), (xa, y_top - 0.002)] + ([(xa, E)] if xg - xa > 0.004 else [])
+	else:
+		pts = [(xa, ya), (xb, yb), (xb, y_top - 0.002), (xa, y_top - 0.002)]
+	cuts = [-w / 2 + E] + sorted(K.rng.uniform(-0.3, 0.3) + c for c in ((-0.33, 0.33) if i % 2 else (0.0,))) + [w / 2 - E]
+	for a, b in zip(cuts, cuts[1:]):
+		SV.prism(K.Frame(ox=(a + b) / 2, yaw=90), pts, 0.0, b - a - 0.003, HB.m_lime(), cut=K.rng.uniform(0.02, 0.03), role="lime")
 
 
 def stair_sides(w, h, dd, n, sw, rise, ch):
@@ -359,7 +381,7 @@ def stair_sides(w, h, dd, n, sw, rise, ch):
 
 
 def foundation_steps():
-	stairs(2.0, 1.0, 2.0, n=3)
+	stairs(2.0, 1.0, 2.0, n=3, open_under=False)
 
 
 # ---------------- ramp ----------------

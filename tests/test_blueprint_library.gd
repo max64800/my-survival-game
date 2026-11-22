@@ -89,22 +89,27 @@ func test_hearth_manor_is_sound() -> void:
 
 
 ## F626: the dwarf can walk everywhere in the manor: no half or small floors (balconies are whole cells), no roof
-## cap, and every spiral stair goes in and comes out (its turned +x side) onto a floor, with no wall or railing there.
+## cap, and the tower's three straight flights (F169/F626, Nov 22: no more spirals) start and land on open floor.
 func test_hearth_manor_stairs_lead_onto_floor() -> void:
 	var bp := BlueprintLibrary.make("hearthbrick_manor")
-	var spirals := 0
+	var flights := 0
 	for p in bp.pieces:
-		check(not p.id in ["floor_half", "small_floor", "roof_cap"], "no %s in the manor (at %s)" % [p.id, p.pos])
-		if p.id != "stairs_spiral":
+		check(not p.id in ["floor_half", "small_floor", "roof_cap", "stairs_spiral"], "no %s in the manor (at %s)" % [p.id, p.pos])
+		if p.id != "stairs":
 			continue
-		spirals += 1
-		var out := Vector3(1, 0, 0).rotated(Vector3.UP, Pieces.yaw_of(p.rot))
-		var cell: Vector3 = p.pos + out * 2.0
-		var edge: Vector3 = p.pos + out
-		for top in [p.pos.y - 0.25, p.pos.y + 2.0]:   # (it stands on a slab: one small step up at its foot)
-			check(_floor_top_at(bp, cell.x, cell.z, top), "spiral at %s: floor at %s, top %.2f" % [p.pos, cell, top])
-			check(not _blocked_edge(bp, edge.x, edge.z, top), "spiral at %s: nothing blocks its side at %.2f" % [p.pos, top])
-	check_eq(spirals, 3, "the tower has three spiral flights")
+		flights += 1
+		var up := Vector3(0, 0, -1).rotated(Vector3.UP, Pieces.yaw_of(p.rot))
+		var foot: Vector3 = p.pos - up * 2.0
+		var top: Vector3 = p.pos + up * 2.0
+		# (F169: with no slab under a flight, its top step is one ordinary 25 cm step below the floor above)
+		check(_floor_top_at(bp, foot.x, foot.z, p.pos.y - 0.25) or _floor_top_at(bp, foot.x, foot.z, p.pos.y),
+			"stairs at %s: their foot is on open floor" % p.pos)
+		check(_floor_top_at(bp, top.x, top.z, p.pos.y + 2.0) or _floor_top_at(bp, top.x, top.z, p.pos.y + 2.25), "stairs at %s: their top lands on floor" % p.pos)
+		check(not _blocked_edge(bp, (p.pos + up).x, (p.pos + up).z, p.pos.y + 1.75), "stairs at %s: nothing blocks their top" % p.pos)
+	check(flights >= 3, "the tower has three straight flights (%d stairs)" % flights)
+	# the lookout room has a flat deck now (owner, Nov 22: no odd pyramid roof)
+	for p in bp.pieces:
+		check(not (p.id.begins_with("roof_45") and p.pos.y > 9.0), "no pyramid roof on the lookout (%s at %s)" % [p.id, p.pos])
 
 
 ## Ruin 8, Cliff Watch (owner, Nov 22, F479): layered ("up, out, up, out"). Sound like the manor, every stair lands on
@@ -138,7 +143,7 @@ func test_cliff_watch_is_layered_and_sound() -> void:
 		var top: Vector3 = p.pos + up * 2.0
 		check(_floor_top_at(bp, foot.x, foot.z, p.pos.y - 0.25) or _floor_top_at(bp, foot.x, foot.z, p.pos.y),
 			"stairs at %s: their foot is on open floor" % p.pos)
-		check(_floor_top_at(bp, top.x, top.z, p.pos.y + 2.0), "stairs at %s: their top lands on floor" % p.pos)
+		check(_floor_top_at(bp, top.x, top.z, p.pos.y + 2.0) or _floor_top_at(bp, top.x, top.z, p.pos.y + 2.25), "stairs at %s: their top lands on floor" % p.pos)
 		check(not _blocked_edge(bp, (p.pos + up).x, (p.pos + up).z, p.pos.y + 1.75), "stairs at %s: nothing blocks their top" % p.pos)
 	check_eq(flights, 4, "four flights: up to every storey and the roof deck")
 	# the widest wall of each storey: 1 (10 m), 2 out (14 m), 3 in (6 m), 4 out (10 m)
@@ -197,7 +202,7 @@ func test_prow_hall_stairs_lead_onto_floor() -> void:
 		var foot: Vector3 = p.pos - up * 2.0
 		var top: Vector3 = p.pos + up * 2.0
 		check(_any_floor_at(bp, foot, p.pos.y - 0.25) or _any_floor_at(bp, foot, p.pos.y), "stairs at %s: their foot is on open floor" % p.pos)
-		check(_any_floor_at(bp, top, p.pos.y + 2.0), "stairs at %s: their top lands on floor" % p.pos)
+		check(_any_floor_at(bp, top, p.pos.y + 2.0) or _any_floor_at(bp, top, p.pos.y + 2.25), "stairs at %s: their top lands on floor" % p.pos)
 		var edge: Vector3 = p.pos + up
 		check(not _blocked_edge(bp, edge.x, edge.z, p.pos.y + 1.75), "stairs at %s: nothing blocks their top" % p.pos)
 	check_eq(flights, 29, "stairs up every storey: hall 2, prow 1, towers 4+4+5+5, lone tower 2, keep 4 + 2")
