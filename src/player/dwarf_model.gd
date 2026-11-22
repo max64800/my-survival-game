@@ -381,6 +381,37 @@ func _build_dwarf_rig() -> void:
 	set_held("")
 
 
+## You got hurt (F695, owner Nov 22): the body flashes a warm pale for a blink, like monsters do when
+## you hit them, so you can see the hit on your dwarf instead of across the whole screen.
+const HURT_FLASH_HOLD := 0.05
+const HURT_FLASH_FADE := 0.15
+var _hurt_glow: StandardMaterial3D
+var _hurt_tween: Tween
+
+
+func hurt_flash() -> void:
+	if not is_inside_tree():
+		return
+	if _hurt_glow == null:
+		_hurt_glow = StandardMaterial3D.new()
+		_hurt_glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		_hurt_glow.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		_hurt_glow.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	_hurt_glow.albedo_color = Color(1.0, 0.75, 0.65, 0.55)
+	for mi: MeshInstance3D in find_children("*", "MeshInstance3D", true, false):
+		if mi.material_overlay == null:
+			mi.material_overlay = _hurt_glow
+	if _hurt_tween:
+		_hurt_tween.kill()  # a new hit restarts the blink
+	_hurt_tween = create_tween()
+	_hurt_tween.tween_interval(HURT_FLASH_HOLD)
+	_hurt_tween.tween_property(_hurt_glow, "albedo_color:a", 0.0, HURT_FLASH_FADE)
+	_hurt_tween.tween_callback(func():
+		for mi: MeshInstance3D in find_children("*", "MeshInstance3D", true, false):
+			if mi.material_overlay == _hurt_glow:
+				mi.material_overlay = null)
+
+
 func _rest() -> void:
 	if right_arm:
 		right_arm.rotation.x = deg_to_rad(35)

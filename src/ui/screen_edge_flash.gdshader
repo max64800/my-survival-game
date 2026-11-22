@@ -6,6 +6,6 @@ uniform float strength : hint_range(0.0, 1.0) = 0.0;
 
 void fragment() {
 	float d = min(min(UV.x, 1.0 - UV.x), min(UV.y, 1.0 - UV.y));
-	float glow = pow(1.0 - clamp(d / 0.35, 0.0, 1.0), 2.0);
+	float glow = pow(1.0 - clamp(d / 0.10, 0.0, 1.0), 2.0);
 	COLOR = vec4(edge_color.rgb, glow * strength);
 }

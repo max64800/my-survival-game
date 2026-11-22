@@ -51,6 +51,13 @@ var _buff_label: Label
 var _ailment_badges: AilmentBadges  ## burning / chilled / poisoned / frozen, above the health bar
 var _edge_flash: ScreenEdgeFlash  ## red flash on a hit, green/orange/blue glow while poisoned/burning/chilled (F695)
 var _edge_flash_vitals: Vitals  ## whose "damaged" signal _edge_flash is listening to right now
+## Ghost health bar (F695, owner Nov 22): a pale strip behind the red fill shows the health you just
+## lost, waits a moment, then drains down to the real value. Uses real time, so hit-stop can't freeze it.
+var _ghost_bar: ProgressBar
+var _ghost_hold_until := 0  ## Time.get_ticks_msec() when the pale strip starts draining
+var _ghost_last_ms := 0
+const GHOST_HOLD_MS := 600
+const GHOST_DRAIN := 8.0  ## how fast it catches up once draining (about 0.4 s)
 var craft: CraftPanel
 var skills: SkillsPanel
 var map_panel: MapPanel
@@ -271,6 +278,20 @@ func _build() -> void:
 		frame.add_child(pb)
 		_bars[b[0]] = pb
 	_vitals.move_child(_bars.stun.get_parent(), 0)  # (the stun meter above the health bar)
+	# The ghost bar sits under the red fill and takes over its dark background (F695).
+	_ghost_bar = ProgressBar.new()
+	_ghost_bar.name = "HealthGhost"
+	_ghost_bar.show_percentage = false
+	_ghost_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_ghost_bar.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_ghost_bar.add_theme_stylebox_override("background", _bars.health.get_theme_stylebox("background"))
+	var ghost_fill := StyleBoxFlat.new()
+	ghost_fill.bg_color = Color(0.95, 0.82, 0.62, 0.85)
+	ghost_fill.set_corner_radius_all(3)
+	_ghost_bar.add_theme_stylebox_override("fill", ghost_fill)
+	_bars.health.add_theme_stylebox_override("background", StyleBoxEmpty.new())
+	_bars.health.get_parent().add_child(_ghost_bar)
+	_bars.health.get_parent().move_child(_ghost_bar, 0)
 	_bars.stun.get_parent().visible = false
 	_place_vitals()
 	_health_text = _label(_bars.health.get_parent(), 17)  # over the bar, centred both ways inside the frame
@@ -1205,13 +1226,14 @@ func _process(delta: float) -> void:
 	if ps:
 		var v := ps.vitals
 		if v != _edge_flash_vitals:  # a new/other player's body: listen to its hits instead (F695)
-			if _edge_flash_vitals and _edge_flash_vitals.damaged.is_connected(_edge_flash.flash_hit):
-				_edge_flash_vitals.damaged.disconnect(_edge_flash.flash_hit)
-			v.damaged.connect(_edge_flash.flash_hit)
+			if _edge_flash_vitals and _edge_flash_vitals.damaged.is_connected(_on_hurt):
+				_edge_flash_vitals.damaged.disconnect(_on_hurt)
+			v.damaged.connect(_on_hurt)
 			_edge_flash_vitals = v
 		_edge_flash.set_status("burn" if v.ailments.has("burn") else "poison" if v.ailments.has("poison") else "chill" if (v.ailments.has("chill") or v.ailments.has("frozen")) else "")
 		_bars.health.max_value = v.max_health()
 		_bars.health.value = v.health
+		_update_ghost_bar(v)
 		_bars.stamina.max_value = v.max_stamina()
 		_bars.stamina.value = v.stamina
 		var fighter := _local_dwarf()
@@ -1320,6 +1342,32 @@ func _refresh_selection(sel: int) -> void:
 	if sel != _last_selected:
 		_last_selected = sel
 		_refresh_slots()
+
+
+## You got hurt (F695, owner Nov 22: subtle, not the whole screen): the health bar keeps a pale ghost
+## of what you lost, your dwarf flashes and the camera bumps a little, and only a BIG hit touches the
+## screen edge. Only for this computer's player: the hit itself was already decided by the host.
+func _on_hurt(amount: float) -> void:
+	var v := _edge_flash_vitals
+	var max_hp := v.max_health() if v else 100.0
+	_edge_flash.flash_hit(amount, max_hp)
+	_ghost_hold_until = Time.get_ticks_msec() + GHOST_HOLD_MS
+	var me := _local_dwarf()
+	if me:
+		me.got_hurt(amount, max_hp)
+
+
+func _update_ghost_bar(v: Vitals) -> void:
+	var now := Time.get_ticks_msec()
+	var dt := clampf((now - _ghost_last_ms) / 1000.0, 0.0, 0.1)
+	_ghost_last_ms = now
+	_ghost_bar.max_value = v.max_health()
+	if v.health >= _ghost_bar.value:
+		_ghost_bar.value = v.health  # healing (or nothing lost): no ghost
+	elif now >= _ghost_hold_until:
+		_ghost_bar.value = lerpf(_ghost_bar.value, v.health, 1.0 - exp(-GHOST_DRAIN * dt))
+		if _ghost_bar.value - v.health < 0.2:
+			_ghost_bar.value = v.health
 
 
 func _local_dwarf() -> Dwarf:

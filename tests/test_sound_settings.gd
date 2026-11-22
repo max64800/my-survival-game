@@ -36,3 +36,17 @@ func test_mouse_speed_is_remembered() -> void:
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_PATH))
 	Controls.mouse_scale = old
 	SoundSettings.load_and_apply()
+
+
+## The Settings panel's camera shake slider (F695, owner Nov 22) is remembered and kept between 0 and 1.
+func test_camera_shake_is_remembered() -> void:
+	var old := SoundSettings.camera_shake
+	SoundSettings.set_camera_shake(0.3, TEST_PATH)
+	SoundSettings.camera_shake = 1.0
+	SoundSettings.load_and_apply(TEST_PATH)
+	check_near(SoundSettings.camera_shake, 0.3, 0.001, "camera shake came back from the saved file")
+	SoundSettings.set_camera_shake(5.0, TEST_PATH)
+	check_eq(SoundSettings.camera_shake, 1.0, "never more than full")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_PATH))
+	SoundSettings.camera_shake = old
+	SoundSettings.load_and_apply()

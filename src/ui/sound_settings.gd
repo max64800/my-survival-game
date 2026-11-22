@@ -6,6 +6,7 @@ const PATH := "user://settings.cfg"
 
 static var volume := 0.8  ## 0 = silent, 1 = full
 static var muted := false
+static var camera_shake := 1.0  ## 0 = the camera never shakes, 1 = full (F695, owner Nov 22: a slider for it)
 
 
 ## Reads the saved settings (if any) and applies them. Call once when the game starts.
@@ -15,6 +16,7 @@ static func load_and_apply(path: String = PATH) -> void:
 		volume = clampf(float(cfg.get_value("sound", "volume", volume)), 0.0, 1.0)
 		muted = bool(cfg.get_value("sound", "muted", muted))
 		Controls.mouse_scale = clampf(float(cfg.get_value("controls", "mouse_scale", Controls.mouse_scale)), 0.25, 3.0)
+		camera_shake = clampf(float(cfg.get_value("controls", "camera_shake", camera_shake)), 0.0, 1.0)
 	apply()
 
 
@@ -41,10 +43,16 @@ static func set_mouse_scale(m: float, path: String = PATH) -> void:
 	save(path)
 
 
+static func set_camera_shake(k: float, path: String = PATH) -> void:
+	camera_shake = clampf(k, 0.0, 1.0)
+	save(path)
+
+
 static func save(path: String = PATH) -> void:
 	var cfg := ConfigFile.new()
 	cfg.load(path)  # keep any other settings already in the file
 	cfg.set_value("sound", "volume", volume)
 	cfg.set_value("sound", "muted", muted)
 	cfg.set_value("controls", "mouse_scale", Controls.mouse_scale)
+	cfg.set_value("controls", "camera_shake", camera_shake)
 	cfg.save(path)

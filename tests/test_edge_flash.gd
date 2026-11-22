@@ -26,28 +26,29 @@ func test_god_mode_and_zero_damage_dont_flash() -> void:
 	check_eq(seen.size(), 0, "god mode: no hit, no flash")
 
 
-func test_flash_strength_scales_then_fades_to_nothing() -> void:
+func test_small_hits_skip_the_edge_and_big_ones_flash_faintly() -> void:
+	# Owner, Nov 22: the old flash was "too much": now only big hits, thin and faint (HIT_MAX).
 	var f := ScreenEdgeFlash.new()
 	f._ready()
-	f.flash_hit(0.0)
-	check_near(f._hit_strength, 0.35, 0.01, "even a 0-damage hit flashes a little")
-	var f2 := ScreenEdgeFlash.new()
-	f2._ready()
-	f2.flash_hit(50.0)
-	check_eq(f2._hit_strength, 1.0, "a big hit caps at full strength")
-	f2._process(ScreenEdgeFlash.HIT_FADE)
-	check_eq(f2._hit_strength, 0.0, "fully faded after HIT_FADE seconds")
+	f.flash_hit(5.0, 100.0)
+	check_eq(f._hit_strength, 0.0, "a small hit (5% of health) doesn't touch the screen edge")
+	f.flash_hit(10.0, 100.0)
+	check_near(f._hit_strength, ScreenEdgeFlash.HIT_MIN, 0.01, "a 10% hit flashes faintly")
+	f.flash_hit(80.0, 100.0)
+	check_near(f._hit_strength, ScreenEdgeFlash.HIT_MAX, 0.01, "a huge hit caps at HIT_MAX")
+	check(ScreenEdgeFlash.HIT_MAX <= 0.35, "never a strong flash")
+	f._process(ScreenEdgeFlash.HIT_FADE)
+	check_near(f._hit_strength, 0.0, 0.001, "fully faded after HIT_FADE seconds")
 	f.free()
-	f2.free()
 
 
 func test_a_fresh_hit_doesnt_get_weaker_than_the_fading_one() -> void:
 	var f := ScreenEdgeFlash.new()
 	f._ready()
-	f.flash_hit(50.0)
-	f._process(f.HIT_FADE * 0.5)
+	f.flash_hit(50.0, 100.0)
+	f._process(f.HIT_FADE * 0.25)
 	var mid := f._hit_strength
-	f.flash_hit(0.0)  # a tiny new hit while the big one is still fading
+	f.flash_hit(11.0, 100.0)  # a smaller big hit while the strong one is still fading
 	check_eq(f._hit_strength, mid, "doesn't dim an already-brighter flash")
 	f.free()
 
@@ -56,7 +57,7 @@ func test_status_glow_shows_only_once_the_hit_flash_is_gone() -> void:
 	var f := ScreenEdgeFlash.new()
 	f._ready()
 	f.set_status("poison")
-	f.flash_hit(50.0)
+	f.flash_hit(50.0, 100.0)
 	f._process(0.01)
 	check(f._hit_strength > 0.0, "still mid-flash")
 	f._process(f.HIT_FADE)
@@ -64,3 +65,17 @@ func test_status_glow_shows_only_once_the_hit_flash_is_gone() -> void:
 	check_eq(f._hit_strength, 0.0, "hit faded out")
 	check_eq(f._status_kind, "poison", "status glow still set, now visible")
 	f.free()
+
+
+func test_getting_hurt_bumps_the_camera_a_little_and_flashes_the_dwarf() -> void:
+	# F695 (owner Nov 22): small bump for a small hit, bigger for a big one, never more than HURT_SHAKE_MAX.
+	var d := Dwarf.new()
+	d.got_hurt(1.0, 100.0)
+	check_near(d._shake, Dwarf.HURT_SHAKE_MIN, 0.02, "a scratch: a tiny bump")
+	d._shake = 0.0
+	d.got_hurt(90.0, 100.0)
+	check_near(d._shake, Dwarf.HURT_SHAKE_MAX, 0.001, "a huge hit: the biggest hurt bump")
+	d.free()
+	var m := DwarfModel.new()
+	m.hurt_flash()  # not in the tree yet: must not crash
+	m.free()

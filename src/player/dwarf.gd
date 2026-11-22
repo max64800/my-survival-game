@@ -433,8 +433,9 @@ func _process(delta: float) -> void:
 	_spring.spring_length = lerpf(_spring.spring_length, want_len, minf(1.0, delta * 10.0))  # smooth zoom
 	_shake = maxf(0.0, _shake - delta * 4.0)
 	camera.fov = lerpf(camera.fov, 32.0 if fight and fight.aiming() else 72.0, minf(1.0, delta * 10.0))  # crossbow zoom
-	camera.h_offset = randf_range(-1, 1) * _shake * 0.06
-	camera.v_offset = randf_range(-1, 1) * _shake * 0.06
+	var shake := _shake * 0.06 * SoundSettings.camera_shake  # the Settings slider can turn it down/off (F695)
+	camera.h_offset = randf_range(-1, 1) * shake
+	camera.v_offset = randf_range(-1, 1) * shake
 
 
 ## What's under the crosshair, up to `reach` meters from the dwarf (building reaches further).
@@ -813,6 +814,19 @@ func got_parry() -> void:
 
 func add_shake(amount: float) -> void:
 	_shake = maxf(_shake, amount)
+
+
+## You got hurt (F695, owner Nov 22): a small camera bump, bigger for a bigger share of your health,
+## and the dwarf's body flashes pale for a blink. Smaller than the bump when YOU land a hit (0.25).
+const HURT_SHAKE_MIN := 0.12
+const HURT_SHAKE_MAX := 0.3
+
+
+func got_hurt(amount: float, max_health: float) -> void:
+	var share := clampf(amount / maxf(max_health, 1.0) / 0.3, 0.0, 1.0)
+	add_shake(lerpf(HURT_SHAKE_MIN, HURT_SHAKE_MAX, share))
+	if model:
+		model.hurt_flash()
 
 
 var _tree: AnimationTree = null

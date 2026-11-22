@@ -43,6 +43,18 @@ func _ready() -> void:
 	ms.value_changed.connect(func(x: float): SoundSettings.set_mouse_scale(x / 100.0))
 	mouse.add_child(ms)
 	UiKit.divider(v)
+	# Camera shake (F695, owner Nov 22): some people get dizzy from it, so it can be turned down or off.
+	var shake_row := _row(v, "Camera shake")
+	var sh := UiKit.slider(HSlider.new())
+	sh.name = "CameraShake"
+	sh.min_value = 0
+	sh.max_value = 100
+	sh.step = 10
+	sh.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sh.set_value_no_signal(SoundSettings.camera_shake * 100.0)
+	sh.value_changed.connect(func(x: float): SoundSettings.set_camera_shake(x / 100.0))
+	shake_row.add_child(sh)
+	UiKit.divider(v)
 	# Graphics (owner, Nov 19: run well on weak computers too): a preset, and the few things people change most.
 	var gfx := _row(v, "Graphics")
 	var pick := OptionButton.new()
@@ -97,6 +109,7 @@ func _ready() -> void:
 			vol.set_value_no_signal(SoundSettings.volume * 100.0)
 			mute.set_pressed_no_signal(SoundSettings.muted)
 			ms.set_value_no_signal(Controls.mouse_scale * 100.0)
+			sh.set_value_no_signal(SoundSettings.camera_shake * 100.0)
 			show_gfx.call())
 
 
