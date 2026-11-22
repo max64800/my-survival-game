@@ -9,15 +9,18 @@ class_name BlueprintLibrary
 
 const IDS := ["delvers_hut", "miners_homestead", "stone_hall", "forge_workshop", "watchtower_cabin", "stone_watchtower",
 	"stone_outpost", "wooden_watchtower", "wooden_outpost", "hearthbrick_brewhall", "wooden_brewhall", "lantern_spire", "wooden_spire",
-	"hearthbrick_manor", "wooden_manor", "stonehold_twin_gate", "wooden_twin_gate", "stonehold_cliff_watch", "wooden_cliff_watch"]
+	"hearthbrick_manor", "wooden_manor", "stonehold_twin_gate", "wooden_twin_gate", "stonehold_cliff_watch", "wooden_cliff_watch",
+	"stonehold_prow_hall", "wooden_prow_hall"]
 ## Known from the very start (F161): you place them and bring the materials. The rest are learned from
 ## Old Blueprints found in ruins (F98).
 const STARTER := ["delvers_hut"]
 ## Learned only by rebuilding a ruin (owner, Nov 19), never from an Old Blueprint page.
 ## The Brewhall's two (F479): its cellar goes below the ground line, which only the ruin digs out.
-## The Lantern Spire's two (F479): a landmark you rebuild where it stands. The Hearth Manor's two (F479) the same, and the Twin Gate's and Cliff Watch's (owner, Nov 22: so the dev menu has them).
+## The Lantern Spire's two (F479): a landmark you rebuild where it stands. The Hearth Manor's two (F479) the same, and the Twin Gate's and Cliff Watch's (owner, Nov 22: so the dev menu has them),
+## and the Prow Hall's (owner, Nov 22: its ruin teaches both).
 const REBUILD_ONLY := ["wooden_watchtower", "wooden_outpost", "hearthbrick_brewhall", "wooden_brewhall", "lantern_spire", "wooden_spire",
-	"hearthbrick_manor", "wooden_manor", "stonehold_twin_gate", "wooden_twin_gate", "stonehold_cliff_watch", "wooden_cliff_watch"]
+	"hearthbrick_manor", "wooden_manor", "stonehold_twin_gate", "wooden_twin_gate", "stonehold_cliff_watch", "wooden_cliff_watch",
+	"stonehold_prow_hall", "wooden_prow_hall"]
 const NAMES := {
 	"delvers_hut": "Delver's Hut",
 	"miners_homestead": "Miner's Homestead",
@@ -102,7 +105,7 @@ static func make(id: String) -> Blueprint:
 			lib._cliff_watch()
 			lib._to_wood()
 		"stonehold_round_test": lib._round_tower_test()  # (owner, Nov 22, F656: the big-ring test, not a blueprint you learn)
-		"stonehold_prow_hall": lib._prow_hall()  # (owner, Nov 22: ruin 9, F656 + F657; not learnable yet, its 3D page first)
+		"stonehold_prow_hall": lib._prow_hall()  # (owner, Nov 22: ruin 9, F656 + F657; learned by rebuilding its ruin)
 		"wooden_prow_hall":  # (owner, Nov 22: "rebuild it in wood"; cornices, corbels, fire bowl and the keep's top tower stay stone)
 			lib._prow_hall()
 			lib._to_wood()
@@ -2145,16 +2148,32 @@ func _prow_hall() -> void:
 			_add("battlement", S, c + _dir(j + 3) * sd + ty, _rot(j + 3))
 			_add("corbel", S, n * (_EDGE + cdepth) + _dir(j + 3) * (0.65 * sd) + _ring_off + Vector3(0, top - 1.0, 0), _rot(j))
 	_ring_off = Vector3.ZERO
-	# --- move it so the box is centred, and keep the lump and the cave wall as rock (not carved)
+	# --- move it so the box is centred. Only the space round the castle itself is "air" (dug out when you build
+	# it): its pieces plus 1.5 m round and over them (F657: the cave keeps its own shape round it, and the dip
+	# under the bridge stays a dip); the lump and the cave wall stay rock.
 	for p in _bp.pieces:
 		p.pos += PROW_SHIFT
 	var sx := int(_bp.size.x)
+	var sy := int(_bp.size.y)
 	var sz := int(_bp.size.z)
+	var near := PackedByteArray()
+	near.resize(sx * sy * sz)
+	for p in _bp.pieces:
+		var b := Pieces.box(p.id, p.pos, p.rot).grow(1.5)
+		b.position.y += 1.5  # (not under it: only round and over it)
+		b.size.y -= 1.5
+		for cy in range(maxi(0, floori(b.position.y)), mini(sy, ceili(b.end.y))):
+			for cz in range(maxi(0, floori(b.position.z + sz * 0.5)), mini(sz, ceili(b.end.z + sz * 0.5))):
+				for cx in range(maxi(0, floori(b.position.x + sx * 0.5)), mini(sx, ceili(b.end.x + sx * 0.5))):
+					near[(cy * sz + cz) * sx + cx] = 1
 	var i := 0
-	for cy in int(_bp.size.y):
+	for cy in sy:
 		for cz in sz:
 			for cx in sx:
-				if cy + 0.5 < prow_rock_top(cx + 0.5 - sx * 0.5, cz + 0.5 - sz * 0.5):
+				var lx := cx + 0.5 - sx * 0.5
+				var lz := cz + 0.5 - sz * 0.5
+				var by_lump := Vector2(lx - PROW_LUMP.x, lz - PROW_LUMP.z).length() < PROW_LUMP_R + 1.6 and cy + 0.5 < PROW_LUMP.y
+				if near[i] == 0 or by_lump or cy + 0.5 < prow_rock_top(lx, lz):
 					_bp.air[i] = 0
 				i += 1
 

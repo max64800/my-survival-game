@@ -189,7 +189,7 @@ func _build() -> void:
 			b._ev_add_rubble.rpc(b._next_rubble, String(p.id), String(p.mat), t)
 			continue
 		var uid: int = b._next_uid
-		b._ev_add_piece.rpc(uid, String(p.id), String(p.mat), pos, rot, float(p.pos[1]) < 0.3)
+		b._ev_add_piece.rpc(uid, String(p.id), String(p.mat), pos, rot, float(p.pos[1]) < 0.3 or bool(p.get("anchor", false)))  # ("anchor": on a rock lump)
 	b.end_batch()
 	for c in plan.get("chests", []):
 		var pos: Vector3 = origin + basis * Vector3(c.pos[0], c.pos[1], c.pos[2])

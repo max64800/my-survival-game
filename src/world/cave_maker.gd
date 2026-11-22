@@ -283,6 +283,7 @@ var outpost_spot := {}  ## where the Fallen Outpost goes ({room, pos, turn}; wor
 var brewhall_spot := {}  ## where the Brewhall goes (F479; the same)
 var spire_spot := {}  ## where the Lantern Spire goes (F479; the same)
 var manor_spot := {}  ## where the Hearth Manor goes (F479; the same)
+var prow_hall_spot := {}  ## where the Prow Hall goes (F656 + F657; the same)
 var reserved: Array[Dictionary] = []  ## {pos, r, h}: a circle of ground (r wide), from pos.y up to pos.y + h
 var dungeons: Array[Dictionary] = []  ## layout 14: the dungeons dug into the rock (DungeonMap.place)
 
@@ -421,6 +422,12 @@ func _reserve_tower() -> void:
 		manor_spot = RuinManor.pick(self, float(mn.get("height", 13.5)))
 		if not manor_spot.is_empty():
 			reserve(manor_spot.pos, Vector2(RuinManor.HALF_X, RuinManor.FRONT).length() + 1.5, float(mn.get("height", 13.5)))
+	# The Prow Hall (owner, Nov 22, F656 + F657): a circle out past the lone tower, the prow's yard and the rock it grows
+	# (after the Manor, whose cavern it leaves alone).
+	if not RuinTower.load_plan(RuinProwHall.PLAN_PATH).is_empty():
+		prow_hall_spot = RuinProwHall.pick(self)
+		if not prow_hall_spot.is_empty():
+			reserve(prow_hall_spot.pos, RuinProwHall.REACH + 3.0, RuinProwHall.WALL_TOP)
 
 
 ## Layout 8 (owner, Nov 17): 1 or 2 smaller stone columns (5 to 11 m wide) in the plain big caverns, the same kind as
