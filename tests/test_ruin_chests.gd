@@ -3,13 +3,11 @@ extends TestCase
 ## on the stairs"). A chest is too close when it is within 1.8 m (sideways) of a stairs piece's middle and level with
 ## its steps or its top (0 to 2.5 m above its base).
 
-const WAITING := ["spire_ruin.json"]  ## (its chest stands in the stairwell too: waiting for the owner's OK, Nov 22)
-
 
 func test_no_ruin_chest_stands_on_the_stairs() -> void:
 	var dir := "res://blueprints/ruins"
 	for f in DirAccess.get_files_at(dir):
-		if not f.ends_with(".json") or WAITING.has(f):
+		if not f.ends_with(".json"):
 			continue
 		var plan = JSON.parse_string(FileAccess.get_file_as_string(dir.path_join(f)))
 		if not plan is Dictionary or not plan.has("chests"):

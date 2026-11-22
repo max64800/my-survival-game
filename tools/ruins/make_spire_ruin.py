@@ -145,7 +145,7 @@ def ring_spot(step, d, y):
 
 chests = [
 	{"kind": "chest_stone", "pos": ring_spot(9.6, 2.9, 1.0), "yaw": round(9.6 * 30 + 180) % 360, "loot": {"recipe_page": 1, "rope": 2}},
-	{"kind": "chest_copper", "pos": ring_spot(8.0, 2.9, 5.5), "yaw": 60, "loot": {"recipe_page": 2, "blueprint_page": 1}},   # on the ledge
+	{"kind": "chest_copper", "pos": ring_spot(6.85, 3.25, 5.5), "yaw": 26, "loot": {"recipe_page": 2, "blueprint_page": 1}},   # on the ledge, behind the stairwell's railing (owner, Nov 22: not on the stairs' top)
 ]
 props = []
 beetles = [ring_spot(6.0, 2.2, 1.0), ring_spot(10.0, 2.3, 3.25), list(along(9.0, -4.0)[:1]) + [0.0] + list(along(9.0, -4.0)[1:])]
