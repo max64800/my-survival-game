@@ -60,6 +60,16 @@ func test_border_rock_cannot_be_dug() -> void:
 	world.queue_free()
 
 
+## F642-adjacent (owner, Nov 22: "7 FPS"/"slow motion" at the very start): collision must start small
+## and grow smoothly to the full distance, never jump straight to it (that's the freeze).
+func test_collision_ramp_starts_small_and_grows_to_full_distance() -> void:
+	check_near(World.collision_ramp(0.0), World.COLLISION_RAMP_START, 0.001, "starts small")
+	var mid := World.collision_ramp(World.COLLISION_RAMP_SECONDS * 0.5)
+	check(mid > World.COLLISION_RAMP_START and mid < World.COLLISION_DISTANCE, "partway through, it's partway there")
+	check_near(World.collision_ramp(World.COLLISION_RAMP_SECONDS), float(World.COLLISION_DISTANCE), 0.001, "reaches full distance")
+	check_near(World.collision_ramp(World.COLLISION_RAMP_SECONDS * 5.0), float(World.COLLISION_DISTANCE), 0.001, "never overshoots")
+
+
 func test_dig_size_survives_the_network_packing() -> void:
 	for t in [0, 1, 2]:
 		for r in [0.8, 1.35]:

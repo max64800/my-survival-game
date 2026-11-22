@@ -6,6 +6,17 @@ extends Node3D
 const VIEW_DISTANCE := 128
 const COLLISION_DISTANCE := 100  ## solid rock round your dwarf (creatures live up to 100 m away: MonsterManager.DESPAWN_FAR)
 const TERRAIN_LAYER := 1
+## Collision is far more costly than drawing and runs on the main thread (see main.gd _spawn_dwarf).
+## Asking for all 100 m of it the instant you spawn froze the game for several seconds (owner, Nov 22:
+## "7 FPS", "slow motion", had to close it). So it starts small and grows over a few seconds instead.
+const COLLISION_RAMP_START := 24.0
+const COLLISION_RAMP_SECONDS := 6.0
+
+
+## How far solid collision should reach `elapsed` seconds after you spawn.
+static func collision_ramp(elapsed: float) -> float:
+	var t: float = clamp(elapsed / COLLISION_RAMP_SECONDS, 0.0, 1.0)
+	return lerp(COLLISION_RAMP_START, float(COLLISION_DISTANCE), t)
 
 var maker: CaveMaker
 var terrain: VoxelTerrain

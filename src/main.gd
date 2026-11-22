@@ -20,6 +20,8 @@ var _curtains: RootCurtains
 var _pillars: RootPillars
 var _groves: GlowGroves
 var _boulders: Boulders
+var _solid_viewer: VoxelViewer  ## grown gradually after spawn, see World.collision_ramp
+var _collision_ramp_t := 0.0
 var authority: GameAuthority
 ## The dev "Test the dungeon" start (owner, Nov 19): only what the dungeon needs. No crystals, plants, pebbles, trees,
 ## ruins or cave creatures are planned (much faster), and you start (and wake after dying) at the dungeon's door.
@@ -714,10 +716,12 @@ func _spawn_dwarf(peer_id: int, pos: Vector3, local: bool) -> Dwarf:
 			# on the main thread. This viewer only draws; a second one makes solid rock out to where creatures roam.
 			viewer.requires_collisions = false
 			var solid := VoxelViewer.new()
-			solid.view_distance = World.COLLISION_DISTANCE
+			solid.view_distance = World.collision_ramp(0.0)  # grown in _process, see World.collision_ramp
 			solid.requires_visuals = false
 			solid.requires_collisions = true
 			d.add_child(solid)
+			_solid_viewer = solid
+			_collision_ramp_t = 0.0
 		d.add_child(viewer)
 	if not local:
 		var tag := Label3D.new()
@@ -847,6 +851,14 @@ func _make_environment() -> void:
 
 
 func _process(delta: float) -> void:
+	if _solid_viewer != null:
+		if is_instance_valid(_solid_viewer):
+			_collision_ramp_t += delta
+			_solid_viewer.view_distance = World.collision_ramp(_collision_ramp_t)
+			if _collision_ramp_t >= World.COLLISION_RAMP_SECONDS:
+				_solid_viewer = null  # full distance reached: stop touching it every frame
+		else:
+			_solid_viewer = null
 	if world and _ready_to_play and saves_world() and authority.is_host():
 		_autosave -= delta
 		if _autosave <= 0.0:
