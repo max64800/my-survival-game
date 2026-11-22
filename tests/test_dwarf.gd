@@ -554,6 +554,74 @@ func test_roll_animation_matches_how_long_the_dash_lasts() -> void:
 	root.queue_free()
 
 
+## Owner (PC, Nov 22 night, F702 real-world repro): "when I'm doing big dodge... he dodges, rolls and then just
+## sprints a little bit" — a real keyboard can drop a single frame of a held key (the same quirk as F494), which
+## used to end a held dash the instant it crossed DODGE_TIME even though the button was still actually down.
+func test_one_dropped_frame_doesnt_end_a_held_dash_early() -> void:
+	Controls.setup()
+	Controls.robot = true
+	Controls.set_captured(true)
+	var root := _room([])
+	var auth := GameAuthority.new()
+	auth.drops_root = root
+	root.add_child(auth)
+	var dwarf := _dwarf_in(root)
+	auth.add_player(1, dwarf)
+	for i in 10:
+		await tree.physics_frame
+	var p0 := dwarf.global_position
+	dwarf.bot_dodge = true
+	Input.action_press("dodge")  # hold it down, as if dashing
+	await tree.physics_frame
+	var dropped := false
+	while dwarf.fight.dodging():
+		if not dropped and dwarf.fight._dodge_t >= Combat.DODGE_TIME:
+			Input.action_release("dodge")  # one real dropped frame, right as a tap roll would normally end
+			await tree.physics_frame
+			Input.action_press("dodge")
+			dropped = true
+		else:
+			await tree.physics_frame
+	Input.action_release("dodge")
+	check(dropped, "the drop actually landed mid-dash (test didn't run long enough otherwise)")
+	var dist := (dwarf.global_position - p0).length()
+	check(dist > Combat.DODGE_DISTANCE + 0.5, "one dropped frame doesn't cut the held dash short (%.2f m, wanted well past a tap's %.2f m)" % [dist, Combat.DODGE_DISTANCE])
+	Controls.robot = false
+	root.queue_free()
+
+
+## Owner (PC, Nov 22 night, F702 real-world repro): "I dodge backwards, and then it dodges forward, so I can go back
+## in place" — the move-direction buffer above only catches a dropped/zero input frame, not one that reads a real,
+## fully-reversed direction (a rarer glitch, but the camera yaw or a key can still misread for exactly one frame).
+## While you're already moving at real speed, that one bad frame should lose to your actual momentum.
+func test_dodge_ignores_one_flipped_frame_and_rolls_with_your_real_momentum() -> void:
+	Controls.setup()
+	Controls.robot = true
+	Controls.set_captured(true)
+	var root := _room([])
+	var auth := GameAuthority.new()
+	auth.drops_root = root
+	root.add_child(auth)
+	var dwarf := _dwarf_in(root)
+	auth.add_player(1, dwarf)
+	dwarf.bot_move = Vector2(0, -1)  # walking forward (-z) long enough to build up real speed
+	for i in 30:
+		await tree.physics_frame
+	var p0 := dwarf.global_position
+	dwarf.bot_move = Vector2(0, 1)  # one single glitched frame: the input reads the dead opposite direction
+	dwarf.bot_dodge = true  # ...and the dodge triggers on that exact bad frame
+	await tree.physics_frame
+	dwarf.bot_move = Vector2(0, -1)  # the glitch is gone next frame, back to the real held direction
+	check(dwarf.fight.dodging(), "the dodge triggered")
+	while dwarf.fight.dodging():
+		await tree.physics_frame
+	dwarf.bot_move = Vector2.ZERO
+	var moved := dwarf.global_position - p0
+	check(moved.z < -0.5, "one flipped input frame doesn't roll backward when you were really moving forward (moved.z=%.2f)" % moved.z)
+	Controls.robot = false
+	root.queue_free()
+
+
 ## Owner (F234, said again from F111): "a beetle hit sends you flying much too far; a couple of metres at most, then the
 ## dwarf gets back up". The push was added to his speed every frame and kept (103 m on a flat floor, 177 m knocked down).
 func test_beetle_charge_throws_a_couple_of_metres() -> void:
