@@ -137,9 +137,11 @@ const LIST := {
 		# goes on for 4 more turns (about 4 s in all), sliding after you at 2.6 m/s (you walk 3, run 5.2): every
 		# turn hits (12), the last one hardest (20) and it knocks you down. Each follow turn gives 0.9 s to dodge.
 		# Nov 22: tells raised from 0.5 to 0.9 s — was near-untelegraphed; now the glint shows 0.5 s before each blow.
-		attacks = [{name = "Pick Whirl", anim = "2H_Melee_Attack_Spin", warn_sound = "beetle_rumble", tell = 0.97, damage = 12, type = "blunt", reach = 1.8, rest = 9.0, parry = "shield", knockdown = false,
-			follow = {tell = 0.9, damage = 12, whirl_speed = 1.5, warn_sound = null, follow = {tell = 0.9, damage = 12,
-				follow = {tell = 0.9, damage = 12, follow = {tell = 0.9, damage = 20, knockdown = true}}}}}],
+		attacks = [{name = "Pick Whirl", anim = "2H_Melee_Attack_Spin", warn_sound = "beetle_rumble", tell = 0.97, damage = 12, type = "blunt", reach = 1.8, rest = 9.0, parry = "shield", knockdown = false, knock = 2.0,
+			follow = {tell = 0.9, damage = 12, whirl_speed = 1.5, warn_sound = null, knock = 2.5, follow = {tell = 0.9, damage = 12, knock = 2.5,
+				follow = {tell = 0.9, damage = 12, knock = 2.5, follow = {tell = 0.9, damage = 20, knockdown = true, knock = 3.5}}}}},
+			# F679 (owner, Nov 22): other attacks besides spin; a heavy overhead chop for close-range pressure.
+			{name = "Pick Crack", anim = "2H_Melee_Attack_Chop", warn_sound = "beetle_hiss", tell = 0.9, damage = 18, type = "blunt", reach = 2.2, parry = "any", knock = 2.5, rest = 5.0}],
 		drops = []},
 	# Mossprop Workings' boss (owner, Nov 21): a mossy skeleton miner with a felling axe and a plank shield on his left
 	# arm (his own model, F468): hits from the front do a fifth (MonsterManager._shield_blocks) unless heavy or he is stunned.
@@ -155,8 +157,8 @@ const LIST := {
 		front_shield = true, size = 1.0, height = 1.9, hp = 300, armor = 50, stun = 240, slash = 1.0, blunt = 1.25, pierce = 0.75,
 		fire = 1.25, frost = 0.5, poison = 1.0, walk = 1.3, run = 3.3, pack = [1, 1], xp = 80,
 		color = Color(0.5, 0.52, 0.4), shape = "foreman", recover = 1.6,
-		attacks = [{name = "Axe Chop", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_rumble", tell = 0.9, damage = 22, type = "slash", reach = 2.3, rest = 5.0, parry = "any"},
-			{name = "Plank Sweep", anim = "2H_Melee_Attack_Spin", warn_sound = "beetle_rumble", tell = 0.97, damage = 16, type = "blunt", reach = 2.3, rest = 8.0, parry = "shield", knockdown = true},
+		attacks = [{name = "Axe Chop", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_rumble", tell = 0.9, damage = 22, type = "slash", reach = 2.3, rest = 5.0, parry = "any", knock = 2.5},
+			{name = "Plank Sweep", anim = "2H_Melee_Attack_Spin", warn_sound = "beetle_rumble", tell = 0.97, damage = 16, type = "blunt", reach = 2.3, rest = 8.0, parry = "shield", knockdown = true, knock = 3.5},
 			{name = "Shield Charge", anim = "Running_B", warn_sound = "beetle_rumble", tell = 1.2, damage = 20, type = "blunt", reach = 8.0, min_reach = 3.5, rest = 9.0, parry = "shield", knockdown = true, lunge = true, straight = true, lunge_reach = 3.0},
 			{name = "Rally Slam", anim = "2H_Melee_Attack_Chop", warn_sound = "beetle_rumble", tell = 2.0, damage = 0, type = "blunt", reach = 14.0, rest = 25.0, parry = "any", raise_miners = 2, land_sound = "snail_slam"}],
 		drops = []},

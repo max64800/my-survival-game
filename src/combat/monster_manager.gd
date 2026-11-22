@@ -478,7 +478,7 @@ func send_tell(m: Monster, atk: Dictionary) -> void:
 	# (F111: it was hitting from 9 m away): at the end it counts as touching range.
 	var reach: float = atk.reach if not atk.get("lunge", false) else float(atk.get("lunge_reach", m.data.get("size", 1.0) * 0.6 + 0.8))
 	_ev_tell.rpc(m.uid, m.target_peer, atk.tell, dmg, reach, crushing, atk.get("knockdown", false), atk.name, buildup,
-		is_charge(atk), atk.get("shield_stops", false))
+		is_charge(atk), atk.get("shield_stops", false), atk.get("knock", 1.5))
 
 
 ## A charge (a beetle running into you) knocks you down and shoves you (F234). A spider's pounce is a lunge too, but
@@ -941,7 +941,7 @@ func _kill(m: Monster, peer: int) -> void:
 
 ## Everyone: a monster starts an attack. Only the target's own computer judges it.
 @rpc("authority", "call_local", "reliable")
-func _ev_tell(uid: int, target: int, tell: float, dmg: float, reach: float, crushing: bool, kd: bool, attack_name: String, buildup: Dictionary = {}, charge: bool = false, shield_stops: bool = false) -> void:
+func _ev_tell(uid: int, target: int, tell: float, dmg: float, reach: float, crushing: bool, kd: bool, attack_name: String, buildup: Dictionary = {}, charge: bool = false, shield_stops: bool = false, knock: float = 1.5) -> void:
 	var m: Monster = monsters.get(uid)
 	if m:
 		m.show_tell(tell, attack_name, player_node(target))
@@ -950,7 +950,7 @@ func _ev_tell(uid: int, target: int, tell: float, dmg: float, reach: float, crus
 		_block_ok[uid] = target
 	if target == auth.local_peer_id() and dmg > 0.0:
 		_incoming.append({uid = uid, at = _clock + tell, damage = dmg, reach = reach, crushing = crushing, kd = kd, name = attack_name, buildup = buildup, charge = charge,
-			shield_stops = shield_stops})
+			shield_stops = shield_stops, knock = knock})
 
 
 # ================================================================== spore clouds
@@ -1099,6 +1099,10 @@ func _judge_incoming() -> void:
 				result.damage *= 1.0 - me.vitals.buff_total("guard_" + Monsters.food_guard(m.kind))  # meat of its kind (food plan)
 				result.damage *= 1.0 - me.vitals.gear.get("guard_all", 0.0)  # Stone Amber armor
 				me.vitals.take_damage(result.damage)
+				if result.result == "hit" and not hit.get("charge", false) and m and result.damage > 0.0 and dwarf.has_method("shove"):
+					var away := (dwarf.global_position - m.global_position) * Vector3(1, 0, 1)
+					if away.length() > 0.01:
+						dwarf.shove(away.normalized() * hit.get("knock", 1.5))  # push away from attacker; charges use charge_shove below
 				if dwarf.get("fight") != null and result.result in ["hit", "block"]:  # your stun meter (owner, chat 15)
 					dwarf.fight.take_stun(result.damage * DwarfFight.STUN_PER_HIT if result.result == "hit" else float(hit.damage) * DwarfFight.STUN_PER_BLOCK)
 				if result.result == "hit" and result.damage > 0.0:

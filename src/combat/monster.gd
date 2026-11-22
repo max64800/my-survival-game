@@ -527,8 +527,8 @@ func think(delta: float, mgr: Node) -> void:
 			else:
 				_no_progress += delta
 			var gives_up := global_position.distance_to(home) > Monsters.LEASH or _no_progress > Monsters.GIVE_UP
-			# F620: dungeon boss blocked by shaft/doorway geometry: give up quickly when literally not moving.
-			if data.get("dungeon_only", false) and velocity.length() < 0.1 and _no_progress > 3.0:
+			# F620/F682: dungeon monsters give up when stuck still; bosses get 8 s (not 3) so a door-snag doesn't abandon the fight.
+			if data.get("dungeon_only", false) and velocity.length() < 0.1 and _no_progress > (8.0 if data.get("boss", false) else 3.0):
 				gives_up = true
 			if data.get("stays_in_cave", false):  # (bats, F419: only when you leave their cave)
 				gives_up = not mgr.in_cave(self, target.global_position) and not angry()
@@ -673,7 +673,7 @@ func think(delta: float, mgr: Node) -> void:
 					_no_progress = 0.0
 				else:
 					_no_progress += delta
-				if _no_progress > 5.0 and data.get("dungeon_only", false):  # F610: teleport home if stuck in doorway/shaft
+				if _no_progress > (2.0 if data.get("boss", false) else 5.0) and data.get("dungeon_only", false):  # F610/F682: teleport home if stuck; bosses snap faster (2 s) since the player already left
 					global_position = home + Vector3.UP * 0.1
 					_best_dist = INF
 					_no_progress = 0.0
