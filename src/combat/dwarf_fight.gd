@@ -145,6 +145,12 @@ func dodging() -> bool:
 	return _dodge_t >= 0.0
 
 
+## The roll's actual, locked travel direction (world space) for this whole roll (F702: so the body can be made to
+## face exactly this, instead of chasing wherever the camera/input happens to point mid-roll).
+func dodge_dir() -> Vector3:
+	return _dodge_dir
+
+
 func invulnerable() -> bool:
 	return _dodge_t >= Combat.DODGE_IFRAME.x and _dodge_t <= Combat.DODGE_IFRAME.y
 

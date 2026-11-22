@@ -342,12 +342,21 @@ func _physics_process(delta: float) -> void:
 		_try_step_up(dir * speed * delta)
 
 	# Face where we're going, or where we're digging.
-	var face_dir := dir
-	if model.swinging or (playing and Input.is_action_pressed("dig")):
-		face_dir = -(Basis(Vector3.UP, _yaw).z)
-	if face_dir.length() > 0.1:
-		var want := atan2(-face_dir.x, -face_dir.z)
-		model.rotation.y = lerp_angle(model.rotation.y, want, minf(1.0, delta * 12.0))
+	# A roll locks onto its own real travel direction for its whole length (F702): without this, the body kept
+	# chasing wherever the camera/input pointed THIS frame via the usual slow turn below, so a roll that started
+	# right after a quick turn (or a direction key let go mid-roll) could visibly tumble a different way than the
+	# dwarf actually moved that whole time.
+	if fight and fight.dodging():
+		var roll_dir := fight.dodge_dir()
+		if roll_dir.length() > 0.1:
+			model.rotation.y = atan2(-roll_dir.x, -roll_dir.z)
+	else:
+		var face_dir := dir
+		if model.swinging or (playing and Input.is_action_pressed("dig")):
+			face_dir = -(Basis(Vector3.UP, _yaw).z)
+		if face_dir.length() > 0.1:
+			var want := atan2(-face_dir.x, -face_dir.z)
+			model.rotation.y = lerp_angle(model.rotation.y, want, minf(1.0, delta * 12.0))
 
 	_footsteps(delta, Vector2(velocity.x, velocity.z).length())
 	model.set_motion(Vector2(velocity.x, velocity.z).length(), is_on_floor(), fight != null and fight.dodging(), fight.dodge_expected_duration() if fight else Combat.DODGE_TIME)

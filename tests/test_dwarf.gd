@@ -451,6 +451,38 @@ func test_dodge_while_walking_forward_rolls_forward_not_back() -> void:
 	root.queue_free()
 
 
+## Owner (PC, Nov 22 night, F702 real-world repro): the bot test above walks straight ahead with a never-turned
+## camera, so the body is always already facing forward before the roll. In real play the body's facing is a slow
+## turn (12/s lerp in dwarf.gd) that can still be lagging behind a recent camera turn when the roll starts; the
+## roll's actual travel direction was always right (previous test proves it), but the body kept turning to face it
+## only gradually, so the tumble itself could visibly start facing the wrong way. The roll must snap the body to
+## face its real direction instantly instead of easing into it.
+func test_roll_snaps_to_face_its_real_direction_even_if_the_body_was_facing_elsewhere() -> void:
+	Controls.setup()
+	Controls.robot = true
+	Controls.set_captured(true)
+	var root := _room([])
+	var auth := GameAuthority.new()
+	auth.drops_root = root
+	root.add_child(auth)
+	var dwarf := _dwarf_in(root)
+	auth.add_player(1, dwarf)
+	dwarf.bot_move = Vector2(0, -1)  # walking forward (-z)
+	for i in 10:
+		await tree.physics_frame
+	dwarf.model.rotation.y = PI  # body still facing backward, as if from a turn just before this
+	dwarf.bot_dodge = true  # tap dodge while walking forward
+	await tree.physics_frame
+	check(dwarf.fight.dodging(), "the dodge triggered")
+	check(absf(dwarf.model.rotation.y) < 0.1, "the body snaps to face the roll's real direction on the very first frame (got %.2f rad)" % dwarf.model.rotation.y)
+	while dwarf.fight.dodging():
+		await tree.physics_frame
+		check(absf(wrapf(dwarf.model.rotation.y, -PI, PI)) < 0.1, "the body keeps facing the roll's direction for the whole roll (got %.2f rad)" % dwarf.model.rotation.y)
+	dwarf.bot_move = Vector2.ZERO
+	Controls.robot = false
+	root.queue_free()
+
+
 ## Owner (PC, Nov 22 night, F732): "need invulnerability window during roll pls." The safe window was 0.05-0.30 s,
 ## too short to feel. Now nearly the whole tapped roll is safe: from the very first frame, only getting up isn't.
 func test_the_roll_cant_be_hurt_for_almost_all_of_it() -> void:
