@@ -81,6 +81,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 
 ## Open (still to do)
 
+- [ ] **F693. Next time: try making a 3D model from several pictures of the same thing (front, side, back).** A test only: picture-to-3D is allowed as a rough shape guide that gets thrown away, never as the final model (model rule 1). Free choice that runs on the PC: TRELLIS (it takes several pictures). Compare it with the one-picture result. *From: you (Mac, Nov 22). Said: 1×*
 - [ ] **F682. You can't tell you got hit unless you look at the health bar.** Flash the screen edges red when health drops; green, orange and blue edges for status effects (poison, burning, cold...). *From: you (Mac, Nov 22, phone notes + TikToks). Said: 1×*
 - [ ] **F683. A 3D hitbox viewer.** Show the hit shape of the dwarf, of every creature's body and of every weapon (example: the Foreman's pickaxe should only hurt with its tip), so you can look and adjust them. Goes with F518 (can't see the miners attack). *From: you (Mac, Nov 22, phone notes + TikToks). Said: 1×*
 - [ ] **F684. Bronze: Zone 1 is big, so it needs a metal between copper and iron.** Tin ore + copper = bronze. *From: you (Mac, Nov 22, phone notes + TikToks). Said: 1×*
