@@ -45,8 +45,10 @@ static func _in_any(map: Dictionary, p: Vector2, py := 0.0) -> bool:
 
 ## The rooms a piece lying at height `py` can be in (Old Pell's two levels overlap seen from above: the hut at 0 over the
 ## Last Dig at -6): the floors at or below it, within 3.5 m.
+## (Old Pell's "pell_passage" is only for the monsters' path finding: no floor or walls of its own, so it is no room;
+## tools/dungeons/make_pell.py skips it too.)
 static func _on(map: Dictionary, py: float) -> Array:
-	return map.spaces.filter(func(s): return float(s[5]) <= py + 0.1 and py - float(s[5]) < 3.5)
+	return map.spaces.filter(func(s): return s[0] != "pell_passage" and float(s[5]) <= py + 0.1 and py - float(s[5]) < 3.5)
 
 
 static func _same_level(y: float, py: float) -> bool:

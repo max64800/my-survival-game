@@ -329,3 +329,75 @@ func test_the_rope_lift() -> void:
 	db.request_use(1, lever)
 	check(not db.mine.lift_up(lift), "not while it is moving")
 	r.root.free()
+
+
+## F729 (owner, Nov 22, said 4×: "the lever for the lift is still floating, has to be attached towards the wall"). It
+## was moved by hand three times. Now: every lever's back plate has something solid right behind it (a wall, a wall
+## piece, or the lift's post), and the lift's post stands on the floor and reaches up into the shaft's wall, clear of
+## the platform riding past it.
+func test_the_lift_lever_is_fixed_to_its_post() -> void:
+	var plan := DungeonBuild.load_plan("pell")
+	var solid: Array[AABB] = []
+	for q in plan.pieces:
+		var w: float = {"wall": 2.0, "wall_narrow": 1.0, "half_wall": 2.0}.get(String(q.id), 0.0)
+		if w > 0.0:
+			var h := 1.0 if String(q.id) == "half_wall" else 2.0
+			var along_x := int(q.get("rot", 0)) % 2 == 0
+			var size := Vector3(w, h, 0.3) if along_x else Vector3(0.3, h, w)
+			solid.append(AABB(Vector3(q.pos[0], q.pos[1], q.pos[2]) - Vector3(size.x * 0.5, 0.0, size.z * 0.5), size))
+	var post_box := AABB()
+	var posts := 0
+	for p in plan.props:
+		var model := String(p.model)
+		if model.begins_with("dungeon/wall_") or model == "dungeon/lift_post.glb":
+			var b := _place_box(_model_box(model), p)
+			solid.append(b)
+			if model == "dungeon/lift_post.glb":
+				post_box = b
+				posts += 1
+	check_eq(posts, 1, "the lift has its lever post")
+	var levers := 0
+	for p in plan.props:
+		if String(p.model) != "dungeon/lever.glb":
+			continue
+		levers += 1
+		var yaw := deg_to_rad(float(p.yaw))
+		var back := -Vector3(sin(yaw), 0.0, cos(yaw))  # the lever's back plate faces -z in its model
+		var behind := Vector3(p.pos[0], p.pos[1], p.pos[2]) + Vector3.UP * 1.05 + back * 0.01
+		check(solid.any(func(b: AABB) -> bool: return b.has_point(behind)),
+			"%s: solid right behind its back plate (at %s)" % [p.label, behind])
+		check(not solid.any(func(b: AABB) -> bool: return b.has_point(behind - back * 0.15)),
+			"%s: its front faces into the room, not into a wall" % p.label)
+	check_eq(levers, 2, "both levers checked (the gate's and the lift's)")
+	var hole: Vector2 = Vector2(44, 46)  # make_pell.py HOLES["lift"] (x 44-46, z 46-48)
+	check(post_box.position.y <= DungeonMap.DOWN + 0.25, "the post stands in the Last Dig's floor boards")
+	check(post_box.end.y >= DungeonMap.DOWN + 4.0, "and reaches up into the shaft's wall (%.2f m up)" % (post_box.end.y - DungeonMap.DOWN))
+	check(post_box.end.x > hole.x - 0.15, "right under that wall")
+	var deck := 0.75  # lift_platform.glb is 1.5 m square, centred in the shaft
+	check(post_box.end.x < hole.x + 1.0 - deck, "clear of the platform riding past it")
+
+
+## A model's box in its own metres (all its meshes).
+func _model_box(model: String) -> AABB:
+	var n: Node3D = (load("res://assets/models/" + model) as PackedScene).instantiate()
+	var box := AABB()
+	var first := true
+	for m in n.find_children("*", "MeshInstance3D", true, false):
+		var mi := m as MeshInstance3D
+		var t := Transform3D.IDENTITY
+		var up: Node = mi
+		while up != n and up != null:
+			t = (up as Node3D).transform * t
+			up = up.get_parent()
+		var mb := t * mi.mesh.get_aabb()
+		box = mb if first else box.merge(mb)
+		first = false
+	n.free()
+	return box
+
+
+## A model's box placed like DungeonBuild does it (yaw, then tilt, then scale), in the plan's metres.
+func _place_box(box: AABB, p: Dictionary) -> AABB:
+	var b := Basis(Vector3.UP, deg_to_rad(float(p.yaw))) * Basis(Vector3.RIGHT, deg_to_rad(float(p.get("tilt", 0.0))))
+	var t := Transform3D(b.scaled_local(Vector3.ONE * float(p.get("scale", 1.0))), Vector3(p.pos[0], p.pos[1], p.pos[2]))
+	return t * box

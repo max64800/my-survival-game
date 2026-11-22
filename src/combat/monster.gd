@@ -684,7 +684,9 @@ func think(delta: float, mgr: Node) -> void:
 					_no_progress = 0.0
 				else:
 					_no_progress += delta
-				if _no_progress > (2.0 if data.get("boss", false) else 5.0) and data.get("dungeon_only", false):  # F610/F682: teleport home if stuck; bosses snap faster (2 s) since the player already left
+				# F610/F682: teleport home if stuck; bosses snap faster (2 s) since the player already left. F731: never
+				# while a player could see it go or arrive (it looked like skeletons teleporting when you came back).
+				if _no_progress > (2.0 if data.get("boss", false) else 5.0) and data.get("dungeon_only", false) 						and not mgr.seen_by_a_player([global_position, home]):
 					global_position = home + Vector3.UP * 0.1
 					_best_dist = INF
 					_no_progress = 0.0

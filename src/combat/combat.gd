@@ -58,7 +58,10 @@ const BOLT_ORDER := ["bolt_stone", "bolt_metal", "bolt_fang", "bolt_thumper", "b
 const DODGE_STAMINA := 20.0
 const DODGE_DISTANCE := 3.0
 const DODGE_TIME := 0.45
-const DODGE_IFRAME := Vector2(0.05, 0.30)  ## safe from 0.05 s to 0.30 s into the roll
+## Safe ("can't be hurt") from the first frame of the roll to 0.40 s in: almost the whole 0.45 s tap roll, only
+## getting back up is open (F732, owner Nov 22: "need invulnerability window during roll"; it was 0.05-0.30 s,
+## too short to feel). A held dash past 0.40 s is for distance, not safety.
+const DODGE_IFRAME := Vector2(0.0, 0.40)
 ## Keep holding the dodge button past the usual roll and it keeps going, up to this long (F702: tap = short
 ## dash, hold = longer). Stays at or under DwarfRig.ROLL_TIME (0.75 s) so he's still mid-tumble the whole time.
 const DASH_HOLD_MAX := 0.75

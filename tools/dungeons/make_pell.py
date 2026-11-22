@@ -15,6 +15,9 @@ D = -6.0  # DungeonMap.DOWN
 SPACES = []
 for m in re.findall(r'\["(\w+)",([^\]]*)\]', SRC):
 	SPACES.append([m[0]] + [float(eval(v, {"DOWN": D})) for v in m[1].split(",")])
+# "pell_passage" (F674) is only for the monsters' path finding (rats walk from the landing to the Last Dig); it has no
+# walls or floors of its own, so the rooms here leave it out (the script stopped running when it was added).
+SPACES = [s for s in SPACES if s[0] != "pell_passage"]
 SP = {s[0]: s for s in SPACES}
 MAT = "plank_root"
 MOUTH_X, MOUTH_Z = 36.0, 60.0
@@ -342,8 +345,9 @@ chest("chest_small", 33.0, 41.2, 180.0, "Niche chest (always)", True, "buried", 
 
 # 13 Pell's Last Dig: the Foreman and his Lost Miners, the recipe stand, the big chest; the lift shaft (east) up to
 # behind the hut's gate.
-creature("foreman", 42.0, 50.0, 180.0)
-for x, z in [(39.0, 46.0), (47.0, 47.5), (40.5, 53.0)]:
+# (F731, owner Nov 22: a bigger arena, 2 miners not 3; the Foreman in the open south half, clear of the lift.)
+creature("foreman", 45.0, 53.0, 180.0)
+for x, z in [(40.0, 46.0), (50.0, 46.0)]:
 	creature("lost_miner", x, z, 180.0)
 RECIPE_STAND = {"pos": [36.8, G, 45.0], "yaw": 90.0, "page": "scroll_pell"}
 prop("dungeon/recipe_stand.glb", 36.8, G, 45.0, 90.0, role="loot", label="Recipe stand (same recipe every time)")
@@ -352,14 +356,28 @@ chest("chest_copper", 36.8, 48.6, 90.0, "The Foreman's chest (always)", True, "b
 prop("decor/shack_table.glb", 48.4, G, 54.2, 0.0)
 prop("dungeon/rubble_ore.glb", 47.6, G, 43.0, 0.0)
 prop("decor/crate_stack.glb", 37.2, G, 55.0, 30.0)
+# Things to smash (F640): crates, a barrel rack, sacks, a keg round the edges.
+prop("decor/crate_stack.glb", 39.2, G, 45.5, 160.0)
+prop("decor/furn_barrel_rack.glb", 53.0, G, 44.0, 270.0)
+prop("decor/grain_sacks.glb", 51.0, G, 56.6, 310.0)
+prop("decor/keg.glb", 38.3, G, 56.5, 25.0)
 prop("dungeon/junk_pickaxe_broken.glb", 37.4, G, 41.0, 60.0)
 prop("treasure/tr_coins_wide.glb", 37.6, G, 47.2, 20.0)
 
 # The rope lift: the platform waits down in the Last Dig (E on it: up or down); the winch over the shaft's top and a
-# lever on the Last Dig's east wall call it.
+# lever on a post beside it call it.
 prop("dungeon/lift_platform.glb", 45.0, D + 0.04, 47.0, 0.0, role="trap", label="Rope lift: E to ride it", travel=[D + 0.04, 0.04])
 prop("dungeon/lift_winch.glb", 45.0, 0.24, 47.0, 0.0, role="trap", label="Winch: E to call the lift", calls="lift")
-prop("dungeon/lever.glb", 45.0, D, 40.0 + 0.15, 0.0, role="trap", label="Lever: E to call the lift", calls="lift")
+# The lever sits right beside the lift (F599) on a post (F729: every spot near the lift floated, as the shaft's walls
+# only start 4 m up). The post stands under the shaft's west wall, its top 5 cm into that wall's bottom and its foot in
+# the floor boards; the lever's back plate is 1 cm into the post's west face. All worked out from the shaft's hole, not
+# guessed (tests/test_pell.gd: test_the_lift_lever_is_fixed_to_its_post).
+LX, LZ = HOLES["lift"]
+POST_HALF = 0.12                        # lift_post.glb is 0.24 m square
+POST_X = LX - 0.15 + POST_HALF - 0.02   # 2 cm under the shaft wall (it is 0.3 m thick, centred on x = LX)
+prop("dungeon/lift_post.glb", POST_X, D, LZ + 1.0, 270.0, label="Lift post")
+prop("dungeon/lever.glb", POST_X - POST_HALF + 0.01, D, LZ + 1.0, 270.0, role="trap", label="Lever: E to call the lift",
+	calls="lift")
 
 # Behind the gate (the lift's top): crates.
 prop("decor/crate_stack.glb", 41.0, F, 49.1, 10.0)
@@ -402,7 +420,7 @@ DECOR = [
 	("op_decoy_chest", "den", decor.corner(_d("op_decoy_chest"), "s", 28, "w", 8)),
 	("spider_eggs", "den", W(_d("spider_eggs"), "n", 22, 10.0, out=HUNG), 1.0),
 	("spider_eggs", "den", W(_d("spider_eggs"), "w", 8, 25.5, out=HUNG), 1.0),
-	("pickaxe_in_wall", "dig", W(_d("pickaxe_in_wall"), "e", 50, 50.0, out=HUNG), 1.0),
+	("pickaxe_in_wall", "dig", W(_d("pickaxe_in_wall"), "e", 54, 52.0, out=HUNG), 1.0),
 	("op_diary_table", "dig", W(_d("op_diary_table"), "w", 36, 53.6)),
 	("last_meal", "pells_hut", W(_d("last_meal"), "n", 44, 35.4)),
 	("table_overturned", "pells_hut", decor.mid(_d("table_overturned"), 36.4, 45.6, 20.0)),
@@ -423,7 +441,7 @@ DECOR = [
 	("op_hat_on_pick", "shrine", W(_d("op_hat_on_pick"), "n", 32, 33.0)),
 	# Pell's Last Dig (x 36-50, z 40-56)
 	("op_madness_board", "dig", W(_d("op_madness_board"), "w", 36, 51.0, out=HUNG), 0.8),
-	("op_x_marks_dig", "dig", decor.corner(_d("op_x_marks_dig"), "s", 56, "e", 50)),
+	("op_x_marks_dig", "dig", decor.corner(_d("op_x_marks_dig"), "s", 58, "e", 54)),
 	# The rule-clash pieces (owner, Nov 22: the rules are fluid). The trapmaker's table out in the Winch Shed (its walls
 	# are the shaft, the tripwire and the doors); the still in the pantry's dry corner; the scale beside the sieve stack;
 	# the cold hearth in the hut; the bell tripwire by the ladder's foot; the rat traps in the Spider Den, where the

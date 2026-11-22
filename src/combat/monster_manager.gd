@@ -452,6 +452,25 @@ static func inside_room(room: Dictionary, p: Vector3, scale := 1.0) -> bool:
 	return Vector3(d.x / r.x, d.y / r.y, d.z / r.z).length() <= 1.0
 
 
+## Could a player see any of these spots (close enough, no rock or built wall in between)? A stuck monster only jumps
+## home when nobody would see it vanish or appear (owner F731, Nov 22: "if I run into the mine and back they will just
+## teleport").
+const SEEN_FAR := 40.0
+func seen_by_a_player(spots: Array) -> bool:
+	for pid in auth.players:
+		var node: Node3D = auth.players[pid].node
+		if node == null:
+			continue
+		var eye := node.global_position + Vector3.UP * 1.5
+		for s: Vector3 in spots:
+			if eye.distance_to(s) > SEEN_FAR:
+				continue
+			var q := PhysicsRayQueryParameters3D.create(eye, s + Vector3.UP, World.TERRAIN_LAYER | PieceNode.PIECE_LAYER)
+			if _root.get_world_3d().direct_space_state.intersect_ray(q).is_empty():
+				return true
+	return false
+
+
 func _can_see(from: Vector3, to: Vector3) -> bool:
 	var q := PhysicsRayQueryParameters3D.create(from, to, World.TERRAIN_LAYER)
 	return _root.get_world_3d().direct_space_state.intersect_ray(q).is_empty()
@@ -950,7 +969,7 @@ func _ev_tell(uid: int, target: int, tell: float, dmg: float, reach: float, crus
 		_block_ok[uid] = target
 	if target == auth.local_peer_id() and dmg > 0.0:
 		_incoming.append({uid = uid, at = _clock + tell, damage = dmg, reach = reach, crushing = crushing, kd = kd, name = attack_name, buildup = buildup, charge = charge,
-			shield_stops = shield_stops, knock = knock})
+			shield_stops = shield_stops, knock = knock, run_from = _clock + tell * (1.0 - Monster.CHARGE_RUN_PART)})
 
 
 # ================================================================== spore clouds
@@ -1067,7 +1086,7 @@ func _judge_incoming() -> void:
 		return
 	var still: Array[Dictionary] = []
 	for hit in _incoming:
-		if hit.at > _clock:
+		if hit.at > _clock and not _charge_ran_into(hit, me.node):
 			still.append(hit)
 			continue
 		var m: Monster = monsters.get(hit.uid)
@@ -1333,6 +1352,16 @@ static func charge_shove(m: Monster, dwarf_pos: Vector3) -> Vector3:
 	var side := fwd.cross(Vector3.UP).normalized()  # the monster's right
 	var which := 1.0 if to.dot(side) >= 0.0 else -1.0
 	return (side * which * 7.0 + fwd * 3.0)
+
+
+## A charge hits the moment it runs into you, not at the end of its run (owner, Nov 22 night: "beetles no longer
+## ragdoll u, and don't dmg u"): a straight charge thunders on past you, so by the end of its wind-up it was already
+## 2-5 m beyond and every charge counted as a miss.
+func _charge_ran_into(hit: Dictionary, dwarf: Node3D) -> bool:
+	if not hit.get("charge", false) or _clock < float(hit.get("run_from", INF)):
+		return false
+	var m: Monster = monsters.get(hit.uid)
+	return m != null and is_instance_valid(m) and m.is_alive() and not m.stun.is_stunned() and _in_reach(m, dwarf, hit.reach)
 
 
 func _in_reach(m: Monster, dwarf: Node3D, reach: float) -> bool:

@@ -415,6 +415,16 @@ def lever():
 	return {"base": base, "handle": handle}
 
 
+def lift_post(h=4.05):
+	"""The rope lift's lever post (F729, owner Nov 22: "the lever for the lift is still floating"): one hewn post from
+	the floor boards up into the bottom of the lift shaft's wall, two pegs where the lever's board is pinned on (its
+	front, +z, faces where the lever goes). Ends 5 cm into the wall above, foot 25 cm into the floor: every part touches."""
+	S.hewn((0.0, 0.0, 0.0), (J(0.006), h, J(0.006)), 0.12)
+	for y in (0.8, 1.3):
+		S.peg(0.0, y, 0.115, "z")
+	S.hewn((-0.13, 2.2, 0.0), (0.13, 2.2 + J(0.01), 0.0), 0.03)  # a cross peg through the middle
+
+
 def railing_broken(w=2.0, h=1.0):
 	"""The ledge's railing, broken (owner: "drop down a ledge" back into the entrance room): the Shack railing with
 	its middle post snapped off, the top rail broken in two (one half hanging down), pickets gone in the gap."""
@@ -1019,7 +1029,7 @@ def pictures(name, parts):
 
 BUILDS = {"wall_broken": wall_broken, "recipe_stand": recipe_stand, "recipe_scroll": recipe_scroll, "bridge_posts": bridge_posts,
 	"wall_cracked": wall_cracked, "wall_old": wall_old, "floor_old": floor_old,
-	"floor_loose_stone": floor_loose_stone, "gate_round": gate_round, "lever": lever, "railing_broken": railing_broken,
+	"floor_loose_stone": floor_loose_stone, "gate_round": gate_round, "lever": lever, "lift_post": lift_post, "railing_broken": railing_broken,
 	"bridge_plank": bridge, "bridge_plank_broken": lambda: bridge(True), "bridge_plank_gap": lambda: bridge(gap=True), "bridge_ropes": lambda: bridge(bare=True), "bridge_ropes_3m": lambda: bridge(bare=True, half=1.494), "dungeon_entrance": entrance,
 	"door_loot": loot_door, "prop_old": prop_old, "brace_old": brace_old, "beam_old": beam_old, "rope_slide": rope_slide, "chain_hanging": chain_hanging, "trap_dart_plate": dart_plate, "trap_dart_wall": dart_wall, "trap_floor_break": floor_break, "trap_crusher": crusher}
 

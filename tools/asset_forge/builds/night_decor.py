@@ -616,12 +616,69 @@ def signpost():
 
 
 def timber_stack():
+	beams = []  # (x, y, z, yaw degrees) of each beam, so the rope can follow where they really lie
 	for row in range(3):
 		for k in range(3 - row):
 			y = (k - (2 - row) / 2) * 0.17
-			B((0.9, 0.16, 0.14), (J(0.02), y, 0.07 + row * 0.14), WOOD(), bevel=0.012, rot=(0, 0, J(2)))
+			c = (J(0.02), y, 0.07 + row * 0.14)
+			a = J(2)
+			B((0.9, 0.16, 0.14), c, WOOD(), bevel=0.012, rot=(0, 0, a))
+			beams.append(c + (a,))
+	# Two ropes pulled tight round the pile (F730, owner Nov 22: "the rope isn't really tied around the logs"; it was a
+	# loose round ring). Each follows the pile's outline where it crosses (a 3-2-1 stack: a rounded triangle) and
+	# presses 5 mm into the wood, so it is joined to the beams, not floating or sitting exactly on them (no shimmer).
 	for x in (-0.25, 0.25):
-		kit.ring(0.28, 0.014, (x, 0, 0.2), kit.tex_mat("rope"), rot=(0, 90, 0), seg=16).scale = (1, 1.3, 0.85)
+		_tight_rope(x, beams, 0.014)
+
+
+def _tight_rope(x, beams, r, hw=0.08, hh=0.07, sink=0.005, sides=8):
+	"""A closed rope loop at `x` wrapped tight round boxes lying along x (the convex outline of their cross-sections)."""
+	pts = []
+	for (bx, by, bz, a) in beams:
+		yc = by + (x - bx) * math.tan(math.radians(a))
+		w = hw / math.cos(math.radians(a))
+		pts += [(yc - w, bz - hh), (yc + w, bz - hh), (yc - w, bz + hh), (yc + w, bz + hh)]
+	pts = sorted(set(pts))
+	cross = lambda o, a, b: (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])  # noqa: E731
+	lower, upper = [], []
+	for p in pts:
+		while len(lower) >= 2 and cross(lower[-2], lower[-1], p) <= 0:
+			lower.pop()
+		lower.append(p)
+	for p in reversed(pts):
+		while len(upper) >= 2 and cross(upper[-2], upper[-1], p) <= 0:
+			upper.pop()
+		upper.append(p)
+	hull = lower[:-1] + upper[:-1]  # counter-clockwise in (y, z)
+	off = r - sink  # the rope's centre this far out from the wood
+	path = []
+	n = len(hull)
+	for i, v in enumerate(hull):
+		p0, p1 = hull[i - 1], hull[(i + 1) % n]
+		a0 = math.atan2(-(v[0] - p0[0]), v[1] - p0[1])  # outward normal of the edge coming in
+		a1 = math.atan2(-(p1[0] - v[0]), p1[1] - v[1])  # ... and of the edge going out
+		while a1 < a0:
+			a1 += 2 * math.pi
+		steps = max(1, int((a1 - a0) / 0.35))
+		for s in range(steps + 1):
+			t = a0 + (a1 - a0) * s / steps
+			path.append((x, v[0] + math.cos(t) * off, v[1] + math.sin(t) * off))
+	verts, faces = [], []
+	m = len(path)
+	for i, p in enumerate(path):
+		q0, q1 = path[i - 1], path[(i + 1) % m]
+		d = (q1[1] - q0[1], q1[2] - q0[2])
+		ln = math.hypot(*d) or 1.0
+		ny, nz = d[1] / ln, -d[0] / ln  # in the loop's plane, at right angles to the rope
+		for k in range(sides):
+			t = 2 * math.pi * k / sides
+			verts.append((p[0] + math.cos(t) * r, p[1] + math.sin(t) * r * ny, p[2] + math.sin(t) * r * nz))
+	for i in range(m):
+		j = (i + 1) % m
+		for k in range(sides):
+			k2 = (k + 1) % sides
+			faces.append((i * sides + k, i * sides + k2, j * sides + k2, j * sides + k))
+	mesh(verts, faces, kit.tex_mat("rope"), smooth=True)
 
 
 def rope_fence():

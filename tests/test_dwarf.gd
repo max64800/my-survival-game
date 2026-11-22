@@ -451,6 +451,37 @@ func test_dodge_while_walking_forward_rolls_forward_not_back() -> void:
 	root.queue_free()
 
 
+## Owner (PC, Nov 22 night, F732): "need invulnerability window during roll pls." The safe window was 0.05-0.30 s,
+## too short to feel. Now nearly the whole tapped roll is safe: from the very first frame, only getting up isn't.
+func test_the_roll_cant_be_hurt_for_almost_all_of_it() -> void:
+	Controls.setup()
+	Controls.robot = true
+	Controls.set_captured(true)
+	var root := _room([])
+	var auth := GameAuthority.new()
+	auth.drops_root = root
+	root.add_child(auth)
+	var dwarf := _dwarf_in(root)
+	auth.add_player(1, dwarf)
+	for i in 10:
+		await tree.physics_frame
+	check(not dwarf.is_invulnerable(), "standing still: you can be hurt")
+	dwarf.bot_dodge = true  # a tap
+	await tree.physics_frame
+	check(dwarf.fight.dodging() and dwarf.is_invulnerable(), "safe from the very first frame of the roll")
+	var frames := 0
+	var safe := 0
+	while dwarf.fight.dodging():
+		frames += 1
+		if dwarf.is_invulnerable():
+			safe += 1
+		await tree.physics_frame
+	check(frames > 0 and float(safe) / frames >= 0.8, "safe for most of the roll (%d of %d frames)" % [safe, frames])
+	check(not dwarf.is_invulnerable(), "the roll is over: you can be hurt again")
+	Controls.robot = false
+	root.queue_free()
+
+
 ## Owner (Mac, Nov 22 phone notes, F702): "the longer roll needs a longer animation... right now he does the same
 ## thing" — a tapped dodge should play the usual short roll clip, a held dash a longer one, instead of always the
 ## same fixed length.

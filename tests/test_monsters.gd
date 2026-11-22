@@ -21,6 +21,11 @@ class FakeDwarf extends Node3D:
 	func got_parry() -> void:
 		parried = true
 
+	var knocked := false
+
+	func knock_down() -> void:
+		knocked = true
+
 
 func _setup() -> void:
 	var root := Node3D.new()
@@ -273,6 +278,9 @@ func test_poison_jabs_build_up() -> void:
 	auth.monsters._ev_tell(m.uid, 1, 0.0, 1.0, 1.4, false, false, "Needle Jab", {poison = 20})
 	auth.monsters._judge_incoming()
 	check(not ps.vitals.ailments.has("poison"), "a parried jab adds nothing")
+	# Since F594 the spider's stun bar is small (13), so that parry stunned it outright, and a stunned monster's
+	# hits all miss. Let the stun wear off before the 5th jab, like it would in a real fight.
+	m.stun.stunned_left = 0.0
 	(player as FakeDwarf).defense = {holding = false, pressed_ago = -1.0, weapon = "sword", shield = false, tier = 0}
 	auth.monsters._ev_tell(m.uid, 1, 0.0, 1.0, 1.4, false, false, "Needle Jab", {poison = 20})
 	auth.monsters._judge_incoming()
@@ -1318,6 +1326,67 @@ func test_beetle_charge_runs_its_full_length_then_is_dazed() -> void:
 		check_eq(m.state, Monster.State.STUNNED, "and stands dazed (stars)")
 		m.queue_free()
 		auth.monsters.monsters.erase(m.uid)
+	_teardown()
+
+
+## Owner (PC, Nov 22 night): "beetles no longer ragdoll u, and don't dmg u." A beetle charging straight at a dwarf who
+## stands still must hit him: damage and knocked down.
+func test_beetle_charge_hits_you_when_you_stand_still() -> void:
+	await _setup()
+	for kind in ["rock_beetle", "great_rock_beetle"]:
+		var atk: Dictionary = {}
+		for a in Monsters.LIST[kind].attacks:
+			if a.get("lunge", false):
+				atk = a
+		ps.vitals.health = 100.0
+		(player as FakeDwarf).knocked = false
+		var m := _spawn(kind, Vector3(-5.0, 0, 0))
+		for i in 10:
+			await tree.physics_frame
+		var to := player.global_position - m.global_position
+		m.model.rotation.y = atan2(-to.x, -to.z)
+		m.target_peer = 1
+		m._start_attack(atk, auth.monsters)
+		var closest := 99.0
+		for i in roundi((atk.tell as float) * 60.0) + 10:
+			await tree.physics_frame
+			var d := m.global_position - player.global_position
+			closest = minf(closest, Vector2(d.x, d.z).length())
+		var d := m.global_position - player.global_position
+		check(ps.vitals.health < 100.0, "%s's charge hurts you (health %.0f; it came within %.1f m, ended %.1f m away)" % [kind, ps.vitals.health, closest, Vector2(d.x, d.z).length()])
+		check((player as FakeDwarf).knocked, "%s's charge knocks you down" % kind)
+		m.queue_free()
+		auth.monsters.monsters.erase(m.uid)
+	_teardown()
+
+
+## F731 (owner, Nov 22 night: "sometimes if I run into the mine and back they will just teleport"): a stuck dungeon
+## creature on its way home only jumps there when no player could see it go or land.
+func test_stuck_dungeon_creature_only_jumps_home_unseen() -> void:
+	await _setup()
+	var m := _spawn("lost_miner", Vector3(2.0, 0, 0))
+	m.data = m.data.duplicate()
+	m.data.dungeon_only = true
+	m.data.passive = true  # (so it doesn't notice us and come back to fight)
+	m.data.walk = 0.0  # stuck: it can't walk home
+	for i in 10:
+		await tree.physics_frame
+	var start := m.global_position
+	m.home = start + Vector3(6.0, 0, 0)
+	m.state = Monster.State.RETURN
+	m._best_dist = INF
+	m._no_progress = 0.0
+	for i in 60 * 7:
+		await tree.physics_frame
+	var moved := Vector2(m.global_position.x - start.x, m.global_position.z - start.z).length()
+	check(moved < 2.0, "stuck for 7 s right in front of you: it stays put, no teleport (moved %.1f m)" % moved)
+	var stand := player.global_position
+	player.global_position = stand + Vector3(0, 0, 200.0)  # (you ran off far into the mine)
+	for i in 60 * 7:
+		await tree.physics_frame
+	var to_home := Vector2(m.global_position.x - m.home.x, m.global_position.z - m.home.z).length()
+	check(to_home < 1.5, "with nobody watching it goes home (%.1f m from home)" % to_home)
+	player.global_position = stand
 	_teardown()
 
 

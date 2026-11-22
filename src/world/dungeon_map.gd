@@ -135,8 +135,9 @@ const PELL := {
 		["niche", 32, 38, 34, 42, DOWN, 3],           #    behind the boulder (a chest)
 		["dig_door", 38, 38, 42, 40, DOWN, 3.5],
 		["pell_passage", 30, 38, 38, 48, DOWN, 5],    #    corridor from landing to dig; without this the rats stop at the room edge
-		["dig", 36, 40, 50, 56, DOWN, 5],             # 13 Pell's Last Dig: the Foreman, the recipe stand, the lift (owner,
-		                                              #    Nov 20: "a lot bigger", 14 x 16 m: 3 miners and the boss)
+		["dig", 36, 40, 54, 58, DOWN, 5],             # 13 Pell's Last Dig: the Foreman, the recipe stand, the lift (owner,
+		                                              #    Nov 20: "a lot bigger"; F731, Nov 22: bigger again, 18 x 18 m,
+		                                              #    2 miners and the boss)
 	],
 }
 
