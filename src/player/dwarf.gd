@@ -70,10 +70,10 @@ var shield_blocks := 0  ## hits blocked or parried with a shield, not yet told t
 var _body_xp_wait := 0.0
 var _jump_wanted := 0.0
 var _cam_y := NAN
+var _cam_tick := 0  ## the physics frame the camera's height last glided on (F781)
 var _zoom := CAMERA_DISTANCE  ## where the mouse wheel wants the camera
 
 var _yaw := 0.0
-var _cam_tick := 0  ## the physics frame the camera's height last glided on (F781)
 var _pitch := -0.25
 var _cam_yaw: Node3D
 var _cam_pitch: Node3D
@@ -385,6 +385,9 @@ func _physics_process(delta: float) -> void:
 
 
 func _process(delta: float) -> void:
+	if _step_dy != 0.0 and model:
+		_step_dy = move_toward(_step_dy, 0.0, delta * 1.5)
+		model.position.y = _step_dy
 	if is_local and fight:
 		model.set_held(fight.item())
 		var shield := fight.shield_item()
@@ -417,9 +420,6 @@ func _process(delta: float) -> void:
 		_net_pose.rpc(global_position, model.rotation.y)
 	# The camera follows smoothly up and down, so stepping up a ledge doesn't jolt.
 	# Zoomed in, the camera looks at the dwarf itself (chest height, no shoulder offset); zoomed out, over the
-	if _step_dy != 0.0 and model:
-		_step_dy = move_toward(_step_dy, 0.0, delta * 1.5)
-		model.position.y = _step_dy
 	# shoulder as before (owner, Nov 16: zooming went to the middle of the screen, not to the dwarf).
 	var near := clampf((_spring.spring_length - ZOOM_MIN) / (CAMERA_DISTANCE - ZOOM_MIN), 0.0, 1.0)
 	# Aiming (F452, owner Nov 20: "I'm looking at his head"): whatever the zoom, the camera slides to a fixed spot over
@@ -460,7 +460,7 @@ func aim_far(reach: float) -> Dictionary:
 	var hit := get_world_3d().direct_space_state.intersect_ray(q)
 	if hit.is_empty() or (global_position + Vector3.UP).distance_to(hit.position) > reach:
 		return {}
-	return hit
+	return _piece_of(hit)
 
 
 ## What's under the crosshair, within reach.
@@ -485,6 +485,14 @@ func aim() -> Dictionary:
 	return _piece_of(hit)
 
 
+## A spiral stair's rail or post is its own small body inside the piece (F781): aiming at it means the piece.
+static func _piece_of(hit: Dictionary) -> Dictionary:
+	var c: Object = hit.get("collider")
+	if c is Node and not (c is PieceNode) and (c as Node).get_parent() is PieceNode:
+		hit.collider = (c as Node).get_parent()
+	return hit
+
+
 func _aim_info() -> Dictionary:
 	var hit := aim()
 	var auth := GameAuthority.instance
@@ -504,36 +512,6 @@ func _aim_info() -> Dictionary:
 		elif spot.get("kind") == GlowPlacer.GIANT:
 			nm = "Giant Mushroom (%d chops left · copper axe)" % spot.get("chops", 1)
 		if k.get("tool", "") == "hand":  # mushrooms, fiber, twigs, thin roots: E picks them (owner, Nov 17)
-## F775: a sprinting dwarf can't turn on the spot: his path swings round at most SPRINT_TURN_SPEED turns a second
-## (walking still turns at once). `k` = how far into the sprint (0..1).
-func _sprint_turn(dir: Vector3, k: float, delta: float) -> Vector3:
-	var hv := Vector2(velocity.x, velocity.z)
-	if k <= 0.0 or dir.length() <= 0.1 or hv.length() < WALK_SPEED * 0.8:
-		return dir
-	var cur := atan2(hv.x, hv.y)
-	var want := atan2(dir.x, dir.z)
-	var step := TAU * lerpf(4.0, DwarfFeel.SPRINT_TURN_SPEED, k) * delta
-	var ang := cur + clampf(angle_difference(cur, want), -step, step)
-	return Vector3(sin(ang), 0.0, cos(ang)) * dir.length()
-
-
-## F766: the camera never sits inside rock. The spring arm feels how far back it can go; when rock is closer than the
-## camera, the camera jumps in at once; when the rock is gone, it glides back out (no popping).
-## Then the rock between the camera and his chest fades to a see-through speckle (terrain.gdshader "see_*").
-func _place_camera(delta: float) -> void:
-	var room := CameraRoom.room(_spring, [get_rid()])  # (F783: thin pieces like railings don't push it in)
-	if room < _cam_len:
-		_cam_len = room
-	else:
-		_cam_len = lerpf(_cam_len, room, minf(1.0, delta * DwarfFeel.CAM_RETURN_SPEED))
-	camera.position = _spring.position + Vector3(0, 0, _cam_len)
-	var rock: ShaderMaterial = World.rock_mat
-	if rock:
-		rock.set_shader_parameter("see_from", camera.global_position)
-		rock.set_shader_parameter("see_to", _cam_yaw.global_position)
-		rock.set_shader_parameter("see_radius", 0.0 if dev_fly else DwarfFeel.CAM_FADE_RADIUS)
-
-
 			if spot.get("kind") == GlowPlacer.ROOT_DANGLE:
 				nm = "Thin Root"
 			return {kind = "glow", name = nm + " · E to pick", pick_glow = auth.glow.id_of(hit.collider)}
@@ -554,14 +532,6 @@ func _place_camera(delta: float) -> void:
 	if hit.collider is Station:
 		var st: Station = hit.collider
 		# F568: say that benches also upgrade and (freely) repair gear, so the side panel isn't missed.
-	return _piece_of(hit)
-
-
-## A spiral stair's rail or post is its own small body inside the piece (F781): aiming at it means the piece.
-static func _piece_of(hit: Dictionary) -> Dictionary:
-	var c: Object = hit.get("collider")
-	if c is Node and not (c is PieceNode) and (c as Node).get_parent() is PieceNode:
-		hit.collider = (c as Node).get_parent()
 		var does := "E: craft, upgrade, repair (free)" if st.kind in ["workbench", "anvil"] else "E to use"
 		return {kind = "station", name = "%s · %s" % [Items.display_name(st.kind), does], station = st}
 	var poi_id := PoiField.poi_id_of(hit.collider)
@@ -694,7 +664,14 @@ func _try_step_up(motion: Vector3) -> void:
 		return  # nothing to stand on
 	if hit.get_normal().angle_to(Vector3.UP) > floor_max_angle:
 		return  # too steep to stand on
+	var y0 := global_position.y
 	global_position = ahead.origin + hit.get_travel()
+	_step_dy = clampf(_step_dy - (global_position.y - y0), -STEP_HEIGHT, 0.0)  # F781: the body pops up, the look glides
+
+
+## F781 (owner, Nov 22: "very jittery"): a step-up lifts the body in one go; the model starts this far below it
+## and glides up (about a tenth of a second), so you see a smooth climb, not a hop.
+var _step_dy := 0.0
 
 
 var _step_t := 0.0
@@ -736,14 +713,7 @@ func is_invulnerable() -> bool:
 
 func guard_break() -> void:
 	fight.guard_break()
-	var y0 := global_position.y
 
-	_step_dy = clampf(_step_dy - (global_position.y - y0), -STEP_HEIGHT, 0.0)  # F781: the body pops up, the look glides
-
-
-## F781 (owner, Nov 22: "very jittery"): a step-up lifts the body in one go; the model starts this far below it
-## and glides up (about a tenth of a second), so you see a smooth climb, not a hop.
-var _step_dy := 0.0
 
 ## Never lost inside the rock (owner, Nov 18: a beetle's charge knocked him through the floor and out of the map):
 ## remembers the last floor you stood on, and if your body ends up inside solid rock it puts you back there.

@@ -767,12 +767,12 @@ static func _steps_for(yaw: float) -> int:
 static func snap(piece: String, p: Vector3, n: Vector3, yaw: float, rot: int, lift: float = 0.0, anchor: AABB = AABB(),
 		anchor_piece: Dictionary = {}) -> Dictionary:
 	var info: Dictionary = LIST[piece]
-	if not anchor_piece.is_empty():
 	if piece == "stairs_spiral" and not anchor_piece.is_empty():
 		var sp := _snap_spiral(p, n, rot, anchor, anchor_piece)
 		if not sp.is_empty():
 			sp.pos.y += lift
 			return sp
+	if not anchor_piece.is_empty():
 		var e := _snap_to_edges(piece, p, n, anchor_piece)
 		if not e.is_empty():
 			e.pos.y += lift
@@ -832,7 +832,6 @@ static func snap(piece: String, p: Vector3, n: Vector3, yaw: float, rot: int, li
 const FREE_MOVE := 0.1  ## furniture moves in 10 cm steps
 
 
-
 ## F780 (owner, Nov 22: "I cannot get them to snap together"): spiral stairs on spiral stairs and beside floors.
 ##  - aiming at the top half of a spiral stair: the next flight goes 2 m up, turned the same way, so its first
 ##    step starts right where the landing below ends (9 steps + the landing = one full turn).
@@ -864,6 +863,7 @@ static func _snap_spiral(p: Vector3, n: Vector3, rot: int, anchor: AABB, a: Dict
 		var cb := (Basis(Vector3.UP, yaw_of(qb)) * Vector3(1, 0, 1))[other]
 		return (ca - cb) * (p[other] - pos[other]) > 0.0)
 	return {pos = pos, rot = picks[posmod(rot, 2)]}
+
 
 ## Snapping to the real edges of a built piece (60° triangles, and anything turned 30°/60°).
 ## Returns {} when the normal square-grid rules should decide instead.
