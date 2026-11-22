@@ -10591,3 +10591,23 @@ like an old model. Furniture shows as a box and only turns 90°. A spawn spot sh
 - `test_new_pieces` crashed once (segfault in the hatch test), then passed on a re-run: a flaky crash, not from this change.
 - `test_ruin_spire.test_spot_is_found_quickly` fails ("the same spot every time"). Not from this change (old turn numbers
   give identical results); another chat has unsaved changes in `cave_maker.gd`, which picks that spot.
+
+
+## Nov 22 (night, PC): a dust puff when a piece goes up (F724)
+
+**What we did**
+- The owner wanted a little puff when building, different per material. The game already had an effects kit (`Fx`) for digging
+  (flying rock bits + a soft dust cloud), so this reuses it instead of a new system: one-shot particle bursts that remove themselves.
+- `Fx.build_puff`: bits fly up from the piece's foot and a dust cloud spreads along it. Wood = pale chips (thin flat
+  shavings) + tan sawdust; stone = grey grit + grey dust; clay brick = red chips + red dust; copper/silver = a few sparks.
+  Bigger pieces puff more.
+- It runs where every screen adds the piece (`Builder._ev_add_piece`), so in co-op everyone sees it. No puffs while a
+  ruin is placed (batch) or a save/joined world loads (new `_loading` flag), so a 700-piece world doesn't puff 700 times.
+- New test: `tests/test_build_dust.gd`.
+- Picked the one-shot burst over a looping dust cloud: pieces pop in at once, so a loop would only cost more.
+
+**Mistakes and hurdles**
+- `fx.gd` uses Windows line endings; my first append used plain ones, so a later text swap didn't match. Fixed by turning the
+  whole file back to Windows line endings.
+- The game still won't start: another chat's unsaved `src/ui/hitbox_debug.gd:375` (a "typed as Variant" warning treated as
+  an error) breaks main.gd. Not touched; asked the owner.
