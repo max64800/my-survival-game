@@ -249,9 +249,10 @@ func _rig_play(name: String, duration: float = 0.0) -> void:
 
 
 ## Walking/running/rolling animation for the rigged look (the shapes look ignores this).
-func set_motion(speed: float, on_floor: bool, rolling: bool) -> void:
+## roll_duration: how long the current roll is on track to last (F702, so a held dash gets a longer roll clip).
+func set_motion(speed: float, on_floor: bool, rolling: bool, roll_duration: float = Combat.DODGE_TIME) -> void:
 	if dwarf_rig:
-		dwarf_rig.set_motion(speed, on_floor, rolling)
+		dwarf_rig.set_motion(speed, on_floor, rolling, roll_duration)
 		return
 	if rig == null or (swinging and not rolling):
 		return

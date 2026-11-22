@@ -424,6 +424,73 @@ func test_holding_dodge_dashes_farther_than_a_tap() -> void:
 	root.queue_free()
 
 
+## Owner (Mac, Nov 22 phone notes, F702): "the dwarf should always roll where you're pointing, or where you are looking" —
+## not backward while you're plainly walking forward.
+func test_dodge_while_walking_forward_rolls_forward_not_back() -> void:
+	Controls.setup()
+	Controls.robot = true
+	Controls.set_captured(true)
+	var root := _room([])
+	var auth := GameAuthority.new()
+	auth.drops_root = root
+	root.add_child(auth)
+	var dwarf := _dwarf_in(root)
+	auth.add_player(1, dwarf)
+	dwarf.bot_move = Vector2(0, -1)  # walking forward (-z), not holding run
+	for i in 10:
+		await tree.physics_frame
+	var p0 := dwarf.global_position
+	dwarf.bot_dodge = true  # tap dodge while still walking forward
+	await tree.physics_frame
+	while dwarf.fight.dodging():
+		await tree.physics_frame
+	dwarf.bot_move = Vector2.ZERO
+	var moved := dwarf.global_position - p0
+	check(moved.z < -0.5, "rolling while walking forward moves forward (-z), not backward (moved.z=%.2f)" % moved.z)
+	Controls.robot = false
+	root.queue_free()
+
+
+## Owner (Mac, Nov 22 phone notes, F702): "the longer roll needs a longer animation... right now he does the same
+## thing" — a tapped dodge should play the usual short roll clip, a held dash a longer one, instead of always the
+## same fixed length.
+func test_roll_animation_matches_how_long_the_dash_lasts() -> void:
+	Controls.setup()
+	Controls.robot = true
+	Controls.set_captured(true)
+	var root := _room([])
+	var auth := GameAuthority.new()
+	auth.drops_root = root
+	root.add_child(auth)
+	var dwarf := _dwarf_in(root)
+	auth.add_player(1, dwarf)
+	var rig: DwarfRig = dwarf.model.dwarf_rig
+	if rig == null:  # the rig-less fallback has its own fixed-length path, not this fix's target
+		Controls.robot = false
+		root.queue_free()
+		return
+	for i in 10:
+		await tree.physics_frame
+	dwarf.bot_dodge = true  # a tap: trigger it once, nothing held down after
+	await tree.physics_frame
+	var tap_plays_for := rig.tree.get_animation(rig._full_clip).length / float(rig.tree.get("parameters/full_speed/scale"))
+	check(absf(tap_plays_for - Combat.DODGE_TIME) < 0.05, "a tapped roll plays for the usual dash time (%.2f s vs %.2f s)" % [tap_plays_for, Combat.DODGE_TIME])
+	while dwarf.fight.dodging():
+		await tree.physics_frame
+	for i in 15:  # let the short recovery after a roll clear
+		await tree.physics_frame
+	dwarf.bot_dodge = true
+	Input.action_press("dodge")  # hold it down the whole time: a longer dash should get a longer roll clip
+	await tree.physics_frame
+	while dwarf.fight.dodging():
+		await tree.physics_frame
+	var held_plays_for := rig.tree.get_animation(rig._full_clip).length / float(rig.tree.get("parameters/full_speed/scale"))
+	Input.action_release("dodge")
+	check(absf(held_plays_for - Combat.DASH_HOLD_MAX) < 0.05, "holding the dash stretches the roll clip to match (%.2f s vs %.2f s)" % [held_plays_for, Combat.DASH_HOLD_MAX])
+	Controls.robot = false
+	root.queue_free()
+
+
 ## Owner (F234, said again from F111): "a beetle hit sends you flying much too far; a couple of metres at most, then the
 ## dwarf gets back up". The push was added to his speed every frame and kept (103 m on a flat floor, 177 m knocked down).
 func test_beetle_charge_throws_a_couple_of_metres() -> void:

@@ -895,7 +895,9 @@ func set_hold(what: String) -> void:
 
 
 ## Legs follow `speed` (m/s); in the air we blend to the jump pose; a dodge rolls the whole body.
-func set_motion(speed: float, on_floor: bool, rolling: bool) -> void:
+## roll_duration: how long the roll is on track to last (F702); a held dash stretches the clip to match instead of
+## always playing the same ROLL_TIME, rescaled live while rolling so a longer hold doesn't restart/pop the clip.
+func set_motion(speed: float, on_floor: bool, rolling: bool, roll_duration: float = ROLL_TIME) -> void:
 	tree.set("parameters/move/blend_position", speed)
 	if grip_feet:
 		tree.set("parameters/move_speed/scale", loop_rate(speed))
@@ -935,8 +937,15 @@ func set_motion(speed: float, on_floor: bool, rolling: bool) -> void:
 			weight.takeoff()
 		_air_time += dt
 	tree.set("parameters/air/blend_amount", _air)
-	if rolling and not _rolling:
-		play_full("roll", ROLL_TIME)
+	if rolling:
+		if not _rolling:
+			play_full("roll", roll_duration)
+		elif not is_equal_approx(_full_length, roll_duration):
+			# Still rolling and the expected duration moved (held longer, or just let go): stretch the
+			# already-playing clip to match instead of restarting it (which would pop/restart the lift arc).
+			if _full_clip == ANIMS.roll and tree.has_animation(ANIMS.roll):
+				_full_length = roll_duration
+				tree.set("parameters/full_speed/scale", tree.get_animation(ANIMS.roll).length / roll_duration)
 	_rolling = rolling
 
 

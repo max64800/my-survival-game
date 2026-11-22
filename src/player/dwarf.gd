@@ -47,6 +47,10 @@ var _speed_smooth := WALK_SPEED  ## eases toward the real target speed (F701), i
 var running := false  ## running this frame (DwarfFight stops a crossbow reload when you run)
 var _was_playing := false  ## (F494: Shift is let go when you come back to the game)
 var _layout := -2  ## the keyboard language last frame (-2 = not looked yet; F494: Ctrl+Shift switches it)
+var _move_dir_buffer := Vector3.ZERO  ## last direction you were really moving in
+var _move_dir_buffer_age := 999.0  ## seconds since then
+const MOVE_DIR_BUFFER_TIME := 0.15  ## Ctrl+W can ghost a frame on some keyboards (F494-style); still "moving" this long
+## after, so a dodge right then still rolls where you were walking instead of backward (F702).
 
 
 ## Owner, Nov 20 (F494, 3rd time: "sometimes I can still run without pressing Shift"): when the game window loses
@@ -270,7 +274,13 @@ func _physics_process(delta: float) -> void:
 	var prog := _progress()
 	if running and body and not body.drain_stamina(RUN_STAMINA * (prog.run_stamina_mult() if prog else 1.0), delta):
 		running = false  # out of breath
-	var fight_mult := fight.step(delta, playing, dir) if fight else 1.0
+	if dir.length() > 0.1:
+		_move_dir_buffer = dir
+		_move_dir_buffer_age = 0.0
+	else:
+		_move_dir_buffer_age += delta
+	var dodge_dir := dir if dir.length() > 0.1 else (_move_dir_buffer if _move_dir_buffer_age < MOVE_DIR_BUFFER_TIME else Vector3.ZERO)
+	var fight_mult := fight.step(delta, playing, dodge_dir) if fight else 1.0
 	if fight and (fight.is_blocking() or fight.stagger > 0.0):
 		running = false
 	if running:
@@ -340,7 +350,7 @@ func _physics_process(delta: float) -> void:
 		model.rotation.y = lerp_angle(model.rotation.y, want, minf(1.0, delta * 12.0))
 
 	_footsteps(delta, Vector2(velocity.x, velocity.z).length())
-	model.set_motion(Vector2(velocity.x, velocity.z).length(), is_on_floor(), fight != null and fight.dodging())
+	model.set_motion(Vector2(velocity.x, velocity.z).length(), is_on_floor(), fight != null and fight.dodging(), fight.dodge_expected_duration() if fight else Combat.DODGE_TIME)
 	if playing and Input.is_action_pressed("dig") and not model.swinging and not _holding_hammer() and not fight.weapon_mode() and _can_swing():
 		var ps_here: GameAuthority.PlayerState = GameAuthority.instance.get_player(peer_id) if GameAuthority.instance else null
 		model.swing(SWING_TIME * (ps_here.progress.dig_swing_mult(Items.kind(ps_here.selected_item()) == "axe") if ps_here else 1.0))  # Mining / Woodcutting ★25
