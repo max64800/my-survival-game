@@ -596,7 +596,8 @@ renderer.setAnimationLoop(() => {
 		for (const m of ghost.mats) m.uniforms.time.value = t;
 		if (!ghost.swinging && !still) trail(t);
 		placeMace();
-		if (!ghost.busy && !still) ghost.root.position.y = ghost.base.y + Math.sin(t * 2.1) * 0.05;
+		// (it keeps bobbing through a swing: owner, Nov 22, pausing it made the whole ghost jump when the swing ended)
+		if ((!ghost.busy || ghost.swinging) && !still) ghost.root.position.y = ghost.base.y + Math.sin(t * 2.1) * 0.05;
 	}
 	for (let i = puffs.length - 1; i >= 0; i--) {
 		const q = puffs[i], f = t - q.start;
