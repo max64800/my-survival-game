@@ -9953,3 +9953,14 @@ the existing `charge_shove` path and are excluded from this new pushback.
 - The search then took 4.5 s. A distance map for columns, a smarter floor search and checking every 4th spot made it 0.2–1.9 s.
 - Claude mistakes: two small typing errors in GDScript (a loop variable named like a parameter, an untyped variable), and a wrong way to run one test (`only=file.fn` instead of `only=file fn=name`).
 - The rebuild test said "no rock lump", even though the code was right. The test world had no "camera" loading the rock, so digging and growing did nothing. Fix: the test adds a rock loader (VoxelViewer) at the ruin and waits for it to load. Now 125 rock balls grow.
+
+
+## 2026-11-22: Whole ghost jumped after a swing on the 3D page (F688, part 2)
+
+- Owner: after the mace fix, "the entire ghost now jumps a bit" after all four swings.
+- Cause: the page's float bob (up and down 5 cm) only ran while the ghost wasn't busy. A swing counts as busy, so the
+  ghost froze at one height, and when the swing ended the bob restarted at the current time's height: up to 10 cm away.
+  The jump was always there; it only stood out once the mace stopped jumping.
+- Fix: the bob keeps running during a swing (`ghosts_page.html` animation loop). The game's `GhostRig.step` never
+  paused its bob, so the game didn't need a change.
+- My miss: when I fixed the mace I only watched the mace, not the whole ghost, at the end of the swing.
