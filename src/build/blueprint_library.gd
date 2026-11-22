@@ -99,6 +99,7 @@ static func make(id: String) -> Blueprint:
 		"wooden_cliff_watch":  # (its brackets and trim bands have no wooden version: they stay stone)
 			lib._cliff_watch()
 			lib._to_wood()
+		"stonehold_round_test": lib._round_tower_test()  # (owner, Nov 22, F656: the big-ring test, not a blueprint you learn)
 		_: return null
 	lib._bp.name = NAMES.get(id, id)
 	lib._bp.author = "Dwarf Game"
@@ -442,6 +443,76 @@ func _ring_rails(k: int, y: float, mat := STONE) -> void:
 	var t := _dir(2 * k + 3)
 	_add("railing", mat, n * _APO + Vector3(0, y, 0) + _ring_off, _rot(2 * k))
 	_add("railing", mat, n * (_APO + 1.0) - t + Vector3(0, y, 0) + _ring_off, _rot(2 * k + 3))
+
+
+## BIG rings (owner, Nov 22, F656): the 12-sided ring `r` times wider. The same plan scaled up: each big triangle
+## is r*r small 2 m triangles, each big square r*r small squares; 12 flat sides of r walls each, every side
+## r * 3.73 m from the middle (r = 1 is the watchtower's ring, r = 2 is 7.46 m, r = 3 is 11.2 m).
+## Squares: 6 r^2, triangles: 12 r^2. `skip` = small squares left open, as [k, a, b]: big square k, row a outward,
+## column b along it (stairs holes).
+func _big_ring_layer(r: int, square_id: String, tri_id: String, y: float, skip: Array = [], mat := STONE) -> void:
+	var up := Vector3(0, y, 0) + _ring_off
+	for k in 6:
+		var n := _dir(2 * k)
+		var t := _dir(2 * k + 3)
+		# the middle hexagon's big triangle k: apex in the middle, flat side facing n
+		_tri_fan(r, Vector3.ZERO, _dir(2 * k - 1) * 2.0, _dir(2 * k + 1) * 2.0, 2 * k, tri_id, mat, up)
+		# the big square on that side
+		for a in r:
+			for b in r:
+				if [k, a, b] in skip:
+					continue
+				var c := n * (r * _APO + 1.0 + 2.0 * a) + t * (1.0 - r + 2.0 * b)
+				_add(square_id, mat, c + up, _rot(2 * k))
+		# the big triangle in the gap between two big squares: apex inward, flat side facing u
+		var u := _dir(2 * k + 1)
+		var tu := _dir(2 * k + 4)
+		_tri_fan(r, u * 2.0, u * _APO + tu, u * _APO - tu, 2 * k + 1, tri_id, mat, up)
+
+
+## Fills a big triangle (corners o, o + r*a, o + r*b, its far side facing yaw step `face`) with r*r small triangles.
+func _tri_fan(r: int, o: Vector3, a: Vector3, b: Vector3, face: int, tri_id: String, mat: String, up: Vector3) -> void:
+	o *= r
+	for i in r:
+		for j in r - i:
+			_add(tri_id, mat, o + a * (i + 1.0 / 3.0) + b * (j + 1.0 / 3.0) + up, _rot(face))            # points inward
+			if i + j <= r - 2:
+				_add(tri_id, mat, o + a * (i + 2.0 / 3.0) + b * (j + 2.0 / 3.0) + up, _rot(face + 6))  # points outward
+
+
+## The 12 sides of a big ring at height y: `pick(j, m)` says which piece goes on side j, slot m (0..r-1).
+func _big_ring_edges(r: int, y: float, pick: Callable, mat := STONE, out := 0.0) -> void:
+	for j in 12:
+		for m in r:
+			var id: String = pick.call(j, m)
+			if id != "":
+				var p := _dir(j) * (r * _EDGE + out) + _dir(j + 3) * (1.0 - r + 2.0 * m)
+				_add(id, mat, p + Vector3(0, y, 0) + _ring_off, _rot(j))
+
+
+## Something on each of a big ring's 12 corners (pillars, battlement corners), not the ones in `skip`.
+func _big_ring_corners(r: int, y: float, id: String, skip: Array = [], mat := STONE) -> void:
+	for j in 12:
+		if j not in skip:
+			var a := (j + 0.5) * PI / 6.0
+			_add(id, mat, Vector3(sin(a), 0, cos(a)) * (r * _CORNER - 0.05) + Vector3(0, y, 0) + _ring_off, _rot(j))
+
+
+## Stairs in the outer row of big square k, small square b, climbing along the ring (toward yaw step 2k+3),
+## lifted on a floor slab like _ring_stairs. Leave [k, r-1, b] open on the floor above.
+func _big_ring_stairs(r: int, k: int, b: int, y: float, mat := STONE) -> void:
+	var c := _dir(2 * k) * (r * _APO + 2.0 * r - 1.0) + _dir(2 * k + 3) * (1.0 - r + 2.0 * b) + _ring_off
+	_add("floor", mat, c + Vector3(0, y, 0), _rot(2 * k))
+	_add("stairs", mat, c + Vector3(0, y + 0.25, 0), _rot(2 * k + 9))
+
+
+## Railings round that stairs hole: its inner side and the side the stairs start from.
+func _big_ring_rails(r: int, k: int, b: int, y: float, mat := STONE) -> void:
+	var n := _dir(2 * k)
+	var t := _dir(2 * k + 3)
+	var c := n * (r * _APO + 2.0 * r - 1.0) + t * (1.0 - r + 2.0 * b) + _ring_off + Vector3(0, y, 0)
+	_add("railing", mat, c - n, _rot(2 * k))
+	_add("railing", mat, c - t, _rot(2 * k + 3))
 
 
 func _stone_watchtower() -> void:
@@ -1793,6 +1864,62 @@ func _cliff_watch() -> void:
 	for p in _bp.pieces:
 		p.pos.x += 1.0   # cells on odd numbers, like every other blueprint (box x -11..11)
 		p.pos.z -= 1.0   # (box z -9..9)
+
+
+## Owner, Nov 22 (F656): a test of the BIG ring, not a blueprint you learn. A wide 2-ring round base (24 squares +
+## 48 triangles a layer, 15 m across, two floors) and the small watchtower ring standing on its roof (two more floors):
+## a round tower that steps in as it rises. Heights like the watchtower: foundations 0-1, walls from 1 and 3.25,
+## the base's roof at 5.25 (battlements from 5.5); the top tower's walls from 5.5 and 7.75, its roof at 9.75.
+func _round_tower_test() -> void:
+	_start(Vector3(18, 12, 18))
+	var R := 2
+	var trim := 0.15 + Pieces.LIST["cornice"].size.z * 0.5
+	_big_ring_layer(R, "foundation", "foundation_triangle", 0.0)
+	_add("foundation_steps", STONE, _dir(0) * (R * _EDGE + 1.0), 0)
+	var g := 1.0
+	# the front side: narrow wall, round doorway in the middle, narrow wall (a 2-ring side is 4 m: two 2 m slots)
+	_big_ring_edges(R, g, func(j, _m): return "" if j == 0 else ("window_wall" if j in [3, 9] else "wall"))
+	var front := _dir(0) * (R * _EDGE)
+	for sx in [-1.5, 1.5]:
+		_add("wall_narrow", STONE, front + Vector3(sx, g, 0), 0)
+	_add("doorway", STONE, front + Vector3(0, g, 0), 0)
+	_add("door", STONE, front + Vector3(0, g, 0), 0)
+	_big_ring_corners(R, g, "pillar")
+	_big_ring_stairs(R, 2, 0, g)
+	var f2 := 3.0
+	_big_ring_layer(R, "floor", "floor_triangle", f2, [[2, R - 1, 0]])
+	_big_ring_rails(R, 2, 0, f2 + 0.25)
+	_big_ring_edges(R, f2 - 0.05, func(_j, _m): return "cornice", STONE, trim)
+	var w2 := f2 + 0.25
+	_big_ring_edges(R, w2, func(j, _m): return "window_wall" if j % 3 == 0 else "wall")
+	_big_ring_corners(R, w2, "pillar")
+	_big_ring_stairs(R, 5, 1, w2)
+	var roof := w2 + 2.0
+	_big_ring_layer(R, "floor", "floor_triangle", roof, [[5, R - 1, 1]])
+	_big_ring_rails(R, 5, 1, roof + 0.25)
+	_big_ring_edges(R, roof - 0.05, func(_j, _m): return "cornice", STONE, trim)
+	_big_ring_edges(R, roof + 0.25, func(_j, _m): return "battlement")
+	_big_ring_corners(R, roof + 0.25, "battlement_corner")
+	# the top tower: the small ring, standing on the base's roof
+	var t1 := roof + 0.25
+	_ring_edges(t1, func(j): return "doorway" if j == 0 else ("window_wall" if j in [4, 8] else "wall"))
+	_add("door", STONE, _dir(0) * _EDGE + Vector3(0, t1, 0), 0)
+	_ring_pillars(t1, [11, 0])
+	_ring_stairs(2, t1)
+	var f4 := t1 + 2.0
+	_ring_layer("floor", "floor_triangle", f4, 2)
+	_ring_rails(2, f4 + 0.25)
+	_big_ring_edges(1, f4 - 0.05, func(_j, _m): return "cornice", STONE, trim)
+	var t2 := f4 + 0.25
+	_ring_edges(t2, func(j): return "window_wall" if j % 2 == 1 else "wall")
+	_ring_pillars(t2)
+	_ring_stairs(4, t2)
+	var top := t2 + 2.0
+	_ring_layer("floor", "floor_triangle", top, 4)
+	_ring_rails(4, top + 0.25)
+	_big_ring_edges(1, top - 0.05, func(_j, _m): return "cornice", STONE, trim)
+	_ring_edges(top + 0.25, func(_j): return "battlement")
+	_big_ring_corners(1, top + 0.25, "battlement_corner")
 
 
 # ---------------------------------------------------------------- helpers

@@ -47,6 +47,26 @@ func test_everything_stands_up() -> void:
 		check(falling.is_empty(), "%s: nothing falls down (%s)" % [id, ", ".join(names)])
 
 
+## F656 (owner, Nov 22): the big 12-sided ring (2 rings wide) is sound: real pieces, nothing overlaps or falls, and
+## every full layer is 24 squares + 48 triangles (squares = 6 R^2, triangles = 12 R^2).
+func test_big_round_tower_is_sound() -> void:
+	var bp := BlueprintLibrary.make("stonehold_round_test")
+	var s := Structure.new()
+	var uid := 1
+	var half := Vector3(bp.size.x * 0.5 + 0.5, bp.size.y + 0.5, bp.size.z * 0.5 + 0.5)
+	for p in bp.pieces:
+		check(Pieces.allowed(p.id, p.mat), "%s can be made of %s" % [p.id, p.mat])
+		check(absf(p.pos.x) <= half.x and absf(p.pos.z) <= half.z and p.pos.y <= half.y, "%s at %s is inside the box" % [p.id, p.pos])
+		check(not s.overlaps(p.id, p.pos, p.rot), "%s at %s doesn't overlap another piece" % [p.id, p.pos])
+		s.add(uid, p.id, p.mat, p.pos, p.rot, p.pos.y < 0.3)
+		uid += 1
+	check(s.recompute().is_empty(), "nothing falls down")
+	var sq := bp.pieces.filter(func(p): return p.id == "foundation").size()
+	var tri := bp.pieces.filter(func(p): return p.id == "foundation_triangle").size()
+	check_eq([sq, tri], [24, 48], "the 2-ring base: 24 squares + 48 triangles")
+	check_eq(bp.pieces.filter(func(p): return p.id == "battlement").size(), 24 + 12, "battlements on both rings' 12 sides")
+
+
 ## Ruin 7, the Hearth Manor (owner, Nov 22, F479): in IDS now (learned by rebuilding it), so the checks above cover
 ## it too; kept as its own quick check while working on it.
 func test_hearth_manor_is_sound() -> void:

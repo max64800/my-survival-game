@@ -44,7 +44,8 @@ our own dwarf world and our own piece kit.
     ruin junk and decor rules). The ruin shows them broken; the blueprint stays empty for the player to furnish.
 
 ## Shapes our grid can make (2 m pieces)
-- Squares, rectangles, L, T, U and courtyards; the 12-sided ring (round towers, `_ring_*` helpers); half pieces
+- Squares, rectangles, L, T, U and courtyards; the 12-sided ring (round towers, `_ring_*` helpers; any size with
+  `_big_ring_*`, see Castle builds below); half pieces
   (`foundation_half`, `floor_half`, `wall_narrow`: 1 m steps in the outline); triangles (`floor_triangle`,
   `foundation_triangle`); diagonal walls and railings (`wall_diagonal`, `half_wall_diagonal`, `window_diagonal`,
   `railing_diagonal`: eight-sided towers, cut corners, bay windows).
@@ -102,3 +103,43 @@ up, then it expands again". We still had flat walls and square towers. What the 
    it gives levels for free. (Our ruins carve their space, so this means a back side set into rock.)
 Checklist add: **at least 2 places where the outline steps OUT above a step IN** (seen from the side it is not a
 straight line), and every jutting floor walkable (the F626 rule).
+
+## Built into the cave (owner, Nov 22, F657: every ruin from now on)
+The owner loved how Cliff Watch's back sits in the rock and the Prow Hall plan's lone tower stands on a rock lump:
+"all the next buildings... using the shape of the cave... not just on a flat surface, but embedded in the cave.
+You can amplify this." So no ruin stands alone on a flat carved floor any more. Use at least 3 of these:
+1. **A back or a side set into a rock wall** (rooms that go into the rock, rock showing through broken walls).
+2. **Parts on different ground levels:** a terrace on a ledge, a tower on a rock lump, a cellar dug down.
+3. **A bridge or walkway over a dip or a gap** in the cave floor.
+4. **Stairs cut into a slope** between levels, rock on one side.
+5. **Rock that "grew" back:** a pillar of cave rock through a broken floor, the cave ceiling low over a back room.
+The cave shape is made by the world (carving + rock), not by building pieces: shape the ground round the ruin's
+plan (ledges, lumps, dips, rock walls), then place the pieces. The placement rule still holds: nothing the world
+grows (columns, crystals, plants) stands inside the ruin or on its paths. Show the cave shape on the 3D page.
+Checklist add: **3+ of the 5 above, and the cave rock visible on the page.**
+
+## Castle builds: round towers from squares and triangles (owner, Nov 22, F656)
+The owner wants castle builds like the best survival-game builders make. Research Nov 22 (floor-plan guides, circle
+tutorials and the owner's 12 reference pictures; the web was thin, the pictures taught most). We learn the
+patterns, never copy a build, a name or a picture.
+1. **No curved pieces.** A "round" tower is a 12-sided ring: 6 triangles (a hexagon) in the middle, a square on each
+   of its sides, a triangle in each gap. The closest to a circle you can get with 90 and 60 degree corners.
+2. **Bigger rings = the same plan, scaled.** A ring R times wider splits every big piece into R x R small ones:
+   squares = 6 R^2, triangles = 12 R^2, 12 flat sides of R walls each. R = 1: 7.5 m across (our watchtower),
+   R = 2: 15 m, R = 3: 22 m. In code: `_big_ring_layer`, `_big_ring_edges`, `_big_ring_corners`,
+   `_big_ring_stairs`, `_big_ring_rails` (`BlueprintLibrary`; test tower `stonehold_round_test`).
+3. **Round towers on a rectangle's corners.** Four rings, and the hall between them meets each ring on one flat
+   side (a square side faces straight out, so a straight wall snaps to it).
+4. **Tower, long wall or bridge, tower.** Two (or six, in a hexagon) round towers joined by straight walls with a
+   walkway on top. The walkway meets each tower on a flat side.
+5. **Wedge tips.** Rooms end in a triangle point, not a flat end (a prow), or a half ring (a round apse).
+6. **Stairs round the ring's edge.** Flights run along the outer row of squares, a different side each floor; the
+   middle stays open for a room (or a tight spiral round a middle pillar in a small ring).
+7. **Many sizes and heights.** A big ring with a small ring standing on its roof (steps in as it rises); a small
+   ring that juts out above (on brackets) for a wider top; turrets on brackets on corners; every tower a different
+   height, the tallest one in the middle or at the gate.
+8. **Roofs that point.** The small towers get pointed cone or spire roofs; the big ones battlements. (Stonehold is
+   flat-only: which style gets cones is the owner's call.)
+9. **Lay the plan first.** The good builds start from a floor plan of the foundation layer only: the outline is the
+   design. Draw it from rings, wedges and rectangles before adding walls.
+Checklist add: **at least one ring that isn't the small watchtower ring**, and a round tower meeting a straight part.

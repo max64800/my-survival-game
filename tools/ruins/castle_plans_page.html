@@ -1,0 +1,392 @@
+<title>Castle Plans</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@700&family=Alegreya+Sans:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: a big 3D stage (the castle) beside a parchment-dark side panel that explains the chosen plan. Single dark look. */
+:root {
+	--bg: #14100c; --panel: #1f1914; --line: #3a2f25; --fg: #eadfcd; --muted: #b3a48e; --accent: #e7a24a;
+	--display: "Alegreya SC", Georgia, serif; --body: "Alegreya Sans", "Segoe UI", sans-serif; --mono: "JetBrains Mono", Consolas, monospace;
+	color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--fg); font: 16px/1.5 var(--body); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 16px; box-sizing: border-box; }
+.wrap { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; height: 100%; }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; height: auto; } .stage { height: 70vh; } }
+.stage { position: relative; background: #0d0a08; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; min-height: 420px; }
+.stage canvas { display: block; width: 100%; height: 100%; }
+.bar { position: absolute; left: 12px; right: 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.bar.top { top: 12px; } .bar.bot { bottom: 12px; }
+button { font: 700 14px var(--body); color: var(--fg); background: #241d17; border: 1px solid var(--line); border-radius: 7px; padding: 8px 12px; cursor: pointer; }
+button[aria-pressed="true"] { background: var(--accent); color: #1a120a; border-color: var(--accent); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.hint { color: var(--muted); font-size: 13px; margin-left: 6px; }
+aside { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px; overflow: auto; min-width: 0; display: flex; flex-direction: column; gap: 18px; }
+h1 { font: 700 30px/1.1 var(--display); margin: 0; text-wrap: balance; }
+h2 { font: 700 13px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin: 0 0 6px; }
+p { margin: 0; } .lede { color: var(--muted); }
+ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px dashed var(--line); }
+li span:last-child { text-align: right; color: var(--muted); }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 14px; color: var(--fg) !important; }
+.ask { background: #2a2018; border: 1px solid #5a4126; border-radius: 8px; padding: 12px 14px; }
+.legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 13px; color: var(--muted); }
+.sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+#loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+	<div class="stage" id="stage">
+		<div id="loading">Laying out the castles&hellip;</div>
+		<div class="bar top" role="group" aria-label="Which castle plan">
+			<button data-p="A" aria-pressed="true">A &middot; Six-Tower Hold</button>
+			<button data-p="B">B &middot; Prow Hall</button>
+			<button data-p="C">C &middot; Star Keep</button>
+		</div>
+		<div class="bar bot" role="group" aria-label="How to look at it">
+			<button id="v3d" aria-pressed="true">3D</button>
+			<button id="vplan" aria-pressed="false">Floor plan</button>
+			<button id="cones" aria-pressed="true">Cone roofs on</button>
+			<span class="hint">Drag to turn &middot; scroll to zoom</span>
+		</div>
+	</div>
+	<aside>
+		<header>
+			<h1 id="title">Six-Tower Hold</h1>
+			<p class="lede" id="lede"></p>
+		</header>
+		<section>
+			<h2>What it's made of</h2>
+			<ul id="parts"></ul>
+		</section>
+		<section>
+			<h2>Foundation layer, counted</h2>
+			<ul id="count"></ul>
+			<p class="hint" style="margin:6px 0 0">Every round tower is a 12-sided ring of 2 m squares and triangles (squares = 6 &times; R&sup2;, triangles = 12 &times; R&sup2;). Press "Floor plan" to see every tile.</p>
+		</section>
+		<section class="legend" aria-label="Colours">
+			<span><i class="sw" style="background:#8c8378"></i>stone</span>
+			<span><i class="sw" style="background:#6b5f52"></i>walkway / wall top</span>
+			<span><i class="sw" style="background:#9a4a32"></i>cone roof (style to choose)</span>
+			<span><i class="sw" style="background:#a98a5c"></i>brackets / wider top</span>
+		</section>
+		<section>
+			<h2>Your call</h2>
+			<div class="ask"><p>These are shapes only, no real pieces yet. Pick one plan (or mix: "A's wall ring with C's keep"), and I build it with real pieces on a 3D page. Rough sizes: A and C about 44 m across, B about 46 &times; 34 m, all under 20 m tall.</p></div>
+		</section>
+	</aside>
+</div>
+
+<script type="importmap">
+{ "imports": {
+	"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+	"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+// ---- our ring math (the same as BlueprintLibrary._big_ring_*): R rings wide, flat side facing +z
+const APO = Math.sqrt(3), EDGE = 2 + Math.sqrt(3), CORNER = 3.8637033;
+const dir = s => new THREE.Vector2(Math.sin(s * Math.PI / 6), Math.cos(s * Math.PI / 6));   // (x, z)
+
+const stage = document.getElementById("stage");
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.shadowMap.enabled = true;
+stage.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d0a08);
+scene.fog = new THREE.Fog(0x0d0a08, 110, 220);
+const persp = new THREE.PerspectiveCamera(40, 1, 0.5, 500);
+const ortho = new THREE.OrthographicCamera(-30, 30, 30, -30, 0.1, 300);
+let camera = persp;
+const controls = new OrbitControls(persp, renderer.domElement);
+controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.49;
+scene.add(new THREE.HemisphereLight(0xb8c4d4, 0x2a1d12, 1.1));
+const sun = new THREE.DirectionalLight(0xffdcb0, 2.3);
+sun.position.set(30, 55, 40); sun.castShadow = true; sun.shadow.mapSize.set(4096, 4096);
+Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, far: 200 });
+scene.add(sun);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), new THREE.MeshStandardMaterial({ color: 0x2b241d, roughness: 1 }));
+ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+
+const M = {
+	stone: new THREE.MeshStandardMaterial({ color: 0x8c8378, roughness: 0.95, flatShading: true }),
+	dark: new THREE.MeshStandardMaterial({ color: 0x6b5f52, roughness: 1, flatShading: true }),
+	roof: new THREE.MeshStandardMaterial({ color: 0x9a4a32, roughness: 0.9, flatShading: true }),
+	brk: new THREE.MeshStandardMaterial({ color: 0xa98a5c, roughness: 0.9, flatShading: true }),
+	rock: new THREE.MeshStandardMaterial({ color: 0x4a3e34, roughness: 1, flatShading: true }),
+	hole: new THREE.MeshStandardMaterial({ color: 0x1a130e, roughness: 1 }),
+};
+let group = new THREE.Group(), coneGroup = new THREE.Group(), tileLines = new THREE.Group();
+const counts = { sq: 0, tri: 0 };
+
+function mesh(geo, mat, x, y, z, ry = 0) {
+	const m = new THREE.Mesh(geo, mat);
+	m.position.set(x, y, z); m.rotation.y = ry; m.castShadow = m.receiveShadow = true;
+	group.add(m); return m;
+}
+// A 12-sided ring prism (R rings wide), from y0 to y1, flat side to +z. Optional: wider top (frustum below it).
+function ring(R, x, z, y0, y1, opts = {}) {
+	const rc = R * CORNER;
+	mesh(new THREE.CylinderGeometry(rc, rc, y1 - y0, 12, 1, false, Math.PI / 12), opts.mat || M.stone, x, (y0 + y1) / 2, z);
+	if (opts.crown !== false) crown(R, x, z, y1);
+	if (opts.cone) {
+		const c = new THREE.Mesh(new THREE.ConeGeometry(rc * 1.12, opts.cone, 12, 1, false, Math.PI / 12), M.roof);
+		c.position.set(x, y1 + opts.cone / 2, z); c.castShadow = true; coneGroup.add(c);
+	}
+	if (opts.found) tiles(R, x, z);
+}
+// Battlements round a ring's top: 2 merlons per 2 m wall slot.
+function crown(R, x, z, y) {
+	const g = new THREE.BoxGeometry(0.7, 0.9, 0.5);
+	for (let j = 0; j < 12; j++) for (let m = 0; m < R; m++) for (const off of [-0.5, 0.5]) {
+		const n = dir(j), t = dir(j + 3), s = 1 - R + 2 * m + off;
+		mesh(g, M.stone, x + n.x * R * EDGE + t.x * s, y + 0.45, z + n.y * R * EDGE + t.y * s, j * Math.PI / 6);
+	}
+}
+// A ring that juts out on brackets: a band of brackets (a cone frustum) then a wider ring.
+function wideTop(R, x, z, y0, y1, cone) {
+	const r0 = R * CORNER, r1 = r0 + 1.0;
+	mesh(new THREE.CylinderGeometry(r1, r0, 1.0, 12, 1, false, Math.PI / 12), M.brk, x, y0 - 0.5, z);
+	mesh(new THREE.CylinderGeometry(r1, r1, y1 - y0, 12, 1, false, Math.PI / 12), M.stone, x, (y0 + y1) / 2, z);
+	const c = new THREE.Mesh(new THREE.ConeGeometry(r1 * 1.12, cone, 12, 1, false, Math.PI / 12), M.roof);
+	c.position.set(x, y1 + cone / 2, z); c.castShadow = true; coneGroup.add(c);
+	const flat = new THREE.Mesh(new THREE.CylinderGeometry(r1 - 0.3, r1 - 0.3, 0.3, 12, 1, false, Math.PI / 12), M.dark);
+	flat.position.set(x, y1 + 0.15, z); flat.userData.flat = true; flat.visible = false; group.add(flat); flatTops.push(flat);
+	crownAt(r1, x, z, y1);
+}
+function crownAt(rc, x, z, y) {   // merlons round a wider ring (no tiling)
+	const g = new THREE.BoxGeometry(0.7, 0.9, 0.5), ap = rc * Math.cos(Math.PI / 12);
+	for (let j = 0; j < 12; j++) for (const s of [-1.3, -0.4, 0.5, 1.4]) {
+		const n = dir(j), t = dir(j + 3);
+		const m = mesh(g, M.stone, x + n.x * ap + t.x * s, y + 0.45, z + n.y * ap + t.y * s, j * Math.PI / 6);
+		m.userData.flatOnly = true; m.visible = false; flatMerlons.push(m);
+	}
+}
+const flatTops = [], flatMerlons = [];
+// A straight wall from (x0,z0) to (x1,z1): solid, a walkway on top, battlements both sides.
+function wall(x0, z0, x1, z1, h, thick = 3.2) {
+	const dx = x1 - x0, dz = z1 - z0, L = Math.hypot(dx, dz), ry = Math.atan2(dx, dz);
+	mesh(new THREE.BoxGeometry(thick, h, L), M.stone, (x0 + x1) / 2, h / 2, (z0 + z1) / 2, ry);
+	mesh(new THREE.BoxGeometry(thick - 0.6, 0.1, L), M.dark, (x0 + x1) / 2, h + 0.05, (z0 + z1) / 2, ry);
+	const g = new THREE.BoxGeometry(0.4, 0.9, 0.7), nx = dz / L, nz = -dx / L;
+	for (let s = 0.6; s < L - 0.3; s += 1.0) for (const side of [-1, 1]) {
+		const px = x0 + dx * s / L + nx * side * (thick / 2 - 0.2), pz = z0 + dz * s / L + nz * side * (thick / 2 - 0.2);
+		mesh(g, M.stone, px, h + 0.45, pz, ry);
+	}
+}
+// A box room with battlements, centred (x,z), w along x, d along z.
+function room(x, z, w, d, y0, y1, ry = 0) {
+	mesh(new THREE.BoxGeometry(w, y1 - y0, d), M.stone, x, (y0 + y1) / 2, z, ry);
+	const g = new THREE.BoxGeometry(0.7, 0.9, 0.5), c = Math.cos(ry), s = Math.sin(ry);
+	const put = (lx, lz, r) => mesh(g, M.stone, x + lx * c + lz * s, y1 + 0.45, z - lx * s + lz * c, ry + r);
+	for (let a = -w / 2 + 0.5; a < w / 2; a += 1) { put(a, d / 2 - 0.25, 0); put(a, -d / 2 + 0.25, 0); }
+	for (let a = -d / 2 + 0.5; a < d / 2; a += 1) { put(w / 2 - 0.25, a, Math.PI / 2); put(-w / 2 + 0.25, a, Math.PI / 2); }
+	tilesRect(x, z, w, d, ry);
+}
+// A wedge (triangle point) room: base of width w on the line at distance `at` along direction ang, tip `len` further.
+function wedge(cx, cz, ang, at, w, len, y0, y1) {
+	const sh = new THREE.Shape();
+	sh.moveTo(-w / 2, 0); sh.lineTo(w / 2, 0); sh.lineTo(0, len); sh.closePath();
+	const geo = new THREE.ExtrudeGeometry(sh, { depth: y1 - y0, bevelEnabled: false });
+	geo.rotateX(-Math.PI / 2);   // shape's y -> -z, extrude -> +y
+	geo.rotateY(Math.PI);        // tip toward +z
+	const m = mesh(geo, M.stone, cx + Math.sin(ang) * at, y0, cz + Math.cos(ang) * at, ang);
+	// battlements along the two long sides
+	const g = new THREE.BoxGeometry(0.7, 0.9, 0.5), sideL = Math.hypot(w / 2, len);
+	for (const sx of [-1, 1]) {
+		const a0 = new THREE.Vector2(sx * w / 2, 0), a1 = new THREE.Vector2(0, len), r = Math.atan2(a1.x - a0.x, a1.y - a0.y);
+		for (let s = 0.6; s < sideL - 0.5; s += 1) {
+			const lx = a0.x + (a1.x - a0.x) * s / sideL, lz = a0.y + (a1.y - a0.y) * s / sideL;
+			const c = Math.cos(ang), sn = Math.sin(ang), bx = cx + Math.sin(ang) * at, bz = cz + Math.cos(ang) * at;
+			mesh(g, M.stone, bx + lx * c + lz * sn, y1 + 0.45, bz - lx * sn + lz * c, ang + r + Math.PI / 2);
+		}
+	}
+	tilesWedge(cx + Math.sin(ang) * at, cz + Math.cos(ang) * at, ang, w, len);
+}
+// A rock lump (cave floor rising) under a lone tower.
+function rock(x, z, r, h) {
+	mesh(new THREE.CylinderGeometry(r * 0.8, r * 1.3, h, 9, 2), M.rock, x, h / 2, z, 0.4);
+}
+
+// ---- the floor-plan tiles (drawn only in the plan view), exactly our ring tiling
+const lineMat = new THREE.LineBasicMaterial({ color: 0xe7a24a });
+const fillSq = new THREE.MeshBasicMaterial({ color: 0x5b4a39 }), fillTri = new THREE.MeshBasicMaterial({ color: 0x3f6a7a });
+function poly(pts, isTri) {
+	const sh = new THREE.Shape(pts.map(p => new THREE.Vector2(p.x, -p.y)));
+	const m = new THREE.Mesh(new THREE.ShapeGeometry(sh), isTri ? fillTri : fillSq);
+	m.rotation.x = -Math.PI / 2; m.position.y = 0.03; tileLines.add(m);
+	const g = new THREE.BufferGeometry().setFromPoints([...pts, pts[0]].map(p => new THREE.Vector3(p.x, 0.06, p.y)));
+	tileLines.add(new THREE.Line(g, lineMat));
+}
+function tiles(R, cx, cz) {
+	const c = new THREE.Vector2(cx, cz);
+	const fan = (o, a, b) => {
+		for (let i = 0; i < R; i++) for (let j = 0; j < R - i; j++) {
+			const P = (u, v) => o.clone().add(a.clone().multiplyScalar(u)).add(b.clone().multiplyScalar(v));
+			poly([P(i, j), P(i + 1, j), P(i, j + 1)], true); counts.tri++;
+			if (i + j <= R - 2) { poly([P(i + 1, j), P(i + 1, j + 1), P(i, j + 1)], true); counts.tri++; }
+		}
+	};
+	for (let k = 0; k < 6; k++) {
+		const n = dir(2 * k), t = dir(2 * k + 3);
+		fan(c.clone(), dir(2 * k - 1).multiplyScalar(2), dir(2 * k + 1).multiplyScalar(2));
+		for (let a = 0; a < R; a++) for (let b = 0; b < R; b++) {
+			const m = c.clone().add(n.clone().multiplyScalar(R * APO + 1 + 2 * a)).add(t.clone().multiplyScalar(1 - R + 2 * b));
+			poly([[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([p, q]) => m.clone().add(n.clone().multiplyScalar(p)).add(t.clone().multiplyScalar(q))), false);
+			counts.sq++;
+		}
+		const u = dir(2 * k + 1), tu = dir(2 * k + 4);
+		fan(c.clone().add(u.clone().multiplyScalar(2 * R)), u.clone().multiplyScalar(APO).add(tu), u.clone().multiplyScalar(APO).sub(tu));
+	}
+}
+function tilesRect(x, z, w, d, ry) {
+	const c = Math.cos(ry), s = Math.sin(ry);
+	for (let a = -w / 2; a < w / 2 - 0.1; a += 2) for (let b = -d / 2; b < d / 2 - 0.1; b += 2) {
+		poly([[a, b], [a + 2, b], [a + 2, b + 2], [a, b + 2]].map(([p, q]) => new THREE.Vector2(x + p * c + q * s, z - p * s + q * c)), false);
+		counts.sq++;
+	}
+}
+function tilesWedge(bx, bz, ang, w, len) {   // a wedge made of 2 m triangles (w = 2n, an equilateral-ish point)
+	const n = Math.round(w / 2), c = Math.cos(ang), s = Math.sin(ang), h = Math.sqrt(3);
+	const L = (p, q) => new THREE.Vector2(bx + p * c + q * s, bz - p * s + q * c);
+	for (let row = 0; row < n; row++) {
+		const half = (n - row), q0 = row * h, q1 = (row + 1) * h;
+		for (let i = 0; i < half; i++) {
+			const p0 = -half + 2 * i;
+			poly([L(p0, q0), L(p0 + 2, q0), L(p0 + 1, q1)], true); counts.tri++;
+			if (i < half - 1) { poly([L(p0 + 1, q1), L(p0 + 2, q0), L(p0 + 3, q1)], true); counts.tri++; }
+		}
+	}
+}
+
+// ---- the three plans (sizes in metres, our 2 m grid; rings: R1 = 7.7 m across, R2 = 15.5 m, R3 = 23 m)
+const PLANS = {
+	A: {
+		title: "Six-Tower Hold",
+		lede: "Six round towers in a hexagon, joined by thick walls you can walk along. A big round keep in the middle climbs in three steps and ends in a tall thin lookout. The front wall has a gatehouse with two little towers.",
+		parts: [["Keep", "big ring 15 m, then small ring, then a wider top on brackets"], ["Wall towers", "6 small rings, two heights"], ["Curtain walls", "6 walls, 6 m high, walkway on top"], ["Gatehouse", "2 tiny towers + gate room"], ["Heights", "6 / 9 / 11 / 13 / 19 m"]],
+		build() {
+			const Rt = 18;
+			for (let i = 0; i < 6; i++) {
+				const a = (i * 60 + 30) * Math.PI / 180, x = Math.sin(a) * Rt, z = Math.cos(a) * Rt;
+				ring(1, x, z, 0, i % 2 ? 11 : 9, { cone: 5, found: true });
+			}
+			for (let i = 0; i < 6; i++) {
+				const a0 = (i * 60 + 30) * Math.PI / 180, a1 = ((i + 1) * 60 + 30) * Math.PI / 180, k = (Rt - 3.4) / Rt;
+				const x0 = Math.sin(a0) * Rt, z0 = Math.cos(a0) * Rt, x1 = Math.sin(a1) * Rt, z1 = Math.cos(a1) * Rt;
+				const f = 3.6 / Rt;   // stop at the towers' sides
+				wall(x0 + (x1 - x0) * f, z0 + (z1 - z0) * f, x1 - (x1 - x0) * f, z1 - (z1 - z0) * f, 6);
+			}
+			// the gatehouse on the front wall (+z): a room standing out, two tiny towers
+			room(0, Rt * Math.cos(Math.PI / 6) + 1, 8, 6, 0, 8);
+			mesh(new THREE.BoxGeometry(2.2, 3, 0.5), M.hole, 0, 1.5, Rt * Math.cos(Math.PI / 6) + 4.05);
+			for (const sx of [-5.5, 5.5]) ring(0.5, sx, Rt * Math.cos(Math.PI / 6) + 3, 0, 10, { cone: 3.5 });
+			// the keep: big ring, small ring on it, wider top on brackets
+			ring(2, 0, 0, 0, 9, { found: true });
+			ring(1, 0, 0, 9, 13, { crown: false });
+			wideTop(1, 0, 0, 13, 15.5, 6);
+		},
+	},
+	B: {
+		title: "Prow Hall",
+		lede: "A long hall with a round tower on every corner, and a pointed prow room on the front like a ship's bow. Behind it a tall keep, and an arched bridge from a back tower out to a lonely lookout standing on a rock.",
+		parts: [["Great hall", "20 × 12 m, two floors"], ["Corner towers", "4 small rings: front 10 m, back 13 m"], ["Prow", "a triangle-tipped room, 3 floors"], ["Keep", "big ring, steps in to a small ring"], ["Bridge", "9 m up, out to a lone tower on a rock"]],
+		build() {
+			room(0, 0, 20, 12, 0, 6.5);
+			const T = [[-10, 6, 10], [10, 6, 10], [-10, -6, 13], [10, -6, 13]];
+			for (const [x, z, h] of T) ring(1, x, z, 0, h, { cone: 5, found: true });
+			wedge(0, 0, 0, 6, 10, 8.7, 0, 9);
+			mesh(new THREE.BoxGeometry(2.2, 3, 0.5), M.hole, 0, 1.5, 6 + 8.7 * 0.3 + 0.6);
+			ring(2, 0, -14, 0, 10, { found: true });
+			ring(1, 0, -14, 10, 15, { crown: false });
+			wideTop(1, 0, -14, 15, 17, 6);
+			rock(-28, -14, 4, 7);
+			ring(1, -28, -14, 7, 15, { cone: 5 });
+			wall(-13.6, -6, -24.3, -12.5, 9, 3);   // the bridge (a wall-walk on arches, shown solid here)
+			mesh(new THREE.BoxGeometry(2.5, 6, 11), M.hole, -19, 3.0, -9.3, Math.atan2(-10.7, -6.5)).visible = true;
+		},
+	},
+	C: {
+		title: "Star Keep",
+		lede: "A huge round keep (23 m) built like a stack of rings: each storey a smaller ring, a terrace round each one. Six pointed bastions stick out of the bottom like a star, each tip carrying a little turret on brackets.",
+		parts: [["Base ring", "3 rings wide, 23 m across, 2 floors"], ["Middle ring", "2 rings, 15 m, terrace round it"], ["Top ring", "small ring, a wider lantern on brackets"], ["Bastions", "6 triangle points, 10 m out"], ["Turrets", "6, on brackets at the points"]],
+		build() {
+			ring(3, 0, 0, 0, 6.5, { found: true });
+			ring(2, 0, 0, 6.5, 11);
+			ring(1, 0, 0, 11, 15, { crown: false });
+			wideTop(1, 0, 0, 15, 17, 6);
+			for (let k = 0; k < 6; k++) {
+				const a = (2 * k) * Math.PI / 6;
+				wedge(0, 0, a, 3 * EDGE, 8, 10, 0, 4.5);
+				const tx = Math.sin(a) * (3 * EDGE + 8.3), tz = Math.cos(a) * (3 * EDGE + 8.3);
+				mesh(new THREE.CylinderGeometry(1.9, 1.2, 0.9, 12, 1, false, Math.PI / 12), M.brk, tx, 4.95, tz);
+				ring(0.5, tx, tz, 5.4, 8, { cone: 3 });
+			}
+			mesh(new THREE.BoxGeometry(2.2, 3, 0.5), M.hole, 0, 1.5, 3 * EDGE + 0.05);
+		},
+	},
+};
+
+let cur = "A";
+function show(p) {
+	cur = p;
+	for (const g of [group, coneGroup, tileLines]) { scene.remove(g); g.traverse(o => o.geometry?.dispose()); }
+	group = new THREE.Group(); coneGroup = new THREE.Group(); tileLines = new THREE.Group();
+	flatTops.length = 0; flatMerlons.length = 0; counts.sq = counts.tri = 0;
+	PLANS[p].build();
+	scene.add(group, coneGroup, tileLines);
+	applyCones(); applyView();
+	const P = PLANS[p];
+	document.getElementById("title").textContent = P.title;
+	document.getElementById("lede").textContent = P.lede;
+	document.getElementById("parts").innerHTML = P.parts.map(([a, b]) => `<li><span>${a}</span><span>${b}</span></li>`).join("");
+	document.getElementById("count").innerHTML = `<li><span>Square foundations</span><span class="num">${counts.sq}</span></li><li><span>Triangle foundations</span><span class="num">${counts.tri}</span></li>`;
+	document.querySelectorAll("[data-p]").forEach(b => b.setAttribute("aria-pressed", b.dataset.p === p));
+	persp.position.set(42, 34, 52); controls.target.set(0, 5, p === "B" ? -4 : 0);
+	const cam = new URLSearchParams(location.search).get("cam");
+	if (cam) { const v = cam.split(",").map(Number); persp.position.set(v[0], v[1], v[2]); controls.target.set(v[3], v[4], v[5]); }
+}
+let plan = false, cones = true;
+function applyView() {
+	camera = plan ? ortho : persp;
+	group.visible = coneGroup.visible ? !plan : !plan;
+	group.visible = !plan; coneGroup.visible = !plan && cones; tileLines.visible = plan;
+	controls.enabled = !plan;
+	if (plan) { ortho.position.set(0, 100, cur === "B" ? -4 : 0); ortho.lookAt(0, 0, cur === "B" ? -4 : 0); ortho.up.set(0, 0, -1); ortho.lookAt(0, 0, cur === "B" ? -4 : 0); }
+	resize();
+	document.getElementById("v3d").setAttribute("aria-pressed", !plan);
+	document.getElementById("vplan").setAttribute("aria-pressed", plan);
+}
+function applyCones() {
+	coneGroup.visible = cones && !plan;
+	flatTops.forEach(f => (f.visible = !cones)); flatMerlons.forEach(m => (m.visible = !cones));
+	const b = document.getElementById("cones");
+	b.setAttribute("aria-pressed", cones); b.textContent = cones ? "Cone roofs on" : "Flat roofs (Stonehold)";
+}
+document.querySelectorAll("[data-p]").forEach(b => (b.onclick = () => show(b.dataset.p)));
+document.getElementById("v3d").onclick = () => { plan = false; applyView(); };
+document.getElementById("vplan").onclick = () => { plan = true; applyView(); };
+document.getElementById("cones").onclick = () => { cones = !cones; applyCones(); };
+
+function resize() {
+	const w = stage.clientWidth, h = stage.clientHeight;
+	renderer.setSize(w, h, false);
+	persp.aspect = w / h; persp.updateProjectionMatrix();
+	const half = 30, a = w / h;
+	Object.assign(ortho, a > 1 ? { left: -half * a, right: half * a, top: half, bottom: -half } : { left: -half, right: half, top: half / a, bottom: -half / a });
+	ortho.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(stage);
+const q = new URLSearchParams(location.search);
+show(q.get("p") || "A");
+if (q.get("plan")) { plan = true; applyView(); }
+if (q.get("flat")) { cones = false; applyCones(); }
+document.getElementById("loading").remove();
+renderer.setAnimationLoop(() => { if (!plan) controls.update(); renderer.render(scene, camera); });
+</script>
