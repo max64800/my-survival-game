@@ -280,16 +280,6 @@ func _physics_process(delta: float) -> void:
 	else:
 		_move_dir_buffer_age += delta
 	var dodge_dir := dir if dir.length() > 0.1 else (_move_dir_buffer if _move_dir_buffer_age < MOVE_DIR_BUFFER_TIME else Vector3.ZERO)
-	# A dodge direction that's the dead opposite of how your body is actually already moving, at real speed, is
-	# almost always one glitched input reading (the same keyboard/mouse quirk as F494), not a real instant 180°
-	# turn — a body can't flip direction in 1/60th of a second, but a key or the camera yaw misreading one frame
-	# can. So trust real momentum over that one bad reading (owner, PC, Nov 22: "I dodge backwards, then it dodges
-	# forward, so I go back in place" — the buffer above only catches a dropped/zero frame, not a flipped one).
-	var real_v := Vector2(velocity.x, velocity.z)
-	if dodge_dir.length() > 0.1 and real_v.length() > WALK_SPEED * 0.5:
-		var real_dir3 := Vector3(real_v.x, 0, real_v.y)
-		if dodge_dir.normalized().dot(real_dir3.normalized()) < -0.5:
-			dodge_dir = real_dir3
 	var fight_mult := fight.step(delta, playing, dodge_dir) if fight else 1.0
 	if fight and (fight.is_blocking() or fight.stagger > 0.0):
 		running = false
