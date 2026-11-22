@@ -10056,3 +10056,69 @@ the existing `charge_shove` path and are excluded from this new pushback.
   are both called F686 (knockback, wood model).
 - Owner's next ask logged: F567 🔁 (blue outlines with the hammer, 3rd time), F708 (B menu cursor vanishes),
   F709 (big build menu overhaul).
+
+
+# 2026-11-22 — Foreman boss fixes: F680 (red-but-no-spin) and F684 (sliding legs)
+
+## What we did
+
+Fixed two remaining foreman bugs from the Nov 22 Mine 2 playtest.
+
+**F680 — boss turns red but doesn't actually spin**
+
+When you knock the foreman down mid-chain, the red outline from `show_tell()` was
+being applied by the timer, then `_start_attack()` aborted because the boss was on
+the floor. The red just sat there until the timer fired (up to ~2 seconds later).
+The timer uses a "generation counter" trick — if `_outline_gen` changes, the timer
+skip its clear. But `_start_attack` wasn't bumping that counter when it aborted.
+
+Fix: added a new `clear_red()` method to `monster.gd` that bumps `_outline_gen`
+(which cancels any pending timer) and immediately clears the material overlay from
+every mesh. Called from `_start_attack()` when it aborts a shield-parry attack due
+to knocked-down/rising guard.
+
+**F684 — boss slides across the floor during spin attack**
+
+The `2H_Melee_Attack_Spin` clip is from the KayKit Skeletons CC0 pack. The game
+moves the boss forward during the WHIRL window (0.62–1.25 s) using `whirl_speed`,
+but the animation has the legs frozen — no walk cycle is baked in. So the boss
+visually slides.
+
+Fix: added `_blend_walk_into_spin()` to `kaykit_miners.py`. It samples the
+`Walking_A` animation's leg-bone FCurves (upperleg, lowerleg, foot, toes) at 5
+evenly-spaced positions across the WHIRL window and inserts new keyframes into the
+spin animation (35% original spin pose + 65% walk pose). This makes the legs appear
+to shuffle/step during the spin whirl rather than standing stiff.
+
+## Mistakes and hurdles
+
+1. **`action.fcurves` doesn't exist in Blender 5.3** — Blender 4.4 introduced a
+   "layered action" system. Each `Action` now has `layers → strips → channelbags`
+   instead of a flat `fcurves` list. The error was:
+   `AttributeError: 'Action' object has no attribute 'fcurves'`
+   
+   First fix attempt used `strip.channelbag_for_slot(slot)` — that also didn't
+   exist. The actual Blender 5.3 API is `strip.channelbags` (a collection you
+   iterate), and each `channelbag` has `.fcurves`. Needed several diagnostic
+   rounds to discover this, because:
+
+2. **Diagnostic Blender scripts can't share the main script's actions** — the
+   actions only exist after `build()` runs the KayKit pack import. Had to
+   monkey-patch `_blend_walk_into_spin` in a wrapper script that calls `build()`
+   directly, then read the diagnostic prints.
+
+3. **`quiet_run.py` swallows grep-matched output** — when grepping the output of
+   `python3 tools/quiet_run.py blender ...`, some output showed Python source lines
+   rather than print output. Switched to running `blender.exe` directly for
+   diagnostics, then went back to quiet_run.py for the final clean builds.
+
+4. **`ActionSlot` has no `.name`** — tried `s.name` to list slot names for
+   debugging; that's not an attribute. The slot has `name_display` and `identifier`.
+
+## Result
+
+Both fixes committed. The foreman.glb is rebuilt with 84 leg FCurves modified in the
+WHIRL window. F680 and F684 marked done in FEEDBACK.md.
+
+Remaining open items from Mine 2: F683/F685 (hit timing — likely a perception issue
+that may be better after F684), F676 (arena too small — design decision).
