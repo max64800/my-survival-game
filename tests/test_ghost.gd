@@ -183,3 +183,62 @@ func test_it_dies_into_mist_not_stone() -> void:
 	check(tree.get_nodes_in_group("ghost_dots").is_empty(), "and so are its dots")
 	check(tree.root.find_children("*", "Statue", true, false).is_empty(), "no stone statue left behind")
 	_teardown()
+
+
+## Owner, Nov 22: thin maces (no toys), the Bearded Shade's twice as long, the Wrathful Shade's long too.
+func test_each_ghost_has_its_own_thin_mace() -> void:
+	var lengths := {}
+	for kind in ["ghost_a", "ghost_b", "ghost_c"]:
+		var model := MonsterModel.build("ghost", Color.WHITE, 1.0, false, kind, 1)
+		tree.root.add_child(model)
+		var rig := CreatureRig.find(model) as GhostRig
+		var box := AABB()
+		var first := true
+		for mi: MeshInstance3D in rig.dm.dwarf_rig.grip.find_children("*", "MeshInstance3D", true, false):
+			var bb := mi.get_aabb()
+			box = bb if first else box.merge(bb)
+			first = false
+		lengths[kind] = box.size.y
+		check(not first and box.size.x < 0.13, "%s's mace is slim (%.2f m across)" % [kind, box.size.x])
+		model.free()
+	check(lengths.ghost_c > lengths.ghost_a * 1.9, "the Bearded Shade's mace is twice as long (%.2f vs %.2f m)" % [lengths.ghost_c, lengths.ghost_a])
+	check(lengths.ghost_b > lengths.ghost_a * 1.5, "the Wrathful Shade's is long too (%.2f m)" % lengths.ghost_b)
+
+
+## F658 (owner: the Wrathful Shade's mace "goes into his neck"): over the whole swing, the long mace's shaft and head
+## stay out of the head and neck.
+func test_the_long_maces_stay_out_of_the_neck() -> void:
+	for kind in [["ghost_b", "SliceDiag", 0.85], ["ghost_c", "Chop", 1.05]]:
+		var model := MonsterModel.build("ghost", Color.WHITE, 1.0, false, kind[0], 1)
+		tree.root.add_child(model)
+		var rig := CreatureRig.find(model) as GhostRig
+		var dr: DwarfRig = rig.dm.dwarf_rig
+		var sk := dr.skeleton
+		var head := sk.find_bone("Head")
+		var neck := sk.find_bone("neck_01")
+		var meshes := dr.grip.find_children("*", "MeshInstance3D", true, false)
+		rig.attack(kind[1], kind[2])
+		var length: float = kind[2] / DwarfOneSwing.HIT_AT
+		var start := Time.get_ticks_msec()
+		var closest := 99.0
+		var at := 0.0
+		while Time.get_ticks_msec() - start < length * 1000.0:
+			await tree.process_frame
+			var spots: Array[Vector3] = []
+			for b in [head, neck]:
+				if b >= 0:
+					spots.append(sk.global_transform * sk.get_bone_global_pose(b).origin)
+			for mi: MeshInstance3D in meshes:
+				var bb := mi.get_aabb()
+				for i in 12:
+					var p := mi.global_transform * Vector3(bb.get_center().x, bb.position.y + bb.size.y * (i + 0.5) / 12.0, bb.get_center().z)
+					# (the grip wrap is in the fist, which is near the body anyway: only the shaft above it counts)
+					if bb.position.y + bb.size.y * (i + 0.5) / 12.0 < 0.3:
+						continue
+					for s in spots:
+						if p.distance_to(s) < closest:
+							closest = p.distance_to(s)
+							at = (Time.get_ticks_msec() - start) / (length * 1000.0)
+		print("%s closest mace-to-neck %.2f m at %.0f%%" % [kind[0], closest, at * 100])
+		check(closest > 0.2, "%s's mace keeps out of the neck (%.2f m)" % [kind[0], closest])
+		model.free()

@@ -14,6 +14,11 @@ const DEPTH := preload("res://src/art/ghost_depth.gdshader")  ## its front surfa
 const BODY := "res://assets/models/creatures/ghost_%s.glb"
 const LOOKS := {"ghost_a": "a", "ghost_b": "b", "ghost_c": "c", "ghost_lord": "c"}
 const MACE := "mace_silver"
+## Each ghost's mace, reshaped from the silver mace (owner, Nov 22: "make them a lot thinner", the skeletons' thick
+## weapons looked like toys; the Bearded Shade's "twice as long", the Wrathful Shade's "very long" too):
+## [how long (x the mace's 0.7 m: only the bare shaft between the grip wrap and the head stretches), how thick].
+const MACE_SHAPE := {"a": [1.0, 0.62], "b": [1.6, 0.6], "c": [2.0, 0.58]}
+const SHAFT := [0.23, 0.33]  ## m up the silver mace (its own model): the bare shaft, from the top of the grip wrap to the fins under the head
 const HOVER := 0.22  ## m: how high it floats above the floor
 const MARKS := 4  ## it fades away after each quarter of its health
 const RUSH := 1.8  ## how much faster it comes at you after a jump...
@@ -60,6 +65,9 @@ static func _dress(dm: DwarfModel, look: String, color: Color) -> void:
 		mi.add_to_group("ghost_skin")
 	src.free()
 	dm.set_held(MACE)
+	var shape: Array = MACE_SHAPE.get(look, [1.0, 1.0])
+	for mi: MeshInstance3D in dm.dwarf_rig.grip.find_children("*", "MeshInstance3D", true, false):
+		mi.mesh = reshape_mace(mi.mesh, shape[0], shape[1])
 	var mace := ShaderMaterial.new()
 	mace.shader = SHADER
 	mace.set_shader_parameter("tint", color.lightened(0.35))
@@ -71,6 +79,46 @@ static func _dress(dm: DwarfModel, look: String, color: Color) -> void:
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		mi.add_to_group("ghost_skin")
 	dm.set_meta("ghost_mats", [mat, mace])
+
+
+static var _maces := {}  ## (the reshaped meshes, made once per mesh and shape)
+
+
+## The silver mace `long` times as long and `thin` times as thick: the bare shaft stretches (the grip wrap stays a
+## fist long, the head keeps its shape and moves up), and every part slims. The mesh's own space: handle up +Y.
+static func reshape_mace(mesh: Mesh, long: float, thin: float) -> Mesh:
+	if mesh == null or (is_equal_approx(long, 1.0) and is_equal_approx(thin, 1.0)):
+		return mesh
+	var key := "%d_%.2f_%.2f" % [mesh.get_instance_id(), long, thin]
+	if _maces.has(key):
+		return _maces[key]
+	var a := float(SHAFT[0])
+	var b := float(SHAFT[1])
+	var full := 0.7  # (the silver mace's length)
+	var stretch := (full * long - full + (b - a)) / (b - a)  # the shaft's stretch that makes the whole mace `long` x
+	var out := ArrayMesh.new()
+	for si in mesh.get_surface_count():
+		var arr := mesh.surface_get_arrays(si)
+		var v: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+		for i in v.size():
+			var p := v[i]
+			var y := p.y
+			if y > b:
+				y += (b - a) * (stretch - 1.0)
+			elif y > a:
+				y = a + (y - a) * stretch
+			v[i] = Vector3(p.x * thin, y, p.z * thin)
+		arr[Mesh.ARRAY_VERTEX] = v
+		if arr[Mesh.ARRAY_NORMAL] != null:
+			var n: PackedVector3Array = arr[Mesh.ARRAY_NORMAL]
+			for i in n.size():
+				n[i] = Vector3(n[i].x / thin, n[i].y, n[i].z / thin).normalized()
+			arr[Mesh.ARRAY_NORMAL] = n
+		arr[Mesh.ARRAY_TANGENT] = null
+		out.add_surface_from_arrays(mesh.surface_get_primitive_type(si), arr)
+		out.surface_set_material(si, mesh.surface_get_material(si))
+	_maces[key] = out
+	return out
 
 
 ## The depth pass drawn just before it (ghost_depth.gdshader: lower render_priority, so it goes first).
