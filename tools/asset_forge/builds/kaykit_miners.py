@@ -103,14 +103,14 @@ for _k in PAINT:
 
 # body: which paint each of the pack's colour kinds gets
 CREATURES = {
-	"tunnel_rat": dict(src="Skeleton_Minion", height=0.95, drop=[],
+	"tunnel_rat": dict(src="Skeleton_Minion", height=0.95, drop=[], poncho=True, head_k=0.8,  # (owner, Nov 22: smaller heads on the Rat and the Lost Miner)
 		paint={"bone": "bone_grime", "cloth": "wool_moss", "metal": "iron", "leather": "leather", "shirt": "shirt_moss"},
 		eyes=(1.0, 0.72, 0.2), eye_glow=2.2, beard="beard", beard_len=0.36, beard_w=0.40,
 		pose={"spine": (22, 0, 0), "chest": (10, 0, 0), "head": (-24, 0, 0)}, chest_scale=(1.05, 1.0, 1.0),
 		helmet="cap", tool="shovel",
 		looks={"grime": {}, "soot": dict(paint={"bone": "bone_soot", "cloth": "wool_soot", "leather": "leather_soot", "shirt": "shirt_soot"}, beard="beard_soot", eyes=(1.0, 0.42, 0.12)),
 			"rust": dict(paint={"bone": "bone_rust", "cloth": "wool_soot", "leather": "leather_tan", "shirt": "shirt_rust"}, beard="beard_brown", eyes=(0.85, 1.0, 0.3))}),
-	"lost_miner": dict(src="Skeleton_Rogue", height=1.4, drop=["Skeleton_Rogue_Hood"],
+	"lost_miner": dict(src="Skeleton_Rogue", height=1.4, drop=["Skeleton_Rogue_Hood"], head_k=0.82,
 		paint={"bone": "bone_ghost", "cloth": "wool_ghost", "metal": "iron", "leather": "leather_ghost", "shirt": "leather_ghost"},
 		eyes=(0.45, 1.0, 0.75), eye_glow=2.6, beard="beard_ghost", beard_len=0.70, beard_w=0.50, ghost=0.05,
 		pose={"spine": (10, 0, 0), "chest": (6, 0, 0), "head": (-12, 0, 0)}, chest_scale=(1.15, 1.0, 1.1),
@@ -118,7 +118,7 @@ CREATURES = {
 		looks={"frost": dict(paint={"bone": "bone_frost", "cloth": "wool_frost2", "leather": "leather_frost", "shirt": "leather_frost"}, beard="beard_frost", eyes=(0.5, 0.82, 1.0)),
 			"rime": dict(paint={"bone": "bone_rime", "cloth": "wool_rime2", "leather": "leather_rime", "shirt": "leather_rime"}, beard="beard_rime", eyes=(0.35, 0.95, 1.0)),
 			"ghost": dict(eyes=(0.55, 0.9, 1.0))}),
-	"foreman": dict(src="Skeleton_Warrior", height=1.85, drop=["Skeleton_Warrior_Helmet"],
+	"foreman": dict(src="Skeleton_Warrior", height=1.85, drop=["Skeleton_Warrior_Helmet"], head_k=0.86,  # (owner, Nov 22: his head too, after the others shrank)
 		paint={"bone": "bone", "cloth": "wool_dark", "metal": "iron", "leather": "leather", "shirt": "leather"},
 		eyes=(1.0, 0.45, 0.12), eye_glow=3.0, beard="beard_red", beard_len=0.62, beard_w=0.62,
 		pose={"spine": (0, 0, 0), "chest": (-4, 0, 0), "head": (4, 0, 0)}, chest_scale=(1.32, 1.12, 1.25),
@@ -129,11 +129,23 @@ CREATURES = {
 		paint={"bone": "bone_moss", "cloth": "wool_mossy", "metal": "iron", "leather": "leather_rot", "shirt": "leather_rot"},
 		eyes=(0.75, 1.0, 0.35), eye_glow=3.0, beard="beard_moss", beard_len=0.66, beard_w=0.60,
 		pose={"spine": (0, 0, 0), "chest": (-4, 0, 0), "head": (4, 0, 0)}, chest_scale=(1.32, 1.12, 1.25),
-		helmet="warden", tool="felling_axe", shield="plank", tache_in=0.02, looks={"": {}}),  # (tache_in: his moustache floated 1 cm off the face)
+		helmet="warden", tool="felling_axe", shield="plank", tache_in=0.02, head_k=0.86, looks={"": {}}),  # (tache_in: his moustache floated 1 cm off the face)
 }
 
 # owner, Nov 21 (F527): "the heads are too big, make them normal size": every head is this much of the pack's
-HEAD_SCALE = (0.56, 0.64, 0.62)
+# (Nov 22: smaller again, "I want to see drastic change": part of the slim-down below)
+HEAD_BASE = (0.40, 0.47, 0.45)
+HEAD_SCALE = HEAD_BASE  # (set for each creature in build(): its head_k times HEAD_BASE)
+# owner, Nov 22: "they look like toys, shrink the parts, drastic change". The pack's bones are fat toy tubes; every
+# limb is squeezed toward its bone's middle line: thin in the middle, knobby at the joints (real bones), and the
+# toy mitten hands and boots shrunk. (bone: (middle, ends)) = how much of the old thickness is left.
+# (Nov 22, round 2, owner: "the legs give it away, keep them thin; the fists still look big; remove the poncho")
+SLIM_LIMB = {"upperarm": (0.38, 0.62), "lowerarm": (0.36, 0.6), "upperleg": (0.28, 0.5), "lowerleg": (0.26, 0.46)}
+SLIM_END = {"wrist": 0.45, "hand": 0.42, "foot": 0.48, "toes": 0.48}  # (fists round their middle, boots flat on the floor)
+SLIM_TORSO = {"hips": (0.66, 0.7), "spine": (0.6, 0.72), "chest": (0.72, 0.8)}  # (width, depth) round the spine line
+# Nov 22 (owner): a vase: shoulders stay, the waist goes very thin, the hips widen out again. The waist squeeze goes by
+# height (hips = 0, neck = 1): (where it is thinnest, how wide the pinch is, how much thinner side to side, front to back)
+WAIST = (0.42, 0.2, 0.5, 0.3)
 HK = sum(HEAD_SCALE) / 3  # the gear round the head (helmet, lamp, beard) shrinks with it
 
 _mats = {}
@@ -386,6 +398,65 @@ def reshape(arm, meshes, cfg):
 		m.object = arm
 
 
+def slim(arm, meshes):
+	"""Nov 22 (owner: 'not toy-ish, drastic'): squeeze every surface point toward its bones (in the rest pose, after
+	reshape). Each bone moves the point its own way; the point ends up at the weighted mix, so elbows and knees
+	stay smooth. The bone lines themselves stay put, so every move still fits."""
+	mw = arm.matrix_world
+	bones = {}
+	for b in arm.data.bones:
+		base = b.name.split(".")[0]
+		if base in SLIM_LIMB or base in SLIM_END or base in SLIM_TORSO:
+			x = (mw.to_3x3() @ b.x_axis).normalized()
+			bones[b.name] = (base, mw @ b.head_local, mw @ b.tail_local, x)
+	spine_x = (mw.to_3x3() @ arm.data.bones["hips"].x_axis).normalized()
+	hip_z, neck_z = (mw @ arm.data.bones["hips"].head_local).z, (mw @ arm.data.bones["head"].head_local).z
+
+	def move(base, h, t, bx, p):
+		if base in SLIM_LIMB:
+			mid, ends = SLIM_LIMB[base]
+			ax = t - h
+			L2 = ax.length_squared
+			s = max(0.0, min(1.0, (p - h).dot(ax) / L2))
+			on = h + ax * s
+			f = ends + (mid - ends) * math.sin(math.pi * s)  # thinnest at the middle of the bone
+			return on + (p - on) * f
+		if base in SLIM_END:
+			k = SLIM_END[base]
+			if base in ("foot", "toes"):  # narrower and shorter, the soles stay on the floor
+				return Vector((h.x + (p.x - h.x) * k, h.y + (p.y - h.y) * k, p.z))
+			c = (h + t) * 0.5  # fists shrink round their middle, so they still close round the handle
+			return c + (p - c) * k
+		wf, df = SLIM_TORSO[base]
+		at, sp, wk, dk = WAIST
+		bell = math.exp(-(((p.z - hip_z) / (neck_z - hip_z) - at) / sp) ** 2)
+		wf, df = wf * (1 - wk * bell), df * (1 - dk * bell)
+		ax = (t - h).normalized()
+		d = p - h
+		along = ax * d.dot(ax)
+		perp = d - along
+		w = spine_x * perp.dot(spine_x)  # side to side
+		return h + along + w * wf + (perp - w) * df  # (front to back: the rest)
+
+	for o in meshes:
+		if o.name.endswith(("_Head", "_Jaw", "_Eyes")):
+			continue  # (the head has its own scale: HEAD_SCALE)
+		names = {g.index: g.name for g in o.vertex_groups}
+		om, oi = o.matrix_world, o.matrix_world.inverted()
+		for v in o.data.vertices:
+			p = om @ v.co
+			acc, tw = Vector((0, 0, 0)), 0.0
+			for g in v.groups:
+				bn = names.get(g.group)
+				if g.weight <= 0 or bn not in bones:
+					continue
+				acc += move(*bones[bn], p) * g.weight
+				tw += g.weight
+			if tw > 0:
+				rest = 1.0 - min(tw, 1.0)
+				v.co = oi @ ((acc / tw) * min(tw, 1.0) + p * rest)
+
+
 def bounds(objs):
 	vs = [o.matrix_world @ v.co for o in objs for v in o.data.vertices]
 	return Vector([min(v[i] for v in vs) for i in range(3)]), Vector([max(v[i] for v in vs) for i in range(3)])
@@ -437,7 +508,8 @@ def beard(jaw_lo, jaw_hi, chest_front, cfg):
 		o.data.materials.append(m)
 		kit.roughen(o, amount=0.014, cuts=1, seed=i)
 	for s in (-1, 1):  # moustache
-		o = kit.cone(0.06 * k, 0.02 * k, 0.24 * k, (s * 0.12 * k, front - 0.03 * k + cfg.get("tache_in", 0.0), jaw_hi.z - 0.1 * k), m, rot=(0, s * 60, 0), verts=5, bevel=0.0)
+		# (owner, Nov 22: it floated above the beard with a gap once the head got smaller: now it rests on the beard's top)
+		o = kit.cone(0.06 * k, 0.02 * k, 0.24 * k, (s * 0.11 * k, front - 0.03 * k + cfg.get("tache_in", 0.0), top + 0.01 * k), m, rot=(0, s * 66, 0), verts=5, bevel=0.0)
 		o.scale = (1.0, 0.6, 1.0)
 	objs = new_objs(before)
 	for o in objs:
@@ -787,12 +859,15 @@ def build(name, look):
 	over = cfg["looks"][look]
 	for k, v in over.items():
 		cfg[k] = {**cfg[k], **v} if isinstance(v, dict) else v
+	global HEAD_SCALE, HK
+	HEAD_SCALE = tuple(a * cfg.get("head_k", 1.0) for a in HEAD_BASE)
+	HK = sum(HEAD_SCALE) / 3
 	rng.seed(sum(map(ord, name)))  # every look gets the same beard and helmet shape
 	kit.reset()
 	_mats.clear()
 	bpy.ops.import_scene.gltf(filepath=str(PACK / f"{cfg['src']}.glb"))
 	for o in list(bpy.data.objects):
-		if o.name.startswith("Icosphere") or o.name in cfg["drop"]:
+		if o.name.startswith("Icosphere") or o.name in cfg["drop"] or (o.name.endswith("_Cloak") and not cfg.get("poncho")):  # (owner, Nov 22: only the Rat keeps his poncho)
 			bpy.data.objects.remove(o)
 	arm = bpy.data.objects["Rig"]
 	arm.data.pose_position = "POSE"
@@ -801,6 +876,7 @@ def build(name, look):
 		if o.parent_type == "BONE":
 			unparent_bone(o, arm)
 	reshape(arm, meshes, cfg)
+	slim(arm, meshes)
 	for o in meshes:
 		repaint(o, cfg)
 	head = next(o for o in meshes if o.name.endswith("_Head"))
