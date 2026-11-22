@@ -1,7 +1,7 @@
 extends Control
 ## A small round dial for hunger or thirst (F229): a bronze ring, and inside it a coloured
 ## "liquid" that sinks as you get hungry or thirsty, with a little picture on top
-## (a mushroom for food, a drop for water). Below a quarter it gently pulses.
+## (a painted stew bowl for food, a painted drop for water, F638). Below a quarter it gently pulses.
 
 var kind := "hunger"  ## "hunger" or "thirst"
 var value := 100.0
@@ -13,6 +13,7 @@ var _tip_text: Label
 const RING := Color(0.62, 0.45, 0.24)
 const RING_DARK := Color(0.25, 0.15, 0.08)
 const BACK := Color(0.09, 0.06, 0.05, 0.92)
+const PICTURES := {"hunger": preload("res://assets/icons/hud/hunger.png"), "thirst": preload("res://assets/icons/hud/thirst.png")}
 
 
 func _init(p_kind: String = "hunger") -> void:
@@ -86,32 +87,10 @@ func _draw() -> void:
 	_draw_picture(c, r)
 
 
-## The little picture in the middle, dark with a light edge so it reads on any fill.
+## The little painted picture in the middle (ChatGPT, F638): about two thirds of the dial.
 func _draw_picture(c: Vector2, r: float) -> void:
-	var s := r / 23.0
-	var ink := Color(0.12, 0.07, 0.04)
-	var edge := Color(1.0, 0.92, 0.75, 0.9)
-	if kind == "hunger":
-		# A mushroom: round cap and a short stem.
-		var cap := PackedVector2Array()
-		for i in 13:
-			var a := PI + PI * i / 12.0
-			cap.append(c + Vector2(cos(a) * 11.0, sin(a) * 9.0 + 1.0) * s)
-		for pass_i in 2:
-			var grow := 1.6 * s if pass_i == 0 else 0.0
-			var col := edge if pass_i == 0 else ink
-			var big := PackedVector2Array()
-			for p in cap:
-				big.append(c + (p - c) * (1.0 + grow / (10.0 * s)))
-			draw_colored_polygon(big, col)
-			draw_rect(Rect2(c + Vector2(-4.0 * s - grow * 0.6, 0.0), Vector2(8.0 * s + grow * 1.2, 10.0 * s + grow * 0.6)), col)
-	else:
-		# A water drop: pointed top, round bottom.
-		for pass_i in 2:
-			var grow := 1.6 * s if pass_i == 0 else 0.0
-			var col := edge if pass_i == 0 else ink
-			var pts := PackedVector2Array([c + Vector2(0, -12.0 * s - grow)])
-			for i in 17:
-				var a := -0.15 * PI + 1.3 * PI * i / 16.0
-				pts.append(c + Vector2(cos(a), sin(a)) * (7.5 * s + grow) + Vector2(0, 3.0 * s))
-			draw_colored_polygon(pts, col)
+	var tex: Texture2D = PICTURES.get(kind)
+	if tex == null:
+		return
+	var side := r * 1.3
+	draw_texture_rect(tex, Rect2(c - Vector2(side, side) * 0.5, Vector2(side, side)), false)

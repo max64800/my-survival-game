@@ -218,3 +218,11 @@ func test_god_mode_cannot_be_hurt_and_monsters_ignore_you() -> void:
 	d.dev_god = true
 	check(MonsterManager.ignores(d), "monsters ignore a dwarf in god mode")
 	d.free()
+
+
+func test_hunger_and_thirst_dials_show_painted_pictures() -> void:
+	# F638: the dials use the painted stew bowl and water drop, not shapes drawn by code.
+	var script := load("res://src/ui/vital_dial.gd")
+	for kind in ["hunger", "thirst"]:
+		var tex: Texture2D = script.PICTURES.get(kind)
+		check(tex != null and tex.get_width() == 128, "%s dial has its 128 px painted picture" % kind)
