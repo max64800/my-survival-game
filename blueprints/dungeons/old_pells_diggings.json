@@ -9992,7 +9992,7 @@
     {
       "model": "dungeon/lift_platform.glb",
       "pos": [
-        45.0,
+        48.0,
         -5.96,
         47.0
       ],
@@ -10021,11 +10021,11 @@
     {
       "model": "dungeon/lever.glb",
       "pos": [
-        44.0,
+        48.0,
         -6.0,
-        47.0
+        44.0
       ],
-      "yaw": 90.0,
+      "yaw": 270,
       "scale": 1.0,
       "role": "trap",
       "label": "Lever: E to call the lift",
