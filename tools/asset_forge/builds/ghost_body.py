@@ -138,8 +138,9 @@ HAND_X = 0.66  # where his sleeves end (wrist)
 
 # The hood: a big soft egg round his head, the face hollow cut into its front.
 hood = ell(HEAD_C, (0.265, 0.285, 0.25))
-if LOOK == "b":  # a tall pointed hood, leaning forward a little (the angry one)
-	hood = smin(hood, tube((0, 0.05, 1.18), (0, 0.10, 1.43), 0.15, 0.018), 0.06)
+if LOOK == "b":  # a tall pointed hood, its tip flopping forward (the angry one)
+	hood = smin(hood, tube((0, 0.05, 1.18), (0, 0.10, 1.42), 0.15, 0.022), 0.06)
+	hood = smin(hood, tube((0, 0.10, 1.41), (0, 0.05, 1.465), 0.022, 0.013), 0.015)
 else:  # a soft fold hanging down the back of the hood
 	hood = smin(hood, tube((0, 0.12, 1.16), (0, 0.27, 1.08), 0.11, 0.03), 0.05)
 hood = smin(hood, ell((0, 0.04, 0.86), (0.25, 0.25, 0.11)), 0.06)  # it falls onto the shoulders
@@ -159,6 +160,15 @@ def tri(x, z, grow=0.0):
 
 if LOOK == "a":  # a pocket behind the triangle, rounded at the back (the eyes sit on its back wall)
 	face = smax(tri(X, Z), ell((0.0, -0.235, 1.05), (0.2, 0.15, 0.25)), 0.02)
+
+
+def brow(x):
+	"""The Wrathful Shade's frown: the top of his face opening dips to a V in the middle."""
+	return 1.085 + 0.45 * np.abs(x)
+
+
+if LOOK == "b":
+	face = smax(face, Z - brow(X), 0.02)
 hood_whole = hood  # (before the face is cut: the rim's line is laid on its surface)
 hood = smax(hood, -face, 0.025)
 
@@ -235,6 +245,114 @@ def tail_at(t):
 	f = t * 12 - i
 	c = tuple(tail_pts[i][j] * (1 - f) + tail_pts[i + 1][j] * f for j in range(3))
 	return c, 0.27 * (1.0 - t) ** 1.25 + 0.01
+
+
+def face_rim(D, top=None, r=0.026, out=0.012, grow=0.016):
+	"""A rolled rim round the round face opening (the Wrathful and Bearded Shades), just outside its edge."""
+	pts = []
+	for i in range(41):
+		t = -math.pi / 2 + i / 40.0 * math.tau
+		x, z = (0.155 + grow) * math.cos(t), FACE_C[2] + (0.165 + grow) * math.sin(t)
+		if top is not None:
+			z = min(z, float(top(x)) + grow)
+		pts.append((x, hit(hood_whole, (x, 0.04, z), (0, -1, 0))[1] + out, z))
+	for i in range(40):
+		D = smin(D, tube(pts[i], pts[i + 1], r + 0.004 * math.sin(i * 1.9), r + 0.004 * math.sin((i + 1) * 1.9)), 0.012)
+	return D, pts
+
+
+def patch(D, start, d, half, turn, seed):
+	"""A sewn-on patch, a little crooked, big chunky stitches across its four edges (d: the way out of the cloth)."""
+	p = np.array(hit(D, start, d)) - np.array(d) * 0.024
+	D = smin(D, rbox(tuple(p), half, 0.008, turn) + wobble(0.007, seed), 0.006)
+	ct, st = math.cos(turn), math.sin(turn)
+	fy = p[1] + d[1] * 0.033
+	for ex, ez, ax in ((1, 0, "x"), (-1, 0, "x"), (0, 1, "z"), (0, -1, "z")):
+		for u in (-0.5, 0.5):
+			lx = ex * half[0] if ax == "x" else u * half[0] * 1.2
+			lz = ez * half[2] if ax == "z" else u * half[2] * 1.2
+			c = np.array((p[0] + lx * ct + lz * st, fy, p[2] - lx * st + lz * ct))
+			dd = np.array((ct, 0, -st)) if ax == "x" else np.array((st, 0, ct))
+			D = smin(D, tube(tuple(c - dd * 0.014), tuple(c + dd * 0.014), 0.0065, 0.0065), 0.003)
+	return D
+
+
+def scratch_marks(D, spots, seed, claw, bad):
+	"""Clean slashes with pointed ends, some alone, some in claw sets of three (painted pitch black by the guide).
+	spots: (centre, x range, y range, z range) to aim from the centre; bad(p): a place to keep clear of."""
+	rs = random.Random(seed)
+	for c0, rx, ry, rz in spots:
+		for _ in range(20):
+			n = np.array((rs.uniform(*rx), rs.uniform(*ry), rs.uniform(*rz)))
+			n /= np.linalg.norm(n)
+			p0 = np.array(hit(D, tuple(c0), n))
+			if bad(p0) or abs(p0[0]) > HAND_X - 0.06:
+				continue
+			break
+		else:
+			continue
+		big = rs.random() < 0.4
+		L = rs.uniform(0.11, 0.18) if big else rs.uniform(0.06, 0.1)
+		r = 0.0085 if big else 0.007
+		tdir = np.cross(n, (rs.uniform(-1, 1), rs.uniform(-1, 1), rs.uniform(-1, 1)))
+		tdir /= np.linalg.norm(tdir)
+		gap = np.cross(n, tdir)
+		count = 3 if rs.random() < claw else 1
+		for j in range(count):
+			c = p0 + gap * (j - (count - 1) / 2) * 0.026
+			c = np.array(hit(D, tuple(np.array(c0) + (c - np.array(c0)) * 0.7), c - np.array(c0)))
+			Lj = L * (1.0 - 0.18 * abs(j - (count - 1) / 2))
+			a, m, b = c - tdir * Lj + n * 0.004, c - n * 0.007, c + tdir * Lj + n * 0.004
+			SCRATCH.append((a, m, b, r))
+			D = smax(D, -tube(tuple(a), tuple(m), 0.003, r), 0.004)
+			D = smax(D, -tube(tuple(m), tuple(b), r, 0.003), 0.004)
+	return D
+
+
+def lumpy(D, zmin):
+	"""A fine hand-pressed unevenness in the cloth above zmin (finer than the whole body's wobble)."""
+	rr = random.Random(44)
+	lump = np.zeros_like(X)
+	for _ in range(5):
+		kk = [rr.uniform(32, 48) for _ in range(3)]
+		ph = [rr.uniform(0, 6.3) for _ in range(3)]
+		lump += np.sin(kk[0] * X + ph[0]) * np.sin(kk[1] * Y + ph[1]) * np.sin(kk[2] * Z + ph[2])
+	return D + 0.0022 * lump * np.clip((Z - zmin) / 0.06, 0, 1)
+
+
+def tail_strips(D, n, seed, r1):
+	"""Torn strips of robe flowing down the tail, their tips lifting off it into the mist."""
+	rr = random.Random(seed)
+	for k in range(n):
+		a = k / n * math.tau + 0.35 + rr.uniform(-0.15, 0.15)
+		t_end = rr.uniform(0.55, 0.8)
+		pts = []
+		for j in range(6):
+			t = 0.04 + (t_end - 0.04) * j / 5
+			c, rt = tail_at(t)
+			off = rt + 0.01 + 0.08 * (j / 5) ** 2
+			pts.append((c[0] + math.sin(a) * 1.12 * off, c[1] + math.cos(a) * off, c[2]))
+		D = rope(D, pts, 0.036, r1, 0.014)
+	return D
+
+
+def hood_seam(D, a0, a1, stitches=True):
+	"""A raised seam over the top of the hood from front (a0, degrees up from straight ahead) to back, with cross-stitches."""
+	seam = [tuple(np.array(hit(hood_whole, HEAD_C, (0, -math.cos(a), math.sin(a)))) - np.array((0, -math.cos(a), math.sin(a))) * 0.004)
+		for a in np.linspace(math.radians(a0), math.radians(a1), 11)]
+	D = rope(D, seam, 0.014, 0.012, 0.008)
+	if stitches:
+		for i in range(1, len(seam) - 1):
+			c = np.array(seam[i])
+			n = c - np.array(HEAD_C)
+			n /= np.linalg.norm(n)
+			D = smin(D, tube(tuple(c - np.array((0.022, 0, 0)) - n * 0.004), tuple(c + np.array((0.022, 0, 0)) - n * 0.004), 0.0065, 0.0065), 0.003)
+	return D
+
+
+def near_face(p, pad):
+	"""Close to the round face opening (keep scratches and dents off the rim)."""
+	return p[1] < -0.1 and ((p[0] / (0.155 + pad)) ** 2 + ((p[2] - FACE_C[2]) / (0.165 + pad)) ** 2) < 1.0
 
 
 SCRATCH = []  # the Drifting Shade's scratch marks (a, middle, b, width): they glow a little (the guide's blue)
@@ -555,21 +673,310 @@ if LOOK == "a":
 			body = smax(body, -tube(tuple(m), tuple(b), r, 0.003), 0.004)
 	body = smax(body, -face, 0.02)  # (the face hollow stays open)
 
-if LOOK == "c":
-	# A misty beard flowing out of the hood, down over the chest.
-	beard = tube((0, -0.17, 0.92), (0, -0.25, 0.66), 0.10, 0.045, sx=1.7)
-	beard = smin(beard, tube((0, -0.25, 0.66), (0, -0.23, 0.55), 0.045, 0.015, sx=1.4), 0.03)
-	beard = beard + 0.006 * np.sin(X * 90.0 + Z * 12.0)  # combed strands
-	body = smin(body, beard, 0.035)
-	# Ragged tatters hanging from the waist and the wrists, and notches torn out of the robe's edge.
-	for k in range(8):
-		a = k / 8.0 * math.tau + R.uniform(-0.2, 0.2)
-		top = (math.sin(a) * 0.31, 0.03 + math.cos(a) * 0.25, 0.47)
-		bot = (math.sin(a) * 0.33, 0.05 + math.cos(a) * 0.27, 0.47 - R.uniform(0.13, 0.2))
-		body = smin(body, tube(top, bot, 0.06, 0.028, sx=1.0), 0.04)
+BEARD = None  # the Bearded Shade's beard (it follows his head)
+GEMS = []  # glowing bits that go in the eyes' mesh (the Bearded Shade's brooch stone)
+if LOOK == "b":
+	# The Wrathful Shade (F642): a dwarf warrior's spirit still furious. A tall pointed hood with a deep frown over his
+	# face, a short cape torn into jagged points, leather straps crossed over his chest, a broad war belt with a big
+	# buckle, broken shackles on both wrists and his grudges stitched on his sleeve as tally marks. Claw marks all over.
+	ang = np.arctan2(X, Y - 0.035)
+	# the frown: a heavy brow ridge along the V of the opening's top, then a rolled rim round the rest of it
+	body, rim = face_rim(body, top=brow, r=0.025)
+	bpts = []
+	for x in np.linspace(-0.15, 0.15, 13):
+		z = float(brow(x)) + 0.03
+		bpts.append((x, hit(hood_whole, (x, 0.04, z), (0, -1, 0))[1] + 0.022, z))
+	for i in range(len(bpts) - 1):
+		k0, k1 = abs(bpts[i][0]) / 0.15, abs(bpts[i + 1][0]) / 0.15
+		body = smin(body, tube(bpts[i], bpts[i + 1], 0.04 - 0.012 * k0, 0.04 - 0.012 * k1), 0.02)
+	# the seam up the front of the pointed hood, over its tip and down the back, cross-stitched
+	body = hood_seam(body, 62, 172)
+	# creases winding round the point (as if it was twisted)
+	for a0 in (0.9, 2.6, 4.3):
+		pts = []
+		for z in np.linspace(1.2, 1.37, 5):
+			c = (0.0, 0.05 + 0.2 * (z - 1.18), z)
+			a = a0 + 2.2 * (z - 1.2) / 0.17
+			d = np.array((math.sin(a), math.cos(a), 0.0))
+			pts.append(tuple(np.array(hit(hood_whole, c, d)) + d * 0.012))
+		for i in range(len(pts) - 1):
+			body = smax(body, -tube(pts[i], pts[i + 1], 0.01, 0.014), 0.01)
+	# the short cape torn into jagged points hanging all round (not over the sleeves)
+	for k in range(26):
+		a = -math.pi + (k + 0.5) / 26.0 * math.tau + R.uniform(-0.05, 0.05)
+		if abs(math.sin(a)) > 0.62:
+			continue
+		d = np.array((math.sin(a), math.cos(a), 0.0))
+		p0 = np.array((0.44 * d[0], 0.04 + 0.31 * d[1], 0.775))
+		zl = 0.775 - R.uniform(0.07, 0.13)
+		p1 = np.array(hit(body, (0.0, 0.035, zl), d)) + d * 0.008
+		mid = (p0 + p1) / 2 + d * 0.012
+		body = rope(body, [tuple(p0), tuple(mid), tuple(p1)], 0.042, 0.006, 0.012)
+	# soft folds radiating over the cape from the neck to its edge
+	for k in range(16):
+		a = k / 16.0 * math.tau + R.uniform(-0.1, 0.1)
+		if abs(math.sin(a)) > 0.8:
+			continue
+		pts = []
+		for e in (50, 28, 8):
+			d = np.array((math.sin(a) * math.cos(math.radians(e)), math.cos(a) * math.cos(math.radians(e)), math.sin(math.radians(e))))
+			pts.append(tuple(np.array(hit(body, (0.0, 0.035, 0.8), d)) + d * 0.012))
+		for i in range(2):
+			body = smax(body, -tube(pts[i], pts[i + 1], 0.01, 0.015), 0.01)
+	# a zigzag of big stitches all round the cape just above its edge, and a ring of studs on its top
+	zig = []
+	for i in range(60):
+		a = -math.pi + i / 60.0 * math.tau
+		if abs(math.sin(a)) > 0.6:
+			if len(zig) > 1:
+				for j in range(len(zig) - 1):
+					body = smin(body, tube(zig[j], zig[j + 1], 0.0065, 0.0065), 0.003)
+			zig = []
+			continue
+		d = np.array((math.sin(a), math.cos(a), 0.0))
+		zig.append(tuple(np.array(hit(body, (0.0, 0.035, 0.80 + (0.028 if i % 2 else 0.0)), d)) - d * 0.002))
+	if len(zig) > 1:
+		for j in range(len(zig) - 1):
+			body = smin(body, tube(zig[j], zig[j + 1], 0.0065, 0.0065), 0.003)
+	for k in range(14):
+		a = -math.pi + (k + 0.5) / 14.0 * math.tau
+		if abs(math.sin(a)) > 0.75:
+			continue
+		e = math.radians(38)
+		d = np.array((math.sin(a) * math.cos(e), math.cos(a) * math.cos(e), math.sin(e)))
+		body = smin(body, ell(tuple(np.array(hit(body, (0.0, 0.035, 0.79), d)) + d * 0.004), (0.016, 0.016, 0.016)), 0.004)
+	# two leather straps crossed over his chest (from under the cape to the belt), a round boss where they cross
 	for s in (-1, 1):
+		pts = []
+		for u in np.linspace(0.0, 1.0, 7):
+			x, z = s * 0.23 * (1 - 2 * u), 0.725 - 0.2 * u
+			pts.append(np.array(hit(body, (x, 0.03, z), (0, -1, 0))) + (0, -0.004, 0))
+		dd = pts[-1] - pts[0]
+		side = np.array((-dd[2], 0, dd[0])) / math.hypot(dd[0], dd[2])
+		for off in (-0.011, 0.011):
+			body = rope(body, [tuple(p + side * off) for p in pts], 0.013, 0.013, 0.006)
+	bc = np.array(hit(body, (0.0, 0.03, 0.625), (0, -1, 0)))
+	body = smin(body, ell(tuple(bc + (0, -0.004, 0)), (0.045, 0.022, 0.045)), 0.006)
+	body = smin(body, ring(tuple(bc + (0, -0.018, 0)), "y", 0.032, 0.032, 0.007), 0.004)
+	for k in range(4):
+		a = k * math.pi / 2 + math.pi / 4
+		body = smin(body, ell(tuple(bc + (0.03 * math.cos(a), -0.02, 0.03 * math.sin(a))), (0.011, 0.011, 0.011)), 0.003)
+	# the broad war belt: a flat leather band, studs all round and a big square buckle at the front
+	bz = 0.5
+	e2 = (np.sqrt((X / 0.30) ** 2 + ((Y - 0.03) / 0.276) ** 2) - 1.0) * 0.276
+	band = smax(np.abs(e2 - 0.012) - 0.014, np.abs(Z - bz) - 0.034, 0.008)
+	body = smin(body, band, 0.006)
+	bk = np.array(hit(body, (0.0, 0.03, bz), (0, -1, 0)))
+	frame = smax(rbox(tuple(bk + (0, -0.002, 0)), (0.056, 0.011, 0.048), 0.008), -rbox(tuple(bk + (0, -0.002, 0)), (0.03, 0.05, 0.024), 0.006), 0.004)
+	body = smin(body, frame, 0.004)
+	body = smin(body, tube(tuple(bk + (-0.03, -0.008, 0)), tuple(bk + (0.016, -0.01, 0.002)), 0.0075, 0.0065), 0.003)  # its prong
+	for k in range(14):
+		a = -math.pi + (k + 0.5) / 14.0 * math.tau
+		if abs(math.atan2(math.sin(a - math.pi), math.cos(a - math.pi))) < 0.4:
+			continue  # (not on the buckle)
+		d = np.array((math.sin(a), math.cos(a), 0.0))
+		body = smin(body, ell(tuple(np.array(hit(body, (0.0, 0.03, bz), d)) + d * 0.002), (0.015, 0.015, 0.015)), 0.004)
+	# broken shackles on both wrists: a thick iron band with rivets, a short chain hanging from it, its last link snapped
+	for s in (-1, 1):
+		rr_ = np.sqrt((Y - 0.035) ** 2 + (Z - 0.778) ** 2)
+		body = smin(body, smax(np.abs(rr_ - 0.126) - 0.014, np.abs(X - s * 0.585) - 0.024, 0.006), 0.006)
+		for k in range(5):
+			a = k / 5.0 * math.tau + 0.4
+			body = smin(body, ell((s * 0.585, 0.035 + 0.14 * math.cos(a), 0.778 + 0.14 * math.sin(a)), (0.012, 0.012, 0.012)), 0.003)
+		for k in range(3):
+			cz = 0.778 - 0.14 - 0.022 - k * 0.042
+			link = ring((s * 0.585, 0.035, cz), "y" if k % 2 == 0 else "x", 0.022, 0.031, 0.0105)
+			if k == 2:
+				link = smax(link, -ell((s * 0.585, 0.035, cz - 0.03), (0.03, 0.03, 0.014)), 0.004)
+			body = smin(body, link, 0.004)
+	# his grudges: four tally strokes and a slash stitched on the front of his left sleeve
+	for k in range(4):
+		x = 0.39 + k * 0.028
+		pa = np.array(hit(body, (x, 0.035, 0.81), (0, -1, 0))) + (0, -0.002, 0)
+		pb = np.array(hit(body, (x + 0.006, 0.035, 0.745), (0, -1, 0))) + (0, -0.002, 0)
+		body = smin(body, tube(tuple(pa), tuple(pb), 0.0075, 0.0075), 0.003)
+	pa = np.array(hit(body, (0.375, 0.035, 0.75), (0, -1, 0))) + (0, -0.006, 0)
+	pb = np.array(hit(body, (0.49, 0.035, 0.805), (0, -1, 0))) + (0, -0.006, 0)
+	body = smin(body, tube(tuple(pa), tuple(pb), 0.0075, 0.0075), 0.003)
+	# deep folds in the robe below the belt, torn strips down the tail and two flame-like wisps off its tip
+	body = body + np.where(Z < 0.46, 0.011 * np.sin(ang * 6 + 1.3) * np.clip((0.46 - Z) / 0.08, 0, 1) * np.clip((Z - 0.12) / 0.12, 0, 1), 0.0)
+	body = tail_strips(body, 6, 512, 0.007)
+	tip, _ = tail_at(0.97)
+	for k, ph in enumerate((0.6, 3.6)):
+		pts = [tip]
+		for j in range(1, 8):
+			u = j / 7
+			pts.append((tip[0] + 0.1 * u * math.sin(u * 5.0 + ph), tip[1] + 0.03 + 0.1 * u, tip[2] + 0.17 * u + 0.03 * k))
+		body = rope(body, pts, 0.03, 0.008, 0.012)
+	# a few small dings in the hood and cape (not many: the owner disliked the "crunched soda can")
+	for k in range(18):
+		c0 = np.array(HEAD_C) if k < 9 else np.array((0.0, 0.035, 0.8))
+		n = np.array((R.uniform(-1, 1), R.uniform(-0.3, 1), R.uniform(0.1, 1)))
+		n /= np.linalg.norm(n)
+		p = np.array(hit(body, tuple(c0), n))
+		if near_face(p, 0.07):
+			continue
+		r = R.uniform(0.014, 0.024)
+		body = smax(body, -ell(tuple(p + n * r * 0.8), (r * 1.15, r * 1.15, r * 0.85)), 0.01)
+	body = lumpy(body, 0.6)
+	# claw marks, mostly on his front, more of them in sets of three (something big fought him)
+	spots = [(HEAD_C, (-1, 1), (-1, -0.25), (-0.1, 1))] * 7 + [(HEAD_C, (-1, 1), (-0.2, 1), (-0.1, 1))] * 2 \
+		+ [((0.0, 0.035, 0.66), (-1, 1), (-1, -0.2), (-0.3, 0.4))] * 10 + [((0.0, 0.035, 0.66), (-1, 1), (0.2, 1), (-0.3, 0.4))] * 4 \
+		+ [((0.0, 0.05, 0.4), (-1, 1), (-1, -0.1), (-0.4, 0.1))] * 9 + [((0.0, 0.05, 0.4), (-1, 1), (0.2, 1), (-0.4, 0.1))] * 3
+	for s0 in (-1, 1):
+		spots += [((s0 * 0.42, 0.035, 0.778), (-0.15, 0.15), (-1, 0.3), (-1, 1))] * 4
+	body = scratch_marks(body, spots, 92, 0.6, lambda p: near_face(p, 0.07) or abs(p[2] - 0.5) < 0.045)
+
+if LOOK == "c":
+	# The Bearded Shade (F642; the Grey Warden wears him too): an old dwarf keeper. A long braided beard and a drooping
+	# moustache, a mantle with a thick fur trim, a glowing stone brooch, a knotted cloth sash, the warden's iron key ring
+	# at his hip, a scroll case on his back, patches, and the ragged hem of an old robe.
+	ang = np.arctan2(X, Y - 0.035)
+	body, rim = face_rim(body, r=0.03)
+	for i in range(0, 40, 3):  # big stitches across the rim
+		c = np.array(rim[i])
+		n = c - np.array(FACE_C)
+		n[1] = 0.0
+		n /= np.linalg.norm(n)
+		body = smin(body, tube(tuple(c - n * 0.03 + (0, -0.022, 0)), tuple(c + n * 0.03 + (0, -0.022, 0)), 0.0065, 0.0065), 0.003)
+	body = hood_seam(body, 58, 165)
+	# the mantle: a short cape over his shoulders (laid on the body, 2.2 cm thick), its edge trimmed with chunky fur
+	def m_edge(a):
+		return 0.69 + 0.025 * math.cos(a) + 0.012 * math.sin(a * 7 + 1.1)
+	edge = 0.69 + 0.025 * np.cos(ang) + 0.012 * np.sin(ang * 7 + 1.1)
+	cowl = smax(smax(body - 0.022, edge - Z, 0.006), np.abs(X) - 0.47 + 0.015 * np.sin(Z * 50), 0.01)
+	body = smin(body, smax(cowl, Z - 0.9, 0.03), 0.006)
+	for i in range(54):
+		a = -math.pi + (i + 0.5) / 54.0 * math.tau
+		if abs(math.sin(a)) > 0.7:
+			continue
+		d = np.array((math.sin(a), math.cos(a), 0.0))
+		p = np.array(hit(body, (0.0, 0.035, m_edge(a) + 0.01), d)) - d * 0.004
+		r = R.uniform(0.026, 0.034)
+		body = smin(body, ell(tuple(p + (0, 0, R.uniform(-0.008, 0.004))), (r, r, r * 1.2)), 0.008)
+	# soft folds down the mantle
+	for k in range(14):
+		a = k / 14.0 * math.tau + R.uniform(-0.12, 0.12)
+		if abs(math.sin(a)) > 0.75:
+			continue
+		d = np.array((math.sin(a), math.cos(a), 0.0))
+		pts = [tuple(np.array(hit(body, (0.0, 0.035, z), d)) + d * 0.013) for z in (0.84, 0.78, 0.73)]
+		for i in range(2):
+			body = smax(body, -tube(pts[i], pts[i + 1], 0.01, 0.016), 0.01)
+	# a round brooch pinning the mantle on his right shoulder (its stone glows: it is in the eyes' mesh)
+	bp = np.array(hit(body, (-0.25, 0.03, 0.765), (0, -1, 0)))
+	body = smin(body, ell(tuple(bp + (0, -0.004, 0)), (0.04, 0.016, 0.04)), 0.006)
+	body = smin(body, ring(tuple(bp + (0, -0.017, 0)), "y", 0.036, 0.036, 0.008), 0.004)
+	for k in range(6):
+		a = k / 6.0 * math.tau
+		body = smin(body, ell(tuple(bp + (0.036 * math.cos(a), -0.022, 0.036 * math.sin(a))), (0.009, 0.009, 0.009)), 0.003)
+	GEMS.append(ell(tuple(bp + (0, -0.022, 0)), (0.018, 0.014, 0.018)))
+	# creases fanning back over the hood from the sides of his face
+	for s in (-1, 1):
+		for f in (0.25, 0.65):
+			pts = []
+			for u in (0.0, 0.5, 1.0):
+				n = np.array((s * (0.6 + 0.35 * u), -0.7 + 0.95 * u, 0.05 + f * 0.6 * u))
+				n /= np.linalg.norm(n)
+				pts.append(tuple(np.array(hit(hood_whole, HEAD_C, n)) + n * 0.016))
+			for i in range(2):
+				body = smax(body, -tube(pts[i], pts[i + 1], 0.012, 0.018), 0.012)
+	# the knotted cloth sash round his waist, a fat knot at his left hip and its two ends hanging with fringes
+	bz = 0.49
+	theta = np.arctan2(Y - 0.03, X)
+	e2 = (np.sqrt((X / 0.30) ** 2 + ((Y - 0.03) / 0.276) ** 2) - 1.0) * 0.276
+	band = smax(np.abs(e2 - 0.01) - 0.015, np.abs(Z - bz - 0.006 * np.sin(theta * 5)) - 0.036, 0.01)
+	band = band + 0.004 * np.sin(theta * 26 + (Z - bz) * 40)  # (cloth wrinkles)
+	body = smin(body, band, 0.006)
+	ka = math.radians(150)  # (his left hip, at the front)
+	kd = np.array((math.sin(ka), math.cos(ka), 0.0))
+	kc = np.array(hit(body, (0.0, 0.03, bz), kd)) + kd * 0.012
+	body = smin(body, ell(tuple(kc), (0.046, 0.034, 0.04)) + wobble(0.006, 31), 0.01)
+	for j, (dx, zl) in enumerate(((0.025, 0.31), (-0.02, 0.35))):
+		pts = []
+		for u in (0.0, 0.5, 1.0):
+			z = bz - 0.03 - (bz - 0.03 - zl) * u
+			p = np.array(hit(body, (kc[0] * 0.6 + dx * u, 0.03, z), kd)) + kd * 0.012
+			pts.append(tuple(p if u > 0 else kc))
+		for off in (-0.012, 0.012):
+			body = rope(body, [(q[0] + off * kd[1], q[1] - off * kd[0], q[2]) for q in pts], 0.014, 0.012, 0.008)
+		end = np.array(pts[-1])
+		for fx in (-0.016, 0.0, 0.016):
+			body = smin(body, tube(tuple(end + (fx * kd[1], -fx * kd[0], 0)), tuple(end + (fx * kd[1] * 1.3, -fx * kd[0] * 1.3, -0.045)), 0.008, 0.006), 0.004)
+	# the warden's iron key ring at his right hip: a big ring hanging from the sash, three old keys on it
+	rd = np.array((-0.93, -0.37, 0.0)) / math.hypot(0.93, 0.37)
+	rc = np.array(hit(body, (0.0, 0.03, 0.43), rd)) + rd * 0.02
+	body = smin(body, ring(tuple(rc), "x", 0.045, 0.045, 0.01), 0.004)
+	for k, phi in enumerate((-0.55, 0.0, 0.5)):
+		top = rc + np.array((0.0, math.sin(phi) * 0.045, -math.cos(phi) * 0.045))
+		bow = top + np.array((0.0, math.sin(phi) * 0.02, -math.cos(phi) * 0.02))
+		body = smin(body, ring(tuple(bow), "x", 0.019, 0.019, 0.0075), 0.003)
+		ln = (0.085, 0.1, 0.075)[k]
+		s0 = bow + np.array((0.0, math.sin(phi) * 0.018, -math.cos(phi) * 0.018))
+		s1 = s0 + np.array((0.012, math.sin(phi) * ln * 0.3, -ln))
+		body = smin(body, tube(tuple(s0), tuple(s1), 0.009, 0.008), 0.003)
+		body = smin(body, rbox(tuple(s1 + (0.0, 0.016, 0.012)), (0.008, 0.012, 0.014), 0.004), 0.003)  # its bit
+	# a leather scroll case on his back, hanging from the sash, its two caps and a band round the middle
+	sp = [np.array(hit(body, (x, 0.03, z), (0, 1, 0))) + (0, 0.04, 0) for x, z in ((0.2, 0.66), (0.05, 0.54), (-0.1, 0.42))]
+	body = rope(body, [tuple(p) for p in sp], 0.046, 0.046, 0.01)
+	axis = (sp[2] - sp[0]) / np.linalg.norm(sp[2] - sp[0])
+	for p, w in ((sp[0], 0.03), (sp[2], 0.03), (sp[1], 0.012)):
+		body = smin(body, tube(tuple(p - axis * w / 2), tuple(p + axis * w / 2), 0.05, 0.05), 0.006)
+	# two patches: low on his back and on his left sleeve
+	body = patch(body, (0.12, 0.05, 0.36), (0, 1, 0), (0.05, 0.03, 0.04), -0.15, 7)
+	body = patch(body, (0.45, 0.035, 0.79), (0, -1, 0), (0.035, 0.03, 0.03), 0.2, 8)
+	# turned-back cuffs on his wide sleeves, ragged tatters hanging under them and round his waist
+	for s in (-1, 1):
+		body = smin(body, ring((s * (HAND_X - 0.03), 0.035, 0.778), "x", 0.128, 0.128, 0.022), 0.01)
 		for dz in (0.0, 0.05):
-			body = smin(body, tube((s * (HAND_X - 0.04), 0.06 + dz, 0.70), (s * (HAND_X - 0.06), 0.08 + dz, 0.61), 0.04, 0.02), 0.025)
+			body = smin(body, tube((s * (HAND_X - 0.04), 0.06 + dz, 0.70), (s * (HAND_X - 0.06), 0.08 + dz, 0.61), 0.04, 0.012), 0.025)
+	for k in range(8):  # (torn flaps lying flat on the robe under the sash, at his sides and back: not dripping off it)
+		a = -0.4 * math.pi + k / 7.0 * 0.8 * math.pi + R.uniform(-0.12, 0.12)
+		d = np.array((math.sin(a), math.cos(a), 0.0))
+		side = np.array((math.cos(a), -math.sin(a), 0.0))
+		zl = 0.45 - R.uniform(0.1, 0.16)
+		pts = [np.array(hit(body, (0.0, 0.03, z), d)) + d * 0.004 for z in (0.455, (0.455 + zl) / 2, zl)]
+		for off in (-0.014, 0.014):
+			body = rope(body, [tuple(q + side * off * (1 - 0.6 * j / 2)) for j, q in enumerate(pts)], 0.016, 0.008, 0.008)
+	body = body + np.where(Z < 0.45, 0.01 * np.sin(ang * 8 + 0.3) * np.clip((0.45 - Z) / 0.08, 0, 1) * np.clip((Z - 0.12) / 0.12, 0, 1), 0.0)
+	body = tail_strips(body, 7, 613, 0.012)
+	tip, _ = tail_at(0.97)
+	for k, ph in enumerate((0.3, 2.4, 4.5)):
+		pts = [tip]
+		for j in range(1, 8):
+			u = j / 7
+			pts.append((tip[0] + 0.12 * u * math.sin(u * 4.0 + ph), tip[1] + 0.03 + 0.12 * u + 0.05 * math.cos(u * 4.0 + ph), tip[2] + 0.13 * u + 0.025 * k))
+		body = rope(body, pts, 0.03, 0.013, 0.012)
+	body = lumpy(body, 0.6)
+	# scratches (fewer claw sets: worn by years more than fights)
+	spots = [(HEAD_C, (-1, 1), (-1, -0.2), (-0.1, 1))] * 7 + [(HEAD_C, (-1, 1), (-0.2, 1), (-0.1, 1))] * 3 \
+		+ [((0.0, 0.035, 0.7), (-1, 1), (-1, -0.2), (-0.2, 0.6))] * 8 + [((0.0, 0.035, 0.7), (-1, 1), (0.2, 1), (-0.2, 0.6))] * 3 \
+		+ [((0.0, 0.05, 0.4), (-1, 1), (-1, -0.1), (-0.4, 0.1))] * 8 + [((0.0, 0.05, 0.4), (-1, 1), (0.2, 1), (-0.4, 0.1))] * 2
+	for s0 in (-1, 1):
+		spots += [((s0 * 0.42, 0.035, 0.778), (-0.15, 0.15), (-1, 0.3), (-1, 1))] * 3
+	body = scratch_marks(body, spots, 93, 0.25, lambda p: near_face(p, 0.07) or (abs(p[0]) < 0.2 and p[1] < -0.1 and p[2] > 0.5)
+		or np.linalg.norm(p - bp) < 0.07 or np.linalg.norm(p - rc) < 0.15 or abs(p[2] - bz) < 0.05)
+	# the beard (laid on last: it comes out of the face hollow): a broad mass with combed strands, a drooping
+	# moustache, and it ends in three braids, each with an iron band and a tuft
+	beard = tube((0, -0.175, 0.93), (0, -0.265, 0.7), 0.1, 0.05, sx=1.45)
+	beard = smin(beard, ell((0, -0.235, 0.83), (0.13, 0.06, 0.09)), 0.04)  # (fuller up by his cheeks)
+	beard = beard + 0.007 * np.sin(X * 75.0 + 0.9 * np.sin(Z * 22.0) + Z * 10.0)  # (combed strands, not ruler-straight)
+	for s in (-1, 1):
+		beard = rope(beard, [(s * 0.02, -0.215, 0.965), (s * 0.08, -0.25, 0.945), (s * 0.13, -0.275, 0.9), (s * 0.15, -0.28, 0.83)], 0.03, 0.014, 0.015)
+	for bx, zl in ((-0.07, 0.5), (0.0, 0.4), (0.07, 0.5)):
+		p0 = np.array((bx * 0.7, -0.27, 0.74))
+		p1 = np.array((bx, -0.3, zl))
+		nl = 8
+		for j in range(nl):
+			u = (j + 0.5) / nl
+			c = p0 + (p1 - p0) * u + np.array(((0.011 if j % 2 else -0.011), 0, 0))
+			rr_ = 0.038 - 0.012 * u
+			beard = smin(beard, ell(tuple(c), (rr_, rr_ * 0.8, rr_ * 0.9)), 0.006)
+		beard = smin(beard, ring(tuple(p0 + (p1 - p0) * 0.7), "z", 0.032, 0.026, 0.009), 0.004)
+		beard = smin(beard, tube(tuple(p1), tuple(p1 + (0, -0.006, -0.06)), 0.026, 0.007), 0.008)
+	BEARD = beard
+	body = smin(body, beard, 0.02)
+
 
 body = body + wobble(0.007, R.randint(0, 999))
 MAT_BODY = ck.color(NAME + "_body", (0.55, 0.85, 0.8) if LOOK != "b" else (0.6, 0.75, 0.95))
@@ -577,8 +984,11 @@ o_body = to_mesh(NAME + "_body", body, MAT_BODY)
 
 # The eyes: two glowing lumps set into the back of the face hollow (they sink into the hood: they touch it).
 eyes = np.minimum(ell((-0.062, -0.087 - 0.0, 1.045), (0.034, 0.02, 0.022)), ell((0.062, -0.087, 1.045), (0.034, 0.02, 0.022)))
-if LOOK == "b":  # angry: slanted, narrower
-	eyes = np.minimum(ell((-0.062, -0.087, 1.04), (0.036, 0.02, 0.016)), ell((0.062, -0.087, 1.04), (0.036, 0.02, 0.016)))
+if LOOK == "b":  # angry: slanted down to the middle, under the frown
+	eyes = np.minimum(tube((-0.03, -0.087, 1.03), (-0.088, -0.087, 1.055), 0.017, 0.012),
+		tube((0.03, -0.087, 1.03), (0.088, -0.087, 1.055), 0.017, 0.012))
+for g in GEMS:  # (the Bearded Shade's brooch stone)
+	eyes = np.minimum(eyes, g)
 if LOOK == "a":  # smaller eyes, lower in the pointed opening (owner, Nov 22), and the lantern's glass: it touches
 	# the cap and the foot, inside the four posts (clear of them)
 	eyes = np.minimum(ell((-0.05, -0.09, 1.0), (0.023, 0.02, 0.016)), ell((0.05, -0.09, 1.0), (0.023, 0.02, 0.016)))
@@ -610,6 +1020,10 @@ for o in (o_body, o_eyes, o_fists):
 		e = tri(co[:, 0], co[:, 2], 0.012)
 		lit = np.maximum(np.clip(e / 0.025, 0.0, 1.0), np.clip((-0.19 - co[:, 1]) / 0.03, 0.0, 1.0))
 		lit = np.where(co[:, 2] < 0.85, 1.0, lit)
+	if LOOK == "b" and o is o_body:  # the brow over the frown is lit
+		lit = np.maximum(lit, np.clip((co[:, 2] - brow(co[:, 0]) + 0.005) / 0.02, 0.0, 1.0))
+	if LOOK == "c" and o is o_body:  # the moustache and the beard where they come out of the hollow are lit
+		lit = np.maximum(lit, np.where(co[:, 2] < 0.99, np.clip((-0.205 - co[:, 1]) / 0.03, 0.0, 1.0), 0.0))
 	lit = 0.08 + 0.92 * lit
 	mist = np.clip((0.5 - co[:, 2]) / 0.44, 0.0, 1.0) if o is o_body else np.zeros(len(co))
 	if o is o_eyes:
@@ -625,15 +1039,15 @@ for o in (o_body, o_eyes, o_fists):
 				near = np.minimum(near, dd)
 		glow = 0.35 * np.clip((1.15 - near) / 0.3, 0.0, 1.0)
 	rgb = np.stack([lit, mist, glow], 1)
-	at = o.data.color_attributes.new("guide", "FLOAT_COLOR", "POINT")
-	at.data.foreach_set("color", np.concatenate([rgb, np.ones((len(rgb), 1))], 1).ravel())
-	o.data.color_attributes.active_color = at
+	ga = o.data.color_attributes.new("guide", "FLOAT_COLOR", "POINT")
+	ga.data.foreach_set("color", np.concatenate([rgb, np.ones((len(rgb), 1))], 1).ravel())
+	o.data.color_attributes.active_color = ga
 	o.data.uv_layers.new(name="UVMap")
 	for p in o.data.polygons:
 		p.use_smooth = True
 	# fewer faces: the game's light copy
 	n = len(o.data.polygons)
-	want = {o_body: 70000 if LOOK == "a" else 7000, o_eyes: 500, o_fists: 900}[o]
+	want = {o_body: 70000 if LOOK == "a" else 50000, o_eyes: 500 if LOOK != "c" else 800, o_fists: 900}[o]
 	if n > want:
 		md = o.modifiers.new("fewer", "DECIMATE")
 		md.ratio = want / n
@@ -677,13 +1091,13 @@ def mix(a, b, t):
 
 def weights_for(o, p):
 	x, y, z = p
-	if o is o_eyes:
-		return {"Head": 1.0} if z > 0.8 else {"pelvis": 1.0}  # (the lantern's glass hangs from the belt)
+	near = ws[KD.find(Vector(p))[1]]
+	if o is o_eyes:  # (the lantern's glass hangs from the belt; the brooch's stone rides on his chest)
+		return {"Head": 1.0} if z > 0.9 else ({"pelvis": 1.0} if LOOK == "a" else near)
 	if o is o_fists:
 		return {"hand_l" if x > 0 else "hand_r": 1.0}
-	near = ws[KD.find(Vector(p))[1]]
 	dh_ = math.dist(p, HEAD_C)
-	if (z > 0.9 and abs(x) < 0.32) or (LOOK == "c" and abs(x) < 0.16 and y < -0.12 and z > 0.5):  # the hood (and the beard) follow his head
+	if (z > 0.9 and abs(x) < 0.32) or (BEARD is not None and at(BEARD, p) < 0.012):  # the hood (and the beard) follow his head
 		return {"Head": 1.0}
 	if z > 0.83 and abs(x) < 0.27:  # hood falling onto the shoulders: half head, half spine
 		return mix(near, {"Head": 1.0}, float(np.clip((z - 0.83) / 0.07, 0, 1)) * (1.0 if dh_ < 0.4 else 0.5))
