@@ -351,10 +351,15 @@ var batch := false
 var _loading := false  ## reading a saved world's pieces (load_snapshot)
 
 
+## F565 🔁: something was taken down during this batch (only then is the whole strength check needed at its end).
+var _batch_removed := false
+
+
 func end_batch() -> void:
 	batch = false
-	if auth.is_host():
+	if auth.is_host() and _batch_removed:
 		_queue_shaky()
+	_batch_removed = false
 
 
 @rpc("authority", "call_local", "reliable")
@@ -369,6 +374,8 @@ func _ev_remove_piece(uid: int) -> void:
 	if auth.is_host() and not p.is_empty():
 		if not batch:
 			_queue_shaky()  # (in a batch: once, at end_batch)
+		else:
+			_batch_removed = true
 		if Pieces.LIST[p.piece].get("use", "") == "store":
 			_spill_furniture(p)
 		if Pieces.LIST[p.piece].get("use", "") == "bed":
@@ -939,7 +946,11 @@ func _tick_sites() -> void:
 
 ## Ruin test worlds (instant_ruins): step the ruin's site again and again until it's done, the frame's time is up, or
 ## nothing moves (someone stands in the way: it goes on next frame).
+## F565 🔁 (owner, Nov 22: the wooden Twin Gate stuck at 99% ran at 7 FPS): a site where a whole step changed nothing
+## is stuck (something in the way); it tries again once a second, like a normal site, not every frame.
 func _rush(box_id: int, site: Dictionary, chest: Dictionary) -> void:
+	if _clock < float(site.get("rush_wait", 0.0)):
+		return
 	var t0 := Time.get_ticks_usec()
 	while Time.get_ticks_usec() - t0 < RUSH_USEC:
 		if not sites.has(box_id):
@@ -948,6 +959,7 @@ func _rush(box_id: int, site: Dictionary, chest: Dictionary) -> void:
 		if not _carve_step(box_id, site, chest) and not _fill_step(box_id, site, chest):
 			_build_step(box_id, site, chest)
 		if sites.has(box_id) and _site_mark(site) == mark:
+			site.rush_wait = _clock + 1.0
 			return
 
 
@@ -1221,8 +1233,11 @@ const RUIN_DEBRIS := ["gate_broken", "chimney_fallen", "spire_top_fallen", "spir
 ## piece and fire bowl): cleared when it's rebuilt
 ## Whole pieces that make way when a new piece needs their spot (the outpost's battlements where its walkway now runs
 ## on over the forge, owner Nov 20: they stood a walkway's height lower), and the old spiral stairs in a Twin Gate
-## built before Nov 22 (F713: they blocked its new straight stairs, so the rebuild stopped and left gaps).
-const RUIN_MAKE_WAY := ["battlement", "battlement_corner", "stairs_spiral"]
+## built before Nov 22 (F713: they blocked its new straight stairs, so the rebuild stopped and left gaps). And the ruins'
+## stairs still raised 25 cm on a slab (F565 🔁, Nov 22: blueprints put their stairs straight on the floor since F169;
+## the old raised stone stairs blocked the new ones, so the Twin Gate's first floor never finished and stopped at 99%).
+const RUIN_MAKE_WAY := ["battlement", "battlement_corner", "stairs_spiral", "stairs", "stairs_corner"]
+const RUIN_STAIRS := ["stairs", "stairs_corner"]
 
 
 ## How far from the ruin's middle its pieces and rubble reach (the tower 9 m, the outpost 26 m).
@@ -1448,6 +1463,13 @@ func _ruin_step(box_id: int, site: Dictionary) -> bool:
 			if q.piece in RUIN_DEBRIS and uid in ov:
 				_ev_remove_piece.rpc(uid)  # the Brewhall's fallen chimney lies where the yard railing goes back up (F479)
 				_set_status(box_id, "Clearing the wreckage…")
+				if not rush:
+					return true
+				cleared = true
+				continue
+			if q.piece == "floor" and p.piece in RUIN_STAIRS and q.pos.distance_to(p.pos) < 0.05:
+				_ev_remove_piece.rpc(uid)  # the slab that lifted the old stairs: the new ones stand on the floor (F169)
+				_set_status(box_id, "Taking down the old stairs…")
 				if not rush:
 					return true
 				cleared = true

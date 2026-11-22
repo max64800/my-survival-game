@@ -237,19 +237,23 @@ func test_rebuild_the_twin_gate_in_stone() -> void:
 	fix.origin = o
 	fix.turn = RuinTwinGate.built_turn
 	fix.plan = RuinTower.load_plan(RuinTwinGate.PLAN_PATH)
-	var at := o + basis * Vector3(-9, 5.75, 8)
+	var at := o + basis * Vector3(-9, 5.5, 8)   # (the straight stairs stand on the floor; the old spiral sat on a slab)
 	var srot := Pieces.add_rot(0, fix.turn)
 	for u in b.structure.near(Pieces.box("stairs", at, srot)):
 		if b.structure.pieces[u].piece == "stairs" and (b.structure.pieces[u].pos as Vector3).distance_to(at) < 0.05:
 			b._ev_remove_piece(u)
-	b._ev_add_piece(b._next_uid, "stairs_spiral", "cut_stone", at, srot, false)
+	b._ev_add_piece(b._next_uid, "floor", "cut_stone", at, srot, false)
+	b._ev_add_piece(b._next_uid, "stairs_spiral", "cut_stone", at + Vector3.UP * 0.25, srot, false)
 	check(fix._swap_old_stairs() >= 1, "an old spiral stair is swapped for a straight one")
 	var spirals := 0
 	var straight := 0
+	var slabs := 0
 	for u in b.structure.near(Pieces.box("stairs", at, srot)):
 		spirals += int(b.structure.pieces[u].piece == "stairs_spiral")
+		slabs += int(b.structure.pieces[u].piece == "floor" and (b.structure.pieces[u].pos as Vector3).distance_to(at) < 0.05)
 		straight += int(b.structure.pieces[u].piece == "stairs" and (b.structure.pieces[u].pos as Vector3).distance_to(at) < 0.05)
 	check(spirals == 0 and straight == 1, "no spiral left, the straight stairs in (%d, %d)" % [spirals, straight])
+	check_eq(slabs, 0, "and the slab the old spiral sat on is gone")
 	fix.free()
 	var ps: GameAuthority.PlayerState = auth.players[1]
 	ps.inventory.add("build_hammer", 1)
@@ -290,6 +294,82 @@ func test_rebuild_the_twin_gate_in_stone() -> void:
 			if outside <= 3:
 				check(false, "the rebuilt %s at %s is on kept-clear ground" % [q.piece, q.pos - o])
 	check_eq(outside, 0, "every piece of the rebuilt gate stands on ground the world keeps clear")
+	world.get_parent().queue_free()
+
+
+## F565 🔁 (owner, Nov 22: "even after I rebuild it, it's still at 7 FPS"): the wooden Twin Gate, rushed like the dev
+## Ruins world, finishes (it stopped at 99%: the ruin's old stairs, still raised 25 cm on a slab, blocked the new ones
+## that stand on the floor, so its first floor never finished and its collapsed walls were never cleared). A site that
+## is stuck waits a second between tries instead of a whole strength check of every piece every frame (120 ms a frame).
+func test_rebuild_the_twin_gate_in_wood_rushed_stays_fast() -> void:
+	var box: int = await _build_twin()
+	if not auth.storage.boxes.has(box):
+		check(false, "the Twin Gate has a Rebuilding Chest")
+		world.get_parent().queue_free()
+		return
+	var o := RuinTwinGate.built_origin
+	var b: Builder = auth.builder
+	b.instant_ruins = true
+	auth.players[1].node.global_position = o + Vector3(0, 40, 0)   # (never standing where a piece goes)
+	# Something in the way of one wall: the site gets stuck there.
+	auth.storage.put(box, BlueprintLibrary.WOOD, 1)
+	check(b.sites.has(box), "a wooden rebuild starts")
+	var site: Dictionary = b.sites.get(box, {})
+	var stuck_at := -1
+	for i in site.get("plan", []).size():
+		var p: Dictionary = site.plan[i]
+		if not p.built and p.piece == "wall" and p.pos.y > o.y + 2.0 and Vector2(p.pos.x - o.x, p.pos.z - o.z).length() > 12.0:
+			stuck_at = i
+			break
+	var blocker := -1
+	if stuck_at >= 0:
+		blocker = b._next_uid
+		b._ev_add_piece(blocker, "wall", "cut_stone", site.plan[stuck_at].pos, site.plan[stuck_at].rot, true)
+	var clock_at := b._clock
+	for k in 200:
+		if not b.sites.has(box) or site.has("rush_wait"):
+			break
+		b._rush(box, site, auth.storage.get_box(box))
+	check(site.has("rush_wait"), "the rush stops where something is in the way")
+	var t0 := Time.get_ticks_usec()
+	for k in 30:  # (30 frames of a stuck site)
+		b._rush(box, site, auth.storage.get_box(box))
+	var ms := (Time.get_ticks_usec() - t0) / 1000.0
+	check(ms < 30.0, "a stuck site costs nothing between its tries (30 frames: %.1f ms)" % ms)
+	if blocker >= 0:
+		b._ev_remove_piece(blocker)
+	for k in 400:
+		if not b.sites.has(box):
+			break
+		b._clock = clock_at + 2.0 * (k + 1)   # (a second has passed: it tries again)
+		b._rush(box, site, auth.storage.get_box(box))
+	if b.sites.has(box):
+		var n := 0
+		for p in site.plan:
+			if not p.built and n < 6:
+				n += 1
+				print("TWIN_WOOD_STUCK %s %s at %s overlap=%s" % [p.piece, p.family, p.pos - o, b.structure.overlapping(p.piece, p.pos, p.rot).map(
+					func(u): return "%s %s@%s" % [b.structure.pieces[u].piece, b.structure.pieces[u].family, b.structure.pieces[u].pos - o])])
+	check(not b.sites.has(box), "the wooden rebuild finished, not stuck at 99%% (%s)" % b.site_status(box))
+	# Nothing of the ruin left doubled under the new gate: no broken walls, no old raised stairs or their slabs.
+	var plan_n := BlueprintLibrary.make("wooden_twin_gate").pieces.size()
+	var near := 0
+	var broken := 0
+	var stairs_slabs := 0
+	for uid in b.structure.pieces:
+		var q: Dictionary = b.structure.pieces[uid]
+		if (q.pos as Vector3).distance_to(o) > RuinTwinGate.REACH + 2.0:
+			continue
+		near += 1
+		broken += int(String(q.piece).begins_with("ruin_"))
+		if q.piece in ["stairs", "stairs_corner"]:
+			for u2 in b.structure.near(Pieces.box(q.piece, q.pos, q.rot)):
+				var f: Dictionary = b.structure.pieces[u2]
+				stairs_slabs += int(f.piece == "stairs" and u2 != uid and (f.pos as Vector3).distance_to(q.pos) < 0.3)
+				stairs_slabs += int(f.piece == "floor" and (f.pos as Vector3).distance_to(q.pos) < 0.05)
+	check_eq(broken, 0, "no broken ruin wall left in the rebuilt gate")
+	check_eq(stairs_slabs, 0, "no old raised stairs or their slabs left under the new ones")
+	check(near <= plan_n + 5, "the rebuilt gate is its plan, not the ruin plus the plan (%d pieces, plan %d)" % [near, plan_n])
 	world.get_parent().queue_free()
 
 

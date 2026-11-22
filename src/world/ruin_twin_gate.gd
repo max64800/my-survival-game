@@ -326,8 +326,9 @@ func _ready() -> void:
 ## old pieces come down and the plan's straight stairs and railings go in (only where nothing stands already).
 const OLD_PIECES := [["stairs_spiral", Vector3(-9, 5.75, 8), 0], ["stairs_spiral", Vector3(9, 5.75, 8), 2],
 	["railing", Vector3(-9, 7.75, 7), 0], ["railing", Vector3(9, 7.75, 7), 0], ["railing", Vector3(-13, 5.5, 7), 0],
-	["floor", Vector3(-13, 5.25, 6), 0]]
-const NEW_PIECES := [["stairs", Vector3(-9, 5.75, 8), 0], ["stairs", Vector3(9, 5.75, 8), 0],
+	["floor", Vector3(-13, 5.25, 6), 0], ["floor", Vector3(-9, 5.5, 8), 0], ["floor", Vector3(9, 5.5, 8), 0]]
+## (F565 🔁, Nov 22: the straight stairs stand on the floor, F169; the slab that lifted them goes with the spirals)
+const NEW_PIECES := [["stairs", Vector3(-9, 5.5, 8), 0], ["stairs", Vector3(9, 5.5, 8), 0],
 	["railing", Vector3(-8, 7.75, 8), 1], ["railing", Vector3(8, 7.75, 8), 1], ["railing", Vector3(-14, 5.5, 6), 1],
 	["railing", Vector3(-13, 5.5, 5), 0], ["railing", Vector3(-12, 5.5, 6), 1]]
 
