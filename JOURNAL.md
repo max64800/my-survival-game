@@ -10854,3 +10854,26 @@ old bot test couldn't.
 **Not done:** the owner's other two sub-notes on the roll (animation length matching the dash, and a possible
 end-of-roll teleport/glitch) were addressed in the earlier commit tonight and are unconfirmed against real play —
 worth asking about on the next session.
+
+
+## Nov 22 (night, PC): F716, new spiral stairs you can climb, with a landing at the top
+
+**What we did**
+- You said the spiral stairs you build were very hard to climb, and the top ended in empty air. We made a 3D page first. You picked the "big spiral, 4 × 4 m" and said "decent, but I'll need to test it".
+- The new stairs take up 4 floor tiles (4 × 4 m). Nine wide steps go 3/4 of the way round a thick post. Then you step out onto a solid flat landing, which sits right over the way in. A rail on corner pillars runs round the outside and along the landing's edge.
+- One shared layout file (`tools/asset_forge/builds/spiral_layout.py`) holds every measurement. All three styles are built from it: Stonehold stone, Hearthbrick brick and Shack wood. So the three can't end up different from each other.
+- The game's bumping shape is new too (`piece_mesh.gd` / `piece_node.gd`): a smooth slope made of 27 thin slices, plus the post, the landing and the pillars.
+- New test: a dwarf walks up all three styles, in the open and inside a tower made of walls. It reaches the landing every time.
+
+**Mistakes and hurdles (and how they were fixed)**
+- The handoff note pointed at the wrong Hearthbrick build file. The real one is `hearthbrick_v2_new.py`, which Claude found by searching.
+- The 3D page needed a few rounds of fixes before it showed the right shape.
+- The test runner couldn't find Godot, because it isn't called `godot` on this PC. Fix: point it at `Godot_v4.7.2-stable_win64_console.exe`.
+- The test dwarf got stuck right at the first step. Claude's first guess was a 10 cm lip at the bottom of the slope (there's no head room under the landing to hop up it). Claude removed the lip, but the dwarf was still stuck. The real cause: each slope slice covered a big 30° wedge, and near the post that wedge made an invisible steep wall. Fix: thinner 10° slices that start 60 cm out from the post.
+- The model checks found three parts floating about 1 cm from the rest:
+  - the first stone step;
+  - two rows of the wooden landing.
+  Fix: every step now sits 2 cm into the post, and the wood landing got thicker beams plus a rim beam along its far edge.
+- The model checks also said "too tall", because the rail rises 1 m over the 2 m landing (just like the stair railing). The check now allows that for the spiral stairs only.
+
+**Note for old saves:** spiral stairs built before this change were 2 × 2 m. They now load as the new 4 × 4 m stairs, so they may poke into things next to them.
