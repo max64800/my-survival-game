@@ -10415,3 +10415,13 @@ backwards while just walking instead of toward where the dwarf is facing).
   The Home tab had no picture, and the red notes on faded cards were cut off: picked the first Home piece that has
   a picture, made cards a bit taller and shortened the station note on the card (the right box shows it whole).
 - Noticed: the Furniture pieces (beds etc.) have no menu pictures at all (also true in the old menu). Asked the owner.
+
+
+## Nov 22 (PC, evening): build menu v2, a slip while saving (F709)
+
+- Mistake: I checked which lines in FEEDBACK.md / FEEDBACK-done.md were mine, then ran the full test suite (53 min).
+  In that time another chat marked F711-F715 done and added F716, and my commit took their lines along with mine.
+  Nothing was lost (it's their finished bookkeeping), but it's against the shared-files rule.
+  Lesson: run `git diff --numstat` on shared files right before committing, not before a long wait.
+- The full suite had 29 failures, all from another chat's half-finished F9 hitbox work (`src/combat/hit_shapes.gd`
+  doesn't compile yet, so `main.gd` can't load). Every build-menu test passes when run on its own.
