@@ -36,6 +36,19 @@ func test_triangle_is_equilateral() -> void:
 	check_near(Pieces.yaw_of(6), PI / 3.0, 0.0001, "and turns 60°")
 
 
+## Owner, Nov 22: a (triangle) floor beside a 1 m foundation sat halfway down it. Tops are level now.
+func test_floor_beside_a_foundation_is_level_with_its_top() -> void:
+	var sq := {piece = "foundation", pos = Vector3(0, 0, 0), rot = 0}
+	var top := float(Pieces.LIST.foundation.size.y)
+	var aim := Vector3(1.0, 0.5, 0.2)
+	var box := Pieces.box("foundation", Vector3.ZERO, 0)
+	var t := Pieces.snap("floor_triangle", aim, Vector3.RIGHT, 0.0, 0, 0.0, box, sq)
+	check_near(t.pos.y + float(Pieces.LIST.floor_triangle.size.y), top, EPS, "triangle floor top = foundation top")
+	var f := Pieces.snap("floor", aim, Vector3.RIGHT, 0.0, 0, 0.0, box, {})
+	check_near(f.pos.y + float(Pieces.LIST.floor.size.y), top, EPS, "square floor top = foundation top")
+	check(not "floor_hatch" in BuildMenu.pieces_in("floor"), "the floor hatch is gone from the menu")
+
+
 func test_triangle_snaps_onto_a_square_side() -> void:
 	var sq := {piece = "foundation", pos = Vector3(0, 0, 0), rot = 0}
 	for aim in [Vector3(1.0, 0.5, 0.2), Vector3(-0.3, 0.5, 1.0), Vector3(-1.0, 0.5, 0.0), Vector3(0.2, 0.5, -1.0)]:

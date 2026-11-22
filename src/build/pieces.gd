@@ -127,7 +127,9 @@ const LIST := {
 	"dormer": {name = "Roof Window", group = "roof", size = Vector3(2, 2, 2), units = 6, place = "cell", model_lift = 0.5,
 		families = ["clay_brick"], station = {"mason": 2}},
 	# A floor with a round hole near its front (fall or drop through it) and its dark-wood lid lying open behind it.
-	"floor_hatch": {name = "Floor Hatch", group = "floor", size = Vector3(2, 0.31, 2), units = 4, place = "cell", shape = "hatch",
+	# Owner, Nov 22: hidden from the build menu ("legacy": nobody uses it and a dwarf can't fit through);
+	# it stays so old saves and the gate blueprint's murder holes still load.
+	"floor_hatch": {name = "Floor Hatch", group = "legacy", size = Vector3(2, 0.31, 2), units = 4, place = "cell", shape = "hatch",
 		families = KIT_FAMILIES, station = {"workbench": 2, "mason": 2}},
 	# The sloped wall upside down: full along the top, slanting down to the floor at the left (fills under stairs).
 	# Its models' stone/brick rows stop a little above the sharp tip (model_lift).
@@ -774,11 +776,12 @@ static func snap(piece: String, p: Vector3, n: Vector3, yaw: float, rot: int, li
 		if info.get("on_wall", false):  # hangs where you aim, in 25 cm steps, but stays on the wall
 			pos.y = clampf(snappedf(p.y - h * 0.5, 0.25), anchor.position.y, maxf(anchor.position.y, anchor.end.y - h))
 	elif has_anchor and absf(n.y) < 0.5 and info.place == "cell" and info.get("group", "") in ["floor", "foundation"] and anchor.size.y <= 1.05:
-		# Next to the floor/foundation we're looking at, at the same height.
+		# Next to the floor/foundation we're looking at, tops level (owner, Nov 22: a floor beside a 1 m
+		# foundation sat halfway down it, because the bottoms were lined up).
 		var axis := 0 if absf(n.x) > absf(n.z) else 2
 		var side := signf(n[axis])
 		pos[axis] = (anchor.end[axis] if side > 0.0 else anchor.position[axis]) + side * s[axis] * 0.5
-		pos.y = anchor.position.y
+		pos.y = anchor.end.y - h
 	if info.place == "ceiling":
 		pos.y = snappedf(p.y, 0.5) - h if n.y < -0.5 else snappedf(p.y, 0.5)
 	pos.y += lift
@@ -816,7 +819,8 @@ static func _snap_to_edges(piece: String, p: Vector3, n: Vector3, a: Dictionary)
 		else:
 			k = _steps_for(_yaw_toward(nrm))
 			centre = mid + nrm * float(info.size.z) * 0.5
-		return {pos = Vector3(centre.x, (a.pos as Vector3).y, centre.z), rot = rot_from_steps(k)}
+		# Tops level (owner, Nov 22: the triangle floor beside a foundation sat halfway down it).
+		return {pos = Vector3(centre.x, a_top - float(info.size.y), centre.z), rot = rot_from_steps(k)}
 	# Standing on top of a triangle (or a turned piece).
 	if n.y > 0.5 and a_odd:
 		if info.place == "edge":  # walls, doorways, windows, railings, gables: on the nearest side
