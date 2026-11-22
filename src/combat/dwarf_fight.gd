@@ -161,6 +161,7 @@ func take_stun(amount: float) -> void:
 	if stun_meter.add(amount):
 		stagger = 0.0  # bypass the "already in brief stagger" guard so knock_down always plays the fall
 		knock_down()
+		stagger = 1.2  # stun recovers faster than a full knockdown (fall + get_up in ~1.2 s, not 2 s)
 		message.emit("Stunned!", Color(1.0, 0.4, 0.3))
 
 
@@ -326,9 +327,11 @@ func _impact(heavy: bool, combo_step: int, riposte: bool, airborne: bool = false
 			continue
 		var to := m.global_position - dwarf.global_position
 		var flat := Vector3(to.x, 0, to.z)
-		if flat.length() > reach + m.data.size * 0.4 or absf(to.y) > 2.0:
+		var kd := m.rig != null and m.rig.knocked_down
+		var eff_reach := reach + m.data.size * 0.4 + (m.data.height * 0.5 if kd else 0.0)
+		if flat.length() > eff_reach or absf(to.y) > 2.0:
 			continue
-		if arc < 360.0 and flat.length() > 0.3 and rad_to_deg(fwd.angle_to(flat.normalized())) > arc * 0.5:
+		if not kd and arc < 360.0 and flat.length() > 0.3 and rad_to_deg(fwd.angle_to(flat.normalized())) > arc * 0.5:
 			continue
 		found.append([flat.length(), m.uid])
 	found.sort()

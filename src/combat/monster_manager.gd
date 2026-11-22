@@ -591,7 +591,7 @@ func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: 
 			if away.length() > 0.01:
 				m.knock(away.normalized() * 3.0)  # Spear ★25: a poke pushes them back
 		_hurt_monster(m, peer, dmg, stun, Combat.effect(wd.type, m.stats()))
-		if finisher and not m.data.get("boss", false) and m.is_alive():  # F607/F617: combo finisher sends non-bosses flying; guard: a finisher that kills the monster skips knockdown (dead monsters can't be hit)
+		if finisher and not m.data.get("boss", false) and m.is_alive() and m.hp <= m.max_hp() * 0.5:  # F607/F617: only knock down when wounded (below 50% HP); at full health they fight back
 			var away_fin := (m.global_position - ps.node.global_position) * Vector3(1, 0, 1)
 			if away_fin.length() > 0.01:
 				m.knock(away_fin.normalized() * 14.0 / maxf(1.0, float(m.data.get("size", 1.0))))

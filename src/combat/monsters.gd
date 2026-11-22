@@ -130,7 +130,7 @@ const LIST := {
 	# parryable, breaking the "spin only" feel. Owner, Nov 20: 30% less health (420 -> 294); chat 16 (F532, the
 	# owner's OK on the balance plan): 450 and armor 50, and his swings break the stone of fallen miners (like a beetle's charge).
 	"foreman": {name = "The Pit Boss", dungeon_only = true, rises = true, rise_near = 10.0, sleeps = true, no_variant = true, ragdoll = false, statue_hits = 5, boss = true,
-		smashes_statues = true, size = 1.0, height = 1.9, hp = 450, armor = 50, stun = 360, slash = 1.0, blunt = 1.25, pierce = 0.75,
+		smashes_statues = true, no_push = true, size = 1.0, height = 1.9, hp = 450, armor = 50, stun = 360, slash = 1.0, blunt = 1.25, pierce = 0.75,
 		fire = 0.0, frost = 0.5, poison = 1.0, walk = 1.4, run = 3.6, pack = [1, 1], xp = 80,
 		color = Color(0.55, 0.5, 0.44), shape = "foreman", recover = 1.6,
 		# Owner, Nov 21 ("when he spins he should move towards the player: you have to dodge that"): the whirl now

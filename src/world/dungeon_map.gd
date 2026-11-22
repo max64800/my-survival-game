@@ -134,6 +134,7 @@ const PELL := {
 		["shrine", 30, 32, 36, 38, DOWN, 4.5],        # 12 the healing basin; the hidden boulder on its south side
 		["niche", 32, 38, 34, 42, DOWN, 3],           #    behind the boulder (a chest)
 		["dig_door", 38, 38, 42, 40, DOWN, 3.5],
+		["pell_passage", 30, 38, 38, 48, DOWN, 5],    #    corridor from landing to dig; without this the rats stop at the room edge
 		["dig", 36, 40, 50, 56, DOWN, 5],             # 13 Pell's Last Dig: the Foreman, the recipe stand, the lift (owner,
 		                                              #    Nov 20: "a lot bigger", 14 x 16 m: 3 miners and the boss)
 	],
