@@ -8821,3 +8821,18 @@ Ran `only=test_monsters`. 2 failures, both pre-existing:
 - `test_bat_ragdoll_falls_out_of_the_air` — pre-existing physics flakiness (confirmed: bats have no `straight_charge` flag, so F602 ragdoll code never runs for them)
 
 All 54 other checks passed.
+
+
+## Nov 22 — Slower dwarf: no more anime legs (Claude 2)
+
+**What we did**
+- The owner tried the trot: "running feels like an anime ... way too fast in all directions". A dwarf has short legs, so to keep his feet on the floor at 4 m/s they had to spin. The owner picked "slow the dwarf a bit": walking 4 → 3 m/s, Shift-running 6.5 → 5.2 m/s. The legs now take 2.7 steps a second walking (feet grip 93%) and 5 running (84%).
+- His speed touches other rules, so I re-tuned them and their tests:
+  - The skeleton miner's whirl slides after you at 2.6 m/s (was 3.8), still slower than you walk.
+  - The Lost Miner's Leaping Chop rushes at 2.6 m/s (was 3.4), so walking off still gets you out.
+  - Dungeon bridge: a walking jump now only just clears the 3 m gap; a running jump clears it easily.
+- Logged 11 new notes from the owner's play (F627–F637, two repeats: F567 🔁 blue outline, F560 🔁 rebuild menu).
+
+**Hurdles and mistakes**
+- My trot fix from earlier today (feet gripping at 4 m/s) was correct on paper but looked wrong: the grip number alone isn't enough, the number of steps a second matters too. Lesson: also check steps a second against what looks natural for short legs.
+- The full test run's summary only showed the last few failures; I had to run all 800 again with only the FAIL lines kept (35 minutes). The remaining failures (hair swing, great-axe swing, ghost_rig parse error, poison jabs, ghost lord statue, material null) also fail without my changes: other chats' unfinished work.
