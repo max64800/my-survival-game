@@ -1,5 +1,6 @@
-# F782: the new dungeon healing fountain (owner picked design 1, Nov 22): a rune-carved stone dwarf face pours
-# glowing green water into a round stone basin. Mine-timber posts with copper straps hold the head, old roots
+# F782: the new dungeon healing fountain (owner picked design 1, Nov 22): a rune-carved stone dwarf face over a
+# round stone basin full of glowing green healing crystals (owner, Nov 22: no water, it would be hard to animate;
+# lighter stone). Mine-timber posts with copper straps hold the head, old roots
 # wind down the sides, moss on top. Built from assets/concepts/healing-fountain/fountain_turnaround.png
 # (the TRELLIS shape in journey/3d/trellis_f706/ was only a shape guide, model rule 1).
 # NOT in the game yet: the owner wants to see it first. Same floor spot as decor/mushroom_fountain (about 1 m round).
@@ -18,18 +19,17 @@ from decor_nov21_mg import carve  # noqa: E402
 CU = lambda v="b": kit.tex_mat("copper", v)  # noqa: E731
 WOOD = lambda: T("wood")  # noqa: E731
 BARK = lambda: T("bark")  # noqa: E731
-GREY = lambda: T("stone")  # noqa: E731
+GREY = lambda: T("limestone", "b")  # noqa: E731   (lighter stone, owner Nov 22)
 MOSS = lambda: kit.mat("moss", -0.25)
-FACE = lambda: T("limestone", "b")  # noqa: E731
+FACE = lambda: T("limestone", "a")  # noqa: E731
 DARK = lambda: C((0.07, 0.06, 0.05), 0.9)  # noqa: E731
-WATER_DEEP = lambda: C((0.01, 0.16, 0.07), 0.15, glow=0.4)  # noqa: E731
-WATER_TOP = lambda: C((0.03, 0.5, 0.17), 0.1, glow=0.9)  # noqa: E731
-WATER_POUR = lambda: C((0.12, 0.75, 0.3), 0.1, glow=1.1)  # noqa: E731
+GEM = lambda: C((0.18, 0.8, 0.42), 0.15, glow=0.8)  # noqa: E731          healing crystal
+GEM_PALE = lambda: C((0.35, 0.95, 0.6), 0.15, glow=0.9)  # noqa: E731     its lighter tips
 
 BX, BY = 0.0, -0.12      # basin centre
 R_OUT, R_IN = 0.37, 0.25  # basin stone ring
 TOP = 0.44               # basin rim height
-WATER = 0.39             # water surface
+BED = 0.36               # pebble bed inside the basin
 
 
 def basin():
@@ -44,10 +44,19 @@ def basin():
 			fy = BY - R_OUT + 0.005
 			for rot in (0, 32, -32):
 				carve(o, (0.022, 0.05, 0.19), (BX, fy, 0.22), rot=(0, rot, 0))
-	# basin floor (inside the ring) and the water, in layers so they never share a surface (rule 2)
-	kit.cylinder(R_IN + 0.03, 0.30, (BX, BY, 0.15), GREY(), verts=14, bevel=0.01)
-	kit.cylinder(R_IN + 0.02, WATER - 0.012 - 0.30, (BX, BY, (0.30 + WATER - 0.012) / 2), WATER_DEEP(), verts=16, bevel=0)
-	kit.cylinder(R_IN + 0.015, 0.012, (BX, BY, WATER - 0.006), WATER_TOP(), verts=16, bevel=0)
+	# basin floor (inside the ring), a bed of pebbles and moss, and the healing crystals growing out of it
+	kit.cylinder(R_IN + 0.03, BED, (BX, BY, BED / 2), T("stone", "a"), verts=14, bevel=0.01)
+	for i in range(9):
+		a = i * 2.4
+		rr = 0.06 + (i % 3) * 0.06
+		lump((BX + math.cos(a) * rr, BY + math.sin(a) * rr, BED + 0.005), (0.06, 0.05, 0.035), T("limestone", "a"), seed=80 + i, rough=0.008)
+	for i, (x, y) in enumerate(((-0.13, -0.06), (0.14, -0.02), (0.02, -0.22))):
+		lump((BX + x, BY + y, BED + 0.01), (0.06, 0.05, 0.015), MOSS(), seed=90 + i, rough=0.006)
+	g, gp = GEM(), GEM_PALE()
+	kit.crystal_cluster((BX, BY + 0.02, BED), 1.1, g, seed=7, n=6)            # big middle cluster, under the face
+	for i, (x, y, sc, n) in enumerate(((-0.13, -0.1, 0.8, 4), (0.13, -0.08, 0.85, 5), (-0.05, -0.2, 0.6, 3),
+			(0.08, -0.21, 0.55, 3), (-0.17, 0.05, 0.65, 3), (0.17, 0.06, 0.7, 3))):
+		kit.crystal_cluster((BX + x, BY + y, BED), sc, gp if i % 2 else g, seed=11 + i, n=n)
 	# copper band round the front half, in short riveted plates pressed into each stone
 	for k in (1, 2, 3, 4, 6, 7, 8, 9):
 		a = 2 * math.pi * (k + 0.5) / 11 - math.pi / 2
@@ -62,7 +71,7 @@ def basin():
 
 def head():
 	# the big stone the face is cut from, with rough boulders round its sides and back
-	core = B((0.6, 0.3, 1.0), (0, 0.27, 0.5), GREY(), bevel=0.04)
+	core = B((0.6, 0.3, 1.0), (0, 0.285, 0.5), GREY(), bevel=0.04)   # front 1.5 cm behind the basin stones (rule 2)
 	kit.roughen(core, 0.01, 1, seed=3)
 	for i, (x, y, z, s) in enumerate(((-0.3, 0.32, 0.18, 0.2), (0.3, 0.3, 0.2, 0.21), (-0.27, 0.36, 0.55, 0.18),
 			(0.28, 0.35, 0.58, 0.18), (-0.2, 0.36, 0.9, 0.17), (0.2, 0.35, 0.92, 0.17), (0.0, 0.42, 0.35, 0.22),
@@ -94,10 +103,8 @@ def head():
 	carve(rs, (0.022, 0.04, 0.14), (0, ry, 1.07))
 	for sx in (-1, 1):
 		carve(rs, (0.02, 0.04, 0.08), (sx * 0.03, ry, 1.105), rot=(0, sx * 45, 0))
-	# the pour: from the mouth into the basin, with a bright splash ring on the water
-	log((0, fy - 0.17, 0.53), (0, BY + 0.02, WATER + 0.004), 0.028, WATER_POUR(), seg=8, rings=3, ends=False, bend=0.12)
-	kit.ring(0.05, 0.008, (0, BY + 0.02, WATER + 0.004), WATER_POUR(), seg=14)
-	kit.ring(0.11, 0.006, (0, BY + 0.02, WATER + 0.006), WATER_POUR(), seg=18)
+	# a small healing crystal growing out of the mouth (instead of a water stream)
+	kit.crystal((0, fy - 0.12, 0.53), 0.028, 0.12, GEM_PALE(), tilt=(90, 0, 0), sides=6)
 
 
 def timbers():
