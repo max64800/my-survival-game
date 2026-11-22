@@ -134,9 +134,11 @@ static func remove(id: int, mined: bool) -> void:
 	if mined:
 		if DisplayServer.get_name() != "headless":  # (the chunks' rock material makes a drawing-less test computer complain)
 			# The same burst as mining rock (owner, Nov 18), with pieces sized to the statue (bat ~0.5, beetle ~0.85, Great Rock Beetle ~1.3).
+			# Skeleton miners (bone_box): their lying body spans ~1.9 m, but the rocks should be small (F653).
 			var dims := [box.size.x, box.size.y, box.size.z]
 			dims.sort()
-			var size := clampf(float(dims[1]) / 1.6, 0.3, 1.3)  # (its middle measure: a bat's long wings don't count)
+			var max_size := 0.4 if c.has_meta("bone_box") else 1.3
+			var size := clampf(float(dims[1]) / 1.6, 0.3, max_size)  # (its middle measure: a bat's long wings don't count)
 			RockShatter.burst(parent, box.get_center(), Vector3.UP, STONE, Mat.STONE, size)
 			RockShatter.burst(parent, box.get_center() + Vector3.UP * 0.15 * size, Vector3.UP, STONE, Mat.STONE, size * 0.8)
 		_free(c)

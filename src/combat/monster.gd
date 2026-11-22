@@ -325,10 +325,14 @@ func start_knockdown(duration: float) -> void:
 	if _knock.length() > 6.0:
 		_knock = _knock.normalized() * 6.0  # keep the direction but cap so player can follow up
 	rig.knock_down()
+	collision_layer = 0  # walk through while on the floor (F651)
 
 
 ## Looks: a red outline round the whole creature while it winds up an attack no weapon parries (only a shield).
+## For the multi-spin chain: each follow turn calls _red_outline again; a generation counter stops the previous
+## timer clearing the outline early (F646).
 static var _outline_mat: StandardMaterial3D
+var _outline_gen := 0
 
 
 func _red_outline(seconds: float) -> void:
@@ -339,12 +343,16 @@ func _red_outline(seconds: float) -> void:
 		_outline_mat.cull_mode = BaseMaterial3D.CULL_FRONT  # (only the grown back faces show: a rim round it)
 		_outline_mat.grow = true
 		_outline_mat.grow_amount = 0.025
+	_outline_gen += 1
+	var gen := _outline_gen
 	var meshes: Array = []
 	for mi: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
-		if mi.material_overlay == null and mi.visible:
-			mi.material_overlay = _outline_mat
+		if mi.visible:
+			mi.material_overlay = _outline_mat  # apply or re-apply; keeps it on through follow turns
 			meshes.append(mi)
-	get_tree().create_timer(seconds + 0.1).timeout.connect(_clear_outline.bind(meshes))  # (a method: nothing if it died)
+	get_tree().create_timer(seconds + 0.1).timeout.connect(func() -> void:
+		if gen == _outline_gen:
+			_clear_outline(meshes))  # only clear when no newer call has taken over
 
 
 func _clear_outline(meshes: Array) -> void:
@@ -411,6 +419,7 @@ func think(delta: float, mgr: Node) -> void:
 		_kd_daze -= delta
 		if _kd_daze <= 0.0 and rig != null and rig.knocked_down:
 			rig.get_up()
+			collision_layer = MONSTER_LAYER  # walkable again once upright (F651)
 			_no_progress = 0.0  # don't give up immediately after getting up
 		else:
 			velocity = Vector3(0, velocity.y, 0)
@@ -419,6 +428,7 @@ func think(delta: float, mgr: Node) -> void:
 	if stun.is_stunned():
 		if rig != null and not rig.knocked_down and not rig.dead:  # stun start: fall apart
 			rig.knock_down()
+			collision_layer = 0  # walk through while stunned (F651)
 		state = State.STUNNED
 		velocity = Vector3(0, velocity.y, 0)
 		_move(delta, Vector3.ZERO, 0.0)
@@ -426,6 +436,7 @@ func think(delta: float, mgr: Node) -> void:
 	if state == State.STUNNED:
 		if rig != null and rig.knocked_down:  # stun ended: get back up
 			rig.get_up()
+			collision_layer = MONSTER_LAYER  # walkable again once upright (F651)
 			_no_progress = 0.0  # don't give up immediately after getting up
 		state = State.FLEE if data.get("passive", false) or (data.get("neutral", false) and hp < max_hp() * 0.5) else State.CHASE
 		_timer = 6.0
@@ -806,6 +817,8 @@ func _pick_attack(dist: float, mgr: Node = null) -> Dictionary:
 
 
 func _start_attack(atk: Dictionary, mgr: Node) -> void:
+	if rig != null and rig.knocked_down:
+		return  # never start an attack while on the floor (F652)
 	if atk.has("rest"):
 		_rest_until[atk.name] = _clock + float(atk.rest)
 	if atk.has("quiet_after"):
@@ -909,10 +922,12 @@ func _move(delta: float, dir: Vector3, speed: float) -> void:
 		velocity.x = 0.0  # it stops right there: a charge used to slide on, out of its room into the doorway (F473)
 		velocity.z = 0.0
 	if data.get("flies", false):
-		velocity = dir * speed
-		velocity.y = 0.0
+		# Smooth flight (F630): the speed and the way it flies change gradually, not in one frame.
+		var want := Vector2(dir.x, dir.z) * speed
+		var flat := Vector2(velocity.x, velocity.z).move_toward(want, FLY_ACCEL * delta)
+		velocity = Vector3(flat.x, 0.0, flat.y)
 		if data.get("swoops", false) and _alt != INF:
-			velocity.y = clampf((_alt - global_position.y) * 3.0, -7.0, 6.0)
+			velocity.y = clampf((_alt - global_position.y) * 2.0, -FLY_CLIMB, FLY_CLIMB)
 	else:
 		var grip := CHARGE_GRIP if charging else 20.0
 		velocity.x = move_toward(velocity.x, dir.x * speed, grip * delta)
@@ -1298,6 +1313,9 @@ func _face(target: Node3D) -> void:
 ## that way. Returns [the direction it really moves (its own forward, or none), a speed factor].
 const TURN_SPEED := 0.9  ## radians a second (about 7 s for a full turn)
 const TURN_GO := 0.45    ## radians: it sets off once it faces within this of the way it wants to go
+const FLY_TURN_SLOW := 0.55  ## a flyer turning right round still flies at this part of its speed (F630)
+const FLY_ACCEL := 9.0   ## m/s² a flyer speeds up, slows down and swings its flight with (F630: no instant changes)
+const FLY_CLIMB := 3.5   ## m/s a flyer climbs or sinks at most while cruising (it was 6-7: it bobbed up and down fast)
 
 
 ## Bats fly in curves with a bit of randomness (owner, Nov 19: "only forward and backward"): the way it wants to go
@@ -1315,6 +1333,10 @@ func _turn_toward(dir: Vector3, delta: float) -> Array:
 	var diff := angle_difference(model.rotation.y, want)
 	model.rotation.y = rotate_toward(model.rotation.y, want, float(data.get("turn_speed", TURN_SPEED)) * delta)
 	model.set_meta("turning", absf(diff) > 0.08)
+	if data.get("flies", false):
+		# A bat never stops in the air to turn (owner, Nov 22, F630: "very sharp turns"): it flies on along its own
+		# nose while it swings round, like a bird banking, a little slower in a tight turn.
+		return [-Basis(Vector3.UP, model.rotation.y).z, FLY_TURN_SLOW + (1.0 - FLY_TURN_SLOW) * maxf(0.0, cos(diff))]
 	if absf(diff) > TURN_GO:
 		return [Vector3.ZERO, 0.0]  # still turning: hops in place
 	var fwd := -Basis(Vector3.UP, model.rotation.y).z

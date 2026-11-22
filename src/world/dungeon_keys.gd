@@ -197,6 +197,11 @@ func request_pull_lever(peer_id: int, dungeon_id: String) -> String:
 		return "Too far away."
 	if gate_open(dungeon_id):
 		return "The gate is already open."
+	# F649: the exit lever is locked while the dungeon's boss is still alive.
+	if auth.monsters != null:
+		for m: Object in auth.monsters.monsters.values():
+			if m.data.get("boss", false) and m.dungeon.get("id", "") == dungeon_id:
+				return "The boss still lives."
 	_ev_gate.rpc(dungeon_id, float(auth.world_state.get("played", 0.0)))
 	return "The gate grinds open. The way out!"
 

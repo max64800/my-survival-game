@@ -113,6 +113,8 @@ func rise_time() -> float:
 func attack(clip: String, tell: float, red := false, again := false) -> void:
 	if dead or not ap.has_animation(clip):
 		return
+	if knocked_down:
+		return  # never attack while on the floor (F652)
 	if _busy_kind == "rise" and _busy > 0.0:
 		return  # finish getting up before swinging (never hit while rising)
 	lying = false
@@ -221,7 +223,7 @@ func _glint_later(wait: float) -> void:
 		var tip := lead_tip()
 		var at := h.global_transform * tip
 		PickGlint.on(h, tip)
-		Sfx.play("clink", at, -3.0, 2.3)  # (a real metal clink pitched up: a small "ting")
+		Sfx.play("clink", at, -3.0, 1.0)  # (a real metal clink at natural pitch: the attack warning)
 	if wait <= 0.01:
 		go.call()
 		return
