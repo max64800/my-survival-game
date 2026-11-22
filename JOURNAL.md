@@ -9600,3 +9600,22 @@ The Warhammer ★25 heavy-swing immunity in `knock_down()` still applies.
 - `src/net/game_authority.gd` — new `_ev_ruin_rebuilt` line, sent to every player.
 - `tests/test_tower_rebuild_play.gd` — rewritten test covers all five fixes together, plus the existing lag/junk-cleanup checks.
 - `FEEDBACK.md`, `FEEDBACK-done.md` — F631, F567, F633, F634, F635, F636 crossed off and moved to done; F637 left open (another Claude's in-progress work).
+
+
+## Nov 22 — Ghost maces: long and thin (F664)
+
+**What we did:** The owner asked for the Bearded Shade's mace twice as long, the Wrathful Shade's very long but out of
+his neck, and every ghost mace much thinner so they don't look like toys (the skeleton problem, F616).
+- `Ghost.reshape_mace` (src/combat/ghost.gd) reshapes the silver mace mesh per look: only the bare shaft between the grip
+  wrap and the fins stretches, so the grip and the head keep their shape; x and z shrink. Drifting 1.0× long / 0.62 thin,
+  Wrathful 1.6× / 0.6, Bearded and the boss 2.0× / 0.58. Reshaped meshes are cached, so each look is built once.
+- The 3D page does the same thing in JS (`reshapeMace`), so the page and the game match.
+- Two new tests: each ghost's mace is slim and the right length, and the long maces stay out of the head and neck all
+  through the swing (they stay about 0.55 m from the head and neck bones).
+
+**Hurdles:**
+- Claude's first page check was a view from behind, which showed nothing useful. Claude switched to measuring in the game
+  (a test that samples the mace along the whole swing), then one side view on the page.
+- A GDScript type error (`length` from an untyped array) stopped the test file from loading; fixed with `: float`.
+- The page folder's copy of the page was older than the repo copy (it was missing the approved dots). Claude copied the
+  repo copy over it before publishing, so the dots weren't lost.
