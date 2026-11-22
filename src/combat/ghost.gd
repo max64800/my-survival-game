@@ -10,6 +10,7 @@ extends RefCounted
 ## (co-op: the host picks the spot, MonsterManager.ghost_fade tells everyone, everyone sees the same jump).
 
 const SHADER := preload("res://src/art/ghost.gdshader")
+const DEPTH := preload("res://src/art/ghost_depth.gdshader")  ## its front surface first: no tearing where it folds over itself
 const BODY := "res://assets/models/creatures/ghost_%s.glb"
 const LOOKS := {"ghost_a": "a", "ghost_b": "b", "ghost_c": "c", "ghost_lord": "c"}
 const MACE := "mace_silver"
@@ -47,6 +48,7 @@ static func _dress(dm: DwarfModel, look: String, color: Color) -> void:
 	var mat := ShaderMaterial.new()
 	mat.shader = SHADER
 	mat.set_shader_parameter("tint", color)
+	_add_depth(mat, true)
 	var src: Node = (load(BODY % look) as PackedScene).instantiate()
 	for mi: MeshInstance3D in src.find_children("ghost_*", "MeshInstance3D", true, false):
 		dm.dwarf_rig._bind_to_skeleton(mi)
@@ -61,11 +63,21 @@ static func _dress(dm: DwarfModel, look: String, color: Color) -> void:
 	mace.set_shader_parameter("tint", color.lightened(0.35))
 	mace.set_shader_parameter("use_guide", false)
 	mace.set_shader_parameter("core", 0.35)
+	_add_depth(mace, false)
 	for mi: MeshInstance3D in dm.dwarf_rig.grip.find_children("*", "MeshInstance3D", true, false):
 		mi.material_override = mace
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		mi.add_to_group("ghost_skin")
 	dm.set_meta("ghost_mats", [mat, mace])
+
+
+## The depth pass drawn just before it (ghost_depth.gdshader: lower render_priority, so it goes first).
+static func _add_depth(mat: ShaderMaterial, guide: bool) -> void:
+	var d := ShaderMaterial.new()
+	d.shader = DEPTH
+	d.set_shader_parameter("use_guide", guide)
+	d.render_priority = -1
+	mat.next_pass = d
 
 
 static func mats(model: Node3D) -> Array:
@@ -76,6 +88,8 @@ static func mats(model: Node3D) -> Array:
 static func set_fade(model: Node3D, f: float) -> void:
 	for m: ShaderMaterial in mats(model):
 		m.set_shader_parameter("fade", f)
+		if m.next_pass is ShaderMaterial:
+			(m.next_pass as ShaderMaterial).set_shader_parameter("fade", f)
 
 
 ## Host: a hit took it past a quarter mark? Returns where it jumps to, or Vector3.INF (no jump).

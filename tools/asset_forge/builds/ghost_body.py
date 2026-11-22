@@ -173,6 +173,153 @@ for i in range(12):
 twist = np.sin(np.arctan2(X, Y - 0.1) * 3.0 + Z * 16.0)
 body = body + np.where(Z < 0.5, 0.006 * twist * np.clip((0.5 - Z) / 0.15, 0, 1), 0.0)
 
+
+def ring(c, axis, ra, rb, r):
+	"""A ring (torus) round `axis` ("x", "y" or "z"): ra, rb its two radii across, r how thick."""
+	p = {"x": (Y - c[1], Z - c[2], X - c[0]), "y": (X - c[0], Z - c[2], Y - c[1]), "z": (X - c[0], Y - c[1], Z - c[2])}[axis]
+	q = (np.sqrt((p[0] / ra) ** 2 + (p[1] / rb) ** 2) - 1.0) * min(ra, rb)
+	return np.sqrt(q * q + p[2] * p[2]) - r
+
+
+def rbox(c, half, rr, turn=0.0):
+	"""A box with soft corners, turned `turn` radians round the front-back line."""
+	ct, st = math.cos(turn), math.sin(turn)
+	lx, lz = (X - c[0]) * ct - (Z - c[2]) * st, (X - c[0]) * st + (Z - c[2]) * ct
+	qx, qy, qz = np.abs(lx) - half[0], np.abs(Y - c[1]) - half[1], np.abs(lz) - half[2]
+	out = np.sqrt(np.maximum(qx, 0) ** 2 + np.maximum(qy, 0) ** 2 + np.maximum(qz, 0) ** 2)
+	return out + np.minimum(np.maximum(np.maximum(qx, qy), qz), 0.0) - rr
+
+
+def at(D, p):
+	i = np.clip(np.round((np.array(p) - LO) / H).astype(int), 0, N - 1)
+	return float(D[tuple(i)])
+
+
+def hit(D, start, d):
+	"""Where a line from inside the clay (start, going d) comes out of it: for setting details right on the surface."""
+	p, d = np.array(start, float), np.array(d, float)
+	d /= np.linalg.norm(d)
+	for _ in range(600):
+		if at(D, p) >= 0.0:
+			return tuple(p)
+		p += d * H * 0.5
+	return tuple(p)
+
+
+def rope(D, pts, r0, r1, k=0.012):
+	for i in range(len(pts) - 1):
+		t0, t1 = i / (len(pts) - 1), (i + 1) / (len(pts) - 1)
+		D = smin(D, tube(pts[i], pts[i + 1], r0 + (r1 - r0) * t0, r0 + (r1 - r0) * t1), k)
+	return D
+
+
+def tail_at(t):
+	"""The tail's middle and its radius, t = 0 at the waist .. 1 at its tip."""
+	i = min(int(t * 12), 11)
+	f = t * 12 - i
+	c = tuple(tail_pts[i][j] * (1 - f) + tail_pts[i + 1][j] * f for j in range(3))
+	return c, 0.27 * (1.0 - t) ** 1.25 + 0.01
+
+
+LANTERN = (0.2, -0.235, 0.355)  # the Drifting Shade's lantern at his left hip (its glass glows, in the eyes' mesh)
+if LOOK == "a":
+	# The Drifting Shade (owner, Nov 22: "way too simplistic... a lot more details"): an old miner's spirit in a hooded
+	# robe with a short torn cowl, a rope belt with a knot, a little ghost lantern and a broken chain at his hips,
+	# wide sleeves with ragged flaps, a patched robe, torn strips flowing down into the mist and wisps curling off the tail.
+	# All one clay shape: nothing sits on top of anything else (no shimmer through the see-through body).
+	ang = np.arctan2(X, Y - 0.035)
+	# the cowl: a short cape round the shoulders, its lower edge wavy and torn upwards in three places
+	# (a layer 2.5 cm thick laid over his shoulders and chest: it follows the body, ends on his upper arms)
+	edge = 0.655 + 0.03 * np.cos(ang) + 0.014 * np.sin(ang * 9 + 0.5) + 0.008 * np.sin(ang * 4 + 2.0)
+	for a0 in (0.9, -2.2, 2.7):
+		edge = edge + 0.05 * np.exp(-((np.angle(np.exp(1j * (ang - a0)))) / 0.1) ** 2)
+	cowl = smax(smax(body - 0.025, edge - Z, 0.006), np.abs(X) - 0.47 + 0.02 * np.sin(Z * 60), 0.01)
+	cowl = smax(cowl, Z - 0.9, 0.03)  # (the hood itself stays as it is)
+	body = smin(body, cowl, 0.006)
+	# the hood's rolled rim round the face, a little uneven, and its long point drooping down his back
+	rim = ring((0, -0.198, 1.035), "y", 0.168, 0.182, 0.029) + 0.004 * np.sin(np.arctan2(Z - 1.035, X) * 13)
+	body = smin(body, rim, 0.012)
+	body = rope(body, [(0, 0.2, 1.19), (0, 0.31, 1.1), (0.02, 0.35, 0.98), (0.05, 0.34, 0.9)], 0.085, 0.022, 0.03)
+	# creases in the hood cloth: two soft grooves each side
+	for s in (-1, 1):
+		for d0, d1, d2 in (((0.35, -0.45, 0.8), (0.75, 0.0, 0.62), (0.7, 0.55, 0.1)),
+				((0.5, -0.6, 0.35), (0.9, -0.05, 0.1), (0.75, 0.5, -0.35))):
+			pts = []
+			for d in (d0, d1, d2):
+				n = np.array((s * d[0], d[1], d[2])) / np.linalg.norm(d)
+				pts.append(tuple(np.array(hit(body, HEAD_C, n)) + n * 0.022))  # (a wide shallow dip: 8 mm deep)
+			for i in range(2):
+				body = smax(body, -tube(pts[i], pts[i + 1], 0.03, 0.03), 0.02)
+	# the robe wrapped across his chest: one raised fold from his right shoulder down to the belt
+	f0 = hit(body, (-0.1, 0.03, 0.69), (0.0, -1, 0.0))
+	f1 = hit(body, (0.05, 0.03, 0.6), (0.0, -1, 0.0))
+	f2 = hit(body, (0.11, 0.03, 0.52), (0.0, -1, 0.0))
+	body = rope(body, [f0, f1, f2], 0.017, 0.015, 0.01)
+	# two sewn-on patches: on his chest and on his back
+	for start, d, half in (((0.05, 0.03, 0.41), (0, -1, 0), (0.042, 0.03, 0.036)), ((0.1, 0.03, 0.64), (0, 1, 0), (0.065, 0.03, 0.055))):
+		p = np.array(hit(body, start, d)) - np.array(d) * 0.024
+		body = smin(body, rbox(tuple(p), half, 0.008, 0.18) + wobble(0.007, 5), 0.006)  # (sewn on a little crooked)
+	# the rope belt: twisted, round his waist, a knot at the front and two frayed ends hanging down
+	bz = 0.505
+	belt = ring((0, 0.03, bz), "z", 0.312, 0.288, 0.03)
+	theta = np.arctan2(Y - 0.03, X)
+	plane = np.sqrt((X / 0.312) ** 2 + ((Y - 0.03) / 0.288) ** 2) * 0.3 - 0.3
+	belt = belt + 0.006 * np.sin(theta * 34 + np.arctan2(Z - bz, plane) * 2)
+	belt = smin(belt, ell((-0.09, -0.262, 0.5), (0.05, 0.036, 0.042)), 0.012)
+	for end, sway in (((-0.06, -0.285, 0.33), 0.0), ((-0.13, -0.275, 0.37), 0.02)):
+		belt = rope(belt, [(-0.09, -0.27, 0.48), ((end[0] - 0.09) / 2 + sway, end[1] - 0.01, (end[2] + 0.48) / 2), end], 0.022, 0.017, 0.008)
+		for fx in (-0.009, 0.0, 0.009):  # the frayed end
+			belt = smin(belt, tube(end, (end[0] + fx, end[1] - 0.004 * (fx != 0), end[2] - 0.05 + abs(fx)), 0.012, 0.008), 0.006)
+	body = smin(body, belt, 0.012)
+	# the lantern hanging from the belt at his left hip: a ring, a cap, four posts and a foot (the glass is in the eyes)
+	lx, ly, lz = LANTERN
+	lan = ring((lx, ly + 0.02, 0.475), "x", 0.026, 0.034, 0.011)
+	lan = smin(lan, ell((lx, ly, lz + 0.066), (0.05, 0.05, 0.02)), 0.008)
+	lan = smin(lan, tube((lx, ly, lz + 0.08), (lx, ly, lz + 0.105), 0.022, 0.008), 0.008)
+	lan = smin(lan, ell((lx, ly, lz - 0.064), (0.048, 0.048, 0.017)), 0.008)
+	for px in (-0.034, 0.034):
+		for py in (-0.034, 0.034):
+			lan = smin(lan, tube((lx + px, ly + py, lz - 0.065), (lx + px, ly + py, lz + 0.066), 0.011, 0.011), 0.006)
+	body = smin(body, lan, 0.008)
+	# a broken chain hanging from the belt at his right hip, round links each turned a quarter, the last one snapped
+	cx, cy = -0.262, 0.15
+	ctop = 0.5
+	for k in range(5):
+		cz = ctop - 0.03 - k * 0.04
+		link = ring((cx, cy, cz), "y" if k % 2 == 0 else "x", 0.024, 0.033, 0.0115)
+		if k == 4:
+			link = smax(link, -ell((cx, cy, cz - 0.03), (0.03, 0.03, 0.014)), 0.004)
+		body = smin(body, link, 0.004)
+	# the sleeves: a band at the cuff, the cuff opened up (the fist sits in it, 1.5 cm clear), a ragged flap hanging down
+	for s in (-1, 1):
+		body = smin(body, ring((s * (HAND_X - 0.035), 0.035, 0.778), "x", 0.122, 0.122, 0.02), 0.01)
+		body = smax(body, -tube((s * (HAND_X - 0.09), 0.035, 0.778), (s * (HAND_X + 0.06), 0.035, 0.778), 0.095, 0.095), 0.01)
+		for x0, x1, zb in ((0.44, 0.5, 0.6), (0.53, 0.6, 0.63)):
+			body = rope(body, [(s * x0, 0.05, 0.71), (s * (x0 + x1) / 2, 0.06, (0.71 + zb) / 2 - 0.01), (s * x1, 0.075, zb)], 0.06, 0.02, 0.03)
+	# deeper folds hanging in the robe below the belt
+	body = body + np.where(Z < 0.48, 0.011 * np.sin(ang * 7 + 0.7) * np.clip((0.48 - Z) / 0.08, 0, 1) * np.clip((Z - 0.12) / 0.12, 0, 1), 0.0)
+	# torn strips of robe flowing down the tail, their tips lifting off it into the mist
+	for k in range(7):
+		a = k / 7.0 * math.tau + 0.35 + R.uniform(-0.15, 0.15)
+		t_end = R.uniform(0.55, 0.8)
+		pts = []
+		for j in range(6):
+			t = 0.04 + (t_end - 0.04) * j / 5
+			c, rt = tail_at(t)
+			off = rt + 0.01 + 0.08 * (j / 5) ** 2
+			pts.append((c[0] + math.sin(a) * 1.12 * off, c[1] + math.cos(a) * off, c[2]))
+		body = rope(body, pts, 0.036, 0.014, 0.014)
+	# wisps of mist curling off the tail's tip
+	tip, _ = tail_at(0.97)
+	for k, ph in enumerate((0.0, 2.1, 4.2)):
+		pts = [tip]
+		for j in range(1, 8):
+			u = j / 7
+			pts.append((tip[0] + 0.12 * u * math.sin(u * 4.5 + ph), tip[1] + 0.03 + 0.12 * u + 0.05 * math.cos(u * 4.5 + ph),
+				tip[2] + 0.14 * u + 0.025 * k))
+		body = rope(body, pts, 0.03, 0.013, 0.012)
+	body = smax(body, -face, 0.02)  # (the face hollow stays open)
+
 if LOOK == "c":
 	# A misty beard flowing out of the hood, down over the chest.
 	beard = tube((0, -0.17, 0.92), (0, -0.25, 0.66), 0.10, 0.045, sx=1.7)
@@ -197,6 +344,8 @@ o_body = to_mesh(NAME + "_body", body, MAT_BODY)
 eyes = np.minimum(ell((-0.062, -0.087 - 0.0, 1.045), (0.034, 0.02, 0.022)), ell((0.062, -0.087, 1.045), (0.034, 0.02, 0.022)))
 if LOOK == "b":  # angry: slanted, narrower
 	eyes = np.minimum(ell((-0.062, -0.087, 1.04), (0.036, 0.02, 0.016)), ell((0.062, -0.087, 1.04), (0.036, 0.02, 0.016)))
+if LOOK == "a":  # the lantern's glass: it touches the cap and the foot, inside the four posts (clear of them)
+	eyes = np.minimum(eyes, ell(LANTERN, (0.026, 0.026, 0.056)))
 o_eyes = to_mesh(NAME + "_eyes", eyes, ck.color(NAME + "_eyes", (1.0, 1.0, 0.85)), min_island=8)
 
 # The fists: chunky, closed (the mace handle goes through the right one), a ridge of knuckles on top.
@@ -205,6 +354,9 @@ for s in (-1, 1):
 	f = ell((s * (HAND_X + 0.08), 0.005, 0.766), (0.09, 0.085, 0.078))
 	f = smin(f, tube((s * (HAND_X + 0.04), -0.06, 0.80), (s * (HAND_X + 0.12), -0.06, 0.80), 0.03, 0.028), 0.03)
 	f = smin(f, tube((s * (HAND_X + 0.02), 0.02, 0.775), (s * (HAND_X + 0.05), 0.02, 0.775), 0.075, 0.08), 0.02)  # wrist into the cuff
+	if LOOK == "a":  # mittens wrapped in rags (no fingers): the wrist reaches into the opened cuff, 1.5 cm clear of it
+		f = smin(f, tube((s * (HAND_X - 0.07), 0.03, 0.778), (s * (HAND_X + 0.03), 0.025, 0.776), 0.07, 0.075), 0.02)
+		f = f + 0.005 * np.sin(np.arctan2(Z - 0.77, Y - 0.01) + X * s * 70.0)
 	fists = f if fists is None else np.minimum(fists, f)
 fists = fists + wobble(0.004, 77)
 o_fists = to_mesh(NAME + "_fists", fists, ck.color(NAME + "_fists", (0.6, 0.9, 0.85)), min_island=8)
@@ -217,6 +369,9 @@ for o in (o_body, o_eyes, o_fists):
 	fz = (co[:, 2] - FACE_C[2]) / 0.165
 	in_face = np.sqrt(fx * fx + fy * fy + fz * fz)
 	lit = np.clip((in_face - 1.0) / 0.12, 0.0, 1.0) if o is o_body else np.ones(len(co))
+	if LOOK == "a" and o is o_body:  # dark only behind the hood's rim (its rolled rim is lit)
+		e = np.sqrt((co[:, 0] / 0.13) ** 2 + ((co[:, 2] - FACE_C[2]) / 0.145) ** 2)
+		lit = np.maximum(np.clip((e - 1.0) / 0.15, 0.0, 1.0), np.clip((-0.2 - co[:, 1]) / 0.03, 0.0, 1.0))
 	lit = 0.08 + 0.92 * lit
 	mist = np.clip((0.5 - co[:, 2]) / 0.44, 0.0, 1.0) if o is o_body else np.zeros(len(co))
 	if o is o_eyes:
@@ -230,7 +385,7 @@ for o in (o_body, o_eyes, o_fists):
 		p.use_smooth = True
 	# fewer faces: the game's light copy
 	n = len(o.data.polygons)
-	want = {o_body: 7000, o_eyes: 300, o_fists: 900}[o]
+	want = {o_body: 16000 if LOOK == "a" else 7000, o_eyes: 500, o_fists: 900}[o]
 	if n > want:
 		md = o.modifiers.new("fewer", "DECIMATE")
 		md.ratio = want / n
@@ -275,7 +430,7 @@ def mix(a, b, t):
 def weights_for(o, p):
 	x, y, z = p
 	if o is o_eyes:
-		return {"Head": 1.0}
+		return {"Head": 1.0} if z > 0.8 else {"pelvis": 1.0}  # (the lantern's glass hangs from the belt)
 	if o is o_fists:
 		return {"hand_l" if x > 0 else "hand_r": 1.0}
 	near = ws[KD.find(Vector(p))[1]]

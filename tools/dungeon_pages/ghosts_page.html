@@ -1,0 +1,433 @@
+<title>Dungeon Ghosts</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@500;700&family=Alegreya+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one dark crypt stage with the ghost floating in it, a bestiary sheet beside it (under it on phones). */
+:root {
+	--rock: #100f12;
+	--sheet: #1a1a20;
+	--line: #34343f;
+	--ink: #e9ecef;
+	--dim: #9fa7b0;
+	--mist: #8fe8d6;
+	--mist-ink: #08201b;
+	--display: "Alegreya SC", Georgia, "Times New Roman", serif;
+	--body: "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+	--mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+	color-scheme: dark;
+}
+html, body { height: 100%; margin: 0; }
+body { background: var(--rock); color: var(--ink); font: 16px/1.5 var(--body); }
+.wrap { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 16px; box-sizing: border-box;
+	padding-block: 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.stage { position: relative; min-height: 420px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #050607; }
+canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.picks { position: absolute; left: 12px; top: 12px; right: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+.tools { position: absolute; left: 12px; right: 12px; bottom: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+button { font: 600 14px var(--body); color: var(--ink); background: #15161bdd; border: 1px solid var(--line); border-radius: 6px; padding: 7px 12px; cursor: pointer; }
+button:hover { border-color: var(--mist); }
+button:focus-visible { outline: 2px solid var(--mist); outline-offset: 2px; }
+button[aria-pressed="true"] { background: var(--mist); color: var(--mist-ink); border-color: var(--mist); }
+.hint { margin-left: auto; color: var(--dim); font: 13px var(--body); }
+#loading[hidden] { display: none; }
+#loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--dim); font: 14px var(--mono); pointer-events: none; }
+aside { background: var(--sheet); border: 1px solid var(--line); border-radius: 8px; padding: 18px; overflow: auto; min-width: 0; }
+h1 { font: 700 26px/1.15 var(--display); margin: 0 0 4px; text-wrap: balance; }
+h2 { font: 500 13px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--dim); margin: 18px 0 6px; }
+.lead { color: var(--dim); margin: 0 0 6px; }
+dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; font-variant-numeric: tabular-nums; }
+dt { color: var(--dim); } dd { margin: 0; }
+p { margin: 0 0 8px; }
+.swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 6px; }
+@media (max-width: 760px) { .wrap { grid-template-columns: 1fr; grid-template-rows: 70vh auto; height: auto; } }
+</style>
+
+<div class="wrap">
+	<div class="stage">
+		<canvas id="c" aria-label="3D view of the selected ghost"></canvas>
+		<div class="picks" role="group" aria-label="Pick a ghost">
+			<button id="k-ghost_a" aria-pressed="true">Drifting Shade</button>
+			<button id="k-ghost_b" aria-pressed="false">Wrathful Shade</button>
+			<button id="k-ghost_c" aria-pressed="false">Bearded Shade</button>
+			<button id="k-ghost_lord" aria-pressed="false">The Grey Warden</button>
+		</div>
+		<div class="tools">
+			<button id="attack">Attack</button>
+			<button id="jump">Fade &amp; jump</button>
+			<button id="vanish">Die into mist</button>
+			<button id="spin" aria-pressed="false">Spin</button>
+			<span class="hint">Drag to turn, scroll to zoom</span>
+		</div>
+		<div id="loading">Summoning...</div>
+	</div>
+	<aside>
+		<h1 id="name">Drifting Shade</h1>
+		<p class="lead" id="who"></p>
+		<h2>In the dungeon</h2>
+		<dl>
+			<dt>Health</dt><dd id="hp"></dd>
+			<dt>Size</dt><dd id="size"></dd>
+			<dt>Glow</dt><dd id="glow"></dd>
+			<dt>Mace moves</dt><dd id="moves"></dd>
+		</dl>
+		<h2>How it fights</h2>
+		<p>It floats a hand above the floor and swings a ghostly silver mace with the dwarf's own mace moves.</p>
+		<p>Every time it loses a quarter of its health, it fades into mist, a trail drifts 3 to 5.5 m away, and it comes back there and rushes at you, nearly twice as fast for 2 seconds.</p>
+		<p>When it dies it rises a little and fades away. No bones, no stone statue.</p>
+		<h2>On this page</h2>
+		<p>The ghost holds still here with its mace up. In the game it bobs and swings on his skeleton.</p>
+	</aside>
+</div>
+
+<script type="importmap">
+{ "imports": {
+	"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+	"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import * as SkeletonUtils from "three/addons/utils/SkeletonUtils.js";
+
+// the four ghosts as the game lists them (src/combat/monsters.gd)
+const KINDS = {
+	ghost_a: { name: "Drifting Shade", look: "a", color: [0.5, 0.95, 0.8], size: 1.0, hp: 150,
+		who: "An old miner's spirit: a rolled hood, a torn cape, a rope belt with a ghost lantern and a broken chain, ragged sleeves, and torn strips flowing into its misty tail.", clips: [1], moves: "Shade Swing (mace move 1)" },
+	ghost_b: { name: "Wrathful Shade", look: "b", color: [0.55, 0.75, 1.0], size: 1.0, hp: 140,
+		who: "The angry one: a tall pointed hood leaning forward, a short cape and slanted eyes.", clips: [2], moves: "Swooping Blow (mace move 2)" },
+	ghost_c: { name: "Bearded Shade", look: "c", color: [0.6, 0.95, 0.7], size: 1.05, hp: 170,
+		who: "An old dwarf's ghost: a misty beard flowing down his chest.", clips: [3], moves: "Old Grudge (mace move 3)" },
+	ghost_lord: { name: "The Grey Warden", look: "c", color: [0.78, 0.9, 1.0], size: 1.35, hp: 520,
+		who: "The boss: a big pale bearded ghost.", clips: [1, 2, 3, 4], moves: "Warden's Combo (moves 1, 2, 3 and 4 in a row) and Grave Smash (move 4)" },
+};
+
+// the ghost shader, the same as src/art/ghost.gdshader
+const VERT = `
+#include <common>
+#include <skinning_pars_vertex>
+attribute vec4 color;
+uniform float time;
+uniform bool useGuide;
+varying vec3 guide;
+varying vec3 wpos;
+varying vec3 vN;
+varying vec3 vV;
+void main() {
+	guide = useGuide ? color.rgb : vec3(1.0, 0.0, 0.0);
+	#include <skinbase_vertex>
+	#include <begin_vertex>
+	#include <beginnormal_vertex>
+	#include <skinning_vertex>
+	#include <skinnormal_vertex>
+	vec3 p = transformed;
+	float m = guide.g * guide.g;
+	p.x += sin(time * 2.3 + p.y * 7.0) * 0.035 * m;
+	p.z += cos(time * 1.7 + p.y * 6.0) * 0.03 * m;
+	vec4 w = modelMatrix * vec4(p, 1.0);
+	wpos = w.xyz;
+	vN = normalize(mat3(modelMatrix) * objectNormal);
+	vV = normalize(cameraPosition - w.xyz);
+	gl_Position = projectionMatrix * viewMatrix * w;
+}`;
+const FRAG = `
+uniform vec3 tint;
+uniform vec3 eyeColor;
+uniform float core;
+uniform float rimPower;
+uniform float fade;
+uniform float time;
+varying vec3 guide;
+varying vec3 wpos;
+varying vec3 vN;
+varying vec3 vV;
+float hash(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+float noise(vec3 x) {
+	vec3 i = floor(x); vec3 f = fract(x); f = f * f * (3.0 - 2.0 * f);
+	return mix(mix(mix(hash(i), hash(i + vec3(1,0,0)), f.x), mix(hash(i + vec3(0,1,0)), hash(i + vec3(1,1,0)), f.x), f.y),
+		mix(mix(hash(i + vec3(0,0,1)), hash(i + vec3(1,0,1)), f.x), mix(hash(i + vec3(0,1,1)), hash(i + vec3(1,1,1)), f.x), f.y), f.z);
+}
+void main() {
+	float rim = pow(1.0 - clamp(dot(normalize(vN), normalize(vV)), 0.0, 1.0), rimPower);
+	float n = noise(wpos * 6.0 + vec3(0.0, time * 0.6, 0.0));
+	float lit = guide.r;
+	vec3 col = tint * (0.45 + 0.35 * n + rim * 1.3);
+	float a = core + rim * 0.8 + 0.08 * n;
+	col = mix(tint * 0.05, col, lit);
+	a = mix(0.85, a, lit);
+	a *= clamp(1.0 - guide.g * (0.55 + 0.6 * n), 0.0, 1.0);
+	if (guide.b > 0.5) { col = eyeColor * 2.2; a = 1.0; }
+	a *= smoothstep(0.0, 0.35, fade - (1.0 - fade) * n);
+#ifdef DEPTH_ONLY
+	if (fade < 0.6) discard;
+#endif
+	gl_FragColor = vec4(col, clamp(a, 0.0, 1.0));
+}`;
+
+function ghostMat(tint, opts = {}) {
+	return new THREE.ShaderMaterial({
+		vertexShader: VERT, fragmentShader: FRAG, transparent: true, depthWrite: true, side: THREE.FrontSide,
+		uniforms: {
+			tint: { value: new THREE.Color(...tint) }, eyeColor: { value: new THREE.Color(0.95, 1.0, 0.8) },
+			core: { value: opts.core ?? 0.16 }, rimPower: { value: 2.0 }, fade: { value: 1.0 }, time: { value: 0 },
+			useGuide: { value: opts.useGuide ?? true },
+		},
+	});
+}
+
+// the depth pass (like the game's ghost_depth.gdshader): a copy of every mesh, drawn first, invisible, marks the
+// front-most surface, so the see-through body shows only its outside and never tears where it folds over itself
+function depthCopy(holder, mat) {
+	const dm = new THREE.ShaderMaterial({ vertexShader: VERT, fragmentShader: FRAG, uniforms: mat.uniforms,
+		defines: { DEPTH_ONLY: 1 }, colorWrite: false, side: THREE.FrontSide });
+	const meshes = [];
+	holder.traverse(o => { if (o.isMesh) meshes.push(o); });
+	for (const o of meshes) {
+		const d = o.clone();
+		d.material = dm;
+		d.renderOrder = -1;
+		o.parent.add(d);
+	}
+}
+
+const canvas = document.getElementById("c");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x050607);
+scene.fog = new THREE.Fog(0x050607, 6, 14);
+const camera = new THREE.PerspectiveCamera(35, 1, 0.05, 50);
+camera.position.set(1.6, 1.3, 3.2);
+const controls = new OrbitControls(camera, canvas);
+controls.target.set(0, 0.75, 0);
+controls.enableDamping = true;
+controls.minDistance = 1.2;
+controls.maxDistance = 8;
+
+// a dim crypt floor: flagstones in lantern light
+scene.add(new THREE.HemisphereLight(0x6a7a90, 0x101010, 0.5));
+const lamp = new THREE.PointLight(0xffb060, 18, 9);
+lamp.position.set(-2, 2.5, 1.5);
+scene.add(lamp);
+const floor = new THREE.Group();
+const stoneMat = new THREE.MeshStandardMaterial({ color: 0x3a3633, roughness: 0.95 });
+for (let x = -4; x <= 4; x++) for (let z = -4; z <= 4; z++) {
+	const s = new THREE.Mesh(new THREE.BoxGeometry(0.92 + Math.sin(x * 3 + z) * 0.03, 0.1, 0.92 + Math.cos(x + z * 2) * 0.03), stoneMat);
+	s.position.set(x + Math.sin(x * 7.1 + z) * 0.02, -0.05 + Math.sin(x * 1.7 + z * 2.3) * 0.012, z);
+	s.rotation.y = Math.sin(x * 4.3 + z * 1.1) * 0.02;
+	floor.add(s);
+}
+scene.add(floor);
+
+const loader = new GLTFLoader();
+const cache = {};
+function load(url) { return cache[url] ??= new Promise((ok, bad) => loader.load(url, ok, undefined, bad)); }
+
+let ghost = null;   // the shown ghost: { root, mats, kind }
+let pick = 0;
+const puffs = [];
+
+async function show(kind) {
+	const k = KINDS[kind];
+	const my = ++pick;
+	document.getElementById("loading").hidden = false;
+	const [body, mace] = await Promise.all([load(`ghost_${k.look}.json`), load("mace_silver.json")]);
+	if (my !== pick) return;
+	if (ghost) scene.remove(ghost.root);
+	const root = new THREE.Group();
+	const holder = SkeletonUtils.clone(body.scene);
+	const mat = ghostMat(k.color);
+	const mMat = ghostMat(k.color.map(c => c + (1 - c) * 0.35), { useGuide: false, core: 0.35 });
+	holder.traverse(o => { if (o.isMesh) o.material = mat; });
+	depthCopy(holder, mat);
+	root.add(holder);
+	// arms down from the dwarf's T-pose: the shoulders turn so each arm hangs down, a little forward
+	const bone = n => holder.getObjectByName(n);
+	for (const [side, sx] of [["l", 1], ["r", -1]]) {
+		holder.updateMatrixWorld(true);
+		const ua = bone("upperarm_" + side), hd = bone("hand_" + side);
+		const a = ua.getWorldPosition(new THREE.Vector3()), b = hd.getWorldPosition(new THREE.Vector3());
+		const want = new THREE.Vector3(sx * 0.3, -1, side === "r" ? 0.55 : 0.2).normalize();
+		const q = new THREE.Quaternion().setFromUnitVectors(b.sub(a).normalize(), want);
+		const world = ua.getWorldQuaternion(new THREE.Quaternion()).premultiply(q);
+		const parent = ua.parent.getWorldQuaternion(new THREE.Quaternion());
+		ua.quaternion.copy(parent.invert().multiply(world));
+	}
+	// the right elbow bends so the mace is held up in front
+	const la = bone("lowerarm_r");
+	if (la) la.rotateX(-0.9);
+	holder.updateMatrixWorld(true);
+	// the mace in his right fist (placed every frame by the swing's handle direction: placeMace)
+	const mc = mace.scene.clone(true);
+	mc.traverse(o => { if (o.isMesh) o.material = mMat; });
+	depthCopy(mc, mMat);
+	root.add(mc);
+	const bones = [];
+	bone("root").traverse(o => { if (o.isBone) bones.push(o); });
+	const idle = bones.map(o => o.quaternion.clone());
+	root.scale.setScalar(k.size);
+	root.position.y = 0.22 * k.size;
+	scene.add(root);
+	ghost = { root, holder, mace: mc, bones, idle, handle: null, mats: [mat, mMat], kind, base: root.position.clone(), busy: false };
+	placeMace();
+	document.getElementById("loading").hidden = true;
+	for (const id of Object.keys(KINDS)) document.getElementById("k-" + id).setAttribute("aria-pressed", String(id === kind));
+	document.getElementById("name").textContent = k.name;
+	document.getElementById("who").textContent = k.who;
+	document.getElementById("hp").textContent = k.hp;
+	document.getElementById("size").textContent = k.size === 1 ? "a dwarf's size" : `${k.size}× a dwarf`;
+	const hex = "#" + new THREE.Color(...k.color).getHexString();
+	document.getElementById("glow").innerHTML = `<span class="swatch" style="background:${hex}"></span>${hex}`;
+	document.getElementById("moves").textContent = k.moves;
+	controls.target.set(0, 0.75 * k.size, 0);
+}
+
+// The mace sits in the fist along the swing's handle direction (skeleton space, like DwarfFist), head up at rest.
+function placeMace() {
+	const g = ghost;
+	g.root.updateMatrixWorld(true);
+	const hand = g.holder.getObjectByName("hand_r"), arm = g.holder.getObjectByName("lowerarm_r");
+	const skel = g.holder.getObjectByName("root").parent;
+	const hp = hand.getWorldPosition(new THREE.Vector3()), lp = arm.getWorldPosition(new THREE.Vector3());
+	const fist = hp.clone().addScaledVector(hp.clone().sub(lp).normalize(), 0.06);
+	const up = g.handle ? new THREE.Vector3(...g.handle).applyQuaternion(skel.getWorldQuaternion(new THREE.Quaternion())).normalize()
+		: new THREE.Vector3(0, 1, 0.35).normalize();
+	const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), up);
+	g.mace.position.copy(g.root.worldToLocal(fist.addScaledVector(up, -0.1)));
+	g.mace.quaternion.copy(q);
+}
+
+// One frame of a dwarf mace move (assets/anim/one_ual.json): each big bone's turn in skeleton space.
+function pose(frame, k) {
+	const g = ghost;
+	const skelQ = new Map();
+	g.bones.forEach((b, i) => {
+		const pq = skelQ.get(b.parent) ?? new THREE.Quaternion();
+		const t = frame.bones[b.name];
+		if (t) {
+			const want = new THREE.Quaternion(t[0], t[1], t[2], t[3]);
+			b.quaternion.copy(pq.clone().invert().multiply(want));
+			b.quaternion.slerpQuaternions(g.idle[i], b.quaternion.clone(), k);
+		} else b.quaternion.copy(g.idle[i]);
+		skelQ.set(b, pq.clone().multiply(b.quaternion));
+	});
+	g.handle = k > 0.5 ? frame.handle : null;
+}
+
+let moves = null;
+async function attack() {
+	if (!ghost || ghost.busy) return;
+	ghost.busy = true;
+	moves ??= await fetch("mace_moves.json").then(r => r.json());
+	for (const n of KINDS[ghost.kind].clips) {
+		const c = moves["UalMace" + n];
+		const len = c.length * 1.25;  // (a touch slower than the game, to watch it)
+		await tween(len, f => {
+			const fr = c.frames[Math.min(c.frames.length - 1, Math.floor(f * c.frames.length))];
+			pose(fr, Math.min(1, f / 0.12, (1 - f) / 0.12 + (n === KINDS[ghost.kind].clips.at(-1) ? 0 : 1)));
+		});
+	}
+	ghost.bones.forEach((b, i) => b.quaternion.copy(ghost.idle[i]));
+	ghost.handle = null;
+	ghost.busy = false;
+}
+
+function setFade(f) { if (ghost) for (const m of ghost.mats) m.uniforms.fade.value = f; }
+
+// soft glowing puffs from a to b that grow, rise and fade (Ghost._mist_trail)
+function mistTrail(a, b) {
+	const col = ghost.mats[0].uniforms.tint.value;
+	const n = Math.max(3, Math.min(14, Math.ceil(a.distanceTo(b) / 0.45)));
+	for (let i = 0; i <= n; i++) {
+		const t0 = i / n;
+		const m = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false });
+		const p = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 5), m);
+		p.position.lerpVectors(a, b, t0).add(new THREE.Vector3(Math.sin(i * 2.1) * 0.15, Math.sin(i * 1.3) * 0.12, Math.cos(i * 1.7) * 0.15));
+		const s = 0.6 + 0.5 * Math.sin(t0 * Math.PI);
+		p.scale.setScalar(s);
+		scene.add(p);
+		puffs.push({ p, m, s, y: p.position.y, start: performance.now() / 1000 + t0 * 0.27 });
+	}
+}
+
+function tween(sec, fn) {
+	return new Promise(ok => {
+		const t0 = performance.now();
+		const step = () => { const f = Math.min(1, (performance.now() - t0) / 1000 / sec); fn(f); f < 1 ? requestAnimationFrame(step) : ok(); };
+		step();
+	});
+}
+
+async function jump() {
+	if (!ghost || ghost.busy) return;
+	ghost.busy = true;
+	const from = ghost.root.position.clone();
+	const ang = Math.random() * Math.PI * 2;
+	const dist = 1.5 + Math.random();
+	let to = ghost.base.clone().add(new THREE.Vector3(Math.cos(ang) * dist, 0, Math.sin(ang) * dist));
+	if (from.distanceTo(ghost.base) > 0.5) to = ghost.base.clone();  // (keeps it on the page: hop back to the middle)
+	mistTrail(from.clone().add(new THREE.Vector3(0, 0.7, 0)), to.clone().add(new THREE.Vector3(0, 0.7, 0)));
+	await tween(0.18, f => setFade(1 - f));
+	ghost.root.position.copy(to);
+	await tween(0.08, () => {});
+	await tween(0.4, f => setFade(f));
+	ghost.busy = false;
+}
+
+async function vanish() {
+	if (!ghost || ghost.busy) return;
+	ghost.busy = true;
+	const p = ghost.root.position.clone();
+	mistTrail(p.clone().add(new THREE.Vector3(0, 0.4, 0)), p.clone().add(new THREE.Vector3(0, 1.2, 0)));
+	await tween(1.2, f => { setFade(1 - f); ghost.root.position.y = p.y + 0.5 * f; });
+	await tween(1.0, () => {});
+	ghost.root.position.copy(ghost.base);
+	await tween(0.6, f => setFade(f));
+	ghost.busy = false;
+}
+
+for (const id of Object.keys(KINDS)) document.getElementById("k-" + id).addEventListener("click", () => show(id));
+document.getElementById("jump").addEventListener("click", jump);
+document.getElementById("attack").addEventListener("click", attack);
+document.getElementById("vanish").addEventListener("click", vanish);
+const spinBtn = document.getElementById("spin");
+spinBtn.addEventListener("click", () => {
+	controls.autoRotate = !controls.autoRotate;
+	spinBtn.setAttribute("aria-pressed", String(controls.autoRotate));
+});
+
+function resize() {
+	const w = canvas.clientWidth, h = canvas.clientHeight;
+	if (canvas.width !== Math.floor(w * renderer.getPixelRatio()) || canvas.height !== Math.floor(h * renderer.getPixelRatio())) {
+		renderer.setSize(w, h, false);
+		camera.aspect = w / h;
+		camera.updateProjectionMatrix();
+	}
+}
+
+const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+renderer.setAnimationLoop(() => {
+	resize();
+	const t = performance.now() / 1000;
+	if (ghost) {
+		for (const m of ghost.mats) m.uniforms.time.value = t;
+		placeMace();
+		if (!ghost.busy && !still) ghost.root.position.y = ghost.base.y + Math.sin(t * 2.1) * 0.05;
+	}
+	for (let i = puffs.length - 1; i >= 0; i--) {
+		const q = puffs[i];
+		const f = (t - q.start) / 1.1;
+		if (f < 0) continue;
+		if (f >= 1) { scene.remove(q.p); q.p.geometry.dispose(); q.m.dispose(); puffs.splice(i, 1); continue; }
+		q.p.scale.setScalar(q.s * (1 + 0.8 * f));
+		q.m.opacity = 0.35 * (1 - f);
+		q.p.position.y = q.y + 0.4 * f;
+	}
+	controls.update();
+	renderer.render(scene, camera);
+});
+
+show("ghost_a").catch(e => { document.getElementById("loading").textContent = "Couldn't load the ghost: " + e.message; });
+</script>
