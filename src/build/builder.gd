@@ -116,7 +116,8 @@ func problem(ps: GameAuthority.PlayerState, piece: String, family: String, pos: 
 		return "Can't be made from %s" % Pieces.FAMILIES.get(family, {}).get("name", family)
 	if ps.node.global_position.distance_to(pos) > Pieces.BUILD_REACH + 1.0:
 		return "Too far away"
-	var station_why := station_problem(piece, family, pos)
+	var free := free_build(ps)
+	var station_why := "" if free else station_problem(piece, family, pos)
 	if station_why != "":
 		return station_why
 	# F159: floors and foundations level their ground; the rules below look at the rock as it will be.
@@ -137,6 +138,8 @@ func problem(ps: GameAuthority.PlayerState, piece: String, family: String, pos: 
 	var anchored := Pieces.touches_rock(piece, pos, rot, sdf, family)
 	if structure.preview_stability(piece, family, pos, rot, anchored) < Pieces.MIN_STABILITY:
 		return "Not steady enough here"
+	if free:
+		return ""
 	var cost := Pieces.cost(piece, family)
 	for item in cost:
 		if ps.inventory.count_of(item) < cost[item]:
@@ -165,7 +168,7 @@ func _level_ground(ps: GameAuthority.PlayerState, peer_id: int, plan: Dictionary
 		auth._give_dig_drops(ps, counts, mid + Vector3.UP * 0.8)
 	for f in plan.fill:
 		var item := "dirt" if ps.inventory.count_of("dirt") > 0 else "stone"
-		if not ps.inventory.remove(item, 1):
+		if not free_build(ps) and not ps.inventory.remove(item, 1):  # (F9 free building fills dips for free)
 			break
 		auth.host_fill(f - Vector3.UP * (Pieces.LEVEL_FILL_R + 0.02), Pieces.LEVEL_FILL_R, Mat.DIRT if item == "dirt" else Mat.STONE)
 	if not plan.fill.is_empty():
@@ -182,9 +185,10 @@ func request_place(peer_id: int, piece: String, family: String, pos: Vector3, ro
 	if why != "":
 		return why
 	var level := last_level.duplicate(true)
-	var cost := Pieces.cost(piece, family)
-	for item in cost:
-		ps.inventory.remove(item, cost[item])
+	if not free_build(ps):
+		var cost := Pieces.cost(piece, family)
+		for item in cost:
+			ps.inventory.remove(item, cost[item])
 	_level_ground(ps, peer_id, level)
 	var uid := _next_uid
 	_next_uid += 1
@@ -287,6 +291,11 @@ static func chest_spot(size: Vector3, origin: Vector3, rot: int, from: Vector3, 
 				break  # rock straight away: this side is inside the mountain
 			y -= 0.25
 	return Vector3.INF
+
+
+## Dev god mode (F9, owner Nov 22): with the hammer you can build anything, free, with no station nearby.
+static func free_build(ps: GameAuthority.PlayerState) -> bool:
+	return ps != null and ps.vitals != null and ps.vitals.god
 
 
 func station_problem(piece: String, family: String, pos: Vector3) -> String:

@@ -13,6 +13,13 @@ const CARD := Vector2(128, 140)  ## one piece card
 const COLUMNS := 6
 const ROWS := 2  ## rows of cards you see at once (more = scroll)
 const GOOD := Color(0.55, 0.9, 0.45)  ## "you have enough" green
+## How much bigger everything is drawn (owner, Nov 22: "the entire menu is quite small and hard to read"): the game
+## draws menus at their pixel size, so on a big screen (1440p) they looked tiny. Grows with the screen height.
+static var zoom := 1.0
+## F9 dev god mode is on: every piece counts as buildable, nothing is missing (owner, Nov 22).
+static var free_mode := false
+## The building tabs show only pieces made in the chosen material (owner, Nov 22: Rootwood showed a stone gateway).
+const MATERIAL_TABS := ["floors", "walls", "roofs", "stairs"]
 
 
 func _ready() -> void:
@@ -88,10 +95,14 @@ func refresh() -> void:
 	var ps: GameAuthority.PlayerState = auth.get_player(peer_id) if auth else null
 	if ps == null or mode == null:
 		return
+	zoom = zoom_for(get_viewport_rect().size.y)
+	_grid.add_theme_constant_override("separation", _z(8))
 	var inv := ps.inventory
 	var where: Vector3 = ps.node.global_position if ps.node else Vector3.ZERO
+	var free := Builder.free_build(ps)  # F9: build anything, free (owner, Nov 22)
 	var lock_of := func(id: String, fam: String) -> String:
-		return auth.builder.station_problem(id, fam, where) if auth.builder else ""
+		return auth.builder.station_problem(id, fam, where) if auth.builder and not free else ""
+	free_mode = free
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 14)
 	_grid.add_child(row)
@@ -110,13 +121,13 @@ func _heading(parent: Node, number: String, text: String) -> HBoxContainer:
 	parent.add_child(h)
 	var num := PanelContainer.new()
 	num.add_theme_stylebox_override("panel", _cap_style(Color(0.93, 0.7, 0.3), Color(0.35, 0.2, 0.06), 13))
-	num.custom_minimum_size = Vector2(28, 28)
+	num.custom_minimum_size = _v(28, 28)
 	num.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	h.add_child(num)
-	var nl := UiKit.label(num, number, 15, UiKit.DARK_TEXT)
+	var nl := UiKit.label(num, number, _z(15), UiKit.DARK_TEXT)
 	nl.add_theme_font_override("font", UiKit.heading_font())
 	nl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	var t := UiKit.label(h, text, 19, UiKit.AMBER)
+	var t := UiKit.label(h, text, _z(19), UiKit.AMBER)
 	t.add_theme_font_override("font", UiKit.heading_font())
 	return h
 
@@ -135,7 +146,7 @@ func _material_column(inv: Inventory) -> VBoxContainer:
 func _material_card(f: String, inv: Inventory) -> Button:
 	var b := Button.new()
 	b.name = "Material_" + f
-	b.custom_minimum_size = Vector2(230, 62)
+	b.custom_minimum_size = _v(230, 62)
 	b.focus_mode = Control.FOCUS_NONE
 	b.toggle_mode = true
 	b.button_pressed = f == mode.family
@@ -147,27 +158,23 @@ func _material_card(f: String, inv: Inventory) -> Button:
 	h.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 8)
 	h.add_theme_constant_override("separation", 10)
 	b.add_child(h)
-	var ic := _icon(Items.icon(f), 44)
+	var ic := _icon(Items.icon(f), _z(44))
 	ic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	h.add_child(ic)
 	var v := VBoxContainer.new()
 	v.alignment = BoxContainer.ALIGNMENT_CENTER
 	v.add_theme_constant_override("separation", 0)
 	h.add_child(v)
-	var n := UiKit.label(v, Pieces.FAMILIES[f].name, 17, UiKit.TEXT)
+	var n := UiKit.label(v, Pieces.FAMILIES[f].name, _z(17), UiKit.TEXT)
 	n.add_theme_font_override("font", UiKit.heading_font())
 	var have := inv.count_of(f)
 	if have > 0:
-		UiKit.label(v, "you have %d" % have, 13, GOOD)
+		UiKit.label(v, "you have %d" % have, _z(13), GOOD)
 	else:
-		UiKit.label(v, "none yet: %s" % Items.display_name(station_item(f)), 13, UiKit.DIM)
+		UiKit.label(v, "none yet: %s" % Items.display_name(station_item(f)), _z(13), UiKit.DIM)
 		b.modulate = Color(1, 1, 1, 0.6)
 	_ignore_mouse(h)
-	b.disabled = not Pieces.allowed(mode.piece, f)
-	if b.disabled:
-		b.modulate = Color(1, 1, 1, 0.3)
-		b.tooltip_text = "%s can't be made in %s" % [Pieces.LIST[mode.piece].name, Pieces.FAMILIES[f].name]
-	b.pressed.connect(func(): mode.choose(mode.piece, f); refresh())
+	b.pressed.connect(func(): mode.choose(piece_for_material(mode.piece, f, tab), f); refresh())
 	return b
 
 
@@ -180,7 +187,7 @@ func _piece_column(inv: Inventory, lock_of: Callable) -> VBoxContainer:
 	var gap := Control.new()
 	gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top.add_child(gap)
-	var only := UiKit.dark_button(Button.new(), 13)  # glows gold while on
+	var only := UiKit.dark_button(Button.new(), _z(13))  # glows gold while on
 	only.name = "OnlyBuildable"
 	only.text = ("[x] " if only_buildable else "[  ] ") + "Only show what I can build now"
 	only.toggle_mode = true
@@ -193,7 +200,7 @@ func _piece_column(inv: Inventory, lock_of: Callable) -> VBoxContainer:
 	tabs.add_theme_constant_override("separation", 6)
 	col.add_child(tabs)
 	for t in TABS:
-		var b := UiKit.dark_button(Button.new(), 14)
+		var b := UiKit.dark_button(Button.new(), _z(14))
 		b.name = "Tab_" + t
 		b.text = TABS[t].name
 		var all := []
@@ -204,10 +211,10 @@ func _piece_column(inv: Inventory, lock_of: Callable) -> VBoxContainer:
 			if b.icon:
 				break
 		b.expand_icon = true
-		b.add_theme_constant_override("icon_max_width", 34)
+		b.add_theme_constant_override("icon_max_width", _z(34))
 		b.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
 		b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		b.custom_minimum_size = Vector2(CARD.x, 64)
+		b.custom_minimum_size = Vector2(CARD.x * zoom, _z(64))
 		b.toggle_mode = true
 		b.button_pressed = t == tab
 		var which: String = t
@@ -221,9 +228,9 @@ func _piece_column(inv: Inventory, lock_of: Callable) -> VBoxContainer:
 		subs.add_theme_constant_override("separation", 4)
 		col.add_child(subs)
 		for g in HOME_SUBS:
-			var s := UiKit.dark_button(Button.new(), 12)
+			var s := UiKit.dark_button(Button.new(), _z(12))
 			s.text = HOME_SUBS[g]
-			s.custom_minimum_size = Vector2(0, 30)
+			s.custom_minimum_size = _v(0, 30)
 			s.toggle_mode = true
 			s.button_pressed = g == home_sub
 			var grp: String = g
@@ -232,8 +239,8 @@ func _piece_column(inv: Inventory, lock_of: Callable) -> VBoxContainer:
 	# The piece cards (scroll when there are more than fit).
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	var h := rows * CARD.y + (rows - 1) * 6 - (36 if tab == "home" else 0)
-	scroll.custom_minimum_size = Vector2(COLUMNS * CARD.x + (COLUMNS - 1) * 6 + 14, h)
+	var h := (rows * CARD.y + (rows - 1) * 6 - (36 if tab == "home" else 0)) * zoom
+	scroll.custom_minimum_size = Vector2((COLUMNS * CARD.x + (COLUMNS - 1) * 6) * zoom + 14, h)
 	col.add_child(scroll)
 	var pieces := GridContainer.new()
 	pieces.name = "Pieces"
@@ -242,14 +249,28 @@ func _piece_column(inv: Inventory, lock_of: Callable) -> VBoxContainer:
 	pieces.add_theme_constant_override("v_separation", 6)
 	scroll.add_child(pieces)
 	for id in tab_pieces(tab, home_sub):
+		if tab in MATERIAL_TABS and not Pieces.allowed(id, mode.family):
+			continue
 		var fam := _family_for(id)
 		var lock: String = lock_of.call(id, fam)
 		if only_buildable and not can_build(id, fam, inv, lock):
 			continue
 		pieces.add_child(_piece_button(id, fam, lock, inv))
 	if pieces.get_child_count() == 0:
-		UiKit.label(pieces, "Nothing here you can build yet.", 14, UiKit.DIM)
+		UiKit.label(pieces, "Nothing here you can build yet.", _z(14), UiKit.DIM)
 	return col
+
+
+## Switching material: keep the piece if it can be made in it, else the first piece on this tab that can
+## (else the first floor piece that can).
+static func piece_for_material(piece: String, fam: String, on_tab: String) -> String:
+	if Pieces.allowed(piece, fam):
+		return piece
+	for t in [on_tab, "floors"]:
+		for id in tab_pieces(t, home_sub):
+			if Pieces.allowed(id, fam):
+				return id
+	return piece
 
 
 ## The material a piece is shown in: the chosen one if it allows it, else its first.
@@ -274,7 +295,7 @@ static func _cost_text(c: Dictionary) -> String:
 func _piece_button(id: String, fam: String, lock: String, inv: Inventory) -> Button:
 	var b := Button.new()
 	b.name = "Piece_" + id
-	b.custom_minimum_size = CARD
+	b.custom_minimum_size = CARD * zoom
 	b.focus_mode = Control.FOCUS_NONE
 	b.toggle_mode = true
 	b.button_pressed = id == mode.piece
@@ -287,9 +308,9 @@ func _piece_button(id: String, fam: String, lock: String, inv: Inventory) -> But
 	v.add_theme_constant_override("separation", 1)
 	b.add_child(v)
 	var pic := _icon(piece_picture(id, fam), 0)
-	pic.custom_minimum_size = Vector2(0, 60)
+	pic.custom_minimum_size = _v(0, 60)
 	v.add_child(pic)
-	var name_l := UiKit.label(v, Pieces.LIST[id].name, 13, UiKit.TEXT)
+	var name_l := UiKit.label(v, Pieces.LIST[id].name, _z(13), UiKit.TEXT)
 	name_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	name_l.clip_text = true
@@ -298,18 +319,18 @@ func _piece_button(id: String, fam: String, lock: String, inv: Inventory) -> But
 	v.add_child(costs)
 	var cost := Pieces.cost(id, fam)
 	for item in cost:
-		costs.add_child(_icon(Items.icon(item), 16))
-		UiKit.label(costs, str(cost[item]), 13, UiKit.TEXT if inv.count_of(item) >= cost[item] else UiKit.MISSING)
+		costs.add_child(_icon(Items.icon(item), _z(16)))
+		UiKit.label(costs, str(cost[item]), _z(13), UiKit.TEXT if inv.count_of(item) >= cost[item] else UiKit.MISSING)
 	var ok := can_build(id, fam, inv, lock)
 	if ok:
-		b.add_child(_tick(Vector2(CARD.x - 24, 6)))
+		b.add_child(_tick(Vector2(CARD.x * zoom - _z(26), _z(6))))
 	else:
-		var note := UiKit.label(v, card_note(id, fam, inv, lock), 12, UiKit.MISSING)
+		var note := UiKit.label(v, card_note(id, fam, inv, lock), _z(12), UiKit.MISSING)
 		note.name = "Note"
 		note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		note.max_lines_visible = 2
-		note.custom_minimum_size = Vector2(CARD.x - 14, 0)
+		note.custom_minimum_size = Vector2((CARD.x - 14) * zoom, 0)
 		b.modulate = Color(1, 1, 1, 0.6)
 	_ignore_mouse(v)
 	b.tooltip_text = needs_text(id, fam, inv) + ("\n" + lock if lock != "" else "")
@@ -323,17 +344,17 @@ func _detail_box(id: String, fam: String, inv: Inventory, lock: String) -> Panel
 	var box := PanelContainer.new()
 	box.name = "Chosen"
 	box.add_theme_stylebox_override("panel", UiKit.style("card", 12))
-	box.custom_minimum_size = Vector2(290, 0)
+	box.custom_minimum_size = _v(290, 0)
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 4)
 	box.add_child(v)
-	var n := UiKit.label(v, Pieces.LIST[id].name, 22, UiKit.AMBER)
+	var n := UiKit.label(v, Pieces.LIST[id].name, _z(22), UiKit.AMBER)
 	n.add_theme_font_override("font", UiKit.heading_font())
 	n.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	var m := UiKit.label(v, Pieces.FAMILIES[fam].name, 14, UiKit.DIM)
+	var m := UiKit.label(v, Pieces.FAMILIES[fam].name, _z(14), UiKit.DIM)
 	m.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var pic := _icon(piece_picture(id, fam), 0)
-	pic.custom_minimum_size = Vector2(0, 130)
+	pic.custom_minimum_size = _v(0, 130)
 	v.add_child(pic)
 	UiKit.divider(v)
 	var cost := Pieces.cost(id, fam)
@@ -342,6 +363,8 @@ func _detail_box(id: String, fam: String, inv: Inventory, lock: String) -> Panel
 		_need_row(v, Items.icon(item), Items.display_name(item), "%d / %d" % [have, cost[item]], have >= cost[item])
 	var kind := station_item(fam)
 	_need_row(v, Items.icon(kind), lock if lock != "" else "%s nearby" % Items.display_name(kind), "", lock == "")
+	if free_mode:
+		UiKit.label(v, "F9 god mode: free, no station needed", _z(13), GOOD).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var gap := Control.new()
 	gap.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	v.add_child(gap)
@@ -351,7 +374,7 @@ func _detail_box(id: String, fam: String, inv: Inventory, lock: String) -> Panel
 	go.add_theme_stylebox_override("panel", UiKit.style("button_gold" if ok else "button_dark", 8))
 	v.add_child(go)
 	var gl := UiKit.label(go, "Left click in the world to place" if ok else "Still missing something (red above)",
-		15 if ok else 13, UiKit.DARK_TEXT if ok else UiKit.DIM)
+		_z(15) if ok else _z(13), UiKit.DARK_TEXT if ok else UiKit.DIM)
 	gl.add_theme_font_override("font", UiKit.heading_font())
 	gl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	gl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -363,15 +386,15 @@ func _need_row(parent: Node, icon: Texture2D, text: String, amount: String, ok: 
 	var h := HBoxContainer.new()
 	h.add_theme_constant_override("separation", 6)
 	parent.add_child(h)
-	h.add_child(_icon(icon, 22))
-	var l := UiKit.label(h, text, 14, UiKit.TEXT if ok else UiKit.MISSING)
+	h.add_child(_icon(icon, _z(22)))
+	var l := UiKit.label(h, text, _z(14), UiKit.TEXT if ok else UiKit.MISSING)
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	l.custom_minimum_size = Vector2(150, 0)
+	l.custom_minimum_size = _v(150, 0)
 	if amount != "":
-		UiKit.label(h, amount, 14, GOOD if ok else UiKit.MISSING)
+		UiKit.label(h, amount, _z(14), GOOD if ok else UiKit.MISSING)
 	var mark := Control.new()
-	mark.custom_minimum_size = Vector2(18, 18)
+	mark.custom_minimum_size = _v(18, 18)
 	mark.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	h.add_child(mark)
 	if ok:
@@ -391,21 +414,34 @@ func _key_hints() -> HBoxContainer:
 	for p in parts:
 		if p == null:
 			var s := Control.new()
-			s.custom_minimum_size = Vector2(14, 0)
+			s.custom_minimum_size = _v(14, 0)
 			row.add_child(s)
 		elif p is Array:
 			for k in p:
 				var cap := PanelContainer.new()
 				cap.add_theme_stylebox_override("panel", _cap_style(Color(0.9, 0.82, 0.66), Color(0.45, 0.3, 0.14), 4))
 				row.add_child(cap)
-				var l := UiKit.label(cap, k, 13, UiKit.DARK_TEXT)
+				var l := UiKit.label(cap, k, _z(13), UiKit.DARK_TEXT)
 				l.add_theme_font_override("font", UiKit.heading_font())
 		else:
-			UiKit.label(row, p, 14, UiKit.DIM)
+			UiKit.label(row, p, _z(14), UiKit.DIM)
 	return row
 
 
 # ------------------------------------------------------------------ helpers
+
+## The zoom for a screen this tall: 1 at 900 px (the game's base size), 1.6 at 1440 px, never smaller than 1.
+static func zoom_for(screen_height: float) -> float:
+	return clampf(screen_height / 900.0, 1.0, 3.0)
+
+
+static func _z(px: float) -> int:
+	return roundi(px * zoom)
+
+
+static func _v(x: float, y: float) -> Vector2:
+	return Vector2(x, y) * zoom
+
 
 ## A small rounded box (key caps, the 1 / 2 badges): the kit's frames are too ornate at this size.
 static func _cap_style(fill: Color, edge: Color, round: int) -> StyleBoxFlat:
@@ -437,12 +473,12 @@ static func _tick(at: Vector2) -> Control:
 	var c := Control.new()
 	c.name = "Tick"
 	c.position = at
-	c.size = Vector2(18, 18)
+	c.size = Vector2(18, 18) * zoom
 	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	c.draw.connect(func():
-		var pts := PackedVector2Array([Vector2(2, 10), Vector2(7, 15), Vector2(16, 3)])
-		c.draw_polyline(pts, Color(0.05, 0.1, 0.03, 0.8), 5.0, true)
-		c.draw_polyline(pts, GOOD, 3.0, true))
+		var pts := PackedVector2Array([Vector2(2, 10) * zoom, Vector2(7, 15) * zoom, Vector2(16, 3) * zoom])
+		c.draw_polyline(pts, Color(0.05, 0.1, 0.03, 0.8), 5.0 * zoom, true)
+		c.draw_polyline(pts, GOOD, 3.0 * zoom, true))
 	return c
 
 
@@ -462,6 +498,8 @@ static func piece_picture(id: String, fam: String) -> Texture2D:
 ## What's missing to build one (item -> how many more you need).
 static func missing(id: String, fam: String, inv: Inventory) -> Dictionary:
 	var out := {}
+	if free_mode:
+		return out
 	var cost := Pieces.cost(id, fam)
 	for item in cost:
 		if inv.count_of(item) < cost[item]:

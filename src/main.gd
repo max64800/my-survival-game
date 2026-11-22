@@ -1000,7 +1000,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		var me := authority.get_player(authority.local_peer_id()) if authority else null
 		if me:
 			me.vitals.god = dwarf.dev_god
-		hud.show_toast("Dev: god mode (nothing hurts you, monsters ignore you) · F9 to turn off" if dwarf.dev_god else "Dev: god mode off", 3.0)
+		hud.show_toast("Dev: god mode (nothing hurts you, monsters ignore you, build anything free) · F9 to turn off" if dwarf.dev_god else "Dev: god mode off", 3.0)
+		if hud.build_menu and hud.build_menu.visible:
+			hud.build_menu.refresh()
 		return
 	if DevMenu.enabled() and event.is_action_pressed("dev_bright"):
 		var amb: Ambience = get_node_or_null("Ambience")

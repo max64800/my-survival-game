@@ -43,6 +43,43 @@ func test_six_tabs_and_buildable_pieces_get_a_tick() -> void:
 		n.free()
 
 
+## Owner, Nov 22: under Rootwood, Walls showed the stone Gateway, Roofs the Battlement, Stairs the Short Railing.
+## The building tabs now list only pieces made in the chosen material; switching material picks one that is.
+func test_building_tabs_show_only_the_chosen_material() -> void:
+	for p in ["gateway", "battlement", "railing_narrow"]:
+		check(not Pieces.allowed(p, "plank_root"), "%s isn't made in Rootwood" % p)
+	var menu := BuildMenu.new()
+	menu.mode = BuildMode.new()
+	menu.mode.piece = "wall"
+	menu.mode.family = "plank_root"
+	var lock := func(_id, _f): return ""
+	for t in BuildMenu.MATERIAL_TABS:
+		BuildMenu.tab = t
+		var col := menu._piece_column(Inventory.new(), lock)
+		for b in col.find_child("Pieces", true, false).get_children():
+			if b is Button:
+				check(Pieces.allowed(String(b.name).trim_prefix("Piece_"), "plank_root"), "%s on %s is Rootwood" % [b.name, t])
+		col.free()
+	BuildMenu.tab = "walls"
+	check_eq(BuildMenu.piece_for_material("gateway", "cut_stone", "walls"), "gateway", "stone keeps the gateway")
+	check(Pieces.allowed(BuildMenu.piece_for_material("gateway", "plank_root", "walls"), "plank_root"), "Rootwood swaps it for a Rootwood piece")
+	for n in [menu.mode, menu]:
+		n.free()
+
+
+## F9 dev god mode (owner, Nov 22): build anything, free, no station needed.
+func test_god_mode_builds_anything_free() -> void:
+	var ps := GameAuthority.PlayerState.new()
+	ps.vitals = Vitals.new()
+	check(not Builder.free_build(ps), "normally you pay")
+	ps.vitals.god = true
+	check(Builder.free_build(ps), "god mode builds free")
+	BuildMenu.free_mode = true
+	check(BuildMenu.can_build("wall", "plank_root", Inventory.new(), ""), "an empty bag can build in god mode")
+	BuildMenu.free_mode = false
+	check(not BuildMenu.can_build("wall", "plank_root", Inventory.new(), ""), "and not without it")
+
+
 ## Ready-made buildings are learned from Old Blueprint pages (F98); once known, all are in the book and load.
 func test_blueprint_book_has_the_ready_made_buildings() -> void:
 	var root := Node.new()
