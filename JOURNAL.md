@@ -8903,3 +8903,46 @@ left fist doesn't fully close round the handle, his beard is a flat board, and h
   checked the game's log instead.
 
 **Next:** ruin 8, "layered like the best builds" (goes up, juts out, goes up, juts out again): research first.
+
+
+## Nov 22, 2026 — Dungeon ghosts: the dwarf's own bones under a ghost body (Claude 3, creatures)
+
+**What we did.** The owner wanted a ghost enemy for the medium dungeons (#5-#8) that moves with the dwarf's skeleton
+and mace swings, because the KayKit skeleton moves look wrong. "You do one, you copy, and then you adjust some details."
+
+- A ChatGPT concept sheet (`docs/art/creatures/ghost_concepts_v1.png`), then a Blender script
+  (`tools/asset_forge/builds/ghost_body.py`) that sculpts three bodies on the dwarf's bones: a round hood (a),
+  a pointed hood with a shoulder cape (b), and a misty beard with tatters (c). Each body has a face hollow, two eyes,
+  fists and a curling misty tail. The script copies the dwarf's skin weights point by point, so the body bends with
+  his bones. Colours painted on the points tell the shader which part is which.
+- A ghost shader (`src/art/ghost.gdshader`): see-through in the middle, glowing edges, a dark face with bright eyes,
+  a tail that sways and fades to nothing, and a "fade" knob that breaks it up into mist.
+- `Ghost` + `GhostRig`: a ghost is really a hidden dwarf model wearing the ghost body and a ghostly silver mace.
+  It floats and bobs, leans into its glide, and swings the dwarf's mace moves. After every quarter of its health
+  it fades away and comes back 3-5.5 m off, then rushes you for 2 s (the host picks the spot, everyone sees it).
+  When it dies it rises and fades into mist: no stone statue, its loot falls where it was.
+- Four creatures: Drifting Shade (mace move 1), Wrathful Shade (move 2, a swoop), Bearded Shade (move 3), and the boss
+  The Grey Warden (moves 1→2→3→4 in a chain, plus a Grave Smash lunge). Ghosts notice you from 7 m.
+- Test `test_ghost` (5 checks) and a robot `-- ghostcheck` that films them in the dungeon test world.
+
+**Mistakes and hurdles (and fixes).**
+- Thin rods stuck out of the sleeves in the first renders. The sleeve tops were above the "this belongs to the head"
+  height, so they followed the head. Fix: only points near the middle follow the head.
+- The tail first followed the thigh bones (it split like legs). Fix: leg bones are moved onto the hips, finger bones
+  onto the hand.
+- The exported file also held Blender's little bone-shape cubes. Fix: delete every extra mesh before export.
+- The bearded ghost's beard looked like an elephant trunk and the tatters like spikes: wider beard, thicker tatters
+  (2 render rounds, the limit).
+- Godot didn't know the new class names until it re-imported the project (`--import`).
+- Claude's world tests failed at first: this test runner doesn't call `_setup()` by itself; the tests now call it.
+- The "tell" flash crashed on ghosts: it looks for an eye material on every monster. Fix: the ghost gets a spare one.
+- "material is null" errors when a ghost died. First the body was moved to another parent (that upset the renderer),
+  and in the real game the errors came back when the ghost was freed. Fix: the ghost stays where it is for its
+  1.2 s fade and lets go of its shader just before it is removed.
+- The robot showed ghosts leaving stone statues: every creature turns to stone when it dies. Fix: ghosts skip
+  the statue and drop their loot straight away.
+- In the robot the ghosts never attacked: they slept and only woke at 4 m. Now they notice you from 7 m.
+- Once (1 of 4 robot runs) the Wrathful Shade ended up 59 m away walking home; it didn't happen again in 3 more runs.
+  Worth watching when ghosts are placed in a real dungeon.
+
+**Still to do.** Place the ghosts once dungeons #5-#8 exist.
