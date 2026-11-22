@@ -260,7 +260,7 @@ func _swing_trail(clip: String, speed: float, red: bool) -> void:
 
 ## Hit: the flinch (not in the middle of a swing or of getting up: the swing still lands).
 func hit() -> void:
-	if dead or lying or (_busy > 0.0 and _busy_kind != "hit"):
+	if dead or lying or knocked_down or (_busy > 0.0 and _busy_kind != "hit"):
 		return
 	ap.play(HIT, 0.05)
 	ap.seek(0.0, true)  # (hit again while flinching: it flinches again)

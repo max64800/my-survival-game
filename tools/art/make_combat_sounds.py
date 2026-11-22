@@ -11,6 +11,8 @@ Writes: assets/sfx/hit_0..3.ogg
         assets/sfx/hit_heavy_0..3.ogg
         assets/sfx/parry_0..3.ogg
         assets/sfx/swing_0..3.ogg  (subtle cloth-snap whoosh, quiet)
+        assets/sfx/clink_0..3.ogg  (attack-warning metal tap, brief)
+        assets/sfx/block_0..3.ogg  (wood-and-leather shield thud)
 
 Sounds:
   hit           Quick leather-and-bone thud (weapon on a skeleton).
@@ -146,7 +148,53 @@ def swing(v, rng):
 
 # ---------------------------------------------------------------- write
 
-SOUNDS = {"hit": hit, "hit_heavy": hit_heavy, "parry": parry, "swing": swing}
+def clink(v, rng):
+    """Attack-warning metal tap: very brief inharmonic ring (< 20 ms decay).
+
+    Shorter and lighter than parry — this is the glint warning before a blow,
+    not a full block.  Fast-decaying partials prevent any beep quality.
+    """
+    n = int(RATE * 0.07)
+    t = np.arange(n) / RATE
+    # Lighter inharmonic set, faster decay than parry
+    freqs  = [380, 620,  980, 1550, 2300]
+    dec_ms = [14,  10,    8,    6,    4]
+    out = np.zeros(n)
+    spread = 1.0 + 0.06 * rng.standard_normal()
+    for freq, dms in zip(freqs, dec_ms):
+        f = freq * spread * (1.0 + 0.03 * rng.standard_normal())
+        tone = np.sin(2 * np.pi * f * t)
+        noise_mod = 1.0 + 0.3 * lowpass(rng.standard_normal(n), 10)
+        env = np.exp(-t / (dms * 0.001))
+        out += tone * noise_mod * env * (1.0 / len(freqs))
+    # Short transient click
+    ck = int(0.003 * RATE)
+    click = rng.standard_normal(ck) * np.linspace(1, 0, ck) ** 0.5
+    out[:ck] += click * 0.5
+    return fade(rasp(out, rng, 0.15), 0.008)
+
+
+def block(v, rng):
+    """Wood-and-leather shield absorbing a blow: dense thud, no ring.
+
+    A plank shield is thick wood wrapped in leather — the dominant sound
+    is a compressed thud, not a metallic ring.  Any resonance dies fast
+    under the mass of the wood.
+    """
+    n = int(RATE * 0.09)
+    t = np.arange(n) / RATE
+    # Main wood thud: mid-low noise burst (120-500 Hz)
+    noise = rng.standard_normal(n)
+    thud = bandpass(noise, 120, 500) * adsr(n, 0.004, 0.028, 0.08, 0.04)
+    # Leather surface snap (500-1800 Hz), very brief
+    snap = bandpass(rng.standard_normal(n), 500, 1800)
+    snap_env = np.exp(-t / 0.010) * adsr(n, 0.002, 0.01, 0.0, 0.015)
+    snap *= snap_env * 0.3
+    out = rasp(thud * 0.85 + snap, rng, 0.25)
+    return fade(out, 0.015)
+
+
+SOUNDS = {"hit": hit, "hit_heavy": hit_heavy, "parry": parry, "swing": swing, "clink": clink, "block": block}
 VARIANTS = 4
 
 

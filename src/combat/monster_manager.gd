@@ -591,7 +591,7 @@ func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: 
 			if away.length() > 0.01:
 				m.knock(away.normalized() * 3.0)  # Spear ★25: a poke pushes them back
 		_hurt_monster(m, peer, dmg, stun, Combat.effect(wd.type, m.stats()))
-		if finisher and not m.data.get("boss", false):  # F607/F617: combo finisher sends non-bosses flying
+		if finisher and not m.data.get("boss", false) and m.is_alive():  # F607/F617: combo finisher sends non-bosses flying; guard: a finisher that kills the monster skips knockdown (dead monsters can't be hit)
 			var away_fin := (m.global_position - ps.node.global_position) * Vector3(1, 0, 1)
 			if away_fin.length() > 0.01:
 				m.knock(away_fin.normalized() * 14.0 / maxf(1.0, float(m.data.get("size", 1.0))))
@@ -712,7 +712,7 @@ func _hurt_monster(m: Monster, peer: int, dmg: int, stun_amount: float, eff := 0
 		auth.give_xp(peer, 1, Progression.weapon_skill(Combat.weapon_of(hitter_ps.selected_item())))
 	# A push away from the hitter (owner, Nov 18, "juicy hits"): stronger for big hits, weaker for big creatures.
 	var from := hitter.global_position if hitter else m.global_position
-	if hitter and not m.shell_shut and m.shell_left <= 0.0:  # (a snail in his shell is a heavy stone)
+	if hitter and not m.shell_shut and m.shell_left <= 0.0 and not (m.rig != null and m.rig.knocked_down):  # (a snail in his shell is a heavy stone; don't slide knocked-down skeletons: they can't be hit while moving, and teleport when collision is restored)
 		var away := (m.global_position - from) * Vector3(1, 0, 1)
 		if away.length() > 0.01:
 			m.knock(away.normalized() * clampf(1.8 + dmg * 0.06, 1.8, 5.0) / maxf(1.0, float(m.data.get("size", 1.0))))
