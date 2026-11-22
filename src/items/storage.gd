@@ -286,6 +286,11 @@ static func _is_furniture(kind: String) -> bool:
 	return Pieces.LIST.has(kind) and String(Pieces.LIST[kind].get("use", "")) == "store"
 
 
+## Which stations model a box uses (the placing ghost uses it too, F632). It is turned around (PI) when shown.
+static func model_id(kind: String) -> String:
+	return "barrel_box" if kind == "barrel" else ("builder" if kind == "rebuild" else kind)
+
+
 func _build_look(body: StaticBody3D, kind: String) -> void:
 	if _is_furniture(kind):
 		# Furniture that stores things (Furnish tab: cabinet, bookcase...): the built piece shows itself; the box
@@ -311,7 +316,7 @@ func _build_look(body: StaticBody3D, kind: String) -> void:
 		"builder": Color(0.3, 0.45, 0.7), "rebuild": Color(0.45, 0.35, 0.25), "grave": Color(0.45, 0.43, 0.4)}.get(kind, Color.GRAY)
 	# A loot barrel: its own model with a lid that swings open (owner, Nov 19); the building kit's barrel is solid.
 	# (the Rebuilding Chest looks like a Builder's Chest)
-	var model := Look.forged("stations", "barrel_box") if kind == "barrel" else Look.forged("stations", "builder" if kind == "rebuild" else kind)  # a real model, if made
+	var model := Look.forged("stations", model_id(kind))  # a real model, if made
 	if kind == "recipe_stand":  # a dungeon's recipe stand with its glowing scroll (owner, Nov 19)
 		model = Look.forged("dungeon", "recipe_stand")
 		var scroll := Look.forged("dungeon", "recipe_scroll")

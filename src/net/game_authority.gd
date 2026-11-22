@@ -2264,6 +2264,36 @@ func request_buy_perk(peer_id: int, perk_id: String) -> bool:
 
 ## Crafting. station_id 0 = by hand. Instant recipes finish now; timed ones (smelter,
 ## campfire, pot, tanning rack) take their inputs now and pop out of the station later.
+## F629 (owner, Nov 22): a batch (10 ropes) finishes all at once, and every craft played the same sound at the same
+## moment. Now the first craft rings, at most CRAFT_SFX_EXTRA more follow a little later (quieter, a different pitch),
+## and the rest of the batch is quiet.
+const CRAFT_SFX_GAP := 0.6  ## crafts closer together than this count as one batch
+const CRAFT_SFX_EXTRA := 2
+var _craft_sfx_at := -10.0
+var _craft_sfx_extra := 0
+
+
+func _craft_sound() -> void:
+	var delay := craft_sound_delay(Time.get_ticks_msec() / 1000.0)
+	if delay == 0.0:
+		Sfx.ui("craft", 0.0)
+	elif delay > 0.0 and is_inside_tree():
+		var vol := -4.0 - 2.0 * _craft_sfx_extra
+		get_tree().create_timer(delay).timeout.connect(Sfx.ui.bind("craft", vol, randf_range(0.86, 1.1)))
+
+
+## When this craft's sound plays: 0 = now, > 0 = that many seconds later, -1 = not at all (the batch already rang).
+func craft_sound_delay(t: float) -> float:
+	if t - _craft_sfx_at > CRAFT_SFX_GAP:
+		_craft_sfx_at = t
+		_craft_sfx_extra = 0
+		return 0.0
+	if _craft_sfx_extra >= CRAFT_SFX_EXTRA:
+		return -1.0
+	_craft_sfx_extra += 1
+	return 0.2 * _craft_sfx_extra + randf_range(0.0, 0.08)
+
+
 func request_craft(peer_id: int, recipe_id: String, station_id: int = 0) -> bool:
 	var ps := get_player(peer_id)
 	var r := Recipes.get_recipe(recipe_id)
@@ -2328,7 +2358,7 @@ func request_craft(peer_id: int, recipe_id: String, station_id: int = 0) -> bool
 			spawn_drop(back, left, _chest(ps))
 	var skill := "cooking" if r.station == "campfire" else "crafting"
 	if peer_id == local_peer_id():
-		Sfx.ui("craft", 0.0)
+		_craft_sound()
 	if Items.stack_size(r.output) == 1 and (peer_id == local_peer_id() or multiplayer.get_peers().has(peer_id)):
 		# F561 (owner, Nov 21: "I crafted a wooden shield without the resources"): say what it took from the bag.
 		var used := []

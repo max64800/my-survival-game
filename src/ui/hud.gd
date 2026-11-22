@@ -1224,6 +1224,8 @@ func _process(delta: float) -> void:
 		for e in v.effects:
 			if not e.begins_with("cd_") and Progression.PERKS.has(e) or e == "bond":
 				buffs.append("%s %d s" % [Progression.PERKS[e][4] if Progression.PERKS.has(e) else "Bond of the Clan", ceili(v.effects[e].left)])
+			elif e == "bandage_heal":
+				buffs.append("Bandage healing %d s" % ceili(v.effects[e].left))
 		_buff_label.text = "\n".join(([mood] if mood != "" else []) + buffs + Array(v.ailments.describe(false)))
 		_ailment_badges.show_ailments(v.ailments)
 		var p := ps.progress

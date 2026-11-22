@@ -128,6 +128,9 @@ static func _place(maker: CaveMaker) -> Array[Dictionary]:
 				s.hidden = true
 	_add_bridge_roots(maker, spots, taken)
 	_add_tunnel_roots(maker, spots, taken, trees)  # F566 (last: older ids stay the same)
+	for s in spots:  # how far a drip's drops fall to the floor (owner F654: they vanished halfway down)
+		if s.kind == DRIP:
+			s.fall = drip_fall(maker, s.pos)
 	for i in spots.size():
 		spots[i].id = i
 	return spots
@@ -686,6 +689,17 @@ static func normal_at(maker: CaveMaker, p: Vector3) -> Vector3:
 		maker.sdf_at(p + Vector3(0, E, 0)) - maker.sdf_at(p - Vector3(0, E, 0)),
 		maker.sdf_at(p + Vector3(0, 0, E)) - maker.sdf_at(p - Vector3(0, 0, E)))
 	return g.normalized() if g.length() > 0.0001 else Vector3.UP
+
+
+const NO_FLOOR := 30.0  ## a drip over a bottomless pit: its drops fall this far, then are gone
+const DRIP_TIP := 0.91  ## how far below the ceiling a drip's tip hangs (glow_field: (1.15-0.14)*0.9)
+
+
+## Metres from a drip's tip down to the floor under it (where its drops land and a Drip Bucket goes).
+static func drip_fall(maker: CaveMaker, ceiling: Vector3) -> float:
+	var tip := ceiling + Vector3.DOWN * DRIP_TIP
+	var fl := _march(maker, tip + Vector3.DOWN * 0.1, Vector3.DOWN, 80.0)
+	return clampf(tip.y - fl.y, 0.3, 80.0) if fl != Vector3.INF else NO_FLOOR
 
 
 ## Drip spots near p (sideways distance), for Drip Buckets.

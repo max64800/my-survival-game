@@ -192,13 +192,36 @@ func set_used(id: int, used: int, burst := true) -> void:
 	if burst:
 		for s in STAGE_CHOPS:
 			if before < s and used >= s:
-				RockShatter.burst(get_parent(), mid, Vector3(cos(t.spin), 0.3, sin(t.spin)), WOOD)
+				_wood_burst(id, mid, Vector3(cos(t.spin), 0.3, sin(t.spin)))
 	if used >= CHOPS and t.stage == "tree":
-		if burst:  # the crack: the bottom crumbles into wood chunks
+		_show(id, "broken")  # (first, so the chips start outside the stump and crown, not inside the old trunk)
+		if burst:  # the crack: the bottom crumbles into wood chips
 			for k in 3:
-				RockShatter.burst(get_parent(), (t.top as Vector3).lerp(t.bottom, 0.55 + 0.15 * k), Vector3(cos(k * 2.1), 0.4, sin(k * 2.1)), WOOD)
-		_show(id, "broken")
+				_wood_burst(id, (t.top as Vector3).lerp(t.bottom, 0.55 + 0.15 * k), Vector3(cos(k * 2.1), 0.4, sin(k * 2.1)))
 		t.want_stage = "broken"
+
+
+## Wood chips fly off tree `id` at height `at`, thrown along `out`. Small chips (owner, Nov 22, F627: the 1 m
+## "log" slabs of a rock burst were far too big), starting just outside the bark: thrown from the trunk's
+## middle they got stuck on the tree's solid inside and hung in the air as dark flat shards (F628).
+const CHIP_SCALE := 0.35  ## the biggest chip is about 35 cm, the rest 4-16 cm
+
+
+func _wood_burst(id: int, at: Vector3, out: Vector3) -> void:
+	RockShatter.burst(get_parent(), bark_spot(id, at, out), out, WOOD, -1, CHIP_SCALE)
+
+
+## A spot just outside tree `id`'s bark at the height of `at`, on the `out` side (in open air, so chips fall free).
+func bark_spot(id: int, at: Vector3, out: Vector3) -> Vector3:
+	var t: Dictionary = _trees[id]
+	var flat := Vector3(out.x, 0.0, out.z).normalized() if Vector2(out.x, out.z).length() > 0.01 else Vector3.RIGHT
+	var far := at + flat * (float(t.width) + 1.0)
+	if is_inside_tree():
+		var q := PhysicsRayQueryParameters3D.create(far, at, World.TERRAIN_LAYER)
+		var hit := get_world_3d().direct_space_state.intersect_ray(q)
+		if not hit.is_empty() and hit.collider == t.body:  # (the bark, not a rock wall in between)
+			return (hit.position as Vector3) + flat * 0.5
+	return at + flat * (float(t.width) * 0.5 + 0.5)
 
 
 ## A tree planted by a player (from the host): {id, pos (floor), top (ceiling), grow (seconds left), model, spin}.

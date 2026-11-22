@@ -324,13 +324,18 @@ func _add_fire() -> void:
 	add_child(_fire)
 
 
+## Which forged model a station uses (the placing ghost uses it too, F632). It is turned around (PI) when shown.
+static func model_id(kind: String) -> String:
+	return "kiln" if kind == "stone_oven" else kind
+
+
 ## Placeholder looks made of boxes and cylinders (used until the asset forge has a model).
 func _build_look() -> void:
 	var c := Items.color(kind)
 	var sz := _size()
 	# A real 3D model from the asset forge, when one exists (else the simple shapes below).
 	# shortcut: the Stone Oven borrows the Charcoal Kiln's model until its own is built (PC, Blender).
-	var model := Look.forged("stations", "kiln" if kind == "stone_oven" else kind)
+	var model := Look.forged("stations", model_id(kind))
 	if model:
 		model.rotation.y = PI  # forged models face +Z; stations face -Z
 		model.scale = Vector3.ONE * scale_of(kind)

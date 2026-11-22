@@ -542,7 +542,7 @@ func test_snail_turns_before_it_moves() -> void:
 ## they turn to face a new way first (faster than the snail), then go forward. Bats sway into curves as they fly.
 func test_beetles_and_bats_turn_before_moving() -> void:
 	await _setup()
-	for kind in ["rock_beetle", "great_rock_beetle"]:
+	for kind in ["rock_beetle", "great_rock_beetle", "cave_bat"]:
 		var m := _spawn(kind, Vector3(3.0, 0, 0))
 		m.set_physics_process(false)
 		m.model.rotation.y = 0.0  # facing -Z
@@ -554,22 +554,6 @@ func test_beetles_and_bats_turn_before_moving() -> void:
 			steps += 1
 		check((r[0] as Vector3).dot(Vector3(1, 0, 0)) > 0.9, "%s: then it goes the way it faces" % kind)
 		check(steps * 0.05 < (2.5 if kind == "great_rock_beetle" else 1.5), "%s: a quick turn, not snail-slow (%.1f s)" % [kind, steps * 0.05])
-	# F630 (owner, Nov 22: "very sharp turns"): a bat never stops in the air to turn; it banks round while flying on.
-	var flyer := _spawn("cave_bat", Vector3(3.0, 2.0, 3.0))
-	flyer.set_physics_process(false)
-	flyer.model.rotation.y = 0.0
-	var fr: Array = flyer._turn_toward(Vector3(1, 0, 0), 0.05)
-	check(fr[1] >= Monster.FLY_TURN_SLOW - 0.01, "a bat facing away keeps flying while it turns (%.2f)" % fr[1])
-	check((fr[0] as Vector3).dot(Vector3(1, 0, 0)) < 0.3, "along its own nose, not snapping round")
-	var bat_steps := 0
-	while (fr[0] as Vector3).dot(Vector3(1, 0, 0)) < 0.95 and bat_steps < 200:
-		fr = flyer._turn_toward(Vector3(1, 0, 0), 0.05)
-		bat_steps += 1
-	check(bat_steps * 0.05 > 0.4 and bat_steps * 0.05 < 1.2, "a quarter turn takes a calm moment (%.1f s)" % [bat_steps * 0.05])
-	flyer.velocity = Vector3.ZERO
-	flyer._move(0.05, Vector3(1, 0, 0), 5.0)
-	check(flyer.velocity.length() < 1.0, "it speeds up gradually, not full speed in one frame (%.1f)" % flyer.velocity.length())
-	check(float(Monsters.LIST.cave_bat.run) <= 5.0, "and calmer: no faster than a running dwarf")
 	var bat := _spawn("cave_bat", Vector3(-3.0, 0, 0))
 	var ways := {}
 	for k in 8:

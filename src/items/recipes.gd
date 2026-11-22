@@ -19,7 +19,7 @@ const LIST := {
 	# Rope from cave spiders' silk (owner, Nov 19): the other way to rope.
 	"rope_silk": {station = HAND, inputs = {spider_silk = 2}, output = "rope", count = 1, unlock = ["spider_silk"]},
 	# A Moss Bandage: right-click it to heal a little.
-	"bandage": {station = HAND, inputs = {tree_moss = 2, fiber = 1}, output = "bandage", count = 1, unlock = ["tree_moss"]},
+	"bandage": {station = HAND, inputs = {tree_moss = 5, fiber = 10}, output = "bandage", count = 1, unlock = ["tree_moss"]},
 	# Spore Powder, ground from spore truffles by hand (for spore bombs, bugbane oil and the spore mask).
 	"spore_powder": {station = HAND, inputs = {spore_truffle = 1}, output = "spore_powder", count = 2, unlock = ["spore_truffle"]},
 	"drink_bellcap_juice": {station = HAND, inputs = {bellcap = 2}, output = "drink_bellcap_juice", count = 1, unlock = ["bellcap"]},

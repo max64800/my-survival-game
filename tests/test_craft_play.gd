@@ -116,3 +116,19 @@ func test_bench_says_it_makes_planks_from_wood_first() -> void:
 	ps.inventory.add("plank_root", 6)
 	check(panel.chain_lines("shield_stone", ps.inventory).is_empty(), "with the planks already in the bag: no extra line")
 	auth.get_parent().queue_free()
+
+
+## F629 (owner, Nov 22): 10 ropes finished at once played 10 identical sounds at the same moment. Now one sound, plus
+## at most two more a little later, at different moments.
+func test_a_batch_finishes_with_one_sound_and_a_few_spread_out() -> void:
+	var auth := GameAuthority.new()
+	var delays := []
+	for i in 10:
+		delays.append(auth.craft_sound_delay(100.0))
+	check_eq(delays[0], 0.0, "the first craft rings right away")
+	var later := delays.filter(func(d): return d > 0.0)
+	check_eq(later.size(), GameAuthority.CRAFT_SFX_EXTRA, "only %d more follow" % GameAuthority.CRAFT_SFX_EXTRA)
+	check(later.size() < 2 or absf(later[0] - later[1]) > 0.1, "and not at the same moment")
+	check_eq(delays.filter(func(d): return d < 0.0).size(), 10 - 1 - GameAuthority.CRAFT_SFX_EXTRA, "the rest are quiet")
+	check_eq(auth.craft_sound_delay(105.0), 0.0, "the next batch later rings again")
+	auth.free()

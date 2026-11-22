@@ -114,3 +114,29 @@ func test_vines_pick_with_e() -> void:
 	var main_src := FileAccess.get_file_as_string("res://src/main.gd")
 	check(main_src.contains("ask_break_hanging(\"strand\", str(info.pick_strand))"), "E breaks the vine via the host")
 
+
+
+## F627 + F628 (owner, Nov 22): a cracking Root Tree threw 1 m wood "logs" from the middle of its trunk, where some got
+## stuck on the tree's solid inside and hung in the air as dark flat shards. Now: small chips, from outside the bark.
+func test_a_cracking_root_tree_throws_small_chips_from_outside_its_bark() -> void:
+	var holder := Node3D.new()
+	tree.root.add_child(holder)
+	var rp := RootPillars.new()
+	holder.add_child(rp)
+	var top := Vector3(0, 10, 0)
+	var bottom := Vector3(0, 0, 0)
+	rp._add_tree(0, {top = top, bottom = bottom, width = 6.0, model = 0, spin = 0.0}, "tree")
+	RockShatter._alive.clear()
+	rp.set_used(0, RootPillars.CHOPS)
+	check(RockShatter._alive.size() > 0, "it still bursts into wood")
+	var biggest := 0.0
+	var closest := INF
+	for c in RockShatter._alive:
+		biggest = maxf(biggest, c._size)
+		closest = minf(closest, Vector2(c.global_position.x, c.global_position.z).length())
+	check(biggest <= 0.4, "no big logs: the biggest chip is %.2f m" % biggest)
+	check(closest >= 6.0 * 0.5 - 0.3, "every chip starts outside the trunk (closest %.2f m from its middle)" % closest)
+	for c in RockShatter._alive.duplicate():
+		c._release()
+	RockShatter._alive.clear()
+	holder.free()

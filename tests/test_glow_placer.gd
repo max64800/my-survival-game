@@ -85,6 +85,24 @@ func test_first_cavern_has_a_drip() -> void:
 		check(found, "seed %d: a drip in the first cavern" % sd)
 
 
+## F654: a drip's drops fall all the way to the floor (they used to vanish halfway down) and splash there.
+func test_drip_drops_reach_the_floor() -> void:
+	var maker := CaveMaker.new(42)
+	var n := 0
+	for s in GlowPlacer.place(maker):
+		if s.kind != GlowPlacer.DRIP or s.get("hidden", false):
+			continue
+		n += 1
+		check(s.has("fall"), "drip %d knows how far its drops fall" % s.id)
+		var fall: float = s.get("fall", 0.0)
+		var floor_at: Vector3 = s.pos + Vector3.DOWN * (GlowPlacer.DRIP_TIP + fall)
+		check(fall == GlowPlacer.NO_FLOOR or maker.sdf_at(floor_at) < 0.4, "drip %d: the floor is where its drops land (%.2f, fall %.2f, tip sdf %.2f)" % [s.id, maker.sdf_at(floor_at), fall, maker.sdf_at(s.pos + Vector3.DOWN * GlowPlacer.DRIP_TIP)])
+		var t := GlowField.drop_time(fall)
+		var fell := 0.5 * GlowField.DROP_GRAVITY * t * t
+		check(fell >= fall - 0.05, "drip %d: a drop falls %.1f m of %.1f m before it ends" % [s.id, fell, fall])
+	check(n > 0, "the world has drips (%d)" % n)
+
+
 ## Ground things are sometimes bigger, never smaller (owner F218), the same on every computer.
 func test_size_boost_only_grows() -> void:
 	var big := 0

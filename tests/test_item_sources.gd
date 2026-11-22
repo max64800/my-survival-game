@@ -117,11 +117,21 @@ func test_new_drops() -> void:
 	check_eq(inv.count_of("rope"), 1, "one rope")
 
 
+## Owner F655: a bandage heals slowly, 25 over 15 s (5 s was still too fast), not all at once; made from 5 tree moss +
+## 10 cave fiber.
 func test_a_bandage_heals_a_little() -> void:
 	var v := Vitals.new()
+	v.in_dark = true  # (no normal healing in the dark, so only the bandage counts)
 	v.health = 20.0
 	check(v.consume("bandage"), "a bandage can be used")
-	check_near(v.health, 45.0, 0.01, "it heals 25")
+	check_near(v.health, 20.0, 0.01, "nothing at once")
+	v.tick(1.0)
+	check_near(v.health, 20.0 + 25.0 / 15.0, 0.01, "a little after one second")
+	check(float(Items.info("bandage").heal_time) >= 15.0, "it takes at least 15 s")
+	for i in 16:
+		v.tick(1.0)
+	check_near(v.health, 45.0, 0.01, "25 in all, then it stops")
+	check_eq(Recipes.LIST.bandage.inputs, {tree_moss = 5, fiber = 10}, "5 tree moss + 10 cave fiber, no rope")
 
 
 ## Old saves: a boss or removed creature in the save is skipped, removed items vanish.

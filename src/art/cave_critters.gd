@@ -7,6 +7,10 @@ extends Node3D
 
 const BEETLES := 5   ## (owner, Nov 19: "too many bugs crawling around", was 14)
 const MOTHS := 10
+const MOTH_SLOW := 0.35  ## m/s a moth's calmest flight (F630: they flew 0.6-4 m/s with darts: "too fast")
+const MOTH_FAST := 0.75
+const MOTH_STEER := 1.5  ## how quickly its flight bends to a new way (was 4: sharp turns)
+const MOTH_TURN := 2.5   ## radians a second its body swings round to a new way, at most (it used to snap round at once)
 const CRICKETS := 3  ## (owner, Nov 19: "that many crickets", was 10)
 const NEAR := 26.0  ## further than this from the camera: moved to a new spot near it
 const BEETLE_SPEED := 0.08
@@ -41,7 +45,7 @@ func setup(p_world: World, p_glow: GlowField) -> void:
 				w.scale = Vector3(-1, 1, 1)  # the left wing: the right one mirrored
 			wings.append(hinge)
 		_moths.append({node = body, wings = wings, anchor = Vector3.INF, phase = _rng.randf() * TAU, goal = Vector3.ZERO,
-			vel = Vector3.ZERO, wait = 0.0, speed = _rng.randf_range(0.8, 1.6), wob = _rng.randf_range(1.5, 3.5)})
+			vel = Vector3.ZERO, wait = 0.0, speed = _rng.randf_range(MOTH_SLOW, MOTH_FAST), wob = _rng.randf_range(1.5, 3.5)})
 	for i in CRICKETS:
 		_crickets.append({node = _model("cave_cricket"), hop = 0.0, from = Vector3.ZERO, to = Vector3.ZERO})
 	for c in _beetles + _moths + _crickets:
@@ -143,16 +147,21 @@ func _moth(m: Dictionary, cam: Vector3, delta: float) -> void:
 	m.wait -= delta
 	if m.wait <= 0.0 or n.global_position.distance_to(a + m.goal) < 0.15:
 		m.goal = Vector3(_rng.randf_range(-1.4, 1.4), _rng.randf_range(-0.2, 1.2), _rng.randf_range(-1.4, 1.4))
-		m.wait = _rng.randf_range(0.6, 2.5)
-		m.speed = _rng.randf_range(0.6, 1.8) * (2.2 if _rng.randf() < 0.15 else 1.0)
+		m.wait = _rng.randf_range(1.5, 4.0)
+		m.speed = _rng.randf_range(MOTH_SLOW, MOTH_FAST)
+	# Slow and soft (owner, Nov 22, F630: "they fly too fast and not gracefully, very sharp turns"): no quick darts,
+	# the flight bends round gently and the body swings round to its new way slowly (it used to snap at once).
 	var want: Vector3 = (a + m.goal - n.global_position).limit_length(1.0) * m.speed
-	want += Vector3(sin(t * m.wob * 3.1), cos(t * m.wob * 2.3), sin(t * m.wob * 2.7 + 1.0)) * 0.35  # flutter
-	m.vel = (m.vel as Vector3).lerp(want, minf(1.0, delta * 4.0))
+	want += Vector3(sin(t * m.wob * 3.1), cos(t * m.wob * 2.3), sin(t * m.wob * 2.7 + 1.0)) * 0.15  # flutter
+	m.vel = (m.vel as Vector3).lerp(want, minf(1.0, delta * MOTH_STEER))
 	n.global_position += m.vel * delta
 	var vel: Vector3 = m.vel
 	var f := Vector3(vel.x, vel.y * 0.3, vel.z)
-	if f.length() > 0.01 and absf(f.normalized().y) < 0.95:
-		n.global_basis = Basis.looking_at(f.normalized(), Vector3.UP)
+	if f.length() > 0.05 and absf(f.normalized().y) < 0.95:
+		var face := Basis.looking_at(f.normalized(), Vector3.UP)
+		var cur := n.global_basis.orthonormalized()
+		var ang := cur.z.angle_to(face.z)  # (at most MOTH_TURN radians a second, however sharp the new way is)
+		n.global_basis = cur.slerp(face, 1.0 if ang < 0.001 else minf(1.0, delta * MOTH_TURN / ang))
 	var flap := sin(t * (34.0 + m.wob * 3.0)) * 0.9  # wings beat fast, round the body's long axis
 	(m.wings[0] as Node3D).rotation.z = flap
 	(m.wings[1] as Node3D).rotation.z = -flap

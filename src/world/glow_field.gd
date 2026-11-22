@@ -405,25 +405,54 @@ func _add_drip(s: Dictionary) -> void:
 	tip.position = Vector3.UP * 0.14 * SIZE
 	tip.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	root.add_child(tip)
+	# Each drop falls all the way to the floor (owner F654: they vanished halfway down), then splashes there, so you
+	# see where to put the Drip Bucket.
+	var fall: float = s.get("fall", 8.0)
 	var drops := CPUParticles3D.new()
-	drops.amount = 3
-	drops.lifetime = 1.6
+	drops.lifetime = drop_time(fall)
+	drops.amount = maxi(3, ceili(drops.lifetime * 2.0))
 	drops.emission_shape = CPUParticles3D.EMISSION_SHAPE_POINT
 	drops.direction = Vector3.DOWN
 	drops.spread = 0.0
 	drops.initial_velocity_min = 0.0
-	drops.initial_velocity_max = 0.2
-	drops.gravity = Vector3(0, -6.0, 0)
+	drops.initial_velocity_max = 0.0
+	drops.gravity = Vector3.DOWN * DROP_GRAVITY
+	drops.visibility_aabb = AABB(Vector3(-0.5, -fall - 0.5, -0.5), Vector3(1.0, fall + 1.0, 1.0))
 	var dm := SphereMesh.new()
 	dm.radius = 0.03
 	dm.height = 0.08
 	dm.radial_segments = 4
 	dm.rings = 2
 	drops.mesh = dm
-	drops.material_override = _material_for(s.color, true)
+	var wet := _material_for(s.color, true)
+	drops.material_override = wet
 	drops.position = Vector3.DOWN * TIP
 	root.add_child(drops)
+	var splash := CPUParticles3D.new()  # little drops jumping up where they land
+	splash.amount = 6
+	splash.lifetime = 0.45
+	splash.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	splash.emission_sphere_radius = 0.08
+	splash.direction = Vector3.UP
+	splash.spread = 50.0
+	splash.initial_velocity_min = 0.6
+	splash.initial_velocity_max = 1.2
+	splash.gravity = Vector3.DOWN * DROP_GRAVITY
+	splash.scale_amount_min = 0.4
+	splash.scale_amount_max = 0.7
+	splash.mesh = dm
+	splash.material_override = wet
+	splash.position = Vector3.DOWN * (TIP + fall - 0.05)
+	root.add_child(splash)
 	_nodes[s.id] = root
+
+
+const DROP_GRAVITY := 9.8
+
+
+## Seconds a drop takes to fall `fall` metres from rest (it lives exactly that long, so it ends on the floor).
+static func drop_time(fall: float) -> float:
+	return sqrt(2.0 * maxf(fall, 0.3) / DROP_GRAVITY)
 
 
 ## Which painted grain each kind of plant/crystal gets (see Look.SURFACES).

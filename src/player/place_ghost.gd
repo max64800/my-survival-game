@@ -116,9 +116,13 @@ func _show(id: String) -> void:
 	_shown_id = id
 	if _look:
 		_look.queue_free()
-	_look = Look.forged("stations", id)
+	var chest := Items.kind(id) == "chest"
+	_look = Look.forged("stations", Storage.model_id(id) if chest else Station.model_id(id))
 	if _look:
-		_look.scale = Vector3.ONE * Station.scale_of(id)
+		# The same model, turned around the same way as the real one (forged models face +Z, placed things -Z).
+		# Without this the ghost showed the back as the front and the chest went down the other way (F632).
+		_look.rotation.y = PI
+		_look.scale = Vector3.ONE * (1.0 if chest else Station.scale_of(id))
 	if _look == null:
 		var mi := MeshInstance3D.new()
 		var box := BoxMesh.new()

@@ -119,3 +119,26 @@ func test_small_roots_break_and_grow_back() -> void:
 	life.restore_plant(id)
 	check(life.position_of(id) == home, "it grows back in the same place")
 	life.free()
+
+
+## F630 (owner, Nov 22: the "bees", the little moths round the crystals, "fly too fast and not gracefully; very sharp
+## turns"): they drift slowly and swing round gently, never darting or snapping to a new way.
+func test_moths_fly_slow_and_turn_gently() -> void:
+	var cc := CaveCritters.new()
+	tree.root.add_child(cc)
+	var body := Node3D.new()
+	cc.add_child(body)
+	var m := {node = body, wings = [Node3D.new(), Node3D.new()], anchor = Vector3.ZERO, phase = 0.0, goal = Vector3.ZERO,
+		vel = Vector3.ZERO, wait = 0.0, speed = CaveCritters.MOTH_FAST, wob = 3.5}
+	var fastest := 0.0
+	var sharpest := 0.0
+	for i in 600:
+		var before := body.global_basis.z
+		cc._moth(m, Vector3.ZERO, 0.05)
+		fastest = maxf(fastest, (m.vel as Vector3).length())
+		sharpest = maxf(sharpest, before.angle_to(body.global_basis.z))
+	check(fastest < 1.0, "a moth drifts slowly (fastest %.2f m/s; it darted at up to 4)" % fastest)
+	check(rad_to_deg(sharpest) < 12.0, "and swings round gently (sharpest %.0f° in a 20th of a second)" % rad_to_deg(sharpest))
+	for w in m.wings:
+		w.free()
+	cc.free()

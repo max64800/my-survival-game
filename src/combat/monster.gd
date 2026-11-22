@@ -547,7 +547,7 @@ func think(delta: float, mgr: Node) -> void:
 				_move(delta, Vector3.ZERO, 0.0)
 				return
 			# Far above it (a hole's edge), or it's still clinging to the wall: climb up first, then fight (F236).
-			var atk := _pick_attack(dist, mgr) if to.y < 1.3 and (is_on_floor() or to.y < 0.4) else {}
+			var atk :=_pick_attack(dist, mgr) if to.y < 1.3 and (is_on_floor() or to.y < 0.4) else {}
 			if not atk.is_empty():
 				_start_attack(atk, mgr)
 				return
@@ -925,12 +925,10 @@ func _move(delta: float, dir: Vector3, speed: float) -> void:
 		velocity.x = 0.0  # it stops right there: a charge used to slide on, out of its room into the doorway (F473)
 		velocity.z = 0.0
 	if data.get("flies", false):
-		# Smooth flight (F630): the speed and the way it flies change gradually, not in one frame.
-		var want := Vector2(dir.x, dir.z) * speed
-		var flat := Vector2(velocity.x, velocity.z).move_toward(want, FLY_ACCEL * delta)
-		velocity = Vector3(flat.x, 0.0, flat.y)
+		velocity = dir * speed
+		velocity.y = 0.0
 		if data.get("swoops", false) and _alt != INF:
-			velocity.y = clampf((_alt - global_position.y) * 2.0, -FLY_CLIMB, FLY_CLIMB)
+			velocity.y = clampf((_alt - global_position.y) * 3.0, -7.0, 6.0)
 	else:
 		var grip := CHARGE_GRIP if charging else 20.0
 		velocity.x = move_toward(velocity.x, dir.x * speed, grip * delta)
@@ -1316,9 +1314,6 @@ func _face(target: Node3D) -> void:
 ## that way. Returns [the direction it really moves (its own forward, or none), a speed factor].
 const TURN_SPEED := 0.9  ## radians a second (about 7 s for a full turn)
 const TURN_GO := 0.45    ## radians: it sets off once it faces within this of the way it wants to go
-const FLY_TURN_SLOW := 0.55  ## a flyer turning right round still flies at this part of its speed (F630)
-const FLY_ACCEL := 9.0   ## m/s² a flyer speeds up, slows down and swings its flight with (F630: no instant changes)
-const FLY_CLIMB := 3.5   ## m/s a flyer climbs or sinks at most while cruising (it was 6-7: it bobbed up and down fast)
 
 
 ## Bats fly in curves with a bit of randomness (owner, Nov 19: "only forward and backward"): the way it wants to go
@@ -1336,10 +1331,6 @@ func _turn_toward(dir: Vector3, delta: float) -> Array:
 	var diff := angle_difference(model.rotation.y, want)
 	model.rotation.y = rotate_toward(model.rotation.y, want, float(data.get("turn_speed", TURN_SPEED)) * delta)
 	model.set_meta("turning", absf(diff) > 0.08)
-	if data.get("flies", false):
-		# A bat never stops in the air to turn (owner, Nov 22, F630: "very sharp turns"): it flies on along its own
-		# nose while it swings round, like a bird banking, a little slower in a tight turn.
-		return [-Basis(Vector3.UP, model.rotation.y).z, FLY_TURN_SLOW + (1.0 - FLY_TURN_SLOW) * maxf(0.0, cos(diff))]
 	if absf(diff) > TURN_GO:
 		return [Vector3.ZERO, 0.0]  # still turning: hops in place
 	var fwd := -Basis(Vector3.UP, model.rotation.y).z

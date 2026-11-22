@@ -114,6 +114,37 @@ func test_q_and_e_turn_the_piece_walking_does_not() -> void:
 	g.free()
 
 
+## F632 (owner, Nov 22, "big note"): a chest turned before placing went down facing the other way. The ghost
+## must show the same model facing the same way as the real chest or station placed with that turn.
+func test_the_ghost_faces_the_same_way_as_what_is_placed() -> void:
+	for id in ["chest_small", "workbench"]:
+		var g := PlaceGhost.new()
+		tree.root.add_child(g)
+		g._show(id)
+		var ghost_y: float = g._look.rotation.y if g._look else -1.0
+		var real: Node3D
+		if Items.kind(id) == "chest":
+			var body := StaticBody3D.new()
+			var st := Storage.new()
+			st._build_look(body, id)
+			real = body
+			st.free()
+		else:
+			var s: Station = Station.new()
+			s.kind = id
+			s._build_look()
+			real = s
+		var real_y := -1.0
+		for c in real.get_children():
+			if c is Node3D and not c is CollisionShape3D:
+				real_y = (c as Node3D).rotation.y
+				break
+		check(real_y != -1.0, "%s has a real model to compare" % id)
+		check_near(ghost_y, real_y, 0.001, "the %s ghost is turned like the real one" % id)
+		real.free()
+		g.free()
+
+
 ## F100 (owner, Nov 19): the screen says how to take the aimed piece down.
 func test_take_down_text_says_how() -> void:
 	check(Hud.take_down_text(7.2).contains("8 s left"), "seconds left to pick up")

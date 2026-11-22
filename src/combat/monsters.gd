@@ -28,8 +28,8 @@ const LIST := {
 		drops = [["snail_meat", 1, 1.0], ["snail_meat", 1, 0.5], ["shell_piece", 2, 0.8]]},
 	# Cave bats (owner, Nov 18): packs of 5-10; hit one and the whole pack wakes and swoops at you, flies back, swoops
 	# again; easy (one heavy or two light sword hits each), they drop the wing leather that tans into leather armour.
-	"cave_bat": {name = "Cave Bat", turns_in_place = true, turn_speed = 2.2, weaves = true, ragdoll = {hop = 0.4, spin = 6.0}, statue_hits = 1, size = 1.0, hp = 20, armor = 0, stun = 35, slash = 1.0, blunt = 1.0, pierce = 1.25,
-		fire = 0.0, frost = 0.0, poison = 0.0, walk = 2.5, run = 5.0, pack = [5, 10], xp = 4, leader = "Bat Matriarch", leader_chance = 0.15,
+	"cave_bat": {name = "Cave Bat", turns_in_place = true, turn_speed = 3.2, weaves = true, ragdoll = {hop = 0.4, spin = 6.0}, statue_hits = 1, size = 1.0, hp = 20, armor = 0, stun = 35, slash = 1.0, blunt = 1.0, pierce = 1.25,
+		fire = 0.0, frost = 0.0, poison = 0.0, walk = 3.0, run = 6.5, pack = [5, 10], xp = 4, leader = "Bat Matriarch", leader_chance = 0.15,
 		color = Color(0.3, 0.26, 0.28), shape = "cave_bat", flap_sound = "bat_flap", flies = true, swoops = true, roosts = true, sleeps = true,
 		hit_and_run = true, retreat = 7.0, recover = 1.6,
 		# F419 (owner, Nov 19): carry a light within 25 m of the roost and they wake; they keep attacking until you

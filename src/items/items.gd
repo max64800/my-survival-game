@@ -92,7 +92,7 @@ const DATA := {
 	"heartwood": {name = "Root Tree Heartwood", color = Color(0.62, 0.3, 0.16), short = "Hw"},  ## chopping a Root Tree; the Copper Pickaxe needs one
 	"tree_moss": {name = "Tree Moss", color = Color(0.36, 0.55, 0.26), short = "TM"},  ## peels off a Root Tree's bark when you chop it
 	"bloomheart_core": {name = "Bloomheart Core", color = Color(1.0, 0.5, 0.8), short = "BC"},  ## now and then inside a giant mushroom
-	"bandage": {name = "Moss Bandage", stack = 20, color = Color(0.7, 0.75, 0.55), short = "Bn", kind = "food", hunger = 0, heal = 25},  ## heals a little (right-click)
+	"bandage": {name = "Moss Bandage", stack = 20, color = Color(0.7, 0.75, 0.55), short = "Bn", kind = "food", hunger = 0, heal = 25, heal_time = 15.0},  ## heals 25 over 15 s (right-click; owner F655: 5 s was still too fast)
 	# --- tools
 	"pickaxe_stone": {name = "Stone Pickaxe", stack = 1, color = Color(0.7, 0.68, 0.62), short = "Pk", kind = "pickaxe", power = 10, tier = 0},
 	"pickaxe_copper": {name = "Copper Pickaxe", stack = 1, color = Color(0.9, 0.55, 0.3), short = "Pk", kind = "pickaxe", power = 13, tier = 1},

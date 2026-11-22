@@ -137,6 +137,7 @@ func tick(delta: float, resting: bool = false) -> void:
 		stamina = max_stamina() * 0.25  # Running ★100 Second Wind: out of stamina, a quarter comes back (every 2 min)
 		second_wind_cd = 120.0
 	for k in effects.keys():
+		health += float(effects[k].get("heal_per_s", 0.0)) * minf(delta, effects[k].left)  # a bandage healing (F655)
 		effects[k].left -= delta
 		if effects[k].left <= 0.0:
 			effects.erase(k)
@@ -216,7 +217,12 @@ func consume(item_id: String, roll: float = 1.0) -> bool:
 		return false
 	hunger = minf(100.0, hunger + info.get("hunger", 0))
 	thirst = minf(100.0, thirst + info.get("thirst", 0))
-	health = minf(max_health(), health + info.get("heal", 0) * (1.0 + gear.get("heal", 0.0)))  # a Moss Bandage (Blood Ruby armor)
+	var heal: float = info.get("heal", 0) * (1.0 + gear.get("heal", 0.0))  # a Moss Bandage (Blood Ruby armor)
+	var heal_time: float = info.get("heal_time", 0.0)
+	if heal_time > 0.0:  # a bandage heals a bit every second, not all at once (owner F655: 25 over 15 s)
+		effects[item_id + "_heal"] = {left = heal_time, heal_per_s = heal / heal_time}
+	else:
+		health = minf(max_health(), health + heal)
 	if roll < info.get("upset", 0.0):
 		upset_time = UPSET_TIME
 	if Foods.is_buff_food(item_id):
