@@ -160,3 +160,41 @@ func test_hip_lantern_hangs_at_the_belt() -> void:
 	check(not lantern._hook.visible, "no hook when it's back in the hand")
 	check(Lantern.HIP_RANGE < Lantern.FULL_RANGE, "a bit less light than in the hand")
 	dm.queue_free()
+
+
+## F613 (owner, Nov 22): the Hip Lantern swings on the belt when he walks and stops, then settles.
+func test_hip_lantern_swings_when_he_stops() -> void:
+	var dm := DwarfModel.new()
+	tree.root.add_child(dm)
+	var lantern := Lantern.new()
+	dm.left_hand.add_child(lantern)
+	lantern.set_process(false)
+	lantern.place("hip")
+	for i in 5:
+		await tree.process_frame
+	var dt := 1.0 / 60.0
+	var step := func(move: Vector3) -> void:
+		dm.global_position += move
+		lantern._to_belt()
+		lantern._hang("hip")
+		lantern._swing_step(dt)
+	for i in 30:
+		step.call(Vector3.ZERO)
+	check(lantern.swing_degrees() < 0.5, "standing still: it hangs straight (%.1f°)" % lantern.swing_degrees())
+	for i in 40:  # walk forward at 3 m/s...
+		step.call(Vector3(0, 0, 3.0 * dt))
+	var most := 0.0
+	for i in 20:  # ...and stop dead
+		step.call(Vector3.ZERO)
+		most = maxf(most, lantern.swing_degrees())
+	check(most > 8.0, "stopping makes it swing forward (%.1f°)" % most)
+	check(most < 35.0, "but not wildly (%.1f°)" % most)
+	var belt := lantern.global_position + Vector3(0, Lantern.BELT_ABOVE * Lantern.HIP_SCALE, 0)
+	var hook_top := lantern.to_global(Vector3(0, Lantern.BELT_ABOVE, 0))
+	check(hook_top.distance_to(dm.hip_point()) < 0.02, "it swings around the belt ring, which stays on the belt (%.3f m)" % hook_top.distance_to(dm.hip_point()))
+	for i in 180:
+		step.call(Vector3.ZERO)
+	check(lantern.swing_degrees() < 1.5, "a few seconds later it hangs still again (%.1f°)" % lantern.swing_degrees())
+	var bottom := dm.to_local(lantern.to_global(Vector3(0, -0.25, 0))).y
+	check(bottom > 0.02, "still clear of the ground (%.2f)" % bottom)
+	dm.queue_free()

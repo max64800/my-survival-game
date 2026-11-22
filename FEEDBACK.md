@@ -234,7 +234,6 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F608. The Pit Boss (Old Pell's) does his overhead then immediately a second hit with no wind-up — that second hit needs to be removed.** Also remove about half the garbage/decor from his room, it gets in the way. *From: you (PC, Nov 22). Said: 1×*
 - [ ] **F609. Medium skeletons (Hollow Miner) can run into and push the player.** They shouldn't be able to move you. *From: you (PC, Nov 22). Said: 1×*
 - [ ] **F610. The Pit Boss (or other bosses) can't find their way back if they get stuck in a hallway, elevator shaft, or behind a doorway.** They need to handle these nav dead-ends. *From: you (PC, Nov 22). Said: 1×*
-- [ ] **F613. The hip lantern should swing as he walks and runs** (now it hangs still on the belt). *From: you (PC, Nov 22, after the F612 hip fix). Said: 1×* → Claude 3. Idea: a small swing on its belt ring that follows his steps and lags a little when he turns or stops, like the hair does (F215). Spot: `src/player/lantern.gd` `_hang()`.
 
 
 ## Done

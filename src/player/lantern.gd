@@ -22,6 +22,16 @@ var light: OmniLight3D
 var _glass_mat: StandardMaterial3D
 var _flicker := 0.0
 var _hook: Node3D  ## the belt hook, shown only on the hip
+# The swing on the belt (F613): how far the lantern's middle is pushed out from straight below the belt, and how fast.
+var _swing := Vector3.ZERO
+var _swing_v := Vector3.ZERO
+var _belt_last := Vector3.ZERO
+var _belt_v := Vector3.ZERO
+var _belt_seen := false
+const SWING_SPEED := 6.5  ## how quickly it swings back and forth (a short pendulum)
+const SWING_DAMP := 0.22  ## how fast a swing dies down (0 = forever, 1 = no swing)
+const SWING_MAX := 0.6  ## the furthest it swings out, as a share of the hook's length (~30 degrees)
+const SWING_PUSH := 0.1  ## how hard his starts, stops and turns push it
 
 
 func _ready() -> void:
@@ -145,6 +155,10 @@ func _process(delta: float) -> void:
 		_to_belt()  # every frame: follows the hips (and the hip bone isn't posed yet in the first frames)
 	if spot != "back":
 		_hang(spot)
+	if spot == "hip":
+		_swing_step(delta)
+	else:
+		_belt_seen = false
 	var full_range: float = {back = BACK_RANGE, hip = HIP_RANGE}.get(spot, FULL_RANGE) * (ps.progress.lantern_range_mult() if ps else 1.0)  # (Lantern Bearer perk)
 	var t := 1.0 if fuel > 0.0 else 0.0
 	if fuel > 0.0 and fuel < LOW_FUEL:
@@ -160,6 +174,44 @@ func _process(delta: float) -> void:
 func _hang(spot: String) -> void:
 	var yaw := global_basis.z
 	global_basis = Basis(Vector3.UP, atan2(yaw.x, yaw.z)).scaled(Vector3.ONE * (HIP_SCALE if spot == "hip" else 1.0))
+
+
+## The Hip Lantern swings on its belt ring as he walks, runs and turns (owner, Nov 22, F613): a little pendulum
+## pushed by how the belt speeds up and slows down. Call it after _to_belt() and _hang().
+func _swing_step(delta: float) -> void:
+	if delta <= 0.0:
+		return
+	var drop := BELT_ABOVE * HIP_SCALE
+	var belt := global_position + Vector3(0, drop, 0)
+	if not _belt_seen or belt.distance_to(_belt_last) > 1.0:  # (first frame, or a teleport: start still)
+		_belt_seen = true
+		_belt_last = belt
+		_belt_v = Vector3.ZERO
+		_swing = Vector3.ZERO
+		_swing_v = Vector3.ZERO
+		return
+	var v := (belt - _belt_last) / delta
+	var push := ((v - _belt_v) / delta).limit_length(250.0)  # (ignores glitches, not a hard stop)
+	_belt_last = belt
+	_belt_v = v
+	push.y = 0.0
+	var w := SWING_SPEED
+	_swing_v += (-w * w * _swing - 2.0 * SWING_DAMP * w * _swing_v - push * SWING_PUSH) * delta
+	_swing += _swing_v * delta
+	_swing.y = 0.0
+	if _swing.length() > drop * SWING_MAX:
+		_swing = _swing.limit_length(drop * SWING_MAX)
+		_swing_v *= 0.5
+	var dir := Vector3(_swing.x, -drop, _swing.z).normalized()
+	var axis := Vector3.DOWN.cross(dir)
+	if axis.length() > 0.0001:
+		global_basis = Basis(axis.normalized(), Vector3.DOWN.angle_to(dir)) * global_basis
+	global_position = belt + dir * drop
+
+
+## How far it tilts from hanging straight down, in degrees.
+func swing_degrees() -> float:
+	return rad_to_deg(atan2(_swing.length(), BELT_ABOVE * HIP_SCALE))
 
 
 ## Move the lantern to the hand, the hip (on its belt hook) or the back.
