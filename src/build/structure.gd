@@ -168,9 +168,9 @@ func _touching(piece: String, pos: Vector3, rot: int, other: Dictionary) -> bool
 	return Pieces.outlines_overlap(Pieces.footprint(piece, pos, rot, 0.06), Pieces.footprint(other.piece, other.pos, other.rot, 0.0))
 
 
-## Pieces made to sit inside another one's opening.
+## Pieces made to sit inside another one's opening (and the roof window on its steep roof, F479).
 static func fits_inside(inner: String, outer: String) -> bool:
-	return (inner == "door" and outer in ["doorway", "arch_doorway"]) or (inner == "gate_leaf" and outer == "gateway")
+	return (inner == "door" and outer in ["doorway", "arch_doorway"]) or (inner == "gate_leaf" and outer == "gateway") 		or (inner == "dormer" and outer == "roof_45")
 
 
 ## Shrinks a box on every side, but never past its middle (thin walls stay valid boxes).

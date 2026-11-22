@@ -282,6 +282,7 @@ var tower_spot := {}  ## only in a ruin test world (RuinTests); real worlds work
 var outpost_spot := {}  ## where the Fallen Outpost goes ({room, pos, turn}; worked out once, in _reserve_tower)
 var brewhall_spot := {}  ## where the Brewhall goes (F479; the same)
 var spire_spot := {}  ## where the Lantern Spire goes (F479; the same)
+var manor_spot := {}  ## where the Hearth Manor goes (F479; the same)
 var reserved: Array[Dictionary] = []  ## {pos, r, h}: a circle of ground (r wide), from pos.y up to pos.y + h
 var dungeons: Array[Dictionary] = []  ## layout 14: the dungeons dug into the rock (DungeonMap.place)
 
@@ -413,6 +414,13 @@ func _reserve_tower() -> void:
 		spire_spot = RuinSpire.pick(self, sp)
 		if not spire_spot.is_empty():
 			reserve(spire_spot.pos, RuinSpire.REACH + 1.5, float(sp.get("height", 12.0)))
+	# The Hearth Manor (owner, Nov 22, F479): a circle out past its far corners and its terrace steps (after the Spire,
+	# whose cavern it leaves alone).
+	var mn := RuinTower.load_plan(RuinManor.PLAN_PATH)
+	if not mn.is_empty():
+		manor_spot = RuinManor.pick(self, float(mn.get("height", 13.5)))
+		if not manor_spot.is_empty():
+			reserve(manor_spot.pos, Vector2(RuinManor.HALF_X, RuinManor.FRONT).length() + 1.5, float(mn.get("height", 13.5)))
 
 
 ## Layout 8 (owner, Nov 17): 1 or 2 smaller stone columns (5 to 11 m wide) in the plain big caverns, the same kind as

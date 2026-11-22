@@ -110,6 +110,20 @@ const LIST := {
 		model_lift = 0.45, families = KIT_FAMILIES, station = {"workbench": 1, "mason": 1}},
 	"edge_strip": {name = "Edge Strip", group = "around", size = Vector3(2, 0.3, 0.07), units = 1, place = "edge",
 		families = KIT_FAMILIES, station = {"workbench": 1, "mason": 1}},
+	# Hearth Manor's pieces (owner OK Nov 22, F479 ruin 7; models: tools/asset_forge/builds/hearthbrick_v2_manor.py),
+	# Hearthbrick only. Bracket: under a floor that juts 1 m past the wall (its back on the wall's face; snaps to a
+	# wall's two ends and middle, never over a door). Trim band: on a wall's face at a floor line, corner block where
+	# two bands meet. Short railing: the 1 m ends of a balcony. Roof window: sits on a steep roof in the same cell.
+	"railing_narrow": {name = "Short Railing", group = "around", size = Vector3(1, 1, 0.15), units = 1, place = "edge", shape = "railing",
+		families = ["clay_brick"], station = {"mason": 1}},
+	"corbel": {name = "Bracket", group = "support", size = Vector3(0.5, 1.0, 0.82), units = 2, place = "edge", on_wall = true,
+		families = ["clay_brick"], station = {"mason": 2}},
+	"cornice": {name = "Trim Band", group = "decor", size = Vector3(2.0, 0.4, 0.17), units = 2, place = "edge", on_wall = true,
+		families = ["clay_brick"], station = {"mason": 2}},
+	"cornice_corner": {name = "Trim Corner", group = "decor", size = Vector3(0.32, 0.4, 0.32), units = 1, place = "free",
+		families = ["clay_brick"], station = {"mason": 2}},
+	"dormer": {name = "Roof Window", group = "roof", size = Vector3(2, 2, 2), units = 6, place = "cell", model_lift = 0.5,
+		families = ["clay_brick"], station = {"mason": 2}},
 	# A floor with a round hole near its front (fall or drop through it) and its dark-wood lid lying open behind it.
 	"floor_hatch": {name = "Floor Hatch", group = "floor", size = Vector3(2, 0.31, 2), units = 4, place = "cell", shape = "hatch",
 		families = KIT_FAMILIES, station = {"workbench": 2, "mason": 2}},

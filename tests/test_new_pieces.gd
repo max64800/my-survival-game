@@ -38,6 +38,13 @@ func test_every_kit_has_its_model() -> void:
 	check(Pieces.allowed("roof_cap", "plank_root") and Pieces.allowed("roof_cap", "clay_brick"), "roof cap for Shack and Hearthbrick")
 
 
+## Hearth Manor's 5 Hearthbrick pieces (owner OK Nov 22, F479): the game uses their hand-made models.
+func test_manor_pieces_use_their_models() -> void:
+	for id in ["corbel", "cornice", "cornice_corner", "railing_narrow", "dormer"]:
+		check(Pieces.allowed(id, "clay_brick") and not Pieces.allowed(id, "cut_stone"), "%s is Hearthbrick only" % id)
+		check(PieceNode.forged_mesh(id, "clay_brick") != null, "%s uses its hand-made model" % id)
+
+
 func test_down_sloped_wall_is_full_along_the_top() -> void:
 	var pts := PieceMesh.solid("sloped_wall_down").get_faces()
 	var low_right := INF

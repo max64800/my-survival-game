@@ -3,7 +3,7 @@ extends TestCase
 
 
 func test_four_blueprints_exist() -> void:
-	check_eq(BlueprintLibrary.IDS.size(), 13, "thirteen blueprints (the starter hut, six found in ruins, the Wooden Watchtower, the Wooden Outpost, the two Brewhalls and the two Spires learned by rebuilding ruins)")
+	check_eq(BlueprintLibrary.IDS.size(), 15, "fifteen blueprints (the starter hut, six found in ruins, the Wooden Watchtower, the Wooden Outpost, the two Brewhalls, the two Spires and the two Manors learned by rebuilding ruins)")
 	for id in BlueprintLibrary.IDS:
 		check(BlueprintLibrary.make(id) != null, "%s can be made" % id)
 
@@ -45,6 +45,62 @@ func test_everything_stands_up() -> void:
 		for u in falling:
 			names.append("%s@%s" % [s.pieces[u].piece, s.pieces[u].pos])
 		check(falling.is_empty(), "%s: nothing falls down (%s)" % [id, ", ".join(names)])
+
+
+## Ruin 7, the Hearth Manor (owner, Nov 22, F479): in IDS now (learned by rebuilding it), so the checks above cover
+## it too; kept as its own quick check while working on it.
+func test_hearth_manor_is_sound() -> void:
+	for id in ["hearthbrick_manor", "wooden_manor"]:
+		var bp := BlueprintLibrary.make(id)
+		var half := Vector3(bp.size.x * 0.5 + 0.5, bp.size.y + 0.5, bp.size.z * 0.5 + 0.5)
+		var s := Structure.new()
+		var uid := 1
+		for p in bp.pieces:
+			check(Pieces.allowed(p.id, p.mat), "%s: %s can be made of %s" % [id, p.id, p.mat])
+			var v: Vector3 = p.pos
+			check(absf(v.x) <= half.x and v.y >= 0.0 and v.y <= half.y and absf(v.z) <= half.z, "%s: %s at %s is inside the box" % [id, p.id, v])
+			check(not s.overlaps(p.id, p.pos, p.rot), "%s: %s at %s doesn't overlap another piece" % [id, p.id, p.pos])
+			s.add(uid, p.id, p.mat, p.pos, p.rot, p.pos.y < 0.3)
+			uid += 1
+		var names := []
+		for u in s.recompute():
+			names.append("%s@%s" % [s.pieces[u].piece, s.pieces[u].pos])
+		check(names.is_empty(), "%s: nothing falls down (%s)" % [id, ", ".join(names)])
+
+
+## F626: the dwarf can walk everywhere in the manor: no half or small floors (balconies are whole cells), no roof
+## cap, and every spiral stair goes in and comes out (its turned +x side) onto a floor, with no wall or railing there.
+func test_hearth_manor_stairs_lead_onto_floor() -> void:
+	var bp := BlueprintLibrary.make("hearthbrick_manor")
+	var spirals := 0
+	for p in bp.pieces:
+		check(not p.id in ["floor_half", "small_floor", "roof_cap"], "no %s in the manor (at %s)" % [p.id, p.pos])
+		if p.id != "stairs_spiral":
+			continue
+		spirals += 1
+		var out := Vector3(1, 0, 0).rotated(Vector3.UP, Pieces.yaw_of(p.rot))
+		var cell: Vector3 = p.pos + out * 2.0
+		var edge: Vector3 = p.pos + out
+		for top in [p.pos.y - 0.25, p.pos.y + 2.0]:   # (it stands on a slab: one small step up at its foot)
+			check(_floor_top_at(bp, cell.x, cell.z, top), "spiral at %s: floor at %s, top %.2f" % [p.pos, cell, top])
+			check(not _blocked_edge(bp, edge.x, edge.z, top), "spiral at %s: nothing blocks its side at %.2f" % [p.pos, top])
+	check_eq(spirals, 3, "the tower has three spiral flights")
+
+
+func _floor_top_at(bp: Blueprint, x: float, z: float, top: float) -> bool:
+	for q in bp.pieces:
+		if q.id in ["floor", "foundation"] and absf(q.pos.x - x) < 0.1 and absf(q.pos.z - z) < 0.1:
+			if absf(q.pos.y + Pieces.LIST[q.id].size.y - top) < 0.06:
+				return true
+	return false
+
+
+func _blocked_edge(bp: Blueprint, x: float, z: float, y: float) -> bool:
+	for q in bp.pieces:
+		if q.id in ["wall", "window_wall", "window_wide", "railing", "railing_narrow"]:
+			if absf(q.pos.x - x) < 0.1 and absf(q.pos.z - z) < 0.1 and absf(q.pos.y - y) < 0.3:
+				return true
+	return false
 
 
 func test_json_round_trip() -> void:

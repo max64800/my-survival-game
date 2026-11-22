@@ -75,6 +75,30 @@ Every new piece: Blender by script in the style (MODEL-RULES.md), a game piece w
       stairs meet floors, nothing floats (the blueprint checks).
 - [ ] Stairs up to a balcony land on floor as wide as the stairs, with room to step off and walk to the door
       (owner, Nov 22, F615: a 1 m balcony beside a 2 m stair "doesn't really work"; make a 2 m landing there).
+- [ ] The dwarf can walk everywhere (owner, Nov 22, F626): balconies and galleries are whole floor tiles (no half
+      or small floors), spiral stairs need a tower of 4×4 cells or more and go in and out onto open floor (never
+      a wall or a railing), no roof cap. Add a test like `test_hearth_manor_stairs_lead_onto_floor`.
 - [ ] Cost: a showpiece is big. Show the price on the page; the owner decides if it is too much.
 - [ ] Page from `tools/ruins/kiln_page.html` (ruin / wood / original, "Mark new pieces", roof and upper floor on/off,
       decor inside the ruin). Photograph it yourself first; at most 2 photo rounds.
+
+## Layered builds: up, out, up, out (owner, Nov 22, for ruin 8 on)
+The owner, after the Hearth Manor: "make it more complicated, layered... it goes up, then it expands, then it goes
+up, then it expands again". We still had flat walls and square towers. What the best survival-game builders do
+(research Nov 22; mostly old forum guides, so treat it as ideas, not facts):
+1. **Stepped tiers (a stepped pyramid).** Stack foundations so each tier is one cell smaller (or bigger), with a long
+   stair up the outside to the building on top. For us: a 2-3 tier plinth, then the hall on top.
+2. **Out, then up, then out again.** A storey sticks out 1 cell past the one below on brackets (a jetty); the next
+   storey steps back in (a setback) with a walkable terrace on the ledge; the one above that juts out again. The
+   outline zig-zags, like a stack of offset boxes. Every overhang is held by brackets or a pillar/foundation below
+   (our Structure must say it stands).
+3. **Changing shape on the way up.** A square base, cut corners above (diagonal walls), round or octagonal at the
+   top. Keep the same shape above and below a support (square on square), and change it on a floor, not mid-wall.
+4. **Thick, layered outer walls.** A wall, a gap, a second wall (a walkway or a gallery inside the thickness);
+   pillars or buttresses standing proud of the wall face; recessed window bays. No flat 6 m wall.
+5. **Bridges and walkways between parts.** A covered bridge or open walkway from one tower or wing to another at an
+   upper storey; a sloped walkway down to a lower terrace.
+6. **Built into the rock.** Half the building grows out of the cave wall or a rock ledge: cheap to read as "old", and
+   it gives levels for free. (Our ruins carve their space, so this means a back side set into rock.)
+Checklist add: **at least 2 places where the outline steps OUT above a step IN** (seen from the side it is not a
+straight line), and every jutting floor walkable (the F626 rule).

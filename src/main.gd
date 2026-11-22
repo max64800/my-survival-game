@@ -633,6 +633,9 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 		# The Lantern Spire (owner, Nov 20, F479), the same way. Robots: only with spirecheck.
 		if not dungeon_test and (not _robot_run or OS.get_cmdline_user_args().has("spirecheck")):
 			authority.world_state["spire"] = "pending"
+		# The Hearth Manor (owner, Nov 22, F479), the same way. Robots: only with manorcheck.
+		if not dungeon_test and (not _robot_run or OS.get_cmdline_user_args().has("manorcheck")):
+			authority.world_state["manor"] = "pending"
 		if ruin_test == "tower":  # a ruin test world: only its ruin (RuinTests)
 			authority.add_child(RuinTower.new(authority))
 		elif ruin_test != "":
@@ -645,6 +648,8 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 		authority.add_child(RuinBrewhall.new(authority))
 	if authority.is_host() and authority.world_state.has("spire"):
 		authority.add_child(RuinSpire.new(authority))
+	if authority.is_host() and authority.world_state.has("manor"):
+		authority.add_child(RuinManor.new(authority))
 	if _jungle_kit:
 		# Test kit: what you'd have after beating Orrumhal and Brask.
 		var kit := authority.get_player(me).inventory

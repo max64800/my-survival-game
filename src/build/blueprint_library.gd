@@ -8,14 +8,16 @@ class_name BlueprintLibrary
 ## Every cell of the box is marked "air", so placed inside rock the chest carves the room out first.
 
 const IDS := ["delvers_hut", "miners_homestead", "stone_hall", "forge_workshop", "watchtower_cabin", "stone_watchtower",
-	"stone_outpost", "wooden_watchtower", "wooden_outpost", "hearthbrick_brewhall", "wooden_brewhall", "lantern_spire", "wooden_spire"]
+	"stone_outpost", "wooden_watchtower", "wooden_outpost", "hearthbrick_brewhall", "wooden_brewhall", "lantern_spire", "wooden_spire",
+	"hearthbrick_manor", "wooden_manor"]
 ## Known from the very start (F161): you place them and bring the materials. The rest are learned from
 ## Old Blueprints found in ruins (F98).
 const STARTER := ["delvers_hut"]
 ## Learned only by rebuilding a ruin (owner, Nov 19), never from an Old Blueprint page.
 ## The Brewhall's two (F479): its cellar goes below the ground line, which only the ruin digs out.
-## The Lantern Spire's two (F479): a landmark you rebuild where it stands.
-const REBUILD_ONLY := ["wooden_watchtower", "wooden_outpost", "hearthbrick_brewhall", "wooden_brewhall", "lantern_spire", "wooden_spire"]
+## The Lantern Spire's two (F479): a landmark you rebuild where it stands. The Hearth Manor's two (F479) the same.
+const REBUILD_ONLY := ["wooden_watchtower", "wooden_outpost", "hearthbrick_brewhall", "wooden_brewhall", "lantern_spire", "wooden_spire",
+	"hearthbrick_manor", "wooden_manor"]
 const NAMES := {
 	"delvers_hut": "Delver's Hut",
 	"miners_homestead": "Miner's Homestead",
@@ -30,6 +32,8 @@ const NAMES := {
 	"wooden_brewhall": "Wooden Brewhall",
 	"lantern_spire": "Lantern Spire",
 	"wooden_spire": "Wooden Spire",
+	"hearthbrick_manor": "Hearth Manor",
+	"wooden_manor": "Wooden Manor",
 }
 
 const WOOD := "plank_root"
@@ -82,6 +86,10 @@ static func make(id: String) -> Blueprint:
 		"stonehold_twin_gate": lib._twin_gate()  # (owner, Nov 21: ruin 6, the first showpiece; not learnable yet, its 3D page first)
 		"wooden_twin_gate":
 			lib._twin_gate()
+			lib._to_wood()
+		"hearthbrick_manor": lib._hearth_manor()  # (owner, Nov 22: ruin 7, a showpiece; not learnable yet, its 3D page first)
+		"wooden_manor":  # (its trims, brackets, short railings and roof windows are Hearthbrick only: they stay brick)
+			lib._hearth_manor()
 			lib._to_wood()
 		_: return null
 	lib._bp.name = NAMES.get(id, id)
@@ -1397,6 +1405,213 @@ func _twin_barracks() -> void:
 		_wall_z("battlement", 17, z, 3.25, S)
 	_add("door", S, Vector3(16, 1.0, -17), 0)
 	_add("foundation_steps", S, Vector3(16, 0, -16), 0)
+
+
+## Owner, Nov 22 (ruin 7 of Zone 1, F479; a showpiece: docs/design/GRAND-RUIN-RECIPE.md): the Hearth Manor, a rich
+## Hearthbrick family's house. Plan on the 2 m grid (x right, z front; numbers before the 1 m shift at the end, which
+## puts the cells on odd numbers like every other blueprint):
+##   - The hall (x -5..5, z -7..1): two floors on foundations, a steep roof (ridge along x at z -3, 9.25 m) with two
+##     roof windows at the front and one at the back, gables at both ends. The round main door in the middle of the
+##     front, a wide window over it; stairs inside climbing to the right (railings round their hole).
+##   - The front terrace (x -5..5, z 1..5): foundations with railings, a 6 m wide flight of steps up to the main door.
+##   - The left wing (x -13..-5, z -7..-3): two floors, its own steep roof (7.25 m) with a roof window, a side door at its
+##     end (steps up to it), stairs inside. Its upper floor has a balcony that juts 1 m out over the front on brackets
+##     (a door onto it from the upper room; a short railing at its end).
+##   - The link (x 5..7, z -3..1): one low storey between the hall and the tower, a back door, its roof (5 m) running
+##     into both their walls.
+##   - The tower (x 7..11, z -3..1), the tallest part: three square storeys (spiral stairs, each flight on the other
+##     side), then a gallery 1 m wider all round on brackets (railings), a lookout room with wide windows, and a
+##     pyramid roof with a cap (12.25 m). So it changes shape twice: plain, then jutting out, then a spire.
+##   - Trim bands at every floor line on the outside, corner blocks where two bands meet.
+## Heights: foundations 0..1, walls 1..3, floors at 3, walls 3.25..5.25 (the tower: floor 5.25, walls 5.5..7.5,
+## gallery floor 7.5, lookout walls 7.75..9.75). Every roof slopes (Hearthbrick); no furniture: you furnish it.
+func _hearth_manor() -> void:
+	_start(Vector3(36, 13, 16))
+	var B := BRICK
+	var g := 1.0
+	var u := 3.25
+	# --- the hall (cells x -4..4, z -6..0)
+	for x in [-4, -2, 0, 2, 4]:
+		for z in [-6, -4, -2, 0]:
+			_add("foundation", B, Vector3(x, 0, z), 0)
+			if not (x == 2 and z == -6):
+				_add("floor", B, Vector3(x, 3.0, z), 0)
+	for e in [["window_wall", -4], ["wall", -2], ["doorway", 0], ["wall", 2], ["window_wall", 4]]:
+		_wall_x(e[0], e[1], 1, g, B)
+	for e in [["window_wall", -4], ["wall", -2], ["window_wide", 0], ["wall", 2], ["window_wall", 4]]:
+		_wall_x(e[0], e[1], 1, u, B)
+	for y in [g, u]:
+		for e in [["wall", -4], ["window_wall", -2], ["wall", 0], ["window_wall", 2], ["wall", 4]]:
+			_wall_x(e[0], e[1], -7, y, B)
+		for e in [["window_wall", 0], ["wall", -2], ["doorway", -4], ["wall", -6]]:   # the left side, into the wing
+			_wall_z(e[0], -5, e[1], y, B)
+		_add("door", B, Vector3(-5, y, -4), 1)
+	for e in [["doorway", 0], ["wall", -2], ["window_wall", -4], ["wall", -6]]:       # the right side, into the link
+		_wall_z(e[0], 5, e[1], g, B)
+	for e in [["wall", 0], ["wall", -2], ["window_wall", -4], ["wall", -6]]:
+		_wall_z(e[0], 5, e[1], u, B)
+	_add("door", B, Vector3(0, g, 1), 0)
+	_add("door", B, Vector3(5, g, 0), 1)
+	# stairs at the back, climbing to the right (their foot on open floor; a slab lifts their top level with the floor)
+	_add("floor", B, Vector3(2, g, -6), 0)
+	_add("stairs", B, Vector3(2, g + 0.25, -6), 3)
+	_wall_x("railing", 2, -5, u, B)
+	_wall_z("railing", 1, -6, u, B)
+	# the steep roof: ridge along x at z -3, two rows each side, gables at both ends (walls under the upper ones)
+	var top := u + 2.0
+	for x in [-4, -2, 0, 2, 4]:
+		_add("roof_45", B, Vector3(x, top, 0), 0)
+		_add("roof_45", B, Vector3(x, top + 2.0, -2), 0)
+		_add("roof_45", B, Vector3(x, top + 2.0, -4), 2)
+		_add("roof_45", B, Vector3(x, top, -6), 2)
+	for gx in [-5, 5]:
+		_add("gable_45", B, Vector3(gx, top, 0), 1)
+		_wall_z("wall", gx, -2, top, B)
+		_add("gable_45", B, Vector3(gx, top + 2.0, -2), 1)
+		_wall_z("wall", gx, -4, top, B)
+		_add("gable_45", B, Vector3(gx, top + 2.0, -4), 3)
+		_add("gable_45", B, Vector3(gx, top, -6), 3)
+	_add("dormer", B, Vector3(-2, top, 0), 0)
+	_add("dormer", B, Vector3(2, top, 0), 0)
+	_add("dormer", B, Vector3(0, top, -6), 2)
+	# --- the front terrace: foundations, railings round it, a 6 m flight of steps up to the main door
+	for x in [-4, -2, 0, 2, 4]:
+		for z in [2, 4]:
+			_add("foundation", B, Vector3(x, 0, z), 0)
+	for x in [-2, 0, 2]:
+		_add("foundation_steps", B, Vector3(x, 0, 6), 0)
+	for z in [2, 4]:
+		_wall_z("railing", -5, z, g, B)
+		_wall_z("railing", 5, z, g, B)
+	_wall_x("railing", -4, 5, g, B)
+	_wall_x("railing", 4, 5, g, B)
+	# --- the left wing (cells x -12..-6, z -6..-4)
+	var wx := [-12, -10, -8, -6]
+	for x in wx:
+		for z in [-6, -4]:
+			_add("foundation", B, Vector3(x, 0, z), 0)
+			if not (x == -10 and z == -6):
+				_add("floor", B, Vector3(x, 3.0, z), 0)
+		_wall_x("wall", x, -3, g, B)                                              # (no door under the brackets)
+		_wall_x(["window_wall", "wall", "doorway", "wall"][wx.find(x)], x, -3, u, B)
+	for y in [g, u]:
+		for e in [["wall", -12], ["window_wall", -10], ["wall", -8], ["window_wall", -6]]:
+			_wall_x(e[0], e[1], -7, y, B)
+	_wall_z("doorway", -13, -4, g, B)
+	_wall_z("wall", -13, -6, g, B)
+	_wall_z("window_wall", -13, -4, u, B)
+	_wall_z("wall", -13, -6, u, B)
+	_add("door", B, Vector3(-13, g, -4), 1)
+	_add("foundation_steps", B, Vector3(-14, 0, -4), 3)                           # up to the side door
+	_add("door", B, Vector3(-8, u, -3), 0)                                         # onto the balcony
+	_add("floor", B, Vector3(-10, g, -6), 0)                                       # stairs climbing to the left
+	_add("stairs", B, Vector3(-10, g + 0.25, -6), 1)
+	_wall_x("railing", -10, -5, u, B)
+	_wall_z("railing", -9, -6, u, B)
+	# the balcony: whole floors (one cell deep, F626: no half or small floors) along the wing's front, brackets under
+	# them at every wall's two ends and middle, railings round it (its right end is the hall's side wall)
+	for x in wx:
+		_add("floor", B, Vector3(x, 3.0, -2), 0)
+		_wall_x("railing", x, -1, u, B)
+	for x in [-12.75, -12, -11, -10, -9, -8, -7, -6, -5.25]:
+		_on_wall_z("corbel", B, x, -3, 2.0, 1)
+	_wall_z("railing", -13, -2, u, B)
+	# its steep roof (ridge along x at z -5, running into the hall's end wall), gables at its end, a roof window
+	for x in wx:
+		_add("roof_45", B, Vector3(x, top, -4), 0)
+		_add("roof_45", B, Vector3(x, top, -6), 2)
+	_add("gable_45", B, Vector3(-13, top, -4), 1)
+	_add("gable_45", B, Vector3(-13, top, -6), 3)
+	_add("dormer", B, Vector3(-10, top, -4), 0)
+	# --- the link (x 5..7, z -3..1): one storey, a back door (steps behind), its roof between the hall and the tower
+	for z in [-2, 0]:
+		_add("foundation", B, Vector3(6, 0, z), 0)
+	_wall_x("wall", 6, 1, g, B)
+	_wall_x("doorway", 6, -3, g, B)
+	_add("door", B, Vector3(6, g, -3), 0)
+	_add("foundation_steps", B, Vector3(6, 0, -4), 2)
+	_add("roof_45", B, Vector3(6, 3.0, 0), 0)
+	_add("roof_45", B, Vector3(6, 3.0, -2), 2)
+	# --- the tower (cells x 8..14, z -6..0): 4 by 4 (F626: room for spiral stairs that open onto floor), three
+	# storeys, then a lookout room on its roof with a gallery of whole floors round it
+	var tx := [8, 10, 12, 14]
+	var tz := [-6, -4, -2, 0]
+	for x in tx:
+		for z in tz:
+			_add("foundation", B, Vector3(x, 0, z), 0)
+	var lv := [g, u, 5.5]          # its three storeys' walls
+	var fys := [3.0, 5.25, 7.5]    # the floors above them
+	# Each spiral stair goes in and comes out on the same side (its +x side, turned with it), so that side always faces
+	# open floor: up from the ground in the back-right corner, from the first floor in the back-left, from the second
+	# in the front-right (out onto the gallery by the lookout's door).
+	var flights := [[Vector2(14, -6), 2], [Vector2(8, -6), 0], [Vector2(14, 0), 2]]
+	for i in 3:
+		var y: float = lv[i]
+		for x in tx:
+			_wall_x("window_wall" if i < 2 and x in [10, 12] else "wall", x, 1, y, B)
+			_wall_x("window_wall" if i == 1 and x in [10, 12] else "wall", x, -7, y, B)
+		for z in tz:
+			_wall_z("window_wall" if i < 2 and z in [-4, -2] else "wall", 15, z, y, B)
+			_wall_z("doorway" if i == 0 and z == 0 else "wall", 7, z, y, B)
+		var c: Vector2 = flights[i][0]
+		_add("floor", B, Vector3(c.x, y, c.y), 0)                       # (a slab lifts its top level with the floor)
+		_add("stairs_spiral", B, Vector3(c.x, y + 0.25, c.y), flights[i][1])
+		for x in tx:
+			for z in tz:
+				if x != int(c.x) or z != int(c.y):
+					_add("floor", B, Vector3(x, fys[i], z), 0)
+		_wall_x("railing", c.x, -5 if c.y < -3 else -1, fys[i] + 0.25, B)   # the hole's other open side
+	_add("door", B, Vector3(7, g, 0), 1)
+	# the gallery: railings all round the tower's top
+	var ry := 7.75
+	for x in tx:
+		_wall_x("railing", x, 1, ry, B)
+		_wall_x("railing", x, -7, ry, B)
+	for z in tz:
+		_wall_z("railing", 7, z, ry, B)
+		_wall_z("railing", 15, z, ry, B)
+	# the lookout room (cells x 10..12, z -4..-2): wide windows all round, a round door at the top of the stairs
+	_wall_x("doorway", 12, -1, ry, B)
+	_add("door", B, Vector3(12, ry, -1), 0)
+	_wall_x("wall", 10, -1, ry, B)
+	for k in [10, 12]:
+		_wall_x("window_wide", k, -5, ry, B)
+	for z in [-4, -2]:
+		_wall_z("window_wide", 9, z, ry, B)
+		_wall_z("window_wide", 13, z, ry, B)
+	# its pyramid roof: four outside corners, each turned so its high corner points at the middle (no cap: F626)
+	var py := ry + 2.0
+	_add("roof_45_outer", B, Vector3(10, py, -4), 2)
+	_add("roof_45_outer", B, Vector3(12, py, -4), 1)
+	_add("roof_45_outer", B, Vector3(10, py, -2), 3)
+	_add("roof_45_outer", B, Vector3(12, py, -2), 0)
+	# --- trim bands at the floor lines (outside only, never where a balcony, roof or gallery is), corner blocks
+	var b3 := 2.95
+	for x in [-4, -2, 0, 2, 4]:
+		_on_wall_z("cornice", B, x, 1, b3, 1)
+	for x in [-12, -10, -8, -6, -4, -2, 0, 2, 4]:
+		_on_wall_z("cornice", B, x, -7, b3, -1)
+	for z in [-6, -4]:
+		_on_wall_x("cornice", B, -13, z, b3, -1)
+		_on_wall_x("cornice", B, 5, z, b3, 1)
+	_on_wall_x("cornice", B, -5, 0, b3, -1)
+	for c in [Vector2(-5.17, 1.17), Vector2(-13.17, -7.17), Vector2(-13.17, -2.83), Vector2(5.17, -7.17)]:
+		_add("cornice_corner", B, Vector3(c.x, b3, c.y), 0)
+	for by in [b3, 5.2, 7.45]:     # the tower's bands (not where the link's roof leans on it)
+		for x in tx:
+			_on_wall_z("cornice", B, x, 1, by, 1)
+			_on_wall_z("cornice", B, x, -7, by, -1)
+		for z in tz:
+			_on_wall_x("cornice", B, 15, z, by, 1)
+			if by > 3.0 or z < -3:
+				_on_wall_x("cornice", B, 7, z, by, -1)
+		var cs := [Vector2(15.17, 1.17), Vector2(15.17, -7.17), Vector2(6.83, -7.17)]
+		if by > 3.0:
+			cs.append(Vector2(6.83, 1.17))
+		for c in cs:
+			_add("cornice_corner", B, Vector3(c.x, by, c.y), 0)
+	for p in _bp.pieces:
+		p.pos.x += 1.0   # cells on odd numbers, like every other blueprint (box x -18..18)
 
 
 # ---------------------------------------------------------------- helpers

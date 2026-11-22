@@ -51,7 +51,8 @@ const NAMES := {
 }
 ## The ruins whose plans may hold lootable props (world_state.ruins[k].name -> plan).
 const RUIN_PLANS := {"tower": RuinTower.PLAN, "outpost": RuinOutpost.OUTPOST_PLAN, "brewhall": RuinBrewhall.PLAN_PATH,
-	"spire": RuinSpire.PLAN_PATH, "kiln": "res://blueprints/ruins/kiln_ruin.json"}
+	"spire": RuinSpire.PLAN_PATH, "kiln": "res://blueprints/ruins/kiln_ruin.json",
+	"manor": RuinManor.PLAN_PATH}
 
 var auth: GameAuthority
 var props := {}          ## key -> {model, xform: Transform3D, label, node: StaticBody3D, inst: Node3D, looted: bool}
