@@ -238,6 +238,12 @@ var _great_clock := 0.0  ## s into that swing
 var one_fixed: Dictionary = {}  ## tools only: hold this sword/mace swing pose still (F389 chat 13)
 var one: Dictionary = {}
 var one_weight := 0.0
+## How a swing hands back to his own arms: over one_blend_out s, and with one_ease the weight eases in and out (a
+## slow start and a soft landing) instead of a straight line. Ghosts (Ghost._dress, owner Nov 22: "the mace teleports a
+## little at the last second" on its way back): 0.6 s eased. The dwarf himself keeps DwarfOneSwing.BLEND_OUT, straight.
+var one_blend_out := DwarfOneSwing.BLEND_OUT
+var one_ease := false
+var _one_lin := 0.0  ## (the straight-line weight one_weight is eased from)
 var one_move := ""  ## the one-handed swing playing now ("" = none)
 var one_t := 0.0  ## how far into it (0..1)
 var _one_from: Dictionary = {}
@@ -832,9 +838,11 @@ func one_pose(delta: float) -> Dictionary:
 		var now := DwarfOneSwing.swing(one_move, one_t)
 		one = DwarfGreatSwing.blend(_one_from, now, k) if _one_from_w > 0.0 else now
 		one_weight = lerpf(_one_from_w, 1.0, k)
+		_one_lin = one_weight
 	else:
 		one_move = ""
-		one_weight = move_toward(one_weight, 0.0, delta / DwarfOneSwing.BLEND_OUT)
+		_one_lin = move_toward(_one_lin, 0.0, delta / maxf(one_blend_out, 0.01))
+		one_weight = smoothstep(0.0, 1.0, _one_lin) if one_ease else _one_lin
 	return one
 
 

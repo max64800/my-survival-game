@@ -263,3 +263,43 @@ func test_the_ghosts_are_not_fat() -> void:
 		print("%s body %.2f wide, %.2f deep, %.2f tall" % [kind, box.size.x, box.size.z, box.size.y])
 		check(not first and box.size.x < 1.65 and box.size.z < 0.82, "%s is slim (%.2f wide, %.2f deep)" % [kind, box.size.x, box.size.z])
 		model.free()
+
+
+## Owner, Nov 22: after every ghost attack the mace "teleports a little bit at the last second" on its way back to
+## the resting pose (all four ghosts). The mace's head is followed frame by frame through each swing and its ease
+## back; no frame near the end may jump far more than the frames around it.
+func test_the_mace_eases_back_without_a_jump() -> void:
+	for kind in [["ghost_a", "mace_1", 0.85], ["ghost_b", "SliceDiag", 0.85], ["ghost_c", "Chop", 1.05], ["ghost_lord", "mace_4", 0.75]]:
+		var model := MonsterModel.build("ghost", Color.WHITE, 1.0, false, kind[0], 1)
+		tree.root.add_child(model)
+		var rig := CreatureRig.find(model) as GhostRig
+		var dr: DwarfRig = rig.dm.dwarf_rig
+		var mi := dr.grip.find_children("*", "MeshInstance3D", true, false)[0] as MeshInstance3D
+		for i in 10:
+			await tree.process_frame
+		rig.attack(kind[1], kind[2])
+		var length: float = kind[2] / DwarfOneSwing.HIT_AT
+		var start := Time.get_ticks_usec()
+		var bb := mi.get_aabb()
+		var top := Vector3(bb.get_center().x, bb.end.y, bb.get_center().z)
+		var prev := mi.global_transform * top
+		var rows: Array = []  # [how far into the swing (1 = its end), the mace head's speed (m/s)]
+		while (Time.get_ticks_usec() - start) / 1e6 < length + Ghost.RETURN_TIME + 0.2:
+			await tree.process_frame
+			rig.step(0.016, 0.0, 3.0, true, false)
+			var p := mi.global_transform * top
+			rows.append([(Time.get_ticks_usec() - start) / 1e6 / length, p.distance_to(prev) / maxf(tree.root.get_process_delta_time(), 0.0005)])
+			prev = p
+		var worst := 0.0
+		var worst_at := 0.0
+		for i in range(2, rows.size() - 2):
+			if rows[i][0] < 0.8:
+				continue
+			var around: float = (rows[i - 2][1] + rows[i + 2][1]) * 0.5
+			var jump: float = rows[i][1] / maxf(around, 0.3)
+			if jump > worst:
+				worst = jump
+				worst_at = rows[i][0]
+		print("%s mace's worst jump %.1fx at %.0f%% of the swing" % [kind[0], worst, worst_at * 100])
+		check(worst < 3.0, "%s's mace eases back without a jump (%.1fx at %.0f%%)" % [kind[0], worst, worst_at * 100])
+		model.free()

@@ -339,9 +339,15 @@ function placeMace() {
 	const skel = g.holder.getObjectByName("root").parent;
 	const hp = hand.getWorldPosition(new THREE.Vector3()), lp = arm.getWorldPosition(new THREE.Vector3());
 	const fist = hp.clone().addScaledVector(hp.clone().sub(lp).normalize(), 0.06);
-	const up = g.handle ? new THREE.Vector3(...g.handle).applyQuaternion(skel.getWorldQuaternion(new THREE.Quaternion())).normalize()
-		: new THREE.Vector3(0.1, -0.5, 1).normalize();
-	const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), up);
+	// (blended from the resting angle to the swing's by handleW, never switched: owner, Nov 22, the mace "teleports a
+	// little bit at the last second" getting back to rest)
+	const Y = new THREE.Vector3(0, 1, 0);
+	const q = new THREE.Quaternion().setFromUnitVectors(Y, new THREE.Vector3(0.1, -0.5, 1).normalize());
+	if (g.handle && g.handleW > 0) {
+		const sw = new THREE.Vector3(...g.handle).applyQuaternion(skel.getWorldQuaternion(new THREE.Quaternion())).normalize();
+		q.slerp(new THREE.Quaternion().setFromUnitVectors(Y, sw), Math.min(1, g.handleW));
+	}
+	const up = Y.clone().applyQuaternion(q);
 	g.mace.position.copy(g.root.worldToLocal(fist.addScaledVector(up, -0.1)));
 	g.mace.quaternion.copy(q);
 }
@@ -390,7 +396,7 @@ function pose(frame, k) {
 		} else b.quaternion.copy(g.idle[i]);
 		skelQ.set(b, pq.clone().multiply(b.quaternion));
 	});
-	g.handle = k > 0.5 ? frame.handle : null;
+	g.handle = frame.handle; g.handleW = k;
 }
 
 let moves = null;
@@ -415,7 +421,7 @@ async function attack() {
 	await tween(0.6, f => {
 		const e = f * f * (3 - 2 * f);
 		g.bones.forEach((b, i) => b.quaternion.slerpQuaternions(end[i], g.idle[i], e));
-		g.handle = e < 0.5 ? hEnd : null;
+		g.handle = hEnd; g.handleW = 1 - e;
 	});
 	g.handle = null;
 	g.swinging = false;

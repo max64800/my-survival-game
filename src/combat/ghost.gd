@@ -22,6 +22,7 @@ const MACE := "mace_silver"
 ## the boss get exactly the same mace.
 const MACE_SHAPE := {"a": [1.0, 0.62, 0.62, 1.0], "b": [1.6, 0.8, 1.35, 1.25], "c": [1.6, 0.8, 1.35, 1.25]}
 const SHAFT := [0.23, 0.33]  ## m up the silver mace (its own model): the bare shaft, from the top of the grip wrap to the fins under the head
+const RETURN_TIME := 0.6  ## s for the arms and the mace to ease back to rest after a swing
 const HOVER := 0.22  ## m: how high it floats above the floor
 const MARKS := 4  ## it fades away after each quarter of its health
 const RUSH := 1.8  ## how much faster it comes at you after a jump...
@@ -70,6 +71,10 @@ static func _dress(dm: DwarfModel, look: String, color: Color) -> void:
 	# (owner, Nov 22: "still very fat"): no extra dwarf width under the ghost body, so it's as slim as on the 3D page
 	dm.dwarf_rig.scale.x /= DwarfRig.WIDTH
 	dm.dwarf_rig.scale.z /= DwarfRig.WIDTH
+	# (owner, Nov 22: after every attack the mace "teleports a little bit at the last second" getting back to its
+	# resting spot: the swing let go in 0.18 s, full speed to a dead stop. Now a slow, eased return.)
+	dm.dwarf_rig.one_blend_out = RETURN_TIME
+	dm.dwarf_rig.one_ease = true
 	dm.set_held(MACE)
 	var shape: Array = MACE_SHAPE.get(look, [1.0, 1.0, 1.0, 1.0])
 	for mi: MeshInstance3D in dm.dwarf_rig.grip.find_children("*", "MeshInstance3D", true, false):

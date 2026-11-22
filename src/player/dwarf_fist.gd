@@ -41,6 +41,9 @@ var fist_radius := 0.0           ## how far the finger joints sit from the middl
 var fist_half := 0.0             ## half the fist's width along the handle (m)
 var holding := false             ## the right fist is closed round a handle this frame
 var wrist_turn := 0.0            ## how far the wrist turned this frame to line the fist up (degrees)
+var _was_from := Quaternion.IDENTITY  ## (the swing's blend keeps going the same way round: _hold)
+var _was_aim := Quaternion.IDENTITY
+var _was_w := 0.0  ## (last frame's swing weight)
 ## The held tool's handle, measured from its model (tool holder space): [the handle's middle line's offset from the
 ## holder's axis, where the handle ends along that axis]. Measured, not assumed (Nov 19, owner: "the axe still needs
 ## work"): the axe's handle sits 5.5 cm off the axis in its model (the stone axe 7 cm), and every handle ends at the
@@ -133,6 +136,7 @@ func _process_modification_with_delta(_delta: float) -> void:
 	if holding:
 		_close("_r", sk)
 	# the sword's and the mace's swings (DwarfOneSwing, F389 chat 12): the pack's move over his own arms, eased in and out
+	_was_w = _one_w
 	_one_w = 0.0
 	if not rig.tool_look in TWO_HANDED:  # (standing, the legs and hips take the swing's moves; walking, they keep the walk)
 		_plant = move_toward(_plant, 1.0 if rig.move_speed < 0.3 else 0.0, _delta * 4.0)
@@ -185,7 +189,20 @@ func _hold(sk: Skeleton3D) -> void:
 		var aim := _one_aim(sk, _one).get_rotation_quaternion()
 		if rig.tool_look == "spear":
 			aim = aim * SPEAR_IN_SWING  # (its -Z where the sword's +Y would be: the tip leads the spin)
-		want.basis = Basis(want.basis.get_rotation_quaternion().slerp(aim, _one_w))
+		# (mid-blend, the same way round as last frame: when the swing's aim and the resting grip are nearly
+		# opposite, the shortest way flipped sides from one frame to the next and the weapon spun in the fist, Nov 22.
+		# At full swing or just starting, the way round can't show, so it's picked fresh: the shortest.)
+		var from := want.basis.get_rotation_quaternion()
+		if from.dot(_was_from) < 0.0:
+			from = -from
+		if _one_w >= 0.999 or _was_w <= 0.0:
+			if aim.dot(from) < 0.0:
+				aim = -aim
+		elif aim.dot(_was_aim) < 0.0:
+			aim = -aim
+		_was_from = from
+		_was_aim = aim
+		want.basis = Basis(from.slerpni(aim, _one_w).normalized())
 	var before := sk.get_bone_global_pose(hand).basis.get_rotation_quaternion()
 	var inv := sk_world.basis.inverse()  # (directions in skeleton space: the dwarf is a bit wider than tall)
 	var ax := Vector3.FORWARD if rig.tool_look == "spear" else Vector3.UP  # (the spear points along its holder's -Z)
@@ -341,6 +358,11 @@ var _leg_rest := 0.0
 var _keep_carry := Vector3.ZERO  ## the guard's push last frame (the dwarf's own space), its start this frame
 const KEEP_EASE := 0.85  ## share of last frame's push kept as this frame's start
 func _apply_pose(sk: Skeleton3D, p: Dictionary, legs: float, w := 1.0) -> void:
+	# The whole pose is put on first, then every bone is blended from its own turn before to its turn in that pose.
+	# (Blending bone by bone on the way down made each one aim from a half-blended parent: at one weight a bone's
+	# shortest way round flipped and the arm and the weapon jumped. Owner, Nov 22: the ghosts' maces "teleport a
+	# little bit at the last second" easing back after a swing.)
+	var blend: Array = []
 	for n: String in DwarfGreatSwing.ORDER:
 		if not p.bones.has(n):
 			continue
@@ -356,7 +378,10 @@ func _apply_pose(sk: Skeleton3D, p: Dictionary, legs: float, w := 1.0) -> void:
 		_set_turn(sk, b, Transform3D(Basis(p.bones[n] as Quaternion), Vector3.ZERO))
 		var k := w * (legs if leg else 1.0)
 		if k < 1.0:
-			sk.set_bone_pose_rotation(b, before.slerp(sk.get_bone_pose_rotation(b), k))
+			blend.append([b, before, k])
+	for e: Array in blend:
+		var b: int = e[0]
+		sk.set_bone_pose_rotation(b, (e[1] as Quaternion).slerp(sk.get_bone_pose_rotation(b), e[2]))
 	var pel: int = _bone_ids.get("pelvis", -1)
 	if pel >= 0 and legs > 0.0:
 		var th := sk.find_bone("thigh_l")
