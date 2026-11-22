@@ -277,6 +277,16 @@ func dodge_velocity() -> Vector3:
 	return _dodge_dir * (Combat.DODGE_DISTANCE / Combat.DODGE_TIME)
 
 
+## How long the roll is on track to last (s), updated live so the roll animation can be stretched or shortened to
+## match it instead of always playing the same length (F702). The usual tap: DODGE_TIME. Held past that: grows
+## toward DASH_HOLD_MAX while the button's still down, then settles the moment you let go or hit the cap.
+func dodge_expected_duration() -> float:
+	if _dodge_t < 0.0:
+		return Combat.DODGE_TIME
+	var still_held := Input.is_action_pressed("dodge") and _dodge_t < Combat.DASH_HOLD_MAX
+	return Combat.DASH_HOLD_MAX if still_held else maxf(_dodge_t, Combat.DODGE_TIME)
+
+
 func _attack(heavy: bool) -> void:
 	if _busy > 0.0 or is_blocking():
 		return
