@@ -39,7 +39,7 @@ func test_the_rigged_dwarf_counts_his_steps() -> void:
 	holder.add_child(rig)
 	rig.build(Color(0.6, 0.45, 0.3))
 	var rate := {}
-	for speed in [4.0, 6.5]:
+	for speed in [Dwarf.WALK_SPEED, Dwarf.RUN_SPEED]:
 		for i in 30:  # (settle into the loop)
 			rig.set_motion(speed, true, false)
 			await rig.skeleton.skeleton_updated
@@ -51,6 +51,6 @@ func test_the_rigged_dwarf_counts_his_steps() -> void:
 		var secs := (Time.get_ticks_usec() - t0) / 1e6
 		rate[speed] = (rig.steps - start) / secs
 		check(rig.steps - start >= 3, "at %.1f m/s his feet come down (%d steps)" % [speed, rig.steps - start])
-	check(rate[6.5] > rate[4.0], "running steps come quicker (%.1f vs %.1f a second)" % [rate[6.5], rate[4.0]])
+	check(rate[Dwarf.RUN_SPEED] > rate[Dwarf.WALK_SPEED], "running steps come quicker (%.1f vs %.1f a second)" % [rate[Dwarf.RUN_SPEED], rate[Dwarf.WALK_SPEED]])
 	await frames(1)
 	holder.free()

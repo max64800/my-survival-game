@@ -6,10 +6,10 @@ extends CharacterBody3D
 ## no controls, they just copy the position their owner sends over the network.
 
 const BODY_LAYER := 8  ## players' bodies (friendly fire bolts can hit them)
-const WALK_SPEED := 4.0
+const WALK_SPEED := 3.0  ## (owner, Nov 22: 4 m/s made his short legs spin "like anime"; was 4)
 const LADDER_SPEED := 2.5
 const LADDER_STAMINA := 4.0
-const RUN_SPEED := 6.5
+const RUN_SPEED := 5.2   ## (was 6.5, same reason)
 const JUMP_SPEED := 5.5         ## about 1.5 m high
 const COYOTE_TIME := 0.15       ## you can still jump this long after walking off an edge
 const JUMP_BUFFER := 0.15       ## a jump pressed this long before landing still counts

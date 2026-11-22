@@ -117,8 +117,10 @@ const ROLL_TIME := 0.75
 ## shift"): plain walking (Dwarf.WALK_SPEED, 4 m/s) played the jog, so it looked like running except while blocking or
 ## aiming (slower: the walk). Owner, Nov 22 (🔁 F577: "walking with no shift still feels like moonwalking"): the slow
 ## walk's feet can't keep up with 4 m/s (they slid back at ~15% of his speed), so plain walking plays the trot (jog,
-## feet grip ~96%) and Shift the sprint (faster legs, leans 13 degrees further forward). The walk is for slow moves.
-const MOVE_POINTS := {idle = 0.0, walk = 1.6, jog = 4.0, sprint = 6.5}
+## feet grip ~93%) and Shift the sprint (faster legs, leans 13 degrees further forward). The walk is for slow moves.
+## Later that day ("running feels like anime, way too fast"): short legs had to spin to keep up, so the dwarf himself
+## is slower (Dwarf.WALK_SPEED 4 -> 3, RUN_SPEED 6.5 -> 5.2): 2.7 steps a second walking, 5 running.
+const MOVE_POINTS := {idle = 0.0, walk = 1.6, jog = 3.0, sprint = 5.2}
 ## How fast the standing/walk/run loops play (1 = as made; owner Nov 18: "way too fast").
 const LOOP_SPEED := 0.7
 ## Feet that grip the floor: at 70% the feet skate (they move back only 64% as fast as the dwarf walks, 39% when
@@ -127,7 +129,7 @@ const LOOP_SPEED := 0.7
 static var grip_feet := true
 ## The heavy-steps layer (DwarfWeight): off, the owner kept the old moves (Nov 19). The Dwarf Moves page tool turns it on.
 static var use_weight := false
-const GRIP_RATES := {0.0: 0.7, 1.6: 1.3, 4.0: 1.75, 6.5: 2.2}
+const GRIP_RATES := {0.0: 0.7, 1.6: 1.2, 3.0: 1.3, 5.2: 1.65}
 
 
 ## How fast the standing/walk/run loops play at `speed` m/s.

@@ -87,7 +87,8 @@ const LIST := {
 		color = Color(0.7, 0.82, 0.78), shape = "lost_miner", recover = 1.2,
 		# F593: picks shortened so running away gets you out. F605: only the Leaping Chop now (owner Nov 22:
 		# "should only do lunge"); Frost Pick and Pick Jab removed. At ≤2 m the miner circles and waits for space.
-		attacks = [{name = "Leaping Chop", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_hiss", tell = 0.9, damage = 14, type = "pierce", reach = 3.0, parry = "any", lunge = true, small_lunge = true, lunge_speed = 3.4, rest = 4.0, quiet_after = 3.5, buildup = {chill = 34}}],
+		# Its leap rushes at 2.6 m/s (was 3.4): the dwarf walks 3 m/s now (was 4), and walking off must still get you out.
+		attacks = [{name = "Leaping Chop", anim = "1H_Melee_Attack_Chop", warn_sound = "beetle_hiss", tell = 0.9, damage = 14, type = "pierce", reach = 3.0, parry = "any", lunge = true, small_lunge = true, lunge_speed = 2.6, rest = 4.0, quiet_after = 3.5, buildup = {chill = 34}}],
 		drops = []},
 	# The end boss with his Lost Miners (F467): a big two-handed chop, and the spin (only a shield parries it, it
 	# knocks you down: step back out of it). Owner, Nov 20: the spin reached far too far and he only ever spun
@@ -101,10 +102,10 @@ const LIST := {
 		# F608: rest = 2 s after the chop so he doesn't immediately chain a second hit with no wind-up.
 		attacks = [{name = "Great Chop", anim = "2H_Melee_Attack_Chop", warn_sound = "beetle_rumble", tell = 1.0, damage = 26, type = "slash", reach = 2.3, parry = "any", rest = 2.0},
 			# Owner, Nov 21 ("when he spins he should move towards the player: you have to dodge that"): the whirl now
-			# goes on for 4 more turns (about 3 s in all), sliding after you at 3.8 m/s (you walk 4, run 6.5): every
+			# goes on for 4 more turns (about 3 s in all), sliding after you at 2.6 m/s (you walk 3, run 5.2): every
 			# turn hits (12), the last one hardest (20) and it knocks you down. Roll out or run.
 			{name = "Pick Whirl", anim = "2H_Melee_Attack_Spin", warn_sound = "beetle_rumble", tell = 0.97, damage = 12, type = "blunt", reach = 1.8, rest = 9.0, parry = "shield", knockdown = false,
-				follow = {tell = 0.5, damage = 12, whirl_speed = 3.8, warn_sound = null, follow = {tell = 0.5, damage = 12,
+				follow = {tell = 0.5, damage = 12, whirl_speed = 2.6, warn_sound = null, follow = {tell = 0.5, damage = 12,
 					follow = {tell = 0.5, damage = 12, follow = {tell = 0.5, damage = 20, knockdown = true}}}}}],
 		drops = []},
 	# Mossprop Workings' boss (owner, Nov 21): a mossy skeleton miner with a felling axe and a plank shield on his left

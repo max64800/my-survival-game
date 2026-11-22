@@ -548,8 +548,10 @@ func test_the_bridge_is_two_big_jumps() -> void:
 	var g: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
 	var reach := Dwarf.WALK_SPEED * 2.0 * Dwarf.JUMP_SPEED / g
 	check(gap >= 1.9, "a big jump (%.1f m)" % gap)
-	check(reach > gap + 1.0, "the dwarf makes it walking (%.1f m jump)" % reach)
+	# (owner, Nov 22: the dwarf walks 3 m/s now, was 4: a walking jump only just makes it, a running one easily)
+	check(reach > gap + 0.3, "the dwarf makes it walking, just (%.1f m jump)" % reach)
 	var run_reach := Dwarf.RUN_SPEED * 2.0 * Dwarf.JUMP_SPEED / g
+	check(run_reach > gap + 1.5, "and easily with a running jump (%.1f m)" % run_reach)
 	check(run_reach < 8.0 - 0.5, "even a running jump (%.1f m) can't clear the whole 8 m chasm" % run_reach)
 	check(plan.props.any(func(p): return String(p.model) == "dungeon/bridge_ropes_3m.glb"), "the ropes run on where the planks are gone")
 	for model in ["dungeon/bridge_ropes_3m.glb", "dungeon/bridge_posts.glb"]:
