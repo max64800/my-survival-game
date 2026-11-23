@@ -36,7 +36,7 @@ func test_small_hits_skip_the_edge_and_big_ones_flash_faintly() -> void:
 	check_near(f._hit_strength, ScreenEdgeFlash.HIT_MIN, 0.01, "a 10% hit flashes faintly")
 	f.flash_hit(80.0, 100.0)
 	check_near(f._hit_strength, ScreenEdgeFlash.HIT_MAX, 0.01, "a huge hit caps at HIT_MAX")
-	check(ScreenEdgeFlash.HIT_MAX <= 0.35, "never a strong flash")
+	check(ScreenEdgeFlash.HIT_MAX <= 0.95, "never a solid red screen")  # (owner, Nov 23: the old 0.35 cap was too faint)
 	f._process(ScreenEdgeFlash.HIT_FADE)
 	check_near(f._hit_strength, 0.0, 0.001, "fully faded after HIT_FADE seconds")
 	f.free()

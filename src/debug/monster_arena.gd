@@ -179,10 +179,10 @@ func _build_menu() -> void:
 	_hp_slider.step = 1.0
 	_hp_slider.value = 100.0
 	_hp_slider.custom_minimum_size = Vector2(380, 24)
-	_hp_slider.value_changed.connect(_on_hp_slider)
+	_hp_slider.value_changed.connect(func(val): _hp_lock.button_pressed = true; _on_hp_slider(val))  # (moving it holds your health there)
 	v.add_child(_hp_slider)
 	_hp_lock = CheckButton.new()
-	_hp_lock.text = "Hold my health at the slider"
+	_hp_lock.text = "Holding my health at the slider (moving it turns this on)"
 	_hp_lock.toggled.connect(func(_on): _on_hp_slider(_hp_slider.value))
 	v.add_child(_hp_lock)
 	_on_hp_slider(100.0)
@@ -196,7 +196,7 @@ func _build_menu() -> void:
 		row.add_child(sb)
 	var row2 := HBoxContainer.new()
 	v.add_child(row2)
-	for e in [["Small hit", 10.0], ["Big hit", 40.0]]:
+	for e in [["Small hit", 15.0], ["Big hit", 50.0]]:
 		var hb := Button.new()
 		hb.text = e[0] + " (look only)"
 		hb.custom_minimum_size = Vector2(185, 36)
@@ -315,6 +315,10 @@ func _heal_everyone() -> void:
 
 
 func heal_me() -> void:
+	if _hp_lock != null:
+		_hp_lock.button_pressed = false  # (stop holding it at the slider)
+		_hp_slider.set_value_no_signal(100.0)
+		_hp_label.text = "My health: 100%"
 	var auth: GameAuthority = _main.authority
 	var ps := auth.get_player(auth.local_peer_id())
 	if ps:

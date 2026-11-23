@@ -23,10 +23,10 @@ extends ColorRect
 ## across one or two random corners (new corners each time your health drops low again).
 
 const HIT_COLOR := Color(0.85, 0.08, 0.05)
-const HIT_FADE := 0.4  ## seconds a hit flash takes to fade back to nothing
+const HIT_FADE := 0.6  ## seconds a hit flash takes to fade back to nothing
 const BIG_HIT_SHARE := 0.1  ## a hit must take this share of your max health to flash the edges
-const HIT_MIN := 0.2  ## the faintest edge flash (a hit of exactly BIG_HIT_SHARE)
-const HIT_MAX := 0.35  ## the strongest (a hit of 40% of your health or more)
+const HIT_MIN := 0.5  ## the faintest edge flash (a hit of exactly BIG_HIT_SHARE)
+const HIT_MAX := 0.9  ## the strongest (a hit of 40% of your health or more)
 const STATUS_MODES := {"poison": 1, "burn": 2, "chill": 3}  ## which look the shader draws
 const FADE_IN := 0.6  ## seconds for a look to grow in
 const FADE_OUT := 0.9  ## seconds for it to melt away again
