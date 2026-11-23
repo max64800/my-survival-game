@@ -728,4 +728,28 @@ func test_jump_animation_is_stretched_to_match_how_long_hes_really_airborne() ->
 	var plays_for := rig.tree.get_animation(DwarfRig.ANIMS.air).length / scale
 	check(absf(plays_for - expected) < 0.05, "the jump pose is stretched to the real hang time (%.2f s vs %.2f s)" % [plays_for, expected])
 	root.queue_free()
+
+
+## Owner (Nov 23, PC) said the jump still looked wrong after the fix above: "it is the same, he jumps lands and if
+## it a long jump he just sprints to the next stop" 🔁. The first fix guessed once at takeoff, assuming he'd come
+## back down to the exact height he left — wrong for a real long jump, which often lands in a dip (a gap) or up on
+## a rise, so that single guess stayed wrong for the whole flight. Now it re-guesses every tick from a straight-down
+## ray to the real ground, so a landing well below launch gets the longer time it actually needs.
+func test_jump_hang_guess_accounts_for_landing_lower_than_launch() -> void:
+	var root := Node3D.new()
+	tree.root.add_child(root)
+	_block(root, Vector3(-3, -0.5, 0), Vector3(6, 1, 6))  # launch platform, top at y = 0
+	_block(root, Vector3(7, -3.5, 0), Vector3(6, 1, 6))  # landing platform, top at y = -3 (a real drop, like a gap)
+	var dwarf := Dwarf.new()
+	root.add_child(dwarf)
+	dwarf.global_position = Vector3(5, 1.0, 0)  # mid-flight, over the gap, above the lower platform
+	await tree.physics_frame  # let the physics server register the new platforms (and free the last test's room)
+	var vy := 5.5
+	var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
+	var drop := 4.0  # from y=1.0 down to the landing platform's top at y=-3
+	var expected := (vy + sqrt(vy * vy + 2.0 * gravity * drop)) / gravity
+	var flat_guess := 2.0 * vy / gravity
+	var got: float = dwarf._jump_hang_guess(vy, 0.0)
+	check(absf(got - expected) < 0.05, "guess accounts for the real drop (%.2f s vs %.2f s)" % [got, expected])
+	check(got > flat_guess + 0.1, "landing lower takes longer than the flat up-and-down guess (%.2f s vs flat %.2f s)" % [got, flat_guess])
 	root.queue_free()

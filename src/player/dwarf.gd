@@ -16,15 +16,14 @@ const JUMP_BUFFER := 0.15       ## a jump pressed this long before landing still
 const STEP_HEIGHT := 0.5        ## ledges up to this tall are stepped up without jumping
 const ACCEL := 14.0
 const AIR_ACCEL := 4.0
-const SPEED_BLEND := 6.0  ## m/s² walk eases into run (and back), not a sudden jump (F701)
+const SPEED_BLEND := 20.0  ## m/s²: softens other speed changes (blocking, buffs); walk → sprint is ramped by _sprint_t (F775)
 const SWING_TIME := 0.55
-const CAMERA_DISTANCE := 3.4  ## starting camera distance (and the longest reach used for aiming)
+const CAMERA_DISTANCE := DwarfFeel.CAM_DISTANCE  ## starting camera distance (tune it in dwarf_feel.gd)
 const ZOOM_MIN := 1.1
 const ZOOM_MAX := 8.0
 const ZOOM_STEP := 0.5
-## The normal camera's height: dwarf height, not human height (owner, Nov 20: "made for humans, not dwarfs";
-## was 1.5 m, now close to the aim camera's 0.9 m, which the owner liked).
-const SHOULDER := Vector3(0.55, 1.0, 0.0)
+## The normal camera: over his right shoulder, looking at his chest (height: DwarfFeel.CAM_AIM_HEIGHT, F469).
+const SHOULDER := Vector3(0.55, DwarfFeel.CAM_AIM_HEIGHT, 0.0)
 ## Where the camera sits while aiming (F452): x = to his right, y = height, z = distance behind.
 const AIM_CAMERA := Vector3(0.45, 0.9, 2.0)
 const POSE_SEND_TIME := 0.05  ## send our position 20 times a second
@@ -44,6 +43,9 @@ var fight: DwarfFight
 var bot_move := Vector2.ZERO
 var _run_streak := 0.0  ## seconds since you started this run (Running ★25: a quick burst at the start)
 var _speed_smooth := WALK_SPEED  ## eases toward the real target speed (F701), instead of snapping to it
+var _sprint_t := 0.0  ## 0 = walking speed, 1 = full sprint: ramps up over DwarfFeel.SPRINT_RAMP_TIME (F775)
+var _skid := false  ## skidding to a stop after a sprint (F775)
+var _winded := false  ## sprint stopped to keep a dodge's worth of energy; waits to catch its breath (F775)
 var running := false  ## running this frame (DwarfFight stops a crossbow reload when you run)
 var _was_playing := false  ## (F494: Shift is let go when you come back to the game)
 var _layout := -2  ## the keyboard language last frame (-2 = not looked yet; F494: Ctrl+Shift switches it)
@@ -61,6 +63,7 @@ func _notification(what: int) -> void:
 		for act in InputMap.get_actions():
 			Input.action_release(act)
 var bot_jump := false
+var bot_run := false  ## tests: hold Shift
 var bot_dodge := false  ## tests: start a dodge this frame, like a real press (skips Input's just-pressed timing)
 
 var _since_floor := 0.0
@@ -70,6 +73,7 @@ var shield_blocks := 0  ## hits blocked or parried with a shield, not yet told t
 var _body_xp_wait := 0.0
 var _jump_wanted := 0.0
 var _jump_air_expected := 0.0  ## F807: how long this jump should hang in the air, 0.0 off a real jump (a step off a ledge)
+var _jump_elapsed := 0.0  ## F807: seconds airborne so far this jump, so the hang guess below can keep refreshing instead of being stuck with its first guess
 var _cam_y := NAN
 var _cam_tick := 0  ## the physics frame the camera's height last glided on (F781)
 var _zoom := CAMERA_DISTANCE  ## where the mouse wheel wants the camera
@@ -78,7 +82,8 @@ var _yaw := 0.0
 var _pitch := -0.25
 var _cam_yaw: Node3D
 var _cam_pitch: Node3D
-var _spring: SpringArm3D
+var _spring: SpringArm3D  ## only feels for rock (F766): the camera itself is placed by hand, so it can glide back out
+var _cam_len := CAMERA_DISTANCE  ## how far behind him the camera really is right now (rock can push it in)
 var _shake := 0.0
 var _aim_t := 0.0  ## 0 = normal camera, 1 = aiming over the shoulder (F452)
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
@@ -154,7 +159,7 @@ func _build_camera() -> void:
 	camera.fov = 72.0
 	camera.near = 0.05
 	camera.far = 400.0
-	_spring.add_child(camera)
+	_cam_pitch.add_child(camera)  # (not on the spring arm: that one snaps the camera both ways; F766 wants a slow glide out)
 	camera.current = true
 
 
@@ -271,9 +276,20 @@ func _physics_process(delta: float) -> void:
 		running = Input.is_action_pressed("run") and iv.length() > 0.1
 	if bot_move != Vector2.ZERO:
 		iv = bot_move
+	if bot_run and playing and iv.length() > 0.1:
+		running = true
 	dir = (Basis(Vector3.UP, _yaw) * Vector3(iv.x, 0, iv.y))
 	var body := _vitals()
 	var prog := _progress()
+	# F775: one energy bar for sprint, dodge and attack, but sprinting never spends the last dodge.
+	if body:
+		var keep := minf(Combat.DODGE_STAMINA * (prog.dodge_stamina_mult() if prog else 1.0) * DwarfFeel.SPRINT_KEEPS_DODGES, body.max_stamina() * 0.5)
+		if body.stamina <= keep + RUN_STAMINA * delta * 2.0:  # (stop a step early: one more step would dip under it)
+			_winded = true
+		elif body.stamina >= keep + DwarfFeel.SPRINT_CATCH_BREATH:
+			_winded = false
+		if _winded:
+			running = false
 	if running and body and not body.drain_stamina(RUN_STAMINA * (prog.run_stamina_mult() if prog else 1.0), delta):
 		running = false  # out of breath
 	if dir.length() > 0.1:
@@ -299,20 +315,37 @@ func _physics_process(delta: float) -> void:
 		_run_time += delta
 	_run_streak = _run_streak + delta if running else 0.0
 	var burst := 1.3 if running and _run_streak < 1.0 and prog and prog.has_star("running", 25) else 1.0  # Running ★25
-	var top_speed := (RUN_SPEED * (prog.run_speed_mult() if prog else 1.0) * burst if running else WALK_SPEED) * fight_mult * (body.ailments.speed_mult() * maxf(0.2, 1.0 + body.buff_total("move_speed")) if body else 1.0)
-	_speed_smooth = move_toward(_speed_smooth, top_speed, SPEED_BLEND * delta)  # walk eases into run (F701)
+	# Heavy legs: walk → sprint ramps up over SPRINT_RAMP_TIME, and back down over SPRINT_SLOW_TIME (F775).
+	_sprint_t = minf(1.0, _sprint_t + delta / DwarfFeel.SPRINT_RAMP_TIME) if running else maxf(0.0, _sprint_t - delta / DwarfFeel.SPRINT_SLOW_TIME)
+	var sprint_k := smoothstep(0.0, 1.0, _sprint_t)
+	var top_speed := lerpf(WALK_SPEED, RUN_SPEED * (prog.run_speed_mult() if prog else 1.0) * burst, sprint_k) * fight_mult * (body.ailments.speed_mult() * maxf(0.2, 1.0 + body.buff_total("move_speed")) if body else 1.0)
+	_speed_smooth = move_toward(_speed_smooth, top_speed, SPEED_BLEND * delta)
 	var speed := _speed_smooth
 	if held_left > 0.0:  # (Lampwick's bear jaws hold your leg: MineTraps)
 		held_left -= delta
 		speed = 0.0
 		_jump_wanted = 0.0
-	var target := dir * speed
 	var on_floor := is_on_floor()
 	if on_floor:
 		_jump_air_expected = 0.0  # (F807: only a real jump gets a stretched animation, not a step off a ledge)
+	dir = _sprint_turn(dir, sprint_k, delta)  # (the dodge above already took the real key direction, F702)
+	var target := dir * speed
 	var a := ACCEL if on_floor else AIR_ACCEL
-	velocity.x = move_toward(velocity.x, target.x, a * maxf(speed, WALK_SPEED) * delta)  # (knocked down = speed 0: still
-	velocity.z = move_toward(velocity.z, target.z, a * maxf(speed, WALK_SPEED) * delta)  # slow to a stop, F234)
+	# Let go of every key mid-sprint: a short skid instead of stopping dead (F775).
+	var hv := Vector2(velocity.x, velocity.z)
+	if dir.length() > 0.1 or not on_floor or held_left > 0.0 or (fight and fight.dodging()) or hv.length() < 0.3:
+		_skid = false
+	elif _sprint_t > 0.5:
+		if not _skid:
+			_kick_dust(DwarfFeel.SPRINT_DUST_AMOUNT * 2)  # skidding to a stop: a bigger cloud
+		_skid = true
+	if _skid:
+		hv = hv.move_toward(Vector2.ZERO, DwarfFeel.SPRINT_STOP_GRIP * delta)
+		velocity.x = hv.x
+		velocity.z = hv.y
+	else:
+		velocity.x = move_toward(velocity.x, target.x, a * maxf(speed, WALK_SPEED) * delta)  # (knocked down = speed 0: still
+		velocity.z = move_toward(velocity.z, target.z, a * maxf(speed, WALK_SPEED) * delta)  # slow to a stop, F234)
 	if fight and fight.dodging() and held_left <= 0.0:
 		var dv := fight.dodge_velocity()
 		velocity.x = dv.x
@@ -328,12 +361,18 @@ func _physics_process(delta: float) -> void:
 	if _jump_wanted > 0.0 and _since_floor <= COYOTE_TIME and velocity.y <= 0.5 \
 			and (body == null or body.use_stamina(JUMP_STAMINA * (prog.jump_stamina_mult() if prog else 1.0))):
 		velocity.y = JUMP_SPEED * (prog.jump_speed_mult() if prog else 1.0)
-		_jump_air_expected = 2.0 * velocity.y / _gravity  # (F807: up and back down to the same height, our best guess)
+		_jump_elapsed = 0.0
+		_jump_air_expected = _jump_hang_guess(velocity.y, 0.0)  # (F807: our best guess, refreshed every tick below)
 		_jumps += 1
 		_jump_wanted = 0.0
 		_since_floor = COYOTE_TIME + 1.0  # no double jump
 	elif not on_floor:
 		velocity.y -= _gravity * delta
+		# Keep re-guessing as he falls (F807/F798 🔁): a flat "up and back to launch height" guess, made once at
+		# takeoff, was badly wrong for a real long jump — landing lower (a chasm) or higher (a ledge) than where he
+		# left changes how long he's really airborne a lot, and the single upfront guess never caught up.
+		_jump_elapsed += delta
+		_jump_air_expected = _jump_hang_guess(velocity.y, _jump_elapsed)
 	# Ladders (rope or built): hold forward (or jump) to climb, 4 stamina a second (doc 6.2).
 	var ladder := _ladder_here()
 	if ladder and playing and (Input.is_action_pressed("move_forward") or Input.is_action_pressed("jump")) \
@@ -425,12 +464,14 @@ func _process(delta: float) -> void:
 	# The camera follows smoothly up and down, so stepping up a ledge doesn't jolt.
 	# Zoomed in, the camera looks at the dwarf itself (chest height, no shoulder offset); zoomed out, over the
 	# shoulder as before (owner, Nov 16: zooming went to the middle of the screen, not to the dwarf).
-	var near := clampf((_spring.spring_length - ZOOM_MIN) / (CAMERA_DISTANCE - ZOOM_MIN), 0.0, 1.0)
+	# (F766: measured where the camera really is, so rock pushing it in also brings it in behind his head, not out
+	# to the side inside a narrow tunnel's wall.)
+	var near := clampf((_cam_len - ZOOM_MIN) / (CAMERA_DISTANCE - ZOOM_MIN), 0.0, 1.0)
 	# Aiming (F452, owner Nov 20: "I'm looking at his head"): whatever the zoom, the camera slides to a fixed spot over
 	# his right shoulder, so the crosshair sits just past it. Letting go slides back to the normal camera.
 	_aim_t = move_toward(_aim_t, 1.0 if fight and fight.aiming() else 0.0, delta * 6.0)
 	var aim_k := smoothstep(0.0, 1.0, _aim_t)
-	var want_y := global_position.y + lerpf(lerpf(1.0, SHOULDER.y, near), AIM_CAMERA.y, aim_k)
+	var want_y := global_position.y + lerpf(SHOULDER.y, AIM_CAMERA.y, aim_k)
 	if is_nan(_cam_y) or absf(_cam_y - want_y) > 2.0:
 		_cam_y = want_y
 	# F781 (owner, Nov 22: climbing the spiral stairs was "very jittery"): the body only moves 60 times a second, but
@@ -445,13 +486,67 @@ func _process(delta: float) -> void:
 	_cam_yaw.rotation.y = _yaw
 	_cam_pitch.rotation.x = _pitch
 	_spring.position = Vector3(lerpf(lerpf(0.08, SHOULDER.x, near), AIM_CAMERA.x, aim_k), 0, 0)
-	var want_len := lerpf(_zoom, AIM_CAMERA.z, aim_k)
+	# Looking down pulls the camera out a little, looking up brings it in (F766, "come in close when looking up").
+	var tilt := 1.0
+	if _pitch < 0.0:
+		tilt = lerpf(1.0, DwarfFeel.CAM_LOOK_DOWN_STRETCH, smoothstep(0.0, 1.35, -_pitch))
+	else:
+		tilt = lerpf(1.0, DwarfFeel.CAM_LOOK_UP_SQUEEZE, smoothstep(0.0, 1.1, _pitch))
+	var want_len := lerpf(_zoom * tilt, AIM_CAMERA.z, aim_k)
 	_spring.spring_length = lerpf(_spring.spring_length, want_len, minf(1.0, delta * 10.0))  # smooth zoom
+	_place_camera(delta)
 	_shake = maxf(0.0, _shake - delta * 4.0)
-	camera.fov = lerpf(camera.fov, 32.0 if fight and fight.aiming() else 72.0, minf(1.0, delta * 10.0))  # crossbow zoom
+	var sprint_view := DwarfFeel.SPRINT_WIDER_VIEW * _sprint_t  # (F775: a little wider while sprinting)
+	camera.fov = lerpf(camera.fov, 32.0 if fight and fight.aiming() else 72.0 + sprint_view, minf(1.0, delta * 10.0))  # crossbow zoom
 	var shake := _shake * 0.06 * SoundSettings.camera_shake  # the Settings slider can turn it down/off (F695)
 	camera.h_offset = randf_range(-1, 1) * shake
 	camera.v_offset = randf_range(-1, 1) * shake
+
+
+## F775: a sprinting dwarf can't turn on the spot: his path swings round at most SPRINT_TURN_SPEED turns a second
+## (walking still turns at once). `k` = how far into the sprint (0..1).
+func _sprint_turn(dir: Vector3, k: float, delta: float) -> Vector3:
+	var hv := Vector2(velocity.x, velocity.z)
+	if k <= 0.0 or dir.length() <= 0.1 or hv.length() < WALK_SPEED * 0.8:
+		return dir
+	var cur := atan2(hv.x, hv.y)
+	var want := atan2(dir.x, dir.z)
+	var step := TAU * lerpf(4.0, DwarfFeel.SPRINT_TURN_SPEED, k) * delta
+	var ang := cur + clampf(angle_difference(cur, want), -step, step)
+	return Vector3(sin(ang), 0.0, cos(ang)) * dir.length()
+
+
+## F766: the camera never sits inside rock. The spring arm feels how far back it can go; when rock is closer than the
+## camera, the camera jumps in at once; when the rock is gone, it glides back out (no popping).
+## Then the rock between the camera and his chest fades to a see-through speckle (terrain.gdshader "see_*").
+func _place_camera(delta: float) -> void:
+	var room := CameraRoom.room(_spring, [get_rid()])  # (F783: thin pieces like railings don't push it in)
+	if room < _cam_len:
+		_cam_len = room
+	else:
+		_cam_len = lerpf(_cam_len, room, minf(1.0, delta * DwarfFeel.CAM_RETURN_SPEED))
+	camera.position = _spring.position + Vector3(0, 0, _cam_len)
+	var rock: ShaderMaterial = World.rock_mat
+	if rock:
+		rock.set_shader_parameter("see_from", camera.global_position)
+		rock.set_shader_parameter("see_to", _cam_yaw.global_position)
+		rock.set_shader_parameter("see_radius", 0.0 if dev_fly else DwarfFeel.CAM_FADE_RADIUS)
+
+
+## How long this jump is expected to last in total (F807): `elapsed` seconds in already, moving at `vy` right now.
+## Casts straight down to find the real landing height instead of assuming he comes back to the exact height he
+## left from — a long jump across a dip or up onto a rise needs more or less time than that flat guess.
+func _jump_hang_guess(vy: float, elapsed: float) -> float:
+	var drop := 0.0
+	var q := PhysicsRayQueryParameters3D.create(global_position, global_position + Vector3.DOWN * 30.0)
+	q.collision_mask = World.TERRAIN_LAYER | PieceNode.PIECE_LAYER
+	q.exclude = [get_rid()]
+	var hit := get_world_3d().direct_space_state.intersect_ray(q)
+	if not hit.is_empty():
+		drop = global_position.y - hit.position.y  # + falling further down than launch, - landing higher up
+	var discriminant := vy * vy + 2.0 * _gravity * drop
+	var remaining := (vy + sqrt(discriminant)) / _gravity if discriminant >= 0.0 else 2.0 * maxf(vy, 0.0) / _gravity
+	return elapsed + maxf(remaining, 0.0)
 
 
 ## What's under the crosshair, up to `reach` meters from the dwarf (building reaches further).
@@ -701,8 +796,50 @@ func _footsteps(delta: float, speed: float) -> void:
 			return
 		_step_t = 0.42 if speed < 5.0 else 0.3
 	Sfx.play("step", global_position, -14.0)
-	if speed >= 5.0:  # running kicks up a little dust
-		Fx.dust(get_parent(), global_position + Vector3.UP * 0.05, Color(0.5, 0.45, 0.38), 2, 0.25)
+	if _sprint_t >= DwarfFeel.SPRINT_DUST_FROM:  # sprinting: his heels throw the floor up behind him (F775)
+		_kick_dust(DwarfFeel.SPRINT_DUST_AMOUNT)
+	else:  # walking: just a faint puff (owner, Nov 22)
+		_kick_dust(DwarfFeel.WALK_DUST_AMOUNT, DwarfFeel.WALK_DUST_SIZE, DwarfFeel.WALK_DUST_SEE)
+
+
+## A cloud of whatever he's running on, thrown back behind his heels (F775: cave rock, moss, dungeon wood...).
+func _kick_dust(amount: int, size := DwarfFeel.SPRINT_DUST_SIZE, see := 0.5) -> void:
+	var back := Vector3(-velocity.x, 0.0, -velocity.z)
+	if back.length() < 0.1:
+		back = model.global_basis.z
+	Fx.run_kick(get_parent(), global_position + back.normalized() * 0.25 + Vector3.UP * 0.08, back, floor_surface(), amount, size, see)
+
+
+## What he's standing on, for dust: "rock", "dirt", "moss", "fungus", "wood", "stone", "brick" or "metal".
+## A built piece says its own material; a dungeon floor box says wood or stone; the cave asks the rock underfoot.
+func floor_surface() -> String:
+	for i in get_slide_collision_count():
+		var c := get_slide_collision(i)
+		if c.get_normal().y < 0.6:
+			continue
+		var shape := c.get_collider_shape() as Node
+		if shape and shape.has_meta("surface"):
+			return String(shape.get_meta("surface"))
+		var n := c.get_collider() as Node
+		while n:
+			if n is PieceNode:
+				var kind := Fx.build_dust_kind((n as PieceNode).family)
+				return "wood" if kind == "wood" else kind
+			n = n.get_parent()
+		break
+	var auth := GameAuthority.instance
+	if auth == null or auth.world == null:
+		return "rock"
+	match auth.world.rock_material_near(global_position + Vector3.DOWN * 0.2, 1.0):
+		Mat.MOSS:
+			return "moss"
+		Mat.DIRT, Mat.CLAY:
+			return "dirt"
+		Mat.MYCELIUM, Mat.SPORESTONE:
+			return "fungus"
+		Mat.DWARF:
+			return "stone"
+	return "rock"
 
 
 # ---------------------------------------------------------------- fighting (see DwarfFight)

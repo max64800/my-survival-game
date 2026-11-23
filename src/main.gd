@@ -177,6 +177,12 @@ func _ready() -> void:
 			_saving = false
 			if mode == "menu":
 				mode = "solo"
+		elif arg == "jumpcheck":  # photos of a sprinting long jump, shot by shot, to check the jump pose (F807)
+			debug_script = "res://src/debug/jumpcheck.gd"
+			_saving = false
+			_monsters = false
+			if mode == "menu":
+				mode = "solo"
 		elif arg == "dungeoncheck":  # photos of the first dungeon (Mossgate Hold)
 			debug_script = "res://src/debug/dungeoncheck.gd"
 			_saving = false

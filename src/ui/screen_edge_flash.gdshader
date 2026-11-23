@@ -520,15 +520,16 @@ vec4 frost_fx(vec2 p, float aspect, float lvl, float fade, float t) {
 		return vec4(0.0);
 	}
 	vec2 q = p + (vec2(fbm(p * 7.0), fbm(p * 7.0 + 5.3)) - 0.5) * 0.04;
-	vec4 big = ice_plates(q * 5.0);
-	vec4 mid = ice_plates(q * 9.0 + 7.0);
-	vec4 small = ice_plates(q * 16.0 + 3.0);
+	vec4 big = ice_plates(q * 7.0);
+	vec4 mid = ice_plates(q * 12.0 + 7.0);
+	vec4 small = ice_plates(q * 21.0 + 3.0);
 	// A plate is frozen when its middle is inside the ice, so the front follows the plate edges.
-	vec2 bc = big.zw / 5.0;
+	// (Round 7: plates are smaller, scales 7 / 12 / 21.)
+	vec2 bc = big.zw / 7.0;
 	float be = (frost_dist(bc, aspect) - (big.y - 0.5) * w * 0.5 - (noise(bc * 3.0) - 0.5) * w * 0.4) / max(w, 0.001);
-	vec2 mc = (mid.zw - 7.0) / 9.0;
+	vec2 mc = (mid.zw - 7.0) / 12.0;
 	float me = (frost_dist(mc, aspect) - (mid.y - 0.5) * w * 0.5 - (noise(mc * 3.0) - 0.5) * w * 0.4) / max(w, 0.001);
-	vec2 sc = (small.zw - 3.0) / 16.0;
+	vec2 sc = (small.zw - 3.0) / 21.0;
 	float se = (frost_dist(sc, aspect) - (small.y - 0.5) * w * 0.4 - (noise(sc * 3.0) - 0.5) * w * 0.4) / max(w, 0.001);
 	float body = max(step(be, 1.0), max(step(me, 1.08) * step(be, 1.4), step(se, 1.12) * step(me, 1.4)));
 	float depth = clamp(1.0 - e / max(w, 0.001), 0.0, 1.0);
