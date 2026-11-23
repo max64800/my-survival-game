@@ -183,6 +183,12 @@ func _ready() -> void:
 			_monsters = false
 			if mode == "menu":
 				mode = "solo"
+		elif arg == "dashcheck":  # a held dodge/dash roll, shot by shot, to check the roll animation matches the real distance (F798)
+			debug_script = "res://src/debug/dashcheck.gd"
+			_saving = false
+			_monsters = false
+			if mode == "menu":
+				mode = "solo"
 		elif arg == "dungeoncheck":  # photos of the first dungeon (Mossgate Hold)
 			debug_script = "res://src/debug/dungeoncheck.gd"
 			_saving = false
@@ -944,9 +950,12 @@ func _notification(what: int) -> void:
 		save_now()  # saving when you quit (spec 5.11)
 	# You switched to another program (Alt+Tab, clicked another window): let go of the mouse (F27),
 	# but no pause menu, so screenshots of the game stay clean (F228). Coming back takes the mouse again.
-	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and not Controls.robot and Controls.captured():
-		Controls.set_captured(false)
-		_away = true
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and not Controls.robot:
+		if Controls.captured():
+			Controls.set_captured(false)
+			_away = true
+		Input.action_release("run")
+		Input.action_release("dodge")
 	if what == NOTIFICATION_APPLICATION_FOCUS_IN and _away:
 		_away = false
 		if _ready_to_play and hud and not hud.is_paused() and not menu_wants_cursor():

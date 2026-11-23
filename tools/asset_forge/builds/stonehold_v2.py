@@ -1253,7 +1253,10 @@ def gate_leaf(w=1.6, d=0.15):
 		_tag(_new_since(before), "board")
 	for y in (0.45, 1.35, 2.25):
 		hw_r = min(x1, cx + math.sqrt(max(0.0, R * R - (y - GATE_SPRING) ** 2)) - 0.05) if y > GATE_SPRING else x1
-		copper_band(x0 + 0.02, hw_r - 0.02, y, 0.11, 0.045, 1, rivets=[x0 + 0.1 + (hw_r - x0 - 0.2) * k / 4 for k in range(5)])
+		rv = [x0 + 0.1 + (hw_r - x0 - 0.2) * k / 4 for k in range(5)]
+		copper_band(x0 + 0.02, hw_r - 0.02, y, 0.11, 0.045, 1, rivets=rv)
+	for y in (0.6, 1.8):
+		copper_band(x0 + 0.02, x1 - 0.02, y, 0.11, -0.075, -1, rivets=[])
 	before = set(bpy.data.objects)
 	kit.ring(0.09, 0.016, K.G((x1 - 0.18, 1.15, 0.052)), copper_m(), rot=(90, 0, 0), seg=16)
 	kit.cylinder(0.035, 0.03, K.G((x1 - 0.18, 1.24, 0.045)), copper_m(), rot=(90, 0, 0), verts=10, bevel=0.003)

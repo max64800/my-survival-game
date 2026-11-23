@@ -249,16 +249,41 @@ func request_door(peer_id: int, uid: int) -> bool:
 		return false
 	if ps.node and ps.node.global_position.distance_to(p.pos) > Pieces.BUILD_REACH:
 		return false
+	var open_to := 0
 	if int(p.get("open", 0)) != 0:
 		_ev_door.rpc(uid, 0)
-		return true
-	# Open AWAY from the player: which side of the door are they on? (door front = its +z)
-	var side := 1.0
-	if ps.node:
-		var to_player: Vector3 = Basis(Vector3.UP, Pieces.yaw_of(p.rot)).inverse() * (ps.node.global_position - p.pos)
-		side = signf(to_player.z) if absf(to_player.z) > 0.01 else 1.0
-	_ev_door.rpc(uid, -1 if side > 0.0 else 1)
+	else:
+		# Open AWAY from the player: which side of the door are they on? (door front = its +z)
+		var side := 1.0
+		if ps.node:
+			var to_player: Vector3 = Basis(Vector3.UP, Pieces.yaw_of(p.rot)).inverse() * (ps.node.global_position - p.pos)
+			side = signf(to_player.z) if absf(to_player.z) > 0.01 else 1.0
+		open_to = -1 if side > 0.0 else 1
+		_ev_door.rpc(uid, open_to)
+	if p.piece == "gate_leaf":
+		var partner := _find_gate_partner(uid, p)
+		if partner != -1:
+			_ev_door.rpc(partner, open_to)
 	return true
+
+
+## Partner leaf of a double gate: same piece, complementary rotation (differ by 2), same height, ~1 leaf-width apart.
+func _find_gate_partner(uid: int, p: Dictionary) -> int:
+	var leaf_w: float = Pieces.LIST["gate_leaf"].size.x
+	for other_uid in structure.pieces:
+		if other_uid == uid:
+			continue
+		var q: Dictionary = structure.pieces[other_uid]
+		if q.piece != "gate_leaf":
+			continue
+		if absi(p.rot - q.rot) != 2:
+			continue
+		if absf(p.pos.y - q.pos.y) > 0.1:
+			continue
+		if absf(p.pos.distance_to(q.pos) - leaf_w) > 0.25:
+			continue
+		return other_uid
+	return -1
 
 
 ## Is there a built ladder at `pos` (a dwarf's feet)? Same reach as rope ladders.
