@@ -83,6 +83,7 @@ var _pitch := -0.25
 var _cam_yaw: Node3D
 var _cam_pitch: Node3D
 var _spring: SpringArm3D  ## only feels for rock (F766): the camera itself is placed by hand, so it can glide back out
+var _cam_side := 0.0  ## how far over his shoulder the camera is right now (a door frame beside him can narrow it, F806)
 var _cam_len := CAMERA_DISTANCE  ## how far behind him the camera really is right now (rock can push it in)
 var _shake := 0.0
 var _aim_t := 0.0  ## 0 = normal camera, 1 = aiming over the shoulder (F452)
@@ -464,9 +465,11 @@ func _process(delta: float) -> void:
 	# The camera follows smoothly up and down, so stepping up a ledge doesn't jolt.
 	# Zoomed in, the camera looks at the dwarf itself (chest height, no shoulder offset); zoomed out, over the
 	# shoulder as before (owner, Nov 16: zooming went to the middle of the screen, not to the dwarf).
-	# (F766: measured where the camera really is, so rock pushing it in also brings it in behind his head, not out
-	# to the side inside a narrow tunnel's wall.)
-	var near := clampf((_cam_len - ZOOM_MIN) / (CAMERA_DISTANCE - ZOOM_MIN), 0.0, 1.0)
+	# F806: measured from the zoom you chose, not from where rock or a wall pushed the camera: that made a loop in
+	# doorways (pushed in -> slid to the middle -> room again -> glided out -> slid to the shoulder -> hit the frame).
+	# Instead CameraRoom.best_side feels for the shoulder spot with a clear line back (F766: in a narrow tunnel or
+	# a doorway that's nearer behind his head, never inside the wall).
+	var near := clampf((_spring.spring_length - ZOOM_MIN) / (CAMERA_DISTANCE - ZOOM_MIN), 0.0, 1.0)
 	# Aiming (F452, owner Nov 20: "I'm looking at his head"): whatever the zoom, the camera slides to a fixed spot over
 	# his right shoulder, so the crosshair sits just past it. Letting go slides back to the normal camera.
 	_aim_t = move_toward(_aim_t, 1.0 if fight and fight.aiming() else 0.0, delta * 6.0)
@@ -485,7 +488,9 @@ func _process(delta: float) -> void:
 	_cam_yaw.global_position = Vector3(global_position.x, _cam_y, global_position.z)
 	_cam_yaw.rotation.y = _yaw
 	_cam_pitch.rotation.x = _pitch
-	_spring.position = Vector3(lerpf(lerpf(0.08, SHOULDER.x, near), AIM_CAMERA.x, aim_k), 0, 0)
+	var side := CameraRoom.best_side(_spring, lerpf(lerpf(0.08, SHOULDER.x, near), AIM_CAMERA.x, aim_k), [get_rid()])
+	_cam_side = side if side < _cam_side else lerpf(_cam_side, side, minf(1.0, delta * DwarfFeel.CAM_RETURN_SPEED))
+	_spring.position = Vector3(_cam_side, 0, 0)
 	# Looking down pulls the camera out a little, looking up brings it in (F766, "come in close when looking up").
 	var tilt := 1.0
 	if _pitch < 0.0:
