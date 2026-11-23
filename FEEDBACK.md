@@ -97,8 +97,8 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F803. Going DOWN the tower stairs you fall straight through them** (Twin Gate towers). *From: you (PC, Nov 23). Said: 1×*
 - [ ] **F804. The stone railings on the stairs are floating.** "Still floating, which is a big problem." *From: you (PC, Nov 23, Twin Gate). Said: 1×*
 - [ ] **F805. Sometimes the dwarf keeps sprinting when you are not holding Shift.** *From: you (PC, Nov 23). Said: 1×*
-- [ ] **F806. ⭐ BIG PRIORITY: the camera near doors and walls.** Walking toward a door, the camera jumps in drastically; standing still near a door it zooms in, out, in, out. (The wall walks after the courtyard are fixed now, F784.) *From: you (PC, Nov 23). Said: 1×*
-- [ ] **F807. A building between the camera and the dwarf turns a bit see-through**, so you always see your dwarf (the rock already does this, F766). *From: you (PC, Nov 23, "best case"). Said: 1×*
+- [ ] **F806. ⭐ BIG PRIORITY: the camera near doors and walls.** Walking toward a door, the camera jumps in drastically; standing still near a door it zooms in, out, in, out. (The wall walks after the courtyard are fixed now, F784.) *From: you (PC, Nov 23). Said: 1×* **Nov 23: fix in, waiting for your play test** (the camera chased itself in round doorways; now it picks the shoulder spot with a clear view back).
+- [ ] **F807. A building between the camera and the dwarf turns a bit see-through**, so you always see your dwarf (the rock already does this, F766). *From: you (PC, Nov 23, "best case"). Said: 1×* **Nov 23: in, waiting for your play test** (pieces in the way fade to about half; knob CAM_BUILD_FADE in dwarf_feel.gd).
 - [ ] **F808. Doors close by themselves after about 30 seconds; a double door opens both leaves with one press.** *From: you (PC, Nov 23). Said: 1×*
 - [ ] **F809. The two leaves of a double door don't match:** one has the iron bands, the other has none (the same door used twice). Each leaf needs its matching design. *From: you (PC, Nov 23, screenshot of the Twin Gate's big door). Said: 1×*
 

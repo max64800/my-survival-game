@@ -83,6 +83,7 @@ var _pitch := -0.25
 var _cam_yaw: Node3D
 var _cam_pitch: Node3D
 var _spring: SpringArm3D  ## only feels for rock (F766): the camera itself is placed by hand, so it can glide back out
+var _cam_fade := CameraFade.new()  ## built pieces in the way turn a bit see-through (F807)
 var _cam_side := 0.0  ## how far over his shoulder the camera is right now (a door frame beside him can narrow it, F806)
 var _cam_len := CAMERA_DISTANCE  ## how far behind him the camera really is right now (rock can push it in)
 var _shake := 0.0
@@ -536,6 +537,7 @@ func _place_camera(delta: float) -> void:
 		rock.set_shader_parameter("see_from", camera.global_position)
 		rock.set_shader_parameter("see_to", _cam_yaw.global_position)
 		rock.set_shader_parameter("see_radius", 0.0 if dev_fly else DwarfFeel.CAM_FADE_RADIUS)
+	_cam_fade.update(get_world_3d(), camera.global_position, _cam_yaw.global_position, delta, [get_rid()], not dev_fly)
 
 
 ## How long this jump is expected to last in total (F807): `elapsed` seconds in already, moving at `vy` right now.

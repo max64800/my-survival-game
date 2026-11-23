@@ -16,6 +16,10 @@ const CAM_LOOK_UP_SQUEEZE := 0.75
 const CAM_RETURN_SPEED := 4.0
 ## Rock between the camera and the dwarf fades to a see-through speckle inside a tube this thick (m). 0 = off.
 const CAM_FADE_RADIUS := 0.45
+## A built piece between the camera and the dwarf turns this see-through (0 = off, 0.5 = half, 1 = gone) (F807) ...
+const CAM_BUILD_FADE := 0.55
+## ... and fades in and out this fast (1 = the whole way in one second).
+const CAM_BUILD_FADE_SPEED := 4.0
 
 # ---------------------------------------------------------------- sprint (hold Shift)
 ## Seconds to go from walking to full sprint speed (F775: "about 0.3-0.6 s"). Heavy legs need a moment.
