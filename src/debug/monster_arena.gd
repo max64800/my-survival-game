@@ -19,6 +19,10 @@ var _uids := {}      ## kind -> uid of the one alive now (or missing)
 var _fight_back := false
 var _panel: PanelContainer
 var _fight_button: Button
+var _hp_slider: HSlider
+var _hp_lock: CheckButton
+var _hp_label: Label
+var _god_button: Button
 
 
 ## Where each creature kind stands: a grid, nearest the player first, in the order of Monsters.LIST.
@@ -57,6 +61,8 @@ func _run() -> void:
 			inv.add(it[0], it[1])
 		inv.changed.emit()
 		ps.fuel = GameAuthority.MAX_FUEL
+	if ps:
+		ps.bed_pos = ORIGIN + Vector3(0.0, 0.4, 8.0)  # if you die here you wake up here, not in the dungeon
 	var dwarf: Dwarf = _main.dwarf
 	dwarf.global_position = ORIGIN + Vector3(0.0, 0.4, 8.0)
 	dwarf.velocity = Vector3.ZERO
@@ -90,7 +96,7 @@ func _run() -> void:
 			await get_tree().create_timer(1.0).timeout
 			print("MONSTER_ARENA after reset: beetle alive ", _mgr.monsters.has(_uids["rock_beetle"]), ", statues: ", _mgr.statues.size())
 			if "lowhp" in OS.get_cmdline_user_args():  # (the screen-edge look at low health, bigger window)
-				_main.authority.get_player(_main.authority.local_peer_id()).vitals.health = 12.0
+				_main.authority.get_player(_main.authority.local_peer_id()).vitals.health = 45.0
 				await get_tree().create_timer(2.5).timeout
 			await RenderingServer.frame_post_draw
 			print("MONSTER_ARENA shot ", _main.take_screenshot(arg.trim_prefix("shots=").path_join("monster_arena.png")))
@@ -155,6 +161,47 @@ func _build_menu() -> void:
 	_fight_button.pressed.connect(toggle_fight_back)
 	v.add_child(_fight_button)
 	_update_fight_text()
+	v.add_child(HSeparator.new())
+	var look := Label.new()
+	look.text = "Screen looks (nothing hurts you)"
+	look.add_theme_font_size_override("font_size", 18)
+	v.add_child(look)
+	_god_button = Button.new()
+	_god_button.custom_minimum_size = Vector2(380, 40)
+	_god_button.pressed.connect(toggle_god)
+	v.add_child(_god_button)
+	_update_god_text()
+	_hp_label = Label.new()
+	v.add_child(_hp_label)
+	_hp_slider = HSlider.new()
+	_hp_slider.min_value = 1.0
+	_hp_slider.max_value = 100.0
+	_hp_slider.step = 1.0
+	_hp_slider.value = 100.0
+	_hp_slider.custom_minimum_size = Vector2(380, 24)
+	_hp_slider.value_changed.connect(_on_hp_slider)
+	v.add_child(_hp_slider)
+	_hp_lock = CheckButton.new()
+	_hp_lock.text = "Hold my health at the slider"
+	_hp_lock.toggled.connect(func(_on): _on_hp_slider(_hp_slider.value))
+	v.add_child(_hp_lock)
+	_on_hp_slider(100.0)
+	var row := HBoxContainer.new()
+	v.add_child(row)
+	for e in [["No look", ""], ["Poison", "poison"], ["Burn", "burn"], ["Chill", "chill"]]:
+		var sb := Button.new()
+		sb.text = e[0]
+		sb.custom_minimum_size = Vector2(90, 36)
+		sb.pressed.connect(func(): _main.hud.edge_fake = e[1])
+		row.add_child(sb)
+	var row2 := HBoxContainer.new()
+	v.add_child(row2)
+	for e in [["Small hit", 10.0], ["Big hit", 40.0]]:
+		var hb := Button.new()
+		hb.text = e[0] + " (look only)"
+		hb.custom_minimum_size = Vector2(185, 36)
+		hb.pressed.connect(func(): _main.hud._on_hurt(e[1]))
+		row2.add_child(hb)
 	_panel.visible = false
 	layer.add_child(_panel)
 	# A little how-to on the right side that is always there (owner, Nov 23).
@@ -278,3 +325,36 @@ func to_start() -> void:
 	var dwarf: Dwarf = _main.dwarf
 	dwarf.global_position = ORIGIN + Vector3(0.0, 0.4, 8.0)
 	dwarf.velocity = Vector3.ZERO
+
+
+func toggle_god() -> void:
+	var dwarf: Dwarf = _main.dwarf
+	dwarf.dev_god = not dwarf.dev_god
+	var me = _main.authority.get_player(_main.authority.local_peer_id())
+	if me:
+		me.vitals.god = dwarf.dev_god
+	_update_god_text()
+
+
+func _update_god_text() -> void:
+	_god_button.text = "God mode: %s (click to switch)" % ("ON, nothing hurts" if _main.dwarf.dev_god else "OFF")
+
+
+func _on_hp_slider(value: float) -> void:
+	_hp_label.text = "My health: %d%%" % int(value)
+	if _hp_lock.button_pressed:
+		_hold_health()
+
+
+func _hold_health() -> void:
+	var ps = _main.authority.get_player(_main.authority.local_peer_id())
+	if ps:
+		ps.vitals.god = false  # (god mode would refill you at once)
+		_main.dwarf.dev_god = false
+		_update_god_text()
+		ps.vitals.health = ps.vitals.max_health() * _hp_slider.value / 100.0
+
+
+func _process(_delta: float) -> void:
+	if _hp_lock != null and _hp_lock.button_pressed:
+		_hold_health()

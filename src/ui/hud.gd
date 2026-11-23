@@ -53,6 +53,7 @@ var _level_label: Label
 var _buff_label: Label
 var _ailment_badges: AilmentBadges  ## burning / chilled / poisoned / frozen, above the health bar
 var _edge_flash: ScreenEdgeFlash  ## red flash on a hit, green/orange/blue glow while poisoned/burning/chilled (F695)
+var edge_fake := ""  ## dev: show this status look at the screen edges without any ailment ("" = off)
 var _edge_flash_vitals: Vitals  ## whose "damaged" signal _edge_flash is listening to right now
 ## Ghost health bar (F695, owner Nov 22): a pale strip behind the red fill shows the health you just
 ## lost, waits a moment, then drains down to the real value. Uses real time, so hit-stop can't freeze it.
@@ -1363,6 +1364,9 @@ func _on_hurt(amount: float) -> void:
 
 ## Which ailment shows at the screen edges, and how strongly (F695, F799). Burning wins, then poison, then cold.
 func _update_edge_status(a: Ailments) -> void:
+	if edge_fake != "":  # the Monster Arena's "show me the look" buttons: looks only, no damage
+		_edge_flash.set_status(edge_fake, CHILL_EDGE_BY_STACK[4] if edge_fake == "chill" else 1.0)
+		return
 	if a.has("burn"):
 		_edge_flash.set_status("burn", 1.0)
 	elif a.has("poison"):

@@ -73,7 +73,8 @@ func set_status(kind: String, level: float = 1.0) -> void:
 
 ## Your health share (0..1) for the low-health screen (F802).
 func set_health(share: float) -> void:
-	_low_target = clampf((LOW_START - share) / (LOW_START - LOW_FULL), 0.0, 1.0)
+	# sqrt: the red shows clearly right from half health instead of creeping in (owner, Nov 23)
+	_low_target = sqrt(clampf((LOW_START - share) / (LOW_START - LOW_FULL), 0.0, 1.0))
 
 
 func _process(delta: float) -> void:
