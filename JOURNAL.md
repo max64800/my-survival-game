@@ -10975,6 +10975,7 @@ worth asking about on the next session.
 - The first attempt to actually save the commit failed outright (forgot to pass the tree to `git commit-tree`).
   Nothing was lost — just redid it correctly the second time.
 
+
 ## 2026-11-22 — F782: a new dungeon healing fountain (not in the game yet) + F706 TRELLIS test
 
 **What we did**

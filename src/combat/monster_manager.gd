@@ -589,12 +589,13 @@ func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: 
 			shelled = float(m.stats().get("armor", 0.0)) >= 20.0, airborne = airborne,
 			tip = dist >= wd.reach * ps.progress.reach_mult(w) * 0.8})  # skills.md ★ perks
 		var dmg := roundi(Combat.damage(w, heavy, tier, _pierced(ps, m, w), combo_step, sit, 0.0, Upgrades.bonus(ps.inventory.get_slot(hand)), buff + auth.damage_boost(ps, m.kind) + ps.progress.weapon_damage_bonus(w) + _perk_buff(ps, peer, m, w) + star, elem) * mult)
+		var crit := false
 		if riposte and ps.progress.riposte_crits(w):  # Sword ★100: a perfect parry's counter is a critical
 			dmg = roundi(dmg * Combat.CRIT_MULT)
-			_ev_note.rpc(m.uid, "Critical!")
+			crit = true
 		elif not Controls.robot and randf() < Combat.crit_chance(w):  # now and then a critical hit (owner F137; never in tests: they need exact numbers)
 			dmg = roundi(dmg * Combat.CRIT_MULT)
-			_ev_note.rpc(m.uid, "Critical!")
+			crit = true  # (the number itself shows it now: bigger, red, with a "!" (F788); no separate "Critical!" word)
 		if _shield_blocks(m, ps.node.global_position, heavy):
 			dmg = roundi(dmg * SHIELD_BLOCK)
 			_ev_note.rpc(m.uid, "Blocked!")
@@ -609,7 +610,7 @@ func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: 
 			var away := (m.global_position - ps.node.global_position) * Vector3(1, 0, 1)
 			if away.length() > 0.01:
 				m.knock(away.normalized() * 3.0)  # Spear ★25: a poke pushes them back
-		_hurt_monster(m, peer, dmg, stun, Combat.effect(wd.type, m.stats()))
+		_hurt_monster(m, peer, dmg, stun, Combat.effect(wd.type, m.stats()), crit)
 		if finisher and not m.data.get("boss", false) and m.is_alive() and m.hp <= m.max_hp() * 0.5:  # F607/F617: only knock down when wounded (below 50% HP); at full health they fight back
 			var away_fin := (m.global_position - ps.node.global_position) * Vector3(1, 0, 1)
 			if away_fin.length() > 0.01:
@@ -697,7 +698,7 @@ func _gem_buildup(m: Monster, gb: Dictionary) -> void:
 
 ## Host: one hit lands on a monster (sword, bolt...).
 ## eff: how it takes this damage type (Combat.effect): the colour of the hit's number.
-func _hurt_monster(m: Monster, peer: int, dmg: int, stun_amount: float, eff := 0) -> void:
+func _hurt_monster(m: Monster, peer: int, dmg: int, stun_amount: float, eff := 0, crit := false) -> void:
 	# Rock Beetle: its back is soft (owner: charge, sidestep, hit it from behind).
 	var back: float = m.data.get("soft_back", 0.0)
 	var hitter: Node3D = player_node(peer)
@@ -735,7 +736,7 @@ func _hurt_monster(m: Monster, peer: int, dmg: int, stun_amount: float, eff := 0
 		var away := (m.global_position - from) * Vector3(1, 0, 1)
 		if away.length() > 0.01:
 			m.knock(away.normalized() * clampf(1.8 + dmg * 0.06, 1.8, 5.0) / maxf(1.0, float(m.data.get("size", 1.0))))
-	_ev_hit.rpc(m.uid, dmg, from, peer, eff)
+	_ev_hit.rpc(m.uid, dmg, from, peer, eff, crit)
 	if m.hp <= 0.0:
 		_kill(m, peer)
 	else:
@@ -1692,7 +1693,7 @@ func _ev_note(uid: int, text: String) -> void:
 
 
 @rpc("authority", "call_local", "reliable")
-func _ev_hit(uid: int, dmg: int, from := Vector3.ZERO, peer := 0, eff := 0) -> void:
+func _ev_hit(uid: int, dmg: int, from := Vector3.ZERO, peer := 0, eff := 0, crit := false) -> void:
 	var m: Monster = monsters.get(uid)
 	if m:
 		# Juicy hits (owner, Nov 18): sparks spray AWAY from the hitter, both fighters freeze for a blink (a bigger hit, a
@@ -1700,13 +1701,15 @@ func _ev_hit(uid: int, dmg: int, from := Vector3.ZERO, peer := 0, eff := 0) -> v
 		var heavy := dmg >= 20
 		var away := (m.global_position - from) * Vector3(1, 0, 1)
 		var dir := (away.normalized() + Vector3.UP * 0.35) if from != Vector3.ZERO and away.length() > 0.01 else Vector3.UP
-		var at := m.global_position + Vector3.UP * 0.5
+		# F717: the bits fly from where the weapon touched: on the side facing the hitter, at the creature's chest height.
+		var side := -away.normalized() if from != Vector3.ZERO and away.length() > 0.01 else Vector3.ZERO
+		var at := m.global_position + Vector3.UP * (float(m.data.get("height", 1.0)) * 0.55) + side * float(m.data.get("size", 1.0)) * 0.35
 		if m.shell_shut:
 			# Hitting a hidden snail: a hard stony clank and sparks (it's barely hurt).
 			Fx.burst(_root, m.global_position + Vector3.UP * 0.6, Color(1.0, 0.75, 0.35), 12, 4.5, dir, 40.0)
 			Sfx.play("shell_clank", m.global_position)
 		else:
-			Fx.burst(_root, at, Color(1.0, 0.9, 0.7), 14 if heavy else 9, 4.5 if heavy else 3.2, dir, 38.0)
+			Fx.hit(_root, at, Fx.hit_body(m.kind), dir, heavy, crit, m.data.get("color", Color(0.5, 0.45, 0.4)))
 			Sfx.play("hit_heavy" if heavy else "hit", m.global_position)
 		var stop := HIT_STOP_HEAVY if heavy else HIT_STOP
 		m.hit_flash()
@@ -1718,7 +1721,7 @@ func _ev_hit(uid: int, dmg: int, from := Vector3.ZERO, peer := 0, eff := 0) -> v
 				me.add_shake(0.45 if heavy else 0.25)
 				if heavy and away.length() > 0.01:
 					me.shove(-away.normalized() * 2.2)  # (a heavy hit bounces you back off it)
-		_float_number(m.global_position + Vector3.UP * 1.4, str(dmg), heavy, dir, EFFECT_COLOR[eff + 1])
+		_float_number(m.global_position + Vector3.UP * 1.4, str(dmg) + ("!" if crit else ""), heavy, dir, CRIT_COLOR if crit else EFFECT_COLOR[eff + 1], crit, dmg)
 
 
 @rpc("authority", "unreliable_ordered")
@@ -1737,13 +1740,24 @@ func _ev_poses(ids: PackedInt32Array, pos: PackedVector3Array, yaw: PackedFloat3
 const EFFECT_COLOR := [Color(0.6, 0.6, 0.6), Color(1.0, 1.0, 1.0), Color(1.0, 0.85, 0.15)]
 
 
-func _float_number(at: Vector3, text: String, big := false, away := Vector3.ZERO, color := Color(-1, 0, 0)) -> void:
+## A crit's number: hot red (owner F788: "crits bigger and a different colour").
+const CRIT_COLOR := Color(1.0, 0.22, 0.18)
+
+
+## How big a hit's number is (F788): a bigger hit = a bigger number, a heavy one bigger still, a crit biggest.
+static func number_scale(dmg: int, big: bool, crit: bool) -> float:
+	var s := clampf(0.8 + float(dmg) / 70.0, 0.8, 1.3)
+	return s * (1.25 if big else 1.0) * (1.55 if crit else 1.0)
+
+
+func _float_number(at: Vector3, text: String, big := false, away := Vector3.ZERO, color := Color(-1, 0, 0), crit := false, dmg := 0) -> void:
 	var l := Label3D.new()
 	l.text = text
 	l.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	l.font_size = 64 if big else 48
+	l.font_size = 64 if (big or crit) else 48
 	l.pixel_size = 0.005
-	l.outline_size = 12 if big else 10
+	l.outline_size = 14 if crit else (12 if big else 10)
+	l.outline_modulate = Color(0.12, 0.0, 0.0) if crit else Color(0.0, 0.0, 0.0)
 	l.no_depth_test = true
 	l.modulate = color if color.r >= 0.0 else (Color(1.0, 0.62, 0.25) if big else Color(1.0, 0.9, 0.5))
 	_root.add_child(l)
@@ -1751,15 +1765,18 @@ func _float_number(at: Vector3, text: String, big := false, away := Vector3.ZERO
 	var side := Vector3(away.x, 0.0, away.z)
 	side = side.normalized() if side.length() > 0.01 else Vector3(randf_range(-1.0, 1.0), 0.0, randf_range(-1.0, 1.0)).normalized()
 	side *= randf_range(0.35, 0.6)
-	var rise := 1.0 if big else 0.8
+	var rise := 1.0 if (big or crit) else 0.8
+	# Grow fast to a big pop, settle to its size, then shrink away while it fades (owner F788).
+	var size := number_scale(dmg, big, crit) if dmg > 0 else (1.2 if big else 1.0)
 	l.scale = Vector3.ONE * 0.3
 	var t := l.create_tween()
-	t.tween_property(l, "scale", Vector3.ONE * (1.35 if big else 1.2), 0.07).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	t.tween_property(l, "scale", Vector3.ONE, 0.1)
+	t.tween_property(l, "scale", Vector3.ONE * size * 1.35, 0.07).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	t.tween_property(l, "scale", Vector3.ONE * size, 0.1)
+	t.tween_property(l, "scale", Vector3.ONE * size * 0.45, 0.7).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	t.parallel().tween_method(func(u: float) -> void:
 		if is_instance_valid(l):
-			l.global_position = at + side * u + Vector3.UP * (rise * 1.6 * u - rise * 0.75 * u * u), 0.0, 1.0, 0.85)  # (an arc: up, over, a little down)
-	t.parallel().tween_property(l, "modulate:a", 0.0, 0.85).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+			l.global_position = at + side * u + Vector3.UP * (rise * 1.6 * u - rise * 0.75 * u * u), 0.0, 1.0, 0.7)  # (an arc: up, over, a little down)
+	t.parallel().tween_property(l, "modulate:a", 0.0, 0.7).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN).set_delay(0.17)
 	t.tween_callback(l.queue_free)
 
 
