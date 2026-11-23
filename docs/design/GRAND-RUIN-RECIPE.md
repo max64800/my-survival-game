@@ -76,6 +76,8 @@ Every new piece: Blender by script in the style (MODEL-RULES.md), a game piece w
       stairs meet floors, nothing floats (the blueprint checks).
 - [ ] Stairs up to a balcony land on floor as wide as the stairs, with room to step off and walk to the door
       (owner, Nov 22, F615: a 1 m balcony beside a 2 m stair "doesn't really work"; make a 2 m landing there).
+- [ ] Every staircase has a whole free 2 m block past its foot and its top (a triangle after round-stage stairs);
+      move the stairs rather than squeeze in half railings (owner, Nov 23, F811). `test_stairs_free_block` must pass.
 - [ ] The dwarf can walk everywhere (owner, Nov 22, F626): balconies and galleries are whole floor tiles (no half
       or small floors), spiral stairs need a tower of 4×4 cells or more and go in and out onto open floor (never
       a wall or a railing), no roof cap. Add a test like `test_hearth_manor_stairs_lead_onto_floor`.

@@ -19,6 +19,9 @@ The Delver's Hut (`BlueprintLibrary._delvers_hut`) is the example to copy.
   are 3.73 m from its middle, so it can only meet the 2 m grid flush on **one** side: plan round towers so only one
   side joins anything (stairs, walkway or wall), or use square towers where two sides must join.
 - **Stairs never start against a wall or in a corner** (owner, Nov 17): their foot is on open floor.
+- **A whole free block at both ends of every staircase** (owner, Nov 23, F811): past the foot and past the top
+  there is a whole free 2 m block of floor (a triangle after round-stage stairs), with no door, wall, railing or pillar in
+  it. Never fix a tight spot with a half railing or a smaller piece: move the stairs. Auto-check: `test_stairs_free_block`.
 
 ## Steps
 1. **Sketch the plan on the 2 m grid.** Rooms are 2 x 2 m cells. Walls go on cell edges, roofs on cells, a
