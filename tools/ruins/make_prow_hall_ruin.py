@@ -2,7 +2,7 @@
 #   godot --headless --audio-driver Dummy --path . -s res://tools/dump_blueprint.gd -- stonehold_prow_hall <prow.json>
 #   python tools/ruins/make_prow_hall_ruin.py <prow.json>
 # Writes blueprints/ruins/prow_hall_ruin.json (pieces, chests with loot, props, beetle spots) for the world to place
-# (src/world/ruin_prow_hall.gd, which also shapes the cave round it: the dip, the lump, the rock wall).
+# (src/world/ruin_prow_hall.gd, which also shapes the cave round it: the dip; from layout 19 a natural cave, F657).
 # What happened: the owner-approved sketch of the 3D page (tools/ruins/make_prow_hall_page.py: the same dice, the same
 # heights each part still stands to). The hall lost its upper storey, the front-right tower and the prow their tops, the
 # bridge's middle fell into the dip, the lone tower's roof is half gone. Then made sound for the game: no doors (gone),
@@ -29,8 +29,9 @@ TOWERS = {"front_left": (-5.732, 7), "front_right": (21.732, 7), "back_left": (-
 KEEP, LONE = (8.0, -11.464), (-20.856, -11.732)
 D8 = (-math.sqrt(3) / 2, -0.5)
 B0 = (TOWERS["back_left"][0] + D8[0] * 3.732, TOWERS["back_left"][1] + D8[1] * 3.732)
-CUT = {"lone": 12.3, "front_left": 7.8, "front_right": 5.6, "back_left": 12.3, "back_right": 10.1, "keep": 12.3,
-	"prow": 5.6, "hall": 3.3, "hall_back": 5.6, "bridge": 99}
+# (F710, Nov 23: the hall and the prow have 4.5 m storeys now, so every part stands to its new storey heights)
+CUT = {"lone": 12.3, "front_left": 10.1, "front_right": 7.8, "back_left": 14.55, "back_right": 12.3, "keep": 14.55,
+	"prow": 10.1, "hall": 5.6, "hall_back": 10.1, "bridge": 99}
 
 
 def dist(a, b):
@@ -72,7 +73,7 @@ for p in whole:
 			fell.append((x, y, z))
 			continue
 	elif y > cut:
-		if p["id"] in WALLISH + ("floor", "battlement") and r < 0.18:
+		if p["id"] in WALLISH + ("floor", "battlement", "beam") and r < 0.18:
 			fell.append((x, y, z))
 		continue
 	elif p["id"] == "door":
@@ -98,8 +99,8 @@ FLOORS = ("floor", "floor_triangle", "foundation", "foundation_triangle", "found
 
 
 def rock_top(x, z):
-	"""BlueprintLibrary.prow_rock_top: the lump under the lone tower (the cave wall never holds pieces)."""
-	return 7.0 if dist((x, z), LONE) < 5.5 else 0.0
+	"""BlueprintLibrary.prow_rock_top: no rock holds pieces (F657, Nov 23: the lone tower's lump is gone)."""
+	return 0.0
 
 
 def height_of(p):
@@ -157,9 +158,7 @@ def dip_at(x, z):
 
 
 def by_the_rock(x, z):
-	"""On the lump's slope, or by the rock wall behind the keep (the world shapes those: no rubble there)."""
-	if dist((x, z), LONE) < 10.5:
-		return True
+	"""By the rock behind the keep (the cave's own rock there: no rubble)."""
 	return z < KEEP[1] + 0.5 and x > -7.0 and dist((x, z), KEEP) > 8.0
 
 
@@ -288,11 +287,11 @@ ROOF_KEEP_Y = 10.25
 chests = [
 	chest_at("chest_stone", 8.0, -16.0, 1.0, {"recipe_page": 1, "rope": 3}),                       # the keep, downstairs
 	chest_at("chest_small", 21.732, -3.0, 7.75, {"recipe_page": 1, "blueprint_page": 1}),           # the back-right tower, top floor left
-	chest_at("chest_small", 8.0, 16.0, 3.25, {"recipe_page": 1, "blueprint_page": 1}),              # the prow, upstairs
+	chest_at("chest_small", 8.0, 16.0, 5.5, {"recipe_page": 1, "blueprint_page": 1}),               # the prow, upstairs (4.5 m storeys)
 	chest_at("chest_copper", LONE[0], LONE[1], 10.0, {"recipe_page": 2, "blueprint_page": 2}),      # the lone tower, past the fallen bridge
 ]
 props = [
-	# the great hall: two long feast tables with their benches (its ceiling is too low for the tall racks)
+	# the great hall: two long feast tables with their benches (they fit its long floor best)
 	free_at("furn_table_long", 4.0, 2.0, 1.0, 90),
 	free_at("furn_bench_long", 5.4, 2.0, 1.0, 90),
 	free_at("furn_table_long", 12.5, 2.0, 1.0, 90),
@@ -316,8 +315,6 @@ rubble = []
 for (x, y0, z) in fell:
 	x, z = x + rng.uniform(-0.6, 0.6), z + rng.uniform(-0.6, 0.6)
 	if 2.2 < along_bridge(x, z) < 8.2 and y0 > 9:
-		if along_bridge(x, z) > 4.5:
-			continue                                   # (that end lies on the lump's slope)
 		y = round(dip_at(x, z), 2)                     # down in the dip under the bridge
 	else:
 		tops = [top_of(f) for f in build if f["id"] in FLOORS and f["id"] != "foundation_steps" and top_of(f) < y0 + 0.1
@@ -344,9 +341,6 @@ for b in problems:
 	print("RULE:", b)
 
 # ---------------------------------------------------------------- write it
-for p in pieces:
-	if p["id"].startswith("foundation") and 0.3 <= p["pos"][1] < rock_top(p["pos"][0], p["pos"][2]) + 0.05:
-		p["anchor"] = True                             # (the lone tower's foundations sit in the rock lump)
 pieces += rubble
 out = GAME / "blueprints" / "ruins" / "prow_hall_ruin.json"
 radius = round(max(math.hypot(p["pos"][0], p["pos"][2]) for p in pieces) + 1.5, 1)

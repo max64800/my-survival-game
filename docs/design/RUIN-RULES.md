@@ -32,7 +32,9 @@ New lesson? Add it to the right section here **and** add a check that would have
 5. **Corner stairs come out SIDEWAYS** (in at the front, out at their left side, near the back), not straight ahead.
    Never assume where a stair comes out: look it up. (F783, Claude's mistake.) Check: `test_walk_through`.
 6. **Leave head room over a stair:** a whole free floor tile above a corner stair's foot, or the dwarf's head hits the
-   hole's edge on step 2. (Twin Gate, Nov 22.) Check: `test_dwarf_walks_up_every_tower_flight`.
+   hole's edge on step 2. (Twin Gate, Nov 22.) Never a floor over a flight: every stair top has its stair hole (F821,
+   Prow Hall: a tower stair ran up under the next floor). Check: `test_dwarf_walks_up_every_tower_flight`,
+   `stairs_under_a_ceiling` (in `test_prow_hall_play_test_fixes` and `test_play_test_fixes_in_the_ruin`).
 7. **Flights meet the floor above exactly:** floors are 2.25 m apart. The stairs stand straight on the floor and their
    slope climbs the last 25 cm, so there's no lip and no drop. (F303, F803.) Check: `test_stairs_down` (up AND down).
 8. **Steps about 25 cm high** (8 steps for a 2 m rise), never 33 cm. (F711.)
@@ -62,6 +64,12 @@ New lesson? Add it to the right section here **and** add a check that would have
 7. **Yard walls end on a real wall or tower**, never on a fence or in the air. (Twin Gate back gaps.) No check yet.
 8. **Worn or collapsed wall tops collide as their broken top**, so you can jump the low part. (F715.) Check:
    `test_broken_walls_collide_as_their_broken_top`.
+9. **Both ends of every railing stand on its floor:** a ring tower's deck has its edge railings only, never a 2 m
+   railing where a 0.6 m battlement corner was (it pokes out past the deck). (F820, Prow Hall towers.) Check:
+   `railing_ends_poking_out` (in `test_prow_hall_play_test_fixes`, `test_play_test_fixes_in_the_ruin`).
+10. **Battlements only on open roofs, and only on stone:** never under a floor (inside a room), and never a stone
+    merlon on a wood deck; when a wooden version keeps a stone top, its battlements turn wood with the deck. (F822,
+    Prow Hall keep roof.) Check: `merlons_indoors` (same tests).
 
 ## 3. Doors and gates
 1. **Round doors and doorways only**, one round doorway per style. (F75, model rule 5.)
@@ -93,9 +101,12 @@ New lesson? Add it to the right section here **and** add a check that would have
    rocks.) **Twin Gate done (layout 18, Nov 23):** `RuinTwinGate.pick` scores each spot also on the cave's own rock
    just behind its back (`back_rock`) and a way in with no drop (`front_state`; the yard is dug out 10 m), and new
    worlds grow no rock round it (`RuinTwinGate.natural`). Old worlds keep their grown rock (their ruin stands there).
-   A new cave rule = a new layout number, so built ruins never move. Still to do: the Prow Hall and every other ruin.
+   **Prow Hall done (layout 19, Nov 23):** the same (`RuinProwHall.natural`, `back_rock` behind the keep,
+   `front_state` before the prow doors); its lone tower stands on the cave floor now (no rock lump in any world).
+   A new cave rule = a new layout number, so built ruins never move. Still to do: every other ruin.
    Check: `test_spot_keeps_clear_of_what_the_world_grows` (back in rock on 3 seeds, way in) and
-   `test_rebuild_the_twin_gate_in_stone` ("no placed rock lumps or wall round the Twin Gate").
+   `test_rebuild_the_twin_gate_in_stone` / `test_rebuild_the_prow_hall_in_stone` ("no placed rock round it").
+   Weigh the back rock strongly (Prow Hall `BACK_MISS` 1.5): at 0.6 one seed put the keep's back in open air.
 2. **Built into the cave, not on a flat floor:** use 3+ of: a back set into a rock wall, parts on different ground
    levels, a bridge over a dip, stairs cut into a slope, cave rock through a broken floor. Use the shapes the cave
    already has. (F657, GRAND-RUIN-RECIPE "Built into the cave".) Check: `test_cave_shape` (Twin Gate, Prow Hall).
@@ -107,6 +118,8 @@ New lesson? Add it to the right section here **and** add a check that would have
    distance map, under a second). (Manor, Prow Hall, Twin Gate.) Check: `test_spot_is_found_quickly`, the spot tests.
 5. **Ruin tests need a rock loader (VoxelViewer) at the spot**, or nothing grows and the test lies. (Prow Hall.)
 6. **The rebuild digs only air next to pieces**, never inside the ruin's own rock lump or wall. (Prow Hall, Twin Gate.)
+   And test that what should be dug IS dug: the Prow Hall's dip under the bridge was never dug (a lump check cut it
+   off), so its rubble lay buried. (Nov 23.) Check: `test_cave_shape` ("it digs the dip under the bridge").
 7. **Every rubble pile lies on a floor or foundation**, never over a hole. (Watchtower.) Check: the rubble-on-floor test.
 8. **Loose parts hang only from flat roof** (stalactites). (Manor.)
 9. **The courtyard stays flat and open:** rock lumps go to a corner. (F714.)
@@ -144,7 +157,9 @@ New lesson? Add it to the right section here **and** add a check that would have
    ones in, only where nothing is in the way, and also takes pieces that stand close by. (F713, F783, F811.) Check:
    `test_rebuild_the_twin_gate_in_stone` (builds the old way, loads, checks it's fixed).
 2. **After any blueprint change, make every ruin's JSON again** before testing (Manor, Brewhall, Kiln, Outpost, Spire,
-   Watchtower, Twin Gate, Prow Hall). A stale JSON builds pieces that no longer fit. (Manor, Twin Gate.)
+   Watchtower, Twin Gate, Prow Hall). A stale JSON builds pieces that no longer fit. (Manor, Twin Gate; Prow Hall
+   Nov 23: after the taller floors (F710) the old JSON kept 205 pieces at the old heights: missing floors, double
+   stairs, battlements inside rooms, F819 to F822.) Check: `test_blueprint_matches_its_ruin`.
 3. **Say in the note when a change only reaches new worlds** (cave shape, tower inside), so the owner knows.
 
 ## 9. Looks and models (short; the full rules are in GRAND-RUIN-RECIPE and MODEL-RULES)

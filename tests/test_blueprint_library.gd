@@ -156,7 +156,7 @@ func test_cliff_watch_is_layered_and_sound() -> void:
 
 
 ## Ruin 9, the Prow Hall (owner, Nov 22, F656 + F657): real stone pieces, inside its box, nothing overlaps, nothing
-## stands inside its own rock (the lone tower's foundations may sink 25 cm into the lump), and nothing falls when the
+## stands inside the cave rock behind the keep, and nothing falls when the
 ## pieces resting on the cave floor or the rock hold (in the game the rock anchors them: Pieces.touches_rock).
 ## Both the stone hall and its wooden rebuild (owner, Nov 22).
 func test_prow_hall_is_sound() -> void:
@@ -186,7 +186,7 @@ func _check_prow_hall(id: String) -> void:
 	var rock_cells := 0
 	for a in bp.air:
 		rock_cells += 1 if a == 0 else 0
-	check(rock_cells > 500, "the lump and the cave wall stay rock (%d cells)" % rock_cells)
+	check(rock_cells > 500, "the cave rock behind the keep stays rock (%d cells)" % rock_cells)
 
 
 ## F626 for the Prow Hall: every stair's foot is on open floor (a square or a triangle) and its top lands on floor,
@@ -205,7 +205,94 @@ func test_prow_hall_stairs_lead_onto_floor() -> void:
 		check(_any_floor_at(bp, top, p.pos.y + 2.0) or _any_floor_at(bp, top, p.pos.y + 2.25), "stairs at %s: their top lands on floor" % p.pos)
 		var edge: Vector3 = p.pos + up
 		check(not _blocked_edge(bp, edge.x, edge.z, p.pos.y + 1.75), "stairs at %s: nothing blocks their top" % p.pos)
-	check_eq(flights, 29, "stairs up every storey: hall 2, prow 1, towers 4+4+5+5, lone tower 2, keep 4 + 2")
+	check_eq(flights, 40, "stairs up every storey (F710: two flights and a landing per tall storey): hall 2x2, prow 2, towers 5+5+6+6, lone tower 5 (on the cave floor, F657), keep 4 + 3")
+
+
+## The owner's Nov 23 play test of the Prow Hall (F820, F821, F822), in the stone and the wooden blueprint.
+func test_prow_hall_play_test_fixes() -> void:
+	for id in ["stonehold_prow_hall", "wooden_prow_hall"]:
+		var bp := BlueprintLibrary.make(id)
+		var ps: Array = bp.pieces
+		for msg in railing_ends_poking_out(ps):
+			check(false, "%s: %s" % [id, msg])
+		for msg in stairs_under_a_ceiling(ps):
+			check(false, "%s: %s" % [id, msg])
+		for msg in merlons_indoors(ps, BlueprintLibrary.WOOD):
+			check(false, "%s: %s" % [id, msg])
+		check(true, "%s: railings, stair holes and merlons checked" % id)
+
+
+const FLOORS := ["floor", "foundation", "floor_triangle", "foundation_triangle"]
+
+
+static func _floor_under(ps: Array, at: Vector3, grow: float) -> Dictionary:
+	for q in ps:
+		if q.id in FLOORS and absf(q.pos.y + Pieces.LIST[q.id].size.y - at.y) < 0.06:
+			if Geometry2D.is_point_in_polygon(Vector2(at.x, at.z), Pieces.footprint(q.id, q.pos, q.rot, grow)):
+				return q
+	return {}
+
+
+## F820 (owner, Nov 23: "the railing ends poke out past the tower's wood deck"): both ends of every railing stand on
+## the floor it rails (to 15 cm): none sticks out into the air past a deck's edge.
+static func railing_ends_poking_out(ps: Array) -> Array:
+	var out := []
+	for p in ps:
+		if not p.id in ["railing", "railing_narrow"]:
+			continue
+		var half: float = Pieces.LIST[p.id].size.x * 0.5
+		for sgn in [-1.0, 1.0]:
+			var end: Vector3 = p.pos + Vector3(half * sgn * 0.95, 0, 0).rotated(Vector3.UP, Pieces.yaw_of(p.rot))
+			if _floor_under(ps, end, 0.15).is_empty() and out.size() < 6:
+				out.append("the %s at %s pokes out past its floor at %s" % [p.id, p.pos, end])
+	return out
+
+
+## F821 (owner, Nov 23: "the stair ends under the next floor, there's no hole"): no floor or ceiling over any stair
+## closer than 1.8 m above its steps.
+static func stairs_under_a_ceiling(ps: Array) -> Array:
+	var out := []
+	for p in ps:
+		if p.id != "stairs":
+			continue
+		var up := Vector3(0, 0, -1).rotated(Vector3.UP, Pieces.yaw_of(p.rot))
+		for s in [-0.8, 0.0, 0.8]:
+			var at: Vector3 = p.pos + up * s
+			var step: float = p.pos.y + 1.0 + s
+			for q in ps:
+				if q.id in FLOORS and q.pos.y > step - 0.05 and q.pos.y < step + 1.8:
+					if Geometry2D.is_point_in_polygon(Vector2(at.x, at.z), Pieces.footprint(q.id, q.pos, q.rot, -0.05)):
+						if out.size() < 6:
+							out.append("the stairs at %s run up under the %s at %s (no stair hole)" % [p.pos, q.id, q.pos])
+						break
+	return out
+
+
+## F822 (owner, Nov 23: "grey battlement blocks on a tower's wood deck and inside a wood-walled room"): no battlement
+## stands under a floor (inside a building), and in a wooden castle none stands on a wood deck.
+static func merlons_indoors(ps: Array, wood: String) -> Array:
+	var out := []
+	for p in ps:
+		if not String(p.id).begins_with("battlement"):
+			continue
+		var pts: Array[Vector3] = [p.pos]
+		if p.id != "battlement_corner":
+			var n := Vector3(0, 0, 0.35).rotated(Vector3.UP, Pieces.yaw_of(p.rot))
+			pts = [p.pos + n, p.pos - n]
+		for q in ps:
+			if q.id in FLOORS and q.pos.y > p.pos.y + 0.5 and q.pos.y < p.pos.y + 4.6:
+				var fp := Pieces.footprint(q.id, q.pos, q.rot, -0.05)
+				if pts.all(func(v): return Geometry2D.is_point_in_polygon(Vector2(v.x, v.z), fp)):
+					if out.size() < 6:
+						out.append("the %s at %s is indoors, under the %s at %s" % [p.id, p.pos, q.id, q.pos])
+					break
+		if p.mat != wood:
+			for v in pts:
+				var deck := _floor_under(ps, v, -0.05)
+				if not deck.is_empty() and deck.mat == wood and out.size() < 6:
+					out.append("the stone %s at %s stands on a wood deck" % [p.id, p.pos])
+					break
+	return out
 
 
 ## Any floor-like piece (square or triangle) whose top is at `top` and whose outline holds the point `at`.

@@ -7,8 +7,10 @@ extends RuinTower
 ## Manor (ruin_manor.gd): the world remembers "prow_hall: pending" and builds it the first time someone comes close.
 ## Built INTO the cave (F657, docs/design/GRAND-RUIN-RECIPE.md "Built into the cave"): before its pieces go in, the
 ## world digs only the space round the castle (the blueprint's own "air" cells, a yard in front, the way under the
-## bridge and a dip below it) and grows rock where the 3D page shows it: the lump under the lone tower (flat on top at
-## 7 m) and a rough rock wall wrapped round the keep's back. Rebuilt in cut stone or wood; rock beetles guard it.
+## bridge and a dip below it). Layout 19 on (owner, Nov 23, F657: "use the caves that already exist"): it FINDS a
+## natural cave that fits, the keep's back in the cave's own rock wall, and grows no rock at all (see natural). Older
+## worlds still grow a rough rock wall round the keep's back. The lone tower stands on the cave floor in every world
+## (no rock lump under it any more). Rebuilt in cut stone or wood; rock beetles guard it.
 
 const PLAN_PATH := "res://blueprints/ruins/prow_hall_ruin.json"
 const BLUEPRINT := "stonehold_prow_hall"
@@ -17,10 +19,11 @@ const CHECK_EVERY := 1.0
 const REACH := 30.0        ## its far corners (the lone tower's back, the prow's point) are about 29 m from the middle
 const HEIGHT := 16.0
 const TRIES := 5
+const TRIES_NATURAL := 10  ## a natural cave has to fit it: look at more caverns (F657)
 ## Its ground, in its own frame: the whole castle and the lone tower (x -26..26, z -20..19), the yard in front to z 21.
 const LO := Vector2(-26.0, -20.0)
 const HI := Vector2(26.0, 21.0)
-const FILL_R := 1.6        ## the balls of rock the lump and the wall are grown from
+const FILL_R := 1.6        ## the balls of rock the wall is grown from (worlds before layout 19)
 const FILL_STEP := 1.8
 const FILLS_PER_FRAME := 20
 const WALL_TOP := 20.0     ## the rock wall never grows higher than this
@@ -32,6 +35,7 @@ var room := -1
 var _check := 0.0
 var _fill: Array = []
 var _grown := 0
+var _natural := false  ## a natural cave (layout 19 on): it grows no rock (F657)
 
 
 ## Its caverns, best first: Mossy's plain big caverns (not the start's, nor another ruin's), the widest first, each lot
@@ -65,7 +69,7 @@ const CLEAR_Z := 36
 
 
 ## Its ground in its own frame, every 2 m: under every piece (the bridge too, and the dip under it), the yard in front
-## of the prow and the rock lump. Not the empty corners of its box, nor the rock wall it grows (a column may stand in
+## of the prow and round the lone tower (where its rock lump stood before Nov 23: kept, so old worlds' spots stay). Not the empty corners of its box, nor the rock wall it grows (a column may stand in
 ## that rock). [Vector2, ...]; `main` = also under the main body (not the lone tower's side), for how flat it is.
 static func ground() -> Array:
 	if _ground.is_empty():
@@ -76,7 +80,7 @@ static func ground() -> Array:
 		for x in range(0, 9):
 			for z in range(5, 11):
 				cells[Vector2i(x, z)] = true  # the yard (x 0..16, z 10..20)
-		var l := BlueprintLibrary.PROW_LUMP
+		var l := BlueprintLibrary.PROW_LONE
 		for x in range(-15, -5):
 			for z in range(-11, 0):
 				if Vector2(x * 2.0 - l.x, z * 2.0 - l.z).length() < 9.0:
@@ -118,15 +122,65 @@ static func clear_at(x: float, z: float) -> float:
 	return _clear[(cz + CLEAR_Z) * w + cx + CLEAR_X]
 
 
+## Layout 19 on (owner, Nov 23, F657: "you don't build the cave around it, you embed it or use the caves that already
+## exist"): it stands in a natural cave that fits it, the keep's back in the cave's own rock wall, and the world grows
+## no rock round it. Older worlds keep growing their rock wall (their Prow Hall may already stand there).
+const NATURAL_LAYOUT := 19
+static func natural(maker: CaveMaker) -> bool:
+	return maker.made_layout >= NATURAL_LAYOUT
+
+
+## Where the cave's own rock should be in a natural cave: just behind the keep's back (the keep's middle is at z -11.5,
+## its back edge about z -19), 2 to 8 m up.
+const BACK_XS := [-2.0, 2.0, 6.0, 10.0, 14.0, 18.0]
+const BACK_ZS := [-20.5, -23.5]
+const BACK_YS := [2.0, 5.0, 8.0]
+const BACK_ALL := 36     ## BACK_XS x BACK_ZS x BACK_YS
+const BACK_MISS := 1.5   ## how much each back sample that's open air counts against a spot
+const FRONT_COST := 8.0  ## and a way in that has to be dug out
+
+
+## How many of the back samples are rock at this spot (the keep's back set into the rock).
+static func back_rock(maker: CaveMaker, p: Vector3, basis: Basis) -> int:
+	var n := 0
+	for x in BACK_XS:
+		for z in BACK_ZS:
+			for y in BACK_YS:
+				if maker.sdf_at(p + basis * Vector3(x, y, z)) < 0.0:
+					n += 1
+	return n
+
+
+## The way in: 10 m in front of the two doors' steps (z 11 to 21; the owner rule F350, like RuinSpire.door_is_open).
+## The yard is dug out to z 21, so rock there only costs a little digging: 0 = open, level ground already; 1 = rock or
+## a bump to dig out; 2 = a drop (no spot for it).
+static func front_state(maker: CaveMaker, p: Vector3, basis: Basis) -> int:
+	var st := 0
+	for z in [13.0, 16.0, 19.0, 21.0]:
+		for x in [3.0, 8.0, 13.0]:
+			var at: Vector3 = p + basis * Vector3(x, 0, z)
+			if maker.sdf_at(Vector3(at.x, p.y + 4.0, at.z)) <= 0.0:
+				st = 1
+				continue
+			var f := maker.find_floor(at.x, at.z, p.y + 4.0).y
+			if f < p.y - 1.5:
+				return 2
+			if f > p.y + 1.1:
+				st = 1
+	return st
+
+
 ## The spot (in the first few caverns) with the flattest floor under its main body, no column or other ruin on any
 ## of its ground, the least rock in the way; its prow turned toward the way you come from if it fits that way (else
-## another way). Returns {room, pos, turn}.
+## another way). In a natural cave (layout 19 on) also: the cave's own rock behind the keep (the more the better), the
+## way in open, and no drop under the lone tower either. Returns {room, pos, turn}.
 static func pick(maker: CaveMaker) -> Dictionary:
+	var nat := natural(maker)
 	var c0 := maker.cavern_spawn
 	var best := {}
 	var best_score := INF
 	var pts := ground()
-	for best_room in rooms_to_try(maker).slice(0, TRIES):
+	for best_room in rooms_to_try(maker).slice(0, TRIES_NATURAL if nat else TRIES):
 		var rc: Vector3 = maker.rooms[best_room].center
 		var cols := []  # (only the columns near this cavern: quick)
 		for o in maker._cols:
@@ -165,9 +219,10 @@ static func pick(maker: CaveMaker) -> Dictionary:
 						if q.y > mid.y - 3.25:
 							while maker.sdf_at(q + Vector3(0, 0.25, 0)) <= 0.0 and q.y < mid.y + 4.0:
 								q.y += 0.25  # (back up to the floor's top, 0.25 m at a time)
-						var on_lump := Vector2(g.x - BlueprintLibrary.PROW_LUMP.x, g.y - BlueprintLibrary.PROW_LUMP.z).length() < 9.0
+						# (before layout 19 the lone tower stood on a grown lump, whatever the floor's depth under it)
+						var on_lump := not nat and Vector2(g.x - BlueprintLibrary.PROW_LONE.x, g.y - BlueprintLibrary.PROW_LONE.z).length() < 9.0
 						if q.y < mid.y - 3.0 and not on_lump:
-							ok = false  # a drop or a chasm under it (the lump is grown from the floor, whatever its depth)
+							ok = false  # a drop or a chasm under it
 							break
 						if g.x > -11.0:
 							ys.append(q.y)  # (the main body)
@@ -188,6 +243,13 @@ static func pick(maker: CaveMaker) -> Dictionary:
 								if maker.sdf_at(Vector3(p.x, base, p.z) + o) < 0.0:
 									rock += 1
 					var score: float = (ys[-1] - ys[0]) * 4.0 + rock * 1.0 + Vector2(gx, gz).length() * 0.3 + [0, 5, 5, 10][k]
+					if nat and score < best_score:
+						var at := Vector3(p.x, base, p.z)
+						var front := front_state(maker, at, basis)
+						if front == 2:
+							continue  # a drop in front of the doors
+						score += front * FRONT_COST
+						score += (BACK_ALL - back_rock(maker, at, basis)) * BACK_MISS
 					if score < best_score:
 						best_score = score
 						best = {room = best_room, pos = Vector3(p.x, base, p.z), turn = turn}
@@ -250,17 +312,8 @@ static func dip_at(x: float, z: float) -> float:
 	return -3.0 * _smooth(minf(t.x - 0.5, 9.0 - t.x) / 2.0) * _smooth(1.0 - t.y / 4.5)
 
 
-## The rock lump under the lone tower: its height (7 m flat on top where the tower stands, a rough ledged side).
-static func lump_at(x: float, z: float) -> float:
-	var l := BlueprintLibrary.PROW_LUMP
-	var r := Vector2(x - l.x, z - l.z).length() - 1.4 * _fbm(x * 0.35 + 7, z * 0.35)
-	if Vector2(x - l.x, z - l.z).length() <= BlueprintLibrary.PROW_LUMP_R or r <= 5.5:
-		return l.y
-	var u := l.y * (1.0 - _smooth((r - 5.5) / 3.2))
-	return _ledges(u, 3.5) + ((_fbm(x * 0.8, z * 0.8) - 0.5) * 0.5 if u > 0.2 else 0.0)
-
-
-## The rock wall wrapped round the keep's back: its height (0 where there is none). The noise only pulls it back.
+## The rock wall wrapped round the keep's back (worlds before layout 19): its height (0 where there is none). The
+## noise only pulls it back. (The rock lump under the lone tower is gone in every world: F657, owner Nov 23.)
 static func wall_at(x: float, z: float) -> float:
 	var k := BlueprintLibrary.PROW_KEEP
 	var s := minf(minf(k.z - z, x + 6.0), Vector2(x - k.x, z - k.z).length() - KEEP_GAP) - 1.8 * _fbm(x * 0.12, z * 0.12)
@@ -271,9 +324,9 @@ static func wall_at(x: float, z: float) -> float:
 	return minf(w, WALL_TOP)
 
 
-## The rock the world grows round it, at (x, z) in its own frame (0 = none).
-static func rock_at(x: float, z: float) -> float:
-	return maxf(lump_at(x, z), wall_at(x, z))
+## The rock the world grows round it, at (x, z) in its own frame (0 = none; always 0 in a natural cave).
+static func rock_at(x: float, z: float, grown := true) -> float:
+	return wall_at(x, z) if grown else 0.0
 
 
 func _init(p_auth: GameAuthority) -> void:
@@ -318,13 +371,14 @@ func _ready() -> void:
 		built_turn = turn
 		set_process(false)
 		return
-	_carve = carve_points(origin, turn)
+	_natural = natural(auth.world.maker)
+	_carve = carve_points(origin, turn, not _natural)
 
 
 ## What it digs (ordinary digs: saved and sent to friends), in world space: the blueprint's own air cells (only round
-## the castle; never down into the rock lump or below its ground line), the yard in front, the way under the bridge,
-## and the dip below it.
-static func carve_points(at: Vector3, trn: int) -> Array:
+## the castle; never down into the grown rock wall or below its ground line), the yard in front, the way under the
+## bridge, and the dip below it. grown = false (a natural cave): no rock wall is grown, so it digs all the air cells.
+static func carve_points(at: Vector3, trn: int, grown := true) -> Array:
 	var basis := Basis(Vector3.UP, trn * PI / 2.0)
 	var out := []
 	var bp := BlueprintLibrary.make(BLUEPRINT)
@@ -336,7 +390,7 @@ static func carve_points(at: Vector3, trn: int) -> Array:
 			for cx in sx:
 				if bp.air[i] == 1:
 					var c := Vector3(cx + 0.5 - sx * 0.5, cy + 0.5, cz + 0.5 - sz * 0.5)
-					if c.y >= 0.9 and c.y - CARVE_RADIUS >= rock_at(c.x, c.z) - 0.3:
+					if c.y >= 0.9 and c.y - CARVE_RADIUS >= rock_at(c.x, c.z, grown) - 0.3:
 						out.append(at + basis * c)
 				i += 1
 	var y := 1.5
@@ -349,22 +403,21 @@ static func carve_points(at: Vector3, trn: int) -> Array:
 	var side := Vector2(-d.y, d.x)
 	var b := _b0()
 	var t := -1.0
-	while t <= 14.0:  # under the bridge (down to the dip), never into the lump
+	while t <= 14.0:  # under the bridge (down to the dip)
 		var s := -3.0
 		while s <= 3.0:
 			var xz := b + d * t + side * s
 			var h := dip_at(xz.x, xz.y)
 			y = (h + 1.0) if h < -0.3 else 1.5
 			while y <= 9.0:
-				if y - CARVE_RADIUS >= lump_at(xz.x, xz.y) - 0.3:  # (the lump wins over the dip, like on the page)
-					out.append(at + basis * Vector3(xz.x, y, xz.y))
+				out.append(at + basis * Vector3(xz.x, y, xz.y))
 				y += 1.2
 			s += 1.2
 		t += 1.2
 	return out
 
 
-## Where it grows rock (after the digging): the lump and the wall, balls of rock from the top of each column down to
+## Where it grows rock (after the digging, worlds before layout 19): the wall, balls of rock from the top of each column down to
 ## the rock that's already there. Only where the cave is open (no ball is wasted inside solid rock).
 func _fill_points() -> Array:
 	var basis := Basis(Vector3.UP, turn * PI / 2.0)
@@ -402,7 +455,7 @@ func _process(delta: float) -> void:
 		if auth.world.terrain.is_area_meshed(box) and auth.world.is_ready_at(box.get_center(), half):
 			_state = "carve"
 		return
-	if _state == "build" and _fill.is_empty() and not has_meta("filled"):
+	if _state == "build" and _fill.is_empty() and not has_meta("filled") and not _natural:
 		_fill = _fill_points()
 		set_meta("filled", true)
 		print("RUIN_PROW_HALL growing its rock: %d balls" % _fill.size())

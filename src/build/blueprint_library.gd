@@ -2064,65 +2064,97 @@ func _round_tower_test() -> void:
 ##   - The keep: a BIG ring (R = 2, 15 m) behind the hall; its front side is the middle of the hall's back wall. Four
 ##     storeys (roof 9.75), the small ring standing on its roof (two storeys, roof 14.25), and on top a crown of six
 ##     balconies jutting 2 m out on brackets: the tallest part. Its back half sits in the cave wall (F657 idea 1).
-##   - The bridge: 10 m long, 9.75 m up, from the back-left tower out to a lone tower standing on a rock lump (F657
-##     ideas 2 and 3: the ruin digs a dip under the bridge). The blueprint keeps the lump and the cave wall as rock
-##     (not "air"), so the Builder's Chest never carves them away; the lone tower's foundations sit 25 cm into the lump.
-##   - Heights all differ: hall 5.25, prow 7.5, front towers 9.75, back towers and lone tower 12, keep 14.25 + crown.
+##   - The bridge: 10 m long, 9.75 m up, from the back-left tower out to a lone tower (F657 idea 2: the ruin digs a
+##     dip under the bridge). The lone tower stands on the cave floor, five storeys up to the bridge (owner, Nov 23,
+##     F657: no grown rock lump under it any more). The blueprint keeps the cave wall behind the keep as rock (not
+##     "air"), so the Builder's Chest never carves it away.
+##   - Heights all differ (F710): hall roof walk 10, front towers and lone tower 12.25, prow and back towers 14.5,
+##     keep 10 + its small tower 16.75 + crown.
 ##   - Every stair's foot is on open floor and its top lands on floor; railings round every stairs hole.
 const PROW_SHIFT := Vector3(8, 0, 2)
-const PROW_LUMP := Vector3(-20.856, 7.0, -11.732)   # the rock lump under the lone tower: centre x, its top, centre z
-const PROW_LUMP_R := 5.5
+const PROW_LONE := Vector3(-20.856, 0.0, -11.732)   # the lone tower's middle (it stands on the cave floor)
 const PROW_KEEP := Vector3(8, 0, -11.464)            # the keep's middle: the cave wall wraps round its back half
+## F710 (owner, Nov 22): the hall's and the prow's storeys are twice a tower storey (2 x 2.25 m), so every doorway
+## from the hall still opens onto a tower's or the keep's floor. Each one: a wall, a stone beam band, a wall.
+const PROW_STOREY := 4.5
 
 
-## How high the Prow Hall's own rock reaches at (x, z) in its box (0 = the cave floor): the lump, and the cave wall.
+## F710: stairs up one tall storey of the Prow Hall. Two flights with a landing between, in a straight row of cells:
+## flight 1 in `c` (its foot on floor at height c.y), the landing over the next two cells on four pillars, flight 2
+## in the third cell, landing on the floor above the cell after it. `rot` 3 climbs toward +x, 1 toward -x.
+func _prow_tall_stairs(c: Vector3, rot: int) -> void:
+	var d := Vector3(2 if rot == 3 else -2, 0, 0)
+	var y := c.y
+	_add("floor", STONE, c, 0)
+	_add("stairs", STONE, c + Vector3(0, 0.25, 0), rot)
+	for i in [1, 2]:
+		_add("floor", STONE, c + d * i + Vector3(0, 2.0, 0), 0)
+	_add("floor", STONE, c + d * 2 + Vector3(0, 2.25, 0), 0)
+	_add("stairs", STONE, c + d * 2 + Vector3(0, 2.5, 0), rot)
+	for k in [1.5, 2.5]:
+		for sz in [-1, 1]:
+			_add("pillar", STONE, Vector3(c.x + d.x * k, y, c.z + sz), 0)
+
+
+## How high the Prow Hall's own rock reaches at (x, z) in its box (0 = the cave floor): the cave wall behind the keep.
 static func prow_rock_top(x: float, z: float) -> float:
-	if Vector2(x - PROW_LUMP.x, z - PROW_LUMP.z).length() < PROW_LUMP_R:
-		return PROW_LUMP.y
 	if z < PROW_KEEP.z and x > -6.0 and Vector2(x - PROW_KEEP.x, z - PROW_KEEP.z).length() > 8.6:
 		return 99.0
 	return 0.0
 
 
 func _prow_hall() -> void:
-	_start(Vector3(52, 16, 40))
+	_start(Vector3(52, 20, 40))
 	var S := STONE
 	var H := sqrt(3.0)
 	var trim := 0.15 + Pieces.LIST["cornice"].size.z * 0.5
-	# --- the great hall (cells x -9..9, z -5..5): foundations, the upper floor, the roof walk; two stairs
+	# --- the great hall (cells x -9..9, z -5..5): foundations, the upper floor (5.25), the roof walk (9.75)
 	for x in range(-9, 10, 2):
 		for z in range(-5, 6, 2):
 			_add("foundation", S, Vector3(x, 0, z), 0)
-			if Vector2(x, z) != Vector2(-7, -1):
-				_add("floor", S, Vector3(x, 3.0, z), 0)
-			if Vector2(x, z) != Vector2(7, -1):
-				_add("floor", S, Vector3(x, 5.25, z), 0)
-	_add("floor", S, Vector3(-7, 1.0, -1), 0)            # stairs 1 -> 2 climbing to the back (a slab lifts their top)
-	_add("stairs", S, Vector3(-7, 1.25, -1), 0)
-	_add("floor", S, Vector3(7, 3.25, -1), 0)            # stairs 2 -> the roof walk
-	_add("stairs", S, Vector3(7, 3.5, -1), 0)
-	for e in [[-7, 3.25], [7, 5.5]]:
-		_wall_z("railing", e[0] - 1, -1, e[1], S)
-		_wall_z("railing", e[0] + 1, -1, e[1], S)
-		_wall_x("railing", e[0], 0, e[1], S)
-	for y in [1.0, 3.25]:
-		var up: bool = y > 2.0
-		for x in [-9, -7, -5, 5, 7, 9]:                    # front (the prow takes the middle)
-			_wall_x("window_wall" if absi(x) == 7 else "wall", x, 6, y, S)
-		for x in [-9, -7, -5, -3, 3, 5, 7, 9]:             # back (the keep takes the middle)
-			_wall_x("window_wall" if up and absi(x) in [5, 9] else "wall", x, -6, y, S)
-		for z in [-3, -1, 1, 3]:                           # sides (the towers take both ends)
-			for sx in [-10, 10]:
-				var id := "window_wide" if up and z in [-1, 1] else ("window_wall" if not up and absi(z) == 3 else "wall")
-				_wall_z(id, sx, z, y, S)
+			if Vector2(x, z) != Vector2(-3, -3):
+				_add("floor", S, Vector3(x, PROW_STOREY + 0.75, z), 0)
+			if Vector2(x, z) != Vector2(3, 3):
+				_add("floor", S, Vector3(x, 2.0 * PROW_STOREY + 0.75, z), 0)
+	_prow_tall_stairs(Vector3(-7, 1.0, -3), 3)          # storey 1 -> 2: toward +x along the back row
+	_prow_tall_stairs(Vector3(7, 1.0 + PROW_STOREY, 3), 1)   # storey 2 -> the roof walk: toward -x along the front row
+	for e in [[-3, -3, 1.0 + PROW_STOREY, -1], [3, 3, 1.0 + 2.0 * PROW_STOREY, 1]]:   # railings round both holes
+		_wall_x("railing", e[0], e[1] - 1, e[2], S)
+		_wall_x("railing", e[0], e[1] + 1, e[2], S)
+		_wall_z("railing", e[0] + e[3], e[1], e[2], S)
+	for s in 2:                                           # each storey: a wall, a stone beam band, a wall
+		var y := 1.0 + PROW_STOREY * s
+		var up := s == 1
+		for hi in [false, true]:
+			var wy: float = y + (2.25 if hi else 0.0)
+			for x in [-9, -7, -5, 5, 7, 9]:                # front (the prow takes the middle)
+				_wall_x("window_wall" if absi(x) == 7 and not hi else "wall", x, 6, wy, S)
+			for x in [-9, -7, -5, -3, 3, 5, 7, 9]:         # back (the keep takes the middle)
+				_wall_x("window_wall" if up and not hi and absi(x) in [5, 9] else "wall", x, -6, wy, S)
+			for z in [-3, -1, 1, 3]:                       # sides (the towers take both ends); high windows let light in
+				for sx in [-10, 10]:
+					var id := "wall"
+					if not hi:
+						id = "window_wide" if up and z in [-1, 1] else ("window_wall" if not up and absi(z) == 3 else "wall")
+					elif z in [-1, 1]:
+						id = "window_wall"
+					_wall_z(id, sx, z, wy, S)
+		for x in [-9, -7, -5, 5, 7, 9]:
+			_wall_x("beam", x, 6, y + 2.0, S)
+		for x in [-9, -7, -5, -3, 3, 5, 7, 9]:
+			_wall_x("beam", x, -6, y + 2.0, S)
+		for z in [-3, -1, 1, 3]:
+			_wall_z("beam", -10, z, y + 2.0, S)
+			_wall_z("beam", 10, z, y + 2.0, S)
+	var roof := 1.0 + 2.0 * PROW_STOREY
 	for x in [-9, -7, -5, 5, 7, 9]:
-		_wall_x("battlement", x, 6, 5.5, S)
+		_wall_x("battlement", x, 6, roof, S)
 	for x in [-9, -7, -5, -3, 3, 5, 7, 9]:
-		_wall_x("battlement", x, -6, 5.5, S)
+		_wall_x("battlement", x, -6, roof, S)
 	for z in [-3, -1, 1, 3]:
-		_wall_z("battlement", -10, z, 5.5, S)
-		_wall_z("battlement", 10, z, 5.5, S)
-	for band in [2.95, 5.2]:                              # trim bands on the hall's outside faces
+		_wall_z("battlement", -10, z, roof, S)
+		_wall_z("battlement", 10, z, roof, S)
+	for band in [PROW_STOREY + 0.7, 2.0 * PROW_STOREY + 0.7]:   # trim bands on the hall's outside faces (the floor lines)
 		for x in [-9, -7, -5, 5, 7, 9]:
 			_on_wall_z("cornice", S, x, 6, band, 1)
 		for x in [-9, -7, -5, -3, 3, 5, 7, 9]:
@@ -2133,12 +2165,13 @@ func _prow_hall() -> void:
 	# --- the four corner towers: each one's doorway side is the hall's side-wall end slot (z = +-5)
 	var left := [[9], [7, 11, 0], [9], [6, 0], [9]]
 	var right := [[3], [5, 1, 0], [3], [6, 0], [3]]
-	_prow_tower(Vector3(-10.0 - _EDGE, 0, 5), 0.0, [4, 0, 5, 2], {0: [3], 1: [3], 2: [3]}, left, trim)
-	_prow_tower(Vector3(10.0 + _EDGE, 0, 5), 0.0, [1, 3, 0, 4], {0: [9], 1: [9], 2: [9]}, right, trim)
+	# (F710: their storeys stay 2.25 m; the hall's floors meet every other one, so doors on storeys 1, 3 and 5)
+	_prow_tower(Vector3(-10.0 - _EDGE, 0, 5), 0.0, [4, 0, 5, 2, 0], {0: [3], 2: [3], 4: [3]}, left, trim)
+	_prow_tower(Vector3(10.0 + _EDGE, 0, 5), 0.0, [1, 3, 0, 4, 2], {0: [9], 2: [9], 4: [9]}, right, trim)
 	var bl := Vector3(-10.0 - _EDGE, 0, -5)
-	_prow_tower(bl, 0.0, [4, 0, 5, 2, 0], {0: [3], 1: [3], 2: [3], 4: [8]}, left, trim)
-	_prow_tower(Vector3(10.0 + _EDGE, 0, -5), 0.0, [1, 3, 0, 4, 2], {0: [9], 1: [9], 2: [9]}, right, trim)
-	# --- the bridge: from the back-left tower's side 8, 9.75 m up, 10 m out to the lone tower on its rock lump
+	_prow_tower(bl, 0.0, [4, 0, 5, 2, 0, 5], {0: [3], 2: [3], 4: [3, 8]}, left, trim)
+	_prow_tower(Vector3(10.0 + _EDGE, 0, -5), 0.0, [1, 3, 0, 4, 2, 0], {0: [9], 2: [9], 4: [9]}, right, trim)
+	# --- the bridge: from the back-left tower's side 8, 9.75 m up, 10 m out to the lone tower
 	var d := _dir(8)
 	var b0 := bl + d * _EDGE
 	for i in 5:
@@ -2151,7 +2184,9 @@ func _prow_hall() -> void:
 	for sd in [-0.65, 0.65]:                              # brackets under both ends of the bridge
 		_add("corbel", S, bl + d * (_EDGE + cdepth) + _dir(11) * sd + Vector3(0, 8.75, 0), _rot(8))
 		_add("corbel", S, lone - d * (_EDGE + cdepth) + _dir(11) * sd + Vector3(0, 8.75, 0), _rot(2))
-	var lt := _prow_tower(lone, 6.75, [3, 4], {1: [2]}, [[8, 11], [6, 10]], trim)
+	# the lone tower: the back-left tower's plan turned half round (its door out to the bridge on side 2, 10 m up),
+	# on the cave floor (F657, owner Nov 23: no rock lump grown under it); its ground door faces away from the hall
+	var lt := _prow_tower(lone, 0.0, [1, 3, 2, 5, 3], {0: [9], 4: [2]}, [[8, 11], [6, 10]], trim)
 	_add("beacon_bowl", S, lone + Vector3(0, lt, 0), 0)
 	# --- the prow: cells x -3..3, z 7..9, then a point of triangles (4 rows, z 10 .. 10 + 4 * sqrt 3)
 	var tris := []                                        # [centre, rot]: up-pointing ones point to the front
@@ -2162,10 +2197,11 @@ func _prow_hall() -> void:
 			tris.append([Vector3(a + 1, 0, 10 + row * H + H / 3.0), _rot(6)])
 			if i < half - 1:
 				tris.append([Vector3(a + 2, 0, 10 + (row + 1) * H - H / 3.0), _rot(0)])
-	for lay in [["foundation", "foundation_triangle", 0.0], ["floor", "floor_triangle", 3.0], ["floor", "floor_triangle", 5.25], ["floor", "floor_triangle", 7.5]]:
+	var ps := PROW_STOREY
+	for lay in [["foundation", "foundation_triangle", 0.0], ["floor", "floor_triangle", ps + 0.75], ["floor", "floor_triangle", 2.0 * ps + 0.75], ["floor", "floor_triangle", 3.0 * ps + 0.75]]:
 		for x in [-3, -1, 1, 3]:
 			for z in [7, 9]:
-				if not (lay[2] == 7.5 and Vector2(x, z) == Vector2(1, 9)):
+				if not (lay[2] > 14.0 and Vector2(x, z) == Vector2(1, 7)):
 					_add(lay[0], S, Vector3(x, lay[2], z), 0)
 		for t in tris:
 			_add(lay[1], S, t[0] + Vector3(0, lay[2], 0), t[1])
@@ -2174,38 +2210,61 @@ func _prow_hall() -> void:
 		var off := Vector3(0.5 * (2 * i + 1), 0, 10 + H * 0.5 * (2 * i + 1))
 		slant.append([Vector3(4 - off.x, 0, off.z), _rot(2), _dir(2)])
 		slant.append([Vector3(off.x - 4, 0, off.z), _rot(10), _dir(10)])
-	for s in 3:
-		var y := 1.0 + 2.25 * s
+	for s in 3:                                           # 4.5 m storeys like the hall's: wall, beam band, wall
+		var y := 1.0 + ps * s
+		for hi in [false, true]:
+			var wy: float = y + (2.25 if hi else 0.0)
+			for sx in [-4, 4]:
+				for z in [7, 9]:
+					var id := "wall"
+					if not hi:
+						id = "doorway" if s == 0 and z == 9 else ("window_wall" if s > 0 and z == 9 else "wall")
+					_wall_z(id, sx, z, wy, S)
+				_add("pillar", S, Vector3(sx * 0.9875, wy, 10), 0)   # where the side turns into the point
+			for i in 8:
+				var w: Array = slant[i]
+				var win := false
+				if not hi:
+					win = (i / 2) == 1 if s == 0 else ((i / 2) % 2 == 0 if s == 1 else (i / 2) in [1, 2])
+				else:
+					win = s > 0 and (i / 2) in [0, 3]
+				_add("window_wall" if win else "wall", S, w[0] + Vector3(0, wy, 0), w[1])
+			_add("pillar", S, Vector3(0, wy, 10 + 4 * H - 0.18), 0)   # the very point
 		for sx in [-4, 4]:
 			for z in [7, 9]:
-				var id := "doorway" if s == 0 and z == 9 else ("window_wall" if s > 0 and z == 9 else "wall")
-				_wall_z(id, sx, z, y, S)
-			_add("pillar", S, Vector3(sx * 0.9875, y, 10), 0)   # where the side turns into the point
-		for i in 8:
-			var w: Array = slant[i]
-			var win := (i / 2) == 1 if s == 0 else ((i / 2) % 2 == 0 if s == 1 else (i / 2) in [1, 2])
-			_add("window_wall" if win else "wall", S, w[0] + Vector3(0, y, 0), w[1])
-		_add("pillar", S, Vector3(0, y, 10 + 4 * H - 0.18), 0)   # the very point
+				_wall_z("beam", sx, z, y + 2.0, S)
+		for w in slant:
+			_add("beam", S, w[0] + Vector3(0, y + 2.0, 0), w[1])
 	for sx in [-4, 4]:                                    # the main doors, wide steps up to each
 		_add("door", S, Vector3(sx, 1.0, 9), 1)
 		for z in [7, 9]:
 			_add("foundation_steps", S, Vector3(sx * 1.25, 0, z), 1 if sx > 0 else 3)
+	var y3 := 1.0 + 2.0 * ps                              # storey 3's back: a door out onto the hall's roof walk
 	for e in [["wall", -3.0], ["wall_narrow", -1.5], ["doorway", 0.0], ["wall_narrow", 1.5], ["wall", 3.0]]:
-		_wall_x(e[0], e[1], 6, 5.5, S)                    # storey 3's back: a door out onto the hall's roof walk
-	_add("door", S, Vector3(0, 5.5, 6), 0)
-	_add("floor", S, Vector3(1, 5.5, 9), 0)              # stairs up to the prow's roof, climbing toward -x
-	_add("stairs", S, Vector3(1, 5.75, 9), 1)
-	_wall_x("railing", 1, 8, 7.75, S)
-	_wall_x("railing", 1, 10, 7.75, S)
-	_wall_z("railing", 2, 9, 7.75, S)
+		_wall_x(e[0], e[1], 6, y3, S)
+		_wall_x("beam" if e[0] != "wall_narrow" else "beam_half", e[1], 6, y3 + 2.0, S)
+		_wall_x("wall" if e[0] != "wall_narrow" else "wall_narrow", e[1], 6, y3 + 2.25, S)
+	_add("door", S, Vector3(0, y3, 6), 0)
+	# up to the prow's roof: a flight toward -x, a landing on pillars, a flight back toward +x (never a spiral)
+	_add("floor", S, Vector3(1, y3, 9), 0)
+	_add("stairs", S, Vector3(1, y3 + 0.25, 9), 1)
+	for c in [Vector2(-1, 9), Vector2(-1, 7), Vector2(1, 7)]:
+		_add("floor", S, Vector3(c.x, y3 + 2.0, c.y), 0)
+	_add("floor", S, Vector3(1, y3 + 2.25, 7), 0)
+	_add("stairs", S, Vector3(1, y3 + 2.5, 7), 3)
+	for p in [Vector2(-1.8, 9.8), Vector2(-1.8, 6.4), Vector2(1.8, 6.4), Vector2(-0.2, 8.2)]:
+		_add("pillar", S, Vector3(p.x, y3, p.y), 0)
+	var ptop := 1.0 + 3.0 * ps
+	_wall_x("railing", 1, 8, ptop, S)
+	_wall_z("railing", 0, 7, ptop, S)
 	for sx in [-4, 4]:
 		for z in [7, 9]:
-			_wall_z("battlement", sx, z, 7.75, S)
+			_wall_z("battlement", sx, z, ptop, S)
 	for x in [-3, -1, 1, 3]:
-		_wall_x("battlement", x, 6, 7.75, S)
+		_wall_x("battlement", x, 6, ptop, S)
 	for w in slant:
-		_add("battlement", S, w[0] + Vector3(0, 7.75, 0), w[1])
-	for band in [2.95, 5.2, 7.45]:
+		_add("battlement", S, w[0] + Vector3(0, ptop, 0), w[1])
+	for band in [ps + 0.7, 2.0 * ps + 0.7, 3.0 * ps + 0.7]:
 		for sx in [-4, 4]:
 			for z in [7, 9]:
 				_on_wall_x("cornice", S, sx, z, band, signi(sx))
@@ -2217,10 +2276,10 @@ func _prow_hall() -> void:
 	_big_ring_layer(R, "foundation", "foundation_triangle", 0.0)
 	var front := _dir(0) * (R * _EDGE) + _ring_off
 	var kst := [[2, 0], [4, 0], [1, 0], [3, 0]]          # each storey's stairs: [big square, small square]
-	var wins := [[3, 9], [2, 10], [3, 9], [0, 2, 4, 8, 10]]
+	var wins := [[3, 9], [2, 10], [3, 9], [2, 4, 8, 10]]
 	var y := 1.0
 	for s in 4:
-		var door := s < 3                                 # into the hall (storeys 1, 2), out onto its roof walk (3)
+		var door := s in [0, 2]                           # into the hall's two tall storeys (F710: they meet storeys 1 and 3)
 		var wj: Array = wins[s]
 		_big_ring_edges(R, y, func(j, _m): return "" if (j == 0 and door) else ("window_wall" if j in wj else "wall"))
 		if door:
@@ -2232,27 +2291,31 @@ func _prow_hall() -> void:
 		var f := y + 2.0
 		_big_ring_layer(R, "floor", "floor_triangle", f, [[kst[s][0], R - 1, kst[s][1]]])
 		_big_ring_rails(R, kst[s][0], kst[s][1], f + 0.25)
-		var hidden := [5, 6, 7] if f > 6.0 else [11, 0, 1, 5, 6, 7]   # (no bands where the hall meets it, or in the rock)
+		var hidden := [11, 0, 1, 5, 6, 7]                 # (no bands where the hall meets it, or in the rock)
 		_big_ring_edges(R, f - 0.05, func(j, _m): return "" if j in hidden else "cornice", S, trim)
 		y = f + 0.25
-	_big_ring_edges(R, y, func(_j, _m): return "battlement")
+	# its roof is level with the hall's roof walk (both 10 m): no battlement on the hall's side, you walk straight on
+	_big_ring_edges(R, y, func(j, _m): return "" if j == 0 else "battlement")
 	_big_ring_corners(R, y, "battlement_corner")
-	# the small ring on the keep's roof: two storeys, then the crown
-	_ring_edges(y, func(j): return "doorway" if j == 0 else ("window_wall" if j in [4, 8] else "wall"))
-	_add("door", S, _dir(0) * _EDGE + _ring_off + Vector3(0, y, 0), 0)
-	_ring_pillars(y, [11, 0])
-	_ring_stairs(2, y)
-	var f5 := y + 2.0
-	_ring_layer("floor", "floor_triangle", f5, 2)
-	_ring_rails(2, f5 + 0.25)
-	_big_ring_edges(1, f5 - 0.05, func(_j, _m): return "cornice", S, trim)
-	var t2 := f5 + 0.25
-	_ring_edges(t2, func(j): return "window_wall" if j % 2 == 1 else "wall")
-	_ring_pillars(t2)
-	_ring_stairs(4, t2)
-	var top := t2 + 2.0
-	_ring_layer("floor", "floor_triangle", top, 4)
-	_ring_rails(4, top + 0.25)
+	# the small ring on the keep's roof: three storeys, then the crown
+	var top := y
+	for k in 3:
+		var sk: int = [2, 4, 0][k]
+		if k == 0:
+			_ring_edges(top, func(j): return "doorway" if j == 0 else ("window_wall" if j in [4, 8] else "wall"))
+			_add("door", S, _dir(0) * _EDGE + _ring_off + Vector3(0, top, 0), 0)
+			_ring_pillars(top, [11, 0])
+		else:
+			_ring_edges(top, func(j): return "window_wall" if j % 2 == k % 2 else "wall")
+			_ring_pillars(top)
+		_ring_stairs(sk, top)
+		var fk := top + 2.0
+		_ring_layer("floor", "floor_triangle", fk, sk)
+		_ring_rails(sk, fk + 0.25)
+		if k < 2:
+			_big_ring_edges(1, fk - 0.05, func(_j, _m): return "cornice", S, trim)
+		top = fk + 0.25
+	top -= 0.25
 	# the crown: on every square side a balcony 2 m out on two brackets, battlements round it; plain battlements between
 	for j in 12:
 		var n := _dir(j)
@@ -2269,12 +2332,10 @@ func _prow_hall() -> void:
 	_ring_off = Vector3.ZERO
 	# --- move it so the box is centred. Only the space round the castle itself is "air" (dug out when you build
 	# it): its pieces plus 1.5 m round and over them (F657: the cave keeps its own shape round it, and the dip
-	# under the bridge stays a dip); the lump and the cave wall stay rock.
+	# under the bridge stays a dip); the cave wall behind the keep stays rock.
 	for p in _bp.pieces:
 		p.pos += PROW_SHIFT
-	_air_only_round_pieces(func(lx: float, y: float, lz: float) -> bool:
-		var by_lump := Vector2(lx - PROW_LUMP.x, lz - PROW_LUMP.z).length() < PROW_LUMP_R + 1.6 and y < PROW_LUMP.y
-		return by_lump or y < prow_rock_top(lx, lz))
+	_air_only_round_pieces(func(lx: float, y: float, lz: float) -> bool: return y < prow_rock_top(lx, lz))
 
 
 ## F657 (the grand ruins built into the cave): only the space round the building itself is "air" (dug out when you
@@ -2341,14 +2402,28 @@ func _start(size: Vector3) -> void:
 
 
 ## The wooden Prow Hall's keep is 7 storeys tall: wood loses too much strength that high (Structure: 8% a storey up,
-## 16% sideways), so the small tower on the keep's roof and its crown stay stone, like the stone hall's.
+## 16% sideways), so the small tower on the keep's roof and its crown stay stone, like the stone hall's. The same
+## for the prow's top storey and roof (F710: its storeys are two walls high now, so its roof sits 14.5 m up).
 func _prow_keep_top_stays_stone() -> void:
 	var stone := BlueprintLibrary.make("stonehold_prow_hall")
 	for i in _bp.pieces.size():
 		var q: Dictionary = stone.pieces[i]
-		if q.pos.y > 9.9 and Vector2(q.pos.x - PROW_KEEP.x, q.pos.z - PROW_KEEP.z).length() < 8.0:
+		var keep_top: bool = q.pos.y > 9.9 and Vector2(q.pos.x - PROW_KEEP.x, q.pos.z - PROW_KEEP.z).length() < 8.0
+		# F822 (owner, Nov 23: grey merlons on a tower's wood deck): the keep's roof deck (10 m) is wood, so the
+		# battlements round it are wooden railings too; only the small tower above stays stone
+		if String(q.id).begins_with("battlement") and q.pos.y < 10.5:
+			keep_top = false
+		var prow_top: bool = q.pos.y > 9.9 and q.pos.z > PROW_SHIFT.z + 6.1
+		if keep_top or prow_top:
 			_bp.pieces[i].id = q.id
 			_bp.pieces[i].mat = q.mat
+	# F820 (owner, Nov 23: railing ends poke out past every tower's wood deck): _to_wood turns each 0.6 m battlement
+	# corner into a whole 2 m railing, which juts out of the corner. The edge railings already meet there: drop them.
+	var keep: Array[Dictionary] = []
+	for i in _bp.pieces.size():
+		if not (stone.pieces[i].id == "battlement_corner" and _bp.pieces[i].mat == WOOD):
+			keep.append(_bp.pieces[i])
+	_bp.pieces = keep
 
 
 ## The same building in root planks (docs/design/ruin-rebuild-plan.md): every piece that has a wooden version becomes

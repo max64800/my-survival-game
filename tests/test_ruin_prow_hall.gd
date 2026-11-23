@@ -1,7 +1,7 @@
 extends TestCase
 ## The Prow Hall (owner, Nov 22, F656 + F657 + F479): the ninth ruin, a Stonehold castle built into the cave. Its plan,
 ## where it goes (and the placement rule: nothing the world grows stands inside it), the cave's shape round it (the
-## lump, the dip, the rock wall), and rebuilding it in stone.
+## dip, and from layout 19 a natural cave with no rock grown round it), and rebuilding it in stone.
 
 var world: World
 var auth: GameAuthority
@@ -29,14 +29,18 @@ func test_plan_is_whole() -> void:
 		check(Vector2(v.x, v.z).length() <= RuinProwHall.REACH, "the ruin's %s at %s is within its reach" % [p.id, v])
 	check(plan.get("chests", []).size() >= 3, "chests to find in it")
 	check(plan.pieces.filter(func(p): return p.id == "door").is_empty(), "no doors left (they rotted away)")
+	# F657 (owner, Nov 23): no rock lump grown under the lone tower any more; it stands on the cave floor
 	var anchored: Array = plan.pieces.filter(func(p): return p.get("anchor", false))
-	check(anchored.size() >= 8, "the lone tower's foundations rest on its rock lump (%d)" % anchored.size())
-	for p in anchored:
-		var v := Vector3(p.pos[0], p.pos[1], p.pos[2])
-		check(RuinProwHall.lump_at(v.x, v.z) > 6.9, "anchored %s at %s is on the lump's flat top" % [p.id, v])
+	check_eq(anchored.size(), 0, "nothing rests on a grown rock lump (the lone tower stands on the cave floor)")
+	var lone := BlueprintLibrary.PROW_LONE
+	var low := 99.0
+	for p in plan.pieces:
+		if Vector2(p.pos[0] - lone.x, p.pos[2] - lone.z).length() < 5.0:
+			low = minf(low, float(p.pos[1]))
+	check(low < 0.3, "the lone tower's lowest piece is on the floor (%.2f m)" % low)
 
 
-## Nothing in the ruin falls when it is built (its floors hang on their walls; the lone tower stands on its lump).
+## Nothing in the ruin falls when it is built (its floors hang on their walls; the lone tower stands on the floor).
 func test_ruin_stands_up() -> void:
 	var plan := RuinTower.load_plan(RuinProwHall.PLAN_PATH)
 	var s := Structure.new()
@@ -75,21 +79,49 @@ func test_blueprint_matches_its_ruin() -> void:
 				check(false, "the ruin's %s at %s is in the blueprint" % [q.id, qp])
 	check_eq(off, 0, "every whole piece of the ruin is in the blueprint")
 	var wood := BlueprintLibrary.make("wooden_prow_hall")
-	check(wood != null and wood.pieces.size() == bp.pieces.size(), "a Wooden Prow Hall blueprint, piece for piece")
+	# (F820: the wood version drops the battlement corners that became whole railings sticking out of the corners)
+	var corners := 0
+	for p in bp.pieces:
+		if p.id == "battlement_corner":
+			corners += 1
+	check(wood != null and wood.pieces.size() <= bp.pieces.size() and wood.pieces.size() >= bp.pieces.size() - corners,
+		"a Wooden Prow Hall blueprint, piece for piece (bar the corners: %d of %d)" % [wood.pieces.size() if wood else 0, bp.pieces.size()])
 	check(BlueprintLibrary.REBUILD_ONLY.has("wooden_prow_hall") and BlueprintLibrary.REBUILD_ONLY.has("stonehold_prow_hall"),
 		"both learned only by rebuilding the ruin")
 	for bx in bp.pieces:
 		check(_inside(bx.pos), "the whole castle's %s at %s fits the ground the ruin keeps clear" % [bx.id, bx.pos])
 
 
-## F657: the cave's shape is the 3D page's: the lump is flat at 7 m under the lone tower, the dip is 3 m deep under
-## the bridge, the rock wall rises behind the keep but never touches it or the hall, and the blueprint keeps all of
-## that rock (it only digs round the castle itself, so rebuilding never flattens the cave).
+## The owner's Nov 23 play test (F819 to F822) in the ruin itself: no railing end out past its floor, a stair hole
+## over every stair and no chest at a stair's top, no battlement indoors, and nothing of the old, lower plan left.
+func test_play_test_fixes_in_the_ruin() -> void:
+	var lib := preload("res://tests/test_blueprint_library.gd")
+	var plan := RuinTower.load_plan(RuinProwHall.PLAN_PATH)
+	var ps := []
+	for q in plan.pieces:
+		ps.append({id = q.id, mat = q.mat, pos = Vector3(q.pos[0], q.pos[1], q.pos[2]), rot = int(q.rot)})
+	for msg in lib.railing_ends_poking_out(ps) + lib.stairs_under_a_ceiling(ps) + lib.merlons_indoors(ps, BlueprintLibrary.WOOD):
+		check(false, "the ruin: %s" % msg)
+	var blocked := 0
+	for c in plan.chests:
+		var cv := Vector3(c.pos[0], c.pos[1], c.pos[2])
+		for p in ps:
+			if p.id == "stairs":
+				var up := Vector3(0, 0, -1).rotated(Vector3.UP, Pieces.yaw_of(p.rot))
+				var top: Vector3 = p.pos + up * 2.0 + Vector3.UP * 2.0
+				if Vector2(cv.x - top.x, cv.z - top.z).length() < 1.5 and absf(cv.y - top.y) < 0.6:
+					blocked += 1
+					check(false, "the %s at %s sits at the top of the stairs at %s" % [c.kind, cv, p.pos])
+	check_eq(blocked, 0, "no chest blocks a stair's top")
+
+
+## F657: the cave's shape: the dip is 3 m deep under the bridge; in old worlds (before layout 19) the rock wall rises
+## behind the keep but never touches it or the hall, and the blueprint keeps all of that rock (it only digs round the
+## castle itself, so rebuilding never flattens the cave). No rock lump under the lone tower in any world (Nov 23).
 func test_cave_shape() -> void:
-	var lump := BlueprintLibrary.PROW_LUMP
-	check_near(RuinProwHall.lump_at(lump.x, lump.z), 7.0, 0.01, "the lump's top is flat at 7 m")
-	check_near(RuinProwHall.lump_at(lump.x + 4.0, lump.z), 7.0, 0.01, "all under the lone tower")
-	check(RuinProwHall.lump_at(lump.x, lump.z + 12.0) < 0.5, "and gone 12 m away")
+	var lone := BlueprintLibrary.PROW_LONE
+	check_eq(RuinProwHall.rock_at(lone.x, lone.z), 0.0, "no rock lump grown under the lone tower")
+	check_eq(RuinProwHall.rock_at(12.0, -19.0, false), 0.0, "a natural cave grows no rock at all")
 	var deepest := 0.0
 	for t in range(0, 10):
 		var at := RuinProwHall._b0() + RuinProwHall._d8() * t
@@ -114,11 +146,18 @@ func test_cave_shape() -> void:
 	check(air < bp.air.size() * 0.75, "the blueprint only digs round the castle (%d of %d cells)" % [air, bp.air.size()])
 	var pts := RuinProwHall.carve_points(Vector3.ZERO, 0)
 	var into := 0
+	var dip := 0
 	for c in pts:
-		if c.y - RuinTower.CARVE_RADIUS < RuinProwHall.rock_at(c.x, c.z) - 0.31:
+		var r := RuinProwHall.rock_at(c.x, c.z)
+		if r > 0.0 and c.y - RuinTower.CARVE_RADIUS < r - 0.31:
 			into += 1
-	check_eq(into, 0, "the ruin never digs into its lump or wall")
+		if c.y < -1.0:
+			dip += 1
+	# (before Nov 23 the lump check stopped the dip being dug at all, so the rubble fallen into it lay buried)
+	check(dip >= 8, "it digs the dip under the bridge (%d digs below the floor)" % dip)
+	check_eq(into, 0, "the ruin never digs into the wall it grows (old worlds)")
 	check(sx > 0 and sz > 0 and pts.size() > 1000, "it digs its space (%d digs)" % pts.size())
+	check(RuinProwHall.carve_points(Vector3.ZERO, 0, false).size() >= pts.size(), "in a natural cave it digs all its air")
 
 
 ## Where it goes, on a few worlds: a big cavern of its own, a fair walk out, found quickly, and the placement rule
@@ -145,6 +184,15 @@ func test_spot_keeps_clear_of_what_the_world_grows() -> void:
 			if c._in_column(at, 1.0) or not c.is_reserved(at):
 				bad += 1
 		check_eq(bad, 0, "seed %d: no column in the Prow Hall, all of its ground kept clear" % sd)
+		# F657 (owner, Nov 23: "use the caves that already exist"): a natural cave that fits, the keep's back in the cave's
+		# own rock, and the way in open (10 m in front of the doors, F350).
+		check(RuinProwHall.natural(c), "seed %d: new worlds put it in a natural cave" % sd)
+		var back := RuinProwHall.back_rock(c, spot.pos, basis)
+		print("PROW_NATURAL seed %d: back rock %d of %d, turn %d" % [sd, back, RuinProwHall.BACK_ALL, spot.turn])
+		check(back * 2 >= RuinProwHall.BACK_ALL, "seed %d: the keep's back is set into the cave's own rock (%d of %d)" % [sd, back, RuinProwHall.BACK_ALL])
+		var front := RuinProwHall.front_state(c, spot.pos, basis)
+		print("PROW_NATURAL seed %d: the way in is %s" % [sd, ["open", "dug out", "a drop"][front]])
+		check(front < 2, "seed %d: no drop in the 10 m in front of the doors (the yard is dug out that far)" % sd)
 		if sd == 42:  # (a new world takes a few seconds: once is enough)
 			check_eq(CaveMaker.new(sd).prow_hall_spot, spot, "seed %d: always the same spot" % sd)
 
@@ -199,10 +247,15 @@ func test_rebuild_the_prow_hall_in_stone() -> void:
 		return
 	var o := RuinProwHall.built_origin
 	var basis := Basis(Vector3.UP, RuinProwHall.built_turn * PI / 2.0)
-	# The cave's shape (F657): rock on the lump's top and in the wall, open air over the yard.
-	var lump := BlueprintLibrary.PROW_LUMP
-	check(world.sdf_at(o + basis * Vector3(lump.x + 2.0, 6.0, lump.z)) < 0.0, "rock in the lump under the lone tower")
-	check(world.sdf_at(o + basis * Vector3(lump.x + 2.0, 8.5, lump.z)) > 0.0, "air over its top")
+	# The cave's shape (F657, owner Nov 23): a natural cave, no rock placed round it at all, open air over the yard.
+	check(RuinProwHall.natural(world.maker), "a new world puts it in a natural cave")
+	var job: RuinProwHall = null
+	for n in auth.get_children():
+		if n is RuinProwHall:
+			job = n
+	check(job != null and job._grown == 0 and not job.has_meta("filled"), "no placed rock lump or wall round the Prow Hall")
+	var lone := BlueprintLibrary.PROW_LONE
+	check(world.sdf_at(o + basis * Vector3(lone.x + 2.0, 6.0, lone.z)) > 0.0, "air where the old rock lump stood")
 	check(world.sdf_at(o + basis * Vector3(8.0, 2.5, 18.0)) > 0.0, "an open yard in front of the prow")
 	var r: Dictionary = auth.world_state.ruins[str(box)]
 	check_eq([r.wood, r.stone, r.get("mat", "")], ["wooden_prow_hall", "stonehold_prow_hall", "cut_stone"], "its chest rebuilds the Prow Hall")
@@ -228,16 +281,29 @@ func test_rebuild_the_prow_hall_in_stone() -> void:
 	if b.sites.has(box):  # (what holds it up, to fix)
 		var inv := basis.inverse()
 		var n := 0
-		for p in b.sites[box].plan:
-			if not p.built and n < 6:
+		var plan: Array = b.sites[box].plan
+		var way := {}
+		for i in plan.size():
+			var q: Dictionary = plan[i]
+			if not q.built and (b.structure.overlaps(q.piece, q.pos, q.rot) or Pieces.rock_problem(q.piece, q.pos, q.rot, auth.world.sdf_at) != ""):
+				way[i] = true
+		var steps := Builder.site_steps(plan, way)
+		print("PROW_STUCK band %s of %s" % [steps.current, steps.count])
+		for i in plan.size():
+			var p: Dictionary = plan[i]
+			if not p.built and n < 20:
 				n += 1
-				print("PROW_STUCK %s %s at %s overlap=%s rock='%s'" % [p.piece, p.family, inv * (p.pos - o),
-					b.structure.overlapping(p.piece, p.pos, p.rot).size(), Pieces.rock_problem(p.piece, p.pos, p.rot, auth.world.sdf_at)])
+				var anch := Pieces.touches_rock(p.piece, p.pos, p.rot, auth.world.sdf_at, p.family)
+				var hits := []
+				for uid in b.structure.overlapping(p.piece, p.pos, p.rot):
+					hits.append("%s@%s" % [b.structure.pieces[uid].piece, inv * (b.structure.pieces[uid].pos - o)])
+				print("PROW_STUCK %s %s at %s band=%s overlaps=%s %s rock='%s' stab=%.2f" % [p.piece, p.family, inv * (p.pos - o),
+					steps.band_of[i], b.structure.overlaps(p.piece, p.pos, p.rot), hits, Pieces.rock_problem(p.piece, p.pos, p.rot, auth.world.sdf_at),
+					b.structure.preview_stability(p.piece, p.family, p.pos, p.rot, anch)])
 	check(not b.sites.has(box), "the rebuilding finished (%s)" % b.site_status(box))
 	var known: Array = auth.world_state.get("blueprints", [])
 	check(known.has("wooden_prow_hall") and known.has("stonehold_prow_hall"), "rebuilt in stone: you learn both blueprints")
-	check(world.sdf_at(o + basis * Vector3(lump.x + 2.0, 6.0, lump.z)) < 0.0, "the lump is still there after rebuilding")
-	check(world.sdf_at(o + basis * Vector3(18.0, 6.0, -19.0)) < 0.0, "and the rock wall behind the keep")
+	check(RuinProwHall.back_rock(world.maker, o, basis) * 2 >= RuinProwHall.BACK_ALL, "the cave's own rock behind the keep, still there after rebuilding")
 	# The placement rule: every piece of the rebuilt castle stands on ground the world keeps clear.
 	var outside := 0
 	for uid in b.structure.pieces:
