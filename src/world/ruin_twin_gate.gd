@@ -5,6 +5,8 @@ extends RuinTower
 ## the left one's fire still burns. 40 x 36 m, 16.5 m tall. Its plan is blueprints/ruins/twin_gate_ruin.json
 ## (tools/ruins/make_twin_gate_ruin.py). Works like the Prow Hall (ruin_prow_hall.gd): the world remembers
 ## "twin_gate: pending" and builds it the first time someone comes close.
+## Layout 18 on (owner, Nov 23, F657): it FINDS a natural cave that fits (its back in the cave's own rock wall), digs only
+## the little it needs and grows no rock at all (see natural). Older worlds (below) keep the rock they grew.
 ## Built INTO the cave (F657, owner Nov 22: "yes, add cave shapes"): before its pieces go in, the world digs only the
 ## space round it (the blueprint's own "air" cells, the yard in front, the ground where the right tower fell) and a
 ## dry moat round the left tower's outside and front, then grows rock: a rough ledged cave wall wrapped round the
@@ -18,6 +20,7 @@ const CHECK_EVERY := 1.0
 const REACH := 34.0        ## its far corners (the moat's outer corner, the rock lumps) are about 33 m from the middle
 const HEIGHT := 16.5
 const TRIES := 5
+const TRIES_NATURAL := 10  ## a natural cave has to fit it: look at more caverns (F657)
 ## Its ground, in its own frame: the whole gate, barracks and kitchen, the fallen tower half (x to 24), the moat
 ## (x from -25), the lumps and the yard in front (z to 22.5).
 const LO := Vector2(-26.0, -17.0)
@@ -130,15 +133,63 @@ static func _main_body(g: Vector2) -> bool:
 	return g.y < 15.0 and g.x > -18.0 and g.x < 19.0
 
 
+## Layout 18 on (owner, Nov 23, F657: "you don't build the cave around it, you embed it or use the caves that already
+## exist"): it stands in a natural cave that fits it, its back in the cave's own rock wall, and the world grows no rock
+## round it (no lumps, no wall). Older worlds keep the rock they grew (their Twin Gate already stands there).
+static func natural(maker: CaveMaker) -> bool:
+	return maker.made_layout >= 18
+
+
+## Where the cave's own rock should be in a natural cave: just behind the barracks' back wall (z -19), 2 to 8 m up.
+const BACK_XS := [-14.0, -9.0, -4.0, 1.0, 6.0, 11.0, 16.0]
+const BACK_ZS := [-20.5, -23.5]
+const BACK_YS := [2.0, 5.0, 8.0]
+const BACK_MISS := 0.6   ## how much each back sample that's open air counts against a spot
+const FRONT_COST := 8.0  ## and a way in that has to be dug out
+
+
+## How many of the back samples (BACK_XS x BACK_ZS x BACK_YS) are rock at this spot (the back set into the rock).
+static func back_rock(maker: CaveMaker, p: Vector3, basis: Basis) -> int:
+	var n := 0
+	for x in BACK_XS:
+		for z in BACK_ZS:
+			for y in BACK_YS:
+				if maker.sdf_at(p + basis * Vector3(x, y, z)) < 0.0:
+					n += 1
+	return n
+
+
+## The way in: 10 m in front of the grand stair's foot (z 15 to 25; the owner rule F350, like RuinSpire.door_is_open).
+## In a natural cave the yard is dug out to FRONT_DIG, so rock there only costs a little digging: 0 = open, level
+## ground already; 1 = rock or a bump to dig out; 2 = a drop (no spot for it).
+const FRONT_DIG := 25.5
+static func front_state(maker: CaveMaker, p: Vector3, basis: Basis) -> int:
+	var st := 0
+	for z in [17.0, 20.0, 23.5, 25.0]:
+		for x in [-3.0, 0.0, 3.0]:
+			var at: Vector3 = p + basis * Vector3(x, 0, z)
+			if maker.sdf_at(Vector3(at.x, p.y + 4.0, at.z)) <= 0.0:
+				st = 1
+				continue
+			var f := maker.find_floor(at.x, at.z, p.y + 4.0).y
+			if f < p.y - 1.5:
+				return 2
+			if f > p.y + 1.1:
+				st = 1
+	return st
+
+
 ## The spot (in the first few caverns) with the flattest floor under its buildings, no column or other ruin on any of
 ## its ground, the least rock in the way; its gate turned toward the way you come from if it fits that way (else
-## another way). Returns {room, pos, turn}.
+## another way). In a natural cave (layout 18 on) also: the cave's own rock behind the barracks (the more the better)
+## and the way in open. Returns {room, pos, turn}.
 static func pick(maker: CaveMaker, past_columns := false) -> Dictionary:
+	var nat := natural(maker)
 	var c0 := maker.cavern_spawn
 	var best := {}
 	var best_score := INF
 	var pts := ground()
-	for best_room in rooms_to_try(maker).slice(0, TRIES):
+	for best_room in rooms_to_try(maker).slice(0, TRIES_NATURAL if nat else TRIES):
 		var rc: Vector3 = maker.rooms[best_room].center
 		var cols := []  # (only the columns near this cavern: quick)
 		for o in maker._cols:
@@ -200,6 +251,14 @@ static func pick(maker: CaveMaker, past_columns := false) -> Dictionary:
 								if maker.sdf_at(Vector3(p.x, base, p.z) + o) < 0.0:
 									rock += 1
 					var score: float = (ys[-1] - ys[0]) * 4.0 + rock * 1.0 + Vector2(gx, gz).length() * 0.3 + [0, 5, 5, 10][k]
+					if nat and score < best_score:
+						var at := Vector3(p.x, base, p.z)
+						var front := front_state(maker, at, basis)
+						if front == 2:
+							continue  # a drop in front of the way in
+						score += front * FRONT_COST
+						var all_back: int = BACK_XS.size() * BACK_ZS.size() * BACK_YS.size()
+						score += (all_back - back_rock(maker, at, basis)) * BACK_MISS
 					if score < best_score:
 						best_score = score
 						best = {room = best_room, pos = Vector3(p.x, base, p.z), turn = turn}
@@ -322,7 +381,7 @@ func _ready() -> void:
 		_fix_f804()
 		set_process(false)
 		return
-	_carve = carve_points(origin, turn)
+	_carve = carve_points(origin, turn, not natural(auth.world.maker))
 
 
 ## A Twin Gate built before Nov 22 still has its two spiral stairs (F713/F626, owner: "avoid the spiral stairs, they're
@@ -542,14 +601,14 @@ func _swap(found: Dictionary, new: Array) -> int:
 
 ## Digs a box of its own frame (x0..x1, z0..z1, from y0 up to 4.5 m), never into its own rock. y0 1.5 digs down to
 ## 0.4 m (the yards: the ground stays); 0.9 down to the floor (where pieces stand on it).
-static func _dig_box(out: Array, at: Vector3, basis: Basis, x0: float, x1: float, z0: float, z1: float, y0 := 1.5) -> void:
+static func _dig_box(out: Array, at: Vector3, basis: Basis, x0: float, x1: float, z0: float, z1: float, y0 := 1.5, grown := true) -> void:
 	var y := y0
 	while y <= 4.5:
 		var x := x0
 		while x <= x1:
 			var z := z0
 			while z <= z1:
-				if y - CARVE_RADIUS >= rock_at(x, z) - 0.3 and dip_at(x, z) > -0.3:
+				if y - CARVE_RADIUS >= (rock_at(x, z) if grown else 0.0) - 0.3 and dip_at(x, z) > -0.3:
 					out.append(at + basis * Vector3(x, y, z))
 				z += 1.2
 			x += 1.2
@@ -558,7 +617,8 @@ static func _dig_box(out: Array, at: Vector3, basis: Basis, x0: float, x1: float
 
 ## What it digs (ordinary digs: saved and sent to friends), in world space: the blueprint's own air cells (only round
 ## the buildings; never into its rock), the yard in front, the ground where the right tower fell, and the moat.
-static func carve_points(at: Vector3, trn: int) -> Array:
+## grown = false in a natural cave (layout 18 on, see natural): no rock is grown, so none is kept back for it.
+static func carve_points(at: Vector3, trn: int, grown := true) -> Array:
 	var basis := Basis(Vector3.UP, trn * PI / 2.0)
 	var out := []
 	var bp := BlueprintLibrary.make(BLUEPRINT)
@@ -570,12 +630,12 @@ static func carve_points(at: Vector3, trn: int) -> Array:
 			for cx in sx:
 				if bp.air[i] == 1:
 					var c := Vector3(cx + 0.5 - sx * 0.5, cy + 0.5, cz + 0.5 - sz * 0.5)
-					if c.y >= 0.9 and c.y - CARVE_RADIUS >= rock_at(c.x, c.z) - 0.3:
+					if c.y >= 0.9 and c.y - CARVE_RADIUS >= (rock_at(c.x, c.z) if grown else 0.0) - 0.3:
 						out.append(at + basis * c)
 				i += 1
-	_dig_box(out, at, basis, -9.0, 13.0, 15.0, 22.5)   # the yard in front of the grand stair
-	_dig_box(out, at, basis, 13.0, 25.0, -2.0, 15.0, 0.9)   # where the right tower's outer half fell, and its buttresses' feet
-	_dig_box(out, at, basis, -12.0, 12.0, -5.0, 3.0)   # the drill yard: level ground (F714), the cave floor never pokes up
+	_dig_box(out, at, basis, -9.0, 13.0, 15.0, 22.5 if grown else FRONT_DIG, 1.5, grown)   # the yard in front of the grand stair (a natural cave: the way in, 10 m)
+	_dig_box(out, at, basis, 13.0, 25.0, -2.0, 15.0, 0.9, grown)   # where the right tower's outer half fell, and its buttresses' feet
+	_dig_box(out, at, basis, -12.0, 12.0, -5.0, 3.0, 1.5, grown)   # the drill yard: level ground (F714), the cave floor never pokes up
 	var x := -26.0
 	while x <= -8.0:  # the moat: from its floor up to 5 m
 		var z := -3.0
@@ -629,7 +689,7 @@ func _process(delta: float) -> void:
 		if auth.world.terrain.is_area_meshed(box) and auth.world.is_ready_at(box.get_center(), half):
 			_state = "carve"
 		return
-	if _state == "build" and _fill.is_empty() and not has_meta("filled"):
+	if _state == "build" and _fill.is_empty() and not has_meta("filled") and not natural(auth.world.maker):
 		_fill = _fill_points()
 		set_meta("filled", true)
 		print("RUIN_TWIN_GATE growing its rock: %d balls" % _fill.size())

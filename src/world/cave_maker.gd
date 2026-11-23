@@ -20,7 +20,7 @@ extends RefCounted
 ##   1 = the first caves: 400 m areas (Mossy x -200…200, Jungle x 220…620), squashed balls and tubes.
 ##   2 = real-shaped caves: 800 m areas (Mossy x -400…400, Jungle x 420…1220), about 4x the rooms,
 ##       passages and halls shaped the way water shapes real caves (see "layout 2" below).
-const LAYOUT_LATEST := 17
+const LAYOUT_LATEST := 18
 ## What brand-new worlds get. Layout 2: the real-shaped caves (F211 step 1, OK'd by the owner Nov 17). Layout 3: the
 ## same plus tall/wide/joined caverns and cliff exits with ledge paths (F230, F231). Old saves keep the layout they were
 ## made with; robots can try older caves with "-- layout=1" or "-- layout=2". Layout 4: the same plus a huge first
@@ -42,7 +42,9 @@ const LAYOUT_LATEST := 17
 ## Layout 15: the second dungeon too, Lampwick Drift (owner, Nov 20: F477), kept well clear of the first.
 ## Layout 16: the third, Old Pell's Diggings (owner, Nov 20: "start working on dung 3"), clear of both.
 ## Layout 17: the fourth, Mossprop Workings (owner, Nov 21: a timber prop tower to climb), clear of all three.
-const LAYOUT_DEFAULT := 17
+## Layout 18: the Twin Gate stands in a natural cave that fits it, its back in the cave's own rock wall; no rock is
+## grown round it (owner, Nov 23, F657: "use the caves that already exist"). See RuinTwinGate.natural.
+const LAYOUT_DEFAULT := 18
 ## The dungeon test world (owner, Nov 20: "do not build any caves at all, the way in should be a small cave like where
 ## you spawn"): one small cave with Mossgate Hold behind its wall, nothing else. A layout number of its own (higher
 ## than every real one, so every "layout 14 or later" rule holds), so saves, friends and the planning caches keep it

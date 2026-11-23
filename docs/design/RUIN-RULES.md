@@ -90,7 +90,12 @@ New lesson? Add it to the right section here **and** add a check that would have
 1. **Use a cave that's already there.** The world grows its caves as normal; the ruin then FINDS a natural cave big
    enough and carves only a little so it fits. Never grow a new cave round a fort and scatter placed rocks round it.
    (F657, said 2×; owner's choice Nov 23: find a cave that fits, Twin Gate first then every ruin, remove all the placed
-   rocks.) Still to build: the cave finder. Check to add: no placed rock lumps round a ruin.
+   rocks.) **Twin Gate done (layout 18, Nov 23):** `RuinTwinGate.pick` scores each spot also on the cave's own rock
+   just behind its back (`back_rock`) and a way in with no drop (`front_state`; the yard is dug out 10 m), and new
+   worlds grow no rock round it (`RuinTwinGate.natural`). Old worlds keep their grown rock (their ruin stands there).
+   A new cave rule = a new layout number, so built ruins never move. Still to do: the Prow Hall and every other ruin.
+   Check: `test_spot_keeps_clear_of_what_the_world_grows` (back in rock on 3 seeds, way in) and
+   `test_rebuild_the_twin_gate_in_stone` ("no placed rock lumps or wall round the Twin Gate").
 2. **Built into the cave, not on a flat floor:** use 3+ of: a back set into a rock wall, parts on different ground
    levels, a bridge over a dip, stairs cut into a slope, cave rock through a broken floor. Use the shapes the cave
    already has. (F657, GRAND-RUIN-RECIPE "Built into the cave".) Check: `test_cave_shape` (Twin Gate, Prow Hall).

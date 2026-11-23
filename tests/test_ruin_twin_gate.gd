@@ -158,6 +158,21 @@ func test_spot_keeps_clear_of_what_the_world_grows() -> void:
 			if c._in_column(at, 1.0) or not c.is_reserved(at):
 				bad += 1
 		check_eq(bad, 0, "seed %d: no column in the Twin Gate, all of its ground kept clear" % sd)
+		# F657 (owner, Nov 23: "use the caves that already exist"): a natural cave that fits, its back in the cave's own
+		# rock, the way in open, and only a little rock to dig out.
+		check(RuinTwinGate.natural(c), "seed %d: new worlds put it in a natural cave" % sd)
+		var all_back: int = RuinTwinGate.BACK_XS.size() * RuinTwinGate.BACK_ZS.size() * RuinTwinGate.BACK_YS.size()
+		var back := RuinTwinGate.back_rock(c, spot.pos, basis)
+		var dig := 0
+		var pts := RuinTwinGate.carve_points(spot.pos, spot.turn, false)
+		for p in pts:
+			if c.sdf_at(p) < 0.0:
+				dig += 1
+		print("TWIN_NATURAL seed %d: back rock %d of %d, %d of %d digs into rock, turn %d" % [sd, back, all_back, dig, pts.size(), spot.turn])
+		check(back * 2 >= all_back, "seed %d: its back is set into the cave's own rock (%d of %d)" % [sd, back, all_back])
+		var front := RuinTwinGate.front_state(c, spot.pos, basis)
+		print("TWIN_NATURAL seed %d: the way in is %s" % [sd, ["open", "dug out", "a drop"][front]])
+		check(front < 2, "seed %d: no drop in the 10 m in front of the grand stair (the yard is dug out that far)" % sd)
 		if sd == 42:  # (a new world takes a few seconds: once is enough)
 			check_eq(CaveMaker.new(sd).twin_gate_spot, spot, "seed %d: always the same spot" % sd)
 
@@ -219,10 +234,15 @@ func test_rebuild_the_twin_gate_in_stone() -> void:
 		return
 	var o := RuinTwinGate.built_origin
 	var basis := Basis(Vector3.UP, RuinTwinGate.built_turn * PI / 2.0)
-	# The cave's shape (F657): rock in the wall and the lumps, the moat dug, open air over the yard.
-	var l1: Vector3 = RuinTwinGate.LUMPS[0][0]
-	check(world.sdf_at(o + basis * Vector3(l1.x, l1.y - 1.0, l1.z)) < 0.0, "rock in the lump past the grand stair")
-	check(world.sdf_at(o + basis * Vector3(0.0, 4.0, -24.0)) < 0.0, "rock in the wall behind the barracks")
+	# The cave's shape (F657, owner Nov 23: "use the caves that already exist"): a new world grows no rock round it at
+	# all (no lumps, no wall), its back stands in the cave's own rock, the moat is dug, open air over the yard.
+	check(RuinTwinGate.natural(world.maker), "a new world puts it in a natural cave")
+	var job: RuinTwinGate = null
+	for n in auth.get_children():
+		if n is RuinTwinGate:
+			job = n
+	check(job != null and job._grown == 0 and not job.has_meta("filled"), "no placed rock lumps or wall round the Twin Gate")
+	check(world.sdf_at(o + basis * Vector3(0.0, 4.0, -24.0)) < 0.0, "the cave's own rock behind the barracks")
 	check(world.sdf_at(o + basis * Vector3(-22.0, -1.5, 8.0)) > 0.0, "the moat is dug beside the left tower")
 	check(world.sdf_at(o + basis * Vector3(0.0, 2.5, 19.0)) > 0.0, "an open yard in front of the grand stair")
 	# F714: the courtyards are level: no rock lump in the front yard, nothing poking up in the drill yard.
@@ -354,8 +374,7 @@ func test_rebuild_the_twin_gate_in_stone() -> void:
 	check(not b.sites.has(box), "the rebuilding finished (%s)" % b.site_status(box))
 	var known: Array = auth.world_state.get("blueprints", [])
 	check(known.has("wooden_twin_gate") and known.has("stonehold_twin_gate"), "rebuilt in stone: you learn both blueprints")
-	check(world.sdf_at(o + basis * Vector3(0.0, 4.0, -24.0)) < 0.0, "the rock wall is still there after rebuilding")
-	check(world.sdf_at(o + basis * Vector3(l1.x, l1.y - 1.0, l1.z)) < 0.0, "and the lump")
+	check(world.sdf_at(o + basis * Vector3(0.0, 4.0, -24.0)) < 0.0, "the cave's rock behind it is still there after rebuilding")
 	# The placement rule: every piece of the rebuilt gate stands on ground the world keeps clear.
 	var outside := 0
 	for uid in b.structure.pieces:
