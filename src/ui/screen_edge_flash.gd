@@ -19,6 +19,8 @@ extends ColorRect
 ## the screen, and the round ones splat, fade and splat again.
 ## Round 5: frost = frozen-lake ice, solid in the corners with white cracks and milky crust, creeping to the
 ## middle (no more snowflakes); blood splats built in layers (lumpy pool, uneven spikes, flung drops, mist).
+## Round 6: many more ice cracks, a jagged broken-ice front with cracks shooting out; long blood slashes
+## across one or two random corners (new corners each time your health drops low again).
 
 const HIT_COLOR := Color(0.85, 0.08, 0.05)
 const HIT_FADE := 0.4  ## seconds a hit flash takes to fade back to nothing
@@ -40,6 +42,7 @@ var _shown_kind := ""  ## the look on screen right now (still fading out after t
 var _fade := 0.0  ## 0 = gone, 1 = fully grown in
 var _low_target := 0.0  ## how strong the low-health screen should be (0..1)
 var _low := 0.0  ## how strong it is right now
+var _blood_seed := 0.0  ## picks which corners get the long blood slashes
 var _mat: ShaderMaterial
 
 
@@ -74,6 +77,8 @@ func set_health(share: float) -> void:
 
 
 func _process(delta: float) -> void:
+	if _low <= 0.0 and _low_target > 0.0:
+		_blood_seed = randf_range(0.0, 100.0)  # new corners each time you drop low again
 	_low = move_toward(_low, _low_target, delta * LOW_SPEED)
 	if _hit_strength > 0.0:
 		_hit_strength = maxf(0.0, _hit_strength - delta * HIT_MAX / HIT_FADE)
@@ -90,3 +95,4 @@ func _process(delta: float) -> void:
 	_mat.set_shader_parameter("status_fade", _fade)
 	_mat.set_shader_parameter("status_level", _status_level)
 	_mat.set_shader_parameter("low_health", _low)
+	_mat.set_shader_parameter("blood_seed", _blood_seed)

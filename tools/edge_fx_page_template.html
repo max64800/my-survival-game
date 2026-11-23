@@ -108,13 +108,13 @@ varying vec2 vUv;
 uniform vec2 res; uniform float time;
 uniform vec4 hit_color; uniform float hit_strength;
 uniform int status_mode; uniform float status_fade; uniform float status_level;
-uniform float low_health;
+uniform float low_health; uniform float blood_seed;
 /*EDGE_FX*/
 void main(){ gl_FragColor = edge_fx(vec2(vUv.x, 1.0 - vUv.y), res.x / res.y, time); }`;
   const U = {
     res: { value: new THREE.Vector2(16, 9) }, time: { value: 0 },
     hit_color: { value: new THREE.Vector4(0.85, 0.08, 0.05, 1) }, hit_strength: { value: 0 },
-    status_mode: { value: 0 }, low_health: { value: 0 }, status_fade: { value: 0 }, status_level: { value: 0 },
+    status_mode: { value: 0 }, low_health: { value: 0 }, blood_seed: { value: Math.random() * 100 }, status_fade: { value: 0 }, status_level: { value: 0 },
   };
   const overlay = new THREE.Scene();
   const ocam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -180,6 +180,7 @@ void main(){ gl_FragColor = edge_fx(vec2(vUv.x, 1.0 - vUv.y), res.x / res.y, tim
     if (want !== '' && want === shown) fade = Math.min(1, fade + dt / (shown === 'chill' ? FROST_IN : FADE_IN));
     else if (fade > 0) fade = Math.max(0, fade - dt / FADE_OUT);
     else shown = want;
+    if (low <= 0 && lowT > 0) U.blood_seed.value = Math.random() * 100;
     low += Math.max(-dt * 1.5, Math.min(dt * 1.5, lowT - low)); U.low_health.value = low;
     U.status_mode.value = MODES[shown] || 0; U.status_fade.value = fade; U.status_level.value = level; U.hit_strength.value = hit;
     lamp.intensity = 2.1 + Math.sin(U.time.value * 7) * 0.08;
