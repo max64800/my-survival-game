@@ -106,8 +106,82 @@ func _apply_swing(t: float) -> void:
 	var xf := Transform3D(Basis(Vector3.UP, -t * PI / 2.0), Vector3.ZERO)
 	xf = Transform3D(Basis(), hinge) * xf * Transform3D(Basis(), -hinge)
 	for c in get_children():
-		if c is MeshInstance3D or c is CollisionShape3D:
+		if c is MeshInstance3D:
 			(c as Node3D).transform = xf
+		elif c is CollisionShape3D:
+			(c as Node3D).transform = xf
+
+
+## F810 (owner, Nov 23: "the side with the ring must always face outwards"): a double gate's right leaf is the left
+## one turned round (so it hinges at the outer edge), which put its ring on the inside. Its look is mirrored front to
+## back (the hinge side stays), so both rings face the gateway's front. The builder sets it (Builder._flip_gate_leaves).
+var look_flipped := false
+
+
+func set_look_flipped(f: bool) -> void:
+	if f == look_flipped:
+		return
+	look_flipped = f
+	# F813 (owner, Nov 23: "one of them is a lot darker"): mirroring with a -1 scale turned the leaf's light inside
+	# out (it drew dark). Now its mesh is swapped for a real mirrored copy (front to back), lit like the other leaf.
+	for c in get_children():
+		if c is MeshInstance3D and (c as MeshInstance3D).mesh:
+			var mi := c as MeshInstance3D
+			if not mi.has_meta("plain_mesh"):
+				mi.set_meta("plain_mesh", mi.mesh)
+			var plain: Mesh = mi.get_meta("plain_mesh")
+			mi.mesh = mirrored_z(plain) if f else plain
+
+
+static var _mirrored := {}
+
+
+## A copy of `mesh` mirrored front to back (z -> -z), with its normals, tangents and triangle order fixed so it
+## lights like the original. Made once per mesh.
+static func mirrored_z(mesh: Mesh) -> ArrayMesh:
+	if _mirrored.has(mesh):
+		return _mirrored[mesh]
+	var out := ArrayMesh.new()
+	for si in mesh.get_surface_count():
+		var a := mesh.surface_get_arrays(si)
+		var v: PackedVector3Array = a[Mesh.ARRAY_VERTEX]
+		for i in v.size():
+			v[i].z = -v[i].z
+		a[Mesh.ARRAY_VERTEX] = v
+		if a[Mesh.ARRAY_NORMAL] != null:
+			var n: PackedVector3Array = a[Mesh.ARRAY_NORMAL]
+			for i in n.size():
+				n[i].z = -n[i].z
+			a[Mesh.ARRAY_NORMAL] = n
+		if a[Mesh.ARRAY_TANGENT] != null:
+			var t: PackedFloat32Array = a[Mesh.ARRAY_TANGENT]
+			for i in range(0, t.size(), 4):
+				t[i + 2] = -t[i + 2]
+				t[i + 3] = -t[i + 3]   # (mirroring flips its handedness)
+			a[Mesh.ARRAY_TANGENT] = t
+		if a[Mesh.ARRAY_INDEX] != null:
+			var idx: PackedInt32Array = a[Mesh.ARRAY_INDEX]
+			for i in range(0, idx.size() - 2, 3):
+				var k := idx[i + 1]
+				idx[i + 1] = idx[i + 2]
+				idx[i + 2] = k
+			a[Mesh.ARRAY_INDEX] = idx
+		else:   # (no index list: swap the vertices of each triangle instead)
+			for key in a.size():
+				if a[key] == null or key == Mesh.ARRAY_INDEX:
+					continue
+				var arr = a[key]
+				var per: int = arr.size() / v.size() if v.size() > 0 else 1
+				for i in range(0, v.size() - 2, 3):
+					for j in per:
+						var x = arr[(i + 1) * per + j]
+						arr[(i + 1) * per + j] = arr[(i + 2) * per + j]
+						arr[(i + 2) * per + j] = x
+				a[key] = arr
+		out.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, a)
+		out.surface_set_material(out.get_surface_count() - 1, mesh.surface_get_material(si))
+	_mirrored[mesh] = out
+	return out
 
 
 func set_ghost_ok(ok: bool) -> void:
@@ -203,6 +277,9 @@ func rebuild(p_piece: String, p_family: String) -> void:
 	for c in get_children():
 		c.queue_free()
 	_build()
+	if look_flipped:   # (F813: the new look is mirrored again)
+		look_flipped = false
+		set_look_flipped(true)
 
 
 ## F780: spiral stairs with another flight on top swap to their "stacked" model (no landing rail across the way
@@ -477,10 +554,19 @@ static func _top_in_slab(t: Array, x0: float, x1: float) -> float:
 func _ramp_shape(s: Vector3) -> void:
 	var cs := CollisionShape3D.new()
 	if piece == "stairs_corner":
-		# Corner stairs can't be one smooth slope: they collide as their real steps (code shape), and the
-		# dwarf's step-up (0.5 m) climbs them 25 cm at a time.
-		cs.shape = PieceMesh.solid(piece).create_trimesh_shape()
+		# F781 🔁 (owner, Nov 23: still jitters walking up): as their real 25 cm steps, every step was a bump, a stop
+		# and a 25 cm pop. Now they're one smooth bent sheet that climbs evenly round the post (like the spiral
+		# stairs), plus the post. It's steep (about 55 degrees halfway out, 70 near the post), so the dwarf counts
+		# stairs as ground up to Dwarf.STAIRS_FLOOR_ANGLE while he's on them.
+		cs.shape = corner_slope(s, lip)
+		_slope = cs
 		add_child(cs)
+		var post := CollisionShape3D.new()
+		var bx := BoxShape3D.new()
+		bx.size = Vector3(0.3, s.y, 0.3)
+		post.shape = bx
+		post.position = Vector3(-s.x * 0.5 + 0.16, s.y * 0.5, s.z * 0.5 - 0.16)
+		add_child(post)
 		return
 	if piece == "stairs_spiral":
 		# F716: a smooth spiral slope of slanted treads, the post, the landing (and its pillar), the outside
@@ -538,14 +624,80 @@ func _ramp_shape(s: Vector3) -> void:
 		Vector3(-hx, 0, hz), Vector3(hx, 0, hz), Vector3(-hx, 0, -hz), Vector3(hx, 0, -hz),
 		Vector3(-hx, s.y, -hz), Vector3(hx, s.y, -hz)])
 	if piece == "stairs":
-		# A slanted slab you walk up, open underneath so you can walk under the stairs (owner, Nov 16).
-		var t := PieceMesh.STAIRS_UNDER  # how thick the slab is, straight down (F169: like the open models)
-		var zt := hz - t * (2.0 * hz / s.y)  # where its underside meets the floor
-		sh.points = PackedVector3Array([
-			Vector3(-hx, 0, hz), Vector3(hx, 0, hz), Vector3(-hx, 0, zt), Vector3(hx, 0, zt),
-			Vector3(-hx, s.y, -hz), Vector3(hx, s.y, -hz), Vector3(-hx, s.y - t, -hz), Vector3(hx, s.y - t, -hz)])
+		sh = stairs_slope(s, lip)
+		_slope = cs
 	cs.shape = sh
 	add_child(cs)
+
+
+## The corner stairs' walking surface: from the foot (+z side, at the floor) it climbs evenly with the angle round
+## the post at the turn up to its top step, which then rises LIP more with `p_lip` (to the next floor's top; you can
+## step off it on its -x side or at its -z end). Open underneath.
+static func corner_slope(s: Vector3, p_lip: bool) -> ConcavePolygonShape3D:
+	var hx := s.x * 0.5
+	var hz := s.z * 0.5
+	var h := s.y + (LIP if p_lip else 0.0)
+	var c := Vector2(-hx, hz)   # the turn (where the post stands)
+	var far := atan2(2.0 * hz, 2.0 * hx)   # the back-right corner's angle
+	var top_a := PI * 0.5 * 7.0 / 8.0   # where the top step (of 8) starts
+	var angles := []
+	var n := 24
+	for k in n + 1:
+		var a := PI * 0.5 * k / n
+		if not angles.is_empty() and angles[-1] < far - 0.0001 and a > far + 0.0001:
+			angles.append(far)
+		angles.append(a)
+	var ring := func(a: float, out: bool) -> Vector3:
+		var e := PieceMesh._square_exit(c, a, hx, hz)
+		var q := e if out else c + (e - c).normalized() * 0.3   # (inside 0.3 m is the post)
+		# up to the top step's height at the top step's start (like the real steps), then over the top step up the lip
+		var y := s.y * minf(a / top_a, 1.0) + (h - s.y) * maxf(0.0, (a - top_a) / (PI * 0.5 - top_a))
+		return Vector3(q.x, y, q.y)
+	var faces := PackedVector3Array()
+	for k in angles.size() - 1:
+		var i0: Vector3 = ring.call(angles[k], false)
+		var o0: Vector3 = ring.call(angles[k], true)
+		var i1: Vector3 = ring.call(angles[k + 1], false)
+		var o1: Vector3 = ring.call(angles[k + 1], true)
+		faces.append_array([i0, o0, o1, i0, o1, i1])
+	var sh := ConcavePolygonShape3D.new()
+	sh.backface_collision = true
+	sh.set_faces(faces)
+	return sh
+
+
+## A straight stairs' solid shape: a slanted slab you walk up, open underneath so you can walk under the stairs
+## (owner, Nov 16). `lip`: it climbs LIP higher than its steps, to the top of the next floor's slab (F803).
+static func stairs_slope(s: Vector3, p_lip: bool) -> ConvexPolygonShape3D:
+	var hx := s.x * 0.5
+	var hz := s.z * 0.5
+	var h := s.y + (LIP if p_lip else 0.0)
+	var t := PieceMesh.STAIRS_UNDER  # how thick the slab is, straight down (F169: like the open models)
+	var zt := hz - t * (2.0 * hz / h)  # where its underside meets the floor
+	var sh := ConvexPolygonShape3D.new()
+	sh.points = PackedVector3Array([
+		Vector3(-hx, 0, hz), Vector3(hx, 0, hz), Vector3(-hx, 0, zt), Vector3(hx, 0, zt),
+		Vector3(-hx, h, -hz), Vector3(hx, h, -hz), Vector3(-hx, h - t, -hz), Vector3(hx, h - t, -hz)])
+	return sh
+
+
+## F803 (owner, Nov 23: going down "feels like jumping"): the next floor's slab usually sits 25 cm above a straight
+## stairs' top step (floors are 2.25 m apart, stairs 2 m). Walking down, the dwarf's round feet rolled off that
+## edge, lost the floor and fell in an arc over the whole flight (40 frames in the air). Where such a slab is
+## (Builder._relip_stairs sets `lip`), the solid slope climbs those 25 cm too (48 degrees, still walkable) and
+## meets the slab's top: no edge left. (The steps' look stays; the feet ride at most 25 cm over the top step.)
+const LIP := 0.25
+var lip := false
+var _slope: CollisionShape3D
+
+
+func set_lip(on: bool) -> void:
+	if on == lip:
+		return
+	lip = on
+	if _slope and is_instance_valid(_slope):
+		var sz: Vector3 = Pieces.LIST[piece].size
+		_slope.shape = corner_slope(sz, lip) if piece == "stairs_corner" else stairs_slope(sz, lip)
 
 
 static func _mat(fam: String) -> Material:

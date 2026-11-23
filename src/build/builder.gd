@@ -263,8 +263,23 @@ func request_door(peer_id: int, uid: int) -> bool:
 	if p.piece == "gate_leaf":
 		var partner := _find_gate_partner(uid, p)
 		if partner != -1:
-			_ev_door.rpc(partner, open_to)
+			_ev_door.rpc(partner, -open_to)  # F810: it is turned round, so "its back" is the other way: both swing alike
 	return true
+
+
+## F810: every gate leaf near `at` turned round against the gateway it hangs in shows its look mirrored, so its
+## ring faces the same way as the gateway's front (PieceNode.look_flipped). Runs on every screen.
+func _flip_gate_leaves(at: Vector3) -> void:
+	for uid in structure.near(AABB(at - Vector3(3, 2, 3), Vector3(6, 4, 6))):
+		var p: Dictionary = structure.pieces[uid]
+		if p.piece != "gate_leaf" or not nodes.has(uid):
+			continue
+		var flip := false
+		for g in structure.near(AABB(p.pos - Vector3(2.2, 0.5, 2.2), Vector3(4.4, 1, 4.4))):
+			var q: Dictionary = structure.pieces[g]
+			if q.piece == "gateway" and absf(q.pos.y - p.pos.y) < 0.3 					and absf(absf(angle_difference(Pieces.yaw_of(p.rot), Pieces.yaw_of(q.rot))) - PI) < 0.1:
+				flip = true
+		(nodes[uid] as PieceNode).set_look_flipped(flip)
 
 
 ## Partner leaf of a double gate: same piece, complementary rotation (differ by 2), same height, ~1 leaf-width apart.
@@ -367,6 +382,10 @@ func _ev_add_piece(uid: int, piece: String, family: String, pos: Vector3, rot: i
 		_recap_spirals(pos)
 	if piece == "ladder":
 		ladders[uid] = true
+	if piece == "gate_leaf" or piece == "gateway":
+		_flip_gate_leaves(pos)
+	if piece in ["stairs", "stairs_corner"] or Pieces.LIST[piece].get("place", "") == "cell":
+		_relip_stairs(pos)
 	_next_uid = maxi(_next_uid, uid + 1)
 	if auth.is_host() and not batch:
 		structure.settle_added(uid)  # (F565: a new piece only makes things steadier: no whole-world check)
@@ -402,6 +421,8 @@ func _ev_remove_piece(uid: int) -> void:
 		n.queue_free()
 	if not p.is_empty() and p.piece == "stairs_spiral":
 		_recap_spirals(p.pos)
+	if not p.is_empty() and Pieces.LIST[p.piece].get("place", "") == "cell":
+		_relip_stairs(p.pos)
 	if auth.is_host() and not p.is_empty():
 		if not batch:
 			_queue_shaky()  # (in a batch: once, at end_batch)
@@ -1672,6 +1693,26 @@ func _recap_spirals(pos: Vector3) -> void:
 			var p: Dictionary = structure.pieces[me]
 			var up := _spiral_at(p.pos + Vector3(0, 2, 0))
 			(nodes[me] as PieceNode).set_capped(up >= 0 and structure.pieces[up].rot == p.rot)
+
+
+## F803: every straight or corner stairs near `at` whose top end meets a floor or foundation 25 cm above its top step gets
+## a slope that climbs those 25 cm too (PieceNode.lip), so walking down doesn't roll off that edge.
+func _relip_stairs(at: Vector3) -> void:
+	for uid in structure.near(AABB(at - Vector3(3.5, 3.5, 3.5), Vector3(7, 7, 7))):
+		var p: Dictionary = structure.pieces[uid]
+		if not p.piece in ["stairs", "stairs_corner"] or not nodes.has(uid):
+			continue
+		var s: Vector3 = Pieces.LIST[p.piece].size
+		var out := Vector3(-s.x * 0.5 - 0.15, 0, 0) if p.piece == "stairs_corner" else Vector3(0, 0, -s.z * 0.5 - 0.15)
+		var past: Vector3 = p.pos + Basis(Vector3.UP, Pieces.yaw_of(p.rot)) * (out + Vector3(0, s.y + PieceNode.LIP * 0.5, 0))
+		var on := false
+		for q in structure.near(AABB(past - Vector3(0.05, 0.05, 0.05), Vector3(0.1, 0.1, 0.1))):
+			var o: Dictionary = structure.pieces[q]
+			var top: float = o.pos.y + Pieces.LIST[o.piece].size.y
+			if o.piece in ["floor", "foundation", "floor_half", "floor_triangle", "floor_hatch"] \
+					and absf(top - (p.pos.y + s.y + PieceNode.LIP)) < 0.03 and Pieces.box(o.piece, o.pos, o.rot).has_point(past):
+				on = true
+		(nodes[uid] as PieceNode).set_lip(on)
 
 
 func _spiral_at(pos: Vector3) -> int:

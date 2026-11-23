@@ -37,14 +37,32 @@ class Walker extends CharacterBody3D:
 		var dir := to.normalized()
 		velocity.x = dir.x * 4.0  # Dwarf.WALK_SPEED
 		velocity.z = dir.z * 4.0
-		if not is_on_floor():
+		var was := is_on_floor() or stepped_down
+		if not was:
 			velocity.y -= gravity * delta
 		var before := global_position
+		floor_max_angle = deg_to_rad(Dwarf.STAIRS_FLOOR_ANGLE if on_stairs else 52.0)  # (= Dwarf)
 		move_and_slide()
+		on_stairs = Dwarf.on_steep_stairs(self)
+		stepped_down = was and not is_on_floor() and velocity.y <= 0.01 and _try_step_down()
 		if is_on_floor() and is_on_wall():
 			_try_step_up(dir * 4.0 * delta)
 		max_y = maxf(max_y, global_position.y)
 		stuck_time = stuck_time + delta if global_position.distance_to(before) < 0.01 else 0.0
+
+	var stepped_down := false
+	var on_stairs := false
+
+	## Same as Dwarf._try_step_down (F803).
+	func _try_step_down() -> bool:
+		var hit := KinematicCollision3D.new()
+		if not test_move(global_transform, Vector3.DOWN * Dwarf.STEP_DOWN, hit):
+			return false
+		if hit.get_normal().angle_to(Vector3.UP) > deg_to_rad(Dwarf.step_down_steepest(hit.get_collider())):
+			return false
+		global_position += hit.get_travel()
+		velocity.y = 0.0
+		return true
 
 	## Same as Dwarf._try_step_up.
 	func _try_step_up(motion: Vector3) -> void:

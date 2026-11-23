@@ -327,7 +327,7 @@ func _physics_process(delta: float) -> void:
 		held_left -= delta
 		speed = 0.0
 		_jump_wanted = 0.0
-	var on_floor := is_on_floor()
+	var on_floor := _grounded()
 	if on_floor:
 		_jump_air_expected = 0.0  # (F807: only a real jump gets a stretched animation, not a step off a ledge)
 	dir = _sprint_turn(dir, sprint_k, delta)  # (the dodge above already took the real key direction, F702)
@@ -386,7 +386,10 @@ func _physics_process(delta: float) -> void:
 	if shoved:
 		velocity.x += _shove.x
 		velocity.z += _shove.z
+	floor_max_angle = deg_to_rad(STAIRS_FLOOR_ANGLE if _on_stairs else 52.0)
 	move_and_slide()
+	_on_stairs = on_steep_stairs(self)
+	_stepped_down = on_floor and not is_on_floor() and velocity.y <= 0.01 and not ladder and _try_step_down()
 	if shoved:  # (only for this step: added every frame and kept, it piled up and threw you 100 m, F234)
 		velocity.x -= _shove.x
 		velocity.z -= _shove.z
@@ -416,7 +419,7 @@ func _physics_process(delta: float) -> void:
 			model.rotation.y = lerp_angle(model.rotation.y, want, minf(1.0, delta * 12.0))
 
 	_footsteps(delta, Vector2(velocity.x, velocity.z).length())
-	model.set_motion(Vector2(velocity.x, velocity.z).length(), is_on_floor(), fight != null and fight.dodging(), fight.dodge_expected_duration() if fight else Combat.DODGE_TIME, _jump_air_expected)
+	model.set_motion(Vector2(velocity.x, velocity.z).length(), _grounded(), fight != null and fight.dodging(), fight.dodge_expected_duration() if fight else Combat.DODGE_TIME, _jump_air_expected)
 	if playing and Input.is_action_pressed("dig") and not model.swinging and not _holding_hammer() and not fight.weapon_mode() and _can_swing():
 		var ps_here: GameAuthority.PlayerState = GameAuthority.instance.get_player(peer_id) if GameAuthority.instance else null
 		model.swing(SWING_TIME * (ps_here.progress.dig_swing_mult(Items.kind(ps_here.selected_item()) == "axe") if ps_here else 1.0))  # Mining / Woodcutting ★25
@@ -776,6 +779,58 @@ func _try_step_up(motion: Vector3) -> void:
 	_step_dy = clampf(_step_dy - (global_position.y - y0), -STEP_HEIGHT, 0.0)  # F781: the body pops up, the look glides
 
 
+## F803 (owner, Nov 23: going down the stairs "feels like jumping instead of walking down"): walking off the edge
+## of a step, or down a slope steeper than you can stand on (the middle of corner stairs is ~55 degrees), the dwarf
+## lost the floor and fell in an arc. Now, when he was standing, isn't jumping and the ground is at most STEP_DOWN
+## below, he keeps his feet on it, like walking down steps. (A real drop, deeper than that, is still a fall.)
+const STEP_DOWN := 0.75
+const STEP_DOWN_STEEPEST := 65.0  ## degrees: steeper than this below you is a wall, not ground
+const STEP_DOWN_STEEPEST_STAIRS := 80.0  ## (near the post of corner stairs they're about 70 degrees)
+
+
+## F781 🔁: corner stairs are one smooth slope, steeper than ground you can stand on (52 degrees). While touching
+## stairs, the dwarf counts up to this as ground: he walks up and down them smoothly instead of popping up steps.
+const STAIRS_FLOOR_ANGLE := 78.0
+var _on_stairs := false
+
+
+## Is `body` touching a stairs piece (after its move_and_slide)?
+static func on_steep_stairs(body: CharacterBody3D) -> bool:
+	for i in body.get_slide_collision_count():
+		if step_down_steepest(body.get_slide_collision(i).get_collider()) == STEP_DOWN_STEEPEST_STAIRS:
+			return true
+	return false
+
+
+## How steep the ground under `what` may be and you still keep your feet on it going down.
+static func step_down_steepest(what: Object) -> float:
+	var n := what as Node
+	while n and not n is PieceNode:
+		n = n.get_parent()
+	if n and (n as PieceNode).piece in ["stairs", "stairs_corner", "stairs_spiral"]:
+		return STEP_DOWN_STEEPEST_STAIRS
+	return STEP_DOWN_STEEPEST
+var _stepped_down := false
+
+
+func _try_step_down() -> bool:
+	var hit := KinematicCollision3D.new()
+	if not test_move(global_transform, Vector3.DOWN * STEP_DOWN, hit):
+		return false
+	if hit.get_normal().angle_to(Vector3.UP) > deg_to_rad(step_down_steepest(hit.get_collider())):
+		return false
+	global_position += hit.get_travel()
+	velocity.y = 0.0
+	if hit.get_travel().y < -0.2:   # a real step down (not just following a slope): the look glides down after
+		_step_dy = clampf(_step_dy - hit.get_travel().y, 0.0, STEP_DOWN)
+	return true
+
+
+## Standing on the ground, or keeping his feet on steps going down (F803).
+func _grounded() -> bool:
+	return is_on_floor() or _stepped_down
+
+
 ## F781 (owner, Nov 22: "very jittery"): a step-up lifts the body in one go; the model starts this far below it
 ## and glides up (about a tenth of a second), so you see a smooth climb, not a hop.
 var _step_dy := 0.0
@@ -792,7 +847,7 @@ func _footsteps(delta: float, speed: float) -> void:
 	var counted := rig.steps if rig else 0
 	var new_step := counted != _steps_heard
 	_steps_heard = counted
-	if not is_on_floor() or speed < 1.0:
+	if not _grounded() or speed < 1.0:
 		_step_t = 0.0
 		return
 	if rig:

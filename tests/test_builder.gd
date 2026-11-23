@@ -350,6 +350,35 @@ func test_doors_open_and_ladders_climb() -> void:
 	auth.builder._ev_door(500, 0)
 	auth.builder.load_snapshot({pieces = [[503, "door", "plank_root", pos + Vector3(0, 0, 8), 0, true, true]]})
 	check_eq(auth.builder.structure.pieces[503].open, 1, "an old save's open door (true) still opens")
+	# F810: a double gate (the right leaf is the left one turned round): both leaves swing to the same side, and the
+	# turned-round leaf's look is mirrored so both rings face the gateway's front.
+	var g := pos + Vector3(0, 0, -10)
+	auth.builder._ev_add_piece(510, "gateway", "cut_stone", g, 0, true)
+	auth.builder._ev_add_piece(511, "gate_leaf", "cut_stone", g + Vector3(-0.8, 0, 0), 0, true)
+	auth.builder._ev_add_piece(512, "gate_leaf", "cut_stone", g + Vector3(0.8, 0, 0), 2, true)
+	check(not auth.builder.nodes[511].look_flipped and auth.builder.nodes[512].look_flipped, "only the turned-round leaf is mirrored")
+	# F813: mirrored as a real mirrored copy of its shape, not a -1 scale (that turned its light inside out: dark)
+	var m512: MeshInstance3D = auth.builder.nodes[512]._look
+	check(m512.transform.basis.determinant() > 0.0 and m512.mesh != auth.builder.nodes[511]._look.mesh,
+			"the mirrored leaf has its own mirrored shape, never a -1 scale (F813)")
+	player.global_position = g + Vector3(-0.8, 0, 1.5)  # in front of the gate
+	auth.builder.request_door(1, 511)
+	var swing := func(uid: int) -> float:   # which way (world z) the leaf's far edge moved
+		var n: PieceNode = auth.builder.nodes[uid]
+		n._apply_swing(float(auth.builder.structure.pieces[uid].open))
+		var mi: MeshInstance3D = n._look
+		return (n.global_basis * (mi.transform * Vector3(Pieces.LIST["gate_leaf"].size.x * 0.5, 0, 0) - Vector3(Pieces.LIST["gate_leaf"].size.x * 0.5, 0, 0))).z
+	check(swing.call(511) < -0.5 and swing.call(512) < -0.5, "both leaves swing away from you, the same way (%.2f, %.2f)" % [swing.call(511), swing.call(512)])
+	auth.builder.request_door(1, 511)
+	# F803: a straight stairs whose top meets a floor 25 cm higher gets the taller slope (no edge to roll off going
+	# down); taking that floor away puts the plain slope back.
+	var st := pos + Vector3(10, 0, -10)
+	auth.builder._ev_add_piece(520, "stairs", "cut_stone", st, 0, true)
+	check(not auth.builder.nodes[520].lip, "stairs alone: plain slope")
+	auth.builder._ev_add_piece(521, "floor", "cut_stone", st + Vector3(0, 2.0, -2), 0, true)
+	check(auth.builder.nodes[520].lip, "a floor 25 cm above its top: the slope climbs to it")
+	auth.builder._ev_remove_piece(521)
+	check(not auth.builder.nodes[520].lip, "floor gone: plain slope again")
 	player.global_position = pos - Vector3(1, 0, 0)
 	auth.builder._ev_add_piece(501, "wall", "plank_root", pos + Vector3(4, 0, 0), 0, true)
 	check(not auth.builder.request_door(1, 501), "walls don't open")
