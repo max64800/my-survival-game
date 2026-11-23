@@ -40,3 +40,18 @@ common/max_physics_steps_per_frame=3
 
 threads/count/minimum=3
 threads/count/ratio_over_max=0.2
+
+[shader_globals]
+
+see_target={
+"type": "vec3",
+"value": Vector3(0, 0, 0)
+}
+see_cam={
+"type": "vec3",
+"value": Vector3(0, 0, 0)
+}
+see_shape={
+"type": "vec3",
+"value": Vector3(0.95, 0.3, 0.75)
+}

@@ -15,6 +15,9 @@ We learn the *ways of building* from the best player builds in other games (the 
 timber-and-stone halls, castles, a tall tiered tower). We never copy a build, a name or a look: the shapes come from
 our own dwarf world and our own piece kit.
 
+**Every lesson from the ruins built so far (stairs, railings, doors, caves, rebuilds) is in
+`docs/design/RUIN-RULES.md`. Read it first.**
+
 ## What the great builds do (and our simple ones don't)
 
 1. **Many volumes, not one box.** A main hall, wings, a tower, a gatehouse, a lean-to: each its own block with its own
@@ -81,7 +84,7 @@ Every new piece: Blender by script in the style (MODEL-RULES.md), a game piece w
 - [ ] The dwarf can walk everywhere (owner, Nov 22, F626): balconies and galleries are whole floor tiles (no half
       or small floors), spiral stairs need a tower of 4×4 cells or more and go in and out onto open floor (never
       a wall or a railing), no roof cap. Add a test like `test_hearth_manor_stairs_lead_onto_floor`.
-- [ ] Every lesson in `docs/design/WALK-THROUGH-RULES.md` (doors with room on both sides, nothing across a stair's
+- [ ] Every rule in `docs/design/RUIN-RULES.md`, and every lesson in `docs/design/WALK-THROUGH-RULES.md` (doors with room on both sides, nothing across a stair's
       way out, corner stairs come out sideways). `test_walk_through` must pass.
 - [ ] Cost: a showpiece is big. Show the price on the page; the owner decides if it is too much.
 - [ ] Page from `tools/ruins/kiln_page.html` (ruin / wood / original, "Mark new pieces", roof and upper floor on/off,
@@ -117,8 +120,9 @@ You can amplify this." So no ruin stands alone on a flat carved floor any more. 
 3. **A bridge or walkway over a dip or a gap** in the cave floor.
 4. **Stairs cut into a slope** between levels, rock on one side.
 5. **Rock that "grew" back:** a pillar of cave rock through a broken floor, the cave ceiling low over a back room.
-The cave shape is made by the world (carving + rock), not by building pieces: shape the ground round the ruin's
-plan (ledges, lumps, dips, rock walls), then place the pieces. The placement rule still holds: nothing the world
+The cave shape is made by the world, not by building pieces. **Owner, Nov 23: use a cave that's already there.**
+The world grows its caves as normal; the ruin finds a natural cave that fits its plan and carves only a little.
+Never grow a cave round the fort or place extra rock lumps round it (Twin Gate first, then every ruin). The placement rule still holds: nothing the world
 grows (columns, crystals, plants) stands inside the ruin or on its paths. Show the cave shape on the 3D page.
 Checklist add: **3+ of the 5 above, and the cave rock visible on the page.**
 

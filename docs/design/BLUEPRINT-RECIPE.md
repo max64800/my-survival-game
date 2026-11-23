@@ -35,7 +35,7 @@ The Delver's Hut (`BlueprintLibrary._delvers_hut`) is the example to copy.
    inside the box, that nothing overlaps, and that everything stands up. Add a check for what makes this one
    special.
    Also run `only=test_walk_through` and follow `docs/design/WALK-THROUGH-RULES.md` (owner, Nov 23: doors need room
-   on both sides, nothing across a stair's way in or out).
+   on both sides, nothing across a stair's way in or out). For a ruin, also follow `docs/design/RUIN-RULES.md`.
 4. **Check the cost and look at it:**
    - `godot --headless --audio-driver Dummy --path . -s res://tools/dump_blueprint.gd -- <id> out.json` prints
      the total cost and writes the piece list.

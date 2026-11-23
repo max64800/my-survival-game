@@ -128,6 +128,12 @@ func _ready() -> void:
 			_monsters = false
 			if mode == "menu":
 				mode = "solo"
+		elif arg == "camcheck":  # photos of the see-through circle round the dwarf behind built walls (F807)
+			debug_script = "res://src/debug/camcheck.gd"
+			_saving = false
+			_monsters = false
+			if mode == "menu":
+				mode = "solo"
 		elif arg == "menucheck":  # photos of the bag, Workbench, chest and build menu (F187, F709)
 			debug_script = "res://src/debug/menucheck.gd"
 			_saving = false

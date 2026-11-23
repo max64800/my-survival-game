@@ -16,10 +16,19 @@ const CAM_LOOK_UP_SQUEEZE := 0.75
 const CAM_RETURN_SPEED := 4.0
 ## Rock between the camera and the dwarf fades to a see-through speckle inside a tube this thick (m). 0 = off.
 const CAM_FADE_RADIUS := 0.45
-## A built piece between the camera and the dwarf turns this see-through (0 = off, 0.5 = half, 1 = gone) (F807) ...
-const CAM_BUILD_FADE := 0.55
-## ... and fades in and out this fast (1 = the whole way in one second).
+## A built piece between the camera and the dwarf gets a see-through circle round him (F807). How strong (0 = off, 1 = full) ...
+const CAM_BUILD_FADE := 1.0
+## ... and it fades in and out this fast (1 = the whole way in one second).
 const CAM_BUILD_FADE_SPEED := 4.0
+## The circle: how clear right round him (1 = all gone) ...
+const CAM_CIRCLE_MIDDLE := 0.95
+## ... how clear out at the screen's corners (0 = solid) ...
+const CAM_CIRCLE_CORNERS := 0.3
+## ... and how far out it goes before reaching the corner look (in screen heights: 0.5 = half the screen's height).
+const CAM_CIRCLE_SIZE := 0.75
+## A piece this close (m) to the line from the camera to him counts as "in the way"; then every piece on screen
+## nearer than him gets the circle.
+const CAM_CIRCLE_TUBE := 0.5
 
 # ---------------------------------------------------------------- sprint (hold Shift)
 ## Seconds to go from walking to full sprint speed (F775: "about 0.3-0.6 s"). Heavy legs need a moment.

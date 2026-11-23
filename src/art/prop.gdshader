@@ -9,6 +9,8 @@ shader_type spatial;
 // - "wobble" pushes the corners around a little, so perfect balls and tubes look lumpy and hand-made.
 // - A soft rim light on the edges: shapes read clearly in the dark.
 
+#include "res://src/art/see_through.gdshaderinc"  // (F807: built pieces in the way)
+
 uniform vec4 albedo : source_color = vec4(1.0);
 uniform sampler2DArray detail_tex : filter_linear_mipmap_anisotropic, repeat_enable;
 uniform sampler2DArray normal_tex : filter_linear_mipmap_anisotropic, repeat_enable;
@@ -55,6 +57,9 @@ void vertex() {
 }
 
 void fragment() {
+	if (see_cut(VERTEX, VIEW_MATRIX, PROJECTION_MATRIX, CAMERA_POSITION_WORLD, FRAGCOORD.xy)) {
+		discard;
+	}
 	vec3 n = normalize(v_n);
 	vec3 bw = pow(abs(n), vec3(4.0));
 	bw /= (bw.x + bw.y + bw.z);

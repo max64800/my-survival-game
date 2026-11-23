@@ -3,6 +3,7 @@
 The owner asked: "document everything that we're learning after every round, so we don't make these kind of mistakes."
 Every time a building turns out hard to walk through, the lesson goes here **and** gets an automatic check.
 Read this before building or changing any blueprint, ruin or tower. Newest lessons at the bottom.
+All ruin lessons (not only walking) are gathered in `docs/design/RUIN-RULES.md`.
 
 | # | Lesson (the rule) | What went wrong | Automatic check |
 |---|---|---|---|

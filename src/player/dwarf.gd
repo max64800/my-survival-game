@@ -537,7 +537,8 @@ func _place_camera(delta: float) -> void:
 		rock.set_shader_parameter("see_from", camera.global_position)
 		rock.set_shader_parameter("see_to", _cam_yaw.global_position)
 		rock.set_shader_parameter("see_radius", 0.0 if dev_fly else DwarfFeel.CAM_FADE_RADIUS)
-	_cam_fade.update(get_world_3d(), camera.global_position, _cam_yaw.global_position, delta, [get_rid()], not dev_fly)
+	_cam_fade.update(get_world_3d(), camera.global_position, _cam_yaw.global_position, delta, [get_rid()], not dev_fly,
+		camera)
 
 
 ## How long this jump is expected to last in total (F807): `elapsed` seconds in already, moving at `vy` right now.
