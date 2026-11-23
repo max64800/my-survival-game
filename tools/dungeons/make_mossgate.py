@@ -278,7 +278,7 @@ chest("chest_small", 8.5, 36.4, 0.0, "Random chest")
 chest("chest_small", 9.0, 43.0, 90.0, "Buried chest (under the loose stone)", True, "buried")
 
 # 8 Rune Shrine: the healing basin, stone lanterns, a rune shield. No creatures.
-prop("decor/mushroom_fountain.glb", 12.0, 0.25, 22.0, 0.0, role="heal", label="Healing basin")
+prop("decor/healing_fountain.glb", 12.0, 0.25, 22.0, 0.0, role="heal", label="Healing basin")  # F782 dwarf-face fountain, face turned to the room
 prop("decor/stone_lantern.glb", 9.0, 0.25, 17.4, 0.0, role="light")
 prop("decor/stone_lantern.glb", 15.0, 0.25, 17.4, 0.0, role="light")
 lights.append([12.0, 1.6, 21.0])

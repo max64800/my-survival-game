@@ -340,7 +340,7 @@ chest("chest_small", 28.4, 19.4, 180.0, "Store chest", y=F2)
 chest("chest_stone", 26.0, 15.2, 180.0, "Vault chest (always)", True, "vault", y=F2)
 creature("lost_miner", 27.0, 25.2, 270.0, L2)   # (F542: before the swinging boulder, where you meet them first)
 creature("lost_miner", 28.8, 26.6, 270.0, L2)
-prop("decor/mushroom_fountain.glb", 49.5, F2 + 0.01, 31.0, 0.0, role="heal", label="Healing basin")
+prop("decor/healing_fountain.glb", 49.5, F2 + 0.01, 31.0, -90.0, role="heal", label="Healing basin")  # F782 dwarf-face fountain, face turned to the room
 lights.append([49.5, L2 + 1.6, 31.0])
 prop("decor/shack_bench.glb", 51.4, F2, 31.0, 270.0)
 # The upper ladder (owner, Nov 21, F546): walk round to its front (south) and climb; it ends level with the top deck.

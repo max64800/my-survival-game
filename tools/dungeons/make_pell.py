@@ -337,7 +337,7 @@ for i, x in enumerate((39.0, 41.0)):
 # 12 Miner's Shrine: the healing basin in a ring of rubble, a bench; the hidden boulder on its south side, a chest
 # in the niche behind it.
 prop("dungeon/rubble_ore.glb", 33.0, G, 34.6, 0.0)
-prop("decor/mushroom_fountain.glb", 33.0, G + 0.01, 34.6, 0.0, role="heal", label="Healing basin")
+prop("decor/healing_fountain.glb", 33.0, G + 0.01, 34.6, 0.0, role="heal", label="Healing basin")  # F782 dwarf-face fountain, face turned to the room
 lights.append([33.0, D + 1.6, 34.6])
 prop("decor/shack_bench.glb", 30.9, G, 35.0, 90.0)
 prop("cave/boulder_round.glb", 33.0, D, 39.4, 30.0, scale=2.6, role="secret", label="Hidden boulder (hit it)")

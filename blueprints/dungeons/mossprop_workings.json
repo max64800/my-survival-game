@@ -9989,13 +9989,13 @@
    "label": ""
   },
   {
-   "model": "decor/mushroom_fountain.glb",
+   "model": "decor/healing_fountain.glb",
    "pos": [
     49.5,
     5.25,
     31.0
    ],
-   "yaw": 0.0,
+   "yaw": -90.0,
    "scale": 1.0,
    "role": "heal",
    "label": "Healing basin"

@@ -362,7 +362,7 @@ for i, (x, z) in enumerate([(41.0, 9.0), (43.0, 12.6), (41.4, 14.6)]):
 
 # 11 Miners' Rest: the healing basin in a ring of rubble, a bench, a table, a chest.
 prop("dungeon/rubble_ore.glb", 35.0, F, 13.0, 0.0)
-prop("decor/mushroom_fountain.glb", 35.0, F + 0.01, 13.0, 0.0, role="heal", label="Healing basin")
+prop("decor/healing_fountain.glb", 35.0, F + 0.01, 13.0, 90.0, role="heal", label="Healing basin")  # F782 dwarf-face fountain, face turned to the room
 lights.append([35.0, UP + 1.6, 13.0])
 # (Nov 22, decor catalogue: the plain bench made way for the rest nook bench, section 4b)
 prop("decor/shack_table.glb", 33.2, F, 11.0, 0.0)
