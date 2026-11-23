@@ -48,12 +48,13 @@ var _vitals: VBoxContainer  ## health + stamina bars above the hotbar
 var _dials: HBoxContainer  ## hunger + thirst dials left of the hotbar
 const DIAL_SIZE := 72
 const VitalDialScript := preload("res://src/ui/vital_dial.gd")
+const WeightDialScript := preload("res://src/ui/weight_dial.gd")
 var _health_text: Label
 var _stamina_text: Label  ## "80 / 100" in the middle of the stamina bar (owner F823)
 var _level_label: Label
 var _buff_label: Label
 var _ailment_badges: AilmentBadges  ## burning / chilled / poisoned / frozen, above the health bar
-var _carry_text: Label  ## "HEAVY" / "OVERLOADED" inside the stamina bar, only when your load is heavy (F793)
+var _weight_dial: Control  ## carry weight dial above hunger + thirst: green / yellow heavy / red overloaded (F793)
 var _bag_weight: Label  ## "Weight 142 / 200" under the Bag title (F793)
 var _food_slots: FoodSlots  ## the eaten foods + drink as pictures with a ring, right of the health bar (F426)
 var _edge_flash: ScreenEdgeFlash  ## red flash on a hit, green/orange/blue glow while poisoned/burning/chilled (F695)
@@ -252,6 +253,9 @@ func _build() -> void:
 		d.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		_dials.add_child(d)
 		_bars[k] = d
+	_weight_dial = WeightDialScript.new()
+	_weight_dial.name = "WeightDial"
+	root.add_child(_weight_dial)
 	var stack := _vitals
 	_ailment_badges = AilmentBadges.new()
 	_ailment_badges.name = "AilmentBadges"
@@ -313,10 +317,6 @@ func _build() -> void:
 	_stamina_text = _label(_bars.stamina.get_parent(), 14)  # same as health, a bit smaller for the thinner bar (F823)
 	_stamina_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_stamina_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_carry_text = _label(_bars.stamina.get_parent(), 15)  # inside the stamina frame, left end (the food row is right of the bars)
-	_carry_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	_carry_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_carry_text.visible = false
 	# Moods, food buffs and ailments: small text in the bottom-left, above the lantern.
 	_buff_label = _label(root, 13)
 	_buff_label.anchor_top = 1.0
@@ -1013,6 +1013,15 @@ func _place_vitals() -> void:
 	_dials.offset_left = _dials.offset_right - dw
 	_dials.offset_bottom = -18.0 - (HOTBAR_SLOT - DIAL_SIZE) * 0.5
 	_dials.offset_top = _dials.offset_bottom - DIAL_SIZE
+	if _weight_dial:  # centred above hunger + thirst (owner, Nov 23)
+		for k in ["anchor_left", "anchor_right"]:
+			_weight_dial.set(k, 0.5)
+		_weight_dial.anchor_top = 1.0
+		_weight_dial.anchor_bottom = 1.0
+		_weight_dial.offset_left = _dials.offset_left + (dw - DIAL_SIZE) * 0.5
+		_weight_dial.offset_right = _weight_dial.offset_left + DIAL_SIZE
+		_weight_dial.offset_bottom = _dials.offset_top - 8.0
+		_weight_dial.offset_top = _weight_dial.offset_bottom - DIAL_SIZE
 	if _food_slots:  # right of the health and stamina bars, level with them (F426; the left has the lantern bar)
 		for k in ["anchor_left", "anchor_right"]:
 			_food_slots.set(k, 0.5)
@@ -1427,13 +1436,13 @@ func _update_ghost_bar(v: Vitals) -> void:
 			_ghost_bar.value = v.health
 
 
-## Carry weight (F793): the bag window always shows it; the stamina bar says HEAVY (yellow) / OVERLOADED (red).
+## Carry weight (F793): the weight dial above hunger + thirst (green / yellow heavy / red overloaded),
+## and the bag window shows the numbers.
 func _show_carry(d: Dwarf) -> void:
 	var c: Dictionary = d.carry if d else {}
 	var load: int = c.get("load", ItemWeights.Load.LIGHT)
-	_carry_text.visible = load != ItemWeights.Load.LIGHT
-	_carry_text.text = " OVERLOADED" if load == ItemWeights.Load.OVERLOADED else " HEAVY"
-	_carry_text.add_theme_color_override("font_color", Color(1.0, 0.3, 0.25) if load == ItemWeights.Load.OVERLOADED else Color(1.0, 0.85, 0.35))
+	if _weight_dial:
+		_weight_dial.set_carry(c)
 	if _bag_weight and _bag_panel.visible and not c.is_empty():
 		var word: String = ["", "   Heavy: slower", "   OVERLOADED: drop something"][load]
 		_bag_weight.text = "Weight %s / %s   (overloaded past %s)%s" % [ItemWeights.pretty(c.weight),
