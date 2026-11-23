@@ -78,7 +78,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 ## Priority order (owner, Nov 23 to-do review)
 
 1. **Debuff screens** (F799): poison, fire, cold and hits on your screen.
-2. **Combat feel:** F717 hit sparks/dust where the weapon lands, F790 soft lock-on, F788 damage numbers, F800 killing-blow pause.
+2. ~~**Combat feel:** F717 hit sparks/dust where the weapon lands, F790 soft lock-on, F788 damage numbers, F800 killing-blow pause.~~ All done Nov 23.
 3. **Survival:** F793 carry weight, F426 food effects, F697 bronze.
 - Not a priority now: movement extras (coyote time F744, ledge help F791, climbing F700, crouch F735).
 - Digging stays allowed everywhere (no no-dig walls); most dungeons will be wrapped in walls of building pieces instead.
