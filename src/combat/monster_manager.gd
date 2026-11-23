@@ -1703,7 +1703,10 @@ func _ev_hit(uid: int, dmg: int, from := Vector3.ZERO, peer := 0, eff := 0, crit
 		var dir := (away.normalized() + Vector3.UP * 0.35) if from != Vector3.ZERO and away.length() > 0.01 else Vector3.UP
 		# F717: the bits fly from where the weapon touched: on the side facing the hitter, at the creature's chest height.
 		var side := -away.normalized() if from != Vector3.ZERO and away.length() > 0.01 else Vector3.ZERO
-		var at := m.global_position + Vector3.UP * (float(m.data.get("height", 1.0)) * 0.55) + side * float(m.data.get("size", 1.0)) * 0.35
+		# (Owner, Nov 23: a skeleton lying on the floor still got sparks at standing chest height: a body that is knocked
+		# down or dead lies low, so the bits come from just above the floor, further out toward the hitter.)
+		var lying: bool = m.rig != null and (m.rig.knocked_down or m.rig.dead or m.rig.lying)
+		var at := m.global_position + Vector3.UP * (float(m.data.get("height", 1.0)) * (0.12 if lying else 0.55)) 				+ side * float(m.data.get("size", 1.0)) * (0.6 if lying else 0.35)
 		if m.shell_shut:
 			# Hitting a hidden snail: a hard stony clank and sparks (it's barely hurt).
 			Fx.burst(_root, m.global_position + Vector3.UP * 0.6, Color(1.0, 0.75, 0.35), 12, 4.5, dir, 40.0)

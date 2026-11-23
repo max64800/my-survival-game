@@ -9,7 +9,7 @@ static var _chunk_mats := {}
 
 
 ## `dir` / `spread`: which way they fly (a hit sprays its sparks away from the hitter: owner, Nov 18, "juicy hits").
-static func burst(parent: Node, pos: Vector3, color: Color, amount: int = 10, speed: float = 3.0, dir := Vector3.UP, spread := 70.0, puff := true) -> void:
+static func burst(parent: Node, pos: Vector3, color: Color, amount: int = 10, speed: float = 3.0, dir := Vector3.UP, spread := 70.0, puff := true, size := 1.0) -> void:
 	var glowing := color.v > 0.85 and color.s < 0.6 or color.v > 0.95
 	var p := CPUParticles3D.new()
 	p.one_shot = true
@@ -31,8 +31,8 @@ static func burst(parent: Node, pos: Vector3, color: Color, amount: int = 10, sp
 	p.angular_velocity_min = -400.0
 	p.angular_velocity_max = 400.0
 	p.particle_flag_rotate_y = true
-	p.scale_amount_min = 0.35 if not glowing else 0.2
-	p.scale_amount_max = 1.1 if not glowing else 0.5
+	p.scale_amount_min = (0.35 if not glowing else 0.2) * size
+	p.scale_amount_max = (1.1 if not glowing else 0.5) * size
 	var shrink := Curve.new()
 	shrink.add_point(Vector2(0.0, 1.0))
 	shrink.add_point(Vector2(0.75, 1.0))
@@ -68,20 +68,31 @@ static func hit_body(kind: String) -> String:
 static func hit(parent: Node, pos: Vector3, body: String, dir: Vector3, heavy := false, crit := false, tint := Color(0.5, 0.45, 0.4)) -> void:
 	var n := (14 if heavy else 9) + (6 if crit else 0)
 	var sp := 4.5 if heavy else 3.2
+	var big := 1.7  # (owner, Nov 23: "I can barely see them": bigger bits, and a fan out to the left and right)
+	var fan := Color(0.55, 0.07, 0.05)
 	match body:
 		"rock":
-			burst(parent, pos, Color(1.0, 0.8, 0.4), n / 2, sp * 1.2, dir, 32.0)  # sparks (glow)
-			burst(parent, pos, tint.darkened(0.15), n, sp * 0.8, dir, 50.0)  # chips of its own rock
+			burst(parent, pos, Color(1.0, 0.8, 0.4), n / 2, sp * 1.2, dir, 60.0, true, big)  # sparks (glow)
+			burst(parent, pos, tint.darkened(0.15), n, sp * 0.8, dir, 75.0, true, big)  # chips of its own rock
+			fan = tint.darkened(0.15)
 		"bone":
-			burst(parent, pos, Color(0.82, 0.78, 0.66), n, sp * 0.9, dir, 48.0)
+			burst(parent, pos, Color(0.82, 0.78, 0.66), n, sp * 0.9, dir, 75.0, true, big)
+			fan = Color(0.82, 0.78, 0.66)
 		"ghost":
-			burst(parent, pos, Color(0.7, 0.95, 1.0), n / 2, sp * 0.5, Vector3.UP, 85.0)
+			burst(parent, pos, Color(0.7, 0.95, 1.0), n / 2, sp * 0.5, Vector3.UP, 85.0, true, big)
+			fan = Color(0.7, 0.95, 1.0)
 		"ichor":
-			burst(parent, pos, Color(0.38, 0.5, 0.12), n, sp, dir, 50.0, false)
+			burst(parent, pos, Color(0.38, 0.5, 0.12), n, sp, dir, 75.0, false, big)
+			fan = Color(0.38, 0.5, 0.12)
 		_:
-			burst(parent, pos, Color(0.55, 0.07, 0.05), n, sp, dir, 50.0, false)
+			burst(parent, pos, Color(0.55, 0.07, 0.05), n, sp, dir, 75.0, false, big)
+	# Start in the middle, then spread wide: a fan of bits sideways, to the left and to the right of the hit.
+	var side := dir.cross(Vector3.UP)
+	side = side.normalized() if side.length() > 0.05 else Vector3.RIGHT
+	for sgn in [-1.0, 1.0]:
+		burst(parent, pos, fan, maxi(n / 2, 3), sp * 1.1, side * sgn + Vector3.UP * 0.25, 35.0, false, big)
 	if crit:
-		burst(parent, pos, Color(1.0, 0.95, 0.7), 10, sp * 1.3, dir, 180.0)  # a bright ring of sparks all around
+		burst(parent, pos, Color(1.0, 0.95, 0.7), 10, sp * 1.3, dir, 180.0, true, big)  # a bright ring of sparks all around
 
 
 ## A soft puff of dust that drifts up and fades (digging, landing, things breaking).

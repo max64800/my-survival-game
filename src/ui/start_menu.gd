@@ -110,6 +110,9 @@ func _ready() -> void:
 		var purple := StyleBoxFlat.new()
 		purple.bg_color = Color(0.22, 0.08, 0.26)
 		purple.set_corner_radius_all(8)
+		# Owner, Nov 23: the Monster Arena is always the very first dev button.
+		var abtn := _button(box, "Monster Arena (flat floor, all creatures)", func(): test_arena.emit())
+		abtn.add_theme_stylebox_override("normal", purple)
 		# Owner, Nov 21: dungeons in one column, ruins in another beside it.
 		var cols := HBoxContainer.new()
 		cols.add_theme_constant_override("separation", 16)
@@ -123,8 +126,6 @@ func _ready() -> void:
 				["Dungeon 3, Old Pell's Diggings", test_dungeon3], ["Dungeon 4, Mossprop Workings", test_dungeon4]]:
 			var sig: Signal = d[1]
 			_button(dcol, d[0], func(): sig.emit()).add_theme_stylebox_override("normal", purple)
-		var abtn := _button(dcol, "Monster Arena (flat floor, all creatures)", func(): test_arena.emit())
-		abtn.add_theme_stylebox_override("normal", purple)
 		# Ruins (owner, Nov 21): a cave with just that ruin; opening its Rebuilding Chest rebuilds it at once, in
 		# stone (brick) or wood. One row per RuinTests.LIST entry.
 		var rcol := VBoxContainer.new()
