@@ -326,7 +326,7 @@ func _add_fire() -> void:
 
 ## Which forged model a station uses (the placing ghost uses it too, F632). It is turned around (PI) when shown.
 static func model_id(kind: String) -> String:
-	return "kiln" if kind == "stone_oven" else kind
+	return kind  # (the Stone Oven has its own model since Nov 23, F426; it borrowed the kiln before)
 
 
 ## Placeholder looks made of boxes and cylinders (used until the asset forge has a model).

@@ -52,6 +52,7 @@ var _health_text: Label
 var _level_label: Label
 var _buff_label: Label
 var _ailment_badges: AilmentBadges  ## burning / chilled / poisoned / frozen, above the health bar
+var _food_slots: FoodSlots  ## the eaten foods + drink as pictures with a ring, right of the health bar (F426)
 var _edge_flash: ScreenEdgeFlash  ## red flash on a hit, green/orange/blue glow while poisoned/burning/chilled (F695)
 var edge_fake := ""  ## dev: show this status look at the screen edges without any ailment ("" = off)
 var _edge_flash_vitals: Vitals  ## whose "damaged" signal _edge_flash is listening to right now
@@ -250,6 +251,9 @@ func _build() -> void:
 	_ailment_badges = AilmentBadges.new()
 	_ailment_badges.name = "AilmentBadges"
 	root.add_child(_ailment_badges)
+	_food_slots = FoodSlots.new()
+	_food_slots.name = "FoodSlots"
+	root.add_child(_food_slots)
 	# F247 (owner, Nov 19): the old slider look stretched into a thin strip with the number on its top edge.
 	# Now each bar sits in the hotbar slots' wood-and-brass frame, a thick fill inside, the number in the middle.
 	# (+ your stun meter, owner chat 15: a thin purple bar, shown only while it has stun in it)
@@ -990,6 +994,16 @@ func _place_vitals() -> void:
 	_dials.offset_left = _dials.offset_right - dw
 	_dials.offset_bottom = -18.0 - (HOTBAR_SLOT - DIAL_SIZE) * 0.5
 	_dials.offset_top = _dials.offset_bottom - DIAL_SIZE
+	if _food_slots:  # right of the health and stamina bars, level with them (F426; the left has the lantern bar)
+		for k in ["anchor_left", "anchor_right"]:
+			_food_slots.set(k, 0.5)
+		_food_slots.anchor_top = 1.0
+		_food_slots.anchor_bottom = 1.0
+		_food_slots.offset_left = w * 0.5 + 16.0
+		_food_slots.offset_right = _food_slots.offset_left + 260.0
+		var mid := (_vitals.offset_top + _vitals.offset_bottom) * 0.5 + 6.0  # (+6: the minutes sit under the ring)
+		_food_slots.offset_top = mid - (FoodSlots.SIZE + 14.0) * 0.5
+		_food_slots.offset_bottom = mid + (FoodSlots.SIZE + 14.0) * 0.5
 
 
 func _size_hotbar(s: float) -> void:
@@ -1251,9 +1265,8 @@ func _process(delta: float) -> void:
 		_bars.hunger.set_value(v.hunger)
 		_bars.thirst.set_value(v.thirst)
 		_health_text.text = "%d / %d" % [ceili(v.health), roundi(v.max_health())]
-		var buffs := []
-		for b in v.buffs:
-			buffs.append("%s %d:%02d" % [Items.display_name(b.id), int(b.time_left) / 60, int(b.time_left) % 60])
+		var buffs := []  # (eaten foods show as pictures in _food_slots now, F426)
+		_food_slots.show_buffs(v)
 		var mood: String = {"well_fed": "Well fed", "peckish": "Peckish", "starving": "Starving (tired)"}.get(v.status(), "")
 		if v.in_dark:
 			buffs.append("In the dark: no healing, tiring")  # F293

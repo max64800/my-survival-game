@@ -48,7 +48,13 @@ it and makes the fire level 2; a Stone Oven (stone 20, clay 10, 2 planks, Workbe
 Pressing E on the pot opens the fire's cooking. Because it's all one station, the dwarf's auto-crafting now roasts
 the bug meat by himself when you make a Miner's Pie.
 
+## Food slots on the screen (Nov 23, PC)
+Right of the health and stamina bars: 2 food slots (3 with Cooking ★75), a small gap, 1 drink slot
+(`src/ui/food_slots.gd`). Each shows the meal's picture with a ring that empties as it wears off (gold = food,
+blue = drink) and the minutes left under it; empty slots stay faded ("food" / "drink"). Hover (bag open) = effects.
+The old text lines for foods in the bottom-left corner are gone. The Stone Oven has its own model now
+(`tools/asset_forge/builds/stone_oven.py`: stone base, clay barrel roof, round stone mouth, chimney, bread paddle).
+
 ## Still to build
-- The Stone Oven's own model (PC, Blender). Until then it borrows the Charcoal Kiln's model and icon.
 - Old saves: a Cooking Pot standing away from a fire no longer cooks; put a new pot on a campfire.
 - Zone 2+ foods keep their old effects.
