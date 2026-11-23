@@ -86,8 +86,7 @@ vec4 over(vec4 base, vec4 top) {
 //  - kind < 0.75: a round splat with sharp spikes all around and a few drops flung out
 //  - otherwise:   only a spray of drops, no big blob
 // rel, r and len are in screen heights. Returns how much blood covers this spot (0..1).
-float splat_shape(vec2 rel, float ang, float r, float len, float id) {
-	float kind = fract(id * 29.7);
+float splat_shape(vec2 rel, float ang, float r, float len, float id, float kind) {
 	vec2 dir = vec2(cos(ang), sin(ang));
 	float u = dot(rel, dir);
 	float v = dot(rel, vec2(-dir.y, dir.x));
@@ -140,33 +139,68 @@ float splat_shape(vec2 rel, float ang, float r, float len, float id) {
 	return a;
 }
 
-// All the blood splats: more of them the lower your health, each a different size, shape and shade.
-// Checks the 3x3 squares around, so a splat never gets cut off at its square's edge.
-// x = how much blood, y = its shade (0 dark and dried, 1 fresh and bright).
-vec2 splats(vec2 p, float aspect, float lh) {
-	vec2 x = p * 6.0;
-	vec2 n = floor(x);
+// One size of blood splats. s = squares per screen height (fewer = bigger splats), r0..r1 = blob size.
+// Splats bunch up in the corners (and a little along the sides). Splats can start just outside the
+// screen and be thrown in. The round ones keep splatting: each pops in, stays a moment, fades, and
+// splats again somewhere close by (owner, round 4). x = blood, y = shade (0 dried dark, 1 fresh).
+vec2 splat_layer(vec2 p, float aspect, float lh, float t, float s, float r0, float r1, float seed) {
+	vec2 n = floor(p * s);
 	float a = 0.0;
 	float shade = 0.5;
 	for (int j = -1; j <= 1; j++) {
 		for (int i = -1; i <= 1; i++) {
-			vec2 g = n + vec2(float(i), float(j));
+			vec2 g = n + vec2(float(i), float(j)) + seed;
 			float id = hash(g + 3.7);
-			if (id >= 1.0 - 0.6 * lh) {
-				vec2 base = (g + 0.15 + 0.7 * vec2(hash(g), hash(g + 19.19))) / 6.0;
-				vec2 toc = vec2(aspect * 0.5, 0.5) - base;
-				float ang = atan(toc.y, toc.x) + (fract(id * 17.3) - 0.5) * 2.2;
-				float r = 0.005 + 0.013 * pow(fract(id * 7.3), 1.6);
-				float len = min(r * (2.0 + 7.0 * fract(id * 3.1)), 0.11);
-				float s = splat_shape(p - base, ang, r, len, id);
-				if (s > a) {
-					a = s;
-					shade = fract(id * 71.0);
-				}
+			vec2 cell = (g - seed + 0.5) / s;
+			float bx = max(min(cell.x, aspect - cell.x), 0.0);
+			float by = max(min(cell.y, 1.0 - cell.y), 0.0);
+			float corner = 1.0 - smoothstep(0.05, 0.55, max(bx, by));
+			float side = (1.0 - smoothstep(0.0, 0.18, bx)) * 0.4;
+			float chance = lh * (0.08 + 0.92 * max(corner, side));
+			if (id >= chance) {
+				continue;
+			}
+			float kind = fract(id * 29.7 + seed);
+			float sid = id;
+			float vis = 1.0;
+			float pop = 1.0;
+			if (kind >= 0.45 && kind < 0.75) {
+				// The round ones: splat, stay, fade away, then splat again in a new spot.
+				float period = 2.5 + 3.5 * fract(id * 37.0);
+				float cyc = t / period + id * 7.0;
+				float ph = fract(cyc);
+				sid = hash(g + floor(cyc) * 1.37);
+				pop = 0.55 + 0.45 * smoothstep(0.0, 0.05, ph);
+				vis = smoothstep(0.0, 0.02, ph) * (1.0 - smoothstep(0.65, 0.9, ph));
+			}
+			vec2 base = (g - seed + 0.1 + 0.8 * vec2(hash(g + sid), hash(g + sid + 19.19))) / s;
+			vec2 toc = vec2(aspect * 0.5, 0.5) - base;
+			float ang = atan(toc.y, toc.x) + (fract(sid * 17.3) - 0.5) * 1.8;
+			float r = mix(r0, r1, pow(fract(sid * 7.3), 1.5)) * mix(1.0, 1.4, corner) * pop;
+			float len = min(r * (2.0 + 7.0 * fract(sid * 3.1)), 0.55 / s);
+			float sp = splat_shape(p - base, ang, r, len, sid, kind) * vis;
+			if (sp > a) {
+				a = sp;
+				shade = fract(sid * 71.0);
 			}
 		}
 	}
 	return vec2(a, shade);
+}
+
+// All the blood: a few big splats, more middle ones, lots of small ones.
+vec2 splats(vec2 p, float aspect, float lh, float t) {
+	vec2 a = splat_layer(p, aspect, lh, t, 3.0, 0.018, 0.036, 0.0);
+	vec2 b = splat_layer(p, aspect, lh, t, 6.0, 0.008, 0.016, 40.0);
+	vec2 c = splat_layer(p, aspect, lh, t, 11.0, 0.003, 0.008, 80.0);
+	vec2 m = a;
+	if (b.x > m.x) {
+		m = b;
+	}
+	if (c.x > m.x) {
+		m = c;
+	}
+	return m;
 }
 
 vec4 low_health_fx(vec2 p, float aspect, float dx, float dy, float lh, float t) {
@@ -180,8 +214,8 @@ vec4 low_health_fx(vec2 p, float aspect, float dx, float dy, float lh, float t) 
 	vec3 c = mix(vec3(0.55, 0.04, 0.03), vec3(0.25, 0.0, 0.0), m);
 	vec4 col = vec4(c, m * m * (0.30 + 0.35 * lh) * (0.85 + 0.15 * hb));
 	// Blood thrown on the screen, only out near the edges.
-	float zone = 1.0 - smoothstep(0.12, 0.35 + 0.15 * lh, de);
-	vec2 sp = splats(p, aspect, lh);
+	float zone = 1.0 - smoothstep(0.18, 0.40 + 0.10 * lh, de);
+	vec2 sp = splats(p, aspect, lh, t);
 	float sa = sp.x * zone * (0.50 + 0.35 * sp.y) * (0.75 + 0.35 * lh);
 	vec3 blood = mix(vec3(0.20, 0.02, 0.01), vec3(0.48, 0.02, 0.03), sp.y);  // dried dark to fresh bright
 	return over(col, vec4(blood, sa));
@@ -323,14 +357,51 @@ float frond(vec2 rel, float ang, float len, float grow, vec3 look) {
 float frost_dist(vec2 p, float aspect) {
 	float dx = min(p.x, aspect - p.x);
 	float dy = min(p.y, 1.0 - p.y);
-	return min(dx, dy) * (0.55 + 0.45 * smoothstep(0.0, 0.5, max(dx, dy)));
+	return min(dx, dy) * (0.20 + 0.80 * smoothstep(0.0, 0.5, max(dx, dy)));  // round 4: much more in the corners
+}
+
+// One six-armed snowflake (owner, round 4: "more variety of snowflakes"). id picks its look: how many
+// side branches and where, how long they are, a flat hexagon plate in the middle or not, sharp or
+// plate-shaped arm tips. rel and size in screen heights.
+float snowflake(vec2 rel, float size, float id, float rot) {
+	float r = length(rel);
+	if (r > size) {
+		return 0.0;
+	}
+	float sector = 1.0472;  // 60 degrees: six arms
+	float a = mod(atan(rel.y, rel.x) + rot, sector) - sector * 0.5;
+	a = abs(sector * 0.5 - abs(a));  // fold so every arm (and both its sides) draws the same
+	vec2 q = r * vec2(cos(a), sin(a));  // q.x runs out along the arm, q.y is beside it
+	float lw = 0.0011 + 0.0012 * (1.0 - r / size);
+	float f = (1.0 - smoothstep(lw * 0.5, lw, q.y)) * step(q.x, size * 0.97);
+	float branches = floor(4.0 * fract(id * 3.3));
+	float blen = 0.18 + 0.30 * fract(id * 5.1);
+	for (int b = 0; b < 3; b++) {
+		float fb = float(b);
+		if (fb >= branches) {
+			break;
+		}
+		float at = size * (0.30 + 0.22 * fb + 0.08 * fract(id * (7.0 + fb)));
+		vec2 d = q - vec2(at, 0.0);
+		float along = dot(d, vec2(0.5, 0.866));
+		float across = abs(dot(d, vec2(-0.866, 0.5)));
+		float bl = size * blen * (1.0 - 0.25 * fb);
+		f = max(f, (1.0 - smoothstep(lw * 0.4, lw * 0.9, across)) * step(0.0, along) * step(along, bl));
+	}
+	float plate = step(0.5, fract(id * 9.7)) * size * (0.12 + 0.12 * fract(id * 2.9));
+	float hexd = q.x * 0.866 + q.y * 0.5;  // distance to a flat hexagon edge
+	f = max(f, (1.0 - smoothstep(lw * 0.4, lw, abs(hexd - plate))) * step(0.001, plate));
+	f = max(f, (1.0 - step(plate, hexd)) * 0.35);
+	float tip = step(0.6, fract(id * 4.7)) * size * 0.16;  // some arms end in a small flat plate
+	f = max(f, (1.0 - smoothstep(lw * 0.4, lw, abs(length(q - vec2(size * 0.85, 0.0)) - tip))) * step(0.001, tip));
+	return f;
 }
 
 vec4 frost_fx(vec2 p, float aspect, float lvl, float fade, float t) {
 	// Round 3 (owner): sharp straight frost ferns like on a window, on all four edges, see-through,
 	// and every burst different: thin spears, wide ferns, single ones, stars of up to six arms, and
 	// patches where the frost is thick next to clear gaps.
-	float w = (0.08 + 0.14 * lvl) * fade;
+	float w = (0.05 + 0.08 * lvl) * fade;  // round 4: not as far in along the edges
 	float e = frost_dist(p, aspect) - (fbm(p * 2.5) - 0.5) * w * 0.8;
 	if (e > w + 0.09) {
 		return vec4(0.0);
@@ -338,6 +409,8 @@ vec4 frost_fx(vec2 p, float aspect, float lvl, float fade, float t) {
 	float patchy = fbm(p * 4.0 + 7.0);
 	float haze = (1.0 - smoothstep(w * 0.3, w, e)) * (0.5 + patchy);
 	float solid = 1.0 - smoothstep(0.0, w * 0.35, e);
+	float cn = 1.0 - smoothstep(0.05, 0.35, max(min(p.x, aspect - p.x), min(p.y, 1.0 - p.y)));
+	solid = max(solid, cn * haze * 0.8);  // the corners are packed thick
 	float ice = 0.0;
 	for (int l = 0; l < 4; l++) {
 		float s = 6.0 * pow(1.7, float(l));
@@ -352,7 +425,8 @@ vec4 frost_fx(vec2 p, float aspect, float lvl, float fade, float t) {
 				}
 				float id = hash(g + s + 3.7);
 				// Clear gaps between the bursts, like the dark holes in real window frost.
-				if (noise(base * 5.0 + 3.0) < 0.28 && l < 3) {
+				float bc = 1.0 - smoothstep(0.1, 0.4, max(min(base.x, aspect - base.x), min(base.y, 1.0 - base.y)));
+				if (noise(base * 5.0 + 3.0) < 0.28 * (1.0 - bc) && l < 3) {
 					continue;
 				}
 				float be = frost_dist(base, aspect) - (noise(base * 2.5) - 0.5) * w * 0.8;
@@ -374,6 +448,27 @@ vec4 frost_fx(vec2 p, float aspect, float lvl, float fade, float t) {
 						f = max(f, frond(rel, aa, len * (0.55 + 0.4 * hash(vec2(fm, id))), grow, look));
 					}
 					ice = max(ice, f * (0.55 + 0.45 * fract(id * 19.3)) * (1.0 - 0.18 * float(l)));
+				}
+			}
+		}
+	}
+	// Snowflakes of many kinds scattered through the frost.
+	for (int l = 0; l < 2; l++) {
+		float s = 8.0 + 7.0 * float(l);
+		vec2 n = floor(p * s);
+		for (int j = -1; j <= 1; j++) {
+			for (int i = -1; i <= 1; i++) {
+				vec2 g = n + vec2(float(i), float(j)) + 300.0;
+				float id = hash(g + s);
+				if (id > 0.55) {
+					continue;
+				}
+				vec2 base = (g - 300.0 + 0.25 + 0.5 * vec2(hash(g + 1.3), hash(g + 7.9))) / s;
+				float be = frost_dist(base, aspect) - (noise(base * 2.5) - 0.5) * w * 0.8;
+				float grow = clamp((w - be) / (w * 0.35 + 0.001), 0.0, 1.0);
+				if (grow > 0.0) {
+					float size = (0.22 + 0.22 * fract(id * 17.0)) / s * grow;
+					ice = max(ice, snowflake(p - base, size, fract(id * 31.0), id * 40.0) * (0.7 + 0.3 * fract(id * 11.0)));
 				}
 			}
 		}

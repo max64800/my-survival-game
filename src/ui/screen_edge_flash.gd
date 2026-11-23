@@ -14,6 +14,9 @@ extends ColorRect
 ## thicker left and right, blood splats) that grows from half health down.
 ## Round 3: burning = lots of glowing embers and black ash rising from the bottom, mostly up the sides;
 ## frost = sharp fern-like needles like frost on a window, on all four edges; blood = smaller thrown-paint streaks.
+## Round 4: frost stays closer to the edges but is packed thick in the corners, with many kinds of
+## snowflakes; blood = lots of big and small splats bunched in the corners, some thrown in from outside
+## the screen, and the round ones splat, fade and splat again.
 
 const HIT_COLOR := Color(0.85, 0.08, 0.05)
 const HIT_FADE := 0.4  ## seconds a hit flash takes to fade back to nothing
