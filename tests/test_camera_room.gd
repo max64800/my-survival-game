@@ -38,7 +38,13 @@ func test_thin_pieces_dont_push_the_camera_in() -> void:
 	var wall := _piece("wall", far + Vector3(0, 0, 2), 0)
 	for i in 4:
 		await tree.physics_frame
-	var r := CameraRoom.room(spring)
-	check(r < 2.0, "a wall still stops the camera (%.2f m)" % r)
+	check_near(CameraRoom.room(spring), 4.0, 0.01, "F807: a wall doesn't stop it either (it fades instead)")
 	wall.free()
+	var floor_piece := _piece("floor", far + Vector3(0, -0.3, 2), 0)   # (a floor just below the spring, tipped into it)
+	spring.rotation.x = 0.5    # (looking down: the arm reaches back and down, under the floor's top)
+	for i in 4:
+		await tree.physics_frame
+	var r := CameraRoom.room(spring)
+	check(r < 3.5, "a floor below his chest still stops the camera (%.2f m)" % r)
+	floor_piece.free()
 	spring.free()

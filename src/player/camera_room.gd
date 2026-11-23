@@ -2,27 +2,26 @@ class_name CameraRoom
 ## How far back the camera can really go (F783, owner Nov 23: "the camera jitters" walking the Twin Gate's wall walks).
 ## Every built piece bumps like rock, so the camera's feeler (the spring arm) also hit every railing, battlement,
 ## post and lamp that passed behind the dwarf: the camera jumped in, glided back out, jumped in again. Now only the
-## big solid pieces (walls, floors, roofs, stairs) and rock push the camera in; it slips past the thin ones.
+## floors and stairs below him and rock push the camera in (F807: since Nov 23 walls and roofs don't either).
 ## (The same idea as F781, which took the spiral stairs' rails and post off the camera's layer.)
 
-## Pieces the camera never goes through: you'd see inside a room or under the floor.
-const SOLID := ["wall", "wall_diagonal", "wall_narrow", "window_wall", "window_wide", "window_diagonal", "doorway",
-	"arch_doorway", "gateway", "sloped_wall", "sloped_wall_down", "floor", "floor_half", "floor_triangle", "floor_hatch",
-	"small_floor", "foundation", "foundation_half", "foundation_triangle", "foundation_steps", "flat_roof", "ceiling_panel",
-	"dormer", "gable_26", "gable_45", "stairs", "stairs_corner", "stairs_spiral", "ramp", "ruin_wall_worn",
-	"ruin_wall_collapsed", "spire_wall_chunk", "bartizan"]
+## F807 (owner, Nov 23: "do the same on the walls and the ceiling"; in a small tower room they pushed the camera so
+## close the dwarf looked bigger): the camera now slips through every built piece and CameraFade makes it see-through.
+## Only these stop it, and only when they're lower than his chest: you'd look up from under the floor.
+const FLOORS := ["floor", "floor_half", "floor_triangle", "floor_hatch", "small_floor", "foundation", "foundation_half",
+	"foundation_triangle", "foundation_steps", "stairs", "stairs_corner", "stairs_spiral", "ramp"]
 const SIDE_TRIES := [1.0, 0.6, 0.3, 0.0]  ## shoulder spots tried, as parts of the wanted one (F806)
 const MAX_SKIPS := 6   ## at most this many thin pieces looked past in one frame
 
 
-## True if the camera may slip past this thing (a thin or small built piece).
-static func see_through(collider: Object) -> bool:
+## True if the camera may slip past this thing: any built piece except a floor or stair lower than `chest_y`.
+static func see_through(collider: Object, chest_y := INF) -> bool:
 	var node := collider as Node
 	if node and not (node is PieceNode) and node.get_parent() is PieceNode:
 		node = node.get_parent()
 	if node is PieceNode:
 		var id := String((node as PieceNode).piece)
-		return not (id in SOLID or id.begins_with("roof_"))
+		return not (id in FLOORS and (node as PieceNode).global_position.y < chest_y)
 	return false
 
 
@@ -90,7 +89,7 @@ static func _free(spring: SpringArm3D, from: Vector3, motion: Vector3, extra_exc
 		q.motion = Vector3.ZERO
 		var info := space.get_rest_info(q)
 		var c: Object = instance_from_id(int(info.get("collider_id", 0))) if not info.is_empty() else null
-		if c == null or not see_through(c):
+		if c == null or not see_through(c, from.y):
 			return frac[0]
 		exclude.append(info.rid)
 	return last  # (too many thin pieces in a row: stop at the last one)
