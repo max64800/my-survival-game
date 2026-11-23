@@ -68,7 +68,7 @@ func _run() -> void:
 		amb.set_dev_bright(true)  # no cave dark or fog up here
 	_build_menu()
 	reset_all()
-	_main.hud.show_toast("Monster Arena: F10 = menu (Reset, Fight back, Heal me).", 6.0)
+	_main.hud.show_toast("Monster Arena: F10 = menu · F11 = reset everyone.", 6.0)
 	print("MONSTER_ARENA ready: %d creatures" % _uids.size())
 	for arg in OS.get_cmdline_user_args():  # robots: wait, check nobody walked off, kill one, reset, one picture, quit
 		if arg.begins_with("shots="):
@@ -137,7 +137,7 @@ func _build_menu() -> void:
 	var v := VBoxContainer.new()
 	_panel.add_child(v)
 	var title := Label.new()
-	title.text = "Monster Arena  ·  F10 to close"
+	title.text = "Monster Arena  ·  F10 to close  ·  F11 = quick reset"
 	title.add_theme_font_size_override("font_size", 20)
 	v.add_child(title)
 	for e in [["Reset all creatures (full health, back in place)", reset_all],
@@ -154,10 +154,46 @@ func _build_menu() -> void:
 	_update_fight_text()
 	_panel.visible = false
 	layer.add_child(_panel)
+	# A little how-to on the right side that is always there (owner, Nov 23).
+	var help := PanelContainer.new()
+	help.anchor_left = 1.0
+	help.anchor_right = 1.0
+	help.offset_left = -20.0
+	help.offset_right = -20.0
+	help.offset_top = 70.0
+	help.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	help.add_theme_stylebox_override("panel", bg)
+	var hv := VBoxContainer.new()
+	help.add_child(hv)
+	var ht := Label.new()
+	ht.text = "How the Arena works"
+	ht.add_theme_font_size_override("font_size", 20)
+	hv.add_child(ht)
+	var tips := Label.new()
+	tips.text = "Creatures stand still. Hit them, kill them.
+
+All dead? Bring them back:
+  1. Press F10 (the mouse appears)
+  2. Click \"Reset all creatures\"
+  3. Press F10 again to keep playing
+
+Quick way: press F11 = reset at once.
+
+In the menu you can also:
+  · Heal me (refill health)
+  · Fight back ON (they attack you)
+  · Teleport back to the start"
+	hv.add_child(tips)
+	layer.add_child(help)
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if _panel == null:
+		return
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F11:
+		reset_all()
+		_main.hud.show_toast("Arena reset: everyone is back.", 2.0)
+		get_viewport().set_input_as_handled()
 		return
 	var open_key: bool = event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F10
 	var close_key: bool = _panel.visible and event.is_action_pressed("pause")
@@ -200,7 +236,7 @@ func _spawn(kind: String) -> void:
 	m.dummy = not _fight_back
 	m.state = Monster.State.IDLE  # (not asleep or lying: they stand and wait)
 	if m.rig != null and m.data.get("rises", false):
-		m.rig.get_up()  # (the skeletons start as a pile of bones: stand them up)
+		m.rig.rise()  # (the skeletons start as a pile of bones: they stand up, then wait)
 	_uids[kind] = uid
 	var tag := Label3D.new()
 	tag.text = String(Monsters.LIST[kind].name)
