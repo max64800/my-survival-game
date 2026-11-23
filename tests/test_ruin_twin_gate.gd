@@ -271,6 +271,31 @@ func test_rebuild_the_twin_gate_in_stone() -> void:
 		turned += int(pc.piece == "stairs" and (pc.pos as Vector3).distance_to(at) < 0.05 and int(pc.rot) == Pieces.add_rot(3, fix.turn))
 	check_eq(rails, 0, "no railing across the tower door any more")
 	check_eq(turned, 1, "the deck stairs now climb toward the door")
+	# F783 round 3: the deck stairs' railing on the stage side guards only the deep half (the top half opens onto the stage).
+	var rail_short := 0
+	var rail_long := 0
+	for u in b.structure.near(AABB(o + basis * Vector3(-9, 7.75, 7) - Vector3(2, 1, 2), Vector3(4, 2, 4))):
+		var pc: Dictionary = b.structure.pieces[u]
+		rail_short += int(pc.piece == "railing_narrow" and (pc.pos as Vector3).distance_to(o + basis * Vector3(-9.5, 7.75, 7)) < 0.05)
+		rail_long += int(pc.piece == "railing" and (pc.pos as Vector3).distance_to(o + basis * Vector3(-9, 7.75, 7)) < 0.05)
+	check(rail_short == 1 and rail_long == 0, "a short railing on the deck stairs' stage side, no full one (%d, %d)" % [rail_short, rail_long])
+	# F783 round 3: a right stage rebuilt before then gets its first stairs turned round.
+	var st_at := o + basis * Vector3(11, 8.0, 5.2679)
+	var old_rail := o + basis * Vector3(12, 10.0, 5.2679)
+	for u in b.structure.near(AABB(st_at - Vector3(3, 1, 3), Vector3(6, 4, 6))):
+		if b.structure.pieces[u].piece in ["stairs", "railing"]:
+			b._ev_remove_piece(u)
+	b._ev_add_piece(b._next_uid, "stairs", "cut_stone", st_at, Pieces.add_rot(1, fix.turn), false)
+	b._ev_add_piece(b._next_uid, "railing", "cut_stone", old_rail, Pieces.add_rot(3, fix.turn), false)
+	check(fix._fix_right_stage() == 2, "the right stage's old stairs and railing come out, new ones go in")
+	var round_st := 0
+	var moved := 0
+	for u in b.structure.near(AABB(st_at - Vector3(3, 1, 3), Vector3(6, 4, 6))):
+		var pc: Dictionary = b.structure.pieces[u]
+		round_st += int(pc.piece == "stairs" and (pc.pos as Vector3).distance_to(st_at) < 0.05 and int(pc.rot) == Pieces.add_rot(3, fix.turn))
+		moved += int(pc.piece == "railing" and (pc.pos as Vector3).distance_to(o + basis * Vector3(10, 10.0, 5.2679)) < 0.05)
+	check(round_st == 1 and moved == 1, "the stairs turned round, the railing at their new foot end (%d, %d)" % [round_st, moved])
+	check_eq(fix._fix_right_stage(), 0, "and only once")
 	fix.free()
 	var ps: GameAuthority.PlayerState = auth.players[1]
 	ps.inventory.add("build_hammer", 1)

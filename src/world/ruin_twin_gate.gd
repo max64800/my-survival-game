@@ -317,6 +317,7 @@ func _ready() -> void:
 		built_turn = turn
 		_swap_old_stairs()
 		_fix_blocked_ways()
+		_fix_right_stage()
 		set_process(false)
 		return
 	_carve = carve_points(origin, turn)
@@ -331,17 +332,21 @@ const OLD_PIECES := [["stairs_spiral", Vector3(-9, 5.75, 8), 0], ["stairs_spiral
 ## (F565 🔁, Nov 22: the straight stairs stand on the floor, F169; the slab that lifted them goes with the spirals)
 ## (F783, Nov 23: the deck flights climb toward the gate now, their top at the stage's door; see FIX_F783)
 const NEW_PIECES := [["stairs", Vector3(-9, 5.5, 8), 3], ["stairs", Vector3(9, 5.5, 8), 1],
-	["railing", Vector3(-9, 7.75, 7), 0], ["railing", Vector3(9, 7.75, 7), 0], ["railing", Vector3(-14, 5.5, 6), 1],
+	["railing_narrow", Vector3(-9.5, 7.75, 7), 0], ["railing_narrow", Vector3(9.5, 7.75, 7), 0], ["railing", Vector3(-14, 5.5, 6), 1],
 	["railing", Vector3(-13, 5.5, 5), 0], ["railing", Vector3(-12, 5.5, 6), 1]]
 ## F783 (owner, Nov 23): a Twin Gate built (or rebuilt) before Nov 23 has a railing 0.7 m inside each tower's top
 ## door (it guarded the deck stairs' hole right behind the door) and a railing across the corner stairs' way out
 ## (they come out sideways). Host, once on loading: those railings come out, the deck stairs turn to climb toward
 ## the door (railings on their long sides).
+## F783 round 3 (robot walk, Nov 23): those stairs come up inside the round stage, and the full railing on their
+## stage-stairs side fenced the stage off (their top only led out of the door). It becomes a short railing on the
+## deep half; the top half opens onto the stage floor.
 const FIX_F783_OLD := [["railing", Vector3(-8, 7.75, 8), 1], ["railing", Vector3(8, 7.75, 8), 1],
 	["railing", Vector3(-12, 5.5, 8), 1], ["railing", Vector3(14, 5.5, 8), 1],
-	["stairs", Vector3(-9, 5.5, 8), 0], ["stairs", Vector3(9, 5.5, 8), 0]]
-const FIX_F783_NEW := [["stairs", Vector3(-9, 5.5, 8), 3], ["stairs", Vector3(9, 5.5, 8), 1],
+	["stairs", Vector3(-9, 5.5, 8), 0], ["stairs", Vector3(9, 5.5, 8), 0],
 	["railing", Vector3(-9, 7.75, 7), 0], ["railing", Vector3(9, 7.75, 7), 0]]
+const FIX_F783_NEW := [["stairs", Vector3(-9, 5.5, 8), 3], ["stairs", Vector3(9, 5.5, 8), 1],
+	["railing_narrow", Vector3(-9.5, 7.75, 7), 0], ["railing_narrow", Vector3(9.5, 7.75, 7), 0]]
 
 
 func _swap_old_stairs() -> int:
@@ -361,6 +366,37 @@ func _fix_blocked_ways() -> int:
 		return 0
 	var added := _swap(found, FIX_F783_NEW)
 	print("TWIN_GATE cleared its blocked doors and stairs: %d old pieces down, %d new up" % [found.size(), added])
+	return added
+
+
+## F783 round 3 (robot walk, Nov 23): the right tower's round stage (only there once rebuilt: it is in the fallen
+## half) had its first stairs climbing the same way as the left one's, so their foot sat behind a gap too narrow for
+## the dwarf. A stage rebuilt before then: those stairs turn round and their railing upstairs moves to the other end.
+const FIX_F783_STAGE_OLD := [["stairs", Vector3(11, 8.0, 5.2679), 1], ["railing", Vector3(12, 10.0, 5.2679), 3]]
+const FIX_F783_STAGE_NEW := [["stairs", Vector3(11, 8.0, 5.2679), 3], ["railing", Vector3(10, 10.0, 5.2679), 3]]
+
+
+## Turns the right stage's first stairs round (FIX_F783_STAGE_OLD), each new piece in the old one's material.
+## Returns how many pieces went in (0: nothing to fix).
+func _fix_right_stage() -> int:
+	var found := _find_pieces(FIX_F783_STAGE_OLD)
+	if not found.values().has("stairs"):
+		return 0
+	var b: Builder = auth.builder
+	var basis := Basis(Vector3.UP, turn * PI / 2.0)
+	var had := {}
+	for uid in found:
+		had[found[uid]] = String(b.structure.pieces[uid].family)
+		b._ev_remove_piece.rpc(uid)
+	var added := 0
+	for n in FIX_F783_STAGE_NEW:
+		var pos: Vector3 = origin + basis * (n[1] as Vector3)
+		var rot: int = Pieces.add_rot(int(n[2]), turn)
+		if not had.has(n[0]) or not b.structure.overlapping(n[0], pos, rot).is_empty():
+			continue
+		b._ev_add_piece.rpc(b._next_uid, String(n[0]), String(had[n[0]]), pos, rot, false)
+		added += 1
+	print("TWIN_GATE turned the right stage's stairs round: %d old pieces down, %d new up" % [found.size(), added])
 	return added
 
 

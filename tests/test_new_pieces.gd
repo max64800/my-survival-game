@@ -195,6 +195,62 @@ func test_dwarf_drops_through_the_hatch() -> void:
 
 ## F169 / F626 (owner, Nov 22: "I can't climb the spiral stairs in the Hearth Manor"): the Manor's and the Twin
 ## Gate's towers now climb by straight (and corner) stairs; a dwarf walks up every flight, built as real pieces.
+## F783 🔁 (owner, Nov 23: "the stairs in both towers are still blocked"): every flight climbed fine on its own (the
+## test below), yet the Twin Gate's deck stairs came up INSIDE the round stage with railings on both long sides, so
+## their top only led out of the door and the stage's own stairs were fenced off. This pours "water" from the foot
+## of each tower's first flight (ReachMap: the dwarf's own body, 25 cm steps) and checks the foot and top of every
+## flight in that tower and both sides of every door are wet.
+func test_every_tower_flight_and_door_can_be_reached() -> void:
+	_ground()
+	var bp := BlueprintLibrary.make("stonehold_twin_gate")
+	var towers := {-1: [], 1: []}
+	var doors := []
+	for p in bp.pieces:
+		var n: PieceNode = preload("res://src/build/piece_node.gd").new()
+		n.piece = p.id
+		n.family = p.mat
+		if p.id in Pieces.DOORS and p.id != "gate_leaf":
+			doors.append(p)                                             # (left out: a player opens a door away from
+			continue                                                    # themselves: the leaf never fences their side)
+		_root.add_child(n)
+		n.global_position = p.pos
+		n.rotation.y = Pieces.yaw_of(p.rot)
+		if p.id in ["stairs", "stairs_corner"] and absf(p.pos.x) > 6.0:
+			towers[signi(p.pos.x)].append(p)
+	var body := CharacterBody3D.new()
+	body.collision_mask = World.TERRAIN_LAYER | PieceNode.PIECE_LAYER
+	var shape := CollisionShape3D.new()
+	var cap := CapsuleShape3D.new()
+	cap.radius = 0.36
+	cap.height = 1.35
+	shape.shape = cap
+	shape.position = Vector3.UP * 0.675
+	body.add_child(shape)
+	_root.add_child(body)
+	body.global_position = Vector3(0, -50, 0)
+	await tree.physics_frame
+	await tree.physics_frame
+	for side in towers:
+		var flights: Array = towers[side]
+		check(flights.size() >= 5, "tower %d: its five flights (%d)" % [side, flights.size()])
+		if flights.is_empty():
+			continue
+		flights.sort_custom(func(a, c): return a.pos.y < c.pos.y)
+		var box := AABB(Vector3(11.0 * side - 7.0, 0, flights[0].pos.z - 9.0), Vector3(14, 0, 18))
+		var spots := ReachMap.flood(body, ReachMap.flight_ends(flights[0].id, flights[0].pos, flights[0].rot)[0], box, 60000)
+		for p in flights:
+			var ends := ReachMap.flight_ends(p.id, p.pos, p.rot)
+			check(ReachMap.distance(spots, ends[0]) < 0.6, "tower %d: the foot of the %s at %s can be reached" % [side, p.id, p.pos])
+			check(ReachMap.distance(spots, ends[1]) < 0.6, "tower %d: the top of the %s at %s can be reached" % [side, p.id, p.pos])
+		for p in doors:
+			if p.pos.x > box.position.x and p.pos.x < box.end.x and p.pos.z > box.position.z and p.pos.z < box.end.z and p.pos.y > 4.0:   # (the tower's upper doors)
+				var bs := Basis(Vector3.UP, Pieces.yaw_of(p.rot))
+				for f in [1.0, -1.0]:
+					check(ReachMap.distance(spots, p.pos + bs * Vector3(0, 0, f)) < 0.6, "tower %d: the %s at %s, %s side, can be reached" % [side, p.id, p.pos, "front" if f > 0 else "back"])
+	_root.queue_free()
+	await tree.physics_frame
+
+
 func test_dwarf_walks_up_every_tower_flight() -> void:
 	for id in ["hearthbrick_manor", "stonehold_twin_gate"]:
 		_ground()

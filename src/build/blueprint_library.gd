@@ -443,17 +443,18 @@ func _ring_pillars(y: float, skip: Array = [], mat := STONE) -> void:
 
 ## Stairs in square `k` climbing along the ring (toward yaw step 2k+3). Stairs are 2 m tall but Stonehold floors are
 ## 2.25 m apart: a floor slab under them lifts them so their top step meets the next floor (owner: a lip at the top
-## made the dwarf hop going down and struggle going up).
-func _ring_stairs(k: int, y: float, mat := STONE) -> void:
+## made the dwarf hop going down and struggle going up). `back`: climbing the other way round (toward 2k+9), for a
+## mirrored building (F783: the Twin Gate's right tower).
+func _ring_stairs(k: int, y: float, mat := STONE, back := false) -> void:
 	_add("floor", mat, _dir(2 * k) * (_APO + 1.0) + Vector3(0, y, 0) + _ring_off, _rot(2 * k))
-	_add("stairs", mat, _dir(2 * k) * (_APO + 1.0) + Vector3(0, y + 0.25, 0) + _ring_off, _rot(2 * k + 9))
+	_add("stairs", mat, _dir(2 * k) * (_APO + 1.0) + Vector3(0, y + 0.25, 0) + _ring_off, _rot(2 * k + (3 if back else 9)))
 
 
 ## Railings round the stairs hole in square `k` on the floor above: its inner edge and the side the stairs
 ## start from (the far side stays open: that's where you step off).
-func _ring_rails(k: int, y: float, mat := STONE) -> void:
+func _ring_rails(k: int, y: float, mat := STONE, back := false) -> void:
 	var n := _dir(2 * k)
-	var t := _dir(2 * k + 3)
+	var t := _dir(2 * k + (9 if back else 3))
 	_add("railing", mat, n * _APO + Vector3(0, y, 0) + _ring_off, _rot(2 * k))
 	_add("railing", mat, n * (_APO + 1.0) - t + Vector3(0, y, 0) + _ring_off, _rot(2 * k + 3))
 
@@ -1221,7 +1222,7 @@ func _twin_gate() -> void:
 	_twin_tower(_TWIN_L, 1)
 	_twin_ring_stage(_TWIN_L, 3, 3, 5, true)
 	_twin_tower(_TWIN_R, -1)
-	_twin_ring_stage(_TWIN_R, 9, 3, 1, false)
+	_twin_ring_stage(_TWIN_R, 9, 3, 1, false, true)
 	_twin_gatehouse()
 	_twin_yard()
 	_twin_barracks()
@@ -1365,7 +1366,10 @@ func _twin_tower(cx: float, m: int) -> void:
 		if i == 2:
 			# the deck flight climbs across the tower (+u): railings on both long sides and the foot's end; its top
 			# end stays open, toward the stage's door
-			_add("railing", S, _tp(hole.x, ry, hole.y - 1), 0)
+			# F783 round 3 (robot walk, Nov 23): these stairs come up INSIDE the round stage, and with full railings on
+			# both long sides their top only led out of the door: the stage floor and its stairs (at -v) were fenced
+			# off. The -v railing now only guards the deep half; the top half opens onto the stage floor.
+			_add("railing_narrow", S, _tp(hole.x - 0.5, ry, hole.y - 1), 0)
 			_add("railing", S, _tp(hole.x, ry, hole.y + 1), 0)
 			_add("railing", S, _tp(hole.x - 1, ry, hole.y), 1)
 			continue
@@ -1407,15 +1411,18 @@ func _twin_wall(side: String, c: int, lvl: int) -> String:
 
 ## The 12-sided stage on a tower's deck (7.75): a door out onto the wall walk on edge door_j, stairs in squares k1
 ## (deck -> 9.75) and k2 (-> 12); then battlements, or (lantern) the 6-sided lantern room with the fire bowl on top.
-func _twin_ring_stage(cx: float, door_j: int, k1: int, k2: int, lantern: bool) -> void:
+## `back`: the first stairs climb the other way round. F783 round 3 (robot walk, Nov 23): the right tower is the
+## left one mirrored, but its first stairs weren't, so their foot was on the far side, behind a 0.7 m gap between the
+## deck stairs' railings and the steps (too narrow for the dwarf). Now both feet are beside the deck stairs' top.
+func _twin_ring_stage(cx: float, door_j: int, k1: int, k2: int, lantern: bool, back := false) -> void:
 	_ring_off = Vector3(cx, 0, 0)
 	var y := 7.75
 	_ring_edges(y, func(j): return "doorway" if j == door_j else ("window_wall" if j in [0, 6, (door_j + 6) % 12] else "wall"))
 	_add("door", STONE, _dir(door_j) * _EDGE + Vector3(0, y, 0) + _ring_off, _rot(door_j))
 	_ring_pillars(y, [posmod(door_j - 1, 12), door_j])
-	_ring_stairs(k1, y)
+	_ring_stairs(k1, y, STONE, back)
 	_ring_layer("floor", "floor_triangle", 9.75, k1)
-	_ring_rails(k1, 10.0)
+	_ring_rails(k1, 10.0, STONE, back)
 	_ring_edges(10.0, func(j): return "window_wall" if j % 4 == 1 else "wall")
 	_ring_pillars(10.0)
 	_ring_stairs(k2, 10.0)

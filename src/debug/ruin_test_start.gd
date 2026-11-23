@@ -110,6 +110,10 @@ func _robot_shots(folder: String, origin: Vector3, out: Vector3) -> void:
 	await _shot(folder, "ruintest_%s_after.png" % _main.ruin_test, cam_at, origin + Vector3.UP * 3.0)
 	if OS.get_cmdline_user_args().has("perf"):
 		await _perf(cam_at, origin + Vector3.UP * 3.0)
+	if OS.get_cmdline_user_args().has("walk"):   # (the real dwarf over every stair and through every door)
+		var w: Node = preload("res://src/debug/tower_walk.gd").new()
+		add_child(w)
+		await w.run(_main, folder)
 	get_tree().quit()
 
 
