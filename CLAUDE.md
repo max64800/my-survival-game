@@ -52,6 +52,17 @@ Code layout, recorder details, how to run robots: `docs/CLAUDE-REFERENCE.md` (re
 ## Videos (Shorts about the game)
 - Editing the dwarf Shorts: `video/README.md` (pipeline, owner's video rules in `video/rules/`, scripts in `video/scripts/`).
 
+## Other chats share this to-do list (owner, Nov 23)
+Several Claude chats work in this folder at once. Twice a list was wrong because another chat had already fixed items
+(F806, F807, F808 were done while a to-do list still showed them as open).
+- **Before you give a to-do list, pick an item, or start a fix:** `git pull`, then check what others did: `git log --oneline -40`,
+  Grep the item's F-number in `git log --oneline -300`, `journal-inbox/`, `FEEDBACK.md` and `FEEDBACK-done.md`.
+  Also look at other chats still running (ListAgents). If it was done, or someone is on it, say so and pick another.
+- **Claim it when you start:** add a short line on the item in `FEEDBACK.md`: `🛠 in progress (<chat topic>, <date>)`.
+  Commit that line right away so other chats see it.
+- **Update it when you stop,** even if you didn't finish: what you did, what you tried that didn't work, what is left.
+  Done = cross out and move to `FEEDBACK-done.md` (as in the Feedback rules). Remove the 🛠 line when you hand the item back.
+
 ## Feedback and play sessions
 - **Play recordings (owner, Nov 20):** `Videos\Dwarf Game Recordings\` are the owner's videos for social media. Never count
   them or mention them at the start of a chat. Read a session's report and snapshots only when the owner says "check my last session".
