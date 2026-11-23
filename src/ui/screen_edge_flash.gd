@@ -17,6 +17,8 @@ extends ColorRect
 ## Round 4: frost stays closer to the edges but is packed thick in the corners, with many kinds of
 ## snowflakes; blood = lots of big and small splats bunched in the corners, some thrown in from outside
 ## the screen, and the round ones splat, fade and splat again.
+## Round 5: frost = frozen-lake ice, solid in the corners with white cracks and milky crust, creeping to the
+## middle (no more snowflakes); blood splats built in layers (lumpy pool, uneven spikes, flung drops, mist).
 
 const HIT_COLOR := Color(0.85, 0.08, 0.05)
 const HIT_FADE := 0.4  ## seconds a hit flash takes to fade back to nothing
