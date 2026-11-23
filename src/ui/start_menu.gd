@@ -12,6 +12,7 @@ signal quit_game
 signal test_dungeon  ## dev builds only: a new world, standing at the first dungeon's door with the best gear
 signal test_dungeon2  ## dev builds only: the same at the second dungeon, Lampwick Drift
 signal test_dungeon3  ## dev builds only: the same at the third dungeon, Old Pell's Diggings
+signal test_arena  ## dev builds only: a flat floor with one of every creature standing still (MonsterArena)
 signal test_dungeon4  ## dev builds only: the same at the fourth dungeon, Mossprop Workings
 signal test_ruin(key: String, wood: bool)  ## dev builds only: a cave with just that ruin (RuinTests), at its chest
 
@@ -122,6 +123,8 @@ func _ready() -> void:
 				["Dungeon 3, Old Pell's Diggings", test_dungeon3], ["Dungeon 4, Mossprop Workings", test_dungeon4]]:
 			var sig: Signal = d[1]
 			_button(dcol, d[0], func(): sig.emit()).add_theme_stylebox_override("normal", purple)
+		var abtn := _button(dcol, "Monster Arena (flat floor, all creatures)", func(): test_arena.emit())
+		abtn.add_theme_stylebox_override("normal", purple)
 		# Ruins (owner, Nov 21): a cave with just that ruin; opening its Rebuilding Chest rebuilds it at once, in
 		# stone (brick) or wood. One row per RuinTests.LIST entry.
 		var rcol := VBoxContainer.new()

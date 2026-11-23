@@ -1,0 +1,241 @@
+class_name MonsterArena
+extends Node
+## The Monster Arena (owner, Nov 23): a dev-only test place. A flat grey floor high above the cave with ONE of every
+## creature standing still on it (they don't walk or attack, but you can hit, stun and kill them). F10 opens a little
+## menu: "Reset" brings every creature back at full health (and clears the stone bodies of dead ones),
+## "Fight back" lets them fight you for real, "Heal me" refills you.
+## Dev builds only (DevMenu.enabled()): the start-menu button never shows in the game players get.
+
+const ORIGIN := Vector3(0.0, 400.0, 0.0)  ## the middle of the floor
+const SIZE := Vector2(64.0, 44.0)         ## floor width (x) and depth (z)
+const COLUMNS := 5
+const SPACING := 7.0
+const ARENA_PACK := 900000                ## the pack number all arena creatures share (no cave room has it)
+
+var _main: Node
+var _mgr: MonsterManager
+var _spots := {}     ## kind -> Vector3 (where its dummy stands)
+var _uids := {}      ## kind -> uid of the one alive now (or missing)
+var _fight_back := false
+var _panel: PanelContainer
+var _fight_button: Button
+
+
+## Where each creature kind stands: a grid, nearest the player first, in the order of Monsters.LIST.
+static func layout(kinds: Array) -> Dictionary:
+	var out := {}
+	for i in kinds.size():
+		var col := i % COLUMNS
+		var row := i / COLUMNS
+		var x := (float(col) - float(COLUMNS - 1) * 0.5) * SPACING
+		out[kinds[i]] = ORIGIN + Vector3(x, 0.0, -4.0 - float(row) * SPACING)
+	return out
+
+
+func _ready() -> void:
+	_main = get_parent()
+	_run.call_deferred()
+
+
+func _run() -> void:
+	var waited := 0.0
+	while not _main.is_ready_to_play() and waited < 180.0:
+		await get_tree().create_timer(0.25).timeout
+		waited += 0.25
+	var auth: GameAuthority = _main.authority
+	_mgr = auth.monsters
+	_build_floor()
+	var ps := auth.get_player(auth.local_peer_id())
+	if ps:  # the same copper gear as the dungeon test
+		var gear = load("res://src/debug/dungeon_test_start.gd")
+		var inv: Inventory = ps.inventory
+		for slot in gear.WEAR:
+			inv.slots[Inventory.equip_index(slot)] = {id = gear.WEAR[slot], count = 1}
+		for i in Inventory.HOTBAR_SIZE:
+			inv.slots[i] = {id = gear.HOTBAR[i][0], count = gear.HOTBAR[i][1]} if i < gear.HOTBAR.size() else {}
+		for it in gear.BAG:
+			inv.add(it[0], it[1])
+		inv.changed.emit()
+		ps.fuel = GameAuthority.MAX_FUEL
+	var dwarf: Dwarf = _main.dwarf
+	dwarf.global_position = ORIGIN + Vector3(0.0, 0.4, 8.0)
+	dwarf.velocity = Vector3.ZERO
+	dwarf._yaw = 0.0  # looking toward -z, at the creatures
+	dwarf._pitch = 0.0
+	dwarf.model.rotation.y = 0.0
+	var amb: Ambience = _main.get_node_or_null("Ambience")
+	if amb:
+		amb.set_dev_bright(true)  # no cave dark or fog up here
+	_build_menu()
+	reset_all()
+	_main.hud.show_toast("Monster Arena: F10 = menu (Reset, Fight back, Heal me).", 6.0)
+	print("MONSTER_ARENA ready: %d creatures" % _uids.size())
+	for arg in OS.get_cmdline_user_args():  # robots: wait, check nobody walked off, kill one, reset, one picture, quit
+		if arg.begins_with("shots="):
+			await get_tree().create_timer(6.0).timeout
+			var moved := 0
+			for kind in _uids:
+				var m: Monster = _mgr.monsters.get(_uids[kind])
+				if m == null:
+					print("MONSTER_ARENA missing: ", kind)
+				elif Vector2(m.global_position.x - _spots[kind].x, m.global_position.z - _spots[kind].z).length() > 0.5 or m.global_position.y < ORIGIN.y - 1.0:
+					moved += 1
+					print("MONSTER_ARENA moved/fell: ", kind, " ", m.global_position)
+			print("MONSTER_ARENA after 6 s: %d of %d moved or fell" % [moved, _uids.size()])
+			var victim: Monster = _mgr.monsters.get(_uids["rock_beetle"])
+			_mgr._kill(victim, _main.authority.local_peer_id())
+			await get_tree().create_timer(1.0).timeout
+			print("MONSTER_ARENA beetle alive after kill: ", _mgr.monsters.has(_uids["rock_beetle"]), ", statues: ", _mgr.statues.size())
+			reset_all()
+			await get_tree().create_timer(1.0).timeout
+			print("MONSTER_ARENA after reset: beetle alive ", _mgr.monsters.has(_uids["rock_beetle"]), ", statues: ", _mgr.statues.size())
+			await RenderingServer.frame_post_draw
+			print("MONSTER_ARENA shot ", _main.take_screenshot(arg.trim_prefix("shots=").path_join("monster_arena.png")))
+			get_tree().quit()
+
+
+func _build_floor() -> void:
+	var body := StaticBody3D.new()
+	body.name = "ArenaFloor"
+	body.collision_layer = World.TERRAIN_LAYER
+	body.collision_mask = 0
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(SIZE.x, 2.0, SIZE.y)
+	shape.shape = box
+	shape.position = Vector3(0.0, -1.0, 0.0)  # the top of the slab is exactly at ORIGIN.y
+	body.add_child(shape)
+	var mesh := MeshInstance3D.new()
+	var bm := BoxMesh.new()
+	bm.size = box.size
+	mesh.mesh = bm
+	mesh.position = shape.position
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.45, 0.45, 0.47)
+	mat.roughness = 1.0
+	mesh.material_override = mat
+	body.add_child(mesh)
+	var sun := DirectionalLight3D.new()
+	sun.rotation_degrees = Vector3(-60.0, 20.0, 0.0)
+	sun.light_energy = 1.1
+	body.add_child(sun)
+	add_child(body)
+	body.global_position = ORIGIN
+
+
+func _build_menu() -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = 60
+	add_child(layer)
+	_panel = PanelContainer.new()
+	_panel.position = Vector2(20.0, 20.0)
+	var bg := StyleBoxFlat.new()
+	bg.bg_color = Color(0.1, 0.04, 0.12, 0.95)  # purple: clearly a dev thing
+	bg.set_corner_radius_all(10)
+	bg.set_content_margin_all(14)
+	_panel.add_theme_stylebox_override("panel", bg)
+	var v := VBoxContainer.new()
+	_panel.add_child(v)
+	var title := Label.new()
+	title.text = "Monster Arena  ·  F10 to close"
+	title.add_theme_font_size_override("font_size", 20)
+	v.add_child(title)
+	for e in [["Reset all creatures (full health, back in place)", reset_all],
+			["Heal me", heal_me], ["Teleport back to the start", to_start]]:
+		var b := Button.new()
+		b.text = e[0]
+		b.custom_minimum_size = Vector2(380, 40)
+		b.pressed.connect(e[1])
+		v.add_child(b)
+	_fight_button = Button.new()
+	_fight_button.custom_minimum_size = Vector2(380, 40)
+	_fight_button.pressed.connect(toggle_fight_back)
+	v.add_child(_fight_button)
+	_update_fight_text()
+	_panel.visible = false
+	layer.add_child(_panel)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if _panel == null:
+		return
+	var open_key: bool = event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F10
+	var close_key: bool = _panel.visible and event.is_action_pressed("pause")
+	if open_key or close_key:
+		_panel.visible = not _panel.visible
+		Controls.set_captured(not _panel.visible)
+		get_viewport().set_input_as_handled()
+
+
+func _update_fight_text() -> void:
+	_fight_button.text = "Fight back: %s (click to switch)" % ("ON, they attack you" if _fight_back else "OFF, they stand still")
+
+
+## Every creature comes back at full health, standing in its place. Stone bodies of the dead go too.
+func reset_all() -> void:
+	for kind in _uids:
+		if _mgr.monsters.has(_uids[kind]):
+			_mgr._ev_remove.rpc(_uids[kind], -1)  # (sinks away: no stone body)
+	_uids.clear()
+	for id in _mgr.statues.keys():
+		_mgr.statues.erase(id)
+		_mgr._ev_statue_gone.rpc(id, false)
+	var kinds := Monsters.LIST.keys()
+	_spots = layout(kinds)
+	for kind in kinds:
+		_spawn(kind)
+	_heal_everyone()
+
+
+func _spawn(kind: String) -> void:
+	var uid := _mgr._next_uid
+	_mgr._next_uid += 1
+	var pos: Vector3 = _spots[kind]
+	if Monsters.LIST[kind].get("flies", false):
+		pos.y += 1.6  # a flyer hangs in the air
+	_mgr._ev_spawn.rpc(uid, kind, pos + Vector3.UP * 0.3, false, ARENA_PACK)
+	var m: Monster = _mgr.monsters.get(uid)
+	if m == null:
+		return
+	m.dummy = not _fight_back
+	m.state = Monster.State.IDLE  # (not asleep or lying: they stand and wait)
+	if m.rig != null and m.data.get("rises", false):
+		m.rig.get_up()  # (the skeletons start as a pile of bones: stand them up)
+	_uids[kind] = uid
+	var tag := Label3D.new()
+	tag.text = String(Monsters.LIST[kind].name)
+	tag.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	tag.no_depth_test = true
+	tag.pixel_size = 0.006
+	tag.font_size = 48
+	tag.outline_size = 12
+	tag.position = Vector3(0.0, float(m.data.get("height", 1.2)) * float(m.data.size) + 0.9, 0.0)
+	m.add_child(tag)
+
+
+func toggle_fight_back() -> void:
+	_fight_back = not _fight_back
+	for kind in _uids:
+		var m: Monster = _mgr.monsters.get(_uids[kind])
+		if m:
+			m.dummy = not _fight_back
+			if _fight_back:
+				m.alert(_main.authority.local_peer_id())
+	_update_fight_text()
+
+
+func _heal_everyone() -> void:
+	heal_me()
+
+
+func heal_me() -> void:
+	var auth: GameAuthority = _main.authority
+	var ps := auth.get_player(auth.local_peer_id())
+	if ps:
+		ps.vitals.health = ps.vitals.max_health()
+
+
+func to_start() -> void:
+	var dwarf: Dwarf = _main.dwarf
+	dwarf.global_position = ORIGIN + Vector3(0.0, 0.4, 8.0)
+	dwarf.velocity = Vector3.ZERO

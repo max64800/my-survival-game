@@ -18,6 +18,7 @@ var variant := ""  ## crystal colour ("" = normal), combat doc 7
 var pack_id := 0
 var hp := 30.0
 var state := State.IDLE
+var dummy := false  ## the Monster Arena's stand-still mode: no walking, no attacks; hits, stun and death still work
 var home := Vector3.ZERO
 ## A dungeon creature's dungeon and room (owner, Nov 20: "the pack came out and crushed me in the hallway"): it never
 ## steps out of its room, gives up when you leave it, and never walks under a crusher.
@@ -451,6 +452,11 @@ func think(delta: float, mgr: Node) -> void:
 			_no_progress = 0.0  # don't give up immediately after getting up
 		state = State.FLEE if data.get("passive", false) or (data.get("neutral", false) and hp < max_hp() * 0.5) else State.CHASE
 		_timer = 6.0
+	if dummy:
+		state = State.IDLE
+		velocity = Vector3(0, velocity.y, 0)
+		_move(delta, Vector3.ZERO, 0.0)
+		return
 	_think -= delta
 	if _think <= 0.0:
 		_think = 0.3

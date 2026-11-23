@@ -154,6 +154,12 @@ func _ready() -> void:
 				mode = "solo"
 		elif arg == "ruinwood":  # with ruintest=: the menu's "Wood" button
 			ruin_test_wood = true
+		elif arg == "arenatest":  # the start menu's dev "Monster Arena" button, without the menu (robots)
+			debug_script = "res://src/debug/monster_arena.gd"
+			dungeon_test = true
+			_saving = false
+			if mode == "menu":
+				mode = "solo"
 		elif arg == "dungeon2":  # with dungeontest: the menu's "Dungeon 2" (Lampwick Drift's test world)
 			dungeon_test_layout = CaveMaker.DUNGEON_ONLY_2
 		elif arg == "dungeon3":  # with dungeontest: the menu's "Dungeon 3" (Old Pell's Diggings' test world)
@@ -344,6 +350,13 @@ func _show_menu() -> void:
 			dungeon_test = true
 			_new_world(seed, "Dungeon Test")
 			add_child(load("res://src/debug/dungeon_test_start.gd").new()), seed, CaveMaker.DUNGEON_ONLY))  # (no caves: owner, Nov 20)
+	_menu.connect("test_arena", func():  # (owner, Nov 23: a flat floor with every creature standing still)
+		_close_menu()
+		dungeon_test_layout = CaveMaker.DUNGEON_ONLY
+		_with_loading(func():
+			dungeon_test = true
+			_new_world(seed, "Arena Test")
+			add_child(load("res://src/debug/monster_arena.gd").new()), seed, CaveMaker.DUNGEON_ONLY))
 	_menu.connect("test_dungeon2", func():  # (owner, Nov 20, F477: Dungeon 2 = Lampwick Drift, the real second dungeon)
 		_close_menu()
 		dungeon_test_layout = CaveMaker.DUNGEON_ONLY_2
