@@ -11245,3 +11245,21 @@ unrelated, uncommitted camera/sprint work in progress there.
 **Mistakes and hurdles**
 - Godot is not on the shell's search path, so `tools/run_tests.sh` failed at first. It lives in the WinGet packages folder;
   set `GODOT=` to it. The owner stopped the test run partway and asked to commit, so the dungeon tests have not finished yet.
+
+
+## Nov 23: game-dev tips list checked against the game
+
+**What we did**
+- The owner brought a long list of game-dev tricks (from another Claude chat on the drive) and asked what we already have.
+  Two helpers checked the code for about 50 tricks. Already done: hit stop, screen shake, random hit-sound pitch, the ghost
+  health bar, roll invincibility (0.40 s of the 0.45 s roll), enemy wind-up warnings, fleeing at low health, far monsters
+  thinking less often, food buffs, the Cozy rest buff, graves, cave-ins, tool-tier digging, fog per zone, key prompts,
+  recipes that unlock when you find a material, and the save system.
+- New feedback items F785-F797 for the ones the owner wants: FOV kick, swing rhythm, size-based hit reactions, damage
+  numbers, fair hitboxes check, soft lock-on, ledge help, aggro sounds, carry weight, direction sounds, occlusion culling,
+  test-menu extras, one vertical slice. F717 (hit sparks), F744 (coyote time), F703 (fog) and F738 (music) got bumped.
+
+**Mistakes and hurdles**
+- The owner believed three things already existed that don't: damage numbers (only name/health tags), sounds for
+  direction (only the water splash), and the fair-hitbox rule (two reach numbers, nothing checks them). Written into the
+  new items so nobody assumes again.
