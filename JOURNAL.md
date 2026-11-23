@@ -11769,3 +11769,10 @@ standing up as he slows down near the end, not mid-burst.
 - `combat` test has one failure ("a brand-new tool shows its bar too"). It is in the durability bar code, not my files, so I left it for its owner.
 
 **Not done:** bursts when the dwarf gets hit.
+
+
+## Nov 23: Monster Arena (dev test place)
+
+**What we did:** Added a purple "Monster Arena" button on the start menu (dev builds only). It makes a world and puts you on a big flat grey floor high above the cave, wearing the copper gear. One of every creature stands still on it, each with a name tag. You can hit, stun and kill them. F10 opens a menu: Reset all (everyone back at full health, stone bodies cleared), Heal me, Teleport back, and a "Fight back" switch that lets them attack you for real. New `dummy` flag on Monster; new `src/debug/monster_arena.gd`; test `tests/test_monster_arena.gd`.
+
+**Hurdles:** The arena floor is its own collision slab, so creatures that look for cave rock (some attacks, climbing) may act oddly when Fight back is on. The skeleton miners still lie as piles of bones even though I asked them to get up. Not fixed yet.
