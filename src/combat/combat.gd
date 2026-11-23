@@ -65,6 +65,12 @@ const DODGE_IFRAME := Vector2(0.0, 0.40)
 ## Keep holding the dodge button past the usual roll and it keeps going, up to this long (F702: tap = short
 ## dash, hold = longer). Stays at or under DwarfRig.ROLL_TIME (0.75 s) so he's still mid-tumble the whole time.
 const DASH_HOLD_MAX := 0.75
+## How much past DASH_HOLD_MAX the roll animation keeps playing once a held dash ends (F798, owner Nov 23: "I am
+## holding the control key all the way until the dwarf stops rolling... after my animation of the dodge is done,
+## he propels me forward"). A held dash speeds up (DASH_SPEED_MULT) right up to DASH_HOLD_MAX, so the stand-up
+## finish can't land there like a tap roll's does (it would play mid-speed-burst, not after it) — it gets this
+## same tail budget instead, spent once the burst is over. Matches DwarfRig.ROLL_TIME - DODGE_TIME (0.75 - 0.45).
+const DASH_RECOVERY_TAIL := 0.3
 const COMBO_WINDOW := 0.5
 const PARRY_COOLDOWN := 0.5  ## anti-spam: a new parry window can't start for 0.5 s
 const RIPOSTE_TIME := 1.0

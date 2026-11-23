@@ -549,7 +549,46 @@ func test_roll_animation_matches_how_long_the_dash_lasts() -> void:
 		await tree.physics_frame
 	var held_plays_for := rig.tree.get_animation(rig._full_clip).length / float(rig.tree.get("parameters/full_speed/scale"))
 	Input.action_release("dodge")
-	check(absf(held_plays_for - Combat.DASH_HOLD_MAX) < 0.05, "holding the dash stretches the roll clip to match (%.2f s vs %.2f s)" % [held_plays_for, Combat.DASH_HOLD_MAX])
+	# Stretched past DASH_HOLD_MAX itself, not to it (F798): a held dash keeps speeding up right up to
+	# DASH_HOLD_MAX, so the clip's stand-up finish needs its recovery tail after that, not landing exactly on it.
+	var want := Combat.DASH_HOLD_MAX + Combat.DASH_RECOVERY_TAIL
+	check(absf(held_plays_for - want) < 0.05, "holding the dash stretches the roll clip to match (%.2f s vs %.2f s)" % [held_plays_for, want])
+	Controls.robot = false
+	root.queue_free()
+
+
+## Owner (PC, Nov 23, F798): "I am holding the control key all the way until the dwarf stops rolling... after my
+## animation of the dodge is done, he propels me forward" — a held dash keeps speeding up right up to DASH_HOLD_MAX
+## (DASH_SPEED_MULT), and the roll clip used to be stretched to finish exactly there too, so the stand-up pose
+## landed right in the middle of the speed burst instead of after it. Checked with a robot + screenshots in
+## journal-inbox before this was written; this locks the fix in.
+func test_held_dash_roll_still_has_recovery_left_when_the_dash_ends() -> void:
+	Controls.setup()
+	Controls.robot = true
+	Controls.set_captured(true)
+	var root := _room([])
+	var auth := GameAuthority.new()
+	auth.drops_root = root
+	root.add_child(auth)
+	var dwarf := _dwarf_in(root)
+	auth.add_player(1, dwarf)
+	var rig: DwarfRig = dwarf.model.dwarf_rig
+	if rig == null:
+		Controls.robot = false
+		root.queue_free()
+		return
+	for i in 10:
+		await tree.physics_frame
+	dwarf.bot_dodge = true
+	Input.action_press("dodge")  # hold it all the way to the cap, like the owner's repro
+	await tree.physics_frame
+	while dwarf.fight.dodging():
+		await tree.physics_frame
+	Input.action_release("dodge")
+	# Right as the dash ends (still at its fastest), the clip must still have unplayed content left — the
+	# stand-up — not have already finished and looked done mid-burst.
+	var elapsed := Time.get_ticks_msec() / 1000.0 - rig._full_start
+	check(elapsed < rig._full_length - 0.05, "the roll clip still has a recovery tail left when the dash ends (%.2f s played of %.2f s)" % [elapsed, rig._full_length])
 	Controls.robot = false
 	root.queue_free()
 
@@ -701,6 +740,168 @@ func test_your_own_stun_meter() -> void:
 	check(dwarf.fight.stagger <= 0.0, "not stunned again straight away (2 s rest)")
 	dwarf.fight.guard_break()
 	check(said.count("stunned") == 2, "a guard break plays the Shield broken move too")
+	root.queue_free()
+
+# ---------------------------------------------------------------- camera (F469, F766) and sprint feel (F775)
+func _robot_room(blocks: Array = []) -> Array:
+	Controls.setup()
+	Controls.robot = true
+	Controls.set_captured(true)
+	var root := _room(blocks)
+	var auth := GameAuthority.new()
+	auth.drops_root = root
+	root.add_child(auth)
+	var dwarf := _dwarf_in(root)
+	auth.add_player(1, dwarf)
+	for i in 10:
+		await tree.physics_frame
+	return [root, dwarf]
+
+
+func _flat_speed(dwarf: Dwarf) -> float:
+	return Vector2(dwarf.velocity.x, dwarf.velocity.z).length()
+
+
+func test_sprint_ramps_up_instead_of_snapping_to_full_speed() -> void:
+	var r: Array = await _robot_room()
+	var dwarf: Dwarf = r[1]
+	dwarf.bot_move = Vector2(0, -1)
+	for i in 30:
+		await tree.physics_frame
+	dwarf.bot_run = true
+	for i in 6:  # 0.1 s into the sprint
+		await tree.physics_frame
+	var early := _flat_speed(dwarf)
+	for i in 60:
+		await tree.physics_frame
+	var full := _flat_speed(dwarf)
+	check(early < Dwarf.RUN_SPEED - 1.0, "0.1 s in, still building speed (%.2f m/s)" % early)
+	check(full > Dwarf.RUN_SPEED - 0.3, "after 1 s, full sprint (%.2f m/s)" % full)
+	Controls.robot = false
+	r[0].queue_free()
+
+
+func test_sprint_turns_slower_than_walking() -> void:
+	var r: Array = await _robot_room()
+	var dwarf: Dwarf = r[1]
+	dwarf.bot_move = Vector2(0, -1)
+	for i in 30:
+		await tree.physics_frame
+	dwarf.bot_move = Vector2(1, 0)  # walking: turn right
+	for i in 6:
+		await tree.physics_frame
+	var walk_side := dwarf.velocity.x
+	dwarf.bot_move = Vector2(0, -1)
+	dwarf.bot_run = true
+	for i in 60:
+		await tree.physics_frame
+	dwarf.bot_move = Vector2(1, 0)  # sprinting: same turn
+	for i in 6:
+		await tree.physics_frame
+	check(walk_side > 2.0, "walking turns at once (sideways %.2f m/s)" % walk_side)
+	check(dwarf.velocity.z < -2.5, "sprinting still mostly going forward 0.1 s after turning (forward %.2f m/s)" % -dwarf.velocity.z)
+	Controls.robot = false
+	r[0].queue_free()
+
+
+func test_letting_go_mid_sprint_skids_a_little() -> void:
+	var r: Array = await _robot_room()
+	var dwarf: Dwarf = r[1]
+	dwarf.bot_move = Vector2(0, -1)
+	dwarf.bot_run = true
+	for i in 60:
+		await tree.physics_frame
+	var p0 := dwarf.global_position
+	dwarf.bot_move = Vector2.ZERO
+	dwarf.bot_run = false
+	for i in 90:
+		await tree.physics_frame
+	var skid := (dwarf.global_position - p0).length()
+	check(skid > 0.5 and skid < 2.0, "a short skid, not a dead stop (%.2f m)" % skid)
+	check(_flat_speed(dwarf) < 0.1, "and then he stands still")
+	Controls.robot = false
+	r[0].queue_free()
+
+
+func test_sprinting_never_spends_the_last_dodge() -> void:
+	var r: Array = await _robot_room()
+	var dwarf: Dwarf = r[1]
+	var body := dwarf._vitals()
+	body.stamina = 40.0
+	dwarf.bot_move = Vector2(0, -1)
+	dwarf.bot_run = true
+	for i in 300:  # 5 s of holding Shift
+		await tree.physics_frame
+	var dodge_cost := Combat.DODGE_STAMINA * dwarf._progress().dodge_stamina_mult()
+	check(body.stamina >= dodge_cost - 0.5, "sprint stopped with a dodge's worth left (%.1f, dodge costs %.1f)" % [body.stamina, dodge_cost])
+	dwarf.bot_dodge = true
+	await tree.physics_frame
+	check(dwarf.fight.dodging(), "and the dodge still works")
+	Controls.robot = false
+	r[0].queue_free()
+
+
+func test_camera_comes_in_looking_up_and_out_looking_down() -> void:
+	var r: Array = await _robot_room()
+	var dwarf: Dwarf = r[1]
+	dwarf._pitch = -1.0
+	for i in 90:
+		await tree.process_frame
+	var down := dwarf.camera.position.z
+	dwarf._pitch = 0.8
+	for i in 90:
+		await tree.process_frame
+	var up := dwarf.camera.position.z
+	check(down > Dwarf.CAMERA_DISTANCE and up < Dwarf.CAMERA_DISTANCE - 0.3, "looking down %.2f m out, up %.2f m (normal %.2f)" % [down, up, Dwarf.CAMERA_DISTANCE])
+	Controls.robot = false
+	r[0].queue_free()
+
+
+func test_camera_slides_in_for_rock_and_glides_back_out() -> void:
+	var r: Array = await _robot_room([[Vector3(0, 1.5, 1.6), Vector3(6, 3, 0.4)]])  # a wall just behind him
+	var dwarf: Dwarf = r[1]
+	dwarf._pitch = 0.0
+	for i in 60:
+		await tree.physics_frame
+	check(dwarf.camera.global_position.z < 1.4, "camera stays in front of the rock (z %.2f, rock at 1.4)" % dwarf.camera.global_position.z)
+	dwarf.global_position = Vector3(0, 0.05, -6)  # step away from the wall
+	await tree.physics_frame
+	await tree.physics_frame
+	var right_after := dwarf.camera.position.z
+	for i in 120:
+		await tree.physics_frame
+	var later := dwarf.camera.position.z
+	check(right_after < later - 0.3, "glides back out instead of popping (%.2f → %.2f m)" % [right_after, later])
+	check(later > Dwarf.CAMERA_DISTANCE * 0.9, "back to the normal distance (%.2f m)" % later)
+	Controls.robot = false
+	r[0].queue_free()
+
+
+func test_sprint_dust_knows_wood_from_rock() -> void:
+	var r: Array = await _robot_room()
+	var root: Node3D = r[0]
+	var dwarf: Dwarf = r[1]
+	check(dwarf.floor_surface() == "rock", "a plain floor counts as rock (%s)" % dwarf.floor_surface())
+	var plank := StaticBody3D.new()  # a dungeon bridge plank's box, tagged the way DungeonBuild tags them
+	plank.collision_layer = World.TERRAIN_LAYER
+	var cs := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(4, 0.2, 4)
+	cs.shape = box
+	cs.set_meta("surface", DungeonBuild.surface_of("dungeon/bridge_plank.glb"))
+	plank.add_child(cs)
+	root.add_child(plank)
+	plank.global_position = Vector3(8, 0.1, 0)
+	dwarf.global_position = Vector3(8, 0.25, 0)
+	for i in 20:
+		await tree.physics_frame
+	check(dwarf.floor_surface() == "wood", "on a dungeon plank: wood (%s)" % dwarf.floor_surface())
+	check(DungeonBuild.surface_of("dungeon/floor_old.glb") == "stone", "a dungeon's old floor is stone")
+	var before := root.get_children().size()
+	dwarf._kick_dust(6)
+	check(root.get_children().size() > before, "a sprinting step throws up dust")
+	Controls.robot = false
+	root.queue_free()
 
 
 ## Owner (Nov 23, PC): "the animation finishes and then he just sprints forward... the animation should end where he

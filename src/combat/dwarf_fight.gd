@@ -304,7 +304,11 @@ func dodge_expected_duration() -> float:
 	if _dodge_t < 0.0:
 		return Combat.DODGE_TIME
 	var still_held := _dodge_held_grace > 0.0 and _dodge_t < Combat.DASH_HOLD_MAX
-	return Combat.DASH_HOLD_MAX if still_held else maxf(_dodge_t, Combat.DODGE_TIME)
+	# A held dash is still speeding up right up to DASH_HOLD_MAX (F702), so the roll clip can't be done "stood
+	# up" by then like a tap roll is: give it its recovery tail on top, to play out after the speed burst
+	# instead of during it (F798: "after my animation of the dodge is done, he propels me forward").
+	return (Combat.DASH_HOLD_MAX + Combat.DASH_RECOVERY_TAIL if still_held
+			else maxf(_dodge_t, Combat.DODGE_TIME))
 
 
 func _attack(heavy: bool) -> void:
