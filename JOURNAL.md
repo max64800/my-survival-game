@@ -12163,3 +12163,12 @@ wall into another cave only gets the small speckle tube.
   Fixed by sinking a whole clay barrel into the base and using a round stone front. (4) I first drew emoji in the
   empty slots; the game font has none, so they say "food" / "drink" instead.
 - Talked with the carry-weight chat (F793) before editing hud.gd: no clash.
+
+
+## 2026-11-23 (PC) — Monster Arena: every food to try (F426)
+- Owner: "add all the food to the monster flat world, I should have all the recipes". The arena now puts 5 of every
+  food and drink (26 kinds) in the bag at the start, next to the copper gear (exactly fills the 30 bag slots), and
+  makes every cooking recipe known (page/rune recipes go in the world's learned list, ingredient recipes count as
+  seen). New F10 menu button "Refill all food and drinks" throws out old food first, then fills again.
+- Hurdle: a robot-check line I added didn't say its type, so Godot refused the whole arena script; fixed and the
+  arena robot now prints "food kinds in bag: 26 of 26".
