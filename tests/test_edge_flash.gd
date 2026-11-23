@@ -144,3 +144,16 @@ func test_low_health_screen_grows_from_half_health_down() -> void:
 	f.set_health(0.05)
 	check_near(f._low_target, 1.0, 0.001, "nearly dead: full strength")
 	f.free()
+
+
+func test_the_edge_effect_covers_the_whole_screen_and_follows_resizing() -> void:
+	# Owner, Nov 23: it only showed in a small top-left box (its size was 0 and never followed the window).
+	var root := Control.new()
+	root.size = Vector2(800, 600)
+	var f := ScreenEdgeFlash.new()
+	(Engine.get_main_loop() as SceneTree).root.add_child(root)
+	root.add_child(f)
+	check_eq(f.size, Vector2(800, 600), "starts as big as the screen")
+	root.size = Vector2(1200, 700)
+	check_eq(f.size, Vector2(1200, 700), "grows with the window")
+	root.queue_free()

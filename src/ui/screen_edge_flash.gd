@@ -48,7 +48,7 @@ var _mat: ShaderMaterial
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)  # (anchors alone left the size at 0: the effect only showed in a small top-left box, Nov 23)
 	color = Color(0, 0, 0, 0)
 	_mat = ShaderMaterial.new()
 	_mat.shader = load("res://src/ui/screen_edge_flash.gdshader")

@@ -89,6 +89,9 @@ func _run() -> void:
 			reset_all()
 			await get_tree().create_timer(1.0).timeout
 			print("MONSTER_ARENA after reset: beetle alive ", _mgr.monsters.has(_uids["rock_beetle"]), ", statues: ", _mgr.statues.size())
+			if "lowhp" in OS.get_cmdline_user_args():  # (the screen-edge look at low health, bigger window)
+				_main.authority.get_player(_main.authority.local_peer_id()).vitals.health = 12.0
+				await get_tree().create_timer(2.5).timeout
 			await RenderingServer.frame_post_draw
 			print("MONSTER_ARENA shot ", _main.take_screenshot(arg.trim_prefix("shots=").path_join("monster_arena.png")))
 			get_tree().quit()
