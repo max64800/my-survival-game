@@ -61,6 +61,7 @@ func _run() -> void:
 			inv.add(it[0], it[1])
 		inv.changed.emit()
 		ps.fuel = GameAuthority.MAX_FUEL
+		give_all_food()  # (owner, Nov 23: every food and drink to try, and every recipe known)
 	if ps:
 		ps.bed_pos = ORIGIN + Vector3(0.0, 0.4, 8.0)  # if you die here you wake up here, not in the dungeon
 	var dwarf: Dwarf = _main.dwarf
@@ -88,6 +89,11 @@ func _run() -> void:
 					moved += 1
 					print("MONSTER_ARENA moved/fell: ", kind, " ", m.global_position)
 			print("MONSTER_ARENA after 6 s: %d of %d moved or fell" % [moved, _uids.size()])
+			var fps: GameAuthority.PlayerState = _main.authority.get_player(_main.authority.local_peer_id())
+			var kinds := 0
+			for sl in fps.inventory.slots:
+				kinds += 1 if Foods.DISHES.has(sl.get("id", "")) else 0
+			print("MONSTER_ARENA food kinds in bag: %d of %d" % [kinds, Foods.DISHES.size()])
 			var victim: Monster = _mgr.monsters.get(_uids["rock_beetle"])
 			_mgr._kill(victim, _main.authority.local_peer_id())
 			await get_tree().create_timer(1.0).timeout
@@ -150,7 +156,8 @@ func _build_menu() -> void:
 	title.add_theme_font_size_override("font_size", 20)
 	v.add_child(title)
 	for e in [["Reset all creatures (full health, back in place)", reset_all],
-			["Heal me", heal_me], ["Teleport back to the start", to_start]]:
+			["Heal me", heal_me], ["Teleport back to the start", to_start],
+			["Refill all food and drinks (5 of each in the bag)", give_all_food]]:
 		var b := Button.new()
 		b.text = e[0]
 		b.custom_minimum_size = Vector2(380, 40)
@@ -312,6 +319,36 @@ func toggle_fight_back() -> void:
 
 func _heal_everyone() -> void:
 	heal_me()
+
+
+## Every food and drink, 5 of each, in the bag (26 kinds fit next to the gear), and every food recipe known
+## (owner, Nov 23). Old food in the bag is thrown out first so a refill never runs out of room.
+func give_all_food() -> void:
+	var auth: GameAuthority = _main.authority
+	var ps := auth.get_player(auth.local_peer_id())
+	if ps == null:
+		return
+	var inv: Inventory = ps.inventory
+	for i in inv.slots.size():
+		if Foods.DISHES.has(inv.slots[i].get("id", "")):
+			inv.slots[i] = {}
+	var left := 0
+	for id in Foods.DISHES:
+		left += inv.add(id, 5)
+	inv.changed.emit()
+	var learned: Array = auth.world_state.get("learned", [])
+	for r in Recipes.LIST:
+		if not Foods.DISHES.has(String(Recipes.LIST[r].output)):
+			continue
+		var u = Recipes.LIST[r].unlock
+		if u is String:
+			if not learned.has(r):
+				learned.append(r)
+		else:
+			for item in u:
+				ps.seen[item] = true
+	auth.world_state["learned"] = learned
+	_main.hud.show_toast("Every food and drink is in your bag (5 of each)%s; every cooking recipe is known." % ("" if left == 0 else ", %d didn't fit" % left), 4.0)
 
 
 func heal_me() -> void:
