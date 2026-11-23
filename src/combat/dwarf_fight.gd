@@ -12,6 +12,8 @@ signal message(text: String, color: Color)
 var dwarf: Dwarf
 var clock := 0.0
 var _busy := 0.0  ## seconds until we can attack again
+var _lock_off := 0.0  ## F790: how far (radians) this swing turns him away from where the camera looks, toward an enemy
+var _lock_until := 0.0  ## ... until this clock time (the end of the swing)
 var _combo_step := 0
 var _combo_until := 0.0
 var _block_pressed_at := -100.0
@@ -336,6 +338,55 @@ func _attack(heavy: bool) -> void:
 	var airborne := not dwarf.is_on_floor()  # Jumping ★75: hits in the air
 	dwarf.get_tree().create_timer(speed * 0.4).timeout.connect(func(): _impact(heavy, step, riposte, airborne))
 	dwarf.face_camera()
+	# F790 soft lock-on: lean the swing toward the best enemy in front. The dwarf's body turns there over the next
+	# blink (Dwarf: the swinging body follows swing_yaw), so the hit lands where the enemy really is.
+	var cam_yaw := dwarf.model.rotation.y
+	_lock_off = angle_difference(cam_yaw, soft_lock_yaw(dwarf.global_position, cam_yaw, _lock_targets()))
+	_lock_until = clock + speed
+
+
+## Which way the swinging dwarf should face (F790): where the camera looks, plus this swing's lock-on lean.
+func swing_yaw(cam_yaw: float) -> float:
+	return cam_yaw + (_lock_off if clock < _lock_until else 0.0)
+
+
+## Living enemies near enough to lean toward: [position, how far it may be (m)] each.
+func _lock_targets() -> Array:
+	var out := []
+	var auth := GameAuthority.instance
+	if auth == null or auth.monsters == null:
+		return out
+	var prog: Progression = _ps().progress if _ps() else Progression.new()
+	var reach: float = Combat.WEAPONS[weapon()].reach * prog.reach_mult(weapon()) + 0.5
+	for m: Monster in auth.monsters.monsters.values():
+		if m.is_alive():
+			out.append([m.global_position, reach + m.data.size * 0.4 + DwarfFeel.LOCK_EXTRA_RANGE])
+	return out
+
+
+## F790: the yaw a swing should face. Only enemies inside the cone in front of `yaw` (DwarfFeel.LOCK_CONE) and in range
+## count; the best is the one nearest your aim (and closest). It turns you toward it by at most LOCK_MAX_TURN.
+## No enemy in front = `yaw` unchanged (it never turns you toward one beside or behind you).
+## targets: [[position, range], ...]. Pure maths, so the tests can check it.
+static func soft_lock_yaw(from: Vector3, yaw: float, targets: Array) -> float:
+	var best := INF
+	var best_turn := 0.0
+	for t in targets:
+		var to: Vector3 = t[0] - from
+		var flat := Vector3(to.x, 0, to.z)
+		var dist := flat.length()
+		if dist < 0.3 or dist > float(t[1]) or absf(to.y) > 2.0:
+			continue
+		var turn := angle_difference(yaw, atan2(-flat.x, -flat.z))
+		var off := rad_to_deg(absf(turn))
+		if off > DwarfFeel.LOCK_CONE:
+			continue
+		var score := off + dist * DwarfFeel.LOCK_DIST_WEIGHT
+		if score < best:
+			best = score
+			best_turn = turn
+	var most := deg_to_rad(DwarfFeel.LOCK_MAX_TURN)
+	return yaw + clampf(best_turn, -most, most)
 
 
 ## The swing lands: find monsters in front of us within reach.

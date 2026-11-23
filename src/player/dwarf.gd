@@ -413,7 +413,7 @@ func _physics_process(delta: float) -> void:
 	else:
 		var face_dir := dir
 		if model.swinging or (playing and Input.is_action_pressed("dig")):
-			face_dir = -(Basis(Vector3.UP, _yaw).z)
+			face_dir = -(Basis(Vector3.UP, fight.swing_yaw(_yaw) if fight else _yaw).z)  # (F790: plus the lock-on lean)
 		if face_dir.length() > 0.1:
 			var want := atan2(-face_dir.x, -face_dir.z)
 			model.rotation.y = lerp_angle(model.rotation.y, want, minf(1.0, delta * 12.0))
@@ -504,6 +504,7 @@ func _process(delta: float) -> void:
 	var want_len := lerpf(_zoom * tilt, AIM_CAMERA.z, aim_k)
 	_spring.spring_length = lerpf(_spring.spring_length, want_len, minf(1.0, delta * 10.0))  # smooth zoom
 	_place_camera(delta)
+	_kill_push_step(delta)
 	_shake = maxf(0.0, _shake - delta * 4.0)
 	var sprint_view := DwarfFeel.SPRINT_WIDER_VIEW * _sprint_t  # (F775: a little wider while sprinting)
 	camera.fov = lerpf(camera.fov, 32.0 if fight and fight.aiming() else 72.0 + sprint_view, minf(1.0, delta * 10.0))  # crossbow zoom
@@ -1048,6 +1049,24 @@ func got_parry() -> void:
 
 func add_shake(amount: float) -> void:
 	_shake = maxf(_shake, amount)
+
+
+var _kill_push_left := 0.0  ## F800: seconds left of the killing-blow camera push-in
+
+
+## F800: you landed a killing blow: your camera pushes in a little and back out (only on your own screen).
+func kill_push() -> void:
+	_kill_push_left = DwarfFeel.KILL_PUSH_TIME
+
+
+## The push-in: quick in, slower back out, scaled by the camera shake setting (0 = off). Never closer than 1 m.
+func _kill_push_step(delta: float) -> void:
+	if _kill_push_left <= 0.0:
+		return
+	_kill_push_left = maxf(0.0, _kill_push_left - delta)
+	var p := 1.0 - _kill_push_left / DwarfFeel.KILL_PUSH_TIME
+	var push := sin(PI * sqrt(p)) * DwarfFeel.KILL_PUSH * SoundSettings.camera_shake
+	camera.position.z -= minf(push, maxf(0.0, _cam_len - 1.0))
 
 
 ## You got hurt (F695, owner Nov 22): a small camera bump, bigger for a bigger share of your health,

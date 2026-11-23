@@ -56,3 +56,20 @@ const SPRINT_DUST_FROM := 0.6
 const WALK_DUST_AMOUNT := 2
 const WALK_DUST_SIZE := 0.28
 const WALK_DUST_SEE := 0.2
+
+# ---------------------------------------------------------------- fighting feel (F790, F800)
+## Soft lock-on (F790): a swing turns you a little toward the best enemy inside this cone in front of where you look
+## (half-angle in degrees: 45 = 45° either side). Enemies outside it (beside or behind you) are never chosen.
+const LOCK_CONE := 45.0
+## ... and only enemies this much farther than your weapon reaches (m).
+const LOCK_EXTRA_RANGE := 1.0
+## ... and it turns you at most this many degrees, so it helps your aim without taking it over.
+const LOCK_MAX_TURN := 25.0
+## How the "best" enemy is picked: degrees off your aim + meters away x this. Bigger = closer enemies win more.
+const LOCK_DIST_WEIGHT := 8.0
+## Killing blow (F800): only the player who lands the kill freezes this long (s) (a normal hit: 0.06, heavy: 0.11) ...
+const KILL_STOP := 0.15
+const KILL_STOP_HEAVY := 0.2
+## ... and their camera pushes in this far (m) and back out over this long (s). The camera shake setting scales it.
+const KILL_PUSH := 0.45
+const KILL_PUSH_TIME := 0.45

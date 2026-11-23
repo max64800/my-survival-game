@@ -197,3 +197,47 @@ func test_every_weapon_can_crit() -> void:
 		var c := Combat.crit_chance(w)
 		check(c >= 0.03 and c <= 0.12, "%s crits sometimes, not often (%.2f)" % [w, c])
 	check(Combat.CRIT_MULT > 1.4 and Combat.CRIT_MULT < 2.1, "a critical hit hits clearly harder")
+
+
+# ---------------------------------------------------------------- F790 soft lock-on, F800 killing blow
+# yaw 0 = looking down -Z. A target at (x, 0, z) from the dwarf at the origin, in range 4 m.
+
+func test_lock_on_turns_a_little_toward_an_enemy_in_front() -> void:
+	var yaw := DwarfFight.soft_lock_yaw(Vector3.ZERO, 0.0, [[Vector3(-1.0, 0, -2.5), 4.0]])  # ~22° to the left
+	check(yaw > deg_to_rad(15.0) and yaw <= deg_to_rad(DwarfFeel.LOCK_MAX_TURN) + 0.001, "turns toward it (%.1f°)" % rad_to_deg(yaw))
+
+
+func test_lock_on_never_turns_toward_an_enemy_behind_you() -> void:
+	check_eq(DwarfFight.soft_lock_yaw(Vector3.ZERO, 0.0, [[Vector3(0, 0, 2.0), 4.0]]), 0.0, "enemy behind: no turn")
+	check_eq(DwarfFight.soft_lock_yaw(Vector3.ZERO, 0.0, [[Vector3(-2.0, 0, 0.0), 4.0]]), 0.0, "enemy beside: no turn")
+	# (one in front and one behind: only the one in front counts)
+	var yaw := DwarfFight.soft_lock_yaw(Vector3.ZERO, 0.0, [[Vector3(0.3, 0, 1.0), 4.0], [Vector3(0.8, 0, -2.0), 4.0]])
+	check(yaw < 0.0, "turns right, toward the one in front, not the close one behind")
+
+
+func test_lock_on_ignores_far_enemies() -> void:
+	check_eq(DwarfFight.soft_lock_yaw(Vector3.ZERO, 0.0, [[Vector3(-1.0, 0, -6.0), 4.0]]), 0.0, "out of range: no turn")
+
+
+func test_lock_on_turns_gently_at_most() -> void:
+	var yaw := DwarfFight.soft_lock_yaw(Vector3.ZERO, 0.0, [[Vector3(-2.0, 0, -2.2), 4.0]])  # ~42° left
+	check(absf(yaw - deg_to_rad(DwarfFeel.LOCK_MAX_TURN)) < 0.001, "never more than LOCK_MAX_TURN")
+
+
+func test_lock_on_picks_the_enemy_you_aim_at() -> void:
+	# One almost straight ahead (to the right), one far off to the left: it leans toward the one you aim at.
+	var yaw := DwarfFight.soft_lock_yaw(Vector3.ZERO, 0.0, [[Vector3(-1.8, 0, -2.0), 4.0], [Vector3(0.2, 0, -2.2), 4.0]])
+	check(yaw < 0.0 and yaw > deg_to_rad(-10.0), "leans a touch right to the aimed-at enemy (%.1f°)" % rad_to_deg(yaw))
+	# It works facing any direction (yaw near ±180°: no wrap-around mistakes).
+	var back := DwarfFight.soft_lock_yaw(Vector3.ZERO, PI, [[Vector3(0.0, 0, -2.0), 4.0]])
+	check_eq(back, PI, "enemy behind when facing +Z: no turn")
+
+
+func test_only_the_killer_gets_the_killing_blow_pause() -> void:
+	var me := MonsterManager.hitter_feel(5, 5, false, true)
+	check(me.stop > MonsterManager.HIT_STOP and me.push, "the killer: longer pause and the camera push-in")
+	check(MonsterManager.hitter_feel(5, 7, false, true).is_empty(), "another player's screen: nothing (plays on)")
+	var hit := MonsterManager.hitter_feel(5, 5, true, false)
+	check(hit.stop == MonsterManager.HIT_STOP_HEAVY and not hit.push, "a hit that doesn't kill: the normal pause")
+	check(MonsterManager.hitter_feel(5, 5, true, true).stop > MonsterManager.hitter_feel(5, 5, false, true).stop,
+		"a heavy killing blow freezes a little longer")

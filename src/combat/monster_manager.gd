@@ -736,7 +736,7 @@ func _hurt_monster(m: Monster, peer: int, dmg: int, stun_amount: float, eff := 0
 		var away := (m.global_position - from) * Vector3(1, 0, 1)
 		if away.length() > 0.01:
 			m.knock(away.normalized() * clampf(1.8 + dmg * 0.06, 1.8, 5.0) / maxf(1.0, float(m.data.get("size", 1.0))))
-	_ev_hit.rpc(m.uid, dmg, from, peer, eff, crit)
+	_ev_hit.rpc(m.uid, dmg, from, peer, eff, crit, m.hp <= 0.0)  # (the host decides the kill: F800)
 	if m.hp <= 0.0:
 		_kill(m, peer)
 	else:
@@ -1445,6 +1445,16 @@ const HIT_STOP := 0.06        ## seconds both fighters freeze on a hit (owner, N
 const HIT_STOP_HEAVY := 0.11  ## ... on a big hit
 
 
+## What the hitter feels on their own screen (F800): {} on everyone else's screen; the hitter freezes `stop` seconds,
+## longer for a killing blow, which also pushes their camera in (`push`). Nobody else's game slows (co-op).
+static func hitter_feel(peer: int, local_peer: int, heavy: bool, killed: bool) -> Dictionary:
+	if peer == 0 or peer != local_peer:
+		return {}
+	if killed:
+		return {stop = DwarfFeel.KILL_STOP_HEAVY if heavy else DwarfFeel.KILL_STOP, push = true}
+	return {stop = HIT_STOP_HEAVY if heavy else HIT_STOP, push = false}
+
+
 # ================================================================== stone statues (owner, Nov 18)
 # Everything that dies turns to stone where it lies. Mine it with a pickaxe (hits by size: data.statue_hits) for its
 # stone and its loot (1 in 50 also a gem). Left alone it crumbles to dust after STATUE_LIFE. The host keeps the list;
@@ -1693,7 +1703,7 @@ func _ev_note(uid: int, text: String) -> void:
 
 
 @rpc("authority", "call_local", "reliable")
-func _ev_hit(uid: int, dmg: int, from := Vector3.ZERO, peer := 0, eff := 0, crit := false) -> void:
+func _ev_hit(uid: int, dmg: int, from := Vector3.ZERO, peer := 0, eff := 0, crit := false, killed := false) -> void:
 	var m: Monster = monsters.get(uid)
 	if m:
 		# Juicy hits (owner, Nov 18): sparks spray AWAY from the hitter, both fighters freeze for a blink (a bigger hit, a
@@ -1714,14 +1724,16 @@ func _ev_hit(uid: int, dmg: int, from := Vector3.ZERO, peer := 0, eff := 0, crit
 		else:
 			Fx.hit(_root, at, Fx.hit_body(m.kind), dir, heavy, crit, m.data.get("color", Color(0.5, 0.45, 0.4)))
 			Sfx.play("hit_heavy" if heavy else "hit", m.global_position)
-		var stop := HIT_STOP_HEAVY if heavy else HIT_STOP
+		var feel := hitter_feel(peer, auth.local_peer_id(), heavy, killed)
 		m.hit_flash()
-		m.hit_stop(stop)
-		if peer != 0 and peer == auth.local_peer_id():
+		m.hit_stop(feel.get("stop", HIT_STOP_HEAVY if heavy else HIT_STOP))  # (the killer sees it freeze longer too)
+		if not feel.is_empty():
 			var me := player_node(peer)
 			if me and me.has_method("hit_stop"):
-				me.hit_stop(stop)
+				me.hit_stop(feel.stop)
 				me.add_shake(0.45 if heavy else 0.25)
+				if feel.push:
+					me.kill_push()
 				if heavy and away.length() > 0.01:
 					me.shove(-away.normalized() * 2.2)  # (a heavy hit bounces you back off it)
 		_float_number(m.global_position + Vector3.UP * 1.4, str(dmg) + ("!" if crit else ""), heavy, dir, CRIT_COLOR if crit else EFFECT_COLOR[eff + 1], crit, dmg)
