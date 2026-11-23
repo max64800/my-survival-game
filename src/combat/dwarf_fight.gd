@@ -224,7 +224,7 @@ func step(delta: float, playing: bool, move_dir: Vector3) -> float:
 		return 0.0
 	if not playing:
 		return 1.0
-	if (Input.is_action_just_pressed("dodge") or dwarf.bot_dodge) and _busy <= 0.0 and _ps() and _ps().vitals.use_stamina(Combat.DODGE_STAMINA * _ps().progress.dodge_stamina_mult()):
+	if (Input.is_action_just_pressed("dodge") or dwarf.bot_dodge) and _busy <= 0.0 and not dwarf.is_overloaded() and _ps() and _ps().vitals.use_stamina(Combat.DODGE_STAMINA * _ps().progress.dodge_stamina_mult()):
 		dwarf.bot_dodge = false
 		_dodge_t = 0.0
 		# No direction pressed = roll the way you're already facing (owner, PC, Nov 22: "I'm looking forward, I

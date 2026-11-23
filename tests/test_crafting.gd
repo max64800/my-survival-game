@@ -52,16 +52,17 @@ func test_planks_make_two() -> void:
 
 func test_full_bag_takes_nothing() -> void:
 	var inv := Inventory.new()
-	inv.add("stone", 100 * (Inventory.SIZE - 1))
-	inv.add("rootwood", 100)  # bag now completely full
+	inv.add("stone", Items.stack_size("stone") * (Inventory.SIZE - 1))  # (stacks by kind since F793)
+	var wood := Items.stack_size("rootwood")
+	inv.add("rootwood", wood)  # bag now completely full
 	# Planks need a new slot (rootwood stack shrinks by 1 but doesn't empty).
 	check(not Crafting.craft(inv, "plank_root"), "no room for planks")
-	check_eq(inv.count_of("rootwood"), 100, "nothing taken")
+	check_eq(inv.count_of("rootwood"), wood, "nothing taken")
 
 
 func test_inputs_free_room_for_output() -> void:
 	var inv := Inventory.new()
-	inv.add("stone", 100 * (Inventory.SIZE - 1))
+	inv.add("stone", Items.stack_size("stone") * (Inventory.SIZE - 1))
 	inv.add("rootwood", 1)  # last slot: 1 rootwood
 	check(Crafting.craft(inv, "plank_root"), "the rootwood's slot frees up for the planks")
 

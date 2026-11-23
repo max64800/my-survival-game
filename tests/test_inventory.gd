@@ -10,24 +10,26 @@ func test_add_and_count() -> void:
 
 func test_full_stack_starts_new_slot() -> void:
 	var inv := Inventory.new()
-	inv.add("stone", 100)
+	var full := Items.stack_size("stone")  # (50 since F793)
+	inv.add("stone", full)
 	inv.add("stone", 5)
-	check_eq(inv.get_slot(0).count, 100, "first slot is a full stack")
+	check_eq(inv.get_slot(0).count, full, "first slot is a full stack")
 	check_eq(inv.get_slot(1), {id = "stone", count = 5}, "extra goes to the next slot")
 
 
 func test_fills_existing_stack_first() -> void:
 	var inv := Inventory.new()
-	inv.add("stone", 50)
+	var full := Items.stack_size("stone")
+	inv.add("stone", full - 10)
 	inv.add("dirt", 1)
-	inv.add("stone", 60)
-	check_eq(inv.get_slot(0).count, 100, "topped up first stone stack")
+	inv.add("stone", 20)
+	check_eq(inv.get_slot(0).count, full, "topped up first stone stack")
 	check_eq(inv.get_slot(2), {id = "stone", count = 10}, "rest after the dirt")
 
 
 func test_full_bag_returns_leftover() -> void:
 	var inv := Inventory.new()
-	check_eq(inv.add("stone", Inventory.SIZE * 100 + 7), 7, "7 stone don't fit")
+	check_eq(inv.add("stone", Inventory.SIZE * Items.stack_size("stone") + 7), 7, "7 stone don't fit")
 	check_eq(inv.add("dirt", 3), 3, "nothing fits in a full bag")
 
 

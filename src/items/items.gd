@@ -246,7 +246,7 @@ static func info(id: String) -> Dictionary:
 
 
 static func stack_size(id: String) -> int:
-	return info(id).get("stack", 100)
+	return info(id).get("stack", ItemWeights.default_stack(id))  # (by kind since F793: stone 50, food 20...)
 
 
 static func display_name(id: String) -> String:

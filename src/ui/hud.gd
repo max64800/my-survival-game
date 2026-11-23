@@ -53,6 +53,8 @@ var _stamina_text: Label  ## "80 / 100" in the middle of the stamina bar (owner 
 var _level_label: Label
 var _buff_label: Label
 var _ailment_badges: AilmentBadges  ## burning / chilled / poisoned / frozen, above the health bar
+var _carry_text: Label  ## "HEAVY" / "OVERLOADED" inside the stamina bar, only when your load is heavy (F793)
+var _bag_weight: Label  ## "Weight 142 / 200" under the Bag title (F793)
 var _food_slots: FoodSlots  ## the eaten foods + drink as pictures with a ring, right of the health bar (F426)
 var _edge_flash: ScreenEdgeFlash  ## red flash on a hit, green/orange/blue glow while poisoned/burning/chilled (F695)
 var edge_fake := ""  ## dev: show this status look at the screen edges without any ailment ("" = off)
@@ -176,6 +178,8 @@ func _build() -> void:
 	bag_outer.add_theme_constant_override("separation", 8)
 	_bag_panel.add_child(bag_outer)
 	UiKit.title(bag_outer, "Bag")
+	_bag_weight = UiKit.label(bag_outer, "", 16)
+	_bag_weight.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	# Equipped things on the left, everything you carry on the right (owner F150).
 	var bag_row := HBoxContainer.new()
 	bag_row.add_theme_constant_override("separation", 18)
@@ -309,6 +313,10 @@ func _build() -> void:
 	_stamina_text = _label(_bars.stamina.get_parent(), 14)  # same as health, a bit smaller for the thinner bar (F823)
 	_stamina_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_stamina_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_carry_text = _label(_bars.stamina.get_parent(), 15)  # inside the stamina frame, left end (the food row is right of the bars)
+	_carry_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_carry_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_carry_text.visible = false
 	# Moods, food buffs and ailments: small text in the bottom-left, above the lantern.
 	_buff_label = _label(root, 13)
 	_buff_label.anchor_top = 1.0
@@ -608,6 +616,10 @@ func _refresh_slots() -> void:
 		if not s.is_empty():
 			icon.add_theme_stylebox_override("panel", _slot_style(Items.color(s.id).darkened(0.15), Items.color(s.id).lightened(0.3)))
 			panel.tooltip_text = Upgrades.display_name(s)  # "Copper Sword +2"
+			var each := ItemWeights.weight(s.id)  # F793: what it weighs
+			if each > 0.0:
+				panel.tooltip_text += "\nWeight %s%s" % [ItemWeights.pretty(each * int(s.count)),
+						" (%s each)" % ItemWeights.pretty(each) if int(s.count) > 1 else ""]
 			var hits := Combat.damage_text(s)  # (owner F571: weapons show their damage)
 			if hits != "":
 				panel.tooltip_text += "
@@ -1262,6 +1274,7 @@ func _process(delta: float) -> void:
 		_update_ghost_bar(v)
 		_bars.stamina.max_value = v.max_stamina()
 		_bars.stamina.value = v.stamina
+		_show_carry(_local_dwarf())
 		var fighter := _local_dwarf()
 		var sm: StunMeter = fighter.fight.stun_meter if fighter != null and fighter.fight != null else null
 		_bars.stun.get_parent().visible = sm != null and sm.fraction() > 0.0
@@ -1412,6 +1425,21 @@ func _update_ghost_bar(v: Vitals) -> void:
 		_ghost_bar.value = lerpf(_ghost_bar.value, v.health, 1.0 - exp(-GHOST_DRAIN * dt))
 		if _ghost_bar.value - v.health < 0.2:
 			_ghost_bar.value = v.health
+
+
+## Carry weight (F793): the bag window always shows it; the stamina bar says HEAVY (yellow) / OVERLOADED (red).
+func _show_carry(d: Dwarf) -> void:
+	var c: Dictionary = d.carry if d else {}
+	var load: int = c.get("load", ItemWeights.Load.LIGHT)
+	_carry_text.visible = load != ItemWeights.Load.LIGHT
+	_carry_text.text = " OVERLOADED" if load == ItemWeights.Load.OVERLOADED else " HEAVY"
+	_carry_text.add_theme_color_override("font_color", Color(1.0, 0.3, 0.25) if load == ItemWeights.Load.OVERLOADED else Color(1.0, 0.85, 0.35))
+	if _bag_weight and _bag_panel.visible and not c.is_empty():
+		var word: String = ["", "   Heavy: slower", "   OVERLOADED: drop something"][load]
+		_bag_weight.text = "Weight %s / %s   (overloaded past %s)%s" % [ItemWeights.pretty(c.weight),
+				ItemWeights.pretty(c.heavy), ItemWeights.pretty(c.max), word]
+		_bag_weight.add_theme_color_override("font_color", Color(1.0, 0.4, 0.3) if load == ItemWeights.Load.OVERLOADED
+				else (Color(1.0, 0.85, 0.35) if load == ItemWeights.Load.HEAVY else UiKit.TEXT))
 
 
 func _local_dwarf() -> Dwarf:

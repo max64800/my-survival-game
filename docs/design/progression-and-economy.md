@@ -893,7 +893,7 @@ Buff food ends. XP is not lost. **Skills: you lose some (owner, Nov 19, like Val
 | Armor slots | Set by combat doc | Don't use bag space |
 
 - **Stacks:** 100 default (section 1). A full stack starts a new slot.
-- **No weight limit.** Only slots matter. (Simple, and fits "big auto-pickup radius" from the plan.)
+- **Carry weight (owner, Nov 23, F793).** Every item weighs something (stone = 1); heavy at 200, OVERLOADED at 300, stacks by kind (stone 50, food 20). All numbers and choices: `docs/decisions/2026-11-23-carry-weight.md`, code `src/items/item_weights.gd`.
 - **Bag full:** items stay on the ground and blink. A "Bag full!" note shows.
 - **Buttons:** "Sort" (by type), "Stack to nearby chests" (puts items into chests within 10 m that already hold that item).
 

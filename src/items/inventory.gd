@@ -256,4 +256,22 @@ func load_data(data: Array) -> void:
 		slots[i] = data[i].duplicate(true) if i < data.size() and data[i] is Dictionary else {}  # deep: gems lists too
 		if slots[i].has("id") and not Items.exists(str(slots[i].id)):
 			slots[i] = {}  # an old save's item the game no longer has (critter meat, boss parts..., Nov 19)
+	_split_big_stacks()
 	changed.emit()
+
+
+## Stacks got smaller (F793: stone 100 -> 50). An old save's too-big stack spills its extra into empty slots
+## (nothing is ever deleted: with no room left, the big stack just stays as it is).
+func _split_big_stacks() -> void:
+	for i in slots.size():
+		var s := slots[i]
+		if s.is_empty() or (is_player and is_equip_index(i)) or s.has("gems"):
+			continue
+		var max_stack := Items.stack_size(str(s.id))
+		for j in slots.size():
+			if int(s.count) <= max_stack:
+				break
+			if j != i and slots[j].is_empty() and not (is_player and (is_equip_index(j) or (is_pack_index(j) and not pack_open()))):
+				var put := mini(int(s.count) - max_stack, max_stack)
+				slots[j] = {id = s.id, count = put}
+				s.count = int(s.count) - put

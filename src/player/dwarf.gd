@@ -46,6 +46,8 @@ var _speed_smooth := WALK_SPEED  ## eases toward the real target speed (F701), i
 var _sprint_t := 0.0  ## 0 = walking speed, 1 = full sprint: ramps up over DwarfFeel.SPRINT_RAMP_TIME (F775)
 var _skid := false  ## skidding to a stop after a sprint (F775)
 var _winded := false  ## sprint stopped to keep a dodge's worth of energy; waits to catch its breath (F775)
+var carry := {}  ## your load (F793): {weight, heavy, max, load, speed} from ItemWeights.for_player, refreshed 5x a second
+var _carry_wait := 0.0
 var running := false  ## running this frame (DwarfFight stops a crossbow reload when you run)
 var _was_playing := false  ## (F494: Shift is let go when you come back to the game)
 var _layout := -2  ## the keyboard language last frame (-2 = not looked yet; F494: Ctrl+Shift switches it)
@@ -283,6 +285,10 @@ func _physics_process(delta: float) -> void:
 	dir = (Basis(Vector3.UP, _yaw) * Vector3(iv.x, 0, iv.y))
 	var body := _vitals()
 	var prog := _progress()
+	_update_carry(delta)
+	var overloaded: bool = carry.get("load", ItemWeights.Load.LIGHT) == ItemWeights.Load.OVERLOADED
+	if overloaded:
+		running = false  # F793: too heavy to sprint
 	# F775: one energy bar for sprint, dodge and attack, but sprinting never spends the last dodge.
 	if body:
 		var keep := minf(Combat.DODGE_STAMINA * (prog.dodge_stamina_mult() if prog else 1.0) * DwarfFeel.SPRINT_KEEPS_DODGES, body.max_stamina() * 0.5)
@@ -320,7 +326,7 @@ func _physics_process(delta: float) -> void:
 	# Heavy legs: walk → sprint ramps up over SPRINT_RAMP_TIME, and back down over SPRINT_SLOW_TIME (F775).
 	_sprint_t = minf(1.0, _sprint_t + delta / DwarfFeel.SPRINT_RAMP_TIME) if running else maxf(0.0, _sprint_t - delta / DwarfFeel.SPRINT_SLOW_TIME)
 	var sprint_k := smoothstep(0.0, 1.0, _sprint_t)
-	var top_speed := lerpf(WALK_SPEED, RUN_SPEED * (prog.run_speed_mult() if prog else 1.0) * burst, sprint_k) * fight_mult * (body.ailments.speed_mult() * maxf(0.2, 1.0 + body.buff_total("move_speed")) if body else 1.0)
+	var top_speed := lerpf(WALK_SPEED, RUN_SPEED * (prog.run_speed_mult() if prog else 1.0) * burst, sprint_k) * fight_mult * (body.ailments.speed_mult() * maxf(0.2, 1.0 + body.buff_total("move_speed")) if body else 1.0) * float(carry.get("speed", 1.0))
 	_speed_smooth = move_toward(_speed_smooth, top_speed, SPEED_BLEND * delta)
 	var speed := _speed_smooth
 	if held_left > 0.0:  # (Lampwick's bear jaws hold your leg: MineTraps)
@@ -360,7 +366,7 @@ func _physics_process(delta: float) -> void:
 		bot_jump = false
 	else:
 		_jump_wanted = maxf(0.0, _jump_wanted - delta)
-	if _jump_wanted > 0.0 and _since_floor <= COYOTE_TIME and velocity.y <= 0.5 \
+	if _jump_wanted > 0.0 and _since_floor <= COYOTE_TIME and velocity.y <= 0.5 and not overloaded \
 			and (body == null or body.use_stamina(JUMP_STAMINA * (prog.jump_stamina_mult() if prog else 1.0))):
 		velocity.y = JUMP_SPEED * (prog.jump_speed_mult() if prog else 1.0)
 		_jump_elapsed = 0.0
@@ -1136,6 +1142,21 @@ func _send_body_xp(delta: float) -> void:
 	_run_time = 0.0
 	_jumps = 0
 	shield_blocks = 0
+
+
+## Carry weight (F793): what you're carrying and how much it slows you. Your own inventory comes from the host.
+func _update_carry(delta: float) -> void:
+	_carry_wait -= delta
+	if _carry_wait > 0.0 and not carry.is_empty():
+		return
+	_carry_wait = 0.2
+	var auth := GameAuthority.instance
+	var ps := auth.get_player(peer_id) if auth else null
+	carry = ItemWeights.for_player(ps) if ps else {}
+
+
+func is_overloaded() -> bool:
+	return carry.get("load", ItemWeights.Load.LIGHT) == ItemWeights.Load.OVERLOADED
 
 
 func _progress() -> Progression:
