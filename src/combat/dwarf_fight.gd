@@ -285,16 +285,12 @@ func _shield_bash() -> void:
 	dwarf.face_camera()
 
 
-## How much faster a fully-held dash moves than a tapped roll, by the end of the hold (owner, PC, Nov 22: "the
-## dodge forward should be longer... he should fly further"): past DODGE_TIME it isn't just the same roll speed
-## sustained longer, it picks up speed the rest of the way to DASH_HOLD_MAX, for a real forward burst.
-const DASH_SPEED_MULT := 1.8
-
-
-## Where a roll moves you this frame.
+## Where a roll moves you this frame. Same speed the whole way, tap or held (owner, Nov 23: "the entire speed at
+## the beginning of the dodge and the end of the dodge should be exactly the same... he's traveling too fast at
+## the end of the long dodge" — an earlier version sped up toward DASH_HOLD_MAX; removed). Holding goes farther
+## only because it keeps going longer (toward DASH_HOLD_MAX), never because it moves faster.
 func dodge_velocity() -> Vector3:
-	var k := clampf((_dodge_t - Combat.DODGE_TIME) / (Combat.DASH_HOLD_MAX - Combat.DODGE_TIME), 0.0, 1.0)
-	return _dodge_dir * (Combat.DODGE_DISTANCE / Combat.DODGE_TIME) * lerpf(1.0, DASH_SPEED_MULT, k)
+	return _dodge_dir * (Combat.DODGE_DISTANCE / Combat.DODGE_TIME)
 
 
 ## How long the roll is on track to last (s), updated live so the roll animation can be stretched or shortened to
@@ -304,9 +300,9 @@ func dodge_expected_duration() -> float:
 	if _dodge_t < 0.0:
 		return Combat.DODGE_TIME
 	var still_held := _dodge_held_grace > 0.0 and _dodge_t < Combat.DASH_HOLD_MAX
-	# A held dash is still speeding up right up to DASH_HOLD_MAX (F702), so the roll clip can't be done "stood
-	# up" by then like a tap roll is: give it its recovery tail on top, to play out after the speed burst
-	# instead of during it (F798: "after my animation of the dodge is done, he propels me forward").
+	# A held dash is still actively moving right up to DASH_HOLD_MAX (F702), so the roll clip can't be done "stood
+	# up" by then like a tap roll is: give it its recovery tail on top, to play out after he's done moving instead
+	# of while he's still mid-dash (F798: "after my animation of the dodge is done, he propels me forward").
 	return (Combat.DASH_HOLD_MAX + Combat.DASH_RECOVERY_TAIL if still_held
 			else maxf(_dodge_t, Combat.DODGE_TIME))
 

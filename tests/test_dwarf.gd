@@ -424,6 +424,36 @@ func test_holding_dodge_dashes_farther_than_a_tap() -> void:
 	root.queue_free()
 
 
+## Owner (PC, Nov 23, F702): "the entire speed at the beginning of the dodge and the end of the dodge should be
+## exactly the same... he's traveling too fast at the end of the long dodge" — an earlier version sped up toward
+## DASH_HOLD_MAX; holding should only make the dash last longer, never faster.
+func test_held_dash_moves_at_the_same_speed_start_to_finish() -> void:
+	Controls.setup()
+	Controls.robot = true
+	Controls.set_captured(true)
+	var root := _room([])
+	var auth := GameAuthority.new()
+	auth.drops_root = root
+	root.add_child(auth)
+	var dwarf := _dwarf_in(root)
+	auth.add_player(1, dwarf)
+	for i in 10:
+		await tree.physics_frame
+	dwarf.bot_dodge = true
+	Input.action_press("dodge")  # hold it down the whole time
+	await tree.physics_frame
+	var early_speed := dwarf.fight.dodge_velocity().length()
+	var late_speed := early_speed
+	while dwarf.fight.dodging():
+		late_speed = dwarf.fight.dodge_velocity().length()
+		await tree.physics_frame
+	Input.action_release("dodge")
+	check(absf(late_speed - early_speed) < 0.01,
+			"dash speed stays the same start to finish (%.2f m/s vs %.2f m/s, F702)" % [early_speed, late_speed])
+	Controls.robot = false
+	root.queue_free()
+
+
 ## Owner (Mac, Nov 22 phone notes, F702): "the dwarf should always roll where you're pointing, or where you are looking" —
 ## not backward while you're plainly walking forward.
 func test_dodge_while_walking_forward_rolls_forward_not_back() -> void:
@@ -549,7 +579,7 @@ func test_roll_animation_matches_how_long_the_dash_lasts() -> void:
 		await tree.physics_frame
 	var held_plays_for := rig.tree.get_animation(rig._full_clip).length / float(rig.tree.get("parameters/full_speed/scale"))
 	Input.action_release("dodge")
-	# Stretched past DASH_HOLD_MAX itself, not to it (F798): a held dash keeps speeding up right up to
+	# Stretched past DASH_HOLD_MAX itself, not to it (F798): a held dash keeps moving right up to
 	# DASH_HOLD_MAX, so the clip's stand-up finish needs its recovery tail after that, not landing exactly on it.
 	var want := Combat.DASH_HOLD_MAX + Combat.DASH_RECOVERY_TAIL
 	check(absf(held_plays_for - want) < 0.05, "holding the dash stretches the roll clip to match (%.2f s vs %.2f s)" % [held_plays_for, want])
@@ -558,10 +588,10 @@ func test_roll_animation_matches_how_long_the_dash_lasts() -> void:
 
 
 ## Owner (PC, Nov 23, F798): "I am holding the control key all the way until the dwarf stops rolling... after my
-## animation of the dodge is done, he propels me forward" — a held dash keeps speeding up right up to DASH_HOLD_MAX
-## (DASH_SPEED_MULT), and the roll clip used to be stretched to finish exactly there too, so the stand-up pose
-## landed right in the middle of the speed burst instead of after it. Checked with a robot + screenshots in
-## journal-inbox before this was written; this locks the fix in.
+## animation of the dodge is done, he propels me forward" — a held dash keeps moving right up to DASH_HOLD_MAX,
+## and the roll clip used to be stretched to finish exactly there too, so the stand-up pose landed right in the
+## middle of the dash instead of after it. Checked with a robot + screenshots in journal-inbox before this was
+## written; this locks the fix in.
 func test_held_dash_roll_still_has_recovery_left_when_the_dash_ends() -> void:
 	Controls.setup()
 	Controls.robot = true
