@@ -1337,14 +1337,15 @@ func _twin_tower(cx: float, m: int) -> void:
 	_add("door", S, _tp(5, 5.5, 0), 1)                                  # into the gate room
 	# Stairs (owner, Nov 21: the new pieces worked in): floor 1 -> 2 straight in the front middle climbing to the back,
 	# a stair railing on its gate side and a down-sloped wall closing its outer side; 2 -> 3 corner stairs on the outer
-	# side climbing to the front; 3 -> the deck straight stairs on the gate side (F626: they were spiral stairs you
+	# side climbing to the front; 3 -> the deck straight stairs in the middle (F626: they were spiral stairs you
 	# couldn't climb).
 	# Each foot on open floor, each starting where the last ends.
 	# F783 (owner, Nov 23: "the doors opening towards the towers are blocked by railings"): the deck flight used to
 	# climb to the back, so its hole lay right behind the stage's door and a railing stood 0.7 m inside it. It now
-	# climbs toward the gate side and comes out at that door: up the stairs, straight out onto the gate's roof.
+	# climbed toward the gate side, out at that door. F811 (Nov 23): now it climbs to the back from the stage's middle
+	# (see i == 2 below), so both its ends have a whole free 2 m block.
 	var flights := [[Vector2(0, 2), 1.0, 0, "stairs"], [Vector2(-2, 0), 3.25, 2, "stairs_corner"],
-		[Vector2(2, 0), 5.5, 3 if m == 1 else 1, "stairs"]]
+		[Vector2(0, 2), 5.5, 0, "stairs"]]
 	for f in flights:
 		var c: Vector2 = f[0]
 		_add("floor", S, _tp(c.x, f[1], c.y), 0)                        # (a slab lifts each top step to the floor)
@@ -1364,14 +1365,14 @@ func _twin_tower(cx: float, m: int) -> void:
 					_add("floor", S, _tp(u, floors[i], v), 0)
 		var ry: float = floors[i] + 0.25
 		if i == 2:
-			# the deck flight climbs across the tower (+u): railings on both long sides and the foot's end; its top
-			# end stays open, toward the stage's door
-			# F783 round 3 (robot walk, Nov 23): these stairs come up INSIDE the round stage, and with full railings on
-			# both long sides their top only led out of the door: the stage floor and its stairs (at -v) were fenced
-			# off. The -v railing now only guards the deep half; the top half opens onto the stage floor.
-			_add("railing_narrow", S, _tp(hole.x - 0.5, ry, hole.y - 1), 0)
-			_add("railing", S, _tp(hole.x, ry, hole.y + 1), 0)
+			# F811 (owner, Nov 23: "don't make half-railing models, rebuild the spot"): the deck flight stands in the
+			# round stage's middle and climbs toward -v, so its top lands in the stage's middle with a whole free
+			# 2 m block (the door to the gate roof on its right, the stage stairs' foot ahead-left), and its foot has
+			# the free cell at the back wall. Railings on both long sides and the foot's end. (Before: it climbed
+			# toward the door, which left only 0.7 m between its top and the door, F783.)
 			_add("railing", S, _tp(hole.x - 1, ry, hole.y), 1)
+			_add("railing", S, _tp(hole.x + 1, ry, hole.y), 1)
+			_add("railing", S, _tp(hole.x, ry, hole.y + 1), 0)
 			continue
 		# round the hole: both sides and the foot's end (not over the stair railing, never across its way out).
 		# F783 (owner, Nov 23: "the spiral staircase is blocked"): corner stairs come out SIDEWAYS (in at their front,
@@ -2381,6 +2382,11 @@ func _stairs_on_the_floor() -> void:
 		var under: Vector3 = p.pos - Vector3(0, 0.25, 0)
 		if slabs.has(_key(under)) and tops.has(_key(under)):
 			gone[slabs[_key(under)]] = true
+			# F804 (Nov 23): the stair railing beside them comes down with them (it floated 25 cm over the steps)
+			for r: Dictionary in _bp.pieces:
+				if r.id == "railing_stairs" and absf(r.pos.y - p.pos.y) < 0.01 \
+						and Vector2(r.pos.x - p.pos.x, r.pos.z - p.pos.z).length() < 1.2:
+					r.pos = r.pos - Vector3(0, 0.25, 0)
 			p.pos = under
 	var kept: Array[Dictionary] = []
 	for i in _bp.pieces.size():

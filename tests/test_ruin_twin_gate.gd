@@ -271,14 +271,43 @@ func test_rebuild_the_twin_gate_in_stone() -> void:
 		turned += int(pc.piece == "stairs" and (pc.pos as Vector3).distance_to(at) < 0.05 and int(pc.rot) == Pieces.add_rot(3, fix.turn))
 	check_eq(rails, 0, "no railing across the tower door any more")
 	check_eq(turned, 1, "the deck stairs now climb toward the door")
-	# F783 round 3: the deck stairs' railing on the stage side guards only the deep half (the top half opens onto the stage).
-	var rail_short := 0
-	var rail_long := 0
-	for u in b.structure.near(AABB(o + basis * Vector3(-9, 7.75, 7) - Vector3(2, 1, 2), Vector3(4, 2, 4))):
+	# F811 (Nov 23): a gate rebuilt before then (deck stairs toward the door, the old railings, the deck floor where
+	# the new hole goes) gets its deck stairs moved to the stage's middle, with a whole free block at both ends.
+	var lpos := func(v: Vector3) -> Vector3: return o + basis * v
+	for n in RuinTwinGate.f811_list(RuinTwinGate.FIX_F811_NEW, -1):
+		for u in b.structure.near(Pieces.box(n[0], lpos.call(n[1]), Pieces.add_rot(n[2], fix.turn))):
+			var pc: Dictionary = b.structure.pieces[u]
+			if pc.piece == n[0] and (pc.pos as Vector3).distance_to(lpos.call(n[1])) < 0.05:
+				b._ev_remove_piece(u)
+	for n in [["floor", Vector3(-11, 7.5, 10), 0], ["railing", Vector3(-9, 7.75, 9), 0], ["railing", Vector3(-10, 7.75, 8), 1]]:
+		b._ev_add_piece(b._next_uid, n[0], "cut_stone", lpos.call(n[1]), Pieces.add_rot(n[2], fix.turn), false)
+	check(fix._fix_f811() >= 5, "the old deck stairs move to the stage's middle")
+	var want := {}
+	for n in RuinTwinGate.f811_list(RuinTwinGate.FIX_F811_NEW, -1):
+		want[n] = 0
+	var old_left := 0
+	for u in b.structure.near(AABB(lpos.call(Vector3(-11, 6.5, 9)) - Vector3(4, 2, 4), Vector3(8, 4, 8))):
 		var pc: Dictionary = b.structure.pieces[u]
-		rail_short += int(pc.piece == "railing_narrow" and (pc.pos as Vector3).distance_to(o + basis * Vector3(-9.5, 7.75, 7)) < 0.05)
-		rail_long += int(pc.piece == "railing" and (pc.pos as Vector3).distance_to(o + basis * Vector3(-9, 7.75, 7)) < 0.05)
-	check(rail_short == 1 and rail_long == 0, "a short railing on the deck stairs' stage side, no full one (%d, %d)" % [rail_short, rail_long])
+		for n in want:
+			if pc.piece == n[0] and int(pc.rot) == Pieces.add_rot(n[2], fix.turn) and (pc.pos as Vector3).distance_to(lpos.call(n[1])) < 0.05:
+				want[n] += 1
+		for n in RuinTwinGate.f811_list(RuinTwinGate.FIX_F811_OLD, -1):
+			if pc.piece == n[0] and int(pc.rot) == Pieces.add_rot(n[2], fix.turn) and (pc.pos as Vector3).distance_to(lpos.call(n[1])) < 0.05:
+				old_left += 1
+	check(want.values().all(func(c): return c == 1), "the new stairs, their railings and the floor over the old hole are in (%s)" % [want.values()])
+	check_eq(old_left, 0, "none of the old deck pieces are left")
+	check_eq(fix._fix_f811(), 0, "and only once")
+	# F804 (Nov 23): the towers' first stair railing floated 25 cm over the steps; an old gate's comes down.
+	var rs_at: Vector3 = lpos.call(Vector3(-10, 1.0, 10))
+	for u in b.structure.near(AABB(rs_at - Vector3(1, 1, 1), Vector3(2, 2, 2))):
+		if b.structure.pieces[u].piece == "railing_stairs":
+			b._ev_remove_piece(u)
+	b._ev_add_piece(b._next_uid, "railing_stairs", "cut_stone", rs_at + Vector3.UP * 0.25, Pieces.add_rot(1, fix.turn), false)
+	check_eq(fix._fix_f804(), 1, "the floating stair railing is found")
+	var low := 0
+	for u in b.structure.near(AABB(rs_at - Vector3(1, 1, 1), Vector3(2, 2, 2))):
+		low += int(b.structure.pieces[u].piece == "railing_stairs" and (b.structure.pieces[u].pos as Vector3).distance_to(rs_at) < 0.05)
+	check_eq(low, 1, "and it now sits on the steps")
 	# F783 round 3: a right stage rebuilt before then gets its first stairs turned round.
 	var st_at := o + basis * Vector3(11, 8.0, 5.2679)
 	var old_rail := o + basis * Vector3(12, 10.0, 5.2679)
