@@ -116,10 +116,11 @@ func test_hud_picks_burn_then_poison_then_cold_with_stack_strength() -> void:
 	a.add("chill", 300)
 	hud._update_edge_status(a)
 	check_eq(hud._edge_flash._status_kind, "chill", "chilled: frost")
-	check_near(hud._edge_flash._status_level, Hud.CHILL_EDGE_MAX, 0.001, "3 chill stacks = the most frost")
+	check_near(hud._edge_flash._status_level, Hud.CHILL_EDGE_BY_STACK[2], 0.001, "3 chill stacks")
 	a.add("chill", 200)  # 5th stack = frozen
 	hud._update_edge_status(a)
-	check_near(hud._edge_flash._status_level, Hud.CHILL_EDGE_MAX, 0.001, "frozen: frost stays the same as 3 stacks")
+	check_near(hud._edge_flash._status_level, Hud.CHILL_EDGE_BY_STACK[4], 0.001, "frozen = 5-stack frost")
+	check(Hud.CHILL_EDGE_BY_STACK[4] < 0.8 and Hud.CHILL_EDGE_BY_STACK[0] < Hud.CHILL_EDGE_BY_STACK[1], "frost grows each stack, 5 stays modest")
 	a.add("poison", 100)
 	hud._update_edge_status(a)
 	check_eq(hud._edge_flash._status_kind, "poison", "poison shows over cold")

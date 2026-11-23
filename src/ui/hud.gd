@@ -4,7 +4,9 @@ extends CanvasLayer
 ## dig progress, the hotbar (Item Bar), the bag, lantern fuel, frame rate, pause screen.
 
 const SLOT_SIZE := 58
-const CHILL_EDGE_MAX := 0.6  ## frost edge strength at 3 stacks, the most it ever covers (owner, Nov 23 round 7)
+## Frost edge strength for 1..5 chill stacks (owner, Nov 23 round 7): small start, 3 stacks = the look he liked,
+## 4 and 5 only a little more, so even 5 never covers too much of the screen.
+const CHILL_EDGE_BY_STACK := [0.15, 0.35, 0.6, 0.68, 0.76]
 const HOTBAR_SLOT := 88  ## the item bar at the bottom of the screen is bigger than the bag's slots
 const SKILLS_HOTBAR_ROOM := 125.0  ## the K window stays above the hotbar (owner, Nov 20)
 const BAG_HINT := "Click: pick up / swap  ·  Shift+Click: quick move  ·  Double-click: equip  ·  Right-click: split"
@@ -1366,10 +1368,10 @@ func _update_edge_status(a: Ailments) -> void:
 	elif a.has("poison"):
 		_edge_flash.set_status("poison", a.stacks_of("poison") / 3.0)
 	elif a.has("frozen"):
-		_edge_flash.set_status("chill", CHILL_EDGE_MAX)  # frozen looks like 3 stacks (owner, Nov 23 round 7)
+		_edge_flash.set_status("chill", CHILL_EDGE_BY_STACK[4])  # frozen = the 5th stack
 	elif a.has("chill"):
-		# Frost stops growing at 3 stacks: stacks 4 and 5 look the same as 3.
-		_edge_flash.set_status("chill", minf(a.stacks_of("chill"), 3.0) / 3.0 * CHILL_EDGE_MAX)
+		var i := clampi(int(a.stacks_of("chill")) - 1, 0, 4)
+		_edge_flash.set_status("chill", CHILL_EDGE_BY_STACK[i])
 	else:
 		_edge_flash.set_status("")
 

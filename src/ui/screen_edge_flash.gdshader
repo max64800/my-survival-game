@@ -560,19 +560,24 @@ vec4 edge_fx(vec2 uv, float aspect, float t) {
 	float dy = min(p.y, 1.0 - p.y);
 	float d = min(dx, dy);
 	vec4 col = vec4(0.0);
+	vec4 blood = vec4(0.0);
 	if (low_health > 0.0) {
-		col = low_health_fx(p, aspect, dx, dy, low_health, t, blood_seed);
+		blood = low_health_fx(p, aspect, dx, dy, low_health, t, blood_seed);
 	}
+	bool blood_on_top = false;
 	if (status_mode != 0 && status_fade > 0.0) {
 		float lvl = clamp(status_level, 0.0, 1.0);
 		if (status_mode == 1) {
-			col = over(col, poison_fx(p, d, lvl, status_fade, t));
+			col = poison_fx(p, d, lvl, status_fade, t);
 		} else if (status_mode == 2) {
-			col = over(col, fire_fx(p, aspect, dx, lvl, status_fade, t));
+			col = fire_fx(p, aspect, dx, lvl, status_fade, t);
 		} else if (status_mode == 3) {
-			col = over(col, frost_fx(p, aspect, lvl, status_fade, t));
+			col = frost_fx(p, aspect, lvl, status_fade, t);
+			blood_on_top = true;  // owner, round 7: blood stays visible over the ice
 		}
 	}
+	// Blood sits under poison and fire (as approved), but over the frost.
+	col = blood_on_top ? over(col, blood) : over(blood, col);
 	if (hit_strength > 0.0) {
 		float rim = pow(1.0 - clamp(d / 0.07, 0.0, 1.0), 2.0);
 		col = over(col, vec4(hit_color.rgb, rim * hit_strength));
