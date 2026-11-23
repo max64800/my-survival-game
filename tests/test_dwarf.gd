@@ -701,4 +701,31 @@ func test_your_own_stun_meter() -> void:
 	check(dwarf.fight.stagger <= 0.0, "not stunned again straight away (2 s rest)")
 	dwarf.fight.guard_break()
 	check(said.count("stunned") == 2, "a guard break plays the Shield broken move too")
+
+
+## Owner (Nov 23, PC): "the animation finishes and then he just sprints forward... the animation should end where he
+## should appear if it's a long jump" (F807) — the Jump pose was always one fixed-length clip, so a real jump (which
+## hangs in the air longer than that clip runs) finished early and held its last pose while still mid-flight, looking
+## like he was already running before he'd actually come down. Stretched to the real hang time, same trick as the
+## roll's clip (F702).
+func test_jump_animation_is_stretched_to_match_how_long_hes_really_airborne() -> void:
+	Controls.setup()
+	var root := _room([])
+	var dwarf := _dwarf_in(root)
+	var rig: DwarfRig = dwarf.model.dwarf_rig
+	if rig == null:  # the rig-less fallback has its own fixed-length path, not this fix's target
+		root.queue_free()
+		return
+	for i in 20:
+		await tree.physics_frame
+	check(dwarf.is_on_floor(), "dwarf stands before jumping")
+	dwarf.bot_jump = true
+	await tree.physics_frame
+	var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
+	var expected := 2.0 * Dwarf.JUMP_SPEED / gravity
+	var scale: float = rig.tree.get("parameters/jump_speed/scale")
+	check(scale > 0.0, "the jump clip got a playback scale at all")
+	var plays_for := rig.tree.get_animation(DwarfRig.ANIMS.air).length / scale
+	check(absf(plays_for - expected) < 0.05, "the jump pose is stretched to the real hang time (%.2f s vs %.2f s)" % [plays_for, expected])
+	root.queue_free()
 	root.queue_free()

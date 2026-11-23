@@ -897,7 +897,9 @@ func set_hold(what: String) -> void:
 ## Legs follow `speed` (m/s); in the air we blend to the jump pose; a dodge rolls the whole body.
 ## roll_duration: how long the roll is on track to last (F702); a held dash stretches the clip to match instead of
 ## always playing the same ROLL_TIME, rescaled live while rolling so a longer hold doesn't restart/pop the clip.
-func set_motion(speed: float, on_floor: bool, rolling: bool, roll_duration: float = ROLL_TIME) -> void:
+## jump_duration: how long this jump is expected to stay airborne (F807), 0.0 if unknown (stepping off a ledge,
+## not a real jump) — stretched the same way, so a far running jump doesn't finish the pose early mid-flight.
+func set_motion(speed: float, on_floor: bool, rolling: bool, roll_duration: float = ROLL_TIME, jump_duration: float = 0.0) -> void:
 	tree.set("parameters/move/blend_position", speed)
 	if grip_feet:
 		tree.set("parameters/move_speed/scale", loop_rate(speed))
@@ -922,6 +924,10 @@ func set_motion(speed: float, on_floor: bool, rolling: bool, roll_duration: floa
 	_carry_arm = move_toward(_carry_arm, 0.0 if _roll_on() else _carry, dt * 8.0)
 	tree.set("parameters/carry/blend_amount", _carry_arm)
 	_air = move_toward(_air, 0.0 if on_floor else 1.0, dt * 6.0)
+	if jump_duration > 0.0 and tree.has_animation(ANIMS.air):
+		tree.set("parameters/jump_speed/scale", tree.get_animation(ANIMS.air).length / jump_duration)
+	else:
+		tree.set("parameters/jump_speed/scale", 1.0)
 	if weight:
 		weight.speed = speed
 		weight.on_floor = on_floor
@@ -1066,9 +1072,16 @@ func _build_tree(body: Node3D) -> void:
 	var jump := AnimationNodeAnimation.new()
 	jump.animation = ANIMS.air
 	bt.add_node("jump", jump, Vector2(0, 200))
+	# F807: a short hop and a far running jump hang in the air for very different lengths of time, but the
+	# clip itself is one fixed length, so without this it finishes early and holds its last pose while the
+	# dwarf is still sailing through the air (looks like he's already running, mid-flight). Stretched to the
+	# real hang time instead, same trick as the roll (full_speed) above.
+	var jump_speed := AnimationNodeTimeScale.new()
+	bt.add_node("jump_speed", jump_speed, Vector2(100, 200))
+	bt.connect_node("jump_speed", 0, "jump")
 	bt.add_node("air", AnimationNodeBlend2.new(), Vector2(200, 0))
 	bt.connect_node("air", 0, "move_speed")
-	bt.connect_node("air", 1, "jump")
+	bt.connect_node("air", 1, "jump_speed")
 	# Ladders: the climbing loop over everything below it.
 	var climb := AnimationNodeAnimation.new()
 	climb.animation = ANIMS.climb

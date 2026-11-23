@@ -69,6 +69,7 @@ var _jumps := 0
 var shield_blocks := 0  ## hits blocked or parried with a shield, not yet told to the host
 var _body_xp_wait := 0.0
 var _jump_wanted := 0.0
+var _jump_air_expected := 0.0  ## F807: how long this jump should hang in the air, 0.0 off a real jump (a step off a ledge)
 var _cam_y := NAN
 var _cam_tick := 0  ## the physics frame the camera's height last glided on (F781)
 var _zoom := CAMERA_DISTANCE  ## where the mouse wheel wants the camera
@@ -307,6 +308,8 @@ func _physics_process(delta: float) -> void:
 		_jump_wanted = 0.0
 	var target := dir * speed
 	var on_floor := is_on_floor()
+	if on_floor:
+		_jump_air_expected = 0.0  # (F807: only a real jump gets a stretched animation, not a step off a ledge)
 	var a := ACCEL if on_floor else AIR_ACCEL
 	velocity.x = move_toward(velocity.x, target.x, a * maxf(speed, WALK_SPEED) * delta)  # (knocked down = speed 0: still
 	velocity.z = move_toward(velocity.z, target.z, a * maxf(speed, WALK_SPEED) * delta)  # slow to a stop, F234)
@@ -325,6 +328,7 @@ func _physics_process(delta: float) -> void:
 	if _jump_wanted > 0.0 and _since_floor <= COYOTE_TIME and velocity.y <= 0.5 \
 			and (body == null or body.use_stamina(JUMP_STAMINA * (prog.jump_stamina_mult() if prog else 1.0))):
 		velocity.y = JUMP_SPEED * (prog.jump_speed_mult() if prog else 1.0)
+		_jump_air_expected = 2.0 * velocity.y / _gravity  # (F807: up and back down to the same height, our best guess)
 		_jumps += 1
 		_jump_wanted = 0.0
 		_since_floor = COYOTE_TIME + 1.0  # no double jump
@@ -371,7 +375,7 @@ func _physics_process(delta: float) -> void:
 			model.rotation.y = lerp_angle(model.rotation.y, want, minf(1.0, delta * 12.0))
 
 	_footsteps(delta, Vector2(velocity.x, velocity.z).length())
-	model.set_motion(Vector2(velocity.x, velocity.z).length(), is_on_floor(), fight != null and fight.dodging(), fight.dodge_expected_duration() if fight else Combat.DODGE_TIME)
+	model.set_motion(Vector2(velocity.x, velocity.z).length(), is_on_floor(), fight != null and fight.dodging(), fight.dodge_expected_duration() if fight else Combat.DODGE_TIME, _jump_air_expected)
 	if playing and Input.is_action_pressed("dig") and not model.swinging and not _holding_hammer() and not fight.weapon_mode() and _can_swing():
 		var ps_here: GameAuthority.PlayerState = GameAuthority.instance.get_player(peer_id) if GameAuthority.instance else null
 		model.swing(SWING_TIME * (ps_here.progress.dig_swing_mult(Items.kind(ps_here.selected_item()) == "axe") if ps_here else 1.0))  # Mining / Woodcutting ★25
