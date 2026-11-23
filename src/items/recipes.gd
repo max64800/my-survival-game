@@ -177,6 +177,7 @@ const LIST := {
 	"dish_bug_hotpot": {station = "campfire", level = 2, inputs = {beetle_meat = 2, ember_morel = 1, mushroom_flesh = 1, water_bucket = 1}, output = "dish_bug_hotpot", count = 1, seconds = 20, unlock = "ruin"},
 	"dish_jungle_pie": {station = "campfire", level = 2, inputs = {beetle_meat = 2, root_tuber = 2, spore_truffle = 1}, output = "dish_jungle_pie", count = 1, seconds = 20, unlock = "rune"},
 	"drink_glowcap_tea": {station = "campfire", level = 2, inputs = {glowcap = 2, water_bucket = 1}, output = "drink_glowcap_tea", count = 1, seconds = 20, unlock = "ruin"},
+	"drink_gutweed_tea": {station = "campfire", inputs = {moss = 2, water_bucket = 1}, output = "drink_gutweed_tea", count = 1, seconds = 10, unlock = ["moss"]},  # the laxative (owner F824)
 	"drink_firecap_cordial": {station = "campfire", level = 2, inputs = {firecap = 1, water_bucket = 2}, output = "drink_firecap_cordial", count = 1, seconds = 20, unlock = "ruin"},
 }
 

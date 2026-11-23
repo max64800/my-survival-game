@@ -123,6 +123,8 @@ class PlayerState:
 	## Host: timed fight boosts it can see (food damage buffs, whetstone, bug oil, war horn).
 	## name -> {damage, bugs, until (host seconds)}
 	var boosts := {}
+	## Host: the foods and drink this player has eaten: id -> until (host seconds). Full = no more eating (owner F824).
+	var meals := {}
 	var train_hits := 0
 	var train_at := 0.0
 	var body_xp_at := 0.0  ## when this player last sent Running/Jumping practice
@@ -151,6 +153,16 @@ class PlayerState:
 		return inventory.equipped("weapon") != "" or inventory.equipped("shield") != ""
 
 	## The slot index of what's in hand (a hotbar slot or an equipment slot).
+	## Host: is there a free food (or drink) slot for this meal? The same dish again just refreshes.
+	func meal_fits(id: String, at: float) -> bool:
+		var list := []
+		for m in meals.keys():
+			if meals[m] > at:
+				list.append({id = m})
+			else:
+				meals.erase(m)
+		return Vitals.meal_fits(list, id, vitals.food_slots())
+
 	func hand_slot() -> int:
 		if weapon_drawn and inventory.equipped("weapon") != "":
 			return Inventory.equip_index("weapon")
@@ -1897,6 +1909,30 @@ func _learn_from_page(ps: PlayerState, id: String) -> String:
 
 
 ## Read a page straight from a bag slot (right-click in the bag). Request -> host decides -> everyone learns.
+## Right-click a food or drink in the bag to eat it (owner F827).
+func ask_eat(index: int) -> void:
+	if is_host():
+		request_eat(local_peer_id(), index)
+	else:
+		_rpc_eat.rpc_id(1, index)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_eat(index: int) -> void:
+	if is_host():
+		request_eat(multiplayer.get_remote_sender_id(), index)
+
+
+func request_eat(peer_id: int, index: int) -> String:
+	var ps := get_player(peer_id)
+	if ps == null or index < 0 or index >= ps.inventory.slots.size():
+		return ""
+	var id: String = ps.inventory.get_slot(index).get("id", "")
+	if not Items.kind(id) in ["food", "drink"]:
+		return ""
+	return _eat(ps, peer_id, id, index)
+
+
 func ask_read(index: int) -> void:
 	if is_host():
 		request_read(local_peer_id(), index)
@@ -1941,33 +1977,7 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 			tell(peer_id, "Filled with pool water. Boil it at a campfire to make it clean.")
 			return "filled"
 		"food", "drink":
-			if id == "bandage":  # (owner, Nov 20: "you can just spam bandages": one every BANDAGE_COOLDOWN s)
-				if ps.boosts.has("bandage_cooldown") and ps.boosts.bandage_cooldown.until > now():
-					tell(peer_id, "Your last bandage is still fresh. Wait %d s." % ceili(ps.boosts.bandage_cooldown.until - now()))
-					return "cooldown"
-				add_boost(ps, "bandage_cooldown", {}, BANDAGE_COOLDOWN)
-				send_cooldown(peer_id, "bandage", BANDAGE_COOLDOWN)  # a grey shade on its slot (owner F470)
-			if id == "waterskin_clean" or id == "waterskin_dirty":
-				_take_sip(ps, ps.selected_slot)
-			elif not ps.inventory.remove(id, 1):
-				return ""
-			var roll := randf()
-			if Foods.is_buff_food(id) and ps.progress.has_star("cooking", 100):
-				heal(peer_id, 10.0)  # Cooking ★100: your cooked food heals a little
-			if peer_id == local_peer_id():
-				ps.vitals.consume(id, roll)
-				Sfx.ui("eat", -4.0)
-			else:
-				_rpc_consumed.rpc_id(peer_id, id, roll)
-			# The host does the fighting, digging and drops math, so it remembers those food buffs itself.
-			var fb: Dictionary = Foods.buff_of(id) if Foods.is_buff_food(id) else {}
-			var host_part := {}
-			for k in ["damage", "dig_power", "extra_drops"]:
-				if fb.has(k):
-					host_part[k] = fb[k]
-			if not host_part.is_empty():
-				add_boost(ps, id, host_part, Foods.minutes_of(id) * 60.0)
-			return "ate"
+			return _eat(ps, peer_id, id, ps.selected_slot)
 		"page":
 			return _read_page(ps, peer_id, id)
 		"tonic":
@@ -2243,6 +2253,46 @@ func _take_sip(ps: PlayerState, slot_i: int) -> void:
 	else:
 		slot.sips = sips
 	ps.inventory.changed.emit()
+
+
+## Eating or drinking the item in one bag slot (the hotbar's right click, or a right click in the bag: owner F827).
+func _eat(ps: PlayerState, peer_id: int, id: String, slot_i: int) -> String:
+	if id == "bandage":  # (owner, Nov 20: "you can just spam bandages": one every BANDAGE_COOLDOWN s)
+		if ps.boosts.has("bandage_cooldown") and ps.boosts.bandage_cooldown.until > now():
+			tell(peer_id, "Your last bandage is still fresh. Wait %d s." % ceili(ps.boosts.bandage_cooldown.until - now()))
+			return "cooldown"
+		add_boost(ps, "bandage_cooldown", {}, BANDAGE_COOLDOWN)
+		send_cooldown(peer_id, "bandage", BANDAGE_COOLDOWN)  # a grey shade on its slot (owner F470)
+	if not ps.meal_fits(id, now()):  # every slot of that sort is taken (owner F824)
+		tell(peer_id, ("You've had a drink already" if Foods.is_drink(id) else "You're full") + ": wait for one to wear off, or drink Gutweed Tea to empty your belly.")
+		return "full"
+	if id == "waterskin_clean" or id == "waterskin_dirty":
+		_take_sip(ps, slot_i)
+	elif not ps.inventory.remove(id, 1):
+		return ""
+	var roll := randf()
+	if Foods.is_purge(id):
+		ps.meals.clear()
+		for m in Foods.DISHES:
+			ps.boosts.erase(m)  # the host's food fight boosts go too
+	elif Foods.is_buff_food(id):
+		ps.meals[id] = now() + Foods.minutes_of(id) * 60.0
+	if Foods.is_buff_food(id) and ps.progress.has_star("cooking", 100):
+		heal(peer_id, 10.0)  # Cooking ★100: your cooked food heals a little
+	if peer_id == local_peer_id():
+		ps.vitals.consume(id, roll)
+		Sfx.ui("eat", -4.0)
+	else:
+		_rpc_consumed.rpc_id(peer_id, id, roll)
+	# The host does the fighting, digging and drops math, so it remembers those food buffs itself.
+	var fb: Dictionary = Foods.buff_of(id) if Foods.is_buff_food(id) else {}
+	var host_part := {}
+	for k in ["damage", "dig_power", "extra_drops"]:
+		if fb.has(k):
+			host_part[k] = fb[k]
+	if not host_part.is_empty():
+		add_boost(ps, id, host_part, Foods.minutes_of(id) * 60.0)
+	return "ate"
 
 
 ## Taking a shrine's rune. Returns what happened.
@@ -3088,6 +3138,7 @@ func request_died(peer_id: int) -> void:
 	if grave >= 0:
 		storage._changed(grave)
 	ps.inventory.changed.emit()
+	ps.meals.clear()  # waking up clears your eaten foods (Vitals.respawn does the same on your own computer)
 	var wake: Vector3 = ps.bed_pos if ps.bed_pos != Vector3.INF else world.maker.spawn_point
 	if peer_id == local_peer_id():
 		_respawn_here(wake)

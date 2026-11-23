@@ -36,6 +36,8 @@ const DISHES := {
 	"drink_moss_ale": {name = "Moss Ale", drink = true, thirst = 50, minutes = 25, buff = {regen = 0.05, max_stamina = 0.10, max_health = 0.05, thirst_slow = 0.25}},
 	"drink_spore_mead": {name = "Spore Mead", drink = true, thirst = 50, minutes = 35, buff = {max_health = 0.15}},
 	"drink_deep_stout": {name = "Deep Stout", drink = true, thirst = 50, minutes = 35, buff = {damage_taken = -0.08}},
+	# --- the laxative (owner F824, Nov 23): your belly runs empty, so every eaten food and drink is gone and the slots are free
+	"drink_gutweed_tea": {name = "Gutweed Tea", drink = true, thirst = 10, minutes = 0, purge = true, color = Color(0.55, 0.6, 0.25), short = "Gt"},
 }
 
 
@@ -49,6 +51,11 @@ static func buff_of(id: String) -> Dictionary:
 
 static func minutes_of(id: String) -> float:
 	return DISHES.get(id, {}).get("minutes", 0)
+
+
+## Gutweed Tea: empties every food and drink slot (owner F824).
+static func is_purge(id: String) -> bool:
+	return DISHES.get(id, {}).get("purge", false)
 
 
 static func is_drink(id: String) -> bool:
@@ -76,6 +83,8 @@ static func effect_lines(id: String) -> Array[String]:
 	for k in b:
 		if words.has(k):
 			out.append(words[k] % roundi(absf(b[k]) * 100.0))
+	if is_purge(id):
+		out.append("empties every food and drink slot (a quick trip behind a rock)")
 	if minutes_of(id) > 0:
 		out.append("lasts %d min" % minutes_of(id))
 	return out

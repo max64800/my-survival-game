@@ -49,6 +49,7 @@ var _dials: HBoxContainer  ## hunger + thirst dials left of the hotbar
 const DIAL_SIZE := 72
 const VitalDialScript := preload("res://src/ui/vital_dial.gd")
 var _health_text: Label
+var _stamina_text: Label  ## "80 / 100" in the middle of the stamina bar (owner F823)
 var _level_label: Label
 var _buff_label: Label
 var _ailment_badges: AilmentBadges  ## burning / chilled / poisoned / frozen, above the health bar
@@ -305,6 +306,9 @@ func _build() -> void:
 	_health_text = _label(_bars.health.get_parent(), 17)  # over the bar, centred both ways inside the frame
 	_health_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_health_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_stamina_text = _label(_bars.stamina.get_parent(), 14)  # same as health, a bit smaller for the thinner bar (F823)
+	_stamina_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_stamina_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	# Moods, food buffs and ailments: small text in the bottom-left, above the lantern.
 	_buff_label = _label(root, 13)
 	_buff_label.anchor_top = 1.0
@@ -751,6 +755,9 @@ func _on_slot_input(event: InputEvent, index: int) -> void:
 		_swap_from = -1
 		if Items.kind(auth.get_player(peer_id).inventory.get_slot(index).get("id", "")) == "page":
 			auth.ask_read(index)  # right-click an old page to read it (owner: "I cannot read the recipe")
+			_refresh_slots()
+		elif Items.kind(auth.get_player(peer_id).inventory.get_slot(index).get("id", "")) in ["food", "drink"]:
+			auth.ask_eat(index)  # right-click a food or drink to eat it (owner F827)
 			_refresh_slots()
 		elif wants_equip_click(index, auth.get_player(peer_id).inventory):
 			_quick_equip(index)
@@ -1265,6 +1272,7 @@ func _process(delta: float) -> void:
 		_bars.hunger.set_value(v.hunger)
 		_bars.thirst.set_value(v.thirst)
 		_health_text.text = "%d / %d" % [ceili(v.health), roundi(v.max_health())]
+		_stamina_text.text = "%d / %d" % [floori(v.stamina), roundi(v.max_stamina())]
 		var buffs := []  # (eaten foods show as pictures in _food_slots now, F426)
 		_food_slots.show_buffs(v)
 		var mood: String = {"well_fed": "Well fed", "peckish": "Peckish", "starving": "Starving (tired)"}.get(v.status(), "")

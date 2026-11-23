@@ -111,12 +111,16 @@ func test_two_foods_and_one_drink() -> void:
 	v.consume("dish_hearth_stew")  # 35 min
 	v.consume("drink_moss_ale")  # the drink has its own slot
 	check_eq(v.buffs.size(), 3, "2 foods + 1 drink")
-	v.consume("dish_miners_pie")  # a 3rd food replaces the food with the least time left
+	check(not v.has_room_for("dish_miners_pie"), "a 3rd food doesn't fit (owner F824)")
+	check(v.has_room_for("dish_hearth_stew"), "the same dish again still fits (it refreshes)")
+	check(not v.has_room_for("drink_glowcap_tea"), "a 2nd drink doesn't fit")
+	check(v.has_room_for("drink_gutweed_tea"), "Gutweed Tea always fits")
+	v.consume("dish_miners_pie")  # (the host says no first; if it slips through, nothing is pushed out)
 	var ids := v.buffs.map(func(b): return b.id)
-	check(not ids.has("dish_glowcap_skewer") and ids.has("drink_moss_ale"), "the skewer went, the drink stayed")
-	v.consume("drink_glowcap_tea")
-	ids = v.buffs.map(func(b): return b.id)
-	check(ids.has("drink_glowcap_tea") and not ids.has("drink_moss_ale"), "a new drink replaces the old drink")
+	check(ids.has("dish_glowcap_skewer") and not ids.has("dish_miners_pie"), "nothing was pushed out")
+	v.consume("drink_gutweed_tea")
+	check_eq(v.buffs.size(), 0, "Gutweed Tea empties every slot")
+	check(v.has_room_for("dish_miners_pie"), "room again after the tea")
 
 
 func test_food_speeds_up_healing_to_the_cap() -> void:
@@ -124,6 +128,7 @@ func test_food_speeds_up_healing_to_the_cap() -> void:
 	check_near(v.regen_per_second() / v.health_regen_mult(), 0.2, 0.0001, "on your own: 1 health every 5 s")
 	v.consume("dish_cooked_snail")
 	check_near(v.regen_per_second() / v.health_regen_mult(), 0.22, 0.0001, "a campfire meal: a little faster")
+	v.buffs.clear()  # (a full row now refuses a 3rd food, owner F824)
 	v.consume("dish_hearth_stew")
 	v.consume("dish_miners_pie")
 	v.consume("drink_moss_ale")

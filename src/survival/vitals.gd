@@ -229,9 +229,31 @@ func consume(item_id: String, roll: float = 1.0) -> bool:
 		health = minf(max_health(), health + heal)
 	if roll < info.get("upset", 0.0):
 		upset_time = UPSET_TIME
+	if Foods.is_purge(item_id):
+		buffs.clear()  # Gutweed Tea: every slot is free again (owner F824)
 	if Foods.is_buff_food(item_id):
 		_add_buff(item_id)
 	return true
+
+
+## Is there a free slot for this meal? The same dish again always fits (it just refreshes); a full row says no (owner F824:
+## "you can't eat another food if the food already placed on the bar"). Things without a buff always fit.
+func has_room_for(id: String) -> bool:
+	return meal_fits(buffs, id, food_slots())
+
+
+## The same check for any list of {id} meals (the host keeps its own list for every player).
+static func meal_fits(meals: Array, id: String, n_food_slots: int) -> bool:
+	if not Foods.is_buff_food(id):
+		return true
+	var drink := Foods.is_drink(id)
+	var same := 0
+	for b in meals:
+		if b.id == id:
+			return true
+		if Foods.is_drink(b.id) == drink:
+			same += 1
+	return same < (DRINK_SLOTS if drink else n_food_slots)
 
 
 ## 2 foods at once, 3 with Cooking ★75 (owner, Nov 21).
@@ -251,11 +273,7 @@ func _add_buff(id: String) -> void:
 		if Foods.is_drink(buffs[i].id) == drink:
 			same.append(i)
 	if same.size() >= (DRINK_SLOTS if drink else food_slots()):
-		var weakest: int = same[0]
-		for i in same:
-			if buffs[i].time_left < buffs[weakest].time_left:
-				weakest = i
-		buffs.remove_at(weakest)
+		return  # full: the host already said no (owner F824); nothing is pushed out any more
 	buffs.append({id = id, time_left = seconds})
 
 
