@@ -66,6 +66,7 @@ const REGROW_TIME := 600.0  ## 10 minutes
 const CRYSTAL_REGROW_TIME := 5400.0  ## 90 minutes (owner F406)
 var _drops: Dictionary = {}  ## drop_id -> Drop
 var _next_drop_id := 1
+var _drop_extra := {}  ## host: drop_id -> the whole slot a thrown item came from (wear, upgrades, gems), F825
 var _pending_digs: Array[Vector4] = []  ## digs waiting for that part of the cave to load
 var _fuel_sync := 0.0
 var _auto_timer := 0.0
@@ -105,6 +106,7 @@ class PlayerState:
 	var selected_slot := 0
 	var weapon_drawn := false  ## F: fighting with the equipped weapon (+ shield)
 	var hands_empty := false  ## the picked hotbar number pressed again: tool put away (owner, Nov 17)
+	var equip_job := {}  ## putting something on (F826): {index, id, left, total}; on the player's own computer only
 	var fuel := GameAuthority.MAX_FUEL
 	var needs_lantern := false  ## true = started with nothing: no light until you pick up the Lantern
 	var thrifty_saved := 0.0  ## Thrifty perk: wear skipped so far (1.0 = skip the next one)
@@ -133,6 +135,7 @@ class PlayerState:
 
 	func _init() -> void:
 		inventory.changed.connect(_note_seen)
+		vitals.damaged.connect(func(_amount: float): equip_job = {})  # a hit stops putting something on (owner F826)
 		inventory.changed.connect(func(): vitals.gear = Gems.armor_bonus(inventory))  # armor gems work on your body
 		vitals.progress = progress
 
@@ -164,16 +167,20 @@ class PlayerState:
 		return Vitals.meal_fits(list, id, vitals.food_slots())
 
 	func hand_slot() -> int:
+		if not equip_job.is_empty():
+			return -1  # putting something on: hands busy until the ring is full (F826)
 		if weapon_drawn and inventory.equipped("weapon") != "":
-			return Inventory.equip_index("weapon")
+			return inventory.worn_slot("weapon")
 		if weapon_drawn and inventory.equipped("shield") != "":
-			return Inventory.equip_index("shield")  # only a shield equipped: F raises it alone (owner, Nov 17)
+			return inventory.worn_slot("shield")  # only a shield worn: F raises it alone (owner, Nov 17)
 		if hands_empty:
 			return -1  # nothing in hand (an empty slot: get_slot(-1) is {})
 		var picked: String = inventory.get_slot(selected_slot).get("id", "")
+		if Inventory.equip_slot_for(picked) in Inventory.HAND and not inventory.is_worn(selected_slot):
+			return -1  # a pickaxe/weapon/shield is used only once it's on (F826: picking it starts the ring)
 		if picked == "":  # an empty hotbar slot = your pickaxe (owner F151: otherwise you hold what you picked)
 			if inventory.equipped("pickaxe") != "":
-				return Inventory.equip_index("pickaxe")
+				return inventory.worn_slot("pickaxe")
 			var carried := inventory.best_of_kind("pickaxe")  # a pickaxe in the hotbar or bag still digs (F88)
 			if carried >= 0:
 				return carried
@@ -238,6 +245,7 @@ func add_player(peer_id: int, node: Node3D, give_start_items: bool = true) -> Pl
 	elif give_start_items:
 		# Friends who join later (and test robots) arrive ready to dig, with a lantern built in.
 		ps.inventory.add("pickaxe_stone", 1)
+		ps.inventory.set_worn(ps.inventory.best_of_kind("pickaxe"), true)  # already on (F825 gold E)
 	players[peer_id] = ps
 	if is_host() and peer_id != local_peer_id():
 		ps.inventory.changed.connect(func(): _send_inventory(peer_id))
@@ -313,6 +321,10 @@ func ask_select_slot(slot: int) -> void:
 		request_select_slot(local_peer_id(), slot)
 	else:
 		_rpc_select_slot.rpc_id(1, slot)
+	if me and not me.hands_empty:  # picking a pickaxe/weapon/shield you don't wear yet puts it on (F826, like Valheim)
+		var id: String = me.inventory.get_slot(slot).get("id", "")
+		if Inventory.equip_slot_for(id) in Inventory.HAND and not me.inventory.is_worn(slot):
+			ask_equip(slot)
 
 
 func ask_hit(point: Vector3, normal: Vector3) -> void:
@@ -1553,6 +1565,111 @@ func request_draw_weapon(peer_id: int, on: bool) -> void:
 		ps.weapon_drawn = on and ps.can_draw()
 
 
+# ---------------------------------------------------------------- putting things on (F826, owner Nov 23, like Valheim)
+# Right-click armour, a weapon, a shield, a tool: a ring fills (EquipTime.seconds_for) while you walk very slowly;
+# a hit stops it. The ring runs on the player's own computer (that's where hits land, Vitals.damaged); when it's
+# full the host is asked and does the change, and the new inventory goes back to the player. Taking off is instant.
+
+## Right-click in the bag (or a hotbar pick): start putting slot `index` on, or take it off right away.
+func ask_equip(index: int) -> void:
+	var me := get_player(local_peer_id())
+	if me == null:
+		return
+	var s := me.inventory.get_slot(index)
+	if s.is_empty():
+		return
+	if me.inventory.is_worn(index):
+		me.equip_job = {}
+		_send_equip(index, str(s.id))  # taking off: instant
+		return
+	if me.equip_job.get("index", -1) == index:
+		return  # already putting it on
+	var secs := EquipTime.seconds_for(str(s.id))
+	me.equip_job = {index = index, id = str(s.id), left = secs, total = secs}
+
+
+## The player's own computer, every frame: fill the ring; when it's full, ask the host.
+func tick_equip(delta: float) -> void:
+	var me := get_player(local_peer_id())
+	if me == null or me.equip_job.is_empty():
+		return
+	var job := me.equip_job
+	if me.inventory.get_slot(job.index).get("id", "") != job.id:
+		me.equip_job = {}  # it was moved or thrown away
+		return
+	job.left -= delta
+	if job.left <= 0.0:
+		me.equip_job = {}
+		_send_equip(job.index, job.id)
+
+
+## A hit (or anything else) stops it; nothing changes.
+func cancel_equip() -> void:
+	var me := get_player(local_peer_id())
+	if me and not me.equip_job.is_empty():
+		me.equip_job = {}
+
+
+func _send_equip(index: int, id: String) -> void:
+	if is_host():
+		request_equip(local_peer_id(), index, id)
+	else:
+		_rpc_equip.rpc_id(1, index, id)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_equip(index: int, id: String) -> void:
+	if is_host():
+		request_equip(multiplayer.get_remote_sender_id(), index, id)
+
+
+## Host: put on / take off what's in `index`, if it's still the item the player meant. Returns "" or why not.
+func request_equip(peer_id: int, index: int, id: String) -> String:
+	var ps := get_player(peer_id)
+	if ps == null:
+		return "?"
+	if ps.inventory.get_slot(index).get("id", "") != id:
+		return "moved"
+	var why := ps.inventory.equip_problem(index)
+	if why == "" and not ps.inventory.toggle_equip(index):
+		why = "?"
+	if why != "" and peer_id == local_peer_id():
+		hud_message.emit(why)
+	return why
+
+
+## Q over a bag slot (owner F825): throw the whole slot on the floor in front of you.
+func ask_throw(index: int) -> void:
+	if is_host():
+		request_throw(local_peer_id(), index)
+	else:
+		_rpc_throw.rpc_id(1, index)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_throw(index: int) -> void:
+	if is_host():
+		request_throw(multiplayer.get_remote_sender_id(), index)
+
+
+## Host: empty the slot into a drop. Items with their own data (wear, upgrades, gems) keep it when picked up.
+func request_throw(peer_id: int, index: int) -> bool:
+	var ps := get_player(peer_id)
+	if ps == null or ps.node == null:
+		return false
+	var s := ps.inventory.take_slot(index)
+	if s.is_empty():
+		return false
+	var fwd := -ps.node.global_transform.basis.z * Vector3(1, 0, 1)
+	fwd = fwd.normalized() if fwd.length() > 0.01 else Vector3.FORWARD
+	var id := _next_drop_id
+	_next_drop_id += 1
+	if s.size() > 2:
+		_drop_extra[id] = s
+	_ev_spawn_drop.rpc(id, str(s.id), int(s.count), _chest(ps) + fwd * 0.6, fwd * 2.5 + Vector3.UP * 2.0, true)
+	return true
+
+
 ## Moving items around in your own bag.
 func request_swap(peer_id: int, a: int, b: int) -> void:
 	var ps := get_player(peer_id)
@@ -2563,6 +2680,16 @@ func request_pickup(peer_id: int, drop_id: int) -> bool:
 	var reach := PICKUP_RANGE * (1.3 if ps.progress.has_star("gathering", 25) else 1.0)  # Gathering ★25
 	if _chest(ps).distance_to(d.global_position) > reach and _chest(ps).distance_to(d.home) > reach + 4.0:
 		return false
+	if _drop_extra.has(drop_id):  # a thrown item with its own data (wear, upgrades): back into one free slot, whole
+		var whole: Dictionary = _drop_extra[drop_id]
+		for i in Inventory.SIZE:
+			if ps.inventory.slots[i].is_empty():
+				ps.inventory.slots[i] = whole.duplicate(true)
+				_drop_extra.erase(drop_id)
+				ps.inventory.changed.emit()
+				_ev_remove_drop.rpc(drop_id)
+				return true
+		return false
 	var left := ps.inventory.add(d.item_id, d.count)
 	if left == d.count:
 		return false
@@ -2804,8 +2931,9 @@ func _ev_place_station(station_id: int, kind: String, pos: Vector3, yaw: float) 
 
 
 @rpc("authority", "call_local", "reliable")
-func _ev_spawn_drop(drop_id: int, item_id: String, count: int, pos: Vector3, vel: Vector3) -> void:
+func _ev_spawn_drop(drop_id: int, item_id: String, count: int, pos: Vector3, vel: Vector3, thrown := false) -> void:
 	var d: Drop = DROP_SCENE.new()
+	d.thrown = thrown
 	d.drop_id = drop_id
 	d.item_id = item_id
 	d.count = count
@@ -2824,6 +2952,7 @@ func _ev_spawn_drop(drop_id: int, item_id: String, count: int, pos: Vector3, vel
 func _ev_remove_drop(drop_id: int) -> void:
 	var d: Drop = _drops.get(drop_id)
 	_drops.erase(drop_id)
+	_drop_extra.erase(drop_id)
 	if d:
 		d.queue_free()
 
@@ -2955,7 +3084,7 @@ func snapshot() -> Dictionary:
 	var drops := []
 	for id in _drops:
 		var d: Drop = _drops[id]
-		drops.append([id, d.item_id, d.count, d.global_position])
+		drops.append([id, d.item_id, d.count, d.global_position, _drop_extra.get(id, {})])
 	var sts := []
 	for id in stations:
 		var st: Station = stations[id]
@@ -3026,6 +3155,8 @@ func load_snapshot(snap: Dictionary) -> void:
 		_pending_digs.append(c)
 	for d in snap.drops:
 		_ev_spawn_drop(d[0], d[1], d[2], d[3], Vector3.ZERO)
+		if d.size() > 4 and d[4] is Dictionary and not d[4].is_empty():
+			_drop_extra[d[0]] = d[4]  # a thrown sword keeps its wear and upgrades (F825)
 	_next_drop_id = snap.next_drop
 	for st in snap.get("stations", []):
 		_ev_place_station(st[0], st[1], st[2], st[3])
@@ -3129,8 +3260,8 @@ func request_died(peer_id: int) -> void:
 	var grave := -1
 	for i in ps.inventory.slots.size():
 		var s: Dictionary = ps.inventory.slots[i]
-		if s.is_empty() or (i < Inventory.HOTBAR_SIZE and Items.stack_size(s.id) == 1) or Inventory.is_equip_index(i):
-			continue  # hotbar tools and everything equipped (F23) stay with you
+		if s.is_empty() or (i < Inventory.HOTBAR_SIZE and Items.stack_size(s.id) == 1) or ps.inventory.is_worn(i):
+			continue  # hotbar tools and everything worn (F23, F825) stay with you
 		if grave < 0:
 			grave = storage.create_box("grave", where, 0.0, peer_id)
 		storage.boxes[grave].inv.slots[i] = s.duplicate()

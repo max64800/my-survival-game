@@ -57,6 +57,7 @@ func _run() -> void:
 			inv.slots[Inventory.equip_index(slot)] = {id = gear.WEAR[slot], count = 1}
 		for i in Inventory.HOTBAR_SIZE:
 			inv.slots[i] = {id = gear.HOTBAR[i][0], count = gear.HOTBAR[i][1]} if i < gear.HOTBAR.size() else {}
+		inv.hand_slots_out()  # the worn pickaxe, sword and shield sit in the hotbar/bag with the worn mark (F825)
 		for it in gear.BAG:
 			inv.add(it[0], it[1])
 		inv.changed.emit()

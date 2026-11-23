@@ -57,7 +57,7 @@ func test_upgraded_armor_and_weapons_are_stronger() -> void:
 func test_upgrade_level_is_saved() -> void:
 	var inv := Inventory.new(Inventory.PLAYER_SIZE)
 	inv.add("pickaxe_stone", 1)
-	inv.slots[Inventory.equip_index("pickaxe")]["up"] = 2
+	inv.slots[0]["up"] = 2  # the pickaxe lands in hotbar slot 0 (F243)
 	var copy := Inventory.new(Inventory.PLAYER_SIZE)
 	copy.load_data(inv.to_data())
-	check_eq(Upgrades.level(copy.get_slot(Inventory.equip_index("pickaxe"))), 2, "+2 survives saving/sending")
+	check_eq(Upgrades.level(copy.get_slot(0)), 2, "+2 survives saving/sending")

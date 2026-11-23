@@ -105,7 +105,7 @@ static func total(inv: Inventory) -> float:
 		if s.is_empty():
 			continue
 		var w := weight(str(s.id)) * int(s.get("count", 1))
-		t += w * WORN_FACTOR if inv.is_player and Inventory.is_equip_index(i) else w
+		t += w * WORN_FACTOR if inv.is_worn(i) else w
 	return t
 
 

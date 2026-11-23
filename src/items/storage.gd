@@ -125,6 +125,7 @@ static func _move_slot(src: Inventory, i: int, dst: Inventory) -> int:
 	var s := src.get_slot(i)
 	if s.is_empty():
 		return 0
+	s.erase("worn")  # put in a box = taken off (F825)
 	if s.size() > 2:
 		for j in dst.slots.size():
 			if dst.slots[j].is_empty():

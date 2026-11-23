@@ -289,6 +289,13 @@ func _physics_process(delta: float) -> void:
 	var overloaded: bool = carry.get("load", ItemWeights.Load.LIGHT) == ItemWeights.Load.OVERLOADED
 	if overloaded:
 		running = false  # F793: too heavy to sprint
+	var equip_mult := 1.0
+	if is_local and GameAuthority.instance:  # putting something on (F826): the ring fills, you walk very slowly
+		GameAuthority.instance.tick_equip(delta)
+		var me = GameAuthority.instance.get_player(peer_id)
+		if me and not me.equip_job.is_empty():
+			equip_mult = EquipTime.WALK_MULT
+			running = false
 	# F775: one energy bar for sprint, dodge and attack, but sprinting never spends the last dodge.
 	if body:
 		var keep := minf(Combat.DODGE_STAMINA * (prog.dodge_stamina_mult() if prog else 1.0) * DwarfFeel.SPRINT_KEEPS_DODGES, body.max_stamina() * 0.5)
@@ -326,7 +333,7 @@ func _physics_process(delta: float) -> void:
 	# Heavy legs: walk → sprint ramps up over SPRINT_RAMP_TIME, and back down over SPRINT_SLOW_TIME (F775).
 	_sprint_t = minf(1.0, _sprint_t + delta / DwarfFeel.SPRINT_RAMP_TIME) if running else maxf(0.0, _sprint_t - delta / DwarfFeel.SPRINT_SLOW_TIME)
 	var sprint_k := smoothstep(0.0, 1.0, _sprint_t)
-	var top_speed := lerpf(WALK_SPEED, RUN_SPEED * (prog.run_speed_mult() if prog else 1.0) * burst, sprint_k) * fight_mult * (body.ailments.speed_mult() * maxf(0.2, 1.0 + body.buff_total("move_speed")) if body else 1.0) * float(carry.get("speed", 1.0))
+	var top_speed := lerpf(WALK_SPEED, RUN_SPEED * (prog.run_speed_mult() if prog else 1.0) * burst, sprint_k) * fight_mult * (body.ailments.speed_mult() * maxf(0.2, 1.0 + body.buff_total("move_speed")) if body else 1.0) * float(carry.get("speed", 1.0)) * equip_mult
 	_speed_smooth = move_toward(_speed_smooth, top_speed, SPEED_BLEND * delta)
 	var speed := _speed_smooth
 	if held_left > 0.0:  # (Lampwick's bear jaws hold your leg: MineTraps)

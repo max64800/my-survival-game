@@ -278,6 +278,12 @@ func _ready() -> void:
 			_monsters = false
 			if mode == "menu":
 				mode = "solo"
+		elif arg == "bagcheck":  # F825/F826: photos of the bag window, the worn E, the putting-on ring, Q-throw
+			debug_script = "res://src/debug/bagcheck.gd"
+			_saving = false
+			_monsters = false
+			if mode == "menu":
+				mode = "solo"
 		elif arg.begins_with("savecheck"):
 			debug_script = "res://src/debug/savecheck.gd"
 	# (startcheck is a robot too, but it plays the real new-game start on purpose.)

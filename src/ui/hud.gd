@@ -9,7 +9,9 @@ const SLOT_SIZE := 58
 const CHILL_EDGE_BY_STACK := [0.15, 0.35, 0.6, 0.68, 0.76]
 const HOTBAR_SLOT := 88  ## the item bar at the bottom of the screen is bigger than the bag's slots
 const SKILLS_HOTBAR_ROOM := 125.0  ## the K window stays above the hotbar (owner, Nov 20)
-const BAG_HINT := "Click: pick up / swap  ·  Shift+Click: quick move  ·  Double-click: equip  ·  Right-click: split"
+const BAG_HINT := "Click: pick up / swap  ·  Shift+Click: quick move  ·  Right-click: put on / take off, eat, split  ·  Q: throw away"
+const GEAR_SLOT := 80  ## the Gear panel's slots are bigger than the bag's (owner F825: "make the gear and icons bigger")
+const GEAR_NAMES := {head = "Head", chest = "Chest", legs = "Legs", feet = "Feet", lantern = "Lantern", pack = "Backpack"}
 
 ## A button on the Escape menu was pressed: "resume", "save", "invite", "menu" or "quit" (F87).
 signal pause_pressed(what: String)
@@ -25,6 +27,8 @@ var _bag_grid: GridContainer
 var _slot_panels := {}  ## inventory index -> its slot Panel (hotbar, bag, backpack, equipment)
 var _pack_title: Label
 var _equip_title: Label
+var _gear_panel: PanelContainer  ## left of the bag: armour, lantern, backpack (owner F825)
+var _gear_names := {}  ## gear slot index -> the Label beside it ("Copper Helm" or "Head")
 const EQUIP_NAMES := ["Pick", "Lamp", "Weapon", "Shield", "Head", "Chest", "Legs", "Feet", "Pack"]
 var _fuel_bar: ProgressBar
 var _fuel_label: Label
@@ -181,14 +185,9 @@ func _build() -> void:
 	UiKit.title(bag_outer, "Bag")
 	_bag_weight = UiKit.label(bag_outer, "", 16)
 	_bag_weight.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	# Equipped things on the left, everything you carry on the right (owner F150).
-	var bag_row := HBoxContainer.new()
-	bag_row.add_theme_constant_override("separation", 18)
-	bag_outer.add_child(bag_row)
-	var equip_col := VBoxContainer.new()
-	bag_row.add_child(equip_col)
+	# Gear on its own panel on the left, the bag in the middle, crafting on the right (owner F825).
 	var bag_box := VBoxContainer.new()
-	bag_row.add_child(bag_box)
+	bag_outer.add_child(bag_box)
 	# The hotbar stays at the bottom of the screen while the bag is open (owner F241); its slots
 	# work the same there (click, drag, Shift+click), so it isn't repeated in here.
 	_bag_grid = GridContainer.new()
@@ -203,14 +202,7 @@ func _build() -> void:
 	bag_box.add_child(pack_grid)
 	for i in Inventory.PACK_SIZE:
 		pack_grid.add_child(_make_slot(Inventory.PACK_START + i, ""))
-	_equip_title = _label(equip_col, 15)
-	_equip_title.custom_minimum_size = Vector2(2 * (SLOT_SIZE + 4), 0)
-	_equip_title.autowrap_mode = TextServer.AUTOWRAP_WORD
-	var equip_grid := GridContainer.new()
-	equip_grid.columns = 2
-	equip_col.add_child(equip_grid)
-	for i in Inventory.EQUIP.size():
-		equip_grid.add_child(_make_slot(Inventory.EQUIP_START + i, ""))  # no names, the pictures say it (owner F242)
+	_build_gear_panel(root)
 	# One short hint line, no long explanations (owner F179, F187).
 	UiKit.divider(bag_outer)
 	var hint := UiKit.label(bag_outer, BAG_HINT, 13, UiKit.DIM)
@@ -219,6 +211,7 @@ func _build() -> void:
 	_bag_panel.resized.connect(_layout_panels)
 	root.resized.connect(_layout_panels)
 	_bag_panel.visibility_changed.connect(_layout_panels)
+	_bag_panel.visibility_changed.connect(func(): _gear_panel.visible = _bag_panel.visible)
 
 	var fuel_box := VBoxContainer.new()
 	fuel_box.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
@@ -450,6 +443,42 @@ func _build() -> void:
 	(_loading.find_child("Sub", true, false) as Label).get_parent().add_child(_loading_bar)
 
 
+## The Gear panel (owner F825, Nov 23): armour on the left column, lantern and backpack on the right, big slots
+## with the item's name beside each. Pickaxe, weapon and shield aren't here: they're worn where they lie (gold E).
+func _build_gear_panel(root: Control) -> void:
+	_gear_panel = PanelContainer.new()
+	_gear_panel.visible = false
+	UiKit.panel(_gear_panel)
+	root.add_child(_gear_panel)
+	_gear_panel.resized.connect(_layout_panels)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 8)
+	_gear_panel.add_child(box)
+	UiKit.title(box, "Gear")
+	var cols := HBoxContainer.new()
+	cols.add_theme_constant_override("separation", 14)
+	box.add_child(cols)
+	for group in [["head", "chest", "legs", "feet"], ["lantern", "pack"]]:
+		var col := VBoxContainer.new()
+		col.add_theme_constant_override("separation", 8)
+		cols.add_child(col)
+		for part in group:
+			var row := HBoxContainer.new()
+			row.add_theme_constant_override("separation", 8)
+			col.add_child(row)
+			var i := Inventory.equip_index(part)
+			var slot := _make_slot(i, "")
+			_size_slot(slot, GEAR_SLOT)
+			row.add_child(slot)
+			var name_l := UiKit.label(row, GEAR_NAMES[part], 15)
+			name_l.custom_minimum_size = Vector2(96, 0)
+			name_l.autowrap_mode = TextServer.AUTOWRAP_WORD
+			name_l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			_gear_names[i] = name_l
+	UiKit.divider(box)
+	_equip_title = UiKit.label(box, "", 16)
+
+
 func _label(parent: Node, size: int) -> Label:
 	var l := Label.new()
 	l.add_theme_font_size_override("font_size", size)
@@ -595,7 +624,7 @@ func _refresh_slots() -> void:
 	var pack_open := ps.inventory.pack_open()
 	if _pack_title:
 		_pack_title.text = "Backpack" if pack_open else "Backpack  (wear a Leather Satchel to open these)"
-		_equip_title.text = "Equipped\narmor: %d%%\nF: draw weapon" % roundi(ps.armor_cut() * 100.0)
+		_equip_title.text = "Armour: %d%%\nF: draw your worn weapon" % roundi(ps.armor_cut() * 100.0)
 	var hand := ps.hand_slot()
 	for key in _slot_panels:
 		var i: int = key
@@ -640,6 +669,11 @@ func _refresh_slots() -> void:
 		(panel.get_node("Count") as Label).text = "" if s.is_empty() or s.count <= 1 else str(s.count)
 		_show_wear(panel, s)
 		_show_cooldown(panel, s, auth)
+		_show_worn_badge(panel, s.get("worn", false))
+		if _gear_names.has(i):
+			var part: String = Inventory.EQUIP[i - Inventory.EQUIP_START]
+			(_gear_names[i] as Label).text = GEAR_NAMES[part] if s.is_empty() else Upgrades.display_name(s)
+			(_gear_names[i] as Label).add_theme_color_override("font_color", UiKit.DIM if s.is_empty() else UiKit.TEXT)
 
 
 ## An item that is cooling down (a bandage: 30 s) gets a dark shade over its slot. Right after you use it, the shade
@@ -773,7 +807,6 @@ func _on_slot_input(event: InputEvent, index: int) -> void:
 			_refresh_slots()
 		elif wants_equip_click(index, auth.get_player(peer_id).inventory):
 			_quick_equip(index)
-			_refresh_slots()
 		else:
 			auth.ask_split(index)
 		return
@@ -782,7 +815,6 @@ func _on_slot_input(event: InputEvent, index: int) -> void:
 	if event.double_click and not box_panel.visible:
 		_swap_from = -1
 		_quick_equip(index)
-		_refresh_slots()
 		return
 	if event.shift_pressed and not box_panel.visible:
 		_swap_from = -1
@@ -829,33 +861,19 @@ static func wants_equip_click(index: int, inv: Inventory) -> bool:
 	return Inventory.is_equip_index(index) or Inventory.equip_slot_for(s.id) != ""
 
 
-## Double-click / right-click: equip an item into its slot (swapping out what was there), or take an
-## equipped item off into the first free bag slot.
+## Double-click / right-click: put an item on (a ring fills first, F826) or take it off (instant).
+## Says why right away when it can't (no room, backpack not empty), before asking the host.
 func _quick_equip(index: int) -> void:
 	var auth := GameAuthority.instance
 	var inv: Inventory = auth.get_player(peer_id).inventory
-	var s := inv.get_slot(index)
-	if s.is_empty():
+	if inv.get_slot(index).is_empty():
 		return
-	if Inventory.is_equip_index(index):
-		for i in Inventory.SIZE:
-			if inv.get_slot(i).is_empty():
-				if inv.swap_allowed(index, i):
-					auth.ask_swap(index, i)
-				else:
-					show_toast("Empty the backpack first.", 2.5)
-				return
-		show_toast("No room in the bag to take that off.", 2.5)
+	var why := inv.equip_problem(index)
+	if why != "":
+		show_toast(why, 2.5)
 		return
-	var where := Inventory.equip_slot_for(s.id)
-	if where == "":
-		show_toast("%s can't be equipped." % Items.display_name(s.id), 2.0)
-		return
-	var target := Inventory.equip_index(where)
-	if inv.swap_allowed(index, target):
-		auth.ask_swap(index, target)
-	else:
-		show_toast("Empty the backpack first.", 2.5)
+	auth.ask_equip(index)
+	_refresh_slots()
 
 
 func _on_dig_feedback(pid: int, result: Dictionary) -> void:
@@ -949,6 +967,8 @@ func _layout_panels() -> void:
 	var panels: Array[Control] = []
 	if craft.upgrade_panel and craft.upgrade_panel.visible:
 		panels.append(craft.upgrade_panel)  # gear upgrades: left of the bag (owner F178)
+	if _gear_panel and _gear_panel.visible:
+		panels.append(_gear_panel)  # armour + lantern on the left (owner F825)
 	if _bag_panel.visible:
 		panels.append(_bag_panel)
 	if side:
@@ -958,6 +978,14 @@ func _layout_panels() -> void:
 	for p in panels:
 		total += p.size.x + gap
 		tallest = maxf(tallest, p.size.y)
+	# Gear + bag + crafting fill the screen (owner F825, Nov 23: "this needs to be a lot bigger"): all three grow
+	# (or shrink on a small screen) the same, as wide as the screen and never down over the bars + hotbar.
+	var room_h := screen.y - (HOTBAR_SLOT + 18.0 + 14.0 + 60.0 + 10.0) - 30.0
+	var k := minf((screen.x - 40.0) / maxf(total, 1.0), room_h / maxf(tallest, 1.0))
+	k = clampf(k, 0.5, 2.5)
+	total *= k
+	tallest *= k
+	gap *= k
 	var x := maxf(10.0, (screen.x - total) * 0.5)
 	var top := maxf(10.0, (screen.y - tallest) * 0.5 - 30.0)  # a little above the middle, clear of the hotbar
 	# The hotbar and body bars stay on screen under the bag (owner F241): never cover them.
@@ -965,8 +993,9 @@ func _layout_panels() -> void:
 	if top + tallest > free_bottom:
 		top = maxf(10.0, free_bottom - tallest)
 	for p in panels:
+		p.scale = Vector2(k, k)
 		p.position = Vector2(x, top)
-		x += p.size.x + gap
+		x += p.size.x * k + gap
 
 
 ## The hotbar at the bottom middle of the screen.
@@ -1257,6 +1286,7 @@ func _process(delta: float) -> void:
 	var ps: GameAuthority.PlayerState = auth.get_player(peer_id) if auth else null
 	_update_work_bar(auth)
 	_update_reload_bar(delta)
+	_show_equip_ring(ps)
 	if auth and not auth.my_cooldowns.is_empty() and ps:  # the grey cooldown shades climb every frame (owner F470)
 		for i in _slot_panels:
 			_show_cooldown(_slot_panels[i], ps.inventory.get_slot(i), auth)
@@ -1480,6 +1510,11 @@ func _input(event: InputEvent) -> void:
 	var k := event as InputEventKey
 	if k == null or not k.pressed or k.echo or not _bag_panel.visible or box_panel.visible or _hover_slot < 0:
 		return
+	if k.keycode == KEY_Q:  # Q over a slot: throw it on the floor (owner F825)
+		GameAuthority.instance.ask_throw(_hover_slot)
+		_swap_from = -1
+		get_viewport().set_input_as_handled()
+		return
 	var n := hotbar_key(k.keycode)
 	if n < 0 or n == _hover_slot:
 		return
@@ -1514,3 +1549,71 @@ static func steadiness_text(p: Dictionary) -> String:
 	if pct < 25:
 		return "shaky! (%d%%) prop it up" % pct
 	return "%d%% steady" % pct
+
+
+## The gold "E" in a slot's top-right corner: you're wearing this pickaxe/weapon/shield (F825, like Valheim).
+func _show_worn_badge(panel: Control, on: bool) -> void:
+	var b: Label = panel.get_node_or_null("Worn")
+	if not on:
+		if b:
+			b.visible = false
+		return
+	if b == null:
+		b = Label.new()
+		b.name = "Worn"
+		b.text = "E"
+		b.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		b.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		var st := StyleBoxFlat.new()
+		st.bg_color = Color(0.91, 0.69, 0.29)
+		st.border_color = Color(0.23, 0.13, 0.03)
+		st.set_border_width_all(2)
+		st.set_corner_radius_all(20)
+		b.add_theme_stylebox_override("normal", st)
+		b.add_theme_color_override("font_color", UiKit.DARK_TEXT)
+		b.add_theme_font_override("font", UiKit.heading_font())
+		panel.add_child(b)
+	var d := roundf(panel.size.x * 0.3)
+	b.size = Vector2(d, d)
+	b.position = Vector2(panel.size.x - d * 0.85, -d * 0.15)
+	b.add_theme_font_size_override("font_size", roundi(d * 0.62))
+	b.visible = true
+
+
+var _ring_at := -1  ## the slot that shows the putting-on ring (F826)
+
+
+## Putting something on (F826): a gold ring fills around its slot (hotbar or bag). Gone when done or a hit stops it.
+func _show_equip_ring(ps) -> void:
+	var job: Dictionary = ps.equip_job if ps else {}
+	var at: int = job.get("index", -1)
+	if at != _ring_at and _slot_panels.has(_ring_at):
+		var old: Control = _slot_panels[_ring_at].get_node_or_null("Ring")
+		if old:
+			old.visible = false
+	_ring_at = at
+	if at < 0 or not _slot_panels.has(at):
+		return
+	var panel: Control = _slot_panels[at]
+	var ring: Control = panel.get_node_or_null("Ring")
+	if ring == null:
+		ring = Control.new()
+		ring.name = "Ring"
+		ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		panel.add_child(ring)
+		ring.draw.connect(_draw_equip_ring.bind(ring))
+	ring.position = Vector2.ZERO
+	ring.size = panel.size
+	ring.set_meta("job", job)
+	ring.visible = true
+	ring.queue_redraw()
+
+
+func _draw_equip_ring(ring: Control) -> void:
+	var p := EquipTime.progress(ring.get_meta("job", {}))
+	var c := ring.size * 0.5
+	var r := ring.size.x * 0.5 - 1.0
+	ring.draw_arc(c, r, 0.0, TAU, 48, Color(0, 0, 0, 0.5), 7.0, true)
+	if p > 0.0:
+		ring.draw_arc(c, r, -PI * 0.5, -PI * 0.5 + TAU * p, 48, Color(1.0, 0.8, 0.45), 5.0, true)

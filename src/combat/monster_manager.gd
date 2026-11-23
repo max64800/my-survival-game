@@ -641,7 +641,7 @@ func _shield_blocks(m: Monster, from: Vector3, heavy: bool) -> bool:
 
 ## Host: the slot of the shield a bash hits with: the equipped one, else the best on the hotbar (-1 = none).
 func _shield_slot(ps: GameAuthority.PlayerState) -> int:
-	var eq := Inventory.equip_index("shield")
+	var eq := ps.inventory.worn_slot("shield")  # (-1 = none worn, F825)
 	if Items.kind(ps.inventory.get_slot(eq).get("id", "")) == "shield":
 		return eq
 	var best := -1
@@ -1212,7 +1212,7 @@ func request_blocked(uid: int, peer: int) -> void:
 	if m == null or ps == null or ps.node.global_position.distance_to(m.global_position) > 8.0:
 		return
 	# A blocked hit wears what blocked it once: the shield if one is equipped, else the weapon in hand.
-	var shield_at := Inventory.equip_index("shield")
+	var shield_at := ps.inventory.worn_slot("shield")  # (-1 = none worn, F825)
 	auth.wear_slot(ps, shield_at if not ps.inventory.get_slot(shield_at).is_empty() else ps.hand_slot())
 	var sb := Gems.bonus(Gems.shield_slot(ps.inventory))
 	if randf() < sb.get("block_poison", 0.0):  # Bog Jade shield

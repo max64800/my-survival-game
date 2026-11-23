@@ -20,6 +20,7 @@ var count := 1
 var home := Vector3.ZERO  ## where it first appeared
 
 var _age := 0.0
+var thrown := false  ## thrown away with Q (F825): doesn't fly back until you've walked away from it once
 var _flying := false
 var _retry := 0.0
 var _asked := 0.0  ## seconds since we asked the host to pick us up (0 = not asked)
@@ -74,6 +75,11 @@ func _physics_process(delta: float) -> void:
 		return
 	var target: Vector3 = ps.node.global_position + Vector3.UP * 0.9
 	var dist := global_position.distance_to(target)
+	if thrown:
+		if dist < PICKUP_RADIUS:
+			return
+		thrown = false
+		pickup_radius = LOOSE_PICKUP_RADIUS  # walked away: now you walk up to it to pick it back up
 	if not _flying:
 		if dist < pickup_radius and _retry == 0.0:
 			_flying = true

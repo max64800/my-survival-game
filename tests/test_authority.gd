@@ -129,7 +129,8 @@ func test_needs_pickaxe_selected() -> void:
 	var p := _find_rock(Mat.STONE)
 	auth.request_select_slot(1, 3)
 	check(auth.request_hit(1, p, Vector3.UP).get("state") != "no_tool", "empty hand digs with the equipped pickaxe (F23)")
-	auth.get_player(1).inventory.slots[Inventory.equip_index("pickaxe")] = {}
+	var inv := auth.get_player(1).inventory
+	inv.slots[inv.best_of_kind("pickaxe")] = {}
 	check(auth.request_hit(1, p, Vector3.UP).get("state") != "no_tool", "no pickaxe at all: bare hands still dig (F89)")
 	auth.get_player(1).inventory.slots[3] = {id = "sword_stone", count = 1}
 	check_eq(auth.request_hit(1, p, Vector3.UP).get("state"), "no_tool", "but a sword in your hand doesn't dig")

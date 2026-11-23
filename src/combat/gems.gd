@@ -217,7 +217,7 @@ static func roll(favourite: String = "", level: int = 1) -> String:
 
 ## The best shield on the hotbar's bag slot (shield gems work while it's on your hotbar).
 static func shield_slot(inv: Inventory) -> Dictionary:
-	var best := inv.get_slot(Inventory.equip_index("shield")) if inv.is_player else {}  # the equipped shield (F23)
+	var best := inv.get_slot(inv.worn_slot("shield")) if inv.is_player else {}  # the worn shield (F23, F825)
 	for i in Inventory.HOTBAR_SIZE:
 		var s := inv.get_slot(i)
 		if not s.is_empty() and Items.kind(s.id) == "shield" and (best.is_empty() or Items.tier(s.id) > Items.tier(best.id)):

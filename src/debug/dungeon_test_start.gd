@@ -41,6 +41,7 @@ func _run() -> void:
 			inv.slots[Inventory.equip_index(slot)] = {id = WEAR[slot], count = 1}
 		for i in Inventory.HOTBAR_SIZE:  # the starting tools are replaced by the copper ones (owner, Nov 20: silver made the dungeon far too easy)
 			inv.slots[i] = {id = HOTBAR[i][0], count = HOTBAR[i][1]} if i < HOTBAR.size() else {}
+		inv.hand_slots_out()  # the worn pickaxe, sword and shield sit in the hotbar/bag with the worn mark (F825)
 		for it in BAG:
 			inv.add(it[0], it[1])
 		inv.changed.emit()

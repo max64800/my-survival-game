@@ -4,6 +4,8 @@ extends RefCounted
 ## A dwarf's inventory (PLAYER_SIZE) also has (feedback F23):
 ##   slots 39-48: 10 backpack slots, open only while a backpack is equipped
 ##   slots 49-57: equipment: pickaxe, lantern, weapon, shield, head, chest, legs, feet, pack
+##     (F825/F826, owner Nov 23, like Valheim: the pickaxe, weapon and shield slots are no longer used. Those three
+##     stay in their hotbar/bag slot and get `worn = true` when put on; old saves move them out, see hand_slots_out.)
 ## Chests and graves are plain inventories (any size, no backpack or equipment).
 ## Each slot is either empty ({}) or {id = "stone", count = 12}.
 
@@ -17,6 +19,8 @@ const PACK_START := SIZE
 const EQUIP := ["pickaxe", "lantern", "weapon", "shield", "head", "chest", "legs", "feet", "pack"]
 const EQUIP_START := SIZE + PACK_SIZE
 const PLAYER_SIZE := EQUIP_START + 9  ## = EQUIP.size()
+const HAND := ["pickaxe", "weapon", "shield"]  ## worn in place (a `worn` mark), not in an equipment slot (F825)
+const GEAR := ["head", "chest", "legs", "feet", "lantern", "pack"]  ## the slots the bag's Gear panel shows
 
 var slots: Array[Dictionary] = []
 var is_player := false  ## has backpack + equipment slots
@@ -55,7 +59,103 @@ static func equip_slot_for(id: String) -> String:
 
 
 func equipped(slot_name: String) -> String:
-	return get_slot(equip_index(slot_name)).get("id", "") if is_player else ""
+	return get_slot(worn_slot(slot_name)).get("id", "") if is_player else ""
+
+
+## Where the thing you wear of this kind is (-1 = none). Pickaxe, weapon and shield: the hotbar/bag/backpack slot
+## with the worn mark (F825); everything else: its equipment slot.
+func worn_slot(slot_name: String) -> int:
+	if not is_player:
+		return -1
+	var at := equip_index(slot_name)
+	if not slot_name in HAND:
+		return at
+	for i in EQUIP_START:
+		var s := slots[i]
+		if s.get("worn", false) and equip_slot_for(s.get("id", "")) == slot_name:
+			return i
+	return at if not slots[at].is_empty() else -1  # an old save's item that found no room in the bag yet
+
+
+## Is the item in slot i worn? (In an equipment slot, or a pickaxe/weapon/shield with the worn mark.)
+func is_worn(i: int) -> bool:
+	if not is_player or get_slot(i).is_empty():
+		return false
+	return is_equip_index(i) or get_slot(i).get("worn", false)
+
+
+## Put on (or take off) the pickaxe/weapon/shield in slot i. Only one of each kind is worn: the old one comes off.
+func set_worn(i: int, on: bool) -> bool:
+	var s := get_slot(i)
+	var kind := equip_slot_for(s.get("id", ""))
+	if not is_player or not kind in HAND or is_equip_index(i) or int(s.get("count", 0)) != 1:
+		return false
+	if on:
+		for j in EQUIP_START:
+			if j != i and slots[j].get("worn", false) and equip_slot_for(slots[j].get("id", "")) == kind:
+				slots[j].erase("worn")
+		var old := equip_index(kind)
+		if not slots[old].is_empty():  # an old save's leftover in the unused equipment slot: the two trade places
+			var tmp := slots[old]
+			s.erase("worn")
+			slots[old] = s  # worn from there (worn_slot falls back to it)
+			slots[i] = tmp
+			slots[i].erase("worn")
+			changed.emit()
+			return true
+		s.worn = true
+	else:
+		s.erase("worn")
+	changed.emit()
+	return true
+
+
+## What putting on / taking off slot i would hit ("" = fine), so the screen can say why before asking the host.
+func equip_problem(i: int) -> String:
+	var s := get_slot(i)
+	if s.is_empty():
+		return "?"
+	if is_equip_index(i):
+		for j in SIZE:
+			if slots[j].is_empty():
+				return "" if swap_allowed(i, j) else "Empty the backpack first."
+		return "No room in the bag to take that off."
+	var where := equip_slot_for(s.id)
+	if where == "":
+		return "%s can't be equipped." % Items.display_name(s.id)
+	if where in HAND:
+		return ""
+	return "" if swap_allowed(i, equip_index(where)) else "Empty the backpack first."
+
+
+## Put on / take off slot i right now (the host does this when the equip ring is full, F826). True = it changed.
+func toggle_equip(i: int) -> bool:
+	if equip_problem(i) != "":
+		return false
+	var s := get_slot(i)
+	if is_equip_index(i):
+		for j in SIZE:
+			if slots[j].is_empty():
+				return swap(i, j)
+		return false
+	var where := equip_slot_for(s.id)
+	if where in HAND:
+		return set_worn(i, not s.get("worn", false))
+	return swap(i, equip_index(where))
+
+
+## Takes the whole slot out (Q in the bag throws it away, F825). Returns what was there, without the worn mark.
+func take_slot(i: int) -> Dictionary:
+	var s := get_slot(i)
+	if s.is_empty():
+		return {}
+	if is_player and i == equip_index("pack") and not _pack_slots_empty():
+		return {}  # empty the backpack first
+	slots[i] = {}
+	s = s.duplicate(true)
+	s.erase("worn")
+	changed.emit()
+	return s
 
 
 ## The slot with the strongest item of this kind you carry (hotbar, bag, backpack), or -1.
@@ -129,15 +229,15 @@ func remove(id: String, count: int) -> bool:
 		return true
 	var have := 0
 	for i in slots.size():
-		if not is_equip_index(i) or not is_player:
+		if not is_worn(i):
 			if slots[i].get("id", "") == id:
 				have += slots[i].count
 	if have < count:
 		return false
 	var left := count
 	for i in range(slots.size() - 1, -1, -1):
-		if is_player and is_equip_index(i):
-			continue
+		if is_worn(i):
+			continue  # never what you're wearing (equipment, or a worn pickaxe/weapon/shield, F825)
 		var s := slots[i]
 		if s.get("id", "") != id:
 			continue
@@ -161,6 +261,8 @@ func fits(i: int, item: Dictionary) -> bool:
 	if item.is_empty():
 		return true
 	if is_player and is_equip_index(i):
+		if EQUIP[i - EQUIP_START] in HAND:
+			return false  # unused since F825: pickaxe/weapon/shield are worn where they lie
 		return equip_slot_for(item.id) == EQUIP[i - EQUIP_START] and int(item.count) == 1
 	if is_player and is_pack_index(i):
 		return pack_open()
@@ -257,6 +359,7 @@ func load_data(data: Array) -> void:
 		if slots[i].has("id") and not Items.exists(str(slots[i].id)):
 			slots[i] = {}  # an old save's item the game no longer has (critter meat, boss parts..., Nov 19)
 	_split_big_stacks()
+	hand_slots_out()
 	changed.emit()
 
 
@@ -275,3 +378,23 @@ func _split_big_stacks() -> void:
 				var put := mini(int(s.count) - max_stack, max_stack)
 				slots[j] = {id = s.id, count = put}
 				s.count = int(s.count) - put
+
+
+## Old saves (before F825) kept the pickaxe, weapon and shield in equipment slots. They move to the first free
+## hotbar/bag slot, still worn. With no room they wait there (still worn) until a slot is free on the next load.
+func hand_slots_out() -> void:
+	if not is_player:
+		return
+	for kind in HAND:
+		var at := equip_index(kind)
+		if slots[at].is_empty():
+			continue
+		for j in SIZE:
+			if slots[j].is_empty():
+				for k in EQUIP_START:  # one worn of each kind
+					if slots[k].get("worn", false) and equip_slot_for(slots[k].get("id", "")) == kind:
+						slots[k].erase("worn")
+				slots[j] = slots[at]
+				slots[j].worn = true
+				slots[at] = {}
+				break

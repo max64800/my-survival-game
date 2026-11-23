@@ -136,7 +136,7 @@ func _fire_through_block() -> void:
 	var v := _ps.vitals
 	_ps.lantern_stowed = true  # the hand lantern takes the shield hand; put it away
 	_ps.inventory.slots[0] = {id = "sword_copper", count = 1}
-	_ps.inventory.slots[Inventory.equip_index("shield")] = {id = "shield_copper", count = 1}
+	_ps.inventory.slots[1] = {id = "shield_copper", count = 1, worn = true}  # worn where it lies (F825)
 	_ps.inventory.changed.emit()
 	_auth.request_select_slot(_auth.local_peer_id(), 0)
 	await _wait(0.5)
