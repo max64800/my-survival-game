@@ -35,7 +35,8 @@ func _teardown() -> void:
 func test_inventory_any_size() -> void:
 	var inv := Inventory.new(12)
 	check_eq(inv.slots.size(), 12, "a 12-slot chest")
-	check_eq(inv.add("stone", 1300), 100, "12 stacks fit, 100 left over")
+	var full := Items.stack_size("stone")  # (50 since F793)
+	check_eq(inv.add("stone", 12 * full + 100), 100, "12 stacks fit, 100 left over")
 
 
 func test_chest_place_fill_and_empty() -> void:

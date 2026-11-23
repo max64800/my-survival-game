@@ -119,8 +119,7 @@ func test_overloaded_dwarf_is_slow_and_cannot_jump_or_dodge() -> void:
 	dwarf.bot_dodge = true
 	await tree.physics_frame
 	check(not dwarf.fight.dodging(), "overloaded can't dodge roll")
-	dwarf.bot_dodge = false
-	Controls.robot = false
+	dwarf.bot_dodge = false  # (Controls.robot stays on: the test runner keeps it on for every test)
 	root.queue_free()
 
 
