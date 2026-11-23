@@ -1230,7 +1230,8 @@ func _process(delta: float) -> void:
 				_edge_flash_vitals.damaged.disconnect(_on_hurt)
 			v.damaged.connect(_on_hurt)
 			_edge_flash_vitals = v
-		_edge_flash.set_status("burn" if v.ailments.has("burn") else "poison" if v.ailments.has("poison") else "chill" if (v.ailments.has("chill") or v.ailments.has("frozen")) else "")
+		_update_edge_status(v.ailments)
+		_edge_flash.set_health(v.health / maxf(v.max_health(), 1.0))
 		_bars.health.max_value = v.max_health()
 		_bars.health.value = v.health
 		_update_ghost_bar(v)
@@ -1355,6 +1356,20 @@ func _on_hurt(amount: float) -> void:
 	var me := _local_dwarf()
 	if me:
 		me.got_hurt(amount, max_hp)
+
+
+## Which ailment shows at the screen edges, and how strongly (F695, F799). Burning wins, then poison, then cold.
+func _update_edge_status(a: Ailments) -> void:
+	if a.has("burn"):
+		_edge_flash.set_status("burn", 1.0)
+	elif a.has("poison"):
+		_edge_flash.set_status("poison", a.stacks_of("poison") / 3.0)
+	elif a.has("frozen"):
+		_edge_flash.set_status("chill", 1.0)
+	elif a.has("chill"):
+		_edge_flash.set_status("chill", a.stacks_of("chill") / 5.0)
+	else:
+		_edge_flash.set_status("")
 
 
 func _update_ghost_bar(v: Vitals) -> void:

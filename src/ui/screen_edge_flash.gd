@@ -1,25 +1,40 @@
 class_name ScreenEdgeFlash
 extends ColorRect
-## A glow along the screen edges (F695): a quick red flash the moment you lose health, and a steady
-## tinted glow while poisoned (green), burning (orange) or chilled (blue). The hit flash wins over the
-## status glow so a hit always stands out, even while you're already poisoned or on fire.
+## A glow along the screen edges (F695): a quick red flash the moment you lose health, and a look
+## of its own while poisoned, burning or chilled (see F799 below).
 ## Owner, Nov 22 ("too much, it goes on the entire screen"): now only a thin, faint rim, and only for
 ## BIG hits (a tenth of your health or more). Small hits show on the health bar and the dwarf instead.
+
+## F799 (owner, Nov 23): each ailment now has its own clear but soft look, still only at the edges:
+## green creeping edges = poison, orange flicker = burning, frosty white edges = chilled/frozen.
+## The looks grow in and fade away instead of popping, get a bit stronger with more stacks, and a hit's
+## red rim is drawn on top of them (you see both).
+## Owner, Nov 23 round 2: poison = pumping green veins like roots, frost = thick feathery frost from the
+## corners, burning = calmer (3 styles to pick from, FIRE_STYLE), and F802: a low-health screen (dark red,
+## thicker left and right, blood splats) that grows from half health down.
+## Round 3: burning = lots of glowing embers and black ash rising from the bottom, mostly up the sides;
+## frost = sharp fern-like needles like frost on a window, on all four edges; blood = smaller thrown-paint streaks.
 
 const HIT_COLOR := Color(0.85, 0.08, 0.05)
 const HIT_FADE := 0.4  ## seconds a hit flash takes to fade back to nothing
 const BIG_HIT_SHARE := 0.1  ## a hit must take this share of your max health to flash the edges
 const HIT_MIN := 0.2  ## the faintest edge flash (a hit of exactly BIG_HIT_SHARE)
 const HIT_MAX := 0.35  ## the strongest (a hit of 40% of your health or more)
-const STATUS_COLORS := {
-	"burn": Color(1.0, 0.45, 0.05),
-	"poison": Color(0.25, 0.85, 0.25),
-	"chill": Color(0.35, 0.65, 1.0),
-}
-const STATUS_STRENGTH := 0.15
+const STATUS_MODES := {"poison": 1, "burn": 2, "chill": 3}  ## which look the shader draws
+const FADE_IN := 0.6  ## seconds for a look to grow in
+const FADE_OUT := 0.9  ## seconds for it to melt away again
+const FROST_FADE_IN := 1.4  ## frost creeps in slower, like real frost growing
+const LOW_START := 0.5  ## the low-health screen starts below this share of health (F802)...
+const LOW_FULL := 0.1  ## ...and is at full strength here
+const LOW_SPEED := 1.5  ## how fast it follows your health (per second), so it never jumps
 
 var _hit_strength := 0.0
-var _status_kind := ""
+var _status_kind := ""  ## the ailment that should show now ("" = none)
+var _status_level := 0.0  ## how bad it is, 0..1 (more stacks = stronger look)
+var _shown_kind := ""  ## the look on screen right now (still fading out after the ailment ended)
+var _fade := 0.0  ## 0 = gone, 1 = fully grown in
+var _low_target := 0.0  ## how strong the low-health screen should be (0..1)
+var _low := 0.0  ## how strong it is right now
 var _mat: ShaderMaterial
 
 
@@ -41,18 +56,32 @@ func flash_hit(amount: float, max_health: float = 100.0) -> void:
 	_hit_strength = maxf(_hit_strength, lerpf(HIT_MIN, HIT_MAX, k))
 
 
-## Which ailment (if any) tints the edges while it's active: "" clears it (F695).
-func set_status(kind: String) -> void:
-	_status_kind = kind
+## Which ailment (if any) shows at the edges: "" clears it. level 0..1 = how bad (F695, F799).
+func set_status(kind: String, level: float = 1.0) -> void:
+	_status_kind = kind if STATUS_MODES.has(kind) else ""
+	if _status_kind != "":
+		_status_level = clampf(level, 0.0, 1.0)
+
+
+## Your health share (0..1) for the low-health screen (F802).
+func set_health(share: float) -> void:
+	_low_target = clampf((LOW_START - share) / (LOW_START - LOW_FULL), 0.0, 1.0)
 
 
 func _process(delta: float) -> void:
+	_low = move_toward(_low, _low_target, delta * LOW_SPEED)
 	if _hit_strength > 0.0:
 		_hit_strength = maxf(0.0, _hit_strength - delta * HIT_MAX / HIT_FADE)
-		_mat.set_shader_parameter("edge_color", HIT_COLOR)
-		_mat.set_shader_parameter("strength", _hit_strength)
-	elif _status_kind != "":
-		_mat.set_shader_parameter("edge_color", STATUS_COLORS.get(_status_kind, Color.WHITE))
-		_mat.set_shader_parameter("strength", STATUS_STRENGTH)
+	# A different ailment first melts the old look away, then grows its own in.
+	if _status_kind != "" and _status_kind == _shown_kind:
+		_fade = minf(1.0, _fade + delta / (FROST_FADE_IN if _shown_kind == "chill" else FADE_IN))
+	elif _fade > 0.0:
+		_fade = maxf(0.0, _fade - delta / FADE_OUT)
 	else:
-		_mat.set_shader_parameter("strength", 0.0)
+		_shown_kind = _status_kind
+	_mat.set_shader_parameter("hit_color", HIT_COLOR)
+	_mat.set_shader_parameter("hit_strength", _hit_strength)
+	_mat.set_shader_parameter("status_mode", int(STATUS_MODES.get(_shown_kind, 0)))
+	_mat.set_shader_parameter("status_fade", _fade)
+	_mat.set_shader_parameter("status_level", _status_level)
+	_mat.set_shader_parameter("low_health", _low)
