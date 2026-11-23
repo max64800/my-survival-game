@@ -134,6 +134,12 @@ func _ready() -> void:
 			_monsters = false
 			if mode == "menu":
 				mode = "solo"
+		elif arg == "dungeoncam":  # photos of the camera with his back to a dungeon wall and to rock (F766)
+			debug_script = "res://src/debug/dungeoncam.gd"
+			dungeon_test = true
+			_saving = false
+			if mode == "menu":
+				mode = "solo"
 		elif arg == "menucheck":  # photos of the bag, Workbench, chest and build menu (F187, F709)
 			debug_script = "res://src/debug/menucheck.gd"
 			_saving = false

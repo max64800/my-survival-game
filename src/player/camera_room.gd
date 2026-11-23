@@ -2,7 +2,8 @@ class_name CameraRoom
 ## How far back the camera can really go (F783, owner Nov 23: "the camera jitters" walking the Twin Gate's wall walks).
 ## Every built piece bumps like rock, so the camera's feeler (the spring arm) also hit every railing, battlement,
 ## post and lamp that passed behind the dwarf: the camera jumped in, glided back out, jumped in again. Now only the
-## floors and stairs below him and rock push the camera in (F807: since Nov 23 walls and roofs don't either).
+## floors and stairs below him and the ground push the camera in (F807: since Nov 23 walls and roofs don't either;
+## F766, Nov 23 late: nor rock walls, rock ceilings or dungeon walls, see FLOOR_NORMAL).
 ## (The same idea as F781, which took the spiral stairs' rails and post off the camera's layer.)
 
 ## F807 (owner, Nov 23: "do the same on the walls and the ceiling"; in a small tower room they pushed the camera so
@@ -69,27 +70,60 @@ static func best_side(spring: SpringArm3D, want: float, extra_exclude: Array[RID
 	return best
 
 
-## The free part (0..1) of moving the spring's ball from `from` by `motion`, slipping past thin pieces.
+## Rock and dungeon walls (owner, Nov 23: "if I am against the wall, it doesn't zoom in my camera all the way close
+## to my character, but I can still see through the wall and the rock"): the camera slips through rock walls and
+## ceilings too. From inside the rock its cave side faces away from the camera, so it isn't drawn: you see straight
+## through (dungeon walls get CameraFade's circle). Only ground stops it: a surface facing up more than this ...
+const FLOOR_NORMAL := 0.6
+## ... or anything it touches lower than this far below his chest (m), so you never look up from under the ground.
+const SLIP_LOWEST := 0.6
+
+
+## True if the camera may slip through rock or a dungeon wall at this touch (`info` = get_rest_info's answer).
+static func slips_through_rock(info: Dictionary, chest_y: float) -> bool:
+	var n: Vector3 = info.get("normal", Vector3.UP)
+	var p: Vector3 = info.get("point", Vector3.ZERO)
+	return n.y < FLOOR_NORMAL and p.y > chest_y - SLIP_LOWEST
+
+
+## The free part (0..1) of moving the spring's ball from `from` by `motion`, slipping past thin pieces, rock walls
+## and dungeon walls.
 static func _free(spring: SpringArm3D, from: Vector3, motion: Vector3, extra_exclude: Array[RID]) -> float:
 	var space := spring.get_world_3d().direct_space_state
 	var q := PhysicsShapeQueryParameters3D.new()
 	q.shape = spring.shape
 	q.collision_mask = spring.collision_mask
 	var exclude: Array[RID] = extra_exclude.duplicate()
+	var length := motion.length()
+	if length < 0.001:
+		return 1.0
+	var sphere := spring.shape as SphereShape3D
+	var hop := ((sphere.radius if sphere else 0.3) * 2.0 + 0.05) / length  # (past a wall: the ball's whole width on)
+	var start := 0.0   # (where along `motion` the ball starts this round: past the walls slipped through so far)
 	var last := 0.0
 	for _i in MAX_SKIPS + 1:
+		if start >= 1.0:
+			return 1.0
 		q.exclude = exclude
-		q.transform = Transform3D(Basis(), from)
-		q.motion = motion
+		q.transform = Transform3D(Basis(), from + motion * start)
+		q.motion = motion * (1.0 - start)
 		var frac := space.cast_motion(q)
 		if frac.is_empty() or frac[0] >= 1.0:
 			return 1.0
-		last = frac[0]
-		q.transform = Transform3D(Basis(), from + motion * frac[1])
+		var at := start + (1.0 - start) * frac[0]
+		var touch := start + (1.0 - start) * frac[1]
+		last = at
+		q.transform = Transform3D(Basis(), from + motion * touch)
 		q.motion = Vector3.ZERO
 		var info := space.get_rest_info(q)
-		var c: Object = instance_from_id(int(info.get("collider_id", 0))) if not info.is_empty() else null
-		if c == null or not see_through(c, from.y):
-			return frac[0]
-		exclude.append(info.rid)
-	return last  # (too many thin pieces in a row: stop at the last one)
+		if info.is_empty():
+			return at
+		var c: Object = instance_from_id(int(info.get("collider_id", 0)))
+		if c != null and see_through(c, from.y):
+			exclude.append(info.rid)   # (a built piece: look past that one piece)
+			continue
+		var piece := c is PieceNode or (c is Node and (c as Node).get_parent() is PieceNode)
+		if piece or not slips_through_rock(info, from.y):
+			return at   # (a built floor or stair below his chest, or the ground)
+		start = touch + hop   # (rock or a dungeon wall: carry on from just past it; the rock's floors still count)
+	return last  # (too many things in a row: stop at the last one)

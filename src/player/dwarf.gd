@@ -564,7 +564,10 @@ func _jump_hang_guess(vy: float, elapsed: float) -> float:
 func aim_far(reach: float) -> Dictionary:
 	var from := camera.global_position
 	var forward := -camera.global_basis.z
-	var q := PhysicsRayQueryParameters3D.create(from, from + forward * (_spring.spring_length + reach + 2.0))
+	var end := from + forward * (_spring.spring_length + reach + 2.0)
+	# (F766: the camera may sit inside rock now; start level with him, like aim(), so the rock behind isn't hit)
+	from += forward * maxf(0.0, (global_position + Vector3.UP - from).dot(forward) - 0.4)
+	var q := PhysicsRayQueryParameters3D.create(from, end)
 	q.collision_mask = World.TERRAIN_LAYER | GlowField.GLOW_LAYER | Station.STATION_LAYER | Monster.MONSTER_LAYER | PoiField.POI_LAYER | PieceNode.PIECE_LAYER | Storage.BOX_LAYER 		| Ragdoll.LAYER  # (chests: the hammer picks them up; a fallen body: mine it the moment it dies)
 	q.exclude = [get_rid()]
 	var hit := get_world_3d().direct_space_state.intersect_ray(q)

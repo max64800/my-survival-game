@@ -23,7 +23,17 @@ static var _see_shader: Shader        ## the stand-in paint for two-sided models
 static var _see_shader_one: Shader    ## ... and for one-sided ones
 static var _swaps := {}               ## a model's own paint -> its see-through stand-in (shared by every piece)
 
+## F766 (owner, Nov 23: "the camera also has this transparency like we have with our buildings in the dungeons"):
+## a dungeon's walls are drawn in batches (one paint for every copy, DungeonBuild), so they wear the see-through
+## paint all the time, at see_amount 0. When a dungeon wall is between the camera and him, all of them fade in together;
+## the circle only clears what is in front of him round him on screen, so the rest looks the same.
+static var _world_paints := []        ## WeakRefs to those paints
+static var _world_copies := {}        ## [a model's own paint, keep_low] -> its always-on see-through copy
+
 var _faded := {}  ## PieceNode instance id -> [piece, how see-through it is now (0..1), _swap_in()'s answer]
+var _world_hold := 0.0     ## seconds left of the dungeon walls' circle
+var _world_amount := 0.0   ## how see-through the dungeon walls are now (0..1)
+var _world_set := -1.0     ## the amount last handed to their paints
 var _shape := CapsuleShape3D.new()
 var _screen := ConvexPolygonShape3D.new()
 var _hold := 0.0   ## seconds left of the whole-screen circle
@@ -44,14 +54,25 @@ func update(world: World3D, from: Vector3, to: Vector3, delta: float, exclude: A
 			DwarfFeel.CAM_CIRCLE_CORNERS, DwarfFeel.CAM_CIRCLE_SIZE))
 		var blocking := _pieces_between(world, from, to.move_toward(from, TUBE_STOP), to.y, exclude)
 		_hold = HOLD if not blocking.is_empty() else maxf(_hold - delta, 0.0)
+		var walls := _world_between(world, from, to.move_toward(from, TUBE_STOP), to.y, exclude)
+		_world_hold = HOLD if walls else maxf(_world_hold - delta, 0.0)
 		if _hold > 0.0 and cam and cam.is_inside_tree():
 			blocking.append_array(_pieces_on_screen(world, cam, to, exclude))   # (doubles drop out below)
 		for p in blocking:
 			want[p.get_instance_id()] = p
+	else:
+		_world_hold = 0.0
 	for id in want:
 		if not _faded.has(id):
 			_faded[id] = [want[id], 0.0, _swap_in(want[id])]
 	var step := delta * DwarfFeel.CAM_BUILD_FADE_SPEED
+	_world_amount = move_toward(_world_amount, amount if _world_hold > 0.0 else 0.0, step)
+	if _world_amount != _world_set:
+		_world_set = _world_amount
+		for w in _world_paints:
+			var m := (w as WeakRef).get_ref() as ShaderMaterial
+			if m:
+				m.set_shader_parameter("see_amount", _world_amount)
 	for id in _faded.keys():
 		var entry: Array = _faded[id]
 		if not is_instance_valid(entry[0]):   # (removed while faded: just forget it)
@@ -68,6 +89,59 @@ func update(world: World3D, from: Vector3, to: Vector3, delta: float, exclude: A
 func faded(p: Node) -> float:
 	var entry: Array = _faded.get(p.get_instance_id(), [])
 	return entry[1] if entry.size() > 1 else 0.0
+
+
+## How see-through the dungeon walls are right now (0 = solid). For tests.
+func world_faded() -> float:
+	return _world_amount
+
+
+## F766: a copy of `mesh` whose paints are always-on see-through paints (at 0 until a dungeon wall is in the way).
+## `keep_low` = a floor: the part lower than his chest never fades.
+static func see_mesh(mesh: Mesh, keep_low := false) -> Mesh:
+	if mesh == null:
+		return mesh
+	var out := mesh.duplicate() as Mesh
+	for s in out.get_surface_count():
+		var own := out.surface_get_material(s)
+		var key := [own, keep_low]
+		if not _world_copies.has(key):
+			var base := _see_version(own)
+			var copy: ShaderMaterial = null
+			if base:
+				copy = base.duplicate() as ShaderMaterial
+				copy.set_shader_parameter("keep_low", keep_low)
+				copy.set_shader_parameter("see_amount", 0.0)
+				_world_paints.append(weakref(copy))
+			_world_copies[key] = copy
+		if _world_copies[key]:
+			out.surface_set_material(s, _world_copies[key])
+	return out
+
+
+## Is a dungeon wall (or ceiling) in the tube from the camera to his chest? Floors below his chest don't count.
+func _world_between(world: World3D, a: Vector3, b: Vector3, chest_y: float, exclude: Array[RID]) -> bool:
+	var length := a.distance_to(b)
+	if length < 0.05:
+		return false
+	var r := DwarfFeel.CAM_CIRCLE_TUBE
+	_shape.radius = r
+	_shape.height = length + r * 2.0
+	var up := (b - a) / length
+	var side := up.cross(Vector3.FORWARD if absf(up.z) < 0.9 else Vector3.RIGHT).normalized()
+	var q := PhysicsShapeQueryParameters3D.new()
+	q.shape = _shape
+	q.collision_mask = World.TERRAIN_LAYER
+	q.exclude = exclude
+	q.transform = Transform3D(Basis(side, up, side.cross(up)), (a + b) * 0.5)
+	for hit in world.direct_space_state.intersect_shape(q, MAX_HITS):
+		var body := hit.get("collider") as Node3D
+		if body == null or not body.is_in_group(RuinKit.GROUP):
+			continue
+		var box := body.global_transform * PhysicsServer3D.body_get_shape_transform(hit.rid, int(hit.shape))
+		if box.origin.y > chest_y - 0.3:
+			return true
+	return false
 
 
 func _pieces_between(world: World3D, a: Vector3, b: Vector3, chest_y: float, exclude: Array[RID]) -> Array:

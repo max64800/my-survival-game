@@ -352,7 +352,7 @@ func _build(d: Dictionary, plan: Dictionary) -> void:
 			var rel := _rel_xform(inst, m)
 			var mm := MultiMesh.new()
 			mm.transform_format = MultiMesh.TRANSFORM_3D
-			mm.mesh = _own_mesh(m)
+			mm.mesh = CameraFade.see_mesh(_own_mesh(m), lies_low(String(model)))  # (F766: walls fade like buildings)
 			mm.instance_count = xforms.size()
 			for i in xforms.size():
 				mm.set_instance_transform(i, (xforms[i] as Transform3D) * rel)
@@ -438,6 +438,18 @@ func _scene(model: String) -> PackedScene:
 	if scene == null:
 		push_warning("DungeonBuild: missing model %s" % path)
 	return scene
+
+
+## F766: floors, stairs, bridges, rails and junk on the ground: their part below his chest never fades
+## (the floor he stands on, and the one in front of him).
+static func lies_low(model: String) -> bool:
+	var base := model.get_file().get_basename()
+	if model.begins_with("build/"):
+		return base.get_slice("__", 0) in CameraRoom.FLOORS
+	for start in ["floor_", "bridge_", "rail_", "junk_", "lift_platform", "trap_floor", "trap_spikes", "trap_bear"]:
+		if base.begins_with(start):
+			return true
+	return false
 
 
 ## A mesh with the model's own materials on it (overrides on the node, or the mesh's).

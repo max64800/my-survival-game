@@ -17,13 +17,17 @@ uniform float metallic = 0.0;
 uniform float specular = 0.5;
 uniform vec3 emission : source_color = vec3(0.0);
 uniform float emission_energy = 0.0;
+// F766 (Nov 23): dungeon floors share one paint for every tile, so "floors below his chest stay solid" is done here:
+// a floor's dots lower than his chest are never left out.
+uniform bool keep_low = false;
 
 void vertex() {
 	UV = UV * uv_scale.xy + uv_offset.xy;
 }
 
 void fragment() {
-	if (see_cut(VERTEX, VIEW_MATRIX, PROJECTION_MATRIX, CAMERA_POSITION_WORLD, FRAGCOORD.xy)) {
+	bool low = keep_low && (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).y < see_target.y;
+	if (!low && see_cut(VERTEX, VIEW_MATRIX, PROJECTION_MATRIX, CAMERA_POSITION_WORLD, FRAGCOORD.xy)) {
 		discard;
 	}
 	vec4 c = albedo;
