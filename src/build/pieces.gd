@@ -539,6 +539,7 @@ const ROCK_SINK_OK := 0.6  ## pieces may poke this far into rock (was 0.35; owne
 const SLOPE_SINK_OK := 1.0  ## stairs and ramps: their upper corners are mostly empty air
 const BOTTOM_SINK_OK := 0.6  ## floors/pillars/stairs/props may sink their bottom this deep
 const BUILD_REACH := 8.0
+const WORKBENCH_RANGE := 20.0
 
 
 ## Building economy (owner, Nov 20): a first 6 x 6 m Shack takes about 15 min of gathering, Stonehold about 2x

@@ -117,3 +117,25 @@ All CC0 (public domain), checked on each page. Trimmed, loudness-matched and con
 | Page Turn 02 | LilMati | https://freesound.org/s/397549/ | CC0 | open_1 |
 | Page Turn 04 | LilMati | https://freesound.org/s/397551/ | CC0 | open_2 |
 | GRUNT 2.wav | vmgraw | https://freesound.org/s/257709/ | CC0 | hurt_3 (owner's MAYBE pick, added so hurt has 4 takes) |
+
+### Freesound sounds, owner's picks round 2 + 3 (Nov 25, 2026; replace older rows for these slots)
+
+| Title | Author | Link | Licence | Used as |
+|---|---|---|---|---|
+| Footstep_Walk_HardSurface_8.wav | nicholasdaryl | https://freesound.org/s/563471/ | CC0 | step_0 |
+| Slicing through flesh | NeoSpica | https://freesound.org/s/504615/ | CC0 | swing_0 |
+| whip03.wav | snowflakes | https://freesound.org/s/72191/ | CC0 | swing_1 |
+| Water Pouring Onto Stone | TheWoodlandNomad | https://freesound.org/s/363119/ | CC0 | waterfall_trickle |
+| Zipper,Unzip,Leather Pouch.wav | Mediaman57 | https://freesound.org/s/347152/ | CC0 | close_0 |
+| turnPage.mp3 | partheeban | https://freesound.org/s/457767/ | CC0 | close_1 |
+| Stone,Block,Drag,Wood,Grind.wav | Mediaman57 | https://freesound.org/s/347149/ | CC0 | build_stone_0 |
+| wooden impact | agaisgsbs | https://freesound.org/s/803551/ | CC0 | build_wood_0 |
+| bricks | (see page) | https://freesound.org/s/735273/ | CC0 | build_brick_0 (MAYBE) |
+| bodyfall thump over motorbike seat Parking Space.flac | kyles | https://freesound.org/s/454418/ | CC0 | hit_heavy_0 (MAYBE) |
+| Hit Impact Sword 3 | (see page) | https://freesound.org/s/547042/ | CC0 | hit_heavy_1, block_1, parry_0 (MAYBE) |
+| Sword Thud.wav | (see page) | https://freesound.org/s/435210/ | CC0 | block_0 (MAYBE) |
+| Shovel_dirt.wav | (see page) | https://freesound.org/s/353907/ | CC0 | dig_soft_0 (MAYBE) |
+| Pick Hitting Rock.wav | (see page) | https://freesound.org/s/202103/ | CC0 | clink_0..3 (four hits cut from one file) |
+| helmet clash | Luisa_Sanchez | https://freesound.org/s/816987/ | CC0 | shell_clank_0, shell_clunk_0 (MAYBE) |
+| Dropping Rocks | (see page) | https://freesound.org/s/567250/ | CC0 | thud_0 |
+| Bricks/Stones/Rocks/Gravel Falling | (see page) | https://freesound.org/s/567249/ | CC0 | thud_1 (MAYBE) |

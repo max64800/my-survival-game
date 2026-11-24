@@ -366,7 +366,8 @@ func station_problem(piece: String, family: String, pos: Vector3) -> String:
 @rpc("authority", "call_local", "reliable")
 func _ev_add_piece(uid: int, piece: String, family: String, pos: Vector3, rot: int, anchored: bool) -> void:
 	if not batch:
-		Sfx.play("build", pos, -2.0, 1.2 if family in ["cut_stone", "cut_marble", "clay_brick"] else 1.0)
+		# each material its own sound (owner, Nov 24): wood, brick, everything else stone
+		Sfx.play("build_wood" if family.begins_with("plank") else "build_brick" if family == "clay_brick" else "build_stone", pos, -2.0)
 	structure.add(uid, piece, family, pos, rot, anchored)
 	var n: PieceNode = PIECE_SCRIPT.new()
 	n.uid = uid

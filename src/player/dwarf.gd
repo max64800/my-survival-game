@@ -549,11 +549,6 @@ func _place_camera(delta: float) -> void:
 	else:
 		_cam_len = lerpf(_cam_len, room, minf(1.0, delta * DwarfFeel.CAM_RETURN_SPEED))
 	camera.position = _spring.position + Vector3(0, 0, _cam_len)
-	var rock: ShaderMaterial = World.rock_mat
-	if rock:
-		rock.set_shader_parameter("see_from", camera.global_position)
-		rock.set_shader_parameter("see_to", _cam_yaw.global_position)
-		rock.set_shader_parameter("see_radius", 0.0 if dev_fly else DwarfFeel.CAM_FADE_RADIUS)
 	_cam_fade.update(get_world_3d(), camera.global_position, _cam_yaw.global_position, delta, [get_rid()], not dev_fly,
 		camera)
 
