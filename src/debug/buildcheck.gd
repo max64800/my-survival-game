@@ -88,6 +88,10 @@ func _run() -> void:
 			await _stacked(dwarf, base, lamp)
 			get_tree().quit()
 			return
+		if arg == "part=stairs":
+			await _stacked_stairs(dwarf, base, lamp)
+			get_tree().quit()
+			return
 		if arg == "part=extras":
 			await _extras(dwarf, base, lamp)
 			get_tree().quit()
@@ -147,6 +151,48 @@ func _run() -> void:
 		n += 1
 		bx += Vector3(16, 0, 0)
 	get_tree().quit()
+
+
+## `part=stairs` (F838/F840): two flights straight on as the blueprints build them (slab, sloped walls, a wall
+## under the upper one, the floor 25 cm over its top), in stone and in wood, from the side and from the foot.
+## Then the green stair ghost on its own.
+func _stacked_stairs(dwarf: Dwarf, base: Vector3, lamp: OmniLight3D) -> void:
+	var n := 0
+	for fam in ["cut_stone", "plank_root"]:
+		_clear()
+		for x in [-3, -1, 1, 3, 5]:
+			_place("foundation", "cut_stone", base + Vector3(x, -1, 0), 0)
+		for i in 2:
+			var cell := base + Vector3(-1 + 2 * i, 0, 0)
+			_place("floor", fam, cell, 0)
+			_place("stairs", fam, cell + Vector3(0, 0.25 + 2.0 * i, 0), 3)
+			for sz in [-1, 1]:
+				if i == 1:
+					_place("wall", fam, cell + Vector3(0, 0.25, sz), 0)
+				_place("sloped_wall", fam, cell + Vector3(0, 0.25 + 2.0 * i, sz), 0)
+		_place("floor", fam, base + Vector3(3, 4.25, 0), 0)
+		_place("floor", fam, base + Vector3(5, 4.25, 0), 0)
+		await _wait(0.8)
+		for v in [[Vector3(1, 3, 9), Vector3(1, 2, 0), "side"], [Vector3(-7, 3.5, 2.5), Vector3(1, 2.5, 0), "foot"]]:
+			lamp.global_position = base + Vector3(-2, 7, 5)
+			_look(dwarf, base + v[0], base + v[1])
+			dwarf._zoom = 1.0
+			dwarf.visible = false
+			await _wait(0.8)
+			await _shot("%02d_stairs_%s_%s" % [n, fam, v[2]])
+			n += 1
+	_clear()
+	var g: PieceNode = preload("res://src/build/piece_node.gd").new()
+	g.ghost = true
+	g.piece = "stairs"
+	g.family = "cut_stone"
+	add_child(g)
+	g.global_position = base
+	g.rotation.y = Pieces.yaw_of(3)
+	_look(dwarf, base + Vector3(0, 2, 5), base + Vector3(0, 1, 0))
+	await _wait(0.8)
+	await _shot("%02d_stairs_ghost" % n)
+	dwarf.visible = true
 
 
 ## `part=extras`: a door (closed, then open), a built ladder, the Kiln and Smelter, and three Ore Crates

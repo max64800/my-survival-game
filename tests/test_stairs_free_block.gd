@@ -38,6 +38,8 @@ func test_every_flight_has_a_free_block_at_both_ends() -> void:
 		for p in bp.pieces:
 			if p.id in STAIRS:
 				for e in block_ends(p.id, p.pos, p.rot):
+					if p.id == "stairs" and _goes_straight_on(bp, p, e[2]):
+						continue   # F838: that end runs straight on into the next flight (its far end is checked)
 					var why := _blocked(e[0], e[1])
 					if why != "":
 						bad.append("%s at %s, %s: %s" % [p.id, p.pos, e[2], why])
@@ -59,6 +61,13 @@ static func block_ends(id: String, pos: Vector3, rot: int) -> Array:
 	if id == "stairs_corner":
 		top = Vector3(-out_dist, 2, 0)   # (it comes out at its side)
 	return [[pos + b * foot, spread, "foot"], [pos + b * top, spread, "top"]]
+
+
+## F838: another straight flight joins this end, the same way (stacked stairs, no landing).
+static func _goes_straight_on(bp: Blueprint, p: Dictionary, end: String) -> bool:
+	var off := Vector3(0, 2, -2) if end == "top" else Vector3(0, -2, 2)
+	var at: Vector3 = p.pos + Basis(Vector3.UP, Pieces.yaw_of(p.rot)) * off
+	return bp.pieces.any(func(q): return q.id == "stairs" and q.rot == p.rot and (q.pos as Vector3).distance_to(at) < 0.05)
 
 
 ## "" when the dwarf's body fits on floor at every sample point of the block, else why not.

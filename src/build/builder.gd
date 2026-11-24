@@ -1309,6 +1309,21 @@ const RUIN_STAIRS := ["stairs", "stairs_corner"]
 
 
 ## How far from the ruin's middle its pieces and rubble reach (the tower 9 m, the outpost 26 m).
+## F838: `q` stands in the open space under the straight flight `p` (its cell, corners included, from 2.3 m below its
+## foot up to its slope), where the blueprints used to put a landing and its pillars.
+static func _under_flight(p: Dictionary, q: Dictionary) -> bool:
+	var l := Basis(Vector3.UP, Pieces.yaw_of(p.rot)).inverse() * ((q.pos as Vector3) - (p.pos as Vector3))
+	return absf(l.x) < 1.1 and absf(l.z) < 1.1 and l.y > -2.3 and l.y < 1.9
+
+
+## A piece at exactly this spot is in the rebuild's plan (so it stays).
+static func _in_plan(plan: Array, q: Dictionary) -> bool:
+	for p: Dictionary in plan:
+		if p.piece == q.piece and (p.pos as Vector3).distance_to(q.pos) < 0.05:
+			return true
+	return false
+
+
 func _ruin_reach(box_id: int) -> float:
 	return float(auth.world_state.get("ruins", {}).get(str(box_id), {}).get("reach", 9.0))
 
@@ -1559,6 +1574,13 @@ func _ruin_step(box_id: int, site: Dictionary) -> bool:
 				cleared = true
 				continue
 			if q.piece in RUIN_MAKE_WAY and uid in ov:
+			if p.piece == "stairs" and q.piece in ["floor", "pillar"] and _under_flight(p, q) and not _in_plan(site.plan, q):
+				_ev_remove_piece.rpc(uid)  # F838: an old landing (or its pillars) under the new flights, from before (a save)
+				_set_status(box_id, "Taking down the old landing…")
+				if not rush:
+					return true
+				cleared = true
+				continue
 				_ev_remove_piece.rpc(uid)  # an old battlement where the new walkway goes (it goes back up higher)
 				_set_status(box_id, "Taking down an old battlement…" if String(q.piece).begins_with("battlement") else "Taking down the old stairs…")
 				if not rush:

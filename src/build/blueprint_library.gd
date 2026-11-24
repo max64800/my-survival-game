@@ -725,19 +725,10 @@ func _stone_outpost(line_up := true) -> void:
 		for y in [0.0, 2.0]:
 			_add("pillar", STONE, Vector3(pp.x, y, pp.y), 0)
 	_wall_x("railing", 13, 2, 4.5, STONE)  # across the walkway's end over the forge (it stops before the breach)
-	# stairs up: left wall (to the front-left tower) and back wall (to the back-right tower), with a landing
-	_add("floor", STONE, Vector3(-13, 0.0, 3), 0)         # a slab under the first flight: it then meets the landing
-	_add("stairs", STONE, Vector3(-13, 0.25, 3), 2)       # climbs toward the front (+z)
-	_floors(-14, 4, -12, 8, 2.0, STONE)                   # the landing, and the floor under the second flight
-	_add("floor", STONE, Vector3(-13, 2.25, 7), 0)
-	_add("stairs", STONE, Vector3(-13, 2.5, 7), 2)
-	_add("floor", STONE, Vector3(5, 0.0, -13), 0)
-	_add("stairs", STONE, Vector3(5, 0.25, -13), 3)       # climbs toward the right (+x)
-	_floors(6, -14, 10, -12, 2.0, STONE)
-	_add("floor", STONE, Vector3(9, 2.25, -13), 0)
-	_add("stairs", STONE, Vector3(9, 2.5, -13), 3)
-	for pp in [Vector2i(-12, 4), Vector2i(-12, 6), Vector2i(6, -12), Vector2i(8, -12)]:
-		_add("pillar", STONE, Vector3(pp.x, 0.0, pp.y), 0)
+	# stairs up: left wall (to the front-left tower) and back wall (to the back-right tower). F838 (owner, Nov 24): two
+	# flights straight on, no landing; the curtain wall closes their outer side, walls close the courtyard side.
+	_stacked_stairs(Vector3(-13, 0.0, 5), 2, STONE, [-1])   # climbs toward the front (+z)
+	_stacked_stairs(Vector3(7, 0.0, -13), 3, STONE, [1])    # climbs toward the right (+x)
 	# --- armoury and forge: against the right curtain wall (its back wall), open toward the well on pillars
 	_floors(10, -6, 14, 2, 0.0, STONE)
 	for x in [11, 13]:
@@ -2079,21 +2070,34 @@ const PROW_KEEP := Vector3(8, 0, -11.464)            # the keep's middle: the ca
 const PROW_STOREY := 4.5
 
 
-## F710: stairs up one tall storey of the Prow Hall. Two flights with a landing between, in a straight row of cells:
-## flight 1 in `c` (its foot on floor at height c.y), the landing over the next two cells on four pillars, flight 2
-## in the third cell, landing on the floor above the cell after it. `rot` 3 climbs toward +x, 1 toward -x.
+## F710: stairs up one tall storey of the Prow Hall. `c` = the cell before the first flight (its floor at c.y),
+## `rot` 3 climbs toward +x, 1 toward -x; the upper flight ends in the hole in the floor above the third cell.
+## F838 (owner, Nov 24, from their own rebuild): two flights straight on, the second starting exactly where the first
+## ends, no landing or pillars between. Under them only walls: a sloped wall each side of the lower flight, a wall
+## with a sloped wall on it each side of the upper one. A slab lifts both, so the upper one ends 25 cm under the
+## floor above (the lip, F803), like every tower flight.
 func _prow_tall_stairs(c: Vector3, rot: int) -> void:
-	var d := Vector3(2 if rot == 3 else -2, 0, 0)
-	var y := c.y
-	_add("floor", STONE, c, 0)
-	_add("stairs", STONE, c + Vector3(0, 0.25, 0), rot)
-	for i in [1, 2]:
-		_add("floor", STONE, c + d * i + Vector3(0, 2.0, 0), 0)
-	_add("floor", STONE, c + d * 2 + Vector3(0, 2.25, 0), 0)
-	_add("stairs", STONE, c + d * 2 + Vector3(0, 2.5, 0), rot)
-	for k in [1.5, 2.5]:
-		for sz in [-1, 1]:
-			_add("pillar", STONE, Vector3(c.x + d.x * k, y, c.z + sz), 0)
+	_stacked_stairs(c + Vector3(2 if rot == 3 else -2, 0, 0), rot, STONE)
+
+
+## F838: two straight flights one after the other (the second starts where the first ends, same way), with a slab under
+## both cells and closed sides. `c` = the lower flight's cell, its slab at c.y (the flights' feet at c.y + 0.25).
+## `sides`: which sides get the walls (the stairs' own -x / +x); leave out a side that already stands against a
+## wall (a curtain wall closes it).
+func _stacked_stairs(c: Vector3, rot: int, mat: String, sides := [-1, 1]) -> void:
+	var b := Basis(Vector3.UP, Pieces.yaw_of(rot))
+	var ahead: Vector3 = (b * Vector3(0, 0, -2)).round()
+	var side: Vector3 = (b * Vector3(1, 0, 0)).round()
+	var y := c.y + 0.25
+	for i in 2:
+		var cell: Vector3 = c + ahead * i
+		_add("floor", mat, cell, 0)
+		_add("stairs", mat, cell + Vector3(0, 0.25 + 2.0 * i, 0), rot)
+		for sx in sides:
+			var e: Vector3 = cell + side * sx
+			if i == 1:
+				_add("wall", mat, Vector3(e.x, y, e.z), (rot + 1) % 4)
+			_add("sloped_wall", mat, Vector3(e.x, y + 2.0 * i, e.z), (rot + 1) % 4)   # (high end toward the climb)
 
 
 ## How high the Prow Hall's own rock reaches at (x, z) in its box (0 = the cave floor): the cave wall behind the keep.
@@ -2455,6 +2459,11 @@ func _stairs_on_the_floor() -> void:
 		if p.id != "stairs" and p.id != "stairs_corner":
 			continue
 		var under: Vector3 = p.pos - Vector3(0, 0.25, 0)
+		# F838: under two flights straight on (4 m) the slab stays, so the upper one still ends one 25 cm step
+		# under a tall storey's floor (the Prow Hall's 4.5 m).
+		var next: Vector3 = p.pos + Basis(Vector3.UP, Pieces.yaw_of(p.rot)) * Vector3(0, 2, -2)
+		if p.id == "stairs" and _bp.pieces.any(func(q): return q.id == "stairs" and q.rot == p.rot and (q.pos as Vector3).distance_to(next) < 0.05):
+			continue
 		if slabs.has(_key(under)) and tops.has(_key(under)):
 			gone[slabs[_key(under)]] = true
 			# F804 (Nov 23): the stair railing beside them comes down with them (it floated 25 cm over the steps)

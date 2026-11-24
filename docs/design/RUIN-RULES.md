@@ -45,6 +45,10 @@ New lesson? Add it to the right section here **and** add a check that would have
 11. **Stair railings sit at the stairs' own height and touch them**, never floating; stone stairs get a stone railing.
     (F804, F712.) No check yet for floating railings.
 12. **Every stair piece touches its neighbour** (no step board floating 5 cm up). Check: model check FLOAT.
+13. **A storey taller than one stair (2 m): the second flight goes straight on** where the first ends, the same way.
+    No landing block, no pillars, no ceiling or floor under it. Both sides closed: a triangle (sloped) wall beside each
+    flight, a normal wall under the top one (the owner's Prow Hall rebuild; `_stacked_stairs` in the blueprint library).
+    Old saves: the rebuild takes down an old landing under the new flights. (F838.) Check: `test_stacked_stairs`.
 
 ## 2. Railings, walls and ways through
 1. **Nothing stands across a stair's way in or way out:** no railing, wall, battlement, bench or crate. (F783, Prow
