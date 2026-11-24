@@ -139,10 +139,13 @@ func test_weight_dial_fills_and_turns_yellow_then_red() -> void:
 	d.set_carry({weight = 100.0, heavy = 200.0, max = 300.0, load = ItemWeights.Load.LIGHT})
 	check_near(d._frac(), 1.0 / 3.0, 0.001, "100 of 300 = a third full")
 	check_eq(d._fill_color(), d.GREEN, "light = green")
+	check(d._shows_heavy_line(), "green: the heavy line shows")
 	d.set_carry({weight = 250.0, heavy = 200.0, max = 300.0, load = ItemWeights.Load.HEAVY})
 	check_eq(d._fill_color(), d.YELLOW, "heavy = yellow")
+	check(not d._shows_heavy_line(), "yellow: the heavy line goes away (owner, Nov 24)")
 	d.set_carry({weight = 340.0, heavy = 200.0, max = 300.0, load = ItemWeights.Load.OVERLOADED})
 	check_eq(d._frac(), 1.0, "overloaded = full")
+	check(not d._shows_heavy_line(), "red: no heavy line")
 	var c: Color = d._fill_color()
 	check(c.r > 0.8 and c.g < 0.6, "overloaded = red (%s)" % c)
 	d.set_carry({})  # no dwarf yet: keeps the last numbers, no crash

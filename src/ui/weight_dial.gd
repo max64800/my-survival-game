@@ -80,9 +80,14 @@ func _draw() -> void:
 				p = Vector2(clampf(p.x, c.x - half, c.x + half), level)
 			pts.append(p)
 		draw_colored_polygon(pts, _fill_color())
-	# A thin mark where "heavy" starts, so you can see it coming.
-	var hy := c.y + ri - 2.0 * ri * clampf(heavy / maxf(max_value, 1.0), 0.0, 1.0)
-	var hh := sqrt(maxf(0.0, ri * ri - pow(hy - c.y, 2.0)))
-	draw_line(Vector2(c.x - hh, hy), Vector2(c.x + hh, hy), Color(1, 0.9, 0.6, 0.55), maxf(1.0, k))
+	if _shows_heavy_line():  # a thin mark where "heavy" starts, so you can see it coming
+		var hy := c.y + ri - 2.0 * ri * clampf(heavy / maxf(max_value, 1.0), 0.0, 1.0)
+		var hh := sqrt(maxf(0.0, ri * ri - pow(hy - c.y, 2.0)))
+		draw_line(Vector2(c.x - hh, hy), Vector2(c.x + hh, hy), Color(1, 0.9, 0.6, 0.55), maxf(1.0, k))
 	var side := r * 1.3
 	draw_texture_rect(WEIGHT_PICTURE, Rect2(c - Vector2(side, side) * 0.5, Vector2(side, side)), false)
+
+
+## The heavy line only while you're still green: once you're past it (yellow or red) it goes away (owner, Nov 24).
+func _shows_heavy_line() -> bool:
+	return load_state == ItemWeights.Load.LIGHT
