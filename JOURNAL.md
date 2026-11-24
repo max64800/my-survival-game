@@ -12551,3 +12551,41 @@ with 21 rooms on 2 levels. About half of its walls are broken, and 149 ceiling p
   stairs. This is the same kind of check as mine above, but the Smeltery didn't cause it. Left for the stairs chat.
 
 **Next:** the owner's OK on the page, then the real ruin in the game (chests in the vaults, junk, beetles).
+
+
+# Stairs: open preview, flush snapping, straight-on double stairs (F840, F839, F838), Nov 24
+
+**What we did:**
+- **F840:** the green stair preview was a solid stepped block down to the floor. Now it draws only the steps, open
+  underneath like the built stair (`PieceMesh._open_steps`).
+- **F839:** a stair aimed at another stair now snaps flush: aimed at its top end, it goes straight on (one stair up,
+  one ahead); aimed at its side, it goes beside it at the same height (`Pieces.snap_stairs_on_stairs`). No side walls
+  are added (owner's choice). Tests in `test_stairs_down`: snap straight on / beside / beside turned, and a robot dwarf
+  walks up two flights and back down with no bump or stall.
+- **F838:** where a storey is taller than one stair (Prow Hall 4.5 m floors, Stone/Wooden Outpost), the blueprints had
+  a landing floor + pillars between two flights. Now the 2nd flight goes straight on, with a triangle wall on both sides
+  and a wall under the top flight (the owner's own rebuild): `BlueprintLibrary._stacked_stairs`. Rebuilding an old ruin
+  from a save takes the old landing and pillars down (`Builder._under_flight`). New test `test_stacked_stairs`, robot
+  shot `buildcheck part=stairs`, ruin rule 1.13.
+
+**Hurdles and mistakes:**
+- `tools/run_tests.sh` failed: Godot isn't on this PC's PATH. Found the exe from the running processes and set `GODOT`
+  to the WinGet path before each run.
+- The Prow stairs came out 2.25 m apart instead of 2 m: the blueprint pass that removes the slab under a stair on a
+  floor (F169) also lowered the first of a stacked pair. Fixed: a stair with a flight straight on above it keeps its slab.
+- `test_stairs_free_block` (F811: free block at both ends of every flight) failed for the stacked pairs, because the top
+  of the lower flight runs into the next flight, not onto floor. Fixed: an end that joins another flight is skipped (the
+  far end is still checked).
+- Other chats had unfinished lines in `builder.gd`; I committed only my own lines (a filtered patch into the index).
+- **My mistake:** to commit only my own lines of `builder.gd` I made a zero-context patch (`git apply --unidiff-zero`).
+  Both blocks landed one line too early (one cut a function's comment off, one split an `if` from its body), so the
+  committed `builder.gd` didn't parse. The file on disk was fine, so only the saved copy was broken. Found it by running the test
+  in a clean copy (git worktree). Fixed by writing the corrected file straight into the index. Lesson: after a partial
+  commit, check the committed file parses (`git show HEAD:file`, or a worktree).
+- The full suite showed 27 fails. Most were other chats' half-saved work (main.gd parse error mid-edit, Jolt body
+  limit, Foreman attacks). Mine: the Prow Hall stair test wanted floor at both ends of every flight (now skips an end
+  that joins the next flight), and the Outpost and Prow Hall ruin plans still had the old landings (re-made with
+  `make_outpost_ruin.py` / `make_prow_hall_ruin.py`; a feast table moved 1 m away from the new stair foot).
+- Also found: the F833 round 2 / F837 commit (2390458a) left its `builder.gd`, `piece_node.gd` and `structure.gd`
+  lines unsaved, so the committed `builder.gd` points at `Pieces.WORKBENCH_RANGE`, which no longer exists. Asked the
+  owner before touching another chat's work.
