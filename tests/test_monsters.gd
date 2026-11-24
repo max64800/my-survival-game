@@ -88,7 +88,7 @@ func test_notices_and_chases_you() -> void:
 
 func test_sword_damage_and_kill() -> void:
 	await _setup()
-	ps.inventory.add("sword_stone", 1)
+	ps.inventory.add_worn("sword_stone")
 	auth.request_select_slot(1, first_item_slot(ps))  # the start pickaxe is in the hotbar (F243)
 	var m := _spawn("cave_spider", Vector3(1.2, 0, 0))
 	m.state = Monster.State.CHASE  # it saw us: no sneak bonus
@@ -106,7 +106,7 @@ func test_sword_damage_and_kill() -> void:
 ## Owner, chat 16: one-handed weapons have no heavy attack; left click while blocking = a shield bash.
 func test_shield_bash_hits_with_the_shield() -> void:
 	await _setup()
-	ps.inventory.add("sword_stone", 1)
+	ps.inventory.add_worn("sword_stone")
 	auth.request_select_slot(1, first_item_slot(ps))
 	for w in ["sword", "mace", "spear", "axe"]:
 		check(not DwarfFight.weapon_has_heavy(w), "%s: no heavy attack" % w)
@@ -115,7 +115,7 @@ func test_shield_bash_hits_with_the_shield() -> void:
 	check(is_equal_approx(DwarfRig.attack_seconds("mace", false, 0, 9.0), DwarfOneSwing.clip_length(clip)),
 		"the mace swings at its own speed, not slowed like the sword (owner, chat 16)")
 	check_eq(auth.monsters.request_attack(1, PackedInt32Array(), false, 0, false, false, false, true), 0, "no shield: no bash")
-	ps.inventory.add("shield_stone", 1)
+	ps.inventory.add_worn("shield_stone")
 	var m := _spawn("cave_spider", Vector3(1.2, 0, 0))
 	m.state = Monster.State.CHASE
 	var dealt := auth.monsters.request_attack(1, PackedInt32Array([m.uid]), true, 2, false, false, false, true)
@@ -135,7 +135,7 @@ func test_crystal_monster_hits_harder_and_drops_crystals() -> void:
 	auth.monsters._judge_incoming()
 	check_near(ps.vitals.health, 100.0 - (6.0 * 1.1 + 5.0), 0.01, "×1.1 damage + 5 fire")
 	check_near(ps.vitals.ailments.buildup.burn, 30.0, 0.01, "and 30 burn buildup")
-	ps.inventory.add("sword_stone", 1)
+	ps.inventory.add_worn("sword_stone")
 	auth.request_select_slot(1, first_item_slot(ps))  # the start pickaxe is in the hotbar (F243)
 	m.state = Monster.State.CHASE
 	for i in 6:
@@ -155,7 +155,7 @@ func test_crystal_monster_hits_harder_and_drops_crystals() -> void:
 ## The Rock Snail is neutral: it fights back when hit, and goes away when it's badly hurt.
 func test_a_healthy_snail_fights_back_a_hurt_one_runs() -> void:
 	await _setup()
-	ps.inventory.add("sword_stone", 1)
+	ps.inventory.add_worn("sword_stone")
 	auth.request_select_slot(1, first_item_slot(ps))  # the start pickaxe is in the hotbar (F243)
 	var snail := _spawn("rock_snail", Vector3(-1.2, 0, 0))
 	snail.state = Monster.State.CHASE
@@ -174,7 +174,7 @@ func test_crossbow_shot() -> void:
 	m.state = Monster.State.CHASE  # it saw us
 	var from := player.global_position + Vector3.UP * 1.5
 	check_eq(auth.monsters.request_shoot(1, "bolt_stone", true, m.uid, from, m.global_position + Vector3.UP), 0, "no crossbow in hand: no shot")
-	ps.inventory.add("crossbow_stone", 1)
+	ps.inventory.add_worn("crossbow_stone")
 	ps.inventory.add("bolt_stone", 3)
 	ps.inventory.add("bolt_ember", 1)
 	for i in Inventory.HOTBAR_SIZE:
@@ -196,7 +196,7 @@ func test_friendly_fire() -> void:
 	player.get_parent().add_child(friend)
 	friend.global_position = player.global_position + Vector3(1.0, 0, 0)
 	var fs := auth.add_player(2, friend)
-	fs.inventory.add("sword_stone", 1)
+	fs.inventory.add_worn("sword_stone")
 	for i in Inventory.HOTBAR_SIZE:
 		if fs.inventory.get_slot(i).get("id", "") == "sword_stone":
 			fs.selected_slot = i
@@ -204,7 +204,7 @@ func test_friendly_fire() -> void:
 	check_near(ps.vitals.health, 95.0, 0.01, "it hurt")
 	check_eq(auth.monsters.request_hit_friend(2, 1, false), 0, "a 2nd hit faster than a swing doesn't count")
 	auth.monsters._ff_ready.clear()
-	fs.inventory.add("crossbow_stone", 1)
+	fs.inventory.add_worn("crossbow_stone")
 	for i in Inventory.HOTBAR_SIZE:
 		if fs.inventory.get_slot(i).get("id", "") == "crossbow_stone":
 			fs.selected_slot = i
@@ -235,7 +235,7 @@ func test_spore_clouds() -> void:
 
 func test_sneak_attack_doubles() -> void:
 	await _setup()
-	ps.inventory.add("sword_stone", 1)
+	ps.inventory.add_worn("sword_stone")
 	auth.request_select_slot(1, first_item_slot(ps))  # the start pickaxe is in the hotbar (F243)
 	var m := _spawn("rock_snail", Vector3(1.2, 0, 0), true)  # a leader: armor 30, 275 HP (lives through the hit)
 	m.state = Monster.State.SLEEP
@@ -299,7 +299,7 @@ func test_too_far_misses() -> void:
 
 func test_pack_leader_boost_ends_when_it_dies() -> void:
 	await _setup()
-	ps.inventory.add("mace_2h_copper", 1)
+	ps.inventory.add_worn("mace_2h_copper")
 	auth.request_select_slot(1, first_item_slot(ps))  # the start pickaxe is in the hotbar (F243)
 	var leader := _spawn("cave_spider", Vector3(5, 0, 0), true, 7)
 	var member := _spawn("cave_spider", Vector3(6, 0, 1), false, 7)
@@ -364,7 +364,7 @@ func test_attack_animation_keeps_monster_size() -> void:
 ## damage (no more hiding every 3rd hit: that let you stun-lock it).
 func test_rock_snail_hides_in_its_shell() -> void:
 	await _setup()
-	ps.inventory.add("sword_stone", 1)
+	ps.inventory.add_worn("sword_stone")
 	auth.request_select_slot(1, 1)
 	var m := _spawn("rock_snail", Vector3(1.2, 0, 0))
 	m.state = Monster.State.CHASE
@@ -390,7 +390,7 @@ func test_rock_snail_hides_in_its_shell() -> void:
 ## Owner's Rock Beetle: its back is soft (double damage from behind).
 func test_rock_beetle_soft_back() -> void:
 	await _setup()
-	ps.inventory.add("sword_stone", 1)
+	ps.inventory.add_worn("sword_stone")
 	auth.request_select_slot(1, 1)
 	var m := _spawn("rock_beetle", Vector3(1.2, 0, 0))
 	m.state = Monster.State.CHASE
@@ -893,7 +893,7 @@ func _all_nodes(n: Node) -> Array:
 ## Owner (Nov 18, "juicy hits"): a hit pushes the creature away from you and freezes it for a blink.
 func test_a_hit_pushes_and_freezes() -> void:
 	await _setup()
-	ps.inventory.add("sword_stone", 1)
+	ps.inventory.add_worn("sword_stone")
 	auth.request_select_slot(1, 1)
 	var m := _spawn("rock_beetle", Vector3(1.4, 0, 0))
 	m.state = Monster.State.CHASE
@@ -1069,7 +1069,7 @@ func test_leaders_are_big_without_a_crown() -> void:
 
 func test_sword_star_perks_in_a_real_fight() -> void:
 	await _setup()
-	ps.inventory.add("sword_stone", 1)
+	ps.inventory.add_worn("sword_stone")
 	auth.request_select_slot(1, first_item_slot(ps))
 	var m := _spawn("rock_snail", Vector3(1.2, 0, 0), true)  # armor 30, lots of HP
 	m.state = Monster.State.CHASE

@@ -84,6 +84,17 @@ func is_worn(i: int) -> bool:
 	return is_equip_index(i) or get_slot(i).get("worn", false)
 
 
+## Add one item and put it on straight away (robots and tests: "he already has his sword on"). Returns the slot or -1.
+func add_worn(id: String) -> int:
+	if add(id, 1) > 0:
+		return -1
+	for i in EQUIP_START:
+		if slots[i].get("id", "") == id and not slots[i].get("worn", false):
+			set_worn(i, true)
+			return i
+	return equip_index(equip_slot_for(id)) if equipped(equip_slot_for(id)) == id else -1
+
+
 ## Put on (or take off) the pickaxe/weapon/shield in slot i. Only one of each kind is worn: the old one comes off.
 func set_worn(i: int, on: bool) -> bool:
 	var s := get_slot(i)

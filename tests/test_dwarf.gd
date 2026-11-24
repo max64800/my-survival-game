@@ -344,7 +344,7 @@ func test_crossbow_reload_needs_standing_still() -> void:
 	root.add_child(auth)
 	var dwarf := _dwarf_in(root)
 	var ps := auth.add_player(1, dwarf)
-	ps.inventory.add("crossbow_copper", 1)
+	ps.inventory.add_worn("crossbow_copper")
 	ps.inventory.add("bolt_stone", 5)
 	for i in Inventory.HOTBAR_SIZE:
 		if ps.inventory.get_slot(i).get("id", "") == "crossbow_copper":

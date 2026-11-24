@@ -154,7 +154,7 @@ func _run_host() -> void:
 			if friend:
 				friend.inventory.add("stone", 5)
 				friend.inventory.add("rootwood", 3)
-				friend.inventory.add("sword_stone", 1)
+				friend.inventory.add_worn("sword_stone")
 				gave = true
 		if _door_requested and not multiplayer.get_peers().is_empty():
 			_door_requested = false

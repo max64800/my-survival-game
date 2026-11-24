@@ -213,8 +213,8 @@ func _run() -> void:
 		await _shot("15_lodge_building")
 	auth.request_select_slot(auth.local_peer_id(), 0)
 	# Step 5: a fight. Sword in hand, back lantern on, a pack of monsters in front.
-	ps.inventory.add("sword_stone", 1)
-	ps.inventory.add("shield_stone", 1)
+	ps.inventory.add_worn("sword_stone")
+	ps.inventory.add_worn("shield_stone")
 	ps.inventory.add("lantern_back", 1)
 	_to_hotbar(ps, "sword_stone")
 	var mm: MonsterManager = auth.monsters
@@ -296,7 +296,7 @@ func _visit_jungle(dwarf: Dwarf, ps: GameAuthority.PlayerState) -> void:
 	await _shot("24_jungle_gate")
 	dwarf.global_position = gate.pos + Vector3(-2.0, 0.2, 0)
 	var stone_try := auth.request_hit(auth.local_peer_id(), gate.pos + Vector3(0.05, 0.4, 0), Vector3.LEFT)
-	ps.inventory.add("pickaxe_copper", 1)
+	ps.inventory.add_worn("pickaxe_copper")
 	_to_hotbar(ps, "pickaxe_copper")
 	var digs := 0
 	for step in 8:
@@ -338,7 +338,7 @@ func _visit_jungle(dwarf: Dwarf, ps: GameAuthority.PlayerState) -> void:
 	await _teleport(dwarf, dwarf.global_position, look)
 	await _shot("27_monsters")
 	# Crossbow: aim at the Great Rock Beetle and fire through the real controls code.
-	ps.inventory.add("crossbow_copper", 1)
+	ps.inventory.add_worn("crossbow_copper")
 	ps.inventory.add("bolt_stone", 10)
 	_to_hotbar(ps, "crossbow_copper")
 	var husk: Monster = null

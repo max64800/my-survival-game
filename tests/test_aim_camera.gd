@@ -39,7 +39,7 @@ func test_aiming_looks_past_the_right_shoulder() -> void:
 	root.add_child(dwarf)
 	dwarf.global_position = Vector3(0, 0.05, 0)
 	var ps := auth.add_player(1, dwarf)
-	ps.inventory.add("crossbow_copper", 1)
+	ps.inventory.add_worn("crossbow_copper")
 	for i in Inventory.HOTBAR_SIZE:
 		if ps.inventory.get_slot(i).get("id", "") == "crossbow_copper":
 			auth.request_select_slot(1, i)
