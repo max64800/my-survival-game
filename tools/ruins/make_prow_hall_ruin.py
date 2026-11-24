@@ -291,9 +291,9 @@ chests = [
 	chest_at("chest_copper", LONE[0], LONE[1], 10.0, {"recipe_page": 2, "blueprint_page": 2}),      # the lone tower, past the fallen bridge
 ]
 props = [
-	# the great hall: two long feast tables with their benches (they fit its long floor best)
-	free_at("furn_table_long", 4.0, 2.0, 1.0, 90),
-	free_at("furn_bench_long", 5.4, 2.0, 1.0, 90),
+	# the great hall (the first table 1 m along from the straight-on stairs, F838): two long feast tables with their benches (they fit its long floor best)
+	free_at("furn_table_long", 4.0, 3.0, 1.0, 90),
+	free_at("furn_bench_long", 5.4, 3.0, 1.0, 90),
 	free_at("furn_table_long", 12.5, 2.0, 1.0, 90),
 	free_at("furn_bench_long", 11.1, 2.0, 1.0, 90),
 	# the keep: the lord's map table, an armour bench, a crossbow rack (lootable)

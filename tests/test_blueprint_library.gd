@@ -201,8 +201,10 @@ func test_prow_hall_stairs_lead_onto_floor() -> void:
 		var up := Vector3(0, 0, -1).rotated(Vector3.UP, Pieces.yaw_of(p.rot))
 		var foot: Vector3 = p.pos - up * 2.0
 		var top: Vector3 = p.pos + up * 2.0
-		check(_any_floor_at(bp, foot, p.pos.y - 0.25) or _any_floor_at(bp, foot, p.pos.y), "stairs at %s: their foot is on open floor" % p.pos)
-		check(_any_floor_at(bp, top, p.pos.y + 2.0) or _any_floor_at(bp, top, p.pos.y + 2.25), "stairs at %s: their top lands on floor" % p.pos)
+		var on_flight: bool = preload("res://tests/test_stairs_free_block.gd")._goes_straight_on(bp, p, "foot")  # (F838: stacked)
+		check(on_flight or _any_floor_at(bp, foot, p.pos.y - 0.25) or _any_floor_at(bp, foot, p.pos.y), "stairs at %s: their foot is on open floor" % p.pos)
+		var to_flight: bool = preload("res://tests/test_stairs_free_block.gd")._goes_straight_on(bp, p, "top")
+		check(to_flight or _any_floor_at(bp, top, p.pos.y + 2.0) or _any_floor_at(bp, top, p.pos.y + 2.25), "stairs at %s: their top lands on floor" % p.pos)
 		var edge: Vector3 = p.pos + up
 		check(not _blocked_edge(bp, edge.x, edge.z, p.pos.y + 1.75), "stairs at %s: nothing blocks their top" % p.pos)
 	check_eq(flights, 40, "stairs up every storey (F710: two flights and a landing per tall storey): hall 2x2, prow 2, towers 5+5+6+6, lone tower 5 (on the cave floor, F657), keep 4 + 3")
