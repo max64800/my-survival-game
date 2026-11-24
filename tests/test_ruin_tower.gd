@@ -111,6 +111,10 @@ func test_built_in_the_first_cave_without_monsters() -> void:
 		if auth.storage.boxes[id].inv.count_of("watchtower_plans") > 0:
 			found = true
 	check(found, "one chest holds the Watchtower Plans")
+	var helms := 0
+	for id in auth.storage.boxes:
+		helms += auth.storage.boxes[id].inv.count_of("page_helm_copper")
+	check_eq(helms, 1, "its main chest holds the Copper Helm page (F844)")
 	check_eq(auth.monsters.count() if auth.monsters and auth.monsters.has_method("count") else 0, 0, "no monsters in the first-cave tower (owner)")
 	auth.get_parent().queue_free()
 

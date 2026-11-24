@@ -70,7 +70,7 @@ const LIST := {
 	"lantern_lens": {station = "smelter", inputs = {crystal_blue = 3, clay = 1}, output = "lantern_lens", count = 1, seconds = 30, fuel = 1, unlock = ["crystal_blue"]},
 	# --- anvil
 	# Copper gear is found, not known (owner, Nov 19): each piece needs its own page. Copper tools come from ruin
-	# pages, copper armour and weapons from the dungeons (owner, Nov 21, F554; see random_page). The Copper
+	# pages, copper armour and weapons from named pages in the ruins' main chests (owner, Nov 24, F844: RUIN_COPPER). The Copper
 	# Pickaxe needs Root Tree Heartwood (owner, Nov 19: it came from the Keeper boss before).
 	"helm_copper": {station = "anvil", inputs = {copper_ingot = 30, leather = 10}, output = "helm_copper", count = 1, unlock = "ruin"},
 	"mail_copper": {station = "anvil", inputs = {copper_ingot = 30, leather = 10}, output = "mail_copper", count = 1, unlock = "ruin"},
@@ -266,8 +266,24 @@ static func page_recipes(page_id: String) -> Array:
 	return LIST.keys().filter(func(r): return LIST[r].unlock is String and LIST[r].unlock == "ruin" and (kind == "" or page_kind(r) == kind))
 
 
-## A page for a ruin chest: each kind as likely as how many recipes it can teach. `roll` 0..1.
-## Ruins teach food and copper tools only; copper armour and weapons come from the dungeons (owner, Nov 21, F554).
+## Each ruin always teaches the same copper armour/weapon, from a named page in its main chest (owner, Nov 24, F844;
+## docs/decisions/2026-11-24-zone1-metal-and-loot.md section 1). Keys are RuinTower.ruin_name. Small ruins teach
+## armour, the grand ruins the big weapons. The Old Kiln (Copper Greaves) isn't in the game yet, so the Outpost
+## holds its page until it is; new ruins (F740) take over the doubles.
+const RUIN_COPPER := {
+	tower = ["helm_copper"],
+	outpost = ["boots_copper", "greaves_copper"],
+	kiln = [],
+	brewhall = ["mail_copper"],
+	spire = ["crossbow_copper", "spear_copper"],
+	manor = ["shield_copper", "axe_copper"],
+	prow_hall = ["sword_copper", "mace_copper"],
+	twin_gate = ["axe_2h_copper", "mace_2h_copper"],
+}
+
+
+## The other ruin pages: each kind as likely as how many recipes it can teach. `roll` 0..1.
+## Random pages are food and copper tools only; copper armour and weapons are the named pages above (F554, F844).
 const RUIN_PAGE_KINDS := ["food", "tool"]
 static func random_page(roll: float) -> String:
 	var kinds := RUIN_PAGE_KINDS

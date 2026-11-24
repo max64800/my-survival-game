@@ -98,8 +98,11 @@ Signposts are drawn from the world seed, so every player sees the same ones. Not
 
 1. **Fixed bronze per dungeon (data only, copper stand-ins).** `dungeon_list.gd`: each dungeon names its recipe; drop the shuffle;
    test `test_each_dungeon_teaches_its_own_recipe`. Until bronze exists the stands still teach the copper version, in the new order.
+   ✅ Done Nov 24: `DungeonList.LIST` entries carry `recipe`, `recipe_of(id)` has no seed; the 5 dungeon scrolls agree.
 2. **Copper pages in ruins.** 12 named copper pages; each ruin's main chest holds its page(s); other chests keep food/tool pages.
    Test: every copper armour/weapon recipe is taught by exactly one ruin and its chest really spawns.
+   ✅ Done Nov 24: `Recipes.RUIN_COPPER` (ruin name -> pages); `RuinTower.main_chest` = the chest with the most recipe
+   pages. The Old Kiln isn't in the game yet, so the Outpost holds the Copper Greaves page until it is (move it then).
 3. **Tin ore.** New wall material + drop + vein look + placement + test (never in built places). Needs Copper Pickaxe.
 4. **Bronze ingot + 13 bronze items** (recoloured copper models, ~1.3× stats), bronze recipes at the anvil (locked).
 5. **Switch the dungeon stands to bronze** + Bronze Pickaxe page in Mossgate's big chest. Copper recipes now only from ruins.

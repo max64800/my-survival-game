@@ -46,16 +46,3 @@ static func _someone_near(auth: GameAuthority, p: Vector3) -> bool:
 			return true
 	return false
 
-
-## Which recipe each dungeon of one kind teaches: the kind's recipes shuffled by the world seed, so every world is a
-## bit different but always the same for that world (dungeon number i teaches result[i]).
-static func recipes_for(world_seed: int, kind_recipes: Array) -> Array:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = world_seed + 2370
-	var out := kind_recipes.duplicate()
-	for i in range(out.size() - 1, 0, -1):
-		var j := rng.randi_range(0, i)
-		var t = out[i]
-		out[i] = out[j]
-		out[j] = t
-	return out

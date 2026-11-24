@@ -67,15 +67,3 @@ func test_dungeon_chests_fill_up_again_after_an_hour_of_play() -> void:
 	check_eq(inv.count_of("rusty_scrap"), 4, "and the scrap is topped back up")
 	check_eq(float(auth.world_state.dungeon_chests[str(box)].taken_at), -1.0, "the clock is reset")
 	_teardown()
-
-
-func test_each_world_shuffles_which_dungeon_teaches_what() -> void:
-	var kind := ["sword_copper", "mace_copper", "spear_copper"]
-	check_eq(DungeonLoot.recipes_for(42, kind), DungeonLoot.recipes_for(42, kind), "the same world always gives the same answer")
-	var a := DungeonLoot.recipes_for(42, kind)
-	a.sort()
-	check_eq(a, ["mace_copper", "spear_copper", "sword_copper"], "every recipe once")
-	var seen := {}
-	for s in 30:
-		seen[str(DungeonLoot.recipes_for(s, kind))] = true
-	check(seen.size() > 1, "different worlds differ")

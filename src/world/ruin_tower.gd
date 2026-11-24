@@ -191,7 +191,9 @@ func _build() -> void:
 		var uid: int = b._next_uid
 		b._ev_add_piece.rpc(uid, String(p.id), String(p.mat), pos, rot, float(p.pos[1]) < 0.3 or bool(p.get("anchor", false)))  # ("anchor": on a rock lump)
 	b.end_batch()
-	for c in plan.get("chests", []):
+	var main := main_chest(plan.get("chests", []))
+	for ci in plan.get("chests", []).size():
+		var c: Dictionary = plan.chests[ci]
 		var pos: Vector3 = origin + basis * Vector3(c.pos[0], c.pos[1], c.pos[2])
 		var yaw := deg_to_rad(float(c.yaw)) + turn * PI / 2.0
 		var flat := Vector2(float(c.pos[0]), float(c.pos[2]))
@@ -205,6 +207,9 @@ func _build() -> void:
 					auth.storage.put(id, Recipes.random_page(randf()), 1)
 			elif Items.exists(item):
 				auth.storage.put(id, item, int(c.loot[item]))
+		if ci == main:  # this ruin's own copper recipe(s), the same in every world (owner, Nov 24, F844)
+			for r in Recipes.RUIN_COPPER.get(ruin_name, []):
+				auth.storage.put(id, "page_" + r, 1)
 	_add_rebuild_chest(basis)
 	last_origin = origin
 	last_turn = turn
@@ -214,6 +219,19 @@ func _build() -> void:
 		auth._next_station_id += 1
 		auth._ev_place_station.rpc(sid, "crystal_torch", tp, turn * PI / 2.0)
 	print("RUIN_TOWER built at %s (turn %d): %d pieces, %d chests" % [origin, turn, plan.get("pieces", []).size(), plan.get("chests", []).size()])
+
+
+## The ruin's main chest (index in the plan's chests, -1 = none): the one with the most recipe pages, the first on a
+## tie. It holds the ruin's named copper page(s) (Recipes.RUIN_COPPER).
+static func main_chest(chests: Array) -> int:
+	var best := -1
+	var most := 0
+	for i in chests.size():
+		var n := int(chests[i].get("loot", {}).get("recipe_page", 0))
+		if n > most:
+			best = i
+			most = n
+	return best
 
 
 ## The tower stands here: at least half of its plan's building pieces (not rubble) are in the world at their exact

@@ -236,7 +236,7 @@ func test_chests_and_breakable_things() -> void:
 	for c in plan.chests:
 		check(DungeonBuild.LOOT.has(String(c.get("loot", ""))), "chest %s has a loot list" % c.label)
 	check_eq(String(plan.recipe_stand.page), "scroll_mossgate", "the recipe stand holds Mossgate's scroll")
-	check_eq(String(Items.info("scroll_mossgate").get("teaches_recipe", "")), "shield_copper", "the scroll always teaches the Copper Shield")
+	check_eq(String(Items.info("scroll_mossgate").get("teaches_recipe", "")), "helm_copper", "the scroll always teaches the Copper Helm")
 	var kinds := {}
 	for p in plan.props:
 		var k := DungeonBuild.thing_kind(p)
