@@ -57,7 +57,7 @@ func _floor_spot(piece: String, dx: float) -> Dictionary:
 func test_needs_a_workbench_and_materials() -> void:
 	await _setup()
 	var s := _floor_spot("floor", 3.0)
-	check_eq(auth.builder.problem(ps, "floor", "plank_root", s.pos, s.rot), "Needs a Workbench (build one anywhere)", "no workbench yet")
+	check_eq(auth.builder.problem(ps, "floor", "plank_root", s.pos, s.rot), "Needs a Workbench within 20 m", "no workbench yet")
 	auth._ev_place_station(1, "workbench", player.global_position + Vector3(-3, 0, 0), 0.0)
 	check(auth.builder.problem(ps, "floor", "plank_root", s.pos, s.rot).begins_with("Needs 12"), "no planks yet")
 	ps.inventory.add("plank_root", 20)
@@ -132,15 +132,13 @@ func test_station_levels_unlock_pieces() -> void:
 	check_eq(auth.builder.station_problem("roof_45", "plank_root", s.pos), "Needs Workbench level 2 (build a Chopping Block next to it)",
 		"a steep wooden roof needs Workbench level 2")
 	check_eq(auth.builder.station_problem("roof_26", "plank_root", s.pos), "", "a gentle roof is fine with any Workbench (F133)")
-	check_eq(auth.builder.station_problem("floor", "plank_root", s.pos + Vector3(100, 0, 0)), "",
-		"F837: the Workbench counts from anywhere (no 20 m rule)")
 	auth._ev_place_station(2, "chopping_block", at + Vector3(12, 0, 0), 0.0)
 	check_eq((auth.stations[1] as Station).level(), 1, "an extra 12 m away doesn't count (helpers reach 10 m, owner Nov 20)")
 	auth._ev_place_station(3, "chopping_block", at + Vector3(2, 0, 0), 0.0)
 	auth._ev_place_station(4, "chopping_block", at + Vector3(0, 0, 2), 0.0)
 	check_eq((auth.stations[1] as Station).level(), 2, "two Chopping Blocks nearby: still only level 2 (each extra counts once)")
 	check_eq(auth.builder.station_problem("roof_45", "plank_root", s.pos), "", "now the steep roof is allowed")
-	check_eq(auth.builder.station_problem("floor", "cut_stone", s.pos), "Needs a Mason's Table (build one anywhere)", "stone needs a Mason's Table")
+	check_eq(auth.builder.station_problem("floor", "cut_stone", s.pos), "Needs a Mason's Table within 20 m", "stone needs a Mason's Table")
 	auth._ev_place_station(5, "masonry_table", at + Vector3(0, 0, -3), 0.0)
 	check_eq(auth.builder.station_problem("floor", "cut_stone", s.pos), "", "with the Mason's Table, stone floors are fine")
 	check_eq(auth.builder.station_problem("column", "cut_stone", s.pos), "Needs Mason's Table level 2 (build a Chisel Rack next to it)",

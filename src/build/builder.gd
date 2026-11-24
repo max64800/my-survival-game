@@ -237,8 +237,7 @@ func request_remove(peer_id: int, uid: int, smash: bool = false) -> String:
 
 
 ## Building polish spec §3: wood pieces need a Workbench, stone/brick a Mason's Table, copper an
-## Anvil at the piece's level (more extras around the station = higher level). F837 (owner, Nov 24): anywhere in
-## the world, not within 20 m any more (the best one of that kind counts).
+## Anvil, within 20 m and at the piece's level (more extras around the station = higher level).
 const STATION_KIND := {"workbench": "workbench", "mason": "masonry_table", "anvil": "anvil"}
 
 
@@ -347,14 +346,14 @@ func station_problem(piece: String, family: String, pos: Vector3) -> String:
 	var best := 0
 	var nearest: Station = null
 	for st in auth.stations.values():
-		if st.kind == kind:
+		if st.kind == kind and st.global_position.distance_to(pos) <= Pieces.WORKBENCH_RANGE:
 			var lvl: int = (st as Station).level()
 			if lvl > best:
 				best = lvl
 				nearest = st
 	var name := Items.display_name(kind)
 	if nearest == null:
-		return "Needs a %s (build one anywhere)" % name
+		return "Needs a %s within 20 m" % name
 	if best < need:
 		var extra := nearest.next_extra()
 		return "Needs %s level %d (build a %s next to it)" % [name, need, Items.display_name(extra)] if extra != "" \
@@ -1745,7 +1744,7 @@ static func _stacks(piece: String) -> bool:
 func _refill_gaps(at: Vector3) -> void:
 	for uid in structure.near(AABB(at - Vector3(4.5, 3.0, 4.5), Vector3(9, 6, 9))):
 		if nodes.has(uid) and _stacks(structure.pieces[uid].piece):
-			(nodes[uid] as PieceNode).set_fills(gap_fill_for(structure, uid), seams_for(structure, uid))
+			(nodes[uid] as PieceNode).set_gap_fill(gap_fill_for(structure, uid))
 
 
 const GAP_MAX := 0.3  ## a bigger gap between two stacked walls was left on purpose (or is something else)
@@ -1780,35 +1779,6 @@ static func gap_fill_for(st: Structure, uid: int) -> Vector3:
 			continue
 		best = Vector3(a, gap, b) if best.y == 0.0 else Vector3(minf(a, best.x), maxf(gap, best.y), maxf(b, best.z))
 	return best
-
-
-## F833 (owner, Nov 24): wall-like pieces side by side on one line. Returns one (x of the seam, from y, to y) per
-## neighbour, in this piece's own space; only the lower uid of each pair carries it (no two in the same place).
-## Where both have a gap beam on top, the seam runs on up through it.
-static func seams_for(st: Structure, uid: int) -> Array:
-	var me: Dictionary = st.pieces[uid]
-	var ms: Vector3 = Pieces.LIST[me.piece].size
-	var back := Basis(Vector3.UP, -Pieces.yaw_of(me.rot))
-	var my_gap := gap_fill_for(st, uid)
-	var out := []
-	for q in st.near(AABB((me.pos as Vector3) - Vector3(2.5, 0.1, 2.5), Vector3(5, ms.y + 0.2, 5))):
-		if q <= uid or not _stacks(st.pieces[q].piece):
-			continue
-		var o: Dictionary = st.pieces[q]
-		if absf(sin(Pieces.yaw_of(o.rot) - Pieces.yaw_of(me.rot))) > 0.05:
-			continue
-		var os: Vector3 = Pieces.LIST[o.piece].size
-		var d: Vector3 = back * ((o.pos as Vector3) - (me.pos as Vector3))
-		if absf(d.z) > 0.05 or absf(absf(d.x) - (ms.x + os.x) * 0.5) > 0.05:
-			continue
-		var y0 := maxf(0.0, d.y)
-		var y1 := minf(ms.y, d.y + os.y)
-		if y1 - y0 < 0.2:
-			continue
-		if my_gap.y > 0.0 and absf(d.y) < 0.01 and absf(os.y - ms.y) < 0.01 and gap_fill_for(st, q).y > 0.0:
-			y1 += my_gap.y
-		out.append(Vector3(signf(d.x) * ms.x * 0.5, y0, y1))
-	return out
 
 
 ## Is a floor, foundation or ceiling panel at this spot of the wall's top (its rim beam fills the slit then)?

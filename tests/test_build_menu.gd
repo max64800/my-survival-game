@@ -33,12 +33,12 @@ func test_six_tabs_and_buildable_pieces_get_a_tick() -> void:
 	check(poor.get_node_or_null("Tick") == null, "nothing in the bag: no tick")
 	var first: String = cost.keys()[0]
 	check(BuildMenu.card_note("wall", "plank_root", inv, "").begins_with("need %d more" % cost[first]), "the card says what's missing")
-	check_eq(BuildMenu.card_note("wall", "plank_root", inv, "Needs a Workbench (build one anywhere)"), "Needs a Workbench", "or the station lock")
+	check_eq(BuildMenu.card_note("wall", "plank_root", inv, "Needs a Workbench within 20 m"), "Needs a Workbench within 20 m", "or the station lock")
 	for item in cost:
 		inv.add(item, cost[item])
 	var rich := menu._piece_button("wall", "plank_root", "", inv)
 	check(rich.get_node_or_null("Tick") != null, "enough in the bag: a green tick")
-	check(menu._piece_button("wall", "plank_root", "Needs a Workbench (build one anywhere)", inv).get_node_or_null("Tick") == null, "no station nearby: no tick")
+	check(menu._piece_button("wall", "plank_root", "Needs a Workbench within 20 m", inv).get_node_or_null("Tick") == null, "no station nearby: no tick")
 	for n in [poor, rich, menu.mode, menu]:
 		n.free()
 

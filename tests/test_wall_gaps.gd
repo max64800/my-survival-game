@@ -95,46 +95,12 @@ func test_gap_beam_node() -> void:
 		var g := n.get_node_or_null("GapFill")
 		check(g != null, "%s: gap beam added" % fam)
 		if g:
-			var mi: MeshInstance3D = g.get_child(1)  # (0 = the dark backing)
+			var mi: MeshInstance3D = g.get_child(0)
 			var box := mi.transform * mi.mesh.get_aabb()
-			check_near(box.position.y, 2.0 - PieceNode.GAP_OVERLAP, 0.002, "%s: starts 6 cm inside the wall below (past its round edge log)" % fam)
-			check_near(box.end.y, 2.25 + PieceNode.GAP_OVERLAP, 0.002, "%s: ends 6 cm inside the wall above" % fam)
+			check_near(box.position.y, 2.0 - PieceNode.GAP_OVERLAP, 0.002, "%s: starts 1 cm inside the wall below" % fam)
+			check_near(box.end.y, 2.25 + PieceNode.GAP_OVERLAP, 0.002, "%s: ends 1 cm inside the wall above" % fam)
 			check_near(box.size.z, 0.3 + PieceNode.GAP_PROUD * 2.0, 0.002, "%s: 1.5 cm proud of both faces (no shimmer)" % fam)
 		n.set_gap_fill(Vector3.ZERO)
 		await tree.process_frame
 		check(n.get_node_or_null("GapFill") == null, "%s: gap beam gone again" % fam)
-	root.queue_free()
-
-
-## Owner, Nov 24 (second picture): side by side, the round end posts left a see-through V. Each pair gets one seam.
-func test_side_by_side_walls_get_a_seam() -> void:
-	var st := Structure.new()
-	st.add(1, "wall", "plank_root", Vector3(1, 0, 0), 0, true)
-	st.add(2, "window_wall", "plank_root", Vector3(3, 0, 0), 0, true)
-	st.add(3, "wall", "plank_root", Vector3(1, 2.25, 0), 0, false)
-	st.add(4, "window_wall", "plank_root", Vector3(3, 2.25, 0), 0, false)
-	var a := Builder.seams_for(st, 1)
-	check_eq(a.size(), 1, "one seam between the two lower pieces")
-	if a.size() == 1:
-		check_near(a[0].x, 1.0, 0.001, "on the shared edge")
-		check_near(a[0].z, 2.25, 0.001, "runs up through the gap beams to the next wall")
-	check_eq(Builder.seams_for(st, 2).size(), 0, "only one of the pair carries it (nothing doubled)")
-	check_eq(Builder.seams_for(st, 3).size(), 1, "the upper pair has its own seam")
-	var root := Node3D.new()
-	tree.root.add_child(root)
-	for fam in ["plank_root", "cut_stone"]:
-		var n: PieceNode = load("res://src/build/piece_node.gd").new()
-		n.piece = "wall"
-		n.family = fam
-		root.add_child(n)
-		n.set_fills(Vector3.ZERO, [Vector3(1.0, 0.0, 2.0)])
-		var g := n.get_node_or_null("GapFill")
-		check(g != null and g.get_child_count() == (2 if fam == "plank_root" else 1),
-				"%s: dark backing in the seam%s" % [fam, " + an upright log over it" if fam == "plank_root" else ""])
-		if g and fam == "plank_root":
-			var mi: MeshInstance3D = g.get_child(1)
-			var box := mi.transform * mi.mesh.get_aabb()
-			check_near(box.size.y, 2.0, 0.003, "the log stands the seam's full height")
-			check_near(box.size.x, PieceNode.SEAM_WIDTH, 0.003, "12 cm wide")
-			check_near(box.size.z, 0.3 + PieceNode.SEAM_PROUD * 2.0, 0.003, "3 cm proud (in front of the gap beam)")
 	root.queue_free()

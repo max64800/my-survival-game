@@ -539,6 +539,7 @@ const ROCK_SINK_OK := 0.6  ## pieces may poke this far into rock (was 0.35; owne
 const SLOPE_SINK_OK := 1.0  ## stairs and ramps: their upper corners are mostly empty air
 const BOTTOM_SINK_OK := 0.6  ## floors/pillars/stairs/props may sink their bottom this deep
 const BUILD_REACH := 8.0
+const WORKBENCH_RANGE := 20.0
 
 
 ## Building economy (owner, Nov 20): a first 6 x 6 m Shack takes about 15 min of gathering, Stonehold about 2x
@@ -627,6 +628,7 @@ static func turns_freely(piece: String) -> bool:
 	return info.get("place", "") == "free" and not info.get("on_wall", false) and not info.get("group", "") in ["legacy", "roof", "mining"]
 
 
+
 ## The number to store for k × 30° (a quarter turn when it is one).
 static func rot_from_steps(k: int) -> int:
 	k = posmod(k, 12)
@@ -634,8 +636,6 @@ static func rot_from_steps(k: int) -> int:
 
 
 static func yaw_of(rot: int) -> float:
-	if rot < FREE_ROT:
-		return steps_of(rot) * PI / 6.0  # the very same numbers as before for grid turns (ruins, saves)
 	return fives_of(rot) * PI / 36.0
 
 
