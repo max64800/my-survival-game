@@ -166,7 +166,7 @@ func test_equip_ring_takes_time_and_a_hit_stops_it() -> void:
 	auth.queue_free()
 
 
-## F828 (owner, Nov 24): armour comes off with a ring too; several pieces go on one after another; dragging into
+## F828 (owner, Nov 24): armour comes off with a ring too; several pieces fill their rings together; dragging into
 ## a gear slot fills the ring first. F829: swapping to a one-hand weapon keeps the shield on.
 func test_armour_off_ring_queue_and_drag() -> void:
 	var auth := GameAuthority.new()
@@ -178,13 +178,13 @@ func test_armour_off_ring_queue_and_drag() -> void:
 	inv.changed.emit()
 	auth.ask_equip(10)
 	auth.ask_equip(11)
-	check_eq(ps.equip_queue.size(), 1, "the boots wait their turn")
-	auth.tick_equip(1.6)
+	check_eq(ps.equip_queue.size(), 1, "two rings filling")
+	auth.tick_equip(1.0)
+	check_eq(inv.equipped("head"), "", "not on after 1 s")
+	auth.tick_equip(0.6)
 	check_eq(inv.equipped("head"), "helm_copper", "the helm is on")
-	check_eq(inv.equipped("feet"), "", "the boots not yet")
-	auth.tick_equip(0.01)
-	auth.tick_equip(1.6)
-	check_eq(inv.equipped("feet"), "boots_leather", "then the boots go on")
+	check_eq(inv.equipped("feet"), "boots_leather", "...and the boots at the same time (owner: all rings start at once)")
+	check(ps.equip_job.is_empty() and ps.equip_queue.is_empty(), "nothing left filling")
 	auth.ask_equip(Inventory.equip_index("head"))
 	check_eq(inv.equipped("head"), "helm_copper", "taking the helm off isn't instant")
 	auth.tick_equip(1.6)

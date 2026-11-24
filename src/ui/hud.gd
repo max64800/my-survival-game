@@ -1587,33 +1587,40 @@ func _show_worn_badge(panel: Control, on: bool) -> void:
 	b.visible = true
 
 
-var _ring_at := -1  ## the slot that shows the putting-on ring (F826)
+var _ring_at := []  ## the slots that show a putting-on ring (F826; several at once since F828)
 
 
-## Putting something on (F826): a gold ring fills around its slot (hotbar or bag). Gone when done or a hit stops it.
+## Putting something on (F826): a gold ring fills around its slot (hotbar, bag or gear). Several can fill together
+## (F828). Gone when done or a hit stops it.
 func _show_equip_ring(ps) -> void:
-	var job: Dictionary = ps.equip_job if ps else {}
-	var at: int = job.get("ring", job.get("index", -1))
-	if at != _ring_at and _slot_panels.has(_ring_at):
-		var old: Control = _slot_panels[_ring_at].get_node_or_null("Ring")
-		if old:
-			old.visible = false
-	_ring_at = at
-	if at < 0 or not _slot_panels.has(at):
-		return
-	var panel: Control = _slot_panels[at]
-	var ring: Control = panel.get_node_or_null("Ring")
-	if ring == null:
-		ring = Control.new()
-		ring.name = "Ring"
-		ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		panel.add_child(ring)
-		ring.draw.connect(_draw_equip_ring.bind(ring))
-	ring.position = Vector2.ZERO
-	ring.size = panel.size
-	ring.set_meta("job", job)
-	ring.visible = true
-	ring.queue_redraw()
+	var jobs: Array = []
+	if ps and not ps.equip_job.is_empty():
+		jobs = [ps.equip_job] + ps.equip_queue
+	var now := []
+	for job in jobs:
+		var at: int = job.get("ring", job.get("index", -1))
+		if not _slot_panels.has(at):
+			continue
+		now.append(at)
+		var panel: Control = _slot_panels[at]
+		var ring: Control = panel.get_node_or_null("Ring")
+		if ring == null:
+			ring = Control.new()
+			ring.name = "Ring"
+			ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			panel.add_child(ring)
+			ring.draw.connect(_draw_equip_ring.bind(ring))
+		ring.position = Vector2.ZERO
+		ring.size = panel.size
+		ring.set_meta("job", job)
+		ring.visible = true
+		ring.queue_redraw()
+	for old in _ring_at:
+		if old not in now and _slot_panels.has(old):
+			var r: Control = _slot_panels[old].get_node_or_null("Ring")
+			if r:
+				r.visible = false
+	_ring_at = now
 
 
 func _draw_equip_ring(ring: Control) -> void:
