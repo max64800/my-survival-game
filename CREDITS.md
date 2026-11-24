@@ -77,3 +77,43 @@ Quaternius asks (but doesn't require) a credit: "Characters and animations by Qu
 | **AI-made.** `docs/art/2h-reference/great_axe_poses_side.jpg`: key-pose reference sheet of our dwarf with a great axe (made from a render of our own dwarf model), made by us with ChatGPT image generation in the chat "Create Concept Art Grid". Animation reference only, not used in the game | `docs/art/2h-reference/` | Ours (OpenAI terms give the output to the user). Steam: disclose as pre-generated AI content | 2026-11-20 |
 | **AI-made.** `docs/art/creatures/ghost_concepts_v1.png`: concept sheet of the dungeon ghosts (hooded, misty tail, mace), made by us with ChatGPT image generation; only a picture to model from (the models are built by script in Blender) | `docs/art/creatures/` | Ours (OpenAI terms give the output to the user). Steam: disclose as pre-generated AI content | 2026-11-22 |
 | **AI-made.** `assets/concepts/healing-fountain/fountain_ideas.png` (4 healing fountain ideas) and `fountain_turnaround.png` (design 1 from front, side, back, top), made by us with ChatGPT image generation; pictures to model from only (the model is built by script in Blender). The 4 views also went into the free TRELLIS website (MIT) in `journey/3d/trellis_f706/`; that TRELLIS model, reworked by script (`builds/healing_fountain_trellis.py`), is the F782 healing fountain (owner's one-time OK) | `assets/concepts/healing-fountain/` | Ours (OpenAI terms give the output to the user). Steam: disclose as pre-generated AI content | 2026-11-22 |
+
+
+## Freesound sounds, owner's picks (Nov 24, 2026; replaces the older sound rows for these slots)
+All CC0 (public domain), checked on each page. Trimmed, loudness-matched and converted to .ogg by us. Files are in `assets/sfx/`.
+
+| Sound | Author | Link | License | Used as |
+|---|---|---|---|---|
+| Voice_AdultMale_PainGrunts_09.wav | MrFossy | https://freesound.org/s/547209/ | CC0 | hurt_0 |
+| Oof (original) | unfa | https://freesound.org/s/719053/ | CC0 | hurt_1 |
+| malegrunt03 | samrad20 | https://freesound.org/s/874593/ | CC0 | hurt_2 |
+| Man Dying | Under7dude | https://freesound.org/s/163442/ | CC0 | death_0 |
+| EatingSFX.wav | maugusto_sfx | https://freesound.org/s/521253/ | CC0 | eat_0 |
+| Crunch | LilMati | https://freesound.org/s/348112/ | CC0 | eat_1 |
+| heavy_swallow.wav | Mikes-MultiMedia | https://freesound.org/s/368711/ | CC0 | refill_0 |
+| Drink / Drinking liquid | Breviceps | https://freesound.org/s/445970/ | CC0 | refill_1 |
+| ItemPickup.wav | nicholasdaryl | https://freesound.org/s/563465/ | CC0 | pickup_0 |
+| Concrete SMASH 2 | magnuswaker | https://freesound.org/s/522099/ | CC0 | dig_break_0 |
+| Chopping wood 02 | micahlg | https://freesound.org/s/421929/ | CC0 | chop_0 |
+| Chopping wood 01 | micahlg | https://freesound.org/s/421928/ | CC0 | chop_1 |
+| Surge Leech 2 | scorpion67890 | https://freesound.org/s/205754/ | CC0 | beetle_hiss_0 |
+| Water drops with reverb | Patrick_Corra | https://freesound.org/s/696438/ | CC0 | cave_drip_0 (not wired yet) |
+| hammer_hit | link4541 | https://freesound.org/s/816051/ | CC0 | craft_0 |
+| Bing1.wav | BMacZero | https://freesound.org/s/96132/ | CC0 | craft_1 |
+| Repair_metal.wav | zbig77 | https://freesound.org/s/244985/ | CC0 | craft_2 |
+| Right Gravel Footstep 5 | Ali_6868 | https://freesound.org/s/384880/ | CC0 | step_0 |
+| Knight Right Footstep on Gravel 5 (With Chainmail) | Ali_6868 | https://freesound.org/s/384890/ | CC0 | step_1 |
+| sandwalking_step1.wav | BranndyBottle | https://freesound.org/s/464699/ | CC0 | step_2 |
+| two footsteps on gravel | PostProdDog | https://freesound.org/s/537835/ | CC0 | step_3 |
+| swing.mp3 | GaussTheWizard | https://freesound.org/s/367182/ | CC0 | swing_0 |
+| swosh swinging sword 37.flac | qubodup | https://freesound.org/s/60024/ | CC0 | swing_1 |
+| body_hit.wav | insanity54 | https://freesound.org/s/276600/ | CC0 | hit_0 |
+| BODY FALL - V HVY - DIRT | leonelmail | https://freesound.org/s/504626/ | CC0 | hit_heavy_0 |
+| shield guard | nekoninja | https://freesound.org/s/370203/ | CC0 | block_0 |
+| Sword.wav | hello_flowers | https://freesound.org/s/37596/ | CC0 | parry_0 |
+| stonehit3.wav | aerror | https://freesound.org/s/350748/ | CC0 | thud_0 |
+| Wilkies Pools Waterfalls.mp3 | laughatlantic | https://freesound.org/s/565737/ | CC0 | waterfall_trickle_0 |
+| Page Turn 01 | LilMati | https://freesound.org/s/397548/ | CC0 | open_0 |
+| Page Turn 02 | LilMati | https://freesound.org/s/397549/ | CC0 | open_1 |
+| Page Turn 04 | LilMati | https://freesound.org/s/397551/ | CC0 | open_2 |
+| GRUNT 2.wav | vmgraw | https://freesound.org/s/257709/ | CC0 | hurt_3 (owner's MAYBE pick, added so hurt has 4 takes) |
