@@ -78,6 +78,7 @@ static func _make(piece: String, style: String, detail: bool) -> ArrayMesh:
 		"flat_roof": _flat_roof(s)
 		"battlement": _battlement(s)
 		"battlement_corner": _battlement_corner(s)
+		"bartizan": _bartizan(s)
 		"diagonal": _diagonal(piece, s)
 		"column_base", "column_shaft", "column_capital": _column_part(shape, s)
 		"table", "bench": _table(s, shape == "bench")
@@ -112,7 +113,7 @@ static func _plain_piece(piece: String, s: Vector3, info: Dictionary) -> void:
 		return
 	match piece:
 		"stairs":
-			_steps(s, 4)
+			_open_steps(s, 4)
 		"pillar":
 			_slab(Vector3(0, s.y * 0.5, 0), s, "post")
 			_box(Vector3(0, 0.075, 0), Vector3(s.x + 0.15, 0.15, s.z + 0.15))
@@ -160,6 +161,24 @@ static func _steps(s: Vector3, count: int) -> void:
 		var h := (i + 1) * s.y / count
 		var depth := s.z / count
 		_slab(Vector3(0, h * 0.5, s.z * 0.5 - (i + 0.5) * depth), Vector3(s.x, h, depth), "floor")
+
+
+## F840: straight stairs open underneath, like the built models (F169): each step reaches down only to the
+## slanted underside STAIRS_UNDER below the line of the step tips, so the green ghost shows just the stairs.
+static func _open_steps(s: Vector3, count: int) -> void:
+	var hz := s.z * 0.5
+	var depth := s.z / count
+	for i in count:
+		var top := (i + 1) * s.y / count
+		var zf := hz - i * depth
+		var zb := zf - depth
+		var uf := maxf(0.0, (hz - zf) / s.z * s.y - STAIRS_UNDER)
+		var ub := maxf(0.0, (hz - zb) / s.z * s.y - STAIRS_UNDER)
+		var outline := [Vector2(zf, uf), Vector2(zf, top), Vector2(zb, top), Vector2(zb, ub)]
+		if uf < 0.001 and ub > 0.001:  # the underside leaves the floor inside this step: one more corner
+			var zc := hz - STAIRS_UNDER / s.y * s.z
+			outline.insert(0, Vector2(zc, 0.0))
+		_prism_x(outline, -s.x * 0.5, s.x * 0.5)
 
 
 ## Ramp: a solid wedge, low at the front (z = +d/2) and full height at the back, with cleats
@@ -694,6 +713,25 @@ static func _battlement(s: Vector3) -> void:
 	_slab(Vector3(0, low * 0.5, 0), Vector3(s.x, low, s.z), "wall")
 	for x in [-0.5, 0.5]:
 		_slab(Vector3(x, low + 0.2, 0), Vector3(0.6, 0.4, s.z), "wall_x")
+
+
+## The little round corner turret (stonehold_v2_twin.py): you walk in from the tower's deck. The tower corner is at
+## (+SH, +SH) of the piece, the tower at -x, -z; a floor level with the deck (1.75 up), a 1 m parapet round the outside
+## (small blocks stepping round the circle) and along both deck edges, the corbelled cone under the floor.
+static func _bartizan(s: Vector3) -> void:
+	const TR := 1.344
+	const YF := 1.75
+	const SH := (1.984 - TR) / 2.0
+	_box(Vector3(SH, YF - 0.125, SH), Vector3(TR * 2.0, 0.25, TR * 2.0))      # the floor
+	_box(Vector3(SH, (YF - 0.25) * 0.5, SH), Vector3(TR * 1.2, YF - 0.25, TR * 1.2))  # the cone under it
+	var top := s.y - YF
+	for i in 19:
+		var a := deg_to_rad(-90.0 + 270.0 * i / 18.0)                         # round the outside (not the tower side)
+		_box(Vector3(SH + cos(a) * (TR - 0.14), YF + top * 0.5, SH + sin(a) * (TR - 0.14)), Vector3(0.32, top, 0.32))
+	const REACH := 1.984                                                     # along the deck edges, to the next battlement
+	var c := SH - (REACH + TR) * 0.5
+	_box(Vector3(c, YF + top * 0.5, SH), Vector3(REACH - TR, top, 0.39))
+	_box(Vector3(SH, YF + top * 0.5, c), Vector3(0.39, top, REACH - TR))
 
 
 ## A square post that caps the corner where two battlements meet.
