@@ -12333,3 +12333,15 @@ wall into another cave only gets the small speckle tube.
   (built from the last saved copy + my changes) and didn't sweep theirs into my commit. (3) My first photo crop
   missed the dial (wrong corner).
 - Told the bag-UI chat and the Prow Hall chat before editing hud.gd; both said go ahead.
+
+
+## Nov 24 — Bag window follow-up (F825, F826)
+
+**What we did**
+- The owner said the bag window was much too small. Gear + bag + crafting now grow together to fill the screen (up to 2.5x), not only shrink.
+- New helper `Inventory.add_worn(id)`: adds an item and puts it on straight away. Tests and robots use it for "the dwarf already holds his sword".
+
+**Mistakes and hurdles**
+- The full test run showed 7 monster tests failing: since F826, a sword lying in the bag does nothing until you put it on, so the tests' dwarves fought with bare fists (3 damage instead of 10, crossbow 0). Fixed by giving them worn weapons (`add_worn`) in test_monsters, test_aim_camera, test_dwarf, autopilot and netcheck. test_monsters: 58/58 pass.
+- 4 test_dwarf tests still fail (stun meter, braid tufts, aim material, camera glide). Checked with git blame: the stun test broke on Nov 22, when another chat made stuns knock you down instead of playing "Shield broken". None of the 4 touch the bag, so they are left for those chats.
+- Running a single test function needs `only=<file> fn=<name>`; `only=<function name>` silently runs 0 checks and says ALL PASSED. Easy to fool yourself.
