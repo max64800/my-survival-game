@@ -132,3 +132,34 @@ func _walk(dwarf: Dwarf, seconds: float) -> float:
 	for i in 30:
 		await tree.physics_frame
 	return Vector2(dwarf.global_position.x - p0.x, dwarf.global_position.z - p0.z).length()
+
+
+func test_weight_dial_fills_and_turns_yellow_then_red() -> void:
+	var d = preload("res://src/ui/weight_dial.gd").new()
+	d.set_carry({weight = 100.0, heavy = 200.0, max = 300.0, load = ItemWeights.Load.LIGHT})
+	check_near(d._frac(), 1.0 / 3.0, 0.001, "100 of 300 = a third full")
+	check_eq(d._fill_color(), d.GREEN, "light = green")
+	d.set_carry({weight = 250.0, heavy = 200.0, max = 300.0, load = ItemWeights.Load.HEAVY})
+	check_eq(d._fill_color(), d.YELLOW, "heavy = yellow")
+	d.set_carry({weight = 340.0, heavy = 200.0, max = 300.0, load = ItemWeights.Load.OVERLOADED})
+	check_eq(d._frac(), 1.0, "overloaded = full")
+	var c: Color = d._fill_color()
+	check(c.r > 0.8 and c.g < 0.6, "overloaded = red (%s)" % c)
+	d.set_carry({})  # no dwarf yet: keeps the last numbers, no crash
+	check_eq(d.value, 340.0, "empty carry ignored")
+	d.free()
+
+
+func test_weight_dial_sits_centred_above_hunger_and_thirst() -> void:
+	var hud := Hud.new()
+	tree.root.add_child(hud)
+	await tree.process_frame
+	await tree.process_frame
+	var w: Control = hud._weight_dial
+	check(w != null and w.is_inside_tree(), "the HUD has a weight dial")
+	var dials: Rect2 = hud._dials.get_global_rect()
+	var r: Rect2 = w.get_global_rect()
+	check(r.end.y <= dials.position.y, "above the hunger/thirst dials (%s vs %s)" % [r, dials])
+	check_near(r.get_center().x, dials.get_center().x, 2.0, "centred over them")
+	hud.queue_free()
+	await tree.process_frame

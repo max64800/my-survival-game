@@ -284,6 +284,12 @@ func _ready() -> void:
 			_monsters = false
 			if mode == "menu":
 				mode = "solo"
+		elif arg == "carrycheck":  # F793: photos of the weight dial light / heavy / overloaded
+			debug_script = "res://src/debug/carrycheck.gd"
+			_saving = false
+			_monsters = false
+			if mode == "menu":
+				mode = "solo"
 		elif arg.begins_with("savecheck"):
 			debug_script = "res://src/debug/savecheck.gd"
 	# (startcheck is a robot too, but it plays the real new-game start on purpose.)
