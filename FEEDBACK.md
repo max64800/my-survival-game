@@ -163,6 +163,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
   Plan written (Nov 24): docs/decisions/2026-11-24-zone1-metal-and-loot.md (tin in Zone 1 cave walls, bronze = copper ingot + tin ore). Not built yet; free to pick up, build order step 3-5.
 - [ ] **F844. Zone 1 loot plan: copper recipes in ruins, bronze recipes in dungeons, skull signposts (1-3) with the recipe picture at each dungeon entrance, each dungeon always the same recipe.** *From: you (PC, Nov 24). Said: 1×*
   Plan written (Nov 24): docs/decisions/2026-11-24-zone1-metal-and-loot.md, owner answered the 4 questions. Not built yet; free to pick up, build order step 1.
+  🛠 in progress (zone1 loot steps 1-2 chat, Nov 24)
 - [ ] **F698. Paths through the caves.** Trails that lead the player around: to dead ends, dungeons and ruins. Goes with F237 (places to discover). *From: you (Mac, Nov 22, phone notes + TikToks). Said: 1×*
 - [ ] **F699. Stalactites like sharp teeth.** Long, pointy, growing out of the ceiling rock so they blend in. Decoration: they never fall. *From: you (Mac, Nov 22, phone notes + TikToks). Said: 1×*
 - [ ] **F700. More ways to move.** Slide, double jump (unlocked by a skill), climbing like in Conan Exiles (climb walls while stamina lasts), a little wall running. Fluid movement overall. *From: you (Mac, Nov 22, phone notes + TikToks). Said: 2×* (Nov 22: you asked again for wall running and sliding. Research: slides and wall runs feel good with a small speed boost, the camera tilting slightly away from the wall, and no sharp turns mid-slide.)
