@@ -433,7 +433,7 @@ func _physics_process(delta: float) -> void:
 
 	_footsteps(delta, Vector2(velocity.x, velocity.z).length())
 	model.set_motion(Vector2(velocity.x, velocity.z).length(), _grounded(), fight != null and fight.dodging(), fight.dodge_expected_duration() if fight else Combat.DODGE_TIME, _jump_air_expected)
-	if playing and Input.is_action_pressed("dig") and not model.swinging and not _holding_hammer() and not fight.weapon_mode() and not fight.is_blocking() and _can_swing():  # (no digging behind a raised guard, F835)
+	if playing and Input.is_action_pressed("dig") and not model.swinging and not _holding_hammer() and not fight.weapon_mode() and not fight.is_blocking() and _can_swing():  # (no digging behind a raised guard, F836)
 		var ps_here: GameAuthority.PlayerState = GameAuthority.instance.get_player(peer_id) if GameAuthority.instance else null
 		model.swing(SWING_TIME * (ps_here.progress.dig_swing_mult(Items.kind(ps_here.selected_item()) == "axe") if ps_here else 1.0))  # Mining / Woodcutting ★25
 		if _online():

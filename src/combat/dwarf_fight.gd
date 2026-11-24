@@ -146,13 +146,13 @@ func aiming() -> bool:
 
 ## The button that blocks: right click, but the middle click for great weapons (their right click is the heavy spin).
 func block_action() -> String:
-	if tool_blocks():  # (owner F835: hammer and shovel already use right click, so they block with the middle one)
+	if tool_blocks():  # (owner F836: hammer and shovel already use right click, so they block with the middle one)
 		return "use" if Items.kind(item()) in ["pickaxe", "axe"] else "heavy_attack"
 	return "heavy_attack" if has_heavy() else "use"
 
 
 ## A tool in hand can block too, like a one-hand weapon but weaker (its `block` in Combat.WEAPONS; with a shield
-## worn, the shield blocks) (owner F835, Nov 24).
+## worn, the shield blocks) (owner F836, Nov 24).
 func tool_blocks() -> bool:
 	return Items.kind(item()) in SHIELD_TOOLS
 
@@ -253,7 +253,7 @@ func step(delta: float, playing: bool, move_dir: Vector3) -> float:
 		if not tool_blocks():
 			return 1.0
 		if Input.is_action_just_pressed(block_action()) and clock - _last_press >= Combat.PARRY_COOLDOWN:
-			_block_pressed_at = clock  # (the same parry window as a weapon, F835)
+			_block_pressed_at = clock  # (the same parry window as a weapon, F836)
 			_last_press = clock
 		elif Input.is_action_just_pressed(block_action()):
 			_last_press = clock

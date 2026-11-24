@@ -234,7 +234,7 @@ func test_shield_stays_while_a_one_hand_weapon_goes_on() -> void:
 	ps.selected_slot = 4
 	check_eq(dwarf.fight.item(), "pickaxe_stone", "holding the pickaxe")
 	check_eq(dwarf.fight.shield_item(), "shield_stone", "...with the shield still on (owner: tools too)")
-	check(dwarf.fight.tool_blocks(), "a pickaxe can block (owner F835)")
+	check(dwarf.fight.tool_blocks(), "a pickaxe can block (owner F836)")
 	check_eq(dwarf.fight.block_action(), "use", "...with right click")
 	ps.inventory.slots[5] = {id = "masons_shovel", count = 1}
 	ps.selected_slot = 5
