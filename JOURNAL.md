@@ -12461,3 +12461,57 @@ big chest, and bronze starts as recoloured copper models. Plan: `docs/decisions/
 - Ruin distances from the start aren't stored in one place (each ruin picks its own spot), so the ruin → recipe table goes
   by ruin size (small → armour, grand → big weapons) instead of measured distance.
 - Found that the dungeon sizes (small/medium/big) already match the owner's 1/2/3 skulls exactly, so no dungeon has to move.
+
+
+## Nov 24, 2026 (PC): Dungeon 5, the Tomb of Hald Ironbrow (F843)
+
+**What we did.** Built the fifth dungeon, all in the game with no 3D page first. It is a medium stone tomb (Stonehold `cut_stone`)
+with 21 rooms on 2 levels. About half of its walls are broken, and 149 ceiling panels are gone so the dark rock shows through.
+- **Ghosts only.** All 4 kinds, plus two new bosses:
+  - **The Shield-Brother.** A big Bearded Shade with a front shield. He carries the Bronze Key.
+  - **Hald Ironbrow.** The ghost lord's body and moves under a new name. He rises from his coffin.
+- **Traps.** Each has a clue and a safe way through:
+  - the dart-wall tripwires in the Hall of Candles and the Collapsed Tunnel
+  - the loose stones over the Statue Corridor
+  - the spike pit under the Broken Stair
+  - the 10 m chasm under the Bridge of Oaths
+  - the Embalmers' hidden boulder and spiked chest
+- **The way out.** A Bronze door (it needs the Bronze Key) → the Grave Chamber's recipe stand → the secret stair → the lever behind the barred gate.
+- **How it's made.** A Python script (`tools/dungeons/make_hald.py`) writes the whole plan. Decor and junk are placed with the shared helpers (`decor.py`, `junk.py`).
+- **How to try it.** The start menu has "Dungeon 5, Tomb of Hald Ironbrow".
+- **Tests.** A new test file, `tests/test_hald.gd`. It also proves the dart trap fires and the key drops.
+
+**First, the lessons.** I read every journal note from dungeons #1-#4 and wrote the lessons into
+`docs/design/zone1-dungeons/2026-11-24-hald-decisions.md`, so this dungeon wouldn't repeat them.
+
+**Mistakes and hurdles**
+- The script that reads the map also caught the `deadly = ["stair_pit", "chasm"]` line as if it were a room ("could not
+  convert 'chasm'"). Fix: skip any match that has quotes in it.
+- A bash heredoc holding Python with `r'''` broke ("unexpected EOF"). Fix: edit the file with the editor tool instead.
+- Some wall decor touched torches or stood on the walking lines. Fix: moved them, and dropped the skeleton-with-note and
+  the shield walls in the too-narrow Shield Hall.
+- Junk placement crashed on the secret stair (`KeyError`), because stairs have no single floor height. Fix: a stair returns "no floor".
+- I changed how often torches appear, and that broke the decor checks. Fix: went back to every 4th wall.
+- The decor test counts stair pieces as doors (it wants 2 m clear), and an honour guard stood too close to one. Fix: moved it.
+- The junk test thought the whole deep level (floor -8) was a drop, and some junk sat on stairs or at the pit's edge.
+  Fixes:
+  - The test knows Hald's deep floor is real floor.
+  - A filter keeps junk off stairs and 0.8 m back from the pit and chasm.
+  - "Level 2" now means below -5 m, so the stair pit counts as level 1.
+- **The biggest catch.** Nothing in the game ever called "drop the boss's key" (`DungeonKeys.drop_key`). The Shield-Brother would have died
+  without dropping the Bronze Key, and the last door would never open. Fix: any monster with a `key` drops it when it
+  dies (`MonsterManager._kill`), and a test checks it. I also broke that test on purpose once, to be sure it really runs.
+- Small test slips:
+  - forgot to set the GODOT path in a new shell
+  - GDScript couldn't tell the type of a filtered count
+  - a key list came back as StringName, not String
+- Not mine: `test_dungeon_list.test_each_dungeon_teaches_its_own_recipe` fails because of another chat's unfinished
+  zone-1 loot changes (`recipe_of` now takes 2 values).
+- Speed: the robot run showed only 10-37 frames a second inside the tomb (about 1,500 draw calls). Left for later.
+
+**Left for later chats**
+- The 3 new models (collapsing stairs, cracked bridge slabs, locked round stone door) and their traps.
+- The Honour Chapel's portcullis ambush.
+- The Shield-Brother's visible ghost shield.
+- The fluffy moss in the broken parts.
+- Making the tomb faster.
