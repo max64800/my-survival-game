@@ -1,0 +1,305 @@
+<title>Smeltery Shape Model</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans+SC:wght@700&family=Alegreya+Sans:wght@400;700&display=swap">
+<style>
+/* Layout: one cave stage with the shape model, a side panel naming every part and what is new. Single dark look. */
+:root {
+	--rock: #17130f; --panel: #221b16; --ink: #ecdcc6; --dim: #b9a58c; --ember: #e8a24a; --line: #3d3128;
+	--display: "Alegreya Sans SC", Georgia, serif; --body: "Alegreya Sans", "Segoe UI", sans-serif;
+	color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--rock); color: var(--ink); font: 16px/1.5 var(--body); }
+.wrap { display: flex; gap: 16px; height: 100%; padding-block: 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); box-sizing: border-box; }
+.stage { position: relative; flex: 1 1 auto; min-width: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: #0d0a08; }
+canvas { display: block; width: 100%; height: 100%; }
+.bar { position: absolute; left: 12px; top: 12px; right: 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: 700 15px var(--body); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 5px; padding: 6px 12px; cursor: pointer; }
+button[aria-pressed="true"] { background: var(--ember); color: #1c140d; border-color: var(--ember); }
+button:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+.hint { position: absolute; right: 12px; bottom: 10px; color: var(--dim); font-size: 13px; }
+.tag { font: 700 13px var(--body); color: #1c140d; background: rgba(232,162,74,.92); padding: 1px 7px; border-radius: 4px; white-space: nowrap; pointer-events: none; }
+aside { flex: 0 0 360px; overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px; box-sizing: border-box; }
+h1 { font: 700 30px/1.1 var(--display); margin: 0 0 8px; text-wrap: balance; }
+h2 { font: 700 15px var(--display); letter-spacing: .08em; color: var(--ember); margin: 20px 0 6px; }
+p { margin: 0 0 10px; color: var(--dim); }
+ul { list-style: none; margin: 0; padding: 0; }
+li { padding: 7px 0; border-bottom: 1px dashed var(--line); }
+li b { color: var(--ink); }
+.new { color: var(--ember); font-weight: 700; font-size: 13px; letter-spacing: .05em; }
+.ask { background: #2c231c; border-left: 3px solid var(--ember); padding: 10px 12px; border-radius: 4px; }
+.ask p { color: var(--ink); }
+@media (max-width: 800px) { .wrap { flex-direction: column; height: auto; } .stage { height: 70vh; flex: none; } aside { flex: none; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<div class="wrap">
+	<div class="stage" id="stage">
+		<div class="bar" role="group" aria-label="Camera">
+			<button id="c_front" aria-pressed="true">Front</button>
+			<button id="c_left" aria-pressed="false">Furnace side</button>
+			<button id="c_right" aria-pressed="false">Tower side</button>
+			<button id="c_above" aria-pressed="false">From above</button>
+			<button id="names" aria-pressed="true">Names on</button>
+		</div>
+		<div class="hint">Drag to turn &middot; scroll to zoom &middot; right-drag to move</div>
+	</div>
+	<aside>
+		<h1>Smeltery Terraces, version 2</h1>
+		<p>A simple shape model, not real pieces yet: blocks for brick, brown for wood, dark for doors and windows. It shows the plan before I build it from our Hearthbrick pieces. Everything still sits on the 2 m grid, and every round tower meets a square part on only one flat side, so it can be built for real.</p>
+		<h2>The parts</h2>
+		<ul>
+			<li><b>Vaults + terrace.</b> The row of arched store rooms; the terrace on top. <span class="new">NEW:</span> a lower front terrace and a split grand stair (two flights meeting at a landing).</li>
+			<li><b>Smelting hall.</b> Tall first floor, jettied upper floor. <span class="new">NEW:</span> a long wooden balcony on brackets across the front, and a round stair turret on its front-left corner.</li>
+			<li><b>Chimney tower.</b> Square for 4 storeys, <span class="new">NEW:</span> a wrap-round balcony halfway up, four little round corner turrets on brackets, then it turns 12-sided for a ring room, a crown of balconies, and a square chimney with a bronze cap on top.</li>
+			<li><b>Furnace house.</b> <span class="new">NEW:</span> a fat round bottom, a thinner round neck on top (like a kiln bottle), a railed deck where it steps in, and a square porch in front.</li>
+			<li><b>Bridge.</b> <span class="new">NEW:</span> roofed in wood, with a round pier in the dip holding up its middle.</li>
+			<li><b>Watch turret.</b> <span class="new">NEW:</span> a small round tower on the terrace's front-right corner with a balcony crown, so the right side isn't flat.</li>
+		</ul>
+		<h2>Heights</h2>
+		<p>Vaults 3 m, watch turret 9 m, furnace 12 m, hall 14 m, tower 22 m. The cave needs about 24 m here.</p>
+		<h2>Your call</h2>
+		<div class="ask">
+			<p>Is this rich enough? Tell me what to add, take away or move. Once you OK the shapes, I build it from our real brick and wood pieces and show you that page.</p>
+		</div>
+	</aside>
+</div>
+<script type="importmap">
+{ "imports": {
+	"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+	"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { CSS2DRenderer, CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
+
+const stage = document.getElementById("stage");
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+stage.prepend(renderer.domElement);
+const labels = new CSS2DRenderer();
+labels.domElement.style.cssText = "position:absolute;inset:0;pointer-events:none";
+stage.appendChild(labels.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d0a08);
+scene.fog = new THREE.Fog(0x0d0a08, 90, 190);
+const camera = new THREE.PerspectiveCamera(40, 1, 0.5, 400);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+scene.add(new THREE.HemisphereLight(0xffe2bf, 0x2a1e16, 0.9));
+const sun = new THREE.DirectionalLight(0xffc98a, 2.2);   // a lantern glow from front-left
+sun.position.set(-30, 50, 40);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -45, right: 45, top: 45, bottom: -45, near: 1, far: 160 });
+scene.add(sun);
+
+// Colours: brick, trim (lime-stone bands), wood, roof tiles, dark openings, bronze, rock
+const M = {};
+for (const [k, c] of Object.entries({ brick: 0xa4472f, brick2: 0x8f3c28, trim: 0xd9bf94, wood: 0x6b4a2e, roof: 0x6e2a1e,
+	dark: 0x1a1210, bronze: 0xb0793a, rock: 0x4a3d33, floor: 0x3a3027 }))
+	M[k] = new THREE.MeshStandardMaterial({ color: c, roughness: k === "bronze" ? 0.45 : 0.9, metalness: k === "bronze" ? 0.5 : 0 });
+
+function add(geo, mat, x, y, z, ry = 0) {
+	const m = new THREE.Mesh(geo, M[mat]);
+	m.position.set(x, y, z);
+	m.rotation.y = ry;
+	m.castShadow = m.receiveShadow = true;
+	scene.add(m);
+	return m;
+}
+// a box by its corners: x0..x1, y0..y1, z0..z1
+const box = (x0, x1, y0, y1, z0, z1, mat) => add(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), mat, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
+// 12-sided tower: a = distance to a flat side; flat sides face the four grid ways
+const ring = (x, z, a, y0, y1, mat) => add(new THREE.CylinderGeometry(a / Math.cos(Math.PI / 12), a / Math.cos(Math.PI / 12), y1 - y0, 12), mat, x, (y0 + y1) / 2, z, Math.PI / 12);
+// railing round a 12-sided deck: posts + a top rail
+function ringRail(x, z, a, y, mat = "trim") {
+	add(new THREE.TorusGeometry(a / Math.cos(Math.PI / 12) - 0.1, 0.07, 4, 12), mat, x, y + 1, z).rotation.set(Math.PI / 2, 0, Math.PI / 12);
+	for (let j = 0; j < 12; j++) { const t = j * Math.PI / 6; add(new THREE.BoxGeometry(0.15, 1, 0.15), mat, x + Math.cos(t) * (a - 0.1), y + 0.5, z + Math.sin(t) * (a - 0.1)); }
+}
+// railing along a line
+function rail(x0, z0, x1, z1, y, mat = "trim") {
+	const L = Math.hypot(x1 - x0, z1 - z0), ry = -Math.atan2(z1 - z0, x1 - x0);
+	add(new THREE.BoxGeometry(L, 0.12, 0.12), mat, (x0 + x1) / 2, y + 1, (z0 + z1) / 2, ry);
+	for (let i = 0; i <= Math.round(L / 1); i++) { const f = i / Math.round(L / 1); add(new THREE.BoxGeometry(0.12, 1, 0.12), mat, x0 + (x1 - x0) * f, y + 0.5, z0 + (z1 - z0) * f); }
+}
+// a bracket (corbel) under a balcony: a wedge, wide at the top
+function corbel(x, y, z, ry) {
+	const g = new THREE.CylinderGeometry(0.35, 0.12, 1.0, 4);
+	add(g, "trim", x, y - 0.5, z, ry + Math.PI / 4);
+}
+// windows: dark slots on a face. face: "z+" etc, along u from u0 to u1 every 2 m
+function windows(face, at, u0, u1, y, w = 0.8, h = 1.3, step = 2) {
+	for (let u = u0; u <= u1 + 0.01; u += step) {
+		if (face[0] === "z") box(u - w / 2, u + w / 2, y, y + h, at - 0.06, at + 0.06, "dark");
+		else box(at - 0.06, at + 0.06, y, y + h, u - w / 2, u + w / 2, "dark");
+		if (face[0] === "z") add(new THREE.CylinderGeometry(w / 2, w / 2, 0.12, 12, 1, false, 0, Math.PI), "dark", u, y + h, at).rotation.set(Math.PI / 2, Math.PI / 2, 0);
+	}
+}
+// ring windows: dark slots on some sides of a 12-sided tower
+function ringWindows(x, z, a, y, sides, h = 1.2) {
+	for (const j of sides) { const t = j * Math.PI / 6; add(new THREE.BoxGeometry(0.14, h, 0.7), "dark", x + Math.cos(t) * a, y + h / 2, z + Math.sin(t) * a, -t); }
+}
+// a gable roof along x (ridge along x): from x0..x1, over z0..z1, eaves at y, pitch 45 degrees
+function roofX(x0, x1, z0, z1, y, mat = "roof") {
+	const half = (z1 - z0) / 2 + 0.4, sh = new THREE.Shape();
+	sh.moveTo(-half, 0); sh.lineTo(half, 0); sh.lineTo(0, half); sh.closePath();
+	const g = new THREE.ExtrudeGeometry(sh, { depth: x1 - x0 + 0.8, bevelEnabled: false });
+	const m = add(g, mat, x0 - 0.4, y, (z0 + z1) / 2, Math.PI / 2);
+	m.position.x = x0 - 0.4;
+	return half;
+}
+const tags = [];
+function tag(text, x, y, z) {
+	const d = document.createElement("div");
+	d.className = "tag";
+	d.textContent = text;
+	const o = new CSS2DObject(d);
+	o.position.set(x, y, z);
+	scene.add(o);
+	tags.push(o);
+}
+
+// ---- the cave: floor, a dip under the bridge, the rock wall behind ----
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(220, 160, 1, 1), M.floor);
+floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+box(-18.5, -10.5, -0.02, 0.01, -6.5, 1.5, "dark");              // the dip (shown as a dark hollow)
+const wall = new THREE.Mesh(new THREE.BoxGeometry(120, 30, 10), M.rock);
+wall.position.set(0, 15, -17); wall.receiveShadow = true; scene.add(wall);
+for (let i = 0; i < 18; i++) box(-50 + i * 6 + (i % 3), -46 + i * 6, 0, 1 + (i * 7 % 5), -12.5, -11.5 + (i % 2), "rock");
+
+// ---- 1. Vaults + terraces (x -8..24, z -10..2, roof 3) ----
+box(-8, 24, 0, 3, -11, 2, "brick");
+box(-8.2, 24.2, 2.9, 3.2, -11, 2.2, "trim");                    // band at the terrace line
+for (let x = -6; x <= 22; x += 4) {                              // the vault arches along the front
+	box(x - 0.9, x + 0.9, 0, 1.8, 2.0, 2.08, "dark");
+	add(new THREE.CylinderGeometry(0.9, 0.9, 0.1, 12, 1, false, 0, Math.PI), "dark", x, 1.8, 2.04).rotation.set(Math.PI / 2, Math.PI / 2, 0);
+}
+rail(-8, 2.1, 1, 2.1, 3.2); rail(9, 2.1, 24, 2.1, 3.2); rail(-8, 2, -8, -1, 3.2); rail(-8, -3, -8, -11, 3.2); rail(24, 2, 24, -11, 3.2);
+// lower front terrace (1.5 m) and the split grand stair: two side flights up to a landing, one flight up to the terrace
+box(-2, 12, 0, 1.5, 2, 8, "brick"); box(-2.1, 12.1, 1.4, 1.6, 1.9, 8.1, "trim");
+rail(-2, 8, 2, 8, 1.6); rail(8, 8, 12, 8, 1.6); rail(-2, 8, -2, 2, 1.6); rail(12, 8, 12, 2, 1.6);
+for (let i = 0; i < 4; i++) { box(2 + i * 0, 4, 0, 0.4 + i * 0.37, 8 + 0.5 * (3 - i), 8.5 + 0.5 * (3 - i), "trim"); box(6, 8, 0, 0.4 + i * 0.37, 8 + 0.5 * (3 - i), 8.5 + 0.5 * (3 - i), "trim"); }
+box(4, 6, 1.5, 1.55, 6, 8, "trim");                                // the landing
+for (let i = 0; i < 4; i++) box(3, 7, 1.5, 1.5 + (i + 1) * 0.375, 2 + (3 - i) * 0.5 + 0.5, 2 + (3 - i) * 0.5 + 1, "trim");
+tag("Split grand stair", 5, 3, 9);
+tag("Vaults", -4, 1.5, 3);
+
+// ---- 2. Smelting hall (x -2..12, z -10..-3): tall first floor 3..7.5, jettied upper 7.5..10, roof ----
+box(-2, 12, 3, 7.5, -10, -3, "brick2");
+box(-2.2, 12.2, 5.1, 5.35, -10.2, -2.8, "trim");                 // the beam band inside the tall storey
+windows("z+", -2.95, 0, 10, 3.6, 1.0, 1.9, 2);
+box(4.2, 5.8, 3, 5.6, -2.96, -2.9, "dark");                       // main door
+box(-3, 13, 7.5, 7.75, -11, -1.5, "trim");                        // the jetty floor (sticks out 1 m)
+box(-3, 13, 7.75, 10, -11, -2, "brick");
+windows("z+", -1.95, -1, 11, 8.2, 0.8, 1.2, 2);
+const h = roofX(-3, 13, -11, -2, 10);
+for (const x of [1, 9]) { box(x - 0.8, x + 0.8, 10, 12, -2.6, -1.4, "brick"); box(x - 0.4, x + 0.4, 10.3, 11.4, -1.38, -1.3, "dark"); }   // dormers
+// the long wooden front balcony at 7.5 on brackets
+box(-1, 11, 7.45, 7.65, -1.5, 0.2, "wood");
+rail(-1, 0.2, 11, 0.2, 7.65, "wood"); rail(-1, -1.5, -1, 0.2, 7.65, "wood"); rail(11, -1.5, 11, 0.2, 7.65, "wood");
+for (let x = 0; x <= 10; x += 2) corbel(x, 7.45, -0.4, 0);
+tag("Front balcony (wood)", 5, 9.2, 0.6);
+// round stair turret on the hall's front-left corner (meets the hall on one flat side)
+ring(-3.9, -3.2, 1.9, 3, 12.5, "brick");
+ring(-3.9, -3.2, 2.05, 12.3, 12.6, "trim");
+ringRail(-3.9, -3.2, 2.0, 12.6);
+ringWindows(-3.9, -3.2, 1.92, 4.5, [4, 5, 6]); ringWindows(-3.9, -3.2, 1.92, 8.5, [5, 6, 7]);
+tag("Stair turret", -3.9, 14.5, -3.2);
+tag("Smelting hall", 5, 15.5, -6.5);
+
+// ---- 3. Chimney tower (x 15..23, z -10..-2) ----
+box(15, 23, 3, 12, -10, -2, "brick");
+for (const y of [5.25, 7.5, 9.75]) box(14.8, 23.2, y - 0.12, y + 0.12, -10.2, -1.8, "trim");
+windows("z+", -1.95, 17, 21, 3.6, 0.8, 1.3, 2); windows("z+", -1.95, 17, 21, 8.1, 0.8, 1.2, 2);
+windows("x+", 23.05, -8, -4, 5.8, 0.8, 1.2, 2);
+// the wrap-round balcony halfway up (7.5) on brackets: front and right sides
+box(14.5, 24.5, 7.4, 7.6, -1.9, -0.6, "trim"); box(23.1, 24.5, 7.4, 7.6, -10, -0.6, "trim");
+rail(14.5, -0.6, 24.5, -0.6, 7.6); rail(24.5, -0.6, 24.5, -10, 7.6);
+for (let x = 16; x <= 23; x += 2) corbel(x, 7.4, -1.2, 0);
+for (let z = -9; z <= -2; z += 2) corbel(23.8, 7.4, z, 0);
+tag("Balcony halfway up", 24.5, 9.2, -1);
+// top of the square part: a cornice and four little round corner turrets on brackets
+box(14.6, 23.4, 12, 12.5, -10.4, -1.6, "trim");
+for (const [cx, cz] of [[15, -2], [23, -2], [15, -10], [23, -10]]) {
+	ring(cx, cz, 0.95, 12.5, 15, "brick"); ring(cx, cz, 1.05, 15, 15.25, "trim");
+	add(new THREE.ConeGeometry(1.25, 1.6, 12), "roof", cx, 16.05, cz, Math.PI / 12);
+	add(new THREE.CylinderGeometry(1.0, 0.25, 1.4, 12), "trim", cx, 11.8, cz, Math.PI / 12);     // its bracket
+	ringWindows(cx, cz, 0.97, 13.2, [0, 3, 6, 9], 0.9);
+}
+tag("Corner turrets", 23, 17, -2);
+// then 12-sided: the ring room, a crown deck with balconies, the chimney with a bronze cap
+ring(19, -6, 3.2, 12.5, 16.5, "brick");
+ringWindows(19, -6, 3.22, 13.4, [1, 3, 5, 7, 9, 11]);
+ring(19, -6, 3.5, 16.5, 16.8, "trim");
+ring(19, -6, 3.0, 16.8, 18.5, "brick2");
+ringRail(19, -6, 4.2, 16.8);
+add(new THREE.CylinderGeometry(4.3, 3.6, 0.3, 12), "trim", 19, 16.65, -6, Math.PI / 12);   // the crown deck sticking out
+for (let j = 0; j < 12; j += 2) { const t = j * Math.PI / 6; corbel(19 + Math.cos(t) * 3.8, 16.5, -6 + Math.sin(t) * 3.8, -t); }
+box(17.8, 20.2, 18.5, 23, -7.2, -4.8, "brick");                  // the chimney stack
+box(17.5, 20.5, 22.6, 23.0, -7.5, -4.5, "bronze");
+add(new THREE.ConeGeometry(1.9, 1.2, 4), "bronze", 19, 23.6, -6, Math.PI / 4);
+for (let i = 0; i < 5; i++) {                                     // a little smoke
+	const s = new THREE.Mesh(new THREE.SphereGeometry(0.7 + i * 0.35, 10, 8), new THREE.MeshStandardMaterial({ color: 0x6b625b, transparent: true, opacity: 0.32 - i * 0.05, roughness: 1 }));
+	s.position.set(19 + i * 0.6, 24.4 + i * 1.3, -6 - i * 0.2); scene.add(s);
+}
+tag("Chimney tower", 19, 25.5, -6);
+
+// ---- 4. Furnace house: fat round bottom, thin round neck, deck where it steps in, square porch ----
+const FX = -22.3, FZ = -2.5;
+ring(FX, FZ, 3.73, 0, 7.5, "brick");
+ring(FX, FZ, 3.9, 2.85, 3.1, "trim"); ring(FX, FZ, 3.9, 5.1, 5.35, "trim");
+ring(FX, FZ, 3.95, 7.25, 7.6, "trim");
+ringRail(FX, FZ, 3.85, 7.6);
+ringWindows(FX, FZ, 3.75, 3.6, [2, 4, 6, 8, 10]); ringWindows(FX, FZ, 3.75, 5.8, [1, 3, 5, 7, 9, 11]);
+ring(FX, FZ, 1.9, 7.6, 11.5, "brick2");                           // the neck
+ring(FX, FZ, 2.1, 11.5, 11.8, "trim");
+ringRail(FX, FZ, 2.05, 11.8);
+ringWindows(FX, FZ, 1.92, 8.6, [1, 5, 9]);
+add(new THREE.CylinderGeometry(0.9, 1.1, 0.6, 12), "bronze", FX, 12.1, FZ);   // the vent cap
+// square porch on the front (meets the ring on its front flat side)
+box(FX - 2, FX + 2, 0, 3.5, FZ + 3.73, FZ + 6.5, "brick");
+box(FX - 2.2, FX + 2.2, 3.5, 3.75, FZ + 3.6, FZ + 6.7, "trim");
+box(FX - 0.8, FX + 0.8, 0, 2.4, FZ + 6.5, FZ + 6.56, "dark");
+const ph = roofX(FX - 2, FX + 2, FZ + 3.73, FZ + 6.5, 3.75);
+tag("Furnace house", FX, 13.5, FZ);
+tag("Porch", FX, 5.5, FZ + 6);
+
+// ---- 5. Bridge: furnace's right flat side (x -18.6) to the vault terrace (x -8), 3 m up, roofed, a round pier ----
+box(-18.6, -8, 2.8, 3.05, -3.5, -1.5, "wood");
+rail(-18.6, -3.5, -8, -3.5, 3.05, "wood"); rail(-18.6, -1.5, -8, -1.5, 3.05, "wood");
+for (let x = -18; x <= -8.5; x += 2.6) { box(x - 0.1, x + 0.1, 3.05, 5.5, -3.6, -3.4, "wood"); box(x - 0.1, x + 0.1, 3.05, 5.5, -1.6, -1.4, "wood"); }
+const bh = roofX(-18.6, -8, -3.6, -1.4, 5.5, "wood");
+ring(-13.3, -2.5, 1.2, -0.2, 2.8, "brick");                        // the pier in the dip
+add(new THREE.CylinderGeometry(1.6, 1.1, 0.5, 12), "trim", -13.3, 2.55, -2.5, Math.PI / 12);
+tag("Roofed bridge", -13.3, 8, -2.5);
+
+// ---- 6. Watch turret on the terrace's front-right corner (meets the vaults on one flat side) ----
+ring(25.9, 1.0, 1.9, 0, 8.2, "brick");
+ring(25.9, 1.0, 2.6, 8.2, 8.45, "trim");
+add(new THREE.CylinderGeometry(2.6, 2.0, 0.6, 12), "trim", 25.9, 7.9, 1.0, Math.PI / 12);
+ringRail(25.9, 1.0, 2.55, 8.45);
+ringWindows(25.9, 1.0, 1.92, 3.8, [0, 1, 2]); ringWindows(25.9, 1.0, 1.92, 6.2, [11, 0, 1, 2]);
+tag("Watch turret", 25.9, 10.5, 1.0);
+
+// ---- camera spots and buttons ----
+const CAMS = { front: [[6, 26, 70], [2, 8, -4]], left: [[-62, 26, 30], [-6, 6, -4]], right: [[64, 30, 30], [10, 9, -4]], above: [[2, 90, 22], [2, 0, -3]] };
+function look(k) {
+	camera.position.set(...CAMS[k][0]); controls.target.set(...CAMS[k][1]); controls.update();
+	for (const c in CAMS) document.getElementById("c_" + c).setAttribute("aria-pressed", c === k);
+}
+for (const c in CAMS) document.getElementById("c_" + c).onclick = () => look(c);
+look("front");
+const nb = document.getElementById("names");
+nb.onclick = () => { const on = nb.getAttribute("aria-pressed") !== "true"; nb.setAttribute("aria-pressed", on); nb.textContent = on ? "Names on" : "Names off"; tags.forEach(t => (t.visible = on)); };
+function resize() {
+	const w = stage.clientWidth, hh = stage.clientHeight;
+	renderer.setSize(w, hh, false); labels.setSize(w, hh);
+	camera.aspect = w / hh; camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(stage);
+resize();
+renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); labels.render(scene, camera); });
+</script>

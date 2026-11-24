@@ -42,7 +42,7 @@ def part(x, z, y):
 		return "furnace"
 	if BRIDGE[0] - 0.1 < x < BRIDGE[1] + 0.1 and y > 1.9:
 		return "bridge"
-	if x > 14.2 and z < -1.8:
+	if x > 14.2 and (z < -1.8 or y > 3.4) or y > 12.4:   # (the crown and its balconies stick out: they belong to the tower)
 		return "tower"
 	if -3.2 < x < 13.2 and z < -1.8 and y > 3.1:
 		return "hall"
@@ -61,7 +61,7 @@ for i, p in enumerate(whole):
 	q = dict(p)
 	if k == "bridge":
 		t = x - BRIDGE[0]                                    # how far out along the bridge
-		if p["id"] == "floor" and 2.5 < t < 6.5 or p["id"] == "railing" and r < 0.5:
+		if p["id"] in ("floor", "railing") and 2.5 < t < 6.5 or p["id"] == "railing" and r < 0.5:
 			rubble.append((x, -DIP + 0.35 if 2.5 < t < 6.5 else None, z, y))
 			continue
 	elif k == "vaults":                                      # the vaults stand; doors rotted, terrace railings broken
