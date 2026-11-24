@@ -7,6 +7,12 @@ extends PanelContainer
 var _grid: GridContainer
 var _search: LineEdit
 var _info: Label
+var _tab := "All"  ## the open tab (owner, Nov 24, F842)
+var _tab_buttons := {}
+
+const TABS := ["All", "Materials", "Craftable", "Farmable", "Equipment", "Food", "Drinks", "Building", "Other"]
+const _EQUIP := ["weapon", "wear", "shield", "pickaxe", "axe", "shovel", "hammer", "lantern", "waterskin", "pack", "lens", "horn", "throw", "ammo"]
+const _MATERIAL := ["material", "gem", "fuel", "rune"]
 
 
 func _ready() -> void:
@@ -20,6 +26,21 @@ func _ready() -> void:
 	box.add_theme_constant_override("separation", 8)
 	add_child(box)
 	UiKit.label(box, "Dev: get any item (F8)  ·  click = 1, right-click = a full stack", 16, UiKit.AMBER)
+	var tab_row := HFlowContainer.new()
+	tab_row.add_theme_constant_override("h_separation", 6)
+	box.add_child(tab_row)
+	var group := ButtonGroup.new()
+	for t in TABS:
+		var tb := UiKit.dark_button(Button.new(), 14)
+		tb.text = t
+		tb.toggle_mode = true
+		tb.button_group = group
+		tb.button_pressed = t == _tab
+		tb.pressed.connect(func() -> void:
+			_tab = t
+			refresh())
+		tab_row.add_child(tb)
+		_tab_buttons[t] = tb
 	_search = LineEdit.new()
 	_search.placeholder_text = "Search (bolt, crossbow, copper…)"
 	_search.text_changed.connect(func(_t: String) -> void: refresh())
@@ -37,11 +58,39 @@ func _ready() -> void:
 	refresh()
 
 
-## Every item id, sorted by name, filtered by the search box.
-static func all_ids(filter: String = "") -> Array:
+## Which tabs an item shows under (besides "All"). Craftable and Farmable overlap with the others; every item has
+## one "main" tab, and anything that fits none of them lands in Other.
+static func tabs_of(id: String) -> Array:
+	var out := ["All"]
+	var k := Items.kind(id)
+	var main := "Other"
+	if Foods.is_drink(id) or k == "drink":
+		main = "Drinks"
+	elif k == "food":
+		main = "Food"
+	elif k in _EQUIP:
+		main = "Equipment"
+	elif k in ["station", "chest"]:
+		main = "Building"
+	elif k in _MATERIAL:
+		main = "Materials"
+	out.append(main)
+	for r in Recipes.LIST:
+		if Recipes.LIST[r].output == id:
+			out.append("Craftable")
+			break
+	if k == "seed" or Station.can_plant(id) or Station.CROPS.has(id):
+		out.append("Farmable")
+	return out
+
+
+## Every item id, sorted by name, filtered by the open tab and the search box.
+static func all_ids(filter: String = "", tab: String = "All") -> Array:
 	var ids := []
 	var f := filter.strip_edges().to_lower()
 	for id in Items._data():
+		if tab != "All" and not tabs_of(id).has(tab):
+			continue
 		if f == "" or String(id).to_lower().contains(f) or Items.display_name(id).to_lower().contains(f):
 			ids.append(id)
 	ids.sort_custom(func(a, b): return Items.display_name(a) < Items.display_name(b))
@@ -53,7 +102,7 @@ func refresh() -> void:
 		return
 	for c in _grid.get_children():
 		c.queue_free()
-	for id in all_ids(_search.text):
+	for id in all_ids(_search.text, _tab):
 		var b := Button.new()
 		b.custom_minimum_size = Vector2(64, 64)
 		b.tooltip_text = Items.display_name(id)

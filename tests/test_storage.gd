@@ -179,6 +179,27 @@ func test_chest_lid_swings_open_and_shut() -> void:
 	_teardown()
 
 
+## F8 item menu tabs (owner, Nov 24, F842).
+func test_dev_item_menu_tabs() -> void:
+	var untabbed := []
+	for id in Items.ids():
+		var t := DevItems.tabs_of(id)
+		if t.size() < 2 or not t.has("All"):
+			untabbed.append(id)
+	check(untabbed.is_empty(), "every item is in a tab (%s)" % str(untabbed))
+	check(DevItems.all_ids("", "Food").has("root_tuber"), "a food is under Food")
+	check(DevItems.all_ids("", "Drinks").has("water_bucket"), "a drink is under Drinks")
+	check(not DevItems.all_ids("", "Food").has("water_bucket"), "a drink is not under Food")
+	check(DevItems.all_ids("", "Equipment").has("pickaxe_stone"), "a pickaxe is under Equipment")
+	check(DevItems.all_ids("", "Farmable").has("tuber_seed"), "a seed is under Farmable")
+	check(DevItems.all_ids("", "Craftable").has("pickaxe_stone"), "a made thing is under Craftable")
+	check(DevItems.all_ids("tuber", "Food").has("root_tuber"), "search finds it inside its tab")
+	check(not DevItems.all_ids("tuber", "Drinks").has("root_tuber"), "and not inside another tab")
+	check(DevItems.all_ids("tuber").has("root_tuber"), "and in All")
+	for t in DevItems.TABS:
+		check(DevItems.all_ids("", t).size() > 0, "tab %s has items" % t)
+
+
 ## F8 item menu (owner, Nov 19): every item is listed, search works, a click puts it straight into your bag.
 func test_dev_item_menu_gives_items() -> void:
 	await _setup()
