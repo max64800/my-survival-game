@@ -539,7 +539,6 @@ const ROCK_SINK_OK := 0.6  ## pieces may poke this far into rock (was 0.35; owne
 const SLOPE_SINK_OK := 1.0  ## stairs and ramps: their upper corners are mostly empty air
 const BOTTOM_SINK_OK := 0.6  ## floors/pillars/stairs/props may sink their bottom this deep
 const BUILD_REACH := 8.0
-const WORKBENCH_RANGE := 20.0
 
 
 ## Building economy (owner, Nov 20): a first 6 x 6 m Shack takes about 15 min of gathering, Stonehold about 2x
@@ -628,7 +627,6 @@ static func turns_freely(piece: String) -> bool:
 	return info.get("place", "") == "free" and not info.get("on_wall", false) and not info.get("group", "") in ["legacy", "roof", "mining"]
 
 
-
 ## The number to store for k × 30° (a quarter turn when it is one).
 static func rot_from_steps(k: int) -> int:
 	k = posmod(k, 12)
@@ -636,6 +634,8 @@ static func rot_from_steps(k: int) -> int:
 
 
 static func yaw_of(rot: int) -> float:
+	if rot < FREE_ROT:
+		return steps_of(rot) * PI / 6.0  # the very same numbers as before for grid turns (ruins, saves)
 	return fives_of(rot) * PI / 36.0
 
 
@@ -772,6 +772,11 @@ static func snap(piece: String, p: Vector3, n: Vector3, yaw: float, rot: int, li
 		if not sp.is_empty():
 			sp.pos.y += lift
 			return sp
+	if piece == "stairs" and anchor_piece.get("piece", "") == "stairs":
+		var st := snap_stairs_on_stairs(n, rot, anchor_piece)
+		if not st.is_empty():
+			st.pos.y += lift
+			return st
 	if not anchor_piece.is_empty():
 		var e := _snap_to_edges(piece, p, n, anchor_piece)
 		if not e.is_empty():
@@ -830,6 +835,23 @@ static func snap(piece: String, p: Vector3, n: Vector3, yaw: float, rot: int, li
 
 
 const FREE_MOVE := 0.1  ## furniture moves in 10 cm steps
+
+
+## F839 (owner, Nov 24: a big gap and a stutter between stairs): stairs on stairs snap flush, no gap, no step.
+##  - aiming at its slope (or its back): straight on, the new flight starting exactly where this one ends, same way.
+##  - aiming at its side: right beside it, same height (Q turns it, e.g. the other way for a switchback).
+## No side walls are added (owner's choice): the player places those.
+static func snap_stairs_on_stairs(n: Vector3, rot: int, a: Dictionary) -> Dictionary:
+	if not on_square_grid(a.piece, a.rot):
+		return {}
+	var s: Vector3 = LIST["stairs"].size
+	var b := Basis(Vector3.UP, yaw_of(a.rot))
+	var ln := b.inverse() * n
+	if absf(ln.x) > 0.5:
+		return {pos = (a.pos as Vector3) + b * Vector3(signf(ln.x) * s.x, 0, 0), rot = posmod(int(a.rot) + rot, 4)}
+	if n.y > 0.5 or ln.z < -0.5:
+		return {pos = (a.pos as Vector3) + b * Vector3(0, s.y, -s.z), rot = a.rot}
+	return {}
 
 
 ## F780 (owner, Nov 22: "I cannot get them to snap together"): spiral stairs on spiral stairs and beside floors.

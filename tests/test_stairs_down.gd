@@ -102,3 +102,51 @@ func _walk_down(path: Array) -> int:
 			log.append("%.2f,%.2f/%.2f%s" % [w.global_position.x, w.global_position.z, w.global_position.y, "" if w.is_on_floor() or w.stepped_down else "*"])
 	print("STAIRS_DOWN ", " ".join(log))
 	return worst if w.done else -1
+
+
+## F839 (owner, Nov 24: a big gap and a stutter between stairs): a stair aimed at another stair snaps flush, straight
+## on (where the first ends, same way) or right beside it, and a dwarf walks up and down two flights without a stop.
+func test_stairs_snap_flush_on_stairs() -> void:
+	var a := {piece = "stairs", pos = Vector3(4, 1, 6), rot = 1}
+	var b := Basis(Vector3.UP, Pieces.yaw_of(1))
+	var on := Pieces.snap("stairs", Vector3(4, 2, 6), (b * Vector3(0, 1, 1)).normalized(), 0.0, 0, 0.0, AABB(), a)
+	check(on.pos.is_equal_approx(Vector3(4, 1, 6) + b * Vector3(0, 2, -2)) and on.rot == 1, "straight on: %s" % [on])
+	var side := Pieces.snap("stairs", Vector3(4, 1.5, 6), b * Vector3(1, 0, 0), 0.0, 0, 0.0, AABB(), a)
+	check(side.pos.is_equal_approx(Vector3(4, 1, 6) + b * Vector3(2, 0, 0)) and side.rot == 1, "beside: %s" % [side])
+	var turned := Pieces.snap("stairs", Vector3(4, 1.5, 6), b * Vector3(-1, 0, 0), 0.0, 2, 0.0, AABB(), a)
+	check(turned.pos.is_equal_approx(Vector3(4, 1, 6) + b * Vector3(-2, 0, 0)) and turned.rot == 3, "beside, Q turns it: %s" % [turned])
+
+
+func test_two_flights_straight_on_walk_smoothly() -> void:
+	_root = Node3D.new()
+	tree.root.add_child(_root)
+	for z in [4, 2]:
+		_piece("floor", "cut_stone", Vector3(0, 0.75, z), 0)
+	var a := {piece = "stairs", pos = Vector3(0, 1, 0), rot = 0}
+	_piece("stairs", "cut_stone", a.pos, 0)
+	var t := Pieces.snap("stairs", Vector3(0, 2, 0), Vector3(0, 0.7, 0.7), 0.0, 0, 0.0, AABB(), a)
+	_piece("stairs", "cut_stone", t.pos, t.rot)
+	for z in [-4, -6]:
+		_piece("floor", "cut_stone", Vector3(0, 4.75, z), 0)
+	var up := Walking.Walker.new()
+	_root.add_child(up)
+	up.global_position = Vector3(0, 1.05, 3.5)
+	up.goal = Vector3(0, 0, -5.5)
+	var pop := 0.0
+	var stalls := 0
+	var last := up.global_position
+	for i in 400:
+		await tree.physics_frame
+		if up.done:
+			break
+		var now := up.global_position
+		if now.z < 1.2 and now.z > -3.2:
+			pop = maxf(pop, now.y - last.y)
+			if now.distance_to(last) < 0.02:
+				stalls += 1
+		last = now
+	check(up.done and up.global_position.y > 4.9, "he climbs both flights (ended at %s)" % up.global_position)
+	check(pop < 0.15 and stalls == 0, "climbing over the join is smooth (biggest pop %.2f m, %d stalls)" % [pop, stalls])
+	var worst := await _walk_down([Vector3(0, 5.1, -5.5), Vector3(0, 1.0, 3.5)])
+	check(worst >= 0 and worst <= 2, "and down again with his feet on the steps (longest in the air: %d frames)" % worst)
+	_root.free()
