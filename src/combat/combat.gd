@@ -221,28 +221,19 @@ static func weapon_of(item: String) -> String:
 ## What a weapon (or a tool or shield you can hit with) hits for, as one line for its tooltip and the crafting card
 ## (owner F571, Nov 21: "weapons should show their damage"): on an enemy without armor, with its tier and upgrades.
 ## "" for things that don't fight.
-## What each damage type is good at, in plain words (owner F831). Numbers match the monster table (Monsters).
-const TYPE_INFO := {
-	slash = {name = "Slash", color = "e0a060", what = "Cuts. Good against most creatures, weaker on shells and stone."},
-	blunt = {name = "Blunt", color = "c8b090", what = "Smashes. +25% on shells and stone, and knocks foes dizzy faster."},
-	pierce = {name = "Pierce", color = "90c0e0", what = "Stabs. +25% on bats, weaker on ghosts."},
-}
+## The weapon's kind and hands, nothing more (owner F831, Nov 24: "just one- or two-handed and blunt or slash").
+const TYPE_INFO := {slash = {name = "Slash", color = "e0a060"}, blunt = {name = "Blunt", color = "d8c4a0"},
+	pierce = {name = "Pierce", color = "90c0e0"}}
 
 
-## The weapon's tip lines (BBCode, ItemTipSlot): its kind in colour, one hand or two, what that kind is good at.
+## "Blunt · one hand" (BBCode, the kind in its colour). "" for things that aren't weapons.
 static func type_text(id: String) -> String:
 	var w := weapon_of(id)
 	if w == "fists" or not WEAPONS.has(w):
 		return ""
 	var wd: Dictionary = WEAPONS[w]
 	var t: Dictionary = TYPE_INFO[wd.type]
-	var text := "[color=#%s][b]%s[/b][/color]  ·  %s" % [t.color, t.name, "two hands" if wd.hands == 2 else "one hand"]
-	if wd.hands == 1 and Items.kind(id) == "weapon" and not wd.get("ranged", false):
-		text += ", shield allowed"
-	text += "\n[color=#b8a890]%s[/color]" % t.what
-	if wd.get("armor_break", 0.0) > 0.0:
-		text += "\n[color=#b8a890]Goes through %d%% of armour.[/color]" % roundi(wd.armor_break * 100.0)
-	return text
+	return "[color=#%s]%s[/color]  ·  %s" % [t.color, t.name, "two hands" if wd.hands == 2 else "one hand"]
 
 
 static func damage_text(slot: Dictionary) -> String:

@@ -20,7 +20,7 @@ func _make_custom_tooltip(for_text: String) -> Object:
 	text.custom_minimum_size.x = WIDTH * k
 	text.add_theme_font_size_override("normal_font_size", roundi(FONT * k))
 	text.add_theme_font_size_override("bold_font_size", roundi((FONT + 3) * k))
-	text.add_theme_font_override("bold_font", UiKit.heading_font())
+	text.add_theme_font_override("bold_font", load("res://assets/fonts/AlegreyaSans-Bold.ttf"))  # a real bold (fake bold smudges, F831)
 	text.add_theme_color_override("default_color", Color(0.93, 0.87, 0.76))
 	text.text = for_text
 	box.add_child(text)

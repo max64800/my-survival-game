@@ -31,12 +31,15 @@ func test_stack_sizes_by_kind() -> void:
 	check_eq(Items.stack_size("pickaxe_stone"), 1, "tools 1")
 
 
-func test_total_counts_worn_gear_half() -> void:
+## Owner F834 (Nov 24): putting armour on or taking it off doesn't change your weight.
+func test_worn_gear_weighs_the_same() -> void:
 	var inv := Inventory.new(Inventory.PLAYER_SIZE)
 	inv.add("stone", 40)
 	check_eq(ItemWeights.total(inv), 40.0, "40 stone = 40")
 	inv.slots[Inventory.equip_index("chest")] = {id = "mail_copper", count = 1}
-	check_eq(ItemWeights.total(inv), 44.0, "worn copper mail (8) counts as 4")
+	check_eq(ItemWeights.total(inv), 48.0, "worn copper mail (8) counts as 8")
+	inv.swap(Inventory.equip_index("chest"), 20)
+	check_eq(ItemWeights.total(inv), 48.0, "...and the same in the bag")
 
 
 func test_slowdown_two_steps() -> void:

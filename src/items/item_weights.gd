@@ -8,7 +8,6 @@ class_name ItemWeights
 
 const HEAVY := 200.0  ## start slowing down here
 const MAX := 300.0  ## past this: OVERLOADED
-const WORN_FACTOR := 0.5  ## worn gear (equipment slots) counts half: dwarves carry armor well
 const HEAVY_SLOWEST := 0.75  ## speed just under the max (100% at HEAVY, easing down to this)
 const OVERLOADED_SPEED := 0.4  ## speed past the max
 const DEEP_POCKETS_PER_RANK := 25.0  ## the Deep Pockets perk (3 ranks = +75)
@@ -97,15 +96,14 @@ static func is_unsorted(id: String) -> bool:
 	return k == "material" or not BY_KIND.has(k)  # (a plain material must be put in a group by id)
 
 
-## Everything a dwarf (or chest) is carrying. Worn gear counts half.
+## Everything a dwarf (or chest) is carrying. Worn or not, a thing weighs the same (owner F834, Nov 24).
 static func total(inv: Inventory) -> float:
 	var t := 0.0
 	for i in inv.slots.size():
 		var s: Dictionary = inv.slots[i]
 		if s.is_empty():
 			continue
-		var w := weight(str(s.id)) * int(s.get("count", 1))
-		t += w * WORN_FACTOR if inv.is_worn(i) else w
+		t += weight(str(s.id)) * int(s.get("count", 1))
 	return t
 
 

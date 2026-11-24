@@ -6,7 +6,7 @@ Owner, Nov 23 (grill in the carry weight chat). Code: `src/items/item_weights.gd
 |---|---|---|---|
 | Slowdown shape | Two steps: free up to "heavy", then a gentle growing slowdown (100% → 75%), then OVERLOADED past the max | You see it coming before you're stuck | play tests say it feels sticky |
 | Limits | Heavy at 200, OVERLOADED at 300 (stone = 1) | Rock trips need planning, light loot barely counts | carts / pack animals arrive |
-| Worn gear | Counts half | Armor has a cost without crushing hauls | heavy metal armor tiers arrive |
+| Worn gear | Weighs the same as in the bag (was: counts half) | Owner F834, Nov 24: "your equipment should stay the same, whether your armor is equipped or not" | — |
 | Overloaded | ~40% walk speed, no sprint, no dodge roll, no jump; red warning | You can still limp home or drop things | — |
 | Raising the limit | Leather Satchel +60; Deep Pockets perk +25 per rank (3 ranks = +75); food/drink buffs via the `carry` buff key; better backpacks later (`PACK_BONUS` table) | Owner picked all four | new backpacks are made |
 | HUD | Bag window: "Weight 142 / 200"; main screen shows nothing until heavy, then a yellow "Heavy", red "OVERLOADED" next to the stamina bar | Clean screen | — |

@@ -645,7 +645,7 @@ func _refresh_slots() -> void:
 		if not s.is_empty():
 			icon.add_theme_stylebox_override("panel", _slot_style(Items.color(s.id).darkened(0.15), Items.color(s.id).lightened(0.3)))
 			panel.tooltip_text = "[b]%s[/b]" % Upgrades.display_name(s)  # "Copper Sword +2" (BBCode: ItemTipSlot, F831)
-			var kind_line := Combat.type_text(s.id)  # F831: slash / blunt / pierce in plain words
+			var kind_line := Combat.type_text(s.id)  # F831: "Blunt · one hand"
 			if kind_line != "":
 				panel.tooltip_text += "\n" + kind_line
 			var each := ItemWeights.weight(s.id)  # F793: what it weighs

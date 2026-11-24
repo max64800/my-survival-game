@@ -702,13 +702,12 @@ func _food_lines(item: String) -> void:
 	var hits := Combat.damage_text({id = item})  # (owner F571: weapons show their damage)
 	if hits != "":
 		UiKit.label(_detail_food, "•  " + hits, 15, UiKit.AMBER)
-		var kind := RichTextLabel.new()  # F831: slash / blunt / pierce in plain words
+		var kind := RichTextLabel.new()  # F831: "Blunt · one hand"
 		kind.bbcode_enabled = true
 		kind.fit_content = true
 		kind.scroll_active = false
 		kind.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		kind.add_theme_font_size_override("normal_font_size", 14)
-		kind.add_theme_font_size_override("bold_font_size", 15)
 		kind.add_theme_color_override("default_color", UiKit.AMBER)
 		kind.text = Combat.type_text(item)
 		_detail_food.add_child(kind)

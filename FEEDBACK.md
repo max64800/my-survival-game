@@ -99,10 +99,11 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F826. Putting on armour, weapons and tools takes a moment (like Valheim); a shield goes on with a right-click.** *From: you (PC, Nov 23). Said: 1×* ✅ built Nov 23, waiting for your play test: a ring fills (0.5 s, armour 1.5 s), you walk very slowly, a hit stops it
 - [ ] **F827. Right-click a food or drink to eat or drink it.** *From: you (PC, Nov 23). Said: 1×* ✅ built Nov 23 (food chat): right-click a food or drink in the open bag to eat it. Waiting for your play test.
 - [ ] **F828. Taking armour off takes a ring too, and armour can't go on several at once (dragging it into a gear slot skipped the ring).** *From: you (PC, Nov 24, screenshot). Said: 1×* 🛠 in progress (bag chat, Nov 24)
-- [ ] **F829. Swapping to a mace while wearing sword + shield: the shield must stay on.** *From: you (PC, Nov 24). Said: 1×* 🛠 in progress (bag chat, Nov 24)
+- [ ] **F829. Swapping to a mace while wearing sword + shield: the shield must stay on.** *From: you (PC, Nov 24). Said: 1×* 🛠 in progress (bag chat, Nov 24) Also with a pickaxe, axe, hammer or shovel in hand (owner, Nov 24).
 - [ ] **F830. E must not close the bag.** *From: you (PC, Nov 24). Said: 1×* 🛠 in progress (bag chat, Nov 24)
-- [ ] **F831. Weapon tips: explain slash / blunt / pierce simply; right now it's a lot of text.** *From: you (PC, Nov 24). Said: 1×* 🛠 in progress (bag chat, Nov 24)
+- [ ] **F831. Weapon tips: explain slash / blunt / pierce simply; right now it's a lot of text.** *From: you (PC, Nov 24). Said: 1×* 🛠 in progress (bag chat, Nov 24) Shortened (owner, Nov 24): just "Blunt · one hand", no explanations; real bold font (the fake bold made dots).
 - [ ] **F832. The bag window text is blurry (looks like 800×600); pictures are fine.** *From: you (PC, Nov 24). Said: 1× (same cause as F445: stretched like a photo)* 🛠 in progress (bag chat, Nov 24)
+- [ ] **F834. Worn armour must weigh the same as armour in the bag (it counted half).** *From: you (PC, Nov 24). Said: 1×* ✅ built Nov 24 (bag chat): a thing weighs the same worn or not. Waiting for your play test.
 - [ ] **F801. Locked recipe shadows: in the craft menu, recipes you haven't found yet show as dark shapes with a '?'.** So you know there's more to find. Goes with the "Recipe learned" card. *From: you (PC, Nov 23, to-do review). Said: 1×*
 
 - [ ] **F758. Co-op joins must never break: test join, leave, rejoin and host change in every build; show a connection icon per friend.** Reviews of Grounded and Deep Rock: bad connections are the top complaint. Goes with F348. *From: research (`docs/research/reports/Survival game design lessons.md`), you asked to add it (PC, Nov 22). Said: 1×*

@@ -228,6 +228,12 @@ func test_shield_stays_while_a_one_hand_weapon_goes_on() -> void:
 	auth.tick_equip(0.6)
 	check_eq(ps.inventory.equipped("weapon"), "mace_stone", "the mace is on")
 	check_eq(dwarf.fight.shield_item(), "shield_stone", "...and the shield still is")
+	ps.inventory.slots[4] = {id = "pickaxe_stone", count = 1}
+	ps.inventory.set_worn(4, true)
+	ps.weapon_drawn = false
+	ps.selected_slot = 4
+	check_eq(dwarf.fight.item(), "pickaxe_stone", "holding the pickaxe")
+	check_eq(dwarf.fight.shield_item(), "shield_stone", "...with the shield still on (owner: tools too)")
 	root.queue_free()
 
 
@@ -359,13 +365,14 @@ func test_q_throw_makes_a_drop_and_picks_back_up() -> void:
 	root.queue_free()
 
 
-## F831 (owner, Nov 24): weapon tips say what slash / blunt / pierce mean in plain words, in a framed box.
+## F831 (owner, Nov 24): weapon tips say the kind (slash / blunt / pierce) and one or two hands, in a framed box.
 func test_weapon_tips_explain_the_damage_kind() -> void:
-	check(Combat.type_text("mace_stone").contains("Blunt") and Combat.type_text("mace_stone").contains("shield allowed"),
-			"a mace: blunt, one hand, shield allowed")
+	check(Combat.type_text("mace_stone").contains("Blunt") and Combat.type_text("mace_stone").contains("one hand"),
+			"a mace: blunt, one hand")
 	check(Combat.type_text("sword_copper").contains("Slash"), "a sword: slash")
 	check(Combat.type_text("mace_2h_copper").contains("two hands"), "a great mace: two hands")
-	check(Combat.type_text("crossbow_stone").contains("armour"), "the crossbow goes through armour")
+	check(not Combat.type_text("crossbow_stone").contains("
+"), "just one line, no explanations (owner)")
 	check_eq(Combat.type_text("stone"), "", "a rock: nothing")
 	var slot := ItemTipSlot.new()
 	tree.root.add_child(slot)
