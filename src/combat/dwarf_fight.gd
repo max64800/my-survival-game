@@ -83,6 +83,11 @@ func has_shield() -> bool:
 ## The shield shown on the left arm ("" = none): while one can be used (has_shield) and a weapon or shield is selected.
 ## The selected shield, else the equipped one, else the best on the hotbar.
 func shield_item() -> String:
+	var ps0 := _ps()
+	if ps0 and not ps0.equip_job.is_empty() and Items.kind(str(ps0.equip_job.id)) == "weapon" \
+			and Combat.WEAPONS.get(Combat.weapon_of(str(ps0.equip_job.id)), {}).get("hands", 1) == 1 \
+			and ps0.inventory.equipped("shield") != "" and off_hand_free(ps0):
+		return ps0.inventory.equipped("shield")  # swapping to a one-hand weapon: the shield stays on (owner F829)
 	if not weapon_mode() or not has_shield():
 		return ""
 	if Items.kind(item()) == "shield":

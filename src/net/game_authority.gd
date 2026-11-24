@@ -106,7 +106,8 @@ class PlayerState:
 	var selected_slot := 0
 	var weapon_drawn := false  ## F: fighting with the equipped weapon (+ shield)
 	var hands_empty := false  ## the picked hotbar number pressed again: tool put away (owner, Nov 17)
-	var equip_job := {}  ## putting something on (F826): {index, id, left, total}; on the player's own computer only
+	var equip_job := {}  ## putting something on (F826): {index, id, left, total, to, to_id, ring}; own computer only
+	var equip_queue: Array = []  ## the next ones (F828): several armour pieces go on one after another
 	var fuel := GameAuthority.MAX_FUEL
 	var needs_lantern := false  ## true = started with nothing: no light until you pick up the Lantern
 	var thrifty_saved := 0.0  ## Thrifty perk: wear skipped so far (1.0 = skip the next one)
@@ -135,7 +136,7 @@ class PlayerState:
 
 	func _init() -> void:
 		inventory.changed.connect(_note_seen)
-		vitals.damaged.connect(func(_amount: float): equip_job = {})  # a hit stops putting something on (owner F826)
+		vitals.damaged.connect(func(_amount: float): equip_job = {}; equip_queue.clear())  # a hit stops it (owner F826)
 		inventory.changed.connect(func(): vitals.gear = Gems.armor_bonus(inventory))  # armor gems work on your body
 		vitals.progress = progress
 
@@ -1568,9 +1569,10 @@ func request_draw_weapon(peer_id: int, on: bool) -> void:
 # ---------------------------------------------------------------- putting things on (F826, owner Nov 23, like Valheim)
 # Right-click armour, a weapon, a shield, a tool: a ring fills (EquipTime.seconds_for) while you walk very slowly;
 # a hit stops it. The ring runs on the player's own computer (that's where hits land, Vitals.damaged); when it's
-# full the host is asked and does the change, and the new inventory goes back to the player. Taking off is instant.
+# full the host is asked and does the change, and the new inventory goes back to the player. Taking armour off takes a ring too (F828); several wait in a queue.
 
-## Right-click in the bag (or a hotbar pick): start putting slot `index` on, or take it off right away.
+## Right-click in the bag (or a hotbar pick): start putting slot `index` on or taking it off. Armour takes a ring
+## both ways (F828); weapons, tools and shields come off at once. Busy already? It waits its turn.
 func ask_equip(index: int) -> void:
 	var me := get_player(local_peer_id())
 	if me == null:
@@ -1578,36 +1580,79 @@ func ask_equip(index: int) -> void:
 	var s := me.inventory.get_slot(index)
 	if s.is_empty():
 		return
-	if me.inventory.is_worn(index):
-		me.equip_job = {}
-		_send_equip(index, str(s.id))  # taking off: instant
+	var id := str(s.id)
+	var secs := EquipTime.seconds_off(id) if me.inventory.is_worn(index) else EquipTime.seconds_for(id)
+	if secs <= 0.0:
+		_send_equip(index, id)
 		return
-	if me.equip_job.get("index", -1) == index:
-		return  # already putting it on
-	var secs := EquipTime.seconds_for(str(s.id))
-	me.equip_job = {index = index, id = str(s.id), left = secs, total = secs}
+	_queue_equip(me, {index = index, id = id, left = secs, total = secs})
 
 
-## The player's own computer, every frame: fill the ring; when it's full, ask the host.
+## Dragging into or out of a gear slot (F828: it used to skip the ring). Swaps a and b once the ring is full.
+func ask_equip_move(a: int, b: int) -> void:
+	var me := get_player(local_peer_id())
+	if me == null:
+		return
+	var id_a := str(me.inventory.get_slot(a).get("id", ""))
+	var id_b := str(me.inventory.get_slot(b).get("id", ""))
+	var gear := b if Inventory.is_equip_index(b) else a
+	var going_on := id_a if gear == b else id_b
+	var coming_off := id_b if gear == b else id_a
+	var secs := maxf(EquipTime.seconds_for(going_on) if going_on != "" else 0.0,
+			EquipTime.seconds_off(coming_off) if coming_off != "" else 0.0)
+	if secs <= 0.0:
+		ask_swap(a, b)
+		return
+	_queue_equip(me, {index = a, id = id_a, to = b, to_id = id_b, ring = gear, left = secs, total = secs})
+
+
+func _queue_equip(me: PlayerState, job: Dictionary) -> void:
+	for j in [me.equip_job] + me.equip_queue:
+		if not j.is_empty() and j.index == job.index and j.get("to", -1) == job.get("to", -1):
+			return  # already on its way
+	if me.equip_job.is_empty():
+		me.equip_job = job
+	else:
+		me.equip_queue.append(job)
+
+
+## Is the job's item (and, for a drag, the other slot's) still where it was?
+static func _job_valid(me: PlayerState, job: Dictionary) -> bool:
+	if str(me.inventory.get_slot(job.index).get("id", "")) != job.id:
+		return false
+	return not job.has("to") or str(me.inventory.get_slot(job.to).get("id", "")) == job.to_id
+
+
+## The player's own computer, every frame: fill the ring; when it's full, ask the host, then start the next one.
 func tick_equip(delta: float) -> void:
 	var me := get_player(local_peer_id())
-	if me == null or me.equip_job.is_empty():
+	if me == null:
+		return
+	while me.equip_job.is_empty() and not me.equip_queue.is_empty():
+		var nxt: Dictionary = me.equip_queue.pop_front()
+		if _job_valid(me, nxt):
+			me.equip_job = nxt
+	if me.equip_job.is_empty():
 		return
 	var job := me.equip_job
-	if me.inventory.get_slot(job.index).get("id", "") != job.id:
+	if not _job_valid(me, job):
 		me.equip_job = {}  # it was moved or thrown away
 		return
 	job.left -= delta
 	if job.left <= 0.0:
 		me.equip_job = {}
-		_send_equip(job.index, job.id)
+		if job.has("to"):
+			ask_swap(job.index, job.to)
+		else:
+			_send_equip(job.index, job.id)
 
 
-## A hit (or anything else) stops it; nothing changes.
+## A hit (or anything else) stops it and everything waiting; nothing changes.
 func cancel_equip() -> void:
 	var me := get_player(local_peer_id())
-	if me and not me.equip_job.is_empty():
+	if me:
 		me.equip_job = {}
+		me.equip_queue.clear()
 
 
 func _send_equip(index: int, id: String) -> void:

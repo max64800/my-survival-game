@@ -166,6 +166,71 @@ func test_equip_ring_takes_time_and_a_hit_stops_it() -> void:
 	auth.queue_free()
 
 
+## F828 (owner, Nov 24): armour comes off with a ring too; several pieces go on one after another; dragging into
+## a gear slot fills the ring first. F829: swapping to a one-hand weapon keeps the shield on.
+func test_armour_off_ring_queue_and_drag() -> void:
+	var auth := GameAuthority.new()
+	tree.root.add_child(auth)
+	var ps := auth.add_player(1, null, false)
+	var inv := ps.inventory
+	inv.slots[10] = {id = "helm_copper", count = 1}
+	inv.slots[11] = {id = "boots_leather", count = 1}
+	inv.changed.emit()
+	auth.ask_equip(10)
+	auth.ask_equip(11)
+	check_eq(ps.equip_queue.size(), 1, "the boots wait their turn")
+	auth.tick_equip(1.6)
+	check_eq(inv.equipped("head"), "helm_copper", "the helm is on")
+	check_eq(inv.equipped("feet"), "", "the boots not yet")
+	auth.tick_equip(0.01)
+	auth.tick_equip(1.6)
+	check_eq(inv.equipped("feet"), "boots_leather", "then the boots go on")
+	auth.ask_equip(Inventory.equip_index("head"))
+	check_eq(inv.equipped("head"), "helm_copper", "taking the helm off isn't instant")
+	auth.tick_equip(1.6)
+	check_eq(inv.equipped("head"), "", "...it comes off when the ring is full")
+	var hat := -1
+	for i in Inventory.EQUIP_START:
+		if inv.get_slot(i).get("id", "") == "helm_copper":
+			hat = i
+	auth.ask_equip_move(hat, Inventory.equip_index("head"))
+	check_eq(inv.equipped("head"), "", "dragging it onto the head slot fills the ring first")
+	check_eq(int(ps.equip_job.get("ring", -1)), Inventory.equip_index("head"), "the ring shows on the head slot")
+	auth.tick_equip(1.6)
+	check_eq(inv.equipped("head"), "helm_copper", "...then it's on")
+	auth.ask_equip(Inventory.equip_index("head"))
+	auth.ask_equip(Inventory.equip_index("feet"))
+	ps.vitals.take_damage(5.0)
+	check(ps.equip_job.is_empty() and ps.equip_queue.is_empty(), "a hit stops the ring and everything waiting")
+	auth.queue_free()
+
+
+## F829: sword + shield worn, putting on a one-hand mace: the shield stays on the arm while the ring fills.
+func test_shield_stays_while_a_one_hand_weapon_goes_on() -> void:
+	var root := Node3D.new()
+	tree.root.add_child(root)
+	var auth := GameAuthority.new()
+	auth.drops_root = root
+	root.add_child(auth)
+	var dwarf := Dwarf.new()
+	root.add_child(dwarf)
+	var ps := auth.add_player(1, dwarf)
+	ps.inventory.slots[1] = {id = "sword_copper", count = 1}
+	ps.inventory.slots[2] = {id = "shield_stone", count = 1}
+	ps.inventory.slots[3] = {id = "mace_stone", count = 1}
+	ps.inventory.set_worn(1, true)
+	ps.inventory.set_worn(2, true)
+	ps.lantern_stowed = true  # (a hand lantern would fill the shield hand)
+	ps.weapon_drawn = true
+	check_eq(dwarf.fight.shield_item(), "shield_stone", "sword drawn: the shield is on the arm")
+	auth.ask_equip(3)
+	check_eq(dwarf.fight.shield_item(), "shield_stone", "putting the mace on: the shield stays")
+	auth.tick_equip(0.6)
+	check_eq(ps.inventory.equipped("weapon"), "mace_stone", "the mace is on")
+	check_eq(dwarf.fight.shield_item(), "shield_stone", "...and the shield still is")
+	root.queue_free()
+
+
 ## F825 (owner, Nov 23): Q over a slot throws it away; picking it back up keeps its wear and upgrades.
 func test_q_throw_keeps_the_items_data() -> void:
 	var inv := Inventory.new(Inventory.PLAYER_SIZE)
@@ -292,3 +357,20 @@ func test_q_throw_makes_a_drop_and_picks_back_up() -> void:
 	check(auth.request_throw(1, 1), "Q throws the sword")
 	check_eq(auth.drops_root.get_child_count(), 2, "two drops on the floor")
 	root.queue_free()
+
+
+## F831 (owner, Nov 24): weapon tips say what slash / blunt / pierce mean in plain words, in a framed box.
+func test_weapon_tips_explain_the_damage_kind() -> void:
+	check(Combat.type_text("mace_stone").contains("Blunt") and Combat.type_text("mace_stone").contains("shield allowed"),
+			"a mace: blunt, one hand, shield allowed")
+	check(Combat.type_text("sword_copper").contains("Slash"), "a sword: slash")
+	check(Combat.type_text("mace_2h_copper").contains("two hands"), "a great mace: two hands")
+	check(Combat.type_text("crossbow_stone").contains("armour"), "the crossbow goes through armour")
+	check_eq(Combat.type_text("stone"), "", "a rock: nothing")
+	var slot := ItemTipSlot.new()
+	tree.root.add_child(slot)
+	var tip = slot._make_custom_tooltip("[b]Stone Mace[/b]\n" + Combat.type_text("mace_stone"))
+	check(tip is PanelContainer and (tip.get_child(0) as RichTextLabel).get_parsed_text().begins_with("Stone Mace"),
+			"the tip box shows the name without the [b] marks")
+	tip.free()
+	slot.queue_free()

@@ -1199,8 +1199,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		if st:
 			hud.open_station(st)
 			Controls.set_captured(false)
-	elif event.is_action_pressed("interact") and hud.is_bag_open():
-		_set_bag(false)
 	elif event is InputEventMouseButton and event.pressed and not Controls.captured() and not menu_wants_cursor():
 		Controls.set_captured(true)
 		hud.set_paused(false)

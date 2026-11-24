@@ -512,7 +512,7 @@ func _overlay(root: Control, title: String, sub: String) -> Control:
 
 
 func _make_slot(index: int, key: String) -> Control:
-	var panel := Panel.new()
+	var panel := ItemTipSlot.new()  # (a framed, coloured hover tip, F831)
 	panel.custom_minimum_size = Vector2(SLOT_SIZE, SLOT_SIZE)
 	panel.name = "Slot%d" % index
 	panel.gui_input.connect(_on_slot_input.bind(index))
@@ -644,7 +644,10 @@ func _refresh_slots() -> void:
 		icon.visible = not s.is_empty() and tex == null
 		if not s.is_empty():
 			icon.add_theme_stylebox_override("panel", _slot_style(Items.color(s.id).darkened(0.15), Items.color(s.id).lightened(0.3)))
-			panel.tooltip_text = Upgrades.display_name(s)  # "Copper Sword +2"
+			panel.tooltip_text = "[b]%s[/b]" % Upgrades.display_name(s)  # "Copper Sword +2" (BBCode: ItemTipSlot, F831)
+			var kind_line := Combat.type_text(s.id)  # F831: slash / blunt / pierce in plain words
+			if kind_line != "":
+				panel.tooltip_text += "\n" + kind_line
 			var each := ItemWeights.weight(s.id)  # F793: what it weighs
 			if each > 0.0:
 				panel.tooltip_text += "\nWeight %s%s" % [ItemWeights.pretty(each * int(s.count)),
@@ -836,6 +839,9 @@ func _on_slot_input(event: InputEvent, index: int) -> void:
 		return
 	if _swap_from < 0:
 		_swap_from = index
+	elif Inventory.is_equip_index(_swap_from) or Inventory.is_equip_index(index):
+		GameAuthority.instance.ask_equip_move(_swap_from, index)  # into/out of a gear slot: the ring first (F828)
+		_swap_from = -1
 	else:
 		GameAuthority.instance.ask_swap(_swap_from, index)
 		_swap_from = -1
@@ -861,7 +867,7 @@ static func wants_equip_click(index: int, inv: Inventory) -> bool:
 	return Inventory.is_equip_index(index) or Inventory.equip_slot_for(s.id) != ""
 
 
-## Double-click / right-click: put an item on (a ring fills first, F826) or take it off (instant).
+## Double-click / right-click: put an item on or take it off (a ring fills first, F826/F828).
 ## Says why right away when it can't (no room, backpack not empty), before asking the host.
 func _quick_equip(index: int) -> void:
 	var auth := GameAuthority.instance
@@ -1587,7 +1593,7 @@ var _ring_at := -1  ## the slot that shows the putting-on ring (F826)
 ## Putting something on (F826): a gold ring fills around its slot (hotbar or bag). Gone when done or a hit stops it.
 func _show_equip_ring(ps) -> void:
 	var job: Dictionary = ps.equip_job if ps else {}
-	var at: int = job.get("index", -1)
+	var at: int = job.get("ring", job.get("index", -1))
 	if at != _ring_at and _slot_panels.has(_ring_at):
 		var old: Control = _slot_panels[_ring_at].get_node_or_null("Ring")
 		if old:
