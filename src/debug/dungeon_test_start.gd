@@ -83,7 +83,7 @@ func _run() -> void:
 				dwarf.global_position.distance_to(door), DungeonMap.space_at(d, dwarf.global_position + fwd * 8.0 + Vector3.UP)])
 			print("DUNGEON_TEST shot ", _main.take_screenshot(a.trim_prefix("shots=").path_join("dungeon_test.png")))
 			var face := DungeonMap.mouth_z(d.map)
-			var views := LAMPWICK_VIEWS if d.id == "lampwick" else PELL_VIEWS if d.id == "pell" else MOSSPROP_VIEWS if d.id == "mossprop" else [["door_close", Vector3(34.0, 0.3, face + 4.5), Vector3(34.0, 1.3, face)],
+			var views := LAMPWICK_VIEWS if d.id == "lampwick" else PELL_VIEWS if d.id == "pell" else MOSSPROP_VIEWS if d.id == "mossprop" else HALD_VIEWS if d.id == "hald" else [["door_close", Vector3(34.0, 0.3, face + 4.5), Vector3(34.0, 1.3, face)],
 					["corridor", Vector3(34.0, 0.3, face - 1.0), Vector3(34.0, 1.4, 44.0)],
 					["gate_hall", Vector3(36.0, 0.3, 45.0), Vector3(32.0, 1.4, 37.0)],
 					["doorway", Vector3(30.0, 0.3, 38.0), Vector3(34.0, 1.2, 46.0)],
@@ -114,6 +114,18 @@ func _run() -> void:
 				await _pell_walks(d)
 			get_tree().quit()
 	queue_free()
+
+
+## The Tomb of Hald Ironbrow's robot pictures (-- dungeontest dungeon5 shots=<folder>): [name, stand, look at].
+const HALD_VIEWS := [
+	["hd_gate", Vector3(42.0, 0.3, 61.0), Vector3(42.0, 1.5, 55.0)],
+	["hd_candles", Vector3(35.0, 0.3, 58.0), Vector3(25.0, 1.2, 58.0)],
+	["hd_wardens", Vector3(20.0, 0.3, 41.0), Vector3(20.0, 2.0, 31.0)],
+	["hd_grand_stair", Vector3(20.0, 0.3, 31.0), Vector3(20.0, -6.0, 21.0)],
+	["hd_broken_stair", Vector3(37.0, 0.3, 36.0), Vector3(47.0, 4.5, 36.0)],
+	["hd_names", Vector3(20.0, -7.7, 19.0), Vector3(20.0, -6.0, 9.0)],
+	["hd_bridge", Vector3(27.0, -7.7, 14.0), Vector3(40.0, -8.0, 14.0)],
+	["hd_tomb", Vector3(44.0, -7.7, 37.0), Vector3(49.0, -7.0, 43.0)]]
 
 
 ## Mossprop Workings' robot pictures (-- dungeontest dungeon4 shots=<folder>): [name, stand (map metres), look at].

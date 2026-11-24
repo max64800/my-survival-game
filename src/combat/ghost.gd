@@ -12,7 +12,7 @@ extends RefCounted
 const SHADER := preload("res://src/art/ghost.gdshader")
 const DEPTH := preload("res://src/art/ghost_depth.gdshader")  ## its front surface first: no tearing where it folds over itself
 const BODY := "res://assets/models/creatures/ghost_%s.glb"
-const LOOKS := {"ghost_a": "a", "ghost_b": "b", "ghost_c": "c", "ghost_lord": "c"}
+const LOOKS := {"ghost_a": "a", "ghost_b": "b", "ghost_c": "c", "ghost_lord": "c", "shield_brother": "c", "hald_ironbrow": "c"}
 const MACE := "mace_silver"
 ## Each ghost's mace, reshaped from the silver mace (owner, Nov 22: "make them a lot thinner", the skeletons' thick
 ## weapons looked like toys; the Bearded Shade's "twice as long", the Wrathful Shade's "very long" too):

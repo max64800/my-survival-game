@@ -186,7 +186,68 @@ const MOSSPROP := {
 	]},
 }
 
-const MAPS := [MOSSGATE, LAMPWICK, PELL, MOSSPROP]
+## The Tomb of Hald Ironbrow (owner, Nov 24, F843): a medium Stonehold-stone tomb, half fallen in and mossy, haunted
+## by the four kinds of ghost; Hald himself is the boss. Two levels: the mourners' halls at 0 and the deep burial at
+## DEEP = -8 m, joined by two stairs (the Grand Stair down from the Wardens' Hall; the Secret Stair up from the Grave
+## Chamber to the way out behind the barred gate). Each stair is four 2 m steps of its own (floors -2 .. -8) so the rock
+## fills in under them. Built by tools/dungeons/make_hald.py (docs/design/zone1-dungeons/2026-11-24-hald-decisions.md).
+## `since = 20`: real worlds only get it once CaveMaker.LAYOUT_DEFAULT reaches 20 (only its test world has it now).
+const DEEP := -8.0
+const HALD := {
+	id = "hald",
+	name = "Tomb of Hald Ironbrow",
+	mouth = Vector2(42, 70),
+	since = 20,
+	best = 130.0,
+	chase_out = true,
+	deadly = ["stair_pit", "chasm"],
+	no_raising = true,
+	spaces = [
+		["entry", 40, 62, 44, 70, 0, 3.5],                 # the way in
+		["mourners_gate", 36, 54, 48, 62, 0, 5],           # 1 bell, banners; the barred gate on its east wall
+		["exit_way", 48, 56, 66, 60, 0, 3.5],              #   behind the gate: the lever, the Secret Stair's top
+		["candle_hall", 24, 56, 36, 60, 0, 3.5],           # 2 candle niches, the dart wall
+		["offering_room", 16, 54, 24, 62, 0, 4.5],         # 3 offering tables and niches
+		["scribe_niche", 12, 56, 16, 60, 0, 3],            # 4 the scribe's bones, the loose stone
+		["statue_corridor", 18, 42, 22, 54, 0, 4],         # 5 honour guards, the falling stones
+		["wardens_hall", 14, 30, 28, 42, 0, 6],            # 6 Bearded Shades
+		["ossuary_door", 28, 34, 30, 38, 0, 3.5],
+		["ossuary", 30, 32, 38, 40, 0, 4.5],               # 7 bone walls, Drifting Shades; the cracked north wall
+		["ossuary_stash", 32, 28, 36, 32, 0, 3],           #   behind the cracked wall
+		["broken_stair", 38, 34, 44, 38, 0, 8],            # 8 4 m up to the chapel; the south half gives way
+		["stair_pit", 40, 34, 44, 36, -3, 3],              #   under the south half: spikes (falling in kills)
+		["honour_chapel", 44, 32, 52, 40, 4, 5],           # 9 the Shield-Brother (the Bronze Key)
+		["grand_stair_a", 18, 28, 22, 30, -2, 6],          # 10 the Grand Stair: 8 m down in four steps
+		["grand_stair_b", 18, 26, 22, 28, -4, 8],
+		["grand_stair_c", 18, 24, 22, 26, -6, 10],
+		["grand_stair", 18, 20, 22, 24, DEEP, 12],         #    its foot (the old door lies broken)
+		["names_hall", 14, 8, 28, 20, DEEP, 7],            # 11 name stones, carvings; Wrathful Shades
+		["embalm_door", 12, 12, 14, 16, DEEP, 3.5],
+		["embalmers", 4, 10, 12, 18, DEEP, 4.5],           # 12 stone tables, the drain grate; the hidden boulder west
+		["embalm_niche", 2, 12, 4, 14, DEEP, 3],           #    behind the boulder (the spiked chest)
+		["chapel_door", 6, 8, 10, 10, DEEP, 3.5],
+		["quiet_chapel", 4, 0, 12, 8, DEEP, 4.5],          # 13 the healing basin
+		["bridge_of_oaths", 28, 12, 42, 16, DEEP, 6],      # 14 cracked slabs over the chasm
+		["chasm", 30, 12, 40, 16, DEEP - 10.0, 10],        #    10 m down onto spikes (falling in kills)
+		["shield_hall", 42, 12, 46, 24, DEEP, 4],          # 15 shields down both walls
+		["goods_door", 46, 14, 48, 18, DEEP, 3.5],
+		["grave_goods", 48, 12, 56, 20, DEEP, 4.5],        # 19 the looted chest, the drinking horn
+		["collapsed_tunnel", 56, 14, 66, 18, DEEP, 3.5],   # 20 the tripwire; a tomb robber under the rubble
+		["antechamber", 40, 24, 48, 32, DEEP, 4.5],        # 16 guards and weapon racks; Bearded Shades
+		["tomb_door", 42, 32, 46, 36, DEEP, 3.5],
+		["halds_tomb", 40, 36, 52, 48, DEEP, 5],           # 17 Hald Ironbrow rises from his tomb
+		["bronze_door", 44, 48, 48, 50, DEEP, 3.5],        #    the locked Bronze door behind him
+		["grave_chamber", 42, 50, 50, 56, DEEP, 4.5],      # 21 the recipe stand, his armour and hammer
+		["secret_landing", 50, 50, 54, 54, DEEP, 4.5],     # 18 the Secret Stair: 8 m up in four steps
+		["secret_stair_d", 54, 50, 56, 54, DEEP, 6],
+		["secret_stair_c", 56, 50, 58, 54, -6, 8],
+		["secret_stair_b", 58, 50, 60, 54, -4, 8],
+		["secret_stair_a", 60, 50, 62, 54, -2, 6],
+		["secret_top", 62, 50, 66, 56, 0, 4],              #    its top: round into the way out
+	],
+}
+
+const MAPS := [MOSSGATE, LAMPWICK, PELL, MOSSPROP, HALD]
 
 
 ## One placed dungeon: where its mouth is in the world, which way it faces, and its boxes in world terms.

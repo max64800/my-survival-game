@@ -58,8 +58,10 @@ const DUNGEON_ONLY_2 := 1015
 const DUNGEON_ONLY_3 := 1016
 ## The Dungeon 4 test world: the same small cave with Mossprop Workings behind it.
 const DUNGEON_ONLY_4 := 1017
+## The Dungeon 5 test world: the same small cave with the Tomb of Hald Ironbrow behind it.
+const DUNGEON_ONLY_5 := 1018
 ## Test world layout -> which DungeonMap.MAPS it holds.
-const DUNGEON_TESTS := {DUNGEON_ONLY: 0, DUNGEON_ONLY_2: 1, DUNGEON_ONLY_3: 2, DUNGEON_ONLY_4: 3}
+const DUNGEON_TESTS := {DUNGEON_ONLY: 0, DUNGEON_ONLY_2: 1, DUNGEON_ONLY_3: 2, DUNGEON_ONLY_4: 3, DUNGEON_ONLY_5: 4}
 static var layout := LAYOUT_DEFAULT
 
 

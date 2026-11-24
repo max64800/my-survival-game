@@ -14,7 +14,8 @@ extends Node3D
 ## Falling into the chasm or the spike pit kills you (decisions: instant death; the grave goes where you last stood).
 
 const PLANS := {"mossgate": "res://blueprints/dungeons/mossgate_hold.json", "lampwick": "res://blueprints/dungeons/lampwick_drift.json",
-	"pell": "res://blueprints/dungeons/old_pells_diggings.json", "mossprop": "res://blueprints/dungeons/mossprop_workings.json"}
+	"pell": "res://blueprints/dungeons/old_pells_diggings.json", "mossprop": "res://blueprints/dungeons/mossprop_workings.json",
+	"hald": "res://blueprints/dungeons/tomb_of_hald_ironbrow.json"}
 ## What you bump into, in each model's own metres: [centre, size] boxes. Models not listed and not in NO_BODY get
 ## the box round the whole model.
 const BOXES := {
@@ -163,7 +164,7 @@ const HEAL_RATE := 8.0        ## health a second
 const HEAL_POOL := 30.0       ## owner, Nov 20: it heals 30 health in all, then it is dry until the dungeon refills
 ## The loot door opens when the Pack Hall's pack is dead (owner, Nov 20). It is a lock of DungeonKeys (the same saved,
 ## sent-to-everyone door state as the bigger dungeons' key doors); it shuts again when the pack moves back in.
-const LIST_ID := {"mossgate": "mossgate_hold", "lampwick": "lampwick_drift", "pell": "old_pells_diggings", "mossprop": "mossprop_workings"}  ## the dungeon's id in DungeonList / DungeonKeys
+const LIST_ID := {"mossgate": "mossgate_hold", "lampwick": "lampwick_drift", "pell": "old_pells_diggings", "mossprop": "mossprop_workings", "hald": "tomb_of_hald_ironbrow"}  ## the dungeon's id in DungeonList / DungeonKeys
 const PACK_LOCK := "pack"
 const PACK_ROOM := "pack_hall"
 const KILL := 1000000.0       ## instant death (more than any health and armour)

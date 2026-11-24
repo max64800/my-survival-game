@@ -954,6 +954,8 @@ func _kill(m: Monster, peer: int) -> void:
 		var rune := auth.rune_slab.pick_drop(GameAuthority.rune_biome_at(m.global_position), [randf(), randf(), randf(), randf()])
 		if rune != "":
 			loot.append(["rune_" + rune, 1])
+	if m.data.has("key") and auth.keys != null:  # a key-keeper (the Shield-Brother): its dungeon key falls where it died
+		auth.keys.drop_key(String(m.data.key), m.global_position + Vector3.UP * 0.5)
 	var room: Dictionary = _rooms.get(m.pack_id, {})
 	if not room.is_empty():
 		room.alive.erase(m.uid)
