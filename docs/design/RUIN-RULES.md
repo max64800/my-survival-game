@@ -151,6 +151,10 @@ New lesson? Add it to the right section here **and** add a check that would have
    down first, and waits 1 s between tries (not every frame). (F713, F565.) Check: `test_tower_rebuild_play`.
 5. **Measure the frame time at a rebuilt ruin before guessing a fix.** (F565: the Twin Gate ran at 7 FPS.)
 6. **Show both wood and stone** in the chest's text and pictures. (F689, F560.)
+7. **A placed ruin gets its strength worked out at once.** Placing a ruin adds all its pieces in one batch; before
+   F819 the strength check only ran if something was taken down, so every ruin piece had strength 0, and a tower whose
+   only missing piece was high up (nothing new below it) waited forever ("something is in the way"). Now `end_batch`
+   works the strength out after adding too. Check: `test_placed_ruin_has_its_strength`.
 
 ## 8. Old saves
 1. **A blueprint change also fixes worlds already built:** a load-time fix takes the old pieces out and puts the new
@@ -171,7 +175,7 @@ New lesson? Add it to the right section here **and** add a check that would have
 4. **No shimmer, no floating, every part touching:** no two surfaces in the same place; walls reach the roof; floors
    have rim beams; diagonal pieces end in points along the square's sides. (F165, F158, MODEL-RULES rule 2.) Check:
    model checks SHIMMER, FLOAT, OUTLINE (and look close: the checker once missed a tiny patch).
-5. **Storeys tall enough for the hall:** a big hall's storeys 1.5-2× the normal height. (F710, open.)
+5. **Storeys tall enough for the hall:** a big hall's storeys 1.5-2× the normal height. (F710, done Nov 23: the Prow Hall's hall and prow are 4.5 m.)
 
 ## 10. The camera inside buildings
 1. **The camera only bumps into big solid pieces** (walls, floors, roofs, stairs, rock); thin pieces (railings,

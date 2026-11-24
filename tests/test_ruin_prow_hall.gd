@@ -314,3 +314,29 @@ func test_rebuild_the_prow_hall_in_stone() -> void:
 				check(false, "the rebuilt %s at %s is on kept-clear ground" % [q.piece, q.pos - o])
 	check_eq(outside, 0, "every piece of the rebuilt castle stands on ground the world keeps clear")
 	world.get_parent().queue_free()
+
+
+
+## F819: the placed ruin gets its real strength at once, so a tower whose only missing pieces are high up can still be
+## rebuilt (they were stuck at strength 0: "Waiting: something is in the way").
+func test_placed_ruin_has_its_strength() -> void:
+	await _build_prow()
+	var o := RuinProwHall.built_origin
+	var basis := Basis(Vector3.UP, RuinProwHall.built_turn * PI / 2.0)
+	var b: Builder = auth.builder
+	var weak := 0
+	for uid in b.structure.pieces:
+		if b.structure.pieces[uid].stability < Pieces.MIN_STABILITY:
+			weak += 1
+	check_eq(weak, 0, "every piece of the placed ruin holds (has its strength)")
+	for at in [Vector3(-8.964096, 3.25, -4.866024), Vector3(24.9641, 3.25, -1.133976), Vector3(-17.62436, 3.25, -9.866028), Vector3(14.9641, 3.25, -14.33013)]:
+		var pos: Vector3 = o + basis * at
+		var found := false
+		for uid in b.structure.pieces:  # (the same wall one storey up: same turn)
+			var q: Dictionary = b.structure.pieces[uid]
+			if q.piece == "wall" and q.pos.distance_to(pos + Vector3.UP * 2.25) < 0.05:
+				found = true
+				check(not b.structure.overlaps("wall", pos, q.rot), "nothing stands in the missing tower wall's spot at %s" % at)
+				check(b.structure.preview_stability("wall", q.family, pos, q.rot, false) >= Pieces.MIN_STABILITY,
+					"the missing tower wall at %s can be built" % at)
+		check(found, "the tower wall above %s is there" % at)

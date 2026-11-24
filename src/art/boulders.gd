@@ -102,6 +102,20 @@ static func plan(maker: CaveMaker, avoid: Callable = Callable()) -> Array[Dictio
 	return out
 
 
+## Layout 19 on: does `p` sit deeper inside another cave's oval than inside its own `room`'s? (Caves overlap; the
+## Prow Hall's move in layout 19 put a third boulder in one cave that way.)
+static func _deeper_in_another(maker: CaveMaker, room: Dictionary, p: Vector3) -> bool:
+	var own := pow((p.x - room.center.x) / room.radii.x, 2) + pow((p.z - room.center.z) / room.radii.z, 2)
+	for other in maker.rooms:
+		if other == room:
+			continue
+		var rc: Vector3 = other.center
+		var rr: Vector3 = other.radii
+		if absf(p.y - rc.y) < rr.y * 1.5 + 2.0 and pow((p.x - rc.x) / rr.x, 2) + pow((p.z - rc.z) / rr.z, 2) < own:
+			return true
+	return false
+
+
 ## One try at a boulder in `room`: a low line from its middle to the floor by a wall. Appended to `out` if it fits.
 ## `outer`: how far out it must stand (0 = anywhere by a wall; 0.6 = the outer part of the cave's oval).
 static func _try(maker: CaveMaker, room: Dictionary, rng: RandomNumberGenerator, near: Dictionary, taken: Array,
@@ -132,6 +146,8 @@ static func _try(maker: CaveMaker, room: Dictionary, rng: RandomNumberGenerator,
 		return false  # out in the open: boulders only stand by the walls (owner F404)
 	if avoid.is_valid() and avoid.call(hit, 3.0):
 		return false
+	if maker.made_layout >= 19 and _deeper_in_another(maker, room, hit):
+		return false  # (where two caves overlap: it counts for the other cave too; keeps each cave at 1-2, F404)
 	# never floating (owner, Nov 18: "a few of them just float"): it stands as low as the lowest floor under its edge
 	var low := hit.y
 	var ok := true

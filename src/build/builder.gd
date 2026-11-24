@@ -389,6 +389,8 @@ func _ev_add_piece(uid: int, piece: String, family: String, pos: Vector3, rot: i
 	_next_uid = maxi(_next_uid, uid + 1)
 	if auth.is_host() and not batch:
 		structure.settle_added(uid)  # (F565: a new piece only makes things steadier: no whole-world check)
+	elif batch:
+		_batch_added = true
 	if not batch and not _loading:  # F724: a puff of chips and dust as it goes up (everyone sees it: this runs on every screen)
 		Fx.build_puff(get_parent(), Pieces.box(piece, pos, rot), family)
 
@@ -401,13 +403,20 @@ var _loading := false  ## reading a saved world's pieces (load_snapshot)
 
 ## F565 🔁: something was taken down during this batch (only then is the whole strength check needed at its end).
 var _batch_removed := false
+## F819: pieces were added during this batch. Their strength is worked out once at its end; before, a placed ruin kept
+## strength 0 everywhere, so a tower whose only missing piece was high up could never be rebuilt (nothing new below it
+## spread strength up).
+var _batch_added := false
 
 
 func end_batch() -> void:
 	batch = false
 	if auth.is_host() and _batch_removed:
 		_queue_shaky()
+	elif auth.is_host() and _batch_added:
+		structure.recompute()  # (only adding: nothing falls, every piece just gets its real strength)
 	_batch_removed = false
+	_batch_added = false
 
 
 @rpc("authority", "call_local", "reliable")
