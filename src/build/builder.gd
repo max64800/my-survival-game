@@ -386,6 +386,8 @@ func _ev_add_piece(uid: int, piece: String, family: String, pos: Vector3, rot: i
 		_flip_gate_leaves(pos)
 	if piece in ["stairs", "stairs_corner"] or Pieces.LIST[piece].get("place", "") == "cell":
 		_relip_stairs(pos)
+	if _affects_gaps(piece):
+		_refill_gaps(pos)
 	_next_uid = maxi(_next_uid, uid + 1)
 	if auth.is_host() and not batch:
 		structure.settle_added(uid)  # (F565: a new piece only makes things steadier: no whole-world check)
@@ -432,6 +434,8 @@ func _ev_remove_piece(uid: int) -> void:
 		_recap_spirals(p.pos)
 	if not p.is_empty() and Pieces.LIST[p.piece].get("place", "") == "cell":
 		_relip_stairs(p.pos)
+	if not p.is_empty() and _affects_gaps(p.piece):
+		_refill_gaps(p.pos)
 	if auth.is_host() and not p.is_empty():
 		if not batch:
 			_queue_shaky()  # (in a batch: once, at end_batch)
@@ -1722,6 +1726,74 @@ func _relip_stairs(at: Vector3) -> void:
 					and absf(top - (p.pos.y + s.y + PieceNode.LIP)) < 0.03 and Pieces.box(o.piece, o.pos, o.rot).has_point(past):
 				on = true
 		(nodes[uid] as PieceNode).set_lip(on)
+
+
+## F833 🔁 (F165): walls, windows and doorways (and the floors whose rim fills the slit) change the gap beams nearby.
+static func _affects_gaps(piece: String) -> bool:
+	var info: Dictionary = Pieces.LIST[piece]
+	return _stacks(piece) or info.get("group", "") in ["floor", "foundation"] or info.get("place", "") == "ceiling"
+
+
+## A wall-like piece that stands on an edge and can have another one stacked on it.
+static func _stacks(piece: String) -> bool:
+	var info: Dictionary = Pieces.LIST[piece]
+	return info.get("group", "") == "wall" and info.get("place", "") == "edge" \
+			and not info.get("shape", "") in ["door", "gable", "gable_down"]
+
+
+func _refill_gaps(at: Vector3) -> void:
+	for uid in structure.near(AABB(at - Vector3(4.5, 3.0, 4.5), Vector3(9, 6, 9))):
+		if nodes.has(uid) and _stacks(structure.pieces[uid].piece):
+			(nodes[uid] as PieceNode).set_gap_fill(gap_fill_for(structure, uid))
+
+
+const GAP_MAX := 0.3  ## a bigger gap between two stacked walls was left on purpose (or is something else)
+
+
+## F833: the slit between this wall-like piece's top and the wall-like piece standing over it, when no floor fills
+## it. Returns (from x, gap height, to x) in the lower piece's own space, or zero when there's nothing to fill.
+static func gap_fill_for(st: Structure, uid: int) -> Vector3:
+	var low: Dictionary = st.pieces[uid]
+	var ls: Vector3 = Pieces.LIST[low.piece].size
+	var top: float = (low.pos as Vector3).y + ls.y
+	var back := Basis(Vector3.UP, -Pieces.yaw_of(low.rot))
+	var best := Vector3.ZERO
+	for q in st.near(AABB(Vector3(low.pos.x, top, low.pos.z) - Vector3(2.5, 0.0, 2.5), Vector3(5, GAP_MAX + 0.05, 5))):
+		if q == uid or not _stacks(st.pieces[q].piece):
+			continue
+		var up: Dictionary = st.pieces[q]
+		var gap: float = (up.pos as Vector3).y - top
+		if gap < 0.02 or gap > GAP_MAX + 0.001:
+			continue
+		if absf(sin(Pieces.yaw_of(up.rot) - Pieces.yaw_of(low.rot))) > 0.05:
+			continue  # not along the same line
+		var d: Vector3 = back * ((up.pos as Vector3) - (low.pos as Vector3))
+		if absf(d.z) > 0.05:
+			continue
+		var uw: float = Pieces.LIST[up.piece].size.x
+		var a := maxf(-ls.x * 0.5, d.x - uw * 0.5) + 0.005
+		var b := minf(ls.x * 0.5, d.x + uw * 0.5) - 0.005
+		if b - a < 0.1:
+			continue
+		if _floor_fills(st, low, top, gap, (a + b) * 0.5):
+			continue
+		best = Vector3(a, gap, b) if best.y == 0.0 else Vector3(minf(a, best.x), maxf(gap, best.y), maxf(b, best.z))
+	return best
+
+
+## Is a floor, foundation or ceiling panel at this spot of the wall's top (its rim beam fills the slit then)?
+static func _floor_fills(st: Structure, low: Dictionary, top: float, gap: float, x: float) -> bool:
+	var turn := Basis(Vector3.UP, Pieces.yaw_of(low.rot))
+	for side in [-0.2, 0.2]:
+		var spot: Vector3 = (low.pos as Vector3) + turn * Vector3(x, 0, side)
+		spot.y = top + gap * 0.5
+		for q in st.near(AABB(spot - Vector3(0.05, 0.05, 0.05), Vector3(0.1, 0.1, 0.1))):
+			var o: Dictionary = st.pieces[q]
+			var info: Dictionary = Pieces.LIST[o.piece]
+			if (info.get("group", "") in ["floor", "foundation"] or info.get("place", "") == "ceiling") \
+					and Pieces.box(o.piece, o.pos, o.rot).has_point(spot):
+				return true
+	return false
 
 
 func _spiral_at(pos: Vector3) -> int:

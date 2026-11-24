@@ -84,6 +84,10 @@ func _run() -> void:
 			await _edges(dwarf, base, lamp)
 			get_tree().quit()
 			return
+		if arg == "part=stacked":
+			await _stacked(dwarf, base, lamp)
+			get_tree().quit()
+			return
 		if arg == "part=extras":
 			await _extras(dwarf, base, lamp)
 			get_tree().quit()
@@ -183,6 +187,29 @@ func _extras(dwarf: Dwarf, base: Vector3, lamp: OmniLight3D) -> void:
 ## one doorway on its own (its open ends show), photographed close up from several angles, lit by a small
 ## warm lamp by the camera (like the lantern). Two shots 2° apart at each angle: shimmer shows as stripes
 ## that change between them. `norim` turns the shader's rim light off, to compare.
+## `part=stacked` (F833): in each style a wall, then a wall, window and doorway a storey (2.25 m) up with no floor
+## between (the Prow Hall's tall hall), and a stone wall on a wood one. The 25 cm slit should show a beam.
+func _stacked(dwarf: Dwarf, base: Vector3, lamp: OmniLight3D) -> void:
+	var rows := [["plank_root", "plank_root"], ["cut_stone", "cut_stone"], ["clay_brick", "clay_brick"], ["plank_root", "cut_stone"]]
+	for i in rows.size():
+		var row := base + Vector3(0, 0, -i * 5.0)
+		for k in 3:
+			var x := (k - 1) * 2.0
+			_place("foundation", "cut_stone", row + Vector3(x, -1, 0), 0)
+			_place("wall", rows[i][0], row + Vector3(x, 0, -1), 0)
+			_place(["wall", "window_wall", "doorway"][k], rows[i][1], row + Vector3(x, 2.25, -1), 0)
+	await _wait(0.8)
+	dwarf.visible = false
+	for i in rows.size():
+		var at := base + Vector3(0, 2.1, -i * 5.0 - 1)
+		var from := at + Vector3(1.5, 0.3, 4.5)
+		_look(dwarf, from - Vector3.UP * 1.5, at)
+		dwarf._zoom = 0.0
+		lamp.global_position = from + Vector3(0.4, 0.3, 0)
+		await _wait(0.5)
+		await _shot("stacked_%s_%s" % rows[i])
+
+
 func _edges(dwarf: Dwarf, base: Vector3, lamp: OmniLight3D) -> void:
 	var fams := ["cut_stone", "clay_brick", "plank_root"]
 	for i in fams.size():

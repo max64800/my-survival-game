@@ -420,6 +420,56 @@ func _build() -> void:
 		l.position = Vector3(0, s.y * 0.5, 0)
 		add_child(l)
 	_decor_extras(s, made != null)
+	if not ghost and gap_fill.y > 0.0:
+		_add_gap_fill()
+
+
+## F833 🔁 (F165): a wall, window or doorway standing on another one with no floor between leaves a 25 cm slit
+## (walls are 2 m, a storey 2.25 m; a floor's rim beam fills it when there is a floor). Builder._refill_gaps
+## then gives the lower piece a beam on its top: this material's own Beam model, squeezed into the slit.
+## `gap_fill` = (from x, gap height, to x) along the wall, in the piece's own space; y = 0 means none.
+## The beam reaches 1 cm into both walls (no slit left) and stands 1.5 cm proud of their faces (no shimmer).
+var gap_fill := Vector3.ZERO
+var _gap_node: Node3D
+const GAP_OVERLAP := 0.01
+const GAP_PROUD := 0.015
+
+
+func set_gap_fill(fill: Vector3) -> void:
+	if fill.is_equal_approx(gap_fill):
+		return
+	gap_fill = fill
+	if _gap_node and is_instance_valid(_gap_node):
+		_gap_node.queue_free()
+	_gap_node = null
+	if fill.y > 0.0 and not ghost and is_inside_tree():
+		_add_gap_fill()
+
+
+func _add_gap_fill() -> void:
+	var s: Vector3 = Pieces.LIST[piece].size
+	var box := Vector3(gap_fill.z - gap_fill.x, gap_fill.y + GAP_OVERLAP * 2.0, s.z + GAP_PROUD * 2.0)
+	var centre := Vector3((gap_fill.x + gap_fill.z) * 0.5, s.y + gap_fill.y * 0.5, 0.0)
+	var holder := Node3D.new()
+	holder.name = "GapFill"
+	_gap_node = holder
+	var mi := MeshInstance3D.new()
+	var made := forged_mesh("beam", family)
+	mi.mesh = made if made else PieceMesh.visual("beam", family)
+	if not made:
+		mi.material_override = _mat(family)
+	var aabb := mi.mesh.get_aabb()
+	var k := Vector3(box.x / maxf(aabb.size.x, 0.01), box.y / maxf(aabb.size.y, 0.01), box.z / maxf(aabb.size.z, 0.01))
+	mi.scale = k
+	mi.position = centre - aabb.get_center() * k
+	holder.add_child(mi)
+	var cs := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(box.x, gap_fill.y, s.z)
+	cs.shape = shape
+	cs.position = centre
+	holder.add_child(cs)
+	add_child(holder)
 
 
 ## Decor pieces: cloth parts (rug, banner) in their own colour, and the sconce's glowing crystal.
