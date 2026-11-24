@@ -120,6 +120,13 @@ func test_shield_bash_hits_with_the_shield() -> void:
 	m.state = Monster.State.CHASE
 	var dealt := auth.monsters.request_attack(1, PackedInt32Array([m.uid]), true, 2, false, false, false, true)
 	check(dealt > 0 and dealt < 13, "the bash hits like the shield's light push (%d), not the sword (13 light, more heavy)" % dealt)
+	check(dealt >= 1 and dealt <= 3, "a bash barely hurts (%d), it was 20+ on beetles (owner F841)" % dealt)
+	var full_push: float = m._knock.length()
+	check(full_push > 3.0, "a bash shoves the monster away (%.1f m/s)" % full_push)
+	ps.vitals.health = ps.vitals.max_health() * 0.1
+	m._knock = Vector3.ZERO
+	auth.monsters.request_attack(1, PackedInt32Array([m.uid]), false, 0, false, false, false, true)
+	check(m._knock.length() > full_push * 1.5, "low on health, the bash shoves much further (%.1f vs %.1f, owner F841)" % [m._knock.length(), full_push])
 	_teardown()
 
 

@@ -596,6 +596,9 @@ func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: 
 		elif not Controls.robot and randf() < Combat.crit_chance(w):  # now and then a critical hit (owner F137; never in tests: they need exact numbers)
 			dmg = roundi(dmg * Combat.CRIT_MULT)
 			crit = true  # (the number itself shows it now: bigger, red, with a "!" (F788); no separate "Critical!" word)
+		if bash:  # F841 (owner, Nov 24): a bash barely hurts; it shoves them away, harder the lower your health
+			dmg = maxi(1, roundi(dmg * BASH_DAMAGE))
+			crit = false
 		if _shield_blocks(m, ps.node.global_position, heavy):
 			dmg = roundi(dmg * SHIELD_BLOCK)
 			_ev_note.rpc(m.uid, "Blocked!")
@@ -611,6 +614,10 @@ func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: 
 			if away.length() > 0.01:
 				m.knock(away.normalized() * 3.0)  # Spear ★25: a poke pushes them back
 		_hurt_monster(m, peer, dmg, stun, Combat.effect(wd.type, m.stats()), crit)
+		var shove := (m.global_position - ps.node.global_position) * Vector3(1, 0, 1)
+		if bash and m.is_alive() and shove.length() > 0.01 and not m.data.get("boss", false):  # (after the hurt: its small push would replace this)
+			var low := 1.0 - clampf(ps.vitals.health / maxf(1.0, ps.vitals.max_health()), 0.0, 1.0)
+			m.knock(shove.normalized() * lerpf(BASH_PUSH, BASH_PUSH_LOW, low) / maxf(1.0, float(m.data.get("size", 1.0))))
 		if finisher and not m.data.get("boss", false) and m.is_alive() and m.hp <= m.max_hp() * 0.5:  # F607/F617: only knock down when wounded (below 50% HP); at full health they fight back
 			var away_fin := (m.global_position - ps.node.global_position) * Vector3(1, 0, 1)
 			if away_fin.length() > 0.01:
@@ -627,6 +634,9 @@ func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: 
 ## The Prop Warden's plank shield (owner, Nov 21): a hit from the front does only this much, unless it is a heavy
 ## swing or he is stunned. Get round him (or stun him) to hurt him properly.
 const SHIELD_BLOCK := 0.2
+const BASH_DAMAGE := 0.2  ## a shield bash does a fifth of the shield's damage (F841: it was 20+ on beetles)
+const BASH_PUSH := 7.0  ## the bash's shove (m/s) at full health ...
+const BASH_PUSH_LOW := 16.0  ## ... and when nearly dead: shove them further away (owner F841)
 
 
 func _shield_blocks(m: Monster, from: Vector3, heavy: bool) -> bool:
