@@ -12371,3 +12371,10 @@ wall into another cave only gets the small speckle tube.
 - **Full suite:** every Prow Hall test passes, including the 35-minute stone rebuild. Still failing, not ours: the
   sword-digs test (combat chats' unsaved work), the tower ground keep-clear test, robot saves, miner numbers, and one
   Jolt "too many bodies" error in the wood test.
+
+
+## 2026-11-24 (PC) — Weight dial: the white "heavy" line hides once you're past it (F793)
+- **Owner play test:** the weight dial works and they like it. One change: the thin white line (where "heavy" starts)
+  still showed while the dial was yellow or red and flashing, which looked wrong.
+- **Fix:** `src/ui/weight_dial.gd` `_shows_heavy_line()`: the line only shows while the dial is green. Yellow or red = no line.
+  Test checks all three colours. No hurdles this time.
