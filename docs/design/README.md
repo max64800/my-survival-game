@@ -18,6 +18,7 @@ approved it, so it always wins. The three docs below add the details and numbers
 | [`creature-craft.md`](creature-craft.md) | How the creatures are built in Blender and animated: part names, versions, what real animals taught us, lessons. | Monsters (art) |
 | [`world-and-building.md`](world-and-building.md) | The star of 7 biomes, how caves are made, special places, the map, building pieces, cave-ins, blueprints, co-op world edits. | Steps 1, 3, 4, 6 |
 | [`epic-caves-plan.md`](epic-caves-plan.md) | **Plan (F211)**: research on real caves and dwarf halls; cave kits, wonders, peek cracks; 8 choices for the owner. | When the owner picks |
+| [`player-teaching.md`](player-teaching.md) | **Research (Nov 24)**: teaching players by light, sound, shape and colour; survival games compared; 7 proposed items. | When the owner picks |
 
 **Who owns what** (if two docs ever disagree again, this decides):
 - **Item ids, recipes, stations, hardness, yields, lantern, food, runes, XP:** progression doc.
