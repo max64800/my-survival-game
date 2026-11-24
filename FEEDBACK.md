@@ -162,6 +162,7 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F697. Bronze: Zone 1 is big, so it needs a metal between copper and iron.** Tin ore + copper = bronze. *From: you (Mac, Nov 22, phone notes + TikToks). Said: 2×* (Nov 22, late evening: you asked again, bronze for Zone 1.)
   Plan written (Nov 24): docs/decisions/2026-11-24-zone1-metal-and-loot.md (tin in Zone 1 cave walls, bronze = copper ingot + tin ore). Not built yet; free to pick up, build order step 3-5.
 - [ ] **F844. Zone 1 loot plan: copper recipes in ruins, bronze recipes in dungeons, skull signposts (1-3) with the recipe picture at each dungeon entrance, each dungeon always the same recipe.** *From: you (PC, Nov 24). Said: 1×*
+- [ ] **F845. A new grand ruin, about as big as the Prow Hall, using every lesson so far.** Design first (idea round, plan on the 2 m grid, rule checks, 3D page); goes in the game only after your OK. *From: you (PC, Nov 24). Said: 1×* 🛠 in progress (new grand ruin chat, Nov 24)
   Plan written (Nov 24): docs/decisions/2026-11-24-zone1-metal-and-loot.md, owner answered the 4 questions. Not built yet; free to pick up, build order step 1.
   🛠 in progress (zone1 loot steps 1-2 chat, Nov 24)
 - [ ] **F698. Paths through the caves.** Trails that lead the player around: to dead ends, dungeons and ruins. Goes with F237 (places to discover). *From: you (Mac, Nov 22, phone notes + TikToks). Said: 1×*
