@@ -55,3 +55,7 @@ see_shape={
 "type": "vec3",
 "value": Vector3(0.95, 0.3, 0.75)
 }
+lantern_at={
+"type": "vec4",
+"value": Vector4(0, 0, 0, 0)
+}

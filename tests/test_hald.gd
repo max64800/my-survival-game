@@ -319,6 +319,126 @@ func test_the_tomb_is_dark() -> void:
 			check(not map.has("mood") and not map.has("torch_energy"), "%s keeps its light" % map.id)
 
 
+## F856 🔁 (owner, Nov 25: "the buried chest sits on wooden boards"): Hald's loose floor stone and recipe stand are stone.
+func test_the_niche_and_the_stand_are_stone() -> void:
+	var plan := DungeonBuild.load_plan("hald")
+	var models := {}
+	for p in plan.props:
+		models[String(p.model)] = true
+	for m in ["dungeon/floor_loose_flagstone.glb", "dungeon/recipe_stand_stone.glb"]:
+		check(models.has(m), "Hald has %s" % m)
+		check(DungeonBuild.BOXES.has(m), "%s has its own boxes" % m)
+	for m in ["dungeon/floor_loose_stone.glb", "dungeon/recipe_stand.glb"]:
+		check(not models.has(m), "no wooden %s" % m)
+	check_eq(String(plan.recipe_stand.get("kind", "")), "recipe_stand_stone", "the Storage box draws the stone stand")
+	var fl := (load("res://assets/models/dungeon/floor_loose_flagstone.glb") as PackedScene).instantiate()
+	for part in ["frame", "stone"]:
+		check(fl.find_child(part, true, false) != null, "the loose flagstone has its '%s' (the stone lifts off)" % part)
+	fl.free()
+
+
+## F857 🔁: the stone stash wall has the junction's narrow walls on both sides, and a hole right through its middle.
+func test_the_cracked_wall_has_walls_beside_it_and_a_hole() -> void:
+	var plan := DungeonBuild.load_plan("hald")
+	var at := Vector3.ZERO
+	for p in plan.props:
+		if String(p.model) == "dungeon/wall_cracked_stone.glb":
+			at = Vector3(p.pos[0], p.pos[1], p.pos[2])
+	var sides := {}
+	for p in plan.pieces:
+		if p.id == "wall_narrow" and absf(float(p.pos[1]) - at.y) < 0.1 and absf(float(p.pos[2]) - at.z) < 0.3:
+			var dx := float(p.pos[0]) - at.x
+			if absf(dx) > 1.2 and absf(dx) < 1.8:
+				sides[signf(dx)] = true
+	check(sides.has(-1.0) and sides.has(1.0), "a narrow wall on each side (%s)" % [sides.keys()])
+	var wall := (load("res://assets/models/dungeon/wall_cracked_stone.glb") as PackedScene).instantiate() as Node3D
+	var hits := 0
+	for mi in wall.find_children("*", "MeshInstance3D", true, false):
+		var m := mi as MeshInstance3D
+		var rel := DungeonBuild._rel_xform(wall, m)
+		var tm := m.mesh.generate_triangle_mesh()
+		for y in [0.8, 0.95, 1.1]:
+			var from := rel.affine_inverse() * Vector3(0.1, y, 2.0)
+			var dir := rel.basis.inverse() * Vector3(0, 0, -1)
+			if not tm.intersect_ray(from, dir).is_empty():
+				hits += 1
+	check_eq(hits, 0, "you can see right through the hole in its middle")
+	wall.free()
+
+
+## F871: the sign on the way-in's lintel is cut deep and its runes glow (it was far too faint).
+func test_the_lintel_runes_glow() -> void:
+	var ent := (load("res://assets/models/dungeon/entrance_stone.glb") as PackedScene).instantiate()
+	var glows := false
+	for mi in ent.find_children("*", "MeshInstance3D", true, false):
+		var m := (mi as MeshInstance3D).mesh
+		for k in m.get_surface_count():
+			var mat := m.surface_get_material(k) as StandardMaterial3D
+			if mat and mat.emission_enabled:
+				glows = true
+	check(glows, "the runes glow")
+	ent.free()
+
+
+## F875 (owner, Nov 25: "it only works when I look at the foot of its post"): the stand's touch box reaches its book.
+func test_the_recipe_stand_works_from_its_book() -> void:
+	for kind in ["recipe_stand", "recipe_stand_stone"]:
+		var st := Storage.new()
+		var body := StaticBody3D.new()
+		st.add_child(body)
+		st._build_look(body, kind)
+		var top := 0.0
+		for cs in body.find_children("*", "CollisionShape3D", true, false):
+			var sh := (cs as CollisionShape3D).shape as BoxShape3D
+			if sh:
+				top = maxf(top, (cs as CollisionShape3D).position.y + sh.size.y * 0.5)
+		check(top >= 1.15, "%s: the touch box reaches over the book (top %.2f m)" % [kind, top])
+		st.free()
+
+
+## F844 (owner, said 2x): a signpost at the way in: skulls for how hard, the recipe's picture, a tick once learned.
+func test_the_signpost_at_the_way_in() -> void:
+	check_eq(DungeonBuild.SIGN_SKULLS.small.size(), 1, "small: 1 skull")
+	check_eq(DungeonBuild.SIGN_SKULLS.medium.size(), 2, "medium: 2 skulls")
+	check_eq(DungeonBuild.SIGN_SKULLS.big.size(), 3, "big: 3 skulls")
+	var m := _test_world()
+	var d := _hald(m)
+	var spot := DungeonBuild.sign_spot(m, d)
+	check(not spot.is_empty(), "there is a spot for it")
+	if spot.is_empty():
+		return
+	var t: Transform3D = spot.xform
+	check(DungeonBuild.sign_clear(m, t), "open air round it (no rock through it)")
+	check(m.sdf_at(t.origin + Vector3.DOWN * 0.15) <= 0.0, "it stands on the floor")
+	var mouth: Vector2 = d.map.mouth
+	var local := (d.basis as Basis).inverse() * (t.origin - (d.mouth as Vector3))
+	check(absf(local.x) >= DungeonMap.DOOR_HOLE.x * 0.5 + 0.6, "off the path (%.1f m to the side)" % local.x)
+	var kept := false  # (the placement rule: inside the doorway's clear circle, so nothing the world grows stands in it)
+	for r in m.reserved:
+		var flat := Vector2(t.origin.x - r.pos.x, t.origin.z - r.pos.z)
+		if flat.length() + 0.4 <= float(r.r):
+			kept = true
+	check(kept, "nothing grows on it")
+	var rig := _rig()
+	var db: DungeonBuild = rig.db
+	var sp: Node3D = db.signs.get("tomb_of_hald_ironbrow")
+	check(sp != null, "the game puts it up")
+	if sp:
+		var shown := []
+		for part in ["skull_l", "skull_mid", "skull_r"]:
+			if (sp.find_child(part, true, false) as Node3D).visible:
+				shown.append(part)
+		check_eq(shown.size(), 2, "a medium dungeon: 2 skulls")
+		var pic := sp.find_child("Picture", true, false) as Sprite3D
+		check(pic != null and pic.texture != null, "the recipe's picture on the board")
+		var tick := sp.find_child("tick", true, false) as Node3D
+		check(tick != null and not tick.visible, "no tick before the recipe is learned")
+		rig.auth.world_state.learned = [DungeonList.recipe_of("tomb_of_hald_ironbrow")]
+		db.update_signs()
+		check(tick != null and tick.visible, "a tick once it is learned")
+	rig.root.queue_free()
+
+
 ## The Shield-Brother drops the Bronze Key when he dies (or the Grave Chamber stays shut).
 func test_the_shield_brother_drops_the_bronze_key() -> void:
 	var root := Node3D.new()

@@ -20,6 +20,9 @@ uniform float flat_shading = 0.0;  // 1 = old low-poly facets
 uniform vec3 see_from = vec3(0.0);
 uniform vec3 see_to = vec3(0.0);
 uniform float see_radius = 0.0;
+// F870 (owner, Nov 25: "ore glints in lantern light"): your own lantern (Lantern._process): xyz = where, w = its reach
+// (0 = no lantern / empty). Copper and tin veins near it get tiny twinkling sparkles.
+global uniform vec4 lantern_at;
 
 // Glow colour of the alpha-marked veins, per material number.
 const vec3 GLOW[16] = vec3[16](
@@ -224,6 +227,9 @@ void fragment() {
 	vec3 nrm = vec3(0.0);
 	float rough = 0.0;
 	float metal = 0.0;
+	float ore = 0.0;  // how much copper / tin vein is here (for the glints)
+	float ore_tin = 0.0;
+	float ore_vein = 0.0;  // ... and how much of it is the shiny vein / flakes
 	float ids[4] = float[4](v_indices.x, v_indices.y, v_indices.z, v_indices.w);
 	float ws[4] = float[4](w.x, w.y, w.z, w.w);
 	// Which of the 4 looks of each material shows here (owner F213): big patches from world-position noise, so every
@@ -255,6 +261,39 @@ void fragment() {
 		nrm += n * ws[k];
 		rough += mix(ROUGH[id], 0.35, a.a * METAL[id]) * ws[k];
 		metal += METAL[id] * a.a * ws[k];
+		if (id == 3 || id == 6) {
+			ore += ws[k];
+			ore_vein += a.a * ws[k];
+			ore_tin += (id == 6 ? 1.0 : 0.0) * ws[k];
+		}
+	}
+	// Ore glints (F870): on copper and tin rock (more on its veins), a few tiny four-point stars flash white-hot for a moment, only when your
+	// lantern is near and shines on them; each speck at its own time, and they shift as you move (like glitter).
+	if (ore > 0.05 && lantern_at.w > 0.5) {
+		vec3 L = lantern_at.xyz - v_world;
+		float dl = length(L);
+		float reach = (1.0 - smoothstep(lantern_at.w * 0.3, lantern_at.w * 0.55, dl)) * clamp(dot(wn, L / dl), 0.0, 1.0);
+		vec3 gp = v_world * 10.0;  // one possible glint per 10 cm cube
+		vec3 cell = floor(gp);
+		float h = hash(cell + vec3(0.37, 1.7, 4.1));
+		vec3 f = fract(gp) - 0.5;
+		float off = dot(f, wn);  // how far the rock surface passes from the cube's middle
+		if (reach > 0.0 && h > mix(0.88, 0.2, clamp(ore_vein * 2.0, 0.0, 1.0)) && abs(off) < 0.25) {
+			f -= wn * off;  // the spot on the rock nearest the middle
+			vec3 t1 = normalize(cross(wn, abs(wn.y) < 0.9 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0)));
+			vec3 t2 = cross(wn, t1);
+			float d1 = abs(dot(f, t1));
+			float d2 = abs(dot(f, t2));
+			// A tiny four-point star: a bright core and two thin crossed rays.
+			float core = 1.0 - smoothstep(0.03, 0.1, length(f));
+			float rays = max((1.0 - smoothstep(0.0, 0.02, d1)) * (1.0 - smoothstep(0.0, 0.4, d2)),
+					(1.0 - smoothstep(0.0, 0.02, d2)) * (1.0 - smoothstep(0.0, 0.4, d1)));
+			float ph = hash(cell + vec3(7.1, 2.3, 5.9));
+			vec3 V = normalize(CAMERA_POSITION_WORLD - v_world);
+			float tw = pow(max(sin(TIME * (1.0 + 1.6 * ph) + ph * 40.0 + dot(V, vec3(5.0, 3.0, 4.0)) * 3.0), 0.0), 10.0);
+			vec3 gcol = mix(vec3(1.0, 0.86, 0.72), vec3(0.88, 0.94, 1.0), ore_tin / ore);  // copper warm-white, tin cool-white
+			emit += gcol * (core + rays * 0.7) * tw * min(ore * 1.5, 1.0) * reach * 9.0;
+		}
 	}
 	// Big soft light/dark patches so the texture repeats are hard to spot.
 	float macro = vnoise(v_world * 0.07) * 0.6 + vnoise(v_world * 0.21) * 0.4;

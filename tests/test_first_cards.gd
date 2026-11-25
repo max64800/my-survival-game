@@ -83,3 +83,13 @@ func test_no_old_teaching_text() -> void:
 	check(not hud.contains("lessons.text()"), "no hammer lessons in the build panel")
 	check(not ResourceLoader.exists("res://src/build/build_lessons.gd"), "the hammer lessons are gone")
 	check(hud.contains("first_cards.check("), "the HUD looks for first times")
+
+
+## F870 step 4: copper and tin twinkle in your own lantern's light (the rock paint knows where your lantern is).
+func test_ore_glints_in_lantern_light() -> void:
+	check(ProjectSettings.has_setting("shader_globals/lantern_at"), "a shared lantern_at setting for the rock paint")
+	var sh := FileAccess.get_file_as_string("res://src/world/terrain.gdshader")
+	check(sh.contains("global uniform vec4 lantern_at") and sh.contains("id == 3 || id == 6"), "the rock paint: glints on copper and tin")
+	var ln := FileAccess.get_file_as_string("res://src/player/lantern.gd")
+	check(ln.contains("global_shader_parameter_set(\"lantern_at\"") and ln.contains("peer_id == multiplayer.get_unique_id()"),
+		"only your own lantern tells the rock where it is (co-op: everyone sees glints by their own light)")

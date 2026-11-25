@@ -8,7 +8,7 @@ const BOX_LAYER := 16  ## same layer as stations, so you can aim at them and pre
 const REACH := 4.5
 ## Rows of 8 (owner, Nov 17): a barrel one row, a chest two, a stone chest three.
 const SIZES := {"barrel": 8, "chest_small": 16, "chest_stone": 24, "chest_copper": 36, "crate_ore": 60, "grave": Inventory.EQUIP_START, "builder": 24,
-	"rebuild": 24, "chest_loot": 16, "recipe_stand": 4}  ## (rebuild: the Rebuilding Chest at a ruin, owner Nov 19; docs/design/ruin-rebuild-plan.md)
+	"rebuild": 24, "chest_loot": 16, "recipe_stand": 4, "recipe_stand_stone": 4}  ## (rebuild: the Rebuilding Chest at a ruin, owner Nov 19; docs/design/ruin-rebuild-plan.md)
 ## The Ore Crate only takes ores, stone types, clay and crystals (doc 8 storage table).
 const ORE_CRATE := ["stone", "dirt", "moss", "clay", "copper_ore", "tin_ore", "silver_ore", "sporestone", "amberrock", "marble", "basalt", "brown_rock"]
 
@@ -247,7 +247,7 @@ func _ev_box(id: int, data: Array) -> void:
 		box.inv.load_data(data)
 		if box.kind == "crate_ore":
 			show_fill(box.node, box.inv)
-		elif box.kind == "recipe_stand":
+		elif String(box.kind).begins_with("recipe_stand"):
 			DungeonBuild.show_scroll(box.node, box.inv)
 
 
@@ -307,6 +307,8 @@ func _build_look(body: StaticBody3D, kind: String) -> void:
 	var size := Vector3(1.0, 0.7, 0.7) if kind != "grave" else Vector3(0.9, 0.6, 0.9)
 	if kind == "barrel":
 		size = Vector3(0.7, 0.9, 0.7)
+	if kind.begins_with("recipe_stand"):  # F875 (owner, Nov 25): the touch box was a chest's 0.7 m, under the book (at 0.9-1.1 m);
+		size = Vector3(0.78, 1.25, 0.72)  # now it reaches over the book and scroll, a little bigger than the stand itself
 	var cs := CollisionShape3D.new()
 	var sh := BoxShape3D.new()
 	sh.size = size
@@ -318,8 +320,8 @@ func _build_look(body: StaticBody3D, kind: String) -> void:
 	# A loot barrel: its own model with a lid that swings open (owner, Nov 19); the building kit's barrel is solid.
 	# (the Rebuilding Chest looks like a Builder's Chest)
 	var model := Look.forged("stations", model_id(kind))  # a real model, if made
-	if kind == "recipe_stand":  # a dungeon's recipe stand with its glowing scroll (owner, Nov 19)
-		model = Look.forged("dungeon", "recipe_stand")
+	if kind.begins_with("recipe_stand"):  # a dungeon's recipe stand with its glowing scroll (owner, Nov 19)
+		model = Look.forged("dungeon", kind)  # (recipe_stand_stone: the Tomb of Hald's stone one, F856)
 		var scroll := Look.forged("dungeon", "recipe_scroll")
 		if model and scroll:
 			scroll.name = "Scroll"  # (it rolls up and vanishes when its page is taken: DungeonBuild.show_scroll)

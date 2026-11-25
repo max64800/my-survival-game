@@ -12,6 +12,51 @@ var _clean := false  ## true = hide the HUD in the pictures
 var _plants := false  ## true = only close-ups of the cave plants and crystals (cave_plants.py models), then quit
 var _kinds := false  ## true = one picture of each passage kind and room shape (cave layout 2, F211), then quit
 var _cover := false  ## true = only close-ups of the cave life (moss, grass, small roots, lichen, ferns; cave_cover.py)
+var _ore := false  ## true = only the dwarf's lantern on the nearest copper / tin wall, a few pictures in a row (F870 glints)
+
+
+## F870: walks the dwarf up to the nearest copper or tin wall and takes 6 pictures in a row (the glints twinkle).
+func _ore_shots(dwarf: Dwarf, maker: CaveMaker) -> void:
+	var c := Vector3i(maker.spawn_point.round())
+	var spots: Array[Vector3] = []
+	for x in range(-70, 71, 2):
+		for z in range(-70, 71, 2):
+			for y in range(-8, 9, 2):
+				var v := c + Vector3i(x, y, z)
+				var m := maker.material_at(v)
+				if (m == Mat.COPPER or m == Mat.TIN) and absf(maker.sdf_at(Vector3(v))) < 1.2:
+					spots.append(Vector3(v))
+	spots.sort_custom(func(a, b): return a.distance_to(maker.spawn_point) < b.distance_to(maker.spawn_point))
+	var found := 0
+	for p in spots:
+		var e := 0.5
+		var n := Vector3(maker.sdf_at(p + Vector3(e, 0, 0)) - maker.sdf_at(p - Vector3(e, 0, 0)), 0.0,
+			maker.sdf_at(p + Vector3(0, 0, e)) - maker.sdf_at(p - Vector3(0, 0, e)))
+		if n.length() < 0.05:
+			continue  # a floor or ceiling: we want a wall
+		n = n.normalized()
+		var stand := p + n * 2.6
+		if maker.sdf_at(stand + Vector3.UP) < 1.0:
+			continue
+		var m := maker.material_at(Vector3i(p))
+		print("  ore wall: ", Mat.NAMES[m], " at ", p)
+		await _teleport(dwarf, stand, p)
+		var cam := Camera3D.new()  # a close-up of the wall, lit only by his own lantern 2.6 m away
+		cam.fov = 50.0
+		add_child(cam)
+		cam.global_position = p + n * 1.5 + Vector3.UP * 0.4
+		cam.look_at(p, Vector3.UP)
+		cam.make_current()
+		await _wait(0.4)
+		for i in 6:
+			await _shot("ore_%d_%s_%d" % [found, Mat.NAMES[m].replace(" ", "_"), i])
+			await _wait(0.25)
+		dwarf.camera.make_current()
+		cam.queue_free()
+		found += 1
+		if found >= 2:
+			break
+	print("  ore walls found: ", found, " of ", spots.size(), " ore spots")
 
 
 func _ready() -> void:
@@ -27,6 +72,8 @@ func _ready() -> void:
 			_cover = true
 		elif arg == "kinds":
 			_kinds = true
+		elif arg == "ore":
+			_ore = true
 	DirAccess.make_dir_recursive_absolute(_shots)
 	_run.call_deferred()
 
@@ -427,6 +474,10 @@ func _run() -> void:
 		return
 	if _kinds:
 		await _kind_shots(dwarf, maker)
+		get_tree().quit()
+		return
+	if _ore:
+		await _ore_shots(dwarf, maker)
 		get_tree().quit()
 		return
 	await _shot("a_spawn")

@@ -17,6 +17,9 @@
 #                           stone0..stone8 (each falls on its own when it breaks)
 #   trap_chest_spikes_stone the Embalmers' spike floor (F856): 2 x 4 m of flagstones with iron-ringed spike holes.
 #                           Parts "floor" and "spikes" (same holes and spikes as dungeon_mine.trap_chest_spikes)
+#   floor_loose_flagstone   the Scribe's Niche loose stone (F856): a Stonehold floor with a loose square stone in it
+#                           (the buried chest under it). Parts "frame" and "stone" (like dungeon_rootwood.floor_loose_stone)
+#   recipe_stand_stone      Hald's recipe stand (F856): a stone lectern, the scroll at the wooden stand's spot
 import math
 import sys
 from pathlib import Path
@@ -104,12 +107,21 @@ def entrance_stone():
 	# the lintel: two long stones and a taller middle one, 3 mm apart, resting on the pillar caps
 	for x0, x1, ya, yb in ((-1.6, -0.555, 2.49, 2.9), (-0.552, 0.552, 2.47, 2.98), (0.555, 1.6, 2.49, 2.9)):
 		S.block(((x0 + x1) / 2, (ya + yb) / 2, 0.02), (x1 - x0, yb - ya, 0.6), cut=0.045, tilt=0.15, free="xyz")
-	# three runes cut into the middle stone: dark strips set into its front face
+	# three runes cut into the middle stone (F871, owner Nov 25: "far too faint"): twice as big, a wide dark groove
+	# with a warm glowing inlay in it, so they read from across the cave even in the dark
 	before = meshes()
-	for rx, strokes in ((-0.3, [(0, 0, 90), (0.04, 0.04, 35), (0.04, -0.04, -35)]), (0.0, [(-0.04, 0, 90), (0.04, 0, 90), (0, 0, 0)]),
-			(0.3, [(0, 0, 90), (0.035, 0.05, -40), (0.035, -0.05, 40)])):
+	for rx, strokes in ((-0.3, [(0, 0, 90), (0.08, 0.08, 35), (0.08, -0.08, -35)]), (0.0, [(-0.08, 0, 90), (0.08, 0, 90), (0, 0, 0)]),
+			(0.3, [(0, 0, 90), (0.07, 0.1, -40), (0.07, -0.1, 40)])):
 		for k, (dx, dy, ang) in enumerate(strokes):   # (each stroke 4 mm further out: crossing strokes never share a face)
-			K.blk((rx + dx, 2.725 + dy, 0.306 + 0.004 * k), (0.17 if ang in (0, 90) else 0.11, 0.028, 0.03), kit.mat("charcoal"), bevel=0.004, rz=ang)
+			ln = 0.34 if ang in (0, 90) else 0.21
+			K.blk((rx + dx, 2.725 + dy, 0.306 + 0.004 * k), (ln, 0.075, 0.03), kit.mat("charcoal"), bevel=0.006, rz=ang)
+	tag(meshes() - before, "rune")
+	before = meshes()
+	for rx, strokes in ((-0.3, [(0, 0, 90), (0.08, 0.08, 35), (0.08, -0.08, -35)]), (0.0, [(-0.08, 0, 90), (0.08, 0, 90), (0, 0, 0)]),
+			(0.3, [(0, 0, 90), (0.07, 0.1, -40), (0.07, -0.1, 40)])):
+		for k, (dx, dy, ang) in enumerate(strokes):   # the glowing inlay, 1.2 cm in front of its groove
+			ln = 0.3 if ang in (0, 90) else 0.17
+			K.blk((rx + dx, 2.725 + dy, 0.318 + 0.004 * k), (ln, 0.036, 0.03), kit.glow("crystal_amber", 1.4), bevel=0.004, rz=ang)
 	tag(meshes() - before, "rune")
 
 
@@ -187,9 +199,39 @@ def lever_iron():
 
 # ---------------------------------------------------------------- the Ossuary stash's cracked wall (F857)
 def wall_cracked_stone(w=2.0, h=2.0, d=0.3):
-	"""A Stonehold wall that is about to give: a hole knocked into its middle (dark behind), three stones bulging out of line, chips on the floor in front."""
+	"""A Stonehold wall that is about to give: a ragged hole knocked right through its middle (F857 🔁, owner Nov 25:
+	"an open hole so players can see the chest"), three stones bulging out of line, chips on the floor in front."""
+	ya_h, yb_h = 0.5, 1.35    # the hole's bottom and top (low enough to see the chest on the floor behind it)
+	half = {}                 # each row through it stops at a different place (ragged): (ya, yb) -> (left, right)
+
+	def hole(ya, yb):
+		if yb <= ya_h or ya >= yb_h:
+			return None
+		r = (round(ya, 3), round(yb, 3))
+		if r not in half:   # wider in the middle rows, narrower at the top and bottom; a little off centre
+			mid = max(0.0, 1.0 - abs((ya + yb) / 2 - 0.92) / 0.45)
+			half[r] = (0.1 - 0.15 - 0.22 * mid - K.rng.uniform(0.0, 0.08), 0.1 + 0.15 + 0.22 * mid + K.rng.uniform(0.0, 0.08))
+		return half[r]
 	before = set(bpy.data.objects)
-	S.courses(w, h, d)
+	S.courses(w, h, d, hole=hole, back=False)
+	# The dark backing (layer 1) follows the hole row by row, 1 cm back from the stones' ends, so the hole is open
+	# right through and no joint between stones is see-through.
+	bx0, bx1, by0, by1 = -w / 2 + E + 0.01, w / 2 - E - 0.01, E + 0.004, h - E - 0.01
+	rows = sorted(half.items())
+	# (no shimmer: each row's strips reach 1 cm into the next ones and are a little thinner than them, every other
+	# row thinner again, so no two strip faces ever lie in the same place)
+	# (and their ends stay 3 cm off the stones' joints, or they show through the joint beside a stone's face)
+	strips = [(bx0, bx1, by0, rows[0][0][0] - 0.03, 0.62), (bx0, bx1, rows[-1][0][1] + 0.03, by1, 0.62)]
+	for i, ((ya, yb), (hl, hr)) in enumerate(rows):
+		dd = 0.56 if i % 2 == 0 else 0.5
+		strips += [(bx0, hl - 0.01, ya - 0.04, yb + 0.04, dd), (hr + 0.01, bx1, ya - 0.04, yb + 0.04, dd)]
+	fr = K.Frame()
+	for (a, b, c, e, dd) in strips:
+		if b - a > 0.01 and e - c > 0.01:
+			fr.box(((a + b) / 2, (c + e) / 2, 0.0), (b - a, e - c, d * dd), S.mortar_m(), bevel=0)
+	for o in bpy.data.objects:
+		if o not in before and o.type == "MESH" and o.get("role") is None:
+			o["role"] = "mortar"
 	made = [o for o in bpy.data.objects if o not in before and o.type == "MESH"]
 	stones = [o for o in made if o.get("role") == "stone"]
 	frame = {o.name for o in made if o.get("role") != "stone"}
@@ -197,13 +239,7 @@ def wall_cracked_stone(w=2.0, h=2.0, d=0.3):
 	def mid(o):
 		vs = [o.matrix_world @ v.co for v in o.data.vertices]
 		return (sum(v.x for v in vs) / len(vs), sum(v.z for v in vs) / len(vs))   # (game x, game y)
-	hole = sorted(stones, key=lambda o: math.hypot(mid(o)[0] - 0.15, mid(o)[1] - 1.05))[:2]
-	for o in hole:  # knocked out: a smaller broken stone sits back in the gap, the rest is the dark hollow behind
-		x, y = mid(o)
-		stones.remove(o)
-		bpy.data.objects.remove(o, do_unlink=True)
-		stones.append(S.block((x + J(0.04), y - 0.07, -0.04), (0.2, 0.14, 0.12), cut=0.03, tilt=10.0, free="xyz"))
-	for o in sorted(stones, key=lambda o: abs(mid(o)[0] + 0.45) + abs(mid(o)[1] - 0.7))[:3]:  # bulging out of line
+	for o in sorted(stones, key=lambda o: abs(mid(o)[0] + 0.55) + abs(mid(o)[1] - 0.5))[:3]:  # bulging out of line
 		o.location.y -= K.rng.uniform(0.015, 0.03)   # (Blender -y = toward the room)
 		o.rotation_euler.x += math.radians(J(3.0))
 		o.rotation_euler.y += math.radians(J(3.0))
@@ -268,6 +304,68 @@ def trap_chest_spikes_stone():
 	return {"floor": floor, "spikes": spikes}
 
 
+# ---------------------------------------------------------------- the Scribe's Niche loose stone (F856 🔁)
+def floor_loose_flagstone(w=2.0, h=0.25, dd=2.0):
+	"""The stone twin of dungeon_rootwood.floor_loose_stone (that one is a Shack board floor, made for wooden
+	Mossgate): a Stonehold floor (stone band round the edge, dark stone bed, chisel-cut flagstones) with a big
+	square stone in its middle that sits loose: a dark gap all round, one corner rocked up a finger high (the clue).
+	Parts "frame" (the floor, stays) and "stone" (lifts off; the buried chest is under it). No wood at all."""
+	jh, rd = 0.13, 0.16
+	x0, x1, z0, z1 = -w / 2 + E, w / 2 - E, -dd / 2 + E, dd / 2 - E
+	outer = [(x0, z1), (x1, z1), (x1, z0), (x0, z0)]
+	inner = [(x0 + rd, z1 - rd), (x1 - rd, z1 - rd), (x1 - rd, z0 + rd), (x0 + rd, z0 + rd)]
+	S.floor_rim(outer, inner, E, E + jh, per_side=max(2, round(max(w, dd) / 0.6)))
+	before = meshes()   # the dark stone bed inside the band (in place of the normal floor's timber joists)
+	K.blk((0, E + jh / 2 + 0.003, 0), (w - 2 * E - 2 * rd - 0.01, jh - 0.006, dd - 2 * E - 2 * rd - 0.01), dark_stone(), bevel=0)
+	tag(meshes() - before, "mortar")
+	hx, hz = 0.45, 0.4    # the loose stone's opening
+	fy0, fy1 = E + jh + 0.004, h - E
+	for (a, b, c, e) in ((x0, x1, z0, -hz), (x0, x1, hz, z1), (x0, -hx, -hz, hz), (hx, x1, -hz, hz)):
+		S.flagstones(a, b, c, e, fy0, fy1)
+	# the loose stone: 4.5 cm of dark gap all round, resting on the bed, one corner up (round 2 of the wooden one:
+	# a thin gap and a low corner didn't read as loose)
+	stone = S.block((J(0.01), (fy0 + 0.006 + fy1 + 0.008) / 2, J(0.01)), (2 * hx - 0.09, fy1 + 0.008 - fy0 - 0.006, 2 * hz - 0.09),
+		cut=0.04, tilt=0.0, dent=0.014, free="y")
+	stone.rotation_euler.x += math.radians(2.6)
+	stone.rotation_euler.y += math.radians(2.0)
+	stone.location.z += 0.012   # (Blender z = up: the raised corner a finger high, the low one still on the bed)
+	frame = meshes() - {stone.name}
+	return {"frame": frame, "stone": {stone.name}}
+
+
+# ---------------------------------------------------------------- Hald's recipe stand (F856 🔁: no wood by a chest)
+STAND_TILT = math.radians(20)        # = dungeon_rootwood.STAND_TILT: the scroll lies at the same spot and slant
+STAND_PIVOT = (0.0, 0.90, -0.11)     # (= the wooden one's pivot after its STAND_DY drop)
+
+
+def tilt_x(objs, theta, pivot):
+	"""Turn finished parts about the game's x axis through `pivot` (game coords): + tips the top toward the front
+	(= dungeon_rootwood.rot_x)."""
+	from mathutils import Matrix
+	piv = Vector(K.G(pivot))
+	m = Matrix.Rotation(theta, 4, "X")
+	for o in objs:
+		o.data.transform(o.matrix_basis)
+		o.matrix_basis = Matrix.Identity(4)
+		for v in o.data.vertices:
+			v.co = piv + (m @ (v.co - piv))
+
+
+def recipe_stand_stone():
+	"""The stone twin of dungeon_rootwood.recipe_stand, for the Tomb of Hald: a wide foot stone and a step, a square
+	shaft of two cut stones, a head stone, and a slanted reading slab with a stone lip at its front. Its top is where
+	the wooden one's is (the game lays the scroll at (0, 0.90, 0.007), tilted 20 degrees)."""
+	S.block((0, 0.08, 0), (0.62, 0.16, 0.5), dark_stone(), cut=0.035, tilt=0.0, free="xz")
+	S.block((J(0.005), 0.195, J(0.005)), (0.42, 0.08, 0.36), cut=0.03, tilt=0.0, free="xz")       # (5 mm into the foot)
+	S.block((J(0.006), 0.39, J(0.006)), (0.22, 0.32, 0.22), cut=0.03, tilt=0.3, free="xz")         # the shaft
+	S.block((J(0.006), 0.68, J(0.006)), (0.21, 0.27, 0.21), cut=0.03, tilt=0.3, free="xz")
+	before = meshes()
+	S.block((0, 0.832, -0.01), (0.32, 0.075, 0.24), dark_stone(), cut=0.025, tilt=0.0, free="xz")  # the head stone
+	S.block((0, 0.90, 0.0), (0.6, 0.08, 0.44), cut=0.035, tilt=0.0, dent=0.01, free="xz")          # the reading slab, top at 0.94
+	S.block((J(0.005), 0.962, 0.195), (0.56, 0.05, 0.05), dark_stone(), cut=0.015, tilt=0.0, free="xyz")  # the lip (5 mm into the slab)
+	tilt_x([bpy.data.objects[n] for n in meshes() - before], STAND_TILT, STAND_PIVOT)
+
+
 def save(name, groups=None):
 	"""Apply modifiers, join each group into one named part (or everything into "model"), export .glb."""
 	objs = [o for o in bpy.data.objects if o.type == "MESH"]
@@ -313,7 +411,8 @@ def save(name, groups=None):
 
 
 BUILDS = {"entrance_stone": entrance_stone, "gate_iron": gate_iron, "lever_iron": lever_iron,
-	"wall_cracked_stone": wall_cracked_stone, "trap_chest_spikes_stone": trap_chest_spikes_stone}
+	"wall_cracked_stone": wall_cracked_stone, "trap_chest_spikes_stone": trap_chest_spikes_stone,
+	"floor_loose_flagstone": floor_loose_flagstone, "recipe_stand_stone": recipe_stand_stone}
 
 if __name__ == "__main__":
 	for name, fn in BUILDS.items():

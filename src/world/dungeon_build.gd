@@ -22,6 +22,7 @@ const BOXES := {
 	"build/floor__plank_root.glb": [[Vector3(0, 0.12, 0), Vector3(2, 0.24, 2)]],
 	"dungeon/floor_old.glb": [[Vector3(0, 0.12, 0), Vector3(2, 0.24, 2)]],
 	"dungeon/floor_loose_stone.glb": [[Vector3(0, 0.12, 0), Vector3(2, 0.24, 2)]],
+	"dungeon/floor_loose_flagstone.glb": [[Vector3(0, 0.12, 0), Vector3(2, 0.24, 2)]],  # (Hald's stone twin, F856)
 	"dungeon/trap_floor_break.glb": [[Vector3(0, 0.12, 0), Vector3(2, 0.24, 2)]],
 	"build/wall__plank_root.glb": [[Vector3(0, 1, 0), Vector3(2, 2, 0.29)]],
 	"dungeon/wall_old.glb": [[Vector3(0, 1, 0), Vector3(2, 2, 0.29)]],
@@ -89,6 +90,7 @@ const BOXES := {
 	# just its two posts (the shaft under its arms stays open). The lift platform has its own moving body.
 	"dungeon/trap_spear_wall.glb": [[Vector3(0, 1, 0), Vector3(2, 2, 0.29)]],
 	"dungeon/recipe_stand.glb": [[Vector3(0, 0.48, 0), Vector3(0.7, 0.97, 0.62)]],
+	"dungeon/recipe_stand_stone.glb": [[Vector3(0, 0.48, 0), Vector3(0.62, 0.97, 0.5)]],  # (Hald's, F856)
 	"dungeon/trap_push_wall.glb": [[Vector3(0, 1, 0), Vector3(2, 2, 0.29)]],
 	# Mossprop Workings: the old prop frame's two posts and cap (you walk between the posts); the rope slide's two posts
 	# (top on the deck, bottom 10.24 m down and 18.9 m out in Base Camp; the rope itself has no body).
@@ -123,7 +125,7 @@ const BOXES := {
 const NO_BODY := ["decor/furn_wall_torch_iron.glb", "dungeon/trap_dart_plate.glb", "dungeon/chain_hanging.glb",
 	"dungeon/recipe_scroll.glb", "treasure/tr_coins_wide.glb", "treasure/tr_chalice.glb",
 	"decor/fossil_plaque.glb", "decor/rune_shield.glb",
-	"build/ruin_rubble__cut_stone.glb", "dungeon/recipe_stand.glb", "dungeon/rail_wedge.glb",
+	"build/ruin_rubble__cut_stone.glb", "dungeon/recipe_stand.glb", "dungeon/recipe_stand_stone.glb", "dungeon/rail_wedge.glb",
 	"dungeon/rubble_ore.glb", "dungeon/lift_platform.glb", "dungeon/brace_old.glb"]  # (Lampwick's low rubble: you walk over it to the healing basin, owner Nov 20)
 
 ## Furniture you can smash (owner, decisions round 2: "a little root wood + small finds").
@@ -184,6 +186,17 @@ const PACK_LOCK := "pack"
 const PACK_ROOM := "pack_hall"
 const KILL := 1000000.0       ## instant death (more than any health and armour)
 const THING_ID := 10000       ## a thing's id: dungeon index * THING_ID + its prop index in the plan
+## F844 (owner, Nov 25): a signpost by every dungeon's way in: 1-3 skulls (small / medium / big), the picture of the
+## recipe you find inside on its board, and a green tick once your group has learned it (builds/dungeon_signpost.py).
+const SIGN_MODEL := "dungeon/signpost_skulls.glb"
+const SIGN_BOARD := 1.0     ## the picture's centre height (= dungeon_signpost.BOARD_Y)
+const SIGN_FRONT := 0.135   ## the board's front face (= dungeon_signpost.BOARD_FRONT)
+const SIGN_PIC_X := -0.07   ## the picture sits left of the tick (= dungeon_signpost.PIC_X)
+## Where it may stand, in the dungeon map's metres: sideways from the middle of the way in, and out from where the
+## hole comes into the cave. The first spot with floor and open air wins. All lie inside the doorway's clear circle
+## (CaveMaker._plan_dungeons: 4.5 m), so nothing the world grows stands in them; all keep 1 m off the 2.8 m path.
+const SIGN_SPOTS := [Vector2(2.4, 1.5), Vector2(-2.4, 1.5), Vector2(2.7, 3.0), Vector2(-2.7, 3.0), Vector2(2.5, 0.6), Vector2(-2.5, 0.6)]
+const SIGN_SKULLS := {"small": ["skull_mid"], "medium": ["skull_l", "skull_r"], "big": ["skull_l", "skull_mid", "skull_r"]}
 const STONE := Color(0.5, 0.46, 0.41)
 const WOOD := Color(0.45, 0.32, 0.2)
 
@@ -207,6 +220,7 @@ var mine: MineTraps  ## Lampwick Drift's traps and lamps
 var crushers: Array = []        ## thing ids of the crushers (each moves its weight every frame)
 var ladders: Array[Vector3] = []  ## the plans' ladder pieces, in the world (Old Pell's shafts)
 var ladder_tall: Array[float] = []  ## how tall each one is (a piece at scale 1.25 is 2.5 m: Mossprop's upper ladder)
+var signs := {}  ## F844: dungeon list id -> its signpost (the tick shows once the recipe is learned)
 
 
 ## Is there a dungeon ladder at `pos` (a dwarf's feet)? The same reach as built ladders (Builder.ladder_at).
@@ -299,6 +313,7 @@ func _ready() -> void:
 			continue
 		_build(d, plan)
 		_build_things(di, d, plan)
+		_build_sign(d)
 		for p in plan.get("props", []):
 			if p.get("role", "") == "heal":
 				heals.append(DungeonMap.to_world(d, Vector3(p.pos[0], p.pos[1], p.pos[2])))
@@ -318,6 +333,8 @@ func _hook() -> void:
 	auth.keys.door_changed.connect(_on_door_changed)
 	auth.keys.gate_changed.connect(_on_gate_changed)
 	auth.monsters.dungeon_room.connect(_on_dungeon_room)
+	auth.learned_recipe.connect(func(_r: String): update_signs())
+	update_signs()
 	if auth.loot_props:
 		for d in maker.dungeons:
 			place_lootables(auth.loot_props, d, load_plan(String(d.id)))
@@ -344,6 +361,94 @@ static func place_lootables(lp: LootProps, d: Dictionary, plan: Dictionary) -> v
 func _exit_tree() -> void:
 	if instance == self:
 		instance = null
+
+
+## F844: where this dungeon's signpost stands ({} when no spot fits): on the cave floor beside the way in, the board
+## turned a little toward the path. The same on every computer (the cave and the dungeon come from the world number).
+static func sign_spot(p_maker: CaveMaker, d: Dictionary) -> Dictionary:
+	var mouth: Vector2 = d.map.mouth
+	var door_y: float = (d.mouth as Vector3).y
+	for s: Vector2 in SIGN_SPOTS:
+		var w := DungeonMap.to_world(d, Vector3(mouth.x + s.x, 0.0, mouth.y + float(d.entry_out) + s.y))
+		var fl := p_maker.find_floor(w.x, w.z, door_y + 2.5)
+		if absf(fl.y - door_y) > 2.0:
+			continue  # (a drop or a ledge there)
+		var y := fl.y
+		while y < fl.y + 0.3 and p_maker.sdf_at(Vector3(w.x, y + 0.05, w.z)) <= 0.0:
+			y += 0.05  # (find_floor steps 0.25 m: come up to the real floor)
+		var b := Basis(Vector3.UP, float(d.turn) * PI / 2.0 - signf(s.x) * deg_to_rad(25.0))
+		var t := Transform3D(b, Vector3(w.x, y - 0.06, w.z))  # (the cairn's foot sits a little into the ground)
+		if sign_clear(p_maker, t):
+			return {xform = t, spot = s}
+	return {}
+
+
+## F844: is there open air all round the signpost (no rock through its post, board or skulls)?
+static func sign_clear(p_maker: CaveMaker, t: Transform3D) -> bool:
+	for h in [0.45, 1.0, 1.65]:
+		for off in [Vector3.ZERO, Vector3(0.36, 0, 0), Vector3(-0.36, 0, 0), Vector3(0, 0, 0.25), Vector3(0, 0, -0.2)]:
+			if p_maker.sdf_at(t * (off + Vector3(0, h, 0))) <= 0.05:
+				return false
+	return true
+
+
+func _build_sign(d: Dictionary) -> void:
+	var spot := sign_spot(maker, d)
+	var scene := _scene(SIGN_MODEL)
+	if spot.is_empty() or scene == null:
+		return
+	var info := DungeonList.get_dungeon(list_id(d))
+	var sp := scene.instantiate() as Node3D
+	sp.name = "Signpost_" + String(d.id)
+	sp.transform = spot.xform
+	add_child(sp)
+	var shown: Array = SIGN_SKULLS.get(String(info.get("size", "small")), ["skull_mid"])
+	for part in ["skull_l", "skull_mid", "skull_r"]:
+		var n := sp.find_child(part, true, false) as Node3D
+		if n:
+			n.visible = part in shown
+	var r: Dictionary = Recipes.LIST.get(String(info.get("recipe", "")), {})
+	var tex: Texture2D = Items.icon(String(r.output)) if not r.is_empty() else null
+	if tex:
+		var pic := Sprite3D.new()  # the recipe's picture painted on the board
+		pic.name = "Picture"
+		pic.texture = tex
+		pic.pixel_size = 0.28 / maxf(1.0, float(tex.get_width()))
+		pic.shaded = true
+		pic.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
+		pic.modulate = Color(0.92, 0.88, 0.8)  # (a little worn, like paint on old wood)
+		pic.position = Vector3(SIGN_PIC_X, SIGN_BOARD, SIGN_FRONT + 0.006)
+		sp.add_child(pic)
+	var body := StaticBody3D.new()  # the post is solid (you bump into it, the pickaxe doesn't dig it)
+	body.collision_layer = World.TERRAIN_LAYER
+	body.collision_mask = 0
+	sp.add_child(body)
+	for box in [[Vector3(0, 0.8, 0), Vector3(0.22, 1.6, 0.22)], [Vector3(0, SIGN_BOARD, 0.09), Vector3(0.68, 0.42, 0.1)],
+			[Vector3(0, 0.12, 0), Vector3(0.6, 0.24, 0.6)]]:
+		var cs := CollisionShape3D.new()
+		var bs := BoxShape3D.new()
+		bs.size = box[1]
+		cs.shape = bs
+		cs.position = box[0]
+		body.add_child(cs)
+	sp.set_meta("recipe", String(info.get("recipe", "")))
+	signs[list_id(d)] = sp
+	_show_tick(sp)
+
+
+## F844: the tick on each signpost shows once its recipe is learned (the host's world_state, sent to everyone).
+func update_signs() -> void:
+	for id in signs:
+		_show_tick(signs[id])
+
+
+func _show_tick(sp: Node3D) -> void:
+	var tick := sp.find_child("tick", true, false) as Node3D
+	if tick == null:
+		return
+	var auth := GameAuthority.instance
+	var learned: Array = auth.world_state.get("learned", []) if auth else []
+	tick.visible = String(sp.get_meta("recipe", "")) in learned
 
 
 func _build(d: Dictionary, plan: Dictionary) -> void:
@@ -388,8 +493,8 @@ func _build(d: Dictionary, plan: Dictionary) -> void:
 		for t in xforms:
 			_add_boxes(body, String(model), t as Transform3D, whole)
 	for p in plan.get("props", []):  # (owner, Nov 20: the recipe stand is solid; its Storage box only draws it)
-		if String(p.model) == "dungeon/recipe_stand.glb":
-			_add_boxes(body, "dungeon/recipe_stand.glb", _xform(d, p.pos, float(p.yaw), 1.0, 0.0), AABB())
+		if String(p.model).begins_with("dungeon/recipe_stand"):  # (Hald's is stone: recipe_stand_stone)
+			_add_boxes(body, String(p.model), _xform(d, p.pos, float(p.yaw), 1.0, 0.0), AABB())
 	for p in plan.get("pieces", []):  # (Old Pell's shafts: root wood ladders you climb like built ones)
 		if p.id == "ladder":
 			ladders.append(DungeonMap.to_world(d, Vector3(p.pos[0], p.pos[1], p.pos[2])))
@@ -1615,6 +1720,6 @@ static func add_chests(auth: GameAuthority, p_maker: CaveMaker) -> void:
 		var stand: Dictionary = plan.get("recipe_stand", {})
 		if not stand.is_empty() and Items.exists(String(stand.page)):
 			var t := _xform(d, stand.pos, float(stand.yaw) + 180.0, 1.0, 0.0)
-			var sid: int = auth.storage.create_box("recipe_stand", t.origin, t.basis.get_euler().y)
+			var sid: int = auth.storage.create_box(String(stand.get("kind", "recipe_stand")), t.origin, t.basis.get_euler().y)
 			auth.storage.put(sid, String(stand.page), 1)
 		print("DUNGEON_CHESTS %s placed" % d.id)

@@ -145,7 +145,10 @@ func _process(delta: float) -> void:
 	var auth := GameAuthority.instance
 	var ps: GameAuthority.PlayerState = auth.get_player(peer_id) if auth else null
 	visible = has_lantern(ps) and not (ps != null and ps.lantern_stowed)  # L puts it away (owner, Nov 17)
+	var mine := peer_id == multiplayer.get_unique_id()
 	if not visible:
+		if mine:
+			RenderingServer.global_shader_parameter_set("lantern_at", Vector4.ZERO)  # no lantern: no ore glints
 		return
 	var fuel := ps.fuel if ps else GameAuthority.MAX_FUEL
 	var spot := spot_of(ps)
@@ -167,6 +170,9 @@ func _process(delta: float) -> void:
 	var energy := lerpf(EMPTY_ENERGY, FULL_ENERGY, t)
 	light.omni_range = lerpf(light.omni_range, lerpf(EMPTY_RANGE, full_range, t), minf(1.0, delta * 4.0))
 	light.light_energy = lerpf(light.light_energy, energy, minf(1.0, delta * 6.0))
+	if mine:  # F870: your own lantern tells the rock where it is, so copper and tin twinkle in its light
+		var p := light.global_position
+		RenderingServer.global_shader_parameter_set("lantern_at", Vector4(p.x, p.y, p.z, light.omni_range * t))
 	_glass_mat.emission_energy_multiplier = 0.6 + 2.4 * t
 
 

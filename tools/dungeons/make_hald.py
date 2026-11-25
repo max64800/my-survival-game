@@ -126,7 +126,7 @@ def top_at(key):
 
 
 BRIDGE = {(x, z, 2) for x in range(30, 40, 2) for z in (12, 14)}   # stone slabs over the chasm (the cracked ones: next)
-SPECIAL_FLOOR = {(12, 56, 1): "floor_loose_stone"}                # the Scribe's Niche: a buried chest under it
+SPECIAL_FLOOR = {(12, 56, 1): "floor_loose_flagstone"}  # the Scribe's Niche: a buried chest under it (stone, not boards: F856)
 holes = set()   # the cells whose ceiling fell in
 for key, g in cells.items():
 	if key in NO_PIECES:
@@ -248,6 +248,9 @@ for (a, b, along_z, line, lvl), j in junctions.items():
 		for al in spots:
 			x, z = p(al)
 			piece("wall", x, y + 2.0, z, rot)
+		for edge in [e for e in (lo + 0.5, hi - 0.5) if abs(e - mid) > 1.0]:   # (F857 🔁: the narrow walls beside it)
+			x, z = p(edge)
+			piece("wall_narrow", x, y, z, rot)
 		continue
 	if hi - lo != 4.0:
 		sys.exit("junction %s/%s is %.0f m wide (doorways need 4 m)" % (a, b, hi - lo))
@@ -362,8 +365,8 @@ for x, z, yaw in [(42.2, 29.6, 0.0), (45.8, 29.6, 0.0)]:
 creature("hald_ironbrow", 44.6, 41.0, 0.0, floor=D)
 
 # 21 Grave Chamber: the recipe stand, the big chest.
-RECIPE_STAND = {"pos": [46.0, G, 54.6], "yaw": 180.0, "page": "scroll_hald"}
-prop("dungeon/recipe_stand.glb", 46.0, G, 54.6, 180.0, role="loot", label="Recipe stand (same recipe every time)")
+RECIPE_STAND = {"pos": [46.0, G, 54.6], "yaw": 180.0, "page": "scroll_hald", "kind": "recipe_stand_stone"}  # (stone, F856)
+prop("dungeon/recipe_stand_stone.glb", 46.0, G, 54.6, 180.0, role="loot", label="Recipe stand (same recipe every time)")
 prop("dungeon/recipe_scroll.glb", 46.0, G + 0.90, 54.6 - 0.007, 180.0, role="loot", tilt=20.0)
 chest("chest_copper", 43.4, 53.6, 90.0, "Hald's grave chest (always)", True, "big", y=G)
 
@@ -440,7 +443,7 @@ DECOR = [
 	("th_hammer_rest", "grave_chamber", W(_d("th_hammer_rest"), "w", 42, 51.4)),
 ]
 _plvl = lambda p: 1 if p["pos"][1] > -3.0 else 2
-_flatj = {"dungeon/wall_cracked_stone.glb", "dungeon/floor_loose_stone.glb"}
+_flatj = {"dungeon/wall_cracked_stone.glb", "dungeon/floor_loose_flagstone.glb"}
 _dxz = lambda p: (p["pos"][0], p["pos"][2])
 _cells_l = {l: {(k[0], k[1]): v for k, v in cells.items() if k[2] == l and k not in NO_PIECES} for l in (1, 2)}
 _spaces_l = {l: [s for s in SPACES if s[0] not in NOT_ROOMS and level(s[0]) == l] for l in (1, 2)}

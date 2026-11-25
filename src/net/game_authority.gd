@@ -3036,6 +3036,8 @@ func _rpc_inventory(data: Array, selected: int) -> void:
 @rpc("authority", "call_local", "reliable")
 func _ev_state(state: Dictionary) -> void:
 	world_state = state.duplicate(true)
+	if DungeonBuild.instance:  # (F844: the signposts' ticks follow the learned recipes: a save, or a friend joining)
+		DungeonBuild.instance.update_signs()
 	for gone in ["clues", "bosses_dead", "lairs_found"]:  # old saves: boss clues and boss kills (bosses removed, Nov 19)
 		world_state.erase(gone)
 	if poi_field:
