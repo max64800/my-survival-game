@@ -173,11 +173,11 @@ const DATA := {
 	"weapon_page": {name = "Weaponsmith's Page", color = Color(0.85, 0.5, 0.42), short = "Wp", kind = "page", page_of = "weapon"},
 	"tool_page": {name = "Toolmaker's Page", color = Color(0.6, 0.7, 0.45), short = "Tl", kind = "page", page_of = "tool"},
 	"blueprint_page": {name = "Old Blueprint", color = Color(0.55, 0.68, 0.85), short = "Bp", kind = "page"},  ## teaches a ready-made building (F98)
-	"scroll_mossgate": {name = "Mossgate Recipe Scroll", color = Color(0.8, 0.62, 0.36), short = "Ms", kind = "page", teaches_recipe = "helm_copper"},  ## Mossgate Hold's recipe stand: always the Copper Helm (F844; Bronze Helm once bronze is in)
-	"scroll_pell": {name = "Old Pell's Recipe Scroll", color = Color(0.66, 0.55, 0.36), short = "Pl", kind = "page", teaches_recipe = "greaves_copper", icon_of = "scroll_lampwick"},  ## Old Pell's Diggings' recipe stand (Pell's Last Dig): always the Copper Greaves (F844)
-	"scroll_mossprop": {name = "Mossprop Recipe Scroll", color = Color(0.5, 0.58, 0.36), short = "Mp", kind = "page", teaches_recipe = "crossbow_copper", icon_of = "scroll_lampwick"},  ## Mossprop Workings' recipe stand (the Top Hall): always the Copper Crossbow (F844)
-	"scroll_hald": {name = "Hald's Recipe Scroll", color = Color(0.62, 0.6, 0.56), short = "Hd", kind = "page", teaches_recipe = "mail_copper", icon_of = "scroll_lampwick"},  ## the Tomb of Hald Ironbrow's recipe stand (Bronze Mail once bronze is in: docs/decisions/2026-11-24-zone1-metal-and-loot.md)
-	"scroll_lampwick": {name = "Lampwick Recipe Scroll", color = Color(0.72, 0.58, 0.34), short = "Lw", kind = "page", teaches_recipe = "boots_copper"},  ## Lampwick Drift's recipe stand (the Foreman's Office): always the Copper-shod Boots (F844)
+	"scroll_mossgate": {name = "Mossgate Recipe Scroll", color = Color(0.8, 0.62, 0.36), short = "Ms", kind = "page", teaches_recipe = "helm_bronze"},  ## Mossgate Hold's recipe stand: always the Bronze Helm (F844 step 5)
+	"scroll_pell": {name = "Old Pell's Recipe Scroll", color = Color(0.66, 0.55, 0.36), short = "Pl", kind = "page", teaches_recipe = "greaves_bronze", icon_of = "scroll_lampwick"},  ## Old Pell's Diggings' recipe stand (Pell's Last Dig): always the Bronze Greaves (F844)
+	"scroll_mossprop": {name = "Mossprop Recipe Scroll", color = Color(0.5, 0.58, 0.36), short = "Mp", kind = "page", teaches_recipe = "crossbow_bronze", icon_of = "scroll_lampwick"},  ## Mossprop Workings' recipe stand (the Top Hall): always the Bronze Crossbow (F844)
+	"scroll_hald": {name = "Hald's Recipe Scroll", color = Color(0.62, 0.6, 0.56), short = "Hd", kind = "page", teaches_recipe = "mail_bronze", icon_of = "scroll_lampwick"},  ## the Tomb of Hald Ironbrow's recipe stand: always the Bronze Mail (F844)
+	"scroll_lampwick": {name = "Lampwick Recipe Scroll", color = Color(0.72, 0.58, 0.34), short = "Lw", kind = "page", teaches_recipe = "boots_bronze"},  ## Lampwick Drift's recipe stand (the Foreman's Office): always the Bronze Boots (F844)
 	"watchtower_plans": {name = "Watchtower Plans", color = Color(0.62, 0.7, 0.82), short = "Wp", kind = "page", teaches = "stone_watchtower"},  ## always teaches the Stone Watchtower (its ruin's roof chest, F254)
 	"outpost_plans": {name = "Outpost Plans", color = Color(0.62, 0.7, 0.82), short = "Op", kind = "page", teaches = "stone_outpost"},  ## always teaches the Stone Outpost (its ruin's tower roof chest)
 	"rope_ladder": {name = "Rope Ladder", stack = 10, color = Color(0.75, 0.65, 0.45), short = "RL", kind = "station"},
@@ -246,7 +246,7 @@ static func _data() -> Dictionary:
 				_all["gem_" + key] = {name = Gems.full_name(key), color = Gems.NORMAL[g].color, short = "G" + g.left(1).to_upper() + str(lv), kind = "gem", stack = 20, gem_level = lv}
 		for g in Gems.EPIC:
 			_all["gem_" + g] = {name = Gems.EPIC[g].name, color = Gems.EPIC[g].color, short = "E" + g.left(1).to_upper(), kind = "gem", stack = 5}
-		for r in Recipes.LIST:  # a dungeon's page always teaches the same copper recipe, and its name says which (owner, Nov 19, F237)
+		for r in Recipes.LIST:  # a named page always teaches the same copper/bronze recipe, and its name says which (owner, Nov 19, F237)
 			if Recipes.LIST[r].unlock is String and Recipes.LIST[r].unlock in ["ruin", "dungeon"] and Recipes.LIST[r].station in ["anvil", "armoury_bench"]:
 				var pg: String = Recipes.PAGE_OF_KIND[Recipes.page_kind(r)]
 				_all["page_" + r] = DATA[pg].merged({name = "%s: %s" % [DATA[pg].name, display_name(Recipes.LIST[r].output)], recipe = r, icon_of = pg}, true)

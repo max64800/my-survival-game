@@ -1,6 +1,6 @@
 extends TestCase
-## Zone 1 dungeons (owner, Nov 19, F237; docs/design/zone1-dungeons-plan.md): each one's page always teaches the same
-## copper recipe and says which, and its chests fill up again an hour of play after someone takes from them.
+## Zone 1 dungeons (owner, Nov 19, F237; docs/design/zone1-dungeons-plan.md): each named page always teaches the same
+## recipe and says which, and its chests fill up again an hour of play after someone takes from them.
 
 var auth: GameAuthority
 var player: Node3D
