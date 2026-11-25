@@ -57,6 +57,7 @@ var _loaded := {}  ## the save we started from (friends' dwarfs are restored fro
 func _ready() -> void:
 	Controls.setup()
 	SoundSettings.load_and_apply()
+	FirstCards.load_setting()  # "Hints and cards" on / off (F870)
 	GraphicsSettings.load_and_apply()  # Potato..Ultra, remembered on this computer (owner, Nov 19)
 	seed = randi() % 1000000
 	session = Session.new()
@@ -1114,6 +1115,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			else:
 				hud.show_toast("No ability on this key yet. Active perks (diamonds) in the skills window (K) go here.", 3.0)
 			return
+	if event.is_action_pressed("toggle_notes"):  # J: the same window, on the Notes tab (F870)
+		if hud.is_skills_open() and hud.skills.tab != "notes":
+			hud.skills.show_tab("notes")
+		else:
+			var open_notes := not hud.is_skills_open()
+			hud.set_skills_open(open_notes, "notes")
+			Controls.set_captured(not open_notes)
+		return
 	if event.is_action_pressed("toggle_skills") or (event.is_action_pressed("pause") and hud.is_skills_open()):
 		var open := not hud.is_skills_open()
 		hud.set_skills_open(open)

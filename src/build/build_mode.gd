@@ -24,7 +24,6 @@ var _bp_origin := Vector3.INF
 var _bp_chest := Vector3.INF  ## where its Builder's Chest will appear (INF = no room)
 var _bp_chest_ghost: MeshInstance3D
 var capture_corner := Vector3.INF  ## first corner while saving a blueprint (C)
-var lessons := BuildLessons.new()  ## step-by-step hammer lessons (F579), ticked off as you do them
 
 
 func _ready() -> void:
@@ -53,7 +52,6 @@ func choose(p_piece: String, p_family: String) -> void:
 	if _turn_unit(p_piece) != _turn_unit(piece):  # keep facing the same way: 5° (furniture), 30° (triangles) or 90° steps
 		var u := _turn_unit(p_piece)
 		rot = posmod(roundi(float(rot * _turn_unit(piece)) / u), Pieces.FREE_STEPS / u)
-	_learn("choose")
 	piece = p_piece
 	family = p_family if Pieces.allowed(p_piece, p_family) else Pieces.LIST[p_piece].get("families", [p_family])[0]
 	_ghost.rebuild(piece, family)
@@ -169,12 +167,6 @@ var _hold_dir := 0
 var _hold_time := 0.0
 
 
-## Ticks off a hammer lesson the first time you do it (F579), with a little "well done".
-func _learn(id: String) -> void:
-	if lessons.mark(id):
-		message.emit("✓ Got it!" if not lessons.all_done() else "✓ You know the hammer now! The keys stay on the right in one short line.")
-
-
 func turn(dir: int) -> void:
 	_step(dir)
 	_hold_dir = dir
@@ -182,7 +174,6 @@ func turn(dir: int) -> void:
 
 
 func _step(dir: int) -> void:
-	_learn("turn")
 	rot = posmod(rot + dir, 4 if blueprint else Pieces.FREE_STEPS / _turn_unit(piece))
 	changed.emit()
 
@@ -361,18 +352,15 @@ func _unhandled_input(event: InputEvent) -> void:
 	if wheel and wheel.pressed and wheel.shift_pressed and wheel.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
 		# Shift + mouse wheel: raise / lower the piece half a metre (F97). Page Up / Down still work.
 		lift += 0.5 if wheel.button_index == MOUSE_BUTTON_WHEEL_UP else -0.5
-		_learn("lift")
 		changed.emit()
 		get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed("dig") and not target.is_empty():
 		auth.builder.ask_place(piece, family, target.pos, target.rot)
-		_learn("place")
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("use"):
 		var hit := dwarf.aim_far(Pieces.BUILD_REACH)
 		if hit.get("collider") is PieceNode:
-			_learn("pickup")
 			auth.builder.ask_remove(hit.collider.uid)  # careful pick-up: all back, right after placing (F100)
 		elif hit.get("collider") is Station:
 			auth.ask_pickup_station((hit.collider as Station).station_id)  # stations always come back whole
@@ -388,11 +376,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		turn(1)  # (E turns the other way: main.gd, because E is also "use / open")
 	elif event.is_action_pressed("lift_up"):
 		lift += 0.5
-		_learn("lift")
 		changed.emit()
 	elif event.is_action_pressed("lift_down"):
 		lift -= 0.5
-		_learn("lift")
 		changed.emit()
 
 

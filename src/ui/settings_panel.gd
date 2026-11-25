@@ -68,6 +68,14 @@ func _ready() -> void:
 	sh.set_value_no_signal(SoundSettings.camera_shake * 100.0)
 	sh.value_changed.connect(func(x: float): SoundSettings.set_camera_shake(x / 100.0))
 	shake_row.add_child(sh)
+	var hints := CheckButton.new()  # F870: the first-time picture cards (the Notes in J fill up either way)
+	hints.name = "Hints"
+	hints.text = "Hints and cards"
+	hints.focus_mode = Control.FOCUS_NONE
+	hints.add_theme_color_override("font_color", UiKit.TEXT)
+	hints.set_pressed_no_signal(FirstCards.hints_on)
+	hints.toggled.connect(func(on: bool): FirstCards.set_hints(on))
+	v.add_child(hints)
 	UiKit.divider(v)
 	# Graphics (owner, Nov 19: run well on weak computers too): a preset, and the few things people change most.
 	var gfx := _row(v, "Graphics")
@@ -124,6 +132,7 @@ func _ready() -> void:
 			mute.set_pressed_no_signal(SoundSettings.muted)
 			ms.set_value_no_signal(Controls.mouse_scale * 100.0)
 			sh.set_value_no_signal(SoundSettings.camera_shake * 100.0)
+			hints.set_pressed_no_signal(FirstCards.hints_on)
 			show_gfx.call())
 
 
@@ -133,7 +142,7 @@ const CONTROLS := [
 	["Left click", "dig, harvest, attack"], ["Right click", "eat, place, block"], ["E", "use, open, pick up"],
 	["1 - 9", "hotbar"], ["Wheel", "zoom"], ["F", "draw / put away weapon"],
 	["R", "refill the lantern"], ["L", "put the lantern away / out"],
-	["Tab", "bag + crafting"], ["K", "skills"], ["M", "map"], ["B", "build menu (hammer)"],
+	["Tab", "bag + crafting"], ["K", "skills"], ["J", "notes"], ["M", "map"], ["B", "build menu (hammer)"],
 	["V", "blueprints (hammer)"], ["Q", "turn piece (hammer)"], ["Z  G  T", "perks"],
 	["F5", "quick save"], ["Esc", "pause"],
 ]

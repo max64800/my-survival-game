@@ -34,8 +34,8 @@ var _lantern_out: PanelContainer  ## "Press R to refill the lantern" while it's 
 var skill_popup: SkillPopup  ## a skill pops up for ~2 s when it grows (F870)
 var _fuel_label: Label
 var _fps_label: Label
-var _goals_label: Label  ## "Next steps" in the top-right corner (F103)
-var _goals_wait := 0.0
+var first_cards := FirstCards.new()  ## picture cards the first time you meet something (F870); kept in Notes (J)
+var _cards_wait := 0.0
 var _toast: Label
 var _toast_timer := 0.0
 var _pause: Control
@@ -401,13 +401,7 @@ func _build() -> void:
 	_fps_label = _label(root, 15)
 	_fps_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
 	_fps_label.position += Vector2(-130, 10)
-	_goals_label = _label(root, 15)
-	_goals_label.name = "Goals"
-	_goals_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	_goals_label.custom_minimum_size = Vector2(440, 0)
-	_goals_label.position = Vector2(16, 112)  # under the controls help, top left
-	_goals_label.autowrap_mode = TextServer.AUTOWRAP_WORD
-	_goals_label.add_theme_color_override("font_color", Color(1.0, 0.88, 0.62))
+	# (F870: no "Next steps" goal text: the world and the first-time cards teach instead)
 
 	learned_cards = LearnedCards.new()  # "Recipe learned" cards on the left (owner, Nov 19)
 	root.add_child(learned_cards)
@@ -893,52 +887,12 @@ func _on_dig_feedback(pid: int, result: Dictionary) -> void:
 			show_toast("Pick your pickaxe in the hotbar (key 1).")
 
 
-## "What do I do now?" for the first minutes of a new game (feedback F11).
-## One line at the top of the screen that changes as you go, then disappears.
-var _steps_label: Label
-var _steps_done := false
-
-
-func _update_first_steps(ps: GameAuthority.PlayerState, has_lantern: bool) -> void:
-	if _steps_done:
-		return
-	if _steps_label == null:
-		_steps_label = Label.new()
-		_steps_label.add_theme_font_size_override("font_size", 20)
-		_steps_label.add_theme_color_override("font_outline_color", Color.BLACK)
-		_steps_label.add_theme_constant_override("outline_size", 6)
-		_steps_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		_steps_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		# Centered, below the top corner texts, wrapping onto a second line if it's long.
-		_steps_label.anchor_left = 0.5
-		_steps_label.anchor_right = 0.5
-		_steps_label.offset_left = -360
-		_steps_label.offset_right = 360
-		_steps_label.offset_top = 120
-		add_child(_steps_label)
-	var inv := ps.inventory
-	var has_pick := inv.count_of("pickaxe_stone") + inv.count_of("pickaxe_copper") + inv.count_of("pickaxe_bronze") + inv.count_of("pickaxe_silver") > 0
-	var t := ""
-	if not has_lantern:
-		t = "Pick up your Lantern from the floor (walk over it)."
-	elif not has_pick and (inv.count_of("stone") < 3 or inv.count_of("rootwood") < 2):
-		t = "Pick up the loose rocks (walk over them) and pull down the hanging roots (click them)."
-	elif not has_pick:
-		t = "Press Tab and make a Stone Pickaxe."
-	elif _in_start_room() and get_tree().root.find_child("Peephole", true, false) != null:
-		t = "Something glows through that little hole… Dig through the soft wall (hold left click)."
-	else:
-		_steps_done = true
-	_steps_label.text = t
-	_steps_label.visible = t != ""
-
-
-func _in_start_room() -> bool:
-	var me := _local_dwarf()
-	var st: Dictionary = GameAuthority.instance.world.maker.start
-	if me == null or st.is_empty():
-		return false
-	return me.global_position.distance_to(st.room_c) < CaveMaker.START_ROOM_R.x + 1.5
+## F870: a picture card the first time you meet something new (unless "Hints and cards" is off in Settings).
+func show_first_card(id: String) -> Control:
+	if not FirstCards.hints_on:
+		return null
+	var c: Array = FirstCards.CARDS[id]
+	return learned_cards.show_card("New note  (J)", c[0], FirstCards.picture(id), c[1])
 
 
 func show_toast(text: String, seconds: float = 2.5) -> void:
@@ -1156,9 +1110,12 @@ func is_skills_open() -> bool:
 	return skills.visible
 
 
-func set_skills_open(open: bool) -> void:
+func set_skills_open(open: bool, tab := "") -> void:
 	skills.visible = open
 	if open:
+		skills.notes = first_cards
+		if tab != "":
+			skills.show_tab(tab)
 		skills.refresh()
 
 
@@ -1294,15 +1251,6 @@ func _process(delta: float) -> void:
 	if auth and not auth.my_cooldowns.is_empty() and ps:  # the grey cooldown shades climb every frame (owner F470)
 		for i in _slot_panels:
 			_show_cooldown(_slot_panels[i], ps.inventory.get_slot(i), auth)
-	_goals_wait -= delta
-	if ps and _goals_wait <= 0.0:
-		_goals_wait = 1.0
-		var steps := Goals.next_steps(ps, auth)
-		_goals_label.text = "" if steps.is_empty() else "Next steps
-" + "
-".join(steps.map(func(t): return "• " + t))
-	# "Next steps" would run over any big panel (F187): hidden while one is open.
-	_goals_label.visible = not (_bag_panel.visible or skills.visible or map_panel.visible or build_menu.visible or blueprint_menu.visible)
 	if ps:
 		var v := ps.vitals
 		if v != _edge_flash_vitals:  # a new/other player's body: listen to its hits instead (F695)
@@ -1353,7 +1301,11 @@ func _process(delta: float) -> void:
 		var has_lantern := Lantern.has_lantern(ps)
 		_lantern_out.visible = has_lantern and ps.fuel <= 0.0  # F870: no bar, just this when it runs out
 		_fuel_label.text = ""
-		_update_first_steps(ps, has_lantern)
+		_cards_wait -= delta
+		if _cards_wait <= 0.0:
+			_cards_wait = 0.5
+			for id in first_cards.check(ps):
+				show_first_card(id)
 		var me := _local_dwarf()
 		if me and me.fight and me.fight.is_crossbow():
 			var bolts := 0
@@ -1377,13 +1329,11 @@ func _process(delta: float) -> void:
 		_build_label.text = "Blueprint: %s (%s)\nQ turn · left click place (a blue build site) · right click or B: back to single pieces" % [build_mode.blueprint.name, BuildMenu._cost_text(build_mode.blueprint.cost())]
 	elif build_mode and build_mode.active():
 		var c := BuildMenu._cost_text(Pieces.cost(build_mode.piece, build_mode.family))
-		# F579: no wall of keys: one lesson at a time ("NEXT: ..."), ticked off as you do it (BuildLessons),
-		# then just a short one-line key list.
-		_build_label.text = "Building: %s (%s)\nCost: %s%s%s\n\n%s" % [
+		# (F870: no hammer lessons or key list here: the build menu pictures are enough; keys are in Settings)
+		_build_label.text = "Building: %s (%s)\nCost: %s%s%s" % [
 			Pieces.LIST[build_mode.piece].name, Pieces.FAMILIES[build_mode.family].name, c,
 			" (now %+.1f m)" % build_mode.lift if build_mode.lift != 0.0 else "",
-			"" if build_mode.problem == "" else "\nCan't place: " + build_mode.problem,
-			build_mode.lessons.text()]
+			"" if build_mode.problem == "" else "\nCan't place: " + build_mode.problem]
 		if build_mode.level_text() != "":  # F159: what placing it does to the ground
 			_build_label.text += "\n" + build_mode.level_text()
 		var aimed: Dictionary = auth.builder.structure.pieces.get(build_mode.aimed_uid, {}) if auth and auth.builder else {}

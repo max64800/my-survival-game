@@ -5,6 +5,7 @@ extends PanelContainer
 ##    one line each; what every level gives is in the card's hover text (owner, Nov 21, F576: it showed too much).
 ##  - "Perks" (opens first, F576): the perk tree (PerkTreeView: 1 point per level, 4 branches; a perk opens once the one before it has a
 ##    point) and, on the right, the perk you clicked with its Learn button. ◆ = active perk on an ability key (Z / G / T).
+##  - "Notes" (F870, owner Nov 25; J opens the window here): every first-time picture card you have seen (FirstCards).
 ## The window has one fixed size (switching tabs never changes it) that fits above the hotbar. It is BUILT at the
 ## screen's size (`ui` = how much bigger than the 1600 x 900 design), not stretched afterwards, so the letters stay
 ## sharp (owner, Nov 20: stretching it made everything blurry).
@@ -26,6 +27,9 @@ var _tabs := {}  ## "skills" / "perks" -> its tab Button
 var _skills: GridContainer
 var _skills_page: Control
 var _perks_page: Control
+var _notes_page: Control
+var _notes: GridContainer
+var notes: FirstCards  ## the cards you have seen (the HUD hands over its FirstCards)
 var _help: Label
 var _tree: PerkTreeView
 var _detail: VBoxContainer
@@ -83,7 +87,7 @@ func _build() -> void:
 	var tabs := HBoxContainer.new()
 	tabs.add_theme_constant_override("separation", _px(10))
 	top.add_child(tabs)
-	for t in [["perks", "Perks"], ["skills", "Skills"]]:
+	for t in [["perks", "Perks"], ["skills", "Skills"], ["notes", "Notes"]]:
 		var b := UiKit.dark_button(Button.new(), _px(22))
 		b.name = "Tab_" + t[0]
 		b.text = "  %s  " % t[1]
@@ -118,6 +122,19 @@ func _build() -> void:
 	_skills.add_theme_constant_override("h_separation", _px(8))
 	_skills.add_theme_constant_override("v_separation", _px(6))
 	scroll.add_child(_skills)
+	_notes_page = _framed(page)
+	_notes_page.name = "NotesPage"
+	var nscroll := ScrollContainer.new()
+	nscroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	nscroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_notes_page.get_child(0).add_child(nscroll)
+	_notes = GridContainer.new()
+	_notes.name = "Notes"
+	_notes.columns = 3
+	_notes.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_notes.add_theme_constant_override("h_separation", _px(10))
+	_notes.add_theme_constant_override("v_separation", _px(10))
+	nscroll.add_child(_notes)
 	_perks_page = HBoxContainer.new()
 	_perks_page.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_perks_page.add_theme_constant_override("separation", _px(8))
@@ -154,11 +171,15 @@ func show_tab(which: String) -> void:
 	tab = which
 	_skills_page.visible = which == "skills"
 	_perks_page.visible = which == "perks"
+	_notes_page.visible = which == "notes"
+	if which == "notes":
+		_show_notes()
 	for k in _tabs:
 		var b: Button = _tabs[k]
 		b.add_theme_color_override("font_color", UiKit.AMBER if k == which else UiKit.DIM)
 		b.modulate = Color.WHITE if k == which else Color(0.8, 0.8, 0.8)
-	_help.text = ("Skills grow by doing (dig for Mining, chop for Woodcutting...). ★ = a bonus at levels 25, 50, 75 and 100. Point at a skill to see what each level gives."
+	_help.text = ("Everything new you have met. J opens this page, K the skills" if which == "notes" else
+		"Skills grow by doing (dig for Mining, chop for Woodcutting...). ★ = a bonus at levels 25, 50, 75 and 100. Point at a skill to see what each level gives."
 		if which == "skills" else "Circle = works by itself  ·  ◆ = press Z / G / T  ·  ★ = last perk  ·  scroll to zoom, drag to move  ·  K to close")
 	if which == "perks" and _tree.progress:
 		_tree.refresh.call_deferred()
@@ -194,6 +215,41 @@ func refresh() -> void:
 	_tree.refresh()
 	_show_skills()
 	_show_detail()
+
+
+# ---------------------------------------------------------------- the Notes tab (F870)
+
+## One card per thing you have met: its picture, its name and its one line.
+func _show_notes() -> void:
+	UiKit.clear(_notes)
+	var seen: Array = notes.seen if notes else []
+	if seen.is_empty():
+		_lbl(_notes, "Nothing yet. Each new thing you find adds a note here.", 16, UiKit.DIM)
+		return
+	for id in seen:
+		var c: Array = FirstCards.CARDS[id]
+		var card := PanelContainer.new()
+		card.name = "Note_" + id
+		card.add_theme_stylebox_override("panel", UiKit.style("card", _px(10)))
+		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", _px(10))
+		card.add_child(row)
+		var pic := TextureRect.new()
+		pic.texture = FirstCards.picture(id)
+		pic.custom_minimum_size = Vector2(_px(56), _px(56))
+		pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		row.add_child(pic)
+		var words := VBoxContainer.new()
+		words.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		words.alignment = BoxContainer.ALIGNMENT_CENTER
+		row.add_child(words)
+		_lbl(words, c[0], 18, UiKit.AMBER, true)
+		var line := _lbl(words, c[1], 14, UiKit.TEXT)
+		line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		line.custom_minimum_size.x = _px(260)  # (a wrapping label needs a width, or it measures itself very tall: F429)
+		_notes.add_child(card)
 
 
 # ---------------------------------------------------------------- the Skills tab

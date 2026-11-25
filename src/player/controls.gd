@@ -15,6 +15,7 @@ const KEYS := {
 	"screenshot": [KEY_F12],
 	"interact": [KEY_E],
 	"toggle_skills": [KEY_K],
+	"toggle_notes": [KEY_J],  ## the skills window on its Notes tab (F870)
 	"toggle_map": [KEY_M],
 	"rotate_piece": [KEY_Q],
 	"lift_up": [KEY_PAGEUP, KEY_EQUAL],
