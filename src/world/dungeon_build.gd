@@ -27,6 +27,13 @@ const BOXES := {
 	"dungeon/wall_old.glb": [[Vector3(0, 1, 0), Vector3(2, 2, 0.29)]],
 	"dungeon/trap_dart_wall.glb": [[Vector3(0, 1, 0), Vector3(2, 2, 0.29)]],
 	"dungeon/wall_cracked.glb": [[Vector3(0, 1, 0.05), Vector3(2, 2, 0.35)]],
+	# The Tomb of Hald's stone and iron twins (owner, Nov 25: a dark STONE dungeon; builds/dungeon_stonehold.py).
+	"dungeon/wall_cracked_stone.glb": [[Vector3(0, 1, 0), Vector3(2, 2, 0.3)]],
+	"dungeon/gate_iron.glb": [[Vector3(0, 0.75, 0.05), Vector3(1.5, 1.5, 0.14)]],
+	"dungeon/lever_iron.glb": [[Vector3(0, 1.05, 0.1), Vector3(0.4, 0.75, 0.22)]],
+	"dungeon/trap_chest_spikes_stone.glb": [[Vector3(0, 0.125, 0), Vector3(2, 0.25, 4)]],
+	"dungeon/entrance_stone.glb": [[Vector3(-1.22, 1.25, 0.02), Vector3(0.68, 2.5, 0.6)], [Vector3(1.22, 1.25, 0.02), Vector3(0.68, 2.5, 0.6)],
+		[Vector3(0, 2.73, 0.02), Vector3(3.2, 0.5, 0.6)]],
 	"build/wall_narrow__plank_root.glb": [[Vector3(0, 1, 0), Vector3(1, 2, 0.26)]],
 	"build/half_wall__plank_root.glb": [[Vector3(0, 0.5, 0), Vector3(2, 1, 0.27)]],
 	# The round doorway: its two sides and the top (the hole is about 1.3 m wide and 1.75 m high; the dungeon uses it
@@ -232,7 +239,7 @@ static func thing_kind(p: Dictionary) -> String:
 		return "drip"
 	if model == "dungeon/trap_floor_break.glb":
 		return "floor"
-	if model == "dungeon/wall_broken.glb" or model == "dungeon/wall_cracked.glb":
+	if model in ["dungeon/wall_broken.glb", "dungeon/wall_cracked.glb", "dungeon/wall_cracked_stone.glb"]:
 		return "rubble"  # (the cracked wall in front of the hidden vault breaks like the rubble: owner, Nov 20)
 	if model == "build/ruin_rubble__cut_stone.glb":
 		return "rubble"  # (owner, Nov 20: the stone rubble in the Rubble Tunnel breaks, like the tower's)
@@ -240,9 +247,9 @@ static func thing_kind(p: Dictionary) -> String:
 		return "crusher"
 	if model == "dungeon/door_loot.glb":
 		return "hand_door" if String(p.get("opens", "")) == "hand" else "door"
-	if model == "dungeon/gate_round.glb":
+	if model == "dungeon/gate_round.glb" or model == "dungeon/gate_iron.glb":
 		return "gate"  # (the way out's one-way gate: the lever behind it opens it, DungeonKeys)
-	if model == "dungeon/lever.glb":
+	if model == "dungeon/lever.glb" or model == "dungeon/lever_iron.glb":
 		return "lever"
 	if model == "dungeon/portcullis.glb":
 		return "portcullis"  # (Hald's Honour Chapel ambush, F843: it drops behind you, lifts when the room is won)
@@ -391,8 +398,8 @@ func _build(d: Dictionary, plan: Dictionary) -> void:
 	for l in plan.get("lights", []):
 		var o := OmniLight3D.new()
 		o.light_color = Color(1.0, 0.68, 0.38)
-		o.light_energy = 1.6
-		o.omni_range = 9.0
+		o.light_energy = float(d.map.get("torch_energy", 1.6))  # (the Tomb of Hald's are dimmer: F860)
+		o.omni_range = float(d.map.get("torch_range", 9.0))
 		o.position = DungeonMap.to_world(d, Vector3(l[0], l[1], l[2]))
 		root.add_child(o)
 		Darkness.mark(o)
@@ -677,6 +684,11 @@ func _ev_broke(id: int) -> void:
 				Sfx.play("chop", th.centre, 2.0, 0.7)
 				_topple(id)
 				return
+			if th.model == "dungeon/wall_cracked_stone.glb":  # (Hald's, F857) its stones burst out and tumble down
+				RockShatter.burst(get_parent(), th.centre, Vector3.UP, STONE, Mat.STONE)
+				Sfx.play("dig_rock", th.centre, 2.0, 0.7)
+				_topple(id)
+				return
 			RockShatter.burst(get_parent(), th.centre, Vector3.UP, STONE, Mat.STONE)
 		"floor":  # (owner, Nov 20: "no break animation"): the boards snap and tumble down into the spike pit
 			Fx.burst(get_parent(), th.centre, WOOD, 24, 3.0, Vector3.DOWN)
@@ -721,7 +733,7 @@ func _tumble(id: int, depth: float, secs: float) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = id
 	var out := Vector3.ZERO
-	if th.model == "dungeon/wall_cracked.glb":  # (it bursts out of the wall's face, into the room)
+	if th.model in ["dungeon/wall_cracked.glb", "dungeon/wall_cracked_stone.glb"]:  # (it bursts out of the wall's face, into the room)
 		out = (th.xform as Transform3D).basis.z.normalized()
 	var parts := (th.inst as Node).find_children("*", "MeshInstance3D", true, false)
 	for k in parts.size():

@@ -216,10 +216,11 @@ for g, side, line, along, rot, key in rock_edges:
 			wall_piece(x, y, z, rot, yaw, r == rows - 1 and rows >= 2)
 	if h % 2:
 		piece("half_wall", x, fy + 2.0 * rows, z, rot)
-	# A lamp on about every third wall of a lit room (the dark places get none: your lantern).
+	# A lamp on about every seventh wall of a lit room (the dark places get none: your lantern). (F860, owner Nov 25:
+	# "make it darker": was every fourth wall; the game dims Hald's torches too, DungeonMap.HALD torch_energy.)
 	n = torch_every.get(g, 0)
 	torch_every[g] = n + 1
-	if g not in DARK and key not in STAIRS and (g, side, line, along) not in DART and n % 4 == 2:
+	if g not in DARK and key not in STAIRS and (g, side, line, along) not in DART and n % 8 == 2:
 		ox, oz = {"w": (0.2, 0), "e": (-0.2, 0), "n": (0, 0.2), "s": (0, -0.2)}[side]
 		prop("decor/furn_wall_torch_iron.glb", x + ox, fy + 1.2, z + oz, yaw, role="light")
 		lights.append([round(x + ox * 3, 2), fy + 2.0, round(z + oz * 3, 2)])
@@ -242,7 +243,7 @@ for (a, b, along_z, line, lvl), j in junctions.items():
 		return wall_pos(rot, line, al)
 	if kind == "cracked":
 		x, z = p(mid)
-		prop("dungeon/wall_cracked.glb", x, y, z, 90.0 if along_z else 0.0, role="secret", label="Cracked wall (hollow sound)",
+		prop("dungeon/wall_cracked_stone.glb", x, y, z, 90.0 if along_z else 0.0, role="secret", label="Cracked wall (hollow sound)",
 			floor=y)
 		for al in spots:
 			x, z = p(al)
@@ -261,9 +262,9 @@ for (a, b, along_z, line, lvl), j in junctions.items():
 	if kind == "bronze":   # (DungeonKeys: the Bronze Key opens it; the Shield-Brother holds the key)
 		prop("dungeon/door_loot.glb", x, y, z, 90.0 if along_z else 0.0, DOOR_SCALE, role="door", label="Bronze door (locked: the Bronze Key)")
 	if kind == "gate":
-		prop("dungeon/gate_round.glb", x, y, z, 90.0 if along_z else 0.0, DOOR_SCALE, role="door", label="Barred gate: the way out")
+		prop("dungeon/gate_iron.glb", x, y, z, 90.0 if along_z else 0.0, DOOR_SCALE, role="door", label="Barred gate: the way out")
 		# The lever: on the way out's north wall, 1.2 m past the gate, its back on the wall's face.
-		prop("dungeon/lever.glb", x + 1.2, y, 56.0 + 0.15, 0.0, role="door", label="Lever: E to open the gate")
+		prop("dungeon/lever_iron.glb", x + 1.2, y, 56.0 + 0.15, 0.0, role="door", label="Lever: E to open the gate")
 	for edge in (lo + 0.5, hi - 0.5):
 		x, z = p(edge)
 		piece("wall_narrow", x, y, z, rot)
@@ -281,8 +282,8 @@ for (a, b, along_z, line, lvl), j in junctions.items():
 			x, z = p(al)
 			piece("wall", x, float(wy), z, rot)
 
-# --- 3. The way in: the round stone door where the tunnel meets the cave. ---
-prop("dungeon/dungeon_entrance.glb", MOUTH_X, 0.0, CAVE_Z, 0.0, role="door", label="The way in: round stone door")
+# --- 3. The way in: the round stone door where the tunnel meets the cave (stone pillars and lintel, F859). ---
+prop("dungeon/entrance_stone.glb", MOUTH_X, 0.0, CAVE_Z, 0.0, role="door", label="The way in: round stone door")
 for x in (MOUTH_X - 1.5, MOUTH_X + 1.5):
 	piece("wall_narrow", x, 0.0, CAVE_Z, 0)
 for x in (MOUTH_X - 1.0, MOUTH_X + 1.0):
@@ -332,7 +333,7 @@ for x, z, yaw in [(17.0, 11.0, 30.0), (24.6, 10.4, 300.0), (21.0, 16.4, 180.0)]:
 for x, z, yaw in [(6.4, 16.4, 120.0), (10.6, 11.2, 260.0)]:
 	creature("ghost_a", x, z, yaw, floor=D)
 prop("cave/boulder_round.glb", 4.4, D, 13.0, 30.0, scale=2.4, role="secret", label="Hidden boulder (hit it)")
-prop("dungeon/trap_chest_spikes.glb", 3.0, D, 13.0, 90.0, role="trap", label="Spike holes round the chest")
+prop("dungeon/trap_chest_spikes_stone.glb", 3.0, D, 13.0, 90.0, role="trap", label="Spike holes round the chest")
 chest("chest_small", 2.6, 13.0, 90.0, "Embalmers' hoard (always): shoot it first", True, "buried", y=D + 0.24)
 
 # 13 Quiet Chapel: the healing basin.
@@ -439,7 +440,7 @@ DECOR = [
 	("th_hammer_rest", "grave_chamber", W(_d("th_hammer_rest"), "w", 42, 51.4)),
 ]
 _plvl = lambda p: 1 if p["pos"][1] > -3.0 else 2
-_flatj = {"dungeon/wall_cracked.glb", "dungeon/floor_loose_stone.glb"}
+_flatj = {"dungeon/wall_cracked_stone.glb", "dungeon/floor_loose_stone.glb"}
 _dxz = lambda p: (p["pos"][0], p["pos"][2])
 _cells_l = {l: {(k[0], k[1]): v for k, v in cells.items() if k[2] == l and k not in NO_PIECES} for l in (1, 2)}
 _spaces_l = {l: [s for s in SPACES if s[0] not in NOT_ROOMS and level(s[0]) == l] for l in (1, 2)}
@@ -451,7 +452,7 @@ for n, room, at, *up in DECOR:
 
 def _doorways(l):
 	dw = [_dxz(p) for p in pieces if p["id"] == "doorway" and _plvl(p) == l]
-	return dw + [_dxz(p) for p in props if p["model"] in ("dungeon/dungeon_entrance.glb", "dungeon/wall_cracked.glb") and _plvl(p) == l]
+	return dw + [_dxz(p) for p in props if p["model"] in ("dungeon/entrance_stone.glb", "dungeon/wall_cracked_stone.glb") and _plvl(p) == l]
 
 
 def _things(l):
@@ -517,7 +518,7 @@ for g in JUNK_THEMES:
 	_jcounts[g] = max(2, round(1.8 * len(_floor) * 4 / 10) - _there)
 for l in (1, 2):
 	_new = junk.place_junk(
-		_spaces_l[l], _group, _cells_l[l], lambda g: SP[g][5] if g in SP else None, {r for r in JUNK_THEMES if level(r) == l}, JUNK_THEMES,  # (the stairs get none)
+		_spaces_l[l], _group, _cells_l[l], lambda g, l=l: SP[g][5] if g in SP else (0.0 if l == 1 else D), {r for r in JUNK_THEMES if level(r) == l}, JUNK_THEMES,  # (the stairs get none)
 		doors=_doors(l), path_doors=_doorways(l), things=_things(l), traps=_traps(l),
 		furniture=[(p["pos"][0], p["pos"][2], max(junk.size(p["model"])[:2]) / 2) for p in props
 			if p["role"] in ("decor", "light", "heal") and p["model"] not in _flatj and _plvl(p) == l],
@@ -530,7 +531,7 @@ for l in (1, 2):
 			return False
 		return not any(SP[n][1] - 0.8 < x < SP[n][3] + 0.8 and SP[n][2] - 0.8 < z < SP[n][4] + 0.8 and level(n) == l
 			for n in NOT_ROOMS)
-	props += [j for j in _new if _ok(j)]
+	props += [j for j in _new if _ok(j)]  # (a group with no space of its own, F860's fewer torches: its level's floor, then _ok drops stair ones)
 
 # --- Write it out. ---
 missing =sorted({p["model"] for p in props if not (ROOT / "assets/models" / p["model"]).exists()} |

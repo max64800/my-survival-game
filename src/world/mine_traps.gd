@@ -111,7 +111,7 @@ static func kind_of(p: Dictionary) -> String:
 			return "tripwire"
 		"dungeon/trap_tripwire_wall.glb":
 			return "dart_wall"
-		"dungeon/trap_chest_spikes.glb":
+		"dungeon/trap_chest_spikes.glb", "dungeon/trap_chest_spikes_stone.glb":
 			return "chest_spikes"
 		"dungeon/trap_spear_wall.glb":
 			return "spears"
@@ -119,7 +119,7 @@ static func kind_of(p: Dictionary) -> String:
 			return "push"
 		"dungeon/lift_platform.glb":
 			return "lift" if p.has("travel") else ""
-		"dungeon/lift_winch.glb", "dungeon/lever.glb":
+		"dungeon/lift_winch.glb", "dungeon/lever.glb", "dungeon/lever_iron.glb":
 			return "lift_call" if p.has("calls") else ""  # (the other levers open gates: DungeonBuild)
 		"dungeon/trap_dart_plate.glb":
 			return "plate" if p.get("fires", false) else ""  # (Mossgate's plates are only for show)

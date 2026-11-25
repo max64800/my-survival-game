@@ -273,6 +273,52 @@ func test_the_bronze_door_opens_with_its_key() -> void:
 	r.root.free()
 
 
+## A dark STONE dungeon (owner, Nov 25: F856-F860, F862, F863): stone and iron twins of the wooden dungeons' models,
+## no planks under any chest, each with its own boxes (F847) and its moving part.
+func test_stone_and_iron_not_wood() -> void:
+	var plan := DungeonBuild.load_plan("hald")
+	var models := {}
+	for p in plan.props:
+		models[String(p.model)] = true
+	for m in ["dungeon/entrance_stone.glb", "dungeon/gate_iron.glb", "dungeon/lever_iron.glb", "dungeon/portcullis.glb",
+			"dungeon/wall_cracked_stone.glb", "dungeon/trap_chest_spikes_stone.glb"]:
+		check(models.has(m), "Hald has %s" % m)
+	for m in ["dungeon/dungeon_entrance.glb", "dungeon/gate_round.glb", "dungeon/lever.glb", "dungeon/wall_cracked.glb",
+			"dungeon/trap_chest_spikes.glb"]:
+		check(not models.has(m), "no wooden %s" % m)
+	for m in models:
+		check(not ("plank" in m or "wood" in m), "no planks or wood: %s" % m)
+	for p in plan.pieces:
+		check(not ("plank" in String(p.get("mat", "")) or "root" in String(p.get("mat", ""))), "a stone piece: %s %s" % [p.id, p.get("mat", "")])
+	for m in ["dungeon/entrance_stone.glb", "dungeon/gate_iron.glb", "dungeon/lever_iron.glb", "dungeon/wall_cracked_stone.glb",
+			"dungeon/trap_chest_spikes_stone.glb"]:
+		check(DungeonBuild.BOXES.has(m), "%s has its own boxes (F847)" % m)
+	check_eq(DungeonBuild.thing_kind({model = "dungeon/wall_cracked_stone.glb"}), "rubble", "the stone cracked wall breaks")
+	check_eq(DungeonBuild.thing_kind({model = "dungeon/gate_iron.glb"}), DungeonBuild.thing_kind({model = "dungeon/gate_round.glb"}), "the iron gate is a gate")
+	check_eq(DungeonBuild.thing_kind({model = "dungeon/lever_iron.glb"}), DungeonBuild.thing_kind({model = "dungeon/lever.glb"}), "the iron lever is a lever")
+	check_eq(MineTraps.kind_of({model = "dungeon/trap_chest_spikes_stone.glb"}), "chest_spikes", "the stone spike holes fire")
+	for mp in [["dungeon/lever_iron.glb", "handle"], ["dungeon/portcullis.glb", "gate"], ["dungeon/trap_chest_spikes_stone.glb", "spikes"]]:
+		var inst := (load("res://assets/models/" + mp[0]) as PackedScene).instantiate()
+		check(inst.find_child(mp[1], true, false) != null, "%s has its moving '%s'" % mp)
+		inst.free()
+	var wall := (load("res://assets/models/dungeon/wall_cracked_stone.glb") as PackedScene).instantiate()
+	check(wall.find_children("*", "MeshInstance3D", true, false).size() >= 6, "the stone wall falls in pieces")
+	wall.free()
+
+
+## F860 🔁 (owner, Nov 25: "make it darker"): fewer, dimmer torches and a cold dark tomb mood inside.
+func test_the_tomb_is_dark() -> void:
+	var plan := DungeonBuild.load_plan("hald")
+	check(plan.lights.size() <= 32, "fewer torches (%d; were 48)" % plan.lights.size())
+	var d := _hald(_test_world())
+	check(float(d.map.get("torch_energy", 1.6)) < 1.6 and float(d.map.get("torch_range", 9.0)) < 9.0, "dimmer torches")
+	check_eq(String(d.map.get("mood", "")), "tomb", "the tomb mood")
+	check(float(Ambience.MOODS.tomb.ambient_energy) < float(Ambience.MOODS.mossy.ambient_energy) * 0.5, "much less soft light")
+	for map in DungeonMap.MAPS:
+		if map.id != "hald":
+			check(not map.has("mood") and not map.has("torch_energy"), "%s keeps its light" % map.id)
+
+
 ## The Shield-Brother drops the Bronze Key when he dies (or the Grave Chamber stays shut).
 func test_the_shield_brother_drops_the_bronze_key() -> void:
 	var root := Node3D.new()

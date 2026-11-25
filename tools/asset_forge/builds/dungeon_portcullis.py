@@ -7,7 +7,7 @@
 #   frame  the Stonehold round doorway itself (stonehold_v2.doorway: block courses cut round 13 wedge stones and the
 #          keystone). It takes the plain doorway's place at that junction (tools/dungeons/make_hald.py), so there are
 #          never two stone frames in the same spot (Rule 2).
-#   gate   a rusted iron grille cut to the round hole (Rule 5): an iron rim round the arch, upright bars with spike
+#   gate   an old iron grille (F862: plain dark iron, no rust-brown, which read as wood) cut to the round hole (Rule 5): an iron rim round the arch, upright bars with spike
 #          teeth at the bottom, flat straps riveted across both faces. Shut, the teeth stand on the floor; the game
 #          lifts the whole part GATE_LIFT up into the wall's slot, where only the row of teeth shows under the arch
 #          (the clue). Bar/rivet/rust look from decor_nov21_c.py:portcullis_rusted, made round and bigger.
@@ -48,24 +48,8 @@ def iron():
 
 
 def rust():
-	"""The dark iron painting tinted rust-brown (about one part in four is rustier, like the old portcullis)."""
-	m = bpy.data.materials.get("rust_iron")
-	if m:
-		return m
-	m = kit.tex_mat("iron", "dark").copy()
-	m.name = "rust_iron"
-	nt = m.node_tree
-	b = nt.nodes["Principled BSDF"]
-	tex = b.inputs["Base Color"].links[0].from_node
-	mul = nt.nodes.new("ShaderNodeMix")
-	mul.data_type, mul.blend_type = "RGBA", "MULTIPLY"
-	mul.inputs[0].default_value = 1.0
-	mul.inputs[7].default_value = (0.78, 0.4, 0.22, 1)
-	nt.links.new(tex.outputs["Color"], mul.inputs[6])
-	nt.links.new(mul.outputs[2], b.inputs["Base Color"])
-	b.inputs["Metallic"].default_value = 0.35
-	b.inputs["Roughness"].default_value = 0.75
-	return m
+	"""A second, lighter iron (owner, Nov 25, F862: the rust-brown tint looked like wood, so the bars are all iron now)."""
+	return kit.tex_mat("iron", "a")
 
 
 def old_iron():

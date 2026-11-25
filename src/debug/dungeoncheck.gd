@@ -38,7 +38,7 @@ func _run() -> void:
 	_main.hud.set_paused(false)
 	_light = OmniLight3D.new()
 	_light.omni_range = 26.0
-	_light.light_energy = 2.5
+	_light.light_energy = 0.0 if "dark" in OS.get_cmdline_user_args() else 2.5  # "dark": only the game's own lights
 	_light.shadow_enabled = true
 	_main.add_child(_light)
 	var mx: float = d.map.mouth.x
@@ -52,6 +52,12 @@ func _run() -> void:
 		["chasm", Vector3(34.0, 0.3, 6.0), Vector3(39.0, -6.0, 6.0)],
 		["pack_hall", Vector3(58.0, 0.3, 6.0), Vector3(70.0, 2.0, 12.0)],
 	]
+	if "views=hald" in OS.get_cmdline_user_args():  # (F860, Nov 25: the Tomb of Hald, before/after darkening)
+		views = [
+			["hald_mourners", Vector3(42.0, 0.3, 60.5), Vector3(42.0, 1.8, 55.0)],
+			["hald_wardens", Vector3(21.0, 0.3, 40.5), Vector3(21.0, 2.0, 31.0)],
+			["hald_names", Vector3(21.0, DungeonMap.DEEP + 0.3, 18.5), Vector3(21.0, DungeonMap.DEEP + 2.0, 9.0)],
+		]
 	if "views=decor" in OS.get_cmdline_user_args():  # (Nov 22: the decor catalogue's pieces, one corner per photo)
 		views = [
 			["decor_gatekeeper", Vector3(33.0, 0.3, 41.0), Vector3(29.0, 0.6, 45.5)],
@@ -64,6 +70,8 @@ func _run() -> void:
 	for v in views:
 		await _teleport(DungeonMap.to_world(d, v[1]), DungeonMap.to_world(d, v[2]))
 		print("DUNGEONCHECK %s: standing in '%s', looking at '%s' (open %.1f)" % [v[0], DungeonMap.space_at(d, DungeonMap.to_world(d, v[1] + Vector3.UP)), DungeonMap.space_at(d, DungeonMap.to_world(d, v[2])), maker.sdf_at(DungeonMap.to_world(d, v[2]))])
+		if String(v[0]).begins_with("hald_"):
+			await _wait(4.0)  # (the room's mood blends in over a few seconds: Ambience.BLEND_SPEED)
 		await RenderingServer.frame_post_draw
 		print("DUNGEONCHECK shot ", _main.take_screenshot(_shots.path_join("dungeon_%s.png" % v[0])))
 	get_tree().quit()

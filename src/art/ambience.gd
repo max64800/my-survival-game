@@ -19,6 +19,13 @@ const MOODS := {
 		fog = Color(0.05, 0.04, 0.07), fog_emit = Color(0.02, 0.012, 0.03),
 		tint = Color(0.97, 0.95, 1.0), dust = Color(0.8, 0.7, 1.0, 0.5), spores = 0.0,  # (owner, Nov 18: no purple dots)
 	},
+	# Inside a dungeon whose map says mood = "tomb" (the Tomb of Hald, F860, owner Nov 25: "make it darker"): cold grey
+	# and very little soft light, so the torches and your lantern are what you see by.
+	"tomb": {
+		ambient = Color(0.30, 0.32, 0.36), ambient_energy = 0.06,
+		fog = Color(0.02, 0.02, 0.025), fog_emit = Color(0.004, 0.004, 0.006),
+		tint = Color(0.95, 0.96, 1.0), dust = Color(0.75, 0.72, 0.68, 0.45), spores = 0.0,
+	},
 }
 const BLEND_SPEED := 0.6  ## how fast the mood changes when you cross into another biome
 
@@ -96,7 +103,7 @@ func _process(delta: float) -> void:
 	var at := cam.global_position
 	_dust.global_position = at
 	_spores.global_position = at
-	var want: Dictionary = MOODS.get(CaveMaker.biome_at(at), MOODS.mossy)
+	var want: Dictionary = MOODS.get(_dungeon_mood(at), MOODS.get(CaveMaker.biome_at(at), MOODS.mossy))
 	var t := clampf(delta * BLEND_SPEED, 0.0, 1.0)
 	for k in want:
 		_cur[k] = lerp(_cur[k], want[k], t)
@@ -119,6 +126,17 @@ var _big := 0.0  ## 0..1: how far inside the huge cavern the camera is
 var _eyes := 0.0  ## 0..1: how adjusted to the dark the eyes are
 var _open := 0.0  ## 0..1: how open the space around the camera is
 var _look_t := 0.0
+
+
+## The mood of the dungeon room p is in, if its map has one ("tomb"), else "".
+func _dungeon_mood(p: Vector3) -> String:
+	var w = get_parent().get("world") if get_parent() else null
+	if w == null or w.maker == null:
+		return ""
+	for d in w.maker.dungeons:
+		if d.map.has("mood") and DungeonMap.space_at(d, p) != "":
+			return String(d.map.mood)
+	return ""
 
 
 ## How far inside the huge first cavern p is (0 = outside, 1 = well inside).
