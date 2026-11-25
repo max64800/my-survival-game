@@ -397,7 +397,7 @@ func _upgrade_rows(inv: Inventory) -> void:
 	heading.add_theme_font_size_override("font_size", 20)
 	_up_list.add_child(heading)
 	var sub := Label.new()
-	sub.text = "Upgrades: +15% each step, up to +3. Repairs are free."
+	sub.text = "Upgrades: +15% each step, up to +3. Repairs are free.\nThe station's level decides how far you can upgrade: stone and wood gear +1 at level 1, copper gear +1 at level 2, each next step one level more."
 	sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	sub.add_theme_font_size_override("font_size", 13)
 	_up_list.add_child(sub)
@@ -436,8 +436,12 @@ func _upgrade_rows(inv: Inventory) -> void:
 		if cost.is_empty():
 			parts = ["fully upgraded"]
 		elif station.level() < Upgrades.needed_level(s):
-			parts.append("[color=#ff7070]needs station level %d[/color]" % Upgrades.needed_level(s))
-		text.text = "[b]%s[/b]\n[font_size=13]%s[/font_size]" % [Upgrades.display_name(s), ", ".join(parts)]
+			parts.append("[color=#ff7070]to make it +%d, this %s must be level %d (now %d)[/color]" % [Upgrades.level(s) + 1,
+				Items.display_name(station.kind), Upgrades.needed_level(s), station.level()])
+		# The gear's name in the game's title font (F882: the plain bold looked wrong).
+		text.add_theme_font_override("bold_font", UiKit.heading_font())
+		text.add_theme_font_size_override("bold_font_size", 17)
+		text.text = "[b][color=#ffcc73]%s[/color][/b]\n[font_size=13]%s[/font_size]" % [Upgrades.display_name(s), ", ".join(parts)]
 		if Durability.needs_repair(s):  # worn: show how worn; repairing is free
 			text.text += "\n[font_size=13]%s · repair: free[/font_size]" % Durability.status_text(s)
 		row.add_child(text)

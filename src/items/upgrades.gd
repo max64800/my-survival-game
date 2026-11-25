@@ -2,7 +2,9 @@ class_name Upgrades
 ## Gear upgrades +1 to +3 (building polish spec §4).
 ##  - Pickaxes, axes, weapons, shields and clothes/armor can be upgraded 3 times.
 ##  - Stone/wood/leather gear at the Workbench, copper/silver gear at the Anvil.
-##  - +1 needs station level 2, +2 level 3, +3 level 4 (or the station's top level).
+##  - Stone, wood, shell and leather gear: +1 at any station, +2 needs station level 2, +3 level 3. Copper and better
+##    (metal): +1 needs station level 2, +2 level 3, +3 level 4 (owner, Nov 25, F882: "only copper gear should").
+##    Both capped at the station's top level.
 ##  - Each step costs the item's material × 2 / 4 / 6, plus a crystal (blue for +1/+2, green for +3).
 ##  - Each step: +15% dig power / damage / armor.
 ## The level lives on the item's slot: {id, count, up = 0..3}, so it's saved and traded with it.
@@ -42,10 +44,10 @@ static func station_for(id: String) -> String:
 	return "anvil" if is_metal(id) else "workbench"
 
 
-## The station level needed for the NEXT step.
+## The station level needed for the NEXT step (metal gear needs one level more than stone or wood gear).
 static func needed_level(slot: Dictionary) -> int:
-	var kind := station_for(slot.get("id", ""))
-	return mini(level(slot) + 2, Station.max_level(kind))
+	var id: String = slot.get("id", "")
+	return mini(level(slot) + (2 if is_metal(id) else 1), Station.max_level(station_for(id)))
 
 
 ## The item's main material.

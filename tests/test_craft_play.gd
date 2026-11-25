@@ -132,3 +132,21 @@ func test_a_batch_finishes_with_one_sound_and_a_few_spread_out() -> void:
 	check_eq(delays.filter(func(d): return d < 0.0).size(), 10 - 1 - GameAuthority.CRAFT_SFX_EXTRA, "the rest are quiet")
 	check_eq(auth.craft_sound_delay(105.0), 0.0, "the next batch later rings again")
 	auth.free()
+
+
+## F882 (owner, Nov 25): stone gear said "needs station level 2" at the repair bench; only copper gear should.
+func test_stone_gear_upgrades_at_a_plain_workbench() -> void:
+	await _setup()
+	var panel := CraftPanel.new()
+	panel.peer_id = 1
+	auth.get_parent().add_child(panel)
+	var up := panel.make_upgrade_panel()
+	auth.get_parent().add_child(up)
+	panel.open_for(auth.stations[7])
+	var texts := []
+	for n in up.find_children("*", "RichTextLabel", true, false):
+		texts.append((n as RichTextLabel).text)
+	var pick := " ".join(texts)
+	check(pick.contains("Pickaxe"), "the stone pickaxe is listed (%s)" % pick)
+	check(not pick.contains("must be level"), "and needs no higher station level")
+	auth.get_parent().queue_free()
