@@ -102,7 +102,7 @@ func shield_item() -> String:
 		return best
 	for i in Inventory.HOTBAR_SIZE:
 		var id: String = ps.inventory.get_slot(i).get("id", "")
-		if Items.kind(id) == "shield" and (best == "" or Items.tier(id) > Items.tier(best)):
+		if Items.kind(id) == "shield" and (best == "" or Items.rank(id) > Items.rank(best)):
 			best = id
 	return best
 

@@ -69,7 +69,7 @@ const DUNGEON_GEMS := {
 }
 const BOSS_CHANCE := 0.5  ## a boss drops a Rough gem half the time
 const BIG_CUT_CHANCE := 0.5  ## a big dungeon's last chest: Cut half the time (the only place Cut gems drop)
-const ARMOR_TIER := {"copper": 1, "silver": 2, "iron": 3}  ## armor has no "tier": its look says the metal
+const ARMOR_TIER := {"copper": 1, "bronze": 1, "silver": 2, "iron": 3}  ## armor has no "tier": its look says the metal
 const ARMOR_SLOTS := ["head", "chest", "legs", "feet"]
 
 
@@ -220,6 +220,6 @@ static func shield_slot(inv: Inventory) -> Dictionary:
 	var best := inv.get_slot(inv.worn_slot("shield")) if inv.is_player else {}  # the worn shield (F23, F825)
 	for i in Inventory.HOTBAR_SIZE:
 		var s := inv.get_slot(i)
-		if not s.is_empty() and Items.kind(s.id) == "shield" and (best.is_empty() or Items.tier(s.id) > Items.tier(best.id)):
+		if not s.is_empty() and Items.kind(s.id) == "shield" and (best.is_empty() or Items.rank(s.id) > Items.rank(best.id)):
 			best = s
 	return best

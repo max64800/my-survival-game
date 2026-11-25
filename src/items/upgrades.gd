@@ -56,6 +56,8 @@ static func material_for(id: String) -> String:
 		return "leather"
 	if id.contains("silver"):
 		return "silver_ingot"
+	if id.contains("bronze"):
+		return "bronze_ingot"
 	if is_metal(id):
 		return "copper_ingot"
 	if Items.kind(id) == "wear":

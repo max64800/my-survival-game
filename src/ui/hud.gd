@@ -919,7 +919,7 @@ func _update_first_steps(ps: GameAuthority.PlayerState, has_lantern: bool) -> vo
 		_steps_label.offset_top = 120
 		add_child(_steps_label)
 	var inv := ps.inventory
-	var has_pick := inv.count_of("pickaxe_stone") + inv.count_of("pickaxe_copper") + inv.count_of("pickaxe_silver") > 0
+	var has_pick := inv.count_of("pickaxe_stone") + inv.count_of("pickaxe_copper") + inv.count_of("pickaxe_bronze") + inv.count_of("pickaxe_silver") > 0
 	var t := ""
 	if not has_lantern:
 		t = "Pick up your Lantern from the floor (walk over it)."

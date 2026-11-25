@@ -155,6 +155,11 @@ static func situation(sneak: bool, stunned: bool, first_heavy_on_stunned: bool, 
 	return m
 
 
+## A shield's extra block from its boost: bronze (+0.15) blocks 5% more, halfway from copper (60%) to silver (70%).
+static func boost_block(boost: float) -> float:
+	return boost / 3.0
+
+
 ## A crossbow bolt's damage. `dist` fades it out past 40 m.
 static func shot_damage(aimed: bool, tier: int, bolt: String, target: Dictionary, dist: float, situation: float = 1.0, buff: float = 0.0, extra := {}) -> int:
 	var b: Dictionary = BOLTS.get(bolt, BOLTS.bolt_stone)
@@ -242,11 +247,12 @@ static func damage_text(slot: Dictionary) -> String:
 	if w == "fists" or not WEAPONS.has(w):
 		return ""
 	var tier := maxi(Items.tier(id), 0)
+	var boost := Items.boost(id)  # bronze: +15% (F697)
 	if w == "crossbow":
-		return "Damage %d · aimed %d (stone bolt)" % [shot_damage(false, tier, "bolt_stone", {armor = 0}, 0.0),
-			shot_damage(true, tier, "bolt_stone", {armor = 0}, 0.0)]
+		return "Damage %d · aimed %d (stone bolt)" % [shot_damage(false, tier, "bolt_stone", {armor = 0}, 0.0, 1.0, boost),
+			shot_damage(true, tier, "bolt_stone", {armor = 0}, 0.0, 1.0, boost)]
 	var up := Upgrades.bonus(slot)
-	var text := "Damage %d" % damage(w, false, tier, {armor = 0}, 0, 1.0, 0.0, up)
+	var text := "Damage %d" % damage(w, false, tier, {armor = 0}, 0, 1.0, boost, up)
 	if has_heavy(w, tier):
-		text += " · heavy %d" % damage(w, true, tier, {armor = 0}, 0, 1.0, 0.0, up)
+		text += " · heavy %d" % damage(w, true, tier, {armor = 0}, 0, 1.0, boost, up)
 	return text

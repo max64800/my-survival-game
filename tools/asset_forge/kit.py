@@ -19,7 +19,7 @@ rng = random.Random(7)
 _mats = {}
 # Hand-painted tiling textures (made with ChatGPT, see CREDITS.md). Variants a/b/c/dark = brightness copies.
 TEX = Path(__file__).resolve().parents[2] / "assets" / "textures" / "kit"
-TILE = {"stone": 0.9, "wood": 0.7, "iron": 0.5, "copper": 0.5, "cloth": 0.8, "straw": 0.5,
+TILE = {"stone": 0.9, "wood": 0.7, "iron": 0.5, "copper": 0.5, "bronze": 0.5, "cloth": 0.8, "straw": 0.5,
 	"leather": 0.6, "soil": 0.8, "rope": 0.22, "ropev": 0.22, "silver": 0.5, "sack": 0.75, "marble": 0.9, "basalt": 0.9, "clay": 0.9, "brownrock": 0.9, "amberrock": 0.9, "sporestone": 0.9, "brick": 0.9, "mushwood": 0.7, "shingle": 0.6, "slate": 0.6, "rooftile": 0.6, "bannercloth": 0.8, "rugcloth": 0.8, "bark": 0.6, "greywood": 0.7, "limestone": 0.9, "brickochre": 0.9, "greenpaint": 0.7, "greystone": 0.9, "warmstone": 0.9, "shackbark": 1.0, "shackplank": 1.0, "shackshingle": 1.0, "shacklogend": 1.0, "shackstone": 1.0, "shackdark": 1.0}   # meters one texture repeat covers
 
 # Palette: earthy and a little warm (style bible: muted colors, bright only for gems/fire/magic).
@@ -69,8 +69,8 @@ def tex_mat(kind, variant=None, metal=None, rough=None):
 	m.use_nodes = True
 	nt = m.node_tree
 	b = nt.nodes["Principled BSDF"]
-	b.inputs["Roughness"].default_value = rough if rough is not None else (0.45 if kind in ("iron", "copper", "silver") else 0.9)
-	b.inputs["Metallic"].default_value = metal if metal is not None else (0.6 if kind in ("iron", "copper", "silver") else 0.0)
+	b.inputs["Roughness"].default_value = rough if rough is not None else (0.45 if kind in ("iron", "copper", "bronze", "silver") else 0.9)
+	b.inputs["Metallic"].default_value = metal if metal is not None else (0.6 if kind in ("iron", "copper", "bronze", "silver") else 0.0)
 	t = nt.nodes.new("ShaderNodeTexImage")
 	t.image = bpy.data.images.load(str(TEX / f"{kind}_{variant}.png"), check_existing=True)
 	nt.links.new(t.outputs["Color"], b.inputs["Base Color"])

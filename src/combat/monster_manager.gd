@@ -588,7 +588,7 @@ func request_attack(peer: int, uids: PackedInt32Array, heavy: bool, combo_step: 
 		var star: float = ps.progress.star_damage_bonus(w, {combo_step = combo_step, riposte = riposte, stunned = m.stun.is_stunned(),
 			shelled = float(m.stats().get("armor", 0.0)) >= 20.0, airborne = airborne,
 			tip = dist >= wd.reach * ps.progress.reach_mult(w) * 0.8})  # skills.md ★ perks
-		var dmg := roundi(Combat.damage(w, heavy, tier, _pierced(ps, m, w), combo_step, sit, 0.0, Upgrades.bonus(ps.inventory.get_slot(hand)), buff + auth.damage_boost(ps, m.kind) + ps.progress.weapon_damage_bonus(w) + _perk_buff(ps, peer, m, w) + star, elem) * mult)
+		var dmg := roundi(Combat.damage(w, heavy, tier, _pierced(ps, m, w), combo_step, sit, Items.boost(item), Upgrades.bonus(ps.inventory.get_slot(hand)), buff + auth.damage_boost(ps, m.kind) + ps.progress.weapon_damage_bonus(w) + _perk_buff(ps, peer, m, w) + star, elem) * mult)
 		var crit := false
 		if riposte and ps.progress.riposte_crits(w):  # Sword ★100: a perfect parry's counter is a critical
 			dmg = roundi(dmg * Combat.CRIT_MULT)
@@ -657,7 +657,7 @@ func _shield_slot(ps: GameAuthority.PlayerState) -> int:
 	var best := -1
 	for i in Inventory.HOTBAR_SIZE:
 		var id: String = ps.inventory.get_slot(i).get("id", "")
-		if Items.kind(id) == "shield" and (best < 0 or Items.tier(id) > Items.tier(ps.inventory.get_slot(best).get("id", ""))):
+		if Items.kind(id) == "shield" and (best < 0 or Items.rank(id) > Items.rank(ps.inventory.get_slot(best).get("id", ""))):
 			best = i
 	return best
 
@@ -792,13 +792,13 @@ func request_hit_friend(peer: int, target: int, heavy: bool, bolt: String = "", 
 		if w != "crossbow" or not Combat.BOLTS.has(bolt) or gap > Combat.BOLT_MAX + 2.0:
 			return 0
 		_ff_ready[peer] = _clock + Combat.RELOAD[clampi(tier, 0, 4)] * 0.8  # one bolt per reload
-		dmg = Combat.shot_damage(heavy, tier, bolt, {armor = 0}, gap)
+		dmg = Combat.shot_damage(heavy, tier, bolt, {armor = 0}, gap, 1.0, Items.boost(item))
 		for k in BOLT_BUILDUP.get(bolt, {}):
 			buildup[k] = BOLT_BUILDUP[bolt][k] * Combat.FRIENDLY_FIRE
 	else:
 		if w == "crossbow" or gap > Combat.WEAPONS[w].reach + 1.5:
 			return 0
-		dmg = Combat.damage(w, heavy, tier, {armor = 0})
+		dmg = Combat.damage(w, heavy, tier, {armor = 0}, 0, 1.0, Items.boost(item))
 		_ff_ready[peer] = _clock + Combat.WEAPONS[w].light_speed * 0.8
 	var dealt := roundi(dmg * Combat.FRIENDLY_FIRE)
 	auth.hurt(target, dealt, buildup)
@@ -852,7 +852,7 @@ func request_shoot(peer: int, bolt: String, aimed: bool, uid: int, from: Vector3
 				elem[e] = gb[e]
 		var sneak: bool = m.state in [Monster.State.IDLE, Monster.State.WANDER, Monster.State.SLEEP]
 		var sit := Combat.situation(sneak, m.stun.is_stunned(), false, false)
-		dealt = Combat.shot_damage(aimed, tier, bolt, _pierced(ps, m, "crossbow"), dist, sit, gb.get("keen", 0.0) + auth.damage_boost(ps, m.kind) + ps.progress.weapon_damage_bonus("crossbow") + _perk_buff(ps, peer, m, "crossbow"), elem)
+		dealt = Combat.shot_damage(aimed, tier, bolt, _pierced(ps, m, "crossbow"), dist, sit, gb.get("keen", 0.0) + Items.boost(ps.selected_item()) + auth.damage_boost(ps, m.kind) + ps.progress.weapon_damage_bonus("crossbow") + _perk_buff(ps, peer, m, "crossbow"), elem)
 		var stun_amount: float = (Combat.stun_value("crossbow", aimed, tier) + b.get("stun", 0.0)) * (1.0 + gb.get("stun", 0.0))
 		for k in BOLT_BUILDUP.get(bolt, {}):
 			m.add_buildup(k, BOLT_BUILDUP[bolt][k])
@@ -1113,6 +1113,7 @@ func _judge_incoming() -> void:
 				var sb := Gems.bonus(Gems.shield_slot(me.inventory)) if def.shield else {}
 				if def.shield:  # Shield skill: stronger, cheaper blocks
 					sb = sb.duplicate()
+					sb["block"] = sb.get("block", 0.0) + Combat.boost_block(Items.boost(Gems.shield_slot(me.inventory).get("id", "")))  # bronze
 					for k in me.progress.block_bonus():
 						sb[k] = sb.get(k, 0.0) + me.progress.block_bonus()[k]
 				else:

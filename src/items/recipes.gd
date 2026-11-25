@@ -65,6 +65,7 @@ const LIST := {
 	# --- smelter (needs wood fuel; times from doc 4.2)
 	"copper_ingot": {station = "smelter", inputs = {copper_ore = 2}, output = "copper_ingot", count = 1, seconds = 20, fuel = 1, unlock = ["copper_ore"]},
 	"copper_from_scrap": {station = "smelter", inputs = {rusty_scrap = 3}, output = "copper_ingot", count = 1, seconds = 20, fuel = 1, unlock = ["rusty_scrap"]},
+	"bronze_ingot": {station = "smelter", inputs = {copper_ingot = 1, tin_ore = 1}, output = "bronze_ingot", count = 1, seconds = 20, fuel = 1, unlock = ["tin_ore"]},  # F697
 	"silver_ingot": {station = "smelter", inputs = {silver_ore = 2}, output = "silver_ingot", count = 1, seconds = 30, fuel = 1, unlock = ["silver_ore"]},
 	"clay_brick": {station = "smelter", inputs = {clay = 2}, output = "clay_brick", count = 2, seconds = 10, fuel = 1, unlock = ["clay"]},
 	"lantern_lens": {station = "smelter", inputs = {crystal_blue = 3, clay = 1}, output = "lantern_lens", count = 1, seconds = 30, fuel = 1, unlock = ["crystal_blue"]},
@@ -102,6 +103,21 @@ const LIST := {
 	# Crossbows and bolts (combat doc 3.6; "starting idea" recipes, tune in play-testing).
 	"crossbow_stone": {station = "workbench", inputs = {plank_root = 4, rope = 3, stone = 4}, output = "crossbow_stone", count = 1, unlock = ["rope"]},
 	"crossbow_copper": {station = "anvil", inputs = {copper_ingot = 30, plank_root = 3, rope = 2}, output = "crossbow_copper", count = 1, unlock = "ruin"},
+	# Bronze (F697 step 4, owner Nov 25): copper's amounts with Bronze Ingots, halfway between copper and silver.
+	# Locked ("ruin") until step 5 puts one bronze page on each dungeon's recipe stand (the Pickaxe page in Mossgate's big chest).
+	"helm_bronze": {station = "anvil", inputs = {bronze_ingot = 30, leather = 10}, output = "helm_bronze", count = 1, unlock = "ruin"},
+	"mail_bronze": {station = "anvil", inputs = {bronze_ingot = 30, leather = 10}, output = "mail_bronze", count = 1, unlock = "ruin"},
+	"greaves_bronze": {station = "anvil", inputs = {bronze_ingot = 30, leather = 10}, output = "greaves_bronze", count = 1, unlock = "ruin"},
+	"boots_bronze": {station = "anvil", inputs = {bronze_ingot = 30, leather = 10}, output = "boots_bronze", count = 1, unlock = "ruin"},
+	"shield_bronze": {station = "anvil", inputs = {bronze_ingot = 30, plank_root = 4, leather = 2}, output = "shield_bronze", count = 1, unlock = "ruin"},
+	"crossbow_bronze": {station = "anvil", inputs = {bronze_ingot = 30, plank_root = 3, rope = 2}, output = "crossbow_bronze", count = 1, unlock = "ruin"},
+	"spear_bronze": {station = "anvil", inputs = {bronze_ingot = 30, plank_root = 3, leather = 1}, output = "spear_bronze", count = 1, unlock = "ruin"},
+	"axe_bronze": {station = "anvil", inputs = {bronze_ingot = 15, plank_root = 3, leather = 1}, output = "axe_bronze", count = 1, unlock = "ruin"},
+	"sword_bronze": {station = "anvil", inputs = {bronze_ingot = 30, plank_root = 2, leather = 1}, output = "sword_bronze", count = 1, unlock = "ruin"},
+	"mace_bronze": {station = "anvil", inputs = {bronze_ingot = 30, plank_root = 2, leather = 1}, output = "mace_bronze", count = 1, unlock = "ruin"},
+	"axe_2h_bronze": {station = "anvil", inputs = {bronze_ingot = 30, plank_root = 3, leather = 2}, output = "axe_2h_bronze", count = 1, unlock = "ruin"},
+	"mace_2h_bronze": {station = "anvil", inputs = {bronze_ingot = 30, plank_root = 3, leather = 2}, output = "mace_2h_bronze", count = 1, unlock = "ruin"},
+	"pickaxe_bronze": {station = "anvil", inputs = {bronze_ingot = 15, plank_root = 4, leather = 2}, output = "pickaxe_bronze", count = 1, unlock = "ruin"},
 	"crossbow_silver": {station = "anvil", inputs = {silver_ingot = 4, plank_mushroom = 3, spider_silk = 1}, output = "crossbow_silver", count = 1, unlock = ["silver_ingot"]},
 	"bolt_stone": {station = "workbench", inputs = {plank_root = 1, stone = 2}, output = "bolt_stone", count = 10, unlock = ["rope"]},
 	"bolt_metal": {station = "anvil", inputs = {plank_root = 1, copper_ingot = 1}, output = "bolt_metal", count = 10, unlock = ["copper_ingot"]},

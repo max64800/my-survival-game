@@ -79,6 +79,7 @@ const DATA := {
 	"rope": {name = "Rope", color = Color(0.75, 0.65, 0.45), short = "Ro"},
 	"leather": {name = "Leather", color = Color(0.55, 0.35, 0.2), short = "Le"},
 	"copper_ingot": {name = "Copper Ingot", color = Color(0.9, 0.55, 0.3), short = "CI"},
+	"bronze_ingot": {name = "Bronze Ingot", color = Color(0.72, 0.55, 0.28), short = "BI"},  ## smelter: 1 Copper Ingot + 1 Tin Ore (F697)
 	"gold_coin": {name = "Gold Coin", stack = 100, color = Color(0.95, 0.75, 0.25), short = "Au"},  ## found in old chests; pays for a perk reset
 	"silver_ingot": {name = "Silver Ingot", color = Color(0.85, 0.87, 0.92), short = "SI"},
 	"clay_brick": {name = "Clay Brick", color = Color(0.8, 0.4, 0.25), short = "CB"},
@@ -97,12 +98,16 @@ const DATA := {
 	# --- tools
 	"pickaxe_stone": {name = "Stone Pickaxe", stack = 1, color = Color(0.7, 0.68, 0.62), short = "Pk", kind = "pickaxe", power = 10, tier = 0},
 	"pickaxe_copper": {name = "Copper Pickaxe", stack = 1, color = Color(0.9, 0.55, 0.3), short = "Pk", kind = "pickaxe", power = 13, tier = 1},
+	# Bronze (F697, owner Nov 25): halfway between copper and silver. Same tier as copper (same rock, durability, reload),
+	# plus boost = +15% damage / block (Items.boost). Pickaxe and axe power 15 (copper 13, silver 17).
+	"pickaxe_bronze": {name = "Bronze Pickaxe", stack = 1, color = Color(0.72, 0.55, 0.28), short = "Pk", kind = "pickaxe", power = 15, tier = 1, boost = 0.15},
 	"pickaxe_silver": {name = "Silver Pickaxe", stack = 1, color = Color(0.85, 0.87, 0.92), short = "Pk", kind = "pickaxe", power = 17, tier = 2},
 	"tuber_seed": {name = "Tuber Seed", stack = 20, color = Color(0.7, 0.5, 0.3), short = "TS", kind = "seed"},  ## found in old chests; plant in a Farm Plot for Root Tubers
 	"root_seed": {name = "Root Seed", stack = 20, color = Color(0.45, 0.3, 0.18), short = "Rs", kind = "seed"},  ## plant with the Mason's Shovel (owner, Nov 18)
 	"masons_shovel": {name = "Mason's Shovel", stack = 1, color = Color(0.66, 0.62, 0.55), short = "Sh", kind = "shovel", tier = 0},  ## levels the ground (owner, Nov 17)
 	"axe_stone": {name = "Stone Axe", stack = 1, color = Color(0.7, 0.68, 0.62), short = "Ax", kind = "axe", power = 10, tier = 0},
 	"axe_copper": {name = "Copper Axe", stack = 1, color = Color(0.9, 0.55, 0.3), short = "Ax", kind = "axe", power = 13, tier = 1},
+	"axe_bronze": {name = "Bronze Axe", stack = 1, color = Color(0.72, 0.55, 0.28), short = "Ax", kind = "axe", power = 15, tier = 1, boost = 0.15},
 	"axe_silver": {name = "Silver Axe", stack = 1, color = Color(0.85, 0.87, 0.92), short = "Ax", kind = "axe", power = 17, tier = 2},
 	"build_hammer": {name = "Build Hammer", stack = 1, color = Color(0.6, 0.5, 0.4), short = "Hm", kind = "hammer"},
 	"lantern": {name = "Lantern", stack = 1, color = Color(1.0, 0.75, 0.4), short = "La", kind = "lantern"},
@@ -152,6 +157,10 @@ const DATA := {
 	"mail_copper": {name = "Copper Mail", stack = 1, color = Color(0.88, 0.52, 0.28), short = "Ma", kind = "wear", slot = "chest", armor = 9, look = "copper"},
 	"greaves_copper": {name = "Copper Greaves", stack = 1, color = Color(0.85, 0.5, 0.28), short = "Gr", kind = "wear", slot = "legs", armor = 6, look = "copper"},
 	"boots_copper": {name = "Copper-shod Boots", stack = 1, color = Color(0.8, 0.48, 0.26), short = "CB", kind = "wear", slot = "feet", armor = 4, look = "copper"},
+	"helm_bronze": {name = "Bronze Helm", stack = 1, color = Color(0.72, 0.55, 0.28), short = "He", kind = "wear", slot = "head", armor = 6, look = "bronze"},
+	"mail_bronze": {name = "Bronze Mail", stack = 1, color = Color(0.7, 0.53, 0.27), short = "Ma", kind = "wear", slot = "chest", armor = 10, look = "bronze"},
+	"greaves_bronze": {name = "Bronze Greaves", stack = 1, color = Color(0.68, 0.51, 0.26), short = "Gr", kind = "wear", slot = "legs", armor = 7, look = "bronze"},
+	"boots_bronze": {name = "Bronze Boots", stack = 1, color = Color(0.65, 0.49, 0.25), short = "BB", kind = "wear", slot = "feet", armor = 5, look = "bronze"},
 	# --- backpacks (pack slot): open 10 more bag slots
 	"satchel": {name = "Leather Satchel", stack = 1, color = Color(0.6, 0.42, 0.25), short = "Sa", kind = "pack"},
 	"prospectors_lens": {name = "Prospector's Lens", stack = 1, color = Color(0.85, 0.9, 1.0), short = "Ln", kind = "lens"},
@@ -174,9 +183,10 @@ const DATA := {
 	"rune_slab": {name = "Rune Slab", stack = 1, color = Color(0.5, 0.5, 0.6), short = "RS", kind = "station"},
 	"farm_plot": {name = "Farm Plot", stack = 1, color = Color(0.35, 0.25, 0.15), short = "FP", kind = "station"},
 	"drip_bucket": {name = "Drip Bucket", stack = 1, color = Color(0.45, 0.4, 0.35), short = "DB", kind = "station"},
-	# --- weapons (combat doc 3). tier: 0 stone, 1 copper, 2 silver
+	# --- weapons (combat doc 3). tier: 0 stone, 1 copper (and bronze, with boost), 2 silver
 	"crossbow_stone": {name = "Wooden Crossbow", stack = 1, color = Color(0.6, 0.45, 0.3), short = "Xb", kind = "weapon", weapon = "crossbow", tier = 0},
 	"crossbow_copper": {name = "Copper Crossbow", stack = 1, color = Color(0.9, 0.55, 0.3), short = "Xb", kind = "weapon", weapon = "crossbow", tier = 1},
+	"crossbow_bronze": {name = "Bronze Crossbow", stack = 1, color = Color(0.72, 0.55, 0.28), short = "Xb", kind = "weapon", weapon = "crossbow", tier = 1, boost = 0.15},
 	"crossbow_silver": {name = "Silver Crossbow", stack = 1, color = Color(0.85, 0.87, 0.92), short = "Xb", kind = "weapon", weapon = "crossbow", tier = 2},
 	"bolt_stone": {name = "Stone-tip Bolt", color = Color(0.65, 0.6, 0.55), short = "Bs", kind = "ammo"},
 	"bolt_metal": {name = "Metal-tip Bolt", color = Color(0.8, 0.6, 0.4), short = "Bm", kind = "ammo"},
@@ -197,6 +207,12 @@ const DATA := {
 	"shield_copper": {name = "Copper Shield", stack = 1, color = Color(0.9, 0.55, 0.3), short = "Sh", kind = "shield", weapon = "shield", tier = 1},
 	"axe_2h_copper": {name = "Copper Great Axe", stack = 1, color = Color(0.9, 0.55, 0.3), short = "GA", kind = "weapon", weapon = "axe_2h", tier = 1},
 	"mace_2h_copper": {name = "Copper Great Maul", stack = 1, color = Color(0.9, 0.55, 0.3), short = "GM", kind = "weapon", weapon = "mace_2h", tier = 1},
+	"sword_bronze": {name = "Bronze Sword", stack = 1, color = Color(0.72, 0.55, 0.28), short = "Sw", kind = "weapon", weapon = "sword", tier = 1, boost = 0.15},
+	"mace_bronze": {name = "Bronze Mace", stack = 1, color = Color(0.72, 0.55, 0.28), short = "Mc", kind = "weapon", weapon = "mace", tier = 1, boost = 0.15},
+	"spear_bronze": {name = "Bronze Spear", stack = 1, color = Color(0.72, 0.55, 0.28), short = "Sp", kind = "weapon", weapon = "spear", tier = 1, boost = 0.15},
+	"shield_bronze": {name = "Bronze Shield", stack = 1, color = Color(0.72, 0.55, 0.28), short = "Sh", kind = "shield", weapon = "shield", tier = 1, boost = 0.15},
+	"axe_2h_bronze": {name = "Bronze Great Axe", stack = 1, color = Color(0.72, 0.55, 0.28), short = "GA", kind = "weapon", weapon = "axe_2h", tier = 1, boost = 0.15},
+	"mace_2h_bronze": {name = "Bronze Great Maul", stack = 1, color = Color(0.72, 0.55, 0.28), short = "GM", kind = "weapon", weapon = "mace_2h", tier = 1, boost = 0.15},
 	"sword_silver": {name = "Silver Sword", stack = 1, color = Color(0.85, 0.87, 0.92), short = "Sw", kind = "weapon", weapon = "sword", tier = 2},
 	"mace_silver": {name = "Silver Mace", stack = 1, color = Color(0.85, 0.87, 0.92), short = "Mc", kind = "weapon", weapon = "mace", tier = 2},
 	"spear_silver": {name = "Silver Spear", stack = 1, color = Color(0.85, 0.87, 0.92), short = "Sp", kind = "weapon", weapon = "spear", tier = 2},
@@ -290,6 +306,17 @@ static func dig_power(id: String) -> int:
 ## Tool tier: 0 stone, 1 copper, 2 silver, ... -1 = not a tool.
 static func tier(id: String) -> int:
 	return info(id).get("tier", -1)
+
+
+## Extra strength on top of the tier: 0.15 = +15% damage (and +5% shield block, Combat.boost_block).
+## Bronze has it: copper's tier, halfway to silver (F697, owner Nov 25).
+static func boost(id: String) -> float:
+	return info(id).get("boost", 0.0)
+
+
+## Which of two items is the better one: tier, then boost (a Bronze Shield beats a Copper Shield).
+static func rank(id: String) -> float:
+	return tier(id) + boost(id)
 
 
 ## Seconds of lantern light one of this item gives. 0 = not fuel.

@@ -38,7 +38,7 @@ const GROUP_OF := {
 	"ancient_brick": "rock", "sporestone": "rock", "amberrock": "rock", "clay_brick": "rock", "mortar": "rock",
 	"cut_stone": "rock", "cut_marble": "rock", "sporestone_block": "rock", "amber_block": "rock", "mushroom_brick": "rock",
 	"copper_ore": "ore", "tin_ore": "ore", "silver_ore": "ore",
-	"copper_ingot": "metal", "silver_ingot": "metal", "rusty_scrap": "metal",
+	"copper_ingot": "metal", "bronze_ingot": "metal", "silver_ingot": "metal", "rusty_scrap": "metal",
 	"crystal_blue": "crystal", "crystal_green": "crystal", "crystal_violet": "crystal", "crystal_amber": "crystal",
 	"crystal_white": "crystal", "crystal_red": "crystal", "bloomheart_core": "crystal", "lantern_lens": "crystal",
 	"rootwood": "wood", "coal": "wood", "mushroom_wood": "wood", "plank_root": "wood", "plank_mushroom": "wood",
@@ -61,6 +61,7 @@ const WEIGHT_OF := {
 	"cap_leather": 1.5, "boots_leather": 1.5, "trousers_leather": 2.5, "tunic_leather": 3.0,
 	"helm_shell": 2.5, "boots_shell": 2.5, "greaves_shell": 4.0, "plate_shell": 5.0,
 	"helm_copper": 3.5, "boots_copper": 3.5, "greaves_copper": 6.0, "mail_copper": 8.0, "spore_mask": 1.0,
+	"helm_bronze": 3.5, "boots_bronze": 3.5, "greaves_bronze": 6.0, "mail_bronze": 8.0,
 	"shield_stone": 8.0, "shield_shell": 5.0,
 	"bandage": 0.1, "waterskin_empty": 0.3, "satchel": 2.0, "whetstone": 0.5, "build_hammer": 3.0,
 }

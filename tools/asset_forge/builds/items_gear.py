@@ -32,7 +32,7 @@ def dome(loc, r, h, material, open_bottom=True, segs=16):
 
 
 def mat_of(set_):
-	return {"leather": kit.tex_mat("leather"), "copper": kit.tex_mat("copper"), "shell": kit.tex_mat("stone", "c")}[set_]
+	return {"leather": kit.tex_mat("leather"), "copper": kit.tex_mat("copper"), "bronze": kit.tex_mat("bronze"), "shell": kit.tex_mat("stone", "c")}[set_]
 
 
 def shell_spiral(loc, r, rot=(0, 0, 0)):
@@ -67,9 +67,9 @@ def chest_armor(set_):
 	kit.taper(0.34, 0.2, 0.42, 0.22, 0.4, (0, 0, 0.0), m, bevel=0.03)
 	kit.tbox("leather", (0.36, 0.23, 0.05), (0, 0, 0.12), variant="dark", bevel=0.01)
 	kit.tbox("iron", (0.06, 0.02, 0.05), (0, -0.12, 0.12), bevel=0.005)
-	if set_ == "copper":
+	if set_ in ("copper", "bronze"):
 		for z in (0.2, 0.27, 0.34):
-			kit.box((0.4, 0.23, 0.012), (0, 0, z), kit.tex_mat("copper", "dark"), bevel=0.003, wobble=0)
+			kit.box((0.4, 0.23, 0.012), (0, 0, z), kit.tex_mat(set_, "dark"), bevel=0.003, wobble=0)
 	for s in (-1, 1):
 		dome((s * 0.17, 0, 0.36), 0.085, 0.07, m)
 	if set_ == "shell":
@@ -97,16 +97,17 @@ def boots(set_):
 	m = mat_of(set_) if set_ != "shell" else kit.tex_mat("leather")
 	for s in (-1, 1):
 		x = s * 0.056  # the pair stands together, soles touching (nothing floats apart)
-		kit.tbox("leather", (0.1, 0.22, 0.07), (x, -0.04, 0.035), variant="b", bevel=0.03)
-		kit.tcyl("leather", 0.055, 0.16, (x, 0.02, 0.15), verts=12)
-		kit.ring(0.058, 0.014, (x, 0.02, 0.22), kit.tex_mat("leather", "dark"), seg=14)
-		kit.tbox("leather", (0.105, 0.225, 0.02), (x, -0.04, 0.01), variant="dark", bevel=0.006)
-		if set_ == "copper":
-			kit.tbox("copper", (0.105, 0.07, 0.06), (x, -0.13, 0.04), bevel=0.015)
-			kit.ring(0.06, 0.012, (x, 0.02, 0.12), kit.tex_mat("copper"), seg=14)
+		y = s * 0.04  # one boot a little ahead, so the two top rings don't cut into each other (no shimmer)
+		kit.tbox("leather", (0.1, 0.22, 0.07), (x, y - 0.04, 0.035), variant="b", bevel=0.03)
+		kit.tcyl("leather", 0.055, 0.16, (x, y + 0.02, 0.15), verts=12)
+		kit.ring(0.058, 0.014, (x, y + 0.02, 0.22), kit.tex_mat("leather", "dark"), seg=14)
+		kit.tbox("leather", (0.105, 0.225, 0.02), (x, y - 0.04, 0.01), variant="dark", bevel=0.006)
+		if set_ in ("copper", "bronze"):
+			kit.tbox(set_, (0.105, 0.07, 0.06), (x, y - 0.13, 0.04), bevel=0.015)
+			kit.ring(0.06, 0.012, (x, y + 0.02, 0.12), kit.tex_mat(set_), seg=14)
 		if set_ == "shell":
-			shell_spiral((x, -0.09, 0.07), 0.035, rot=(70, 0, 0))
-			kit.ring(0.06, 0.016, (x, 0.02, 0.12), kit.tex_mat("stone", "c"), seg=14)
+			shell_spiral((x, y - 0.09, 0.07), 0.035, rot=(70, 0, 0))
+			kit.ring(0.06, 0.016, (x, y + 0.02, 0.12), kit.tex_mat("stone", "c"), seg=14)
 
 
 def satchel():
@@ -228,6 +229,9 @@ BUILD = {
 	"plate_shell": lambda: chest_armor("shell"),
 	"trousers_leather": lambda: legs("leather"), "greaves_copper": lambda: legs("copper"), "greaves_shell": lambda: legs("shell"),
 	"boots_leather": lambda: boots("leather"), "boots_copper": lambda: boots("copper"), "boots_shell": lambda: boots("shell"),
+	# bronze = the copper pieces repainted (F697 step 4; own bronze models later)
+	"helm_bronze": lambda: helm("bronze"), "mail_bronze": lambda: chest_armor("bronze"),
+	"greaves_bronze": lambda: legs("bronze"), "boots_bronze": lambda: boots("bronze"),
 }
 
 ids = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []

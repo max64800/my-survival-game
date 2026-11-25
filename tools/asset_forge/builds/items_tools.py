@@ -19,7 +19,7 @@ JOUR = GAME / "journey" / "3d" / "v2_hand_built" / "items"
 
 
 def hm(m, variant=None):
-	return kit.tex_mat({"stone": "stone", "copper": "copper", "silver": "silver"}[m], variant)
+	return kit.tex_mat({"stone": "stone", "copper": "copper", "bronze": "bronze", "silver": "silver"}[m], variant)
 
 
 def fr(axis, a0, a1, c0, c1, s0, s1, material, bevel=0.005):
@@ -130,7 +130,7 @@ def great_axe(m):
 def sword(m):
 	stone = m == "stone"
 	kit.cone(0.022, 0.02, 0.17, (0, 0, 0.1), kit.tex_mat("wood", "b"), verts=8)
-	grip = kit.tex_mat("rope") if m == "copper" else kit.tex_mat("leather", "dark")
+	grip = kit.tex_mat("rope") if m in ("copper", "bronze") else kit.tex_mat("leather", "dark")
 	kit.rope_wrap((0, 0, 0), 0.025, 0.03, 0.175, 10, thick=0.0085, material=grip)  # F53: tight, the whole handle
 	kit.gem((0, 0, 0.02), (0.035, 0.035, 0.03), kit.tex_mat("iron" if stone else m), seed=2)
 	if stone:
@@ -200,9 +200,11 @@ def great_maul(m):
 
 def spear(m):
 	stone = m == "stone"
-	kit.cone(0.024, 0.019, 1.26, (0, 0, 0.63), kit.tex_mat("wood", "b"), verts=10)
-	kit.rope_wrap((0, 0, 0), 0.026, 0.45, 0.68, 15, thick=0.0085, material=kit.tex_mat("rope") if m == "copper" else kit.tex_mat("leather", "dark"))
-	if m == "copper":  # F52: tight binding under the head too
+	# metal spears: the shaft ends inside the socket (it used to run up through it and shimmer); stone keeps its length
+	top = 1.26 if m == "stone" else 1.19
+	kit.cone(0.024, 0.024 - 0.005 * top / 1.26, top, (0, 0, top / 2), kit.tex_mat("wood", "b"), verts=10)
+	kit.rope_wrap((0, 0, 0), 0.026, 0.45, 0.68, 15, thick=0.0085, material=kit.tex_mat("rope") if m in ("copper", "bronze") else kit.tex_mat("leather", "dark"))
+	if m in ("copper", "bronze"):  # F52: tight binding under the head too
 		kit.rope_wrap((0, 0, 0), 0.025, 1.12, 1.2, 6, thick=0.0075, material=kit.tex_mat("rope"))
 	kit.cone(0.02, 0.0, 0.07, (0, 0, -0.01), kit.tex_mat("iron"), rot=(180, 0, 0), verts=6)
 	kit.ring(0.026, 0.008, (0, 0, 0.04), kit.tex_mat("iron"), seg=10)
@@ -412,7 +414,7 @@ def shield_shell():
 
 
 BUILD = {}
-for m in ("stone", "copper", "silver"):
+for m in ("stone", "copper", "bronze", "silver"):  # bronze = copper repainted (F697; own models later)
 	BUILD[f"pickaxe_{m}"] = (lambda m=m: pickaxe(m))
 	BUILD[f"axe_{m}"] = (lambda m=m: axe(m))
 	BUILD[f"axe_2h_{m}"] = (lambda m=m: great_axe(m))

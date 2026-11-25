@@ -1238,6 +1238,7 @@ const ARMOR := {
 	"leather": [Color(0.48, 0.32, 0.2), "leather"],
 	"shell": [Color(0.55, 0.5, 0.44), "stone"],
 	"copper": [Color(0.78, 0.47, 0.25), "metal"],
+	"bronze": [Color(0.66, 0.5, 0.24), "metal"],
 	"husk": [Color(0.44, 0.4, 0.27), "fungus"],
 	"silver": [Color(0.8, 0.82, 0.88), "metal"],
 	"ironshell": [Color(0.3, 0.32, 0.35), "metal"],
@@ -1344,7 +1345,7 @@ func _helmet_shape(att: Node3D, tier: String, col: Color, surf: String) -> void:
 		"hide", "leather":
 			for x in [-1.0, 1.0]:  # ear flaps
 				_piece(att, _ball(0.5), col, surf, Vector3(x * 0.12, 0.05, -0.01), Vector3(0.04, 0.12, 0.1))
-		"copper":
+		"copper", "bronze":
 			_piece(att, BoxMesh.new(), col, surf, Vector3(0, 0.08, 0.14), Vector3(0.026, 0.1, 0.02))  # nose guard
 		"husk", "shell":
 			for i in 3:  # shell ridges
