@@ -231,20 +231,13 @@ func _process(delta: float) -> void:
 			tidy_ruin(str(k))
 
 
-## Everyone: ruin `k` is being rebuilt (or is rebuilt): its broken lootable junk goes, like the rest of its mess, inside
-## (owner F581: the bolt crate on floor 2 was still there after the rebuild) and outside (owner, Nov 21). Whole things
-## stay unless the rebuilt building stands where they are (F864, owner Nov 25).
+## Everyone: ruin `k` is being rebuilt (or is rebuilt): ALL its lootable things go, inside and outside, whole or broken
+## (owner F581, Nov 21; F864, Nov 25: "remove the carts, the place where I can get coal... people take the loot, then
+## rebuild"). This includes the ruin plan's own props (the Smeltery's ingot cart, coal scuttle...), keyed "r:<k>:".
 func tidy_ruin(k: String) -> void:
-	var r: Dictionary = auth.world_state.get("ruins", {}).get(k, {}) if auth else {}
-	var boxes := RuinJunk.rebuilt_boxes(k, r)
 	for key in props.keys():
-		var pr: Dictionary = props[key]
-		# F864: whole things stay (the bolt crate spills, so it still goes: F581); none inside the rebuilt building.
-		if not String(key).begins_with("r:%s:" % k) or pr.has("kept"):
-			continue
-		if RuinJunk.keeps(String(pr.model), (pr.xform as Transform3D).origin, boxes):
-			pr.kept = true
-		else:
+		if String(key).begins_with("r:%s:" % k):
+			var pr: Dictionary = props[key]
 			if is_instance_valid(pr.node):
 				(pr.node as Node).queue_free()
 			props.erase(key)

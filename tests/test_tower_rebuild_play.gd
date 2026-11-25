@@ -141,13 +141,11 @@ func test_rebuilds_itself_no_hammer_no_blue_plan() -> void:
 	for key in lp.props:
 		if String(lp.props[key].get("ruin", "")) == k:
 			left += 1
-	check(had > 0 and left == 0, "the tower's spilt bolt crate (its lootable junk) goes after the rebuild (%d before, %d left; F581)" % [had, left])
-	# Owner, Nov 21: the ruin's mess goes, inside and outside; F864 (Nov 25): its whole things stay.
+	check(had > 0 and left == 0, "the tower's lootable junk (inside and out) goes after the rebuild (%d before, %d left; F581)" % [had, left])
+	# Owner, Nov 21 and F864 (Nov 25): all the ruin's junk goes, inside and outside, whole or broken.
 	var rj := RuinJunk.new(auth)
 	auth.add_child(rj)
 	rj._check = 0.0
 	rj._process(0.1)
-	var all_junk: Array = auth.world_state.ruins[k].get("junk", [])
-	check(rj.shown.size() <= all_junk.size() and rj.shown.all(func(m): return not RuinJunk.is_mess(m)),
-		"only its whole things are still drawn (%d of %d), none of the mess" % [rj.shown.size(), all_junk.size()])
+	check_eq(rj.count, 0, "and none of its junk, inside or outside, is drawn")
 	auth.get_parent().queue_free()
