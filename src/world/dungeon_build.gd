@@ -485,6 +485,16 @@ static func add_boxes(body: StaticBody3D, model: String, t: Transform3D, whole: 
 
 
 static func _add_boxes(body: StaticBody3D, model: String, t: Transform3D, whole: AABB) -> void:
+	if model.get_file().begins_with("stairs__"):
+		# F847 (owner, Nov 25: "all of the stairs are broken"): a building kit stairs (Hald's stone stairs) got the box
+		# round the whole model: a 2 m block, you stood on air at its top and bumped its sides. Now the same slanted
+		# slab you walk up as the stairs you build (PieceNode.stairs_slope).
+		var cs := CollisionShape3D.new()
+		cs.shape = PieceNode.stairs_slope(Pieces.LIST.stairs.size * t.basis.get_scale(), false)
+		cs.transform = Transform3D(t.basis.orthonormalized(), t.origin)
+		cs.set_meta("surface", "stone")
+		body.add_child(cs)
+		return
 	var boxes: Array = BOXES.get(model, [[whole.get_center(), whole.size]])
 	for bx in boxes:
 		var cs := CollisionShape3D.new()
@@ -1262,6 +1272,12 @@ func ask_use(id: int) -> void:
 	var th: Dictionary = things.get(id, {})
 	if auth == null or th.is_empty():
 		return
+		"door":  # F848 (owner, Nov 25): a key door (Hald's Bronze door) opens with E while you carry its key
+			var keys := DungeonKeys.keys_of(list_id(th.d))
+			if keys.is_empty() or is_door_open(th.d):
+				return {}
+			var names: Array = keys.map(func(k): return String(DungeonKeys.KEYS[k].name))
+			return {name = "Locked door (the %s) · E to unlock" % " and the ".join(names), use = id}
 	if th.kind == "lever":
 		auth.keys.ask_pull_lever(list_id(th.d))  # (DungeonKeys: request -> host -> everyone; it says what happened)
 		return
@@ -1274,6 +1290,9 @@ func ask_use(id: int) -> void:
 @rpc("any_peer", "reliable")
 func _rpc_use(id: int) -> void:
 	var auth := GameAuthority.instance
+	if th.kind == "door":
+		auth.keys.ask_unlock(list_id(th.d))  # (F848: nothing called it, so the Bronze door never opened, key or not)
+		return
 	if auth and auth.is_host():
 		request_use(multiplayer.get_remote_sender_id(), id)
 
@@ -1502,7 +1521,8 @@ static func deadly_space(d: Dictionary, p: Vector3) -> String:
 	var q := DungeonMap.to_local(d, p)
 	var only: Array = d.map.get("deadly", [])  # (Pell's: its whole lower level is under 0, only the spike pit kills)
 	for s in d.map.spaces:
-		if float(s[5]) < 0.0 and (only.is_empty() or String(s[0]) in only) and q.x > float(s[1]) - 0.5 and q.x < float(s[3]) + 0.5 and q.z > float(s[2]) - 0.5 				and q.z < float(s[4]) + 0.5 and q.y < float(s[5]) + 1.2:
+		# (F846, Nov 25: no bottom to the box killed you in Hald's tomb door, 5 m under the pit: only near its floor)
+		if float(s[5]) < 0.0 and (only.is_empty() or String(s[0]) in only) and q.x > float(s[1]) - 0.5 and q.x < float(s[3]) + 0.5 and q.z > float(s[2]) - 0.5 				and q.z < float(s[4]) + 0.5 and q.y < float(s[5]) + 1.2 and q.y > float(s[5]) - 2.0:
 			return String(s[0])
 	return ""
 

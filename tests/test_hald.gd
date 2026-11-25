@@ -216,6 +216,63 @@ func _blocked(db: DungeonBuild, at: Vector3) -> bool:
 	return false
 
 
+## F846 (owner, Nov 25: died twice at 100 HP just before the boss room): the Broken Stair's spike pit only kills down
+## in the pit, not on the stairs over it and not in the tomb door and Hald's Tomb 5 m under it.
+func test_over_and_under_the_spike_pit_is_safe() -> void:
+	var d := _hald(_test_world())
+	for q in [Vector3(41, 0.6, 35), Vector3(43, 2.6, 35), Vector3(41, 0.6, 37), Vector3(43, 4.3, 35.5),  # on the stairs
+			Vector3(42.5, -7.7, 34.5), Vector3(43.5, -7.7, 35.8), Vector3(42, -7.7, 36.8), Vector3(43, -6.5, 35)]:  # under
+		check_eq(DungeonBuild.deadly_space(d, DungeonMap.to_world(d, q)), "", "standing at %s is safe" % q)
+	check_eq(DungeonBuild.deadly_space(d, DungeonMap.to_world(d, Vector3(42, -2.7, 35))), "stair_pit", "down in the pit kills")
+
+
+## F847 (owner, Nov 25: "all of the stairs are broken", you stand on air): every stone stairs is a slope you walk up,
+## not a 2 m block. Along each flight, the ground is where its steps are, and there is room for a dwarf over them.
+func test_walk_up_every_stair() -> void:
+	var r := _rig()
+	var d: Dictionary = r.d
+	var db: DungeonBuild = r.db
+	await tree.physics_frame
+	await tree.physics_frame
+	var stairs: Array = DungeonBuild.placements(d, DungeonBuild.load_plan("hald")).get("build/stairs__cut_stone.glb", [])
+	check_eq(stairs.size(), 20, "Hald's 20 stairs")
+	var space := db.get_world_3d().direct_space_state
+	for t: Transform3D in stairs:
+		for f in [0.15, 0.5, 0.85]:
+			var on := t * Vector3(0, 2.0 * f, 1.0 - 2.0 * f)  # (a stairs climbs from its front, +z, to its back)
+			var ray := PhysicsRayQueryParameters3D.create(on + Vector3.UP * 1.5, on + Vector3.DOWN * 1.0, World.TERRAIN_LAYER)
+			var hit := space.intersect_ray(ray)
+			var top: float = (hit.position as Vector3).y if not hit.is_empty() else -INF
+			check(absf(top - on.y) < 0.3, "the stairs at %s: ground %.2f where its step is (%.2f)" % [t.origin, top, on.y])
+			if f < 0.7:  # (the top 60 cm: a dwarf there touches the real wall round the doorway at the top)
+				check(not _blocked(db, on + Vector3.UP * 1.0), "the stairs at %s: no invisible wall %d%% up" % [t.origin, f * 100])
+	r.root.free()
+
+
+## F848 (owner, Nov 25: the door in Hald's Tomb didn't open after he died): E on the Bronze door unlocks it with the
+## Bronze Key (nothing called DungeonKeys.ask_unlock, so it never opened); without the key it stays shut.
+func test_the_bronze_door_opens_with_its_key() -> void:
+	var r := _rig()
+	var db: DungeonBuild = r.db
+	var auth: GameAuthority = r.auth
+	var ids: Array = db.things.keys().filter(func(id): return db.things[id].kind == "door")
+	check_eq(ids.size(), 1, "one key door: the Bronze door")
+	if ids.size() != 1:
+		r.root.free()
+		return
+	var id: int = ids[0]
+	var th: Dictionary = db.things[id]
+	(r.player as Node3D).global_position = (th.xform as Transform3D) * Vector3(0, 0.2, -1.5)
+	check(String(db.use_info(id).get("name", "")).contains("Bronze Key"), "E aims at it: '%s'" % db.use_info(id).get("name", ""))
+	db.ask_use(id)
+	check(not db.is_door_open(th.d), "no key: it stays shut")
+	r.ps.inventory.add("key_bronze", 1)
+	db.ask_use(id)
+	check(db.is_door_open(th.d), "with the Bronze Key: it opens")
+	check(db.use_info(id).is_empty(), "open: nothing more to do with E")
+	r.root.free()
+
+
 ## The Shield-Brother drops the Bronze Key when he dies (or the Grave Chamber stays shut).
 func test_the_shield_brother_drops_the_bronze_key() -> void:
 	var root := Node3D.new()
