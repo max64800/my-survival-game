@@ -1,0 +1,386 @@
+<title>Mine-head Works Shape Model</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans+SC:wght@700&family=Alegreya+Sans:wght@400;700&display=swap">
+<style>
+/* Layout: one cave stage with the shape model, a side panel naming every part. Single dark look. */
+:root {
+	--rock: #17130f; --panel: #221b16; --ink: #ecdcc6; --dim: #b9a58c; --ember: #e8a24a; --line: #3d3128;
+	--display: "Alegreya Sans SC", Georgia, serif; --body: "Alegreya Sans", "Segoe UI", sans-serif;
+	color-scheme: dark;
+}
+html, body { height: 100%; margin: 0; }
+body { background: var(--rock); color: var(--ink); font: 16px/1.5 var(--body); }
+.wrap { display: flex; gap: 16px; height: 100%; padding-block: 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); box-sizing: border-box; }
+.stage { position: relative; flex: 1 1 auto; min-width: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: #0d0a08; }
+canvas { display: block; width: 100%; height: 100%; }
+.bar { position: absolute; left: 12px; top: 12px; right: 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: 700 15px var(--body); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 5px; padding: 6px 12px; cursor: pointer; }
+button[aria-pressed="true"] { background: var(--ember); color: #1c140d; border-color: var(--ember); }
+button:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+.hint { position: absolute; right: 12px; bottom: 10px; color: var(--dim); font-size: 13px; }
+.tag { font: 700 13px var(--body); color: #1c140d; background: rgba(232,162,74,.92); padding: 1px 7px; border-radius: 4px; white-space: nowrap; pointer-events: none; }
+aside { flex: 0 0 360px; overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px; box-sizing: border-box; }
+h1 { font: 700 30px/1.1 var(--display); margin: 0 0 8px; text-wrap: balance; }
+h2 { font: 700 15px var(--display); letter-spacing: .08em; color: var(--ember); margin: 20px 0 6px; }
+p { margin: 0 0 10px; color: var(--dim); }
+ul { list-style: none; margin: 0; padding: 0; }
+li { padding: 7px 0; border-bottom: 1px dashed var(--line); color: var(--dim); }
+li b { color: var(--ink); }
+.key { display: flex; gap: 14px; flex-wrap: wrap; margin: 4px 0 10px; }
+.key span { display: inline-flex; align-items: center; gap: 6px; color: var(--ink); font-size: 14px; }
+.key i { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+.ask { background: #2c231c; border-left: 3px solid var(--ember); padding: 10px 12px; border-radius: 4px; }
+.ask p { color: var(--ink); }
+@media (max-width: 800px) { .wrap { flex-direction: column; height: auto; } .stage { height: 70vh; flex: none; } aside { flex: none; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<div class="wrap">
+	<div class="stage" id="stage">
+		<div class="bar" role="group" aria-label="Camera and view">
+			<button id="c_front" aria-pressed="true">Front</button>
+			<button id="c_left" aria-pressed="false">Left</button>
+			<button id="c_right" aria-pressed="false">Right</button>
+			<button id="c_above" aria-pressed="false">From above</button>
+			<button id="c_shaft" aria-pressed="false">Down the shaft</button>
+			<button id="under" aria-pressed="false">See underground</button>
+			<button id="rockoff" aria-pressed="false">Rock wall off</button>
+			<button id="names" aria-pressed="true">Names on</button>
+		</div>
+		<div class="hint">Drag to turn &middot; scroll to zoom &middot; right-drag to move</div>
+	</div>
+	<aside>
+		<h1>Ruin 12: Mine-head Works</h1>
+		<p>A very simple shape model, not real pieces yet. It's the plan, shown in plain blocks.</p>
+		<div class="key">
+			<span><i style="background:#8b867c"></i>Stonehold stone</span>
+			<span><i style="background:#7a5434"></i>Shack wood</span>
+			<span><i style="background:#4f3a28"></i>Wood shingle roofs</span>
+			<span><i style="background:#c9a25a"></i>New piece: Head Wheel</span>
+		</div>
+		<h2>The idea</h2>
+		<p>Long ago, dwarves dug a deep mine here. A tall wooden frame stood over the hole, with a big wheel on top. A rope ran from a steam engine in the stone house, over the wheel and down the shaft, to pull ore carts up. Then carts rolled over a wooden bridge to the ore shed. One day the mine was left, and it fell apart.</p>
+		<p>Press <b>See underground</b> to look inside the rock at the mine room under the shaft.</p>
+		<h2>The parts</h2>
+		<ul>
+			<li><b>Stone terrace + grand stair.</b> One long stone step that the engine house and the frame both stand on. A wide stair leads up to the engine house's round door.</li>
+			<li><b>Engine house (stone).</b> A tall hall for the engine, a smaller storey on top that steps back, flat roofs (Stonehold). Its back goes into the cave's rock wall. A tall stone stack (chimney) stands beside it.</li>
+			<li><b>Boiler shed (wood).</b> A small lean-to on the engine house's left, with a sloped roof.</li>
+			<li><b>Headframe (wood on a stone collar).</b> The tallest part. It changes shape 3 times: a wide base with a loading deck, a thinner braced middle, then a wide top deck on brackets, then the wheel under a small sloped roof.</li>
+			<li><b>The Head Wheel (new piece).</b> The big wooden wheel on top. The rope runs from it to the engine house, and down the shaft.</li>
+			<li><b>The shaft.</b> A square hole with a stone rim, about 8 m deep. Ladders go down its side.</li>
+			<li><b>Mine room (underground).</b> At the bottom: a dug-out room held up by wooden props, the fallen lift cage, and the best chest. A tunnel at its end has caved in.</li>
+			<li><b>Trestle bridge (wood).</b> A tall wooden bridge with cart rails, from the loading deck, over a dip in the cave floor, to the ore shed.</li>
+			<li><b>Ore shed (wood on stone).</b> On a lower rock ledge, its back in the rock. Its top floor sticks out on brackets; chutes on its front poured ore into carts on the rails below.</li>
+			<li><b>Stairs in the rock.</b> Steps cut into the slope between the upper floor and the lower ledge, with rock beside them.</li>
+		</ul>
+		<h2>Built into the cave</h2>
+		<p>Backs in the rock (engine house, ore shed), two floor levels plus the mine room, a bridge over a dip, and stairs cut into the slope.</p>
+		<h2>Heights</h2>
+		<p>Terrace 1.5 m, boiler shed 4 m, engine house 8 m, ore shed 11 m (from its lower ledge), stack 17 m, headframe 20 m. Shaft 8 m down. The cave needs about 22 m here.</p>
+		<h2>When it's a ruin</h2>
+		<p>The wheel hangs crooked, the bridge's middle has fallen into the dip, the cage lies at the bottom of the shaft, and roofs have holes. Rebuild it to learn the blueprint.</p>
+		<h2>Your call</h2>
+		<div class="ask">
+			<p>Is this the mine-head you pictured? Tell me what to add, take away or move. Once you OK the shapes, I make the Head Wheel piece (and show it to you), then build the rest from our real pieces.</p>
+		</div>
+	</aside>
+</div>
+<script type="importmap">
+{ "imports": {
+	"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+	"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { CSS2DRenderer, CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
+
+const stage = document.getElementById("stage");
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+stage.prepend(renderer.domElement);
+const labels = new CSS2DRenderer();
+labels.domElement.style.cssText = "position:absolute;inset:0;pointer-events:none";
+stage.appendChild(labels.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d0a08);
+scene.fog = new THREE.Fog(0x0d0a08, 100, 200);
+const camera = new THREE.PerspectiveCamera(40, 1, 0.5, 400);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+scene.add(new THREE.HemisphereLight(0xffe2bf, 0x2a1e16, 0.9));
+const sun = new THREE.DirectionalLight(0xffc98a, 2.2);   // a lantern glow from front-left
+sun.position.set(-30, 50, 40);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -50, right: 50, top: 50, bottom: -50, near: 1, far: 170 });
+scene.add(sun);
+const lamp = new THREE.PointLight(0xffb060, 30, 16, 1.5);   // a lamp in the mine room
+lamp.position.set(1, -6.5, -4);
+scene.add(lamp);
+
+// Colours: stone, darker stone, light stone trim, wood, lighter beams, shingles, the wheel, dark openings, rock, ground
+const M = {};
+for (const [k, c] of Object.entries({ stone: 0x8b867c, stone2: 0x76716a, trim: 0xb9b1a2, wood: 0x7a5434, beam: 0x8f6a44,
+	roof: 0x4f3a28, wheel: 0xc9a25a, iron: 0x3b3835, dark: 0x1a1210, rock: 0x66564a, floor: 0x3a3027, rope: 0xcdb98e }))
+	M[k] = new THREE.MeshStandardMaterial({ color: c, roughness: 0.9 });
+const ground = new THREE.MeshStandardMaterial({ color: 0x3a3027, roughness: 1, transparent: true, opacity: 1 });
+const rockM = M.rock;
+
+function add(geo, mat, x, y, z, ry = 0) {
+	const m = new THREE.Mesh(geo, typeof mat === "string" ? M[mat] : mat);
+	m.position.set(x, y, z);
+	m.rotation.y = ry;
+	m.castShadow = m.receiveShadow = true;
+	scene.add(m);
+	return m;
+}
+// a box by its corners: x0..x1, y0..y1, z0..z1
+const box = (x0, x1, y0, y1, z0, z1, mat) => add(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), mat, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
+// a beam from one point to another (braces, rope, struts)
+function beam(a, b, t = 0.25, mat = "beam") {
+	const A = new THREE.Vector3(...a), B = new THREE.Vector3(...b), L = A.distanceTo(B);
+	const m = add(new THREE.BoxGeometry(t, L, t), mat, 0, 0, 0);
+	m.position.copy(A).add(B).multiplyScalar(0.5);
+	m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), B.clone().sub(A).normalize());
+	return m;
+}
+const post = (x, z, y0, y1, t = 0.4, mat = "wood") => box(x - t / 2, x + t / 2, y0, y1, z - t / 2, z + t / 2, mat);
+// railing along a line
+function rail(x0, z0, x1, z1, y, mat = "beam") {
+	const L = Math.hypot(x1 - x0, z1 - z0), ry = -Math.atan2(z1 - z0, x1 - x0);
+	add(new THREE.BoxGeometry(L, 0.12, 0.12), mat, (x0 + x1) / 2, y + 1, (z0 + z1) / 2, ry);
+	const n = Math.max(1, Math.round(L / 1.5));
+	for (let i = 0; i <= n; i++) { const f = i / n; add(new THREE.BoxGeometry(0.12, 1, 0.12), mat, x0 + (x1 - x0) * f, y + 0.5, z0 + (z1 - z0) * f); }
+}
+// a bracket under an overhang: a wedge, wide at the top
+function corbel(x, y, z, mat = "beam") { add(new THREE.CylinderGeometry(0.35, 0.12, 1.0, 4), mat, x, y - 0.5, z, Math.PI / 4); }
+// windows: dark slots on a face. face "z" = a wall facing +z at z=at; "x" = facing +-x at x=at
+function windows(face, at, u0, u1, y, w = 0.8, h = 1.3, step = 2) {
+	for (let u = u0; u <= u1 + 0.01; u += step) {
+		if (face === "z") box(u - w / 2, u + w / 2, y, y + h, at - 0.06, at + 0.06, "dark");
+		else box(at - 0.06, at + 0.06, y, y + h, u - w / 2, u + w / 2, "dark");
+	}
+}
+// a round-topped door on a face looking +z
+function roundDoor(x, z, y, w, h) {
+	box(x - w / 2, x + w / 2, y, y + h - w / 2, z - 0.06, z + 0.06, "dark");
+	add(new THREE.CylinderGeometry(w / 2, w / 2, 0.12, 16, 1, false, 0, Math.PI), "dark", x, y + h - w / 2, z).rotation.set(Math.PI / 2, Math.PI / 2, 0);
+}
+// a round-topped door on a face looking +-x
+function roundDoorX(x, z, y, w, h) {
+	box(x - 0.06, x + 0.06, y, y + h - w / 2, z - w / 2, z + w / 2, "dark");
+	add(new THREE.CylinderGeometry(w / 2, w / 2, 0.12, 16), "dark", x, y + h - w / 2, z).rotation.z = Math.PI / 2;
+}
+// a gable roof with its ridge along x, over z0..z1, eaves at y, 45 degrees
+function roofX(x0, x1, z0, z1, y, mat = "roof") {
+	const half = (z1 - z0) / 2 + 0.4, sh = new THREE.Shape();
+	sh.moveTo(-half, 0); sh.lineTo(half, 0); sh.lineTo(0, half * 0.75); sh.closePath();
+	add(new THREE.ExtrudeGeometry(sh, { depth: x1 - x0 + 0.8, bevelEnabled: false }), mat, x0 - 0.4, y, (z0 + z1) / 2, Math.PI / 2);
+}
+// two rails (iron strips on sleepers) along x at height y, centred on z
+function track(x0, x1, z, y) {
+	for (const dz of [-0.45, 0.45]) box(x0, x1, y + 0.12, y + 0.2, z + dz - 0.05, z + dz + 0.05, "iron");
+	for (let x = x0 + 0.3; x < x1; x += 0.8) box(x - 0.12, x + 0.12, y, y + 0.12, z - 0.7, z + 0.7, "beam");
+}
+// an ore cart: a wooden tub on 4 iron wheels
+function cart(x, y, z, tilt = 0) {
+	const g = new THREE.Group();
+	const tub = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.75, 0.95), M.wood); tub.position.y = 0.6; g.add(tub);
+	for (const dx of [-0.4, 0.4]) for (const dz of [-0.45, 0.45]) {
+		const w = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.1, 10), M.iron);
+		w.rotation.x = Math.PI / 2; w.position.set(dx, 0.2, dz); g.add(w);
+	}
+	g.traverse(o => { o.castShadow = o.receiveShadow = true; });
+	g.position.set(x, y, z); g.rotation.z = tilt; scene.add(g);
+}
+const tags = [];
+function tag(text, x, y, z, under = false) {
+	const d = document.createElement("div");
+	d.className = "tag";
+	d.textContent = text;
+	const o = new CSS2DObject(d);
+	o.position.set(x, y, z);
+	o.userData.under = under;
+	scene.add(o);
+	tags.push(o);
+}
+
+// ---- the cave: an upper floor (y 0), a dip (y -5), a lower ledge (y -3), the rock wall behind (face at z -10) ----
+// ground is solid blocks so the shaft is a real hole; "See underground" makes it see-through
+const G = [];
+const gbox = (x0, x1, y0, y1, z0, z1) => G.push(box(x0, x1, y0, y1, z0, z1, ground));
+gbox(-60, 3, -16, 0, -10, 50); gbox(7, 12, -16, 0, -10, 50);      // the upper floor, round the shaft hole (x 3..7, z -6..-2)
+gbox(3, 7, -16, 0, -10, -6); gbox(3, 7, -16, 0, -2, 50);
+gbox(12, 17, -16, -5, -8, 50);                                     // the dip
+gbox(12, 17, -16, -3, -10, -8);                                    // a shelf behind the dip (under the rock stairs)
+gbox(17, 60, -16, -3, -10, 50);                                    // the lower ledge
+const ROCK = [];
+const rbox = (x0, x1, y0, y1, z0, z1) => ROCK.push(box(x0, x1, y0, y1, z0, z1, rockM));
+rbox(-60, 60, -16, 32, -30, -10);                                  // the rock wall
+for (let i = 0; i < 20; i++) { const x0 = -56 + i * 6 + (i % 3); if ((x0 > -22 && x0 < -1) || (x0 > 17 && x0 < 30)) continue; rbox(x0, x0 + 4, i % 2 ? -3 : 0, 1 + (i * 7 % 5), -10.5, -9.5 + (i % 2)); }
+rbox(-24, -19, 0, 7, -10.4, -7.5);                                 // rock bulging out by the stack
+rbox(9, 12, 0, 5, -10.2, -8.5);                                    // rock beside the top of the stairs
+
+// ---- the stone terrace + grand stair: engine house and headframe both stand on it (y 0..1.5) ----
+box(-15, 1, 0, 1.5, -3, 2, "stone2");
+box(-15.1, 1.1, 1.35, 1.6, -3.1, 2.1, "trim");
+for (let i = 0; i < 4; i++) box(-10, -6, 0, 0.375 * (i + 1), 2 + (3 - i) * 0.75, 2.75 + (3 - i) * 0.75, "trim");
+rail(-15, 2, -10, 2, 1.6, "trim"); rail(-6, 2, 1, 2, 1.6, "trim");
+tag("Grand stair", -8, 3, 6);
+
+// ---- the engine house (stone): a tall engine hall, then a smaller storey stepped back, flat roofs ----
+box(-14, -2, 1.5, 7.5, -12, -3, "stone");
+box(-14.2, -1.8, 4.3, 4.55, -12, -2.8, "trim");                    // band at the floor line
+box(-14.3, -1.7, 7.3, 7.7, -12, -2.7, "trim");                     // cornice under the flat roof
+roundDoor(-8, -2.94, 1.5, 2, 3.2);
+windows("z", -2.94, -12, -12, 2.2, 0.9, 3.4); windows("z", -2.94, -4, -4, 2.2, 0.9, 3.4);   // tall engine-hall windows
+windows("x", -1.94, -10, -6, 2.2, 0.9, 3.4, 4);
+rail(-14, -3, -14, -10, 7.7, "trim"); rail(-14, -3, -10, -3, 7.7, "trim");   // the roof terrace left of the top storey
+box(-10, -2, 7.7, 10.2, -12, -3.5, "stone2");                      // the top storey steps back in on the left
+box(-10.2, -1.8, 10.0, 10.4, -12, -3.3, "trim");
+windows("z", -3.44, -8, -4, 8.4, 0.8, 1.2, 4);
+box(-2.06, -1.94, 8.2, 9.2, -4.6, -3.6, "dark");                   // the rope hole, toward the wheel
+tag("Engine house (stone)", -8, 12, -2);
+// the stack (chimney), eight-sided, beside the engine house's back
+add(new THREE.CylinderGeometry(1.0, 1.35, 17, 8), "stone", -16.5, 8.5, -9);
+add(new THREE.CylinderGeometry(1.25, 1.25, 0.5, 8), "trim", -16.5, 16.8, -9);
+tag("Stack", -16.5, 18.8, -9);
+// the boiler shed (wood lean-to) on its left, sloped roof
+box(-20, -15, 0, 3.0, -9, -3.5, "wood");
+roundDoor(-17.5, -3.44, 0, 1.4, 2.4);
+{ const r = box(-20.6, -14.6, 3.3, 3.5, -9.4, -3.1, "roof"); r.rotation.z = -0.22; r.position.y = 3.6; }
+tag("Boiler shed (wood)", -18.5, 6, -3);
+
+// ---- the headframe over the shaft (shaft x 3..7, z -6..-2) ----
+const HX = 5, HZ = -4;
+// stone collar: a plinth round the hole, with a front apron for the stair
+box(1, 9, 0, 1.5, -8, -6, "stone"); box(1, 9, 0, 1.5, -2, 4, "stone");
+box(1, 3, 0, 1.5, -6, -2, "stone"); box(7, 9, 0, 1.5, -6, -2, "stone");
+box(0.9, 9.1, 1.35, 1.6, -8.1, 4.1, "trim");
+// tier 1: 8 x 8 base, posts to the loading deck at y 6
+for (const x of [1.2, 5, 8.8]) for (const z of [-7.8, -0.2]) post(x, z, 1.5, 6);
+for (const z of [-4]) for (const x of [1.2, 8.8]) post(x, z, 1.5, 6);
+box(1, 9, 5.75, 6, -8, -6, "wood"); box(1, 9, 5.75, 6, -2, 0, "wood");   // the loading deck (the cage way stays open)
+box(1, 3, 5.75, 6, -6, -2, "wood"); box(7, 9, 5.75, 6, -6, -2, "wood");
+rail(1, -8, 9, -8, 6); rail(1, -8, 1, 0, 6); rail(3, 0, 9, 0, 6); rail(9, -8, 9, -5.2, 6);
+// the stair up to the deck: two flights straight on, from the apron
+for (let i = 0; i < 8; i++) box(1, 3, 1.5 + i * 0.5625, 1.5 + (i + 1) * 0.5625, 4 - (i + 1) * 0.5, 4 - i * 0.5, "beam");
+tag("Loading deck", 1, 7.5, 1);
+// tier 2: 6 x 6, braced, to y 12.75
+for (const x of [2, 8]) for (const z of [-7, -1]) post(x, z, 6, 12.75, 0.45);
+for (const y of [8.25, 10.5]) { box(2, 8, y - 0.12, y + 0.12, -7.15, -6.85, "beam"); box(2, 8, y - 0.12, y + 0.12, -1.15, -0.85, "beam"); box(1.85, 2.15, y - 0.12, y + 0.12, -7, -1, "beam"); box(7.85, 8.15, y - 0.12, y + 0.12, -7, -1, "beam"); }
+for (const z of [-7, -1]) { beam([2, 6, z], [8, 10.5, z], 0.18); beam([8, 6, z], [2, 10.5, z], 0.18); }
+for (const x of [2, 8]) { beam([x, 6, -7], [x, 10.5, -1], 0.18); beam([x, 6, -1], [x, 10.5, -7], 0.18); }
+tag("Headframe (wood)", 10.5, 10, -1);
+// tier 3: the top deck juts out wide again on brackets (y 12.75)
+box(1, 9, 12.5, 12.75, -8, 0, "wood");
+for (const x of [2.5, 4.5, 6.5]) { corbel(x, 12.5, -7.5); corbel(x, 12.5, -0.5); }
+for (const z of [-5, -3]) { corbel(1.5, 12.5, z); corbel(8.5, 12.5, z); }
+rail(1, -8, 9, -8, 12.75); rail(1, 0, 9, 0, 12.75); rail(1, -8, 1, 0, 12.75); rail(9, -8, 9, 0, 12.75);
+// the wheel stand: posts front and back of the wheel, cross beams that hold the axle
+for (const x of [3, 7]) for (const z of [-6, -2]) post(x, z, 12.75, 17.6, 0.35);
+for (const z of [-6, -2]) box(2.8, 7.2, 15.3, 15.7, z - 0.18, z + 0.18, "beam");
+// THE HEAD WHEEL (new piece): rim, spokes, hub, axle (along z)
+const WY = 15.5;
+add(new THREE.TorusGeometry(1.9, 0.18, 8, 28), "wheel", HX, WY, HZ);
+add(new THREE.TorusGeometry(1.55, 0.06, 6, 28), "wheel", HX, WY, HZ);
+for (let j = 0; j < 8; j++) { const t = j * Math.PI / 4; beam([HX, WY, HZ], [HX + Math.cos(t) * 1.85, WY + Math.sin(t) * 1.85, HZ], 0.14, "wheel"); }
+add(new THREE.CylinderGeometry(0.35, 0.35, 0.6, 12), "iron", HX, WY, HZ).rotation.x = Math.PI / 2;
+add(new THREE.CylinderGeometry(0.1, 0.1, 4.2, 8), "iron", HX, WY, HZ).rotation.x = Math.PI / 2;
+tag("Head Wheel (new piece)", HX, 21.5, HZ);
+// the hood: a small sloped wooden roof over the wheel, open at the sides
+roofX(2.6, 7.4, -6.6, -1.4, 17.6);
+// the rope: over the wheel, down the shaft, and back to the engine house
+beam([HX - 1.35, WY + 1.35, HZ], [-1.9, 8.7, HZ - 0.1], 0.07, "rope");
+beam([HX + 1.9, WY, HZ], [HX + 1.9, -6.5, HZ], 0.07, "rope");
+// the ladders down the shaft's back wall
+box(3.6, 4.4, -8.5, 1.5, -5.95, -5.8, "beam");
+tag("Shaft (8 m)", 2, 3, -4);
+
+// ---- the mine room at the bottom of the shaft (underground) ----
+box(-5, 7, -8.6, -8.5, -7, -1, "floor");
+for (const x of [-4, -1, 2]) { post(x, -6.8, -8.5, -5.6, 0.3, "beam"); post(x, -1.2, -8.5, -5.6, 0.3, "beam"); box(x - 0.2, x + 0.2, -5.6, -5.3, -7, -1, "beam"); }
+box(5.4, 6.9, -8.5, -7.0, -5, -3, "wood");                         // the lift cage, fallen to the bottom
+box(-4.6, -3.4, -8.5, -7.7, -4.6, -3.4, "beam");                    // the best chest
+box(-5.6, -4.4, -8.5, -6.5, -6.5, -1.5, "rock");                   // the caved-in tunnel at its end
+tag("Mine room + best chest", 0, -4.5, -4, true);
+
+// ---- the trestle bridge with the rails (deck y 6, z -5..-3), over the dip, to the ore shed ----
+box(9, 18, 5.75, 6, -5, -3, "wood");
+track(1, 18, HZ, 6);
+rail(9, -5, 18, -5, 6); rail(9.6, -3, 18, -3, 6);
+for (const [x, y0] of [[11, 0], [13.5, -5], [16, -5]]) {
+	post(x, -5, y0, 5.75); post(x, -3, y0, 5.75);
+	box(x - 0.15, x + 0.15, 2, 2.3, -5.2, -2.8, "beam");
+	beam([x, y0, -5], [x, 5.75, -3], 0.16); beam([x, y0, -3], [x, 5.75, -5], 0.16);
+}
+for (const [xa, xb, ya] of [[11, 13.5, 0], [13.5, 16, -5]]) { beam([xa, Math.max(ya, -2), -5], [xb, 5.6, -5], 0.16); beam([xa, Math.max(ya, -2), -3], [xb, 5.6, -3], 0.16); }
+cart(7.5, 6.2, HZ);
+cart(14.5, -5, 1, 1.2);                                            // a cart that fell into the dip
+tag("Trestle bridge + rails", 13.5, 8.5, -1);
+
+// ---- the ore shed on the lower ledge (y -3): stone base, wood bin house, a loft on brackets, sloped roof ----
+box(18, 30, -3, -0.75, -12, 2, "stone");
+box(17.9, 30.1, -0.95, -0.7, -12, 2.1, "trim");
+box(19, 29, -0.75, 6, -12, -2, "wood");
+for (const x of [19, 24, 29]) post(x, -1.95, -0.75, 6, 0.45, "beam");
+box(18.9, 29.1, 2.5, 2.75, -12, -1.9, "beam");                     // band at the floor line
+for (const x of [21, 24, 27]) { const c = box(x - 0.6, x + 0.6, 1.0, 1.2, -2.2, 0.4, "beam"); c.rotation.x = -0.6; }   // ore chutes
+windows("z", -1.94, 26.5, 26.5, 3.4, 0.8, 1.2);
+box(18, 29, 6, 8.25, -12, -1, "wood");                             // the loft juts out 1 m at the front and the left
+for (const x of [20, 22, 26, 28]) corbel(x, 6, -1.5);
+for (const z of [-8, -6]) corbel(18.5, 6, z);
+roundDoorX(17.94, -4, 6, 1.4, 2.0);                                // where the carts come in off the bridge
+windows("z", -0.94, 21, 27, 6.6, 0.8, 1.1, 3);
+roofX(18, 29, -12, -1, 8.25);
+tag("Ore shed (wood on stone)", 24, 13.5, -3);
+tag("Loft on brackets", 31, 7.5, 0);
+// rails along the ledge under the chutes, with carts
+track(18, 34, 1.2, -0.75 - 0);
+cart(21, -0.55, 1.2); cart(26.5, -0.55, 1.2);
+tag("Cart rails", 33, 1.5, 2.5);
+
+// ---- the stairs cut into the slope: from the upper floor (x 12, y 0) down to the ledge (x 17, y -3) ----
+for (let i = 0; i < 8; i++) box(12 + i * 0.625, 12 + (i + 1) * 0.625, -3, -i * 0.375, -10, -8, "stone2");
+tag("Stairs in the rock", 14.5, 1.5, -9);
+
+// ---- camera spots and buttons ----
+const CAMS = { front: [[4, 22, 64], [4, 6, -4]], left: [[-58, 24, 30], [-2, 6, -4]], right: [[62, 24, 34], [8, 6, -4]],
+	above: [[4, 82, 22], [4, 0, -3]], shaft: [[24, 6, 30], [2, -3, -4]] };
+let under = false, namesOn = true, rockOff = false;
+function setUnder(v) {
+	under = v;
+	ground.opacity = v ? 0.22 : 1; ground.depthWrite = !v;
+	G.forEach(m => (m.castShadow = !v));
+	document.getElementById("under").setAttribute("aria-pressed", v);
+	refresh();
+}
+function look(k) {
+	camera.position.set(...CAMS[k][0]); controls.target.set(...CAMS[k][1]); controls.update();
+	for (const c in CAMS) document.getElementById("c_" + c).setAttribute("aria-pressed", c === k);
+	if (k === "shaft") setUnder(true);
+}
+for (const c in CAMS) document.getElementById("c_" + c).onclick = () => look(c);
+function refresh() {
+	tags.forEach(t => (t.visible = namesOn && (!t.userData.under || under)));
+	ROCK.forEach(m => (m.visible = !rockOff));
+}
+document.getElementById("under").onclick = () => setUnder(!under);
+const nb = document.getElementById("names");
+nb.onclick = () => { namesOn = !namesOn; nb.setAttribute("aria-pressed", namesOn); nb.textContent = namesOn ? "Names on" : "Names off"; refresh(); };
+const rb = document.getElementById("rockoff");
+rb.onclick = () => { rockOff = !rockOff; rb.setAttribute("aria-pressed", rockOff); refresh(); };
+look(location.hash.slice(1) in CAMS ? location.hash.slice(1) : "front");
+refresh();
+function resize() {
+	const w = stage.clientWidth, hh = stage.clientHeight;
+	renderer.setSize(w, hh, false); labels.setSize(w, hh);
+	camera.aspect = w / hh; camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(stage);
+resize();
+renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); labels.render(scene, camera); });
+</script>
