@@ -13225,3 +13225,17 @@ entrance), F849 (boss too easy, 2 minions), F850 (Shield-Brother never turns his
 
 **Next**
 - Owner's OK on the shapes, then build it from real stone and brick pieces in `BlueprintLibrary`.
+
+
+## Nov 25: ruin 11 shapes OK'd, build plan written (F895)
+
+**What we did**
+- The owner OK'd the Brickcrown Keep shape model ("exactly right") and added one rule: the courtyard carved into the
+  cave must look natural, not square.
+- Wrote `docs/design/ruin11/BRICKCROWN-PLAN.md`: every part with its material (stone bottom with flat battlement
+  tops, brick top storeys with sloped roofs, stone bands between), the courtyard carve as a lumpy noisy outline, and
+  the build steps. The real build goes to a new chat (this one was getting long).
+
+**Mistakes and hurdles**
+- None new. Noted for the builder: the model puts walls on even lines, the blueprint grid puts them on odd lines,
+  so the plan shifts by 1 m.
