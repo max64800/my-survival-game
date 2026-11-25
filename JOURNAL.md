@@ -13162,3 +13162,30 @@ entrance), F849 (boss too easy, 2 minions), F850 (Shield-Brother never turns his
 - The skill pop-up flashed for a moment at the start, because its timer began at 0 instead of "already faded". This was hidden until the new test caught it. Fixed.
 
 **Left to do:** step 5, the old dirt path between ruins. It is the owner's top priority and goes to a new chat.
+
+
+## Nov 25: ruin 11 (stone + brick) first shape model (F895)
+
+**What we did**
+- The owner asked for ruin 11 that mixes Stonehold stone and Hearthbrick brick "in a good way", first only a very
+  simple 3D model.
+- Checked that one ruin plan can mix materials: every piece in a blueprint has its own `mat` (`cut_stone`,
+  `clay_brick`), and the Smeltery already mixes brick with 9 wood pieces. So yes.
+- Picked one idea: **an old stone fort, later mended and built higher in brick.** Why: it tells a story you can see,
+  and it fits the roof rule by itself (stone parts get flat battlement tops, brick parts get sloped tile roofs).
+  Stone bands at every floor line tie the two together.
+- Made `docs/design/ruin11/brickcrown_shapes.html` (plain blocks, like the Smeltery shape model): stone terrace and
+  grand stair, a keep (2 stone storeys, a brick storey sticking out on brackets, a brick storey stepping back in with a
+  terrace, tile roof, chimney, back set into the rock), a left tower (stone ring, thinner brick top with a walkway,
+  pointed roof), a stone curtain wall with an arch over a dip and one crack mended in brick, and an all-stone right
+  tower on a rock lump. Button "Old stone fort only" hides the brick. Published:
+  https://claude.ai/artifact/Th7UtndFNRJU6u2KmqSTbE
+
+**Mistakes and hurdles**
+- The chrome-devtools browser link timed out twice. Fixed by taking the photo with headless Edge from the command
+  line (`msedge --headless=new --use-angle=swiftshader --screenshot=...`) against a local `python -m http.server`.
+- The cave's rock wall was too dark to see on the first photo; made the rock colour lighter.
+
+**Next**
+- Owner judges the shapes. After an OK: build it from real stone and brick pieces in `BlueprintLibrary`, then the
+  ruin page, then the game.

@@ -1,0 +1,298 @@
+<title>Brickcrown Keep Shape Model</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans+SC:wght@700&family=Alegreya+Sans:wght@400;700&display=swap">
+<style>
+/* Layout: one cave stage with the shape model, a side panel naming every part. Single dark look. */
+:root {
+	--rock: #17130f; --panel: #221b16; --ink: #ecdcc6; --dim: #b9a58c; --ember: #e8a24a; --line: #3d3128;
+	--display: "Alegreya Sans SC", Georgia, serif; --body: "Alegreya Sans", "Segoe UI", sans-serif;
+	color-scheme: dark;
+}
+html, body { height: 100%; margin: 0; }
+body { background: var(--rock); color: var(--ink); font: 16px/1.5 var(--body); }
+.wrap { display: flex; gap: 16px; height: 100%; padding-block: 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); box-sizing: border-box; }
+.stage { position: relative; flex: 1 1 auto; min-width: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: #0d0a08; }
+canvas { display: block; width: 100%; height: 100%; }
+.bar { position: absolute; left: 12px; top: 12px; right: 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: 700 15px var(--body); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 5px; padding: 6px 12px; cursor: pointer; }
+button[aria-pressed="true"] { background: var(--ember); color: #1c140d; border-color: var(--ember); }
+button:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+.hint { position: absolute; right: 12px; bottom: 10px; color: var(--dim); font-size: 13px; }
+.tag { font: 700 13px var(--body); color: #1c140d; background: rgba(232,162,74,.92); padding: 1px 7px; border-radius: 4px; white-space: nowrap; pointer-events: none; }
+aside { flex: 0 0 360px; overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px; box-sizing: border-box; }
+h1 { font: 700 30px/1.1 var(--display); margin: 0 0 8px; text-wrap: balance; }
+h2 { font: 700 15px var(--display); letter-spacing: .08em; color: var(--ember); margin: 20px 0 6px; }
+p { margin: 0 0 10px; color: var(--dim); }
+ul { list-style: none; margin: 0; padding: 0; }
+li { padding: 7px 0; border-bottom: 1px dashed var(--line); color: var(--dim); }
+li b { color: var(--ink); }
+.key { display: flex; gap: 14px; flex-wrap: wrap; margin: 4px 0 10px; }
+.key span { display: inline-flex; align-items: center; gap: 6px; color: var(--ink); font-size: 14px; }
+.key i { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+.ask { background: #2c231c; border-left: 3px solid var(--ember); padding: 10px 12px; border-radius: 4px; }
+.ask p { color: var(--ink); }
+@media (max-width: 800px) { .wrap { flex-direction: column; height: auto; } .stage { height: 70vh; flex: none; } aside { flex: none; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<div class="wrap">
+	<div class="stage" id="stage">
+		<div class="bar" role="group" aria-label="Camera and view">
+			<button id="c_front" aria-pressed="true">Front</button>
+			<button id="c_left" aria-pressed="false">Left</button>
+			<button id="c_right" aria-pressed="false">Right</button>
+			<button id="c_above" aria-pressed="false">From above</button>
+			<button id="oldonly" aria-pressed="false">Old stone fort only</button>
+			<button id="names" aria-pressed="true">Names on</button>
+		</div>
+		<div class="hint">Drag to turn &middot; scroll to zoom &middot; right-drag to move</div>
+	</div>
+	<aside>
+		<h1>Ruin 11: Brickcrown Keep</h1>
+		<p>A very simple shape model, not real pieces yet. It's the plan, shown in plain blocks.</p>
+		<div class="key">
+			<span><i style="background:#8b867c"></i>Stonehold stone</span>
+			<span><i style="background:#a4472f"></i>Hearthbrick brick</span>
+			<span><i style="background:#6e2a1e"></i>Brick roof tiles</span>
+		</div>
+		<h2>The idea</h2>
+		<p>Long ago, dwarves built a stone fort here. Later, brickmakers moved in. They mended the cracks and built new storeys on top in red brick. Stone at the bottom, brick on top, and stone bands at every floor line tie the two together.</p>
+		<p>Press <b>Old stone fort only</b> to see the fort before the brickmakers came.</p>
+		<h2>The parts</h2>
+		<ul>
+			<li><b>Terrace + grand stair (stone).</b> A wide step up to the round front door.</li>
+			<li><b>Keep (stone, then brick).</b> Two stone storeys with a flat top. The brick storey on top sticks out 1 m on brackets. The one above steps back in and leaves a railed terrace. A sloped tile roof and a brick chimney sit on top. The back of the keep goes into the cave's rock wall.</li>
+			<li><b>Left tower (stone, then brick).</b> A round stone tower. Its brick top is a bit thinner, so there's a walkway round it. A pointed brick roof finishes it.</li>
+			<li><b>Curtain wall (stone).</b> A thick wall with a walkway and battlements on top. An arch lets it cross a dip in the cave floor. One old crack was patched with brick.</li>
+			<li><b>Right tower (all stone).</b> The oldest part, never rebuilt. It stands on a rock lump and has a flat top with battlements, the way Stonehold roofs must be.</li>
+		</ul>
+		<h2>Heights</h2>
+		<p>Terrace 1.5 m, curtain wall 7 m, left tower 16 m, right tower 13 m (on its 3 m rock), keep roof 19 m. The cave needs about 21 m here.</p>
+		<h2>Your call</h2>
+		<div class="ask">
+			<p>Is this a good way to mix stone and brick? Tell me what to add, take away or move. Once you OK the shapes, I build it from our real stone and brick pieces and show you that page.</p>
+		</div>
+	</aside>
+</div>
+<script type="importmap">
+{ "imports": {
+	"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+	"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { CSS2DRenderer, CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
+
+const stage = document.getElementById("stage");
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+stage.prepend(renderer.domElement);
+const labels = new CSS2DRenderer();
+labels.domElement.style.cssText = "position:absolute;inset:0;pointer-events:none";
+stage.appendChild(labels.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d0a08);
+scene.fog = new THREE.Fog(0x0d0a08, 100, 200);
+const camera = new THREE.PerspectiveCamera(40, 1, 0.5, 400);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+scene.add(new THREE.HemisphereLight(0xffe2bf, 0x2a1e16, 0.9));
+const sun = new THREE.DirectionalLight(0xffc98a, 2.2);   // a lantern glow from front-left
+sun.position.set(-30, 50, 40);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -45, right: 45, top: 45, bottom: -45, near: 1, far: 160 });
+scene.add(sun);
+
+// Colours: stone, darker stone, light stone trim, brick, darker brick, roof tiles, dark openings, rock
+const M = {};
+for (const [k, c] of Object.entries({ stone: 0x8b867c, stone2: 0x76716a, trim: 0xb9b1a2, brick: 0xa4472f, brick2: 0x8f3c28,
+	roof: 0x6e2a1e, dark: 0x1a1210, rock: 0x66564a, floor: 0x3a3027 }))
+	M[k] = new THREE.MeshStandardMaterial({ color: c, roughness: 0.9 });
+
+// Every block belongs to the old stone fort ("old") or the brick rebuild ("new"), for the "Old stone fort only" button.
+let part = "old";
+const newParts = [];
+function add(geo, mat, x, y, z, ry = 0) {
+	const m = new THREE.Mesh(geo, M[mat]);
+	m.position.set(x, y, z);
+	m.rotation.y = ry;
+	m.castShadow = m.receiveShadow = true;
+	scene.add(m);
+	if (part === "new") newParts.push(m);
+	return m;
+}
+// a box by its corners: x0..x1, y0..y1, z0..z1
+const box = (x0, x1, y0, y1, z0, z1, mat) => add(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), mat, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
+// 12-sided tower: a = distance to a flat side; flat sides face the four grid ways
+const R12 = a => a / Math.cos(Math.PI / 12);
+const ring = (x, z, a, y0, y1, mat) => add(new THREE.CylinderGeometry(R12(a), R12(a), y1 - y0, 12), mat, x, (y0 + y1) / 2, z, Math.PI / 12);
+// railing along a line
+function rail(x0, z0, x1, z1, y, mat = "trim") {
+	const L = Math.hypot(x1 - x0, z1 - z0), ry = -Math.atan2(z1 - z0, x1 - x0);
+	add(new THREE.BoxGeometry(L, 0.12, 0.12), mat, (x0 + x1) / 2, y + 1, (z0 + z1) / 2, ry);
+	const n = Math.max(1, Math.round(L));
+	for (let i = 0; i <= n; i++) { const f = i / n; add(new THREE.BoxGeometry(0.12, 1, 0.12), mat, x0 + (x1 - x0) * f, y + 0.5, z0 + (z1 - z0) * f); }
+}
+// railing round a 12-sided deck
+function ringRail(x, z, a, y, mat = "trim") {
+	add(new THREE.TorusGeometry(R12(a) - 0.1, 0.07, 4, 12), mat, x, y + 1, z).rotation.set(Math.PI / 2, 0, Math.PI / 12);
+	for (let j = 0; j < 12; j++) { const t = j * Math.PI / 6; add(new THREE.BoxGeometry(0.15, 1, 0.15), mat, x + Math.cos(t) * (a - 0.1), y + 0.5, z + Math.sin(t) * (a - 0.1)); }
+}
+// battlements (stone merlons) along a line, standing on y
+function merlons(x0, z0, x1, z1, y, mat = "stone") {
+	const L = Math.hypot(x1 - x0, z1 - z0), ry = -Math.atan2(z1 - z0, x1 - x0), n = Math.max(1, Math.round(L / 1.6));
+	for (let i = 0; i <= n; i++) { const f = i / n; add(new THREE.BoxGeometry(0.8, 0.9, 0.5), mat, x0 + (x1 - x0) * f, y + 0.45, z0 + (z1 - z0) * f, ry); }
+}
+function ringMerlons(x, z, a, y) {
+	for (let j = 0; j < 12; j++) { const t = j * Math.PI / 6 + Math.PI / 12; add(new THREE.BoxGeometry(0.5, 0.9, 1.0), "stone", x + Math.cos(t) * (R12(a) - 0.3), y + 0.45, z + Math.sin(t) * (R12(a) - 0.3), -t); }
+}
+// a bracket (corbel) under an overhang: a wedge, wide at the top
+function corbel(x, y, z, mat = "trim") { add(new THREE.CylinderGeometry(0.35, 0.12, 1.0, 4), mat, x, y - 0.5, z, Math.PI / 4); }
+// windows: dark slots on a face. face "z" = a wall facing +z at z=at; "x" = facing +-x at x=at
+function windows(face, at, u0, u1, y, w = 0.8, h = 1.3, step = 2) {
+	for (let u = u0; u <= u1 + 0.01; u += step) {
+		if (face === "z") box(u - w / 2, u + w / 2, y, y + h, at - 0.06, at + 0.06, "dark");
+		else box(at - 0.06, at + 0.06, y, y + h, u - w / 2, u + w / 2, "dark");
+	}
+}
+function ringWindows(x, z, a, y, sides, h = 1.2) {
+	for (const j of sides) { const t = j * Math.PI / 6; add(new THREE.BoxGeometry(0.14, h, 0.6), "dark", x + Math.cos(t) * a, y + h / 2, z + Math.sin(t) * a, -t); }
+}
+// a round-topped door on a face looking +z
+function roundDoor(x, z, y, w, h) {
+	box(x - w / 2, x + w / 2, y, y + h - w / 2, z - 0.06, z + 0.06, "dark");
+	add(new THREE.CylinderGeometry(w / 2, w / 2, 0.12, 16, 1, false, 0, Math.PI), "dark", x, y + h - w / 2, z).rotation.set(Math.PI / 2, Math.PI / 2, 0);
+}
+// a gable roof with its ridge along x, over z0..z1, eaves at y, 45 degrees
+function roofX(x0, x1, z0, z1, y, mat = "roof") {
+	const half = (z1 - z0) / 2 + 0.4, sh = new THREE.Shape();
+	sh.moveTo(-half, 0); sh.lineTo(half, 0); sh.lineTo(0, half); sh.closePath();
+	const m = add(new THREE.ExtrudeGeometry(sh, { depth: x1 - x0 + 0.8, bevelEnabled: false }), mat, x0 - 0.4, y, (z0 + z1) / 2, Math.PI / 2);
+	return half;
+}
+const tags = [];
+function tag(text, x, y, z) {
+	const d = document.createElement("div");
+	d.className = "tag";
+	d.textContent = text;
+	const o = new CSS2DObject(d);
+	o.position.set(x, y, z);
+	o.userData.part = part;
+	scene.add(o);
+	tags.push(o);
+}
+
+// ---- the cave: floor, a dip under the curtain wall, the rock wall the keep is set into, a rock lump ----
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(220, 160, 1, 1), M.floor);
+floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+box(11, 17, -0.02, 0.01, -10, 10, "dark");                          // the dip (a dark hollow)
+const wall = new THREE.Mesh(new THREE.BoxGeometry(120, 32, 10), M.rock);
+wall.position.set(0, 16, -17); wall.receiveShadow = true; scene.add(wall);
+for (let i = 0; i < 18; i++) box(-50 + i * 6 + (i % 3), -46 + i * 6, 0, 1 + (i * 7 % 5), -12.5, -11.5 + (i % 2), "rock");
+add(new THREE.CylinderGeometry(5.4, 6.6, 3, 9), "rock", 24, 1.5, -4);   // the rock lump under the right tower
+box(-14, -10, 0, 6, -12.4, -9, "rock");                                 // rock bulging out beside the keep
+
+// ======== THE OLD STONE FORT ========
+part = "old";
+// ---- terrace + grand stair (stone) ----
+box(-10, 10, 0, 1.5, 0, 6, "stone2");
+box(-10.1, 10.1, 1.35, 1.6, -0.1, 6.1, "trim");
+rail(-10, 6, -2, 6, 1.6); rail(2, 6, 10, 6, 1.6); rail(10, 6, 10, 0, 1.6);
+for (let i = 0; i < 4; i++) box(-2, 2, 0, 0.375 * (i + 1), 6 + (3 - i) * 0.75, 6.75 + (3 - i) * 0.75, "trim");
+tag("Grand stair", 0, 3.5, 9);
+
+// ---- keep: two stone storeys (0..7.5), the back set into the rock ----
+box(-8, 8, 0, 7.5, -12, 0, "stone");
+box(-8.2, 8.2, 4.4, 4.65, -12, 0.2, "trim");                          // band at the floor line
+for (const x of [-5, 5]) box(x - 0.6, x + 0.6, 0, 7.2, 0, 0.6, "stone2");   // buttresses so the front isn't flat
+roundDoor(0, 0.06, 1.5, 2, 3.2);
+windows("z", 0.06, -3, 3, 5.2, 0.5, 1.4, 6); windows("z", 0.06, -7, -7, 5.2, 0.5, 1.4); windows("z", 0.06, 7, 7, 5.2, 0.5, 1.4);
+box(-8.3, 8.3, 7.3, 7.75, -12, 0.3, "trim");                          // the cornice under the brick
+tag("Keep (stone base)", 0, 6.2, 2);
+
+// ---- left tower: a stone ring (0..9) meeting the keep on one flat side ----
+const LX = -8 - 3.73, LZ = -2;
+ring(LX, LZ, 3.73, 0, 9, "stone");
+ring(LX, LZ, 3.9, 4.4, 4.65, "trim");
+ring(LX, LZ, 3.95, 8.7, 9.1, "trim");
+ringWindows(LX, LZ, 3.75, 2.2, [4, 5, 6, 7], 1.0); ringWindows(LX, LZ, 3.75, 5.6, [3, 5, 7]);
+tag("Left tower", LX, 18, LZ);
+
+// ---- curtain wall: keep's right side (x 8) to the right tower (x 20.3), walkway on top, an arch over the dip ----
+box(8, 20.3, 0, 7, -6, -3, "stone");
+box(12, 16, 0, 2.2, -3.06, -2.94, "dark");
+add(new THREE.CylinderGeometry(2, 2, 3.2, 16, 1, false, 0, Math.PI), "dark", 14, 2.2, -4.5).rotation.set(Math.PI / 2, Math.PI / 2, 0);
+box(7.9, 20.4, 6.8, 7.05, -6.1, -2.9, "trim");
+merlons(8.5, -2.95, 19.8, -2.95, 7.05); merlons(8.5, -6.05, 19.8, -6.05, 7.05);
+windows("z", -2.94, 9.5, 9.5, 3.5, 0.4, 1.2);
+tag("Curtain wall", 14, 9.5, -2);
+
+// ---- right tower: all stone, on the rock lump, flat battlement top ----
+const RX = 24, RZ = -4;
+ring(RX, RZ, 3.73, 3, 13, "stone");
+ring(RX, RZ, 3.9, 7.0, 7.25, "trim");
+ring(RX, RZ, 4.1, 12.7, 13.1, "trim");
+add(new THREE.CylinderGeometry(R12(4.1), R12(3.73), 0.7, 12), "trim", RX, 12.4, RZ, Math.PI / 12);
+ringMerlons(RX, RZ, 4.1, 13.1);
+ringWindows(RX, RZ, 3.75, 4.5, [0, 1, 2, 11], 1.0); ringWindows(RX, RZ, 3.75, 8.6, [0, 2, 10]);
+tag("Right tower (oldest, all stone)", RX, 15.5, RZ);
+
+// ======== THE BRICK REBUILD ========
+part = "new";
+// a brick patch mending an old crack in the curtain wall
+box(17, 19.4, 2.6, 6.8, -3.08, -2.92, "brick");
+tag("Crack mended in brick", 18.2, 5.2, -1.5);
+
+// ---- keep storey 3: brick, sticks out 1 m at the front and right on brackets (7.75..11) ----
+box(-8, 9, 7.75, 11, -12, 1, "brick");
+for (let x = -7; x <= 7; x += 2) corbel(x, 7.75, 0.5);
+for (let z = -1; z >= -2; z -= 2) corbel(8.5, 7.75, z);
+windows("z", 1.06, -6, 6, 8.6, 0.8, 1.4, 2);
+windows("x", 9.06, -10, -8, 8.6, 0.8, 1.4, 2);
+box(-8.3, 9.3, 10.9, 11.2, -12, 1.3, "trim");                         // stone band at the floor line
+tag("Brick storey sticks out", 5, 12.5, 2);
+
+// ---- keep storey 4: steps back in (11.2..14), leaving a railed terrace in front ----
+box(-6, 7, 11.2, 14, -12, -3, "brick2");
+windows("z", -2.94, -4, 5, 11.9, 0.8, 1.3, 3);
+rail(-8, 1.2, 9, 1.2, 11.2); rail(-8, 1.2, -8, -3, 11.2); rail(9, 1.2, 9, -12, 11.2);
+const kh = roofX(-6, 7, -12, -3, 14);
+box(3.2, 4.8, 15, 20, -9.8, -8.2, "brick");                           // the chimney
+box(3.0, 5.0, 19.8, 20.2, -10, -8, "trim");
+tag("Steps back in + terrace", -3, 13, 1.5);
+tag("Keep roof", 0.5, 20.5, -7.5);
+
+// ---- left tower top: a thinner brick ring (9.1..13) with a walkway round it, then a pointed roof ----
+ring(LX, LZ, 3.1, 9.1, 13, "brick");
+ringRail(LX, LZ, 3.85, 9.1);
+ringWindows(LX, LZ, 3.12, 10.2, [2, 4, 6, 8, 10]);
+ring(LX, LZ, 3.3, 12.9, 13.2, "trim");
+add(new THREE.ConeGeometry(R12(3.6), 3.4, 12), "roof", LX, 14.9, LZ, Math.PI / 12);
+tag("Brick top + walkway", LX - 4, 11, LZ + 3);
+
+// ---- camera spots and buttons ----
+const CAMS = { front: [[4, 22, 62], [5, 8, -4]], left: [[-56, 24, 30], [0, 7, -4]], right: [[60, 26, 34], [8, 8, -4]], above: [[4, 80, 22], [4, 0, -3]] };
+function look(k) {
+	camera.position.set(...CAMS[k][0]); controls.target.set(...CAMS[k][1]); controls.update();
+	for (const c in CAMS) document.getElementById("c_" + c).setAttribute("aria-pressed", c === k);
+}
+for (const c in CAMS) document.getElementById("c_" + c).onclick = () => look(c);
+look("front");
+let namesOn = true, oldOnly = false;
+function refresh() { newParts.forEach(m => (m.visible = !oldOnly)); tags.forEach(t => (t.visible = namesOn && !(oldOnly && t.userData.part === "new"))); }
+const nb = document.getElementById("names");
+nb.onclick = () => { namesOn = !namesOn; nb.setAttribute("aria-pressed", namesOn); nb.textContent = namesOn ? "Names on" : "Names off"; refresh(); };
+const ob = document.getElementById("oldonly");
+ob.onclick = () => { oldOnly = !oldOnly; ob.setAttribute("aria-pressed", oldOnly); refresh(); };
+function resize() {
+	const w = stage.clientWidth, hh = stage.clientHeight;
+	renderer.setSize(w, hh, false); labels.setSize(w, hh);
+	camera.aspect = w / hh; camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(stage);
+resize();
+renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); labels.render(scene, camera); });
+</script>
