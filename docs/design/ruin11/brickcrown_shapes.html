@@ -41,6 +41,7 @@ li b { color: var(--ink); }
 			<button id="c_left" aria-pressed="false">Left</button>
 			<button id="c_right" aria-pressed="false">Right</button>
 			<button id="c_above" aria-pressed="false">From above</button>
+			<button id="c_yard" aria-pressed="false">Courtyard</button>
 			<button id="oldonly" aria-pressed="false">Old stone fort only</button>
 			<button id="names" aria-pressed="true">Names on</button>
 		</div>
@@ -62,8 +63,11 @@ li b { color: var(--ink); }
 			<li><b>Terrace + grand stair (stone).</b> A wide step up to the round front door.</li>
 			<li><b>Keep (stone, then brick).</b> Two stone storeys with a flat top. The brick storey on top sticks out 1 m on brackets. The one above steps back in and leaves a railed terrace. A sloped tile roof and a brick chimney sit on top. The back of the keep goes into the cave's rock wall.</li>
 			<li><b>Left tower (stone, then brick).</b> A round stone tower. Its brick top is a bit thinner, so there's a walkway round it. A pointed brick roof finishes it.</li>
-			<li><b>Curtain wall (stone).</b> A thick wall with a walkway and battlements on top. An arch lets it cross a dip in the cave floor. One old crack was patched with brick.</li>
-			<li><b>Right tower (all stone).</b> The oldest part, never rebuilt. It stands on a rock lump and has a flat top with battlements, the way Stonehold roofs must be.</li>
+			<li><b>Curtain wall (stone).</b> A thick wall with a walkway and battlements on top. One old crack was patched with brick.</li>
+			<li><b>Gate (new).</b> A round-topped gate with two wooden doors in the curtain wall. A stone bridge crosses the dip in front of it.</li>
+			<li><b>Courtyard (new).</b> Carved back into the cave rock behind the gate, with a well. The rock hangs over its back.</li>
+			<li><b>Rooms in the rock (new).</b> On the courtyard's left, the keep's stone base carries on back into the rock: a stone front with two round doors and windows, rooms behind it.</li>
+			<li><b>Right tower (all stone).</b> The oldest part, never rebuilt. It stands on a rock lump and has a flat top with battlements, the way Stonehold roofs must be. <b>New:</b> a short wall, the same height as the curtain wall, joins its back to the rock.</li>
 		</ul>
 		<h2>Heights</h2>
 		<p>Terrace 1.5 m, curtain wall 7 m, left tower 16 m, right tower 13 m (on its 3 m rock), keep roof 19 m. The cave needs about 21 m here.</p>
@@ -109,7 +113,7 @@ scene.add(sun);
 // Colours: stone, darker stone, light stone trim, brick, darker brick, roof tiles, dark openings, rock
 const M = {};
 for (const [k, c] of Object.entries({ stone: 0x8b867c, stone2: 0x76716a, trim: 0xb9b1a2, brick: 0xa4472f, brick2: 0x8f3c28,
-	roof: 0x6e2a1e, dark: 0x1a1210, rock: 0x66564a, floor: 0x3a3027 }))
+	roof: 0x6e2a1e, wood: 0x6b4a2e, dark: 0x1a1210, rock: 0x66564a, floor: 0x3a3027 }))
 	M[k] = new THREE.MeshStandardMaterial({ color: c, roughness: 0.9 });
 
 // Every block belongs to the old stone fort ("old") or the brick rebuild ("new"), for the "Old stone fort only" button.
@@ -166,6 +170,11 @@ function roundDoor(x, z, y, w, h) {
 	box(x - w / 2, x + w / 2, y, y + h - w / 2, z - 0.06, z + 0.06, "dark");
 	add(new THREE.CylinderGeometry(w / 2, w / 2, 0.12, 16, 1, false, 0, Math.PI), "dark", x, y + h - w / 2, z).rotation.set(Math.PI / 2, Math.PI / 2, 0);
 }
+// a round-topped door on a face looking +-x
+function roundDoorX(x, z, y, w, h) {
+	box(x - 0.06, x + 0.06, y, y + h - w / 2, z - w / 2, z + w / 2, "dark");
+	add(new THREE.CylinderGeometry(w / 2, w / 2, 0.12, 16), "dark", x, y + h - w / 2, z).rotation.z = Math.PI / 2;
+}
 // a gable roof with its ridge along x, over z0..z1, eaves at y, 45 degrees
 function roofX(x0, x1, z0, z1, y, mat = "roof") {
 	const half = (z1 - z0) / 2 + 0.4, sh = new THREE.Shape();
@@ -188,10 +197,11 @@ function tag(text, x, y, z) {
 // ---- the cave: floor, a dip under the curtain wall, the rock wall the keep is set into, a rock lump ----
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(220, 160, 1, 1), M.floor);
 floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
-box(11, 17, -0.02, 0.01, -10, 10, "dark");                          // the dip (a dark hollow)
-const wall = new THREE.Mesh(new THREE.BoxGeometry(120, 32, 10), M.rock);
-wall.position.set(0, 16, -17); wall.receiveShadow = true; scene.add(wall);
-for (let i = 0; i < 18; i++) box(-50 + i * 6 + (i % 3), -46 + i * 6, 0, 1 + (i * 7 % 5), -12.5, -11.5 + (i % 2), "rock");
+box(11, 17, -0.02, 0.01, -1, 9, "dark");                            // the dip in front of the gate (a dark hollow)
+// the rock wall, with a notch carved out for the courtyard (x 8..23, back to z -20)
+box(-60, 8, 0, 32, -22, -12, "rock"); box(23, 60, 0, 32, -22, -12, "rock"); box(8, 23, 0, 32, -24, -20, "rock");
+box(8, 23, 17, 32, -20, -15, "rock");                               // the rock hangs over the back of the courtyard
+for (let i = 0; i < 18; i++) { const x0 = -50 + i * 6 + (i % 3); if (x0 > 4 && x0 < 23) continue; box(x0, x0 + 4, 0, 1 + (i * 7 % 5), -12.5, -11.5 + (i % 2), "rock"); }
 add(new THREE.CylinderGeometry(5.4, 6.6, 3, 9), "rock", 24, 1.5, -4);   // the rock lump under the right tower
 box(-14, -10, 0, 6, -12.4, -9, "rock");                                 // rock bulging out beside the keep
 
@@ -222,9 +232,16 @@ ringWindows(LX, LZ, 3.75, 2.2, [4, 5, 6, 7], 1.0); ringWindows(LX, LZ, 3.75, 5.6
 tag("Left tower", LX, 18, LZ);
 
 // ---- curtain wall: keep's right side (x 8) to the right tower (x 20.3), walkway on top, an arch over the dip ----
-box(8, 20.3, 0, 7, -6, -3, "stone");
-box(12, 16, 0, 2.2, -3.06, -2.94, "dark");
-add(new THREE.CylinderGeometry(2, 2, 3.2, 16, 1, false, 0, Math.PI), "dark", 14, 2.2, -4.5).rotation.set(Math.PI / 2, Math.PI / 2, 0);
+{	// the wall with a round-topped gate hole cut through it (x 12..16, 5 m high)
+	const s = new THREE.Shape();
+	s.moveTo(8, 0); s.lineTo(12, 0); s.lineTo(12, 3); s.absarc(14, 3, 2, Math.PI, 0, true); s.lineTo(16, 0);
+	s.lineTo(20.3, 0); s.lineTo(20.3, 7); s.lineTo(8, 7); s.closePath();
+	add(new THREE.ExtrudeGeometry(s, { depth: 3, bevelEnabled: false }), "stone", 0, 0, -6);
+}
+box(11.85, 12.0, 0, 4.2, -8, -6, "wood"); box(16.0, 16.15, 0, 4.2, -8, -6, "wood");   // the two gate doors, swung open
+box(12.3, 15.7, 0, 0.45, -3, 9.5, "stone2");                          // a stone bridge over the dip to the gate
+rail(12.3, -1, 12.3, 9, 0.45); rail(15.7, -1, 15.7, 9, 0.45);
+tag("Gate (two doors)", 14, 6, 1);
 box(7.9, 20.4, 6.8, 7.05, -6.1, -2.9, "trim");
 merlons(8.5, -2.95, 19.8, -2.95, 7.05); merlons(8.5, -6.05, 19.8, -6.05, 7.05);
 windows("z", -2.94, 9.5, 9.5, 3.5, 0.4, 1.2);
@@ -239,6 +256,24 @@ add(new THREE.CylinderGeometry(R12(4.1), R12(3.73), 0.7, 12), "trim", RX, 12.4, 
 ringMerlons(RX, RZ, 4.1, 13.1);
 ringWindows(RX, RZ, 3.75, 4.5, [0, 1, 2, 11], 1.0); ringWindows(RX, RZ, 3.75, 8.6, [0, 2, 10]);
 tag("Right tower (oldest, all stone)", RX, 15.5, RZ);
+
+// ---- NEW: a short wall from the right tower's back to the rock (same height as the curtain wall) ----
+box(23, 25, 0, 7, -12, -7.6, "stone");
+box(22.9, 25.1, 6.8, 7.05, -12, -7.6, "trim");
+merlons(23, -11.6, 23, -8, 7.05); merlons(25, -11.6, 25, -8, 7.05);
+tag("Wall to the rock", 27, 8.5, -10);
+
+// ---- NEW: the courtyard carved into the rock behind the gate ----
+box(8, 23, 0, 0.08, -20, -6, "stone2");                              // paving
+ring(17, -14, 1.0, 0, 0.9, "stone"); ring(17, -14, 0.7, 0.9, 0.92, "dark");   // a well
+tag("Courtyard", 17, 3, -14);
+// the keep's stone base goes on back into the rock: a front of rooms facing the courtyard
+roundDoorX(8.06, -9, 0, 1.6, 2.8);                                    // the keep's own side door
+box(8, 8.4, 0, 7.5, -20, -12, "stone");
+box(8, 8.6, 4.3, 4.55, -20, -12, "trim"); box(8, 8.7, 7.3, 7.75, -20, -12, "trim");
+roundDoorX(8.46, -18, 0, 1.6, 2.8); roundDoorX(8.46, -14, 0, 1.6, 2.8);
+windows("x", 8.46, -19, -13, 5.0, 0.5, 1.3, 2);
+tag("Rooms dug into the rock", 9, 9, -16);
 
 // ======== THE BRICK REBUILD ========
 part = "new";
@@ -274,13 +309,13 @@ add(new THREE.ConeGeometry(R12(3.6), 3.4, 12), "roof", LX, 14.9, LZ, Math.PI / 1
 tag("Brick top + walkway", LX - 4, 11, LZ + 3);
 
 // ---- camera spots and buttons ----
-const CAMS = { front: [[4, 22, 62], [5, 8, -4]], left: [[-56, 24, 30], [0, 7, -4]], right: [[60, 26, 34], [8, 8, -4]], above: [[4, 80, 22], [4, 0, -3]] };
+const CAMS = { front: [[4, 22, 62], [5, 8, -4]], left: [[-56, 24, 30], [0, 7, -4]], right: [[60, 26, 34], [8, 8, -4]], above: [[4, 80, 22], [4, 0, -3]], yard: [[8, 40, 16], [15, 1, -13]] };
 function look(k) {
 	camera.position.set(...CAMS[k][0]); controls.target.set(...CAMS[k][1]); controls.update();
 	for (const c in CAMS) document.getElementById("c_" + c).setAttribute("aria-pressed", c === k);
 }
 for (const c in CAMS) document.getElementById("c_" + c).onclick = () => look(c);
-look("front");
+look(location.hash.slice(1) in CAMS ? location.hash.slice(1) : "front");
 let namesOn = true, oldOnly = false;
 function refresh() { newParts.forEach(m => (m.visible = !oldOnly)); tags.forEach(t => (t.visible = namesOn && !(oldOnly && t.userData.part === "new"))); }
 const nb = document.getElementById("names");
