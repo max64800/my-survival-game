@@ -1,8 +1,7 @@
 class_name SettingsPanel
 extends PanelContainer
 ## The Settings panel (owner F187 mock-up): sound volume, mute, mouse speed and graphics (owner, Nov 19), remembered on this
-## computer (SoundSettings). Used by the start screen and the Escape menu. The game has no music yet,
-## so there is one volume for everything; Music / Effects sliders come when music does.
+## computer (SoundSettings). Used by the start screen and the Escape menu. A Music slider sits under the main volume.
 
 
 func _ready() -> void:
@@ -23,6 +22,16 @@ func _ready() -> void:
 	vol.set_value_no_signal(SoundSettings.volume * 100.0)
 	vol.value_changed.connect(func(x: float): SoundSettings.set_volume(x / 100.0))
 	sound.add_child(vol)
+	var music := _row(v, "Music")
+	var mus := UiKit.slider(HSlider.new())
+	mus.name = "MusicVolume"
+	mus.min_value = 0
+	mus.max_value = 100
+	mus.step = 5
+	mus.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	mus.set_value_no_signal(SoundSettings.music_volume * 100.0)
+	mus.value_changed.connect(func(x: float): SoundSettings.set_music_volume(x / 100.0))
+	music.add_child(mus)
 	var mute := CheckButton.new()
 	mute.name = "Mute"
 	mute.text = "Mute"
