@@ -719,11 +719,11 @@ def _inside(u, v, pl, m=0.0):
 	return all(a_ * u + b_ * v <= c_ - m for (a_, b_, c_) in pl)
 
 
-def shingle_slope(sl, extra=(), rafters=(-0.9, 0.9), sark_cut=(), sh_cut=(), base=0.0, eave=True):
+def shingle_slope(sl, extra=(), rafters=(-0.9, 0.9), sark_cut=(), sh_cut=(), base=0.0, eave=True, top_gap=0.16):
 	"""One Shack roof slope, in layers from below: hand-hewn rafters, a board deck (sarking), then courses of big
 	stepped shingles, each a different painting, pegged. `extra` = diagonal cuts (corner roofs); sark_cut /
 	sh_cut = cuts for the deck / shingles only (they stop short of a valley board); base = lower everything
-	(thin pieces with no rafters)."""
+	(thin pieces with no rafters); top_gap = how far the shingles stop below the high edge."""
 	pl = sl.planes(extra)
 	if eave:  # a hewn eave beam along the low edge, sitting on the wall top: no gap between roof and wall
 		vs = [sl.vlo + 0.05 + k * 0.01 for k in range(int((sl.vhi - sl.vlo - 0.1) / 0.01) + 1)]
@@ -749,7 +749,7 @@ def shingle_slope(sl, extra=(), rafters=(-0.9, 0.9), sark_cut=(), sh_cut=(), bas
 	cuts = list(extra) + list(sh_cut)
 	i = 0
 	while i * Er < sl.run - 0.1:
-		d0, d1 = i * Er, min(i * Er + Er + OV, sl.run - 0.16)
+		d0, d1 = i * Er, min(i * Er + Er + OV, sl.run - top_gap)
 		hb = (lambda a_: (lambda u: 0.183 - base + 0.06 * (1 - (sl.d(u) - a_) / (Er + OV))))(d0)
 		ht = (lambda f: (lambda u: f(u) + TH))(hb)
 		v = sl.vlo + (0.0 if i % 2 == 0 else -0.16)
@@ -773,8 +773,21 @@ def shingle_slope(sl, extra=(), rafters=(-0.9, 0.9), sark_cut=(), sh_cut=(), bas
 def roof_v3(w=2.0, rise=1.0, dd=2.0):
 	"""Shack roof (the owner liked it): the same big stepped shingles, now each one a different painting, on
 	hand-hewn rafters, a hewn ridge beam at the top, wooden pegs instead of iron bolts."""
-	sl = K.Slope("z", dd / 2, -dd / 2, rise, 0.33, vlo=-w / 2, vhi=w / 2)
-	shingle_slope(sl)
+	# F861 (Nov 25): the slope climbs the piece's full rise (top_v 0, was 0.33). At 0.33 it climbed only 1.5 m of a
+	# steep piece's 2 m, so the next row up started ~40 cm higher than this one ended: a long see-through slit.
+	# Now the next row carries on exactly where this one ends; the shingles poke past the box top at the high
+	# edge (into the next row's start), as a real roof's do. Shingles run up to under the ridge log.
+	sl = K.Slope("z", dd / 2, -dd / 2, rise, 0.0, vlo=-w / 2, vhi=w / 2)
+	shingle_slope(sl, top_gap=0.012)
+	# A dark backing board 1 cm under the deck along the high edge and the +x side, reaching 4 cm past the box:
+	# from inside, the 1 cm crack to the next row up / the next piece along shows dark wood, not light.
+	# (Only on one side each way, so two neighbours never put a board in the same place.)
+	before = set(bpy.data.objects)
+	out = sl.planes(e=-0.04)
+	sl.strip(sl.run - 0.06, sl.run + 0.04, sl.vlo + E, sl.vhi - E, out, lambda u: 0.135, lambda u: 0.155, T("wood", "dark"))
+	sl.strip(0.0, sl.run, sl.vhi - 0.06, sl.vhi + 0.04, out, lambda u: 0.115, lambda u: 0.13, T("wood", "dark"))
+	for o in set(bpy.data.objects) - before:
+		o["role"] = "board"
 	a, b = sl.P(sl.u(sl.run - 0.11), sl.vlo + 0.04, 0.22), sl.P(sl.u(sl.run - 0.11), sl.vhi - 0.04, 0.22)
 	real_log(a, b, 0.075, "round", stub=False)  # round ridge log: no flat corner lying on the steep boards
 
@@ -785,11 +798,11 @@ def roof_corner_v3(w=2.0, rise=1.0, dd=2.0, inner=False):
 	valley, the shingles stop just short of it. Same layers as the roof; cut exactly on the diagonal (F80)."""
 	g = 0.005
 	cut = [(-1.0, 1.0, -g)] if not inner else [(1.0, -1.0, -g)]
-	slz = K.Slope("z", dd / 2, -dd / 2, rise, 0.33, vlo=-w / 2, vhi=w / 2)
-	slx = K.Slope("x", w / 2, -w / 2, rise, 0.33, vlo=-dd / 2, vhi=dd / 2)
+	slz = K.Slope("z", dd / 2, -dd / 2, rise, 0.0, vlo=-w / 2, vhi=w / 2)  # F861: the full rise, like roof_v3
+	slx = K.Slope("x", w / 2, -w / 2, rise, 0.0, vlo=-dd / 2, vhi=dd / 2)
 	sark, shc = ([(1.0, -1.0, -0.2)], [(1.0, -1.0, -0.2)]) if inner else ((), ())
 	for sl in (slz, slx):
-		shingle_slope(sl, cut, rafters=(-0.9, 0.0, 0.9), sark_cut=sark, sh_cut=shc)
+		shingle_slope(sl, cut, rafters=(-0.9, 0.0, 0.9), sark_cut=sark, sh_cut=shc, top_gap=0.012)
 
 	def diag(f, h):
 		u = (dd / 2 - 0.13) - f * (dd - 0.26)

@@ -67,6 +67,7 @@ const LIST := {
 		station = {"workbench": 1, "mason": 1, "anvil": 2}},
 	# (model_lift: the Shack's steep roof models start 10-13 cm up, on the wall's top beam; F865, Nov 25: at 0.1 they were
 	# thrown out for a rounding hair and the plain code shape showed, "flat, wood-like")
+	# (F861, Nov 25: built at the true roof angle, the inner corner starts 16 cm up: model_lift 0.2 there)
 	"roof_45": {name = "Roof (steep)", group = "roof", size = Vector3(2, 2, 2), units = 4, place = "cell", shape = "roof", rise = 2.0, model_lift = 0.15,
 		station = {"workbench": 2, "mason": 2, "anvil": 2}},
 	"roof_26_ridge": {name = "Roof Ridge (gentle)", group = "roof", size = Vector3(2, 0.5, 2), units = 3, place = "cell", shape = "ridge", rise = 0.5,
@@ -79,7 +80,7 @@ const LIST := {
 		station = {"workbench": 3, "mason": 3, "anvil": 2}},
 	"roof_45_outer": {name = "Roof Corner Out (steep)", group = "roof", size = Vector3(2, 2, 2), units = 4, place = "cell", shape = "roof_outer", rise = 2.0, model_lift = 0.15,
 		station = {"workbench": 3, "mason": 3, "anvil": 2}},
-	"roof_45_inner": {name = "Roof Corner In (steep)", group = "roof", size = Vector3(2, 2, 2), units = 4, place = "cell", shape = "roof_inner", rise = 2.0, model_lift = 0.15,
+	"roof_45_inner": {name = "Roof Corner In (steep)", group = "roof", size = Vector3(2, 2, 2), units = 4, place = "cell", shape = "roof_inner", rise = 2.0, model_lift = 0.2,
 		station = {"workbench": 3, "mason": 3, "anvil": 2}},
 	# --- supports
 	"beam": {name = "Beam", group = "support", size = Vector3(2, 0.3, 0.3), units = 2, place = "edge", station = ALL},
