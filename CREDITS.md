@@ -139,3 +139,16 @@ All CC0 (public domain), checked on each page. Trimmed, loudness-matched and con
 | helmet clash | Luisa_Sanchez | https://freesound.org/s/816987/ | CC0 | shell_clank_0, shell_clunk_0 (MAYBE) |
 | Dropping Rocks | (see page) | https://freesound.org/s/567250/ | CC0 | thud_0 |
 | Bricks/Stones/Rocks/Gravel Falling | (see page) | https://freesound.org/s/567249/ | CC0 | thud_1 (MAYBE) |
+
+### Freesound sounds, owner's picks round 4 (Nov 25, 2026; replace older rows for these slots)
+
+| Title | Author | Link | Licence | Used as |
+|---|---|---|---|---|
+| Hit Swing Sword | CogFireStudios | https://freesound.org/s/547038/ | CC0 | hit_0 |
+| sword slash.wav | ethanchase7744 | https://freesound.org/s/441666/ | CC0 | hit_1 (MAYBE) |
+| Impact: Metal 1 | Sheyvan | https://freesound.org/s/475221/ | CC0 | block_0, parry_0, shell_clank_1, shell_clunk_1 |
+| Single Rock hit Dirt.wav | worthahep88 | https://freesound.org/s/319222/ | CC0 | dig_soft_0 |
+| Impact Hit at soft but big material | doudar41 | https://freesound.org/s/728515/ | CC0 | shell_clank_0, shell_clunk_0 |
+| Ceramic Plate Set Down.wav | bbrocer | https://freesound.org/s/382643/ | CC0 | build_brick_0, build_brick_1 (MAYBE; two takes cut from it) |
+| Ceramic clank and sliding over wooden table.wav | kessir | https://freesound.org/s/264757/ | CC0 | build_brick_2 (MAYBE) |
+(Shovel_dirt.wav 353907 is now cut to its first 1.2 s as dig_soft_1; "bricks" 735273 is cut to one clatter as build_brick_3.)
