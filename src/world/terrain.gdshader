@@ -14,6 +14,12 @@ const int LOOKS = 4;  // looks per material in the arrays: slice = material * 4 
 uniform float tex_scale = 0.33;  // one texture tile every ~3 m
 uniform float bump_strength = 1.0;
 uniform float flat_shading = 0.0;  // 1 = old low-poly facets
+// F766: rock between the camera and the dwarf fades to a see-through speckle (set every frame by the camera,
+// Dwarf._place_camera). see_radius 0 = off. Only rock in a thin tube from the camera to his chest, and not right
+// next to him, so the floor under his feet always stays.
+uniform vec3 see_from = vec3(0.0);
+uniform vec3 see_to = vec3(0.0);
+uniform float see_radius = 0.0;
 
 // Glow colour of the alpha-marked veins, per material number.
 const vec3 GLOW[16] = vec3[16](
@@ -189,6 +195,18 @@ void vertex() {
 }
 
 void fragment() {
+	if (see_radius > 0.0) {
+		vec3 ab = see_to - see_from;
+		float t = clamp(dot(v_world - see_from, ab) / max(dot(ab, ab), 0.0001), 0.0, 1.0);
+		float d = length(v_world - (see_from + ab * t));
+		float fade = (1.0 - smoothstep(see_radius * 0.55, see_radius, d)) * (1.0 - smoothstep(0.7, 0.9, t));
+		// A 4x4 checker of thresholds: fading = more and more of the dots left out (no see-through sorting needed).
+		ivec2 q = ivec2(FRAGCOORD.xy) % 4;
+		int bayer[16] = int[](0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5);
+		if (fade * 0.85 > (float(bayer[q.y * 4 + q.x]) + 0.5) / 16.0) {
+			discard;
+		}
+	}
 	vec4 w = v_weights / (v_weights.x + v_weights.y + v_weights.z + v_weights.w + 0.00001);
 	vec3 wn = normalize(v_wnormal);
 	if (flat_shading > 0.5) {

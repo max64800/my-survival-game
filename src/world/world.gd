@@ -56,6 +56,7 @@ func setup(seed: int) -> void:
 	mat.set_shader_parameter("normal_tex", preload("res://assets/textures/terrain/terrain_normal.png"))
 	mat.set_shader_parameter("flat_shading", 1.0 if CaveMaker.rock_style == "blocks" else 0.0)  # soft light, like before (owner)
 	_rock_mat = mat
+	rock_mat = mat  # (the local camera fades the rock in front of it, F766)
 	var star := maker.star_room()  # thicker glow-worm stars and a group of snakes there (owner F260, Nov 17)
 	if not star.is_empty():
 		mat.set_shader_parameter("star_center", star.center)
@@ -251,6 +252,8 @@ func copy_area(origin: Vector3i, size: Vector3i) -> VoxelBuffer:
 # The rock's look code gets the 16 rock bridges nearest the camera, twice a second (owner, Nov 18: the glowing veins
 # "under the bridges as well"; all of them would make every ceiling pixel check every bridge).
 var _rock_mat: ShaderMaterial
+## The rock's paint, for the camera (F766: rock between the camera and the dwarf fades out).
+static var rock_mat: ShaderMaterial
 var _bridge_t := 0.0
 
 

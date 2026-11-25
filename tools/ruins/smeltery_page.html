@@ -83,13 +83,15 @@ li span:last-child { font: 400 15px var(--body); font-variant-numeric: tabular-n
 			<h2>The parts</h2>
 			<ul>
 				<li><span>Vaults</span><span>a 30 m long row of brick store rooms, 3 m tall; their flat roof is the terrace you walk on</span></li>
-				<li><span>Yard + grand stair</span><span>a railed yard in front, a wide stair up to the terrace and the hall's main door</span></li>
-				<li><span>Smelting hall</span><span>12 &times; 8 m on the terrace, a tall first floor (4.5 m, with a brick beam band), an upper floor that sticks out on brackets, a steep roof with two dormers, top about 14 m up</span></li>
-				<li><span>Chimney tower</span><span>square, 6 storeys, then 12-sided for a round room, then a crown of 5 balconies on brackets, about 18 m up</span></li>
-				<li><span>Furnace house</span><span>round (12 sides), 3 storeys and a railed roof deck, lower than the hall</span></li>
-				<li><span>Bridge</span><span>8 m long, 3 m up, from the furnace house to the terrace, over a dip in the cave floor</span></li>
+				<li><span>Yard + split stair</span><span>a railed yard in front, a grand stair that splits in two around the middle, then one wide flight up to the terrace and the hall's main door</span></li>
+				<li><span>Smelting hall</span><span>14 &times; 8 m on the terrace, a tall first floor (4.5 m, with a brick beam band), a wooden balcony across the front on brackets, a steep roof with two dormers, top about 14 m up</span></li>
+				<li><span>Stair turret</span><span>6-sided, on the hall's front-left corner: a ladder inside climbs 4 storeys to a railed lookout above the roof</span></li>
+				<li><span>Chimney tower</span><span>square, 6 storeys with a balcony that wraps round its front and right side, two carved stone spires on its top corners, then a 12-sided round room, a railed crown deck, and a square chimney with a cap, about 23 m up</span></li>
+				<li><span>Furnace house</span><span>round (12 sides), 3 storeys, a railed deck where it steps in, a thinner round top (2 storeys, railed), and a small porch with a sloped roof on its front</span></li>
+				<li><span>Bridge</span><span>8 m long, 3 m up, from the furnace house to the terrace, roofed in wood, on a brick pier with 4 carved columns in the dip</span></li>
+				<li><span>Watch turret</span><span>6-sided, on the terrace's front-right corner, 3 storeys with a railed top</span></li>
 			</ul>
-			<p class="note">Three steps up: vaults, hall, tower. Every part is a different height. 15 flights of stairs, each starts and ends on whole floor. The back is pushed into the cave wall; the dip under the bridge is made by the world, not by building pieces. The cave needs to be about 20 m tall here.</p>
+			<p class="note">Three steps up: vaults, hall, tower. Every part is a different height. 15 flights of stairs and 9 ladders (in the turrets and the furnace top), each starts and ends on whole floor. The back is pushed into the cave wall; the dip under the bridge is made by the world, not by building pieces. The cave needs to be about 24 m tall here.</p>
 		</section>
 		<section>
 			<h2 id="costH">Build it in brick</h2>
@@ -258,8 +260,8 @@ function refresh() {
 	document.getElementById("costH").textContent = m === "wood" ? "Mend it in wood" : "Build it in brick";
 	const nice = c => Object.entries(c).sort((a, b) => b[1] - a[1]).map(([a, b]) => `${b.toLocaleString("en")} ${NICE[a] || a}`).join(", ");
 	document.getElementById("costNote").textContent = m === "wood"
-		? `Only what fell or broke (${costs.n_mend} of the ${costs.n_whole} pieces) is new, in wood; everything still standing stays the old brick. The tower from the third floor up stays brick: wood gets too weak that high. Mending it in brick instead: ${nice(costs.stone_mend)}.`
-		: `${costs.n_whole.toLocaleString("en")} pieces, about a third of the Prow Hall's: just as wide, but more of it is solid vaults and cave rock. You decide if the price is too much.`;
+		? `Only what fell or broke (${costs.n_mend} of the ${costs.n_whole} pieces) is new, in wood; everything still standing stays the old brick. The whole chimney tower and its wrap-round balcony stay brick: wood gets too weak that high (23 m). Mending it in brick instead: ${nice(costs.stone_mend)}.`
+		: `${costs.n_whole.toLocaleString("en")} pieces: much of it is solid vaults and cave rock. You decide if the price is too much.`;
 	document.getElementById("cost").innerHTML = Object.entries(costs[m])
 		.sort((a, b) => b[1] - a[1]).map(([a, b]) => `<li><span>${NICE[a] || a}</span><span>${b.toLocaleString("en")}</span></li>`).join("");
 }
@@ -278,7 +280,7 @@ try {
 		const parts = [];
 		m.traverse(o => { if (o.isMesh) parts.push({ geo: o.geometry, mat: o.material, local: o.matrixWorld.clone() }); });
 		models[k] = parts;
-		loadingEl.textContent = `Building the Prow Hall… ${++done} of ${kinds.length} kinds of piece`;
+		loadingEl.textContent = `Building the Smeltery… ${++done} of ${kinds.length} kinds of piece`;
 	}));
 	// One InstancedMesh per kind of piece, per view, per height (so the storey buttons can hide what is above).
 	const groups = {};
@@ -305,12 +307,12 @@ try {
 	refresh();
 	loadingEl.hidden = true;
 } catch (err) {
-	loadingEl.textContent = "Couldn't build the Prow Hall: " + err.message;
+	loadingEl.textContent = "Couldn't build the Smeltery: " + err.message;
 	console.error(err);
 }
 
 // Camera spots: the front (the yard, the grand stair, the three steps), the furnace side (the bridge and the dip), from above.
-const CAMS = { front: [[6, 34, 80], [0, 7, -3]], bridge: [[-52, 24, 34], [-6, 6, -3]], above: [[0, 80, 18], [0, 0, -1]] };
+const CAMS = { front: [[8, 38, 88], [2, 9, -3]], bridge: [[-52, 24, 34], [-6, 6, -3]], above: [[0, 80, 18], [0, 0, -1]] };
 function look(which) {
 	const [p, t] = CAMS[which];
 	camera.position.set(...p);
