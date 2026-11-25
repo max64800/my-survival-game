@@ -11,7 +11,7 @@ const MODELS := ["res://assets/models/decor/stepping_stones.glb", "res://assets/
 enum { STONES, RAIL, TORCH }
 const STRETCH := 24.0  ## the path is split into stretches this long: each is plain dirt, old stones or old track
 const RAIL_SHARE := 0.09  ## of the stretches still have bits of cart track
-const STONE_SHARE := 0.32  ## of the stretches still have old stones
+const STONE_SHARE := 0.0  ## (F900: none. The old stones' dirt patches looked bad; the road is bricks now)
 const TORCH_EVERY := 0.012  ## chance per path spot of a fallen torch (about one every 125 m)
 const PATCH := 24.0
 const VIEW := 48.0  ## further than this: not drawn

@@ -257,11 +257,35 @@ void fragment() {
 			a.rgb *= vec3(0.62, 0.6, 0.6);
 		}
 		if (id == 7) {
-			// The old dirt path (F870 step 5): the dirt look trodden flat: a little paler and greyer, calmer, so it
-			// reads as a worn track through the moss, not fresh dug earth.
-			float g = dot(a.rgb, vec3(0.33));
-			a.rgb = mix(a.rgb, vec3(g), 0.3) * vec3(1.12, 1.06, 0.98);
-			n = mix(n, wn, 0.45);  // (trodden smoother)
+			// The old road (F900, owner Nov 25: "a grey brick road that leads to each place", was dirt): grey bricks
+			// laid in rows (each row half a brick on), worn round at the edges, each its own shade, with dark earth in
+			// the joints and here and there a brick gone. The stone look gives each brick its grain. On the floor
+			// only (the sides of a bump stay earth).
+			vec4 sa;
+			vec3 sn;
+			triplanar(float(LOOKS) + look, p, bw, wn, sa, sn);
+			const vec2 BRICK = vec2(0.6, 0.3);
+			vec2 q = v_world.xz / BRICK;
+			float row = floor(q.y);
+			q.x += mod(row, 2.0) * 0.5;
+			vec2 cb = vec2(floor(q.x), row);
+			vec2 f = fract(q);
+			vec2 e = min(f, 1.0 - f) * BRICK;  // metres to the brick's edges
+			float edge = min(e.x, e.y) - vnoise(v_world * 7.0) * 0.025;  // (uneven, worn edges)
+			float hb = hash(vec3(cb, 3.7));
+			float gone = step(0.94, hash(vec3(cb, 9.1)));
+			float brick = smoothstep(0.012, 0.03, edge) * (1.0 - gone);
+			vec3 grey = vec3(dot(sa.rgb, vec3(0.3, 0.4, 0.3))) * vec3(0.95, 0.98, 1.06) * mix(1.0, 1.4, hb);
+			grey = mix(grey, grey * vec3(1.06, 1.0, 0.9), step(0.82, hash(vec3(cb, 5.3))));  // a few warmer ones
+			vec3 joint = a.rgb * 0.3;
+			float up = smoothstep(0.5, 0.8, wn.y);
+			a.rgb = mix(a.rgb, mix(joint, grey, brick), up);
+			// rounded worn edges: the normal tips away from the brick's middle near its edge
+			vec2 c = (f - 0.5) * BRICK;
+			vec2 away = abs(c.x) / BRICK.x > abs(c.y) / BRICK.y ? vec2(sign(c.x), 0.0) : vec2(0.0, sign(c.y));
+			float bevel = (1.0 - smoothstep(0.0, 0.07, edge)) * (1.0 - gone);
+			vec3 bn = normalize(mix(sn, wn, 0.5) + vec3(away.x, 0.0, away.y) * bevel * 0.9);
+			n = normalize(mix(n, bn, up));
 		}
 		col += a.rgb * ws[k];
 		emit += GLOW[id] * a.a * ws[k];

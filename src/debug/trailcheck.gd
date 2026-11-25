@@ -1,5 +1,5 @@
 extends Node
-## Trail check (F870 step 5): photos of the old dirt path near the start, old stones, broken track and a fallen torch.
+## Trail check (F870 step 5): photos of the old road near the start (and its bricks close up, F900), old stones, broken track and a fallen torch.
 ## Run:  godot --audio-driver Dummy --path . -- trailcheck claude=old_path seed=42 shots=<folder>
 
 var _main: Node
@@ -40,6 +40,7 @@ func _run() -> void:
 		if maker.trail[i].distance_to(maker.spawn_point) < maker.trail[best].distance_to(maker.spawn_point):
 			best = i
 	await _look_along(dwarf, best, "1_path_near_start")
+	await _look_along(dwarf, best, "2_bricks_close", maker.trail[best] + maker.trail_along[best] * 1.0)  # (F900)
 	var items := TrailDecor.plan(maker)
 	for kind in [TrailDecor.STONES, TrailDecor.RAIL, TrailDecor.TORCH]:
 		var pick: Dictionary = {}
@@ -98,6 +99,6 @@ func _look_along(dwarf: Dwarf, i: int, name: String, at := Vector3.INF) -> void:
 	dwarf._yaw = atan2(-d.x, -d.z)
 	dwarf._pitch = clampf(atan2(d.y, Vector2(d.x, d.z).length()), -1.2, 1.0)
 	dwarf.model.rotation.y = dwarf._yaw
-	dwarf.model.visible = at == Vector3.INF  # (hidden for the close looks)
+	dwarf.model.visible = at == Vector3.INF or name.begins_with("2_")  # (hidden for the close looks; the bricks need his lantern)
 	await _wait(2.5)
 	await _shot(name)

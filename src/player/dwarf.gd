@@ -932,11 +932,11 @@ func floor_surface() -> String:
 	match auth.world.rock_material_near(global_position + Vector3.DOWN * 0.2, 1.0):
 		Mat.MOSS:
 			return "moss"
-		Mat.DIRT, Mat.CLAY, Mat.PATH:
+		Mat.DIRT, Mat.CLAY:
 			return "dirt"
 		Mat.MYCELIUM, Mat.SPORESTONE:
 			return "fungus"
-		Mat.DWARF:
+		Mat.DWARF, Mat.PATH:  # (the old brick road, F900)
 			return "stone"
 	return "rock"
 
@@ -1214,7 +1214,7 @@ func _on_dig_feedback(pid: int, result: Dictionary) -> void:
 		return
 	var at: Vector3 = result.point
 	var col := Fx.material_color(result.get("material", Mat.STONE))
-	var soft: bool = result.get("material", Mat.STONE) in [Mat.MOSS, Mat.DIRT, Mat.CLAY, Mat.PATH]
+	var soft: bool = result.get("material", Mat.STONE) in [Mat.MOSS, Mat.DIRT, Mat.CLAY]
 	if result.get("state", "") in ["hit", "dug"]:
 		FreezeWatch.hits += 1
 	var wood: bool = result.get("kind", "") in GlowPlacer.TALL  # roots, Root Trees, grove trees, giant mushrooms

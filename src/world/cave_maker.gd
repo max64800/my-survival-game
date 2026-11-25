@@ -467,9 +467,7 @@ func is_trail_floor(p: Vector3i) -> bool:
 	if d == INF:
 		return false
 	var wear := _hash01(Vector3i(p.x, 7, p.z))
-	var edge := TRAIL_HALF * (0.75 + 0.5 * wear)
-	if _hash01(Vector3i(p.x >> 2, 11, p.z >> 2)) < 0.12:
-		edge *= 0.55  # (a patch where the moss has grown back over most of it)
+	var edge := TRAIL_HALF * (0.85 + 0.3 * wear)  # (F900: a brick road, so steadier edges and no moss grown over it)
 	return d < edge * edge
 
 

@@ -10,7 +10,7 @@ const COPPER := 3
 const BORDER := 4
 const CLAY := 5
 const TIN := 6  ## Zone 1 tin (F697): grey-silver specks in ordinary walls; needs a Copper Pickaxe
-const PATH := 7  ## the old worn dirt path's packed dirt (F870 step 5, OldTrail): digs like dirt
+const PATH := 7  ## the old road's grey bricks (F870 step 5, OldTrail; bricks since F900): digs like stone, gives stone
 # Fungal Jungle (world doc 2.7 numbering)
 const MYCELIUM := 8  ## the jungle's "moss": soft white fungus mat on floors
 const SILVER := 9
@@ -19,11 +19,11 @@ const SPORESTONE := 13  ## the jungle's default rock
 const DWARF := 14  ## old dwarf stone: a dungeon's walls (owner, Nov 19): no pickaxe breaks it
 const EDGE := 15  ## the end of the world: no pickaxe ever digs it
 
-const NAMES := {MOSS: "Moss", STONE: "Stone", DIRT: "Dirt", COPPER: "Copper ore", BORDER: "Border rock", CLAY: "Orange clay", TIN: "Tin ore", PATH: "Packed dirt",
+const NAMES := {MOSS: "Moss", STONE: "Stone", DIRT: "Dirt", COPPER: "Copper ore", BORDER: "Border rock", CLAY: "Orange clay", TIN: "Tin ore", PATH: "Old road",
 	MYCELIUM: "Mycelium", SILVER: "Silver ore", AMBERROCK: "Amberrock", SPORESTONE: "Sporestone", DWARF: "Old dwarf stone", EDGE: "World's edge"}
 
 ## How much digging a spot of this rock needs. Moss 20: the mossy top layer takes 2 hits with a stone pickaxe (owner, F196).
-const HARDNESS := {MOSS: 20, DIRT: 10, PATH: 14, STONE: 26, COPPER: 45, BORDER: 80, CLAY: 15, TIN: 40,
+const HARDNESS := {MOSS: 20, DIRT: 10, PATH: 24, STONE: 26, COPPER: 45, BORDER: 80, CLAY: 15, TIN: 40,
 	MYCELIUM: 10, SILVER: 55, AMBERROCK: 25, SPORESTONE: 30, DWARF: 999, EDGE: 999}
 ## The weakest pickaxe tier that can dig it (0 stone, 1 copper, 2 silver).
 const MIN_TIER := {MOSS: 0, DIRT: 0, PATH: 0, STONE: 0, COPPER: 0, BORDER: 1, CLAY: 0, TIN: 1,
@@ -31,9 +31,9 @@ const MIN_TIER := {MOSS: 0, DIRT: 0, PATH: 0, STONE: 0, COPPER: 0, BORDER: 1, CL
 const TIER_NAMES := ["Stone", "Copper", "Silver", "Iron", "Steel"]
 
 ## What item you get from dug voxels of this material, and how many voxels make one item.
-const DROP_ITEM := {MOSS: "moss", DIRT: "dirt", PATH: "dirt", STONE: "stone", COPPER: "copper_ore", CLAY: "clay", TIN: "tin_ore",
+const DROP_ITEM := {MOSS: "moss", DIRT: "dirt", PATH: "stone", STONE: "stone", COPPER: "copper_ore", CLAY: "clay", TIN: "tin_ore",
 	MYCELIUM: "dirt", SILVER: "silver_ore", AMBERROCK: "amberrock", SPORESTONE: "sporestone"}
-const VOXELS_PER_ITEM := {MOSS: 4, DIRT: 4, PATH: 4, STONE: 3, COPPER: 3, CLAY: 2, TIN: 3,
+const VOXELS_PER_ITEM := {MOSS: 4, DIRT: 4, PATH: 3, STONE: 3, COPPER: 3, CLAY: 2, TIN: 3,
 	MYCELIUM: 4, SILVER: 3, AMBERROCK: 3, SPORESTONE: 3}
 ## Mining XP per finished dig (progression doc 7.2).
 const DIG_XP := {MOSS: 1, DIRT: 1, PATH: 1, STONE: 2, COPPER: 6, BORDER: 50, CLAY: 1, TIN: 6,

@@ -122,7 +122,7 @@ func test_trail_decor_along_the_path() -> void:
 		if m.is_reserved(o, 0.5) or m._in_column(o, 0.5) or not m.on_trail(o, 1.5):
 			bad += 1
 	print("TRAIL decor: %d stones, %d track, %d torches" % n)
-	check(n[TrailDecor.STONES] > 100 and n[TrailDecor.RAIL] > 20 and n[TrailDecor.TORCH] > 10, "some of each (%s)" % str(n))
+	check(n[TrailDecor.STONES] == 0 and n[TrailDecor.RAIL] > 20 and n[TrailDecor.TORCH] > 10, "no old-stone patches (F900), some track and torches (%s)" % str(n))
 	check_eq(bad, 0, "all along the path, none on built ground")
 	check_eq(TrailDecor.plan(m).size(), items.size(), "the same every time")
 	CaveMaker.use_layout(was)
