@@ -109,8 +109,8 @@ func test_stone_below_brick_above() -> void:
 		if p.mat == BlueprintLibrary.BRICK:
 			brick += 1
 			var lx: float = p.pos.x - BlueprintLibrary.BRICK_SHIFT.x
-			if p.pos.y < BlueprintLibrary.BRICK_SHIFT.y + 7.4 and not (lx > 15.0 and lx < 19.5):   # (the mended crack)
+			if p.pos.y < BlueprintLibrary.BRICK_SHIFT.y + 7.4:
 				low_brick.append("%s@%s" % [id, p.pos])
 	check(roofs > 10, "it has a sloped tile roof (%d pieces)" % roofs)
 	check(brick > 100, "plenty of brick (%d pieces)" % brick)
-	check(low_brick.is_empty(), "no brick below storey 3 but the mended crack (%s)" % ", ".join(low_brick.slice(0, 8)))
+	check(low_brick.is_empty(), "no brick below storey 3 (owner, Nov 25: the crack is plain stone) (%s)" % ", ".join(low_brick.slice(0, 8)))

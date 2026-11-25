@@ -82,14 +82,14 @@ li span:last-child { font: 400 15px var(--body); font-variant-numeric: tabular-n
 		<section>
 			<h2>The parts</h2>
 			<ul>
-				<li><span>Keep</span><span>14 &times; 12 m. Two tall stone storeys (the first 4.5 m, with a beam band), two buttresses and a round front door. Then a brick 3rd storey that juts out 1 m at the front on stone brackets, and a smaller brick 4th storey stepped back behind a railed terrace, with a tile roof, two dormers and a brick chimney (about 18 m up)</span></li>
+				<li><span>Keep</span><span>14 &times; 12 m. Two tall stone storeys (the first 4.5 m, with a beam band), two buttresses and a round front door. Then a brick 3rd storey that juts out 1 m at the front on stone brackets, and a big brick 4th storey that fills most of the top, with a narrow railed stone terrace round it, a steep tile roof, two dormers and a brick chimney (about 20 m up)</span></li>
 				<li><span>Left tower</span><span>round (12 sides), joined to the keep by a door; stone to a railed deck with battlements at 7.5 m, then a thinner 6-sided brick top, 3 storeys with a ladder, and a railed lookout at 14.5 m</span></li>
-				<li><span>Curtain wall</span><span>stone, 2 m thick, from the keep to the right tower: a round gateway with two gate doors in the middle, a passage inside, a walk on top with battlements on both sides. One crack mended in brick</span></li>
+				<li><span>Curtain wall</span><span>stone, 2 m thick, from the keep to the right tower: a round gateway with two gate doors in the middle, a passage inside, a walk on top with battlements on both sides.</span></li>
 				<li><span>Bridge</span><span>a stone bridge on 3 carved columns across a dip in the cave floor, up to the gate</span></li>
 				<li><span>Right tower</span><span>all stone, round, on a 2 m lump of rock: 4 storeys and a flat top with battlements, about 15 m up. A short wall runs from it to the cave rock</span></li>
-				<li><span>Courtyard</span><span>behind the gate, carved back into the cave rock: stone paving and a well, with 2 small stone rooms in the rock on its left (round doors, windows, a battlement top)</span></li>
+				<li><span>Courtyard</span><span>a cave room inside the solid rock, reached only through the gate: stone paving and a well, with 2 small stone rooms on its left (round doors, windows, a battlement top). Press "The courtyard" or "Cave rock off" to look in</span></li>
 			</ul>
-			<p class="note">11 flights of stairs and 3 ladders, each starts and ends on whole floor. Made only from pieces the game already has, stone and brick mixed. The dip, the rock lump and the courtyard's hollow are made by the world, not by building pieces; in the game the hollow gets a lumpy, natural edge. The cave needs to be about 21 m tall here.</p>
+			<p class="note">11 flights of stairs and 3 ladders, each starts and ends on whole floor. Made only from pieces the game already has, stone and brick mixed. The dip, the rock lump and the courtyard's cave room are made by the world, not by building pieces; in the game the cave room gets lumpy rock walls and an uneven rock ceiling. The cave needs to be about 21 m tall here.</p>
 		</section>
 		<section>
 			<h2 id="costH">Build it whole</h2>
@@ -100,7 +100,7 @@ li span:last-child { font: 400 15px var(--body); font-variant-numeric: tabular-n
 			<h2>Your call</h2>
 			<div class="ask">
 				<p>Does this feel like a grand ruin worth finding? Look from the front, then "The gate", then "The courtyard". Press "Cave rock off" to see the courtyard and rooms.</p>
-				<p>The left tower's top is a railed brick lookout made from pieces we already have. The plan said a pointed roof, which needs a <b>new</b> piece (a pointed brick roof for a round tower). Make one, or keep the lookout?</p>
+				<p>Changed from your notes: the brick house is much bigger, the terrace round it is stone, the crack is plain stone, and the rock now covers the courtyard. The left tower's round brick roof is a <b>new</b> piece; it is being made next and isn't on this page yet.</p>
 				<p>Once you OK it, I put the ruin in the game (chests, junk, a few creatures) and you can learn the blueprint there.</p>
 			</div>
 		</section>
@@ -198,12 +198,13 @@ function buildCave(bp) {
 	};
 	const rockAt = (x, z) => {
 		const lx = x - sx, lz = z - sz;
-		const hollow = Math.min(lx - 2.8, 21.6 - lx, lz + 19.2);           // the courtyard, carved into the rock
-		let s = Math.min(-11.2 - lz, -hollow);
-		s = Math.max(s, Math.min(lx - 27, 9 - lz), Math.min(-15.5 - lx, 7 - lz)) - 1.8 * fbm(x * 0.12, z * 0.12);
+		// solid rock behind the keep, behind the curtain wall and behind the right tower (owner, Nov 25: "rock over
+		// it"); the courtyard and its rooms are a cave room inside it, reached through the gate (Rock off shows them)
+		let s = Math.max(-11.2 - lz, Math.min(lx - 7.4, 19.6 - lx, -5.8 - lz), Math.min(lx - 19.0, 30 - lx, -8.0 - lz));
+		s = Math.max(s, Math.min(lx - 27, 9 - lz), Math.min(-15.5 - lx, 7 - lz)) - 1.2 * fbm(x * 0.12, z * 0.12);
 		if (s <= 0) return -9;
 		const H = 21 + 5 * fbm(x * 0.05 + 3, z * 0.05) + 5 * fbm(x * 0.16 + 1, z * 0.16 + 4);
-		return G + ledges(H * smooth(s / 4.0), 4.5) + (fbm(x * 0.45, z * 0.45) - 0.5) * 2.6 * smooth(s / 2.0)
+		return G + ledges(H * smooth(s / 2.5), 4.5) + (fbm(x * 0.45, z * 0.45) - 0.5) * 2.6 * smooth(s / 2.0)
 			+ (fbm(x * 1.3, z * 1.3) - 0.5) * 0.8;
 	};
 	const make = withRock => {
@@ -245,6 +246,11 @@ function buildCave(bp) {
 		b.castShadow = b.receiveShadow = true;
 		rockGroup.add(b);
 	}
+	// the dark mouth of the courtyard's cave room, right behind the gate
+	const mouth = new THREE.Mesh(new THREE.CircleGeometry(1.9, 20, 0, Math.PI), new THREE.MeshBasicMaterial({ color: 0x050403 }));
+	mouth.position.set(sx + 13, G - 0.05, sz - 6.6);
+	mouth.scale.set(1, 1.35, 1);
+	rockGroup.add(mouth);
 	scene.add(rockGroup);
 }
 
@@ -326,7 +332,10 @@ function look(which) {
 	}
 	for (const k in CAMS) document.getElementById("c_" + k).setAttribute("aria-pressed", k === which);
 }
-for (const k in CAMS) document.getElementById("c_" + k).onclick = () => look(k);
+for (const k in CAMS) document.getElementById("c_" + k).onclick = () => {
+	look(k);
+	if (k === "yard" && rockBtn.getAttribute("aria-pressed") === "true") rockBtn.click();   // (the courtyard is inside the rock)
+};
 look(new URLSearchParams(location.search).get("c") || "front");
 for (const k of ["ruin", "stone"]) document.getElementById("w_" + k).onclick = () => { view = k; refresh(); };
 
