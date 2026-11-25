@@ -15,6 +15,7 @@ var _columns := {}
 var _col_rids: Array[RID] = []  ## the columns' own bodies: the floor rays look through them
 var _new_cols: Array[int] = []
 const COLS_PER_POI := 16
+const MAX_SINK := 1.6  ## a column may sink this far into the higher side of uneven rock; over a bigger drop it isn't made
 static var _mats := {}
 
 
@@ -143,6 +144,11 @@ func _make(p: Dictionary) -> Node3D:
 
 ## A ruin column, numbered so every computer means the same one (the host breaks it by number).
 func _col(root: Node3D, p: Dictionary, i: int, at: Vector3, height: float, width: float, broken_at: float, rng: RandomNumberGenerator, color: Color = RuinKit.STONE) -> void:
+	if maker and p.has("pos"):
+		var drop := base_drop(maker, (p.pos as Vector3) + at, width)
+		if drop > MAX_SINK:
+			return  # (F878: its base would hang over a drop or a ledge's edge: it fell long ago)
+		at.y -= drop  # down to the lowest rock round its base (sunk into the higher side, like an old buried column)
 	var col := RuinKit.column(root, at, height, width, broken_at, rng, color)
 	var cid := int(p.id) * COLS_PER_POI + i
 	var body: StaticBody3D = col.get_meta("solid")
@@ -151,6 +157,20 @@ func _col(root: Node3D, p: Dictionary, i: int, at: Vector3, height: float, width
 	var tall := (height - 1.3) * (broken_at if broken_at > 0.0 else 1.0) + 1.3
 	_columns[cid] = {node = col, body = body, width = width, height = tall, hits = clampi(roundi(width * tall * 1.5), 3, 10)}
 	_new_cols.append(cid)
+
+
+## How far a column's base at `at` must go down so its whole base sits on rock: the floor under its middle and round
+## its edge (F878, owner Nov 25: "some stone columns float in the air": a row hung over a drop, only its middle was
+## checked).
+static func base_drop(m: CaveMaker, at: Vector3, width: float) -> float:
+	var drop := 0.0
+	for k in 5:
+		var p := at
+		if k > 0:
+			var a := k * TAU / 4.0 + 0.4
+			p += Vector3(cos(a), 0.0, sin(a)) * width * 0.55
+		drop = maxf(drop, p.y - m.find_floor(p.x, p.z, p.y + 0.5).y)
+	return drop
 
 
 ## Which ruin column a ray hit (its column or a fallen drum of it), or -1.

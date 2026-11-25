@@ -140,3 +140,34 @@ func test_ruin_column_sits_on_the_real_floor() -> void:
 	var y: float = (pf.column(cid).node as Node3D).global_position.y
 	check_near(y, 49.05, 0.03, "it drops onto the floor (and sinks in 5 cm)")
 	root.free()
+
+
+## F878 (owner, Nov 25): "some stone columns float in the air" (a row of them hanging over a drop). Every ruin column
+## stands with its whole base on the rock: the floor under its middle and round its edge is close below it.
+func test_columns_stand_on_rock() -> void:
+	var was := CaveMaker.layout
+	CaveMaker.use_layout(CaveMaker.LAYOUT_LATEST)
+	var cols := 0
+	var hanging := []
+	for s in [42, 7, 1234]:
+		var m := CaveMaker.new(s)
+		var field := PoiField.new()
+		tree.root.add_child(field)
+		field.build(m)
+		for cid in field._columns:
+			var c: Dictionary = field._columns[cid]
+			var at: Vector3 = (c.node as Node3D).global_position
+			cols += 1
+			for k in 5:
+				var p := at
+				if k > 0:
+					var a := k * TAU / 4.0 + 0.4
+					p += Vector3(cos(a), 0.0, sin(a)) * float(c.width) * 0.55
+				var gap := p.y - m.find_floor(p.x, p.z, p.y + 0.5).y
+				if gap > 1.0:
+					hanging.append("seed %d column %d: %.1f m over the floor" % [s, cid, gap])
+					break
+		field.free()
+	check(cols >= 10, "there are ruin columns (%d)" % cols)
+	check_eq(hanging.size(), 0, "none hanging over a drop %s" % str(hanging.slice(0, 6)))
+	CaveMaker.use_layout(was)
