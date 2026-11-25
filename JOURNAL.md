@@ -13298,3 +13298,23 @@ entrance), F849 (boss too easy, 2 minions), F850 (Shield-Brother never turns his
   physics body limit).
 
 **Tests:** test_ghost (4 new), test_hald (4 new; the Shield-Brother key test stays last). All pass.
+
+
+## Nov 25: Tomb of Hald, 4th round: the stash hole and the boss by the door (F857 🔁, F896)
+
+**What we did**
+- **Secret stash hole (F857 🔁, said 4×):** the owner had to say it again ("I've told you like 3 times"). In the 3rd round
+  I only logged it, because another chat had made the wall, and I asked first. That was the wrong call for something the
+  owner had already asked for three times: problems the owner mentioned get fixed. Now the cracked stone wall
+  (`tools/asset_forge/builds/dungeon_stonehold.py`, wall_cracked_stone) has one missing stone (about 36 cm, one row, at
+  knee height) instead of a ragged hole up to 90 cm wide and 85 cm tall. My first try still cut two rows (a row is only
+  about 25 cm tall); the hole now takes only the one row whose middle sits in the band. Model checks pass.
+- **Boss by the door (F896):** Hald stood 5 m inside his tomb's door and his two shades almost in the doorway, so they
+  blocked the way in. Now Hald waits by his tomb at the back (about 9 m) and the shades sit in the back corners (about 10.5 m).
+
+**Mistakes and hurdles (Claude's own)**
+- Asking about the wall instead of fixing it (see above).
+- When I changed the hole test, my script swapped the first matching lines in the file, which sat in a different test
+  (the one that checks that the wall breaks into pieces) and deleted its check. I spotted it in the diff and put it back.
+
+**Tests:** test_hald, all 23 pass (the hole test now checks that the hole is small; a new check keeps the boss away from the door).
