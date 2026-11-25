@@ -26,3 +26,28 @@ func test_every_sound_used_in_code_loads() -> void:
 		check(list.size() >= 1, "sound '%s' (used in %s) has at least one file" % [name, found[name]])
 		for s in list:
 			check(s is AudioStream, "sound '%s' loads as audio" % name)
+
+
+## Owner, Nov 25: F854 the mace sounded like a sword; F881 bats and snails died with a dwarf's cry; F883 the lantern
+## refill sounded like a gulp of water. Each has its own sound now.
+func test_mace_and_creature_death_sounds() -> void:
+	for name in ["hit_blunt", "bat_death", "snail_death", "refill"]:
+		check(Sfx._variants(name).size() >= 2, "%s has its own sounds" % name)
+	check_eq(MonsterManager.death_sound("cave_bat"), "bat_death", "a bat's own last squeak")
+	check_eq(MonsterManager.death_sound("rock_snail"), "snail_death", "a snail's shell cracks")
+	var root := Node3D.new()
+	tree.root.add_child(root)
+	var auth := GameAuthority.new()
+	root.add_child(auth)
+	var me := Node3D.new()
+	root.add_child(me)
+	var ps := auth.add_player(auth.local_peer_id(), me)
+	var mm := MonsterManager.new()
+	mm.auth = auth
+	ps.inventory.slots[Inventory.equip_index("weapon")] = {id = "mace_stone", count = 1}
+	ps.weapon_drawn = true
+	check_eq(mm.hit_sound(auth.local_peer_id(), false), "hit_blunt", "a mace lands with a dull knock")
+	ps.inventory.slots[Inventory.equip_index("weapon")] = {id = "sword_copper", count = 1}
+	check_eq(mm.hit_sound(auth.local_peer_id(), false), "hit", "a sword still slashes")
+	mm.free()
+	root.queue_free()

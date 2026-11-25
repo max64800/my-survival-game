@@ -1467,13 +1467,29 @@ func _ev_spawn(uid: int, kind: String, pos: Vector3, leader: bool, pack: int, va
 	_next_uid = maxi(_next_uid, uid + 1)
 
 
+## F881 (owner, Nov 25: bats and Rock Snails died with a dwarf's death cry): their own last sounds.
+const DEATH_SOUNDS := {"cave_bat": "bat_death", "rock_snail": "snail_death"}
+
+
+static func death_sound(kind: String) -> String:
+	return DEATH_SOUNDS.get(kind, "death")
+
+
+## F854 (owner, Nov 25: "the mace makes a sword sound"): blunt weapons land with a dull knock and crunch.
+func hit_sound(peer: int, heavy: bool) -> String:
+	var ps: GameAuthority.PlayerState = auth.get_player(peer) if auth and peer != 0 else null
+	if ps and Combat.WEAPONS.get(Combat.weapon_of(ps.selected_item()), {}).get("type", "") == "blunt":
+		return "hit_blunt"
+	return "hit_heavy" if heavy else "hit"
+
+
 @rpc("authority", "call_local", "reliable")
 func _ev_remove(uid: int, statue := -1) -> void:
 	var m: Monster = monsters.get(uid)
 	monsters.erase(uid)
 	if m:
 		Fx.burst(_root, m.global_position + Vector3.UP * 0.4, m.data.color, 18, 3.0)
-		Sfx.play("death", m.global_position)
+		Sfx.play(death_sound(m.kind), m.global_position)
 		m.die_visual(statue)  # goes limp, then turns to stone (statue >= 0) or sinks away (only looks)
 
 
@@ -1773,7 +1789,7 @@ func _ev_hit(uid: int, dmg: int, from := Vector3.ZERO, peer := 0, eff := 0, crit
 			if m.data.get("ghost", false):
 				Sfx.play("ghost_hit", m.global_position, 0.0 if heavy else -3.0, 0.85 if heavy else 1.0)  # (F874: mist and cloth, no ring)
 			else:
-				Sfx.play("hit_heavy" if heavy else "hit", m.global_position)
+				Sfx.play(hit_sound(peer, heavy), m.global_position)
 		var feel := hitter_feel(peer, auth.local_peer_id(), heavy, killed)
 		m.hit_flash()
 		m.hit_stop(feel.get("stop", HIT_STOP_HEAVY if heavy else HIT_STOP))  # (the killer sees it freeze longer too)

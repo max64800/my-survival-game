@@ -197,3 +197,17 @@ All CC0 (public domain), checked on each page. Trimmed, loudness-matched and con
 |---|---|---|---|---|
 | Single Sword Clash.MP3 | FunWithSound | https://freesound.org/s/361482/ | CC0 | parry_ring_0 (two real swords; one clash cut out, clock rumble filtered, faded) |
 | Sword Thud.wav | sefu2010 | https://freesound.org/s/435210/ | CC0 | block_thud_0 (cut to one hit, softened) |
+
+## Nov 25 play-note sounds (F854 mace, F881 bat and snail deaths, F883 lantern refill)
+All CC0 (public domain), checked on each page. Cut, pitched and layered by us with `tools/art/make_nov25_sounds.py`.
+The new `refill_0..1` (lantern) replace the older refill rows above (heavy_swallow, Drink).
+
+| Title | Author | Link | Licence | Used as |
+|---|---|---|---|---|
+| GASP_Weapon Knock_2.wav | Rob_Marion | https://freesound.org/s/541990/ | CC0 | hit_blunt_0..2 (the mace's knock, pitched down) |
+| body_hit.wav | insanity54 | https://freesound.org/s/276600/ | CC0 | hit_blunt_0..2 (the thump) |
+| Bone Crunch Fast.wav | BrassKnucklesFilms | https://freesound.org/s/192146/ | CC0 | hit_blunt_0..2, snail_death_0..1 (crunch underneath) |
+| Bats squeak in the small cave | Selector | https://freesound.org/s/404152/ | CC0 | bat_death_0..1 (one squeak each, sliding down in pitch; plus our bat_flap) |
+| egg shell crunch crack | spanrucker | https://freesound.org/s/272224/ | CC0 | snail_death_0..1 (slowed: a bigger shell; plus our snail_spit, dulled) |
+| Oil Lantern Open and Close | ImAFoley | https://freesound.org/s/516740/ | CC0 | refill_0..1 (lid opening and clicking shut) |
+| Pouring oil.wav | clement.bernardeau | https://freesound.org/s/699231/ | CC0 | refill_0..1 (a second of pouring) |
