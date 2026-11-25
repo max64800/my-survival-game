@@ -13239,3 +13239,62 @@ entrance), F849 (boss too easy, 2 minions), F850 (Shield-Brother never turns his
 **Mistakes and hurdles**
 - None new. Noted for the builder: the model puts walls on even lines, the blueprint grid puts them on odd lines,
   so the plan shifts by 1 m.
+
+
+## Nov 25: fair and fun ghost fights in the Tomb of Hald Ironbrow (F849, F850, F851, F872, F873, F874)
+
+**What we did**
+- **Teleports (F873):** a ghost that loses a quarter of its health used to jump to a random spot 3 to 5.5 m away,
+  sometimes into a wall. Now it comes back right behind the dwarf who hit it (1.7 m; a bit to the side if a wall is
+  in the way, never in front). A spot only counts if it's on your floor, has room all round the ghost's body, is
+  inside the dungeon's rooms (not the spike pit or chasm) and has no wall between you and it. No good spot: no jump.
+  When it shows again it swings an overhead "Ambush Chop" at once (the owner's F849 idea).
+- **Ghosts standing idle (F873):** two causes. A ghost knocked down could never get up: its rig (the ghost body on
+  the dwarf skeleton) has no animation player, and the shared knock-down/get-up code used one. And a jump never reset
+  the "can't get closer" timer, so a ghost that came back further away sometimes gave up. Both fixed.
+- **Parry star (F851):** ghosts never asked for the star: other creatures flash it on a hand bone, ghosts hold their
+  mace in the dwarf rig's grip. Now every ghost swing flashes it on the mace head 0.4 s before the blow.
+- **Doors and walking backwards (F872):** ghosts ran straight at you, so in the next room they pushed into the wall
+  beside the doorway. Now in a dungeon they go room by room (the map's rooms that share a 1.2 m+ opening are linked,
+  shortest way, never through the pit or chasm). They also look where they walk (before, only a chase turned them).
+- **Shield-Brother (F850):** a ghostly bronze shield you can see; he turns slowly (step round him); his shield
+  drops while he swings and just after; a Shield Charge when you keep away. The Honour Chapel grew from 8x8 to 10x12 m.
+- **Hald (F849):** runs 4.3 (faster than walking), shorter rests, and two weak Tomb Shades (new kind `hald_shade`)
+  rise with him.
+- **Hit sound (F874):** `ghost_hit` (cloth whump, dull thump, breath of mist), made by `tools/art/make_ghost_hit.py`
+  from our CC0 recordings.
+
+**Mistakes and hurdles (Claude's own)**
+- I first hung the parry-star timer on the mace grip as a Timer node. The dwarf's hand code takes the grip's last
+  child for the weapon, so every ghost threw hundreds of errors. Fix: a scene-tree timer (nothing added to the grip).
+- Then that timer's little function held the grip itself; when a test ended first, Godot complained the grip was
+  freed. Fix: it holds a weak reference and checks it is still there.
+- A typing slip (`var held := weakref(...)`) broke every script that uses the ghost rig ("Variant" warning counts as
+  an error here). Found with `--check-only` on each script.
+- My first "behind you" test failed: the test dwarf floats 1.5 m over the floor, and I compared the spot's floor with
+  the dwarf's height. Now it compares with the floor under the dwarf (also right when you jump).
+- One new test caught an error left over from the test before it (a freed model). Moved the new tests before the
+  last old one, so the leftover error falls at the end again, as before.
+
+**3rd round of the owner's play (same day)**
+- Praise: "the parry right now is very satisfying with the sparks".
+- **"I haven't seen a single teleport" (F873 🔁):** the real cause was my own body-room check. Its low test ball sat at
+  0.6 m, and the tomb's floor tiles stand about 0.25 m over the rock, so the ball touched a tile at every spot and no
+  spot ever passed. My test had used a plain cave without tiles, so it passed anyway. Now the balls sit at 0.95 and 1.45 m,
+  and a new test builds the real tomb and finds a spot behind you in 3 of its rooms.
+- **"They sometimes lie down" (picture):** a dazed ghost leaned far over. Now it only sinks 12 cm and bows a little.
+- **"They go up a few stairs, then stop and go back" (F572 🔁):** three "give up" timers (the 15 s grudge, "can't get
+  closer", "standing still for 3 s") ended the chase on the stairs. Now a ghost that saw you follows you anywhere in the
+  dungeon, and only when you leave the dungeon does it vanish back to its spot, as the owner asked.
+- **"He does two attacks and then just stands there" (F849 🔁):** every parry staggered Hald and cut his combo short,
+  and the owner parries a lot. Now a parry still sparks and fills his daze bar, but his four blows all come unless the
+  bar is full. The new test failed with the fix switched off and passed with it on.
+- **Spiders (owner: "add lots of tiny spiders like in the 1st dungeon, but more"):** 16 Cave Spiders (Mossgate has 7)
+  in 10 rooms, most up in the corners. One first landed on a bone pile, and the placement check caught it, so I moved it.
+  The old "every creature is a ghost" test now allows spiders.
+- Logged but not fixed: the secret stash hole is too big (F857 🔁, the Hald stone look chat's wall), and "trap still not
+  fixed with a lever" (unclear which trap: asked the owner).
+- Full suite: 986 checks, 5 tests failing, none from this work (pickaxe, roof models, ruin pages, an old Foreman check, a
+  physics body limit).
+
+**Tests:** test_ghost (4 new), test_hald (4 new; the Shield-Brother key test stays last). All pass.
