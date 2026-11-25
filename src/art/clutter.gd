@@ -606,6 +606,11 @@ static func _stalactite_mesh() -> Mesh:
 	return st.commit()
 
 
+## How far past a dig's ball the floor can still move: the rock is stored in 1 m steps, so the smooth floor next to a
+## dug ball sinks a little too (F891, owner Nov 25: pebbles floating after the Mason's Shovel levelled the ground).
+const DIG_MARGIN := 1.0
+
+
 ## Rock changed near here: anything resting there disappears (it fell with the rock).
 var _pending_digs := []
 
@@ -614,7 +619,7 @@ func _on_rock_changed(center: Vector3, radius: float) -> void:
 	if not _built:
 		_pending_digs.append([center, radius])
 		return
-	var r2 := (radius + 0.6) * (radius + 0.6)
+	var r2 := (radius + DIG_MARGIN) * (radius + DIG_MARGIN)
 	var rd := (radius + 1.2) * (radius + 1.2)  # dripstone hangs from a wider chunk of rock
 	for kind in _drip_cells:
 		for mmi: MultiMeshInstance3D in _drip_cells[kind]:

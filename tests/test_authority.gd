@@ -877,3 +877,54 @@ func test_pot_on_the_fire_makes_a_kitchen() -> void:
 	check(auth.request_craft(1, "dish_snail_stew", 8), "a stew cooks at the fire with the pot")
 	check(not auth.request_craft(1, "dish_miners_pie", 8), "Miner's Pie still needs the Stone Oven (level 3)")
 	_teardown()
+
+
+## F891 (owner, Nov 25): "pebbles stay floating after you level the ground with the shovel". Wherever a swing of the
+## Mason's Shovel lowers the floor, the loose floor things (pebbles, rocks) are taken away: each spot is inside a
+## changed ball plus Clutter.DIG_MARGIN.
+func test_shovel_takes_the_pebbles_with_the_ground() -> void:
+	await _setup(42)
+	var feet := player.global_position
+	var fl := world.maker.find_floor(feet.x, feet.z, feet.y + 1.0)
+	if fl != Vector3.INF:
+		player.global_position = fl
+		feet = fl
+	var at := feet + Vector3(2.0, 0.0, 0.0)
+	world.apply_fill(at + Vector3.UP * 0.3, 1.0, Mat.STONE)  # a bump on the floor
+	var spots: Array[Vector3] = []
+	for ix in range(-10, 11):
+		for iz in range(-10, 11):
+			spots.append(at + Vector3(ix, 0.0, iz) * 0.4)
+	var before := spots.map(func(p: Vector3) -> float: return _floor_y(p, feet.y))
+	var changes := []
+	var rec := func(c: Vector3, r: float) -> void: changes.append([c, r])
+	world.changed.connect(rec)
+	ps.inventory.slots[0] = {id = "masons_shovel", count = 1}
+	auth.request_select_slot(1, 0)
+	check_eq(auth.request_hit(1, at, Vector3.UP).get("state"), "dug", "the shovel works")
+	world.changed.disconnect(rec)
+	var lowered := 0
+	var left := []
+	for i in spots.size():
+		var y := _floor_y(spots[i], feet.y)
+		if before[i] - y < 0.05:
+			continue
+		lowered += 1
+		var p := Vector3(spots[i].x, before[i], spots[i].z)
+		var cleared := false
+		for c in changes:
+			if p.distance_to(c[0]) < float(c[1]) + Clutter.DIG_MARGIN:
+				cleared = true
+		if not cleared:
+			left.append("%.1f m lower at %s" % [before[i] - y, (spots[i] - at).snapped(Vector3.ONE * 0.1)])
+	check(lowered > 3, "the shovel lowered the floor (%d spots)" % lowered)
+	check_eq(left.size(), 0, "no pebble left in the air %s" % str(left.slice(0, 5)))
+	_teardown()
+
+
+## The smooth floor's height under `p` (scanning down from 2 m above `y`).
+func _floor_y(p: Vector3, y: float) -> float:
+	var h := y + 2.0
+	while h > y - 3.0 and world.sdf_smooth(Vector3(p.x, h, p.z)) > 0.0:
+		h -= 0.05
+	return h
