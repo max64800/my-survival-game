@@ -303,6 +303,7 @@ const RUIN_COPPER := {
 	twin_gate = ["axe_2h_copper", "mace_2h_copper"],
 	smeltery = [],
 	brickcrown = [],
+	minehead = [],
 }
 
 

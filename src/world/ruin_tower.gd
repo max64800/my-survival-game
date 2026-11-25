@@ -180,6 +180,12 @@ func _build() -> void:
 	for p in plan.get("pieces", []):
 		var pos: Vector3 = origin + basis * Vector3(p.pos[0], p.pos[1], p.pos[2])
 		var rot: int = Pieces.add_rot(int(p.rot), turn)
+		if p.get("fallen", false):
+			# A piece that fell but kept its shape (the Mine-head's crooked wheel, its bridge floors in the dip: owner,
+			# Nov 25, F899): tipped rubble of that very piece, "tilt" radians about its own x axis. Hit it to clear it.
+			var tb := Basis(Vector3.UP, Pieces.yaw_of(rot)) * Basis(Vector3.RIGHT, float(p.get("tilt", 0.0)))
+			b._ev_add_rubble.rpc(b._next_rubble, String(p.id), String(p.mat), Transform3D(tb, pos))
+			continue
 		if String(p.id) in RUBBLE:
 			# Rubble and the broken door: real rubble you hit to clear (owner: "they have to be destroyable"),
 			# dropped onto whatever is under it so nothing floats.

@@ -1368,8 +1368,11 @@ func ruin_choices(box_id: int) -> Array[Dictionary]:
 		return out
 	for pair in [[String(r.wood), Items.display_name("plank_root")], [String(r.stone), Items.display_name(ruin_hard(r))]]:
 		var need := ruin_needs(pair[0], r)
+		var mixed := String(r.wood) == String(r.stone)  # (the Mine-head Works, F899: one blueprint, stone below and wood above)
 		out.append({key = pair[0], name = BlueprintLibrary.NAMES.get(pair[0], pair[0]), put = pair[1],
-			needs = _list_text(need), need = need, wood = pair[0] == String(r.wood)})
+			needs = _list_text(need), need = need, wood = pair[0] == String(r.wood) and not mixed, mixed = mixed})
+		if mixed:
+			break  # (one way to rebuild it: one picture)
 	return out
 
 
@@ -1454,7 +1457,7 @@ func ruin_chest_changed(box_id: int) -> void:
 	for i in site.plan.size():  # what still stands whole is done already
 		if _ruin_slot_whole(site.plan[i], site.worn_go):
 			_ev_site_piece.rpc(box_id, i)
-	_set_status(box_id, "Rebuilding in %s" % ("wood" if key == String(r.wood) else ("brick" if ruin_hard(r) == BlueprintLibrary.BRICK else "stone")))
+	_set_status(box_id, "Rebuilding" if String(r.wood) == String(r.stone) else "Rebuilding in %s" % ("wood" if key == String(r.wood) else ("brick" if ruin_hard(r) == BlueprintLibrary.BRICK else "stone")))
 
 
 ## F559 (owner, Nov 21: rebuilding the tower said "carving rock"): a ruin already stands on its ground. Rebuilding it

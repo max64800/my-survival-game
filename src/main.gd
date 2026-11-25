@@ -738,6 +738,9 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 		# The Smeltery Terraces (owner, Nov 25, F845), the same way. Robots: only with smeltcheck.
 		if not dungeon_test and (not _robot_run or OS.get_cmdline_user_args().has("smeltcheck")):
 			authority.world_state["smeltery"] = "pending"
+		# The Mine-head Works (owner, Nov 25, F899), the same way. Robots: only with minecheck.
+		if not dungeon_test and (not _robot_run or OS.get_cmdline_user_args().has("minecheck")):
+			authority.world_state["minehead"] = "pending"
 		if ruin_test == "tower":  # a ruin test world: only its ruin (RuinTests)
 			authority.add_child(RuinTower.new(authority))
 		elif ruin_test != "":
@@ -758,6 +761,8 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 		authority.add_child(RuinTwinGate.new(authority))
 	if authority.is_host() and authority.world_state.has("smeltery"):
 		authority.add_child(RuinSmeltery.new(authority))
+	if authority.is_host() and authority.world_state.has("minehead"):
+		authority.add_child(RuinMinehead.new(authority))
 	if _jungle_kit:
 		# Test kit: what you'd have after beating Orrumhal and Brask.
 		var kit := authority.get_player(me).inventory

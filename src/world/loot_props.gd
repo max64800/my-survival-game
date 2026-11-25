@@ -17,6 +17,8 @@ extends Node
 ##   - "label" (optional) names it in the "You take ... from the <label>." message; else NAMES, else "Loot".
 ##     (The aim line shows only "E to take", owner F134.)
 ##   - a "lootable" prop whose <id> is not in LOOT is drawn as ordinary decor (nothing to take).
+##   - in a ruin plan, a prop with "role": "decor" is drawn too (solid, nothing to take: the Mine-head's rails and
+##     carts, owner Nov 25, F899), and goes with the loot when the ruin is rebuilt (F864).
 ##   Keys: "d:<dungeon id>:<prop index>" in a dungeon, "r:<ruin record key>:<prop index>" in a ruin.
 ##   Special pieces (any role, normally "decor"): bv_vault_door_forced and vo_spyhole_wall get collision boxes that
 ##   leave their round doorway / spyhole open (DungeonBuild.BOXES); bv_strongbox is "lootable" (its lid opens).
@@ -53,7 +55,8 @@ const NAMES := {
 const RUIN_PLANS := {"tower": RuinTower.PLAN, "outpost": RuinOutpost.OUTPOST_PLAN, "brewhall": RuinBrewhall.PLAN_PATH,
 	"spire": RuinSpire.PLAN_PATH, "kiln": "res://blueprints/ruins/kiln_ruin.json",
 	"manor": RuinManor.PLAN_PATH, "prow_hall": RuinProwHall.PLAN_PATH,
-	"twin_gate": RuinTwinGate.PLAN_PATH, "smeltery": RuinSmeltery.PLAN_PATH}
+	"twin_gate": RuinTwinGate.PLAN_PATH, "smeltery": RuinSmeltery.PLAN_PATH,
+	"minehead": RuinMinehead.PLAN_PATH}
 
 var auth: GameAuthority
 var props := {}          ## key -> {model, xform: Transform3D, label, node: StaticBody3D, inst: Node3D, looted: bool}
@@ -132,7 +135,7 @@ func place(key: String, model: String, xform: Transform3D, label := "") -> void:
 ## once it's empty.
 func use_info(key: String) -> Dictionary:
 	var pr: Dictionary = props.get(key, {})
-	if pr.is_empty() or pr.looted or is_looted(key):
+	if pr.is_empty() or pr.looted or is_looted(key) or pr.get("decor", false):
 		return {}
 	return {kind = "loot", name = "%s · E to take" % pr.label, loot_key = key}
 
@@ -160,7 +163,7 @@ func _rpc_loot(key: String) -> void:
 func request_loot(peer_id: int, key: String) -> bool:
 	var ps := auth.get_player(peer_id) if auth else null
 	var pr: Dictionary = props.get(key, {})
-	if ps == null or pr.is_empty() or is_looted(key):
+	if ps == null or pr.is_empty() or is_looted(key) or pr.get("decor", false):
 		return false
 	var at: Vector3 = (pr.xform as Transform3D).origin
 	if ps.node.global_position.distance_to(at) > REACH + 1.5:
@@ -269,12 +272,16 @@ func place_ruin(k: String, r: Dictionary, plan := {}) -> void:
 	var props_list: Array = plan.get("props", [])
 	for i in props_list.size():
 		var p: Dictionary = props_list[i]
-		if not is_lootable(p):
+		var decor := String(p.get("role", "")) == "decor"
+		if not is_lootable(p) and not decor:
 			continue
 		var pos: Vector3 = origin + basis * Vector3(float(p.pos[0]), float(p.pos[1]), float(p.pos[2]))
 		var b := Basis(Vector3.UP, deg_to_rad(float(p.get("yaw", 0.0))) + turn * PI / 2.0)
-		place("r:%s:%d" % [k, i], String(p.model), Transform3D(b.scaled_local(Vector3.ONE * float(p.get("scale", 1.0))), pos),
+		var key := "r:%s:%d" % [k, i]
+		place(key, String(p.model), Transform3D(b.scaled_local(Vector3.ONE * float(p.get("scale", 1.0))), pos),
 			String(p.get("label", "")))
+		if decor and props.has(key):
+			props[key].decor = true   # (just a thing to look at: E does nothing)
 	# The lootable catalogue pieces in the ruin's junk list (the arrow crate, the quiver rack: Nov 21).
 	var junk := RuinJunk.load_list(String(r.get("name", "")))
 	for i in junk.size():

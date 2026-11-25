@@ -162,7 +162,7 @@ func _show_ways() -> void:
 		var col := VBoxContainer.new()
 		col.add_theme_constant_override("separation", 8)
 		card.add_child(col)
-		UiKit.label(col, "Wood" if w.wood else "Stone", 19, UiKit.AMBER).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		UiKit.label(col, "Stone and wood" if w.get("mixed", false) else ("Wood" if w.wood else "Stone"), 19, UiKit.AMBER).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_need_row(col, w.need)
 
 

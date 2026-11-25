@@ -302,6 +302,7 @@ var manor_spot := {}  ## where the Hearth Manor goes (F479; the same)
 var prow_hall_spot := {}  ## where the Prow Hall goes (F656 + F657; the same)
 var twin_gate_spot := {}  ## where the Twin Gate goes (F479 + F656 + F657; the same)
 var smeltery_spot := {}  ## where the Smeltery Terraces go (F845; the same)
+var minehead_spot := {}  ## where the Mine-head Works go (F899; the same)
 var reserved: Array[Dictionary] = []  ## {pos, r, h}: a circle of ground (r wide), from pos.y up to pos.y + h
 var dungeons: Array[Dictionary] = []  ## layout 14: the dungeons dug into the rock (DungeonMap.place)
 
@@ -544,6 +545,17 @@ func _reserve_tower() -> void:
 					_cols[i] = Vector4(1.0e7, 1.0e7, _cols[i].z, _cols[i].w)
 		if not smeltery_spot.is_empty():
 			reserve(smeltery_spot.pos, RuinSmeltery.REACH + 3.0, RuinSmeltery.HEIGHT + 2.0)
+	# The Mine-head Works (owner, Nov 25, F899): its back in a wide cavern's rock, its shaft 8 m down (after Brickcrown,
+	# whose cavern it leaves alone). No spot clear of the columns: like the Twin Gate.
+	if not RuinTower.load_plan(RuinMinehead.PLAN_PATH).is_empty():
+		minehead_spot = RuinMinehead.pick(self)
+		if minehead_spot.is_empty():
+			minehead_spot = RuinMinehead.pick(self, true)
+			if not minehead_spot.is_empty():
+				for i in RuinMinehead.columns_in(self, minehead_spot):
+					_cols[i] = Vector4(1.0e7, 1.0e7, _cols[i].z, _cols[i].w)
+		if not minehead_spot.is_empty():
+			reserve(minehead_spot.pos - Vector3(0, 9.5, 0), RuinMinehead.REACH + 3.0, RuinMinehead.HEIGHT + 11.5)  # (its shaft goes 8 m down)
 
 
 ## Layout 8 (owner, Nov 17): 1 or 2 smaller stone columns (5 to 11 m wide) in the plain big caverns, the same kind as
