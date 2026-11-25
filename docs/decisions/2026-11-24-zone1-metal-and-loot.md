@@ -47,7 +47,7 @@ New: each ruin has one **named copper page** in its main chest. Smaller ruins te
 
 ## 3. Bronze (new metal)
 
-- ~~**Bronze Ingot** at the smelter: 1 Copper Ingot + 1 Tin Ore → 1 Bronze Ingot~~ Changed Nov 25 (owner, F894): **Tin Ore → Tin Bar** at the smelter (2 ore = 1 bar, like copper), then **3 Copper Ingots + 1 Tin Bar → 4 Bronze Ingots at the anvil**. Next: a new **Armoury Bench** (made early, planks + leather) makes all armour and shields; the anvil keeps weapons and tools.
+- ~~**Bronze Ingot** at the smelter: 1 Copper Ingot + 1 Tin Ore → 1 Bronze Ingot~~ Changed Nov 25 (owner, F894): **Tin Ore → Tin Bar** at the smelter (2 ore = 1 bar, like copper), then **3 Copper Ingots + 1 Tin Bar → 4 Bronze Ingots at the anvil**. Done Nov 25 (step 2): the **Armoury Bench** (Workbench: 8 Root Planks + 3 Leather, shows with leather) makes, upgrades and repairs all armour and shields; the anvil keeps weapons and tools.
 - Bronze gear is about **1.3× copper** (damage, armour, mining power). Exact numbers set when building, next to copper's.
 - New items, one per copper one: `helm_bronze`, `mail_bronze`, `greaves_bronze`, `boots_bronze`, `shield_bronze`,
   `crossbow_bronze`, `spear_bronze`, `axe_bronze`, `sword_bronze`, `mace_bronze`, `axe_2h_bronze`, `mace_2h_bronze`,

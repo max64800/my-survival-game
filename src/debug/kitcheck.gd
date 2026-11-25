@@ -149,7 +149,7 @@ func _run() -> void:
 ## groups of about five.
 func _stations(dwarf: Dwarf, base: Vector3, lamp: OmniLight3D) -> void:
 	var rows := [
-		["twin_smelter", "gem_bench", "copper_drip_basin", "drip_bucket"],
+		["twin_smelter", "gem_bench", "copper_drip_basin", "drip_bucket", "armoury_bench"],
 		["crystal_sconce", "glow_marker", "bellows", "campfire", "chest_small", "chopping_block"],
 		["cooking_pot", "grindstone", "stone_saw", "tool_rack", "training_dummy"],
 		["carpenters_vise", "tanning_rack", "kiln", "rune_slab"],

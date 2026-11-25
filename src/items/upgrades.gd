@@ -1,7 +1,8 @@
 class_name Upgrades
 ## Gear upgrades +1 to +3 (building polish spec §4).
 ##  - Pickaxes, axes, weapons, shields and clothes/armor can be upgraded 3 times.
-##  - Stone/wood/leather gear at the Workbench, copper/silver gear at the Anvil.
+##  - Armour and shields at the Armoury Bench (owner, Nov 25, F894); stone/wood tools and weapons at the Workbench,
+##    copper/bronze/silver tools and weapons at the Anvil.
 ##  - Stone, wood, shell and leather gear: +1 at any station, +2 needs station level 2, +3 level 3. Copper and better
 ##    (metal): +1 needs station level 2, +2 level 3, +3 level 4 (owner, Nov 25, F882: "only copper gear should").
 ##    Both capped at the station's top level.
@@ -39,8 +40,10 @@ static func is_metal(id: String) -> bool:
 	return id.contains("copper") or id.contains("silver") or Items.tier(id) >= 1
 
 
-## Which station upgrades it: "workbench" or "anvil".
+## Which station upgrades (and repairs) it: "armoury_bench" for armour and shields, else "workbench" or "anvil".
 static func station_for(id: String) -> String:
+	if Items.kind(id) in ["wear", "shield"]:
+		return "armoury_bench"
 	return "anvil" if is_metal(id) else "workbench"
 
 

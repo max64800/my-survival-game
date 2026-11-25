@@ -42,6 +42,9 @@ const LIST := {
 	"rune_slab": {station = "workbench", inputs = {stone = 15, cut_stone = 5}, output = "rune_slab", count = 1, unlock = ["rune_*"]},  # any rune you find (F399)
 	"gem_bench": {station = "workbench", inputs = {plank_root = 8, copper_ingot = 4, crystal_blue = 2}, output = "gem_bench", count = 1,
 		unlock = ["gem_ember", "gem_rime", "gem_blight", "gem_leech", "gem_jolt", "gem_swift", "gem_bulwark", "gem_keen", "gem_burrow"]},
+	# The Armoury Bench (owner, Nov 25, F894): ALL armour and shields are made on it. Cheap, so it comes early: it shows
+	# up once you have leather (old saves too, as they have seen leather already).
+	"armoury_bench": {station = "workbench", inputs = {plank_root = 8, leather = 3}, output = "armoury_bench", count = 1, unlock = ["leather"]},
 	"anvil": {station = "workbench", inputs = {stone = 10, copper_ingot = 30}, output = "anvil", count = 1, unlock = ["copper_ingot"]},
 	"cooking_pot": {station = "workbench", inputs = {copper_ingot = 4, stone = 4}, output = "cooking_pot", count = 1, unlock = ["copper_ingot"]},
 	# The Mason's Table makes stone/brick building pieces, so it's early (no copper any more).
@@ -54,11 +57,11 @@ const LIST := {
 	"stone_saw": {station = "masonry_table", inputs = {cut_stone = 8, copper_ingot = 2}, output = "stone_saw", count = 1, unlock = []},
 	"bellows": {station = "anvil", inputs = {leather = 3, plank_root = 4}, output = "bellows", count = 1, unlock = []},
 	"grindstone": {station = "anvil", inputs = {cut_stone = 6, plank_root = 4, copper_ingot = 2}, output = "grindstone", count = 1, unlock = []},
-	# Clothes and a backpack (feedback F23): leather from the tanning rack.
-	"cap_leather": {station = "workbench", inputs = {leather = 20, fiber = 2}, output = "cap_leather", count = 1, unlock = ["leather"]},
-	"tunic_leather": {station = "workbench", inputs = {leather = 20, rope = 1}, output = "tunic_leather", count = 1, unlock = ["leather"]},
-	"trousers_leather": {station = "workbench", inputs = {leather = 20, rope = 1}, output = "trousers_leather", count = 1, unlock = ["leather"]},
-	"boots_leather": {station = "workbench", inputs = {leather = 20, fiber = 2}, output = "boots_leather", count = 1, unlock = ["leather"]},
+	# Clothes and a backpack (feedback F23): leather from the tanning rack. Clothes are made on the Armoury Bench (F894).
+	"cap_leather": {station = "armoury_bench", inputs = {leather = 20, fiber = 2}, output = "cap_leather", count = 1, unlock = ["leather"]},
+	"tunic_leather": {station = "armoury_bench", inputs = {leather = 20, rope = 1}, output = "tunic_leather", count = 1, unlock = ["leather"]},
+	"trousers_leather": {station = "armoury_bench", inputs = {leather = 20, rope = 1}, output = "trousers_leather", count = 1, unlock = ["leather"]},
+	"boots_leather": {station = "armoury_bench", inputs = {leather = 20, fiber = 2}, output = "boots_leather", count = 1, unlock = ["leather"]},
 	"satchel": {station = "workbench", inputs = {leather = 4, rope = 2}, output = "satchel", count = 1, unlock = ["leather"]},
 	# --- kiln (F32): wood → coal. Also runs by itself from a chest within 5 m (AutoSmelt).
 	"coal": {station = "kiln", inputs = {rootwood = 2}, output = "coal", count = 1, seconds = 20, unlock = []},
@@ -74,10 +77,10 @@ const LIST := {
 	# pages, copper armour and weapons from named pages in the ruins' main chests (owner, Nov 24, F844: RUIN_COPPER). The Copper
 	# Pickaxe needs Root Tree Heartwood (owner, Nov 19: it came from the Keeper boss before).
 	"bronze_ingot": {station = "anvil", inputs = {copper_ingot = 3, tin_ingot = 1}, output = "bronze_ingot", count = 4, unlock = ["tin_ingot"]},  # F894: bronze is mostly copper
-	"helm_copper": {station = "anvil", inputs = {copper_ingot = 30, leather = 10}, output = "helm_copper", count = 1, unlock = "ruin"},
-	"mail_copper": {station = "anvil", inputs = {copper_ingot = 30, leather = 10}, output = "mail_copper", count = 1, unlock = "ruin"},
-	"greaves_copper": {station = "anvil", inputs = {copper_ingot = 30, leather = 10}, output = "greaves_copper", count = 1, unlock = "ruin"},
-	"boots_copper": {station = "anvil", inputs = {copper_ingot = 30, leather = 10}, output = "boots_copper", count = 1, unlock = "ruin"},
+	"helm_copper": {station = "armoury_bench", inputs = {copper_ingot = 30, leather = 10}, output = "helm_copper", count = 1, unlock = "ruin"},
+	"mail_copper": {station = "armoury_bench", inputs = {copper_ingot = 30, leather = 10}, output = "mail_copper", count = 1, unlock = "ruin"},
+	"greaves_copper": {station = "armoury_bench", inputs = {copper_ingot = 30, leather = 10}, output = "greaves_copper", count = 1, unlock = "ruin"},
+	"boots_copper": {station = "armoury_bench", inputs = {copper_ingot = 30, leather = 10}, output = "boots_copper", count = 1, unlock = "ruin"},
 	"axe_copper": {station = "anvil", inputs = {copper_ingot = 15, plank_root = 3, leather = 1}, output = "axe_copper", count = 1, unlock = "ruin"},
 	"pickaxe_copper": {station = "anvil", inputs = {copper_ingot = 15, plank_root = 4, leather = 2, heartwood = 1}, output = "pickaxe_copper", count = 1, unlock = ["heartwood"]},
 	"axe_silver": {station = "anvil", inputs = {silver_ingot = 6, plank_mushroom = 3, chitin_plate = 2}, output = "axe_silver", count = 1, unlock = ["silver_ingot"]},
@@ -86,7 +89,7 @@ const LIST := {
 	"sword_stone": {station = "workbench", inputs = {stone = 5, rootwood = 2, rope = 1}, output = "sword_stone", count = 1, unlock = []},
 	"mace_stone": {station = "workbench", inputs = {stone = 6, rootwood = 2, rope = 1}, output = "mace_stone", count = 1, unlock = []},
 	"spear_stone": {station = "workbench", inputs = {stone = 3, rootwood = 3, rope = 2}, output = "spear_stone", count = 1, unlock = []},
-	"shield_stone": {station = "workbench", inputs = {plank_root = 6, rope = 2}, output = "shield_stone", count = 1, unlock = []},
+	"shield_stone": {station = "armoury_bench", inputs = {plank_root = 6, rope = 2}, output = "shield_stone", count = 1, unlock = []},
 	"axe_2h_stone": {station = "workbench", inputs = {stone = 8, rootwood = 3, rope = 2}, output = "axe_2h_stone", count = 1, unlock = []},
 	"mace_2h_stone": {station = "workbench", inputs = {stone = 10, rootwood = 3, rope = 2}, output = "mace_2h_stone", count = 1, unlock = []},
 	"sword_copper": {station = "anvil", inputs = {copper_ingot = 30, plank_root = 2, leather = 1}, output = "sword_copper", count = 1, unlock = "ruin"},
@@ -95,8 +98,8 @@ const LIST := {
 	"mace_silver": {station = "anvil", inputs = {silver_ingot = 6, plank_mushroom = 2, chitin_plate = 1}, output = "mace_silver", count = 1, unlock = ["silver_ingot"]},
 	"spear_copper": {station = "anvil", inputs = {copper_ingot = 30, plank_root = 3, leather = 1}, output = "spear_copper", count = 1, unlock = "ruin"},
 	"spear_silver": {station = "anvil", inputs = {silver_ingot = 4, plank_mushroom = 3, chitin_plate = 1}, output = "spear_silver", count = 1, unlock = ["silver_ingot"]},
-	"shield_copper": {station = "anvil", inputs = {copper_ingot = 30, plank_root = 4, leather = 2}, output = "shield_copper", count = 1, unlock = "ruin"},
-	"shield_silver": {station = "anvil", inputs = {silver_ingot = 5, plank_mushroom = 4, chitin_plate = 2}, output = "shield_silver", count = 1, unlock = ["silver_ingot"]},
+	"shield_copper": {station = "armoury_bench", inputs = {copper_ingot = 30, plank_root = 4, leather = 2}, output = "shield_copper", count = 1, unlock = "ruin"},
+	"shield_silver": {station = "armoury_bench", inputs = {silver_ingot = 5, plank_mushroom = 4, chitin_plate = 2}, output = "shield_silver", count = 1, unlock = ["silver_ingot"]},
 	"axe_2h_copper": {station = "anvil", inputs = {copper_ingot = 30, plank_root = 3, leather = 2}, output = "axe_2h_copper", count = 1, unlock = "ruin"},
 	"axe_2h_silver": {station = "anvil", inputs = {silver_ingot = 8, plank_mushroom = 3, chitin_plate = 2}, output = "axe_2h_silver", count = 1, unlock = ["silver_ingot"]},
 	"mace_2h_copper": {station = "anvil", inputs = {copper_ingot = 30, plank_root = 3, leather = 2}, output = "mace_2h_copper", count = 1, unlock = "ruin"},
@@ -107,11 +110,11 @@ const LIST := {
 	# Bronze (F697 step 4, owner Nov 25): copper's amounts with Bronze Ingots, halfway between copper and silver.
 	# unlock = "dungeon": only a named page teaches it (never a random ruin page). Step 5 puts one on each dungeon's
 	# recipe stand (the Pickaxe page in Mossgate's big chest).
-	"helm_bronze": {station = "anvil", inputs = {bronze_ingot = 30, leather = 10}, output = "helm_bronze", count = 1, unlock = "dungeon"},
-	"mail_bronze": {station = "anvil", inputs = {bronze_ingot = 30, leather = 10}, output = "mail_bronze", count = 1, unlock = "dungeon"},
-	"greaves_bronze": {station = "anvil", inputs = {bronze_ingot = 30, leather = 10}, output = "greaves_bronze", count = 1, unlock = "dungeon"},
-	"boots_bronze": {station = "anvil", inputs = {bronze_ingot = 30, leather = 10}, output = "boots_bronze", count = 1, unlock = "dungeon"},
-	"shield_bronze": {station = "anvil", inputs = {bronze_ingot = 30, plank_root = 4, leather = 2}, output = "shield_bronze", count = 1, unlock = "dungeon"},
+	"helm_bronze": {station = "armoury_bench", inputs = {bronze_ingot = 30, leather = 10}, output = "helm_bronze", count = 1, unlock = "dungeon"},
+	"mail_bronze": {station = "armoury_bench", inputs = {bronze_ingot = 30, leather = 10}, output = "mail_bronze", count = 1, unlock = "dungeon"},
+	"greaves_bronze": {station = "armoury_bench", inputs = {bronze_ingot = 30, leather = 10}, output = "greaves_bronze", count = 1, unlock = "dungeon"},
+	"boots_bronze": {station = "armoury_bench", inputs = {bronze_ingot = 30, leather = 10}, output = "boots_bronze", count = 1, unlock = "dungeon"},
+	"shield_bronze": {station = "armoury_bench", inputs = {bronze_ingot = 30, plank_root = 4, leather = 2}, output = "shield_bronze", count = 1, unlock = "dungeon"},
 	"crossbow_bronze": {station = "anvil", inputs = {bronze_ingot = 30, plank_root = 3, rope = 2}, output = "crossbow_bronze", count = 1, unlock = "dungeon"},
 	"spear_bronze": {station = "anvil", inputs = {bronze_ingot = 30, plank_root = 3, leather = 1}, output = "spear_bronze", count = 1, unlock = "dungeon"},
 	"axe_bronze": {station = "anvil", inputs = {bronze_ingot = 15, plank_root = 3, leather = 1}, output = "axe_bronze", count = 1, unlock = "dungeon"},
@@ -147,7 +150,7 @@ const LIST := {
 	"copper_drip_basin": {station = "anvil", inputs = {copper_ingot = 4, plank_root = 2}, output = "copper_drip_basin", count = 1, unlock = "rune"},
 	"drink_moss_ale": {station = "campfire", level = 2, inputs = {root_tuber = 3, hollowcap = 1, water_bucket = 2}, output = "drink_moss_ale", count = 3, seconds = 30, unlock = "rune"},
 	"drink_spore_mead": {station = "campfire", level = 2, inputs = {spore_truffle = 2, ember_morel = 1, water_bucket = 2}, output = "drink_spore_mead", count = 3, seconds = 30, unlock = "rune"},
-	"spore_mask": {station = "workbench", inputs = {leather = 2, spore_powder = 3, fiber = 4}, output = "spore_mask", count = 1, unlock = "rune"},
+	"spore_mask": {station = "armoury_bench", inputs = {leather = 2, spore_powder = 3, fiber = 4}, output = "spore_mask", count = 1, unlock = "rune"},
 	# A spare hand lantern needs copper (owner, Nov 22: you find your first one in the starting room).
 	"lantern": {station = "workbench", inputs = {copper_ingot = 2, rootwood = 1, crystal_blue = 1}, output = "lantern", count = 1, unlock = ["copper_ingot"]},
 	"lantern_hip": {station = "workbench", inputs = {stone = 2, rootwood = 1, crystal_blue = 1, leather = 2, rope = 2}, output = "lantern_hip", count = 1, unlock = ["leather"]},  # F562
@@ -171,15 +174,15 @@ const LIST := {
 	"dish_bug_stew": {station = "campfire", level = 2, inputs = {bug_meat = 2, glowcap = 2}, output = "dish_bug_stew", count = 1, seconds = 20, unlock = "ruin"},
 	"leather_from_wing": {station = "tanning_rack", inputs = {wing_leather = 2}, output = "leather", count = 1, seconds = 40, unlock = ["wing_leather"]},
 	"waterskin_wing": {station = HAND, inputs = {wing_leather = 2, rope = 1}, output = "waterskin_empty", count = 1, unlock = ["wing_leather"]},
-	"shield_shell": {station = "workbench", inputs = {shell_piece = 6, leather = 1}, output = "shield_shell", count = 1, unlock = ["shell_piece"]},
+	"shield_shell": {station = "armoury_bench", inputs = {shell_piece = 6, leather = 1}, output = "shield_shell", count = 1, unlock = ["shell_piece"]},
 	"bolt_fang": {station = "workbench", inputs = {plank_root = 1, bat_fang = 1}, output = "bolt_fang", count = 6, unlock = ["bat_fang"]},
 	"pickaxe_fang": {station = "workbench", level = 2, inputs = {pickaxe_stone = 1, bat_fang = 4, leather = 1}, output = "pickaxe_fang", count = 1, unlock = ["bat_fang"]},  # mines copper (F115)
 	"bolt_glow_gland": {station = "workbench", inputs = {plank_root = 1, glow_gland = 1}, output = "bolt_glow", count = 10, unlock = ["glow_gland"]},
 	"glow_lamp": {station = "workbench", inputs = {stone = 3, glow_gland = 2}, output = "glow_lamp", count = 1, unlock = ["glow_gland"]},
-	"helm_shell": {station = "workbench", inputs = {shell_piece = 3, leather = 1}, output = "helm_shell", count = 1, unlock = ["shell_piece"]},
-	"plate_shell": {station = "workbench", inputs = {shell_piece = 5, leather = 2}, output = "plate_shell", count = 1, unlock = ["shell_piece"]},
-	"greaves_shell": {station = "workbench", inputs = {shell_piece = 4, leather = 1}, output = "greaves_shell", count = 1, unlock = ["shell_piece"]},
-	"boots_shell": {station = "workbench", inputs = {shell_piece = 3, leather = 1}, output = "boots_shell", count = 1, unlock = ["shell_piece"]},
+	"helm_shell": {station = "armoury_bench", inputs = {shell_piece = 3, leather = 1}, output = "helm_shell", count = 1, unlock = ["shell_piece"]},
+	"plate_shell": {station = "armoury_bench", inputs = {shell_piece = 5, leather = 2}, output = "plate_shell", count = 1, unlock = ["shell_piece"]},
+	"greaves_shell": {station = "armoury_bench", inputs = {shell_piece = 4, leather = 1}, output = "greaves_shell", count = 1, unlock = ["shell_piece"]},
+	"boots_shell": {station = "armoury_bench", inputs = {shell_piece = 3, leather = 1}, output = "boots_shell", count = 1, unlock = ["shell_piece"]},
 	"dish_stalk_steak": {station = "campfire", inputs = {mushroom_flesh = 2}, output = "dish_stalk_steak", count = 1, seconds = 10, unlock = ["mushroom_flesh"]},
 	"dish_ember_skewer": {station = "campfire", inputs = {beetle_meat = 1, ember_morel = 2}, output = "dish_ember_skewer", count = 1, seconds = 10, unlock = ["ember_morel"]},
 	"boil_water": {station = "campfire", inputs = {waterskin_dirty = 1}, output = "waterskin_clean", count = 1, seconds = 10, unlock = ["waterskin_dirty"]},
@@ -299,6 +302,7 @@ const RUIN_COPPER := {
 	prow_hall = ["sword_copper", "mace_copper"],
 	twin_gate = ["axe_2h_copper", "mace_2h_copper"],
 	smeltery = [],
+	brickcrown = [],
 }
 
 

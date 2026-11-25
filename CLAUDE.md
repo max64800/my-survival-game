@@ -75,7 +75,9 @@ Several Claude chats work in this folder at once. Twice a list was wrong because
   When fixed: cross it out with date + what changed and move it to `FEEDBACK-done.md`. Keep the Patterns table current.
 - **Play test while Claude tests (owner, Nov 22):** as soon as a change is in the game and only tests/commit remain, say so in a big heading `# 🎮 GO PLAY TEST THIS NOW 🎮` with exactly what to try and where, then "I'm still running tests". Don't wait for the full suite.
 - **Fixing rule (owner):** problems the owner *mentioned* get fixed. Problems Claude found that the owner didn't mention:
-  ask first, one yes/no each (they wait under "Claude noticed, waiting for your OK").
+  ask first (they wait under "Claude noticed, waiting for your OK").
+- **Questions are multiple choice (owner, Nov 25):** every question to the owner goes through the AskUserQuestion
+  tool (clickable choices, recommended one first), never as plain text in the message.
 
 ## Saving tokens (owner, Nov 16; token check Nov 21)
 Nov 21 check: 60% of all tokens = Claude re-reading the chat on every step, so **short chats matter most**.

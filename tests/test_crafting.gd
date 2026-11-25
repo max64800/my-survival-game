@@ -90,7 +90,7 @@ func test_holding_the_ingredients_shows_the_station_too() -> void:
 		if r.station == Recipes.HAND or not r.unlock is Array or r.unlock.is_empty() or not maker.has(r.station):
 			continue
 		for x in r.unlock:
-			var seen := {x: true, "copper_ore": true, "copper_ingot": true}  # copper comes early for everyone
+			var seen := {x: true, "copper_ore": true, "copper_ingot": true, "leather": true}  # copper and leather (the Armoury Bench, F894) come early for everyone
 			for i in r.inputs:
 				seen[i] = true
 			if Recipes.is_unlocked(id, seen, {}) and not Recipes.is_unlocked(maker[r.station], seen, {}):

@@ -25,21 +25,22 @@ func _setup() -> void:
 	auth.add_player(1, me)
 	ps = auth.players[1]
 	auth._ev_place_station(7, "workbench", me.global_position + Vector3(1.5, 0, 0), 0.0)
+	auth._ev_place_station(8, "armoury_bench", me.global_position + Vector3(-1.5, 0, 0), 0.0)  # shields are made here (F894)
 
 
 ## F561 (owner: "I crafted a wooden shield without having the resources on me").
 func test_no_free_shield() -> void:
 	await _setup()
-	check(not auth.request_craft(1, "shield_stone", 7), "an empty bag makes no shield")
+	check(not auth.request_craft(1, "shield_stone", 8), "an empty bag makes no shield")
 	check_eq(ps.inventory.count_of("shield_stone"), 0, "no shield appeared")
 	ps.inventory.add("plank_root", 5)
 	ps.inventory.add("rope", 2)
-	check(not auth.request_craft(1, "shield_stone", 7), "one plank short: no shield")
+	check(not auth.request_craft(1, "shield_stone", 8), "one plank short: no shield")
 	check_eq(ps.inventory.count_of("plank_root"), 5, "and nothing was taken")
 	ps.inventory.add("plank_root", 1)
 	var said := []
 	auth.hud_message.connect(func(t): said.append(t))
-	check(auth.request_craft(1, "shield_stone", 7), "6 planks + 2 rope make a shield")
+	check(auth.request_craft(1, "shield_stone", 8), "6 planks + 2 rope make a shield")
 	check_eq(ps.inventory.count_of("plank_root") + ps.inventory.count_of("rope"), 0, "and they were used up")
 	check(said.any(func(t): return "Made a Wooden Shield from 6" in t), "it says what it used: %s (F561)" % [said])
 	auth.get_parent().queue_free()
@@ -110,11 +111,11 @@ func test_bench_says_it_makes_planks_from_wood_first() -> void:
 	panel.peer_id = 1
 	auth.get_parent().add_child(panel)
 	panel.open_for(auth.stations[7])
-	var lines := panel.chain_lines("shield_stone", ps.inventory)
+	var lines := panel.chain_lines("barrel", ps.inventory)
 	check_eq(lines, ["First makes 6 %s from 3 %s" % [Items.display_name("plank_root"), Items.display_name("rootwood")]],
 		"no planks, 3 rootwood: it says it turns them into 6 planks first")
 	ps.inventory.add("plank_root", 6)
-	check(panel.chain_lines("shield_stone", ps.inventory).is_empty(), "with the planks already in the bag: no extra line")
+	check(panel.chain_lines("barrel", ps.inventory).is_empty(), "with the planks already in the bag: no extra line")
 	auth.get_parent().queue_free()
 
 

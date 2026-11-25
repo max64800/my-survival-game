@@ -56,7 +56,7 @@ const WEIGHT_OF := {
 	"crystal_sconce": 1.0, "glow_lamp": 1.0, "crystal_torch": 0.5, "glow_marker": 0.2, "rope_ladder": 2.0,
 	"drip_bucket": 3.0, "water_bucket": 2.0, "campfire": 5.0, "training_dummy": 6.0,
 	# big heavy stations
-	"anvil": 20.0, "smelter": 15.0, "twin_smelter": 20.0, "stone_oven": 15.0, "stone_saw": 15.0,
+	"anvil": 20.0, "armoury_bench": 12.0, "smelter": 15.0, "twin_smelter": 20.0, "stone_oven": 15.0, "stone_saw": 15.0,
 	# armor: leather light, shell middle, copper heavy
 	"cap_leather": 1.5, "boots_leather": 1.5, "trousers_leather": 2.5, "tunic_leather": 3.0,
 	"helm_shell": 2.5, "boots_shell": 2.5, "greaves_shell": 4.0, "plate_shell": 5.0,

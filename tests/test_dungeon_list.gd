@@ -15,7 +15,7 @@ func test_twelve_dungeons_in_three_sizes() -> void:
 
 
 func test_each_dungeon_teaches_its_own_recipe() -> void:
-	var copper := Recipes.LIST.keys().filter(func(r): return Recipes.LIST[r].unlock is String and Recipes.LIST[r].unlock == "ruin" and Recipes.LIST[r].station == "anvil")
+	var copper := Recipes.LIST.keys().filter(func(r): return Recipes.LIST[r].unlock is String and Recipes.LIST[r].unlock == "ruin" and Recipes.LIST[r].station in ["anvil", "armoury_bench"])
 	copper.sort()
 	var got := DungeonList.LIST.map(func(d): return DungeonList.recipe_of(d.id))
 	for r in got:

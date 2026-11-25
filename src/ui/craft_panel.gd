@@ -266,7 +266,7 @@ func refresh() -> void:
 		_list.add_child(l)
 	# (only while this window is open: a craft ending after it closed used to bring the panel back alone, with no
 	# way to close it; owner, Nov 22)
-	var upgrades := visible and station != null and station.kind in ["workbench", "anvil"]
+	var upgrades := visible and station != null and station.kind in ["workbench", "anvil", "armoury_bench"]
 	if upgrade_panel:
 		upgrade_panel.visible = upgrades
 		if upgrades:
@@ -466,7 +466,7 @@ func _upgrade_rows(inv: Inventory) -> void:
 		_up_list.add_child(row)
 	if not any:
 		var l := Label.new()
-		l.text = "Nothing to upgrade here. (%s)" % ("copper and silver gear" if station.kind == "anvil" else "stone, wood, leather and shell gear")
+		l.text = "Nothing to upgrade here. (%s)" % {"anvil": "copper, bronze and silver tools and weapons", "armoury_bench": "armour and shields"}.get(station.kind, "stone and wood tools and weapons")
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		_up_list.add_child(l)
 

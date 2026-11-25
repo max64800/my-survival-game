@@ -6,7 +6,9 @@ func test_rules() -> void:
 	var stone := {id = "pickaxe_stone", count = 1}
 	check_eq(Upgrades.station_for("pickaxe_stone"), "workbench", "stone gear at the Workbench")
 	check_eq(Upgrades.station_for("sword_copper"), "anvil", "copper gear at the Anvil")
-	check_eq(Upgrades.station_for("helm_shell"), "workbench", "shell gear at the Workbench")
+	check_eq(Upgrades.station_for("helm_shell"), "armoury_bench", "shell armour at the Armoury Bench (F894)")
+	check_eq(Upgrades.station_for("tunic_leather"), "armoury_bench", "leather armour at the Armoury Bench")
+	check_eq(Upgrades.station_for("shield_copper"), "armoury_bench", "copper shields at the Armoury Bench")
 	check_eq(Upgrades.next_cost(stone), {stone = 2, crystal_blue = 1}, "+1 costs 2 stone and a blue crystal")
 	check_eq(Upgrades.needed_level(stone), 1, "stone gear: +1 at any Workbench (F882)")
 	check_eq(Upgrades.needed_level({id = "pickaxe_stone", count = 1, up = 1}), 2, "stone gear: +2 needs level 2")

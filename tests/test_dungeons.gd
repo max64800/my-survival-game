@@ -22,7 +22,7 @@ func _teardown() -> void:
 
 
 func test_every_copper_recipe_has_its_own_page() -> void:
-	var copper := Recipes.LIST.keys().filter(func(r): return Recipes.LIST[r].unlock is String and Recipes.LIST[r].unlock == "ruin" and Recipes.LIST[r].station == "anvil")
+	var copper := Recipes.LIST.keys().filter(func(r): return Recipes.LIST[r].unlock is String and Recipes.LIST[r].unlock == "ruin" and Recipes.LIST[r].station in ["anvil", "armoury_bench"])
 	check_eq(copper.size(), 12, "12 copper recipes, one per dungeon")
 	for r in copper:
 		var page: String = "page_" + r

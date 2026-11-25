@@ -33,7 +33,8 @@ func test_every_bronze_item_has_recipe_model_and_icon() -> void:
 		var id: String = i + "_bronze"
 		check(Items.exists(id), id + " exists")
 		var r: Dictionary = Recipes.LIST.get(id, {})
-		check_eq(r.get("station", ""), "anvil", id + " at the anvil")
+		var at := "armoury_bench" if Items.kind(id) in ["wear", "shield"] else "anvil"  # F894 step 2: armour + shields
+		check_eq(r.get("station", ""), at, id + " at the " + at)
 		check(r.get("inputs", {}).has("bronze_ingot"), id + " needs bronze ingots")
 		check_eq(r.get("unlock", ""), "dungeon", id + " is locked until its own page teaches it")
 		check(not Recipes.page_recipes("armour_page").has(id) and not Recipes.page_recipes("weapon_page").has(id)

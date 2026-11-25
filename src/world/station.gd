@@ -252,7 +252,7 @@ func _size() -> Vector3:
 
 ## Shown smaller than its model was made (owner, Nov 17: "the crafting table is too big for the dwarf in terms of
 ## height": 1.17 m, chest-high on a dwarf). Same look, dwarf-sized. Its solid box shrinks with it.
-const MODEL_SCALE := {"workbench": 0.8, "masonry_table": 0.8}
+const MODEL_SCALE := {"workbench": 0.8, "masonry_table": 0.8, "armoury_bench": 0.8}
 
 
 static func scale_of(p_kind: String) -> float:
@@ -289,6 +289,7 @@ static func _base_size(p_kind: String) -> Vector3:
 		"smelter": return Vector3(1.2, 1.6, 1.2)
 		"kiln": return Vector3(1.3, 1.3, 1.3)
 		"anvil": return Vector3(0.9, 0.8, 0.5)
+		"armoury_bench": return Vector3(1.8, 1.0, 0.9)
 		"cooking_pot": return Vector3(0.9, 0.7, 0.9)
 		"stone_oven": return Vector3(1.4, 1.5, 1.2)
 		"bed": return Vector3(1.0, 0.5, 2.0)

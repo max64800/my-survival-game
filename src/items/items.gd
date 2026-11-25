@@ -120,6 +120,7 @@ const DATA := {
 	"smelter": {name = "Smelter", stack = 1, color = Color(0.7, 0.4, 0.3), short = "Sm", kind = "station"},
 	"kiln": {name = "Charcoal Kiln", stack = 1, color = Color(0.62, 0.42, 0.32), short = "Ki", kind = "station"},
 	"anvil": {name = "Anvil", stack = 1, color = Color(0.35, 0.35, 0.38), short = "An", kind = "station"},
+	"armoury_bench": {name = "Armoury Bench", stack = 1, color = Color(0.55, 0.38, 0.24), short = "AB", kind = "station"},  ## all armour + shields (F894)
 	"stone_oven": {name = "Stone Oven", stack = 1, color = Color(0.6, 0.45, 0.38), short = "SO", kind = "station"},  ## kitchen level 3 (owner, Nov 20)
 	"cooking_pot": {name = "Cooking Pot", stack = 1, color = Color(0.85, 0.5, 0.3), short = "CP", kind = "station"},
 	"tanning_rack": {name = "Tanning Rack", stack = 1, color = Color(0.6, 0.45, 0.3), short = "TR", kind = "station"},
@@ -246,7 +247,7 @@ static func _data() -> Dictionary:
 		for g in Gems.EPIC:
 			_all["gem_" + g] = {name = Gems.EPIC[g].name, color = Gems.EPIC[g].color, short = "E" + g.left(1).to_upper(), kind = "gem", stack = 5}
 		for r in Recipes.LIST:  # a dungeon's page always teaches the same copper recipe, and its name says which (owner, Nov 19, F237)
-			if Recipes.LIST[r].unlock is String and Recipes.LIST[r].unlock in ["ruin", "dungeon"] and Recipes.LIST[r].station == "anvil":
+			if Recipes.LIST[r].unlock is String and Recipes.LIST[r].unlock in ["ruin", "dungeon"] and Recipes.LIST[r].station in ["anvil", "armoury_bench"]:
 				var pg: String = Recipes.PAGE_OF_KIND[Recipes.page_kind(r)]
 				_all["page_" + r] = DATA[pg].merged({name = "%s: %s" % [DATA[pg].name, display_name(Recipes.LIST[r].output)], recipe = r, icon_of = pg}, true)
 		for id in Foods.DISHES:
