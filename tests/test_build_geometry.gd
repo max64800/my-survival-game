@@ -228,6 +228,10 @@ func test_hand_made_models_fit_and_hold_together() -> void:
 	print("        (%d hand-made building models checked; misfits %d, floating %d)" % [n, misfits.size(), floating.size()])
 	if not misfits.is_empty():
 		print("        misfits: ", misfits)
+	# F865 (Nov 25): the Shack's steep roofs were thrown out for a rounding hair and showed the plain code shape.
+	# Pieces you can build never fall back like that (wreckage only lies in ruins).
+	var built_bad := misfits.filter(func(f: String): return not (RuinJunk.is_mess(f) or f.begins_with("ruin_") or "smashed" in f))
+	check(built_bad.is_empty(), "no buildable piece's model is thrown out for not fitting: %s" % [built_bad])
 	if not floating.is_empty():
 		print("        floating: ", floating)
 	# Models that don't fit or have floating parts are never used: the game falls back to the shape
