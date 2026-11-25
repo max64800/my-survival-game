@@ -196,6 +196,29 @@ func test_code_shapes_have_no_floating_bits() -> void:
 	check(bad.is_empty(), "every code shape is one connected piece: %s" % [bad])
 
 
+## F725 (Nov 25): the brick Triangle Foundation showed its old, darker first-version look for 5 days. The new .glb
+## was on the drive, but it kept its old "last changed" time (OneDrive), so Godot never re-read it and the game
+## loaded the stale copy in .godot/imported. Every model's copy must be made from the file as it is now.
+## (Fix when it fails: `touch` the file, then run Godot once with `--headless --import`.)
+func test_every_model_copy_is_fresh() -> void:
+	var stale := []
+	for dir in ["res://assets/models/build"]:
+		for f in DirAccess.get_files_at(dir):
+			if not f.ends_with(".glb"):
+				continue
+			var cfg := ConfigFile.new()
+			if cfg.load("%s/%s.import" % [dir, f]) != OK:
+				continue
+			var dest: Array = cfg.get_value("deps", "dest_files", [])
+			if dest.is_empty():
+				continue
+			var md5 := ConfigFile.new()
+			var md5_path: String = (dest[0] as String).get_basename() + ".md5"
+			if md5.load(md5_path) != OK or md5.get_value("", "source_md5", "") != FileAccess.get_md5("%s/%s" % [dir, f]):
+				stale.append(f)
+	check(stale.is_empty(), "the game reads every model as it is now, not an old copy: %s" % [stale])
+
+
 ## Claude 2's hand-made models (only the ones on this computer): each must fit its piece and be in one piece.
 func test_hand_made_models_fit_and_hold_together() -> void:
 	var dir := "res://assets/models/build"

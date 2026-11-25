@@ -113,6 +113,10 @@ func _run() -> void:
 			await _doors(dwarf, base, lamp)
 			get_tree().quit()
 			return
+		if arg == "part=triangles":
+			await _triangles(dwarf, base, lamp)
+			get_tree().quit()
+			return
 		if arg == "part=stations":
 			await _stations(dwarf, base, lamp)
 			get_tree().quit()
@@ -172,6 +176,24 @@ func _stations(dwarf: Dwarf, base: Vector3, lamp: OmniLight3D) -> void:
 
 ## `part=doors` (F57): the round doorway with its door in each style, side by side, close up; then the
 ## doorways alone, so the round top of the opening shows.
+## F725: brick square and triangle foundations and floors side by side, in good light (do they match?).
+func _triangles(dwarf: Dwarf, base: Vector3, lamp: OmniLight3D) -> void:
+	var f := "clay_brick"
+	_place("foundation", f, base + Vector3(-2, 0, 0), 0)
+	_place("foundation_triangle", f, base + Vector3(0, 0, 2.5), 0)
+	_place("floor", f, base + Vector3(2, 1, 0), 0)
+	_place("floor_triangle", f, base + Vector3(2, 1, 1.0 + 0.577), 2)
+	await _wait(1.0)
+	dwarf._zoom = 1.0
+	dwarf.visible = false
+	for v in [["tri_front", Vector3(0, 2.0, 6.0), 4.0], ["tri_above", Vector3(0, 5.5, 4.0), 3.0], ["tri_lowlight", Vector3(0, 2.0, 6.0), 0.6]]:
+		lamp.global_position = base + Vector3(0, 3.0, 3.0)
+		lamp.light_energy = v[2]
+		_look(dwarf, base + (v[1] as Vector3) - Vector3.UP * 1.5, base + Vector3(0, 0.8, 0.8))
+		await _wait(0.8)
+		await _shot(v[0])
+
+
 func _doors(dwarf: Dwarf, base: Vector3, lamp: OmniLight3D) -> void:
 	var fams := ["plank_root", "cut_stone", "clay_brick"]
 	for with_door in [true, false]:
