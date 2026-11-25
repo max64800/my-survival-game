@@ -6,7 +6,7 @@ extends RefCounted
 ## checks every field and refuses anything odd. Nothing in a file is ever run as code.
 
 const FORMAT := 1
-const MAX_SIZE := Vector3(56, 24, 56)  ## the Prow Hall (ruin 9) is 52 x 40 m
+const MAX_SIZE := Vector3(56, 32, 56)  ## the Prow Hall (ruin 9) is 52 x 40 m; the Mine-head Works (ruin 12) 30 m tall (its shaft)
 const MAX_PIECES := 3000  ## the Prow Hall has about 2400
 
 var name := "Blueprint"
@@ -136,7 +136,7 @@ static func from_json(text: String) -> Dictionary:
 	bp.size = Vector3(sz[0], sz[1], sz[2])
 	if bp.size.x < 1 or bp.size.y < 1 or bp.size.z < 1 or bp.size.x > MAX_SIZE.x or bp.size.y > MAX_SIZE.y or bp.size.z > MAX_SIZE.z \
 			or bp.size != bp.size.floor():
-		return _fail("Size must be whole meters, at most 56 × 24 × 56.")
+		return _fail("Size must be whole meters, at most 56 × 32 × 56.")
 	var plist = d.get("pieces")
 	if not plist is Array or plist.size() > MAX_PIECES:
 		return _fail("Bad piece list (max %d pieces)." % MAX_PIECES)

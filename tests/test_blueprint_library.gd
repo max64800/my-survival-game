@@ -3,7 +3,7 @@ extends TestCase
 
 
 func test_four_blueprints_exist() -> void:
-	check_eq(BlueprintLibrary.IDS.size(), 23, "twenty-three blueprints (the starter hut, six found in ruins, the Wooden Watchtower, the Wooden Outpost, the two Brewhalls, the two Spires, the two Manors, the two Twin Gates, the two Cliff Watches, the two Prow Halls and the two Smelteries learned by rebuilding ruins)")
+	check_eq(BlueprintLibrary.IDS.size(), 24, "twenty-four blueprints (the starter hut, six found in ruins, the Wooden Watchtower, the Wooden Outpost, the two Brewhalls, the two Spires, the two Manors, the two Twin Gates, the two Cliff Watches, the two Prow Halls and the two Smelteries learned by rebuilding ruins, and the Mine-head Works)")
 	for id in BlueprintLibrary.IDS:
 		check(BlueprintLibrary.make(id) != null, "%s can be made" % id)
 
@@ -38,13 +38,18 @@ func test_everything_stands_up() -> void:
 		var s := Structure.new()
 		var uid := 1
 		for p in bp.pieces:
-			s.add(uid, p.id, p.mat, p.pos, p.rot, p.pos.y < 0.3)
+			s.add(uid, p.id, p.mat, p.pos, p.rot, p.pos.y < 0.3 or _on_own_ground(id, p.pos))
 			uid += 1
 		var falling := s.recompute()
 		var names := []
 		for u in falling:
 			names.append("%s@%s" % [s.pieces[u].piece, s.pieces[u].pos])
 		check(falling.is_empty(), "%s: nothing falls down (%s)" % [id, ", ".join(names)])
+
+
+## The Mine-head Works stands on its cave's own ground (cave floor, ledge, dip and mine room).
+static func _on_own_ground(id: String, v: Vector3) -> bool:
+	return id == "minehead_works" and BlueprintLibrary.mine_rock(v.x, v.y - 0.05, v.z)
 
 
 ## F656 (owner, Nov 22): the big 12-sided ring (2 rings wide) is sound: real pieces, nothing overlaps or falls, and

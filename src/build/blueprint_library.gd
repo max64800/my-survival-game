@@ -10,7 +10,8 @@ class_name BlueprintLibrary
 const IDS := ["delvers_hut", "miners_homestead", "stone_hall", "forge_workshop", "watchtower_cabin", "stone_watchtower",
 	"stone_outpost", "wooden_watchtower", "wooden_outpost", "hearthbrick_brewhall", "wooden_brewhall", "lantern_spire", "wooden_spire",
 	"hearthbrick_manor", "wooden_manor", "stonehold_twin_gate", "wooden_twin_gate", "stonehold_cliff_watch", "wooden_cliff_watch",
-	"stonehold_prow_hall", "wooden_prow_hall", "hearthbrick_smeltery", "wooden_smeltery"]
+	"stonehold_prow_hall", "wooden_prow_hall", "hearthbrick_smeltery", "wooden_smeltery",
+	"minehead_works"]
 ## Known from the very start (F161): you place them and bring the materials. The rest are learned from
 ## Old Blueprints found in ruins (F98).
 const STARTER := ["delvers_hut"]
@@ -20,7 +21,8 @@ const STARTER := ["delvers_hut"]
 ## and the Prow Hall's (owner, Nov 22: its ruin teaches both), and the Smeltery's (owner, Nov 25, F845: the same).
 const REBUILD_ONLY := ["wooden_watchtower", "wooden_outpost", "hearthbrick_brewhall", "wooden_brewhall", "lantern_spire", "wooden_spire",
 	"hearthbrick_manor", "wooden_manor", "stonehold_twin_gate", "wooden_twin_gate", "stonehold_cliff_watch", "wooden_cliff_watch",
-	"stonehold_prow_hall", "wooden_prow_hall", "hearthbrick_smeltery", "wooden_smeltery"]
+	"stonehold_prow_hall", "wooden_prow_hall", "hearthbrick_smeltery", "wooden_smeltery",
+	"minehead_works"]
 const NAMES := {
 	"delvers_hut": "Delver's Hut",
 	"miners_homestead": "Miner's Homestead",
@@ -46,6 +48,7 @@ const NAMES := {
 	"hearthbrick_smeltery": "Smeltery Terraces",
 	"wooden_smeltery": "Wooden Smeltery Terraces",
 	"brickcrown_keep": "Brickcrown Keep",
+	"minehead_works": "Mine-head Works",
 }
 
 const WOOD := "plank_root"
@@ -115,6 +118,7 @@ static func make(id: String) -> Blueprint:
 			lib._stairs_on_the_floor()  # (before the stone top: it matches the stone hall piece by piece)
 			lib._prow_keep_top_stays_stone()
 		"brickcrown_keep": lib._brickcrown()  # (owner, Nov 25: ruin 11, F895; its 3D page first, not learnable yet)
+		"minehead_works": lib._minehead()  # (owner, Nov 25: ruin 12, F899; learned by rebuilding its ruin)
 		"hearthbrick_smeltery": lib._smeltery()  # (owner, Nov 24: ruin 10, F845; learned by rebuilding its ruin)
 		"wooden_smeltery":  # (its trims, brackets and roof windows are Hearthbrick only: they stay brick)
 			lib._smeltery()
@@ -3172,6 +3176,422 @@ func _brickcrown() -> void:
 	for p in _bp.pieces:
 		p.pos += BRICK_SHIFT
 	_air_only_round_pieces(func(lx: float, y: float, lz: float) -> bool: return y < brick_rock_top(lx, lz))
+
+
+# ---------------------------------------------------------------- ruin 12: the Mine-head Works
+
+## Ruin 12, the Mine-head Works (owner, Nov 25, F899; plan: docs/design/ruin12/MINEHEAD-PLAN.md). Built into the cave:
+## a stone terrace on the cave floor; the engine house (a tall stone hall, a wooden top storey) with its six-sided
+## stack and the boiler shed in a niche of the rock wall behind; the wooden headframe over the shaft (three tiers, the
+## Head Wheel on top under a little roof); a trestle over the dip to the ore shed on the lower ledge; steps in the rock
+## down to the ledge; and the 8 m shaft with ladders down to a mine room. Every building: stone below, wood above.
+## Local metres (the cave floor y = 0, the shaft's middle x 5, z -5), moved by MINE_SHIFT at the end so the mine
+## room's floor is the box's floor.
+const MINE_SHIFT := Vector3(-4, 8, 4)
+const MINE_WHEEL := Vector3(5, 14.05, -5)   # the Head Wheel (local): its bearings sit on the beams' tops at 15.8
+
+
+## Is there rock at (x, y, z) in the Works' box? The cave floor, the dip, the lower ledge, the rock wall behind with
+## its two niches, and the shaft and the mine room dug into it.
+static func mine_rock(x: float, y: float, z: float) -> bool:
+	return _mine_rock(x - MINE_SHIFT.x, y - MINE_SHIFT.y, z - MINE_SHIFT.z)
+
+
+static func _mine_rock(x: float, y: float, z: float) -> bool:
+	if y < -8.0:
+		return true
+	if x > 3.0 and x < 7.0 and z > -7.0 and z < -3.0:
+		return false                                                        # the shaft
+	if x > -5.0 and x < 7.0 and z > -7.0 and z < -3.0 and y < -5.0:
+		return false                                                        # the mine room
+	return y < _mine_ground(x, z)
+
+
+## How high the ground reaches at (x, z) (local): the cave floor 0, the rock wall behind (99) with its niches.
+static func _mine_ground(x: float, z: float) -> float:
+	var back := -9.2
+	if (x > -21.5 and x < -2.8) or (x > 16.8 and x < 30.8):
+		back = -11.2                                                        # the niches: engine house, stack, ore shed
+	if x > -19.6 and x < -14.4:
+		back = -11.8                                                        # (the stack's trim bands)
+	if z < back:
+		return 99.0
+	if z < -6.8 and x > 11.2:
+		return 0.0 if x < 13.0 else -2.25                                   # the step strip down to the ledge
+	if x > 16.8:
+		return -2.25                                                        # the lower ledge
+	if x > 11.2:
+		return -4.0                                                         # the dip under the trestle
+	return 0.0
+
+
+func _minehead() -> void:
+	_start(Vector3(54, 30, 20))
+	_mine_terrace()
+	_mine_engine_house()
+	_mine_boiler_and_stack()
+	_mine_headframe()
+	_mine_trestle()
+	_mine_ore_shed()
+	_mine_shaft()
+	_brackets_off_windows()
+	# --- move it so the box is centred; only the space round the pieces is dug (F657), the rock and ground stay
+	for p in _bp.pieces:
+		p.pos += MINE_SHIFT
+	_air_only_round_pieces(func(lx: float, y: float, lz: float) -> bool: return mine_rock(lx, y, lz))
+	_mine_dig()
+
+
+## The stone terrace along the cave floor in front of the engine house, railed, a wide flight of steps up to it.
+func _mine_terrace() -> void:
+	for x in range(-14, 1, 2):
+		for z in [-2, 0]:
+			_add("foundation", STONE, Vector3(x, 0, z), 0)
+	for x in [-10, -8, -6]:
+		_add("foundation_steps", STONE, Vector3(x, 0, 2), 0)
+	for x in [-14, -12, -4, -2, 0]:
+		_wall_x("railing", x, 1, 1.0, STONE)
+	for z in [-2, 0]:
+		_wall_z("railing", -15, z, 1.0, STONE)
+
+
+## The engine house (x -13..-3, z -11..-3, its back in the rock): a tall stone hall (two walls high) with stairs up
+## to its roof; on the roof a railed stone terrace (left) and a wooden storey with a sloped roof (right).
+func _mine_engine_house() -> void:
+	var S := STONE
+	var W := WOOD
+	var ex := range(-12, -3, 2)
+	var ez := range(-10, -3, 2)
+	for x in ex:
+		for z in ez:
+			_add("foundation", S, Vector3(x, 0, z), 0)
+	var front := [{-12: "window_wall", -10: "wall", -8: "doorway", -6: "wall", -4: "window_wall"},
+		{-12: "wall", -10: "window_wall", -8: "window_wide", -6: "window_wall", -4: "wall"}]
+	var left := [{-10: "wall", -8: "window_wall", -6: "wall", -4: "window_wall"},
+		{-10: "wall", -8: "wall", -6: "window_wall", -4: "wall"}]
+	var right := [{-10: "wall", -8: "wall", -6: "window_wall", -4: "wall"},
+		{-10: "wall", -8: "window_wall", -6: "wall", -4: "window_wall"}]
+	for i in 2:
+		var y := 1.0 + 2.0 * i
+		for x in ex:
+			_wall_x(front[i][x], x, -3, y, S)
+			_wall_x("wall", x, -11, y, S)
+		for z in ez:
+			_wall_z(left[i][z], -13, z, y, S)
+			_wall_z(right[i][z], -3, z, y, S)
+	_add("door", S, Vector3(-8, 1.0, -3), 0)
+	_stacked_stairs(Vector3(-4, 1.0, -6), 0, S, [-1])                       # up beside the right wall, toward the rock
+	for x in ex:
+		for z in ez:
+			if x != -4 or not z in [-6, -8]:                                # (both flights' cells: no low ceiling)
+				_add("floor", S, Vector3(x, 5.0, z), 0)
+	var wy := 5.25
+	for x in [-12, -10]:                                                    # the stone roof terrace
+		_wall_x("battlement", x, -3, wy, S)
+		_wall_x("battlement", x, -11, wy, S)
+	for z in ez:
+		_wall_z("battlement", -13, z, wy, S)
+	for x in [-8, -6, -4]:                                                  # the wooden top storey
+		_wall_x("window_wall" if x == -6 else "wall", x, -3, wy, W)
+		_wall_x("wall", x, -11, wy, W)
+	for z in ez:
+		_wall_z("doorway" if z == -6 else ("window_wall" if z == -4 else "wall"), -9, z, wy, W)
+		_wall_z("window_wall" if z in [-4, -8] else "wall", -3, z, wy, W)
+	_add("door", W, Vector3(-9, wy, -6), 1)
+	for z in [-6, -8]:                                                      # round the stairs hole
+		_wall_z("railing", -5, z, wy, W)
+	_wall_x("railing", -4, -5, wy, W)
+	_mine_roof([-8, -6, -4], -4, wy + 2.0, [-9, -3], W)
+
+
+## A sloped roof with its ridge along x over the 4 rows z0 (the front row), z0 - 2, z0 - 4 and z0 - 6, gables on the
+## lines x = `gx` (half walls under the upper ones).
+func _mine_roof(xs: Array, z0: int, top: float, gx: Array, mat: String) -> void:
+	for x in xs:
+		_add("roof_26", mat, Vector3(x, top, z0), 0)
+		_add("roof_26", mat, Vector3(x, top + 1.0, z0 - 2), 0)
+		_add("roof_26", mat, Vector3(x, top + 1.0, z0 - 4), 2)
+		_add("roof_26", mat, Vector3(x, top, z0 - 6), 2)
+	for x in gx:
+		_add("gable_26", mat, Vector3(x, top, z0), 1)
+		_wall_z("half_wall", x, z0 - 2, top, mat)
+		_add("gable_26", mat, Vector3(x, top + 1.0, z0 - 2), 1)
+		_wall_z("half_wall", x, z0 - 4, top, mat)
+		_add("gable_26", mat, Vector3(x, top + 1.0, z0 - 4), 3)
+		_add("gable_26", mat, Vector3(x, top, z0 - 6), 3)
+
+
+## The boiler shed (x -21..-15, z -7..-3: stone foundations, wooden walls, a lean-to roof high on its right) and the
+## six-sided stone stack behind it in the rock niche (17 m tall, two trim bands).
+func _mine_boiler_and_stack() -> void:
+	var S := STONE
+	var W := WOOD
+	for x in [-20, -18, -16]:
+		for z in [-6, -4]:
+			_add("foundation", S, Vector3(x, 0, z), 0)
+		_wall_x("doorway" if x == -18 else "window_wall", x, -3, 1.0, W)
+		_wall_x("wall", x, -7, 1.0, W)
+	_add("door", W, Vector3(-18, 1.0, -3), 0)
+	_add("foundation_steps", S, Vector3(-18, 0, -2), 0)
+	for z in [-6, -4]:
+		_wall_z("wall", -21, z, 1.0, W)
+		_wall_z("wall", -15, z, 1.0, W)
+		_wall_z("wall", -15, z, 3.0, W)
+		_wall_z("half_wall", -15, z, 5.0, W)
+	for i in 3:                                                             # the lean-to: low on the left (3 m), high on the right (6 m)
+		var x: int = -20 + 2 * i
+		for z in [-6, -4]:
+			_add("roof_26", W, Vector3(x, 3.0 + i, z), 3)
+		for gz in [-3, -7]:
+			if i > 0:
+				_wall_x("half_wall" if i == 1 else "wall", x, gz, 3.0, W)
+			_add("gable_26", W, Vector3(x, 3.0 + i, gz), 0)
+	var c := Vector3(-17, 0, -9.4)
+	_hex_layer("foundation_triangle", c, 0, -1, S)
+	for k in 8:
+		var at := c + Vector3(0, 1.0 + 2.0 * k, 0)
+		_hex_edges(at, 0, func(_j: int) -> String: return "wall", S)
+		_hex_pillars(at, 0, S)
+	for y in [5.0, 13.0, 16.6]:
+		_hex_bands(c + Vector3(0, y, 0), 0, S)
+
+
+## The headframe over the shaft (x 3..7, z -7..-3): a stone collar round it; tier 1, an 8 x 8 braced frame of posts
+## with the loading deck on it (5.25 m) and two flights of stairs up from the front; tier 2, a 4 x 4 tower of posts on
+## the shaft's edge (railed at the bottom, braced above) with the top deck on it (11.5 m, jutting 2 m all round on
+## knee braces) and a ladder up; on top the wheel stand: 4 posts, two bearing beams 4 m apart, the Head Wheel
+## hanging between them, and a little roof over it.
+func _mine_headframe() -> void:
+	var S := STONE
+	var W := WOOD
+	var in_hole := func(x: float, z: float) -> bool: return x > 3 and x < 7 and z > -7 and z < -3
+	for x in range(2, 9, 2):
+		for z in range(-8, 3, 2):
+			if not in_hole.call(x, z):
+				_add("foundation", S, Vector3(x, 0, z), 0)
+		_add("foundation_steps", S, Vector3(x, 0, 4), 0)
+	for rl in [[3, -6, 1], [3, -4, 1], [7, -6, 1], [7, -4, 1], [4, -3, 0], [6, -3, 0], [6, -7, 0]]:
+		_add("railing", S, Vector3(rl[0], 1.0, rl[1]), rl[2])                  # round the shaft (the ladder comes up at x 4)
+	# tier 1: posts every 2 m round the 8 x 8 (x 1..9, z -9..-1) and round the shaft
+	for x in range(1, 10, 2):
+		for z in range(-9, 0, 2):
+			if Vector2(x, z) != Vector2(5, -5):
+				for y in [1.0, 3.0]:
+					_add("pillar", W, Vector3(x, y, z), 0)
+	var open1 := [Vector2(2, -1), Vector2(4, -1), Vector2(1, -2), Vector2(9, -8)]   # the stairs, the way in, the way out to the steps
+	for i in 4:
+		var c := 2 + 2 * i
+		for lv in 2:
+			var y := 1.0 + 2.0 * lv
+			var f := (i + lv) % 2
+			for zl in [-9, -1]:
+				if not Vector2(c, zl) in open1:
+					_add("brace", W, Vector3(c, y, zl), 2 * f)
+			for xl in [1, 9]:
+				if not Vector2(xl, -c) in open1:
+					_add("brace", W, Vector3(xl, y, -c), 1 + 2 * f)
+	_stacked_stairs(Vector3(2, 1.0, 0), 0, W)                               # up from the front onto the deck
+	for x in range(2, 9, 2):
+		for z in range(-8, -1, 2):
+			if not in_hole.call(x, z) and Vector2(x, z) != Vector2(2, -2):
+				_add("floor", W, Vector3(x, 5.0, z), 0)
+	var d := 5.25
+	for x in range(2, 9, 2):
+		_wall_x("railing", x, -9, d, W)
+		if x != 2:
+			_wall_x("railing", x, -1, d, W)
+	for z in [-8, -6, -4, -2]:
+		if z != -2:
+			_wall_z("railing", 1, z, d, W)
+		if z != -4:
+			_wall_z("railing", 9, z, d, W)                                  # (z -4: the trestle comes in)
+	_wall_z("railing", 3, -2, d, W)                                         # beside the stairs hole
+	# tier 2: posts round the shaft up to the top deck; railings at the bottom, girts and braces above
+	var ring := [Vector2(3, -7), Vector2(5, -7), Vector2(7, -7), Vector2(3, -5), Vector2(7, -5), Vector2(3, -3), Vector2(5, -3), Vector2(7, -3)]
+	for p: Vector2 in ring:
+		for lv in 3:
+			_add("pillar", W, Vector3(p.x, d + 2.0 * lv, p.y), 0)
+	for i in 2:
+		var c := 4 + 2 * i
+		for zl in [-7, -3]:
+			_wall_x("railing", c, zl, d, W)
+		for xl in [3, 7]:
+			_wall_z("railing", xl, -c, d, W)
+		for lv: int in [1, 2]:
+			var y := d + 2.0 * lv
+			var f := (i + lv) % 2
+			for zl in [-7, -3]:
+				_wall_x("beam", c, zl, y - 0.15, W)
+				_add("brace", W, Vector3(c, y, zl), 2 * f)
+			for xl in [3, 7]:
+				_wall_z("beam", xl, -c, y - 0.15, W)
+				_add("brace", W, Vector3(xl, y, -c), 1 + 2 * f)
+	for z in [-7, -5, -3]:                                                  # knee braces under the jutting top deck
+		_add("brace", W, Vector3(2, d + 4.0, z), 2)
+		_add("brace", W, Vector3(8, d + 4.0, z), 0)
+	for x in [3, 5, 7]:
+		_add("brace", W, Vector3(x, d + 4.0, -8), 1)
+		if x == 3:
+			_add("brace", W, Vector3(x, d + 4.0, -2), 3)
+	for y in [d, d + 2.0, d + 4.0]:                                         # the ladder up the tower's front
+		_add("ladder", W, Vector3(6, y, -2.73), 2)
+	var t := 11.25
+	for x in range(2, 9, 2):
+		for z in range(-8, -1, 2):
+			if not in_hole.call(x, z) and Vector2(x, z) != Vector2(6, -2):
+				_add("floor", W, Vector3(x, t, z), 0)
+	var t2 := t + 0.25
+	for x in range(2, 9, 2):
+		_wall_x("railing", x, -9, t2, W)
+		_wall_x("railing", x, -1, t2, W)
+	for z in [-8, -6, -4, -2]:
+		_wall_z("railing", 1, z, t2, W)
+		_wall_z("railing", 9, z, t2, W)
+	for c in [4, 6]:                                                        # round the rope hole and the ladder hole
+		_wall_x("railing", c, -7, t2, W)
+		_wall_x("railing", c, -3, t2, W)
+		_wall_z("railing", 3, -c, t2, W)
+		_wall_z("railing", 7, -c, t2, W)
+	_wall_z("railing", 7, -2, t2, W)
+	# the wheel stand and its roof
+	for p in [Vector2(3, -7), Vector2(7, -7), Vector2(3, -3), Vector2(7, -3)]:
+		for y in [t2, t2 + 2.0, t2 + 4.0, t2 + 6.0]:
+			_add("pillar", W, Vector3(p.x, y, p.y), 0)
+	var bear := t2 + 4.0                                                    # the bearing beams (their tops at 15.8)
+	var eave := t2 + 7.7
+	for c in [4, 6]:
+		for zl in [-7, -3]:
+			_wall_x("beam", c, zl, bear, W)
+			_wall_x("beam", c, zl, eave, W)
+		for xl in [3, 7]:
+			_wall_z("beam", xl, -c, bear, W)
+			_wall_z("beam", xl, -c, eave, W)
+			_add("brace", W, Vector3(xl, t2 + 2.0, -c), 3 if c == 6 else 1)
+	_add("head_wheel", W, MINE_WHEEL, 0)
+	var r := eave + 0.3
+	for z in [-6, -4]:
+		_add("roof_26", W, Vector3(4, r, z), 3)
+		_add("roof_26", W, Vector3(6, r, z), 1)
+	for zl in [-7, -3]:
+		_add("gable_26", W, Vector3(4, r, zl), 0)
+		_add("gable_26", W, Vector3(6, r, zl), 2)
+
+
+## The trestle from the loading deck over the dip to the ore shed's loft (x 9..17, z -5..-3, its deck 5.25 m): three
+## braced bents of posts (one on the cave floor, two down in the dip on stone piers), railed both sides.
+func _mine_trestle() -> void:
+	var S := STONE
+	var W := WOOD
+	_add("foundation", S, Vector3(10, 0, -4), 0)
+	_add("foundation", S, Vector3(12, -4, -4), 0)
+	_add("foundation", S, Vector3(14, -4, -4), 0)
+	for bent in [[11, 1.0], [13, -3.0], [15, -3.0]]:
+		var bx: float = bent[0]
+		var y: float = bent[1]
+		var lv := 0
+		while y < 4.9:
+			for z in [-5, -3]:
+				_add("pillar", W, Vector3(bx, y, z), 0)
+			_add("brace", W, Vector3(bx, y, -4), 1 + 2 * (lv % 2))
+			y += 2.0
+			lv += 1
+	for x in [12, 14]:
+		for z in [-5, -3]:
+			_add("brace", W, Vector3(x, 3.0, z), 0 if (x == 12) == (z == -5) else 2)
+	for x in [10, 12, 14, 16]:
+		_add("floor", W, Vector3(x, 5.0, -4), 0)
+		for z in [-5, -3]:
+			_wall_x("railing", x, z, 5.25, W)
+
+
+## The ore shed on the lower ledge (x 17..29, z -11..-3, its back in the rock): a tall stone ground storey, a wooden
+## storey with three ore chutes out of its wide front windows, and a wooden loft (the trestle comes in at its left)
+## under a sloped roof. Steps in the rock lead down from the cave floor to its side door.
+func _mine_ore_shed() -> void:
+	var S := STONE
+	var W := WOOD
+	var sx := range(18, 29, 2)
+	var sz := range(-10, -3, 2)
+	var g := -2.25
+	for x in sx:
+		for z in sz:
+			_add("foundation", S, Vector3(x, g, z), 0)
+	for x in [10, 12]:                                                      # the steps in the rock
+		_add("foundation", S, Vector3(x, 0, -8), 0)
+		_wall_x("railing", x, -7, 1.0, S)
+	for x in [14, 16]:
+		_add("foundation", S, Vector3(x, g, -8), 0)
+		_wall_x("railing", x, -7, g + 1.0, S)
+	_add("floor", S, Vector3(14, g + 1.0, -8), 0)
+	_add("stairs", S, Vector3(14, g + 1.25, -8), 1)
+	var front := [{18: "window_wall", 20: "wall", 22: "doorway", 24: "wall", 26: "window_wall", 28: "wall"},
+		{18: "wall", 20: "window_wall", 22: "wall", 24: "window_wall", 26: "wall", 28: "window_wall"},
+		{18: "wall", 20: "window_wide", 22: "wall", 24: "window_wide", 26: "wall", 28: "window_wide"},
+		{18: "window_wall", 20: "wall", 22: "window_wall", 24: "wall", 26: "window_wall", 28: "wall"}]
+	var left := [{-10: "wall", -8: "doorway", -6: "wall", -4: "window_wall"},
+		{-10: "wall", -8: "wall", -6: "window_wall", -4: "wall"},
+		{-10: "wall", -8: "window_wall", -6: "wall", -4: "wall"},
+		{-10: "wall", -8: "window_wall", -6: "wall", -4: "doorway"}]
+	var right := [{-10: "wall", -8: "wall", -6: "wall", -4: "wall"},
+		{-10: "wall", -8: "wall", -6: "window_wall", -4: "wall"},
+		{-10: "wall", -8: "window_wall", -6: "wall", -4: "wall"},
+		{-10: "wall", -8: "wall", -6: "window_wall", -4: "wall"}]
+	var lv := [[g + 1.0, S], [g + 3.0, S], [3.0, W], [5.25, W]]
+	for i in 4:
+		var y: float = lv[i][0]
+		var m: String = lv[i][1]
+		for x in sx:
+			_wall_x(front[i][x], x, -3, y, m)
+			_wall_x("wall", x, -11, y, m)
+		for z in sz:
+			_wall_z(left[i][z], 17, z, y, m)
+			_wall_z(right[i][z], 29, z, y, m)
+	_add("door", S, Vector3(22, g + 1.0, -3), 0)
+	_add("door", S, Vector3(17, g + 1.0, -8), 1)
+	_add("door", W, Vector3(17, 5.25, -4), 1)
+	for x in sx:
+		for z in sz:
+			if x != 28 or not z in [-6, -8]:                                # (both flights' cells: no low ceiling)
+				_add("floor", S, Vector3(x, 2.75, z), 0)
+			if Vector2(x, z) != Vector2(20, -6):
+				_add("floor", W, Vector3(x, 5.0, z), 0)
+	_stacked_stairs(Vector3(28, g + 1.0, -6), 0, S, [-1])                   # up the right wall, toward the rock
+	for z in [-6, -8]:
+		_wall_z("railing", 27, z, 3.0, W)
+	_wall_x("railing", 28, -5, 3.0, W)
+	_add("floor", W, Vector3(20, 3.0, -6), 0)                               # the loft stairs (toward the rock)
+	_add("stairs", W, Vector3(20, 3.25, -6), 0)
+	_wall_z("railing", 19, -6, 5.25, W)
+	_wall_z("railing", 21, -6, 5.25, W)
+	_wall_x("railing", 20, -5, 5.25, W)
+	for x in [20, 24, 28]:
+		_add("ramp", W, Vector3(x, 2.0, -2), 0)                             # the ore chutes under the wide windows
+	_mine_roof(sx, -4, 7.25, [17, 29], W)
+
+
+## The shaft: ladders from the mine room's floor (-8) up the shaft's back wall to the collar; the mine room's mine
+## props every 3 m.
+func _mine_shaft() -> void:
+	for y in [-8.0, -6.0, -4.0, -2.0, 0.0]:
+		_add("ladder", WOOD, Vector3(4, y, -6.73), 2)
+	for x in [-4.0, -1.0, 2.0]:
+		for z in [-6, -4]:
+			_add("mine_prop", WOOD, Vector3(x, -8.0, z), 1)
+
+
+## The shaft and the mine room are dug out whole (not only round the pieces in them).
+func _mine_dig() -> void:
+	var sx := int(_bp.size.x)
+	var sy := int(_bp.size.y)
+	var sz := int(_bp.size.z)
+	var i := 0
+	for cy in sy:
+		for cz in sz:
+			for cx in sx:
+				var l := Vector3(cx + 0.5 - sx * 0.5, cy + 0.5, cz + 0.5 - sz * 0.5) - MINE_SHIFT
+				if l.y < 0.0 and l.x > -5.0 and l.x < 7.0 and l.z > -7.0 and l.z < -3.0 and not _mine_rock(l.x, l.y, l.z):
+					_bp.air[i] = 1
+				i += 1
 
 
 ## How far the glass reaches from a window piece's middle, along its wall (the rest is the frame's brick or wood).
