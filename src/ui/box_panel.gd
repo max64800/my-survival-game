@@ -14,6 +14,7 @@ var _grid: GridContainer
 var _status: Label
 var _ways: HBoxContainer  ## pictures of what goes in: the two ways (an untouched Rebuilding Chest, F560) or what's still missing (F578)
 var _ways_for := -1  ## which chest the pictures are of (they're built once, not every frame)
+var _same: Button  ## "Store same" (F889)
 var _ways_sig := ""  ## which box these cards are for (F689: cards no longer depend on what you're holding)
 
 
@@ -32,12 +33,22 @@ func _ready() -> void:
 	_grid = GridContainer.new()
 	_grid.columns = 8
 	v.add_child(_grid)
+	var buttons := HBoxContainer.new()
+	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
+	buttons.add_theme_constant_override("separation", 12)
+	v.add_child(buttons)
 	var take := UiKit.gold_button(Button.new())
 	take.text = "Take all"
-	take.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	take.custom_minimum_size = Vector2(150, 0)
 	take.pressed.connect(func(): GameAuthority.instance.storage.ask_take_all(box_id))
-	v.add_child(take)
+	buttons.add_child(take)
+	_same = UiKit.gold_button(Button.new())  # F889: put in only the kinds already in here
+	_same.text = "Store same"
+	_same.tooltip_text = "Puts in the things from your bag that this one already holds
+(not your hotbar, not what you wear)."
+	_same.custom_minimum_size = Vector2(150, 0)
+	_same.pressed.connect(func(): GameAuthority.instance.storage.ask_store_same(box_id))
+	buttons.add_child(_same)
 
 
 func open(id: int) -> void:
@@ -92,6 +103,7 @@ func refresh() -> void:
 	elif box.kind in ["builder", "rebuild"]:
 		_show_missing(GameAuthority.instance.builder.still_needed(box_id))
 	_ways.visible = _ways.get_child_count() > 0 and box.kind in ["builder", "rebuild"]
+	_same.visible = box.kind != "grave"  # (nothing goes back into a grave)
 	var inv: Inventory = box.inv
 	if visible and _had and not has_items(inv):
 		_had = false

@@ -121,6 +121,28 @@ func test_crafting_takes_from_nearby_chests() -> void:
 	_teardown()
 
 
+## F889 (owner, Nov 25): "Store same" puts in only the kinds already in the box, from the bag, not the hotbar.
+func test_store_same() -> void:
+	await _setup()
+	var st := auth.storage
+	var bag := ps.inventory
+	var id := st.create_box("barrel", player.global_position + Vector3(1.5, 0, 0), 0.0)
+	st.put(id, "stone", 1)
+	var b := Inventory.HOTBAR_SIZE
+	bag.slots[b] = {id = "stone", count = 30}
+	bag.slots[b + 1] = {id = "copper_ore", count = 5}
+	bag.slots[b + 2] = {id = "stone", count = 7}
+	bag.slots[2] = {id = "stone", count = 4}  # in the hotbar: stays
+	check_eq(st.request_store_same(1, id), 37, "37 stones went in")
+	check_eq(st.get_box(id).inv.count_of("stone"), 38, "the barrel has 38")
+	check_eq(bag.count_of("copper_ore"), 5, "the ore stayed in the bag")
+	check_eq(bag.get_slot(2).get("count", 0), 4, "the hotbar's stones stayed")
+	var far := st.create_box("barrel", player.global_position + Vector3(20, 0, 0), 0.0)
+	st.put(far, "copper_ore", 1)
+	check_eq(st.request_store_same(1, far), 0, "not from 20 m away")
+	_teardown()
+
+
 func test_too_far_from_chest() -> void:
 	await _setup()
 	var id := auth.storage.create_box("chest_small", player.global_position + Vector3(20, 0, 0), 0.0)

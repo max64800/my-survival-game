@@ -96,6 +96,41 @@ func request_pick_up(peer_id: int, box_id: int) -> String:
 	return ""
 
 
+## F889 (owner, Nov 25): "Store same": from your bag (and backpack) only the kinds that are already in this box go
+## in, e.g. all your mushrooms into the mushroom barrel. The hotbar and what you wear stay put.
+func ask_store_same(box_id: int) -> void:
+	if auth.is_host():
+		request_store_same(auth.local_peer_id(), box_id)
+	else:
+		_rpc_store_same.rpc_id(1, box_id)
+
+
+@rpc("any_peer", "reliable")
+func _rpc_store_same(box_id: int) -> void:
+	if auth.is_host():
+		request_store_same(multiplayer.get_remote_sender_id(), box_id)
+
+
+func request_store_same(peer_id: int, box_id: int) -> int:
+	var ps := auth.get_player(peer_id)
+	var box := get_box(box_id)
+	if ps == null or box.is_empty() or _far(ps, box):
+		return 0
+	var kinds := {}
+	for s: Dictionary in box.inv.slots:
+		if not s.is_empty():
+			kinds[s.id] = true
+	var moved := 0
+	for i in range(Inventory.HOTBAR_SIZE, Inventory.EQUIP_START):
+		var s := ps.inventory.get_slot(i)
+		if not s.is_empty() and kinds.has(s.id) and not s.get("worn", false) and accepts(box.kind, s.id):
+			moved += _move_slot(ps.inventory, i, box.inv)
+	if moved > 0:
+		ps.inventory.changed.emit()
+		_changed(box_id)
+	return moved
+
+
 func ask_take_all(box_id: int) -> void:
 	if auth.is_host():
 		request_take_all(auth.local_peer_id(), box_id)

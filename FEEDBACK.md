@@ -189,9 +189,8 @@ Fixed items get ~~crossed out~~, never deleted, so we can see the whole history.
 - [ ] **F881. Bats and Rock Snails die with a dwarf's death sound. They need their own death sounds.** *From: you (PC, Nov 25, play). Said: 1×*
 - [ ] **F882. Repair station: the gear names need a better font, and stone gear says "needs station level 2" (only copper gear should). Make clear what the level is for.** *From: you (PC, Nov 25, play). Said: 1×*
 - [ ] **F883. Refilling the lantern sounds like a gulp of water. It needs an oil/lantern sound.** *From: you (PC, Nov 25, play). Said: 1×*
-- [ ] **F885. Every resource you pick up should pop up on the left: its picture and the amount.** *From: you (PC, Nov 25, play). Said: 1×*
+- [ ] **F885. Every resource you pick up should pop up on the left: its picture and the amount.** *From: you (PC, Nov 25, play). Said: 1×* 🛠 in progress (Nov 25 play notes chat, Nov 25)
 - [ ] **F887. Note for later: a recycling bench.** *From: you (PC, Nov 25, play). Said: 1×*
-- [ ] **F889. A chest button "store the same ones": puts from your bag only the kinds already in that chest (e.g. mushrooms into the mushroom barrel).** *From: you (PC, Nov 25, play). Said: 1×* 🛠 in progress (Nov 25 play notes chat, Nov 25)
 - [ ] **F890. The shovel should raise the ground too, not only flatten it.** *From: you (PC, Nov 25, play). Said: 1×*
 - [ ] **F891. Pebbles stay floating after you level the ground with the shovel.** *From: you (PC, Nov 25, play). Said: 1×*
 - [ ] **F892. Farming redo: open the plot's menu, put a seed in, and see that plant growing on the plot. An empty plot shows no mushrooms; no timer or "growing" text.** *From: you (PC, Nov 25, play). Said: 1×*
