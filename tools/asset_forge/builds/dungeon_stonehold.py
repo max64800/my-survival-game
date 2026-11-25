@@ -20,6 +20,12 @@
 #   floor_loose_flagstone   the Scribe's Niche loose stone (F856): a Stonehold floor with a loose square stone in it
 #                           (the buried chest under it). Parts "frame" and "stone" (like dungeon_rootwood.floor_loose_stone)
 #   recipe_stand_stone      Hald's recipe stand (F856): a stone lectern, the scroll at the wooden stand's spot
+#   trap_tripwire_wall_stone the dart wall (F853, owner Nov 25: "it's still wooden"): a Stonehold wall, a small round
+#                           hole drilled through one stone at hip height with an iron ring round it, a green poison stain
+#                           under it and an iron eye low down for the wire. Parts "frame" and "bolt" (same hole spot and
+#                           bolt as dungeon_mine.trap_tripwire_wall, so the game fires it the same way)
+#   tripwire_iron           its wire (F853): a thin rusty iron wire instead of the white string, same size and halves
+#                           ("wire_l", "wire_r") as dungeon_mine.tripwire
 import math
 import sys
 from pathlib import Path
@@ -366,6 +372,77 @@ def recipe_stand_stone():
 	tilt_x([bpy.data.objects[n] for n in meshes() - before], STAND_TILT, STAND_PIVOT)
 
 
+# ---------------------------------------------------------------- the dart wall and its wire (F853)
+DART_HOLE = (0.12, 0.95)   # = dungeon_mine's hole = the game's MineTraps.DART_HOLE (x, y)
+
+
+def bore_z(target, x, y, r, depth=0.8):
+	"""Drill a round hole straight through `target` front to back (game z) at (x, y)."""
+	bpy.ops.mesh.primitive_cylinder_add(vertices=14, radius=r, depth=depth, location=K.G((x, y, 0.0)),
+		rotation=(math.radians(90), 0, 0))
+	cut = bpy.context.object
+	m = target.modifiers.new("bore", "BOOLEAN")
+	m.operation, m.object, m.solver = "DIFFERENCE", cut, "EXACT"
+	bpy.ops.object.select_all(action="DESELECT")
+	target.select_set(True)
+	bpy.context.view_layer.objects.active = target
+	bpy.ops.object.modifier_apply(modifier=m.name)
+	bpy.data.objects.remove(cut, do_unlink=True)
+
+
+def trap_tripwire_wall_stone(w=2.0, h=2.0, d=0.3):
+	"""Owner, Nov 20: no crossbow, just a small dark hole a poison bolt shoots out of. Nov 25: "it's still wooden":
+	now the Tomb's own stone wall, the hole drilled through a stone and ringed with iron."""
+	hx, hy = DART_HOLE
+	before = set(bpy.data.objects)
+	S.courses(w, h, d)
+	made = [o for o in bpy.data.objects if o not in before and o.type == "MESH"]
+	for o in made:
+		if o.get("role") is None:
+			o["role"] = "mortar"
+	for o in made:   # drill every stone the hole passes through (the dark mortar sheet behind shows as the hole's dark)
+		if o.get("role") != "stone":
+			continue
+		vs = [o.matrix_world @ v.co for v in o.data.vertices]
+		if min(v.x for v in vs) - 0.04 < hx < max(v.x for v in vs) + 0.04 and min(v.z for v in vs) - 0.04 < hy < max(v.z for v in vs) + 0.04:
+			bore_z(o, hx, hy, 0.026)
+	front = d / 2 - E
+	kit.ring(0.04, 0.011, K.G((hx, hy, front)), iron(), rot=(90, 0, 0), seg=14)   # the iron ring round the hole
+	for a in (40, 160, 280):   # three rivets holding it
+		kit.rivet(K.G((hx + 0.04 * math.cos(math.radians(a)), hy + 0.04 * math.sin(math.radians(a)), front + 0.012)), iron(), r=0.01)
+	# the clue: a dark green poison stain run down the stone under the ring
+	K.blk((hx + J(0.004), hy - 0.105, front - 0.002), (0.026, 0.09, 0.012), kit.mat("sprout", -0.25, rough=0.3), bevel=0.004)
+	kit.ring(0.022, 0.006, K.G((hx, 0.15, front)), iron("a"), rot=(0, 90, 0), seg=10)  # the wire's eye, low down
+	frame = {o.name for o in bpy.data.objects if o not in before and o.type == "MESH"}
+	# the poison bolt waiting deep in the hole (the player's blight bolt from items_tools.py, its shape code only)
+	from mathutils import Matrix
+	path = Path(__file__).resolve().parent / "items_tools.py"
+	src = path.read_text(encoding="utf-8")
+	ns = {"__file__": str(path), "__name__": "items_tools_borrowed"}
+	exec(compile(src[:src.index("ids = sys.argv")], str(path), "exec"), ns)
+	b0 = meshes()
+	ns["bolt"]("blight")
+	new = [bpy.data.objects[n] for n in meshes() - b0]
+	for o in new:
+		o.data.transform(o.matrix_basis)
+		o.matrix_basis = Matrix.Identity(4)
+	M = Matrix.Translation(K.G((hx, hy, 0.09 - 0.6))) @ Matrix.Rotation(math.pi, 4, "Z") @ Matrix.Rotation(-math.pi / 2, 4, "X")
+	for o in new:
+		o.data.transform(M)
+	return {"frame": frame, "bolt": {o.name for o in new}}
+
+
+def tripwire_iron():
+	"""The dart wall's wire in rusty iron: 1 m along x, origin in its middle (the game stretches it), two halves."""
+	m = iron("a")
+	groups = {}
+	for name, a, b in (("wire_l", -0.5, 0.008), ("wire_r", -0.008, 0.5)):
+		b0 = meshes()
+		kit.cylinder(0.002, b - a, K.G(((a + b) / 2, 0.12, 0.0)), m, rot=(0, 90, 0), verts=6, bevel=0.0)
+		groups[name] = meshes() - b0
+	return groups
+
+
 def save(name, groups=None):
 	"""Apply modifiers, join each group into one named part (or everything into "model"), export .glb."""
 	objs = [o for o in bpy.data.objects if o.type == "MESH"]
@@ -412,7 +489,8 @@ def save(name, groups=None):
 
 BUILDS = {"entrance_stone": entrance_stone, "gate_iron": gate_iron, "lever_iron": lever_iron,
 	"wall_cracked_stone": wall_cracked_stone, "trap_chest_spikes_stone": trap_chest_spikes_stone,
-	"floor_loose_flagstone": floor_loose_flagstone, "recipe_stand_stone": recipe_stand_stone}
+	"floor_loose_flagstone": floor_loose_flagstone, "recipe_stand_stone": recipe_stand_stone,
+	"trap_tripwire_wall_stone": trap_tripwire_wall_stone, "tripwire_iron": tripwire_iron}
 
 if __name__ == "__main__":
 	for name, fn in BUILDS.items():

@@ -107,9 +107,9 @@ static func kind_of(p: Dictionary) -> String:
 			return "swing"
 		"dungeon/trap_bear_jaws.glb":
 			return "jaws"
-		"dungeon/tripwire.glb":
+		"dungeon/tripwire.glb", "dungeon/tripwire_iron.glb":
 			return "tripwire"
-		"dungeon/trap_tripwire_wall.glb":
+		"dungeon/trap_tripwire_wall.glb", "dungeon/trap_tripwire_wall_stone.glb":
 			return "dart_wall"
 		"dungeon/trap_chest_spikes.glb", "dungeon/trap_chest_spikes_stone.glb":
 			return "chest_spikes"

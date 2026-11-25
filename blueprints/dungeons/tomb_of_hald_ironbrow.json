@@ -16022,7 +16022,7 @@
 "label":""
 },
 {
-"model":"dungeon/trap_tripwire_wall.glb",
+"model":"dungeon/trap_tripwire_wall_stone.glb",
 "pos":[
 29.0,
 0.0,
@@ -16286,7 +16286,7 @@
 "label":""
 },
 {
-"model":"dungeon/trap_tripwire_wall.glb",
+"model":"dungeon/trap_tripwire_wall_stone.glb",
 "pos":[
 61.0,
 -8.0,
@@ -16457,7 +16457,7 @@
 "label":"The way in: round stone door"
 },
 {
-"model":"dungeon/tripwire.glb",
+"model":"dungeon/tripwire_iron.glb",
 "pos":[
 29.12,
 0.24,
@@ -16698,7 +16698,7 @@
 "label":""
 },
 {
-"model":"dungeon/tripwire.glb",
+"model":"dungeon/tripwire_iron.glb",
 "pos":[
 61.12,
 -7.76,

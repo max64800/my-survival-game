@@ -77,7 +77,9 @@ const BOXES := {
 	"dungeon/rail_lane.glb": [[Vector3(0, 0.11, 0), Vector3(2, 0.22, 2)]],
 	"dungeon/floor_grooved.glb": [[Vector3(0, 0.12, 0), Vector3(2, 0.24, 2)]],
 	"dungeon/trap_tripwire_wall.glb": [[Vector3(0, 1, 0), Vector3(2, 2, 0.29)]],
+	"dungeon/trap_tripwire_wall_stone.glb": [[Vector3(0, 1, 0), Vector3(2, 2, 0.29)]],
 	"dungeon/tripwire.glb": [[Vector3(0, 0.12, 0), Vector3(1, 0.08, 0.1)]],  # (stretched to the tunnel's width; hit it to cut it)
+	"dungeon/tripwire_iron.glb": [[Vector3(0, 0.12, 0), Vector3(1, 0.08, 0.1)]],
 	"dungeon/trap_bear_jaws.glb": [[Vector3(0, 0.02, 0), Vector3(0.8, 0.04, 0.5)]],  # (low: you walk onto it)
 	# The swinging boulder's two posts, and its chain's top (shoot it there; the boulder itself is judged by distance).
 	"dungeon/trap_swing_boulder.glb": [[Vector3(-1.74, 2, -0.08), Vector3(0.4, 4, 0.4)], [Vector3(1.74, 2, -0.08), Vector3(0.4, 4, 0.4)],

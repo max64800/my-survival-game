@@ -284,23 +284,27 @@ func test_stone_and_iron_not_wood() -> void:
 	for p in plan.props:
 		models[String(p.model)] = true
 	for m in ["dungeon/entrance_stone.glb", "dungeon/gate_iron.glb", "dungeon/lever_iron.glb", "dungeon/portcullis.glb",
-			"dungeon/wall_cracked_stone.glb", "dungeon/trap_chest_spikes_stone.glb"]:
+			"dungeon/wall_cracked_stone.glb", "dungeon/trap_chest_spikes_stone.glb", "dungeon/trap_tripwire_wall_stone.glb",
+			"dungeon/tripwire_iron.glb"]:
 		check(models.has(m), "Hald has %s" % m)
 	for m in ["dungeon/dungeon_entrance.glb", "dungeon/gate_round.glb", "dungeon/lever.glb", "dungeon/wall_cracked.glb",
-			"dungeon/trap_chest_spikes.glb"]:
+			"dungeon/trap_chest_spikes.glb", "dungeon/trap_tripwire_wall.glb", "dungeon/tripwire.glb"]:
 		check(not models.has(m), "no wooden %s" % m)
 	for m in models:
 		check(not ("plank" in m or "wood" in m), "no planks or wood: %s" % m)
 	for p in plan.pieces:
 		check(not ("plank" in String(p.get("mat", "")) or "root" in String(p.get("mat", ""))), "a stone piece: %s %s" % [p.id, p.get("mat", "")])
 	for m in ["dungeon/entrance_stone.glb", "dungeon/gate_iron.glb", "dungeon/lever_iron.glb", "dungeon/wall_cracked_stone.glb",
-			"dungeon/trap_chest_spikes_stone.glb"]:
+			"dungeon/trap_chest_spikes_stone.glb", "dungeon/trap_tripwire_wall_stone.glb", "dungeon/tripwire_iron.glb"]:
 		check(DungeonBuild.BOXES.has(m), "%s has its own boxes (F847)" % m)
 	check_eq(DungeonBuild.thing_kind({model = "dungeon/wall_cracked_stone.glb"}), "rubble", "the stone cracked wall breaks")
 	check_eq(DungeonBuild.thing_kind({model = "dungeon/gate_iron.glb"}), DungeonBuild.thing_kind({model = "dungeon/gate_round.glb"}), "the iron gate is a gate")
 	check_eq(DungeonBuild.thing_kind({model = "dungeon/lever_iron.glb"}), DungeonBuild.thing_kind({model = "dungeon/lever.glb"}), "the iron lever is a lever")
 	check_eq(MineTraps.kind_of({model = "dungeon/trap_chest_spikes_stone.glb"}), "chest_spikes", "the stone spike holes fire")
-	for mp in [["dungeon/lever_iron.glb", "handle"], ["dungeon/portcullis.glb", "gate"], ["dungeon/trap_chest_spikes_stone.glb", "spikes"]]:
+	check_eq(MineTraps.kind_of({model = "dungeon/trap_tripwire_wall_stone.glb"}), "dart_wall", "the stone dart wall is a dart wall (F853)")
+	check_eq(MineTraps.kind_of({model = "dungeon/tripwire_iron.glb"}), "tripwire", "the iron wire is a tripwire (F853)")
+	for mp in [["dungeon/lever_iron.glb", "handle"], ["dungeon/portcullis.glb", "gate"], ["dungeon/trap_chest_spikes_stone.glb", "spikes"],
+			["dungeon/trap_tripwire_wall_stone.glb", "bolt"], ["dungeon/tripwire_iron.glb", "wire_l"], ["dungeon/tripwire_iron.glb", "wire_r"]]:
 		var inst := (load("res://assets/models/" + mp[0]) as PackedScene).instantiate()
 		check(inst.find_child(mp[1], true, false) != null, "%s has its moving '%s'" % mp)
 		inst.free()

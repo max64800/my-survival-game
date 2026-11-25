@@ -213,7 +213,7 @@ for g, side, line, along, rot, key in rock_edges:
 	for r in range(rows):
 		y = fy + 2.0 * r
 		if r == 0 and (g, side, line, along) in DART:
-			prop("dungeon/trap_tripwire_wall.glb", x, y, z, yaw, role="trap", label="Dart hole (green stain under it)")
+			prop("dungeon/trap_tripwire_wall_stone.glb", x, y, z, yaw, role="trap", label="Dart hole (green stain under it)")
 		else:
 			wall_piece(x, y, z, rot, yaw, r == rows - 1 and rows >= 2)
 	if h % 2:
@@ -301,7 +301,7 @@ C = 4.0 + 0.25   # the Honour Chapel's floor top
 
 # 2 Hall of Candles: a thin wire across the hall at ankle height, from the dart hole's sill (north wall) to the south
 # wall: step over it or cut it.
-prop("dungeon/tripwire.glb", 29.12, 0.24, 58.0, 90.0, role="trap", label="Tripwire (step over it, or cut it)",
+prop("dungeon/tripwire_iron.glb", 29.12, 0.24, 58.0, 90.0, role="trap", label="Tripwire (step over it, or cut it)",
 	stretch=round(4.0 - 0.3, 2))
 
 # 4 Scribe's Niche: the loose stone hides a buried chest.
@@ -355,7 +355,7 @@ for x in range(30, 40, 2):
 chest("chest_small", 54.6, 18.6, 270.0, "Grave goods chest", y=G)
 
 # 20 Collapsed Tunnel: a tripwire across it (the dart hole on its north wall), a robber's chest at its end.
-prop("dungeon/tripwire.glb", 61.12, D + 0.24, 16.0, 90.0, role="trap", label="Tripwire (step over it, or cut it)",
+prop("dungeon/tripwire_iron.glb", 61.12, D + 0.24, 16.0, 90.0, role="trap", label="Tripwire (step over it, or cut it)",
 	stretch=round(4.0 - 0.3, 2))
 chest("chest_small", 64.9, 17.0, 270.0, "The robbers' chest (always)", True, "vault", y=G)
 
