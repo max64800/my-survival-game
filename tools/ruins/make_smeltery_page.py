@@ -26,11 +26,14 @@ wood_bp = json.load(open(sys.argv[3], encoding="utf-8"))
 
 # The parts, after the blueprint's shift (see BlueprintLibrary._smeltery: SMELT_SHIFT (5, 0, -3))
 FURNACE, TOWER = (-19.732, -1.0), (18.0, -6.0)
-BRIDGE = (-16.0, -8.0)        # the bridge's two ends (x), along z = -1, 3 m up
+BRIDGE = (-16.0, -8.0)        # the bridge's two ends (x), along z = -1, 3 m up; its pier is at x = -13
+TURRET, WATCH = (-4.05, -3.5), (24.052, 2.4)   # the hall's stair turret, the terrace's watch turret (6-sided)
 ROCK_Z = -10.2                # the cave wall starts behind this (BlueprintLibrary.smelt_rock_top)
 DIP = 3.0                     # how deep the dip under the bridge goes (page only)
-# How high each part still stands: pieces above are gone, the top storey left is broken up.
-CUT = {"furnace": 5.6, "tower": 12.3, "hall": 8.5, "bridge": 99, "vaults": 99}
+# How high each part still stands: pieces above are gone, the top BAND m left is broken up. The tower keeps its
+# ring room, crown deck and a broken stump of the chimney; its band is thin so no chimney wall stands on a broken one.
+CUT = {"furnace": 5.6, "tower": 19.0, "hall": 8.5, "turret": 10.5, "watch": 6.0, "bridge": 99, "vaults": 99}
+BAND = {"tower": 1.0, "turret": 1.0, "watch": 1.0}
 
 
 def dist(a, b):
@@ -40,11 +43,15 @@ def dist(a, b):
 def part(x, z, y):
 	if dist((x, z), FURNACE) < 4.6:
 		return "furnace"
+	if dist((x, z), TURRET) < 2.06 and y > 0.5:
+		return "turret"
+	if dist((x, z), WATCH) < 2.06 and y > 0.5:
+		return "watch"
 	if BRIDGE[0] - 0.1 < x < BRIDGE[1] + 0.1 and y > 1.9:
 		return "bridge"
 	if x > 14.2 and (z < -1.8 or y > 3.4) or y > 12.4:   # (the crown and its balconies stick out: they belong to the tower)
 		return "tower"
-	if -3.2 < x < 13.2 and z < -1.8 and y > 3.1:
+	if -3.2 < x < 13.2 and z < 0.2 and y > 3.1:   # (z < 0.2: with its front balcony)
 		return "hall"
 	return "vaults"
 
@@ -56,13 +63,14 @@ for i, p in enumerate(whole):
 	x, y, z = p["pos"]
 	k = part(x, z, y)
 	cut = CUT[k]
-	top = cut - 2.3 < y <= cut                               # the highest storey still (partly) standing
+	top = cut - BAND.get(k, 2.3) < y <= cut                               # the highest storey still (partly) standing
 	r = rng.random()
 	q = dict(p)
 	if k == "bridge":
 		t = x - BRIDGE[0]                                    # how far out along the bridge
-		if p["id"] in ("floor", "railing") and 2.5 < t < 6.5 or p["id"] == "railing" and r < 0.5:
-			rubble.append((x, -DIP + 0.35 if 2.5 < t < 6.5 else None, z, y))
+		gap = 4.4 < t < 5.6                                  # the span between the pier and the terrace fell
+		if p["id"] in ("roof_45_ridge", "pillar") or gap or p["id"] == "railing" and r < 0.5:   # (its wood roof rotted)
+			rubble.append((x, -DIP + 0.35 if gap or 3.5 < t < 6.5 and r < 0.5 else None, z, y))
 			continue
 	elif k == "vaults":                                      # the vaults stand; doors rotted, terrace railings broken
 		if p["id"] == "door" and r < 0.7 or p["id"] == "railing" and r < 0.35:
@@ -92,6 +100,14 @@ for i, p in enumerate(whole):
 	ruin.append(q)
 	if q["id"] == p["id"]:
 		standing.add(i)
+
+# A railing whose floor fell goes with it (nothing may float).
+fell = [whole[i]["pos"] for i in range(len(whole)) if i not in standing and whole[i]["id"] in ("floor", "floor_triangle")]
+fell = [f for f in fell if not any(q["pos"] == f and q["id"].startswith("floor") for q in ruin)]
+for i in [i for i in standing if whole[i]["id"] in ("railing", "door") and any(0.0 < whole[i]["pos"][1] - f[1] < 0.5
+		and dist((whole[i]["pos"][0], whole[i]["pos"][2]), (f[0], f[2])) < 1.2 for f in fell)]:
+	standing.discard(i)
+	ruin.remove(whole[i])
 
 # Rubble lands on the highest floor still standing under it (a vault roof, the yard, a tower floor), or the cave floor.
 floors = [whole[i] for i in standing if whole[i]["id"] in ("floor", "floor_triangle", "foundation", "foundation_triangle")]

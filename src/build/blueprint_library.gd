@@ -466,6 +466,39 @@ func _ring_rails(k: int, y: float, mat := STONE, back := false) -> void:
 	_add("railing", mat, n * (_APO + 1.0) - t + Vector3(0, y, 0) + _ring_off, _rot(2 * k + 3))
 
 
+## 6-sided turrets (owner, Nov 25, F845: the smallest round shape real pieces make, 3.5 m across): the 12-sided
+## ring's middle hexagon on its own, centred at `c` (its y = the height). `flat` 0: flat sides face sides 0, 2 .. 10
+## (front and back flat); 1: sides 1, 3 .. 11 (left and right flat). Side j faces _dir(j).
+func _hex_layer(tri_id: String, c: Vector3, flat: int, skip := -1, mat := STONE) -> void:
+	for j in range(flat, 12, 2):
+		if j != skip:
+			_add(tri_id, mat, c + _dir(j) * (_APO * 2.0 / 3.0), _rot(j))
+
+
+func _hex_edges(c: Vector3, flat: int, pick: Callable, mat := STONE) -> void:
+	for j in range(flat, 12, 2):
+		var id: String = pick.call(j)
+		if id != "":
+			_add(id, mat, c + _dir(j) * _APO, _rot(j))
+
+
+## Pillars on its 6 corners (corner j + 1 sits between sides j and j + 2, 2 m from the middle).
+func _hex_pillars(c: Vector3, flat: int, mat := STONE) -> void:
+	for j in range(flat, 12, 2):
+		_add("pillar", mat, c + _dir(j + 1) * 1.95, _rot(j + 1))
+
+
+## A ladder up the inside of side j (leave triangle j open in the floor above: the hole you climb through).
+func _hex_ladder(c: Vector3, j: int, mat := STONE) -> void:
+	_add("ladder", mat, c + _dir(j) * (_APO - 0.27), _rot(j))
+
+
+## A trim band round its outside at height c.y.
+func _hex_bands(c: Vector3, flat: int, mat := STONE) -> void:
+	for j in range(flat, 12, 2):
+		_add("cornice", mat, c + _dir(j) * (_APO + 0.15 + Pieces.LIST["cornice"].size.z * 0.5), _rot(j))
+
+
 ## BIG rings (owner, Nov 22, F656): the 12-sided ring `r` times wider. The same plan scaled up: each big triangle
 ## is r*r small 2 m triangles, each big square r*r small squares; 12 flat sides of r walls each, every side
 ## r * 3.73 m from the middle (r = 1 is the watchtower's ring, r = 2 is 7.46 m, r = 3 is 11.2 m).
@@ -2416,6 +2449,8 @@ func _prow_tower(c: Vector3, y0: float, stairs: Array, doors: Dictionary, window
 const SMELT_SHIFT := Vector3(5, 0, -3)
 const SMELT_TOWER := Vector3(13, 0, -3)          # the chimney tower's middle (its ring room stands on its roof)
 const SMELT_FURNACE := Vector3(-24.732051, 0, 2)  # the furnace tower's middle: its right flat side meets the bridge at x -21
+const SMELT_STAIR_TURRET := Vector3(-9.05, 0, -0.5)  # the hall's 6-sided stair turret: its right flat side 1 cm off the hall
+const SMELT_WATCH := Vector3(19.052, 0, 5.4)       # the watch turret: its left flat side 2 cm off the vaults' side wall
 
 
 ## How high the Smeltery's own rock reaches at (x, z) in its box: the cave wall behind it (everything behind the back walls).
@@ -2424,8 +2459,9 @@ static func smelt_rock_top(_x: float, z: float) -> float:
 
 
 func _smeltery() -> void:
-	_start(Vector3(48, 20, 22))
+	_start(Vector3(52, 24, 22))
 	var B := BRICK
+	var W := WOOD
 	var g := 1.0
 	var u := 3.25
 	var trim := 0.15 + Pieces.LIST["cornice"].size.z * 0.5
@@ -2466,14 +2502,15 @@ func _smeltery() -> void:
 	for x in range(-6, 7, 2):
 		for z in [6, 8, 10]:
 			_add("foundation", B, Vector3(x, 0, z), 0)
-	for x in [-2, 0, 2]:
+	for x in [-4, 4]:                                                       # the split stair: two side flights
 		_add("foundation_steps", B, Vector3(x, 0, 12), 0)
+	for x in [-2, 0, 2]:                                                    # (the landing between them: the yard)
 		_add("floor", B, Vector3(x, g, 6), 0)
 		_add("stairs", B, Vector3(x, g + 0.25, 6), 0)
 	for z in [6, 8, 10]:
 		_wall_z("railing", -7, z, g, B)
 		_wall_z("railing", 7, z, g, B)
-	for x in [-6, -4, 4, 6]:
+	for x in [-6, -2, 0, 2, 6]:
 		_wall_x("railing", x, 11, g, B)
 	# the terrace's railings (open at the grand stair's top and where the bridge leaves)
 	for x in range(-12, 17, 2):
@@ -2493,7 +2530,7 @@ func _smeltery() -> void:
 		_wall_x("wall", x, -7, u + 2.25, B)
 	_add("door", B, Vector3(0, u, 1), 0)
 	for z in [-6, -4, -2, 0]:
-		_wall_z("window_wall" if z in [-4, -2] else "wall", -7, z, u, B)    # (no door under the brackets)
+		_wall_z("window_wall" if z in [-6, -4] else "wall", -7, z, u, B)    # (plain where the stair turret stands)
 		_wall_z("wall", -7, z, u + 2.25, B)
 		_wall_z("doorway" if z == -2 else ("window_wall" if z == -4 else "wall"), 7, z, u, B)
 		_wall_z("wall", 7, z, u + 2.25, B)
@@ -2506,37 +2543,59 @@ func _smeltery() -> void:
 		_wall_z("beam", 7, z, u + 2.0, B)
 	_stacked_stairs(Vector3(-4, u, -6), 3, B, [1])                          # up the back wall toward +x (F838)
 	var f2 := 7.5
-	for x in range(-8, 9, 2):
+	for x in range(-6, 9, 2):
 		for z in [-6, -4, -2, 0]:
 			if Vector2(x, z) != Vector2(-2, -6):
 				_add("floor", B, Vector3(x, f2, z), 0)
 	_wall_x("railing", -2, -5, f2 + 0.25, B)
 	_wall_z("railing", -3, -6, f2 + 0.25, B)
-	# the jetty on the left: brackets under it on the hall's side wall
-	for z in [-6.75, -6, -5, -4, -3, -2, -1, 0, 0.75]:
-		_on_wall_x("corbel", B, -7, z, f2 - 1.0, -1)
-	# storey 2 (walls 7.75): 2 m wider both sides; its right wall is the tower's
+	# storey 2 (walls 7.75): 2 m wider on the right, over the covered alley (its right wall is the tower's); its left
+	# side is flush (shape model v2: the round stair turret stands there). A door onto the front balcony.
 	var w2 := f2 + 0.25
-	var up2 := {-8: "wall", -6: "window_wall", -4: "wall", -2: "window_wall", 0: "window_wide", 2: "window_wall", 4: "wall",
+	var up2 := {-6: "window_wall", -4: "wall", -2: "window_wall", 0: "doorway", 2: "window_wall", 4: "wall",
 		6: "window_wall", 8: "wall"}
 	for x in up2:
 		_wall_x(up2[x], x, 1, w2, B)
 		_wall_x("wall", x, -7, w2, B)
+	_add("door", B, Vector3(0, w2, 1), 0)
 	for z in [-6, -4, -2, 0]:
-		_wall_z("window_wall" if z in [-4, -2] else "wall", -9, z, w2, B)
+		_wall_z("window_wall" if z in [-6, -4] else "wall", -7, z, w2, B)
+	# the long wooden front balcony (7.5) on brackets, railed all round
+	for x in range(-6, 7, 2):
+		_add("floor", W, Vector3(x, f2, 2), 0)
+		_wall_x("railing", x, 3, w2, W)
+		_on_wall_z("corbel", B, x, 1, f2 - 1.0, 1)
+	for x in [-7, 7]:
+		_wall_z("railing", x, 2, w2, W)
+	# the round stair turret (6-sided, owner Nov 25: the smallest round shape real pieces make) on the hall's
+	# front-left corner: one flat side against the hall, a door from the terrace, a ladder up its back, a railed top
+	var st := Vector3(SMELT_STAIR_TURRET.x, 0, SMELT_STAIR_TURRET.z)
+	_hex_edges(st + Vector3(0, u, 0), 1, func(j): return "doorway" if j == 11 else ("window_wall" if j == 9 else "wall"), B)
+	_add("door", B, st + _dir(11) * _APO + Vector3(0, u, 0), _rot(11))
+	var sy := u
+	for i in 4:
+		if i > 0:
+			var wj: int = [1, 9, 1][i - 1]
+			_hex_edges(st + Vector3(0, sy, 0), 1, func(j): return "window_wall" if j == wj else "wall", B)
+		_hex_pillars(st + Vector3(0, sy, 0), 1, B)
+		_hex_ladder(st + Vector3(0, sy, 0), 7, B)
+		_hex_layer("floor_triangle", st + Vector3(0, sy + 2.0, 0), 1, 7, B)
+		sy += 2.25
+	_hex_edges(st + Vector3(0, sy, 0), 1, func(_j): return "railing", B)
+	_hex_bands(st + Vector3(0, sy - 0.3, 0), 1, B)
 	# the steep roof: ridge along x at z -3, gables at the left end, its right end runs into the tower; roof windows
 	var top := w2 + 2.0
-	for x in range(-8, 9, 2):
+	for x in range(-6, 9, 2):
 		_add("roof_45", B, Vector3(x, top, 0), 0)
 		_add("roof_45", B, Vector3(x, top + 2.0, -2), 0)
 		_add("roof_45", B, Vector3(x, top + 2.0, -4), 2)
 		_add("roof_45", B, Vector3(x, top, -6), 2)
-	_add("gable_45", B, Vector3(-9, top, 0), 1)
-	_wall_z("wall", -9, -2, top, B)
-	_add("gable_45", B, Vector3(-9, top + 2.0, -2), 1)
-	_wall_z("wall", -9, -4, top, B)
-	_add("gable_45", B, Vector3(-9, top + 2.0, -4), 3)
-	_add("gable_45", B, Vector3(-9, top, -6), 3)
+	_add("gable_45", B, Vector3(-7, top, 0), 1)
+	_wall_z("wall", -7, -2, top, B)
+	_add("gable_45", B, Vector3(-7, top + 2.0, -2), 1)
+	_wall_z("wall", -7, -4, top, B)
+	_add("gable_45", B, Vector3(-7, top + 2.0, -4), 3)
+	_add("gable_45", B, Vector3(-7, top, -6), 3)
 	for x in [-4, 4]:
 		_add("dormer", B, Vector3(x, top, 0), 0)
 	# --- the Chimney Tower (cells x 10..16, z -6..0): six square storeys
@@ -2557,13 +2616,15 @@ func _smeltery() -> void:
 			var fw := "wall"
 			if i == 0 or i == 1:
 				fw = "doorway" if x == 12 else ("window_wall" if i == 1 and x == 16 else "wall")
+			elif i == 3 and x == 14:
+				fw = "doorway"                                              # onto the balcony halfway up
 			elif (x in [10, 14]) == (i % 2 == 0):
 				fw = "window_wall"
 			_wall_x(fw, x, 1, y, B)
 			_wall_x("wall", x, -7, y, B)
 		for z in tz:
 			var rw := "window_wall" if i > 0 and z in [-4, -2] and (z == -4) == (i % 2 == 1) else "wall"
-			if i == 0 and z == -4:
+			if (i == 0 or i == 3) and z == -4:
 				rw = "doorway"
 			_wall_z(rw, 17, z, y, B)
 			_wall_z("doorway" if (i == 0 or i == 3) and z == -2 else "wall", 9, z, y, B)
@@ -2591,8 +2652,26 @@ func _smeltery() -> void:
 	_add("door", B, Vector3(17, g, -4), 1)
 	_add("foundation_steps", B, Vector3(18, 0, -4), 1)
 	_add("door", B, Vector3(9, 7.75, -2), 1)                                # from the hall's upper storey
+	_add("door", B, Vector3(14, 7.75, 1), 0)                                # onto the wrap-round balcony
+	_add("door", B, Vector3(17, 7.75, -4), 1)
+	# the wrap-round balcony halfway up (7.5): along the front and down the right side, on brackets
+	var bal := [Vector2(18, 2)]
+	for x in tx:
+		bal.append(Vector2(x, 2))
+		_on_wall_z("corbel", B, x, 1, 6.5, 1)
+	for z in tz:
+		bal.append(Vector2(18, z))
+		_on_wall_x("corbel", B, 17, z, 6.5, 1)
+	for c in bal:
+		_add("floor", B, Vector3(c.x, 7.5, c.y), 0)
+	for x in [10, 12, 14, 16, 18]:
+		_wall_x("railing", x, 3, 7.75, B)
+	for z in [-6, -4, -2, 0, 2]:
+		_wall_z("railing", 19, z, 7.75, B)
+	_wall_z("railing", 9, 2, 7.75, B)
+	_wall_x("railing", 18, -7, 7.75, B)
 	# trim bands at its floor lines (where nothing leans on it), corner blocks
-	for by in [2.95, 5.2, 7.45, 9.7, 11.95, 14.2]:
+	for by in [2.95, 5.2, 9.7, 11.95, 14.2]:                                 # (not at 7.45: the balcony's brackets)
 		for z in tz:
 			_on_wall_x("cornice", B, 17, z, by, 1)
 			if by > 14.0:
@@ -2626,26 +2705,67 @@ func _smeltery() -> void:
 		for sd in [-1, 1]:
 			_add("railing", B, bc + _dir(j + 3) * sd + ty, _rot(j + 3))
 			_add("corbel", B, n * (_EDGE + cdepth) + _dir(j + 3) * (0.65 * sd) + _ring_off + Vector3(0, deck - 1.0, 0), _rot(j))
-	# --- the bridge (x -20..-14, z 2) over the dip, brackets under both ends
+	# the square chimney stack on the deck, a trim band round its top
+	_ring_off = Vector3.ZERO
+	var cy := deck + 0.25
+	for k in 3:
+		for z in [SMELT_TOWER.z - 1, SMELT_TOWER.z + 1]:
+			_wall_x("wall", SMELT_TOWER.x, z, cy + 2.0 * k, B)
+		for x in [SMELT_TOWER.x - 1, SMELT_TOWER.x + 1]:
+			_wall_z("wall", x, SMELT_TOWER.z, cy + 2.0 * k, B)
+	var ctop := cy + 6.0 - 0.4
+	for s in [-1, 1]:
+		_on_wall_z("cornice", B, SMELT_TOWER.x, SMELT_TOWER.z + s, ctop, s)
+		_on_wall_x("cornice", B, SMELT_TOWER.x + s, SMELT_TOWER.z, ctop, s)
+		for s2 in [-1, 1]:
+			_add("cornice_corner", B, Vector3(SMELT_TOWER.x + s * 1.17, ctop, SMELT_TOWER.z + s2 * 1.17), 0)
+	# little round pinnacles on brackets at the square top's two front corners (the back two would be in the rock)
+	for x in [9, 17]:
+		var sd := -1 if x == 9 else 1
+		_on_wall_z("corbel", B, x - sd * 0.4, 1, 13.2, 1)
+		_on_wall_x("corbel", B, x, 0.6, 13.2, sd)
+		var py := 14.5
+		for id in ["column_base", "column_shaft", "column_shaft", "column_capital"]:
+			_add(id, B, Vector3(x, py, 1), 0)
+			py += Pieces.LIST[id].size.y
+	# --- the bridge (x -20..-14, z 2) over the dip, brackets under both ends, a round pier of columns in the dip,
+	# roofed in wood on posts
 	for x in [-20, -18, -16, -14]:
 		_add("floor", B, Vector3(x, 3.0, 2), 0)
 		_wall_x("railing", x, 1, u, B)
 		_wall_x("railing", x, 3, u, B)
+		_add("roof_45_ridge", W, Vector3(x, u + 2.0, 2), 0)
+	for x in [-19, -17, -15]:
+		for z in [1, 3]:
+			_add("pillar", W, Vector3(x, u, z), 0)
 	for z in [1.35, 2.65]:
 		_on_wall_x("corbel", B, -13, z, 2.0, -1)
 		_on_wall_x("corbel", B, -21, z, 2.0, 1)
+	_add("foundation", B, Vector3(-18, 0, 2), 0)
+	for x in [-19, -17]:
+		for z in [1, 3]:
+			_add("column", B, Vector3(x, g, z), 0)
 	# --- the Furnace Tower (12-sided): the ground door at its front, the bridge door on its right, stairs up a
 	# different side each storey, a deck with railings on top
 	_ring_off = SMELT_FURNACE
 	_ring_layer("foundation", "foundation_triangle", 0.0, -1, B)
-	_add("foundation_steps", B, _dir(0) * (_EDGE + 1.0) + _ring_off, 0)
+	# the square porch on its front flat side: one storey, a lean-to roof against the ring, steps in front
+	var pc := _ring_off + Vector3(0, 0, _EDGE + 0.17 + 1.0)
+	_add("foundation", B, pc, 0)
+	_add("foundation_steps", B, pc + Vector3(0, 0, 2), 0)
+	_wall_x("doorway", pc.x, pc.z + 1, g, B)
+	_add("door", B, Vector3(pc.x, g, pc.z + 1), 0)
+	for s in [-1, 1]:
+		_wall_z("window_wall", pc.x + s, pc.z, g, B)
+		_add("sloped_wall", B, Vector3(pc.x + s, u - 0.25, pc.z), 1)
+	_add("roof_45", B, Vector3(pc.x, u - 0.25, pc.z), 0)
 	_ring_edges(g, func(j): return "doorway" if j == 0 else ("window_wall" if j in [5, 8] else "wall"), B)
 	_add("door", B, _dir(0) * _EDGE + _ring_off + Vector3(0, g, 0), 0)
 	_ring_pillars(g, [11, 0], B)
 	_ring_stairs(4, g, B)
 	_ring_layer("floor", "floor_triangle", 3.0, 4, B)
 	_ring_rails(4, u, B)
-	_ring_edges(u, func(j): return "doorway" if j == 3 else ("window_wall" if j in [0, 6, 9] else "wall"), B)
+	_ring_edges(u, func(j): return "doorway" if j == 3 else ("window_wall" if j in [6, 9] else "wall"), B)   # (porch roof at 0)
 	_add("door", B, _dir(3) * _EDGE + _ring_off + Vector3(0, u, 0), _rot(3))
 	_ring_pillars(u, [2, 3], B)
 	_ring_stairs(0, u, B)
@@ -2655,37 +2775,64 @@ func _smeltery() -> void:
 	_ring_pillars(5.5, [], B)
 	_ring_stairs(2, 5.5, B)
 	_ring_layer("floor", "floor_triangle", 7.5, 2, B)
-	_ring_rails(2, 7.75, B)
+	_add("railing", B, _dir(4) * (_APO + 1.0) - _dir(7) + Vector3(0, 7.75, 0) + _ring_off, _rot(7))   # (the neck's wall is its inner side)
 	_ring_edges(7.75, func(_j): return "railing", B)
-	for by in [5.2, 7.45]:
-		_big_ring_edges(1, by, func(_j, _m): return "cornice", B, trim)
-	_big_ring_edges(1, 2.95, func(j, _m): return "" if j == 3 else "cornice", B, trim)
+	_big_ring_edges(1, 7.45, func(_j, _m): return "cornice", B, trim)
+	_big_ring_edges(1, 5.2, func(j, _m): return "" if j == 3 else "cornice", B, trim)    # (the bridge roof at 3)
+	_big_ring_edges(1, 2.95, func(j, _m): return "" if j in [0, 3] else "cornice", B, trim)
+	# the thinner round neck on the deck (kiln bottle, 6-sided): two storeys, a ladder up its back, a railed top
+	var nk := _ring_off
+	for i in 2:
+		var ny := 7.75 + 2.25 * i
+		var nw: Array = [2, 10] if i == 0 else [4, 8]
+		var first := i == 0
+		_hex_edges(nk + Vector3(0, ny, 0), 0, func(j): return "doorway" if first and j == 0 else (
+			"window_wall" if j in nw else "wall"), B)
+		_hex_pillars(nk + Vector3(0, ny, 0), 0, B)
+		_hex_ladder(nk + Vector3(0, ny, 0), 6, B)
+		_hex_layer("floor_triangle", nk + Vector3(0, ny + 2.0, 0), 0, 6, B)
+	_add("door", B, nk + _dir(0) * _APO + Vector3(0, 7.75, 0), 0)
+	_hex_edges(nk + Vector3(0, 12.25, 0), 0, func(_j): return "railing", B)
+	_hex_bands(nk + Vector3(0, 11.95, 0), 0, B)
 	_ring_off = Vector3.ZERO
+	# --- the watch turret (6-sided) at the terrace's front-right corner, half against the vaults' side wall: a door
+	# toward the yard, a ladder up, a railed top level with the tower's balcony
+	var wt := Vector3(SMELT_WATCH.x, 0, SMELT_WATCH.z)
+	_hex_layer("foundation_triangle", wt, 1, -1, B)
+	_add("foundation_steps", B, wt + _dir(11) * (_APO + 1.17), _rot(11))
+	_add("door", B, wt + _dir(11) * _APO + Vector3(0, g, 0), _rot(11))
+	for wy in [g, u, 5.5]:
+		var low: bool = wy == g
+		_hex_edges(wt + Vector3(0, wy, 0), 1, func(j): return "doorway" if low and j == 11 else (
+			"window_wall" if j in [3, 1] else "wall"), B)
+		_hex_pillars(wt + Vector3(0, wy, 0), 1, B)
+		_hex_ladder(wt + Vector3(0, wy, 0), 7, B)
+		_hex_layer("floor_triangle", wt + Vector3(0, wy + 2.0, 0), 1, 7, B)
+	_hex_edges(wt + Vector3(0, 7.75, 0), 1, func(_j): return "railing", B)
+	_hex_bands(wt + Vector3(0, 7.45, 0), 1, B)
 	# --- the vaults' trim band at the terrace line (not behind the grand stair or where the bridge's brackets are)
 	for x in range(-12, 17, 2):
 		if absi(x) > 2:
 			_on_wall_z("cornice", B, x, 5, 2.95, 1)
 	for z in [-6, -4, -2, 0, 4]:
 		_on_wall_x("cornice", B, -13, z, 2.95, -1)
-	for z in [2, 4]:
-		_on_wall_x("cornice", B, 17, z, 2.95, 1)
-	for c in [Vector2(-13.17, 5.17), Vector2(17.17, 5.17)]:
-		_add("cornice_corner", B, Vector3(c.x, 2.95, c.y), 0)
-	for x in range(-6, 7, 2):                                               # the hall's band between its storeys
-		_on_wall_z("cornice", B, x, 1, 7.45, 1)
+	_on_wall_x("cornice", B, 17, 2, 2.95, 1)                                # (not behind the watch turret)
+	_add("cornice_corner", B, Vector3(-13.17, 2.95, 5.17), 0)
 	# --- move it so the box is centred; only the space round the pieces is dug (F657), the cave wall behind stays
 	for p in _bp.pieces:
 		p.pos += SMELT_SHIFT
 	_air_only_round_pieces(func(lx: float, _y: float, lz: float) -> bool: return smelt_rock_top(lx, lz) > 0.0)
 
 
-## The wooden Smeltery's chimney tower is six storeys plus its ring room and crown: wood loses too much strength that
-## high (Structure: 8% a storey up, floors count too), so from its fourth storey (floor 7.5) up it stays brick,
-## like the Prow Hall's keep top.
+## The wooden Smeltery's chimney tower is six storeys plus its ring room, crown and chimney (about 23 m): wood loses
+## too much strength that high (Structure: 8% a storey up, floors count too), so the whole tower above its ground
+## floor stays brick, and so does its wrap-round balcony, like the Prow Hall's keep top.
 func _smelt_top_stays_brick() -> void:
 	for p in _bp.pieces:
 		var lx: float = p.pos.x - SMELT_SHIFT.x
-		if p.pos.y > 7.4 and lx > 8.9 and lx < 20.0:
+		var lz: float = p.pos.z - SMELT_SHIFT.z
+		var balcony: bool = p.pos.y > 6.4 and p.pos.y < 8.8 and lz < 3.2
+		if lx > 8.9 and lx < 19.2 and p.pos.y > 0.9 and (lz < 1.7 or balcony):
 			p.mat = BRICK
 
 
