@@ -32,6 +32,7 @@ var _gear_names := {}  ## gear slot index -> the Label beside it ("Copper Helm" 
 const EQUIP_NAMES := ["Pick", "Lamp", "Weapon", "Shield", "Head", "Chest", "Legs", "Feet", "Pack"]
 var _lantern_out: PanelContainer  ## "Press R to refill the lantern" while it's out (F870)
 var skill_popup: SkillPopup  ## a skill pops up for ~2 s when it grows (F870)
+var pickup_feed: PickupFeed  ## what you pick up pops up on the left: picture + amount (F885)
 var _fuel_label: Label
 var _fps_label: Label
 var first_cards := FirstCards.new()  ## picture cards the first time you meet something (F870); kept in Notes (J)
@@ -105,6 +106,8 @@ func _ready() -> void:
 		var ps := auth.get_player(peer_id)
 		if ps:
 			ps.inventory.changed.connect(_refresh_slots)
+			ps.inventory.changed.connect(func(): pickup_feed.watch(ps.inventory, _bag_panel.visible or box_panel.visible))
+			pickup_feed.watch(ps.inventory, true)
 	_refresh_slots()
 
 
@@ -234,6 +237,13 @@ func _build() -> void:
 	skill_popup.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	skill_popup.position += Vector2(-16, 36)
 	root.add_child(skill_popup)
+	pickup_feed = PickupFeed.new()  # F885: on the left, a little under the middle (newest at the bottom)
+	pickup_feed.set_anchors_and_offsets_preset(Control.PRESET_CENTER_LEFT)
+	pickup_feed.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	pickup_feed.offset_left = 24.0
+	pickup_feed.offset_top = 160.0
+	pickup_feed.offset_bottom = 160.0
+	root.add_child(pickup_feed)
 
 	# Body (F229, owner F240): fat health and stamina bars as long as the hotbar, right above it;
 	# big hunger and thirst dials on the hotbar's left. Same wood-and-brass kit pieces as the menus.
