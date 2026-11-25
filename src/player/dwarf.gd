@@ -175,6 +175,30 @@ func build_lifts() -> bool:
 	return build_mode != null and build_mode.active()
 
 
+## F494/F805, 5th time (owner, Nov 25: "I'm not holding Shift, but he's still sprinting"): the game sometimes never
+## hears Shift come back up, and each fix so far guessed one way that happens. This one doesn't guess: every mouse move
+## and key press carries the real Shift state from Windows, so if "run" (on Shift) thinks it is held but the event says
+## Shift is up, let go of it. The mouse moves all the time while playing, so a stuck sprint heals itself at once.
+func _input(event: InputEvent) -> void:
+	if is_local and shift_is_really_up(event, Input.is_action_pressed("run")):
+		Input.action_release("run")
+
+
+## True when `event` says Shift is up while "run" (bound only to Shift) still counts as held.
+static func shift_is_really_up(event: InputEvent, run_held: bool) -> bool:
+	if not run_held or not (event is InputEventMouseMotion or event is InputEventMouseButton or event is InputEventKey):
+		return false
+	var ev := event as InputEventWithModifiers
+	if ev.shift_pressed:
+		return false
+	if event is InputEventKey and (event as InputEventKey).keycode == KEY_SHIFT:
+		return false  # (the Shift key's own events: pressing it reports itself as not yet held)
+	for e in InputMap.action_get_events("run"):
+		if not (e is InputEventKey and ((e as InputEventKey).keycode == KEY_SHIFT or (e as InputEventKey).physical_keycode == KEY_SHIFT)):
+			return false  # run is on another key too (rebound): Shift tells us nothing
+	return true
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not input_enabled or not is_local:
 		return

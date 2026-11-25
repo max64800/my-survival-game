@@ -984,3 +984,22 @@ func test_jump_hang_guess_accounts_for_landing_lower_than_launch() -> void:
 	check(absf(got - expected) < 0.05, "guess accounts for the real drop (%.2f s vs %.2f s)" % [got, expected])
 	check(got > flat_guess + 0.1, "landing lower takes longer than the flat up-and-down guess (%.2f s vs flat %.2f s)" % [got, flat_guess])
 	root.queue_free()
+
+
+## F494/F805, 5th time (owner, Nov 25): a stuck sprint heals itself: any mouse move, click or key press that says
+## Shift is up lets go of "run" (bound to Shift), whatever made the game miss Shift coming back up.
+func test_stuck_sprint_heals_on_the_next_mouse_move() -> void:
+	Controls.setup()
+	var move := InputEventMouseMotion.new()
+	check(Dwarf.shift_is_really_up(move, true), "run held, the mouse says Shift is up: let go of run")
+	move.shift_pressed = true
+	check(not Dwarf.shift_is_really_up(move, true), "Shift really held: keep running")
+	check(not Dwarf.shift_is_really_up(InputEventMouseMotion.new(), false), "not running: nothing to do")
+	var click := InputEventMouseButton.new()
+	check(Dwarf.shift_is_really_up(click, true), "a click with Shift up heals it too")
+	var shift_key := InputEventKey.new()
+	shift_key.keycode = KEY_SHIFT
+	check(not Dwarf.shift_is_really_up(shift_key, true), "the Shift key's own event is left alone")
+	var w := InputEventKey.new()
+	w.keycode = KEY_W
+	check(Dwarf.shift_is_really_up(w, true), "pressing W with Shift up heals it")
