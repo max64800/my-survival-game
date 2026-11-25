@@ -141,7 +141,7 @@ func test_the_plan() -> void:
 		n += (all[model] as Array).size()
 	check_eq(n, plan.pieces.size() + plan.props.size() + plan.chests.size(), "every piece, prop and chest is placed")
 	check_eq(String(plan.recipe_stand.page), "scroll_lampwick", "the recipe stand holds Lampwick's scroll")
-	check_eq(String(Items.info("scroll_lampwick").get("teaches_recipe", "")), "boots_bronze", "it always teaches the Bronze Boots")
+	check_eq(String(Items.info("scroll_lampwick").get("teaches_recipe", "")), "boots_copper", "it always teaches the Copper-shod Boots")
 	check_eq(Gems.dungeon_key("lampwick"), "lampwick_drift", "its last chest knows its gems")
 	check_eq(DungeonBuild.list_id(d), "lampwick_drift", "its id in the dungeon list")
 	var kinds := {}

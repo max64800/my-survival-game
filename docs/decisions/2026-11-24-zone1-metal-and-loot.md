@@ -113,10 +113,6 @@ Signposts are drawn from the world seed, so every player sees the same ones. Not
    `unlock = "dungeon"` (only their own named `page_<id>`, never a random ruin page) until step 5. Paint: `tools/art/make_bronze.py`. Auto-smelt does NOT make bronze (it would eat
    stored copper ingots). Test: `tests/test_bronze.gd`.
 5. **Switch the dungeon stands to bronze** + Bronze Pickaxe page in Mossgate's big chest. Copper recipes now only from ruins.
-   ✅ Done Nov 25: `DungeonList.LIST` names the 12 bronze twins; the 5 built dungeons' scrolls (`items.gd` `scroll_*`) teach
-   bronze; `DungeonBuild.BIG_CHEST_EXTRA` puts `page_pickaxe_bronze` in Mossgate's big chest. Only 5 of 12 dungeons are
-   built, so 7 bronze recipes (spear, axe, shield, sword, mace, mace_2h, axe_2h) have no home until their dungeons (F742).
-   Tests: test_dungeon_list (bronze order, every built dungeon teaches bronze), test_dungeon (the pickaxe page in the chest).
 6. **Skull signposts** (new model, art round, owner OK), with the recipe picture and the "learned" tick.
 7. **Own bronze models** (later, small batches).
 8. Add new ruins (F740) and move the doubled copper recipes onto them.

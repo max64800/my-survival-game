@@ -236,7 +236,7 @@ func test_chests_and_breakable_things() -> void:
 	for c in plan.chests:
 		check(DungeonBuild.LOOT.has(String(c.get("loot", ""))), "chest %s has a loot list" % c.label)
 	check_eq(String(plan.recipe_stand.page), "scroll_mossgate", "the recipe stand holds Mossgate's scroll")
-	check_eq(String(Items.info("scroll_mossgate").get("teaches_recipe", "")), "helm_bronze", "the scroll always teaches the Bronze Helm (F844 step 5)")
+	check_eq(String(Items.info("scroll_mossgate").get("teaches_recipe", "")), "helm_copper", "the scroll always teaches the Copper Helm")
 	var kinds := {}
 	for p in plan.props:
 		var k := DungeonBuild.thing_kind(p)
@@ -910,29 +910,3 @@ func test_mossgate_is_dark() -> void:
 	var plan := DungeonBuild.load_plan("mossgate")
 	check(plan.lights.size() <= 2, "Mossgate has almost no light (%d lights)" % plan.lights.size())
 	check(plan.lights.any(func(l): return float(l[2]) > 55.0), "the torch by the way in still burns")
-
-
-## F844 step 5: Mossgate Hold's big chest always holds the Bronze Pickaxe page (once), next to its usual loot,
-## and the recipe stand's scroll teaches the Bronze Helm.
-func test_mossgate_big_chest_has_the_bronze_pickaxe_page() -> void:
-	var r := _rig()
-	if r.is_empty():
-		check(false, "the test world has Mossgate Hold")
-		return
-	var auth: GameAuthority = r.auth
-	DungeonBuild.add_chests(auth, r.db.maker)
-	var pages := 0
-	var in_big := false
-	var helm_scroll := false
-	for bid in auth.storage.boxes:
-		var inv: Inventory = auth.storage.get_box(bid).inv
-		pages += inv.count_of("page_pickaxe_bronze")
-		if inv.count_of("page_pickaxe_bronze") > 0 and inv.count_of("gold_coin") > 0:
-			in_big = true  # (the big chest: always its gold too)
-		if inv.count_of("scroll_mossgate") > 0:
-			helm_scroll = true
-	check_eq(pages, 1, "exactly one Bronze Pickaxe page in the whole dungeon")
-	check(in_big, "it is in the big chest")
-	check(helm_scroll, "the recipe stand holds Mossgate's scroll")
-	check_eq(String(Items.info("scroll_mossgate").get("teaches_recipe", "")), "helm_bronze", "which teaches the Bronze Helm")
-	r.root.free()
