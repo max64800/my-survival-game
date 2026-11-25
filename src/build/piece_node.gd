@@ -420,55 +420,99 @@ func _build() -> void:
 		l.position = Vector3(0, s.y * 0.5, 0)
 		add_child(l)
 	_decor_extras(s, made != null)
-	if not ghost and gap_fill.y > 0.0:
-		_add_gap_fill()
+	if not ghost:
+		_add_fills()
 
 
 ## F833 🔁 (F165): a wall, window or doorway standing on another one with no floor between leaves a 25 cm slit
 ## (walls are 2 m, a storey 2.25 m; a floor's rim beam fills it when there is a floor). Builder._refill_gaps
 ## then gives the lower piece a beam on its top: this material's own Beam model, squeezed into the slit.
 ## `gap_fill` = (from x, gap height, to x) along the wall, in the piece's own space; y = 0 means none.
-## The beam reaches 1 cm into both walls (no slit left) and stands 1.5 cm proud of their faces (no shimmer).
+## The beam reaches 6 cm into both walls (past the wood walls' round edge logs, owner Nov 24: a thin slit still
+## showed above and below a 1 cm overlap) and stands 1.5 cm proud of their faces (no shimmer).
+## `seams` (owner, Nov 24, same picture): where two wall-like pieces stand side by side, the round posts at their
+## ends left a see-through V. Each seam = (x of the seam, from y, to y) in this piece's space: a dark backing
+## hidden inside it (nothing shows through), and on wood a thin upright log over it (the two posts read as one).
 var gap_fill := Vector3.ZERO
+var seams: Array = []
 var _gap_node: Node3D
-const GAP_OVERLAP := 0.01
+const GAP_OVERLAP := 0.06
 const GAP_PROUD := 0.015
+const SEAM_WIDTH := 0.12
+const SEAM_PROUD := 0.03  ## (1.5 cm in front of the gap beam's face: no shimmer where they cross)
+const BACKING_DEPTH := 0.04  ## (thin and deep inside: 20 cm covered the wood walls' own edge logs in black)
+static var _backing_mat: StandardMaterial3D
 
 
 func set_gap_fill(fill: Vector3) -> void:
-	if fill.is_equal_approx(gap_fill):
+	set_fills(fill, seams)
+
+
+func set_fills(fill: Vector3, p_seams: Array) -> void:
+	if fill.is_equal_approx(gap_fill) and p_seams == seams:
 		return
 	gap_fill = fill
+	seams = p_seams
 	if _gap_node and is_instance_valid(_gap_node):
 		_gap_node.queue_free()
 	_gap_node = null
-	if fill.y > 0.0 and not ghost and is_inside_tree():
-		_add_gap_fill()
+	if not ghost and is_inside_tree():
+		_add_fills()
 
 
-func _add_gap_fill() -> void:
-	var s: Vector3 = Pieces.LIST[piece].size
-	var box := Vector3(gap_fill.z - gap_fill.x, gap_fill.y + GAP_OVERLAP * 2.0, s.z + GAP_PROUD * 2.0)
-	var centre := Vector3((gap_fill.x + gap_fill.z) * 0.5, s.y + gap_fill.y * 0.5, 0.0)
-	var holder := Node3D.new()
-	holder.name = "GapFill"
-	_gap_node = holder
+## The material's Beam model (or the code shape), stretched to fill `box` round `centre`; `upright` = standing up.
+func _beam_in(holder: Node3D, box: Vector3, centre: Vector3, upright: bool) -> void:
 	var mi := MeshInstance3D.new()
 	var made := forged_mesh("beam", family)
 	mi.mesh = made if made else PieceMesh.visual("beam", family)
 	if not made:
 		mi.material_override = _mat(family)
 	var aabb := mi.mesh.get_aabb()
-	var k := Vector3(box.x / maxf(aabb.size.x, 0.01), box.y / maxf(aabb.size.y, 0.01), box.z / maxf(aabb.size.z, 0.01))
-	mi.scale = k
-	mi.position = centre - aabb.get_center() * k
+	var want := Vector3(box.y, box.x, box.z) if upright else box  # (the beam's length runs along its x)
+	var k := Vector3(want.x / maxf(aabb.size.x, 0.01), want.y / maxf(aabb.size.y, 0.01), want.z / maxf(aabb.size.z, 0.01))
+	var turn := Basis(Vector3.BACK, PI * 0.5) if upright else Basis.IDENTITY
+	mi.transform = Transform3D(turn * Basis.from_scale(k), centre - turn * (aabb.get_center() * k))
 	holder.add_child(mi)
-	var cs := CollisionShape3D.new()
-	var shape := BoxShape3D.new()
-	shape.size = Vector3(box.x, gap_fill.y, s.z)
-	cs.shape = shape
-	cs.position = centre
-	holder.add_child(cs)
+
+
+func _backing_in(holder: Node3D, box: Vector3, centre: Vector3) -> void:
+	if not _backing_mat:
+		_backing_mat = StandardMaterial3D.new()
+		_backing_mat.albedo_color = Color(0.06, 0.045, 0.035)
+		_backing_mat.roughness = 1.0
+	var mi := MeshInstance3D.new()
+	var bm := BoxMesh.new()
+	bm.size = Vector3(box.x, box.y, BACKING_DEPTH)
+	mi.mesh = bm
+	mi.material_override = _backing_mat
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.position = centre
+	holder.add_child(mi)
+
+
+func _add_fills() -> void:
+	if gap_fill.y <= 0.0 and seams.is_empty():
+		return
+	var s: Vector3 = Pieces.LIST[piece].size
+	var holder := Node3D.new()
+	holder.name = "GapFill"
+	_gap_node = holder
+	if gap_fill.y > 0.0:
+		var box := Vector3(gap_fill.z - gap_fill.x, gap_fill.y + GAP_OVERLAP * 2.0, s.z + GAP_PROUD * 2.0)
+		var centre := Vector3((gap_fill.x + gap_fill.z) * 0.5, s.y + gap_fill.y * 0.5, 0.0)
+		_backing_in(holder, Vector3(box.x + 0.1, box.y, 0), centre)
+		_beam_in(holder, box, centre, false)
+		var cs := CollisionShape3D.new()
+		var shape := BoxShape3D.new()
+		shape.size = Vector3(box.x, gap_fill.y, s.z)
+		cs.shape = shape
+		cs.position = centre
+		holder.add_child(cs)
+	for sm: Vector3 in seams:
+		var centre := Vector3(sm.x, (sm.y + sm.z) * 0.5, 0.0)
+		_backing_in(holder, Vector3(SEAM_WIDTH, sm.z - sm.y, 0), centre)
+		if family.begins_with("plank"):
+			_beam_in(holder, Vector3(SEAM_WIDTH, sm.z - sm.y, s.z + SEAM_PROUD * 2.0), centre, true)
 	add_child(holder)
 
 
