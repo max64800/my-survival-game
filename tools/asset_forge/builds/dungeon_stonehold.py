@@ -199,18 +199,18 @@ def lever_iron():
 
 # ---------------------------------------------------------------- the Ossuary stash's cracked wall (F857)
 def wall_cracked_stone(w=2.0, h=2.0, d=0.3):
-	"""A Stonehold wall that is about to give: a ragged hole knocked right through its middle (F857 🔁, owner Nov 25:
-	"an open hole so players can see the chest"), three stones bulging out of line, chips on the floor in front."""
-	ya_h, yb_h = 0.5, 1.35    # the hole's bottom and top (low enough to see the chest on the floor behind it)
+	"""A Stonehold wall that is about to give: one stone knocked out of it (F857 🔁, owner Nov 25: "an open hole so
+	players can see the chest"; then 3rd time: "this hole is too big, it's too obvious: fill it, only one part open"),
+	three stones bulging out of line, chips on the floor in front."""
+	ya_h, yb_h = 0.66, 0.9    # one course only: a peep hole at knee height (you crouch a little to see the chest)
 	half = {}                 # each row through it stops at a different place (ragged): (ya, yb) -> (left, right)
 
 	def hole(ya, yb):
-		if yb <= ya_h or ya >= yb_h:
+		if not (ya_h <= (ya + yb) / 2 <= yb_h):   # (only the one course whose middle is in the band)
 			return None
 		r = (round(ya, 3), round(yb, 3))
-		if r not in half:   # wider in the middle rows, narrower at the top and bottom; a little off centre
-			mid = max(0.0, 1.0 - abs((ya + yb) / 2 - 0.92) / 0.45)
-			half[r] = (0.1 - 0.15 - 0.22 * mid - K.rng.uniform(0.0, 0.08), 0.1 + 0.15 + 0.22 * mid + K.rng.uniform(0.0, 0.08))
+		if r not in half:   # about one stone wide (36-42 cm), a little off centre
+			half[r] = (0.1 - 0.18 - K.rng.uniform(0.0, 0.03), 0.1 + 0.18 + K.rng.uniform(0.0, 0.03))
 		return half[r]
 	before = set(bpy.data.objects)
 	S.courses(w, h, d, hole=hole, back=False)

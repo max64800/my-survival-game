@@ -331,6 +331,14 @@ func test_hald_has_two_easy_shades() -> void:
 	check_eq(int(kinds.get("hald_shade", 0)), 2, "two Tomb Shades")
 	check(Monsters.info("hald_shade").hp < Monsters.info("ghost_a").hp, "weaker than a Drifting Shade")
 	check(Monsters.info("hald_ironbrow").run >= 4.0, "Hald runs you down")
+	# (owner, Nov 25: "the boss stands too close to the door, I couldn't come in"): all three wait well inside,
+	# further than they wake, so you walk into the room before the fight starts.
+	var door := Vector2(44.0, 36.0)  # the tomb door's middle (tomb_door: x 42-46, z 32-36)
+	for c in DungeonBuild.load_plan("hald").creatures:
+		if String(c.kind) in ["hald_ironbrow", "hald_shade"]:
+			var far := Vector2(float(c.pos[0]), float(c.pos[2])).distance_to(door)
+			check(far > float(Monsters.info(String(c.kind)).rise_near) - 0.5 and far > 8.0,
+				"%s waits %.1f m from the door" % [c.kind, far])
 
 
 ## F850: the Honour Chapel is bigger (room to step round the Shield-Brother).
@@ -376,7 +384,7 @@ func test_the_niche_and_the_stand_are_stone() -> void:
 	fl.free()
 
 
-## F857 🔁: the stone stash wall has the junction's narrow walls on both sides, and a hole right through its middle.
+## F857 🔁: the stone stash wall has the junction's narrow walls on both sides, and a small hole (one stone) through it.
 func test_the_cracked_wall_has_walls_beside_it_and_a_hole() -> void:
 	var plan := DungeonBuild.load_plan("hald")
 	var at := Vector3.ZERO
@@ -391,17 +399,28 @@ func test_the_cracked_wall_has_walls_beside_it_and_a_hole() -> void:
 				sides[signf(dx)] = true
 	check(sides.has(-1.0) and sides.has(1.0), "a narrow wall on each side (%s)" % [sides.keys()])
 	var wall := (load("res://assets/models/dungeon/wall_cracked_stone.glb") as PackedScene).instantiate() as Node3D
-	var hits := 0
+	var shapes := []
 	for mi in wall.find_children("*", "MeshInstance3D", true, false):
 		var m := mi as MeshInstance3D
-		var rel := DungeonBuild._rel_xform(wall, m)
-		var tm := m.mesh.generate_triangle_mesh()
-		for y in [0.8, 0.95, 1.1]:
-			var from := rel.affine_inverse() * Vector3(0.1, y, 2.0)
-			var dir := rel.basis.inverse() * Vector3(0, 0, -1)
-			if not tm.intersect_ray(from, dir).is_empty():
-				hits += 1
-	check_eq(hits, 0, "you can see right through the hole in its middle")
+		shapes.append([DungeonBuild._rel_xform(wall, m), m.mesh.generate_triangle_mesh()])
+	var see_through := func(x: float, y: float) -> bool:
+		for sh in shapes:
+			var rel: Transform3D = sh[0]
+			var tm: TriangleMesh = sh[1]
+			if not tm.intersect_ray(rel.affine_inverse() * Vector3(x, y, 2.0), rel.basis.inverse() * Vector3(0, 0, -1)).is_empty():
+				return false
+		return true
+	# F857 🔁 3rd time (owner, Nov 25: "this hole is too big, too obvious: fill it, only one part open"): one stone out.
+	var open_at := []
+	for i in 11:
+		var y := 0.5 + i * 0.05
+		if see_through.call(0.1, y):
+			open_at.append(y)
+	check(not open_at.is_empty(), "you can see through the one missing stone")
+	check(open_at.size() <= 7, "the hole is one stone tall, not more (open at %s)" % [open_at])
+	var mid: float = open_at[open_at.size() / 2] if not open_at.is_empty() else 0.78
+	check(not see_through.call(0.1, 1.2) and not see_through.call(0.1, 0.35), "closed above and below it")
+	check(not see_through.call(-0.4, mid) and not see_through.call(0.6, mid), "closed to the left and right of it")
 	wall.free()
 
 

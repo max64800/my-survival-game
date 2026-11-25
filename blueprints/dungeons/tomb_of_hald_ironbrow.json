@@ -19612,9 +19612,9 @@
 "kind":"hald_ironbrow",
 "model":"creatures/ghost_c.glb",
 "pos":[
-44.6,
+46.0,
 -7.75,
-41.0
+44.6
 ],
 "yaw":0.0,
 "scale":1.0,
@@ -19626,7 +19626,7 @@
 "pos":[
 42.6,
 -7.75,
-38.4
+46.4
 ],
 "yaw":0.0,
 "scale":1.0,
@@ -19636,9 +19636,9 @@
 "kind":"hald_shade",
 "model":"creatures/ghost_a.glb",
 "pos":[
-42.6,
+50.4,
 -7.75,
-45.6
+46.6
 ],
 "yaw":0.0,
 "scale":1.0,

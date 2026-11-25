@@ -364,10 +364,12 @@ for x, z, yaw in [(42.2, 29.6, 0.0), (45.8, 29.6, 0.0)]:
 	creature("ghost_c", x, z, yaw, floor=D)
 
 # 17 Hald's Tomb: Hald Ironbrow rises from his tomb.
-creature("hald_ironbrow", 44.6, 41.0, 0.0, floor=D)
+# (owner, Nov 25: "the boss stands too close to the door, I couldn't come in until I defeated 2 other ones"): he waits
+# at the back by his tomb, about 9 m from the door, and his shades in the two back corners, so you walk in first.
+creature("hald_ironbrow", 46.0, 44.6, 0.0, floor=D)
 # F849 (owner, Nov 25: "too easy"): two weak Tomb Shades rise with him, one on each side.
-creature("hald_shade", 42.6, 38.4, 0.0, floor=D)
-creature("hald_shade", 42.6, 45.6, 0.0, floor=D)
+creature("hald_shade", 42.6, 46.4, 0.0, floor=D)
+creature("hald_shade", 50.4, 46.6, 0.0, floor=D)
 
 # Cave Spiders (owner, Nov 25: "add lots of tiny spiders like in the 1st dungeon, but more"): 16 (Mossgate has 7),
 # most up in the corners near the ceiling (they drop on you, like Mossgate's Guard Room), a few on the floor.
