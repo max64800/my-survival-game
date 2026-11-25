@@ -134,6 +134,88 @@ func test_the_candle_hall_dart_wall_fires() -> void:
 	r.root.free()
 
 
+## The Honour Chapel's ambush (F843): the portcullis hangs raised (its teeth show), slams down behind you once you are
+## 2.5 m into the room while the Shield-Brother's room lives, and lifts when he dies or when nobody living is inside.
+func test_the_honour_chapel_portcullis() -> void:
+	var r := _rig()
+	var db: DungeonBuild = r.db
+	var d: Dictionary = r.d
+	var auth: GameAuthority = r.auth
+	var player: Node3D = r.player
+	var ids: Array = db.things.keys().filter(func(id): return db.things[id].kind == "portcullis")
+	check_eq(ids.size(), 1, "one portcullis")
+	if ids.size() != 1:
+		r.root.free()
+		return
+	var id: int = ids[0]
+	var th: Dictionary = db.things[id]
+	check_eq(String(th.prop.get("room", "")), "honour_chapel", "it guards the Honour Chapel")
+	var door := (th.xform as Transform3D).origin + Vector3.UP * 1.0
+	check_eq(DungeonMap.space_at(d, door + Vector3(1.0, 0, 0)), "honour_chapel", "it stands in the chapel's doorway")
+	await tree.physics_frame
+	await tree.physics_frame
+	check(not _blocked(db, door), "raised: you walk through under it")
+	check(not db.is_portcullis_shut(id), "it starts raised")
+	var mid := DungeonMap.space_floor(d, "honour_chapel") + Vector3.UP * 0.3
+	player.global_position = DungeonMap.to_world(d, Vector3(44.8, 4.24, 36.0))  # (just through the doorway)
+	db._on_dungeon_room("hald", "honour_chapel", false)  # (his room's ghosts came)
+	db._check_portcullises(auth)
+	check(not db.is_portcullis_shut(id), "not yet: only half a step in")
+	player.global_position = mid
+	db._check_portcullises(auth)
+	check(db.is_portcullis_shut(id), "walked in on him: it slams down")
+	await tree.physics_frame
+	await tree.physics_frame
+	check(_blocked(db, door), "shut: it blocks the doorway")
+	db._on_dungeon_room("hald", "honour_chapel", true)  # (the Shield-Brother and his ghosts died)
+	db._check_portcullises(auth)
+	check(not db.is_portcullis_shut(id), "he died: it lifts")
+	db._on_dungeon_room("hald", "honour_chapel", false)
+	db._check_portcullises(auth)
+	check(db.is_portcullis_shut(id), "an hour later, again")
+	player.global_position = DungeonMap.space_floor(d, "broken_stair") + Vector3.UP * 0.3
+	db._check_portcullises(auth)
+	check(not db.is_portcullis_shut(id), "nobody living inside: it lifts (nobody is locked out for good)")
+	r.root.free()
+
+
+## Hald's stone doorways let you through (F843: without their own boxes, the box round the whole model shut them).
+func test_the_stone_doorways_are_open() -> void:
+	check(DungeonBuild.BOXES.has("build/doorway__cut_stone.glb"), "the Stonehold doorway has its own boxes")
+	var r := _rig()
+	var d: Dictionary = r.d
+	await tree.physics_frame
+	await tree.physics_frame
+	var plan := DungeonBuild.load_plan("hald")
+	var doors := {}  # (the doorways with a real door or gate in them are shut on purpose)
+	for p in plan.props:
+		if String(p.get("role", "")) == "door":
+			doors[str(p.pos)] = true
+	var n := 0
+	for p in plan.pieces:
+		if String(p.id) != "doorway" or doors.has(str(p.pos)):
+			continue
+		n += 1
+		var at := DungeonMap.to_world(d, Vector3(p.pos[0], float(p.pos[1]) + 1.0, p.pos[2]))
+		check(not _blocked(r.db, at), "the doorway at %s lets you through" % [p.pos])
+	check(n > 10, "Hald has doorways (%d)" % n)
+	r.root.free()
+
+
+## Is there anything solid of the dungeon's at `at` (a dwarf-sized ball)?
+func _blocked(db: DungeonBuild, at: Vector3) -> bool:
+	var q := PhysicsShapeQueryParameters3D.new()
+	var ball := SphereShape3D.new()
+	ball.radius = 0.35
+	q.shape = ball
+	q.transform = Transform3D(Basis(), at)
+	q.collision_mask = World.TERRAIN_LAYER
+	for hit in db.get_world_3d().direct_space_state.intersect_shape(q, 8):
+		if (hit.collider as Node).is_ancestor_of(db) == false and db.is_ancestor_of(hit.collider as Node):
+			return true
+	return false
+
+
 ## The Shield-Brother drops the Bronze Key when he dies (or the Grave Chamber stays shut).
 func test_the_shield_brother_drops_the_bronze_key() -> void:
 	var root := Node3D.new()
@@ -165,4 +247,5 @@ func test_the_shield_brother_drops_the_bronze_key() -> void:
 			auth.monsters._hurt_monster(m, 1, 9999, 0.0)
 		check(not auth.keys.boss_has_key("key_bronze"), "the key is out in the world")
 		check_eq(auth._drops.values().filter(func(dr): return dr.item_id == "key_bronze").size(), 1, "the Bronze Key drops once")
-	root.queue_free()
+	root.queue_free()  # (keep this test last: the World it frees at the frame's end throws a
+	# harmless 'material is null' error into whatever test runs next)

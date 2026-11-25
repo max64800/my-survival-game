@@ -228,7 +228,8 @@ for g, side, line, along, rot, key in rock_edges:
 # it up to the taller room's ceiling, and (a stair's top) walls under it down to the lower floor. Special ones: the
 # cracked wall to the Ossuary stash, the barred way-out gate, the boss room's round door, the locked Bronze door.
 SPECIAL_J = {("ossuary", "ossuary_stash"): "cracked", ("exit_way", "mourners_gate"): "gate",
-	("halds_tomb", "tomb_door"): "hand_door", ("bronze_door", "halds_tomb"): "bronze"}
+	("halds_tomb", "tomb_door"): "hand_door", ("bronze_door", "halds_tomb"): "bronze",
+	("broken_stair", "honour_chapel"): "portcullis", ("honour_chapel", "broken_stair"): "portcullis"}
 for (a, b, along_z, line, lvl), j in junctions.items():
 	spots = sorted(j["spots"])
 	y = j["y"]
@@ -250,7 +251,11 @@ for (a, b, along_z, line, lvl), j in junctions.items():
 	if hi - lo != 4.0:
 		sys.exit("junction %s/%s is %.0f m wide (doorways need 4 m)" % (a, b, hi - lo))
 	x, z = p(mid)
-	piece("doorway", x, y, z, rot, DOOR_SCALE)
+	if kind == "portcullis":   # (the Honour Chapel's ambush, F843: its own stone doorway with the gate hanging raised in it)
+		prop("dungeon/portcullis.glb", x, y, z, 90.0 if along_z else 0.0, DOOR_SCALE, role="door", label="Rusted portcullis",
+			room="honour_chapel")
+	else:
+		piece("doorway", x, y, z, rot, DOOR_SCALE)
 	if kind == "hand_door":
 		prop("dungeon/door_loot.glb", x, y, z, 90.0 if along_z else 0.0, DOOR_SCALE, role="door", label="Round door: E to open", opens="hand")
 	if kind == "bronze":   # (DungeonKeys: the Bronze Key opens it; the Shield-Brother holds the key)

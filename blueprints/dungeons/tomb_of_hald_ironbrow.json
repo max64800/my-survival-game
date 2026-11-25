@@ -14335,17 +14335,6 @@
 "rot":1
 },
 {
-"id":"doorway",
-"mat":"cut_stone",
-"pos":[
-44.0,
-4.0,
-36.0
-],
-"rot":1,
-"scale":1.5
-},
-{
 "id":"wall_narrow",
 "mat":"cut_stone",
 "pos":[
@@ -16260,6 +16249,19 @@
 "role":"secret",
 "label":"Cracked wall (hollow sound)",
 "floor":0.0
+},
+{
+"model":"dungeon/portcullis.glb",
+"pos":[
+44.0,
+4.0,
+36.0
+],
+"yaw":90.0,
+"scale":1.5,
+"role":"door",
+"label":"Rusted portcullis",
+"room":"honour_chapel"
 },
 {
 "model":"dungeon/door_loot.glb",

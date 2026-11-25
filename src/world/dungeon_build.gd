@@ -34,6 +34,14 @@ const BOXES := {
 	"build/doorway__plank_root.glb": [[Vector3(-0.83, 1, 0), Vector3(0.34, 2, 0.25)], [Vector3(0.83, 1, 0), Vector3(0.34, 2, 0.25)],
 		[Vector3(0, 1.88, 0), Vector3(1.4, 0.24, 0.25)]],
 	"build/column__plank_root.glb": [[Vector3(0, 1, 0), Vector3(0.7, 2, 0.7)]],
+	# The Stonehold round doorway (Hald's, F843): the same way through as the plank one (without these, the box round
+	# the whole model shut every doorway). The portcullis is that doorway plus its gate; the gate's own box ("#gate",
+	# from the floor to the top of the hole) is only there while it is down (DungeonBuild._move_portcullis).
+	"build/doorway__cut_stone.glb": [[Vector3(-0.85, 1, 0), Vector3(0.3, 2, 0.3)], [Vector3(0.85, 1, 0), Vector3(0.3, 2, 0.3)],
+		[Vector3(0, 1.75, 0), Vector3(1.4, 0.5, 0.3)]],
+	"dungeon/portcullis.glb": [[Vector3(-0.85, 1, 0), Vector3(0.3, 2, 0.3)], [Vector3(0.85, 1, 0), Vector3(0.3, 2, 0.3)],
+		[Vector3(0, 1.75, 0), Vector3(1.4, 0.5, 0.3)]],
+	"dungeon/portcullis.glb#gate": [[Vector3(0, 0.83, 0), Vector3(1.5, 1.32, 0.12)]],
 	# The bridge: just its deck, its top level with the floor boards (fall off the side and you fall). The posts: the two
 	# posts and the deck between them (owner, Nov 19: one box round the whole frame blocked the way onto the bridge).
 	# Owner, Nov 20: the hand ropes are solid too (you can't walk off through them), and the gap section has a 1 m hole in
@@ -185,6 +193,7 @@ var _clock := 0.0
 var _host_tick := 0.0
 var _last_pos := {}  ## host: peer -> where they were at the last trap check (for their walking speed)
 var _healed := {}    ## host: peer -> true while they stand by a healing basin (one message per visit)
+var _room_alive := {}  ## host: "dungeon id/room" -> true while that room's creatures are alive (MonsterManager)
 var heals: Array[Vector3] = []  ## the healing basins, in the world
 var heal_ds: Array = []          ## the dungeon each basin is in (each keeps its own water)
 var mine: MineTraps  ## Lampwick Drift's traps and lamps
@@ -235,6 +244,8 @@ static func thing_kind(p: Dictionary) -> String:
 		return "gate"  # (the way out's one-way gate: the lever behind it opens it, DungeonKeys)
 	if model == "dungeon/lever.glb":
 		return "lever"
+	if model == "dungeon/portcullis.glb":
+		return "portcullis"  # (Hald's Honour Chapel ambush, F843: it drops behind you, lifts when the room is won)
 	if model.begins_with("cave/boulder_"):
 		return "boulder"
 	return ""
@@ -420,6 +431,9 @@ func _build_things(di: int, d: Dictionary, plan: Dictionary) -> void:
 			first = false
 		if not String(p.model) in NO_BODY or p.get("fires", false):
 			_add_boxes(body, String(p.model), t, whole)
+		if kind == "portcullis":  # (its gate's own box, marked so only it comes and goes)
+			_add_boxes(body, String(p.model) + "#gate", t, whole)
+			body.get_child(body.get_child_count() - 1).set_meta("gate", true)
 		# (where a stalactite lands: the floor or bridge; Lampwick's upper level is 3 m up, its props say "floor")
 		var landing := DungeonMap.to_world(d, Vector3(p.pos[0], float(p.get("floor", 0.0)) + 0.24, p.pos[2])).y
 		things[id] = {kind = kind, model = String(p.model), node = body, prop = p, d = d, inst = inst, xform = t,
@@ -541,7 +555,7 @@ func request_hit(peer_id: int, id: int, by_bolt := false) -> void:
 		if by_bolt:
 			_fall(id)
 		return
-	if by_bolt or th.kind in ["floor", "crusher", "door", "hand_door", "gate", "lever"]:
+	if by_bolt or th.kind in ["floor", "crusher", "door", "hand_door", "gate", "lever", "portcullis"]:
 		return
 	var chest := ps.node.global_position + Vector3.UP * 1.1
 	if chest.distance_to(at) > GameAuthority.REACH + float(th.radius) + 0.5:
@@ -580,7 +594,7 @@ func request_hit(peer_id: int, id: int, by_bolt := false) -> void:
 ## F603: a monster's attack lands — break nearby smash/rubble props without a player distance check.
 func request_monster_hit(id: int) -> void:
 	var th: Dictionary = things.get(id, {})
-	if th.is_empty() or is_broken(id) or th.kind in ["floor", "crusher", "door", "hand_door", "gate", "lever", "drip", "boulder"]:
+	if th.is_empty() or is_broken(id) or th.kind in ["floor", "crusher", "door", "hand_door", "gate", "lever", "portcullis", "drip", "boulder"]:
 		return
 	var auth := GameAuthority.instance
 	var at: Vector3 = th.centre
@@ -918,6 +932,7 @@ func _physics_process(delta: float) -> void:
 
 
 	_traps_hit_creatures(auth)
+	_check_portcullises(auth)
 
 
 ## Host: traps hurt creatures too (decisions round 2: "you can lure creatures into traps"). Owner, Nov 20 (3rd play):
@@ -1170,6 +1185,7 @@ func is_door_open(d: Dictionary) -> bool:
 ## Host: a dungeon room's creatures came, or were all killed (MonsterManager). The Pack Hall's pack dead = the loot door
 ## opens; the pack moving back in (an hour later) = it shuts again.
 func _on_dungeon_room(dungeon_id: String, room: String, cleared: bool) -> void:
+	_room_alive[dungeon_id + "/" + room] = not cleared  # (a portcullis room: the gate lifts once it is won)
 	var auth := GameAuthority.instance
 	if auth == null or not auth.is_host() or auth.keys == null or room != PACK_ROOM:
 		return
@@ -1195,6 +1211,10 @@ func _sync_doors(id: int) -> void:
 			want = opened_by_hand(id) != 0
 		"gate":
 			want = is_gate_open(th.d)
+		"portcullis":
+			if not th.has("open") or bool(th.open) == is_portcullis_shut(id):
+				_move_portcullis(id, not is_portcullis_shut(id), false)
+			return
 		"lever":  # (its handle follows the gate: down while the gate is open)
 			if bool(th.get("open", false)) != is_gate_open(th.d):
 				th.open = is_gate_open(th.d)
@@ -1301,6 +1321,110 @@ func _on_gate_changed(dungeon_id: String, open: bool) -> void:
 				_open_door(id, true, -1)  # (it swings toward the way out, where the one who pulled the lever stands)
 			else:
 				_close_door(id)
+
+
+# ================================================================== the portcullis (Hald's Honour Chapel, F843)
+
+const PORTCULLIS_LIFT := 1.15  ## how far up its gate hangs, in the model's metres (builds/dungeon_portcullis.py GATE_LIFT)
+const PORTCULLIS_IN := 2.5     ## how far into its room a dwarf walks before it drops behind them
+
+
+func is_portcullis_shut(id: int) -> bool:
+	var auth := GameAuthority.instance
+	return auth != null and bool(auth.world_state.get("dungeon_shut", {}).get(str(id), false))
+
+
+## Host: a portcullis drops while a living dwarf stands PORTCULLIS_IN into its room and the room's creatures live; it
+## lifts when they are all dead, or when no living dwarf is left in the room (so nobody is locked out for good).
+func _check_portcullises(auth: GameAuthority) -> void:
+	for id in things:
+		var th: Dictionary = things[id]
+		if th.kind != "portcullis":
+			continue
+		var room := String(th.prop.get("room", ""))
+		var alive := bool(_room_alive.get(String(th.d.id) + "/" + room, false))
+		var deep: Array = []
+		var inside := false
+		for pid in auth.players:
+			var ps = auth.players[pid]
+			if ps.node == null or (ps.vitals and ps.vitals.is_dead()):
+				continue
+			if in_room(th.d, room, ps.node.global_position, 0.0):
+				inside = true
+			if in_room(th.d, room, ps.node.global_position, PORTCULLIS_IN):
+				deep.append(pid)
+		var shut := is_portcullis_shut(id)
+		if not shut and alive and not deep.is_empty():
+			_set_portcullis(auth, id, true)
+			for pid in deep:
+				auth.tell(pid, "A rusted gate slams down behind you!")
+		elif shut and (not alive or not inside):
+			_set_portcullis(auth, id, false)
+
+
+## Is world point `p` inside room `room` of dungeon `d`, at least `margin` m in from its walls (and between its floor
+## and ceiling)?
+static func in_room(d: Dictionary, room: String, p: Vector3, margin: float) -> bool:
+	var q := DungeonMap.to_local(d, p)
+	for s in d.map.spaces:
+		if String(s[0]) == room:
+			return q.x > float(s[1]) + margin and q.x < float(s[3]) - margin and q.z > float(s[2]) + margin \
+				and q.z < float(s[4]) - margin and q.y > float(s[5]) - 0.5 and q.y < float(s[5]) + float(s[6])
+	return false
+
+
+func _set_portcullis(auth: GameAuthority, id: int, shut: bool) -> void:
+	var all: Dictionary = auth.world_state.get("dungeon_shut", {}).duplicate()
+	if shut:
+		all[str(id)] = true
+	else:
+		all.erase(str(id))
+	auth.world_state["dungeon_shut"] = all
+	_ev_portcullis.rpc(id, shut)
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_portcullis(id: int, shut: bool) -> void:
+	var auth := GameAuthority.instance
+	if auth and not auth.is_host():
+		var all: Dictionary = auth.world_state.get("dungeon_shut", {}).duplicate()
+		if shut:
+			all[str(id)] = true
+		else:
+			all.erase(str(id))
+		auth.world_state["dungeon_shut"] = all
+	if things.has(id):
+		_move_portcullis(id, not shut, true)
+
+
+## Everyone: the gate hangs up in the wall (`raised`: its teeth show under the arch, the clue) or stands on the floor
+## and blocks the way. `slow`: it slams down fast with a crash, or grinds back up.
+func _move_portcullis(id: int, raised: bool, slow: bool) -> void:
+	var th: Dictionary = things[id]
+	th.open = raised
+	for c in (th.node as Node).get_children():
+		if c is CollisionShape3D and c.has_meta("gate"):
+			(c as CollisionShape3D).disabled = raised
+	var gate := (th.inst as Node3D).find_child("gate", true, false) as Node3D
+	if gate == null:
+		return
+	if not th.has("gate_rest"):
+		th.gate_rest = gate.position
+	var to: Vector3 = th.gate_rest + Vector3.UP * (PORTCULLIS_LIFT if raised else 0.0)
+	if th.has("tween") and is_instance_valid(th.tween):
+		(th.tween as Tween).kill()
+	if not slow or not gate.is_inside_tree():
+		gate.position = to
+		return
+	var at: Vector3 = (th.xform as Transform3D).origin + Vector3.UP
+	var tw := create_tween()
+	th.tween = tw
+	if raised:
+		Sfx.play("chop", at, 0.0, 0.4)
+		tw.tween_property(gate, "position", to, 2.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	else:
+		tw.tween_property(gate, "position", to, 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		tw.tween_callback(Sfx.play.bind("hit_heavy", at, 3.0, 0.7))
 
 
 const LEVER_PIVOT := Vector3(0.0, 1.05, 0.13)  ## where the lever's handle turns (tools/asset_forge/builds/dungeon_rootwood.py)

@@ -657,6 +657,9 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	authority.drops_root = drops
 	authority.poi_field = pf
 	add_child(authority)
+	var music := Music.new()  # the quiet solo music and the jingles (owner, Nov 25)
+	music.auth = authority
+	add_child(music)
 	authority.add_child(RuinJunk.new(authority))  # the ruins' junk, on every computer (owner, Nov 20)
 
 	players_root = Node3D.new()
