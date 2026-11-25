@@ -27,7 +27,7 @@ wood_bp = json.load(open(sys.argv[3], encoding="utf-8"))
 # The parts, after the blueprint's shift (see BlueprintLibrary._smeltery: SMELT_SHIFT (5, 0, -3))
 FURNACE, TOWER = (-19.732, -1.0), (18.0, -6.0)
 BRIDGE = (-16.0, -8.0)        # the bridge's two ends (x), along z = -1, 3 m up; its pier is at x = -13
-TURRET, WATCH = (-4.05, -3.5), (24.052, 2.4)   # the hall's stair turret, the terrace's watch turret (6-sided)
+TURRET, WATCH = (-4.05, -3.5), (24.052, 0.0)   # the hall's stair turret, the terrace's watch turret (6-sided)
 ROCK_Z = -10.2                # the cave wall starts behind this (BlueprintLibrary.smelt_rock_top)
 DIP = 3.0                     # how deep the dip under the bridge goes (page only)
 # How high each part still stands: pieces above are gone, the top BAND m left is broken up. The tower keeps its

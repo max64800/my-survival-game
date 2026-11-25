@@ -7,6 +7,9 @@ extends Node3D
 ## is measured on the host's rock), and writes it into the ruin's record (world_state.ruins: saved and sent to friends).
 ## Every computer draws it from there. The junk inside goes as soon as the ruin is being rebuilt (owner, Nov 20), and
 ## the junk outside too (owner, Nov 21: "any garbage outside the perimeter gets removed"; the rebuild clears the rubble).
+## F864 (owner, Nov 25: "after rebuilding, all its junk is gone"): only the broken mess goes (rubble, bones, rags, dropped
+## gear, smashed or tipped things); whole things (crates, kegs, sacks, carts, benches, racks) stay, unless the rebuilt
+## building would stand where they are (inside a new wall, floor or stair).
 
 const PLANS := {"tower": RuinTower.PLAN, "outpost": RuinOutpost.OUTPOST_PLAN, "brewhall": RuinBrewhall.PLAN_PATH,
 	"spire": RuinSpire.PLAN_PATH}
@@ -21,6 +24,8 @@ var _drawn := ""         ## what is drawn now (redrawn when it changes)
 var _gone := {}          ## ruin box id -> true: its junk went (stays gone, even before the "done" news arrives)
 var _root: Node3D
 var count := 0           ## how many pieces are drawn now (tests)
+var shown := []          ## the models drawn now (tests)
+static var _boxes := {}  ## ruin box id + blueprint -> the rebuilt building's piece boxes (world)
 static var instance: RuinJunk
 
 
@@ -147,6 +152,39 @@ func _make_missing(ruins: Dictionary) -> void:
 		auth._ev_state.rpc(auth.world_state)
 
 
+## Broken mess (F864): the dungeon junk (bones, rags, rubble, dropped gear), the table litter, and anything broken.
+const MESS_WORDS := ["broken", "shattered", "fallen", "burst", "spill", "tipped", "overturned", "rolled", "snapped",
+	"pried", "rotten", "rubble", "scrap", "bones", "dropped", "cold"]
+static func is_mess(model: String) -> bool:
+	var id := model.get_file().get_basename()
+	if id.begins_with("junk_") or id.begins_with("tr_"):
+		return true
+	return MESS_WORDS.any(func(w: String): return w in id)
+
+
+## The boxes of the building that replaces ruin record `r` (its stone blueprint, where the ruin stands), world space.
+static func rebuilt_boxes(k: String, r: Dictionary) -> Array:
+	var key := "%s:%s" % [k, r.get("stone", "")]
+	if _boxes.has(key):
+		return _boxes[key]
+	var out := []
+	var bp := BlueprintLibrary.make(String(r.get("stone", ""))) if r.has("stone") and r.has("origin") else null
+	if bp != null:
+		for p in bp.world_pieces(r.origin, int(r.get("turn", 0))):
+			if Pieces.LIST.has(p.piece):
+				out.append(Pieces.box(p.piece, p.pos, p.rot).grow(0.05))
+	_boxes[key] = out
+	return out
+
+
+## Whole junk that is not where the rebuilt building stands stays after a rebuild (F864).
+static func keeps(model: String, pos: Vector3, boxes: Array) -> bool:
+	if is_mess(model):
+		return false
+	var at := pos + Vector3.UP * 0.3
+	return not boxes.any(func(b: AABB): return b.has_point(at))
+
+
 func _draw(ruins: Dictionary) -> void:
 	if _root:
 		_root.queue_free()
@@ -159,10 +197,12 @@ func _draw(ruins: Dictionary) -> void:
 	body.add_to_group(RuinKit.GROUP)
 	_root.add_child(body)
 	var all := {}  # model -> [Transform3D]
+	shown = []
 	for k in ruins:
 		for j in ruins[k].get("junk", []):
-			if _gone.has(k):
-				continue  # being rebuilt (or rebuilt): inside and outside are tidy now (owner, Nov 21)
+			if _gone.has(k) and not keeps(String(j[0]), j[1] as Vector3, rebuilt_boxes(k, ruins[k])):
+				continue  # being rebuilt (or rebuilt): the mess goes, inside and outside (owner, Nov 21; F864)
+			shown.append(String(j[0]))
 			(all.get_or_add(String(j[0]), []) as Array).append(Transform3D(Basis(Vector3.UP, float(j[2])), j[1] as Vector3))
 	var n := 0
 	for model in all:

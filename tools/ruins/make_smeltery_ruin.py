@@ -27,7 +27,7 @@ whole = [{"id": p["id"], "mat": p["mat"], "pos": [round(v, 4) for v in p["pos"]]
 # ---------------------------------------------------------------- the page's sketch (keep in step with make_smeltery_page.py)
 FURNACE, TOWER = (-19.732, -1.0), (18.0, -6.0)
 BRIDGE = (-16.0, -8.0)
-TURRET, WATCH = (-4.05, -3.5), (24.052, 2.4)
+TURRET, WATCH = (-4.05, -3.5), (24.052, 0.0)
 CUT = {"furnace": 5.6, "tower": 19.0, "hall": 8.5, "turret": 10.5, "watch": 6.0, "bridge": 99, "vaults": 99}
 BAND = {"tower": 1.0, "turret": 1.0, "watch": 1.0}
 

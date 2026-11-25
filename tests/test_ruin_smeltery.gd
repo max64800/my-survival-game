@@ -183,6 +183,7 @@ func test_spot_keeps_clear_of_what_the_world_grows() -> void:
 		print("SMELT_NATURAL seed %d: back rock %d of %d, way in %s, turn %d, room %d (radii %s)" % [sd, back, RuinSmeltery.BACK_ALL,
 			["open", "dug out", "a drop"][front], spot.turn, spot.room, c.rooms[spot.room].radii])
 		check(front < 2, "seed %d: no drop in the 10 m in front of the yard" % sd)
+		check(back >= 36, "seed %d: its back stands against the cave rock (F866: %d of %d back samples are rock)" % [sd, back, RuinSmeltery.BACK_ALL])
 		if sd == 42:  # (a new world takes a few seconds: once is enough)
 			check_eq(CaveMaker.new(sd).smeltery_spot, spot, "seed %d: always the same spot" % sd)
 

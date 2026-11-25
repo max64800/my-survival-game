@@ -131,18 +131,47 @@ func test_ruin_junk_keeps_off_the_way_in() -> void:
 		(kinds[k] as Node).free()
 
 
-## All its junk, inside and outside, goes when the ruin is being rebuilt (owner, Nov 21; the outside used to stay).
-func test_rebuilt_ruin_drops_all_its_junk() -> void:
+## The broken mess, inside and outside, goes when the ruin is being rebuilt (owner, Nov 21); whole things stay (F864,
+## owner Nov 25: "after rebuilding, all its junk is gone"), unless the rebuilt building stands on them.
+func test_rebuilt_ruin_drops_its_mess_and_keeps_whole_things() -> void:
 	var ruins := {"5": {name = "tower", junk = [["res://assets/models/dungeon/junk_bones.glb", Vector3(1, 0, 0), 0.0, true],
-		["res://assets/models/dungeon/junk_rags.glb", Vector3(9, 0, 0), 0.0, false]]}}
+		["res://assets/models/dungeon/junk_rags.glb", Vector3(9, 0, 0), 0.0, false],
+		["res://assets/models/decor/keg.glb", Vector3(9, 0, 3), 0.0, false],
+		["res://assets/models/decor/rt_fallen_bell.glb", Vector3(9, 0, 5), 0.0, false]]}}
 	var rj := RuinJunk.new(null)
 	rj._draw(ruins)
-	check_eq(rj.count, 2, "both drawn while the ruin stands")
+	check_eq(rj.count, 4, "all drawn while the ruin stands")
 	rj._gone["5"] = true
 	rj._draw(ruins)
-	check_eq(rj.count, 0, "inside and outside junk gone once it is rebuilt")
+	check_eq(rj.shown, ["res://assets/models/decor/keg.glb"], "only the whole keg is left once it is rebuilt (F864)")
 	rj.free()
+	for m in ["dungeon/junk_bones", "treasure/tr_mug", "decor/rt_arrow_crate_spill", "decor/rb_vat_burst", "decor/rs_lens_shattered",
+			"decor/ro_gate_wing_broken", "decor/rb_cask_rolled", "dungeon/junk_cookpot_tipped"]:
+		check(RuinJunk.is_mess(m + ".glb"), "%s is mess: it goes" % m)
+	for m in ["decor/keg", "decor/crate_stack", "decor/grain_sacks", "decor/ro_supply_cart", "decor/hw_ingot_cart",
+			"decor/ef_coal_scuttle", "decor/cf_ingot_stack", "decor/rt_weapon_rack", "decor/timber_stack"]:
+		check(not RuinJunk.is_mess(m + ".glb"), "%s is a whole thing: it stays" % m)
+	var wall := [AABB(Vector3(-1, 0, -0.15), Vector3(2, 3, 0.3))]
+	check(not RuinJunk.keeps("decor/keg.glb", Vector3(0, 0, 0), wall), "a keg where a rebuilt wall stands goes")
+	check(RuinJunk.keeps("decor/keg.glb", Vector3(0, 0, 0.8), wall), "a keg beside it stays")
 
+
+## Every ruin: its whole junk that stays after a rebuild is never inside the rebuilt building (F864).
+func test_kept_junk_is_never_inside_the_rebuilt_ruin() -> void:
+	for n in RuinJunk.PLANS:
+		var bp_key: String = {"tower": "stone_watchtower", "outpost": "stone_outpost", "brewhall": "hearthbrick_brewhall",
+			"spire": "lantern_spire"}[n]
+		var list := RuinJunk.load_list(n)
+		var kept := 0
+		var gone := 0
+		var boxes := RuinJunk.rebuilt_boxes("t_" + n, {stone = bp_key, origin = Vector3.ZERO, turn = 0})
+		for j in list:
+			var p := Vector3(float(j.pos[0]), float(j.pos[1]), float(j.pos[2]))
+			if RuinJunk.keeps(String(j.model), p, boxes):
+				kept += 1
+			else:
+				gone += 1
+		check(boxes.size() > 50 and kept > 0 and gone > 0, "%s (%s, %d boxes): some whole things stay (%d) and the mess goes (%d)" % [n, bp_key, boxes.size(), kept, gone])
 
 
 ## The catalogue pieces (owner, Nov 21: "Brewhall and Spire: nothing; Outpost and Watchtower: 2 props each"): every

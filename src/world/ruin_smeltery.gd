@@ -119,7 +119,7 @@ const BACK_XS := [-6.0, -1.0, 4.0, 9.0, 14.0, 19.0]
 const BACK_ZS := [-11.5, -14.0]
 const BACK_YS := [2.0, 6.0, 10.0, 14.0]
 const BACK_ALL := 48     ## BACK_XS x BACK_ZS x BACK_YS
-const BACK_MISS := 1.5   ## how much each back sample that's open air counts against a spot
+const BACK_MISS := 3.0   ## how much each back sample that's open air counts against a spot (F866: was 1.5)
 const FRONT_COST := 8.0  ## and a way in that has to be dug out
 
 
@@ -156,11 +156,13 @@ static func front_state(maker: CaveMaker, p: Vector3, basis: Basis) -> int:
 ## The spot (in the tallest caverns) with the flattest floor under it, no column or other ruin on any of its ground,
 ## the least rock in the way of its pieces (up to each piece's own height: a low ceiling over the chimney tower counts),
 ## the cave's own rock behind its back and the way in open; its front turned toward the way you come from if it fits
-## that way (else another way). past_columns = its second try (see columns_in). Returns {room, pos, turn}.
+## that way (else another way). Besides a grid round the cavern's middle, it tries spots slid straight back until its
+## back meets the cave wall (owner, Nov 25, F866: it stood out in the open in a wide cavern). past_columns = its second
+## try (see columns_in). Returns {room, pos, turn}.
 static func pick(maker: CaveMaker, past_columns := false) -> Dictionary:
 	var c0 := maker.cavern_spawn
 	var best := {}
-	var best_score := INF
+	var best_score := [INF]
 	var pts := ground()
 	for best_room in rooms_to_try(maker).slice(0, TRIES):
 		var rc: Vector3 = maker.rooms[best_room].center
@@ -168,74 +170,102 @@ static func pick(maker: CaveMaker, past_columns := false) -> Dictionary:
 		for o in maker._cols:
 			if Vector2(o.x - rc.x, o.y - rc.z).length() < 80.0:
 				cols.append(o)
+		var tries := []  # [p, turn, how far from the middle (m)]
 		for gx in range(-4, 5):
 			for gz in range(-4, 5):
 				var p := rc + Vector3(gx * 4.0, 0, gz * 4.0)
-				var to: Vector3 = c0 - p  # its front (local +z) faces the way you come from, if it can
-				var facing := posmod(roundi(atan2(to.x, to.z) / (PI / 2.0)), 4)
-				var mid := maker.find_floor(p.x, p.z, rc.y)
-				for k in 4:
-					var turn := posmod(facing + [0, 1, 3, 2][k], 4)
-					var basis := Basis(Vector3.UP, turn * PI / 2.0)
-					var ok := true
-					var inv := basis.inverse()
-					for o in cols:
-						if past_columns:
-							break  # (its second try: the columns in the way are taken out after, see columns_in)
-						if _column_in(o, p, inv):
-							ok = false  # a stone column would stand in it (the placement rule)
-							break
-					if not ok:
-						continue
-					var ys := []
-					var lo := INF
-					var hi := -INF
-					for i in range(0, pts.size(), 4):
-						var g: Vector2 = pts[i]
-						var w: Vector3 = p + basis * Vector3(g.x, 0, g.y)
-						if maker.is_reserved(Vector3(w.x, mid.y + 0.3, w.z), 2.0):
-							ok = false  # another ruin's (or a dungeon's) ground
-							break
-						var q := Vector3(w.x, mid.y + 4.0, w.z)  # (its floor, looked for only 3 m below the middle's: quick)
-						while q.y > mid.y - 3.25 and maker.sdf_at(q) > 0.0:
-							q.y -= 0.75
-						if q.y > mid.y - 3.25:
-							while maker.sdf_at(q + Vector3(0, 0.25, 0)) <= 0.0 and q.y < mid.y + 4.0:
-								q.y += 0.25  # (back up to the floor's top, 0.25 m at a time)
-						if q.y < mid.y - 3.0 and dip_at(g.x, g.y) > -0.5:
-							ok = false  # a drop or a chasm under it
-							break
-						ys.append(q.y)
-						lo = minf(lo, q.y)
-						hi = maxf(hi, q.y)
-						if (hi - lo) * 4.0 + [0, 5, 5, 10][k] >= best_score:
-							ok = false  # already worse than the best spot so far (quick)
-							break
-					if not ok or ys.is_empty():
-						continue
-					ys.sort()
-					var base: float = ys[0] - 0.05
-					var rock := 0
-					for i in range(0, pts.size(), 3):  # rock in the way of its pieces, up to their own height
-						var g: Vector2 = pts[i]
-						var top := top_at(g.x, g.y)
-						for h in [2.0, 6.0, 10.0, 14.0, 18.0, 22.0]:
-							if h > top:
-								break
-							if maker.sdf_at(Vector3(p.x, base, p.z) + basis * Vector3(g.x, h, g.y)) < 0.0:
-								rock += 1
-					var score: float = (ys[-1] - ys[0]) * 4.0 + rock * 1.0 + Vector2(gx, gz).length() * 0.3 + [0, 5, 5, 10][k]
-					if score < best_score:
-						var at := Vector3(p.x, base, p.z)
-						var front := front_state(maker, at, basis)
-						if front == 2:
-							continue  # a drop in front of the yard
-						score += front * FRONT_COST
-						score += (BACK_ALL - back_rock(maker, at, basis)) * BACK_MISS
-					if score < best_score:
-						best_score = score
-						best = {room = best_room, pos = Vector3(p.x, base, p.z), turn = turn}
+				for t in 4:
+					tries.append([p, t, Vector2(gx, gz).length() * 4.0])
+		for t in 4:  # slid back to the wall
+			var basis := Basis(Vector3.UP, t * PI / 2.0)
+			for lx in [-8.0, -4.0, 0.0, 4.0, 8.0]:
+				var d := 0.0
+				while d <= 44.0:
+					var p: Vector3 = rc + basis * Vector3(lx, 0, -d)
+					if maker.sdf_at(p + Vector3(0, 2.0, 0)) < 0.0:
+						break  # (into the rock itself)
+					var fy := maker.find_floor(p.x, p.z, rc.y + 4.0).y
+					var n := 0
+					for x in BACK_XS:
+						for y in [4.0, 8.0]:
+							if maker.sdf_at(p + basis * Vector3(x, 0, -11.0) + Vector3(0, fy - p.y + y, 0)) < 0.0:
+								n += 1
+					if n >= 8:  # its back meets the wall here
+						tries.append([p, t, Vector2(lx, d).length() * 0.5])
+						break
+					d += 2.0
+		for tr in tries:
+			var p: Vector3 = tr[0]
+			var to: Vector3 = c0 - p  # its front (local +z) faces the way you come from, if it can
+			var facing := posmod(roundi(atan2(to.x, to.z) / (PI / 2.0)), 4)
+			var pen: float = [0, 5, 10, 5][posmod(int(tr[1]) - facing, 4)] + float(tr[2]) * 0.075
+			var sc := _score(maker, p, int(tr[1]), pen, cols, pts, rc, past_columns, best_score[0])
+			if sc < best_score[0]:
+				best_score[0] = sc
+				best = {room = best_room, pos = Vector3(p.x, _last_base, p.z), turn = int(tr[1])}
 	return best
+
+
+static var _last_base := 0.0  ## where its ground line goes at the spot _score last passed
+
+
+## How bad a spot is (lower = better; INF = no good, or no better than `beat`).
+static func _score(maker: CaveMaker, p: Vector3, turn: int, pen: float, cols: Array, pts: Array, rc: Vector3,
+		past_columns: bool, beat: float) -> float:
+	var basis := Basis(Vector3.UP, turn * PI / 2.0)
+	var inv := basis.inverse()
+	if not past_columns:  # (its second try: the columns in the way are taken out after, see columns_in)
+		for o in cols:
+			if _column_in(o, p, inv):
+				return INF  # a stone column would stand in it (the placement rule)
+	var mid := maker.find_floor(p.x, p.z, rc.y)
+	var ys := []
+	var lo := INF
+	var hi := -INF
+	for i in range(0, pts.size(), 4):
+		var g: Vector2 = pts[i]
+		var w: Vector3 = p + basis * Vector3(g.x, 0, g.y)
+		if maker.is_reserved(Vector3(w.x, mid.y + 0.3, w.z), 2.0):
+			return INF  # another ruin's (or a dungeon's) ground
+		var q := Vector3(w.x, mid.y + 4.0, w.z)  # (its floor, looked for only 3 m below the middle's: quick)
+		while q.y > mid.y - 3.25 and maker.sdf_at(q) > 0.0:
+			q.y -= 0.75
+		if q.y > mid.y - 3.25:
+			while maker.sdf_at(q + Vector3(0, 0.25, 0)) <= 0.0 and q.y < mid.y + 4.0:
+				q.y += 0.25  # (back up to the floor's top, 0.25 m at a time)
+		if q.y < mid.y - 3.0 and dip_at(g.x, g.y) > -0.5:
+			return INF  # a drop or a chasm under it
+		ys.append(q.y)
+		lo = minf(lo, q.y)
+		hi = maxf(hi, q.y)
+		if (hi - lo) * 4.0 + pen >= beat:
+			return INF  # already worse than the best spot so far (quick)
+	if ys.is_empty():
+		return INF
+	ys.sort()
+	var base: float = ys[0] - 0.05
+	var rock := 0
+	for i in range(0, pts.size(), 3):  # rock in the way of its pieces, up to their own height
+		var g: Vector2 = pts[i]
+		var top := top_at(g.x, g.y)
+		for h in [2.0, 6.0, 10.0, 14.0, 18.0, 22.0]:
+			if h > top:
+				break
+			if maker.sdf_at(Vector3(p.x, base, p.z) + basis * Vector3(g.x, h, g.y)) < 0.0:
+				rock += 1
+	var score: float = (ys[-1] - ys[0]) * 4.0 + rock * 1.0 + pen
+	if score >= beat:
+		return INF
+	var at := Vector3(p.x, base, p.z)
+	var front := front_state(maker, at, basis)
+	if front == 2:
+		return INF  # a drop in front of the yard
+	score += front * FRONT_COST
+	score += (BACK_ALL - back_rock(maker, at, basis)) * BACK_MISS
+	if score >= beat:
+		return INF
+	_last_base = base
+	return score
 
 
 static func _column_in(o: Vector4, p: Vector3, inv: Basis) -> bool:
