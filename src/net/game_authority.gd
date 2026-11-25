@@ -2,6 +2,7 @@ class_name GameAuthority
 extends Node
 
 signal hud_message(text: String)  ## a line for our own screen
+signal music_stinger(name: String)  ## a short jingle for everyone (Music plays it)
 signal learned_recipe(recipe_id: String)  ## a recipe page taught the group something (a card on the left)
 signal learned_blueprint(what: String, page_id: String, why: String)
 ## The referee. Every action that changes the shared world goes through here:
@@ -970,10 +971,18 @@ func _ev_learned_blueprint(what: String, page_id: String, why: String) -> void:
 @rpc("authority", "call_local", "reliable")
 func _ev_ruin_rebuilt(name: String) -> void:
 	hud_message.emit("The old %s stands again!" % name)
+	music_stinger.emit(Music.ruin_stinger(name))
+
+
+@rpc("authority", "call_local", "reliable")
+func _ev_stinger(name: String) -> void:
+	music_stinger.emit(name)
 
 
 @rpc("authority", "call_local", "reliable")
 func _ev_learned(recipe_id: String) -> void:
+	var cooks: bool = String(Recipes.get_recipe(recipe_id).get("station", "")) == "campfire"
+	music_stinger.emit("recipe_cook" if cooks else "recipe")
 	learned_recipe.emit(recipe_id)  # a card on the left with its picture (owner, Nov 19)
 
 

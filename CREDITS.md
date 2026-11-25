@@ -42,7 +42,28 @@ Rule: only things allowed in a game you sell (best: CC0).
 | **AI-made.** Concept pictures in `assets/concepts/night-2026-11-15/` (32: dwarf heads, stations, model-fix references, material items, decor): made by us with ChatGPT image generation (owner's ChatGPT Plus). Reference only, not shipped in the game | Prompts and list: `docs/art/NIGHT-PICTURES-2026-11-15.md` | Ours (OpenAI terms give the output to the user) | 2026-11-15 |
 | The dwarf's animations: "Universal Animation Library" 1 and 2 (Standard) by Quaternius, in `assets/characters/anims/` | https://quaternius.com/packs/universalanimationlibrary.html · https://quaternius.com/packs/universalanimationlibrary2.html | CC0 | 2026-11-14 |
 
-No music yet. The monsters, crystals, mushrooms and building pieces are still made from simple
+## Music (in the game, `assets/music/`, trimmed and converted to .ogg; added 2026-11-25)
+
+| Used for | Title and artist | Link | Licence |
+|---|---|---|---|
+| Explore | "Solo Violin" by ztn | https://opengameart.org/content/solo-violin | CC0 |
+| Explore | "Meadow Thoughts" and "Stop dreaming about it" by Écrivain | https://opengameart.org/content/meadow-thoughts · https://opengameart.org/content/stop-dreaming-about-it | CC0 |
+| Explore | "Short kalimba loop" and "Emotional piano loop" by extenz | https://opengameart.org/content/short-kalimba-loop · https://opengameart.org/content/emotional-piano-loop | CC0 |
+| Explore | "Soundscape Dust Ambient Guitar" and "Soundscape D125" by Tri-Tachyon | https://opengameart.org/content/soundscape-dust-ambient-guitar · https://opengameart.org/content/soundscape-d125 | **CC-BY 4.0: credit needed** |
+| Explore | "Solo Guitar - Celtic #32" by Ellary | https://opengameart.org/content/solo-guitar-celtic-32 | **CC-BY 4.0: credit needed** |
+| Caves | "Crystal Cave (song18)" by cynicmusic; "Crystal Caverns" and "Dark Ambient Drone" by Tsorthan Grove | https://opengameart.org/content/crystal-cave-song18 · https://opengameart.org/content/crystal-caverns · https://opengameart.org/content/dark-ambient-drone | CC0 |
+| Caves, Boss | "Cavernous Depths" and "Final Confrontation" by tcarisland | https://opengameart.org/content/cavernous-depths · https://opengameart.org/content/final-confrontation | **CC-BY 4.0: credit needed** |
+| Caves | "Cave" by maggie.beans3696 | https://opengameart.org/content/cave-1 | **CC-BY 4.0: credit needed** |
+| Fights | "Cinematic percussion loop" by Marwan Antonios | https://opengameart.org/content/cinematic-percussion-loop | CC0 |
+| Fights | "Wasteland Showdown" by Matthew Pablo (www.matthewpablo.com) | https://opengameart.org/content/wasteland-showdown-battle-music | **CC-BY 3.0: credit needed** |
+| Boss | "Dark Descent (Extended Cut)" by Matthew Pablo (www.matthewpablo.com) | https://opengameart.org/content/dark-descent-extended-cut | **CC-BY 3.0: credit needed** |
+| Boss defeated | "The Last Horn" by redFireMeat | https://opengameart.org/content/the-last-horn | CC0 |
+| Small / medium / large ruin done | Horns by adharca (539956), kirmm (392180), Vendarro (328541) | https://freesound.org/s/539956/ · https://freesound.org/s/392180/ · https://freesound.org/s/328541/ | CC0 |
+| Recipe learned | "Music Box Chime" by Qvantor (879799); "Good answer harp glissando" by oggraphics (610703, cooking recipes) | https://freesound.org/s/879799/ · https://freesound.org/s/610703/ | CC0 |
+
+The CC-BY tracks must be named in the game's credits screen (none exists yet: add it when the credits screen is built, Step 7).
+
+The monsters, crystals, mushrooms and building pieces are still made from simple
 shapes in our own code (now with the shared painted look from `src/art/look.gd`).
 Quaternius asks (but doesn't require) a credit: "Characters and animations by Quaternius". Kenney asks (but doesn't require) a credit:
 "Sounds by Kenney (www.kenney.nl)" goes in the game's credits screen in Step 7.
