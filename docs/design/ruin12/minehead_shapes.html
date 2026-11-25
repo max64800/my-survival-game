@@ -59,18 +59,19 @@ li b { color: var(--ink); }
 		</div>
 		<h2>The idea</h2>
 		<p>Long ago, dwarves dug a deep mine here. A tall wooden frame stood over the hole, with a big wheel on top. A rope ran from a steam engine in the stone house, over the wheel and down the shaft, to pull ore carts up. Then carts rolled over a wooden bridge to the ore shed. One day the mine was left, and it fell apart.</p>
+			<p>Every building is <b>stone below, wood above</b>: heavy stone where the work is, light wood on top. Stone parts have flat roofs, wood parts sloped ones.</p>
 		<p>Press <b>See underground</b> to look inside the rock at the mine room under the shaft.</p>
 		<h2>The parts</h2>
 		<ul>
 			<li><b>Stone terrace + grand stair.</b> One long stone step that the engine house and the frame both stand on. A wide stair leads up to the engine house's round door.</li>
-			<li><b>Engine house (stone).</b> A tall hall for the engine, a smaller storey on top that steps back, flat roofs (Stonehold). Its back goes into the cave's rock wall. A tall stone stack (chimney) stands beside it.</li>
-			<li><b>Boiler shed (wood).</b> A small lean-to on the engine house's left, with a sloped roof.</li>
+			<li><b>Engine house (stone, then wood).</b> A tall stone hall for the engine with a flat stone roof terrace. On top, a smaller wooden storey steps back, with a sloped shingle roof. Its back goes into the cave's rock wall. A tall stone stack (chimney) stands beside it.</li>
+			<li><b>Boiler shed (stone, then wood).</b> A small lean-to on the engine house's left: a low stone wall, wood above, a sloped roof.</li>
 			<li><b>Headframe (wood on a stone collar).</b> The tallest part. It changes shape 3 times: a wide base with a loading deck, a thinner braced middle, then a wide top deck on brackets, then the wheel under a small sloped roof.</li>
 			<li><b>The Head Wheel (new piece).</b> The big wooden wheel on top. The rope runs from it to the engine house, and down the shaft.</li>
 			<li><b>The shaft.</b> A square hole with a stone rim, about 8 m deep. Ladders go down its side.</li>
 			<li><b>Mine room (underground).</b> At the bottom: a dug-out room held up by wooden props, the fallen lift cage, and the best chest. A tunnel at its end has caved in.</li>
 			<li><b>Trestle bridge (wood).</b> A tall wooden bridge with cart rails, from the loading deck, over a dip in the cave floor, to the ore shed.</li>
-			<li><b>Ore shed (wood on stone).</b> On a lower rock ledge, its back in the rock. Its top floor sticks out on brackets; chutes on its front poured ore into carts on the rails below.</li>
+			<li><b>Ore shed (stone, then wood).</b> On a lower rock ledge, its back in the rock. A stone ground storey with chutes that poured ore into carts on the rails below. Wood above, and its top floor sticks out on brackets.</li>
 			<li><b>Stairs in the rock.</b> Steps cut into the slope between the upper floor and the lower ledge, with rock beside them.</li>
 		</ul>
 		<h2>Built into the cave</h2>
@@ -239,20 +240,22 @@ roundDoor(-8, -2.94, 1.5, 2, 3.2);
 windows("z", -2.94, -12, -12, 2.2, 0.9, 3.4); windows("z", -2.94, -4, -4, 2.2, 0.9, 3.4);   // tall engine-hall windows
 windows("x", -1.94, -10, -6, 2.2, 0.9, 3.4, 4);
 rail(-14, -3, -14, -10, 7.7, "trim"); rail(-14, -3, -10, -3, 7.7, "trim");   // the roof terrace left of the top storey
-box(-10, -2, 7.7, 10.2, -12, -3.5, "stone2");                      // the top storey steps back in on the left
-box(-10.2, -1.8, 10.0, 10.4, -12, -3.3, "trim");
+box(-10, -2, 7.7, 10.2, -12, -3.5, "wood");                        // the wooden top storey steps back in on the left
+for (const x of [-10, -6, -2]) post(x, -3.45, 7.7, 10.2, 0.35, "beam");
+box(-10.2, -1.8, 10.0, 10.25, -12, -3.3, "beam");
 windows("z", -3.44, -8, -4, 8.4, 0.8, 1.2, 4);
+roofX(-10, -2, -12, -3.5, 10.25);                                  // wood on top = a sloped shingle roof (Shack)
 box(-2.06, -1.94, 8.2, 9.2, -4.6, -3.6, "dark");                   // the rope hole, toward the wheel
-tag("Engine house (stone)", -8, 12, -2);
+tag("Engine house (stone + wood)", -8, 12, -2);
 // the stack (chimney), eight-sided, beside the engine house's back
 add(new THREE.CylinderGeometry(1.0, 1.35, 17, 8), "stone", -16.5, 8.5, -9);
 add(new THREE.CylinderGeometry(1.25, 1.25, 0.5, 8), "trim", -16.5, 16.8, -9);
 tag("Stack", -16.5, 18.8, -9);
 // the boiler shed (wood lean-to) on its left, sloped roof
-box(-20, -15, 0, 3.0, -9, -3.5, "wood");
+box(-20, -15, 0, 1.2, -9, -3.5, "stone"); box(-20, -15, 1.2, 3.0, -9, -3.5, "wood");
 roundDoor(-17.5, -3.44, 0, 1.4, 2.4);
 { const r = box(-20.6, -14.6, 3.3, 3.5, -9.4, -3.1, "roof"); r.rotation.z = -0.22; r.position.y = 3.6; }
-tag("Boiler shed (wood)", -18.5, 6, -3);
+tag("Boiler shed (stone + wood)", -18.5, 6, -3);
 
 // ---- the headframe over the shaft (shaft x 3..7, z -6..-2) ----
 const HX = 5, HZ = -4;
@@ -325,8 +328,9 @@ tag("Trestle bridge + rails", 13.5, 8.5, -1);
 // ---- the ore shed on the lower ledge (y -3): stone base, wood bin house, a loft on brackets, sloped roof ----
 box(18, 30, -3, -0.75, -12, 2, "stone");
 box(17.9, 30.1, -0.95, -0.7, -12, 2.1, "trim");
-box(19, 29, -0.75, 6, -12, -2, "wood");
-for (const x of [19, 24, 29]) post(x, -1.95, -0.75, 6, 0.45, "beam");
+box(19, 29, -0.75, 2.5, -12, -2, "stone");                          // a stone ground storey with the chutes
+box(19, 29, 2.5, 6, -12, -2, "wood");                              // wood above
+for (const x of [19, 24, 29]) post(x, -1.95, 2.5, 6, 0.45, "beam");
 box(18.9, 29.1, 2.5, 2.75, -12, -1.9, "beam");                     // band at the floor line
 for (const x of [21, 24, 27]) { const c = box(x - 0.6, x + 0.6, 1.0, 1.2, -2.2, 0.4, "beam"); c.rotation.x = -0.6; }   // ore chutes
 windows("z", -1.94, 26.5, 26.5, 3.4, 0.8, 1.2);
@@ -336,7 +340,7 @@ for (const z of [-8, -6]) corbel(18.5, 6, z);
 roundDoorX(17.94, -4, 6, 1.4, 2.0);                                // where the carts come in off the bridge
 windows("z", -0.94, 21, 27, 6.6, 0.8, 1.1, 3);
 roofX(18, 29, -12, -1, 8.25);
-tag("Ore shed (wood on stone)", 24, 13.5, -3);
+tag("Ore shed (stone + wood)", 24, 13.5, -3);
 tag("Loft on brackets", 31, 7.5, 0);
 // rails along the ledge under the chutes, with carts
 track(18, 34, 1.2, -0.75 - 0);
