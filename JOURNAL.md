@@ -13205,3 +13205,23 @@ entrance), F849 (boss too easy, 2 minions), F850 (Shield-Brother never turns his
 - `test_item_sources.test_only_the_five_creatures_are_left` fails (16 monsters, expects 8). Another chat added the dungeon monsters; not this change.
 
 **Next:** step 2, the Armoury Bench (new chat, Opus: new model + new station).
+
+
+## Nov 25: ruin 11 shape model, round 2 (F895)
+
+**What we did**
+- The owner liked Brickcrown Keep and asked for three things: a short wall (same height as the curtain wall) from the
+  right tower to the rock, a courtyard carved into the rock behind the gate, and on the courtyard's left the keep's
+  stone base going on into the rock with a few rooms.
+- Added them to `docs/design/ruin11/brickcrown_shapes.html`: the curtain-wall arch is now a real round-topped gate
+  hole (an extruded wall shape) with two open wooden doors and a stone bridge over the dip; the rock wall has a notch
+  (x 8..23, 8 m deep) with paving, a well and rock hanging over the back; a stone room front with two round doors and
+  windows on the courtyard's left; the new wall joins the right tower to the rock. New camera button "Courtyard"
+  (the page also opens on a camera from the link's #name, which let headless Edge photograph each view).
+
+**Mistakes and hurdles**
+- The first courtyard camera was too low: the right tower hid the courtyard. Moved it higher and further left
+  (second and last photo round).
+
+**Next**
+- Owner's OK on the shapes, then build it from real stone and brick pieces in `BlueprintLibrary`.
