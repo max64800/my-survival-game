@@ -10,17 +10,17 @@ class_name BlueprintLibrary
 const IDS := ["delvers_hut", "miners_homestead", "stone_hall", "forge_workshop", "watchtower_cabin", "stone_watchtower",
 	"stone_outpost", "wooden_watchtower", "wooden_outpost", "hearthbrick_brewhall", "wooden_brewhall", "lantern_spire", "wooden_spire",
 	"hearthbrick_manor", "wooden_manor", "stonehold_twin_gate", "wooden_twin_gate", "stonehold_cliff_watch", "wooden_cliff_watch",
-	"stonehold_prow_hall", "wooden_prow_hall"]
+	"stonehold_prow_hall", "wooden_prow_hall", "hearthbrick_smeltery", "wooden_smeltery"]
 ## Known from the very start (F161): you place them and bring the materials. The rest are learned from
 ## Old Blueprints found in ruins (F98).
 const STARTER := ["delvers_hut"]
 ## Learned only by rebuilding a ruin (owner, Nov 19), never from an Old Blueprint page.
 ## The Brewhall's two (F479): its cellar goes below the ground line, which only the ruin digs out.
 ## The Lantern Spire's two (F479): a landmark you rebuild where it stands. The Hearth Manor's two (F479) the same, and the Twin Gate's and Cliff Watch's (owner, Nov 22: so the dev menu has them),
-## and the Prow Hall's (owner, Nov 22: its ruin teaches both).
+## and the Prow Hall's (owner, Nov 22: its ruin teaches both), and the Smeltery's (owner, Nov 25, F845: the same).
 const REBUILD_ONLY := ["wooden_watchtower", "wooden_outpost", "hearthbrick_brewhall", "wooden_brewhall", "lantern_spire", "wooden_spire",
 	"hearthbrick_manor", "wooden_manor", "stonehold_twin_gate", "wooden_twin_gate", "stonehold_cliff_watch", "wooden_cliff_watch",
-	"stonehold_prow_hall", "wooden_prow_hall"]
+	"stonehold_prow_hall", "wooden_prow_hall", "hearthbrick_smeltery", "wooden_smeltery"]
 const NAMES := {
 	"delvers_hut": "Delver's Hut",
 	"miners_homestead": "Miner's Homestead",
@@ -113,7 +113,7 @@ static func make(id: String) -> Blueprint:
 			lib._to_wood()
 			lib._stairs_on_the_floor()  # (before the stone top: it matches the stone hall piece by piece)
 			lib._prow_keep_top_stays_stone()
-		"hearthbrick_smeltery": lib._smeltery()  # (owner, Nov 24: ruin 10, F845; not learnable yet, its 3D page first)
+		"hearthbrick_smeltery": lib._smeltery()  # (owner, Nov 24: ruin 10, F845; learned by rebuilding its ruin)
 		"wooden_smeltery":  # (its trims, brackets and roof windows are Hearthbrick only: they stay brick)
 			lib._smeltery()
 			lib._to_wood()
@@ -2719,32 +2719,26 @@ func _smeltery() -> void:
 		_on_wall_x("cornice", B, SMELT_TOWER.x + s, SMELT_TOWER.z, ctop, s)
 		for s2 in [-1, 1]:
 			_add("cornice_corner", B, Vector3(SMELT_TOWER.x + s * 1.17, ctop, SMELT_TOWER.z + s2 * 1.17), 0)
-	# little round pinnacles on brackets at the square top's two front corners (the back two would be in the rock)
-	for x in [9, 17]:
-		var sd := -1 if x == 9 else 1
-		_on_wall_z("corbel", B, x - sd * 0.4, 1, 13.2, 1)
-		_on_wall_x("corbel", B, x, 0.6, 13.2, sd)
-		var py := 14.5
-		for id in ["column_base", "column_shaft", "column_shaft", "column_capital"]:
-			_add(id, B, Vector3(x, py, 1), 0)
-			py += Pieces.LIST[id].size.y
-	# --- the bridge (x -20..-14, z 2) over the dip, brackets under both ends, a round pier of columns in the dip,
+	# (no pinnacles on the square top's front corners: owner, Nov 25, F845: "remove the 2 columns from the roof")
+	# --- the bridge (x -20..-14, z 2) over the dip, brackets under both ends, three rows of tall columns under it (the dip is in front),
 	# roofed in wood on posts
 	for x in [-20, -18, -16, -14]:
 		_add("floor", B, Vector3(x, 3.0, 2), 0)
 		_wall_x("railing", x, 1, u, B)
 		_wall_x("railing", x, 3, u, B)
 		_add("roof_45_ridge", W, Vector3(x, u + 2.0, 2), 0)
-	for x in [-19, -17, -15]:
+	for x in [-19, -17, -15, -13]:  # (-13: posts at the hall end too, owner, Nov 25, F845)
 		for z in [1, 3]:
 			_add("pillar", W, Vector3(x, u, z), 0)
 	for z in [1.35, 2.65]:
 		_on_wall_x("corbel", B, -13, z, 2.0, -1)
 		_on_wall_x("corbel", B, -21, z, 2.0, 1)
-	_add("foundation", B, Vector3(-18, 0, 2), 0)
-	for x in [-19, -17]:
+	# three rows of tall columns from the cave floor up to it, no brick block under them (owner, Nov 25, F845)
+	for x in [-19, -17, -15]:
 		for z in [1, 3]:
-			_add("column", B, Vector3(x, g, z), 0)
+			_add("column_base", B, Vector3(x, 0, z), 0)
+			_add("column", B, Vector3(x, 0.5, z), 0)
+			_add("column_capital", B, Vector3(x, 2.5, z), 0)
 	# --- the Furnace Tower (12-sided): the ground door at its front, the bridge door on its right, stairs up a
 	# different side each storey, a deck with railings on top
 	_ring_off = SMELT_FURNACE
@@ -2818,10 +2812,64 @@ func _smeltery() -> void:
 		_on_wall_x("cornice", B, -13, z, 2.95, -1)
 	_on_wall_x("cornice", B, 17, 2, 2.95, 1)                                # (not behind the watch turret)
 	_add("cornice_corner", B, Vector3(-13.17, 2.95, 5.17), 0)
+	_brackets_off_windows()
 	# --- move it so the box is centred; only the space round the pieces is dug (F657), the cave wall behind stays
 	for p in _bp.pieces:
 		p.pos += SMELT_SHIFT
 	_air_only_round_pieces(func(lx: float, _y: float, lz: float) -> bool: return smelt_rock_top(lx, lz) > 0.0)
+
+
+## How far the glass reaches from a window piece's middle, along its wall (the rest is the frame's brick or wood).
+const GLASS_HALF := {window_wall = 0.6, window_wide = 0.75}
+
+
+## Does this bracket (corbel) cover a window's glass? (owner, Nov 25, F845: "these things cannot touch walls with
+## glass, it doesn't make sense"). Next to the window, on the frame or the wall between, is fine.
+static func bracket_on_glass(c: Dictionary, w: Dictionary) -> bool:
+	if not GLASS_HALF.has(w.id):
+		return false
+	var along := Vector3.RIGHT.rotated(Vector3.UP, Pieces.yaw_of(w.rot))
+	var d: Vector3 = c.pos - w.pos
+	var out := Vector3(d.x, 0, d.z) - along * d.dot(along)
+	var cy: float = c.pos.y
+	if out.length() > 0.8 or cy + Pieces.LIST["corbel"].size.y <= w.pos.y or cy >= w.pos.y + Pieces.LIST[w.id].size.y:
+		return false
+	return absf(d.dot(along)) < GLASS_HALF[w.id] + Pieces.LIST["corbel"].size.x * 0.5 - 0.01
+
+
+## Every bracket that would cover a window's glass slides along its wall to the seam beside the window (where two
+## wall pieces meet); if that is taken or on glass too, it goes.
+func _brackets_off_windows() -> void:
+	var wins := _bp.pieces.filter(func(q): return GLASS_HALF.has(q.id))
+	var gone := []
+	for c in _bp.pieces:
+		if c.id != "corbel":
+			continue
+		for w in wins:
+			if not bracket_on_glass(c, w):
+				continue
+			var along := Vector3.RIGHT.rotated(Vector3.UP, Pieces.yaw_of(w.rot))
+			var t: float = (c.pos - w.pos).dot(along)
+			var moved := false
+			for side in ([1.0, -1.0] if t >= 0.0 else [-1.0, 1.0]):
+				var np: Vector3 = c.pos + along * (side * 1.0 - t)
+				var free := true
+				for q in _bp.pieces:
+					if q != c and q.id == "corbel" and q.pos.distance_to(np) < 0.3:
+						free = false
+				var at := {id = "corbel", pos = np, rot = c.rot}
+				for w2 in wins:
+					if bracket_on_glass(at, w2):
+						free = false
+				if free:
+					c.pos = np
+					moved = true
+					break
+			if not moved:
+				gone.append(c)
+			break
+	for c in gone:
+		_bp.pieces.erase(c)
 
 
 ## The wooden Smeltery's chimney tower is six storeys plus its ring room, crown and chimney (about 23 m): wood loses

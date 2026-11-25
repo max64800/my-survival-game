@@ -4,7 +4,7 @@ An old dwarf bronze-works in **Hearthbrick** (clay_brick), set into the cave in 
 own brick, or mended in wood (`wooden_smeltery`). Concept sheet: `ideas_sheet.jpg`. 3D page:
 `tools/ruins/make_smeltery_page.py` + `tools/ruins/smeltery_page.html`.
 
-Code: `BlueprintLibrary._smeltery()` (design stage: in `make()` and `NAMES`, not in `IDS` / `REBUILD_ONLY` yet).
+Code: `BlueprintLibrary._smeltery()` (in `IDS` + `REBUILD_ONLY`: learned by rebuilding its ruin). In game (Nov 25): `src/world/ruin_smeltery.gd`, plan `blueprints/ruins/smeltery_ruin.json` from `tools/ruins/make_smeltery_ruin.py`, tests `tests/test_ruin_smeltery.gd`, ladder robot `src/debug/laddercheck.gd`.
 Checks: `tests/test_smeltery_design.gd` (sound, nothing falls, walk-through, both materials).
 
 ## The plan (2 m grid, before the shift `SMELT_SHIFT = (5, 0, -3)`; box 52 x 24 x 22)
@@ -18,27 +18,26 @@ Rebuilt Nov 25 to match the owner's approved shape model `smeltery_shapes.html`.
 | Stair turret | 6-sided at `SMELT_STAIR_TURRET` (-9.05, -0.5), door on the yard side, ladder inside, 4 storeys + railed top | 1 / 3.25 / 5.5 / 7.75 / 10, top 12.25 |
 | Chimney tower | square x 10..16, z -6..0, 6 storeys; doors out onto the wrap balcony at 7.75 | 1 / 3.25 / 5.5 / 7.75 / 10 / 12.25 |
 | Wrap balcony | brick floors round the tower's front (z 2) and right side (x 18) on corbels, railed | 7.5 |
-| Corner spires | carved columns on corbels at the square top's two front corners (x 9 and 17, z 1); the back two would be in the rock | 13.2 .. 17.5 |
 | Ring room + crown + chimney | 12-sided on the tower (centre `SMELT_TOWER`), 5 balconies on corbels, a square chimney with a cap band | 14.5, deck 16.5, chimney 16.75..20.75, cap 22.35 (~23 m) |
 | Furnace house | 12-sided at `SMELT_FURNACE` (-24.73, 2), 3 storeys + railed deck where it steps in | 1 / 3.25 / 5.5 / deck 7.5 |
 | Furnace top (neck) | thinner 6-sided ring on the deck, ladder inside, railed top | 7.75 / 10, top 12.25 |
 | Furnace porch | 1 cell on the furnace's front, steps, door, windows, lean-to roof | 1.0 |
-| Bridge | x -20..-14, z 2, roofed in wood (roof_45_ridge on wood pillars), brick pier with 4 carved columns at x -18 | 3.0, roof 5.25 |
+| Bridge | x -20..-14, z 2, roofed in wood (roof_45_ridge on wood pillars), posts at x -19/-17/-15/-13; under it 3 rows of tall columns (base + column + capital) at x -19/-17/-15, no brick block (owner, Nov 25) | 3.0, roof 5.25 |
 | Watch turret | 6-sided at `SMELT_WATCH` (19.05, 5.4) on the terrace's front-right corner, steps + door, ladder, railed crown | 1 / 3.25 / 5.5, top 7.75 |
 
-Cave: rock behind z < -10.2 (after the shift, `smelt_rock_top`), the dip under the bridge comes from the world.
+Cave: rock behind z < -10.2 (after the shift, `smelt_rock_top`), the dip just in front of the bridge (z 0.5..5 after the shift) comes from the world, so the columns stand on flat ground.
 **The cave must be about 24 m tall here.**
 
 Where it differs from the shape model (2 m pieces can't make everything):
 - The stair and watch turrets are 6-sided (3.5 m across, owner's pick Nov 25) with ladders, not tiny round towers.
-- The tower's corner turrets are carved stone spires on brackets, only on the two front corners.
+- No spires on the tower's square top (owner, Nov 25: removed).
 - The hall's left jetty is gone (the stair turret stands there). The lower terrace stays at yard height.
 - The porch is 1 cell wide with a lean-to roof; the chimney cap is a brick trim band (no bronze piece).
 - Ladders through the 6-sided floors' open triangle are not tried in the game yet.
 
 ## Recipe items covered (GRAND-RUIN-RECIPE)
 - Different heights: vaults 3.25, watch turret ~8.75, furnace ~13, hall ~13.75, stair turret ~13, tower ~23.
-- Things on brackets: hall balcony, wrap balcony, bridge ends, corner spires, tower crown balconies.
+- Things on brackets: hall balcony, wrap balcony, bridge ends, tower crown balconies.
 - Outline steps out (vaults), in (hall), out (balconies). Three shape changes on the tower (square, 12-sided, crown, chimney).
 - Terrace with a split grand stair to the main door, bands at the floor lines, symmetry broken (tower right, furnace left).
 - A round tower meets straight parts only on one flat side (furnace to bridge).
@@ -57,6 +56,7 @@ Where it differs from the shape model (2 m pieces can't make everything):
 - Brick: 8,862 Clay Brick, 1,314 Mortar, 48 Copper Ingot, 213 Rootwood Plank, 26 Rope (1,328 pieces).
 - The ruin mended in wood (340 pieces new): 2,310 Rootwood Plank, 281 Rope, 190 Clay Brick, 19 Mortar.
 
-## Next (after the owner's OK)
-The real ruin in the game (like `ruin_prow_hall.gd`): chests in the vaults, junk, beetles, the cave shape, a placement
-test that nothing grows inside it, then add the ids to `IDS` / `REBUILD_ONLY`.
+## In game (Nov 25)
+Done: chests in the vaults + the ring room, lootable props, beetles, rubble on the floors below, the cave shape, the
+placement test (seeds 42/7/1234), both ids in `IDS` / `REBUILD_ONLY`. All 5 ladders left standing climbed by the robot
+(`-- ruintest=smeltery laddercheck`): at a turret top you step back off the ladder onto the floor behind you.

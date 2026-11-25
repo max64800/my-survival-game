@@ -180,6 +180,10 @@ New lesson? Add it to the right section here **and** add a check that would have
    have rim beams; diagonal pieces end in points along the square's sides. (F165, F158, MODEL-RULES rule 2.) Check:
    model checks SHIMMER, FLOAT, OUTLINE (and look close: the checker once missed a tiny patch).
 5. **Storeys tall enough for the hall:** a big hall's storeys 1.5-2× the normal height. (F710, done Nov 23: the Prow Hall's hall and prow are 4.5 m.)
+6. **Brackets never sit on a window's glass** (owner, Nov 25: "it doesn't make sense"): a balcony's brackets go on
+   plain wall or on the seam beside a window, never over the opening. (F845, Smeltery.) Builder:
+   `BlueprintLibrary._brackets_off_windows()` slides them to the seam. Check: `test_brackets_keep_off_windows`
+   (`tests/test_smeltery_design.gd`); use `BlueprintLibrary.bracket_on_glass()` for every new blueprint.
 
 ## 10. The camera inside buildings
 1. **The camera only bumps into big solid pieces** (walls, floors, roofs, stairs, rock); thin pieces (railings,

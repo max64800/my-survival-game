@@ -73,3 +73,20 @@ func test_smeltery_walk_through() -> void:
 
 func _flight_at(bp: Blueprint, at: Vector3, rot: int) -> bool:
 	return bp.pieces.any(func(q): return q.id == "stairs" and q.rot == rot and (q.pos as Vector3).distance_to(at) < 0.05)
+
+
+## A bracket (corbel) never covers a window's glass (owner, Nov 25, F845: "these things cannot touch walls with
+## glass, it doesn't make sense"). Brick and wood.
+func test_brackets_keep_off_windows() -> void:
+	for id in IDS:
+		var bp := BlueprintLibrary.make(id)
+		var wins := bp.pieces.filter(func(q): return q.id in ["window_wall", "window_wide", "window_diagonal"])
+		var bad := []
+		for p in bp.pieces:
+			if p.id != "corbel":
+				continue
+			for w in wins:
+				if BlueprintLibrary.bracket_on_glass(p, w):
+					bad.append("%s on %s@%s" % [p.pos, w.id, w.pos])
+					break
+		check(bad.is_empty(), "%s: no bracket on a window's glass (%d: %s)" % [id, bad.size(), ", ".join(bad.slice(0, 10))])

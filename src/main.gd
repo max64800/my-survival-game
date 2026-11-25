@@ -197,6 +197,10 @@ func _ready() -> void:
 			_saving = false
 			if mode == "menu":
 				mode = "solo"
+		elif arg == "laddercheck":  # with ruintest=: climbs every ruin ladder and says if the dwarf gets off at the top (F845)
+			debug_script = "res://src/debug/laddercheck.gd"
+			_saving = false
+			_monsters = false
 		elif arg == "jumpcheck":  # photos of a sprinting long jump, shot by shot, to check the jump pose (F807)
 			debug_script = "res://src/debug/jumpcheck.gd"
 			_saving = false
@@ -714,6 +718,9 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 		# The Twin Gate (owner, Nov 22, F479 + F656 + F657), the same way. Robots: only with twincheck.
 		if not dungeon_test and (not _robot_run or OS.get_cmdline_user_args().has("twincheck")):
 			authority.world_state["twin_gate"] = "pending"
+		# The Smeltery Terraces (owner, Nov 25, F845), the same way. Robots: only with smeltcheck.
+		if not dungeon_test and (not _robot_run or OS.get_cmdline_user_args().has("smeltcheck")):
+			authority.world_state["smeltery"] = "pending"
 		if ruin_test == "tower":  # a ruin test world: only its ruin (RuinTests)
 			authority.add_child(RuinTower.new(authority))
 		elif ruin_test != "":
@@ -732,6 +739,8 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 		authority.add_child(RuinProwHall.new(authority))
 	if authority.is_host() and authority.world_state.has("twin_gate"):
 		authority.add_child(RuinTwinGate.new(authority))
+	if authority.is_host() and authority.world_state.has("smeltery"):
+		authority.add_child(RuinSmeltery.new(authority))
 	if _jungle_kit:
 		# Test kit: what you'd have after beating Orrumhal and Brask.
 		var kit := authority.get_player(me).inventory

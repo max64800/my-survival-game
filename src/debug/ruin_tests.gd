@@ -15,6 +15,7 @@ const LIST := [
 	{key = "manor", half = 18.5, name = "Hearth Manor", layout = 1105, cave = Vector3(40.0, 15.0, 38.0), back = 6.0, hard = "Brick"},
 	{key = "prow_hall", half = 26.0, name = "Prow Hall", layout = 1106, cave = Vector3(50.0, 20.0, 46.0), back = 2.0},
 	{key = "twin_gate", half = 20.0, name = "Twin Gate", layout = 1107, cave = Vector3(46.0, 20.0, 44.0), back = 2.0},
+	{key = "smeltery", half = 27.0, name = "Smeltery Terraces", layout = 1108, cave = Vector3(50.0, 26.0, 40.0), back = 2.0, hard = "Brick"},
 ]
 
 
