@@ -232,3 +232,29 @@ func test_roots_in_nearly_every_tunnel() -> void:
 		check(not m.is_reserved(r.pos, 0.5), "no root on built ground or a path")
 		for z in taken:
 			check((r.pos as Vector3).distance_to(z.pos) >= float(z.r) + 0.5, "no root in an old place's treasure")
+
+
+## F893 🔁 F630 (owner, Nov 25: "the bees are flying so fast"): the glowing swarms drift slowly round their caves,
+## in big caves too (their loop went round at a set turn speed, so a big cave's loop was fast).
+func test_swarms_drift_slowly() -> void:
+	var m := _maker()
+	var sw := GlowSwarms.new()
+	tree.root.add_child(sw)
+	sw.build(m)
+	var fastest := 0.0
+	var where := ""
+	for s in sw._swarms:
+		if not s.get("done", false):
+			sw._finish(s)
+		var t := 0.0
+		var last := sw._head_at(s, 0.0)
+		while t < 300.0:
+			t += 0.2
+			var now := sw._head_at(s, t)
+			var v := now.distance_to(last) / 0.2
+			if v > fastest:
+				fastest = v
+				where = "cave %.0f m across" % ((s.r as Vector3).x * 2.0)
+			last = now
+	check(fastest < GlowSwarms.MAX_SPEED + 0.05, "never faster than %.1f m/s (fastest %.2f m/s, %s)" % [GlowSwarms.MAX_SPEED, fastest, where])
+	sw.free()

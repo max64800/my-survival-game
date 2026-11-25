@@ -7,6 +7,11 @@ extends Node3D
 ## Only looks; planned from the cave (same caves get them on every computer, though each screen moves its own).
 
 const SHARE := 1.0  ## every cave gets fireflies (owner, Nov 18 again: "a lot more of them"); big caves 2-3, the first cave 5
+## F893 (owner, Nov 25: "the bees are flying so fast"): a swarm glides round its cave at about CRUISE m/s (at its widest), whatever
+## the cave's size, and never faster than MAX_SPEED (it went round at a set turn speed: up to 15 m/s in a big cave).
+const CRUISE := 0.5
+const MAX_SPEED := 1.0
+const RING_STEP := 1.0  ## m the path may move in or out from one feeler to the next (a tunnel's mouth made it jump)
 const ACTIVE := 80.0  ## swarms further than this from the camera hold still (nobody sees them move)
 ## Warm firefly colours (owner, Nov 18: they blended with the pale green/white glow-worm ceiling): gold, amber, lime-gold.
 const TINTS := [Color(1.0, 0.8, 0.3), Color(1.0, 0.62, 0.22), Color(0.85, 1.0, 0.3), Color(1.0, 0.9, 0.45)]
@@ -134,6 +139,32 @@ var _working = null  ## the swarm being finished now (Dictionary or null)
 
 func _finish_end(sw: Dictionary) -> void:
 	var c: Vector3 = sw.c
+	# A smooth loop: the wall's distance changes at most RING_STEP between feelers (only ever drawn in, so it stays in
+	# the cave), and its clock runs so the loop goes round at CRUISE m/s.
+	var ring: PackedFloat32Array = sw.ring
+	for pass_i in ring.size():
+		var same := true
+		for i in ring.size():
+			var lo := minf(ring[(i + ring.size() - 1) % ring.size()], ring[(i + 1) % ring.size()]) + RING_STEP
+			if ring[i] > lo:
+				ring[i] = lo
+				same = false
+		if same:
+			break
+	sw.ring = ring
+	var far := 1.5
+	for d in ring:
+		far = maxf(far, d - float(sw.gap))
+	sw.tscale = minf(1.0, CRUISE / maxf(0.01, absf(float(sw.w)) * far))
+	# and the bobbing (in, out, up, down) never adds up past MAX_SPEED: try the path out and slow its clock if it does
+	var peak := 0.0
+	var last := _head_at(sw, 0.0)
+	for k in 240:
+		var now := _head_at(sw, (k + 1) * 0.5)
+		peak = maxf(peak, now.distance_to(last) / 0.5)
+		last = now
+	if peak > MAX_SPEED * 0.8:
+		sw.tscale = float(sw.tscale) * MAX_SPEED * 0.8 / peak
 	sw.head = _head_at(sw, 0.0)
 	sw.prev = sw.head
 	for i in (sw.off as PackedVector2Array).size():
@@ -146,6 +177,7 @@ func _finish_end(sw: Dictionary) -> void:
 
 ## Where a swarm's head is at time t: smooth slow loops inside its cave, between 1.5 m above the floor and 2/3 up.
 func _head_at(sw: Dictionary, t: float) -> Vector3:
+	t *= float(sw.get("tscale", 1.0))
 	var f: Vector3 = sw.f
 	var ph: Vector3 = sw.ph
 	var c: Vector3 = sw.c
@@ -215,7 +247,7 @@ func _process(delta: float) -> void:
 		# and the stretch follows its speed slowly (frame-to-frame speed shakes with every uneven frame).
 		head = _above_floor(sw, head, delta)
 		var sm: Vector3 = sw.get("sm", head)
-		sm = sm.lerp(head, 1.0 - exp(-delta * 2.5))
+		sm += (sm.lerp(head, 1.0 - exp(-delta * 2.5)) - sm).limit_length(MAX_SPEED * delta)
 		for tr in _trunks:
 			if sm.y > float(tr.top) or sm.y < float(tr.bottom):
 				continue
