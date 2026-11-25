@@ -2201,7 +2201,7 @@ func request_use(peer_id: int, aim_point: Vector3, aim_normal: Vector3, yaw: flo
 			_next_station_id += 1
 			_ev_place_station.rpc(sid, id, spot, yaw)
 			if Station.WATER.has(id):
-				var drip := glow != null and GlowPlacer.drip_near(glow.spots_near(aim_point, 20.0), aim_point)
+				var drip := glow != null and GlowPlacer.drip_near(GlowPlacer.drips_above(glow, spot), spot)
 				_ev_water.rpc(sid, 0, drip)
 			if id == "bed":
 				set_bed(peer_id, "s%d" % sid)  # F727: your newest bed is your wake-up spot
@@ -3219,7 +3219,7 @@ func load_snapshot(snap: Dictionary) -> void:
 		if st.size() > 4 and stations.has(st[0]):
 			stations[st[0]].jobs.assign(st[4])  # smelting/cooking in progress survives a save
 		if st.size() > 6 and stations.has(st[0]):
-			stations[st[0]].under_drip = st[6]
+			stations[st[0]].under_drip = st[6] or (glow != null and GlowPlacer.drip_near(GlowPlacer.drips_above(glow, st[2]), st[2]))  # F884: old saves
 			stations[st[0]].set_water(st[5])
 		if st.size() > 8 and stations.has(st[0]):
 			stations[st[0]].set_crop(st[7], st[8])  # what's growing on a farm plot

@@ -705,12 +705,28 @@ static func drip_fall(maker: CaveMaker, ceiling: Vector3) -> float:
 	return clampf(tip.y - fl.y, 0.3, 80.0) if fl != Vector3.INF else NO_FLOOR
 
 
-## Drip spots near p (sideways distance), for Drip Buckets.
+## Is a drip dripping onto p (for Drip Buckets)? Close sideways, above p, and its drops fall down as far as p.
+## F884 (owner, Nov 25: "right under the drips, it says no drips here"): it used to count only drips less than
+## 15 m up, but in tall caves they hang higher (about 1 in 8). Now each drip's own fall to the floor counts.
 static func drip_near(spots: Array, p: Vector3) -> bool:
 	for s in spots:
-		if s.kind == DRIP and Vector2(s.pos.x - p.x, s.pos.z - p.z).length() <= DRIP_REACH and s.pos.y > p.y and s.pos.y - p.y < 15.0:
+		if s.kind != DRIP or s.get("hidden", false):
+			continue
+		if Vector2(s.pos.x - p.x, s.pos.z - p.z).length() > DRIP_REACH or s.pos.y <= p.y:
+			continue
+		if s.pos.y - DRIP_TIP - float(s.get("fall", NO_FLOOR)) - 2.0 < p.y:
 			return true
 	return false
+
+
+## Drip spots that could drip onto p: a tall box straight above it (drips hang up to 80 m up).
+static func drips_above(glow: GlowField, p: Vector3) -> Array:
+	var out := []
+	for k in 9:
+		for s in glow.spots_near(p + Vector3.UP * (2.0 + k * 9.0), 6.0):
+			if s.kind == DRIP and not out.has(s):
+				out.append(s)
+	return out
 
 
 static func is_plant(kind: String) -> bool:

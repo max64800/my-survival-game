@@ -103,6 +103,34 @@ func test_drip_drops_reach_the_floor() -> void:
 	check(n > 0, "the world has drips (%d)" % n)
 
 
+## F884 (owner, Nov 25: "placed right under the drips, it says no drips here"): a Drip Bucket on the floor under any
+## drip you can see fills up, also under the ones high up in tall caves; one 6 m to the side doesn't.
+func test_bucket_under_any_drip_fills() -> void:
+	for sd in [42, 7]:
+		var maker := CaveMaker.new(sd)
+		var glow := GlowField.new()
+		tree.root.add_child(glow)
+		glow.build(GlowPlacer.place(maker))
+		var n := 0
+		var missed := 0
+		for s in GlowPlacer.place(maker):
+			if s.kind != GlowPlacer.DRIP or s.get("hidden", false) or float(s.fall) >= GlowPlacer.NO_FLOOR:
+				continue
+			n += 1
+			var floor_at: Vector3 = s.pos + Vector3.DOWN * (GlowPlacer.DRIP_TIP + float(s.fall))
+			for off in [Vector3.ZERO, Vector3(1.5, 0.3, 0.0), Vector3(0.0, -0.2, -2.0)]:
+				var p: Vector3 = floor_at + off
+				if not GlowPlacer.drip_near(GlowPlacer.drips_above(glow, p), p):
+					missed += 1
+					print("  seed %d: bucket at %s not under drip %d (fall %.1f)" % [sd, str(p), s.id, float(s.fall)])
+		check(n > 20, "seed %d: drips to test (%d)" % [sd, n])
+		check_eq(missed, 0, "seed %d: a bucket under every drip fills" % sd)
+		var away: Vector3 = Vector3(9999, 0, 9999)
+		check(not GlowPlacer.drip_near(GlowPlacer.drips_above(glow, away), away), "no drip far away")
+		tree.root.remove_child(glow)
+		glow.free()
+
+
 ## Ground things are sometimes bigger, never smaller (owner F218), the same on every computer.
 func test_size_boost_only_grows() -> void:
 	var big := 0
