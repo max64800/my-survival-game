@@ -93,3 +93,19 @@ func test_ore_glints_in_lantern_light() -> void:
 	var ln := FileAccess.get_file_as_string("res://src/player/lantern.gd")
 	check(ln.contains("global_shader_parameter_set(\"lantern_at\"") and ln.contains("peer_id == multiplayer.get_unique_id()"),
 		"only your own lantern tells the rock where it is (co-op: everyone sees glints by their own light)")
+
+
+## F876 (owner, Nov 25: "like in normal games"): Settings has tabs: Display, Audio, Controls, Gameplay; one page at a time.
+func test_settings_tabs() -> void:
+	var panel := SettingsPanel.new()
+	tree.root.add_child(panel)
+	await tree.process_frame
+	for t in ["display", "audio", "controls", "gameplay"]:
+		check(panel.find_child("Tab_" + t, true, false) is Button, "a %s tab" % t)
+	panel.show_tab("controls")
+	check(panel.find_child("Page_controls", true, false).visible and not panel.find_child("Page_audio", true, false).visible, "one page at a time")
+	check(panel.find_child("Page_controls", true, false).is_ancestor_of(panel.find_child("ControlsList", true, false)), "the key list is on Controls")
+	check(panel.find_child("Page_audio", true, false).is_ancestor_of(panel.find_child("Volume", true, false)), "the sound sliders are on Audio")
+	check(panel.find_child("Page_display", true, false).is_ancestor_of(panel.find_child("Preset", true, false)), "graphics on Display")
+	check(panel.find_child("Page_gameplay", true, false).is_ancestor_of(panel.find_child("Hints", true, false)), "hints on Gameplay")
+	panel.free()

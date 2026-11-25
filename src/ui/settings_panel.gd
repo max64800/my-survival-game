@@ -2,20 +2,44 @@ class_name SettingsPanel
 extends PanelContainer
 ## The Settings panel (owner F187 mock-up): sound volume, mute, mouse speed and graphics (owner, Nov 19), remembered on this
 ## computer (SoundSettings). Used by the start screen and the Escape menu. A Music slider sits under the main volume.
+## F876 (owner, Nov 25: "like in normal games"): tabs along the top: Display, Audio, Controls, Gameplay.
+
+const TABS := [["display", "Display"], ["audio", "Audio"], ["controls", "Controls"], ["gameplay", "Gameplay"]]
+var tab := "display"
+var _pages := {}  ## tab id -> its page
+var _tab_buttons := {}
 
 
 func _ready() -> void:
 	UiKit.panel(self)
-	custom_minimum_size = Vector2(360, 0)
-	var cols := HBoxContainer.new()  # settings on the left, the controls list on the right (F870)
-	cols.add_theme_constant_override("separation", 28)
-	add_child(cols)
-	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", 10)
-	v.custom_minimum_size = Vector2(360, 0)
-	cols.add_child(v)
-	_build_controls(cols)
-	UiKit.title(v, "Settings")
+	custom_minimum_size = Vector2(620, 560)  # the same size on every tab (it doesn't jump when you switch)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 12)
+	add_child(box)
+	UiKit.title(box, "Settings")
+	var bar := HBoxContainer.new()
+	bar.name = "Tabs"
+	bar.alignment = BoxContainer.ALIGNMENT_CENTER
+	bar.add_theme_constant_override("separation", 8)
+	box.add_child(bar)
+	for t in TABS:
+		var b := UiKit.dark_button(Button.new(), 18)
+		b.name = "Tab_" + t[0]
+		b.text = t[1]
+		b.focus_mode = Control.FOCUS_NONE
+		b.custom_minimum_size = Vector2(140, 42)
+		b.pressed.connect(func(): show_tab(t[0]))
+		bar.add_child(b)
+		_tab_buttons[t[0]] = b
+	UiKit.divider(box)
+	for t in TABS:
+		var page := VBoxContainer.new()
+		page.name = "Page_" + t[0]
+		page.add_theme_constant_override("separation", 12)
+		page.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		box.add_child(page)
+		_pages[t[0]] = page
+	var v: VBoxContainer = _pages.audio
 	var sound := _row(v, "Sound")
 	sound.name = "SoundBox"
 	var vol := UiKit.slider(HSlider.new())
@@ -45,7 +69,7 @@ func _ready() -> void:
 	mute.set_pressed_no_signal(SoundSettings.muted)
 	mute.toggled.connect(func(m: bool): SoundSettings.set_muted(m))
 	v.add_child(mute)
-	UiKit.divider(v)
+	v = _pages.controls
 	var mouse := _row(v, "Mouse speed")
 	var ms := UiKit.slider(HSlider.new())
 	ms.name = "MouseSpeed"
@@ -57,6 +81,8 @@ func _ready() -> void:
 	ms.value_changed.connect(func(x: float): SoundSettings.set_mouse_scale(x / 100.0))
 	mouse.add_child(ms)
 	UiKit.divider(v)
+	_build_controls(v)
+	v = _pages.gameplay
 	# Camera shake (F695, owner Nov 22): some people get dizzy from it, so it can be turned down or off.
 	var shake_row := _row(v, "Camera shake")
 	var sh := UiKit.slider(HSlider.new())
@@ -76,7 +102,8 @@ func _ready() -> void:
 	hints.set_pressed_no_signal(FirstCards.hints_on)
 	hints.toggled.connect(func(on: bool): FirstCards.set_hints(on))
 	v.add_child(hints)
-	UiKit.divider(v)
+	UiKit.label(v, "Hints and cards: a picture card the first time you meet something new (they are all kept in Notes, J)", 13, UiKit.DIM).autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	v = _pages.display
 	# Graphics (owner, Nov 19: run well on weak computers too): a preset, and the few things people change most.
 	var gfx := _row(v, "Graphics")
 	var pick := OptionButton.new()
@@ -134,6 +161,17 @@ func _ready() -> void:
 			sh.set_value_no_signal(SoundSettings.camera_shake * 100.0)
 			hints.set_pressed_no_signal(FirstCards.hints_on)
 			show_gfx.call())
+	show_tab(tab)
+
+
+## Shows one tab's page (F876).
+func show_tab(which: String) -> void:
+	tab = which
+	for k in _pages:
+		_pages[k].visible = k == which
+		var b: Button = _tab_buttons[k]
+		b.add_theme_color_override("font_color", UiKit.AMBER if k == which else UiKit.DIM)
+		b.modulate = Color.WHITE if k == which else Color(0.78, 0.78, 0.78)
 
 
 ## F870 (owner, Nov 25: "the screen is all over the place"): the controls list lives only here, not on the game screen.
@@ -149,19 +187,26 @@ const CONTROLS := [
 
 
 func _build_controls(parent: Node) -> void:
-	var c := VBoxContainer.new()
-	c.name = "ControlsList"
-	c.add_theme_constant_override("separation", 4)
-	parent.add_child(c)
-	UiKit.title(c, "Controls")
+	var scroll := ScrollContainer.new()  # (F876: big and easy to read; scrolls if the screen is small)
+	scroll.name = "ControlsList"
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	parent.add_child(scroll)
 	var grid := GridContainer.new()
-	grid.columns = 2
-	grid.add_theme_constant_override("h_separation", 16)
-	grid.add_theme_constant_override("v_separation", 3)
-	c.add_child(grid)
-	for row in CONTROLS:
-		UiKit.label(grid, row[0], 14, UiKit.AMBER)
-		UiKit.label(grid, row[1], 14, UiKit.TEXT)
+	grid.columns = 4  # two columns of key + what it does
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	grid.add_theme_constant_override("h_separation", 14)
+	grid.add_theme_constant_override("v_separation", 5)
+	scroll.add_child(grid)
+	var half := ceili(CONTROLS.size() / 2.0)
+	for i in half:
+		for row in [CONTROLS[i], CONTROLS[i + half] if i + half < CONTROLS.size() else []]:
+			if row.is_empty():
+				continue
+			var key := UiKit.label(grid, row[0], 18, UiKit.AMBER)
+			key.custom_minimum_size.x = 100
+			var what := UiKit.label(grid, row[1], 17, UiKit.TEXT)
+			what.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 
 ## A setting's name over its control.
