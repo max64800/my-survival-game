@@ -25,27 +25,27 @@ func test_controls_are_in_the_settings_page() -> void:
 	check_eq(Controls.key_name("refill_lantern"), "R", "refill is R (L puts the lantern away)")
 
 
-## A skill pops up for ~2 s only when it grows, then hides; a level up shows too.
+## F880 (owner, Nov 25): a skill pops up (with its picture) only when it LEVELS UP, not on every bit of XP; a level up shows too.
 func test_skill_pops_up_when_it_grows() -> void:
 	var pop := SkillPopup.new()
 	tree.root.add_child(pop)
 	var p := Progression.new()
 	pop.watch(p, 0.016)
 	check(not pop.visible, "hidden at the start")
-	p.add_xp(6, "mining")
+	p.add_xp(1, "jumping")
 	pop.watch(p, 0.016)
-	check(pop.visible, "shows after mining XP")
-	check(pop.text().begins_with("Mining 0") and pop.text().ends_with("+6"), "says the skill and the gain: '%s'" % pop.text())
-	p.add_xp(4, "mining")
+	check(not pop.visible, "a bit of XP shows nothing (was 'Jumping 0 +1')")
+	p.add_xp(Progression.skill_xp_to_next(0), "mining")
 	pop.watch(p, 0.016)
-	check(pop.text().ends_with("+10"), "gains add up while it's showing: '%s'" % pop.text())
-	for i in 200:  # 3.2 s, nothing gained
+	check(pop.visible and pop.text() == "Mining 1!", "a skill level up shows: '%s'" % pop.text())
+	for i in 250:  # 4 s, nothing new
 		pop.watch(p, 0.016)
-	check(not pop.visible, "gone again after ~2 s")
+	check(not pop.visible, "gone again after ~2.5 s")
 	p.add_xp(Progression.xp_to_next(p.level), "")
 	pop.watch(p, 0.016)
 	check(pop.text().begins_with("Level 2"), "a level up shows: '%s'" % pop.text())
-	check_eq(SkillPopup._gain([0, Progression.skill_xp_to_next(0) - 5], 1, 3), 8, "XP over a skill level-up is counted right")
+	for s in Progression.SKILL_INFO:
+		check(SkillPopup.icon(s) != null, "%s has a picture" % s)
 	pop.free()
 
 
