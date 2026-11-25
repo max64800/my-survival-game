@@ -2661,6 +2661,7 @@ func request_craft(peer_id: int, recipe_id: String, station_id: int = 0) -> bool
 		return false
 	if st and st.level() < int(r.get("level", 1)):
 		return false  # needs a better-equipped station (F115)
+	var pulled := _pull_for_craft(ps, recipe_id, st)
 	var fuel_item := ""
 	if r.get("fuel", 0) > 0:
 		for f in ["coal"]:  # only coal from the Bloomery, never raw wood (owner, Nov 19, F404)
@@ -2717,11 +2718,57 @@ func request_craft(peer_id: int, recipe_id: String, station_id: int = 0) -> bool
 		var used := []
 		for item in r.inputs:
 			used.append("%d %s" % [r.inputs[item], Items.display_name(item)])
-		tell(peer_id, "Made a %s from %s%s." % [Items.display_name(r.output), ", ".join(used),
-			" (some made first from what was in your bag)" if extra_seconds > 0.0 or crafted_first else ""])
+		tell(peer_id, "Made a %s from %s%s.%s" % [Items.display_name(r.output), ", ".join(used),
+			" (some made first from what was in your bag)" if extra_seconds > 0.0 or crafted_first else "",
+			" Some came from the chests nearby." if pulled else ""])
 	var xp := 10 if Items.stack_size(r.output) == 1 else (5 if skill == "cooking" else 1)
 	give_xp(peer_id, xp, skill)
 	return true
+
+
+## F888 (owner, Nov 25): what the bag is short of for this craft (and the in-between things auto-crafting makes
+## first, and the coal) comes out of the chests and barrels nearby (Storage.craft_boxes) into the bag, then the
+## craft goes on as usual. Only when bag + chests have it all; otherwise nothing moves. Returns true if it took any.
+func _pull_for_craft(ps: PlayerState, recipe_id: String, st: Station) -> bool:
+	if storage == null:
+		return false
+	var r := Recipes.get_recipe(recipe_id)
+	var at := _chest(ps)
+	var fuel: int = int(r.get("fuel", 0))
+	if Crafting.missing(ps.inventory, recipe_id).is_empty() and ps.inventory.count_of("coal") >= fuel:
+		return false
+	if storage.craft_boxes(at).is_empty():
+		return false
+	var stock := storage.craft_stock(ps.inventory, at)
+	var steps := [recipe_id]
+	if not Crafting.missing(stock, recipe_id).is_empty():
+		var lvl := st.level() if st else 1
+		steps = Crafting.plan(stock, recipe_id, r.station, func(id): 			return Recipes.is_unlocked(id, ps.seen, taught_recipes()) and lvl >= int(Recipes.get_recipe(id).get("level", 1)))
+		if steps.is_empty():
+			return false
+	# Walk the steps on the bag's counts: what runs short has to come from the chests.
+	var have := {}
+	var short := {}
+	for sid in steps:
+		var sr := Recipes.get_recipe(sid)
+		for item in sr.inputs:
+			if not have.has(item):
+				have[item] = ps.inventory.count_of(item)
+			var n: int = int(sr.inputs[item])
+			if have[item] < n:
+				short[item] = short.get(item, 0) + n - have[item]
+				have[item] = n
+			have[item] -= n
+		have[sr.output] = have.get(sr.output, ps.inventory.count_of(sr.output)) + int(sr.count)
+	if fuel > 0 and ps.inventory.count_of("coal") < fuel:
+		short["coal"] = short.get("coal", 0) + fuel - ps.inventory.count_of("coal")
+	for item in short:
+		if stock.count_of(item) - ps.inventory.count_of(item) < short[item]:
+			return false
+	var took := false
+	for item in short:
+		took = storage.pull_for_craft(ps.inventory, at, item, short[item]) > 0 or took
+	return took
 
 
 func request_pickup(peer_id: int, drop_id: int) -> bool:

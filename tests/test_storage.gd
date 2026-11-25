@@ -88,6 +88,39 @@ func test_drag_to_a_chosen_slot() -> void:
 	_teardown()
 
 
+## F888 (owner, Nov 25): crafting takes what the bag is short of from the chests and barrels nearby; never from a
+## chest that's far away, a grave or a Builder's Chest, and nothing moves if it still can't be made.
+func test_crafting_takes_from_nearby_chests() -> void:
+	await _setup()
+	var st := auth.storage
+	var bag := ps.inventory
+	bag.remove("stone", bag.count_of("stone"))
+	bag.remove("rootwood", bag.count_of("rootwood"))
+	bag.add("stone", 2)
+	var far := st.create_box("chest_small", player.global_position + Vector3(20, 0, 0), 0.0)
+	st.put(far, "rootwood", 50)
+	var builder := st.create_box("builder", player.global_position + Vector3(0, 0, 2), 0.0)
+	st.put(builder, "stone", 50)
+	check(not auth.request_craft(1, "campfire"), "a far chest and a Builder's Chest don't count")
+	check_eq(st.get_box(builder).inv.count_of("stone"), 50, "the Builder's Chest kept its stone")
+	var near := st.create_box("chest_small", player.global_position + Vector3(2, 0, 0), 0.0)
+	var keg := st.create_box("barrel", player.global_position + Vector3(-2, 0, 0), 0.0)
+	st.put(near, "stone", 2)
+	st.put(keg, "rootwood", 7)
+	check(not auth.request_craft(1, "campfire"), "still 1 stone short: no campfire")
+	check_eq(st.get_box(near).inv.count_of("stone"), 2, "and nothing was taken")
+	check_eq(CraftPanel.can_make_count("campfire", st.craft_stock(bag, player.global_position)), 0, "the list says it can't be made")
+	st.put(near, "stone", 3)
+	check_eq(CraftPanel.can_make_count("campfire", st.craft_stock(bag, player.global_position)), 1, "the list counts the chests")
+	check(auth.request_craft(1, "campfire"), "bag + chest + barrel: a campfire")
+	check_eq(bag.count_of("campfire"), 1, "the campfire is in the bag")
+	check_eq(bag.count_of("stone"), 0, "the bag's 2 stones were used first")
+	check_eq(st.get_box(near).inv.count_of("stone"), 2, "3 stones came from the chest")
+	check_eq(st.get_box(keg).inv.count_of("rootwood"), 4, "3 rootwood came from the barrel")
+	check_eq(st.get_box(far).inv.count_of("rootwood"), 50, "the far chest wasn't touched")
+	_teardown()
+
+
 func test_too_far_from_chest() -> void:
 	await _setup()
 	var id := auth.storage.create_box("chest_small", player.global_position + Vector3(20, 0, 0), 0.0)

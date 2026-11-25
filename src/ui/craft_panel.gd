@@ -250,10 +250,11 @@ func refresh() -> void:
 	var tab_ids: Array = by_tab.get(_tab, [])
 	if not _picked in tab_ids:
 		_picked = tab_ids[0] if not tab_ids.is_empty() else ""
+	var stock := stock_of(ps)  # your bag and the chests nearby (F888)
 	for id in tab_ids:
 		shown += 1
-		cards.add_child(_card(id, ps.inventory))
-	_show_detail(ps.inventory)
+		cards.add_child(_card(id, stock))
+	_show_detail(stock)
 	# The card area is only as tall as its cards, up to 3 rows (F247: no empty space under the icons).
 	var rows := ceili(maxi(shown, 1) / float(CARD_COLUMNS))
 	_scroll.custom_minimum_size.y = mini(rows, 3) * (CARD + 6) - 6
@@ -285,7 +286,16 @@ static func craft_time(recipe_id: String) -> float:
 	return clampf(amount / 6.0, 1.0, 3.0)
 
 
-## How many of a recipe you can make right now with what you carry.
+## F888 (owner, Nov 25): what you can craft from: your bag and the chests and barrels nearby (the host moves what's
+## needed from them into your bag when you craft).
+static func stock_of(ps: GameAuthority.PlayerState) -> Inventory:
+	var auth := GameAuthority.instance
+	if auth == null or auth.storage == null or not is_instance_valid(ps.node):
+		return ps.inventory
+	return auth.storage.craft_stock(ps.inventory, ps.node.global_position)
+
+
+## How many of a recipe you can make right now with what you carry (and the chests nearby).
 static func can_make_count(recipe_id: String, inv: Inventory) -> int:
 	var r := Recipes.get_recipe(recipe_id)
 	var most := 999
@@ -310,7 +320,7 @@ func start_making(recipe_id: String, count: int = -2) -> void:
 	if count == -2:  # from the Craft button: the chosen amount (owner F129)
 		count = amount
 	if me_ps:
-		count = mini(count, maxi(can_make_count(recipe_id, me_ps.inventory), 1))
+		count = mini(count, maxi(can_make_count(recipe_id, stock_of(me_ps)), 1))
 	count = maxi(count, 1)
 	var one := craft_time(recipe_id) * (_prog().craft_time_mult(false) if _prog() else 1.0)  # Crafting: −3% per 10 levels
 	if one <= 0.0:

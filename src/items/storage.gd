@@ -219,6 +219,60 @@ func request_take_all(peer_id: int, box_id: int) -> int:
 	return moved
 
 
+## F888 (owner, Nov 25: "crafting should take from nearby chests and barrels, a big thing in crafting games"):
+## the chests and barrels within CRAFT_REACH of `at` that crafting may take from (not graves, Builder's or
+## Rebuilding Chests, old loot chests or recipe stands). Nearest first.
+const CRAFT_REACH := 8.0
+const CRAFT_FROM := ["barrel", "chest_small", "chest_stone", "chest_copper", "crate_ore"]
+
+
+func craft_boxes(at: Vector3) -> Array[int]:
+	var out: Array[int] = []
+	var ids := boxes.keys()
+	ids.sort()
+	for id in ids:
+		var b: Dictionary = boxes[id]
+		if b.kind in CRAFT_FROM and is_instance_valid(b.node) and b.node.global_position.distance_to(at) <= CRAFT_REACH:
+			out.append(id)
+	out.sort_custom(func(x, y): return boxes[x].node.global_position.distance_to(at) < boxes[y].node.global_position.distance_to(at))
+	return out
+
+
+## Your bag and the nearby chests together (to count what you could craft; not a real bag).
+func craft_stock(bag: Inventory, at: Vector3) -> Inventory:
+	var ids := craft_boxes(at)
+	if ids.is_empty():
+		return bag
+	var all := Inventory.new(bag.slots.size())
+	all.load_data(bag.to_data())
+	for id in ids:
+		for s: Dictionary in boxes[id].inv.slots:
+			if not s.is_empty():
+				all.slots.append({id = s.id, count = int(s.count)})
+	return all
+
+
+## Moves `n` of an item from the nearby chests into the bag (host). Returns how many came.
+func pull_for_craft(bag: Inventory, at: Vector3, item: String, n: int) -> int:
+	var got := 0
+	for id in craft_boxes(at):
+		if got >= n:
+			break
+		var inv: Inventory = boxes[id].inv
+		var take := mini(inv.count_of(item), n - got)
+		if take <= 0:
+			continue
+		inv.remove(item, take)
+		var left := bag.add(item, take)
+		if left > 0:
+			inv.add(item, left)  # (the bag is full: the rest stays in the chest)
+		got += take - left
+		_changed(id)
+		if left > 0:
+			break
+	return got
+
+
 ## What a box will hold. Builder's Chests only take building materials (and the rock they carve).
 static func accepts(kind: String, item: String) -> bool:
 	if kind == "crate_ore":
