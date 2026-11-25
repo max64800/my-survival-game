@@ -12,7 +12,7 @@ extends RefCounted
 const SHADER := preload("res://src/art/ghost.gdshader")
 const DEPTH := preload("res://src/art/ghost_depth.gdshader")  ## its front surface first: no tearing where it folds over itself
 const BODY := "res://assets/models/creatures/ghost_%s.glb"
-const LOOKS := {"ghost_a": "a", "ghost_b": "b", "ghost_c": "c", "ghost_lord": "c", "shield_brother": "c", "hald_shade": "a", "hald_ironbrow": "c"}
+const LOOKS := {"ghost_a": "a", "ghost_b": "b", "ghost_c": "c", "ghost_lord": "c", "shield_brother": "c", "hald_shade": "a", "hald_ironbrow": "c", "barrow_warden": "c", "barrow_keeper": "b"}
 const MACE := "mace_silver"
 const SHIELD := "shield_bronze"  ## the Shield-Brother's shield (F850)
 ## Each ghost's mace, reshaped from the silver mace (owner, Nov 22: "make them a lot thinner", the skeletons' thick

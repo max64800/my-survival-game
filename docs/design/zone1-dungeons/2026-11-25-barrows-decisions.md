@@ -44,4 +44,4 @@ Level 3 (floor -16), the oldest:
 - **17 spear_gate** [18,32,22,42] spear walls · kings_door [18,42,22,44] (round door)
 - **19 kings_barrow** [14,44,28,56] h6: the Barrow Keeper + 2 shades · grave_gate [28,48,30,52] locked (Barrow Key)
 - **21 kings_grave** [30,48,38,56] recipe stand + big chest
-- **20 air_shaft** [30,56,34,58] from -16 up to the exit ledge at +6 (a ladder)
+- **20 air_shaft** [30,56,34,60] + air_hole [30,58,32,60] (h25): the hole climbs from -16 up to the exit ledge at +6 (a ladder)

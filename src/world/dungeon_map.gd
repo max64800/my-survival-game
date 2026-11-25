@@ -252,7 +252,72 @@ const HALD := {
 	],
 }
 
-const MAPS := [MOSSGATE, LAMPWICK, PELL, MOSSPROP, HALD]
+## The Quiet Barrows (owner, Nov 25, F906): a medium Stonehold-stone barrow, rings of burial rooms round an old
+## shaft, three levels (0, OLDER = -8, OLDEST = -16), each older than the one above; ghosts and spiders, the Barrow
+## Keeper (a rune ghost) the boss. Straight stairs wind round the shaft: the Spiral Stair east from the First Ring, the
+## Deep Stair back west under it. The way out: the Air Shaft's ladder from the King's Grave up to a ledge high in the
+## Barrow Door's west wall; jump down onto the soft heap. Built by tools/dungeons/make_barrows.py
+## (docs/design/zone1-dungeons/2026-11-25-barrows-decisions.md). `since = 21`: only its test world has it for now.
+const OLDER := -8.0
+const OLDEST := -16.0
+const BARROWS := {
+	id = "barrows",
+	name = "The Quiet Barrows",
+	mouth = Vector2(40, 70),
+	since = 21,
+	mood = "tomb",
+	torch_energy = 0.9,
+	torch_range = 6.5,
+	best = 140.0,
+	chase_out = true,
+	deadly = ["chasm"],
+	no_raising = true,
+	spaces = [
+		["entry", 38, 62, 42, 70, 0, 3.5],                 # the way in
+		["barrow_door", 36, 54, 44, 62, 0, 9],             # 1 the exit ledge's dark hole high in its west wall
+		["exit_ledge", 30, 58, 36, 62, 6, 3.5],            #   the Air Shaft comes up here; jump down onto the soft heap
+		["long_barrow", 38, 42, 42, 54, 0, 4.5],           # 2 the rolling boulder
+		["alcove_w", 36, 46, 38, 50, 0, 3],                #   the side alcoves (safe from the boulder)
+		["alcove_e", 42, 46, 44, 50, 0, 3],
+		["first_ring", 34, 30, 46, 42, 0, 5],              # 3 Drifting Shades; a chest
+		["smith_door", 32, 34, 34, 38, 0, 3.5],
+		["smith_barrow", 24, 32, 32, 40, 0, 4.5],          # 4 the loose stone (a buried chest)
+		["hunter_door", 26, 28, 30, 32, 0, 3.5],
+		["hunter_barrow", 24, 20, 32, 28, 0, 4.5],         # 5 spiders in the dark
+		["spiral_a", 46, 34, 48, 38, -2, 6],               # 6 the Spiral Stair: 8 m down in four steps (falling stones)
+		["spiral_b", 48, 34, 50, 38, -4, 8],
+		["spiral_c", 50, 34, 52, 38, -6, 10],
+		["spiral_foot", 52, 34, 56, 38, OLDER, 12],
+		["second_ring", 56, 28, 68, 40, OLDER, 5],         # 7 Bearded Shades
+		["twins_door", 60, 40, 64, 44, OLDER, 3.5],
+		["twins", 58, 44, 66, 52, OLDER, 4.5],             # 8 two coffins, a chest; the cracked back wall
+		["twins_vault", 60, 52, 64, 56, OLDER, 3],         # 9 behind the cracked wall
+		["keepers_corridor", 60, 16, 64, 28, OLDER, 4],    # 10 bear jaws in the grave dust
+		["shrine_door", 64, 20, 66, 24, OLDER, 3.5],
+		["shrine", 66, 18, 74, 26, OLDER, 4.5],            # 13 the healing basin
+		["keepers_barrow", 56, 4, 68, 16, OLDER, 5],       # 11 a big Warden and its pack
+		["sunken_door", 54, 8, 56, 12, OLDER, 3.5],
+		["sunken_barrow", 42, 4, 54, 16, OLDER, 5],        # 12 the spiked chest
+		["deep_a", 54, 28, 56, 32, -10, 6],                # 14 the Deep Stair: 8 m down in four steps, back west
+		["deep_b", 52, 28, 54, 32, -12, 8],
+		["deep_c", 50, 28, 52, 32, -14, 10],
+		["deep_foot", 46, 28, 50, 32, OLDEST, 12],
+		["hall_of_bones", 34, 22, 46, 34, OLDEST, 6],      # 15 spiders and Drifting Shades, the dart plate
+		["mourning_niche", 40, 20, 42, 22, OLDEST, 3],     # 18 behind the boulder (a chest)
+		["bridge_door", 32, 26, 34, 30, OLDEST, 3.5],
+		["ash_bridge", 18, 24, 32, 32, OLDEST, 6],         # 16 slabs over the chasm, swinging boulders, Wrathful Shades
+		["chasm", 22, 24, 30, 32, OLDEST - 10.0, 10],      #    10 m down onto spikes (falling in kills)
+		["spear_gate", 18, 32, 22, 42, OLDEST, 4],         # 17 spear walls
+		["kings_door", 18, 42, 22, 44, OLDEST, 3.5],
+		["kings_barrow", 14, 44, 28, 56, OLDEST, 6],       # 19 the Barrow Keeper (the Barrow Key)
+		["grave_gate", 28, 48, 30, 52, OLDEST, 3.5],       #    locked: the Barrow Key
+		["kings_grave", 30, 48, 38, 56, OLDEST, 4.5],      # 21 the recipe stand, the big chest
+		["air_shaft", 30, 56, 34, 60, OLDEST, 4],          # 20 the Air Shaft's foot
+		["air_hole", 30, 58, 32, 60, OLDEST, 25],          #    its ladder up to the exit ledge (+6)
+	],
+}
+
+const MAPS := [MOSSGATE, LAMPWICK, PELL, MOSSPROP, HALD, BARROWS]
 
 
 ## One placed dungeon: where its mouth is in the world, which way it faces, and its boxes in world terms.

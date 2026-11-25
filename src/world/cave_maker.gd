@@ -60,8 +60,10 @@ const DUNGEON_ONLY_3 := 1016
 const DUNGEON_ONLY_4 := 1017
 ## The Dungeon 5 test world: the same small cave with the Tomb of Hald Ironbrow behind it.
 const DUNGEON_ONLY_5 := 1018
+## The Dungeon 6 test world: the same small cave with the Quiet Barrows behind it.
+const DUNGEON_ONLY_6 := 1019
 ## Test world layout -> which DungeonMap.MAPS it holds.
-const DUNGEON_TESTS := {DUNGEON_ONLY: 0, DUNGEON_ONLY_2: 1, DUNGEON_ONLY_3: 2, DUNGEON_ONLY_4: 3, DUNGEON_ONLY_5: 4}
+const DUNGEON_TESTS := {DUNGEON_ONLY: 0, DUNGEON_ONLY_2: 1, DUNGEON_ONLY_3: 2, DUNGEON_ONLY_4: 3, DUNGEON_ONLY_5: 4, DUNGEON_ONLY_6: 5}
 static var layout := LAYOUT_DEFAULT
 
 

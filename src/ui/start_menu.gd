@@ -15,6 +15,7 @@ signal test_dungeon3  ## dev builds only: the same at the third dungeon, Old Pel
 signal test_arena  ## dev builds only: a flat floor with one of every creature standing still (MonsterArena)
 signal test_dungeon4  ## dev builds only: the same at the fourth dungeon, Mossprop Workings
 signal test_dungeon5  ## dev builds only: the same at the fifth dungeon, the Tomb of Hald Ironbrow
+signal test_dungeon6  ## dev builds only: the same at the sixth dungeon, the Quiet Barrows
 signal test_ruin(key: String, wood: bool)  ## dev builds only: a cave with just that ruin (RuinTests), at its chest
 
 var _status: Label
@@ -125,7 +126,7 @@ func _ready() -> void:
 		# Owner, Nov 20: "Dungeon 1" and "Dungeon 2" (F477: Dungeon 2 is Lampwick Drift, the planned second dungeon).
 		for d in [["Dungeon 1, Mossgate Hold", test_dungeon], ["Dungeon 2, Lampwick Drift", test_dungeon2],
 				["Dungeon 3, Old Pell's Diggings", test_dungeon3], ["Dungeon 4, Mossprop Workings", test_dungeon4],
-				["Dungeon 5, Tomb of Hald Ironbrow", test_dungeon5]]:
+				["Dungeon 5, Tomb of Hald Ironbrow", test_dungeon5], ["Dungeon 6, The Quiet Barrows", test_dungeon6]]:
 			var sig: Signal = d[1]
 			_button(dcol, d[0], func(): sig.emit()).add_theme_stylebox_override("normal", purple)
 		# Ruins (owner, Nov 21): a cave with just that ruin; opening its Rebuilding Chest rebuilds it at once, in

@@ -158,6 +158,26 @@ static var LIST := {
 					follow = {anim = "mace_4", tell = 0.75, damage = 26, knockdown = true}}}},
 			{name = "Grave Smash", anim = "mace_4", warn_sound = "beetle_rumble", tell = 1.0, damage = 24, type = "blunt", reach = 3.4, parry = "any", lunge = true, small_lunge = true, lunge_speed = 4.6, rest = 3.5}],
 		drops = []},
+	# The Quiet Barrows (F906, owner Nov 25: "ghosts and spiders, the boss a rune ghost"). The Barrow Warden: a big
+	# Bearded Shade who leads the Keepers' Barrow (not a boss: two keepers rise with him).
+	"barrow_warden": {name = "The Barrow Warden", dungeon_only = true, sleeps = true, no_variant = true, ragdoll = false, ghost = true, rise_near = 8.0,
+		size = 1.25, height = 1.9, hp = 240, armor = 15, stun = 160, slash = 0.8, blunt = 0.9, pierce = 0.6,
+		fire = 1.25, frost = 0.25, poison = 0.0, walk = 1.2, run = 3.2, pack = [1, 1], xp = 40,
+		color = Color(0.62, 0.9, 0.8), shape = "ghost", recover = 1.7,
+		attacks = [{name = "Warden's Chop", anim = "Chop", warn_sound = "beetle_rumble", tell = 1.0, damage = 18, type = "blunt", reach = 2.4, parry = "any", rest = 3.5},
+			{name = "Grave Smash", anim = "mace_4", warn_sound = "beetle_rumble", tell = 1.1, damage = 20, type = "blunt", reach = 3.2, parry = "any", lunge = true, small_lunge = true, lunge_speed = 3.4, rest = 6.0}],
+		drops = []},
+	# The end boss: the Barrow Keeper, a rune ghost (owner). He holds the Barrow Key (DungeonKeys.KEYS.key_barrow) to
+	# the King's Grave. Step 1: he fights with the ghost boss's mace moves; his glowing rune bolts come next (step 2).
+	"barrow_keeper": {name = "The Barrow Keeper", dungeon_only = true, sleeps = true, no_variant = true, ragdoll = false, ghost = true, rise_near = 7.0, boss = true,
+		no_push = true, key = "key_barrow", size = 1.45, height = 2.15, hp = 600, armor = 30, stun = 340, slash = 0.8, blunt = 0.9, pierce = 0.6,
+		fire = 1.25, frost = 0.25, poison = 0.0, walk = 1.6, run = 4.3, pack = [1, 1], xp = 110,
+		color = Color(0.7, 0.85, 1.0), shape = "ghost", recover = 1.8,
+		attacks = [{name = "Keeper's Combo", anim = "mace_1", warn_sound = "beetle_rumble", tell = 0.9, damage = 16, type = "blunt", reach = 2.6, parry = "any", rest = 4.0, chain = true,
+				follow = {anim = "mace_2", tell = 0.6, damage = 16, warn_sound = null, follow = {anim = "mace_3", tell = 0.6, damage = 18,
+					follow = {anim = "mace_4", tell = 0.75, damage = 26, knockdown = true}}}},
+			{name = "Grave Smash", anim = "mace_4", warn_sound = "beetle_rumble", tell = 1.0, damage = 24, type = "blunt", reach = 3.4, parry = "any", lunge = true, small_lunge = true, lunge_speed = 4.6, rest = 3.5}],
+		drops = []},
 	# The end boss with his Lost Miners (F467): only the spinning whirl (only a shield parries it, the last turn
 	# knocks you down: step back out of it). F645 (owner, Nov 22): the Great Chop removed — it was readable and
 	# parryable, breaking the "spin only" feel. Owner, Nov 20: 30% less health (420 -> 294); chat 16 (F532, the

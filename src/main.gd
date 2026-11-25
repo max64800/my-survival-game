@@ -181,6 +181,8 @@ func _ready() -> void:
 			dungeon_test_layout = CaveMaker.DUNGEON_ONLY_4
 		elif arg == "dungeon5":  # with dungeontest: the menu's "Dungeon 5" (the Tomb of Hald Ironbrow's test world)
 			dungeon_test_layout = CaveMaker.DUNGEON_ONLY_5
+		elif arg == "dungeon6":  # with dungeontest: the menu's "Dungeon 6" (the Quiet Barrows' test world)
+			dungeon_test_layout = CaveMaker.DUNGEON_ONLY_6
 		elif arg == "minercheck":  # photos of the skeleton miners lying, rising, running, swinging, turning to stone
 			debug_script = "res://src/debug/minercheck.gd"
 			dungeon_test = true
@@ -416,6 +418,13 @@ func _show_menu() -> void:
 			dungeon_test = true
 			_new_world(seed, "Dungeon 5 Test")
 			add_child(load("res://src/debug/dungeon_test_start.gd").new()), seed, CaveMaker.DUNGEON_ONLY_5))
+	_menu.connect("test_dungeon6", func():  # (owner, Nov 25: Dungeon 6 = the Quiet Barrows, F906)
+		_close_menu()
+		dungeon_test_layout = CaveMaker.DUNGEON_ONLY_6
+		_with_loading(func():
+			dungeon_test = true
+			_new_world(seed, "Dungeon 6 Test")
+			add_child(load("res://src/debug/dungeon_test_start.gd").new()), seed, CaveMaker.DUNGEON_ONLY_6))
 	_menu.connect("test_ruin", func(key: String, wood: bool):  # (owner, Nov 21: a column of ruins beside the dungeons)
 		_close_menu()
 		_start_ruin_test(key)
