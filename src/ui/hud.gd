@@ -89,6 +89,7 @@ const RELOAD_COLOR := Color(0.55, 0.68, 0.82)  ## steel blue while it winds
 const RELOAD_DONE_COLOR := Color(1.0, 0.82, 0.3)  ## gold flash: loaded
 var _reload_bar: ProgressBar
 var box_panel: BoxPanel
+var farm_panel: FarmPanel  ## F892: E at a Farm Plot
 var build_mode: BuildMode
 var _build_label: Label
 var map_data := MapData.new()
@@ -368,6 +369,14 @@ func _build() -> void:
 	root.add_child(box_panel)
 	box_panel.resized.connect(_layout_panels)
 	box_panel.visibility_changed.connect(_layout_panels)
+	farm_panel = FarmPanel.new()
+	farm_panel.visible = false
+	farm_panel.done.connect(func() -> void:  # planted or picked: back to the game to see it on the plot
+		set_bag_open(false)
+		Controls.set_captured(true))
+	root.add_child(farm_panel)
+	farm_panel.resized.connect(_layout_panels)
+	farm_panel.visibility_changed.connect(_layout_panels)
 	build_menu = BuildMenu.new()
 	build_menu.peer_id = peer_id
 	build_menu.visible = false
@@ -984,7 +993,7 @@ func is_bag_open() -> bool:
 ## the screen, never overlapping (owner, Nov 16: "not centred, overlap"). Alone, each is centred.
 func _layout_panels() -> void:
 	var screen: Vector2 = _bag_panel.get_parent().size
-	var side: Control = craft if craft.visible else (box_panel if box_panel.visible else null)
+	var side: Control = craft if craft.visible else (box_panel if box_panel.visible else (farm_panel if farm_panel.visible else null))
 	var gap := 16.0
 	var panels: Array[Control] = []
 	if craft.upgrade_panel and craft.upgrade_panel.visible:
@@ -1103,10 +1112,20 @@ func set_bag_open(open: bool) -> void:
 	_swap_from = -1
 	_refresh_slots()
 	box_panel.visible = false
+	farm_panel.visible = false
 	if open:
 		craft.open_for(null)
 	else:
 		craft.visible = false
+
+
+## E at a Farm Plot (F892): your bag on the left, what you can plant on the right.
+func open_farm(st: Station) -> void:
+	_bag_panel.visible = true
+	_refresh_slots()
+	craft.visible = false
+	box_panel.visible = false
+	farm_panel.open(st)
 
 
 ## E at a chest or grave: your bag on the left, the box on the right.
@@ -1114,6 +1133,7 @@ func open_box(id: int) -> void:
 	_bag_panel.visible = true
 	_refresh_slots()
 	craft.visible = false
+	farm_panel.visible = false
 	box_panel.open(id)
 
 

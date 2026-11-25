@@ -196,41 +196,83 @@ func set_crop(id: String, left: float) -> void:
 
 func farm_text() -> String:
 	if crop == "":
-		return "Farm Plot · empty · E with a mushroom or tuber"
+		return "Farm Plot · E to plant"
 	if crop_ripe():
 		return "%s ready! · E to pick" % Items.display_name(crop)
-	return "%s growing · %d:%02d" % [Items.display_name(crop), int(crop_left) / 60, int(crop_left) % 60]
+	return ""  # growing: you see it on the plot, no timer (owner F892)
 
 
-## Little mushrooms (or tuber leaves) on the plot that get bigger as they grow.
+## What you planted, on the plot (owner F892: "see that plant growing on the plot"): five of it (the real mushroom or
+## tuber model) that grow from tiny to full size. Root Tubers sit half in the soil.
+const CROP_SPOTS := [Vector3(0, 0, 0), Vector3(0.36, 0, 0.3), Vector3(-0.34, 0, 0.32), Vector3(0.33, 0, -0.33), Vector3(-0.35, 0, -0.3)]
+const SOIL_TOP := 0.16
+const CROP_TALL := 0.34  ## m, full grown
+
+
 func _show_crop() -> void:
 	if kind != "farm_plot":
 		return
+	if _crop_node and _crop_node.get_meta("crop", "") != crop:
+		_crop_node.queue_free()
+		_crop_node = null
 	if crop == "":
-		if _crop_node:
-			_crop_node.queue_free()
-			_crop_node = null
 		return
 	if _crop_node == null:
 		_crop_node = Node3D.new()
+		_crop_node.name = "Crop"
+		_crop_node.set_meta("crop", crop)
 		add_child(_crop_node)
-		var c := Items.color(crop)
-		for i in 5:
-			var a := i * TAU / 5.0 + 0.4
-			var at := Vector3(cos(a) * 0.55, 0.2, sin(a) * 0.55) if i > 0 else Vector3(0, 0.2, 0)
-			var stem := MeshInstance3D.new()
-			stem.mesh = _cyl(0.04, 0.05, 0.25)
-			stem.position = at + Vector3.UP * 0.12
-			stem.material_override = Look.mat(Color(0.85, 0.82, 0.7), "", 0.0)
-			_crop_node.add_child(stem)
-			var cap := MeshInstance3D.new()
-			cap.mesh = _cyl(0.04, 0.16, 0.1)
-			cap.position = at + Vector3.UP * 0.28
-			cap.material_override = Look.mat(c, "", 3.0 if crop == "glowcap" else 0.0)
-			_crop_node.add_child(cap)
+		for i in CROP_SPOTS.size():
+			var piece := _crop_piece(crop, 1.0 - i * 0.08)
+			piece.position = CROP_SPOTS[i] + Vector3.UP * (SOIL_TOP - (0.05 if crop == "root_tuber" else 0.0))
+			piece.rotation.y = i * 1.9
+			_crop_node.add_child(piece)
 	var total: float = CROPS.get(crop, {}).get("grow", 1.0)
-	var f := 1.0 - crop_left / total
-	_crop_node.scale = Vector3.ONE * lerpf(0.25, 1.0, clampf(f, 0.0, 1.0))
+	var f := clampf(1.0 - crop_left / total, 0.0, 1.0)
+	for p: Node3D in _crop_node.get_children():
+		p.scale = Vector3.ONE * lerpf(0.15, 1.0, f) * float(p.get_meta("size", 1.0))
+
+
+## One plant: the item's model standing on its base, CROP_TALL high (times `size`), or a little mushroom if it has none.
+func _crop_piece(id: String, size: float) -> Node3D:
+	var holder := Node3D.new()
+	holder.set_meta("size", size)
+	var model := Look.forged("items", id)
+	if model:
+		var box := _local_box(model, Transform3D.IDENTITY)
+		var k := CROP_TALL / maxf(0.01, box.size.y)
+		model.scale = Vector3.ONE * k
+		model.position = Vector3(-box.get_center().x, -box.position.y, -box.get_center().z) * k
+		holder.add_child(model)
+		return holder
+	var stem := MeshInstance3D.new()
+	stem.mesh = _cyl(0.04, 0.05, 0.25)
+	stem.position = Vector3.UP * 0.12
+	stem.material_override = Look.mat(Color(0.85, 0.82, 0.7), "", 0.0)
+	holder.add_child(stem)
+	var cap := MeshInstance3D.new()
+	cap.mesh = _cyl(0.04, 0.16, 0.1)
+	cap.position = Vector3.UP * 0.28
+	cap.material_override = Look.mat(Items.color(id), "", 3.0 if id == "glowcap" else 0.0)
+	holder.add_child(cap)
+	return holder
+
+
+## The box round all of a model's meshes, in the model's own space (before it is in the scene).
+static func _local_box(n: Node, xf: Transform3D) -> AABB:
+	var box := AABB()
+	var first := true
+	if n is Node3D:
+		xf = xf * (n as Node3D).transform if n.get_parent() != null else xf
+	if n is MeshInstance3D and (n as MeshInstance3D).mesh:
+		box = xf * (n as MeshInstance3D).get_aabb()
+		first = false
+	for c in n.get_children():
+		var b := _local_box(c, xf)
+		if b.size != Vector3.ZERO:
+			box = b if first else box.merge(b)
+			first = false
+	return box
 
 
 func set_water(n: int) -> void:

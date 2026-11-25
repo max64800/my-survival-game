@@ -1,4 +1,5 @@
-# Farm Plot (folder: stations): a low square bed of dark soil framed with stones, with cave mushrooms.
+# Farm Plot (folder: stations): a low square bed of dark soil framed with stones. Empty: what you plant shows on it
+# (owner F892, Nov 25: "an empty plot shouldn't show mushrooms").
 import math
 import sys
 from pathlib import Path
@@ -26,10 +27,5 @@ for side in range(4):
 		else:
 			x, y = S / 2 - 0.1, t
 		kit.stone((0.24, 0.22, 0.2), (x, y, 0.1), rot_z=0 if side < 2 else 90)
-kit.mushroom((-0.2, 0.12, 0.16), 1.2, seed=1)
-kit.mushroom((0.2, -0.15, 0.16), 0.9, seed=2)
-kit.mushroom((0.28, 0.25, 0.16), 0.7, seed=3)
-kit.mushroom((-0.3, -0.25, 0.16), 0.55, cap="crystal_amber", seed=4)
-kit.mushroom((0.02, 0.3, 0.16), 0.45, seed=5)
 
 kit.save(out, preview)
