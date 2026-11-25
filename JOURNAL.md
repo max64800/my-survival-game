@@ -13511,3 +13511,18 @@ entrance), F849 (boss too easy, 2 minions), F850 (Shield-Brother never turns his
 - My first "Down the shaft" camera was too close to see the room; moved it back after the first photo.
 
 **Next:** the owner's OK on the shapes, then the Head Wheel piece (Blender, MODEL-RULES), then the blueprint.
+
+
+## Nov 25: Mine-head Works, the owner OK'd the shapes (F899)
+
+**What we did:**
+- The owner OK'd the shape page ("looks great") and asked for a mix of stone and wood. Asked where (multiple choice):
+  every building is stone below, wood above. The engine house got a wooden top storey with a sloped shingle roof, the
+  ore shed a stone ground storey, the boiler shed a low stone wall. Page v2, same link.
+- Wrote the build plan `docs/design/ruin12/MINEHEAD-PLAN.md` (every part with its measurements, and the steps).
+
+**Mistakes and hurdles:**
+- "A mix of stone and wood" could mean several things (buildings, the headframe's legs, the bridge's piers), so I
+  asked instead of guessing.
+
+**Next:** a new chat makes the Head Wheel piece, then the blueprint.
