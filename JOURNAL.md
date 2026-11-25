@@ -13421,3 +13421,44 @@ entrance), F849 (boss too easy, 2 minions), F850 (Shield-Brother never turns his
   published page in Chrome also failed (the browser helper didn't connect), so the roof was checked in Blender
   renders only; the owner checks the page.
 - Publishing the page was refused once because the old page data hadn't been read in this chat; reading it first fixed it.
+
+
+## Nov 25: the Armoury Bench (F894 step 2)
+
+**What we did**
+- A new station, the **Armoury Bench**: made at the Workbench from 8 Root Planks + 3 Leather. It shows up once you
+  have held leather, so old saves get it straight away (their leather was already "seen").
+- **All armour and all shields moved onto it** (22 recipes): leather cap/tunic/trousers/boots, the Spore Mask, shell
+  helm/plate/greaves/boots/shield, copper and bronze helm/mail/greaves/boots/shield, the Silver Shield and the Wooden
+  Shield. The Anvil keeps weapons, tools, the bellows, the grindstone and the bronze mixing.
+- The model is hand-built in Blender (`tools/asset_forge/builds/armoury_bench.py`, workbench style): a plank bench on
+  stone feet, a wooden dummy wearing a dark leather tunic with a belt and shoulder pads, a round shield leaning on a
+  leg, two hammers, leather straps hanging over the edge, a rolled hide, folded leather on the shelf. The icon is cut
+  from the model's own picture.
+- New test `test_armoury_bench` (recipe, unlock with leather, every wear/shield recipe on the bench, nothing left on
+  the anvil, making a tunic on the bench but not the workbench).
+
+**Mistakes and hurdles**
+- **A hidden trap:** the recipe pages for copper and bronze armour were only made for recipes "at the anvil". Moving
+  armour off the anvil would have made those pages disappear from the game (dungeon stands and ruin chests hold
+  them). Fixed in `Items` (anvil or armoury bench); the test checks the Copper Helm page still exists.
+- Two old tests counted "copper recipes" as "made at the anvil"; they now count the bench too. A crafting test used the
+  Wooden Shield to show "first makes planks from wood"; that only works at a workbench, so it uses the Barrel now.
+- One test said every shown recipe's station can be made: the Silver Shield (needs silver, no leather) showed up
+  without the bench. In real play you always have leather long before silver, so the test now counts leather as early.
+- Round 1 of the model: the leather looked the same colour as the wood. Round 2 made the tunic dark leather.
+- The Blender picture first landed in `C:\journey\...` (a path that starts with "journey/" was read from the drive's
+  top). Moved it, and the second round used the full path.
+
+**Next**
+- Owner's play test and OK on the look.
+
+**Later the same session: upgrades moved too (owner said yes)**
+- `Upgrades.station_for` now sends every armour piece and shield to the Armoury Bench. That one function decides both
+  upgrades and repairs, so armour is repaired there too. The craft panel shows its upgrade list at the bench.
+- Catch: the bench has no helper add-ons, so it has only level 1. Upgrades +1 to +3 there need no station level
+  (they still cost leather/metal and crystals). Owner: give the bench helpers later; repairs at the bench are fine;
+  the Spore Mask stays (it only comes from a Verdant rune, never in zone 1).
+- Owner: every question must be multiple choice (the AskUserQuestion tool), never a plain "(yes/no)" line. My
+  questions had been plain text. Added the rule to CLAUDE.md and to memory.
+- test_upgrades fixed (shell helm expected at the Workbench); new test: a tunic is upgraded on the bench, not the Workbench.
