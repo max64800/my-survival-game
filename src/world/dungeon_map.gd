@@ -203,13 +203,14 @@ const HALD := {
 	torch_range = 6.5,
 	best = 130.0,
 	chase_out = true,
-	deadly = ["stair_pit", "chasm"],
+	deadly = ["stair_pit", "chasm", "candle_pit", "names_pit"],  # (owner, Nov 25: "add a few spikes and fake floor")
 	no_raising = true,
 	spaces = [
 		["entry", 40, 62, 44, 70, 0, 3.5],                 # the way in
 		["mourners_gate", 36, 54, 48, 62, 0, 5],           # 1 bell, banners; the barred gate on its east wall
 		["exit_way", 48, 56, 66, 60, 0, 3.5],              #   behind the gate: the lever, the Secret Stair's top
 		["candle_hall", 24, 56, 36, 60, 0, 3.5],           # 2 candle niches, the dart wall
+		["candle_pit", 32, 56, 34, 58, -3, 3],             #   under a fake floor slab: spikes (falling in kills)
 		["offering_room", 16, 54, 24, 62, 0, 4.5],         # 3 offering tables and niches
 		["scribe_niche", 12, 56, 16, 60, 0, 3],            # 4 the scribe's bones, the loose stone
 		["statue_corridor", 18, 42, 22, 54, 0, 4],         # 5 honour guards, the falling stones
@@ -225,6 +226,7 @@ const HALD := {
 		["grand_stair_c", 18, 24, 22, 26, -6, 10],
 		["grand_stair", 18, 20, 22, 24, DEEP, 12],         #    its foot (the old door lies broken)
 		["names_hall", 14, 8, 28, 20, DEEP, 7],            # 11 name stones, carvings; Wrathful Shades
+		["names_pit", 22, 12, 24, 14, DEEP - 3.0, 3],      #    under a fake floor slab: spikes (falling in kills)
 		["embalm_door", 12, 12, 14, 16, DEEP, 3.5],
 		["embalmers", 4, 10, 12, 18, DEEP, 4.5],           # 12 stone tables, the drain grate; the hidden boulder west
 		["embalm_niche", 2, 12, 4, 14, DEEP, 3],           #    behind the boulder (the spiked chest)

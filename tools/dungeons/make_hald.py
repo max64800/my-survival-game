@@ -24,7 +24,7 @@ CAVE_Z = MOUTH_Z + 4.0  # the round door at the end of the way in (DungeonMap.FA
 GAP = 0.5               # DungeonMap.GAP: the rock stands this far behind the wall lines
 rng = random.Random(5021)
 
-NOT_ROOMS = {"stair_pit", "chasm"}   # spaces that are no floor cells of their own (you fall into them)
+NOT_ROOMS = {"stair_pit", "chasm", "candle_pit", "names_pit"}   # spaces that are no floor cells of their own (you fall into them)
 GROUP = {"grand_stair_a": "grand_stair", "grand_stair_b": "grand_stair", "grand_stair_c": "grand_stair",
 	"secret_landing": "secret_stair", "secret_stair_a": "secret_stair", "secret_stair_b": "secret_stair",
 	"secret_stair_c": "secret_stair", "secret_stair_d": "secret_stair"}
@@ -129,6 +129,12 @@ def top_at(key):
 
 BRIDGE = {(x, z, 2) for x in range(30, 40, 2) for z in (12, 14)}   # stone slabs over the chasm (the cracked ones: next)
 SPECIAL_FLOOR = {(12, 56, 1): "floor_loose_flagstone"}  # the Scribe's Niche: a buried chest under it (stone, not boards: F856)
+# Owner, Nov 25: "add a few spikes and fake floor, we don't have a full death trap anywhere". Loose slabs that give way
+# under you (instant death): over a spike pit in the Hall of Candles and the Hall of Names, and two cracked slabs on the
+# Bridge of Oaths over the chasm (staggered: a careful dwarf crosses on the sound ones). The tell: the slab sits
+# loose and odd among the others, like the Scribe's loose stone.
+TRAP_RNG = random.Random(902)  # (its own dice: the rest of the tomb stays as it was)
+FAKE_FLOOR = {(32, 56, 1), (22, 12, 2), (32, 12, 2), (36, 14, 2)}
 holes = set()   # the cells whose ceiling fell in
 for key, g in cells.items():
 	if key in NO_PIECES:
@@ -138,6 +144,9 @@ for key, g in cells.items():
 	if key in STAIRS:
 		bottom, rot = STAIRS[key]
 		piece("stairs", cx, bottom, cz, rot)
+	elif key in FAKE_FLOOR:
+		prop("dungeon/floor_loose_flagstone.glb", cx, fy, cz, TRAP_RNG.choice([0, 90, 180, 270]), role="trap",
+			label="Fake floor (it gives way: spikes below)")
 	elif key in SPECIAL_FLOOR:
 		prop("dungeon/%s.glb" % SPECIAL_FLOOR[key], cx, fy, cz, 0.0, role="secret", label="Loose stone")
 	else:
@@ -325,6 +334,12 @@ chest("chest_small", 34.0, 29.0, 180.0, "Ossuary stash (always)", True, "vault")
 for x in (40, 42):
 	prop("dungeon/trap_spikes.glb", x + 1.0, -3.0, 35.0, rng.choice([0, 90, 180, 270]), role="trap",
 		label="The spike pit (falling in kills)" if x == 40 else "")
+
+# The fake floors' pits: spikes waiting 3 m down.
+for name in ("candle_pit", "names_pit"):
+	_s = SP[name]
+	prop("dungeon/trap_spikes.glb", (_s[1] + _s[3]) / 2, _s[5], (_s[2] + _s[4]) / 2, TRAP_RNG.choice([0, 90, 180, 270]), role="trap",
+		label="A spike pit under the fake floor (falling in kills)")
 
 # 9 Honour Chapel: the Shield-Brother on guard, the Bronze Key on him; a chest by the altar.
 creature("shield_brother", 50.0, 36.0, 270.0, floor=4.0)

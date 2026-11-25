@@ -325,6 +325,8 @@ var far_dt := 0.0           ## (host) time saved up while it thinks less often, 
 
 ## Host: pushed by a hit (speed in m/s, away from the hitter). It slides back and stops quickly.
 func knock(push: Vector3) -> void:
+	if data.get("ghost", false):
+		return  # owner, Nov 25: "make sure I cannot knock away ghosts" (a combo's last blow threw it out of reach)
 	_knock = Vector3(push.x, 0.0, push.z)
 
 
@@ -595,12 +597,16 @@ func think(delta: float, mgr: Node) -> void:
 			if Ghost.hidden(self):  # F659: a ghost in dots waits where they gather (no moving or swinging unseen)
 				_move(delta, Vector3.ZERO, 0.0)
 				return
+			if mgr.has_method("ghost_owed_jump") and mgr.ghost_owed_jump(self, target):
+				return  # (a jump it couldn't make when hit, e.g. you shot from a narrow doorway: it makes it now)
 			if Ghost.ambush_due(self):  # F873: it shows again right behind you, facing you, and swings at once
 				model.rotation.y = atan2(-to.x, -to.z)
 				_start_attack(Ghost.ambush(data), mgr)
 				return
 			# Far above it (a hole's edge), or it's still clinging to the wall: climb up first, then fight (F236).
 			var atk :=_pick_attack(dist, mgr) if to.y < 1.3 and (is_on_floor() or to.y < 0.4) else {}
+			if not atk.is_empty() and data.get("ghost", false) and not Ghost.clear_to(self, target.global_position):
+				atk = {}  # owner, Nov 25: "he is trying to hit me through the tomb": no swing through stone; it walks round
 			if not atk.is_empty():
 				_start_attack(atk, mgr)
 				return
@@ -614,6 +620,7 @@ func think(delta: float, mgr: Node) -> void:
 				_face(target)
 			elif data.get("ghost", false) and not dungeon.is_empty():
 				var way := Ghost.way_to(self, target.global_position)  # F872: through the doorways, room by room
+				way = Ghost.around(self, way, target.global_position)  # (round a tomb or a pillar in its way)
 				_move(delta, way, speed)
 				if way.dot(to.normalized()) > 0.95:
 					_face(target)

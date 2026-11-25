@@ -253,8 +253,8 @@ static func thing_kind(p: Dictionary) -> String:
 		return "smash"
 	if model in DRIPS:
 		return "drip"
-	if model == "dungeon/trap_floor_break.glb":
-		return "floor"
+	if model == "dungeon/trap_floor_break.glb" or (model == "dungeon/floor_loose_flagstone.glb" and p.get("role", "") == "trap"):
+		return "floor"  # (Hald's fake floor: a loose stone slab over a spike pit, owner Nov 25)
 	if model in ["dungeon/wall_broken.glb", "dungeon/wall_cracked.glb", "dungeon/wall_cracked_stone.glb"]:
 		return "rubble"  # (the cracked wall in front of the hidden vault breaks like the rubble: owner, Nov 20)
 	if model == "build/ruin_rubble__cut_stone.glb":
@@ -617,7 +617,16 @@ static func _add_boxes(body: StaticBody3D, model: String, t: Transform3D, whole:
 		sh.size = ((bx[1] as Vector3) * sc).abs()
 		cs.shape = sh
 		cs.transform = Transform3D(t.basis.orthonormalized(), t * (bx[0] as Vector3))
+		cs.set_meta("surface", surface_of(model))  # (what a running dwarf kicks up here, F775)
 		body.add_child(cs)
+
+
+## What a dungeon model's floor is made of, for footstep dust (F775): "wood" or "stone".
+static func surface_of(model: String) -> String:
+	for w in ["plank", "bridge", "lift_platform", "beam", "brace", "wood"]:
+		if model.contains(w):
+			return "wood"
+	return "stone"
 
 
 ## Dungeon junk (owner, Nov 20: "just for looks", low and flat) and small treasure bits: you walk over them, so they
@@ -798,8 +807,9 @@ func _ev_broke(id: int) -> void:
 				return
 			RockShatter.burst(get_parent(), th.centre, Vector3.UP, STONE, Mat.STONE)
 		"floor":  # (owner, Nov 20: "no break animation"): the boards snap and tumble down into the spike pit
-			Fx.burst(get_parent(), th.centre, WOOD, 24, 3.0, Vector3.DOWN)
-			Sfx.play("chop", th.centre, 2.0, 0.6)
+			var stone := String(th.prop.model) == "dungeon/floor_loose_flagstone.glb"  # (Hald's slab cracks like stone)
+			Fx.burst(get_parent(), th.centre, STONE if stone else WOOD, 24, 3.0, Vector3.DOWN)
+			Sfx.play("dig_break" if stone else "chop", th.centre, 2.0, 0.6)
 			_tumble(id, 4.4, FLOOR_FALL)
 			return
 		"drip":
@@ -1382,6 +1392,12 @@ func use_info(id: int) -> Dictionary:
 			return {} if opened_by_hand(id) != 0 else {name = "Round door · E to open", use = id}
 		"lever":
 			return {name = "Old lever · E to pull" if not is_gate_open(th.d) else "Old lever (pulled)", use = id}
+		"door":  # F848 (owner, Nov 25): a key door (Hald's Bronze door) opens with E while you carry its key
+			var keys := DungeonKeys.keys_of(list_id(th.d))
+			if keys.is_empty() or is_door_open(th.d):
+				return {}
+			var names: Array = keys.map(func(k): return String(DungeonKeys.KEYS[k].name))
+			return {name = "Locked door (the %s) · E to unlock" % " and the ".join(names), use = id}
 	return {}
 
 
@@ -1391,14 +1407,11 @@ func ask_use(id: int) -> void:
 	var th: Dictionary = things.get(id, {})
 	if auth == null or th.is_empty():
 		return
-		"door":  # F848 (owner, Nov 25): a key door (Hald's Bronze door) opens with E while you carry its key
-			var keys := DungeonKeys.keys_of(list_id(th.d))
-			if keys.is_empty() or is_door_open(th.d):
-				return {}
-			var names: Array = keys.map(func(k): return String(DungeonKeys.KEYS[k].name))
-			return {name = "Locked door (the %s) · E to unlock" % " and the ".join(names), use = id}
 	if th.kind == "lever":
 		auth.keys.ask_pull_lever(list_id(th.d))  # (DungeonKeys: request -> host -> everyone; it says what happened)
+		return
+	if th.kind == "door":
+		auth.keys.ask_unlock(list_id(th.d))  # (F848: nothing called it, so the Bronze door never opened, key or not)
 		return
 	if auth.is_host():
 		request_use(auth.local_peer_id(), id)
@@ -1409,9 +1422,6 @@ func ask_use(id: int) -> void:
 @rpc("any_peer", "reliable")
 func _rpc_use(id: int) -> void:
 	var auth := GameAuthority.instance
-	if th.kind == "door":
-		auth.keys.ask_unlock(list_id(th.d))  # (F848: nothing called it, so the Bronze door never opened, key or not)
-		return
 	if auth and auth.is_host():
 		request_use(multiplayer.get_remote_sender_id(), id)
 

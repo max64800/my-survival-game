@@ -179,6 +179,12 @@ static func set_fade(model: Node3D, f: float) -> void:
 ## Host: a hit took it past a quarter mark? Returns where it jumps to, or Vector3.INF (no jump).
 ## F873 (owner, Nov 25): right BEHIND the one who hit it (`hitter`), never a random spot or inside a wall; it swings
 ## at once when it shows there (ambush). No open spot behind or beside them: it doesn't jump at all.
+## True when this hit took it past one of its quarter marks (it owes a jump, even if no spot was open).
+static func jump_owed(m: Monster, hp_before: float) -> bool:
+	var step := m.max_hp() / MARKS
+	return m.hp > 0.0 and floori((m.max_hp() - m.hp) / step) > floori((m.max_hp() - hp_before) / step)
+
+
 static func jump_after_hit(m: Monster, hp_before: float, maker: CaveMaker, hitter: Node3D = null) -> Vector3:
 	if m.hp <= 0.0:
 		return Vector3.INF
@@ -193,8 +199,9 @@ static func jump_after_hit(m: Monster, hp_before: float, maker: CaveMaker, hitte
 const BEHIND := 1.7  ## m behind you it comes back: inside its swing's reach, too close to just walk away from
 const BODY_ROOM := 0.45  ## m of open air it needs all round its body there (no half-in-a-wall ghost, F873)
 ## The ways round you it tries, in turn (radians from straight behind) and how far: behind first, then a bit to
-## either side, then beside you. Never in front (you'd just see it come).
-const TRY_TURNS := [0.0, 0.45, -0.45, 0.9, -0.9, 1.35, -1.35]
+## either side, then beside you, last a little ahead of beside you (owner, Nov 25: "they stop teleporting" when you
+## stand in a narrow spot). Never straight in front (you'd just see it come).
+const TRY_TURNS := [0.0, 0.45, -0.45, 0.9, -0.9, 1.35, -1.35, 1.8, -1.8, 2.3, -2.3]  ## (last: beside you, a bit ahead)
 const TRY_DIST := [BEHIND, BEHIND + 0.5, BEHIND - 0.4]
 
 
@@ -568,3 +575,49 @@ static func first_door(link: Dictionary, starts: Array[int], goals: Array[int]) 
 		if l[0] == step:
 			return [start, l[1], step]
 	return []
+
+
+## Host: nothing solid (a tomb, a pillar, a wall) between it and `goal` at chest height (owner, Nov 25: Hald "is trying
+## to hit me through the tomb and he can't hit me").
+static func clear_to(m: Monster, goal: Vector3) -> bool:
+	if not m.is_inside_tree():
+		return true
+	var line := PhysicsRayQueryParameters3D.create(m.global_position + Vector3.UP * 0.9, goal + Vector3.UP * 0.9,
+		World.TERRAIN_LAYER | PieceNode.PIECE_LAYER)
+	return m.get_world_3d().direct_space_state.intersect_ray(line).is_empty()
+
+
+const AROUND_LOOK := 1.6  ## m ahead it looks for something in its way
+const AROUND_TURNS := [0.5, 1.0, 1.5, 2.0]  ## radians it tries to either side to get past it
+
+
+## Host: `way` bent round whatever solid stands right in front of it ("he just needs to go around it"). It keeps to
+## the side it picked (meta ghost_side) so it doesn't swing left and right in front of the tomb; once the way is
+## open again it forgets the side.
+static func around(m: Monster, way: Vector3, goal: Vector3) -> Vector3:
+	if way.length() < 0.1 or not m.is_inside_tree():
+		return way
+	var look := minf(AROUND_LOOK, ((goal - m.global_position) * Vector3(1, 0, 1)).length())
+	if _open(m, way, look):
+		m.remove_meta("ghost_side")
+		return way
+	var side := float(m.get_meta("ghost_side", 0.0))
+	var sides := [side] if side != 0.0 else ([1.0, -1.0] if way.cross(goal - m.global_position).y >= 0.0 else [-1.0, 1.0])
+	for turn: float in AROUND_TURNS:
+		for sd: float in sides:
+			var dir := way.rotated(Vector3.UP, turn * sd)
+			if _open(m, dir, AROUND_LOOK * 0.75):
+				m.set_meta("ghost_side", sd)
+				return dir
+	m.remove_meta("ghost_side")  # (boxed in on that side: next time it tries both)
+	return way
+
+
+static func _open(m: Monster, dir: Vector3, dist: float) -> bool:
+	var space := m.get_world_3d().direct_space_state
+	for h: float in [0.7, 1.2]:  # (above a stair step, below a doorway top)
+		var a := m.global_position + Vector3.UP * h
+		var q := PhysicsRayQueryParameters3D.create(a, a + dir * dist, World.TERRAIN_LAYER | PieceNode.PIECE_LAYER)
+		if not space.intersect_ray(q).is_empty():
+			return false
+	return true

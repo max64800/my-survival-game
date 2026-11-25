@@ -51,3 +51,15 @@ func test_mace_and_creature_death_sounds() -> void:
 	check_eq(mm.hit_sound(auth.local_peer_id(), false), "hit", "a sword still slashes")
 	mm.free()
 	root.queue_free()
+
+
+## Owner, Nov 25: "fix the enemy dying, it doesn't match anyone": no creature dies with the dwarf's old thump any more.
+func test_every_creature_dies_with_its_own_kind_of_sound() -> void:
+	for name in ["beetle_death", "spider_death", "bones_death", "ghost_death"]:
+		check(Sfx._variants(name).size() >= 2, "%s has its own sounds" % name)
+	check_eq(MonsterManager.death_sound("rock_beetle"), "beetle_death", "a beetle's shell cracks and it hisses out")
+	check_eq(MonsterManager.death_sound("cave_spider"), "spider_death", "a spider hisses and curls up")
+	check_eq(MonsterManager.death_sound("lost_miner"), "bones_death", "a skeleton miner falls into a heap of bones")
+	check_eq(MonsterManager.death_sound("hald_ironbrow"), "ghost_death", "a ghost blows away as mist")
+	for kind: String in Monsters.LIST:
+		check(MonsterManager.death_sound(kind) != "death", "%s has its own death sound" % kind)

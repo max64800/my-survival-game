@@ -79,8 +79,30 @@ func test_only_the_pit_and_chasm_kill() -> void:
 	var d := _hald(_test_world())
 	for safe in ["mourners_gate", "candle_hall", "honour_chapel", "names_hall", "quiet_chapel", "halds_tomb"]:
 		check_eq(DungeonBuild.deadly_space(d, DungeonMap.space_floor(d, safe) + Vector3.UP * 0.3), "", "standing in %s is safe" % safe)
-	for deadly in ["stair_pit", "chasm"]:
+	for deadly in ["stair_pit", "chasm", "candle_pit", "names_pit"]:
 		check_eq(DungeonBuild.deadly_space(d, DungeonMap.space_floor(d, deadly) + Vector3.UP * 0.3), deadly, "%s kills" % deadly)
+
+
+## Owner, Nov 25: "add a few spikes and fake floor, we don't have a full death trap anywhere": four loose slabs give
+## way (two over new spike pits, two on the Bridge of Oaths over the chasm), and right under each one you die.
+func test_the_fake_floors_give_way_over_a_deadly_drop() -> void:
+	var d := _hald(_test_world())
+	var fakes: Array = DungeonBuild.load_plan("hald").props.filter(func(p): return DungeonBuild.thing_kind(p) == "floor")
+	check_eq(fakes.size(), 4, "four fake floor slabs")
+	for p in fakes:
+		check_eq(String(p.model), "dungeon/floor_loose_flagstone.glb", "a stone slab, not boards (a stone tomb, F856)")
+		var hit := ""
+		for drop in [3.0, 10.0]:  # (a pit 3 m down, the chasm 10 m)
+			var under := DungeonMap.to_world(d, Vector3(float(p.pos[0]), float(p.pos[1]) - drop + 0.3, float(p.pos[2])))
+			if hit == "":
+				hit = DungeonBuild.deadly_space(d, under)
+		check(hit != "", "under the slab at %s: a deadly drop (%s)" % [p.pos, hit])
+		var on := DungeonMap.to_world(d, Vector3(float(p.pos[0]), float(p.pos[1]) + 0.5, float(p.pos[2])))
+		check_eq(DungeonBuild.deadly_space(d, on), "", "(standing on it is safe till it breaks)")
+	var bridge: Array = fakes.filter(func(p): return float(p.pos[1]) < -7.0 and float(p.pos[0]) > 30.0 and float(p.pos[2]) < 17.0)
+	check_eq(bridge.size(), 2, "two cracked slabs on the bridge")
+	if bridge.size() == 2:
+		check(absf(float(bridge[0].pos[2]) - float(bridge[1].pos[2])) > 1.0, "on opposite sides: a careful dwarf gets across")
 
 
 func test_the_bronze_door_needs_the_shield_brothers_key() -> void:

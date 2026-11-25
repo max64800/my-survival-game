@@ -758,6 +758,8 @@ func _hurt_monster(m: Monster, peer: int, dmg: int, stun_amount: float, eff := 0
 			var spot := Ghost.jump_after_hit(m, hp_before, auth.world.maker if auth and auth.world else null, hitter)
 			if spot != Vector3.INF:
 				ghost_fade(m, spot)
+			elif Ghost.jump_owed(m, hp_before):
+				m.set_meta("ghost_jump_owed", 0.0)  # no room behind you right now: it tries again as it chases you
 
 
 # ================================================================== friendly fire (doc 2.7)
@@ -1468,11 +1470,21 @@ func _ev_spawn(uid: int, kind: String, pos: Vector3, leader: bool, pack: int, va
 
 
 ## F881 (owner, Nov 25: bats and Rock Snails died with a dwarf's death cry): their own last sounds.
-const DEATH_SOUNDS := {"cave_bat": "bat_death", "rock_snail": "snail_death"}
+## Owner, Nov 25: "fix the enemy dying, it doesn't match anyone": every other creature too (tools/art/make_death_sounds.py).
+const DEATH_SOUNDS := {"cave_bat": "bat_death", "rock_snail": "snail_death", "rock_beetle": "beetle_death",
+	"great_rock_beetle": "beetle_death", "cave_spider": "spider_death"}
 
 
+## The ghosts blow apart into mist; the skeleton miners (they rise from the floor) fall into a heap of bones.
 static func death_sound(kind: String) -> String:
-	return DEATH_SOUNDS.get(kind, "death")
+	if DEATH_SOUNDS.has(kind):
+		return DEATH_SOUNDS[kind]
+	var data: Dictionary = Monsters.LIST.get(kind, {})
+	if data.get("ghost", false):
+		return "ghost_death"
+	if data.get("rises", false):
+		return "bones_death"
+	return "death"
 
 
 ## F854 (owner, Nov 25: "the mace makes a sword sound"): blunt weapons land with a dull knock and crunch.
@@ -1722,6 +1734,23 @@ func _ev_shell(uid: int, hidden: bool) -> void:
 		_incoming = _incoming.filter(func(h): return h.uid != uid)
 		if hidden:
 			_float_number(m.global_position + Vector3.UP * 1.3, "Hides in its shell!")
+
+
+## Host: a ghost owes a jump (owner, Nov 25: "if I shoot them from far away ... they stop teleporting": you stood in a
+## narrow doorway or corridor, there was no room behind you, and that quarter's jump was lost). A few times a second
+## it looks again for a spot behind you; true when it jumped now.
+func ghost_owed_jump(m: Monster, target: Node3D) -> bool:
+	if not m.has_meta("ghost_jump_owed") or Ghost.hidden(m) or target == null:
+		return false
+	if _clock < float(m.get_meta("ghost_jump_owed")):
+		return false
+	m.set_meta("ghost_jump_owed", _clock + 0.3)
+	var spot := Ghost.spot_behind(m, target, auth.world.maker if auth and auth.world else null, m.dungeon)
+	if spot == Vector3.INF:
+		return false
+	m.remove_meta("ghost_jump_owed")
+	ghost_fade(m, spot)
+	return true
 
 
 ## A ghost fades into mist and comes back at `to` (Ghost; the host picked the spot after a quarter of its health).

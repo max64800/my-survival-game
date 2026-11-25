@@ -39,6 +39,9 @@ func _setup() -> void:
 
 
 func _teardown() -> void:
+	for mi: MeshInstance3D in auth.get_parent().find_children("*", "MeshInstance3D", true, false):
+		mi.material_override = null  # (as Ghost does: freeing the ghost shader with its body upsets the dummy renderer,
+		mi.material_overlay = null   #  and its error lands in the next test)
 	auth.get_parent().queue_free()
 
 
@@ -447,4 +450,71 @@ func test_the_blue_ghost_swings_when_right_next_to_you() -> void:
 	var miner: Monster = _spawn("lost_miner", Vector3(-3, 0, 0)) if Monsters.LIST.has("lost_miner") else null
 	if miner:
 		check(miner._pick_attack(1.2, auth.monsters).is_empty(), "(a Lost Miner still circles close up: its leap needs room)")
+	_teardown()
+
+
+## Owner, Nov 25 (5th round): "make sure that I cannot knock away ghosts" (the combo's 3rd blow threw it out of reach
+## just as it came back behind you).
+func test_no_blow_knocks_a_ghost_away() -> void:
+	await _setup()
+	var m := _spawn("ghost_b", Vector3(2, 0, 0))
+	check(m != null, "a ghost appears")
+	if m == null:
+		_teardown()
+		return
+	await tree.process_frame
+	m.knock(Vector3(6, 0, 0))
+	check(m._knock.length() < 0.01, "a finisher's push does nothing to it")
+	auth.monsters._hurt_monster(m, 1, 5, 0.0)
+	check(m._knock.length() < 0.01, "nor does a plain hit's")
+	_teardown()
+
+
+## Owner, Nov 25: "if I shoot them from far away ... a lot of them stop teleporting": with no room behind you (a narrow
+## doorway) the quarter's jump was lost. Now it is owed, and it makes it as soon as a spot is open.
+func test_a_jump_it_couldnt_make_is_made_later() -> void:
+	await _setup()
+	var m := _spawn("ghost_b", Vector3(8, 0, 0))
+	check(m != null, "a ghost appears")
+	if m == null:
+		_teardown()
+		return
+	await tree.process_frame
+	auth.monsters._hurt_monster(m, 777, int(m.max_hp() * 0.3), 0.0)  # (a hitter it can't find: no spot to go to)
+	check(m.has_meta("ghost_jump_owed"), "the jump is owed")
+	check(not Ghost.hidden(m), "(it hasn't gone yet)")
+	check(auth.monsters.ghost_owed_jump(m, player), "it jumps once it can find you")
+	check(Ghost.hidden(m) and not m.has_meta("ghost_jump_owed"), "into the mist, nothing owed")
+	_teardown()
+
+
+## Owner, Nov 25: "if I'm standing behind a tomb, he is trying to hit me through the tomb ... he just needs to go
+## around it."
+func test_it_walks_round_a_tomb_and_never_swings_through_it() -> void:
+	await _setup()
+	var m := _spawn("ghost_b", Vector3(0, 0, 0))
+	check(m != null, "a ghost appears")
+	if m == null:
+		_teardown()
+		return
+	player.global_position = m.global_position + Vector3(3, 0, 0)
+	var tomb := StaticBody3D.new()
+	tomb.collision_layer = World.TERRAIN_LAYER
+	var box := CollisionShape3D.new()
+	box.shape = BoxShape3D.new()
+	(box.shape as BoxShape3D).size = Vector3(0.8, 1.6, 1.4)
+	tomb.add_child(box)
+	world.add_child(tomb)
+	tomb.global_position = m.global_position + Vector3(1.5, 0.8, 0)
+	await tree.physics_frame
+	await tree.physics_frame
+	check(not Ghost.clear_to(m, player.global_position), "the tomb is in the way")
+	var way := Ghost.around(m, Vector3(1, 0, 0), player.global_position)
+	check(absf(way.z) > 0.4, "it steps to one side of it (%s)" % way)
+	check(way.x > -0.1, "(still heading your way, not back)")
+	tomb.global_position += Vector3(0, 0, 9)
+	await tree.physics_frame
+	await tree.physics_frame
+	check(Ghost.clear_to(m, player.global_position), "with the tomb gone it can swing again")
+	tomb.queue_free()
 	_teardown()
