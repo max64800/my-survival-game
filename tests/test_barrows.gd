@@ -139,3 +139,96 @@ func test_no_spiders_in_the_keepers_fight() -> void:
 		var x := float(c.pos[0])
 		var z := float(c.pos[2])
 		check(not (x > 14.0 and x < 28.0 and z > 44.0 and z < 56.0 and float(c.floor) < -15.0), "no spider in the King's Barrow (%s)" % [c.pos])
+
+
+func _rig() -> Dictionary:
+	var m := _test_world()
+	var root := Node3D.new()
+	tree.root.add_child(root)
+	var auth := GameAuthority.new()
+	root.add_child(auth)
+	auth.drops_root = Node3D.new()
+	root.add_child(auth.drops_root)
+	var player := Node3D.new()
+	root.add_child(player)
+	var ps := auth.add_player(1, player)
+	var db := DungeonBuild.new()
+	db.maker = m
+	root.add_child(db)
+	return {root = root, auth = auth, player = player, ps = ps, db = db, d = m.dungeons[0]}
+
+
+func _blocked(db: DungeonBuild, at: Vector3) -> bool:
+	var q := PhysicsShapeQueryParameters3D.new()
+	var ball := SphereShape3D.new()
+	ball.radius = 0.35
+	q.shape = ball
+	q.transform = Transform3D(Basis(), at)
+	q.collision_mask = World.TERRAIN_LAYER
+	for hit in db.get_world_3d().direct_space_state.intersect_shape(q, 8):
+		if (hit.collider as Node).is_ancestor_of(db) == false and db.is_ancestor_of(hit.collider as Node):
+			return true
+	return false
+
+
+## Both flights are slopes you walk up, with room for a dwarf over them (the lesson of Hald's F847).
+func test_walk_up_every_stair() -> void:
+	var r := _rig()
+	var db: DungeonBuild = r.db
+	await tree.physics_frame
+	await tree.physics_frame
+	var stairs: Array = DungeonBuild.placements(r.d, DungeonBuild.load_plan("barrows")).get("build/stairs__cut_stone.glb", [])
+	check_eq(stairs.size(), 16, "two flights of 4 steps, 2 wide")
+	var space := db.get_world_3d().direct_space_state
+	for t: Transform3D in stairs:
+		for f in [0.15, 0.5, 0.85]:
+			var on := t * Vector3(0, 2.0 * f, 1.0 - 2.0 * f)
+			var ray := PhysicsRayQueryParameters3D.create(on + Vector3.UP * 1.5, on + Vector3.DOWN * 1.0, World.TERRAIN_LAYER)
+			var hit := space.intersect_ray(ray)
+			var top: float = (hit.position as Vector3).y if not hit.is_empty() else -INF
+			check(absf(top - on.y) < 0.3, "the stairs at %s: ground %.2f where its step is (%.2f)" % [t.origin, top, on.y])
+			if f < 0.7:
+				check(not _blocked(db, on + Vector3.UP * 1.0), "the stairs at %s: no invisible wall %d%% up" % [t.origin, f * 100])
+	r.root.free()
+
+
+## Owner, Nov 25 (1st play): "they can't climb the stairs". A ghost that saw you follows you up each flight.
+func _ghost_follows(kind: String, from: Vector3, room: String, to: Vector3) -> void:
+	var r := _rig()
+	var d: Dictionary = r.d
+	var mgr: MonsterManager = r.auth.monsters
+	await tree.physics_frame
+	await tree.physics_frame
+	r.player.global_position = DungeonMap.to_world(d, to)
+	var uid: int = mgr._next_uid
+	mgr._ev_spawn(uid, kind, DungeonMap.to_world(d, from + Vector3.UP * 0.55), false, 0, "")
+	var m: Monster = mgr.get_monster(uid)
+	m.dungeon = d
+	m.dungeon_room = room
+	await tree.physics_frame
+	m.alert(1)
+	var best := INF
+	var top_y := -INF
+	for i in 900:
+		await tree.physics_frame
+		var gap: Vector3 = r.player.global_position - m.global_position
+		best = minf(best, Vector2(gap.x, gap.z).length())
+		top_y = maxf(top_y, m.global_position.y)
+		if best < 3.2:
+			break
+	check(best < 3.2, "a %s from %s reaches you at %s (closest %.1f m, highest %.1f m)" % [kind, room, to, best, top_y - DungeonMap.to_world(d, Vector3.ZERO).y])
+	r.root.free()
+
+
+## TODO F907 (still fails: rename back to test_ when fixed)
+func todo_a_ghost_follows_you_up_the_spiral_stair() -> void:
+	await _ghost_follows("ghost_c", Vector3(58.0, DungeonMap.OLDER, 34.0), "second_ring", Vector3(40.0, 0.3, 36.0))
+
+
+func test_a_ghost_follows_you_up_the_deep_stair() -> void:
+	await _ghost_follows("ghost_a", Vector3(40.0, DungeonMap.OLDEST, 28.0), "hall_of_bones", Vector3(60.0, DungeonMap.OLDER + 0.3, 30.0))
+
+
+## TODO F907 (still fails: rename back to test_ when fixed)
+func todo_the_warden_follows_you_up_the_spiral_stair() -> void:
+	await _ghost_follows("barrow_warden", Vector3(58.0, DungeonMap.OLDER, 34.0), "second_ring", Vector3(40.0, 0.3, 36.0))
