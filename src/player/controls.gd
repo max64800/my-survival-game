@@ -89,6 +89,12 @@ static func setup() -> void:
 		InputMap.action_add_event(action, ev)
 
 
+## The first key of an action as a word for on-screen hints ("R"), so a hint never names the wrong key (F870).
+static func key_name(action: String) -> String:
+	var keys: Array = KEYS.get(action, [])
+	return OS.get_keycode_string(keys[0]) if not keys.is_empty() else "?"
+
+
 static func _ensure(action: String) -> void:
 	if InputMap.has_action(action):
 		InputMap.action_erase_events(action)

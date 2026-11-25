@@ -30,15 +30,14 @@ var _equip_title: Label
 var _gear_panel: PanelContainer  ## left of the bag: armour, lantern, backpack (owner F825)
 var _gear_names := {}  ## gear slot index -> the Label beside it ("Copper Helm" or "Head")
 const EQUIP_NAMES := ["Pick", "Lamp", "Weapon", "Shield", "Head", "Chest", "Legs", "Feet", "Pack"]
-var _fuel_bar: ProgressBar
+var _lantern_out: PanelContainer  ## "Press R to refill the lantern" while it's out (F870)
+var skill_popup: SkillPopup  ## a skill pops up for ~2 s when it grows (F870)
 var _fuel_label: Label
 var _fps_label: Label
 var _goals_label: Label  ## "Next steps" in the top-right corner (F103)
 var _goals_wait := 0.0
 var _toast: Label
 var _toast_timer := 0.0
-var _help: Label
-var _help_timer := 25.0
 var _pause: Control
 var _loading: Control
 var _loading_bar: ProgressBar
@@ -55,7 +54,6 @@ const VitalDialScript := preload("res://src/ui/vital_dial.gd")
 const WeightDialScript := preload("res://src/ui/weight_dial.gd")
 var _health_text: Label
 var _stamina_text: Label  ## "80 / 100" in the middle of the stamina bar (owner F823)
-var _level_label: Label
 var _buff_label: Label
 var _ailment_badges: AilmentBadges  ## burning / chilled / poisoned / frozen, above the health bar
 var _weight_dial: Control  ## carry weight dial above hunger + thirst: green / yellow heavy / red overloaded (F793)
@@ -217,15 +215,24 @@ func _build() -> void:
 	fuel_box.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
 	fuel_box.position += Vector2(20, -170)  # above the hunger/thirst dials (F240)
 	root.add_child(fuel_box)
-	_fuel_label = _label(fuel_box, 15)
-	_fuel_bar = ProgressBar.new()
-	_fuel_bar.custom_minimum_size = Vector2(200, 10)
-	_fuel_bar.show_percentage = false
-	_fuel_bar.max_value = GameAuthority.MAX_FUEL
-	var fill := StyleBoxFlat.new()
-	fill.bg_color = Color(1.0, 0.75, 0.35)
-	_fuel_bar.add_theme_stylebox_override("fill", fill)
-	fuel_box.add_child(_fuel_bar)
+	_fuel_label = _label(fuel_box, 15)  # only the crossbow's bolts now (F870: no lantern bar)
+	# F870 (owner, Nov 25): no lantern bar; one simple pop-up when the lantern runs out.
+	_lantern_out = PanelContainer.new()
+	_lantern_out.name = "LanternOut"
+	UiKit.panel(_lantern_out, 18.0)
+	_lantern_out.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_lantern_out.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	_lantern_out.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_lantern_out.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_lantern_out.offset_bottom = -300.0
+	_lantern_out.visible = false
+	root.add_child(_lantern_out)
+	UiKit.label(_lantern_out, "Press %s to refill the lantern" % Controls.key_name("refill_lantern"), 17, UiKit.TEXT)
+	skill_popup = SkillPopup.new()  # F870: a skill shows for ~2 s only when it grows
+	skill_popup.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	skill_popup.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	skill_popup.position += Vector2(-16, 36)
+	root.add_child(skill_popup)
 
 	# Body (F229, owner F240): fat health and stamina bars as long as the hotbar, right above it;
 	# big hunger and thirst dials on the hotbar's left. Same wood-and-brass kit pieces as the menus.
@@ -318,13 +325,6 @@ func _build() -> void:
 	_buff_label.offset_top = -300
 	_buff_label.offset_bottom = -178
 	_buff_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
-	_level_label = _label(root, 16)
-	_level_label.anchor_left = 1.0
-	_level_label.anchor_right = 1.0
-	_level_label.offset_left = -460
-	_level_label.offset_right = -16
-	_level_label.offset_top = 36
-	_level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 
 	craft = CraftPanel.new()
 	craft.peer_id = peer_id
@@ -417,9 +417,7 @@ func _build() -> void:
 	_toast.custom_minimum_size = Vector2(500, 0)
 	_toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
-	_help = _label(root, 14)
-	_help.position = Vector2(16, 12)
-	_help.text = "WASD walk · Shift run · Space jump · Mouse look\nLeft click dig/harvest · Right click eat/place · E use station\n1-9 hotbar · Wheel zoom · R refill lantern · Tab bag + crafting\nK skills · M map · Esc pause"
+	# (F870: the controls list lives only in the settings page now, SettingsPanel.CONTROLS)
 
 	_pause = _build_pause(root)
 	# Loading cover (F226): its own layer above everything, fully solid, so the dwarf and the cave
@@ -1333,7 +1331,6 @@ func _process(delta: float) -> void:
 		_stamina_text.text = "%d / %d" % [floori(v.stamina), roundi(v.max_stamina())]
 		var buffs := []  # (eaten foods show as pictures in _food_slots now, F426)
 		_food_slots.show_buffs(v)
-		var mood: String = {"well_fed": "Well fed", "peckish": "Peckish", "starving": "Starving (tired)"}.get(v.status(), "")
 		if v.in_dark:
 			buffs.append("In the dark: no healing, tiring")  # F293
 		if v.cozy_time > 0.0:
@@ -1347,29 +1344,15 @@ func _process(delta: float) -> void:
 				buffs.append("%s %d s" % [Progression.PERKS[e][4] if Progression.PERKS.has(e) else "Bond of the Clan", ceili(v.effects[e].left)])
 			elif e == "bandage_heal":
 				buffs.append("Bandage healing %d s" % ceili(v.effects[e].left))
-		_buff_label.text = "\n".join(([mood] if mood != "" else []) + buffs + Array(v.ailments.describe(false)))
+		# (F870: no well-fed / peckish words: the hunger dial shows it)
+		_buff_label.text = "\n".join(buffs + Array(v.ailments.describe(false)))
 		_ailment_badges.show_ailments(v.ailments)
-		var p := ps.progress
-		var best := Progression.SKILLS.duplicate()
-		best.sort_custom(func(a, b): return p.skill_level[a] > p.skill_level[b])
-		_level_label.text = "Level %d  (%d/%d XP)%s\n%s" % [
-			p.level, p.xp, Progression.xp_to_next(p.level), "  · %d perk points" % p.points_free() if p.points_free() > 0 else "",
-			" · ".join(best.slice(0, 3).map(func(s): return "%s %d" % [Progression.SKILL_INFO[s][0], p.skill_level[s]]))]
+		skill_popup.watch(ps.progress, delta)  # (F870: no skills list in the corner; K shows them all)
 		if craft.visible and craft.station:
 			craft._status.text = craft.station.busy_text()
-		_fuel_bar.value = ps.fuel
-		var crystals := 0
-		for id in GameAuthority.FUEL_ORDER:
-			crystals += ps.inventory.count_of(id)
-		var mins := int(ps.fuel) / 60
-		var secs := int(ps.fuel) % 60
-		_fuel_label.text = "Lantern %d:%02d   (R: refill, %d fuel)" % [mins, secs, crystals]
-		if ps.fuel <= 0.0:
-			_fuel_label.text = "Lantern is out!  Get a glow crystal or rootwood, press R"
 		var has_lantern := Lantern.has_lantern(ps)
-		_fuel_bar.visible = has_lantern
-		if not has_lantern:
-			_fuel_label.text = "No lantern yet"
+		_lantern_out.visible = has_lantern and ps.fuel <= 0.0  # F870: no bar, just this when it runs out
+		_fuel_label.text = ""
 		_update_first_steps(ps, has_lantern)
 		var me := _local_dwarf()
 		if me and me.fight and me.fight.is_crossbow():
@@ -1377,7 +1360,7 @@ func _process(delta: float) -> void:
 			for id in Combat.BOLT_ORDER:
 				bolts += ps.inventory.count_of(id)
 			var state := "loaded" if me.fight.loaded else ("reloading %.1f s" % me.fight.reload_left if me.fight.reload_left >= 0.0 else "empty: R to reload")
-			_fuel_label.text = "Lantern %d:%02d   ·   Crossbow %s, %d bolts" % [mins, secs, state, bolts]
+			_fuel_label.text = "Crossbow %s, %d bolts" % [state, bolts]
 		_refresh_selection(ps.selected_slot)
 	var dwarf := _local_dwarf()
 	if dwarf:
@@ -1415,8 +1398,6 @@ func _process(delta: float) -> void:
 		map_data.reveal(dwarf.global_position, auth.world.sdf_at)
 	_toast_timer -= delta
 	_toast.modulate.a = clampf(_toast_timer, 0.0, 1.0)
-	_help_timer -= delta
-	_help.modulate.a = clampf(_help_timer / 3.0, 0.0, 1.0)
 
 
 var _last_selected := -1

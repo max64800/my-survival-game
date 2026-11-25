@@ -7,9 +7,14 @@ extends PanelContainer
 func _ready() -> void:
 	UiKit.panel(self)
 	custom_minimum_size = Vector2(360, 0)
+	var cols := HBoxContainer.new()  # settings on the left, the controls list on the right (F870)
+	cols.add_theme_constant_override("separation", 28)
+	add_child(cols)
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 10)
-	add_child(v)
+	v.custom_minimum_size = Vector2(360, 0)
+	cols.add_child(v)
+	_build_controls(cols)
 	UiKit.title(v, "Settings")
 	var sound := _row(v, "Sound")
 	sound.name = "SoundBox"
@@ -120,6 +125,34 @@ func _ready() -> void:
 			ms.set_value_no_signal(Controls.mouse_scale * 100.0)
 			sh.set_value_no_signal(SoundSettings.camera_shake * 100.0)
 			show_gfx.call())
+
+
+## F870 (owner, Nov 25: "the screen is all over the place"): the controls list lives only here, not on the game screen.
+const CONTROLS := [
+	["W A S D", "walk"], ["Shift", "run"], ["Space", "jump"], ["Ctrl", "dodge roll"], ["Mouse", "look"],
+	["Left click", "dig, harvest, attack"], ["Right click", "eat, place, block"], ["E", "use, open, pick up"],
+	["1 - 9", "hotbar"], ["Wheel", "zoom"], ["F", "draw / put away weapon"],
+	["R", "refill the lantern"], ["L", "put the lantern away / out"],
+	["Tab", "bag + crafting"], ["K", "skills"], ["M", "map"], ["B", "build menu (hammer)"],
+	["V", "blueprints (hammer)"], ["Q", "turn piece (hammer)"], ["Z  G  T", "perks"],
+	["F5", "quick save"], ["Esc", "pause"],
+]
+
+
+func _build_controls(parent: Node) -> void:
+	var c := VBoxContainer.new()
+	c.name = "ControlsList"
+	c.add_theme_constant_override("separation", 4)
+	parent.add_child(c)
+	UiKit.title(c, "Controls")
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 16)
+	grid.add_theme_constant_override("v_separation", 3)
+	c.add_child(grid)
+	for row in CONTROLS:
+		UiKit.label(grid, row[0], 14, UiKit.AMBER)
+		UiKit.label(grid, row[1], 14, UiKit.TEXT)
 
 
 ## A setting's name over its control.
