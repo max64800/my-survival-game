@@ -128,23 +128,35 @@ static var LIST := {
 	# guards the Honour Chapel. He blocks every hit from the front (front_shield, like the Prop Warden): walk round him.
 	# He holds the Bronze Key (DungeonKeys.KEYS.key_bronze) that opens the Bronze door behind Hald's tomb.
 	"shield_brother": {name = "The Shield-Brother", dungeon_only = true, sleeps = true, no_variant = true, ragdoll = false, ghost = true, rise_near = 7.0,
-		front_shield = true, no_push = true, key = "key_bronze",
+		# F850 (owner, Nov 25: "he never turns his back"): he turns slowly (turns_in_place: step round him), his shield
+		# drops for a moment after each swing (GhostRig.shield_open: hit him then), and he charges behind his shield
+		# when you keep away (a dodge-able run; he stands dazed after it, his back open).
+		front_shield = true, no_push = true, key = "key_bronze", turns_in_place = true, turn_speed = 1.7,
 		size = 1.25, height = 1.9, hp = 280, armor = 20, stun = 200, slash = 0.8, blunt = 0.9, pierce = 0.6,
 		fire = 1.25, frost = 0.25, poison = 0.0, walk = 1.1, run = 2.9, pack = [1, 1], xp = 50,
 		color = Color(0.62, 0.92, 0.75), shape = "ghost", recover = 1.7,
-		attacks = [{name = "Oath Chop", anim = "Chop", warn_sound = "beetle_rumble", tell = 1.0, damage = 20, type = "blunt", reach = 2.4, parry = "any", rest = 3.5},
+		attacks = [{name = "Shield Charge", anim = "charge", warn_sound = "beetle_rumble", tell = 1.1, damage = 18, type = "blunt", reach = 8.0, min_reach = 3.5, rest = 8.0, parry = "shield", knockdown = true, lunge = true, straight = true, lunge_reach = 3.0},
+			{name = "Oath Chop", anim = "Chop", warn_sound = "beetle_rumble", tell = 1.0, damage = 20, type = "blunt", reach = 2.4, parry = "any", rest = 3.5},
 			{name = "Grave Smash", anim = "mace_4", warn_sound = "beetle_rumble", tell = 1.1, damage = 22, type = "blunt", reach = 3.2, parry = "any", lunge = true, small_lunge = true, lunge_speed = 3.4, rest = 7.0}],
 		drops = []},
+	# Hald's two tomb guards (F849, owner: "2 easy ghost minions fight with him"): small and weak, one slow swing.
+	"hald_shade": {name = "Tomb Shade", dungeon_only = true, sleeps = true, no_variant = true, ragdoll = false, ghost = true, rise_near = 9.0,
+		size = 0.9, height = 1.4, hp = 70, armor = 0, stun = 40, slash = 0.8, blunt = 0.9, pierce = 0.6,
+		fire = 1.25, frost = 0.25, poison = 0.0, walk = 1.1, run = 2.6, pack = [1, 1], xp = 8,
+		color = Color(0.55, 0.85, 0.95), shape = "ghost", recover = 1.6,
+		attacks = [{name = "Shade Swing", anim = "mace_1", warn_sound = "beetle_hiss", tell = 1.0, damage = 9, type = "blunt", reach = 2.1, parry = "any", rest = 3.5}],
+		drops = []},
 	# The end boss: Hald Ironbrow himself (owner: "final boss is a ghost, obviously"): the ghosts' lord body and moves
-	# (all four mace moves in one combo, mist every quarter of his health), rising from his tomb.
+	# (all four mace moves in one combo, mist every quarter of his health), rising from his tomb. F849 (owner, Nov 25:
+	# "too easy"): he runs you down (faster than you walk), swings more often, and two Tomb Shades rise with him.
 	"hald_ironbrow": {name = "Hald Ironbrow", dungeon_only = true, sleeps = true, no_variant = true, ragdoll = false, ghost = true, rise_near = 7.0, boss = true,
 		no_push = true, size = 1.4, height = 2.1, hp = 560, armor = 30, stun = 320, slash = 0.8, blunt = 0.9, pierce = 0.6,
-		fire = 1.25, frost = 0.25, poison = 0.0, walk = 1.3, run = 3.2, pack = [1, 1], xp = 100,
+		fire = 1.25, frost = 0.25, poison = 0.0, walk = 1.6, run = 4.3, pack = [1, 1], xp = 100,
 		color = Color(0.8, 0.88, 1.0), shape = "ghost", recover = 1.8,
-		attacks = [{name = "Ironbrow's Combo", anim = "mace_1", warn_sound = "beetle_rumble", tell = 0.9, damage = 16, type = "blunt", reach = 2.6, parry = "any", rest = 6.0,
+		attacks = [{name = "Ironbrow's Combo", anim = "mace_1", warn_sound = "beetle_rumble", tell = 0.9, damage = 16, type = "blunt", reach = 2.6, parry = "any", rest = 4.0, chain = true,
 				follow = {anim = "mace_2", tell = 0.6, damage = 16, warn_sound = null, follow = {anim = "mace_3", tell = 0.6, damage = 18,
 					follow = {anim = "mace_4", tell = 0.75, damage = 26, knockdown = true}}}},
-			{name = "Grave Smash", anim = "mace_4", warn_sound = "beetle_rumble", tell = 1.0, damage = 24, type = "blunt", reach = 3.4, parry = "any", lunge = true, small_lunge = true, lunge_speed = 3.8, rest = 5.0}],
+			{name = "Grave Smash", anim = "mace_4", warn_sound = "beetle_rumble", tell = 1.0, damage = 24, type = "blunt", reach = 3.4, parry = "any", lunge = true, small_lunge = true, lunge_speed = 4.6, rest = 3.5}],
 		drops = []},
 	# The end boss with his Lost Miners (F467): only the spinning whirl (only a shield parries it, the last turn
 	# knocks you down: step back out of it). F645 (owner, Nov 22): the Great Chop removed — it was readable and

@@ -504,6 +504,8 @@ func think(delta: float, mgr: Node) -> void:
 				state = State.IDLE
 				_timer = randf_range(3.0, 8.0)
 			_move(delta, to.normalized(), data.walk)
+			if data.get("ghost", false):
+				_face_way(to, delta)  # F872: a wandering ghost looks where it drifts
 		State.ALERT:
 			_face(target)
 			_move(delta, Vector3.ZERO, 0.0)
@@ -520,6 +522,8 @@ func think(delta: float, mgr: Node) -> void:
 			var away := global_position - target.global_position
 			away.y = 0
 			_move(delta, away.normalized(), data.run)
+			if data.get("ghost", false):
+				_face_way(away, delta)
 		State.CHASE:
 			if target == null:
 				state = State.RETURN
@@ -553,6 +557,21 @@ func think(delta: float, mgr: Node) -> void:
 				var at_room := DungeonMap.space_at(dungeon, target.global_position + Vector3.UP)
 				if (at_room == "" and not angry()) or (at_room != dungeon_room and not chases_out()):
 					gives_up = true  # (you left its room; in Lampwick only when you leave the dungeon)
+				if data.get("ghost", false) and chases_out():
+					# Owner, Nov 25 (3rd round: "they go up a few stairs, then stop and go back"): a ghost that saw you
+					# follows you anywhere in the dungeon, never tiring or snagging; only when you leave the dungeon
+					# does it vanish back to its place.
+					gives_up = false
+					if not DungeonMap.covers(dungeon, target.global_position, 1.0):  # (stairs and doorways still count)
+						global_position = home + Vector3.UP * 0.1
+						velocity = Vector3.ZERO
+						state = State.IDLE
+						target_peer = 0
+						_timer = randf_range(3.0, 8.0)
+						_best_dist = INF
+						_no_progress = 0.0
+						mgr.monster_changed(self)
+						return
 			if gives_up:
 				state = State.RETURN
 				target_peer = 0
@@ -562,6 +581,10 @@ func think(delta: float, mgr: Node) -> void:
 				return
 			if Ghost.hidden(self):  # F659: a ghost in dots waits where they gather (no moving or swinging unseen)
 				_move(delta, Vector3.ZERO, 0.0)
+				return
+			if Ghost.ambush_due(self) and to.y < 1.3:  # F873: it shows again right behind you and swings at once
+				model.rotation.y = atan2(-to.x, -to.z)
+				_start_attack(Ghost.ambush(data), mgr)
 				return
 			# Far above it (a hole's edge), or it's still clinging to the wall: climb up first, then fight (F236).
 			var atk :=_pick_attack(dist, mgr) if to.y < 1.3 and (is_on_floor() or to.y < 0.4) else {}
@@ -575,9 +598,17 @@ func think(delta: float, mgr: Node) -> void:
 			to.y = 0
 			if data.get("no_push", false) and dist < 1.5:  # F609: stop before running into the player
 				_move(delta, Vector3.ZERO, 0.0)
+				_face(target)
+			elif data.get("ghost", false) and not dungeon.is_empty():
+				var way := Ghost.way_to(self, target.global_position)  # F872: through the doorways, room by room
+				_move(delta, way, speed)
+				if way.dot(to.normalized()) > 0.95:
+					_face(target)
+				else:
+					_face_way(way, delta)  # (it looks where it walks, never backwards or sideways)
 			else:
 				_move(delta, to.normalized(), speed)
-			_face(target)
+				_face(target)
 		State.ATTACK:
 			if _attack.get("dive", false):
 				_dive_step(delta)
@@ -696,7 +727,10 @@ func think(delta: float, mgr: Node) -> void:
 					global_position = home + Vector3.UP * 0.1
 					_best_dist = INF
 					_no_progress = 0.0
-			_move(delta, to.normalized(), data.walk)
+			var home_way := Ghost.way_to(self, home) if data.get("ghost", false) else to.normalized()
+			_move(delta, home_way, data.walk)
+			if data.get("ghost", false):
+				_face_way(home_way, delta)  # F872: it walks home face first
 
 
 func _perceive(mgr: Node) -> void:
@@ -1315,6 +1349,15 @@ func _rock_above() -> float:
 
 func _body_height() -> float:
 	return (_body_shape.shape as CapsuleShape3D).height if _body_shape else 1.0
+
+
+## Turn to look the way it walks (ghosts, F872: "they sometimes walk backwards").
+func _face_way(dir: Vector3, delta: float) -> void:
+	if Vector2(dir.x, dir.z).length() < 0.1:
+		return
+	if data.get("turns_in_place", false):
+		return  # (_move already turns it, at its own slow speed)
+	model.rotation.y = lerp_angle(model.rotation.y, atan2(-dir.x, -dir.z), minf(1.0, delta * 8.0))
 
 
 func _face(target: Node3D) -> void:

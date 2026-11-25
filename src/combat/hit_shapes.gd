@@ -148,6 +148,8 @@ func _build_monster(model: Node3D, kind: String, data: Dictionary) -> void:
 		if dm and dm.dwarf_rig:
 			add_humanoid(dm.dwarf_rig.skeleton, STOUT.shade, 1)
 			weapon_box(dm.dwarf_rig.grip, "mace", "weapon")
+			if data.get("front_shield", false) and dm.dwarf_rig.shield_grip:
+				weapon_box(dm.dwarf_rig.shield_grip, "shield", "charge")  # F850: the Shield-Brother's Shield Charge
 		return
 	var forged: Node3D = model.get_meta("forged_root", null)
 	var sks := (forged if forged else model).find_children("*", "Skeleton3D", true, false)

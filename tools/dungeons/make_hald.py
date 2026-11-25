@@ -90,11 +90,13 @@ def prop(model, x, y, z, yaw=0.0, scale=1.0, role="decor", label="", tilt=0.0, *
 
 
 CREATURE_MODEL = {"ghost_a": "creatures/ghost_a.glb", "ghost_b": "creatures/ghost_b.glb", "ghost_c": "creatures/ghost_c.glb",
-	"shield_brother": "creatures/ghost_c.glb", "hald_ironbrow": "creatures/ghost_c.glb"}
+	"shield_brother": "creatures/ghost_c.glb", "hald_shade": "creatures/ghost_a.glb", "hald_ironbrow": "creatures/ghost_c.glb",
+	"cave_spider": "monsters/cave_spider_v0.glb"}
 
 
-def creature(kind, x, z, yaw=0.0, floor=0.0, wake=None):
-	creatures.append({"kind": kind, "model": CREATURE_MODEL[kind], "pos": r3((x, floor + 0.25, z)), "yaw": yaw, "scale": 1.0,
+def creature(kind, x, z, yaw=0.0, floor=0.0, wake=None, up=0.25):
+	"""`up`: how high over its floor it waits (spiders cling high in the corners)."""
+	creatures.append({"kind": kind, "model": CREATURE_MODEL[kind], "pos": r3((x, floor + up, z)), "yaw": yaw, "scale": 1.0,
 		"floor": floor, **({"wake": wake} if wake else {})})
 
 
@@ -325,8 +327,8 @@ for x in (40, 42):
 		label="The spike pit (falling in kills)" if x == 40 else "")
 
 # 9 Honour Chapel: the Shield-Brother on guard, the Bronze Key on him; a chest by the altar.
-creature("shield_brother", 49.0, 36.0, 270.0, floor=4.0)
-chest("chest_small", 50.6, 33.4, 270.0, "Chapel chest", y=C)
+creature("shield_brother", 50.0, 36.0, 270.0, floor=4.0)
+chest("chest_small", 52.4, 31.6, 270.0, "Chapel chest", y=C)
 
 # 11 Hall of Names: Wrathful Shades swoop down at you.
 for x, z, yaw in [(17.0, 11.0, 30.0), (24.6, 10.4, 300.0), (21.0, 16.4, 180.0)]:
@@ -363,6 +365,26 @@ for x, z, yaw in [(42.2, 29.6, 0.0), (45.8, 29.6, 0.0)]:
 
 # 17 Hald's Tomb: Hald Ironbrow rises from his tomb.
 creature("hald_ironbrow", 44.6, 41.0, 0.0, floor=D)
+# F849 (owner, Nov 25: "too easy"): two weak Tomb Shades rise with him, one on each side.
+creature("hald_shade", 42.6, 38.4, 0.0, floor=D)
+creature("hald_shade", 42.6, 45.6, 0.0, floor=D)
+
+# Cave Spiders (owner, Nov 25: "add lots of tiny spiders like in the 1st dungeon, but more"): 16 (Mossgate has 7),
+# most up in the corners near the ceiling (they drop on you, like Mossgate's Guard Room), a few on the floor.
+# Not in Hald's fight, the Shield-Brother's chapel, the pit, the chasm or the tripwire tunnel.
+SPIDERS = [  # (x, z, floor, height over the floor)
+	(25.0, 57.0, 0.0, 2.9), (34.8, 59.0, 0.0, 0.25),          # 2 Candle Hall
+	(16.6, 54.6, 0.0, 3.9), (23.4, 61.4, 0.0, 3.9),           # 3 Offering Room
+	(18.6, 43.0, 0.0, 3.4),                                   # 5 Statue Corridor
+	(14.6, 41.4, 0.0, 5.0), (27.4, 30.6, 0.0, 5.0), (20.0, 40.0, 0.0, 0.25),  # 6 Wardens' Hall
+	(30.6, 39.4, 0.0, 3.9),                                   # 7 Ossuary
+	(14.6, 8.6, D, 6.0), (27.4, 19.4, D, 6.0),                # 11 Hall of Names
+	(11.4, 17.4, D, 3.9),                                     # 12 Embalmers' Room
+	(45.4, 23.0, D, 3.4), (42.6, 13.0, D, 0.25),              # 15 Shield Hall
+	(55.4, 12.6, D, 3.9), (49.0, 19.4, D, 0.25),              # 19 Grave Goods
+]
+for i, (x, z, fl, up) in enumerate(SPIDERS):
+	creature("cave_spider", x, z, (i * 97.0) % 360.0, floor=fl, up=up)
 
 # 21 Grave Chamber: the recipe stand, the big chest.
 RECIPE_STAND = {"pos": [46.0, G, 54.6], "yaw": 180.0, "page": "scroll_hald", "kind": "recipe_stand_stone"}  # (stone, F856)
@@ -406,9 +428,9 @@ DECOR = [
 	("th_urn_shelf", "ossuary", W(_d("th_urn_shelf"), "s", 40, 33.4)),
 	("bone_pile", "ossuary", decor.corner(_d("bone_pile"), "s", 40, "e", 38)),
 	# 9 Honour Chapel (x 44-52, z 32-40, 4 m up): a guard on each side wall (the stair top is too near the door wall), the altar.
-	("th_honour_guard", "honour_chapel", W(_d("th_honour_guard"), "s", 40, 46.4)),
-	("th_honour_guard", "honour_chapel", W(_d("th_honour_guard"), "n", 32, 46.4)),
-	("altar_candles", "honour_chapel", W(_d("altar_candles"), "e", 52, 37.4)),
+	("th_honour_guard", "honour_chapel", W(_d("th_honour_guard"), "s", 42, 46.4)),
+	("th_honour_guard", "honour_chapel", W(_d("th_honour_guard"), "n", 30, 46.4)),
+	("altar_candles", "honour_chapel", W(_d("altar_candles"), "e", 54, 36.0)),
 	# 11 Hall of Names (x 14-28, z 8-20, deep): the two carved panels on the north wall, name plaques, a sealed door.
 	("th_relief_battle", "names_hall", W(_d("th_relief_battle"), "n", 8, 19.0)),
 	("th_relief_forge", "names_hall", W(_d("th_relief_forge"), "n", 8, 21.0)),

@@ -57,7 +57,10 @@ func test_the_plan() -> void:
 	var kinds := {}
 	for c in plan.creatures:
 		kinds[c.kind] = int(kinds.get(c.kind, 0)) + 1
-		check(Monsters.info(String(c.kind)).get("ghost", false), "%s is a ghost (owner: 'there should be ghosts now')" % c.kind)
+		# (and Cave Spiders: owner, Nov 25, "add lots of tiny spiders like in the 1st dungeon, but more")
+		check(Monsters.info(String(c.kind)).get("ghost", false) or c.kind == "cave_spider",
+			"%s is a ghost or a spider (owner: 'there should be ghosts now')" % c.kind)
+	check(int(kinds.get("cave_spider", 0)) > 7, "more spiders than Mossgate's 7 (%d)" % int(kinds.get("cave_spider", 0)))
 	check_eq(int(kinds.get("hald_ironbrow", 0)), 1, "Hald Ironbrow is the boss")
 	check_eq(int(kinds.get("shield_brother", 0)), 1, "the Shield-Brother is the mini boss")
 	var ruined: int = plan.pieces.filter(func(p): return "ruin" in String(p.id)).size()
@@ -319,6 +322,42 @@ func test_the_tomb_is_dark() -> void:
 			check(not map.has("mood") and not map.has("torch_energy"), "%s keeps its light" % map.id)
 
 
+## The Shield-Brother drops the Bronze Key when he dies (or the Grave Chamber stays shut).
+## F849 (owner, Nov 25: "too easy"): two weak Tomb Shades fight with Hald, and he runs faster than you walk.
+func test_hald_has_two_easy_shades() -> void:
+	var kinds := {}
+	for c in DungeonBuild.load_plan("hald").creatures:
+		kinds[c.kind] = int(kinds.get(c.kind, 0)) + 1
+	check_eq(int(kinds.get("hald_shade", 0)), 2, "two Tomb Shades")
+	check(Monsters.info("hald_shade").hp < Monsters.info("ghost_a").hp, "weaker than a Drifting Shade")
+	check(Monsters.info("hald_ironbrow").run >= 4.0, "Hald runs you down")
+
+
+## F850: the Honour Chapel is bigger (room to step round the Shield-Brother).
+func test_the_honour_chapel_is_bigger() -> void:
+	for s in DungeonMap.HALD.spaces:
+		if s[0] == "honour_chapel":
+			check((s[3] - s[1]) * (s[4] - s[2]) >= 100, "at least 10 x 10 m (%d x %d)" % [s[3] - s[1], s[4] - s[2]])
+
+
+## F872: a ghost finds its way room by room through the doorways.
+func test_ghosts_find_the_doorways() -> void:
+	var d := _hald(_test_world())
+	var link := Ghost.links(d)
+	for pair in [["antechamber", "halds_tomb"], ["names_hall", "halds_tomb"], ["ossuary", "honour_chapel"]]:
+		var a := Ghost.boxes_at(d, DungeonMap.space_floor(d, pair[0]))
+		var b := Ghost.boxes_at(d, DungeonMap.space_floor(d, pair[1]))
+		var step := Ghost.first_door(link, a, b)
+		check(not step.is_empty(), "a way from %s to %s" % pair)
+	var deadly: Array = []
+	for i in d.map.spaces.size():
+		if d.map.spaces[i][0] in d.map.deadly:
+			deadly.append(i)
+	for i in link:
+		for l in link[i]:
+			check(not (l[0] in deadly) and not (i in deadly), "never through the pit or chasm")
+
+
 ## F856 🔁 (owner, Nov 25: "the buried chest sits on wooden boards"): Hald's loose floor stone and recipe stand are stone.
 func test_the_niche_and_the_stand_are_stone() -> void:
 	var plan := DungeonBuild.load_plan("hald")
@@ -439,7 +478,29 @@ func test_the_signpost_at_the_way_in() -> void:
 	rig.root.queue_free()
 
 
-## The Shield-Brother drops the Bronze Key when he dies (or the Grave Chamber stays shut).
+## F873 (owner, Nov 25, 3rd round: "I haven't seen a single teleport"): in the Tomb the floor tiles stand 0.25 m over
+## the rock, and the body check at knee height hit them, so no spot was ever open. Now a ghost finds one behind you.
+func test_ghosts_find_a_spot_behind_you_in_the_tomb() -> void:
+	var r := _rig()
+	var d: Dictionary = r.d
+	await tree.physics_frame
+	await tree.physics_frame
+	for room in ["mourners_gate", "halds_tomb", "honour_chapel"]:
+		var mid := DungeonMap.space_floor(d, room)
+		r.player.global_position = mid + Vector3.UP * 0.3
+		var m := Node3D.new()  # (where the ghost stood: 3 m in front of you)
+		r.root.add_child(m)
+		m.global_position = mid + Vector3(3, 0.3, 0)
+		await tree.physics_frame
+		var spot := Ghost.spot_behind(m, r.player, r.db.maker, d)
+		check(spot != Vector3.INF, "in %s it finds an open spot" % room)
+		if spot != Vector3.INF:
+			var was: Vector3 = (m.global_position - r.player.global_position) * Vector3(1, 0, 1)
+			var now: Vector3 = (spot - r.player.global_position) * Vector3(1, 0, 1)
+			check(now.normalized().dot(was.normalized()) < -0.3, "behind you in %s" % room)
+	r.root.free()
+
+
 func test_the_shield_brother_drops_the_bronze_key() -> void:
 	var root := Node3D.new()
 	tree.root.add_child(root)

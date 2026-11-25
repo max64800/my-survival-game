@@ -12,8 +12,9 @@ extends RefCounted
 const SHADER := preload("res://src/art/ghost.gdshader")
 const DEPTH := preload("res://src/art/ghost_depth.gdshader")  ## its front surface first: no tearing where it folds over itself
 const BODY := "res://assets/models/creatures/ghost_%s.glb"
-const LOOKS := {"ghost_a": "a", "ghost_b": "b", "ghost_c": "c", "ghost_lord": "c", "shield_brother": "c", "hald_ironbrow": "c"}
+const LOOKS := {"ghost_a": "a", "ghost_b": "b", "ghost_c": "c", "ghost_lord": "c", "shield_brother": "c", "hald_shade": "a", "hald_ironbrow": "c"}
 const MACE := "mace_silver"
+const SHIELD := "shield_bronze"  ## the Shield-Brother's shield (F850)
 ## Each ghost's mace, reshaped from the silver mace (owner, Nov 22: "make them a lot thinner", the skeletons' thick
 ## weapons looked like toys; the Bearded Shade's "twice as long", the Wrathful Shade's "very long" too):
 ## [how long (x the mace's 0.7 m: only the bare shaft between the grip wrap and the head stretches), how thick].
@@ -46,12 +47,12 @@ static func build_model(kind: String, color: Color, size: float) -> Node3D:
 	dm.name = "Ghost"
 	dm.position.y = HOVER
 	holder.add_child(dm)
-	dm.ready.connect(func() -> void: _dress(dm, String(LOOKS.get(kind, "a")), color), CONNECT_ONE_SHOT)
+	dm.ready.connect(func() -> void: _dress(dm, String(LOOKS.get(kind, "a")), color, kind), CONNECT_ONE_SHOT)
 	return holder
 
 
 ## The dwarf's own body hidden, the ghost body on his skeleton, a ghostly mace in his fist, all in the ghost shader.
-static func _dress(dm: DwarfModel, look: String, color: Color) -> void:
+static func _dress(dm: DwarfModel, look: String, color: Color, kind := "") -> void:
 	if dm.dwarf_rig == null or not ResourceLoader.exists(BODY % look):
 		return
 	for mi: MeshInstance3D in dm.find_children("*", "MeshInstance3D", true, false):
@@ -89,7 +90,23 @@ static func _dress(dm: DwarfModel, look: String, color: Color) -> void:
 		mi.material_override = mace
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		mi.add_to_group("ghost_skin")
-	dm.set_meta("ghost_mats", [mat, mace])
+	var mats := [mat, mace]
+	if bool(Monsters.LIST.get(kind, {}).get("front_shield", false)):
+		# F850 (owner: "hits from the front are blocked but you can't see a shield"): the Shield-Brother's old bronze
+		# shield on his left arm, in the ghost shader but more solid than his body, so you see what stops your blows.
+		dm.set_shield(SHIELD)
+		var sh := ShaderMaterial.new()
+		sh.shader = SHADER
+		sh.set_shader_parameter("tint", color.lerp(Color(1.0, 0.85, 0.55), 0.35).lightened(0.25))
+		sh.set_shader_parameter("use_guide", false)
+		sh.set_shader_parameter("core", 0.7)
+		_add_depth(sh, false)
+		for mi: MeshInstance3D in dm.dwarf_rig.shield_grip.find_children("*", "MeshInstance3D", true, false):
+			mi.material_override = sh
+			mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			mi.add_to_group("ghost_skin")
+		mats.append(sh)
+	dm.set_meta("ghost_mats", mats)
 
 
 static var _maces := {}  ## (the reshaped meshes, made once per mesh and shape)
@@ -160,29 +177,111 @@ static func set_fade(model: Node3D, f: float) -> void:
 
 
 ## Host: a hit took it past a quarter mark? Returns where it jumps to, or Vector3.INF (no jump).
-static func jump_after_hit(m: Monster, hp_before: float, maker: CaveMaker) -> Vector3:
+## F873 (owner, Nov 25): right BEHIND the one who hit it (`hitter`), never a random spot or inside a wall; it swings
+## at once when it shows there (ambush). No open spot behind or beside them: it doesn't jump at all.
+static func jump_after_hit(m: Monster, hp_before: float, maker: CaveMaker, hitter: Node3D = null) -> Vector3:
 	if m.hp <= 0.0:
 		return Vector3.INF
 	var step := m.max_hp() / MARKS
 	if floori((m.max_hp() - m.hp) / step) <= floori((m.max_hp() - hp_before) / step):
 		return Vector3.INF
-	return pick_spot(m.global_position, m.uid + floori(m.hp), maker)
+	if hitter == null:
+		return Vector3.INF
+	return spot_behind(m, hitter, maker, m.dungeon)
 
 
-## A floor spot a few metres away with room to stand (the ghost's blink, like the old _try_blink).
-static func pick_spot(from: Vector3, seed: int, maker: CaveMaker) -> Vector3:
-	var r := RandomNumberGenerator.new()
-	r.seed = seed
-	for i in 10:
-		var dir := Vector3.FORWARD.rotated(Vector3.UP, r.randf() * TAU)
-		var spot := from + dir * r.randf_range(JUMP_MIN, JUMP_MAX)
-		if maker == null:
-			return spot
-		spot = maker.find_floor(spot.x, spot.z, from.y + 1.5)
-		if absf(spot.y - from.y) <= 2.0 and maker.sdf_at(spot + Vector3.UP * 0.8) > 0.3 \
-				and maker.sdf_at(spot + Vector3.UP * 1.4) > 0.3:
-			return spot + Vector3.UP * 0.1
+const BEHIND := 1.7  ## m behind you it comes back: inside its swing's reach, too close to just walk away from
+const BODY_ROOM := 0.45  ## m of open air it needs all round its body there (no half-in-a-wall ghost, F873)
+## The ways round you it tries, in turn (radians from straight behind) and how far: behind first, then a bit to
+## either side, then beside you. Never in front (you'd just see it come).
+const TRY_TURNS := [0.0, 0.45, -0.45, 0.9, -0.9, 1.35, -1.35]
+const TRY_DIST := [BEHIND, BEHIND + 0.5, BEHIND - 0.4]
+
+
+## Which way a player faces: their dwarf model's front (the rig faces -Z), else the way to the ghost (you face what
+## you hit).
+static func facing(player: Node3D, m: Node3D) -> Vector3:
+	var model = player.get("model")
+	var f := Vector3.ZERO
+	if model is Node3D and (model as Node3D).is_inside_tree():
+		f = -(model as Node3D).global_basis.z
+	f.y = 0.0
+	if f.length() < 0.1:
+		f = (m.global_position - player.global_position) * Vector3(1, 0, 1)
+	return f.normalized() if f.length() > 0.01 else Vector3.FORWARD
+
+
+## `m`: the ghost (any node where it stands, in the world); `dungeon`: the dungeon it is in ({} = none).
+static func spot_behind(m: Node3D, player: Node3D, maker: CaveMaker, dungeon: Dictionary) -> Vector3:
+	var back := -facing(player, m)
+	for turn: float in TRY_TURNS:
+		for dist: float in TRY_DIST:
+			var spot := player.global_position + back.rotated(Vector3.UP, turn) * dist
+			var ok := open_spot(m, dungeon, player.global_position, spot, maker)
+			if ok != Vector3.INF:
+				return ok
 	return Vector3.INF
+
+
+## A spot it may come back at (F873): the same floor you stand on, open air all round its body, inside the dungeon's
+## rooms (not in a wall, not over its spike pit or chasm), and nothing solid between you and it (never through a wall).
+## Returns the spot on the floor (+0.1 m), or Vector3.INF.
+static func open_spot(m: Node3D, dungeon: Dictionary, player_pos: Vector3, at: Vector3, maker: CaveMaker) -> Vector3:
+	var spot := at
+	if maker != null:
+		var under_you := maker.find_floor(player_pos.x, player_pos.z, player_pos.y + 1.2)  # (your floor, even mid-jump)
+		var ground := under_you.y if under_you != Vector3.INF else player_pos.y
+		spot = maker.find_floor(at.x, at.z, ground + 1.2)
+		if spot == Vector3.INF or absf(spot.y - ground) > 0.7:
+			return Vector3.INF
+		for h in [0.8, 1.4]:
+			if maker.sdf_at(spot + Vector3.UP * h) <= BODY_ROOM:
+				return Vector3.INF
+	if not dungeon.is_empty():
+		var room := DungeonMap.space_at(dungeon, spot + Vector3.UP * 0.5)
+		if room == "" or room in dungeon.map.get("deadly", []):
+			return Vector3.INF
+		if DungeonMap.sdf(dungeon, spot + Vector3.UP * 0.8) <= BODY_ROOM:
+			return Vector3.INF  # (too near a room's wall line: built stone stands there)
+	if m.is_inside_tree():
+		var space := m.get_world_3d().direct_space_state
+		var line := PhysicsRayQueryParameters3D.create(player_pos + Vector3.UP * 0.9, spot + Vector3.UP * 0.9,
+			World.TERRAIN_LAYER | PieceNode.PIECE_LAYER)
+		if not space.intersect_ray(line).is_empty():
+			return Vector3.INF
+		var body := PhysicsShapeQueryParameters3D.new()
+		var ball := SphereShape3D.new()
+		ball.radius = BODY_ROOM
+		body.shape = ball
+		body.collision_mask = World.TERRAIN_LAYER | PieceNode.PIECE_LAYER
+		for h in [0.95, 1.45]:  # (above the dungeon's floor tiles, 0.25 m over the rock: at knee height they "blocked" every spot)
+			body.transform = Transform3D(Basis.IDENTITY, spot + Vector3.UP * h)
+			if not space.intersect_shape(body, 1).is_empty():
+				return Vector3.INF
+	return spot + Vector3.UP * 0.35  # (over the floor tiles: it settles onto them)
+
+
+## The swing it comes out of the mist with (F873, F849's idea): an overhead chop, its own blow's damage, the parry star
+## first (F851). Dodge (or parry) it the moment you see the dots gather behind you.
+static func ambush(data: Dictionary) -> Dictionary:
+	var first: Dictionary = data.attacks[0]
+	return {name = "Ambush Chop", anim = "Chop", warn_sound = "beetle_hiss", tell = AMBUSH_TELL, damage = first.damage,
+		type = "blunt", reach = 3.0, parry = "any"}
+
+
+const AMBUSH_TELL := 0.9  ## s from showing again to the blow (the star shows 0.4 s before it)
+
+
+## Host: the ambush swing is due now (it just showed again behind you)? Once only, and not long after.
+static func ambush_due(m: Monster) -> bool:
+	var at := float(m.get_meta("ghost_ambush", -1.0))
+	if at < 0.0:
+		return false
+	var now := Time.get_ticks_msec() / 1000.0
+	if now < at:
+		return false
+	m.remove_meta("ghost_ambush")
+	return now < at + 2.0  # (stuck dazed far longer: it just fights on)
 
 
 ## Everyone: it fades into mist, a trail of mist drifts to the new spot, it comes back there and rushes at you.
@@ -192,6 +291,7 @@ static func show_fade(m: Monster, to: Vector3) -> void:
 	var now := Time.get_ticks_msec() / 1000.0
 	m.set_meta("ghost_rush", now + FADE_OUT + DOTS_FLY + FADE_IN + RUSH_TIME)
 	m.set_meta("ghost_hidden", now + FADE_OUT + DOTS_FLY)
+	m.set_meta("ghost_ambush", now + FADE_OUT + DOTS_FLY)  # (the host swings then: ambush_due)
 	if model == null or not m.is_inside_tree():
 		m.global_position = to
 		return
@@ -348,3 +448,118 @@ static func vanish(m: Monster) -> void:
 		for mi: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
 			mi.material_override = null  # (let go of the ghost shader first: freeing it with the body upsets the renderer)
 		m.queue_free())
+
+
+# ================================================================== host: finding the way through doors (F872)
+# Owner, Nov 25: "they struggle through doors". A ghost ran straight at you, so in the next room it pushed into the
+# wall beside the doorway. Now in a dungeon it goes room by room: the rooms (the map's boxes) that meet with an
+# opening at least DOOR_MIN wide are linked; it walks to the middle of the opening to the next room on the shortest
+# way to you, a little through it, then on. Same room as you: straight at you, as before.
+const DOOR_MIN := 1.2      ## m of shared wall two rooms need to count as joined (a doorway)
+const THROUGH := 0.9       ## m past the opening's middle it aims, so it walks right through
+
+
+## Which of the dungeon's boxes p is in (several where two rooms meet).
+static func boxes_at(d: Dictionary, p: Vector3) -> Array[int]:
+	var q := DungeonMap.to_local(d, p + Vector3.UP * 0.5)
+	var out: Array[int] = []
+	for i in d.boxes.size():
+		var mn: Vector3 = d.boxes[i][0]
+		var mx: Vector3 = d.boxes[i][1]
+		if q.x > mn.x and q.x < mx.x and q.z > mn.z and q.z < mx.z and q.y > mn.y - 0.6 and q.y < mx.y:
+			out.append(i)
+	return out
+
+
+## The links between the boxes: {i: [[j, the opening's middle (local)], ...]}. Worked out once per dungeon.
+static func links(d: Dictionary) -> Dictionary:
+	if d.has("ghost_links"):
+		return d.ghost_links
+	var out := {}
+	for i in d.boxes.size():
+		out[i] = []
+	var deadly: Array = d.map.get("deadly", [])
+	var bad := func(i: int) -> bool: return i < d.map.spaces.size() and String(d.map.spaces[i][0]) in deadly
+	for i in d.boxes.size():
+		if bad.call(i):
+			continue  # (never the way through its spike pit or over its chasm)
+		for j in range(i + 1, d.boxes.size()):
+			if bad.call(j):
+				continue
+			var lo: Vector3 = (d.boxes[i][0] as Vector3).max(d.boxes[j][0])
+			var hi: Vector3 = (d.boxes[i][1] as Vector3).min(d.boxes[j][1])
+			if hi.x < lo.x - 0.05 or hi.z < lo.z - 0.05 or hi.y - lo.y < 1.6:
+				continue  # (apart, or no head room where they meet)
+			if maxf(hi.x - lo.x, hi.z - lo.z) < DOOR_MIN:
+				continue
+			var mid := Vector3((lo.x + hi.x) * 0.5, lo.y, (lo.z + hi.z) * 0.5)
+			out[i].append([j, mid])
+			out[j].append([i, mid])
+	d.ghost_links = out
+	return out
+
+
+## The flat way to walk toward `goal` through the dungeon's doorways (a unit Vector3), or the straight way when it's
+## in the same room, outside the dungeon, or no way is known.
+static func way_to(m: Monster, goal: Vector3) -> Vector3:
+	var straight := (goal - m.global_position) * Vector3(1, 0, 1)
+	straight = straight.normalized() if straight.length() > 0.01 else Vector3.ZERO
+	if m.dungeon.is_empty():
+		return straight
+	var d: Dictionary = m.dungeon
+	var here := boxes_at(d, m.global_position)
+	var there := boxes_at(d, goal)
+	if here.is_empty() or there.is_empty():
+		return straight
+	for i in here:
+		if i in there:
+			return straight
+	var next := first_door(links(d), here, there)
+	if next.is_empty():
+		return straight
+	var from: int = next[0]
+	var mid: Vector3 = next[1]
+	# Aim at the opening's middle, a little through it into the next room (its box's middle side).
+	var to_room: int = next[2]
+	var room_mid: Vector3 = ((d.boxes[to_room][0] as Vector3) + (d.boxes[to_room][1] as Vector3)) * 0.5
+	var push := (room_mid - mid) * Vector3(1, 0, 1)
+	var own_mid: Vector3 = ((d.boxes[from][0] as Vector3) + (d.boxes[from][1] as Vector3)) * 0.5
+	var across := (room_mid - own_mid) * Vector3(1, 0, 1)
+	if across.length() > 0.01:
+		push = across  # (straight through the wall line, not slanted toward the room's far corner)
+	var aim := mid + (push.normalized() * THROUGH if push.length() > 0.01 else Vector3.ZERO)
+	var w := DungeonMap.to_world(d, Vector3(aim.x, 0.0, aim.z))
+	var dir := (w - m.global_position) * Vector3(1, 0, 1)
+	return dir.normalized() if dir.length() > 0.05 else straight
+
+
+## Shortest hop list (rooms walked through) from any of `starts` to any of `goals`: [the box it's in, the first
+## opening's middle, the next box], or [] when they aren't joined.
+static func first_door(link: Dictionary, starts: Array[int], goals: Array[int]) -> Array:
+	var came := {}
+	var queue: Array = []
+	for s in starts:
+		came[s] = -1
+		queue.append(s)
+	var found := -1
+	while not queue.is_empty() and found < 0:
+		var at: int = queue.pop_front()
+		for l: Array in link.get(at, []):
+			var j: int = l[0]
+			if came.has(j):
+				continue
+			came[j] = at
+			if j in goals:
+				found = j
+				break
+			queue.append(j)
+	if found < 0:
+		return []
+	var step := found
+	while came[step] != -1 and not (came[step] in starts):
+		step = came[step]
+	var start: int = came[step]
+	for l: Array in link[start]:
+		if l[0] == step:
+			return [start, l[1], step]
+	return []

@@ -219,7 +219,7 @@ const HALD := {
 		["ossuary_stash", 32, 28, 36, 32, 0, 3],           #   behind the cracked wall
 		["broken_stair", 38, 34, 44, 38, 0, 8],            # 8 4 m up to the chapel; the south half gives way
 		["stair_pit", 40, 34, 44, 36, -3, 3],              #   under the south half: spikes (falling in kills)
-		["honour_chapel", 44, 32, 52, 40, 4, 5],           # 9 the Shield-Brother (the Bronze Key)
+		["honour_chapel", 44, 30, 54, 42, 4, 5.5],         # 9 the Shield-Brother (the Bronze Key); F850: was 8 x 8 m
 		["grand_stair_a", 18, 28, 22, 30, -2, 6],          # 10 the Grand Stair: 8 m down in four steps
 		["grand_stair_b", 18, 26, 22, 28, -4, 8],
 		["grand_stair_c", 18, 24, 22, 26, -6, 10],

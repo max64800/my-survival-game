@@ -642,6 +642,8 @@ const BASH_PUSH_LOW := 16.0  ## ... and when nearly dead: shove them further awa
 func _shield_blocks(m: Monster, from: Vector3, heavy: bool) -> bool:
 	if heavy or not m.data.get("front_shield", false) or m.stun.is_stunned() or m.model == null or not m.raising.is_empty():
 		return false  # (during his Rally Slam the plank is up over his head: hit him now)
+	if m.data.get("ghost", false) and (m.state == Monster.State.RECOVER or (m.rig is GhostRig and m.rig.shield_open())):
+		return false  # F850: the Shield-Brother's shield drops after each swing and after his charge: hit him then
 	var to_me := (from - m.global_position) * Vector3(1, 0, 1)
 	var ahead := -m.model.global_transform.basis.z * Vector3(1, 0, 1)
 	if to_me.length() < 0.01 or ahead.length() < 0.01:
@@ -753,7 +755,7 @@ func _hurt_monster(m: Monster, peer: int, dmg: int, stun_amount: float, eff := 0
 		m.knocked_off()  # up on a wall or ceiling: any hit knocks it down (a snail lands dazed on its shell, F475)
 		monster_changed(m)
 		if m.data.get("ghost", false):
-			var spot := Ghost.jump_after_hit(m, hp_before, auth.world.maker if auth and auth.world else null)
+			var spot := Ghost.jump_after_hit(m, hp_before, auth.world.maker if auth and auth.world else null, hitter)
 			if spot != Vector3.INF:
 				ghost_fade(m, spot)
 
@@ -1438,7 +1440,9 @@ func request_parried(uid: int, stun_amount: float, peer: int = 0) -> void:
 				m.add_buildup(k, Ailments.FULL)
 		auth.heal(peer, sb.get("parry_heal", 0.0))
 	m.stun.add(stun_amount)
-	if not m.stun.is_stunned():
+	if not m.stun.is_stunned() and combo_goes_on(m):
+		pass  # F849 🔁 (owner, Nov 25: "he does two attacks and then just stands there"): a boss swings his whole combo
+	elif not m.stun.is_stunned():
 		m.state = Monster.State.RECOVER  # staggered for a moment
 		m._timer = 0.6
 	monster_changed(m)
@@ -1601,6 +1605,12 @@ func start_raise(m: Monster, atk: Dictionary) -> void:
 	_ev_stir.rpc(PackedInt32Array(m.raising), float(atk.tell))
 
 
+## A boss in the middle of a `chain` combo (Hald's four mace blows) isn't staggered by one parry (only a full daze bar stops him): each parry still
+## dazes him a bit and sparks, but his last, hardest blows come too.
+static func combo_goes_on(m: Monster) -> bool:
+	return m.data.get("boss", false) and m.state == Monster.State.ATTACK and m._attack.get("chain", false)
+
+
 ## Host: a hit during the slam: called off (the glow stops; he needs a moment, and the move rests as usual).
 func cancel_raise(m: Monster) -> void:
 	var ids := PackedInt32Array(m.raising)
@@ -1701,8 +1711,13 @@ func _ev_shell(uid: int, hidden: bool) -> void:
 ## A ghost fades into mist and comes back at `to` (Ghost; the host picked the spot after a quarter of its health).
 ## Its swing is called off: the hits it was about to land are dropped everywhere.
 func ghost_fade(m: Monster, to: Vector3) -> void:
-	m.state = Monster.State.CHASE
+	if m.state == Monster.State.STUNNED:
+		m.stun.stunned_left = 0.0  # (the mist shakes off its daze: it gets up on its next step, then swings)
+	else:
+		m.state = Monster.State.CHASE
 	m._attack = {}
+	m._best_dist = INF  # (F873: it came back further away: that isn't "can't get closer", so it doesn't give up)
+	m._no_progress = 0.0
 	_ev_ghost_fade.rpc(m.uid, to)
 
 
@@ -1755,7 +1770,10 @@ func _ev_hit(uid: int, dmg: int, from := Vector3.ZERO, peer := 0, eff := 0, crit
 			Sfx.play("shell_clank", m.global_position)
 		else:
 			Fx.hit(_root, at, Fx.hit_body(m.kind), dir, heavy, crit, m.data.get("color", Color(0.5, 0.45, 0.4)))
-			Sfx.play("hit_heavy" if heavy else "hit", m.global_position)
+			if m.data.get("ghost", false):
+				Sfx.play("ghost_hit", m.global_position, 0.0 if heavy else -3.0, 0.85 if heavy else 1.0)  # (F874: mist and cloth, no ring)
+			else:
+				Sfx.play("hit_heavy" if heavy else "hit", m.global_position)
 		var feel := hitter_feel(peer, auth.local_peer_id(), heavy, killed)
 		m.hit_flash()
 		m.hit_stop(feel.get("stop", HIT_STOP_HEAVY if heavy else HIT_STOP))  # (the killer sees it freeze longer too)

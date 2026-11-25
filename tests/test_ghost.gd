@@ -265,9 +265,108 @@ func test_the_ghosts_are_not_fat() -> void:
 		model.free()
 
 
+## F873 (owner, Nov 25): after its jump it shows again right behind you (you face what you hit, so: the far side of
+## you from where it stood), in open air, close enough to swing, and swings at once.
+func test_it_comes_back_behind_you_and_swings() -> void:
+	await _setup()
+	var m := _spawn("ghost_a", Vector3(4, 0, 0))
+	check(m != null, "a ghost appears")
+	if m == null:
+		_teardown()
+		return
+	await tree.process_frame
+	m.alert(1)
+	var start := m.global_position
+	auth.monsters._hurt_monster(m, 1, 40, 0.0)
+	var me := player.global_position
+	var was := (start - me) * Vector3(1, 0, 1)
+	var swung := false
+	for i in 120:
+		await tree.physics_frame
+		if String(m._attack.get("name", "")) == "Ambush Chop":
+			swung = true
+			break
+	var now := (m.global_position - me) * Vector3(1, 0, 1)
+	check(now.normalized().dot(was.normalized()) < -0.3, "it came back on your other side (behind you)")
+	check(now.length() < 2.6, "close behind you (%.1f m)" % now.length())
+	check(world.maker.sdf_at(m.global_position + Vector3.UP * 0.8) > Ghost.BODY_ROOM, "in open air, not in the rock")
+	check(swung, "and swings at once (the ambush chop)")
+	_teardown()
+
+
+## F851 / F743: every ghost swing shows the parry star on its mace head first.
+func test_every_ghost_swing_shows_the_star_first() -> void:
+	await _setup()
+	var m := _spawn("ghost_a", Vector3(4, 0, 0))
+	await tree.process_frame
+	var rig := m.rig as GhostRig
+	check(rig != null, "a ghost has a ghost rig")
+	if rig == null:
+		_teardown()
+		return
+	rig.attack("mace_1", 0.85)
+	var star_at := -1.0
+	var t0 := Time.get_ticks_msec()
+	for i in 120:
+		await tree.process_frame
+		if rig.stars > 0:
+			star_at = (Time.get_ticks_msec() - t0) / 1000.0
+			break
+	check(star_at >= 0.0, "the star shows on its mace")
+	check(star_at < 0.85, "before the blow lands (%.2f s)" % star_at)
+	_teardown()
+
+
+## F850 (owner, Nov 25): the Shield-Brother holds a shield you can see; it drops when he swings and while he's down.
+func test_the_shield_brother_shows_and_drops_his_shield() -> void:
+	await _setup()
+	var m := _spawn("shield_brother", Vector3(4, 0, 0))
+	await tree.process_frame
+	var rig := m.rig as GhostRig
+	check(rig != null and rig.guard, "he guards with a shield")
+	if rig == null:
+		_teardown()
+		return
+	var shield := rig.dm.dwarf_rig.shield_grip.find_children("*", "MeshInstance3D", true, false)
+	check(not shield.is_empty() and shield.any(func(s): return s.is_visible_in_tree()), "his shield shows")
+	check(not rig.shield_open(), "shield up while he waits")
+	check(auth.monsters._shield_blocks(m, m.global_position - m.model.global_basis.z * 2.0, false), "it blocks from the front")
+	rig.attack("Chop", 1.0)
+	check(rig.shield_open(), "his shield drops as he swings")
+	check(not auth.monsters._shield_blocks(m, m.global_position - m.model.global_basis.z * 2.0, false), "so a hit then gets through")
+	check(m.data.get("turns_in_place", false), "he turns slowly: step round him")
+	check(m.data.attacks.any(func(a): return a.name == "Shield Charge"), "he charges behind his shield")
+	_teardown()
+
+
 ## Owner, Nov 22: after every ghost attack the mace "teleports a little bit at the last second" on its way back to
 ## the resting pose (all four ghosts). The mace's head is followed frame by frame through each swing and its ease
 ## back; no frame near the end may jump far more than the frames around it.
+## F849 🔁 (owner, Nov 25: "he does two attacks and then just stands there"): a parry no longer cuts Hald's combo short.
+func test_a_parry_doesnt_stop_halds_combo() -> void:
+	await _setup()
+	var m := _spawn("hald_ironbrow", Vector3(2, 0, 0))
+	check(m != null, "Hald appears")
+	if m == null:
+		_teardown()
+		return
+	await tree.process_frame
+	m.alert(1)
+	var combo: Dictionary = m.data.attacks[0]
+	m._start_attack(combo, auth.monsters)
+	auth.monsters.request_parried(m.uid, 1.0, 1)
+	check(m.state == Monster.State.ATTACK, "still swinging after the parry")
+	var seen := {}
+	for i in 400:
+		await tree.physics_frame
+		if m.state == Monster.State.ATTACK:
+			seen[String(m._attack.get("anim", ""))] = true
+		elif not seen.is_empty() and m.state != Monster.State.ATTACK:
+			break
+	check(seen.has("mace_4"), "all four blows come (saw %s)" % str(seen.keys()))
+	_teardown()
+
+
 func test_the_mace_eases_back_without_a_jump() -> void:
 	for kind in [["ghost_a", "mace_1", 0.85], ["ghost_b", "SliceDiag", 0.85], ["ghost_c", "Chop", 1.05], ["ghost_lord", "mace_4", 0.75]]:
 		var model := MonsterModel.build("ghost", Color.WHITE, 1.0, false, kind[0], 1)
@@ -303,3 +402,4 @@ func test_the_mace_eases_back_without_a_jump() -> void:
 		print("%s mace's worst jump %.1fx at %.0f%% of the swing" % [kind[0], worst, worst_at * 100])
 		check(worst < 3.0, "%s's mace eases back without a jump (%.1fx at %.0f%%)" % [kind[0], worst, worst_at * 100])
 		model.free()
+
