@@ -117,7 +117,7 @@ static func _place(maker: CaveMaker) -> Array[Dictionary]:
 								s.hidden = true
 	var taken := RuinTreasure.keep_clear(maker)  # old places' loot chests and treasure (owner, Nov 19: mushrooms in a chest)
 	for s in spots:
-		if maker.is_reserved(s.pos, 0.5) or maker.on_bridge(s.pos):  # (built ground; bridge tops: owner Nov 18)
+		if maker.is_reserved(s.pos, 0.5) or maker.on_bridge(s.pos) or maker.on_trail(s.pos, 0.3):  # (built ground; bridge tops: owner Nov 18)
 			s.hidden = true  # on a built thing's ground (the placement rule); kept in the list so ids stay the same
 		for z in taken:
 			if (s.pos as Vector3).distance_to(z.pos) < float(z.r) + 0.5:
@@ -128,6 +128,9 @@ static func _place(maker: CaveMaker) -> Array[Dictionary]:
 				s.hidden = true
 	_add_bridge_roots(maker, spots, taken)
 	_add_tunnel_roots(maker, spots, taken, trees)  # F566 (last: older ids stay the same)
+	for s in spots:  # (and none of those on the old dirt path either: F870, the placement rule)
+		if maker.on_trail(s.pos, 0.3):
+			s.hidden = true
 	for s in spots:  # how far a drip's drops fall to the floor (owner F654: they vanished halfway down)
 		if s.kind == DRIP:
 			s.fall = drip_fall(maker, s.pos)
@@ -163,7 +166,7 @@ static func _add_bridge_roots(maker: CaveMaker, spots: Array[Dictionary], taken:
 			var hit := _march(maker, top + Vector3.UP * 2.0, Vector3.DOWN, 4.0)
 			if hit == Vector3.INF or absf(hit.y - a.lerp(b, t).y) > 0.8 or normal_at(maker, hit).y < 0.8:
 				continue
-			if maker.sdf_at(hit + Vector3.UP * 1.0) <= 0.4 or not _solid_ground(maker, hit) or maker.is_reserved(hit, 2.0):
+			if maker.sdf_at(hit + Vector3.UP * 1.0) <= 0.4 or not _solid_ground(maker, hit) or maker.is_reserved(hit, 2.0) or maker.on_trail(hit, 1.0):
 				continue
 			var blocked := false
 			for z in taken:
@@ -357,7 +360,7 @@ static func _add_wood_everywhere(maker: CaveMaker, spots: Array[Dictionary]) -> 
 			# low, far-reaching lines: they reach the cave's edges too (round a ruin's kept-clear middle)
 			var dir := Vector3(rng.randf_range(-1, 1), -rng.randf_range(0.12, 0.7), rng.randf_range(-1, 1)).normalized()
 			var hit := _march(maker, room.center, dir, 60.0)
-			if hit == Vector3.INF or normal_at(maker, hit).y < 0.8 or maker.is_reserved(hit, 2.0):
+			if hit == Vector3.INF or normal_at(maker, hit).y < 0.8 or maker.is_reserved(hit, 2.0) or maker.on_trail(hit, 1.0):
 				continue
 			if maker.sdf_at(hit + Vector3.UP * 1.0) <= 0.4 or not _solid_ground(maker, hit) or not _spaced_grid(near, hit):
 				continue
@@ -429,7 +432,7 @@ static func _tunnel_root(maker: CaveMaker, rng: RandomNumberGenerator, sg: Dicti
 		return {}
 	if maker.sdf_at(hit + Vector3.UP * 1.0) <= 0.4 or not _solid_ground(maker, hit) or not _spaced_grid(near, hit):
 		return {}
-	if maker.sdf_at(hit - Vector3.UP * 0.8) >= 0.0 or maker.is_reserved(hit, 2.0) or maker.on_bridge(hit, 2.0):
+	if maker.sdf_at(hit - Vector3.UP * 0.8) >= 0.0 or maker.is_reserved(hit, 2.0) or maker.on_bridge(hit, 2.0) or maker.on_trail(hit, 1.0):
 		return {}
 	# room to walk past: open air on the other side of the tunnel, 1.6 m over, at chest height
 	if maker.sdf_at(hit - side * 1.6 + Vector3.UP * 1.0) <= 0.4:

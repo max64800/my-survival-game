@@ -244,7 +244,7 @@ void fragment() {
 		int id = clamp(int(ids[k] + 0.5), 0, 15);
 		vec4 a;
 		vec3 n;
-		float slice = float((id == 14 ? 1 : id) * LOOKS) + look;  // old dwarf stone: the stone look, darker (below)
+		float slice = float((id == 14 ? 1 : (id == 7 ? 2 : id)) * LOOKS) + look;  // old dwarf stone: the stone look, darker (below); 7 the path: dirt
 		triplanar(slice, p, bw, wn, a, n);
 		if (look_mix > 0.01) {  // only where two looks meet: read the next look too
 			vec4 a2;
@@ -255,6 +255,13 @@ void fragment() {
 		}
 		if (id == 14) {
 			a.rgb *= vec3(0.62, 0.6, 0.6);
+		}
+		if (id == 7) {
+			// The old dirt path (F870 step 5): the dirt look trodden flat: a little paler and greyer, calmer, so it
+			// reads as a worn track through the moss, not fresh dug earth.
+			float g = dot(a.rgb, vec3(0.33));
+			a.rgb = mix(a.rgb, vec3(g), 0.3) * vec3(1.12, 1.06, 0.98);
+			n = mix(n, wn, 0.45);  // (trodden smoother)
 		}
 		col += a.rgb * ws[k];
 		emit += GLOW[id] * a.a * ws[k];

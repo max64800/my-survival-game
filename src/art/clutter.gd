@@ -123,9 +123,9 @@ func _plan(maker: CaveMaker) -> Dictionary:
 			_ceiling(maker, rng, picks, room.center, dir)
 	if not maker.reserved.is_empty() or not maker._bridges.is_empty():  # nothing on a built thing's ground or a bridge top
 		for k in picks:
-			picks[k] = (picks[k] as Array).filter(func(xf: Transform3D) -> bool: return not maker.is_reserved(xf.origin, 0.3) and not maker.on_bridge(xf.origin))
+			picks[k] = (picks[k] as Array).filter(func(xf: Transform3D) -> bool: return not maker.is_reserved(xf.origin, 0.3) and not maker.on_bridge(xf.origin) and not maker.on_trail(xf.origin, 0.3))
 		for k in _drips:
-			_drips[k] = (_drips[k] as Array).filter(func(it: Array) -> bool: return not maker.is_reserved((it[0] as Transform3D).origin, 0.3) and not maker.on_bridge((it[0] as Transform3D).origin))
+			_drips[k] = (_drips[k] as Array).filter(func(it: Array) -> bool: return not maker.is_reserved((it[0] as Transform3D).origin, 0.3) and not maker.on_bridge((it[0] as Transform3D).origin) and not maker.on_trail((it[0] as Transform3D).origin, 0.3))
 	# Not inside a Root Tree (owner, Nov 18: "dripstone spawns in the tree and drips water inside it"): nothing within its
 	# trunk and root feet on the floor, no dripstone where its crown spreads over the ceiling.
 	var trees := RootPillars.plan(maker)
@@ -346,7 +346,7 @@ func _place_hanging_roots(maker: CaveMaker, rng: RandomNumberGenerator) -> void:
 			items[kind].append([Transform3D(basis.scaled(Vector3.ONE * size), hit + Vector3.UP * 0.04 * size), tint])
 	for k in HROOTS:
 		if not maker.reserved.is_empty():
-			items[k] = (items[k] as Array).filter(func(it: Array) -> bool: return not maker.is_reserved((it[0] as Transform3D).origin, 0.3) and not maker.on_bridge((it[0] as Transform3D).origin))
+			items[k] = (items[k] as Array).filter(func(it: Array) -> bool: return not maker.is_reserved((it[0] as Transform3D).origin, 0.3) and not maker.on_bridge((it[0] as Transform3D).origin) and not maker.on_trail((it[0] as Transform3D).origin, 0.3))
 		_make_model_cells(k, _model_mesh(HROOTS[k].model), items[k])
 
 

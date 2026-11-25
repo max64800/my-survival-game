@@ -279,6 +279,12 @@ func _ready() -> void:
 			_monsters = false
 			if mode == "menu":
 				mode = "solo"
+		elif arg == "trailcheck":  # F870 step 5: photos of the old dirt path, its stones, track and a fallen torch
+			debug_script = "res://src/debug/trailcheck.gd"
+			_saving = false
+			_monsters = false
+			if mode == "menu":
+				mode = "solo"
 		elif arg == "cavecheck":  # F404-F407 + F350: photos of the cave floor, Root Trees, Rebuilding Chest, swarm
 			debug_script = "res://src/debug/cavecheck.gd"
 			_saving = false
@@ -579,6 +585,10 @@ func start_game(p_seed: int, snap: Dictionary = {}, save: Dictionary = {}) -> vo
 	_clutter.name = "Clutter"
 	add_child(_clutter)
 	if not dungeon_test: _clutter.build(world.maker, world)  # worked out on a helper thread while the rock loads
+	var trail_decor := TrailDecor.new()  # old stones, broken track and fallen torches along the old dirt path (F870)
+	trail_decor.name = "TrailDecor"
+	add_child(trail_decor)
+	if not dungeon_test: trail_decor.build(world.maker, world)
 
 	FreezeWatch.doing = "hanging root curtains"
 	_curtains = RootCurtains.new()  # thin roots hanging across some tunnel mouths, parting as you walk through (F189)

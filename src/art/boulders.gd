@@ -134,7 +134,7 @@ static func _try(maker: CaveMaker, room: Dictionary, rng: RandomNumberGenerator,
 		return false  # open, fairly flat floor only
 	if maker.sdf_at(hit + Vector3.UP * maxf(2.0, scale * 1.3)) <= 0.8:
 		return false  # room above it
-	if maker.is_reserved(hit, 3.0) or maker.on_bridge(hit, 2.0) or maker._in_column(hit, 2.5):
+	if maker.is_reserved(hit, 3.0) or maker.on_bridge(hit, 2.0) or maker.on_trail(hit, 2.0) or maker._in_column(hit, 2.5):
 		return false
 	var rc: Vector3 = room.center
 	var rr: Vector3 = room.radii

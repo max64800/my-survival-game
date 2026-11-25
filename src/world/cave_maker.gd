@@ -243,6 +243,8 @@ func _init(p_seed: int = 1, big_caverns: int = 3, small_rooms: int = 12) -> void
 	_reserve_tower()
 	if made_layout >= 14:
 		_plan_dungeons()  # last, so nothing above moves
+	if made_layout >= 2:
+		_plan_trail()  # after everything built is known, so it keeps off it (uses no dice: nothing moves)
 
 
 ## One biome's rooms and the tunnels that join them, in this cave's layout.
@@ -394,6 +396,81 @@ func is_reserved(p: Vector3, margin := 0.0) -> bool:
 		if DungeonMap.covers(d, p, margin):
 			return true
 	return false
+
+
+# ---------------------------------------------------------------- the old dirt path (F870 step 5, OldTrail)
+
+const TRAIL_HALF := 1.0  ## half the path's width (m); its edges wear in and out a little
+const TRAIL_CELL := 4.0
+var trail := PackedVector3Array()  ## floor spots along the old path, about 1.5 m apart
+var trail_along := PackedVector3Array()  ## which way the path runs at each spot (flat)
+var _trail_grid := {}  ## Vector2i (4 m square) -> PackedInt32Array of spots
+
+
+func _plan_trail() -> void:
+	# (read from the saved file when this cave was planned before: PlanCache, faster second load)
+	var t: Dictionary = PlanCache.get_or_make("trail", self, "res://src/world/old_trail.gd", func() -> Dictionary: return OldTrail.plan(self))
+	trail = t.points
+	trail_along = t.along
+	_trail_grid.clear()
+	for i in trail.size():
+		var g := Vector2i(floori(trail[i].x / TRAIL_CELL), floori(trail[i].z / TRAIL_CELL))
+		if not _trail_grid.has(g):
+			_trail_grid[g] = PackedInt32Array()
+		_trail_grid[g].append(i)
+
+
+## Is p on the old dirt path (or within `margin` of it)? Nothing the world grows may stand there (placement rule).
+func on_trail(p: Vector3, margin := 0.0) -> bool:
+	return _trail_dist2(p, TRAIL_HALF + margin) < INF
+
+
+## Squared flat distance from p to the nearest path spot within `reach` (and 2.5 m up or down), or INF.
+func _trail_dist2(p: Vector3, reach: float) -> float:
+	if _trail_grid.is_empty():
+		return INF
+	var best := INF
+	var r2 := reach * reach
+	for gx in range(floori((p.x - reach) / TRAIL_CELL), floori((p.x + reach) / TRAIL_CELL) + 1):
+		for gz in range(floori((p.z - reach) / TRAIL_CELL), floori((p.z + reach) / TRAIL_CELL) + 1):
+			var cell = _trail_grid.get(Vector2i(gx, gz))
+			if cell == null:
+				continue
+			for i: int in cell:
+				var q := trail[i]
+				if absf(p.y - q.y) > 2.5:
+					continue
+				var d := (p.x - q.x) * (p.x - q.x) + (p.z - q.z) * (p.z - q.z)
+				if d < r2 and d < best:
+					best = d
+	return best
+
+
+## Does the path come near this box (so its floor voxels need a look)?
+func _trail_near_box(lo: Vector3, hi: Vector3) -> bool:
+	if _trail_grid.is_empty():
+		return false
+	for gx in range(floori((lo.x - 2.0) / TRAIL_CELL), floori((hi.x + 2.0) / TRAIL_CELL) + 1):
+		for gz in range(floori((lo.z - 2.0) / TRAIL_CELL), floori((hi.z + 2.0) / TRAIL_CELL) + 1):
+			var cell = _trail_grid.get(Vector2i(gx, gz))
+			if cell == null:
+				continue
+			for i: int in cell:
+				if trail[i].y > lo.y - 3.0 and trail[i].y < hi.y + 3.0:
+					return true
+	return false
+
+
+## Is this floor voxel worn into packed dirt? The edges go in and out, and here and there the moss creeps back in.
+func is_trail_floor(p: Vector3i) -> bool:
+	var d := _trail_dist2(Vector3(p) + Vector3(0.5, 1.0, 0.5), TRAIL_HALF + 0.4)
+	if d == INF:
+		return false
+	var wear := _hash01(Vector3i(p.x, 7, p.z))
+	var edge := TRAIL_HALF * (0.75 + 0.5 * wear)
+	if _hash01(Vector3i(p.x >> 2, 11, p.z >> 2)) < 0.12:
+		edge *= 0.55  # (a patch where the moss has grown back over most of it)
+	return d < edge * edge
 
 
 ## The ruined watchtower by the first cavern (owner F254): it always picks the same spot from the cave (RuinTower.
@@ -2379,7 +2456,7 @@ func material_at(p: Vector3i) -> int:
 		return Mat.TIN
 	var s := _smooth_at(pf)
 	if _smooth_at(pf + Vector3.UP) > 0.0:
-		return pal.floor
+		return Mat.PATH if is_trail_floor(p) else pal.floor
 	if _smooth_at(pf + Vector3.UP * 2.0) > 0.0:
 		return pal.under
 	if s > -3.0 and _is_patch(pf, pal.patch):
@@ -2667,6 +2744,7 @@ func generate_block(buf: VoxelBuffer, origin: Vector3i) -> void:
 	var near_start := _start_overlaps(lo, hi)
 	var blocky := _style == BLOCKS
 	var in_dg := not dungeons.is_empty() and _overlaps_dungeon(lo, hi)
+	var trail_near := _trail_near_box(bmin, bmax)
 	var all_rock := room_ids.is_empty() and seg_ids.is_empty() and not in_dg
 	if not all_rock and made_layout >= 2 and one_biome and not near_start and not blocky and not in_dg:
 		# Shapes are listed nearby, but if the middle of the block is far inside rock, so is all of it:
@@ -2738,7 +2816,7 @@ func generate_block(buf: VoxelBuffer, origin: Vector3i) -> void:
 				elif p_rock == Mat.STONE and _is_tin(pi):
 					m = Mat.TIN
 				elif grid[base + y + 1] > 0.0:
-					m = p_floor
+					m = Mat.PATH if trail_near and is_trail_floor(pi) else p_floor
 				elif grid[base + y + 2] > 0.0:
 					m = p_under
 				elif s > -3.0 and _is_patch(Vector3(pi), p_patch):

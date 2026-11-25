@@ -208,7 +208,7 @@ static func _dress(maker: CaveMaker, room: Dictionary, rng: RandomNumberGenerato
 
 ## The placement rule: not on kept-clear ground, a bridge, a stone column, a place, a path, a Root Tree or another tree.
 static func _clear(maker: CaveMaker, at: Vector3, foot: float, mine: Array, others: Array, avoid: Callable) -> bool:
-	if maker.is_reserved(at, foot + 2.0) or maker._in_column(at, foot + 2.0) or maker.on_bridge(at, foot + 1.0):
+	if maker.is_reserved(at, foot + 2.0) or maker._in_column(at, foot + 2.0) or maker.on_bridge(at, foot + 1.0) or maker.on_trail(at, foot + 1.0):
 		return false
 	if avoid.is_valid() and avoid.call(at, foot + 3.0):
 		return false

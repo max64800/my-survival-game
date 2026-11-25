@@ -352,7 +352,7 @@ static func plan(maker: CaveMaker, spots: Array[Dictionary]) -> Array[Dictionary
 	if not maker.reserved.is_empty() or not maker._bridges.is_empty():  # nothing on built ground or bridge tops
 		var kept: Array[Dictionary] = []
 		for it in out:
-			if not maker.is_reserved((it.xform as Transform3D).origin, 0.3) and not maker.on_bridge((it.xform as Transform3D).origin):
+			if not maker.is_reserved((it.xform as Transform3D).origin, 0.3) and not maker.on_bridge((it.xform as Transform3D).origin) and not maker.on_trail((it.xform as Transform3D).origin, 0.3):
 				kept.append(it)
 		out = kept
 	return out

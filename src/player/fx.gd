@@ -170,7 +170,7 @@ static func dust(parent: Node, pos: Vector3, color: Color, amount: int = 5, size
 static func material_color(mat: int) -> Color:
 	match mat:
 		Mat.MOSS: return Color(0.3, 0.5, 0.2)
-		Mat.DIRT: return Color(0.4, 0.28, 0.18)
+		Mat.DIRT, Mat.PATH: return Color(0.4, 0.28, 0.18)
 		Mat.COPPER: return Color(0.9, 0.55, 0.25)
 		Mat.TIN: return Color(0.7, 0.72, 0.74)
 		Mat.BORDER, Mat.EDGE: return Color(0.6, 0.4, 1.0)

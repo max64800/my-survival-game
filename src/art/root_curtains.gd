@@ -129,7 +129,7 @@ static func plan(maker: CaveMaker) -> Array:
 					continue
 				var top := GlowPlacer._march(maker, base, Vector3.UP, 5.0)
 				var fl := GlowPlacer._march(maker, base, Vector3.DOWN, 5.0)
-				if top == Vector3.INF or fl == Vector3.INF or maker.is_reserved(top, 1.0):
+				if top == Vector3.INF or fl == Vector3.INF or maker.is_reserved(top, 1.0) or maker.on_trail(fl, 1.0):
 					continue
 				var length := ((top.y - fl.y) - rng.randf_range(0.5, 1.1)) * rng.randf_range(0.45, 1.0)  # a ragged edge
 				if length < 0.6:
@@ -185,7 +185,7 @@ static func _plan_under_bridges(maker: CaveMaker, rng: RandomNumberGenerator, ou
 				continue
 			var top := GlowPlacer._march(maker, under, Vector3.UP, 3.0)  # the bridge's underside
 			var fl := GlowPlacer._march(maker, under, Vector3.DOWN, 30.0)
-			if top == Vector3.INF or fl == Vector3.INF or maker.is_reserved(top, 1.0):
+			if top == Vector3.INF or fl == Vector3.INF or maker.is_reserved(top, 1.0) or maker.on_trail(fl, 1.0):
 				continue
 			var length := minf(rng.randf_range(1.2, 4.5), (top.y - fl.y) - 1.0)
 			if length < 0.6:
@@ -204,7 +204,7 @@ static func _curtain_across(maker: CaveMaker, rng: RandomNumberGenerator, out: A
 			continue
 		var top := GlowPlacer._march(maker, base, Vector3.UP, 5.0)
 		var fl := GlowPlacer._march(maker, base, Vector3.DOWN, 5.0)
-		if top == Vector3.INF or fl == Vector3.INF or maker.is_reserved(top, 1.0):
+		if top == Vector3.INF or fl == Vector3.INF or maker.is_reserved(top, 1.0) or maker.on_trail(fl, 1.0):
 			continue
 		var length := ((top.y - fl.y) - rng.randf_range(0.5, 1.1)) * rng.randf_range(0.45, 1.0)
 		if length < 0.6:

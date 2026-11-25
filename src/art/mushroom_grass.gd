@@ -114,7 +114,7 @@ static func plan(maker: CaveMaker, trees: Array = []) -> Array[Dictionary]:
 			var n := GlowPlacer.normal_at(maker, hit)
 			if n.y < 0.6:
 				continue  # floors and gentle slopes, not walls
-			if maker.is_reserved(hit, 1.8) or maker.on_bridge(hit, 1.0) or maker._in_column(hit, 1.0):
+			if maker.is_reserved(hit, 1.8) or maker.on_bridge(hit, 1.0) or maker.on_trail(hit, 0.5) or maker._in_column(hit, 1.0):
 				continue
 			var clear := true
 			for t in trees:

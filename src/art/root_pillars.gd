@@ -70,6 +70,8 @@ static func plan(maker: CaveMaker) -> Array[Dictionary]:
 				continue  # up to a real ceiling, never into a bridge (and not standing on one)
 			if not _clear(maker, at, width * 0.45, out):
 				continue
+			if maker.on_trail(bottom, width * 0.45 + 2.0):
+				continue  # (its foot, not its middle: never on the old path)
 			out.append({top = top + Vector3.UP * 0.3, bottom = bottom - Vector3.UP * 0.3, width = width, model = model, spin = spin})
 			placed += 1
 	return out
@@ -77,7 +79,7 @@ static func plan(maker: CaveMaker) -> Array[Dictionary]:
 
 ## The placement rule: not on kept-clear ground, a bridge, a stone column, a place, a path or another tree.
 static func _clear(maker: CaveMaker, at: Vector3, foot: float, out: Array[Dictionary]) -> bool:
-	if maker.is_reserved(at, foot + 2.0) or maker._in_column(at, foot + 2.0):
+	if maker.is_reserved(at, foot + 2.0) or maker._in_column(at, foot + 2.0) or maker.on_trail(at, foot + 2.0):
 		return false
 	for q in maker.pois:
 		if Vector2(q.pos.x - at.x, q.pos.z - at.z).length() < foot + 4.0:
